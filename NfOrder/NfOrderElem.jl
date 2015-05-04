@@ -8,6 +8,12 @@ export NfOrderElem
 
 export elem_in_order
 
+################################################################################
+#
+#  Types and memory management
+#
+################################################################################
+
 type NfOrderElem
   elem_in_nf::nf_elem
   elem_in_basis::Array{fmpz, 1}
@@ -25,7 +31,7 @@ type NfOrderElem
 
   function NfOrderElem(O::NfOrder, arr::Array{fmpz, 1})
     z = new()
-    z.elem_in_nf = dot(O._basis, arr)
+    z.elem_in_nf = dot(_basis(O), arr)
     z.elem_in_basis = arr
     z.parent = O
     return z
@@ -44,6 +50,12 @@ function NfOrderElem!(O::NfOrder, a::nf_elem)
 end
 
 parent(a::NfOrderElem) = a.parent
+
+################################################################################
+#
+#  Parent object overloading
+#
+################################################################################
  
 function Base.call(O::NfOrder, a::nf_elem)
   return NfOrderElem(O,a)
@@ -65,7 +77,7 @@ end
 
 # compute a^i mod p (fast?)
 function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
-  println(i)
+  #println(i)
   if i == 1 then
     b = mod(a,p)
     return b
@@ -101,6 +113,8 @@ function elem_in_basis(a::NfOrderElem)
   !x && error("Ooops! The underlying .elem_in_nf is not contained in the order")
 end
 
+# the following is a bad idea
+# don't use the matrix function
 function mod(a::NfOrderElem, m::fmpz)
   M = MatrixSpace(ZZ, 1, degree(parent(a)))(reshape(elem_in_basis(a),1,degree(parent(a))))
   MM = reduce_mod(M, m)
@@ -153,7 +167,7 @@ function _check_elem_in_order(a::nf_elem, O::NfOrder)
   element_to_mat_row!(M,1,b)
   t = FakeFmpqMat(M,d)
   x = t*basis_mat_inv(O)
-  println(x)
+  #println(x)
   return (x.den == 1, map(ZZ,vec(Array(x.num)))) ## Array() should really be already an array of fmpz's; Julia Arrays are a nightmare
 end  
 

@@ -8,7 +8,7 @@ import Base: powermod
 
 export NfOrder, NfOrderSet
 
-export powermod, elem_in_basis, EquationOrder
+export powermod, elem_in_basis, EquationOrder, deepcopy
 
 ################################################################################
 #
@@ -90,7 +90,7 @@ type NfOrder <: Ring
 end
 
 function _basis(O::NfOrder)
-  (!isdefinied(O, :_basis) || !isdefinied(O, :basis_mat)) && error("_basis or basis_mat must be definied")
+  (!isdefined(O, :_basis) && !isdefined(O, :basis_mat)) && error("_basis or basis_mat must be defined")
   if isdefined(O, :_basis)
     return O._basis
   end
@@ -146,6 +146,8 @@ end
 
 degree(O::NfOrder) = degree(O.nf)
 
+parent(O::NfOrder) = O.parent
+
 ################################################################################
 #
 #  Binary operations
@@ -154,8 +156,9 @@ degree(O::NfOrder) = degree(O.nf)
 
 function +(a::NfOrder, b::NfOrder)
   O = parent(a)()
-  O.basis_mat = a.basis_mat + b.basis_mat
-  O.basis_mat = simplify_content(h,d)
+  c = sub(hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b)))),1:degree(O),1:degree(O))
+  O.basis_mat = FakeFmpqMat(c,den(basis_mat(a))*den(basis_mat(b)))
+  return O
 end
 
 ################################################################################
@@ -173,7 +176,7 @@ function show(io::IO, a::NfOrder)
   print(io, "Order of ")
   println(io, a.nf)
   print(io, "with Z-basis ")
-  print(io, a._basis)
+  print(io, _basis(a))
 end
 
 ################################################################################
@@ -219,7 +222,7 @@ function discriminant(O::NfOrder)
   A = MatrixSpace(ZZ, degree(O), degree(O))()
   for i in 1:degree(O)
     for j in 1:degree(O)
-      A[i,j] = ZZ(trace(O._basis[i]*O._basis[j]))
+      A[i,j] = ZZ(trace(_basis(O)[i]*_basis(O)[j]))
     end
   end
   O.discriminant = determinant(A)

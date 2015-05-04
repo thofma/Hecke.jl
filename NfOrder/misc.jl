@@ -20,7 +20,7 @@ function kernel(a::nmod_mat)
   x = transpose(a)
   z,n = _right_kernel(x)
   z = transpose(z)
-  println(z)
+  #println(z)
   ar = typeof(Array(Residue{fmpz}, cols(z)))[]
   for i in 1:n 
     t = Array(Residue{fmpz}, cols(z))
@@ -29,6 +29,6 @@ function kernel(a::nmod_mat)
     end
     push!(ar,t)
   end
-  println(ar)
+  #println(ar)
   return ar
 end
