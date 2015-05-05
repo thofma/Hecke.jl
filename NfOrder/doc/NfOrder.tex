@@ -1,0 +1,259 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+%\usepackage{eucal}
+\usepackage{amscd}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{textcomp}
+\usepackage{listings}
+\urlstyle{sf}
+
+\addtolength{\oddsidemargin}{-0.75in}
+\addtolength{\evensidemargin}{-0.75in}
+\addtolength{\textwidth}{1.5in}
+
+\newcommand{\Z}{\mathbf{Z}}
+\newcommand{\N}{\mathbf{N}}
+\newcommand{\HH}{\mathcal{H}}
+\newcommand{\Q}{\mathbf{Q}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\R}{\mathbf{R}}
+\newcommand{\F}{\mathbf{F}}
+\newcommand{\Pee}{\mathbb{P}}
+\newcommand{\EuO}{\mathcal{O}}
+\newcommand{\Qbar}{\overline{\mathbf{Q}}}
+\newcommand{\fn}{\hfill[Function]}
+\newcommand{\macro}{\hfill[Macro]}
+\newcommand{\gmp}{\hfill[GMP]}
+\newcommand{\code}{\lstinline}
+\newcommand{\desc}[1]{\vspace{-3mm}\begin{quote}#1\end{quote}}
+\newcommand{\Mat}{\operatorname{Mat}}
+
+\newcommand{\ljk}[2]{\left(\frac{#1}{#2}\right)}
+\newcommand{\modulo}[1]{\;\left(\mbox{mod}\;#1\right)}
+\newcommand{\fr}{\mathfrak}
+
+\def\notdivides{\mathrel{\kern-3pt\not\!\kern4.5pt\bigm|}}
+\def\nmid{\notdivides}
+\def\nsubseteq{\mathrel{\kern-3pt\not\!\kern2.5pt\subseteq}}
+
+\newsavebox{\itembox}
+\newcommand*{\descitem}{%
+\everyhbox{\everyhbox{}\aftergroup\finishdescitem}%
+\setbox\itembox\hbox
+}
+\newcommand*{\finishdescitem}{%
+\everyhbox{}%
+\item[\box\itembox]%
+}
+
+\lstdefinelanguage{julia}
+{
+  keywordsprefix=\@,
+  morekeywords={
+    exit,whos,edit,load,is,isa,isequal,typeof,tuple,ntuple,uid,hash,finalizer,convert,promote,
+    subtype,typemin,typemax,realmin,realmax,sizeof,eps,promote_type,method_exists,applicable,
+    invoke,dlopen,dlsym,system,error,throw,assert,new,Inf,Nan,pi,im,begin,while,for,in,return,
+    break,continue,macro,quote,let,if,elseif,else,try,catch,end,bitstype,ccall,do,using,module,
+    import,export,importall,baremodule,immutable,local,global,const,Bool,Int,Int8,Int16,Int32,
+    Int64,Uint,Uint8,Uint16,Uint32,Uint64,Float32,Float64,Complex64,Complex128,Any,Nothing,None,
+    function,type,typealias,abstract
+  },
+  sensitive=true,
+  morecomment=[l]{\#},
+  morestring=[b]',
+  morestring=[b]" 
+}
+
+\parindent=0pt
+\parskip 4pt plus 2pt minus 2pt
+
+%\email{goodwillhart@googlemail.com}
+
+\begin{document}
+\lstset{
+  language=julia,
+  keywordstyle=\bfseries\ttfamily\color[rgb]{0,0.6,0.4},
+  identifierstyle=\ttfamily\color[rgb]{0,0.2,0.8},
+  commentstyle=\color[rgb]{0.8,0.05,1},
+  stringstyle=\color[rgb]{0.8,0.1,0.1},
+  basicstyle=\ttfamily,
+  showstringspaces=false,
+}
+%\maketitle
+\tableofcontents
+
+\section{Mathematical background and conventions}
+
+\paragraph{Representation matrix of a number field element.}
+
+Let $K$ be an algebraic number field with $\Q$-basis $(\alpha_1,\dotsc,\alpha_d)$.
+For an element $\alpha$ of $K$ we call the matrix $M_\alpha \in \Mat_{d \times d} (\Q)$ with
+\begin{align*} \alpha \cdot \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix} = \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix} \cdot \alpha = M_\alpha \cdot \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix}
+\end{align*}
+the \textit{representation matrix} of $\alpha$ (with respect to $(\alpha_1,\dotsc,\alpha_d)$).
+In particular, if $\beta$ is another element of $K$ with coefficient vector $(b_1,\dotsc,b_d)$, that is, $\beta = \sum_{i=1}^d b_i \alpha_i$, then we have
+\begin{align*} \alpha \cdot \beta = \beta \cdot \alpha = \begin{pmatrix} b_1 & b_2 & \dotsc & b_d \end{pmatrix} \cdot \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix} \alpha = (b_1 \, b_2 \, \dotsc \, b_d ) \cdot M_\alpha \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix}. \end{align*}
+Thus, the coefficient vector of $\alpha \cdot \beta$ is just $(b_1\, b_2 \, \dotsc \, b_d ) \cdot M_\alpha$.
+
+\paragraph{Representation matrix of an order element}
+
+Let $\mathcal O$ be an order in an lgebraic number field with $\Z$-basis $(\omega_1,\dotsc,\omega_d)$.
+For an element $\alpha$ of $K$ we call the matrix $M_\alpha \in \Mat_{d \times d} (\Z)$ with
+\begin{align*} \alpha \cdot \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} = \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} \cdot \alpha = M_\alpha \cdot \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix}
+\end{align*}
+the \textit{representation matrix} of $\alpha$ (with respect to $(\omega_1,\dotsc,\omega_d)$).
+In particular, if $\beta$ is another element of $\mathcal O$ with coefficient vector $(b_1,\dotsc,b_d)$, that is, $\beta = \sum_{i=1}^d b_i \omega_i$, then we have
+\begin{align*} \alpha \cdot \beta = \beta \cdot \alpha = \begin{pmatrix} b_1 & b_2 & \dotsc & b_d \end{pmatrix} \cdot \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} \alpha = (b_1 \, b_2 \, \dotsc \, b_d ) \cdot M_\alpha \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix}. \end{align*}
+Thus, the coefficient vector of $\alpha \cdot \beta$ is just $(b_1\, b_2 \, \dotsc \, b_d ) \cdot M_\omega$.
+
+\paragraph{Basis matrix of an order.}
+
+Let $K$ be an algebraic number field with $\Q$-basis $(\alpha_1,\dotsc,\alpha_d)$ and $\mathcal O$ a $\Z$-order in $K$ with $\Z$-basis $\Omega = (\omega_1,\dotsc,\omega_d)$.
+The \textit{basis matrix} of $\mathcal O$ (with respect to $(\alpha_1,\dotsc,\alpha_d)$ and $\Omega$) is the matrix $M \in \Mat_{d \times d}(\Q)$ with
+\begin{align*}
+  \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} =
+  M \cdot \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix}
+\end{align*}
+
+\paragraph{Basis matrix of an ideal of an order.}
+
+Let $\mathcal O$ be an order of an algebraic number field with $\Z$-basis $\Omega = (\omega_1,\dotsc,\omega_d)$.
+
+\paragraph{Basis matrix of a fractional ideal of an order.}
+
+\section{NfOrder : Orders in absolute number fields}
+
+Orders in number fields are modeled using the type \code{NfOrder}, which has the following definition:
+
+\subsection{Definition}
+
+\begin{lstlisting}
+type NfOrder <: Ring             
+  nf::NfNumberField              
+  basis # Array{NfOrderElem, 1}  
+  _basis::Array{nf_elem, 1}      
+  basis_mat::FakeFmpqMat         
+  basis_mat_inv::FakeFmpqMat     
+  discriminant::fmpz             
+  isequationorder::Bool          
+  index::fmpz                
+  parent::NfOrderSet 
+end
+\end{lstlisting}
+
+Let $\mathcal O$ be an order represented by an object \code{O} of type \code{NfOrder}. 
+
+\begin{description}
+\descitem{\code{O.nf}:} Object \code{K} of type \code{NfNumberField}, which itself represents a number field $K$ such that $\mathcal O$ is a $\Z$-order of $K$.
+
+\descitem{\code{O.basis}:} Array of objects of type \code{NfOderElem} which represents elements $\omega_1,\dotsc,\omega_d \in \mathcal O$ such that $(\omega_1,\dotsc,\omega_d)$ is a $\Z$-basis of $\mathcal O$.
+(We cannot declare it to be of type \lstinline!Array{NfOrderElem, 1}!, since the definition of the type \code{NfOrder} preceeds the definition of and uses the type \code{NfOrder}).
+
+\descitem{\code{O._basis}:} Array of objects of type \code{nf_elem} with parent \code{O.nf} which represents elements $\omega_1,\dotsc,\omega_d \in K$ such that $(\omega_1,\dotsc,\omega_d)$ is a $\Z$-basis of $\mathcal O$. Note that the objects represented by \code{O.basis} and \code{O._basis} are equal.
+
+\descitem{\code{O.basis_mat}:} Let $\alpha_1,\dotsc,\alpha_d$ be the elements represented by \code{basis(K)} and $M \in \Mat_{d\times d}(\Q)$ the matrix represented by \code{O.basis_mat}. Then $M$ is the basis matrix of $\mathcal O$ (with respect to $(\omega_1,\dotsc,\omega_d)$ and $(\alpha_1,\dotsc,\alpha_d)$).
+
+\descitem{\code{O.basis_mat_inv}:} Let $N \in \Mat_{d \times d}(\Q)$ be the matrix represented by \code{O.basis_mat_inv}. Then $N$ is the inverse of $M$, that is, $M N = N M = \mathbf{1}_d$.
+
+\descitem{\code{O.discriminant}:} Represents the discriminant of $\mathcal O$.
+
+\descitem{\code{O.isequationorder}:} If $f \in \Q[X]$ is the polynomial represented by \code{O.nf.pol}, then \code{O.isequationorder} is set to \code{true}, if and only if $\mathcal O$ is the equation order of $f$.
+
+\descitem{\code{O.index}:} I don't know (yet).
+
+\descitem{\code{O.parent}:} The mandatory parent object. All objects of type \code{NfOrder} representing an order in a fixed number field have this parent object in common.
+\end{description}
+
+Note that you should never ever access the field \code{x} of an object of type \code{NfOrder} using the function \code{O.x}. Always use \code{x(O)}!
+For example, if you want to access the discriminant, use \code{discriminant(O)}.
+(Not all fields are set upon creation).
+
+\subsection{Creation}
+
+Objects of type \code{NfOrder} can be created as follows:
+
+\begin{lstlisting}
+  EquationOrder(K::NfNumberField)
+\end{lstlisting}
+
+\desc{Create the equation order of the number field represented by \code{K} with defining polynomial \code{K.pol}.}
+
+\begin{lstlisting}
+  Order(arr::Array{nf_elem, 1})
+\end{lstlisting}
+  
+\desc{Given a list of number field elements $\alpha_1,\dotsc, \alpha_d \in K$, create the order $\mathcal O$ with $\Z$-basis $(\alpha_1,\dotsc,\alpha_d)$ (It is not checked if this really is really defines a $\Z$-order of $K$.)}
+
+\begin{lstlisting}
+  Order(K::NfNumberField, A::FakeFmpqMat)
+\end{lstlisting}
+
+\desc{Let $K$ be the number field represented by \code{K} and $\alpha_1,\dotsc,\alpha_d$ the basis represented by \code{basis(K)}.
+Let $A \in \Mat_{d \times d}(\Q)$ be the matrix represented by \code{A}. Then this function creates the order of $K$ with basis matrix $A$. It is not checked if this really defines a $\Z$-order of $K$.}
+
+Here are some examples:
+
+\begin{verbatim}
+julia> Qx,x = PolynomialRing(QQ, "x");
+
+julia> f = x^12 - x^11 + 5*x^4 + 25
+x^12 - 1*x^11 + 5*x^4 + 25
+
+julia> O = EquationOrder(K)
+Order of Number field over Rational Field with defining polynomial x^12 - 1*x^11 + 5*x^4 + 25
+with Z-basis [1,a,a^2,a^3,a^4,a^5,a^6,a^7,a^8,a^9,a^10,a^11]
+
+julia> OO = Order([K(2), 2*a, 2*a^2, 2*a^3, 2*a^4, 2*a^5, 2*a^6, 2*a^7, 2*a^8, 2*a^9, 2*a^10, 2*a^11])
+Order of Number field over Rational Field with defining polynomial x^12 - 1*x^11 + 5*x^4 + 25
+with Z-basis [2,2*a,2*a^2,2*a^3,2*a^4,2*a^5,2*a^6,2*a^7,2*a^8,2*a^9,2*a^10,2*a^11]
+
+julia> basis_mat(OO)
+FakeFmpqMat with numerator
+[2 0 0 0 0 0 0 0 0 0 0 0]
+[0 2 0 0 0 0 0 0 0 0 0 0]
+[0 0 2 0 0 0 0 0 0 0 0 0]
+[0 0 0 2 0 0 0 0 0 0 0 0]
+[0 0 0 0 2 0 0 0 0 0 0 0]
+[0 0 0 0 0 2 0 0 0 0 0 0]
+[0 0 0 0 0 0 2 0 0 0 0 0]
+[0 0 0 0 0 0 0 2 0 0 0 0]
+[0 0 0 0 0 0 0 0 2 0 0 0]
+[0 0 0 0 0 0 0 0 0 2 0 0]
+[0 0 0 0 0 0 0 0 0 0 2 0]
+[0 0 0 0 0 0 0 0 0 0 0 2]
+and denominator 1
+
+julia> basis_mat_inv(OO)
+FakeFmpqMat with numerator
+[1 0 0 0 0 0 0 0 0 0 0 0]
+[0 1 0 0 0 0 0 0 0 0 0 0]
+[0 0 1 0 0 0 0 0 0 0 0 0]
+[0 0 0 1 0 0 0 0 0 0 0 0]
+[0 0 0 0 1 0 0 0 0 0 0 0]
+[0 0 0 0 0 1 0 0 0 0 0 0]
+[0 0 0 0 0 0 1 0 0 0 0 0]
+[0 0 0 0 0 0 0 1 0 0 0 0]
+[0 0 0 0 0 0 0 0 1 0 0 0]
+[0 0 0 0 0 0 0 0 0 1 0 0]
+[0 0 0 0 0 0 0 0 0 0 1 0]
+[0 0 0 0 0 0 0 0 0 0 0 1]
+and denominator 2
+
+julia> discriminant(O)
+26849018109922162628173828125
+
+julia> discriminant(OO)
+450451776218075865600000000000000000
+
+julia> discriminant(OO)//discriminant(O)
+16777216
+
+julia> 16777216 == (2^12)^2
+true
+\end{verbatim}
+
+\end{document}
