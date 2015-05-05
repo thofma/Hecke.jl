@@ -8,7 +8,7 @@ import Base: powermod
 
 export NfOrder, NfOrderSet
 
-export powermod, elem_in_basis, EquationOrder, deepcopy
+export powermod, elem_in_basis, EquationOrder, deepcopy, Order
 
 ################################################################################
 #
@@ -194,7 +194,7 @@ end
 
 function Order(a::Array{nf_elem, 1}) 
   # check if it is a basis?
-  return NfOrder(parent(a[1]),a)
+  return NfOrder(a)
 end
 
 function Order(a::NfNumberField, b::FakeFmpqMat)
