@@ -4,6 +4,8 @@
 #
 ################################################################################
 
+import Base: in
+
 export NfOrderElem
 
 export elem_in_order
@@ -19,12 +21,14 @@ type NfOrderElem
   elem_in_basis::Array{fmpz, 1}
   parent::NfOrder
 
-  function NfOrderElem(O::NfOrder, a::nf_elem)
-    (x,y) = _check_elem_in_order(a,O)
-    !x && error("Number field element not in the order")
+  function NfOrderElem(O::NfOrder, a::nf_elem, check::Bool = true)
     z = new()
+    if check
+      (x,y) = _check_elem_in_order(a,O)
+      !x && error("Number field element not in the order")
+      z.elem_in_basis = y
+    end
     z.elem_in_nf = a
-    z.elem_in_basis = y
     z.parent = O
     return z
   end
@@ -37,19 +41,78 @@ type NfOrderElem
     return z
   end
 
+  function NfOrderElem{T <: Integer}(O::NfOrder, arr::Array{T, 1})
+    return NfOrderElem(O, map(ZZ, arr))
+  end
+
   function NfOrderElem(O::NfOrder)
     z = new()
     z.parent = O
+    #z.elem_in_nf = zero(parent(O).nf)
+    #z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
     return z
   end
 end
 
-function NfOrderElem!(O::NfOrder, a::nf_elem)
-  z = O()
-  z.elem_in_nf = a
-end
+#function NfOrderElem!(O::NfOrder, a::nf_elem)
+#  z = O()
+#  z.elem_in_nf = a
+#end
 
 parent(a::NfOrderElem) = a.parent
+
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+function elem_in_nf(a::NfOrderElem)
+  if isdefined(a, :elem_in_nf)
+    return a.elem_in_nf
+  end
+  if isdefined(a, :elem_in_basis)
+    a.elem_in_nf = dot(_basis(O), a.elem_in_basis)
+    return a.elem_in_nf
+  end
+  error("Not a valid order element")
+end
+
+function elem_in_basis(a::NfOrderElem)
+  if isdefined(a, :elem_in_basis)
+    return a.elem_in_basis
+  end
+  if isdefined(a, :elem_in_nf)
+    (x,y) = _check_elem_in_order(a.elem_in_nf,parent(a))
+    !x && error("Number field element not in the order")
+    a.elem_in_basis = y
+    return a.elem_in_basis
+  end
+  error("Not a valid order element")
+end
+
+################################################################################
+#
+#  Special elements
+#
+################################################################################
+
+function zero(O::NfOrder)
+  z = O()
+  z.elem_in_nf = zero(O.nf)
+  z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
+  return z
+end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, a::NfOrderElem)
+  print(io, a.elem_in_nf)
+end
 
 ################################################################################
 #
@@ -57,11 +120,15 @@ parent(a::NfOrderElem) = a.parent
 #
 ################################################################################
  
-function Base.call(O::NfOrder, a::nf_elem)
-  return NfOrderElem(O,a)
+function Base.call(O::NfOrder, a::nf_elem, check::Bool = true)
+  return NfOrderElem(O,a,check)
 end
 
 function Base.call(O::NfOrder, arr::Array{fmpz, 1})
+  return NfOrderElem(O,arr)
+end
+
+function Base.call{T <: Integer}(O::NfOrder, arr::Array{T, 1})
   return NfOrderElem(O,arr)
 end
 
@@ -69,15 +136,55 @@ function Base.call(O::NfOrder)
   return NfOrderElem(O)
 end
 
-function *(a::NfOrderElem, b::NfOrderElem)
-  z = parent(a)()
-  z.elem_in_nf = a.elem_in_nf * b.elem_in_nf
+################################################################################
+#
+#  Binary operations
+#
+################################################################################
+
+function *(x::NfOrderElem, y::NfOrderElem)
+  @check_parent(x,y)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
   return z
 end
 
-# compute a^i mod p (fast?)
+function +(x::NfOrderElem, y::NfOrderElem)
+  @check_parent(x,y) 
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  return z
+end
+
+function *(a::NfOrderElem, b::fmpz)
+  z = parent(a)()
+  z.elem_in_nf = a.elem_in_nf *b
+  return z
+end
+
+*(a::fmpz, b::NfOrderElem) = b*a
+
+################################################################################
+#
+#  Modular reduction
+#
+################################################################################
+
+function mod(a::NfOrderElem, m::fmpz)
+  ar = elem_in_basis(a)
+  for i in 1:degree(parent(a))
+    ar[i] = mod(ar[i],m)
+  end
+  return parent(a)(ar)
+end
+ 
+################################################################################
+#
+#  Modular exponentiation
+#
+################################################################################
+
 function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
-  #println(i)
   if i == 1 then
     b = mod(a,p)
     return b
@@ -93,94 +200,39 @@ function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
   return b
 end  
 
-#function mod(a::NfOrderElem, p::fmpz)
-#  z = parent(a)()
-#  t = MatrixSpace(ZZ,degree(parent(a)), degree(parent(a)))(p)
-#  d = ZZ(1)
-#  z.elem_in_nf = element_reduce_mod(a.elem_in_nf, to_array(basis_mat(parent(a))), to_array(basis_mat_inv(parent(a))), p)
-#  return z
-#end
+powermod(a::NfOrderElem, i::Integer, p::Integer)  = powermod(a, ZZ(i), ZZ(p))
 
-function elem_in_basis(a::NfOrderElem)
-  # I should check if it is really in the order
+powermod(a::NfOrderElem, i::fmpz, p::Integer)  = powermod(a, i, ZZ(p))
 
-  if isdefined(a, :elem_in_basis)
-    return a.elem_in_basis
-  end
+powermod(a::NfOrderElem, i::Integer, p::fmpz)  = powermod(a, ZZ(i), p)
 
-  (x,y) = _check_elem_in_order(a.elem_in_nf, parent(a))
-  x && return y
-  !x && error("Ooops! The underlying .elem_in_nf is not contained in the order")
-end
-
-# the following is a bad idea
-# don't use the matrix function
-function mod(a::NfOrderElem, m::fmpz)
-  M = MatrixSpace(ZZ, 1, degree(parent(a)))(reshape(elem_in_basis(a),1,degree(parent(a))))
-  MM = reduce_mod(M, m)
-  return parent(a)(map(ZZ, vec(Array(MM))))
-end
-  
-  
-#  bas = to_array(basis_mat(parent(a)))
-#  inv_bas = to_array(basis_mat_inv(parent(a)))
+################################################################################
 #
-#  n = degree(parent(a))
-#  M = MatrixSpace(ZZ, 1, n)();
-#  d_a = denominator(a.elem_in_nf)
-#  element_to_mat_row!(M, 1, a.elem_in_nf*d_a);
-#  b, d = inv_bas
-#  M = divexact(M*b, d*d_a)  
-#  arr = Array(fmpz, n)
-#  for i in 1:n
-#    arr[i] = M[1,i]
-#  end
-#  return arr
-#end
+#  Number field element conversion/containment
+#
+################################################################################
 
-function *(a::NfOrderElem, b::fmpz)
-  z = parent(a)()
-  z.elem_in_nf = a.elem_in_nf *b
-  return z
+function in(a::nf_elem, O::NfOrder)
+  x, = _check_elem_in_order(a::nf_elem, O::NfOrder)
+  return x
 end
-
-*(a::fmpz, b::NfOrderElem) = b*a
-
-function zero(O::NfOrder)
-  z = O()
-  z.elem_in_nf = zero(O.nf)
-  z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
-  return z
-end
-
-
-function +(a::NfOrderElem, b::NfOrderElem)
-  z = parent(a)()
-  z.elem_in_nf = a.elem_in_nf + b.elem_in_nf
-  return z
-end
-
-function _check_elem_in_order(a::nf_elem, O::NfOrder)
-  d = denominator(a)
-  b = d*a 
-  M = MatrixSpace(ZZ, 1, degree(O))()
-  element_to_mat_row!(M,1,b)
-  t = FakeFmpqMat(M,d)
-  x = t*basis_mat_inv(O)
-  #println(x)
-  return (x.den == 1, map(ZZ,vec(Array(x.num)))) ## Array() should really be already an array of fmpz's; Julia Arrays are a nightmare
-end  
 
 function elem_in_order(a::nf_elem, O::NfOrder)
   (x,y) = _check_elem_in_order(a, O)
   return (x, O(y))
 end
 
+################################################################################
+#
+#  Representation matrices
+#
+################################################################################
+
 function representation_mat(a::NfOrderElem)
   O = parent(a)
   A = representation_mat(a, parent(a).nf)
   A = basis_mat(O)*A*basis_mat_inv(O)
-  @assert A.den == 1
+  !(A.den == 1) && error("Element not in order")
   return A.num
 end
 
@@ -192,5 +244,13 @@ function representation_mat(a::NfOrderElem, K::NfNumberField)
   z = FakeFmpqMat(A,d)
   return z
 end
-  
 
+################################################################################
+#
+#  Trace
+#
+################################################################################
+
+function trace(a::NfOrderElem)
+  return trace(elem_in_nf(a))
+end
