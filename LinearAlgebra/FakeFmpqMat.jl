@@ -166,3 +166,30 @@ function to_fmpz_mat(x::FakeFmpqMat)
   den(x) != 1 && error("Denominator has to be 1")
   return num(x)
 end
+
+################################################################################
+#
+#  Hermite normal form for numerator
+#
+################################################################################
+
+function hnf!(x::FakeFmpqMat)
+  h = hnf(num(x))
+  x.num = h
+end
+
+function hnf(x::FakeFmpqMat)
+  h = hnf(num(x))
+  return FakeFmpqMat(h,den(x))
+end
+
+################################################################################
+#
+#  Sub
+#
+################################################################################
+
+function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
+  z = FakeFmpqMat(sub(num(x),r,c),den(x))
+  return z
+end

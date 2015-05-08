@@ -45,7 +45,7 @@ function colon_ideal(a::NfOrderIdeal)
   n = hnf(transpose(m))
   n = transpose(sub(n,1:degree(O),1:degree(O)))
   b,d = pseudo_inverse(n)
-  return NfOrderFracIdeal(O,FakeFmpqMat(b,d))
+  return NfOrderFracIdeal(O,hnf(FakeFmpqMat(b,d)))
 end  
 
 function NfOrder(a::NfOrderFracIdeal)

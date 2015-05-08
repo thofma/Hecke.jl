@@ -104,6 +104,17 @@ function NfOrder(a::Array{nf_elem, 1})
     return z
   end
 end
+
+function deepcopy(O::NfOrder)
+  z = NfOrder()
+  for x in fieldnames(O)
+    if isdefined(O, x)
+      z.(x) = O.(x)
+    end
+  end
+  return z
+end
+
  
 ################################################################################
 #
@@ -178,6 +189,15 @@ function basis_mat_inv(O::NfOrder)
   return O.basis_mat_inv
 end
 
+function isequationorder(O::NfOrder)
+  if !isdefined(O, :isequationorder)
+    return false
+  end
+  return O.isequationorder
+end
+
+nf(O::NfOrder) = O.nf
+
 degree(O::NfOrder) = degree(O.nf)
 
 parent(O::NfOrder) = O.parent
@@ -206,9 +226,8 @@ end
 ################################################################################
 
 function +(a::NfOrder, b::NfOrder)
-  O = parent(a)()
-  c = sub(hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b)))),1:degree(O),1:degree(O))
-  O.basis_mat = FakeFmpqMat(c,den(basis_mat(a))*den(basis_mat(b)))
+  c = sub(hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b)))),1:degree(a),1:degree(a))
+  O = Order(nf(a),FakeFmpqMat(c,den(basis_mat(a))*den(basis_mat(b))))
   return O
 end
 
