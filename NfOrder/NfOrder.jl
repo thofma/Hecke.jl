@@ -191,9 +191,10 @@ end
 
 function isequationorder(O::NfOrder)
   if !isdefined(O, :isequationorder)
-    return false
+    return O.isequationorder
   end
-  return O.isequationorder
+  O.isequationorder = false
+  return false
 end
 
 nf(O::NfOrder) = O.nf
