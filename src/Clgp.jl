@@ -672,8 +672,8 @@ function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int, I = Base.ra
     r = 2
   end
   for i=1:r 
-    I = Nemo.prod(I, Base.rand(clg.FB.ideals))
-    I, g = Nemo.reduce_ideal_class(I)
+    I = prod(I, Base.rand(clg.FB.ideals))
+    I, g = reduce_ideal_class(I)
     s *= g
   end
   return s;
@@ -730,7 +730,7 @@ function lll(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat; prec::Int64 = 100,
   c = b[1]*c
   old = get_bigfloat_precision()
   set_bigfloat_precision(prec)
-  g = Nemo.round(scale(c, BigInt(2)^(prec)))
+  g = round(scale(c, BigInt(2)^(prec)))
   @assert !iszero(g)
   set_bigfloat_precision(old)
   g = g*g'
@@ -941,11 +941,11 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
   t = time_ns()
   I = []
   for i in clg.FB.ideals
-    f = Nemo.class_group_small_real_elements_relation_start(clg, i, limit = limit, prec = prec)
+    f = class_group_small_real_elements_relation_start(clg, i, limit = limit, prec = prec)
     push!(I, f)
     f.vl = val
     while true
-      f = Nemo.class_group_add_relation(clg, Nemo.class_group_small_real_elements_relation_next(I[end]))
+      f = class_group_add_relation(clg, class_group_small_real_elements_relation_next(I[end]))
       if f
         I[end].cnt += 1
         break
@@ -989,7 +989,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
             println("random parameters now ", E.rr, " and ", E.vl)
           end
           A = idl[i] * prod([idl[Base.rand(rnd)] for i= E.rr])
-          I[i] = Nemo.class_group_small_real_elements_relation_start(clg, A, val = E.vl, limit = limit, prec = prec)
+          I[i] = class_group_small_real_elements_relation_start(clg, A, val = E.vl, limit = limit, prec = prec)
           I[i].rr = E.rr
           I[i].vl = E.vl
           E = I[i]
@@ -997,8 +997,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
           println("confirm random parameters now ", I[i].rr, " and ", I[i].vl)
           limit_cnt += 1
         end
-        b = Nemo.Nemo.class_group_small_real_elements_relation_next(E)
-        if Nemo.class_group_add_relation(clg, b*a)
+        b = class_group_small_real_elements_relation_next(E)
+        if class_group_add_relation(clg, b*a)
           E.cnt += 1
           if length(clg.R) - clg.last_H > 20
             break

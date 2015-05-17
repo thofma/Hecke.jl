@@ -143,14 +143,12 @@ end
 ################################################################################
 
 function *(x::NfOrderElem, y::NfOrderElem)
-  @check_parent(x,y)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
   return z
 end
 
 function +(x::NfOrderElem, y::NfOrderElem)
-  @check_parent(x,y) 
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   return z
