@@ -8,7 +8,13 @@ using Nemo
 # we want to extend them
 # So we have to import them explicitely
 
-import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree, denominator, den, __prime_ideal_components, num, lg, prime_decomposition, parent, _factor, length, _lift, norm, prod, varstring, real, imag, inv, rows, getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero, representation_mat
+import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
+  denominator, den, __prime_ideal_components, num, lg, prime_decomposition,
+  parent, _factor, length, _lift, norm, prod, varstring, real, imag, inv, rows,
+  getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero,
+  representation_mat
+
+import Base: show  
 
 
 # To make all exported Nemo functions visible to someone using "using hecke"
