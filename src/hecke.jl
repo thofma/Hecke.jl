@@ -1,8 +1,12 @@
 module hecke
 
-# package code goes here
-
 using Nemo
+
+################################################################################
+#
+#  Import/export nightmare
+#
+################################################################################
 
 # The following functions/types are not exported or
 # we want to extend them
@@ -14,8 +18,9 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
   getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero,
   representation_mat
 
-import Base: show  
+export NfNumberField
 
+import Base: show, minimum
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -24,51 +29,132 @@ for i in names(Nemo)
   eval(Expr(:export, i))
 end
 
-export setverbose, getverbose, @vprint, @assertl, setassert, getassert
+export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
+       set_verbose_level, add_assert_scope, get_assert_level, set_assert_level
 
-VERBOSE_LEVEL = [1]
+################################################################################
+#
+#  Verbose printing
+#
+################################################################################
 
-function setverbose(i::Int)
-  VERBOSE_LEVEL[end] = i
-  if i == 1
-    eval(parse("macro vprint(x); :(print(\$x)); end;"))
-  else
-    eval(parse("macro vprint(x); nothing; end;"))
+VERBOSE_SCOPE = Symbol[]
+
+VERBOSE_LOOKUP = Dict{Symbol, Int}()
+
+function add_verbose_scope(s::Symbol)
+  !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
+  nothing
+end
+
+macro vprint(args...)
+  if length(args) == 2
+    quote
+      if get_verbose_level($(args[1])) >= 1
+        print($(args[2]))
+      end
+    end
+  elseif length(args) == 3
+    quote
+      if get_verbose_level($(args[1])) >= $(args[2])
+        print($(args[3]))
+      end
+    end
   end
 end
 
-function getverbose()
-  return VERBOSE_LEVEL[end]
+function set_verbose_level(s::Symbol, l::Int)
+  !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
+  VERBOSE_LOOKUP[s] = l
 end
 
-setverbose(VERBOSE_LEVEL[end])
-
-ASSERT_LEVEL = [0]
-
-function setassert(i::Int)
-  ASSERT_LEVEL[end] = i
+function get_verbose_level(s::Symbol)
+  !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
+  return get(VERBOSE_LOOKUP, s, 0)
 end
 
-function getassert()
-  return ASSERT_LEVEL[end]
+################################################################################
+#
+#  Assertions
+#
+################################################################################
+
+ASSERT_SCOPE = Symbol[]
+
+ASSERT_LOOKUP = Dict{Symbol, Int}()
+
+function add_assert_scope(s::Symbol)
+  !(s in ASSERT_SCOPE) && push!(ASSERT_SCOPE, s)
+  nothing
 end
 
-function setassert(i::Int)
-  ASSERT_LEVEL[end] = i
-  eval(parse("macro assertl(lvl, ex, msgs...)
-  if lvl <= getassert()
-    msg = isempty(msgs) ? ex : msgs[1]                              
-    if !isempty(msgs) && isa(msg, Expr)                             
-      msg = :(string(\$(esc(msg))))                                
-    else
-      msg = string(msg)                                           
-    end                                                             
-    :(\$(esc(ex)) ? \$(nothing) : throw(AssertionError(\$msg)))        
+function set_assert_level(s::Symbol, l::Int)
+  !(s in ASSERT_SCOPE) && error("Not a valid symbol")
+  ASSERT_LOOKUP[s] = l
+end
+
+function get_assert_level(s::Symbol)
+  !(s in ASSERT_SCOPE) && error("Not a valid symbol")
+  return get(ASSERT_LOOKUP, s, 0)
+end
+
+macro hassert(args...)
+  if length(args) == 2
+    quote
+      if get_assert_level($(args[1])) >= 1
+        @assert $(args[2])
+      end
+    end
+  elseif length(args) == 3
+    quote
+      if get_assert_level($(args[1])) >= $(args[2])
+        @assert $(args[3])
+      end
+    end
   end
-  end"))
 end
 
-setassert(ASSERT_LEVEL[end])
+################################################################################
+#
+#  Verbose time printing
+#
+################################################################################
+
+macro vtime(args...)
+  if length(args) == 2
+    msg = string(args[2])
+    quote
+      if get_verbose_level($(args[1])) >= 1
+        local t0 = time_ns()
+        local val = $(esc(args[2]))
+        println((time_ns()-t0)/1e9, " @ ", $msg)
+        val
+      else
+        local val2 = $(esc(args[2]))
+        val2
+      end
+    end
+  elseif length(args) == 3
+    msg = string(args[3])
+    quote
+      if get_verbose_level($(args[1])) >= $(args[2])
+        local t0 = time_ns()
+        local val = $(esc(args[3]))
+        println((time_ns()-t0)/1e9, " @ ", $msg)
+        val
+      else
+        local val2 = $(esc(args[2]))
+        val2
+      end
+    end
+  end
+end
+
+################################################################################
+#
+#  "Submodules"
+#
+################################################################################
 
 include("Sparse.jl")
 include("BigComplex.jl")
@@ -77,8 +163,7 @@ include("misc.jl")
 include("PrimeDec.jl")
 include("MaximalOrderIdeals.jl")
 include("LinearAlgebra.jl")
-include("Clgp.jl")
 include("NfOrder.jl")
+include("Clgp.jl")
 
-
-end # module
+end
