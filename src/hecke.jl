@@ -16,9 +16,10 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
   denominator, den, __prime_ideal_components, num, lg, prime_decomposition,
   parent, _factor, length, _lift, norm, prod, varstring, real, imag, inv, rows,
   getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero,
-  representation_mat
+  representation_mat, pari_load, PariPolyRing, PariRationalField, PariQQ,
+  pari_vec, hash
 
-export NfNumberField
+export NfNumberField, hash
 
 import Base: show, minimum
 
@@ -143,7 +144,7 @@ macro vtime(args...)
         println((time_ns()-t0)/1e9, " @ ", $msg)
         val
       else
-        local val2 = $(esc(args[2]))
+        local val2 = $(esc(args[3]))
         val2
       end
     end
@@ -156,14 +157,15 @@ end
 #
 ################################################################################
 
+include("LinearAlgebra.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("misc.jl")
 include("PrimeDec.jl")
 include("MaximalOrderIdeals.jl")
-include("LinearAlgebra.jl")
 include("NfOrder.jl")
+include("NfMaximalOrder.jl")
 include("Clgp.jl")
 
 end
