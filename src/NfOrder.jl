@@ -27,10 +27,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+add_verbose_scope(:NfOrder)
+add_assert_scope(:NfOrder)
+
 include("NfOrder/NfOrder.jl")
 include("NfOrder/NfOrderElem.jl")
 include("NfOrder/NfOrderIdeal.jl")
 include("NfOrder/NfOrderFracIdeal.jl")
 include("NfOrder/NfOrderRoundTwo.jl")
 include("NfOrder/NfOrderDedekindTest.jl")
+include("NfOrder/NfOrderMontes.jl")
 include("NfOrder/misc.jl")

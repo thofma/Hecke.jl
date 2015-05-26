@@ -1,4 +1,4 @@
-import Base:sub, isprime
+import Base: isprime
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
@@ -82,7 +82,7 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
   s = zero(b[1].parent)
   t = zero(b[1].parent)
   for i = 1:length(b)
-    Nemo.mult_into!(b[i], rand(r), t)
+    Nemo.mult_into!(b[i], Base.rand(r), t)
     Nemo.add_into!(s, t, s)
   end
   return s

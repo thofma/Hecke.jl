@@ -88,8 +88,8 @@ end
 ################################################################################
 
 function hash(a::FakeFmpqMat, b::UInt)
-  h = hash(num(a)) $ hash(den(a))
-  h = h $ hash(b)
+  h = Base.hash(num(a)) $ Base.hash(den(a))
+  h = h $ Base.hash(b)
   h = (h << 1) | (h >> (sizeof(Int)*8 - 1))
   return h
 end

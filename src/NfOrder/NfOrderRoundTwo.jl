@@ -105,7 +105,7 @@ end
 
 function MaximalOrder(O::NfOrder)
   OO = deepcopy(O)
-  fac = factor(abs(discriminant(O)))
+  @vtime :NfOrder fac = factor(abs(discriminant(O)))
   for i in 1:fac.len
     (p,j) = fac[i]
     if j == 1
