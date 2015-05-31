@@ -88,6 +88,8 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
   return s
 end
 
+# rand
+
 function rand_into!(b::Array{nf_elem,1}, r::UnitRange, c::nf_elem)
   Nemo.mult_into!(b[1], rand(r), c)
   t = zero(b[1].parent)  # this still needs to go ...
@@ -97,6 +99,8 @@ function rand_into!(b::Array{nf_elem,1}, r::UnitRange, c::nf_elem)
   end
   return c
 end
+
+# rand!
 
 
 
@@ -544,3 +548,22 @@ function Base.call(a::IntegerRing, b::fmpq)
   den(b) != 1 && error("denominator not 1")
   return ZZ(num(b))
 end
+
+# Berstein: coprime bases
+# ppio(a,b) = (c,n) where v_p(c) = v_p(a) if v_p(b) !=0, 0 otherwise
+#                         c*n = a
+# or c = gcd(a, b^infty)
+
+function ppio(a::fmpz, b::fmpz) 
+  c = gcd(a, b)
+  n = div(a, c)
+  m = c
+  g = gcd(c, n)
+  while g != 1
+    c = c*g
+    n = div(n, g)
+    g = gcd(c, n)
+  end
+  return (c, n)
+end
+

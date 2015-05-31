@@ -63,6 +63,23 @@ function NfMaximalOrderElem{T <: Integer}(O::NfMaximalOrder, x::T)
   return NfMaximalOrderElem(O, ZZ(x))
 end
 
+function zero(O::NfMaximalOrder)
+  z = NfMaximalOrderElem(O)
+  z.elem_in_nf = zero(nf(O))
+  v = fill(ZZ(0), degree(O))
+  z.elem_in_basis = v
+  return z
+end
+
+function one(O::NfMaximalOrder)
+  z = NfMaximalOrderElem(O)
+  z.elem_in_nf = one(nf(O))
+  v = fill(ZZ(0), degree(0))
+  v[1] = ZZ(1)
+  z.elem_in_basis = v
+  return z
+end
+
 ################################################################################
 #
 #  Field access
@@ -184,6 +201,21 @@ function +(x::NfMaximalOrderElem, y::NfMaximalOrderElem)
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
 end
 
+function add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfMaximalOrderElem, x::Int, y::NfMaximalOrderElem)
+  z.elem_in_nf = x*y.elem_in_nf
+  nothing
+end
+
 ################################################################################
 #
 #  String I/O
@@ -200,3 +232,46 @@ function show(io::IO, x::NfMaximalOrderElem)
   end
 end
 
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(O::NfMaximalOrder, r::UnitRange{Int})
+  ar = basis(O)
+  s = zero(O)
+  t = zero(O)
+  for i in 1:degree(O)
+    mul!(t, rand(r), ar[i])
+    add!(s, s, t)
+  end
+  return s
+end
+
+function rand!(z::NfMaximalOrderElem, O::NfMaximalOrder, r::UnitRange{Int})
+  ar = basis(O)
+  t = O()
+  mul!(z, rand(r), ar[1])
+  for i in 2:degree(O)
+    mul!(t, rand(r), ar[i])
+    add!(z, z, t)
+  end
+end
+
+################################################################################
+#
+#  Reduction
+#
+################################################################################
+
+function mod(a::NfMaximalOrderElem, m::Int)
+  O = parent(a)
+  z = O()
+  v = fill(ZZ(0), degree(O))
+  ar = elem_in_basis(a)
+  for i in 1:degree(O)
+    v[i] = ar[i] % m
+  end
+  return O(v)
+end
