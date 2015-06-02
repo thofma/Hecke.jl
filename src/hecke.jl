@@ -64,6 +64,23 @@ macro vprint(args...)
   end
 end
 
+macro v_do(args...)
+  if length(args) == 2
+    quote
+      if get_verbose_level($(args[1])) >= 1
+       $(args[2])
+      end
+    end
+  elseif length(args) == 3
+    quote
+      if get_verbose_level($(args[1])) >= $(args[2])
+        $(args[3])
+      end
+    end
+  end
+end
+
+
 function set_verbose_level(s::Symbol, l::Int)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
   VERBOSE_LOOKUP[s] = l

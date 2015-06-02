@@ -99,11 +99,7 @@ function MaximalOrderIdeal(b::nf_elem, ord::MaximalOrderIdealSet)
    C.norm = num(abs(norm(b)))
    @assert(gcd(C.gen_one^degree(O), ZZ(norm(C.gen_two))) == C.norm);
    C.princ_gen = b
-   if C.gen_one == 1
-     C.gens_are_normal = 2*C.gen_one
-   else
-     C.gens_are_normal = C.gen_one
-   end
+   C.gens_are_normal = C.gen_one
    C.gens_are_weakly_normal = 1
    return C
 end
@@ -166,6 +162,7 @@ function show(io::IO, id::MaximalOrderIdeal)
    if isdefined(id, :gens_are_normal)
      print(io, "\ntwo normal wrt: ", id.gens_are_normal)
    end
+   println(io)
 end
 
 function show(io::IO, id::MaximalOrderFracIdeal)
@@ -250,7 +247,7 @@ function is_weakly_normal(A::MaximalOrderIdeal)
 end
 
 function is_2_normal(A::MaximalOrderIdeal)
-  return isdefined(A, :gens_are_normal) && A.gens_are_normal > 1
+  return isdefined(A, :gens_are_normal)
 end
 
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
@@ -447,7 +444,7 @@ function prod_by_int(A::MaximalOrderIdeal, a::fmpz)
   println("prod_by_int", A, " and ", a)
   # <a,a> is a a-normal presentation
   # we need to have a common presentation for A and a though
-  m = lcm(a, A.gen_one)
+  m = lcm(a, A.gens_are_normal)
 
   e, f = ppio(m, A.gen_one)
   if f == 1
@@ -728,7 +725,7 @@ function prod(a::MaximalOrderIdeal, b::MaximalOrderIdeal)
 end
 
 function prod(a::MaximalOrderFracIdeal, b::MaximalOrderFracIdeal)
-  A = prod(a.I, b.I)
+  A = simplify(prod(a.I, b.I))
   return MaximalOrderFracIdeal(A, a.den*b.den)
 end
 

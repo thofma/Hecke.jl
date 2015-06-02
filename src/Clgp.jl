@@ -20,6 +20,10 @@ TODO:
  Note: enumerating x,0,0,0 is pointless unless x==1
 =#
 
+add_verbose_scope(:ClassGroup)
+add_verbose_scope(:ClassGroup_time)
+add_verbose_scope(:ClassGroup_gc)
+
 
 ################################################################################
 #
@@ -423,28 +427,44 @@ end
 #         length
 #         proper lattice type
 
+function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
+  return ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+               (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
+end
+
+function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
+  z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+               (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
+  ccall((:fmpz_add_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+end
+               
 
 function enum_ctx_advance_level{A,B,C}(E::enum_ctx{A,B,C}, i::Int)
 #  println("i: ", i, "                                   "[1:2*i], "|")
   t = ZZ()
   if i == E.last_non_zero-1
-    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
+    fmpz_mat_entry_incref!(E.x, 1, i)
+#    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
   elseif i == E.last_non_zero
 #    @assert E.x[1, i] == 0
     E.last_non_zero += 1
-    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
+    fmpz_mat_entry_incref!(E.x, 1, i)
+#    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
   else
     s = E.U[i] + E.L[i]
     x = A(getindex!(t, E.x, 1, i))
     if s < 2*x  # larger than the middle
-      E.x[1, i] = -x + A(Base.floor(s))
+      setindex!(E.x, -x + A(Base.floor(s)), 1, i)
     else
-      E.x[1, i] = -x + A(Base.floor(s))+1
+      setindex!(E.x, -x + A(Base.floor(s)) + 1, 1, i)
     end
   end
 end
 
+global _next = 0.0
 function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
+  global _next
+  @v_do :ClassGroup_time 2 rt = time_ns()
   n::Int = 1
   n = E.limit
   i=1
@@ -454,6 +474,7 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
     t = getindex!(t, E.x, 1, i)
     if E.L[i] <= C(t) <= E.U[i] #coordinate is valid
       if i==1
+        @v_do :ClassGroup_time 2 _next += time_ns()-rt
         return true
       else
         i -= 1
@@ -461,6 +482,7 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
     else # coordinate is invalid
       i += 1
       if i>n
+        @v_do :ClassGroup_time 2 _next += time_ns()-rt
         return false
       end
       continue
@@ -477,11 +499,11 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
       
       if E.l[i] >= 0
         Z = C(B(E.l[i])/E.C[i,i])
-        @assert E.l[i] >= 0
-        @assert E.C[i,i] > 0
-        @assert Z >= 0
+#        @assert E.l[i] >= 0
+#        @assert E.C[i,i] > 0
+#        @assert Z >= 0
         L, U = enum_ctx_local_bound(-E.tail[i], Z)
-        @assert typeof(L) == C
+#        @assert typeof(L) == C
         E.L[i] = L
         E.U[i] = U
         
@@ -489,17 +511,19 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
         E.x[1, i] = x
         if -E.L[i] == E.U[i] && E.last_non_zero == i+1
           E.last_non_zero = i
-          @assert x == 0 
+#          @assert x == 0 
         end
         if x <= E.U[i] # coordinate is valid`
           i -= 1            # go further up
           if i==0
+            @v_do :ClassGroup_time 2 _next += time_ns()-rt
             return true
           end
           continue
         else  # coordinate invalid, need to truy next on i+1
           i += 1
           if i>n
+            @v_do :ClassGroup_time 2 _next += time_ns()-rt
             return false
           end
           break
@@ -507,12 +531,14 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
       else # intervall too short
         i += 1
         if i>n
+          @v_do :ClassGroup_time 2 _next += time_ns()-rt
           return false
         end
         break
       end
     end
   end
+  @v_do :ClassGroup_time 2 _next += time_ns()-rt
   return true
 end
 
@@ -599,7 +625,9 @@ type ClassGrpCtx{T}
   end  
 end
 
+global AllRels
 function class_group_init(O::PariMaximalOrder, B::Int; complete = true, degree_limit = 5)
+  global AllRels = []
   clg = ClassGrpCtx{BigInt}()
 
   clg.bad_rel = 0
@@ -640,6 +668,8 @@ function class_group_add_relation(clg::ClassGrpCtx, a::nf_elem)
   if a in clg.RS 
     return false
   end
+  global AllRels
+  push!(AllRels, a)
   n = abs(norm(a))
   clg.sum_norm += num(n*n)
 #  print("trying relation of length ", Float64(length(clg.c, a)),  " and norm ", Float64(n));
@@ -653,7 +683,7 @@ function class_group_add_relation(clg::ClassGrpCtx, a::nf_elem)
     push!(clg.RS, a)
     @assert rows(clg.M) == length(clg.R)
     clg.rel_cnt += 1
-    println(" -> OK, rate currently ", clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last, ", avg (norm^2) ", Float64(BigInt(clg.sum_norm)/(clg.bad_rel-clg.last+1)))
+    @v_do :ClassGroup 1 println(" -> OK, rate currently ", clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last, ", avg (norm^2) ", Float64(BigInt(clg.sum_norm)/(clg.bad_rel-clg.last+1)))
     clg.last = clg.bad_rel
     clg.sum_norm = 0
     return true
@@ -718,7 +748,7 @@ end
 function lll(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat; prec::Int64 = 100, limit::Int64=0)
   c = minkowski_mat(c, A.parent.order.pari_nf.nf, prec)
   if !iszero(v)
-    println("using inf val", v)
+    @v_do :ClassGroup 1 println("using inf val", v)
     old = get_bigfloat_precision()
     set_bigfloat_precision(4*prec)
     e = convert(typeof(c[1,1]), exp(1))
@@ -771,8 +801,8 @@ function short_elem(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat=MatrixSpace(
   return q
 end
 
-function enum_ctx_from_ideal(clg::ClassGrpCtx, A::MaximalOrderIdeal, v::fmpz_mat;prec::Int64 = 100, limit::Int64 = 0)
-  l, t = lll(clg.c, A, v, prec = prec, limit = limit)
+function enum_ctx_from_ideal(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat;prec::Int64 = 100, limit::Int64 = 0)
+  l, t = lll(c, A, v, prec = prec, limit = limit)
   b, b_den = basis_mat(A)
 
   K = A.parent.order.pari_nf.nf
@@ -794,7 +824,7 @@ function class_group_ideal_ctx(clg::ClassGrpCtx, A::MaximalOrderIdeal; prec::Int
   I = ideal_relations_ctx()
   I.A = A
   v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1, rows(clg.val_base)))*clg.val_base
-  I.E = enum_ctx_from_ideal(clg, A, v, prec = prec, limit = limit)
+  I.E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit)
   I.c = 0
   I.cnt = 0
   I.bad = 0
@@ -804,13 +834,19 @@ function class_group_ideal_ctx(clg::ClassGrpCtx, A::MaximalOrderIdeal; prec::Int
   return I
 end
 
+global _start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx, A::MaximalOrderIdeal; prec::Int64 = 200, val::Int64 = 0, limit::Int64 = 0)
+  global _start
+  @v_do :ClassGroup_time 2 rt = time_ns()
   I = class_group_ideal_ctx(clg, A, prec = prec, val = val, limit = limit)
+  @v_do :ClassGroup_time 2 _start += time_ns()-rt
   return I
 end
 
+global _elt = 0.0
 function class_group_small_real_elements_relation_next(I::ideal_relations_ctx)
 
+  global _elt, _next
   K = I.A.parent.order.pari_nf.nf
   while true
     if enum_ctx_next(I.E)
@@ -818,13 +854,15 @@ function class_group_small_real_elements_relation_next(I::ideal_relations_ctx)
       if !content_is_one(I.E.x) 
         continue
       end
+      @v_do :ClassGroup_time 2 rt = time_ns()
        I.M = I.E.x * I.E.t
       q = element_from_mat_row(K, I.M, 1)
       q = divexact(q,I.E.t_den)
 #      println("found ", q, " of length ", length(q), " and norm ", norm(q))
+      @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q
     end
-    println("restart for ", I.A, I.E.c)
+#    println("restart for ", I.A, I.E.c)
     enum_ctx_start(I.E, I.E.c*2)
   end
 end
@@ -882,7 +920,7 @@ function class_group_current_result(clg::ClassGrpCtx)
       deleteat!(clg.M.rows, (clg.last_H+1):length(clg.R))
       deleteat!(clg.R, (clg.last_H+1):length(clg.R))
       clg.M.r = length(clg.M.rows)
-      println("pruning again...")
+      @vprint :ClassGroup 1 "pruning again...\n"
     end
   else
     full_rank = false
@@ -894,7 +932,7 @@ function class_group_current_result(clg::ClassGrpCtx)
     last_H = 0
   end
 
-  println("rank is currently ", rows(h), " need to be ", cols(h), clg.M)
+  @v_do :ClassGroup 1 println("rank is currently ", rows(h), " need to be ", cols(h), clg.M)
   
   clg.H = h
   clg.last_H = length(clg.R)
@@ -917,10 +955,10 @@ function class_group_current_result(clg::ClassGrpCtx)
   if full_rank
     clg.h = abs(prod([h[i,i] for i=1:cols(h)]))
   else
-    println("1st non-modular")
-    toMagma("/tmp/big.m", clg.M)
+    @vprint :ClassGroup 1 "1st non-modular"
+    @v_do :ClassGroup 4 toMagma("/tmp/big.m", clg.M)
     h = copy(clg.M)
-    @time upper_triangular(h)
+    @vtime :ClassGroup 1 upper_triangular(h)
     clg.H = h
     clg.h = abs(prod([h[i,i] for i=1:cols(h)]))
   end
@@ -952,16 +990,16 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
       else
         I[end].bad += 1
         if I[end].bad > (clg.bad_rel/clg.rel_cnt)*2
-          println("too slow in getting s.th. for ", i, "good: ", I[end].cnt,  " bad: ",  I[end].bad, " ratio: ", (clg.bad_rel/clg.rel_cnt))
+          @v_do :ClassGroup 2 println("too slow in getting s.th. for ", i, "good: ", I[end].cnt,  " bad: ",  I[end].bad, " ratio: ", (clg.bad_rel/clg.rel_cnt))
           break
         end
       end
     end
-    gc()
+    @v_do :ClassGroup_gc 1 gc()
   end
 
-  println("used ", (time_ns()-t)/1e9, " sec for small elts, so far ", clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
-  println("added ", clg.rel_cnt, " good relations and ", clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
+  @v_do :ClassGroup 1 println("used ", (time_ns()-t)/1e9, " sec for small elts, so far ", clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
+  @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ", clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
 
   s = time_ns()
 
@@ -980,21 +1018,21 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
       rnd = max(rnd-10, 1):rnd
       while true
         if (E.cnt==0 && E.bad > lt) || (E.cnt != 0 && (bad_h ||(E.bad+E.cnt)/E.cnt > lt))
-          println("cnt ", E.cnt, " bad ", E.bad)
-          println("re-starting for ideal ", i, "randomizing ", rnd, " and ", E.rr)
+          @v_do :ClassGroup 2 println("cnt ", E.cnt, " bad ", E.bad)
+          @v_do :ClassGroup 2 println("re-starting for ideal ", i, "\nrandomizing ", rnd, " and ", E.rr)
           if limit_cnt < 5
             rnd = max((rnd.start-10), 1):rnd.stop
             E.rr = 1:(2*E.rr.stop+1)
             E.vl = Int(Base.round(E.vl*1.2))
-            println("random parameters now ", E.rr, " and ", E.vl)
+            @v_do :ClassGroup 3 println("random parameters now ", E.rr, " and ", E.vl)
           end
           A = idl[i] * prod([idl[Base.rand(rnd)] for i= E.rr])
           I[i] = class_group_small_real_elements_relation_start(clg, A, val = E.vl, limit = limit, prec = prec)
           I[i].rr = E.rr
           I[i].vl = E.vl
           E = I[i]
-          println("confirm random parameters now ", E.rr, " and ", E.vl)
-          println("confirm random parameters now ", I[i].rr, " and ", I[i].vl)
+          @v_do :ClassGroup 3 println("confirm random parameters now ", E.rr, " and ", E.vl)
+          @v_do :ClassGroup 3 println("confirm random parameters now ", I[i].rr, " and ", I[i].vl)
           limit_cnt += 1
         end
         b = class_group_small_real_elements_relation_next(E)
@@ -1014,7 +1052,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
     h, piv = class_group_current_result(clg)
     if h != 0
       piv = Set([Base.rand(div(clg.FB.size, 2):clg.FB.size) for i=1:1])
-      println("full rank: current h = ", h, " want ", want_extra, " more")
+      @v_do :ClassGroup 1 println("full rank: current h = ", h, " want ", want_extra, " more")
       if h == last_h 
         want_extra -= 1
       else
@@ -1026,12 +1064,12 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
     else
       bad_h = false
     end
-    gc()
+    @v_do :ClassGroup_gc 1 gc()
   end
 
 
-  println("used ", (time_ns()-s)/1e9, " total so far ", clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
-  println("added ", clg.rel_cnt, " good relations and ", clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
+  @v_do :ClassGroup 1 println("used ", (time_ns()-s)/1e9, " total so far ", clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
+  @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ", clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
   return class_group_current_result(clg)
 end
 ################################################################################
