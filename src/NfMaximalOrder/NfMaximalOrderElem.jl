@@ -194,11 +194,20 @@ end
 function *(x::NfMaximalOrderElem, y::NfMaximalOrderElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  return z
 end
+
+function *(x::NfMaximalOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf * y
+end
+
+*(x::fmpz, y::NfMaximalOrderElem) = y * x
 
 function +(x::NfMaximalOrderElem, y::NfMaximalOrderElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  return z
 end
 
 function add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
@@ -275,3 +284,5 @@ function mod(a::NfMaximalOrderElem, m::Int)
   end
   return O(v)
 end
+
+Base.call(K::NfNumberField, x::NfMaximalOrderElem) = elem_in_nf(x)

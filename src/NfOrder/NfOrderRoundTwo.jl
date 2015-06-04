@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-# TODO:
-# - 
 export pradical, pmaximal_overorder, MaximalOrder
 
 ################################################################################
@@ -103,16 +101,18 @@ function pmaximal_overorder(O::NfOrder, p::Integer)
   return pmaximal_overorder(O, ZZ(p))
 end
 
-function MaximalOrder(O::NfOrder)
+function _MaximalOrder(O::NfOrder)
   OO = deepcopy(O)
-  @vtime :NfOrder fac = factor(abs(discriminant(O)))
+  @vtime :NfOrder fac = factor(Nemo.abs(discriminant(O)))
   for i in 1:fac.len
     (p,j) = fac[i]
     if j == 1
       continue
     end
+    @vprint :NfOrder 1 "Computing p-maximal overorder for $p ..."
     #println("Computing maximal ",p," overorder")
     OO += pmaximal_overorder(O, p)
+    @vprint :NfOrder 1 "done\n"
   end
   return OO
 end

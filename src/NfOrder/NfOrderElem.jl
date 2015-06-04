@@ -35,7 +35,7 @@ type NfOrderElem
 
   function NfOrderElem(O::NfOrder, arr::Array{fmpz, 1})
     z = new()
-    z.elem_in_nf = dot(_basis(O), arr)
+    z.elem_in_nf = Base.dot(_basis(O), arr)
     z.elem_in_basis = arr
     z.parent = O
     return z
@@ -121,7 +121,7 @@ end
 ################################################################################
  
 function Base.call(O::NfOrder, a::nf_elem, check::Bool = true)
-  return NfOrderElem(O,a,check)
+  return NfOrderElem(O, a, check)
 end
 
 function Base.call(O::NfOrder, arr::Array{fmpz, 1})

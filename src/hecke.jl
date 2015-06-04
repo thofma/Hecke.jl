@@ -12,16 +12,18 @@ using Nemo
 # we want to extend them
 # So we have to import them explicitely
 
+
+
 import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
   denominator, den, __prime_ideal_components, num, lg, prime_decomposition,
-  parent, _factor, length, _lift, norm, prod, varstring, real, imag, inv, rows,
+  parent, _factor, length, _lift, norm, varstring, real, imag, inv, rows,
   getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero,
   representation_mat, pari_load, PariPolyRing, PariRationalField, PariQQ,
-  pari_vec, hash
+  pari_vec, hash, PolynomialRing, coeff, var, abs, min, iszero, one, sqrt, isone
 
 export NfNumberField, hash
 
-import Base: show, minimum, rand
+import Base: show, minimum, rand, prod
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -176,13 +178,13 @@ end
 
 include("LinearAlgebra.jl")
 include("Sparse.jl")
+include("Misc.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("misc.jl")
-include("PrimeDec.jl")
 include("MaximalOrderIdeals.jl")
 include("NfOrder.jl")
+include("misc.jl")
 include("NfMaximalOrder.jl")
-include("Clgp.jl")
-
+#include("PrimeDec.jl")
+#include("Clgp.jl")
 end

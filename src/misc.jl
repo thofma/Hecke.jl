@@ -1,8 +1,8 @@
-import Base: isprime
+import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant
+       discriminant, dot
 
 ################################################################################
 #
@@ -227,7 +227,8 @@ function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   t = ZZ()
   for i = 1:nr
     for j = 1:nc
-      M[i,j] = getindex!(t, A, a+i-1, b+j-1)
+      getindex!(t, A, a+i-1, b+j-1)
+      M[i,j] = t
     end
   end
   return M
@@ -401,74 +402,74 @@ end
 #
 ################################################################################
 
-type smooth_ctx{T}
-  prod::T
-  base::Set{T}
-end
-
-function is_smooth_init{T}(r::Set{T})
-  c = smooth_ctx(prod(r), r)
-  return c
-end
-
-function is_smooth{T}(c::smooth_ctx{T}, a::T)
-  g = gcd(c.prod, a)
-  while g != 1 
-    a = div(a, g)
-    g = gcd(g, a)
-  end
-  return a == 1
-end
-
-function factor{T}(c::smooth_ctx{T}, a::T)
-  f = Dict{T, Int}()
-  for i in c.base
-    if mod(a, i)==0
-      v = valuation(a, i)
-      f[i] = v[1]
-      a = v[2]
-      if a == 1 
-        break
-      end
-    end
-  end
-  assert(a==1)
-  return f
-end
-
-function factor{T}(c::smooth_ctx{T}, a::fmpq)
-  f = Dict{T, Int}()
-  n = num(a)
-  d = den(a)
-  for i in c.base
-    if mod(d, i)==0
-      v = valuation(d, i)
-      if isdefined(f, :i)
-        f[i] -= v[1]
-      else
-        f[i] = -v[1]
-      end
-      d = v[2]
-      if d == 1 && n == 1
-        break
-      end
-    end
-    if mod(n, i)==0
-      v = valuation(n, i)
-      if isdefined(f, :i)
-        f[i] += v[1]
-      else
-        f[i] = v[1]
-      end
-      n = v[2]
-      if d == 1 && n==1
-        break
-      end
-    end
-  end
-  @assert d==1 && n==1 
-  return f
-end
+#type smooth_ctx{T}
+#  prod::T
+#  base::Set{T}
+#end
+#
+#function is_smooth_init{T}(r::Set{T})
+#  c = smooth_ctx(prod(r), r)
+#  return c
+#end
+#
+#function is_smooth{T}(c::smooth_ctx{T}, a::T)
+#  g = gcd(c.prod, a)
+#  while g != 1 
+#    a = div(a, g)
+#    g = gcd(g, a)
+#  end
+#  return a == 1
+#end
+#
+#function factor{T}(c::smooth_ctx{T}, a::T)
+#  f = Dict{T, Int}()
+#  for i in c.base
+#    if mod(a, i)==0
+#      v = valuation(a, i)
+#      f[i] = v[1]
+#      a = v[2]
+#      if a == 1 
+#        break
+#      end
+#    end
+#  end
+#  assert(a==1)
+#  return f
+#end
+#
+#function factor{T}(c::smooth_ctx{T}, a::fmpq)
+#  f = Dict{T, Int}()
+#  n = num(a)
+#  d = den(a)
+#  for i in c.base
+#    if mod(d, i)==0
+#      v = valuation(d, i)
+#      if isdefined(f, :i)
+#        f[i] -= v[1]
+#      else
+#        f[i] = -v[1]
+#      end
+#      d = v[2]
+#      if d == 1 && n == 1
+#        break
+#      end
+#    end
+#    if mod(n, i)==0
+#      v = valuation(n, i)
+#      if isdefined(f, :i)
+#        f[i] += v[1]
+#      else
+#        f[i] = v[1]
+#      end
+#      n = v[2]
+#      if d == 1 && n==1
+#        break
+#      end
+#    end
+#  end
+#  @assert d==1 && n==1 
+#  return f
+#end
 
 ###############################################################################
 #
@@ -565,5 +566,191 @@ function ppio(a::fmpz, b::fmpz)
     g = gcd(c, n)
   end
   return (c, n)
+end
+
+function denominator(a::nf_elem)                                           
+  d_den = ZZ()                                                             
+  ccall((:nf_elem_get_den, :libflint), Void,                                                              
+    (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}),
+    &d_den, &a, &parent(a))                                             
+  return d_den                                                             
+end
+
+function basis(K::NfNumberField)
+  n = degree(K)
+  g = gen(K);
+  d = Array(typeof(g), n)
+  b = K(1)
+  for i = 1:n-1
+    d[i] = b
+    b *= g
+  end
+  d[n] = b
+  return d
+end
+function element_to_mat_row!(a::fmpz_mat, i::Int, b::nf_elem)
+  ccall((:nf_elem_to_mat_row, :libflint), 
+        Void, 
+       (Ptr{Nemo.fmpz_mat}, Int32, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}), 
+       &a, Int32(i-1), &b, &parent(b))
+end
+
+const d_from = fmpz(1)
+function element_from_mat_row(K::NfNumberField, a::fmpz_mat, i::Int)
+  global d_from::fmpz
+  b = K();
+  ccall((:nf_elem_from_mat_row, :libflint), 
+        Void, 
+       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int64, Ptr{Nemo.NfNumberField}), 
+       &b, &a, i-1, &parent(b))
+  set_denominator!(b, d_from)     
+  return b
+end
+
+dot(x::nf_elem, y::Int64) = x*y
+
+dot(x::nf_elem, y::fmpz) = x*y
+
+function representation_mat(a::nf_elem)
+  assert (denominator(a) == 1)
+  n = degree(a.parent)
+  M = MatrixSpace(ZZ, n,n)()
+  t = gen(a.parent)
+  b = a
+  for i = 1:n-1
+    element_to_mat_row!(M, i, b)
+    b *= t
+  end
+  element_to_mat_row!(M, n, b)
+  return M
+end 
+
+function set_denominator!(a::nf_elem, d::fmpz)
+  ccall((:nf_elem_set_den, :libflint), 
+        Void, 
+       (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.NfNumberField}), 
+       &a, &d, &parent(a))
+end
+
+function factor_dict(A::BigInt)
+  D = Dict{BigInt, Int}()
+  a = factor(A)
+  for i = 1:a.len 
+    D[a.d[i][1]] = a.d[i][2]
+  end
+  return D
+end
+
+function factor_dict(A::fmpz)
+  D = Dict{fmpz, Int}()
+  a = factor(A)
+  for i = 1:a.len 
+    D[a.d[i][1]] = a.d[i][2]
+  end
+  return D
+end
+
+################################################################################
+################################################################################
+#
+# other stuff:
+#  fmpz_mat -> Array(BigInt, 2)
+#
+################################################################################
+################################################################################
+function Array(a::fmpz_mat)
+  A = Array(BigInt, rows(a), cols(a))
+  for i = 1:rows(a)
+    for j = 1:cols(a)
+      A[i,j] = a[i,j]
+    end 
+  end
+  return A
+end
+
+
+################################################################################
+#
+# other stuff:
+#  export various types to a Magma or Nemo readable file
+#
+################################################################################
+# fmpz_mat -> nemo file
+# use as include(...)
+################################################################################
+function toNemo(io::IOStream, A::fmpz_mat; name = "A")
+  println(io, name, " = MatrixSpace(ZZ, ", rows(A), ", ", cols(A), ")([")
+  for i = 1:rows(A)
+    for j = 1:cols(A)
+      print(io, A[i,j])
+      if j < cols(A)
+        print(io, " ")
+      end
+    end
+    if i<rows(A)
+      println(io, ";")
+    end
+  end
+  println(io, "]);")
+  println(io, "println(\"Loaded ", name, "\")")
+end
+
+function toNemo(s::ASCIIString, A::fmpz_mat)
+  f = open(s, "w")
+  toNemo(f, A)
+  close(f)
+end
+
+################################################################################
+# fmpz_mat -> magma file
+# use as read(...)
+################################################################################
+function toMagma(io::IOStream, A::fmpz_mat; name = "A")
+  println(io, name, " := Matrix(Integers(), ", rows(A), ", ", cols(A), ", [")
+  for i = 1:rows(A)
+    for j = 1:cols(A)
+      print(io, A[i,j])
+      if j < cols(A)
+        print(io, ", ")
+      end
+    end
+    if i<rows(A)
+      println(io, ",")
+    end
+  end
+  println(io, "]);")
+  println(io, "\"Loaded ", name, "\";")
+end
+
+function toMagma(s::ASCIIString, A::fmpz_mat)
+  f = open(s, "w")
+  toMagma(f, A)
+  close(f)
+end
+
+################################################################################
+# Smat -> magma file
+# use as read(...)
+################################################################################
+function toMagma(io::IOStream, A::Smat; name = "A")
+  println(io, name, " := SparseMatrix(Integers(), ", rows(A), ", ", cols(A), ", [")
+  for i = 1:rows(A)
+    for xx = 1:length(A.rows[i].entry) 
+      x = A.rows[i].entry[xx]
+      print(io, "<", i, ", ", x.col, ", ", x.val, ">")
+      if xx < length(A.rows[i].entry) || i<rows(A)
+        print(io, ", ")
+      end
+    end
+    println(io, "")
+  end
+  println(io, "]);")
+  println(io, "\"Loaded ", name, "\";")
+end
+
+function toMagma(s::ASCIIString, A::Smat)
+  f = open(s, "w")
+  toMagma(f, A)
+  close(f)
 end
 

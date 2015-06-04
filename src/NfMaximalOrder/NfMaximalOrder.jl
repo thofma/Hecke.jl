@@ -42,10 +42,11 @@ function NfMaximalOrder(K::NfNumberField, x::FakeFmpqMat)
   B_K = basis(K)
   d = Array(nf_elem, n)
   for i in 1:n
-    d[i] = dot(x.num[i],basis(K))//K(x.den)
+    d[i] = divexact(element_from_mat_row(K, x.num, i), x.den)
   end
   
   z.basis_nf = d
+  z.basis_mat = x
   z.basis_mat_inv = inv(x)
   B = Array(NfMaximalOrderElem, n)
 
@@ -90,12 +91,9 @@ end
 
 function NfMaximalOrder(O::PariMaximalOrder)
   K = O.pari_nf.nf
-  z = NfMaximalOrder(K)
-  data = pari_load(O.pari_nf.data, 8)
-  pol_type = PariPolyRing{PariRationalField}
-  par = pol_type(PariQQ, var(parent(K.pol)))
-  b =  pari_vec{pol_type}(data, par)
   n = degree(K)
+  #z = NfMaximalOrder(K)
+  b = basis(O)
   d = Array(nf_elem, n)
   Qx = K.pol.parent
   B = Array(NfMaximalOrderElem, n)
@@ -128,7 +126,12 @@ function basis_ord(O::NfMaximalOrder)
 end
 
 function basis_mat_inv(O::NfMaximalOrder)
-  return O.basis_mat_inv
+  if isdefined(O, :basis_mat_inv)
+    return O.basis_mat_inv
+  else
+    O.basis_mat_inv = inv(basis_mat(O))
+    return O.basis_mat_inv
+  end
 end
 
 function basis_mat(O::NfMaximalOrder)
@@ -148,6 +151,30 @@ function basis_nf(O::NfMaximalOrder)
   return O.basis_nf
 end
 
+function index(O::NfMaximalOrder)
+  if isdefined(O, :index)
+    return O.index
+  else
+    O.index = divexact(basis_mat(O).den^degree(O), determinant(basis_mat(O).num))
+    return O.index
+  end
+end
+
+function discriminant(O::NfMaximalOrder)
+  if isdefined(O, :disc)
+    return O.disc
+  end
+
+  A = MatrixSpace(ZZ, degree(O), degree(O))()
+  B = basis(O)
+  for i in 1:degree(O)
+    for j in 1:degree(O)
+      A[i,j] = ZZ(trace(B[i]*B[j]))
+    end
+  end
+  O.disc = determinant(A)
+  return O.disc
+end
 nf(O::NfMaximalOrder) = O.nf
 
 rank(x::NfMaximalOrder) = degree(nf(x))
@@ -167,7 +194,11 @@ function _check_elem_in_maximal_order(x::nf_elem, O::NfMaximalOrder)
   element_to_mat_row!(M,1,b)
   t = FakeFmpqMat(M,d)
   z = t*basis_mat_inv(O)
-  return (z.den == 1, map(ZZ,vec(Array(z.num))))  
+  v = Array(fmpz, degree(O))
+  for i in 1:degree(O)
+    v[i] = z.num[1,i]
+  end
+  return (z.den == 1, v)  
 end
 
 function in(a::nf_elem, O::NfMaximalOrder)
@@ -216,12 +247,18 @@ end
 
   Compute the maximal order of K.
 """ ->
+#function MaximalOrder(K::NfNumberField)
+#  @vprint :NfMaximalOrder 1 "Computing the PariMaximalOrder...\n"
+#  @vtime :NfMaximalOrder 1 O = PariMaximalOrder(PariNumberField(K))
+#  @vprint :NfMaximalOrder 1 "...DONE \n"
+#
+#  return NfMaximalOrder(O)
+#end
+#
 function MaximalOrder(K::NfNumberField)
-  @vprint :NfMaximalOrder 1 "Computing the PariMaximalOrder...\n"
-  @vtime :NfMaximalOrder 1 O = PariMaximalOrder(PariNumberField(K))
-  @vprint :NfMaximalOrder 1 "...DONE \n"
-
-  return NfMaximalOrder(O)
+  O = EquationOrder(K)
+  O = _MaximalOrder(O)
+  return NfMaximalOrder(K, basis_mat(O))
 end
 
 ################################################################################
@@ -232,4 +269,8 @@ end
 
 function show(io::IO, O::NfMaximalOrder)
   print(io, "Maximal order of $(nf(O)) \nwith basis $(basis_nf(O))")
+end
+
+function PariMaximalOrder(O::NfMaximalOrder)
+  return PariMaximalOrder(PariNumberField(nf(O)))
 end

@@ -1,6 +1,3 @@
-import Base: Array, isprime
-export prime_ideals, factor
-
 #=
 TODO: 
   using/ implement limit in enum
@@ -24,107 +21,20 @@ add_verbose_scope(:ClassGroup)
 add_verbose_scope(:ClassGroup_time)
 add_verbose_scope(:ClassGroup_gc)
 
-
-################################################################################
-#
-# general prime decomposition, convert into "proper" Julia constructs
-#
-################################################################################
-
-function my_prime_decomposition(O::PariMaximalOrder, p::Union(fmpz, Integer))
-  p = ZZ(p)
-  if  mod(ZZ(index(O)),p) == 0
-    l = prime_decomposition(O, p)
-    P = IdealSet(O)
-    i = P(l[1])
-    r = Array(typeof(i), lg(l.data)-1)
-    r[1] = i
-    for i = 2:lg(l.data)-1
-      r[i] = P(l[i])
-    end
-    return r
-  else
-    r = prime_dec_nonindex(O, Int(p))
-    return [x[1] for x=r]
-  end
-end
-
-################################################################################
-#
-# all primes up to a given bound
-#  complete controls if all primes over prime numbers <= B are taken
-#  or
-#  ideals of bounded norm
-#
-################################################################################
-
-# Use prime_ideals_up_to with the same signature but O::NfMaximalOrder
-
-function prime_ideals(O::PariMaximalOrder, B::Int; complete = true, degree_limit = 5)
-  p = 1
- 
-  r = []
-  while p < B
-    p = next_prime(p)
-    if p > B
-      return r
-    end
-    li = my_prime_decomposition(O, p)
-    if !complete
-      for P in li
-        if norm(P) <= B && P.splitting_type[2] < degree_limit
-          push!(r, P)
-        end
-      end
-    else
-      r = vcat(r, li)
-    end
-  end
-  return r
-end
-
-################################################################################
-#
-# factorisation of ideals and elements
-#  in general and over a factor bases
-#
-################################################################################
-
-################################################################################
-# gmp-factorisation into julia dictionaries
-################################################################################
-function my_factor(A::BigInt)
-  D = Dict{BigInt, Int}()
-  a = factor(A)
-  for i = 1:a.len 
-    D[a.d[i][1]] = a.d[i][2]
-  end
-  return D
-end
-
-function my_factor(A::fmpz)
-  D = Dict{fmpz, Int}()
-  a = factor(A)
-  for i = 1:a.len 
-    D[a.d[i][1]] = a.d[i][2]
-  end
-  return D
-end
-
-function factor(A::MaximalOrderIdeal)
-  lf = my_factor(minimum(A) * A.den)
+function factor_dict(A::NfMaximalOrderIdeal)
+  lf = my_factor(minimum(A))
   lF = Dict{typeof(A), Int}()
   n = norm(A)
-  O = A.parent.order
+  O = order(A)
   for (i, (p, v)) in enumerate(lf)
-    lP = my_prime_decomposition(O, p)
+    lP = prime_decomposition(O, p)
     for P in lP
-      v = valuation(A, P)
+      v = valuation(A, P[1])
       if v != 0
-        lF[P] = v
-        n = n//norm(P)^v
+        lF[P[1]] = v
+        n = n//norm(P[1])^v
       end
-      if A.den==1 && n==1 
+      if n==1 
         return lF
       end
     end
@@ -132,16 +42,87 @@ function factor(A::MaximalOrderIdeal)
   return lF
 end
 
+type smooth_ctx{T}
+  prod::T
+  base::Set{T}
+end
+
+function is_smooth_init{T}(r::Set{T})
+  c = smooth_ctx(Base.prod(r), r)
+  return c
+end
+
+function is_smooth{T}(c::smooth_ctx{T}, a::T)
+  g = gcd(c.prod, a)
+  while g != 1 
+    a = div(a, g)
+    g = gcd(g, a)
+  end
+  return a == 1
+end
+
+function factor{T}(c::smooth_ctx{T}, a::T)
+  f = Dict{T, Int}()
+  for i in c.base
+    if mod(a, i)==0
+      v = valuation(a, i)
+      f[i] = v[1]
+      a = v[2]
+      if a == 1 
+        break
+      end
+    end
+  end
+  assert(a==1)
+  return f
+end
+
+function factor{T}(c::smooth_ctx{T}, a::fmpq)
+  f = Dict{T, Int}()
+  n = num(a)
+  d = den(a)
+  for i in c.base
+    if mod(d, i)==0
+      v = valuation(d, i)
+      if isdefined(f, :i)
+        f[i] -= v[1]
+      else
+        f[i] = -v[1]
+      end
+      d = v[2]
+      if d == 1 && n == 1
+        break
+      end
+    end
+    if mod(n, i)==0
+      v = valuation(n, i)
+      if isdefined(f, :i)
+        f[i] += v[1]
+      else
+        f[i] = v[1]
+      end
+      n = v[2]
+      if d == 1 && n==1
+        break
+      end
+    end
+  end
+  @assert d==1 && n==1 
+  return f
+end
+
+
 ################################################################################
 # a factor basis is mostly a collection of prime ideals
 # designed, if possible, to allow for rapid testing if elements are smooth
 #
 ################################################################################
+
 type FactorBase
-  fb::Dict{fmpz, Array{Tuple{Int, MaximalOrderIdeal}, 1}}
+  fb::Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}
   size::Int
   fb_int::smooth_ctx
-  ideals::Array{MaximalOrderIdeal, 1}
+  ideals::Array{NfMaximalOrderIdeal, 1}
   rw::Array{Int, 1}
   mx::Int
 
@@ -152,7 +133,7 @@ type FactorBase
   end
 end
 
-function factor_base(O::PariMaximalOrder, B::Int; complete = true, degree_limit = 5)
+function factor_base(O::NfMaximalOrder, B::Int; complete = true, degree_limit = 5)
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
   FB = FactorBase()
@@ -172,6 +153,96 @@ function factor_base(O::PariMaximalOrder, B::Int; complete = true, degree_limit 
   FB.fb_int = is_smooth_init(Set(keys(FB.fb)))
 
   return FB
+end
+
+################################################################################
+# factor element over factor base. put valuations into row i of the
+#  relation matrix M
+#  M needs to have at least as many columns as the FB has ideals
+################################################################################
+
+function factor!(M::fmpz_mat, i::Int, FB::FactorBase, a::nf_elem; error = true, n = abs(norm(a)))
+  d = factor(FB.fb_int, num(n)*denominator(a))
+  cor = []
+  for p in keys(d)
+    for (j, P) in FB.fb[p]
+      M[i, j] = valuation(a, P)
+      if M[i,j] != 0
+        push!(cor, j)
+      end
+      if M[i,j] < 0 
+        n = n*norm(P)^(-M[i, j])
+      else
+        n = n/norm(P)^M[i, j]
+      end  
+    end
+  end
+  if error
+    assert(n==1)
+  else
+    if n!=1
+      for j in cor
+        M[i,j] = 0
+      end
+    end
+    return n==1
+  end
+  return true
+end
+
+function factor!{T}(M::Smat{T}, i::Int, FB::FactorBase, a::nf_elem; error = true, n = abs(norm(a)))
+  d = factor(FB.fb_int, num(n)*denominator(a))
+  rw = FB.rw
+  lg::Int = 0
+  for p in keys(d)
+    vp = valuation(n, p)[1]
+    for (j, P) in FB.fb[p]
+      v = valuation(a, P)
+      if v != 0
+        vp -= P.splitting_type[2]*v
+        lg += 1
+        if lg <= FB.mx
+          rw[lg] = j
+          rw[lg+1] = v
+        else
+          push!(rw, j)
+          push!(rw, v)
+        end
+        lg += 1
+      end
+    end
+    if vp != 0
+      if error
+        assert(vp==0)
+      end
+      return false
+    end
+  end
+  if lg >0
+    if length(rw) > FB.mx
+      FB.mx = length(rw)
+    end
+    @assert lg > 1
+    @assert iseven(lg)
+    nrw = Array{Tuple{Int, Int}}(div(lg, 2))
+    for i=1:div(lg, 2)
+      nrw[i] = (rw[2*(i-1)+1], rw[2*i])
+    end
+    sort!(nrw, lt=function(a,b) return a[1]<b[1]; end)
+    @assert length(nrw) > 0
+    push!(M, SmatRow{T}(nrw))
+    return true
+  else 
+    # factor failed or I have a unit.
+    # sparse rel mat must not have zero-rows.
+    return false
+  end
+end
+
+function factor(FB::FactorBase, a::nf_elem)
+  M = MatrixSpace(ZZ, 1, FB.size)()
+  factor!(M, 1, FB, a)
+  return M
 end
 
 ################################################################################
@@ -323,7 +394,8 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   C = Array(TC,limit,limit)
   for i=1:limit
     for j=1:limit
-      C[i,j] = TC(getindex!(t, G, i,j))/TC(den)
+      getindex!(t, G, i, j)
+      C[i,j] = TC(t)/TC(den)
     end
   end
 
@@ -456,7 +528,8 @@ function enum_ctx_advance_level{A,B,C}(E::enum_ctx{A,B,C}, i::Int)
 #    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
   else
     s = E.U[i] + E.L[i]
-    x = A(getindex!(t, E.x, 1, i))
+    getindex!(t, E.x, 1, i)
+    x = A(t)
     if s < 2*x  # larger than the middle
       setindex!(E.x, -x + A(Base.floor(s)), 1, i)
     else
@@ -475,7 +548,7 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
   t = ZZ()
   while true 
     enum_ctx_advance_level(E, i)
-    t = getindex!(t, E.x, 1, i)
+    getindex!(t, E.x, 1, i)
     if E.L[i] <= C(t) <= E.U[i] #coordinate is valid
       if i==1
         @v_do :ClassGroup_time 2 _next += time_ns()-rt
@@ -494,10 +567,12 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
 
     @assert i<n
     while true
-      t1 = A(getindex!(t, E.x, 1, i+1))
+      getindex!(t, E.x, 1, i+1)
+      t1 = A(t)
       E.tail[i] = E.C[i, i+1]*t1
       for j = i+2:n
-        E.tail[i] += E.C[i, j] * A(getindex!(t, E.x, 1, j))
+        getindex!(t, E.x, 1, j)
+        E.tail[i] += E.C[i, j] * A(t)
       end
       E.l[i]    = E.l[i+1] - E.C[i+1, i+1]*(t1 + E.tail[i+1])^2
       
@@ -563,7 +638,7 @@ end
 #
 ################################################################################
 type ideal_relations_ctx
-  A::MaximalOrderIdeal
+  A::NfMaximalOrderIdeal
   v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
   E::enum_ctx
   c::fmpz # the last length
@@ -630,7 +705,7 @@ type ClassGrpCtx{T}
 end
 
 global AllRels
-function class_group_init(O::PariMaximalOrder, B::Int; complete = true, degree_limit = 5)
+function class_group_init(O::NfMaximalOrder, B::Int; complete = true, degree_limit = 5)
   global AllRels = []
   clg = ClassGrpCtx{BigInt}()
 
@@ -641,10 +716,10 @@ function class_group_init(O::PariMaximalOrder, B::Int; complete = true, degree_l
 
   clg.FB = factor_base(O, B, complete = complete, degree_limit = degree_limit)
   clg.M = Smat{BigInt}()
-  clg.c = conjugates_init(O.pari_nf.nf.pol)
+  clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
-    class_group_add_relation(clg, O.pari_nf.nf(I.gen_one))
-    class_group_add_relation(clg, O.pari_nf.nf(I.gen_two))
+    class_group_add_relation(clg, nf(O)(I.gen_one))
+    class_group_add_relation(clg, nf(O)(I.gen_two))
   end
   n = degree(O)
   l = MatrixSpace(ZZ, n, 1+clg.c.r2)()
@@ -717,14 +792,13 @@ end
 # Naive relation search: tries random lin. comb of lll reduced basis
 #         lll is done on the coeff. lattice.   
 ################################################################################
-function class_group_small_elements_relation(clg::ClassGrpCtx, A::MaximalOrderIdeal, cnt = degree(A.parent.order))
-  b = basis_mat(A)
-  l = lll(b[1])
-  K = A.parent.order.pari_nf.nf
+function class_group_small_elements_relation(clg::ClassGrpCtx, A::NfMaximalOrderIdeal, cnt = degree(A.parent.order))
+  l = FakeFmpqMat(lll(basis_mat(A)))*basis_mat(order(A))
+  K = nf(order(A))
   if cnt <= degree(A.parent.order)
-    lb = Array(typeof(K()), degree(K))
+    lb = Array(nf_elem, degree(K))
     for i = 1:cnt
-      lb[i] = element_from_mat_row(K, l, i)//b[2]
+      lb[i] = element_from_mat_row(K, l.num, i)//l.den
     end
     return lb
   end
@@ -734,7 +808,7 @@ function class_group_small_elements_relation(clg::ClassGrpCtx, A::MaximalOrderId
 
   ll = Array(typeof(K()), degree(K))
   for i = 1:degree(K)
-    ll[i] = element_from_mat_row(K, l, i)//b[2]
+    ll[i] = element_from_mat_row(K, l.num, i)//l.den
   end
 
   lb = Array(typeof(K()), cnt)
@@ -749,8 +823,8 @@ end
 # more interesting search: enumeration and other things on the minkowski side
 #
 ################################################################################
-function lll(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat; prec::Int64 = 100, limit::Int64=0)
-  c = minkowski_mat(c, A.parent.order.pari_nf.nf, prec)
+function lll(c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat; prec::Int64 = 100, limit::Int64=0)
+  c = minkowski_mat(c, nf(order(A)), prec)
   if !iszero(v)
     @v_do :ClassGroup 1 println("using inf val", v)
     old = get_bigfloat_precision()
@@ -760,8 +834,8 @@ function lll(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat; prec::Int64 = 100,
     c = c*sc
     set_bigfloat_precision(old)
   end
-  b = basis_mat(A)
-  c = b[1]*c
+  b = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  c = b.num*c
   old = get_bigfloat_precision()
   set_bigfloat_precision(prec)
   g = round(scale(c, BigInt(2)^(prec)))
@@ -780,7 +854,7 @@ function lll(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat; prec::Int64 = 100,
   return l, t
 end
 
-function one_step(c::roots_ctx, b::MaximalOrderFracIdeal, p::MaximalOrderIdeal; prec::Int64 = 100)
+function one_step(c::roots_ctx, b::NfMaximalOrderFracIdeal, p::NfMaximalOrderIdeal; prec::Int64 = 100)
   b = p*b
   simplify(b)
   g1 = short_elem(c, b, prec = prec)
@@ -790,12 +864,12 @@ function one_step(c::roots_ctx, b::MaximalOrderFracIdeal, p::MaximalOrderIdeal; 
   return simplify(g2*inv(b)), g1, g2
 end
 
-function short_elem(c::roots_ctx, A::MaximalOrderFracIdeal, v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int64 = 100)
-  return divexact(short_elem(c, A.I, v, prec = prec), A.den)
+function short_elem(c::roots_ctx, A::NfMaximalOrderFracIdeal, v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int64 = 100)
+  return divexact(short_elem(c, A.num, v, prec = prec), A.den)
 end
 
-function short_elem(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int64 = 100)
-  K = A.parent.order.pari_nf.nf
+function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int64 = 100)
+  K = nf(order(A))
   b, b_den = basis_mat(A)
   l, t = lll(c, A, v, prec = prec)
   w = window(t, 1,1, 1, cols(t))
@@ -805,11 +879,13 @@ function short_elem(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat=MatrixSpace(
   return q
 end
 
-function enum_ctx_from_ideal(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat;prec::Int64 = 100, limit::Int64 = 0)
+function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;prec::Int64 = 100, limit::Int64 = 0)
   l, t = lll(c, A, v, prec = prec, limit = limit)
-  b, b_den = basis_mat(A)
+  temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  b = temp.num
+  b_den = temp.den
 
-  K = A.parent.order.pari_nf.nf
+  K = nf(order(A))
 
   if limit == 0
     limit = rows(l)
@@ -824,7 +900,7 @@ function enum_ctx_from_ideal(c::roots_ctx, A::MaximalOrderIdeal, v::fmpz_mat;pre
   return E
 end
 
-function class_group_ideal_ctx(clg::ClassGrpCtx, A::MaximalOrderIdeal; prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
+function class_group_ideal_ctx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal; prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
   I = ideal_relations_ctx()
   I.A = A
   v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1, rows(clg.val_base)))*clg.val_base
@@ -839,7 +915,7 @@ function class_group_ideal_ctx(clg::ClassGrpCtx, A::MaximalOrderIdeal; prec::Int
 end
 
 global _start = 0.0
-function class_group_small_real_elements_relation_start(clg::ClassGrpCtx, A::MaximalOrderIdeal; prec::Int64 = 200, val::Int64 = 0, limit::Int64 = 0)
+function class_group_small_real_elements_relation_start(clg::ClassGrpCtx, A::NfMaximalOrderIdeal; prec::Int64 = 200, val::Int64 = 0, limit::Int64 = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()
   I = class_group_ideal_ctx(clg, A, prec = prec, val = val, limit = limit)
@@ -848,14 +924,15 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx, A::Max
 end
 
 global _elt = 0.0
-function class_group_small_real_elements_relation_next(I::ideal_relations_ctx)
 
+function class_group_small_real_elements_relation_next(I::ideal_relations_ctx)
   global _elt, _next
-  K = I.A.parent.order.pari_nf.nf
+  K = nf(order(I.A))
   while true
     if enum_ctx_next(I.E)
 #      println("elt is", I.E.x)
-      if !content_is_one(I.E.x) 
+      # should we add content_is_one()?
+      if !isone(content(I.E.x))
         continue
       end
       @v_do :ClassGroup_time 2 rt = time_ns()
@@ -1075,109 +1152,6 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100, limit
   @v_do :ClassGroup 1 println("used ", (time_ns()-s)/1e9, " total so far ", clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ", clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
   return class_group_current_result(clg)
-end
-################################################################################
-################################################################################
-#
-# other stuff:
-#  fmpz_mat -> Array(BigInt, 2)
-#
-################################################################################
-################################################################################
-function Array(a::fmpz_mat)
-  A = Array(BigInt, rows(a), cols(a))
-  for i = 1:rows(a)
-    for j = 1:cols(a)
-      A[i,j] = a[i,j]
-    end 
-  end
-  return A
-end
-
-
-################################################################################
-#
-# other stuff:
-#  export various types to a Magma or Nemo readable file
-#
-################################################################################
-# fmpz_mat -> nemo file
-# use as include(...)
-################################################################################
-function toNemo(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " = MatrixSpace(ZZ, ", rows(A), ", ", cols(A), ")([")
-  for i = 1:rows(A)
-    for j = 1:cols(A)
-      print(io, A[i,j])
-      if j < cols(A)
-        print(io, " ")
-      end
-    end
-    if i<rows(A)
-      println(io, ";")
-    end
-  end
-  println(io, "]);")
-  println(io, "println(\"Loaded ", name, "\")")
-end
-
-function toNemo(s::ASCIIString, A::fmpz_mat)
-  f = open(s, "w")
-  toNemo(f, A)
-  close(f)
-end
-
-################################################################################
-# fmpz_mat -> magma file
-# use as read(...)
-################################################################################
-function toMagma(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " := Matrix(Integers(), ", rows(A), ", ", cols(A), ", [")
-  for i = 1:rows(A)
-    for j = 1:cols(A)
-      print(io, A[i,j])
-      if j < cols(A)
-        print(io, ", ")
-      end
-    end
-    if i<rows(A)
-      println(io, ",")
-    end
-  end
-  println(io, "]);")
-  println(io, "\"Loaded ", name, "\";")
-end
-
-function toMagma(s::ASCIIString, A::fmpz_mat)
-  f = open(s, "w")
-  toMagma(f, A)
-  close(f)
-end
-
-################################################################################
-# Smat -> magma file
-# use as read(...)
-################################################################################
-function toMagma(io::IOStream, A::Smat; name = "A")
-  println(io, name, " := SparseMatrix(Integers(), ", rows(A), ", ", cols(A), ", [")
-  for i = 1:rows(A)
-    for xx = 1:length(A.rows[i].entry) 
-      x = A.rows[i].entry[xx]
-      print(io, "<", i, ", ", x.col, ", ", x.val, ">")
-      if xx < length(A.rows[i].entry) || i<rows(A)
-        print(io, ", ")
-      end
-    end
-    println(io, "")
-  end
-  println(io, "]);")
-  println(io, "\"Loaded ", name, "\";")
-end
-
-function toMagma(s::ASCIIString, A::Smat)
-  f = open(s, "w")
-  toMagma(f, A)
-  close(f)
 end
 
 ################################################################################

@@ -30,7 +30,7 @@ function conjugates_init(f::Union(fmpz_poly, fmpq_poly))
     for i = 1:f.length
       g[i] = ZZ(num(coeff(f, i-1)))
     end
-    g = PolynomialRing(ZZ, varstring(f))[1](g)
+    g = PolynomialRing(ZZ, string(var(parent(f))))[1](g)
     f = g
   end
   is_constant(gcd(f, derivative(f))) || error("poly should be square-free")
@@ -190,7 +190,8 @@ function *(a::fmpz_mat, b::Array{BigFloat, 2})
     for j = 1:s[2]
       t = zero(b[1,1])
       for k = 1:cols(a)
-        t += getindex!(A, a, i, k) * b[k, j]
+        getindex!(A, a, i, k)
+        t += A * b[k, j]
       end
       c[i,j] = t
     end

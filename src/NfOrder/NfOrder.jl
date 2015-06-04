@@ -63,7 +63,7 @@ function NfOrder(a::NfNumberField)
     z.parent = NfOrderSet(a)
     z.basis_mat = A
     z.basis = Array(NfOrderElem, degree(a))
-    z.basis[1] = z(one(a), false)
+    z.basis[1] = z(Nemo.one(a), false)
     for i in 2:degree(a)
       z.basis[i] = z(gen(a)^(i-1), false)
     end
@@ -216,7 +216,11 @@ function _check_elem_in_order(a::nf_elem, O::NfOrder)
   element_to_mat_row!(M,1,b)
   t = FakeFmpqMat(M,d)
   x = t*basis_mat_inv(O)
-  return (x.den == 1, map(ZZ,vec(Array(x.num)))) ## Array() should really be already an array of fmpz's; Julia Arrays are a nightmare
+  v = Array(fmpz, degree(O))
+  for i in 1:degree(O)
+    v[i] = x.num[1,i]
+  end
+  return (x.den == 1, v) ## Array() should really be already an array of fmpz's; Julia Arrays are a nightmare
 end  
 
 

@@ -57,10 +57,12 @@ type NfMaximalOrderIdeal <: RingElem
 
   function NfMaximalOrderIdeal(A::PariIdeal, ord::NfMaximalOrderIdealSet)
     r = new()
-    K = ord.order.pari_nf.nf
+    O = ord.order
+    K = nf(O)
+    #@hassert :NfMaximalOrder 1 K == A.parent.order.pari_nf.nf
     p, a, e, f = __prime_ideal_components(A)
     r.gen_one = p
-    r.gen_two = K(a)
+    r.gen_two = O(K(a))
     r.norm = p^f
     r.minimum = p
     r.is_prime = 1
@@ -92,6 +94,15 @@ type NfMaximalOrderIdeal <: RingElem
     @hassert :NfMaximalOrder x
     r.gen_one = a
     r.gen_two = O(b, y)
+    r.parent = NfMaximalOrderIdealSet(O)
+    return r
+  end
+
+  function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz, b::NfMaximalOrderElem)
+    r = new()
+    @hassert :NfMaximalOrder x
+    r.gen_one = a
+    r.gen_two = b
     r.parent = NfMaximalOrderIdealSet(O)
     return r
   end
@@ -268,7 +279,7 @@ end
 function prod_via_2_elem_normal(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
   @hassert :NfMaximalOrder 1 is_2_normal(a)
   @hassert :NfMaximalOrder 1 is_2_normal(b)
-  O = Order(a)
+  O = order(a)
   a1 = a.gen_one
   b1 = b.gen_one
   m = lcm(a1, b1)
@@ -292,9 +303,9 @@ function prod_via_2_elem_normal(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
     @hassert :NfMaximalOrder 1 g == 1                       
     b2 = b.gen_two*f*x + y*b1^2
   end
-  C = NfMaximalOrderIdeal(a1*b1, a2*b2, a.parent)
+  C = NfMaximalOrderIdeal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
-  if C.norm != gcd(C.gen_one^degree(O), norm(C.gen_two))
+  if C.norm != gcd(C.gen_one^degree(O), ZZ(norm(C.gen_two)))
     println("a:", a)
     println("b:", b)
     println("C:", C)
@@ -621,12 +632,14 @@ end
 ###########################################################################################
 
 function valuation(a::nf_elem, p::NfMaximalOrderIdeal)
-  assert(a !=0) # can't handle infinity yet
+  @hassert :NfMaximalOrder 0 a != 0 
+  #assert(a !=0) # can't handle infinity yet
   if isdefined(p, :valuation)
     return p.valuation(a)
   end
+  K = nf(order(p))
   pi = inv(p)
-  e = divexact(pi.I.gen_two, pi.den)
+  e = divexact(K(pi.num.gen_two), pi.den)
   P = p.gen_one
   O = p.parent.order
 
