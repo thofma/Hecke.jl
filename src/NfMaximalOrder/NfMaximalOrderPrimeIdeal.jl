@@ -83,7 +83,7 @@ end
 
 function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
                             complete = true,
-                            degree_limit = 5)
+                            degree_limit = 0)
   p = 1
   r = NfMaximalOrderIdeal[]
   while p < B
@@ -93,9 +93,17 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
     end
     li = prime_decomposition(O, p)
     if !complete
-      for P in li
-        if norm(P[1]) <= B && P[1].splitting_type[2] < degree_limit
-          push!(r, P[1])
+      if degree_limit <= 0
+        for P in li
+          if norm(P[1]) <= B
+            push!(r, P[1])
+          end
+        end
+      else 
+        for P in li
+          if norm(P[1]) <= B && P[1].splitting_type[2] < degree_limit
+            push!(r, P[1])
+          end
         end
       end
     else

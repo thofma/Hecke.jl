@@ -754,3 +754,32 @@ function toMagma(s::ASCIIString, A::Smat)
   close(f)
 end
 
+*(a::fmpz, b::nf_elem) = b * a
+
+function is_zero_row(M::fmpz_mat, i::Int)
+  for j = 1:cols(M)
+    if M[i,j] != 0 
+      return false
+    end
+  end
+  return true
+end
+
+function is_zero_row{T <: Integer}(M::Array{T, 2}, i::Int)
+  for j = 1:Base.size(M, 2)
+    if M[i,j] != 0 
+      return false
+    end
+  end
+  return true
+end
+
+function is_zero_row(M::Array{fmpz, 2}, i::Int)
+  for j = 1:Base.size(M, 2)
+    if M[i,j] != 0 
+      return false
+    end
+  end
+  return true
+end
+
