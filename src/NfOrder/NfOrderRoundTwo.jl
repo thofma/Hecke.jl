@@ -18,19 +18,15 @@ function pradical(O::NfOrder, p::fmpz)
   A = MatrixSpace(R, degree(O), degree(O))()
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
-    #print("basis elemt", i, "to the power", p^j, "modulo ", p)
-    #println(t)
     ar = elem_in_basis(t)
-    for j in 1:degree(O)
-      A[i,j] = ar[j]
+    for k in 1:degree(O)
+      A[i,k] = ar[k]
     end
   end
-  #println(A)
   X = kernel(A)
   Mat = MatrixSpace(ZZ, 1, degree(O))
   MMat = MatrixSpace(R, 1, degree(O))
   if length(X) != 0
-    #println(parent(X[1][1]) == base_ring(MMat))
     m = lift(MMat(X[1]))
     for x in 2:length(X)
       m = vcat(m,lift(MMat(X[x])))
@@ -39,7 +35,6 @@ function pradical(O::NfOrder, p::fmpz)
   else
     m = MatrixSpace(ZZ, degree(O), degree(O))(p)
   end
-  #println(m)
   return ideal(O,sub(hnf(m), 1:degree(O), 1:degree(O)))
 end
 
@@ -82,14 +77,19 @@ end
 ################################################################################
 
 function pmaximal_overorder(O::NfOrder, p::fmpz)
+  @vprint :NfOrder 1 "computing p-maximal overorder for $p ... \n"
   if rem(discriminant(O), p) != 0
     return O
   end
 
   d = discriminant(O)
+  @vprint :NfOrder 1 "extending the order at $p for the first time ... \n"
   OO = poverorder(O, p)
   dd = discriminant(OO)
+  i = 1
   while d != dd
+    i += 1
+    @vprint :NfOrder 1 "extending the order at $p for the $(i)th time ... \n"
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)

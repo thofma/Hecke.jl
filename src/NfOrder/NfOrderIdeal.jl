@@ -74,11 +74,15 @@ function basis(a::NfOrderIdeal)
   end
   B = Array(NfOrderElem, degree(order(a)))
   for i in 1:degree(O)
-    t = zero(O)
+    t = O()
+    t.elem_in_nf = zero(nf(O))
+    v = Array(fmpz,degree(O))
     for j in 1:degree(O)
       t += basis(O)[j]*basis_mat(a)[i,j]
+      #v[j] = basis_mat(a)[i,j]
     end
     B[i] = t
+    #B[i].elem_in_basis = v
   end
   a.basis = B
   return a.basis

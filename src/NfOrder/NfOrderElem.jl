@@ -26,7 +26,7 @@ type NfOrderElem
     if check
       (x,y) = _check_elem_in_order(a,O)
       !x && error("Number field element not in the order")
-      z.elem_in_basis = y
+      #z.elem_in_basis = y
     end
     z.elem_in_nf = a
     z.parent = O
@@ -36,7 +36,6 @@ type NfOrderElem
   function NfOrderElem(O::NfOrder, arr::Array{fmpz, 1})
     z = new()
     z.elem_in_nf = Base.dot(_basis(O), arr)
-    z.elem_in_basis = arr
     z.parent = O
     return z
   end
@@ -71,23 +70,25 @@ function elem_in_nf(a::NfOrderElem)
   if isdefined(a, :elem_in_nf)
     return a.elem_in_nf
   end
-  if isdefined(a, :elem_in_basis)
-    a.elem_in_nf = dot(_basis(O), a.elem_in_basis)
-    return a.elem_in_nf
-  end
+#  if isdefined(a, :elem_in_basis)
+#    a.elem_in_nf = dot(_basis(O), a.elem_in_basis)
+#    return a.elem_in_nf
+#  end
   error("Not a valid order element")
 end
 
 function elem_in_basis(a::NfOrderElem)
-  if isdefined(a, :elem_in_basis)
-    return a.elem_in_basis
-  end
-  if isdefined(a, :elem_in_nf)
+  @vprint :NfOrder 2 "Computing the coordinates of $a\n"
+#  if isdefined(a, :elem_in_basis)
+#    @vprint :NfOrder 2 "allready definied\n"
+#    return a.elem_in_basis
+#  end
+#  if isdefined(a, :elem_in_nf)
     (x,y) = _check_elem_in_order(a.elem_in_nf,parent(a))
     !x && error("Number field element not in the order")
     a.elem_in_basis = y
     return a.elem_in_basis
-  end
+#  end
   error("Not a valid order element")
 end
 
@@ -100,7 +101,7 @@ end
 function zero(O::NfOrder)
   z = O()
   z.elem_in_nf = zero(O.nf)
-  z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
+#  z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
   return z
 end
 
@@ -175,6 +176,8 @@ function mod(a::NfOrderElem, m::fmpz)
   end
   return parent(a)(ar)
 end
+
+==(x::NfOrderElem, y::NfOrderElem) = x.elem_in_nf == y.elem_in_nf
  
 ################################################################################
 #
@@ -183,6 +186,11 @@ end
 ################################################################################
 
 function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
+  if i == 0 then
+    z = parent(a)()
+    z.elem_in_nf = one(nf(parent(a)))
+    return z
+  end
   if i == 1 then
     b = mod(a,p)
     return b

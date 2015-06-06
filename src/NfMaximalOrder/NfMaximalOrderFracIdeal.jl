@@ -101,7 +101,7 @@ end
 *(A::NfMaximalOrderFracIdeal, B::NfMaximalOrderIdeal) = NfMaximalOrderFracIdeal(A.I*B, A.den)
 
 function *(A::NfMaximalOrderFracIdeal, a::nf_elem)
-  C = prod(A, make_pid(parent(A.I), a))
+  C = *(A, Ideal(order(num(A))), a)
   return C
 end
 
@@ -111,7 +111,7 @@ function /(A::NfMaximalOrderFracIdeal, B::NfMaximalOrderIdeal)
 end
 
 function /(A::NfMaximalOrderFracIdeal, a::nf_elem)
-  C = prod(A, make_pid(A.parent, inv(a)))
+  C = prod(A, Ideal((order(num(A)), inv(a))))
   return C
 end
 
@@ -120,7 +120,5 @@ function Base.call(ord::NfMaximalOrderIdealSet, b::NfMaximalOrderFracIdeal)
    return b.I
 end
 
-function *(a::nf_elem, A::NfMaximalOrderFracIdeal)
-  C = prod(A, make_pid(A.I.parent, a))
-  return C
-end
+*(x::nf_elem, y::NfMaximalOrderFracIdeal) = y * x
+

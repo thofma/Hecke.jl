@@ -38,6 +38,8 @@ order(a::NfOrderFracIdeal) = order(a.parent)
 function colon_ideal(a::NfOrderIdeal)
   B = basis(a)
   O = order(a)
+  @vprint :NfOrder 1 "$(representation_mat(B[1]))\n"
+  @vprint :NfOrder 1 FakeFmpqMat(representation_mat(B[1]),ZZ(1))*basis_mat_inv(a)
   m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),ZZ(1))*basis_mat_inv(a))
   for i in 2:degree(O)
     m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
