@@ -1,0 +1,97 @@
+\documentclass[parskip=half,DIV=18]{scrartcl}
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+%\usepackage{eucal}
+\usepackage{amscd}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{alltt}
+\urlstyle{sf}
+
+%\addtolength{\oddsidemargin}{-0.75in}
+%\addtolength{\evensidemargin}{-0.75in}
+%\addtolength{\textwidth}{1.5in}
+
+\newcommand{\Z}{\mathbf{Z}}
+\newcommand{\N}{\mathbf{N}}
+\newcommand{\HH}{\mathcal{H}}
+\newcommand{\Q}{\mathbf{Q}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\R}{\mathbf{R}}
+\newcommand{\F}{\mathbf{F}}
+\newcommand{\Pee}{\mathbb{P}}
+\newcommand{\EuO}{\mathcal{O}}
+\newcommand{\Qbar}{\overline{\mathbf{Q}}}
+\newcommand{\fn}{\hfill[Function]}
+\newcommand{\macro}{\hfill[Macro]}
+\newcommand{\gmp}{\hfill[GMP]}
+\newcommand{\code}{\lstinline}
+\newcommand{\desc}[1]{\vspace{-0.5em}\begin{quote}#1\end{quote}\vspace{-1.5em}}
+\newcommand{\Mat}{\operatorname{Mat}}
+
+\newcommand{\ljk}[2]{\left(\frac{#1}{#2}\right)}
+\newcommand{\modulo}[1]{\;\left(\mbox{mod}\;#1\right)}
+\newcommand{\fr}{\mathfrak}
+
+\addtokomafont{sectioning}{\normalfont\bfseries}
+
+\def\notdivides{\mathrel{\kern-3pt\not\!\kern4.5pt\bigm|}}
+\def\nmid{\notdivides}
+\def\nsubseteq{\mathrel{\kern-3pt\not\!\kern2.5pt\subseteq}}
+
+\newsavebox{\itembox}
+\newcommand*{\descitem}{%
+\everyhbox{\everyhbox{}\aftergroup\finishdescitem}%
+\setbox\itembox\hbox
+}
+\newcommand*{\finishdescitem}{%
+\everyhbox{}%
+\item[\box\itembox]%
+}
+
+\lstdefinelanguage{julia}
+{
+  keywordsprefix=\@,
+  morekeywords={
+    exit,whos,edit,load,is,isa,isequal,typeof,tuple,ntuple,uid,hash,finalizer,convert,promote,
+    subtype,typemin,typemax,realmin,realmax,sizeof,eps,promote_type,method_exists,applicable,
+    invoke,dlopen,dlsym,system,error,throw,assert,new,Inf,Nan,pi,im,begin,while,for,in,return,
+    break,continue,macro,quote,let,if,elseif,else,try,catch,end,bitstype,ccall,do,using,module,
+    import,export,importall,baremodule,immutable,local,global,const,Int,Int8,Int16,Int32,
+    Int64,Uint,Uint8,Uint16,Uint32,Uint64,Float32,Float64,Complex64,Complex128,Any,Nothing,None,
+    function,type,typealias,abstract, EquationOrder, Order,
+  },
+  keywords=[2]{NfNumberField, NfOrder, Bool, Array, nf_elem},
+  sensitive=true,
+  morecomment=[l]{\#},
+  morestring=[b]',
+  morestring=[b]" 
+}
+
+\lstset{
+  language=julia,
+  keywordstyle=\bfseries\ttfamily\color[rgb]{0,0.6,0.4},
+  keywordstyle=[2]\color[rgb]{0.5,0.3,0.1},
+  identifierstyle=\ttfamily\color[rgb]{0,0.2,0.8},
+  commentstyle=\color[rgb]{0.8,0.05,1},
+  stringstyle=\color[rgb]{0.8,0.1,0.1},
+  basicstyle=\ttfamily,
+  showstringspaces=false,
+}
+\newcommand{\function}[3]{%
+  \lstinline{#1(#2) -> #3}
+  \par
+}
+
+\newcommand{\para}[1]{\hspace{1em}\lstinline{#1}}
+
+%\newcommand{\exam}[1]{\begin{alltt}#1\end{alltt}}
+
+\lstnewenvironment{exam}{\lstset{basewidth=0.5em, basicstyle=\small\ttfamily, columns=fullflexible, keepspaces=true, keywordstyle={}, identifierstyle={}, commentstyle={}, stringstyle={},
+  showstringspaces=false,
+}}{}
