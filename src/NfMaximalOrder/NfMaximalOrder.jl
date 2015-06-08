@@ -233,20 +233,20 @@ end
 #
 ################################################################################
 
-@doc """
-  MaximalOrder(O::PariMaximalOrder) -> NfMaximalOrder
+#@doc """
+#  MaximalOrder(O::PariMaximalOrder) -> NfMaximalOrder
+#
+#  Compute the NfMaximalOrder corresponding to O.
+#""" ->
+#function MaximalOrder(O::PariMaximalOrder)
+#  return NfMaximalOrder(O)
+#end
 
-  Compute the NfMaximalOrder corresponding to O.
-""" ->
-function MaximalOrder(O::PariMaximalOrder)
-  return NfMaximalOrder(O)
-end
-
-@doc """
-  MaximalOrder(K::NfNumberField) -> NfMaximalOrder
-
-  Compute the maximal order of K.
-""" ->
+#@doc """
+#  MaximalOrder(K::NfNumberField) -> NfMaximalOrder
+#
+#  Compute the maximal order of K.
+#""" ->
 #function MaximalOrder(K::NfNumberField)
 #  @vprint :NfMaximalOrder 1 "Computing the PariMaximalOrder...\n"
 #  @vtime :NfMaximalOrder 1 O = PariMaximalOrder(PariNumberField(K))
@@ -255,7 +255,7 @@ end
 #  return NfMaximalOrder(O)
 #end
 #
-function MaximalOrder(K::NfNumberField)
+function _MaximalOrder(K::NfNumberField)
   O = EquationOrder(K)
   O = _MaximalOrder(O)
   return NfMaximalOrder(K, basis_mat(O))

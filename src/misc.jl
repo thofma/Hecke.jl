@@ -2,7 +2,7 @@ import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot
+       discriminant, dot, hnf
 
 ################################################################################
 #
@@ -545,7 +545,7 @@ function BigFloat(a::fmpq)
 end
 
 
-function Base.call(a::IntegerRing, b::fmpq)
+function Base.call(a::FlintIntegerRing, b::fmpq)
   den(b) != 1 && error("denominator not 1")
   return ZZ(num(b))
 end
@@ -783,3 +783,83 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
+function _hnf(x::fmpz_mat; shape = :upperright)
+  if shape == :upperright
+    return hnf(x)
+  elseif shape == :lowerleft
+    h = hnf(_swapcols(x))
+    _swapcols!(h);
+    _swaprows!(h);
+    return h
+  end
+end
+
+function _swaprows(x::fmpz_mat)
+  y = deepcopy(x)
+  _swaprows!(y)
+  return y
+end
+
+function _swapcols(x::fmpz_mat)
+  y = deepcopy(x)
+  _swapcols!(y)
+  return y
+end
+
+function _swaprows!(x::fmpz_mat)
+  t = FlintZZ()
+  r = rows(x)
+  c = cols(x)
+
+  if r == 1
+    return x
+  end
+
+  if r % 2 == 0
+    for i in 1:div(r,2)
+      for j = 1:c
+        t = x[i,j]
+        x[i,j] = x[r-i+1,j]
+        x[r-i+1,j] = t
+      end
+    end
+  else
+    for i in 1:div(r-1,2)
+      for j = 1:c
+        t = x[i,j]
+        x[i,j] = x[r-i+1,j]
+        x[r-i+1,j] = t
+      end
+    end
+  end
+  nothing
+end
+
+function _swapcols!(x::fmpz_mat)
+  t = FlintZZ()
+  r = rows(x)
+  c = cols(x)
+
+  if c == 1
+    return x
+  end
+
+  if c % 2 == 0
+    for i in 1:div(c,2)
+      for j = 1:r
+        t = x[j,i]
+        x[j,i] = x[j,c-i+1]
+        x[j,c-i+1] = t
+      end
+    end
+  else
+    for i in 1:div(c-1,2)
+      for j = 1:r
+        t = x[j,i]
+        x[j,i] = x[j,c-i+1]
+        x[j,c-i+1] = t
+      end
+    end
+  end
+  nothing
+end
