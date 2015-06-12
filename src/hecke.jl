@@ -15,10 +15,10 @@ using Nemo
 
 
 import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
-  denominator, den, __prime_ideal_components, num, lg, prime_decomposition,
-  parent, _factor, length, _lift, norm, varstring, real, imag, inv, rows,
+  denominator, den, num, lg, prime_decomposition,
+  parent, length, norm, real, imag, inv, rows,
   getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero,
-  representation_mat, pari_load, PariPolyRing, PariRationalField, PariQQ,
+  pari_load, PariPolyRing, PariRationalField, PariQQ,
   pari_vec, hash, PolynomialRing, coeff, var, abs, min, iszero, one, sqrt, isone, deepcopy
 
 export NfNumberField, hash

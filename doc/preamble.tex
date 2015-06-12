@@ -1,4 +1,4 @@
-\documentclass[parskip=half,DIV=18]{scrartcl}
+\documentclass[parskip=half,DIV=20,8pt]{scrartcl}
 
 \usepackage{amsfonts}
 \usepackage{amsmath}
@@ -66,7 +66,7 @@
     Int64,Uint,Uint8,Uint16,Uint32,Uint64,Float32,Float64,Complex64,Complex128,Any,Nothing,None,
     function,type,typealias,abstract, EquationOrder, Order,
   },
-  keywords=[2]{NfNumberField, NfOrder, Bool, Array, nf_elem},
+  keywords=[2]{NfNumberField, NfOrder, Bool, Array, nf_elem, FakeFmpqMat},
   sensitive=true,
   morecomment=[l]{\#},
   morestring=[b]',
@@ -87,8 +87,6 @@
   \lstinline{#1(#2) -> #3}
   \par
 }
-
-\newcommand{\para}[1]{\hspace{1em}\lstinline{#1}}
 
 %\newcommand{\exam}[1]{\begin{alltt}#1\end{alltt}}
 
