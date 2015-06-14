@@ -14,9 +14,13 @@ end
 type roots_ctx
   f::fmpz_poly
   r_d::Array{BigComplex, 1}  # the 1st r1 ones will be real
-  r::Array{BigComplex, 1}          # the complexes and at the end, the conjugated
+  r::Array{BigComplex, 1}    # the complexes and at the end, the conjugated
   r1::Int
   r2::Int
+  minkowski_mat::Array{BigFloat, 2} # cacheing: I currently
+                             # cannot extend number fields, so I cache it
+                             # here...
+  minkowski_mat_p::Int
   function roots_ctx()
     r = new()
     return r
@@ -147,7 +151,10 @@ function length(c::roots_ctx, a::nf_elem, p::Int = 50)
   return sum([x*x for x in m])
 end
 
-function minkowski_mat(c::roots_ctx, K::NfNumberField, p::Int)
+function minkowski_mat(c::roots_ctx, p::Int)
+  if isdefined(c, :minkowski_mat) && c.minkowski_mat_p == p
+    return c.minkowski_mat
+  end
   old = get_bigfloat_precision()
   set_bigfloat_precision(p)
   r = conjugates(c, p)
@@ -158,7 +165,7 @@ function minkowski_mat(c::roots_ctx, K::NfNumberField, p::Int)
     d[i] = one
   end
 
-  n = degree(K)
+  n = degree(c.f)
   m = Array(BigFloat, n, n)
 
   for i = 1:n
@@ -177,26 +184,62 @@ function minkowski_mat(c::roots_ctx, K::NfNumberField, p::Int)
     end
   end
   set_bigfloat_precision(old)
+  c.minkowski_mat = m
+  c.minkowski_mat_p = p
   return m
 end
+
+function minkowski_mat(c::roots_ctx, K::NfNumberField, p::Int = 50)
+  return minkowski_mat(c, p)
+end
+
+function mult!(c::Array{BigFloat, 2}, a::fmpz_mat, b::Array{BigFloat, 2})
+  s = Base.size(b)
+  t = Base.size(c)
+  cols(a) == s[1] || error("dimensions do not match")
+  rows(a) == t[1] || error("dimensions do not match")
+  t[2] == s[2]    || error("dimensions do not match")
+
+  tmp_mpz = BigInt()
+  tmp_mpz_r = BigFloat()
+  tmp_mpfr = BigFloat()
+
+  ##CF: careful: one SHOULD use mpfr_mul_z, but this converts to
+  ##    mpfr every time. I think mpfr_mul_z should be re-written
+  ##    to directly operate. Hoever, this is not going to happen soon.
+  for i = 1:rows(a)
+    for j = 1:t[2]
+      if isdefined(c, i, j)
+        ccall((:mpfr_set_zero, :libmpfr), Void, (Ptr{BigFloat}, Int), &c[i,j], 0)
+      else
+        c[i,j] = BigFloat(0)
+      end
+
+    end
+    for j = 1:cols(a)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+        (Ptr{fmpz_mat}, Int, Int), &a, i - 1, j - 1)
+      ccall((:flint_mpz_init_set_readonly, :libflint),
+        Void, (Ptr{BigInt}, Ptr{fmpz}), &tmp_mpz, z)
+      ccall((:mpfr_set_z, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Int32),
+        &tmp_mpz_r, &tmp_mpz, Base.MPFR.ROUNDING_MODE[end])
+      for k = 1:s[2]
+        ccall((:mpfr_mul, :libmpfr), Int, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &b[j,k], &tmp_mpz_r, Base.MPFR.ROUNDING_MODE[end])
+        ccall((:mpfr_add, :libmpfr), Int, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{BigFloat}, Int32), &c[i,k], &tmp_mpfr, &c[i,k], Base.MPFR.ROUNDING_MODE[end])
+      end
+#      ccall((:flint_mpz_clear_readonly, :libflint), Void, (Ptr{BigInt}), &tmp_mpz)
+    end
+  end
+  return c
+end
+
 
 function *(a::fmpz_mat, b::Array{BigFloat, 2})
   s = Base.size(b)
   cols(a) == s[1] || error("dimensions do not match")
 
   c = Array(BigFloat, rows(a), s[2])
-  A = ZZ()
-  for i = 1:rows(a)
-    for j = 1:s[2]
-      t = zero(b[1,1])
-      for k = 1:cols(a)
-        getindex!(A, a, i, k)
-        t += A * b[k, j]
-      end
-      c[i,j] = t
-    end
-  end
-  return c
+  return mult!(c, a, b)
 end
 
 for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:floor, Base.floor))

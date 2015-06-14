@@ -306,17 +306,16 @@ end
 #
 #  Class group data structure
 #
-
 ################################################################################
-type ClassGrpCtx{T}
+type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   FB::NfFactorBase
-  M::Union(fmpz_mat, Smat{T}) # the relation matrix, columns index by the
-                              # factor basis, rows by the relations
-  R::Array{nf_elem, 1}        # the relations
+  M::T                    # the relation matrix, columns index by the
+                          # factor basis, rows by the relations
+  R::Array{nf_elem, 1}    # the relations
   RS::Set{nf_elem}
-  H::Union(fmpz_mat, Smat{T}) # the last hnf, at least the non-trivial part
-                              # of it
-  last_H::Int                 # the number of rows of M that went into H
+  H::T                    # the last hnf, at least the non-trivial part
+                          # of it
+  last_H::Int             # the number of rows of M that went into H
   last_piv1::Array{Int, 1}
   mis::Set{Int}
   h::fmpz
@@ -328,13 +327,12 @@ type ClassGrpCtx{T}
   last::Int
   sum_norm::fmpz
 
-  val_base::fmpz_mat          # a basis for the possible infinite ranodmization 
-                              # vectors: conditions are
-                              #  - sum over all = 0
-                              #  - indices correspoding to complex pairs are
-                              #    identical
-                              # done via lll + nullspace
-
+  val_base::fmpz_mat      # a basis for the possible infinite ranodmization 
+                          # vectors: conditions are
+                          #  - sum over all = 0
+                          #  - indices correspoding to complex pairs are
+                          #    identical
+                          # done via lll + nullspace
   function ClassGrpCtx()
     r = new()
     r.R = Array{nf_elem, 1}[]
@@ -345,7 +343,7 @@ end
 
 global AllRels
 function class_group_init(O::NfMaximalOrder, B::Int;
-                          complete = true, degree_limit = 5, T = BigInt)
+                          complete = true, degree_limit = 5, T = Smat{BigInt})
   global AllRels = []
   clg = ClassGrpCtx{T}()
 
@@ -355,7 +353,7 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   clg.sum_norm = 0
 
   clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
-  clg.M = Smat{T}()
+  clg.M = T()
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
     class_group_add_relation(clg, nf(O)(I.gen_one))
@@ -473,33 +471,84 @@ end
 #
 ################################################################################
 
+#scales the i-th column of a by 2^d[1,i]
+function mult_by_2pow_diag(a::Array{BigFloat, 2}, d::fmpz_mat)
+  s = Base.size(a)
+  b = Array(BigFloat, s)
+  tmp_mpz = BigInt(0)
+  for i = 1:s[1]
+    for j = 1:s[2]
+      e = ccall((:mpfr_get_z_2exp, :libmpfr), Int64, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
+      b[i,j] = BigFloat()
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Int64, Int32), &b[i,j], &tmp_mpz, e+Int64(d[1,j]), Base.MPFR.ROUNDING_MODE[end])
+    end
+  end
+  return b
+end
+
+#converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
+function round_scale(a::Array{BigFloat, 2}, l::Int64)
+  s = size(a)
+  b = MatrixSpace(ZZ, s[1], s[2])()
+  tmp_mpz = BigInt(0)
+  tmp_fmpz = fmpz(0)
+  tmp_mpfr = BigFloat(0)
+  for i = 1:s[1]
+    for j = 1:s[2]
+      e = a[i,j].exp
+      a[i,j].exp += l
+      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], Base.MPFR.ROUNDING_MODE[end]) 
+      f = ccall((:mpfr_get_z_2exp, :libmpfr), Int, (Ptr{BigInt}, Ptr{BigFloat}),
+        &tmp_mpz, &tmp_mpfr)
+      ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
+        &tmp_fmpz, &tmp_mpz)
+      if f > 0  
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int64), &tmp_fmpz, &tmp_fmpz, f)
+      else
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int64), &tmp_fmpz, &tmp_fmpz, -f);
+      end
+      setindex!(b, tmp_fmpz, i, j)
+      a[i,j].exp = e
+    end
+  end
+  return b
+end
+
+function shift!(g::fmpz_mat, l::Int)
+  for i=1:rows(g)
+    for j=1:cols(g)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int64, Int64), &g, i-1, j-1)
+      if l > 0
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
+      else
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
+      end
+    end
+  end
+  return g
+end
+  
 function lll(c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
                 prec::Int64 = 100, limit::Int64 = 0)
-  c = minkowski_mat(c, nf(order(A)), prec)
+  c = minkowski_mat(c, nf(order(A)), prec) ## carefule: current iteration
+                                           ## c is NOT a copy, so don't change.
   if !iszero(v)
     @v_do :ClassGroup 1 println("using inf val", v)
     old = get_bigfloat_precision()
     set_bigfloat_precision(4*prec)
-    e = convert(typeof(c[1,1]), exp(1))
-    sc = diagm([e^Int(v[1, i]) for i=1:cols(v)])
-    c = c*sc
+    c = mult_by_2pow_diag(c, v);
     set_bigfloat_precision(old)
   end
   b = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   c = b.num*c
   old = get_bigfloat_precision()
   set_bigfloat_precision(prec)
-  g = round(scale(c, BigInt(2)^(prec)))
+  g = round_scale(c, prec)
   @hassert :ClassGroup 1 !iszero(g)
   set_bigfloat_precision(old)
   g = g*g'
-  n = rows(g)
-  for i = 1:n
-    for j = 1:n
-      g[i,j] = div(g[i,j], ZZ(2)^prec)
-    end
-  end
-  g += n*one(parent(g))
+  shift!(g, -prec)
+  g += rows(g)*one(parent(g))
 
   l, t = lll_gram_with_transform(g)
   return l, t
