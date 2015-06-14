@@ -1,6 +1,6 @@
-export NfMaximalOrder
+export NfMaximalOrder, MaximalOrder
 
-abstract ComOrder 
+abstract ComMaxOrder 
 
 ################################################################################
 #
@@ -8,9 +8,23 @@ abstract ComOrder
 #
 ################################################################################
 
-NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, ComOrder}()
+NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, ComMaxOrder}()
 
-type NfMaximalOrder <: ComOrder 
+NfMaximalOrderSetID = ObjectIdDict()
+
+type NfMaximalOrderSet
+  nf::NfNumberField
+
+  function NfMaximalOrderSet(a::NfNumberField)
+  try
+    return NfMaximalOrderSetID[a]
+  end
+    NfMaximalOrderSetID[a] = new(a)
+    return NfMaximalOrderSetID[a]
+  end
+end
+
+type NfMaximalOrder <: ComMaxOrder 
   nf::NfNumberField
   basis_nf::Array{nf_elem, 1}   # Array of number field elements
   basis_ord                     # Array of order elements
@@ -18,10 +32,12 @@ type NfMaximalOrder <: ComOrder
   basis_mat_inv::FakeFmpqMat    # inverse of basis matrix
   index::fmpz                   # the determinant of basis_mat_inv
   disc::fmpz                    # discriminant
-  disc_fac                      # factorized discriminant
+  disc_fac                      # factorized discriminant or prime factors?
+  parent::NfMaximalOrderSet     # parent object
 
   function NfMaximalOrder(a::NfNumberField)
     r = new(a)
+    r.parent = NfMaximalOrderSet(a)
     return r
   end
 end
@@ -233,31 +249,16 @@ end
 #
 ################################################################################
 
-#@doc """
-#  MaximalOrder(O::PariMaximalOrder) -> NfMaximalOrder
-#
-#  Compute the NfMaximalOrder corresponding to O.
-#""" ->
-#function MaximalOrder(O::PariMaximalOrder)
-#  return NfMaximalOrder(O)
-#end
+@doc """
+  MaximalOrder(K::NfNumberField) -> NfMaximalOrder
 
-#@doc """
-#  MaximalOrder(K::NfNumberField) -> NfMaximalOrder
-#
-#  Compute the maximal order of K.
-#""" ->
-#function MaximalOrder(K::NfNumberField)
-#  @vprint :NfMaximalOrder 1 "Computing the PariMaximalOrder...\n"
-#  @vtime :NfMaximalOrder 1 O = PariMaximalOrder(PariNumberField(K))
-#  @vprint :NfMaximalOrder 1 "...DONE \n"
-#
-#  return NfMaximalOrder(O)
-#end
-#
-function _MaximalOrder(K::NfNumberField)
+  Compute the maximal order of K.
+""" ->
+function MaximalOrder(K::NfNumberField)
   O = EquationOrder(K)
+  @vprint :NfMaximalOrder 1 "Computing the maximal order ...\n"
   O = _MaximalOrder(O)
+  @vprint :NfMaximalOrder 1 "... done\n"
   return NfMaximalOrder(K, basis_mat(O))
 end
 
@@ -274,3 +275,5 @@ end
 function PariMaximalOrder(O::NfMaximalOrder)
   return PariMaximalOrder(PariNumberField(nf(O)))
 end
+
+

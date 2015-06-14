@@ -8,7 +8,7 @@ import Base: in
 
 export NfOrderElem
 
-export elem_in_order
+export elem_in_order, random
 
 ################################################################################
 #
@@ -35,7 +35,7 @@ type NfOrderElem
 
   function NfOrderElem(O::NfOrder, arr::Array{fmpz, 1})
     z = new()
-    z.elem_in_nf = Base.dot(_basis(O), arr)
+    z.elem_in_nf = Base.dot(basis_nf(O), arr)
     z.parent = O
     return z
   end
@@ -260,3 +260,84 @@ end
 function trace(a::NfOrderElem)
   return trace(elem_in_nf(a))
 end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+function norm(a::NfOrderElem)
+  return norm(elem_in_nf(a))
+end
+
+################################################################################
+#
+#  Random element generation
+#
+################################################################################
+
+function random!{T <: Integer}(z::NfOrderElem, O::NfOrder, R::UnitRange{T})
+  y = O()
+  ar = rand(R, degree(O))
+  B = basis(O)
+  mul!(z, ar[1], B[1])
+  for i in 2:degree(O)
+    mul!(y, ar[i], B[i])
+    add!(z, z, y)
+  end
+  return z
+end
+
+function random{T <: Integer}(O::NfOrder, R::UnitRange{T})
+  z = zero(O)
+  random!(z, O, R)
+  return z
+end
+
+function random!(z::NfOrderElem, O::NfOrder, n::Integer)
+  return random!(z, O, -n:n)
+end
+
+function random(O::NfOrder, n::Integer)
+  return random(O, -n:n)
+end
+
+function random!(z::NfOrderElem, O::NfOrder, n::fmpz)
+  return random!(z, O, BigInt(n))
+end
+
+function random(O::NfOrder, n::fmpz)
+  return random(O, BigInt(n))
+end
+  
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+function add!(z::NfOrderElem, x::NfOrderElem, y::NfOrderElem)
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfOrderElem, x::NfOrderElem, y::NfOrderElem)
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfOrderElem, x::Integer, y::NfOrderElem)
+  z.elem_in_nf = ZZ(x) * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfOrderElem, x::NfOrderElem, y::Integer) = mul!(z, y, x)
+
+function mul!(z::NfOrderElem, x::fmpz, y::NfOrderElem)
+  z.elem_in_nf = x * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfOrderElem, x::NfOrderElem, y::fmpz) = mul!(z, y, x)
+
