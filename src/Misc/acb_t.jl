@@ -6,7 +6,7 @@
 
 export acb_t, AcbField
 
-export imag, real, one, onei
+export imag, real, one, onei, copy
 
 ################################################################################
 #
@@ -114,6 +114,12 @@ end
 
 parent(x::acb_t) = x.parent
 
+function copy(a::acb_t)
+  b = parent(a)()
+  ccall((:acb_set, :libarb), Void, (Ptr{Void}, Ptr{Void}), b.data, a.data)
+  return b
+end
+
 function _acb_t_clear_fn(a::acb_t)
   ccall((:_acb_vec_clear, :libarb), Void, (Ptr{Void}, Clong), a.data, Clong(1))
 end
@@ -151,7 +157,7 @@ end
 ################################################################################
 
 function +(x::acb_t, y::acb_t)
-  check_parent(x,y)
+  #check_parent(x,y)
   z = parent(x)()
   ccall((:acb_add, :libarb), Void, (Ptr{Void}, Ptr{Void}, Ptr{Void}), z.data, x.data, y.data)
   return z
@@ -165,7 +171,7 @@ function -(x::acb_t, y::acb_t)
 end
 
 function *(x::acb_t, y::acb_t)
-  check_parent(x,y)
+  #check_parent(x,y)
   z = parent(x)()
   ccall((:acb_mul, :libarb), Void, (Ptr{Void}, Ptr{Void}, Ptr{Void}), z.data, x.data, y.data)
   return z
@@ -177,7 +183,7 @@ function /(x::acb_t, y::acb_t)
   ccall((:acb_div, :libarb), Void, (Ptr{Void}, Ptr{Void}, Ptr{Void}), z.data, x.data, y.data)
   return z
 end
- 
+
 ################################################################################
 #
 #  Unsafe arithmetic

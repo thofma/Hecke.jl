@@ -17,13 +17,13 @@ using Nemo
 import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
   denominator, den, num, lg, prime_decomposition,
   parent, length, norm, real, imag, inv, rows,
-  getindex!, lll, hnf, cols, MaximalOrder, basis, trace, factor, mod, zero,
+  getindex!, lll, hnf, cols, basis, trace, factor, mod, zero,
   pari_load, PariPolyRing, PariRationalField, PariQQ,
   pari_vec, hash, PolynomialRing, coeff, var, abs, min, iszero, one, sqrt, isone, deepcopy
 
 export NfNumberField, hash
 
-import Base: show, minimum, rand, prod
+import Base: show, minimum, rand, prod, copy
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
