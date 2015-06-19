@@ -533,24 +533,26 @@ function *(a::fmpz, b::BigFloat)
 end
 
 function Float64(a::fmpz)
-  return Float64(BigInt(a))
+  return ccall((:fmpz_get_d, :libflint), Float64, (Ptr{fmpz},), &a)
 end
 
 function Float64(a::fmpq)
-  return Float64(BigInt(num(a))//BigInt(den(a)))
+  return Float64(num(a))/Float64(den(a))
 end
 
 function BigFloat(a::fmpq)
-  return BigFloat(BigInt(num(a))//BigInt(den(a)))
+  r = BigFloat(0)
+  ccall((:fmpq_get_mpfr, :libflint), Void, (Ptr{BigFloat}, Ptr{fmpq}, Int32), &r, &a, Base.MPFR.ROUNDING_MODE[end])
+  return r
 end
 
 
 function Base.call(a::FlintIntegerRing, b::fmpq)
   den(b) != 1 && error("denominator not 1")
-  return ZZ(num(b))
+  return a(num(b))
 end
 
-# Berstein: coprime bases
+# Bernstein: coprime bases
 # ppio(a,b) = (c,n) where v_p(c) = v_p(a) if v_p(b) !=0, 0 otherwise
 #                         c*n = a
 # or c = gcd(a, b^infty)
