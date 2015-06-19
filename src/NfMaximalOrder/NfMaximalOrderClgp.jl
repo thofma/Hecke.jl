@@ -38,6 +38,8 @@ set_assert_level(:ClassGroup, 1)
 set_assert_level(:LatEnum, 1)
 
 
+import Base.size;
+
 ################################################################################
 #
 #  Factor base over (Euclidean) Rings
@@ -473,31 +475,31 @@ end
 
 #scales the i-th column of a by 2^d[1,i]
 function mult_by_2pow_diag(a::Array{BigFloat, 2}, d::fmpz_mat)
-  s = Base.size(a)
-  b = Array(BigFloat, s)
-  tmp_mpz = BigInt(0)
+  s = size(a)
+  R = RealRing()
+  tmp_mpz = R.z1
   for i = 1:s[1]
     for j = 1:s[2]
       e = ccall((:mpfr_get_z_2exp, :libmpfr), Int64, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
-      b[i,j] = BigFloat()
-      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Int64, Int32), &b[i,j], &tmp_mpz, e+Int64(d[1,j]), Base.MPFR.ROUNDING_MODE[end])
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Int64, Int32), &a[i,j], &tmp_mpz, e+Int64(d[1,j]), Base.MPFR.ROUNDING_MODE[end])
     end
   end
-  return b
 end
 
 #converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
 function round_scale(a::Array{BigFloat, 2}, l::Int64)
   s = size(a)
   b = MatrixSpace(ZZ, s[1], s[2])()
-  tmp_mpz = BigInt(0)
-  tmp_fmpz = fmpz(0)
-  tmp_mpfr = BigFloat(0)
+  R = RealRing()
+  tmp_mpz = R.z1
+  tmp_fmpz = R.zz1
+  tmp_mpfr = R.t1
   for i = 1:s[1]
     for j = 1:s[2]
       e = a[i,j].exp
       a[i,j].exp += l
       ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], Base.MPFR.ROUNDING_MODE[end]) 
+      a[i,j].exp = e
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Int, (Ptr{BigInt}, Ptr{BigFloat}),
         &tmp_mpz, &tmp_mpfr)
       ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
@@ -508,7 +510,6 @@ function round_scale(a::Array{BigFloat, 2}, l::Int64)
         ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int64), &tmp_fmpz, &tmp_fmpz, -f);
       end
       setindex!(b, tmp_fmpz, i, j)
-      a[i,j].exp = e
     end
   end
   return b
@@ -527,23 +528,28 @@ function shift!(g::fmpz_mat, l::Int)
   end
   return g
 end
-  
-function lll(c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
+ 
+#CF todo: use limit!!!
+function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
                 prec::Int64 = 100, limit::Int64 = 0)
-  c = minkowski_mat(c, nf(order(A)), prec) ## carefule: current iteration
+  c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
+  b = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  if !isdefined(rt_c, :cache)
+    rt_c.cache = 0*c
+  end
+  d = rt_c.cache
+  mult!(d, b.num, c)
                                            ## c is NOT a copy, so don't change.
   if !iszero(v)
     @v_do :ClassGroup 1 println("using inf val", v)
     old = get_bigfloat_precision()
     set_bigfloat_precision(4*prec)
-    c = mult_by_2pow_diag(c, v);
+    mult_by_2pow_diag!(d, v);
     set_bigfloat_precision(old)
   end
-  b = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
-  c = b.num*c
   old = get_bigfloat_precision()
   set_bigfloat_precision(prec)
-  g = round_scale(c, prec)
+  g = round_scale(d, prec)
   @hassert :ClassGroup 1 !iszero(g)
   set_bigfloat_precision(old)
   g = g*g'

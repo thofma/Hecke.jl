@@ -21,10 +21,33 @@ type roots_ctx
                              # cannot extend number fields, so I cache it
                              # here...
   minkowski_mat_p::Int
+
+  cache::Array{BigFloat, 2} # to avoid allocation elsewhere.
   function roots_ctx()
     r = new()
     return r
   end
+end
+
+type _RealRing
+  t1::BigFloat
+  t2::BigFloat
+  z1::BigInt
+  zz1::fmpz
+  function _RealRing()
+    r = new()
+    r.t1 = BigFloat(0)
+    r.t2 = BigFloat(0)
+    r.z1 = BigInt(0)
+    r.zz1 = fmpz(0)
+    return r
+  end
+end
+
+R = _RealRing()
+function RealRing()
+  global R
+  return R
 end
 
 function conjugates_init(f::Union(fmpz_poly, fmpq_poly))
@@ -200,9 +223,10 @@ function mult!(c::Array{BigFloat, 2}, a::fmpz_mat, b::Array{BigFloat, 2})
   rows(a) == t[1] || error("dimensions do not match")
   t[2] == s[2]    || error("dimensions do not match")
 
-  tmp_mpz = BigInt()
-  tmp_mpz_r = BigFloat()
-  tmp_mpfr = BigFloat()
+  R = RealRing()
+  tmp_mpz = R.z1
+  tmp_mpz_r = R.t1
+  tmp_mpfr = R.t2
 
   ##CF: careful: one SHOULD use mpfr_mul_z, but this converts to
   ##    mpfr every time. I think mpfr_mul_z should be re-written
