@@ -21,12 +21,16 @@ Assume that \code{K} represents the number field $\Q(\alpha)$. This function wil
 
 \exam
 ##
-  julia> Qx, x = PolynomialRing(QQ,"x");
-  julia> f = x^19 + x^2 + 3*x + 11;
-  julia> K, a = NumberField(f, "a");
-  julia> O = EquationOrder(K)
-  Order of Number field over Rational Field with defining polynomial x^19 + 1*x^2 + 3*x + 11                                                                              
-  with Z-basis [1,a,a^2,a^3,a^4,a^5,a^6,a^7,a^8,a^9,a^10,a^11,a^12,a^13,a^14,a^15,a^16,a^17,a^18]                                                                         
+julia> Qx, x = PolynomialRing(QQ,"x")
+(Univariate Polynomial Ring in x over Rational Field,x)
+julia> f = x^19 + x^2 + 3*x + 11
+x^19 + 1*x^2 + 3*x + 11
+julia> K, a = NumberField(f, "a")
+(Number field over Rational Field with defining polynomial x^19 + 1*x^2 + 3*x + 11,a)
+julia> O = EquationOrder(K)
+Order of Number field over Rational Field with defining polynomial x^19 + 1*x^2 + 3*x + 11
+with Z-basis [1,a,a^2,a^3,a^4,a^5,a^6,a^7,a^8,a^9,a^10,a^11,a^12,a^13,a^14,a^15,a^16,a^17,a^18]
+julia> ASSERT assert(degree(O) == 19)
 ##long##
 
 \function##Order##K::NfNumberField,x::fmpz_mat,y::fmpz##NfOrder##check::Bool = true##
@@ -55,5 +59,5 @@ Given an order \code{O}, try to coerce the number field element \code{x} into \c
 \exam
 ##
   julia> 4 == 2 + 2
-  julia> #assert(3 == 2)
+  julia> ASSERT #assert(3 == 2)
 ##error##

@@ -18,6 +18,8 @@ export powermod, elem_in_basis, EquationOrder, deepcopy, Order
 #
 ################################################################################
 
+abstract ComOrd
+
 NfOrderSetID = ObjectIdDict()
 
 type NfOrderSet
@@ -32,16 +34,18 @@ type NfOrderSet
   end
 end
 
+NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, ComOrd}()
 
-type NfOrder <: Ring
+type NfOrder <: ComOrd
   nf::NfNumberField
-  basis # Array{NfOrder_elt, 1}
-  #_basis::Array{nf_elem, 1}
+  basis_ord # Array{NfOrder_elt, 1}
+  basis_nf #_basis::Array{nf_elem, 1}
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
-  discriminant::fmpz
-  isequationorder::Bool
   index::fmpz
+  disc::fmpz
+  disc_fac
+  isequationorder::Bool
   parent::NfOrderSet
 
   function NfOrder()
@@ -49,8 +53,6 @@ type NfOrder <: Ring
     return z
   end
 end
-
-NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, NfOrder}()
 
 # need outer constructor or else NfOrderElem is not known at this point
 function NfOrder(a::NfNumberField)
@@ -62,10 +64,11 @@ function NfOrder(a::NfNumberField)
     z.nf = a
     z.parent = NfOrderSet(a)
     z.basis_mat = A
-    z.basis = Array(NfOrderElem, degree(a))
-    z.basis[1] = z(Nemo.one(a), false)
+    z.basis_nf = basis(a)
+    z.basis_ord = Array(NfOrderElem, degree(a))
+    z.basis_ord[1] = z(Nemo.one(a), false)
     for i in 2:degree(a)
-      z.basis[i] = z(gen(a)^(i-1), false)
+      z.basis_ord[i] = z(gen(a)^(i-1), false)
     end
     NfOrderID[(a, A)] = z
     return z
@@ -80,10 +83,14 @@ function NfOrder(K::NfNumberField, x::FakeFmpqMat)
     z.basis_mat = x
     z.nf = K
     B = Array(NfOrderElem, degree(K))
+    BB = Array(nf_elem, degree(K))
     for i in 1:degree(K)
-      B[i] = z(element_from_mat_row(K, x.num, i)//K(x.den), false) ## this is stupid: nf_elem//fmpz not definied!
+      t = element_from_mat_row(K, x.num, i)//K(x.den)
+      BB[i] = t
+      B[i] = z(t, false) 
     end
-    z.basis = B
+    z.basis_ord = B
+    z.basis_nf = BB
     z.parent = NfOrderSet(z.nf)
     NfOrderID[(K,x)] = z
     return z
@@ -98,7 +105,7 @@ function NfOrder(a::Array{nf_elem, 1})
   else
     z = NfOrder()
     z.nf = parent(a[1])
-    z._basis = a
+    z.basis_nf = a
     z.parent = NfOrderSet(z.nf)
     NfOrderID[(K,A)] = z
     return z
@@ -122,36 +129,32 @@ end
 #
 ################################################################################
 
-function _basis(O::NfOrder)
-#  (!isdefined(O, :basis) && !isdefined(O, :basis_mat)) && #  if isdefined(O, :_basis)
-#    return O._basis
-#  end
-  a = Array(nf_elem, degree(O))
-  if isdefined(O, :basis)
-    for i in 1:degree(O)
-      a[i] = elem_in_nf(basis(O)[i])
-    end
-  elseif isdefined(O, :basis_mat)
-    for i in 1:degree(O)
-      a[i] = QQ(1)//QQ(den(basis_mat(O))) * element_from_mat_row(O.nf, num(basis_mat(O)), i)
-    end
-  else
-    error("basis or basis_mat must be defined")
+function basis_ord(O::NfOrder)
+  if isdefined(O, :basis_ord)
+    return O.basis_ord
   end
-  return a
+  b = O.basis_nf
+  B = Array(NfOrderElem, length(b))
+  for i in 1:length(b)
+    v = fill(ZZ(0), length(b))
+    v[i] = ZZ(1)
+    B[i] = O(b[i], v; check = false)
+  end
+  O.basis_ord = B
+  return B
 end
 
 function basis(O::NfOrder)
-  if isdefined(O, :basis)
-    return O.basis
-  end
-  z = Array(NfOrderElem, degree(O))
-  B = _basis(O)
-  for i in 1:degree(O)
-    z[i] = O(B[i])
-  end
-  O.basis = z
-  return O.basis
+  return basis_ord(O)
+end
+
+function basis(O::NfOrder, K::NfNumberField)
+  nf(O) != K && error()
+  return basis_nf(O)
+end
+
+function basis_nf(O::NfOrder)
+  return O.basis_nf
 end
 
 function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
@@ -220,7 +223,7 @@ function _check_elem_in_order(a::nf_elem, O::NfOrder)
   for i in 1:degree(O)
     v[i] = x.num[1,i]
   end
-  return (x.den == 1, v) ## Array() should really be already an array of fmpz's; Julia Arrays are a nightmare
+  return (x.den == 1, v) 
 end  
 
 
@@ -230,6 +233,7 @@ end
 #
 ################################################################################
 
+# This works only if something is coprime??
 function +(a::NfOrder, b::NfOrder)
   c = sub(hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b)))),1:degree(a),1:degree(a))
   O = Order(nf(a),FakeFmpqMat(c,den(basis_mat(a))*den(basis_mat(b))))
@@ -293,8 +297,8 @@ end
 ################################################################################
 
 function discriminant(O::NfOrder)
-  if isdefined(O, :discriminant)
-    return O.discriminant
+  if isdefined(O, :disc)
+    return O.disc
   end
 
   A = MatrixSpace(ZZ, degree(O), degree(O))()
@@ -304,6 +308,6 @@ function discriminant(O::NfOrder)
       A[i,j] = ZZ(trace(B[i]*B[j]))
     end
   end
-  O.discriminant = determinant(A)
-  return O.discriminant
+  O.disc = determinant(A)
+  return O.disc
 end

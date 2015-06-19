@@ -1,5 +1,7 @@
 export NfMaximalOrderElem
 
+export is_torsion_unit
+
 type NfMaximalOrderElem
   elem_in_nf::nf_elem
   elem_in_basis::Array{fmpz, 1}
@@ -294,4 +296,128 @@ function mod(a::NfMaximalOrderElem, m::Int)
   return O(v)
 end
 
+
+################################################################################
+#
+#  Random element generation
+#
+################################################################################
+
+function random!{T <: Integer}(z::NfMaximalOrderElem, O::NfMaximalOrder, R::UnitRange{T})
+  y = O()
+  ar = rand(R, degree(O))
+  B = basis(O)
+  mul!(z, ar[1], B[1])
+  for i in 2:degree(O)
+    mul!(y, ar[i], B[i])
+    add!(z, z, y)
+  end
+  return z
+end
+
+function random{T <: Integer}(O::NfMaximalOrder, R::UnitRange{T})
+  z = zero(O)
+  random!(z, O, R)
+  return z
+end
+
+function random!(z::NfMaximalOrderElem, O::NfMaximalOrder, n::Integer)
+  return random!(z, O, -n:n)
+end
+
+function random(O::NfMaximalOrder, n::Integer)
+  return random(O, -n:n)
+end
+
+function random!(z::NfMaximalOrderElem, O::NfMaximalOrder, n::fmpz)
+  return random!(z, O, BigInt(n))
+end
+
+function random(O::NfMaximalOrder, n::fmpz)
+  return random(O, BigInt(n))
+end
+  
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+function add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfMaximalOrderElem, x::Integer, y::NfMaximalOrderElem)
+  z.elem_in_nf = ZZ(x) * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::Integer) = mul!(z, y, x)
+
+function mul!(z::NfMaximalOrderElem, x::fmpz, y::NfMaximalOrderElem)
+  z.elem_in_nf = x * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::fmpz) = mul!(z, y, x)
+
+################################################################################
+#
+#  Conversion
+#
+################################################################################
+
 Base.call(K::NfNumberField, x::NfMaximalOrderElem) = elem_in_nf(x)
+
+################################################################################
+#
+#  Torsion units
+#
+################################################################################
+
+function is_torsion_unit(x::NfMaximalOrderElem)
+  !is_unit(x) && return false
+  # test for the signature etc
+  O = parent(x)
+  d = degree(O)
+  # round down should be mode 3 (right?)
+  Rarb = ArbField(32)
+  Rd = Rarb(d)
+  t = (log(Rd)/d^2)/24
+  while !ispositive(t)
+     Rarb = ArbField(2*Rarb.prec)
+     Rd = Rarb(d)
+     t = (log(Rd)/d^2)/24
+  end
+  Rarf = ArfField(Rarb.prec)
+  z = Rarf()
+  ccall((:arb_get_abs_lbound_arf, :libarb), Void, (Ptr{Void}, Ptr{Void}, Clong), z.data, t.data, Rarb.prec)
+  @hassert :NfMaximalOrder 1 sign(z) == 1
+  zz = 1 + (log(Rd)/d^2)/12
+  i = ccall((:arf_cmpabs_mag, :libarb), Cint, (Ptr{Void}, Ptr{Void}), z.data, radius(zz).data)
+  f = nf(parent(x)).pol
+  Zf = PolynomialRing(FlintZZ,"x")[1](f) 
+  c = complex_roots(Zf, target_prec = Rarb.prec)
+  for j in 1:length(c)
+    r = parent(c[1])(0)
+    for k in 1:degree(O)
+      r = r + parent(c[1])(coeff(elem_in_nf(x), k))*c[j]^k
+    end
+    s = abs(r)
+    assert(ccall((:arf_cmpabs_mag, :libarb), Cint, (Ptr{Void}, Ptr{Void}), z.data, radius(s).data) == 1)
+    if compare(midpoint(s), midpoint(zz)) == 1
+      return false
+    end
+  end
+  return true
+end
+
+function is_unit(x::NfMaximalOrderElem)
+  return inv(elem_in_nf(x)) in parent(x)
+end
