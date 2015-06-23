@@ -76,9 +76,15 @@ end
 function one(O::NfMaximalOrder)
   z = NfMaximalOrderElem(O)
   z.elem_in_nf = one(nf(O))
-  v = fill(ZZ(0), degree(0))
+  v = fill(ZZ(0), degree(O))
   v[1] = ZZ(1)
   z.elem_in_basis = v
+  return z
+end
+
+function copy(x::NfMaximalOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = deepcopy(x.elem_in_nf)
   return z
 end
 
@@ -99,10 +105,10 @@ function elem_in_nf(x::NfMaximalOrderElem)
 end
 
 function elem_in_basis(x::NfMaximalOrderElem)
-  if isdefined(x, :elem_in_basis)
-    return x.elem_in_basis
-  end
-  (b,v) = _check_elem_in_maximal_order(x.elem_in_nf, parent(x))
+#  if isdefined(x, :elem_in_basis)
+#    return x.elem_in_basis
+#  end
+  (b,v) = _check_elem_in_maximal_order(elem_in_nf(x), parent(x))
   x.elem_in_basis = v
   return v
 end
@@ -195,7 +201,7 @@ end
 
 function *(x::NfMaximalOrderElem, y::NfMaximalOrderElem)
   z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  z.elem_in_nf = elem_in_nf(x)*elem_in_nf(y)
   return z
 end
 
@@ -207,11 +213,22 @@ end
 
 *(x::fmpz, y::NfMaximalOrderElem) = y * x
 
+*(x::Integer, y::NfMaximalOrderElem) = fmpz(x)* y
+
+*(x::NfMaximalOrderElem, y::Integer) = y * x
+
 function +(x::NfMaximalOrderElem, y::NfMaximalOrderElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   return z
 end
+
+function -(x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
+  return z
+end
+
 
 function +(x::NfMaximalOrderElem, y::fmpz)
   z = parent(x)()
@@ -243,13 +260,13 @@ end
 ################################################################################
 
 function show(io::IO, x::NfMaximalOrderElem)
-  if isdefined(x, :elem_in_basis) && isdefined(x, :elem_in_nf)
+#  if isdefined(x, :elem_in_basis) && isdefined(x, :elem_in_nf)
     print(io, elem_in_nf(x), " ", elem_in_basis(x))
-  elseif isdefined(x, :elem_in_basis)
-    print(io, x.elem_in_basis)
-  else
-    print(io, x.elem_in_nf)
-  end
+#  elseif isdefined(x, :elem_in_basis)
+#    print(io, x.elem_in_basis)
+#  else
+#    print(io, x.elem_in_nf)
+#  end
 end
 
 ################################################################################
@@ -418,6 +435,71 @@ function is_torsion_unit(x::NfMaximalOrderElem)
   return true
 end
 
+function mod(a::NfMaximalOrderElem, m::fmpz)
+  ar = elem_in_basis(a)
+  for i in 1:degree(parent(a))
+    ar[i] = mod(ar[i],m)
+  end
+  return parent(a)(ar)
+end
+
+
+################################################################################
+#
+#  Modular exponentiation
+#
+################################################################################
+
+function ^(a::NfMaximalOrderElem, i::Int)
+  if i == 0 then
+    z = parent(a)()
+    z.elem_in_nf = one(nf(parent(a)))
+    return z
+  end
+  if i == 1 then
+    return copy(a)
+  end
+  if mod(i,2) == 0 
+    j = div(i,2)
+    b = a^j
+    b = b*b
+    return b
+  end
+  b = a*a^(i-1)
+  return b
+end  
+
+function powermod(a::NfMaximalOrderElem, i::fmpz, p::fmpz)
+  if i == 0 then
+    z = parent(a)()
+    z.elem_in_nf = one(nf(parent(a)))
+    return z
+  end
+  if i == 1 then
+    b = mod(a,p)
+    return b
+  end
+  if mod(i,2) == 0 
+    j = div(i,2)
+    b = powermod(a, j, p)
+    b = b*b
+    b = mod(b,p)
+    return b
+  end
+  b = mod(a*powermod(a,i-1,p),p)
+  return b
+end  
+
+powermod(a::NfMaximalOrderElem, i::Integer, p::Integer)  = powermod(a, ZZ(i), ZZ(p))
+
+powermod(a::NfMaximalOrderElem, i::fmpz, p::Integer)  = powermod(a, i, ZZ(p))
+
+powermod(a::NfMaximalOrderElem, i::Integer, p::fmpz)  = powermod(a, ZZ(i), p)
+
 function is_unit(x::NfMaximalOrderElem)
   return inv(elem_in_nf(x)) in parent(x)
 end
+
+dot(x::fmpz, y::nf_elem) = x*y
+
+dot(x::NfMaximalOrderElem, y::Int64) = y*x

@@ -184,9 +184,9 @@ function show(io::IO, id::NfMaximalOrderIdeal)
   if isdefined(id, :princ_gen)
     print(io, "\nprincipal generator ", id.princ_gen)
   end
-#   if isdefined(id, :basis)
-#     print(io, "\nbasis_mat ", id.basis)
-#   end
+   if isdefined(id, :basis_mat)
+     print(io, "\nbasis_mat \n", id.basis_mat)
+   end
   if isdefined(id, :gens_are_normal)
     print(io, "\ntwo normal wrt: ", id.gens_are_normal)
   end
@@ -525,6 +525,7 @@ function assure_2_normal(A::NfMaximalOrderIdeal)
     m = minimum(A)
     bas = basis(K, O)
     r = -div(m+1, 2):div(m+1, 2)
+    # Magic constants
     if length(r) > 1000 
       r = -500:500
     end
@@ -883,6 +884,135 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer)
   return result
 end
 
+function prime_dec_index(O::NfMaximalOrder, p::Integer)
+  # Firstly compute the p-radical of O
+  Ip = pradical(O, p)
+  # I only want the rank, so it doesn't matter
+  BB = _get_fp_basis(O, Ip, p)
+  AA = _split_algebra(BB, Ip, p)
+  return AA
+end
+
+function _split_algebra(BB::Array{NfMaximalOrderElem}, Ip::NfMaximalOrderIdeal, p::Integer)
+  println("_split_algebra for $BB $Ip and $p")
+  O = order(Ip)
+  C = zero(MatrixSpace(ResidueRing(ZZ, p), length(BB)+1, degree(O)))
+  D = zero(MatrixSpace(ResidueRing(ZZ, p), length(BB), degree(O)))
+  for i in 1:length(BB)
+    A = elem_in_basis(mod(BB[i]^p - BB[i], Ip))
+    for j in 1:degree(O)
+      D[i,j] = A[j]
+    end
+  end
+  r = rank(D)
+  k = length(BB) - r
+  # k is the dimension of the kernel of x -> x^p - x
+  println(k)
+  if k == 1
+    # the algebra is a field over F_p
+    # the ideal Ip is a prime ideal!
+    return [ Ip ]
+  end
+  
+  while true
+    r = rand(0:p-1, length(BB))
+    x = dot(BB,r)
+    # now compute the minimal polynomial
+    for i in 0:length(BB)
+      ar = elem_in_basis(mod(x^i,Ip))
+      for j in 1:degree(O)
+        C[i+1,j] = ar[j]
+      end
+    end
+    K = kernel(C)
+    length(K) == 0 ? continue : nothing
+    KK = K[1]
+    println(KK)
+    f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](KK)
+    degree(f) < 2 ? continue : nothing
+    println(x)
+    println(f)
+    @hassert :NfMaximalOrder 0 issquarefree(f)
+    # By theory, all factors should have degree 1 # exploit this if p is small!
+    fac = factor(f)
+    F = fac[1][1]
+    H = divexact(f,F)
+    E, U, V = gcdx(F, H)
+    println(F, " ", H)
+    println("$E $U $V")
+    @hassert :NfMaximalOrder 0 E == 1
+    H = U*F;
+    idem = O(coeff(H,0).data)
+    for i in 1:degree(H)
+      idem = idem + coeff(H,i).data*x^i
+    end
+    # build bases for the two new ideals
+    I1 = Ip + NfMaximalOrderIdeal(O, elem_in_nf(idem))
+    I2 = Ip + NfMaximalOrderIdeal(O, elem_in_nf(O(1)-idem))
+    BB1 = _get_fp_basis(O, I1, p)
+    BB2 = _get_fp_basis(O, I2, p)
+    return vcat(_split_algebra(BB1, I1, p),_split_algebra(BB2, I2, p))
+    break
+  end
+end
+
+
+function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
+  A = basis_mat(I)
+  FpMat = MatrixSpace(ResidueRing(ZZ, p), A.r, A.c)
+  Amodp = FpMat(A)
+  # I think rref can/should also return the rank
+  B = rref(Amodp)
+  println(B)
+  r = rank(B)
+  C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, A.c))
+  BB = Array(NfMaximalOrderElem, degree(O) - r)
+  pivots = Array(Int, 0)
+  # get he pivots of B
+  for i in 1:r
+    for j in 1:degree(O)
+      if !iszero(B[i,j])
+        push!(pivots, j)
+        break
+      end
+    end
+  end
+  println("pivots of B: $pivots")
+  i = 1
+  k = 1
+  while i <= degree(O)-r
+    for j in k:degree(O)
+      if !in(j, pivots)
+        BB[i] = basis(O)[j]
+        C[i,j] = 1
+        k = j + 1
+        i = i + 1
+        break
+      end
+    end
+  end
+  return BB
+end
+
+function mod(x::NfMaximalOrderElem, y::NfMaximalOrderIdeal)
+  # *** minimum doesn't work so use norm
+  # this function assumes that HNF is upper right 
+  # !!! This must be changes as soon as HNF is lower left
+  O = order(y)
+  @hassert :NfMaximalOrder 0 basis_mat(y)[1,degree(O)] == zero(ZZ)
+  b = elem_in_basis(x)
+  a = copy(b)
+  b = basis_mat(y)
+  t = fmpz(0)
+  for i in 1:degree(O)
+    t = div(a[i],b[i,i])
+    for j in i:degree(O)
+      a[j] = a[j] - t*b[i,i]
+    end
+  end
+  return O(a)
+end
+
 function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
   K = nf(O)
   f = K.pol
@@ -952,3 +1082,47 @@ function factor_dict(A::NfMaximalOrderIdeal)
   return lF
 end
 
+################################################################################
+#
+#  Compute the p-radical of an order
+#
+################################################################################
+
+function pradical(O::NfMaximalOrder, p::fmpz)
+  j = clog(ZZ(degree(O)),p)
+  R = ResidueRing(ZZ,p)
+  A = MatrixSpace(R, degree(O), degree(O))()
+  for i in 1:degree(O)
+    t = powermod(basis(O)[i], p^j, p)
+    ar = elem_in_basis(t)
+    for k in 1:degree(O)
+      A[i,k] = ar[k]
+    end
+  end
+  X = kernel(A)
+  Mat = MatrixSpace(ZZ, 1, degree(O))
+  MMat = MatrixSpace(R, 1, degree(O))
+  if length(X) != 0
+    m = lift(MMat(X[1]))
+    for x in 2:length(X)
+      m = vcat(m,lift(MMat(X[x])))
+    end
+    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
+  else
+    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
+  end
+  return ideal(O,sub(hnf(m), 1:degree(O), 1:degree(O)))
+end
+
+function pradical(O::NfMaximalOrder, p::Integer)
+  return pradical(O, ZZ(p))
+end
+
+function ideal(O::NfMaximalOrder, x::fmpz_mat)
+  return NfMaximalOrderIdeal(x, NfMaximalOrderIdealSet(O))
+end
+
+function +(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
+  H = sub(hnf(vcat(basis_mat(x),basis_mat(y))), 1:degree(order(x)), 1:degree(order(x)))
+  return NfMaximalOrderIdeal(H, parent(x))
+end

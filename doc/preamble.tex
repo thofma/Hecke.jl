@@ -31,7 +31,15 @@
 \newcommand{\macro}{\hfill[Macro]}
 \newcommand{\gmp}{\hfill[GMP]}
 \newcommand{\code}{\lstinline}
+
+% redefine quote environment
+\renewenvironment{quote}
+{\list{}{\leftmargin=1.5em\rightmargin=0em}%
+  \item\relax}
+{\endlist}
+
 \newcommand{\desc}[1]{\vspace{-0.5em}\begin{quote}#1\end{quote}\vspace{-1.5em}}
+%\newcommand{\desc}[1]{\begin{description}\item #1 \end{description}}
 \newcommand{\Mat}{\operatorname{Mat}}
 
 \newcommand{\ljk}[2]{\left(\frac{#1}{#2}\right)}

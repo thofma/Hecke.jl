@@ -239,16 +239,17 @@ sub print_latex
       print "$_[4]}\n";
       print "\\vspace{1em}\n";
     }
+    print "\\hrulefill\n";
   }
   if ($k eq 2)
   {
     # I have to print an example 
     if ( $_[0] !~ /^\s*$/s )
     {
-      print "{\\small \\begin{verbatim}";
+      print "\\begin{quote}{ \\begin{verbatim}";
       $_[0] =~ s/.*ASSERT.*\n//g;
       print "$_[0]";
-      print "\\end{verbatim}}\n";
+      print "\\end{verbatim}}\\end{quote}\n";
       print "\\vspace{-1em}\n";
       print "\\hrulefill\n";
     }
