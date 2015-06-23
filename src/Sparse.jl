@@ -345,7 +345,7 @@ function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
   return A
 end
 
-function max{T}(A::Smat{T})
+function max(A::Smat{Int})
   m = abs(A.rows[1].entry[1].val)
   for i in A.rows
     for j in i.entry
@@ -353,6 +353,31 @@ function max{T}(A::Smat{T})
     end
   end
   return m
+end
+
+function max(A::Smat{BigInt})
+  m = abs(A.rows[1].entry[1].val)
+  for i in A.rows
+    for j in i.entry
+      if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
+        &m, &j.val) < 0
+        m = j.val
+      end
+    end
+  end
+  return abs(m)
+end
+
+function max(A::Smat{fmpz})
+  m = abs(A.rows[1].entry[1].val)
+  for i in A.rows
+    for j in i.entry
+      if cmpabs(m, j.val) < 0
+        m = j.val
+      end
+    end
+  end
+  return abs(m)
 end
 
 function one_step{T}(A::Smat{T}, sr = 1)
