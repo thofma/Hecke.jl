@@ -474,7 +474,7 @@ end
 ################################################################################
 
 #scales the i-th column of a by 2^d[1,i]
-function mult_by_2pow_diag(a::Array{BigFloat, 2}, d::fmpz_mat)
+function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
   s = size(a)
   R = RealRing()
   tmp_mpz = R.z1
