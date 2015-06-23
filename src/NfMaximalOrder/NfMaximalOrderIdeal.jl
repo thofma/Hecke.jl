@@ -671,7 +671,7 @@ end
 ###########################################################################################
 
 function valuation(a::nf_elem, p::NfMaximalOrderIdeal)
-  @hassert :NfMaximalOrder 0 a != 0 
+  @hassert :NfMaximalOrder 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   if isdefined(p, :valuation)
     return p.valuation(a)
