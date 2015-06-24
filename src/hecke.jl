@@ -23,7 +23,7 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
 
 export NfNumberField, hash
 
-import Base: show, minimum, rand, prod, copy
+import Base: show, minimum, rand, prod, copy, rand!
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again

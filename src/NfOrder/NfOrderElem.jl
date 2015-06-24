@@ -170,7 +170,7 @@ end
 ################################################################################
 
 function mod(a::NfOrderElem, m::fmpz)
-  ar = elem_in_basis(a)
+  ar = copy(elem_in_basis(a))
   for i in 1:degree(parent(a))
     ar[i] = mod(ar[i],m)
   end

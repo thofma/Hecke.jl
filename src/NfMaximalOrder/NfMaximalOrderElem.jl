@@ -120,7 +120,7 @@ end
 ################################################################################
 
 function norm(x::NfMaximalOrderElem)
-  return norm(elem_in_nf(x))
+  return FlintZZ(norm(elem_in_nf(x)))
 end
 
 ################################################################################
@@ -503,3 +503,42 @@ end
 dot(x::fmpz, y::nf_elem) = x*y
 
 dot(x::NfMaximalOrderElem, y::Int64) = y*x
+
+function add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  nothing
+end
+
+function add!(z::NfMaximalOrderElem, x::fmpz, y::NfMaximalOrderElem)
+  z.elem_in_nf = y.elem_in_nf + x
+  nothing
+end
+
+add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::fmpz) = add!(z, y, x)
+
+function add!(z::NfMaximalOrderElem, x::Integer, y::NfMaximalOrderElem)
+  z.elem_in_nf = x + y.elem_in_nf
+  nothing
+end
+
+add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::Integer) = add!(z, y, x)
+
+function mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfMaximalOrderElem, x::Integer, y::NfMaximalOrderElem)
+  z.elem_in_nf = ZZ(x) * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::Integer) = mul!(z, y, x)
+
+function mul!(z::NfMaximalOrderElem, x::fmpz, y::NfMaximalOrderElem)
+  z.elem_in_nf = x * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::fmpz) = mul!(z, y, x)
+

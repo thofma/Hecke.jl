@@ -2,7 +2,7 @@ import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf
+       discriminant, dot, hnf, _hnf
 
 ################################################################################
 #
@@ -785,7 +785,7 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function _hnf(x::fmpz_mat; shape = :upperright)
+function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :upperright
     return hnf(x)
   elseif shape == :lowerleft
@@ -809,7 +809,6 @@ function _swapcols(x::fmpz_mat)
 end
 
 function _swaprows!(x::fmpz_mat)
-  t = FlintZZ()
   r = rows(x)
   c = cols(x)
 
@@ -820,17 +819,19 @@ function _swaprows!(x::fmpz_mat)
   if r % 2 == 0
     for i in 1:div(r,2)
       for j = 1:c
-        t = x[i,j]
-        x[i,j] = x[r-i+1,j]
-        x[r-i+1,j] = t
+        # we swap x[i,j] <-> x[r-i+1,j]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, i - 1, j - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   else
     for i in 1:div(r-1,2)
       for j = 1:c
-        t = x[i,j]
-        x[i,j] = x[r-i+1,j]
-        x[r-i+1,j] = t
+        # we swap x[i,j] <-> x[r-i+1,j]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, i - 1, j - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   end
@@ -849,17 +850,19 @@ function _swapcols!(x::fmpz_mat)
   if c % 2 == 0
     for i in 1:div(c,2)
       for j = 1:r
-        t = x[j,i]
-        x[j,i] = x[j,c-i+1]
-        x[j,c-i+1] = t
+        # swap x[j,i] <-> x[j,c-i+1]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, i - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   else
     for i in 1:div(c-1,2)
       for j = 1:r
-        t = x[j,i]
-        x[j,i] = x[j,c-i+1]
-        x[j,c-i+1] = t
+        # swap x[j,i] <-> x[j,c-i+1]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, i - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   end

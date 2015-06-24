@@ -235,7 +235,7 @@ end
 
 # This works only if something is coprime??
 function +(a::NfOrder, b::NfOrder)
-  c = sub(hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b)))),1:degree(a),1:degree(a))
+  c = sub(_hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b))), :lowerleft), degree(a)+1:2*degree(a),1:degree(a))
   O = Order(nf(a),FakeFmpqMat(c,den(basis_mat(a))*den(basis_mat(b))))
   return O
 end

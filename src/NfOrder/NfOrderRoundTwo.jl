@@ -35,7 +35,7 @@ function pradical(O::NfOrder, p::fmpz)
   else
     m = MatrixSpace(ZZ, degree(O), degree(O))(p)
   end
-  return ideal(O,sub(hnf(m), 1:degree(O), 1:degree(O)))
+  return ideal(O,sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:cols(m)))
 end
 
 function pradical(O::NfOrder, p::Integer)
@@ -114,5 +114,5 @@ function _MaximalOrder(O::NfOrder)
     OO += pmaximal_overorder(O, p)
     @vprint :NfOrder 1 "done\n"
   end
-  return OO
+  return OO::NfOrder
 end
