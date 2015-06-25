@@ -18,7 +18,6 @@ export powermod, elem_in_basis, EquationOrder, deepcopy, Order
 #
 ################################################################################
 
-abstract ComOrd
 
 NfOrderSetID = ObjectIdDict()
 
@@ -34,9 +33,9 @@ type NfOrderSet
   end
 end
 
-NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, ComOrd}()
+NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
 
-type NfOrder <: ComOrd
+type NfOrder <: GenNfOrd
   nf::NfNumberField
   basis_ord # Array{NfOrder_elt, 1}
   basis_nf #_basis::Array{nf_elem, 1}

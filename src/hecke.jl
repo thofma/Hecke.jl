@@ -90,7 +90,7 @@ end
 
 function get_verbose_level(s::Symbol)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
-  return get(VERBOSE_LOOKUP, s, 0)
+  return get(VERBOSE_LOOKUP, s, 0)::Int
 end
 
 ################################################################################
@@ -115,7 +115,7 @@ end
 
 function get_assert_level(s::Symbol)
   !(s in ASSERT_SCOPE) && error("Not a valid symbol")
-  return get(ASSERT_LOOKUP, s, 0)
+  return get(ASSERT_LOOKUP, s, 0)::Int
 end
 
 macro hassert(args...)
@@ -182,6 +182,7 @@ include("Misc.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("MaximalOrderIdeals.jl")
+include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("misc.jl")
 include("NfMaximalOrder.jl")

@@ -2,7 +2,7 @@ import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf, _hnf
+       discriminant, dot, hnf, _hnf, representation_mat
 
 ################################################################################
 #
@@ -223,7 +223,7 @@ end
 
 function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   @assert nr >= 0 && nc >= 0
-  M = MatrixSpace(ZZ, nr, nc)()
+  M = MatrixSpace(ZZ, nr, nc)()::fmpz_mat
   t = ZZ()
   for i = 1:nr
     for j = 1:nc
@@ -237,7 +237,7 @@ end
 function sub(A::fmpz_mat, r::UnitRange, c::UnitRange)
   @assert !isdefined(r, :step) || r.step==1
   @assert !isdefined(c, :step) || c.step==1
-  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)
+  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
 end
 
 ################################################################################
@@ -571,7 +571,7 @@ function ppio(a::fmpz, b::fmpz)
 end
 
 function denominator(a::nf_elem)                                           
-  d_den = ZZ()                                                             
+  d_den = FlintZZ()::fmpz
   ccall((:nf_elem_get_den, :libflint), Void,                                                              
     (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}),
     &d_den, &a, &parent(a))                                             
@@ -614,9 +614,9 @@ dot(x::nf_elem, y::Int64) = x*y
 dot(x::nf_elem, y::fmpz) = x*y
 
 function representation_mat(a::nf_elem)
-  assert (denominator(a) == 1)
+  #@assert (denominator(a) == 1)
   n = degree(a.parent)
-  M = MatrixSpace(ZZ, n,n)()
+  M = MatrixSpace(FlintZZ, n,n)()::fmpz_mat
   t = gen(a.parent)
   b = a
   for i = 1:n-1
@@ -786,14 +786,13 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
 end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
-  if shape == :upperright
-    return hnf(x)
-  elseif shape == :lowerleft
+  if shape == :lowerleft
     h = hnf(_swapcols(x))
-    _swapcols!(h);
-    _swaprows!(h);
-    return h
+    _swapcols!(h)
+    _swaprows!(h)
+    return h::fmpz_mat
   end
+  return hnf(x)::fmpz_mat
 end
 
 function _swaprows(x::fmpz_mat)

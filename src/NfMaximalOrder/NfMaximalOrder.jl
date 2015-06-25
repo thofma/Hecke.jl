@@ -1,6 +1,5 @@
 export NfMaximalOrder, MaximalOrder
 
-abstract ComMaxOrder 
 
 ################################################################################
 #
@@ -8,7 +7,7 @@ abstract ComMaxOrder
 #
 ################################################################################
 
-NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, ComMaxOrder}()
+NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
 
 NfMaximalOrderSetID = ObjectIdDict()
 
@@ -24,7 +23,7 @@ type NfMaximalOrderSet
   end
 end
 
-type NfMaximalOrder <: ComMaxOrder 
+type NfMaximalOrder <: GenNfOrd
   nf::NfNumberField
   basis_nf::Array{nf_elem, 1}   # Array of number field elements
   basis_ord                     # Array of order elements
