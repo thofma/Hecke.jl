@@ -2,7 +2,7 @@ import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf, _hnf, representation_mat
+       discriminant, dot, hnf, _hnf, representation_mat, signature
 
 ################################################################################
 #
@@ -356,7 +356,6 @@ function next_prime(z::Integer)
   return z
 end
 
-
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....
@@ -470,26 +469,6 @@ end
 #  @assert d==1 && n==1 
 #  return f
 #end
-
-###############################################################################
-#
-#   discriminant of maximal order ...
-#
-###############################################################################
-
-function discriminant(O::PariMaximalOrder)
-  K = O.pari_nf.nf  
-  f = K.pol
-  R = parent(f)
-  Sy,y = PolynomialRing(ZZ,"y")
-  coef = typeof(ZZ(0))[]
-  for i in 0:degree(f)
-    push!(coef,ZZ(coeff(f,i)))
-  end
-  g = Sy(coef)
-  disc = div(discriminant(g),ZZ(index(O))^2)
-  return disc
-end
 
 ################################################################################
 #
@@ -867,3 +846,39 @@ function _swapcols!(x::fmpz_mat)
   end
   nothing
 end
+
+################################################################################
+#
+#  Signature 
+#
+################################################################################
+
+function signature(x::fmpz_poly)
+  r = Array(Int, 1)
+  s = Array(Int, 1)
+  ccall((:fmpz_poly_signature, :libflint), Void, (Ptr{Int}, Ptr{Int}, Ptr{fmpz_poly}), r, s, &x)
+  return (r[1],s[1])
+end
+
+function signature(x::fmpq_poly)
+  R, = PolynomialRing(FlintZZ, "x")
+  return signature(R(x))
+end
+
+function signature(K::NfNumberField)
+  return signature(K.pol)
+end
+
+function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
+  d = denominator(b[1])
+  n = degree(K)
+  for i = 2:n
+    d = Base.lcm(d, denominator(b[i]))
+  end
+  M = MatrixSpace(ZZ, n,n)()
+  for i = 1:n
+    element_to_mat_row!(M, i, b[i]*d)
+  end
+  return M, d
+end 
+

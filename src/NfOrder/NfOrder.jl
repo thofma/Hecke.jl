@@ -1,6 +1,32 @@
 ################################################################################
 #
-#  NfOrder.jl : Orders in Number fields
+#                   NfOrder.jl : Orders in Number fields
+#
+# This file is part of hecke.
+#
+# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 #
 #  Copyright (C) 2015 Tommy Hofmann
 #
@@ -18,8 +44,7 @@ export powermod, elem_in_basis, EquationOrder, deepcopy, Order
 #
 ################################################################################
 
-
-NfOrderSetID = ObjectIdDict()
+const NfOrderSetID = ObjectIdDict()
 
 type NfOrderSet
   nf::NfNumberField
@@ -33,54 +58,63 @@ type NfOrderSet
   end
 end
 
-NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
+const NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
 
 type NfOrder <: GenNfOrd
   nf::NfNumberField
-  basis_ord # Array{NfOrder_elt, 1}
-  basis_nf #_basis::Array{nf_elem, 1}
-  basis_mat::FakeFmpqMat
-  basis_mat_inv::FakeFmpqMat
-  index::fmpz
-  disc::fmpz
-  disc_fac
-  isequationorder::Bool
-  parent::NfOrderSet
+  basis_nf::Array{nf_elem, 1} # Basis as number field elements
+  basis_ord                   # Array{NfOrderElt, 1}
+  basis_mat::FakeFmpqMat      # Basis matrix with respect to number field basis
+  basis_mat_inv::FakeFmpqMat  # Inverse of basis matrix
+  index::fmpz                 # ??
+  disc::fmpz                  # Discriminant
+  disc_fac                    # ??
+  isequationorder::Bool       # Flag for being equation order
+  parent::NfOrderSet          # Parent object
+  signature::Tuple{Int, Int}  # Signature of the associated number field
+                              # (-1, 0) means 'not set'
 
   function NfOrder()
     z = new()
+    # Populate with 'default' values
+    z.signature = (-1,0)      
+    z.isequationorder = false
     return z
   end
 end
 
-# need outer constructor or else NfOrderElem is not known at this point
-function NfOrder(a::NfNumberField)
-  A = FakeFmpqMat(basis_mat(a,basis(a)))
-  if haskey(NfOrderID, (a,A))
-    return NfOrderID[(a,A)]
+# We use outer constructors or else NfOrderElem is not known at this point
+
+# The following constructs the order with basis matrix the identity matrix
+function NfOrder(K::NfNumberField)
+  A = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
+  if haskey(NfOrderID, (K,A))
+    return NfOrderID[(K,A)]
   else
     z = NfOrder()
-    z.nf = a
-    z.parent = NfOrderSet(a)
+    z.parent = NfOrderSet(K)
+    z.nf = K
     z.basis_mat = A
-    z.basis_nf = basis(a)
-    z.basis_ord = Array(NfOrderElem, degree(a))
-    z.basis_ord[1] = z(Nemo.one(a), false)
-    for i in 2:degree(a)
-      z.basis_ord[i] = z(gen(a)^(i-1), false)
+    z.basis_nf = basis(K)
+    z.basis_ord = Array(NfOrderElem, degree(K))
+    z.basis_ord[1] = z(K(1), false)
+    for i in 2:degree(K)
+      z.basis_ord[i] = z(gen(K)^(i-1), false)
     end
-    NfOrderID[(a, A)] = z
+    NfOrderID[(K, A)] = z
     return z
   end
 end
 
+# Construct the order with basis matrix x
 function NfOrder(K::NfNumberField, x::FakeFmpqMat)
   if haskey(NfOrderID, (K,x))
     return NfOrderID[(K,x)]
   else
     z = NfOrder()
-    z.basis_mat = x
+    z.parent = NfOrderSet(K)
     z.nf = K
+    z.basis_mat = x
     B = Array(NfOrderElem, degree(K))
     BB = Array(nf_elem, degree(K))
     for i in 1:degree(K)
@@ -96,6 +130,7 @@ function NfOrder(K::NfNumberField, x::FakeFmpqMat)
   end
 end
 
+# Construct the order with basis a
 function NfOrder(a::Array{nf_elem, 1})
   K = parent(a[1])
   A = FakeFmpqMat(basis_mat(K,a))
@@ -103,13 +138,24 @@ function NfOrder(a::Array{nf_elem, 1})
     return NfOrderID[(K,A)]
   else
     z = NfOrder()
-    z.nf = parent(a[1])
+    z.parent = NfOrderSet(K)
+    z.nf = K
     z.basis_nf = a
-    z.parent = NfOrderSet(z.nf)
+    z.basis_mat = A
+    z.basis_ord = Array(NfOrderElem, degree(K))
+    for i in 1:degree(K)
+      z.basis_ord[i] = z(a[i], false)
+    end
     NfOrderID[(K,A)] = z
     return z
   end
 end
+
+################################################################################
+#
+#  Copy of an order
+#
+################################################################################
 
 function deepcopy(O::NfOrder)
   z = NfOrder()
@@ -121,7 +167,6 @@ function deepcopy(O::NfOrder)
   return z
 end
 
- 
 ################################################################################
 #
 #  Field access
@@ -156,29 +201,11 @@ function basis_nf(O::NfOrder)
   return O.basis_nf
 end
 
-function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
-  d = denominator(b[1])
-  n = degree(K)
-  for i = 2:n
-    d = Base.lcm(d, denominator(b[i]))
-  end
-  M = MatrixSpace(ZZ, n,n)()
-  for i = 1:n
-    element_to_mat_row!(M, i, b[i]*d)
-  end
-  return M, d
-end 
-
 function basis_mat(O::NfOrder)
   if isdefined(O, :basis_mat)
     return O.basis_mat
   end
-  error("This should not happen")
-  A = basis(O)
-  B = Array(nf_elem, degree(O))
-  for i in 1:degree(O)
-    B[i] = elem_in_nf(A[i])
-  end
+  A = basis_nf(O)
   O.basis_mat = FakeFmpqMat(basis_mat(O.nf, B))
   return O.basis_mat
 end
@@ -191,13 +218,7 @@ function basis_mat_inv(O::NfOrder)
   return O.basis_mat_inv
 end
 
-function isequationorder(O::NfOrder)
-  if !isdefined(O, :isequationorder)
-    return O.isequationorder
-  end
-  O.isequationorder = false
-  return false
-end
+isequationorder(O::NfOrder) = O.isequationorder
 
 nf(O::NfOrder) = O.nf
 
@@ -207,34 +228,16 @@ parent(O::NfOrder) = O.parent
 
 ################################################################################
 #
-#  Number field element containment
-#
-################################################################################
-
-function _check_elem_in_order(a::nf_elem, O::NfOrder)
-  d = denominator(a)
-  b = d*a 
-  M = MatrixSpace(ZZ, 1, degree(O))()
-  element_to_mat_row!(M,1,b)
-  t = FakeFmpqMat(M,d)
-  x = t*basis_mat_inv(O)
-  v = Array(fmpz, degree(O))
-  for i in 1:degree(O)
-    v[i] = x.num[1,i]
-  end
-  return (x.den == 1, v) 
-end  
-
-
-################################################################################
-#
 #  Binary operations
 #
 ################################################################################
 
 # This works only if something is coprime??
 function +(a::NfOrder, b::NfOrder)
-  c = sub(_hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),den(basis_mat(a))*num(basis_mat(b))), :lowerleft), degree(a)+1:2*degree(a),1:degree(a))
+  c = sub(_hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),
+                    den(basis_mat(a))*num(basis_mat(b))),
+               :lowerleft),
+          degree(a)+1:2*degree(a),1:degree(a))
   O = Order(nf(a),FakeFmpqMat(c,den(basis_mat(a))*den(basis_mat(b))))
   return O
 end
@@ -259,32 +262,29 @@ end
 
 ################################################################################
 #
-#  Parent call overloading
+#  Parent object overloading
 #
 ################################################################################
 
-@doc """ dasd sads """ ->
-function Base.call(a::NfOrderSet)
+function call(a::NfOrderSet)
   z = NfOrder()
   z.parent = a
   z.nf = a.nf
   return z
 end
 
-@doc """ ich produziere eine Ordnung"""->
-function Order(a::Array{nf_elem, 1}) 
-  # check if it is a basis?
+function Order(a::Array{nf_elem, 1}, check = true) 
+  # We should check if it really is a basis and the elements are integral
   return NfOrder(a)
 end
 
-@doc """ ich auch """->
-function Order(a::NfNumberField, b::FakeFmpqMat)
-  return NfOrder(a,b)
+function Order(K::NfNumberField, a::FakeFmpqMat, check = true)
+  # We should check if a has full rank and the elements are integral?
+  return NfOrder(K,a)
 end
 
-function EquationOrder(a::NfNumberField)
-  # check if a is simple (when we have non-simple fields)
-  z = NfOrder(a)
+function EquationOrder(K::NfNumberField)
+  z = NfOrder(K)
   z.isequationorder = true
   return z
 end
@@ -299,7 +299,6 @@ function discriminant(O::NfOrder)
   if isdefined(O, :disc)
     return O.disc
   end
-
   A = MatrixSpace(ZZ, degree(O), degree(O))()
   B = basis(O)
   for i in 1:degree(O)

@@ -201,7 +201,7 @@ function show(io::IO, id::NfMaximalOrderIdeal)
   end
 end
 
-function vshow(A::NfMaximalOrderIdeal)
+function vshow(A)
   for i in fieldnames(typeof(A))
     if isdefined(A, i)
       println("$i: ")

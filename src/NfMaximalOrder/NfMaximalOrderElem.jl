@@ -26,6 +26,8 @@ function NfMaximalOrderElem(O::NfMaximalOrder, x::nf_elem; check::Bool = true )
     if b
       return O(x,v)
     end
+# Check if a is contained in O
+# In this case, also return the coefficient vector v
   end
   z = NfMaximalOrderElem(O)
   z.elem_in_nf = x

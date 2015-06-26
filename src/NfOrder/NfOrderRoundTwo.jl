@@ -8,42 +8,6 @@ export pradical, pmaximal_overorder, MaximalOrder
 
 ################################################################################
 #
-#  Compute the p-radical of an order
-#
-################################################################################
-
-#function pradical(O::NfOrder, p::fmpz)
-#  j = clog(ZZ(degree(O)),p)
-#  R = ResidueRing(ZZ,p)
-#  A = MatrixSpace(R, degree(O), degree(O))()
-#  for i in 1:degree(O)
-#    t = powermod(basis(O)[i], p^j, p)
-#    ar = elem_in_basis(t)
-#    for k in 1:degree(O)
-#      A[i,k] = ar[k]
-#    end
-#  end
-#  X = kernel(A)
-#  Mat = MatrixSpace(ZZ, 1, degree(O))
-#  MMat = MatrixSpace(R, 1, degree(O))
-#  if length(X) != 0
-#    m = lift(MMat(X[1]))
-#    for x in 2:length(X)
-#      m = vcat(m,lift(MMat(X[x])))
-#    end
-#    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
-#  else
-#    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
-#  end
-#  return ideal(O,sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:cols(m)))
-#end
-#
-#function pradical(O::NfOrder, p::Integer)
-#  return pradical(O, ZZ(p))
-#end
-
-################################################################################
-#
 #  Compute an overorder, which is larger at p (if possible)
 #
 ################################################################################
@@ -114,5 +78,5 @@ function _MaximalOrder(O::NfOrder)
     OO += pmaximal_overorder(O, p)
     @vprint :NfOrder 1 "done\n"
   end
-  return OO::NfOrder
+  return OO
 end

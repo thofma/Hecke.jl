@@ -28,7 +28,7 @@ type NfOrderElem
       !x && error("Number field element not in the order")
       #z.elem_in_basis = y
     end
-    z.elem_in_nf = a
+    z.elem_in_nf = deepcopy(a)
     z.parent = O
     return z
   end
