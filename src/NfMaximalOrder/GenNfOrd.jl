@@ -87,7 +87,7 @@ function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
 end  
 
 function in(a::nf_elem, O::GenNfOrd)
-  (x,y) = _check_elem_in_maximal_order(a,O)
+  (x,y) = _check_elem_in_order(a,O)
   return x
 end
 

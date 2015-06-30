@@ -95,7 +95,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
   
   function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz, b::nf_elem)
     r = new()
-    (x,y) = _check_elem_in_maximal_order(b,O)
+    (x,y) = _check_elem_in_order(b,O)
     @hassert :NfMaximalOrder x
     r.gen_one = a
     r.gen_two = O(b, y)
@@ -126,7 +126,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
   function NfMaximalOrderIdeal(O::NfMaximalOrder, b::nf_elem)
     
     # check if element is contained in maximal order
-    (x,y) = _check_elem_in_maximal_order(b,O)
+    (x,y) = _check_elem_in_order(b,O)
     @hassert :NfMaximalOrder x
 
     bi = inv(b)
