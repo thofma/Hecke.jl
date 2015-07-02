@@ -495,7 +495,7 @@ function prod_by_int(A::NfMaximalOrderIdeal, a::fmpz)
   global last = (A, a)
   @assert has_2_elem(A) && is_2_normal(A)
   if a==1 || a==-1 
-    println ("shortcut: returning ", A)
+    println("shortcut: returning ", A)
     return A
   end
   println("prod_by_int", A, " and ", a)
