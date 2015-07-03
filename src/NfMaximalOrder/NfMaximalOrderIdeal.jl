@@ -95,7 +95,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
   
   function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz, b::nf_elem)
     r = new()
-    (x,y) = _check_elem_in_maximal_order(b,O)
+    (x,y) = _check_elem_in_order(b,O)
     @hassert :NfMaximalOrder x
     r.gen_one = a
     r.gen_two = O(b, y)
@@ -126,7 +126,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
   function NfMaximalOrderIdeal(O::NfMaximalOrder, b::nf_elem)
     
     # check if element is contained in maximal order
-    (x,y) = _check_elem_in_maximal_order(b,O)
+    (x,y) = _check_elem_in_order(b,O)
     @hassert :NfMaximalOrder x
 
     bi = inv(b)
@@ -241,7 +241,6 @@ function minimum(A::NfMaximalOrderIdeal)
   end
   if is_weakly_normal(A)
     println(has_2_elem(A))
-    vshow(A)
     d = denominator(inv(A.gen_two), A.parent.order)
     d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
@@ -960,7 +959,6 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer)
   # We need the ramification indices and a 2-element presentation
   for j in 1:length(AA)
     P = AA[j]
-    vshow(P)
     _assure_weakly_normal_presentation(P)
     assure_2_normal(P)
     e = Int(valuation(NfMaximalOrderIdeal(O, nf(O)(p)), P))

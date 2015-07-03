@@ -22,7 +22,7 @@ end
 
 function NfMaximalOrderElem(O::NfMaximalOrder, x::nf_elem; check::Bool = true )
   if check
-    b,v = _check_elem_in_maximal_order(x, O)
+    b,v = _check_elem_in_order(x, O)
     if b
       return O(x,v)
     end
@@ -110,7 +110,7 @@ function elem_in_basis(x::NfMaximalOrderElem)
 #  if isdefined(x, :elem_in_basis)
 #    return x.elem_in_basis
 #  end
-  (b,v) = _check_elem_in_maximal_order(elem_in_nf(x), parent(x))
+  (b,v) = _check_elem_in_order(elem_in_nf(x), parent(x))
   x.elem_in_basis = v
   return v
 end
