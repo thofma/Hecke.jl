@@ -58,7 +58,8 @@ type NfOrderSet
   end
 end
 
-const NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
+#const NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
+const NfOrderID = ObjectIdDict()
 
 type NfOrder <: GenNfOrd
   nf::NfNumberField
@@ -89,7 +90,7 @@ end
 function NfOrder(K::NfNumberField)
   A = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
   if haskey(NfOrderID, (K,A))
-    return NfOrderID[(K,A)]
+    return NfOrderID[(K,A)]::NfOrder
   else
     z = NfOrder()
     z.parent = NfOrderSet(K)
@@ -102,14 +103,14 @@ function NfOrder(K::NfNumberField)
       z.basis_ord[i] = z(gen(K)^(i-1), false)
     end
     NfOrderID[(K, A)] = z
-    return z
+    return z::NfOrder
   end
 end
 
 # Construct the order with basis matrix x
 function NfOrder(K::NfNumberField, x::FakeFmpqMat)
   if haskey(NfOrderID, (K,x))
-    return NfOrderID[(K,x)]
+    return NfOrderID[(K,x)]::NfOrder
   else
     z = NfOrder()
     z.parent = NfOrderSet(K)
@@ -126,7 +127,7 @@ function NfOrder(K::NfNumberField, x::FakeFmpqMat)
     z.basis_nf = BB
     z.parent = NfOrderSet(z.nf)
     NfOrderID[(K,x)] = z
-    return z
+    return z::NfOrder
   end
 end
 
@@ -135,7 +136,7 @@ function NfOrder(a::Array{nf_elem, 1})
   K = parent(a[1])
   A = FakeFmpqMat(basis_mat(K,a))
   if haskey(NfOrderID, (K,A))
-    return NfOrderID[(K,A)]
+    return NfOrderID[(K,A)]::NfOrder
   else
     z = NfOrder()
     z.parent = NfOrderSet(K)
@@ -147,7 +148,7 @@ function NfOrder(a::Array{nf_elem, 1})
       z.basis_ord[i] = z(a[i], false)
     end
     NfOrderID[(K,A)] = z
-    return z
+    return z::NfOrder
   end
 end
 
@@ -160,6 +161,8 @@ end
 function deepcopy(O::NfOrder)
   z = NfOrder()
   for x in fieldnames(O)
+    # This is slow. Julia can't interfere the type of the right hand side.
+    # (According to @code_warntype)
     if isdefined(O, x)
       z.(x) = O.(x)
     end
