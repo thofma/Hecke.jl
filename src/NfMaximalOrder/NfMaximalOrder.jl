@@ -201,7 +201,7 @@ degree(x::NfMaximalOrder) = degree(nf(x))
 #
 ################################################################################
 
-# Migrated to GenNfOrd.jl
+# Migrated to GenNfOrd.jl under new name _check_elem_in_order
 
 #function _check_elem_in_maximal_order(x::nf_elem, O::NfMaximalOrder)
 #  d = denominator(x)

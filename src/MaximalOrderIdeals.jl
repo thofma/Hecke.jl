@@ -188,7 +188,7 @@ function norm(A::MaximalOrderIdeal)
   if has_basis(A)
     A.norm = determinant(A.basis[1])//A.basis[2]^degree(O) // index(O)
   end
-  assert (isdefined(A, :norm))
+  assert(isdefined(A, :norm))
   return A.norm
 end
 
@@ -438,7 +438,7 @@ function prod_by_int(A::MaximalOrderIdeal, a::fmpz)
   global last = (A, a)
   @assert has_2_elem(A) && is_2_normal(A)
   if a==1 || a==-1 
-    println ("shortcut: returning ", A)
+    println("shortcut: returning ", A)
     return A
   end
   println("prod_by_int", A, " and ", a)
