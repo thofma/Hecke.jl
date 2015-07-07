@@ -480,14 +480,14 @@ function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
   tmp_mpz = R.z1
   for i = 1:s[1]
     for j = 1:s[2]
-      e = ccall((:mpfr_get_z_2exp, :libmpfr), Int64, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
-      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Int64, Int32), &a[i,j], &tmp_mpz, e+Int64(d[1,j]), Base.MPFR.ROUNDING_MODE[end])
+      e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Clong, Int32), &a[i,j], &tmp_mpz, e+Clong(d[1,j]), Base.MPFR.ROUNDING_MODE[end])
     end
   end
 end
 
 #converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
-function round_scale(a::Array{BigFloat, 2}, l::Int64)
+function round_scale(a::Array{BigFloat, 2}, l::Int)
   s = size(a)
   b = MatrixSpace(ZZ, s[1], s[2])()
   R = RealRing()
@@ -500,14 +500,14 @@ function round_scale(a::Array{BigFloat, 2}, l::Int64)
       a[i,j].exp += l
       ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], Base.MPFR.ROUNDING_MODE[end]) 
       a[i,j].exp = e
-      f = ccall((:mpfr_get_z_2exp, :libmpfr), Int, (Ptr{BigInt}, Ptr{BigFloat}),
+      f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}),
         &tmp_mpz, &tmp_mpfr)
       ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
         &tmp_fmpz, &tmp_mpz)
       if f > 0  
-        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int64), &tmp_fmpz, &tmp_fmpz, f)
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, f)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int64), &tmp_fmpz, &tmp_fmpz, -f);
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, -f);
       end
       setindex!(b, tmp_fmpz, i, j)
     end
@@ -518,7 +518,7 @@ end
 function shift!(g::fmpz_mat, l::Int)
   for i=1:rows(g)
     for j=1:cols(g)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int64, Int64), &g, i-1, j-1)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &g, i-1, j-1)
       if l > 0
         ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
       else
@@ -531,7 +531,7 @@ end
  
 #CF todo: use limit!!!
 function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
-                prec::Int64 = 100, limit::Int64 = 0)
+                prec::Int = 100, limit::Int = 0)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
   b = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   if !isdefined(rt_c, :cache)
@@ -567,7 +567,7 @@ end
 ################################################################################
 
 function one_step(c::roots_ctx, b::NfMaximalOrderFracIdeal,
-                p::NfMaximalOrderIdeal; prec::Int64 = 100)
+                p::NfMaximalOrderIdeal; prec::Int = 100)
   b = p*b
   simplify(b)
   g1 = short_elem(c, b, prec = prec)
@@ -578,12 +578,12 @@ function one_step(c::roots_ctx, b::NfMaximalOrderFracIdeal,
 end
 
 function short_elem(c::roots_ctx, A::NfMaximalOrderFracIdeal,
-                v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int64 = 100)
+                v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int = 100)
   return divexact(short_elem(c, A.num, v, prec = prec), A.den)
 end
 
 function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
-                v::fmpz_mat = MatrixSpace(ZZ, 1,1)(); prec::Int64 = 100)
+                v::fmpz_mat = MatrixSpace(ZZ, 1,1)(); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
@@ -597,7 +597,7 @@ function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
 end
 
 function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
-                v::fmpz_mat;prec::Int64 = 100, limit::Int64 = 0)
+                v::fmpz_mat;prec::Int = 100, limit::Int = 0)
   l, t = lll(c, A, v, prec = prec, limit = limit)
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
@@ -619,7 +619,7 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
 end
 
 function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
-                prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
+                prec::Int = 100, val::Int=0, limit::Int = 0)
   I = IdealRelationsCtx()
   I.A = A
   v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
@@ -636,8 +636,8 @@ end
 
 global _start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
-                A::NfMaximalOrderIdeal; prec::Int64 = 200, val::Int64 = 0,
-                limit::Int64 = 0)
+                A::NfMaximalOrderIdeal; prec::Int = 200, val::Int = 0,
+                limit::Int = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()
   I = IdealRelationsCtx(clg, A, prec = prec, val = val, limit = limit)
@@ -738,7 +738,7 @@ function class_group_current_result(clg::ClassGrpCtx)
   end
 
   clg.mis = Set(1:0)
-  return (clg.h, clg.mis)::Tuple{fmpz, Set{Int64}}
+  return (clg.h, clg.mis)::Tuple{fmpz, Set{Int}}
 end
 
 ################################################################################

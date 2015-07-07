@@ -582,7 +582,7 @@ function element_from_mat_row(K::NfNumberField, a::fmpz_mat, i::Int)
   b = K();
   ccall((:nf_elem_from_mat_row, :libflint), 
         Void, 
-       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int64, Ptr{Nemo.NfNumberField}), 
+       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int, Ptr{Nemo.NfNumberField}),
        &b, &a, i-1, &parent(b))
   set_denominator!(b, d_from)     
   return b
