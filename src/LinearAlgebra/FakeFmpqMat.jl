@@ -178,8 +178,8 @@ function hnf!(x::FakeFmpqMat)
   x.num = h
 end
 
-function hnf(x::FakeFmpqMat)
-  h = hnf(num(x))
+function hnf(x::FakeFmpqMat, shape = :lowerleft)
+  h = _hnf(num(x), shape)
   return FakeFmpqMat(h,den(x))
 end
 

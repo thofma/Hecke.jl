@@ -22,10 +22,12 @@ end
 
 function NfMaximalOrderElem(O::NfMaximalOrder, x::nf_elem; check::Bool = true )
   if check
-    b,v = _check_elem_in_maximal_order(x, O)
+    b,v = _check_elem_in_order(x, O)
     if b
       return O(x,v)
     end
+# Check if a is contained in O
+# In this case, also return the coefficient vector v
   end
   z = NfMaximalOrderElem(O)
   z.elem_in_nf = x
@@ -108,7 +110,7 @@ function elem_in_basis(x::NfMaximalOrderElem)
 #  if isdefined(x, :elem_in_basis)
 #    return x.elem_in_basis
 #  end
-  (b,v) = _check_elem_in_maximal_order(elem_in_nf(x), parent(x))
+  (b,v) = _check_elem_in_order(elem_in_nf(x), parent(x))
   x.elem_in_basis = v
   return v
 end
@@ -120,7 +122,7 @@ end
 ################################################################################
 
 function norm(x::NfMaximalOrderElem)
-  return norm(elem_in_nf(x))
+  return FlintZZ(norm(elem_in_nf(x)))
 end
 
 ################################################################################
@@ -503,3 +505,42 @@ end
 dot(x::fmpz, y::nf_elem) = x*y
 
 dot(x::NfMaximalOrderElem, y::Int64) = y*x
+
+function add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  nothing
+end
+
+function add!(z::NfMaximalOrderElem, x::fmpz, y::NfMaximalOrderElem)
+  z.elem_in_nf = y.elem_in_nf + x
+  nothing
+end
+
+add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::fmpz) = add!(z, y, x)
+
+function add!(z::NfMaximalOrderElem, x::Integer, y::NfMaximalOrderElem)
+  z.elem_in_nf = x + y.elem_in_nf
+  nothing
+end
+
+add!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::Integer) = add!(z, y, x)
+
+function mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::NfMaximalOrderElem)
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  nothing
+end
+
+function mul!(z::NfMaximalOrderElem, x::Integer, y::NfMaximalOrderElem)
+  z.elem_in_nf = ZZ(x) * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::Integer) = mul!(z, y, x)
+
+function mul!(z::NfMaximalOrderElem, x::fmpz, y::NfMaximalOrderElem)
+  z.elem_in_nf = x * y.elem_in_nf
+  nothing
+end
+
+mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::fmpz) = mul!(z, y, x)
+

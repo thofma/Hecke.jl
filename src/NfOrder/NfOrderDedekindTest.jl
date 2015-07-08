@@ -130,11 +130,11 @@ function dedekind_test(O::NfOrder, p::fmpz)
 
   b = FakeFmpqMat(n,p)
 
-  OO = Order(nf(O), sub(hnf(b),1:degree(O), 1:degree(O)))
+  OO = Order(nf(O), sub(hnf(b),degree(O) + 1:2*degree(O), 1:degree(O)))
 
   OO.isequationorder = false
 
-  OO.discriminant = divexact(discriminant(O),p^(2*(degree(O)-degree(U))))
+  OO.disc = divexact(discriminant(O),p^(2*(degree(O)-degree(U))))
 
   return false, OO
 end

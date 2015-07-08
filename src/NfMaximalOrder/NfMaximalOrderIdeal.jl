@@ -32,27 +32,26 @@ end
 
 order(S::NfMaximalOrderIdealSet) = S.order
 
-type NfMaximalOrderIdeal <: RingElem
+type NfMaximalOrderIdeal <: GenNfOrdIdeal
   basis::Array{NfMaximalOrderElem, 1}
   basis_mat::fmpz_mat
   gen_one::fmpz
   gen_two::NfMaximalOrderElem
-  gens_are_short::Int
-  gens_are_normal::fmpz
-  gens_are_weakly_normal::Int  # 1 if Norm(A) = gcd(Norm, Norm) and gen_one is
-                               # int
-                               # weaker than normality - at least potentialy
+  gens_short::Bool
+  gens_normal::fmpz
+  gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
+                           # weaker than normality - at least potentialy
   norm::fmpz
   minimum::fmpz
-  is_prime::Int                # 0: don't know
-                               # 1 known to be prime
-                               # 2 known to be not prime
-  is_principal::Int            # as above
+  is_prime::Int            # 0: don't know
+                           # 1 known to be prime
+                           # 2 known to be not prime
+  is_principal::Int        # as above
   princ_gen::NfMaximalOrderElem
   splitting_type::Tuple{Int, Int}
 
-  valuation::Function          # a function returning "the" valuation -
-                               # mind that the ideal is not prime
+  valuation::Function      # a function returning "the" valuation -
+                           # mind that the ideal is not prime
 
   parent::NfMaximalOrderIdealSet
 
@@ -67,8 +66,8 @@ type NfMaximalOrderIdeal <: RingElem
     r.norm = p^f
     r.minimum = p
     r.is_prime = 1
-    r.gens_are_normal = p
-    r.gens_are_weakly_normal = 1
+    r.gens_normal = p
+    r.gens_weakly_normal = 1
     r.parent = ord
     r.splitting_type = e, f
     return r
@@ -78,6 +77,11 @@ type NfMaximalOrderIdeal <: RingElem
     r = new()
     r.basis_mat = a
     r.parent = par
+    r.gens_short = false
+    r.gens_weakly_normal = false
+    r.is_prime = 0
+    r.is_prime = 0
+    r.splitting_type = (0,0)
     return r
   end
 
@@ -91,7 +95,7 @@ type NfMaximalOrderIdeal <: RingElem
   
   function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz, b::nf_elem)
     r = new()
-    (x,y) = _check_elem_in_maximal_order(b,O)
+    (x,y) = _check_elem_in_order(b,O)
     @hassert :NfMaximalOrder x
     r.gen_one = a
     r.gen_two = O(b, y)
@@ -109,15 +113,20 @@ type NfMaximalOrderIdeal <: RingElem
   end
 
   function NfMaximalOrderIdeal(O::NfMaximalOrder)
-     r = new()
-     r.parent = NfMaximalOrderIdealSet(O)
-     return r
+    r = new()
+    r.parent = NfMaximalOrderIdealSet(O)
+    r.gens_short = false
+    r.gens_weakly_normal = false
+    r.is_prime = 0
+    r.is_prime = 0
+    r.splitting_type = (0,0)
+    return r
   end
   
   function NfMaximalOrderIdeal(O::NfMaximalOrder, b::nf_elem)
     
     # check if element is contained in maximal order
-    (x,y) = _check_elem_in_maximal_order(b,O)
+    (x,y) = _check_elem_in_order(b,O)
     @hassert :NfMaximalOrder x
 
     bi = inv(b)
@@ -133,11 +142,11 @@ type NfMaximalOrderIdeal <: RingElem
     C.princ_gen = C.gen_two
 
     if C.gen_one == 1
-      C.gens_are_normal = 2*C.gen_one
+      C.gens_normal = 2*C.gen_one
     else
-      C.gens_are_normal = C.gen_one
+      C.gens_normal = C.gen_one
     end
-    C.gens_are_weakly_normal = 1
+    C.gens_weakly_normal = 1
     return C
   end
 end
@@ -187,8 +196,17 @@ function show(io::IO, id::NfMaximalOrderIdeal)
    if isdefined(id, :basis_mat)
      print(io, "\nbasis_mat \n", id.basis_mat)
    end
-  if isdefined(id, :gens_are_normal)
-    print(io, "\ntwo normal wrt: ", id.gens_are_normal)
+  if isdefined(id, :gens_normal)
+    print(io, "\ntwo normal wrt: ", id.gens_normal)
+  end
+end
+
+function vshow(A)
+  for i in fieldnames(typeof(A))
+    if isdefined(A, i)
+      println("$i: ")
+      println(getfield(A, i), "\n")
+    end
   end
 end
 
@@ -202,7 +220,7 @@ function norm(A::NfMaximalOrderIdeal)
   if isdefined(A, :norm)
     return A.norm
   end
-  if has_2_elem(A) && A.gens_are_weakly_normal == 1
+  if has_2_elem(A) && A.gens_weakly_normal == 1
     A.norm = gcd(norm(K(A.gen_one)), norm(A.gen_two))
     return A.norm
   end
@@ -222,12 +240,14 @@ function minimum(A::NfMaximalOrderIdeal)
     return A.minimum
   end
   if is_weakly_normal(A)
+    println(has_2_elem(A))
     d = denominator(inv(A.gen_two), A.parent.order)
     d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
     return d
   end
-  println("cannot find minimum of", A)
+  A.minimum = basis_mat(A)[1,1]
+  return fmpz(A.minimum)
   @hassert :NfNfMaximalOrder 0 false
 end 
 
@@ -236,7 +256,7 @@ function is_prime_known(A::NfMaximalOrderIdeal)
 end
 
 function has_2_elem(A::NfMaximalOrderIdeal)
-  return isdefined(A, :gen_one)
+  return isdefined(A, :gen_two)
 end
 
 function has_minimum(A::NfMaximalOrderIdeal)
@@ -252,12 +272,12 @@ function has_basis_mat(A::NfMaximalOrderIdeal)
 end
 
 function is_weakly_normal(A::NfMaximalOrderIdeal)
-  return (isdefined(A, :gens_are_weakly_normal) &&
-        A.gens_are_weakly_normal==1) || is_2_normal(A)
+  return (isdefined(A, :gens_weakly_normal) &&
+        A.gens_weakly_normal == true) || is_2_normal(A)
 end
 
 function is_2_normal(A::NfMaximalOrderIdeal)
-  return isdefined(A, :gens_are_normal) && A.gens_are_normal > 1
+  return isdefined(A, :gens_normal) && A.gens_normal > 1
 end
 
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
@@ -322,7 +342,7 @@ function prod_via_2_elem_normal(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
                                         # correct value
   end
 
-  C.gens_are_normal = m
+  C.gens_normal = m
 
   return C
 end
@@ -405,7 +425,7 @@ function prod_via_2_elem_weakly(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
                     # otherwise, I don't know the correct value
   end
 
-  c.gens_are_weakly_normal = 1
+  c.gens_weakly_normal = 1
 
   return c
 end
@@ -494,7 +514,7 @@ function prod_by_int(A::NfMaximalOrderIdeal, a::fmpz)
     a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
   B = NfMaximalOrderIdeal(A.gen_one*a, a2*a, A.parent)
-  B.gens_are_normal = m
+  B.gens_normal = m
   if has_minimum(A)
     B.minimum = A.minimum * a
   end
@@ -513,50 +533,104 @@ end
 #
 ###########################################################################################
 
+# The following makes sure that A has a weakly normal presentation
+# Maybe we should allow an optional paramter (an fmpz),
+# which should be the first generator.
+# So far, the algorithm just samples (lifts of) random elements of A/m^2,
+# where m is the minimum of A.
+
+function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
+  if has_2_elem(A) && is_weakly_normal(A)
+    return
+  end
+
+  @hassert :NfMaximalOrder 1 has_basis_mat(A)
+
+  O = order(A)
+
+  # Because of the interesting choice for the HNF,
+  # we don't know the minimum (although we have a basis matrix)
+  # Thanks flint!
+
+  @hassert :NfMaximalOrder 1 has_minimum(A)
+
+  M = MatrixSpace(ZZ, 1, degree(O))
+
+  Amin2 = minimum(A)^2
+  Amind = minimum(A)^degree(O)
+
+  B = Array(BigInt, 1, degree(O))
+
+  gen = O()
+
+  # first compute something weakly normal
+  while true
+    # Magic constant
+    r = -BigInt(Amin2):BigInt(Amin2)
+    rand!(B, r)
+    m = M(B)
+    mm = m * basis_mat(A)
+    # the following should be done inplace
+    gen = dot(reshape(Array(mm), degree(O)), basis(O))
+    if norm(A) == gcd(Amind, norm(gen))
+      A.gen_one = minimum(A)
+      A.gen_two = gen
+      A.gens_weakly_normal = 1
+      return nothing
+    end
+  end
+end
+
 function assure_2_normal(A::NfMaximalOrderIdeal)
   if has_2_elem(A) && is_2_normal(A)
     return
   end 
   O = A.parent.order
-  K = O.pari_nf.nf
+  K = nf(O)
   n = degree(K)
 
   if has_2_elem(A)  && is_weakly_normal(A)
     m = minimum(A)
-    bas = basis(K, O)
-    r = -div(m+1, 2):div(m+1, 2)
+    bas = basis(O)
     # Magic constants
-    if length(r) > 1000 
+    if m > 1000 
       r = -500:500
+    else
+      r = -div(Int(m)+1,2):div(Int(m)+1,2)
     end
-    gen = K()
-    s = K()
+    #gen = K()
+    #s = K()
+    gen = zero(O)
+    s = O()
     cnt = 0
     while true
       cnt += 1
-      Nemo.rand_into!(bas, r, s)
-      Nemo.mult_into!(s, A.gen_two, s)
-      Nemo.add_into!(gen, rand(r)*A.gen_one, gen)
-      Nemo.add_into!(gen, s, gen)
+      #Nemo.rand_into!(bas, r, s)
+      rand!(s, O, r)
+      #Nemo.mult_into!(s, A.gen_two, s)
+      mul!(s, s, A.gen_two)
+      #Nemo.add_into!(gen, rand(r)*A.gen_one, gen)
+      add!(gen, rand(r)*A.gen_one, gen)
+      #Nemo.add_into!(gen, s, gen)
+      add!(gen, s, gen)
 #      gen += rand(r)*A.gen_one + rand(bas, r)*A.gen_two
-      gen = element_reduce_mod(gen, O, m^2)
-      mg = denominator(inv(gen), O) # the minimum of <gen>
+      #gen = element_reduce_mod(gen, O, m^2)
+      gen = mod(gen, m^2)
+      mg = denominator(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
       if gcd(m, div(m, g)) == 1 
-        if gcd(m^n, ZZ(norm(gen))) != norm(A)
-          println("\n\noffending ideal", A)
-          println("gen is", gen)
-          println("Wrong ideal\n\n")
+        if gcd(m^n, norm(gen)) != norm(A)
+          @vprint :NfMaximalOrder 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
           cnt += 10
           continue
         end
         break
       end
     end
-    println("used ", cnt, " attempts")
+    @vprint :NfMaximalOrder 1 "used $cnt attempts\n"
     A.gen_one = m
     A.gen_two = gen
-    A.gens_are_normal = m
+    A.gens_normal = m
     return
   end
   error("not implemented yet...")
@@ -587,7 +661,7 @@ function inv(A::NfMaximalOrderIdeal)
     temp = dn^degree(A.parent.order)//norm(A)
     @hassert :NfMaximalOrder 1 den(temp) == 1
     Ai.norm = num(temp)
-    Ai.gens_are_normal = A.gens_are_normal
+    Ai.gens_normal = A.gens_normal
     return NfMaximalOrderFracIdeal(Ai, dn)
   end
   error("Not implemented yet")
@@ -609,14 +683,14 @@ function basis_mat(A::NfMaximalOrderIdeal)
   end
 
   @hassert :NfMaximalOrder 1 has_2_elem(A)
-
   K = nf(order(A))
   n = degree(K)
-  c = vcat(MatrixSpace(ZZ, n, n)(A.gen_one), representation_mat(A.gen_two))
-  c = hnf(c)
-  c = submat(c, 1, 1, n, n)
+  T = MatrixSpace(FlintZZ, n, n)::Nemo.FmpzMatSpace
+  c = vcat(T(A.gen_one)::fmpz_mat, representation_mat(A.gen_two)::fmpz_mat)::fmpz_mat
+  c = _hnf(c, :lowerleft)
+  c = sub(c, n + 1:2*n, 1:n)
   A.basis_mat = c
-  return c  
+  return c::fmpz_mat
 end
 
 ###########################################################################################
@@ -703,7 +777,7 @@ function valuation(a::fmpz, p::NfMaximalOrderIdeal)
 end
 
 function valuation(A::NfMaximalOrderIdeal, p::NfMaximalOrderIdeal)
-  return min(valuation(A.gen_one, p)[1], valuation(A.gen_two, p))
+  return min(valuation(A.gen_one, p)[1], valuation(elem_in_nf(A.gen_two), p))
 end
 
 
@@ -819,19 +893,8 @@ end
 ################################################################################
 
 function prime_decomposition(O::NfMaximalOrder, p::Integer)
-  if mod(ZZ(index(O)),p) == 0
-    # fall back to pari
-    OO = PariMaximalOrder(PariNumberField(nf(O)))
-    l = prime_decomposition(OO, p)
-    P = IdealSet(O)
-    Q = P(l[1])
-    r = Array(Tuple{typeof(Q), Int}, lg(l.data)-1)
-    r[1] = (Q, Q.splitting_type[1])
-    for i = 2:lg(l.data)-1
-      Q = P(l[i])
-      r[i] = (Q, Q.splitting_type[1])
-    end
-    return r
+  if mod(fmpz(index(O)),p) == 0
+    return prime_dec_index(O, p)
   end
   return prime_dec_nonindex(O, p)
 end
@@ -871,8 +934,8 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer)
       ideal.gen_two = ideal.gen_two + O(p)
     end
 
-    ideal.gens_are_normal = p
-    ideal.gens_are_weakly_normal = 1
+    ideal.gens_normal = p
+    ideal.gens_weakly_normal = true
 
     if length(fac) == 1 && ideal.splitting_type[1] == 1
       # Prime number is inert, in particular principal
@@ -890,11 +953,31 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer)
   # I only want the rank, so it doesn't matter
   BB = _get_fp_basis(O, Ip, p)
   AA = _split_algebra(BB, Ip, p)
-  return AA
+  I = IdealSet(O)
+  result = Array(Tuple{typeof(I()),Int}, length(AA))
+  # We now have all prime ideals, but only their basis matrices
+  # We need the ramification indices and a 2-element presentation
+  for j in 1:length(AA)
+    P = AA[j]
+    _assure_weakly_normal_presentation(P)
+    assure_2_normal(P)
+    e = Int(valuation(NfMaximalOrderIdeal(O, nf(O)(p)), P))
+    f = 0
+    for i in 1:degree(O)
+      f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
+    end
+    P.splitting_type = e, f
+    P.norm = fmpz(p)^f
+    P.is_prime = 1
+    result[j] = (P, e)
+  end
+  return result
 end
 
 function _split_algebra(BB::Array{NfMaximalOrderElem}, Ip::NfMaximalOrderIdeal, p::Integer)
-  println("_split_algebra for $BB $Ip and $p")
+  if length(BB) == 1
+    return [ Ip ]
+  end
   O = order(Ip)
   C = zero(MatrixSpace(ResidueRing(ZZ, p), length(BB)+1, degree(O)))
   D = zero(MatrixSpace(ResidueRing(ZZ, p), length(BB), degree(O)))
@@ -907,7 +990,6 @@ function _split_algebra(BB::Array{NfMaximalOrderElem}, Ip::NfMaximalOrderIdeal, 
   r = rank(D)
   k = length(BB) - r
   # k is the dimension of the kernel of x -> x^p - x
-  println(k)
   if k == 1
     # the algebra is a field over F_p
     # the ideal Ip is a prime ideal!
@@ -927,19 +1009,14 @@ function _split_algebra(BB::Array{NfMaximalOrderElem}, Ip::NfMaximalOrderIdeal, 
     K = kernel(C)
     length(K) == 0 ? continue : nothing
     KK = K[1]
-    println(KK)
     f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](KK)
     degree(f) < 2 ? continue : nothing
-    println(x)
-    println(f)
     @hassert :NfMaximalOrder 0 issquarefree(f)
     # By theory, all factors should have degree 1 # exploit this if p is small!
     fac = factor(f)
     F = fac[1][1]
     H = divexact(f,F)
     E, U, V = gcdx(F, H)
-    println(F, " ", H)
-    println("$E $U $V")
     @hassert :NfMaximalOrder 0 E == 1
     H = U*F;
     idem = O(coeff(H,0).data)
@@ -963,7 +1040,6 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
   Amodp = FpMat(A)
   # I think rref can/should also return the rank
   B = rref(Amodp)
-  println(B)
   r = rank(B)
   C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, A.c))
   BB = Array(NfMaximalOrderElem, degree(O) - r)
@@ -977,7 +1053,6 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
       end
     end
   end
-  println("pivots of B: $pivots")
   i = 1
   k = 1
   while i <= degree(O)-r
@@ -999,15 +1074,15 @@ function mod(x::NfMaximalOrderElem, y::NfMaximalOrderIdeal)
   # this function assumes that HNF is upper right 
   # !!! This must be changes as soon as HNF is lower left
   O = order(y)
-  @hassert :NfMaximalOrder 0 basis_mat(y)[1,degree(O)] == zero(ZZ)
   b = elem_in_basis(x)
   a = copy(b)
   b = basis_mat(y)
   t = fmpz(0)
   for i in 1:degree(O)
-    t = div(a[i],b[i,i])
-    for j in i:degree(O)
-      a[j] = a[j] - t*b[i,i]
+    k = degree(O) - i + 1
+    t = div(a[k],b[k,k])
+    for j in 1:k
+      a[j] = a[j] - t*b[k,j]
     end
   end
   return O(a)
@@ -1088,41 +1163,26 @@ end
 #
 ################################################################################
 
-function pradical(O::NfMaximalOrder, p::fmpz)
-  j = clog(ZZ(degree(O)),p)
-  R = ResidueRing(ZZ,p)
-  A = MatrixSpace(R, degree(O), degree(O))()
-  for i in 1:degree(O)
-    t = powermod(basis(O)[i], p^j, p)
-    ar = elem_in_basis(t)
-    for k in 1:degree(O)
-      A[i,k] = ar[k]
-    end
-  end
-  X = kernel(A)
-  Mat = MatrixSpace(ZZ, 1, degree(O))
-  MMat = MatrixSpace(R, 1, degree(O))
-  if length(X) != 0
-    m = lift(MMat(X[1]))
-    for x in 2:length(X)
-      m = vcat(m,lift(MMat(X[x])))
-    end
-    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
-  else
-    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
-  end
-  return ideal(O,sub(hnf(m), 1:degree(O), 1:degree(O)))
-end
-
-function pradical(O::NfMaximalOrder, p::Integer)
-  return pradical(O, ZZ(p))
-end
-
 function ideal(O::NfMaximalOrder, x::fmpz_mat)
   return NfMaximalOrderIdeal(x, NfMaximalOrderIdealSet(O))
 end
 
 function +(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
-  H = sub(hnf(vcat(basis_mat(x),basis_mat(y))), 1:degree(order(x)), 1:degree(order(x)))
+  H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))::fmpz_mat
   return NfMaximalOrderIdeal(H, parent(x))
 end
+
+function mod(a::NfMaximalOrderElem, m::fmpz)
+  ar = copy(elem_in_basis(a))
+  for i in 1:degree(parent(a))
+    ar[i] = mod(ar[i],m)
+  end
+  return parent(a)(ar)
+end
+
+dot(x::BigInt, y::NfMaximalOrderElem) = x * y
+
+colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
+
+test(a::Int) = fmpz(a)
+test2(a::Int) = FlintZZ(a)

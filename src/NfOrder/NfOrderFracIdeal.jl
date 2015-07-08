@@ -45,12 +45,13 @@ function colon_ideal(a::NfOrderIdeal)
     m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
   end
   n = hnf(transpose(m))
+  # n is upper right HNF
   n = transpose(sub(n,1:degree(O),1:degree(O)))
   b,d = pseudo_inverse(n)
   return NfOrderFracIdeal(O,hnf(FakeFmpqMat(b,d)))
 end  
 
 function NfOrder(a::NfOrderFracIdeal)
-  z = NfOrder(order(a).nf, a.basis_mat*order(a).basis_mat)
+  z = NfOrder(nf(order(a)), a.basis_mat*order(a).basis_mat)
   return z
 end

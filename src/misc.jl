@@ -2,7 +2,7 @@ import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf
+       discriminant, dot, hnf, _hnf, representation_mat, signature
 
 ################################################################################
 #
@@ -223,7 +223,7 @@ end
 
 function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   @assert nr >= 0 && nc >= 0
-  M = MatrixSpace(ZZ, nr, nc)()
+  M = MatrixSpace(ZZ, nr, nc)()::fmpz_mat
   t = ZZ()
   for i = 1:nr
     for j = 1:nc
@@ -237,7 +237,7 @@ end
 function sub(A::fmpz_mat, r::UnitRange, c::UnitRange)
   @assert !isdefined(r, :step) || r.step==1
   @assert !isdefined(c, :step) || c.step==1
-  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)
+  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
 end
 
 ################################################################################
@@ -356,7 +356,6 @@ function next_prime(z::Integer)
   return z
 end
 
-
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....
@@ -471,26 +470,6 @@ end
 #  return f
 #end
 
-###############################################################################
-#
-#   discriminant of maximal order ...
-#
-###############################################################################
-
-function discriminant(O::PariMaximalOrder)
-  K = O.pari_nf.nf  
-  f = K.pol
-  R = parent(f)
-  Sy,y = PolynomialRing(ZZ,"y")
-  coef = typeof(ZZ(0))[]
-  for i in 0:degree(f)
-    push!(coef,ZZ(coeff(f,i)))
-  end
-  g = Sy(coef)
-  disc = div(discriminant(g),ZZ(index(O))^2)
-  return disc
-end
-
 ################################################################################
 #
 #  fmpq_poly with denominator 1 to fmpz_poly
@@ -571,7 +550,7 @@ function ppio(a::fmpz, b::fmpz)
 end
 
 function denominator(a::nf_elem)                                           
-  d_den = fmpz()                                                             
+  d_den = fmpz()::fmpz
   ccall((:nf_elem_get_den, :libflint), Void,                                                              
     (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}),
     &d_den, &a, &parent(a))                                             
@@ -603,7 +582,7 @@ function element_from_mat_row(K::NfNumberField, a::fmpz_mat, i::Int)
   b = K();
   ccall((:nf_elem_from_mat_row, :libflint), 
         Void, 
-       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int64, Ptr{Nemo.NfNumberField}), 
+       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int, Ptr{Nemo.NfNumberField}),
        &b, &a, i-1, &parent(b))
   set_denominator!(b, d_from)     
   return b
@@ -616,7 +595,7 @@ dot(x::nf_elem, y::fmpz) = x*y
 function representation_mat(a::nf_elem)
   @assert denominator(a) == 1
   n = degree(a.parent)
-  M = MatrixSpace(ZZ, n,n)()
+  M = MatrixSpace(FlintZZ, n,n)()::fmpz_mat
   t = gen(a.parent)
   b = a
   for i = 1:n-1
@@ -767,6 +746,15 @@ function is_zero_row(M::fmpz_mat, i::Int)
   return true
 end
 
+function is_zero_row{T}(M::MatElem{T}, i::Int)
+  for j in 1:cols(M)
+    if !iszero(M[i,j])
+      return false
+    end
+  end
+  return true
+end
+
 function is_zero_row{T <: Integer}(M::Array{T, 2}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0 
@@ -785,15 +773,32 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function _hnf(x::fmpz_mat; shape = :upperright)
-  if shape == :upperright
-    return hnf(x)
-  elseif shape == :lowerleft
-    h = hnf(_swapcols(x))
-    _swapcols!(h);
-    _swaprows!(h);
-    return h
+function is_zero_row(M::Array{fmpz, 2}, i::Int)
+  for j = 1:Base.size(M, 2)
+    if M[i,j] != 0 
+      return false
+    end
   end
+  return true
+end
+
+function is_zero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
+  for j in 1:Base.size(M, 2)
+    if !iszero(M[i,j])
+      return false
+    end
+  end
+  return true
+end
+
+function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    h = hnf(_swapcols(x))
+    _swapcols!(h)
+    _swaprows!(h)
+    return h::fmpz_mat
+  end
+  return hnf(x)::fmpz_mat
 end
 
 function _swaprows(x::fmpz_mat)
@@ -809,7 +814,6 @@ function _swapcols(x::fmpz_mat)
 end
 
 function _swaprows!(x::fmpz_mat)
-  t = FlintZZ()
   r = rows(x)
   c = cols(x)
 
@@ -820,17 +824,19 @@ function _swaprows!(x::fmpz_mat)
   if r % 2 == 0
     for i in 1:div(r,2)
       for j = 1:c
-        t = x[i,j]
-        x[i,j] = x[r-i+1,j]
-        x[r-i+1,j] = t
+        # we swap x[i,j] <-> x[r-i+1,j]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, i - 1, j - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   else
     for i in 1:div(r-1,2)
       for j = 1:c
-        t = x[i,j]
-        x[i,j] = x[r-i+1,j]
-        x[r-i+1,j] = t
+        # we swap x[i,j] <-> x[r-i+1,j]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, i - 1, j - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   end
@@ -849,19 +855,57 @@ function _swapcols!(x::fmpz_mat)
   if c % 2 == 0
     for i in 1:div(c,2)
       for j = 1:r
-        t = x[j,i]
-        x[j,i] = x[j,c-i+1]
-        x[j,c-i+1] = t
+        # swap x[j,i] <-> x[j,c-i+1]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, i - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   else
     for i in 1:div(c-1,2)
       for j = 1:r
-        t = x[j,i]
-        x[j,i] = x[j,c-i+1]
-        x[j,c-i+1] = t
+        # swap x[j,i] <-> x[j,c-i+1]
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, i - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   end
   nothing
 end
+
+################################################################################
+#
+#  Signature 
+#
+################################################################################
+
+function signature(x::fmpz_poly)
+  r = Array(Int, 1)
+  s = Array(Int, 1)
+  ccall((:fmpz_poly_signature, :libflint), Void, (Ptr{Int}, Ptr{Int}, Ptr{fmpz_poly}), r, s, &x)
+  return (r[1],s[1])
+end
+
+function signature(x::fmpq_poly)
+  R, = PolynomialRing(FlintZZ, "x")
+  return signature(R(x))
+end
+
+function signature(K::NfNumberField)
+  return signature(K.pol)
+end
+
+function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
+  d = denominator(b[1])
+  n = degree(K)
+  for i = 2:n
+    d = Base.lcm(d, denominator(b[i]))
+  end
+  M = MatrixSpace(ZZ, n,n)()
+  for i = 1:n
+    element_to_mat_row!(M, i, b[i]*d)
+  end
+  return M, d
+end 
+

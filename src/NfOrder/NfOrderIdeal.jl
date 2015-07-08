@@ -23,7 +23,8 @@ type NfOrderIdealSet
   end
 end
 
-type NfOrderIdeal
+
+type NfOrderIdeal <: GenNfOrdIdeal
   basis::Array{NfOrderElem, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat

@@ -8,22 +8,20 @@ using Nemo
 #
 ################################################################################
 
-# The following functions/types are not exported or
-# we want to extend them
+# The following functions/types are not exported or we want to extend them
 # So we have to import them explicitely
 
-
-
 import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
-  denominator, den, num, lg, prime_decomposition,
-  parent, length, norm, real, imag, inv, rows,
-  getindex!, lll, hnf, cols, basis, trace, factor, mod, zero,
-  pari_load, PariPolyRing, PariRationalField, PariQQ,
-  pari_vec, hash, PolynomialRing, coeff, var, abs, min, iszero, one, sqrt, isone, deepcopy, rank
+             denominator, den, num, lg, prime_decomposition, parent, length,
+             norm, real, imag, inv, rows, getindex!, lll, hnf, cols, basis,
+             trace, factor, mod, zero, pari_load, PariPolyRing,
+             PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
+             var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
+             discriminant, log
 
 export NfNumberField, hash
 
-import Base: show, minimum, rand, prod, copy
+import Base: show, minimum, rand, prod, copy, rand!, call
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -115,7 +113,7 @@ end
 
 function get_assert_level(s::Symbol)
   !(s in ASSERT_SCOPE) && error("Not a valid symbol")
-  return get(ASSERT_LOOKUP, s, 0)
+  return get(ASSERT_LOOKUP, s, 0)::Int
 end
 
 macro hassert(args...)
@@ -184,6 +182,7 @@ include("Misc.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 include("MaximalOrderIdeals.jl")
+include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("misc.jl")
 include("NfMaximalOrder.jl")

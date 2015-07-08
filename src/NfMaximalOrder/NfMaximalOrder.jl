@@ -1,6 +1,5 @@
 export NfMaximalOrder, MaximalOrder
 
-abstract ComMaxOrder 
 
 ################################################################################
 #
@@ -8,7 +7,7 @@ abstract ComMaxOrder
 #
 ################################################################################
 
-NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, ComMaxOrder}()
+NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
 
 NfMaximalOrderSetID = ObjectIdDict()
 
@@ -24,7 +23,7 @@ type NfMaximalOrderSet
   end
 end
 
-type NfMaximalOrder <: ComMaxOrder 
+type NfMaximalOrder <: GenNfOrd
   nf::NfNumberField
   basis_nf::Array{nf_elem, 1}   # Array of number field elements
   basis_ord                     # Array of order elements
@@ -34,10 +33,12 @@ type NfMaximalOrder <: ComMaxOrder
   disc::fmpz                    # discriminant
   disc_fac                      # factorized discriminant or prime factors?
   parent::NfMaximalOrderSet     # parent object
+  signature::Tuple{Int, Int}    # signature of the parent object
 
   function NfMaximalOrder(a::NfNumberField)
     r = new(a)
     r.parent = NfMaximalOrderSet(a)
+    r.signature = (-1,0)
     return r
   end
 end
@@ -52,7 +53,6 @@ function NfMaximalOrder(K::NfNumberField, x::FakeFmpqMat)
   if haskey(NfMaximalOrderID, (K,x))
     return NfMaximalOrderID[(K,x)]
   end
-
   z = NfMaximalOrder(K)
   n = degree(K)
   B_K = basis(K)
@@ -60,12 +60,10 @@ function NfMaximalOrder(K::NfNumberField, x::FakeFmpqMat)
   for i in 1:n
     d[i] = divexact(element_from_mat_row(K, x.num, i), x.den)
   end
-  
   z.basis_nf = d
   z.basis_mat = x
   z.basis_mat_inv = inv(x)
   B = Array(NfMaximalOrderElem, n)
-
   for i in 1:n
     v = fill(zero(ZZ), n)
     v[i] = ZZ(1)
@@ -203,24 +201,26 @@ degree(x::NfMaximalOrder) = degree(nf(x))
 #
 ################################################################################
 
-function _check_elem_in_maximal_order(x::nf_elem, O::NfMaximalOrder)
-  d = denominator(x)
-  b = d*x 
-  M = MatrixSpace(ZZ, 1, rank(O))()
-  element_to_mat_row!(M,1,b)
-  t = FakeFmpqMat(M,d)
-  z = t*basis_mat_inv(O)
-  v = Array(fmpz, degree(O))
-  for i in 1:degree(O)
-    v[i] = z.num[1,i]
-  end
-  return (z.den == 1, v)  
-end
+# Migrated to GenNfOrd.jl under new name _check_elem_in_order
 
-function in(a::nf_elem, O::NfMaximalOrder)
-  (x,y) = _check_elem_in_maximal_order(a,O)
-  return x
-end
+#function _check_elem_in_maximal_order(x::nf_elem, O::NfMaximalOrder)
+#  d = denominator(x)
+#  b = d*x 
+#  M = MatrixSpace(ZZ, 1, rank(O))()
+#  element_to_mat_row!(M,1,b)
+#  t = FakeFmpqMat(M,d)
+#  z = t*basis_mat_inv(O)
+#  v = Array(fmpz, degree(O))
+#  for i in 1:degree(O)
+#    v[i] = z.num[1,i]
+#  end
+#  return (z.den == 1, v)  
+#end
+
+#function in(a::nf_elem, O::NfMaximalOrder)
+#  (x,y) = _check_elem_in_maximal_order(a,O)
+#  return x
+#end
 
 ################################################################################
 #
@@ -228,21 +228,23 @@ end
 #
 ################################################################################
 
-@doc """
-  denominator(a::nf_elem, O::NfMaximalOrder) -> fmpz
+# Migrated to GenNfOrd.jl
 
-  Compute the smalles positive integer k such that k*a in O.
-""" ->
-function denominator(a::nf_elem, O::NfMaximalOrder)
-  d = denominator(a)
-  b = d*a 
-  M = MatrixSpace(ZZ, 1, rank(O))()
-  element_to_mat_row!(M,1,b)
-  t = FakeFmpqMat(M,d)
-  z = t*basis_mat_inv(O)
-  return z.den
-end
-
+#@doc """
+#  denominator(a::nf_elem, O::NfMaximalOrder) -> fmpz
+#
+#  Compute the smalles positive integer k such that k*a in O.
+#""" ->
+#function denominator(a::nf_elem, O::NfMaximalOrder)
+#  d = denominator(a)
+#  b = d*a 
+#  M = MatrixSpace(ZZ, 1, rank(O))()
+#  element_to_mat_row!(M,1,b)
+#  t = FakeFmpqMat(M,d)
+#  z = t*basis_mat_inv(O)
+#  return z.den
+#end
+#
 ################################################################################
 #
 #  Constructors for users

@@ -28,7 +28,7 @@ type NfOrderElem
       !x && error("Number field element not in the order")
       #z.elem_in_basis = y
     end
-    z.elem_in_nf = a
+    z.elem_in_nf = deepcopy(a)
     z.parent = O
     return z
   end
@@ -170,7 +170,7 @@ end
 ################################################################################
 
 function mod(a::NfOrderElem, m::fmpz)
-  ar = elem_in_basis(a)
+  ar = copy(elem_in_basis(a))
   for i in 1:degree(parent(a))
     ar[i] = mod(ar[i],m)
   end
