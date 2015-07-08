@@ -571,7 +571,7 @@ function ppio(a::fmpz, b::fmpz)
 end
 
 function denominator(a::nf_elem)                                           
-  d_den = ZZ()                                                             
+  d_den = fmpz()                                                             
   ccall((:nf_elem_get_den, :libflint), Void,                                                              
     (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}),
     &d_den, &a, &parent(a))                                             
@@ -614,7 +614,7 @@ dot(x::nf_elem, y::Int64) = x*y
 dot(x::nf_elem, y::fmpz) = x*y
 
 function representation_mat(a::nf_elem)
-  assert (denominator(a) == 1)
+  @assert denominator(a) == 1
   n = degree(a.parent)
   M = MatrixSpace(ZZ, n,n)()
   t = gen(a.parent)
