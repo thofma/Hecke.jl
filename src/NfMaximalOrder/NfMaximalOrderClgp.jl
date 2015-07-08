@@ -277,43 +277,6 @@ function factor(FB::NfFactorBase, a::nf_elem)
   factor!(M, 1, FB, a)
   return M
 end
-
-################################################################################
-#
-#  Relations based on ideals
-#
-################################################################################
-
-type IdealRelationsCtx
-  A::NfMaximalOrderIdeal
-  v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
-  E::enum_ctx
-  c::fmpz           # the last length
-  cnt::Int
-  bad::Int
-  M::fmpz_mat
-  vl::Int
-  rr::Range{Int}
-
-  function IdealRelationsCtx(E::enum_ctx)
-    I = new()
-    I.E = E
-    return I
-  end
-end
-
-function show(io::IO, I::IdealRelationsCtx)
-  println(io, "IdealRelationCtx for ", I.A)
-  println(io, "  current length bound ", I.c, " stats: ", I.cnt, " and ", I.bad)
-end
-
-
-################################################################################
-#
-#  The main class group part
-#
-################################################################################
-
 ################################################################################
 #
 #  Class group data structure
@@ -352,6 +315,57 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     return r
   end  
 end
+
+
+################################################################################
+#
+#  Relations based on ideals
+#
+################################################################################
+
+type IdealRelationsCtx{Tx, TU, TC}
+  A::NfMaximalOrderIdeal
+  v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
+  E::enum_ctx{Tx, TU, TC}
+  c::fmpz           # the last length
+  cnt::Int
+  bad::Int
+  M::fmpz_mat
+  vl::Int
+  rr::Range{Int}
+
+  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
+                  prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
+    v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
+                    rows(clg.val_base)))*clg.val_base
+    E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit,
+       Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
+    I = new()
+    I.E = E
+    I.A = A
+    I.c = 0
+    I.cnt = 0
+    I.bad = 0
+    I.vl = 0
+    I.rr = 1:0
+    I.M = MatrixSpace(ZZ, 1, I.E.n)()
+    return I
+  end
+
+
+end
+
+function show(io::IO, I::IdealRelationsCtx)
+  println(io, "IdealRelationCtx for ", I.A)
+  println(io, "  current length bound ", I.c, " stats: ", I.cnt, " and ", I.bad)
+end
+
+
+################################################################################
+#
+#  The main class group part
+#
+################################################################################
 
 global AllRels
 function class_group_init(O::NfMaximalOrder, B::Int;
@@ -607,7 +621,7 @@ function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
 end
 
 function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
-                v::fmpz_mat;prec::Int = 100, limit::Int = 0)
+                v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
   l, t = lll(c, A, v, prec = prec, limit = limit)
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
@@ -618,8 +632,8 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
   end
   #E = enum_ctx_from_gram(l, ZZ(2)^prec, Tx = BigInt, TC = Rational{BigInt},
   #                TC = Rational{BigInt}, limit = limit)
-  E = enum_ctx_from_gram(l, ZZ(2)^prec, Tx = Int, TC = Float64, TU = Float64,
-                  limit = limit)
+  E = enum_ctx_from_gram(l, ZZ(2)^prec, Tx = Tx, TC = TC, TU = TU,
+                  limit = limit)::enum_ctx{Tx, TC, TU}
   E.t = t*b
   E.t_den = b_den
   n = E.n
@@ -628,34 +642,18 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
   return E
 end
 
-function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
-                prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
-  v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
-                  rows(clg.val_base)))*clg.val_base
-  E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit)
-  I = IdealRelationsCtx(E)
-  I.A = A
-  I.c = 0
-  I.cnt = 0
-  I.bad = 0
-  I.vl = 0
-  I.rr = 1:0
-  I.M = MatrixSpace(ZZ, 1, I.E.n)()
-  return I
-end
-
 global _start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
                 A::NfMaximalOrderIdeal; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()
-  I = IdealRelationsCtx(clg, A, prec = prec, val = val, limit = limit)
+  I = IdealRelationsCtx{Int, Float64, Float64}(clg, A, prec = prec, val = val, limit = limit)
   @v_do :ClassGroup_time 2 _start += time_ns()-rt
   return I
 end
 
-global _elt = 0.0
+global _elt = Uint(0)
 
 function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
   global _elt, _next

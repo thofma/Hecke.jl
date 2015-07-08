@@ -208,7 +208,7 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
   n::Int = 1
   n = E.limit
   i=1
-  t = ZZ()
+  t = fmpz()
   while true 
     enum_ctx_advance_level(E, i)
     getindex!(t, E.x, 1, i)
