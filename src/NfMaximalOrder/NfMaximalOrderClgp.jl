@@ -55,7 +55,7 @@ type FactorBase{T}
 end
 
 # assume that the set consists of pairwise coprime elements
-function FactorBase{T}(x::Set{T}; check = true)
+function FactorBase{T}(x::Set{T}; check::Bool = true)
   if !check
     z = FactorBase{T}(prod(x), x)
     return z
@@ -138,7 +138,7 @@ end
 type NfFactorBase
   fb::Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}
   size::Int
-  fb_int::FactorBase
+  fb_int::FactorBase{fmpz}
   ideals::Array{NfMaximalOrderIdeal, 1}
   rw::Array{Int, 1}
   mx::Int
@@ -151,7 +151,7 @@ type NfFactorBase
 end
 
 function NfFactorBase(O::NfMaximalOrder, B::Int;
-                      complete = true, degree_limit = 5)
+                      complete::Bool = true, degree_limit::Int = 5)
   lp = prime_ideals_up_to(O, B, complete = complete,
                           degree_limit = degree_limit)
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
@@ -185,7 +185,11 @@ end
 ################################################################################
 
 function factor!(M::fmpz_mat, i::Int, FB::NfFactorBase, a::nf_elem;
-                 error = true, n = abs(norm(a)))
+                 error::Bool = true, n::fmpq = abs(norm(a)))
+  return _factor!(M, i, FB, a, error, n)
+end
+function _factor!(M::fmpz_mat, i::Int, FB::NfFactorBase, a::nf_elem,
+                 error::Bool = true, n::fmpq = abs(norm(a)))
   d = factor(FB.fb_int, num(n)*denominator(a))
   cor = []
   for p in keys(d)
@@ -216,6 +220,10 @@ end
 
 function factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
                     error = true, n = abs(norm(a)))
+  return _factor(M, i, FB, a, error, n)
+end
+function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
+                    error::Bool = true, n::fmpq = abs(norm(a)))
   d = factor(FB.fb_int, num(n)*denominator(a))
   rw = FB.rw
   lg::Int = 0
@@ -287,8 +295,10 @@ type IdealRelationsCtx
   vl::Int
   rr::Range{Int}
 
-  function IdealRelationsCtx()
-    return new()
+  function IdealRelationsCtx(E::enum_ctx)
+    I = new()
+    I.E = E
+    return I
   end
 end
 
@@ -345,7 +355,7 @@ end
 
 global AllRels
 function class_group_init(O::NfMaximalOrder, B::Int;
-                          complete = true, degree_limit = 5, T = Smat{BigInt})
+                          complete::Bool = true, degree_limit::Int = 5, T::DataType = Smat{BigInt})
   global AllRels = []
   clg = ClassGrpCtx{T}()
 
@@ -380,15 +390,15 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   return clg
 end
 
-function class_group_add_relation(clg::ClassGrpCtx, a::nf_elem)
+function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem)
   if a==0
     return false
   end
   if a in clg.RS 
     return false
   end
-  global AllRels
-  push!(AllRels, a)
+#  global AllRels
+#  push!(AllRels, a)
   n = abs(norm(a))
   clg.sum_norm += num(n*n)
   #print("trying relation of length ", Float64(length(clg.c, a)),
@@ -398,7 +408,7 @@ function class_group_add_relation(clg::ClassGrpCtx, a::nf_elem)
     #println(" -> fail")
     return false
   end
-  if factor!(clg.M, length(clg.R)+1, clg.FB, a, error = false, n = n)
+  if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n)
     push!(clg.R, a)
     push!(clg.RS, a)
     @hassert :ClassGroup 1 rows(clg.M) == length(clg.R)
@@ -424,7 +434,7 @@ end
 ################################################################################
 
 function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
-                                           I = Base.rand(clg.FB.ideals))
+                                           I::NfMaximalOrderIdeal = Base.rand(clg.FB.ideals))
   s = 1
   if r < 2
     r = 2
@@ -444,7 +454,7 @@ end
 #
 ################################################################################
 function class_group_small_elements_relation(clg::ClassGrpCtx,
-                A::NfMaximalOrderIdeal, cnt = degree(order(A)))
+                A::NfMaximalOrderIdeal, cnt::Int = degree(order(A)))
   l = FakeFmpqMat(lll(basis_mat(A)))*basis_mat(order(A))
   K = nf(order(A))
   if cnt <= degree(A.parent.order)
@@ -620,11 +630,11 @@ end
 
 function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
                 prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
-  I = IdealRelationsCtx()
-  I.A = A
   v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                   rows(clg.val_base)))*clg.val_base
-  I.E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit)
+  E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit)
+  I = IdealRelationsCtx(E)
+  I.A = A
   I.c = 0
   I.cnt = 0
   I.bad = 0
@@ -723,7 +733,7 @@ function class_group_current_result(clg::ClassGrpCtx)
   if length(mis) > 0
     clg.mis = mis
     clg.h = ZZ(0)
-    return 0, mis
+    return (fmpz(0), mis)::Tuple{fmpz, Set{Int64}}
   end
 
   if full_rank
@@ -763,6 +773,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     push!(I, f)
     f.vl = val
     while true
+      class_group_small_real_elements_relation_next(I[end])
+
       f = class_group_add_relation(clg,
                       class_group_small_real_elements_relation_next(I[end]))
       if f

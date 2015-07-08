@@ -90,7 +90,7 @@ end
 
 function get_verbose_level(s::Symbol)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
-  return get(VERBOSE_LOOKUP, s, 0)
+  return get(VERBOSE_LOOKUP, s, 0)::Int
 end
 
 ################################################################################
@@ -170,6 +170,8 @@ macro vtime(args...)
   end
 end
 
+
+function checkbounds(a::Int, b::Int) nothing; end;
 ################################################################################
 #
 #  "Submodules"
@@ -188,3 +190,5 @@ include("NfMaximalOrder.jl")
 #include("PrimeDec.jl")
 #include("Clgp.jl")
 end
+
+
