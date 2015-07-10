@@ -9,7 +9,6 @@
 ################################################################################
 #
 # Todo: 
-#  - using/ implement limit in enum
 #  - make sure the precision for LLL is high enough (by checking that the
 #    resulting elements have a reasonable norm/ length? theory?)
 #  - add reasonable verbose printing
@@ -557,7 +556,8 @@ end
 function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
                 prec::Int = 100, limit::Int = 0)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
-  b = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  l, t1 = lll_with_transform(basis_mat(A))
+  b = FakeFmpqMat(l)*basis_mat(order(A))
   if !isdefined(rt_c, :cache)
     rt_c.cache = 0*c
   end
@@ -581,7 +581,7 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   g += rows(g)*one(parent(g))
 
   l, t = lll_gram_with_transform(g)
-  return l, t
+  return l, t*t1
 end
 
 ################################################################################
@@ -620,6 +620,10 @@ function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
   return q
 end
 
+################################################################################
+#
+################################################################################
+
 function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
   l, t = lll(c, A, v, prec = prec, limit = limit)
@@ -630,8 +634,7 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
   if limit == 0
     limit = rows(l)
   end
-  #E = enum_ctx_from_gram(l, FlintZZ(2)^prec, Tx = BigInt, TC = Rational{BigInt},
-  #                TC = Rational{BigInt}, limit = limit)
+  
   E = enum_ctx_from_gram(l, FlintZZ(2)^prec, Tx = Tx, TC = TC, TU = TU,
                   limit = limit)::enum_ctx{Tx, TC, TU}
   E.t = t*b
@@ -666,7 +669,8 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
         continue
       end
       @v_do :ClassGroup_time 2 rt = time_ns()
-      I.M = I.E.x * I.E.t
+#      I.M = I.E.x * I.E.t
+      ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz_mat}), &I.M, &I.E.x, &I.E.t)
       q = element_from_mat_row(K, I.M, 1)
       q = divexact(q,I.E.t_den)
       #println("found ", q, " of length ", length(q), " and norm ", norm(q))
@@ -767,7 +771,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   I = []
   for i in clg.FB.ideals
     f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
-                    prec = prec)
+                    prec = prec, val = val)
     push!(I, f)
     f.vl = val
     while true
@@ -914,3 +918,19 @@ function toMagma(s::ASCIIString, c::ClassGrpCtx)
   close(f)
 end
 
+
+################################################################################
+##  Garbage?
+################################################################################
+
+#
+# beware of the precision issue.
+#
+function lll(M::NfMaximalOrder)
+  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
+  K = nf(M)
+  c = conjugates_init(K.pol)
+
+  q,w = lll(c, I, parent(basis_mat(M).num)(0))
+  return NfMaximalOrder(K, FakeFmpqMat(basis_mat(M).num*w, basis_mat(M).den))
+end
