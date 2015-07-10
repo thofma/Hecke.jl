@@ -15,6 +15,11 @@
 #  - write hnf from upper_triangular
 #  - understand/use profiling information (memory, ...)     
 #
+#  - need different norm function: modular resultant? with a large known
+#    factor AND without any proof...
+#    otherwise, it takes much too long if the ideal is non-trivial
+#
+#
 # Clean up:
 #  - sort the various data-types files
 #  - write show functions
@@ -36,8 +41,6 @@ add_assert_scope(:ClassGroup)
 set_assert_level(:ClassGroup, 1)
 set_assert_level(:LatEnum, 1)
 
-
-import Base.size;
 
 ################################################################################
 #
@@ -381,8 +384,10 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   clg.M = T()
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
-    class_group_add_relation(clg, nf(O)(I.gen_one))
-    class_group_add_relation(clg, nf(O)(I.gen_two))
+    a = nf(O)(I.gen_one)
+    class_group_add_relation(clg, a, abs(norm(a)))
+    a = nf(O)(I.gen_two)
+    class_group_add_relation(clg, a, abs(norm(a)))
   end
   n = degree(O)
   l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
@@ -403,7 +408,7 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   return clg
 end
 
-function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem)
+function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
   if a==0
     return false
   end
@@ -412,7 +417,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem)
   end
 #  global AllRels
 #  push!(AllRels, a)
-  n = abs(norm(a))
   clg.sum_norm += num(n*n)
   #print("trying relation of length ", Float64(length(clg.c, a)),
   #      " and norm ", Float64(n));
@@ -447,13 +451,13 @@ end
 ################################################################################
 
 function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
-                                           I::NfMaximalOrderIdeal = Base.rand(clg.FB.ideals))
+                                           I::NfMaximalOrderIdeal = rand(clg.FB.ideals))
   s = 1
   if r < 2
     r = 2
   end
   for i = 1:r 
-    I = prod(I, Base.rand(clg.FB.ideals))
+    I = prod(I, rand(clg.FB.ideals))
     I, g = reduce_ideal_class(I)
     s *= g
   end
@@ -477,7 +481,7 @@ function class_group_small_elements_relation(clg::ClassGrpCtx,
     end
     return lb
   end
-  r = Int(Base.ceil((2*cnt)^(1/degree(K))))
+  r = Int(ceil((2*cnt)^(1/degree(K))))
   r = -div(r+1, 2):div(r+1, 2)
   ll = Array(typeof(K()), degree(K))
   for i = 1:degree(K)
@@ -673,7 +677,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz_mat}), &I.M, &I.E.x, &I.E.t)
       q = element_from_mat_row(K, I.M, 1)
       q = divexact(q,I.E.t_den)
-      #println("found ", q, " of length ", length(q), " and norm ", norm(q))
+      #println("found ", q, " norm ", norm(q))
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q
     end
@@ -769,16 +773,50 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   n = degree(clg.FB.ideals[1].parent.order)
   t = time_ns()
   I = []
+  O = parent(clg.FB.ideals[1]).order
+  sqrt_disc = isqrt(abs(discriminant(O)))
+
+  f = 0
+
   for i in clg.FB.ideals
-    f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
-                    prec = prec, val = val)
+    OK = false
+    while !OK
+      try
+        f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
+                        prec = prec, val = val)
+        OK = true                
+      catch e
+        if isa(e, LowPrecisionCholesky)
+          print_with_color(:red, "prec too low in cholesky,")
+          prec = Int(ceil(1.2*prec))
+          println(" increasing to ", prec)
+        else
+          throw(e)
+        end
+      end
+    end  
+
     push!(I, f)
     f.vl = val
     while true
-      class_group_small_real_elements_relation_next(I[end])
-
-      f = class_group_add_relation(clg,
-                      class_group_small_real_elements_relation_next(I[end]))
+      e = class_group_small_real_elements_relation_next(I[end])
+      n = abs(norm(e))
+#        print_with_color(:blue, "norm OK:")
+#        println(n//norm(I[end].A), " should be ", sqrt_disc)
+      if n//norm(I[end].A) > sqrt_disc
+        prec = Int(ceil(prec*1.2))
+        print_with_color(:red, "norm too large:")
+        println(n//norm(I[end].A), " should be ", sqrt_disc)
+        println("increasing prec to ", prec)
+        if prec>1000
+          error("precision too much, s.th. is probably wrong")
+        end
+        f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
+                    prec = prec, val = val)
+        I[end] = f            
+        continue
+      end
+      f = class_group_add_relation(clg, e, n)
       if f
         I[end].cnt += 1
         break
@@ -811,8 +849,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   while h != 1 && (h==0 || want_extra > 0)
     for i in sort([ x for x in piv], lt = >)
       E = I[i]
-      lt = max(100, Base.round((clg.bad_rel/clg.rel_cnt)*2))
-      a = 1
+      lt = max(100, round((clg.bad_rel/clg.rel_cnt)*2))
+
       limit_cnt = 0
       rnd = length(clg.FB.ideals)
       rnd = max(rnd-10, 1):rnd
@@ -825,11 +863,11 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           if limit_cnt < 5
             rnd = max((rnd.start-10), 1):rnd.stop
             E.rr = 1:(2*E.rr.stop+1)
-            E.vl = Int(Base.round(E.vl*1.2))
+            E.vl = Int(round(E.vl*1.2))
             @v_do :ClassGroup 3 println("random parameters now ", E.rr,
                             " and ", E.vl)
           end
-          A = idl[i] * prod([idl[Base.rand(rnd)] for i= E.rr])
+          A = idl[i] * prod([idl[rand(rnd)] for i= E.rr])
           I[i] = class_group_small_real_elements_relation_start(clg, A,
                           val = E.vl, limit = limit, prec = prec)
           I[i].rr = E.rr
@@ -841,8 +879,27 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
                           I[i].rr, " and ", I[i].vl)
           limit_cnt += 1
         end
-        b = class_group_small_real_elements_relation_next(E)
-        if class_group_add_relation(clg, b*a)
+        e = class_group_small_real_elements_relation_next(E)
+        n = abs(norm(e))
+#        print_with_color(:blue, "norm OK:")
+#        println(n//norm(E.A), " should be ", sqrt_disc)
+        if n//norm(E.A) > sqrt_disc
+          prec = Int(ceil(prec*1.2))
+          print_with_color(:red, "norm too large:")
+          println(n//norm(E.A), " should be ", sqrt_disc)
+          println("increasing prec to ", prec)
+          if prec>1000
+            error("precision too much, s.th. is probably wrong")
+          end
+          I[i] = class_group_small_real_elements_relation_start(clg, E.A,
+                          val = E.vl, limit = limit, prec = prec)
+          I[i].rr = E.rr
+          I[i].vl = E.vl
+          E = I[i]
+
+          continue;
+        end
+        if class_group_add_relation(clg, e, abs(norm(e)))
           E.cnt += 1
           if length(clg.R) - clg.last_H > 20
             break
@@ -857,7 +914,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     l_piv = piv
     h, piv = class_group_current_result(clg)
     if h != 0
-      piv = Set([Base.rand(div(clg.FB.size, 2):clg.FB.size) for i=1:1])
+      piv = Set([rand(div(clg.FB.size, 2):clg.FB.size) for i=1:1])
       @v_do :ClassGroup 1 println("full rank: current h = ", h,
                       " want ", want_extra, " more")
       if h == last_h 
@@ -934,3 +991,5 @@ function lll(M::NfMaximalOrder)
   q,w = lll(c, I, parent(basis_mat(M).num)(0))
   return NfMaximalOrder(K, FakeFmpqMat(basis_mat(M).num*w, basis_mat(M).den))
 end
+
+

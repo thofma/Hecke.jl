@@ -21,7 +21,8 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
 
 export NfNumberField, hash
 
-import Base: show, minimum, rand, prod, copy, rand!, call
+import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
+             size
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -132,6 +133,26 @@ macro hassert(args...)
   end
 end
 
+###############################################################################
+#
+#   Library initialisation message
+#
+###############################################################################
+
+function __init__()
+   println("")
+   print("Welcome to hecke version")
+   print_with_color(:red, " 0.1")
+   println()
+   print("... which comes with absolutely ")
+   print_with_color(:red, "no")
+   print_with_color(:blue, " warranty")
+   println(" whatsoever")
+   println("")
+   println("(c) 2015 by Claus Fieker and Tommy Hofmann and ?")
+end
+
+
 ################################################################################
 #
 #  Verbose time printing
@@ -168,6 +189,8 @@ macro vtime(args...)
   end
 end
 
+type LowPrecisionCholesky <: Exception end
+Base.showerror(io::IO, e::LowPrecisionCholesky) = print(io, e.var, "negative diagonaly in Cholesky, probably precision issue")
 
 function checkbounds(a::Int, b::Int) nothing; end;
 ################################################################################

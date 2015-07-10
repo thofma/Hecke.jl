@@ -74,12 +74,16 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
     end
   end
   for j = 1:limit-1
-    @hassert :LatEnum 1 C[j,j] > 0
+    if C[j,j] <= 0
+      throw(LowPrecisionCholesky())
+    end
     for i=j+1:limit
       C[i,j] = 0
     end
   end
-  @hassert :LatEnum 1 C[limit,limit] > 0
+  if C[limit, limit] <= 0
+    throw(LowPrecisionCholesky())
+  end
   return C
 end
 
