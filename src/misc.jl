@@ -928,3 +928,11 @@ function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
   return M, d
 end 
 
+
+function //(a::fmpq, b::fmpz)
+  return a//fmpq(b)
+end
+
+function //(a::fmpz, b::fmpq)
+  return fmpq(a)//b
+end
