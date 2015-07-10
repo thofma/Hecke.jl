@@ -462,12 +462,12 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
       A.r -= length(i:A.r)
       @assert length(A.rows) == A.r
       h = fmpz_mat(h)
-      println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
+#      println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
       if mod==0
-        @time h = hnf(h)
+        h = hnf(h)
       else
         h = nmod_mat(mod, h)
-        @time rref!(h)
+        rref!(h)
         h = Array(lift(h))
       end
       h = Smat(h)
