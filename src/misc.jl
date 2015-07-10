@@ -2,7 +2,7 @@ import Base: isprime, dot
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf, _hnf, representation_mat, signature
+       discriminant, dot, hnf, _hnf, modular_hnf, representation_mat, signature
 
 ################################################################################
 #
@@ -789,6 +789,25 @@ function is_zero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
     end
   end
   return true
+end
+
+#computes (hopefully) the hnf for vcat(a*I, m) and returns ONLY the
+#non-singular part. By definition, the result wil have full rank
+#
+#Should be rewritten to use Howell and lifting rather the big HNF
+#
+function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
+  c = vcat(parent(a)(m), a)
+  n = cols(a)
+  w = window(c, n+1, 1, 2*n, n)
+  ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &w, &w, &m)
+  if shape == :lowerleft
+    c = _hnf(c, shape)
+    return sub(c, n+1:2*n, 1:n)
+  else
+    c = hnf(c)
+    c = sub(c, 1:n, 1:n)
+  end
 end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
