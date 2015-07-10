@@ -273,7 +273,7 @@ function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
 end
 
 function factor(FB::NfFactorBase, a::nf_elem)
-  M = MatrixSpace(ZZ, 1, FB.size)()
+  M = MatrixSpace(FlintZZ, 1, FB.size)()
   factor!(M, 1, FB, a)
   return M
 end
@@ -336,7 +336,7 @@ type IdealRelationsCtx{Tx, TU, TC}
 
   function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
                   prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
-    v = MatrixSpace(ZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
+    v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
@@ -348,7 +348,7 @@ type IdealRelationsCtx{Tx, TU, TC}
     I.bad = 0
     I.vl = 0
     I.rr = 1:0
-    I.M = MatrixSpace(ZZ, 1, I.E.n)()
+    I.M = MatrixSpace(FlintZZ, 1, I.E.n)()
     return I
   end
 
@@ -386,7 +386,7 @@ function class_group_init(O::NfMaximalOrder, B::Int;
     class_group_add_relation(clg, nf(O)(I.gen_two))
   end
   n = degree(O)
-  l = MatrixSpace(ZZ, n, 1+clg.c.r2)()
+  l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
   for i = 1:n
     l[i,1] = 1
   end
@@ -513,7 +513,7 @@ end
 #converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
 function round_scale(a::Array{BigFloat, 2}, l::Int)
   s = size(a)
-  b = MatrixSpace(ZZ, s[1], s[2])()
+  b = MatrixSpace(FlintZZ, s[1], s[2])()
   R = RealRing()
   tmp_mpz = R.z1
   tmp_fmpz = R.zz1
@@ -602,12 +602,12 @@ function one_step(c::roots_ctx, b::NfMaximalOrderFracIdeal,
 end
 
 function short_elem(c::roots_ctx, A::NfMaximalOrderFracIdeal,
-                v::fmpz_mat=MatrixSpace(ZZ, 1,1)(); prec::Int = 100)
+                v::fmpz_mat=MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   return divexact(short_elem(c, A.num, v, prec = prec), A.den)
 end
 
 function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
-                v::fmpz_mat = MatrixSpace(ZZ, 1,1)(); prec::Int = 100)
+                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
@@ -630,9 +630,9 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
   if limit == 0
     limit = rows(l)
   end
-  #E = enum_ctx_from_gram(l, ZZ(2)^prec, Tx = BigInt, TC = Rational{BigInt},
+  #E = enum_ctx_from_gram(l, FlintZZ(2)^prec, Tx = BigInt, TC = Rational{BigInt},
   #                TC = Rational{BigInt}, limit = limit)
-  E = enum_ctx_from_gram(l, ZZ(2)^prec, Tx = Tx, TC = TC, TU = TU,
+  E = enum_ctx_from_gram(l, FlintZZ(2)^prec, Tx = Tx, TC = TC, TU = TU,
                   limit = limit)::enum_ctx{Tx, TC, TU}
   E.t = t*b
   E.t_den = b_den
@@ -730,19 +730,19 @@ function class_group_current_result(clg::ClassGrpCtx)
 
   if length(mis) > 0
     clg.mis = mis
-    clg.h = ZZ(0)
+    clg.h = FlintZZ(0)
     return (fmpz(0), mis)::Tuple{fmpz, Set{Int64}}
   end
 
   if full_rank
-    clg.h = ZZ(abs(prod([h[i,i] for i=1:cols(h)])))
+    clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
   else
     @vprint :ClassGroup 1 "1st non-modular"
     @v_do :ClassGroup 4 toMagma("/tmp/big.m", clg.M)
     h = copy(clg.M)
     @vtime :ClassGroup 1 upper_triangular(h)
     clg.H = h
-    clg.h = ZZ(abs(prod([h[i,i] for i=1:cols(h)])))
+    clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
   end
 
   clg.mis = Set(1:0)

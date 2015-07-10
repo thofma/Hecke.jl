@@ -216,7 +216,7 @@ end
 ################################################################################
 
 function fmpz_mat{T <: Integer}(A::Smat{T})
-  B = MatrixSpace(ZZ, A.r, A.c)()
+  B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
     for j = 1:length(A.rows[i].entry)
       B[i, A.rows[i].entry[j].col] = A.rows[i].entry[j].val
@@ -226,7 +226,7 @@ function fmpz_mat{T <: Integer}(A::Smat{T})
 end
 
 function fmpz_mat(A::Smat{fmpz})
-  B = MatrixSpace(ZZ, A.r, A.c)()
+  B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
     for j = 1:length(A.rows[i].entry)
       B[i, A.rows[i].entry[j].col] = A.rows[i].entry[j].val

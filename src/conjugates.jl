@@ -44,7 +44,7 @@ type _RealRing
   end
 end
 
-R = _RealRing()
+const R = _RealRing()
 function RealRing()
   global R
   return R
