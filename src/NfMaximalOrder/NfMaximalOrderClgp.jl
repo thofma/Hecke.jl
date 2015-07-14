@@ -775,6 +775,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   I = []
   O = parent(clg.FB.ideals[1]).order
   sqrt_disc = isqrt(abs(discriminant(O)))
+  np = Int(ceil(nbits(sqrt_disc)/60)+1)
 
   f = 0
 
@@ -800,13 +801,15 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     f.vl = val
     while true
       e = class_group_small_real_elements_relation_next(I[end])
-      n = abs(norm(e))
+      n = abs(norm_div(e, norm(I[end].A), np))
 #        print_with_color(:blue, "norm OK:")
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
-      if n//norm(I[end].A) > sqrt_disc
+      if n > sqrt_disc
         prec = Int(ceil(prec*1.2))
         print_with_color(:red, "norm too large:")
-        println(n//norm(I[end].A), " should be ", sqrt_disc)
+        println(n, " should be ", sqrt_disc)
+        println("offending element is ", e)
+        println("offending ideal is ", I[end].A)
         println("increasing prec to ", prec)
         if prec>1000
           error("precision too much, s.th. is probably wrong")
@@ -816,7 +819,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         I[end] = f            
         continue
       end
-      f = class_group_add_relation(clg, e, n)
+      f = class_group_add_relation(clg, e, n*norm(I[end].A))
       if f
         I[end].cnt += 1
         break
@@ -863,11 +866,15 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           if limit_cnt < 5
             rnd = max((rnd.start-10), 1):rnd.stop
             E.rr = 1:(2*E.rr.stop+1)
+            E.rr = 1:4
             E.vl = Int(round(E.vl*1.2))
             @v_do :ClassGroup 3 println("random parameters now ", E.rr,
                             " and ", E.vl)
           end
-          A = idl[i] * prod([idl[rand(rnd)] for i= E.rr])
+          A = idl[i]
+          while norm(A) < sqrt_disc
+            A *= idl[rand(rnd)]
+          end
           I[i] = class_group_small_real_elements_relation_start(clg, A,
                           val = E.vl, limit = limit, prec = prec)
           I[i].rr = E.rr
@@ -880,13 +887,13 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           limit_cnt += 1
         end
         e = class_group_small_real_elements_relation_next(E)
-        n = abs(norm(e))
-#        print_with_color(:blue, "norm OK:")
-#        println(n//norm(E.A), " should be ", sqrt_disc)
-        if n//norm(E.A) > sqrt_disc
+        n = abs(norm_div(e, norm(E.A), np))
+        if n > sqrt_disc
           prec = Int(ceil(prec*1.2))
-          print_with_color(:red, "norm too large:")
-          println(n//norm(E.A), " should be ", sqrt_disc)
+          print_with_color(:red, "2:norm too large:")
+          println(n, " should be ", sqrt_disc)
+          println("offending element is ", e)
+          println("offending ideal is ", E.A)
           println("increasing prec to ", prec)
           if prec>1000
             error("precision too much, s.th. is probably wrong")
@@ -899,7 +906,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
 
           continue;
         end
-        if class_group_add_relation(clg, e, abs(norm(e)))
+        if class_group_add_relation(clg, e, n*norm(E.A))
           E.cnt += 1
           if length(clg.R) - clg.last_H > 20
             break
