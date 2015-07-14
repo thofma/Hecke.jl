@@ -328,14 +328,17 @@ function prod_via_2_elem_normal(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
   end
   C = NfMaximalOrderIdeal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
-  if C.norm != gcd(C.gen_one^degree(O), ZZ(norm(C.gen_two)))
-    println("a:", a)
-    println("b:", b)
-    println("C:", C)
-    @hassert :NfMaximalOrder 1 gcd(a1^degree(O), norm(a2)) == norm(a)
-    @hassert :NfMaximalOrder 1 gcd(b1^degree(O), norm(b2)) == norm(b)
-#    assert(false)
-  end
+#  
+#CF: too expensive, need norm_mod to compute the norm only modulo...
+#
+#  if C.norm != gcd(C.gen_one^degree(O), ZZ(norm(C.gen_two)))
+#    println("a:", a)
+#    println("b:", b)
+#    println("C:", C)
+#    @hassert :NfMaximalOrder 1 gcd(a1^degree(O), norm(a2)) == norm(a)
+#    @hassert :NfMaximalOrder 1 gcd(b1^degree(O), norm(b2)) == norm(b)
+##    assert(false)
+#  end
 
   if has_minimum(a) && has_minimum(b) && gcd(minimum(a), minimum(b)) == 1 
     C.minimum = minimum(a) * minimum(b) # otherwise, I don't know the
