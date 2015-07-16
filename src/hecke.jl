@@ -192,6 +192,9 @@ end
 type LowPrecisionCholesky <: Exception end
 Base.showerror(io::IO, e::LowPrecisionCholesky) = print(io, e.var, "negative diagonaly in Cholesky, probably precision issue")
 
+type LowPrecisionLLL <: Exception end
+Base.showerror(io::IO, e::LowPrecisionLLL) = print(io, e.var, "trafo matrix has too large entries relative to precision in LLL")
+
 function checkbounds(a::Int, b::Int) nothing; end;
 ################################################################################
 #

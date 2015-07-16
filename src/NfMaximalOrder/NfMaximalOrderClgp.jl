@@ -332,6 +332,7 @@ type IdealRelationsCtx{Tx, TU, TC}
   c::fmpz           # the last length
   cnt::Int
   bad::Int
+  restart::Int
   M::fmpz_mat
   vl::Int
   rr::Range{Int}
@@ -348,6 +349,7 @@ type IdealRelationsCtx{Tx, TU, TC}
     I.c = 0
     I.cnt = 0
     I.bad = 0
+    I.restart = 0
     I.vl = 0
     I.rr = 1:0
     I.M = MatrixSpace(FlintZZ, 1, I.E.n)()
@@ -556,10 +558,10 @@ function shift!(g::fmpz_mat, l::Int)
   return g
 end
  
-#CF todo: use limit!!!
 function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
-                prec::Int = 100, limit::Int = 0)
+                prec::Int = 100)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
+                                              ## c is NOT a copy, so don't change.
   l, t1 = lll_with_transform(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
   if !isdefined(rt_c, :cache)
@@ -567,7 +569,6 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   end
   d = rt_c.cache
   mult!(d, b.num, c)
-                                           ## c is NOT a copy, so don't change.
   if !iszero(v)
     @v_do :ClassGroup 1 println("using inf val", v)
     old = get_bigfloat_precision()
@@ -585,6 +586,33 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   g += rows(g)*one(parent(g))
 
   l, t = lll_gram_with_transform(g)
+  ## test if entries in l are small enough, if not: increase precision
+  ## or signal that prec was too low
+  @v_do :ClassGroup 2 print_with_color(:green, "lll basis length profile\n");
+  @v_do :ClassGroup 2 for i=1:rows(l)
+    print(div(l[i,i], fmpz(2)^prec), " : ")
+  end
+  @v_do :ClassGroup 2 println("")
+  if nbits(max(t)) >  div(prec, 2)
+    print_with_color(:red, "lll trafo too large\n");
+    throw(LowPrecisionLLL())
+  end
+  ## lattice has lattice disc = order_disc * norm^2
+  ## lll needs to yield a basis sth
+  ## l[i,i] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)
+  n = rows(l)
+  d = abs(discriminant(order(A)))*norm(A)^2
+  d = root(d, n)
+  d *= fmpz(2)^(div(n,2)) * fmpz(2)^prec
+  for i=1:n
+    if l[i,i] > d
+      print_with_color(:red, "LLL basis too large\n");
+      println("bound is ", d, " value at ", i, " is ", l[i,i]); 
+      throw(LowPrecisionLLL())
+    end  
+  end  
+
+
   return l, t*t1
 end
 
@@ -630,7 +658,7 @@ end
 
 function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
-  l, t = lll(c, A, v, prec = prec, limit = limit)
+  l, t = lll(c, A, v, prec = prec)
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
   b_den = temp.den
@@ -638,13 +666,22 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
   if limit == 0
     limit = rows(l)
   end
-  
+ 
   E = enum_ctx_from_gram(l, FlintZZ(2)^prec, Tx = Tx, TC = TC, TU = TU,
                   limit = limit)::enum_ctx{Tx, TC, TU}
   E.t = t*b
   E.t_den = b_den
-  n = E.n
-  b = E.G[n,n]
+  ## we want to find x sth. norm(x) <= sqrt(|disc|)*norm(A)
+  ## |N(x)^2|^(1/n) <= T_2(x)/n 
+  ## so if T_2(x) <= n * D^(1/n)
+  ## then |N(x)| <= D^(1/2)
+  d = abs(discriminant(order(A))) * norm(A)^2
+  ## but we don't want to overshoot too much the length of the last
+  ## basis element.
+  b = min((root(d, E.n)+1)*E.n * E.d, E.G[E.limit, E.limit]*E.limit)
+  @v_do :ClassGroup 2 println("T_2 from disc ", (root(d, E.n)+1)*E.n * E.d)
+  @v_do :ClassGroup 2 println("    from Gram ", E.G[E.limit, E.limit]*E.limit)
+  @v_do :ClassGroup 2 println(" using ", b)
   enum_ctx_start(E, b)
   return E
 end
@@ -677,11 +714,19 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz_mat}), &I.M, &I.E.x, &I.E.t)
       q = element_from_mat_row(K, I.M, 1)
       q = divexact(q,I.E.t_den)
-      #println("found ", q, " norm ", norm(q))
+      #println("found ", q, " norm ", norm(q)//norm(I.A))
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q
     end
-    #println("restart for ", I.A, I.E.c)
+    @v_do :ClassGroup 1 print_with_color(:red, "restart after ")
+    @v_do :ClassGroup 1 print(I.E.cnt)
+    @v_do :ClassGroup 3 println(" for ", I.A, I.E.c)
+    @v_do :ClassGroup 1 println(" length now ", I.E.c*2)
+    I.restart += 1
+    if I.restart > 10
+      _elt = I
+      error("too much restarting");
+    end
     enum_ctx_start(I.E, I.E.c*2)
   end
 end
@@ -763,6 +808,7 @@ end
 #
 ################################################################################
 
+global last_E
 function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
                 limit = 10)
   clg.hnf_time = 0.0
@@ -775,7 +821,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   I = []
   O = parent(clg.FB.ideals[1]).order
   sqrt_disc = isqrt(abs(discriminant(O)))
-  np = Int(ceil(nbits(sqrt_disc)/60)+1)
+  np = Int(ceil(nbits(sqrt_disc)/Base.GMP.GMP_BITS_PER_LIMB)+1)
 
   f = 0
 
@@ -791,6 +837,10 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           print_with_color(:red, "prec too low in cholesky,")
           prec = Int(ceil(1.2*prec))
           println(" increasing to ", prec)
+        elseif isa(e, LowPrecisionLLL)
+          print_with_color(:red, "prec too low in LLL,")
+          prec = Int(ceil(1.2*prec))
+          println(" increasing to ", prec)
         else
           throw(e)
         end
@@ -804,20 +854,14 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       n = abs(norm_div(e, norm(I[end].A), np))
 #        print_with_color(:blue, "norm OK:")
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
-      if n > sqrt_disc
+      if n > 10*sqrt_disc
         prec = Int(ceil(prec*1.2))
         print_with_color(:red, "norm too large:")
         println(n, " should be ", sqrt_disc)
         println("offending element is ", e)
-        println("offending ideal is ", I[end].A)
-        println("increasing prec to ", prec)
-        if prec>1000
-          error("precision too much, s.th. is probably wrong")
-        end
-        f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
-                    prec = prec, val = val)
-        I[end] = f            
-        continue
+#        println("offending ideal is ", I[end].A)
+        println("skipping ideal (for now)")
+        break
       end
       f = class_group_add_relation(clg, e, n*norm(I[end].A))
       if f
@@ -826,7 +870,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       else
         I[end].bad += 1
         if I[end].bad > (clg.bad_rel/clg.rel_cnt)*2
-          @v_do :ClassGroup 2 println("too slow in getting s.th. for ", i,
+          @v_do :ClassGroup 1 println("too slow in getting s.th. for ", i,
                           "good: ", I[end].cnt,  " bad: ",  I[end].bad,
                           " ratio: ", (clg.bad_rel/clg.rel_cnt))
           break
@@ -860,8 +904,9 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       while true
         if (E.cnt==0 && E.bad > lt) || (E.cnt != 0 && (bad_h ||
                           (E.bad+E.cnt)/E.cnt > lt))
-          @v_do :ClassGroup 2 println("cnt ", E.cnt, " bad ", E.bad)
-          @v_do :ClassGroup 2 println("re-starting for ideal ", i,
+          @v_do :ClassGroup 1 println("cnt ", E.cnt, " bad ", E.bad)
+          @v_do :ClassGroup 1 println("re-starting (at ", i, ") ")
+          @v_do :ClassGroup 2 println("for ideal ", E.A,
                           "\nrandomizing ", rnd, " and ", E.rr)
           if limit_cnt < 5
             rnd = max((rnd.start-10), 1):rnd.stop
@@ -888,17 +933,17 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         end
         e = class_group_small_real_elements_relation_next(E)
         n = abs(norm_div(e, norm(E.A), np))
-        if n > sqrt_disc
+        if n > 10*sqrt_disc
           prec = Int(ceil(prec*1.2))
           print_with_color(:red, "2:norm too large:")
           println(n, " should be ", sqrt_disc)
           println("offending element is ", e)
-          println("offending ideal is ", E.A)
-          println("increasing prec to ", prec)
-          if prec>1000
-            error("precision too much, s.th. is probably wrong")
+#          println("offending ideal is ", E.A, "\nchanging ideal")
+          A = idl[i]
+          while norm(A) < sqrt_disc
+            A *= idl[rand(rnd)]
           end
-          I[i] = class_group_small_real_elements_relation_start(clg, E.A,
+          I[i] = class_group_small_real_elements_relation_start(clg, A,
                           val = E.vl, limit = limit, prec = prec)
           I[i].rr = E.rr
           I[i].vl = E.vl

@@ -38,6 +38,7 @@ type enum_ctx{Tx, TC, TU}
   c::fmpz # the length of the elements we want
   t::fmpz_mat # if set, a transformation to be applied to all elements
   t_den::fmpz
+  cnt::Int
   function enum_ctx()
     return new()
   end
@@ -59,7 +60,7 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   for i=1:limit
     for j=1:limit
       getindex!(t, G, i, j)
-      C[i,j] = TC(t)/TC(den)
+      C[i,j] = TC(t//den)
     end
   end
   for i = 1:limit-1 
@@ -113,6 +114,7 @@ function enum_ctx_local_bound{T}(a::Rational{T}, b::Rational{T})
   #return L <= U sth.
   #L = ceil(a-sqrt(b)), U = floor(a+sqrt(b))
   #solves (gives bounds) for (a-x)^2 <= b
+  b >= 0 || return a, a-1
   @hassert :LatEnum 1 b >= 0
   d = den(b)
   i = isqrt(num(b*d*d))
@@ -134,6 +136,7 @@ function enum_ctx_local_bound{Number}(a::Number, b::Number)
   #return L <= U sth.
   #L = ceil(a-sqrt(b)), U = floor(a+sqrt(b))
   #solves (gives bounds) for (a-x)^2 <= b
+  b >= 0 || return a, a-1
   @hassert :LatEnum b >= 0
   i = sqrt(b)
   L = Base.ceil(a-i)
@@ -148,7 +151,7 @@ function enum_ctx_start{A,B,C}(E::enum_ctx{A,B,C}, c::fmpz)
   E.c = c
   zero!(E.x)
   for i=1:E.limit
-    E.l[i] = C(E.c)/C(E.d)
+    E.l[i] = C(E.c//E.d)
     E.tail[i] = 0
     L, U = enum_ctx_local_bound(C(0), C(B(E.c//E.d)/E.C[i,i]))
     @hassert :LatEnum 1 typeof(L) == C
@@ -160,6 +163,7 @@ function enum_ctx_start{A,B,C}(E::enum_ctx{A,B,C}, c::fmpz)
   E.U[1] = min(E.U[1], 1)
   E.L[1] = -E.U[1]
   E.last_non_zero = 1
+  E.cnt = 0
 end
 
 #for pol-red-abs we need s.th. else I think
@@ -209,6 +213,7 @@ global _next = 0.0
 function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
   global _next
   @v_do :ClassGroup_time 2 rt = time_ns()
+  E.cnt += 1
   n::Int = 1
   n = E.limit
   i=1
