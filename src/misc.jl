@@ -1,4 +1,4 @@
-import Base: isprime, dot
+import Base: isprime, dot, convert
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
@@ -515,10 +515,6 @@ function Float64(a::fmpz)
   return ccall((:fmpz_get_d, :libflint), Float64, (Ptr{fmpz},), &a)
 end
 
-function Float64(a::fmpq)
-  return Float64(num(a))/Float64(den(a))
-end
-
 function BigFloat(a::fmpq)
   r = BigFloat(0)
   ccall((:fmpq_get_mpfr, :libflint), Void, (Ptr{BigFloat}, Ptr{fmpq}, Int32), &r, &a, Base.MPFR.ROUNDING_MODE[end])
@@ -915,6 +911,9 @@ function signature(K::NfNumberField)
   return signature(K.pol)
 end
 
+################################################################################
+##
+################################################################################
 function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
   d = denominator(b[1])
   n = degree(K)
@@ -929,6 +928,10 @@ function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
 end 
 
 
+################################################################################
+##
+################################################################################
+
 function //(a::fmpq, b::fmpz)
   return a//fmpq(b)
 end
@@ -936,3 +939,47 @@ end
 function //(a::fmpz, b::fmpq)
   return fmpq(a)//b
 end
+
+function *(a::fmpz, b::Float64)
+  return BigInt(a)*b
+end
+
+function *(b::Float64, a::fmpz)
+  return BigInt(a)*b
+end
+
+function *(a::fmpq, b::Float64)
+  return Rational(a)*b
+end
+
+function *(b::Float64, a::fmpq)
+  return Rational(a)*b
+end
+
+function Float64(a::fmpq)
+  b = a*fmpz(2)^53
+  Float64(div(num(b), den(b)))/Float64(2^53)
+end
+
+function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.fmpz)
+  return R(BigInt(a))
+end
+################################################################################
+# 
+################################################################################
+
+function max(a::fmpz_mat)
+  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
+  for i=1:rows(a)
+    for j=1:cols(a)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, i-1, j-1)
+      if ccall((:fmpz_cmpabs, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
+        m = z
+      end
+    end
+  end
+  r = fmpz()
+  ccall((:fmpz_abs, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
+  return r
+end
+
