@@ -545,6 +545,20 @@ function ppio(a::fmpz, b::fmpz)
   return (c, n)
 end
 
+function ppio(a::Integer, b::Integer) 
+  c = gcd(a, b)
+  n = div(a, c)
+  m = c
+  g = gcd(c, n)
+  while g != 1
+    c = c*g
+    n = div(n, g)
+    g = gcd(c, n)
+  end
+  return (c, n)
+end
+
+
 function denominator(a::nf_elem)                                           
   d_den = fmpz()::fmpz
   ccall((:nf_elem_get_den, :libflint), Void,                                                              
