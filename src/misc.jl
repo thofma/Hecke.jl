@@ -2,7 +2,7 @@ import Base: isprime, dot, convert
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf, _hnf, modular_hnf, representation_mat, signature
+       discriminant, dot, hnf, _hnf, modular_hnf, representation_mat, signature, howell_form!, howell_form, _hnf_modular
 
 ################################################################################
 #
@@ -820,6 +820,50 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   end
 end
 
+function _lift_howell_to_hnf(x::nmod_mat)
+# Assume that x is square, in howell normal form and all non-zero rows are at the bottom
+  !issquare(x) && error("Matrix has to be square")
+  y = lift(x)
+  for i in cols(y):-1:1
+    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
+    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
+      ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
+      for k in 1:i-1
+        _swaprows!(y, k, k+1)
+      end
+    end
+  end
+  return y
+end
+
+function _hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
+  if abs(m) < fmpz(typemax(UInt))
+    y = nmod_mat(UInt(m), x)
+    howell_form!(y, shape)
+    return _lift_howell_to_hnf(y)
+  end
+  return __hnf_modular(x, m, shape)
+end
+
+function __hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
+  y = deepcopy(x)
+  howell_form!(y, m, shape)
+  for i in cols(y):-1:1
+    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
+    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
+      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
+      for k in 1:i-1
+        _swaprows!(y, k, k+1)
+      end
+    end
+  end
+  return y
+end
+
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
     h = hnf(_swapcols(x))
@@ -828,6 +872,41 @@ function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
     return h::fmpz_mat
   end
   return hnf(x)::fmpz_mat
+end
+
+
+function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    _swapcols!(x)
+    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
+    _swapcols!(x)
+    _swaprows!(x)
+  else
+    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
+  end
+end
+
+function howell_form(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
+  y = deepcopy(x)
+  howell_form!(y, m, shape)
+  return y
+end
+
+function howell_form!(x::nmod_mat, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    _swapcols!(x)
+    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
+    _swapcols!(x)
+    _swaprows!(x)
+  else
+    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
+  end
+end
+
+function howell_form(x::nmod_mat, shape::Symbol = :upperright)
+  y = deepcopy(x)
+  howell_form!(y, shape)
+  return y
 end
 
 function _swaprows(x::fmpz_mat)
@@ -872,8 +951,89 @@ function _swaprows!(x::fmpz_mat)
   nothing
 end
 
+function _swaprows!(x::fmpz_mat, i::Int, j::Int)
+  ccall((:_fmpz_mat_swap_rows, :libflint), Void, (Ptr{fmpz_mat}, Int, Int), &x, i-1, j-1)
+  nothing
+end
+
+function _swaprows!(x::nmod_mat, i::Int, j::Int)
+  ccall((:_nmod_mat_swap_rows, :libflint), Void, (Ptr{nmod_mat}, Int, Int), &x, i-1, j-1)
+#  for k in 1:rows(x)
+#    s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Lim, (Ptr{nmod_mat}, Int, Int), &x, i, k)
+#    t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Lim, (Ptr{nmod_mat}, Int, Int), &x, j, k)
+#    set_entry!(x, i, k, t)
+#    set_entry!(y, j, k, s)
+#  end
+  nothing
+end
+  
+
+function _swaprows!(x::nmod_mat)
+  r = rows(x)
+  c = cols(x)
+
+  if r == 1
+    return nothing
+  end
+
+  if r % 2 == 0
+    for i in 1:div(r,2)
+      for j = 1:c
+        # we swap x[i,j] <-> x[r-i+1,j]
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, j - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        set_entry!(x, r - i + 1, j, s)
+        set_entry!(x, i, j, t)
+      end
+    end
+  else
+    for i in 1:div(r-1,2)
+      for j = 1:c
+        # we swap x[i,j] <-> x[r-i+1,j]
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, j - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        set_entry!(x, i, j, t)
+        set_entry!(x, r - i + 1, j, s)
+      end
+    end
+  end
+  nothing
+end
+
+function _swapcols!(x::nmod_mat)
+  r = rows(x)
+  c = cols(x)
+
+  if c == 1
+    return nothing
+  end
+
+  if c % 2 == 0
+    for i in 1:div(c,2)
+      for j = 1:r
+        # swap x[j,i] <-> x[j,c-i+1]
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, i - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        set_entry!(x, j, i, t)
+        set_entry!(x, j, c - i + 1, s)
+      end
+    end
+  else
+    for i in 1:div(c-1,2)
+      for j = 1:r
+        # swap x[j,i] <-> x[j,c-i+1]
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, i - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        set_entry!(x, j, i, t)
+        set_entry!(x, j, c - i + 1, s)
+      end
+    end
+  end
+  nothing
+end
+
+
 function _swapcols!(x::fmpz_mat)
-  t = FlintZZ()
   r = rows(x)
   c = cols(x)
 
