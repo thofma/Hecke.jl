@@ -690,7 +690,8 @@ function basis_mat(A::NfMaximalOrderIdeal)
   n = degree(K)
 #  T = MatrixSpace(FlintZZ, n, n)::Nemo.FmpzMatSpace
 #  c = vcat(T(A.gen_one)::fmpz_mat, representation_mat(A.gen_two)::fmpz_mat)::fmpz_mat
-  c = modular_hnf(A.gen_one, representation_mat(A.gen_two), :lowerleft)
+  #c = modular_hnf(A.gen_one, representation_mat(A.gen_two), :lowerleft)
+  c = _hnf_modular(representation_mat(A.gen_two), A.gen_one, :lowerleft)
 #  c = sub(c, n + 1:2*n, 1:n)
   A.basis_mat = c
   return c::fmpz_mat
