@@ -240,8 +240,8 @@ function minimum(A::NfMaximalOrderIdeal)
     return A.minimum
   end
   if is_weakly_normal(A)
-    println(has_2_elem(A))
-    d = denominator(inv(A.gen_two), A.parent.order)
+    K = A.parent.order.nf
+    d = denominator(inv(K(A.gen_two)), A.parent.order)
     d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
     return d
