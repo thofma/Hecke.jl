@@ -9,7 +9,7 @@
   converted to an fmpz_mat which is then hnf'ed.
 =#  
 
-import Base.push!, Base.max
+import Base.push!, Base.max, Nemo.nbits
 
 export Smat, SmatRow, Entry, upper_triangular, vcat!, show, sub,
        fmpz_mat, rows, cols, copy, push!
@@ -380,6 +380,15 @@ function max(A::Smat{fmpz})
   return abs(m)
 end
 
+function nbits(a::BigInt)
+  return ndigits(a, 2)
+end
+
+function nbits(a::Int)
+  a==0 && return 0
+  return Int(ceil(log(abs(a))/log(2)))
+end
+
 function one_step{T}(A::Smat{T}, sr = 1)
   i = sr
   all_r = Array(Int, 0)
@@ -438,6 +447,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
 
 #    @assert length(A.rows[all_r[j]].entry) == 0 ||
 #             A.rows[all_r[j]].entry[1].col > min
+#  println("in one step: ilog2(max) now ", nbits(max(A)), " j:", j, " length: ", length(all_r))
   end
   for j=length(all_r):-1:2
     if length(A.rows[all_r[j]].entry) == 0
@@ -451,7 +461,7 @@ end
 function upper_triangular{T}(A::Smat{T}; mod = 0)
   for i = 1:min(rows(A), cols(A))
     x = one_step(A, i)
-#    println("max now ", max(A))
+#    println("after one step: ilog2(max) now ", nbits(max(A)))
     if x>A.r
       return
     end
