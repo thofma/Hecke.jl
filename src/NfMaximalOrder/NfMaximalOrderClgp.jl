@@ -71,6 +71,7 @@ function show(io::IO, B::FactorBase)
 end
 
 function is_smooth{T}(c::FactorBase{T}, a::T)
+  @assert a != 0
   g = gcd(c.prod, a)
   while g != 1 
     a = div(a, g)
@@ -80,6 +81,7 @@ function is_smooth{T}(c::FactorBase{T}, a::T)
 end
 
 function factor{T}(c::FactorBase{T}, a::T)
+  @assert a != 0
   f = Dict{T, Int}()
   for i in c.base
     if mod(a, i)==0
@@ -96,6 +98,7 @@ function factor{T}(c::FactorBase{T}, a::T)
 end
 
 function factor{T}(c::FactorBase{T}, a::fmpq)
+  @assert a != 0
   f = Dict{T, Int}()
   n = num(a)
   d = den(a)
@@ -302,7 +305,6 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   hnf_call::Int
   hnf_time::Float64
   last::Int
-  sum_norm::fmpz
 
   val_base::fmpz_mat      # a basis for the possible infinite ranodmization 
                           # vectors: conditions are
@@ -373,14 +375,17 @@ end
 
 global AllRels
 function class_group_init(O::NfMaximalOrder, B::Int;
-                          complete::Bool = true, degree_limit::Int = 5, T::DataType = Smat{BigInt})
+                          complete::Bool = true, degree_limit::Int = 0, T::DataType = Smat{fmpz})
   global AllRels = []
   clg = ClassGrpCtx{T}()
+
+  if degree_limit == 0 
+    degree_limit = degree(O)
+  end
 
   clg.bad_rel = 0
   clg.rel_cnt = 0
   clg.last = 0
-  clg.sum_norm = 0
 
   clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
   clg.M = T()
@@ -417,9 +422,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
   if a in clg.RS 
     return false
   end
-#  global AllRels
-#  push!(AllRels, a)
-  clg.sum_norm += num(n*n)
   #print("trying relation of length ", Float64(length(clg.c, a)),
   #      " and norm ", Float64(n));
   if !is_smooth(clg.FB.fb_int, num(n)*denominator(a))
@@ -433,11 +435,8 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
     @hassert :ClassGroup 1 rows(clg.M) == length(clg.R)
     clg.rel_cnt += 1
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
-           clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last,
-           ", avg (norm^2) ",
-           Float64(BigInt(clg.sum_norm)/(clg.bad_rel-clg.last+1)))
+           clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
     clg.last = clg.bad_rel
-    clg.sum_norm = 0
     return true
   else
     #println(" -> 2:fail")
@@ -570,7 +569,7 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   d = rt_c.cache
   mult!(d, b.num, c)
   if !iszero(v)
-    @v_do :ClassGroup 1 println("using inf val", v)
+    @v_do :ClassGroup 2 println("using inf val", v)
     old = get_bigfloat_precision()
     set_bigfloat_precision(4*prec)
     mult_by_2pow_diag!(d, v);
@@ -588,32 +587,38 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   l, t = lll_gram_with_transform(g)
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
-  @v_do :ClassGroup 1 print_with_color(:green, "lll basis length profile\n");
-  @v_do :ClassGroup 1 for i=1:rows(l)
+  @v_do :ClassGroup 2 print_with_color(:green, "lll basis length profile\n");
+  @v_do :ClassGroup 2 for i=1:rows(l)
     print(div(l[i,i], fmpz(2)^prec), " : ")
   end
-  @v_do :ClassGroup 1 println("")
+  @v_do :ClassGroup 2 println("")
   if nbits(max(t)) >  div(prec, 2)
     print_with_color(:red, "lll trafo too large\n");
     throw(LowPrecisionLLL())
   end
   ## lattice has lattice disc = order_disc * norm^2
   ## lll needs to yield a basis sth
-  ## l[i,i] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)
+  ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
+  ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = rows(l)
-  d = abs(discriminant(order(A)))*norm(A)^2
-  d = root(d, n)+1
-  d *= fmpz(2)^(div(n,2)) * fmpz(2)^prec
   den = basis_mat(order(A)).den
-  d *= den^2
+  disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n)
+  d = root(disc, n)+1
+  d *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+  pr = fmpz(1)
+  if l[1,1] > d 
+    print_with_color(:red, "LLL basis too large\n");
+    println("bound is ", d, " value at ", 1, " is ", l[1,1]); 
+    throw(LowPrecisionLLL())
+  end
   for i=1:n
-    if l[i,i] > d
-      print_with_color(:red, "LLL basis too large\n");
-      println("bound is ", d, " value at ", i, " is ", l[i,i]); 
-      throw(LowPrecisionLLL())
-    end  
+    pr = pr*l[i,i]
   end  
-
+  if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
+    print_with_color(:red, "LLL basis too large\n");
+    println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));
+    throw(LowPrecisionLLL())
+  end
 
   return l, t*t1
 end
@@ -703,6 +708,8 @@ end
 
 global _elt = Uint(0)
 
+type NoElements <: Exception end
+
 function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
   global _elt, _next
   K = nf(order(I.A))
@@ -722,10 +729,11 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q
     end
-    @v_do :ClassGroup 1 print_with_color(:red, "restart after ")
-    @v_do :ClassGroup 1 print(I.E.cnt)
+    @v_do :ClassGroup 2 print_with_color(:red, "restart after ")
+    @v_do :ClassGroup 2 print(I.E.cnt)
     @v_do :ClassGroup 3 println(" for ", I.A, I.E.c)
-    @v_do :ClassGroup 1 println(" length now ", I.E.c*2)
+    @v_do :ClassGroup 2 println(" length now ", I.E.c*2)
+#    throw(NoElements())
     I.restart += 1
     if I.restart > 10
       _elt = I
@@ -756,12 +764,15 @@ function class_group_current_result(clg::ClassGrpCtx)
     clg.hnf_time += time_ns()-t
     clg.hnf_call += 1
     diag = [clg.H[i,i] for i =1:min(rows(clg.H), cols(clg.H))]
+#=    
+we do need redundant relations for the units.
     if diag == last_diag
       deleteat!(clg.M.rows, (clg.last_H+1):length(clg.R))
       deleteat!(clg.R, (clg.last_H+1):length(clg.R))
       clg.M.r = length(clg.M.rows)
       @vprint :ClassGroup 1 "pruning again...\n"
     end
+=#    
   else
     full_rank = false
     t = time_ns()
@@ -780,12 +791,20 @@ function class_group_current_result(clg::ClassGrpCtx)
   end
     
   piv = Array(Int, 0)
-  for i = 1:rows(h)
-    push!(piv, h.rows[i].entry[1].col)
+  if full_rank
+    for i = h.rows
+      if i.entry[1].val == 1
+        push!(piv, i.entry[1].col)
+      end
+    end
+  else
+    for i = h.rows
+      push!(piv, i.entry[1].col)
+    end
   end
   mis = setdiff(Set(1:cols(h)), Set(piv))
 
-  if length(mis) > 0
+  if !full_rank
     clg.mis = mis
     clg.h = FlintZZ(0)
     return (fmpz(0), mis)::Tuple{fmpz, Set{Int64}}
@@ -802,7 +821,7 @@ function class_group_current_result(clg::ClassGrpCtx)
     clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
   end
 
-  clg.mis = Set(1:0)
+  clg.mis = mis
   return (clg.h, clg.mis)::Tuple{fmpz, Set{Int}}
 end
 
@@ -852,7 +871,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
             error("2:too much prec")
           end
         else
-          throw(e)
+          rethrow(e)
         end
       end
     end  
@@ -862,9 +881,13 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     while true
       e = class_group_small_real_elements_relation_next(I[end])
       n = abs(norm_div(e, norm(I[end].A), np))
+      if n==0 || e==0
+        println("found ", e, " of norm ", n)
+        global AllRels = I[end]
+      end
 #        print_with_color(:blue, "norm OK:")
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
-      if n > 10*sqrt_disc
+      if n > sqrt_disc
 #        prec = Int(ceil(prec*1.2))
         print_with_color(:red, "norm too large:")
         println(n, " should be ", sqrt_disc)
@@ -874,20 +897,26 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         break
       end
       f = class_group_add_relation(clg, e, n*norm(I[end].A))
+#      global AllRels
+#      push!(AllRels, (e, n))
       if f
         I[end].cnt += 1
         break
       else
         I[end].bad += 1
         if I[end].bad > (clg.bad_rel/clg.rel_cnt)*2
-          @v_do :ClassGroup 1 println("too slow in getting s.th. for ", i,
-                          "good: ", I[end].cnt,  " bad: ",  I[end].bad,
+          @v_do :ClassGroup 2 println("too slow in getting s.th. for ", i,
+                          "\ngood: ", I[end].cnt,  " bad: ",  I[end].bad,
                           " ratio: ", (clg.bad_rel/clg.rel_cnt))
           break
         end
       end
     end
     @v_do :ClassGroup_gc 1 gc()
+#    if cols(clg.M) < rows(clg.M)*1.1
+#      @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
+#      break
+#    end
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-t)/1e9,
@@ -910,9 +939,9 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
 
       while true
         if (E.cnt==0 && E.bad > lt) || (E.cnt != 0 && (bad_h || E.bad > lt))
-          @v_do :ClassGroup 1 println("cnt ", E.cnt, " bad ", E.bad)
-          @v_do :ClassGroup 1 println("re-starting (at ", i, ") ")
-          @v_do :ClassGroup 2 println("for ideal ", E.A)
+          @v_do :ClassGroup 2 println("cnt ", E.cnt, " bad ", E.bad, " limit ", lt)
+          @v_do :ClassGroup 2 println("re-starting (at ", i, ") ")
+          @v_do :ClassGroup 3 println("for ideal ", E.A)
 
           A = idl[i]
           while norm(A) < sqrt_disc
@@ -932,22 +961,20 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
               prec = Int(ceil(1.2*prec))
               println(" increasing to ", prec)
             else
-              throw(e)
+              rethrow(e)
             end  
           end  
           E = I[i]
         end
         e = class_group_small_real_elements_relation_next(E)
         n = abs(norm_div(e, norm(E.A), np))
-        if n > 10*sqrt_disc
-#          prec = Int(ceil(prec*1.2))
-          print_with_color(:red, "2:norm too large:")
-          println(n, " should be ", sqrt_disc)
-          println("offending element is ", e)
-          println("prec now ", prec)
-          if prec > 1000
-            error("precision too large")
-          end
+        if n > sqrt_disc
+          @v_do :ClassGroup 2 begin
+            print_with_color(:red, "2:norm too large:")
+            println(n, " should be ", sqrt_disc)
+            println("offending element is ", e)
+            println("prec now ", prec)
+          end  
 #          println("offending ideal is ", E.A, "\nchanging ideal")
           A = idl[i]
           while norm(A) < sqrt_disc
@@ -974,7 +1001,9 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     l_piv = piv
     h, piv = class_group_current_result(clg)
     if h != 0
-      piv = Set([rand(div(clg.FB.size, 2):clg.FB.size) for i=1:1])
+      if h==1 
+        return h, piv
+      end
       @v_do :ClassGroup 1 println("full rank: current h = ", h,
                       " want ", want_extra, " more")
       if h == last_h 
@@ -1061,7 +1090,7 @@ function lll(M::NfMaximalOrder)
         end
         continue;
       else
-        throw(e)
+        rethrow(e)
       end
     end
   end
