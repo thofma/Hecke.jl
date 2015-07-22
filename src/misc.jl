@@ -1,4 +1,4 @@
-import Base: isprime, dot, convert
+import Base: isprime, dot, convert, isless, log
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
@@ -1138,6 +1138,11 @@ end
 function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.fmpz)
   return R(BigInt(a))
 end
+
+isless(a::fmpz, b::fmpz) = a<b
+
+log(a::fmpz) = log(BigInt(a))
+log(a::fmpq) = log(num(a)) - log(den(a))
 ################################################################################
 # 
 ################################################################################
