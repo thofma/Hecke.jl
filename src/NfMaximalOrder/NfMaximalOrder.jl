@@ -264,6 +264,14 @@ function MaximalOrder(K::NfNumberField)
   return NfMaximalOrder(K, basis_mat(O))
 end
 
+function MaximalOrder(K::NfNumberField, primes::Array{fmpz, 1})
+  O = EquationOrder(K)
+  @vprint :NfMaximalOrder 1 "Computing the maximal order ...\n"
+  O = _MaximalOrder(O, primes)
+  @vprint :NfMaximalOrder 1 "... done\n"
+  return NfMaximalOrder(K, basis_mat(O))
+end
+
 ################################################################################
 #
 #  String I/O
