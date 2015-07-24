@@ -913,10 +913,13 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       end
     end
     @v_do :ClassGroup_gc 1 gc()
-#    if cols(clg.M) < rows(clg.M)*1.1
-#      @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
-#      break
-#    end
+    if cols(clg.M) < rows(clg.M)*1.1
+      @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
+      while length(I) < length(clg.FB.ideals)
+        push!(I, class_group_small_real_elements_relation_start(clg, clg.FB.ideals[length(I)+1], limit = limit, prec = prec, val = val))
+      end
+      break
+    end
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-t)/1e9,
@@ -947,6 +950,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           while norm(A) < sqrt_disc
             A *= rand(idl)
           end
+          bad_norm = 0
 
           try
             I[i] = class_group_small_real_elements_relation_start(clg, A,
@@ -968,6 +972,13 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         end
         e = class_group_small_real_elements_relation_next(E)
         n = abs(norm_div(e, norm(E.A), np))
+        #=
+        if n*norm(E.A) != abs(norm(e))
+          println("bad norm for ", e, " is ", n, " or ", n*norm(E.A),
+             " should be ", norm(e), " np ", np, " norm(I) = ", norm(E.A))
+          @assert false   
+        end
+        =#
         if n > sqrt_disc
           @v_do :ClassGroup 2 begin
             print_with_color(:red, "2:norm too large:")
@@ -975,15 +986,25 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
             println("offending element is ", e)
             println("prec now ", prec)
           end  
-#          println("offending ideal is ", E.A, "\nchanging ideal")
-          A = idl[i]
-          while norm(A) < sqrt_disc
-            A *= rand(idl)
+          bad_norm += 1
+          if bad_norm /(E.cnt + E.bad + 1) > 0.1
+            print_with_color(:red, "too many large norms, changing ideal\n")
+            println("bad_norm: ", bad_norm, " cnt: ", E.cnt, " bad ", E.bad)
+            A = idl[i]
+            while norm(A) < sqrt_disc
+              A *= rand(idl)
+            end
+            I[i] = class_group_small_real_elements_relation_start(clg, A,
+                            val = E.vl, limit = limit, prec = prec)
+            E = I[i]
+            bad_norm = 0
           end
-          I[i] = class_group_small_real_elements_relation_start(clg, A,
-                          val = E.vl, limit = limit, prec = prec)
-          E = I[i]
-
+          #= CF: think careful here
+           - norm might be wrong as we did not use enough primes
+           - use as large prime variant
+           - bad chance for smooth
+           lets skip it for now
+          =#
           continue;
         end
         if class_group_add_relation(clg, e, n*norm(E.A))
