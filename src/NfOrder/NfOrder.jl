@@ -32,11 +32,9 @@
 #
 ################################################################################
 
-import Base: powermod
-
 export NfOrder, NfOrderSet
 
-export powermod, elem_in_basis, EquationOrder, deepcopy, Order
+export elem_in_basis, EquationOrder, deepcopy, Order
 
 ################################################################################
 #
@@ -63,17 +61,18 @@ const NfOrderID = ObjectIdDict()
 
 type NfOrder <: GenNfOrd
   nf::NfNumberField
-  basis_nf::Array{nf_elem, 1} # Basis as number field elements
-  basis_ord                   # Array{NfOrderElt, 1}
-  basis_mat::FakeFmpqMat      # Basis matrix with respect to number field basis
-  basis_mat_inv::FakeFmpqMat  # Inverse of basis matrix
-  index::fmpz                 # ??
-  disc::fmpz                  # Discriminant
-  disc_fac                    # ??
-  isequationorder::Bool       # Flag for being equation order
-  parent::NfOrderSet          # Parent object
-  signature::Tuple{Int, Int}  # Signature of the associated number field
-                              # (-1, 0) means 'not set'
+  basis_nf::Array{nf_elem, 1}      # Basis as number field elements
+  basis_ord::Array{NfOrderElem, 1} # Basis as order elements
+  basis_mat::FakeFmpqMat           # Basis matrix with respect
+                                   # to number field basis
+  basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
+  index::fmpz                      # ??
+  disc::fmpz                       # Discriminant
+  disc_fac                         # ??
+  isequationorder::Bool            # Flag for being equation order
+  parent::NfOrderSet               # Parent object
+  signature::Tuple{Int, Int}       # Signature of the associated number field
+                                   # (-1, 0) means 'not set'
 
   function NfOrder()
     z = new()
@@ -292,23 +291,3 @@ function EquationOrder(K::NfNumberField)
   return z
 end
 
-################################################################################
-#
-#  Discriminant
-#
-################################################################################
-
-function discriminant(O::NfOrder)
-  if isdefined(O, :disc)
-    return O.disc
-  end
-  A = MatrixSpace(ZZ, degree(O), degree(O))()
-  B = basis(O)
-  for i in 1:degree(O)
-    for j in 1:degree(O)
-      A[i,j] = ZZ(trace(B[i]*B[j]))
-    end
-  end
-  O.disc = determinant(A)
-  return O.disc
-end

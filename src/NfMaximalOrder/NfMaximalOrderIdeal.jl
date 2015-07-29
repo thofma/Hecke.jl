@@ -33,10 +33,10 @@ end
 order(S::NfMaximalOrderIdealSet) = S.order
 
 type NfMaximalOrderIdeal <: GenNfOrdIdeal
-  basis::Array{NfMaximalOrderElem, 1}
+  basis::Array{NfOrderElem, 1}
   basis_mat::fmpz_mat
   gen_one::fmpz
-  gen_two::NfMaximalOrderElem
+  gen_two::NfOrderElem
   gens_short::Bool
   gens_normal::fmpz
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
@@ -47,7 +47,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
                            # 1 known to be prime
                            # 2 known to be not prime
   is_principal::Int        # as above
-  princ_gen::NfMaximalOrderElem
+  princ_gen::NfOrderElem
   splitting_type::Tuple{Int, Int}
 
   valuation::Function      # a function returning "the" valuation -
@@ -85,7 +85,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
     return r
   end
 
-  function NfMaximalOrderIdeal(a::fmpz, b::NfMaximalOrderElem)
+  function NfMaximalOrderIdeal(a::fmpz, b::NfOrderElem)
     r = new()
     r.gen_one = a
     r.gen_two = b
@@ -104,7 +104,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
   end
 
   function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz,
-                  b::NfMaximalOrderElem)
+                  b::NfOrderElem)
     r = new()
     r.gen_one = a
     r.gen_two = b
@@ -461,7 +461,7 @@ end
 #
 ################################################################################
 
-function Ideal(O::NfMaximalOrder, x::NfMaximalOrderElem)
+function Ideal(O::NfMaximalOrder, x::NfOrderElem)
   return NfMaximalOrderIdeal(O, x)
 end
 
@@ -660,7 +660,7 @@ function inv(A::NfMaximalOrderIdeal)
     Ai = parent(A)()
     dn = denominator(d*alpha, O)
     Ai.gen_one = dn 
-    Ai.gen_two = O(d*alpha*dn; check = false)
+    Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(A.parent.order)//norm(A)
     @hassert :NfMaximalOrder 1 den(temp) == 1
     Ai.norm = num(temp)
@@ -921,7 +921,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer)
     b = K(t)
     ideal = I()
     ideal.gen_one = p
-    ideal.gen_two = O(b, check = false)
+    ideal.gen_two = O(b, false)
     ideal.is_prime = 1
     ideal.parent = I
     ideal.splitting_type = fac[k][2], degree(fac[k][1])
@@ -978,7 +978,7 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer)
   return result
 end
 
-function _split_algebra(BB::Array{NfMaximalOrderElem}, Ip::NfMaximalOrderIdeal, p::Integer)
+function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Integer)
   if length(BB) == 1
     return [ Ip ]
   end
@@ -1046,7 +1046,7 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
   B = rref(Amodp)
   r = rank(B)
   C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, A.c))
-  BB = Array(NfMaximalOrderElem, degree(O) - r)
+  BB = Array(NfOrderElem, degree(O) - r)
   pivots = Array(Int, 0)
   # get he pivots of B
   for i in 1:r
@@ -1073,7 +1073,7 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
   return BB
 end
 
-function mod(x::NfMaximalOrderElem, y::NfMaximalOrderIdeal)
+function mod(x::NfOrderElem, y::NfMaximalOrderIdeal)
   # *** minimum doesn't work so use norm
   # this function assumes that HNF is upper right 
   # !!! This must be changes as soon as HNF is lower left
@@ -1176,7 +1176,7 @@ function +(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
   return NfMaximalOrderIdeal(H, parent(x))
 end
 
-function mod(a::NfMaximalOrderElem, m::fmpz)
+function mod(a::NfOrderElem, m::fmpz)
   ar = copy(elem_in_basis(a))
   for i in 1:degree(parent(a))
     ar[i] = mod(ar[i],m)
@@ -1184,7 +1184,7 @@ function mod(a::NfMaximalOrderElem, m::fmpz)
   return parent(a)(ar)
 end
 
-dot(x::BigInt, y::NfMaximalOrderElem) = x * y
+dot(x::BigInt, y::NfOrderElem) = x * y
 
 colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
 

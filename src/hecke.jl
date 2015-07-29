@@ -22,7 +22,7 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
 export NfNumberField, hash
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
-             size
+             size, dot, in, powermod
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -202,12 +202,12 @@ function checkbounds(a::Int, b::Int) nothing; end;
 #
 ################################################################################
 
-include("LinearAlgebra.jl")
 include("Sparse.jl")
+include("LinearAlgebra.jl")
 include("Misc.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("MaximalOrderIdeals.jl")
+#include("MaximalOrderIdeals.jl")
 include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("misc.jl")

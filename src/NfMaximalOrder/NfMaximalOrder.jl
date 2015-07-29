@@ -25,15 +25,16 @@ end
 
 type NfMaximalOrder <: GenNfOrd
   nf::NfNumberField
-  basis_nf::Array{nf_elem, 1}   # Array of number field elements
-  basis_ord                     # Array of order elements
-  basis_mat::FakeFmpqMat        # basis matrix of order wrt basis of K
-  basis_mat_inv::FakeFmpqMat    # inverse of basis matrix
-  index::fmpz                   # the determinant of basis_mat_inv
-  disc::fmpz                    # discriminant
-  disc_fac                      # factorized discriminant or prime factors?
-  parent::NfMaximalOrderSet     # parent object
-  signature::Tuple{Int, Int}    # signature of the parent object
+  basis_nf::Array{nf_elem, 1}      # Array of number field elements
+  basis_ord::Array{NfOrderElem, 1} # Array of order elements
+  basis_mat::FakeFmpqMat           # basis matrix of order wrt basis of K
+  basis_mat_inv::FakeFmpqMat       # inverse of basis matrix
+  index::fmpz                      # the determinant of basis_mat_inv
+  disc::fmpz                       # discriminant
+  disc_fac                         # factorized discriminant or prime factors?
+  parent::NfMaximalOrderSet        # parent object
+  signature::Tuple{Int, Int}       # signature of the parent object
+                                   # (-1, 0) means 'not set'
 
   function NfMaximalOrder(a::NfNumberField)
     r = new(a)
@@ -63,7 +64,7 @@ function NfMaximalOrder(K::NfNumberField, x::FakeFmpqMat)
   z.basis_nf = d
   z.basis_mat = x
   z.basis_mat_inv = inv(x)
-  B = Array(NfMaximalOrderElem, n)
+  B = Array(NfOrderElem, n)
   for i in 1:n
     v = fill(zero(ZZ), n)
     v[i] = ZZ(1)
@@ -89,7 +90,7 @@ function NfMaximalOrder(b::Array{nf_elem, 1})
   z.basis_mat = A
   z.basis_mat_inv = inv(A)
 
-  B = Array(NfMaximalOrderElem, n)
+  B = Array(NfOrderElem, n)
 
   for i in 1:n
     v = fill(zero(ZZ), n)
@@ -110,7 +111,7 @@ function NfMaximalOrder(O::PariMaximalOrder)
   b = basis(O)
   d = Array(nf_elem, n)
   Qx = K.pol.parent
-  B = Array(NfMaximalOrderElem, n)
+  B = Array(NfOrderElem, n)
 
   for i in 1:n
     d[i] = K(Qx(b[i]))
@@ -129,7 +130,7 @@ function basis_ord(O::NfMaximalOrder)
     return O.basis_ord
   end
   b = O.basis_nf
-  B = Array(NfMaximalOrderElem, length(b))
+  B = Array(NfOrderElem, length(b))
   for i in 1:length(b)
     v = fill(ZZ(0), length(b))
     v[i] = ZZ(1)

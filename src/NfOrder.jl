@@ -31,7 +31,7 @@ add_verbose_scope(:NfOrder)
 add_assert_scope(:NfOrder)
 
 include("NfOrder/NfOrder.jl")
-include("NfOrder/NfOrderElem.jl")
+#include("NfOrder/NfOrderElem.jl")
 include("NfOrder/NfOrderIdeal.jl")
 include("NfOrder/NfOrderFracIdeal.jl")
 include("NfOrder/NfOrderRoundTwo.jl")

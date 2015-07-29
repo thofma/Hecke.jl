@@ -166,34 +166,34 @@ end
 #
 ################################################################################
 
-function Base.call(O::NfMaximalOrder)
-  z = NfMaximalOrderElem(O)
-  return z
-end
-
-function Base.call(O::NfMaximalOrder, x::nf_elem; check::Bool = true)
-  return NfMaximalOrderElem(O, x; check = check)
-end
-
-function Base.call(O::NfMaximalOrder, x::nf_elem, y::Array{fmpz, 1})
-  return NfMaximalOrderElem(O, x, y)
-end
-
-function Base.call(O::NfMaximalOrder, x::Array{fmpz, 1})
-  return NfMaximalOrderElem(O, x)
-end
-
-function Base.call{T <: Integer}(O::NfMaximalOrder, x::Array{T, 1})
-  return NfMaximalOrderElem(O, x)
-end
-
-function Base.call(O::NfMaximalOrder, x::fmpz)
-  return NfMaximalOrderElem(O, x)
-end
-
-function Base.call{T <: Integer}(O::NfMaximalOrder, x::T)
-  return NfMaximalOrderElem(O, x)
-end
+#function Base.call(O::NfMaximalOrder)
+#  z = NfOrderElem(O)
+#  return z
+#end
+#
+#function Base.call(O::NfMaximalOrder, x::nf_elem; check::Bool = true)
+#  return NfOrderElem(O, x; check = check)
+#end
+#
+#function Base.call(O::NfMaximalOrder, x::nf_elem, y::Array{fmpz, 1})
+#  return NfOrderElem(O, x, y)
+#end
+#
+#function Base.call(O::NfMaximalOrder, x::Array{fmpz, 1})
+#  return NfOrderElem(O, x)
+#end
+#
+#function Base.call{T <: Integer}(O::NfMaximalOrder, x::Array{T, 1})
+#  return NfOrderElem(O, x)
+#end
+#
+#function Base.call(O::NfMaximalOrder, x::fmpz)
+#  return NfOrderElem(O, x)
+#end
+#
+#function Base.call{T <: Integer}(O::NfMaximalOrder, x::T)
+#  return NfOrderElem(O, x)
+#end
   
 ################################################################################
 #
@@ -499,7 +499,7 @@ powermod(a::NfMaximalOrderElem, i::fmpz, p::Integer)  = powermod(a, i, ZZ(p))
 powermod(a::NfMaximalOrderElem, i::Integer, p::fmpz)  = powermod(a, ZZ(i), p)
 
 function is_unit(x::NfMaximalOrderElem)
-  return inv(elem_in_nf(x)) in parent(x)
+  return abs(norm(x)) == 1 
 end
 
 dot(x::fmpz, y::nf_elem) = x*y

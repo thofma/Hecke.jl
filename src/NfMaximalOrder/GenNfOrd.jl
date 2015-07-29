@@ -1,16 +1,44 @@
 ################################################################################
 #
-#  GenNfOrd.jl : Generic orders in number fields
+#     GenNfOrd.jl : Generic orders in number fields and elements thereof
+#
+# This file is part of hecke.
+#
+# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+#  Copyright (C) 2015 Tommy Hofmann
 #
 ################################################################################
 
 # So far, this is only a common supertype for NfOrder and NfMaximalOrder
 
+export elem_in_order, rand, rand!
+
 abstract GenNfOrd 
 
 abstract GenNfOrdIdeal
-
-abstract GenNfOrdElem
 
 ################################################################################
 #
@@ -66,12 +94,167 @@ end
 
 ################################################################################
 #
+#  Discriminant
+#
+################################################################################
+
+function discriminant(O::GenNfOrd)
+  if isdefined(O, :disc)
+    return O.disc
+  end
+  A = MatrixSpace(FlintZZ, degree(O), degree(O))()
+  B = basis_nf(O)
+  for i in 1:degree(O)
+    for j in 1:degree(O)
+      A[i,j] = FlintZZ(trace(B[i]*B[j]))
+    end
+  end
+  O.disc = determinant(A)
+  return O.disc
+end
+
+################################################################################
+################################################################################
+##
+##  NfOrderElem
+##
+################################################################################
+################################################################################
+
+type NfOrderElem
+  elem_in_nf::nf_elem
+  elem_in_basis::Array{fmpz, 1}
+  has_coord::Bool
+  parent::GenNfOrd
+
+  function NfOrderElem(O::GenNfOrd, a::nf_elem)
+    z = new()
+    z.elem_in_nf = deepcopy(a)
+    z.elem_in_basis = Array(fmpz, degree(O))
+    z.parent = O
+    z.has_coord = false
+    return z
+  end
+
+  function NfOrderElem(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
+    z = new()
+    z.parent = O
+    z.elem_in_nf = deepcopy(a)
+    z.has_coord = true
+    z.elem_in_basis = deepcopy(arr)
+    return z
+  end
+
+  function NfOrderElem(O::GenNfOrd, arr::Array{fmpz, 1})
+    z = new()
+    z.elem_in_nf = Base.dot(basis_nf(O), arr)
+    z.has_coord = true
+    z.elem_in_basis = deepcopy(arr)
+    z.parent = O
+    return z
+  end
+
+  function NfOrderElem{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
+    return NfOrderElem(O, map(ZZ, arr))
+  end
+
+  function NfOrderElem(O::GenNfOrd)
+    z = new()
+    z.parent = O
+    z.elem_in_nf = nf(O)() 
+    z.elem_in_basis = Array(fmpz, degree(O))
+    z.has_coord = false
+    return z
+  end
+end
+
+################################################################################
+#
+#  Parent object overloading
+#
+################################################################################
+
+function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
+  if check
+    (x,y) = _check_elem_in_order(a,O)
+    !x && error("Number field element not in the order")
+    return NfOrderElem(O, a, y)
+  else
+    return NfOrderElem(O, a)
+  end
+end
+
+function call(O::GenNfOrd, a::Integer)
+  return O(nf(O)(a), false)
+end
+
+function call(O::GenNfOrd, a::fmpz)
+  return O(nf(O)(a), false)
+end
+
+function call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
+  return NfOrderElem(O, a, arr)
+end
+
+function call(O::GenNfOrd, arr::Array{fmpz, 1})
+  return NfOrderElem(O, arr)
+end
+
+function call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
+  return NfOrderElem(O, arr)
+end
+
+function call(O::GenNfOrd)
+  return NfOrderElem(O)
+end
+
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+parent(a::NfOrderElem) = a.parent
+
+function elem_in_nf(a::NfOrderElem)
+  if isdefined(a, :elem_in_nf)
+    return a.elem_in_nf
+  end
+  error("Not a valid order element")
+end
+
+function elem_in_basis(a::NfOrderElem)
+  @vprint :NfOrder 2 "Computing the coordinates of $a\n"
+  if a.has_coord
+    return a.elem_in_basis
+  else
+    (x,y) = _check_elem_in_order(a.elem_in_nf,parent(a))
+    !x && error("Number field element not in the order")
+    a.elem_in_basis = y
+    a.has_coord = true
+    return a.elem_in_basis
+  end
+end
+
+
+################################################################################
+#
+#  Equality testing
+#
+################################################################################
+
+==(x::NfOrderElem, y::NfOrderElem) = parent(x) == parent(y) &&
+                                            x.elem_in_nf == y.elem_in_nf
+
+################################################################################
+#
 #  Number field element containment
 #
 ################################################################################
 
 # Check if a is contained in O
-# In this case, also return the coefficient vector v
+# In this case, the second return value is coefficient vector of the basis
+
 function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
   d = denominator(a)
   b = d*a 
@@ -114,21 +297,367 @@ end
 
 ################################################################################
 #
-#  Discriminant
+#  Special elements
 #
 ################################################################################
 
-function discriminant(O::GenNfOrd)
-  if isdefined(O, :disc)
-    return O.disc
+zero(O::GenNfOrd) = O(fmpz(0))
+
+one(O::GenNfOrd) = O(fmpz(1))
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, a::NfOrderElem)
+  print(io, a.elem_in_nf)
+end
+
+################################################################################
+#
+#  Unary operations
+#
+################################################################################
+
+function -(x::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = - x.elem_in_nf
+  return z
+end
+
+################################################################################
+#
+#  Binary operations
+#
+################################################################################
+
+function *(x::NfOrderElem, y::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = elem_in_nf(x)*elem_in_nf(y)
+  return z
+end
+
+function +(x::NfOrderElem, y::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  return z
+end
+
+function -(x::NfOrderElem, y::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
+  return z
+end
+
+################################################################################
+#
+#  Ad hoc operations
+#
+################################################################################
+
+function *(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf * y
+  return z
+end
+
+*(x::fmpz, y::NfOrderElem) = y * x
+
+*(x::Integer, y::NfOrderElem) = fmpz(x)* y
+
+*(x::NfOrderElem, y::Integer) = y * x
+
+function +(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf + y
+  return z
+end
+
++(x::fmpz, y::NfOrderElem) = y + x
+
++(x::NfOrderElem, y::Integer) = x + fmpz(y)
+
++(x::Integer, y::NfOrderElem) = y + x
+
+function -(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf - y
+  return z
+end
+
+-(x::fmpz, y::NfOrderElem) = y - x
+
+-(x::NfOrderElem, y::Integer) = x - fmpz(y)
+
+-(x::Integer, y::NfOrderElem) = y - x
+
+################################################################################
+#
+#  Exponentiation
+#
+################################################################################
+
+function ^(x::NfOrderElem, y::Int)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf^y
+  return z
+end
+
+################################################################################
+#
+#  Modular reduction
+#
+################################################################################
+
+function mod(a::NfOrderElem, m::fmpz)
+  ar = copy(elem_in_basis(a))
+  for i in 1:degree(parent(a))
+    ar[i] = mod(ar[i],m)
   end
-  A = MatrixSpace(ZZ, degree(O), degree(O))()
-  B = basis_nf(O)
-  for i in 1:degree(O)
-    for j in 1:degree(O)
-      A[i,j] = FlintZZ(trace(B[i]*B[j]))
+  return parent(a)(ar)
+end
+
+mod(a::NfOrderElem, m::Integer) = mod(a, fmpz(m))
+ 
+################################################################################
+#
+#  Modular exponentiation
+#
+################################################################################
+
+function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
+  if i == 0 then
+    return one(parent(a))
+  end
+  if i == 1 then
+    b = mod(a,p)
+    return b
+  end
+  if mod(i,2) == 0 
+    j = div(i,2)
+    b = powermod(a, j, p)
+    b = b^2
+    b = mod(b,p)
+    return b
+  end
+  b = mod(a*powermod(a,i-1,p),p)
+  return b
+end  
+
+powermod(a::NfOrderElem, i::Integer, p::Integer)  = powermod(a, fmpz(i), fmpz(p))
+
+powermod(a::NfOrderElem, i::fmpz, p::Integer)  = powermod(a, i, fmpz(p))
+
+powermod(a::NfOrderElem, i::Integer, p::fmpz)  = powermod(a, fmpz(i), p)
+
+################################################################################
+#
+#  Representation matrices
+#
+################################################################################
+
+function representation_mat(a::NfOrderElem)
+  O = parent(a)
+  A = representation_mat(a, nf(parent(a)))
+  A = basis_mat(O)*A*basis_mat_inv(O)
+  !(A.den == 1) && error("Element not in order")
+  return A.num
+end
+
+function representation_mat(a::NfOrderElem, K::NfNumberField)
+  nf(parent(a)) != K && error("Element not in this field")
+  d = denominator(a.elem_in_nf)
+  b = d*a.elem_in_nf
+  A = representation_mat(b)
+  z = FakeFmpqMat(A,d)
+  return z
+end
+
+################################################################################
+#
+#  Trace
+#
+################################################################################
+
+function trace(a::NfOrderElem)
+  return FlintZZ(trace(elem_in_nf(a)))
+end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+function norm(a::NfOrderElem)
+  return FlintZZ(norm(elem_in_nf(a)))
+end
+
+################################################################################
+#
+#  (Torsion)-Units
+#
+################################################################################
+
+function is_unit(x::NfOrderElem)
+  return abs(norm(x)) == 1 
+end
+
+# don't use this!
+function is_torsion_unit(x::NfOrderElem)
+  !is_unit(x) && return false
+  # test for the signature etc
+  O = parent(x)
+  d = degree(O)
+  # round down should be mode 3 (right?)
+  Rarb = ArbField(32)
+  Rd = Rarb(d)
+  t = (log(Rd)/d^2)/24
+  while !ispositive(t)
+     Rarb = ArbField(2*Rarb.prec)
+     Rd = Rarb(d)
+     t = (log(Rd)/d^2)/24
+  end
+  Rarf = ArfField(Rarb.prec)
+  z = Rarf()
+  ccall((:arb_get_abs_lbound_arf, :libarb), Void, (Ptr{Void}, Ptr{Void}, Clong), z.data, t.data, Rarb.prec)
+  @hassert :NfMaximalOrder 1 sign(z) == 1
+  zz = 1 + (log(Rd)/d^2)/12
+  i = ccall((:arf_cmpabs_mag, :libarb), Cint, (Ptr{Void}, Ptr{Void}), z.data, radius(zz).data)
+  f = nf(parent(x)).pol
+  Zf = PolynomialRing(FlintZZ,"x")[1](f) 
+  c = complex_roots(Zf, target_prec = Rarb.prec)
+  for j in 1:length(c)
+    r = parent(c[1])(0)
+    for k in 1:degree(O)
+      r = r + parent(c[1])(coeff(elem_in_nf(x), k))*c[j]^k
+    end
+    s = abs(r)
+    assert(ccall((:arf_cmpabs_mag, :libarb), Cint, (Ptr{Void}, Ptr{Void}), z.data, radius(s).data) == 1)
+    if compare(midpoint(s), midpoint(zz)) == 1
+      return false
     end
   end
-  O.disc = determinant(A)
-  return O.disc
+  return true
 end
+
+################################################################################
+#
+#  Random element generation
+#
+################################################################################
+
+function rand!{T <: Integer}(z::NfOrderElem, O::GenNfOrd, R::UnitRange{T})
+  y = O()
+  ar = rand(R, degree(O))
+  B = basis(O)
+  mul!(z, ar[1], B[1])
+  for i in 2:degree(O)
+    mul!(y, ar[i], B[i])
+    add!(z, z, y)
+  end
+  return z
+end
+
+function rand{T <: Integer}(O::GenNfOrd, R::UnitRange{T})
+  z = O()
+  rand!(z, O, R)
+  return z
+end
+
+function rand!(z::NfOrderElem, O::GenNfOrd, n::Integer)
+  return rand!(z, O, -n:n)
+end
+
+function rand(O::GenNfOrd, n::Integer)
+  return rand(O, -n:n)
+end
+
+function rand!(z::NfOrderElem, O::GenNfOrd, n::fmpz)
+  return rand!(z, O, BigInt(n))
+end
+
+function rand(O::GenNfOrd, n::fmpz)
+  return rand(O, BigInt(n))
+end
+  
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+function add!(z::NfOrderElem, x::NfOrderElem, y::NfOrderElem)
+  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  if x.has_coord && y.has_coord
+    for i in 1:degree(parent(x))
+      z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
+    end
+    z.has_coord = true
+  else
+    z.has_coord = false
+  end
+  nothing
+end
+
+function mul!(z::NfOrderElem, x::NfOrderElem, y::NfOrderElem)
+  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  z.has_coord = false
+  nothing
+end
+
+function mul!(z::NfOrderElem, x::fmpz, y::NfOrderElem)
+  z.elem_in_nf = x * y.elem_in_nf
+  if y.has_coord
+    for i in 1:degree(parent(z))
+      z.elem_in_basis[i] = x*y.elem_in_basis[i]
+    end
+    z.has_coord = true
+  else
+    z.has_coord = false
+  end
+  nothing
+end
+
+mul!(z::NfOrderElem, x::Integer, y::NfOrderElem) =  mul!(z, ZZ(x), y)
+
+mul!(z::NfOrderElem, x::NfOrderElem, y::Integer) = mul!(z, y, x)
+
+function add!(z::NfOrderElem, x::fmpz, y::NfOrderElem)
+  z.elem_in_nf = y.elem_in_nf + x
+  nothing
+end
+
+add!(z::NfOrderElem, x::NfOrderElem, y::fmpz) = add!(z, y, x)
+
+function add!(z::NfOrderElem, x::Integer, y::NfOrderElem)
+  z.elem_in_nf = x + y.elem_in_nf
+  nothing
+end
+
+add!(z::NfOrderElem, x::NfOrderElem, y::Integer) = add!(z, y, x)
+
+mul!(z::NfOrderElem, x::NfOrderElem, y::fmpz) = mul!(z, y, x)
+
+################################################################################
+#
+#  Base cases for dot product of vectors
+#
+################################################################################
+
+dot(x::fmpz, y::nf_elem) = x*y
+
+dot(x::nf_elem, y::fmpz) = x*y
+
+dot(x::NfOrderElem, y::Int64) = y*x
+
+################################################################################
+#
+#  Conversion
+#
+################################################################################
+
+Base.call(K::NfNumberField, x::NfOrderElem) = elem_in_nf(x)
+

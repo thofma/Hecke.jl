@@ -149,7 +149,7 @@ type NfFactorBase
   mx::Int
 
   function NfFactorBase()
-    r = new(Dict{fmpz, Array{Tuple{Int, MaximalOrderIdeal}, 1}}())
+    r = new(Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}())
     r.size = 0
     return r
   end
