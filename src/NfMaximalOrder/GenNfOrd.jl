@@ -38,44 +38,6 @@ export elem_in_order, rand, rand!
 
 abstract GenNfOrd 
 
-
-################################################################################
-#
-#  Compute the p-radical
-#
-################################################################################
-
-function pradical(O::GenNfOrd, p::fmpz)
-  j = clog(fmpz(degree(O)),p)
-  R = ResidueRing(ZZ,p)
-  A = MatrixSpace(R, degree(O), degree(O))()
-  for i in 1:degree(O)
-    t = powermod(basis(O)[i], p^j, p)
-    ar = elem_in_basis(t)
-    for k in 1:degree(O)
-      A[i,k] = ar[k]
-    end
-  end
-  X = kernel(A)
-  Mat = MatrixSpace(ZZ, 1, degree(O))
-  MMat = MatrixSpace(R, 1, degree(O))
-  if length(X) != 0
-    m = lift(MMat(X[1]))
-    for x in 2:length(X)
-      m = vcat(m,lift(MMat(X[x])))
-    end
-    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
-  else
-    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
-  end
-  r = sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:degree(O))
-  return ideal(O,r)
-end
-
-function pradical(O::GenNfOrd, p::Integer)
-  return pradical(O, fmpz(p))
-end
-
 ################################################################################
 #
 #  Signature
@@ -126,9 +88,18 @@ type NfOrderElem
   has_coord::Bool
   parent::GenNfOrd
 
+  function NfOrderElem(O::GenNfOrd)
+    z = new()
+    z.parent = O
+    z.elem_in_nf = nf(O)() 
+    z.elem_in_basis = Array(fmpz, degree(O))
+    z.has_coord = false
+    return z
+  end
+
   function NfOrderElem(O::GenNfOrd, a::nf_elem)
     z = new()
-    z.elem_in_nf = deepcopy(a)
+    z.elem_in_nf = a
     z.elem_in_basis = Array(fmpz, degree(O))
     z.parent = O
     z.has_coord = false
@@ -138,32 +109,23 @@ type NfOrderElem
   function NfOrderElem(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
     z = new()
     z.parent = O
-    z.elem_in_nf = deepcopy(a)
+    z.elem_in_nf = a
     z.has_coord = true
-    z.elem_in_basis = deepcopy(arr)
+    z.elem_in_basis = arr
     return z
   end
 
   function NfOrderElem(O::GenNfOrd, arr::Array{fmpz, 1})
     z = new()
-    z.elem_in_nf = Base.dot(basis_nf(O), arr)
+    z.elem_in_nf = dot(basis_nf(O), arr)
     z.has_coord = true
-    z.elem_in_basis = deepcopy(arr)
+    z.elem_in_basis = arr
     z.parent = O
     return z
   end
 
   function NfOrderElem{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
     return NfOrderElem(O, map(ZZ, arr))
-  end
-
-  function NfOrderElem(O::GenNfOrd)
-    z = new()
-    z.parent = O
-    z.elem_in_nf = nf(O)() 
-    z.elem_in_basis = Array(fmpz, degree(O))
-    z.has_coord = false
-    return z
   end
 end
 
@@ -177,30 +139,30 @@ function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
   if check
     (x,y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfOrderElem(O, a, y)
+    return NfOrderElem(O, deepcopy(a), y)
   else
-    return NfOrderElem(O, a)
+    return NfOrderElem(O, deepcopy(a))
   end
 end
 
 function call(O::GenNfOrd, a::Integer)
-  return O(nf(O)(a), false)
+  return NfOrderElem(O, nf(O)(a))
 end
 
 function call(O::GenNfOrd, a::fmpz)
-  return O(nf(O)(a), false)
+  return NfOrderElem(O, nf(O)(a))
 end
 
 function call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
-  return NfOrderElem(O, a, arr)
+  return NfOrderElem(O, deepcopy(a), deepcopy(arr))
 end
 
 function call(O::GenNfOrd, arr::Array{fmpz, 1})
-  return NfOrderElem(O, arr)
+  return NfOrderElem(O, deepcopy(arr))
 end
 
 function call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
-  return NfOrderElem(O, arr)
+  return NfOrderElem(O, deepcopy(arr))
 end
 
 function call(O::GenNfOrd)
@@ -752,5 +714,42 @@ function mod(x::NfOrderElem, y::GenNfOrdIdl)
     end
   end
   return O(a)
+end
+
+################################################################################
+#
+#  Compute the p-radical
+#
+################################################################################
+
+function pradical(O::GenNfOrd, p::fmpz)
+  j = clog(fmpz(degree(O)),p)
+  R = ResidueRing(ZZ,p)
+  A = MatrixSpace(R, degree(O), degree(O))()
+  for i in 1:degree(O)
+    t = powermod(basis(O)[i], p^j, p)
+    ar = elem_in_basis(t)
+    for k in 1:degree(O)
+      A[i,k] = ar[k]
+    end
+  end
+  X = kernel(A)
+  Mat = MatrixSpace(ZZ, 1, degree(O))
+  MMat = MatrixSpace(R, 1, degree(O))
+  if length(X) != 0
+    m = lift(MMat(X[1]))
+    for x in 2:length(X)
+      m = vcat(m,lift(MMat(X[x])))
+    end
+    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
+  else
+    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
+  end
+  r = sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:degree(O))
+  return ideal(O, r)
+end
+
+function pradical(O::GenNfOrd, p::Integer)
+  return pradical(O, fmpz(p))
 end
 

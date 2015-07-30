@@ -1197,3 +1197,4 @@ dot(x::BigInt, y::NfOrderElem) = x * y
 
 colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
 
+den(a::fmpq_poly) = denominator(a)
