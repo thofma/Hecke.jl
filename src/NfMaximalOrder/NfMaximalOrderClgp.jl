@@ -157,8 +157,10 @@ end
 
 function NfFactorBase(O::NfMaximalOrder, B::Int;
                       complete::Bool = true, degree_limit::Int = 5)
+  @vprint :ClassGroup 2 "Splitting the prime ideals ..."
   lp = prime_ideals_up_to(O, B, complete = complete,
                           degree_limit = degree_limit)
+  @vprint :ClassGroup 2 " done \n"
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
   FB = NfFactorBase()
   FB.size = length(lp)
@@ -387,7 +389,9 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   clg.rel_cnt = 0
   clg.last = 0
 
+  @vprint :ClassGroup 2 "Computing factor base ... "
   clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
+  @vprint :ClassGroup 2 " done\n"
   clg.M = T()
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
@@ -458,7 +462,7 @@ function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
     r = 2
   end
   for i = 1:r 
-    I = prod(I, rand(clg.FB.ideals))
+    I = I*rand(clg.FB.ideals)
     I, g = reduce_ideal_class(I)
     s *= g
   end

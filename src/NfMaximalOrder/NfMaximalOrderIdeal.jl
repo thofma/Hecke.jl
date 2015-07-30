@@ -11,17 +11,17 @@ export IdealSet, minimum, is_prime_known, MaximalOrderIdeal, basis_mat,
 
 ################################################################################
 #
-#  Types and memory management
+#  NfMaximalOrderIdealSet
 #
 ################################################################################
 
-NfMaximalOrderIdealSetID = Dict{NfMaximalOrder, Ring}()
+const NfMaximalOrderIdealSetID = ObjectIdDict()
 
 type NfMaximalOrderIdealSet <: Ring
   order::NfMaximalOrder
   function NfMaximalOrderIdealSet(O::NfMaximalOrder)
     if haskey(NfMaximalOrderIdealSetID, O)
-      return NfMaximalOrderIdealSetID[O]
+      return NfMaximalOrderIdealSetID[O]::NfMaximalOrderIdealSet
     else
       r = new(O)
       NfMaximalOrderIdealSetID[O] = r
@@ -30,11 +30,56 @@ type NfMaximalOrderIdealSet <: Ring
   end
 end
 
+###########################################################################################
+#
+#  User friendly constructor
+#
+###########################################################################################
+
+function IdealSet(O::NfMaximalOrder)
+   return NfMaximalOrderIdealSet(O)
+end
+
+################################################################################
+#
+#  Field acess
+#
+################################################################################
+
 order(S::NfMaximalOrderIdealSet) = S.order
 
-type NfMaximalOrderIdeal <: GenNfOrdIdeal
+################################################################################
+#
+#  NfMaximalOrderIdeal
+#
+################################################################################
+
+@doc """
+  NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz_mat) -> NfMaximalOrderIdeal
+
+    Creates the ideal of O with basis matrix a.
+    No sanity checks. No data is copied, a should not be used anymore.
+
+  NfMaximalOrderIdeal(a::fmpz, b::NfOrderElem) -> NfMaximalOrderIdeal
+
+    Creates the ideal (a,b) of the order of b.
+    No sanity checks. Note data is copied, a and b should not be used anymore.
+  
+  NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz, b::nf_elem) -> NfMaximalOrderIdeal
+
+    Creates the ideal (a,b) of O.
+    No sanity checks. No data is copied, a and b should be used anymore.
+  
+  NfMaximalOrderIdeal(x::NfOrderElem) -> NfMaximalOrderIdeal
+
+    Creates the principal ideal (x) of the order of O.
+    No sanity checks. No data is copied, x should not be used anymore.
+
+""" ->
+type NfMaximalOrderIdeal <: GenNfOrdIdl
   basis::Array{NfOrderElem, 1}
   basis_mat::fmpz_mat
+  basis_mat_inv::FakeFmpqMat
   gen_one::fmpz
   gen_two::NfOrderElem
   gens_short::Bool
@@ -54,88 +99,53 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
                            # mind that the ideal is not prime
 
   parent::NfMaximalOrderIdealSet
-
-  function NfMaximalOrderIdeal(A::PariIdeal, ord::NfMaximalOrderIdealSet)
+  
+  function NfMaximalOrderIdeal(O::NfMaximalOrder)
+    # populate the bits types (Bool, Int) with default values
     r = new()
-    O = ord.order
-    K = nf(O)
-    #@hassert :NfMaximalOrder 1 K == A.parent.order.pari_nf.nf
-    p, a, e, f = __prime_ideal_components(A)
-    r.gen_one = p
-    r.gen_two = O(K(a))
-    r.norm = p^f
-    r.minimum = p
-    r.is_prime = 1
-    r.gens_normal = p
-    r.gens_weakly_normal = 1
-    r.parent = ord
-    r.splitting_type = e, f
-    return r
-  end
-
-  function NfMaximalOrderIdeal(a::fmpz_mat, par::NfMaximalOrderIdealSet)
-    r = new()
-    r.basis_mat = a
-    r.parent = par
+    r.parent = NfMaximalOrderIdealSet(O)
     r.gens_short = false
     r.gens_weakly_normal = false
     r.is_prime = 0
-    r.is_prime = 0
+    r.is_principal = 0
     r.splitting_type = (0,0)
+    return r
+  end
+
+  function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz_mat)
+    # create ideal of O with basis_matrix a
+    # Note that the constructor 'destroys' a, a should not be used anymore
+    r = NfMaximalOrderIdeal(O)
+    r.basis_mat = a
     return r
   end
 
   function NfMaximalOrderIdeal(a::fmpz, b::NfOrderElem)
-    r = new()
+    # create ideal (a,b) of order(b)
+    r = NfMaximalOrderIdeal(parent(b))
     r.gen_one = a
     r.gen_two = b
-    r.parent = NfMaximalOrderIdealSet(parent(b))
     return r
   end
-  
+ 
   function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz, b::nf_elem)
-    r = new()
-    (x,y) = _check_elem_in_order(b,O)
-    @hassert :NfMaximalOrder x
-    r.gen_one = a
-    r.gen_two = O(b, y)
-    r.parent = NfMaximalOrderIdealSet(O)
+    # create ideal (a,b) of O
+    r = NfMaximalOrderIdeal(a, O(b, false))
     return r
   end
 
-  function NfMaximalOrderIdeal(O::NfMaximalOrder, a::fmpz,
-                  b::NfOrderElem)
-    r = new()
-    r.gen_one = a
-    r.gen_two = b
-    r.parent = NfMaximalOrderIdealSet(O)
-    return r
-  end
-
-  function NfMaximalOrderIdeal(O::NfMaximalOrder)
-    r = new()
-    r.parent = NfMaximalOrderIdealSet(O)
-    r.gens_short = false
-    r.gens_weakly_normal = false
-    r.is_prime = 0
-    r.is_prime = 0
-    r.splitting_type = (0,0)
-    return r
-  end
-  
-  function NfMaximalOrderIdeal(O::NfMaximalOrder, b::nf_elem)
-    
-    # check if element is contained in maximal order
-    (x,y) = _check_elem_in_order(b,O)
-    @hassert :NfMaximalOrder x
+  function NfMaximalOrderIdeal(x::NfOrderElem)
+    # create ideal (x) of parent(x)
+    # Note that the constructor 'destroys' x, x should not be used anymore
+    O = parent(x)
+    b = x.elem_in_nf
 
     bi = inv(b)
 
-    C = new()
-    C.parent = NfMaximalOrderIdealSet(O)
+    C = NfMaximalOrderIdeal(O)
     C.gen_one = denominator(bi, O)
     C.minimum = C.gen_one
-    C.gen_two = O(b, y)
+    C.gen_two = x
     C.norm = abs(num(norm(b)))
     @hassert :NfMaximalOrder 1 gcd(C.gen_one^degree(O),
                     ZZ(norm(C.gen_two))) == C.norm
@@ -151,12 +161,112 @@ type NfMaximalOrderIdeal <: GenNfOrdIdeal
   end
 end
 
+################################################################################
+#
+#  Parent object overloading and user friendly constructors
+#
+################################################################################
+
+@doc """
+ideal(O::NfMaximalOrder, x::nf_elem, check::Bool = true) -> NfMaximalOrderIdeal
+
+    Creates the principal ideal (x) of O. If check is set, then containment of
+    x in O will be checked. Data will be copied.
+
+""" ->
+function ideal(O::NfMaximalOrder, x::nf_elem, check::Bool = true)
+  # Data will be copied, as O(x) will copy data.
+  if check
+    (b,y) = _check_elem_in_order(x,O)
+    !b && error("Element not contained in the order")
+    return NfMaximalOrderIdeal(O(x, y))
+  else
+    return NfMaximalOrderIdeal(O(x, false))
+  end
+end
+
+@doc """
+  ideal(O::NfMaximalOrder, x::nf_elem, check::Bool = true) -> NfMaximalOrderIdeal
+
+    Creates the principal ideal (x) of O. Data will be copied.
+
+""" ->
+function ideal(O::NfMaximalOrder, x::NfOrderElem)
+  return NfMaximalOrderIdeal(deepcopy(x))
+end
+
+@doc """
+  ideal(O::NfMaximalOrder, x::fmpz_mat, check::Bool = false) -> NfMaximalOrderIdeal
+
+    Creates the ideal of O with basis matrix x. If check is set, then it is
+    checked wether x defines an ideal (expensive). Data will be copied.
+
+""" ->
+function ideal(O::NfMaximalOrder, x::fmpz_mat)
+  return NfMaximalOrderIdeal(O, deepcopy(x))
+end
+
+@doc """
+  ideal(O::NfMaximalOrder, x::fmpz, y::NfOrderElem) -> NfMaximalOrderIdeal
+  
+    Creates the ideal (x,y) of O. Data will be copied.
+
+""" ->
+function ideal(O::NfMaximalOrder, x::fmpz, y::NfOrderElem)
+  return NfMaximalOrderIdeal(deepcopy(x), deepcopy(y))
+end
+
+@doc """
+  ideal(O::NfMaximalOrder) -> NfMaximalOrderIdeal
+
+    Creates an empty object of type NfMaximalOrderIdeal.
+
+""" ->
+function ideal(O::NfMaximalOrder)
+  return NfMaximalOrderIdeal(O)
+end
+
+
+function call(S::NfMaximalOrderIdealSet)
+   return NfMaximalOrderIdeal(order(S))
+end
+
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+@doc """
+  parent(x::NfMaximalOrderIdeal) -> NfMaximalOrderIdealSet
+
+    Returns the set of ideals to which x belongs.
+
+""" ->
 parent(x::NfMaximalOrderIdeal) = x.parent
 
+@doc """
+  order(x::NfMaximalOrderIdeal) -> NfMaximalOrder
+
+    Returns the order, of which x is an ideal.
+
+""" ->
 order(x::NfMaximalOrderIdeal) = order(parent(x))
 
+@doc """
+  nf(x::NfMaximalOrderIdeal) -> NfNumberField
+
+    Returns the number field, of which x is an integral ideal.
+
+""" ->
 nf(x::NfMaximalOrderIdeal) = nf(order(x))
 
+@doc """
+  deepcopy(x::NfMaximalOrderIdeal) -> NfMaximalOrderIdeal
+
+    Returns a copy of the ideal x.
+
+""" ->
 function deepcopy(A::NfMaximalOrderIdeal)
   B = NfMaximalOrderIdeal(A.parent)
   for i in fieldnames(A)
@@ -201,11 +311,19 @@ function show(io::IO, id::NfMaximalOrderIdeal)
   end
 end
 
+@doc """
+  vshow(A::NfMaximalOrderIdeal) -> Void
+
+    Prints all fields of A.
+
+""" ->
 function vshow(A)
   for i in fieldnames(typeof(A))
     if isdefined(A, i)
       println("$i: ")
       println(getfield(A, i), "\n")
+    else
+      println("$i: Not definied")
     end
   end
 end
@@ -216,6 +334,12 @@ end
 #
 ################################################################################
 
+@doc """
+  norm(A::NfMaximalOrderIdeal) -> fmpz
+
+    Returns the norm of A, that is, the cardinality of O/A, where O is the order of A.
+
+""" ->
 function norm(A::NfMaximalOrderIdeal)
   if isdefined(A, :norm)
     return A.norm
@@ -235,6 +359,12 @@ function norm(A::NfMaximalOrderIdeal)
   end
 end
 
+@doc """
+  minimum(A::NfMaximalOrderIdeal) -> fmpz
+
+    Returns the smallest positive element in 𝐴 ⋂  𝐙.
+
+""" ->
 function minimum(A::NfMaximalOrderIdeal)
   if has_minimum(A) 
     return A.minimum
@@ -251,31 +381,73 @@ function minimum(A::NfMaximalOrderIdeal)
   @hassert :NfNfMaximalOrder 0 false
 end 
 
+@doc """
+  is_prime_known(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A knows if it is prime.
+
+""" ->
 function is_prime_known(A::NfMaximalOrderIdeal)
   return A.is_prime != 0
 end
 
+@doc """
+  has_2_elem(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A is generated by two elements.
+
+""" ->
 function has_2_elem(A::NfMaximalOrderIdeal)
   return isdefined(A, :gen_two)
 end
 
+@doc """
+  has_minimum(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A knows its mininum.
+
+""" ->
 function has_minimum(A::NfMaximalOrderIdeal)
   return isdefined(A, :minimum)
 end
 
+@doc """
+  has_norm(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A knows its norm.
+
+""" ->
 function has_norm(A::NfMaximalOrderIdeal)
   return isdefined(A, :norm)
 end
 
+@doc """
+  has_basis_mat(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A knows its basis matrix.
+
+""" ->
 function has_basis_mat(A::NfMaximalOrderIdeal)
   return isdefined(A, :basis_mat)
 end
 
+@doc """
+  is_weakly_normal(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A has weakly normal two element generators.
+
+""" ->
 function is_weakly_normal(A::NfMaximalOrderIdeal)
   return (isdefined(A, :gens_weakly_normal) &&
         A.gens_weakly_normal == true) || is_2_normal(A)
 end
 
+@doc """
+  is_2_normal(A::NfMaximalOrderIdeal) -> Bool
+    
+    Returns wether A has normal two element generators.
+
+""" ->
 function is_2_normal(A::NfMaximalOrderIdeal)
   return isdefined(A, :gens_normal) && A.gens_normal > 1
 end
@@ -299,7 +471,6 @@ end
 ################################################################################
 
 # using the 2-normal representation
-
 function prod_via_2_elem_normal(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
   @hassert :NfMaximalOrder 1 is_2_normal(a)
   @hassert :NfMaximalOrder 1 is_2_normal(b)
@@ -326,7 +497,7 @@ function prod_via_2_elem_normal(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
     g, x, y = gcdx(f, b1^2)
     b2 = b.gen_two*f*x + y*b1^2
   end
-  C = NfMaximalOrderIdeal(O, a1*b1, a2*b2)
+  C = ideal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
 #  
 #CF: too expensive, need norm_mod to compute the norm only modulo...
@@ -433,16 +604,23 @@ function prod_via_2_elem_weakly(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
   return c
 end
 
-# for all ideals
+# dispatching 
 
-function *(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
-  if is_2_normal(a) && is_2_normal(b)
-    return prod_via_2_elem_normal(a, b)
+@doc """
+  *(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
+    
+    Returns the ideal x*y.
+
+""" ->
+function *(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
+  if is_2_normal(x) && is_2_normal(y)
+    return prod_via_2_elem_normal(x, y)
   end
-  if has_2_elem(a) && has_2_elem(b)
-    return prod_via_2_elem_weakly(a, b)
+  if has_2_elem(x) && has_2_elem(y)
+    return prod_via_2_elem_weakly(x, y)
   end
-  error("algorithm missing")
+  # Fall back to the generic algorithm _mul(::GenNfOrdIdl, ::GenNfOrdIdl)
+  return _mul(x, y)
 end
 
 ################################################################################
@@ -451,9 +629,7 @@ end
 #
 ################################################################################
 
-function +(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
-  error("algorithm missing")
-end
+# Falls back to generic algorithm +(::GenNfOrdIdl, ::GenNfOrdIdl)
 
 ################################################################################
 #
@@ -461,13 +637,59 @@ end
 #
 ################################################################################
 
-function Ideal(O::NfMaximalOrder, x::NfOrderElem)
-  return NfMaximalOrderIdeal(O, x)
+# multiplication by fmpz, using two normal presentation
+
+global last
+function prod_by_int(A::NfMaximalOrderIdeal, a::fmpz)
+  global last = (A, a)
+  @assert has_2_elem(A) && is_2_normal(A)
+  if a==1 || a==-1 
+    println("shortcut: returning ", A)
+    return A
+  end
+  println("prod_by_int", A, " and ", a)
+  # <a,a> is a a-normal presentation
+  # we need to have a common presentation for A and a though
+  m = lcm(a, A.gen_one)
+
+  e, f = ppio(m, A.gen_one)
+  if f == 1
+    a2 = A.gen_two
+  else
+    g, x, y = gcdx(f, A.gen_one^2)
+                           # we need to become normal at m, we are normal at a
+                           # higher powers in a are fine
+                           # CRT: the 2nd gen of a needs to stay the same at a
+                           # and should be  1 at f
+    assert(g==1)                       
+    a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
+  end
+  B = NfMaximalOrderIdeal(A.gen_one*a, a2*a, A.parent)
+  B.gens_normal = m
+  if has_minimum(A)
+    B.minimum = A.minimum * a
+  end
+  if has_norm(A)
+    B.norm = A.norm * a^degree(A.parent.order)
+  end
+  println("final ", B)
+  @assert has_2_elem(B) && is_2_normal(B)
+  return B
 end
 
-function Ideal(O::NfMaximalOrder, x::nf_elem)
-  return NfMaximalOrderFracIdeal(O, x)
+function *(x::NfMaximalOrderIdeal, y::fmpz)
+  if has_2_elem(x) && is_2_normal(x)
+    return prod_by_int(x,y)
+  else
+    error("Algorithm not yet implemented")
+  end
 end
+
+*(x::fmpz, y::NfMaximalOrderIdeal) = y * x
+
+*(x::NfMaximalOrderIdeal, y::Integer) = x * ZZ(y)
+
+*(x::Integer, y::NfMaximalOrderIdeal) = y * x
 
 #function make_pid(A::NfMaximalOrderIdealSet, b::nf_elem)
 #  d = denominator(b,order(A))
@@ -491,43 +713,6 @@ end
 #  end
 #  error("not implemented yet...")
 #end
-
-global last
-function prod_by_int(A::NfMaximalOrderIdeal, a::fmpz)
-  global last = (A, a)
-  @assert has_2_elem(A) && is_2_normal(A)
-  if a==1 || a==-1 
-    println("shortcut: returning ", A)
-    return A
-  end
-  println("prod_by_int", A, " and ", a)
-  # <a,a> is a a-normal presentation
-  # we need to have a common presentation for A and a though
-  m = lcm(a, A.gen_one)
-
-  e, f = ppio(m, A.gen_one)
-  if f == 1
-    a2 = A.gen_two
-  else
-    g, x, y = gcdx(f, A.gen_one^2) # we need to become normal at m, we are normal at a
-                           # higher powers in a are fine
-                           # CRT: the 2nd gen of a needs to stay the same at a
-                           # and should be  1 at f
-    assert(g==1)                       
-    a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
-  end
-  B = NfMaximalOrderIdeal(A.gen_one*a, a2*a, A.parent)
-  B.gens_normal = m
-  if has_minimum(A)
-    B.minimum = A.minimum * a
-  end
-  if has_norm(A)
-    B.norm = A.norm * a^degree(A.parent.order)
-  end
-  println("final ", B)
-  @assert has_2_elem(B) && is_2_normal(B)
-  return B
-end
 
 
 ###########################################################################################
@@ -641,10 +826,16 @@ end
 
 ###########################################################################################
 #
-# inverse
+#  Inverse
 #
 ###########################################################################################
 
+@doc """
+  inv(A::NfMaximalOrderIdeal) -> NfMaximalOrderFracIdeal
+
+    Computes the inverse of A.
+
+""" ->
 function inv(A::NfMaximalOrderIdeal) 
   if has_2_elem(A) && is_weakly_normal(A)
     assure_2_normal(A)
@@ -676,10 +867,49 @@ end
 #
 ###########################################################################################
 
+@doc """
+  has_basis(A::NfMaximalOrderIdeal) -> Bool
+
+    Returns wether A has a basis.
+
+""" ->
 function has_basis(A::NfMaximalOrderIdeal)
   return isdefined(A, :basis)
 end
 
+@doc """
+  basis(A::NfMaximalOrder) -> Array{NfOrderElem, 1}
+
+    Returns the basis of A
+
+""" ->
+function basis(A::NfMaximalOrderIdeal)
+  if isdefined(A, :basis)
+    return A.basis
+  else
+    O = order(A)
+    M = basis_mat(A)
+    B = Array(NfOrderElem, degree(O))
+    y = O()
+    for i in 1:degree(O)
+      z = O()
+      for k in 1:degree(O)
+        mul!(y, M[i,k], basis(O)[k])
+        add!(z, z, y)
+      end
+      B[i] = z
+    end
+    A.basis = B
+    return A.basis
+  end
+end
+        
+@doc """
+  basis_mat(A::NfMaximalOrderIdeal) -> fmpz_mat
+
+    Returns the basis matrix of A.
+
+""" ->
 function basis_mat(A::NfMaximalOrderIdeal)
   if isdefined(A, :basis_mat)
     return A.basis_mat
@@ -697,18 +927,22 @@ function basis_mat(A::NfMaximalOrderIdeal)
   return c::fmpz_mat
 end
 
+function basis_mat_inv(A::NfMaximalOrderIdeal)
+  if isdefined(A, :basis_mat_inv)
+    return A.basis_mat_inv
+  else
+    A.basis_mat_inv = FakeFmpqMat(pseudo_inverse(basis_mat(A)))
+    return A.basis_mat_inv
+  end
+end
+
 ###########################################################################################
 #
-#  copy
+#  Simplification
 #
 ###########################################################################################
 
-
-###########################################################################################
-#
-#   simplification
-#
-###########################################################################################
+# ??
 
 function simplify(A::NfMaximalOrderIdeal)
   if has_2_elem(A) && is_weakly_normal(A)
@@ -728,15 +962,22 @@ end
 
 ###########################################################################################
 #
-#   reduced element in same class
+#  Find reduced ideal in the same class
 #
 ###########################################################################################
 
+# The following function is broken
+
+@doc """
+  reduce_ideal_class(A::NfMaximalOrderIdeal) -> NfMaximalOrderIdeal, nf_elem
+
+  This function is broken.
+""" ->
 function reduce_ideal_class(A::NfMaximalOrderIdeal)
   B = inv(A)
   bas = basis_mat(B)
   L = lll(bas[1])
-  a = element_from_mat_row(A.parent.order.pari_nf.nf, L, 1)
+  a = element_from_mat_row(nf(order(A)), L, 1)
   a = divexact(a, bas[2])
   B = prod_by_elt(A, a)
   B = simplify(B)
@@ -745,10 +986,16 @@ end
 
 ###########################################################################################
 #
-#   valuation
+#  Valuation
 #
 ###########################################################################################
 
+@doc """
+  valuation(a::nf_elem, p::NfMaximalOrderIdeal) -> fmpz
+
+    Computes the p-adic valuation of a, that is, the largest i such that a is contained in p^i.
+
+""" ->
 function valuation(a::nf_elem, p::NfMaximalOrderIdeal)
   @hassert :NfMaximalOrder 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
@@ -775,31 +1022,27 @@ function valuation(a::nf_elem, p::NfMaximalOrderIdeal)
   return p.valuation(a)
 end
 
+@doc """
+  valuation(a::fmpz, p::NfMaximalOrderIdeal) -> fmpz
+
+    Computes the p-adic valuation of a, that is, the largest i such that a is contained in p^i.
+
+""" ->
 function valuation(a::fmpz, p::NfMaximalOrderIdeal)
   P = p.gen_one
   return valuation(a, P)[1]* p.splitting_type[1]
 end
 
+@doc """
+  valuation(A::NfMaximalOrderIdeal, p::NfMaximalOrderIdeal) -> fmpz
+
+    Computes the p-adic valuation of A, that is, the largest i such that A is contained in p^i.
+
+""" ->
 function valuation(A::NfMaximalOrderIdeal, p::NfMaximalOrderIdeal)
   return min(valuation(A.gen_one, p)[1], valuation(elem_in_nf(A.gen_two), p))
 end
 
-
-################################################################################
-#
-#  prod
-#
-################################################################################
-
-function prod(a::NfMaximalOrderIdeal, b::NfMaximalOrderIdeal)
-  if is_2_normal(a) && is_2_normal(b)
-    return prod_via_2_elem_normal(a, b)
-  end
-  if has_2_elem(a) && has_2_elem(b)
-    return prod_via_2_elem_weakly(a, b)
-  end
-  error("algorithm missing")
-end
 
 ################################################################################
 #
@@ -814,70 +1057,50 @@ end
 #  return norm(C)==1 
 #end
 
-# Use bases for the _moment_
+# at the moment ==(A::NfMaximalOrderIdeal, B::NfMaximalOrderIdeal)
+# falls back to ==(A::GenNfOrdIdl, B::GenNfOrdIdl)
 
-function ==(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
-  return basis_mat(x) == basis_mat(y)
-end
+################################################################################
+#
+#  Principal ideals
+#
+################################################################################
 
-*(A::NfMaximalOrderIdeal, B::NfMaximalOrderIdeal) = prod(A, B)
+@doc """
+  *(O::NfMaximalOrder, a::nf_elem) -> NfMaximalOrderIdeal
+  *(a::nf_elem, O::NfMaximalOrder) -> NfMaximalOrderIdeal
+    
+    Returns the principal ideal (a) of O. Sanity checks are performed.
 
-
+""" ->
 function *(O::NfMaximalOrder, a::nf_elem)
-  C = make_pid(O, a)
-  return C
+  nf(O) != parent(a) && error("Number field of order must be parent of element")
+  return ideal(O, a)
 end
 
-function *(a::nf_elem, O::NfMaximalOrder)
-  C = make_pid(O, a)
-  return C
+*(a::nf_elem, O::NfMaximalOrder) = O*a
+
+@doc """
+  *(O::NfMaximalOrder, x::NfOrderElem) -> NfMaximalOrderIdeal
+  *(x::NfOrderElem, O::NfMaximalOrder) -> NfMaximalOrderIdeal
+
+    Returns the principal ideal (x) of O. Sanity checks are performed.
+
+""" ->
+function *(O::NfMaximalOrder, x::NfOrderElem)
+  order(x) != O && error("Order of element does not coincide with order")
+  return ideal(O, x)
 end
 
-###########################################################################################
-#
-#   Parent call overloads
-#
-###########################################################################################
+*(x::NfOrderElem, O::NfMaximalOrder) = O*x
 
-function Base.call(ord::NfMaximalOrderIdealSet, b::PariIdeal)
-   return NfMaximalOrderIdeal(b, ord)
-end
-
-function Base.call(S::NfMaximalOrderIdealSet)
-   return NfMaximalOrderIdeal(order(S))
-end
-
-function Base.call(ord::NfMaximalOrderIdealSet, a::nf_elem)
-   return make_pid(ord, a)
-end
-
-function Ideal(O::NfMaximalOrder, b::PariIdeal)
-  return NfMaximalOrderIdeal(NfMaximalOrderIdealSet(O), b)
-end
-
-function Ideal(O::NfMaximalOrder, a::nf_elem)
-  return NfMaximalOrderIdealSet(O)(a)
-end
-
-function Ideal(O::NfMaximalOrder, a::fmpz_mat)
-  return NfMaximalOrderIdeal(a, NfMaximalOrderIdealSet(O))
-end
-
-###########################################################################################
-#
-#   NfMaximalOrder constructor
-#
-###########################################################################################
-
-function IdealSet(r::NfMaximalOrder)
-   return NfMaximalOrderIdealSet(r)
-end
-
-###############################################################################
+################################################################################
 #
 #   Extract info from pari-prime ideals (5 component vector) to Nemo objects
 #
-###########################################################################################
+################################################################################
+
+# This function is broken. Pari interfaced got changed.
 
 function __prime_ideal_components(id::PariIdeal)
    QQx = id.parent.order.pari_nf.nf.pol.parent
@@ -896,6 +1119,12 @@ end
 #
 ################################################################################
 
+@doc """
+  prime_decomposition(O::NfMaximalOrder, p::Integer) -> Array{Tuple{NfMaximalOrderIdeal, Integer}, 1}
+
+    Returns an array of tuples (p_i,e_i) such that pO is the product of the p_i^e_i.
+
+""" ->
 function prime_decomposition(O::NfMaximalOrder, p::Integer)
   if mod(fmpz(index(O)),p) == 0
     return prime_dec_index(O, p)
@@ -965,7 +1194,7 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer)
     P = AA[j]
     _assure_weakly_normal_presentation(P)
     assure_2_normal(P)
-    e = Int(valuation(NfMaximalOrderIdeal(O, nf(O)(p)), P))
+    e = Int(valuation(fmpz(p), P))
     f = 0
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
@@ -1028,15 +1257,15 @@ function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Inte
       idem = idem + coeff(H,i).data*x^i
     end
     # build bases for the two new ideals
-    I1 = Ip + NfMaximalOrderIdeal(O, elem_in_nf(idem))
-    I2 = Ip + NfMaximalOrderIdeal(O, elem_in_nf(O(1)-idem))
+    I1 = Ip + ideal(O, idem)
+    I2 = Ip + ideal(O, O(1)-idem)
+    
     BB1 = _get_fp_basis(O, I1, p)
     BB2 = _get_fp_basis(O, I2, p)
     return vcat(_split_algebra(BB1, I1, p),_split_algebra(BB2, I2, p))
     break
   end
 end
-
 
 function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
   A = basis_mat(I)
@@ -1073,25 +1302,7 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
   return BB
 end
 
-function mod(x::NfOrderElem, y::NfMaximalOrderIdeal)
-  # *** minimum doesn't work so use norm
-  # this function assumes that HNF is upper right 
-  # !!! This must be changes as soon as HNF is lower left
-  O = order(y)
-  b = elem_in_basis(x)
-  a = copy(b)
-  b = basis_mat(y)
-  t = fmpz(0)
-  for i in 1:degree(O)
-    k = degree(O) - i + 1
-    t = div(a[k],b[k,k])
-    for j in 1:k
-      a[j] = a[j] - t*b[k,j]
-    end
-  end
-  return O(a)
-end
-
+# Don't use the following functions. It does not work for index divisors
 function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
   K = nf(O)
   f = K.pol
@@ -1103,12 +1314,14 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
   return fac
 end
 
-# The following function needs a clean up and a proper name
-# Maybe two functions?
+@doc """
+  prime_ideals_up_to(O::NfMaximalOrder, B::Int; complete::Bool = true, degree_limit::Int = 0)
 
+    Computes the prime ideals with norm up to B with parameters I forogt.
+""" ->
 function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
-                            complete = true,
-                            degree_limit = 0)
+                            complete::Bool = true,
+                            degree_limit::Int = 0)
   p = 1
   r = NfMaximalOrderIdeal[]
   while p < B
@@ -1140,9 +1353,22 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
   return r
 end
 
+################################################################################
+#
+#  Facotrization into prime ideals
+#
+################################################################################
+
+@doc """
+  factor_dict(A::NfMaximalOrderIdeal) -> Dict{NfMaximalOrderIdeal, Int}
+
+    Computes the prime ideal factorization as a dictionary, the keys being the prime ideal divisors.
+    If lp = factor_dict(A), then keys(lp) are the prime ideal divisors of A and lp[P] is the P-adic valuation of A for all P in keys(lp).
+
+""" ->
 function factor_dict(A::NfMaximalOrderIdeal)
   lf = my_factor(minimum(A))
-  lF = Dict{typeof(A), Int}()
+  lF = Dict{NfMaximalOrderIdeal, Int}()
   n = norm(A)
   O = order(A)
   for (i, (p, v)) in enumerate(lf)
@@ -1161,32 +1387,3 @@ function factor_dict(A::NfMaximalOrderIdeal)
   return lF
 end
 
-################################################################################
-#
-#  Compute the p-radical of an order
-#
-################################################################################
-
-function ideal(O::NfMaximalOrder, x::fmpz_mat)
-  return NfMaximalOrderIdeal(x, NfMaximalOrderIdealSet(O))
-end
-
-function +(x::NfMaximalOrderIdeal, y::NfMaximalOrderIdeal)
-  H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))::fmpz_mat
-  return NfMaximalOrderIdeal(H, parent(x))
-end
-
-function mod(a::NfOrderElem, m::fmpz)
-  ar = copy(elem_in_basis(a))
-  for i in 1:degree(parent(a))
-    ar[i] = mod(ar[i],m)
-  end
-  return parent(a)(ar)
-end
-
-dot(x::BigInt, y::NfOrderElem) = x * y
-
-colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
-
-test(a::Int) = fmpz(a)
-test2(a::Int) = FlintZZ(a)

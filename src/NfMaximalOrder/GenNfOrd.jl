@@ -38,7 +38,6 @@ export elem_in_order, rand, rand!
 
 abstract GenNfOrd 
 
-abstract GenNfOrdIdeal
 
 ################################################################################
 #
@@ -248,6 +247,22 @@ end
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function deepcopy(x::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = deepcopy(x.elem_in_nf)
+  if x.has_coord
+    z.has_coord = true
+    z.elem_in_basis = deepcopy(x.elem_in_basis)
+  end
+  return z
+end
+
+################################################################################
+#
 #  Number field element containment
 #
 ################################################################################
@@ -335,7 +350,7 @@ end
 
 function *(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
-  z.elem_in_nf = elem_in_nf(x)*elem_in_nf(y)
+  z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
 end
 
@@ -660,4 +675,82 @@ dot(x::NfOrderElem, y::Int64) = y*x
 ################################################################################
 
 Base.call(K::NfNumberField, x::NfOrderElem) = elem_in_nf(x)
+
+################################################################################
+################################################################################
+##
+##  GenNfOrd
+##
+################################################################################
+################################################################################
+
+abstract GenNfOrdIdl
+
+function ==(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  return basis_mat(x) == basis_mat(y)
+end
+
+function +(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  H = vcat(basis_mat(x), basis_mat(y))
+  g = gcd(minimum(x),minimum(y))
+  H = _hnf_modular(H, g, :lowerleft)
+  #H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))
+  return ideal(order(x), H)
+end
+
+function *(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  return _mul(x, y)
+end
+
+function _mul(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  O = order(x)
+  l = minimum(x)*minimum(y)
+  z = MatrixSpace(FlintZZ, degree(O)*degree(O), degree(O))()
+  X = basis(x)
+  Y = basis(y)
+  for i in 1:degree(O)
+    for j in 1:degree(O)
+      t = elem_in_basis(X[i]*Y[j])
+      for k in 1:degree(O)
+        z[i*j, k] = t[k]
+      end
+    end
+  end
+  return ideal(O, _hnf_modular(z, l, :lowerleft))
+end
+
+################################################################################
+#
+#  Containment
+#
+################################################################################
+
+function in(x::NfOrderElem, y::GenNfOrdIdl)
+  v = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
+  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
+  return t.den == 1
+end
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod(x::NfOrderElem, y::GenNfOrdIdl)
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+  O = order(y)
+  b = elem_in_basis(x)
+  a = deepcopy(b)
+  b = basis_mat(y)
+  t = fmpz(0)
+  for i in degree(O):-1:1
+    t = div(a[i],b[i,i])
+    for j in 1:i
+      a[j] = a[j] - t*b[i,j]
+    end
+  end
+  return O(a)
+end
 

@@ -1,6 +1,6 @@
 import Base: isprime, dot, convert, isless, log
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
-       pseudo_inverse, denominator, submat, index, degree,
+       pseudo_inverse, denominator, submat, index, degree, sub,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
        discriminant, dot, hnf, _hnf, modular_hnf, representation_mat, signature, howell_form!, howell_form, _hnf_modular
 
@@ -223,7 +223,7 @@ end
 
 function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   @assert nr >= 0 && nc >= 0
-  M = MatrixSpace(ZZ, nr, nc)()::fmpz_mat
+  M = MatrixSpace(FlintZZ, nr, nc)()::fmpz_mat
   t = ZZ()
   for i = 1:nr
     for j = 1:nc
@@ -233,6 +233,13 @@ function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   end
   return M
 end
+
+function submat{T <: Integer}(A::fmpz_mat, r::UnitRange{T}, c::UnitRange)
+  @assert !isdefined(r, :step) || r.step==1
+  @assert !isdefined(c, :step) || c.step==1
+  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
+end
+
 
 function sub(A::fmpz_mat, r::UnitRange, c::UnitRange)
   @assert !isdefined(r, :step) || r.step==1
@@ -822,43 +829,58 @@ end
 
 function _lift_howell_to_hnf(x::nmod_mat)
 # Assume that x is square, in howell normal form and all non-zero rows are at the bottom
+# NOTE: _OUR_ Howell normal form algorithm always puts the rows at the right position
+# If row i is non-zero and i is the rightmost non-zero entry
+# Thus lifting is just replacing zero diagonal entries
   !issquare(x) && error("Matrix has to be square")
-  y = lift(x)
+  y = lift(x, :unsigned)
   for i in cols(y):-1:1
     z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
     if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
-    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
+#      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
       ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
-      for k in 1:i-1
-        _swaprows!(y, k, k+1)
-      end
+#      for k in 1:i-1
+#        _swaprows!(y, k, k+1)
+#      end
     end
   end
   return y
 end
 
+function submat{T <: Integer}(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T})
+  z = deepcopy(window(x, r, c))
+  return z
+end
+
+function submat{T <: Integer}(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T})
+  z = deepcopy(window(x, r, c))
+  return z
+end
+
 function _hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
   if abs(m) < fmpz(typemax(UInt))
-    y = nmod_mat(UInt(m), x)
+    y = MatrixSpace(ResidueRing(FlintZZ, m), rows(x), cols(x))(x)
     howell_form!(y, shape)
+    y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
     return _lift_howell_to_hnf(y)
   end
   return __hnf_modular(x, m, shape)
 end
 
 function __hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
+# See remarks above
   y = deepcopy(x)
   howell_form!(y, m, shape)
+  y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
   for i in cols(y):-1:1
     z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
     if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
     #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
+#      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
       ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
-      for k in 1:i-1
-        _swaprows!(y, k, k+1)
-      end
+#      for k in 1:i-1
+#        _swaprows!(y, k, k+1)
+#      end
     end
   end
   return y
@@ -1161,4 +1183,17 @@ function max(a::fmpz_mat)
   ccall((:fmpz_abs, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
   return r
 end
+
+function lift(a::nmod_mat, can::Symbol = :unsigned)
+  if can == :unsigned
+    z = MatrixSpace(FlintZZ, rows(a), cols(a))()
+    ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Void,
+            (Ptr{fmpz_mat}, Ptr{nmod_mat}), &z, &a)
+    return z
+  end
+end
+
+dot(x::BigInt, y::NfOrderElem) = x * y
+
+colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
 
