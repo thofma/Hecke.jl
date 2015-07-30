@@ -8,7 +8,7 @@ import Base: in
 
 export NfOrderElem
 
-export elem_in_order, random
+export elem_in_order, rand, rand!
 
 ################################################################################
 #
@@ -16,42 +16,65 @@ export elem_in_order, random
 #
 ################################################################################
 
-type NfOrderElem
-  elem_in_nf::nf_elem
-  elem_in_basis::Array{fmpz, 1}
-  parent::NfOrder
-
-  function NfOrderElem(O::NfOrder, a::nf_elem, check::Bool = true)
-    z = new()
-    if check
-      (x,y) = _check_elem_in_order(a,O)
-      !x && error("Number field element not in the order")
-      #z.elem_in_basis = y
-    end
-    z.elem_in_nf = deepcopy(a)
-    z.parent = O
-    return z
-  end
-
-  function NfOrderElem(O::NfOrder, arr::Array{fmpz, 1})
-    z = new()
-    z.elem_in_nf = Base.dot(basis_nf(O), arr)
-    z.parent = O
-    return z
-  end
-
-  function NfOrderElem{T <: Integer}(O::NfOrder, arr::Array{T, 1})
-    return NfOrderElem(O, map(ZZ, arr))
-  end
-
-  function NfOrderElem(O::NfOrder)
-    z = new()
-    z.parent = O
-    #z.elem_in_nf = zero(parent(O).nf)
-    #z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
-    return z
-  end
-end
+#type NfOrderElem
+#  elem_in_nf::nf_elem
+#  elem_in_basis::Array{fmpz, 1}
+#  has_coord::Bool
+#  parent::NfOrder
+#
+#  function NfOrderElem(O::NfOrder, a::nf_elem)
+#    z = new()
+#    z.elem_in_nf = deepcopy(a)
+#    z.elem_in_basis = Array(fmpz, degree(O))
+#    z.parent = O
+#    z.has_coord = false
+#    return z
+#  end
+#
+##  function NfOrderElem(O::NfOrder, a::nf_elem, check::Bool)
+##    z = new()
+##    if check
+##      (x,y) = _check_elem_in_order(a,O)
+##      !x && error("Number field element not in the order")
+##      z.has_coord = true
+##      z.elem_in_basis = y
+##    end
+##    z.elem_in_nf = deepcopy(a)
+##    z.parent = O
+##    return z
+##  end
+##
+#  function NfOrderElem(O::NfOrder, a::nf_elem, arr::Array{fmpz, 1})
+#    z = new()
+#    z.parent = O
+#    z.elem_in_nf = deepcopy(a)
+#    z.has_coord = true
+#    z.elem_in_basis = deepcopy(arr)
+#    return z
+#  end
+#
+#  function NfOrderElem(O::NfOrder, arr::Array{fmpz, 1})
+#    z = new()
+#    z.elem_in_nf = Base.dot(basis_nf(O), arr)
+#    z.has_coord = true
+#    z.elem_in_basis = deepcopy(arr)
+#    z.parent = O
+#    return z
+#  end
+#
+#  function NfOrderElem{T <: Integer}(O::NfOrder, arr::Array{T, 1})
+#    return NfOrderElem(O, map(ZZ, arr))
+#  end
+#
+#  function NfOrderElem(O::NfOrder)
+#    z = new()
+#    z.parent = O
+#    z.elem_in_nf = parent(O).nf()
+#    z.elem_in_basis = Array(fmpz, degree(O))
+#    z.has_coord = false
+#    return z
+#  end
+#end
 
 #function NfOrderElem!(O::NfOrder, a::nf_elem)
 #  z = O()
@@ -84,12 +107,17 @@ function elem_in_basis(a::NfOrderElem)
 #    return a.elem_in_basis
 #  end
 #  if isdefined(a, :elem_in_nf)
+  if a.has_coord
+    return a.elem_in_basis
+  else
     (x,y) = _check_elem_in_order(a.elem_in_nf,parent(a))
     !x && error("Number field element not in the order")
     a.elem_in_basis = y
+    a.has_coord = true
     return a.elem_in_basis
 #  end
-  error("Not a valid order element")
+    error("Not a valid order element")
+  end
 end
 
 ################################################################################
@@ -98,7 +126,7 @@ end
 #
 ################################################################################
 
-function zero(O::NfOrder)
+function zero(O::GenNfOrd)
   z = O()
   z.elem_in_nf = zero(O.nf)
 #  z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
@@ -121,21 +149,31 @@ end
 #
 ################################################################################
  
-function Base.call(O::NfOrder, a::nf_elem, check::Bool = true)
-  return NfOrderElem(O, a, check)
-end
-
-function Base.call(O::NfOrder, arr::Array{fmpz, 1})
-  return NfOrderElem(O,arr)
-end
-
-function Base.call{T <: Integer}(O::NfOrder, arr::Array{T, 1})
-  return NfOrderElem(O,arr)
-end
-
-function Base.call(O::NfOrder)
-  return NfOrderElem(O)
-end
+#function call(O::NfOrder, a::nf_elem, check::Bool = true)
+#  if check
+#    (x,y) = _check_elem_in_order(a,O)
+#    !x && error("Number field element not in the order")
+#    return NfOrderElem(O, a, y)
+#  else
+#    return NfOrderElem(O, a)
+#  end
+#end
+#
+#function call(O::NfOrder, a::nf_elem, arr::Array{fmpz, 1})
+#  return NfOrderElem(O, a, arr)
+#end
+#
+#function call(O::NfOrder, arr::Array{fmpz, 1})
+#  return NfOrderElem(O, arr)
+#end
+#
+#function call{T <: Integer}(O::NfOrder, arr::Array{T, 1})
+#  return NfOrderElem(O, arr)
+#end
+#
+#function call(O::NfOrder)
+#  return NfOrderElem(O)
+#end
 
 ################################################################################
 #
@@ -145,9 +183,21 @@ end
 
 function *(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  z.elem_in_nf = elem_in_nf(x)*elem_in_nf(y)
   return z
 end
+
+function *(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf * y
+  return z
+end
+
+*(x::fmpz, y::NfOrderElem) = y * x
+
+*(x::Integer, y::NfOrderElem) = fmpz(x)* y
+
+*(x::NfOrderElem, y::Integer) = y * x
 
 function +(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
@@ -155,13 +205,26 @@ function +(x::NfOrderElem, y::NfOrderElem)
   return z
 end
 
-function *(a::NfOrderElem, b::fmpz)
-  z = parent(a)()
-  z.elem_in_nf = a.elem_in_nf *b
+function -(x::NfOrderElem, y::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   return z
 end
 
-*(a::fmpz, b::NfOrderElem) = b*a
+
+function +(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf + y
+  return z
+end
+
++(x::fmpz, y::NfOrderElem) = y + x
+
+function ^(x::NfOrderElem, y::Int)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf^y
+  return z
+end
 
 ################################################################################
 #
@@ -258,7 +321,7 @@ end
 ################################################################################
 
 function trace(a::NfOrderElem)
-  return trace(elem_in_nf(a))
+  return FlintZZ(trace(elem_in_nf(a)))
 end
 
 ################################################################################
@@ -268,7 +331,7 @@ end
 ################################################################################
 
 function norm(a::NfOrderElem)
-  return norm(elem_in_nf(a))
+  return FlintZZ(norm(elem_in_nf(a)))
 end
 
 ################################################################################
@@ -277,7 +340,7 @@ end
 #
 ################################################################################
 
-function random!{T <: Integer}(z::NfOrderElem, O::NfOrder, R::UnitRange{T})
+function rand!{T <: Integer}(z::NfOrderElem, O::GenNfOrd, R::UnitRange{T})
   y = O()
   ar = rand(R, degree(O))
   B = basis(O)
@@ -289,26 +352,26 @@ function random!{T <: Integer}(z::NfOrderElem, O::NfOrder, R::UnitRange{T})
   return z
 end
 
-function random{T <: Integer}(O::NfOrder, R::UnitRange{T})
-  z = zero(O)
-  random!(z, O, R)
+function rand{T <: Integer}(O::GenNfOrd, R::UnitRange{T})
+  z = O()
+  rand!(z, O, R)
   return z
 end
 
-function random!(z::NfOrderElem, O::NfOrder, n::Integer)
-  return random!(z, O, -n:n)
+function rand!(z::NfOrderElem, O::GenNfOrd, n::Integer)
+  return rand!(z, O, -n:n)
 end
 
-function random(O::NfOrder, n::Integer)
-  return random(O, -n:n)
+function rand(O::GenNfOrd, n::Integer)
+  return rand(O, -n:n)
 end
 
-function random!(z::NfOrderElem, O::NfOrder, n::fmpz)
-  return random!(z, O, BigInt(n))
+function rand!(z::NfOrderElem, O::GenNfOrd, n::fmpz)
+  return rand!(z, O, BigInt(n))
 end
 
-function random(O::NfOrder, n::fmpz)
-  return random(O, BigInt(n))
+function rand(O::GenNfOrd, n::fmpz)
+  return rand(O, BigInt(n))
 end
   
 ################################################################################
@@ -319,16 +382,25 @@ end
 
 function add!(z::NfOrderElem, x::NfOrderElem, y::NfOrderElem)
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  if x.has_coord && y.has_coord
+    for i in 1:degree(parent(x))
+      z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
+    end
+    z.has_coord = true
+  else
+    z.has_coord = false
+  end
   nothing
 end
 
 function mul!(z::NfOrderElem, x::NfOrderElem, y::NfOrderElem)
   z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  z.has_coord = false
   nothing
 end
 
 function mul!(z::NfOrderElem, x::Integer, y::NfOrderElem)
-  z.elem_in_nf = ZZ(x) * y.elem_in_nf
+  mul!(z, ZZ(x), y)
   nothing
 end
 
@@ -336,8 +408,35 @@ mul!(z::NfOrderElem, x::NfOrderElem, y::Integer) = mul!(z, y, x)
 
 function mul!(z::NfOrderElem, x::fmpz, y::NfOrderElem)
   z.elem_in_nf = x * y.elem_in_nf
+  if y.has_coord
+    for i in 1:degree(parent(z))
+      z.elem_in_basis[i] = x*y.elem_in_basis[i]
+    end
+  end
+  z.has_coord = true
   nothing
 end
 
+function add!(z::NfOrderElem, x::fmpz, y::NfOrderElem)
+  z.elem_in_nf = y.elem_in_nf + x
+  nothing
+end
+
+add!(z::NfOrderElem, x::NfOrderElem, y::fmpz) = add!(z, y, x)
+
+function add!(z::NfOrderElem, x::Integer, y::NfOrderElem)
+  z.elem_in_nf = x + y.elem_in_nf
+  nothing
+end
+
+add!(z::NfOrderElem, x::NfOrderElem, y::Integer) = add!(z, y, x)
+
 mul!(z::NfOrderElem, x::NfOrderElem, y::fmpz) = mul!(z, y, x)
 
+dot(x::fmpz, y::nf_elem) = x*y
+
+dot(x::nf_elem, y::fmpz) = x*y
+
+dot(x::NfOrderElem, y::Int64) = y*x
+
+Base.call(K::NfNumberField, x::NfOrderElem) = elem_in_nf(x)
