@@ -17,7 +17,7 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
              trace, factor, mod, zero, pari_load, PariPolyRing,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
-             discriminant, log
+             discriminant, log, sub, lift
 
 export NfNumberField, hash
 

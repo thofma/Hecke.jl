@@ -23,8 +23,7 @@ type NfOrderIdealSet
   end
 end
 
-
-type NfOrderIdeal <: GenNfOrdIdeal
+type NfOrderIdeal <: GenNfOrdIdl
   basis::Array{NfOrderElem, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
@@ -89,33 +88,12 @@ function basis(a::NfOrderIdeal)
   return a.basis
 end
 
-#function colon_ideal(a::NfOrderIdeal)
-#  B = basis(a)
-#  O = order(a)
-#  m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),ZZ(1))*basis_mat_inv(a))
-#  for i in 2:degree(O)
-#    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
-#  end
-#  n = hnf(transpose(m))
-#  n = transpose(sub(n,1:degree(O),1:degree(O)))
-#  b,d = pseudo_inverse(n)
-#  return FakeFmpqMat(b,d)
-#end  
-
-function elem_in_ideal(a::NfOrderElem, I::NfOrderIdeal)
-  @assert parent(a) == order(I)
-  M = MatrixSpace(ZZ, 1, degree(order(I)))
-  
-  t = FakeFmpqMat(M(reshape(elem_in_basis(a), 1, degree(parent(a)))), ZZ(1)) * basis_mat_inv(I)
-
-  return (t.den == 1, map(ZZ, vec(Array(t.num))))
-end
-
 function basis_mat_inv(a::NfOrderIdeal)
   if isdefined(a, :basis_mat_inv)
     return a.basis_mat_inv
+  else
+    m,d = pseudo_inverse(a.basis_mat)
+    a.basis_mat_inv = FakeFmpqMat(m,d)
+    return a.basis_mat_inv
   end
-  m,d = pseudo_inverse(a.basis_mat)
-  a.basis_mat_inv = FakeFmpqMat(m,d)
-  return a.basis_mat_inv
 end

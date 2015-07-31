@@ -7,16 +7,16 @@ export NfMaximalOrder, MaximalOrder
 #
 ################################################################################
 
-NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
+const NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
 
-NfMaximalOrderSetID = ObjectIdDict()
+const NfMaximalOrderSetID = ObjectIdDict()
 
 type NfMaximalOrderSet
   nf::NfNumberField
 
   function NfMaximalOrderSet(a::NfNumberField)
   try
-    return NfMaximalOrderSetID[a]
+    return NfMaximalOrderSetID[a]::NfMaximalOrderSet
   end
     NfMaximalOrderSetID[a] = new(a)
     return NfMaximalOrderSetID[a]
@@ -286,5 +286,4 @@ end
 function PariMaximalOrder(O::NfMaximalOrder)
   return PariMaximalOrder(PariNumberField(nf(O)))
 end
-
 

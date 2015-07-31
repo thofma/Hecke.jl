@@ -38,45 +38,6 @@ export elem_in_order, rand, rand!
 
 abstract GenNfOrd 
 
-abstract GenNfOrdIdeal
-
-################################################################################
-#
-#  Compute the p-radical
-#
-################################################################################
-
-function pradical(O::GenNfOrd, p::fmpz)
-  j = clog(fmpz(degree(O)),p)
-  R = ResidueRing(ZZ,p)
-  A = MatrixSpace(R, degree(O), degree(O))()
-  for i in 1:degree(O)
-    t = powermod(basis(O)[i], p^j, p)
-    ar = elem_in_basis(t)
-    for k in 1:degree(O)
-      A[i,k] = ar[k]
-    end
-  end
-  X = kernel(A)
-  Mat = MatrixSpace(ZZ, 1, degree(O))
-  MMat = MatrixSpace(R, 1, degree(O))
-  if length(X) != 0
-    m = lift(MMat(X[1]))
-    for x in 2:length(X)
-      m = vcat(m,lift(MMat(X[x])))
-    end
-    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
-  else
-    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
-  end
-  r = sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:degree(O))
-  return ideal(O,r)
-end
-
-function pradical(O::GenNfOrd, p::Integer)
-  return pradical(O, fmpz(p))
-end
-
 ################################################################################
 #
 #  Signature
@@ -127,9 +88,18 @@ type NfOrderElem
   has_coord::Bool
   parent::GenNfOrd
 
+  function NfOrderElem(O::GenNfOrd)
+    z = new()
+    z.parent = O
+    z.elem_in_nf = nf(O)() 
+    z.elem_in_basis = Array(fmpz, degree(O))
+    z.has_coord = false
+    return z
+  end
+
   function NfOrderElem(O::GenNfOrd, a::nf_elem)
     z = new()
-    z.elem_in_nf = deepcopy(a)
+    z.elem_in_nf = a
     z.elem_in_basis = Array(fmpz, degree(O))
     z.parent = O
     z.has_coord = false
@@ -139,32 +109,23 @@ type NfOrderElem
   function NfOrderElem(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
     z = new()
     z.parent = O
-    z.elem_in_nf = deepcopy(a)
+    z.elem_in_nf = a
     z.has_coord = true
-    z.elem_in_basis = deepcopy(arr)
+    z.elem_in_basis = arr
     return z
   end
 
   function NfOrderElem(O::GenNfOrd, arr::Array{fmpz, 1})
     z = new()
-    z.elem_in_nf = Base.dot(basis_nf(O), arr)
+    z.elem_in_nf = dot(basis_nf(O), arr)
     z.has_coord = true
-    z.elem_in_basis = deepcopy(arr)
+    z.elem_in_basis = arr
     z.parent = O
     return z
   end
 
   function NfOrderElem{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
     return NfOrderElem(O, map(ZZ, arr))
-  end
-
-  function NfOrderElem(O::GenNfOrd)
-    z = new()
-    z.parent = O
-    z.elem_in_nf = nf(O)() 
-    z.elem_in_basis = Array(fmpz, degree(O))
-    z.has_coord = false
-    return z
   end
 end
 
@@ -178,30 +139,30 @@ function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
   if check
     (x,y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfOrderElem(O, a, y)
+    return NfOrderElem(O, deepcopy(a), y)
   else
-    return NfOrderElem(O, a)
+    return NfOrderElem(O, deepcopy(a))
   end
 end
 
 function call(O::GenNfOrd, a::Integer)
-  return O(nf(O)(a), false)
+  return NfOrderElem(O, nf(O)(a))
 end
 
 function call(O::GenNfOrd, a::fmpz)
-  return O(nf(O)(a), false)
+  return NfOrderElem(O, nf(O)(a))
 end
 
 function call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
-  return NfOrderElem(O, a, arr)
+  return NfOrderElem(O, deepcopy(a), deepcopy(arr))
 end
 
 function call(O::GenNfOrd, arr::Array{fmpz, 1})
-  return NfOrderElem(O, arr)
+  return NfOrderElem(O, deepcopy(arr))
 end
 
 function call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
-  return NfOrderElem(O, arr)
+  return NfOrderElem(O, deepcopy(arr))
 end
 
 function call(O::GenNfOrd)
@@ -245,6 +206,22 @@ end
 
 ==(x::NfOrderElem, y::NfOrderElem) = parent(x) == parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
+
+################################################################################
+#
+#  Copy
+#
+################################################################################
+
+function deepcopy(x::NfOrderElem)
+  z = parent(x)()
+  z.elem_in_nf = deepcopy(x.elem_in_nf)
+  if x.has_coord
+    z.has_coord = true
+    z.elem_in_basis = deepcopy(x.elem_in_basis)
+  end
+  return z
+end
 
 ################################################################################
 #
@@ -335,7 +312,7 @@ end
 
 function *(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
-  z.elem_in_nf = elem_in_nf(x)*elem_in_nf(y)
+  z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
 end
 
@@ -660,4 +637,119 @@ dot(x::NfOrderElem, y::Int64) = y*x
 ################################################################################
 
 Base.call(K::NfNumberField, x::NfOrderElem) = elem_in_nf(x)
+
+################################################################################
+################################################################################
+##
+##  GenNfOrd
+##
+################################################################################
+################################################################################
+
+abstract GenNfOrdIdl
+
+function ==(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  return basis_mat(x) == basis_mat(y)
+end
+
+function +(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  H = vcat(basis_mat(x), basis_mat(y))
+  g = gcd(minimum(x),minimum(y))
+  H = _hnf_modular(H, g, :lowerleft)
+  #H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))
+  return ideal(order(x), H)
+end
+
+function *(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  return _mul(x, y)
+end
+
+function _mul(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  O = order(x)
+  l = minimum(x)*minimum(y)
+  z = MatrixSpace(FlintZZ, degree(O)*degree(O), degree(O))()
+  X = basis(x)
+  Y = basis(y)
+  for i in 1:degree(O)
+    for j in 1:degree(O)
+      t = elem_in_basis(X[i]*Y[j])
+      for k in 1:degree(O)
+        z[i*j, k] = t[k]
+      end
+    end
+  end
+  return ideal(O, _hnf_modular(z, l, :lowerleft))
+end
+
+################################################################################
+#
+#  Containment
+#
+################################################################################
+
+function in(x::NfOrderElem, y::GenNfOrdIdl)
+  v = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
+  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
+  return t.den == 1
+end
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod(x::NfOrderElem, y::GenNfOrdIdl)
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+  O = order(y)
+  b = elem_in_basis(x)
+  a = deepcopy(b)
+  b = basis_mat(y)
+  t = fmpz(0)
+  for i in degree(O):-1:1
+    t = div(a[i],b[i,i])
+    for j in 1:i
+      a[j] = a[j] - t*b[i,j]
+    end
+  end
+  return O(a)
+end
+
+################################################################################
+#
+#  Compute the p-radical
+#
+################################################################################
+
+function pradical(O::GenNfOrd, p::fmpz)
+  j = clog(fmpz(degree(O)),p)
+  R = ResidueRing(ZZ,p)
+  A = MatrixSpace(R, degree(O), degree(O))()
+  for i in 1:degree(O)
+    t = powermod(basis(O)[i], p^j, p)
+    ar = elem_in_basis(t)
+    for k in 1:degree(O)
+      A[i,k] = ar[k]
+    end
+  end
+  X = kernel(A)
+  Mat = MatrixSpace(ZZ, 1, degree(O))
+  MMat = MatrixSpace(R, 1, degree(O))
+  if length(X) != 0
+    m = lift(MMat(X[1]))
+    for x in 2:length(X)
+      m = vcat(m,lift(MMat(X[x])))
+    end
+    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
+  else
+    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
+  end
+  r = sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:degree(O))
+  return ideal(O, r)
+end
+
+function pradical(O::GenNfOrd, p::Integer)
+  return pradical(O, fmpz(p))
+end
 

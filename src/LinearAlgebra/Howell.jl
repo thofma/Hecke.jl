@@ -1,7 +1,7 @@
-export howell_form
+export howell_form2
 
 # we assume that B has at least as many rows as columns
-function howell_form(B::nmod_mat)
+function howell_form2(A::nmod_mat)
   #A = deepcopy(B)
   n = A.r
   m = A.c
@@ -12,6 +12,7 @@ function howell_form(B::nmod_mat)
     for i in j+1:n
       #print("Computing xgcd of $(_raw_getindex(A,j,j)), $(_raw_getindex(A,i,j))\n")
       g,s,t,u,v = _xxgcd(_raw_getindex(A,j,j),_raw_getindex(A,i,j),A._n)
+      #println("$g $s $t $u $v ")
       for k in 1:m
         t1 = s*_raw_getindex(A,j,k) + t*_raw_getindex(A, i, k)
         t2 = u*_raw_getindex(A,j,k) + v*_raw_getindex(A, i, k)
@@ -83,7 +84,7 @@ function howell_form(B::nmod_mat)
     #println("After reducing with T the augmented matrix looks like \n$A\n$T\n")
  
   end
-  return A
+  #return A
 end
 
 function _raw_setindex(A::nmod_mat, i::Int, j::Int, x::UInt)

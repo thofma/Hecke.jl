@@ -201,7 +201,7 @@ end
 # Sparse matrix times dense vector -> dense vector
 
 function _raw_getindex(A::nmod_mat, i::Int, j::Int)
-  return ccall((:nmod_mat_get_entry, :libflint), Int, (Ptr{nmod_mat}, Int, Int), &A, i - 1, j - 1)::Int
+  return ccall((:nmod_mat_get_entry, :libflint), UInt, (Ptr{nmod_mat}, Int, Int), &A, i - 1, j - 1)
 end
 
 rows(A::NmodSmat) = A.r
