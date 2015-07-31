@@ -441,14 +441,11 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
   if !fl
     # try for large prime?
     if isprime(r) && abs(r) < clg.B2
-      println("found partial large prime relation");
       i = special_prime_ideal(r, a)
       if haskey(clg.largePrime, i)
-        println("found large relation!!!")
         lp = clg.largePrime[i]
         b = a//lp[1]
         fl = class_group_add_relation(clg, b, n//lp[2])
-        println("adding yielded ", fl)
         if fl 
           clg.largePrime_success += 1
         end
@@ -1110,7 +1107,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   sqrt_disc = isqrt(abs(discriminant(O)))
   np = Int(ceil(nbits(sqrt_disc)/Base.GMP.GMP_BITS_PER_LIMB)+1)
 
-  f = 0
+  local f
 
   nI = length(clg.FB.ideals)
   Idl = clg.FB.ideals
@@ -1168,9 +1165,32 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       end
     end
     @v_do :ClassGroup_gc 1 gc()
-    if cols(clg.M) < rows(clg.M)*1.1
-      @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
-      break
+    if (isdefined(clg, :H) && length(clg.R)-clg.last_H > cols(clg.M)*0.1)
+      old_h = rows(clg.H)
+      h, piv = class_group_current_result(clg)
+      if h==1 
+        return h, piv
+      end
+      if h!=0
+        break
+      end
+      if rows(clg.H) - old_h < cols(clg.M)*0.05
+        println("too slow in finding rels")
+        break
+      end
+    end
+    if (!isdefined(clg, :H) && length(clg.R) > cols(clg.M)*0.1)
+      h, piv = class_group_current_result(clg)
+      if h==1 
+        return h, piv
+      end
+      if h!=0
+        break
+      end
+      if rows(clg.H) < cols(clg.M) * 0.05
+        println("2:too slow in finding rels")
+        break
+      end
     end
   end
 
@@ -1186,11 +1206,11 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   want_extra = 5
   bad_h = false
+  no_rand = 1
   while h != 1 && (h==0 || want_extra > 0)
     for i in sort([ x for x in piv], lt = >)
       I = Idl[i]
       lt = max(100, round((clg.bad_rel/clg.rel_cnt)*2))
-      no_rand = 1
 
       while true
         print_with_color(:red, "starting ideal no ")
@@ -1232,7 +1252,6 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             end  
             A = Idl[i]
             j = 0
-            no_rand = 10
             while norm(A) < sqrt_disc && j < no_rand
               A *= rand(Idl[(nI-no_rand):nI])
               j += 1
@@ -1258,19 +1277,27 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             E.bad += 1
           end
         end
-        if length(clg.R) - clg.last_H > 20
+        if length(clg.R) - clg.last_H > cols(clg.M)*0.1
           print_with_color(:blue, "2:found rels, trying again\n")
           break
         end
       end
-      if length(clg.R) - clg.last_H > 20
+      if length(clg.R) - clg.last_H > cols(clg.M)*0.1
         print_with_color(:blue, "3:found rels, trying again\n")
         break
       end
     end
     last_h = h
     l_piv = piv
+    last_rank = rows(clg.H)
+    last_rels = clg.last_H
     h, piv = class_group_current_result(clg)
+    if (rows(clg.H) - last_rank) < 0.5 * (clg.last_H - last_rels)
+      println("rank too slow, increasing randomness")
+      no_rand += 5
+      no_rand = min(no_rand, length(clg.FB.ideals))
+      println("new is ", no_rand)
+    end
     if h != 0
       if h==1 
         return h, piv
