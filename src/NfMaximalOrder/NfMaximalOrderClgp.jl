@@ -263,6 +263,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
                           # of it
   last_H::Int             # the number of rows of M that went into H
   last_piv1::Array{Int, 1}
+  H_is_modular::Bool
   mis::Set{Int}
   h::fmpz
   c::roots_ctx
@@ -291,6 +292,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0
     r.B2 = 0
+    r.H_is_modular = true
     return r
   end  
 end
@@ -783,8 +785,15 @@ function class_group_current_result(clg::ClassGrpCtx)
     vcat!(clg.H, new_rel)
     h = clg.H
     t = time_ns()
-    if ! full_rank
+    if clg.H_is_modular
       upper_triangular(h, mod = modu)
+      if rows(h) == cols(h)
+        h = copy(clg.M)
+        println("1st non modular hnf")
+        upper_triangular(h)
+        clg.H_is_modular = false
+        full_rank = true
+      end
     else
       upper_triangular(h)
     end
@@ -804,7 +813,18 @@ we do need redundant relations for the units.
     full_rank = false
     t = time_ns()
     h = sub(clg.M, 1:clg.M.r, 1:clg.M.c)
-    upper_triangular(h)
+    if clg.H_is_modular
+      upper_triangular(h, mod = modu)
+      if rows(h) == cols(h)
+        h = copy(clg.M)
+        println("1st non modular hnf")
+        upper_triangular(h)
+        clg.H_is_modular = false
+        full_rank = true
+      end
+    else
+      upper_triangular(h)
+    end
     clg.hnf_time += time_ns()-t
     clg.hnf_call += 1
     last_H = 0
@@ -838,13 +858,6 @@ we do need redundant relations for the units.
   end
 
   if full_rank
-    clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
-  else
-    @vprint :ClassGroup 1 "1st non-modular "
-    @v_do :ClassGroup 4 toMagma("/tmp/big.m", clg.M)
-    h = copy(clg.M)
-    @vtime :ClassGroup 1 upper_triangular(h)
-    clg.H = h
     clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
   end
 
