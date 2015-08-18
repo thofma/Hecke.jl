@@ -456,65 +456,65 @@ end
 #
 ################################################################################
 
-function Base.call(r::ArbField)
-  z = arb_t()
-  z.parent = r
-  return z
-end
-
-function Base.call(r::ArbField, a::Clong)
-  z = arb_t(arb_t(a), r.prec)
-  z.parent = r
-  return z
-end
-
-function Base.call(r::ArbField, a::Culong)
-  z = arb_t(arb_t(a), r.prec)
-  z.parent = r
-  return z
-end
-
-function Base.call(r::ArbField, a::fmpz)
-  z = arb_t(a, r.prec)
-  z.parent = r
-  return z
-end
-
-function Base.call(r::ArbField, a::fmpq)
-  z = arb_t(a, r.prec)
-  z.parent = r
-  return z
-end
-  
-function Base.call(r::ArbField, a::arf_t)
-  z = arb_t(arb_t(a), r.prec)
-  z.parent = r
-  return z
-end
-
-function Base.call(r::ArbField, a::Float64)
-  return r(arf_t(a))
-end
-
-function Base.call(r::ArbField, a::arb_t)
-  z = arb_t(a, r.prec)
-  z.parent = r
-  return z
-end
-
-function Base.call(r::ArbField, a::MathConst)
-  if a == pi
-    z = pi_arb_t(r.prec)
-    z.parent = r
-    return z
-  elseif a == e
-    z = e_arb_t(r.prec)
-    z.parent = r 
-    return z
-  else
-    error("constant not supported")
-  end
-end
+#function Base.call(r::ArbField)
+#  z = arb_t()
+#  z.parent = r
+#  return z
+#end
+#
+#function Base.call(r::ArbField, a::Clong)
+#  z = arb_t(arb_t(a), r.prec)
+#  z.parent = r
+#  return z
+#end
+#
+#function Base.call(r::ArbField, a::Culong)
+#  z = arb_t(arb_t(a), r.prec)
+#  z.parent = r
+#  return z
+#end
+#
+#function Base.call(r::ArbField, a::fmpz)
+#  z = arb_t(a, r.prec)
+#  z.parent = r
+#  return z
+#end
+#
+#function Base.call(r::ArbField, a::fmpq)
+#  z = arb_t(a, r.prec)
+#  z.parent = r
+#  return z
+#end
+#  
+#function Base.call(r::ArbField, a::arf_t)
+#  z = arb_t(arb_t(a), r.prec)
+#  z.parent = r
+#  return z
+#end
+#
+#function Base.call(r::ArbField, a::Float64)
+#  return r(arf_t(a))
+#end
+#
+#function Base.call(r::ArbField, a::arb_t)
+#  z = arb_t(a, r.prec)
+#  z.parent = r
+#  return z
+#end
+#
+#function Base.call(r::ArbField, a::MathConst)
+#  if a == pi
+#    z = pi_arb_t(r.prec)
+#    z.parent = r
+#    return z
+#  elseif a == e
+#    z = e_arb_t(r.prec)
+#    z.parent = r 
+#    return z
+#  else
+#    error("constant not supported")
+#  end
+#end
 
 ################################################################################
 #
