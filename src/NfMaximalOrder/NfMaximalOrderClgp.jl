@@ -289,6 +289,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
                           # of it
   last_H::Int             # the number of rows of M that went into H
   last_piv1::Array{Int, 1}
+  H_is_modular::Bool
   mis::Set{Int}
   h::fmpz
   c::roots_ctx
@@ -317,6 +318,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0
     r.B2 = 0
+    r.H_is_modular = true
     return r
   end  
 end
@@ -463,14 +465,11 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
   if !fl
     # try for large prime?
     if isprime(r) && abs(r) < clg.B2
-      println("found partial large prime relation");
       i = special_prime_ideal(r, a)
       if haskey(clg.largePrime, i)
-        println("found large relation!!!")
         lp = clg.largePrime[i]
         b = a//lp[1]
         fl = class_group_add_relation(clg, b, n//lp[2])
-        println("adding yielded ", fl)
         if fl 
           clg.largePrime_success += 1
         end
@@ -811,8 +810,15 @@ function class_group_current_result(clg::ClassGrpCtx)
     vcat!(clg.H, new_rel)
     h = clg.H
     t = time_ns()
-    if ! full_rank
+    if clg.H_is_modular
       upper_triangular(h, mod = modu)
+      if rows(h) == cols(h)
+        h = copy(clg.M)
+        println("1st non modular hnf")
+        upper_triangular(h)
+        clg.H_is_modular = false
+        full_rank = true
+      end
     else
       upper_triangular(h)
     end
@@ -832,7 +838,18 @@ we do need redundant relations for the units.
     full_rank = false
     t = time_ns()
     h = sub(clg.M, 1:clg.M.r, 1:clg.M.c)
-    upper_triangular(h)
+    if clg.H_is_modular
+      upper_triangular(h, mod = modu)
+      if rows(h) == cols(h)
+        h = copy(clg.M)
+        println("1st non modular hnf")
+        upper_triangular(h)
+        clg.H_is_modular = false
+        full_rank = true
+      end
+    else
+      upper_triangular(h)
+    end
     clg.hnf_time += time_ns()-t
     clg.hnf_call += 1
     last_H = 0
@@ -866,13 +883,6 @@ we do need redundant relations for the units.
   end
 
   if full_rank
-    clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
-  else
-    @vprint :ClassGroup 1 "1st non-modular "
-    @v_do :ClassGroup 4 toMagma("/tmp/big.m", clg.M)
-    h = copy(clg.M)
-    @vtime :ClassGroup 1 upper_triangular(h)
-    clg.H = h
     clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
   end
 
@@ -1121,7 +1131,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   sqrt_disc = isqrt(abs(discriminant(O)))
   np = Int(ceil(nbits(sqrt_disc)/Base.GMP.GMP_BITS_PER_LIMB)+1)
 
-  f = 0
+  local f
 
   nI = length(clg.FB.ideals)
   Idl = clg.FB.ideals
@@ -1179,9 +1189,32 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       end
     end
     @v_do :ClassGroup_gc 1 gc()
-    if cols(clg.M) < rows(clg.M)*1.1
-      @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
-      break
+    if (isdefined(clg, :H) && length(clg.R)-clg.last_H > cols(clg.M)*0.1)
+      old_h = rows(clg.H)
+      h, piv = class_group_current_result(clg)
+      if h==1 
+        return h, piv
+      end
+      if h!=0
+        break
+      end
+      if rows(clg.H) - old_h < cols(clg.M)*0.05
+        println("too slow in finding rels")
+        break
+      end
+    end
+    if (!isdefined(clg, :H) && length(clg.R) > cols(clg.M)*0.1)
+      h, piv = class_group_current_result(clg)
+      if h==1 
+        return h, piv
+      end
+      if h!=0
+        break
+      end
+      if rows(clg.H) < cols(clg.M) * 0.05
+        println("2:too slow in finding rels")
+        break
+      end
     end
   end
 
@@ -1197,11 +1230,11 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   want_extra = 5
   bad_h = false
+  no_rand = 1
   while h != 1 && (h==0 || want_extra > 0)
     for i in sort([ x for x in piv], lt = >)
       I = Idl[i]
       lt = max(100, round((clg.bad_rel/clg.rel_cnt)*2))
-      no_rand = 1
 
       while true
         print_with_color(:red, "starting ideal no ")
@@ -1243,7 +1276,6 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             end  
             A = Idl[i]
             j = 0
-            no_rand = 10
             while norm(A) < sqrt_disc && j < no_rand
               A *= rand(Idl[(nI-no_rand):nI])
               j += 1
@@ -1269,19 +1301,27 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             E.bad += 1
           end
         end
-        if length(clg.R) - clg.last_H > 20
+        if length(clg.R) - clg.last_H > cols(clg.M)*0.1
           print_with_color(:blue, "2:found rels, trying again\n")
           break
         end
       end
-      if length(clg.R) - clg.last_H > 20
+      if length(clg.R) - clg.last_H > cols(clg.M)*0.1
         print_with_color(:blue, "3:found rels, trying again\n")
         break
       end
     end
     last_h = h
     l_piv = piv
+    last_rank = rows(clg.H)
+    last_rels = clg.last_H
     h, piv = class_group_current_result(clg)
+    if (rows(clg.H) - last_rank) < 0.5 * (clg.last_H - last_rels)
+      println("rank too slow, increasing randomness")
+      no_rand += 5
+      no_rand = min(no_rand, length(clg.FB.ideals))
+      println("new is ", no_rand)
+    end
     if h != 0
       if h==1 
         return h, piv
