@@ -1,11 +1,36 @@
 ################################################################################
 #
-#  LatEnum.jl : Basic lattice enumeration
+#                 LatEnum.jl : Basic lattice enumeration
 #
-################################################################################
-
+# This file is part of hecke.
+#
+# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
 # (C) 2015 Claus Fieker
-
+# (C) 2015 Tommy Hofmann
+#
 ################################################################################
 #  Todo:
 #   - (sh/c)ould be indexed by the type of G and C
@@ -302,4 +327,160 @@ function enum_ctx_short_elements{A,B,C}(E::enum_ctx{A,B,C}, c::fmpz, limit=-1)
     l = vcat(l, transpose(E.x))
   end
   return l
+end
+
+################################################################################
+#
+#  Enumerating using arb objects
+#
+################################################################################
+
+function pseudo_cholesky(G::arb_mat)
+  n = cols(G)
+  C = deepcopy(G)
+  for i = 1:n-1 
+    for j = i+1:n
+      C[j,i] = C[i,j]
+      C[i,j] = C[i,j]/C[i,i]
+      if !isfinite(C[i,j])
+          error("Precision not high enough")
+      end
+    end
+    for k = i+1:n
+      for l = i+1:n
+        C[k,l] = C[k,l] - C[k,i]*C[i,l]
+        if !isfinite(C[k,l])
+          error("Precision not high enough")
+        end
+      end
+    end
+  end
+  for j = 1:n-1
+    for i=j+1:n
+      C[i,j] = parent(C[i,j])(0)
+    end
+  end
+  for i in 1:n
+    #println(C[i,i])
+    if contains_zero(C[i,i])
+      error("Precision not high enough")
+    end
+  end
+
+  return C
+end
+
+type EnumCtxArb
+  G::arb_mat
+  L::Array{fmpz_mat, 1}
+  x::fmpz_mat
+  p::Int
+
+  function EnumCtxArb(G::arb_mat)
+    z = new()
+    z.G = G
+    z.x = MatrixSpace(ZZ, 1, rows(G))()
+    z.p = parent(G).prec
+    return z
+  end
+end
+
+function enumerate_using_gram(G::arb_mat, c::arb)
+  E = EnumCtxArb(pseudo_cholesky(G))
+  return _enumerate(E, c, rows(G), MatrixSpace(ZZ, 1, rows(G))())
+end
+
+function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
+  # assume x_n,x_n-1,...,x_i+1 are set
+  # compute the bound for x_i
+  G = E.G
+  n = rows(G)
+  p = E.p
+  #recprint(n-i)
+  #println("I am at level $i with $x")
+
+  #recprint(n-i)
+  #println("Gii: ", G[i,i])
+  #recprint(n-i)
+  #println("c: ", ArbField(p)(c))
+  C = ArbField(p)(c)/G[i,i]
+  #recprint(n-i)
+  #println("C: ", C)
+  C = sqrt(C)
+  CC = ArbField(p)(0)
+  for j in i+1:n
+    CC = CC + G[i,j]*x[1,j]
+  end
+  lb = -CC - C
+  ub = -CC + C
+  tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &lb)
+  tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &lb)
+  u = ArfField(p)()
+  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf}, Ptr{mag}), &u, tr)
+  ccall((:arf_sub, :libarb), Void, (Ptr{arf}, Ptr{arf}, Ptr{arf}, Clong, Cint), &u, tm, &u, p,4) # 4 is round to -infty
+  lbfmpz = fmpz()
+  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf}, Cint), &lbfmpz, &u, 4)
+
+  tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &ub)
+  tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &ub)
+  u = ArfField(p)()
+  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf}, Ptr{mag}), &u, tr)
+  ccall((:arf_sub, :libarb), Void, (Ptr{arf}, Ptr{arf}, Ptr{arf}, Clong, Cint), &u, tm, &u, p, 3) # 3 is round to +infty
+  ubfmpz = fmpz()
+  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf}, Cint), &ubfmpz, &u, 3)
+
+  #error("precision $p not high enough")
+
+  #recprint(n-i)
+  #println("Coordinate $i between $lbfmpz and $ubfmpz")
+
+  A = Array{Array{fmpz, 1}, 1}()
+  if i == 1
+    for j in Int(lbfmpz):Int(ubfmpz)
+      if isnegative(c - G[i,i]*(j + CC)^2)
+        continue
+      end
+      push!(A, [ fmpz(j) ])
+    end
+  else
+    for j in Int(lbfmpz):Int(ubfmpz)
+      #recprint(n-i)
+      #println("$x $i $j: $c $(G[i,i]) $CC")
+      #recprint(n-i)
+      #println("$x $i $j $(G[i,i]*j^2)")
+      #recprint(n-i)
+      #println("$x $i $j: $(c - G[i,i]*(j + CC)^2)")
+      #recprint(n-i)
+      t = c - G[i,i]*(j + CC)^2
+      if isnegative(t)
+        #recprint(n-i)
+        #println("Oh no, negative!")
+        continue
+      end
+      if contains_zero(t)
+        error("Precision not high enough")
+       # y = Array(fmpz, i)
+       # for o in 1:i-1
+       #   y[o] = 0
+       # end
+       # y[i] = j
+       # push!(A, y)
+       # continue
+      end
+      x[1,i] = j
+      #recprint(n-i)
+      #println("Calling again with new bound $t and vector  $x")
+      l = _enumerate(E, t, i - 1, x)
+      for k in 1:length(l)
+        push!(A, push!(l[k], fmpz(j)))
+      end
+    end
+  end
+  return A
+end
+
+function recprint(n::Int)
+  for i in 1:n
+    print("    ")
+  end
 end
