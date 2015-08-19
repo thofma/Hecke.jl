@@ -30,7 +30,7 @@ type BigComplex
     return BigComplex(BigFloat(Base.real(r)), BigFloat(Base.imag(r)))
   end
 
-  function BigComplex(r::acb_t)
+  function BigComplex(r::acb)
     return BigComplex(BigFloat(midpoint(real(r))), BigFloat(midpoint(imag(r))))
   end
 end
