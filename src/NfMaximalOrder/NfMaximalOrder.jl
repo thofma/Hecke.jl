@@ -1,5 +1,6 @@
-export NfMaximalOrder, MaximalOrder
+export NfMaximalOrder
 
+export MaximalOrder, conjugate_data
 
 ################################################################################
 #
@@ -35,6 +36,7 @@ type NfMaximalOrder <: GenNfOrd
   parent::NfMaximalOrderSet        # parent object
   signature::Tuple{Int, Int}       # signature of the parent object
                                    # (-1, 0) means 'not set'
+  conjugate_data::acb_root_ctx
 
   function NfMaximalOrder(a::NfNumberField)
     r = new(a)
@@ -140,6 +142,18 @@ function basis_ord(O::NfMaximalOrder)
   return B
 end
 
+function conjugate_data(O::NfMaximalOrder)
+  if isdefined(O, :conjugate_data)
+    return O.conjugate_data
+  else
+    # acb_root_ctx will find the roots of the polynomial
+    # precision will be chosen so that roots can be separated
+    # starting precision is 64
+    O.conjugate_data = acb_root_ctx(nf(O).pol)
+    return O.conjugate_data
+  end
+end
+
 function basis_mat_inv(O::NfMaximalOrder)
   if isdefined(O, :basis_mat_inv)
     return O.basis_mat_inv
@@ -190,6 +204,7 @@ function discriminant(O::NfMaximalOrder)
   O.disc = determinant(A)
   return O.disc
 end
+
 nf(O::NfMaximalOrder) = O.nf
 
 rank(x::NfMaximalOrder) = degree(nf(x))

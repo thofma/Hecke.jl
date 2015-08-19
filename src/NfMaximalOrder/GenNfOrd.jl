@@ -34,7 +34,7 @@
 
 # So far, this is only a common supertype for NfOrder and NfMaximalOrder
 
-export elem_in_order, rand, rand!
+export GenNfOrd, NfOrderElem, GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit
 
 abstract GenNfOrd 
 
@@ -260,7 +260,7 @@ end
 @doc """
   denominator(a::nf_elem, O::GenNfOrd) -> fmpz
 
-  Compute the smalles positive integer k such that k*a in O.
+  Compute the smallest positive integer k such that k*a in O.
 """ ->
 function denominator(a::nf_elem, O::GenNfOrd)
   d = denominator(a)
@@ -474,54 +474,6 @@ end
 
 ################################################################################
 #
-#  (Torsion)-Units
-#
-################################################################################
-
-function is_unit(x::NfOrderElem)
-  return abs(norm(x)) == 1 
-end
-
-# don't use this!
-function is_torsion_unit(x::NfOrderElem)
-  !is_unit(x) && return false
-  # test for the signature etc
-  O = parent(x)
-  d = degree(O)
-  # round down should be mode 3 (right?)
-  Rarb = ArbField(32)
-  Rd = Rarb(d)
-  t = (log(Rd)/d^2)/24
-  while !ispositive(t)
-     Rarb = ArbField(2*Rarb.prec)
-     Rd = Rarb(d)
-     t = (log(Rd)/d^2)/24
-  end
-  Rarf = ArfField(Rarb.prec)
-  z = Rarf()
-  ccall((:arb_get_abs_lbound_arf, :libarb), Void, (Ptr{Void}, Ptr{Void}, Clong), z.data, t.data, Rarb.prec)
-  @hassert :NfMaximalOrder 1 sign(z) == 1
-  zz = 1 + (log(Rd)/d^2)/12
-  i = ccall((:arf_cmpabs_mag, :libarb), Cint, (Ptr{Void}, Ptr{Void}), z.data, radius(zz).data)
-  f = nf(parent(x)).pol
-  Zf = PolynomialRing(FlintZZ,"x")[1](f) 
-  c = complex_roots(Zf, target_prec = Rarb.prec)
-  for j in 1:length(c)
-    r = parent(c[1])(0)
-    for k in 1:degree(O)
-      r = r + parent(c[1])(coeff(elem_in_nf(x), k))*c[j]^k
-    end
-    s = abs(r)
-    assert(ccall((:arf_cmpabs_mag, :libarb), Cint, (Ptr{Void}, Ptr{Void}), z.data, radius(s).data) == 1)
-    if compare(midpoint(s), midpoint(zz)) == 1
-      return false
-    end
-  end
-  return true
-end
-
-################################################################################
-#
 #  Random element generation
 #
 ################################################################################
@@ -641,7 +593,7 @@ Base.call(K::NfNumberField, x::NfOrderElem) = elem_in_nf(x)
 ################################################################################
 ################################################################################
 ##
-##  GenNfOrd
+##  GenNfOrdIdl : Ideals in GenNfOrd
 ##
 ################################################################################
 ################################################################################
