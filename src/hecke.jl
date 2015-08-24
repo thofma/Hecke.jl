@@ -141,15 +141,27 @@ end
 
 function __init__()
    println("")
-   print("Welcome to hecke version")
-   print_with_color(:red, " 0.1")
+   print("Welcome to \n")
+   print_with_color(:red, "
+    ('-. .-.   ('-.             .-. .-')     ('-.   
+   ( OO )  / _(  OO)            \\  ( OO )  _(  OO)  
+   ,--. ,--.(,------.   .-----. ,--. ,--. (,------. 
+   |  | |  | |  .---'  '  .--./ |  .'   /  |  .---' 
+   |   .|  | |  |      |  |('-. |      /,  |  |     
+   |       |(|  '--.  /_) |OO  )|     ' _)(|  '--.  
+   |  .-.  | |  .--'  ||  |`-'| |  .   \\   |  .--'  
+   |  | |  | |  `---.(_'  '--'\\ |  |\\   \\  |  `---. 
+   `--' `--' `------'   `-----' `--' '--'  `------' 
+   ")
    println()
-   print("... which comes with absolutely ")
+   print("hecke version")
+   print_with_color(:green, " 0.1 ")
+   print("... \n ... which comes with absolutely ")
    print_with_color(:red, "no")
    print_with_color(:blue, " warranty")
    println(" whatsoever")
    println("")
-   println("(c) 2015 by Claus Fieker and Tommy Hofmann and ?")
+   println("(c) 2015 by Claus Fieker and Tommy Hofmann")
 end
 
 
@@ -203,8 +215,8 @@ function checkbounds(a::Int, b::Int) nothing; end;
 ################################################################################
 
 include("Sparse.jl")
-include("LinearAlgebra.jl")
 include("Misc.jl")
+include("LinearAlgebra.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 #include("MaximalOrderIdeals.jl")
