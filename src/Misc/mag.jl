@@ -38,7 +38,7 @@
 #
 ################################################################################
 
-export mag, MagnSet
+export mag, MagSet
 
 type MagnSet
 end  
@@ -296,7 +296,7 @@ end
 #
 ################################################################################
 
-function FlintQQ(x::mag)
+function call(::FlintRationalField, x::mag)
   y = fmpq()
   ccall((:mag_get_fmpq, :libarb), Void, (Ptr{fmpq}, Ptr{mag}), &y, &x)
   return y
