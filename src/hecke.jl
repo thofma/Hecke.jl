@@ -223,6 +223,7 @@ include("conjugates.jl")
 include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("misc.jl")
+include("analytic.jl")
 include("NfMaximalOrder.jl")
 end
 
