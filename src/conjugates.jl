@@ -107,6 +107,15 @@ function evaluate(f::fmpq_poly, r::BigComplex)
   return s
 end
 
+function evaluate{T <: FieldElem}(f::fmpq_poly, r::T)
+  R = parent(r)
+  l = length(f) - 1
+  s = R(coeff(f, l))
+  for i in l-1:-1:0
+    s = s*r + R(coeff(f, i))
+  end
+  return s
+end
 
 function evaluate(f::fmpz_poly, r::BigComplex)
   #Horner - not elegant, but workable
