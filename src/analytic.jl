@@ -23,9 +23,6 @@ export dickman_rho, bach_rho, bach_G, bach_F
   It should be enough for dickman_rho to guarantee doubles (53 bits)
   In the paper Bach used 21 for the bash_rho function
 
-  I have no example where the recursion (splitting of the integral)
-  occurs
-
   In the values tested, the results agree with Magma (DickmanRho) and
   the paper for bach_rho
 
@@ -103,7 +100,7 @@ function bach_J{T<:Number}(u::T, v::T, w::T)
     return k-w+w/t
   end
 
-  if xi(v) >= 0 && xi(u) <= 1
+  if xi(v) <= 1 
     local A = w/v+k-w,
           B = w/u+k-w,
           C = k-w
