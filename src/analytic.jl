@@ -1,6 +1,6 @@
 import Base: ceil, log, -, <, <=, vcat, sum, ^, &, +, /
 
-export dickman_rho, bach_rho, bach_G, bach_F
+export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_integral, li, ei
 
 #= source: http://cr.yp.to/bib/1996/bach-semismooth.pdf
 
@@ -13,7 +13,7 @@ export dickman_rho, bach_rho, bach_G, bach_F
   then
 
   Psi(x, x^1/u) = x*dickman_rho(u)
-  Psi(x, x^1/u, x^1/v) = x * bach_rho(u, v)
+  Psi(x, x^1/u, x^1/v) = x * bach_rho(v, u)
 
   OK, the "=" is an approximation
 
@@ -61,7 +61,7 @@ function analytic_eval{T<:Number}(a::analytic_func{T}, b::T)
   end
   return s
 end
-
+ 
 function dickman_rho(x::Number)
   if x < 0
     error("argument must be positive")
@@ -116,3 +116,37 @@ function bach_J{T<:Number}(u::T, v::T, w::T)
   end
 end
 
+#the function Ei = -integral(-x, infty, exp(-t)/t dt)
+
+@doc """
+  exponential_integral(x::FloatingPoint) -> FloatingPoint
+  ei(x::FloatingPoint) -> FloatingPoint
+
+  Compute the exponential integral function
+""" ->
+function exponential_integral(x::BigFloat)
+  z = BigFloat()
+  ccall((:mpfr_eint, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &z, &x, Base.MPFR.ROUNDING_MODE[end])
+  return z
+end
+
+function exponential_integral{T<:FloatingPoint}(x::T)
+  return T(exponential_integral(BigFloat(x)))
+end
+
+#the function li = integral(0, x, dt/log(t))
+#             li(x) = Ei(log(x)) according to wiki and ?
+@doc """
+  logarithmic_integral(x::FloatingPoint) -> FloatingPoint
+  li(x::FloatingPoint) -> FloatingPoint
+
+  Compute the logarithmic integral function. Used as an approximation
+  for the number of primes up to x
+""" ->
+
+function logarithmic_integral(x::FloatingPoint)
+  return exponential_integral(log(x))
+end
+
+const ei = exponential_integral
+const li = logarithmic_integral
