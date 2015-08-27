@@ -17,12 +17,13 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
              trace, factor, mod, zero, pari_load, PariPolyRing,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
-             discriminant, log, sub, lift, FlintQQ, FlintZZ
+             discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type
 
 export NfNumberField, hash
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
-             size, dot, in, powermod
+             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
+             getindex, setindex!, transpose, getindex, //, colon
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -207,7 +208,7 @@ Base.showerror(io::IO, e::LowPrecisionCholesky) = print(io, e.var, "negative dia
 type LowPrecisionLLL <: Exception end
 Base.showerror(io::IO, e::LowPrecisionLLL) = print(io, e.var, "trafo matrix has too large entries relative to precision in LLL")
 
-#function checkbounds(a::Int, b::Int) nothing; end;
+function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
 #
@@ -225,5 +226,46 @@ include("NfOrder.jl")
 include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
+
+################################################################################
+#
+#  Extending Nemo types
+#
+################################################################################
+
+const hecke_handle = get_handle()
+
+const _get_nf_conjugate_data_arb, _set_nf_conjugate_data_arb =
+            create_accessors(NfNumberField, acb_root_ctx, hecke_handle)
+
+function conjugate_data(K::NfNumberField)
+  try
+    c = _get_nf_conjugate_data_arb(K)
+    return c
+  catch
+    c = acb_root_ctx(K.pol)
+    _set_nf_conjugate_data_arb(K, c)
+    return c
+  end
+end
+
+################################################################################
+#
+#  (Temporary) global dictionaries
+#
+################################################################################
+
+const _conjugate_data_dict = Dict{NfNumberField, acb_root_ctx}()
+
+#function conjugate_data(K::NfNumberField)
+#  if haskey(_conjugate_data_dict, K)
+#    return _conjugate_data_dict[K]
+#  else
+#    z = acb_root_ctx(K.pol)
+#    _conjugate_data_dict[K] = z
+#    return z
+#  end
+#end
+    
 end
 
