@@ -7,7 +7,8 @@
 export NfMaximalOrderIdealSet, NfMaximalOrderIdeal
 
 export IdealSet, minimum, is_prime_known, MaximalOrderIdeal, basis_mat,
-       valuation, defines_2_normal, *, /, ==, MaximalOrderIdealSet, norm, Ideal
+       valuation, defines_2_normal, *, /, ==, MaximalOrderIdealSet, norm, Ideal,
+       prime_decomposition_type, prime_decomposition
 
 ################################################################################
 #
@@ -1304,14 +1305,31 @@ end
 
 # Don't use the following functions. It does not work for index divisors
 function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
-  K = nf(O)
-  f = K.pol
-  R = parent(f)
-  Zx, x = PolynomialRing(ZZ,"x")
-  Zf = Zx(f)
-  fmodp = PolynomialRing(ResidueRing(ZZ,p), "y")(Zf)
-  fac = factor_shape(fmodp)
-  return fac
+  if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
+    K = nf(O)
+    f = K.pol
+    R = parent(f)
+    Zx, x = PolynomialRing(ZZ,"x")
+    Zf = Zx(f)
+    fmodp = PolynomialRing(ResidueRing(ZZ,p), "y")[1](Zf)
+    fac = factor_shape(fmodp)
+    g = sum([ x[2] for x in fac])
+    res = Array(Tuple{Int, Int}, g)
+    k = 1
+    for i in length(fac)
+      for j in 1:fac[i][2]
+        res[k] = (fac[i][1], 1)
+        k = k + 1
+      end
+    end
+  else
+    lp = prime_decomposition(O, p)
+    res = Array(Tuple{Int, Int}, length(lp))
+    for i in 1:length(lp)
+      res[i] = (lp[i][1].splitting_type[2], lp[i][1].splitting_type[1])
+    end
+  end
+  return res
 end
 
 @doc """

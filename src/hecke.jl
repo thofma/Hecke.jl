@@ -17,7 +17,7 @@ import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
              trace, factor, mod, zero, pari_load, PariPolyRing,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
-             discriminant, log, sub, lift
+             discriminant, log, sub, lift, FlintQQ, FlintZZ
 
 export NfNumberField, hash
 
@@ -207,7 +207,8 @@ Base.showerror(io::IO, e::LowPrecisionCholesky) = print(io, e.var, "negative dia
 type LowPrecisionLLL <: Exception end
 Base.showerror(io::IO, e::LowPrecisionLLL) = print(io, e.var, "trafo matrix has too large entries relative to precision in LLL")
 
-function checkbounds(a::Int, b::Int) nothing; end;
+#function checkbounds(a::Int, b::Int) nothing; end;
+
 ################################################################################
 #
 #  "Submodules"
@@ -219,14 +220,10 @@ include("Misc.jl")
 include("LinearAlgebra.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-#include("MaximalOrderIdeals.jl")
 include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
-#include("PrimeDec.jl")
-#include("Clgp.jl")
 end
-
 
