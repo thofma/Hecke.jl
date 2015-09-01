@@ -68,7 +68,7 @@ end
 
 prec(x::ArbField) = x.prec
 
-type arb
+type arb <: FieldElem
   mid_exp::Int # fmpz
   mid_size::UInt64 # mp_size_t
   mid_d1::Int64 # mantissa_struct
@@ -147,6 +147,8 @@ end
 function _arb_clear_fn(x::arb)
   ccall((:arb_clear, :libarb), Void, (Ptr{arb}, ), &x)
 end
+
+elem_type(x::ArbField) = arb
 
 parent(x::arb) = x.parent
 
@@ -502,6 +504,8 @@ function ^(x::arb, y::fmpz)
               &z, &x, &y, parent(x).prec)
   return z
 end
+
+^(x::arb, y::Int) = ^(x, fmpz(y))
 
 function ^(x::arb, y::Culong)
   z = parent(x)()

@@ -98,7 +98,7 @@ function __acb_clear_fn(x::_raw_acb)
   ccall((:acb_clear, :libarb), Void, (Ptr{_raw_acb}, ), &x)
 end
 
-type acb
+type acb <: FieldElem
   real_mid_exp::Int     # fmpz
   real_mid_size::UInt64 # mp_size_t
   real_mid_d1::Int64    # mantissa_struct

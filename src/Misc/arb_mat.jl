@@ -51,13 +51,14 @@ type ArbMatSpace
     if haskey(ArbMatSpaceID, (r, c, prec))
       return ArbMatSpaceID[(r, c, prec)]::ArbMatSpace
     else
-      ArbMatSpaceID[(r, c, prec)] = new(r, c, prec)
-      return ArbMatSpaceID[(r, c, prec)]
+      z = new(r, c, prec)
+      ArbMatSpaceID[(r, c, prec)] = z
+      return z
     end
   end
 end
 
-type arb_mat
+type arb_mat <: RingElem
   entries::Ptr{Void}
   r::Int
   c::Int
