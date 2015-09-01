@@ -1434,6 +1434,33 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   return class_group_current_result(clg)
 end
 
+function class_group_find_relations3(clg::ClassGrpCtx; val = 0, prec = 100,
+                limit = 10)
+  O = order(clg.FB.ideals[1])
+  K = nf(O)
+  n = degree(K)
+  b = basis(O, K)
+
+  no_b = 1
+  while rows(clg.M) < 2*cols(clg.M)
+    no_poss = 2^no_b * binom(n, no_b)
+    no_poss = root(no_poss, 2)
+    no = 0
+    while no < no_poss && rows(clg.M) < 2*cols(clg.M)
+      x = sum([rand([-1, 1])*rand(b) for i =1:no_b])
+      nrm = norm_div(x, fmpz(1), 3)
+      fl = class_group_add_relation(clg, x, nrm, fmpz(1))
+      no += 1
+    end
+    if no >= no_poss
+      no_b += 1
+      println("giving more basis, now", no_b)
+      continue;
+    else
+      break
+    end
+  end
+end 
 ################################################################################
 #
 #  Main function
