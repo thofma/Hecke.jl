@@ -1,4 +1,4 @@
-import Base: isprime, dot, convert, isless, log
+import Base: isprime, dot, convert, isless, log, round
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree, sub,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
@@ -1198,3 +1198,15 @@ dot(x::BigInt, y::NfOrderElem) = x * y
 colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
 
 den(a::fmpq_poly) = denominator(a)
+
+function round(a::fmpq)
+  n = num(a)
+  d = den(a)
+  q = div(n, d)
+  r = mod(n, d)
+  if r >= d//2
+    return q+1
+  else
+    return q
+  end
+end

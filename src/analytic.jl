@@ -150,3 +150,23 @@ end
 
 const ei = exponential_integral
 const li = logarithmic_integral
+
+
+#=
+From Feller:An Introduction to Probability Theory and Its Applications vol1
+Chapter IX, Question 18
+The formula (for n=365) is in the solutions.
+=#
+
+@doc """
+  rels_from_partial(n::Int, k::Int) -> Int
+
+  Estimates the number of collision in k samples among n possibilities. Used 
+  to estimate the number of full relations to be expected from k partial
+  relations involving n (large) primes
+""" ->
+function rels_from_partial(n::Int, k::Int) 
+  N = fmpz(n)
+  return Int(round(N*(1-(N-1)^k//N^k-k*(N-1)^(k-1)//N^k)))
+end
+
