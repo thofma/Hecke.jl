@@ -303,6 +303,9 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   B2::Int
   largePrime::Dict{fmpz_poly, Tuple{nf_elem, fmpq}}
   largePrime_success::Int
+  largePrime_no_success::Int
+  relNorm::Array{Tuple{nf_elem, fmpz}, 1}
+  relPartialNorm::Array{Tuple{nf_elem, fmpz}, 1}
 
   val_base::fmpz_mat      # a basis for the possible infinite ranodmization 
                           # vectors: conditions are
@@ -312,11 +315,14 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
                           # done via lll + nullspace
   function ClassGrpCtx()
     r = new()
-    r.R = Array{nf_elem, 1}[]
+    r.R = Array{nf_elem, 1}()
     r.RS = Set(r.R)
     r.largePrimeCnt = 0
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0
+    r.largePrime_no_success = 0
+    r.relNorm=Array{Tuple{nf_elem, fmpz}, 1}()
+    r.relPartialNorm=Array{Tuple{nf_elem, fmpz}, 1}()
     r.B2 = 0
     r.H_is_modular = true
     return r
@@ -397,9 +403,9 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
     a = nf(O)(I.gen_one)
-    class_group_add_relation(clg, a, abs(norm(a)))
+    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
     a = nf(O)(I.gen_two)
-    class_group_add_relation(clg, a, abs(norm(a)))
+    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
   end
   n = degree(O)
   l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
@@ -449,8 +455,9 @@ function israt(a::nf_elem)
   return a.elem_length<2
 end
 
-rels = Array(nf_elem, 100)
-function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
+rels = Array(fmpz, 1)
+rel_cnt = 0
+function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz)
   if a==0
     return false
   end
@@ -459,9 +466,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
   end
   #print("trying relation of length ", Float64(length(clg.c, a)),
   #      " and norm ", Float64(n));
-  global rels;
-  rels[clg.bad_rel % 100 + 1] = a
-  fl, r = is_smooth(clg.FB.fb_int, num(n)*denominator(a))
+  fl, r = is_smooth(clg.FB.fb_int, num(n*nI)*denominator(a))
   if !fl
     # try for large prime?
     if isprime(r) && abs(r) < clg.B2
@@ -469,12 +474,17 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
       if haskey(clg.largePrime, i)
         lp = clg.largePrime[i]
         b = a//lp[1]
-        fl = class_group_add_relation(clg, b, n//lp[2])
+        fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1))
+        global rels
+        push!(rels,r)
         if fl 
           clg.largePrime_success += 1
+        else
+          clg.largePrime_no_success += 1
         end
       else
-        clg.largePrime[i] = (a, n)
+        clg.largePrime[i] = (a, n*nI)
+        push!(clg.relPartialNorm, (a, nI))
       end
       clg.largePrimeCnt += 1
     else
@@ -483,7 +493,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
     #println(" -> fail")
     return false
   end
-  if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n)
+  if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n*nI)
     push!(clg.R, a)
     push!(clg.RS, a)
     @hassert :ClassGroup 1 rows(clg.M) == length(clg.R)
@@ -491,6 +501,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq)
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
            clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
     clg.last = clg.bad_rel
+    push!(clg.relNorm, (a, nI))
     return true
   else
     #println(" -> 2:fail")
@@ -961,7 +972,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         println("skipping ideal (for now)")
         break
       end
-      f = class_group_add_relation(clg, e, n*norm(I[end].A))
+      f = class_group_add_relation(clg, e, n, norm(I[end].A))
 #      global AllRels
 #      push!(AllRels, (e, n))
       if f
@@ -1072,7 +1083,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           =#
           continue;
         end
-        if class_group_add_relation(clg, e, n*norm(E.A))
+        if class_group_add_relation(clg, e, n, norm(E.A))
           E.cnt += 1
           if length(clg.R) - clg.last_H > 20
             break
@@ -1117,6 +1128,19 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   return class_group_current_result(clg)
 end
 
+function rank_increase(clg::ClassGrpCtx)
+  if isdefined(clg, :H)
+    old_h = rows(clg.H)
+    new = rows(clg.M) - clg.last_H 
+    h, piv = class_group_current_result(clg)
+    return rows(clg.H)-old_h, new
+  end
+  if !isdefined(clg, :H)
+    h, piv = class_group_current_result(clg)
+    return rows(clg.H), rows(clg.M)
+  end
+end
+
 function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
                 limit = 10)
   clg.hnf_time = 0.0
@@ -1138,6 +1162,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   for i in nI:-1:1
     I = Idl[i]
     OK = false
+    too_slow = false
     while !OK
       try
         f = class_group_small_real_elements_relation_start(clg, I, 
@@ -1175,46 +1200,31 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
         println("skipping ideal (for now)")
         break
       end
-      fl = class_group_add_relation(clg, e, n*norm(f.A))
+      fl = class_group_add_relation(clg, e, n, norm(f.A))
       if fl
         f.cnt += 1
+        if rows(clg.M) % 20 == 0
+          a,b = rank_increase(clg)
+          if a/b < 0.5
+            @v_do :ClassGroup 2 println("rank too slow", a, b)
+            too_slow=true
+            break
+          end
+        end
       else
         f.bad += 1
         if f.bad > (clg.bad_rel/clg.rel_cnt)*2
           @v_do :ClassGroup 2 println("too slow in getting s.th. for ", i,
                           "\ngood: ", f.cnt,  " bad: ",  f.bad,
                           " ratio: ", (clg.bad_rel/clg.rel_cnt))
+          too_slow = true                
           break
         end
       end
     end
     @v_do :ClassGroup_gc 1 gc()
-    if (isdefined(clg, :H) && length(clg.R)-clg.last_H > cols(clg.M)*0.1)
-      old_h = rows(clg.H)
-      h, piv = class_group_current_result(clg)
-      if h==1 
-        return h, piv
-      end
-      if h!=0
-        break
-      end
-      if rows(clg.H) - old_h < cols(clg.M)*0.05
-        println("too slow in finding rels")
-        break
-      end
-    end
-    if (!isdefined(clg, :H) && length(clg.R) > cols(clg.M)*0.1)
-      h, piv = class_group_current_result(clg)
-      if h==1 
-        return h, piv
-      end
-      if h!=0
-        break
-      end
-      if rows(clg.H) < cols(clg.M) * 0.05
-        println("2:too slow in finding rels")
-        break
-      end
+    if too_slow
+      break
     end
   end
 
@@ -1237,8 +1247,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       lt = max(100, round((clg.bad_rel/clg.rel_cnt)*2))
 
       while true
-        print_with_color(:red, "starting ideal no ")
-        println(i, " now")
+        #print_with_color(:red, "starting ideal no ")
+        #println(i, " now")
         A = Idl[i]
         j = 0
         while norm(A) < sqrt_disc && j < no_rand
@@ -1264,10 +1274,11 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             rethrow(e)
           end  
         end  
+        no_rand_local = no_rand
         while true
           e = class_group_small_real_elements_relation_next(E)
           n = abs(norm_div(e, norm(E.A), np))
-          if n > sqrt_disc || E.restart > 0
+          if n > sqrt_disc || E.restart > 2
             @v_do :ClassGroup 2 begin
               print_with_color(:red, "2:norm too large (or restarting):")
               println(n, " should be ", sqrt_disc)
@@ -1276,9 +1287,10 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             end  
             A = Idl[i]
             j = 0
-            while norm(A) < sqrt_disc && j < no_rand
-              A *= rand(Idl[(nI-no_rand):nI])
+            while norm(A) < sqrt_disc && j < no_rand_local
+              A *= rand(Idl[(nI-no_rand_local):nI])
               j += 1
+              no_rand_local += 1
             end
             E = class_group_small_real_elements_relation_start(clg, A,
                             val = E.vl, limit = limit, prec = prec)
@@ -1290,11 +1302,11 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             =#
             continue;
           end
-          if class_group_add_relation(clg, e, n*norm(E.A))
+          if class_group_add_relation(clg, e, n, norm(E.A))
             E.cnt += 1
-            print_with_color(:green, "success\n")
+            #print_with_color(:green, "success\n")
             if length(clg.R) - clg.last_H > 20
-              print_with_color(:blue, "found rels, trying again\n")
+              #print_with_color(:blue, "found rels, trying again\n")
               break
             end
           else
@@ -1302,12 +1314,12 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
           end
         end
         if length(clg.R) - clg.last_H > cols(clg.M)*0.1
-          print_with_color(:blue, "2:found rels, trying again\n")
+          #print_with_color(:blue, "2:found rels, trying again\n")
           break
         end
       end
       if length(clg.R) - clg.last_H > cols(clg.M)*0.1
-        print_with_color(:blue, "3:found rels, trying again\n")
+        #print_with_color(:blue, "3:found rels, trying again\n")
         break
       end
     end
@@ -1317,10 +1329,10 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     last_rels = clg.last_H
     h, piv = class_group_current_result(clg)
     if (rows(clg.H) - last_rank) < 0.5 * (clg.last_H - last_rels)
-      println("rank too slow, increasing randomness")
+      #println("rank too slow, increasing randomness")
       no_rand += 5
       no_rand = min(no_rand, length(clg.FB.ideals))
-      println("new is ", no_rand)
+      #println("new is ", no_rand)
     end
     if h != 0
       if h==1 
