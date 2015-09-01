@@ -31,12 +31,15 @@
 #  Copyright (C) 2015 Tommy Hofmann
 #
 ################################################################################
-
+#
+#  TODO:
+#   Fix hashing 
+#
 # So far, this is only a common supertype for NfOrder and NfMaximalOrder
 
 export GenNfOrd, NfOrderElem, GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit
 
-abstract GenNfOrd 
+abstract GenNfOrd <: Ring{Antic}
 
 ################################################################################
 #
@@ -82,7 +85,7 @@ end
 ################################################################################
 ################################################################################
 
-type NfOrderElem
+type NfOrderElem <: RingElem
   elem_in_nf::nf_elem
   elem_in_basis::Array{fmpz, 1}
   has_coord::Bool
@@ -196,6 +199,16 @@ function elem_in_basis(a::NfOrderElem)
     return a.elem_in_basis
   end
 end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+# I don't think this is a good idea
+
+hash(x::NfOrderElem) = hash(elem_in_nf(x))
 
 
 ################################################################################

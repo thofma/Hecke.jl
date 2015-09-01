@@ -1103,16 +1103,16 @@ end
 
 # This function is broken. Pari interfaced got changed.
 
-function __prime_ideal_components(id::PariIdeal)
-   QQx = id.parent.order.pari_nf.nf.pol.parent
-   av = unsafe_load(Nemo.avma, 1)
-   p = Nemo.ZZ!(ZZ(), pari_load(id.ideal, 2)) ## the minimum of the prime ideal
-   a = Nemo.fmpq_poly!(QQx(), Nemo.residue(Nemo.basistoalg(id.parent.order.pari_nf.data, pari_load(id.ideal, 3)))) ## the 2nd generator
-   e = Int(Nemo.ZZ!(ZZ(), pari_load(id.ideal, 4))) ## the ramification
-   f = Int(Nemo.ZZ!(ZZ(), pari_load(id.ideal, 5))) ## the inertia
-   unsafe_store!(Nemo.avma, av, 1)
-   return p, a, e, f
-end
+#function __prime_ideal_components(id::PariIdeal)
+#   QQx = id.parent.order.pari_nf.nf.pol.parent
+#   av = unsafe_load(Nemo.avma, 1)
+#   p = Nemo.ZZ!(ZZ(), pari_load(id.ideal, 2)) ## the minimum of the prime ideal
+#   a = Nemo.fmpq_poly!(QQx(), Nemo.residue(Nemo.basistoalg(id.parent.order.pari_nf.data, pari_load(id.ideal, 3)))) ## the 2nd generator
+#   e = Int(Nemo.ZZ!(ZZ(), pari_load(id.ideal, 4))) ## the ramification
+#   f = Int(Nemo.ZZ!(ZZ(), pari_load(id.ideal, 5))) ## the inertia
+#   unsafe_store!(Nemo.avma, av, 1)
+#   return p, a, e, f
+#end
 
 ################################################################################
 #
