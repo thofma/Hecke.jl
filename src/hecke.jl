@@ -238,7 +238,7 @@ const hecke_handle = get_handle()
 const _get_nf_conjugate_data_arb, _set_nf_conjugate_data_arb =
             create_accessors(NfNumberField, acb_root_ctx, hecke_handle)
 
-function conjugate_data(K::NfNumberField)
+function conjugate_data_arb(K::NfNumberField)
   try
     c = _get_nf_conjugate_data_arb(K)
     return c
