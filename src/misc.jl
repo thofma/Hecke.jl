@@ -15,20 +15,20 @@ export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
 # basis of an (Pari)Order as array of elements in the field
 ################################################################################
 
-function basis(K::NfNumberField, O::PariMaximalOrder)
-  if isdefined(O, :basis)
-    return O.basis
-  end
-  n = degree(K)
-  d = Array(typeof(K(0)), n)
-  b = Nemo.basis(O)
-  Qx = K.pol.parent
-  for i = 1:n 
-    d[i] = K(Qx(b[i]))
-  end
-  O.basis = d
-  return d
-end
+#function basis(K::NfNumberField, O::PariMaximalOrder)
+#  if isdefined(O, :basis)
+#    return O.basis
+#  end
+#  n = degree(K)
+#  d = Array(typeof(K(0)), n)
+#  b = Nemo.basis(O)
+#  Qx = K.pol.parent
+#  for i = 1:n 
+#    d[i] = K(Qx(b[i]))
+#  end
+#  O.basis = d
+#  return d
+#end
 
 ################################################################################
 # the same basis, but the elements (the coefficients) are put into a marix
@@ -37,40 +37,40 @@ end
 # the result is cached in the order
 ################################################################################
 
-function basis_mat(K::NfNumberField, O::PariMaximalOrder)
-  if isdefined(O, :basis_mat) 
-    return O.basis_mat
-  end
-  b = basis(K, O)
-  d = denominator(b[1])
-  n = degree(K)
-  for i = 2:n
-    d = lcm(d, denominator(b[i]))
-  end
-  M = MatrixSpace(ZZ, n,n)()
-  for i = 1:n
-    element_to_mat_row!(M, i, b[i]*d)
-  end
-  O.basis_mat = M, d
-  return M, d
-end 
-
-################################################################################
-# The pseudo inverse of the above matrix
-# the result is cached in the order
-################################################################################
-
-function inv_basis_mat(K::NfNumberField, O::PariMaximalOrder)
-  if isdefined(O, :inv_basis_mat) 
-    return O.inv_basis_mat
-  end
-  b, d_b = basis_mat(K, O)
-  i, d_i = pseudo_inverse(b)
-  i *= d_b
-  i, d_i = simplify_content(i, d_i)
-  O.inv_basis_mat = i, d_i
-  return i, d_i
-end 
+#function basis_mat(K::NfNumberField, O::PariMaximalOrder)
+#  if isdefined(O, :basis_mat) 
+#    return O.basis_mat
+#  end
+#  b = basis(K, O)
+#  d = denominator(b[1])
+#  n = degree(K)
+#  for i = 2:n
+#    d = lcm(d, denominator(b[i]))
+#  end
+#  M = MatrixSpace(ZZ, n,n)()
+#  for i = 1:n
+#    element_to_mat_row!(M, i, b[i]*d)
+#  end
+#  O.basis_mat = M, d
+#  return M, d
+#end 
+#
+#################################################################################
+## The pseudo inverse of the above matrix
+## the result is cached in the order
+#################################################################################
+#
+#function inv_basis_mat(K::NfNumberField, O::PariMaximalOrder)
+#  if isdefined(O, :inv_basis_mat) 
+#    return O.inv_basis_mat
+#  end
+#  b, d_b = basis_mat(K, O)
+#  i, d_i = pseudo_inverse(b)
+#  i *= d_b
+#  i, d_i = simplify_content(i, d_i)
+#  O.inv_basis_mat = i, d_i
+#  return i, d_i
+#end 
 
 
 ################################################################################
@@ -108,19 +108,19 @@ end
 # The index of the equation order (Z[x]/pol) in the maximal order
 ################################################################################
 
-function index(O::PariMaximalOrder)
-  if isdefined(O, :index)
-    return O.index
-  end
-  K = O.pari_nf.nf
-  b = basis_mat(K, O)
-  O.index = b[2]^degree(K)//determinant(b[1])
-  return O.index
-end
-
-function degree(O::PariMaximalOrder)
-  return degree(O.pari_nf.nf)
-end
+#function index(O::PariMaximalOrder)
+#  if isdefined(O, :index)
+#    return O.index
+#  end
+#  K = O.pari_nf.nf
+#  b = basis_mat(K, O)
+#  O.index = b[2]^degree(K)//determinant(b[1])
+#  return O.index
+#end
+#
+#function degree(O::PariMaximalOrder)
+#  return degree(O.pari_nf.nf)
+#end
 
 ################################################################################
 #
@@ -289,16 +289,16 @@ function element_reduce_mod(a::nf_elem, bas::Tuple{fmpz_mat, fmpz}, inv_bas::Tup
 end 
 
 
-function element_reduce_mod(a::nf_elem, O::PariMaximalOrder, m::Integer)
-  K = parent(a)
-  return element_reduce_mod(a, basis_mat(K, O), inv_basis_mat(K, O), m)
-end 
-
-function element_reduce_mod(a::nf_elem, O::PariMaximalOrder, m::fmpz)
-  K = parent(a)
-  return element_reduce_mod(a, basis_mat(K, O), inv_basis_mat(K, O), m)
-end 
-
+#function element_reduce_mod(a::nf_elem, O::PariMaximalOrder, m::Integer)
+#  K = parent(a)
+#  return element_reduce_mod(a, basis_mat(K, O), inv_basis_mat(K, O), m)
+#end 
+#
+#function element_reduce_mod(a::nf_elem, O::PariMaximalOrder, m::fmpz)
+#  K = parent(a)
+#  return element_reduce_mod(a, basis_mat(K, O), inv_basis_mat(K, O), m)
+#end 
+#
 
 
 ################################################################################
@@ -307,38 +307,38 @@ end
 #
 ################################################################################
 
-function element_is_in_order(a::nf_elem, O::PariMaximalOrder)
-  K = parent(a)
-  n = degree(K)
-  M = MatrixSpace(ZZ, 1, n)();
-  d_a = denominator(a)
-  element_to_mat_row!(M, 1, a*d_a);
-  b, d = inv_basis_mat(K, O)
-  M = M*b
-  for i = 1:n
-    if mod(M[1,i], d*d_a) != 0
-#      println("M is", M, " dens are ", d, " and ", d_a, " index i=", i)
-      return false
-    end
-  end
-#  println ("basis rep is ", divexact(M, d*d_a))
-  return true
-end
-
-################################################################################
-# the denominator of a in the field wrt to the order O
-################################################################################
-
-function denominator(a::nf_elem, O::PariMaximalOrder)
-  n = degree(parent(a))
-  M = MatrixSpace(ZZ, 1, n)();
-  d_a = denominator(a)
-  element_to_mat_row!(M, 1, a*d_a);
-  b, d = inv_basis_mat(parent(a), O)
-  M = divexact(M*b, d)
-  c = content(M)
-  return div(d_a, gcd(d_a, c))
-end
+#function element_is_in_order(a::nf_elem, O::PariMaximalOrder)
+#  K = parent(a)
+#  n = degree(K)
+#  M = MatrixSpace(ZZ, 1, n)();
+#  d_a = denominator(a)
+#  element_to_mat_row!(M, 1, a*d_a);
+#  b, d = inv_basis_mat(K, O)
+#  M = M*b
+#  for i = 1:n
+#    if mod(M[1,i], d*d_a) != 0
+##      println("M is", M, " dens are ", d, " and ", d_a, " index i=", i)
+#      return false
+#    end
+#  end
+##  println ("basis rep is ", divexact(M, d*d_a))
+#  return true
+#end
+#
+#################################################################################
+## the denominator of a in the field wrt to the order O
+#################################################################################
+#
+#function denominator(a::nf_elem, O::PariMaximalOrder)
+#  n = degree(parent(a))
+#  M = MatrixSpace(ZZ, 1, n)();
+#  d_a = denominator(a)
+#  element_to_mat_row!(M, 1, a*d_a);
+#  b, d = inv_basis_mat(parent(a), O)
+#  M = divexact(M*b, d)
+#  c = content(M)
+#  return div(d_a, gcd(d_a, c))
+#end
 
 ################################################################################
 #
@@ -1099,7 +1099,7 @@ function signature(x::fmpz_poly)
 end
 
 function signature(x::fmpq_poly)
-  R, = PolynomialRing(FlintZZ, "x")
+  R = PolynomialRing(FlintZZ, "x")[1]
   return signature(R(x))
 end
 
