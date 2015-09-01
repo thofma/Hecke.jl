@@ -106,20 +106,20 @@ function NfMaximalOrder(b::Array{nf_elem, 1})
   return z
 end
 
-function NfMaximalOrder(O::PariMaximalOrder)
-  K = O.pari_nf.nf
-  n = degree(K)
-  #z = NfMaximalOrder(K)
-  b = basis(O)
-  d = Array(nf_elem, n)
-  Qx = K.pol.parent
-  B = Array(NfOrderElem, n)
-
-  for i in 1:n
-    d[i] = K(Qx(b[i]))
-  end
-  return NfMaximalOrder(d)
-end
+#function NfMaximalOrder(O::PariMaximalOrder)
+#  K = O.pari_nf.nf
+#  n = degree(K)
+#  #z = NfMaximalOrder(K)
+#  b = basis(O)
+#  d = Array(nf_elem, n)
+#  Qx = K.pol.parent
+#  B = Array(NfOrderElem, n)
+#
+#  for i in 1:n
+#    d[i] = K(Qx(b[i]))
+#  end
+#  return NfMaximalOrder(d)
+#end
 
 ################################################################################
 #
