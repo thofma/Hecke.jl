@@ -150,27 +150,27 @@ end
 
 function _split{T}(c::node{T}, a::T)
   if isleaf(c)
-    return [a]
+    return [gcd(a, c.content)]
   end
   if isdefined(c, :left)
     l = gcd(a, c.left.content)
     if l != 1
       ls = _split(c.left, l)
     else
-      ls = []
+      ls = Array{T, 1}()
     end
   else
-    ls = []
+    ls = Array{T, 1}()
   end
   if isdefined(c, :right)
     r = gcd(a, c.right.content)
     if r != 1 
       rs = _split(c.right, r)
     else
-      rs = []
+      rs = Array{T, 1}()
     end
   else
-    rs = []
+    rs = Array{T, 1}()
   end
   return vcat(ls, rs)
 end
@@ -198,7 +198,7 @@ function factor{T}(c::FactorBase{T}, a::fmpq)
   f = Dict{T, Int}()
   n = abs(num(a))
   d = den(a)
-  lp = _split(c.ptree, a*d)
+  lp = _split(c.ptree, n*d)
   for i in lp
     if mod(d, i)==0
       v = valuation(d, i)
@@ -1435,13 +1435,12 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 end
 
 function class_group_find_relations3(clg::ClassGrpCtx; val = 0, prec = 100,
-                limit = 10)
+                limit = 10, no_b = 1)
   O = order(clg.FB.ideals[1])
   K = nf(O)
   n = degree(K)
   b = basis(O, K)
 
-  no_b = 1
   while rows(clg.M) < 2*cols(clg.M)
     no_poss = 2^no_b * binom(n, no_b)
     no_poss = root(no_poss, 2)
@@ -1455,6 +1454,7 @@ function class_group_find_relations3(clg::ClassGrpCtx; val = 0, prec = 100,
     if no >= no_poss
       no_b += 1
       println("giving more basis, now", no_b)
+      break
       continue;
     else
       break
