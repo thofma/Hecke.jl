@@ -23,7 +23,8 @@ export NfNumberField, hash
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
-             getindex, setindex!, transpose, getindex, //, colon, exp, div
+             getindex, setindex!, transpose, getindex, //, colon, exp, div,
+             floor
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
