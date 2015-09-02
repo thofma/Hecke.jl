@@ -1011,6 +1011,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   idl = clg.FB.ideals
   want_extra = 5
   bad_h = false
+  bad_norm = 0
   while h != 1 && (h==0 || want_extra > 0)
     for i in sort([ x for x in piv], lt = >)
       E = I[i]
