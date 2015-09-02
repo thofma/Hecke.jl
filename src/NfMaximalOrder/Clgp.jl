@@ -57,6 +57,8 @@
 #
 ################################################################################
 
+export class_group, FactorBase, is_smooth, factor
+
 add_verbose_scope(:ClassGroup)
 add_verbose_scope(:ClassGroup_time)
 add_verbose_scope(:ClassGroup_gc)
@@ -72,18 +74,56 @@ set_assert_level(:LatEnum, 1)
 #
 ################################################################################
 
-# Note that T must admit gcd's and base must consists of elements x for which
+# Note that T must admit gcd's and base must consist of elements x for which
 # valuation(_, x) is definied.
+
+type node{T}
+  content::T
+  left::node{T}
+  right::node{T}
+  function node(a::T)
+    f = new()
+    f.content = a
+    return f
+  end
+  function node(a::T, b::node{T}, c::node{T})
+    f = node{T}(a)
+    f.content = a
+    f.right = b
+    f.left = c
+    return f
+  end
+end
+
+function compose{T}(a::node{T}, b::node{T})
+  return node{T}(a.content * b.content, a, b)
+end
 
 type FactorBase{T}
   prod::T
   base::Set{T}
+  ptree::node{T}
+  function FactorBase(a::T, b::Set{T})
+    f = new()
+    f.prod = a
+    f.base = b
+    return f
+  end
 end
 
 # assume that the set consists of pairwise coprime elements
 function FactorBase{T}(x::Set{T}; check::Bool = true)
   if !check
-    z = FactorBase{T}(prod(x), x)
+    ax = [ node{T}(p) for p in x]
+    while length(ax) > 1
+      bx = [ compose(ax[2*i-1], ax[2*i]) for i=1:div(length(ax), 2)]
+      if isodd(length(ax))
+        push!(bx, ax[end])
+      end
+      ax = bx
+    end
+    z = FactorBase{T}(ax[1].content, x)
+    z.ptree = ax[1]
     return z
   else
     error("not yet implemented")
@@ -104,10 +144,42 @@ function is_smooth{T}(c::FactorBase{T}, a::T)
   return a == 1 || a==-1, a
 end
 
+function isleaf{T}(a::node{T})
+  return !(isdefined(a, :left) || isdefined(a, :right))
+end
+
+function _split{T}(c::node{T}, a::T)
+  if isleaf(c)
+    return [a]
+  end
+  if isdefined(c, :left)
+    l = gcd(a, c.left.content)
+    if l != 1
+      ls = _split(c.left, l)
+    else
+      ls = []
+    end
+  else
+    ls = []
+  end
+  if isdefined(c, :right)
+    r = gcd(a, c.right.content)
+    if r != 1 
+      rs = _split(c.right, r)
+    else
+      rs = []
+    end
+  else
+    rs = []
+  end
+  return vcat(ls, rs)
+end
+
 function factor{T}(c::FactorBase{T}, a::T)
   @assert a != 0
   f = Dict{T, Int}()
-  for i in c.base
+  lp = _split(c.ptree, a)
+  for i in lp
     if mod(a, i)==0
       v = valuation(a, i)
       f[i] = v[1]
@@ -126,7 +198,8 @@ function factor{T}(c::FactorBase{T}, a::fmpq)
   f = Dict{T, Int}()
   n = abs(num(a))
   d = den(a)
-  for i in c.base
+  lp = _split(c.ptree, a*d)
+  for i in lp
     if mod(d, i)==0
       v = valuation(d, i)
       if isdefined(f, :i)
@@ -1360,6 +1433,56 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
   return class_group_current_result(clg)
+end
+
+function class_group_find_relations3(clg::ClassGrpCtx; val = 0, prec = 100,
+                limit = 10)
+  O = order(clg.FB.ideals[1])
+  K = nf(O)
+  n = degree(K)
+  b = basis(O, K)
+
+  no_b = 1
+  while rows(clg.M) < 2*cols(clg.M)
+    no_poss = 2^no_b * binom(n, no_b)
+    no_poss = root(no_poss, 2)
+    no = 0
+    while no < no_poss && rows(clg.M) < 2*cols(clg.M)
+      x = sum([rand([-1, 1])*rand(b) for i =1:no_b])
+      nrm = norm_div(x, fmpz(1), 3)
+      fl = class_group_add_relation(clg, x, nrm, fmpz(1))
+      no += 1
+    end
+    if no >= no_poss
+      no_b += 1
+      println("giving more basis, now", no_b)
+      continue;
+    else
+      break
+    end
+  end
+end 
+################################################################################
+#
+#  Main function
+#
+################################################################################
+
+function class_group(O::NfMaximalOrder; bound = -1, method = 2, large = 1000)
+  if bound == -1
+    bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
+  end
+
+  c = class_group_init(O, bound, complete = false)
+  c.B2 = bound * large
+
+  if method==1
+    class_group_find_relations(c)
+  else
+    class_group_find_relations2(c)
+  end
+
+  return c
 end
 
 
