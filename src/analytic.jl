@@ -170,3 +170,25 @@ function rels_from_partial(n::Int, k::Int)
   return Int(round(N*(1-(N-1)^k//N^k-k*(N-1)^(k-1)//N^k)))
 end
 
+
+#=
+Let p_i,j = 1 if the i-th and j-th person have the same birthday and 0 
+otherwise.
+We need
+  W = E(sum p_i,j)
+the expectation of the sum, how many birthdays are common.
+Then 
+  lambda = k(k-1)/(2n)
+  P(W=x) = exp(-l)l^x/x!
+=#  
+
+function euler_phi(a::Int)
+  f = factor(a)
+  e = 1
+  for p=keys(f)
+    e *= (p-1)*p^(f[p]-1)
+  end
+  return e
+end 
+
+
