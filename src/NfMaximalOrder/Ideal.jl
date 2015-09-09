@@ -1097,25 +1097,6 @@ end
 
 ################################################################################
 #
-#   Extract info from pari-prime ideals (5 component vector) to Nemo objects
-#
-################################################################################
-
-# This function is broken. Pari interfaced got changed.
-
-#function __prime_ideal_components(id::PariIdeal)
-#   QQx = id.parent.order.pari_nf.nf.pol.parent
-#   av = unsafe_load(Nemo.avma, 1)
-#   p = Nemo.ZZ!(ZZ(), pari_load(id.ideal, 2)) ## the minimum of the prime ideal
-#   a = Nemo.fmpq_poly!(QQx(), Nemo.residue(Nemo.basistoalg(id.parent.order.pari_nf.data, pari_load(id.ideal, 3)))) ## the 2nd generator
-#   e = Int(Nemo.ZZ!(ZZ(), pari_load(id.ideal, 4))) ## the ramification
-#   f = Int(Nemo.ZZ!(ZZ(), pari_load(id.ideal, 5))) ## the inertia
-#   unsafe_store!(Nemo.avma, av, 1)
-#   return p, a, e, f
-#end
-
-################################################################################
-#
 #  Prime ideals
 #
 ################################################################################
@@ -1126,14 +1107,14 @@ end
     Returns an array of tuples (p_i,e_i) such that pO is the product of the p_i^e_i.
 
 """ ->
-function prime_decomposition(O::NfMaximalOrder, p::Integer)
+function prime_decomposition(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
   if mod(fmpz(index(O)),p) == 0
-    return prime_dec_index(O, p)
+    return prime_dec_index(O, p, degree_limit)
   end
-  return prime_dec_nonindex(O, p)
+  return prime_dec_nonindex(O, p, degree_limit)
 end
 
-function prime_dec_nonindex(O::NfMaximalOrder, p::Integer)
+function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
   K = nf(O)
   f = K.pol
   I = IdealSet(O)
@@ -1142,6 +1123,9 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer)
   Zf = Zx(f)
   fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
   fac = factor(fmodp)
+  if degree_limit >0
+    fac = sub(fac, find(x -> degree(x[1]) <= degree_limit, fac))
+  end
   result = Array(Tuple{typeof(I()),Int}, length(fac))
   t = fmpq_poly()
   b = K()
@@ -1181,14 +1165,14 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer)
   return result
 end
 
-function prime_dec_index(O::NfMaximalOrder, p::Integer)
+function prime_dec_index(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
   # Firstly compute the p-radical of O
   Ip = pradical(O, p)
   # I only want the rank, so it doesn't matter
   BB = _get_fp_basis(O, Ip, p)
   AA = _split_algebra(BB, Ip, p)
   I = IdealSet(O)
-  result = Array(Tuple{typeof(I()),Int}, length(AA))
+  result = Array{Tuple{typeof(I()),Int}, 1}()
   # We now have all prime ideals, but only their basis matrices
   # We need the ramification indices and a 2-element presentation
   for j in 1:length(AA)
@@ -1200,10 +1184,13 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer)
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
     end
+    if degree_limit >0 && f > degree_limit
+      continue
+    end
     P.splitting_type = e, f
     P.norm = fmpz(p)^f
     P.is_prime = 1
-    result[j] = (P, e)
+    push!(result, (P, e))
   end
   return result
 end
@@ -1303,7 +1290,7 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
   return BB
 end
 
-# Don't use the following functions. It does not work for index divisors
+# Don't use the following function. It does not work for index divisors
 function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
     K = nf(O)
@@ -1347,25 +1334,17 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
     if p > B
       return r
     end
-    li = prime_decomposition(O, p)
     if !complete
-      if degree_limit <= 0
-        for P in li
-          if norm(P[1]) <= B
-            push!(r, P[1])
-          end
-        end
-      else 
-        for P in li
-          if norm(P[1]) <= B && P[1].splitting_type[2] < degree_limit
-            push!(r, P[1])
-          end
-        end
+      deg_lim = Int(floor(log(B)/log(p)))
+      if degree_limit >0
+        deg_lim = min(deg_lim, degree_limit)
       end
     else
-      for P in li
-        push!(r, P[1])
-      end
+      deg_lim = 0
+    end
+    li = prime_decomposition(O, p, deg_lim)
+    for P in li
+      push!(r, P[1])
     end
   end
   return r

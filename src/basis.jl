@@ -1,6 +1,4 @@
-using hecke
-
-function lll_basis_profile(rt_c::roots_ctx, A::NfMaximalOrderIdeal; prec::Int = 100)
+function lll_basis_profile(rt_c::hecke.roots_ctx, A::NfMaximalOrderIdeal; prec::Int = 100)
   c = hecke.minkowski_mat(rt_c, hecke.nf(order(A)), prec)
   l = lll(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
@@ -36,6 +34,55 @@ function random_ideal_with_norm_up_to(a::hecke.NfFactorBase, B::Integer)
     I = I*J
   end
   return I
+end
+
+
+
+##chebychev_u ... in flint
+function tschebyschew(Qx::Nemo.FmpqPolyRing, n::Int)
+  T = [Qx(1), gen(Qx)]
+  while length(T) <= n
+    push!(T, 2*T[2]*T[end] - T[end-1])
+  end
+  return T[end]
+end
+
+function auto_of_maximal_real(K::NfNumberField, n::Int)
+  # image of zeta -> zeta^n
+  # assumes K = Q(zeta+1/zeta)
+  # T = tschebyschew(n), then
+  # cos(nx) = T(cos(x))
+  # zeta + 1/zeta = 2 cos(2pi/n)
+  T = tschebyschew(parent(K.pol), n)
+  i = evaluate(T, gen(K)*1//fmpz(2))*2
+  Qx = parent(K.pol)
+  return function(a::Nemo.nf_elem)
+           return evaluate(Qx(a), i)
+         end
+end
+
+function orbit(f::Function, a::Nemo.nf_elem)
+  b = Set([a])
+  nb = 1
+  while true
+    b = union(Set([f(x) for x in b]) , b)
+    if nb == length(b)
+      return b
+    end
+    nb = length(b)
+  end
+end
+
+
+function order_of_auto(f::Function, K::NfNumberField)
+  a = gen(K)
+  b = f(a)
+  i = 1
+  while b != a
+    b = f(b)
+    i += 1
+  end
+  return i
 end
 
 

@@ -21,7 +21,7 @@ export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_
 
   The explicit 55 should be linked to the actual precision desired.
   It should be enough for dickman_rho to guarantee doubles (53 bits)
-  In the paper Bach used 21 for the bash_rho function
+  In the paper Bach used 21 for the bach_rho function
 
   In the values tested, the results agree with Magma (DickmanRho) and
   the paper for bach_rho
@@ -39,15 +39,15 @@ type analytic_func{T<:Number}
 end
 
 
-function rho_coeff{T<: Number}(x::T)
+function rho_coeff{T<: Number}(x::T, prec = 55)
   a = analytic_func{T}()
   k = ceil(x)
   a.coeff = vcat([ 1-log(T(2))] ,
-                [1/(i*T(2)^i) for i=1:55])
+                [1/(i*T(2)^i) for i=1:prec])
   a.valid=(1,2)
   while k>a.valid[2]
-    d = [ sum([a.coeff[j+1]/(i*(a.valid[2]+1)^(i-j)) for j=0:(i-1) ])  for i=1:55]
-    d = vcat([1/(a.valid[2]) * sum([d[j]/(j+1) for j=1:55 ])] , d)
+    d = [ sum([a.coeff[j+1]/(i*(a.valid[2]+1)^(i-j)) for j=0:(i-1) ])  for i=1:prec]
+    d = vcat([1/(a.valid[2]) * sum([d[j]/(j+1) for j=1:prec ])] , d)
     a.coeff = d
     a.valid = (a.valid[1]+1, a.valid[2]+1)
   end
@@ -62,7 +62,7 @@ function analytic_eval{T<:Number}(a::analytic_func{T}, b::T)
   return s
 end
  
-function dickman_rho(x::Number)
+function dickman_rho(x::Number, prec=55)
   if x < 0
     error("argument must be positive")
   end
@@ -76,25 +76,25 @@ function dickman_rho(x::Number)
   end
   
   k = ceil(x)
-  return analytic_eval(rho_coeff(x), k-x)
+  return analytic_eval(rho_coeff(x, prec), k-x)
 end
 
 function bach_F{T<: Number}(x::T)
   return dickman_rho(1/x)
 end
 
-function bach_rho{T<:Number}(a::T, b::T)
+function bach_rho{T<:Number}(a::T, b::T, prec = 21)
   if b>a || a<0 || b <0
     error("wrong values")
   end
-  return dickman_rho(a) + bach_J(a, b, a)
+  return dickman_rho(a, prec) + bach_J(a, b, a, prec)
 end
 
 function bach_G(a,b)
   return bach_rho(1/a, 1/b)
 end
 
-function bach_J{T<:Number}(u::T, v::T, w::T)
+function bach_J{T<:Number}(u::T, v::T, w::T, prec)
   k = ceil(w-w/u)
   function xi(t::T)
     return k-w+w/t
@@ -108,11 +108,11 @@ function bach_J{T<:Number}(u::T, v::T, w::T)
       return C^i*(log(u/v) + sum([(A/C)^j/j for j=1:i]) -
                              sum([(B/C)^j/j for j=1:i]))
     end
-    a = rho_coeff(k*1.0)
+    a = rho_coeff(k*1.0, prec)
     return sum([a.coeff[i+1] * H_i(u, v, w, i) for i=0:(length(a.coeff)-1)])
   else
     println("recurse")
-    return bach_J(w/(w-k+1), v, w) + bach_J(u, w/(w-k+1), w)
+    return bach_J(w/(w-k+1), v, w, prec) + bach_J(u, w/(w-k+1), w, prec)
   end
 end
 
@@ -169,4 +169,26 @@ function rels_from_partial(n::Int, k::Int)
   N = fmpz(n)
   return Int(round(N*(1-(N-1)^k//N^k-k*(N-1)^(k-1)//N^k)))
 end
+
+
+#=
+Let p_i,j = 1 if the i-th and j-th person have the same birthday and 0 
+otherwise.
+We need
+  W = E(sum p_i,j)
+the expectation of the sum, how many birthdays are common.
+Then 
+  lambda = k(k-1)/(2n)
+  P(W=x) = exp(-l)l^x/x!
+=#  
+
+function euler_phi(a::Int)
+  f = factor(a)
+  e = 1
+  for p=keys(f)
+    e *= (p-1)*p^(f[p]-1)
+  end
+  return e
+end 
+
 
