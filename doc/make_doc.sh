@@ -14,9 +14,9 @@ echo "Building pdf documentation for module $MODULE ... ";
 
 perl doc.pl --make-latex --file $docfile >> tmp.tex
 
-pdflatex tmp.tex
+pdflatex tmp.tex #>/dev/null
 
-rm tmp.tex
+#rm tmp.tex
 
 rm tmp.log
 

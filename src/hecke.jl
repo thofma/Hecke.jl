@@ -231,6 +231,7 @@ include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
 include("ResidueApproximation.jl")
+include("Misc/Map.jl")
 
 ################################################################################
 #

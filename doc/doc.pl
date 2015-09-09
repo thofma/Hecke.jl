@@ -35,6 +35,8 @@ my $firstline;
 
 my %stuff;
 
+my %explanations;
+
 my $name;
 
 my %functions;
@@ -44,6 +46,8 @@ my %everything;
 my @subsections;
 
 my $introduction;
+
+my $expl;
 
 my $current_subsection = "none";
 
@@ -67,7 +71,7 @@ while ( $rest !~ /^\s*$/s && $k > -1 )
   }
   elsif ( $firstline =~ /^\\introduction/ )
   {
-    #print "Found a introduction\n";
+    #print "Found an introduction\n";
     $rest =~ m/\\introduction[\w\n]*$MARKDOWNSYMBOL(.*?)$MARKDOWNSYMBOL\n?(.*)/s;
     $introduction = $1;
     $rest = $2;
@@ -78,16 +82,27 @@ while ( $rest !~ /^\s*$/s && $k > -1 )
   elsif ( $firstline =~ /^\\subsection/ )
   {
     #print "I found a subsection\n";
-    $rest =~ m/\\subsection[\w\n]*$MARKDOWNSYMBOL(.*?)$MARKDOWNSYMBOL\n?(.*)/s;
+    $rest =~ m/\\subsection[\w\n]*$MARKDOWNSYMBOL(.*?)$MARKDOWNSYMBOL(.*?)$MARKDOWNSYMBOL\n?(.*)/s;
     $name = $1;
-    $rest = $2;
+    $expl = $2;
+    $rest = $3;
     $name =~ s/\n//mg;
     #print "content: $name\n";
     push(@subsections, $name);
     $current_subsection = $name;
+    $explanations{$name} = $2;
     $functions{$current_subsection} = [];
     $examples{$current_subsection} = [];
     $everything{$current_subsection} = [];
+  }
+  elsif ( $firstline =~ /^\\randombla/ )
+  {
+    $rest =~ m/\\randombla[\w\n]*$MARKDOWNSYMBOL(.*?)$MARKDOWNSYMBOL(.*?$)/s;
+
+    my $bla = $1;
+    $rest = $2;
+
+    push @{$everything{$current_subsection}}, [ $bla ];
   }
 
   elsif ( $firstline =~ /^\\function/ )
@@ -167,6 +182,7 @@ if ($make_latex eq 1)
   for my $sub (@subsections)
   {
     print "\\subsection{$sub}\n";
+    print "$explanations{$sub}";
     my @k = @{$everything{$sub}};
     my $l = @k;
     for (my $i =0; $i < $l; $i++)
@@ -239,20 +255,30 @@ sub print_latex
       print "$_[4]}\n";
       print "\\vspace{1em}\n";
     }
-    print "\\hrulefill\n";
+    # print "\\noindent\\hfil\\rule{0.8\\textwidth}{.4pt}\\hfil";
+    # print "\\hrulefill\n";
   }
   if ($k eq 2)
   {
     # I have to print an example 
     if ( $_[0] !~ /^\s*$/s )
     {
+      print "\\begin{center}\\rule{0.5\\textwidth}{.4pt}\\end{center}\n";
       print "\\begin{quote}{ \\begin{verbatim}";
       $_[0] =~ s/.*ASSERT.*\n//g;
       print "$_[0]";
       print "\\end{verbatim}}\\end{quote}\n";
-      print "\\vspace{-1em}\n";
-      print "\\hrulefill\n";
+      #print "\\vspace{-0.5em}\n";
+      print "\\begin{center}\\rule{0.5\\textwidth}{.4pt}\\end{center}\n";
+      #print "\\vspace{0.5em}\n";
+      #print "\\hrulefill\n";
     }
+  }
+  if ($k eq 1)
+  {
+    # I have to print random bla
+    #print "\\newline n";
+    print "$_[0]\n";
   }
 }
 
