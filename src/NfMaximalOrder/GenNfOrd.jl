@@ -37,9 +37,7 @@
 #
 # So far, this is only a common supertype for NfOrder and NfMaximalOrder
 
-export GenNfOrd, NfOrderElem, GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit
-
-abstract GenNfOrd <: Ring{Antic}
+export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit
 
 ################################################################################
 #
@@ -85,52 +83,6 @@ end
 ################################################################################
 ################################################################################
 
-type NfOrderElem <: RingElem
-  elem_in_nf::nf_elem
-  elem_in_basis::Array{fmpz, 1}
-  has_coord::Bool
-  parent::GenNfOrd
-
-  function NfOrderElem(O::GenNfOrd)
-    z = new()
-    z.parent = O
-    z.elem_in_nf = nf(O)() 
-    z.elem_in_basis = Array(fmpz, degree(O))
-    z.has_coord = false
-    return z
-  end
-
-  function NfOrderElem(O::GenNfOrd, a::nf_elem)
-    z = new()
-    z.elem_in_nf = a
-    z.elem_in_basis = Array(fmpz, degree(O))
-    z.parent = O
-    z.has_coord = false
-    return z
-  end
-
-  function NfOrderElem(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
-    z = new()
-    z.parent = O
-    z.elem_in_nf = a
-    z.has_coord = true
-    z.elem_in_basis = arr
-    return z
-  end
-
-  function NfOrderElem(O::GenNfOrd, arr::Array{fmpz, 1})
-    z = new()
-    z.elem_in_nf = dot(basis_nf(O), arr)
-    z.has_coord = true
-    z.elem_in_basis = arr
-    z.parent = O
-    return z
-  end
-
-  function NfOrderElem{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
-    return NfOrderElem(O, map(ZZ, arr))
-  end
-end
 
 ################################################################################
 #

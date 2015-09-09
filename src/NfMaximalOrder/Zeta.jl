@@ -168,8 +168,6 @@ function _term_bf(O::NfMaximalOrder, B::Int64, R::ArbField)
 
   xx09 = div(xx0,9)
 
-  #println("Have to use prime ideals with norm power up to ", xx0)
-
   p = 2
 
   summ = R(0)
@@ -215,12 +213,15 @@ function _term_bf(O::NfMaximalOrder, B::Int64, R::ArbField)
 
     max_exp = _max_power_in(p, xx0)
 
+    #println("maximal power is $max_exp")
+
     for m in 1:max_exp
       summand = comp_summand(p, m, prodx)
       summ = summ - summand
     end
 
     #x += @elapsed 
+
     lP = prime_decomposition_type(O, p)
 
     for P in lP
@@ -290,19 +291,32 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
   error_prime_arf = arf(error_prime)
   error_arf = arf(error)
 
+  println("error prime: $error_prime")
+
+  print("Finding a bound ... ")
+
   x0 = Int(ceil(_find_threshold(F, error_prime, Float64(10), true, Float64)))
   x0 = x0 + 1
 
+  println(" done ")
+
   prec = 64 
 
+  println("Computing residue with bound $x0 and precision $prec")
   val = _term_bf(O, x0, ArbField(prec))
 
   valaddederror = deepcopy(val)
   ccall((:arb_add_error_arf, :libarb), Void,
               (Ptr{arb}, Ptr{arf}), &valaddederror, &error_prime_arf)
 
-  while !lttwopower(radius(val), der) ||
-                (arf(radius(valaddederror)) > error_arf)
+  while (!lttwopower(radius(val), der)) ||
+                ((arf(radius(valaddederror)) > error_arf))
+
+    println("Precision is now $prec")
+
+    if prec > 2048
+      error("Something wrong")
+    end
 
     prec = 2*prec
     println("increasing precision to $prec")

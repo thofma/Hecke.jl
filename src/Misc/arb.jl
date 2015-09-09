@@ -592,13 +592,13 @@ end
 ################################################################################
 
 function pi_arb(p::Clong)
-  z = parent(x)()
+  z = ArbField(p)()
   ccall((:arb_const_pi, :libarb), Void, (Ptr{arb}, Clong), &z, p)
   return z
 end
 
 function e_arb(p::Clong)
-  z = arb()
+  z = ArbField(p)()
   ccall((:arb_const_e, :libarb), Void, (Ptr{arb}, Clong), &z, p)
   return z
 end

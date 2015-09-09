@@ -32,30 +32,7 @@
 #
 ################################################################################
 
-export UnitGrpCtx, FactoredElem, FactoredElemMon
-
 export is_unit, is_torsion_unit, is_independent, pow!
-
-type UnitGrpCtx{T <: Union{nf_elem, FactoredElem{nf_elem}}}
-  order::GenNfOrd
-  rank::Int
-  units::Array{T, 1}
-  regulator::arb
-  tentative_regulator::arb
-  regulator_precision::Int
-  torsion_unit::NfOrderElem
-  torsion_units_order::Int
-
-  function UnitGrpCtx(O::GenNfOrd)
-    z = new()
-    z.order = O
-    z.rank = -1
-    z.regulator_precision = -1
-    z.torsion_units_order = -1
-    z.units = Array{T, 1}()
-    return z
-  end
-end
 
 function unit_rank(O::GenNfOrd)
   r1, r2 = signature(nf(O))
@@ -163,13 +140,12 @@ function conjugates_arb(x::nf_elem)
   return res
 end
 
-
 function conjugates_log(x::nf_elem)
   K = parent(x)  
   d = degree(K)
   r1, r2 = signature(K)
   c = conjugate_data_arb(K)
-  println("precision is $(c.prec)");
+  #println("precision is $(c.prec)");
 
   # We should replace this using multipoint evaluation of libarb
   z = Array(arb, r1 + r2)
@@ -205,7 +181,7 @@ function is_independent{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 
   r = rr - 1 # unit rank
 
   while true
-    println("precision is $(c.prec)");
+    #println("precision is $(c.prec)");
     A = ArbMatSpace(length(x), rr, c.prec)()::arb_mat
     Ar = ArbField(c.prec)
     for k in 1:length(x)
@@ -219,7 +195,7 @@ function is_independent{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 
     p = Array(Cint, B.r)
     d = det(B)
     y = (Ar(1)/Ar(r))^r * (Ar(21)/Ar(128) * log(Ar(deg))/(Ar(deg)^2))^(2*r)
-    println(y, d)
+    #println(y, d)
     if isfinite(d) && ispositive(y - d)
       return false
     elseif isfinite(d) && ispositive(d)
@@ -229,7 +205,11 @@ function is_independent{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 
   end
 end
 
-function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1}, y::S)
+function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::UnitGrpCtx{S}, y::T)
+  x.units = add_dependent_unit(x.units, y)
+end
+
+function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{S, 1}, y::T)
   # I need to find a relation
 
   if eltype(x) == nf_elem
@@ -243,13 +223,13 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  println("precision is $(c.prec)");
+  #println("precision is $(c.prec)");
   A = ArbMatSpace(length(x), rr, c.prec)()
   b = ArbMatSpace(1, rr, c.prec)()
   Ar = ArbField(c.prec)
   for k in 1:length(x)
     conlog = conjugates_log(x[k])
-    println("logs of $(x[k]): $conlog")
+    #println("logs of $(x[k]): $conlog")
     for i in 1:rr
       A[k, i] = conlog[i]
     end
@@ -258,18 +238,18 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
   for i in 1:rr
     b[1,i] = conlog[i]
   end
-  println(A)
+  #println(A)
   B = A*transpose(A)
-  println(B)
+  #println(B)
   B = transpose(A)*inv(B)
-  println(B)
+  #println(B)
   v = b*B
 
   z = Array(fmpq, r)
 
   rreg = abs(_reg(x)) # use submatrix of A instead or store it
 
-  println(midpoint(20*rreg))
+  #println(midpoint(20*rreg))
 
   bound = fmpz(BigInt(ceil(BigFloat(midpoint(20*rreg))))) # fix this
 
@@ -308,7 +288,7 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
     zz[i] = div(zz[i], g)
   end
 
-  println(zz)
+  #println(zz)
 
   m = MatrixSpace(FlintZZ, r + 1, 1)(reshape(zz, r + 1, 1))
 
@@ -357,13 +337,13 @@ function _pow{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1}, y::Arr
 end
 
 function approximate(x::arb, y::fmpz)
-  println(x)
+  #println(x)
   found = true
   q = 1
   while(found)
     cf, re = cfrac(fmpq(fmpr(midpoint(x))), q)
     z = fmpq(cf)
-    println(z)
+    #println(z)
     if den(z) <= y && contains(x, z)
       return z
     end
@@ -377,11 +357,15 @@ end
 function torsion_units(O::GenNfOrd)
   n = degree(O)
   K = nf(O)
-  rts = conjugate_data(O)
-  _find_real(rts)
+  #rts = conjugate_data(O)
+  #_find_real(rts)
+  rts = conjugate_data_arb(K)
   A = ArbField(rts.prec)
   M = ArbMatSpace(n, n, rts.prec)()
-  r1, r2 = signature(O)
+  r1, r2 = signature(K)
+  if r1 > 1
+    return [ O(1), -O(1) ]
+  end
   for i in 1:n
     for j in 1:n
       t = AcbField(rts.prec)(0)
@@ -464,66 +448,41 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       continue
     end
 
-    println("testing element $j")
+    #println("testing element $j")
 
     y = FactoredElem(x, ker, j)
 
     if is_torsion_unit(y)
-      println("torsion unit: $y")
+      #println("torsion unit: $y")
       continue
     end
     _add_unit(u, y)
   end
 
-  u.tentative_regulator = _reg(A)
-end
+  u.full_rank = true
 
-#  AA = ArbMatSpace(r, r, conjugate_data(O).prec)()
-#
-#  println(AA)
-#
-#  if r1 > 1
-#      r1 = r1 - 1
-#  else
-#      r2 = r2 - 1
-#  end
-#
-#
-#  for k in 1:r
-#    for i in 1:r1
-#      AA[k, i] = log(abs(_evaluate(parent(K.pol)(u.units[k].elem_in_nf), conjugate_data(O).real_roots[i])))
-#    end
-#    for i in 1:r2
-#      AA[k, r1 + i] = 2*log(abs(_evaluate(parent(K.pol)(u.units[k].elem_in_nf), conjugate_data(O).complex_roots[i])))
-#    end
-#  end
-#
-#  A_all = ArbMatSpace(rnk, r, conjugate_data(O).prec)()
-#
-#  for k in 1:rnk
-#    a = K(1)
-#    for i in 1:cols(ker)
-#      if ker[k, i]  == 0
-#        continue
-#      end
-#      a = a * (x.R[i])^(Int(ker[k, i]))
-#    end
-#    if is_torsion_unit(O(a, false))
-#      continue
-#    end
-#    println("$k, $a")
-#    for i in 1:r1
-#      A_all[k, i] = log(abs(_evaluate(parent(K.pol)(a), conjugate_data(O).real_roots[i])))
-#    end
-#    for i in 1:r2
-#      A_all[k, r1 + i] = 2*log(abs(_evaluate(parent(K.pol)(a), conjugate_data(O).complex_roots[i])))
-#    end
-#  end
-#
-#  X = A_all * inv(AA)
-#
-#  return X
-#end
+  j = 0
+
+  while(j < rows(ker))
+    j = j + 1
+    if is_zero_row(ker, j)
+      continue
+    end
+
+    y = FactoredElem(x, ker, j)
+    
+    if is_torsion_unit(y)
+      #println("torsion unit: $y")
+      continue
+    end
+
+    add_dependent_unit(u, y)
+
+    println(_reg(u.units))
+  end
+
+  u.tentative_regulator = _reg(u.units)
+end
 
 function _add_unit(u::UnitGrpCtx, x::FactoredElem{nf_elem})
   if is_independent( vcat(u.units, [ x ]))
@@ -553,13 +512,13 @@ function conjugates_log(x::FactoredElem{nf_elem})
   r1, r2 = signature(K)
   res = Array(arb, r1 + r2)
   c = conjugate_data_arb(K)
-  println("precision is $(c.prec)");
+  #println("precision is $(c.prec)");
 
   for i in 1:r1+r2
     res[i] = ArbField(c.prec)(0)
   end
 
-  println("Cached logarithms: $(M.basis_conjugates_log)")
+  #println("Cached logarithms: $(M.basis_conjugates_log)")
 
   for a in base(x)
     # We should replace this using multipoint evaluation of libarb
@@ -624,8 +583,18 @@ function conjugates_arb(x::FactoredElem{nf_elem})
   return res
 end
 
+function inv(x::FactoredElem{nf_elem})
+  y = deepcopy(x)
+  for a in base(y)
+    y.fac[a] = -y.fac[a]
+  end
+  return y
+end
+
 function ^{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T, y::fmpz)
-  if y == 0
+  if y < 0
+    return inv(x)^(-y)
+  elseif y == 0
     return parent(x)(1)
   elseif y == 1
     return deepcopy(x)

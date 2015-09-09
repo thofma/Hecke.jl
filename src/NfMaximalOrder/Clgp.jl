@@ -1,6 +1,6 @@
 ################################################################################
 #
-# NfMaxOrdClgrp.jl : Class group computation of maximal orders in number fields
+#     Clgrp.jl : Class group computation of maximal orders in number fields
 #
 # This file is part of hecke.
 #
@@ -1554,4 +1554,72 @@ function lll(M::NfMaximalOrder)
     end
   end
 end
+
+################################################################################
+#
+#  Verification
+#
+################################################################################
+
+# think of a sensible function name
+
+
+function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
+  O = U.order
+
+  T = torsion_units(O)
+
+  U.torsion_units = T
+
+  U.torsion_units_order = length(T)
+
+  w = U.torsion_units_order
+
+  r1, r2 = signature(O)
+
+  residue = zeta_residue(O, 0.6931)
+
+  pre = prec(parent(residue))
+
+  Ar = ArbField(pre)
+
+  loghRtrue = Ar(residue) + log(Ar(w)*sqrt(abs(Ar(discriminant(O))))/(Ar(2)^(r1+r2) * pi_arb(pre)^r2))
+
+  # I should assert that radius(loghRtrue) < log(2)
+
+  @assert isfinite(loghRtrue)
+
+  while true
+    loghRapprox = log(c.h* abs(U.tentative_regulator))
+
+    @assert isfinite(loghRapprox)
+
+    if contains(loghRtrue, loghRapprox)
+      return fmpz(1)
+    elseif !overlaps(loghRtrue, loghRapprox)
+      e = exp(loghRapprox - loghRtrue)
+      t = ArfField(pre)()
+      s = fmpz()
+      ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf}, Ptr{arb}, Clong), &t, &e, pre)
+      ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf}, Cint), &s, &t, 1) # 1 is round up
+      return s
+    end
+
+    error("Not yet implemented")
+  end
+end
+
+function _class_unit_group(O::NfMaximalOrder)
+
+  c = class_group(O)
+
+  U = UnitGrpCtx{FactoredElem{nf_elem}}(O)
+
+  _unit_group_find_units(U, c)
+
+  @assert U.full_rank
+
+  return c, U, _validate_class_unit_group(c, U)
+end
+
 

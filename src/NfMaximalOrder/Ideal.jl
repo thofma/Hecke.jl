@@ -1303,7 +1303,7 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
     g = sum([ x[2] for x in fac])
     res = Array(Tuple{Int, Int}, g)
     k = 1
-    for i in length(fac)
+    for i in 1:length(fac)
       for j in 1:fac[i][2]
         res[k] = (fac[i][1], 1)
         k = k + 1

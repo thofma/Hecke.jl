@@ -1,3 +1,5 @@
+#VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module hecke
 
 using Nemo
@@ -222,11 +224,13 @@ include("Misc.jl")
 include("LinearAlgebra.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
+include("NfMaximalOrder/Types.jl")
 include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
+include("ResidueApproximation.jl")
 
 ################################################################################
 #
