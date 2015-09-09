@@ -591,7 +591,7 @@ function inv(x::FactoredElem{nf_elem})
   return y
 end
 
-function ^{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T, y::fmpz)
+function ^(x::nf_elem, y::fmpz)
   if y < 0
     return inv(x)^(-y)
   elseif y == 0

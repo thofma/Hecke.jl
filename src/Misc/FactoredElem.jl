@@ -113,7 +113,7 @@ function pow!{T <: Union{fmpz, Integer}}(z::FactoredElem, x::FactoredElem, y::T)
   end
 end
 
-function ^{T <: Union{fmpz, Integer}}(x::FactoredElem, y::T)
+function ^(x::FactoredElem, y::fmpz)
   z = parent(x)()
   z.fac = _deepcopy(x.fac)
   for a in base(x)
@@ -122,6 +122,8 @@ function ^{T <: Union{fmpz, Integer}}(x::FactoredElem, y::T)
   end
   return z
 end
+
+^(x::FactoredElem, y::Integer) = ^(x, fmpz(y))
 
 ################################################################################
 #
