@@ -1,4 +1,4 @@
-import Base: isprime, dot, convert, isless, log, round
+import Base: isprime, dot, convert, isless, log
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree, sub,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
@@ -830,10 +830,10 @@ end
 function _lift_howell_to_hnf(x::nmod_mat)
 # Assume that x is square, in howell normal form and all non-zero rows are at the bottom
 # NOTE: _OUR_ Howell normal form algorithm always puts the rows at the right position
-# If row i is non-zero and i is the rightmost non-zero entry
+# If row i is non-zero then i is the rightmost non-zero entry
 # Thus lifting is just replacing zero diagonal entries
   !issquare(x) && error("Matrix has to be square")
-  y = lift(x, :unsigned)
+  y = lift_unsigned(x)
   for i in cols(y):-1:1
     z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
     if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
@@ -1161,8 +1161,6 @@ function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.fmpz)
   return R(BigInt(a))
 end
 
-isless(a::fmpz, b::fmpz) = a<b
-
 log(a::fmpz) = log(BigInt(a))
 log(a::fmpq) = log(num(a)) - log(den(a))
 ################################################################################
@@ -1184,13 +1182,11 @@ function max(a::fmpz_mat)
   return r
 end
 
-function lift(a::nmod_mat, can::Symbol = :unsigned)
-  if can == :unsigned
-    z = MatrixSpace(FlintZZ, rows(a), cols(a))()
-    ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Void,
-            (Ptr{fmpz_mat}, Ptr{nmod_mat}), &z, &a)
-    return z
-  end
+function lift_unsigned(a::nmod_mat)
+  z = MatrixSpace(FlintZZ, rows(a), cols(a))()
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Void,
+          (Ptr{fmpz_mat}, Ptr{nmod_mat}), &z, &a)
+  return z
 end
 
 dot(x::BigInt, y::NfOrderElem) = x * y
@@ -1198,15 +1194,3 @@ dot(x::BigInt, y::NfOrderElem) = x * y
 colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
 
 den(a::fmpq_poly) = denominator(a)
-
-function round(a::fmpq)
-  n = num(a)
-  d = den(a)
-  q = div(n, d)
-  r = mod(n, d)
-  if r >= d//2
-    return q+1
-  else
-    return q
-  end
-end
