@@ -408,7 +408,7 @@ function representation_mat(a::NfOrderElem)
   return A.num
 end
 
-function representation_mat(a::NfOrderElem, K::NfNumberField)
+function representation_mat(a::NfOrderElem, K::AnticNumberField)
   nf(parent(a)) != K && error("Element not in this field")
   d = denominator(a.elem_in_nf)
   b = d*a.elem_in_nf
@@ -553,7 +553,7 @@ dot(x::NfOrderElem, y::Int64) = y*x
 #
 ################################################################################
 
-Base.call(K::NfNumberField, x::NfOrderElem) = elem_in_nf(x)
+Base.call(K::AnticNumberField, x::NfOrderElem) = elem_in_nf(x)
 
 ################################################################################
 ################################################################################

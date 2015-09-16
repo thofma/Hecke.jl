@@ -8,14 +8,14 @@ export MaximalOrder, conjugate_data
 #
 ################################################################################
 
-const NfMaximalOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
+const NfMaximalOrderID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, GenNfOrd}()
 
 const NfMaximalOrderSetID = ObjectIdDict()
 
 type NfMaximalOrderSet
-  nf::NfNumberField
+  nf::AnticNumberField
 
-  function NfMaximalOrderSet(a::NfNumberField)
+  function NfMaximalOrderSet(a::AnticNumberField)
   try
     return NfMaximalOrderSetID[a]::NfMaximalOrderSet
   end
@@ -25,7 +25,7 @@ type NfMaximalOrderSet
 end
 
 type NfMaximalOrder <: GenNfOrd
-  nf::NfNumberField
+  nf::AnticNumberField
   basis_nf::Array{nf_elem, 1}      # Array of number field elements
   basis_ord::Array{NfOrderElem, 1} # Array of order elements
   basis_mat::FakeFmpqMat           # basis matrix of order wrt basis of K
@@ -38,7 +38,7 @@ type NfMaximalOrder <: GenNfOrd
                                    # (-1, 0) means 'not set'
   conjugate_data::acb_root_ctx
 
-  function NfMaximalOrder(a::NfNumberField)
+  function NfMaximalOrder(a::AnticNumberField)
     r = new(a)
     r.parent = NfMaximalOrderSet(a)
     r.signature = (-1,0)
@@ -52,7 +52,7 @@ end
 #
 ################################################################################
 
-function NfMaximalOrder(K::NfNumberField, x::FakeFmpqMat)
+function NfMaximalOrder(K::AnticNumberField, x::FakeFmpqMat)
   if haskey(NfMaximalOrderID, (K,x))
     return NfMaximalOrderID[(K,x)]
   end
@@ -171,7 +171,7 @@ function basis(O::NfMaximalOrder)
   return basis_ord(O)
 end
 
-function basis(O::NfMaximalOrder, K::NfNumberField)
+function basis(O::NfMaximalOrder, K::AnticNumberField)
   nf(O) != K && error()
   return basis_nf(O)
 end
@@ -268,11 +268,11 @@ degree(x::NfMaximalOrder) = degree(nf(x))
 ################################################################################
 
 @doc """
-  MaximalOrder(K::NfNumberField) -> NfMaximalOrder
+  MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 
   Compute the maximal order of K.
 """ ->
-function MaximalOrder(K::NfNumberField)
+function MaximalOrder(K::AnticNumberField)
   O = EquationOrder(K)
   @vprint :NfMaximalOrder 1 "Computing the maximal order ...\n"
   O = _MaximalOrder(O)
@@ -280,7 +280,7 @@ function MaximalOrder(K::NfNumberField)
   return NfMaximalOrder(K, basis_mat(O))
 end
 
-function MaximalOrder(K::NfNumberField, primes::Array{fmpz, 1})
+function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   O = EquationOrder(K)
   @vprint :NfMaximalOrder 1 "Computing the maximal order ...\n"
   O = _MaximalOrder(O, primes)

@@ -149,7 +149,7 @@ function representation_mat(a::NfMaximalOrderElem)
   return A.num
 end
 
-function representation_mat(a::NfMaximalOrderElem, K::NfNumberField)
+function representation_mat(a::NfMaximalOrderElem, K::AnticNumberField)
   @assert nf(parent(a)) == K
   a_nf = elem_in_nf(a)
   d = denominator(a_nf)
@@ -392,7 +392,7 @@ mul!(z::NfMaximalOrderElem, x::NfMaximalOrderElem, y::fmpz) = mul!(z, y, x)
 #
 ################################################################################
 
-Base.call(K::NfNumberField, x::NfMaximalOrderElem) = elem_in_nf(x)
+Base.call(K::AnticNumberField, x::NfMaximalOrderElem) = elem_in_nf(x)
 
 ################################################################################
 #

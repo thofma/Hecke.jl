@@ -13,15 +13,15 @@ using Nemo
 # The following functions/types are not exported or we want to extend them
 # So we have to import them explicitely
 
-import Nemo: nf_elem, PariIdeal, NfNumberField, FmpzPolyRing, degree,
-             denominator, den, num, lg, prime_decomposition, parent, length,
+import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
+             den, num, lg, prime_decomposition, parent, length,
              norm, real, imag, inv, rows, getindex!, lll, hnf, cols, basis,
              trace, factor, mod, zero, pari_load, PariPolyRing,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type
 
-export NfNumberField, hash
+export AnticNumberField, hash
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
@@ -230,8 +230,9 @@ include("NfOrder.jl")
 include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
-include("ResidueApproximation.jl")
-include("Misc/Map.jl")
+#include("ResidueApproximation.jl")
+#include("Misc/Map.jl")
+include("basis.jl")
 
 ################################################################################
 #
@@ -242,9 +243,9 @@ include("Misc/Map.jl")
 const hecke_handle = get_handle()
 
 const _get_nf_conjugate_data_arb, _set_nf_conjugate_data_arb =
-            create_accessors(NfNumberField, acb_root_ctx, hecke_handle)
+            create_accessors(AnticNumberField, acb_root_ctx, hecke_handle)
 
-function conjugate_data_arb(K::NfNumberField)
+function conjugate_data_arb(K::AnticNumberField)
   try
     c = _get_nf_conjugate_data_arb(K)
     return c
@@ -261,9 +262,9 @@ end
 #
 ################################################################################
 
-const _conjugate_data_dict = Dict{NfNumberField, acb_root_ctx}()
+const _conjugate_data_dict = Dict{AnticNumberField, acb_root_ctx}()
 
-#function conjugate_data(K::NfNumberField)
+#function conjugate_data(K::AnticNumberField)
 #  if haskey(_conjugate_data_dict, K)
 #    return _conjugate_data_dict[K]
 #  else

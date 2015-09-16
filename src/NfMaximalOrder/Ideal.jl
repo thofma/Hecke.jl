@@ -255,7 +255,7 @@ parent(x::NfMaximalOrderIdeal) = x.parent
 order(x::NfMaximalOrderIdeal) = order(parent(x))
 
 @doc """
-  nf(x::NfMaximalOrderIdeal) -> NfNumberField
+  nf(x::NfMaximalOrderIdeal) -> AnticNumberField
 
     Returns the number field, of which x is an integral ideal.
 

@@ -47,7 +47,7 @@ function tschebyschew(Qx::Nemo.FmpqPolyRing, n::Int)
   return T[end]
 end
 
-function auto_of_maximal_real(K::NfNumberField, n::Int)
+function auto_of_maximal_real(K::AnticNumberField, n::Int)
   # image of zeta -> zeta^n
   # assumes K = Q(zeta+1/zeta)
   # T = tschebyschew(n), then
@@ -74,7 +74,7 @@ function orbit(f::Function, a::Nemo.nf_elem)
 end
 
 
-function order_of_auto(f::Function, K::NfNumberField)
+function order_of_auto(f::Function, K::AnticNumberField)
   a = gen(K)
   b = f(a)
   i = 1

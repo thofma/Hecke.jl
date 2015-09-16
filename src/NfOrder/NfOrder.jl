@@ -45,9 +45,9 @@ export elem_in_basis, EquationOrder, deepcopy, Order
 const NfOrderSetID = ObjectIdDict()
 
 type NfOrderSet
-  nf::NfNumberField
+  nf::AnticNumberField
 
-  function NfOrderSet(a::NfNumberField)
+  function NfOrderSet(a::AnticNumberField)
   try
     return NfOrderSetID[a]
   end
@@ -56,11 +56,11 @@ type NfOrderSet
   end
 end
 
-#const NfOrderID = Dict{Tuple{NfNumberField, FakeFmpqMat}, GenNfOrd}()
+#const NfOrderID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, GenNfOrd}()
 const NfOrderID = ObjectIdDict()
 
 type NfOrder <: GenNfOrd
-  nf::NfNumberField
+  nf::AnticNumberField
   basis_nf::Array{nf_elem, 1}      # Basis as number field elements
   basis_ord::Array{NfOrderElem, 1} # Basis as order elements
   basis_mat::FakeFmpqMat           # Basis matrix with respect
@@ -86,7 +86,7 @@ end
 # We use outer constructors or else NfOrderElem is not known at this point
 
 # The following constructs the order with basis matrix the identity matrix
-function NfOrder(K::NfNumberField)
+function NfOrder(K::AnticNumberField)
   A = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
   if haskey(NfOrderID, (K,A))
     return NfOrderID[(K,A)]::NfOrder
@@ -107,7 +107,7 @@ function NfOrder(K::NfNumberField)
 end
 
 # Construct the order with basis matrix x
-function NfOrder(K::NfNumberField, x::FakeFmpqMat)
+function NfOrder(K::AnticNumberField, x::FakeFmpqMat)
   if haskey(NfOrderID, (K,x))
     return NfOrderID[(K,x)]::NfOrder
   else
@@ -194,7 +194,7 @@ function basis(O::NfOrder)
   return basis_ord(O)
 end
 
-function basis(O::NfOrder, K::NfNumberField)
+function basis(O::NfOrder, K::AnticNumberField)
   nf(O) != K && error()
   return basis_nf(O)
 end
@@ -280,12 +280,12 @@ function Order(a::Array{nf_elem, 1}, check = true)
   return NfOrder(a)
 end
 
-function Order(K::NfNumberField, a::FakeFmpqMat, check = true)
+function Order(K::AnticNumberField, a::FakeFmpqMat, check = true)
   # We should check if a has full rank and the elements are integral?
   return NfOrder(K,a)
 end
 
-function EquationOrder(K::NfNumberField)
+function EquationOrder(K::AnticNumberField)
   z = NfOrder(K)
   z.isequationorder = true
   return z

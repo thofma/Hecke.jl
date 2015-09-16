@@ -170,9 +170,9 @@ function is_independent{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 
   # I should first check if there are enough units ...
   # this is bad
   if eltype(x) == nf_elem
-    K = parent(x[1])::NfNumberField
+    K = parent(x[1])::AnticNumberField
   elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::NfNumberField
+    K = base_ring(x[1])::AnticNumberField
   end
   deg = degree(K)
   r1, r2 = signature(K)
@@ -213,9 +213,9 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
   # I need to find a relation
 
   if eltype(x) == nf_elem
-    K = parent(x[1])::NfNumberField
+    K = parent(x[1])::AnticNumberField
   elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::NfNumberField
+    K = base_ring(x[1])::AnticNumberField
   end
   deg = degree(K)
   r1, r2 = signature(K)
@@ -317,9 +317,9 @@ end
 
 function _pow{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1}, y::Array{fmpz, 1})
   if eltype(x) == nf_elem
-    K = parent(x[1])::NfNumberField
+    K = parent(x[1])::AnticNumberField
   elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::NfNumberField
+    K = base_ring(x[1])::AnticNumberField
   end
 
   zz = deepcopy(y)
@@ -402,9 +402,9 @@ end
 
 function _reg{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1})
   if eltype(x) == nf_elem
-    K = parent(x[1])::NfNumberField
+    K = parent(x[1])::AnticNumberField
   elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::NfNumberField
+    K = base_ring(x[1])::AnticNumberField
   end
   deg = degree(K)
   r1, r2 = signature(K)

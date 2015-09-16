@@ -52,7 +52,7 @@ end
 
 function conjugates_init(f::Union(fmpz_poly, fmpq_poly))
   if typeof(f) == fmpq_poly
-    f = f*denominator(f)
+    f = f*den(f)
     g = Array(fmpz, length(f))
     for i = 1:f.length
       g[i] = ZZ(num(coeff(f, i-1)))
@@ -107,7 +107,7 @@ function evaluate(f::fmpq_poly, r::BigComplex)
   return s
 end
 
-function evaluate{T <: FieldElem}(f::fmpq_poly, r::T)
+function evaluate{T <: RingElem}(f::fmpq_poly, r::T)
   R = parent(r)
   l = length(f) - 1
   s = R(coeff(f, l))
@@ -221,7 +221,7 @@ function minkowski_mat(c::roots_ctx, p::Int)
   return m
 end
 
-function minkowski_mat(c::roots_ctx, K::NfNumberField, p::Int = 50)
+function minkowski_mat(c::roots_ctx, K::AnticNumberField, p::Int = 50)
   return minkowski_mat(c, p)
 end
 

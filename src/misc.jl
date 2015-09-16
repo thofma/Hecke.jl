@@ -2,7 +2,8 @@ import Base: isprime, dot, convert, isless, log
 export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        pseudo_inverse, denominator, submat, index, degree, sub,
        next_prime, element_is_in_order, valuation, is_smooth, is_smooth_init,
-       discriminant, dot, hnf, _hnf, modular_hnf, representation_mat, signature, howell_form!, howell_form, _hnf_modular
+       discriminant, dot, hnf, _hnf, modular_hnf, representation_mat,
+       signature, howell_form!, howell_form, _hnf_modular, isless
 
 ################################################################################
 #
@@ -10,67 +11,6 @@ export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
 # and thus is in a different file.
 #
 ################################################################################
-
-################################################################################
-# basis of an (Pari)Order as array of elements in the field
-################################################################################
-
-#function basis(K::NfNumberField, O::PariMaximalOrder)
-#  if isdefined(O, :basis)
-#    return O.basis
-#  end
-#  n = degree(K)
-#  d = Array(typeof(K(0)), n)
-#  b = Nemo.basis(O)
-#  Qx = K.pol.parent
-#  for i = 1:n 
-#    d[i] = K(Qx(b[i]))
-#  end
-#  O.basis = d
-#  return d
-#end
-
-################################################################################
-# the same basis, but the elements (the coefficients) are put into a marix
-# The matrix is put on a common denominator.
-# returns a tuple (mat, den)
-# the result is cached in the order
-################################################################################
-
-#function basis_mat(K::NfNumberField, O::PariMaximalOrder)
-#  if isdefined(O, :basis_mat) 
-#    return O.basis_mat
-#  end
-#  b = basis(K, O)
-#  d = denominator(b[1])
-#  n = degree(K)
-#  for i = 2:n
-#    d = lcm(d, denominator(b[i]))
-#  end
-#  M = MatrixSpace(ZZ, n,n)()
-#  for i = 1:n
-#    element_to_mat_row!(M, i, b[i]*d)
-#  end
-#  O.basis_mat = M, d
-#  return M, d
-#end 
-#
-#################################################################################
-## The pseudo inverse of the above matrix
-## the result is cached in the order
-#################################################################################
-#
-#function inv_basis_mat(K::NfNumberField, O::PariMaximalOrder)
-#  if isdefined(O, :inv_basis_mat) 
-#    return O.inv_basis_mat
-#  end
-#  b, d_b = basis_mat(K, O)
-#  i, d_i = pseudo_inverse(b)
-#  i *= d_b
-#  i, d_i = simplify_content(i, d_i)
-#  O.inv_basis_mat = i, d_i
-#  return i, d_i
-#end 
 
 
 ################################################################################
@@ -82,8 +22,8 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
   s = zero(b[1].parent)
   t = zero(b[1].parent)
   for i = 1:length(b)
-    Nemo.mult_into!(b[i], Base.rand(r), t)
-    Nemo.add_into!(s, t, s)
+    Nemo.mul!(t, b[i], Base.rand(r))
+    Nemo.add!(s, t, s)
   end
   return s
 end
@@ -91,36 +31,17 @@ end
 # rand
 
 function rand_into!(b::Array{nf_elem,1}, r::UnitRange, c::nf_elem)
-  Nemo.mult_into!(b[1], rand(r), c)
+  Nemo.mul!(c, b[1], rand(r))
   t = zero(b[1].parent)  # this still needs to go ...
   for i = 1:length(b)
-    Nemo.mult_into!(b[i], rand(r), t)
-    Nemo.add_into!(c, t, c)
+    Nemo.mul!(t, b[i], rand(r))
+    Nemo.add!(c, t, c)
   end
   return c
 end
 
 # rand!
 
-
-
-################################################################################
-# The index of the equation order (Z[x]/pol) in the maximal order
-################################################################################
-
-#function index(O::PariMaximalOrder)
-#  if isdefined(O, :index)
-#    return O.index
-#  end
-#  K = O.pari_nf.nf
-#  b = basis_mat(K, O)
-#  O.index = b[2]^degree(K)//determinant(b[1])
-#  return O.index
-#end
-#
-#function degree(O::PariMaximalOrder)
-#  return degree(O.pari_nf.nf)
-#end
 
 ################################################################################
 #
@@ -217,7 +138,7 @@ end
 
 #
 ################################################################################
-# possibly a slice or winwod in fmpz_mat?
+# possibly a slice or window in fmpz_mat?
 # the nr x nc matrix starting in (a,b)
 ################################################################################
 
@@ -289,57 +210,6 @@ function element_reduce_mod(a::nf_elem, bas::Tuple{fmpz_mat, fmpz}, inv_bas::Tup
 end 
 
 
-#function element_reduce_mod(a::nf_elem, O::PariMaximalOrder, m::Integer)
-#  K = parent(a)
-#  return element_reduce_mod(a, basis_mat(K, O), inv_basis_mat(K, O), m)
-#end 
-#
-#function element_reduce_mod(a::nf_elem, O::PariMaximalOrder, m::fmpz)
-#  K = parent(a)
-#  return element_reduce_mod(a, basis_mat(K, O), inv_basis_mat(K, O), m)
-#end 
-#
-
-
-################################################################################
-#
-# boolean function: test membership
-#
-################################################################################
-
-#function element_is_in_order(a::nf_elem, O::PariMaximalOrder)
-#  K = parent(a)
-#  n = degree(K)
-#  M = MatrixSpace(ZZ, 1, n)();
-#  d_a = denominator(a)
-#  element_to_mat_row!(M, 1, a*d_a);
-#  b, d = inv_basis_mat(K, O)
-#  M = M*b
-#  for i = 1:n
-#    if mod(M[1,i], d*d_a) != 0
-##      println("M is", M, " dens are ", d, " and ", d_a, " index i=", i)
-#      return false
-#    end
-#  end
-##  println ("basis rep is ", divexact(M, d*d_a))
-#  return true
-#end
-#
-#################################################################################
-## the denominator of a in the field wrt to the order O
-#################################################################################
-#
-#function denominator(a::nf_elem, O::PariMaximalOrder)
-#  n = degree(parent(a))
-#  M = MatrixSpace(ZZ, 1, n)();
-#  d_a = denominator(a)
-#  element_to_mat_row!(M, 1, a*d_a);
-#  b, d = inv_basis_mat(parent(a), O)
-#  M = divexact(M*b, d)
-#  c = content(M)
-#  return div(d_a, gcd(d_a, c))
-#end
-
 ################################################################################
 #
 #
@@ -402,89 +272,12 @@ end
 
 ################################################################################
 #
-# smoothness test and factorisation over a factor base
-# not optimal or even good....
-# hopefully a stable API
-#
-################################################################################
-
-#type smooth_ctx{T}
-#  prod::T
-#  base::Set{T}
-#end
-#
-#function is_smooth_init{T}(r::Set{T})
-#  c = smooth_ctx(prod(r), r)
-#  return c
-#end
-#
-#function is_smooth{T}(c::smooth_ctx{T}, a::T)
-#  g = gcd(c.prod, a)
-#  while g != 1 
-#    a = div(a, g)
-#    g = gcd(g, a)
-#  end
-#  return a == 1
-#end
-#
-#function factor{T}(c::smooth_ctx{T}, a::T)
-#  f = Dict{T, Int}()
-#  for i in c.base
-#    if mod(a, i)==0
-#      v = valuation(a, i)
-#      f[i] = v[1]
-#      a = v[2]
-#      if a == 1 
-#        break
-#      end
-#    end
-#  end
-#  assert(a==1)
-#  return f
-#end
-#
-#function factor{T}(c::smooth_ctx{T}, a::fmpq)
-#  f = Dict{T, Int}()
-#  n = num(a)
-#  d = den(a)
-#  for i in c.base
-#    if mod(d, i)==0
-#      v = valuation(d, i)
-#      if isdefined(f, :i)
-#        f[i] -= v[1]
-#      else
-#        f[i] = -v[1]
-#      end
-#      d = v[2]
-#      if d == 1 && n == 1
-#        break
-#      end
-#    end
-#    if mod(n, i)==0
-#      v = valuation(n, i)
-#      if isdefined(f, :i)
-#        f[i] += v[1]
-#      else
-#        f[i] = v[1]
-#      end
-#      n = v[2]
-#      if d == 1 && n==1
-#        break
-#      end
-#    end
-#  end
-#  @assert d==1 && n==1 
-#  return f
-#end
-
-################################################################################
-#
 #  fmpq_poly with denominator 1 to fmpz_poly
 #
 ################################################################################
 
 function Base.call(a::FmpzPolyRing, b::fmpq_poly)
-  (denominator(b) != 1) && error("denominator has to be 1")
+  (den(b) != 1) && error("denominator has to be 1")
   temp = fmpz[]
   for i in 0:degree(b)
     push!(temp, num(coeff(b,i)))
@@ -528,6 +321,11 @@ function BigFloat(a::fmpq)
   return r
 end
 
+function isless(a::Float64, b::fmpq) return a<b*1.0; end
+function isless(a::fmpq, b::Float64) return a*1.0<b; end
+
+function isless(a::Float64, b::fmpz) return a<b*1.0; end
+function isless(a::fmpz, b::Float64) return a*1.0<b; end
 
 function Base.call(a::FlintIntegerRing, b::fmpq)
   den(b) != 1 && error("denominator not 1")
@@ -569,12 +367,12 @@ end
 function denominator(a::nf_elem)                                           
   d_den = fmpz()::fmpz
   ccall((:nf_elem_get_den, :libflint), Void,                                                              
-    (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}),
+    (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.AnticNumberField}),
     &d_den, &a, &parent(a))                                             
   return d_den                                                             
 end
 
-function basis(K::NfNumberField)
+function basis(K::AnticNumberField)
   n = degree(K)
   g = gen(K);
   d = Array(typeof(g), n)
@@ -589,17 +387,17 @@ end
 function element_to_mat_row!(a::fmpz_mat, i::Int, b::nf_elem)
   ccall((:nf_elem_to_mat_row, :libflint), 
         Void, 
-       (Ptr{Nemo.fmpz_mat}, Int32, Ptr{Nemo.nf_elem}, Ptr{Nemo.NfNumberField}), 
+       (Ptr{Nemo.fmpz_mat}, Int32, Ptr{Nemo.nf_elem}, Ptr{Nemo.AnticNumberField}), 
        &a, Int32(i-1), &b, &parent(b))
 end
 
 const d_from = fmpz(1)
-function element_from_mat_row(K::NfNumberField, a::fmpz_mat, i::Int)
+function element_from_mat_row(K::AnticNumberField, a::fmpz_mat, i::Int)
   global d_from::fmpz
   b = K();
   ccall((:nf_elem_from_mat_row, :libflint), 
         Void, 
-       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int, Ptr{Nemo.NfNumberField}),
+       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int, Ptr{Nemo.AnticNumberField}),
        &b, &a, i-1, &parent(b))
   set_denominator!(b, d_from)     
   return b
@@ -626,7 +424,7 @@ end
 function set_denominator!(a::nf_elem, d::fmpz)
   ccall((:nf_elem_set_den, :libflint), 
         Void, 
-       (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.NfNumberField}), 
+       (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.AnticNumberField}), 
        &a, &d, &parent(a))
 end
 
@@ -1103,14 +901,14 @@ function signature(x::fmpq_poly)
   return signature(R(x))
 end
 
-function signature(K::NfNumberField)
+function signature(K::AnticNumberField)
   return signature(K.pol)
 end
 
 ################################################################################
 ##
 ################################################################################
-function basis_mat(K::NfNumberField, b::Array{nf_elem, 1})
+function basis_mat(K::AnticNumberField, b::Array{nf_elem, 1})
   d = denominator(b[1])
   n = degree(K)
   for i = 2:n
@@ -1193,4 +991,40 @@ dot(x::BigInt, y::NfOrderElem) = x * y
 
 colon(start::fmpz, stop::fmpz) = StepRange(start, fmpz(1), stop)
 
-den(a::fmpq_poly) = denominator(a)
+function round(a::fmpq)
+  n = num(a)
+  d = den(a)
+  q = div(n, d)
+  r = mod(n, d)
+  if r >= d//2
+    return q+1
+  else
+    return q
+  end
+end
+
+function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int = 4, no_rel::Int = 10000, no_coeff::Int = 4 )
+  a = b[1].parent()
+  t = b[1].parent()
+  nb = length(b)
+  one = fmpz(1)
+  for i=1:no_rel
+    zero!(a)
+    for j=1:no_coeff
+      cf = rand([-1, 1])
+      p  = rand(1:nb)
+      if cf==1
+        Nemo.add!(a, a, b[p])
+      else
+        Nemo.sub!(a, a, b[p])
+      end
+    end
+    n = norm_div(a, one, no_p)
+    if cmpabs(num(n), bd) <= 0 
+      if class_group_add_relation(c, a, n, one)
+        a = b[1].parent()
+      end
+    end
+  end
+end
+

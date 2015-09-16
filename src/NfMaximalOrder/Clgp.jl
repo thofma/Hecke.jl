@@ -528,8 +528,6 @@ function israt(a::nf_elem)
   return a.elem_length<2
 end
 
-rels = Array(fmpz, 1)
-rel_cnt = 0
 function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz)
   if a==0
     return false
@@ -548,8 +546,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
         lp = clg.largePrime[i]
         b = a//lp[1]
         fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1))
-        global rels
-        push!(rels,r)
         if fl 
           clg.largePrime_success += 1
         else
