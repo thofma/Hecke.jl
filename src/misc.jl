@@ -6,14 +6,6 @@ export basis, basis_mat, simplify_content, element_reduce_mod, inv_basis_mat,
        signature, howell_form!, howell_form, _hnf_modular, isless
 
 ################################################################################
-#
-# Support stuff for number fields, stuff that need orders and fields
-# and thus is in a different file.
-#
-################################################################################
-
-
-################################################################################
 # given a basis (an array of elements), get a linear combination with
 # random integral coefficients
 ################################################################################
@@ -367,7 +359,7 @@ end
 function denominator(a::nf_elem)                                           
   d_den = fmpz()::fmpz
   ccall((:nf_elem_get_den, :libflint), Void,                                                              
-    (Ptr{Nemo.fmpz}, Ptr{Nemo.nf_elem}, Ptr{Nemo.AnticNumberField}),
+    (Ptr{fmpz}, Ptr{nf_elem}, Ptr{AnticNumberField}),
     &d_den, &a, &parent(a))                                             
   return d_den                                                             
 end
@@ -384,10 +376,11 @@ function basis(K::AnticNumberField)
   d[n] = b
   return d
 end
+
 function element_to_mat_row!(a::fmpz_mat, i::Int, b::nf_elem)
   ccall((:nf_elem_to_mat_row, :libflint), 
         Void, 
-       (Ptr{Nemo.fmpz_mat}, Int32, Ptr{Nemo.nf_elem}, Ptr{Nemo.AnticNumberField}), 
+       (Ptr{Nemo.fmpz_mat}, Int32, Ptr{nf_elem}, Ptr{AnticNumberField}), 
        &a, Int32(i-1), &b, &parent(b))
 end
 
@@ -397,7 +390,7 @@ function element_from_mat_row(K::AnticNumberField, a::fmpz_mat, i::Int)
   b = K();
   ccall((:nf_elem_from_mat_row, :libflint), 
         Void, 
-       (Ptr{nf_elem}, Ptr{Nemo.fmpz_mat}, Int, Ptr{Nemo.AnticNumberField}),
+       (Ptr{nf_elem}, Ptr{fmpz_mat}, Int, Ptr{AnticNumberField}),
        &b, &a, i-1, &parent(b))
   set_denominator!(b, d_from)     
   return b
@@ -908,6 +901,7 @@ end
 ################################################################################
 ##
 ################################################################################
+
 function basis_mat(K::AnticNumberField, b::Array{nf_elem, 1})
   d = denominator(b[1])
   n = degree(K)

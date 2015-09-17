@@ -3,8 +3,8 @@ export Mor, domain
 abstract Mapping{S, T}
 
 type NfToNfMor <: Mapping{nf_elem, nf_elem}
-  domain::NfNumberField
-  codomain::NfNumberField
+  domain::AnticNumberField
+  codomain::AnticNumberField
   fun::Function
   inv::Function
 
@@ -56,7 +56,7 @@ function evaluate(f::fmpz_poly, r::fq_nmod)
 end                                           
 
 
-function Mor(K::NfNumberField, L::NfNumberField, y::nf_elem)
+function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
   z = NfToNfMor()
   z.domain = K
   z.codomain = L

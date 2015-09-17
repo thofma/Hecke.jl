@@ -21,7 +21,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type
 
-export AnticNumberField, hash
+export AnticNumberField, hash, update
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
@@ -36,7 +36,8 @@ for i in names(Nemo)
 end
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
-       set_verbose_level, add_assert_scope, get_assert_level, set_assert_level
+       set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
+       update
 
 ################################################################################
 #
@@ -230,7 +231,6 @@ include("NfOrder.jl")
 include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
-#include("ResidueApproximation.jl")
 #include("Misc/Map.jl")
 include("basis.jl")
 
@@ -274,5 +274,40 @@ const _conjugate_data_dict = Dict{AnticNumberField, acb_root_ctx}()
 #  end
 #end
     
+end
+
+################################################################################
+#
+#  An update function 
+#
+################################################################################
+
+function update()
+
+  olddir = pwd()
+
+  println("Updating hecke ... ")
+  cd(Pkg.dir("hecke"))
+  run(`git pull`)
+  
+  pkgdir = Pkg.dir("Nemo")
+
+  println("Updating Nemo ... ")
+  cd("$pkgdir")
+  run(`git pull`)
+
+  println("Updating antic ... ")
+  cd("$pkgdir/deps/antic")
+  run(`git pull`)
+
+  println("Updating arb ... ")
+  cd("$pkgdir/deps/arb")
+  run(`git pull`)
+
+  println("Updating flint ... ")
+  cd("$pkgdir/deps/flint2")
+  run(`git pull`)
+  
+  cd(olddir)
 end
 
