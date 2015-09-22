@@ -47,6 +47,7 @@ function tschebyschew(Qx::Nemo.FmpqPolyRing, n::Int)
   return T[end]
 end
 
+
 function auto_of_maximal_real(K::AnticNumberField, n::Int)
   # image of zeta -> zeta^n
   # assumes K = Q(zeta+1/zeta)
@@ -60,6 +61,24 @@ function auto_of_maximal_real(K::AnticNumberField, n::Int)
            return evaluate(Qx(a), i)
          end
 end
+
+function auto_power(A::Function, n::Int) 
+  if n==1 
+    return A
+  end;
+  B = x->A(A(x));
+  C = power(B, div(n, 2))
+  if n%2==0
+    return C
+  else 
+    return x-> A(C(x))
+  end
+end
+
+function auto_mult(A::Function, B::Function)
+  return x -> A(B(x))
+end
+
 
 function orbit(f::Function, a::Nemo.nf_elem)
   b = Set([a])
