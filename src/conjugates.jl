@@ -109,6 +109,9 @@ end
 
 function evaluate{T <: RingElem}(f::fmpq_poly, r::T)
   R = parent(r)
+  if iszero(f)
+    return zero(R)
+  end
   l = length(f) - 1
   s = R(coeff(f, l))
   for i in l-1:-1:0
