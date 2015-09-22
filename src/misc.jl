@@ -1022,3 +1022,28 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int =
   end
 end
 
+
+function rels_stat(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4 )
+  a = b[1].parent()
+  t = b[1].parent()
+  nb = length(b)
+  one = fmpz(1)
+
+  stat = Dict{Int, Int}()
+  for i=1:no_rel
+    zero!(a)
+    for j=1:no_coeff
+      p  = rand(1:nb)
+      Nemo.add!(a, a, b[p])
+    end
+    n = norm_div(a, one, no_p)
+    k - Int(round(log(abs(n))))
+    if isdefined(stat, k)
+      stat[k] += 1
+    else
+      stat[k] = 1
+    end
+  end
+  return stat
+end
+
