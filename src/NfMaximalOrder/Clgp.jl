@@ -1357,7 +1357,9 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             end  
             A = Idl[i]
             j = 0
-            while norm(A) < sqrt_disc && j < no_rand_local
+            # TH: without added no_rand_local < nI it crashes sometimes
+            #     but I don't know what I am doing
+            while norm(A) < sqrt_disc && j < no_rand_local && no_rand_local < nI
               A *= rand(Idl[(nI-no_rand_local):nI])
               j += 1
               no_rand_local += 1
