@@ -87,6 +87,9 @@ function bach_rho{T<:Number}(a::T, b::T, prec = 21)
   if b>a || a<0 || b <0
     error("wrong values")
   end
+  if a <1
+    return T(1)
+  end
   return dickman_rho(a, prec) + bach_J(a, b, a, prec)
 end
 
@@ -111,7 +114,7 @@ function bach_J{T<:Number}(u::T, v::T, w::T, prec)
     a = rho_coeff(k*1.0, prec)
     return sum([a.coeff[i+1] * H_i(u, v, w, i) for i=0:(length(a.coeff)-1)])
   else
-    println("recurse")
+    #println("recurse: k = ", Int(k))
     return bach_J(w/(w-k+1), v, w, prec) + bach_J(u, w/(w-k+1), w, prec)
   end
 end
@@ -179,8 +182,16 @@ We need
 the expectation of the sum, how many birthdays are common.
 Then 
   lambda = k(k-1)/(2n)
+  the expectation is lambda as this should be Poisson distributed
   P(W=x) = exp(-l)l^x/x!
 =#  
+
+@doc """
+  euler_phi(n::Int) -> Int
+
+  The Euler ϕ function of n
+  Ie. the number of integers 0<= i = n coprime to n
+""" ->
 
 function euler_phi(a::Int)
   f = factor(a)
@@ -191,4 +202,100 @@ function euler_phi(a::Int)
   return e
 end 
 
+#= computes (hopefully) the 
+  vol(prod x_i <= b meet [0,1]^n)
+an easy excercise in induction...
+  vol = b(sum_1^{n-1} (-1)^k/k! log(b)^k)
+=#
 
+function vol{T<:Number}(n::Int, b::T)
+  lb = log(b)
+  s = [typeof(b)(1)]
+  t = typeof(b)(1)
+  for k = 1:n-1
+    t  = -t/k * lb
+    push!(s, t)
+  end
+  return b*sum(s)
+end
+
+#= D is supposed to be the disccriminant
+   n the dimension
+   B1 the bound for the factor base
+   B2 the bound for the large primes
+   steps the number of steps in the integration
+
+Computes s.th. like
+  sum (vol(l^i) - vol(l^-1)) rho(
+
+The idea is that we basically generate elements of small, bounded, T2 norm
+in the number field. The naive estimate (Arithmetic-geometric) shows that
+we expect a norm <= sqrt(D).
+But frequently this is smaller.
+We re-scalee the fundamental epiped to be [0,1]^n and assume the
+norm is still prod x_i (which is "true" for totally real and need
+though otherwise). The we try to cound elements of norm <= l^i
+for l^i = 1..sqrt D by assuming the proportion is thus the volume
+of above.
+The dickman_rho or bach_rho functions are then used to estimate the
+number of smooth elements among those.
+
+Idea due to Steve Donnelly
+
+experimentally: this might be true, but it depends very much on the sampling
+tool:
+  for a (fixed) (lll) basis of max real 512 and lin. comb of
+  n elements with coeff. in 0,1
+  the norms are (roughly) normally distributed with the centre
+  less than (2*sqrt(n))^128
+  I assume that comes in part from the distribution of the
+  conjugates themselves. They are bounded by 2, but the mean is less...
+
+  The norm is the product of the conjugates. If the cojugates are reasonably
+  distributed then the central limit theorem should imply that the norms
+  are normalily distributed.
+
+  Steve's idea is (probably) correct if one samples in the entire lattice,
+  represented by taking few elements of a basis and then changing the basis
+=#
+
+function expected_yield(D::fmpz, n::Int, B1::Integer, B2::Integer=0, steps::Int=20)
+  lD = log(abs(D))/2
+  l = lD/steps
+
+  lB1 = log(B1)
+  if B2 != 1
+    lB2 = log(B2)
+  end
+
+  v_l1 = 0
+  yield = 0
+  s = []
+  for i=1:steps
+    v_l = vol(n, exp(i*l-lD))
+    b = i*l/lB1
+    if b<1 
+      b = typeof(b)(1) 
+    end
+    if b > 15
+      println(" argument to dickmann too largee to make sense")
+      break
+    end
+    if B2 == 0
+     #elts have norm <= exp(i*l)
+      r = dickman_rho(b)
+    else
+      b2 = i*l/lB2
+      if b2<1 
+        b2 = typeof(b)(1) 
+      end
+#      println("Calling bach with", Float64(b), " and ", Float64(b2))
+      r = bach_rho(b, b2)
+    end
+               
+    push!(s, (v_l-v_l1)*r)
+    v_l1 = v_l
+  end
+  
+  return s
+end
