@@ -44,11 +44,7 @@ type _RealRing
   end
 end
 
-const R = _RealRing()
-function RealRing()
-  global R
-  return R
-end
+RealRing() = R
 
 function conjugates_init(f::Union(fmpz_poly, fmpq_poly))
   if typeof(f) == fmpq_poly

@@ -1,4 +1,4 @@
-#VERSION >= v"0.4.0-dev+6521" && __precompile__()
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
 module hecke
 
@@ -45,9 +45,9 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ################################################################################
 
-VERBOSE_SCOPE = Symbol[]
+global VERBOSE_SCOPE = Symbol[]
 
-VERBOSE_LOOKUP = Dict{Symbol, Int}()
+global VERBOSE_LOOKUP = Dict{Symbol, Int}()
 
 function add_verbose_scope(s::Symbol)
   !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
@@ -103,9 +103,9 @@ end
 #
 ################################################################################
 
-ASSERT_SCOPE = Symbol[]
+global ASSERT_SCOPE = Symbol[]
 
-ASSERT_LOOKUP = Dict{Symbol, Int}()
+global ASSERT_LOOKUP = Dict{Symbol, Int}()
 
 function add_assert_scope(s::Symbol)
   !(s in ASSERT_SCOPE) && push!(ASSERT_SCOPE, s)
@@ -145,29 +145,52 @@ end
 ###############################################################################
 
 function __init__()
-   println("")
-   print("Welcome to \n")
-   print_with_color(:red, "
-    ('-. .-.   ('-.             .-. .-')     ('-.   
-   ( OO )  / _(  OO)            \\  ( OO )  _(  OO)  
-   ,--. ,--.(,------.   .-----. ,--. ,--. (,------. 
-   |  | |  | |  .---'  '  .--./ |  .'   /  |  .---' 
-   |   .|  | |  |      |  |('-. |      /,  |  |     
-   |       |(|  '--.  /_) |OO  )|     ' _)(|  '--.  
-   |  .-.  | |  .--'  ||  |`-'| |  .   \\   |  .--'  
-   |  | |  | |  `---.(_'  '--'\\ |  |\\   \\  |  `---. 
-   `--' `--' `------'   `-----' `--' '--'  `------' 
-   ")
-   println()
-   print("hecke version")
-   print_with_color(:green, " 0.1 ")
-   print("... \n ... which comes with absolutely ")
-   print_with_color(:red, "no")
-   print_with_color(:blue, " warranty")
-   println(" whatsoever")
-   println("")
-   println("(c) 2015 by Claus Fieker and Tommy Hofmann")
+
+  println("")
+  print("Welcome to \n")
+  print_with_color(:red, "
+   ('-. .-.   ('-.             .-. .-')     ('-.   
+  ( OO )  / _(  OO)            \\  ( OO )  _(  OO)  
+  ,--. ,--.(,------.   .-----. ,--. ,--. (,------. 
+  |  | |  | |  .---'  '  .--./ |  .'   /  |  .---' 
+  |   .|  | |  |      |  |('-. |      /,  |  |     
+  |       |(|  '--.  /_) |OO  )|     ' _)(|  '--.  
+  |  .-.  | |  .--'  ||  |`-'| |  .   \\   |  .--'  
+  |  | |  | |  `---.(_'  '--'\\ |  |\\   \\  |  `---. 
+  `--' `--' `------'   `-----' `--' '--'  `------' 
+  ")
+  println()
+  print("hecke version")
+  print_with_color(:green, " 0.1 ")
+  print("... \n ... which comes with absolutely ")
+  print_with_color(:red, "no")
+  print_with_color(:blue, " warranty")
+  println(" whatsoever")
+  println("")
+  println("(c) 2015 by Claus Fieker and Tommy Hofmann")
+   
+  global hecke_handle = get_handle()
+
+  t = create_accessors(AnticNumberField, acb_root_ctx, hecke_handle)
+  global _get_nf_conjugate_data_arb = t[1]
+  global _set_nf_conjugate_data_arb = t[2]
+
+  global R = _RealRing()
+
 end
+
+
+function conjugate_data_arb(K::AnticNumberField)
+  try
+    c = _get_nf_conjugate_data_arb(K)
+    return c
+  catch
+    c = acb_root_ctx(K.pol)
+    _set_nf_conjugate_data_arb(K, c)
+    return c
+  end
+end
+
 
 
 ################################################################################
@@ -233,6 +256,7 @@ include("analytic.jl")
 include("NfMaximalOrder.jl")
 #include("Misc/Map.jl")
 include("basis.jl")
+include("helper.jl")
 
 ################################################################################
 #
@@ -240,21 +264,6 @@ include("basis.jl")
 #
 ################################################################################
 
-const hecke_handle = get_handle()
-
-const _get_nf_conjugate_data_arb, _set_nf_conjugate_data_arb =
-            create_accessors(AnticNumberField, acb_root_ctx, hecke_handle)
-
-function conjugate_data_arb(K::AnticNumberField)
-  try
-    c = _get_nf_conjugate_data_arb(K)
-    return c
-  catch
-    c = acb_root_ctx(K.pol)
-    _set_nf_conjugate_data_arb(K, c)
-    return c
-  end
-end
 
 ################################################################################
 #
@@ -303,10 +312,16 @@ function update()
   println("Updating arb ... ")
   cd("$pkgdir/deps/arb")
   run(`git pull`)
+  run(`make -j`)
+  run(`make install`)
+
 
   println("Updating flint ... ")
   cd("$pkgdir/deps/flint2")
   run(`git pull`)
+  run(`make -j`)
+  run(`make install`)
+
   
   cd(olddir)
 end
