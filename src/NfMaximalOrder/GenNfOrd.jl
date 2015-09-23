@@ -198,7 +198,7 @@ end
 # In this case, the second return value is coefficient vector of the basis
 
 function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
-  d = denominator(a)
+  d = den(a)
   b = d*a 
   M = MatrixSpace(ZZ, 1, degree(O))()
   element_to_mat_row!(M,1,b)
@@ -223,16 +223,16 @@ end
 ################################################################################
 
 @doc """
-  denominator(a::nf_elem, O::GenNfOrd) -> fmpz
+  den(a::nf_elem, O::GenNfOrd) -> fmpz
 
   Compute the smallest positive integer k such that k*a in O.
 """ ->
-function denominator(a::nf_elem, O::GenNfOrd)
-  d = denominator(a)
+function den(a::nf_elem, O::GenNfOrd)
+  d = den(a)
   b = d*a 
   M = MatrixSpace(ZZ, 1, degree(O))()
-  element_to_mat_row!(M,1,b)
-  t = FakeFmpqMat(M,d)
+  elem_to_mat_row!(M, 1, fmpz(1), b)
+  t = FakeFmpqMat(M, d)
   z = t*basis_mat_inv(O)
   return z.den
 end
@@ -410,7 +410,7 @@ end
 
 function representation_mat(a::NfOrderElem, K::AnticNumberField)
   nf(parent(a)) != K && error("Element not in this field")
-  d = denominator(a.elem_in_nf)
+  d = den(a.elem_in_nf)
   b = d*a.elem_in_nf
   A = representation_mat(b)
   z = FakeFmpqMat(A,d)
@@ -562,8 +562,6 @@ Base.call(K::AnticNumberField, x::NfOrderElem) = elem_in_nf(x)
 ##
 ################################################################################
 ################################################################################
-
-abstract GenNfOrdIdl
 
 function ==(x::GenNfOrdIdl, y::GenNfOrdIdl)
   return basis_mat(x) == basis_mat(y)

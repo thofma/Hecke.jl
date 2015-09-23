@@ -77,38 +77,8 @@ set_assert_level(:LatEnum, 1)
 # Note that T must admit gcd's and base must consist of elements x for which
 # valuation(_, x) is definied.
 
-type node{T}
-  content::T
-  left::node{T}
-  right::node{T}
-  function node(a::T)
-    f = new()
-    f.content = a
-    return f
-  end
-  function node(a::T, b::node{T}, c::node{T})
-    f = node{T}(a)
-    f.content = a
-    f.right = b
-    f.left = c
-    return f
-  end
-end
-
 function compose{T}(a::node{T}, b::node{T})
   return node{T}(a.content * b.content, a, b)
-end
-
-type FactorBase{T}
-  prod::T
-  base::Set{T}
-  ptree::node{T}
-  function FactorBase(a::T, b::Set{T})
-    f = new()
-    f.prod = a
-    f.base = b
-    return f
-  end
 end
 
 # assume that the set consists of pairwise coprime elements
@@ -130,8 +100,8 @@ function FactorBase{T}(x::Set{T}; check::Bool = true)
   end
 end
 
-function show(io::IO, B::FactorBase)
-  print(io, "Factor base with \n$(B.base) and type $(typeof(B.prod))")
+function show{T}(io::IO, B::FactorBase{T})
+  print(io, "Factor base with \n$(B.base) and type $T")
 end
 
 function is_smooth{T}(c::FactorBase{T}, a::T)
@@ -237,21 +207,6 @@ end
 #
 ################################################################################
 
-type NfFactorBase
-  fb::Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}
-  size::Int
-  fb_int::FactorBase{fmpz}
-  ideals::Array{NfMaximalOrderIdeal, 1}
-  rw::Array{Int, 1}
-  mx::Int
-
-  function NfFactorBase()
-    r = new(Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}())
-    r.size = 0
-    return r
-  end
-end
-
 function NfFactorBase(O::NfMaximalOrder, B::Int;
                       complete::Bool = true, degree_limit::Int = 5)
   @vprint :ClassGroup 2 "Splitting the prime ideals ..."
@@ -294,7 +249,7 @@ function factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
 end
 function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)))
-  d = factor(FB.fb_int, num(n)*denominator(a))
+  d = factor(FB.fb_int, num(n)*den(a))
   rw = FB.rw
   lg::Int = 0
   for p in keys(d)
@@ -346,101 +301,6 @@ function factor(FB::NfFactorBase, a::nf_elem)
   M = MatrixSpace(FlintZZ, 1, FB.size)()
   factor!(M, 1, FB, a)
   return M
-end
-################################################################################
-#
-#  Class group data structure
-#
-################################################################################
-type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
-  FB::NfFactorBase
-  M::T                    # the relation matrix, columns index by the
-                          # factor basis, rows by the relations
-  R::Array{nf_elem, 1}    # the relations
-  RS::Set{nf_elem}
-  H::T                    # the last hnf, at least the non-trivial part
-                          # of it
-  last_H::Int             # the number of rows of M that went into H
-  last_piv1::Array{Int, 1}
-  H_is_modular::Bool
-  mis::Set{Int}
-  h::fmpz
-  c::roots_ctx
-  rel_cnt::Int
-  bad_rel::Int
-  hnf_call::Int
-  hnf_time::Float64
-  last::Int
-
-  largePrimeCnt::Int
-  B2::Int
-  largePrime::Dict{fmpz_poly, Tuple{nf_elem, fmpq}}
-  largePrime_success::Int
-  largePrime_no_success::Int
-  relNorm::Array{Tuple{nf_elem, fmpz}, 1}
-  relPartialNorm::Array{Tuple{nf_elem, fmpz}, 1}
-
-  val_base::fmpz_mat      # a basis for the possible infinite ranodmization 
-                          # vectors: conditions are
-                          #  - sum over all = 0
-                          #  - indices correspoding to complex pairs are
-                          #    identical
-                          # done via lll + nullspace
-  function ClassGrpCtx()
-    r = new()
-    r.R = Array{nf_elem, 1}()
-    r.RS = Set(r.R)
-    r.largePrimeCnt = 0
-    r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
-    r.largePrime_success = 0
-    r.largePrime_no_success = 0
-    r.relNorm=Array{Tuple{nf_elem, fmpz}, 1}()
-    r.relPartialNorm=Array{Tuple{nf_elem, fmpz}, 1}()
-    r.B2 = 0
-    r.H_is_modular = true
-    return r
-  end  
-end
-
-
-################################################################################
-#
-#  Relations based on ideals
-#
-################################################################################
-
-type IdealRelationsCtx{Tx, TU, TC}
-  A::NfMaximalOrderIdeal
-  v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
-  E::enum_ctx{Tx, TU, TC}
-  c::fmpz           # the last length
-  cnt::Int
-  bad::Int
-  restart::Int
-  M::fmpz_mat
-  vl::Int
-  rr::Range{Int}
-
-  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
-                  prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
-    v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
-                    rows(clg.val_base)))*clg.val_base
-    E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit,
-       Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
-    I = new()
-    I.E = E
-    I.A = A
-    I.c = 0
-    I.cnt = 0
-    I.bad = 0
-    I.restart = 0
-    I.vl = 0
-    I.rr = 1:0
-    I.M = MatrixSpace(FlintZZ, 1, I.E.n)()
-    return I
-  end
-
-
 end
 
 function show(io::IO, I::IdealRelationsCtx)
@@ -518,7 +378,7 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   Zx = PolynomialRing(ZZ, "\$x_z")[1]
   Zf = Zx(f)
   Zpx = PolynomialRing(ResidueRing(ZZ, p), "\$x_p")[1]
-  Za = Zx(parent(f)(a*denominator(a)))
+  Za = Zx(parent(f)(a*den(a)))
   g = gcd(Zpx(Zf), Zpx(Za))
   return lift(Zx, g)
 end
@@ -537,7 +397,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   end
   #print("trying relation of length ", Float64(length(clg.c, a)),
   #      " and norm ", Float64(n));
-  fl, r = is_smooth(clg.FB.fb_int, num(n*nI)*denominator(a))
+  fl, r = is_smooth(clg.FB.fb_int, num(n*nI)*den(a))
   if !fl
     # try for large prime?
     if isprime(r) && abs(r) < clg.B2
@@ -612,7 +472,7 @@ function class_group_small_elements_relation(clg::ClassGrpCtx,
   if cnt <= degree(A.parent.order)
     lb = Array(nf_elem, degree(K))
     for i = 1:cnt
-      lb[i] = element_from_mat_row(K, l.num, i)//l.den
+      lb[i] = elem_from_mat_row(K, l.num, i, l.den)
     end
     return lb
   end
@@ -620,7 +480,7 @@ function class_group_small_elements_relation(clg::ClassGrpCtx,
   r = -div(r+1, 2):div(r+1, 2)
   ll = Array(typeof(K()), degree(K))
   for i = 1:degree(K)
-    ll[i] = element_from_mat_row(K, l.num, i)//l.den
+    ll[i] = elem_from_mat_row(K, l.num, i, l.den)
   end
   lb = Array(typeof(K()), cnt)
   for i = 1:cnt
@@ -788,8 +648,7 @@ function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
   l, t = lll(c, A, v, prec = prec)
   w = window(t, 1,1, 1, cols(t))
   c = w*b
-  q = element_from_mat_row(K, c, 1)
-  q = divexact(q, b_den)
+  q = elem_from_mat_row(K, c, 1, b_den)
   return q
 end
 
@@ -842,8 +701,6 @@ end
 
 global _elt = Uint(0)
 
-type NoElements <: Exception end
-
 function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
   global _elt, _next
   K = nf(order(I.A))
@@ -857,8 +714,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
       @v_do :ClassGroup_time 2 rt = time_ns()
 #      I.M = I.E.x * I.E.t
       ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz_mat}), &I.M, &I.E.x, &I.E.t)
-      q = element_from_mat_row(K, I.M, 1)
-      q = divexact(q,I.E.t_den)
+      q = elem_from_mat_row(K, I.M, 1, I.E.t_den)
       #println("found ", q, " norm ", norm(q)//norm(I.A))
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q

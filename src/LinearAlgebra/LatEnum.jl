@@ -47,28 +47,6 @@
 
 add_assert_scope(:LatEnum)
 
-# now that x is a fmpz_mat, the type for x is not really used
-type enum_ctx{Tx, TC, TU}
-  G::fmpz_mat
-  n::Int
-  limit :: Int # stop recursion at level limit, defaults to n
-  d::Union(Integer, fmpz) #we actually want G/d
-  C::Array{TC, 2} # the pseudo-cholesky form - we don't have fmpq_mat
-  last_non_zero::Int
-  x::fmpz_mat # 1 x n
-  U::Array{TU, 1}
-  L::Array{TU, 1}
-  l::Array{TU, 1}
-  tail::Array{TU, 1}
-  c::fmpz # the length of the elements we want
-  t::fmpz_mat # if set, a transformation to be applied to all elements
-  t_den::fmpz
-  cnt::Int
-  function enum_ctx()
-    return new()
-  end
-end
-
 function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
   println(io, "curr. length ", E.c, " elt ", E.x, "(", (typeof(E.x), typeof(E.C), typeof(E.U)), ")")
@@ -370,20 +348,6 @@ function pseudo_cholesky(G::arb_mat)
   return C
 end
 
-type EnumCtxArb
-  G::arb_mat
-  L::Array{fmpz_mat, 1}
-  x::fmpz_mat
-  p::Int
-
-  function EnumCtxArb(G::arb_mat)
-    z = new()
-    z.G = G
-    z.x = MatrixSpace(ZZ, 1, rows(G))()
-    z.p = parent(G).prec
-    return z
-  end
-end
 
 function enumerate_using_gram(G::arb_mat, c::arb)
   E = EnumCtxArb(pseudo_cholesky(G))

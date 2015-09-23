@@ -20,17 +20,6 @@ export Smat, SmatRow, Entry, upper_triangular, vcat!, show, sub,
 #
 ################################################################################
 
-type Entry{T}
-  col::Int
-  val::T
-  function Entry(c,v)
-    @assert v != 0
-    r = new()
-    r.col = c
-    r.val = v
-    return r
-  end
-end
 
 function show(io::IO, E::Entry)
   print(io, E.col, "->", E.val)
@@ -42,26 +31,6 @@ end
 #
 ################################################################################
 
-type SmatRow{T}
-  entry::Array{Entry{T}, 1}  # should be sorted by 1st entry
-  function SmatRow()
-    r = new()
-    r.entry = Array(Entry{T}, 0)
-    return r
-  end
-
-  function SmatRow(A::Array{Tuple{Int, T}, 1})
-    r = new()
-    r.entry = [Entry{T}(x[1], x[2]) for x in A]
-    return r
-  end
-
-  function SmatRow(A::Array{Tuple{Int, Int}, 1})
-    r = new()
-    r.entry = [Entry{T}(x[1], T(x[2])) for x in A]
-    return r
-  end
-end
 
 function show{T}(io::IO, A::SmatRow{T})
   println(io, "sparse row ", A.entry)
@@ -72,22 +41,6 @@ end
 # Smat
 #
 ################################################################################
-
-type Smat{T}
-  r::Int
-  c::Int
-  rows::Array{SmatRow{T}, 1}
-  nnz::Int
-
-  function Smat()
-    r = new()
-    r.rows = Array(SmatRow{T}, 0)
-    r.nnz = 0
-    r.r = 0
-    r.c = 0
-    return r
-  end
-end
 
 function Smat(A::fmpz_mat)
   m = Smat{BigInt}()

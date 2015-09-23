@@ -1,36 +1,5 @@
 export NfMaximalOrderFracIdeal
 
-NfMaximalOrderFracIdealSetID = Dict{NfMaximalOrder, Ring}()
-
-type NfMaximalOrderFracIdealSet <: Ring
-   order::NfMaximalOrder
-   function NfMaximalOrderFracIdealSet(O::NfMaximalOrder)
-     try
-       return NfMaximalOrderFracIdealSetID[O]
-     catch
-       r = new()
-       r.order = O
-       NfMaximalOrderFracIdealSetID[O] = r
-       return r
-     end
-   end
-end
-
-type NfMaximalOrderFracIdeal
-  num::NfMaximalOrderIdeal
-  den::fmpz
-  basis_mat::FakeFmpqMat
-  parent::NfMaximalOrderFracIdealSet
-
-  function NfMaximalOrderFracIdeal(x::NfMaximalOrderIdeal, y::fmpz)
-    z = new()
-    z.parent = NfMaximalOrderFracIdealSet(order(x))
-    z.num = x
-    z.den = y
-    return z
-  end
-end
-
 function basis_mat(x::NfMaximalOrderFracIdeal)
   return FakeFmpqMat(basis_mat(num(x)), den(x))
 end

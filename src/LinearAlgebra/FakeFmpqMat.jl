@@ -4,66 +4,7 @@
 #
 ################################################################################
 
-export FakeFmpqMatSpace, FakeFmpqMat
-
 export num, den
-
-FakeFmpqMatSpaceID = ObjectIdDict()
-
-type FakeFmpqMatSpace
-  rows::Int
-  cols::Int
-
-  function FakeFmpqMatSpace(r::Int, c::Int)
-    try
-      return FakeFmpqMatSpaceID[r,c]
-    catch
-      z = new(r,c)
-      FakeFmpqMatSpaceID[r,c] = z
-      return z
-    end
-  end
-end
-
-type FakeFmpqMat
-  num::fmpz_mat
-  den::fmpz
-  parent::FakeFmpqMatSpace
-  rows::Int
-  cols::Int
-
-  function FakeFmpqMat(x::fmpz_mat, y::fmpz)
-    z = new()
-    z.num = x
-    z.den = y
-    z.rows = rows(x)
-    z.cols = cols(x)
-    simplify_content!(z)
-    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
-    return z
-  end
-
-  function FakeFmpqMat(x::Tuple{fmpz_mat, fmpz})
-    z = new()
-    z.num = x[1]
-    z.den = x[2]
-    z.rows = rows(x[1])
-    z.cols = cols(x[1])
-    simplify_content!(z)
-    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
-    return z
-  end
-
-  function FakeFmpqMat(x::fmpz_mat)
-    z = new()
-    z.num = x
-    z.den = ZZ(1)
-    z.rows = rows(x)
-    z.cols = cols(x)
-    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
-    return z
-  end
-end
 
 num(x::FakeFmpqMat) = x.num
 
@@ -117,7 +58,7 @@ function -(x::FakeFmpqMat)
 end
 
 function inv(x::FakeFmpqMat)
-  i, d_i = pseudo_inverse(num(x))
+  i, d_i = pseudo_inv(num(x))
   i *= den(x)
   z = FakeFmpqMat(i,d_i)
   simplify_content!(z)
@@ -193,3 +134,4 @@ function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
   z = FakeFmpqMat(sub(num(x),r,c),den(x))
   return z
 end
+

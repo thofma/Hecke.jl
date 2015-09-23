@@ -12,35 +12,6 @@ export transform
 
 const FactoredElemMonDict = ObjectIdDict()
 
-type FactoredElemMon{T <: RingElem} <: Ring
-  base_ring::Ring  # for the base
-  basis_conjugates_log::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
-  basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
-
-  function FactoredElemMon(R::Ring)
-    if haskey(FactoredElemMonDict, R)
-      return FactoredElemMonDict[R]::FactoredElemMon
-    else
-      z = new()
-      z.base_ring = R
-      z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
-      z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
-      FactoredElemMonDict[R] = z
-      return z
-    end
-  end
-end
-
-type FactoredElem{B}
-  fac::Dict{B, fmpz}
-  parent::FactoredElemMon
-
-  function FactoredElem()
-    z = new()
-    z.fac = Dict{B, fmpz}()
-    return z
-  end
-end
 
 function call{T}(x::FactoredElemMon{T})
   z = FactoredElem{T}()
