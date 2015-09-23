@@ -62,12 +62,20 @@ function auto_of_maximal_real(K::AnticNumberField, n::Int)
          end
 end
 
+function auto_simplify(A::Function, K::AnticNumberField)
+  Qx = parent(K.pol)
+  b = A(gen(K))
+  return function(a::Nemo.nf_elem)
+           return evaluate(Qx(a), b)
+         end  
+end
+
 function auto_power(A::Function, n::Int) 
   if n==1 
     return A
   end;
   B = x->A(A(x));
-  C = power(B, div(n, 2))
+  C = auto_power(B, div(n, 2))
   if n%2==0
     return C
   else 
