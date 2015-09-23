@@ -1,39 +1,6 @@
 
 export BigComplex, abs2, precision, conj, atan2, angle
 
-type BigComplex 
-  re::BigFloat
-  im::BigFloat
-  function BigComplex(r::BigFloat)
-    c = new()
-    c.re = r
-    c.im = zero(r)
-    return c
-  end
-
-  function BigComplex(r::BigInt)
-    return BigComplex(BigFloat(r))
-  end
-
-  function BigComplex(r::fmpz)
-    return BigComplex(BigFloat(BigInt(r)))
-  end
-
-  function BigComplex(r::BigFloat, i::BigFloat)
-    c = new()
-    c.re = r
-    c.im = i
-    return c
-  end
-
-  function BigComplex(r::Complex{Float64})
-    return BigComplex(BigFloat(Base.real(r)), BigFloat(Base.imag(r)))
-  end
-
-  function BigComplex(r::acb)
-    return BigComplex(BigFloat(midpoint(real(r))), BigFloat(midpoint(imag(r))))
-  end
-end
 
 function show(io::IO, a::BigComplex)
   print(io, a.re, " + ", a.im, "im")

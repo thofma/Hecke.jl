@@ -20,17 +20,6 @@ export Smat, SmatRow, Entry, upper_triangular, vcat!, show, sub,
 #
 ################################################################################
 
-type Entry{T}
-  col::Int
-  val::T
-  function Entry(c,v)
-    @assert v != 0
-    r = new()
-    r.col = c
-    r.val = v
-    return r
-  end
-end
 
 function show(io::IO, E::Entry)
   print(io, E.col, "->", E.val)
@@ -72,22 +61,6 @@ end
 # Smat
 #
 ################################################################################
-
-type Smat{T}
-  r::Int
-  c::Int
-  rows::Array{SmatRow{T}, 1}
-  nnz::Int
-
-  function Smat()
-    r = new()
-    r.rows = Array(SmatRow{T}, 0)
-    r.nnz = 0
-    r.r = 0
-    r.c = 0
-    return r
-  end
-end
 
 function Smat(A::fmpz_mat)
   m = Smat{BigInt}()

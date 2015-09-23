@@ -11,41 +11,6 @@ function is_squarefree(f::PolyElem)
   return is_constant(gcd(f, derivative(f)))
 end
 
-type roots_ctx
-  f::fmpz_poly
-  r_d::Array{BigComplex, 1}  # the 1st r1 ones will be real
-  r::Array{BigComplex, 1}    # the complexes and at the end, the conjugated
-  r1::Int
-  r2::Int
-  minkowski_mat::Array{BigFloat, 2} # cacheing: I currently
-                             # cannot extend number fields, so I cache it
-                             # here...
-  minkowski_mat_p::Int
-
-  cache::Array{BigFloat, 2} # to avoid allocation elsewhere.
-  function roots_ctx()
-    r = new()
-    return r
-  end
-end
-
-type _RealRing
-  t1::BigFloat
-  t2::BigFloat
-  z1::BigInt
-  zz1::fmpz
-  function _RealRing()
-    r = new()
-    r.t1 = BigFloat(0)
-    r.t2 = BigFloat(0)
-    r.z1 = BigInt(0)
-    r.zz1 = fmpz(0)
-    return r
-  end
-end
-
-RealRing() = R
-
 function conjugates_init(f::Union(fmpz_poly, fmpq_poly))
   if typeof(f) == fmpq_poly
     f = f*den(f)

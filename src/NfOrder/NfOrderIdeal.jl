@@ -8,41 +8,6 @@ export NfOrderIdeal
 
 export ideal, colon_ideal, basis_mat_inv
 
-NfOrderIdealSetID = ObjectIdDict()
-
-type NfOrderIdealSet
-  order::NfOrder
-  
-  function NfOrderIdealSet(a::NfOrder)
-    try
-      return NfOrderIdealSetID[a]
-    catch
-      NfOrderIdealSetID[a] = new(a)
-      return NfOrderIdealSetID[a]
-    end
-  end
-end
-
-type NfOrderIdeal <: GenNfOrdIdl
-  basis::Array{NfOrderElem, 1}
-  basis_mat::fmpz_mat
-  basis_mat_inv::FakeFmpqMat
-  parent::NfOrderIdealSet
-
-  function NfOrderIdeal(O::NfOrder, a::fmpz)
-    z = new()
-    z.parent = NfOrderIdealSet(O)
-    z.basis_mat = MatrixSpace(ZZ, degree(O), degree(O))(a)
-    return z
-  end
-
-  function NfOrderIdeal(O::NfOrder, a::fmpz_mat)
-    z = new()
-    z.parent = NfOrderIdealSet(O)
-    z.basis_mat = a
-    return z
-  end
-end
 
 ideal(O::NfOrder, a::fmpz)  = NfOrderIdeal(O,a)
 
@@ -92,7 +57,7 @@ function basis_mat_inv(a::NfOrderIdeal)
   if isdefined(a, :basis_mat_inv)
     return a.basis_mat_inv
   else
-    m,d = pseudo_inverse(a.basis_mat)
+    m,d = pseudo_inv(a.basis_mat)
     a.basis_mat_inv = FakeFmpqMat(m,d)
     return a.basis_mat_inv
   end

@@ -19,14 +19,15 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              trace, factor, mod, zero, pari_load, PariPolyRing,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
-             discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type
+             discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
+             elem_from_mat_row, elem_to_mat_row!, norm_div
 
 export AnticNumberField, hash, update
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor
+             floor, max
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -243,15 +244,14 @@ function checkbounds(a::Int, b::Int) nothing; end;
 #
 ################################################################################
 
-include("Sparse.jl")
+include("Arb.jl")  # Arb will soon be in Nemo
+include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("NfMaximalOrder/Types.jl")
 include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
-include("misc.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
 #include("Misc/Map.jl")
@@ -263,27 +263,6 @@ include("helper.jl")
 #  Extending Nemo types
 #
 ################################################################################
-
-
-################################################################################
-#
-#  (Temporary) global dictionaries
-#
-################################################################################
-
-const _conjugate_data_dict = Dict{AnticNumberField, acb_root_ctx}()
-
-#function conjugate_data(K::AnticNumberField)
-#  if haskey(_conjugate_data_dict, K)
-#    return _conjugate_data_dict[K]
-#  else
-#    z = acb_root_ctx(K.pol)
-#    _conjugate_data_dict[K] = z
-#    return z
-#  end
-#end
-    
-end
 
 ################################################################################
 #
@@ -315,14 +294,13 @@ function update()
   run(`make -j`)
   run(`make install`)
 
-
   println("Updating flint ... ")
   cd("$pkgdir/deps/flint2")
   run(`git pull`)
   run(`make -j`)
   run(`make install`)
 
-  
   cd(olddir)
 end
 
+end

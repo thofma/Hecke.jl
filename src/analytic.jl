@@ -30,15 +30,6 @@ export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_
   Lots of powers are computed over and over again.
 =#
 
-type analytic_func{T<:Number}
-  coeff::Array{T, 1}
-  valid::Tuple{T, T}
-  function analytic_func()
-    return new()
-  end
-end
-
-
 function rho_coeff{T<: Number}(x::T, prec = 55)
   a = analytic_func{T}()
   k = ceil(x)

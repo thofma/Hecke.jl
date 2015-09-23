@@ -14,6 +14,19 @@ type NfToNfMor <: Mapping{nf_elem, nf_elem}
   end
 end
 
+type NfMaxOrdToFqNmodMor <: Mapping{NfOrderElem, fq_nmod}
+  domain::NfMaximalOrder
+  codomain::FqNmodFiniteField
+  fun::Function
+  inv::Function
+  sec::Function # a section to fun
+
+  function NfMaxOrdToFqNmodMor()
+    z = new()
+    return z
+  end
+end
+
 type NfToFqNmodMor <: Mapping{NfOrderElem, fq_nmod}
   domain::NfMaximalOrder
   codomain::FqNmodFiniteField
@@ -27,8 +40,30 @@ type NfToFqNmodMor <: Mapping{NfOrderElem, fq_nmod}
   end
 end
 
-function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
+
+function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
+  nf(domain(f)) != K && error("Number field is not the number field of the order")
+
   z = NfToFqNmodMor()
+  z.domain = K
+  z.domain = f.codomain
+
+  p = characteristic(F)
+  Zx = PolynomialRing(ZZ, "x")[1]
+
+  function fun(x::NfOrderElem)
+    g = parent(K.pol)(x)
+    u = inv(F(denominator(g)))
+    g = Zx(denominator(g)*g)
+    return u*evaluate(g, y)
+  end
+
+  z.fun = fun
+  return z
+end
+   
+function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
+  z = NfMaxOrdToFqNmodMor()
   z.domain = O
   z.codomain = F
   p = characteristic(F)
@@ -74,10 +109,5 @@ function call{D, C}(f::Mapping{D, C}, x::D)
   parent(x) != domain(f) && error("Argument not in domain")
   return f.fun(x)
 end
-  
-function call(f::NfToNfMor, x::nf_elem)
-  parent(x) != domain(f) && error("Argument not in domain")
-  return f.fun(x)
-end
-
+ 
 domain(f::Mapping) = f.domain

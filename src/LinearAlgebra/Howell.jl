@@ -119,3 +119,24 @@ function _xxgcd(a::UInt, b::UInt, N::UInt)
   v = div(a,g)
   return (g,UInt(prem(s,Int(N))),UInt(prem(t,Int(N))),u,v)
 end
+
+################################################################################
+#
+#  positive remainder
+#
+################################################################################
+
+function prem{T<:Integer}(a::Integer, m::T)
+  b = a % m
+  if b < 0
+    return m+b
+  else
+    return b
+  end
+end
+
+function prem{T}(a::fmpz, m::T)
+  return prem(BigInt(a), m)
+end
+     
+
