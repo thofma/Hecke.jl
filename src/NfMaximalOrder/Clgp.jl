@@ -1520,6 +1520,42 @@ function toMagma(s::ASCIIString, c::ClassGrpCtx)
 end
 
 
+function toMagma(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
+  print(f, name, " := [\n")
+  for i=1:(length(a)-1)
+    print(f, a[i], ",\n")
+  end
+  print(f, a[end], "];\n")
+end
+
+function toMagma(s::ASCIIString, a::Array{Any, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+  f = open(s, mode)
+  toMagma(f, a, name = name)
+  close(f)
+end
+  
+
+################################################################################
+#
+#  Conversion to Nemo/hecke for storage
+#
+################################################################################
+
+function toNemo(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
+  print(f, name, " = [\n")
+  for i=1:(length(a)-1)
+    print(f, a[i], ",\n")
+  end
+  print(f, a[end], "];\n")
+end
+
+function toNemo(s::ASCIIString, a::Array{Any, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+  f = open(s, mode)
+  toNemo(f, a, name = name)
+  close(f)
+end
+ 
+
 ################################################################################
 ##  Garbage?
 ################################################################################
