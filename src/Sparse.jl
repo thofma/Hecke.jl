@@ -42,7 +42,7 @@ end
 #
 ################################################################################
 
-type SmatRow{T}
+type SmatRow{T}  ## terrible memory footprint!
   entry::Array{Entry{T}, 1}  # should be sorted by 1st entry
   function SmatRow()
     r = new()
