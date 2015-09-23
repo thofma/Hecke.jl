@@ -31,27 +31,6 @@ end
 #
 ################################################################################
 
-type SmatRow{T}  ## terrible memory footprint!
-  entry::Array{Entry{T}, 1}  # should be sorted by 1st entry
-  function SmatRow()
-    r = new()
-    r.entry = Array(Entry{T}, 0)
-    return r
-  end
-
-  function SmatRow(A::Array{Tuple{Int, T}, 1})
-    r = new()
-    r.entry = [Entry{T}(x[1], x[2]) for x in A]
-    return r
-  end
-
-  function SmatRow(A::Array{Tuple{Int, Int}, 1})
-    r = new()
-    r.entry = [Entry{T}(x[1], T(x[2])) for x in A]
-    return r
-  end
-end
-
 function show{T}(io::IO, A::SmatRow{T})
   println(io, "sparse row ", A.entry)
 end
