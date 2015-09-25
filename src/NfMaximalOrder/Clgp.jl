@@ -815,7 +815,7 @@ we do need redundant relations for the units.
   if !full_rank
     clg.mis = mis
     clg.h = FlintZZ(0)
-    return (fmpz(0), mis)::Tuple{fmpz, Set{Int64}}
+    return (fmpz(0), mis)::Tuple{fmpz, Set{Int}}
   end
 
   if full_rank

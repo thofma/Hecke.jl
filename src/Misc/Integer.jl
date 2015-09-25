@@ -183,7 +183,7 @@ end
 
 function Float64(a::fmpq)
   b = a*fmpz(2)^53
-  Float64(div(num(b), den(b)))/Float64(2^53)
+  Float64(div(num(b), den(b)))/(Float64(2)^53) #CF 2^53 is bad in 32bit
 end
 
 function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.fmpz)

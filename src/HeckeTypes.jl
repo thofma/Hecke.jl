@@ -981,7 +981,7 @@ type IdealRelationsCtx{Tx, TU, TC}
   rr::Range{Int}
 
   function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaximalOrderIdeal;
-                  prec::Int64 = 100, val::Int64=0, limit::Int64 = 0)
+                  prec::Int = 100, val::Int=0, limit::Int = 0)
     v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit,
