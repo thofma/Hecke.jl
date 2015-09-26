@@ -605,3 +605,95 @@ function ^(x::nf_elem, y::fmpz)
     return x^(y-1) * x
   end
 end
+
+function _saturate(U::UnitGrpCtx, p::Int)
+  primes =  _find_primes_for_saturation(order(U), p, 5)
+  
+  m = _get_matrix(U, primes[1], p)
+
+  for i in 2:5
+    m = vcat(m, _get_matrix(U, primes[i], p))
+  end
+
+  return m
+end
+
+function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
+  O = order(U)
+  K = nf(O)
+  F, mF = ResidueField(O, P)
+  mK = extend(mF, K)
+  g = _primitive_element(F)
+  res = MatrixSpace(ResidueRing(FlintZZ, p), 1, unit_rank(O))()
+
+  for i in 1:length(U.units)
+    u = U.units[i]
+    # how do I map the factored element of one of the basis elements is zero?
+    y = one(F)
+
+    for b in base(u)
+      # P.gen_two should be P-unformizer
+      y = y*mK(b*K(P.gen_two)^(-valuation(b, P)))^u.fac[b]
+    end
+
+    res[1, i] = disc_log(y, g, p)
+  end
+  return res
+end
+
+function _find_primes_for_saturation(O::NfMaximalOrder, p::Int, n::Int)
+  res = Array(NfMaximalOrderIdeal, n)
+  i = 0
+
+  q = 1
+  while i < n
+    q = next_prime(q)
+
+    if mod(index(O), q) == 0 || isramified(O, q)
+      continue
+    end
+
+    lp = prime_decomposition(O, q)
+
+    j = 1
+
+    while j <= length(lp) && i < n
+      Q = lp[j]
+      if mod(norm(Q[1]) - 1, p) == 0
+        i = i + 1
+        res[i] = Q[1]
+      end
+      j = j + 1
+    end
+  end
+
+  return res
+end
+        
+function _primitive_element(F::FqNmodFiniteField)
+  @assert characteristic(F) < typemax(Int)
+  fac = factor(order(F) - 1)
+  f = degree(F)
+  p = Int(characteristic(F))
+  g = gen(F)
+  while true
+    r = rand(0:p-1, f)
+    a = zero(F)
+    for i in 1:f
+      a = a + r[i]*g^i
+    end
+    if iszero(a)
+      continue
+    end
+    is_primitive = true
+    for l in 1:fac.len
+      if isone(a^(div(order(F) - 1, fac[l][1])))
+        is_primitive = false
+      end
+    end
+    if is_isprimitive
+      return a
+    end
+  end
+end
+
