@@ -3,4 +3,4 @@ include("Misc/Integer.jl")
 include("Misc/Magma.jl")
 include("Misc/Matrix.jl")
 include("Misc/NumberField.jl")
-
+include("Misc/Map.jl")

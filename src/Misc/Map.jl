@@ -1,4 +1,4 @@
-export Mor, domain
+export Mor, domain, codomain
 
 abstract Mapping{S, T}
 
@@ -27,8 +27,8 @@ type NfMaxOrdToFqNmodMor <: Mapping{NfOrderElem, fq_nmod}
   end
 end
 
-type NfToFqNmodMor <: Mapping{NfOrderElem, fq_nmod}
-  domain::NfMaximalOrder
+type NfToFqNmodMor <: Mapping{nf_elem, fq_nmod}
+  domain::AnticNumberField
   codomain::FqNmodFiniteField
   fun::Function
   inv::Function
@@ -46,15 +46,16 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
 
   z = NfToFqNmodMor()
   z.domain = K
-  z.domain = f.codomain
+  z.codomain = f.codomain
 
-  p = characteristic(F)
+  p = characteristic(z.codomain)
   Zx = PolynomialRing(ZZ, "x")[1]
+  y = f(NfOrderElem(domain(f), gen(K)))
 
-  function fun(x::NfOrderElem)
+  function fun(x::nf_elem)
     g = parent(K.pol)(x)
-    u = inv(F(denominator(g)))
-    g = Zx(denominator(g)*g)
+    u = inv(z.codomain(den(g)))
+    g = Zx(den(g)*g)
     return u*evaluate(g, y)
   end
 
@@ -71,8 +72,8 @@ function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
 
   function fun(x::NfOrderElem)
     g = parent(nf(O).pol)(elem_in_nf(x))
-    u = inv(F(denominator(g)))
-    g = Zx(denominator(g)*g)
+    u = inv(F(den(g)))
+    g = Zx(den(g)*g)
     return u*evaluate(g, y)
   end
 
@@ -107,7 +108,14 @@ end
 
 function call{D, C}(f::Mapping{D, C}, x::D)
   parent(x) != domain(f) && error("Argument not in domain")
-  return f.fun(x)
+  return f.fun(x)::C
 end
- 
+
 domain(f::Mapping) = f.domain
+
+codomain(f::Mapping) = f.codomain
+
+function show(io::IO, f::Mapping)
+  println("Function from $(f.domain) to $(f.codomain)")
+end
+
