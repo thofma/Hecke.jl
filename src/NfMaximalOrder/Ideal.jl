@@ -968,6 +968,16 @@ end
 #
 ################################################################################
 
+function isramified(O::NfMaximalOrder, p::Int)
+  lp = prime_decomposition(O, p)
+  for P in lp
+    if P[2] > 1
+      return true
+    end
+  end
+  return false
+end
+
 @doc """
   prime_decomposition(O::NfMaximalOrder, p::Integer) -> Array{Tuple{NfMaximalOrderIdeal, Integer}, 1}
 
