@@ -1,4 +1,3 @@
-export Mor, domain, codomain
 
 abstract Mapping{S, T}
 
@@ -9,8 +8,6 @@ type NfToNfMor <: Mapping{nf_elem, nf_elem}
   inv::Function
 
   function NfToNfMor()
-    z = new()
-    return z
   end
 end
 

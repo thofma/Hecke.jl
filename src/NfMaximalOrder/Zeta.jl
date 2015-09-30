@@ -291,18 +291,18 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
   error_prime_arf = arf(error_prime)
   error_arf = arf(error)
 
-  println("error prime: $error_prime")
+  #println("error prime: $error_prime")
 
-  print("Finding a bound ... ")
+  #print("Finding a bound ... ")
 
   x0 = Int(ceil(_find_threshold(F, error_prime, Float64(10), true, Float64)))
   x0 = x0 + 1
 
-  println(" done ")
+  #println(" done ")
 
   prec = 64 
 
-  println("Computing residue with bound $x0 and precision $prec")
+  #println("Computing residue with bound $x0 and precision $prec")
   val = _term_bf(O, x0, ArbField(prec))
 
   valaddederror = deepcopy(val)
@@ -312,14 +312,14 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
   while (!lttwopower(radius(val), der)) ||
                 ((arf(radius(valaddederror)) > error_arf))
 
-    println("Precision is now $prec")
+    #println("Precision is now $prec")
 
     if prec > 2048
       error("Something wrong")
     end
 
     prec = 2*prec
-    println("increasing precision to $prec")
+    #println("increasing precision to $prec")
     val = _term_bf(O, x0, ArbField(prec))
     valaddederror = deepcopy(val)
     ccall((:arb_add_error_arf, :libarb), Void,

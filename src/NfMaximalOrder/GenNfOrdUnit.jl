@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, pow!
+export is_unit, is_torsion_unit, is_independent, pow!, unit_group
 
 function unit_rank(O::GenNfOrd)
   r1, r2 = signature(nf(O))
@@ -206,7 +206,10 @@ function is_independent{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 
 end
 
 function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::UnitGrpCtx{S}, y::T)
-  x.units = add_dependent_unit(x.units, y)
+  u, m = add_dependent_unit(x.units, y)
+  x.units = u
+  x.tentative_regulator = _reg(u)
+  return m
 end
 
 function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{S, 1}, y::T)
@@ -300,7 +303,7 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
 
   m = submat(u, 1:r+1, 2:r+1)
 
-  return transform(vcat(x, y), m)
+  return transform(vcat(x, y), m), m
 end
 
 function check_relation_mod_torsion(x::Array{FactoredElem{nf_elem}, 1}, y::FactoredElem{nf_elem}, z::Array{fmpz, 1})
@@ -418,10 +421,28 @@ function _reg{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1})
       A[i, j] = conlog[j]
     end
   end
-  return det(A)
+  return abs(det(A))
 end
 
 order(u::UnitGrpCtx) = u.order
+
+function _make_row_primitive(x::fmpz_mat, j::Int)
+  y = x[j, 1]
+  for i in 1:cols(x)
+    y = gcd(y, x[j, i])
+  end
+  if y > 1
+    for i in 1:cols(x)
+      x[j, i] = div(x[j, i], y)
+    end
+  end
+end
+
+function unit_group(O::NfMaximalOrder, c::ClassGrpCtx)
+  u = UnitGrpCtx{FactoredElem{nf_elem}}(O)
+  _unit_group_find_units(u, c)
+  return u
+end
 
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   O = order(u)
@@ -449,6 +470,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     end
 
     #println("testing element $j")
+    _make_row_primitive(ker, j)
 
     y = FactoredElem(x, ker, j)
 
@@ -463,7 +485,12 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   j = 0
 
-  while(j < rows(ker))
+  no_change_matrix = MatrixSpace(ZZ, unit_rank(O), unit_rank(O))(1)
+  no_change_matrix = vcat(no_change_matrix, MatrixSpace(ZZ, 1, unit_rank(O))(0))
+
+  not_larger = 0
+
+  while(j < rows(ker)) && not_larger < 6
     j = j + 1
     if is_zero_row(ker, j)
       continue
@@ -476,7 +503,13 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       continue
     end
 
-    add_dependent_unit(u, y)
+    m = add_dependent_unit(u, y)
+
+    if m == no_change_matrix
+      not_larger = not_larger + 1
+    else
+      not_larger = 0
+    end
 
     println(_reg(u.units))
   end
@@ -485,7 +518,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 end
 
 function _add_unit(u::UnitGrpCtx, x::FactoredElem{nf_elem})
-  if is_independent( vcat(u.units, [ x ]))
+  if is_independent(vcat(u.units, [x]))
     push!(u.units, x)
   end
   nothing
@@ -606,16 +639,184 @@ function ^(x::nf_elem, y::fmpz)
   end
 end
 
-function _saturate(U::UnitGrpCtx, p::Int)
-  primes =  _find_primes_for_saturation(order(U), p, 5)
+function _issaturated(U::UnitGrpCtx, p::Int)
+  N = 2*unit_rank(order(U))
+  #print("Computing prime ideals for saturation...")
+  primes =  _find_primes_for_saturation(order(U), p, N)
+  #println("DONE")
   
+  #print("Computing the matrix...")
   m = _get_matrix(U, primes[1], p)
 
-  for i in 2:5
+  for i in 2:N
     m = vcat(m, _get_matrix(U, primes[i], p))
   end
+  #println("DONE")
 
-  return m
+  #println(m)
+
+  #print("Computing the kernel...")
+  (K, k) = _right_kernel(m)
+  println(K, k)
+  #println("DONE")
+  K = transpose(K)
+  L = lift(K)
+
+  if k == 0
+    return (true, zero(nf(order(U))))
+  else
+    for j in 1:rows(L)
+      if is_zero_row(L, j)
+        continue
+      end
+      
+      #println(K)
+      a = U.units[1]^(L[j, 1])
+      for i in 2:length(U.units)
+        a = a*U.units[i]^L[j, i]
+      end
+
+      #print("Evaluating the element...")
+      b = evaluate(a)
+      #println("DONE")
+      has_root, roota = root(b, p)
+
+      if !has_root
+        continue
+      end
+
+      return (false, roota)
+    end
+  end
+
+  # try some random linear combination of kernel vectors
+
+  MAX = 100
+
+  println("No root found so far")
+
+  for i in 1:MAX
+    ra = rand(0:p-1, rows(K))
+    v = MatrixSpace(base_ring(K), 1, cols(K))(0)
+    for j in 1:cols(K)
+      for l in 1:rows(K)
+        v[1, j] = v[1, j] + ra[l]*K[l,j]
+      end
+    end
+
+    if v == parent(v)(0)
+      continue
+    end
+    
+    v = lift(v)
+
+    a = U.units[1]^(v[1, 1])
+    for j in 2:length(U.units)
+      a = a*U.units[j]^v[1, j]
+    end
+
+      #print("Evaluating the element...")
+    b = evaluate(a)
+      #println("DONE")
+    has_root, roota = root(b, p)
+
+    if has_root
+      return (false, roota)
+    end
+  end
+
+  println(K)
+  error("Something ooddd")
+end
+
+function root(a::nf_elem, n::Int)
+  #println("Compute $(n)th root of $a")
+  Kx, x = PolynomialRing(parent(a), "x")
+
+  f = x^n - a
+
+  fac = factor(f)
+  #println("factorization is $fac")
+
+  for i in 1:length(fac)
+    if degree(fac[i]) == 1
+      return (true, -coeff(fac[i], 0)//coeff(fac[i], 1))
+    end
+  end
+
+  return (false, zero(parent(a)))
+end
+
+function factor(f::PolyElem{nf_elem})
+  print("factoring $f ...")
+  Kx = parent(f)
+  K = base_ring(f)
+  Qy = parent(K.pol)
+  y = gen(Qy)
+  Qyx, x = PolynomialRing(Qy, "x")
+  
+  Qx = PolynomialRing(QQ, "x")[1]
+  Qxy = PolynomialRing(Qx, "y")[1]
+
+  k = 0
+  N = zero(Qxy)
+
+  T = zero(Qxy)
+  for i in 0:degree(K.pol)
+    T = T + coeff(K.pol, i)*gen(Qxy)^i
+  end
+
+  g = f
+
+  while true
+    G = zero(Qyx)
+    for i in 0:degree(g)
+      G = G + Qy(coeff(g, i))*x^i
+    end
+
+    Gcompose = G
+
+    # Switch the place of the variables
+
+    H = zero(Qxy)
+
+    for i in 0:degree(Gcompose)
+      t = coeff(Gcompose, i)
+      HH = zero(Qxy)
+      for j in 0:degree(t)
+        HH = HH + coeff(t, j)*gen(Qxy)^j
+      end
+      H = H + HH*gen(Qx)^i
+    end
+
+    N = resultant(T, H)
+
+    if !is_constant(N) && is_squarefree(N)
+      break
+    end
+
+    k = k + 1
+    g = compose(f, gen(Kx) - k*gen(K))
+  end
+  
+  #println("k: $k")
+
+  fac = factor(N)
+
+  res = Array(PolyElem{nf_elem}, fac.len)
+
+  for i in 1:fac.len
+    t = zero(Kx)
+    # write the factor in Kx
+    for j in 0:degree(fac[i][1])
+      t = t + K(coeff(fac[i][1], j))*gen(Kx)^j
+    end
+    t = compose(t, gen(Kx) + k*gen(K))
+    res[i] = gcd(f, t)
+  end
+
+  println("DONE")
+  return res
 end
 
 function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
@@ -623,7 +824,9 @@ function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
   K = nf(O)
   F, mF = ResidueField(O, P)
   mK = extend(mF, K)
+  #print("Computing primitive element...")
   g = _primitive_element(F)
+  #println("DONE")
   res = MatrixSpace(ResidueRing(FlintZZ, p), 1, unit_rank(O))()
 
   for i in 1:length(U.units)
@@ -631,12 +834,32 @@ function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
     # how do I map the factored element of one of the basis elements is zero?
     y = one(F)
 
-    for b in base(u)
       # P.gen_two should be P-unformizer
-      y = y*mK(b*K(P.gen_two)^(-valuation(b, P)))^u.fac[b]
+      #println("$(P.gen_one), $b, $(P.gen_two)")
+    try
+      for b in base(u)
+        y = y*mK(b*K(P.gen_two)^(-valuation(b, P)))^u.fac[b]
+      end
+    catch
+      lp = prime_decomposition(order(U), Int(P.gen_one))
+      Q = lp[1][1]
+      j = 1
+      while valuation(elem_in_nf(Q.gen_two), P) != 0
+        j = j + 1
+        Q = lp[j][1]
+      end
+      c = zero(K)
+      for b in base(u)
+        c = b*K(P.gen_two)^(-valuation(b, P))
+        l = valuation(den(c), P)
+        y = y*(mK(b*K(Q.gen_two)^l) * mF(Q.gen_two)^(-l))^u.fac[b]
+      end
+
     end
 
+    #println("Computing the discrete logarithm...")
     res[1, i] = disc_log(y, g, p)
+    #print("DONE")
   end
   return res
 end
@@ -672,6 +895,8 @@ end
         
 function _primitive_element(F::FqNmodFiniteField)
   @assert characteristic(F) < typemax(Int)
+  #println("Computing primitive element of $F")
+  #println("Have to factor $(order(F) - 1)")
   fac = factor(order(F) - 1)
   f = degree(F)
   p = Int(characteristic(F))
@@ -680,7 +905,7 @@ function _primitive_element(F::FqNmodFiniteField)
     r = rand(0:p-1, f)
     a = zero(F)
     for i in 1:f
-      a = a + r[i]*g^i
+      a = a + r[i]*g^(i-1)
     end
     if iszero(a)
       continue
@@ -691,9 +916,37 @@ function _primitive_element(F::FqNmodFiniteField)
         is_primitive = false
       end
     end
-    if is_isprimitive
+    if is_primitive
       return a
     end
+  end
+end
+
+function FactoredElem(x::nf_elem)
+  z = FactoredElem{nf_elem}()
+  z.fac[x] = fmpz(1)
+  z.parent = FactoredElemMon{nf_elem}(parent(x))
+  return z
+end
+
+function validate(c::ClassGrpCtx, u::UnitGrpCtx)
+  b = _validate_class_unit_group(c, u)
+
+  p = 2
+
+  while b > 1
+    print("Saturating at $p...")
+    issaturated, new_unit = _issaturated(u, p)
+    while !issaturated
+      println("$new_unit")
+      add_dependent_unit(u, FactoredElem(new_unit))
+      println("$(u.tentative_regulator)")
+      issaturated, new_unit = _issaturated(u, p)
+    end
+    println("DONE")
+    b = _validate_class_unit_group(c, u)
+    #println("Bound is now $b")
+    p = next_prime(p)
   end
 end
 

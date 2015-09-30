@@ -12,7 +12,6 @@ export transform
 
 const FactoredElemMonDict = ObjectIdDict()
 
-
 function call{T}(x::FactoredElemMon{T})
   z = FactoredElem{T}()
   z.parent = x
