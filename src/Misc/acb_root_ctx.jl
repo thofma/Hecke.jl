@@ -49,7 +49,7 @@ function BigFloat(x::arb)
   a = BigFloat()
   b = BigFloat()
   ccall((:arb_get_interval_mpfr, :libarb), Void, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{arb}, Clong), &a, &b, &x, get_bigfloat_precision())
-  return (b-a)/2
+  return (a+b)/2
 end
 
 type acb_root_ctx
