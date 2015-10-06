@@ -20,14 +20,15 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
-             elem_from_mat_row, elem_to_mat_row!, norm_div
+             elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
+             base_ring, compose, root, arf_struct, acb_struct, fmpq
 
 export AnticNumberField, hash, update
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max
+             floor, max, BigFloat
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again

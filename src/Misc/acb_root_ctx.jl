@@ -45,9 +45,16 @@ export acb_root_ctx, complex_roots
 #
 ################################################################################
 
+function BigFloat(x::arb)
+  a = BigFloat()
+  b = BigFloat()
+  ccall((:arb_get_interval_mpfr, :libarb), Void, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{arb}, Clong), &a, &b, &x, get_bigfloat_precision())
+  return (a+b)/2
+end
+
 type acb_root_ctx
   poly::fmpq_poly
-  _roots::Ptr{_raw_acb}
+  _roots::Ptr{acb_struct}
   prec::Int
   roots::Array{acb, 1}
   real_roots::Array{acb, 1}
@@ -55,15 +62,15 @@ type acb_root_ctx
 
   function acb_root_ctx(x::fmpq_poly)
     p = 32 
-    y = ccall((:_acb_vec_init, :libarb), Ptr{_raw_acb}, (Clong, ), degree(x))
+    y = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct}, (Clong, ), degree(x))
     t = acb_poly(x, p)
     n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                (Ptr{_raw_acb}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
                 y, &t, C_NULL, 0, p)
     while n < degree(x)
       p *= 2
       n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                  (Ptr{_raw_acb}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+                  (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
                   y, &t, y, 0, p)
     end
     z = new()
@@ -77,12 +84,12 @@ type acb_root_ctx
 
   function acb_root_ctx(x::fmpq_poly, p::Int)
     z = new()
-    z._roots = ccall((:_acb_vec_init, :libarb), Ptr{_raw_acb},
+    z._roots = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct},
                             (Clong, ), degree(x))
     finalizer(z, _acb_root_ctx_clear_fn)
     t = acb_poly(x, p)
     n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                (Ptr{_raw_acb}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
                 z._roots, &t, C_NULL, 0, p)
     n < degree(x) && error("Precision not high enough")
     z.prec = p
@@ -94,7 +101,7 @@ end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
   ccall((:_acb_vec_clear, :libarb), Void,
-              (Ptr{_raw_acb}, Clong), x._roots, degree(x.poly))
+              (Ptr{acb_struct}, Clong), x._roots, degree(x.poly))
 end
 
 ################################################################################
@@ -133,15 +140,15 @@ function refine(x::acb_root_ctx, target_prec::Int = 2*prec(x))
   p = prec(x)
   f = acb_poly(x.poly, p)
   n = ccall((:acb_poly_find_roots, :libarb), Clong,
-          (Ptr{_raw_acb}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+          (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
           x._roots, &f, x._roots, 0, p)
   while n != degree(x.poly) || !Bool(ccall((:check_accuracy, :libarb),
-                                     Cint, (Ptr{_raw_acb}, Clong, Clong),
+                                     Cint, (Ptr{acb_struct}, Clong, Clong),
                                      x._roots, degree(x.poly), target_prec))
     p *= 2
     f = acb_poly(poly(x), p)
     n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                (Ptr{_raw_acb}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
                 x._roots, &f, C_NULL, 0, p)
   end
   x.prec = target_prec
@@ -163,7 +170,7 @@ function _find_real(x::acb_root_ctx)
   for i in 1:degree(x.poly)
     _r = unsafe_load(x._roots, i)
     r = AcbField(x.prec)()
-    ccall((:acb_set, :libarb), Void, (Ptr{acb}, Ptr{_raw_acb}), &r, &_r)
+    ccall((:acb_set, :libarb), Void, (Ptr{acb}, Ptr{acb_struct}), &r, &_r)
     A[i] = r
     #println("trying to insert $r")
     if contains_zero(imag(A[i]))
@@ -205,17 +212,17 @@ end
 function complex_roots(f::fmpz_poly; target_prec::Clong = 32,
                                      initial_prec::Clong = 16)
   res = Array(acb, degree(f))
-  r = ccall((:_acb_vec_init, :libarb), Ptr{_raw_acb}, (Clong, ), degree(f))
-  ccall((:poly_roots, :libarb), Void, (Ptr{_raw_acb},
+  r = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct}, (Clong, ), degree(f))
+  ccall((:poly_roots, :libarb), Void, (Ptr{acb_struct},
               Ptr{fmpz_poly}, Clong, Clong), r, &f, initial_prec, target_prec)
   #r = reinterpret(Ptr{_raw_acb}, r)
   for i in 1:degree(f)
     res[i] = AcbField(target_prec)()
     # slick julia pointer arithmetic
-    ccall((:acb_set, :libarb), Void, (Ptr{acb}, Ptr{_raw_acb}),
-                &res[i], r + (i-1)*sizeof(_raw_acb))
+    ccall((:acb_set, :libarb), Void, (Ptr{acb}, Ptr{acb_struct}),
+                &res[i], r + (i-1)*sizeof(acb_struct))
   end
-  ccall((:_acb_vec_clear, :libarb), Void, (Ptr{_raw_acb}, Clong), r, degree(f))
+  ccall((:_acb_vec_clear, :libarb), Void, (Ptr{acb_struct}, Clong), r, degree(f))
   return res
 end
 
