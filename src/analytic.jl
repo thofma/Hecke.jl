@@ -196,7 +196,8 @@ end
 #= computes (hopefully) the 
   vol(prod x_i <= b meet [0,1]^n)
 an easy excercise in induction...
-  vol = b(sum_1^{n-1} (-1)^k/k! log(b)^k)
+  vol = b(sum_0^{n-1} (-1)^k/k! log(b)^k)
+     -> b exp(log(1/b)) = 1 very rapidly for n-> infty
 =#
 
 function vol{T<:Number}(n::Int, b::T)
