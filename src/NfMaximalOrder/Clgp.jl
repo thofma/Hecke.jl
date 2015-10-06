@@ -35,13 +35,25 @@
 # Todo: 
 #  - make sure the precision for LLL is high enough (by checking that the
 #    resulting elements have a reasonable norm/ length? theory?)
+#    done
 #  - add reasonable verbose printing
+#    done
 #  - write hnf from upper_triangular
 #  - understand/use profiling information (memory, ...)     
 #
 #  - need different norm function: modular resultant? with a large known
 #    factor AND without any proof...
 #    otherwise, it takes much too long if the ideal is non-trivial
+#  DONE (norm_div)
+#
+#  - move the various factor, is_smooth and similar to a sensible
+#    spot. This has nothing to do with class groups
+#  - the SingleP version: 
+#      figure out if a union is better than the current version
+#      ie have a version for easy primes
+#         and a dumb version as fallback
+#      make sure stuff works with fractionals as well!
+#      just scaling by the den can affect smoothness (incomplete factor base)
 #
 #
 # Clean up:
@@ -76,6 +88,8 @@ set_assert_level(:LatEnum, 1)
 
 # Note that T must admit gcd's and base must consist of elements x for which
 # valuation(_, x) is definied.
+# works (at least) for fmpz and nmod_poly, so it can be used for the
+# smoothness test
 
 function compose{T}(a::node{T}, b::node{T})
   return node{T}(a.content * b.content, a, b)
@@ -83,21 +97,20 @@ end
 
 # assume that the set consists of pairwise coprime elements
 function FactorBase{T}(x::Set{T}; check::Bool = true)
-  if !check
-    ax = [ node{T}(p) for p in x]
-    while length(ax) > 1
-      bx = [ compose(ax[2*i-1], ax[2*i]) for i=1:div(length(ax), 2)]
-      if isodd(length(ax))
-        push!(bx, ax[end])
-      end
-      ax = bx
+  ax = [ node{T}(p) for p in x]
+  while length(ax) > 1
+    if check && !isone(gcd(ax[2*i-1], ax[2*i]))
+      error("input not coprime")
+    end  
+    bx = [ compose(ax[2*i-1], ax[2*i]) for i=1:div(length(ax), 2)]
+    if isodd(length(ax))
+      push!(bx, ax[end])
     end
-    z = FactorBase{T}(ax[1].content, x)
-    z.ptree = ax[1]
-    return z
-  else
-    error("not yet implemented")
+    ax = bx
   end
+  z = FactorBase{T}(ax[1].content, x)
+  z.ptree = ax[1]
+  return z
 end
 
 function show{T}(io::IO, B::FactorBase{T})
@@ -150,11 +163,12 @@ function factor{T}(c::FactorBase{T}, a::T)
   f = Dict{T, Int}()
   lp = _split(c.ptree, a)
   for i in lp
-    if mod(a, i)==0
+    if mod(a, i)==0  ## combine: use divmod and do val of rest
+                     ## to save a division
       v = valuation(a, i)
       f[i] = v[1]
       a = v[2]
-      if a == 1 || a==-1
+      if a == 1 || a==-1  ## should be is_unit (think poly)
         break
       end
     end
@@ -163,7 +177,7 @@ function factor{T}(c::FactorBase{T}, a::T)
   return f
 end
 
-function factor{T}(c::FactorBase{T}, a::fmpq)
+function factor{T}(c::FactorBase{T}, a::fmpq)  ## fractions over T
   @assert a != 0
   f = Dict{T, Int}()
   n = abs(num(a))
@@ -209,7 +223,7 @@ end
 
 function NfFactorBase(O::NfMaximalOrder, B::Int;
                       complete::Bool = true, degree_limit::Int = 5)
-  @vprint :ClassGroup 2 "Splitting the prime ideals ..."
+  @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lp = prime_ideals_up_to(O, B, complete = complete,
                           degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
@@ -247,6 +261,72 @@ function factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
                     error = true, n = abs(norm(a)))
   return _factor(M, i, FB, a, error, n)
 end
+
+
+type FactorBaseSingleP
+  P::fmpz
+  pt::FactorBase{nmod_poly}
+  lp::Array{Tuple{Int,NfMaximalOrderIdeal}, 1}
+  doit::Function
+  
+  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfMaximalOrderIdeal}, 1})
+    FB = new()
+    FB.lp = lp
+    FB.P = p
+
+    if length(lp) < 3 ##  || is_difficult(p) # ie. index divisor or so
+      FB.doit = function(a::nf_elem, v::Int)
+        r = Array{Tuple{Int, Int},1}()
+        for x=1:length(lp)
+          vl = valuation(a, lp[x][2])
+          v -= vl*lp[x][2].splitting_type[2]
+          push!(r, (lp[x][1], vl))
+        end  
+        return r, v
+      end
+    else
+      Zx = PolynomialRing(ZZ, "x")[1]
+      Fpx = PolynomialRing(ResidueRing(ZZ, p), "x")[1]
+      O = order(lp[1][2])
+      K = O.nf
+      Qx = parent(K.pol)
+      fp = Fpx(Zx(K.pol))
+      lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]
+
+      FB.pt = FactorBase(Set(lf), check = false)
+      FB.doit = function(a::nf_elem, v::Int)
+          g = Fpx(Zx(Qx(a)))
+          g = gcd(g, fp)
+          fl = is_smooth(FB.pt, g)[1]
+          if fl
+            d = factor(FB.pt, g)
+            r = Array{Tuple{Int, Int}, 1}()
+            vv=v
+            for x in keys(d)
+              id = findfirst(lf, x)
+              vv -= FB.lp[id][2].splitting_type[2]
+              push!(r, (FB.lp[id][1], 1))
+            end
+            if vv == 0
+              return r, vv
+            end
+            r = Array{Tuple{Int, Int}, 1}()
+            for x in keys(d)
+              id = findfirst(lf, x)
+              vl  = valuation(a, lp[id][2])
+              v -= FB.lp[id][2].splitting_type[2]*vl
+              push!(r, (FB.lp[id][1], vl))
+            end
+            return r, v
+          else
+            return Array(Tuple{Int, Int}, 1)()
+          end
+        end  
+    end
+    return FB
+  end
+end  
+
 function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)))
   d = factor(FB.fb_int, num(n)*den(a))
@@ -254,7 +334,11 @@ function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
   lg::Int = 0
   for p in keys(d)
     vp = valuation(n, p)[1]
-    for (j, P) in FB.fb[p]
+    for (j, P) in FB.fb[p]  ## TODO: use a poly factor base for
+                            ## non-index divisors to speed this up
+                            ## totally split primes in large degree 
+                            ## fields are otherwise a pain
+                            ## ie. the structure above!
       v = valuation(a, P)
       if v != 0
         vp -= P.splitting_type[2]*v
@@ -791,11 +875,11 @@ we do need redundant relations for the units.
     last_H = 0
   end
   @v_do :ClassGroup 1 println("rank is currently ", rows(h), " need to be ",
-                  cols(h), clg.M)
+                  cols(h), " mat is ", clg.M)
   clg.H = h
   clg.last_H = length(clg.R)
   if length(clg.R)/rows(h) > 4
-    print_with_color(:yellow, "no enough useful relations\n")
+    print_with_color(:yellow, "not enough useful relations\n")
   end
     
   piv = Array(Int, 0)
