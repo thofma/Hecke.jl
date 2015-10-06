@@ -201,7 +201,7 @@ function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
   d = den(a)
   b = d*a 
   M = MatrixSpace(ZZ, 1, degree(O))()
-  element_to_mat_row!(M,1,b)
+  elem_to_mat_row!(M, 1, fmpz(1), b)
   t = FakeFmpqMat(M,d)
   x = t*basis_mat_inv(O)
   v = Array(fmpz, degree(O))
