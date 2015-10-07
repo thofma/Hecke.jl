@@ -21,7 +21,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
-             base_ring, compose, root, arf_struct, acb_struct, fmpq
+             base_ring, compose, root, arf_struct, acb_struct, fmpq, Ring
 
 export AnticNumberField, hash, update
 
