@@ -31,7 +31,7 @@ import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
              floor, max, BigFloat, promote_rule
 
-# To make all exported Nemo functions visible to someone using "using hecke"
+# To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
 
 for i in names(Nemo)
@@ -278,8 +278,8 @@ function update()
 
   olddir = pwd()
 
-  println("Updating hecke ... ")
-  cd(Pkg.dir("hecke"))
+  println("Updating Hecke ... ")
+  cd(Pkg.dir("Hecke"))
   run(`git pull`)
   
   pkgdir = Pkg.dir("Nemo")
