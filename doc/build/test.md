@@ -8,6 +8,6 @@
 
 <a name="Hecke.MaximalOrder"></a>
 
-MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
+```julia   MaximalOrder(K::AnticNumberField) -> NfMaximalOrder   ```
 
 Compute the maximal order of K.
