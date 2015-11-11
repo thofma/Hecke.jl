@@ -440,3 +440,5 @@ dot(x::nf_elem, y::fmpz) = x*y
 dot(x::NfOrderElem, y::Int64) = y*x
 
 Base.call(K::AnticNumberField, x::NfOrderElem) = elem_in_nf(x)
+
+Base.promote_rule{T <: Integer}(::Type{NfOrderElem}, ::Type{T}) = NfOrderElem

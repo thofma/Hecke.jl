@@ -198,11 +198,9 @@ end
 # In this case, the second return value is coefficient vector of the basis
 
 function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
-  d = den(a)
-  b = d*a 
   M = MatrixSpace(ZZ, 1, degree(O))()
   t = FakeFmpqMat(M)
-  elem_to_mat_row!(t.num, 1, t.den, b)
+  elem_to_mat_row!(t.num, 1, t.den, a)
   x = t*basis_mat_inv(O)
   v = Array(fmpz, degree(O))
   for i in 1:degree(O)
@@ -347,6 +345,12 @@ function ^(x::NfOrderElem, y::Int)
   return z
 end
 
+function ^(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf^y
+  return z
+end
+
 ################################################################################
 #
 #  Modular reduction
@@ -378,7 +382,7 @@ function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
     return b
   end
   if mod(i,2) == 0 
-    j = div(i,2)
+    j = div(i, 2)
     b = powermod(a, j, p)
     b = b^2
     b = mod(b,p)
@@ -639,6 +643,10 @@ end
 
 function pradical(O::GenNfOrd, p::fmpz)
   j = clog(fmpz(degree(O)),p)
+
+  @assert p^(j-1) < degree(O)
+  @assert degree(O) <= p^j
+
   R = ResidueRing(ZZ,p)
   A = MatrixSpace(R, degree(O), degree(O))()
   for i in 1:degree(O)
@@ -668,3 +676,10 @@ function pradical(O::GenNfOrd, p::Integer)
   return pradical(O, fmpz(p))
 end
 
+################################################################################
+#
+#  Promotion
+#
+################################################################################
+
+Base.promote_rule{T <: Integer}(::Type{NfOrderElem}, ::Type{T}) = NfOrderElem

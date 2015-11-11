@@ -783,7 +783,7 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
   return I
 end
 
-global _elt = Uint(0)
+global _elt = UInt(0)
 
 function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
   global _elt, _next
@@ -1541,11 +1541,11 @@ end
 function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   O = U.order
 
-  T = torsion_units(O)
+  T, z = torsion_units(O)
 
   U.torsion_units = T
-
   U.torsion_units_order = length(T)
+  U.torsion_units_gen = z
 
   w = U.torsion_units_order
 
@@ -1557,7 +1557,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   Ar = ArbField(pre)
 
-  loghRtrue = Ar(residue) + log(Ar(w)*sqrt(abs(Ar(discriminant(O))))/(Ar(2)^(r1+r2) * pi_arb(pre)^r2))
+  loghRtrue = Ar(residue) + log(Ar(w)*sqrt(abs(Ar(discriminant(O))))//(Ar(2)^(r1+r2) * const_pi(Ar)^r2))
 
   # I should assert that radius(loghRtrue) < log(2)
 
@@ -1572,10 +1572,13 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
       return fmpz(1)
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
-      t = ArfField(pre)()
+      t = arf_struct(0, 0, 0, 0)
+      ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &t)
+
       s = fmpz()
-      ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf}, Ptr{arb}, Clong), &t, &e, pre)
-      ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf}, Cint), &s, &t, 1) # 1 is round up
+      ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}, Clong), &t, &e, pre)
+      ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &s, &t, 1) # 1 is round up
+      ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &t)
       return s
     end
 
@@ -1595,5 +1598,4 @@ function _class_unit_group(O::NfMaximalOrder)
 
   return c, U, _validate_class_unit_group(c, U)
 end
-
 

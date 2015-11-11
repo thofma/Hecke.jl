@@ -234,7 +234,7 @@ end
 #
 ################################################################################
 
-function PolynomialRing(R::AcbField, s::String)
+function PolynomialRing(R::AcbField, s::AbstractString)
   S = symbol(s)
   parent_obj = AcbPolyRing(R, S)
   return parent_obj, parent_obj(fmpz_poly([fmpz(0), fmpz(1)]))

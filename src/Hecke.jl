@@ -1,6 +1,6 @@
 VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
-module hecke
+module Hecke
 
 using Nemo
 
@@ -21,14 +21,15 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
-             base_ring, compose, root, arf_struct, acb_struct, fmpq, Ring
+             base_ring, compose, root, arf_struct, acb_struct, fmpq, Ring,
+             prec
 
 export AnticNumberField, hash, update
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat
+             floor, max, BigFloat, promote_rule
 
 # To make all exported Nemo functions visible to someone using "using hecke"
 # we have to export everything again
@@ -46,6 +47,8 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #  Verbose printing
 #
 ################################################################################
+
+global hecke = Hecke
 
 global VERBOSE_SCOPE = Symbol[]
 
@@ -184,11 +187,11 @@ end
 
 function conjugate_data_arb(K::AnticNumberField)
   try
-    c = _get_nf_conjugate_data_arb(K)
+    c = _get_nf_conjugate_data_arb(K)::acb_root_ctx
     return c
   catch
     c = acb_root_ctx(K.pol)
-    _set_nf_conjugate_data_arb(K, c)
+    _set_nf_conjugate_data_arb(K, c)::acb_root_ctx
     return c
   end
 end

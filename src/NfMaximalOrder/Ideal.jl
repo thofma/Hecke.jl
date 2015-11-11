@@ -10,12 +10,11 @@ export IdealSet, minimum, is_prime_known, MaximalOrderIdeal, basis_mat,
        valuation, defines_2_normal, *, /, ==, MaximalOrderIdealSet, norm, Ideal,
        prime_decomposition_type, prime_decomposition
 
-
-###########################################################################################
+#################################################################################
 #
 #  User friendly constructor
 #
-###########################################################################################
+#################################################################################
 
 function IdealSet(O::NfMaximalOrder)
    return NfMaximalOrderIdealSet(O)
@@ -1000,13 +999,13 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   Zf = Zx(f)
   fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
   fac = factor(fmodp)
-  if degree_limit >0
+  if degree_limit > 0
     fac = sub(fac, find(x -> degree(x[1]) <= degree_limit, fac))
   end
   result = Array(Tuple{typeof(I()),Int}, length(fac))
   t = fmpq_poly()
   b = K()
-  fill!(result,(I(),0))
+  #fill!(result,(I(),0))
   for k in 1:length(fac)
     t = parent(f)(lift(Zx,fac[k][1]))
     b = K(t)
@@ -1031,6 +1030,13 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
 
     ideal.gens_normal = p
     ideal.gens_weakly_normal = true
+
+    # Find an anti-uniformizer in case P is unramified
+
+    if ideal.splitting_type[1] == 1
+      t = parent(f)(lift(Zx, divexact(fmodp, fac[k][1])))
+      ideal.anti_uniformizer = O(K(t), false)
+    end
 
     if length(fac) == 1 && ideal.splitting_type[1] == 1
       # Prime number is inert, in particular principal
@@ -1085,6 +1091,7 @@ function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Inte
       D[i,j] = A[j]
     end
   end
+
   r = rank(D)
   k = length(BB) - r
   # k is the dimension of the kernel of x -> x^p - x
@@ -1094,9 +1101,15 @@ function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Inte
     return [ Ip ]
   end
   
+  # actually I should only take elements from the kernel of D
   while true
     r = rand(0:p-1, length(BB))
     x = dot(BB,r)
+    zz = r[1]*(mod(BB[1]^p - BB[1], Ip))
+    for i in 2:length(BB)
+      zz = zz + r[i]*(mod(BB[i]^p - BB[i], Ip))
+    end
+
     # now compute the minimal polynomial
     for i in 0:length(BB)
       ar = elem_in_basis(mod(x^i,Ip))
@@ -1108,6 +1121,13 @@ function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Inte
     length(K) == 0 ? continue : nothing
     KK = K[1]
     f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](KK)
+
+    zz = zero(parent(x))
+    for i in 0:degree(f)
+      zz = zz + coeff(f, i).data*x^i
+    end
+
+
     degree(f) < 2 ? continue : nothing
     @hassert :NfMaximalOrder 0 issquarefree(f)
     # By theory, all factors should have degree 1 # exploit this if p is small!
@@ -1160,6 +1180,19 @@ function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
         C[i,j] = 1
         k = j + 1
         i = i + 1
+        break
+      end
+    end
+  end
+
+  if B[1, 1] != 0
+    C = rref(vcat(submat(B, 1:1, 1:A.c), C))
+  end
+
+  for i in 1:length(BB)
+    for j in 1:degree(O)
+      if C[i, j] != 0
+        BB[i] = basis(O)[j]
         break
       end
     end
@@ -1261,3 +1294,4 @@ function factor_dict(A::NfMaximalOrderIdeal)
   return lF
 end
 
+dot(x::BigInt, y::NfOrderElem) = fmpz(x)*y

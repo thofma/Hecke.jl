@@ -113,8 +113,8 @@ end
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
 @doc """
-  exponential_integral(x::FloatingPoint) -> FloatingPoint
-  ei(x::FloatingPoint) -> FloatingPoint
+  exponential_integral(x::AbstractFloat) -> AbstractFloat
+  ei(x::AbstractFloat) -> AbstractFloat
 
   Compute the exponential integral function
 """ ->
@@ -124,21 +124,21 @@ function exponential_integral(x::BigFloat)
   return z
 end
 
-function exponential_integral{T<:FloatingPoint}(x::T)
+function exponential_integral{T<:AbstractFloat}(x::T)
   return T(exponential_integral(BigFloat(x)))
 end
 
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
 @doc """
-  logarithmic_integral(x::FloatingPoint) -> FloatingPoint
-  li(x::FloatingPoint) -> FloatingPoint
+  logarithmic_integral(x::AbstractFloat) -> AbstractFloat
+  li(x::AbstractFloat) -> AbstractFloat
 
   Compute the logarithmic integral function. Used as an approximation
   for the number of primes up to x
 """ ->
 
-function logarithmic_integral(x::FloatingPoint)
+function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
 end
 

@@ -319,7 +319,7 @@ function pseudo_cholesky(G::arb_mat)
   for i = 1:n-1 
     for j = i+1:n
       C[j,i] = C[i,j]
-      C[i,j] = C[i,j]/C[i,i]
+      C[i,j] = C[i,j]//C[i,i]
       if !isfinite(C[i,j])
           error("Precision not high enough")
       end
@@ -367,7 +367,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   #println("Gii: ", G[i,i])
   #recprint(n-i)
   #println("c: ", ArbField(p)(c))
-  C = ArbField(p)(c)/G[i,i]
+  C = ArbField(p)(c)//G[i,i]
   #recprint(n-i)
   #println("C: ", C)
   C = sqrt(C)
@@ -377,21 +377,39 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   end
   lb = -CC - C
   ub = -CC + C
-  tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &lb)
-  tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &lb)
-  u = ArfField(p)()
-  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf}, Ptr{mag}), &u, tr)
-  ccall((:arf_sub, :libarb), Void, (Ptr{arf}, Ptr{arf}, Ptr{arf}, Clong, Cint), &u, tm, &u, p,4) # 4 is round to -infty
-  lbfmpz = fmpz()
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf}, Cint), &lbfmpz, &u, 4)
 
-  tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &ub)
-  tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &ub)
-  u = ArfField(p)()
-  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf}, Ptr{mag}), &u, tr)
-  ccall((:arf_sub, :libarb), Void, (Ptr{arf}, Ptr{arf}, Ptr{arf}, Clong, Cint), &u, tm, &u, p, 3) # 3 is round to +infty
+  #tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &lb)
+  #tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &lb)
+
+  tr_ptr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &lb)
+  tr = Nemo.mag_struct(0, 0)
+  ccall((:mag_init, :libarb), Void, (Ptr{Nemo.mag_struct}, ), &tr)
+  ccall((:mag_set, :libarb), Void, (Ptr{Nemo.mag_struct}, Ptr{Nemo.mag_struct}), &tr, tr_ptr)
+
+  tm_ptr = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &lb)
+  tm = arf_struct(0, 0, 0, 0)
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+  ccall((:arf_set, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}), &tm, tm_ptr)
+
+  u = arf_struct(0, 0, 0, 0)
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &u)
+
+  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf_struct}, Ptr{Nemo.mag_struct}), &u, tr_ptr)
+  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Clong, Cint), &u, tm_ptr, &u, p, 4) # 4 is round to -infty
+  lbfmpz = fmpz()
+  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &lbfmpz, &u, 4)
+
+  #tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &ub)
+  #tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &ub)
+  tr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &ub)
+  tm = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &ub)
+
+  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf_struct}, Ptr{Nemo.mag_struct}), &u, tr)
+  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Clong, Cint), &u, tm, &u, p, 3) # 3 is round to +infty
   ubfmpz = fmpz()
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf}, Cint), &ubfmpz, &u, 3)
+  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &ubfmpz, &u, 3)
+
+  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &u)
 
   #error("precision $p not high enough")
 

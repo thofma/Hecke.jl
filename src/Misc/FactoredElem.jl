@@ -124,6 +124,16 @@ function *{B}(x::FactoredElem{B}, y::FactoredElem{B})
   return z
 end
 
+function *{B}(x::FactoredElem{B}, y::B)
+  z = deepcopy(x)
+  if haskey(x.fac, y)
+    z.fac[y] = z.fac[y] + 1
+  else
+    z.fac[y] = 1
+  end
+  return z
+end
+
 function div{B}(x::FactoredElem{B}, y::FactoredElem{B})
   z = deepcopy(x)
   for a in base(y)
@@ -189,5 +199,17 @@ function _deepcopy{K, V}(x::Dict{K, V})
   for a in keys(x)
     z[a] = deepcopy(x[a])
   end
+  return z
+end
+
+################################################################################
+#
+#  Parent object overloading
+#
+################################################################################
+
+function call{T}(F::FactoredElemMon{T}, a::T)
+  z = F()
+  z.fac[a] = fmpz(1)
   return z
 end

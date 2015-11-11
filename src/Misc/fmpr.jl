@@ -9,6 +9,14 @@ type fmpr
     return z
   end
 
+  function fmpr(x::Ptr{arf_struct})
+    z = new()
+    ccall((:fmpr_init, :libarb), Void, (Ptr{fmpr}, ), &z)
+    ccall((:arf_get_fmpr, :libarb), Void, (Ptr{fmpr}, Ptr{arf_struct}), &z, x)
+    finalizer(z, _fmpr_clear_fn)
+    return z
+  end
+
   function fmpr(x::arf_struct)
     z = new()
     ccall((:fmpr_init, :libarb), Void, (Ptr{fmpr}, ), &z)
