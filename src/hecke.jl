@@ -21,9 +21,10 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
-             base_ring, compose, root, arf_struct, acb_struct, fmpq, Ring
+             base_ring, compose, root, arf_struct, acb_struct, fmpq, valuation,
+             Ring
 
-export AnticNumberField, hash, update
+export AnticNumberField, hash, update, nf
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
@@ -258,6 +259,7 @@ include("NfMaximalOrder.jl")
 #include("Misc/Map.jl")
 include("basis.jl")
 include("helper.jl")
+include("misc.jl")
 
 ################################################################################
 #

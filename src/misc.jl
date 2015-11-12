@@ -50,6 +50,7 @@ function rels_stat(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no
         Nemo.sub!(a, a, b[p])
       end
     end
+    if iszero(a) continue; end;
     if fixed!=0 && fixed(a) == a
       stat[-1] += 1
     end
@@ -63,10 +64,29 @@ function rels_stat(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no
     if smooth != 0 && is_smooth(smooth, num(n))[1]
       stat[-2] += 1
       push!(all_g, a)
+      a =   a = b[1].parent()
     end  
   end
   return stat, all_g
 end
+
+function find_rels(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+
+  for i=10:50
+    st, re = rels_stat(b, no_p = no_p, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
+    toNemo("/home/fieker/Rels128/rels128.$i", re, name="R$i");
+  end
+end
+
+function find_rels2(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+
+  for i=100:150
+    st, re = rels_stat(b, no_p = no_p, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
+    toNemo("/home/fieker/Rels128/rels128.$i", re, name="R$i");
+  end
+end
+
+
 
 
 function int_fb_max_real(f::Int, B::Int)

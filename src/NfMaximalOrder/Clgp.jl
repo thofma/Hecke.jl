@@ -91,7 +91,10 @@ set_assert_level(:LatEnum, 1)
 # works (at least) for fmpz and nmod_poly, so it can be used for the
 # smoothness test
 
-function compose{T}(a::node{T}, b::node{T})
+function compose{T}(a::node{T}, b::node{T}, check = false)
+  if check && !isone(gcd(a.content, b.content))
+    error("input not coprime")
+  end
   return node{T}(a.content * b.content, a, b)
 end
 
@@ -99,10 +102,7 @@ end
 function FactorBase{T}(x::Set{T}; check::Bool = true)
   ax = [ node{T}(p) for p in x]
   while length(ax) > 1
-    if check && !isone(gcd(ax[2*i-1], ax[2*i]))
-      error("input not coprime")
-    end  
-    bx = [ compose(ax[2*i-1], ax[2*i]) for i=1:div(length(ax), 2)]
+    bx = [ compose(ax[2*i-1], ax[2*i], check) for i=1:div(length(ax), 2)]
     if isodd(length(ax))
       push!(bx, ax[end])
     end
@@ -236,12 +236,19 @@ function NfFactorBase(O::NfMaximalOrder, B::Int;
   FB.rw = Array(Int, 20)
   FB.mx = 20
 
+  fb = Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}()
+
   for i = 1:length(lp)
-    if !haskey(FB.fb, lp[i].gen_one)
-      FB.fb[lp[i].gen_one] = [(i, lp[i])]
+    if !haskey(fb, lp[i].gen_one)
+      fb[lp[i].gen_one] = [(i, lp[i])]
     else
-      push!(FB.fb[lp[i].gen_one], (i, lp[i]))
+      push!(fb[lp[i].gen_one], (i, lp[i]))
     end
+  end
+
+  FB.fb = Dict{fmpz, FactorBaseSingleP}()
+  for p in keys(fb)
+    FB.fb[p] = FactorBaseSingleP(p, fb[p])
   end
 
   FB.fb_int = FactorBase(Set(keys(FB.fb)); check = false)
@@ -262,117 +269,30 @@ function factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
   return _factor(M, i, FB, a, error, n)
 end
 
-
-type FactorBaseSingleP
-  P::fmpz
-  pt::FactorBase{nmod_poly}
-  lp::Array{Tuple{Int,NfMaximalOrderIdeal}, 1}
-  doit::Function
-  
-  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfMaximalOrderIdeal}, 1})
-    FB = new()
-    FB.lp = lp
-    FB.P = p
-
-    if length(lp) < 3 ##  || is_difficult(p) # ie. index divisor or so
-      FB.doit = function(a::nf_elem, v::Int)
-        r = Array{Tuple{Int, Int},1}()
-        for x=1:length(lp)
-          vl = valuation(a, lp[x][2])
-          v -= vl*lp[x][2].splitting_type[2]
-          push!(r, (lp[x][1], vl))
-        end  
-        return r, v
-      end
-    else
-      Zx = PolynomialRing(ZZ, "x")[1]
-      Fpx = PolynomialRing(ResidueRing(ZZ, p), "x")[1]
-      O = order(lp[1][2])
-      K = O.nf
-      Qx = parent(K.pol)
-      fp = Fpx(Zx(K.pol))
-      lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]
-
-      FB.pt = FactorBase(Set(lf), check = false)
-      FB.doit = function(a::nf_elem, v::Int)
-          g = Fpx(Zx(Qx(a)))
-          g = gcd(g, fp)
-          fl = is_smooth(FB.pt, g)[1]
-          if fl
-            d = factor(FB.pt, g)
-            r = Array{Tuple{Int, Int}, 1}()
-            vv=v
-            for x in keys(d)
-              id = findfirst(lf, x)
-              vv -= FB.lp[id][2].splitting_type[2]
-              push!(r, (FB.lp[id][1], 1))
-            end
-            if vv == 0
-              return r, vv
-            end
-            r = Array{Tuple{Int, Int}, 1}()
-            for x in keys(d)
-              id = findfirst(lf, x)
-              vl  = valuation(a, lp[id][2])
-              v -= FB.lp[id][2].splitting_type[2]*vl
-              push!(r, (FB.lp[id][1], vl))
-            end
-            return r, v
-          else
-            return Array(Tuple{Int, Int}, 1)()
-          end
-        end  
-    end
-    return FB
-  end
-end  
-
 function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)))
   d = factor(FB.fb_int, num(n)*den(a))
   rw = FB.rw
-  lg::Int = 0
+  r = Array{Tuple{Int, Int}, 1}()
   for p in keys(d)
     vp = valuation(n, p)[1]
-    for (j, P) in FB.fb[p]  ## TODO: use a poly factor base for
-                            ## non-index divisors to speed this up
-                            ## totally split primes in large degree 
-                            ## fields are otherwise a pain
-                            ## ie. the structure above!
-      v = valuation(a, P)
-      if v != 0
-        vp -= P.splitting_type[2]*v
-        lg += 1
-        if lg <= FB.mx
-          rw[lg] = j
-          rw[lg + 1] = v
-        else
-          push!(rw, j)
-          push!(rw, v)
-        end
-        lg += 1
-      end
-    end
+    s, vp = FB.fb[p].doit(a, vp)
     if vp != 0
       if error
         @hassert :ClassGroup 1 vp == 0
       end
       return false
     end
+    r = vcat(r, s)
   end
+  lg::Int = length(r)
   if lg > 0
     if length(rw) > FB.mx
       FB.mx = length(rw)
     end
-    @hassert :ClassGroup lg > 1
-    @hassert :ClassGroup iseven(lg)
-    nrw = Array{Tuple{Int, Int}}(div(lg, 2))
-    for i = 1:div(lg, 2)
-      nrw[i] = (rw[2*(i-1)+1], rw[2*i])
-    end
-    sort!(nrw, lt=function(a,b) return a[1] < b[1]; end)
-    @hassert :ClassGroup 1 length(nrw) > 0
-    push!(M, SmatRow{T}(nrw))
+    sort!(r, lt=function(a,b) return a[1] < b[1]; end)
+    @hassert :ClassGroup 1 length(r) > 0
+    push!(M, SmatRow{T}(r))
     return true
   else 
     # factor failed or I have a unit.
@@ -413,7 +333,7 @@ function class_group_init(O::NfMaximalOrder, B::Int;
   clg.rel_cnt = 0
   clg.last = 0
 
-  @vprint :ClassGroup 2 "Computing factor base ... "
+  @vprint :ClassGroup 2 "Computing factor base ...\n"
   clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done\n"
   clg.M = T()

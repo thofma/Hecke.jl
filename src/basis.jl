@@ -23,6 +23,33 @@ function lll_basis_profile(rt_c::hecke.roots_ctx, A::NfMaximalOrderIdeal; prec::
   return lp
 end
 
+function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
+                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
+  l, t = lll(c, A, v, prec = prec)
+  w = window(t, 1,1, 1, cols(t))
+  c = w*b
+  q = elem_from_mat_row(K, c, 1, b_den)
+  return q
+end
+
+
+function lll_basis(rt_c::hecke.roots_ctx, A::NfMaximalOrderIdeal; 
+                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
+                      prec::Int = 100)
+  K = nf(order(A))
+  temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
+  b = temp.num
+  b_den = temp.den
+
+  l, t = lll(rt_c, A, v, prec = prec)
+
+  c = t*b
+  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
+
+  return q
+end
+
+
 function random_ideal_with_norm_up_to(a::hecke.NfFactorBase, B::Integer)
   B = fmpz(B)
   O = order(a.ideals[1])
