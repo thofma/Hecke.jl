@@ -288,8 +288,13 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
 
   error_prime = @with_round_down(error - 0.5^der, Float64)
 
-  error_prime_arf = arf(error_prime)
-  error_arf = arf(error)
+  error_prime_arf = arf_struct(0, 0, 0, 0)
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &error_prime_arf)
+  ccall((:arf_set_d, :libarb), Void, (Ptr{arf_struct}, Float64), &error_prime_arf, error_prime)
+
+  error_arf = arf_struct(0, 0, 0, 0)
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &error_arf)
+  ccall((:arf_set_d, :libarb), Void, (Ptr{arf_struct}, Float64), &error_arf, error)
 
   #println("error prime: $error_prime")
 
@@ -307,10 +312,10 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
 
   valaddederror = deepcopy(val)
   ccall((:arb_add_error_arf, :libarb), Void,
-              (Ptr{arb}, Ptr{arf}), &valaddederror, &error_prime_arf)
+              (Ptr{arb}, Ptr{arf_struct}), &valaddederror, &error_prime_arf)
 
-  while (!lttwopower(radius(val), der)) ||
-                ((arf(radius(valaddederror)) > error_arf))
+  while (!radiuslttwopower(val, der)) ||
+                ((radius(valaddederror)) > error)
 
     #println("Precision is now $prec")
 
@@ -323,8 +328,21 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
     val = _term_bf(O, x0, ArbField(prec))
     valaddederror = deepcopy(val)
     ccall((:arb_add_error_arf, :libarb), Void,
-                (Ptr{arb}, Ptr{arf}), &valaddederror, &error_prime_arf)
+                (Ptr{arb}, Ptr{arf_struct}), &valaddederror, &error_prime_arf)
   end
+
+  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &error_prime_arf)
+  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &error_arf)
+
   return valaddederror
 end
 
+function radiuslttwopower(x::arb, n::Int)
+  z = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &x)
+  r = ccall((:mag_cmp_2exp_si, :libarb), Cint, (Ptr{Nemo.mag_struct}, Int), z, n)
+  return r <= 0
+end
+
+function radiuslttwopower(x::acb, n::Int)
+  return radiuslttwopower(real(x), n) && radiuslttwopower(imag(x), n)
+end

@@ -11,7 +11,7 @@ function is_squarefree(f::PolyElem)
   return is_constant(gcd(f, derivative(f)))
 end
 
-function conjugates_init(f::Union(fmpz_poly, fmpq_poly))
+function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
   if typeof(f) == fmpq_poly
     f = f*den(f)
     g = Array(fmpz, length(f))

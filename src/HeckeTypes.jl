@@ -64,7 +64,7 @@ type enum_ctx{Tx, TC, TU}
   G::fmpz_mat
   n::Int
   limit :: Int # stop recursion at level limit, defaults to n
-  d::Union(Integer, fmpz) #we actually want G/d
+  d::Union{Integer, fmpz} #we actually want G/d
   C::Array{TC, 2} # the pseudo-cholesky form - we don't have fmpq_mat
   last_non_zero::Int
   x::fmpz_mat # 1 x n
@@ -606,6 +606,11 @@ type NfMaximalOrderIdeal <: GenNfOrdIdl
   is_principal::Int        # as above
   princ_gen::NfOrderElem
   splitting_type::Tuple{Int, Int}
+                           #
+  anti_uniformizer::NfOrderElem
+                           # If A is unramified, prime with minimum p,
+                           # this element is in pA^-1
+                           # Used for the residue map
 
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime
@@ -726,6 +731,7 @@ type UnitGrpCtx{T <: Union{nf_elem, FactoredElem{nf_elem}}}
   regulator_precision::Int
   torsion_units::Array{NfOrderElem, 1}
   torsion_units_order::Int
+  torsion_units_gen::NfOrderElem
 
   function UnitGrpCtx(O::GenNfOrd)
     z = new()
