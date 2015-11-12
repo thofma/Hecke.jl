@@ -22,7 +22,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
              base_ring, compose, root, arf_struct, acb_struct, fmpq, Ring,
-             prec
+             prec, conj
 
 export AnticNumberField, hash, update
 
@@ -40,7 +40,7 @@ end
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
-       update
+       update, @timeit
 
 ################################################################################
 #
@@ -241,6 +241,51 @@ type LowPrecisionLLL <: Exception end
 Base.showerror(io::IO, e::LowPrecisionLLL) = print(io, e.var, "trafo matrix has too large entries relative to precision in LLL")
 
 function checkbounds(a::Int, b::Int) nothing; end;
+
+################################################################################
+#
+#  Functions for timings
+#
+################################################################################
+
+macro timeit(args...)
+  loops = 50
+  if length(args) == 2
+    loops = args[2]
+  end
+
+  quote
+    gc_enable(false)
+    # warm-up
+    local val = $(esc(args[1]))
+
+    local min = Inf
+    local max = 0
+    local sum = 0.0
+    local t0, diff
+    local i
+    for i in 1:$(loops)
+      t0 = time_ns()
+      local val = $(esc(args[1]))
+      diff = time_ns() - t0
+      if diff > max
+        max = diff
+      end
+      if diff < min
+        min = diff
+      end
+      sum += diff
+    end
+    sum = sum/$(loops)
+    print("max: $(max/1e9)\nmin: $(min/1e9)\nsum: $(sum/1e9)\n")
+    gc_enable(true)
+    nothing
+  end
+end
+
+function timeit(expr::Expr)
+  @timeit expr
+end
 
 ################################################################################
 #
