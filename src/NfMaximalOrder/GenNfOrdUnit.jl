@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, pow!, unit_group
+export is_unit, is_torsion_unit, is_independent, pow!, unit_group, conjugates_arb
 
 order(u::UnitGrpCtx) = u.order
 
@@ -41,13 +41,36 @@ function _unit_group_init(O::NfMaximalOrder)
   return u
 end
 
+"""
+    unit_rank(O::GenNfOrd) -> Int
+
+Returns the unit_rank of `O`, that is, the rank of the free part of the unit
+group of `O`.
+"""
 function unit_rank(O::GenNfOrd)
   r1, r2 = signature(nf(O))
   return r1 + r2 - 1
 end
 
+################################################################################
+#
+#  Unit test
+#
+################################################################################
+
+"""
+    is_unit(x::NfOrderElem) -> Bool
+
+Returns wether `x` is invertible or not.
+"""
 function is_unit(x::NfOrderElem)
   return abs(norm(x)) == 1 
+end
+
+_is_unit(x::NfOrderElem) = is_unit(x)
+
+function _is_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T)
+  return abs(norm(x)) == 1
 end
 
 ################################################################################
@@ -56,79 +79,50 @@ end
 #
 ################################################################################
 
-#function is_torsion_unit(x::nf_elem)
-#  abs(norm(x)) != 1 && return false
-#  d = degree(parent(x))
-#  c = conjugate_data_arb(parent(x))
-#
-#  while true
-#    l = 0
-#    cx = conjugates_arb(x)
-#    A = parent(cx[1])
-#    for i in 1:degree(parent(x))
-#      k = cx[i]
-#      if ispositive(k - A(1))
-#        return false
-#      elseif isnonnegative( A(1) + A(1)//A(6) * log(A(d))/A(d^2) - k)
-#        l = l + 1
-#      end
-#    end
-#    if l == d
-#      return true
-#    end
-#
-#    refine(c)
-#  end
-#end
+"""
+    is_torsion_unit(x::T, checkisunit::Bool = false) -> Bool
+    
+    T = Union{nf_elem, FacElem{nf_elem}}
 
-function is_torsion_unit(x::Union{nf_elem, FactoredElem{nf_elem}},
-                         checkisunit::Bool = false)
+Returns whether there exists `n` such that `x^n == 1`, that is, whether `x`
+is a torsion unit.
+
+If `checkisunit` is set, it is first checked whether `x` is a unit of the
+maximal order of the number field `x` is lying in.
+"""
+function is_torsion_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T,
+                                                    checkisunit::Bool = false)
   if checkisunit
-    is_unit(x) ? nothing : return false
+    _is_unit(x) ? nothing : return false
   end
 
   K = base_ring(x)
   d = degree(K)
   c = conjugate_data_arb(K)
+  r, s = signature(K)
 
   while true
     l = 0
-    cx = conjugates_arb(x)
-    A = parent(cx[1])
-    for i in 1:degree(K)
-      k = cx[i]
+    cx, cy = conjugates_arb(x)
+    A = ArbField(c.prec)
+    for i in 1:r
+      k = abs(cx[i])
       if k > A(1)
         return false
       elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
         l = l + 1
       end
     end
-    if l == d
-      return true
-    end
-    refine(c)
-  end
-end
-
-function is_torsion_unit(x::NfOrderElem)
-  !is_unit(x) && return false
-  # test for the signature etc
-  c = conjugate_data(parent(x))
-  _find_real(c)
-  d = degree(parent(x))
-  while true
-    l = 0
-    #println("precision is $(c.prec)")
-    for i in 1:degree(parent(x))
-      k = abs(_evaluate(parent(nf(parent(x)).pol)(x.elem_in_nf), c.roots[i]))
-      A = parent(k)
-      if ispositive(k - A(1))
+    for i in 1:s
+      k = abs(cy[i])
+      if k > A(1)
         return false
-      elseif isnonnegative( A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
         l = l + 1
       end
     end
-    if l == d
+
+    if l == r + s
       return true
     end
     refine(c)
@@ -136,12 +130,65 @@ function is_torsion_unit(x::NfOrderElem)
 end
 
 """
-conjugates_arb(x::nf_elem) -> Array{arb, 1}, Array{acb, 1}
+    is_torsion_unit(x::T, checkisunit::Bool = false) -> Bool
+    
+    T = Union{nf_elem, FacElem{nf_elem}}
 
-Compute the the conjugates of x. The complex conjugates x_1,...,x_2s are
-ordered such that x_{2i - 1} = conj(x_{2i}).
+Returns whether there exists `n` such that `x^n == 1`, that is, whether `x`
+is a torsion unit.
+
+If `checkisunit` is set, it is first checked whether `x` is a unit of the
+maximal order of the number field `x` is lying in.
 """
-function conjugates_arb(x::nf_elem, absolute_tolerance::Int = 1)
+function is_torsion_unit(x::NfOrderElem, checkisunit::Bool = false)
+  return is_torsion_unt(x.elem_in_nf, checkisunit)
+end
+
+"""
+    torsion_unit_order(x::nf_elem, n::Int)
+
+Given a torsion unit `x` together with a multiple `n` of its order, compute the
+order of `x`, that is, the smallest `k` such that x^`k` = 1.
+"""
+function torsion_unit_order(x::nf_elem, n::Int)
+  # This is lazy
+  # Someone please change this
+  y = deepcopy(x)
+  for i in 1:n
+    if y == 1
+      return i
+    end
+    mul!(y, y, x)
+  end
+  error("Something odd in the torsion unit order computation")
+end
+
+"""
+    torsion_unit_order(x::nf_elem, n::Int)
+
+Given a torsion unit `x` together with a multiple `n` of its order, compute the
+order of `x`, that is, the smallest `k` such that x^`k` = 1.
+"""
+function torsion_unit_order(x::NfOrderElem, n::Int)
+  return torsion_unit_order(x.elem_in_nf)
+end
+
+################################################################################
+#
+#  Conjugates and real embeddings
+#
+################################################################################
+
+"""
+conjugates_arb(x::nf_elem, abs_tol::Int = 1) -> Array{arb, 1}, Array{acb, 1}
+
+Compute the the conjugates of `x`. The complex conjugates x_1,...,x_2s are
+ordered such that x_{i + s} = conj(x_{i}).
+
+Every entry `y` of the arrays returned satisfies `radius(y) < 2^abs_tol` or
+`radius(real(y)) < 2^abs_tol`, `radius(imag(y)) < 2^abs_tol` respectively.
+"""
+function conjugates_arb(x::nf_elem, abs_tol::Int = 1)
   K = parent(x)
   d = degree(K)
   c = conjugate_data_arb(K)
@@ -151,23 +198,35 @@ function conjugates_arb(x::nf_elem, absolute_tolerance::Int = 1)
 
   for i in 1:r
     reals[i] = evaluate(parent(K.pol)(x), real(c.real_roots[i]))
-    if !isfinite(reals[i]) || !radiuslttwopower(reals[i], absolute_tolerance)
+    if !isfinite(reals[i]) || !radiuslttwopower(reals[i], abs_tol)
       refine(c)
       return conjugates_arb(x)
     end
   end
 
   for i in 1:s
-    complex[2*i - 1] = evaluate(parent(K.pol)(x), c.complex_roots[i])
-    if !isfinite(complex[2*i - 1]) ||
-                !radiuslttwopower(complex[2*i - 1], absolute_tolerance)
+    complex[i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
+    if !isfinite(complex[i]) || !radiuslttwopower(complex[i], abs_tol)
       refine(c)
       return conjugates_arb(x)
     end
-    complex[2*i] = Nemo.conj(complex[2*i - 1])
+    complex[i + s] = Nemo.conj(complex[i])
   end
  
   return reals, complex
+end
+
+"""
+conjugates_arb(x::NfOrderElem, abs_tol::Int = 1) -> Array{arb, 1}, Array{acb, 1}
+
+Compute the the conjugates of `x`. The complex conjugates x_1,...,x_2s are
+ordered such that x_{i + s} = conj(x_{i}).
+
+Every entry `y` of the arrays returned satisfies `radius(y) < 2^abs_tol` or
+`radius(real(y)) < 2^abs_tol`, `radius(imag(y)) < 2^abs_tol` respectively.
+"""
+function conjugates_arb(x::NfOrderElem, abs_tol::Int = 1)
+  return conjugates_arb(x.elem_in_nf)
 end
 
 function conjugates_log(x::nf_elem)
@@ -427,7 +486,7 @@ function torsion_units(O::GenNfOrd)
   i = 0
 
   for i in 1:length(R)
-    if _torsion_unit_order(R[i], length(R)) == length(R)
+    if torsion_unit_order(R[i], length(R)) == length(R)
       break
     end
   end
@@ -683,30 +742,20 @@ function ^(x::nf_elem, y::fmpz)
   end
 end
 
-function _issaturated(U::UnitGrpCtx, p::Int)
+function issaturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1)
   N = 3*unit_rank(order(U))
-  #print("Computing prime ideals for saturation...")
-  primes =  _find_primes_for_saturation(order(U), p, N)
-  #println("DONE")
+  primes =  _find_primes_for_saturation(order(U), p, N, B)
   
-  #print("Computing the matrix...")
-  m = _get_matrix(U, primes[1], p)
+  m = _matrix_for_saturation(U, primes[1], p)
 
   for i in 2:N
-    m = vcat(m, _get_matrix(U, primes[i], p))
+    m = vcat(m, _matrix_for_saturation(U, primes[i], p))
   end
-  #println("DONE")
 
-  #println(m)
-
-  #print("Computing the kernel...")
   (K, k) = _right_kernel(m)
-  println(K, k)
-  #println("DONE")
+
   K = transpose(K)
   L = lift(K)
-
-  # Get column indicies with non-zero rows
 
   nonzerorows = Array{Int, 1}()
 
@@ -719,7 +768,8 @@ function _issaturated(U::UnitGrpCtx, p::Int)
   if k == 0 
     return (true, zero(nf(order(U))))
   elseif k == 1 && sum([ L[nonzerorows[1], i] for i in 1:cols(L)-1]) == 0
-    # Only root is torsion, which we do not want
+    # Only one root, which is torsion.
+    # We assume that the torsion group is the full torsion group
     return (true, zero(nf(order(U))))
   else
     for j in nonzerorows
@@ -808,85 +858,27 @@ function root(a::nf_elem, n::Int)
   return (false, zero(parent(a)))
 end
 
-function factor(f::PolyElem{nf_elem})
-  print("factoring $f ...")
-  Kx = parent(f)
-  K = base_ring(f)
-  Qy = parent(K.pol)
-  y = gen(Qy)
-  Qyx, x = PolynomialRing(Qy, "x")
-  
-  Qx = PolynomialRing(QQ, "x")[1]
-  Qxy = PolynomialRing(Qx, "y")[1]
-
-  k = 0
-  N = zero(Qxy)
-
-  T = zero(Qxy)
-  for i in 0:degree(K.pol)
-    T = T + coeff(K.pol, i)*gen(Qxy)^i
-  end
-
-  g = f
-
-  while true
-    G = zero(Qyx)
-    for i in 0:degree(g)
-      G = G + Qy(coeff(g, i))*x^i
-    end
-
-    Gcompose = G
-
-    # Switch the place of the variables
-
-    H = zero(Qxy)
-
-    for i in 0:degree(Gcompose)
-      t = coeff(Gcompose, i)
-      HH = zero(Qxy)
-      for j in 0:degree(t)
-        HH = HH + coeff(t, j)*gen(Qxy)^j
-      end
-      H = H + HH*gen(Qx)^i
-    end
-
-    N = resultant(T, H)
-
-    if !is_constant(N) && is_squarefree(N)
-      break
-    end
-
-    k = k + 1
-    g = compose(f, gen(Kx) - k*gen(K))
-  end
-  
-  #println("k: $k")
-
-  fac = factor(N)
-
-  res = Array(PolyElem{nf_elem}, fac.len)
-
-  for i in 1:fac.len
-    t = zero(Kx)
-    # write the factor in Kx
-    for j in 0:degree(fac[i][1])
-      t = t + K(coeff(fac[i][1], j))*gen(Kx)^j
-    end
-    t = compose(t, gen(Kx) + k*gen(K))
-    res[i] = gcd(f, t)
-  end
-
-  return res
-end
-
-function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
+# TH:
+# Let U = <u_1,...,u_n,z> with z a generator for Tor(U)
+# For a prime p the group U/U^p is F_p-vector space of dimension
+# rank(U) or rank(U) + 1 (depending on the order of z).
+# if p divides N(P) - 1 = #F_P*, then F_P*/F_P*^p is a one-dimensional
+# F_p-vector space. Thus the canonical map F_p-linear
+#               U/U^p -> F_P*/F_P*^p
+# can be described by a 1 x (rank(U)) or 1 x (rank(U) + 1) matrix over F_p,
+# and can be computed by solving discrete logarithms in F_P
+#
+# The output will be of type
+# elem_type(MatrixSpace(ResidueRing(ZZ, p), 1, rank(U) ( + 1))), so
+# nmod_mat or 
+# THIS FUNCTION IS NOT TYPE STABLE
+function _matrix_for_saturation(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
   O = order(U)
   K = nf(O)
   F, mF = ResidueField(O, P)
   mK = extend(mF, K)
-  #print("Computing primitive element...")
   g = _primitive_element(F)
-  #println("DONE")
+
   # We have to add the generator of the torsion group
   if gcd(p, U.torsion_units_order) != 1
     res = MatrixSpace(ResidueRing(FlintZZ, p), 1, unit_rank(O) + 1)()
@@ -894,36 +886,27 @@ function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
     res = MatrixSpace(ResidueRing(FlintZZ, p), 1, unit_rank(O))()
   end
 
+  t = K()
+
   for i in 1:length(U.units)
     u = U.units[i]
-    # how do I map the factored element of one of the basis elements is zero?
     y = one(F)
 
-      # P.gen_two should be P-unformizer
-      #println("$(P.gen_one), $b, $(P.gen_two)")
-    try
-      for b in base(u)
-        y = y*mK(b*K(P.gen_two)^(-valuation(b, P)))^u.fac[b]
+    # P.gen_two should be P-unformizer
+    #println("$(P.gen_one), $b, $(P.gen_two)")
+
+    for b in base(u)
+      t = b*K(P.gen_two)^(-valuation(b, P))
+
+      if mod(den(t), minimum(P)) == 0
+        l = valuation(den(t), P)
+        y = y*(mK(t*elem_in_nf(P.anti_uniformizer)^l)*mF(P.anti_uniformizer)^(-l))^u.fac[b]
+      else
+        y = y*mK(t)^u.fac[b]
       end
-    catch
-      lp = prime_decomposition(order(U), Int(P.gen_one))
-      Q = lp[1][1]
-      j = 1
-      while valuation(elem_in_nf(Q.gen_two), P) != 0
-        j = j + 1
-        Q = lp[j][1]
-      end
-        c = zero(K)
-        for b in base(u)
-          c = b*K(P.gen_two)^(-valuation(b, P))
-          l = valuation(den(c), P)
-          y = y*(mK(b*K(Q.gen_two)^l) * mF(Q.gen_two)^(-l))^u.fac[b]
-        end
     end
 
-    #println("Computing the discrete logarithm...")
     res[1, i] = disc_log(y, g, p)
-    #print("DONE")
   end
 
   if gcd(p, U.torsion_units_order) != 1
@@ -933,11 +916,19 @@ function _get_matrix(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
   return res
 end
 
-function _find_primes_for_saturation(O::NfMaximalOrder, p::Int, n::Int)
+# TH:
+# This function finds n prime ideals P of O such that p divides N(P) - 1
+# Moreover the prime ideals are unramified and min(P) does not divide
+# the index of O in the equation order.
+#
+# The function loops through all prime ideals ordered by the minimum,
+# starting at next_prime(st)
+function _find_primes_for_saturation(O::NfMaximalOrder, p::Int, n::Int,
+                                     st::Int = 0)
   res = Array(NfMaximalOrderIdeal, n)
   i = 0
 
-  q = 1
+  q = st
   while i < n
     q = next_prime(q)
 
@@ -1005,8 +996,8 @@ function validate(c::ClassGrpCtx, u::UnitGrpCtx)
 
   while b > 1
     print("Saturating at $p...")
-    issaturated, new_unit = _issaturated(u, p)
-    while !issaturated
+    issat, new_unit = issaturated(u, p)
+    while !issat
       println("I have found a new unit: $new_unit")
       add_dependent_unit(u, FactoredElem(new_unit))
       println("$(u.tentative_regulator)")
@@ -1017,7 +1008,7 @@ function validate(c::ClassGrpCtx, u::UnitGrpCtx)
         break
       end
 
-      issaturated, new_unit = _issaturated(u, p)
+      issat, new_unit = issaturated(u, p)
     end
 
     b = _validate_class_unit_group(c, u)
@@ -1050,18 +1041,4 @@ function ^(x::fmpq, y::fmpz)
   end
 end
 
-"""
-Given a torsion unit x together with a multiple n of its order, compute the
-order of x, that is, the smallest k such that x^k = 1.
-"""
-function _torsion_unit_order(x::NfOrderElem, n::Int)
-  # This is lazy
-  y = deepcopy(x)
-  for i in 1:n
-    if y == 1
-      return i
-    end
-    y = y*x
-  end
-  error("Something odd in the torsion unit order computation")
-end
+
