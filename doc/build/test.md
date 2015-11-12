@@ -18,7 +18,7 @@ MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 
 Compute the maximal order of `K` using Dedekind's criterion and the classical Round two algorithm.
 
-Testing (x^2 + y^2 \mathcal{O}).
+Testing \(x^2 + y^2 \mathcal{O}\).
 
 Here is an example:
 
