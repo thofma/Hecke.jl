@@ -910,16 +910,20 @@ type FactorBaseSingleP
     O = order(lp[1][2])
     K = O.nf
 
-    if length(lp) < 3 ##  || is_difficult(p) # ie. index divisor or so
-      int_doit = function(a::nf_elem, v::Int)
-        r = Array{Tuple{Int, Int},1}()
-        for x=1:length(lp)
-          vl = valuation(a, lp[x][2])
-          v -= vl*lp[x][2].splitting_type[2]
+    naive_doit = function(a::nf_elem, v::Int)
+      r = Array{Tuple{Int, Int},1}()
+      for x=1:length(lp)
+        vl = valuation(a, lp[x][2])
+        v -= vl*lp[x][2].splitting_type[2]
+        if vl !=0 
           push!(r, (lp[x][1], vl))
         end  
-        return r, v
-      end
+      end  
+      return r, v
+    end
+
+    if length(lp) < 3 || isindexdivisor(O, p) # ie. index divisor or so
+      int_doit = naive_doit
     else
       Zx = PolynomialRing(ZZ, "x")[1]
       Fpx = PolynomialRing(ResidueRing(ZZ, p), "x")[1]
@@ -953,14 +957,14 @@ type FactorBaseSingleP
           end
           return r, v
         else
-          return Array(Tuple{Int, Int}, 1)(), -1
+          return Array{Tuple{Int, Int}, 1}(), -1
         end
       end  
     end
     FB.doit = function(a::nf_elem, v::Int)
       d = den(a)
       if isone(d) return int_doit(a, v); end
-      error("cannot do this right now")
+      return naive_doit(a, v); 
     end  
     return FB
   end
