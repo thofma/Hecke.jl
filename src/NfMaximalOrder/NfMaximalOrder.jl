@@ -155,11 +155,21 @@ degree(x::NfMaximalOrder) = degree(nf(x))
 #
 ################################################################################
 
-@doc """
-  MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
+doc"""
+    MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 
-  Compute the maximal order of K.
-""" ->
+Compute the maximal order of ``K`` using Dedekind's criterion and the classical
+Round two algorithm.
+
+Testing \(x^2 + y^2 \mathcal{O}\).
+
+Here is an example:
+```jl
+Qx, x = QQ["x"]
+K, a = NumberField(x^3 + 2, "a")
+O = MaximalOrder(K)
+```
+"""
 function MaximalOrder(K::AnticNumberField)
   O = EquationOrder(K)
   @vprint :NfMaximalOrder 1 "Computing the maximal order ...\n"

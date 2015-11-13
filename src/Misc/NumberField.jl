@@ -103,3 +103,70 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int =
   end
 end
 
+function factor(f::PolyElem{nf_elem})
+  Kx = parent(f)
+  K = base_ring(f)
+  Qy = parent(K.pol)
+  y = gen(Qy)
+  Qyx, x = PolynomialRing(Qy, "x")
+  
+  Qx = PolynomialRing(QQ, "x")[1]
+  Qxy = PolynomialRing(Qx, "y")[1]
+
+  k = 0
+  N = zero(Qxy)
+
+  T = zero(Qxy)
+  for i in 0:degree(K.pol)
+    T = T + coeff(K.pol, i)*gen(Qxy)^i
+  end
+
+  g = f
+
+  while true
+    G = zero(Qyx)
+    for i in 0:degree(g)
+      G = G + Qy(coeff(g, i))*x^i
+    end
+
+    Gcompose = G
+
+    # Switch the place of the variables
+
+    H = zero(Qxy)
+
+    for i in 0:degree(Gcompose)
+      t = coeff(Gcompose, i)
+      HH = zero(Qxy)
+      for j in 0:degree(t)
+        HH = HH + coeff(t, j)*gen(Qxy)^j
+      end
+      H = H + HH*gen(Qx)^i
+    end
+
+    N = resultant(T, H)
+
+    if !is_constant(N) && is_squarefree(N)
+      break
+    end
+
+    k = k + 1
+    g = compose(f, gen(Kx) - k*gen(K))
+  end
+  
+  fac = factor(N)
+
+  res = Array(PolyElem{nf_elem}, fac.len)
+
+  for i in 1:fac.len
+    t = zero(Kx)
+    for j in 0:degree(fac[i][1])
+      t = t + K(coeff(fac[i][1], j))*gen(Kx)^j
+    end
+    t = compose(t, gen(Kx) + k*gen(K))
+    res[i] = gcd(f, t)
+  end
+
+  return res
+end
+

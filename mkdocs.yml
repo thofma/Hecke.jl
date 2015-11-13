@@ -1,0 +1,16 @@
+site_name:           Hecke.jl
+repo_url:            https://github.com/thofma/Hecke.jl
+site_description:    Hecke
+site_author:         Tommy Hofmann
+theme:               readthedocs
+
+pages:
+- Introduction:        index.md
+- Test:                build/test.md
+
+markdown_extensions:
+- tables
+- fenced_code
+- mdx_math
+extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
+
