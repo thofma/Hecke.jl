@@ -77,7 +77,7 @@ function index(O::NfMaximalOrder)
   end
 end
 
-function isindexdivisor(O::NfMaximalOrder, d::fmpz)
+function is_index_divisor(O::NfMaximalOrder, d::fmpz)
   i = index(O)
   return i%d==0
 end
