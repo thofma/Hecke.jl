@@ -12,5 +12,6 @@ markdown_extensions:
 - tables
 - fenced_code
 - mdx_math
-extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML','mathjaxhelper.js']
+
+extra_javascript: ['mathjaxhelper.js', 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
 
