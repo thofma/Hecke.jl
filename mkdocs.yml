@@ -11,7 +11,8 @@ pages:
 markdown_extensions:
 - tables
 - fenced_code
-- mdx_math
+- mdx_math:
+    enable_dollar_delimiter = true
 
 extra_javascript: ['mathjaxhelper.js', 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
 
