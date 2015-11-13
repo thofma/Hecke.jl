@@ -1,38 +1,31 @@
 ################################################################################
 #
-#  Entry/SmatRow/Smat
+#  SmatRow/Smat
 #
 ################################################################################
 
-type Entry{T}
-  col::Int
-  val::T
-  function Entry(c,v)
-    @assert v != 0
-    r = new()
-    r.col = c
-    r.val = v
-    return r
-  end
-end
-
 type SmatRow{T}
-  entry::Array{Entry{T}, 1}  # should be sorted by 1st entry
+  #in this row, in column pos[1] we have value values[1]
+  values::Array{T, 1}
+  pos::Array{Int, 1}
   function SmatRow()
     r = new()
-    r.entry = Array(Entry{T}, 0)
+    r.values = Array{T, 1}()
+    r.pos = Array{Int, 1}()
     return r
   end
 
   function SmatRow(A::Array{Tuple{Int, T}, 1})
     r = new()
-    r.entry = [Entry{T}(x[1], x[2]) for x in A]
+    r.values = [x[2] for x in A]
+    r.pos = [x[1] for x in A]
     return r
   end
 
   function SmatRow(A::Array{Tuple{Int, Int}, 1})
     r = new()
-    r.entry = [Entry{T}(x[1], T(x[2])) for x in A]
+    r.values = [T(x[2]) for x in A]
+    r.pos = [x[1] for x in A]
     return r
   end
 end

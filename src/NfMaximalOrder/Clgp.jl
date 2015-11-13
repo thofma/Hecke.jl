@@ -805,13 +805,13 @@ we do need redundant relations for the units.
   piv = Array(Int, 0)
   if full_rank
     for i = h.rows
-      if abs(i.entry[1].val) == 1
-        push!(piv, i.entry[1].col)
+      if abs(i.values[1]) == 1
+        push!(piv, i.pos[1])
       end
     end
   else
     for i = h.rows
-      push!(piv, i.entry[1].col)
+      push!(piv, i.pos[1])
     end
   end
   mis = setdiff(Set(1:cols(h)), Set(piv))

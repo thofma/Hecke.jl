@@ -11,19 +11,8 @@
 
 import Base.push!, Base.max, Nemo.nbits
 
-export Smat, SmatRow, Entry, upper_triangular, vcat!, show, sub,
+export Smat, SmatRow, upper_triangular, vcat!, show, sub,
        fmpz_mat, rows, cols, copy, push!
-
-################################################################################
-#
-# Entry
-#
-################################################################################
-
-
-function show(io::IO, E::Entry)
-  print(io, E.col, "->", E.val)
-end
 
 ################################################################################
 #
@@ -32,7 +21,7 @@ end
 ################################################################################
 
 function show{T}(io::IO, A::SmatRow{T})
-  println(io, "sparse row ", A.entry)
+  println(io, "sparse row ", A.values, A.pos)
 end
 
 ################################################################################
@@ -53,7 +42,8 @@ function Smat(A::fmpz_mat)
     for j =1:cols(A)
       if A[i,j] != 0
         m.nnz += 1
-        push!(r.entry, Entry{BigInt}(j, A[i,j]))
+        push!(r.values, BigInt(A[i,j]))
+        push!(r.pos, j)
       end
     end
     push!(m.rows, r)
@@ -74,7 +64,8 @@ function Smat{T}(A::Array{T, 2})
     for j =1:Base.size(A, 2)
       if A[i,j] != 0
         m.nnz += 1
-        push!(r.entry, Entry{T}(j, A[i,j]))
+        push!(r.values, T(A[i,j]))
+        push!(r.pos, A[i,j])
       end
     end
     push!(m.rows, r)
@@ -104,14 +95,16 @@ function sub{T}(A::Smat{T}, r::UnitRange, c::UnitRange)
   B.nnz = 0
   for i=r
     rw = SmatRow{T}()
-    for j=A.rows[i].entry
-      if j.col in c
-        push!(rw.entry, Entry{T}(j.col-c.start+1, j.val))
+    ra = A.rows[i]
+    for j=1:length(ra.values)
+      if ra.pos[j] in c
+        push!(rw.values, ra.values[j])
+        push!(rw.pos, ra.pos[j]-c.start+1)
       end
     end
-    if length(rw.entry)>0
+    if length(rw.pos)>0
       push!(B.rows, rw)
-      B.nnz += length(rw.entry)
+      B.nnz += length(rw.pos)
     end
   end
   B.r = length(r)
@@ -134,14 +127,22 @@ end
 
 function getindex{T}(A::Smat{T}, i::Int, j::Int)
   if i in 1:A.r
-    for h in A.rows[i].entry
-      if h.col == j
-        return h.val
-      end
+    ra = A.rows[i]
+    p = findfirst(x->x==j, ra.pos)
+    if p!= 0
+      return ra.values[p]
     end
   end
   return T(0)
 end
+
+function getindex{T}(A::Smat{T}, i::Int)
+  if i in 1:A.r
+    return A.rows[i]
+  end
+  return SmatRow{T}()
+end
+
 
 function vcat!{T}(A::Smat{T}, B::Smat{T})
   A.r += B.r
@@ -152,12 +153,12 @@ function vcat!{T}(A::Smat{T}, B::Smat{T})
 end
 
 function push!{T}(A::Smat{T}, B::SmatRow{T})
-  if length(B.entry)>0
+  if length(B.pos)>0
     push!(A.rows, B)
     A.r += 1
     @assert length(A.rows) == A.r
-    A.nnz += length(B.entry)
-    A.c = max(A.c, B.entry[end].col)
+    A.nnz += length(B.pos)
+    A.c = max(A.c, B.pos[end])
   end
 end
 
@@ -170,8 +171,9 @@ end
 function fmpz_mat{T <: Integer}(A::Smat{T})
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
-    for j = 1:length(A.rows[i].entry)
-      B[i, A.rows[i].entry[j].col] = A.rows[i].entry[j].val
+    ra = A.rows[i]
+    for j = 1:length(ra.pos)
+      B[i, ra.pos[j]] = ra.values[j]
     end
   end
   return B
@@ -180,8 +182,9 @@ end
 function fmpz_mat(A::Smat{fmpz})
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
-    for j = 1:length(A.rows[i].entry)
-      B[i, A.rows[i].entry[j].col] = A.rows[i].entry[j].val
+    ra = A.rows[i]
+    for j = 1:length(ra.pos)
+      B[i, ra.pos[j]] = ra.values[j]
     end
   end
   return B
@@ -204,31 +207,36 @@ function add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
   pi = 1
   pj = 1
   @assert c != 0
-  while pi <= length(A.rows[i].entry) && pj <= length(A.rows[j].entry)
-    if A.rows[i].entry[pi].col < A.rows[j].entry[pj].col
-      push!(sr.entry, Entry{T}(A.rows[i].entry[pi].col, c*A.rows[i].entry[pi].val))
+  while pi <= length(A.rows[i].pos) && pj <= length(A.rows[j].pos)
+    if A.rows[i].pos[pi] < A.rows[j].pos[pj]
+      push!(sr.pos, A.rows[i].pos[pi])
+      push!(sr.values, c*A.rows[i].values[pi])
       pi += 1
-    elseif A.rows[i].entry[pi].col > A.rows[j].entry[pj].col
-      push!(sr.entry, A.rows[j].entry[pj])
+    elseif A.rows[i].pos[pi] > A.rows[j].pos[pj]
+      push!(sr.pos, A.rows[j].pos[pj])
+      push!(sr.values, A.rows[j].values[pj])
       pj += 1
     else
-      n = c*A.rows[i].entry[pi].val + A.rows[j].entry[pj].val
+      n = c*A.rows[i].values[pi] + A.rows[j].values[pj]
       if n != 0
-        push!(sr.entry, Entry{T}(A.rows[i].entry[pi].col, n))
+        push!(sr.pos, A.rows[i].pos[pi])
+        push!(sr.values, n)
       end
       pi += 1
       pj += 1
     end
   end
-  while pi <= length(A.rows[i].entry)
-    push!(sr.entry, Entry{T}(A.rows[i].entry[pi].col, c*A.rows[i].entry[pi].val))
+  while pi <= length(A.rows[i].pos)
+    push!(sr.pos, A.rows[i].pos[pi])
+    push!(sr.values, c*A.rows[i].values[pi])
     pi += 1
   end
-  while pj <= length(A.rows[j].entry)
-    push!(sr.entry, A.rows[j].entry[pj])
+  while pj <= length(A.rows[j].pos)
+    push!(sr.pos, A.rows[j].pos[pj])
+    push!(sr.values, A.rows[j].values[pj])
     pj += 1
   end
-  A.nnz = A.nnz - length(A.rows[j].entry) + length(sr.entry)
+  A.nnz = A.nnz - length(A.rows[j].pos) + length(sr.pos)
   A.rows[j] = sr
   return A
 end
@@ -241,55 +249,65 @@ function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
   tr = SmatRow{T}()
   pi = 1
   pj = 1
-  while pi <= length(A.rows[i].entry) && pj <= length(A.rows[j].entry)
-    if A.rows[i].entry[pi].col < A.rows[j].entry[pj].col
+  while pi <= length(A.rows[i].pos) && pj <= length(A.rows[j].pos)
+    if A.rows[i].pos[pi] < A.rows[j].pos[pj]
       if a != 0
-        push!(sr.entry, Entry{T}(A.rows[i].entry[pi].col, a*A.rows[i].entry[pi].val))
+        push!(sr.pos, A.rows[i].pos[pi])
+        push!(sr.values, a*A.rows[i].values[pi])
       end
       if c != 0
-        push!(tr.entry, Entry{T}(A.rows[i].entry[pi].col, c*A.rows[i].entry[pi].val))
+        push!(tr.pos, A.rows[i].pos[pi])
+        push!(tr.values, c*A.rows[i].values[pi])
       end
       pi += 1
-    elseif A.rows[i].entry[pi].col > A.rows[j].entry[pj].col
+    elseif A.rows[i].pos[pi] > A.rows[j].pos[pj]
       if b != 0
-        push!(sr.entry, Entry{T}(A.rows[j].entry[pj].col, b*A.rows[j].entry[pj].val))
+        push!(sr.pos, A.rows[j].pos[pj])
+        push!(sr.values, b*A.rows[j].values[pj])
       end
       if d != 0
-        push!(tr.entry, Entry{T}(A.rows[j].entry[pj].col, d*A.rows[j].entry[pj].val))
+        push!(tr.pos, A.rows[j].pos[pj])
+        push!(tr.values, d*A.rows[j].values[pj])
       end
       pj += 1
     else
-      m = a*A.rows[i].entry[pi].val + b*A.rows[j].entry[pj].val
-      n = c*A.rows[i].entry[pi].val + d*A.rows[j].entry[pj].val
+      m = a*A.rows[i].values[pi] + b*A.rows[j].values[pj]
+      n = c*A.rows[i].values[pi] + d*A.rows[j].values[pj]
       if m != 0
-        push!(sr.entry, Entry{T}(A.rows[i].entry[pi].col, m))
+        push!(sr.pos, A.rows[i].pos[pi])
+        push!(sr.values, m)
       end
       if n != 0
-        push!(tr.entry, Entry{T}(A.rows[i].entry[pi].col, n))
+        push!(tr.pos, A.rows[i].pos[pi])
+        push!(tr.values, n)
       end
       pi += 1
       pj += 1
     end
   end
-  while pi <= length(A.rows[i].entry)
+  while pi <= length(A.rows[i].pos)
     if a != 0
-      push!(sr.entry, Entry{T}(A.rows[i].entry[pi].col, a*A.rows[i].entry[pi].val))
+      push!(sr.pos, A.rows[i].pos[pi])
+      push!(sr.values, a*A.rows[i].values[pi])
     end
     if c != 0
-      push!(tr.entry, Entry{T}(A.rows[i].entry[pi].col, c*A.rows[i].entry[pi].val))
+      push!(tr.pos, A.rows[i].pos[pi])
+      push!(tr.values, c*A.rows[i].values[pi])
     end
     pi += 1
   end
-  while pj <= length(A.rows[j].entry)
+  while pj <= length(A.rows[j].pos)
     if b != 0
-      push!(sr.entry, Entry{T}(A.rows[j].entry[pj].col, b*A.rows[j].entry[pj].val))
+      push!(sr.pos, A.rows[j].pos[pj])
+      push!(sr.values, b*A.rows[j].values[pj])
     end
     if d != 0
-      push!(tr.entry, Entry{T}(A.rows[j].entry[pj].col, d*A.rows[j].entry[pj].val))
+      push!(tr.pos, A.rows[j].pos[pj])
+      push!(tr.values, d*A.rows[j].values[pj])
     end
     pj += 1
   end
-  A.nnz = A.nnz - length(A.rows[j].entry) + length(sr.entry) - length(A.rows[i].entry) + length(tr.entry)
+  A.nnz = A.nnz - length(A.rows[j].pos) + length(sr.pos) - length(A.rows[i].pos) + length(tr.pos)
   A.rows[i] = sr
   A.rows[j] = tr
   @assert i<j
@@ -298,22 +316,22 @@ function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 end
 
 function max(A::Smat{Int})
-  m = abs(A.rows[1].entry[1].val)
+  m = abs(A.rows[1].values[1])
   for i in A.rows
-    for j in i.entry
-      m = max(m, abs(j.val))
+    for j in i.values
+      m = max(m, abs(j))
     end
   end
   return m
 end
 
 function max(A::Smat{BigInt})
-  m = abs(A.rows[1].entry[1].val)
+  m = abs(A.rows[1].values[1])
   for i in A.rows
-    for j in i.entry
+    for j in i.values
       if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
-        &m, &j.val) < 0
-        m = j.val
+        &m, &j) < 0
+        m = j
       end
     end
   end
@@ -321,11 +339,11 @@ function max(A::Smat{BigInt})
 end
 
 function max(A::Smat{fmpz})
-  m = abs(A.rows[1].entry[1].val)
+  m = abs(A.rows[1].values[1])
   for i in A.rows
-    for j in i.entry
-      if cmpabs(m, j.val) < 0
-        m = j.val
+    for j in i.values
+      if cmpabs(m, j) < 0
+        m = j
       end
     end
   end
@@ -346,11 +364,11 @@ function one_step{T}(A::Smat{T}, sr = 1)
   all_r = Array(Int, 0)
   min = A.c
   while i <= length(A.rows)
-    @assert A.rows[i].entry[1].col >= sr
-    if A.rows[i].entry[1].col < min
-      min = A.rows[i].entry[1].col
+    @assert A.rows[i].pos[1] >= sr
+    if A.rows[i].pos[1] < min
+      min = A.rows[i].pos[1]
       all_r = [i]
-    elseif A.rows[i].entry[1].col == min
+    elseif A.rows[i].pos[1] == min
       push!(all_r, i)
     end
     i += 1
@@ -370,8 +388,8 @@ function one_step{T}(A::Smat{T}, sr = 1)
   end
 
   for j=2:length(all_r)
-    x = A.rows[sr].entry[1].val
-    y = A.rows[all_r[j]].entry[1].val
+    x = A.rows[sr].values[1]
+    y = A.rows[all_r[j]].values[1]
     g = x
     @assert x!= 0
     if y % x == 0
@@ -388,7 +406,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
       transform_row!(A, sr, all_r[j], a, b, c, d)
     end
 
-#    @assert A.rows[sr].entry[1].val == g
+#    @assert A.rows[sr].entry[1]valuesval == g
 #    @assert A.rows[sr].entry[1].val != 0
 #    if length(A.rows[all_r[j]].entry) == 0 ||
 #             A.rows[all_r[j]].entry[1].col > min
@@ -402,7 +420,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
 #  println("in one step: ilog2(max) now ", nbits(max(A)), " j:", j, " length: ", length(all_r))
   end
   for j=length(all_r):-1:2
-    if length(A.rows[all_r[j]].entry) == 0
+    if length(A.rows[all_r[j]].pos) == 0
       deleteat!(A.rows, all_r[j])
       A.r -= 1
     end
@@ -435,8 +453,9 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
       h = Smat(h)
       for j in h.rows
         rw = SmatRow{T}()
-        for e in j.entry
-          push!(rw.entry, Entry{T}(e.col + i-1, e.val))
+        for e in 1:length(j.pos)
+          push!(rw.pos, j.pos[e] + i-1)
+          push!(rw.values, j.values[e])
         end
         push!(A.rows, rw)
         A.r += 1

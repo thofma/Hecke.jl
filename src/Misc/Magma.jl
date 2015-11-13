@@ -59,10 +59,9 @@ end
 function toMagma(io::IOStream, A::Smat; name = "A")
   println(io, name, " := SparseMatrix(Integers(), ", rows(A), ", ", cols(A), ", [")
   for i = 1:rows(A)
-    for xx = 1:length(A.rows[i].entry) 
-      x = A.rows[i].entry[xx]
-      print(io, "<", i, ", ", x.col, ", ", x.val, ">")
-      if xx < length(A.rows[i].entry) || i<rows(A)
+    for xx = 1:length(A.rows[i].pos) 
+      print(io, "<", i, ", ", A.rows[i].pos[xx], ", ", A.rows[i].values[xx], ">")
+      if xx < length(A.rows[i].pos) || i<rows(A)
         print(io, ", ")
       end
     end
