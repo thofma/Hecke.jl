@@ -65,7 +65,7 @@ function Smat{T}(A::Array{T, 2})
       if A[i,j] != 0
         m.nnz += 1
         push!(r.values, T(A[i,j]))
-        push!(r.pos, A[i,j])
+        push!(r.pos, j)
       end
     end
     push!(m.rows, r)
