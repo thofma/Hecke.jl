@@ -12,7 +12,7 @@
 import Base.push!, Base.max, Nemo.nbits
 
 export Smat, SmatRow, upper_triangular, vcat!, show, sub,
-       fmpz_mat, rows, cols, copy, push!
+       fmpz_mat, rows, cols, copy, push!, mul, mul!
 
 ################################################################################
 #
@@ -31,18 +31,18 @@ end
 ################################################################################
 
 function Smat(A::fmpz_mat)
-  m = Smat{BigInt}()
+  m = Smat{fmpz}()
   m.c = cols(A)
   m.r = 0
   for i=1:rows(A)
     if is_zero_row(A, i)
       continue
     end
-    r = SmatRow{BigInt}()
+    r = SmatRow{fmpz}()
     for j =1:cols(A)
       if A[i,j] != 0
         m.nnz += 1
-        push!(r.values, BigInt(A[i,j]))
+        push!(r.values, fmpz(A[i,j]))
         push!(r.pos, j)
       end
     end
@@ -74,9 +74,108 @@ function Smat{T}(A::Array{T, 2})
   return m
 end
 
-
 function show{T}(io::IO, A::Smat{T})
   println(io, "Sparse ", A.r, " x ", A.c, " matrix with ", A.nnz, " non-zero entries")
+end
+
+################################################################################
+#  transpose
+################################################################################
+function transpose{T}(A::Smat{T})
+  B = Smat{T}()
+  n = rows(A)
+  m = cols(A)
+  B.rows = Array(SmatRow{T}, m)
+  for i=1:m
+    B.rows[i] = SmatRow{T}()
+  end
+  for i = 1:length(A.rows)
+    for j = 1:length(A.rows[i].pos)
+      r = A.rows[i].pos[j]
+      push!(B.rows[r].pos, i)
+      push!(B.rows[r].values, A.rows[i].values[j])
+    end 
+  end
+  B.c = n
+  B.r = m
+  B.nnz = A.nnz
+
+  return B
+end
+
+################################################################################
+#
+# multiplication of Smat * Dense
+# for Dense = {Array{T, 1}, Array{T, 2}, fmpz_mat}
+# both mul and mul! versions
+#
+################################################################################
+function mul!{T}(c::Array{T, 1}, A::Smat{T}, b::Array{T, 1})
+  assert( length(b) == cols(A))
+  assert( length(c) == rows(A))
+  for i = 1:length(A.rows)
+    s = 0
+    I = A.rows[i]
+    for j=1:length(I.pos)
+      s += I.values[j]*b[I.pos[j]]
+    end
+    c[i] = s
+  end
+  return c
+end
+
+function mul{T}(A::Smat{T}, b::Array{T, 1})
+  assert( length(b) == cols(A))
+  c = Array(T,rows(A))
+  mul!(c, A, b)
+  return c
+end
+
+function mul!{T}(c::Array{T, 2}, A::Smat{T}, b::Array{T, 2})
+  sz = size(b)
+  assert( sz[1] == cols(A))
+  tz = size(c)
+  assert( tz[1] == rows(A))
+  assert( tz[2] == sz[2])
+  for m = 1:sz[2]
+    for i = 1:length(A.rows)
+      s = 0
+      for j=1:length(A.rows[i].pos)
+        s += A.rows[i].values[j]*b[A.rows[i].pos[j], m]
+      end
+      c[i, m] = s
+    end
+  end
+  return c
+end
+
+function mul{T}(A::Smat{T}, b::Array{T, 2})
+  sz = size(b)
+  assert( sz[1] == cols(A))
+  c = Array(T, sz[1], sz[2])
+  return mul!(c, A, b)
+end
+
+function mul!{T}(c::fmpz_mat, A::Smat{T}, b::fmpz_mat)
+  assert( rows(b) == cols(A))
+  assert( rows(c) == rows(A))
+  assert( cols(c) == cols(b))
+  for m = 1:cols(b)
+    for i = 1:length(A.rows)
+      s = 0
+      for j=1:length(A.rows[i].pos)
+        s += A.rows[i].values[j]*b[A.rows[i].pos[j], m]
+      end
+      c[i, m] = s
+    end
+  end  
+  return c
+end
+
+function mul{T}(A::Smat{T}, b::fmpz_mat)
+  assert( rows(b) == cols(A))
+  c = MatrixSpace(ZZ, rows(A), cols(b))()
+  return mul!(c, A, b)
 end
 
 ################################################################################
