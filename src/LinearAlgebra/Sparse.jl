@@ -1,18 +1,24 @@
 #= basic support for sparse matrices, more Magma style than Julia
   a sparse matrix is a collection (Array) of sparse rows (SmatRow)
   A sparse matrix cannot have 0 rows!
-  A SmatRow is a sorted collection of Entries, an entry is a pair
-  (column, value)
+  A SmatRow is two Arrays, one (pos) containing the columns, values
+  contains the values.
+  A[i,j] = A.rows[i].values[A.rows[i].pos[j]]
+  to be formal
 
   The upper_triangular stuff performs very elementary transformations
   until the matrix becomes dense. At this point, the dense bit is extraced and
   converted to an fmpz_mat which is then hnf'ed.
+
+  Missing:
+   full HNF, Howell, modular and not
+   conversion to and from Julia sparse mat
 =#  
 
 import Base.push!, Base.max, Nemo.nbits
 
 export Smat, SmatRow, upper_triangular, vcat!, show, sub,
-       fmpz_mat, rows, cols, copy, push!, mul, mul!
+       fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max
 
 ################################################################################
 #
@@ -131,6 +137,37 @@ function mul{T}(A::Smat{T}, b::Array{T, 1})
   return c
 end
 
+function mul_mod_big!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
+  assert( length(b) == cols(A))
+  assert( length(c) == rows(A))
+  for i = 1:length(A.rows)
+    s = 0
+    I = A.rows[i]
+    for j=1:length(I.pos)
+      s += S(I.values[j] *b[I.pos[j]] % mod)
+    end
+    c[i] = s % mod
+  end
+  return c
+end
+
+function mul_mod!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
+  assert( length(b) == cols(A))
+  assert( length(c) == rows(A))
+  for i = 1:length(A.rows)
+    s = 0
+    I = A.rows[i]
+    for j=1:length(I.pos)
+      s += S(I.values[j]) *b[I.pos[j]]
+    end
+    c[i] = s % mod
+  end
+  return c
+end
+
+
+
+
 function mul!{T}(c::Array{T, 2}, A::Smat{T}, b::Array{T, 2})
   sz = size(b)
   assert( sz[1] == cols(A))
@@ -178,6 +215,86 @@ function mul{T}(A::Smat{T}, b::fmpz_mat)
   return mul!(c, A, b)
 end
 
+function valence_mc{T}(A::Smat{T}; extra_prime = 2)
+  # we work in At * A (or A * At) where we choose the smaller of the 2
+  # matrices
+  if false && cols(A) > rows(A)
+    At = A
+    A = transpose(A)
+  else
+    At = transpose(A)
+  end
+  if abs_max(A) > 2^20
+    mm = mul_mod_big!
+    println("mul big case")
+  else
+    mm = mul_mod!
+    println("mul small case")
+  end
+  c1 = Array(Int, cols(A))
+  c2 = Array(Int, rows(A))
+
+  for i=1:cols(A)
+    c1[i] = Int(rand(-10:10))
+  end
+
+  c = copy(c1) ## need the starting value for the other primes as well
+
+  p = next_prime(2^30)
+  k = FiniteField(p)
+  d = 10
+  v = Array{typeof(k(1)), 1}()
+  push!(v, k(c1[1]))
+  while true
+    while length(v) <= d
+      mm(c2, A, c1, p)
+      mm(c1, At, c2, p)
+      push!(v, k(c1[1]))
+    end
+    fl, f = berlekamp_massey(v)
+    if !fl || degree(f) > div(d, 2)-1
+      d += 10
+      continue
+    end
+    df = degree(f)
+
+    V = fmpz(leading_coefficient(f))
+    pp = fmpz(p)
+      
+    while true
+      p = next_prime(p)
+      println(p)
+      k = FiniteField(p)
+      v = Array{typeof(k(1)), 1}()
+      copy!(c1, c)
+      push!(v, k(c1[1]))
+      @time for i=1:2*degree(f)+1
+        mm(c2, A, c1, p)
+        mm(c1, At, c2, p)
+        push!(v, k(c1[1]))
+      end
+      @time fl, f = berlekamp_massey(v)
+      if !fl || degree(f) > df
+        println("initial guess was wrong...")
+        d += 10
+        return -1
+      end
+
+      Vn = crt(V, pp, fmpz(leading_coefficient(f)), fmpz(p))
+      pp *= p
+      if 2*Vn > pp
+        Vn = Vn - pp
+      end
+      if Vn == V
+        extra_prime -= 1
+        if extra_prime == 0
+          return V
+        end
+      end
+      V = Vn
+    end
+  end
+end
 ################################################################################
 #
 # Basics: sub 
@@ -414,7 +531,7 @@ function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
   return A
 end
 
-function max(A::Smat{Int})
+function abs_max(A::Smat{Int})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -424,7 +541,7 @@ function max(A::Smat{Int})
   return m
 end
 
-function max(A::Smat{BigInt})
+function abs_max(A::Smat{BigInt})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -437,7 +554,7 @@ function max(A::Smat{BigInt})
   return abs(m)
 end
 
-function max(A::Smat{fmpz})
+function abs_max(A::Smat{fmpz})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -534,7 +651,7 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
     if x>A.r
       return
     end
-    if A.nnz > (A.r-i) * (A.c-i) /2 || max(A) > T(2)^200
+    if A.nnz > (A.r-i) * (A.c-i) /2 || abs_max(A) > T(2)^200
 #      println("calling hnf at level ", i)
       h = sub(A, i:A.r, i:A.c)
       deleteat!(A.rows, i:A.r)
