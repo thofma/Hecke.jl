@@ -1,4 +1,30 @@
 
+export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
+       trailing_coefficient, constant_coefficient
+
+function PolynomialRing(R::Ring)
+  return PolynomialRing(R, "_x")
+end
+
+function FiniteField(p::Integer)
+  return ResidueRing(ZZ, p)
+end
+
+function fmpz(a::Residue{Nemo.fmpz})
+  return a.data
+end
+
+function lift(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
+  return a.data
+end
+
+function lift(a::Residue{Nemo.fmpz})
+  return a.data
+end
+
+function Base.call(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
+  return a.data
+end
 
 ## given some r/s = a mod b and deg(r) = n, deg(s) <= m find r,s
 ## a and b better be polynomials in the same poly ring.
@@ -8,7 +34,7 @@
 # faster algorithm. For Q possibly using CRT and fast Fp techniques
 # Algorithm copies from the bad-primes paper
 
-function rational_reconstruction{P}(a::P, b::P, n::Int, m::Int)
+function rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
   R = a.parent
   if degree(a) <= n return true, a, R(1); end
 
@@ -32,7 +58,7 @@ function rational_reconstruction{P}(a::P, b::P, n::Int, m::Int)
   return false, M[2,1], M[2,2]
 end
 
-function rational_reconstruction{P}(a::P, b::P)
+function rational_reconstruction{T}(a::PolyElem{T}, b::PolyElem{T})
   return rational_reconstruction(a, b, div(degree(b), 2), div(degree(b), 2))
 end
 
@@ -48,15 +74,40 @@ farey_lift = rational_reconstruction
 #
 
 function berlekamp_massey{T}(a::Array{T, 1})
-  Qx,x = PolynomialRing(parent(a[1]), "x")
-  f = Qx(a)
+  Rx,x = PolynomialRing(parent(a[1]))
+  f = Rx(a)
   xn= x^length(a)
 
   fl, n, d = rational_reconstruction(f, xn)
   if fl
-    return true, d*(1//d(0))
+    return true, d*(inv(trailing_coefficient(d)))
   else
-    return false, Qx(0)
+    return false, Rx(0)
   end
 end
 
+
+function div(f::PolyElem, g::PolyElem)
+  q,r = divrem(f,g)
+  return q
+end
+
+# probably better off in c and faster
+function valence(f::PolyElem)
+  c = f(0)
+  while c==0 && degree(f)>0
+    f = div(f, gen(parent(f)))
+    c = f(0)
+  end
+  return c
+end
+
+function leading_coefficient(f::PolyElem)
+  return coeff(f, degree(f))
+end
+
+function trailing_coefficient(f::PolyElem)
+  return coeff(f, 0)
+end
+
+constant_coefficient = trailing_coefficient
