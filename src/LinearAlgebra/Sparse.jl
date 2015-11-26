@@ -15,10 +15,11 @@
    conversion to and from Julia sparse mat
 =#  
 
-import Base.push!, Base.max, Nemo.nbits
+import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array
 
 export Smat, SmatRow, upper_triangular, vcat!, show, sub,
-       fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max
+       fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
+       valence_mc
 
 ################################################################################
 #
@@ -82,6 +83,24 @@ end
 
 function show{T}(io::IO, A::Smat{T})
   println(io, "Sparse ", A.r, " x ", A.c, " matrix with ", A.nnz, " non-zero entries")
+end
+
+function toNemo(io::IOStream, A::Smat; name = "A")
+  T = typeof(A.rows[1].values[1])
+  println(io, name, " = Smat{$T}()")
+  for i=A.rows
+    print(io, "push!($(name), SmatRow{$T}(Tuple{Int, $T}[");
+    for j=1:length(i.pos)-1
+      print(io, "($(i.pos[j]), $(i.values[j])), ")
+    end
+    println(io, "($(i.pos[end]), $(i.values[end]))]))")
+  end
+end
+
+function toNemo(f::ASCIIString, A::Smat; name = "A")
+  io = open(f, "w")
+  toNemo(io, A, name=name)
+  close(io)
 end
 
 ################################################################################
@@ -165,9 +184,6 @@ function mul_mod!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
   return c
 end
 
-
-
-
 function mul!{T}(c::Array{T, 2}, A::Smat{T}, b::Array{T, 2})
   sz = size(b)
   assert( sz[1] == cols(A))
@@ -215,7 +231,70 @@ function mul{T}(A::Smat{T}, b::fmpz_mat)
   return mul!(c, A, b)
 end
 
-function valence_mc{T}(A::Smat{T}; extra_prime = 2)
+function SLP_AddRow{T}(i::Int, j::Int, v::T)
+  assert(v != 0)
+  slp = SmatSLP(i, j, SLP_AddRow_typ, v)
+  return slp
+end
+
+function SLP_SwapRows{T}(i::Int, j::Int)
+  slp = SmatSLP{T}(i, j, SLP_SwapRows_typ, T(0))
+  return slp
+end
+
+function mul!{T}(a::Array{T, 1}, s::SmatSLP{T})
+  if s.typ==SLP_AddRow_typ
+    a[s.row] = a[s.row]*s.val + a[s.col]
+  elseif s.typ==SLP_SwapRows_typ
+    t = a[s.row]
+    a[s.row] = a[s.col]
+    a[s.col] = t
+  end
+end
+
+function mul_t!{T}(a::Array{T, 1}, s::SmatSLP{T})
+  if s.typ==SLP_AddRow_typ
+    a[s.col] = a[s.col]*s.val + a[s.row]
+  elseif s.typ==SLP_SwapRows_typ
+    t = a[s.row]
+    a[s.row] = a[s.col]
+    a[s.col] = t
+  end
+end
+
+function apply!{T}(a::Array{T}, b::Array{SmatSLP{T}, 1})
+  for i=length(b):-1:1
+    mul!(a, b[i])
+  end
+  return a
+end
+
+function apply_t!{T}(a::Array{T}, b::Array{SmatSLP{T}, 1})
+  for i=1:length(b)
+    mul_t!(a, b[i])
+  end
+  return a
+end
+
+function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
+  a = Array(SmatSLP{Int}, i)
+  for j=1:i
+    c = rand(v)
+    while c==0
+      c = rand(v)
+    end
+    i1 = rand(1:rows(A))
+    i2 = rand(1:rows(A))
+    while i1==i2
+      i1 = rand(1:rows(A))
+      i2 = rand(1:rows(A))
+    end
+    a[j] = SLP_AddRow(i1, i2, Int(c))
+  end
+  return a
+end
+
+function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP{T}, 1}())
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
   if false && cols(A) > rows(A)
@@ -248,6 +327,10 @@ function valence_mc{T}(A::Smat{T}; extra_prime = 2)
   while true
     while length(v) <= d
       mm(c2, A, c1, p)
+      if length(trans) >0
+        apply_t!(c2, trans)
+        apply!(c2, trans)
+      end
       mm(c1, At, c2, p)
       push!(v, k(c1[1]))
     end
@@ -257,21 +340,26 @@ function valence_mc{T}(A::Smat{T}; extra_prime = 2)
       continue
     end
     df = degree(f)
+    println("Poly degree is $df, dims $(rows(A)) x $(cols(A))")
 
     V = fmpz(leading_coefficient(f))
     pp = fmpz(p)
       
+    v = Array(typeof(k(1)), 2*degree(f)+1)
     while true
       p = next_prime(p)
       println(p)
       k = FiniteField(p)
-      v = Array{typeof(k(1)), 1}()
       copy!(c1, c)
-      push!(v, k(c1[1]))
-      @time for i=1:2*degree(f)+1
+      v[1] = k(c1[1])
+      @time for i=1:2*degree(f)
         mm(c2, A, c1, p)
+        if length(trans) >0
+          apply_t!(c2, trans)
+          apply!(c2, trans)
+        end
         mm(c1, At, c2, p)
-        push!(v, k(c1[1]))
+        v[i+1] = k(c1[1])
       end
       @time fl, f = berlekamp_massey(v)
       if !fl || degree(f) > df
@@ -295,6 +383,7 @@ function valence_mc{T}(A::Smat{T}; extra_prime = 2)
     end
   end
 end
+
 ################################################################################
 #
 # Basics: sub 
@@ -406,6 +495,37 @@ function fmpz_mat(A::Smat{fmpz})
   return B
 end
 
+
+################################################################################
+#
+# convert to Julia
+#
+################################################################################
+function sparse{T}(A::Smat{T})
+  I = Array(Int, A.nnz)
+  J = Array(Int, A.nnz)
+  V = Array(T, A.nnz)
+  i = 1
+  for r = 1:rows(A)
+    for j=1:length(A.rows[r].pos)
+      I[i] = r
+      J[i] = A.rows[r].pos[j]
+      V[i] = A.rows[r].values[j]
+      i += 1
+    end
+  end
+  return sparse(I, J, V)
+end
+
+function Array{T}(A::Smat{T})
+  R = Array(T, A.r, A.c)
+  for i=1:rows(A)
+    for j=1:length(A.rows[i].pos)
+      R[i,A.rows[i].pos[j]] = A.rows[i].values[j]
+    end
+  end
+  return R
+end
 
 ################################################################################
 #
@@ -577,9 +697,11 @@ end
 
 function one_step{T}(A::Smat{T}, sr = 1)
   i = sr
+  assert(i>0)
   all_r = Array(Int, 0)
   min = A.c
   while i <= length(A.rows)
+    @assert length(A.rows[i].pos)>0
     @assert A.rows[i].pos[1] >= sr
     if A.rows[i].pos[1] < min
       min = A.rows[i].pos[1]
@@ -593,15 +715,32 @@ function one_step{T}(A::Smat{T}, sr = 1)
   if length(all_r) == 0 
     return A.r+1
   end
-  if all_r[1] > sr
+#  println("found multiple $(length(all_r)) possibilities of weight $([length(A.rows[_i].pos) for _i in all_r])")
+  #sorting
+  sort!(all_r, lt=function(a,b) return length(A.rows[a].pos) < length(A.rows[b].pos)end)
+#  println("found multiple $(length(all_r)) possibilities of weight $([length(A.rows[_i].pos) for _i in all_r])")
+  # we need to have rows[all_r[1]] == sr, so that the new pivot will be in
+  # row sr
+
+  if !(sr in all_r)
     q = A.rows[sr]
     A.rows[sr] = A.rows[all_r[1]]
     A.rows[all_r[1]] = q
     all_r[1] = sr
+  else
+    p = findfirst(all_r, sr)
+    if p > 1
+      q = A.rows[sr]
+      A.rows[sr] = A.rows[all_r[1]]
+      A.rows[all_r[1]] = q
+      all_r[p] = all_r[1]
+      all_r[1] = sr
+    end
   end
   if length(all_r) == 1
     return sr+1
   end
+
 
   for j=2:length(all_r)
     x = A.rows[sr].values[1]
@@ -620,6 +759,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
       d = div(x, g)
 #      @assert x == d*g
       transform_row!(A, sr, all_r[j], a, b, c, d)
+      println("complicated")
     end
 
 #    @assert A.rows[sr].entry[1]valuesval == g
@@ -651,14 +791,14 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
     if x>A.r
       return
     end
-    if A.nnz > (A.r-i) * (A.c-i) /2 || abs_max(A) > T(2)^200
-#      println("calling hnf at level ", i)
+    if A.nnz > (A.r-i) * (A.c-i) /2 || nbits(abs_max(A)) > 200
+      println("calling hnf at level ", i, " bits: ", nbits(abs_max(A)), "nnz: ", A.nnz)
       h = sub(A, i:A.r, i:A.c)
       deleteat!(A.rows, i:A.r)
       A.r -= length(i:A.r)
       @assert length(A.rows) == A.r
       h = fmpz_mat(h)
-#      println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
+      println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
       if mod==0
         h = hnf(h)
       else
