@@ -205,3 +205,11 @@ function round(a::fmpq)
   end
 end
 
+function zero(::Type{Nemo.fmpz})
+  return fmpz(0)
+end
+
+function one(::Type{Nemo.fmpz})
+  return fmpz(1)
+end
+
