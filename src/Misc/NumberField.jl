@@ -1,3 +1,34 @@
+import Nemo.AnticNumberField
+
+################################################################################
+#
+# convenience ...
+#
+################################################################################
+
+#CF: we have to "extend" AnticNumberField as NumberField is just defined by
+#    NumberField = AnticNumberField in Nemo.
+#    Possibly should be replaced by having optional 2nd arguments?
+
+function AnticNumberField(f::fmpq_poly)
+  return NumberField(f, "_a")
+end
+
+function AnticNumberField(f::fmpz_poly, s::Symbol)
+  Qx, x = PolynomialRing(QQ, parent(f).S)
+  return NumberField(Qx(f), s)
+end
+
+function AnticNumberField(f::fmpz_poly, s::AbstractString)
+  Qx, x = PolynomialRing(QQ, parent(f).S)
+  return NumberField(Qx(f), s)
+end
+
+function AnticNumberField(f::fmpz_poly)
+  Qx, x = PolynomialRing(QQ, parent(f).S)
+  return NumberField(Qx(f))
+end
+
 ################################################################################
 # given a basis (an array of elements), get a linear combination with
 # random integral coefficients
@@ -76,31 +107,6 @@ function set_den!(a::nf_elem, d::fmpz)
         Void, 
        (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.AnticNumberField}), 
        &a, &d, &parent(a))
-end
-
-function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int = 4, no_rel::Int = 10000, no_coeff::Int = 4 )
-  a = b[1].parent()
-  t = b[1].parent()
-  nb = length(b)
-  one = fmpz(1)
-  for i=1:no_rel
-    zero!(a)
-    for j=1:no_coeff
-      cf = rand([-1, 1])
-      p  = rand(1:nb)
-      if cf==1
-        Nemo.add!(a, a, b[p])
-      else
-        Nemo.sub!(a, a, b[p])
-      end
-    end
-    n = norm_div(a, one, no_p)
-    if cmpabs(num(n), bd) <= 0 
-      if class_group_add_relation(c, a, n, one)
-        a = b[1].parent()
-      end
-    end
-  end
 end
 
 function factor(f::PolyElem{nf_elem})
