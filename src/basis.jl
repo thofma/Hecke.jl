@@ -1,20 +1,20 @@
-function lll_basis_profile(rt_c::hecke.roots_ctx, A::NfMaximalOrderIdeal; prec::Int = 100)
-  c = hecke.minkowski_mat(rt_c, hecke.nf(order(A)), prec)
+function lll_basis_profile(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal; prec::Int = 100)
+  c = Hecke.minkowski_mat(rt_c, Hecke.nf(order(A)), prec)
   l = lll(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
   if !isdefined(rt_c, :cache)
     rt_c.cache = 0*c
   end
   d = rt_c.cache
-  hecke.mult!(d, b.num, c)
+  Hecke.mult!(d, b.num, c)
 
   old = get_bigfloat_precision()
   set_bigfloat_precision(prec)
 
-  g = hecke.round_scale(d, prec)
+  g = Hecke.round_scale(d, prec)
   set_bigfloat_precision(old)
   g = g*g'
-  hecke.shift!(g, -prec)
+  Hecke.shift!(g, -prec)
   g += rows(g)*one(parent(g))
 
   l = lll_gram(g)
@@ -33,7 +33,7 @@ function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
 end
 
 
-function lll_basis(rt_c::hecke.roots_ctx, A::NfMaximalOrderIdeal; 
+function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
   K = nf(order(A))
@@ -49,12 +49,111 @@ function lll_basis(rt_c::hecke.roots_ctx, A::NfMaximalOrderIdeal;
   return q
 end
 
+function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int; 
+                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
+                      prec::Int = 100)
 
-function random_ideal_with_norm_up_to(a::hecke.NfFactorBase, B::Integer)
+                      
+  K = nf(order(A))
+
+  c = minkowski_mat(rt_c, K, prec)
+
+  @time l, t1 = lll_with_transform(basis_mat(A))
+  @time temp = FakeFmpqMat(l)*basis_mat(order(A))
+  b = temp.num
+  b_den = temp.den
+
+  if !isdefined(rt_c, :cache)
+    rt_c.cache = 0*c
+  end
+  d = rt_c.cache
+  @time mult!(d, b, c)
+
+  #ignore v
+
+  @time g = round_scale(d, prec)
+
+  println("calling bkz")
+  @time g, tt = bkz_trans(g, bs)  ## check: bkz_trans seems to s.t. kill the input
+
+  c = tt*b
+  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
+
+  return q
+end
+
+function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int; 
+                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
+                      prec::Int = 100)
+
+                      
+  K = nf(order(A))
+
+  c = minkowski_mat(rt_c, K, prec)
+
+  @time l, t1 = lll_with_transform(basis_mat(A))
+  @time temp = FakeFmpqMat(l)*basis_mat(order(A))
+  b = temp.num
+  b_den = temp.den
+
+  if !isdefined(rt_c, :cache)
+    rt_c.cache = 0*c
+  end
+  d = rt_c.cache
+  @time mult!(d, b, c)
+
+  #ignore v
+
+  @time g = round_scale(d, prec)
+
+  println("calling lll")
+  @time g, tt = lll_with_transform(g)  ## check: bkz_trans seems to s.t. kill the input
+
+  c = tt*b
+  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
+
+  return q
+end
+
+function fplll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int; 
+                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
+                      prec::Int = 100)
+                      
+  K = nf(order(A))
+
+  c = minkowski_mat(rt_c, K, prec)
+
+  @time l, t1 = lll_with_transform(basis_mat(A))
+  @time temp = FakeFmpqMat(l)*basis_mat(order(A))
+  b = temp.num
+  b_den = temp.den
+
+  if !isdefined(rt_c, :cache)
+    rt_c.cache = 0*c
+  end
+  d = rt_c.cache
+  @time mult!(d, b, c)
+
+  #ignore v
+
+  @time g = round_scale(d, prec)
+
+  println("calling lll")
+  @time g, tt = FPlll.lll_trans(g)  ## check: bkz_trans seems to s.t. kill the input
+
+  c = tt*b
+  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
+
+  return q
+end
+
+
+
+function random_ideal_with_norm_up_to(a::Hecke.NfFactorBase, B::Integer)
   B = fmpz(B)
   O = order(a.ideals[1])
-  K = hecke.nf(O)
-  I = hecke.ideal(O, K(1))
+  K = Hecke.nf(O)
+  I = Hecke.ideal(O, K(1))
   while B >= norm(a.ideals[end])
     J = a.ideals[rand(find(x -> (norm(x) <= B), a.ideals))]
     B = div(B, norm(J))

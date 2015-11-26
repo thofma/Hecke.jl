@@ -1,5 +1,5 @@
 
-function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int = 4, no_rel::Int = 10000, no_coeff::Int = 4 )
+function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int = 4, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0) )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -15,17 +15,39 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int =
         Nemo.sub!(a, a, b[p])
       end
     end
+    iszero(a) && continue
     n = norm_div(a, one, no_p)
     if cmpabs(num(n), bd) <= 0 
-      if class_group_add_relation(c, a, n, one)
-        a = b[1].parent()
-      end
+      if no_id != 0
+        g = gcd(no_id, num(n))
+        if g==1 || gcd(div(num(n), g), g) == 1
+          if class_group_add_relation(c, a, n, one)
+            a = b[1].parent()
+          end
+        end
+      else
+        if class_group_add_relation(c, a, n, one)
+          a = b[1].parent()
+        end
+      end  
     end
   end
 end
 
+function improve(c::Hecke.ClassGrpCtx)
+  H = sub(c.M, 1:rows(c.M), 1:cols(c.M))
+  Hecke.upper_triangular(H, mod = 17)
+  p = setdiff(Set(1:cols(H)), Set([x.pos[1] for x=H.rows]))
+  p = maximum(p)
+  b = Hecke.bkz_basis(c.FB.ideals[p]);
+#  b = rels_stat(b, ...)
+  for x=b
+    class_group_add_relation(c, b, n, one)
+  end
+end
 
-function rels_stat(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+
+function rels_stat(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -70,7 +92,7 @@ function rels_stat(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no
   return stat, all_g
 end
 
-function find_rels(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function find_rels(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
 
   for i=10:50
     st, re = rels_stat(b, no_p = no_p, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
@@ -78,7 +100,7 @@ function find_rels(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no
   end
 end
 
-function find_rels2(b::Array{hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function find_rels2(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
 
   for i=100:150
     st, re = rels_stat(b, no_p = no_p, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
