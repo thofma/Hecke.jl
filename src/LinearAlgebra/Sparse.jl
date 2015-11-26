@@ -12,7 +12,7 @@
 
   Missing:
    full HNF, Howell, modular and not
-   conversion to and from Julia sparse mat
+   better elemination strategy
 =#  
 
 import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array
@@ -36,7 +36,13 @@ end
 # Smat
 #
 ################################################################################
+@doc """
+  Smat(A::fmpz_mat) -> Smat{fmpz}
 
+  Constructs the Smat (Hecke-sparse matrix) with coefficients fmpz
+  corresponding to A.
+
+""" ->
 function Smat(A::fmpz_mat)
   m = Smat{fmpz}()
   m.c = cols(A)
@@ -59,6 +65,13 @@ function Smat(A::fmpz_mat)
   return m
 end
 
+@doc """
+  Smat{T}(A::Array{T, 2}) -> Smat{T}
+
+  Constructs the Smat (Hecke-sparse matrix) with coefficients of
+  type T corresponding to A.
+
+""" ->
 function Smat{T}(A::Array{T, 2})
   m = Smat{T}()
   m.c = Base.size(A, 2)
@@ -85,6 +98,13 @@ function show{T}(io::IO, A::Smat{T})
   println(io, "Sparse ", A.r, " x ", A.c, " matrix with ", A.nnz, " non-zero entries")
 end
 
+@doc """
+  toNemo(io::IOStream, A::Smat; name = "A")
+
+  Prints the Smat as a julia-program into the file corresponding to io.
+  The file can be included to get the matrix.
+  "name" controls the variable name of the matrix.
+"""->  
 function toNemo(io::IOStream, A::Smat; name = "A")
   T = typeof(A.rows[1].values[1])
   println(io, name, " = Smat{$T}()")
@@ -97,6 +117,13 @@ function toNemo(io::IOStream, A::Smat; name = "A")
   end
 end
 
+@doc """
+  toNemo(io::ASCIIString, A::Smat; name = "A")
+
+  Prints the Smat as a julia-program into the file named io.
+  The file can be included to get the matrix.
+  "name" controls the variable name of the matrix.
+"""->  
 function toNemo(f::ASCIIString, A::Smat; name = "A")
   io = open(f, "w")
   toNemo(io, A, name=name)
@@ -106,6 +133,11 @@ end
 ################################################################################
 #  transpose
 ################################################################################
+@doc """
+  transpose{T}(A::Smat{T}) -> Smat{T}
+
+  The transpose of A
+""" ->
 function transpose{T}(A::Smat{T})
   B = Smat{T}()
   n = rows(A)
