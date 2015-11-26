@@ -344,7 +344,7 @@ end
 # 
 ################################################################################
 
-function max(a::fmpz_mat)
+function abs_max(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -356,6 +356,36 @@ function max(a::fmpz_mat)
   end
   r = fmpz()
   ccall((:fmpz_abs, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
+  return r
+end
+
+function max(a::fmpz_mat)  #should be maximum in julia
+  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
+  for i=1:rows(a)
+    for j=1:cols(a)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, i-1, j-1)
+      if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
+        m = z
+      end
+    end
+  end
+  r = fmpz()
+  ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
+  return r
+end
+
+function min(a::fmpz_mat)  #should be minimum in julia
+  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
+  for i=1:rows(a)
+    for j=1:cols(a)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, i-1, j-1)
+      if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) > 0
+        m = z
+      end
+    end
+  end
+  r = fmpz()
+  ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
   return r
 end
 
