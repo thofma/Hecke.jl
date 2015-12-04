@@ -574,7 +574,7 @@ end
 function +(x::GenNfOrdIdl, y::GenNfOrdIdl)
   H = vcat(basis_mat(x), basis_mat(y))
   g = gcd(minimum(x),minimum(y))
-  H = _hnf_modular(H, g, :lowerleft)
+  H = _hnf_modular_eldiv(H, g, :lowerleft)
   #H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))
   return ideal(order(x), H)
 end
@@ -597,7 +597,7 @@ function _mul(x::GenNfOrdIdl, y::GenNfOrdIdl)
       end
     end
   end
-  return ideal(O, _hnf_modular(z, l, :lowerleft))
+  return ideal(O, _hnf_modular_eldiv(z, l, :lowerleft))
 end
 
 ################################################################################

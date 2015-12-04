@@ -83,25 +83,25 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   end
 end
 
-function _lift_howell_to_hnf(x::nmod_mat)
-# Assume that x is square, in howell normal form and all non-zero rows are at the bottom
-# NOTE: _OUR_ Howell normal form algorithm always puts the rows at the right position
-# If row i is non-zero then i is the rightmost non-zero entry
-# Thus lifting is just replacing zero diagonal entries
-  !issquare(x) && error("Matrix has to be square")
-  y = lift_unsigned(x)
-  for i in cols(y):-1:1
-    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
-#      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
-      ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
-#      for k in 1:i-1
-#        _swaprows!(y, k, k+1)
-#      end
-    end
-  end
-  return y
-end
+#function _lift_howell_to_hnf(x::nmod_mat)
+## Assume that x is square, in howell normal form and all non-zero rows are at the bottom
+## NOTE: _OUR_ Howell normal form algorithm always puts the rows at the right position
+## If row i is non-zero then i is the rightmost non-zero entry
+## Thus lifting is just replacing zero diagonal entries
+#  !issquare(x) && error("Matrix has to be square")
+#  y = lift_unsigned(x)
+#  for i in cols(y):-1:1
+#    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
+#    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
+#      ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
+##      for k in 1:i-1
+##        _swaprows!(y, k, k+1)
+##      end
+#    end
+#  end
+#  return y
+#end
 
 function submat{T <: Integer}(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T})
   z = deepcopy(window(x, r, c))
@@ -113,34 +113,34 @@ function submat{T <: Integer}(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T})
   return z
 end
 
-function _hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
-  if abs(m) < fmpz(typemax(UInt))
-    y = MatrixSpace(ResidueRing(FlintZZ, m), rows(x), cols(x))(x)
-    howell_form!(y, shape)
-    y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
-    return _lift_howell_to_hnf(y)
-  end
-  return __hnf_modular(x, m, shape)
-end
-
-function __hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
-# See remarks above
-  y = deepcopy(x)
-  howell_form!(y, m, shape)
-  y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
-  for i in cols(y):-1:1
-    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
-    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
-#      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
-      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
-#      for k in 1:i-1
-#        _swaprows!(y, k, k+1)
-#      end
-    end
-  end
-  return y
-end
+#function _hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
+#  if abs(m) < fmpz(typemax(UInt))
+#    y = MatrixSpace(ResidueRing(FlintZZ, m), rows(x), cols(x))(x)
+#    howell_form!(y, shape)
+#    y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
+#    return _lift_howell_to_hnf(y)
+#  end
+#  return __hnf_modular(x, m, shape)
+#end
+#
+#function __hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
+## See remarks above
+#  y = deepcopy(x)
+#  howell_form!(y, m, shape)
+#  y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
+#  for i in cols(y):-1:1
+#    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
+#    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+#    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
+##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
+#      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
+##      for k in 1:i-1
+##        _swaprows!(y, k, k+1)
+##      end
+#    end
+#  end
+#  return y
+#end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
@@ -152,40 +152,50 @@ function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   return hnf(x)::fmpz_mat
 end
 
-
-function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
+function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   if shape == :lowerleft
-    _swapcols!(x)
-    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
-    _swapcols!(x)
-    _swaprows!(x)
-  else
-    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
+    h = hnf_modular_eldiv(_swapcols(x), m)
+    _swapcols!(h)
+    _swaprows!(h)
+    return h
+  elseif shape == :upperright
+    return hnf_modular_eldiv(x, m)
   end
 end
 
-function howell_form(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
-  y = deepcopy(x)
-  howell_form!(y, m, shape)
-  return y
-end
-
-function howell_form!(x::nmod_mat, shape::Symbol = :upperright)
-  if shape == :lowerleft
-    _swapcols!(x)
-    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
-    _swapcols!(x)
-    _swaprows!(x)
-  else
-    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
-  end
-end
-
-function howell_form(x::nmod_mat, shape::Symbol = :upperright)
-  y = deepcopy(x)
-  howell_form!(y, shape)
-  return y
-end
+#function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
+#  if shape == :lowerleft
+#    _swapcols!(x)
+#    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
+#    _swapcols!(x)
+#    _swaprows!(x)
+#  else
+#    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
+#  end
+#end
+#
+#function howell_form(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
+#  y = deepcopy(x)
+#  howell_form!(y, m, shape)
+#  return y
+#end
+#
+#function howell_form!(x::nmod_mat, shape::Symbol = :upperright)
+#  if shape == :lowerleft
+#    _swapcols!(x)
+#    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
+#    _swapcols!(x)
+#    _swaprows!(x)
+#  else
+#    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
+#  end
+#end
+#
+#function howell_form(x::nmod_mat, shape::Symbol = :upperright)
+#  y = deepcopy(x)
+#  howell_form!(y, shape)
+#  return y
+#end
 
 function _swaprows(x::fmpz_mat)
   y = deepcopy(x)
@@ -476,4 +486,5 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   end
   return X, r
 end
-  
+
+
