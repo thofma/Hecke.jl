@@ -4,6 +4,16 @@
 #
 ################################################################################
 
+global const SLP_AddRow_typ = 1
+global const SLP_SwapRows_typ = 2
+
+type SmatSLP{T}
+  row::Int
+  col::Int
+  typ::Int
+  val::T  ##only used for AddRow
+end
+
 type SmatRow{T}
   #in this row, in column pos[1] we have value values[1]
   values::Array{T, 1}
@@ -28,6 +38,16 @@ type SmatRow{T}
     r.pos = [x[1] for x in A]
     return r
   end
+
+  function SmatRow{S}(A::SmatRow{S})
+    r = new()
+    r.values = Array(T, length(A.pos))
+    r.pos = copy(A.pos)
+    for i=1:length(r.values)
+      r.values[i] = T(A.values[i])
+    end
+    return r
+  end
 end
 
 type Smat{T}
@@ -42,6 +62,18 @@ type Smat{T}
     r.nnz = 0
     r.r = 0
     r.c = 0
+    return r
+  end
+
+  function Smat{S}(a::Smat{S})
+    r = new()
+    r.rows = Array(SmatRow{T}, length(a.rows))
+    for i=1:rows(a)
+      r.rows[i] = SmatRow{T}(a.rows[i])
+    end
+    r.c = a.c
+    r.r = a.r
+    r.nnz = a.nnz
     return r
   end
 end
