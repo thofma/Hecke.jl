@@ -743,7 +743,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
     end
     i += 1
   end
- 
+
   if length(all_r) == 0 
     return A.r+1
   end
@@ -773,7 +773,6 @@ function one_step{T}(A::Smat{T}, sr = 1)
     return sr+1
   end
 
-
   for j=2:length(all_r)
     x = A.rows[sr].values[1]
     y = A.rows[all_r[j]].values[1]
@@ -791,7 +790,6 @@ function one_step{T}(A::Smat{T}, sr = 1)
       d = div(x, g)
 #      @assert x == d*g
       transform_row!(A, sr, all_r[j], a, b, c, d)
-      println("complicated")
     end
 
 #    @assert A.rows[sr].entry[1]valuesval == g
@@ -807,6 +805,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
 #             A.rows[all_r[j]].entry[1].col > min
 #  println("in one step: ilog2(max) now ", nbits(max(A)), " j:", j, " length: ", length(all_r))
   end
+  sort!(all_r)
   for j=length(all_r):-1:2
     if length(A.rows[all_r[j]].pos) == 0
       deleteat!(A.rows, all_r[j])
@@ -824,13 +823,13 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
       return
     end
     if A.nnz > (A.r-i) * (A.c-i) /2 || nbits(abs_max(A)) > 200
-      println("calling hnf at level ", i, " bits: ", nbits(abs_max(A)), "nnz: ", A.nnz)
+#      println("calling hnf at level ", i, " bits: ", nbits(abs_max(A)), "nnz: ", A.nnz)
       h = sub(A, i:A.r, i:A.c)
       deleteat!(A.rows, i:A.r)
       A.r -= length(i:A.r)
       @assert length(A.rows) == A.r
       h = fmpz_mat(h)
-      println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
+#      println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
       if mod==0
         h = hnf(h)
       else
