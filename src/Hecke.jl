@@ -1,8 +1,13 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__()
+#VERSION >= v"0.4.0-dev+6521" && __precompile__()
 
 module Hecke
 
+
 using Nemo
+
+if isdir(joinpath(Pkg.dir(),"FPlll"))
+  using FPlll
+end
 
 ################################################################################
 #
@@ -22,7 +27,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
              base_ring, compose, root, arf_struct, acb_struct, fmpq, valuation,
-             Ring, prec, conj
+             Ring, prec, conj, mul!
 
 export AnticNumberField, hash, update, nf
 
