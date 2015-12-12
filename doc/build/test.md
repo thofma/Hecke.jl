@@ -16,11 +16,9 @@ Ich beschreibe die Mathematik.
 MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 ```
 
-Compute the maximal order of `K` using Dedekind's criterion and the classical Round two algorithm.
+Computes the maximal order (ring of integers) of the given number field `K`.
 
-Testing $x^2 + y^2$.
-
-Here is an example:
+## Example
 
 ```jl
 Qx, x = QQ["x"]
