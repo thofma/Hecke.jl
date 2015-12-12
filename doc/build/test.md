@@ -16,9 +16,11 @@ Ich beschreibe die Mathematik.
 MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 ```
 
+#### Description
+
 Computes the maximal order (ring of integers) of the given number field `K`.
 
-## Example
+#### Example
 
 ```jl
 Qx, x = QQ["x"]
