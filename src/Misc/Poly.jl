@@ -22,10 +22,6 @@ function lift(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
   return a.data
 end
 
-function lift(a::Residue{Nemo.fmpz})
-  return a.data
-end
-
 function Base.call(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
   return a.data
 end
