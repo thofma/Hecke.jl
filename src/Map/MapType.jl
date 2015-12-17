@@ -29,6 +29,9 @@ type MapHeader
     r.preim = p
     return r
   end
+  function MapHeader()
+    return new()
+  end
 end
 
 

@@ -4,6 +4,9 @@ type NfToNfMor <: Map
   header::MapHeader
 
   function NfToNfMor()
+    r = new()
+    r.header = MapHeader()
+    return r
   end
 end
 
@@ -12,18 +15,20 @@ type NfMaxOrdToFqNmodMor <: Map
   sec::Function # a section to fun
 
   function NfMaxOrdToFqNmodMor()
-    z = new()
-    return z
+    r = new()
+    r.header = MapHeader()
+    return r
   end
 end
 
-type NfToFqNmodMor <: Mapping{nf_elem, fq_nmod}
+type NfToFqNmodMor <: Map
   header::MapHeader
   sec::Function # a section to fun
 
   function NfToFqNmodMor()
-    z = new()
-    return z
+    r = new()
+    r.header = MapHeader()
+    return r
   end
 end
 
@@ -39,7 +44,7 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
   Zx = PolynomialRing(ZZ, "x")[1]
   y = f(NfOrderElem(domain(f), gen(K)))
 
-  function fun(x::nf_elem)
+  function fun(M::Map, x::nf_elem)
     g = parent(K.pol)(x)
     u = inv(z.header.codomain(den(g)))
     g = Zx(den(g)*g)
@@ -57,7 +62,7 @@ function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
   p = characteristic(F)
   Zx = PolynomialRing(ZZ, "x")[1]
 
-  function fun(x::NfOrderElem)
+  function fun(M::Map, x::NfOrderElem)
     g = parent(nf(O).pol)(elem_in_nf(x))
     u = inv(F(den(g)))
     g = Zx(den(g)*g)
@@ -84,7 +89,7 @@ function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
   z.header.domain = K
   z.header.codomain = L
 
-  function fun(x::nf_elem)
+  function fun(M::Map, x::nf_elem)
     g = parent(K.pol)(x)
     return evaluate(g, y)
   end
