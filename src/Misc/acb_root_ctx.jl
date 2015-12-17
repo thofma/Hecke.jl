@@ -48,7 +48,7 @@ export acb_root_ctx, complex_roots
 function BigFloat(x::arb)
   a = BigFloat()
   b = BigFloat()
-  ccall((:arb_get_interval_mpfr, :libarb), Void, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{arb}, Clong), &a, &b, &x, get_bigfloat_precision())
+  ccall((:arb_get_interval_mpfr, :libarb), Void, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{arb}, Clong), &a, &b, &x, precision(BigFloat))
   return (a+b)/2
 end
 

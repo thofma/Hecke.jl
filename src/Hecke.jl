@@ -34,7 +34,7 @@ export AnticNumberField, hash, update, nf
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule
+             floor, max, BigFloat, promote_rule, precision, setprecision
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again

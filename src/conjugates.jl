@@ -1,5 +1,4 @@
 
-
 export conjugates_init, is_constant, is_squarefree, conjugates, angle, cos, 
        sin, abs, abs2, sqrt
 
@@ -48,12 +47,12 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
 
   c.r = Array(BigComplex, 0)
 
-  old = get_bigfloat_precision()
-  set_bigfloat_precision(53)
+  old = precision(BigFloat)
+  setprecision(53)
   for i = 1:length(c.r_d)
     push!(c.r, c.r_d[i])
   end
-  set_bigfloat_precision(old)
+  setprecision(old)
 
   return c
 end
@@ -104,18 +103,18 @@ function conjugates(c::roots_ctx, p::Int)
       function _h()
         return hensel_lift(c.f, c.r[i])
       end
-      c.r[i] = with_bigfloat_precision(_h, prec)
+      c.r[i] = setprecision(_h, prec)
     end
   end
   return set_precision(c.r, p)
 end
 
 function set_precision(a::BigFloat, p::Int)
-  return with_bigfloat_precision(function() return a*1.0; end, p)
+  return setprecision(function() return a*1.0; end, p)
 end
 
 function set_precision(a::BigComplex, p::Int)
-  return with_bigfloat_precision(function() return BigComplex(a.re*1.0, a.im*1.0); end, p)
+  return setprecision(function() return BigComplex(a.re*1.0, a.im*1.0); end, p)
 end
 
 function set_precision(a::Array{BigComplex, 1}, p::Int)
@@ -151,8 +150,8 @@ function minkowski_mat(c::roots_ctx, p::Int)
   if isdefined(c, :minkowski_mat) && c.minkowski_mat_p == p
     return c.minkowski_mat
   end
-  old = get_bigfloat_precision()
-  set_bigfloat_precision(p)
+  old = precision(BigFloat)
+  setprecision(p)
   r = conjugates(c, p)
   d = Array(typeof(r[1]), length(r))
   one = BigComplex(BigFloat(1.0), BigFloat(0.0))
@@ -179,7 +178,7 @@ function minkowski_mat(c::roots_ctx, p::Int)
       end
     end
   end
-  set_bigfloat_precision(old)
+  setprecision(old)
   c.minkowski_mat = m
   c.minkowski_mat_p = p
   return m

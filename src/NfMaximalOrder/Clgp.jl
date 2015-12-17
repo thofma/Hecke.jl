@@ -568,16 +568,16 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   mult!(d, b.num, c)
   if !iszero(v)
     @v_do :ClassGroup 2 println("using inf val", v)
-    old = get_bigfloat_precision()
-    set_bigfloat_precision(4*prec)
+    old = precision(BigFloat)
+    setprecision(4*prec)
     mult_by_2pow_diag!(d, v);
-    set_bigfloat_precision(old)
+    setprecision(old)
   end
-  old = get_bigfloat_precision()
-  set_bigfloat_precision(prec)
+  old = precision(BigFloat)
+  setprecision(prec)
   g = round_scale(d, prec)
   @hassert :ClassGroup 1 !iszero(g)
-  set_bigfloat_precision(old)
+  setprecision(old)
   g = g*g'
   shift!(g, -prec)
   g += rows(g)*one(parent(g))
