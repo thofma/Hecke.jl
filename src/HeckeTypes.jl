@@ -1104,6 +1104,8 @@ type IdealRelationsCtx{Tx, TU, TC}
   end
 end
 
+include("Map/MapType.jl")
+
 ################################################################################
 #
 #  NoElements

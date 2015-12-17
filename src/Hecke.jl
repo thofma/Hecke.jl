@@ -27,14 +27,15 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
              base_ring, compose, root, arf_struct, acb_struct, fmpq, valuation,
-             Ring, prec, conj, mul!
+             Ring, prec, conj, mul!, resultant
 
 export AnticNumberField, hash, update, nf
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule, precision, setprecision
+             floor, max, BigFloat, promote_rule, precision, setprecision,
+             last, first, StepRange, show, one, zero, inv
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -45,7 +46,8 @@ end
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
-       update, @timeit
+       update, @timeit, show, StepRange, domain, codomain, image, preimage,
+       modord, resultant
 
 ################################################################################
 #
@@ -308,7 +310,7 @@ include("NfMaximalOrder/GenNfOrd.jl")
 include("NfOrder.jl")
 include("analytic.jl")
 include("NfMaximalOrder.jl")
-#include("Misc/Map.jl")
+include("Map.jl")
 include("basis.jl")
 include("helper.jl")
 include("misc.jl")

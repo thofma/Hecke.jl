@@ -111,3 +111,11 @@ function trailing_coefficient(f::PolyElem)
 end
 
 constant_coefficient = trailing_coefficient
+function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
+  z = fmpz()
+  ccall((:fmpz_poly_resultant_modular_div, :libflint), Void, 
+     (Ptr{fmpz}, Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz}, Int), 
+     &z, &f, &g, &d, nb)
+  return z
+end
+
