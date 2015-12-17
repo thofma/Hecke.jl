@@ -10,6 +10,10 @@ function FiniteField(p::Integer)
   return ResidueRing(ZZ, p)
 end
 
+function FiniteField(p::fmpz)
+  return ResidueRing(ZZ, p)
+end
+
 function fmpz(a::Residue{Nemo.fmpz})
   return a.data
 end
