@@ -1,0 +1,417 @@
+# missing in FinFld
+# base_ring consistently
+# rand
+# creation with string, symbol, neither
+# minpoly, charpoly
+# order = size?
+# solve behave consistently for rings and fields
+#         do pseudo solve for extra den
+#       if ring is known to be field, use field version
+#       solve for matrix of NOT full rank
+#       kernel
+#       version that returns false rather than an error
+#         alterntively: throw a very precise error object that
+#         can be caught
+# residueRing creation: rename generator to prefix with r or so
+#
+# Padic -> pAdic
+# gen for ResidueRing(Poly) 
+
+
+immutable FmpzBits
+  len::Int
+  A::fmpz
+  function FmpzBits(a::fmpz)
+    a<0 && throw("should be positive")
+    r = new(nbits(a)-1, a)
+    return r
+  end
+end
+function start(I::FmpzBits)
+  return I.len
+end
+
+function next(I::FmpzBits, st::Int)
+  r = ccall((:fmpz_tstbit, :libflint), Int, (Ptr{fmpz}, Int), &I.A, st)
+  return (r, st-1)
+end
+function done(I::FmpzBits, st::Int)
+  return st<0
+end
+## sample: iteration over the bits...
+function pow_new(a::Residue, f::fmpz)
+  f==0 && return one(parent(a))
+  f==1 && return a
+  if f<0
+    f=-f
+    a = inv(a)
+  end
+  b = one(parent(a))
+  for X=FmpzBits(f)
+    b *= b
+    if X[1]==1
+      b*=a
+    end
+  end
+  return b
+end
+
+#################################################
+
+
+# Plesken: a ordering on finite field elements and polynomials
+# from his lecture notes.
+
+function steinitz(a::nmod_poly)
+  p = characteristic(base_ring(a))
+  ZZx = PolynomialRing(ZZ)[1]
+  #  f = lift(ZZx, a)  ## bloody stupid lift for poly uses symmetric residue
+  f = [lift(coeff(a, i))::fmpz for i=0:degree(a)]
+  return Nemo.evaluate(ZZx(f), p)
+end
+
+function steinitz(a::Residue{fmpz})
+  return lift(a)
+end
+
+function steinitz{T<:Poly}(a::Nemo.Residue{T})
+  f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
+  ZZx = PolynomialRing(ZZ)[1]
+  return evaluate(ZZx(f), size(parent(a)))
+end
+
+function steinitz(a::Nemo.Residue{fq_nmod_poly})
+  f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
+  ZZx = PolynomialRing(ZZ)[1]
+  return evaluate(ZZx(f), size(parent(a)))
+end
+
+function steinitz(a::fq)
+  st = 0
+  p = characteristic(parent(a))
+  for i=degree(parent(a))-1:-1:0
+    st *=p
+    st += coeff(a, i)
+  end
+  return st
+end
+
+function steinitz(a::fq_nmod)
+  st = 0
+  p = characteristic(parent(a))
+  for i=degree(parent(a))-1:-1:0
+    st *=p
+    st += coeff(a, i)
+  end
+  return st
+end
+
+##############################################################
+# this is expensive, write different version using lin-alg instead
+# or, deal with better frobenius. We're powering by power of characteristic
+# after all
+function minpoly_aut(a::Residue{fq_nmod_poly}, aut :: Function)
+  R = parent(a)
+  RX, X = PolynomialRing(R)
+  o = Set{typeof(X)}()
+  push!(o, X-a)
+  a = aut(a)
+  while !(X-a in o)
+    push!(o, X-a)
+    a = aut(a)
+  end
+  f = prod(collect(o))
+  # now, the coefficients SHOULD be in a smaller ring, but we
+  # don't have that ring
+  return f
+end
+
+function minpoly_aut{T <: Poly}(a::Residue{T}, aut :: Function)
+  R = parent(a)
+  RX, X = PolynomialRing(R)
+  o = Set{typeof(X)}()
+  push!(o, X-a)
+  a = aut(a)
+  while !(X-a in o)
+    push!(o, X-a)
+    a = aut(a)
+  end
+  f = prod(collect(o))
+  return f
+end
+
+function minpoly_pow{T <: Union{Poly, fq_nmod_poly}}(a::Residue{T}, deg::Int)
+  R = parent(a)
+  S = base_ring(base_ring(R))
+  M = MatrixSpace(S, deg, degree(R.modulus))()
+  B = MatrixSpace(S, 1, degree(R.modulus))()
+  elem_to_mat_row!(M, 1, one(R))
+  b = a
+  for i=1:deg-1
+    elem_to_mat_row!(M, i+1, b)
+    b *= a
+  end
+  elem_to_mat_row!(B, 1, -b)
+  s = solve(M', B')
+  if isa(s, Tuple)
+    s = s[1] * inv(s[2])
+  end
+  ## just to keep the interface...
+  Rx,x = PolynomialRing(R)
+  arr = Array{typeof(b), 1}(deg+1)
+  for i=1:deg
+    arr[i] = R(s[i, 1])  ## wasteful
+  end
+  arr[deg+1] = one(R)
+  return Rx(arr)
+end
+
+###################################################################
+###################################################################
+###################################################################
+##
+##
+##
+##
+## Plesken starting
+##
+
+function primitive_root_r_div_qm1(R, r::Int)
+  #Plesken, 1.39 essentially
+  n = size(R)-1
+  k, e = valuation(n, r)
+  @assert k>0
+  @assert isprime(r)
+
+  e = Int(e)
+  a = rand(R)^e
+  while a==0 || a^(r^(k-1)) == 1
+    a = rand(R)^e
+  end
+  println("found one $r^$k-th root of one: $a")
+
+  #level 1: need a^(r^(k-1))^l minimal, 0<l<r (so a stays primitive)
+  b = a^(r^(k-1))
+  c = b
+  st = steinitz(b)
+  opt = 1
+  for i=2:r-1
+    c *= b
+    if steinitz(c) < st
+      opt = i
+      st = steinitz(c)
+    end
+  end
+  a = a^opt
+  println("adjusted for level 1: ", a, " st: $st")
+  for i=2:k
+    println("dealing with level $i")
+    ## (a*a^(xr^(i-1)))^r^(k-i) needs to be minimal in the Steinitz sense
+    ## a^(r^(k-i) + xr^k-1)
+    # use a*a^(xr^(i-1)) as the new root
+    b = a^(r^(k-1)) ## basically a r-th root
+    c = a^(r^(k-i))
+    opt = 0
+    st = steinitz(c)
+    for ii=1:r
+      c *= b
+      if steinitz(c) < st
+        opt = ii
+        st = steinitz(c)
+      end
+    end
+    println("adjusted for level $i: ", a, " st: $st")
+    a = a*a^(opt*r^(i-1))
+  end
+  return a
+end
+
+function get_f(r::Int, p::fmpz, s::Int)
+  R = PadicField(r, s)
+  return lift(teichmuller(R(p)))
+end
+# plan
+# to get a field p^n, decompose n into prime powers and use compositum (missing)
+# to get p^(r^l)
+# find minimal k sth. r| p^k-1 and define F_(p^k)
+#  in F_p^k find the proper root of 1 (using the primitive_root_r_div_qm1
+#    function), cal this mu
+# build x^r - mu and iterate l times
+# descent: find f using get_f and form the trace relative to f
+# to find generators for the degree r extension of F_p, not F_p^k
+# needs minpoly in some variant...
+
+function f_trace(a::Residue, f::fmpz, o::Int)
+  s = a
+  for i=1:o-1
+    a = a^f
+    s += a
+  end
+  return s
+end
+
+function plesken_kummer(p::fmpz, r::Int, s::Int)
+  #find Plesken rep for F_p^(r^s)
+  @assert r%2 == 1
+  @assert r!=p
+  @assert isprime(r) && isprime(p)
+
+
+  if (p-1) % r == 0
+    R = FiniteField(p)
+    descent = false
+  else
+    f = cyclotomic(r, PolynomialRing(ZZ)[2])
+    f = PolynomialRing(ResidueRing(ZZ, p))[1](f)
+    f = factor(f)
+    st = steinitz(f[1][1])
+    opt = f[1][1]
+    for i=2:length(f)
+      if steinitz(f[i][1]) < st
+        st = steinitz(f[i][1])
+        opt = f[i][1]
+      end
+    end
+    descent = true
+    ord = degree(opt)
+    R = FlintFiniteField(opt, "a")[1]
+    T = ResidueRing(ZZ, p)
+    J = CoerceMap(T, R)
+  end
+  zeta = primitive_root_r_div_qm1(R, r)
+
+  a = zeta
+
+  if descent
+    f = get_f(r, p, s+4)  #+4 is stupid. Need to think
+    println("using $f as f")
+    # a -> a^f should be an automorphism of order ord = degree of ext
+  end
+
+  S = 1
+  U = 1
+  for i=1:s ## maybe do one step x^(r^s)-a only?
+    println("doin' stuff")
+    Rx, x = PolynomialRing(R, "x_$i")
+    S = ResidueRing(Rx, x^r-a)
+    I = CoerceMap(R, S)
+    a = S(x)
+    if descent
+      b = f_trace(a, f, ord)
+      println("$i: trace of $a is $b")
+#      pol = minpoly_aut(b, x->x^(p^(r^(i-1)))) 
+      pol = minpoly_pow(b, r)  ## does not work: expo too large
+      println(pol)
+      arr = Array{typeof(zero(T))}(degree(pol)+1)
+      @assert domain(I) == codomain(J)
+      @assert parent(coeff(pol, 0)) == codomain(I)
+      for j=0:degree(pol)
+        arr[j+1] = preimage(J, preimage(I, coeff(pol, j)))
+      end
+      pol = PolynomialRing(T, "t_$i")[1](arr)
+      U = ResidueRing(parent(pol), pol)
+      H = ResidueRingPolyMap(U, S, b)
+      H.coeff_map = J
+      J = H
+      T = U
+    end
+    R = S
+  end
+
+  return U, S
+end
+
+function plesken_as(p::fmpz, r::Int, s::Int)
+  @assert p==r
+  R = FiniteField(p)
+  g = R(-1)
+  t = 1
+  while s>1
+    Rx,x = PolynomialRing(R, "t_$i")
+    R = ResidueRing(Rx, x^r-x-g^(r-1)) ## r==p, but of better type
+    g = gen(R)
+    s -= 1
+    t += 1
+  end
+  return R
+end
+
+function plesken_2(p::fmpz, r::Int, s::Int)
+  @assert r==2
+  #Plesken, 1.27
+  if valuation(p-1, 2) >1
+    R = FiniteField(p)
+    g = primitive_root_r_div_qm1(p, r)
+    t = 1
+  else
+    @assert valuation(p+1, 2)>1
+    R = FiniteField(p)
+    Rx,x = PolynomialRing(R. "t_1")
+    R = ResidueRing(Rx, x^2+1)
+    g = primitive_root_r_div_qm1(R, 2)
+    s -= 1
+    t = 2
+  end
+  while s>0
+    Rx,x = PolynomialRing(R, "t_$t")
+    R = ResidueRing(Rx, x^2-g)
+    g = gen(R)
+    t += 1
+  end
+  return R
+end
+
+## missing:
+# the composition for general r (proper order and such)
+# choice or sum or product to generate field uniquely
+#
+# efficiency: those towers are slow (improved by different minpoly, Plesken
+#               suggests a recursion to writem them down, based on the matrix)
+#   one should probably collapse them as much as possibly
+#   the rep is still unique (in prime power towers) as the
+#   fields are cyclic: there are now subfields that will
+#   combine to everything
+#
+#   direct version: the final elt in them kummer case is x^(r^s)-a
+#   we can descent on this directly
+#   same with 2
+#   as is more involved (->Witt ring construction)
+#
+# maps & coercion
+#
+# the Log = canonical generator
+
+function h_minus(p::Int, nb::Int)
+  #void
+  #fmpz_poly_resultant_modular_div(fmpz_t res, const fmpz_poly_t poly1,
+  #              const fmpz_poly_t poly2, const fmpz_t divisor, slong nbits)
+
+  #let g be a generator for Z/pZ^*, h = g^-1 mod p
+  # F = sum_0^p-2 h^i x^i in Z[x]
+  # h^- = Res(F, x^((p-1)/2)+1)/(2p)^((p-3)/2)
+  #
+  # log(2*p*(p/4/pi^2)*(p-1)/4/log(2)
+  #
+  # is the asymptotic size, so that's what nb should be
+
+
+  Zx, x = PolynomialRing(ZZ)
+  F = Array{fmpz, 1}(p-1)
+
+  g = rand(1:p-1)
+  while modord(g, p) != p-1
+    g = rand(1:p-1)
+  end
+  h = invmod(g, p)
+  F[1] = 1
+  for i=2:p-1
+    F[i] = F[i-1]*h % p
+  end
+  F = Zx(F)
+
+  f = (2*fmpz(p))^div(p-3, 2)
+  @time r1 = resultant(F, x^div(p-1, 2)+1, f, nb)
+  @time r2 = resultant(F, x^div(p-1, 2)+1)
+  return r1
+end
+
