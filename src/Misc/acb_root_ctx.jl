@@ -57,46 +57,87 @@ type acb_root_ctx
   _roots::Ptr{acb_struct}
   prec::Int
   roots::Array{acb, 1}
-  real_roots::Array{acb, 1}
+  real_roots::Array{arb, 1}
   complex_roots::Array{acb, 1}
+  signature::Tuple{Int, Int}
 
-  function acb_root_ctx(x::fmpq_poly)
-    p = 32 
-    y = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct}, (Clong, ), degree(x))
-    t = acb_poly(x, p)
-    n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
-                y, &t, C_NULL, 0, p)
-    while n < degree(x)
-      p *= 2
-      n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                  (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
-                  y, &t, y, 0, p)
+  function acb_root_ctx(x::fmpq_poly, p::Int = 32)
+    z = new()
+    z.roots = _roots(x, p, p)
+    z.poly = x
+    z.prec = p
+    z._roots = acb_vec(degree(x))
+    r, s = signature(x)
+    z.signature = (r, s)
+
+    for i = 1:degree(x)
+      ccall((:acb_set, :libarb), Void, (Ptr{acb_struct}, Ptr{acb}),
+            z._roots + (i - 1) * sizeof(acb_struct), &z.roots[i])
     end
-    z = new()
-    z._roots = y
-    z.prec = p
-    z.poly = x
-    finalizer(z, _acb_root_ctx_clear_fn)
-    _find_real(z)
-    return z
-  end
 
-  function acb_root_ctx(x::fmpq_poly, p::Int)
-    z = new()
-    z._roots = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct},
-                            (Clong, ), degree(x))
-    finalizer(z, _acb_root_ctx_clear_fn)
-    t = acb_poly(x, p)
-    n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
-                z._roots, &t, C_NULL, 0, p)
-    n < degree(x) && error("Precision not high enough")
     z.prec = p
-    z.poly = x
-    _find_real(z)
+    A = Array(arb, z.signature[1])
+    B = Array(acb, z.signature[2])
+
+    for i in 1:r
+      A[i] = real(z.roots[i])
+    end
+
+    j = 0
+    for i in r+1:degree(x)
+      if ispositive(imag(z.roots[i]))
+        j += 1
+        B[j] = z.roots[i]
+      end
+    end
+
+    @assert j == s
+
+    z.real_roots = A
+    z.complex_roots = B
+
+    finalizer(z, _acb_root_ctx_clear_fn)
+
     return z
   end
+        
+  #function acb_root_ctx(x::fmpq_poly)
+  #  p = 32 
+  #  y = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct}, (Clong, ), degree(x))
+  #  t = acb_poly(x, p)
+  #  n = ccall((:acb_poly_find_roots, :libarb), Clong,
+  #              (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+  #              y, &t, C_NULL, 0, p)
+  #  while n < degree(x)
+  #    p *= 2
+  #    n = ccall((:acb_poly_find_roots, :libarb), Clong,
+  #                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+  #                y, &t, y, 0, p)
+  #  end
+  #  z = new()
+  #  z._roots = y
+  #  z.prec = p
+  #  z.poly = x
+  #  finalizer(z, _acb_root_ctx_clear_fn)
+  #  _find_real(z)
+  #  return z
+  #end
+
+  #function acb_root_ctx(x::fmpq_poly, p::Int)
+  #  z = new()
+  #  z._roots = ccall((:_acb_vec_init, :libarb), Ptr{acb_struct},
+  #                          (Clong, ), degree(x))
+  #  finalizer(z, _acb_root_ctx_clear_fn)
+  #  t = acb_poly(x, p)
+  #  n = ccall((:acb_poly_find_roots, :libarb), Clong,
+  #              (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+  #              z._roots, &t, C_NULL, 0, p)
+  #  n < degree(x) && error("Precision not high enough")
+  #  z.prec = p
+  #  z.poly = x
+  #  _find_real(z)
+  #  return z
+  #end
 end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
@@ -134,27 +175,51 @@ end
 # If none is given, double the precision
 
 function refine(x::acb_root_ctx, target_prec::Int = 2*prec(x))
+
   if target_prec < prec(x)
     return nothing
   end
-  p = prec(x)
-  f = acb_poly(x.poly, p)
-  n = ccall((:acb_poly_find_roots, :libarb), Clong,
-          (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
-          x._roots, &f, x._roots, 0, p)
-  while n != degree(x.poly) || !Bool(ccall((:check_accuracy, :libarb),
-                                     Cint, (Ptr{acb_struct}, Clong, Clong),
-                                     x._roots, degree(x.poly), target_prec))
-    p *= 2
-    f = acb_poly(poly(x), p)
-    n = ccall((:acb_poly_find_roots, :libarb), Clong,
-                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
-                x._roots, &f, C_NULL, 0, p)
-  end
+
+  x.roots = _roots(x.poly, x._roots, target_prec, target_prec)
   x.prec = target_prec
-  _find_real(x)
+
+  r, s = x.signature
+
+  for i in 1:r
+    x.real_roots[i] = real(x.roots[i])
+  end
+
+  j = 0
+  for i in r+1:2*s
+    if ispositive(imag(x.roots[i]))
+      j += 1
+      x.complex_roots[j] = x.roots[i]
+    end
+  end
+  @assert j == s
   nothing
-end
+end 
+  
+#  if target_prec < prec(x)
+#    return nothing
+#  end
+#  p = prec(x)
+#  f = acb_poly(x.poly, p)
+#  n = ccall((:acb_poly_find_roots, :libarb), Clong,
+#          (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+#          x._roots, &f, x._roots, 0, p)
+#  while n != degree(x.poly) || !Bool(ccall((:check_accuracy, :libarb),
+#                                     Cint, (Ptr{acb_struct}, Clong, Clong),
+#                                     x._roots, degree(x.poly), target_prec))
+#    p *= 2
+#    f = acb_poly(poly(x), p)
+#    n = ccall((:acb_poly_find_roots, :libarb), Clong,
+#                (Ptr{acb_struct}, Ptr{acb_poly}, Ptr{Void}, Clong , Clong),
+#                x._roots, &f, C_NULL, 0, p)
+#  end
+#  x.prec = target_prec
+#  _find_real(x)
+#  nothing
 
 # I don't think this function is correct
 # Need a way to prove that some ball contains real root (or not)
