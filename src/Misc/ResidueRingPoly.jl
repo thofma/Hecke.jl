@@ -115,6 +115,16 @@ function rand(R::ResidueRing{fq_poly})
   return r
 end
 
+function rand(R::ResidueRing{nmod_poly})
+  r = rand(base_ring(base_ring(R)))
+  g = gen(R)
+  for i=1:degree(R.modulus)
+    r = r*g + rand(base_ring(base_ring(R)))
+  end
+  return r
+end
+
+
 #######################################################
 ##
 ##
