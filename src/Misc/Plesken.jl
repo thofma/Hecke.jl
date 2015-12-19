@@ -74,16 +74,11 @@ function steinitz(a::Residue{fmpz})
   return lift(a)
 end
 
-function steinitz{T<:Poly}(a::Nemo.Residue{T})
+function steinitz{T <: Union{nmod_poly, fq_nmod_poly, Poly}}(a::Nemo.Residue{T})
   f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
   ZZx = PolynomialRing(ZZ)[1]
-  return evaluate(ZZx(f), size(parent(a)))
-end
-
-function steinitz(a::Nemo.Residue{fq_nmod_poly})
-  f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
-  ZZx = PolynomialRing(ZZ)[1]
-  return evaluate(ZZx(f), size(parent(a)))
+  S = base_ring(base_ring(parent(a)))
+  return evaluate(ZZx(f), size(S))
 end
 
 function steinitz(a::fq)
@@ -107,10 +102,10 @@ function steinitz(a::fq_nmod)
 end
 
 ##############################################################
-# this is expensive, write different version using lin-alg instead
-# or, deal with better frobenius. We're powering by power of characteristic
-# after all
-function minpoly_aut(a::Residue{fq_nmod_poly}, aut :: Function)
+# this is expensive, but completely generic
+# possibly improve by using the fact that aut should be an automorphism
+# if the order of aut would be known, one could use this to proceed in layers
+function minpoly_aut{T <: Union{fq_nmod_poly, nmod_poly}}(a::Residue{T}, aut :: Function)
   R = parent(a)
   RX, X = PolynomialRing(R)
   o = Set{typeof(X)}()
@@ -183,7 +178,6 @@ function primitive_root_r_div_qm1(R, r::Int)
   @assert k>0
   @assert isprime(r)
 
-  e = Int(e)
   a = rand(R)^e
   while a==0 || a^(r^(k-1)) == 1
     a = rand(R)^e
