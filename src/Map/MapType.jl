@@ -19,7 +19,7 @@ type MapHeader
     r = new()
     r.domain = a
     r.codomain = b
-    return a
+    return r
   end
   function MapHeader(a::Any, b::Any, i::Function, p::Function)
     r = new()
@@ -83,6 +83,18 @@ type ResidueRingPolyMap <: Map
     r.header = MapHeader(d, c, ResidueRingPolyMap_image, 
                                ResidueRingPolyMap_preimage)
     r.gen_image = i
+    return r
+  end
+end
+
+type IdentityMap <: Map
+  header::MapHeader
+  function IdentityMap(d::Any)
+    r = new()
+    i = function(M::Map, x::Any)
+      return x
+    end
+    r.header = MapHeader(d, d, i, i)
     return r
   end
 end
