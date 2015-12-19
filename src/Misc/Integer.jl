@@ -213,3 +213,99 @@ function one(::Type{Nemo.fmpz})
   return fmpz(1)
 end
 
+@doc """
+  modord(a::fmpz, m::fmpz) -> Int
+  modord(a::Integer, m::Integer)
+
+  The multiplicative order of a modulo m, no good algorithm.
+""" ->
+function modord(a::fmpz, m::fmpz)
+  gcd(a,m)!=1 && throw("1st agrument not a unit")
+  i = 1
+  b = a % m
+  while b != 1
+    i += 1
+    b = b*a % m
+  end
+  return i
+end
+
+function modord(a::Integer, m::Integer)
+  gcd(a,m)!=1 && throw("1st agrument not a unit")
+  i = 1
+  b = a % m
+  while b != 1
+    i += 1
+    b = b*a % m
+  end
+  return i
+end
+
+
+function isodd(a::fmpz)
+  return a%2==1
+end
+function iseven(a::fmpz)
+  return a%2==0
+end
+##
+## to support rand(fmpz:fmpz)....
+##
+# note, we cannot get a UnitRange as this is only legal for subtypes of Real
+
+function colon(a::Int, b::fmpz)
+  return fmpz(a):b
+end
+
+function one(::fmpz)
+  return fmpz(1)
+end
+
+function zero(::fmpz)
+  return fmpz(0)
+end
+
+#the build-in show fails due to Integer(a::fmpz) not defined
+# I don't think it would efficient to provide this for printing
+#display() seems to NOT call my show function, why, I don't know
+function Integer(a::fmpz)
+  return BigInt(a)
+end
+
+function show(io::IO, a::StepRange{fmpz, fmpz})
+  println(io, "2-element ", typeof(a), ":\n ", a.start, ",", a.stop)
+end
+
+# need to be mapped onto proper Flint primitives
+# flints needs a proper interface to randomness - I think
+# currently one simply cannot use it at all
+#
+# should be tied(?) to the Julia rng stuff?
+# similarly, all the derived rand functions should probably also do this
+#
+# inspired by/ copied from the Base/random.jl
+#
+function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
+  m = Base.last(a) - Base.first(a)
+  m < 0 && throw("range empty")
+  nd = ndigits(m, 2)
+  nl, high = divrem(nd, 8*sizeof(Base.GMP.Limb))
+  if high>0
+    mask = m>>(nl*8*sizeof(Base.GMP.Limb))
+  end  
+  s = fmpz(0)
+  while true
+    s = fmpz(0)
+    for i=1:nl
+      s = s << (8*sizeof(Base.GMP.Limb))
+      s += rand(Base.GMP.Limb)
+    end
+    if high >0 
+      s = s << high
+      s += rand(0:Base.GMP.Limb(mask))
+    end
+    if s <= m break; end
+  end
+  return s + first(a)
+end
+

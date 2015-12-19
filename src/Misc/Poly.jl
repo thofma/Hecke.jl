@@ -10,15 +10,15 @@ function FiniteField(p::Integer)
   return ResidueRing(ZZ, p)
 end
 
+function FiniteField(p::fmpz)
+  return ResidueRing(ZZ, p)
+end
+
 function fmpz(a::Residue{Nemo.fmpz})
   return a.data
 end
 
 function lift(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
-  return a.data
-end
-
-function lift(a::Residue{Nemo.fmpz})
   return a.data
 end
 
@@ -139,3 +139,12 @@ function valuation(z::nmod_poly, p::nmod_poly)
   end
   return v, z
 end 
+
+function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
+  z = fmpz()
+  ccall((:fmpz_poly_resultant_modular_div, :libflint), Void, 
+     (Ptr{fmpz}, Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz}, Int), 
+     &z, &f, &g, &d, nb)
+  return z
+end
+

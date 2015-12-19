@@ -182,21 +182,16 @@ function auto_of_maximal_real(K::AnticNumberField, n::Int)
   # zeta + 1/zeta = 2 cos(2pi/n)
   T = tschebyschew(parent(K.pol), n)
   i = evaluate(T, gen(K)*1//fmpz(2))*2
-  Qx = parent(K.pol)
-  return function(a::Nemo.nf_elem)
-           return evaluate(Qx(a), i)
-         end
+  return Mor(K, K, i)
 end
 
-function auto_simplify(A::Function, K::AnticNumberField)
+function auto_simplify(A::Map, K::AnticNumberField)
   Qx = parent(K.pol)
   b = A(gen(K))
-  return function(a::Nemo.nf_elem)
-           return evaluate(Qx(a), b)
-         end  
+  return Mor(K, K, b)
 end
 
-function auto_power(A::Function, n::Int) 
+function auto_power(A::Map, n::Int) 
   if n==1 
     return A
   end;
@@ -209,12 +204,7 @@ function auto_power(A::Function, n::Int)
   end
 end
 
-function auto_mult(A::Function, B::Function)
-  return x -> A(B(x))
-end
-
-
-function orbit(f::Function, a::Nemo.nf_elem)
+function orbit(f::Map, a::Nemo.nf_elem)
   b = Set([a])
   nb = 1
   while true
@@ -227,7 +217,7 @@ function orbit(f::Function, a::Nemo.nf_elem)
 end
 
 
-function order_of_auto(f::Function, K::AnticNumberField)
+function order_of_auto(f::Map, K::AnticNumberField)
   a = gen(K)
   b = f(a)
   i = 1
