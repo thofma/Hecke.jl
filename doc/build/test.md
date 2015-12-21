@@ -14,11 +14,11 @@ I am explaining the mathemics and conventions
 MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 ```
 
+###### Description
+
 Compute the maximal order of `K` using Dedekind's criterion and the classical Round two algorithm.
 
-Testing $x^2 + y^2$.
-
-Here is an example:
+###### Example
 
 ```jl
 Qx, x = QQ["x"]
@@ -26,13 +26,7 @@ K, a = NumberField(x^3 + 2, "a")
 O = MaximalOrder(K)
 ```
 
-<a name="Hecke.nf"></a>
-
-nf(x::NfMaximalOrderIdeal) -> AnticNumberField
-
-```
-Returns the number field, of which x is an integral ideal.
-```
+<a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:44"></a>
 
 ```
 nf(O::NfMaximalOrder) -> AnticNumberField
@@ -42,14 +36,36 @@ nf(O::NfMaximalOrder) -> AnticNumberField
 
 Returns the associated number field of `O`.
 
-<a name="Nemo.degree"></a>
+<a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:53"></a>
 
+```
 degree(O::NfMaximalOrder) -> Int
+```
 
 ###### Description
 
 Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module.
 
+<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:115"></a>
+
+```
+index(O::NfMaximalOrder) -> fmpz
+```
+
+###### Description
+
+Returns the index $[ \mathcal{O} : \mathbb{Z}[\alpha]]$ of the equation order in `O`. Here $\alpha$ is the primitive element of `K = nf(O)`.
+
 ## Elements
 
 ## Ideals
+
+<a name="nf(x::Hecke.NfMaximalOrderIdeal) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/Ideal.jl:130"></a>
+
+```
+nf(I::NfMaximalOrderIdeal) -> AnticNumberField
+```
+
+###### Description
+
+Returns the number field, of which `I` is an integral ideal.
