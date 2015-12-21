@@ -26,27 +26,23 @@ K, a = NumberField(x^3 + 2, "a")
 O = MaximalOrder(K)
 ```
 
-<a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:44"></a>
+<a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:43"></a>
 
 ```
 nf(O::NfMaximalOrder) -> AnticNumberField
 ```
 
-###### Description
-
 Returns the associated number field of `O`.
 
-<a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:53"></a>
+<a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:51"></a>
 
 ```
 degree(O::NfMaximalOrder) -> Int
 ```
 
-###### Description
-
 Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module.
 
-<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:113"></a>
+<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:110"></a>
 
 ```
 index(O::NfMaximalOrder) -> fmpz
