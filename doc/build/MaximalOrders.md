@@ -2,7 +2,11 @@
 
 # Introduction
 
-I am explaining the mathematics and conventions. The type of maximal orders in Hecke is `NfMaximalOrder`.
+In Hecke, maximal orders (aka ring of integers), due to their special properties normal orders don't share, come with their own type `NfMaximalOrder`.  While the elements have type `NfOrderElem`, the ideals and fractional ideals have types `NfMaximalOrderIdeal` and `NfMaximalOrderFracIdeal`.
+
+While theoretically a number field contains a unique maximal order (the set of all integral elements), for technical reasons in Hecke a number field admits multiple maximal orders, which are uniquely determined by the number field and a chosen integral basis.
+
+Let $K$ be a number field of degree $d$ with primitive element $\alpha$ and $\mathcal O$ a maximal order $K$ with $\mathbf{Z}$-basis $(\omega_1,\dotsc,\omega_d)$. The *basis matrix* of $\mathcal O$ is the unique matrix $M_{\mathcal O} \in \operatorname{Mat}_{d \times d}(\mathbf{Q})$ such that \begin{align} \begin{pmatrix} \omega_1 \ \omega_2 \ \vdots \ \omega_d \end{pmatrix} = M_{\mathcal O} \end{align}
 
 ## Creation
 
@@ -48,7 +52,8 @@ Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-modul
 index(O::NfMaximalOrder) -> fmpz
 ```
 
-Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element of the ambient number field.
+> Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element of the ambient number field.
+
 
 –––
 
