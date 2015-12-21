@@ -6,7 +6,8 @@ theme:               readthedocs
 
 pages:
 - Introduction:        index.md
-- Test:                build/test.md
+- Orders:              build/Orders.md
+- Maximal Orders:      build/MaximalOrders.md
 
 markdown_extensions:
 - tables
