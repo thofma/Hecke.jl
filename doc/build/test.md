@@ -46,13 +46,13 @@ degree(O::NfMaximalOrder) -> Int
 
 Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module.
 
-<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:115"></a>
+<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:116"></a>
 
 ```
 index(O::NfMaximalOrder) -> fmpz
 ```
 
-###### Description
+**Description**
 
 Returns the index $[ \mathcal{O} : \mathbb{Z}[\alpha]]$ of the equation order in `O`. Here $\alpha$ is the primitive element of `K = nf(O)`.
 
