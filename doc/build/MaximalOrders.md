@@ -12,29 +12,32 @@ For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \op
 
 ## Creation
 
-<a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:212"></a>
+<a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:214"></a>
 
 ```
 MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 ```
 
-> Compute the maximal order of `K` using Dedekind's criterion and the classical Round two algorithm.
+> Returns the maximal order of $K$.
 
 
-##### Example
+  * ##### Example  
 
-> ```Qx, x = QQ["x"]
+```
+Qx, x = QQ["x"]
+K, a = NumberField(x^3 + 2, "a")
+O = MaximalOrder(K)
+```
 
+---
 
-K, a = NumberField(x^3 + 2, "a") O = MaximalOrder(K)```
-
-<a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:227"></a>
+<a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:229"></a>
 
 ```
 MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaximalOrder
 ```
 
-> Assuming that `primes` contains all the prime numbers at which the equation order of `K` is not maximal, this function computes the maximal order of ``K`.
+> Assuming that `primes` contains all the prime numbers at which the equation order of $K$ is not maximal, this function returns the maximal order of $K$.
 
 
 ## Basic Invariants
