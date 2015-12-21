@@ -8,6 +8,8 @@ I am explaining the mathemics and conventions
 
 ## Creation and access
 
+–––
+
 <a name="Hecke.MaximalOrder"></a>
 
 ```
@@ -26,6 +28,8 @@ K, a = NumberField(x^3 + 2, "a")
 O = MaximalOrder(K)
 ```
 
+–––
+
 <a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:44"></a>
 
 ```
@@ -35,6 +39,8 @@ nf(O::NfMaximalOrder) -> AnticNumberField
 ###### Description
 
 Returns the associated number field of `O`.
+
+–––
 
 <a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:53"></a>
 
@@ -46,19 +52,23 @@ degree(O::NfMaximalOrder) -> Int
 
 Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module.
 
+–––
+
 <a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:116"></a>
 
-```
-index(O::NfMaximalOrder) -> fmpz
-```
+#### `index(O::NfMaximalOrder) -> fmpz`
 
 **Description**
 
 Returns the index $[ \mathcal{O} : \mathbb{Z}[\alpha]]$ of the equation order in `O`. Here $\alpha$ is the primitive element of `K = nf(O)`.
 
+–––
+
 ## Elements
 
 ## Ideals
+
+–––
 
 <a name="nf(x::Hecke.NfMaximalOrderIdeal) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/Ideal.jl:130"></a>
 
@@ -69,3 +79,5 @@ nf(I::NfMaximalOrderIdeal) -> AnticNumberField
 ###### Description
 
 Returns the number field, of which `I` is an integral ideal.
+
+–––
