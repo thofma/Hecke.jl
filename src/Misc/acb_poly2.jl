@@ -636,7 +636,7 @@ function evaluate(x::acb_poly, b::Array{acb, 1})
    return evaluate_iter(x, b)
 end
 
-function _roots(x::fmpq_poly, initial_prec = 0, abs_tol = 32, max_iter = 0)
+function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol = 32, initial_prec = 0, max_iter = 0)
   roots = acb_vec(degree(x))
   deg = degree(x)
 
@@ -703,8 +703,7 @@ function _roots(x::fmpq_poly, initial_prec = 0, abs_tol = 32, max_iter = 0)
   return res
 end
 
-
-function _roots(x::fmpq_poly, roots::Ptr{acb_struct}, initial_prec = 0, abs_tol = 32, max_iter = 0)
+function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol = 32, initial_prec = 0, max_iter = 0)
   deg = degree(x)
 
   initial_prec = (initial_prec >= 2) ? initial_prec : 32

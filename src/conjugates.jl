@@ -23,7 +23,7 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
   is_constant(gcd(f, derivative(f))) || error("poly should be square-free")
   c = roots_ctx()
   c.f = f
-  r = complex_roots(f, target_prec = 100)
+  r = _roots(f, 100)
 
   r_d = Array(BigComplex, 0)
   c_d = Array(BigComplex, 0)

@@ -1,9 +1,45 @@
-#VERSION >= v"0.4.0-dev+6521" && __precompile__()
+################################################################################
+#
+#     Hecke.jl : Hecke main file
+#
+# This file is part of Hecke.
+#
+# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# (C) 2015 Claus Fieker, Tommy Hofmann
+#
+################################################################################
 
 module Hecke
 
-
 using Nemo
+
+################################################################################
+#
+#  Load FPlll if available
+#
+################################################################################
 
 if isdir(joinpath(Pkg.dir(),"FPlll"))
   using FPlll
@@ -11,12 +47,17 @@ end
 
 ################################################################################
 #
-#  Import/export nightmare
+#  Make Hecke compatible for julia 0.4
 #
 ################################################################################
 
-# The following functions/types are not exported or we want to extend them
-# So we have to import them explicitely
+include("compat.jl")
+
+################################################################################
+#
+#  Import/export
+#
+################################################################################
 
 import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              den, num, lg, prime_decomposition, parent, length,
@@ -25,17 +66,18 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
-             elem_from_mat_row, elem_to_mat_row!, norm_div, order, signature,
-             base_ring, compose, root, arf_struct, acb_struct, fmpq, valuation,
+             elem_from_mat_row, elem_to_mat_row!, order, signature,
+             base_ring, compose, root, arf_struct, fmpq, valuation,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
-             resultant, evaluate
+             resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
+             ceil, //, setindex!, transpose, colon
 
 export AnticNumberField, hash, update, nf
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
-             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -,
+             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -, !=
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule, precision, setprecision,
+             floor, max, BigFloat, promote_rule, precision, 
              first, StepRange, show, one, zero, inv, iseven, isodd
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
@@ -49,6 +91,63 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, @timeit, show, StepRange, domain, codomain, image, preimage,
        modord, resultant
+
+###############################################################################
+#
+#   Library initialisation
+#
+###############################################################################
+
+function __init__()
+
+  println("")
+  print("Welcome to \n")
+  print_with_color(:red, "
+  _    _           _        
+ | |  | |         | |       
+ | |__| | ___  ___| | _____ 
+ |  __  |/ _ \\\/ __| |/ / _ \\
+ | |  | |  __/ (__|   <  __/
+ |_|  |_|\\___|\\___|_|\\_\\___|
+  ")
+#   ('-. .-.   ('-.             .-. .-')     ('-.   
+#  ( OO )  / _(  OO)            \\  ( OO )  _(  OO)  
+#  ,--. ,--.(,------.   .-----. ,--. ,--. (,------. 
+#  |  | |  | |  .---'  '  .--./ |  .'   /  |  .---' 
+#  |   .|  | |  |      |  |('-. |      /,  |  |     
+#  |       |(|  '--.  /_) |OO  )|     ' _)(|  '--.  
+#  |  .-.  | |  .--'  ||  |`-'| |  .   \\   |  .--'  
+#  |  | |  | |  `---.(_'  '--'\\ |  |\\   \\  |  `---. 
+#  `--' `--' `------'   `-----' `--' '--'  `------' 
+#  ")
+  println()
+  print("Version")
+  print_with_color(:green, " 0.1-dev ")
+  print("... \n ... which comes with absolutely no warrant whatsoever")
+  println()
+  println("(c) 2015 by Claus Fieker and Tommy Hofmann")
+  println()
+   
+  global hecke_handle = get_handle()
+
+  t = create_accessors(AnticNumberField, acb_root_ctx, hecke_handle)
+  global _get_nf_conjugate_data_arb = t[1]
+  global _set_nf_conjugate_data_arb = t[2]
+
+  global R = _RealRing()
+
+end
+
+function conjugate_data_arb(K::AnticNumberField)
+  try
+    c = _get_nf_conjugate_data_arb(K)::acb_root_ctx
+    return c
+  catch
+    c = acb_root_ctx(K.pol)
+    _set_nf_conjugate_data_arb(K, c)::acb_root_ctx
+    return c
+  end
+end
 
 ################################################################################
 #
@@ -151,60 +250,6 @@ macro hassert(args...)
   end
 end
 
-###############################################################################
-#
-#   Library initialisation message
-#
-###############################################################################
-
-function __init__()
-
-  println("")
-  print("Welcome to \n")
-  print_with_color(:red, "
-   ('-. .-.   ('-.             .-. .-')     ('-.   
-  ( OO )  / _(  OO)            \\  ( OO )  _(  OO)  
-  ,--. ,--.(,------.   .-----. ,--. ,--. (,------. 
-  |  | |  | |  .---'  '  .--./ |  .'   /  |  .---' 
-  |   .|  | |  |      |  |('-. |      /,  |  |     
-  |       |(|  '--.  /_) |OO  )|     ' _)(|  '--.  
-  |  .-.  | |  .--'  ||  |`-'| |  .   \\   |  .--'  
-  |  | |  | |  `---.(_'  '--'\\ |  |\\   \\  |  `---. 
-  `--' `--' `------'   `-----' `--' '--'  `------' 
-  ")
-  println()
-  print("hecke version")
-  print_with_color(:green, " 0.1 ")
-  print("... \n ... which comes with absolutely ")
-  print_with_color(:red, "no")
-  print_with_color(:blue, " warranty")
-  println(" whatsoever")
-  println("")
-  println("(c) 2015 by Claus Fieker and Tommy Hofmann")
-   
-  global hecke_handle = get_handle()
-
-  t = create_accessors(AnticNumberField, acb_root_ctx, hecke_handle)
-  global _get_nf_conjugate_data_arb = t[1]
-  global _set_nf_conjugate_data_arb = t[2]
-
-  global R = _RealRing()
-
-end
-
-
-function conjugate_data_arb(K::AnticNumberField)
-  try
-    c = _get_nf_conjugate_data_arb(K)::acb_root_ctx
-    return c
-  catch
-    c = acb_root_ctx(K.pol)
-    _set_nf_conjugate_data_arb(K, c)::acb_root_ctx
-    return c
-  end
-end
-
-
 
 ################################################################################
 #
@@ -241,14 +286,6 @@ macro vtime(args...)
     end
   end
 end
-
-type LowPrecisionCholesky <: Exception end
-Base.showerror(io::IO, e::LowPrecisionCholesky) = print(io, e.var, "negative diagonaly in Cholesky, probably precision issue")
-
-type LowPrecisionLLL <: Exception end
-Base.showerror(io::IO, e::LowPrecisionLLL) = print(io, e.var, "trafo matrix has too large entries relative to precision in LLL")
-
-function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
 #
@@ -297,6 +334,28 @@ end
 
 ################################################################################
 #
+#  Exception types
+#
+################################################################################
+
+type LowPrecisionCholesky <: Exception end
+
+Base.showerror(io::IO, e::LowPrecisionCholesky) =
+    print(io, e.var, """
+    Negative diagonal in Cholesky decomposition, probably a precision issue""")
+
+type LowPrecisionLLL <: Exception end
+
+Base.showerror(io::IO, e::LowPrecisionLLL) =
+    print(io, e.var, """
+    Transformation matrix has too large entries relative to precision in LLL""")
+
+# what is this function doing here?
+function checkbounds(a::Int, b::Int) nothing; end;
+
+
+################################################################################
+#
 #  "Submodules"
 #
 ################################################################################
@@ -315,12 +374,6 @@ include("Map.jl")
 include("basis.jl")
 include("helper.jl")
 include("misc.jl")
-
-################################################################################
-#
-#  Extending Nemo types
-#
-################################################################################
 
 ################################################################################
 #
