@@ -6,13 +6,11 @@ In Hecke, maximal orders (aka ring of integers), due to their special properties
 
 While theoretically a number field contains a unique maximal order (the set of all integral elements), for technical reasons in Hecke a number field admits multiple maximal orders, which are uniquely determined by the number field and a chosen integral basis.
 
-Let $K$ be a number field of degree $d$ with primitive element $\alpha$ and $\mathcal O$ a maximal order $K$ with $\mathbf{Z}$-basis $(\omega_1,\dotsc,\omega_d)$. The *basis matrix* of $\mathcal O$ is the unique matrix $M_{\mathcal O} \in \operatorname{Mat}_{d \times d}(\mathbf{Q})$ such that \begin{align} \begin{matrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{matrix} = M_{\mathcal O} \begin{pmatrix} 1 \\ \alpha \\ \vdots \\ \alpha^{d - 1} \end{align}. If $\beta$ is an element of $\mathcal O$, we call the unique integers $(x_1,\dotsc,x_d) \in \mathbf Z^d$ with \begin{align} \beta = \sum_{i=1}^d x_i \omega_i \end{align} the *coefficients* of $\beta$ with respect to $\mathcal O$ or just the *coefficient vector*.
+Let $K$ be a number field of degree $d$ with primitive element $\alpha$ and $\mathcal O$ a maximal order $K$ with $\mathbf{Z}$-basis $(\omega_1,\dotsc,\omega_d)$. The *basis matrix* of $\mathcal O$ is the unique matrix $M_{\mathcal O} \in \operatorname{Mat}_{d \times d}(\mathbf{Q})$ such that \begin{align} \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} = M_{\mathcal O} \begin{pmatrix} 1 \\ \alpha \\ \vdots \\ \alpha^{d - 1} \end{pmatrix} \end{align}. If $\beta$ is an element of $\mathcal O$, we call the unique integers $(x_1,\dotsc,x_d) \in \mathbf Z^d$ with \begin{align} \beta = \sum_{i=1}^d x_i \omega_i \end{align} the *coefficients* of $\beta$ with respect to $\mathcal O$ or just the *coefficient vector*.
 
-For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \operatorname{Mat}_{d \times d}(\mathbf{Z})$, such that the elements $(\alpha_1,\dotsc,\alpha_d)$ definied by \begin{align} \begin{matrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{matrix} = M_{\mathcal O} \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{align} form a $\mathbf{Z}$-basis of $I$.
+For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \operatorname{Mat}_{d \times d}(\mathbf{Z})$, such that the elements $(\alpha_1,\dotsc,\alpha_d)$ definied by \begin{align} \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix} = M_{\mathcal O} \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} \end{align} form a $\mathbf{Z}$-basis of $I$.
 
 ## Creation
-
-–––
 
 <a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:215"></a>
 
@@ -23,14 +21,13 @@ MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 > Compute the maximal order of `K` using Dedekind's criterion and the classical Round two algorithm.
 
 
-> ###### Example
->
-> ```jl
-> Qx, x = QQ["x"]
-> K, a = NumberField(x^3 + 2, "a")
-> O = MaximalOrder(K)
-> ```
+###### Example
 
+```jl
+Qx, x = QQ["x"]
+K, a = NumberField(x^3 + 2, "a")
+O = MaximalOrder(K)
+```
 
 <a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:230"></a>
 
@@ -49,7 +46,8 @@ MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaximalOrder
 nf(O::NfMaximalOrder) -> AnticNumberField
 ```
 
-Returns the associated number field of `O`.
+> Returns the associated number field of `O`.
+
 
 <a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:51"></a>
 
@@ -57,7 +55,8 @@ Returns the associated number field of `O`.
 degree(O::NfMaximalOrder) -> Int
 ```
 
-Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module.
+> Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module or the degree of the ambient number field.
+
 
 <a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:110"></a>
 
@@ -74,7 +73,8 @@ index(O::NfMaximalOrder) -> fmpz
 basis_mat(O::NfMaximalOrder) -> FakeFmpqMat
 ```
 
-Return the basis matrix of `O`.
+> Return the basis matrix of `O`.
+
 
 <a name="basis_mat_inv(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:69"></a>
 
@@ -82,40 +82,50 @@ Return the basis matrix of `O`.
 basis_mat_inv(O::NfMaximalOrder) -> FakeFmpqMat
 ```
 
-Return the inverse of the basis matrix of `O`. ```
+> Returns the inverse of the basis matrix of `O`.
+
+
+```
+
+
 
 <a name="basis(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:83"></a>
 
 ```
+
 basis(O::NfMaximalOrder) -> Array{NfOrderElem, 1}
+
 ```
 
-Return the basis of `O`.
+> Returns the basis of `O`.
+
+
+
 
 <a name="basis(O::Hecke.NfMaximalOrder, K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:93"></a>
 
 ```
+
 basis(O::NfMaximalOrder, K::AnticNumberField -> Array{nf_elem, 1}
+
 ```
 
-Return the basis of `O` as elements of `K`. The object `K` must be the number field of `O`.
+> Returns the basis of `O` as elements of `K`. The object `K` must be the ambient number field of `O`.
 
-–––
+
 
 ## Elements
 
 ## Ideals
 
-–––
+
 
 <a name="nf(x::Hecke.NfMaximalOrderIdeal) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/Ideal.jl:130"></a>
 
 ```
-nf(I::NfMaximalOrderIdeal) -> AnticNumberField
-```
+
+nf(I::NfMaximalOrderIdeal) -> AnticNumberField ```
 
 ###### Description
 
 Returns the number field, of which `I` is an integral ideal.
-
-–––
