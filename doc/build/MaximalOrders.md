@@ -12,7 +12,7 @@ For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \op
 
 ## Creation
 
-<a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:210"></a>
+<a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:225"></a>
 
 ---
 
@@ -31,7 +31,7 @@ julia> K, a = NumberField(x^3 + 2, "a")
 julia> O = MaximalOrder(K)
 ```
 
-<a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:226"></a>
+<a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:241"></a>
 
 ---
 
@@ -119,6 +119,17 @@ index(O::NfMaximalOrder) -> fmpz
 > Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element of the ambient number field.
 
 
+<a name="signature(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:198"></a>
+
+---
+
+```
+signature(O::NfMaximalOrder) -> Tuple{Int, Int}
+```
+
+> Returns the signature of the ambient number field of $\mathcal O$.
+
+
 <a name="is_index_divisor(O::Hecke.NfMaximalOrder, d::Union{Int64,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:187"></a>
 
 ---
@@ -131,6 +142,17 @@ is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
 
 
 ## Elements
+
+<a name="call(O::Hecke.GenNfOrd, a::Nemo.nf_elem, check::Bool) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:102"></a>
+
+---
+
+```
+call(O::GenNfOrd, a::nf_elem, check::Bool = true) -> NfOrderElem
+```
+
+> Given an element $a$ of the ambient number field of $\mathcal O$, this function coerces the element into $\mathcal O$. It will be checked that $a$ is contained in $\mathcal O$ if and only if `check` is `true`,
+
 
 ## Ideals
 
