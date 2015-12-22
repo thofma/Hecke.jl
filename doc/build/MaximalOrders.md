@@ -24,9 +24,9 @@ MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
   * ##### Example  
 
 ```
-Qx, x = QQ["x"]
-K, a = NumberField(x^3 + 2, "a")
-O = MaximalOrder(K)
+julia> Qx, x = QQ["x"]
+julia> K, a = NumberField(x^3 + 2, "a")
+julia> O = MaximalOrder(K)
 ```
 
 ---
