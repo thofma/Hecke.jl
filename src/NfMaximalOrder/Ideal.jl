@@ -34,13 +34,13 @@ order(S::NfMaximalOrderIdealSet) = S.order
 #
 ################################################################################
 
-@doc """
+doc"""
 ideal(O::NfMaximalOrder, x::nf_elem, check::Bool = true) -> NfMaximalOrderIdeal
 
     Creates the principal ideal (x) of O. If check is set, then containment of
     x in O will be checked. Data will be copied.
 
-""" ->
+"""
 function ideal(O::NfMaximalOrder, x::nf_elem, check::Bool = true)
   # Data will be copied, as O(x) will copy data.
   if check
@@ -120,12 +120,13 @@ parent(x::NfMaximalOrderIdeal) = x.parent
 """ ->
 order(x::NfMaximalOrderIdeal) = order(parent(x))
 
-@doc """
-  nf(x::NfMaximalOrderIdeal) -> AnticNumberField
+doc"""
+    nf(I::NfMaximalOrderIdeal) -> AnticNumberField
 
-    Returns the number field, of which x is an integral ideal.
+###### Description
+Returns the number field, of which ``I`` is an integral ideal.
 
-""" ->
+"""
 nf(x::NfMaximalOrderIdeal) = nf(order(x))
 
 @doc """

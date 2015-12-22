@@ -12,7 +12,9 @@ For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \op
 
 ## Creation
 
-<a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:214"></a>
+<a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:210"></a>
+
+---
 
 ```
 MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
@@ -21,7 +23,7 @@ MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 > Returns the maximal order of $K$.
 
 
-  * ##### Example  
+##### Example
 
 ```
 julia> Qx, x = QQ["x"]
@@ -29,38 +31,86 @@ julia> K, a = NumberField(x^3 + 2, "a")
 julia> O = MaximalOrder(K)
 ```
 
----
+<a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:226"></a>
 
-<a name="MaximalOrder(K::Nemo.AnticNumberField, primes::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:229"></a>
+---
 
 ```
 MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaximalOrder
 ```
 
-> Assuming that `primes` contains all the prime numbers at which the equation order of $K$ is not maximal, this function returns the maximal order of $K$.
+> Assuming that `primes` contains all the prime numbers at which the equation order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal, this function returns the maximal order of $K$.
 
 
-## Basic Invariants
+## Basic invariants
 
-<a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:43"></a>
+<a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:79"></a>
+
+---
 
 ```
 nf(O::NfMaximalOrder) -> AnticNumberField
 ```
 
-> Returns the associated number field of `O`.
+> Returns the ambient number field of $\mathcal O$.
 
 
-<a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:51"></a>
+<a name="degree(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:89"></a>
+
+---
 
 ```
 degree(O::NfMaximalOrder) -> Int
 ```
 
-> Returns the degree of `O`, which is just the rank of `O` as a $\mathbb{Z}$-module or the degree of the ambient number field.
+> Returns the degree of $\mathcal O$, which is just the rank of $\mathcal O$ as a $\mathbb{Z}$-module or equivalently the degree of the ambient number field.
 
 
-<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:109"></a>
+<a name="basis(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:122"></a>
+
+---
+
+```
+basis(O::NfMaximalOrder) -> Array{NfOrderElem, 1}
+```
+
+> Returns the basis of $\mathcal O$.
+
+
+<a name="basis(O::Hecke.NfMaximalOrder, K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:133"></a>
+
+---
+
+```
+basis(O::NfMaximalOrder, K::AnticNumberField -> Array{nf_elem, 1}
+```
+
+> Returns the basis of $\mathcal O$ as elements of $K$. The number field $K$ must be the ambient number field of $\mathcal O$.
+
+
+<a name="basis_mat(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:98"></a>
+
+---
+
+```
+basis_mat(O::NfMaximalOrder) -> FakeFmpqMat
+```
+
+> Returns the basis matrix of $\mathcal O$.
+
+
+<a name="basis_mat_inv(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:107"></a>
+
+```
+basis_mat_inv(O::NfMaximalOrder) -> FakeFmpqMat
+```
+
+> Returns the inverse of the basis matrix of $\mathcal O$.
+
+
+<a name="index(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:150"></a>
+
+---
 
 ```
 index(O::NfMaximalOrder) -> fmpz
@@ -69,40 +119,15 @@ index(O::NfMaximalOrder) -> fmpz
 > Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element of the ambient number field.
 
 
-<a name="basis_mat(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:59"></a>
+<a name="is_index_divisor(O::Hecke.NfMaximalOrder, d::Union{Int64,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:187"></a>
+
+---
 
 ```
-basis_mat(O::NfMaximalOrder) -> FakeFmpqMat
+is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
 ```
 
-> Return the basis matrix of `O`.
-
-
-<a name="basis_mat_inv(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:68"></a>
-
-```
-basis_mat_inv(O::NfMaximalOrder) -> FakeFmpqMat
-```
-
-> Returns the inverse of the basis matrix of `O`.
-
-
-<a name="basis(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:82"></a>
-
-```
-basis(O::NfMaximalOrder) -> Array{NfOrderElem, 1}
-```
-
-> Returns the basis of `O`.
-
-
-<a name="basis(O::Hecke.NfMaximalOrder, K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:92"></a>
-
-```
-basis(O::NfMaximalOrder, K::AnticNumberField -> Array{nf_elem, 1}
-```
-
-> Returns the basis of `O` as elements of `K`. The object `K` must be the ambient number field of `O`.
+> Returns whether $d$ is a divisor of $\operatorname{disc}(\mathcal O)$.
 
 
 ## Elements

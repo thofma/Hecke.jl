@@ -90,6 +90,14 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    call(O::GenNfOrd, a::nf_elem, check::Bool = true) -> NfOrderElem
+
+> Given an element $a$ of the ambient number field of $\mathcal O$, this
+> function coerces the element into $\mathcal O$. It will be checked that $a$
+> is contained in $\mathcal O$ if and only if `check` is `true`, 
+"""
 function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
   if check
     (x,y) = _check_elem_in_order(a,O)

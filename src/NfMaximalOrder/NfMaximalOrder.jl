@@ -1,13 +1,41 @@
+################################################################################
+#
+#       NfMaximalOrder.jl : Maximal orders in absolute number fields
+#
+# This file is part of hecke.
+#
+# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+# (C) 2015 Tommy Hofmann
+#
+################################################################################
+
 export NfMaximalOrder
 
-export MaximalOrder, conjugate_data
-
-################################################################################
-#
-#  Types and memory management
-#
-################################################################################
-
+export MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
+       degree, index, is_index_divisor, discriminant
 
 ################################################################################
 #
@@ -42,6 +70,39 @@ function conjugate_data(O::NfMaximalOrder)
   end
 end
 
+doc"""
+***
+    nf(O::NfMaximalOrder) -> AnticNumberField
+
+> Returns the ambient number field of $\mathcal O$.
+"""
+nf(O::NfMaximalOrder) = O.nf
+
+doc"""
+***
+    degree(O::NfMaximalOrder) -> Int
+
+> Returns the degree of $\mathcal O$, which is just the rank of $\mathcal O$
+> as a $\mathbb{Z}$-module or equivalently the degree of the ambient number
+> field.
+"""
+degree(O::NfMaximalOrder) = degree(nf(O))
+
+doc"""
+***
+    basis_mat(O::NfMaximalOrder) -> FakeFmpqMat
+
+> Returns the basis matrix of $\mathcal O$.
+"""
+function basis_mat(O::NfMaximalOrder)
+  return O.basis_mat
+end
+
+doc"""
+    basis_mat_inv(O::NfMaximalOrder) -> FakeFmpqMat
+
+> Returns the inverse of the basis matrix of $\mathcal O$.
+"""
 function basis_mat_inv(O::NfMaximalOrder)
   if isdefined(O, :basis_mat_inv)
     return O.basis_mat_inv
@@ -51,14 +112,23 @@ function basis_mat_inv(O::NfMaximalOrder)
   end
 end
 
-function basis_mat(O::NfMaximalOrder)
-  return O.basis_mat
-end
+doc"""
+***
+    basis(O::NfMaximalOrder) -> Array{NfOrderElem, 1}
 
+> Returns the basis of $\mathcal O$.
+"""
 function basis(O::NfMaximalOrder)
   return basis_ord(O)
 end
 
+doc"""
+***
+    basis(O::NfMaximalOrder, K::AnticNumberField -> Array{nf_elem, 1}
+
+> Returns the basis of $\mathcal O$ as elements of $K$. The number field $K$
+> must be the ambient number field of $\mathcal O$.
+"""
 function basis(O::NfMaximalOrder, K::AnticNumberField)
   nf(O) != K && error()
   return basis_nf(O)
@@ -68,6 +138,14 @@ function basis_nf(O::NfMaximalOrder)
   return O.basis_nf
 end
 
+doc"""
+***
+    index(O::NfMaximalOrder) -> fmpz
+
+> Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order
+> in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element
+> of the ambient number field.
+"""
 function index(O::NfMaximalOrder)
   if isdefined(O, :index)
     return O.index
@@ -77,11 +155,12 @@ function index(O::NfMaximalOrder)
   end
 end
 
-function is_index_divisor(O::NfMaximalOrder, d::fmpz)
-  i = index(O)
-  return i%d==0
-end
+doc"""
+***
+    discriminant(O::NfMaximalOrder) -> fmpz
 
+> Returns the discriminant of $\mathcal O$.
+"""
 function discriminant(O::NfMaximalOrder)
   if isdefined(O, :disc)
     return O.disc
@@ -98,62 +177,32 @@ function discriminant(O::NfMaximalOrder)
   return O.disc
 end
 
-nf(O::NfMaximalOrder) = O.nf
+doc"""
+***
+    is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
 
-rank(x::NfMaximalOrder) = degree(nf(x))
+> Returns whether $d$ is a divisor of $\operatorname{disc}(\mathcal O)$.
+"""
+function is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
+  i = index(O)
+  return i % d == 0
+end
 
-degree(x::NfMaximalOrder) = degree(nf(x))
+doc"""
+***
+    signature(O::NfMaximalOrder) -> Tuple{Int, Int}
 
-################################################################################
-#
-#  Containment
-#
-################################################################################
+> Returns the signature of the ambient number field of $\mathcal O$.
+"""
+function signature(O::NfMaximalOrder)
+  if isdefined(O, :signature)
+    return O.signature
+  else
+    O.signature = signature(nf(K))
+    return O.signature
+  end
+end
 
-# Migrated to GenNfOrd.jl under new name _check_elem_in_order
-
-#function _check_elem_in_maximal_order(x::nf_elem, O::NfMaximalOrder)
-#  d = denominator(x)
-#  b = d*x 
-#  M = MatrixSpace(ZZ, 1, rank(O))()
-#  element_to_mat_row!(M,1,b)
-#  t = FakeFmpqMat(M,d)
-#  z = t*basis_mat_inv(O)
-#  v = Array(fmpz, degree(O))
-#  for i in 1:degree(O)
-#    v[i] = z.num[1,i]
-#  end
-#  return (z.den == 1, v)  
-#end
-
-#function in(a::nf_elem, O::NfMaximalOrder)
-#  (x,y) = _check_elem_in_maximal_order(a,O)
-#  return x
-#end
-
-################################################################################
-#
-#  Denominator
-#
-################################################################################
-
-# Migrated to GenNfOrd.jl
-
-#@doc """
-#  denominator(a::nf_elem, O::NfMaximalOrder) -> fmpz
-#
-#  Compute the smalles positive integer k such that k*a in O.
-#""" ->
-#function denominator(a::nf_elem, O::NfMaximalOrder)
-#  d = denominator(a)
-#  b = d*a 
-#  M = MatrixSpace(ZZ, 1, rank(O))()
-#  element_to_mat_row!(M,1,b)
-#  t = FakeFmpqMat(M,d)
-#  z = t*basis_mat_inv(O)
-#  return z.den
-#end
-#
 ################################################################################
 #
 #  Constructors for users
@@ -161,19 +210,16 @@ degree(x::NfMaximalOrder) = degree(nf(x))
 ################################################################################
 
 doc"""
+***
     MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 
-Compute the maximal order of ``K`` using Dedekind's criterion and the classical
-Round two algorithm.
+> Returns the maximal order of $K$.
 
-Testing $x^2 + y^2$.
+##### Example  
 
-Here is an example:
-```jl
-Qx, x = QQ["x"]
-K, a = NumberField(x^3 + 2, "a")
-O = MaximalOrder(K)
-```
+    julia> Qx, x = QQ["x"]
+    julia> K, a = NumberField(x^3 + 2, "a")
+    julia> O = MaximalOrder(K)
 """
 function MaximalOrder(K::AnticNumberField)
   O = EquationOrder(K)
@@ -183,6 +229,14 @@ function MaximalOrder(K::AnticNumberField)
   return NfMaximalOrder(K, basis_mat(O))
 end
 
+doc"""
+***
+    MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaximalOrder
+
+> Assuming that ``primes`` contains all the prime numbers at which the equation
+> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
+> this function returns the maximal order of $K$.
+"""
 function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   O = EquationOrder(K)
   @vprint :NfMaximalOrder 1 "Computing the maximal order ...\n"
@@ -199,9 +253,5 @@ end
 
 function show(io::IO, O::NfMaximalOrder)
   print(io, "Maximal order of $(nf(O)) \nwith basis $(basis_nf(O))")
-end
-
-function PariMaximalOrder(O::NfMaximalOrder)
-  return PariMaximalOrder(PariNumberField(nf(O)))
 end
 
