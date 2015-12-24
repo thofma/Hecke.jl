@@ -8,7 +8,7 @@ pages:
 - Introduction:        index.md
 - Maximal Orders:
     - Introduction:    build/MaximalOrders/Introduction.md
-    - Creation and Basic Invariants:        build/MaximalOrders/Creation.md
+    - Creation:        build/MaximalOrders/Creation.md
     - Elements:        build/MaximalOrders/Elements.md
     - Ideals:          build/MaximalOrders/Ideals.md
 - Orders:              build/Orders.md
