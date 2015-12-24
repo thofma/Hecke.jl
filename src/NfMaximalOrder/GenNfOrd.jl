@@ -96,7 +96,7 @@ doc"""
 
 > Given an element $a$ of the ambient number field of $\mathcal O$, this
 > function coerces the element into $\mathcal O$. It will be checked that $a$
-> is contained in $\mathcal O$ if and only if `check` is `true`, 
+> is contained in $\mathcal O$ if and only if `check` is `true`.
 """
 function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
   if check
@@ -108,26 +108,56 @@ function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
   end
 end
 
-function call(O::GenNfOrd, a::Integer)
+doc"""
+***
+    call(O::GenNfOrd, a::Union{fmpz, Integer}) -> NfOrderElem
+
+> Given an element $a$ of type `fmpz` or `Integer`, this
+> function coerces the element into $\mathcal O$. It will be checked that $a$
+> is contained in $\mathcal O$ if and only if `check` is `true`.
+"""
+function call(O::GenNfOrd, a::Union{fmpz, Integer})
   return NfOrderElem(O, nf(O)(a))
 end
 
-function call(O::GenNfOrd, a::fmpz)
-  return NfOrderElem(O, nf(O)(a))
-end
+doc"""
+***
+    call(O::GenNfOrd, arr::Array{fmpz, 1})
 
-function call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
-  return NfOrderElem(O, deepcopy(a), deepcopy(arr))
-end
-
+> Returns the element of $\mathcal O$ with coefficient vector `arr`.
+"""
 function call(O::GenNfOrd, arr::Array{fmpz, 1})
   return NfOrderElem(O, deepcopy(arr))
 end
 
+doc"""
+***
+    call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
+
+> Returns the element of $\mathcal O$ with coefficient vector `arr`.
+"""
 function call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
   return NfOrderElem(O, deepcopy(arr))
 end
 
+doc"""
+***
+    call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrderElem
+
+> This function constructs the element of $\mathcal O$ with coefficient vector
+> `arr`. It is assumed that the corresponding element of the ambient number
+> field is $a$.
+"""
+function call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
+  return NfOrderElem(O, deepcopy(a), deepcopy(arr))
+end
+
+doc"""
+***
+    call(O::GenNfOrd) -> NfOrderElem
+
+> This function constructs a new element of $\mathcal O$ which is set to $0$.
+"""
 function call(O::GenNfOrd)
   return NfOrderElem(O)
 end
@@ -138,8 +168,20 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    parent(a::NfOrderElem) -> GenNfOrd
+
+> Returns the order of which $a$ is an element.
+"""
 parent(a::NfOrderElem) = a.parent
 
+doc"""
+***
+    elem_in_nf(a::NfOrderElem) -> nf_elem
+
+> Returns the element $a$ considered as an element of the ambient number field.
+"""
 function elem_in_nf(a::NfOrderElem)
   if isdefined(a, :elem_in_nf)
     return a.elem_in_nf
@@ -147,6 +189,12 @@ function elem_in_nf(a::NfOrderElem)
   error("Not a valid order element")
 end
 
+doc"""
+***
+    elem_in_basis(a::NfOrderElem) -> Array{fmpz, 1}
+
+> Returns the coefficient vector of $a$.
+"""
 function elem_in_basis(a::NfOrderElem)
   @vprint :NfOrder 2 "Computing the coordinates of $a\n"
   if a.has_coord
@@ -170,13 +218,18 @@ end
 
 hash(x::NfOrderElem) = hash(elem_in_nf(x))
 
-
 ################################################################################
 #
 #  Equality testing
 #
 ################################################################################
 
+doc"""
+***
+    ==(x::NfOrderElem, y::NfOrderElem) -> Bool
+
+> Returns whether $x$ and $y$ are equal.
+"""
 ==(x::NfOrderElem, y::NfOrderElem) = parent(x) == parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
@@ -186,6 +239,12 @@ hash(x::NfOrderElem) = hash(elem_in_nf(x))
 #
 ################################################################################
 
+doc"""
+***
+    deepcopy(x::NfOrderElem) -> NfOrderElem
+
+> Returns a copy of $x$.
+"""
 function deepcopy(x::NfOrderElem)
   z = parent(x)()
   z.elem_in_nf = deepcopy(x.elem_in_nf)
@@ -217,6 +276,12 @@ function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
   return (x.den == 1, v) 
 end  
 
+doc"""
+***
+    in(a::nf_elem, O::GenNfOrd) -> Bool
+
+> Checks wether $a$ lies in $\mathcal O$.
+"""
 function in(a::nf_elem, O::GenNfOrd)
   (x,y) = _check_elem_in_order(a,O)
   return x
@@ -228,11 +293,12 @@ end
 #
 ################################################################################
 
-@doc """
-  den(a::nf_elem, O::GenNfOrd) -> fmpz
+doc"""
+***
+    den(a::nf_elem, O::GenNfOrd) -> fmpz
 
-  Compute the smallest positive integer k such that k*a in O.
-""" ->
+> Returns the smallest positive integer k such that k*a lies in O.
+"""
 function den(a::nf_elem, O::GenNfOrd)
   d = den(a)
   b = d*a 
@@ -249,8 +315,20 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    zero(O::GenNford) -> NfOrderElem
+
+> returns an element of $\mathcal o$ which is set to zero.
+"""
 zero(O::GenNfOrd) = O(fmpz(0))
 
+doc"""
+***
+    one(O::GenNfOrd) -> NfOrderElem
+
+> returns an element of $\mathcal o$ which is set to one.
+"""
 one(O::GenNfOrd) = O(fmpz(1))
 
 ################################################################################
@@ -269,6 +347,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    -(x::NfOrderElem) -> NfOrderElem
+
+> Returns the additive inverse of $x$.
+"""
 function -(x::NfOrderElem)
   z = parent(x)()
   z.elem_in_nf = - x.elem_in_nf
@@ -281,18 +365,36 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    *(x::nforderelem, y::nforderelem) -> nforderelem
+
+> returns $x \cdot y$.
+"""
 function *(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
 end
 
+doc"""
+***
+    +(x::nforderelem, y::nforderelem) -> nforderelem
+
+> returns $x + y$.
+"""
 function +(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   return z
 end
 
+doc"""
+***
+    -(x::nforderelem, y::nforderelem) -> nforderelem
+
+> returns $x - y$.
+"""
 function -(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
@@ -305,41 +407,47 @@ end
 #
 ################################################################################
 
-function *(x::NfOrderElem, y::fmpz)
+doc"""
+***
+    *(x::NfOrderElem, y::Union{fmpz, Integer})
+
+> Returns $x \cdot y$.
+"""
+function *(x::NfOrderElem, y::Union{fmpz, Integer})
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y
   return z
 end
 
-*(x::fmpz, y::NfOrderElem) = y * x
+*(x::Union{fmpz, Integer}, y::NfOrderElem) = y * x
 
-*(x::Integer, y::NfOrderElem) = fmpz(x)* y
+doc"""
+***
+    +(x::NfOrderElem, y::Union{fmpz, Integer})
 
-*(x::NfOrderElem, y::Integer) = y * x
-
-function +(x::NfOrderElem, y::fmpz)
+> Returns $x + y$.
+"""
+function +(x::NfOrderElem, y::Union{fmpz, Integer})
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y
   return z
 end
 
-+(x::fmpz, y::NfOrderElem) = y + x
++(x::Union{fmpz, Integer}, y::NfOrderElem) = y + x
 
-+(x::NfOrderElem, y::Integer) = x + fmpz(y)
+doc"""
+***
+    -(x::NfOrderElem, y::Union{fmpz, Integer})
 
-+(x::Integer, y::NfOrderElem) = y + x
-
-function -(x::NfOrderElem, y::fmpz)
+> Returns $x - y$.
+"""
+function -(x::NfOrderElem, y::Union{fmpz, Integer})
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y
   return z
 end
 
--(x::fmpz, y::NfOrderElem) = y - x
-
--(x::NfOrderElem, y::Integer) = x - fmpz(y)
-
--(x::Integer, y::NfOrderElem) = y - x
+-(x::Union{fmpz, Integer}, y::NfOrderElem) = y - x
 
 ################################################################################
 #
@@ -347,13 +455,13 @@ end
 #
 ################################################################################
 
-function ^(x::NfOrderElem, y::Int)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf^y
-  return z
-end
+doc"""
+***
+    ^(x::NfOrderElem, y::Union{fmpz, Int})
 
-function ^(x::NfOrderElem, y::fmpz)
+> Returns $x^y$.
+"""
+function ^(x::NfOrderElem, y::Union{fmpz, Int})
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf^y
   return z
@@ -365,7 +473,14 @@ end
 #
 ################################################################################
 
-function mod(a::NfOrderElem, m::fmpz)
+doc"""
+***
+    mod(a::NfOrderElem, m::Union{fmpz, Int}) -> NfOrderElem
+
+> Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
+> element.
+"""
+function mod(a::NfOrderElem, m::Union{fmpz, Int})
   ar = copy(elem_in_basis(a))
   for i in 1:degree(parent(a))
     ar[i] = mod(ar[i],m)
@@ -373,13 +488,18 @@ function mod(a::NfOrderElem, m::fmpz)
   return parent(a)(ar)
 end
 
-mod(a::NfOrderElem, m::Integer) = mod(a, fmpz(m))
- 
 ################################################################################
 #
 #  Modular exponentiation
 #
 ################################################################################
+
+doc"""
+***
+    powermod(a::NfOrderElem, i::fmpz, m::Union{fmpz, Int}) -> NfOrderElem
+
+> Returns the element $a^i$ modulo $m$.
+"""
 
 function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
   if i == 0 then
@@ -400,11 +520,29 @@ function powermod(a::NfOrderElem, i::fmpz, p::fmpz)
   return b
 end  
 
-powermod(a::NfOrderElem, i::Integer, p::Integer)  = powermod(a, fmpz(i), fmpz(p))
+doc"""
+***
+    powermod(a::NfOrderElem, i::Integer, m::Integer) -> NfOrderElem
 
-powermod(a::NfOrderElem, i::fmpz, p::Integer)  = powermod(a, i, fmpz(p))
+> Returns the element $a^i$ modulo $m$.
+"""
+powermod(a::NfOrderElem, i::Integer, m::Integer)  = powermod(a, fmpz(i), fmpz(m))
 
-powermod(a::NfOrderElem, i::Integer, p::fmpz)  = powermod(a, fmpz(i), p)
+doc"""
+***
+    powermod(a::NfOrderElem, i::fmpz, m::Integer) -> NfOrderElem
+
+> Returns the element $a^i$ modulo $m$.
+"""
+powermod(a::NfOrderElem, i::fmpz, m::Integer)  = powermod(a, i, fmpz(m))
+
+doc"""
+***
+    powermod(a::NfOrderElem, i::Integer, m::fmpz) -> NfOrderElem
+
+> Returns the element $a^i$ modulo $m$.
+"""
+powermod(a::NfOrderElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 
 ################################################################################
 #
@@ -412,6 +550,12 @@ powermod(a::NfOrderElem, i::Integer, p::fmpz)  = powermod(a, fmpz(i), p)
 #
 ################################################################################
 
+doc"""
+***
+    representation_mat(a::NfOrderElem) -> fmpz_mat
+
+> Returns the representation matrix of the element $a$.
+"""
 function representation_mat(a::NfOrderElem)
   O = parent(a)
   A = representation_mat(a, nf(parent(a)))
@@ -420,6 +564,13 @@ function representation_mat(a::NfOrderElem)
   return A.num
 end
 
+doc"""
+    representation_mat(a::NfOrderElem, K::AnticNumberField) -> FakeFmpqMat
+
+> Returns the representation matrix of the element $a$ considered as an element
+> of the ambient number field $K$. It is assumed that $K$ is the ambient number
+> field of the order of $a$.
+"""
 function representation_mat(a::NfOrderElem, K::AnticNumberField)
   nf(parent(a)) != K && error("Element not in this field")
   d = den(a.elem_in_nf)
@@ -435,6 +586,13 @@ end
 #
 ################################################################################
 
+
+doc"""
+***
+    trace(a::NfOrderElem) -> fmpz
+
+> Returns the trace of $a$.
+"""
 function trace(a::NfOrderElem)
   return FlintZZ(trace(elem_in_nf(a)))
 end
@@ -445,6 +603,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    norm(a::NfOrderElem) -> fmpz
+
+> Returns the norm of $a$.
+"""
 function norm(a::NfOrderElem)
   return FlintZZ(norm(elem_in_nf(a)))
 end
@@ -467,16 +631,30 @@ function rand!{T <: Integer}(z::NfOrderElem, O::GenNfOrd, R::UnitRange{T})
   return z
 end
 
-function rand{T <: Integer}(O::GenNfOrd, R::UnitRange{T})
+doc"""
+***
+    rand{T <: Union{Integer, fmpz}}(z::NfOrderElem, O::GenNfOrd, R::UnitRange{T}) -> NfOrderElem
+
+> Computes a coefficient vector with entries uniformly distributed in `R` and returns
+> the corresponding element of the order.
+"""
+function rand{T <: Union{Integer, fmpz}}(O::GenNfOrd, R::UnitRange{T})
   z = O()
   rand!(z, O, R)
   return z
 end
 
-function rand!(z::NfOrderElem, O::GenNfOrd, n::Integer)
+function rand!(z::NfOrderElem, O::GenNfOrd, n::Union{Integer, fmpz})
   return rand!(z, O, -n:n)
 end
 
+doc"""
+***
+    rand(z::NfOrderElem, O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
+
+> Computes a coefficient vector with entries uniformly distributed in
+> $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the order.
+"""
 function rand(O::GenNfOrd, n::Integer)
   return rand(O, -n:n)
 end
@@ -485,10 +663,6 @@ function rand!(z::NfOrderElem, O::GenNfOrd, n::fmpz)
   return rand!(z, O, BigInt(n))
 end
 
-function rand(O::GenNfOrd, n::fmpz)
-  return rand(O, BigInt(n))
-end
-  
 ################################################################################
 #
 #  Unsafe operations

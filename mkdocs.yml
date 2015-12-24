@@ -6,8 +6,12 @@ theme:               readthedocs
 
 pages:
 - Introduction:        index.md
+- Maximal Orders:
+    - Introduction:    build/MaximalOrders/Introduction.md
+    - Creation:        build/MaximalOrders/Creation.md
+    - Elements:        build/MaximalOrders/Elements.md
+    - Ideals:          build/MaximalOrders/Ideals.md
 - Orders:              build/Orders.md
-- Maximal Orders:      build/MaximalOrders.md
 
 markdown_extensions:
 - tables
