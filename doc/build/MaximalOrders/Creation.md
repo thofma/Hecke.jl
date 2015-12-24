@@ -2,6 +2,8 @@
 
 ## Creation and basic invariants
 
+### Creation
+
 <a name="MaximalOrder(K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:225"></a>
 
 ---
@@ -13,7 +15,7 @@ MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 > Returns the maximal order of $K$.
 
 
-##### Example
+###### Example
 
 ```
 julia> Qx, x = QQ["x"]
@@ -31,6 +33,8 @@ MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaximalOrder
 
 > Assuming that `primes` contains all the prime numbers at which the equation order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal, this function returns the maximal order of $K$.
 
+
+### Basic invariants
 
 <a name="nf(O::Hecke.NfMaximalOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/NfMaximalOrder.jl:79"></a>
 

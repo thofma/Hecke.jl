@@ -189,7 +189,7 @@ Unary minus operator.
 ---
 
 ```
-*(x::nforderelem, y::nforderelem) -> nforderelem
+*(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 ```
 
 > returns $x \cdot y$.
@@ -206,10 +206,10 @@ Multiplication operator. `x*y*z*...` calls this function with all arguments, i.e
 ---
 
 ```
-+(x::nforderelem, y::nforderelem) -> nforderelem
++(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 ```
 
-> returns $x + y$.
+> Returns $x + y$.
 
 
 <a name="-(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:399"></a>
@@ -217,10 +217,10 @@ Multiplication operator. `x*y*z*...` calls this function with all arguments, i.e
 ---
 
 ```
--(x::nforderelem, y::nforderelem) -> nforderelem
+-(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 ```
 
-> returns $x - y$.
+> Returns $x - y$.
 
 
 ```
