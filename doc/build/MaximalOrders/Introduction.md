@@ -10,4 +10,8 @@ Let $K$ be a number field of degree $d$ with primitive element $\alpha$ and $\ma
 
 For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \operatorname{Mat}_{d \times d}(\mathbf{Z})$, such that the elements $(\alpha_1,\dotsc,\alpha_d)$ definied by \begin{align} \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix} = M_{\mathcal O} \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} \end{align} form a $\mathbf{Z}$-basis of $I$.
 
-[test](../Orders.md)
+###### Content
+
+  * [Creation and basic invariants](Creation.md)
+  * [Elements](Elements.md)
+  * [Ideals](Ideals.md)
