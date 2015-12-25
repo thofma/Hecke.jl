@@ -215,7 +215,7 @@ doc"""
 
 > Returns the maximal order of $K$.
 
-##### Example  
+**Example**
 
     julia> Qx, x = QQ["x"]
     julia> K, a = NumberField(x^3 + 2, "a")

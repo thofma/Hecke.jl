@@ -502,11 +502,11 @@ type NfMaximalOrder <: GenNfOrd
   basis_mat_inv::FakeFmpqMat       # inverse of basis matrix
   index::fmpz                      # the determinant of basis_mat_inv
   disc::fmpz                       # discriminant
-  disc_fac                         # factorized discriminant or prime factors?
   parent::NfMaximalOrderSet        # parent object
   signature::Tuple{Int, Int}       # signature of the parent object
                                    # (-1, 0) means 'not set'
   conjugate_data::acb_root_ctx
+  minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
 
   function NfMaximalOrder(a::AnticNumberField)
     r = new(a)

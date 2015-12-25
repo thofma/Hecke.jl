@@ -129,7 +129,6 @@ end
 function zero(O::GenNfOrd)
   z = O()
   z.elem_in_nf = zero(O.nf)
-#  z.elem_in_basis = fill!(Array(fmpz, degree(O)), ZZ(0))
   return z
 end
 

@@ -37,7 +37,7 @@
 #
 # So far, this is only a common supertype for NfOrder and NfMaximalOrder
 
-export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit
+export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit, NfOrderElem
 
 ################################################################################
 #
@@ -367,7 +367,7 @@ end
 
 doc"""
 ***
-    *(x::nforderelem, y::nforderelem) -> nforderelem
+    *(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 
 > returns $x \cdot y$.
 """
@@ -379,9 +379,9 @@ end
 
 doc"""
 ***
-    +(x::nforderelem, y::nforderelem) -> nforderelem
+    +(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 
-> returns $x + y$.
+> Returns $x + y$.
 """
 function +(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
@@ -391,9 +391,9 @@ end
 
 doc"""
 ***
-    -(x::nforderelem, y::nforderelem) -> nforderelem
+    -(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 
-> returns $x - y$.
+> Returns $x - y$.
 """
 function -(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
@@ -740,6 +740,22 @@ dot(x::NfOrderElem, y::Int64) = y*x
 ################################################################################
 
 Base.call(K::AnticNumberField, x::NfOrderElem) = elem_in_nf(x)
+
+################################################################################
+#
+#  Minkowski matrix
+#
+################################################################################
+
+function minkowski_mat(O::GenNfOrd, abs_tol::Int)
+  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] < abs_tol
+    return deepcopy(O.minkowski_matrix[1])
+  elseif isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
+    c = conjugate_data_arb(nf(O))
+
+    
+
+
 
 ################################################################################
 ################################################################################
