@@ -9,9 +9,3 @@ While theoretically a number field contains a unique maximal order (the set of a
 Let $K$ be a number field of degree $d$ with primitive element $\alpha$ and $\mathcal O$ a maximal order $K$ with $\mathbf{Z}$-basis $(\omega_1,\dotsc,\omega_d)$. The *basis matrix* of $\mathcal O$ is the unique matrix $M_{\mathcal O} \in \operatorname{Mat}_{d \times d}(\mathbf{Q})$ such that \begin{align} \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} = M_{\mathcal O} \begin{pmatrix} 1 \\ \alpha \\ \vdots \\ \alpha^{d - 1} \end{pmatrix} \end{align}. If $\beta$ is an element of $\mathcal O$, we call the unique integers $(x_1,\dotsc,x_d) \in \mathbf Z^d$ with \begin{align} \beta = \sum_{i=1}^d x_i \omega_i \end{align} the *coefficients* of $\beta$ with respect to $\mathcal O$ or just the *coefficient vector*.
 
 For an ideal $I$ of $\mathcal O$, a *basis matrix* of $I$ is a matrix $M \in \operatorname{Mat}_{d \times d}(\mathbf{Z})$, such that the elements $(\alpha_1,\dotsc,\alpha_d)$ definied by \begin{align} \begin{pmatrix} \alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_d \end{pmatrix} = M_{\mathcal O} \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} \end{align} form a $\mathbf{Z}$-basis of $I$.
-
-###### Content
-
-  * [Creation and basic invariants](Creation.md)
-  * [Elements](Elements.md)
-  * [Ideals](Ideals.md)

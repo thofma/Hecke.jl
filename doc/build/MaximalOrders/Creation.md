@@ -13,7 +13,7 @@ MaximalOrder(K::AnticNumberField) -> NfMaximalOrder
 > Returns the maximal order of $K$.
 
 
-###### Example
+**Example**
 
 ```
 julia> Qx, x = QQ["x"]
