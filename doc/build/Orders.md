@@ -2,28 +2,13 @@
 
 # Orders in number fields
 
-<a name="basis(O::Hecke.NfOrder) at /home/thofmann/.julia/v0.4/Hecke/src/NfOrder/NfOrder.jl:81"></a>
-
-basis(A::NfMaximalOrder) -> Array{NfOrderElem, 1}
-
-```
-Returns the basis of A
-```
+<a name="signature(x::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:49"></a>
 
 ---
 
 ```
-basis(O::NfMaximalOrder, K::AnticNumberField -> Array{nf_elem, 1}
+signature(O::NfMaximalOrder) -> Tuple{Int, Int}
 ```
 
-> Returns the basis of $\mathcal O$ as elements of $K$. The number field $K$ must be the ambient number field of $\mathcal O$.
-
-
----
-
-```
-basis(O::NfMaximalOrder) -> Array{NfOrderElem, 1}
-```
-
-> Returns the basis of $\mathcal O$.
+> Returns the signature of the ambient number field of $\mathcal O$.
 
