@@ -5,7 +5,7 @@ site_author:         Tommy Hofmann
 theme:               readthedocs
 
 pages:
-- "index.md"
+- Getting Started:     index.md
 - Maximal Orders:
     - Introduction:    build/MaximalOrders/Introduction.md
     - Creation:        build/MaximalOrders/Creation.md
