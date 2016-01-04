@@ -70,7 +70,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              base_ring, compose, root, arf_struct, fmpq, valuation,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
-             ceil, //, setindex!, transpose, colon, nf_elem
+             ceil, //, setindex!, transpose, colon, nf_elem, is_real
 
 export AnticNumberField, hash, update, nf
 

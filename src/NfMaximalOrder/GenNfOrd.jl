@@ -1,6 +1,6 @@
 ################################################################################
 #
-#     GenNfOrd.jl : Generic orders in number fields and elements thereof
+#  GenNfOrd.jl : Generic orders in number fields and elements/ideals thereof
 #
 # This file is part of hecke.
 #
@@ -35,7 +35,6 @@
 #  TODO:
 #   Fix hashing 
 #
-# So far, this is only a common supertype for NfOrder and NfMaximalOrder
 
 export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit, NfOrderElem
 
@@ -257,11 +256,11 @@ end
 
 ################################################################################
 #
-#  Number field element containment
+#  Inclusion of number field elements
 #
 ################################################################################
 
-# Check if a is contained in O
+# Check if a number field element is contained in O
 # In this case, the second return value is coefficient vector of the basis
 
 function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
@@ -297,7 +296,7 @@ doc"""
 ***
     den(a::nf_elem, O::GenNfOrd) -> fmpz
 
-> Returns the smallest positive integer k such that k*a lies in O.
+> Returns the smallest positive integer $k$ such that $k \cdot a$ lies in O.
 """
 function den(a::nf_elem, O::GenNfOrd)
   d = den(a)
@@ -319,7 +318,7 @@ doc"""
 ***
     zero(O::GenNford) -> NfOrderElem
 
-> returns an element of $\mathcal o$ which is set to zero.
+> Returns an element of $\mathcal O$ which is set to zero.
 """
 zero(O::GenNfOrd) = O(fmpz(0))
 
@@ -327,7 +326,7 @@ doc"""
 ***
     one(O::GenNfOrd) -> NfOrderElem
 
-> returns an element of $\mathcal o$ which is set to one.
+> Returns an element of $\mathcal O$ which is set to one.
 """
 one(O::GenNfOrd) = O(fmpz(1))
 
@@ -369,7 +368,7 @@ doc"""
 ***
     *(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
 
-> returns $x \cdot y$.
+> Returns $x \cdot y$.
 """
 function *(x::NfOrderElem, y::NfOrderElem)
   z = parent(x)()
@@ -586,7 +585,6 @@ end
 #
 ################################################################################
 
-
 doc"""
 ***
     trace(a::NfOrderElem) -> fmpz
@@ -633,7 +631,7 @@ end
 
 doc"""
 ***
-    rand{T <: Union{Integer, fmpz}}(z::NfOrderElem, O::GenNfOrd, R::UnitRange{T}) -> NfOrderElem
+    rand{T <: Union{Integer, fmpz}}(O::GenNfOrd, R::UnitRange{T}) -> NfOrderElem
 
 > Computes a coefficient vector with entries uniformly distributed in `R` and returns
 > the corresponding element of the order.
@@ -650,7 +648,7 @@ end
 
 doc"""
 ***
-    rand(z::NfOrderElem, O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
+    rand(O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
 
 > Computes a coefficient vector with entries uniformly distributed in
 > $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the order.
@@ -747,15 +745,48 @@ Base.call(K::AnticNumberField, x::NfOrderElem) = elem_in_nf(x)
 #
 ################################################################################
 
-function minkowski_mat(O::GenNfOrd, abs_tol::Int)
-  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] < abs_tol
-    return deepcopy(O.minkowski_matrix[1])
-  elseif isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
-    c = conjugate_data_arb(nf(O))
+#function minkowski_mat(O::GenNfOrd, abs_tol::Int)
+#  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[1] < abs_tol
+#    return deepcopy(O.minkowski_matrix[1])
+#  elseif isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
+#    c = conjugate_data_arb(nf(O))
 
-    
+function _minkowski_map(a::nf_elem, abs_tol::Int)
+  K = parent(a)
+  A = Array(arb, degree(K))
+  r, s = signature(K)
+  c = conjugate_data_arb(K)
+  R = PolynomialRing(AcbField(c.prec), "x")[1]
+  f = R(parent(K.pol)(a))
+  CC = AcbField(c.prec)
+  T = PolynomialRing(CC, "x")[1]
+  g = T(f)
 
+  for i in 1:r
+    s = evaluate(g, c.real_roots[i])
+    @assert isreal(s)
+    A[i] = real(s)
+    if !radiuslttwopower(A[i], abs_tol)
+      refine(c)
+      return _minkowski_map(a, abs_tol)
+    end
+  end
 
+  s = base_ring(g)()
+
+  for i in 1:s
+    s = evaluate(g, c.complex_roots[i])
+    s = sqrt(CC(2))*s
+    if !radiuslttwopower(s, abs_tol)
+      refine(c)
+      return _minkowski_map(a, abs_tol)
+    end
+    A[r + 2*i - 1] = real(s)
+    A[r + 2*i] = imag(s)
+  end
+
+  return A
+end
 
 ################################################################################
 ################################################################################
