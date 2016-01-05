@@ -5,8 +5,8 @@
 Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann.
 It is written in [julia](http://www.julialang.org) and is based on the computer algebra package [Nemo](http://www.nemocas.org).
 
-- (https://https://github.com/thofma/Hecke.jl) (Source code)
-- [http://hecke.readthedocs.org/en/latest/] (Online documentation)
+- [https://https://github.com/thofma/Hecke.j]l(https://https://github.com/thofma/Hecke.jl) (Source code)
+- [http://hecke.readthedocs.org/en/latest/](http://hecke.readthedocs.org/en/latest/) (Online documentation)
 
 So far, Hecke provides the following features:
 
@@ -20,7 +20,7 @@ So far, Hecke provides the following features:
 ## Installation
 
 To use Hecke, a julia version of 0.4 or higher is necessary (the latest stable julia version will do).
-Please see http://julialang.org/downloads/ for instructions on how to obtain julia for your system.
+Please see [http://julialang.org/downloads](/http://julialang.org/downloads/) for instructions on how to obtain julia for your system.
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 
 ```julia
