@@ -20,7 +20,7 @@ So far, Hecke provides the following features:
 ## Installation
 
 To use Hecke, a julia version of 0.4 or higher is necessary (the latest stable julia version will do).
-Please see [http://julialang.org/downloads/] for instructions on how to obtain julia for your system.
+Please see http://julialang.org/downloads/ for instructions on how to obtain julia for your system.
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 
 ```julia
@@ -31,7 +31,7 @@ julia> Pkg.clone("https://github.com/thofma/Hecke.jl")
 
 ## Quick start
 
-Here is a quick example of using Hecke
+Here is a quick example of using Hecke:
 
 ```julia
 julia> using Hecke
@@ -63,7 +63,7 @@ with basis [1,a,a^2]
 
 The online documentation can be found here: http://hecke.readthedocs.org/en/latest/
 
-The documentation of the single functions can also be accessed at the julia prompt. Here is an example
+The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
 
 ```
 help?> signature

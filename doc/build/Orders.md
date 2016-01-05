@@ -2,12 +2,12 @@
 
 # Orders in number fields
 
-<a name="signature(x::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:49"></a>
+<a name="signature(x::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:56"></a>
 
 ---
 
 ```
-signature(O::NfMaximalOrder) -> Tuple{Int, Int}
+signature(O::GenNfOrd) -> Tuple{Int, Int}
 ```
 
 > Returns the signature of the ambient number field of $\mathcal O$.
