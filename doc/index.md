@@ -5,8 +5,8 @@
 Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann.
 It is written in [julia](http://www.julialang.org) and is based on the computer algebra package [Nemo](http://www.nemocas.org).
 
-- https://https://github.com/thofma/Hecke.jl (Source code)
-- http://hecke.readthedocs.org/en/latest/ (Online documentation)
+- [https://https://github.com/thofma/Hecke.jl] (Source code)
+- [http://hecke.readthedocs.org/en/latest/] (Online documentation)
 
 So far, Hecke provides the following features:
 
@@ -61,7 +61,7 @@ with basis [1,a,a^2]
 
 ## Documentation
 
-The online documentation can be found here: http://hecke.readthedocs.org/en/latest/
+The online documentation can be found here: [http://hecke.readthedocs.org/en/latest/]
 
 The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
 
