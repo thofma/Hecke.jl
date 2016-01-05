@@ -389,7 +389,7 @@ rand(O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
 
 ## Infinite places
 
-<a name="minkowski_mat(O::Hecke.GenNfOrd, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:820"></a>
+<a name="minkowski_mat(O::Hecke.GenNfOrd, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:814"></a>
 
 ---
 
