@@ -131,7 +131,7 @@ is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
 > Returns whether $d$ is a divisor of $\operatorname{disc}(\mathcal O)$.
 
 
-<a name="minkowski_mat(O::Hecke.GenNfOrd, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:814"></a>
+<a name="minkowski_mat(O::Hecke.GenNfOrd, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:110"></a>
 
 ---
 
@@ -139,5 +139,5 @@ is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
 minkowski_mat(O::GenNfOrd, abs_tol::Int) -> arb_mat
 ```
 
-> Returns the matrix representing the minkowski map with respect to the basis of $\mathcal O$. Thus if $\mathcal O$ has degree $d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf R)$. The entries of the matrix are real balls of type `arb` with radius less then `2^abs_tol`.
+> Returns the Minkowski matrix of $\mathcal O$. Thus if $\mathcal O$ has degree $d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf R)$. The entries of the matrix are real balls of type `arb` with radius less then `2^abs_tol`.
 
