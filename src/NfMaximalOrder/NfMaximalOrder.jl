@@ -157,28 +157,6 @@ end
 
 doc"""
 ***
-    discriminant(O::NfMaximalOrder) -> fmpz
-
-> Returns the discriminant of $\mathcal O$.
-"""
-function discriminant(O::NfMaximalOrder)
-  if isdefined(O, :disc)
-    return O.disc
-  end
-
-  A = MatrixSpace(ZZ, degree(O), degree(O))()
-  B = basis(O)
-  for i in 1:degree(O)
-    for j in 1:degree(O)
-      A[i,j] = ZZ(trace(B[i]*B[j]))
-    end
-  end
-  O.disc = determinant(A)
-  return O.disc
-end
-
-doc"""
-***
     is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
 
 > Returns whether $d$ is a divisor of $\operatorname{disc}(\mathcal O)$.
@@ -186,21 +164,6 @@ doc"""
 function is_index_divisor(O::NfMaximalOrder, d::Union{fmpz, Int})
   i = index(O)
   return i % d == 0
-end
-
-doc"""
-***
-    signature(O::NfMaximalOrder) -> Tuple{Int, Int}
-
-> Returns the signature of the ambient number field of $\mathcal O$.
-"""
-function signature(O::NfMaximalOrder)
-  if isdefined(O, :signature)
-    return O.signature
-  else
-    O.signature = signature(nf(K))
-    return O.signature
-  end
 end
 
 ################################################################################

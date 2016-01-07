@@ -224,11 +224,142 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    return z
 end
 
-
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
    ccall((:nf_elem_sub, :libflint), Void,
          (Ptr{nf_elem}, Ptr{nf_elem}, Ptr{nf_elem}, Ptr{AnticNumberField}),
  
          &a, &b, &c, &a.parent)
+end
+
+################################################################################
+#
+#  Minkowski map
+#
+################################################################################
+
+doc"""
+***
+    minkowski_map(a::nf_elem, abs_tol::Int) -> Array{arb, 1}
+
+> Returns the image of $a$ under the Minkowski embedding.
+> Every entry of the array returned is of type `arb` with radius less then
+> `2^abs_tol`.
+"""
+function minkowski_map(a::nf_elem, abs_tol::Int)
+  K = parent(a)
+  A = Array(arb, degree(K))
+  r, s = signature(K)
+  c = conjugate_data_arb(K)
+  R = PolynomialRing(AcbField(c.prec), "x")[1]
+  f = R(parent(K.pol)(a))
+  CC = AcbField(c.prec)
+  T = PolynomialRing(CC, "x")[1]
+  g = T(f)
+
+  for i in 1:r
+    t = evaluate(g, c.real_roots[i])
+    @assert isreal(t)
+    A[i] = real(t)
+    if !radiuslttwopower(A[i], abs_tol)
+      refine(c)
+      return _minkowski_map(a, abs_tol)
+    end
+  end
+
+  t = base_ring(g)()
+
+  for i in 1:s
+    t = evaluate(g, c.complex_roots[i])
+    t = sqrt(CC(2))*t
+    if !radiuslttwopower(t, abs_tol)
+      refine(c)
+      return _minkowski_map(a, abs_tol)
+    end
+    A[r + 2*i - 1] = real(t)
+    A[r + 2*i] = imag(t)
+  end
+
+  return A
+end
+
+################################################################################
+#
+#  Conjugates and real embeddings
+#
+################################################################################
+
+doc"""
+***
+    conjugates_arb(x::nf_elem, abs_tol::Int) -> Tuple{Array{arb, 1}, Array{acb, 1}}
+
+> Compute the the conjugates of `x` as elements of type `arb` and `acb`
+> respectively. Recall that we order the complex conjugates
+> $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+> $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+>
+> Every entry `y` of the arrays returned satisfies `radius(y) < 2^abs_tol` or
+> `radius(real(y)) < 2^abs_tol`, `radius(imag(y)) < 2^abs_tol` respectively.
+"""
+function conjugates_arb(x::nf_elem, abs_tol::Int)
+  K = parent(x)
+  d = degree(K)
+  c = conjugate_data_arb(K)
+  r, s = signature(K)
+  reals = Array(arb, r)
+  complex = Array(acb, 2*s)
+
+  for i in 1:r
+    reals[i] = evaluate(parent(K.pol)(x), c.real_roots[i])
+    if !isfinite(reals[i]) || !radiuslttwopower(reals[i], abs_tol)
+      refine(c)
+      return conjugates_arb(x)
+    end
+  end
+
+  for i in 1:s
+    complex[i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
+    if !isfinite(complex[i]) || !radiuslttwopower(complex[i], abs_tol)
+      refine(c)
+      return conjugates_arb(x)
+    end
+    complex[i + s] = Nemo.conj(complex[i])
+  end
+ 
+  return reals, complex
+end
+
+doc"""
+***
+    conjugates_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
+
+> Returns the elements
+> $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
+> \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
+> 2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+> less then `2^abs_tol`.
+"""
+function conjugates_log(x::nf_elem)
+  K = parent(x)  
+  d = degree(K)
+  r1, r2 = signature(K)
+  c = conjugate_data_arb(K)
+
+  # We should replace this using multipoint evaluation of libarb
+  z = Array(arb, r1 + r2)
+  for i in 1:r1
+    z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
+    if !isfinite(z[i])
+      refine(c)
+      return conjugates_log(x)
+    end
+  end
+  for i in 1:r2
+    z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
+    if !isfinite(z[r1 + i])
+      refine(c)
+      return conjugates_log(x)
+    end
+  end
+  return z
 end
 

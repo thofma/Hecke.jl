@@ -35,8 +35,10 @@
 #  TODO:
 #   Fix hashing 
 #
+################################################################################
 
-export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit, NfOrderElem
+export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit, NfOrderElem,
+       minkowski_mat, conjugates_log, conjugates_arb
 
 ################################################################################
 #
@@ -44,6 +46,12 @@ export GenNfOrdIdl, elem_in_order, rand, rand!, istorsionunit, NfOrderElem
 #
 ################################################################################
 
+doc"""
+***
+    signature(O::GenNfOrd) -> Tuple{Int, Int}
+
+> Returns the signature of the ambient number field of $\mathcal O$.
+"""
 function signature(x::GenNfOrd)
   if x.signature[1] != -1
     return x.signature
@@ -59,10 +67,17 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    discriminant(O::GenNfOrd) -> fmpz
+
+> Returns the discriminant of $\mathcal O$.
+"""
 function discriminant(O::GenNfOrd)
   if isdefined(O, :disc)
     return O.disc
   end
+
   A = MatrixSpace(FlintZZ, degree(O), degree(O))()
   B = basis_nf(O)
   for i in 1:degree(O)
@@ -72,6 +87,46 @@ function discriminant(O::GenNfOrd)
   end
   O.disc = determinant(A)
   return O.disc
+end
+
+################################################################################
+#
+#  Minkowski matrix
+#
+################################################################################
+
+doc"""
+***
+    minkowski_mat(O::GenNfOrd, abs_tol::Int) -> arb_mat
+
+> Returns the Minkowski matrix of $\mathcal O$.
+> Thus if $\mathcal O$ has degree $d$, then the
+> result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf R)$.
+> The entries of the matrix are real balls of type `arb` with radius
+> less then `2^abs_tol`. 
+"""
+
+function minkowski_mat(O::GenNfOrd, abs_tol::Int)
+  if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] < abs_tol
+    A = deepcopy(O.minkowski_mat[1])
+  else
+    T = Array(Array{arb, 1}, degree(O))
+    B = basis(O, nf(O))
+    for i in 1:degree(O)
+      T[i] = minkowski_map(B[i], abs_tol)
+    end
+    p = maximum([ prec(parent(T[i][j])) for i in 1:degree(O), j in 1:degree(O) ])
+    M = ArbMatSpace(ArbField(p), degree(O), degree(O))()
+    for i in 1:degree(O)
+      for j in 1:degree(O)
+        M[i, j] = T[i][j]
+      end
+    end
+    println(p)
+    O.minkowski_mat = (M, abs_tol)
+    A = deepcopy(M)
+  end
+  return A
 end
 
 ################################################################################
@@ -261,7 +316,8 @@ end
 ################################################################################
 
 # Check if a number field element is contained in O
-# In this case, the second return value is coefficient vector of the basis
+# In this case, the second return value is the coefficient vector with respect
+# to the basis of O
 
 function _check_elem_in_order(a::nf_elem, O::GenNfOrd)
   M = MatrixSpace(ZZ, 1, degree(O))()
@@ -651,7 +707,8 @@ doc"""
     rand(O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
 
 > Computes a coefficient vector with entries uniformly distributed in
-> $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the order.
+> $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
+> order $\mathcal O$.
 """
 function rand(O::GenNfOrd, n::Integer)
   return rand(O, -n:n)
@@ -741,51 +798,60 @@ Base.call(K::AnticNumberField, x::NfOrderElem) = elem_in_nf(x)
 
 ################################################################################
 #
-#  Minkowski matrix
+#  Minkowski embedding
 #
 ################################################################################
 
-#function minkowski_mat(O::GenNfOrd, abs_tol::Int)
-#  if isdefined(O, :minkowski_matrix) && O.minkowski_matrix[1] < abs_tol
-#    return deepcopy(O.minkowski_matrix[1])
-#  elseif isdefined(O, :minkowski_matrix) && O.minkowski_matrix[2] >= abs_tol
-#    c = conjugate_data_arb(nf(O))
+doc"""
+***
+    minkowski_map(a::NfOrderElem, abs_tol::Int) -> Array{arb, 1}
 
-function _minkowski_map(a::nf_elem, abs_tol::Int)
-  K = parent(a)
-  A = Array(arb, degree(K))
-  r, s = signature(K)
-  c = conjugate_data_arb(K)
-  R = PolynomialRing(AcbField(c.prec), "x")[1]
-  f = R(parent(K.pol)(a))
-  CC = AcbField(c.prec)
-  T = PolynomialRing(CC, "x")[1]
-  g = T(f)
+> Returns the image of $a$ under the Minkowski embedding.
+> Every entry of the array returned is of type `arb` with radius less then
+> `2^abs_tol`.
+"""
+function minkowski_map(a::NfOrderElem, abs_tol::Int)
+  # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
+  # The function minkowski_map does not alter the input!
+  return minkowski_map(a.elem_in_nf)
+end
 
-  for i in 1:r
-    s = evaluate(g, c.real_roots[i])
-    @assert isreal(s)
-    A[i] = real(s)
-    if !radiuslttwopower(A[i], abs_tol)
-      refine(c)
-      return _minkowski_map(a, abs_tol)
-    end
-  end
+################################################################################
+#
+#  Conjugates
+#
+################################################################################
 
-  s = base_ring(g)()
+doc"""
+***
+    conjugates_arb(x::NfOrderElem, abs_tol::Int) -> Tuple{Array{arb, 1}, Array{acb, 1}}
 
-  for i in 1:s
-    s = evaluate(g, c.complex_roots[i])
-    s = sqrt(CC(2))*s
-    if !radiuslttwopower(s, abs_tol)
-      refine(c)
-      return _minkowski_map(a, abs_tol)
-    end
-    A[r + 2*i - 1] = real(s)
-    A[r + 2*i] = imag(s)
-  end
+> Compute the the conjugates of `x` as elements of type `arb` and `acb`
+> respectively. Recall that we order the complex conjugates
+> $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+> $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+>
+> Every entry `y` of the arrays returned satisfies `radius(y) < 2^abs_tol` or
+> `radius(real(y)) < 2^abs_tol`, `radius(imag(y)) < 2^abs_tol` respectively.
+"""
+function conjugates_arb(x::NfOrderElem, abs_tol::Int)
+  # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
+  # The function minkowski_map does not alter the input!
+  return conjugates_arb(x.elem_in_nf, abs_tol)
+end
 
-  return A
+doc"""
+***
+    conjugates_log(x::NfOrderElem, abs_tol::Int) -> Array{arb, 1}
+
+> Returns the elements
+> $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
+> \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
+> 2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
+> less then `2^abs_tol`.
+"""
+function conjugates_log(x::NfOrderElem)
+  return conjugates_log(x.elem_in_nf)
 end
 
 ################################################################################
@@ -796,10 +862,22 @@ end
 ################################################################################
 ################################################################################
 
+doc"""
+***
+    ==(x::GenNfOrdIdl, y::GenNfOrdIdl)
+
+> Returns whether $x$ and $y$ are equal.
+"""
 function ==(x::GenNfOrdIdl, y::GenNfOrdIdl)
   return basis_mat(x) == basis_mat(y)
 end
 
+doc"""
+***
+    +(x::GenNfOrdIdl, y::GenNfOrdIdl)
+
+> Returns $x + y$.
+"""
 function +(x::GenNfOrdIdl, y::GenNfOrdIdl)
   H = vcat(basis_mat(x), basis_mat(y))
   g = gcd(minimum(x),minimum(y))
@@ -808,6 +886,12 @@ function +(x::GenNfOrdIdl, y::GenNfOrdIdl)
   return ideal(order(x), H)
 end
 
+doc"""
+***
+    *(x::GenNfOrdIdl, y::GenNfOrdIdl)
+
+> Returns $x \cdot y$.
+"""
 function *(x::GenNfOrdIdl, y::GenNfOrdIdl)
   return _mul(x, y)
 end
@@ -831,10 +915,16 @@ end
 
 ################################################################################
 #
-#  Containment
+#  Inclusion of order elements in ideals
 #
 ################################################################################
 
+doc"""
+***
+    in(x::NfOrderElem, y::GenNfOrdIdl)
+
+> Returns whether $x$ is contained in $y$.
+"""
 function in(x::NfOrderElem, y::GenNfOrdIdl)
   v = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
@@ -847,6 +937,16 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    mod(x::NfOrderElem, I::GenNfOrdIdl)
+
+> Returns the unique element $y$ of the ambient order of $x$ with
+> $x \equiv y \bmod I$ and the following property: If
+> $a_1,\dotsc,a_d \in \Z_{\geq 1}$ are the diagonal entries of the unique HNF
+> basis matrix of $I$ and $(b_1,\dotsc,b_d)$ is the coefficient vector of $y$,
+> then $0 \leq b_i < a_i$ for $1 \leq i \leq d$.
+"""
 function mod(x::NfOrderElem, y::GenNfOrdIdl)
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
@@ -870,6 +970,15 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    pradical(O::GenNfOrd, p::fmpz) -> GenNfOrdIdl
+
+> Given a prime number $p$, this function returns the $p$-radical
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is 
+> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+"""
 function pradical(O::GenNfOrd, p::fmpz)
   j = clog(fmpz(degree(O)),p)
 
@@ -901,6 +1010,15 @@ function pradical(O::GenNfOrd, p::fmpz)
   return ideal(O, r)
 end
 
+doc"""
+***
+    pradical(O::GenNfOrd, p::Integer) -> GenNfOrdIdl
+
+> Given a prime number $p$, this function returns the $p$-radical
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is 
+> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+"""
 function pradical(O::GenNfOrd, p::Integer)
   return pradical(O, fmpz(p))
 end
