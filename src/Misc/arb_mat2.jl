@@ -685,13 +685,13 @@ end
 #
 ################################################################################
 
-function charpoly(x::ArbPolyRing, y::arb_mat)
-  base_ring(y) != base_ring(x) && error("Base rings must coincide")
-  z = x()
-  ccall((:arb_mat_charpoly, :libarb), Void,
-              (Ptr{arb_poly}, Ptr{arb_mat}, Int), &z, &y, prec(parent(y)))
-  return z
-end
+#function charpoly(x::ArbPolyRing, y::arb_mat)
+#  base_ring(y) != base_ring(x) && error("Base rings must coincide")
+#  z = x()
+#  ccall((:arb_mat_charpoly, :libarb), Void,
+#              (Ptr{arb_poly}, Ptr{arb_mat}, Int), &z, &y, prec(parent(y)))
+#  return z
+#end
 
 ################################################################################
 #
