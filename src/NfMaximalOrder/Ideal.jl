@@ -676,14 +676,14 @@ function assure_2_normal(A::NfMaximalOrderIdeal)
       g = gcd(m, mg)
       if gcd(m, div(m, g)) == 1 
         if gcd(m^n, norm(gen)) != norm(A)
-          @vprint :NfMaximalOrder 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
+          @vprint :NfMaximalOrder 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
           cnt += 10
           continue
         end
         break
       end
     end
-    @vprint :NfMaximalOrder 1 "used $cnt attempts\n"
+    @vprint :NfMaximalOrder 2 "used $cnt attempts\n"
     A.gen_one = m
     A.gen_two = gen
     A.gens_normal = m
@@ -814,9 +814,9 @@ end
 
 function simplify(A::NfMaximalOrderIdeal)
   if has_2_elem(A) && is_weakly_normal(A)
-    if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
-      A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
-    end
+    #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
+    #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
+    #end
     A.minimum = gcd(A.gen_one, den(inv(A.gen_two), A.parent.order)) 
     A.gen_one = A.minimum
     n = gcd(A.gen_one^degree(A.parent.order), ZZ(norm(A.gen_two)))
@@ -1068,7 +1068,7 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
     end
-    if degree_limit >0 && f > degree_limit
+    if degree_limit > 0 && f > degree_limit
       continue
     end
     P.splitting_type = e, f
@@ -1253,12 +1253,70 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
     else
       deg_lim = 0
     end
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B)"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
     end
   end
   return r
+end
+
+doc"""
+    prime_ideals_up_to(O::NfMaximalOrder, B::Int; complete::Bool = true, degree_limit::Int = 0, F::Function, bad::fmpz)
+
+> Computes the prime ideals with norm up to B with parameters I forogt.
+"""
+function prime_ideals_up_to(O::NfMaximalOrder, B::Int, F::Function, bad::fmpz = discriminant(O);
+                            complete::Bool = false,
+                            degree_limit::Int = 0)
+  p = 1
+  r = NfMaximalOrderIdeal[]
+  while p < B
+    p = next_prime(p)
+    if p > B
+      return r
+    end
+    if !complete
+      deg_lim = flog(fmpz(B), p) # Int(floor(log(B)/log(p)))
+      if degree_limit > 0
+        deg_lim = min(deg_lim, degree_limit)
+      end
+    else
+      deg_lim = 0
+    end
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B)"
+    if mod(bad, p) == 0
+      li = prime_decomposition(O, p, deg_lim)
+      for P in li
+        push!(r, P[1])
+      end
+    else
+      if F(p) <= deg_lim
+        li = prime_decomposition(O, p, deg_lim)
+        for P in li
+          push!(r, P[1])
+        end
+      end
+    end
+  end
+  return r
+end
+
+################################################################################
+#
+#  Division
+#
+################################################################################
+
+function divexact(A::NfMaximalOrderIdeal, B::NfMaximalOrderIdeal)
+  I = A*inv(B)
+  B = basis_mat(I)
+  B.den != 1 && error("Division not exact")
+  I = ideal(order(A), B.num)
+  _assure_weakly_normal_presentation(I)
+  assure_2_normal(I)
+  return I
 end
 
 ################################################################################
@@ -1275,11 +1333,17 @@ end
 
 """ ->
 function factor_dict(A::NfMaximalOrderIdeal)
-  lf = my_factor(minimum(A))
+  ## this should be fixed
+  lf = factor(BigInt(minimum(A)))
   lF = Dict{NfMaximalOrderIdeal, Int}()
   n = norm(A)
   O = order(A)
   for (i, (p, v)) in enumerate(lf)
+    try
+      p = Int(p)
+    catch
+      error("Prime divisor lying over prime > 2^63. Too large.")
+    end
     lP = prime_decomposition(O, p)
     for P in lP
       v = valuation(A, P[1])
