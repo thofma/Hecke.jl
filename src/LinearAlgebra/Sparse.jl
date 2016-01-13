@@ -28,7 +28,7 @@ export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
 ################################################################################
 
 function show{T}(io::IO, A::SmatRow{T})
-  println(io, "sparse row ", A.values, A.pos)
+  print(io, "sparse row with positions $(A.pos) and values $(A.values)\n")
 end
 
 ################################################################################
