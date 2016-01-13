@@ -172,3 +172,9 @@ function statistic{T}(st::Array{T, 1})
   return av, si
 end
 
+# If M is upper-triangular with more columns then rows,
+# this function returns the non-pivot column indices.
+function _find_missing_pivot(M::Smat)
+  return setdiff(Set(1:cols(M)), Set([y.pos[1] for y = M.rows ])) 
+end
+
