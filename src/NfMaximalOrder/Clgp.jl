@@ -221,6 +221,38 @@ end
 #
 ################################################################################
 
+function NfFactorBase(O::NfMaximalOrder, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+  lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
+  lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
+  FB = NfFactorBase()
+  FB.size = length(lp)
+  FB.ideals = lp
+
+  # Magic constant 20?
+  FB.rw = Array(Int, 20)
+  FB.mx = 20
+
+  fb = Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}()
+
+  for i = 1:length(lp)
+    if !haskey(fb, lp[i].gen_one)
+      fb[lp[i].gen_one] = [(i, lp[i])]
+    else
+      push!(fb[lp[i].gen_one], (i, lp[i]))
+    end
+  end
+
+  FB.fb = Dict{fmpz, FactorBaseSingleP}()
+  for p in keys(fb)
+    FB.fb[p] = FactorBaseSingleP(p, fb[p])
+  end
+
+  FB.fb_int = FactorBase(Set(keys(FB.fb)); check = false)
+
+  return FB
+end
+
+
 function NfFactorBase(O::NfMaximalOrder, B::Int;
                       complete::Bool = true, degree_limit::Int = 5)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
@@ -320,6 +352,46 @@ end
 ################################################################################
 
 global AllRels
+
+function class_group_init(O::NfMaximalOrder, FB::NfFactorBase, T::DataType = Smat{fmpz})
+  global AllRels = []
+
+
+  clg = ClassGrpCtx{T}()
+
+  clg.FB = FB
+
+  clg.bad_rel = 0
+  clg.rel_cnt = 0
+  clg.last = 0
+
+  clg.M = T()
+  clg.c = conjugates_init(nf(O).pol)
+  for I in clg.FB.ideals
+    a = nf(O)(I.gen_one)
+    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
+    a = nf(O)(I.gen_two)
+    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
+  end
+  n = degree(O)
+  l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
+  for i = 1:n
+    l[i,1] = 1
+  end
+  for i = 1:clg.c.r2
+    l[clg.c.r1+2*i, i+1] = 1
+    l[clg.c.r1+2*i-1, i+1] = -1
+  end
+  # what I want is a lll-reduced basis for the kernel
+  # it probably should be a sep. function
+  # however, there is nullspace - which is strange...
+  l,t = hnf_with_transform(l)
+  t = sub(t, (1+clg.c.r2+1):rows(l), 1:rows(l))
+  l = lll(t)
+  clg.val_base = l
+  return clg
+end
+
 function class_group_init(O::NfMaximalOrder, B::Int;
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = Smat{fmpz})
   global AllRels = []
