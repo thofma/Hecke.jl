@@ -58,8 +58,8 @@ function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int;
 
   c = minkowski_mat(rt_c, K, prec)
 
-  @time l, t1 = lll_with_transform(basis_mat(A))
-  @time temp = FakeFmpqMat(l)*basis_mat(order(A))
+  l, t1 = lll_with_transform(basis_mat(A))
+  temp = FakeFmpqMat(l)*basis_mat(order(A))
   b = temp.num
   b_den = temp.den
 
@@ -67,14 +67,14 @@ function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int;
     rt_c.cache = 0*c
   end
   d = rt_c.cache
-  @time mult!(d, b, c)
+  mult!(d, b, c)
 
   #ignore v
 
-  @time g = round_scale(d, prec)
+  g = round_scale(d, prec)
 
-  println("calling bkz")
-  @time g, tt = bkz_trans(g, bs)  ## check: bkz_trans seems to s.t. kill the input
+  #println("calling bkz")
+  g, tt = bkz_trans(g, bs)  ## check: bkz_trans seems to s.t. kill the input
 
   c = tt*b
   q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
