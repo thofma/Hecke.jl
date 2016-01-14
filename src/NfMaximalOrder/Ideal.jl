@@ -1263,7 +1263,7 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
 end
 
 doc"""
-    prime_ideals_up_to(O::NfMaximalOrder, B::Int; complete::Bool = true, degree_limit::Int = 0, F::Function, bad::fmpz)
+    prime_ideals_up_to(O::NfMaximalOrder, B::Int; complete::Bool = false, degree_limit::Int = 0, F::Function, bad::fmpz)
 
 > Computes the prime ideals with norm up to B with parameters I forogt.
 """
@@ -1308,6 +1308,25 @@ end
 #  Division
 #
 ################################################################################
+
+# We need to fix the two normal presentation of the trivial ideal
+function divexact(A::NfMaximalOrderIdeal, y::fmpz)
+#  if has_2_elem(A)
+#    z = ideal(order(A), divexact(A.gen_one, y), divexact(A.gen_two, y))
+#    if has_basis_mat(A)
+#      z.basis_mat = divexact(A.basis_mat, y)
+#    end
+#  elseif has_basis_mat(A)
+  if norm(order(A)(y)) == norm(A)
+    return ideal(order(A), one(FlintZZ), order(A)(1))
+  else
+    m = basis_mat(A)
+    z = ideal(order(A), divexact(m, y))
+    _assure_weakly_normal_presentation(z)
+    assure_2_normal(z)
+    return z
+  end
+end
 
 function divexact(A::NfMaximalOrderIdeal, B::NfMaximalOrderIdeal)
   I = A*inv(B)

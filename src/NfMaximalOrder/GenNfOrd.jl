@@ -504,6 +504,13 @@ end
 
 -(x::Union{fmpz, Integer}, y::NfOrderElem) = y - x
 
+# No sanity checks!
+function divexact(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = divexact(x.elem_in_nf, y)
+  return z
+end
+
 ################################################################################
 #
 #  Exponentiation
