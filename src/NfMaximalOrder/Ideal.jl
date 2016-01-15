@@ -1231,12 +1231,12 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
 end
 
 @doc """
-  prime_ideals_up_to(O::NfMaximalOrder, B::Int; complete::Bool = true, degree_limit::Int = 0)
+  prime_ideals_up_to(O::NfMaximalOrder, B::Int; complete::Bool = false, degree_limit::Int = 0)
 
     Computes the prime ideals with norm up to B with parameters I forogt.
 """ ->
 function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
-                            complete::Bool = true,
+                            complete::Bool = false,
                             degree_limit::Int = 0)
   p = 1
   r = NfMaximalOrderIdeal[]
@@ -1329,13 +1329,17 @@ function divexact(A::NfMaximalOrderIdeal, y::fmpz)
 end
 
 function divexact(A::NfMaximalOrderIdeal, B::NfMaximalOrderIdeal)
-  I = A*inv(B)
-  B = basis_mat(I)
-  B.den != 1 && error("Division not exact")
-  I = ideal(order(A), B.num)
-  _assure_weakly_normal_presentation(I)
-  assure_2_normal(I)
-  return I
+  if norm(A) == norm(B)
+    return ideal(order(A), one(FlintZZ), order(A)(1))
+  else
+    I = A*inv(B)
+    B = basis_mat(I)
+    B.den != 1 && error("Division not exact")
+    I = ideal(order(A), B.num)
+    _assure_weakly_normal_presentation(I)
+    assure_2_normal(I)
+    return I
+  end
 end
 
 ################################################################################
