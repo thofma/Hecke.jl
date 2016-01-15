@@ -886,9 +886,10 @@ doc"""
 > Returns $x + y$.
 """
 function +(x::GenNfOrdIdl, y::GenNfOrdIdl)
+  d = degree(order(x))
   H = vcat(basis_mat(x), basis_mat(y))
   g = gcd(minimum(x),minimum(y))
-  H = _hnf_modular_eldiv(H, g, :lowerleft)
+  H = sub(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
   #H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))
   return ideal(order(x), H)
 end
