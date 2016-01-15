@@ -363,3 +363,140 @@ function conjugates_log(x::nf_elem)
   return z
 end
 
+################################################################################
+#
+#  Serialization
+#
+################################################################################
+
+# This function can be improved by directly accessing the numerator
+# of the fmpq_poly representing the nf_elem
+doc"""
+***
+    write(io::IO, A::Array{nf_elem, 1}) -> Void
+
+> Writes the elements of `A` to `io`. The first line are the coefficients of
+> the defining polynomial of the ambient number field. The following lines
+> contain the coefficients of the elements of `A` with respect to the power
+> basis of the ambient number field.
+"""
+function write(io::IO, A::Array{nf_elem, 1})
+  if length(A) == 0
+    return
+  else
+    # print some useful(?) information
+    print(io, "# File created by Hecke $VERSION_NUMBER, $(Base.Dates.now()), by function 'write'\n")
+    K = parent(A[1])
+    polring = parent(K.pol)
+
+    # print the defining polynomial
+    g = K.pol
+    d = den(g)
+
+    for j in 0:degree(g)
+      print(io, coeff(g, j)*d)
+      print(io, " ")
+    end
+    print(io, d)
+    print(io, "\n")
+
+    # print the elements
+    for i in 1:length(A)
+
+      f = polring(A[i])
+      d = den(f)
+
+      for j in 0:degree(K)-1
+        print(io, coeff(f, j)*d)
+        print(io, " ")
+      end
+
+      print(io, d)
+
+      print(io, "\n")
+    end
+  end
+end  
+
+doc"""
+***
+    write(file::ASCIIString, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Void
+
+> Writes the elements of `A` to the file `file`. The first line are the coefficients of
+> the defining polynomial of the ambient number field. The following lines
+> contain the coefficients of the elements of `A` with respect to the power
+> basis of the ambient number field.
+>
+> Unless otherwise specified by the parameter `flag`, the content of `file` will be
+> overwritten.
+"""
+function write(file::ASCIIString, A::Array{nf_elem, 1}, flag::ASCIIString = "w")
+  f = open(file, flag)
+  write(f, A)
+  close(f)
+end
+
+# This function has a bad memory footprint
+doc"""
+***
+    read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
+
+> Given a file with content adhering the format of the `write` procedure,
+> this functions returns the corresponding object of type `Array{nf_elem, 1}` such that
+> all elements have parent $K$.
+
+**Example**
+
+    julia> Qx, x = QQ["x"]
+    julia> K, a = NumberField(x^3 + 2, "a")
+    julia> write("interesting_elements", [1, a, a^2])
+    julia> A = read("interesting_elements", K, Hecke.nf_elem)
+"""
+function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
+  Qx = parent(K.pol)
+
+  A = Array{nf_elem, 1}()
+
+  i = 1
+
+  for ln in eachline(io)
+    if ln[1] == '#'
+      continue
+    elseif i == 1
+      # the first line read should contain the number field and will be ignored
+      i = i + 1
+    else
+      coe = map(Hecke.fmpz, split(ln, " "))
+      t = fmpz_poly(Array(slice(coe, 1:(length(coe) - 1))))
+      t = Qx(t)
+      t = divexact(t, coe[end])
+      push!(A, K(t))
+      i = i + 1
+    end
+  end
+  
+  return A
+end
+
+doc"""
+***
+    read(file::ASCIIString, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
+
+> Given a file with content adhering the format of the `write` procedure,
+> this functions returns the corresponding object of type `Array{nf_elem, 1}` such that
+> all elements have parent $K$.
+
+**Example**
+
+    julia> Qx, x = QQ["x"]
+    julia> K, a = NumberField(x^3 + 2, "a")
+    julia> write("interesting_elements", [1, a, a^2])
+    julia> A = read("interesting_elements", K, Hecke.nf_elem)
+"""
+function read(file::ASCIIString, K::AnticNumberField, ::Type{Hecke.nf_elem})
+  f = open(file, "r")
+  A = read(f, K, Hecke.nf_elem)
+  close(f)
+  return A
+end
+
