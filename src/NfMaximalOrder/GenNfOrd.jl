@@ -74,6 +74,10 @@ doc"""
 > Returns the discriminant of $\mathcal O$.
 """
 function discriminant(O::GenNfOrd)
+  return _discriminant(O)
+end
+
+function _discriminant(O::GenNfOrd)
   if isdefined(O, :disc)
     return O.disc
   end
