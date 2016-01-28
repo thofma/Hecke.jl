@@ -103,7 +103,7 @@ function is_torsion_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T,
 
   while true
     l = 0
-    cx, cy = conjugates_arb(x)
+    cx, cy = conjugates_arb(x, c.prec)
     A = ArbField(c.prec)
     for i in 1:r
       k = abs(cx[i])
@@ -141,7 +141,7 @@ If `checkisunit` is set, it is first checked whether `x` is a unit of the
 maximal order of the number field `x` is lying in.
 """
 function is_torsion_unit(x::NfOrderElem, checkisunit::Bool = false)
-  return is_torsion_unt(x.elem_in_nf, checkisunit)
+  return is_torsion_unit(x.elem_in_nf, checkisunit)
 end
 
 """
@@ -170,7 +170,7 @@ Given a torsion unit `x` together with a multiple `n` of its order, compute the
 order of `x`, that is, the smallest `k` such that x^`k` = 1.
 """
 function torsion_unit_order(x::NfOrderElem, n::Int)
-  return torsion_unit_order(x.elem_in_nf)
+  return torsion_unit_order(x.elem_in_nf, n)
 end
 
 
@@ -376,7 +376,7 @@ function torsion_units(O::GenNfOrd)
   K = nf(O)
   rts = conjugate_data_arb(K)
   A = ArbField(rts.prec)
-  M = ArbMatSpace(n, n, rts.prec)()
+  M = ArbMatSpace(A, n, n)()
   r1, r2 = signature(K)
 
   if r1 > 0
@@ -397,6 +397,9 @@ function torsion_units(O::GenNfOrd)
   #println(l)
   R = Array{NfOrderElem, 1}()
   for i in l
+    if O(i) == zero(O)
+      continue
+    end
     if is_torsion_unit(O(i))
       push!(R, O(i))
     end

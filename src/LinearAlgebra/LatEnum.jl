@@ -46,6 +46,7 @@
 #     (see other comment below)
 
 add_assert_scope(:LatEnum)
+add_verbose_scope(:LatEnum)
 
 function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
@@ -363,18 +364,41 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   #recprint(n-i)
   #println("I am at level $i with $x")
 
-  #recprint(n-i)
-  #println("Gii: ", G[i,i])
-  #recprint(n-i)
-  #println("c: ", ArbField(p)(c))
+  @vprint :LatEnum "$(recprint(n - i)) Gii: , $(G[i,i])\n"
+  @vprint :LatEnum "$(recprint(n - i)) c: $(ArbField(p)(c))\n"
+
   C = ArbField(p)(c)//G[i,i]
-  #recprint(n-i)
-  #println("C: ", C)
-  C = sqrt(C)
+
+  @vprint :LatEnum "$(recprint(n - i)) C: $C\n"
+
+  if !contains_zero(C)
+    C = sqrt(C)
+  else
+    # Element C contains zero, this is a bad when taking square root
+    # (this would ive NaN).
+    # The elements abs(C) also contains zero.
+    # The only(?) way to do it is to invoke arb_get_abs_ubound_arf.
+    # This should work, potentially we enumerate more elements
+
+    tm = arf_struct(0, 0, 0, 0)
+    ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+
+    ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}), &tm, &C)
+    ccall((:arb_set_arf, :libarb), Void, (Ptr{arb}, Ptr{arf_struct}), &C, &tm)
+
+    ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+
+    @hassert :LatEnum !contains_zero(C)
+  end
+
+  @vprint :LatEnum "$(recprint(n - i)) C: $C\n"
+
   CC = ArbField(p)(0)
+
   for j in i+1:n
     CC = CC + G[i,j]*x[1,j]
   end
+
   lb = -CC - C
   ub = -CC + C
 
@@ -382,15 +406,8 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   #tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &lb)
 
   tr_ptr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &lb)
-  tr = Nemo.mag_struct(0, 0)
-  ccall((:mag_init, :libarb), Void, (Ptr{Nemo.mag_struct}, ), &tr)
-  ccall((:mag_set, :libarb), Void, (Ptr{Nemo.mag_struct}, Ptr{Nemo.mag_struct}), &tr, tr_ptr)
-
+  
   tm_ptr = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &lb)
-  tm = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
-  ccall((:arf_set, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}), &tm, tm_ptr)
-
   u = arf_struct(0, 0, 0, 0)
   ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &u)
 
@@ -411,47 +428,33 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 
   ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &u)
 
-  #error("precision $p not high enough")
-
-  #recprint(n-i)
-  #println("Coordinate $i between $lbfmpz and $ubfmpz")
+  @vprint :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz\n"
 
   A = Array{Array{fmpz, 1}, 1}()
+
   if i == 1
+    @vprint :LatEnum "$(recprint(n - i)) his is depth $i\n"
+
     for j in Int(lbfmpz):Int(ubfmpz)
+      @vprint :LatEnum "$(recprint(n - i)) j is $j\n"
       if isnegative(c - G[i,i]*(j + CC)^2)
+        @vprint :LatEnum "$(recprint(n - i)) Something is negative\n"
         continue
       end
       push!(A, [ fmpz(j) ])
     end
   else
     for j in Int(lbfmpz):Int(ubfmpz)
-      #recprint(n-i)
-      #println("$x $i $j: $c $(G[i,i]) $CC")
-      #recprint(n-i)
-      #println("$x $i $j $(G[i,i]*j^2)")
-      #recprint(n-i)
-      #println("$x $i $j: $(c - G[i,i]*(j + CC)^2)")
-      #recprint(n-i)
+      @vprint :LatEnum "$(recprint(n - i)) $x $i $j: $c $(G[i,i]) $CC\n"
+      @vprint :LatEnum "$(recprint(n - i)) $x $i $j $(G[i,i]*j^2)\n"
+      @vprint :LatEnum "$(recprint(n - i)) $x $i $j: $(c - G[i,i]*(j + CC)^2)\n"
       t = c - G[i,i]*(j + CC)^2
+
       if isnegative(t)
-        #recprint(n-i)
-        #println("Oh no, negative!")
         continue
       end
-      if contains_zero(t)
-        error("Precision not high enough")
-       # y = Array(fmpz, i)
-       # for o in 1:i-1
-       #   y[o] = 0
-       # end
-       # y[i] = j
-       # push!(A, y)
-       # continue
-      end
+
       x[1,i] = j
-      #recprint(n-i)
-      #println("Calling again with new bound $t and vector  $x")
       l = _enumerate(E, t, i - 1, x)
       for k in 1:length(l)
         push!(A, push!(l[k], fmpz(j)))
@@ -462,7 +465,9 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 end
 
 function recprint(n::Int)
+  s = ""
   for i in 1:n
-    print("    ")
+    s = s * "    "
   end
+  return s
 end
