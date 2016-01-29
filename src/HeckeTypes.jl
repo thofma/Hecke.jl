@@ -905,10 +905,16 @@ end
 
 type FactorBase{T}
   prod::T
-  base::Set{T}
+  base::Union{Set{T}, AbstractArray{T, 1}}
   ptree::node{T}
 
   function FactorBase(a::T, b::Set{T})
+    f = new()
+    f.prod = a
+    f.base = b
+    return f
+  end
+  function FactorBase(a::T, b::AbstractArray{T, 1})
     f = new()
     f.prod = a
     f.base = b
