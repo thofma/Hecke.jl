@@ -123,7 +123,7 @@ function __init__()
 #  ")
   println()
   print("Version")
-  print_with_color(:green, " 0.1-dev ")
+  print_with_color(:green, " $VERSION_NUMBER ")
   print("... \n ... which comes with absolutely no warrant whatsoever")
   println()
   println("(c) 2015 by Claus Fieker and Tommy Hofmann")
@@ -149,6 +149,14 @@ function conjugate_data_arb(K::AnticNumberField)
     return c
   end
 end
+
+################################################################################
+#
+#  Version number
+#
+################################################################################
+
+global VERSION_NUMBER = v"0.1-dev"
 
 ################################################################################
 #
@@ -375,6 +383,12 @@ include("Map.jl")
 include("basis.jl")
 include("helper.jl")
 include("misc.jl")
+
+################################################################################
+#
+#  Simple version info
+#
+################################################################################
 
 ################################################################################
 #

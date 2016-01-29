@@ -915,3 +915,7 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
   return
 end
 
+function sparsity{T}(A::Smat{T})
+  return A.nnz/(A.r * A.c), nbits(abs_max(A))
+end
+  

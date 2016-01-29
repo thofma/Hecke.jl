@@ -107,6 +107,19 @@ function basis_mat_inv(O::NfOrder)
   return O.basis_mat_inv
 end
 
+function discriminant(O::NfOrder)
+  if isdefined(O, :disc)
+    return O.disc
+  end
+
+  if isequationorder(O)
+    O.disc = num(discriminant(nf(O).pol))
+    return O.disc
+  end
+
+  return _discriminant(O)
+end
+
 isequationorder(O::NfOrder) = O.isequationorder
 
 nf(O::NfOrder) = O.nf
