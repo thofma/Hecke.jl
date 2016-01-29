@@ -83,37 +83,6 @@ end
 
 valuation(z::fmpz, p::Int) = valuation(z, fmpz(p))
 
-# Bernstein: coprime bases
-# ppio(a,b) = (c,n) where v_p(c) = v_p(a) if v_p(b) !=0, 0 otherwise
-#                         c*n = a
-# or c = gcd(a, b^infty)
-
-function ppio(a::fmpz, b::fmpz) 
-  c = gcd(a, b)
-  n = div(a, c)
-  m = c
-  g = gcd(c, n)
-  while g != 1
-    c = c*g
-    n = div(n, g)
-    g = gcd(c, n)
-  end
-  return (c, n)
-end
-
-function ppio{T <: Integer}(a::T, b::T) 
-  c = gcd(a, b)
-  n = div(a, c)
-  m = c
-  g = gcd(c, n)
-  while g != 1
-    c = c*g
-    n = div(n, g)
-    g = gcd(c, n)
-  end
-  return (c, n)
-end
-
 function *(a::fmpz, b::BigFloat)
   return BigInt(a)*b
 end
@@ -243,10 +212,11 @@ end
 
 
 function isodd(a::fmpz)
-  return a%2==1
+  ccall((:fmpz_is_odd, :libflint), Int, (Ptr{fmpz},), &a) == 1
 end
+
 function iseven(a::fmpz)
-  return a%2==0
+  ccall((:fmpz_is_even, :libflint), Int, (Ptr{fmpz},), &a) == 1
 end
 ##
 ## to support rand(fmpz:fmpz)....

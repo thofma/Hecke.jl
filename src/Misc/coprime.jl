@@ -1,5 +1,5 @@
-import Nemo.isone, Nemo.divexact, Base.copy
-export divexact!, gcd_into!, copy, coprime_base, coprime_base_insert
+import Nemo.isone, Nemo.divexact
+export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
 function isone(a::Integer)
   return a==1
@@ -28,17 +28,6 @@ end
 function gcd_into!(a::Integer, b::Integer, c::Integer)
   return gcd(b, c)
 end
-
-function copy(a::fmpz)
-  b = fmpz()
-  ccall((:fmpz_init_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &b, &a)
-  return b
-end
-
-function copy(a::Integer)
-  return a
-end
-
 
 #for larger lists much better than Bill's (Nemo's) prod function
 
@@ -143,8 +132,24 @@ function coprime_base_bach{E}(a::Array{E, 1}) #T need to support GCDs
   return T
 end
    
+# Bernstein: coprime bases
+# ppio(a,b) = (c,n) where v_p(c) = v_p(a) if v_p(b) !=0, 0 otherwise
+#                         c*n = a
+# or c = gcd(a, b^infty)
 
-#Bernstein, ppio exists already elsewhere
+function ppio{E}(a::E, b::E) 
+  c = gcd(a, b)
+  n = div(a, c)
+  m = c
+  g = gcd(c, n)
+  while g != 1
+    c = c*g
+    n = div(n, g)
+    g = gcd(c, n)
+  end
+  return (c, n)
+end
+
 #Note: Bernstein needs bigints, either Integer or fmpz 
 #      well, polys are also OK, small integers are not.
 
@@ -297,10 +302,10 @@ function augment_steel{E}(S::Array{E, 1}, a::E, start = 1)
     end
     S[i] = si
     if isone(a) # g = a and a | S[i]
-      a = copy(g)
+      a = deepcopy(g)
       continue
     end
-    augment_steel(S, copy(g), i)
+    augment_steel(S, deepcopy(g), i)
     continue
   end
   if !isone(a)
@@ -337,8 +342,8 @@ end
 # changes
 # 
 # needs
-# isone, gcd_into!, divexact!, copy
-# (some more for Bernstein: FactorBase, gcd, divexact, ppio)
+# isone, gcd_into!, divexact!, deepcopy
+# (some more for Bernstein: FactorBase, gcd, divexact)
 
 doc"""
 ***
