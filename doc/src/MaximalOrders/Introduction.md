@@ -19,14 +19,14 @@ form a $\mathbf{Z}$-basis of $I$.
 Let $(r,s)$ be the signature of $K$, that is, $K$ has $r$ real embeddings $\sigma_i \colon K \to \mathbf{R}$, $1 \leq i \leq r$, and $2s$ complex embeddings $\sigma_i \colon K \to \mathbf{C}$, $1 \leq i \leq 2s$.
 We order the complex embeddings such that $\sigma_i = \overline{\sigma_{i+s}}$ for $r + 1 \leq i \leq r + s$.
 The $\mathbf{Q}$-linear function
-\\[ K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\operatorname{Re}(\sigma_{r+1}(\alpha)),\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\operatorname{Re}(\sigma_{r+s}(\alpha)),\operatorname{Im}(\sigma_{r+s}(\alpha)) \\]
+\\[ K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\sqrt{2}\operatorname{Re}(\sigma_{r+1}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\sqrt{2}\operatorname{Re}(\sigma_{r+s}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+s}(\alpha)) \\]
 is called the **Minkowski map** (or **Minkowski embedding**).
 For our maximal order $\mathcal O$ with basis $\omega_1,\dotsc,\omega_d$, the matrix
 \\[ \begin{pmatrix} 
-\sigma_1(\omega_1) & \dotsc & \sigma_r(\omega_1) & \operatorname{Re}(\sigma_{r+1}(\omega_1)) & \operatorname{Im}(\sigma_{r+1}(\omega_1)) & \dotsc & \operatorname{Im}(\sigma_{r+s}(\omega_1)) \\\\
-\sigma_2(\omega_2) & \dotsc & \sigma_r(\omega_2) & \operatorname{Re}(\sigma_{r+1}(\omega_2)) & \operatorname{Im}(\sigma_{r+2}(\omega_2)) & \dotsc  & \operatorname{Im}(\sigma_{r+s}(\omega_2)) \\\\
+\sigma_1(\omega_1) & \dotsc & \sigma_r(\omega_1) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_1)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_1)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_1)) \\\\
+\sigma_1(\omega_2) & \dotsc & \sigma_r(\omega_2) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_2)) & \sqrt{2}\operatorname{Im}(\sigma_{r+1}(\omega_2)) & \dotsc  & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_2)) \\\\
 \vdots & \dotsc & \vdots & \vdots & \dotsc & \vdots & \vdots\\\\
-\sigma_1(\omega_d) & \dotsc & \sigma_r(\omega_d) & \operatorname{Re}(\sigma_{r+1}(\omega_d)) & \operatorname{Im}(\sigma_{r+2}(\omega_d)) & \dotsc & \operatorname{Im}(\sigma_{r+s}(\omega_d))
+\sigma_1(\omega_d) & \dotsc & \sigma_r(\omega_d) & \sqrt{2}\operatorname{Re}(\sigma_{r+1}(\omega_d)) & \sqrt{2}\operatorname{Im}(\sigma_{r+2}(\omega_d)) & \dotsc & \sqrt{2}\operatorname{Im}(\sigma_{r+s}(\omega_d))
 \end{pmatrix}
 \in \operatorname{Mat}_{d\times d}(\mathbf R).
 \\]
