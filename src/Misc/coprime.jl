@@ -1,16 +1,12 @@
-import Nemo.isone, Nemo.divexact
+import Nemo.isone, Nemo.divexact, Base.copy
 export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
 function isone(a::Integer)
   return a==1
 end
 
-function divexact(a::Integer, b::Integer)
-  return div(a, b)
-end
-
-function divexact!(a::Integer, b::Integer)
-  return div(a, b)
+function divexact{T <: Integer}(a::T, b::T)
+  return div(a, b)::T
 end
 
 function divexact!(a::fmpz, b::fmpz)
@@ -25,8 +21,12 @@ function gcd_into!(a::fmpz, b::fmpz, c::fmpz)
   return a
 end
 
-function gcd_into!(a::Integer, b::Integer, c::Integer)
-  return gcd(b, c)
+function gcd_into!{T <: Integer}(a::T, b::T, c::T)
+  return gcd(b, c)::T
+end
+
+function copy(a::fmpz) 
+  return deepcopy(a)
 end
 
 #for larger lists much better than Bill's (Nemo's) prod function
@@ -281,7 +281,7 @@ function coprime_base_bernstein{E}(S::Array{E, 1})
   return merge_bernstein(P1, P2)
 end
 
-function augment_steel{E}(S::Array{E, 1}, a::E, start = 1)
+function augment_steel{E}(S::Array{E, 1}, a::E, start::Int = 1)
   i = start
   if isone(a)
     return S
@@ -302,10 +302,10 @@ function augment_steel{E}(S::Array{E, 1}, a::E, start = 1)
     end
     S[i] = si
     if isone(a) # g = a and a | S[i]
-      a = deepcopy(g)
+      a = copy(g)
       continue
     end
-    augment_steel(S, deepcopy(g), i)
+    augment_steel(S, copy(g), i)
     continue
   end
   if !isone(a)
@@ -342,7 +342,7 @@ end
 # changes
 # 
 # needs
-# isone, gcd_into!, divexact!, deepcopy
+# isone, gcd_into!, divexact!, copy
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
 doc"""
