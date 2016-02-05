@@ -98,8 +98,8 @@ function compose{T}(a::node{T}, b::node{T}, check = false)
   return node{T}(a.content * b.content, a, b)
 end
 
-# assume that the set consists of pairwise coprime elements
-function FactorBase{T}(x::Set{T}; check::Bool = true)
+# assume that the set or array consists of pairwise coprime elements
+function FactorBase{T}(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true)
   ax = [ node{T}(p) for p in x]
   while length(ax) > 1
     bx = [ compose(ax[2*i-1], ax[2*i], check) for i=1:div(length(ax), 2)]
