@@ -24,23 +24,27 @@ function show(io::IO, M::Map)
   end
 end
 
-function preimage(M::Map, a::Any)
+function preimage{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :preim)
-    p = M.header.preim(M, a)
+    p = M.header.preim(M, a)#::elem_type(D)
     @assert parent(p) == domain(M)
     return p
   end
   throw("no pre-image function known")
 end
 
-function image(M::Map, a::Any)
+elem_type(::Type{AnticNumberField}) = Hecke.nf_elem
+
+elem_type(::Type{FqNmodFiniteField}) = Hecke.fq_nmod
+
+function image{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :image)
-    return M.header.image(M, a)
+    return M.header.image(M, a)::elem_type(D)
   end
   throw("no image function known")
 end
 
-function Base.call(M::Map, a::Any)
+function Base.call{C, D}(M::Map{C, D}, a::Any)
   return image(M, a)
 end
 
@@ -57,3 +61,5 @@ function show(io::IO, M::CoerceMap)
   println(io, "Coerce: $(domain(M)) -> $(codomain(M))")
 end
 #######################################################
+
+elem_type{T}(::Type{ResidueRing{T}}) = Residue{T}

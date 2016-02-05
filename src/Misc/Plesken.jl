@@ -300,6 +300,8 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
       @assert domain(I) == codomain(J)
       @assert parent(coeff(pol, 0)) == codomain(I)
       for j=0:degree(pol)
+        println(typeof(I))
+        println(typeof(J))
         arr[j+1] = preimage(J, preimage(I, coeff(pol, j)))
       end
       pol = PolynomialRing(T, "t_$i")[1](arr)
