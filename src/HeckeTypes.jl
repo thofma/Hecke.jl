@@ -3,6 +3,27 @@
 #  SmatRow/Smat
 #
 ################################################################################
+abstract abstest
+
+type t1{A <: abstest, B} 
+  x::A 
+  y::B
+end
+
+type t2{C, T} <: abstest 
+  x::C 
+  y::T
+
+  function t2(::Type{C}, ::Type{T})
+    z = new{C, T}()  
+    z.x = C(1)
+    z.y = z
+  end
+end
+
+t2{C, T}(::Type{C}, ::Type{T}) = t2{C, T}(C, T) 
+
+Base.show{C, T}(io::IO, x::t2{C, T}) = print(io, "t2 with type $C and $T")
 
 global const SLP_AddRow_typ = 1
 global const SLP_SwapRows_typ = 2
@@ -122,7 +143,7 @@ type EnumCtxArb
     z = new()
     z.G = G
     z.x = MatrixSpace(ZZ, 1, rows(G))()
-    z.p = parent(G).prec
+    z.p = prec(base_ring(G))
     return z
   end
 end
@@ -200,6 +221,7 @@ type FactoredElemMon{T <: RingElem} <: Ring
   base_ring::Ring  # for the base
   basis_conjugates_log::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
+  conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
   function FactoredElemMon(R::Ring)
     if haskey(FactoredElemMonDict, R)
@@ -209,6 +231,7 @@ type FactoredElemMon{T <: RingElem} <: Ring
       z.base_ring = R
       z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
       z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
+      z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
       FactoredElemMonDict[R] = z
       return z
     end
@@ -318,6 +341,7 @@ type NfOrder <: GenNfOrd
   parent::NfOrderSet               # Parent object
   signature::Tuple{Int, Int}       # Signature of the associated number field
                                    # (-1, 0) means 'not set'
+  torsion_units::Tuple{Array{NfOrderElem, 1}, NfOrderElem}
 
   function NfOrder()
     z = new()
@@ -507,6 +531,7 @@ type NfMaximalOrder <: GenNfOrd
                                    # (-1, 0) means 'not set'
   conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
+  torsion_units::Tuple{Array{NfOrderElem, 1}, NfOrderElem}
 
   function NfMaximalOrder(a::AnticNumberField)
     r = new(a)
@@ -757,6 +782,7 @@ type UnitGrpCtx{T <: Union{nf_elem, FactoredElem{nf_elem}}}
   torsion_units::Array{NfOrderElem, 1}
   torsion_units_order::Int
   torsion_units_gen::NfOrderElem
+  conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
 
   function UnitGrpCtx(O::GenNfOrd)
     z = new()

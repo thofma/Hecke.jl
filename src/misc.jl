@@ -233,3 +233,6 @@ function res_degree_in_max_real(p::Int, n::Int)
   return (powermod(p, div(f,2), n) == n-1) ? (return div(f, 2)) : (return f)
 end
 
+function elem_type(::AnticNumberField)
+  return Nemo.nf_elem
+end

@@ -487,8 +487,7 @@ function -(x::arb_mat, y::arb_mat)
 end
 
 function *(x::arb_mat, y::arb_mat)
-  check_parent(x, y)
-  cols(x) != rows(y) && error("Matrices have wrong  dimensions")
+  cols(x) != rows(y) && error("Matrices have wrong dimensions")
   z = MatrixSpace(base_ring(x), rows(x), cols(y))()
   ccall((:arb_mat_mul, :libarb), Void,
               (Ptr{arb_mat}, Ptr{arb_mat}, Ptr{arb_mat}, Int),

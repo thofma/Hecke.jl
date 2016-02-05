@@ -262,7 +262,7 @@ function minkowski_map(a::nf_elem, abs_tol::Int)
     A[i] = real(t)
     if !radiuslttwopower(A[i], abs_tol)
       refine(c)
-      return _minkowski_map(a, abs_tol)
+      return minkowski_map(a, abs_tol)
     end
   end
 
@@ -273,7 +273,7 @@ function minkowski_map(a::nf_elem, abs_tol::Int)
     t = sqrt(CC(2))*t
     if !radiuslttwopower(t, abs_tol)
       refine(c)
-      return _minkowski_map(a, abs_tol)
+      return minkowski_map(a, abs_tol)
     end
     A[r + 2*i - 1] = real(t)
     A[r + 2*i] = imag(t)
@@ -290,42 +290,78 @@ end
 
 doc"""
 ***
-    conjugates_arb(x::nf_elem, abs_tol::Int) -> Tuple{Array{arb, 1}, Array{acb, 1}}
+    conjugates_arb(x::nf_elem, abs_tol::Int) -> Array{acb, 1}
 
-> Compute the the conjugates of `x` as elements of type `arb` and `acb`
-> respectively. Recall that we order the complex conjugates
+> Compute the the conjugates of `x` as elements of type `acb`.
+> Recall that we order the complex conjugates
 > $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
 > $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 >
-> Every entry `y` of the arrays returned satisfies `radius(y) < 2^abs_tol` or
-> `radius(real(y)) < 2^abs_tol`, `radius(imag(y)) < 2^abs_tol` respectively.
+> Every entry `y` of the array returned satisfies
+> `radius(real(y)) < 2^abs_tol` and `radius(imag(y)) < 2^abs_tol` respectively.
 """
 function conjugates_arb(x::nf_elem, abs_tol::Int)
   K = parent(x)
   d = degree(K)
   c = conjugate_data_arb(K)
   r, s = signature(K)
-  reals = Array(arb, r)
-  complex = Array(acb, 2*s)
+  conjugates = Array(acb, r + 2*s)
+  CC = AcbField(c.prec)
 
   for i in 1:r
-    reals[i] = evaluate(parent(K.pol)(x), c.real_roots[i])
-    if !isfinite(reals[i]) || !radiuslttwopower(reals[i], abs_tol)
+    conjugates[i] = CC(evaluate(parent(K.pol)(x), c.real_roots[i]))
+    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], abs_tol)
       refine(c)
-      return conjugates_arb(x)
+      return conjugates_arb(x, abs_tol)
     end
   end
 
   for i in 1:s
-    complex[i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
-    if !isfinite(complex[i]) || !radiuslttwopower(complex[i], abs_tol)
+    conjugates[r + i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
+    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], abs_tol)
       refine(c)
-      return conjugates_arb(x)
+      return conjugates_arb(x, abs_tol)
     end
-    complex[i + s] = Nemo.conj(complex[i])
+    conjugates[r + i + s] = Nemo.conj(conjugates[r + i])
   end
  
-  return reals, complex
+  return conjugates
+end
+
+doc"""
+***
+    conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
+
+> Compute the the real conjugates of `x` as elements of type `arb`.
+>
+> Every entry `y` of the array returned satisfies
+> `radius(y) < 2^abs_tol`.
+"""
+function conjugates_arb_real(x::nf_elem, abs_tol::Int)
+  r1, r2 = signature(parent(x))
+  c = conjugates_arb(x, abs_tol)
+  z = Array(arb, r1)
+
+  for i in 1:r
+    z[i] = real(c[i])
+  end
+
+  return z
+end
+
+doc"""
+***
+    conjugates_arb_complex(x::nf_elem, abs_tol::Int) -> Array{acb, 1}
+
+> Compute the the complex conjugates of `x` as elements of type `acb`.
+> Recall that we order the complex conjugates
+> $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that
+> $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+>
+> Every entry `y` of the array returned satisfies
+> `radius(real(y)) < 2^abs_tol` and `radius(imag(y)) < 2^abs_tol`.
+"""
+function conjugates_arb_complex(x::nf_elem, abs_tol::Int)
 end
 
 doc"""
@@ -338,7 +374,7 @@ doc"""
 > 2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
 > less then `2^abs_tol`.
 """
-function conjugates_log(x::nf_elem)
+function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   K = parent(x)  
   d = degree(K)
   r1, r2 = signature(K)
@@ -348,19 +384,99 @@ function conjugates_log(x::nf_elem)
   z = Array(arb, r1 + r2)
   for i in 1:r1
     z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
-    if !isfinite(z[i])
+    if !isfinite(z[i]) || !radiuslttwopower(z[i], abs_tol)
       refine(c)
-      return conjugates_log(x)
+      return conjugates_arb_log(x, abs_tol)
     end
   end
   for i in 1:r2
     z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
-    if !isfinite(z[r1 + i])
+    if !isfinite(z[r1 + i]) || !radiuslttwopower(z[r1 + i], abs_tol)
       refine(c)
-      return conjugates_log(x)
+      return conjugates_arb_log(x, abs_tol)
     end
   end
   return z
+end
+
+################################################################################
+#
+#  Torsion units and related functions
+#
+################################################################################
+
+doc"""
+***
+    is_torsion_unit(x::T, checkisunit::Bool = false) -> Bool
+    
+    T = Union{nf_elem, FacElem{nf_elem}}
+
+> Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
+> that $x^n = 1$.
+> 
+> If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
+> maximal order of the number field $x$ is lying in.
+"""
+function is_torsion_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T,
+                                                    checkisunit::Bool = false)
+  if checkisunit
+    _is_unit(x) ? nothing : return false
+  end
+
+  K = base_ring(x)
+  d = degree(K)
+  c = conjugate_data_arb(K)
+  r, s = signature(K)
+
+  while true
+    l = 0
+    cx = conjugates_arb(x, c.prec)
+    A = ArbField(c.prec)
+    for i in 1:r
+      k = abs(cx[i])
+      if k > A(1)
+        return false
+      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+        l = l + 1
+      end
+    end
+    for i in 1:s
+      k = abs(cx[r + i])
+      if k > A(1)
+        return false
+      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
+        l = l + 1
+      end
+    end
+
+    if l == r + s
+      return true
+    end
+    refine(c)
+  end
+end
+
+doc"""
+***
+    torsion_unit_order(x::nf_elem, n::Int)
+
+> Given a torsion unit $x$ together with a multiple $n$ of its order, compute
+> the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
+> that $x^`k` = 1$.
+>
+> It is not checked whether $x$ is a torsion unit.
+"""
+function torsion_unit_order(x::nf_elem, n::Int)
+  # This is lazy
+  # Someone please change this
+  y = deepcopy(x)
+  for i in 1:n
+    if y == 1
+      return i
+    end
+    mul!(y, y, x)
+  end
+  error("Something odd in the torsion unit order computation")
 end
 
 ################################################################################

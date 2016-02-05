@@ -824,7 +824,7 @@ doc"""
 function minkowski_map(a::NfOrderElem, abs_tol::Int)
   # Use a.elem_in_nf instead of elem_in_nf(a) to avoid copying the data.
   # The function minkowski_map does not alter the input!
-  return minkowski_map(a.elem_in_nf)
+  return minkowski_map(a.elem_in_nf, abs_tol)
 end
 
 ################################################################################
