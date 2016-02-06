@@ -26,7 +26,7 @@ end
 
 function preimage{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :preim)
-    p = M.header.preim(M, a)#::elem_type(D)
+    p = M.header.preim(M, a)::elem_type(D)
     @assert parent(p) == domain(M)
     return p
   end
@@ -39,12 +39,12 @@ elem_type(::Type{FqNmodFiniteField}) = Hecke.fq_nmod
 
 function image{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :image)
-    return M.header.image(M, a)::elem_type(D)
+    return M.header.image(M, a)::elem_type(C)
   end
   throw("no image function known")
 end
 
-function Base.call{C, D}(M::Map{C, D}, a::Any)
+function Base.call{D, C}(M::Map{D, C}, a::Any)
   return image(M, a)
 end
 
