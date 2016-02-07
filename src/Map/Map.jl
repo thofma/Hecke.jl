@@ -1,26 +1,34 @@
 function domain(M::Map)
-  return M.domain
+  return M.header.domain
 end
 
 function codomain(M::Map)
-  return M.codomain
+  return M.header.codomain
 end
 
-function image_func(M::Map)
-  return M.header.image
+function image_function(f::Map)
+  return f.header.image
 end
 
-function preim_func(M::Map)
-  return M.header.preim
+function preimage_function(f::Map)
+  return f.header.preimage
 end
+
+#function image_func(M::Map)
+#  return M.header.image
+#end
+#
+#function preim_func(M::Map)
+#  return M.header.preim
+#end
 
 function show(io::IO, M::Map)
   println(io, "Map $(domain(M)) -> $(codomain(M))")
 end
 
 function preimage{D, C}(M::Map{D, C}, a)
-  if isdefined(M, :preimage)
-    p = M.preimage(a)::elem_type(D)
+  if isdefined(M.header, :preimage)
+    p = M.header.preimage(a)::elem_type(D)
     @assert parent(p) == domain(M)
     return p
   end
@@ -34,8 +42,8 @@ elem_type(::Type{FqNmodFiniteField}) = Hecke.fq_nmod
 elem_type{T}(::Type{ResidueRing{T}}) = Hecke.Residue{T}
 
 function image{D, C}(M::Map{D, C}, a)
-  if isdefined(M, :image)
-    return M.image(a)::elem_type(C)
+  if isdefined(M.header, :image)
+    return M.header.image(a)::elem_type(C)
   else
     error("No image function known")
   end
