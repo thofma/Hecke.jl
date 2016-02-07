@@ -5,7 +5,7 @@ function show(io::IO, M::ResidueRingPolyMap)
   end
 end
 
-function ResidueRingPolyMap_image(M::ResidueRingPolyMap, a::Residue)
+function ResidueRingPolyMap_image{D, C, T}(M::ResidueRingPolyMap{D, C}, a::Residue{T})
   #a should be in the domain of M...
   if isdefined(M, :coeff_map)
     I = codomain(M)(0)
@@ -20,7 +20,8 @@ function ResidueRingPolyMap_image(M::ResidueRingPolyMap, a::Residue)
   end
   return I
 end
-function ResidueRingPolyMap_preimage(M::ResidueRingPolyMap, a::Residue)
+
+function ResidueRingPolyMap_preimage{D, C, T}(M::ResidueRingPolyMap{D, C}, a::Residue{T})
   #a should be in the codomain of M...
   #
   # a good 1st attempt. If many preimages are needed, the matrix Mt

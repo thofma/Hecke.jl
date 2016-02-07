@@ -258,8 +258,8 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
     f = cyclotomic(r, PolynomialRing(ZZ)[2])
     f = PolynomialRing(ResidueRing(ZZ, p))[1](f)
     f = factor(f)
-    st = steinitz(f[1][1])
     opt = f[1][1]
+    st = steinitz(f[1][1])
     for i=2:length(f)
       if steinitz(f[i][1]) < st
         st = steinitz(f[i][1])
@@ -300,14 +300,12 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
       @assert domain(I) == codomain(J)
       @assert parent(coeff(pol, 0)) == codomain(I)
       for j=0:degree(pol)
-        println(typeof(I))
-        println(typeof(J))
         arr[j+1] = preimage(J, preimage(I, coeff(pol, j)))
       end
       pol = PolynomialRing(T, "t_$i")[1](arr)
       U = ResidueRing(parent(pol), pol)
-      H = ResidueRingPolyMap(U, S, b)
-      H.coeff_map = J
+      H = ResidueRingPolyMap(U, S, b, J)
+      #H.coeff_map = J
       J = H
       T = U
     end
