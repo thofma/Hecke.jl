@@ -53,8 +53,7 @@ function montes_initial(f::fmpz_poly, p::Int)
 
   res = Array(MType, length(fac))
 
-  for i in 1:length(fac)
-    phi = fac[i][1]
+  for phi in keys(fac)
 
     F = NmodPolyRingResField(phi, :x)
     z = F(gen(parent(phi)))

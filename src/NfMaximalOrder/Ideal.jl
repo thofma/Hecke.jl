@@ -1001,22 +1001,29 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
   fac = factor(fmodp)
   if degree_limit > 0
-    fac = sub(fac, find(x -> degree(x[1]) <= degree_limit, fac))
+    _fac = typeof(fac)()
+    for (k,v) = fac
+      if v <= degree_limit
+        _fac[k] = v
+      end
+    end
+    fac = _fac
   end
   result = Array(Tuple{typeof(I()),Int}, length(fac))
+  k = 1
   t = fmpq_poly()
   b = K()
   #fill!(result,(I(),0))
-  for k in 1:length(fac)
-    t = parent(f)(lift(Zx,fac[k][1]))
+  for (fi, ei) in fac
+    t = parent(f)(lift(Zx,fi))
     b = K(t)
     ideal = I()
     ideal.gen_one = p
     ideal.gen_two = O(b, false)
     ideal.is_prime = 1
     ideal.parent = I
-    ideal.splitting_type = fac[k][2], degree(fac[k][1])
-    ideal.norm = ZZ(p)^degree(fac[k][1])
+    ideal.splitting_type = ei, degree(fi)
+    ideal.norm = ZZ(p)^degree(fi)
     ideal.minimum = ZZ(p)
 
     # We have to do something to get 2-normal presentation:
@@ -1025,7 +1032,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if !((mod(norm(b),(ideal.norm)^2) != 0) || (fac[k][2] > 1))
+    if !((mod(norm(b),(ideal.norm)^2) != 0) || (ei > 1))
       ideal.gen_two = ideal.gen_two + O(p)
     end
 
@@ -1035,7 +1042,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
     # Find an anti-uniformizer in case P is unramified
 
     if ideal.splitting_type[1] == 1
-      t = parent(f)(lift(Zx, divexact(fmodp, fac[k][1])))
+      t = parent(f)(lift(Zx, divexact(fmodp, fi)))
       ideal.anti_uniformizer = O(K(t), false)
     end
 
@@ -1044,7 +1051,8 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
       ideal.is_principal = 1
       ideal.princ_gen = O(p)
     end
-    result[k] =  (ideal, fac[k][2])
+    result[k] =  (ideal, ei)
+    k += 1
   end
   return result
 end
@@ -1133,7 +1141,9 @@ function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Inte
     @hassert :NfMaximalOrder 0 issquarefree(f)
     # By theory, all factors should have degree 1 # exploit this if p is small!
     fac = factor(f)
-    F = fac[1][1]
+    println("fac: $fac")
+    println("F: $(first(fac))")
+    F = first(fac)[1]
     H = divexact(f,F)
     E, U, V = gcdx(F, H)
     @hassert :NfMaximalOrder 0 E == 1
@@ -1142,6 +1152,9 @@ function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Inte
     for i in 1:degree(H)
       idem = idem + coeff(H,i).data*x^i
     end
+#    println("idem: $idem");
+    println("H: $H")
+    println("F: $F")
     # build bases for the two new ideals
     I1 = Ip + ideal(O, idem)
     I2 = Ip + ideal(O, O(1)-idem)
@@ -1211,12 +1224,12 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
     Zf = Zx(f)
     fmodp = PolynomialRing(ResidueRing(ZZ,p), "y")[1](Zf)
     fac = factor_shape(fmodp)
-    g = sum([ x[2] for x in fac])
+    g = sum([ x for x in values(fac)])
     res = Array(Tuple{Int, Int}, g)
     k = 1
-    for i in 1:length(fac)
-      for j in 1:fac[i][2]
-        res[k] = (fac[i][1], 1)
+    for (fi, e1) in fac 
+      for j in 1:ei
+        res[k] = (fi, 1)
         k = k + 1
       end
     end

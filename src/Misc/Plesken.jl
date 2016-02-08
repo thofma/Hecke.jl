@@ -258,12 +258,16 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
     f = cyclotomic(r, PolynomialRing(ZZ)[2])
     f = PolynomialRing(ResidueRing(ZZ, p))[1](f)
     f = factor(f)
-    st = steinitz(f[1][1])
-    opt = f[1][1]
-    for i=2:length(f)
-      if steinitz(f[i][1]) < st
-        st = steinitz(f[i][1])
-        opt = f[i][1]
+    k = keys(f)
+    st = start(k)
+    f1, st = next(k, st)
+    st = steinitz(f1)
+    opt = f1
+    while !done(k, st)
+      fi, st = next(k, st)
+      if steinitz(fi) < st
+        st = steinitz(fi)
+        opt = fi
       end
     end
     descent = true

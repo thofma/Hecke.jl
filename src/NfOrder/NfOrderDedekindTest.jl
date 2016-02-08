@@ -23,8 +23,8 @@ function dedekind_ispmaximal(O::NfOrder, p::fmpz)
   g = Zy(1)
 
   # first build 1/p ( f - prod_{g in fac} g^?)
-  for i in 1:length(fac)
-    g *= lift(Zy, fac[i][1])^fac[i][2]
+  for (fi, ei) in fac
+    g *= lift(Zy, fi)^ei
   end
 
   g = Zyf - g
@@ -39,9 +39,9 @@ function dedekind_ispmaximal(O::NfOrder, p::fmpz)
 
   U = one(Kx)
 
-  for i in 1:length(fac)
-    if fac[i][2] != 1 && rem(gmodp, fac[i][1]) == zero(Kx)
-      U *= fac[i][1]
+  for (fi,e1) in fac
+    if ei != 1 && rem(gmodp, fi) == zero(Kx)
+      U *= fi
       return false
     end
   end
@@ -89,8 +89,8 @@ function dedekind_test(O::NfOrder, p::fmpz)
   g = Zy(1)
 
   # first build 1/p ( f - prod_{g in fac} g^?)
-  for i in 1:length(fac)
-    g *= lift(Zy, fac[i][1])^fac[i][2]
+  for (fi,ei) in fac
+    g *= lift(Zy, fi)^ei
   end
 
   g = Zyf - g
@@ -105,9 +105,9 @@ function dedekind_test(O::NfOrder, p::fmpz)
 
   U = one(Kx)
 
-  for i in 1:length(fac)
-    if fac[i][2] != 1 && rem(gmodp, fac[i][1]) == zero(Kx)
-      U *= fac[i][1]
+  for (fi, e1) in fac
+    if ei != 1 && rem(gmodp, fi) == zero(Kx)
+      U *= fi
       pmaximal=false
     end
   end
