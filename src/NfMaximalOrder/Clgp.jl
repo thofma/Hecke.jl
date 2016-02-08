@@ -1533,11 +1533,9 @@ end
 function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   O = U.order
 
-  T, z = torsion_units(O)
-
-  U.torsion_units = T
-  U.torsion_units_order = length(T)
-  U.torsion_units_gen = z
+  U.torsion_units = torsion_units(O)
+  U.torsion_units_order = length(U.torsion_units)
+  U.torsion_units_gen = torsion_units_gen(O)
 
   w = U.torsion_units_order
 

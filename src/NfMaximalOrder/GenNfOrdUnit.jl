@@ -41,11 +41,22 @@ function _unit_group_init(O::NfMaximalOrder)
   return u
 end
 
-"""
+function show(io::IO, U::UnitGrpCtx)
+  print(io, "Unit group context of\n$(order(U))\n")
+end
+
+################################################################################
+#
+#  Unit rank
+#
+################################################################################
+
+doc"""
+***
     unit_rank(O::GenNfOrd) -> Int
 
-Returns the unit_rank of `O`, that is, the rank of the free part of the unit
-group of `O`.
+> Returns the unit_rank of $\mathcal O$, that is, the rank of the free part of the unit
+> group of $\mathcal O$.
 """
 function unit_rank(O::GenNfOrd)
   r1, r2 = signature(nf(O))
@@ -54,14 +65,15 @@ end
 
 ################################################################################
 #
-#  Unit test
+#  Testing for invertibility
 #
 ################################################################################
 
-"""
+doc"""
+***
     is_unit(x::NfOrderElem) -> Bool
 
-Returns wether `x` is invertible or not.
+> Returns whether $x$ is invertible or not.
 """
 function is_unit(x::NfOrderElem)
   return abs(norm(x)) == 1 
@@ -75,215 +87,389 @@ end
 
 ################################################################################
 #
-#  Torsion units
+#  Torsion unit test
 #
 ################################################################################
 
-"""
-    is_torsion_unit(x::T, checkisunit::Bool = false) -> Bool
-    
-    T = Union{nf_elem, FacElem{nf_elem}}
+doc"""
+***
+    is_torsion_unit(x::NfOrderElem, checkisunit::Bool = false) -> Bool
 
-Returns whether there exists `n` such that `x^n == 1`, that is, whether `x`
-is a torsion unit.
-
-If `checkisunit` is set, it is first checked whether `x` is a unit of the
-maximal order of the number field `x` is lying in.
-"""
-function is_torsion_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T,
-                                                    checkisunit::Bool = false)
-  if checkisunit
-    _is_unit(x) ? nothing : return false
-  end
-
-  K = base_ring(x)
-  d = degree(K)
-  c = conjugate_data_arb(K)
-  r, s = signature(K)
-
-  while true
-    l = 0
-    cx, cy = conjugates_arb(x, c.prec)
-    A = ArbField(c.prec)
-    for i in 1:r
-      k = abs(cx[i])
-      if k > A(1)
-        return false
-      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
-        l = l + 1
-      end
-    end
-    for i in 1:s
-      k = abs(cy[i])
-      if k > A(1)
-        return false
-      elseif isnonnegative(A(1) + A(1)//A(6) * log(A(d))//A(d^2) - k)
-        l = l + 1
-      end
-    end
-
-    if l == r + s
-      return true
-    end
-    refine(c)
-  end
-end
-
-"""
-    is_torsion_unit(x::T, checkisunit::Bool = false) -> Bool
-    
-    T = Union{nf_elem, FacElem{nf_elem}}
-
-Returns whether there exists `n` such that `x^n == 1`, that is, whether `x`
-is a torsion unit.
-
-If `checkisunit` is set, it is first checked whether `x` is a unit of the
-maximal order of the number field `x` is lying in.
+> Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
+> that $x^n = 1$.
+> 
+> If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
+> maximal order of the number field $x$ is lying in.
 """
 function is_torsion_unit(x::NfOrderElem, checkisunit::Bool = false)
   return is_torsion_unit(x.elem_in_nf, checkisunit)
 end
 
-"""
-    torsion_unit_order(x::nf_elem, n::Int)
+################################################################################
+#
+#  Order of a single torsion unit
+#
+################################################################################
 
-Given a torsion unit `x` together with a multiple `n` of its order, compute the
-order of `x`, that is, the smallest `k` such that x^`k` = 1.
-"""
-function torsion_unit_order(x::nf_elem, n::Int)
-  # This is lazy
-  # Someone please change this
-  y = deepcopy(x)
-  for i in 1:n
-    if y == 1
-      return i
-    end
-    mul!(y, y, x)
-  end
-  error("Something odd in the torsion unit order computation")
-end
+doc"""
+***
+    torsion_unit_order(x::NfOrderElem, n::Int)
 
-"""
-    torsion_unit_order(x::nf_elem, n::Int)
-
-Given a torsion unit `x` together with a multiple `n` of its order, compute the
-order of `x`, that is, the smallest `k` such that x^`k` = 1.
+> Given a torsion unit $x$ together with a multiple $n$ of its order, compute
+> the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
+> that $x^`k` = 1$.
+>
+> It is not checked whether $x$ is a torsion unit.
 """
 function torsion_unit_order(x::NfOrderElem, n::Int)
   return torsion_unit_order(x.elem_in_nf, n)
 end
 
+################################################################################
+#
+#  Torsion unit group
+#
+################################################################################
 
-function is_independent{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1})
-  # I should first check if there are enough units ...
-  # this is bad
-  if eltype(x) == nf_elem
-    K = parent(x[1])::AnticNumberField
-  elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::AnticNumberField
+doc"""
+***
+    torsion_units(O::GenNfOrd) -> Array{NfOrderElem, 1}
+
+> Given an order $O$, compute the torsion units of $O$.
+"""
+function torsion_units(O::GenNfOrd)
+  ar, g = _torsion_units(O)
+  return ar
+end
+
+doc"""
+***
+    torsion_units(O::GenNfOrd) -> NfOrderElem
+
+> Given an order $O$, compute a generator of the torsion units of $O$.
+"""
+function torsion_units_gen(O::GenNfOrd)
+  ar, g = _torsion_units(O)
+  return g
+end
+
+function _torsion_units(O::GenNfOrd)
+  if isdefined(O, :torsion_units)
+    return O.torsion_units
   end
+
+  n = degree(O)
+  K = nf(O)
+  rts = conjugate_data_arb(K)
+  A = ArbField(rts.prec)
+  M = ArbMatSpace(A, n, n)()
+  r1, r2 = signature(K)
+  B = basis(O)
+
+  if r1 > 0
+    return [ O(1), -O(1) ], -O(1)
+  end
+
+  function _t2_pairing(x, y, p)
+    local i
+    v = minkowski_map(x, p)
+    w = minkowski_map(y, p)
+ 
+    t = zero(parent(v[1]))
+ 
+    for i in 1:r1
+      t = t + v[i]*w[i]
+    end
+ 
+    for i in (r1 + 1):(r1 + 2*r2)
+      t = t + v[i]*w[i]
+    end
+ 
+    return t
+  end
+
+  p = 64
+
+  gram_found = false
+
+  while !gram_found
+    for i in 1:n, j in 1:n
+      M[i,j] = _t2_pairing(B[i], B[j], p)
+      if !isfinite(M[i, j])
+        p = 2*p
+        break
+      end
+    end
+    gram_found = true
+  end
+
+  l = enumerate_using_gram(M, A(n))
+
+  R = Array{NfOrderElem, 1}()
+
+  for i in l
+    if O(i) == zero(O)
+      continue
+    end
+    if is_torsion_unit(O(i))
+      push!(R, O(i))
+    end
+  end
+
+  i = 0
+
+  for i in 1:length(R)
+    if torsion_unit_order(R[i], length(R)) == length(R)
+      break
+    end
+  end
+
+  O.torsion_units = R, deepcopy(R[i])
+
+  return O.torsion_units
+end
+
+################################################################################
+#
+#  Test if units are independent
+#
+################################################################################
+
+function _conjugates_arb_log(A::FactoredElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
+  if haskey(A.conj_log_cache, abs_tol)
+    if haskey(A.conj_log_cache[abs_tol], a)
+      return A.conj_log_cache[abs_tol][a]
+    else
+      z = conjugates_arb_log(a, abs_tol)
+      A.conj_log_cache[abs_tol][a] = z
+      return z
+    end
+  else
+    A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
+    z = conjugates_arb_log(a, abs_tol)
+    A.conj_log_cache[abs_tol][a] = z
+    return z
+  end
+end
+
+function conjugates_arb(x::FactoredElem{nf_elem}, abs_tol::Int)
+  d = degree(_base_ring(x))
+  res = Array(acb, d)
+
+  i = 1
+
+  for a in base(x)
+    z = conjugates_arb(a, abs_tol)
+    if i == 1
+      for j in 1:d
+        res[j] = z[j]^x.fac[a]
+      end
+    else
+      for j in 1:d
+        res[j] = res[j] * z[j]^x.fac[a]
+      end
+    end
+    i = i + 1
+  end
+
+  return res
+end
+
+function conjugates_arb_log(x::FactoredElem{nf_elem}, abs_tol::Int)
+  K = base_ring(x)::AnticNumberField
+  r1, r2 = signature(K)
+  d = r1 + r2
+  res = Array(arb, d)
+
+  i = 1
+
+  for a in base(x)
+    z = _conjugates_arb_log(parent(x), a, abs_tol)
+    if i == 1
+      for j in 1:d
+        res[j] = x.fac[a]*z[j]
+      end
+    else
+      for j in 1:d
+        res[j] = res[j] + x.fac[a]*z[j]
+      end
+    end
+    i = i + 1
+  end
+
+  return res
+end
+
+_base_ring(x::nf_elem) = parent(x)::AnticNumberField
+
+_base_ring(x::FactoredElem{nf_elem}) = base_ring(x)::AnticNumberField
+
+
+function is_independent{T}(x::Array{T, 1})
+
+  K = _base_ring(x[1])
+
   deg = degree(K)
   r1, r2 = signature(K)
-  c = conjugate_data_arb(K)
   rr = r1 + r2
   r = rr - 1 # unit rank
 
+  p = 32
+
+  # This can be made more memory friendly
   while true
-    #println("precision is $(c.prec)");
-    A = ArbMatSpace(length(x), rr, c.prec)()::arb_mat
-    Ar = ArbField(c.prec)
-    for k in 1:length(x)
-      conlog = conjugates_log(x[k])
+    @assert p != 0
+
+    conlog = conjugates_arb_log(x[1], -p)
+
+    A = MatrixSpace(parent(conlog[1]), length(x), rr)()::arb_mat
+
+    for i in 1:rr
+      A[1, i] = conlog[i]
+    end
+
+    Ar = base_ring(A)
+
+    for k in 2:length(x)
+      conlog = conjugates_arb_log(x[k], -p)
       for i in 1:rr
         A[k, i] = conlog[i]
       end
     end
+
     B = A*transpose(A)
     C = parent(B)()
-    p = Array(Cint, B.r)
     d = det(B)
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
-    #println(y, d)
     if isfinite(d) && ispositive(y - d)
       return false
     elseif isfinite(d) && ispositive(d)
       return true
     end
-    refine(c)
+    p = 2*p
   end
 end
 
-function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::UnitGrpCtx{S}, y::T)
+function add_dependent_unit{S, T}(x::UnitGrpCtx{S}, y::T)
   u, m = add_dependent_unit(x.units, y)
   x.units = u
-  x.tentative_regulator = _reg(u)
+  x.tentative_regulator = _reg(u, 64)
   return m
 end
 
 function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{S, 1}, y::T)
   # I need to find a relation
 
-  if eltype(x) == nf_elem
-    K = parent(x[1])::AnticNumberField
-  elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::AnticNumberField
-  end
+  K = _base_ring(x[1])
+
   deg = degree(K)
   r1, r2 = signature(K)
-  c = conjugate_data_arb(K)
   rr = r1 + r2
   r = rr - 1 # unit rank
 
+  p = 128 
   #println("precision is $(c.prec)");
-  A = ArbMatSpace(length(x), rr, c.prec)()
-  b = ArbMatSpace(1, rr, c.prec)()
-  Ar = ArbField(c.prec)
-  for k in 1:length(x)
-    conlog = conjugates_log(x[k])
+
+  zz = Array(fmpz, r + 1)
+# Find 
+#while true
+  conlog = conjugates_arb_log(x[1], p)
+
+  A = ArbMatSpace(parent(conlog[1]), length(x), rr)()
+  b = ArbMatSpace(parent(conlog[1]), 1, rr)()
+  Ar = base_ring(A)
+  
+  for i in 1:rr
+    A[1, i] = conlog[i]
+  end
+
+  for k in 2:length(x)
+    conlog = conjugates_arb_log(x[k], p)
     #println("logs of $(x[k]): $conlog")
     for i in 1:rr
       A[k, i] = conlog[i]
     end
   end
-  conlog = conjugates_log(y)
+
+  conlog = conjugates_arb_log(y, p)
+
   for i in 1:rr
     b[1,i] = conlog[i]
   end
-  #println(A)
   B = A*transpose(A)
-  #println(B)
   B = transpose(A)*inv(B)
-  #println(B)
   v = b*B
 
   z = Array(fmpq, r)
-
-  rreg = abs(_reg(x)) # use submatrix of A instead or store it
+  
+  rreg = abs(_reg(x, p)) # use submatrix of A instead or store it
 
   #println(midpoint(20*rreg))
 
-  bound = fmpz(BigInt(ceil(BigFloat(midpoint(20*rreg))))) # fix this
+  # This is bad someone should fix it
 
-  for i in 1:r
-    z[i] = approximate(v[1, i], bound)
-  end
+  bound = fmpz(BigInt(ceil(BigFloat(midpoint(20*rreg)))))
 
-  dlcm = den(z[1])
+  #println("bound for den is $bound ")
 
-  for i in 2:length(z)
-    dlcm = lcm(dlcm, den(z[i]))
-  end
+  largest_den = ZZ(0)
 
-  zz = Array(fmpz, r + 1)
+  j = 1
 
-  for i in 1:r
-    zz[i] = num(z[i]*dlcm)
-  end 
+#  while largest_den < bound
+   A = [ _max_frac_bounded(_arb_get_fmpq(v[1, i]), bound) for i in 1:r]
+#   println("Maximal depth of reconstruction: $A \n")
+   B = fill(0, r)
+   B[end] = -1
 
-  zz[r + 1] = -dlcm
+  while true
+   # increased last element by one
+    B[end] += 1
+    # looking at overflows from end to beginning
+    for i = r:-1:2
+      if B[i] > A[i]
+        B[i]= 0
+        B[i-1] += 1
+      end
+    end
+    # if overflow in the first entry, stop
+    if B[1] > A[1]
+      break
+    end
 
-  if !check_relation_mod_torsion(x, y, zz)
-    error("Relation is wrong")
+    is_zero = true
+    is_contained = true
+    for i in 1:r
+      temp_fmpq = _arb_get_fmpq(v[1, i])
+      z[i] = fmpq(cfrac(temp_fmpq, B[i])[1])
+      is_zero = is_zero && iszero(z[i])
+      is_contained = is_contained && Nemo.contains(v[1, i], z[i])
+      @assert den(z[i]) < bound
+    end
+
+    if is_zero || !is_contained
+      continue
+    end
+
+    dlcm = den(z[1])
+
+    for i in 2:length(z)
+      dlcm = lcm(dlcm, den(z[i]))
+    end
+
+    for i in 1:r
+      zz[i] = num(z[i]*dlcm)
+    end 
+
+    zz[r + 1] = -dlcm
+    
+    #println("Possible relation: $zz")
+
+    if !check_relation_mod_torsion(x, y, zz)
+      j = j + 1
+    else
+      break
+    end
   end
 
   g = zz[1]
@@ -303,7 +489,7 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
 
   m = MatrixSpace(FlintZZ, r + 1, 1)(reshape(zz, r + 1, 1))
 
-  h, u = hnf_with_transform(m)
+  h, u = hnf_with_transform(m)::Tuple{fmpz_mat, fmpz_mat} # Why annotations?
 
   @assert h[1,1] == 1
 
@@ -314,7 +500,41 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
   return transform(vcat(x, y), m), m
 end
 
-function check_relation_mod_torsion(x::Array{FactoredElem{nf_elem}, 1}, y::FactoredElem{nf_elem}, z::Array{fmpz, 1})
+function transform(x::Array{nf_elem}, y::fmpz_mat)
+  n = length(x)
+  @assert n == rows(y)
+  m = cols(y)
+  z = Array(nf_elem, m)
+  for i in 1:m
+    z[i] = x[1]^y[1, i]
+    for j in 2:n
+      z[i] = z[i]*x[j]^y[j, i]
+    end
+  end
+  return z
+end
+
+function _max_frac_bounded(x::fmpq, b::fmpz)
+  n = 2
+  c = cfrac(x, n)[1]
+  q = fmpq(c)
+
+  while abs(den(q)) < b && q != x
+    n = 2*n
+    c = cfrac(x, n)[1]
+    q = fmpq(c)
+  end
+
+  while abs(den(q)) > b
+    n = n - 1
+    c = cfrac(x, n)[1]
+    q = fmpq(c)
+  end
+
+  return n
+end
+
+function check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
 # this should be improved
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
@@ -347,107 +567,45 @@ function _pow{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1}, y::Arr
   return zz
 end
 
-function approximate(x::arb, y::fmpz)
-  #println(x)
-  found = true
-  q = 1
-  while(found)
-    m = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &x)
-    cf, re = cfrac(fmpq(fmpr(m)), q)
-    z = fmpq(cf)
-    #println(z)
-    if den(z) <= y && contains(x, z)
-      return z
-    end
-    q = q + 1
-    if q > 30
-      error("Something went wrong")
-    end
-  end
-end
-
-"""
-torsion_units(O::GenNfOrd) -> Array{NfOrderElem, 1}, NfOrderElem
-
-Given an Order O, compute the the torsion units and a generator.
-"""
-function torsion_units(O::GenNfOrd)
-  n = degree(O)
-  K = nf(O)
-  rts = conjugate_data_arb(K)
-  A = ArbField(rts.prec)
-  M = ArbMatSpace(A, n, n)()
-  r1, r2 = signature(K)
-
-  if r1 > 0
-    return [ O(1), -O(1) ], -O(1)
-  end
-
-  for i in 1:n
-    for j in 1:n
-      t = AcbField(rts.prec)(0)
-      for k in 1:n
-        t = t + _evaluate(parent(K.pol)(basis(O)[i].elem_in_nf), rts.roots[k])*Nemo.conj(_evaluate(parent(K.pol)(basis(O)[j].elem_in_nf), rts.roots[k]))
-      end
-      M[i,j] = real(t)
-    end
-  end
-  #println(M)
-  l = enumerate_using_gram(M, A(n))
-  #println(l)
-  R = Array{NfOrderElem, 1}()
-  for i in l
-    if O(i) == zero(O)
-      continue
-    end
-    if is_torsion_unit(O(i))
-      push!(R, O(i))
-    end
-  end
-
-  i = 0
-
-  for i in 1:length(R)
-    if torsion_unit_order(R[i], length(R)) == length(R)
-      break
-    end
-  end
-
-  return R, deepcopy(R[i])
-end
-
-function conjugate(x::NfOrderElem, i::Int)
-  rts = conjugate_data(parent(x))
-  _find_real(rts)
-  K = nf(parent(x))
-  return _evaluate(parent(K.pol)(x.elem_in_nf), rts.roots[i])
-end
-
 ################################################################################
 #
 #  Free part of the unit group
 #
 ################################################################################
 
-function _reg{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1})
-  if eltype(x) == nf_elem
-    K = parent(x[1])::AnticNumberField
-  elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::AnticNumberField
-  end
+function _reg{T}(x::Array{T, 1}, abs_tol::Int)
+  K = _base_ring(x[1])
   deg = degree(K)
   r1, r2 = signature(K)
-  c = conjugate_data_arb(K)
   rr = r1 + r2
   r = rr - 1 # unit rank
-  A = ArbMatSpace(r, r, c.prec)()
-  for i in 1:r
-    conlog = conjugates_log(x[i])
+
+  p = 32
+
+  while true
+    conlog = conjugates_arb_log(x[1], p)
+
+    A = ArbMatSpace(parent(conlog[1]), r, r)()
+
     for j in 1:r
-      A[i, j] = conlog[j]
+      A[1, j] = conlog[j]
     end
+
+    for i in 2:r
+      conlog = conjugates_arb_log(x[i], p)
+      for j in 1:r
+        A[i, j] = conlog[j]
+      end
+    end
+
+    z = abs(det(A))
+
+    if isfinite(z) && radiuslttwopower(z, abs_tol)
+      return z
+    end
+    
+    p = 2*p
   end
-  return abs(det(A))
 end
 
 function _make_row_primitive(x::fmpz_mat, j::Int)
@@ -473,6 +631,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   ker, rnk = nullspace(transpose(fmpz_mat(x.M)))
   rnk = Int(rnk)
   ker = transpose(ker)
+
   K = nf(order(x.FB.ideals[1]))
   r = unit_rank(O)
   r1, r2 = signature(O)
@@ -485,7 +644,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     j = j + 1
 
     if j > rows(ker)
-      println("found only $(length(A)) many units but I need $r many")
+      #println("found only $(length(A)) many units but I need $r many")
       return length(A)
     end
 
@@ -538,7 +697,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     #println(_reg(u.units))
   end
 
-  u.tentative_regulator = _reg(u.units)
+  u.tentative_regulator = _reg(u.units, 64)
 end
 
 function _add_unit(u::UnitGrpCtx, x::FactoredElem{nf_elem})
@@ -920,9 +1079,9 @@ function validate(c::ClassGrpCtx, u::UnitGrpCtx)
     print("Saturating at $p...")
     issat, new_unit = issaturated(u, p)
     while !issat
-      println("I have found a new unit: $new_unit")
+      #println("I have found a new unit: $new_unit")
       add_dependent_unit(u, FactoredElem(new_unit))
-      println("$(u.tentative_regulator)")
+      #println("$(u.tentative_regulator)")
       
       b = _validate_class_unit_group(c, u)
 
@@ -962,5 +1121,4 @@ function ^(x::fmpq, y::fmpz)
     error("Not implemented (yet)")
   end
 end
-
 

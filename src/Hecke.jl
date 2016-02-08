@@ -71,7 +71,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
-             MatrixSpace
+             MatrixSpace, elem_type, contains, overlaps, solve
 
 export AnticNumberField, hash, update, nf
 
@@ -129,11 +129,20 @@ function __init__()
   println("(c) 2015 by Claus Fieker and Tommy Hofmann")
   println()
    
-  global hecke_handle = get_handle()
-
-  t = create_accessors(AnticNumberField, acb_root_ctx, hecke_handle)
+  t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
   global _set_nf_conjugate_data_arb = t[2]
+
+  t = create_accessors(AnticNumberField,
+                       Tuple{Array{nf_elem, 1}, nf_elem},
+                       get_handle())
+  global _get_nf_torsion_units = t[1]
+  global _set_nf_torsion_units = t[2]
+
+  t = create_accessors(AnticNumberField, NfMaximalOrder, get_handle())
+
+  global _get_maximal_order_of_nf = t[1]
+  global _set_maximal_order_of_nf = t[2]
 
   global R = _RealRing()
 
@@ -145,8 +154,43 @@ function conjugate_data_arb(K::AnticNumberField)
     return c
   catch
     c = acb_root_ctx(K.pol)
-    _set_nf_conjugate_data_arb(K, c)::acb_root_ctx
+    _set_nf_conjugate_data_arb(K, c)
     return c
+  end
+end
+
+function _torsion_units(K::AnticNumberField)
+  try
+    c = _get_nf_torsion_units(K)::Tuple{Array{nf_elem, 1}, nf_elem}
+    return c
+  catch
+    O = maximal_order(K)
+    tor, gen = _torsion_units(O)
+    tornf = [ elem_in_nf(x) for x in tor]
+    gennf = elem_in_nf(gen)
+    _set_nf_torsion_units(K, (tornf, gennf))
+    return tornf, gennf
+  end
+end
+
+function torsion_units(K::AnticNumberField)
+  ar, g = _torsion_units(K)
+  return ar
+end
+
+function torsion_units_gen(K::AnticNumberField)
+  ar, g = _torsion_units(K)
+  return g
+end
+
+function maximal_order(K::AnticNumberField)
+  try
+    c = _get_maximal_order_of_nf(K)
+    return c
+  catch
+    O = MaximalOrder(K)
+    _set_maximal_order_of_nf(K, O)
+    return O
   end
 end
 

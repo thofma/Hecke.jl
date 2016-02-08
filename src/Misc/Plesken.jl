@@ -182,7 +182,7 @@ function primitive_root_r_div_qm1(R, r::Int)
   while a==0 || a^(r^(k-1)) == 1
     a = rand(R)^e
   end
-  println("found one $r^$k-th root of one: $a")
+  #println("found one $r^$k-th root of one: $a")
 
   #level 1: need a^(r^(k-1))^l minimal, 0<l<r (so a stays primitive)
   b = a^(r^(k-1))
@@ -197,9 +197,9 @@ function primitive_root_r_div_qm1(R, r::Int)
     end
   end
   a = a^opt
-  println("adjusted for level 1: ", a, " st: $st")
+  #println("adjusted for level 1: ", a, " st: $st")
   for i=2:k
-    println("dealing with level $i")
+    #println("dealing with level $i")
     ## (a*a^(xr^(i-1)))^r^(k-i) needs to be minimal in the Steinitz sense
     ## a^(r^(k-i) + xr^k-1)
     # use a*a^(xr^(i-1)) as the new root
@@ -214,7 +214,7 @@ function primitive_root_r_div_qm1(R, r::Int)
         st = steinitz(c)
       end
     end
-    println("adjusted for level $i: ", a, " st: $st")
+    #println("adjusted for level $i: ", a, " st: $st")
     a = a*a^(opt*r^(i-1))
   end
   return a
@@ -282,24 +282,24 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
 
   if descent
     f = get_f(r, p, s+4)  #+4 is stupid. Need to think
-    println("using $f as f")
+    #println("using $f as f")
     # a -> a^f should be an automorphism of order ord = degree of ext
   end
 
   S = 1
   U = 1
   for i=1:s ## maybe do one step x^(r^s)-a only?
-    println("doin' stuff")
+    #println("doin' stuff")
     Rx, x = PolynomialRing(R, "x_$i")
     S = ResidueRing(Rx, x^r-a)
     I = CoerceMap(R, S)
     a = S(x)
     if descent
       b = f_trace(a, f, ord)
-      println("$i: trace of $a is $b")
+      #println("$i: trace of $a is $b")
 #      pol = minpoly_aut(b, x->x^(p^(r^(i-1)))) 
       pol = minpoly_pow(b, r)  ## does not work: expo too large
-      println(pol)
+      #println(pol)
       arr = Array{typeof(zero(T))}(degree(pol)+1)
       @assert domain(I) == codomain(J)
       @assert parent(coeff(pol, 0)) == codomain(I)
