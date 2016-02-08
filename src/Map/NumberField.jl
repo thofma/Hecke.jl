@@ -1,12 +1,23 @@
 
-
-type NfToNfMor <: Map
-  header::MapHeader
+type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
+  header::MapHeader{AnticNumberField, AnticNumberField}
 
   function NfToNfMor()
-    r = new()
-    r.header = MapHeader()
+    z = new()
+    z.header = MapHeader()
     return r
+  end
+  
+  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
+    z = new()
+
+    function image(x::nf_elem)
+      g = parent(K.pol)(x)
+      return evaluate(g, y)
+    end
+
+    z.header = MapHeader(K, L, image)
+    return z
   end
 end
 
@@ -83,6 +94,10 @@ function evaluate(f::fmpz_poly, r::fq_nmod)
   return s
 end                                           
 
+function morphism(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
+  z = NfToNfMor(K, L, y)
+  return z
+end
 
 function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
   z = NfToNfMor()

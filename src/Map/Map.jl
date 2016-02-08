@@ -68,3 +68,5 @@ end
 #######################################################
 
 elem_type{T}(::Type{ResidueRing{T}}) = Residue{T}
+
+\(f::Map, x) = preimage(f, x)

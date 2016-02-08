@@ -42,7 +42,7 @@ type MapHeader{D, C}
 end
 
 function MapHeader{D, C}(domain::D, codomain::C, image::Function)
-  return MapHead{D, C}(domain, codomain, image)
+  return MapHeader{D, C}(domain, codomain, image)
 end
 
 function MapHeader{D, C}(domain::D, codomain::C, image::Function, preimage::Function)
