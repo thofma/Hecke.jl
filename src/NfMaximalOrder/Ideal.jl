@@ -898,6 +898,7 @@ end
 """ ->
 function valuation(a::fmpz, p::NfMaximalOrderIdeal)
   P = p.gen_one
+  @assert p.splitting_type[1] != 0
   return valuation(a, P)[1]* p.splitting_type[1]
 end
 
@@ -1071,7 +1072,7 @@ function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0)
     P = AA[j].ideal
     _assure_weakly_normal_presentation(P)
     assure_2_normal(P)
-    e = Int(valuation(fmpz(p), P))
+    e = Int(valuation(nf(O)(p), P))
     f = 0
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
@@ -1432,7 +1433,7 @@ function split(R::quoringalg)
 
 #    # By theory, all factors should have degree 1 # exploit this if p is small!
     fac = factor(f)
-    F = fac[1][1]
+    F = first(fac)[1]
     @assert length(fac) == degree(f)
     H = divexact(f,F)
     E, U, V = gcdx(F, H)
