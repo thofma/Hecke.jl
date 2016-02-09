@@ -85,12 +85,16 @@ end
 
 function ^(x::FactoredElem, y::fmpz)
   z = parent(x)()
-  z.fac = _deepcopy(x.fac)
-  for a in base(x)
-    # this should be inplac
-    z.fac[a] = y*x.fac[a]
+  if y == 0
+    return z
+  else
+    z.fac = _deepcopy(x.fac)
+    for a in base(x)
+      # this should be inplac
+      z.fac[a] = y*x.fac[a]
+    end
+    return z
   end
-  return z
 end
 
 ^(x::FactoredElem, y::Integer) = ^(x, fmpz(y))
