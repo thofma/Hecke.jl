@@ -8,8 +8,6 @@
 
 export Map, CoerceMap, ResidueRingPolyMap
 
-abstract Map{D, C}
-
 type MapHeader{D, C}
   domain::D
   codomain::C

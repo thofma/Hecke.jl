@@ -35,6 +35,14 @@ type SmatSLP{T}
   val::T  ##only used for AddRow
 end
 
+################################################################################
+#
+#  Abstract types
+#
+################################################################################
+
+abstract Map{D, C}
+
 type SmatRow{T}
   #in this row, in column pos[1] we have value values[1]
   values::Array{T, 1}
@@ -532,6 +540,10 @@ type NfMaximalOrder <: GenNfOrd
   conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
   torsion_units::Tuple{Array{NfOrderElem, 1}, NfOrderElem}
+  unit_group::Map                  # Abstract types in the field is usually bad,
+                                   # but here it can be neglected.
+                                   # We annotate the concrete type when doing
+                                   # unit_group(O)
 
   function NfMaximalOrder(a::AnticNumberField)
     r = new(a)

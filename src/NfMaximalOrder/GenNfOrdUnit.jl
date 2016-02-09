@@ -32,7 +32,8 @@
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, pow!, unit_group, conjugates_arb
+export is_unit, is_torsion_unit, is_independent, pow!, unit_group,
+       conjugates_arb, unit_group
 
 order(u::UnitGrpCtx) = u.order
 
@@ -1126,3 +1127,19 @@ function ^(x::fmpq, y::fmpz)
   end
 end
 
+################################################################################
+#
+#  High level interface
+#
+################################################################################
+
+function unit_group(O::NfMaximalOrder)
+  if isdefined(O, :unit_group)
+    return O.unit_group::Map{AbGrp, FactoredElem{nf_elem}}
+  else
+    c, U, b = _class_unit_group(O)
+    f = AbToNfOrdUnitGrp(O, U.units, U.torsion_units_gen, U.torsion_units_order)
+    O.unit_group = f
+    return f
+  end
+end
