@@ -85,8 +85,7 @@ end
 function _MaximalOrder(O::NfOrder)
   OO = deepcopy(O)
   @vtime :NfOrder fac = factor(Nemo.abs(discriminant(O)))
-  for i in 1:fac.len
-    (p,j) = fac[i]
+  for (p,j) in fac
     if j == 1
       continue
     end

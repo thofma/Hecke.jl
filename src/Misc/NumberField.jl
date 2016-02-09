@@ -162,15 +162,15 @@ function factor(f::PolyElem{nf_elem})
   
   fac = factor(N)
 
-  res = Array(PolyElem{nf_elem}, fac.len)
+  res = Dict{PolyElem{nf_elem}, Int64}()
 
-  for i in 1:fac.len
+  for i in keys(fac)
     t = zero(Kx)
-    for j in 0:degree(fac[i][1])
-      t = t + K(coeff(fac[i][1], j))*gen(Kx)^j
+    for j in 0:degree(i)
+      t = t + K(coeff(i, j))*gen(Kx)^j
     end
     t = compose(t, gen(Kx) + k*gen(K))
-    res[i] = gcd(f, t)
+    res[gcd(f, t)] = 1
   end
 
   return res

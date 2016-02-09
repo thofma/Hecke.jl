@@ -108,24 +108,6 @@ function Base.call(a::FlintIntegerRing, b::fmpq)
   return deepcopy(num(b))
 end
 
-function factor_dict(A::BigInt)
-  D = Dict{BigInt, Int}()
-  a = factor(A)
-  for i = 1:a.len 
-    D[a.d[i][1]] = a.d[i][2]
-  end
-  return D
-end
-
-function factor_dict(A::fmpz)
-  D = Dict{fmpz, Int}()
-  a = factor(A)
-  for i = 1:a.len 
-    D[a.d[i][1]] = a.d[i][2]
-  end
-  return D
-end
-
 function //(a::fmpq, b::fmpz)
   return a//fmpq(b)
 end

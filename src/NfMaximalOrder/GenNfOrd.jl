@@ -126,7 +126,6 @@ function minkowski_mat(O::GenNfOrd, abs_tol::Int)
         M[i, j] = T[i][j]
       end
     end
-    println(p)
     O.minkowski_mat = (M, abs_tol)
     A = deepcopy(M)
   end
@@ -968,7 +967,7 @@ function mod(x::NfOrderElem, y::GenNfOrdIdl)
   b = basis_mat(y)
   t = fmpz(0)
   for i in degree(O):-1:1
-    t = div(a[i],b[i,i])
+    t = cdiv(a[i],b[i,i])
     for j in 1:i
       a[j] = a[j] - t*b[i,j]
     end

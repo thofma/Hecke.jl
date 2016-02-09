@@ -1001,22 +1001,29 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
   fac = factor(fmodp)
   if degree_limit > 0
-    fac = sub(fac, find(x -> degree(x[1]) <= degree_limit, fac))
+    _fac = typeof(fac)()
+    for (k,v) = fac
+      if v <= degree_limit
+        _fac[k] = v
+      end
+    end
+    fac = _fac
   end
   result = Array(Tuple{typeof(I()),Int}, length(fac))
+  k = 1
   t = fmpq_poly()
   b = K()
   #fill!(result,(I(),0))
-  for k in 1:length(fac)
-    t = parent(f)(lift(Zx,fac[k][1]))
+  for (fi, ei) in fac
+    t = parent(f)(lift(Zx,fi))
     b = K(t)
     ideal = I()
     ideal.gen_one = p
     ideal.gen_two = O(b, false)
     ideal.is_prime = 1
     ideal.parent = I
-    ideal.splitting_type = fac[k][2], degree(fac[k][1])
-    ideal.norm = ZZ(p)^degree(fac[k][1])
+    ideal.splitting_type = ei, degree(fi)
+    ideal.norm = ZZ(p)^degree(fi)
     ideal.minimum = ZZ(p)
 
     # We have to do something to get 2-normal presentation:
@@ -1025,7 +1032,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-    if !((mod(norm(b),(ideal.norm)^2) != 0) || (fac[k][2] > 1))
+    if !((mod(norm(b),(ideal.norm)^2) != 0) || (ei > 1))
       ideal.gen_two = ideal.gen_two + O(p)
     end
 
@@ -1035,7 +1042,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
     # Find an anti-uniformizer in case P is unramified
 
     if ideal.splitting_type[1] == 1
-      t = parent(f)(lift(Zx, divexact(fmodp, fac[k][1])))
+      t = parent(f)(lift(Zx, divexact(fmodp, fi)))
       ideal.anti_uniformizer = O(K(t), false)
     end
 
@@ -1044,23 +1051,24 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
       ideal.is_principal = 1
       ideal.princ_gen = O(p)
     end
-    result[k] =  (ideal, fac[k][2])
+    result[k] =  (ideal, ei)
+    k += 1
   end
   return result
 end
 
-function prime_dec_index(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
+function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0)
   # Firstly compute the p-radical of O
   Ip = pradical(O, p)
-  # I only want the rank, so it doesn't matter
-  BB = _get_fp_basis(O, Ip, p)
-  AA = _split_algebra(BB, Ip, p)
+  R = quoringalg(O, Ip, p)
+  AA = split(R)
+
   I = IdealSet(O)
   result = Array{Tuple{typeof(I()),Int}, 1}()
   # We now have all prime ideals, but only their basis matrices
   # We need the ramification indices and a 2-element presentation
   for j in 1:length(AA)
-    P = AA[j]
+    P = AA[j].ideal
     _assure_weakly_normal_presentation(P)
     assure_2_normal(P)
     e = Int(valuation(fmpz(p), P))
@@ -1079,128 +1087,6 @@ function prime_dec_index(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
   return result
 end
 
-function _split_algebra(BB::Array{NfOrderElem}, Ip::NfMaximalOrderIdeal, p::Integer)
-  if length(BB) == 1
-    return [ Ip ]
-  end
-  O = order(Ip)
-  C = zero(MatrixSpace(ResidueRing(ZZ, p), length(BB)+1, degree(O)))
-  D = zero(MatrixSpace(ResidueRing(ZZ, p), length(BB), degree(O)))
-  for i in 1:length(BB)
-    A = elem_in_basis(mod(BB[i]^p - BB[i], Ip))
-    for j in 1:degree(O)
-      D[i,j] = A[j]
-    end
-  end
-
-  r = rank(D)
-  k = length(BB) - r
-  # k is the dimension of the kernel of x -> x^p - x
-  if k == 1
-    # the algebra is a field over F_p
-    # the ideal Ip is a prime ideal!
-    return [ Ip ]
-  end
-  
-  # actually I should only take elements from the kernel of D
-  while true
-    r = rand(0:p-1, length(BB))
-    x = dot(BB,r)
-    zz = r[1]*(mod(BB[1]^p - BB[1], Ip))
-    for i in 2:length(BB)
-      zz = zz + r[i]*(mod(BB[i]^p - BB[i], Ip))
-    end
-
-    # now compute the minimal polynomial
-    for i in 0:length(BB)
-      ar = elem_in_basis(mod(x^i,Ip))
-      for j in 1:degree(O)
-        C[i+1,j] = ar[j]
-      end
-    end
-    K = kernel(C)
-    length(K) == 0 ? continue : nothing
-    KK = K[1]
-    f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](KK)
-
-    zz = zero(parent(x))
-    for i in 0:degree(f)
-      zz = zz + coeff(f, i).data*x^i
-    end
-
-
-    degree(f) < 2 ? continue : nothing
-    @hassert :NfMaximalOrder 0 issquarefree(f)
-    # By theory, all factors should have degree 1 # exploit this if p is small!
-    fac = factor(f)
-    F = fac[1][1]
-    H = divexact(f,F)
-    E, U, V = gcdx(F, H)
-    @hassert :NfMaximalOrder 0 E == 1
-    H = U*F;
-    idem = O(coeff(H,0).data)
-    for i in 1:degree(H)
-      idem = idem + coeff(H,i).data*x^i
-    end
-    # build bases for the two new ideals
-    I1 = Ip + ideal(O, idem)
-    I2 = Ip + ideal(O, O(1)-idem)
-    
-    BB1 = _get_fp_basis(O, I1, p)
-    BB2 = _get_fp_basis(O, I2, p)
-    return vcat(_split_algebra(BB1, I1, p),_split_algebra(BB2, I2, p))
-    break
-  end
-end
-
-function _get_fp_basis(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Integer)
-  A = basis_mat(I)
-  FpMat = MatrixSpace(ResidueRing(ZZ, p), A.r, A.c)
-  Amodp = FpMat(A)
-  # I think rref can/should also return the rank
-  B = rref(Amodp)
-  r = rank(B)
-  C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, A.c))
-  BB = Array(NfOrderElem, degree(O) - r)
-  pivots = Array(Int, 0)
-  # get he pivots of B
-  for i in 1:r
-    for j in 1:degree(O)
-      if !iszero(B[i,j])
-        push!(pivots, j)
-        break
-      end
-    end
-  end
-  i = 1
-  k = 1
-  while i <= degree(O)-r
-    for j in k:degree(O)
-      if !in(j, pivots)
-        BB[i] = basis(O)[j]
-        C[i,j] = 1
-        k = j + 1
-        i = i + 1
-        break
-      end
-    end
-  end
-
-  if B[1, 1] != 0
-    C = rref(vcat(submat(B, 1:1, 1:A.c), C))
-  end
-
-  for i in 1:length(BB)
-    for j in 1:degree(O)
-      if C[i, j] != 0
-        BB[i] = basis(O)[j]
-        break
-      end
-    end
-  end
-  return BB
-end
-
 # Don't use the following function. It does not work for index divisors
 function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
@@ -1211,12 +1097,12 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
     Zf = Zx(f)
     fmodp = PolynomialRing(ResidueRing(ZZ,p), "y")[1](Zf)
     fac = factor_shape(fmodp)
-    g = sum([ x[2] for x in fac])
+    g = sum([ x for x in values(fac)])
     res = Array(Tuple{Int, Int}, g)
     k = 1
-    for i in 1:length(fac)
-      for j in 1:fac[i][2]
-        res[k] = (fac[i][1], 1)
+    for (fi, e1) in fac 
+      for j in 1:ei
+        res[k] = (fi, 1)
         k = k + 1
       end
     end
@@ -1383,3 +1269,184 @@ function factor_dict(A::NfMaximalOrderIdeal)
 end
 
 dot(x::BigInt, y::NfOrderElem) = fmpz(x)*y
+
+type quoringalg <: Ring
+  base_order::NfMaximalOrder
+  ideal::NfMaximalOrderIdeal
+  prime::Int
+  basis::Array{NfOrderElem}
+
+  function quoringalg(O::NfMaximalOrder, I::NfMaximalOrderIdeal, p::Int)
+    z = new()
+    z.base_order = O
+    z.ideal = I
+    z.prime = p
+
+    # compute a basis
+    Amodp = MatrixSpace(ResidueRing(ZZ, p), degree(O), degree(O))(basis_mat(I))
+    Amodp = vcat(Amodp, MatrixSpace(ResidueRing(ZZ, p), 1, degree(O))())
+    Amodp[1,1] = 1
+    Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
+
+    # I think rref can/should also return the rank
+    B = rref(Amodp)
+    r = rank(B)
+    C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, degree(O)))
+    BB = Array(NfOrderElem, degree(O) - r)
+    pivots = Array(Int, 0)
+#    # get he pivots of B
+    for i in 1:r
+      for j in 1:degree(O)
+        if !iszero(B[i,j])
+          push!(pivots, j)
+          break
+        end
+      end
+    end
+    i = 1
+    k = 1
+    while i <= degree(O)-r
+      for j in k:degree(O)
+        if !in(j, pivots)
+          BB[i] = basis(O)[j]
+          C[i,j] = 1
+          k = j + 1
+          i = i + 1
+          break
+        end
+      end
+    end
+    insert!(BB, 1, basis(O)[1])
+    z.basis = BB
+    return z
+  end
+end
+
+type quoelem
+  parent::quoringalg
+  elem::NfOrderElem
+  coord::Array{fmpz, 1}
+
+  function quoelem(R::quoringalg, x::NfOrderElem)
+    z = new()
+    z.parent = R
+    z.elem = x
+    
+    return z
+  end
+end
+    
+function _kernel_of_frobenius(R::quoringalg)
+  O = R.base_order
+  BB = R.basis
+  p = R.prime
+  C = zero(MatrixSpace(ResidueRing(ZZ, R.prime), length(BB)+1, degree(O)))
+  D = zero(MatrixSpace(ResidueRing(ZZ, R.prime), length(BB), degree(O)))
+  for i in 1:length(BB)
+    A = elem_in_basis(mod(BB[i]^p - BB[i], R.ideal))
+    for j in 1:degree(O)
+      D[i,j] = A[j]
+    end
+  end
+
+  DD = NfOrderElem[ dot(BB, _lift(r)) for r in kernel(D) ]
+
+  return [ quoelem(R, r) for r in DD ]
+end
+
+dot(x::NfOrderElem, y::fmpz) = y*x
+
+function _lift(T::Array{Residue{fmpz}, 1})
+  return [ z.data for z in T ]
+end
+
+function *(x::quoelem, y::quoelem)
+  z = mod(x.elem * y.elem, x.parent.ideal)
+  return quoelem(x.parent, z)
+end
+
+function ^(x::quoelem, y::Int)
+  z = mod(x.elem^y, x.parent.ideal)
+  return quoelem(x.parent, z)
+end
+
+function minpoly(x::quoelem)
+  O = x.parent.base_order
+  p = x.parent.prime
+
+  A = MatrixSpace(ResidueRing(ZZ, p), degree(O), degree(O))()
+
+  for i in 0:degree(O)-1
+    ar =  elem_in_basis( (x^i).elem)
+    for j in 1:degree(O)
+      A[i+1, j] = ar[j]
+    end
+  end
+
+  K = kernel(A)
+
+  f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
+
+  return f
+end
+
+function split(R::quoringalg)
+  if length(R.basis) == 1
+    return [ R ]
+  end
+  K = _kernel_of_frobenius(R)
+  O = R.base_order
+  p = R.prime
+
+  k = length(K)
+
+  if k == 1
+    # the algebra is a field over F_p
+    # the ideal Ip is a prime ideal!
+    return [ R ]
+  end
+
+  maxit = 1 
+
+  while true
+    maxit = maxit + 1
+    r = rand(0:p-1, length(K))
+
+    x = quoelem(R, dot([ x.elem for x in K], r))
+
+    if mod((x^p).elem, R.ideal) != mod(x.elem, R.ideal)
+      println("element^p: $(mod((x^p).elem, R.ideal))")
+      println("element: $(mod(x.elem, R.ideal))")
+      println(R.ideal.basis_mat)
+      println(K)
+      error("Strange")
+    end
+
+    f = minpoly(x)
+
+
+    if degree(f) < 2 
+      continue
+    end
+    @assert  issquarefree(f)
+
+#    # By theory, all factors should have degree 1 # exploit this if p is small!
+    fac = factor(f)
+    F = fac[1][1]
+    @assert length(fac) == degree(f)
+    H = divexact(f,F)
+    E, U, V = gcdx(F, H)
+    @assert E == 1
+    H = U*F;
+    idem = O(coeff(H,0).data)
+    for i in 1:degree(H)
+      idem = idem + coeff(H,i).data*x.elem^i
+    end
+
+    I1 = R.ideal + ideal(O, idem)
+    I2 = R.ideal + ideal(O, O(1)-idem)
+
+    return vcat(split(quoringalg(O, I1, p)), split(quoringalg(O, I2, p)))
+    break
+  end
+end

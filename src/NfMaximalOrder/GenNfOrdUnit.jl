@@ -930,9 +930,9 @@ function root(a::nf_elem, n::Int)
   fac = factor(f)
   #println("factorization is $fac")
 
-  for i in 1:length(fac)
-    if degree(fac[i]) == 1
-      return (true, -coeff(fac[i], 0)//coeff(fac[i], 1))
+  for i in keys(fac)
+    if degree(i) == 1
+      return (true, -coeff(i, 0)//coeff(i, 1))
     end
   end
 
@@ -1052,8 +1052,8 @@ function _primitive_element(F::FqNmodFiniteField)
       continue
     end
     is_primitive = true
-    for l in 1:fac.len
-      if isone(a^(div(order(F) - 1, fac[l][1])))
+    for l in keys(fac)
+      if isone(a^(div(order(F) - 1, l)))
         is_primitive = false
       end
     end
