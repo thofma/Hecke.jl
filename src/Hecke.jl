@@ -430,9 +430,15 @@ include("misc.jl")
 
 ################################################################################
 #
-#  Simple version info
+#  Element types for parent types
 #
 ################################################################################
+
+# Nemo only provides element_types for parent objects
+
+elem_type(::Type{NfMaximalOrder}) = NfOrderElem
+
+elem_type{T}(::Type{FactoredElemMon{T}}) = FactoredElem{T}
 
 ################################################################################
 #

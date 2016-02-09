@@ -1140,53 +1140,6 @@ include("Map/MapType.jl")
 
 ################################################################################
 #
-#  Abelian groups
-#
-################################################################################
-
-const AbGrpID = Dict{Array{fmpz, 1}, Nemo.Set}()
-
-type AbGrp <: Nemo.Set
-  diagonal::Array{fmpz, 1}
-  order::fmpz
-  inf_num::Int
-  fin_num::Int
-  
-  function AbGrp(a::Array{fmpz, 1})
-    sort!(a)
-    #println(a, " ",hash(a))
-    if haskey(AbGrpID, a)
-      return AbGrpID[a]::AbGrp
-    else
-      z = new()
-      z.diagonal = a
-      z.inf_num = findfirst(x -> x != 0, a) - 1
-      z.fin_num = length(a) - z.inf_num
-      AbGrpID[a] = z
-      return z
-    end
-  end
-  
-  function AbGrp(a::Array{Int, 1})
-    return AbGrp(map(fmpz, a))
-  end
-end
-
-type AbGrpElem
-  parent::AbGrp
-  coord::Array{fmpz, 1}
-
-  function AbGrpElem(A::AbGrp, a::Array{fmpz, 1})
-    z = new()
-    z.parent = A
-    z.coord = a
-    return z
-  end
-end
-
-
-################################################################################
-#
 #  NoElements
 #
 ################################################################################
