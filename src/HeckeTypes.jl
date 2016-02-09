@@ -1154,7 +1154,7 @@ type AbGrp <: Nemo.Set
   
   function AbGrp(a::Array{fmpz, 1})
     sort!(a)
-    println(a, " ",hash(a))
+    #println(a, " ",hash(a))
     if haskey(AbGrpID, a)
       return AbGrpID[a]::AbGrp
     else

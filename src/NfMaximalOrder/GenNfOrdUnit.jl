@@ -546,6 +546,10 @@ function check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
   return is_torsion_unit(r*y^z[length(z)])
 end
 
+*(x::FactoredElem{nf_elem}, y::NfOrderElem) = x*elem_in_nf(y)
+
+*(x::NfOrderElem, y::FactoredElem{nf_elem}) = y*x
+
 function _pow{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1}, y::Array{fmpz, 1})
   if eltype(x) == nf_elem
     K = parent(x[1])::AnticNumberField
