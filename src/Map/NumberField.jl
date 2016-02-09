@@ -1,6 +1,7 @@
 
 type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   header::MapHeader{AnticNumberField, AnticNumberField}
+  prim_img::nf_elem
 
   function NfToNfMor()
     z = new()
@@ -10,6 +11,7 @@ type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   
   function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
     z = new()
+    z.prim_img = y
 
     function image(x::nf_elem)
       g = parent(K.pol)(x)
@@ -21,15 +23,36 @@ type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   end
 end
 
-type NfMaxOrdToFqNmodMor <: Map
-  header::MapHeader
-  sec::Function # a section to fun
+type NfMaxOrdToFqNmodMor <: Map{NfMaximalOrder, FqNmodFiniteField}
+  header::MapHeader{NfMaximalOrder, FqNmodFiniteField}
 
   function NfMaxOrdToFqNmodMor()
     r = new()
     r.header = MapHeader()
     return r
   end
+  
+  function NfMaxOrdToFqNmodMor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
+    z = new()
+
+    p = characteristic(F)
+    Zx = PolynomialRing(ZZ, "x")[1]
+
+    function _image(x::NfOrderElem)
+      g = parent(nf(O).pol)(elem_in_nf(x))
+      u = inv(F(den(g)))
+      g = Zx(den(g)*g)
+      return u*evaluate(g, y)
+    end
+
+    z.header = MapHeader{NfMaximalOrder, FqNmodFiniteField}(O, F, _image)
+
+    return z
+  end
+end
+
+function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
+  return NfMaxOrdToFqNmodMor(O, F, y)
 end
 
 type NfToFqNmodMor <: Map
@@ -66,23 +89,6 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
   return z
 end
    
-function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
-  z = NfMaxOrdToFqNmodMor()
-  z.header.domain = O
-  z.header.codomain = F
-  p = characteristic(F)
-  Zx = PolynomialRing(ZZ, "x")[1]
-
-  function fun(M::Map, x::NfOrderElem)
-    g = parent(nf(O).pol)(elem_in_nf(x))
-    u = inv(F(den(g)))
-    g = Zx(den(g)*g)
-    return u*evaluate(g, y)
-  end
-
-  z.header.image = fun
-  return z
-end
 
 function evaluate(f::fmpz_poly, r::fq_nmod)
   #Horner - stolen from Claus
@@ -94,21 +100,7 @@ function evaluate(f::fmpz_poly, r::fq_nmod)
   return s
 end                                           
 
-function morphism(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
-  z = NfToNfMor(K, L, y)
-  return z
-end
-
 function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
-  z = NfToNfMor()
-  z.header.domain = K
-  z.header.codomain = L
-
-  function fun(M::Map, x::nf_elem)
-    g = parent(K.pol)(x)
-    return evaluate(g, y)
-  end
-
-  z.header.image = fun
+  z = NfToNfMor(K, L, y)
   return z
 end
