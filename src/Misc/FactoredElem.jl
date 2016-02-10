@@ -156,7 +156,7 @@ end
 #
 ################################################################################
 
-function transform{T}(x::Array{FactoredElem{T}, 1}, y::fmpz_mat)
+function _transform{T}(x::Array{FactoredElem{T}, 1}, y::fmpz_mat)
   length(x) != rows(y) &&
               error("Length of array must be number of rows of matrix")
 
@@ -175,6 +175,10 @@ function transform{T}(x::Array{FactoredElem{T}, 1}, y::fmpz_mat)
     end
   end
   return z
+end
+
+function transform{T}(x::Array{FactoredElem{T}, 1}, y::fmpz_mat)
+  return _transform(x, y)
 end
 
 ################################################################################
