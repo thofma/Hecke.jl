@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2015 Tommy Hofmann
+#  Copyright (C) 2015, 2016 Tommy Hofmann
 #
 ################################################################################
 
@@ -63,7 +63,7 @@ end
 ################################################################################
 
 
-# compute largest m such that a^m < b (less then!)
+# compute largest m such that a^m < b (strictly less then!)
 
 function _max_power_in(a::fmpz, b::Int)
   m = flog(fmpz(b), a)
@@ -83,11 +83,12 @@ _max_power_in(a::Int, b::Int) = _max_power_in(fmpz(a), b)
 ################################################################################
 
 # bounding the error
-
 function _approx_error_bf(O::NfMaximalOrder, Tc = BigFloat)
   return _approx_error_bf(discriminant(O), degree(O), Tc)
 end
 
+# This function gives an upper bound on the error term of the Belabas-Friedmann
+# approximation.
 function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
 
   logd_up = Tc(0)::Tc
@@ -121,6 +122,8 @@ function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
   return F
 end
 
+# Given f and C, this function computes a small x such that f(x) < C.
+# It is assumed that f is monotone
 function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
   T = Tc
   x0 =  T(70)
@@ -151,8 +154,7 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
   return x0::Tc
 end
 
-# computing the g_K(X) term
-
+# Computing the g_K(X) term of Belabas-Friedmann
 function _term_bf(O::NfMaximalOrder, B::Int64, R::ArbField)
 
   xx0 = B
@@ -270,12 +272,7 @@ function _term_bf(O::NfMaximalOrder, B::Int64, R::ArbField)
   return pr
 end
 
-# approximating the residue
-
-function zeta_residue(O::NfMaximalOrder, error::Float64)
-  return _residue_approx_bf(O, error)
-end
-
+# Approximate the residue
 function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
   F = _approx_error_bf(O, Float64)
 
@@ -337,6 +334,25 @@ function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
   return valaddederror
 end
 
+################################################################################
+#
+#  Toplevel function for users
+#
+################################################################################
+
+doc"""
+***
+    zeta_residue(O::NfMaximalOrder, error::Float64) -> arb
+
+> Computes the residue of the zeta function of $\mathcal O$ at $1$.
+> The output will be an element of type `arb` with radius less then
+> `error`.
+"""
+function zeta_residue(O::NfMaximalOrder, error::Float64)
+  return _residue_approx_bf(O, error)
+end
+
+# This should go somewhere else
 function radiuslttwopower(x::arb, n::Int)
   z = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &x)
   r = ccall((:mag_cmp_2exp_si, :libarb), Cint, (Ptr{Nemo.mag_struct}, Int), z, n)
