@@ -25,40 +25,95 @@ function gcd_into!{T <: Integer}(a::T, b::T, c::T)
   return gcd(b, c)::T
 end
 
+function mul_into!{T}(a::T, b::T, c::T)
+  return (b*c)::T
+end
+
+function mul_into!(a::fmpz, b::fmpz, c::fmpz)
+  mul!(a, b, c)
+  return a
+end
+
 function copy(a::fmpz) 
   return deepcopy(a)
 end
 
+function copy_into!(a, b)
+  return b
+end
+
+function copy_into!(a::fmpz, b::fmpz)
+  ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &a, &b)
+  return a
+end
+
 #for larger lists much better than Bill's (Nemo's) prod function
+# the build-in Julia is better than Bill's Nemo function anyway
 
-function my_prod!(a::AbstractArray{fmpz, 1})
-  n = length(a)
-  while n>1
-    for i = 1:div(n,2)
-      mul!(a[i], a[2*i-1], a[2*i])
+type ProdEnv{T}
+  level :: Array{Int, 1}
+  val   :: Array{T, 1}
+  last  :: Int
+
+  function ProdEnv(n::Int)
+    r = new()
+    m = nbits(n)
+    r.level = Array(Int, m)
+    r.val   = Array(T, m)
+    r.last = 0
+    for i=1:m
+      r.val[i] = T()
     end
-    if isodd(n)
-      m = div(n,2)+1
-      a[m] = a[n]
-      n = m
-    else
-      n = div(n,2)
-    end
+    return r
   end
-  return a[1]
 end
 
-function my_prod(a::AbstractArray{fmpz, 1})
-  b = Array(fmpz, 0)
-  for i=1:div(length(a), 2)
-    push!(b, a[2*i-1]* a[2*i])
+function prod_mul!{T}(A::ProdEnv{T}, b::T)
+  if A.last == 0
+    A.level[1] = 1
+    A.val[1] = copy_into!(A.val[1], b)
+    A.last = 1
+    return
   end
-  if isodd(length(a))
-    push!(b, a[end])
+  if A.level[A.last] > 1
+    A.last += 1
+    A.level[A.last] = 1
+    A.val[A.last] = copy_into!(A.val[A.last], b)
+    return
   end
-  return my_prod!(b)
+
+  lev = 1
+  while A.last > 0 && A.level[A.last] <= lev
+    b = mul_into!(A.val[A.last], A.val[A.last], b)
+    lev += A.level[A.last]
+    A.last -= 1
+  end
+  A.last += 1
+  A.level[A.last] = lev
+  A.val[A.last] = b
+  return
 end
 
+function prod_end(A::ProdEnv)
+  b = A.val[A.last]
+  while A.last >1
+    A.last -= 1
+    b = mul_into!(b, b, A.val[A.last])
+  end
+  return b
+end
+
+function my_prod{T}(a::AbstractArray{T, 1}) 
+  if length(a) <100
+    return prod(a)
+  end
+
+  b = ProdEnv{T}(length(a))
+  for x in a
+    prod_mul!(b, x)
+  end
+  return prod_end(b)
+end
 
 
 #coprime base Bach/ Schallit/ ???
