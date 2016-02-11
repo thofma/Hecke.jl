@@ -26,6 +26,7 @@ Once a suitable julia version is installed, use the following steps at the julia
 ```julia
 julia> Pkg.update()
 julia> Pkg.add("Nemo")
+julia> Pkg.checkout("Nemo")
 julia> Pkg.clone("https://github.com/thofma/Hecke.jl")
 ```
 

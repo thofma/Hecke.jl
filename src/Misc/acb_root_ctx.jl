@@ -190,7 +190,7 @@ function refine(x::acb_root_ctx, target_prec::Int = 2*prec(x))
   end
 
   j = 0
-  for i in r+1:2*s
+  for i in r+1:degree(x.poly)
     if ispositive(imag(x.roots[i]))
       j += 1
       x.complex_roots[j] = x.roots[i]

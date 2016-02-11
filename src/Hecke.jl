@@ -71,7 +71,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
-             MatrixSpace, elem_type, contains, overlaps, solve
+             MatrixSpace, elem_type, contains, overlaps, solve, unique_integer
 
 export AnticNumberField, hash, update, nf
 
@@ -430,9 +430,15 @@ include("misc.jl")
 
 ################################################################################
 #
-#  Simple version info
+#  Element types for parent types
 #
 ################################################################################
+
+# Nemo only provides element_types for parent objects
+
+elem_type(::Type{NfMaximalOrder}) = NfOrderElem
+
+elem_type{T}(::Type{FactoredElemMon{T}}) = FactoredElem{T}
 
 ################################################################################
 #

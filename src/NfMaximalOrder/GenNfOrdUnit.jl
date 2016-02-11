@@ -32,7 +32,8 @@
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, pow!, unit_group, conjugates_arb
+export is_unit, is_torsion_unit, is_independent, pow!, unit_group,
+       conjugates_arb, unit_group
 
 order(u::UnitGrpCtx) = u.order
 
@@ -235,78 +236,14 @@ end
 #
 ################################################################################
 
-function _conjugates_arb_log(A::FactoredElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
-  if haskey(A.conj_log_cache, abs_tol)
-    if haskey(A.conj_log_cache[abs_tol], a)
-      return A.conj_log_cache[abs_tol][a]
-    else
-      z = conjugates_arb_log(a, abs_tol)
-      A.conj_log_cache[abs_tol][a] = z
-      return z
-    end
-  else
-    A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
-    z = conjugates_arb_log(a, abs_tol)
-    A.conj_log_cache[abs_tol][a] = z
-    return z
-  end
-end
+doc"""
+***
+    is_independent{T}(x::Array{T, 1})
 
-function conjugates_arb(x::FactoredElem{nf_elem}, abs_tol::Int)
-  d = degree(_base_ring(x))
-  res = Array(acb, d)
-
-  i = 1
-
-  for a in base(x)
-    z = conjugates_arb(a, abs_tol)
-    if i == 1
-      for j in 1:d
-        res[j] = z[j]^x.fac[a]
-      end
-    else
-      for j in 1:d
-        res[j] = res[j] * z[j]^x.fac[a]
-      end
-    end
-    i = i + 1
-  end
-
-  return res
-end
-
-function conjugates_arb_log(x::FactoredElem{nf_elem}, abs_tol::Int)
-  K = base_ring(x)::AnticNumberField
-  r1, r2 = signature(K)
-  d = r1 + r2
-  res = Array(arb, d)
-
-  i = 1
-
-  for a in base(x)
-    z = _conjugates_arb_log(parent(x), a, abs_tol)
-    if i == 1
-      for j in 1:d
-        res[j] = x.fac[a]*z[j]
-      end
-    else
-      for j in 1:d
-        res[j] = res[j] + x.fac[a]*z[j]
-      end
-    end
-    i = i + 1
-  end
-
-  return res
-end
-
-_base_ring(x::nf_elem) = parent(x)::AnticNumberField
-
-_base_ring(x::FactoredElem{nf_elem}) = base_ring(x)::AnticNumberField
-
-
+> Given an array of non-zero elements in a number field, returns whether they
+> are multiplicatively independent.
+"""
 function is_independent{T}(x::Array{T, 1})
-
   K = _base_ring(x[1])
 
   deg = degree(K)
@@ -350,16 +287,23 @@ function is_independent{T}(x::Array{T, 1})
   end
 end
 
-function add_dependent_unit{S, T}(x::UnitGrpCtx{S}, y::T)
-  u, m = add_dependent_unit(x.units, y)
-  x.units = u
-  x.tentative_regulator = _reg(u, 64)
-  return m
+# Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
+# This can be improved
+function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
+  (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
+  r = x[1]^z[1]
+
+  for i in 2:length(x)
+    r = r*x[i]^z[i]
+  end 
+
+  return is_torsion_unit(r*y^z[length(z)])
 end
 
-function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{S, 1}, y::T)
-  # I need to find a relation
-
+# Given r elements x_1,...,x_r, where r is the unit rank, and y an additional unit,
+# compute a basis z_1,...z_r such that <x_1,...x_r,y,T> = <z_1,...,z_r,T>,
+# where T are the torsion units
+function _add_dependent_unit{S, T}(x::Array{S, 1}, y::T)
   K = _base_ring(x[1])
 
   deg = degree(K)
@@ -402,28 +346,26 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
 
   z = Array(fmpq, r)
   
-  rreg = abs(_reg(x, p)) # use submatrix of A instead or store it
+  rreg = abs(regulator(x, p)) # use submatrix of A instead or store it
 
-  #println(midpoint(20*rreg))
-
-  # This is bad someone should fix it
+  # Somebody should work out the proper bound for the size of the relation
 
   bound = fmpz(BigInt(ceil(BigFloat(midpoint(20*rreg)))))
-
-  #println("bound for den is $bound ")
 
   largest_den = ZZ(0)
 
   j = 1
 
-#  while largest_den < bound
-   A = [ _max_frac_bounded(_arb_get_fmpq(v[1, i]), bound) for i in 1:r]
-#   println("Maximal depth of reconstruction: $A \n")
-   B = fill(0, r)
-   B[end] = -1
+  # Compute the length of the longest continued fraction expansions
+  # with denominator bounded by bound
+  A = [ _max_frac_bounded(_arb_get_fmpq(v[1, i]), bound) for i in 1:r]
+  B = fill(0, r)
+  B[end] = -1
 
   while true
-   # increased last element by one
+    # Loop through all approximations
+
+    # increase last element by one
     B[end] += 1
     # looking at overflows from end to beginning
     for i = r:-1:2
@@ -463,15 +405,15 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
 
     zz[r + 1] = -dlcm
     
-    #println("Possible relation: $zz")
-
-    if !check_relation_mod_torsion(x, y, zz)
+    # Check if it is a relation modulo torsion units!
+    if !_check_relation_mod_torsion(x, y, zz)
       j = j + 1
     else
       break
     end
   end
 
+  # Make the relation primitive
   g = zz[1]
 
   for i in 1:length(zz)
@@ -485,8 +427,7 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
     zz[i] = div(zz[i], g)
   end
 
-  #println(zz)
-
+  # Here is the magic with the new basis using the relation found
   m = MatrixSpace(FlintZZ, r + 1, 1)(reshape(zz, r + 1, 1))
 
   h, u = hnf_with_transform(m)::Tuple{fmpz_mat, fmpz_mat} # Why annotations?
@@ -497,10 +438,10 @@ function add_dependent_unit{S, T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Ar
 
   m = submat(u, 1:r+1, 2:r+1)
 
-  return transform(vcat(x, y), m), m
+  return _transform(vcat(x, y), m), m
 end
 
-function transform(x::Array{nf_elem}, y::fmpz_mat)
+function _transform(x::Array{nf_elem}, y::fmpz_mat)
   n = length(x)
   @assert n == rows(y)
   m = cols(y)
@@ -534,24 +475,17 @@ function _max_frac_bounded(x::fmpq, b::fmpz)
   return n
 end
 
-function check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
-# this should be improved
-  (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
-  r = x[1]^z[1]
-
-  for i in 2:length(x)
-    r = r*x[i]^z[i]
-  end 
-
-  return is_torsion_unit(r*y^z[length(z)])
+function _add_dependent_unit{S, T}(x::UnitGrpCtx{S}, y::T)
+  u, m = _add_dependent_unit(x.units, y)
+  x.units = u
+  x.tentative_regulator = regulator(u, 64)
+  return m
 end
 
-function _pow{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::Array{T, 1}, y::Array{fmpz, 1})
-  if eltype(x) == nf_elem
-    K = parent(x[1])::AnticNumberField
-  elseif eltype(x) == FactoredElem{nf_elem}
-    K = base_ring(x[1])::AnticNumberField
-  end
+
+# Powering function for fmpz exponents
+function _pow{T}(x::Array{T, 1}, y::Array{fmpz, 1})
+  K = _base_ring(x[1])
 
   zz = deepcopy(y)
 
@@ -573,7 +507,14 @@ end
 #
 ################################################################################
 
-function _reg{T}(x::Array{T, 1}, abs_tol::Int)
+doc"""
+***
+    regulator(x::Array{T, 1}, abs_tol::Int) -> arb
+
+> Compute the regulator $r$ of the elements in $x$, such that the radius of $r$
+> is less then `2^abs_tol`.
+"""
+function regulator{T}(x::Array{T, 1}, abs_tol::Int)
   K = _base_ring(x[1])
   deg = degree(K)
   r1, r2 = signature(K)
@@ -620,12 +561,24 @@ function _make_row_primitive(x::fmpz_mat, j::Int)
   end
 end
 
-function unit_group(O::NfMaximalOrder, c::ClassGrpCtx)
+################################################################################
+#
+#  Compute unit group from class group context
+#
+################################################################################
+
+function _unit_group(O::NfMaximalOrder, c::ClassGrpCtx)
   u = UnitGrpCtx{FactoredElem{nf_elem}}(O)
   _unit_group_find_units(u, c)
   return u
 end
 
+# TH:
+# Current strategy
+# ================
+# Compute a basis of the kernel of the relation matrix (as fmpz_mat).
+# In the first round try to find r independent units, r is the unit rank.
+# In the second round, try to enlarge the unit group.
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   O = order(u)
   ker, rnk = nullspace(transpose(fmpz_mat(x.M)))
@@ -644,7 +597,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     j = j + 1
 
     if j > rows(ker)
-      #println("found only $(length(A)) many units but I need $r many")
       return length(A)
     end
 
@@ -652,13 +604,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       continue
     end
 
-    #println("testing element $j")
     _make_row_primitive(ker, j)
 
     y = FactoredElem(x, ker, j)
 
     if is_torsion_unit(y)
-      #println("torsion unit: $y")
       continue
     end
     _add_unit(u, y)
@@ -686,7 +636,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       continue
     end
 
-    m = add_dependent_unit(u, y)
+    m = _add_dependent_unit(u, y)
 
     if m == no_change_matrix
       not_larger = not_larger + 1
@@ -697,7 +647,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     #println(_reg(u.units))
   end
 
-  u.tentative_regulator = _reg(u.units, 64)
+  u.tentative_regulator = regulator(u.units, 64)
 end
 
 function _add_unit(u::UnitGrpCtx, x::FactoredElem{nf_elem})
@@ -951,7 +901,7 @@ end
 #
 # The output will be of type
 # elem_type(MatrixSpace(ResidueRing(ZZ, p), 1, rank(U) ( + 1))), so
-# nmod_mat or 
+# nmod_mat or fmpz_mod_mat
 # THIS FUNCTION IS NOT TYPE STABLE
 function _matrix_for_saturation(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
   O = order(U)
@@ -1080,7 +1030,7 @@ function validate(c::ClassGrpCtx, u::UnitGrpCtx)
     issat, new_unit = issaturated(u, p)
     while !issat
       #println("I have found a new unit: $new_unit")
-      add_dependent_unit(u, FactoredElem(new_unit))
+      _add_dependent_unit(u, FactoredElem(new_unit))
       #println("$(u.tentative_regulator)")
       
       b = _validate_class_unit_group(c, u)
@@ -1121,4 +1071,95 @@ function ^(x::fmpq, y::fmpz)
     error("Not implemented (yet)")
   end
 end
+
+################################################################################
+#
+#  High level interface
+#
+################################################################################
+
+function unit_group(O::NfMaximalOrder)
+  if isdefined(O, :unit_group)
+    return O.unit_group::AbToNfOrdUnitGrp{Nemo.nf_elem,Hecke.NfOrderElem}
+  else
+    c, U, b = _class_unit_group(O)
+    f = AbToNfOrdUnitGrp(O, U.units, U.torsion_units_gen, U.torsion_units_order)
+    O.unit_group = f
+    return f
+  end
+end
+
+# following functions need to be sorted
+function _conjugates_arb_log(A::FactoredElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
+  if haskey(A.conj_log_cache, abs_tol)
+    if haskey(A.conj_log_cache[abs_tol], a)
+      return A.conj_log_cache[abs_tol][a]
+    else
+      z = conjugates_arb_log(a, abs_tol)
+      A.conj_log_cache[abs_tol][a] = z
+      return z
+    end
+  else
+    A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
+    z = conjugates_arb_log(a, abs_tol)
+    A.conj_log_cache[abs_tol][a] = z
+    return z
+  end
+end
+
+function conjugates_arb(x::FactoredElem{nf_elem}, abs_tol::Int)
+  d = degree(_base_ring(x))
+  res = Array(acb, d)
+
+  i = 1
+
+  for a in base(x)
+    z = conjugates_arb(a, abs_tol)
+    if i == 1
+      for j in 1:d
+        res[j] = z[j]^x.fac[a]
+      end
+    else
+      for j in 1:d
+        res[j] = res[j] * z[j]^x.fac[a]
+      end
+    end
+    i = i + 1
+  end
+
+  return res
+end
+
+function conjugates_arb_log(x::FactoredElem{nf_elem}, abs_tol::Int)
+  K = base_ring(x)::AnticNumberField
+  r1, r2 = signature(K)
+  d = r1 + r2
+  res = Array(arb, d)
+
+  i = 1
+
+  for a in base(x)
+    z = _conjugates_arb_log(parent(x), a, abs_tol)
+    if i == 1
+      for j in 1:d
+        res[j] = x.fac[a]*z[j]
+      end
+    else
+      for j in 1:d
+        res[j] = res[j] + x.fac[a]*z[j]
+      end
+    end
+    i = i + 1
+  end
+
+  return res
+end
+
+_base_ring(x::nf_elem) = parent(x)::AnticNumberField
+
+_base_ring(x::FactoredElem{nf_elem}) = base_ring(x)::AnticNumberField
+
+*(x::FactoredElem{nf_elem}, y::NfOrderElem) = x*elem_in_nf(y)
+
+*(x::NfOrderElem, y::FactoredElem{nf_elem}) = y*x
 
