@@ -269,10 +269,10 @@ function SLP_AddRow{T}(i::Int, j::Int, v::T)
   return slp
 end
 
-function SLP_SwapRows{T}(i::Int, j::Int)
-  slp = SmatSLP{T}(i, j, SLP_SwapRows_typ, T(0))
-  return slp
-end
+#function SLP_SwapRows{T}(i::Int, j::Int)
+#  slp = SmatSLP{T}(i, j, SLP_SwapRows_typ, T(0))
+#  return slp
+#end
 
 function mul!{T}(a::Array{T, 1}, s::SmatSLP{T})
   if s.typ==SLP_AddRow_typ

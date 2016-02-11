@@ -55,13 +55,12 @@ function Mor(O::NfMaximalOrder, F::FqNmodFiniteField, y::fq_nmod)
   return NfMaxOrdToFqNmodMor(O, F, y)
 end
 
-type NfToFqNmodMor <: Map
+type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
   header::MapHeader
-  sec::Function # a section to fun
 
   function NfToFqNmodMor()
     r = new()
-    r.header = MapHeader()
+    r.header = MapHeader{AnticNumberField, FqNmodFiniteField}()
     return r
   end
 end
@@ -78,14 +77,14 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
   Zx = PolynomialRing(ZZ, "x")[1]
   y = f(NfOrderElem(domain(f), gen(K)))
 
-  function fun(M::Map, x::nf_elem)
+  function _image(x::nf_elem)
     g = parent(K.pol)(x)
     u = inv(z.header.codomain(den(g)))
     g = Zx(den(g)*g)
     return u*evaluate(g, y)
   end
 
-  z.header.image = fun
+  z.header.image = _image
   return z
 end
    

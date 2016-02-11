@@ -826,7 +826,7 @@ function class_group_current_result(clg::ClassGrpCtx)
       upper_triangular(h, mod = modu)
       if rows(h) == cols(h)
         h = copy(clg.M)
-        println("1st non modular hnf")
+        #println("1st non modular hnf")
         upper_triangular(h)
         clg.H_is_modular = false
         full_rank = true
@@ -871,7 +871,7 @@ we do need redundant relations for the units.
   clg.H = h
   clg.last_H = length(clg.R)
   if length(clg.R)/rows(h) > 4
-    print_with_color(:yellow, "not enough useful relations\n")
+    #print_with_color(:yellow, "not enough useful relations\n")
   end
     
   piv = Array(Int, 0)

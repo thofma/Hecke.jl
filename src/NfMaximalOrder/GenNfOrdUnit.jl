@@ -524,7 +524,7 @@ function regulator{T}(x::Array{T, 1}, abs_tol::Int)
   p = 32
 
   while true
-    conlog = conjugates_arb_log(x[1], p)
+    conlog = conjugates_arb_log(x[1], -p)
 
     A = ArbMatSpace(parent(conlog[1]), r, r)()
 
@@ -832,7 +832,7 @@ function issaturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1)
 
   MAX = 100
 
-  println("No root found so far")
+  #println("No root found so far")
 
   for i in 1:MAX
     ra = rand(0:p-1, rows(K))
@@ -1026,7 +1026,7 @@ function validate(c::ClassGrpCtx, u::UnitGrpCtx)
   p = 2
 
   while b > 1
-    print("Saturating at $p...")
+    #print("Saturating at $p...")
     issat, new_unit = issaturated(u, p)
     while !issat
       #println("I have found a new unit: $new_unit")

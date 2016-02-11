@@ -14,6 +14,11 @@ type MapHeader{D, C}
   image::Function
   preimage::Function
 
+  function MapHeader()
+    z = new{D, C}()
+    return z
+  end
+
   function MapHeader(domain::D, codomain::C)
     z = new{D, C}()
     z.domain = domain

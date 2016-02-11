@@ -471,13 +471,21 @@ doc"""
 
 > Returns $x \cdot y$.
 """
-function *(x::NfOrderElem, y::Union{fmpz, Integer})
+function *(x::NfOrderElem, y::Integer)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf * y
   return z
 end
 
-*(x::Union{fmpz, Integer}, y::NfOrderElem) = y * x
+*(x::Integer, y::NfOrderElem) = y * x
+
+function *(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf * y
+  return z
+end
+
+*(x::fmpz, y::NfOrderElem) = y * x
 
 doc"""
 ***
@@ -485,13 +493,21 @@ doc"""
 
 > Returns $x + y$.
 """
-function +(x::NfOrderElem, y::Union{fmpz, Integer})
+function +(x::NfOrderElem, y::Integer)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y
   return z
 end
 
-+(x::Union{fmpz, Integer}, y::NfOrderElem) = y + x
++(x::Integer, y::NfOrderElem) = y + x
+
+function +(x::NfOrderElem, y::fmpz)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf + y
+  return z
+end
+
++(x::fmpz, y::NfOrderElem) = y + x
 
 doc"""
 ***

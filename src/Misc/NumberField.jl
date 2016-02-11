@@ -182,14 +182,14 @@ end
 #
 ################################################################################
 
-function hash(a::nf_elem)
-   h = 0xc2a44fbe466a1827%UInt
-   for i in 1:degree(parent(a)) + 1
-         h $= hash(coeff(a, i))
-         h = (h << 1) | (h >> (sizeof(Int)*8 - 1))
-   end
-   return h
-end
+#function hash(a::nf_elem)
+#   h = 0xc2a44fbe466a1827%UInt
+#   for i in 1:degree(parent(a)) + 1
+#         h $= hash(coeff(a, i))
+#         h = (h << 1) | (h >> (sizeof(Int)*8 - 1))
+#   end
+#   return h
+#end
 
 function gen!(r::nf_elem)
    a = parent(r)

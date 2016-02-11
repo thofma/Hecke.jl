@@ -71,12 +71,12 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
-             MatrixSpace, elem_type, contains, overlaps, solve, unique_integer
+             MatrixSpace, contains, overlaps, solve, unique_integer
 
 export AnticNumberField, hash, update, nf
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
-             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, -, !=
+             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
              floor, max, BigFloat, promote_rule, precision, 
              first, StepRange, show, one, zero, inv, iseven, isodd
