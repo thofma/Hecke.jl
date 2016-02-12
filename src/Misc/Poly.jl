@@ -148,14 +148,3 @@ function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   return z
 end
 
-################################################################################
-#
-#  Replace coeff function
-#
-################################################################################
-
-function coeff(x::nmod_poly, n::Int)
-  (n < 0 || n > degree(x)) && return base_ring(x)(0)
-  return base_ring(x)(ccall((:nmod_poly_get_coeff_ui, :libflint), UInt,
-          (Ptr{nmod_poly}, Int), &x, n))
-end
