@@ -1,5 +1,9 @@
 # Hecke
 
+**Builds**
+
+[![Build Status][https://travis-ci.org/thofma/Hecke.jl.svg?branch=master]][https://travis-ci.org/thofma/Hecke.jl]
+
 ## About
 
 Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann.
