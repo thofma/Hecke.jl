@@ -261,3 +261,12 @@ function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
   return s + first(a)
 end
 
+function ^(x::fmpq, y::fmpz)
+  if typemax(Int) > y
+    return x^Int(y)
+  else
+    error("Not implemented (yet)")
+  end
+end
+
+

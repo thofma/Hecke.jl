@@ -2,7 +2,7 @@
 
 **Builds**
 
-[![Build Status][https://travis-ci.org/thofma/Hecke.jl.svg?branch=master]][https://travis-ci.org/thofma/Hecke.jl]
+[![Build Status](https://travis-ci.org/thofma/Hecke.jl.svg?branch=master)](https://travis-ci.org/thofma/Hecke.jl)
 
 ## About
 

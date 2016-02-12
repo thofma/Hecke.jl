@@ -70,10 +70,23 @@ end
 
 ################################################################################
 #
-#  Exponentiation
+#  Inverse
 #
 ################################################################################
 
+function inv(x::FactoredElem{nf_elem})
+  y = deepcopy(x)
+  for a in base(y)
+    y.fac[a] = -y.fac[a]
+  end
+  return y
+end
+
+################################################################################
+#
+#  Exponentiation
+#
+################################################################################
 
 function pow!{T <: Union{fmpz, Integer}}(z::FactoredElem, x::FactoredElem, y::T)
   z.fac = _deepcopy(x.fac)

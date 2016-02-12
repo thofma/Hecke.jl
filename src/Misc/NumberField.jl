@@ -285,6 +285,47 @@ function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
          &a, &b, &c, &a.parent)
 end
 
+function ^(x::nf_elem, y::fmpz)
+  if y < 0
+    return inv(x)^(-y)
+  elseif y == 0
+    return parent(x)(1)
+  elseif y == 1
+    return deepcopy(x)
+  elseif mod(y, 2) == 0
+    z = x^(div(y, 2))
+    return z*z
+  elseif mod(y, 2) == 1
+    return x^(y-1) * x
+  end
+end
+
+doc"""
+***
+    root(a::nf_elem, n::Int) -> Bool, nf_elem
+
+> Determines whether $a$ has an $n$-th root. If this is the case,
+> the root is returned.
+"""
+function root(a::nf_elem, n::Int)
+  #println("Compute $(n)th root of $a")
+  Kx, x = PolynomialRing(parent(a), "x")
+
+  f = x^n - a
+
+  fac = factor(f)
+  #println("factorization is $fac")
+
+  for i in keys(fac)
+    if degree(i) == 1
+      return (true, -coeff(i, 0)//coeff(i, 1))
+    end
+  end
+
+  return (false, zero(parent(a)))
+end
+
+
 ################################################################################
 #
 #  Minkowski map
