@@ -28,19 +28,36 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2015 Tommy Hofmann
+#  Copyright (C) 2015, 2016 Tommy Hofmann
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, pow!, unit_group,
-       conjugates_arb, unit_group
+export is_unit, is_torsion_unit, is_independent, unit_group
 
-order(u::UnitGrpCtx) = u.order
+################################################################################
+#
+#  Initialization 
+#
+################################################################################
 
 function _unit_group_init(O::NfMaximalOrder)
   u = UnitGrpCtx{FactoredElem{nf_elem}}(O)
   return u
 end
+
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+order(u::UnitGrpCtx) = u.order
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
 
 function show(io::IO, U::UnitGrpCtx)
   print(io, "Unit group context of\n$(order(U))\n")
@@ -56,8 +73,8 @@ doc"""
 ***
     unit_rank(O::GenNfOrd) -> Int
 
-> Returns the unit_rank of $\mathcal O$, that is, the rank of the free part of the unit
-> group of $\mathcal O$.
+> Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
+> $\mathcal O^\times$.
 """
 function unit_rank(O::GenNfOrd)
   r1, r2 = signature(nf(O))
@@ -118,7 +135,7 @@ doc"""
 
 > Given a torsion unit $x$ together with a multiple $n$ of its order, compute
 > the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
-> that $x^`k` = 1$.
+> that $x^k = 1$.
 >
 > It is not checked whether $x$ is a torsion unit.
 """
@@ -482,7 +499,6 @@ function _add_dependent_unit{S, T}(x::UnitGrpCtx{S}, y::T)
   return m
 end
 
-
 # Powering function for fmpz exponents
 function _pow{T}(x::Array{T, 1}, y::Array{fmpz, 1})
   K = _base_ring(x[1])
@@ -659,121 +675,25 @@ end
 
 ################################################################################
 #
-#  Factored elements over number fields/orders
+#  Saturation
 #
 ################################################################################
 
-# Get FactoredElem from ClassGrpCtx
-
-function FactoredElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
-  return FactoredElem(x.R, [ y[j, i] for i in 1:cols(y) ])
-end
-
-# Compute (log(abs(x_1)),...) where x_i is the ith conjugate
-
-function conjugates_log(x::FactoredElem{nf_elem})
-  M = parent(x)
-  K = base_ring(x)  
-  d = degree(K)
-  r1, r2 = signature(K)
-  res = Array(arb, r1 + r2)
-  c = conjugate_data_arb(K)
-  #println("precision is $(c.prec)");
-
-  for i in 1:r1+r2
-    res[i] = ArbField(c.prec)(0)
+# TH:
+# Let U = <u_1,...,u_n,z> with z a generator for Tor(U)
+# For a prime p the group U/U^p is F_p-vector space of dimension
+# rank(U) or rank(U) + 1 (depending on the order of z).
+# if p divides N(P) - 1 = #F_P*, then F_P*/F_P*^p is a one-dimensional
+# F_p-vector space. Thus the canonical map F_p-linear
+#               U/U^p -> F_P*/F_P*^p
+# can be described by a 1 x (rank(U)) or 1 x (rank(U) + 1) matrix over F_p,
+# and can be computed by solving discrete logarithms in F_P
+#
+function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = false)
+  if proof
+    error("Not yet implemented")
   end
 
-  #println("Cached logarithms: $(M.basis_conjugates_log)")
-
-  for a in base(x)
-    # We should replace this using multipoint evaluation of libarb
-    if haskey(M.basis_conjugates_log, a) && M.basis_conjugates_log[a][1] == c.prec
-      z = M.basis_conjugates_log[a][2] 
-      for i in 1:r1+r2
-        res[i] = res[i] + x.fac[a]*z[i]
-      end
-    else
-      z = Array(arb, r1 + r2)
-      for i in 1:r1
-        z[i] = log(abs(evaluate(parent(K.pol)(a),c.real_roots[i])))
-      end
-      for i in 1:r2
-        z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(a), c.complex_roots[i])))
-      end
-      M.basis_conjugates_log[a] = (c.prec, z)
-      for i in 1:r1+r2
-        res[i] = res[i] + x.fac[a]*z[i]
-        if !isfinite(res[i])
-          refine(c)
-          return conjugates_log(x)
-        end
-      end
-    end
-  end
-  return res
-end
-
-# I don't know why I return absolute values
-function conjugates_arb(x::FactoredElem{nf_elem})
-  K = base_ring(x)
-  M = parent(x)
-  d = degree(K)
-  res = Array(arb, d)
-  c = conjugate_data_arb(K)
-  
-  for i in 1:d
-    res[i] = ArbField(c.prec)(1)
-  end
-
-  for a in base(x)
-    if haskey(M.basis_conjugates, a) && M.basis_conjugates[a][1] == c.prec
-      z = M.basis_conjugates[a][2] 
-      for i in 1:d
-        res[i] = res[i]*z[i]^x.fac[a]
-      end
-    else
-      z = Array(arb, d)
-      for i in 1:d
-        z[i] = abs(evaluate(parent(K.pol)(a),c.roots[i]))
-      end
-      M.basis_conjugates[a] = (c.prec, z)
-      for i in 1:d
-        res[i] = res[i]*z[i]^x.fac[a]
-        if !isfinite(res[i])
-          refine(c)
-          return conjugates_arb(x)
-        end
-      end
-    end
-  end
-  return res
-end
-
-function inv(x::FactoredElem{nf_elem})
-  y = deepcopy(x)
-  for a in base(y)
-    y.fac[a] = -y.fac[a]
-  end
-  return y
-end
-
-function ^(x::nf_elem, y::fmpz)
-  if y < 0
-    return inv(x)^(-y)
-  elseif y == 0
-    return parent(x)(1)
-  elseif y == 1
-    return deepcopy(x)
-  elseif mod(y, 2) == 0
-    z = x^(div(y, 2))
-    return z*z
-  elseif mod(y, 2) == 1
-    return x^(y-1) * x
-  end
-end
-
-function issaturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1)
   N = 3*unit_rank(order(U))
   primes =  _find_primes_for_saturation(order(U), p, N, B)
   
@@ -871,34 +791,6 @@ function issaturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1)
   return (true, zero(nf(order(U))))
 end
 
-function root(a::nf_elem, n::Int)
-  #println("Compute $(n)th root of $a")
-  Kx, x = PolynomialRing(parent(a), "x")
-
-  f = x^n - a
-
-  fac = factor(f)
-  #println("factorization is $fac")
-
-  for i in keys(fac)
-    if degree(i) == 1
-      return (true, -coeff(i, 0)//coeff(i, 1))
-    end
-  end
-
-  return (false, zero(parent(a)))
-end
-
-# TH:
-# Let U = <u_1,...,u_n,z> with z a generator for Tor(U)
-# For a prime p the group U/U^p is F_p-vector space of dimension
-# rank(U) or rank(U) + 1 (depending on the order of z).
-# if p divides N(P) - 1 = #F_P*, then F_P*/F_P*^p is a one-dimensional
-# F_p-vector space. Thus the canonical map F_p-linear
-#               U/U^p -> F_P*/F_P*^p
-# can be described by a 1 x (rank(U)) or 1 x (rank(U) + 1) matrix over F_p,
-# and can be computed by solving discrete logarithms in F_P
-#
 # The output will be of type
 # elem_type(MatrixSpace(ResidueRing(ZZ, p), 1, rank(U) ( + 1))), so
 # nmod_mat or fmpz_mod_mat
@@ -1013,21 +905,14 @@ function _primitive_element(F::FqNmodFiniteField)
   end
 end
 
-function FactoredElem(x::nf_elem)
-  z = FactoredElem{nf_elem}()
-  z.fac[x] = fmpz(1)
-  z.parent = FactoredElemMon{nf_elem}(parent(x))
-  return z
-end
-
-function validate(c::ClassGrpCtx, u::UnitGrpCtx)
+function _refine_with_saturation(c::ClassGrpCtx, u::UnitGrpCtx)
   b = _validate_class_unit_group(c, u)
 
   p = 2
 
   while b > 1
     #print("Saturating at $p...")
-    issat, new_unit = issaturated(u, p)
+    issat, new_unit = _is_saturated(u, p)
     while !issat
       #println("I have found a new unit: $new_unit")
       _add_dependent_unit(u, FactoredElem(new_unit))
@@ -1039,37 +924,17 @@ function validate(c::ClassGrpCtx, u::UnitGrpCtx)
         break
       end
 
-      issat, new_unit = issaturated(u, p)
+      issat, new_unit = _is_saturated(u, p)
     end
 
     b = _validate_class_unit_group(c, u)
     #println("Bound is now $b")
     p = next_prime(p)
+    if p > b
+      break
+    end
   end
-end
-
-# To get a nice "interface" for elements and factored elements
-
-base_ring(x::nf_elem) = parent(x)
-
-function is_unit(x::FactoredElem{nf_elem})
-  return abs(norm(z)) == 1
-end
-
-function norm(x::FactoredElem{nf_elem})
-  z = fmpq(1)
-  for a in base(x)
-    z = z*norm(a)^x.fac[a]
-  end
-  return z
-end
-
-function ^(x::fmpq, y::fmpz)
-  if typemax(Int) > y
-    return x^Int(y)
-  else
-    error("Not implemented (yet)")
-  end
+  return b
 end
 
 ################################################################################
@@ -1078,88 +943,23 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    unit_group(O::NfMaximalOrder) -> Map
+
+> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
+> `A = codomain(f)`. Then a set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+"""
 function unit_group(O::NfMaximalOrder)
   if isdefined(O, :unit_group)
     return O.unit_group::AbToNfOrdUnitGrp{Nemo.nf_elem,Hecke.NfOrderElem}
   else
     c, U, b = _class_unit_group(O)
+    _refine_with_saturation(c, U)
     f = AbToNfOrdUnitGrp(O, U.units, U.torsion_units_gen, U.torsion_units_order)
     O.unit_group = f
     return f
   end
 end
-
-# following functions need to be sorted
-function _conjugates_arb_log(A::FactoredElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
-  if haskey(A.conj_log_cache, abs_tol)
-    if haskey(A.conj_log_cache[abs_tol], a)
-      return A.conj_log_cache[abs_tol][a]
-    else
-      z = conjugates_arb_log(a, abs_tol)
-      A.conj_log_cache[abs_tol][a] = z
-      return z
-    end
-  else
-    A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
-    z = conjugates_arb_log(a, abs_tol)
-    A.conj_log_cache[abs_tol][a] = z
-    return z
-  end
-end
-
-function conjugates_arb(x::FactoredElem{nf_elem}, abs_tol::Int)
-  d = degree(_base_ring(x))
-  res = Array(acb, d)
-
-  i = 1
-
-  for a in base(x)
-    z = conjugates_arb(a, abs_tol)
-    if i == 1
-      for j in 1:d
-        res[j] = z[j]^x.fac[a]
-      end
-    else
-      for j in 1:d
-        res[j] = res[j] * z[j]^x.fac[a]
-      end
-    end
-    i = i + 1
-  end
-
-  return res
-end
-
-function conjugates_arb_log(x::FactoredElem{nf_elem}, abs_tol::Int)
-  K = base_ring(x)::AnticNumberField
-  r1, r2 = signature(K)
-  d = r1 + r2
-  res = Array(arb, d)
-
-  i = 1
-
-  for a in base(x)
-    z = _conjugates_arb_log(parent(x), a, abs_tol)
-    if i == 1
-      for j in 1:d
-        res[j] = x.fac[a]*z[j]
-      end
-    else
-      for j in 1:d
-        res[j] = res[j] + x.fac[a]*z[j]
-      end
-    end
-    i = i + 1
-  end
-
-  return res
-end
-
-_base_ring(x::nf_elem) = parent(x)::AnticNumberField
-
-_base_ring(x::FactoredElem{nf_elem}) = base_ring(x)::AnticNumberField
-
-*(x::FactoredElem{nf_elem}, y::NfOrderElem) = x*elem_in_nf(y)
-
-*(x::NfOrderElem, y::FactoredElem{nf_elem}) = y*x
 
