@@ -23,7 +23,13 @@ end
 #end
 
 function show(io::IO, M::Map)
-  println(io, "Map $(domain(M)) -> $(codomain(M))")
+  print(io, "Map with following data\n")
+  print(io, "Domain:\n")
+  print(io, "=======\n")
+  print(io, "$(domain(M))\n\n")
+  print(io, "Codomain:\n")
+  print(io, "=========\n")
+  print(io, "$(codomain(M))\n")
 end
 
 function preimage{D, C}(M::Map{D, C}, a)
