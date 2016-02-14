@@ -25,14 +25,16 @@ t2{C, T}(::Type{C}, ::Type{T}) = t2{C, T}(C, T)
 
 Base.show{C, T}(io::IO, x::t2{C, T}) = print(io, "t2 with type $C and $T")
 
-global const SLP_AddRow_typ = 1
-global const SLP_SwapRows_typ = 2
 
-type SmatSLP{T}
+type SmatSLP_add_row{T}
   row::Int
   col::Int
-  typ::Int
-  val::T  ##only used for AddRow
+  val::T 
+end
+
+type SmatSLP_swap_row
+  row::Int
+  col::Int
 end
 
 ################################################################################
