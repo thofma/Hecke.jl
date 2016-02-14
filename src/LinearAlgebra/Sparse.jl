@@ -19,7 +19,7 @@ import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array
 
 export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
-       valence_mc
+       valence_mc, swap_rows!
 
 ################################################################################
 #
@@ -269,39 +269,40 @@ function SLP_AddRow{T}(i::Int, j::Int, v::T)
   return slp
 end
 
-#function SLP_SwapRows{T}(i::Int, j::Int)
-#  slp = SmatSLP{T}(i, j, SLP_SwapRows_typ, T(0))
-#  return slp
-#end
-
-function mul!{T}(a::Array{T, 1}, s::SmatSLP{T})
-  if s.typ==SLP_AddRow_typ
-    a[s.row] = a[s.row]*s.val + a[s.col]
-  elseif s.typ==SLP_SwapRows_typ
-    t = a[s.row]
-    a[s.row] = a[s.col]
-    a[s.col] = t
-  end
+function SLP_SwapRows(i::Int, j::Int)
+  slp = SmatSLP(i, j, SLP_SwapRows_typ, T(0))
+  return slp
 end
 
-function mul_t!{T}(a::Array{T, 1}, s::SmatSLP{T})
-  if s.typ==SLP_AddRow_typ
-    a[s.col] = a[s.col]*s.val + a[s.row]
-  elseif s.typ==SLP_SwapRows_typ
-    t = a[s.row]
-    a[s.row] = a[s.col]
-    a[s.col] = t
-  end
+function mul!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
+  t = a[s.row]
+  a[s.row] = a[s.col]
+  a[s.col] = t
 end
 
-function apply!{T}(a::Array{T}, b::Array{SmatSLP{T}, 1})
+function mul!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
+  a[s.row] = a[s.row]*s.val + a[s.col]
+end
+
+function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
+  t = a[s.row]
+  a[s.row] = a[s.col]
+  a[s.col] = t
+end
+
+function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
+  a[s.col] = a[s.col]*s.val + a[s.row]
+end
+
+
+function apply!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
   for i=length(b):-1:1
     mul!(a, b[i])
   end
   return a
 end
 
-function apply_t!{T}(a::Array{T}, b::Array{SmatSLP{T}, 1})
+function apply_t!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
   for i=1:length(b)
     mul_t!(a, b[i])
   end
@@ -600,6 +601,17 @@ end
 #    transform_row!
 #
 ################################################################################
+
+@doc """
+  swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
+
+  swaps, inplace, the i-th row and the j-th
+""" ->
+function swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
+  a = A.rows[i]
+  A.rows[i] = A.rows[j]
+  A.rows[j] = a
+end
 
 # rows j -> row i*c + row j
 @doc """
@@ -918,4 +930,6 @@ end
 function sparsity{T}(A::Smat{T})
   return A.nnz/(A.r * A.c), nbits(abs_max(A))
 end
-  
+ 
+#include("/home/claus/bigRel")
+
