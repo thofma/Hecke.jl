@@ -957,7 +957,7 @@ end
 
 """ ->
 function *(O::NfMaximalOrder, x::NfOrderElem)
-  order(x) != O && error("Order of element does not coincide with order")
+  parent(x) != O && error("Order of element does not coincide with order")
   return ideal(O, x)
 end
 
