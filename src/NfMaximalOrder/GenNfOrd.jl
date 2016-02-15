@@ -406,6 +406,25 @@ doc"""
 one(a::NfOrderElem) = parent(a)(1)
 
 
+doc"""
+***
+    isone(a::GenNfOrd) -> Bool
+
+> Tests if a is one.
+"""
+isone(a::NfOrderElem) = isone(a.elem_in_nf)
+
+doc"""
+***
+    iszero(a::GenNfOrd) -> Bool
+
+> Tests if a is one.
+"""
+iszero(a::NfOrderElem) = iszero(a.elem_in_nf)
+
+
+
+
 ################################################################################
 #
 #  String I/O
