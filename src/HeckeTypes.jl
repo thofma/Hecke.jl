@@ -547,10 +547,13 @@ type NfMaximalOrder <: GenNfOrd
                                    # We annotate the concrete type when doing
                                    # unit_group(O)
 
+  auxilliary_data::Array{Any, 1}   # eg. for the class group: the
+                                   # type dependencies make it difficult
   function NfMaximalOrder(a::AnticNumberField)
     r = new(a)
     r.parent = NfMaximalOrderSet(a)
     r.signature = (-1,0)
+    r.auxilliary_data = Array(Any, 5)
     return r
   end
 

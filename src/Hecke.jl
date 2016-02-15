@@ -144,6 +144,11 @@ function __init__()
   global _get_maximal_order_of_nf = t[1]
   global _set_maximal_order_of_nf = t[2]
 
+  t = create_accessors(NfMaximalOrder, ClassGrpCtx, get_handle())
+
+  global _get_ClassGrpCtx_of_order = t[1]
+  global _set_ClassGrpCtx_of_order = t[2]
+
   global R = _RealRing()
 
 end

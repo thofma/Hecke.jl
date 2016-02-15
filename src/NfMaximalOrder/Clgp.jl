@@ -964,7 +964,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       end
 #        print_with_color(:blue, "norm OK:")
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
-      if n > sqrt_disc
+      if nbits(num(n)) > np-10
 #        prec = Int(ceil(prec*1.2))
         print_with_color(:red, "norm too large:")
         println(n, " should be ", sqrt_disc)
@@ -1057,9 +1057,9 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           @assert false   
         end
         =#
-        if n > sqrt_disc
+        if nbits(num(n)) > np-10
           @v_do :ClassGroup 2 begin
-            print_with_color(:red, "2:norm too large:")
+            print_with_color(:red, "2:norm too large: $n of $(nbits(num(n))) vs $np")
             println(n, " should be ", sqrt_disc)
             println("offending element is ", e)
             println("prec now ", prec)
@@ -1195,8 +1195,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     while true
       e = class_group_small_real_elements_relation_next(f)
       n = abs(norm_div(e, norm(f.A), np))
-      if n > sqrt_disc || f.restart > 0
-        print_with_color(:red, "norm too large or restarting:")
+      if nbits(num(n)) > np-10 || f.restart > 0
+        print_with_color(:red, "norm too large or restarting: $(f.restart)")
         println(n, " should be ", sqrt_disc)
         println("offending element is ", e)
         println("skipping ideal (for now)")
@@ -1280,7 +1280,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
         while true
           e = class_group_small_real_elements_relation_next(E)
           n = abs(norm_div(e, norm(E.A), np))
-          if n > sqrt_disc || E.restart > 2
+          if nbits(num(n)) > np-10 || E.restart > 5
             @v_do :ClassGroup 2 begin
               print_with_color(:red, "2:norm too large (or restarting):")
               println(n, " should be ", sqrt_disc)
@@ -1399,6 +1399,11 @@ end
 ################################################################################
 
 function class_group(O::NfMaximalOrder; bound = -1, method = 2, large = 1000)
+  try 
+    c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
+    return c
+  end
+
   if bound == -1
     bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
   end
@@ -1411,6 +1416,8 @@ function class_group(O::NfMaximalOrder; bound = -1, method = 2, large = 1000)
   else
     class_group_find_relations2(c)
   end
+
+  _set_ClassGrpCtx_of_order(O, c)
 
   return c
 end
