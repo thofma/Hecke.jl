@@ -1371,24 +1371,29 @@ function ^(x::quoelem, y::Int)
   return quoelem(x.parent, z)
 end
 
+
+##CF careful: this computes the char poly NOT the minpoly
 function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
 
-  A = MatrixSpace(ResidueRing(ZZ, p), degree(O), degree(O))()
+  A = MatrixSpace(ResidueRing(ZZ, p), 0, degree(O))()
+  B = MatrixSpace(ResidueRing(ZZ, p), 1, degree(O))()
 
-  for i in 0:degree(O)-1
+  for i in 0:degree(O)
     ar =  elem_in_basis( (x^i).elem)
     for j in 1:degree(O)
-      A[i+1, j] = ar[j]
+      B[1, j] = ar[j]
+    end
+    A = vcat(A, B)
+    K = kernel(A)
+    if length(K)>0
+      @assert length(K)==1
+      f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
+      return f
     end
   end
-
-  K = kernel(A)
-
-  f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
-
-  return f
+  error("cannot find minpoly")
 end
 
 function split(R::quoringalg)
