@@ -237,6 +237,26 @@ function evaluate{T}(x::FactoredElem{T})
   return ev(x.fac)
 end
 
+doc"""
+***
+  naive_evaluate{T}(x::FactoredElem{T}) -> T
+
+> Expands or evaluates the factored element, i.e. actually computes the
+> value. Uses the obvious naive algorithm. Faster for input in finite rings.
+"""
+function naive_evaluate{T}(x::FactoredElem{T})
+  z = one(base_ring(x))
+  d = x.fac
+  if length(d)==0
+    return z
+  end
+  for (k,v) in d
+    z *= k^v
+  end
+  return z
+end
+
+
 ################################################################################
 #
 #  Auxillary deep copy functions
