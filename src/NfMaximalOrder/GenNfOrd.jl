@@ -389,6 +389,23 @@ doc"""
 """
 one(O::GenNfOrd) = O(fmpz(1))
 
+doc"""
+***
+    zero(a::NfOrderElem) -> NfOrderElem
+
+> Returns the zero in the same ring.
+"""
+zero(a::NfOrderElem) = parent(a)(0)
+
+doc"""
+***
+    one(O::GenNfOrd) -> NfOrderElem
+
+> Returns the one in the same ring.
+"""
+one(a::NfOrderElem) = parent(a)(1)
+
+
 ################################################################################
 #
 #  String I/O
