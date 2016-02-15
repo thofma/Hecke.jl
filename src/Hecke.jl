@@ -73,12 +73,12 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer
 
-export AnticNumberField, hash, update, nf
+export AnticNumberField, hash, update, nf, next_prime, dot
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule, precision, 
+             floor, max, BigFloat, promote_rule, precision, dot
              first, StepRange, show, one, zero, inv, iseven, isodd
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
