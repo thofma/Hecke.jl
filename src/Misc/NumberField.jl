@@ -282,9 +282,14 @@ doc"""
 """
 function norm_div(a::nf_elem, d::fmpz, nb::Int)
    z = fmpq()
+   #CF the resultant code has trouble with denominators,
+   #   this "solves" the problem, but it should probably be
+   #   adressed in c
+   de = den(a)
+   n = degree(parent(a))
    ccall((:nf_elem_norm_div, :libflint), Void,
          (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
-         &z, &a, &a.parent, &d, UInt(nb))
+         &z, &(a*de), &a.parent, &(d*de^n), UInt(nb))
    return z
 end
 
