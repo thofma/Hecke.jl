@@ -628,6 +628,9 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
     mm = m * basis_mat(A)
     # the following should be done inplace
     gen = dot(reshape(Array(mm), degree(O)), basis(O))
+    if iszero(gen) 
+      continue
+    end
     if norm(A) == gcd(Amind, norm(gen))
       A.gen_one = minimum(A)
       A.gen_two = gen
@@ -672,6 +675,9 @@ function assure_2_normal(A::NfMaximalOrderIdeal)
 #      gen += rand(r)*A.gen_one + rand(bas, r)*A.gen_two
       #gen = element_reduce_mod(gen, O, m^2)
       gen = mod(gen, m^2)
+      if iszero(gen)
+        continue
+      end
       mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
       if gcd(m, div(m, g)) == 1 
