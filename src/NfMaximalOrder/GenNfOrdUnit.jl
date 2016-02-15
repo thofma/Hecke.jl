@@ -707,6 +707,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   K = transpose(K)
   L = lift(K)
+  T = typeof(L[1,1])
 
   nonzerorows = Array{Int, 1}()
 
@@ -718,7 +719,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   if k == 0 
     return (true, zero(nf(order(U))))
-  elseif k == 1 && sum([ L[nonzerorows[1], i] for i in 1:cols(L)-1]) == 0
+  elseif k == 1 && sum(T[ L[nonzerorows[1], i]::T for i in 1:cols(L)-1]) == 0
     # Only one root, which is torsion.
     # We assume that the torsion group is the full torsion group
     return (true, zero(nf(order(U))))

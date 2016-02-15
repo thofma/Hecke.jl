@@ -628,6 +628,9 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
     mm = m * basis_mat(A)
     # the following should be done inplace
     gen = dot(reshape(Array(mm), degree(O)), basis(O))
+    if iszero(gen) 
+      continue
+    end
     if norm(A) == gcd(Amind, norm(gen))
       A.gen_one = minimum(A)
       A.gen_two = gen
@@ -672,6 +675,9 @@ function assure_2_normal(A::NfMaximalOrderIdeal)
 #      gen += rand(r)*A.gen_one + rand(bas, r)*A.gen_two
       #gen = element_reduce_mod(gen, O, m^2)
       gen = mod(gen, m^2)
+      if iszero(gen)
+        continue
+      end
       mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
       if gcd(m, div(m, g)) == 1 
@@ -1371,24 +1377,29 @@ function ^(x::quoelem, y::Int)
   return quoelem(x.parent, z)
 end
 
+
+##CF careful: this computes the char poly NOT the minpoly
 function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
 
-  A = MatrixSpace(ResidueRing(ZZ, p), degree(O), degree(O))()
+  A = MatrixSpace(ResidueRing(ZZ, p), 0, degree(O))()
+  B = MatrixSpace(ResidueRing(ZZ, p), 1, degree(O))()
 
-  for i in 0:degree(O)-1
+  for i in 0:degree(O)
     ar =  elem_in_basis( (x^i).elem)
     for j in 1:degree(O)
-      A[i+1, j] = ar[j]
+      B[1, j] = ar[j]
+    end
+    A = vcat(A, B)
+    K = kernel(A)
+    if length(K)>0
+      @assert length(K)==1
+      f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
+      return f
     end
   end
-
-  K = kernel(A)
-
-  f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
-
-  return f
+  error("cannot find minpoly")
 end
 
 function split(R::quoringalg)
