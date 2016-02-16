@@ -389,6 +389,42 @@ doc"""
 """
 one(O::GenNfOrd) = O(fmpz(1))
 
+doc"""
+***
+    zero(a::NfOrderElem) -> NfOrderElem
+
+> Returns the zero in the same ring.
+"""
+zero(a::NfOrderElem) = parent(a)(0)
+
+doc"""
+***
+    one(O::GenNfOrd) -> NfOrderElem
+
+> Returns the one in the same ring.
+"""
+one(a::NfOrderElem) = parent(a)(1)
+
+
+doc"""
+***
+    isone(a::GenNfOrd) -> Bool
+
+> Tests if a is one.
+"""
+isone(a::NfOrderElem) = isone(a.elem_in_nf)
+
+doc"""
+***
+    iszero(a::GenNfOrd) -> Bool
+
+> Tests if a is one.
+"""
+iszero(a::NfOrderElem) = iszero(a.elem_in_nf)
+
+
+
+
 ################################################################################
 #
 #  String I/O

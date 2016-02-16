@@ -258,6 +258,16 @@ function zero!(r::nf_elem)
    return r
 end
 
+function one(r::nf_elem)
+   a = parent(r)
+   return one(a)
+end
+
+function zero(r::nf_elem)
+   return zero(parent(r))
+end
+
+
 *(a::nf_elem, b::Integer) = a * fmpz(b)
 
 //(a::Integer, b::nf_elem) = parent(b)(a)//b
@@ -272,9 +282,14 @@ doc"""
 """
 function norm_div(a::nf_elem, d::fmpz, nb::Int)
    z = fmpq()
+   #CF the resultant code has trouble with denominators,
+   #   this "solves" the problem, but it should probably be
+   #   adressed in c
+   de = den(a)
+   n = degree(parent(a))
    ccall((:nf_elem_norm_div, :libflint), Void,
          (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
-         &z, &a, &a.parent, &d, UInt(nb))
+         &z, &(a*de), &a.parent, &(d*de^n), UInt(nb))
    return z
 end
 
@@ -709,5 +724,16 @@ function read(file::ASCIIString, K::AnticNumberField, ::Type{Hecke.nf_elem})
   A = read(f, K, Hecke.nf_elem)
   close(f)
   return A
+end
+
+
+function dot(a::Array{nf_elem, 1}, b::Array{fmpz, 1})
+  d = zero(parent(a[1]))
+  t = zero(d)
+  for i=1:length(a)
+    Nemo.mul!(t, a[i], b[i])
+    Nemo.add!(d, d, t)
+  end
+  return d
 end
 

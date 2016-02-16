@@ -1,4 +1,4 @@
-################################################################################
+#i###############################################################################
 #
 #   NfMaximalOrderIdeals.jl : ideals in Nemo
 #
@@ -628,6 +628,9 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
     mm = m * basis_mat(A)
     # the following should be done inplace
     gen = dot(reshape(Array(mm), degree(O)), basis(O))
+    if iszero(gen) 
+      continue
+    end
     if norm(A) == gcd(Amind, norm(gen))
       A.gen_one = minimum(A)
       A.gen_two = gen
@@ -672,6 +675,9 @@ function assure_2_normal(A::NfMaximalOrderIdeal)
 #      gen += rand(r)*A.gen_one + rand(bas, r)*A.gen_two
       #gen = element_reduce_mod(gen, O, m^2)
       gen = mod(gen, m^2)
+      if iszero(gen)
+        continue
+      end
       mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
       if gcd(m, div(m, g)) == 1 
@@ -957,7 +963,7 @@ end
 
 """ ->
 function *(O::NfMaximalOrder, x::NfOrderElem)
-  order(x) != O && error("Order of element does not coincide with order")
+  parent(x) != O && error("Order of element does not coincide with order")
   return ideal(O, x)
 end
 
@@ -985,14 +991,14 @@ end
     Returns an array of tuples (p_i,e_i) such that pO is the product of the p_i^e_i.
 
 """ ->
-function prime_decomposition(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
+function prime_decomposition(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
   if mod(fmpz(index(O)),p) == 0
-    return prime_dec_index(O, p, degree_limit)
+    return prime_dec_index(O, p, degree_limit, lower_limit)
   end
-  return prime_dec_nonindex(O, p, degree_limit)
+  return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
 
-function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
+function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
   K = nf(O)
   f = K.pol
   I = IdealSet(O)
@@ -1001,15 +1007,16 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   Zf = Zx(f)
   fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
   fac = factor(fmodp)
-  if degree_limit > 0
-    _fac = typeof(fac)()
-    for (k,v) = fac
-      if v <= degree_limit
-        _fac[k] = v
-      end
-    end
-    fac = _fac
+  _fac = typeof(fac)()
+  if degree_limit == 0
+    degree_limit = degree(K)
   end
+  for (k,v) = fac
+    if degree(k) <= degree_limit && degree(k) >= lower_limit
+      _fac[k] = v
+    end
+  end
+  fac = _fac
   result = Array(Tuple{typeof(I()),Int}, length(fac))
   k = 1
   t = fmpq_poly()
@@ -1058,7 +1065,11 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   return result
 end
 
-function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0)
+function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0, lower_limit::Int = 0)
+  if degree_limit == 0
+    degree_limit = degree(O)
+  end
+
   # Firstly compute the p-radical of O
   Ip = pradical(O, p)
   R = quoringalg(O, Ip, p)
@@ -1077,7 +1088,7 @@ function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0)
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
     end
-    if degree_limit > 0 && f > degree_limit
+    if f > degree_limit || f < lower_limit
       continue
     end
     P.splitting_type = e, f
@@ -1140,7 +1151,7 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
     else
       deg_lim = 0
     end
-    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B)"
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
@@ -1371,24 +1382,29 @@ function ^(x::quoelem, y::Int)
   return quoelem(x.parent, z)
 end
 
+
+##CF careful: this computes the char poly NOT the minpoly
 function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
 
-  A = MatrixSpace(ResidueRing(ZZ, p), degree(O), degree(O))()
+  A = MatrixSpace(ResidueRing(ZZ, p), 0, degree(O))()
+  B = MatrixSpace(ResidueRing(ZZ, p), 1, degree(O))()
 
-  for i in 0:degree(O)-1
+  for i in 0:degree(O)
     ar =  elem_in_basis( (x^i).elem)
     for j in 1:degree(O)
-      A[i+1, j] = ar[j]
+      B[1, j] = ar[j]
+    end
+    A = vcat(A, B)
+    K = kernel(A)
+    if length(K)>0
+      @assert length(K)==1
+      f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
+      return f
     end
   end
-
-  K = kernel(A)
-
-  f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
-
-  return f
+  error("cannot find minpoly")
 end
 
 function split(R::quoringalg)

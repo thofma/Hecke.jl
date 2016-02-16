@@ -72,14 +72,14 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer,
-             minpoly, charpoly
+             minpoly, charpoly, gcd, howell_form
 
-export AnticNumberField, hash, update, nf
+export AnticNumberField, hash, update, nf, next_prime, dot
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule, precision, 
+             floor, max, BigFloat, promote_rule, precision, dot
              first, StepRange, show, one, zero, inv, iseven, isodd
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
@@ -145,6 +145,11 @@ function __init__()
   global _get_maximal_order_of_nf = t[1]
   global _set_maximal_order_of_nf = t[2]
 
+  t = create_accessors(NfMaximalOrder, ClassGrpCtx, get_handle())
+
+  global _get_ClassGrpCtx_of_order = t[1]
+  global _set_ClassGrpCtx_of_order = t[2]
+
   global R = _RealRing()
 
 end
@@ -201,7 +206,7 @@ end
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.1-dev"
+global VERSION_NUMBER = v"0.1.2"
 
 ################################################################################
 #

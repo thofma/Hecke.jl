@@ -707,6 +707,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   K = transpose(K)
   L = lift(K)
+  T = typeof(L[1,1])
 
   nonzerorows = Array{Int, 1}()
 
@@ -718,7 +719,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   if k == 0 
     return (true, zero(nf(order(U))))
-  elseif k == 1 && sum([ L[nonzerorows[1], i] for i in 1:cols(L)-1]) == 0
+  elseif k == 1 && sum(T[ L[nonzerorows[1], i]::T for i in 1:cols(L)-1]) == 0
     # Only one root, which is torsion.
     # We assume that the torsion group is the full torsion group
     return (true, zero(nf(order(U))))
@@ -877,19 +878,11 @@ function _find_primes_for_saturation(O::NfMaximalOrder, p::Int, n::Int,
 end
         
 function _primitive_element(F::FqNmodFiniteField)
-  @assert characteristic(F) < typemax(Int)
   #println("Computing primitive element of $F")
   #println("Have to factor $(order(F) - 1)")
   fac = factor(order(F) - 1)
-  f = degree(F)
-  p = Int(characteristic(F))
-  g = gen(F)
   while true
-    r = rand(0:p-1, f)
-    a = zero(F)
-    for i in 1:f
-      a = a + r[i]*g^(i-1)
-    end
+    a = rand(F)
     if iszero(a)
       continue
     end
@@ -897,6 +890,7 @@ function _primitive_element(F::FqNmodFiniteField)
     for l in keys(fac)
       if isone(a^(div(order(F) - 1, l)))
         is_primitive = false
+        break
       end
     end
     if is_primitive
