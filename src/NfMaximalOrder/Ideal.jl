@@ -1010,7 +1010,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   if degree_limit > 0
     _fac = typeof(fac)()
     for (k,v) = fac
-      if v <= degree_limit
+      if degree(k) <= degree_limit
         _fac[k] = v
       end
     end
@@ -1146,7 +1146,7 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
     else
       deg_lim = 0
     end
-    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B)"
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
