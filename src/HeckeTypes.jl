@@ -3,28 +3,6 @@
 #  SmatRow/Smat
 #
 ################################################################################
-abstract abstest
-
-type t1{A <: abstest, B} 
-  x::A 
-  y::B
-end
-
-type t2{C, T} <: abstest 
-  x::C 
-  y::T
-
-  function t2(::Type{C}, ::Type{T})
-    z = new{C, T}()  
-    z.x = C(1)
-    z.y = z
-  end
-end
-
-t2{C, T}(::Type{C}, ::Type{T}) = t2{C, T}(C, T) 
-
-Base.show{C, T}(io::IO, x::t2{C, T}) = print(io, "t2 with type $C and $T")
-
 
 type SmatSLP_add_row{T}
   row::Int
@@ -722,25 +700,10 @@ type NfMaximalOrderIdeal <: GenNfOrdIdl
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
-    b = x.elem_in_nf
-
-    bi = inv(b)
 
     C = NfMaximalOrderIdeal(O)
-    C.gen_one = den(bi, O)
-    C.minimum = C.gen_one
-    C.gen_two = x
-    C.norm = abs(num(norm(b)))
-    @hassert :NfMaximalOrder 1 gcd(C.gen_one^degree(O),
-                    ZZ(norm(C.gen_two))) == C.norm
-    C.princ_gen = C.gen_two
+    C.princ_gen = x
 
-    if C.gen_one == 1
-      C.gens_normal = 2*C.gen_one
-    else
-      C.gens_normal = C.gen_one
-    end
-    C.gens_weakly_normal = 1
     return C
   end
 end
