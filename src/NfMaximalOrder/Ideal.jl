@@ -642,6 +642,8 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
   # we don't know the minimum (although we have a basis matrix)
   # Thanks flint!
 
+  minimum(A)
+
   @hassert :NfMaximalOrder 1 has_minimum(A)
 
   M = MatrixSpace(ZZ, 1, degree(O))
