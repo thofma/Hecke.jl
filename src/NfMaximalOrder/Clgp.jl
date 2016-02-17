@@ -334,8 +334,8 @@ function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
 end
 
 function factor(FB::NfFactorBase, a::nf_elem)
-  M = MatrixSpace(FlintZZ, 1, FB.size)()
-  factor!(M, 1, FB, a)
+  M = Smat{Int}()
+  _factor!(M, 1, FB, a)
   return M
 end
 
@@ -1365,6 +1365,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   return class_group_current_result(clg)
 end
 
+
+# CF: incomplete
 function class_group_find_relations3(clg::ClassGrpCtx; val = 0, prec = 100,
                 limit = 10, no_b = 1)
   O = order(clg.FB.ideals[1])
@@ -1422,6 +1424,68 @@ function class_group(O::NfMaximalOrder; bound = -1, method = 2, large = 1000)
   return c
 end
 
+function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100)
+  #for all prime ideals P with lb <= norm <= ub, find a relation
+  #tying that prime to the factor base
+  # if extra is useful, assume that the function was already run for all primes
+  # up to norm extra
+
+  if extra==0
+    extra = norm(clg.FB.ideals[1])
+  end
+  println("expect to need ", Int(floor(li(ub*1.0) - li(lb*1.0))), " primes")
+  O = order(clg.FB.ideals[1])
+  n = degree(O)
+  p = next_prime(root(lb, n))
+  np = Int(floor(log(abs(discriminant(O)))/log(2)/2))
+  no_primes = 0
+  no_ideals = 0
+  while p < ub
+    no_primes += 1
+    if no_primes % 100 == 0
+      println("did $no_primes prime numbers so far, now $p, need to reach $ub")
+    end
+    deg_lim = Int(floor(log(ub)/log(p)))
+    low_lim = Int(floor(log(lb)/log(p)))
+    fac = prime_decomposition(O, Int(p), deg_lim, low_lim)
+    for _k in fac
+      k = _k[1]
+      if norm(k) <= lb 
+        continue
+      end
+      no_ideals += 1
+      if no_ideals % 100 == 0
+        println("done $no_ideals ideals so far...")
+      end
+#      println("to be more precise: $k")
+      E = class_group_small_real_elements_relation_start(clg, k, limit=10, prec=prec)
+      while true
+        sucess = false
+        a = class_group_small_real_elements_relation_next(E)
+        n = norm_div(a, norm(k), np)
+        if gcd(num(n), p) > extra 
+          println("a: $a, $(norm(a)), $(norm(k)), $n")
+#          println("contains too many conjugates, bad")
+          continue
+        end
+        f, r = is_smooth(clg.FB.fb_int, num(n))
+        if f 
+          M = Smat{Int}()
+          fl = _factor!(M, 1, clg.FB, a, false, n)
+          if fl
+            break
+          else
+#            println("not smooth, ideal")
+          end
+        else
+#          println("not smooth, int")
+        end
+      end
+    end
+    p = next_prime(p)
+  end
+  println("success: used $no_primes numbers and $no_ideals ideals")
+end
 
 ################################################################################
 #

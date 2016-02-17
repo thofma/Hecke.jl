@@ -1,4 +1,4 @@
-################################################################################
+#i###############################################################################
 #
 #   NfMaximalOrderIdeals.jl : ideals in Nemo
 #
@@ -1031,14 +1031,14 @@ end
     Returns an array of tuples (p_i,e_i) such that pO is the product of the p_i^e_i.
 
 """ ->
-function prime_decomposition(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
+function prime_decomposition(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
   if mod(fmpz(index(O)),p) == 0
-    return prime_dec_index(O, p, degree_limit)
+    return prime_dec_index(O, p, degree_limit, lower_limit)
   end
-  return prime_dec_nonindex(O, p, degree_limit)
+  return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
 
-function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0)
+function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
   K = nf(O)
   f = K.pol
   I = IdealSet(O)
@@ -1047,15 +1047,16 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   Zf = Zx(f)
   fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
   fac = factor(fmodp)
-  if degree_limit > 0
-    _fac = typeof(fac)()
-    for (k,v) = fac
-      if v <= degree_limit
-        _fac[k] = v
-      end
-    end
-    fac = _fac
+  _fac = typeof(fac)()
+  if degree_limit == 0
+    degree_limit = degree(K)
   end
+  for (k,v) = fac
+    if degree(k) <= degree_limit && degree(k) >= lower_limit
+      _fac[k] = v
+    end
+  end
+  fac = _fac
   result = Array(Tuple{typeof(I()),Int}, length(fac))
   k = 1
   t = fmpq_poly()
@@ -1104,7 +1105,11 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   return result
 end
 
-function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0)
+function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0, lower_limit::Int = 0)
+  if degree_limit == 0
+    degree_limit = degree(O)
+  end
+
   # Firstly compute the p-radical of O
   Ip = pradical(O, p)
   R = quoringalg(O, Ip, p)
@@ -1123,7 +1128,7 @@ function prime_dec_index(O::NfMaximalOrder, p::Int, degree_limit::Int = 0)
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
     end
-    if degree_limit > 0 && f > degree_limit
+    if f > degree_limit || f < lower_limit
       continue
     end
     P.splitting_type = e, f
@@ -1186,7 +1191,7 @@ function prime_ideals_up_to(O::NfMaximalOrder, B::Int;
     else
       deg_lim = 0
     end
-    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B)"
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
