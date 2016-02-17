@@ -265,12 +265,12 @@ end
 
 function SLP_AddRow{T}(i::Int, j::Int, v::T)
   assert(v != 0)
-  slp = SmatSLP(i, j, SLP_AddRow_typ, v)
+  slp = SmatSLP_add_row(i, j, v)
   return slp
 end
 
 function SLP_SwapRows(i::Int, j::Int)
-  slp = SmatSLP(i, j, SLP_SwapRows_typ, T(0))
+  slp = SmatSLP_swap_row(i, j)
   return slp
 end
 
@@ -310,7 +310,7 @@ function apply_t!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
 end
 
 function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
-  a = Array(SmatSLP{Int}, i)
+  a = Array(SmatSLP_add_row{Int}, i)
   for j=1:i
     c = rand(v)
     while c==0
@@ -328,7 +328,7 @@ function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
 end
 
 @doc """
-  valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP{T}, 1}()) -> T
+  valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_row{T}, 1}()) -> T
 
   Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the vaence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
   typically f(0).
@@ -339,7 +339,7 @@ end
   trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then
   the valence of trans * A  is computed instead.
 """ ->
-function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP{T}, 1}())
+function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_row{T}, 1}())
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
   if false && cols(A) > rows(A)
