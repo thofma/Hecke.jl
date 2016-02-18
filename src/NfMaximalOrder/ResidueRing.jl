@@ -5,12 +5,17 @@ type NfMaxOrdQuoRing <: Ring
   ideal::NfMaximalOrderIdeal
   basis_mat::fmpz_mat
 
+  tmp_div::fmpz_mat
+  tmp_ann::fmpz_mat
+
   function NfMaxOrdQuoRing(O::NfMaximalOrder, I::NfMaximalOrderIdeal)
     z = new()
     z.base_ring = O
     z.ideal = I
     z.basis_mat = basis_mat(I)
-
+    d = degree(O)
+    z.tmp_div = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
+    z.tmp_ann = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
     return z
   end
 end
@@ -116,31 +121,55 @@ function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   # ( 1   x    0  )
   # ( 0  M_y   I  )
   # ( 0  M_I   0  ).
-  # Compute the HNF ->
+  # Compute the UPPER RIGHT HNF ->
   # ( 1   0   u )
   # ( *   *   * )
   # u will be the coefficient vector of the quotient
+  V = parent(x).tmp_div
   A = representation_mat(y.elem)
   B = basis_mat(parent(x))
-  C = MatrixSpace(ZZ, 1, d)()
+
+  V[1, 1] = 1
+
   a = elem_in_basis(x.elem)
+
   for i in 1:d
-    C[1, i] = a[i]
+    V[1, 1 + i] = a[i]
   end
-  D = MatrixSpace(ZZ, 2*d + 1, 1)()
-  U = vcat(A, B)
-  U = vcat(C, U)
-  U = hcat(D, U)
-  U = hcat(U, vcat(vcat(MatrixSpace(ZZ, 1, d)(), one(parent(A))), parent(A)()))
-  U[1,1] = 1
-  U = hnf(U)
-  v = submat(U, 1:1, (d + 2):(2*d + 1))
-  z = R(-base_ring(R)(fmpz[ v[1, i] for i in 1:d]))
-  @assert z*y == x
+
+  _copy_matrix_into_matrix(V, 2, 2, A)
+  _copy_matrix_into_matrix(V, 2+d, 2, B)
+
+  for i in 1:d
+    V[1 + i, d + 1 + i] = 1
+  end
+
+  U = hnf_modular_eldiv(V, minimum(parent(x).ideal))
+  #v = submat(U, 1:1, (d + 2):(2*d + 1))
+  z = R(-base_ring(R)(fmpz[ U[1, i] for i in (d + 2):(2*d + 1)]))
+
+  ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+
+  #@assert z*y == x
   return z
 end
 
-euclid(x::NfMaxOrdQuoRingElem) = is_zero(x) ? fmpz(-1) : norm(ideal(base_ring(parent(x)), x.elem) + parent(x).ideal)
+function euclid(x::NfMaxOrdQuoRingElem)
+  if is_zero(x)
+    return fmpz(-1)
+  end
+
+  U = vcat(representation_mat(x.elem), basis_mat(parent(x)))
+
+  U = hnf_modular_eldiv(U, minimum(parent(x).ideal))
+
+  z = fmpz(1)
+
+  for i in 1:degree(base_ring(parent(x)))
+    mul!(z, z, U[i, i])
+  end
+  return z
+end
 
 is_zero(x::NfMaxOrdQuoRingElem) = x.elem.elem_in_nf == 0
 
@@ -201,9 +230,9 @@ function annihilator(x::NfMaxOrdQuoRingElem)
   M_x = representation_mat(x.elem)
   U = vcat(M_x, M_I)
   m = _kernel(U)
-  @assert rows(m) == degree(O)
-  @assert cols(m) == 2*degree(O)
-  I = ideal(O, _hnf(submat(m, 1:degree(O), 1:degree(O)), :lowerleft))
+  #@assert rows(m) == degree(O)
+  #@assert cols(m) == 2*degree(O)
+  I = ideal(O, _hnf_modular_eldiv(submat(m, 1:degree(O), 1:degree(O)), minimum(I), :lowerleft))
   return f(I)
 end
 
@@ -221,7 +250,7 @@ end
 function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   n = euclid(x)
   m = euclid(y)
-  @assert mod(n, m) == 0
+  #@assert mod(n, m) == 0
   target = divexact(n, m)
 
   q0 = divexact(x, y)
@@ -238,8 +267,8 @@ function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     end
   end
 
-  @assert q*y == x
-  @assert euclid(q) *euclid(y) == euclid(x)
+  #@assert q*y == x
+  #@assert euclid(q) *euclid(y) == euclid(x)
 
   return q
 end
@@ -272,7 +301,7 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   e = _divexact_strong(x, g)
   f = _divexact_strong(y, g)
 
-  @assert euclid(gcd(e, f)) == 1
+  #@assert euclid(gcd(e, f)) == 1
 
   M_e = representation_mat(e.elem)
   M_f = representation_mat(f.elem)
@@ -285,27 +314,50 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  C = MatrixSpace(ZZ, 1, d)()::fmpz_mat
   a = elem_in_basis(Q(O(1)).elem)
+
+  V = parent(x).tmp_ann
+
+  V[1, 1] = 1
+
   for i in 1:d
-    C[1, i] = a[i]
+    V[1, 1 + i] = a[i]
   end
 
-  IdMat = one(MatrixSpace(ZZ, d, d))
-  ZeMat = zero(MatrixSpace(ZZ, d, d))
+  Hecke._copy_matrix_into_matrix(V, 2, 2, M_e)
+  Hecke._copy_matrix_into_matrix(V, d + 2, 2, M_f)
+  Hecke._copy_matrix_into_matrix(V, 2*d + 2, 2, M_I)
 
-  U = hcat(MatrixSpace(ZZ, 3*d + 1, 1)(), vcat(vcat(vcat(C, M_e), M_f), M_I))
-  U = hcat(U, vcat(vcat(vcat(parent(C)(), IdMat), ZeMat), ZeMat))
-  U = hcat(U, vcat(vcat(vcat(parent(C)(), ZeMat), IdMat), ZeMat))
-  U[1, 1] = 1
+  for i in 1:2*d
+    V[1+i, 1 + d + i] = 1
+  end
 
-  U = hnf(U)::fmpz_mat
+#  C = MatrixSpace(ZZ, 1, d)()::fmpz_mat
+#  for i in 1:d
+#    C[1, i] = a[i]
+#  end
+#
+#  IdMat = one(MatrixSpace(ZZ, d, d))
+#  ZeMat = zero(MatrixSpace(ZZ, d, d))
+#
+#  U = hcat(MatrixSpace(ZZ, 3*d + 1, 1)(), vcat(vcat(vcat(C, M_e), M_f), M_I))
+#  U = hcat(U, vcat(vcat(vcat(parent(C)(), IdMat), ZeMat), ZeMat))
+#  U = hcat(U, vcat(vcat(vcat(parent(C)(), ZeMat), IdMat), ZeMat))
+#  U[1, 1] = 1
+#
+#  @assert U == V
+
+  U = V
+
+  U = hnf_modular_eldiv(U, minimum(Q.ideal))::fmpz_mat
 
   u = Q(-O([ U[1,i] for i in (d + 2):(2*d + 1)]))
   v = Q(-O([ U[1,i] for i in (2*d + 2):(3*d + 1)]))
 
-  @assert g == u*x + v*y
-  @assert Q(O(1)) == u*e - (v*(-f))
+  #@assert g == u*x + v*y
+  #@assert Q(O(1)) == u*e - (v*(-f))
+
+  ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
   return g, u, v, -f, e
 end
@@ -393,3 +445,52 @@ function call(M::MatrixSpace{NfOrderElem}, x::MatElem{fmpz})
 end
 
 elem_type(::NfMaximalOrder) = NfOrderElem
+
+# Copy B into A at position (i,j)
+function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
+  for k in 0:rows(B)-1
+    for l in 0:cols(B)-1
+      d = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &B, k, l)
+      t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &A, i - 1 + k, j - 1 + l)
+      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, d)
+    end
+  end
+end
+
+## Hensel
+
+function root_hensel(f::Poly{NfOrderElem})
+  O = base_ring(f)
+
+  # First we find a prime ideal such that f is squarefree modulo P 
+  # (The discriminant of f has only finitely many divisors).
+
+  p = 1
+
+  found_prime = false
+
+  while !found_prime
+    p = next_prime(p)
+
+    if is_index_divisor(O, p) || isramified(O, p)
+      continue
+    end
+
+    lP = prime_decomposition(O, p)
+
+    for P in lP
+      F, pi = ResidueField(O, P[1])
+
+      fmodP = pi(f)
+
+      if issquarefree(fmodP)
+        found_prime = true
+        break
+      end
+    end
+  end
+  return F, pi, P
+end
+
+  
+  
