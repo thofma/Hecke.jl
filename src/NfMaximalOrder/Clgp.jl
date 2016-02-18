@@ -453,7 +453,7 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   R = parent(f)
   Zx = PolynomialRing(ZZ, "\$x_z")[1]
   Zf = Zx(f)
-  Zpx = PolynomialRing(ResidueRing(ZZ, p), "\$x_p")[1]
+  Zpx = PolynomialRing(ResidueRing(ZZ, p, false), "\$x_p", false)[1]
   Za = Zx(parent(f)(a*den(a)))
   g = gcd(Zpx(Zf), Zpx(Za))
   return lift(Zx, g)
@@ -626,7 +626,8 @@ function shift!(g::fmpz_mat, l::Int)
   end
   return g
 end
- 
+
+global last_lat=9
 function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
                 prec::Int = 100)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
@@ -638,6 +639,7 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   end
   d = rt_c.cache
   mult!(d, b.num, c)
+  den = b.den
   if !iszero(v)
     @v_do :ClassGroup 2 println("using inf val", v)
     old = precision(BigFloat)
@@ -671,12 +673,12 @@ function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = rows(l)
-  den = basis_mat(order(A)).den
   disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n)
   d = root(disc, n)+1
   d *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
   pr = fmpz(1)
   if l[1,1] > d 
+    global last_lat = (g, disc, d, prec, A)
     print_with_color(:red, "LLL basis too large\n");
     println("bound is ", d, " value at ", 1, " is ", l[1,1]); 
     throw(LowPrecisionLLL())
@@ -734,6 +736,7 @@ end
 
 function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
+
   l, t = lll(c, A, v, prec = prec)
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
@@ -1456,8 +1459,9 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
       no_ideals += 1
       if no_ideals % 100 == 0
         println("done $no_ideals ideals so far...")
+        gc()
       end
-#      println("to be more precise: $k")
+      #println("to be more precise: $k")
       E = class_group_small_real_elements_relation_start(clg, k, limit=10, prec=prec)
       while true
         sucess = false

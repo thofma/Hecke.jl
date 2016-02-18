@@ -1047,7 +1047,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   R = parent(f)
   Zx, x = PolynomialRing(ZZ,"x")
   Zf = Zx(f)
-  fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
+  fmodp = PolynomialRing(ResidueRing(ZZ, p, false), "y", false)[1](Zf)
   fac = factor(fmodp)
   _fac = typeof(fac)()
   if degree_limit == 0
@@ -1096,7 +1096,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
       ideal.anti_uniformizer = O(K(t), false)
     end
 
-    if length(fac) == 1 && ideal.splitting_type[1] == 1
+    if length(fac) == 1 && ideal.splitting_type[1] == degree(f)
       # Prime number is inert, in particular principal
       ideal.is_principal = 1
       ideal.princ_gen = O(p)
@@ -1149,7 +1149,7 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
     R = parent(f)
     Zx, x = PolynomialRing(ZZ,"x")
     Zf = Zx(f)
-    fmodp = PolynomialRing(ResidueRing(ZZ,p), "y")[1](Zf)
+    fmodp = PolynomialRing(ResidueRing(ZZ,p, false), "y", false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
     res = Array(Tuple{Int, Int}, g)
