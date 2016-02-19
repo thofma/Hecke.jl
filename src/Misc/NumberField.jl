@@ -115,10 +115,10 @@ function representation_mat(a::nf_elem)
   n = degree(a.parent)
   M = MatrixSpace(FlintZZ, n,n)()::fmpz_mat
   t = gen(a.parent)
-  b = a
+  b = deepcopy(a)
   for i = 1:n-1
     elem_to_mat_row!(M, i, dummy, b)
-    b *= t
+    mul!(b, b, t) ## CF: should write and use mul_gen which is faster
   end
   elem_to_mat_row!(M, n, dummy, b)
   return M
