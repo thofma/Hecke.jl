@@ -1047,7 +1047,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   R = parent(f)
   Zx, x = PolynomialRing(ZZ,"x")
   Zf = Zx(f)
-  fmodp = PolynomialRing(ResidueRing(ZZ, p, false), "y", false)[1](Zf)
+  fmodp = PolynomialRing(ResidueRing(ZZ, p, cached=false), "y", cached=false)[1](Zf)
   fac = factor(fmodp)
   _fac = typeof(fac)()
   if degree_limit == 0

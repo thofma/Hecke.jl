@@ -453,7 +453,7 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   R = parent(f)
   Zx = PolynomialRing(ZZ, "\$x_z")[1]
   Zf = Zx(f)
-  Zpx = PolynomialRing(ResidueRing(ZZ, p, false), "\$x_p", false)[1]
+  Zpx = PolynomialRing(ResidueRing(ZZ, p, cached=false), "\$x_p", cached=false)[1]
   Za = Zx(parent(f)(a*den(a)))
   g = gcd(Zpx(Zf), Zpx(Za))
   return lift(Zx, g)
