@@ -10,6 +10,8 @@ export IdealSet, minimum, is_prime_known, MaximalOrderIdeal, basis_mat,
        valuation, defines_2_normal, *, /, ==, MaximalOrderIdealSet, norm, Ideal,
        prime_decomposition_type, prime_decomposition
 
+set_assert_level(:NfMaximalOrder, 1)
+
 #################################################################################
 #
 #  User friendly constructor
@@ -237,6 +239,16 @@ function minimum(A::NfMaximalOrderIdeal)
   if has_minimum(A) 
     return A.minimum
   end
+
+  if isdefined(A, :princ_gen)
+    b = A.princ_gen.elem_in_nf
+
+    bi = inv(b)
+
+    A.minimum =  den(bi, order(A))
+    return A.minimum
+  end
+
   if is_weakly_normal(A)
     K = A.parent.order.nf
     d = den(inv(K(A.gen_two)), A.parent.order)
@@ -600,6 +612,28 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
     return
   end
 
+  if isdefined(A, :princ_gen)
+    x = A.princ_gen
+    b = x.elem_in_nf
+
+    bi = inv(b)
+
+    A.gen_one = den(bi, order(A))
+    A.minimum = A.gen_one
+    A.gen_two = x
+    A.norm = abs(num(norm(b)))
+    @hassert :NfMaximalOrder 1 gcd(A.gen_one^degree(order(A)),
+                    ZZ(norm(A.gen_two))) == A.norm
+
+    if A.gen_one == 1
+      A.gens_normal = 2*A.gen_one
+    else
+      A.gens_normal = A.gen_one
+    end
+    A.gens_weakly_normal = 1
+    return nothing
+  end
+
   @hassert :NfMaximalOrder 1 has_basis_mat(A)
 
   O = order(A)
@@ -607,6 +641,8 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
   # Because of the interesting choice for the HNF,
   # we don't know the minimum (although we have a basis matrix)
   # Thanks flint!
+
+  minimum(A)
 
   @hassert :NfMaximalOrder 1 has_minimum(A)
 
@@ -787,6 +823,12 @@ end
 function basis_mat(A::NfMaximalOrderIdeal)
   if isdefined(A, :basis_mat)
     return A.basis_mat
+  end
+
+  if isdefined(A, :princ_gen)
+    m = representation_mat(A.princ_gen)
+    A.basis_mat = _hnf_modular_eldiv(m, minimum(A), :lowerleft)
+    return m
   end
 
   @hassert :NfMaximalOrder 1 has_2_elem(A)
@@ -1005,7 +1047,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
   R = parent(f)
   Zx, x = PolynomialRing(ZZ,"x")
   Zf = Zx(f)
-  fmodp = PolynomialRing(ResidueRing(ZZ, p), "y")[1](Zf)
+  fmodp = PolynomialRing(ResidueRing(ZZ, p, cached=false), "y", cached=false)[1](Zf)
   fac = factor(fmodp)
   _fac = typeof(fac)()
   if degree_limit == 0
@@ -1054,7 +1096,7 @@ function prime_dec_nonindex(O::NfMaximalOrder, p::Integer, degree_limit::Int = 0
       ideal.anti_uniformizer = O(K(t), false)
     end
 
-    if length(fac) == 1 && ideal.splitting_type[1] == 1
+    if length(fac) == 1 && ideal.splitting_type[1] == degree(f)
       # Prime number is inert, in particular principal
       ideal.is_principal = 1
       ideal.princ_gen = O(p)
@@ -1107,7 +1149,7 @@ function prime_decomposition_type(O::NfMaximalOrder, p::Integer)
     R = parent(f)
     Zx, x = PolynomialRing(ZZ,"x")
     Zf = Zx(f)
-    fmodp = PolynomialRing(ResidueRing(ZZ,p), "y")[1](Zf)
+    fmodp = PolynomialRing(ResidueRing(ZZ,p, false), "y", false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
     res = Array(Tuple{Int, Int}, g)

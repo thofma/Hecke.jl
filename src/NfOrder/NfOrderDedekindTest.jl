@@ -10,7 +10,7 @@ function dedekind_ispmaximal(O::NfOrder, p::fmpz)
 
   p
   Zy, y = PolynomialRing(ZZ, "y")
-  Kx, x = PolynomialRing(ResidueRing(ZZ, p), "x")
+  Kx, x = PolynomialRing(ResidueRing(ZZ, p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -39,7 +39,7 @@ function dedekind_ispmaximal(O::NfOrder, p::fmpz)
 
   U = one(Kx)
 
-  for (fi,e1) in fac
+  for (fi,ei) in fac
     if ei != 1 && rem(gmodp, fi) == zero(Kx)
       U *= fi
       return false
@@ -74,7 +74,7 @@ function dedekind_test(O::NfOrder, p::fmpz)
   p 
   
   Zy, y = PolynomialRing(ZZ, "y")
-  Kx, x = PolynomialRing(ResidueRing(ZZ, p), "x")
+  Kx, x = PolynomialRing(ResidueRing(ZZ, p, cached=false), "x", cached=false)
 
 
   f = nf(O).pol
@@ -105,7 +105,7 @@ function dedekind_test(O::NfOrder, p::fmpz)
 
   U = one(Kx)
 
-  for (fi, e1) in fac
+  for (fi, ei) in fac
     if ei != 1 && rem(gmodp, fi) == zero(Kx)
       U *= fi
       pmaximal=false
