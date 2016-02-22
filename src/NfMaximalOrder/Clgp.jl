@@ -1427,7 +1427,7 @@ function class_group(O::NfMaximalOrder; bound = -1, method = 2, large = 1000)
   return c
 end
 
-function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100)
+function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=fmpz(0), prec::Int = 100, do_it=1:ub)
   #for all prime ideals P with lb <= norm <= ub, find a relation
   #tying that prime to the factor base
   # if extra is useful, assume that the function was already run for all primes
@@ -1443,7 +1443,10 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   np = Int(floor(log(abs(discriminant(O)))/log(2)/2))
   no_primes = 0
   no_ideals = 0
-  while p < ub
+  if do_it.start > 1
+    p = fmpz(next_prime(do_it.start))
+  end
+  while p < do_it.stop
     no_primes += 1
     if no_primes % 100 == 0
       println("did $no_primes prime numbers so far, now $p, need to reach $ub")
