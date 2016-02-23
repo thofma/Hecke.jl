@@ -1116,6 +1116,51 @@ type IdealRelationsCtx{Tx, TU, TC}
   end
 end
 
+################################################################################
+#
+#  Quotient rings of maximal orders of simple number fields
+#
+################################################################################
+
+type NfMaxOrdQuoRing <: Ring
+  base_ring::NfMaximalOrder
+  ideal::NfMaximalOrderIdeal
+  basis_mat::fmpz_mat
+
+  # temporary variables for divisor and annihilator computations
+  tmp_div::fmpz_mat
+  tmp_ann::fmpz_mat
+
+  function NfMaxOrdQuoRing(O::NfMaximalOrder, I::NfMaximalOrderIdeal)
+    z = new()
+    z.base_ring = O
+    z.ideal = I
+    z.basis_mat = basis_mat(I)
+    d = degree(O)
+    z.tmp_div = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
+    z.tmp_ann = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
+    return z
+  end
+end
+
+type NfMaxOrdQuoRingElem <: RingElem
+  elem::NfOrderElem
+  parent::NfMaxOrdQuoRing
+
+  function NfMaxOrdQuoRingElem(O::NfMaxOrdQuoRing, x::NfOrderElem)
+    z = new()
+    z.elem = mod(x, ideal(O))
+    z.parent = O
+    return z
+  end
+end
+
+################################################################################
+#
+#  Maps
+#
+################################################################################
+
 include("Map/MapType.jl")
 
 ################################################################################

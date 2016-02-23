@@ -1,24 +1,49 @@
-export quo
+################################################################################
+#
+#  NfMaximalOrder/ResidueRing.jl : Quotients of maximal orders of number fields
+#
+# This file is part of Hecke.
+#
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+# (C) 2016 Tommy Hofmann
+#
+################################################################################
 
-type NfMaxOrdQuoRing <: Ring
-  base_ring::NfMaximalOrder
-  ideal::NfMaximalOrderIdeal
-  basis_mat::fmpz_mat
+export NfMaxOrdQuoRing, NfMaxOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
+       gcd, inv, parent, show, divexact, isone, iszero
 
-  tmp_div::fmpz_mat
-  tmp_ann::fmpz_mat
+################################################################################
+#
+#  Field access
+#
+################################################################################
 
-  function NfMaxOrdQuoRing(O::NfMaximalOrder, I::NfMaximalOrderIdeal)
-    z = new()
-    z.base_ring = O
-    z.ideal = I
-    z.basis_mat = basis_mat(I)
-    d = degree(O)
-    z.tmp_div = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
-    z.tmp_ann = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
-    return z
-  end
-end
+elem_type(::Type{NfMaxOrdQuoRing}) = NfMaxOrdQuoRingElem
+
+elem_type(::NfMaxOrdQuoRing) = NfMaxOrdQuoRingElem
 
 base_ring(Q::NfMaxOrdQuoRing) = Q.base_ring
 
@@ -26,51 +51,70 @@ ideal(Q::NfMaxOrdQuoRing) = Q.ideal
 
 basis_mat(Q::NfMaxOrdQuoRing) = Q.basis_mat
 
-function show(io::IO, Q::NfMaxOrdQuoRing)
-  print(io, "Quotient of $(Q.base_ring)")# and ideal $(Q.ideal)")
-end
-
-type NfMaxOrdQuoRingElem <: RingElem
-  elem::NfOrderElem
-  parent::NfMaxOrdQuoRing
-
-  function NfMaxOrdQuoRingElem(O::NfMaxOrdQuoRing, x::NfOrderElem)
-    z = new()
-    z.elem = mod(x, ideal(O))
-    z.parent = O
-    return z
-  end
-end
-
 parent(x::NfMaxOrdQuoRingElem) = x.parent
+
+################################################################################
+#
+#  Functions to allow polynomial and polynomial ring constructions
+#
+################################################################################
+
+needs_parentheses(::NfMaxOrdQuoRingElem) = true
+
+is_negative(::NfMaxOrdQuoRingElem) = false
+
+# This is dangerous
+parent_type(::Type{NfOrderElem}) = NfMaximalOrder
+
+Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
+                                ::Type{S}) = NfMaxOrdQuoRingElem
+
+################################################################################
+#
+#  Copying
+#
+################################################################################
+
+deepcopy(x::NfMaxOrdQuoRingElem) = NfMaxOrdQuoRingElem(parent(x), x.elem)
+
+################################################################################
+#
+#  I/O
+#
+################################################################################
+
+function show(io::IO, Q::NfMaxOrdQuoRing)
+  print(io, "Quotient of $(Q.base_ring)")
+end
 
 function show(io::IO, x::NfMaxOrdQuoRingElem)
   print(io, "$(x.elem)")
 end
+
+################################################################################
+#
+#  Parent object overloading
+#
+################################################################################
 
 function call(O::NfMaxOrdQuoRing, x::NfOrderElem)
   parent(x) != base_ring(O) && error("Cannot coerce element into the quotient ring")
   return NfMaxOrdQuoRingElem(O, x)
 end
 
-type NfMaxOrdQuoMap <: Map{NfMaximalOrder, NfMaxOrdQuoRing}
-  header::MapHeader{NfMaximalOrder, NfMaxOrdQuoRing}
-
-  function NfMaxOrdQuoMap(O::NfMaximalOrder, Q::NfMaxOrdQuoRing)
-    z = new()
-    
-    _image = function (x::NfOrderElem)
-      return Q(x)
-    end
-
-    _preimage = function (x::NfMaxOrdQuoRing)
-      return x.elem
-    end
-
-    z.header = MapHeader(O, Q, _image, _preimage)
-    return z
-  end
+function call(Q::NfMaxOrdQuoRing, x::Integer)
+  return Q(base_ring(Q)(x))
 end
+
+function call(Q::NfMaxOrdQuoRing, x::fmpz)
+  return Q(base_ring(Q)(x))
+end
+
+################################################################################
+#
+#  Quotient function
+#
+################################################################################
 
 function quo(O::NfMaximalOrder, I::NfMaximalOrderIdeal)
   # We should check that I is not zero
@@ -78,6 +122,12 @@ function quo(O::NfMaximalOrder, I::NfMaximalOrderIdeal)
   f = NfMaxOrdQuoMap(O, Q)
   return Q, f
 end
+
+################################################################################
+#
+#  Arithmetic
+#
+################################################################################
 
 function +(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
@@ -110,10 +160,45 @@ end
 
 *(x::NfMaxOrdQuoRingElem, y::fmpz) = y*x
 
+################################################################################
+#
+#  Special elements
+#
+################################################################################
+
+iszero(x::NfMaxOrdQuoRingElem) = iszero(x.elem)
+
+isone(x::NfMaxOrdQuoRingElem) = isone(x.elem)
+
+function one(Q::NfMaxOrdQuoRing)
+  return Q(one(Q.base_ring))
+end
+
+function zero(Q::NfMaxOrdQuoRing)
+  return Q(zero(Q.base_ring))
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
 ==(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem) = x.elem == y.elem
+
+################################################################################
+#
+#  Exact division
+#
+################################################################################
 
 function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
+
+  if iszero(x)
+    return zero(parent(x))
+  end
+
   R = parent(x)
   d = degree(base_ring(R))
   # We cannot solve with non-square matrices.
@@ -146,6 +231,8 @@ function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   U = hnf_modular_eldiv(V, minimum(parent(x).ideal))
   #v = submat(U, 1:1, (d + 2):(2*d + 1))
+  @assert iszero(submat(U, 1:1, 2:(d + 1)))
+  
   z = R(-base_ring(R)(fmpz[ U[1, i] for i in (d + 2):(2*d + 1)]))
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
@@ -154,98 +241,11 @@ function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   return z
 end
 
-function euclid(x::NfMaxOrdQuoRingElem)
-  if is_zero(x)
-    return fmpz(-1)
-  end
-
-  U = vcat(representation_mat(x.elem), basis_mat(parent(x)))
-
-  U = hnf_modular_eldiv(U, minimum(parent(x).ideal))
-
-  z = fmpz(1)
-
-  for i in 1:degree(base_ring(parent(x)))
-    mul!(z, z, U[i, i])
-  end
-  return z
-end
-
-is_zero(x::NfMaxOrdQuoRingElem) = x.elem.elem_in_nf == 0
-
-function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
-  q = rand(parent(x))
-  r = x - q*y
-  e = euclid(y)
-  while euclid(r) < e
-    q = rand(parent(x))
-    r = x - q*y
-  end
-  return q, r
-end
-
-function rand(Q::NfMaxOrdQuoRing)
-  A = basis_mat(Q)
-  B = basis(base_ring(Q))
-  z = rand(fmpz(1):A[1,1]) * B[1]
-
-  for i in 2:rows(A)
-    z = z + rand(fmpz(1):A[i, i]) * B[i]
-  end
-
-  return Q(z)
-end
-
-elem_type(::Type{NfMaxOrdQuoRing}) = NfMaxOrdQuoRingElem
-
-
-function call(f::NfMaxOrdQuoMap, I::NfMaximalOrderIdeal)
-  O = domain(f)
-  Q = codomain(f)
-  B = Q.ideal + I
-  b = basis(B)
-
-  z = O()
-
-  while true
-    z = rand(fmpz(1):norm(Q.ideal)^2) * b[1]
-
-    for i in 2:degree(O)
-      z = z + rand(fmpz(1):norm(Q.ideal)^2) * b[i]
-    end
-
-    if norm(ideal(O, z) + ideal(O, O(norm(Q.ideal)))) == norm(B)
-      break
-    end
-  end
-
-  return Q(z)
-end
-
-function annihilator(x::NfMaxOrdQuoRingElem)
-  I = parent(x).ideal
-  O = base_ring(parent(x))
-  f = NfMaxOrdQuoMap(O, parent(x))
-  M_I = basis_mat(I)
-  M_x = representation_mat(x.elem)
-  U = vcat(M_x, M_I)
-  m = _kernel(U)
-  #@assert rows(m) == degree(O)
-  #@assert cols(m) == 2*degree(O)
-  I = ideal(O, _hnf_modular_eldiv(submat(m, 1:degree(O), 1:degree(O)), minimum(I), :lowerleft))
-  return f(I)
-end
-
-function _kernel(x::fmpz_mat)
-  H, U = hnf_with_transform(x)
-  i = 1
-  for i in 1:rows(H)
-    if is_zero_row(H, i)
-      break
-    end
-  end
-  return submat(U, i:rows(U), 1:cols(U))
-end
+################################################################################
+#
+#  Strong exact division
+#
+################################################################################
 
 function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   n = euclid(x)
@@ -273,6 +273,101 @@ function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   return q
 end
 
+################################################################################
+#
+#  Inverse element
+#
+################################################################################
+
+function inv(x::NfMaxOrdQuoRingElem)
+  return divexact(one(parent(x)), x)
+end
+
+################################################################################
+#
+#  Euclidean function
+#
+################################################################################
+
+function euclid(x::NfMaxOrdQuoRingElem)
+  if is_zero(x)
+    return fmpz(-1)
+  end
+
+  U = vcat(representation_mat(x.elem), basis_mat(parent(x)))
+
+  U = hnf_modular_eldiv(U, minimum(parent(x).ideal))
+
+  z = fmpz(1)
+
+  for i in 1:degree(base_ring(parent(x)))
+    mul!(z, z, U[i, i])
+  end
+  return z
+end
+
+################################################################################
+#
+#  Division with remainder
+#
+################################################################################
+
+function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+  q = rand(parent(x))
+  r = x - q*y
+  e = euclid(y)
+  while euclid(r) < e
+    q = rand(parent(x))
+    r = x - q*y
+  end
+  return q, r
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(Q::NfMaxOrdQuoRing)
+  A = basis_mat(Q)
+  B = basis(base_ring(Q))
+  z = rand(fmpz(1):A[1,1]) * B[1]
+
+  for i in 2:rows(A)
+    z = z + rand(fmpz(1):A[i, i]) * B[i]
+  end
+
+  return Q(z)
+end
+
+################################################################################
+#
+#  Annihilator
+#
+################################################################################
+
+function annihilator(x::NfMaxOrdQuoRingElem)
+  I = parent(x).ideal
+  O = base_ring(parent(x))
+  f = NfMaxOrdQuoMap(O, parent(x))
+  M_I = basis_mat(I)
+  M_x = representation_mat(x.elem)
+  U = vcat(M_x, M_I)
+  m = _kernel(U)
+  #@assert rows(m) == degree(O)
+  #@assert cols(m) == 2*degree(O)
+  I = ideal(O, _hnf_modular_eldiv(submat(m, 1:degree(O), 1:degree(O)),
+                                  minimum(I), :lowerleft))
+  return f(I)
+end
+
+################################################################################
+#
+#  GCD
+#
+################################################################################
+
 function gcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
@@ -283,6 +378,12 @@ function gcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   return f(I)
 end
+
+################################################################################
+#
+#  Extended extended GCD
+#
+################################################################################
 
 function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   Q = parent(x)
@@ -332,21 +433,6 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     V[1+i, 1 + d + i] = 1
   end
 
-#  C = MatrixSpace(ZZ, 1, d)()::fmpz_mat
-#  for i in 1:d
-#    C[1, i] = a[i]
-#  end
-#
-#  IdMat = one(MatrixSpace(ZZ, d, d))
-#  ZeMat = zero(MatrixSpace(ZZ, d, d))
-#
-#  U = hcat(MatrixSpace(ZZ, 3*d + 1, 1)(), vcat(vcat(vcat(C, M_e), M_f), M_I))
-#  U = hcat(U, vcat(vcat(vcat(parent(C)(), IdMat), ZeMat), ZeMat))
-#  U = hcat(U, vcat(vcat(vcat(parent(C)(), ZeMat), IdMat), ZeMat))
-#  U[1, 1] = 1
-#
-#  @assert U == V
-
   U = V
 
   U = hnf_modular_eldiv(U, minimum(Q.ideal))::fmpz_mat
@@ -362,7 +448,13 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   return g, u, v, -f, e
 end
 
-function howell_form(A::Mat{NfMaxOrdQuoRingElem})
+################################################################################
+#
+#  Howell form
+#
+################################################################################
+
+function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
   #A = deepcopy(B)
   n = rows(A)
   m = cols(A)
@@ -371,9 +463,7 @@ function howell_form(A::Mat{NfMaxOrdQuoRingElem})
   end
   for j in 1:m
     for i in j+1:n
-      #print("Computing xgcd of $(_raw_getindex(A,j,j)), $(_raw_getindex(A,i,j))\n")
       g,s,t,u,v = xxgcd(A[j,j], A[i,j])
-      #println("$g $s $t $u $v ")
       for k in 1:m
         t1 = s*A[j, k] + t*A[i, k]
         t2 = u*A[j, k] + v*A[i, k]
@@ -381,29 +471,13 @@ function howell_form(A::Mat{NfMaxOrdQuoRingElem})
         A[i, k] = t2
       end
     end
-    #println(A)
   end
-  #println("I have a triangular matrix:")
-  #println(A)
   T = MatrixSpace(base_ring(A), 1, cols(A))()
   # We do not normalize!
   for j in 1:m
     if !is_zero(A[j,j]) != 0
-#      #println("nonzero case")
-#      u = _unit(_raw_getindex(A,j,j), A._n)
-#      for k in 1:m
-#        t1 = mod(u*_raw_getindex(A,j,k), A._n)
-#        ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &A, j - 1, k - 1, t1)
-#      end
-#      for i in 1:j-1
-#        q = UInt(prem(- Int(div(_raw_getindex(A, i, j), _raw_getindex(A, j, j))), Int(A._n)))
-#        for k in j:m
-#          _raw_setindex(A, i, k, mod(_raw_getindex(A, i, k) + q *_raw_getindex(A, j, k), A._n))
-#        end
-#      end
-      #print("computing the annihilator for $j ... ")
       a = annihilator(A[j, j])
-      #println("annihilator is $l")
+
       if is_zero(a)
         continue
       end
@@ -429,45 +503,43 @@ function howell_form(A::Mat{NfMaxOrdQuoRingElem})
   return A
 end
 
-elem_type(::NfMaxOrdQuoRing) = NfMaxOrdQuoRingElem
-
-zero(Q::NfMaxOrdQuoRing) = Q(zero(base_ring(Q)))
-
-deepcopy(x::NfMaxOrdQuoRingElem) = NfMaxOrdQuoRingElem(parent(x), x.elem)
+################################################################################
+#
+#  Functions for matrix spaces
+#
+################################################################################
 
 function call(M::MatrixSpace{NfMaxOrdQuoRingElem}, x::Mat{NfOrderElem})
-  base_ring(base_ring(M)) != base_ring(parent(x)) && error("Base rings do not coincide")
+  base_ring(base_ring(M)) != base_ring(parent(x)) &&
+      error("Base rings do not coincide")
   return M(map(base_ring(M), x.entries))
 end
 
-function call(M::MatrixSpace{NfOrderElem}, x::MatElem{fmpz})
-  return M(NfOrderElem[ base_ring(M)(x[i, j]) for i in 1:rows(x), j in 1:cols(x)])
-end
+################################################################################
+#
+#  Hensel Lifting
+#
+################################################################################
 
-elem_type(::NfMaximalOrder) = NfOrderElem
-
-# Copy B into A at position (i,j)
-function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
-  for k in 0:rows(B)-1
-    for l in 0:cols(B)-1
-      d = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &B, k, l)
-      t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &A, i - 1 + k, j - 1 + l)
-      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, d)
-    end
-  end
-end
-
-## Hensel
-
-function root_hensel(f::Poly{NfOrderElem})
+## Hensel lifting of roots
+# This will fail for too large input
+# Need to incorporate the explicit lifting bounds
+function _root_hensel(f::Poly{NfOrderElem})
   O = base_ring(f)
 
   # First we find a prime ideal such that f is squarefree modulo P 
   # (The discriminant of f has only finitely many divisors).
 
-  p = 1
+  p = 3
+
+  fder = derivative(f)
 
   found_prime = false
+
+  # Dummy variable
+  Q = NfMaximalOrderIdeal(O)
+  pi_F = NfMaxOrdToFqNmodMor()
+  lin_factor = Array{fq_nmod_poly, 1}()
 
   while !found_prime
     p = next_prime(p)
@@ -479,18 +551,117 @@ function root_hensel(f::Poly{NfOrderElem})
     lP = prime_decomposition(O, p)
 
     for P in lP
-      F, pi = ResidueField(O, P[1])
+      F, pi_F = ResidueField(O, P[1])
 
-      fmodP = pi(f)
+      fmodP = pi_F(f)
 
-      if issquarefree(fmodP)
-        found_prime = true
-        break
+      if !issquarefree(fmodP)
+        continue
       end
+
+      fac = factor(fmodP)
+
+      for i in keys(fac)
+        if degree(i) == 1
+          push!(lin_factor, i)
+        end
+      end
+      
+      Q = P[1]
+      found_prime = true
+      break
     end
   end
-  return F, pi, P
+
+  fmodQ = pi_F(f)
+
+
+  for j in 1:length(lin_factor)
+
+    zero_mod_Q = - coeff(lin_factor[j], 0)
+    
+    # The following should be a uniformizing element
+    Q_pi = Q.gen_two
+
+    @assert fmodQ(zero_mod_Q) == 0
+
+    # This is the first step
+
+    R, pi_R = quo(O, Q^2)
+
+    t1 = divexact(pi_R(f(pi_F\zero_mod_Q)), pi_R(Q_pi))
+    t2 = -inv(pi_R(fder(pi_F\zero_mod_Q)))
+    new_a = pi_R\(pi_R(pi_F\zero_mod_Q) + t1*t2*pi_R(Q_pi))
+    #return pi_R(f)
+
+    old_a = new_a
+
+    RR, pi_RR = R, pi_R
+
+    I = Q^2
+
+    reconstructed_new = old_a
+    reconstructed_old = reconstructed_new
+
+    stabilized = -1
+
+    for i in 2:20
+      if reconstructed_new == reconstructed_old
+        stabilized = stabilized + 1
+      else
+        stabilized = 0
+      end
+
+      if stabilized >= 3
+        if f(reconstructed_new) == 0
+          return reconstructed_new
+        else
+          stabilized = 0
+        end
+      end
+
+      reconstructed_old = reconstructed_new
+      old_a = new_a
+      R, pi_R = RR, pi_RR
+      I = I * Q
+
+      # From Q^i -> Q^(i+1)
+
+      RR, pi_RR = quo(O, I)
+      t1 = divexact(pi_RR(f(old_a)), pi_RR(Q_pi)^(i))
+      t2 = pi_RR(pi_F\(-inv(pi_F(fder(old_a)))))
+      new_a = pi_RR\(pi_RR(old_a) + t1*t2*pi_RR((Q_pi))^(i))
+
+      # Try to reconstruct:
+
+      B = basis_mat(I)
+      L = lll(B)
+
+      rhs = MatrixSpace(ZZ, degree(O), 1)(elem_in_basis(new_a)'')
+      lhs = transpose(L)
+
+      X, d = solve(lhs, rhs)
+
+      zz = [ fmpq(BigInt(X[i, 1])//BigInt(d) - round(BigInt(X[i, 1])//BigInt(d))) for i in 1:degree(O)]
+
+      cden = den(zz[1])
+
+      for i in 2:degree(O)
+        cden = lcm(cden, den(zz[i]))
+      end
+
+      zz_num = [ num(cden*zz[i]) for i in 1:degree(O) ]
+
+      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
+
+      w = v*L
+
+      # There is no slower function
+
+      reconstructed_new = O(fmpz[ divexact(w[1, i], cden) for i in 1:degree(O) ])
+
+      @assert iszero(pi_RR(f(new_a)))
+    end
+  end
 end
 
-  
-  

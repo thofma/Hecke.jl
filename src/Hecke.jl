@@ -72,7 +72,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
-             howell_form
+             howell_form, needs_parentheses, is_negative, parent_type
 
 export AnticNumberField, hash, update, nf, next_prime, dot
 

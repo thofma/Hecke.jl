@@ -517,4 +517,34 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   return X, r
 end
 
+# Another kernel function
+function _kernel(x::fmpz_mat)
+  H, U = hnf_with_transform(x)
+  i = 1
+  for i in 1:rows(H)
+    if is_zero_row(H, i)
+      break
+    end
+  end
+  return submat(U, i:rows(U), 1:cols(U))
+end
+
+################################################################################
+#
+#  Copy matrix into another matrix
+#
+################################################################################
+
+# Copy B into A at position (i, j)
+function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
+  for k in 0:rows(B) - 1
+    for l in 0:cols(B) - 1
+      d = ccall((:fmpz_mat_entry, :libflint),
+                Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &B, k, l)
+      t = ccall((:fmpz_mat_entry, :libflint),
+                Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &A, i - 1 + k, j - 1 + l)
+      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, d)
+    end
+  end
+end
 
