@@ -53,6 +53,8 @@ basis_mat(Q::NfMaxOrdQuoRing) = Q.basis_mat
 
 parent(x::NfMaxOrdQuoRingElem) = x.parent
 
+parent_type(::Type{NfMaxOrdQuoRingElem}) = NfMaxOrdQuoRing
+
 ################################################################################
 #
 #  Functions to allow polynomial and polynomial ring constructions
@@ -167,6 +169,8 @@ end
 ################################################################################
 
 iszero(x::NfMaxOrdQuoRingElem) = iszero(x.elem)
+
+is_zero(x::NfMaxOrdQuoRingElem) = iszero(x)
 
 isone(x::NfMaxOrdQuoRingElem) = isone(x.elem)
 
@@ -454,6 +458,21 @@ end
 #
 ################################################################################
 
+function _pivot(A, start_row, col)
+  if !is_zero(A, start_row, col)
+    return 1;
+  end
+
+  for j in start_row + 1:rows(A)
+    if !is_zero(A[j, col])
+      swap_rows!(A, j, start_row)
+      return -1
+    end
+  end
+
+  return 0
+end
+
 function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
   #A = deepcopy(B)
   n = rows(A)
@@ -461,17 +480,27 @@ function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
   if n < m
     A = vcat(A, MatrixSpace(base_ring(A), m-n, m)())
   end
-  for j in 1:m
-    for i in j+1:n
+  row = 1
+  col = 1
+  while row <= rows(A) && col <= cols(A)
+    if _pivot(A, row, col) == 0
+      col = col + 1
+      continue
+    end
+    for i in (row + 1):rows(A)
       g,s,t,u,v = xxgcd(A[j,j], A[i,j])
-      for k in 1:m
+
+      for k in col:m
         t1 = s*A[j, k] + t*A[i, k]
         t2 = u*A[j, k] + v*A[i, k]
         A[j, k] = t1
         A[i, k] = t2
       end
     end
+    row = row + 1;
+    col = col + 1;
   end
+  println("Matrix is now $A")
   T = MatrixSpace(base_ring(A), 1, cols(A))()
   # We do not normalize!
   for j in 1:m
