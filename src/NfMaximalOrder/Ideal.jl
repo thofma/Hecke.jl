@@ -1,4 +1,4 @@
-#i###############################################################################
+################################################################################
 #
 #   NfMaximalOrderIdeals.jl : ideals in Nemo
 #
@@ -813,7 +813,28 @@ function basis(A::NfMaximalOrderIdeal)
     return A.basis
   end
 end
-        
+    
+function basis_mat_prime_deg_1(A::NfMaximalOrderIdeal)
+  @assert A.is_prime == 1
+  @assert A.minimum == A.norm
+  O = order(A)
+  n = degree(O)
+  b = MatrixSpace(ZZ, n, n)(1)
+
+  K, mK = ResidueField(O, A)
+  bas = basis(O)
+  if isone(bas[1])
+    b[1,1] = A.minimum
+  else
+    b[1,1] = fmpz(coeff(mK(bas[1]), 0))
+  end
+  for i=2:n
+    b[i,1] = fmpz(coeff(mK(bas[i]), 0))
+  end
+  return b
+end
+
+
 @doc """
   basis_mat(A::NfMaximalOrderIdeal) -> fmpz_mat
 
@@ -823,6 +844,13 @@ end
 function basis_mat(A::NfMaximalOrderIdeal)
   if isdefined(A, :basis_mat)
     return A.basis_mat
+  end
+
+  if isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum
+    A.basis_mat = basis_mat_prime_deg_1(A)
+    return A.basis_mat
+  else
+#    println("bas mat of $A")
   end
 
   if isdefined(A, :princ_gen)
