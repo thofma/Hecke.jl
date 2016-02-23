@@ -28,7 +28,7 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaximalOrder, FqNmodFiniteField}
 
   function NfMaxOrdToFqNmodMor()
     r = new()
-    r.header = MapHeader()
+    r.header = MapHeader{NfMaximalOrder, FqNmodFiniteField}()
     return r
   end
   
@@ -58,6 +58,25 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaximalOrder, FqNmodFiniteField}
 
     z.header = MapHeader{NfMaximalOrder, FqNmodFiniteField}(O, F, _image, _preimage)
 
+    return z
+  end
+end
+
+type NfMaxOrdQuoMap <: Map{NfMaximalOrder, NfMaxOrdQuoRing}
+  header::MapHeader{NfMaximalOrder, NfMaxOrdQuoRing}
+
+  function NfMaxOrdQuoMap(O::NfMaximalOrder, Q::NfMaxOrdQuoRing)
+    z = new()
+    
+    _image = function (x::NfOrderElem)
+      return Q(x)
+    end
+
+    _preimage = function (x::NfMaxOrdQuoRingElem)
+      return x.elem
+    end
+
+    z.header = MapHeader(O, Q, _image, _preimage)
     return z
   end
 end
@@ -133,11 +152,44 @@ end
 
 function call(f::NfMaxOrdToFqNmodMor, p::Poly{NfOrderElem})
   F = codomain(f)
-  Fx,_ = PolynomialRing(F, "\$")
+  Fx,_ = PolynomialRing(F, "_\$")
 
   ar = NfOrderElem[ coeff(p, i) for i in 0:degree(p) ]
 
-  println(typeof(ar))
+  z = Fx(map(f, ar))
+
+  return z
+end
+
+function call(f::NfMaxOrdQuoMap, I::NfMaximalOrderIdeal)
+  O = domain(f)
+  Q = codomain(f)
+  B = Q.ideal + I
+  b = basis(B)
+
+  z = O()
+
+  while true
+    z = rand(fmpz(1):norm(Q.ideal)^2) * b[1]
+
+    for i in 2:degree(O)
+      z = z + rand(fmpz(1):norm(Q.ideal)^2) * b[i]
+    end
+
+    if norm(ideal(O, z) + ideal(O, O(norm(Q.ideal)))) == norm(B)
+      break
+    end
+  end
+
+  return Q(z)
+end
+
+
+function call(f::NfMaxOrdQuoMap, p::Poly{NfOrderElem})
+  F = codomain(f)
+  Fx,_ = PolynomialRing(F, "_\$")
+
+  ar = NfOrderElem[ coeff(p, i) for i in 0:degree(p) ]
 
   z = Fx(map(f, ar))
 
@@ -149,3 +201,4 @@ base_ring(::NfMaximalOrder) = Union{}
 Nemo.needs_parentheses(::NfOrderElem) = true
 
 Nemo.is_negative(::NfOrderElem) = false
+

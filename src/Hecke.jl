@@ -71,8 +71,9 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
-             MatrixSpace, contains, overlaps, solve, unique_integer,
-             minpoly, charpoly, gcd, howell_form
+             MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
+             minpoly, charpoly,
+             howell_form, needs_parentheses, is_negative, parent_type
 
 export AnticNumberField, hash, update, nf, next_prime, dot
 

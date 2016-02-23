@@ -37,6 +37,8 @@ export NfMaximalOrder
 export MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
        degree, index, is_index_divisor, discriminant
 
+elem_type(::NfMaximalOrder) = NfOrderElem
+
 ################################################################################
 #
 #  Field access
