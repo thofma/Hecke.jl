@@ -2,7 +2,7 @@
 
 ## Ideals
 
-<a name="nf(x::Hecke.NfMaximalOrderIdeal) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/Ideal.jl:130"></a>
+<a name="nf(x::Hecke.NfMaximalOrderIdeal) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/Ideal.jl:132"></a>
 
 ```
 nf(I::NfMaximalOrderIdeal) -> AnticNumberField

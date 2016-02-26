@@ -2,7 +2,7 @@
 
 ## Creation
 
-<a name="call(O::Hecke.GenNfOrd, a::Nemo.nf_elem, check::Bool) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:156"></a>
+<a name="call(O::Hecke.GenNfOrd, a::Nemo.nf_elem, check::Bool) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:159"></a>
 
 ---
 
@@ -13,7 +13,7 @@ call(O::GenNfOrd, a::nf_elem, check::Bool = true) -> NfOrderElem
 > Given an element $a$ of the ambient number field of $\mathcal O$, this function coerces the element into $\mathcal O$. It will be checked that $a$ is contained in $\mathcal O$ if and only if `check` is `true`.
 
 
-<a name="call(O::Hecke.GenNfOrd, a::Union{Integer,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:174"></a>
+<a name="call(O::Hecke.GenNfOrd, a::Union{Integer,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:177"></a>
 
 ---
 
@@ -24,7 +24,7 @@ call(O::GenNfOrd, a::Union{fmpz, Integer}) -> NfOrderElem
 > Given an element $a$ of type `fmpz` or `Integer`, this function coerces the element into $\mathcal O$. It will be checked that $a$ is contained in $\mathcal O$ if and only if `check` is `true`.
 
 
-<a name="call(O::Hecke.GenNfOrd, arr::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:184"></a>
+<a name="call(O::Hecke.GenNfOrd, arr::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:187"></a>
 
 ---
 
@@ -35,7 +35,7 @@ call(O::GenNfOrd, arr::Array{fmpz, 1})
 > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 
 
-<a name="call{T<:Integer}(O::Hecke.GenNfOrd, arr::Array{T<:Integer,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:194"></a>
+<a name="call{T<:Integer}(O::Hecke.GenNfOrd, arr::Array{T<:Integer,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:197"></a>
 
 ---
 
@@ -46,7 +46,7 @@ call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
 > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 
 
-<a name="call(O::Hecke.GenNfOrd, a::Nemo.nf_elem, arr::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:206"></a>
+<a name="call(O::Hecke.GenNfOrd, a::Nemo.nf_elem, arr::Array{Nemo.fmpz,1}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:209"></a>
 
 ---
 
@@ -57,7 +57,7 @@ call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrderElem
 > This function constructs the element of $\mathcal O$ with coefficient vector `arr`. It is assumed that the corresponding element of the ambient number field is $a$.
 
 
-<a name="call(O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:216"></a>
+<a name="call(O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:219"></a>
 
 ---
 
@@ -68,7 +68,7 @@ call(O::GenNfOrd) -> NfOrderElem
 > This function constructs a new element of $\mathcal O$ which is set to $0$.
 
 
-<a name="zero(O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:379"></a>
+<a name="zero(O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:382"></a>
 
 ---
 
@@ -79,7 +79,7 @@ zero(O::GenNford) -> NfOrderElem
 > Returns an element of $\mathcal O$ which is set to zero.
 
 
-<a name="one(O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:387"></a>
+<a name="one(O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:390"></a>
 
 ---
 
@@ -92,7 +92,7 @@ one(O::GenNfOrd) -> NfOrderElem
 
 ## Basic invariants
 
-<a name="parent(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:231"></a>
+<a name="parent(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:234"></a>
 
 ---
 
@@ -103,7 +103,7 @@ parent(a::NfOrderElem) -> GenNfOrd
 > Returns the order of which $a$ is an element.
 
 
-<a name="elem_in_nf(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:240"></a>
+<a name="elem_in_nf(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:243"></a>
 
 ---
 
@@ -114,7 +114,7 @@ elem_in_nf(a::NfOrderElem) -> nf_elem
 > Returns the element $a$ considered as an element of the ambient number field.
 
 
-<a name="elem_in_basis(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:253"></a>
+<a name="elem_in_basis(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:256"></a>
 
 ---
 
@@ -125,7 +125,7 @@ elem_in_basis(a::NfOrderElem) -> Array{fmpz, 1}
 > Returns the coefficient vector of $a$.
 
 
-<a name="==(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:287"></a>
+<a name="==(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:290"></a>
 
 ---
 
@@ -136,7 +136,7 @@ elem_in_basis(a::NfOrderElem) -> Array{fmpz, 1}
 > Returns whether $x$ and $y$ are equal.
 
 
-<a name="deepcopy(x::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:303"></a>
+<a name="deepcopy(x::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:306"></a>
 
 ---
 
@@ -147,7 +147,7 @@ deepcopy(x::NfOrderElem) -> NfOrderElem
 > Returns a copy of $x$.
 
 
-<a name="in(a::Nemo.nf_elem, O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:341"></a>
+<a name="in(a::Nemo.nf_elem, O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:344"></a>
 
 ---
 
@@ -158,7 +158,7 @@ in(a::nf_elem, O::GenNfOrd) -> Bool
 > Checks wether $a$ lies in $\mathcal O$.
 
 
-<a name="den(a::Nemo.nf_elem, O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:358"></a>
+<a name="den(a::Nemo.nf_elem, O::Hecke.GenNfOrd) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:361"></a>
 
 ---
 
@@ -171,7 +171,7 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 
 ## Binary and unary operations
 
-<a name="-(x::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:412"></a>
+<a name="-(x::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:451"></a>
 
 ---
 
@@ -182,6 +182,14 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 > Returns the additive inverse of $x$.
 
 
+```
+-(x)
+```
+
+Unary minus operator.
+
+<a name="*(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:469"></a>
+
 ---
 
 ```
@@ -189,6 +197,15 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 ```
 
 > Returns $x \cdot y$.
+
+
+```
+*(x, y...)
+```
+
+Multiplication operator. `x*y*z*...` calls this function with all arguments, i.e. `*(x, y, z, ...)`.
+
+<a name="+(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:481"></a>
 
 ---
 
@@ -199,7 +216,7 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 > Returns $x + y$.
 
 
-<a name="-(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:454"></a>
+<a name="-(x::Hecke.NfOrderElem, y::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:493"></a>
 
 ---
 
@@ -209,13 +226,37 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 
 > Returns $x - y$.
 
+
+```
+-(x, y)
+```
+
+Subtraction operator.
+
+<a name="*(x::Hecke.NfOrderElem, y::Nemo.fmpz) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:519"></a>
+
+```
+*(x, y...)
+```
+
+Multiplication operator. `x*y*z*...` calls this function with all arguments, i.e. `*(x, y, z, ...)`.
+
+<a name="+(x::Hecke.NfOrderElem, y::Nemo.fmpz) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:541"></a>
+
+```
++(x, y...)
+```
+
+Addition operator. `x+y+z+...` calls this function with all arguments, i.e. `+(x, y, z, ...)`.
+
 ---
 
 ```
-*(x::NfOrderElem, y::Union{fmpz, Integer})
++(x::GenNfOrdIdl, y::GenNfOrdIdl)
 ```
 
-> Returns $x \cdot y$.
+> Returns $x + y$.
+
 
 ---
 
@@ -226,7 +267,25 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 > Returns $x + y$.
 
 
-<a name="-(x::Hecke.NfOrderElem, y::Union{Integer,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:500"></a>
+---
+
+```
++(x::NfOrderElem, y::NfOrderElem) -> NfOrderElem
+```
+
+> Returns $x + y$.
+
+
+---
+
+```
++(x::AbGrpElem, y::AbGrpElem) -> AbGrpElem
+```
+
+> Computes $x + y$.
+
+
+<a name="-(x::Hecke.NfOrderElem, y::Union{Integer,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:555"></a>
 
 ---
 
@@ -236,6 +295,15 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 
 > Returns $x - y$.
 
+
+```
+-(x, y)
+```
+
+Subtraction operator.
+
+<a name="^(x::Hecke.NfOrderElem, y::Union{Int64,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:582"></a>
+
 ---
 
 ```
@@ -243,6 +311,15 @@ den(a::nf_elem, O::GenNfOrd) -> fmpz
 ```
 
 > Returns $x^y$.
+
+
+```
+^(x, y)
+```
+
+Exponentiation operator.
+
+<a name="mod(a::Hecke.NfOrderElem, m::Union{Int64,Nemo.fmpz}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:601"></a>
 
 ---
 
@@ -253,7 +330,7 @@ mod(a::NfOrderElem, m::Union{fmpz, Int}) -> NfOrderElem
 > Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding element.
 
 
-<a name="powermod(a::Hecke.NfOrderElem, i::Integer, m::Nemo.fmpz) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:600"></a>
+<a name="powermod(a::Hecke.NfOrderElem, i::Integer, m::Nemo.fmpz) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:662"></a>
 
 ---
 
@@ -266,7 +343,7 @@ powermod(a::NfOrderElem, i::Integer, m::fmpz) -> NfOrderElem
 
 ## Representation matrices
 
-<a name="representation_mat(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:615"></a>
+<a name="representation_mat(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:677"></a>
 
 ---
 
@@ -277,7 +354,7 @@ representation_mat(a::NfOrderElem) -> fmpz_mat
 > Returns the representation matrix of the element $a$.
 
 
-<a name="representation_mat(a::Hecke.NfOrderElem, K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:630"></a>
+<a name="representation_mat(a::Hecke.NfOrderElem, K::Nemo.AnticNumberField) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:692"></a>
 
 ```
 representation_mat(a::NfOrderElem, K::AnticNumberField) -> FakeFmpqMat
@@ -288,7 +365,7 @@ representation_mat(a::NfOrderElem, K::AnticNumberField) -> FakeFmpqMat
 
 ## Trace and norm
 
-<a name="trace(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:651"></a>
+<a name="trace(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:713"></a>
 
 ---
 
@@ -299,7 +376,7 @@ trace(a::NfOrderElem) -> fmpz
 > Returns the trace of $a$.
 
 
-<a name="norm(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:667"></a>
+<a name="norm(a::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:729"></a>
 
 ---
 
@@ -312,7 +389,7 @@ norm(a::NfOrderElem) -> fmpz
 
 ## Random elements
 
-<a name="rand{T<:Union{Integer,Nemo.fmpz}}(O::Hecke.GenNfOrd, R::UnitRange{T<:Union{Integer,Nemo.fmpz}}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:696"></a>
+<a name="rand{T<:Union{Integer,Nemo.fmpz}}(O::Hecke.GenNfOrd, R::UnitRange{T<:Union{Integer,Nemo.fmpz}}) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:758"></a>
 
 ---
 
@@ -323,7 +400,7 @@ rand{T <: Union{Integer, fmpz}}(O::GenNfOrd, R::UnitRange{T}) -> NfOrderElem
 > Computes a coefficient vector with entries uniformly distributed in `R` and returns the corresponding element of the order.
 
 
-<a name="rand(O::Hecke.GenNfOrd, n::Integer) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:714"></a>
+<a name="rand(O::Hecke.GenNfOrd, n::Integer) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:776"></a>
 
 ---
 
@@ -336,7 +413,7 @@ rand(O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
 
 ## Conjugates
 
-<a name="conjugates_arb(x::Hecke.NfOrderElem, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:840"></a>
+<a name="conjugates_arb(x::Hecke.NfOrderElem, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:902"></a>
 
 ---
 
@@ -344,12 +421,12 @@ rand(O::GenNfOrd, n::Union{Integer, fmpz}) -> NfOrderElem
 conjugates_arb(x::NfOrderElem, abs_tol::Int) -> Tuple{Array{arb, 1}, Array{acb, 1}}
 ```
 
-> Compute the the conjugates of `x` as elements of type `arb` and `acb` respectively. Recall that we order the complex conjugates $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that $\sigma_{i}(x) = \overline{sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
+> Compute the the conjugates of `x` as elements of type `arb` and `acb` respectively. Recall that we order the complex conjugates $\sigma_{r+1}(x),...,\sigma_{r+2s}(x)$ such that $\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}$ for $r + 1 \leq i \leq r + s$.
 >
 > Every entry `y` of the arrays returned satisfies `radius(y) < 2^abs_tol` or `radius(real(y)) < 2^abs_tol`, `radius(imag(y)) < 2^abs_tol` respectively.
 
 
-<a name="minkowski_map(a::Hecke.NfOrderElem, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:816"></a>
+<a name="minkowski_map(a::Hecke.NfOrderElem, abs_tol::Int64) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:878"></a>
 
 ---
 
@@ -360,7 +437,7 @@ minkowski_map(a::NfOrderElem, abs_tol::Int) -> Array{arb, 1}
 > Returns the image of $a$ under the Minkowski embedding. Every entry of the array returned is of type `arb` with radius less then `2^abs_tol`.
 
 
-<a name="conjugates_log(x::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:854"></a>
+<a name="conjugates_log(x::Hecke.NfOrderElem) at /home/thofmann/.julia/v0.4/Hecke/src/NfMaximalOrder/GenNfOrd.jl:916"></a>
 
 ---
 
