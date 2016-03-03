@@ -33,7 +33,8 @@
 ################################################################################
 
 export NfMaxOrdQuoRing, NfMaxOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
-       gcd, inv, parent, show, divexact, isone, iszero
+       gcd, inv, parent, show, divexact, isone, iszero, howell_form,
+       strong_echelon_form, triangularize, det
 
 ################################################################################
 #
@@ -52,6 +53,8 @@ ideal(Q::NfMaxOrdQuoRing) = Q.ideal
 basis_mat(Q::NfMaxOrdQuoRing) = Q.basis_mat
 
 parent(x::NfMaxOrdQuoRingElem) = x.parent
+
+parent_type(::Type{NfMaxOrdQuoRingElem}) = NfMaxOrdQuoRing
 
 ################################################################################
 #
@@ -167,6 +170,8 @@ end
 ################################################################################
 
 iszero(x::NfMaxOrdQuoRingElem) = iszero(x.elem)
+
+is_zero(x::NfMaxOrdQuoRingElem) = iszero(x)
 
 isone(x::NfMaxOrdQuoRingElem) = isone(x.elem)
 
@@ -316,7 +321,7 @@ function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   q = rand(parent(x))
   r = x - q*y
   e = euclid(y)
-  while euclid(r) < e
+  while euclid(r) >= e
     q = rand(parent(x))
     r = x - q*y
   end
@@ -450,37 +455,98 @@ end
 
 ################################################################################
 #
-#  Howell form
+#  Triangularization
 #
 ################################################################################
 
-function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
-  #A = deepcopy(B)
+function _pivot(A, start_row, col)
+  if !is_zero(A[start_row, col])
+    return 1;
+  end
+
+  for j in start_row + 1:rows(A)
+    if !is_zero(A[j, col])
+      swap_rows!(A, j, start_row)
+      return -1
+    end
+  end
+
+  return 0
+end
+
+function strong_echelon_form(A::Mat{NfMaxOrdQuoRingElem})
+  B = deepcopy(A)
+
+  if rows(B) < cols(B)
+    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+  end
+
+  strong_echelon_form!(B)
+  return B
+end
+
+function triangularize!(A::Mat{NfMaxOrdQuoRingElem})
   n = rows(A)
   m = cols(A)
-  if n < m
-    A = vcat(A, MatrixSpace(base_ring(A), m-n, m)())
-  end
-  for j in 1:m
-    for i in j+1:n
-      g,s,t,u,v = xxgcd(A[j,j], A[i,j])
-      for k in 1:m
-        t1 = s*A[j, k] + t*A[i, k]
-        t2 = u*A[j, k] + v*A[i, k]
-        A[j, k] = t1
+
+  row = 1
+  col = 1
+  while row <= rows(A) && col <= cols(A)
+    if _pivot(A, row, col) == 0
+      col = col + 1
+      continue
+    end
+    for i in (row + 1):rows(A)
+      g,s,t,u,v = xxgcd(A[row, col], A[i, col])
+
+      for k in col:m
+        t1 = s*A[row, k] + t*A[i, k]
+        t2 = u*A[row, k] + v*A[i, k]
+        A[row, k] = t1
         A[i, k] = t2
       end
     end
+    row = row + 1;
+    col = col + 1;
   end
+end
+
+function triangularize(A::Mat{NfMaxOrdQuoRingElem})
+  B = deepcopy(A)
+  triangularize!(B)
+  return B
+end
+
+################################################################################
+#
+#  Strong echelon form
+#
+################################################################################
+
+function strong_echelon_form!(A::Mat{NfMaxOrdQuoRingElem})
+  #A = deepcopy(B)
+  n = rows(A)
+  m = cols(A)
+
+  @assert n >= m
+
+  triangularize!(A)
+
   T = MatrixSpace(base_ring(A), 1, cols(A))()
+
   # We do not normalize!
   for j in 1:m
     if !is_zero(A[j,j]) != 0
+      # This is the reduction
+      for i in 1:j-1
+        q, r = divrem(A[i, j], A[j, j])
+        for l in i:m
+          A[i, l] = A[i, l] - q*A[j, l]
+        end
+      end
+
       a = annihilator(A[j, j])
 
-      if is_zero(a)
-        continue
-      end
       for k in 1:m
         T[1, k] = a*A[j, k]
       end
@@ -490,9 +556,11 @@ function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
       end
     end
 
+
     for i in j+1:m 
       g,s,t,u,v = xxgcd(A[i, i], T[1, i])
-      for k in 1:m
+
+      for k in i:m
         t1 = s*A[i, k] + t*T[1, k]
         t2 = u*A[i, k] + v*T[1, k]
         A[i, k] = t1
@@ -501,6 +569,63 @@ function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
     end
   end
   return A
+end
+
+################################################################################
+#
+#  Howell form
+#
+################################################################################
+
+function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
+  @assert rows(A) >= cols(A)
+
+  k = rows(A)
+
+  strong_echelon_form!(A)
+
+  for i in 1:rows(A)
+    if is_zero_row(A, i)
+      k = k - 1
+
+      for j in (i + 1):rows(A)
+        if !is_zero_row(A, j)
+          swap_rows!(A, i, j)
+          j = rows(A)
+          k = k + 1
+        end
+      end
+    end
+  end
+  return k
+end
+
+function howell_form(A::Mat{NfMaxOrdQuoRingElem})
+  B = deepcopy(A)
+
+  if rows(B) < cols(B)
+    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+  end
+
+  howell_form!(B)
+
+  return B
+end
+
+################################################################################
+#
+#  Determinant
+#
+################################################################################
+
+function det(M::Mat{NfMaxOrdQuoRingElem})
+  rows(M) != cols(M) && error("Matrix must be square matrix")
+  N = triangularize(M)
+  z = one(base_ring(M))
+  for i in 1:rows(N)
+    z = z * N[i, i]
+  end
+  return z
 end
 
 ################################################################################
