@@ -519,9 +519,7 @@ end
 
 # multiplication by fmpz, using two normal presentation
 
-global last
 function prod_by_int(A::NfMaximalOrderIdeal, a::fmpz)
-  global last = (A, a)
   @assert has_2_elem(A) && is_2_normal(A)
   if a==1 || a==-1 
     println("shortcut: returning ", A)
@@ -651,14 +649,14 @@ function _assure_weakly_normal_presentation(A::NfMaximalOrderIdeal)
   Amin2 = minimum(A)^2
   Amind = minimum(A)^degree(O)
 
-  B = Array(BigInt, 1, degree(O))
+  B = Array(fmpz, 1, degree(O))
 
   gen = O()
 
   # first compute something weakly normal
+  r = -Amin2:Amin2
   while true
     # Magic constant
-    r = -BigInt(Amin2):BigInt(Amin2)
     rand!(B, r)
     m = M(B)
     mm = m * basis_mat(A)
@@ -780,7 +778,7 @@ end
 @doc """
   has_basis(A::NfMaximalOrderIdeal) -> Bool
 
-    Returns wether A has a basis.
+    Returns wether A has a basis already computed.
 
 """ ->
 function has_basis(A::NfMaximalOrderIdeal)
@@ -788,7 +786,7 @@ function has_basis(A::NfMaximalOrderIdeal)
 end
 
 @doc """
-  basis(A::NfMaximalOrder) -> Array{NfOrderElem, 1}
+  basis(A::NfMaximalOrderIdeal) -> Array{NfOrderElem, 1}
 
     Returns the basis of A
 
@@ -885,21 +883,21 @@ end
 #  Simplification
 #
 ###########################################################################################
-
-# This is broken
+#CF: missing a function to compute the gcd(...) for the minimum 
+#    without 1st computing the complete inv
 
 function simplify(A::NfMaximalOrderIdeal)
   if has_2_elem(A) && is_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
-    A.minimum = gcd(A.gen_one, den(inv(A.gen_two), A.parent.order)) 
+    A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order)) 
     A.gen_one = A.minimum
     n = gcd(A.gen_one^degree(A.parent.order), ZZ(norm(A.gen_two)))
     if isdefined(A, :norm)
     end
     A.norm = n
-    A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
+    A.gen_two = mod(A.gen_two, A.gen_one^2)
     return A
   end
 end

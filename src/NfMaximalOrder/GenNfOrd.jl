@@ -523,6 +523,8 @@ end
 
 *(x::fmpz, y::NfOrderElem) = y * x
 
+Base.dot(x::fmpz, y::NfOrderElem) = y*x
+
 doc"""
 ***
     +(x::NfOrderElem, y::Union{fmpz, Integer})

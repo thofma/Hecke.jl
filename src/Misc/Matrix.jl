@@ -1,10 +1,10 @@
 export is_zero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod
 
-function Array(a::fmpz_mat)
-  A = Array(BigInt, rows(a), cols(a))
+function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
+  A = Array(T, rows(a), cols(a))
   for i = 1:rows(a)
     for j = 1:cols(a)
-      A[i,j] = a[i,j]
+      A[i,j] = T(a[i,j])
     end 
   end
   return A
