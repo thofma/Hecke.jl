@@ -285,6 +285,28 @@ function rand(rng::AbstractRNG, a::StepRange{fmpz, fmpz})
   return s + first(a)
 end
 
+function length(a::StepRange{fmpz, fmpz})
+  return a.stop - a.start +1
+end
+
+immutable RangeGeneratorfmpz <: Base.Random.RangeGenerator
+  a::StepRange{fmpz, fmpz}
+end
+
+function Base.Random.RangeGenerator(r::StepRange{fmpz,fmpz})
+    m = last(r) - first(r)
+    m < 0 && throw(ArgumentError("range must be non-empty"))
+    return RangeGeneratorfmpz(r)
+end
+
+function rand(rng::AbstractRNG, g::RangeGeneratorfmpz)
+  return rand(rng, g.a)
+end
+
+function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
+  a.start+(i-1)*Base.step(a)
+end
+
 function ^(x::fmpq, y::fmpz)
   if typemax(Int) > y
     return x^Int(y)
@@ -292,5 +314,29 @@ function ^(x::fmpq, y::fmpz)
     error("Not implemented (yet)")
   end
 end
+
+
+############################################################
+# more unsafe function that Bill does not want to have....
+############################################################
+
+function divexact!(z::fmpz, x::fmpz, y::fmpz)
+    y == 0 && throw(DivideError())
+    ccall((:fmpz_divexact, :libflint), Void, 
+          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+    z
+end
+
+function lcm!(z::fmpz, x::fmpz, y::fmpz)
+   ccall((:fmpz_lcm, :libflint), Void, 
+         (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+end
+
+function gcd!(z::fmpz, x::fmpz, y::fmpz)
+   ccall((:fmpz_gcd, :libflint), Void, 
+         (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+end
+ 
+
 
 
