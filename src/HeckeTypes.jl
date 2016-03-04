@@ -290,6 +290,10 @@ type NfOrderElem <: RingElem
   function NfOrderElem{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
     return NfOrderElem(O, map(ZZ, arr))
   end
+
+  function NfOrderElem(x::NfOrderElem)
+    return x  ### Check parent?
+  end
 end
 
 ################################################################################
@@ -848,6 +852,8 @@ type roots_ctx
   minkowski_mat_p::Int
 
   cache::Array{BigFloat, 2} # to avoid allocation elsewhere.
+  cache_z1::fmpz_mat
+  cache_z2::fmpz_mat
   function roots_ctx()
     r = new()
     return r
