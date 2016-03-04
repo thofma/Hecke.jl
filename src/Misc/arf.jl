@@ -246,9 +246,9 @@ end
 
 # this function is crap
 function show(io::IO, a::arf)
-  #cstr = ccall((:arf_get_str, :libarb), Ptr{Uint8}, (Ptr{arf}, ), a.data)
+  #cstr = ccall((:arf_get_str, :libarb), Ptr{UInt8}, (Ptr{arf}, ), a.data)
   #print(io, bytestring(cstr))
-  #ccall((:flint_free, :libflint), Void, (Ptr{Uint8},), cstr)
+  #ccall((:flint_free, :libflint), Void, (Ptr{UInt8},), cstr)
   return show(io, BigFloat(a))
 end
 
