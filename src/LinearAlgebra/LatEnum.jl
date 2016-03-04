@@ -188,7 +188,12 @@ function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
                (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
   ccall((:fmpz_add_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
 end
-               
+
+function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
+  z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
+               (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
+  ccall((:fmpz_add_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
+end
 
 function enum_ctx_advance_level{A,B,C}(E::enum_ctx{A,B,C}, i::Int)
 #  println("i: ", i, "                                   "[1:2*i], "|")

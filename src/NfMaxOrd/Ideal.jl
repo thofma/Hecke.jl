@@ -961,21 +961,43 @@ function valuation(a::nf_elem, p::NfMaxOrdIdeal)
   if isdefined(p, :valuation)
     return p.valuation(a)
   end
-  K = nf(order(p))
+  O = order(p)
+  K = nf(O)
   pi = inv(p)
   e = divexact(K(pi.num.gen_two), pi.den)
   P = p.gen_one
-  O = p.parent.order
 
-  p.valuation = function(x::nf_elem)
-    v = -1
-    d = den(x, O)
-    x *= d
-    while gcd(den(x, O), P)==1
-      x *= e
-      v += 1
+  if mod(index(O),P) != 0
+    p.valuation = function(x::nf_elem)
+      v = -1
+      d = den(x)
+      x *= d
+      while gcd(den(x), P)==1
+        mul!(x, x, e)
+        v += 1
+      end
+      return v-valuation(d, P)[1]*p.splitting_type[1]
     end
-    return v-valuation(d, P)[1]*p.splitting_type[1]
+  else
+    # we are in the index divisor case. In larger examples, a lot of
+    # time is spent computing denominators of order elements.
+    # By using the rep-mat to multiply, we can stay in the order
+    # and still be fast (faster even than in field)...
+    M = representation_mat(pi.num.gen_two) ## reduce mod p^? ?
+    p.valuation = function(x::nf_elem)
+      v = 0
+      d = den(x, O)
+      x *= d
+      x_mat = MatrixSpace(ZZ, 1, degree(O))(elem_in_basis(O(x)))
+      Nemo.mul!(x_mat, x_mat, M)
+      while gcd(content(x_mat), P) == P  # should divide and test in place
+        ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Void,
+                        (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &x_mat, &x_mat, &P)
+        Nemo.mul!(x_mat, x_mat, M)
+        v += 1
+      end
+      return v-valuation(d, P)[1]*p.splitting_type[1]
+    end
   end
 
   return p.valuation(a)

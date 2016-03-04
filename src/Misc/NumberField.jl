@@ -340,6 +340,16 @@ function root(a::nf_elem, n::Int)
   return (false, zero(parent(a)))
 end
 
+function num(a::nf_elem)
+   const _one = fmpz(1)
+   z = copy(a)
+   ccall((:nf_elem_set_den, :libflint), Void,
+         (Ptr{nf_elem}, Ptr{fmpz}, Ptr{AnticNumberField}),
+         &z, &_one, &a.parent)
+   return z
+end
+
+copy(d::nf_elem) = deepcopy(d)
 
 ################################################################################
 #
