@@ -14,12 +14,14 @@ function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
   c = gcd(c, x.den)
   if c != 1 
-    x.num = divexact(x.num, c)
+    divexact!(x.num, x.num, c)
     x.den = div(x.den, c)
   end
   y = canonical_unit(x.den)
-  x.den *= y
-  x.num *= y
+  if !isone(y)
+    x.den *= y
+    mul!(x.num, x.num, y)
+  end
 end
 
 ################################################################################
