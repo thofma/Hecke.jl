@@ -780,6 +780,90 @@ function abs_max(A::Smat{fmpz})
   return abs(m)
 end
 
+function max(A::Smat{Int})
+  m = A.rows[1].values[1]
+  for i in A.rows
+    for j in i.values
+      m = max(m, j)
+    end
+  end
+  return m
+end
+
+function max(A::Smat{BigInt})
+  m = A.rows[1].values[1]
+  for i in A.rows
+    for j in i.values
+      if ccall((:__gmpz_cmp, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
+        &m, &j) < 0
+        m = j
+      end
+    end
+  end
+  return m
+end
+
+@doc """
+  max(A::Smat{Int}) -> Int
+  max(A::Smat{BigInt}) -> BigInt
+  max(A::Smat{fmpz}) -> fmpz
+
+  Finds the largest entry of A
+""" ->
+function max(A::Smat{fmpz})
+  m = A.rows[1].values[1]
+  for i in A.rows
+    for j in i.values
+      if cmp(m, j) < 0
+        m = j
+      end
+    end
+  end
+  return m
+end
+
+function min(A::Smat{Int})
+  m = 0
+  for i in A.rows
+    for j in i.values
+      m = min(m, j)
+    end
+  end
+  return m
+end
+
+function min(A::Smat{BigInt})
+  m = BigInt(0)
+  for i in A.rows
+    for j in i.values
+      if ccall((:__gmpz_cmp, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
+        &m, &j) > 0
+        m = j
+      end
+    end
+  end
+  return m
+end
+
+@doc """
+  min(A::Smat{Int}) -> Int
+  min(A::Smat{BigInt}) -> BigInt
+  min(A::Smat{fmpz}) -> fmpz
+
+  Finds the smallest entry of A
+""" ->
+function min(A::Smat{fmpz})
+  m = fmpz(0)
+  for i in A.rows
+    for j in i.values
+      if cmp(m, j) > 0
+        m = j
+      end
+    end
+  end
+  return m
+end
+
 function nbits(a::BigInt)
   return ndigits(a, 2)
 end
