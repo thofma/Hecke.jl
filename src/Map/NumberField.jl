@@ -105,7 +105,7 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
 
   p = characteristic(z.header.codomain)
   Zx = PolynomialRing(ZZ, "x")[1]
-  y = f(NfOrderElem(domain(f), gen(K)))
+  y = f(NfOrderElem{NfMaximalOrder}(domain(f), gen(K)))
 
   function _image(x::nf_elem)
     g = parent(K.pol)(x)

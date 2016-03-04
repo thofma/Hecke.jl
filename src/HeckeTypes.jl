@@ -245,13 +245,13 @@ end
 
 abstract GenNfOrd <: Ring{Antic}
 
-type NfOrderElem <: RingElem
+type NfOrderElem{T <: GenNfOrd} <: RingElem
   elem_in_nf::nf_elem
   elem_in_basis::Array{fmpz, 1}
   has_coord::Bool
-  parent::GenNfOrd
+  parent::T
 
-  function NfOrderElem(O::GenNfOrd)
+  function NfOrderElem(O::T)
     z = new()
     z.parent = O
     z.elem_in_nf = nf(O)() 
@@ -260,7 +260,7 @@ type NfOrderElem <: RingElem
     return z
   end
 
-  function NfOrderElem(O::GenNfOrd, a::nf_elem)
+  function NfOrderElem(O::T, a::nf_elem)
     z = new()
     z.elem_in_nf = a
     z.elem_in_basis = Array(fmpz, degree(O))
@@ -269,7 +269,7 @@ type NfOrderElem <: RingElem
     return z
   end
 
-  function NfOrderElem(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
+  function NfOrderElem(O::T, a::nf_elem, arr::Array{fmpz, 1})
     z = new()
     z.parent = O
     z.elem_in_nf = a
@@ -278,7 +278,7 @@ type NfOrderElem <: RingElem
     return z
   end
 
-  function NfOrderElem(O::GenNfOrd, arr::Array{fmpz, 1})
+  function NfOrderElem(O::T, arr::Array{fmpz, 1})
     z = new()
     z.elem_in_nf = dot(basis_nf(O), arr)
     z.has_coord = true
@@ -287,7 +287,7 @@ type NfOrderElem <: RingElem
     return z
   end
 
-  function NfOrderElem{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
+  function NfOrderElem{S <: Integer}(O::T, arr::Array{S, 1})
     return NfOrderElem(O, map(ZZ, arr))
   end
 end
@@ -429,7 +429,7 @@ type NfOrderIdealSet
 end
 
 type NfOrderIdeal <: GenNfOrdIdl
-  basis::Array{NfOrderElem, 1}
+  basis::Array{NfOrderElem{NfOrder}, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   parent::NfOrderIdealSet
@@ -471,7 +471,7 @@ type NfOrderFracIdealSet
 end
 
 type NfOrderFracIdeal
-  basis::Array{NfOrderElem, 1}
+  basis::Array{NfOrderElem{NfOrder}, 1}
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
   parent::NfOrderFracIdealSet
@@ -525,12 +525,18 @@ type NfMaximalOrder <: GenNfOrd
                                    # We annotate the concrete type when doing
                                    # unit_group(O)
 
+  base_change_const::Tuple{Float64, Float64}
+                                   # Tuple c1, c2 as in the paper of 
+                                   # Fieker-Friedrich
+
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
+
   function NfMaximalOrder(a::AnticNumberField)
     r = new(a)
     r.parent = NfMaximalOrderSet(a)
     r.signature = (-1,0)
+    r.base_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array(Any, 5)
     return r
   end
@@ -549,7 +555,7 @@ type NfMaximalOrder <: GenNfOrd
     z.basis_nf = d
     z.basis_mat = x
     z.basis_mat_inv = inv(x)
-    B = Array(NfOrderElem, n)
+    B = Array(NfOrderElem{NfMaximalOrder}, n)
     for i in 1:n
       v = fill(zero(ZZ), n)
       v[i] = ZZ(1)
@@ -575,7 +581,7 @@ type NfMaximalOrder <: GenNfOrd
     z.basis_mat = A
     z.basis_mat_inv = inv(A)
 
-    B = Array(NfOrderElem, n)
+    B = Array(NfOrderElem{NfMaximalOrder}, n)
 
     for i in 1:n
       v = fill(zero(ZZ), n)
@@ -634,11 +640,11 @@ end
 
 """ ->
 type NfMaximalOrderIdeal <: GenNfOrdIdl
-  basis::Array{NfOrderElem, 1}
+  basis::Array{NfOrderElem{NfMaximalOrder}, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   gen_one::fmpz
-  gen_two::NfOrderElem
+  gen_two::NfOrderElem{NfMaximalOrder}
   gens_short::Bool
   gens_normal::fmpz
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
@@ -649,10 +655,10 @@ type NfMaximalOrderIdeal <: GenNfOrdIdl
                            # 1 known to be prime
                            # 2 known to be not prime
   is_principal::Int        # as above
-  princ_gen::NfOrderElem
+  princ_gen::NfOrderElem{NfMaximalOrder}
   splitting_type::Tuple{Int, Int}
                            #
-  anti_uniformizer::NfOrderElem
+  anti_uniformizer::NfOrderElem{NfMaximalOrder}
                            # If A is unramified, prime with minimum p,
                            # this element is in pA^-1
                            # Used for the residue map
@@ -682,7 +688,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdl
     return r
   end
 
-  function NfMaximalOrderIdeal(a::fmpz, b::NfOrderElem)
+  function NfMaximalOrderIdeal(a::fmpz, b::NfOrderElem{NfMaximalOrder})
     # create ideal (a,b) of order(b)
     r = NfMaximalOrderIdeal(parent(b))
     r.gen_one = a
@@ -696,7 +702,7 @@ type NfMaximalOrderIdeal <: GenNfOrdIdl
     return r
   end
 
-  function NfMaximalOrderIdeal(x::NfOrderElem)
+  function NfMaximalOrderIdeal(x::NfOrderElem{NfMaximalOrder})
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
@@ -759,9 +765,9 @@ type UnitGrpCtx{T <: Union{nf_elem, FactoredElem{nf_elem}}}
   regulator::arb
   tentative_regulator::arb
   regulator_precision::Int
-  torsion_units::Array{NfOrderElem, 1}
+  torsion_units::Array{NfOrderElem{NfMaximalOrder}, 1}
   torsion_units_order::Int
-  torsion_units_gen::NfOrderElem
+  torsion_units_gen::NfOrderElem{NfMaximalOrder}
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
 
   function UnitGrpCtx(O::GenNfOrd)
@@ -1144,10 +1150,10 @@ type NfMaxOrdQuoRing <: Ring
 end
 
 type NfMaxOrdQuoRingElem <: RingElem
-  elem::NfOrderElem
+  elem::NfOrderElem{NfMaximalOrder}
   parent::NfMaxOrdQuoRing
 
-  function NfMaxOrdQuoRingElem(O::NfMaxOrdQuoRing, x::NfOrderElem)
+  function NfMaxOrdQuoRingElem(O::NfMaxOrdQuoRing, x::NfOrderElem{NfMaximalOrder})
     z = new()
     z.elem = mod(x, ideal(O))
     z.parent = O

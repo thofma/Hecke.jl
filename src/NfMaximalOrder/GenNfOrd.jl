@@ -155,13 +155,13 @@ doc"""
 > function coerces the element into $\mathcal O$. It will be checked that $a$
 > is contained in $\mathcal O$ if and only if `check` is `true`.
 """
-function call(O::GenNfOrd, a::nf_elem, check::Bool = true)
+function call{T <: GenNfOrd}(O::T, a::nf_elem, check::Bool = true)
   if check
     (x,y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfOrderElem(O, deepcopy(a), y)
+    return NfOrderElem{T}(O, deepcopy(a), y)
   else
-    return NfOrderElem(O, deepcopy(a))
+    return NfOrderElem{T}(O, deepcopy(a))
   end
 end
 
@@ -173,8 +173,8 @@ doc"""
 > function coerces the element into $\mathcal O$. It will be checked that $a$
 > is contained in $\mathcal O$ if and only if `check` is `true`.
 """
-function call(O::GenNfOrd, a::Union{fmpz, Integer})
-  return NfOrderElem(O, nf(O)(a))
+function call{T <: GenNfOrd}(O::T, a::Union{fmpz, Integer})
+  return NfOrderElem{T}(O, nf(O)(a))
 end
 
 doc"""
@@ -183,8 +183,8 @@ doc"""
 
 > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-function call(O::GenNfOrd, arr::Array{fmpz, 1})
-  return NfOrderElem(O, deepcopy(arr))
+function call{T <: GenNfOrd}(O::T, arr::Array{fmpz, 1})
+  return NfOrderElem{T}(O, deepcopy(arr))
 end
 
 doc"""
@@ -193,8 +193,8 @@ doc"""
 
 > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-function call{T <: Integer}(O::GenNfOrd, arr::Array{T, 1})
-  return NfOrderElem(O, deepcopy(arr))
+function call{T <: GenNfOrd, S <: Integer}(O::T, arr::Array{S, 1})
+  return NfOrderElem{T}(O, deepcopy(arr))
 end
 
 doc"""
@@ -205,8 +205,8 @@ doc"""
 > `arr`. It is assumed that the corresponding element of the ambient number
 > field is $a$.
 """
-function call(O::GenNfOrd, a::nf_elem, arr::Array{fmpz, 1})
-  return NfOrderElem(O, deepcopy(a), deepcopy(arr))
+function call{T <: GenNfOrd}(O::T, a::nf_elem, arr::Array{fmpz, 1})
+  return NfOrderElem{T}(O, deepcopy(a), deepcopy(arr))
 end
 
 doc"""
@@ -215,8 +215,8 @@ doc"""
 
 > This function constructs a new element of $\mathcal O$ which is set to $0$.
 """
-function call(O::GenNfOrd)
-  return NfOrderElem(O)
+function call{T <: GenNfOrd}(O::T)
+  return NfOrderElem{T}(O)
 end
 
 ################################################################################
