@@ -1,36 +1,36 @@
-export NfMaximalOrderFracIdeal
+export NfMaxOrdFracIdeal
 
-function basis_mat(x::NfMaximalOrderFracIdeal)
+function basis_mat(x::NfMaxOrdFracIdeal)
   return FakeFmpqMat(basis_mat(num(x)), den(x))
 end
 
-num(x::NfMaximalOrderFracIdeal) = x.num
+num(x::NfMaxOrdFracIdeal) = x.num
 
-den(x::NfMaximalOrderFracIdeal) = x.den
+den(x::NfMaxOrdFracIdeal) = x.den
 
-function show(io::IO, s::NfMaximalOrderFracIdealSet)
+function show(io::IO, s::NfMaxOrdFracIdealSet)
    print(io, "Set of fractional ideals of ")
    print(io, s.order)
 end
 
-function show(io::IO, id::NfMaximalOrderFracIdeal)
+function show(io::IO, id::NfMaxOrdFracIdeal)
   print(io, "1//", id.den, " * ")
   show(io, id.num)
 end
 
-function norm(A::NfMaximalOrderFracIdeal)
+function norm(A::NfMaxOrdFracIdeal)
   return norm(A.num)//A.den^degree(A.num.parent.order)
 end
 
-function minimum(A::NfMaximalOrderFracIdeal)
+function minimum(A::NfMaxOrdFracIdeal)
   return minimum(A.num)//A.den
 end
 
-function prod_by_int(A::NfMaximalOrderFracIdeal, a::fmpz)
-  return NfMaximalOrderFracIdeal(prod_by_int(A.num, a), A.den)
+function prod_by_int(A::NfMaxOrdFracIdeal, a::fmpz)
+  return NfMaxOrdFracIdeal(prod_by_int(A.num, a), A.den)
 end
 
-function inv(A::NfMaximalOrderFracIdeal)
+function inv(A::NfMaxOrdFracIdeal)
   B = inv(A.num)
   g = gcd(B.den, A.den)
   B.den = divexact(B.den, g)
@@ -38,7 +38,7 @@ function inv(A::NfMaximalOrderFracIdeal)
   return prod_by_int(B, a)
 end
 
-function simplify(A::NfMaximalOrderFracIdeal)
+function simplify(A::NfMaxOrdFracIdeal)
   simplify(A.num)
   m = minimum(A.num)
   g = gcd(m, A.den)
@@ -53,41 +53,41 @@ function simplify(A::NfMaximalOrderFracIdeal)
   return A
 end
 
-is_prime_known(A::NfMaximalOrderFracIdeal) = is_prime_known(A.num)
+is_prime_known(A::NfMaxOrdFracIdeal) = is_prime_known(A.num)
 
-function prod(a::NfMaximalOrderFracIdeal, b::NfMaximalOrderFracIdeal)
+function prod(a::NfMaxOrdFracIdeal, b::NfMaxOrdFracIdeal)
   A = prod(a.num, b.num)
-  return NfMaximalOrderFracIdeal(A, a.den*b.den)
+  return NfMaxOrdFracIdeal(A, a.den*b.den)
 end
 
-function ==(A::NfMaximalOrderFracIdeal, B::NfMaximalOrderFracIdeal)
+function ==(A::NfMaxOrdFracIdeal, B::NfMaxOrdFracIdeal)
   C = simplify(prod(A, inv(B)))
   return norm(C)==1 && C.den == 1
 end
 
-*(A::NfMaximalOrderFracIdeal, B::NfMaximalOrderFracIdeal) = prod(A, B)
-*(A::NfMaximalOrderIdeal, B::NfMaximalOrderFracIdeal) = NfMaximalOrderFracIdeal(A*B.num, B.den)
-*(A::NfMaximalOrderFracIdeal, B::NfMaximalOrderIdeal) = NfMaximalOrderFracIdeal(A.num*B, A.den)
+*(A::NfMaxOrdFracIdeal, B::NfMaxOrdFracIdeal) = prod(A, B)
+*(A::NfMaxOrdIdeal, B::NfMaxOrdFracIdeal) = NfMaxOrdFracIdeal(A*B.num, B.den)
+*(A::NfMaxOrdFracIdeal, B::NfMaxOrdIdeal) = NfMaxOrdFracIdeal(A.num*B, A.den)
 
-function *(A::NfMaximalOrderFracIdeal, a::nf_elem)
+function *(A::NfMaxOrdFracIdeal, a::nf_elem)
   C = *(A, Ideal(order(num(A))), a)
   return C
 end
 
-function /(A::NfMaximalOrderFracIdeal, B::NfMaximalOrderIdeal)
+function /(A::NfMaxOrdFracIdeal, B::NfMaxOrdIdeal)
   C = prod(A, inv(B))
   return C
 end
 
-function /(A::NfMaximalOrderFracIdeal, a::nf_elem)
+function /(A::NfMaxOrdFracIdeal, a::nf_elem)
   C = prod(A, Ideal((order(num(A)), inv(a))))
   return C
 end
 
-function Base.call(ord::NfMaximalOrderIdealSet, b::NfMaximalOrderFracIdeal)
+function Base.call(ord::NfMaxOrdIdlSet, b::NfMaxOrdFracIdeal)
    b.den > 1 && error("not integral")
    return b.num
 end
 
-*(x::nf_elem, y::NfMaximalOrderFracIdeal) = y * x
+*(x::nf_elem, y::NfMaxOrdFracIdeal) = y * x
 

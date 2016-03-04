@@ -1,6 +1,6 @@
 ################################################################################
 #
-#        GenNfOrdZeta.jl: Zeta functions of orders in number fields
+#        NfOrdClsZeta.jl: Zeta functions of orders in number fields
 #
 # This file is part of hecke.
 #
@@ -83,7 +83,7 @@ _max_power_in(a::Int, b::Int) = _max_power_in(fmpz(a), b)
 ################################################################################
 
 # bounding the error
-function _approx_error_bf(O::NfMaximalOrder, Tc = BigFloat)
+function _approx_error_bf(O::NfMaxOrd, Tc = BigFloat)
   return _approx_error_bf(discriminant(O), degree(O), Tc)
 end
 
@@ -155,7 +155,7 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
 end
 
 # Computing the g_K(X) term of Belabas-Friedmann
-function _term_bf(O::NfMaximalOrder, B::Int64, R::ArbField)
+function _term_bf(O::NfMaxOrd, B::Int64, R::ArbField)
 
   xx0 = B
 
@@ -273,7 +273,7 @@ function _term_bf(O::NfMaximalOrder, B::Int64, R::ArbField)
 end
 
 # Approximate the residue
-function _residue_approx_bf(O::NfMaximalOrder, error::Float64)
+function _residue_approx_bf(O::NfMaxOrd, error::Float64)
   F = _approx_error_bf(O, Float64)
 
   # magic constant
@@ -342,13 +342,13 @@ end
 
 doc"""
 ***
-    zeta_residue(O::NfMaximalOrder, error::Float64) -> arb
+    zeta_residue(O::NfMaxOrd, error::Float64) -> arb
 
 > Computes the residue of the zeta function of $\mathcal O$ at $1$.
 > The output will be an element of type `arb` with radius less then
 > `error`.
 """
-function zeta_residue(O::NfMaximalOrder, error::Float64)
+function zeta_residue(O::NfMaxOrd, error::Float64)
   return _residue_approx_bf(O, error)
 end
 

@@ -221,7 +221,7 @@ end
 #
 ################################################################################
 
-function NfFactorBase(O::NfMaximalOrder, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+function NfFactorBase(O::NfMaxOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
   FB = NfFactorBase()
@@ -232,7 +232,7 @@ function NfFactorBase(O::NfMaximalOrder, B::Int, F::Function, complete::Bool = f
   FB.rw = Array(Int, 20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}()
+  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdeal}, 1}}()
 
   for i = 1:length(lp)
     if !haskey(fb, lp[i].gen_one)
@@ -253,7 +253,7 @@ function NfFactorBase(O::NfMaximalOrder, B::Int, F::Function, complete::Bool = f
 end
 
 
-function NfFactorBase(O::NfMaximalOrder, B::Int;
+function NfFactorBase(O::NfMaxOrd, B::Int;
                       complete::Bool = true, degree_limit::Int = 5)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lp = prime_ideals_up_to(O, B, complete = complete,
@@ -268,7 +268,7 @@ function NfFactorBase(O::NfMaximalOrder, B::Int;
   FB.rw = Array(Int, 20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Array{Tuple{Int, NfMaximalOrderIdeal}, 1}}()
+  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdeal}, 1}}()
 
   for i = 1:length(lp)
     if !haskey(fb, lp[i].gen_one)
@@ -353,7 +353,7 @@ end
 
 global AllRels
 
-function class_group_init(O::NfMaximalOrder, FB::NfFactorBase, T::DataType = Smat{fmpz})
+function class_group_init(O::NfMaxOrd, FB::NfFactorBase, T::DataType = Smat{fmpz})
   global AllRels = []
 
 
@@ -392,7 +392,7 @@ function class_group_init(O::NfMaximalOrder, FB::NfFactorBase, T::DataType = Sma
   return clg
 end
 
-function class_group_init(O::NfMaximalOrder, B::Int;
+function class_group_init(O::NfMaxOrd, B::Int;
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = Smat{fmpz})
   global AllRels = []
   clg = ClassGrpCtx{T}()
@@ -522,7 +522,7 @@ end
 ################################################################################
 
 function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
-                                           I::NfMaximalOrderIdeal = rand(clg.FB.ideals))
+                                           I::NfMaxOrdIdeal = rand(clg.FB.ideals))
   s = 1
   if r < 2
     r = 2
@@ -542,7 +542,7 @@ end
 #
 ################################################################################
 function class_group_small_elements_relation(clg::ClassGrpCtx,
-                A::NfMaximalOrderIdeal, cnt::Int = degree(order(A)))
+                A::NfMaxOrdIdeal, cnt::Int = degree(order(A)))
   l = FakeFmpqMat(lll(basis_mat(A)))*basis_mat(order(A))
   K = nf(order(A))
   if cnt <= degree(A.parent.order)
@@ -628,7 +628,7 @@ function shift!(g::fmpz_mat, l::Int)
 end
 
 global last_lat=9
-function lll(rt_c::roots_ctx, A::NfMaximalOrderIdeal, v::fmpz_mat;
+function lll(rt_c::roots_ctx, A::NfMaxOrdIdeal, v::fmpz_mat;
                 prec::Int = 100)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
                                               ## c is NOT a copy, so don't change.
@@ -701,8 +701,8 @@ end
 #
 ################################################################################
 
-function one_step(c::roots_ctx, b::NfMaximalOrderFracIdeal,
-                p::NfMaximalOrderIdeal; prec::Int = 100)
+function one_step(c::roots_ctx, b::NfMaxOrdFracIdeal,
+                p::NfMaxOrdIdeal; prec::Int = 100)
   b = p*b
   simplify(b)
   g1 = short_elem(c, b, prec = prec)
@@ -712,12 +712,12 @@ function one_step(c::roots_ctx, b::NfMaximalOrderFracIdeal,
   return simplify(g2*inv(b)), g1, g2
 end
 
-function short_elem(c::roots_ctx, A::NfMaximalOrderFracIdeal,
+function short_elem(c::roots_ctx, A::NfMaxOrdFracIdeal,
                 v::fmpz_mat=MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   return divexact(short_elem(c, A.num, v, prec = prec), A.den)
 end
 
-function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
+function short_elem(c::roots_ctx, A::NfMaxOrdIdeal,
                 v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
@@ -734,7 +734,7 @@ end
 #
 ################################################################################
 
-function enum_ctx_from_ideal(c::roots_ctx, A::NfMaximalOrderIdeal,
+function enum_ctx_from_ideal(c::roots_ctx, A::NfMaxOrdIdeal,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
 
   l, t = lll(c, A, v, prec = prec)
@@ -769,7 +769,7 @@ end
 
 global _start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
-                A::NfMaximalOrderIdeal; prec::Int = 200, val::Int = 0,
+                A::NfMaxOrdIdeal; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()
@@ -1403,7 +1403,7 @@ end
 #
 ################################################################################
 
-function class_group(O::NfMaximalOrder; bound = -1, method = 2, large = 1000)
+function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   try 
     c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
     return c
@@ -1580,7 +1580,7 @@ end
 #
 # beware of the precision issue.
 #
-function lll(M::NfMaximalOrder)
+function lll(M::NfMaxOrd)
   I = hecke.ideal(M, parent(basis_mat(M).num)(1))
   K = nf(M)
   c = conjugates_init(K.pol)
@@ -1589,7 +1589,7 @@ function lll(M::NfMaximalOrder)
   while true
     try
       q,w = lll(c, I, parent(basis_mat(M).num)(0), prec = prec)
-      return NfMaximalOrder(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+      return NfMaxOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
     catch e
       if isa(e, LowPrecisionLLL)
         prec = Int(round(prec*1.2))
@@ -1659,11 +1659,11 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
-function _class_unit_group(O::NfMaximalOrder)
+function _class_unit_group(O::NfMaxOrd)
 
   c = class_group(O)
 
-  U = UnitGrpCtx{FactoredElem{nf_elem}}(O)
+  U = UnitGrpCtx{FacElem{nf_elem}}(O)
 
   _unit_group_find_units(U, c)
 

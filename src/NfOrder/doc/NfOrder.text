@@ -9,12 +9,12 @@ For computational reasons, an $\mathcal O$ is always given together with a matri
 \[ \begin{pmatrix} \omega_1 \\ \omega_2 \\ \vdots \\ \omega_d \end{pmatrix} = A \cdot \begin{pmatrix} 1 \\ \alpha \\ \vdots \\ \alpha^d \end{pmatrix} \]
 are a $\Z$-basis of $\mathcal O$.
 \par
-In \textsc{Hecke} orders in number fields are modelled by objects of type \code{NfOrder}.
+In \textsc{Hecke} orders in number fields are modelled by objects of type \code{NfOrd}.
 ##
 
-\subsection##Creation of objects of type \code{NfOrder}## ##
+\subsection##Creation of objects of type \code{NfOrd}## ##
 
-\function##EquationOrder##K::NfNumberField##NfOrder##arg1::Bool = true;I am a paramter::Bool = false
+\function##EquationOrder##K::NfNumberField##NfOrd##arg1::Bool = true;I am a paramter::Bool = false
 ##
 Assume that \code{K} represents the number field $\Q(\alpha)$. This function will produce the equation order $\Z[\alpha]$ of $\alpha$, that is, the order of $K$ with basis matrix $\mathbf 1_d$.
 ##
@@ -33,24 +33,24 @@ with Z-basis [1,a,a^2,a^3,a^4,a^5,a^6,a^7,a^8,a^9,a^10,a^11,a^12,a^13,a^14,a^15,
 julia> ASSERT assert(degree(O) == 19)
 ##long##
 
-\function##Order##K::NfNumberField,x::fmpz_mat,y::fmpz##NfOrder##check::Bool = true##
+\function##Order##K::NfNumberField,x::fmpz_mat,y::fmpz##NfOrd##check::Bool = true##
 Return the order with basis matrix \code{x/y}. If the parameter \code{check} is set to true, it is checked that this really is an order.
 Thus it is checked if \code{x} is non-singular and that the set is closed under multiplication.
 ##
 
-\function##Order##K::NfNumberField,x::FakeFmpqMat##NfOrder##check::Bool = true##
+\function##Order##K::NfNumberField,x::FakeFmpqMat##NfOrd##check::Bool = true##
 Return the order with basis matrix \code{x}. If the parameter \code{check} is set to true, it is checked that this really is an order.
 Thus it is checked if \code{x} is non-singular and that the set is closed under multiplication.
 ##
 
-\function##Order##x::Array{nf_elem, 1}##NfOrder##check::Bool = true##
+\function##Order##x::Array{nf_elem, 1}##NfOrd##check::Bool = true##
 If \code{K} is the parent of the elements of \code{x}, this function returns the order of \code{K} with basis \code{x}. If the parameter \code{check} is set to true, it is checked that this really is an order.
 Thus it is checked if \code{x} is a basis of \code{K} and that the set is closed under multiplication.
 ##
 
 
 \subsection##Creation and arithmetic of elements##
-In \textsf{hecke} there are two kinds of constructors for elements of type \code{NfOrderElem}: \textit{destructive} and \textit{non-destructive} constructors.
+In \textsf{hecke} there are two kinds of constructors for elements of type \code{NfOrdElem}: \textit{destructive} and \textit{non-destructive} constructors.
 For non-destructive constructors, the new object is created using a copy of the input data, while for destructive constructors the new object will contain references to the input data.
 Thus for destructive constructors, messing with the memory of the input data directly may result in interesting behavior of programs (also known as intractable bugs).
 The same is true for messing with the memory of the newly created object (this can change data used for input).
@@ -65,7 +65,7 @@ julia> K,a = NumberField(f, "a");
 julia> O = EquationOrder(K);
 julia> v = [ ZZ(1), ZZ(2), ZZ(3) ];
 # Now create an order element out of v destructively
-julia> z = NfOrderElem(O, v);
+julia> z = NfOrdElem(O, v);
 julia> elem_in_basis(z)
 3-element Array{Nemo.fmpz,1}:
  1
@@ -97,7 +97,7 @@ julia> elem_in_basis(z)
 ## ich bin ein Kommentar ich kann alles sein. ##
 
 \function
-##O##x::nf_elem##NfOrderEllem##check::Bool = true##
+##O##x::nf_elem##NfOrdEllem##check::Bool = true##
 Given an order \code{O}, try to coerce the number field element \code{x} into \code{O}
 ##
 
@@ -111,7 +111,7 @@ Given an order \code{O}, try to coerce the number field element \code{x} into \c
 Here is some random comment##
 
 \function
-##O##x::nf_elem##NfOrderEllem##check::Bool = true##
+##O##x::nf_elem##NfOrdEllem##check::Bool = true##
 Given an order \code{O}, try to coerce the number field element \code{x} into \code{O}
 ##
 

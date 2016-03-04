@@ -1,7 +1,7 @@
-add_verbose_scope(:NfMaximalOrder)
-add_assert_scope(:NfMaximalOrder)
+add_verbose_scope(:NfMaxOrd)
+add_assert_scope(:NfMaxOrd)
 
-#set_verbose_level(:NfMaximalOrder, 1)
+#set_verbose_level(:NfMaxOrd, 1)
 
 include("NfMaximalOrder/NfMaximalOrder.jl")
 include("NfMaximalOrder/Ideal.jl")
@@ -13,3 +13,4 @@ include("NfMaximalOrder/ResidueField.jl")
 include("NfMaximalOrder/ResidueRing.jl")
 include("NfMaximalOrder/FactorBaseBound.jl")
 include("NfMaximalOrder/FacElem.jl")
+include("NfMaximalOrder/LinearAlgebra.jl")

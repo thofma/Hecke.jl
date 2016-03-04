@@ -1,6 +1,6 @@
 ################################################################################
 #
-# NfMaximalOrder/FacElem.jl : Factored elements over number fields
+# NfMaxOrd/FacElem.jl : Factored elements over number fields
 #
 # This file is part of hecke.
 #
@@ -32,26 +32,26 @@
 #
 ################################################################################
 
-# Get FactoredElem from ClassGrpCtx
-function FactoredElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
-  return FactoredElem(x.R, [ y[j, i] for i in 1:cols(y) ])
+# Get FacElem from ClassGrpCtx
+function FacElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
+  return FacElem(x.R, [ y[j, i] for i in 1:cols(y) ])
 end
 
 # Get the trivial factored element from an ordinary element
-function FactoredElem(x::nf_elem)
-  z = FactoredElem{nf_elem}()
+function FacElem(x::nf_elem)
+  z = FacElem{nf_elem}()
   z.fac[x] = fmpz(1)
-  z.parent = FactoredElemMon{nf_elem}(parent(x))
+  z.parent = FacElemMon{nf_elem}(parent(x))
   return z
 end
 
 base_ring(x::nf_elem) = parent(x)
 
-function is_unit(x::FactoredElem{nf_elem})
+function is_unit(x::FacElem{nf_elem})
   return abs(norm(z)) == 1
 end
 
-function norm(x::FactoredElem{nf_elem})
+function norm(x::FacElem{nf_elem})
   z = fmpq(1)
   for a in base(x)
     z = z*norm(a)^x.fac[a]
@@ -61,13 +61,13 @@ end
 
 _base_ring(x::nf_elem) = parent(x)::AnticNumberField
 
-_base_ring(x::FactoredElem{nf_elem}) = base_ring(x)::AnticNumberField
+_base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 
-*(x::FactoredElem{nf_elem}, y::NfOrderElem) = x*elem_in_nf(y)
+*(x::FacElem{nf_elem}, y::NfOrdElem) = x*elem_in_nf(y)
 
-*(x::NfOrderElem, y::FactoredElem{nf_elem}) = y*x
+*(x::NfOrdElem, y::FacElem{nf_elem}) = y*x
 
-function _conjugates_arb_log(A::FactoredElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
+function _conjugates_arb_log(A::FacElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
   if haskey(A.conj_log_cache, abs_tol)
     if haskey(A.conj_log_cache[abs_tol], a)
       return A.conj_log_cache[abs_tol][a]
@@ -84,7 +84,7 @@ function _conjugates_arb_log(A::FactoredElemMon{nf_elem}, a::nf_elem, abs_tol::I
   end
 end
 
-function conjugates_arb(x::FactoredElem{nf_elem}, abs_tol::Int)
+function conjugates_arb(x::FacElem{nf_elem}, abs_tol::Int)
   d = degree(_base_ring(x))
   res = Array(acb, d)
 
@@ -107,7 +107,7 @@ function conjugates_arb(x::FactoredElem{nf_elem}, abs_tol::Int)
   return res
 end
 
-function conjugates_arb_log(x::FactoredElem{nf_elem}, abs_tol::Int)
+function conjugates_arb_log(x::FacElem{nf_elem}, abs_tol::Int)
   K = _base_ring(x)
   r1, r2 = signature(K)
   d = r1 + r2

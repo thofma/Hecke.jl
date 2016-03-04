@@ -1,4 +1,4 @@
-function lll_basis_profile(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal; prec::Int = 100)
+function lll_basis_profile(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdeal; prec::Int = 100)
   c = Hecke.minkowski_mat(rt_c, Hecke.nf(order(A)), prec)
   l = lll(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
@@ -23,7 +23,7 @@ function lll_basis_profile(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal; prec::
   return lp
 end
 
-function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
+function short_elem(c::roots_ctx, A::NfMaxOrdIdeal,
                 v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   l, t = lll(c, A, v, prec = prec)
   w = window(t, 1,1, 1, cols(t))
@@ -33,7 +33,7 @@ function short_elem(c::roots_ctx, A::NfMaximalOrderIdeal,
 end
 
 
-function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal; 
+function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdeal; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
   K = nf(order(A))
@@ -49,7 +49,7 @@ function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal;
   return q
 end
 
-function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int; 
+function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdeal, bs::Int; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
 
@@ -82,7 +82,7 @@ function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int;
   return q
 end
 
-function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int; 
+function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdeal, bs::Int; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
 
@@ -115,7 +115,7 @@ function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int;
   return q
 end
 
-function fplll_basis(rt_c::Hecke.roots_ctx, A::NfMaximalOrderIdeal, bs::Int; 
+function fplll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdeal, bs::Int; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
                       

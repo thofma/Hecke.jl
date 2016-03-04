@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfMaximalOrder/ResidueRing.jl : Quotients of maximal orders of number fields
+#  NfMaxOrd/ResidueRing.jl : Quotients of maximal orders of number fields
 #
 # This file is part of Hecke.
 #
@@ -67,7 +67,7 @@ needs_parentheses(::NfMaxOrdQuoRingElem) = true
 is_negative(::NfMaxOrdQuoRingElem) = false
 
 # This is dangerous
-parent_type(::Type{NfOrderElem}) = NfMaximalOrder
+parent_type(::Type{NfOrdElem}) = NfMaxOrd
 
 Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
@@ -100,7 +100,7 @@ end
 #
 ################################################################################
 
-function call(O::NfMaxOrdQuoRing, x::NfOrderElem)
+function call(O::NfMaxOrdQuoRing, x::NfOrdElem)
   parent(x) != base_ring(O) && error("Cannot coerce element into the quotient ring")
   return NfMaxOrdQuoRingElem(O, x)
 end
@@ -119,7 +119,7 @@ end
 #
 ################################################################################
 
-function quo(O::NfMaximalOrder, I::NfMaximalOrderIdeal)
+function quo(O::NfMaxOrd, I::NfMaxOrdIdeal)
   # We should check that I is not zero
   Q = NfMaxOrdQuoRing(O, I)
   f = NfMaxOrdQuoMap(O, Q)
@@ -634,7 +634,7 @@ end
 #
 ################################################################################
 
-function call(M::MatrixSpace{NfMaxOrdQuoRingElem}, x::Mat{NfOrderElem})
+function call(M::MatrixSpace{NfMaxOrdQuoRingElem}, x::Mat{NfOrdElem})
   base_ring(base_ring(M)) != base_ring(parent(x)) &&
       error("Base rings do not coincide")
   return M(map(base_ring(M), x.entries))
@@ -649,7 +649,7 @@ end
 ## Hensel lifting of roots
 # This will fail for too large input
 # Need to incorporate the explicit lifting bounds
-function _root_hensel(f::Poly{NfOrderElem})
+function _root_hensel(f::Poly{NfOrdElem})
   O = base_ring(f)
 
   # First we find a prime ideal such that f is squarefree modulo P 
@@ -662,7 +662,7 @@ function _root_hensel(f::Poly{NfOrderElem})
   found_prime = false
 
   # Dummy variable
-  Q = NfMaximalOrderIdeal(O)
+  Q = NfMaxOrdIdeal(O)
   pi_F = NfMaxOrdToFqNmodMor()
   lin_factor = Array{fq_nmod_poly, 1}()
 

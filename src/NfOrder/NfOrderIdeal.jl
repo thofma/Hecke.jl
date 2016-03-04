@@ -1,43 +1,43 @@
 ################################################################################
 #
-#  NfOrder_ideals: Ideals in orders of number fields
+#  NfOrd_ideals: Ideals in orders of number fields
 #
 ################################################################################
 
-export NfOrderIdeal
+export NfOrdIdeal
 
 export ideal, colon_ideal, basis_mat_inv
 
 
-ideal(O::NfOrder, a::fmpz)  = NfOrderIdeal(O,a)
+ideal(O::NfOrd, a::fmpz)  = NfOrdIdeal(O,a)
 
-ideal(O::NfOrder, a::Integer) = NfOrderIdeal(O,ZZ(a))
+ideal(O::NfOrd, a::Integer) = NfOrdIdeal(O,ZZ(a))
 
-ideal(O::NfOrder, a::fmpz_mat) = NfOrderIdeal(O,a)
+ideal(O::NfOrd, a::fmpz_mat) = NfOrdIdeal(O,a)
 
-order(a::NfOrderIdealSet) = a.order
+order(a::NfOrdIdlSet) = a.order
   
-order(a::NfOrderIdeal) = order(parent(a))
+order(a::NfOrdIdeal) = order(parent(a))
 
-parent(a::NfOrderIdeal) = a.parent
+parent(a::NfOrdIdeal) = a.parent
 
-function show(io::IO, a::NfOrderIdeal)
+function show(io::IO, a::NfOrdIdeal)
   print(io, "Ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis matrix\n")
   print(io, basis_mat(a))
 end
 
-function basis_mat(a::NfOrderIdeal)
+function basis_mat(a::NfOrdIdeal)
   return a.basis_mat
 end
 
-function basis(a::NfOrderIdeal)
+function basis(a::NfOrdIdeal)
   O = order(a)
   if isdefined(a, :basis)
     return a.basis
   end
-  B = Array(NfOrderElem, degree(order(a)))
+  B = Array(NfOrdElem, degree(order(a)))
   for i in 1:degree(O)
     t = O()
     t.elem_in_nf = zero(nf(O))
@@ -53,7 +53,7 @@ function basis(a::NfOrderIdeal)
   return a.basis
 end
 
-function basis_mat_inv(a::NfOrderIdeal)
+function basis_mat_inv(a::NfOrdIdeal)
   if isdefined(a, :basis_mat_inv)
     return a.basis_mat_inv
   else

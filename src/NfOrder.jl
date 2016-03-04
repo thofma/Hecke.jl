@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfOrder.jl
+#  NfOrd.jl
 #
 ################################################################################
 
@@ -27,8 +27,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_verbose_scope(:NfOrder)
-add_assert_scope(:NfOrder)
+add_verbose_scope(:NfOrd)
+add_assert_scope(:NfOrd)
 
 include("NfOrder/NfOrder.jl")
 #include("NfOrder/NfOrderElem.jl")

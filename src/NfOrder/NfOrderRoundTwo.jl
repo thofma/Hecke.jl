@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfOrderRoundTwo.jl : Primitive implementation of Round 2
+#  NfOrdRoundTwo.jl : Primitive implementation of Round 2
 #
 ################################################################################
 
@@ -12,17 +12,17 @@ export pradical, pmaximal_overorder, MaximalOrder
 #
 ################################################################################
 
-function _poverorder(O::NfOrder, p::fmpz)
-  OO = NfOrder(colon_ideal(pradical(O,p)))
+function _poverorder(O::NfOrd, p::fmpz)
+  OO = NfOrd(colon_ideal(pradical(O,p)))
   #OO.basis_mat = hnf(OO.basis_mat)
   return OO
 end
 
-function _poverorder(O::NfOrder, p::Integer)
+function _poverorder(O::NfOrd, p::Integer)
   return _poverorder(O, ZZ(p))
 end
 
-function poverorder(O::NfOrder, p::fmpz)
+function poverorder(O::NfOrd, p::fmpz)
   if isequationorder(O)
     return dedekind_poverorder(O, p)
   else
@@ -30,8 +30,8 @@ function poverorder(O::NfOrder, p::fmpz)
   end
 end
 
-function poverorder(O::NfOrder, p::Integer)
-  return poverorder(O::NfOrder, ZZ(p))
+function poverorder(O::NfOrd, p::Integer)
+  return poverorder(O::NfOrd, ZZ(p))
 end
 
 ################################################################################
@@ -40,20 +40,20 @@ end
 #
 ################################################################################
 
-function pmaximal_overorder(O::NfOrder, p::fmpz)
-  @vprint :NfOrder 1 "computing p-maximal overorder for $p ... \n"
+function pmaximal_overorder(O::NfOrd, p::fmpz)
+  @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
   if rem(discriminant(O), p) != 0
     return O
   end
 
   d = discriminant(O)
-  @vprint :NfOrder 1 "extending the order at $p for the first time ... \n"
+  @vprint :NfOrd 1 "extending the order at $p for the first time ... \n"
   OO = poverorder(O, p)
   dd = discriminant(OO)
   i = 1
   while d != dd
     i += 1
-    @vprint :NfOrder 1 "extending the order at $p for the $(i)th time ... \n"
+    @vprint :NfOrd 1 "extending the order at $p for the $(i)th time ... \n"
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
@@ -61,11 +61,11 @@ function pmaximal_overorder(O::NfOrder, p::fmpz)
   return OO
 end
 
-function pmaximal_overorder(O::NfOrder, p::Integer)
+function pmaximal_overorder(O::NfOrd, p::Integer)
   return pmaximal_overorder(O, ZZ(p))
 end
 
-function _MaximalOrder(O::NfOrder, primes::Array{fmpz, 1})
+function _MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   OO = deepcopy(O)
   disc = abs(discriminant(O))
   for i in 1:length(primes)
@@ -74,25 +74,25 @@ function _MaximalOrder(O::NfOrder, primes::Array{fmpz, 1})
     if j == 1
       continue
     end
-    @vprint :NfOrder 1 "Computing p-maximal overorder for $p ..."
+    @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     #println("Computing maximal ",p," overorder")
     OO += pmaximal_overorder(O, p)
-    @vprint :NfOrder 1 "done\n"
+    @vprint :NfOrd 1 "done\n"
   end
   return OO
 end
 
-function _MaximalOrder(O::NfOrder)
+function _MaximalOrder(O::NfOrd)
   OO = deepcopy(O)
-  @vtime :NfOrder fac = factor(Nemo.abs(discriminant(O)))
+  @vtime :NfOrd fac = factor(Nemo.abs(discriminant(O)))
   for (p,j) in fac
     if j == 1
       continue
     end
-    @vprint :NfOrder 1 "Computing p-maximal overorder for $p ..."
+    @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     #println("Computing maximal ",p," overorder")
     OO += pmaximal_overorder(O, p)
-    @vprint :NfOrder 1 "done\n"
+    @vprint :NfOrd 1 "done\n"
   end
   return OO
 end
