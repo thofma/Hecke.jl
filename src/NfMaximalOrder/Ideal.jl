@@ -951,12 +951,32 @@ function valuation(a::nf_elem, p::NfMaximalOrderIdeal)
   P = p.gen_one
 
   if mod(index(O),P) != 0
+    d = den(K(pi.num.gen_two))
+    @assert gcd(d, P)==1
+    e = K(pi.num.gen_two)*d
+    M = MatrixSpace(ZZ, 1, degree(O))()
+    elem_to_mat_row!(M, 1, d, e)
+    @assert d==1
+    P2 = P^2
+    P22 = div(P2, 2)
+    for i=1:degree(O)
+      x = M[1,i] % P2
+      if x>P22
+        x -= P2
+      end
+      M[1,i] = x
+    end
+    e = elem_from_mat_row(K, M, 1, fmpz(1))
+    M = representation_mat(e) ## reduce mod p^? ?
+    x_mat = MatrixSpace(ZZ, 1, degree(O))()
+    d = fmpz(1)
     p.valuation = function(x::nf_elem)
-      v = -1
-      d = den(x)
-      x *= d
-      while gcd(den(x), P)==1
-        mul!(x, x, e)
+      v = 0
+      elem_to_mat_row!(x_mat, 1, d, x)
+      Nemo.mul!(x_mat, x_mat, M)
+      while gcd(content(x_mat), P) == P
+        divexact!(x_mat, x_mat, P)
+        Nemo.mul!(x_mat, x_mat, M)
         v += 1
       end
       return v-valuation(d, P)[1]*p.splitting_type[1]
@@ -974,8 +994,7 @@ function valuation(a::nf_elem, p::NfMaximalOrderIdeal)
       x_mat = MatrixSpace(ZZ, 1, degree(O))(elem_in_basis(O(x)))
       Nemo.mul!(x_mat, x_mat, M)
       while gcd(content(x_mat), P) == P  # should divide and test in place
-        ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Void,
-                        (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &x_mat, &x_mat, &P)
+        divexact!(x_mat, x_mat, P)
         Nemo.mul!(x_mat, x_mat, M)
         v += 1
       end
