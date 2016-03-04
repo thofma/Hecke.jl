@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfOrder.jl
+#  NfOrd.jl
 #
 ################################################################################
 
@@ -27,13 +27,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_verbose_scope(:NfOrder)
-add_assert_scope(:NfOrder)
+add_verbose_scope(:NfOrd)
+add_assert_scope(:NfOrd)
 
-include("NfOrder/NfOrder.jl")
+include("NfOrd/NfOrd.jl")
 #include("NfOrder/NfOrderElem.jl")
-include("NfOrder/NfOrderIdeal.jl")
-include("NfOrder/NfOrderFracIdeal.jl")
-include("NfOrder/NfOrderRoundTwo.jl")
-include("NfOrder/NfOrderDedekindTest.jl")
+include("NfOrd/Ideal.jl")
+include("NfOrd/FracIdeal.jl")
+include("NfOrd/RoundTwo.jl")
+include("NfOrd/DedekindTest.jl")
 #include("NfOrder/NfOrderMontes.jl")

@@ -1,6 +1,6 @@
 export dedekind_test, dedekind_poverorder, dedekind_ispmaximal
 
-function dedekind_ispmaximal(O::NfOrder, p::fmpz)
+function dedekind_ispmaximal(O::NfOrd, p::fmpz)
   !isequationorder(O) && error("Order must be an equation order")
   if rem(discriminant(O), p) != 0
     return true, O
@@ -49,20 +49,20 @@ function dedekind_ispmaximal(O::NfOrder, p::fmpz)
   return true
 end
 
-function dedekind_ispmaximal(O::NfOrder, p::Integer)
+function dedekind_ispmaximal(O::NfOrd, p::Integer)
   return dedekind_ispmaximal(O, ZZ(p))
 end
 
-function dedekind_poverorder(O::NfOrder, p::fmpz)
+function dedekind_poverorder(O::NfOrd, p::fmpz)
   _, O = dedekind_test(O, p)
   return O
 end
 
-function dedekind_poverorder(O::NfOrder, p::Integer)
+function dedekind_poverorder(O::NfOrd, p::Integer)
   return dedekind_poverorder(O, ZZ(p))
 end
 
-function dedekind_test(O::NfOrder, p::fmpz)
+function dedekind_test(O::NfOrd, p::fmpz)
   !isequationorder(O) && error("Order must be an equation order")
   
   if rem(discriminant(O), p) != 0
@@ -139,6 +139,6 @@ function dedekind_test(O::NfOrder, p::fmpz)
   return false, OO
 end
 
-function dedekind_test(O::NfOrder, p::Integer)
+function dedekind_test(O::NfOrd, p::Integer)
   return dedekind_test(O, ZZ(p))
 end

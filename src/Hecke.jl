@@ -141,12 +141,12 @@ function __init__()
   global _get_nf_torsion_units = t[1]
   global _set_nf_torsion_units = t[2]
 
-  t = create_accessors(AnticNumberField, NfMaximalOrder, get_handle())
+  t = create_accessors(AnticNumberField, NfMaxOrd, get_handle())
 
   global _get_maximal_order_of_nf = t[1]
   global _set_maximal_order_of_nf = t[2]
 
-  t = create_accessors(NfMaximalOrder, ClassGrpCtx, get_handle())
+  t = create_accessors(NfMaxOrd, ClassGrpCtx, get_handle())
 
   global _get_ClassGrpCtx_of_order = t[1]
   global _set_ClassGrpCtx_of_order = t[2]
@@ -426,10 +426,10 @@ include("Misc.jl")
 include("LinearAlgebra.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("NfMaximalOrder/GenNfOrd.jl")
-include("NfOrder.jl")
+include("NfMaxOrd/NfOrdCls.jl")
+include("NfOrd.jl")
 include("analytic.jl")
-include("NfMaximalOrder.jl")
+include("NfMaxOrd.jl")
 include("Map.jl")
 include("basis.jl")
 include("helper.jl")
@@ -443,9 +443,9 @@ include("misc.jl")
 
 # Nemo only provides element_types for parent objects
 
-elem_type(::Type{NfMaximalOrder}) = NfOrderElem
+elem_type(::Type{NfMaxOrd}) = NfOrdElem
 
-elem_type{T}(::Type{FactoredElemMon{T}}) = FactoredElem{T}
+elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
 
 ################################################################################
 #

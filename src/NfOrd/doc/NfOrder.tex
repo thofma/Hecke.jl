@@ -125,33 +125,33 @@ Let $\mathcal O$ be an order of an algebraic number field with $\Z$-basis $\Omeg
 
 \paragraph{Basis matrix of a fractional ideal of an order.}
 
-\section{NfOrder : Orders in absolute number fields}
+\section{NfOrd : Orders in absolute number fields}
 
-Orders in number fields are modeled using the type \code{NfOrder}, which has the following definition:
+Orders in number fields are modeled using the type \code{NfOrd}, which has the following definition:
 
 \subsection{Definition}
 
 \begin{lstlisting}
-type NfOrder <: Ring             
+type NfOrd <: Ring             
   nf::NfNumberField              
-  basis # Array{NfOrderElem, 1}  
+  basis # Array{NfOrdElem, 1}  
   _basis::Array{nf_elem, 1}      
   basis_mat::FakeFmpqMat         
   basis_mat_inv::FakeFmpqMat     
   discriminant::fmpz             
   isequationorder::Bool          
   index::fmpz                
-  parent::NfOrderSet 
+  parent::NfOrdSet 
 end
 \end{lstlisting}
 
-Let $\mathcal O$ be an order represented by an object \code{O} of type \code{NfOrder}. 
+Let $\mathcal O$ be an order represented by an object \code{O} of type \code{NfOrd}. 
 
 \begin{description}
 \descitem{\code{O.nf}:} Object \code{K} of type \code{NfNumberField}, which itself represents a number field $K$ such that $\mathcal O$ is a $\Z$-order of $K$.
 
 \descitem{\code{O.basis}:} Array of objects of type \code{NfOderElem} which represents elements $\omega_1,\dotsc,\omega_d \in \mathcal O$ such that $(\omega_1,\dotsc,\omega_d)$ is a $\Z$-basis of $\mathcal O$.
-(We cannot declare it to be of type \lstinline!Array{NfOrderElem, 1}!, since the definition of the type \code{NfOrder} preceeds the definition of and uses the type \code{NfOrder}).
+(We cannot declare it to be of type \lstinline!Array{NfOrdElem, 1}!, since the definition of the type \code{NfOrd} preceeds the definition of and uses the type \code{NfOrd}).
 
 \descitem{\code{O._basis}:} Array of objects of type \code{nf_elem} with parent \code{O.nf} which represents elements $\omega_1,\dotsc,\omega_d \in K$ such that $(\omega_1,\dotsc,\omega_d)$ is a $\Z$-basis of $\mathcal O$. Note that the objects represented by \code{O.basis} and \code{O._basis} are equal.
 
@@ -165,16 +165,16 @@ Let $\mathcal O$ be an order represented by an object \code{O} of type \code{NfO
 
 \descitem{\code{O.index}:} I don't know (yet).
 
-\descitem{\code{O.parent}:} The mandatory parent object. All objects of type \code{NfOrder} representing an order in a fixed number field have this parent object in common.
+\descitem{\code{O.parent}:} The mandatory parent object. All objects of type \code{NfOrd} representing an order in a fixed number field have this parent object in common.
 \end{description}
 
-Note that you should never ever access the field \code{x} of an object of type \code{NfOrder} using the function \code{O.x}. Always use \code{x(O)}!
+Note that you should never ever access the field \code{x} of an object of type \code{NfOrd} using the function \code{O.x}. Always use \code{x(O)}!
 For example, if you want to access the discriminant, use \code{discriminant(O)}.
 (Not all fields are set upon creation).
 
 \subsection{Creation}
 
-Objects of type \code{NfOrder} can be created as follows:
+Objects of type \code{NfOrd} can be created as follows:
 
 \begin{lstlisting}
   EquationOrder(K::NfNumberField)

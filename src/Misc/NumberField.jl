@@ -537,7 +537,7 @@ doc"""
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function is_torsion_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T,
+function is_torsion_unit{T <: Union{nf_elem, FacElem{nf_elem}}}(x::T,
                                                     checkisunit::Bool = false)
   if checkisunit
     _is_unit(x) ? nothing : return false

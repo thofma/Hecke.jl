@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          GenNfOrdUnits.jl : Units in generic number field orders 
+#          NfOrdClsUnits.jl : Units in generic number field orders 
 #
 # This file is part of hecke.
 #
@@ -40,8 +40,8 @@ export is_unit, is_torsion_unit, is_independent, unit_group
 #
 ################################################################################
 
-function _unit_group_init(O::NfMaximalOrder)
-  u = UnitGrpCtx{FactoredElem{nf_elem}}(O)
+function _unit_group_init(O::NfMaxOrd)
+  u = UnitGrpCtx{FacElem{nf_elem}}(O)
   return u
 end
 
@@ -71,12 +71,12 @@ end
 
 doc"""
 ***
-    unit_rank(O::GenNfOrd) -> Int
+    unit_rank(O::NfOrdCls) -> Int
 
 > Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
 > $\mathcal O^\times$.
 """
-function unit_rank(O::GenNfOrd)
+function unit_rank(O::NfOrdCls)
   r1, r2 = signature(nf(O))
   return r1 + r2 - 1
 end
@@ -89,17 +89,17 @@ end
 
 doc"""
 ***
-    is_unit(x::NfOrderElem) -> Bool
+    is_unit(x::NfOrdElem) -> Bool
 
 > Returns whether $x$ is invertible or not.
 """
-function is_unit(x::NfOrderElem)
+function is_unit(x::NfOrdElem)
   return abs(norm(x)) == 1 
 end
 
-_is_unit(x::NfOrderElem) = is_unit(x)
+_is_unit(x::NfOrdElem) = is_unit(x)
 
-function _is_unit{T <: Union{nf_elem, FactoredElem{nf_elem}}}(x::T)
+function _is_unit{T <: Union{nf_elem, FacElem{nf_elem}}}(x::T)
   return abs(norm(x)) == 1
 end
 
@@ -111,7 +111,7 @@ end
 
 doc"""
 ***
-    is_torsion_unit(x::NfOrderElem, checkisunit::Bool = false) -> Bool
+    is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
@@ -119,7 +119,7 @@ doc"""
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function is_torsion_unit(x::NfOrderElem, checkisunit::Bool = false)
+function is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false)
   return is_torsion_unit(x.elem_in_nf, checkisunit)
 end
 
@@ -131,7 +131,7 @@ end
 
 doc"""
 ***
-    torsion_unit_order(x::NfOrderElem, n::Int)
+    torsion_unit_order(x::NfOrdElem, n::Int)
 
 > Given a torsion unit $x$ together with a multiple $n$ of its order, compute
 > the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
@@ -139,7 +139,7 @@ doc"""
 >
 > It is not checked whether $x$ is a torsion unit.
 """
-function torsion_unit_order(x::NfOrderElem, n::Int)
+function torsion_unit_order(x::NfOrdElem, n::Int)
   return torsion_unit_order(x.elem_in_nf, n)
 end
 
@@ -151,27 +151,27 @@ end
 
 doc"""
 ***
-    torsion_units(O::GenNfOrd) -> Array{NfOrderElem, 1}
+    torsion_units(O::NfOrdCls) -> Array{NfOrdElem, 1}
 
 > Given an order $O$, compute the torsion units of $O$.
 """
-function torsion_units(O::GenNfOrd)
+function torsion_units(O::NfOrdCls)
   ar, g = _torsion_units(O)
   return ar
 end
 
 doc"""
 ***
-    torsion_units(O::GenNfOrd) -> NfOrderElem
+    torsion_units(O::NfOrdCls) -> NfOrdElem
 
 > Given an order $O$, compute a generator of the torsion units of $O$.
 """
-function torsion_units_gen(O::GenNfOrd)
+function torsion_units_gen(O::NfOrdCls)
   ar, g = _torsion_units(O)
   return g
 end
 
-function _torsion_units(O::GenNfOrd)
+function _torsion_units(O::NfOrdCls)
   if isdefined(O, :torsion_units)
     return O.torsion_units
   end
@@ -223,7 +223,7 @@ function _torsion_units(O::GenNfOrd)
 
   l = enumerate_using_gram(M, A(n))
 
-  R = Array{NfOrderElem, 1}()
+  R = Array{NfOrdElem, 1}()
 
   for i in l
     if O(i) == zero(O)
@@ -583,8 +583,8 @@ end
 #
 ################################################################################
 
-function _unit_group(O::NfMaximalOrder, c::ClassGrpCtx)
-  u = UnitGrpCtx{FactoredElem{nf_elem}}(O)
+function _unit_group(O::NfMaxOrd, c::ClassGrpCtx)
+  u = UnitGrpCtx{FacElem{nf_elem}}(O)
   _unit_group_find_units(u, c)
   return u
 end
@@ -622,7 +622,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     _make_row_primitive(ker, j)
 
-    y = FactoredElem(x, ker, j)
+    y = FacElem(x, ker, j)
 
     if is_torsion_unit(y)
       continue
@@ -645,7 +645,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       continue
     end
 
-    y = FactoredElem(x, ker, j)
+    y = FacElem(x, ker, j)
     
     if is_torsion_unit(y)
       #println("torsion unit: $y")
@@ -666,7 +666,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   u.tentative_regulator = regulator(u.units, 64)
 end
 
-function _add_unit(u::UnitGrpCtx, x::FactoredElem{nf_elem})
+function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem})
   if is_independent(vcat(u.units, [x]))
     push!(u.units, x)
   end
@@ -796,7 +796,7 @@ end
 # elem_type(MatrixSpace(ResidueRing(ZZ, p), 1, rank(U) ( + 1))), so
 # nmod_mat or fmpz_mod_mat
 # THIS FUNCTION IS NOT TYPE STABLE
-function _matrix_for_saturation(U::UnitGrpCtx, P::NfMaximalOrderIdeal, p::Int)
+function _matrix_for_saturation(U::UnitGrpCtx, P::NfMaxOrdIdeal, p::Int)
   O = order(U)
   K = nf(O)
   F, mF = ResidueField(O, P)
@@ -847,9 +847,9 @@ end
 #
 # The function loops through all prime ideals ordered by the minimum,
 # starting at next_prime(st)
-function _find_primes_for_saturation(O::NfMaximalOrder, p::Int, n::Int,
+function _find_primes_for_saturation(O::NfMaxOrd, p::Int, n::Int,
                                      st::Int = 0)
-  res = Array(NfMaximalOrderIdeal, n)
+  res = Array(NfMaxOrdIdeal, n)
   i = 0
 
   q = st
@@ -909,7 +909,7 @@ function _refine_with_saturation(c::ClassGrpCtx, u::UnitGrpCtx)
     issat, new_unit = _is_saturated(u, p)
     while !issat
       #println("I have found a new unit: $new_unit")
-      _add_dependent_unit(u, FactoredElem(new_unit))
+      _add_dependent_unit(u, FacElem(new_unit))
       #println("$(u.tentative_regulator)")
       
       b = _validate_class_unit_group(c, u)
@@ -939,15 +939,15 @@ end
 
 doc"""
 ***
-    unit_group(O::NfMaximalOrder) -> Map
+    unit_group(O::NfMaxOrd) -> Map
 
 > Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
 > `A = codomain(f)`. Then a set of fundamental units of $\mathcal O$ can be
 > obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
 """
-function unit_group(O::NfMaximalOrder)
+function unit_group(O::NfMaxOrd)
   if isdefined(O, :unit_group)
-    return O.unit_group::AbToNfOrdUnitGrp{Nemo.nf_elem,Hecke.NfOrderElem}
+    return O.unit_group::AbToNfOrdUnitGrp{Nemo.nf_elem,Hecke.NfOrdElem}
   else
     c, U, b = _class_unit_group(O)
     _refine_with_saturation(c, U)

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Map/AbGrp.jl : Types for maps with domains of type AbGrp
+#  NfMaxOrd/LinearAlgebra.jl : Linear algebra over maximal orders
 #
 # This file is part of Hecke.
 #
@@ -28,54 +28,32 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2015, 2016 Tommy Hofmann
+# (C) 2016 Tommy Hofmann
 #
 ################################################################################
 
-################################################################################
-#
-#  Maps for unit groups of number fields
-#
-################################################################################
+function _det_bound(M::Mat{NfOrdElem})
+  n = rows(M)
+  O = base_ring(M)
+  d = degree(O)
+  c1, c2 = base_change_const(O)
 
-type AbToNfOrdUnitGrp{T, S} <: Map{AbGrp, FacElemMon{T}}
-  header::MapHeader{AbGrp, FacElemMon{nf_elem}}
-  ind_unit::Array{FacElem{T}, 1}
-  tor_unit::S
+  return sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))
+end
 
-  # This only works if there exists at least one independent unit
-  # That is, ind_unit should not have length 1
-  function AbToNfOrdUnitGrp(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::S, tor_ord::Int)
-    A = AbGrp(vcat([ 0 for i in 1:length(ind_unit) ],[ tor_ord ]))
-    z = new()
-    z.ind_unit = ind_unit
-    z.tor_unit = tor_unit
-
-    function _image(a::AbGrpElem)
-      y = parent(z.ind_unit[1])()
-
-      for i in 1:length(z.ind_unit)
-        if a[i] == 0
-          continue
+function _max_max(M::Mat{NfOrdElem})
+  d = FlintZZ(1)
+  for i in 1:rows(M)
+    for j in 1:cols(M)
+      if !iszero(M[i, j])
+        v = elem_in_basis(M[i, j])
+        for k in degree(base_ring(M))
+          d = max(d, abs(v[k]))
         end
-        y = y*z.ind_unit[i]^a[i]
       end
-
-      if a[length(A.diagonal)] != 0
-        y = y*tor_unit^a[length(A.diagonal)]
-      end
-
-      return y
     end
-
-    z.header = MapHeader(A, parent(z.ind_unit[1]), _image)
-
-    return z
   end
+  return d
 end
-
-function AbToNfOrdUnitGrp{T, S}(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::S, tor_ord::Int)
-  length(ind_unit) == 0 && error("Not implemented yet")
-  return AbToNfOrdUnitGrp{T, S}(O, ind_unit, tor_unit, tor_ord)
-end
+  
 

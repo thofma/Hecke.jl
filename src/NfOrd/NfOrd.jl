@@ -1,6 +1,6 @@
 ################################################################################
 #
-#                   NfOrder.jl : Orders in Number fields
+#                   NfOrd.jl : Orders in Number fields
 #
 # This file is part of hecke.
 #
@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export NfOrder, NfOrderSet
+export NfOrd, NfOrdSet
 
 export elem_in_basis, EquationOrder, deepcopy, Order
 
@@ -44,8 +44,8 @@ export elem_in_basis, EquationOrder, deepcopy, Order
 #
 ################################################################################
 
-function deepcopy(O::NfOrder)
-  z = NfOrder()
+function deepcopy(O::NfOrd)
+  z = NfOrd()
   for x in fieldnames(O)
     # This is slow. Julia can't interfere the type of the right hand side.
     # (According to @code_warntype)
@@ -62,12 +62,12 @@ end
 #
 ################################################################################
 
-function basis_ord(O::NfOrder)
+function basis_ord(O::NfOrd)
   if isdefined(O, :basis_ord)
     return O.basis_ord
   end
   b = O.basis_nf
-  B = Array(NfOrderElem, length(b))
+  B = Array(NfOrdElem, length(b))
   for i in 1:length(b)
     v = fill(ZZ(0), length(b))
     v[i] = ZZ(1)
@@ -77,20 +77,20 @@ function basis_ord(O::NfOrder)
   return B
 end
 
-function basis(O::NfOrder)
+function basis(O::NfOrd)
   return basis_ord(O)
 end
 
-function basis(O::NfOrder, K::AnticNumberField)
+function basis(O::NfOrd, K::AnticNumberField)
   nf(O) != K && error()
   return basis_nf(O)
 end
 
-function basis_nf(O::NfOrder)
+function basis_nf(O::NfOrd)
   return O.basis_nf
 end
 
-function basis_mat(O::NfOrder)
+function basis_mat(O::NfOrd)
   if isdefined(O, :basis_mat)
     return O.basis_mat
   end
@@ -99,7 +99,7 @@ function basis_mat(O::NfOrder)
   return O.basis_mat
 end
 
-function basis_mat_inv(O::NfOrder)
+function basis_mat_inv(O::NfOrd)
   if isdefined(O, :basis_mat_inv)
     return O.basis_mat_inv
   end
@@ -107,7 +107,7 @@ function basis_mat_inv(O::NfOrder)
   return O.basis_mat_inv
 end
 
-function discriminant(O::NfOrder)
+function discriminant(O::NfOrd)
   if isdefined(O, :disc)
     return O.disc
   end
@@ -120,13 +120,13 @@ function discriminant(O::NfOrder)
   return _discriminant(O)
 end
 
-isequationorder(O::NfOrder) = O.isequationorder
+isequationorder(O::NfOrd) = O.isequationorder
 
-nf(O::NfOrder) = O.nf
+nf(O::NfOrd) = O.nf
 
-degree(O::NfOrder) = degree(O.nf)
+degree(O::NfOrd) = degree(O.nf)
 
-parent(O::NfOrder) = O.parent
+parent(O::NfOrd) = O.parent
 
 ################################################################################
 #
@@ -135,7 +135,7 @@ parent(O::NfOrder) = O.parent
 ################################################################################
 
 # This works only if something is coprime??
-function +(a::NfOrder, b::NfOrder)
+function +(a::NfOrd, b::NfOrd)
   c = sub(_hnf(vcat(den(basis_mat(b))*num(basis_mat(a)),
                     den(basis_mat(a))*num(basis_mat(b))),
                :lowerleft),
@@ -150,12 +150,12 @@ end
 #
 ################################################################################
 
-function show(io::IO, a::NfOrderSet)
+function show(io::IO, a::NfOrdSet)
   print(io, "Set of orders of the number field ")
   print(io, a.nf)
 end  
 
-function show(io::IO, a::NfOrder)
+function show(io::IO, a::NfOrd)
   print(io, "Order of ")
   println(io, a.nf)
   print(io, "with Z-basis ")
@@ -168,8 +168,8 @@ end
 #
 ################################################################################
 
-function call(a::NfOrderSet)
-  z = NfOrder()
+function call(a::NfOrdSet)
+  z = NfOrd()
   z.parent = a
   z.nf = a.nf
   return z
@@ -177,16 +177,16 @@ end
 
 function Order(a::Array{nf_elem, 1}, check = true) 
   # We should check if it really is a basis and the elements are integral
-  return NfOrder(a)
+  return NfOrd(a)
 end
 
 function Order(K::AnticNumberField, a::FakeFmpqMat, check = true)
   # We should check if a has full rank and the elements are integral?
-  return NfOrder(K,a)
+  return NfOrd(K,a)
 end
 
 function EquationOrder(K::AnticNumberField)
-  z = NfOrder(K)
+  z = NfOrd(K)
   z.isequationorder = true
   return z
 end
