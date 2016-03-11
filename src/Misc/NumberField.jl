@@ -775,9 +775,10 @@ end
 #nf_elem is a union of the three types above
 #ignores the denominator completely
 
-function nf_elem_to_nmod_poly_raw!(r::nmod_poly, p::UInt, a::nf_elem)
+function nf_elem_to_nmod_poly_no_den!(r::nmod_poly, a::nf_elem)
   d = degree(a.parent)
   zero!(r)
+  p = r._mod_n
   if d == 1
     ra = pointer_from_objref(a)
     s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), &, p)
@@ -790,6 +791,7 @@ function nf_elem_to_nmod_poly_raw!(r::nmod_poly, p::UInt, a::nf_elem)
     ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 1, s)
   else
     ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.elem_coeffs, a.elem_length)
+# this works without libhecke:    
 #    ccall((:nmod_poly_fit_length, :libflint), Void, (Ptr{nmod_poly}, Int), &r, a.elem_length)
 #    ccall((:_fmpz_vec_get_nmod_vec, :libflint), Void, (Ptr{Void}, Ptr{Void}, Int, nmod_t), r._coeffs, a.elem_coeffs, a.elem_length, nmod_t(p, 0, 0))
 #    r._length = a.elem_length
@@ -797,8 +799,9 @@ function nf_elem_to_nmod_poly_raw!(r::nmod_poly, p::UInt, a::nf_elem)
   end
 end
 
-function nf_elem_to_nmod_poly_den!(r::nmod_poly, p::UInt, a::nf_elem)
+function nf_elem_to_nmod_poly_den!(r::nmod_poly, a::nf_elem)
   d = degree(a.parent)
+  p = r._mod_n
   if d == 1
     ra = pointer_from_objref(a)
     den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + sizeof(Int), p)
@@ -809,8 +812,15 @@ function nf_elem_to_nmod_poly_den!(r::nmod_poly, p::UInt, a::nf_elem)
     den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.elem_den, p)
   end
   den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
-  nf_elem_to_nmod_poly_raw!(r, p, a)
+  nf_elem_to_nmod_poly_no_den!(r, a)
   mul!(r, r, den)
 end
 
+function nf_elem_to_nmod_poly(Rx::Nemo.NmodPolyRing, a::nf_elem)
+  r = Rx()
+  nf_elem_to_nmod_poly_den!(r, a)
+  return r
+end
 
+
+Base.call(R::Nemo.NmodPolyRing, a::nf_elem) = nf_elem_to_nmod_poly(R, a)

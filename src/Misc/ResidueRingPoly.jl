@@ -160,3 +160,13 @@ function gens(R::ResidueRing{nmod_poly})
   return r
 end
 
+
+function gcd!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
+  ccall((:nmod_poly_gcd, :libflint), Void, (Ptr{Nemo.nmod_poly}, Ptr{Nemo.nmod_poly}, Ptr{Nemo.nmod_poly}), &f, &g, &h)
+  return f
+end
+
+function Base.call(R::Nemo.NmodPolyRing, g::fmpq_poly)
+  return fmpq_poly_to_nmod_poly(R, g)
+end
+

@@ -410,3 +410,32 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
   return hensel_lift(f, g, h, p, k)[1]
 end  
   
+
+function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
+  ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.coeffs, a.length)
+  p = r._mod_n
+  den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.den, p)
+  if den != Uint(1)
+    den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
+    mul!(r, r, den)
+  end
+end
+
+function fmpq_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpq_poly)
+  g = Rx()
+  fmpq_poly_to_nmod_poly_raw!(g, f)
+  return g
+end
+
+function fmpz_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpz_poly)
+  ccall((:fmpz_poly_get_nmod_poly, :libflint), Void,
+                  (Ptr{nmod_poly}, Ptr{fmpz_poly}), &r, &a)
+
+end
+
+function fmpz_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpz_poly)
+  g = Rx()
+  fmpz_poly_to_nmod_poly_raw!(g, f)
+  return g
+end
+

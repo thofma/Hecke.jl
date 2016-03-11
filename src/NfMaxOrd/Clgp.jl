@@ -466,11 +466,12 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   K = parent(a)
   f = K.pol
   R = parent(f)
-  Zx = PolynomialRing(ZZ, "\$x_z")[1]
-  Zf = Zx(f)
-  Zpx = PolynomialRing(ResidueRing(ZZ, p, cached=false), "\$x_p", cached=false)[1]
-  Za = Zx(parent(f)(a*den(a)))
-  g = gcd(Zpx(Zf), Zpx(Za))
+  Zx = PolynomialRing(FlintZZ)[1]
+  Zpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "\$x_p", cached=false)[1]
+  g = Zpx()
+  g = Zpx(a)  
+  ff = Zpx(f)
+  gcd!(g, g, ff)
   return lift(Zx, g)
 end
 
@@ -658,8 +659,8 @@ function lll(rt_c::roots_ctx, A::NfMaxOrdIdeal, v::fmpz_mat;
   n = degree(order(A))
 
   if !isdefined(rt_c, :cache_z1)
-    rt_c.cache_z1 = MatrixSpace(ZZ, n, n)()
-    rt_c.cache_z2 = MatrixSpace(ZZ, n, n)()
+    rt_c.cache_z1 = MatrixSpace(FlintZZ, n, n)()
+    rt_c.cache_z2 = MatrixSpace(FlintZZ, n, n)()
   end
   
   d = rt_c.cache_z1
@@ -1496,9 +1497,13 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
       no_ideals += 1
       if no_ideals % 10 == 0
         println("done $no_ideals ideals so far...")
+        x = Base.gc_num()
+        println("alloc $(x.malloc)   free $(x.freed)  diff: $(x.malloc - x.freed)")
         gc_enable(true)
         gc()
         gc_enable(false)
+        x = Base.gc_num()
+        println("alloc $(x.malloc)   free $(x.freed)  diff: $(x.malloc - x.freed)")
       end
       #println("to be more precise: $k")
       E = class_group_small_real_elements_relation_start(clg, k, limit=10, prec=prec)
