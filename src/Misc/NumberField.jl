@@ -747,3 +747,70 @@ function dot(a::Array{nf_elem, 1}, b::Array{fmpz, 1})
   return d
 end
 
+type nf_elem_deg_1_raw
+  num::Int  ## fmpz!
+  den::Int
+end
+
+type nf_elem_deg_2_raw
+  nu0::Int  ## fmpz - actually an fmpz[3]
+  nu1::Int
+  nu2::Int
+  den::Int
+end
+
+type nf_elem_deg_n_raw  #actually an fmpq_poly_raw
+  A::Ptr{Int} # fmpz
+  den::Int # fmpz
+  alloc::Int
+  len::Int
+end
+
+type nmod_t
+  n::Int
+  ni::Int
+  norm::Int
+end
+
+#nf_elem is a union of the three types above
+#ignores the denominator completely
+
+function nf_elem_to_nmod_poly_raw!(r::nmod_poly, p::UInt, a::nf_elem)
+  d = degree(a.parent)
+  zero!(r)
+  if d == 1
+    ra = pointer_from_objref(a)
+    s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), &, p)
+    ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 0, s)
+  elseif d == 2  
+    ra = pointer_from_objref(a)
+    s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra, p)
+    ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 0, s)
+    s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + sizeof(Int), p)
+    ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 1, s)
+  else
+    ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.elem_coeffs, a.elem_length)
+#    ccall((:nmod_poly_fit_length, :libflint), Void, (Ptr{nmod_poly}, Int), &r, a.elem_length)
+#    ccall((:_fmpz_vec_get_nmod_vec, :libflint), Void, (Ptr{Void}, Ptr{Void}, Int, nmod_t), r._coeffs, a.elem_coeffs, a.elem_length, nmod_t(p, 0, 0))
+#    r._length = a.elem_length
+#    ccall((:_nmod_poly_normalise, :libflint), Void, (Ptr{nmod_poly}, ), &r)
+  end
+end
+
+function nf_elem_to_nmod_poly_den!(r::nmod_poly, p::UInt, a::nf_elem)
+  d = degree(a.parent)
+  if d == 1
+    ra = pointer_from_objref(a)
+    den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + sizeof(Int), p)
+  elseif d == 2  
+    ra = pointer_from_objref(a)
+    den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + 3*sizeof(Int), p)
+  else  
+    den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.elem_den, p)
+  end
+  den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
+  nf_elem_to_nmod_poly_raw!(r, p, a)
+  mul!(r, r, den)
+end
+
+

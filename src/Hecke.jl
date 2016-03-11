@@ -103,6 +103,8 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 
 function __init__()
 
+  push!(Libdl.DL_LOAD_PATH, Pkg.dir("Hecke", "local", "lib"))
+
   println("")
   print("Welcome to \n")
   print_with_color(:red, "
@@ -152,7 +154,6 @@ function __init__()
   global _set_ClassGrpCtx_of_order = t[2]
 
   global R = _RealRing()
-
 end
 
 function conjugate_data_arb(K::AnticNumberField)

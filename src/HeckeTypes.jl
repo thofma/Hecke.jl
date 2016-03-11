@@ -291,7 +291,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
     return NfOrdElem(O, map(ZZ, arr))
   end
 
-  function NfOrderElem(x::NfOrderElem)
+  function NfOrdElem(x::NfOrdElem)
     return x  ### Check parent?
   end
 end
