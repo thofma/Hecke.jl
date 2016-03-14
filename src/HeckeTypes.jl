@@ -982,7 +982,7 @@ type FactorBaseSingleP
 
       FB.pt = FactorBase(Set(lf), check = false)
       int_doit = function(a::nf_elem, v::Int)
-        g = Fpx(Zx(Qx(a)))
+        g = Fpx(a)
         g = gcd(g, fp)
         fl = is_smooth(FB.pt, g)[1]
         if fl
@@ -1012,7 +1012,7 @@ type FactorBaseSingleP
     end
     FB.doit = function(a::nf_elem, v::Int)
       d = den(a)
-      if isone(d) return int_doit(a, v); end
+      if isone(gcd(d, p)) return int_doit(a, v); end
       return naive_doit(a, v); 
     end  
     return FB
