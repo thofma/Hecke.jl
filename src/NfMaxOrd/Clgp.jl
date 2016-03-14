@@ -1541,14 +1541,23 @@ end
 #  Conversion to Magma
 #
 ################################################################################
+function toMagma(f::IOStream, clg::NfMaxOrdIdeal, order::ASCIIString = "M")
+  print(f, "ideal<$(order)| ", clg.gen_one, ", ",
+                    elem_in_nf(clg.gen_two), ">")
+end
+
+function toMagma(s::ASCIIString, c::NfMaxOrdIdeal, order::ASCIIString = "M")
+  f = open(s, "w")
+  toMagma(f, c, order)
+  close(f)
+end
 
 function toMagma(f::IOStream, clg::ClassGrpCtx)
   print(f, "K<a> := NumberField(", nf(order(clg.FB.ideals[1])).pol, ");\n");
   print(f, "M := MaximalOrder(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size
-    print(f, "ideal<M| ", clg.FB.ideals[i].gen_one, ", ",
-                    elem_in_nf(clg.FB.ideals[i].gen_two), ">")
+    toMagma(f, clg.FB.ideals[i], "M")
     if i < clg.FB.size
       print(f, ",\n")
     end
@@ -1573,16 +1582,41 @@ function toMagma(s::ASCIIString, c::ClassGrpCtx)
   close(f)
 end
 
-
-function toMagma(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
+function toMagma{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   print(f, name, " := [\n")
   for i=1:(length(a)-1)
-    print(f, a[i], ",\n")
+    try
+      toMagma(f, a[i]);
+    catch a
+      print(f, a[i])
+    end
+    print(f, ",\n")
   end
-  print(f, a[end], "];\n")
+  try
+    toMagma(f, a[end])
+  catch
+    print(f, a[end])
+  end
+  print(f, "];\n")
 end
 
-function toMagma(s::ASCIIString, a::Array{Any, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toMagma(f::IOStream, t::Tuple)
+  print(f, "<")
+  for i=1:length(t)
+    try
+      toMagma(f, t[i])
+    catch e
+      print(f, t[i])
+    end
+    if i<length(t)
+      print(f, ", ")
+    else
+      print(f, ">\n")
+    end
+  end
+end  
+
+function toMagma{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
   f = open(s, mode)
   toMagma(f, a, name = name)
   close(f)
@@ -1595,7 +1629,7 @@ end
 #
 ################################################################################
 
-function toNemo(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
+function toNemo{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   print(f, name, " = [\n")
   for i=1:(length(a)-1)
     print(f, a[i], ",\n")
@@ -1603,7 +1637,7 @@ function toNemo(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
   print(f, a[end], "];\n")
 end
 
-function toNemo(s::ASCIIString, a::Array{Any, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toNemo{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
   f = open(s, mode)
   toNemo(f, a, name = name)
   close(f)
