@@ -415,7 +415,7 @@ function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
   ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.coeffs, a.length)
   p = r._mod_n
   den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.den, p)
-  if den != Uint(1)
+  if den != UInt(1)
     den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
     mul!(r, r, den)
   end
