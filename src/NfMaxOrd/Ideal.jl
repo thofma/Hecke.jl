@@ -949,6 +949,101 @@ end
 #
 ###########################################################################################
 
+# classical cohn algorithm, but take a valuation element with smaller(?)
+# coefficients. Core idea is that the val elt is, originally, den*gen_two(p)^-1
+# where gen_two(p) is "small". Acutually, we don't care about gen_two, we
+# need gen_two^-1 to be small, hence this version...
+function val_func_no_index(p::NfMaxOrdIdeal)
+  P = p.gen_one
+  K = nf(order(p))
+  pi = inv(p)
+  d = den(K(pi.num.gen_two))
+  @assert gcd(d, P)==1
+  e = K(pi.num.gen_two)*d
+  M = MatrixSpace(ZZ, 1, degree(K))()
+  elem_to_mat_row!(M, 1, d, e)
+  @assert d==1
+  P2 = P^2
+  P22 = div(P2, 2)
+  for i=1:degree(K)
+    x = M[1,i] % P2
+    if x>P22
+      x -= P2
+    end
+    M[1,i] = x
+  end
+  e = elem_from_mat_row(K, M, 1, P)
+  # e is still a valuation element, but with smaller coefficients.
+  return function(x::nf_elem)
+    v = 0
+    d = den(x)
+    x = x*e
+    while den(x) % P != 0
+      v += 1
+      mul!(x, x, e)
+    end
+    return v-valuation(d, P)[1]*p.splitting_type[1]
+  end
+end
+
+# the idea is that valuations are mostly small, eg. in the class group algorithm
+# so this version computes the completion and the embedding into it at small
+# precision and can thus compute (small) valuation at the effective cost of 
+# mod(nmod_poly, nmod_poly)
+# isn't it nice?
+function val_func_no_index_small(p::NfMaxOrdIdeal)
+  P = p.gen_one
+  K = nf(order(p))
+  Rx = PolynomialRing(ResidueRing(FlintZZ, P))[1]
+  Zx = PolynomialRing(FlintZZ)[1]
+  g = Rx(p.gen_two.elem_in_nf)
+  f = Rx(K.pol)
+  g = gcd!(g, g, f)
+  g = lift(Zx, g)
+  k = Int(round(floor(log(UInt(P), typemax(UInt)))))
+  g = hensel_lift(Zx(K.pol), g, P, k)
+  Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k))[1]
+  g = Sx(g)
+  h = Sx()
+  return function(x::nf_elem)
+    d = den(x)
+    nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
+    h = rem!(h, h, g)      
+    c = lift(FlintZZ, coeff(h, 0))
+    v = c==0 ? typemax(Int) : valuation(c, P)[1]
+    for i=1:degree(h)
+      c = lift(FlintZZ, coeff(h, i))
+      v = min(v, c==0 ? typemax(Int) : valuation(c, P)[1])
+    end
+    return v-valuation(d, P)[1]
+  end
+end
+
+function val_func_index(p::NfMaxOrdIdeal)
+  # we are in the index divisor case. In larger examples, a lot of
+  # time is spent computing denominators of order elements.
+  # By using the rep-mat to multiply, we can stay in the order
+  # and still be fast (faster even than in field)...
+
+  pi = inv(p)
+  M = representation_mat(pi.num.gen_two)
+  O = order(p)
+  P = p.gen_one
+  return function(x::nf_elem)
+    v = 0
+    d = den(x, O)
+    x *= d
+    x_mat = MatrixSpace(FlintZZ, 1, degree(O))(elem_in_basis(O(x)))
+    Nemo.mul!(x_mat, x_mat, M)
+    while gcd(content(x_mat), P) == P  # should divide and test in place
+      divexact!(x_mat, x_mat, P)
+      Nemo.mul!(x_mat, x_mat, M)
+      v += 1
+    end
+    return v-valuation(d, P)[1]*p.splitting_type[1]
+  end
+end
+
 @doc """
   valuation(a::nf_elem, p::NfMaxOrdIdeal) -> fmpz
 
@@ -962,61 +1057,22 @@ function valuation(a::nf_elem, p::NfMaxOrdIdeal)
     return p.valuation(a)
   end
   O = order(p)
-  K = nf(O)
-  pi = inv(p)
-  e = divexact(K(pi.num.gen_two), pi.den)
   P = p.gen_one
 
-  if mod(index(O),P) != 0
-    d = den(K(pi.num.gen_two))
-    @assert gcd(d, P)==1
-    e = K(pi.num.gen_two)*d
-    M = MatrixSpace(ZZ, 1, degree(O))()
-    elem_to_mat_row!(M, 1, d, e)
-    @assert d==1
-    P2 = P^2
-    P22 = div(P2, 2)
-    for i=1:degree(O)
-      x = M[1,i] % P2
-      if x>P22
-        x -= P2
-      end
-      M[1,i] = x
-    end
-    e = elem_from_mat_row(K, M, 1, fmpz(1))
-    M = representation_mat(e) ## reduce mod p^? ?
-    x_mat = MatrixSpace(ZZ, 1, degree(O))()
-    d = fmpz(1)
+  if mod(index(O),P) != 0 && p.splitting_type[1] == 1
+    f1 = val_func_no_index_small(p)
+    f2 = val_func_no_index(p)
     p.valuation = function(x::nf_elem)
-      v = 0
-      elem_to_mat_row!(x_mat, 1, d, x)
-      Nemo.mul!(x_mat, x_mat, M)
-      while gcd(content(x_mat), P) == P
-        divexact!(x_mat, x_mat, P)
-        Nemo.mul!(x_mat, x_mat, M)
-        v += 1
+      v = f1(x)
+      if v > 100  # can happen ONLY if the precision in the .._small function
+                  # was too small.
+        return f2(x)
+      else 
+        return v
       end
-      return v-valuation(d, P)[1]*p.splitting_type[1]
     end
   else
-    # we are in the index divisor case. In larger examples, a lot of
-    # time is spent computing denominators of order elements.
-    # By using the rep-mat to multiply, we can stay in the order
-    # and still be fast (faster even than in field)...
-    M = representation_mat(pi.num.gen_two) ## reduce mod p^? ?
-    p.valuation = function(x::nf_elem)
-      v = 0
-      d = den(x, O)
-      x *= d
-      x_mat = MatrixSpace(ZZ, 1, degree(O))(elem_in_basis(O(x)))
-      Nemo.mul!(x_mat, x_mat, M)
-      while gcd(content(x_mat), P) == P  # should divide and test in place
-        divexact!(x_mat, x_mat, P)
-        Nemo.mul!(x_mat, x_mat, M)
-        v += 1
-      end
-      return v-valuation(d, P)[1]*p.splitting_type[1]
-    end
+    p.valuation = val_func_index(p)
   end
 
   return p.valuation(a)
