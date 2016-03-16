@@ -64,6 +64,16 @@ function is_zero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
   return true
 end
 
+function divexact!(a::fmpz_mat, b::fmpz_mat, d::fmpz)
+  ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Void,
+               (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &a, &a, &d)
+end
+
+function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
+  ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Void, 
+                  (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &a, &b, &c)
+end                  
+
 #computes (hopefully) the hnf for vcat(a*I, m) and returns ONLY the
 #non-singular part. By definition, the result wil have full rank
 #

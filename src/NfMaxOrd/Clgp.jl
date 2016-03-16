@@ -466,11 +466,12 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   K = parent(a)
   f = K.pol
   R = parent(f)
-  Zx = PolynomialRing(ZZ, "\$x_z")[1]
-  Zf = Zx(f)
-  Zpx = PolynomialRing(ResidueRing(ZZ, p, cached=false), "\$x_p", cached=false)[1]
-  Za = Zx(parent(f)(a*den(a)))
-  g = gcd(Zpx(Zf), Zpx(Za))
+  Zx = PolynomialRing(FlintZZ)[1]
+  Zpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "\$x_p", cached=false)[1]
+  g = Zpx()
+  g = Zpx(a)  
+  ff = Zpx(f)
+  gcd!(g, g, ff)
   return lift(Zx, g)
 end
 
@@ -658,8 +659,8 @@ function lll(rt_c::roots_ctx, A::NfMaxOrdIdeal, v::fmpz_mat;
   n = degree(order(A))
 
   if !isdefined(rt_c, :cache_z1)
-    rt_c.cache_z1 = MatrixSpace(ZZ, n, n)()
-    rt_c.cache_z2 = MatrixSpace(ZZ, n, n)()
+    rt_c.cache_z1 = MatrixSpace(FlintZZ, n, n)()
+    rt_c.cache_z2 = MatrixSpace(FlintZZ, n, n)()
   end
   
   d = rt_c.cache_z1
@@ -1496,9 +1497,13 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
       no_ideals += 1
       if no_ideals % 10 == 0
         println("done $no_ideals ideals so far...")
+        x = Base.gc_num()
+        println("alloc $(x.malloc)   free $(x.freed)  diff: $(x.malloc - x.freed)")
         gc_enable(true)
         gc()
         gc_enable(false)
+        x = Base.gc_num()
+        println("alloc $(x.malloc)   free $(x.freed)  diff: $(x.malloc - x.freed)")
       end
       #println("to be more precise: $k")
       E = class_group_small_real_elements_relation_start(clg, k, limit=10, prec=prec)
@@ -1536,14 +1541,23 @@ end
 #  Conversion to Magma
 #
 ################################################################################
+function toMagma(f::IOStream, clg::NfMaxOrdIdeal, order::ASCIIString = "M")
+  print(f, "ideal<$(order)| ", clg.gen_one, ", ",
+                    elem_in_nf(clg.gen_two), ">")
+end
+
+function toMagma(s::ASCIIString, c::NfMaxOrdIdeal, order::ASCIIString = "M")
+  f = open(s, "w")
+  toMagma(f, c, order)
+  close(f)
+end
 
 function toMagma(f::IOStream, clg::ClassGrpCtx)
   print(f, "K<a> := NumberField(", nf(order(clg.FB.ideals[1])).pol, ");\n");
   print(f, "M := MaximalOrder(K);\n");
   print(f, "fb := [ ")
   for i=1:clg.FB.size
-    print(f, "ideal<M| ", clg.FB.ideals[i].gen_one, ", ",
-                    elem_in_nf(clg.FB.ideals[i].gen_two), ">")
+    toMagma(f, clg.FB.ideals[i], "M")
     if i < clg.FB.size
       print(f, ",\n")
     end
@@ -1568,16 +1582,41 @@ function toMagma(s::ASCIIString, c::ClassGrpCtx)
   close(f)
 end
 
-
-function toMagma(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
+function toMagma{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   print(f, name, " := [\n")
   for i=1:(length(a)-1)
-    print(f, a[i], ",\n")
+    try
+      toMagma(f, a[i]);
+    catch a
+      print(f, a[i])
+    end
+    print(f, ",\n")
   end
-  print(f, a[end], "];\n")
+  try
+    toMagma(f, a[end])
+  catch
+    print(f, a[end])
+  end
+  print(f, "];\n")
 end
 
-function toMagma(s::ASCIIString, a::Array{Any, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toMagma(f::IOStream, t::Tuple)
+  print(f, "<")
+  for i=1:length(t)
+    try
+      toMagma(f, t[i])
+    catch e
+      print(f, t[i])
+    end
+    if i<length(t)
+      print(f, ", ")
+    else
+      print(f, ">\n")
+    end
+  end
+end  
+
+function toMagma{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
   f = open(s, mode)
   toMagma(f, a, name = name)
   close(f)
@@ -1590,7 +1629,7 @@ end
 #
 ################################################################################
 
-function toNemo(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
+function toNemo{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   print(f, name, " = [\n")
   for i=1:(length(a)-1)
     print(f, a[i], ",\n")
@@ -1598,7 +1637,7 @@ function toNemo(f::IOStream, a::Array{Any, 1}; name::ASCIIString="R")
   print(f, a[end], "];\n")
 end
 
-function toNemo(s::ASCIIString, a::Array{Any, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toNemo{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
   f = open(s, mode)
   toNemo(f, a, name = name)
   close(f)
