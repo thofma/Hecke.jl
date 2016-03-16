@@ -221,21 +221,42 @@ global VERBOSE_SCOPE = Symbol[]
 
 global VERBOSE_LOOKUP = Dict{Symbol, Int}()
 
+global VERBOSE_PRINT_INDENT = [ 0 ]
+
 function add_verbose_scope(s::Symbol)
   !(s in VERBOSE_SCOPE) && push!(VERBOSE_SCOPE, s)
   nothing
+end
+
+function pushindent()
+  a = VERBOSE_PRINT_INDENT[1]
+  VERBOSE_PRINT_INDENT[1] = a + 1
+  nothing
+end
+
+function popindent()
+  a = VERBOSE_PRINT_INDENT[1]
+  VERBOSE_PRINT_INDENT[1] = a - 1
+  nothing
+end
+
+function _global_indent()
+  s = "  "^VERBOSE_PRINT_INDENT[1]
+  return s
 end
 
 macro vprint(args...)
   if length(args) == 2
     quote
       if get_verbose_level($(args[1])) >= 1
+        print(_global_indent())
         print($(args[2]))
       end
     end
   elseif length(args) == 3
     quote
       if get_verbose_level($(args[1])) >= $(args[2])
+        print(_global_indent())
         print($(args[3]))
       end
     end
