@@ -993,6 +993,7 @@ end
 # isn't it nice?
 function val_func_no_index_small(p::NfMaxOrdIdeal)
   P = p.gen_one
+  @assert P <= typemax(UInt)
   K = nf(order(p))
   Rx = PolynomialRing(ResidueRing(FlintZZ, P))[1]
   Zx = PolynomialRing(FlintZZ)[1]
@@ -1000,7 +1001,7 @@ function val_func_no_index_small(p::NfMaxOrdIdeal)
   f = Rx(K.pol)
   g = gcd!(g, g, f)
   g = lift(Zx, g)
-  k = Int(round(floor(log(UInt(P), typemax(UInt)))))
+  k = flog(fmpz(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
   Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k))[1]
   g = Sx(g)
@@ -1060,16 +1061,20 @@ function valuation(a::nf_elem, p::NfMaxOrdIdeal)
   P = p.gen_one
 
   if mod(index(O),P) != 0 && p.splitting_type[1] == 1
-    f1 = val_func_no_index_small(p)
-    f2 = val_func_no_index(p)
-    p.valuation = function(x::nf_elem)
-      v = f1(x)
-      if v > 100  # can happen ONLY if the precision in the .._small function
-                  # was too small.
-        return f2(x)
-      else 
-        return v
+    if p.gen_one <= typemax(UInt)
+      f1 = val_func_no_index_small(p)
+      f2 = val_func_no_index(p)
+      p.valuation = function(x::nf_elem)
+        v = f1(x)
+        if v > 100  # can happen ONLY if the precision in the .._small function
+                    # was too small.
+          return f2(x)
+        else 
+          return v
+        end
       end
+    else
+      return val_func_no_index(p)
     end
   else
     p.valuation = val_func_index(p)
