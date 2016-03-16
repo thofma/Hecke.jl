@@ -337,6 +337,10 @@ function gcd!(z::fmpz, x::fmpz, y::fmpz)
          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
 end
  
-
+function inv!(a::perm)
+  R = parent(a)
+  ccall((:_perm_inv, :libflint), Void, (Ref{Int}, Ref{Int}, Int), a.d, a.d, R.n)
+  nothing
+end
 
 
