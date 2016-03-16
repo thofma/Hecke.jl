@@ -519,6 +519,11 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   return z
 end
 
+function conjugates_arb_log(x::nf_elem, R::ArbField)
+  z = conjugates_arb_log(x, -R.prec)
+  return map(R, z)
+end
+
 ################################################################################
 #
 #  Torsion units and related functions
@@ -527,18 +532,15 @@ end
 
 doc"""
 ***
-    is_torsion_unit(x::T, checkisunit::Bool = false) -> Bool
+    is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
     
-    T = Union{nf_elem, FacElem{nf_elem}}
-
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
 > 
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function is_torsion_unit{T <: Union{nf_elem, FacElem{nf_elem}}}(x::T,
-                                                    checkisunit::Bool = false)
+function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
   if checkisunit
     _is_unit(x) ? nothing : return false
   end
@@ -549,7 +551,9 @@ function is_torsion_unit{T <: Union{nf_elem, FacElem{nf_elem}}}(x::T,
   r, s = signature(K)
 
   while true
+    @vprint :UnitGrp 2 "Precision is now $(c.prec) \n"
     l = 0
+    @vprint :UnitGrp 2 "Computing conjugates ... \n"
     cx = conjugates_arb(x, c.prec)
     A = ArbField(c.prec)
     for i in 1:r

@@ -291,7 +291,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
     return NfOrdElem(O, map(ZZ, arr))
   end
 
-  function NfOrderElem(x::NfOrderElem)
+  function NfOrdElem(x::NfOrdElem{T})
     return x  ### Check parent?
   end
 end
@@ -773,6 +773,9 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   torsion_units_order::Int
   torsion_units_gen::NfOrdElem{NfMaxOrd}
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
+  conj_log_mat_cutoff::Dict{Int, arb_mat}
+  conj_log_mat_cutoff_inv::Dict{Int, arb_mat}
+  rel_add_prec::Int
 
   function UnitGrpCtx(O::NfOrdCls)
     z = new()
@@ -782,6 +785,9 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.regulator_precision = -1
     z.torsion_units_order = -1
     z.units = Array{T, 1}()
+    z.conj_log_mat_cutoff = Dict{Int, arb_mat}()
+    z.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
+    z.rel_add_prec = 32
     return z
   end
 end

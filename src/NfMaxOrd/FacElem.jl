@@ -48,7 +48,58 @@ end
 base_ring(x::nf_elem) = parent(x)
 
 function is_unit(x::FacElem{nf_elem})
-  return abs(norm(z)) == 1
+  return abs(norm(x)) == 1
+end
+
+function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
+  @vprint :UnitGrp 1 "Checking if factored element is torsion\n"
+  if checkisunit
+    _is_unit(x) ? nothing : return false
+  end
+
+  K = base_ring(x)
+  d = degree(K)
+  r, s = signature(K)
+
+  while true
+
+    if nbits(p) > 15
+      error("Precision is too high")
+    end
+
+    @vprint :UnitGrp 2 "Precision is now $(p) \n"
+    l = 0
+    @vprint :UnitGrp 2 "Computing conjugates ... \n"
+    @v_do :UnitGrp 2 pushindent()
+    cx = conjugates_arb_log(x, -p)
+    @v_do :UnitGrp 2 popindent()
+    @vprint :UnitGrp 2 "Conjugates log are $cx\n"
+    A = ArbField(p)
+    B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
+    for i in 1:r
+      k = abs(cx[i])
+      if ispositive(k)
+        return false
+      elseif isnonnegative(B - k)
+        l = l + 1
+      end
+    end
+    for i in 1:s
+      k = cx[r + i]//2
+      if ispositive(k)
+        return false
+      elseif isnonnegative(B - k)
+        l = l + 1
+      end
+    end
+
+    if l == r + s
+      return true
+    end
+
+    p = 2*p
+
+  end
 end
 
 function norm(x::FacElem{nf_elem})
@@ -130,5 +181,10 @@ function conjugates_arb_log(x::FacElem{nf_elem}, abs_tol::Int)
   end
 
   return res
+end
+
+function conjugates_arb_log(x::FacElem{nf_elem}, R::ArbField)
+  z = conjugates_arb_log(x, -R.prec)
+  return map(R, z)
 end
 

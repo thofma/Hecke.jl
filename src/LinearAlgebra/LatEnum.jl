@@ -470,9 +470,6 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
 end
 
 function recprint(n::Int)
-  s = ""
-  for i in 1:n
-    s = s * "    "
-  end
+  s = "  "^n
   return s
 end

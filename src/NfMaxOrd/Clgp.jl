@@ -1644,8 +1644,8 @@ end
 
 # think of a sensible function name
 
-
 function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
+  @vprint :UnitGrp 1 "Validating unit group and class group ... \n"
   O = U.order
 
   U.torsion_units = torsion_units(O)
@@ -1693,11 +1693,17 @@ end
 
 function _class_unit_group(O::NfMaxOrd)
 
+  @vprint :UnitGrp 1 "Computing tentative class and unit group ... \n"
+
+  @v_do :UnitGrp 1 pushindent() 
   c = class_group(O)
+  @v_do :UnitGrp 1 popindent()
 
   U = UnitGrpCtx{FacElem{nf_elem}}(O)
 
+  @v_do :UnitGrp 1 pushindent() 
   _unit_group_find_units(U, c)
+  @v_do :UnitGrp 1 popindent()
 
   @assert U.full_rank
 

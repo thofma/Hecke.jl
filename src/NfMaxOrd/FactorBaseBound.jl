@@ -172,7 +172,7 @@ end
 #
 ################################################################################
 
-# The algorithm is described in
+# The theorem is described in
 # Bach: "Explicit bounds for primality testing and related problems"
 
 doc"""
@@ -187,9 +187,9 @@ function factor_base_bound_bach(O::NfMaxOrd)
   p = 64
   R = ArbField(p)
   if degree(O)==2
-    r = ceil(6*log(R(discriminant(O)))^2)
+    r = ceil(6*log(R(abs(discriminant(O))))^2)
   else
-    r = ceil(12*log(R(discriminant(O)))^2)
+    r = ceil(12*log(R(abs(discriminant(O))))^2)
   end
   (b, x) = unique_integer(r)
   @assert b
