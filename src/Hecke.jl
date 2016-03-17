@@ -101,9 +101,16 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
+const pkgdir = realpath(joinpath(dirname(@__FILE__), ".."))
+const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
+#it seems tobe neccessary to have the push! (also) outside.
+push!(Libdl.DL_LOAD_PATH, Pkg.dir("Hecke", "local", "lib"))
+
 function __init__()
 
   push!(Libdl.DL_LOAD_PATH, Pkg.dir("Hecke", "local", "lib"))
+  Libdl.dlopen(libhecke)
+  ccall((:flint_set_abort, :libflint), Void, (Ptr{Void}, ), cglobal((:hecke_abort, :libhecke), Ptr{Void}))
 
   println("")
   print("Welcome to \n")
