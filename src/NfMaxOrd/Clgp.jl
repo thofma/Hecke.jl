@@ -846,7 +846,7 @@ end
 
 # Do better: re-use partial hnf, check rank mod p, ...
 
-const modu = next_prime(2^20)
+const modu = 1048583 #next_prime(2^20)
 function class_group_current_result(clg::ClassGrpCtx)
   global modu
   full_rank = false
