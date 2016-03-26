@@ -65,7 +65,6 @@ end
 # to appease the Singular crowd...
 farey_lift = rational_reconstruction
 
-
 # in at least 2 examples produces the same result as Magma
 # can do experiments to see if dedicated Berlekamp Massey would be
 # faster as well as experiments if Berlekamp Massey yields faster 
@@ -125,40 +124,11 @@ doc"""
 
 >  The constant coefficient of f.
 """
-
 function trailing_coefficient(f::PolyElem)
   return coeff(f, 0)
 end
 
 constant_coefficient = trailing_coefficient
-
-################################################################################
-#
-#  Functions for nmod_poly
-#
-################################################################################
-
-#CF: div is neccessary for general Euc operations!
-div(x::nmod_poly, y::nmod_poly) = divexact(x,y)
-
-################################################################################
-#
-# Valuation
-#
-################################################################################
-#CF TODO: use squaring for fast large valuation
-#         use divrem to combine steps
-
-function valuation(z::nmod_poly, p::nmod_poly)
-  check_parent(z, p)
-  z == 0 && error("Not yet implemented")
-  v = 0
-  while mod(z, p) == 0
-    z = div(z, p)
-    v += 1
-  end
-  return v, z
-end 
 
 function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   z = fmpz()
