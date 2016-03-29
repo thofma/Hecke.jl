@@ -161,7 +161,7 @@ function call(f::NfMaxOrdToFqNmodMor, p::Poly{NfOrdElem})
   return z
 end
 
-function call(f::NfMaxOrdQuoMap, I::NfMaxOrdIdeal)
+function call(f::NfMaxOrdQuoMap, I::NfMaxOrdIdl)
   O = domain(f)
   Q = codomain(f)
   B = Q.ideal + I

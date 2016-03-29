@@ -466,7 +466,13 @@ include("misc2.jl")
 
 # Nemo only provides element_types for parent objects
 
-elem_type(::Type{NfMaxOrd}) = NfOrdElem
+elem_type(::NfMaxOrd) = NfOrdElem{NfMaxOrd}
+
+elem_type(::Type{NfMaxOrd}) = NfOrdElem{NfMaxOrd}
+
+elem_type(::NfOrd) = NfOrdElem{NfOrd}
+
+elem_type(::Type{NfOrd}) = NfOrdElem{NfOrd}
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
 

@@ -1,6 +1,6 @@
 export ResidueField
 
-function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdeal)
+function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdl)
   @assert !is_index_divisor(O, minimum(P))
   @assert has_2_elem(P) && is_prime_known(P)
 

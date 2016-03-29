@@ -1,13 +1,13 @@
 ################################################################################
 #
-#   NfMaxOrdIdeals.jl : ideals in Nemo
+#   NfMaxOrdIdls.jl : ideals in Nemo
 #
 ################################################################################
 
-export NfMaxOrdIdlSet, NfMaxOrdIdeal
+export NfMaxOrdIdlSet
 
-export IdealSet, minimum, is_prime_known, MaximalOrderIdeal, basis_mat,
-       valuation, defines_2_normal, *, /, ==, MaximalOrderIdealSet, norm, Ideal,
+export IdlSet, minimum, is_prime_known, MaximalOrderIdl, basis_mat,
+       valuation, defines_2_normal, *, /, ==, MaximalOrderIdlSet, norm, Ideal,
        prime_decomposition_type, prime_decomposition
 
 set_assert_level(:NfMaxOrd, 1)
@@ -38,7 +38,7 @@ order(S::NfMaxOrdIdlSet) = S.order
 
 #doc"""
 #***
-#    ideal(O::NfMaxOrd, x::nf_elem, check::Bool = true) -> NfMaxOrdIdeal
+#    ideal(O::NfMaxOrd, x::nf_elem, check::Bool = true) -> NfMaxOrdIdl
 #
 #> Creates the principal ideal (x) of O. If check is set, then containment of
 #> x in O will be checked. 
@@ -49,55 +49,55 @@ order(S::NfMaxOrdIdlSet) = S.order
 #  if check
 #    (b,y) = _check_elem_in_order(x,O)
 #    !b && error("Element not contained in the order")
-#    return NfMaxOrdIdeal(O(x, y))
+#    return NfMaxOrdIdl(O(x, y))
 #  else
-#    return NfMaxOrdIdeal(O(x, false))
+#    return NfMaxOrdIdl(O(x, false))
 #  end
 #end
 
 doc"""
 ***
-    ideal(O::NfMaxOrd, x::nf_elem, check::Bool = true) -> NfMaxOrdIdeal
+    ideal(O::NfMaxOrd, x::nf_elem, check::Bool = true) -> NfMaxOrdIdl
 
 > Creates the principal ideal $(x)$ of $\mathcal O$.
 """
 function ideal(O::NfMaxOrd, x::NfOrdElem)
-  return NfMaxOrdIdeal(deepcopy(x))
+  return NfMaxOrdIdl(deepcopy(x))
 end
 
 doc"""
 ***
-    ideal(O::NfMaxOrd, x::fmpz_mat, check::Bool = false) -> NfMaxOrdIdeal
+    ideal(O::NfMaxOrd, x::fmpz_mat, check::Bool = false) -> NfMaxOrdIdl
 
 > Creates the ideal of $\mathcal O$ with basis matrix $x$. If check is set, then it is
 > checked wether $x$ defines an ideal (expensive).
 """
 function ideal(O::NfMaxOrd, x::fmpz_mat)
-  return NfMaxOrdIdeal(O, deepcopy(x))
+  return NfMaxOrdIdl(O, deepcopy(x))
 end
 
 doc"""
 ***
-    ideal(O::NfMaxOrd, x::fmpz, y::NfOrdElem) -> NfMaxOrdIdeal
+    ideal(O::NfMaxOrd, x::fmpz, y::NfOrdElem) -> NfMaxOrdIdl
   
 > Creates the ideal $(x,y)$ of $\mathcal O$.
 """
 function ideal(O::NfMaxOrd, x::fmpz, y::NfOrdElem)
-  return NfMaxOrdIdeal(deepcopy(x), deepcopy(y))
+  return NfMaxOrdIdl(deepcopy(x), deepcopy(y))
 end
 
 #doc"""
 #***
-#    ideal(O::NfMaxOrd) -> NfMaxOrdIdeal
+#    ideal(O::NfMaxOrd) -> NfMaxOrdIdl
 #
-#> Creates an empty object of type NfMaxOrdIdeal.
+#> Creates an empty object of type NfMaxOrdIdl.
 #"""
 function ideal(O::NfMaxOrd)
-  return NfMaxOrdIdeal(O)
+  return NfMaxOrdIdl(O)
 end
 
 function call(S::NfMaxOrdIdlSet)
-   return NfMaxOrdIdeal(order(S))
+   return NfMaxOrdIdl(order(S))
 end
 
 ################################################################################
@@ -108,37 +108,37 @@ end
 
 doc"""
 ***
-    parent(x::NfMaxOrdIdeal) -> NfMaxOrdIdlSet
+    parent(x::NfMaxOrdIdl) -> NfMaxOrdIdlSet
 
 > Returns the set of ideals to which $x$ belongs.
 """
-parent(x::NfMaxOrdIdeal) = x.parent
+parent(x::NfMaxOrdIdl) = x.parent
 
 doc"""
 ***
-    order(x::NfMaxOrdIdeal) -> NfMaxOrd
+    order(x::NfMaxOrdIdl) -> NfMaxOrd
 
 > Returns the order of which $x$ is an ideal.
 """
-order(x::NfMaxOrdIdeal) = order(parent(x))
+order(x::NfMaxOrdIdl) = order(parent(x))
 
 doc"""
 ***
-    nf(x::NfMaxOrdIdeal) -> AnticNumberField
+    nf(x::NfMaxOrdIdl) -> AnticNumberField
 
 > Returns the number field, of which $x$ is an integral ideal.
 
 """
-nf(x::NfMaxOrdIdeal) = nf(order(x))
+nf(x::NfMaxOrdIdl) = nf(order(x))
 
 doc"""
 ***
-    deepcopy(x::NfMaxOrdIdeal) -> NfMaxOrdIdeal
+    deepcopy(x::NfMaxOrdIdl) -> NfMaxOrdIdl
 
 > Returns a copy of the ideal $x$.
 """
-function deepcopy(A::NfMaxOrdIdeal)
-  B = NfMaxOrdIdeal(A.parent)
+function deepcopy(A::NfMaxOrdIdl)
+  B = NfMaxOrdIdl(A.parent)
   for i in fieldnames(A)
     if isdefined(A, i)
       setfield!(B, i, deepcopy(getfield(A, i)))
@@ -158,7 +158,7 @@ function show(io::IO, S::NfMaxOrdIdlSet)
    print(io, order(S))
 end
 
-function show(io::IO, id::NfMaxOrdIdeal)
+function show(io::IO, id::NfMaxOrdIdl)
   if has_2_elem(id)
     print(io, "<", id.gen_one, ", ", id.gen_two, ">" )
   else
@@ -183,7 +183,7 @@ end
 
 doc"""
 ***
-    vshow(A::NfMaxOrdIdeal) -> Void
+    vshow(A::NfMaxOrdIdl) -> Void
 
 > Prints all fields of $A$.
 """
@@ -206,12 +206,12 @@ end
 
 doc"""
 ***
-    norm(A::NfMaxOrdIdeal) -> fmpz
+    norm(A::NfMaxOrdIdl) -> fmpz
 
 > Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
 > $\mathcal O$ is the order of $A$.
 """
-function norm(A::NfMaxOrdIdeal)
+function norm(A::NfMaxOrdIdl)
   if isdefined(A, :norm)
     return A.norm
   end
@@ -232,11 +232,11 @@ end
 
 doc"""
 ***
-    minimum(A::NfMaxOrdIdeal) -> fmpz
+    minimum(A::NfMaxOrdIdl) -> fmpz
 
 > Returns the smallest positive element in $A \cap \mathbf Z$.
 """
-function minimum(A::NfMaxOrdIdeal)
+function minimum(A::NfMaxOrdIdl)
   if has_minimum(A) 
     return A.minimum
   end
@@ -264,79 +264,79 @@ end
 
 doc"""
 ***
-    is_prime_known(A::NfMaxOrdIdeal) -> Bool
+    is_prime_known(A::NfMaxOrdIdl) -> Bool
 
 > Returns wether $A$ knows if it is prime.
 """
-function is_prime_known(A::NfMaxOrdIdeal)
+function is_prime_known(A::NfMaxOrdIdl)
   return A.is_prime != 0
 end
 
 doc"""
 ***
-    has_2_elem(A::NfMaxOrdIdeal) -> Bool
+    has_2_elem(A::NfMaxOrdIdl) -> Bool
 
 > Returns wether $A$ is generated by two elements.
 """
-function has_2_elem(A::NfMaxOrdIdeal)
+function has_2_elem(A::NfMaxOrdIdl)
   return isdefined(A, :gen_two)
 end
 
 doc"""
 ***
-    has_minimum(A::NfMaxOrdIdeal) -> Bool
+    has_minimum(A::NfMaxOrdIdl) -> Bool
 
 > Returns wether $A$ knows its mininum.
 """
-function has_minimum(A::NfMaxOrdIdeal)
+function has_minimum(A::NfMaxOrdIdl)
   return isdefined(A, :minimum)
 end
 
 doc"""
 ***
-    has_norm(A::NfMaxOrdIdeal) -> Bool
+    has_norm(A::NfMaxOrdIdl) -> Bool
 
 > Returns wether $A$ knows its norm.
 """
-function has_norm(A::NfMaxOrdIdeal)
+function has_norm(A::NfMaxOrdIdl)
   return isdefined(A, :norm)
 end
 
 doc"""
 ***
-    has_basis_mat(A::NfMaxOrdIdeal) -> Bool
+    has_basis_mat(A::NfMaxOrdIdl) -> Bool
 
 > Returns wether $A$ knows its basis matrix.
 """
-function has_basis_mat(A::NfMaxOrdIdeal)
+function has_basis_mat(A::NfMaxOrdIdl)
   return isdefined(A, :basis_mat)
 end
 
 doc"""
 ***
-    has_weakly_normal(A::NfMaxOrdIdeal) -> Bool
+    has_weakly_normal(A::NfMaxOrdIdl) -> Bool
 
 > Returns wether $A$ has weakly normal two element generators.
 """ 
-function has_weakly_normal(A::NfMaxOrdIdeal)
+function has_weakly_normal(A::NfMaxOrdIdl)
   return (isdefined(A, :gens_weakly_normal) &&
         A.gens_weakly_normal == true) || has_2_elem_normal(A)
 end
 
 doc"""
 ***
-    has_2_elem_normal(A::NfMaxOrdIdeal) -> Bool
+    has_2_elem_normal(A::NfMaxOrdIdl) -> Bool
     
 > Returns wether $A$ has normal two element generators.
 """
-function has_2_elem_normal(A::NfMaxOrdIdeal)
+function has_2_elem_normal(A::NfMaxOrdIdl)
   return isdefined(A, :gens_normal) && A.gens_normal > 1
 end
 
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
 # see Pohst-Zassenhaus p. 404
 
-function defines_2_normal(A::NfMaxOrdIdeal)
+function defines_2_normal(A::NfMaxOrdIdl)
   m = A.gen_one
   gen = A.gen_two
   mg = den(inv(gen), order(A))
@@ -352,7 +352,7 @@ end
 ################################################################################
 
 # using the 2-normal representation
-function prod_via_2_elem_normal(a::NfMaxOrdIdeal, b::NfMaxOrdIdeal)
+function prod_via_2_elem_normal(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
   @hassert :NfMaxOrd 1 has_2_elem_normal(a)
   @hassert :NfMaxOrd 1 has_2_elem_normal(b)
   O = order(a)
@@ -404,7 +404,7 @@ end
 
 # using the 2-weak-normal representation
 
-function prod_via_2_elem_weakly(a::NfMaxOrdIdeal, b::NfMaxOrdIdeal)
+function prod_via_2_elem_weakly(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
   @hassert :NfMaxOrd 1 has_2_elem(a)
   @hassert :NfMaxOrd 1 has_2_elem(b)
 
@@ -471,7 +471,7 @@ function prod_via_2_elem_weakly(a::NfMaxOrdIdeal, b::NfMaxOrdIdeal)
 
   @vprint :NfMaxOrd 1 "prod_via_2_elem: used $cnt tries\n"
 
-  c = NfMaxOrdIdeal(O, norm_int_c, gen)
+  c = NfMaxOrdIdl(O, norm_int_c, gen)
 
   c.norm = norm_c
 
@@ -488,12 +488,12 @@ end
 # dispatching 
 
 @doc """
-  *(x::NfMaxOrdIdeal, y::NfMaxOrdIdeal)
+  *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
     
     Returns the ideal x*y.
 
 """ ->
-function *(x::NfMaxOrdIdeal, y::NfMaxOrdIdeal)
+function *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
   if has_2_elem_normal(x) && has_2_elem_normal(y)
     return prod_via_2_elem_normal(x, y)
   end
@@ -527,7 +527,7 @@ end
 ################################################################################
 
 # multiplication by fmpz, using two normal presentation
-function prod_by_int_2_elem_normal(A::NfMaxOrdIdeal, a::fmpz)
+function prod_by_int_2_elem_normal(A::NfMaxOrdIdl, a::fmpz)
   @assert has_2_elem(A) && has_2_elem_normal(A)
 
   # <a,a> is a a-normal presentation
@@ -548,7 +548,7 @@ function prod_by_int_2_elem_normal(A::NfMaxOrdIdeal, a::fmpz)
     a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
 
-  B = NfMaxOrdIdeal(A.gen_one*a, a2*a, A.parent)
+  B = NfMaxOrdIdl(A.gen_one*a, a2*a, A.parent)
   B.gens_normal = m
 
   if has_minimum(A)
@@ -565,11 +565,11 @@ end
 
 doc"""
 ***
-    *(x::NfMaxOrdIdeal, y::fmpz) -> NfMaxOrdIdeal
+    *(x::NfMaxOrdIdl, y::fmpz) -> NfMaxOrdIdl
 
 > Returns the ideal $x \cdot y$.
 """
-function *(x::NfMaxOrdIdeal, y::fmpz)
+function *(x::NfMaxOrdIdl, y::fmpz)
   if y == 1 || y == -1 
     return x
   end
@@ -581,21 +581,21 @@ function *(x::NfMaxOrdIdeal, y::fmpz)
   end
 end
 
-*(x::fmpz, y::NfMaxOrdIdeal) = y * x
+*(x::fmpz, y::NfMaxOrdIdl) = y * x
 
 doc"""
 ***
-    *(x::NfMaxOrdIdeal, y::Integer) -> NfMaxOrdIdeal
+    *(x::NfMaxOrdIdl, y::Integer) -> NfMaxOrdIdl
 
 > Returns the ideal $x \cdot y$.
 """
-*(x::NfMaxOrdIdeal, y::Integer) = x * fmpz(y)
+*(x::NfMaxOrdIdl, y::Integer) = x * fmpz(y)
 
-*(x::Integer, y::NfMaxOrdIdeal) = y * x
+*(x::Integer, y::NfMaxOrdIdl) = y * x
 
-#function *(A::NfMaxOrdIdeal, b::nf_elem)
+#function *(A::NfMaxOrdIdl, b::nf_elem)
 #  if has_2_elem(A)
-#    C = NfMaxOrdIdeal(b, A.parent)
+#    C = NfMaxOrdIdl(b, A.parent)
 #    @assert is_2_normal(C)
 #    @assert is_2_normal(A)
 #    return prod(A,C)
@@ -618,7 +618,7 @@ doc"""
 # So far, the algorithm just samples (lifts of) random elements of A/m^2,
 # where m is the minimum of A.
 
-function _assure_weakly_normal_presentation(A::NfMaxOrdIdeal)
+function _assure_weakly_normal_presentation(A::NfMaxOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
     return
   end
@@ -699,7 +699,7 @@ function _assure_weakly_normal_presentation(A::NfMaxOrdIdeal)
   end
 end
 
-function assure_2_normal(A::NfMaxOrdIdeal)
+function assure_2_normal(A::NfMaxOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
     return
   end 
@@ -764,12 +764,12 @@ end
 ###########################################################################################
 
 @doc """
-  inv(A::NfMaxOrdIdeal) -> NfMaxOrdFracIdeal
+  inv(A::NfMaxOrdIdl) -> NfMaxOrdFracIdl
 
     Computes the inverse of A.
 
 """ ->
-function inv(A::NfMaxOrdIdeal) 
+function inv(A::NfMaxOrdIdl) 
   if has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
     O = order(A)
@@ -789,7 +789,7 @@ function inv(A::NfMaxOrdIdeal)
     @hassert :NfMaxOrd 1 den(temp) == 1
     Ai.norm = num(temp)
     Ai.gens_normal = A.gens_normal
-    return NfMaxOrdFracIdeal(Ai, dn)
+    return NfMaxOrdFracIdl(Ai, dn)
   end
   error("Not implemented yet")
 end
@@ -801,22 +801,22 @@ end
 ###########################################################################################
 
 @doc """
-  has_basis(A::NfMaxOrdIdeal) -> Bool
+  has_basis(A::NfMaxOrdIdl) -> Bool
 
     Returns wether A has a basis already computed.
 
 """ ->
-function has_basis(A::NfMaxOrdIdeal)
+function has_basis(A::NfMaxOrdIdl)
   return isdefined(A, :basis)
 end
 
 @doc """
-  basis(A::NfMaxOrdIdeal) -> Array{NfOrdElem, 1}
+  basis(A::NfMaxOrdIdl) -> Array{NfOrdElem, 1}
 
     Returns the basis of A
 
 """ ->
-function basis(A::NfMaxOrdIdeal)
+function basis(A::NfMaxOrdIdl)
   if isdefined(A, :basis)
     return A.basis
   else
@@ -837,7 +837,7 @@ function basis(A::NfMaxOrdIdeal)
   end
 end
     
-function basis_mat_prime_deg_1(A::NfMaxOrdIdeal)
+function basis_mat_prime_deg_1(A::NfMaxOrdIdl)
   @assert A.is_prime == 1
   @assert A.minimum == A.norm
   O = order(A)
@@ -859,12 +859,12 @@ end
 
 
 @doc """
-  basis_mat(A::NfMaxOrdIdeal) -> fmpz_mat
+  basis_mat(A::NfMaxOrdIdl) -> fmpz_mat
 
     Returns the basis matrix of A.
 
 """ ->
-function basis_mat(A::NfMaxOrdIdeal)
+function basis_mat(A::NfMaxOrdIdl)
   if isdefined(A, :basis_mat)
     return A.basis_mat
   end
@@ -894,7 +894,7 @@ function basis_mat(A::NfMaxOrdIdeal)
   return c::fmpz_mat
 end
 
-function basis_mat_inv(A::NfMaxOrdIdeal)
+function basis_mat_inv(A::NfMaxOrdIdl)
   if isdefined(A, :basis_mat_inv)
     return A.basis_mat_inv
   else
@@ -911,7 +911,7 @@ end
 #CF: missing a function to compute the gcd(...) for the minimum 
 #    without 1st computing the complete inv
 
-function simplify(A::NfMaxOrdIdeal)
+function simplify(A::NfMaxOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
@@ -936,11 +936,11 @@ end
 # The following function is broken
 
 @doc """
-  reduce_ideal_class(A::NfMaxOrdIdeal) -> NfMaxOrdIdeal, nf_elem
+  reduce_ideal_class(A::NfMaxOrdIdl) -> NfMaxOrdIdl, nf_elem
 
   This function is broken.
 """ ->
-function reduce_ideal_class(A::NfMaxOrdIdeal)
+function reduce_ideal_class(A::NfMaxOrdIdl)
   B = inv(A)
   bas = basis_mat(B)
   L = lll(bas[1])
@@ -961,7 +961,7 @@ end
 # coefficients. Core idea is that the val elt is, originally, den*gen_two(p)^-1
 # where gen_two(p) is "small". Acutually, we don't care about gen_two, we
 # need gen_two^-1 to be small, hence this version...
-function val_func_no_index(p::NfMaxOrdIdeal)
+function val_func_no_index(p::NfMaxOrdIdl)
   P = p.gen_one
   K = nf(order(p))
   pi = inv(p)
@@ -999,7 +999,7 @@ end
 # precision and can thus compute (small) valuation at the effective cost of 
 # mod(nmod_poly, nmod_poly)
 # isn't it nice?
-function val_func_no_index_small(p::NfMaxOrdIdeal)
+function val_func_no_index_small(p::NfMaxOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
@@ -1028,7 +1028,7 @@ function val_func_no_index_small(p::NfMaxOrdIdeal)
   end
 end
 
-function val_func_index(p::NfMaxOrdIdeal)
+function val_func_index(p::NfMaxOrdIdl)
   # we are in the index divisor case. In larger examples, a lot of
   # time is spent computing denominators of order elements.
   # By using the rep-mat to multiply, we can stay in the order
@@ -1054,12 +1054,12 @@ function val_func_index(p::NfMaxOrdIdeal)
 end
 
 @doc """
-  valuation(a::nf_elem, p::NfMaxOrdIdeal) -> fmpz
+  valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
 
     Computes the p-adic valuation of a, that is, the largest i such that a is contained in p^i.
 
 """ ->
-function valuation(a::nf_elem, p::NfMaxOrdIdeal)
+function valuation(a::nf_elem, p::NfMaxOrdIdl)
   @hassert :NfMaxOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   if isdefined(p, :valuation)
@@ -1092,24 +1092,24 @@ function valuation(a::nf_elem, p::NfMaxOrdIdeal)
 end
 
 @doc """
-  valuation(a::fmpz, p::NfMaxOrdIdeal) -> fmpz
+  valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
 
     Computes the p-adic valuation of a, that is, the largest i such that a is contained in p^i.
 
 """ ->
-function valuation(a::fmpz, p::NfMaxOrdIdeal)
+function valuation(a::fmpz, p::NfMaxOrdIdl)
   P = p.gen_one
   @assert p.splitting_type[1] != 0
   return valuation(a, P)[1]* p.splitting_type[1]
 end
 
 @doc """
-  valuation(A::NfMaxOrdIdeal, p::NfMaxOrdIdeal) -> fmpz
+  valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl) -> fmpz
 
     Computes the p-adic valuation of A, that is, the largest i such that A is contained in p^i.
 
 """ ->
-function valuation(A::NfMaxOrdIdeal, p::NfMaxOrdIdeal)
+function valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl)
   return min(valuation(A.gen_one, p)[1], valuation(elem_in_nf(A.gen_two), p))
 end
 
@@ -1122,12 +1122,12 @@ end
 
 # This does not work
 
-#function ==(A::NfMaxOrdIdeal, B::NfMaxOrdIdeal)
+#function ==(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
 #  C = simplify(A * inv(B))
 #  return norm(C)==1 
 #end
 
-# at the moment ==(A::NfMaxOrdIdeal, B::NfMaxOrdIdeal)
+# at the moment ==(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
 # falls back to ==(A::NfOrdClsIdl, B::NfOrdClsIdl)
 
 ################################################################################
@@ -1137,8 +1137,8 @@ end
 ################################################################################
 
 @doc """
-  *(O::NfMaxOrd, a::nf_elem) -> NfMaxOrdIdeal
-  *(a::nf_elem, O::NfMaxOrd) -> NfMaxOrdIdeal
+  *(O::NfMaxOrd, a::nf_elem) -> NfMaxOrdIdl
+  *(a::nf_elem, O::NfMaxOrd) -> NfMaxOrdIdl
     
     Returns the principal ideal (a) of O. Sanity checks are performed.
 
@@ -1151,8 +1151,8 @@ end
 *(a::nf_elem, O::NfMaxOrd) = O*a
 
 @doc """
-  *(O::NfMaxOrd, x::NfOrdElem) -> NfMaxOrdIdeal
-  *(x::NfOrdElem, O::NfMaxOrd) -> NfMaxOrdIdeal
+  *(O::NfMaxOrd, x::NfOrdElem) -> NfMaxOrdIdl
+  *(x::NfOrdElem, O::NfMaxOrd) -> NfMaxOrdIdl
 
     Returns the principal ideal (x) of O. Sanity checks are performed.
 
@@ -1181,7 +1181,7 @@ function isramified(O::NfMaxOrd, p::Int)
 end
 
 @doc """
-  prime_decomposition(O::NfMaxOrd, p::Integer) -> Array{Tuple{NfMaxOrdIdeal, Integer}, 1}
+  prime_decomposition(O::NfMaxOrd, p::Integer) -> Array{Tuple{NfMaxOrdIdl, Integer}, 1}
 
     Returns an array of tuples (p_i,e_i) such that pO is the product of the p_i^e_i.
 
@@ -1387,7 +1387,7 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int;
                             complete::Bool = false,
                             degree_limit::Int = 0)
   p = 1
-  r = NfMaxOrdIdeal[]
+  r = NfMaxOrdIdl[]
   while p < B
     p = next_prime(p)
     if p > B
@@ -1419,7 +1419,7 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int, F::Function, bad::fmpz = discri
                             complete::Bool = false,
                             degree_limit::Int = 0)
   p = 1
-  r = NfMaxOrdIdeal[]
+  r = NfMaxOrdIdl[]
   while p < B
     p = next_prime(p)
     if p > B
@@ -1458,7 +1458,7 @@ end
 ################################################################################
 
 # We need to fix the two normal presentation of the trivial ideal
-function divexact(A::NfMaxOrdIdeal, y::fmpz)
+function divexact(A::NfMaxOrdIdl, y::fmpz)
 #  if has_2_elem(A)
 #    z = ideal(order(A), divexact(A.gen_one, y), divexact(A.gen_two, y))
 #    if has_basis_mat(A)
@@ -1476,7 +1476,7 @@ function divexact(A::NfMaxOrdIdeal, y::fmpz)
   end
 end
 
-function divexact(A::NfMaxOrdIdeal, B::NfMaxOrdIdeal)
+function divexact(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
   if norm(A) == norm(B)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
@@ -1497,16 +1497,16 @@ end
 ################################################################################
 
 @doc """
-  factor_dict(A::NfMaxOrdIdeal) -> Dict{NfMaxOrdIdeal, Int}
+  factor_dict(A::NfMaxOrdIdl) -> Dict{NfMaxOrdIdl, Int}
 
     Computes the prime ideal factorization as a dictionary, the keys being the prime ideal divisors.
     If lp = factor_dict(A), then keys(lp) are the prime ideal divisors of A and lp[P] is the P-adic valuation of A for all P in keys(lp).
 
 """ ->
-function factor_dict(A::NfMaxOrdIdeal)
+function factor_dict(A::NfMaxOrdIdl)
   ## this should be fixed
   lf = factor(BigInt(minimum(A)))
-  lF = Dict{NfMaxOrdIdeal, Int}()
+  lF = Dict{NfMaxOrdIdl, Int}()
   n = norm(A)
   O = order(A)
   for (i, (p, v)) in enumerate(lf)
@@ -1538,11 +1538,11 @@ end
 
 type quoringalg <: Ring
   base_order::NfMaxOrd
-  ideal::NfMaxOrdIdeal
+  ideal::NfMaxOrdIdl
   prime::Int
   basis::Array{NfOrdElem}
 
-  function quoringalg(O::NfMaxOrd, I::NfMaxOrdIdeal, p::Int)
+  function quoringalg(O::NfMaxOrd, I::NfMaxOrdIdl, p::Int)
     z = new()
     z.base_order = O
     z.ideal = I
