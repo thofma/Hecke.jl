@@ -514,6 +514,14 @@ end
 
 ################################################################################
 #
+#  Intersection
+#
+################################################################################
+
+# Falls back to generic algorithm intersection(::NfOrdClsIdl, ::NfOrdClsIdl)
+
+################################################################################
+#
 #  Ad hoc multiplication
 #
 ################################################################################
@@ -1266,20 +1274,75 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
   result = Array{Tuple{typeof(I()),Int}, 1}()
   # We now have all prime ideals, but only their basis matrices
   # We need the ramification indices and a 2-element presentation
+
   for j in 1:length(AA)
     P = AA[j].ideal
-    _assure_weakly_normal_presentation(P)
-    assure_2_normal(P)
-    e = Int(valuation(nf(O)(p), P))
     f = 0
+
+    # First compute the residue degree
     for i in 1:degree(O)
       f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
     end
+
+    P.norm = fmpz(p)^f
+
     if f > degree_limit || f < lower_limit
       continue
     end
+
+    if (1-1/p)^degree(O) < 0.1
+      # Find the second element might take some time
+      @vprint :NfMaxOrd 1 "chances are very low: ~$((1-1/p)^degree(O))"
+      # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
+      # number theory".
+
+      # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
+      if j == 1
+        Vp = AA[2].ideal
+        k = 3
+      else
+        Vp = AA[1].ideal;
+        k = 2;
+      end
+
+      for i in k:length(AA)
+        if i == j
+          continue
+        else
+          Vp = intersect(Vp, AA[i].ideal)
+        end
+      end
+
+      u, v = idempotents(P, Vp)
+
+      if !iszero(mod(norm(u), norm(P)*p))
+        x = u
+      elseif !iszero(mod(norm(u + p), norm(P)*p))
+        x = u + p
+      elseif !iszero(mod(norm(u - p), norm(P)*p))
+        x = u - p
+      else
+        for i in 1:degree(O)
+          if !iszero(mod(norm(v*basis(P)[i] + u), norm(P)*p))
+            x = v*basis(P)[i] + u
+          end
+        end
+      end
+
+      @hassert :NfMaxOrd 1 isdefined(:x)
+      @hassert :NfMaxOrd 2 O*O(p) + O*x == P
+      
+      P.gen_one = p
+      P.gen_two = x
+      P.gens_normal = p
+      P.gens_weakly_normal = 1
+    else
+      _assure_weakly_normal_presentation(P)
+      assure_2_normal(P)
+    end
+
+    e = Int(valuation(nf(O)(p), P))
     P.splitting_type = e, f
-    P.norm = fmpz(p)^f
     P.is_prime = 1
     push!(result, (P, e))
   end
@@ -1467,7 +1530,11 @@ function factor_dict(A::NfMaxOrdIdeal)
   return lF
 end
 
-dot(x::BigInt, y::NfOrdElem) = fmpz(x)*y
+################################################################################
+#
+#  Functions for index divisor splitting
+#
+################################################################################
 
 type quoringalg <: Ring
   base_order::NfMaxOrd
@@ -1619,10 +1686,10 @@ function split(R::quoringalg)
     x = quoelem(R, dot([ x.elem for x in K], r))
 
     if mod((x^p).elem, R.ideal) != mod(x.elem, R.ideal)
-      println("element^p: $(mod((x^p).elem, R.ideal))")
-      println("element: $(mod(x.elem, R.ideal))")
-      println(R.ideal.basis_mat)
-      println(K)
+      #println("element^p: $(mod((x^p).elem, R.ideal))")
+      #println("element: $(mod(x.elem, R.ideal))")
+      #println(R.ideal.basis_mat)
+      #println(K)
       error("Strange")
     end
 
