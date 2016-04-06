@@ -33,9 +33,8 @@ DLCFLAGS = "-fPIC -fno-common"
 cd(wdir)
 
 if on_windows
-  error("not supported yet")
    if Int == Int64
-      download_dll("http://www.mathematik.un-kl.de/~thofmann/hecke/bin/libhecke.dll", joinpath(vdir, "lib", "libhecke.dll"))
+      download_dll("http://www.mathematik.uni-kl.de/~thofmann/hecke/bin/libhecke.dll", joinpath(vdir, "lib", "libhecke.dll"))
    else
       println("There is no libhecke for 32 bit Windows")
    end
