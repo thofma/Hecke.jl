@@ -73,7 +73,8 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
              minpoly, charpoly, det,
-             howell_form, needs_parentheses, is_negative, parent_type
+             howell_form, needs_parentheses, is_negative, parent_type,
+             intersect, lcm
 
 export AnticNumberField, hash, update, nf, next_prime, dot
 
@@ -462,7 +463,7 @@ include("NfMaxOrd.jl")
 include("Map.jl")
 include("basis.jl")
 include("helper.jl")
-include("misc.jl")
+include("misc2.jl")
 
 ################################################################################
 #
@@ -472,7 +473,13 @@ include("misc.jl")
 
 # Nemo only provides element_types for parent objects
 
-elem_type(::Type{NfMaxOrd}) = NfOrdElem
+elem_type(::NfMaxOrd) = NfOrdElem{NfMaxOrd}
+
+elem_type(::Type{NfMaxOrd}) = NfOrdElem{NfMaxOrd}
+
+elem_type(::NfOrd) = NfOrdElem{NfOrd}
+
+elem_type(::Type{NfOrd}) = NfOrdElem{NfOrd}
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
 

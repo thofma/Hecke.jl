@@ -119,7 +119,7 @@ end
 #
 ################################################################################
 
-function quo(O::NfMaxOrd, I::NfMaxOrdIdeal)
+function quo(O::NfMaxOrd, I::NfMaxOrdIdl)
   # We should check that I is not zero
   Q = NfMaxOrdQuoRing(O, I)
   f = NfMaxOrdQuoMap(O, Q)
@@ -662,7 +662,7 @@ function _root_hensel(f::Poly{NfOrdElem})
   found_prime = false
 
   # Dummy variable
-  Q = NfMaxOrdIdeal(O)
+  Q = NfMaxOrdIdl(O)
   pi_F = NfMaxOrdToFqNmodMor()
   lin_factor = Array{fq_nmod_poly, 1}()
 

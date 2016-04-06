@@ -1,13 +1,13 @@
-export NfOrdFracIdeal
+export NfOrdFracIdl
 
 export colon_ideal
 
 
 order(a::NfOrdFracIdlSet) = a.order
 
-order(a::NfOrdFracIdeal) = order(a.parent)
+order(a::NfOrdFracIdl) = order(a.parent)
 
-function colon_ideal(a::NfOrdIdeal)
+function colon_ideal(a::NfOrdIdl)
   B = basis(a)
   O = order(a)
   @vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
@@ -20,10 +20,10 @@ function colon_ideal(a::NfOrdIdeal)
   # n is upper right HNF
   n = transpose(sub(n,1:degree(O),1:degree(O)))
   b,d = pseudo_inv(n)
-  return NfOrdFracIdeal(O,hnf(FakeFmpqMat(b,d)))
+  return NfOrdFracIdl(O,hnf(FakeFmpqMat(b,d)))
 end  
 
-function NfOrd(a::NfOrdFracIdeal)
+function NfOrd(a::NfOrdFracIdl)
   z = NfOrd(nf(order(a)), a.basis_mat*order(a).basis_mat)
   return z
 end

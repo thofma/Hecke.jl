@@ -247,7 +247,7 @@ function NfFactorBase(O::NfMaxOrd, B::Int, F::Function, complete::Bool = false, 
   FB.rw = Array(Int, 20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdeal}, 1}}()
+  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}()
 
   for i = 1:length(lp)
     if !haskey(fb, lp[i].gen_one)
@@ -283,7 +283,7 @@ function NfFactorBase(O::NfMaxOrd, B::Int;
   FB.rw = Array(Int, 20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdeal}, 1}}()
+  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}()
 
   for i = 1:length(lp)
     if !haskey(fb, lp[i].gen_one)
@@ -538,7 +538,7 @@ end
 ################################################################################
 
 function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
-                                           I::NfMaxOrdIdeal = rand(clg.FB.ideals))
+                                           I::NfMaxOrdIdl = rand(clg.FB.ideals))
   s = 1
   if r < 2
     r = 2
@@ -558,7 +558,7 @@ end
 #
 ################################################################################
 function class_group_small_elements_relation(clg::ClassGrpCtx,
-                A::NfMaxOrdIdeal, cnt::Int = degree(order(A)))
+                A::NfMaxOrdIdl, cnt::Int = degree(order(A)))
   l = FakeFmpqMat(lll(basis_mat(A)))*basis_mat(order(A))
   K = nf(order(A))
   if cnt <= degree(A.parent.order)
@@ -649,7 +649,7 @@ function shift!(g::fmpz_mat, l::Int)
 end
 
 global last_lat=9
-function lll(rt_c::roots_ctx, A::NfMaxOrdIdeal, v::fmpz_mat;
+function lll(rt_c::roots_ctx, A::NfMaxOrdIdl, v::fmpz_mat;
                 prec::Int = 100)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
                                               ## c is NOT a copy, so don't change.
@@ -733,8 +733,8 @@ end
 #
 ################################################################################
 
-function one_step(c::roots_ctx, b::NfMaxOrdFracIdeal,
-                p::NfMaxOrdIdeal; prec::Int = 100)
+function one_step(c::roots_ctx, b::NfMaxOrdFracIdl,
+                p::NfMaxOrdIdl; prec::Int = 100)
   b = p*b
   simplify(b)
   g1 = short_elem(c, b, prec = prec)
@@ -744,12 +744,12 @@ function one_step(c::roots_ctx, b::NfMaxOrdFracIdeal,
   return simplify(g2*inv(b)), g1, g2
 end
 
-function short_elem(c::roots_ctx, A::NfMaxOrdFracIdeal,
+function short_elem(c::roots_ctx, A::NfMaxOrdFracIdl,
                 v::fmpz_mat=MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   return divexact(short_elem(c, A.num, v, prec = prec), A.den)
 end
 
-function short_elem(c::roots_ctx, A::NfMaxOrdIdeal,
+function short_elem(c::roots_ctx, A::NfMaxOrdIdl,
                 v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
@@ -766,7 +766,7 @@ end
 #
 ################################################################################
 
-function enum_ctx_from_ideal(c::roots_ctx, A::NfMaxOrdIdeal,
+function enum_ctx_from_ideal(c::roots_ctx, A::NfMaxOrdIdl,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
 
   l, t = lll(c, A, v, prec = prec)
@@ -801,7 +801,7 @@ end
 
 global _start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
-                A::NfMaxOrdIdeal; prec::Int = 200, val::Int = 0,
+                A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()
@@ -1541,12 +1541,12 @@ end
 #  Conversion to Magma
 #
 ################################################################################
-function toMagma(f::IOStream, clg::NfMaxOrdIdeal, order::ASCIIString = "M")
+function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::ASCIIString = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")
 end
 
-function toMagma(s::ASCIIString, c::NfMaxOrdIdeal, order::ASCIIString = "M")
+function toMagma(s::ASCIIString, c::NfMaxOrdIdl, order::ASCIIString = "M")
   f = open(s, "w")
   toMagma(f, c, order)
   close(f)

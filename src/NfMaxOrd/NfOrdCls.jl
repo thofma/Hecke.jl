@@ -37,8 +37,9 @@
 #
 ################################################################################
 
-export NfOrdClsIdl, elem_in_order, rand, rand!, istorsionunit, NfOrdElem,
-       minkowski_mat, conjugates_log, conjugates_arb
+export elem_in_order, rand, rand!, istorsionunit, NfOrdElem,
+       minkowski_mat, conjugates_log, conjugates_arb, intersect, lcm,
+       idempotents
 
 ################################################################################
 #
@@ -953,6 +954,23 @@ end
 
 doc"""
 ***
+    intersect(x::NfOrdClsIdl, y::NfOrdClsIdl) -> NfOrdClsIdl
+
+> Returns $x \cap y$.
+"""
+function intersect(x::NfOrdClsIdl, y::NfOrdClsIdl)
+  d = degree(order(x))
+  H = vcat(basis_mat(x), basis_mat(y))
+  K = _kernel(H)
+  g = lcm(minimum(x),minimum(y))
+  return ideal(order(x), _hnf_modular_eldiv(sub(K, 1:d, 1:d)*basis_mat(x), g, :lowerleft))
+  #H = sub(_hnf(vcat(basis_mat(x),basis_mat(y)), :lowerleft), degree(order(x))+1:2*degree(order(x)), 1:degree(order(x)))
+end
+
+lcm(x::NfOrdClsIdl, y::NfOrdClsIdl) = intersection(x, y)
+
+doc"""
+***
     *(x::NfOrdClsIdl, y::NfOrdClsIdl)
 
 > Returns $x \cdot y$.
@@ -963,19 +981,69 @@ end
 
 function _mul(x::NfOrdClsIdl, y::NfOrdClsIdl)
   O = order(x)
+  d = degree(O)
   l = minimum(x)*minimum(y)
   z = MatrixSpace(FlintZZ, degree(O)*degree(O), degree(O))()
   X = basis(x)
   Y = basis(y)
-  for i in 1:degree(O)
-    for j in 1:degree(O)
+  for i in 1:d
+    for j in 1:d
       t = elem_in_basis(X[i]*Y[j])
-      for k in 1:degree(O)
+      for k in 1:d
         z[i*j, k] = t[k]
       end
     end
   end
-  return ideal(O, _hnf_modular_eldiv(z, l, :lowerleft))
+  # This is a d^2 x d matrix
+  return ideal(O, sub(_hnf_modular_eldiv(z, l, :lowerleft),
+                      (d*(d - 1) + 1):d^2, 1:d))
+end
+
+################################################################################
+#
+#  Idempotents
+#
+################################################################################
+
+function idempotents(x::NfOrdClsIdl, y::NfOrdClsIdl)
+  O = order(x)
+  d = degree(O)
+
+  # form the matrix
+  #
+  # ( 1 |  1  | 0 )
+  # ( 0 | M_x | I )
+  # ( 0 | M_y | 0 )
+
+  V = MatrixSpace(FlintZZ, 1 + 2*d, 1 + 2*d)()
+
+  u = elem_in_basis(one(O))
+
+  V[1, 1] = 1
+
+  for i in 1:d
+    V[1, i + 1] = u[i]
+  end
+
+  Hecke._copy_matrix_into_matrix(V, 2, 2, basis_mat(x))
+  Hecke._copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y))
+
+  for i in 1:d
+    V[1 + i, d + 1 + i] = 1
+  end
+
+
+  H = hnf(V) # upper right
+
+  @assert all([ H[1, i] == 0 for i in 2:(1 + d)])
+
+  z = basis(x)[1]*H[1, d + 2]
+
+  for i in 2:d
+    z = z + basis(x)[i]*H[1, d + 1 + i]
+  end
+
+  return -z, 1 + z
 end
 
 ################################################################################

@@ -411,7 +411,7 @@ end
 
 ################################################################################
 #
-#  NfOrdClsIdl/NfOrdIdlSet/NfOrdIdeal
+#  NfOrdClsIdl/NfOrdIdlSet/NfOrdIdl
 #
 ################################################################################
 
@@ -432,20 +432,20 @@ type NfOrdIdlSet
   end
 end
 
-type NfOrdIdeal <: NfOrdClsIdl
+type NfOrdIdl <: NfOrdClsIdl
   basis::Array{NfOrdElem{NfOrd}, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   parent::NfOrdIdlSet
 
-  function NfOrdIdeal(O::NfOrd, a::fmpz)
+  function NfOrdIdl(O::NfOrd, a::fmpz)
     z = new()
     z.parent = NfOrdIdlSet(O)
     z.basis_mat = MatrixSpace(ZZ, degree(O), degree(O))(a)
     return z
   end
 
-  function NfOrdIdeal(O::NfOrd, a::fmpz_mat)
+  function NfOrdIdl(O::NfOrd, a::fmpz_mat)
     z = new()
     z.parent = NfOrdIdlSet(O)
     z.basis_mat = a
@@ -455,7 +455,7 @@ end
 
 ################################################################################
 #
-#  NfOrdFracIdlSet/NfOrdFracIdeal
+#  NfOrdFracIdlSet/NfOrdFracIdl
 #
 ################################################################################
 
@@ -474,13 +474,13 @@ type NfOrdFracIdlSet
   end
 end
 
-type NfOrdFracIdeal
+type NfOrdFracIdl
   basis::Array{NfOrdElem{NfOrd}, 1}
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
   parent::NfOrdFracIdlSet
   
-  function NfOrdFracIdeal(O::NfOrd, a::FakeFmpqMat)
+  function NfOrdFracIdl(O::NfOrd, a::FakeFmpqMat)
     z = new()
     z.basis_mat = a
     z.parent = NfOrdFracIdlSet(O)
@@ -602,7 +602,7 @@ end
 
 ################################################################################
 #
-#  NfMaxOrdIdlSet/NfMaxOrdIdeal
+#  NfMaxOrdIdlSet/NfMaxOrdIdl
 #
 ################################################################################
 
@@ -622,28 +622,28 @@ type NfMaxOrdIdlSet <: Ring
 end
 
 @doc """
-  NfMaxOrdIdeal(O::NfMaxOrd, a::fmpz_mat) -> NfMaxOrdIdeal
+  NfMaxOrdIdl(O::NfMaxOrd, a::fmpz_mat) -> NfMaxOrdIdl
 
     Creates the ideal of O with basis matrix a.
     No sanity checks. No data is copied, a should not be used anymore.
 
-  NfMaxOrdIdeal(a::fmpz, b::NfOrdElem) -> NfMaxOrdIdeal
+  NfMaxOrdIdl(a::fmpz, b::NfOrdElem) -> NfMaxOrdIdl
 
     Creates the ideal (a,b) of the order of b.
     No sanity checks. Note data is copied, a and b should not be used anymore.
   
-  NfMaxOrdIdeal(O::NfMaxOrd, a::fmpz, b::nf_elem) -> NfMaxOrdIdeal
+  NfMaxOrdIdl(O::NfMaxOrd, a::fmpz, b::nf_elem) -> NfMaxOrdIdl
 
     Creates the ideal (a,b) of O.
     No sanity checks. No data is copied, a and b should be used anymore.
   
-  NfMaxOrdIdeal(x::NfOrdElem) -> NfMaxOrdIdeal
+  NfMaxOrdIdl(x::NfOrdElem) -> NfMaxOrdIdl
 
     Creates the principal ideal (x) of the order of O.
     No sanity checks. No data is copied, x should not be used anymore.
 
 """ ->
-type NfMaxOrdIdeal <: NfOrdClsIdl
+type NfMaxOrdIdl <: NfOrdClsIdl
   basis::Array{NfOrdElem{NfMaxOrd}, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
@@ -672,7 +672,7 @@ type NfMaxOrdIdeal <: NfOrdClsIdl
 
   parent::NfMaxOrdIdlSet
   
-  function NfMaxOrdIdeal(O::NfMaxOrd)
+  function NfMaxOrdIdl(O::NfMaxOrd)
     # populate the bits types (Bool, Int) with default values
     r = new()
     r.parent = NfMaxOrdIdlSet(O)
@@ -684,34 +684,34 @@ type NfMaxOrdIdeal <: NfOrdClsIdl
     return r
   end
 
-  function NfMaxOrdIdeal(O::NfMaxOrd, a::fmpz_mat)
+  function NfMaxOrdIdl(O::NfMaxOrd, a::fmpz_mat)
     # create ideal of O with basis_matrix a
     # Note that the constructor 'destroys' a, a should not be used anymore
-    r = NfMaxOrdIdeal(O)
+    r = NfMaxOrdIdl(O)
     r.basis_mat = a
     return r
   end
 
-  function NfMaxOrdIdeal(a::fmpz, b::NfOrdElem{NfMaxOrd})
+  function NfMaxOrdIdl(a::fmpz, b::NfOrdElem{NfMaxOrd})
     # create ideal (a,b) of order(b)
-    r = NfMaxOrdIdeal(parent(b))
+    r = NfMaxOrdIdl(parent(b))
     r.gen_one = a
     r.gen_two = b
     return r
   end
  
-  function NfMaxOrdIdeal(O::NfMaxOrd, a::fmpz, b::nf_elem)
+  function NfMaxOrdIdl(O::NfMaxOrd, a::fmpz, b::nf_elem)
     # create ideal (a,b) of O
-    r = NfMaxOrdIdeal(a, O(b, false))
+    r = NfMaxOrdIdl(a, O(b, false))
     return r
   end
 
-  function NfMaxOrdIdeal(x::NfOrdElem{NfMaxOrd})
+  function NfMaxOrdIdl(x::NfOrdElem{NfMaxOrd})
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
 
-    C = NfMaxOrdIdeal(O)
+    C = NfMaxOrdIdl(O)
     C.princ_gen = x
 
     return C
@@ -720,35 +720,35 @@ end
 
 ################################################################################
 #
-#  NfMaxOrdFracIdealSet/NfMaxOrdFracIdeal
+#  NfMaxOrdFracIdlSet/NfMaxOrdFracIdl
 #
 ################################################################################
 
-const NfMaxOrdFracIdealSetID = Dict{NfMaxOrd, Ring}()
+const NfMaxOrdFracIdlSetID = Dict{NfMaxOrd, Ring}()
 
-type NfMaxOrdFracIdealSet <: Ring
+type NfMaxOrdFracIdlSet <: Ring
    order::NfMaxOrd
-   function NfMaxOrdFracIdealSet(O::NfMaxOrd)
+   function NfMaxOrdFracIdlSet(O::NfMaxOrd)
      try
-       return NfMaxOrdFracIdealSetID[O]::NfMaxOrdFracIdealSet
+       return NfMaxOrdFracIdlSetID[O]::NfMaxOrdFracIdlSet
      catch
        r = new()
        r.order = O
-       NfMaxOrdFracIdealSetID[O] = r
+       NfMaxOrdFracIdlSetID[O] = r
        return r
      end
    end
 end
 
-type NfMaxOrdFracIdeal
-  num::NfMaxOrdIdeal
+type NfMaxOrdFracIdl
+  num::NfMaxOrdIdl
   den::fmpz
   basis_mat::FakeFmpqMat
-  parent::NfMaxOrdFracIdealSet
+  parent::NfMaxOrdFracIdlSet
 
-  function NfMaxOrdFracIdeal(x::NfMaxOrdIdeal, y::fmpz)
+  function NfMaxOrdFracIdl(x::NfMaxOrdIdl, y::fmpz)
     z = new()
-    z.parent = NfMaxOrdFracIdealSet(order(x))
+    z.parent = NfMaxOrdFracIdlSet(order(x))
     z.num = x
     z.den = y
     return z
@@ -955,10 +955,10 @@ end
 type FactorBaseSingleP
   P::fmpz
   pt::FactorBase{nmod_poly}
-  lp::Array{Tuple{Int,NfMaxOrdIdeal}, 1}
+  lp::Array{Tuple{Int,NfMaxOrdIdl}, 1}
   doit::Function
   
-  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfMaxOrdIdeal}, 1})
+  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfMaxOrdIdl}, 1})
     FB = new()
     FB.lp = lp
     FB.P = p
@@ -1029,12 +1029,12 @@ type NfFactorBase
   fb::Dict{fmpz, FactorBaseSingleP}
   size::Int
   fb_int::FactorBase{fmpz}
-  ideals::Array{NfMaxOrdIdeal, 1}
+  ideals::Array{NfMaxOrdIdl, 1}
   rw::Array{Int, 1}
   mx::Int
 
   function NfFactorBase()
-    r = new(Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdeal}, 1}}())
+    r = new(Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}())
     r.size = 0
     return r
   end
@@ -1103,7 +1103,7 @@ end
 ################################################################################
 
 type IdealRelationsCtx{Tx, TU, TC}
-  A::NfMaxOrdIdeal
+  A::NfMaxOrdIdl
   v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
   E::enum_ctx{Tx, TU, TC}
   c::fmpz           # the last length
@@ -1114,7 +1114,7 @@ type IdealRelationsCtx{Tx, TU, TC}
   vl::Int
   rr::Range{Int}
 
-  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaxOrdIdeal;
+  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaxOrdIdl;
                   prec::Int = 100, val::Int=0, limit::Int = 0)
     v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
@@ -1142,14 +1142,14 @@ end
 
 type NfMaxOrdQuoRing <: Ring
   base_ring::NfMaxOrd
-  ideal::NfMaxOrdIdeal
+  ideal::NfMaxOrdIdl
   basis_mat::fmpz_mat
 
   # temporary variables for divisor and annihilator computations
   tmp_div::fmpz_mat
   tmp_ann::fmpz_mat
 
-  function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdeal)
+  function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdl)
     z = new()
     z.base_ring = O
     z.ideal = I

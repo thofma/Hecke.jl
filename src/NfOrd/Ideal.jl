@@ -1,46 +1,45 @@
 ################################################################################
 #
-#  NfOrd_ideals: Ideals in orders of number fields
+#  NfOrd_ideals: Idls in orders of number fields
 #
 ################################################################################
 
-export NfOrdIdeal
+export NfOrdIdl
 
 export ideal, colon_ideal, basis_mat_inv
 
 
-ideal(O::NfOrd, a::fmpz)  = NfOrdIdeal(O,a)
+ideal(O::NfOrd, a::fmpz)  = NfOrdIdl(O,a)
 
-ideal(O::NfOrd, a::Integer) = NfOrdIdeal(O,ZZ(a))
+ideal(O::NfOrd, a::Integer) = NfOrdIdl(O,ZZ(a))
 
-ideal(O::NfOrd, a::fmpz_mat) = NfOrdIdeal(O,a)
+ideal(O::NfOrd, a::fmpz_mat) = NfOrdIdl(O,a)
 
 order(a::NfOrdIdlSet) = a.order
   
-order(a::NfOrdIdeal) = order(parent(a))
+order(a::NfOrdIdl) = order(parent(a))
 
-parent(a::NfOrdIdeal) = a.parent
+parent(a::NfOrdIdl) = a.parent
 
-function show(io::IO, a::NfOrdIdeal)
-  print(io, "Ideal of (")
+function show(io::IO, a::NfOrdIdl)
+  print(io, "Ideall of (")
   print(io, order(a), ")\n")
   print(io, "with basis matrix\n")
   print(io, basis_mat(a))
 end
 
-function basis_mat(a::NfOrdIdeal)
+function basis_mat(a::NfOrdIdl)
   return a.basis_mat
 end
 
-function basis(a::NfOrdIdeal)
+function basis(a::NfOrdIdl)
   O = order(a)
   if isdefined(a, :basis)
     return a.basis
   end
-  B = Array(NfOrdElem, degree(order(a)))
+  B = Array(elem_type(O), degree(order(a)))
   for i in 1:degree(O)
-    t = O()
-    t.elem_in_nf = zero(nf(O))
+    t = zero(O)
     v = Array(fmpz,degree(O))
     for j in 1:degree(O)
       t += basis(O)[j]*basis_mat(a)[i,j]
@@ -53,7 +52,7 @@ function basis(a::NfOrdIdeal)
   return a.basis
 end
 
-function basis_mat_inv(a::NfOrdIdeal)
+function basis_mat_inv(a::NfOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return a.basis_mat_inv
   else
