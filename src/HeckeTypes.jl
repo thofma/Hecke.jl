@@ -516,7 +516,7 @@ type NfMaxOrd <: NfOrdCls
   basis_ord::Array{NfOrdElem, 1} # Array of order elements
   basis_mat::FakeFmpqMat           # basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat       # inverse of basis matrix
-  index::fmpz                      # the determinant of basis_mat_inv
+  index::fmpz                      # the det of basis_mat_inv
   disc::fmpz                       # discriminant
   parent::NfMaxOrdSet        # parent object
   signature::Tuple{Int, Int}       # signature of the parent object

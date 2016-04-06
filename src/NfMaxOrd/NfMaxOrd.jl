@@ -152,7 +152,7 @@ function index(O::NfMaxOrd)
   if isdefined(O, :index)
     return O.index
   else
-    O.index = divexact(basis_mat(O).den^degree(O), determinant(basis_mat(O).num))
+    O.index = divexact(basis_mat(O).den^degree(O), det(basis_mat(O).num))
     return O.index
   end
 end

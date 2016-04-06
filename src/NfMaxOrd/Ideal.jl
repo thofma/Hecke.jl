@@ -222,10 +222,10 @@ function norm(A::NfMaxOrdIdl)
   @hassert :NfMaxOrd 1 has_2_elem(A) || has_basis_mat(A)
   O = parent(A)
   if has_basis_mat(A)
-    A.norm = abs(determinant(basis_mat(A)))
+    A.norm = abs(det(basis_mat(A)))
     return A.norm
   else
-    A.norm = abs(determinant(basis_mat(A)))
+    A.norm = abs(det(basis_mat(A)))
     return A.norm
   end
 end

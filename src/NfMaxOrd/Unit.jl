@@ -294,7 +294,7 @@ function is_independent{T}(x::Array{T, 1})
     end
 
     B = A*transpose(A)
-    @vprint :UnitGrp 2 "Computing determinant of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
+    @vprint :UnitGrp 2 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
