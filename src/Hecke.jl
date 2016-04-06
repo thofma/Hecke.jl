@@ -111,7 +111,6 @@ function __init__()
 
   push!(Libdl.DL_LOAD_PATH, Pkg.dir("Hecke", "local", "lib"))
   Libdl.dlopen(libhecke)
-  ccall((:flint_set_abort, :libflint), Void, (Ptr{Void}, ), cglobal((:hecke_abort, :libhecke), Ptr{Void}))
 
   println("")
   print("Welcome to \n")
