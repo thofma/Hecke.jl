@@ -28,10 +28,9 @@ Please see [http://julialang.org/downloads](/http://julialang.org/downloads/) fo
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 
 ```julia
-julia> Pkg.update()
-julia> Pkg.add("Nemo")
-julia> Pkg.checkout("Nemo")
+julia> Pkg.clone("https://github.com/nemocas/Nemo.jl")
 julia> Pkg.clone("https://github.com/thofma/Hecke.jl")
+julia> Pkg.build("Hecke")
 ```
 
 ## Quick start
