@@ -102,10 +102,15 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
+const pkgdir = realpath(joinpath(dirname(@__FILE__), ".."))
+const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
+const libdir = joinpath(pkgdir, "local", "lib")
+
 function __init__()
 
-  push!(Libdl.DL_LOAD_PATH, Pkg.dir("Hecke", "local", "lib"))
-
+  on_windows = @windows ? true : false
+  on_linux = @linux ? true : false
+  
   println("")
   print("Welcome to \n")
   print_with_color(:red, "
@@ -116,16 +121,7 @@ function __init__()
  | |  | |  __/ (__|   <  __/
  |_|  |_|\\___|\\___|_|\\_\\___|
   ")
-#   ('-. .-.   ('-.             .-. .-')     ('-.   
-#  ( OO )  / _(  OO)            \\  ( OO )  _(  OO)  
-#  ,--. ,--.(,------.   .-----. ,--. ,--. (,------. 
-#  |  | |  | |  .---'  '  .--./ |  .'   /  |  .---' 
-#  |   .|  | |  |      |  |('-. |      /,  |  |     
-#  |       |(|  '--.  /_) |OO  )|     ' _)(|  '--.  
-#  |  .-.  | |  .--'  ||  |`-'| |  .   \\   |  .--'  
-#  |  | |  | |  `---.(_'  '--'\\ |  |\\   \\  |  `---. 
-#  `--' `--' `------'   `-----' `--' '--'  `------' 
-#  ")
+
   println()
   print("Version")
   print_with_color(:green, " $VERSION_NUMBER ")
@@ -133,7 +129,17 @@ function __init__()
   println()
   println("(c) 2015 by Claus Fieker and Tommy Hofmann")
   println()
-   
+  
+  if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
+    push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
+  elseif on_linux
+    push!(Libdl.DL_LOAD_PATH, libdir)
+    Libdl.dlopen(libhecke)
+  else
+    push!(Libdl.DL_LOAD_PATH, libdir)
+	ENV["PATH"] = ENV["PATH"] * ";" * joinpath(Pkg.dir("Nemo"), "local", "lib")
+  end
+  
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
   global _set_nf_conjugate_data_arb = t[2]

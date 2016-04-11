@@ -19,17 +19,24 @@ if !ispath(Pkg.dir("Hecke", "local", "lib"))
     mkdir(Pkg.dir("Hecke", "local", "lib"))
 end
 
+function download_dll(url_string, location_string)
+   try
+      run(`curl -o $(location_string) -L $(url_string)`)
+   catch
+      download(url_string, location_string)
+   end
+end
+
 LDFLAGS = "-Wl,-rpath,$nemo_vdir/lib -Wl,-rpath,\$\$ORIGIN/../share/julia/site/v$(VERSION.major).$(VERSION.minor)/Nemo/local/lib -Wl,-rpath,$vdir/lib -Wl,-rpath,\$\$ORIGIN/../share/julia/site/v$(VERSION.major).$(VERSION.minor)/Hecke/local/lib"
 DLCFLAGS = "-fPIC -fno-common"
 
 cd(wdir)
 
 if on_windows
-  error("not supported yet")
-   if Int == Int32
-      download_dll("http://nemocas.org/binaries/w32-libarb.dll", joinpath(vdir, "lib", "libarb.dll"))
+   if Int == Int64
+      download_dll("http://www.mathematik.uni-kl.de/~thofmann/hecke/bin/libhecke.dll", joinpath(vdir, "lib", "libhecke.dll"))
    else
-      download_dll("http://nemocas.org/binaries/w64-libarb.dll", joinpath(vdir, "lib", "libarb.dll"))
+      println("There is no libhecke for 32 bit Windows")
    end
 else
    cd("$wdir/hecke")

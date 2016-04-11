@@ -90,7 +90,7 @@ function _discriminant(O::NfOrdCls)
       A[i,j] = FlintZZ(trace(B[i]*B[j]))
     end
   end
-  O.disc = determinant(A)
+  O.disc = det(A)
   return O.disc
 end
 
