@@ -1,18 +1,3 @@
-function domain(M::Map)
-  return M.header.domain
-end
-
-function codomain(M::Map)
-  return M.header.codomain
-end
-
-function image_function(f::Map)
-  return f.header.image
-end
-
-function preimage_function(f::Map)
-  return f.header.preimage
-end
 
 #function image_func(M::Map)
 #  return M.header.image

@@ -88,9 +88,9 @@ function bach_G(a,b)
   return bach_rho(1/a, 1/b)
 end
 
-function bach_J{T<:Number}(u::T, v::T, w::T, prec)
+function bach_J{T <: Number}(u::T, v::T, w::T, prec)
   k = ceil(w-w/u)
-  function xi(t::T)
+  function xi(t)#(t::T)
     return k-w+w/t
   end
 
@@ -98,7 +98,7 @@ function bach_J{T<:Number}(u::T, v::T, w::T, prec)
     local A = w/v+k-w,
           B = w/u+k-w,
           C = k-w
-    function H_i(u::T, v::T, w::T, i::Int)
+    function H_i(u, v, w, i)#u::T, v::T, w::T, i::Int)
       return C^i*(log(u/v) + sum([(A/C)^j/j for j=1:i]) -
                              sum([(B/C)^j/j for j=1:i]))
     end

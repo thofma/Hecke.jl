@@ -558,7 +558,7 @@ function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
   end
 end
 
-function swap_rows!(M::Mat, i::Int, j::Int)
+function swap_rows!(M::MatElem, i::Int, j::Int)
   for k in 1:cols(M)
     t = M[i, k]
     M[i, k] = M[j, k]

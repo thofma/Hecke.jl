@@ -1,9 +1,9 @@
 
-function lift(a::Residue)
+function lift(a::GenResidue)
   return a.data
 end
 
-function ^(a::Residue, f::fmpz)
+function ^(a::ResidueElem, f::fmpz)
   f==0 && return one(parent(a))
   f==1 && return a
   if f<0
