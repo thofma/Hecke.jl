@@ -157,7 +157,7 @@ end
 #> is contained in $\mathcal O$ if and only if `check` is `true`.
 #"""
 for T in subtypes(NfOrdCls)
-  (O::T)(a::nf_elem, check::Bool = true) = begin
+  function Base.call(O::T, a::nf_elem, check::Bool = true)
     if check
       (x,y) = _check_elem_in_order(a,O)
       !x && error("Number field element not in the order")
