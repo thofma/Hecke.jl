@@ -41,7 +41,7 @@ function image{D, C}(M::Map{D, C}, a)
 end
 
 for T in subtypes(Map)
-  (M::T)(a) = image(M, a)
+  Base.call(M::T, a) = image(M, a)
 end
 
 function show(io::IO, M::InverseMap)
