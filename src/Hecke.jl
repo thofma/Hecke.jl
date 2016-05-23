@@ -469,7 +469,7 @@ include("helper.jl")
 include("misc2.jl")
 
 for T in subtypes(Map)
-  (M::T)(a) = image(M, a)
+  Base.call(M::T, a) = image(M, a)
 end
 
 ################################################################################
