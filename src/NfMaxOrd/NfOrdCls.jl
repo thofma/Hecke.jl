@@ -177,7 +177,7 @@ end
 #> is contained in $\mathcal O$ if and only if `check` is `true`.
 #"""
 for T in subtypes(NfOrdCls)
-  (O::T)(a::Union{fmpz, Integer}) = begin
+  function Base.call(O::T, a::Union{fmpz, Integer})
     return NfOrdElem{T}(O, nf(O)(a))
   end
 end
@@ -189,7 +189,7 @@ end
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
 for T in subtypes(NfOrdCls)
-  (O::T)(arr::Array{fmpz, 1}) = begin
+  function Base.call(O::T, arr::Array{fmpz, 1})
     return NfOrdElem{T}(O, deepcopy(arr))
   end
 end
@@ -201,7 +201,7 @@ end
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
 for T in subtypes(NfOrdCls)
-  (O::T){S <: Integer}(arr::Array{S, 1}) = begin
+  function Base.call{S <: Integer}(O::T, arr::Array{S, 1})
     return NfOrdElem{T}(O, deepcopy(arr))
   end
 end
@@ -215,7 +215,7 @@ end
 #> field is $a$.
 #"""
 for T in subtypes(NfOrdCls)
-  (O::T)(a::nf_elem, arr::Array{fmpz, 1}) = begin
+  function Base.call(O::T, a::nf_elem, arr::Array{fmpz, 1})
     return NfOrdElem{T}(O, deepcopy(a), deepcopy(arr))
   end
 end
@@ -227,7 +227,7 @@ end
 #> This function constructs a new element of $\mathcal O$ which is set to $0$.
 #"""
 for T in subtypes(NfOrdCls)
-  (O::T)() = NfOrdElem{T}(O)
+  function Base.call(O::T) = NfOrdElem{T}(O)
 end
 
 ################################################################################
