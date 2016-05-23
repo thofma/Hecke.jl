@@ -227,7 +227,7 @@ end
 #> This function constructs a new element of $\mathcal O$ which is set to $0$.
 #"""
 for T in subtypes(NfOrdCls)
-  function Base.call(O::T) = NfOrdElem{T}(O)
+  Base.call(O::T) = NfOrdElem{T}(O)
 end
 
 ################################################################################
