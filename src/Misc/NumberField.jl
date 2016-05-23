@@ -79,7 +79,7 @@ end
 #end
 
 
-function (a::FmpzPolyRing)(b::fmpq_poly) 
+function Base.call(a::FmpzPolyRing, b::fmpq_poly) 
   (den(b) != 1) && error("denominator has to be 1")
   z = a()
   ccall((:fmpq_poly_get_numerator, :libflint), Void,
