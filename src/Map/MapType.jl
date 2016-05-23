@@ -6,6 +6,22 @@
 ##
 ###########################################################
 
+function domain(M::Map)
+  return M.header.domain
+end
+
+function codomain(M::Map)
+  return M.header.codomain
+end
+
+function image_function(f::Map)
+  return f.header.image
+end
+
+function preimage_function(f::Map)
+  return f.header.preimage
+end
+
 export Map, CoerceMap, ResidueRingPolyMap
 
 type MapHeader{D, C}
@@ -63,13 +79,13 @@ type CompositeMap{D, C, R} <: Map{D, C}
     z.domain = domain(g)
     z.codomain = codomain(f)
 
-    image = function(x::elem_type(domain(z)))
+    image = function(x)#x::elem_type(domain(z)))
       parent(x) != domain(z) && error("Element not in domain of map")
       return f(g(x))::elem_type(codomain(z))
     end
 
     if isdefined(f, :preimage) && isdefined(g, :preimage)
-      preimage = function(x::elem_type(codomain(z)))
+      preimage = function(x)#x::elem_type(codomain(z)))
         return codomain(g, codomain(f, x))::elem_type(domain(z))
       end
       z.header = MapHeader(domain(g), codomain(f), image, preimage)
@@ -94,15 +110,15 @@ end
 
 type ResidueRingPolyMap{D, C, T} <: Map{D, C}
   header::MapHeader{D, C}
-  gen_image::Residue{T}
+  gen_image::GenResidue{T}
   coeff_map::Map # can be missing if domain and codomain have the same
                  # base_ring(base_ring())
-  function ResidueRingPolyMap(domain::D, codomain::C, gen_image::Residue{T}, coeff_map::Map)
+  function ResidueRingPolyMap(domain::D, codomain::C, gen_image::GenResidue{T}, coeff_map::Map)
     z = new{D, C, T}()
     z.gen_image = gen_image
     z.coeff_map = coeff_map
 
-    image = function(a::Residue)
+    image = function(a::GenResidue)
       #a should be in the domain of M...
       I = codomain(0)
       for i in degree(a.data):-1:0
@@ -112,7 +128,7 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
     end
     
     # I need to call preimage in _preimage
-    _preimage = function(a::Residue{T})
+    _preimage = function(a::GenResidue{T})
       R = codomain
       parent(a) == R || throw("mixed rings in preimage")
       g = gens(domain)
@@ -141,11 +157,11 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
     return z
   end
 
-  function ResidueRingPolyMap(domain::D, codomain::C, gen_image::Residue{T})
+  function ResidueRingPolyMap(domain::D, codomain::C, gen_image::GenResidue{T})
     z = new{D, C, T}()
     z.gen_image = gen_image
 
-    image = function(a::Residue)
+    image = function(a::GenResidue)
       I = z.codomain(0)
       for i in degree(a.data):-1:0
         I = I*z.gen_image + coeff(a.data, i)
@@ -153,7 +169,7 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
       return I::elem_type(C)
     end
 
-    preimage = function(a::Residue{T})
+    preimage = function(a::GenResidue{T})
       R = z.codomain
       parent(a) == R || throw("mixed rings in preimage")
       g = gens(domain)
@@ -184,11 +200,11 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
   end
 end
 
-function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, i::Residue{T})
+function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, i::GenResidue{T})
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i)
 end
 
-function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, i::Residue{T}, coeff_map::Map)
+function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, i::GenResidue{T}, coeff_map::Map)
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i, coeff_map)
 end
 
@@ -198,7 +214,7 @@ type IdentityMap{D} <: Map{D, D}
   function IdentityMap(domain::D)
     z = new{D}()
 
-    image = function(x::elem_type(D))
+    image = function(x)# (x::elem_type(D))
       return x::elem_type(D)
     end
     preimage = image
@@ -217,10 +233,10 @@ type CoerceMap{D, C} <: Map{D, C}
     return z
   end
 
-  function CoerceMap(domain::ResidueRing{fmpz}, codomain::FqNmodFiniteField)
-    z = new{ResidueRing{fmpz}, FqNmodFiniteField}()
+  function CoerceMap(domain::GenResidueRing{fmpz}, codomain::FqNmodFiniteField)
+    z = new{GenResidueRing{fmpz}, FqNmodFiniteField}()
 
-    image = function(a::Residue{fmpz})
+    image = function(a::GenResidue{fmpz})
         parent(a) != domain && error("Element not in domain")
         return codomain(ZZ(a))
     end
@@ -228,22 +244,22 @@ type CoerceMap{D, C} <: Map{D, C}
     preimage = function(a::fq_nmod)
       parent(a) != codomain && error("Element not in codomain")
       a.length > 1 && throw("Element not in image")
-      return domain(coeff(a, 0))::Residue{fmpz}
+      return domain(coeff(a, 0))::GenResidue{fmpz}
     end
 
     z.header = MapHeader(domain, codomain, image, preimage)
     return z
   end
 
-  function CoerceMap(domain::FqNmodFiniteField, codomain::ResidueRing{fq_nmod_poly})
-    z = new{FqNmodFiniteField, ResidueRing{fq_nmod_poly}}()
+  function CoerceMap(domain::FqNmodFiniteField, codomain::GenResidueRing{fq_nmod_poly})
+    z = new{FqNmodFiniteField, GenResidueRing{fq_nmod_poly}}()
 
     image = function(a::fq_nmod)
       parent(a) != domain && error("Element not in domain")
-      return codomain(a)::Residue{fq_nmod_poly}
+      return codomain(a)::GenResidue{fq_nmod_poly}
     end
 
-    preimage = function(a::Residue{fq_nmod_poly})
+    preimage = function(a::GenResidue{fq_nmod_poly})
       degree(a.data) > 0 && throw("Element not in subfield")
       return domain(coeff(a.data, 0))::fq_nmod
     end
@@ -252,14 +268,14 @@ type CoerceMap{D, C} <: Map{D, C}
     return z
   end
 
-  function CoerceMap{S, T <: Poly}(domain::ResidueRing{S}, codomain::ResidueRing{T})
-    z = new{ResidueRing{S}, ResidueRing{T}}()
+  function CoerceMap{S, T <: PolyElem}(domain::GenResidueRing{S}, codomain::GenResidueRing{T})
+    z = new{GenResidueRing{S}, GenResidueRing{T}}()
 
-    image = function(a::Residue)
+    image = function(a::GenResidue)
       return codomain(a)::elem_type(codomain)
     end
 
-    preimage = function(a::Residue)
+    preimage = function(a::GenResidue)
       while parent(a) != domain
         degree(a.data)>0 && throw("Element not in subfield")
         a = coeff(a.data, 0)

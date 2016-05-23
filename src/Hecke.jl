@@ -1,3 +1,5 @@
+#__precompile__()
+
 ################################################################################
 #
 #     Hecke.jl : Hecke main file
@@ -59,7 +61,7 @@ include("compat.jl")
 #
 ################################################################################
 
-import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
+import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              den, num, lg, prime_decomposition, parent, length,
              norm, real, imag, inv, rows, getindex!, lll, hnf, cols, basis,
              trace, factor, mod, zero, pari_load, PariPolyRing,
@@ -74,9 +76,11 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
              minpoly, charpoly, det,
              howell_form, needs_parentheses, is_negative, parent_type,
-             intersect, lcm
+             intersect, lcm, strong_echelon_form, strong_echelon_form!,
+             howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing
 
-export AnticNumberField, hash, update, nf, next_prime, dot
+
+export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=
@@ -203,7 +207,7 @@ function maximal_order(K::AnticNumberField)
     c = _get_maximal_order_of_nf(K)
     return c
   catch
-    O = MaximalOrder(K)
+    O = _MaximalOrder(K)
     _set_maximal_order_of_nf(K, O)
     return O
   end
@@ -463,6 +467,10 @@ include("Map.jl")
 include("basis.jl")
 include("helper.jl")
 include("misc2.jl")
+
+for T in subtypes(Map)
+  Base.call(M::T, a) = image(M, a)
+end
 
 ################################################################################
 #

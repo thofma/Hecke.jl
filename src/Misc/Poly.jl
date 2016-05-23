@@ -14,15 +14,15 @@ function FiniteField(p::fmpz)
   return ResidueRing(ZZ, p)
 end
 
-function fmpz(a::Residue{Nemo.fmpz})
+function fmpz(a::GenResidue{Nemo.fmpz})
   return a.data
 end
 
-function lift(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
+function lift(R::FlintIntegerRing, a::GenResidue{Nemo.fmpz})
   return a.data
 end
 
-function Base.call(R::FlintIntegerRing, a::Residue{Nemo.fmpz})
+function Base.call(R::FlintIntegerRing, a::GenResidue{Nemo.fmpz})
   return a.data
 end
 

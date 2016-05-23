@@ -148,76 +148,86 @@ end
 #
 ################################################################################
 
-doc"""
-***
-    call(O::NfOrdCls, a::nf_elem, check::Bool = true) -> NfOrdElem
-
-> Given an element $a$ of the ambient number field of $\mathcal O$, this
-> function coerces the element into $\mathcal O$. It will be checked that $a$
-> is contained in $\mathcal O$ if and only if `check` is `true`.
-"""
-function call{T <: NfOrdCls}(O::T, a::nf_elem, check::Bool = true)
-  if check
-    (x,y) = _check_elem_in_order(a,O)
-    !x && error("Number field element not in the order")
-    return NfOrdElem{T}(O, deepcopy(a), y)
-  else
-    return NfOrdElem{T}(O, deepcopy(a))
+#doc"""
+#***
+#    call(O::NfOrdCls, a::nf_elem, check::Bool = true) -> NfOrdElem
+#
+#> Given an element $a$ of the ambient number field of $\mathcal O$, this
+#> function coerces the element into $\mathcal O$. It will be checked that $a$
+#> is contained in $\mathcal O$ if and only if `check` is `true`.
+#"""
+for T in subtypes(NfOrdCls)
+  function Base.call(O::T, a::nf_elem, check::Bool = true)
+    if check
+      (x,y) = _check_elem_in_order(a,O)
+      !x && error("Number field element not in the order")
+      return NfOrdElem{T}(O, deepcopy(a), y)
+    else
+      return NfOrdElem{T}(O, deepcopy(a))
+    end
   end
 end
 
-doc"""
-***
-    call(O::NfOrdCls, a::Union{fmpz, Integer}) -> NfOrdElem
-
-> Given an element $a$ of type `fmpz` or `Integer`, this
-> function coerces the element into $\mathcal O$. It will be checked that $a$
-> is contained in $\mathcal O$ if and only if `check` is `true`.
-"""
-function call{T <: NfOrdCls}(O::T, a::Union{fmpz, Integer})
-  return NfOrdElem{T}(O, nf(O)(a))
+#doc"""
+#***
+#    call(O::NfOrdCls, a::Union{fmpz, Integer}) -> NfOrdElem
+#
+#> Given an element $a$ of type `fmpz` or `Integer`, this
+#> function coerces the element into $\mathcal O$. It will be checked that $a$
+#> is contained in $\mathcal O$ if and only if `check` is `true`.
+#"""
+for T in subtypes(NfOrdCls)
+  function Base.call(O::T, a::Union{fmpz, Integer})
+    return NfOrdElem{T}(O, nf(O)(a))
+  end
 end
 
-doc"""
-***
-    call(O::NfOrdCls, arr::Array{fmpz, 1})
-
-> Returns the element of $\mathcal O$ with coefficient vector `arr`.
-"""
-function call{T <: NfOrdCls}(O::T, arr::Array{fmpz, 1})
-  return NfOrdElem{T}(O, deepcopy(arr))
+#doc"""
+#***
+#    call(O::NfOrdCls, arr::Array{fmpz, 1})
+#
+#> Returns the element of $\mathcal O$ with coefficient vector `arr`.
+#"""
+for T in subtypes(NfOrdCls)
+  function Base.call(O::T, arr::Array{fmpz, 1})
+    return NfOrdElem{T}(O, deepcopy(arr))
+  end
+end
+#
+#doc"""
+#***
+#    call{T <: Integer}(O::NfOrdCls, arr::Array{T, 1})
+#
+#> Returns the element of $\mathcal O$ with coefficient vector `arr`.
+#"""
+for T in subtypes(NfOrdCls)
+  function Base.call{S <: Integer}(O::T, arr::Array{S, 1})
+    return NfOrdElem{T}(O, deepcopy(arr))
+  end
 end
 
-doc"""
-***
-    call{T <: Integer}(O::NfOrdCls, arr::Array{T, 1})
-
-> Returns the element of $\mathcal O$ with coefficient vector `arr`.
-"""
-function call{T <: NfOrdCls, S <: Integer}(O::T, arr::Array{S, 1})
-  return NfOrdElem{T}(O, deepcopy(arr))
+#doc"""
+#***
+#    call(O::NfOrdCls, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
+#
+#> This function constructs the element of $\mathcal O$ with coefficient vector
+#> `arr`. It is assumed that the corresponding element of the ambient number
+#> field is $a$.
+#"""
+for T in subtypes(NfOrdCls)
+  function Base.call(O::T, a::nf_elem, arr::Array{fmpz, 1})
+    return NfOrdElem{T}(O, deepcopy(a), deepcopy(arr))
+  end
 end
 
-doc"""
-***
-    call(O::NfOrdCls, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
-
-> This function constructs the element of $\mathcal O$ with coefficient vector
-> `arr`. It is assumed that the corresponding element of the ambient number
-> field is $a$.
-"""
-function call{T <: NfOrdCls}(O::T, a::nf_elem, arr::Array{fmpz, 1})
-  return NfOrdElem{T}(O, deepcopy(a), deepcopy(arr))
-end
-
-doc"""
-***
-    call(O::NfOrdCls) -> NfOrdElem
-
-> This function constructs a new element of $\mathcal O$ which is set to $0$.
-"""
-function call{T <: NfOrdCls}(O::T)
-  return NfOrdElem{T}(O)
+#doc"""
+#***
+#    call(O::NfOrdCls) -> NfOrdElem
+#
+#> This function constructs a new element of $\mathcal O$ which is set to $0$.
+#"""
+for T in subtypes(NfOrdCls)
+  Base.call(O::T) = NfOrdElem{T}(O)
 end
 
 ################################################################################
@@ -288,7 +298,7 @@ doc"""
 
 > Returns whether $x$ and $y$ are equal.
 """
-==(x::NfOrdElem, y::NfOrdElem) = parent(x) == parent(y) &&
+ ==(x::NfOrdElem, y::NfOrdElem) = parent(x) == parent(y) &&
                                             x.elem_in_nf == y.elem_in_nf
 
 ################################################################################
@@ -454,11 +464,11 @@ function -(x::NfOrdElem)
   return z
 end
 
-################################################################################
+###############################################################################
 #
 #  Binary operations
 #
-################################################################################
+###############################################################################
 
 doc"""
 ***
@@ -554,13 +564,21 @@ doc"""
 
 > Returns $x - y$.
 """
-function -(x::NfOrdElem, y::Union{fmpz, Integer})
+function -(x::NfOrdElem, y::fmpz)
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y
   return z
 end
 
--(x::Union{fmpz, Integer}, y::NfOrdElem) = y - x
+function -(x::NfOrdElem, y::Int)
+  z = parent(x)()
+  z.elem_in_nf = x.elem_in_nf - y
+  return z
+end
+
+-(x::fmpz, y::NfOrdElem) = y - x
+
+-(x::Integer, y::NfOrdElem) = y - x
 
 # No sanity checks!
 function divexact(x::NfOrdElem, y::fmpz)
@@ -625,7 +643,7 @@ function powermod(a::NfOrdElem, i::fmpz, p::fmpz)
   if i == 0 then
     return one(parent(a))
   end
-  if i == 1 then
+  if i == 1 
     b = mod(a,p)
     return b
   end

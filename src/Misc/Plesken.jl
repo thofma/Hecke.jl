@@ -39,7 +39,7 @@ function done(I::FmpzBits, st::Int)
   return st<0
 end
 ## sample: iteration over the bits...
-function pow_new(a::Residue, f::fmpz)
+function pow_new(a::ResidueElem, f::fmpz)
   f==0 && return one(parent(a))
   f==1 && return a
   if f<0
@@ -70,11 +70,11 @@ function steinitz(a::nmod_poly)
   return Nemo.evaluate(ZZx(f), p)
 end
 
-function steinitz(a::Residue{fmpz})
+function steinitz(a::ResidueElem{fmpz})
   return lift(a)
 end
 
-function steinitz{T <: Union{nmod_poly, fq_nmod_poly, Poly}}(a::Nemo.Residue{T})
+function steinitz{T <: Union{nmod_poly, fq_nmod_poly, PolyElem}}(a::ResidueElem{T})
   f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
   ZZx = PolynomialRing(ZZ)[1]
   S = base_ring(base_ring(parent(a)))
@@ -105,7 +105,7 @@ end
 # this is expensive, but completely generic
 # possibly improve by using the fact that aut should be an automorphism
 # if the order of aut would be known, one could use this to proceed in layers
-function minpoly_aut{T <: Union{fq_nmod_poly, nmod_poly}}(a::Residue{T}, aut :: Function)
+function minpoly_aut{T <: Union{fq_nmod_poly, nmod_poly}}(a::ResidueElem{T}, aut :: Function)
   R = parent(a)
   RX, X = PolynomialRing(R)
   o = Set{typeof(X)}()
@@ -121,7 +121,7 @@ function minpoly_aut{T <: Union{fq_nmod_poly, nmod_poly}}(a::Residue{T}, aut :: 
   return f
 end
 
-function minpoly_aut{T <: Poly}(a::Residue{T}, aut :: Function)
+function minpoly_aut{T <: PolyElem}(a::ResidueElem{T}, aut :: Function)
   R = parent(a)
   RX, X = PolynomialRing(R)
   o = Set{typeof(X)}()
@@ -135,7 +135,7 @@ function minpoly_aut{T <: Poly}(a::Residue{T}, aut :: Function)
   return f
 end
 
-function minpoly_pow{T <: Union{Poly, fq_nmod_poly}}(a::Residue{T}, deg::Int)
+function minpoly_pow{T <: Union{PolyElem, fq_nmod_poly}}(a::ResidueElem{T}, deg::Int)
   R = parent(a)
   S = base_ring(base_ring(R))
   M = MatrixSpace(S, deg, degree(R.modulus))()
@@ -235,7 +235,7 @@ end
 # to find generators for the degree r extension of F_p, not F_p^k
 # needs minpoly in some variant...
 
-function f_trace(a::Residue, f::fmpz, o::Int)
+function f_trace(a::ResidueElem, f::fmpz, o::Int)
   s = a
   for i=1:o-1
     a = a^f
@@ -344,7 +344,7 @@ function plesken_2(p::fmpz, r::Int, s::Int)
   else
     @assert valuation(p+1, 2)>1
     R = FiniteField(p)
-    Rx,x = PolynomialRing(R. "t_1")
+    Rx,x = PolynomialRing(R, "t_1")
     R = ResidueRing(Rx, x^2+1)
     g = primitive_root_r_div_qm1(R, 2)
     s -= 1

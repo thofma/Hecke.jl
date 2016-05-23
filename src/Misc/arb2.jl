@@ -286,7 +286,7 @@ for (s,f) in (("contains_zero", "arb_contains_zero"),
               ("contains_nonpositive", "arb_contains_nonpositive"),
               ("contains_nonnegative", "arb_contains_nonnegative"))
   @eval begin
-    function($(symbol(s)))(x::arb)
+    function($(Symbol(s)))(x::arb)
       r = ccall(($f, :libarb), Cint, (Ptr{arb}, ), &x)
       return Bool(r)
     end
@@ -310,7 +310,7 @@ for (s,f) in (("iszero", "arb_is_zero"),
               ("isnegative", "arb_is_negative"),
               ("isnonpositive", "arb_is_nonpositive"))
   @eval begin
-    function($(symbol(s)))(x::arb)
+    function($(Symbol(s)))(x::arb)
       i = ccall(($f, :libarb), Cint, (Ptr{arb},), &x)
       return Bool(i)
     end
@@ -340,7 +340,7 @@ for (s,f) in (("iszero", "arb_is_zero"), ("isnonzero", "arb_is_nonzero"),
               ("isnegative", "arb_is_negative"),
               ("isnonnegative", "arb_is_nonnegative"))
   @eval begin
-    function($(symbol(s)))(x::arb)
+    function($(Symbol(s)))(x::arb)
       return Bool(ccall(($f, :libarb), Cint, (Ptr{arb}, ), &x))
     end
   end
@@ -530,7 +530,7 @@ end
 for (s,f) in (("add!","arb_add"), ("mul!","arb_mul"), ("div!", "arb_div"),
               ("sub!","arb_sub"))
   @eval begin
-    function ($(symbol(s)))(z::arb, x::arb, y::arb)
+    function ($(Symbol(s)))(z::arb, x::arb, y::arb)
       ccall(($f, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{arb}, Clong),
                            &z, &x, &y, parent(x).prec)
     end

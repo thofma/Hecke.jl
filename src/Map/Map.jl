@@ -1,18 +1,3 @@
-function domain(M::Map)
-  return M.header.domain
-end
-
-function codomain(M::Map)
-  return M.header.codomain
-end
-
-function image_function(f::Map)
-  return f.header.image
-end
-
-function preimage_function(f::Map)
-  return f.header.preimage
-end
 
 #function image_func(M::Map)
 #  return M.header.image
@@ -41,11 +26,11 @@ function preimage{D, C}(M::Map{D, C}, a)
   error("No preimage function known")
 end
 
-elem_type(::Type{AnticNumberField}) = Hecke.nf_elem
+elem_type(::Type{AnticNumberField}) = nf_elem
 
-elem_type(::Type{FqNmodFiniteField}) = Hecke.fq_nmod
+elem_type(::Type{FqNmodFiniteField}) = fq_nmod
 
-elem_type{T}(::Type{ResidueRing{T}}) = Hecke.Residue{T}
+elem_type{T}(::Type{GenResidueRing{T}}) = GenResidue{T}
 
 function image{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :image)
@@ -55,8 +40,8 @@ function image{D, C}(M::Map{D, C}, a)
   end
 end
 
-function Base.call{D, C}(M::Map{D, C}, a)
-  return image(M, a)
+for T in subtypes(Map)
+  Base.call(M::T, a) = image(M, a)
 end
 
 function show(io::IO, M::InverseMap)
@@ -72,7 +57,5 @@ function show(io::IO, M::CoerceMap)
   println(io, "Coerce: $(domain(M)) -> $(codomain(M))")
 end
 #######################################################
-
-elem_type{T}(::Type{ResidueRing{T}}) = Residue{T}
 
 \(f::Map, x) = preimage(f, x)

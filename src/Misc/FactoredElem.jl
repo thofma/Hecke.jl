@@ -208,7 +208,7 @@ doc"""
 > value. 
 """
 function evaluate{T}(x::FacElem{T})
-  function ev(d::Dict{T, fmpz})
+  function ev(d)#d::Dict{T, fmpz})
     z = one(base_ring(x))
     if length(d)==0
       return z

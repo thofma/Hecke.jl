@@ -474,7 +474,7 @@ function _pivot(A, start_row, col)
   return 0
 end
 
-function strong_echelon_form(A::Mat{NfMaxOrdQuoRingElem})
+function strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -485,7 +485,7 @@ function strong_echelon_form(A::Mat{NfMaxOrdQuoRingElem})
   return B
 end
 
-function triangularize!(A::Mat{NfMaxOrdQuoRingElem})
+function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
   n = rows(A)
   m = cols(A)
 
@@ -511,7 +511,7 @@ function triangularize!(A::Mat{NfMaxOrdQuoRingElem})
   end
 end
 
-function triangularize(A::Mat{NfMaxOrdQuoRingElem})
+function triangularize(A::GenMat{NfMaxOrdQuoRingElem})
   B = deepcopy(A)
   triangularize!(B)
   return B
@@ -523,7 +523,7 @@ end
 #
 ################################################################################
 
-function strong_echelon_form!(A::Mat{NfMaxOrdQuoRingElem})
+function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
   #A = deepcopy(B)
   n = rows(A)
   m = cols(A)
@@ -577,7 +577,7 @@ end
 #
 ################################################################################
 
-function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
+function howell_form!(A::GenMat{NfMaxOrdQuoRingElem})
   @assert rows(A) >= cols(A)
 
   k = rows(A)
@@ -600,7 +600,7 @@ function howell_form!(A::Mat{NfMaxOrdQuoRingElem})
   return k
 end
 
-function howell_form(A::Mat{NfMaxOrdQuoRingElem})
+function howell_form(A::GenMat{NfMaxOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -618,7 +618,7 @@ end
 #
 ################################################################################
 
-function det(M::Mat{NfMaxOrdQuoRingElem})
+function det(M::GenMat{NfMaxOrdQuoRingElem})
   rows(M) != cols(M) && error("Matrix must be square matrix")
   N = triangularize(M)
   z = one(base_ring(M))
@@ -634,7 +634,7 @@ end
 #
 ################################################################################
 
-function call(M::MatrixSpace{NfMaxOrdQuoRingElem}, x::Mat{NfOrdElem})
+function call(M::GenMatrixSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem})
   base_ring(base_ring(M)) != base_ring(parent(x)) &&
       error("Base rings do not coincide")
   return M(map(base_ring(M), x.entries))
@@ -649,7 +649,7 @@ end
 ## Hensel lifting of roots
 # This will fail for too large input
 # Need to incorporate the explicit lifting bounds
-function _root_hensel(f::Poly{NfOrdElem})
+function _root_hensel(f::GenPoly{NfOrdElem})
   O = base_ring(f)
 
   # First we find a prime ideal such that f is squarefree modulo P 

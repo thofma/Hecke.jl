@@ -34,10 +34,8 @@
 
 export NfMaxOrd
 
-export MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
+export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
        degree, index, is_index_divisor, discriminant
-
-elem_type(::NfMaxOrd) = NfOrdElem
 
 ################################################################################
 #
@@ -225,7 +223,7 @@ doc"""
     julia> K, a = NumberField(x^3 + 2, "a")
     julia> O = MaximalOrder(K)
 """
-function MaximalOrder(K::AnticNumberField)
+function _MaximalOrder(K::AnticNumberField)
   O = EquationOrder(K)
   @vprint :NfMaxOrd 1 "Computing the maximal order ...\n"
   O = _MaximalOrder(O)
@@ -241,7 +239,7 @@ doc"""
 > order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
 > this function returns the maximal order of $K$.
 """
-function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
+function _MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   O = EquationOrder(K)
   @vprint :NfMaxOrd 1 "Computing the maximal order ...\n"
   O = _MaximalOrder(O, primes)

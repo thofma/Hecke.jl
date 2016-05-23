@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-function _det_bound(M::Mat{NfOrdElem})
+function _det_bound(M::GenMat{NfOrdElem})
   n = rows(M)
   O = base_ring(M)
   d = degree(O)
@@ -41,7 +41,7 @@ function _det_bound(M::Mat{NfOrdElem})
   return sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))
 end
 
-function _max_max(M::Mat{NfOrdElem})
+function _max_max(M::GenMat{NfOrdElem})
   d = FlintZZ(1)
   for i in 1:rows(M)
     for j in 1:cols(M)
