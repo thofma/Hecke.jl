@@ -46,15 +46,6 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function is_zero_row(M::Array{fmpz, 2}, i::Int)
-  for j = 1:Base.size(M, 2)
-    if M[i,j] != 0 
-      return false
-    end
-  end
-  return true
-end
-
 function is_zero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
@@ -470,9 +461,9 @@ function kernel(a::nmod_mat)
   z,n = _right_kernel(x)
   z = transpose(z)
   #println(z)
-  ar = typeof(Array(Residue{fmpz}, cols(z)))[]
+  ar = typeof(Array(GenResidue{fmpz}, cols(z)))[]
   for i in 1:n 
-    t = Array(Residue{fmpz}, cols(z))
+    t = Array(GenResidue{fmpz}, cols(z))
     for j in 1:cols(z)
       t[j] = z[i,j]
     end

@@ -50,7 +50,7 @@ function deepcopy(O::NfOrd)
     # This is slow. Julia can't interfere the type of the right hand side.
     # (According to @code_warntype)
     if isdefined(O, x)
-      z.(x) = O.(x)
+      z.(x) = getfield(O, x)
     end
   end
   return z

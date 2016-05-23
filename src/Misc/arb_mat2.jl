@@ -715,7 +715,7 @@ end
 for (s,f) in (("add!","arb_mat_add"), ("mul!","arb_mat_mul"),
               ("sub!","arb_mat_sub"))
   @eval begin
-    function ($(symbol(s)))(z::arb_mat, x::arb_mat, y::arb_mat)
+    function ($(Symbol(s)))(z::arb_mat, x::arb_mat, y::arb_mat)
       ccall(($f, :libarb), Void,
                   (Ptr{arb_mat}, Ptr{arb_mat}, Ptr{arb_mat}, Int),
                   &z, &x, &y, prec(parent(x)))
@@ -1281,7 +1281,7 @@ end
 for (s,f) in (("add!","acb_mat_add"), ("mul!","acb_mat_mul"),
               ("sub!","acb_mat_sub"))
   @eval begin
-    function ($(symbol(s)))(z::acb_mat, x::acb_mat, y::acb_mat)
+    function ($(Symbol(s)))(z::acb_mat, x::acb_mat, y::acb_mat)
       ccall(($f, :libarb), Void,
                   (Ptr{acb_mat}, Ptr{acb_mat}, Ptr{acb_mat}, Int),
                   &z, &x, &y, prec(parent(x)))

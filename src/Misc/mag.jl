@@ -226,7 +226,7 @@ for (s,f) in (("iszero", "mag_is_zero"), ("isone", "mag_is_one"),
               ("isinf", "mag_is_inf"), ("isspecial", "mag_is_special"),
               ("isfinite", "mag_is_finite"))
   @eval begin
-    function($(symbol(s)))(x::mag)
+    function($(Symbol(s)))(x::mag)
       return Bool(ccall(($f, :libarb), Cint, (Ptr{mag},), &x))
     end
   end

@@ -23,14 +23,14 @@ function lll_basis_profile(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl; prec::Int = 10
   return lp
 end
 
-function short_elem(c::roots_ctx, A::NfMaxOrdIdl,
-                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
-  l, t = lll(c, A, v, prec = prec)
-  w = window(t, 1,1, 1, cols(t))
-  c = w*b
-  q = elem_from_mat_row(K, c, 1, b_den)
-  return q
-end
+#function short_elem(c::roots_ctx, A::NfMaxOrdIdl,
+#                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
+#  l, t = lll(c, A, v, prec = prec)
+#  w = window(t, 1,1, 1, cols(t))
+#  c = w*b
+#  q = elem_from_mat_row(K, c, 1, b_den)
+#  return q
+#end
 
 
 function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl; 

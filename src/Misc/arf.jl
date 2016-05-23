@@ -230,7 +230,7 @@ for (s,f) in (("zero", "arf_zero"), ("one", "arf_one"),
               ("pos_inf", "arf_pos_inf"), ("neg_inf", "arf_neg_inf"),
               ("nan", "arf_nan"))
   @eval begin
-    function($(symbol(s)))(r::ArfField)
+    function($(Symbol(s)))(r::ArfField)
       z = r()
       ccall(($f, :libarb), Void, (Ptr{arf}, ), &z)
       return z
@@ -272,7 +272,7 @@ for (s,f) in (("iszero", "arf_is_zero"), ("isone", "arf_is_one"),
               ("isfinite", "arf_is_finite"),
               ("isspecial", "arf_is_special"))
   @eval begin
-    function($(symbol(s)))(x::arf)
+    function($(Symbol(s)))(x::arf)
       return Bool(ccall(($f, :libarb), Cint, (Ptr{arf},), x.data))
     end
   end

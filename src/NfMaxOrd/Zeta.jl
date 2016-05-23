@@ -111,7 +111,7 @@ function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
   C3 = Tc(2) 
   C4 = @with_round_down(Tc(FlintQQ(426)//FlintQQ(100)),Tc)
   
-  function F(X::Tc)
+  function F(X)#(X::Tc)
     A1 = @with_round_down(C1*logd_down/(@with_round_up(sqrt(X)*log(3*X),Tc)),Tc)
     A2 = @with_round_down(1 + C2/@with_round_up(log(X/9),Tc),Tc)
     A3 = @with_round_down(1 + 2/sqrt_logd_up,Tc)

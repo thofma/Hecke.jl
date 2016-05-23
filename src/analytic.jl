@@ -142,8 +142,9 @@ function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
 end
 
-const ei = exponential_integral
-const li = logarithmic_integral
+# They are already in Nemo/arb ?!?!
+#const ei = exponential_integral
+#const li = logarithmic_integral
 
 
 #=

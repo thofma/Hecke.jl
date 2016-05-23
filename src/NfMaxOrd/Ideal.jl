@@ -1290,7 +1290,8 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
       continue
     end
 
-    if (1-1/p)^degree(O) < 0.1
+    # The following does not work if there is only one prime ideal
+    if length(AA) > 1 && (1-1/p)^degree(O) < 0.1
       # Find the second element might take some time
       @vprint :NfMaxOrd 1 "chances are very low: ~$((1-1/p)^degree(O))"
       # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
@@ -1622,7 +1623,7 @@ end
 
 dot(x::NfOrdElem, y::fmpz) = y*x
 
-function _lift(T::Array{Residue{fmpz}, 1})
+function _lift(T::Array{GenResidue{fmpz}, 1})
   return [ z.data for z in T ]
 end
 
