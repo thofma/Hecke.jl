@@ -30,7 +30,7 @@ elem_type(::Type{AnticNumberField}) = nf_elem
 
 elem_type(::Type{FqNmodFiniteField}) = fq_nmod
 
-elem_type{T}(::Type{GenResidueRing{T}}) = GenResidue{T}
+elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
 
 function image{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :image)

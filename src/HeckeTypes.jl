@@ -243,7 +243,7 @@ end
 #
 ################################################################################
 
-abstract NfOrdCls <: Ring{Antic}
+abstract NfOrdCls <: Ring
 
 type NfOrdElem{T <: NfOrdCls} <: RingElem
   elem_in_nf::nf_elem
