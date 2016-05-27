@@ -1623,7 +1623,7 @@ end
 
 dot(x::NfOrdElem, y::fmpz) = y*x
 
-function _lift(T::Array{GenResidue{fmpz}, 1})
+function _lift(T::Array{GenRes{fmpz}, 1})
   return [ z.data for z in T ]
 end
 

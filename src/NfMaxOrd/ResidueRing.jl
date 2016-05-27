@@ -634,7 +634,7 @@ end
 #
 ################################################################################
 
-function call(M::GenMatrixSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem})
+function call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem})
   base_ring(base_ring(M)) != base_ring(parent(x)) &&
       error("Base rings do not coincide")
   return M(map(base_ring(M), x.entries))

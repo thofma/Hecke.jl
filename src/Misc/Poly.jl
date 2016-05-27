@@ -14,15 +14,15 @@ function FiniteField(p::fmpz)
   return ResidueRing(ZZ, p)
 end
 
-function fmpz(a::GenResidue{Nemo.fmpz})
+function fmpz(a::GenRes{Nemo.fmpz})
   return a.data
 end
 
-function lift(R::FlintIntegerRing, a::GenResidue{Nemo.fmpz})
+function lift(R::FlintIntegerRing, a::GenRes{Nemo.fmpz})
   return a.data
 end
 
-function Base.call(R::FlintIntegerRing, a::GenResidue{Nemo.fmpz})
+function Base.call(R::FlintIntegerRing, a::GenRes{Nemo.fmpz})
   return a.data
 end
 
@@ -383,7 +383,7 @@ end
 
 function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
   ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.coeffs, a.length)
-  p = r._mod_n
+  p = r.mod_n
   den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.den, p)
   if den != UInt(1)
     den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)

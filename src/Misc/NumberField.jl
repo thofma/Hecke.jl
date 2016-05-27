@@ -785,7 +785,7 @@ end
 function nf_elem_to_nmod_poly_no_den!(r::nmod_poly, a::nf_elem)
   d = degree(a.parent)
   zero!(r)
-  p = r._mod_n
+  p = r.mod_n
   if d == 1
     ra = pointer_from_objref(a)
     s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), &, p)
@@ -808,7 +808,7 @@ end
 
 function nf_elem_to_nmod_poly_den!(r::nmod_poly, a::nf_elem)
   d = degree(a.parent)
-  p = r._mod_n
+  p = r.mod_n
   if d == 1
     ra = pointer_from_objref(a)
     den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + sizeof(Int), p)

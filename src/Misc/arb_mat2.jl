@@ -8,7 +8,7 @@ import Base: exp
 
 const ArbMatSpaceID = ObjectIdDict()
 
-type ArbMatSpace <: Ring{Nemo.Arb}
+type ArbMatSpace <: Ring
   rows::Int
   cols::Int
   base_ring::ArbField
@@ -114,7 +114,7 @@ end
 
 const AcbMatSpaceID = ObjectIdDict()
 
-type AcbMatSpace <: Ring{Nemo.Arb}
+type AcbMatSpace <: Ring
   rows::Int
   cols::Int
   base_ring::AcbField

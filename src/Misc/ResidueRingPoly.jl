@@ -1,48 +1,48 @@
 import Nemo.characteristic, Nemo.gen, Nemo.size
 export gen, characteristic, size, elem_to_mat_row!, rand
 
-function gen{T<:PolyElem}(R::GenResidueRing{T})  
+function gen{T<:PolyElem}(R::GenResRing{T})  
   return R(gen(base_ring(R)))
 end
 
-function gen(R::GenResidueRing{fq_nmod_poly}) ## this is not covered by above
+function gen(R::GenResRing{fq_nmod_poly}) ## this is not covered by above
   return R(gen(base_ring(R)))              ## and I don't know why
 end
 
-function gen(R::GenResidueRing{nmod_poly}) 
+function gen(R::GenResRing{nmod_poly}) 
   return R(gen(base_ring(R)))     
 end
 
-function characteristic(R::GenResidueRing{Nemo.fmpz})
+function characteristic(R::GenResRing{Nemo.fmpz})
   return modulus(R)
 end
 
-function characteristic(R::GenResidueRing{nmod_poly})
+function characteristic(R::GenResRing{nmod_poly})
   return characteristic(base_ring(base_ring(R)))
 end
 
-function characteristic{T<:PolyElem}(R::GenResidueRing{T})
+function characteristic{T<:PolyElem}(R::GenResRing{T})
   return characteristic(base_ring(base_ring(R)))
 end
 
 # discuss: size = order? order = size?
-function size(R::Nemo.GenResidueRing{Nemo.nmod_poly})
+function size(R::Nemo.GenResRing{Nemo.nmod_poly})
   return characteristic(R)^degree(modulus(R))
 end
 
-function size{T <: ResidueElem}(R::Nemo.GenResidueRing{T})
+function size{T <: ResElem}(R::Nemo.GenResRing{T})
   return size(base_ring(base_ring(R)))^degree(modulus(R))
 end
 
-function size(R::Nemo.GenResidueRing{fmpz})
+function size(R::Nemo.GenResRing{fmpz})
   return modulus(R)
 end
 
-function size{T<:PolyElem}(R::Nemo.GenResidueRing{T})
+function size{T<:PolyElem}(R::Nemo.GenResRing{T})
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
-function size(R::Nemo.GenResidueRing{fq_nmod_poly})
+function size(R::Nemo.GenResRing{fq_nmod_poly})
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
@@ -56,7 +56,7 @@ end
 
 #################################################
 # in triplicate.... and probably cases missing...
-function elem_to_mat_row!{T <: PolyElem}(M::MatElem, i::Int, a::ResidueElem{T}) 
+function elem_to_mat_row!{T <: PolyElem}(M::MatElem, i::Int, a::ResElem{T}) 
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -65,7 +65,7 @@ function elem_to_mat_row!{T <: PolyElem}(M::MatElem, i::Int, a::ResidueElem{T})
     M[i,j] = z
   end
 end
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResidueElem{fq_poly}) 
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly}) 
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -74,7 +74,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResidueElem{fq_poly})
     M[i,j] = z
   end
 end
-function elem_to_mat_row!(M::MatElem, i::Int, a::ResidueElem{fq_nmod_poly}) 
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly}) 
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -84,11 +84,11 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResidueElem{fq_nmod_poly})
   end
 end
 
-function rand(R::GenResidueRing{fmpz})
+function rand(R::GenResRing{fmpz})
   return R(rand(fmpz(0):(size(R)-1)))
 end
 
-function rand{T<:PolyElem}(R::GenResidueRing{T})
+function rand{T<:PolyElem}(R::GenResRing{T})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -97,7 +97,7 @@ function rand{T<:PolyElem}(R::GenResidueRing{T})
   return r
 end
 
-function rand(R::GenResidueRing{fq_nmod_poly})
+function rand(R::GenResRing{fq_nmod_poly})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -106,7 +106,7 @@ function rand(R::GenResidueRing{fq_nmod_poly})
   return r
 end
 
-function rand(R::GenResidueRing{fq_poly})
+function rand(R::GenResRing{fq_poly})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -115,7 +115,7 @@ function rand(R::GenResidueRing{fq_poly})
   return r
 end
 
-function rand(R::GenResidueRing{nmod_poly})
+function rand(R::GenResRing{nmod_poly})
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -131,7 +131,7 @@ end
 ##
 #######################################################
 
-function gens{T<:PolyElem}(R::GenResidueRing{T}) ## probably needs more cases
+function gens{T<:PolyElem}(R::GenResRing{T}) ## probably needs more cases
                                           ## as the other residue functions
   g = gen(R)
   r = Array{typeof(g), 1}()
@@ -146,7 +146,7 @@ function gens{T<:PolyElem}(R::GenResidueRing{T}) ## probably needs more cases
   return r
 end
 
-function gens(R::GenResidueRing{nmod_poly}) 
+function gens(R::GenResRing{nmod_poly}) 
   g = gen(R)
   r = Array{typeof(g), 1}()
   push!(r, one(R))
