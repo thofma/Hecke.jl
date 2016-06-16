@@ -77,7 +77,8 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              minpoly, charpoly, det,
              howell_form, needs_parentheses, is_negative, parent_type,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
-             howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing
+             howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
+             FlintFiniteField
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order

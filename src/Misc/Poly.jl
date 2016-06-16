@@ -6,11 +6,11 @@ function PolynomialRing(R::Ring)
   return PolynomialRing(R, "_x")
 end
 
-function FiniteField(p::Integer)
+function FlintFiniteField(p::Integer)
   return ResidueRing(ZZ, p)
 end
 
-function FiniteField(p::fmpz)
+function FlintFiniteField(p::fmpz)
   return ResidueRing(ZZ, p)
 end
 
