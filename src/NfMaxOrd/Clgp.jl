@@ -890,7 +890,7 @@ we do need redundant relations for the units.
       upper_triangular(h, mod = modu)
       if rows(h) == cols(h)
         h = copy(clg.M)
-        println("1st non modular hnf")
+#        println("1st non modular hnf")
         upper_triangular(h)
         clg.H_is_modular = false
         full_rank = true
