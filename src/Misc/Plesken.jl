@@ -1,3 +1,4 @@
+import Base.start, Base.next, Base.done
 # missing in FinFld
 # base_ring consistently
 # rand
