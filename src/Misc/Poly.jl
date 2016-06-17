@@ -364,7 +364,6 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   P = p
   for i in ll
     p1 = p^i
-    println("p1: $p1, P: $P")
     hensel_lift!(G, H, A, B, f, g, h, a, b, P, p1)
     G, g = g, G
     H, h = h, H
