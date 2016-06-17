@@ -316,7 +316,7 @@ function factor_mod_pk(H::HenselCtx, k::Int)
   return factor_to_dict(H.LF)
 end
 
-#I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the conditino to make it tick.
+#I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the condition to make it tick.
 function hensel_lift!(G::fmpz_poly, H::fmpz_poly, A::fmpz_poly, B::fmpz_poly, f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, a::fmpz_poly, b::fmpz_poly, p::fmpz, p1::fmpz)
   ccall((:fmpz_poly_hensel_lift, :libflint), Void, (Ptr{fmpz_poly}, Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz}, Ptr{fmpz}), &G, &H, &A, &B, &f, &g, &h, &a, &b, &p, &p1)
 end
@@ -333,6 +333,12 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
+  ## if one of the cofactors is zero, this crashes.
+  ## this can only happen if one of the factors is one. In this case, the other
+  ## is essentially f and f would be a legal answer. Probably reduced mod p^k
+  ## with all non-negative coefficients
+  ## for now:
+  @assert !iszero(a) && !iszero(b)
   a = lift(parent(g), a)
   b = lift(parent(g), b)
   G = parent(g)()
@@ -358,6 +364,7 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   P = p
   for i in ll
     p1 = p^i
+    println("p1: $p1, P: $P")
     hensel_lift!(G, H, A, B, f, g, h, a, b, P, p1)
     G, g = g, G
     H, h = h, H
