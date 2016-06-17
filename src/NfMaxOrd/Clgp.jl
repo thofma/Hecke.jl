@@ -968,6 +968,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   I = []
   O = parent(clg.FB.ideals[1]).order
   sqrt_disc = isqrt(abs(discriminant(O)))
+  sqrt_disc = max(sqrt_disc, 1000)
   np = nbits(sqrt_disc)+30
 
   f = 0
@@ -1202,6 +1203,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   I = []
   O = parent(clg.FB.ideals[1]).order
   sqrt_disc = isqrt(abs(discriminant(O)))
+  sqrt_disc = max(sqrt_disc, 1000)
   np = nbits(sqrt_disc)+30
 
   local f
