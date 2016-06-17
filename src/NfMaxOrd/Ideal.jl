@@ -1068,7 +1068,11 @@ function valuation(a::nf_elem, p::NfMaxOrdIdl)
   O = order(p)
   P = p.gen_one
 
-  if mod(index(O),P) != 0 && p.splitting_type[1] == 1
+  if p.splitting_type[1]*p.splitting_type[2] == degree(O)
+    p.valuation = function(a::nf_elem)
+      return divexact(valuation(norm(a), P)[1], p.splitting_type[2])
+    end
+  elseif mod(index(O),P) != 0 && p.splitting_type[1] == 1
     if p.gen_one <= typemax(UInt)
       f1 = val_func_no_index_small(p)
       f2 = val_func_no_index(p)
