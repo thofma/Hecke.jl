@@ -100,6 +100,10 @@ end
 
 # assume that the set or array consists of pairwise coprime elements
 function FactorBase{T}(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true)
+  if length(x)==0
+    z = FactorBase{T}(T(1), x)
+    return z
+  end
   ax = [ node{T}(p) for p in x]
   while length(ax) > 1
     bx = [ compose(ax[2*i-1], ax[2*i], check) for i=1:div(length(ax), 2)]
@@ -421,7 +425,14 @@ function class_group_init(O::NfMaxOrd, B::Int;
   clg.last = 0
 
   @vprint :ClassGroup 2 "Computing factor base ...\n"
-  clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
+  while true
+    clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
+    if length(clg.FB.ideals) > 10
+      break
+    end
+    B *= 2
+    @vprint :ClassGroup 2 "Increasing bound to $B ...\n"
+  end
   @vprint :ClassGroup 2 " done\n"
   clg.M = T()
   clg.c = conjugates_init(nf(O).pol)
