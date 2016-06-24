@@ -4,6 +4,10 @@ function basis_mat(x::NfMaxOrdFracIdl)
   return FakeFmpqMat(basis_mat(num(x)), den(x))
 end
 
+function order(x::NfMaxOrdFracIdl)
+  return x.parent.order
+end
+
 num(x::NfMaxOrdFracIdl) = x.num
 
 den(x::NfMaxOrdFracIdl) = x.den

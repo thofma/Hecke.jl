@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-function _det_bound(M::GenMat{NfOrdElem})
+function _det_bound(M::GenMat{NfOrdElem{NfMaxOrd}})
   n = rows(M)
   O = base_ring(M)
   d = degree(O)
@@ -41,7 +41,7 @@ function _det_bound(M::GenMat{NfOrdElem})
   return sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))
 end
 
-function _max_max(M::GenMat{NfOrdElem})
+function _max_max(M::GenMat{NfOrdElem{NfMaxOrd}})
   d = FlintZZ(1)
   for i in 1:rows(M)
     for j in 1:cols(M)
@@ -56,4 +56,15 @@ function _max_max(M::GenMat{NfOrdElem})
   return d
 end
   
-
+function det(M::GenMat{NfOrdElem{NfMaxOrd}})
+  O = base_ring(M)
+  B = _det_bound(M)
+  p = 2
+  P = 2
+  while P < 2*B
+    println("Doing prime $p")
+    Omodp = quo(O, ideal(O, O(p)))
+    P = P*p
+    p = next_prime(p)
+  end
+end

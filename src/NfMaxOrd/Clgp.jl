@@ -1450,10 +1450,10 @@ end
 ################################################################################
 
 function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
-  try 
-    c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
-    return c
-  end
+  #try 
+  #  c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
+  #  return c
+  #end
 
   if bound == -1
     bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
@@ -1709,7 +1709,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   r1, r2 = signature(O)
 
-  residue = zeta_residue(O, 0.6931)
+  residue = zeta_log_residue(O, 0.6931)
 
   pre = prec(parent(residue))
 
@@ -1744,12 +1744,12 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
-function _class_unit_group(O::NfMaxOrd)
+function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
 
   @vprint :UnitGrp 1 "Computing tentative class and unit group ... \n"
 
   @v_do :UnitGrp 1 pushindent() 
-  c = class_group(O)
+  c = class_group(O, bound = bound, method = method, large = large)
   @v_do :UnitGrp 1 popindent()
 
   U = UnitGrpCtx{FacElem{nf_elem}}(O)

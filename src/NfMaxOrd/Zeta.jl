@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export zeta_residue
+export zeta_log_residue
 
 ################################################################################
 #
@@ -342,13 +342,13 @@ end
 
 doc"""
 ***
-    zeta_residue(O::NfMaxOrd, error::Float64) -> arb
+    zeta_log_residue(O::NfMaxOrd, error::Float64) -> arb
 
 > Computes the residue of the zeta function of $\mathcal O$ at $1$.
 > The output will be an element of type `arb` with radius less then
 > `error`.
 """
-function zeta_residue(O::NfMaxOrd, error::Float64)
+function zeta_log_residue(O::NfMaxOrd, error::Float64)
   return _residue_approx_bf(O, error)
 end
 
