@@ -1,4 +1,4 @@
-#__precompile__()
+__precompile__()
 
 ################################################################################
 #
@@ -206,11 +206,11 @@ end
 function maximal_order(K::AnticNumberField)
   try
     c = _get_maximal_order_of_nf(K)
-    return c
+    return c::NfMaxOrd
   catch
     O = _MaximalOrder(K)
     _set_maximal_order_of_nf(K, O)
-    return O
+    return O::NfMaxOrd
   end
 end
 

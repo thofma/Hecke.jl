@@ -32,13 +32,15 @@
 #
 ################################################################################
 
+using Hecke
+
 function _det_bound(M::GenMat{NfOrdElem{NfMaxOrd}})
   n = rows(M)
   O = base_ring(M)
   d = degree(O)
-  c1, c2 = base_change_const(O)
+  c1, c2 = Hecke.base_change_const(O)
 
-  return sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))
+  return fmpz(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
 end
 
 function _max_max(M::GenMat{NfOrdElem{NfMaxOrd}})
@@ -57,14 +59,65 @@ function _max_max(M::GenMat{NfOrdElem{NfMaxOrd}})
 end
   
 function det(M::GenMat{NfOrdElem{NfMaxOrd}})
-  O = base_ring(M)
+  O = base_ring(M)::NfMaxOrd
   B = _det_bound(M)
-  p = 2
-  P = 2
+  p = next_prime(fmpz(2)^30) # magic numbers
+  P = fmpz(1)
+  i = 1
+  res = O()
+  t = 0.0
   while P < 2*B
-    println("Doing prime $p")
-    Omodp = quo(O, ideal(O, O(p)))
-    P = P*p
-    p = next_prime(p)
+    # reject some bad primes
+    if true  
+      Omodp, pi_p = quo(O, ideal(O, O(p)))
+      Mmodp = MatrixSpace(Omodp, rows(M), cols(M))(M)
+      t += @elapsed detmodp = pi_p\Hecke.det(Mmodp)
+      if i == 1
+        res = detmodp
+      elseif i >= 2
+        g, e, f = gcdx(P, p)
+        @assert isone(g)
+        res = f*p*res + e*P*detmodp
+        res = mod_sym(res, P*p)
+        #@assert _basis_coord_nonneg(res)
+      end
+      P = P*p
+      p = next_prime(p)
+      i += 1
+    end
   end
+  println("Modular determinant time: $t");
+  return res
 end
+
+function mod_sym(x, m)
+  z = elem_in_basis(x)
+  for i in 1:length(z)
+    z[i] = mod(z[i], m)
+    if 2*z[i] > m
+      z[i] = z[i] - m
+    end
+  end
+  return parent(x)(z)
+end
+
+function _basis_coord_nonneg(x)
+  b = elem_in_basis(x)
+  for i in 1:length(b)
+    if b[i] < 0
+      return false
+    end
+  end
+  return true
+end
+
+function rand(M::GenMatSpace{NfOrdElem{NfMaxOrd}}, B::Union{Int, fmpz})
+  z = M()
+  for i in 1:rows(z)
+    for j in 1:cols(z)
+      z[i, j] = Hecke.rand(Hecke.base_ring(M), B)
+    end
+  end
+  return z
+end
+

@@ -152,7 +152,7 @@ function *(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 end
 
 function *(x::Integer, y::NfMaxOrdQuoRingElem)
-  return parent(x)(x * y.elem)
+  return parent(y)(x * y.elem)
 end
 
 *(x::NfMaxOrdQuoRingElem, y::Integer) = y*x
@@ -399,7 +399,7 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   if is_zero(x)
     return deepcopy(y), Q(O(0)), Q(O(1)), Q(O(-1)), Q(O(0))
   elseif is_zero(y)
-    return deepcopy(x), Q(O(1)), Q(O(0)), Q(O(0)), Q(O(-1))
+    return deepcopy(x), Q(O(1)), Q(O(0)), Q(O(0)), Q(O(1))
   end
 
   g = gcd(x, y)
@@ -446,10 +446,11 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   v = Q(-O([ U[1,i] for i in (2*d + 2):(3*d + 1)]))
 
   #@assert g == u*x + v*y
-  #@assert Q(O(1)) == u*e - (v*(-f))
+  @assert Q(O(1)) == u*e - (v*(-f))
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
+  #println(u*e - (v*(-f)));
   return g, u, v, -f, e
 end
 
@@ -488,16 +489,23 @@ end
 function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
   n = rows(A)
   m = cols(A)
+  d = one(base_ring(A))
 
   row = 1
   col = 1
   while row <= rows(A) && col <= cols(A)
-    if _pivot(A, row, col) == 0
+    t = _pivot(A, row, col)
+    if t == 0
       col = col + 1
       continue
     end
+    d = d*t
     for i in (row + 1):rows(A)
       g,s,t,u,v = xxgcd(A[row, col], A[i, col])
+      #println(s*v - t*u)
+      @assert s*v - t*u == base_ring(A)(1)
+      @assert isone(s*v - t*u)
+      #println([s t; u v])
 
       for k in col:m
         t1 = s*A[row, k] + t*A[i, k]
@@ -505,10 +513,14 @@ function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
         A[row, k] = t1
         A[i, k] = t2
       end
+
+      #d = d * ( s*v - t*u)
+      #println(A)
     end
     row = row + 1;
     col = col + 1;
   end
+  return d
 end
 
 function triangularize(A::GenMat{NfMaxOrdQuoRingElem})
@@ -620,12 +632,16 @@ end
 
 function det(M::GenMat{NfMaxOrdQuoRingElem})
   rows(M) != cols(M) && error("Matrix must be square matrix")
-  N = triangularize(M)
+  N = deepcopy(M)
+  d = triangularize!(N)
   z = one(base_ring(M))
   for i in 1:rows(N)
     z = z * N[i, i]
   end
-  return z
+  return z*d
+  q, r = divrem(z, d)
+  @assert iszero(r)
+  return divexact(z, d)
 end
 
 ################################################################################
@@ -634,12 +650,23 @@ end
 #
 ################################################################################
 
-function call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem})
-  base_ring(base_ring(M)) != base_ring(parent(x)) &&
-      error("Base rings do not coincide")
-  return M(map(base_ring(M), x.entries))
-end
+#function call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem{NfMaxOrd}})
+#  base_ring(base_ring(M)) != base_ring(parent(x)) &&
+#      error("Base rings do not coincide")
+#  z = M()
+#  R = base_ring(M)
+#  for i in 1:rows(x)
+#    for j in 1:cols(x)
+#      z[i, j] = R(x[i, j])
+#    end
+#  end
+#  return z
+#end
 
+function Base.call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem{NfMaxOrd}})
+  z = map(base_ring(M), x.entries)::Array{NfMaxOrdQuoRingElem, 1}
+  return M(z)::GenMat{NfMaxOrdQuoRingElem}
+end
 ################################################################################
 #
 #  Hensel Lifting
