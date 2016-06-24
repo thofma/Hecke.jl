@@ -205,12 +205,12 @@ end
 
 function maximal_order(K::AnticNumberField)
   try
-    c = _get_maximal_order_of_nf(K)
-    return c::NfMaxOrd
+    c = _get_maximal_order_of_nf(K)::NfMaxOrd
+    return c
   catch
-    O = _MaximalOrder(K)
+    O = _MaximalOrder(K)::NfMaxOrd
     _set_maximal_order_of_nf(K, O)
-    return O::NfMaxOrd
+    return O
   end
 end
 

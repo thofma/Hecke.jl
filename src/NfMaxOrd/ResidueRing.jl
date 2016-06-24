@@ -664,7 +664,7 @@ end
 #end
 
 function Base.call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem{NfMaxOrd}})
-  z = map(base_ring(M), x.entries)::Array{NfMaxOrdQuoRingElem, 1}
+  z = map(base_ring(M), x.entries)::Array{NfMaxOrdQuoRingElem, 2}
   return M(z)::GenMat{NfMaxOrdQuoRingElem}
 end
 ################################################################################
