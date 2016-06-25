@@ -86,6 +86,14 @@ function ideal(O::NfMaxOrd, x::fmpz, y::NfOrdElem)
   return NfMaxOrdIdl(deepcopy(x), deepcopy(y))
 end
 
+function ideal(O::NfMaxOrd, x::Int)
+  return NfMaxOrdIdl(O, x)
+end
+
+function ideal(O::NfMaxOrd, x::fmpz)
+  return NfMaxOrdIdl(O, x)
+end
+
 #doc"""
 #***
 #    ideal(O::NfMaxOrd) -> NfMaxOrdIdl

@@ -1113,6 +1113,18 @@ doc"""
 function mod(x::NfOrdElem, y::NfOrdClsIdl)
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
+  
+  O = order(y)
+  b = elem_in_basis(x)
+  a = deepcopy(b)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
   O = order(y)
   b = elem_in_basis(x)
   a = deepcopy(b)
