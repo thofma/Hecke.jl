@@ -1210,10 +1210,12 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
   f = K.pol
   I = IdealSet(O)
   R = parent(f)
-  Zx, x = PolynomialRing(ZZ,"x")
+  Zx, x = PolynomialRing(FlintIntegerRing(),"x")
   Zf = Zx(f)
-  fmodp = PolynomialRing(ResidueRing(ZZ, p, cached=false), "y", cached=false)[1](Zf)
-  fac = factor(fmodp)
+  Zmodpx = PolynomialRing(ResidueRing(FlintIntegerRing(), p, cached=false), "y", cached=false)[1]
+  fmodp = Zmodpx(Zf)
+  tt = @elapsed fac = factor(fmodp)
+  println("time to factor $tt")
   _fac = typeof(fac)()
   if degree_limit == 0
     degree_limit = degree(K)

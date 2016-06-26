@@ -252,7 +252,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   parent::T
 
   function NfOrdElem(O::T)
-    z = new()
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = nf(O)() 
     z.elem_in_basis = Array(fmpz, degree(O))
@@ -261,7 +261,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem(O::T, a::nf_elem)
-    z = new()
+    z = new{T}()
     z.elem_in_nf = a
     z.elem_in_basis = Array(fmpz, degree(O))
     z.parent = O
@@ -270,7 +270,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem(O::T, a::nf_elem, arr::Array{fmpz, 1})
-    z = new()
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = a
     z.has_coord = true
@@ -279,7 +279,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem(O::T, arr::Array{fmpz, 1})
-    z = new()
+    z = new{T}()
     z.elem_in_nf = dot(basis_nf(O), arr)
     z.has_coord = true
     z.elem_in_basis = arr
@@ -288,7 +288,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem{S <: Integer}(O::T, arr::Array{S, 1})
-    return NfOrdElem(O, map(ZZ, arr))
+    return NfOrdElem{T}(O, map(ZZ, arr))
   end
 
   function NfOrdElem(x::NfOrdElem{T})

@@ -156,15 +156,23 @@ end
 #> function coerces the element into $\mathcal O$. It will be checked that $a$
 #> is contained in $\mathcal O$ if and only if `check` is `true`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call(O::T, a::nf_elem, check::Bool = true)
-    if check
-      (x,y) = _check_elem_in_order(a,O)
-      !x && error("Number field element not in the order")
-      return NfOrdElem{T}(O, deepcopy(a), y)
-    else
-      return NfOrdElem{T}(O, deepcopy(a))
-    end
+function Base.call(O::NfMaxOrd, a::nf_elem, check::Bool = true)
+  if check
+    (x,y) = _check_elem_in_order(a,O)
+    !x && error("Number field element not in the order")
+    return NfOrdElem{NfMaxOrd}(O, deepcopy(a), y)
+  else
+    return NfOrdElem{NfMaxOrd}(O, deepcopy(a))
+  end
+end
+
+function Base.call(O::NfOrd, a::nf_elem, check::Bool = true)
+  if check
+    (x,y) = _check_elem_in_order(a,O)
+    !x && error("Number field element not in the order")
+    return NfOrdElem{NfOrd}(O, deepcopy(a), y)
+  else
+    return NfOrdElem{NfOrd}(O, deepcopy(a))
   end
 end
 
@@ -196,10 +204,12 @@ end
 #
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call(O::T, arr::Array{fmpz, 1})
-    return NfOrdElem{T}(O, deepcopy(arr))
-  end
+function Base.call(O::NfMaxOrd, arr::Array{fmpz, 1})
+  return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
+end
+
+function Base.call(O::NfOrd, arr::Array{fmpz, 1})
+  return NfOrdElem{NfOrd}(O, deepcopy(arr))
 end
 #
 #doc"""
@@ -208,12 +218,13 @@ end
 #
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call{S <: Integer}(O::T, arr::Array{S, 1})
-    return NfOrdElem{T}(O, deepcopy(arr))
-  end
+function Base.call{S <: Integer}(O::NfMaxOrd, arr::Array{S, 1})
+  return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
 end
 
+function Base.call{S <: Integer}(O::NfOrd, arr::Array{S, 1})
+  return NfOrdElem{NfOrd}(O, deepcopy(arr))
+end
 #doc"""
 #***
 #    call(O::NfOrdCls, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
@@ -807,6 +818,12 @@ doc"""
 """
 function rand(O::NfOrdCls, n::Integer)
   return rand(O, -n:n)
+end
+
+function rand(O::NfOrdCls, n::fmpz)
+  z = O()
+  rand!(z, O, BigInt(n))
+  return z
 end
 
 function rand!(z::NfOrdElem, O::NfOrdCls, n::fmpz)

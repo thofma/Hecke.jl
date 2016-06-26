@@ -61,21 +61,22 @@ end
 function det(M::GenMat{NfOrdElem{NfMaxOrd}})
   O = base_ring(M)::NfMaxOrd
   B = _det_bound(M)
-  p = next_prime(fmpz(2)^30) # magic numbers
+  p = next_prime(2^60) # magic numbers
   P = fmpz(1)
   i = 1
-  res = O()
+  res = zero(O)
   t = 0.0
   while P < 2*B
     # reject some bad primes
     if true  
-      Omodp, pi_p = quo(O, ideal(O, O(p)))
+      println("$p");
+      Omodp, pi_p = quo(O, ideal(O, p))
       Mmodp = MatrixSpace(Omodp, rows(M), cols(M))(M)
       t += @elapsed detmodp = pi_p\Hecke.det(Mmodp)
       if i == 1
         res = detmodp
       elseif i >= 2
-        g, e, f = gcdx(P, p)
+        g, e, f = gcdx(P, fmpz(p))
         @assert isone(g)
         res = f*p*res + e*P*detmodp
         res = mod_sym(res, P*p)
@@ -87,6 +88,56 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
     end
   end
   println("Modular determinant time: $t");
+  return res
+end
+
+function det2(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 60)
+  O = base_ring(M)::NfMaxOrd
+  B = _det_bound(M)
+  p = next_prime(2^b) # magic numbers
+  P = fmpz(1)
+  i = 1
+  res = O()
+  t = 0.0
+  t_reducing = 0.0
+  t_splitting = 0.0
+  while P < 2*B
+    # reject some bad primes
+    if is_index_divisor(O, p) 
+      continue
+    end
+
+    ttt = @elapsed lp = prime_decomposition(O, p)
+
+    ramified = false
+
+    for j in 1:length(ttt)
+      if lp[j][2] > 1
+        ramified = true
+        break
+      end
+    end
+
+    if ramified
+      continue
+    end
+
+    println("Splitting time: $p $(length(lp)) $ttt ")
+    t_splitting += ttt
+    for (Q, e) in lp
+      F, mF = ResidueField(O, Q)
+      t_reducing += @elapsed Mmodp = MatrixSpace(F, rows(M), cols(M))(map(mF, M.entries))
+      t += @elapsed detmodp = mF\det(Mmodp)
+        #@assert _basis_coord_nonneg(res)
+    end
+    P = P*p
+    p = next_prime(p)
+    i += 1
+  end
+  println("Modular determinant time: $t");
+  println("Time for reducing: $t_reducing");
+  println("Time for splitting: $t_splitting");
+  println("Used $i primes")
   return res
 end
 
