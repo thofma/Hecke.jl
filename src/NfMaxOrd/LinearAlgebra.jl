@@ -126,7 +126,9 @@ function det2(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 60)
     t_splitting += ttt
     for (Q, e) in lp
       F, mF = ResidueField(O, Q)
-      t_reducing += @elapsed Mmodp = MatrixSpace(F, rows(M), cols(M))(map(mF, M.entries))
+      #t_reducing += @elapsed Mmodp = MatrixSpace(F, rows(M), cols(M))(map(mF, M.entries))
+      Mmodp = MatrixSpace(F, rows(M), cols(M))()
+      t_reducing += @elapsed __helper!(Mmodp, mF, M.entries)
       t += @elapsed detmodp = mF\det(Mmodp)
         #@assert _basis_coord_nonneg(res)
     end
@@ -139,6 +141,16 @@ function det2(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 60)
   println("Time for splitting: $t_splitting");
   println("Used $i primes")
   return res
+end
+
+function __helper!(z, mF, entries)
+  s = size(entries)
+  for i in 1:s[2]
+    for j in 1:s[1]
+      z[j, i] = mF(entries[j, i])
+    end
+  end
+  return z
 end
 
 function mod_sym(x, m)
