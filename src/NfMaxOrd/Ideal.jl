@@ -1214,8 +1214,7 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
   Zf = Zx(f)
   Zmodpx = PolynomialRing(ResidueRing(FlintIntegerRing(), p, cached=false), "y", cached=false)[1]
   fmodp = Zmodpx(Zf)
-  tt = @elapsed fac = factor(fmodp)
-  println("time to factor $tt")
+  fac = factor(fmodp)
   _fac = typeof(fac)()
   if degree_limit == 0
     degree_limit = degree(K)

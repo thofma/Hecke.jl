@@ -257,3 +257,8 @@ function show(io::IO, O::NfMaxOrd)
   print(io, "Maximal order of $(nf(O)) \nwith basis $(basis_nf(O))")
 end
 
+Base.promote_rule(::Type{NfOrdElem{NfMaxOrd}}, ::Type{Int}) = NfOrdElem{NfMaxOrd}
+
+function addeq!(a::NfOrdElem{NfMaxOrd}, b::NfOrdElem{NfMaxOrd})
+  addeq!(a.elem_in_nf, b.elem_in_nf)
+end
