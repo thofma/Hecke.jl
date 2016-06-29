@@ -25,11 +25,46 @@ end
 
 type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
   header::MapHeader{NfMaxOrd, FqNmodFiniteField}
+  poly_of_the_field::nmod_poly
 
   function NfMaxOrdToFqNmodMor()
     r = new()
     r.header = MapHeader{NfMaxOrd, FqNmodFiniteField}()
     return r
+  end
+
+  function NfMaxOrdToFqNmodMor(O::NfMaxOrd, F::FqNmodFiniteField, g::nmod_poly)
+    # assume that F = F_p[X]/(g) and g is a factor of f mod p
+
+    z = new()
+    p = characteristic(F)
+    a = gen(nf(O))
+    tmp_nmod_poly = parent(g)()
+
+    z.poly_of_the_field = g
+    
+    function _image(x::NfOrdElem)
+      u = F()
+      gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
+      fmpq_poly_to_nmod_poly_raw!(tmp_nmod_poly, gg)
+      ccall((:fq_nmod_set, :libflint), Void, (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}), &u, &tmp_nmod_poly, &F)
+      ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &F)
+      return u
+    end
+
+    function _preimage(x::fq_nmod)
+      zz = nf(O)()
+
+      for i in 0:degree(F)-1
+        zz = zz + _get_coeff_raw(x, i)*a^i
+      end
+
+      return O(zz, false)
+    end
+
+    z.header = MapHeader{NfMaxOrd, FqNmodFiniteField}(O, F, _image, _preimage)
+
+    return z
   end
   
   function NfMaxOrdToFqNmodMor(O::NfMaxOrd, F::FqNmodFiniteField, y::fq_nmod)
@@ -107,6 +142,11 @@ end
 function Mor(O::NfMaxOrd, F::FqNmodFiniteField, y::fq_nmod)
   return NfMaxOrdToFqNmodMor(O, F, y)
 end
+
+function Mor(O::NfMaxOrd, F::FqNmodFiniteField, h::nmod_poly)
+  return NfMaxOrdToFqNmodMor(O, F, h)
+end
+
 
 type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
   header::MapHeader
