@@ -33,7 +33,7 @@
 ################################################################################
 
 export FinGenGrpAb, FinGenGrpAbElem, parent, is_finite, is_infinite, rank, 
-       getindex, show, +, *, call, ngens, snf_with_transform,
+       getindex, show, +, *, call, ngens, snf_with_transform, nrels,
        -, ==, is_trivial, order, exponent, AbelianGroup, DiagonalGroup
 
 import Base.reduce!, Base.+, Nemo.snf, Nemo.parent
@@ -58,33 +58,25 @@ function show(io::IO, A::FinGenGrpAbSnf)
     end
   end
 
-  if nz > 0
-    print(io, "Z")
-  end
-
-  for i in 1:nz
-    print(io, " x Z")
-  end
-
-  if nz != 0 && nz < length(A.snf)
-    print(io, " x ")
-  end
-
-  if nz < length(A.snf) != 0
+  if A.snf[1] != 0
     print(io, "Z/$(A.snf[1])")
   end
 
-  for i=2:length(A.snf)
-    if A.snf[i] == 0 
-      break
-    end
+  i = 2
+  while i<= length(A.snf) && A.snf[i] != 0
     print(io, " x Z/$(A.snf[i])")
+    i += 1
+  end  
+  if i== length(A.snf)
+    print(io, " x Z")
+  elseif i < length(A.snf)
+    print(io, " x Z^$(length(A.snf)-i+1)")
   end  
 end
 
-function show(io::IO, A::FinGenGrpAbElem)
+function show(io::IO, a::FinGenGrpAbElem)
   print(io, "Element of\n$(a.parent)\n with components\n$(a.coeff)")
-#  print(io, A.coeff)
+#  print(io, a.coeff)
 end
 
 ################################################################################
@@ -119,12 +111,26 @@ end
 
 doc"""
 ***
+    nrels(G::FinGenGrpAbSnf ) -> Int
+ 
+> Returns the number of relations of G in the current representation.
+"""
+function nrels(A::FinGenGrpAbGen)
+  return rows(A.rels)
+end
+
+function nrels(A::FinGenGrpAbSnf)
+  return length(A.snf)
+end
+
+doc"""
+***
     getindex(x::FinGenGrpAbElem, i::Int) -> fmpz
 
 > Returns the $i$-th component of the element $x$.
 """
 function getindex(x::FinGenGrpAbElem, i::Int)
-  return x.coeff[i]
+  return x.coeff[1,i]
 end
 
 
@@ -333,11 +339,11 @@ doc"""
 """
 function getindex(A::FinGenGrpAb, i::Int)
   (i<1 || i > ngens(A)) && error("Index out of range") 
-  z = MatrixSpace(ZZ, 1, ngens(A))
+  z = MatrixSpace(ZZ, 1, ngens(A))()
   for j in 1:ngens(A)
-    z[j] = fmpz()
+    z[1,j] = fmpz()
   end
-  z[i] = fmpz(1)
+  z[1,i] = fmpz(1)
   return A(z)
 end
 
@@ -682,6 +688,35 @@ end
 # missing:
 # is_torsion, torsion_subgroup, subgroups, ...
 
+##############################################################################
+#
+##############################################################################
+
+function subgroup(s::Array{FinGenGrpAbElem, 1})
+  p = s[1].parent
+  m = MatrixSpace(FlintZZ, length(s)+nrels(p), ngens(p)+length(s))()
+  for i=1:length(s)
+    for j=1:ngens(p)
+      m[i + nrels(p),j] = s[i][j]
+    end
+    m[i + nrels(p), i+ngens(p)] = 1
+  end
+  if typeof(p) == FinGenGrpAbSnf
+    for i=1:ngens(p)
+      m[i, i] = p.snf[i]
+    end
+  else
+    for i=1:nrels(p)
+      for j=1:ngens(p)
+        m[i, j] = p.rels[i,j]
+      end
+    end
+  end
+  h = hnf(m)
+  r = sub(h, nrels(p)+1:rows(h), ngens(p)+1:cols(h))
+  S = AbelianGroup(r)
+  return S, FinGenGrpAbMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
+end
 
 
 
