@@ -4,24 +4,29 @@ function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdl)
   @assert !is_index_divisor(O, minimum(P))
   @assert has_2_elem(P) && is_prime_known(P)
 
-  x = P.gen_two
+  gtwo = P.gen_two
 
   f = nf(O).pol
-  g = parent(f)(elem_in_nf(x))
+  g = parent(f)(elem_in_nf(gtwo))
 
-  R = ResidueRing(FlintZZ, P.gen_one)
+  if nbits(P.gen_one) < 64
+    R = ResidueRing(FlintZZ, P.gen_one)
 
-  Zy, y = PolynomialRing(FlintZZ, "y")
-  Rx, x = PolynomialRing(R, "x")
+    Zy, y = PolynomialRing(FlintZZ, "y")
+    Rx, x = PolynomialRing(R, "x")::Tuple{NmodPolyRing, nmod_poly}
 
-  gmodp = Rx(Zy(g))
-  fmodp = Rx(Zy(f))
+    gmodp = Rx(Zy(g))::nmod_poly
+    fmodp = Rx(Zy(f))::nmod_poly
 
-  h = gcd(gmodp,fmodp)
+    h = gcd(gmodp,fmodp)
 
-  F = FqNmodFiniteField(h, :$)
+    F = FqNmodFiniteField(h, :$)
 
-  return F, Mor(O, F, gen(F))
+    #return F, Mor(O, F, gen(F))
+    return F, Mor(O, F, h)
+  else
+    error("Not yet implemented")
+  end
 end
 
 function disc_log(x::fq_nmod, g::fq_nmod)

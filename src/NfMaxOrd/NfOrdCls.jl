@@ -156,15 +156,23 @@ end
 #> function coerces the element into $\mathcal O$. It will be checked that $a$
 #> is contained in $\mathcal O$ if and only if `check` is `true`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call(O::T, a::nf_elem, check::Bool = true)
-    if check
-      (x,y) = _check_elem_in_order(a,O)
-      !x && error("Number field element not in the order")
-      return NfOrdElem{T}(O, deepcopy(a), y)
-    else
-      return NfOrdElem{T}(O, deepcopy(a))
-    end
+function Base.call(O::NfMaxOrd, a::nf_elem, check::Bool = true)
+  if check
+    (x,y) = _check_elem_in_order(a,O)
+    !x && error("Number field element not in the order")
+    return NfOrdElem{NfMaxOrd}(O, deepcopy(a), y)
+  else
+    return NfOrdElem{NfMaxOrd}(O, deepcopy(a))
+  end
+end
+
+function Base.call(O::NfOrd, a::nf_elem, check::Bool = true)
+  if check
+    (x,y) = _check_elem_in_order(a,O)
+    !x && error("Number field element not in the order")
+    return NfOrdElem{NfOrd}(O, deepcopy(a), y)
+  else
+    return NfOrdElem{NfOrd}(O, deepcopy(a))
   end
 end
 
@@ -176,10 +184,18 @@ end
 #> function coerces the element into $\mathcal O$. It will be checked that $a$
 #> is contained in $\mathcal O$ if and only if `check` is `true`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call(O::T, a::Union{fmpz, Integer})
-    return NfOrdElem{T}(O, nf(O)(a))
-  end
+#for T in subtypes(NfOrdCls)
+#  function Base.call(O::T, a::Union{fmpz, Integer})
+#    return NfOrdElem{T}(O, nf(O)(a))
+#  end
+#end
+
+function Base.call(O::NfMaxOrd, a::Union{fmpz, Integer})
+  return NfOrdElem{NfMaxOrd}(O, nf(O)(a))
+end
+
+function Base.call(O::NfOrd, a::Union{fmpz, Integer})
+  return NfOrdElem{NfOrd}(O, nf(O)(a))
 end
 
 #doc"""
@@ -188,10 +204,12 @@ end
 #
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call(O::T, arr::Array{fmpz, 1})
-    return NfOrdElem{T}(O, deepcopy(arr))
-  end
+function Base.call(O::NfMaxOrd, arr::Array{fmpz, 1})
+  return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
+end
+
+function Base.call(O::NfOrd, arr::Array{fmpz, 1})
+  return NfOrdElem{NfOrd}(O, deepcopy(arr))
 end
 #
 #doc"""
@@ -200,12 +218,13 @@ end
 #
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
-for T in subtypes(NfOrdCls)
-  function Base.call{S <: Integer}(O::T, arr::Array{S, 1})
-    return NfOrdElem{T}(O, deepcopy(arr))
-  end
+function Base.call{S <: Integer}(O::NfMaxOrd, arr::Array{S, 1})
+  return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
 end
 
+function Base.call{S <: Integer}(O::NfOrd, arr::Array{S, 1})
+  return NfOrdElem{NfOrd}(O, deepcopy(arr))
+end
 #doc"""
 #***
 #    call(O::NfOrdCls, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
@@ -226,9 +245,13 @@ end
 #
 #> This function constructs a new element of $\mathcal O$ which is set to $0$.
 #"""
-for T in subtypes(NfOrdCls)
-  Base.call(O::T) = NfOrdElem{T}(O)
-end
+#for T in subtypes(NfOrdCls)
+#  Base.call(O::T) = NfOrdElem{T}(O)
+#end
+
+Base.call(O::NfMaxOrd) = NfOrdElem{NfMaxOrd}(O)
+
+Base.call(O::NfOrd) = NfOrdElem{NfOrd}(O)
 
 ################################################################################
 #
@@ -797,6 +820,12 @@ function rand(O::NfOrdCls, n::Integer)
   return rand(O, -n:n)
 end
 
+function rand(O::NfOrdCls, n::fmpz)
+  z = O()
+  rand!(z, O, BigInt(n))
+  return z
+end
+
 function rand!(z::NfOrdElem, O::NfOrdCls, n::fmpz)
   return rand!(z, O, BigInt(n))
 end
@@ -1101,6 +1130,18 @@ doc"""
 function mod(x::NfOrdElem, y::NfOrdClsIdl)
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
+  
+  O = order(y)
+  b = elem_in_basis(x)
+  a = deepcopy(b)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
   O = order(y)
   b = elem_in_basis(x)
   a = deepcopy(b)

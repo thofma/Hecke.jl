@@ -1,4 +1,4 @@
-#__precompile__()
+__precompile__()
 
 ################################################################################
 #
@@ -78,7 +78,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              howell_form, needs_parentheses, is_negative, parent_type,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
              howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
-             FlintFiniteField
+             FlintFiniteField, addeq!
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -205,10 +205,10 @@ end
 
 function maximal_order(K::AnticNumberField)
   try
-    c = _get_maximal_order_of_nf(K)
+    c = _get_maximal_order_of_nf(K)::NfMaxOrd
     return c
   catch
-    O = _MaximalOrder(K)
+    O = _MaximalOrder(K)::NfMaxOrd
     _set_maximal_order_of_nf(K, O)
     return O
   end

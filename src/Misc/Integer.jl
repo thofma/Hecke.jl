@@ -343,4 +343,59 @@ function inv!(a::perm)
   nothing
 end
 
+################################################################################
+#
+#  Chinese remaindering modulo UInts to fmpz
+#
+################################################################################
+
+type fmpz_comb
+  primes::Ptr{UInt}
+  num_primes::Int
+  n::Int
+  comb::Ptr{Ptr{fmpz}}
+  res::Ptr{Ptr{fmpz}}
+  mod_n::UInt
+  mod_ninv::UInt
+  mod_norm::UInt
+
+  function fmpz_comb(primes::Array{UInt, 1})
+    z = new()
+    ccall((:fmpz_comb_init, :libflint), Void, (Ptr{fmpz_comb}, Ptr{UInt}, Int),
+            &z, primes, length(primes))
+    finalizer(z, _fmpz_comb_clear_fn)
+    return z
+  end
+end
+
+function _fmpz_comb_clear_fn(z::fmpz_comb)
+  ccall((:fmpz_comb_clear, :libflint), Void, (Ptr{fmpz_comb}, ), &z)
+end
+
+type fmpz_comb_temp
+  n::Int
+  comb_temp::Ptr{Ptr{fmpz}}
+  temp::Ptr{fmpz}
+  temp2::Ptr{fmpz}
+
+  function fmpz_comb_temp(comb::fmpz_comb)
+    z = new()
+    ccall((:fmpz_comb_temp_init, :libflint), Void,
+            (Ptr{fmpz_comb_temp}, Ptr{fmpz_comb}), &z, &comb)
+    finalizer(z, _fmpz_comb_temp_clear_fn)
+    return z
+  end
+end
+
+function _fmpz_comb_temp_clear_fn(z::fmpz_comb_temp)
+  ccall((:fmpz_comb_temp_clear, :libflint), Void, (Ptr{fmpz_comb_temp}, ), &z)
+end
+
+
+function fmpz_multi_crt_ui!(z::fmpz, a::Array{UInt, 1}, b::fmpz_comb, c::fmpz_comb_temp)
+  ccall((:fmpz_multi_CRT_ui, :libflint), Void,
+          (Ptr{fmpz}, Ptr{UInt}, Ptr{fmpz_comb}, Ptr{fmpz_comb_temp}, Cint),
+          &z, a, &b, &c, 1)
+  return z
+end
 

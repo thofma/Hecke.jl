@@ -252,7 +252,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   parent::T
 
   function NfOrdElem(O::T)
-    z = new()
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = nf(O)() 
     z.elem_in_basis = Array(fmpz, degree(O))
@@ -261,7 +261,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem(O::T, a::nf_elem)
-    z = new()
+    z = new{T}()
     z.elem_in_nf = a
     z.elem_in_basis = Array(fmpz, degree(O))
     z.parent = O
@@ -270,7 +270,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem(O::T, a::nf_elem, arr::Array{fmpz, 1})
-    z = new()
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = a
     z.has_coord = true
@@ -279,7 +279,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem(O::T, arr::Array{fmpz, 1})
-    z = new()
+    z = new{T}()
     z.elem_in_nf = dot(basis_nf(O), arr)
     z.has_coord = true
     z.elem_in_basis = arr
@@ -288,7 +288,7 @@ type NfOrdElem{T <: NfOrdCls} <: RingElem
   end
 
   function NfOrdElem{S <: Integer}(O::T, arr::Array{S, 1})
-    return NfOrdElem(O, map(ZZ, arr))
+    return NfOrdElem{T}(O, map(ZZ, arr))
   end
 
   function NfOrdElem(x::NfOrdElem{T})
@@ -438,10 +438,14 @@ type NfOrdIdl <: NfOrdClsIdl
   basis_mat_inv::FakeFmpqMat
   parent::NfOrdIdlSet
 
+  #princ_gen::NfOrdElem{NfMaxOrd}
+  princ_gen_special::Tuple{Int, Int, fmpz}
+
   function NfOrdIdl(O::NfOrd, a::fmpz)
     z = new()
     z.parent = NfOrdIdlSet(O)
-    z.basis_mat = MatrixSpace(ZZ, degree(O), degree(O))(a)
+    z.basis_mat = MatrixSpace(ZZ, degree(O), degree(O))(abs(a))
+    z.princ_gen_special = (2, Int, abs(a))
     return z
   end
 
@@ -660,6 +664,11 @@ type NfMaxOrdIdl <: NfOrdClsIdl
                            # 2 known to be not prime
   is_principal::Int        # as above
   princ_gen::NfOrdElem{NfMaxOrd}
+  princ_gen_special::Tuple{Int, Int, fmpz}
+                           # first entry encodes the following:
+                           # 0: don't know
+                           # 1: second entry generates the ideal
+                           # 2: third entry generates the ideal
   splitting_type::Tuple{Int, Int}
                            #
   anti_uniformizer::NfOrdElem{NfMaxOrd}
@@ -716,6 +725,25 @@ type NfMaxOrdIdl <: NfOrdClsIdl
 
     return C
   end
+
+  function NfMaxOrdIdl(O::NfMaxOrd, x::Int)
+    # create ideal (x) of parent(x)
+    # Note that the constructor 'destroys' x, x should not be used anymore
+    C = NfMaxOrdIdl(O)
+    C.princ_gen = O(x)
+    C.princ_gen_special = (1, Int(x), fmpz(0))
+    return C
+  end
+
+  function NfMaxOrdIdl(O::NfMaxOrd, x::fmpz)
+    # create ideal (x) of parent(x)
+    # Note that the constructor 'destroys' x, x should not be used anymore
+    C = NfMaxOrdIdl(O)
+    C.princ_gen = O(x)
+    C.princ_gen_special = (2, Int(0), abs(x))
+    return C
+  end
+
 end
 
 ################################################################################

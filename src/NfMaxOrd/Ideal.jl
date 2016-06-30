@@ -86,6 +86,14 @@ function ideal(O::NfMaxOrd, x::fmpz, y::NfOrdElem)
   return NfMaxOrdIdl(deepcopy(x), deepcopy(y))
 end
 
+function ideal(O::NfMaxOrd, x::Int)
+  return NfMaxOrdIdl(O, x)
+end
+
+function ideal(O::NfMaxOrd, x::fmpz)
+  return NfMaxOrdIdl(O, x)
+end
+
 #doc"""
 #***
 #    ideal(O::NfMaxOrd) -> NfMaxOrdIdl
@@ -1202,9 +1210,10 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
   f = K.pol
   I = IdealSet(O)
   R = parent(f)
-  Zx, x = PolynomialRing(ZZ,"x")
+  Zx, x = PolynomialRing(FlintIntegerRing(),"x")
   Zf = Zx(f)
-  fmodp = PolynomialRing(ResidueRing(ZZ, p, cached=false), "y", cached=false)[1](Zf)
+  Zmodpx = PolynomialRing(ResidueRing(FlintIntegerRing(), p, cached=false), "y", cached=false)[1]
+  fmodp = Zmodpx(Zf)
   fac = factor(fmodp)
   _fac = typeof(fac)()
   if degree_limit == 0
