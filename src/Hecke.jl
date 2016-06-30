@@ -132,7 +132,7 @@ function __init__()
   print_with_color(:green, " $VERSION_NUMBER ")
   print("... \n ... which comes with absolutely no warrant whatsoever")
   println()
-  println("(c) 2015 by Claus Fieker and Tommy Hofmann")
+  println("(c) 2015, 2016 by Claus Fieker and Tommy Hofmann")
   println()
   
   if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"

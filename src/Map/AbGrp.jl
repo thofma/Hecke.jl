@@ -38,31 +38,27 @@
 #
 ################################################################################
 
-type AbToNfOrdUnitGrp{T, S} <: Map{AbGrp, FacElemMon{T}}
-  header::MapHeader{AbGrp, FacElemMon{nf_elem}}
+type AbToNfOrdUnitGrp{T, S} <: Map{FinGenGrpAbSnf, FacElemMon{T}}
+  header::MapHeader{FinGenGrpAbSnf, FacElemMon{nf_elem}}
   ind_unit::Array{FacElem{T}, 1}
   tor_unit::S
 
   # This only works if there exists at least one independent unit
   # That is, ind_unit should not have length 1
   function AbToNfOrdUnitGrp(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::S, tor_ord::Int)
-    A = AbGrp(vcat([ 0 for i in 1:length(ind_unit) ],[ tor_ord ]))
+    A = DiagonalGroup(vcat([tor_ord], [ 0 for i in 1:length(ind_unit) ]))
     z = new()
     z.ind_unit = ind_unit
     z.tor_unit = tor_unit
 
-    function _image(a::AbGrpElem)
-      y = parent(z.ind_unit[1])()
+    function _image(a::FinGenGrpAbElem)
+      y = tor_unit^a[1]
 
       for i in 1:length(z.ind_unit)
-        if a[i] == 0
+        if a[i+1] == 0
           continue
         end
-        y = y*z.ind_unit[i]^a[i]
-      end
-
-      if a[length(A.diagonal)] != 0
-        y = y*tor_unit^a[length(A.diagonal)]
+        y = y*z.ind_unit[i]^a[i+1]
       end
 
       return y

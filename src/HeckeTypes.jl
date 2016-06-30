@@ -1175,6 +1175,37 @@ end
 
 ################################################################################
 #
+# Abelian Groups and their elements
+#
+################################################################################
+abstract  GrpAb <: Nemo.Group
+abstract  GrpAbElem <: Nemo.GroupElem
+abstract  FinGenGrpAb <: GrpAb
+
+type FinGenGrpAbGen <: FinGenGrpAb
+  rels::fmpz_mat
+  hnf::fmpz_mat
+  function FinGenGrpAbGen(R::fmpz_mat; is_hnf::Bool = false)
+    r = new()
+    r.rels = R
+    if is_hnf
+      r.hnf = R
+    end
+    return r
+  end  
+end
+
+type FinGenGrpAbSnf <: FinGenGrpAb
+  snf::Array{fmpz, 1}
+end
+
+type FinGenGrpAbElem <: GrpAbElem
+  parent :: FinGenGrpAb
+  coeff :: fmpz_mat
+end
+
+################################################################################
+#
 #  Maps
 #
 ################################################################################

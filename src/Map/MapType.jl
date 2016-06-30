@@ -103,9 +103,13 @@ type InverseMap{D, C} <: Map{D, C}
 
   function InverseMap(f::Map{C, D})
     z = new{D, C}()
-    z.header = MapHeader(codomain(f), domain(g), preimage_function(f), image_function(f))
+    z.header = MapHeader(codomain(f), domain(f), preimage_function(f), image_function(f))
     return z
   end
+end
+
+function InverseMap{D, C}(f::Map{C, D})
+  return InverseMap{D, C}(f)
 end
 
 type ResidueRingPolyMap{D, C, T} <: Map{D, C}
@@ -128,7 +132,7 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
     end
     
     # I need to call preimage in _preimage
-    _preimage = function(a::GenRes{T})
+    _preimage = function(a::GenRes)
       R = codomain
       parent(a) == R || throw("mixed rings in preimage")
       g = gens(domain)
@@ -169,7 +173,7 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
       return I::elem_type(C)
     end
 
-    preimage = function(a::GenRes{T})
+    preimage = function(a::GenRes)
       R = z.codomain
       parent(a) == R || throw("mixed rings in preimage")
       g = gens(domain)
@@ -291,3 +295,50 @@ end
 function CoerceMap{D, C}(domain::D, codomain::C)
   return CoerceMap{D, C}(domain, codomain)
 end
+
+type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
+  header::MapHeader{D, C}
+
+  map::fmpz_mat
+  imap::fmpz_mat
+  im:: FinGenGrpAb  # if set
+  ke:: FinGenGrpAb  # if set
+
+  function FinGenGrpAbMap(From::D, To::C, M::fmpz_mat)
+    r = new()
+    function image(a::FinGenGrpAbElem)
+      return FinGenGrpAbElemCreate(To, a.coeff*M)
+    end
+
+    function preimage(a::FinGenGrpAbElem)
+      error("missing")
+    end
+    
+    r.header = MapHeader(From, To, image, preimage)
+    return r
+  end
+
+  function FinGenGrpAbMap(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
+    r = new()
+    function image(a::FinGenGrpAbElem)
+      return FinGenGrpAbElemCreate(To, a.coeff*M)
+    end
+
+    function preimage(a::FinGenGrpAbElem)
+      return FinGenGrpAbElemCreate(From, a.coeff*Mi)
+    end
+    
+    r.header = MapHeader(From, To, image, preimage)
+    return r
+  end
+
+end
+
+function FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb}(From::D, To::C, M::fmpz_mat)
+  return FinGenGrpAbMap{D, C}(From, To, M)
+end
+
+function FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb}(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
+  return FinGenGrpAbMap{D, C}(From, To, M, Mi)
+end
+
