@@ -46,11 +46,11 @@ import Base.reduce!, Base.+, Nemo.snf, Nemo.parent
 ################################################################################
 
 function show(io::IO, A::FinGenGrpAbGen)
-  print(io, "(general) abelian group with relation matrix $(A.rels)")
+  print(io, "(General) abelian group with relation matrix $(A.rels)")
 end
 
 function show(io::IO, A::FinGenGrpAbSnf)
-  println(io, "abelian group")
+  println(io, "Abelian group")
   nz = 0
   for i=1:length(A.snf)
     if A.snf[i] == 0
@@ -658,7 +658,7 @@ doc"""
 """
 function DiagonalGroup(M::fmpz_mat)
   if rows(M) != 1
-    error("Need to be a 1-dim. matrix")
+    error("The argument must have only one row")
   end
 
   N = MatrixSpace(FlintZZ, cols(M), cols(M))()

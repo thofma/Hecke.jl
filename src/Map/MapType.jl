@@ -74,19 +74,17 @@ type CompositeMap{D, C, R} <: Map{D, C}
   g::Map{D, R}
 
   function CompositeMap(f::Map{R, C}, g::Map{D, R})
-    codomain(f) == domain(g) || throw("maps not compatible")
+    domain(f) == codomain(g) || throw("maps not compatible")
     z = new{D, C, R}()
-    z.domain = domain(g)
-    z.codomain = codomain(f)
 
     image = function(x)#x::elem_type(domain(z)))
-      parent(x) != domain(z) && error("Element not in domain of map")
+      parent(x) != domain(g) && error("Element not in domain of map")
       return f(g(x))::elem_type(codomain(z))
     end
 
     if isdefined(f, :preimage) && isdefined(g, :preimage)
       preimage = function(x)#x::elem_type(codomain(z)))
-        return codomain(g, codomain(f, x))::elem_type(domain(z))
+        return preimage(g, preimage(f, x))::elem_type(domain(z))
       end
       z.header = MapHeader(domain(g), codomain(f), image, preimage)
     else
@@ -95,6 +93,14 @@ type CompositeMap{D, C, R} <: Map{D, C}
 
     return z
   end
+end
+
+function *{D, C, R}(f::Map{R, C}, g::Map{D, R})
+  return CompositeMap{D, C, R}(f, g)
+end
+
+function compose{D, C, R}(f::Map{R, C}, g::Map{D, R})
+  return CompositeMap{D, C, R}(f, g)
 end
 
 type InverseMap{D, C} <: Map{D, C}
@@ -226,6 +232,10 @@ type IdentityMap{D} <: Map{D, D}
     z.header = MapHeader(domain, domain, image, preimage)
     return z
   end
+end
+
+function IdentityMap{D}(domain::D)
+  return IdentityMap{D}(domain)
 end
 
 type CoerceMap{D, C} <: Map{D, C}
