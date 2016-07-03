@@ -1227,8 +1227,8 @@ type FinGenGrpAbSnf <: FinGenGrpAb
   snf::Array{fmpz, 1}
 end
 
-type FinGenGrpAbElem <: GrpAbElem
-  parent :: FinGenGrpAb
+type FinGenGrpAbElem{T <: FinGenGrpAb} <: GrpAbElem
+  parent :: T
   coeff :: fmpz_mat
 end
 

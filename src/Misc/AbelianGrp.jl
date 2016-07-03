@@ -161,7 +161,7 @@ end
 function FinGenGrpAbElemCreate(A::FinGenGrpAbGen, a::fmpz_mat)
   assert_hnf(A::FinGenGrpAbGen)
   reduce_mod_hnf!(a, A.hnf)
-  return FinGenGrpAbElem(A, a)
+  return FinGenGrpAbElem{FinGenGrpAbGen}(A, a)
   # reduce mod hnf
 end
 
@@ -171,7 +171,7 @@ function FinGenGrpAbElemCreate(A::FinGenGrpAbSnf, a::fmpz_mat)
       a[1,i] = a[1,i] % A.snf[i]
     end
   end
-  return FinGenGrpAbElem(A, a)
+  return FinGenGrpAbElem{FinGenGrpAbSnf}(A, a)
 end
 ################################################################################
 #
@@ -566,10 +566,10 @@ function order(a::FinGenGrpAbElem)
   b = m(a)
   o = fmpz(1)
   for i=1:ngens(G)
-    if A.snf[i] == 0 && b[i] != 0
+    if G.snf[i] == 0 && b[i] != 0
       error("element has inifinite order")
     end
-    o *= divexact(A.snf[i], gcd(A.snf[i], b[i]))
+    o *= divexact(G.snf[i], gcd(G.snf[i], b[i]))
   end
   return o
 end
@@ -718,6 +718,47 @@ function subgroup(s::Array{FinGenGrpAbElem, 1})
   return S, FinGenGrpAbMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
 end
 
+function quotient(s::Array{FinGenGrpAbElem, 1})
+  p = s[1].parent
+  m = MatrixSpace(FlintZZ, length(s)+nrels(p), ngens(p))()
+  for i=1:length(s)
+    for j=1:ngens(p)
+      m[i + nrels(p),j] = s[i][j]
+    end
+  end
+  if typeof(p) == FinGenGrpAbSnf
+    for i=1:ngens(p)
+      m[i, i] = p.snf[i]
+    end
+  else
+    for i=1:nrels(p)
+      for j=1:ngens(p)
+        m[i, j] = p.rels[i,j]
+      end
+    end
+  end
+
+  Q = AbelianGroup(m)
+  I = MatrixSpace(FlintZZ, ngens(p), ngens(g))(1)
+  m = FinGenGrpAbMap(p, Q, I, I)
+  return Q, m
+end
+
+function quotient(G::FinGenGrpAbSnf, n::Union{fmpz, Integer})
+  r = [gcd(x, n) for x = G.snf] 
+  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  Q = DiagonalGroup(r)
+  m = FinGenGrpAbMap(G, Q, I, I)
+  return Q, m
+end
+
+function quotient(G::FinGenGrpAbGen, n::Union{fmpz, Integer})
+  m = vcat(G.rels, MatrixSpace(FlintZZ, ngens(G), ngens(G))(n))
+  Q = AbelianGroup(m)
+  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  m = FinGenGrpAbMap(G, Q, I, I)
+  return Q, m
+end
 
 
 #=  <example>
