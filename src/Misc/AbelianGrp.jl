@@ -569,7 +569,7 @@ function order(a::FinGenGrpAbElem)
     if G.snf[i] == 0 && b[i] != 0
       error("element has inifinite order")
     end
-    o *= divexact(G.snf[i], gcd(G.snf[i], b[i]))
+    o = lcm(o, divexact(G.snf[i], gcd(G.snf[i], b[i])))
   end
   return o
 end
