@@ -22,20 +22,22 @@ function is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64})
 end
 
 @doc """
-  gen_mod_pk(p::fmpz) -> fmpz
+  gen_mod_pk(p::fmpz, mod::fmpz=0) -> fmpz
 
->  Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p.
+>  Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p. If mod is non zero, it finds a generator for Z/p^kZ modulo mod powers only.
 """ ->
-function gen_mod_pk(p::fmpz)
+function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   @assert isodd(p)
   @assert isprime(p)
-  fp = factor(p-1)
+  gc = gcd(p-1, mod)
+  mi = divexact(p-1, gc)
+  fp = factor(gc)
   Rp = ResidueRing(FlintZZ, p)
   Rpp = ResidueRing(FlintZZ, p*p)
 
   g = fmpz(2)
-  if is_primitive_root(Rp(g), p-1, fp)
-    if Rpp(g)^(p-1) != 1
+  if is_primitive_root(Rp(g)^mi, gc, fp)
+    if Rpp(g)^gc != 1
       return g
     else
       return g+p
@@ -43,9 +45,10 @@ function gen_mod_pk(p::fmpz)
   end
 
   while true
-    g = rand(3:p-2)
-    if is_primitive_root(Rp(g), p-1, fp)
-      if Rpp(g)^(p-1) != 1
+#    g = rand(3:p-2)
+    g += 1
+    if is_primitive_root(Rp(g)^mi, gc, fp)
+      if Rpp(g)^gc != 1
         return g
       else
         return g+p
@@ -72,7 +75,7 @@ Base.call(M::MapUnitGroupModM, a) = image(M, a)
 
 >  The unit group of R = Z/nZ together with the apropriate map.
 """ ->
-function UnitGroup(R::GenResRing{fmpz})
+function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   m = R.modulus
   fm = factor(m)
   
@@ -81,6 +84,9 @@ function UnitGroup(R::GenResRing{fmpz})
   mi = Array(fmpz, 0)
   for p=keys(fm)
     k = fm[p]
+    if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
+      continue
+    end
     pk = p^k
     if p==2
       if k==1
@@ -110,9 +116,10 @@ function UnitGroup(R::GenResRing{fmpz})
       end
     else
       mpk = divexact(m, pk)
-      push!(r, (p-1)*p^(fm[p]-1))
+      push!(r, gcd((p-1)*p^(fm[p]-1), mod))
       push!(mi, pk)
-      gg = gen_mod_pk(p)
+      gg = gen_mod_pk(p, mod)
+      gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), m)
       if mpk == 1
         push!(g, gg)
       else
