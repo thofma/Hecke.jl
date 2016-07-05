@@ -57,10 +57,10 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-type MapUnitGroupModM <: Map{Hecke.FinGenGrpAbGen, GenResRing{fmpz}}
+type MapUnitGroupModM <: Map{Hecke.FinGenGrpAb, GenResRing{fmpz}}
   header::Hecke.MapHeader
 
-  function MapUnitGroupModM(G::Hecke.FinGenGrpAbGen, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
+  function MapUnitGroupModM(G::Hecke.FinGenGrpAb, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
     r = new()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -167,6 +167,34 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   fM = factor(M)
   @assert length(keys(fM)) == 1
   p = first(keys(fM))
+  if p==2
+    println("p=2::: $a $b $M")
+    if (a+1) % 4 == 0
+      if b%4 == 3
+        return fmpz(1)
+      else
+        return fmpz(0)
+      end
+    elseif a % M ==5
+      if b%4 == 3
+        b = -b
+      end
+      g = fmpz(0)
+      if b % 8 == 5
+        g += 1
+        b = b* invmod(a, M) % M
+      end 
+      F = FlintPadicField(p, fM[p])
+      g += 2*lift(divexact(log(F(b)), log(F(a^2))))
+      return g
+    else
+      error("illegal generator mod 2^$(fM[p])")
+    end
+  end
+
+  ## we could do the odd priems case using the same p-adic
+  #  log approach...
+     
   @assert isodd(p)
 
   Fp = ResidueRing(FlintZZ, p)
