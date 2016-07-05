@@ -36,7 +36,7 @@ export FinGenGrpAb, FinGenGrpAbElem, parent, is_finite, is_infinite, rank,
        getindex, show, +, *, call, ngens, snf_with_transform, nrels,
        -, ==, is_trivial, order, exponent, AbelianGroup, DiagonalGroup
 
-import Base.reduce!, Base.+, Nemo.snf, Nemo.parent
+import Base.reduce!, Base.+, Nemo.snf, Nemo.parent, Base.rand
 
 
 ################################################################################
@@ -47,6 +47,9 @@ import Base.reduce!, Base.+, Nemo.snf, Nemo.parent
 
 function show(io::IO, A::FinGenGrpAbGen)
   print(io, "(General) abelian group with relation matrix $(A.rels)")
+  if isdefined(A, :snf_map)
+    println(io, "with structure of ", codomain(A.snf_map))
+  end
 end
 
 function show(io::IO, A::FinGenGrpAbSnf)
@@ -348,8 +351,14 @@ function getindex(A::FinGenGrpAb, i::Int)
 end
 
 
-elem_type(::Type{FinGenGrpAbGen}) = FinGenGrpAbElem
-elem_type(::Type{FinGenGrpAbSnf}) = FinGenGrpAbElem
+elem_type(::Type{FinGenGrpAbGen}) = FinGenGrpAbElem{FinGenGrpAbGen}
+elem_type(::Type{FinGenGrpAbSnf}) = FinGenGrpAbElem{FinGenGrpAbSnf}
+elem_type(::Type{FinGenGrpAb}) = FinGenGrpAbElem # I have no idea what this
+                                    # does, but it appears to be important
+                                    # U, m = UnitGroup(ResidueRing(ZZ, 2^10))
+                                    # m(U[2])
+                                    # preimage(m, ans)
+                                    # fails without...
 
 doc"""
 ***
@@ -481,6 +490,9 @@ function snf_with_transform(A::fmpz_mat; l::Bool = true, r::Bool = true)
 end
 
 function snf(G::FinGenGrpAbGen)
+  if isdefined(G, :snf_map)
+    return codomain(G.snf_map), G.snf_map
+  end
   S, T = snf_with_transform(G.rels, l=false, r=true)
   d = fmpz[S[i,i] for i=1:min(rows(S), cols(S))]
   while length(d) < ngens(G)
@@ -516,6 +528,7 @@ function snf(G::FinGenGrpAbGen)
   end  
   H = FinGenGrpAbSnf(s)
   mp = FinGenGrpAbMap(G, H, TT, TTi)
+  G.snf_map = mp
   return H, mp
 end
 
@@ -692,7 +705,58 @@ end
 #
 ##############################################################################
 
-function subgroup(s::Array{FinGenGrpAbElem, 1})
+doc"""
+***
+  rand(G::FinGenGrpAbSnf) -> FinGenGrpAbElem
+  rand(G::FinGenGrpAbGen) -> FinGenGrpAbElem
+
+> For a finite abelian group G, return an element chosen uniformly at random.
+"""
+function rand(G::FinGenGrpAbSnf)
+  if !is_finite(G)
+    error("Group is not finite")
+  end
+  return G([rand(1:G.snf[i]) for i in 1:ngens(G)])
+end
+
+function rand(G::FinGenGrpAbGen)
+  S, mS = snf(G)
+  return preimage(mS, rand(S))
+end
+
+doc"""
+***
+  rand(G::FinGenGrpAbSnf, B::fmpz = 10) -> FinGenGrpAbElem
+  rand(G::FinGenGrpAbSnf, B::Integer = 10) -> FinGenGrpAbElem
+  rand(G::FinGenGrpAbGen, B::fmpz = 10) -> FinGenGrpAbElem
+  rand(G::FinGenGrpAbGen, B::Integer = 10) -> FinGenGrpAbElem
+
+> For a (potentially infinite) abelian group G, return an element
+> chosen uniformly at random with coefficients bounded by B.
+> If not specified, B defaults to 10.
+"""
+function small_rand(G::FinGenGrpAbSnf, B::fmpz = fmpz(10))
+  return G([rand(1:(G.snf[i]==0 ? B : min(B, G.snf[i]))) for i in 1:ngens(G)])
+end
+
+function small_rand(G::FinGenGrpAbSnf, B::Integer = 10)
+  return small_rand(G, fmpz(B))
+end
+
+function small_rand(G::FinGenGrpAbGen, B::fmpz = fmpz(10))
+  S, mS = snf(G)
+  return preimage(mS, small_rand(S, fmpz(B)))
+end
+
+function small_rand(G::FinGenGrpAbGen, B::Integer = 10)
+  return small_rand(G, fmpz(B))
+end
+
+##############################################################################
+#
+##############################################################################
+
+function subgroup{T <: FinGenGrpAbElem}(s::Array{FinGenGrpAbElem{T}, 1})
   p = s[1].parent
   m = MatrixSpace(FlintZZ, length(s)+nrels(p), ngens(p)+length(s))()
   for i=1:length(s)
@@ -718,7 +782,7 @@ function subgroup(s::Array{FinGenGrpAbElem, 1})
   return S, FinGenGrpAbMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
 end
 
-function quotient(s::Array{FinGenGrpAbElem, 1})
+function quotient{T <: FinGenGrpAb}(s::Array{FinGenGrpAbElem{T}, 1})
   p = s[1].parent
   m = MatrixSpace(FlintZZ, length(s)+nrels(p), ngens(p))()
   for i=1:length(s)
@@ -739,7 +803,7 @@ function quotient(s::Array{FinGenGrpAbElem, 1})
   end
 
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(p), ngens(g))(1)
+  I = MatrixSpace(FlintZZ, ngens(p), ngens(p))(1)
   m = FinGenGrpAbMap(p, Q, I, I)
   return Q, m
 end
