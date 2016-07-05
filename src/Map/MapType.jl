@@ -73,7 +73,15 @@ type CompositeMap{D, C, R} <: Map{D, C}
   f::Map{R, C}
   g::Map{D, R}
 
-  function CompositeMap(f::Map{R, C}, g::Map{D, R})
+  function CompositeMap(f::Map, g::Map)
+  ##CF should be function CompositeMap(f::Map{R, C}, g::Map{D, R})
+  ## but that seems to not work:
+  # U, m = UnitGroup(ResidueRing(ZZ, 2^9));
+  # q, mq = Hecke.quo(U, [preimage(m, codomain(m)(fmpz(-1)))])
+  # z = Hecke.compose(m, inv(mq))
+  # btw: m*inv(mq) also fails.
+
+
     domain(f) == codomain(g) || throw("maps not compatible")
     z = new{D, C, R}()
 
@@ -82,11 +90,11 @@ type CompositeMap{D, C, R} <: Map{D, C}
       return f(g(x))::elem_type(codomain(z))
     end
 
-    if isdefined(f, :preimage) && isdefined(g, :preimage)
-      preimage = function(x)#x::elem_type(codomain(z)))
+    if isdefined(f.header, :preimage) && isdefined(g.header, :preimage)
+      _preimage = function(x)#x::elem_type(codomain(z)))
         return preimage(g, preimage(f, x))::elem_type(domain(z))
       end
-      z.header = MapHeader(domain(g), codomain(f), image, preimage)
+      z.header = MapHeader(domain(g), codomain(f), image, _preimage)
     else
       z.header = MapHeader(domain(g), codomain(f), image)
     end
@@ -103,6 +111,10 @@ function compose{D, C, R}(f::Map{R, C}, g::Map{D, R})
   return CompositeMap{D, C, R}(f, g)
 end
 
+function compose(f::Map, g::Map)
+  return CompositeMap{typeof(domain(g)), typeof(codomain(f)), Any}(f, g)
+end
+
 type InverseMap{D, C} <: Map{D, C}
   header::MapHeader{D, C}
   origin::Map{C, D}
@@ -110,6 +122,7 @@ type InverseMap{D, C} <: Map{D, C}
   function InverseMap(f::Map{C, D})
     z = new{D, C}()
     z.header = MapHeader(codomain(f), domain(f), preimage_function(f), image_function(f))
+    z.origin = f
     return z
   end
 end
@@ -316,11 +329,11 @@ type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
 
   function FinGenGrpAbMap(From::D, To::C, M::fmpz_mat)
     r = new()
-    function image(a::FinGenGrpAbElem)
+    function image(a::FinGenGrpAbElem{D})
       return FinGenGrpAbElemCreate(To, a.coeff*M)
     end
 
-    function preimage(a::FinGenGrpAbElem)
+    function preimage(a::FinGenGrpAbElem{C})
       error("missing")
     end
     
@@ -330,11 +343,11 @@ type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
 
   function FinGenGrpAbMap(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
     r = new()
-    function image(a::FinGenGrpAbElem)
+    function image(a::FinGenGrpAbElem{D})
       return FinGenGrpAbElemCreate(To, a.coeff*M)
     end
 
-    function preimage(a::FinGenGrpAbElem)
+    function preimage(a::FinGenGrpAbElem{C})
       return FinGenGrpAbElemCreate(From, a.coeff*Mi)
     end
     

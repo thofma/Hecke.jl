@@ -57,10 +57,10 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-type MapUnitGroupModM <: Map{Hecke.FinGenGrpAb, GenResRing{fmpz}}
+type MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
   header::Hecke.MapHeader
 
-  function MapUnitGroupModM(G::Hecke.FinGenGrpAb, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
+  function MapUnitGroupModM(G::T, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
     r = new()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -135,7 +135,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   function dlog(x::GenRes{fmpz})
     return G([disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
-  return G, MapUnitGroupModM(G, R, dexp, dlog)
+  return G, MapUnitGroupModM{typeof(G)}(G, R, dexp, dlog)
 end
 
 @doc """
@@ -168,7 +168,6 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   @assert length(keys(fM)) == 1
   p = first(keys(fM))
   if p==2
-    println("p=2::: $a $b $M")
     if (a+1) % 4 == 0
       if b%4 == 3
         return fmpz(1)
