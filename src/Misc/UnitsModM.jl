@@ -180,10 +180,12 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
         b = -b
       end
       g = fmpz(0)
-      if b % 8 == 5
+      if (b-5) % 8 == 0
         g += 1
         b = b* invmod(a, M) % M
       end 
+      @assert (b-1) % 8 == 0
+      @assert (a^2-1) % 8 == 0
       F = FlintPadicField(p, fM[p])
       g += 2*lift(divexact(log(F(b)), log(F(a^2))))
       return g
