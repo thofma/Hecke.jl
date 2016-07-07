@@ -138,6 +138,8 @@ function done{T <: Union{Integer, fmpz}}(A::SetPrimes{T}, st::T)
   return A.to != -1 && st > A.to
 end
 
+eltype{T <: Union{Integer, fmpz}}(::SetPrimes{T}) = T
+
 function lift(R::FmpzRelSeriesRing, f::fmpz_mod_rel_series)
   r = R()
   for i=0:length(f)-1
