@@ -1213,6 +1213,7 @@ abstract  FinGenGrpAb <: GrpAb
 type FinGenGrpAbGen <: FinGenGrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
+
   function FinGenGrpAbGen(R::fmpz_mat; is_hnf::Bool = false)
     r = new()
     r.rels = R
@@ -1228,8 +1229,8 @@ type FinGenGrpAbSnf <: FinGenGrpAb
 end
 
 type FinGenGrpAbElem{T <: FinGenGrpAb} <: GrpAbElem
-  parent :: T
-  coeff :: fmpz_mat
+  parent::T
+  coeff::fmpz_mat
 end
 
 ################################################################################
