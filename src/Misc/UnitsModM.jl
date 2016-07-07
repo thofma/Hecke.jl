@@ -21,6 +21,31 @@ function is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64})
   return true
 end
 
+
+#=
+  for p = 2 this is trivial, as <-1, 5> are generators independently of 
+  everything.
+  Assume p>2 is odd.
+  Then (Z/p^k)^* = <g> with some unknown g, independently of k
+  We want
+  <g>/<g^m> = <A> for A = g^a, independently of k, depending on m
+  (to avoid having to factor p-1, assuming that m is small)
+  
+  Let G_k = <g+ p^kZ>/<g^m + p^k Z> and ord_k(A) the order of A in G_k
+
+  Then ord_k(A) = |G_k|/gcd(|G_k|, a), 
+          |G_k| = gcd(phi(p^k), m) = gcd((p-1)p^(k-1), m)
+  
+  ord_k    (A) = |G_k|      iff gcd(|G_k|    , a) = 1
+  ord_(k+1)(A) = |G_(k+1)|  iff gcd(|G_(k+1)|, a) = 1
+  Since either |G_k| = |G_(k+1)| or 
+              p|G_k| = |G_(k+1)|
+  we get (from the constant gcd) that wither a is coprime to p, hence
+  the gcd will be stable for all subsequent k's as well, or
+  |G_k| is stable (other gcd) hence will be stable. In either case,
+  gcd(|G_(k+l)|, a) = 1 for all l, thus a is a generator
+=#
+  
 @doc """
   gen_mod_pk(p::fmpz, mod::fmpz=0) -> fmpz
 
@@ -57,10 +82,10 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-type MapUnitGroupModM <: Map{Hecke.FinGenGrpAbGen, GenResRing{fmpz}}
+type MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
   header::Hecke.MapHeader
 
-  function MapUnitGroupModM(G::Hecke.FinGenGrpAbGen, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
+  function MapUnitGroupModM(G::T, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
     r = new()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -88,10 +113,10 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
       continue
     end
     pk = p^k
-    if p==2
+    if p==2  && iseven(mod)
       if k==1
         continue
-      elseif k==2
+      elseif k==2 
         push!(r, 2)
         push!(mi, pk)
         gg = fmpz(-1)
@@ -103,7 +128,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
       else
         mpk = divexact(m, pk)
         push!(r, 2)
-        push!(r, p^(k-2))
+        push!(r, gcd(p^(k-2), mod))  # cannot be trivial since mod is even
         push!(mi, fmpz(4))
         push!(mi, pk)
         if mpk == 1
@@ -116,7 +141,11 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
       end
     else
       mpk = divexact(m, pk)
-      push!(r, gcd((p-1)*p^(fm[p]-1), mod))
+      s = gcd((p-1)*p^(fm[p]-1), mod)
+      if s==1 
+        continue
+      end
+      push!(r, s)
       push!(mi, pk)
       gg = gen_mod_pk(p, mod)
       gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), m)
@@ -135,7 +164,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   function dlog(x::GenRes{fmpz})
     return G([disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
-  return G, MapUnitGroupModM(G, R, dexp, dlog)
+  return G, MapUnitGroupModM{typeof(G)}(G, R, dexp, dlog)
 end
 
 @doc """
@@ -167,6 +196,35 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   fM = factor(M)
   @assert length(keys(fM)) == 1
   p = first(keys(fM))
+  if p==2
+    if (a+1) % 4 == 0
+      if b%4 == 3
+        return fmpz(1)
+      else
+        return fmpz(0)
+      end
+    elseif a % M ==5
+      if b%4 == 3
+        b = -b
+      end
+      g = fmpz(0)
+      if (b-5) % 8 == 0
+        g += 1
+        b = b* invmod(a, M) % M
+      end 
+      @assert (b-1) % 8 == 0
+      @assert (a^2-1) % 8 == 0
+      F = FlintPadicField(p, fM[p])
+      g += 2*lift(divexact(log(F(b)), log(F(a^2))))
+      return g
+    else
+      error("illegal generator mod 2^$(fM[p])")
+    end
+  end
+
+  ## we could do the odd priems case using the same p-adic
+  #  log approach...
+     
   @assert isodd(p)
 
   Fp = ResidueRing(FlintZZ, p)

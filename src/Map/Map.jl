@@ -17,9 +17,9 @@ function show(io::IO, M::Map)
   print(io, "$(codomain(M))\n")
 end
 
-function preimage{D, C}(M::Map{D, C}, a)
+function preimage(M::Map, a)
   if isdefined(M.header, :preimage)
-    p = M.header.preimage(a)::elem_type(D)
+    p = M.header.preimage(a)#::elem_type(D)
     @assert parent(p) == domain(M)
     return p
   end
@@ -46,7 +46,7 @@ end
 
 function show(io::IO, M::InverseMap)
   println(io, "inverse of")
-  println(io, " ", M.a)
+  println(io, " ", M.origin)
 end
 
 function inv(a::Map)

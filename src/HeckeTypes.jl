@@ -1210,9 +1210,14 @@ abstract  GrpAb <: Nemo.Group
 abstract  GrpAbElem <: Nemo.GroupElem
 abstract  FinGenGrpAb <: GrpAb
 
+type FinGenGrpAbSnf <: FinGenGrpAb
+  snf::Array{fmpz, 1}
+end
+
 type FinGenGrpAbGen <: FinGenGrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
+  snf_map::Map{FinGenGrpAbGen, FinGenGrpAbSnf}
 
   function FinGenGrpAbGen(R::fmpz_mat; is_hnf::Bool = false)
     r = new()
@@ -1222,10 +1227,6 @@ type FinGenGrpAbGen <: FinGenGrpAb
     end
     return r
   end  
-end
-
-type FinGenGrpAbSnf <: FinGenGrpAb
-  snf::Array{fmpz, 1}
 end
 
 type FinGenGrpAbElem{T <: FinGenGrpAb} <: GrpAbElem
