@@ -771,7 +771,7 @@ function assure_2_normal(A::NfMaxOrdIdl)
       end
       mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
-      if gcd(m, div(m, g)) == 1 
+      if gcd(m, div(mg, g)) == 1 
         if gcd(m^n, norm(gen)) != norm(A)
           @vprint :NfMaxOrd 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
           cnt += 10
