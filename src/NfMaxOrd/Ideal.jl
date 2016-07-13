@@ -258,11 +258,13 @@ function minimum(A::NfMaxOrdIdl)
 
   if isdefined(A, :princ_gen)
     b = A.princ_gen.elem_in_nf
-
-    bi = inv(b)
-
-    A.minimum =  den(bi, order(A))
-    return A.minimum
+    if iszero(b)
+      A.minimum = fmpz(0)
+    else
+      bi = inv(b)
+      A.minimum =  den(bi, order(A))
+    end
+    return deepcopy(A.minimum)
   end
 
   if has_weakly_normal(A)
@@ -1291,7 +1293,7 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
       ideal.anti_uniformizer = O(K(t), false)
     end
 
-    if length(fac) == 1 && ideal.splitting_type[1] == degree(f)
+    if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
       # Prime number is inert, in particular principal
       ideal.is_principal = 1
       ideal.princ_gen = O(p)
