@@ -18,17 +18,17 @@ function AnticNumberField(f::fmpq_poly)
 end
 
 function AnticNumberField(f::fmpz_poly, s::Symbol)
-  Qx, x = PolynomialRing(QQ, parent(f).S)
+  Qx, x = PolynomialRing(QQ, string(parent(f).S))
   return NumberField(Qx(f), s)
 end
 
 function AnticNumberField(f::fmpz_poly, s::AbstractString)
-  Qx, x = PolynomialRing(QQ, parent(f).S)
+  Qx, x = PolynomialRing(QQ, string(parent(f).S))
   return NumberField(Qx(f), s)
 end
 
 function AnticNumberField(f::fmpz_poly)
-  Qx, x = PolynomialRing(QQ, parent(f).S)
+  Qx, x = PolynomialRing(QQ, string(parent(f).S))
   return NumberField(Qx(f))
 end
 
