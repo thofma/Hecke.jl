@@ -146,10 +146,17 @@ doc"""
 > Returns a copy of the ideal $x$.
 """
 function deepcopy(A::NfMaxOrdIdl)
-  B = NfMaxOrdIdl(A.parent)
+  B = NfMaxOrdIdl(order(A))
   for i in fieldnames(A)
+    if i == :parent
+      continue
+    end
     if isdefined(A, i)
-      setfield!(B, i, deepcopy(getfield(A, i)))
+      if i == :basis
+        setfield!(B, i, NfOrdElem{NfMaxOrd}[ deepcopy(x) for x in A.basis])
+      else
+        setfield!(B, i, deepcopy(getfield(A, i)))
+      end
     end
   end
   return B
@@ -479,7 +486,7 @@ function prod_via_2_elem_weakly(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
 
   @vprint :NfMaxOrd 1 "prod_via_2_elem: used $cnt tries\n"
 
-  c = NfMaxOrdIdl(O, norm_int_c, gen)
+  c = ideal(O, norm_int_c, gen)
 
   c.norm = norm_c
 
@@ -556,7 +563,7 @@ function prod_by_int_2_elem_normal(A::NfMaxOrdIdl, a::fmpz)
     a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
 
-  B = NfMaxOrdIdl(A.gen_one*a, a2*a, A.parent)
+  B = NfMaxOrdIdl(A.gen_one*a, a2*a)
   B.gens_normal = m
 
   if has_minimum(A)
@@ -678,7 +685,14 @@ function _assure_weakly_normal_presentation(A::NfMaxOrdIdl)
 
   m = M()
 
+  cnt = 0
   while true
+    cnt += 1
+
+    if cnt > 1000
+      println("Having a hard time find weak generators for $A")
+    end
+
     rand!(B, r)
 
     # Put the entries of B into the (1 x d)-Matrix m
@@ -715,6 +729,13 @@ function assure_2_normal(A::NfMaxOrdIdl)
   K = nf(O)
   n = degree(K)
 
+  if norm(A) == 1
+    A.gen_one = fmpz(1)
+    A.gen_two = one(O)
+    A.gens_normal = fmpz(1)
+    return
+  end
+
   if has_2_elem(A)  && has_weakly_normal(A)
     m = minimum(A)
     bas = basis(O)
@@ -731,6 +752,9 @@ function assure_2_normal(A::NfMaxOrdIdl)
     cnt = 0
     while true
       cnt += 1
+      if cnt > 1000
+        error("Having a hard time making generators normal for $A")
+      end
       #Nemo.rand_into!(bas, r, s)
       rand!(s, O, r)
       #Nemo.mult_into!(s, A.gen_two, s)
@@ -798,6 +822,11 @@ function inv(A::NfMaxOrdIdl)
     Ai.norm = num(temp)
     Ai.gens_normal = A.gens_normal
     return NfMaxOrdFracIdl(Ai, dn)
+  else
+    # I don't know if this is a good idea
+    _assure_weakly_normal_presentation(A)
+    assure_2_normal(A)
+    return inv(A)
   end
   error("Not implemented yet")
 end
@@ -1491,10 +1520,12 @@ function divexact(A::NfMaxOrdIdl, y::fmpz)
 end
 
 function divexact(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
+  # It is assumed that B divides A, that is, A \subseteq B
   if norm(A) == norm(B)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
     I = A*inv(B)
+    simplify(I)
     B = basis_mat(I)
     B.den != 1 && error("Division not exact")
     I = ideal(order(A), B.num)
