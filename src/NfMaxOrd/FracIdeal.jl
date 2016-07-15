@@ -119,6 +119,8 @@ end
 
 is_prime_known(A::NfMaxOrdFracIdl) = is_prime_known(A.num)
 
+order(A::NfMaxOrdFracIdl) = order(num(A))
+
 function prod(a::NfMaxOrdFracIdl, b::NfMaxOrdFracIdl)
   #println("==================\n", has_2_elem(a.num))
   #println(has_2_elem(b.num))
@@ -145,9 +147,18 @@ end
 *(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl) = NfMaxOrdFracIdl(A.num*B, A.den)
 
 function *(A::NfMaxOrdFracIdl, a::nf_elem)
-  C = *(A, a*order(num(A)))
+  C = *(A, a*order(A))
   return C
 end
+
+*(a::nf_elem, A::NfMaxOrdFracIdl) = A*a
+
+function *(A::NfMaxOrdIdl, a::nf_elem)
+  C = *(A, a*order(A))
+  return C
+end
+
+*(a::nf_elem, A::NfMaxOrdIdl) = A*a
 
 function /(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl)
   C = prod(A, inv(B))
@@ -155,7 +166,7 @@ function /(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl)
 end
 
 function /(A::NfMaxOrdFracIdl, a::nf_elem)
-  C = prod(A, Idl((order(num(A)), inv(a))))
+  C = prod(A, Idl((order(A), inv(a))))
   return C
 end
 

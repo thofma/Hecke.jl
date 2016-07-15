@@ -416,6 +416,7 @@ function prod_via_2_elem_normal(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
   end
 
   C.gens_normal = m
+  C.gens_weakly_normal = true #for the 1-ideal: it will not be normal...
 
   return C
 end
@@ -963,6 +964,9 @@ function simplify(A::NfMaxOrdIdl)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
+    if A.gen_one == 1 # || test other things to avoid the 1 ideal
+      return A
+    end
     A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order)) 
     A.gen_one = A.minimum
     n = gcd(A.gen_one^degree(A.parent.order), ZZ(norm(A.gen_two)))
