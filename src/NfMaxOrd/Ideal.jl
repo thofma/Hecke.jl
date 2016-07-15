@@ -49,6 +49,22 @@ end
 ################################################################################
 #
 #  Construction
+#  Field acess
+#
+################################################################################
+
+order(S::NfMaxOrdIdlSet) = S.order
+
+# a (bad) hash function
+# - slow (due to basis)
+# - unless basis is in HNF it si also non-unique
+function hash(A::NfMaxOrdIdl)
+  return hash(basis_mat(A))
+end  
+  
+################################################################################
+#
+#  Parent object overloading and user friendly constructors
 #
 ################################################################################
 
