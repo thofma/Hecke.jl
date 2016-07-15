@@ -259,3 +259,287 @@ function rand(M::GenMatSpace{NfOrdElem{NfMaxOrd}}, B::Union{Int, fmpz})
   return z
 end
 
+type PMat
+  parent
+  matrix::GenMat{nf_elem}
+  coeffs::Array{NfMaxOrdFracIdl, 1}
+
+  function PMat(m::GenMat{nf_elem}, c::Array{NfMaxOrdFracIdl, 1})
+    z = new()
+    z.matrix = m
+    z.coeffs = c
+    return z
+  end
+end
+
+function PseudoMatrix(m::GenMat{nf_elem}, c::Array{NfMaxOrdFracIdl, 1})
+  # sanity checks
+  return PMat(m ,c)
+end
+
+function PseudoMatrix(m::GenMat{NfOrdElem{NfMaxOrd}}, c::Array{NfMaxOrdIdl, 1})
+  mm = change_ring(m, nf(base_ring(m)))
+  cc = map(z -> NfMaxOrdFracIdl(z, fmpz(1)), c)
+  return PMat(mm, cc)
+end
+
+function rows(m::PMat)
+  return rows(m.matrix)
+end
+
+function cols(m::PMat)
+  return cols(m.matrix)
+end
+
+function change_ring(m::GenMat{NfOrdElem{NfMaxOrd}}, K::AnticNumberField)
+  return MatrixSpace(K, rows(m), cols(m))(map(z -> K(z), m.entries))
+end
+
+function det(m::PMat)
+  z = m.coeffs[1]
+  for i in 2:rows(m)
+    if isdefined(z.num, :gen_two) && isdefined(m.coeffs[i].num, :gen_two)
+    end
+    z = z*m.coeffs[i]
+  end
+  return det(m.matrix)*z
+end
+
+# this is slow
+function _coprime_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
+  O = order(y)
+  c = conjugates_init(nf(O).pol)
+  #num_x_inv = inv(num(x))
+  x_inv = inv(x)
+  check = true
+  z = ideal(O, O(1))
+  a = nf(O)()
+  i = 0
+  while check
+    i += 1
+    a = rand(x_inv, 10)
+    b = x*a
+    z = divexact(num(b), den(b))
+    norm(z + y) == 1 ? (check = false) : (check = true)
+  end
+  return z, a 
+end
+
+# this is slow
+function _coprime_norm_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
+  O = order(y)
+  c = conjugates_init(nf(O).pol)
+  #num_x_inv = inv(num(x))
+  x_inv = inv(x)
+  check = true
+  z = ideal(O, O(1))
+  a = nf(O)()
+  i = 0
+  while check
+    i += 1
+    a = rand(x_inv, 10)
+    b = x*a
+    z = divexact(num(b), den(b))
+    gcd(norm(z), norm(y)) == 1 ? (check = false) : (check = true)
+  end
+  @assert gcd(norm(z), norm(y)) == 1
+  return z, a 
+end
+
+
+function rand(I::NfMaxOrdIdl, B::Int)
+  r = rand(1:B, degree(order(I)))
+  b = basis(I)
+  z = r[1]*b[1]
+  for i in 2:degree(order(I))
+    z = z + r[i]*b[i]
+  end
+  return z
+end
+
+function rand(I::NfMaxOrdFracIdl, B::Int)
+  z = rand(num(I), B)
+  return divexact(elem_in_nf(z), den(I))
+end
+
+function pseudo_hnf(P::PMat, m::NfMaxOrdIdl, shape::Symbol = :upperright)
+  O = order(m)
+
+  t_comp_red = 0.0
+  t_mod_comp = 0.0
+  t_sum = 0.0
+  t_div = 0.0
+  t_idem = 0.0
+  
+  t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
+  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
+
+  res_mat = MatrixSpace(nf(O), rows(P), cols(P))()
+  for i in 1:rows(P)
+    for j in 1:cols(P)
+      res_mat[i, j] = elem_in_nf(zz[i, j].elem)
+    end
+  end
+
+  res = PMat(res_mat, [ deepcopy(x)::NfMaxOrdFracIdl for x in P.coeffs])
+
+  for i in 1:rows(P)
+    if iszero(zz[i, i].elem)
+      res.matrix[i, i] = one(nf(O))
+      res.coeffs[i] = NfMaxOrdFracIdl(deepcopy(m), fmpz(1))
+    else
+      o = ideal(O, zz[i, i].elem)
+      t_sum += @elapsed g = o + m
+      t_div += @elapsed oo = divexact(o, g)
+      t_div += @elapsed mm = divexact(m, g)
+      t_idem += @elapsed e, f = idempotents(oo, mm)
+      res.coeffs[i] = NfMaxOrdFracIdl(deepcopy(g), fmpz(1))
+      mul_row!(res.matrix, i, elem_in_nf(e))
+      divide_row!(res.matrix, i, elem_in_nf(zz[i, i].elem))
+      res.matrix[i, i] = one(nf(O))
+    end
+  end
+
+  println("computation of reduction : $t_comp_red")
+  println("modular computation      : $t_mod_comp")
+  println("computation of ideal sum : $t_sum")
+  println("computation of ideal div : $t_div")
+  println("computation of idems     : $t_idem")
+
+  return res
+end
+
+#this is Algorithm 4 of FH2014
+# we assume that span(P) \subseteq O^r
+function _matrix_for_reduced_span(P::PMat, m::NfMaxOrdIdl)
+  O = order(m)
+  c = Array(NfMaxOrdIdl, rows(P))
+  mat = deepcopy(P.matrix)
+  for i in 1:rows(P)
+    I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
+    divide_row!(mat, i, a)
+    c[i] = I
+  end
+  Om, OtoOm = quo(O, m)
+  z = MatrixSpace(Om, rows(P), cols(P))()
+  for i in 1:rows(z)
+    for j in 1:cols(z)
+      @assert norm(c[i])*mat[i, j] in O
+      @assert euclid(OtoOm(O(norm(c[i])))) == 1
+      q = OtoOm(O(norm(c[i])*mat[i,j]))
+      qq = inv(OtoOm(O(norm(c[i]))))
+      z[i, j] = q*qq
+    end
+  end
+  return z
+end
+
+_check(a) = a.has_coord ? dot(a.elem_in_basis, basis(parent(a))) == a : true
+
+function _check(m::GenMat{NfOrdElem{NfMaxOrd}})
+  for i in 1:rows(m)
+    for j in 1:cols(m)
+      if !_check(m[i, j].elem)
+        println("$i $j not consistent: $(m[i, j]) : $(m[i, j].elem_in_basis)")
+        error("dasdsad")
+      end
+    end
+  end
+end
+
+function _check(m::GenMat{NfMaxOrdQuoRingElem})
+  for i in 1:rows(m)
+    for j in 1:cols(m)
+      if !_check(m[i, j].elem)
+        println("$i $j not consistent: $(m[i, j].elem) : $(m[i, j].elem.elem_in_basis)")
+        error("dasdsad")
+      end
+    end
+  end
+end
+
+function divide_row!{T}(M::GenMat{T}, i::Int, r::T)
+  for j in 1:cols(M)
+    M[i, j] = divexact(M[i, j], r)
+  end
+end
+
+function mul_row!{T}(M::GenMat{T}, i::Int, r::T)
+  for j in 1:cols(M)
+    M[i, j] = M[i, j] * r
+  end
+end
+
+function _contained_in_span_of_pseudohnf(v::GenMat{nf_elem}, P::PMat)
+  # assumes that P is upper right pseudo-HNF
+  w = deepcopy(v)
+  for i in 1:rows(P)
+    if !(w[1, i] in P.coeffs[i])
+      return false
+    end
+    e = w[1, i]
+    for j in 1:cols(P)
+      w[1, j] = w[1, j] - e*P.matrix[i, j]
+    end
+  end
+  if !iszero(w)
+    return false
+  end
+  return true
+end
+
+function _contained_in_span_of_pseudohnf_lowerleft(v::GenMat{nf_elem}, P::PMat)
+  # assumes that P is lowerleft pseudo-HNF
+  w = deepcopy(v)
+  for i in rows(P):-1:1
+    if !(w[1, i] in P.coeffs[i])
+      return false
+    end
+    e = w[1, i]
+    for j in 1:cols(P)
+      w[1, j] = w[1, j] - e*P.matrix[i, j]
+    end
+  end
+  if !iszero(w)
+    return false
+  end
+  return true
+end
+
+function _spans_subset_of_pseudohnf(M::PMat, P::PMat)
+# P upperright
+  for i in rows(M)
+    A = M.coeffs[i]
+    v = sub(M.matrix, i:i, 1:cols(P))
+    for b in basis(A.num)
+      bb = divexact(elem_in_nf(b), A.den)
+      if !Hecke._contained_in_span_of_pseudohnf(bb*v, P)
+        return false
+      end
+    end
+  end
+  return true
+end
+
+function sub(M::GenMat, rows::UnitRange{Int}, cols::UnitRange{Int})
+  @assert step(rows) == 1 && step(cols) == 1
+  z = MatrixSpace(base_ring(M), length(rows), length(cols))()
+  for i in rows
+    for j in cols
+      z[i - start(rows) + 1, j - start(cols) + 1] = M[i, j]
+    end
+  end
+  return z
+end
+
+function in(x::nf_elem, y::NfMaxOrdFracIdl)
+  B = inv(basis_mat(y))
+  O = order(y)
+  M = MatrixSpace(FlintZZ, 1, degree(O))()
+  t = FakeFmpqMat(M)
+  elem_to_mat_row!(t.num, 1, t.den, x)
+  v = t*basis_mat_inv(O)
+  v = v*B
+
+  return v.den == 1
+end

@@ -1,3 +1,16 @@
+type fmpz_preinvn_struct
+  dinv::Ptr{UInt}
+  n::Int
+  norm::Int
+
+  function fmpz_preinvn_struct(f::fmpz)
+    z = new()
+    ccall((:fmpz_preinvn_init, :libflint), Void, (Ptr{fmpz_preinvn_struct}, Ptr{fmpz}), &z, &f)
+    finalizer(z, _fmpz_preinvn_struct_clear_fn)
+    return z
+  end
+end
+
 ################################################################################
 #
 #  SmatRow/Smat
@@ -662,6 +675,7 @@ type NfMaxOrdIdl <: NfOrdClsIdl
   is_prime::Int            # 0: don't know
                            # 1 known to be prime
                            # 2 known to be not prime
+  is_zero::Int             # as above
   is_principal::Int        # as above
   princ_gen::NfOrdElem{NfMaxOrd}
   princ_gen_special::Tuple{Int, Int, fmpz}
@@ -687,6 +701,7 @@ type NfMaxOrdIdl <: NfOrdClsIdl
     r.parent = NfMaxOrdIdlSet(O)
     r.gens_short = false
     r.gens_weakly_normal = false
+    r.is_zero = 0
     r.is_prime = 0
     r.is_principal = 0
     r.splitting_type = (0,0)
@@ -719,9 +734,19 @@ type NfMaxOrdIdl <: NfOrdClsIdl
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
-
     C = NfMaxOrdIdl(O)
     C.princ_gen = x
+    C.is_principal = 1
+
+    if iszero(x)
+      C.is_zero = 1
+    end
+
+    C.gen_one = norm(x)
+    C.gen_two = x
+
+    C.gens_normal = C.gen_one
+    C.gens_weakly_normal = true
 
     return C
   end
@@ -1172,19 +1197,30 @@ type NfMaxOrdQuoRing <: Ring
   base_ring::NfMaxOrd
   ideal::NfMaxOrdIdl
   basis_mat::fmpz_mat
+  preinvn::Array{fmpz_preinvn_struct, 1}
 
   # temporary variables for divisor and annihilator computations
   tmp_div::fmpz_mat
+  tmp_div2::fmpz_mat
   tmp_ann::fmpz_mat
+  tmp_ann2::fmpz_mat
+  tmp_euc::fmpz_mat
+  tmp_euc2::fmpz_mat
 
   function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdl)
     z = new()
     z.base_ring = O
     z.ideal = I
     z.basis_mat = basis_mat(I)
+    z.preinvn = [ fmpz_preinvn_struct(z.basis_mat[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
+    z.tmp_div2 = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
     z.tmp_ann = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
+    z.tmp_ann2 = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
+    z.tmp_euc = MatrixSpace(ZZ, 2*d, d)()
+    z.tmp_euc2 = MatrixSpace(ZZ, 2*d, d)()
+    minimum(I) # compute the minimum
     return z
   end
 end
@@ -1195,7 +1231,7 @@ type NfMaxOrdQuoRingElem <: RingElem
 
   function NfMaxOrdQuoRingElem(O::NfMaxOrdQuoRing, x::NfOrdElem{NfMaxOrd})
     z = new()
-    z.elem = mod(x, ideal(O))
+    z.elem = mod(x, ideal(O), O.preinvn)
     z.parent = O
     return z
   end

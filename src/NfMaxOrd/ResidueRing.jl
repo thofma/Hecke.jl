@@ -38,6 +38,16 @@ export NfMaxOrdQuoRing, NfMaxOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
 
 ################################################################################
 #
+#  Assert
+#
+################################################################################
+
+add_assert_scope(:NfMaxOrdQuoRing)
+
+set_assert_level(:NfMaxOrdQuoRing, 0)
+
+################################################################################
+#
 #  Field access
 #
 ################################################################################
@@ -78,7 +88,7 @@ Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
 #
 ################################################################################
 
-deepcopy(x::NfMaxOrdQuoRingElem) = NfMaxOrdQuoRingElem(parent(x), x.elem)
+deepcopy(x::NfMaxOrdQuoRingElem) = NfMaxOrdQuoRingElem(parent(x), deepcopy(x.elem))
 
 ################################################################################
 #
@@ -198,10 +208,16 @@ end
 ################################################################################
 
 function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+  b, z = isdivisible(x, y)
+  @assert b
+  return z
+end
+
+function isdivisible(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
 
   if iszero(x)
-    return zero(parent(x))
+    return true, zero(parent(x))
   end
 
   R = parent(x)
@@ -215,7 +231,7 @@ function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   # ( 1   0   u )
   # ( *   *   * )
   # u will be the coefficient vector of the quotient
-  V = parent(x).tmp_div
+  V = R.tmp_div
   A = representation_mat(y.elem)
   B = basis_mat(parent(x))
 
@@ -223,27 +239,40 @@ function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   a = elem_in_basis(x.elem)
 
+  #println("1V: $V")
+
   for i in 1:d
     V[1, 1 + i] = a[i]
   end
 
-  _copy_matrix_into_matrix(V, 2, 2, A)
-  _copy_matrix_into_matrix(V, 2+d, 2, B)
+  #println("2V: $V")
+
+  _copy_matrix_into_matrix(V, 2, 2, A)   # this really is a copy
+  _copy_matrix_into_matrix(V, 2+d, 2, B) # this really is a copy
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
   end
 
-  U = hnf_modular_eldiv(V, minimum(parent(x).ideal))
+  #println(V)
+  hnf_modular_eldiv!(V, minimum(parent(x).ideal))
+  #println(U)
   #v = submat(U, 1:1, (d + 2):(2*d + 1))
-  @assert iszero(submat(U, 1:1, 2:(d + 1)))
+  if !iszero(submat(V, 1:1, 2:(d + 1)))
+    ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+    return false, zero(parent(x))
+  end
   
-  z = R(-base_ring(R)(fmpz[ U[1, i] for i in (d + 2):(2*d + 1)]))
+  z = R(-base_ring(R)(fmpz[ deepcopy(V[1, i]) for i in (d + 2):(2*d + 1)]))
+
+  #zz = -MatrixSpace(ZZ, 1, d)(fmpz[ U[1, i] for i in (d + 2):(2*d + 1)])
+  #zzz = MatrixSpace(ZZ, 1, d)(elem_in_basis(x.elem))
+  #println("adasd: $(zz*A + zzz)")
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
-  #@assert z*y == x
-  return z
+  @hassert :NfMaxOrdQuoRing 1 z*y == x
+  return true, z
 end
 
 ################################################################################
@@ -255,25 +284,35 @@ end
 function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   n = euclid(x)
   m = euclid(y)
-  #@assert mod(n, m) == 0
+  @hassert :NfMaxOrdQuoRing 1 mod(n, m) == 0
   target = divexact(n, m)
 
+  #println("target valuation: $target")
+  #println("doing first an ordinary divexact with\n $x \n and \n $y")
   q0 = divexact(x, y)
+  #println("valuation of first quotient: $(euclid(q0))")
 
   if euclid(q0) == target
     return q0
   else
     i = annihilator(y)
+    #println("generator of annihilator: $i")
 
     q = q0 + rand(parent(x))*i
 
+    k = 0
     while euclid(q) != target 
+      k += 1
       q = q0 + rand(parent(x))*i
+      #println("current valuation $(euclid(q))")
+      if k > 500
+        error("Could not find proper quotion for strong division")
+      end
     end
   end
 
-  #@assert q*y == x
-  #@assert euclid(q) *euclid(y) == euclid(x)
+  @hassert :NfMaxOrdQuoRing 1 q*y == x
+  @hassert :NfMaxOrdQuoRing 1 euclid(q) *euclid(y) == euclid(x)
 
   return q
 end
@@ -299,15 +338,27 @@ function euclid(x::NfMaxOrdQuoRingElem)
     return fmpz(-1)
   end
 
-  U = vcat(representation_mat(x.elem), basis_mat(parent(x)))
+  U = parent(x).tmp_euc
 
-  U = hnf_modular_eldiv(U, minimum(parent(x).ideal))
+  d = degree(base_ring(parent(x)))
+
+  _copy_matrix_into_matrix(U, 1, 1, representation_mat(x.elem))
+  _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_mat)
+
+  V = hnf_modular_eldiv(U, parent(x).ideal.minimum)
+
+  #U = vcat(representation_mat(x.elem), basis_mat(parent(x)))
+
+  #U = hnf_modular_eldiv(U, minimum(parent(x).ideal))
 
   z = fmpz(1)
 
   for i in 1:degree(base_ring(parent(x)))
-    mul!(z, z, U[i, i])
+    mul!(z, z, V[i, i])
   end
+
+  @hassert :NfMaxOrdQuoRing 1 z == norm(ideal(parent(x.elem), x.elem) + parent(x).ideal)
+
   return z
 end
 
@@ -321,10 +372,39 @@ function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   q = rand(parent(x))
   r = x - q*y
   e = euclid(y)
+
+  # This should be only one case and don't do the try/catch crap
+  # Write a proper _is_divisible function
+
+  if e == 1
+    q = x*inv(y)
+    r = x - q*y
+    @hassert :NfMaxOrdQuoRing 1 iszero(x - q*y)
+    @hassert :NfMaxOrdQuoRing 1 euclid(r) < e
+    return q, r
+  end
+
+  try q = divexact(x, y)
+    r = x - q*y
+    @hassert :NfMaxOrdQuoRing 1 iszero(x - q*y)
+    @hassert :NfMaxOrdQuoRing 1 euclid(r) < e
+    return q, r
+  catch
+  end
+
+  cnt = 0
   while euclid(r) >= e
+    cnt += 1
     q = rand(parent(x))
     r = x - q*y
+    if cnt > 1000
+      println("Target valuation $e")
+      error("Something odd in divrem for $x $y $(parent(x))")
+    end
   end
+
+  @hassert :NfMaxOrdQuoRing 1 euclid(r) < e
+
   return q, r
 end
 
@@ -360,8 +440,6 @@ function annihilator(x::NfMaxOrdQuoRingElem)
   M_x = representation_mat(x.elem)
   U = vcat(M_x, M_I)
   m = _kernel(U)
-  #@assert rows(m) == degree(O)
-  #@assert cols(m) == 2*degree(O)
   I = ideal(O, _hnf_modular_eldiv(submat(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
   return f(I)
@@ -407,8 +485,6 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   e = _divexact_strong(x, g)
   f = _divexact_strong(y, g)
 
-  #@assert euclid(gcd(e, f)) == 1
-
   M_e = representation_mat(e.elem)
   M_f = representation_mat(f.elem)
 
@@ -445,12 +521,10 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   u = Q(-O([ U[1,i] for i in (d + 2):(2*d + 1)]))
   v = Q(-O([ U[1,i] for i in (2*d + 2):(3*d + 1)]))
 
-  #@assert g == u*x + v*y
-  @assert Q(O(1)) == u*e - (v*(-f))
+  @hassert :NfMaxOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
-  #println(u*e - (v*(-f)));
   return g, u, v, -f, e
 end
 
@@ -475,7 +549,7 @@ function _pivot(A, start_row, col)
   return 0
 end
 
-function strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem})
+function _strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -486,14 +560,33 @@ function strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem})
   return B
 end
 
+function strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem}, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    h = _strong_echelon_form(_swapcols(A))
+    _swapcols!(h)
+    _swaprows!(h)
+    return h
+  elseif shape == :upperright
+    return _strong_echelon_form(A)
+  else
+    error("Not yet implemented")
+  end
+end
+
 function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
   n = rows(A)
   m = cols(A)
   d = one(base_ring(A))
 
+  t_isdiv = 0.0
+  t_xxgcd = 0.0
+  t_arith = 0.0
+
   row = 1
   col = 1
+  tic()
   while row <= rows(A) && col <= cols(A)
+    #println("doing row $row")
     t = _pivot(A, row, col)
     if t == 0
       col = col + 1
@@ -501,30 +594,44 @@ function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
     end
     d = d*t
     for i in (row + 1):rows(A)
-      g,s,t,u,v = xxgcd(A[row, col], A[i, col])
-      #println(s*v - t*u)
-      @assert s*v - t*u == base_ring(A)(1)
-      @assert isone(s*v - t*u)
-      #println([s t; u v])
-
-      for k in col:m
-        t1 = s*A[row, k] + t*A[i, k]
-        t2 = u*A[row, k] + v*A[i, k]
-        A[row, k] = t1
-        A[i, k] = t2
+      if iszero(A[i, col])
+        continue
       end
 
-      #d = d * ( s*v - t*u)
-      #println(A)
+      t_isdiv += @elapsed b, q = isdivisible(A[i, col], A[row, col])
+
+      if b
+        for k in col:m
+          t_arith += @elapsed A[i, k] = A[i, k] - q*A[row, k]
+        end
+        @hassert :NfMaxOrdQuoRing 1 A[i, col] == zero(base_ring(A))
+      else
+        t_xxgcd += @elapsed g,s,t,u,v = xxgcd(A[row, col], A[i, col])
+        @hassert :NfMaxOrdQuoRing 1 isone(s*v - t*u)
+
+        for k in col:m
+          t_arith += @elapsed t1 = s*A[row, k] + t*A[i, k]
+          t_arith += @elapsed t2 = u*A[row, k] + v*A[i, k]
+          A[row, k] = t1
+          A[i, k] = t2
+        end
+      end
     end
     row = row + 1;
     col = col + 1;
   end
+  println("  === Time triangularization")
+  println("    isdivisbible: $t_isdiv")
+  println("    xxgcd       : $t_xxgcd")
+  println("    arith       : $t_arith")
+  println("    total time  : $(toc())")
   return d
 end
 
 function triangularize(A::GenMat{NfMaxOrdQuoRingElem})
+  #println("copying ...")
   B = deepcopy(A)
+  #println("done")
   triangularize!(B)
   return B
 end
@@ -542,6 +649,7 @@ function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
 
   @assert n >= m
 
+  #print("triangularizing ... ")
   triangularize!(A)
 
   T = MatrixSpace(base_ring(A), 1, cols(A))()
@@ -551,9 +659,13 @@ function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
     if !is_zero(A[j,j]) != 0
       # This is the reduction
       for i in 1:j-1
-        q, r = divrem(A[i, j], A[j, j])
-        for l in i:m
-          A[i, l] = A[i, l] - q*A[j, l]
+        if iszero(A[i, j])
+          continue
+        else
+          q, r = divrem(A[i, j], A[j, j])
+          for l in i:m
+            A[i, l] = A[i, l] - q*A[j, l]
+          end
         end
       end
 
@@ -570,13 +682,27 @@ function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
 
 
     for i in j+1:m 
-      g,s,t,u,v = xxgcd(A[i, i], T[1, i])
+      
+      if iszero(T[1, i])
+        continue
+      end
 
-      for k in i:m
-        t1 = s*A[i, k] + t*T[1, k]
-        t2 = u*A[i, k] + v*T[1, k]
-        A[i, k] = t1
-        T[1, k] = t2
+      b, q = isdivisible(T[1, i], A[i, i])
+
+      if b
+        for k in i:m
+          T[1, k] = T[1, k] - q*A[i, k]
+        end
+        @hassert :NfMaxOrdQuoRing 1 T[1, i] == zero(base_ring(A))
+      else
+        g,s,t,u,v = xxgcd(A[i, i], T[1, i])
+
+        for k in i:m
+          t1 = s*A[i, k] + t*T[1, k]
+          t2 = u*A[i, k] + v*T[1, k]
+          A[i, k] = t1
+          T[1, k] = t2
+        end
       end
     end
   end
@@ -640,7 +766,7 @@ function det(M::GenMat{NfMaxOrdQuoRingElem})
   end
   return z*d
   q, r = divrem(z, d)
-  @assert iszero(r)
+  @hassert :NfMaxOrdQuoRing 1 iszero(r)
   return divexact(z, d)
 end
 
@@ -735,7 +861,7 @@ function _root_hensel(f::GenPoly{NfOrdElem})
     # The following should be a uniformizing element
     Q_pi = Q.gen_two
 
-    @assert fmodQ(zero_mod_Q) == 0
+    @hassert :NfMaxOrdQuoRing 1 fmodQ(zero_mod_Q) == 0
 
     # This is the first step
 
@@ -812,8 +938,20 @@ function _root_hensel(f::GenPoly{NfOrdElem})
 
       reconstructed_new = O(fmpz[ divexact(w[1, i], cden) for i in 1:degree(O) ])
 
-      @assert iszero(pi_RR(f(new_a)))
+      @hassert :NfMaxOrdQuoRing 1 iszero(pi_RR(f(new_a)))
     end
   end
 end
 
+function probablity(O::NfMaxOrdQuoRing)
+  p = 1.0
+  I = O.ideal
+  f = factor(norm(I))
+  for (P, e) in f
+    if valuation(I, P) > 0
+      p = p * (1 - 1/Float64(norm(P)))
+    end
+  end
+  return p
+end
+    

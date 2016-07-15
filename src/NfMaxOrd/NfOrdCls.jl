@@ -160,7 +160,7 @@ function Base.call(O::NfMaxOrd, a::nf_elem, check::Bool = true)
   if check
     (x,y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfOrdElem{NfMaxOrd}(O, deepcopy(a), y)
+    return NfOrdElem{NfMaxOrd}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
   else
     return NfOrdElem{NfMaxOrd}(O, deepcopy(a))
   end
@@ -170,7 +170,7 @@ function Base.call(O::NfOrd, a::nf_elem, check::Bool = true)
   if check
     (x,y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfOrdElem{NfOrd}(O, deepcopy(a), y)
+    return NfOrdElem{NfOrd}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
   else
     return NfOrdElem{NfOrd}(O, deepcopy(a))
   end
@@ -191,11 +191,11 @@ end
 #end
 
 function Base.call(O::NfMaxOrd, a::Union{fmpz, Integer})
-  return NfOrdElem{NfMaxOrd}(O, nf(O)(a))
+  return NfOrdElem{NfMaxOrd}(O, nf(O)(deepcopy(a)))
 end
 
 function Base.call(O::NfOrd, a::Union{fmpz, Integer})
-  return NfOrdElem{NfOrd}(O, nf(O)(a))
+  return NfOrdElem{NfOrd}(O, nf(O)(deepcopy(a)))
 end
 
 #doc"""
@@ -205,11 +205,11 @@ end
 #> Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #"""
 function Base.call(O::NfMaxOrd, arr::Array{fmpz, 1})
-  return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
+  return NfOrdElem{NfMaxOrd}(O, fmpz[ deepcopy(x) for x in arr ])
 end
 
 function Base.call(O::NfOrd, arr::Array{fmpz, 1})
-  return NfOrdElem{NfOrd}(O, deepcopy(arr))
+  return NfOrdElem{NfOrd}(O, fmpz[ deepcopy(x) for x in arr ])
 end
 #
 #doc"""
@@ -235,7 +235,7 @@ end
 #"""
 for T in subtypes(NfOrdCls)
   function Base.call(O::T, a::nf_elem, arr::Array{fmpz, 1})
-    return NfOrdElem{T}(O, deepcopy(a), deepcopy(arr))
+    return NfOrdElem{T}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
   end
 end
 
@@ -275,7 +275,7 @@ doc"""
 """
 function elem_in_nf(a::NfOrdElem)
   if isdefined(a, :elem_in_nf)
-    return a.elem_in_nf
+    return deepcopy(a.elem_in_nf)
   end
   error("Not a valid order element")
 end
@@ -287,15 +287,20 @@ doc"""
 > Returns the coefficient vector of $a$.
 """
 function elem_in_basis(a::NfOrdElem)
-  @vprint :NfOrd 2 "Computing the coordinates of $a\n"
+  #Base.show_backtrace(STDOUT, backtrace())
+  #@vprint :NfOrd 2 "Computing the coordinates of $a\n"
   if a.has_coord
-    return a.elem_in_basis
+    #@assert a == dot(a.elem_in_basis, basis(parent(a)))
+    #return deepcopy(a.elem_in_basis)
+    return fmpz[ deepcopy(x) for x in a.elem_in_basis]
   else
     (x,y) = _check_elem_in_order(a.elem_in_nf,parent(a))
     !x && error("Number field element not in the order")
-    a.elem_in_basis = y
+    a.elem_in_basis = fmpz[ deepcopy(x) for x in y]
     a.has_coord = true
-    return a.elem_in_basis
+    #@assert a == dot(a.elem_in_basis, basis(parent(a)))
+    return fmpz[ deepcopy(x) for x in a.elem_in_basis]
+    #return deepcopy(a.elem_in_basis)
   end
 end
 
@@ -341,7 +346,7 @@ function deepcopy(x::NfOrdElem)
   z.elem_in_nf = deepcopy(x.elem_in_nf)
   if x.has_coord
     z.has_coord = true
-    z.elem_in_basis = deepcopy(x.elem_in_basis)
+    z.elem_in_basis = [ deepcopy(y) for y in x.elem_in_basis ]
   end
   return z
 end
@@ -357,13 +362,19 @@ end
 # to the basis of O
 
 function _check_elem_in_order(a::nf_elem, O::NfOrdCls)
-  M = MatrixSpace(ZZ, 1, degree(O))()
+  M = MatrixSpace(FlintZZ, 1, degree(O))()
   t = FakeFmpqMat(M)
   elem_to_mat_row!(t.num, 1, t.den, a)
   x = t*basis_mat_inv(O)
+  #v = fmpz[ zero(FlintZZ) for i in 1:degree(O)]
   v = Array(fmpz, degree(O))
+
+  #for i in 1:degree(O)
+  #  ccall((:fmpz_init, :libflint), Void, (Ptr{fmpz}, ), &v[i])
+  #end
+
   for i in 1:degree(O)
-    v[i] = x.num[1,i]
+    v[i] = deepcopy(x.num[1,i])
   end
   return (x.den == 1, v) 
 end  
@@ -500,6 +511,7 @@ doc"""
 > Returns $x \cdot y$.
 """
 function *(x::NfOrdElem, y::NfOrdElem)
+  parent(x) != parent(y) && error("Wrong parents")
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
@@ -642,7 +654,7 @@ doc"""
 > element.
 """
 function mod(a::NfOrdElem, m::Union{fmpz, Int})
-  ar = copy(elem_in_basis(a))
+  ar = elem_in_basis(a)
   for i in 1:degree(parent(a))
     ar[i] = mod(ar[i],m)
   end
@@ -1027,6 +1039,7 @@ function *(x::NfOrdClsIdl, y::NfOrdClsIdl)
 end
 
 function _mul(x::NfOrdClsIdl, y::NfOrdClsIdl)
+  order(x) != order(y) && error("Not compatible")
   O = order(x)
   d = degree(O)
   l = minimum(x)*minimum(y)
@@ -1037,7 +1050,7 @@ function _mul(x::NfOrdClsIdl, y::NfOrdClsIdl)
     for j in 1:d
       t = elem_in_basis(X[i]*Y[j])
       for k in 1:d
-        z[i*j, k] = t[k]
+        z[(i - 1)*d + j, k] = t[k]
       end
     end
   end
@@ -1090,6 +1103,9 @@ function idempotents(x::NfOrdClsIdl, y::NfOrdClsIdl)
     z = z + basis(x)[i]*H[1, d + 1 + i]
   end
 
+  @assert -z in x
+  @assert 1 + z in y
+
   return -z, 1 + z
 end
 
@@ -1132,8 +1148,8 @@ function mod(x::NfOrdElem, y::NfOrdClsIdl)
   # !!! This must be changed as soon as HNF has a different shape
   
   O = order(y)
-  b = elem_in_basis(x)
-  a = deepcopy(b)
+  a = elem_in_basis(x)
+  #a = deepcopy(b)
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
     for i in 1:length(a)
@@ -1142,18 +1158,52 @@ function mod(x::NfOrdElem, y::NfOrdClsIdl)
     return O(a)
   end
 
-  O = order(y)
-  b = elem_in_basis(x)
-  a = deepcopy(b)
-  b = basis_mat(y)
+  #O = order(y)
+  #b = elem_in_basis(x)
+  #a = deepcopy(b)
+  c = basis_mat(y)
   t = fmpz(0)
   for i in degree(O):-1:1
-    t = fdiv(a[i],b[i,i])
+    t = fdiv(a[i], c[i,i])
     for j in 1:i
-      a[j] = a[j] - t*b[i,j]
+      a[j] = a[j] - t*c[i,j]
     end
   end
-  return O(a)
+  z = O(deepcopy(a))
+  return z
+end
+
+function mod{T}(x::NfOrdElem{T}, y::NfOrdClsIdl, preinv::Array{fmpz_preinvn_struct, 1})
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+  
+  O = order(y)
+  a = elem_in_basis(x)
+  #a = deepcopy(b)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
+  #O = order(y)
+  #b = elem_in_basis(x)
+  #a = deepcopy(b)
+  c = basis_mat(y)
+  q = fmpz()
+  r = fmpz()
+  for i in degree(O):-1:1
+    fdiv_qr_with_preinvn!(q, r, a[i], c[i, i], preinv[i])
+    #q = fdiv(a[i], c[i,i])
+    for j in 1:i
+      submul!(a[j], q, c[i, j])
+      #a[j] = a[j] - q*c[i,j]
+    end
+  end
+  z = NfOrdElem{T}(O, a)
+  return z
 end
 
 ################################################################################

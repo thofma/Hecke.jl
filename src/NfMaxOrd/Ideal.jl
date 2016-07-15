@@ -231,7 +231,7 @@ function norm(A::NfMaxOrdIdl)
     return A.norm
   end
   if has_2_elem(A) && A.gens_weakly_normal == 1
-    A.norm = gcd(norm(K(A.gen_one)), norm(A.gen_two))
+    A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
     return A.norm
   end
   @hassert :NfMaxOrd 1 has_2_elem(A) || has_basis_mat(A)
@@ -260,6 +260,7 @@ function minimum(A::NfMaxOrdIdl)
     b = A.princ_gen.elem_in_nf
     if iszero(b)
       A.minimum = fmpz(0)
+      A.is_zero = 1
     else
       bi = inv(b)
       A.minimum =  den(bi, order(A))
@@ -511,6 +512,11 @@ end
 
 """ ->
 function *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
+  if x.is_zero == 1 || y.is_zero == 1
+    z = ideal(order(x), zero(MatrixSpace(FlintZZ, degree(order(x)), degree(order(x)))))
+    z.is_zero = 1
+    return z
+  end
   if has_2_elem_normal(x) && has_2_elem_normal(y)
     return prod_via_2_elem_normal(x, y)
   end
@@ -768,9 +774,11 @@ function assure_2_normal(A::NfMaxOrdIdl)
 #      gen += rand(r)*A.gen_one + rand(bas, r)*A.gen_two
       #gen = element_reduce_mod(gen, O, m^2)
       gen = mod(gen, m^2)
+
       if iszero(gen)
         continue
       end
+
       mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
       if gcd(m, div(mg, g)) == 1 
@@ -1523,17 +1531,31 @@ end
 
 function divexact(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
   # It is assumed that B divides A, that is, A \subseteq B
+  t_prod = 0.0
+  t_simpl = 0.0
+  t_b_mat = 0.0
+  t_2_elem_weak = 0.0
+  t_2_elem = 0.0
+
   if norm(A) == norm(B)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
-    I = A*inv(B)
-    simplify(I)
-    B = basis_mat(I)
-    B.den != 1 && error("Division not exact")
-    I = ideal(order(A), B.num)
-    _assure_weakly_normal_presentation(I)
-    assure_2_normal(I)
-    return I
+    t_prod += @elapsed I = A*inv(B)
+    t_simpl += @elapsed simplify_exact(I)
+    #t_b_mat += @elapsed B = basis_mat(I)
+    I.den != 1 && error("Division not exact")
+    #I = ideal(order(A), B.num)
+    #t_2_elem_weak += @elapsed _assure_weakly_normal_presentation(I)
+    #t_2_elem += @elapsed assure_2_normal(I)
+    
+    #println("  computation for product: $t_prod")
+    #println("  simplification         : $t_simpl")
+    #println("  basis matrix           : $t_b_mat")
+    #println("  2 weak presentation    : $t_2_elem_weak")
+    #println("  2 elem presentation    : $t_2_elem")
+
+    return I.num
+
   end
 end
 

@@ -164,6 +164,14 @@ function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   end
 end
 
+function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
+   (rows(x) < cols(x)) &&
+                error("Matrix must have at least as many rows as columns")
+   ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Void,
+                (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &d)
+   return x
+end
+
 #function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
 #  if shape == :lowerleft
 #    _swapcols!(x)
@@ -351,6 +359,70 @@ function _swapcols!(x::fmpz_mat)
   nothing
 end
 
+function _swapcols(x::GenMat)
+  z = deepcopy(x)
+  _swapcols!(z)
+  return z
+end
+
+function _swapcols!(x::GenMat)
+  r = rows(x)
+  c = cols(x)
+  t = base_ring(x)(0)
+
+  if c == 1
+    return x
+  end
+
+  if c % 2 == 0
+    for i in 1:div(c,2)
+      for j = 1:r
+        # swap x[j,i] <-> x[j,c-i+1]
+        x[j, i], x[j, c - i + 1] = x[j, c - i + 1], x[j, i]
+      end
+    end
+  else
+    for i in 1:div(c-1,2)
+      for j = 1:r
+        # swap x[j,i] <-> x[j,c-i+1]
+        x[j, i], x[j, c - i + 1] = x[j, c - i + 1], x[j, i]
+      end
+    end
+  end
+  nothing
+end
+
+function _swaprows(x::GenMat)
+  z = deepcopy(x)
+  _swaprows(z)
+  return z
+end
+
+function _swaprows!(x::GenMat)
+  r = rows(x)
+  c = cols(x)
+
+  if r == 1
+    return x
+  end
+
+  if r % 2 == 0
+    for i in 1:div(r,2)
+      for j = 1:c
+        # we swap x[i,j] <-> x[r-i+1,j]
+        x[i, j], x[r - i + 1, j] = x[r - i + 1, j], x[i, j]
+      end
+    end
+  else
+    for i in 1:div(r-1,2)
+      for j = 1:c
+        x[i, j], x[r - i + 1, j] = x[r - i + 1, j], x[i, j]
+        # we swap x[i,j] <-> x[r-i+1,j]
+      end
+    end
+  end
+  nothing
+end
 ################################################################################
 # 
 ################################################################################

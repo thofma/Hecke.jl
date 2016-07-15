@@ -579,6 +579,7 @@ function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
         end
     end
 end
+
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 

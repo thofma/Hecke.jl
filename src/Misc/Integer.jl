@@ -399,3 +399,27 @@ function fmpz_multi_crt_ui!(z::fmpz, a::Array{UInt, 1}, b::fmpz_comb, c::fmpz_co
   return z
 end
 
+type fmpz_preinvn_struct
+  dinv::Ptr{UInt}
+  n::Int
+  norm::Int
+
+  function fmpz_preinvn_struct(f::fmpz)
+    z = new()
+    ccall((:fmpz_preinvn_init, :libflint), Void, (Ptr{fmpz_preinvn_struct}, Ptr{fmpz}), &z, &f)
+    finalizer(z, _fmpz_preinvn_struct_clear_fn)
+    return z
+  end
+end
+
+function _fmpz_preinvn_struct_clear_fn(z::fmpz_preinvn_struct)
+  ccall((:fmpz_preinvn_clear, :libflint), Void, (Ptr{fmpz_preinvn_struct}, ), &z)
+end
+
+function fdiv_qr_with_preinvn!(q::fmpz, r::fmpz, g::fmpz, h::fmpz, hinv::fmpz_preinvn_struct)
+  ccall((:fmpz_fdiv_qr_preinvn, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz_preinvn_struct}), &q, &r, &g, &h, &hinv)
+end
+
+function submul!(z::fmpz, x::fmpz, y::fmpz)
+  ccall((:fmpz_submul, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+end
