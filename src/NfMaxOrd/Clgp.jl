@@ -1330,12 +1330,12 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
           e = class_group_small_real_elements_relation_next(E)
           n = abs(norm_div(e, norm(E.A), np))
           if nbits(num(n)) > np-10 || E.restart > 5
-            @v_do :ClassGroup 2 begin
+#            @v_do :ClassGroup 2 begin
 #              print_with_color(:red, "2:norm too large (or restarting):")
 #              println(n, " should be ", sqrt_disc)
 #              println("offending element is ", e)
 #              println("prec now ", prec)
-            end  
+#            end  
             A = Idl[i]
             j = 0
             # TH: without added no_rand_local < nI it crashes sometimes
@@ -1343,8 +1343,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             while norm(A) < sqrt_disc && j < no_rand_local && no_rand_local < nI
               A *= rand(Idl[(nI-no_rand_local):nI])
               j += 1
-              no_rand_local += 1
             end
+            no_rand_local = min(nI-1, no_rand_local+1)
             E = class_group_small_real_elements_relation_start(clg, A,
                             val = E.vl, limit = limit, prec = prec)
             #= CF: think careful here
