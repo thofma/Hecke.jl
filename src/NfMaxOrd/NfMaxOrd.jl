@@ -35,7 +35,7 @@
 export NfMaxOrd
 
 export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
-       degree, index, is_index_divisor, discriminant
+       degree, index, is_index_divisor, discriminant, ring_of_integers
 
 ################################################################################
 #
@@ -262,3 +262,5 @@ Base.promote_rule(::Type{NfOrdElem{NfMaxOrd}}, ::Type{Int}) = NfOrdElem{NfMaxOrd
 function addeq!(a::NfOrdElem{NfMaxOrd}, b::NfOrdElem{NfMaxOrd})
   addeq!(a.elem_in_nf, b.elem_in_nf)
 end
+
+ring_of_integers(x...) = maximal_order(x...)

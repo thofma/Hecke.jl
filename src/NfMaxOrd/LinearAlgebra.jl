@@ -34,6 +34,8 @@
 
 using Hecke
 
+export pseudo_matrix, pseudo_hnf
+
 function _det_bound(M::GenMat{NfOrdElem{NfMaxOrd}})
   n = rows(M)
   O = base_ring(M)
@@ -272,10 +274,18 @@ type PMat
   end
 end
 
+function show(io::IO, P::PMat)
+  print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))\n")
+  for i in 1:rows(P.matrix)
+    print(io, "$(P.coeffs[i]) with row vector $(sub(P.matrix, i:i, 1:cols(P.matrix)))\n")
+  end
+end
+
 function PseudoMatrix(m::GenMat{nf_elem}, c::Array{NfMaxOrdFracIdl, 1})
   # sanity checks
   return PMat(m ,c)
 end
+
 
 function PseudoMatrix(m::GenMat{NfOrdElem{NfMaxOrd}}, c::Array{NfMaxOrdIdl, 1})
   mm = change_ring(m, nf(base_ring(m)))
@@ -400,11 +410,11 @@ function pseudo_hnf(P::PMat, m::NfMaxOrdIdl, shape::Symbol = :upperright)
     end
   end
 
-  println("computation of reduction : $t_comp_red")
-  println("modular computation      : $t_mod_comp")
-  println("computation of ideal sum : $t_sum")
-  println("computation of ideal div : $t_div")
-  println("computation of idems     : $t_idem")
+  #println("computation of reduction : $t_comp_red")
+  #println("modular computation      : $t_mod_comp")
+  #println("computation of ideal sum : $t_sum")
+  #println("computation of ideal div : $t_div")
+  #println("computation of idems     : $t_idem")
 
   return res
 end
@@ -543,3 +553,5 @@ function in(x::nf_elem, y::NfMaxOrdFracIdl)
 
   return v.den == 1
 end
+
+pseudo_matrix(x...) = PseudoMatrix(x...)

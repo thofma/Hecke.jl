@@ -45,8 +45,6 @@ function FacElem(x::nf_elem)
   return z
 end
 
-base_ring(x::nf_elem) = parent(x)
-
 function is_unit(x::FacElem{nf_elem})
   return abs(norm(x)) == 1
 end
