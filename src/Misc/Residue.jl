@@ -21,3 +21,20 @@ function ^(a::ResElem, f::fmpz)
   return b
 end
 
+function zero!(z::fq_nmod)
+  ccall((:fq_nmod_zero, :libflint), Void,
+          (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &z, &parent(z))
+end
+
+function add!(z::fq_nmod, x::fq_nmod, y::fq_nmod)
+  ccall((:fq_nmod_add, :libflint), Void,
+          (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{fq_nmod},
+           Ptr{FqNmodFiniteField}), &z, &x, &y, &parent(z))
+end
+
+function set!(z::fq_nmod, x::fq_nmod)
+  ccall((:fq_nmod_set, :libflint), Void,
+          (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}),
+          &z, &x, &parent(z))
+end
+

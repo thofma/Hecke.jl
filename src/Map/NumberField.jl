@@ -218,14 +218,6 @@ function evaluate!(z::fq_nmod, f::fmpz_poly, r::fq_nmod)
   return z
 end
 
-zero!(z::fq_nmod) = ccall((:fq_nmod_zero, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &z, &parent(z))
-
-add!(z::fq_nmod, x::fq_nmod, y::fq_nmod) = ccall((:fq_nmod_add, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &z, &x, &y, &parent(z))
-
-mul!(z::fq_nmod, x::fq_nmod, y::fq_nmod) = ccall((:fq_nmod_mul, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &z, &x, &y, &parent(z))
-
-set!(z::fq_nmod, x::fq_nmod) = ccall((:fq_nmod_set, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &z, &x, &parent(z))
-
 function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
   z = NfToNfMor(K, L, y)
   return z
@@ -253,6 +245,8 @@ function call(f::NfMaxOrdToFqNmodMor, p::PolyElem{NfOrdElem})
   return z
 end
 
+# this is super slow
+# improve
 function call(f::NfMaxOrdQuoMap, I::NfMaxOrdIdl)
   O = domain(f)
   Q = codomain(f)
