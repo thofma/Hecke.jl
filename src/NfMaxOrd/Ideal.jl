@@ -934,7 +934,7 @@ function basis_mat(A::NfMaxOrdIdl)
   if isdefined(A, :princ_gen)
     m = representation_mat(A.princ_gen)
     A.basis_mat = _hnf_modular_eldiv(m, minimum(A), :lowerleft)
-    return m
+    return A.basis_mat
   end
 
   @hassert :NfMaxOrd 1 has_2_elem(A)
