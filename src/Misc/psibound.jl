@@ -1,5 +1,5 @@
 import Nemo.setcoeff!, Nemo.exp, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift
-export start, next, done, SetPrimes, psi_lower, psi_upper, exp
+export start, next, done, SetPrimes, psi_lower, psi_upper
 
 #function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.GenRes{Nemo.fmpz})
 #  setcoeff!(g, i, lift(a))
@@ -62,7 +62,7 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
   end
 end
 
-function exp(a::fmpz_mod_rel_series)
+function _exp(a::fmpz_mod_rel_series)
   R = base_ring(parent(a))
   Rx,x = PolynomialRing(R)
   A = Rx()
@@ -152,14 +152,14 @@ function psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
   p = fmpz(next_prime(2^60))
   n = Int(ceil(log(N)/log(2)))
 #  println("precision of $n")
-  f = exp(bernstein(n, pr, ResidueRing(FlintZZ, p), cl, a))
+  f = _exp(bernstein(n, pr, ResidueRing(FlintZZ, p), cl, a))
   Rt, t = PowerSeriesRing(FlintZZ, n*a+1, "t")
   f = lift(Rt, f)
   pp = p
   while pp < N
     p = next_prime(p)
 #    println("p: $p, pp: $pp N:$N")
-    g = exp(bernstein(n, pr, ResidueRing(FlintZZ, p), cl, a))
+    g = _exp(bernstein(n, pr, ResidueRing(FlintZZ, p), cl, a))
     @assert length(g) == length(f)
     for i=0:length(f)
       setcoeff!(f, i, crt(coeff(f, i), pp, lift(coeff(g, i)), p))
