@@ -544,7 +544,7 @@ function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
     _is_unit(x) ? nothing : return false
   end
 
-  K = base_ring(x)
+  K = parent(x)
   d = degree(K)
   c = conjugate_data_arb(K)
   r, s = signature(K)
