@@ -270,11 +270,7 @@ function zero(r::nf_elem)
    return zero(parent(r))
 end
 
-
 *(a::nf_elem, b::Integer) = a * fmpz(b)
-
-//(a::Integer, b::nf_elem) = parent(b)(a)//b
-
 
 doc"""
 ***
