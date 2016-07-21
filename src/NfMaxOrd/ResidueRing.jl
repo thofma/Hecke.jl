@@ -34,7 +34,7 @@
 
 export NfMaxOrdQuoRing, NfMaxOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
        gcd, inv, parent, show, divexact, isone, iszero, howell_form,
-       strong_echelon_form, triangularize, det
+       strong_echelon_form, triangularize, det, euclid, xxgcd, annihilator
 
 ################################################################################
 #
@@ -231,6 +231,7 @@ function isdivisible(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   # ( 1   0   u )
   # ( *   *   * )
   # u will be the coefficient vector of the quotient
+
   V = R.tmp_div
   A = representation_mat(y.elem)
   B = basis_mat(parent(x))
@@ -239,13 +240,9 @@ function isdivisible(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   a = elem_in_basis(x.elem)
 
-  #println("1V: $V")
-
   for i in 1:d
     V[1, 1 + i] = a[i]
   end
-
-  #println("2V: $V")
 
   _copy_matrix_into_matrix(V, 2, 2, A)   # this really is a copy
   _copy_matrix_into_matrix(V, 2+d, 2, B) # this really is a copy
@@ -254,20 +251,14 @@ function isdivisible(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     V[1 + i, d + 1 + i] = 1
   end
 
-  #println(V)
   hnf_modular_eldiv!(V, minimum(parent(x).ideal))
-  #println(U)
-  #v = submat(U, 1:1, (d + 2):(2*d + 1))
+
   if !iszero(submat(V, 1:1, 2:(d + 1)))
     ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
     return false, zero(parent(x))
   end
   
   z = R(-base_ring(R)(fmpz[ deepcopy(V[1, i]) for i in (d + 2):(2*d + 1)]))
-
-  #zz = -MatrixSpace(ZZ, 1, d)(fmpz[ U[1, i] for i in (d + 2):(2*d + 1)])
-  #zzz = MatrixSpace(ZZ, 1, d)(elem_in_basis(x.elem))
-  #println("adasd: $(zz*A + zzz)")
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
@@ -345,16 +336,12 @@ function euclid(x::NfMaxOrdQuoRingElem)
   _copy_matrix_into_matrix(U, 1, 1, representation_mat(x.elem))
   _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_mat)
 
-  V = hnf_modular_eldiv(U, parent(x).ideal.minimum)
-
-  #U = vcat(representation_mat(x.elem), basis_mat(parent(x)))
-
-  #U = hnf_modular_eldiv(U, minimum(parent(x).ideal))
+  hnf_modular_eldiv!(U, parent(x).ideal.minimum)
 
   z = fmpz(1)
 
   for i in 1:degree(base_ring(parent(x)))
-    mul!(z, z, V[i, i])
+    mul!(z, z, U[i, i])
   end
 
   @hassert :NfMaxOrdQuoRing 1 z == norm(ideal(parent(x.elem), x.elem) + parent(x).ideal)
@@ -435,14 +422,22 @@ end
 function annihilator(x::NfMaxOrdQuoRingElem)
   I = parent(x).ideal
   O = base_ring(parent(x))
+  d = degree(O)
   f = NfMaxOrdQuoMap(O, parent(x))
-  M_I = basis_mat(I)
-  M_x = representation_mat(x.elem)
-  U = vcat(M_x, M_I)
+  U = parent(x).tmp_ann
+  # We first compute a Z-basis of the annihilator ideal
+  # The basis is the kernel of the following matrix
+  # ( M_I )
+  # ( M_x )
+   _copy_matrix_into_matrix(U, 1, 1, representation_mat(x.elem))
+   _copy_matrix_into_matrix(U, d + 1, 1, I.basis_mat)
+
   m = _kernel(U)
   I = ideal(O, _hnf_modular_eldiv(submat(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
-  return f(I)
+  z = f(I)
+  @assert iszero(z*x)
+  return z
 end
 
 ################################################################################
@@ -498,7 +493,7 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   a = elem_in_basis(Q(O(1)).elem)
 
-  V = parent(x).tmp_ann
+  V = parent(x).tmp_xxgcd
 
   V[1, 1] = 1
 
@@ -620,11 +615,11 @@ function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
     row = row + 1;
     col = col + 1;
   end
-  println("  === Time triangularization")
-  println("    isdivisbible: $t_isdiv")
-  println("    xxgcd       : $t_xxgcd")
-  println("    arith       : $t_arith")
-  println("    total time  : $(toc())")
+  #println("  === Time triangularization")
+  #println("    isdivisbible: $t_isdiv")
+  #println("    xxgcd       : $t_xxgcd")
+  #println("    arith       : $t_arith")
+  #println("    total time  : $(toc())")
   return d
 end
 

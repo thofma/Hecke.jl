@@ -1200,12 +1200,11 @@ type NfMaxOrdQuoRing <: Ring
   preinvn::Array{fmpz_preinvn_struct, 1}
 
   # temporary variables for divisor and annihilator computations
-  tmp_div::fmpz_mat
-  tmp_div2::fmpz_mat
-  tmp_ann::fmpz_mat
-  tmp_ann2::fmpz_mat
-  tmp_euc::fmpz_mat
-  tmp_euc2::fmpz_mat
+  # don't use for anything else
+  tmp_xxgcd::fmpz_mat # used only by xxgcd in NfMaxOrd/ResidueRing.jl
+  tmp_div::fmpz_mat # used only by div in NfMaxOrd/ResidueRing.jl
+  tmp_ann::fmpz_mat # used only by annihilator in NfMaxOrd/ResidueRing.jl
+  tmp_euc::fmpz_mat # used only by euclid in NfMaxOrd/ResidueRing.jl
 
   function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdl)
     z = new()
@@ -1215,11 +1214,9 @@ type NfMaxOrdQuoRing <: Ring
     z.preinvn = [ fmpz_preinvn_struct(z.basis_mat[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
-    z.tmp_div2 = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
-    z.tmp_ann = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
-    z.tmp_ann2 = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
+    z.tmp_xxgcd = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
+    z.tmp_ann = MatrixSpace(ZZ, 2*d, d)()
     z.tmp_euc = MatrixSpace(ZZ, 2*d, d)()
-    z.tmp_euc2 = MatrixSpace(ZZ, 2*d, d)()
     minimum(I) # compute the minimum
     return z
   end
