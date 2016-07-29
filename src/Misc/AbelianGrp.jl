@@ -37,7 +37,7 @@ export FinGenGrpAb, FinGenGrpAbElem, parent, is_finite, is_infinite, rank,
        -, ==, is_trivial, order, exponent, AbelianGroup, DiagonalGroup,
        quo, sub
 
-import Base.reduce!, Base.+, Nemo.snf, Nemo.parent, Base.rand
+import Base.+, Nemo.snf, Nemo.parent, Base.rand
 
 
 ################################################################################

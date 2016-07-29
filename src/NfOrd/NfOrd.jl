@@ -32,11 +32,7 @@
 #
 ################################################################################
 
-export NfOrd, NfOrdSet
-
-export elem_in_basis, EquationOrder, deepcopy, Order
-
-
+export deepcopy, basis, basis_nf, elem_in_basis, isequationorder, EquationOrder, Order
 
 ################################################################################
 #
@@ -49,10 +45,11 @@ function deepcopy(O::NfOrd)
   for x in fieldnames(O)
     # This is slow. Julia can't interfere the type of the right hand side.
     # (According to @code_warntype)
-    if isdefined(O, x)
-      z.(x) = getfield(O, x)
+    if x != :nf && isdefined(O, x) 
+      z.(x) = deepcopy(getfield(O, x))
     end
   end
+  z.nf = O.nf
   return z
 end
 
@@ -168,13 +165,6 @@ end
 #
 ################################################################################
 
-function call(a::NfOrdSet)
-  z = NfOrd()
-  z.parent = a
-  z.nf = a.nf
-  return z
-end
-
 function Order(a::Array{nf_elem, 1}, check = true) 
   # We should check if it really is a basis and the elements are integral
   return NfOrd(a)
@@ -182,7 +172,7 @@ end
 
 function Order(K::AnticNumberField, a::FakeFmpqMat, check = true)
   # We should check if a has full rank and the elements are integral?
-  return NfOrd(K,a)
+  return NfOrd(K, a)
 end
 
 function EquationOrder(K::AnticNumberField)

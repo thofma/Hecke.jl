@@ -11,6 +11,62 @@ type fmpz_preinvn_struct
   end
 end
 
+type acb_root_ctx
+  poly::fmpq_poly
+  _roots::Ptr{acb_struct}
+  prec::Int
+  roots::Array{acb, 1}
+  real_roots::Array{arb, 1}
+  complex_roots::Array{acb, 1}
+  signature::Tuple{Int, Int}
+
+  function acb_root_ctx(x::fmpq_poly, p::Int = 32)
+    z = new()
+    z.roots = _roots(x, p, p)
+    z.poly = x
+    z.prec = p
+    z._roots = acb_vec(degree(x))
+    r, s = signature(x)
+    z.signature = (r, s)
+
+    for i = 1:degree(x)
+      ccall((:acb_set, :libarb), Void, (Ptr{acb_struct}, Ptr{acb}),
+            z._roots + (i - 1) * sizeof(acb_struct), &z.roots[i])
+    end
+
+    z.prec = p
+    A = Array(arb, z.signature[1])
+    B = Array(acb, z.signature[2])
+
+    for i in 1:r
+      @assert isreal(z.roots[i])
+      A[i] = real(z.roots[i])
+    end
+
+    j = 0
+    for i in r+1:degree(x)
+      if ispositive(imag(z.roots[i]))
+        j += 1
+        B[j] = z.roots[i]
+      end
+    end
+
+    @assert j == s
+
+    z.real_roots = A
+    z.complex_roots = B
+
+    finalizer(z, _acb_root_ctx_clear_fn)
+
+    return z
+  end
+end
+
+function _acb_root_ctx_clear_fn(x::acb_root_ctx)
+  ccall((:_acb_vec_clear, :libarb), Void,
+              (Ptr{acb_struct}, Clong), x._roots, degree(x.poly))
+end
+
 ################################################################################
 #
 #  SmatRow/Smat

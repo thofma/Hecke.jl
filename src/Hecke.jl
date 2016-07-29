@@ -79,7 +79,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
              howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
              FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear
+             acb_vec_clear, lufact!
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -100,7 +100,7 @@ end
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, @timeit, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant
+       modord, resultant, @test_and_infer
 
 ###############################################################################
 #
@@ -345,6 +345,18 @@ macro hassert(args...)
   end
 end
 
+macro test_and_infer(f,args,res)
+  quote
+    if isa($(esc(args)), Tuple)
+      Base.Test.@inferred $(esc(f))($(esc(args))...)
+      Base.Test.@test $(esc(f))($(esc(args))...) == $(esc(res))
+    else
+      Base.Test.@inferred $(esc(f))($(esc(args)))
+      local t = $(esc(res))
+      Base.Test.@test $(esc(f))($(esc(args))) == t
+    end
+  end
+end
 
 ################################################################################
 #
@@ -455,7 +467,6 @@ function checkbounds(a::Int, b::Int) nothing; end;
 #
 ################################################################################
 
-include("Arb.jl")  # Arb will soon be in Nemo
 include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")

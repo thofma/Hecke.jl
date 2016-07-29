@@ -167,6 +167,8 @@ function Base.call(O::NfMaxOrd, a::nf_elem, check::Bool = true)
 end
 
 function Base.call(O::NfOrd, a::nf_elem, check::Bool = true)
+  nf(O) != parent(a) &&
+          error("Element is not an element of the number field of the order")
   if check
     (x,y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
