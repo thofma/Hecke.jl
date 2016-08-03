@@ -1,4 +1,8 @@
-# Orders in number fields
+## Orders in number fields
+
+### Creation
+
+### Basic properties
 
 ```@meta
 CurrentModule = Hecke
@@ -11,4 +15,9 @@ signature(::NfOrd)
 ```@docs
 degree(::NfOrd)
 ```
+
+### Elements
+
+### Ideals
+
 

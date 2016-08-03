@@ -12,8 +12,8 @@ extra:
 pages:
 - Getting Started:      index.md
 - Number fields:
-  - Orders:            
-    - Creation:         numberfields/orders/creation.md
+  - Introduction:       numberfields/introduction.md
+  - Orders:             numberfields/orders.md
 #- Maximal Orders:
 #    - Introduction:    build/MaximalOrders/Introduction.md
 #    - Creation:        build/MaximalOrders/Creation.md
