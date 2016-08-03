@@ -13,4 +13,8 @@ notifications:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes -e 'Pkg.clone("https://github.com/Nemocas/Nemo.jl");'
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("Hecke"); Pkg.test("Hecke")'
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.checkout("Hecke", "rename_again"); Pkg.build("Hecke"); Pkg.test("Hecke")'
+
+after_success:
+  - julia -e 'Pkg.add("Documenter")'
+  - julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
