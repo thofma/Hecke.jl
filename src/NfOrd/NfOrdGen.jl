@@ -58,16 +58,33 @@ end
 #
 ################################################################################
 
-function Order(a::Array{nf_elem, 1}, check = true) 
+doc"""
+    Order(B::Array{nf_elem, 1}, check::Bool = true) -> NfOrd
+
+> Returns the order with $\Z$-basis $B$. If `check` is set, it is checked
+> whether $B$ defines an order.
+"""
+function Order(a::Array{nf_elem, 1}, check::Bool = true) 
   # We should check if it really is a basis and the elements are integral
   return NfOrdGen(nf_elem[ deepcopy(x) for x in a])
 end
 
-function Order(K::AnticNumberField, a::FakeFmpqMat, check = true)
+doc"""
+    Order(K::AnticNumberField, A::FakeFmpqMat, check::Bool = true) -> NfOrd
+
+> Returns the order which has basis matrix $A$ with respect to the power basis of $K$.
+> If `check` is set, it is checked whether $A$ defines an order.
+"""
+function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true)
   # We should check if a has full rank and the elements are integral?
   return NfOrdGen(K, deepcopy(a))
 end
 
+doc"""
+    EquationOrder(K::AnticNumberField) -> NfOrd
+
+> Returns the equation of the number field $K$.
+"""
 function EquationOrder(K::AnticNumberField)
   z = NfOrdGen(K)
   z.isequationorder = true

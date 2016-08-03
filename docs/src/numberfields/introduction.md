@@ -1,3 +1,2 @@
-# Number fields
+# Introduction
 
-## Introduction
