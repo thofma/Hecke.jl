@@ -17,4 +17,4 @@ script:
 
 after_success:
   - julia -e 'Pkg.add("Documenter")'
-  - julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
+  - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
