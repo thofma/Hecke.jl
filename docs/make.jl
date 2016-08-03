@@ -2,7 +2,7 @@ using Documenter, Hecke
 
 makedocs(
     modules = Hecke,
-    clean   = false,
+    clean   = true,
 )
 
 deploydocs(

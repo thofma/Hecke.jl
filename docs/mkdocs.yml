@@ -27,7 +27,7 @@ markdown_extensions:
 - mdx_math:
     enable_dollar_delimiter: True
 
-docs_dir: '.'
+docs_dir: 'build'
 
 extra_javascript: ['mathjaxhelper.js', 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
 
