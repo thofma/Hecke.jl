@@ -8,14 +8,18 @@ extra:
   palette:
     primary: 'green'
     accent: 'amber'
+
 pages:
-- Getting Started:     index.md
+- Getting Started:      build/index.md
+- Number fields:
+  - Orders:            
+    - Creation:        build/numberfields/orders/creation.md
 #- Maximal Orders:
 #    - Introduction:    build/MaximalOrders/Introduction.md
 #    - Creation:        build/MaximalOrders/Creation.md
 #    - Elements:        build/MaximalOrders/Elements.md
 #    - Ideals:          build/MaximalOrders/Ideals.md
-- Orders:              build/Orders.md
+#- Orders:              build/Orders.md
 
 markdown_extensions:
 - tables
