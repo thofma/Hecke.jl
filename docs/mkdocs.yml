@@ -10,10 +10,10 @@ extra:
     accent: 'amber'
 
 pages:
-- Getting Started:      build/index.md
+- Getting Started:      index.md
 - Number fields:
   - Orders:            
-    - Creation:        build/numberfields/orders/creation.md
+    - Creation:         numberfields/orders/creation.md
 #- Maximal Orders:
 #    - Introduction:    build/MaximalOrders/Introduction.md
 #    - Creation:        build/MaximalOrders/Creation.md
