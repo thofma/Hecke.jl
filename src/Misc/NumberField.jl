@@ -33,6 +33,16 @@ function AnticNumberField(f::fmpz_poly)
 end
 
 ################################################################################
+#
+#  Base case for dot products
+#
+################################################################################
+
+dot(x::fmpz, y::nf_elem) = x*y
+
+dot(x::nf_elem, y::fmpz) = x*y
+
+################################################################################
 # given a basis (an array of elements), get a linear combination with
 # random integral coefficients
 ################################################################################
@@ -126,6 +136,29 @@ function representation_mat(a::nf_elem)
   elem_to_mat_row!(M, n, dummy, b)
   return M
 end 
+
+function basis_mat(A::Array{nf_elem, 1})
+  @assert length(A) > 0
+  n = length(A)
+  d = degree(parent(A[1]))
+
+  M = MatrixSpace(FlintZZ, n, d)()
+
+  deno = one(FlintZZ)
+  dummy = one(FlintZZ)
+
+  for i in 1:n
+    deno = lcm(deno, den(A[i]))
+  end
+
+  for i in 1:n
+    elem_to_mat_row!(M, i, dummy, A[i])
+    for j in 1:d
+      M[i, j] = divexact(deno, dummy) * M[i, j]
+    end
+  end
+  return FakeFmpqMat(M, deno)
+end
 
 function set_den!(a::nf_elem, d::fmpz)
   ccall((:nf_elem_set_den, :libflint), 
@@ -362,9 +395,9 @@ doc"""
 
 > Returns the image of $a$ under the Minkowski embedding.
 > Every entry of the array returned is of type `arb` with radius less then
-> `2^abs_tol`.
+> `2^(-abs_tol)`.
 """
-function minkowski_map(a::nf_elem, abs_tol::Int)
+function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   K = parent(a)
   A = Array(arb, degree(K))
   r, s = signature(K)
@@ -379,7 +412,7 @@ function minkowski_map(a::nf_elem, abs_tol::Int)
     t = evaluate(g, c.real_roots[i])
     @assert isreal(t)
     A[i] = real(t)
-    if !radiuslttwopower(A[i], abs_tol)
+    if !radiuslttwopower(A[i], -abs_tol)
       refine(c)
       return minkowski_map(a, abs_tol)
     end
@@ -390,7 +423,7 @@ function minkowski_map(a::nf_elem, abs_tol::Int)
   for i in 1:s
     t = evaluate(g, c.complex_roots[i])
     t = sqrt(CC(2))*t
-    if !radiuslttwopower(t, abs_tol)
+    if !radiuslttwopower(t, -abs_tol)
       refine(c)
       return minkowski_map(a, abs_tol)
     end
@@ -429,7 +462,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int)
 
   for i in 1:r
     conjugates[i] = CC(evaluate(parent(K.pol)(x), c.real_roots[i]))
-    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], abs_tol)
+    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], -abs_tol)
       refine(c)
       return conjugates_arb(x, abs_tol)
     end
@@ -437,7 +470,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int)
 
   for i in 1:s
     conjugates[r + i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
-    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], abs_tol)
+    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], -abs_tol)
       refine(c)
       return conjugates_arb(x, abs_tol)
     end
@@ -485,7 +518,7 @@ end
 
 doc"""
 ***
-    conjugates_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
+    conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
 > Returns the elements
 > $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
@@ -503,14 +536,14 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   z = Array(arb, r1 + r2)
   for i in 1:r1
     z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
-    if !isfinite(z[i]) || !radiuslttwopower(z[i], abs_tol)
+    if !isfinite(z[i]) || !radiuslttwopower(z[i], -abs_tol)
       refine(c)
       return conjugates_arb_log(x, abs_tol)
     end
   end
   for i in 1:r2
     z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
-    if !isfinite(z[r1 + i]) || !radiuslttwopower(z[r1 + i], abs_tol)
+    if !isfinite(z[r1 + i]) || !radiuslttwopower(z[r1 + i], -abs_tol)
       refine(c)
       return conjugates_arb_log(x, abs_tol)
     end
@@ -519,7 +552,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
 end
 
 function conjugates_arb_log(x::nf_elem, R::ArbField)
-  z = conjugates_arb_log(x, -R.prec)
+  z = conjugates_arb_log(x, R.prec)
   return map(R, z)
 end
 

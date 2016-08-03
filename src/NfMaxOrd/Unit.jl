@@ -1,6 +1,6 @@
 ################################################################################
 #
-#          NfOrdClsUnits.jl : Units in generic number field orders 
+#          NfOrdUnits.jl : Units in generic number field orders 
 #
 # This file is part of hecke.
 #
@@ -73,12 +73,12 @@ end
 
 doc"""
 ***
-    unit_rank(O::NfOrdCls) -> Int
+    unit_rank(O::NfOrd) -> Int
 
 > Returns the unit rank of $\mathcal O$, that is, the rank of the unit group
 > $\mathcal O^\times$.
 """
-function unit_rank(O::NfOrdCls)
+function unit_rank(O::NfOrd)
   r1, r2 = signature(nf(O))
   return r1 + r2 - 1
 end
@@ -153,27 +153,27 @@ end
 
 doc"""
 ***
-    torsion_units(O::NfOrdCls) -> Array{NfOrdElem, 1}
+    torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
 
 > Given an order $O$, compute the torsion units of $O$.
 """
-function torsion_units(O::NfOrdCls)
+function torsion_units(O::NfOrd)
   ar, g = _torsion_units(O)
   return ar
 end
 
 doc"""
 ***
-    torsion_units(O::NfOrdCls) -> NfOrdElem
+    torsion_units(O::NfOrd) -> NfOrdElem
 
 > Given an order $O$, compute a generator of the torsion units of $O$.
 """
-function torsion_units_gen(O::NfOrdCls)
+function torsion_units_gen(O::NfOrd)
   ar, g = _torsion_units(O)
   return g
 end
 
-function _torsion_units(O::NfOrdCls)
+function _torsion_units(O::NfOrd)
   if isdefined(O, :torsion_units)
     return O.torsion_units
   end

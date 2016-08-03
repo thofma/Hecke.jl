@@ -53,7 +53,7 @@ function test_pseudohnf()
     O = maximal_order(K)
     println("  Testing over field $(x^i - 10)")
 
-    for j in 1:20
+    for j in 1:1
       l = rand(10:20) - i + 1
       ll = rand(1:20)
       z = rand(MatrixSpace(O, l, l), fmpz(2)^ll)

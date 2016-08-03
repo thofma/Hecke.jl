@@ -10,6 +10,10 @@ num(x::FakeFmpqMat) = x.num
 
 den(x::FakeFmpqMat) = x.den
 
+rows(x::FakeFmpqMat) = rows(x.num)
+
+cols(x::FakeFmpqMat) = cols(x.num)
+
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
   c = gcd(c, x.den)
@@ -91,6 +95,26 @@ end
 
 ################################################################################
 #
+#  Adhoc binary operations
+#
+################################################################################
+
+function *(x::FakeFmpqMat, y::fmpz_mat)
+  t = x.num*y
+  z = FakeFmpqMat(t, den(x))
+  simplify_content!(z)
+  return z
+end
+
+function *(x::fmpz_mat, y::FakeFmpqMat)
+  t = x*y.num
+  z = FakeFmpqMat(t, den(y))
+  simplify_content!(z)
+  return z
+end
+
+################################################################################
+#
 #  Comparison
 #
 ################################################################################
@@ -137,3 +161,19 @@ function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
   return z
 end
 
+function deepcopy(x::FakeFmpqMat)
+  z = FakeFmpqMat(deepcopy(num(x)), den(x))
+  return z
+end
+
+################################################################################
+#
+#  Determinant
+#
+################################################################################
+
+function det(x::FakeFmpqMat)
+  rows(x) != cols(x) && error("Matrix must be square")
+  
+  return det(x.num)//(x.den)^rows(x)
+end

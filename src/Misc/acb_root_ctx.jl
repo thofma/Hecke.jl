@@ -262,3 +262,24 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol 
   return res
 end
 
+function radiuslttwopower(x::arb, e::Int)
+  t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &x)
+  b = ccall((:mag_cmp_2exp_si, :libarb), Cint,
+          (Ptr{Nemo.mag_struct}, Int), t, e) <= 0
+  return b
+end
+
+function radiuslttwopower(x::acb, e::Int)
+  re = ccall((:acb_real_ptr, :libarb), Ptr{Nemo.arb_struct},
+          (Ptr{acb}, ), &x)
+  im = ccall((:acb_imag_ptr, :libarb), Ptr{Nemo.arb_struct},
+          (Ptr{acb}, ), &x)
+  t = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), re)
+  u = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), im)
+  ok = (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+              (Ptr{Nemo.mag_struct}, Int), t, e) <= 0)
+  ok = ok && (ccall((:mag_cmp_2exp_si, :libarb), Cint,
+              (Ptr{Nemo.mag_struct}, Int), u, e) <= 0)
+  return ok
+end
+

@@ -1,6 +1,14 @@
 # Orders in number fields
 
-@module{Hecke}
+```@meta
+CurrentModule = Hecke
+```
 
-@{signature(::NfOrder)}
+```@docs
+signature(::NfOrd)
+```
+
+```@docs
+degree(::NfOrd)
+```
 

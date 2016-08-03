@@ -3,9 +3,9 @@
 #  NfOrd.jl
 #
 ################################################################################
-
+#
 # Copyright (c) 2015: Tommy Hofmann
-
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -31,9 +31,12 @@ add_verbose_scope(:NfOrd)
 add_assert_scope(:NfOrd)
 
 include("NfOrd/NfOrd.jl")
-#include("NfOrder/NfOrderElem.jl")
+include("NfOrd/NfOrdGen.jl")
+include("NfOrd/Elem.jl")
 include("NfOrd/Ideal.jl")
-include("NfOrd/FracIdeal.jl")
+include("NfOrd/GenIdl.jl")
+include("NfOrd/FracIdl.jl")
+include("NfOrd/GenFracIdl.jl")
+#include("NfOrd/FracIdeal.jl")
 include("NfOrd/RoundTwo.jl")
 include("NfOrd/DedekindTest.jl")
-#include("NfOrder/NfOrderMontes.jl")

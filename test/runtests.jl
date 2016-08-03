@@ -1,11 +1,19 @@
 using Hecke
 using Base.Test
 
-include("NfMaxOrd-test.jl")
+#include("NfMaxOrd-test.jl")
+#include("NfMaxOrd.jl")
+include("NfOrd.jl")
 
-test_pseudohnf()
+#test_pseudohnf()
 
-set_verbose_level(:UnitGrp, 1)
+#set_verbose_level(:UnitGrp, 1)
+
+#test_NfOrdCls()
+test_NfOrd()
+test_NfOrd_Elem()
+test_NfOrd_Idl()
+test_NfOrd_FracIdl()
 
 # write your own tests here
 #@test 1 == 1
@@ -35,6 +43,6 @@ set_verbose_level(:UnitGrp, 1)
 #print("Saturating the tentative unit group ... \n")
 #Hecke._refine_with_saturation(c, U)
 #
-#@test c.h == 5
+#@test c.h == 36
 #@test Hecke._validate_class_unit_group(c, U) == 1
-
+#

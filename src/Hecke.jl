@@ -470,16 +470,16 @@ function checkbounds(a::Int, b::Int) nothing; end;
 include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
-include("BigComplex.jl")
+#include("BigComplex.jl")
 include("conjugates.jl")
-include("NfMaxOrd/NfOrdCls.jl")
+#include("NfMaxOrd/NfOrdCls.jl")
 include("NfOrd.jl")
-include("analytic.jl")
-include("NfMaxOrd.jl")
-include("Map.jl")
-include("basis.jl")
-include("helper.jl")
-include("misc2.jl")
+#include("analytic.jl")
+#include("NfMaxOrd.jl")
+#include("Map.jl")
+#include("basis.jl")
+#include("helper.jl")
+#include("misc2.jl")
 
 for T in subtypes(Map)
   Base.call(M::T, a) = image(M, a)
@@ -497,9 +497,9 @@ elem_type(::NfMaxOrd) = NfOrdElem{NfMaxOrd}
 
 elem_type(::Type{NfMaxOrd}) = NfOrdElem{NfMaxOrd}
 
-elem_type(::NfOrd) = NfOrdElem{NfOrd}
+elem_type(::NfOrdGen) = NfOrdElem{NfOrdGen}
 
-elem_type(::Type{NfOrd}) = NfOrdElem{NfOrd}
+elem_type(::Type{NfOrdGen}) = NfOrdElem{NfOrdGen}
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
 

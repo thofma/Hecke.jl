@@ -614,6 +614,10 @@ end
 
 *(x::fmpz, y::NfMaxOrdIdl) = y * x
 
+*(x::NfMaxOrdIdl, y::Integer) = x * fmpz(y)
+
+*(x::Integer, y::NfMaxOrdIdl) = y * x
+
 doc"""
 ***
     *(x::NfMaxOrdIdl, y::Integer) -> NfMaxOrdIdl
