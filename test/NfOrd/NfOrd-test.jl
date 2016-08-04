@@ -18,7 +18,9 @@ function test_NfOrd()
   O4 = Order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], fmpz(1)))
 
   K6, a6 = NumberField(x^2 - 180, "a")
-  O6 = EquationOrder(K4)
+  O6 = EquationOrder(K6)
+
+  O7 = Order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)))
 
   # deepcopy
 
@@ -105,6 +107,17 @@ function test_NfOrd()
   b = @inferred gen_index(O4)
   @test b == QQ(1, 2)
   @test_throws ErrorException index(O4)
+
+  b = @inferred gen_index(O7)
+  @test b == QQ(6)
+  b = @inferred index(O7)
+  @test b == 6
+
+  @test !@inferred is_index_divisor(O1, 2)
+  @test !@inferred is_index_divisor(O1, 3)
+  @test @inferred is_index_divisor(O7, 2)
+  @test @inferred is_index_divisor(O7, fmpz(3))
+  @test !@inferred is_index_divisor(O7, 5)
 
   # discriminant
 

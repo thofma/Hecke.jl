@@ -276,7 +276,7 @@ function is_independent{T}(x::Array{T, 1})
   while true
     @assert p != 0
 
-    conlog = conjugates_arb_log(x[1], -p)
+    conlog = conjugates_arb_log(x[1], p)
 
     A = MatrixSpace(parent(conlog[1]), length(x), rr)()
 
@@ -287,7 +287,7 @@ function is_independent{T}(x::Array{T, 1})
     Ar = base_ring(A)
 
     for k in 2:length(x)
-      conlog = conjugates_arb_log(x[k], -p)
+      conlog = conjugates_arb_log(x[k], p)
       for i in 1:rr
         A[k, i] = conlog[i]
       end
@@ -425,7 +425,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
 
   b = ArbMatSpace(Ar, 1, r)()
 
-  conlog = conjugates_arb_log(y, -p)
+  conlog = conjugates_arb_log(y, p)
 
   for i in 1:r
     b[1, i] = conlog[i]
@@ -476,7 +476,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
 
     b = ArbMatSpace(Ar, 1, r)()
 
-    conlog = conjugates_arb_log(y, -p)
+    conlog = conjugates_arb_log(y, p)
 
     for i in 1:r
       b[1, i] = conlog[i]
@@ -616,7 +616,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
 
   b = ArbMatSpace(Ar, 1, r)()
 
-  conlog = conjugates_arb_log(y, -p)
+  conlog = conjugates_arb_log(y, p)
 
   for i in 1:r
     b[1, i] = conlog[i]
@@ -656,7 +656,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
 
     p, B = _conj_log_mat_cutoff_inv(U, p)
 
-    conlog = conjugates_arb_log(y, -p)
+    conlog = conjugates_arb_log(y, p)
 
     b = ArbMatSpace(parent(conlog[1]), 1, r)()
 
@@ -678,7 +678,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
     p = 2*p
     p, B = _conj_log_mat_cutoff_inv(U, p)
 
-    conlog = conjugates_arb_log(y, -p)
+    conlog = conjugates_arb_log(y, p)
 
     b = ArbMatSpace(parent(conlog[1]), 1, r)()
 
@@ -719,7 +719,7 @@ end
 
 function _conj_log_mat_cutoff{T}(x::Array{T, 1}, p::Int)
   r = length(x)
-  conlog = conjugates_arb_log(x[1], -p)
+  conlog = conjugates_arb_log(x[1], p)
   A = ArbMatSpace(parent(conlog[1]), r, r)()
 
   for i in 1:r
@@ -727,7 +727,7 @@ function _conj_log_mat_cutoff{T}(x::Array{T, 1}, p::Int)
   end
 
   for k in 2:r
-    conlog = conjugates_arb_log(x[k], -p)
+    conlog = conjugates_arb_log(x[k], p)
     for i in 1:r
       A[k, i] = conlog[i]
     end
@@ -812,7 +812,7 @@ function regulator{T}(x::Array{T, 1}, abs_tol::Int)
   p = 32
 
   while true
-    conlog = conjugates_arb_log(x[1], -p)
+    conlog = conjugates_arb_log(x[1], p)
 
     A = ArbMatSpace(parent(conlog[1]), r, r)()
 
@@ -821,7 +821,7 @@ function regulator{T}(x::Array{T, 1}, abs_tol::Int)
     end
 
     for i in 2:r
-      conlog = conjugates_arb_log(x[i], -p)
+      conlog = conjugates_arb_log(x[i], p)
       for j in 1:r
         A[i, j] = conlog[j]
       end
@@ -829,7 +829,7 @@ function regulator{T}(x::Array{T, 1}, abs_tol::Int)
 
     z = abs(det(A))
 
-    if isfinite(z) && radiuslttwopower(z, abs_tol)
+    if isfinite(z) && radiuslttwopower(z, -abs_tol)
       return z
     end
     
@@ -993,7 +993,7 @@ function _reduce_size{T}(x::Array{T, 1}, prec::Int = 64)
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  conlog = conjugates_arb_log(x[1], -prec)
+  conlog = conjugates_arb_log(x[1], prec)
 
   A = MatrixSpace(parent(conlog[1]), length(x), rr)()
 

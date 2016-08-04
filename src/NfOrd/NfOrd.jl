@@ -33,8 +33,8 @@
 ################################################################################
 
 export isequationorder, nf, parent, basis, basis_mat, basis_mat_inv,
-       discriminant, degree, gen_index, index, deepcopy, signature,
-       minkowski_mat, in, den
+       discriminant, degree, gen_index, index, is_index_divisor, deepcopy,
+       signature, minkowski_mat, in, den
 
 ################################################################################
 #
@@ -85,19 +85,19 @@ parent(O::NfOrd) = O.parent
 #
 ################################################################################
 
-function basis_ord(O::NfOrdGen)
+function basis_ord(O::NfOrd)
   if isdefined(O, :basis_ord)
-    return O.basis_ord::Array{NfOrdElem{NfOrdGen}, 1}
+    return O.basis_ord::Array{NfOrdElem{typeof(O)}, 1}
   end
   b = O.basis_nf
-  B = Array(NfOrdElem{NfOrdGen}, length(b))
+  B = Array(NfOrdElem{typeof(O)}, length(b))
   for i in 1:length(b)
     v = fill(FlintZZ(0), length(b))
     v[i] = FlintZZ(1)
     B[i] = O(b[i], v; check = false)
   end
   O.basis_ord = B
-  return B::Array{NfOrdElem{NfOrdGen}, 1}
+  return B::Array{NfOrdElem{typeof(O)}, 1}
 end
 
 doc"""
@@ -234,6 +234,23 @@ function index(O::NfOrd)
     O.index = num(i)
     return deepcopy(O.index)
   end
+end
+
+################################################################################
+#
+#  Index divisor
+#
+################################################################################
+
+doc"""
+    is_index_divisor(O::NfOrd, d::fmpz) -> Bool
+    is_index_divisor(O::NfOrd, d::Int) -> Bool
+
+> Returns whether $d$ is a divisor of the index of $\mathcal O$.
+"""
+function is_index_divisor(O::NfOrd, d::Union{fmpz, Int})
+  i = index(O)
+  return i % d == 0
 end
 
 ################################################################################

@@ -1377,7 +1377,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
         if i == j
           continue
         else
-          Vp = intersect(Vp, AA[i].ideal)
+          Vp = intersection(Vp, AA[i].ideal)
         end
       end
 

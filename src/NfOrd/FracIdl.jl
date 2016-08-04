@@ -153,17 +153,19 @@ function colon_ideal(a::NfOrdIdl)
   B = basis(a)
   O = order(a)
   bmatinv = basis_mat_inv(a)
-  @vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
-  @vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv
+  #print("First basis element is $(B[1]) \n with representation mat \n")
+  #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
+  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv
   m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv)
   for i in 2:degree(O)
-    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*bmatinv),m)
+    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
   end
   n = hnf(transpose(m))
   # n is upper right HNF
   n = transpose(sub(n, 1:degree(O), 1:degree(O)))
   b, d = pseudo_inv(n)
-  return frac_ideal(O, FakeFmpqMat(b, d))
+  z = frac_ideal(O, FakeFmpqMat(b, d))
+  return z
 end  
 
 ################################################################################

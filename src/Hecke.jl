@@ -204,17 +204,6 @@ function torsion_units_gen(K::AnticNumberField)
   return g
 end
 
-function maximal_order(K::AnticNumberField)
-  try
-    c = _get_maximal_order_of_nf(K)::NfMaxOrd
-    return c
-  catch
-    O = _MaximalOrder(K)::NfMaxOrd
-    _set_maximal_order_of_nf(K, O)
-    return O
-  end
-end
-
 ################################################################################
 #
 #  Version number
@@ -470,16 +459,16 @@ function checkbounds(a::Int, b::Int) nothing; end;
 include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
-#include("BigComplex.jl")
+include("BigComplex.jl")
 include("conjugates.jl")
 #include("NfMaxOrd/NfOrdCls.jl")
 include("NfOrd.jl")
-#include("analytic.jl")
-#include("NfMaxOrd.jl")
-#include("Map.jl")
-#include("basis.jl")
-#include("helper.jl")
-#include("misc2.jl")
+include("analytic.jl")
+include("NfMaxOrd.jl")
+include("Map.jl")
+include("basis.jl")
+include("helper.jl")
+include("misc2.jl")
 
 for T in subtypes(Map)
   Base.call(M::T, a) = image(M, a)

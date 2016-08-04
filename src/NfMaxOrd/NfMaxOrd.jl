@@ -35,7 +35,8 @@
 export NfMaxOrd
 
 export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
-       degree, index, is_index_divisor, discriminant, ring_of_integers
+       degree, index, is_index_divisor, discriminant, ring_of_integers,
+       make_maximal
 
 ################################################################################
 #
@@ -43,20 +44,20 @@ export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
 #
 ################################################################################
 
-function basis_ord(O::NfMaxOrd)
-  if isdefined(O, :basis_ord)
-    return O.basis_ord
-  end
-  b = O.basis_nf
-  B = Array(NfOrdElem, length(b))
-  for i in 1:length(b)
-    v = fill(ZZ(0), length(b))
-    v[i] = ZZ(1)
-    B[i] = O(b[i], v; check = false)
-  end
-  O.basis_ord = B
-  return B
-end
+#function basis_ord(O::NfMaxOrd)
+#  if isdefined(O, :basis_ord)
+#    return O.basis_ord
+#  end
+#  b = O.basis_nf
+#  B = Array(NfOrdElem, length(b))
+#  for i in 1:length(b)
+#    v = fill(ZZ(0), length(b))
+#    v[i] = ZZ(1)
+#    B[i] = O(b[i], v; check = false)
+#  end
+#  O.basis_ord = B
+#  return B
+#end
 
 function conjugate_data(O::NfMaxOrd)
   if isdefined(O, :conjugate_data)
@@ -70,108 +71,92 @@ function conjugate_data(O::NfMaxOrd)
   end
 end
 
-doc"""
-***
-    nf(O::NfMaxOrd) -> AnticNumberField
+#doc"""
+#    nf(O::NfMaxOrd) -> AnticNumberField
+#
+#> Returns the ambient number field of $\mathcal O$.
+#"""
+#nf(O::NfMaxOrd) = O.nf
+#
+#doc"""
+#    degree(O::NfMaxOrd) -> Int
+#
+#> Returns the degree of $\mathcal O$, which is just the rank of $\mathcal O$
+#> as a $\mathbb{Z}$-module or equivalently the degree of the ambient number
+#> field.
+#"""
+#degree(O::NfMaxOrd) = degree(nf(O))
+#
+#doc"""
+#    basis_mat(O::NfMaxOrd) -> FakeFmpqMat
+#
+#> Returns the basis matrix of $\mathcal O$.
+#"""
+#function basis_mat(O::NfMaxOrd)
+#  return O.basis_mat
+#end
+#
+#doc"""
+#    basis_mat_inv(O::NfMaxOrd) -> FakeFmpqMat
+#
+#> Returns the inverse of the basis matrix of $\mathcal O$.
+#"""
+#function basis_mat_inv(O::NfMaxOrd)
+#  if isdefined(O, :basis_mat_inv)
+#    return O.basis_mat_inv
+#  else
+#    O.basis_mat_inv = inv(basis_mat(O))
+#    return O.basis_mat_inv
+#  end
+#end
+#
+#doc"""
+#    basis(O::NfMaxOrd) -> Array{NfOrdElem, 1}
+#
+#> Returns the basis of $\mathcal O$.
+#"""
+#function basis(O::NfMaxOrd)
+#  return basis_ord(O)
+#end
+#
+#doc"""
+#    basis(O::NfMaxOrd, K::AnticNumberField -> Array{nf_elem, 1}
+#
+#> Returns the basis of $\mathcal O$ as elements of $K$. The number field $K$
+#> must be the ambient number field of $\mathcal O$.
+#"""
+#function basis(O::NfMaxOrd, K::AnticNumberField)
+#  nf(O) != K && error()
+#  return basis_nf(O)
+#end
+#
+#function basis_nf(O::NfMaxOrd)
+#  return O.basis_nf
+#end
 
-> Returns the ambient number field of $\mathcal O$.
-"""
-nf(O::NfMaxOrd) = O.nf
+#doc"""
+#    index(O::NfMaxOrd) -> fmpz
+#
+#> Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order
+#> in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element
+#> of the ambient number field.
+#"""
+#function index(O::NfMaxOrd)
+#  if isdefined(O, :index)
+#    return O.index
+#  else
+#    O.index = divexact(basis_mat(O).den^degree(O), det(basis_mat(O).num))
+#    return O.index
+#  end
+#end
 
-doc"""
-***
-    degree(O::NfMaxOrd) -> Int
-
-> Returns the degree of $\mathcal O$, which is just the rank of $\mathcal O$
-> as a $\mathbb{Z}$-module or equivalently the degree of the ambient number
-> field.
-"""
-degree(O::NfMaxOrd) = degree(nf(O))
-
-doc"""
-***
-    basis_mat(O::NfMaxOrd) -> FakeFmpqMat
-
-> Returns the basis matrix of $\mathcal O$.
-"""
-function basis_mat(O::NfMaxOrd)
-  return O.basis_mat
-end
-
-doc"""
-    basis_mat_inv(O::NfMaxOrd) -> FakeFmpqMat
-
-> Returns the inverse of the basis matrix of $\mathcal O$.
-"""
-function basis_mat_inv(O::NfMaxOrd)
-  if isdefined(O, :basis_mat_inv)
-    return O.basis_mat_inv
-  else
-    O.basis_mat_inv = inv(basis_mat(O))
-    return O.basis_mat_inv
-  end
-end
-
-doc"""
-***
-    basis(O::NfMaxOrd) -> Array{NfOrdElem, 1}
-
-> Returns the basis of $\mathcal O$.
-"""
-function basis(O::NfMaxOrd)
-  return basis_ord(O)
-end
-
-doc"""
-***
-    basis(O::NfMaxOrd, K::AnticNumberField -> Array{nf_elem, 1}
-
-> Returns the basis of $\mathcal O$ as elements of $K$. The number field $K$
-> must be the ambient number field of $\mathcal O$.
-"""
-function basis(O::NfMaxOrd, K::AnticNumberField)
-  nf(O) != K && error()
-  return basis_nf(O)
-end
-
-function basis_nf(O::NfMaxOrd)
-  return O.basis_nf
-end
-
-doc"""
-***
-    index(O::NfMaxOrd) -> fmpz
-
-> Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order
-> in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element
-> of the ambient number field.
-"""
-function index(O::NfMaxOrd)
-  if isdefined(O, :index)
-    return O.index
-  else
-    O.index = divexact(basis_mat(O).den^degree(O), det(basis_mat(O).num))
-    return O.index
-  end
-end
-
-doc"""
-***
-    is_index_divisor(O::NfMaxOrd, d::Union{fmpz, Int})
-
-> Returns whether $d$ is a divisor of $\operatorname{disc}(\mathcal O)$.
-"""
-function is_index_divisor(O::NfMaxOrd, d::Union{fmpz, Int})
-  i = index(O)
-  return i % d == 0
-end
 
 function base_change_const(O::NfMaxOrd)
   if O.base_change_const[1] > 0
     return O.base_change_const
   else
     d = degree(O)
-    M = transpose(minkowski_mat(O, -64))
+    M = transpose(minkowski_mat(O, 64))
     # I need to swap rows (really?)
     r1, r2 = signature(O)
     for i in 2:2:r2
@@ -212,7 +197,6 @@ end
 ################################################################################
 
 doc"""
-***
     MaximalOrder(K::AnticNumberField) -> NfMaxOrd
 
 > Returns the maximal order of $K$.
@@ -232,7 +216,6 @@ function _MaximalOrder(K::AnticNumberField)
 end
 
 doc"""
-***
     MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
 
 > Assuming that ``primes`` contains all the prime numbers at which the equation
@@ -247,6 +230,48 @@ function _MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   return NfMaxOrd(K, basis_mat(O))
 end
 
+doc"""
+    make_maximal(O::NfOrd) -> NfMaxOrd
+
+> Assuming that $\mathcal O$ is an order, this function returns the same order
+> as a maximal order.
+"""
+function make_maximal(O::NfOrd)
+  return NfMaxOrd(nf(O), basis_mat(O))
+end
+
+doc"""
+    maximal_order(K::AnticNumberField) -> NfMaxOrd
+
+> Returns the maximal order of $K$.
+"""
+function maximal_order(K::AnticNumberField)
+#  try
+#    c = _get_maximal_order_of_nf(K)::NfMaxOrd
+#    return c
+#  catch
+    O = _MaximalOrder(K)::NfMaxOrd
+#    _set_maximal_order_of_nf(K, O)
+    return O
+#  end
+end
+
+doc"""
+    maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
+    maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
+
+> Assuming that ``primes`` contains all the prime numbers at which the equation
+> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
+> this function returns the maximal order of $K$.
+"""
+function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
+  O = _MaximalOrder(K, primes)
+  return O
+end
+
+maximal_order{T}(K::AnticNumberField, primes::Array{T, 1}) =
+  maximal_order(K, map(FlintZZ, primes))
+
 ################################################################################
 #
 #  String I/O
@@ -254,7 +279,7 @@ end
 ################################################################################
 
 function show(io::IO, O::NfMaxOrd)
-  print(io, "Maximal order of $(nf(O)) \nwith basis $(basis_nf(O))")
+  print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
 end
 
 Base.promote_rule(::Type{NfOrdElem{NfMaxOrd}}, ::Type{Int}) = NfOrdElem{NfMaxOrd}

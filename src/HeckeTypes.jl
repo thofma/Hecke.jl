@@ -442,14 +442,14 @@ type NfOrdGen <: NfOrd
 
   # Construct the order with basis matrix x
   function NfOrdGen(K::AnticNumberField, x::FakeFmpqMat)
-    y = hnf(x)
-    if haskey(NfOrdGenID, (K,y))
-      return NfOrdGenID[(K,y)]::NfOrdGen
+    x = hnf(x)
+    if haskey(NfOrdGenID, (K,x))
+      return NfOrdGenID[(K,x)]::NfOrdGen
     else
       z = NfOrdGen()
       z.parent = NfOrdGenSet(K)
       z.nf = K
-      z.basis_mat = y
+      z.basis_mat = x
       B = Array(NfOrdElem{NfOrdGen}, degree(K))
       BB = Array(nf_elem, degree(K))
       for i in 1:degree(K)
@@ -656,12 +656,14 @@ end
 type NfMaxOrd <: NfOrd
   nf::AnticNumberField
   basis_nf::Array{nf_elem, 1}      # Array of number field elements
-  basis_ord::Array{NfOrdElem, 1} # Array of order elements
+  basis_ord                        # Array of order elements
   basis_mat::FakeFmpqMat           # basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat       # inverse of basis matrix
+  gen_index::fmpq                  # the det of basis_mat_inv
   index::fmpz                      # the det of basis_mat_inv
   disc::fmpz                       # discriminant
-  parent::NfMaxOrdSet        # parent object
+  parent::NfMaxOrdSet              # parent object
+  isequationorder::Bool            #
   signature::Tuple{Int, Int}       # signature of the parent object
                                    # (-1, 0) means 'not set'
   conjugate_data::acb_root_ctx
@@ -685,6 +687,7 @@ type NfMaxOrd <: NfOrd
     r.signature = (-1,0)
     r.base_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array(Any, 5)
+    r.isequationorder = false
     return r
   end
 

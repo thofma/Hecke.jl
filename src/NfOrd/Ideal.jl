@@ -256,8 +256,8 @@ function +(x::NfOrdIdl, y::NfOrdIdl)
 end
 
 doc"""
-***
     intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
+    lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
 > Returns $x \cap y$.
 """
@@ -270,7 +270,7 @@ function intersection(x::NfOrdIdl, y::NfOrdIdl)
 end
 
 doc"""
-***
+    intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
 > Returns $x \cap y$.
@@ -278,7 +278,6 @@ doc"""
 lcm(x::NfOrdIdl, y::NfOrdIdl) = intersection(x, y)
 
 doc"""
-***
     *(x::NfOrdIdl, y::NfOrdIdl)
 
 > Returns $x \cdot y$.

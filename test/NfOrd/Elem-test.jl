@@ -192,7 +192,7 @@ function test_NfOrd_Elem()
   c = @inferred representation_mat(b)
   @test c == ZZ[0 1 0; 0 0 1; 2 0 0]
   c = @inferred representation_mat(b, K1)
-  @test c == ZZ[0 1 0; 0 0 1; 2 0 0]
+  @test c == Hecke.FakeFmpqMat(ZZ[0 1 0; 0 0 1; 2 0 0], one(FlintZZ))
 
   # trace
   b = O1(a1)
