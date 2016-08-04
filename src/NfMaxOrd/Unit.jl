@@ -800,7 +800,7 @@ doc"""
     regulator(x::Array{T, 1}, abs_tol::Int) -> arb
 
 > Compute the regulator $r$ of the elements in $x$, such that the radius of $r$
-> is less then `2^abs_tol`.
+> is less then `-2^abs_tol`.
 """
 function regulator{T}(x::Array{T, 1}, abs_tol::Int)
   K = _base_ring(x[1])
@@ -963,7 +963,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     #println(_reg(u.units))
   end
 
-  u.tentative_regulator = regulator(u.units, -64)
+  u.tentative_regulator = regulator(u.units, 64)
 
   @vprint :UnitGrp 1 "Finished processing\n"
   @vprint :UnitGrp 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
