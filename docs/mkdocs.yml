@@ -24,6 +24,11 @@ pages:
 markdown_extensions:
 - tables
 - fenced_code
+- codehilite
+- extra
+- tables
+- fenced_code
+- admonition
 - mdx_math:
     enable_dollar_delimiter: True
 
