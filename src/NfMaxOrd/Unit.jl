@@ -444,8 +444,9 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
     @vprint :UnitGrp 1 "Inverting matrix ... \n"
     B = inv(A)
     inv_succesful = true
-  catch
+  catch e
     @vprint :UnitGrp 1 "Cannot invert matrix ... \n"
+    rethrow(e)
   end
       
   v = b*B
@@ -761,7 +762,7 @@ function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
       @vprint :UnitGrp 3 "$(x.conj_log_mat_cutoff_inv[p])\n"
       return p, x.conj_log_mat_cutoff_inv[p]
     catch e
-      println(e)
+      # I should check that it really is that error
       @vprint :UnitGrp 2 "Increasing precision .."
       @v_do :UnitGrp 2 pushindent()
       r = _conj_log_mat_cutoff_inv(x, 2*p)
