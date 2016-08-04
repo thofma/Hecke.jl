@@ -46,3 +46,16 @@ Hecke._refine_with_saturation(c, U)
 @test c.h == 36
 @test Hecke._validate_class_unit_group(c, U) == 1
 #
+f = x^5 + 514944*x^2 + 123904 
+#
+print("Testing $f\n")
+println(signature(f))
+K, a = NumberField(f)
+O = maximal_order(K)
+#
+print("Tentative class and unit group computation ... \n")
+c, U, b = Hecke._class_unit_group(O);
+print("Saturating the tentative unit group ... \n")
+Hecke._refine_with_saturation(c, U)
+
+@test c.h == 2
