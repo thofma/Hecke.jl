@@ -584,4 +584,16 @@ end
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
+#
+# stuff for 0.5
+# 
+
+if VERSION > v"0.5.0-"
+  @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
+end
+
+if VERSION < v"0.5.0-"
+  @inline __get_rounding_mode() = Base.MPFR.ROUNDING_MODE[end]
+end
+
 end

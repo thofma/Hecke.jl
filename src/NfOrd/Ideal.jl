@@ -378,10 +378,13 @@ function idempotents(x::NfOrdIdl, y::NfOrdIdl)
     V[1 + i, d + 1 + i] = 1
   end
 
-
   H = hnf(V) # upper right
 
-  !all([ H[1, i] == 0 for i in 2:(1 + d)]) && error("Ideals are not coprime")
+  for i in 2:(1 + d)
+    if H[1, i] != 0
+      error("Ideals are not coprime")
+    end
+  end
 
   z = basis(x)[1]*H[1, d + 2]
 
