@@ -34,7 +34,7 @@
 
 export isequationorder, nf, parent, basis, basis_mat, basis_mat_inv,
        discriminant, degree, gen_index, index, is_index_divisor, deepcopy,
-       signature, minkowski_mat, in, den
+       signature, minkowski_mat, norm_change_const, in, den
 
 ################################################################################
 #
@@ -389,6 +389,73 @@ function den(a::nf_elem, O::NfOrd)
   t = FakeFmpqMat(M, d)
   z = t*basis_mat_inv(O)
   return z.den
+end
+
+##################################3#############################################
+#
+#  Norm change constant
+#
+################################################################################
+
+# For x = \sum_i x_i omega_i let |x|_1 = \sqrt(x_1^2 + ... + x_d^2).
+# And let |x|_2 = sqrt(T_2(x))
+# Then there exist c1, c2 such that
+# |x|_2^2 <= c1 |x|_2^2, |x|_1^2 <= c2 |x|_1^2
+# A suitable pair (c1, c2) can be determined using the Minkowski map/matrix
+#
+# Reference
+# Fieker, Friedrichs
+# On Reconstruction of Algebraic Numbers
+# (in particular p. 288)
+doc"""
+    norm_change_const(O::NfOrd) -> (Float64, Float64)
+
+> Returns $(c_1, c_2) \in \mathbf R_{>0}^2$ such that for all
+> $x = \sum_{i=1}^d x_i \omega_i \in \mathcal O$ we have
+> $T_2(x) \leq c_1 \cdot \sum_i^d x_i^2$
+> and
+> $\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)$,
+> where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
+"""
+function norm_change_const(O::NfOrd)
+  if O.norm_change_const[1] > 0
+    return O.norm_change_const
+  else
+    d = degree(O)
+    M = transpose(minkowski_mat(O, 64))
+    # I need to swap rows (really?)
+    # I don't think we have to swap rows, since permutation matrices are orthogonal
+    #r1, r2 = signature(O)
+    #for i in 2:2:r2
+    #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
+    #end
+
+    M = [ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ]
+    N = transpose(M)*M
+    r = sort(eigvals(N))
+#    N = transpose(M)*M
+#    N = MatrixSpace(AcbField(prec(base_ring(N))), rows(N), cols(N))(N)
+#    chi = charpoly(PolynomialRing(base_ring(N), "x")[1], N)
+#    return chi
+#    r = roots(chi)
+#    # I want upper bound for the largest and lower bound for the smallest root
+#
+#    tm = arf_struct(0, 0, 0, 0)
+#    ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+#    ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}), &tm, &real(r[end]))
+#    # 3 is round to infinity
+#    c1 = ccall((:arf_get_d, :libarb), Cdouble, (Ptr{arf_struct}, Cint), &tm, 3)
+#
+#    ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}), &tm, &(inv(real(r[1]))))
+#    c2 = ccall((:arf_get_d, :libarb), Cdouble, (Ptr{arf_struct}, Cint), &tm, 3)
+#
+#    ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+#
+#    z = (c1, c2)
+    z = (r[end], inv(r[1]))
+    O.norm_change_const = z
+    return z
+  end
 end
 
 ################################################################################

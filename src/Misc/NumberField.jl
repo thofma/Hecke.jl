@@ -434,6 +434,20 @@ function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   return A
 end
 
+function t2{T}(x::nf_elem, abs_tol::Int = 32, ::Type{T} = arb)
+  p = 2*abs_tol
+  z = mapreduce(y -> y^2, +, minkowski_map(x, p))
+  while !radiuslttwopower(z, -abs_tol)
+    p = 2 * p
+    z = mapreduce(y -> y^2, +, minkowski_map(x, p))
+  end
+  return z
+end
+
+function t2(x::NfOrdElem, abs_tol::Int = 32)
+  return t2(x.elem_in_nf, abs_tol)
+end
+
 ################################################################################
 #
 #  Conjugates and real embeddings
@@ -452,7 +466,7 @@ doc"""
 > Every entry `y` of the array returned satisfies
 > `radius(real(y)) < 2^abs_tol` and `radius(imag(y)) < 2^abs_tol` respectively.
 """
-function conjugates_arb(x::nf_elem, abs_tol::Int)
+function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   K = parent(x)
   d = degree(K)
   c = conjugate_data_arb(K)
@@ -489,7 +503,7 @@ doc"""
 > Every entry `y` of the array returned satisfies
 > `radius(y) < 2^abs_tol`.
 """
-function conjugates_arb_real(x::nf_elem, abs_tol::Int)
+function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   r1, r2 = signature(parent(x))
   c = conjugates_arb(x, abs_tol)
   z = Array(arb, r1)

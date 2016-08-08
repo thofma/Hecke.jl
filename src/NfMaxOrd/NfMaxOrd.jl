@@ -40,158 +40,6 @@ export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
 
 ################################################################################
 #
-#  Field access
-#
-################################################################################
-
-#function basis_ord(O::NfMaxOrd)
-#  if isdefined(O, :basis_ord)
-#    return O.basis_ord
-#  end
-#  b = O.basis_nf
-#  B = Array(NfOrdElem, length(b))
-#  for i in 1:length(b)
-#    v = fill(ZZ(0), length(b))
-#    v[i] = ZZ(1)
-#    B[i] = O(b[i], v; check = false)
-#  end
-#  O.basis_ord = B
-#  return B
-#end
-
-function conjugate_data(O::NfMaxOrd)
-  if isdefined(O, :conjugate_data)
-    return O.conjugate_data
-  else
-    # acb_root_ctx will find the roots of the polynomial
-    # precision will be chosen so that roots can be separated
-    # starting precision is 64
-    O.conjugate_data = acb_root_ctx(nf(O).pol)
-    return O.conjugate_data
-  end
-end
-
-#doc"""
-#    nf(O::NfMaxOrd) -> AnticNumberField
-#
-#> Returns the ambient number field of $\mathcal O$.
-#"""
-#nf(O::NfMaxOrd) = O.nf
-#
-#doc"""
-#    degree(O::NfMaxOrd) -> Int
-#
-#> Returns the degree of $\mathcal O$, which is just the rank of $\mathcal O$
-#> as a $\mathbb{Z}$-module or equivalently the degree of the ambient number
-#> field.
-#"""
-#degree(O::NfMaxOrd) = degree(nf(O))
-#
-#doc"""
-#    basis_mat(O::NfMaxOrd) -> FakeFmpqMat
-#
-#> Returns the basis matrix of $\mathcal O$.
-#"""
-#function basis_mat(O::NfMaxOrd)
-#  return O.basis_mat
-#end
-#
-#doc"""
-#    basis_mat_inv(O::NfMaxOrd) -> FakeFmpqMat
-#
-#> Returns the inverse of the basis matrix of $\mathcal O$.
-#"""
-#function basis_mat_inv(O::NfMaxOrd)
-#  if isdefined(O, :basis_mat_inv)
-#    return O.basis_mat_inv
-#  else
-#    O.basis_mat_inv = inv(basis_mat(O))
-#    return O.basis_mat_inv
-#  end
-#end
-#
-#doc"""
-#    basis(O::NfMaxOrd) -> Array{NfOrdElem, 1}
-#
-#> Returns the basis of $\mathcal O$.
-#"""
-#function basis(O::NfMaxOrd)
-#  return basis_ord(O)
-#end
-#
-#doc"""
-#    basis(O::NfMaxOrd, K::AnticNumberField -> Array{nf_elem, 1}
-#
-#> Returns the basis of $\mathcal O$ as elements of $K$. The number field $K$
-#> must be the ambient number field of $\mathcal O$.
-#"""
-#function basis(O::NfMaxOrd, K::AnticNumberField)
-#  nf(O) != K && error()
-#  return basis_nf(O)
-#end
-#
-#function basis_nf(O::NfMaxOrd)
-#  return O.basis_nf
-#end
-
-#doc"""
-#    index(O::NfMaxOrd) -> fmpz
-#
-#> Returns the index $[ \mathcal{O} : \mathbf{Z}[\alpha]]$ of the equation order
-#> in the given maximal order $\mathcal O$. Here $\alpha$ is the primitive element
-#> of the ambient number field.
-#"""
-#function index(O::NfMaxOrd)
-#  if isdefined(O, :index)
-#    return O.index
-#  else
-#    O.index = divexact(basis_mat(O).den^degree(O), det(basis_mat(O).num))
-#    return O.index
-#  end
-#end
-
-
-function base_change_const(O::NfMaxOrd)
-  if O.base_change_const[1] > 0
-    return O.base_change_const
-  else
-    d = degree(O)
-    M = transpose(minkowski_mat(O, 64))
-    # I need to swap rows (really?)
-    r1, r2 = signature(O)
-    for i in 2:2:r2
-      swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
-    end
-
-    M = [ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ]
-    N = transpose(M)*M
-    r = sort(eigvals(N))
-#    N = transpose(M)*M
-#    N = MatrixSpace(AcbField(prec(base_ring(N))), rows(N), cols(N))(N)
-#    chi = charpoly(PolynomialRing(base_ring(N), "x")[1], N)
-#    return chi
-#    r = roots(chi)
-#    # I want upper bound for the largest and lower bound for the smallest root
-#
-#    tm = arf_struct(0, 0, 0, 0)
-#    ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
-#    ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}), &tm, &real(r[end]))
-#    # 3 is round to infinity
-#    c1 = ccall((:arf_get_d, :libarb), Cdouble, (Ptr{arf_struct}, Cint), &tm, 3)
-#
-#    ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}), &tm, &(inv(real(r[1]))))
-#    c2 = ccall((:arf_get_d, :libarb), Cdouble, (Ptr{arf_struct}, Cint), &tm, 3)
-#
-#    ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tm)
-#
-#    z = (c1, c2)
-    z = (r[end], inv(r[1]))
-    O.base_change_const = z
-    return z
-  end
-end
-################################################################################
-#
 #  Constructors for users
 #
 ################################################################################
@@ -242,6 +90,7 @@ end
 
 doc"""
     maximal_order(K::AnticNumberField) -> NfMaxOrd
+    ring_of_integers(K::AnticNumberField) -> NfMaxOrd
 
 > Returns the maximal order of $K$.
 """
@@ -259,9 +108,12 @@ end
 doc"""
     maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
     maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
+    ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
+    ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
 
 > Assuming that ``primes`` contains all the prime numbers at which the equation
-> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
+> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal
+> (e.g. ``primes`` may contain all prime divisors of the discriminant of $\mathbf Z[\alpha]$),
 > this function returns the maximal order of $K$.
 """
 function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
@@ -271,6 +123,18 @@ end
 
 maximal_order{T}(K::AnticNumberField, primes::Array{T, 1}) =
   maximal_order(K, map(FlintZZ, primes))
+
+doc"""
+    maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
+    maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
+    ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
+    ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
+
+> Assuming that ``primes`` contains all the prime numbers at which the equation
+> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
+> this function returns the maximal order of $K$.
+"""
+ring_of_integers(x...) = maximal_order(x...)
 
 ################################################################################
 #
@@ -288,4 +152,3 @@ function addeq!(a::NfOrdElem{NfMaxOrd}, b::NfOrdElem{NfMaxOrd})
   addeq!(a.elem_in_nf, b.elem_in_nf)
 end
 
-ring_of_integers(x...) = maximal_order(x...)

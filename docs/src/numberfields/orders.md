@@ -50,6 +50,10 @@ signature(::NfOrd)
 degree(::NfOrd)
 ```
 
+```@docs
+norm_change_const(::NfOrd)
+```
+
 ## Elements
 
 ## Ideals

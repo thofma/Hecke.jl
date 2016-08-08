@@ -411,11 +411,15 @@ type NfOrdGen <: NfOrd
                                    # Minkowski matrix
   torsion_units::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
                                    # (Torsion units, generator of torsion)
+  norm_change_const::Tuple{Float64, Float64}
+                                   # Tuple c1, c2 as in the paper of 
+                                   # Fieker-Friedrich
 
   function NfOrdGen()
     z = new()
     # Populate with 'default' values
     z.signature = (-1,0)      
+    z.norm_change_const = (-1.0, -1.0)
     z.isequationorder = false
     return z
   end
@@ -666,7 +670,7 @@ type NfMaxOrd <: NfOrd
   isequationorder::Bool            #
   signature::Tuple{Int, Int}       # signature of the parent object
                                    # (-1, 0) means 'not set'
-  conjugate_data::acb_root_ctx
+  #conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
   torsion_units::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
   unit_group::Map                  # Abstract types in the field is usually bad,
@@ -674,7 +678,7 @@ type NfMaxOrd <: NfOrd
                                    # We annotate the concrete type when doing
                                    # unit_group(O)
 
-  base_change_const::Tuple{Float64, Float64}
+  norm_change_const::Tuple{Float64, Float64}
                                    # Tuple c1, c2 as in the paper of 
                                    # Fieker-Friedrich
 
@@ -685,7 +689,7 @@ type NfMaxOrd <: NfOrd
     r = new(a)
     r.parent = NfMaxOrdSet(a)
     r.signature = (-1,0)
-    r.base_change_const = (-1.0, -1.0)
+    r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array(Any, 5)
     r.isequationorder = false
     return r
