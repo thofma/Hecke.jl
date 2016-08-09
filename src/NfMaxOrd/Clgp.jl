@@ -629,7 +629,7 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
     for j = 1:s[2]
       e = a[i,j].exp
       a[i,j].exp += l
-      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], Base.MPFR.rounding_raw(BigFloat)) 
+      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], __get_rounding_mode())
       a[i,j].exp = e
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}),
         &tmp_mpz, &tmp_mpfr)

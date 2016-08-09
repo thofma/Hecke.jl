@@ -65,7 +65,115 @@ end
 #
 ################################################################################
 
-if VERSION < v"0.5.0-"
+#if VERSION < v"0.5.0-"
+#  doc"""
+#  ***
+#      call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
+#
+#  > Given an element $a$ of the ambient number field of $\mathcal O$, this
+#  > function coerces the element into $\mathcal O$. It will be checked that $a$
+#  > is contained in $\mathcal O$ if and only if `check` is `true`.
+#  """
+#  Base.call{T <: NfOrd}(O::T, a::nf_elem, check::Bool = true) = nothing
+#
+#  for T in (:NfOrdGen, :NfMaxOrd)
+#    @eval begin
+#      function Base.call(O::$T, a::nf_elem, check::Bool = true)
+#        if check
+#          (x,y) = _check_elem_in_order(a,O)
+#          !x && error("Number field element not in the order")
+#          return NfOrdElem{$T}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
+#        else
+#          return NfOrdElem{$T}(O, deepcopy(a))
+#        end
+#      end
+#    end
+#  end
+#
+#  doc"""
+#  ***
+#      call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
+#
+#  > Given an element $a$ of type `fmpz` or `Integer`, this
+#  > function coerces the element into $\mathcal O$. It will be checked that $a$
+#  > is contained in $\mathcal O$ if and only if `check` is `true`.
+#  """
+#  Base.call{T <: NfOrd}(O::T, a::Union{fmpz, Integer}) = nothing
+#
+#  for T in (:NfOrdGen, :NfMaxOrd)
+#    @eval begin
+#      function Base.call(O::$T, a::Union{fmpz, Integer})
+#        return NfOrdElem{$T}(O, nf(O)(a))
+#      end
+#    end
+#  end
+#
+#  doc"""
+#  ***
+#      call(O::NfOrd, arr::Array{fmpz, 1})
+#
+#  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
+#  """
+#  Base.call{T <: NfOrd}(O::T, a::Array{fmpz, 1}) = nothing
+#
+#  for T in (:NfOrdGen, :NfMaxOrd)
+#    @eval begin
+#      function Base.call(O::$T, arr::Array{fmpz, 1})
+#        return NfOrdElem{$T}(O, fmpz[ deepcopy(x) for x in arr ])
+#      end
+#    end
+#  end
+#
+#
+#  doc"""
+#  ***
+#      call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
+#
+#  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
+#  """
+#  Base.call{T <: NfOrd, S <: Integer}(O::T, arr::Array{S, 1}) = nothing
+#
+#  for T in (:NfOrdGen, :NfMaxOrd)
+#    @eval begin
+#      function Base.call{S <: Integer}(O::$T, arr::Array{S, 1})
+#        return NfOrdElem{$T}(O, deepcopy(arr))
+#      end
+#    end
+#  end
+#
+#  doc"""
+#  ***
+#      call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
+#
+#  > This function constructs the element of $\mathcal O$ with coefficient vector
+#  > `arr`. It is assumed that the corresponding element of the ambient number
+#  > field is $a$.
+#  """
+#  Base.call{T <: NfOrd}(O::T, a::nf_elem, arr::Array{fmpz, 1}) = nothing
+#
+#  for T in (:NfOrdGen, :NfMaxOrd)
+#    @eval begin
+#      function Base.call(O::$T, a::nf_elem, arr::Array{fmpz, 1})
+#        return NfOrdElem{$T}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
+#      end
+#    end
+#  end
+#
+#  doc"""
+#  ***
+#      call(O::NfOrd) -> NfOrdElem
+#
+#  > This function constructs a new element of $\mathcal O$ which is set to $0$.
+#  """
+#  Base.call{T <: NfOrd}(O::T)
+#
+#  for T in (:NfOrdGen, :NfMaxOrd)
+#    @eval begin
+#      Base.call(O::$T) = NfOrdElem{$T}(O)
+#    end
+#  end
+#end
+#if VERSION > v"0.5.0-"
   doc"""
   ***
       call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
@@ -74,114 +182,7 @@ if VERSION < v"0.5.0-"
   > function coerces the element into $\mathcal O$. It will be checked that $a$
   > is contained in $\mathcal O$ if and only if `check` is `true`.
   """
-  Base.call{T <: NfOrd}(O::T, a::nf_elem, check::Bool = true) = nothing
-
-  for T in (:NfOrdGen, :NfMaxOrd)
-    @eval begin
-      function Base.call(O::$T, a::nf_elem, check::Bool = true)
-        if check
-          (x,y) = _check_elem_in_order(a,O)
-          !x && error("Number field element not in the order")
-          return NfOrdElem{$T}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
-        else
-          return NfOrdElem{$T}(O, deepcopy(a))
-        end
-      end
-    end
-  end
-
-  doc"""
-  ***
-      call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
-
-  > Given an element $a$ of type `fmpz` or `Integer`, this
-  > function coerces the element into $\mathcal O$. It will be checked that $a$
-  > is contained in $\mathcal O$ if and only if `check` is `true`.
-  """
-  Base.call{T <: NfOrd}(O::T, a::Union{fmpz, Integer}) = nothing
-
-  for T in (:NfOrdGen, :NfMaxOrd)
-    @eval begin
-      function Base.call(O::$T, a::Union{fmpz, Integer})
-        return NfOrdElem{$T}(O, nf(O)(a))
-      end
-    end
-  end
-
-  doc"""
-  ***
-      call(O::NfOrd, arr::Array{fmpz, 1})
-
-  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
-  """
-  Base.call{T <: NfOrd}(O::T, a::Array{fmpz, 1}) = nothing
-
-  for T in (:NfOrdGen, :NfMaxOrd)
-    @eval begin
-      function Base.call(O::$T, arr::Array{fmpz, 1})
-        return NfOrdElem{$T}(O, fmpz[ deepcopy(x) for x in arr ])
-      end
-    end
-  end
-
-
-  doc"""
-  ***
-      call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
-
-  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
-  """
-  Base.call{T <: NfOrd, S <: Integer}(O::T, arr::Array{S, 1}) = nothing
-
-  for T in (:NfOrdGen, :NfMaxOrd)
-    @eval begin
-      function Base.call{S <: Integer}(O::$T, arr::Array{S, 1})
-        return NfOrdElem{$T}(O, deepcopy(arr))
-      end
-    end
-  end
-
-  doc"""
-  ***
-      call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
-
-  > This function constructs the element of $\mathcal O$ with coefficient vector
-  > `arr`. It is assumed that the corresponding element of the ambient number
-  > field is $a$.
-  """
-  Base.call{T <: NfOrd}(O::T, a::nf_elem, arr::Array{fmpz, 1}) = nothing
-
-  for T in (:NfOrdGen, :NfMaxOrd)
-    @eval begin
-      function Base.call(O::$T, a::nf_elem, arr::Array{fmpz, 1})
-        return NfOrdElem{$T}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
-      end
-    end
-  end
-
-  doc"""
-  ***
-      call(O::NfOrd) -> NfOrdElem
-
-  > This function constructs a new element of $\mathcal O$ which is set to $0$.
-  """
-  Base.call{T <: NfOrd}(O::T)
-
-  for T in (:NfOrdGen, :NfMaxOrd)
-    @eval begin
-      Base.call(O::$T) = NfOrdElem{$T}(O)
-    end
-  end
-else
-  doc"""
-  ***
-      call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
-
-  > Given an element $a$ of the ambient number field of $\mathcal O$, this
-  > function coerces the element into $\mathcal O$. It will be checked that $a$
-  > is contained in $\mathcal O$ if and only if `check` is `true`.
-  """
-  (O::NfOrdGen)(a::nf_elem, check::Bool = true) = begin
+  Base.call(O::NfOrdGen, a::nf_elem, check::Bool = true) = begin
     if check
       (x,y) = _check_elem_in_order(a,O)
       !x && error("Number field element not in the order")
@@ -199,7 +200,7 @@ else
   > function coerces the element into $\mathcal O$. It will be checked that $a$
   > is contained in $\mathcal O$ if and only if `check` is `true`.
   """
-  (O::NfMaxOrd)(a::nf_elem, check::Bool = true) = begin
+  Base.call(O::NfMaxOrd, a::nf_elem, check::Bool = true) = begin
     if check
       (x,y) = _check_elem_in_order(a,O)
       !x && error("Number field element not in the order")
@@ -217,7 +218,7 @@ else
   > function coerces the element into $\mathcal O$. It will be checked that $a$
   > is contained in $\mathcal O$ if and only if `check` is `true`.
   """
-  (O::NfOrdGen)(a::Union{fmpz, Integer}) = begin
+  Base.call(O::NfOrdGen, a::Union{fmpz, Integer}) = begin
     return NfOrdElem{NfOrdGen}(O, nf(O)(a))
   end
 
@@ -229,7 +230,7 @@ else
   > function coerces the element into $\mathcal O$. It will be checked that $a$
   > is contained in $\mathcal O$ if and only if `check` is `true`.
   """
-  (O::NfMaxOrd)(a::Union{fmpz, Integer}) = begin
+  Base.call(O::NfMaxOrd, a::Union{fmpz, Integer}) = begin
     return NfOrdElem{NfMaxOrd}(O, nf(O)(a))
   end
 
@@ -239,7 +240,7 @@ else
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
-  (O::NfOrdGen)(arr::Array{fmpz, 1}) = begin
+  Base.call(O::NfOrdGen, arr::Array{fmpz, 1}) = begin
     return NfOrdElem{NfOrdGen}(O, fmpz[ deepcopy(x) for x in arr ])
   end
   
@@ -249,7 +250,7 @@ else
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
-  (O::NfMaxOrd)(arr::Array{fmpz, 1}) = begin
+  Base.call(O::NfMaxOrd, arr::Array{fmpz, 1}) = begin
     return NfOrdElem{NfMaxOrd}(O, fmpz[ deepcopy(x) for x in arr ])
   end
 
@@ -259,7 +260,7 @@ else
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
-  (O::NfOrdGen){S <: Integer}(arr::Array{S, 1}) = begin
+  Base.call{S <: Integer}(O::NfOrdGen, arr::Array{S, 1}) = begin
     return NfOrdElem{NfOrdGen}(O, deepcopy(arr))
   end
 
@@ -269,7 +270,7 @@ else
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
-  (O::NfMaxOrd){S <: Integer}(arr::Array{S, 1}) = begin
+  Base.call{S <: Integer}(O::NfMaxOrd, arr::Array{S, 1}) = begin
     return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
   end
 
@@ -282,7 +283,7 @@ else
   > `arr`. It is assumed that the corresponding element of the ambient number
   > field is $a$.
   """
-  (O::NfOrdGen)(a::nf_elem, arr::Array{fmpz, 1}) = begin
+  Base.call(O::NfOrdGen, a::nf_elem, arr::Array{fmpz, 1}) = begin
     return NfOrdElem{NfOrdGen}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
   end
   
@@ -294,7 +295,7 @@ else
   > `arr`. It is assumed that the corresponding element of the ambient number
   > field is $a$.
   """
-  (O::NfMaxOrd)(a::nf_elem, arr::Array{fmpz, 1}) = begin
+  Base.call(O::NfMaxOrd, a::nf_elem, arr::Array{fmpz, 1}) = begin
     return NfOrdElem{NfMaxOrd}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
   end
 
@@ -304,7 +305,7 @@ else
 
   > This function constructs a new element of $\mathcal O$ which is set to $0$.
   """
-  (O::NfOrdGen)() = NfOrdElem{NfOrdGen}(O)
+  Base.call(O::NfOrdGen) = NfOrdElem{NfOrdGen}(O)
   
   doc"""
   ***
@@ -312,8 +313,8 @@ else
 
   > This function constructs a new element of $\mathcal O$ which is set to $0$.
   """
-  (O::NfMaxOrd)() = NfOrdElem{NfMaxOrd}(O) 
-end
+  Base.call(O::NfMaxOrd) = NfOrdElem{NfMaxOrd}(O) 
+#end
 
 ################################################################################
 #
