@@ -117,7 +117,7 @@ end
 
 function BigFloat(a::fmpq)
   r = BigFloat(0)
-  ccall((:fmpq_get_mpfr, :libflint), Void, (Ptr{BigFloat}, Ptr{fmpq}, Int32), &r, &a, Base.MPFR.ROUNDING_MODE[end])
+  ccall((:fmpq_get_mpfr, :libflint), Void, (Ptr{BigFloat}, Ptr{fmpq}, Int32), &r, &a, __get_rounding_mode())
   return r
 end
 

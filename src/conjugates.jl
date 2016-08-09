@@ -218,7 +218,7 @@ function mult!(c::Array{BigFloat, 2}, a::fmpz_mat, b::Array{BigFloat, 2})
       ccall((:flint_mpz_init_set_readonly, :libflint),
         Void, (Ptr{BigInt}, Ptr{fmpz}), &tmp_mpz, z)
       ccall((:mpfr_set_z, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Int32),
-        &tmp_mpz_r, &tmp_mpz, Base.MPFR.ROUNDING_MODE[end])
+        &tmp_mpz_r, &tmp_mpz, __get_rounding_mode())
       for k = 1:s[2]
         ccall((:mpfr_mul, :libmpfr), Int, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &b[j,k], &tmp_mpz_r, Base.MPFR.ROUNDING_MODE[end])
         ccall((:mpfr_add, :libmpfr), Int, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{BigFloat}, Int32), &c[i,k], &tmp_mpfr, &c[i,k], Base.MPFR.ROUNDING_MODE[end])

@@ -1,14 +1,14 @@
 ################################################################################
 #
-#  NfOrd.jl
+#      NfOrd/NfOrdGenIdl.jl : Ideals of generic orders in number fields
 #
-################################################################################
+# This file is part of hecke.
 #
-# Copyright (c) 2015: Tommy Hofmann
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
+# All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#
 # * Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
 #
@@ -26,17 +26,42 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+#  Copyright (C) 2015, 2016 Tommy Hofmann
+#
+################################################################################
 
-add_verbose_scope(:NfOrd)
-add_assert_scope(:NfOrd)
+export show, ideal
 
-include("NfOrd/NfOrd.jl")
-include("NfOrd/NfOrdGen.jl")
-include("NfOrd/Elem.jl")
-include("NfOrd/Ideal.jl")
-include("NfOrd/GenIdl.jl")
-include("NfOrd/FracIdl.jl")
-include("NfOrd/GenFracIdl.jl")
-#include("NfOrd/FracIdeal.jl")
-include("NfOrd/RoundTwo.jl")
-include("NfOrd/DedekindTest.jl")
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, a::NfOrdGenIdlSet)
+  print(io, "Set of ideals of $(order(a))\n")
+end
+
+function show(io::IO, a::NfOrdGenIdl)
+  print(io, "Ideal of (")
+  print(io, order(a), ")\n")
+  print(io, "with basis matrix\n")
+  print(io, basis_mat(a))
+end
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
+
+ideal(O::NfOrdGen, a::fmpz)  = NfOrdGenIdl(O, deepcopy(a))
+
+ideal(O::NfOrdGen, a::Int) = NfOrdGenIdl(O, a)
+
+ideal(O::NfOrdGen, a::fmpz_mat) = NfOrdGenIdl(O, deepcopy(a))
+
+ideal(O::NfOrdGen, a::NfOrdElem{NfOrdGen}) = NfOrdGenIdl(O, deepcopy(a))
+  

@@ -607,7 +607,7 @@ function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
   for i = 1:s[1]
     for j = 1:s[2]
       e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
-      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Clong, Int32), &a[i,j], &tmp_mpz, e+Clong(d[1,j]), Base.MPFR.ROUNDING_MODE[end])
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Clong, Int32), &a[i,j], &tmp_mpz, e+Clong(d[1,j]), __get_rounding_mode())
     end
   end
 end
@@ -629,7 +629,7 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
     for j = 1:s[2]
       e = a[i,j].exp
       a[i,j].exp += l
-      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], Base.MPFR.ROUNDING_MODE[end]) 
+      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], __get_rounding_mode())
       a[i,j].exp = e
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}),
         &tmp_mpz, &tmp_mpfr)

@@ -120,7 +120,7 @@ end
 """ ->
 function exponential_integral(x::BigFloat)
   z = BigFloat()
-  ccall((:mpfr_eint, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &z, &x, Base.MPFR.ROUNDING_MODE[end])
+  ccall((:mpfr_eint, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &z, &x, __get_rounding_mode())
   return z
 end
 

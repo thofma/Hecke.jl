@@ -13,7 +13,7 @@ export pradical, pmaximal_overorder, MaximalOrder
 ################################################################################
 
 function _poverorder(O::NfOrd, p::fmpz)
-  OO = NfOrd(colon_ideal(pradical(O,p)))
+  OO = NfOrdGen(colon_ideal(pradical(O, p)))
   #OO.basis_mat = hnf(OO.basis_mat)
   return OO
 end
@@ -75,7 +75,6 @@ function _MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
       continue
     end
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    #println("Computing maximal ",p," overorder")
     OO += pmaximal_overorder(O, p)
     @vprint :NfOrd 1 "done\n"
   end
@@ -90,7 +89,6 @@ function _MaximalOrder(O::NfOrd)
       continue
     end
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    #println("Computing maximal ",p," overorder")
     OO += pmaximal_overorder(O, p)
     @vprint :NfOrd 1 "done\n"
   end

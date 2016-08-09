@@ -14,3 +14,7 @@ script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes -e 'Pkg.clone("https://github.com/Nemocas/Nemo.jl");'
   - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("Hecke"); Pkg.test("Hecke")'
+
+after_success:
+  - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "build_non_master")'
+  - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'

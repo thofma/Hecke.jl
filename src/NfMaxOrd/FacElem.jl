@@ -69,7 +69,7 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
     l = 0
     @vprint :UnitGrp 2 "Computing conjugates ... \n"
     @v_do :UnitGrp 2 pushindent()
-    cx = conjugates_arb_log(x, -p)
+    cx = conjugates_arb_log(x, p)
     @v_do :UnitGrp 2 popindent()
     @vprint :UnitGrp 2 "Conjugates log are $cx\n"
     A = ArbField(p)

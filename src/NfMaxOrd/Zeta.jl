@@ -293,26 +293,19 @@ function _residue_approx_bf(O::NfMaxOrd, error::Float64)
   ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &error_arf)
   ccall((:arf_set_d, :libarb), Void, (Ptr{arf_struct}, Float64), &error_arf, error)
 
-  #println("error prime: $error_prime")
-
-  #print("Finding a bound ... ")
-
   x0 = Int(ceil(_find_threshold(F, error_prime, Float64(10), true, Float64)))
   x0 = x0 + 1
 
-  #println(" done ")
-
   prec = 64 
 
-  #println("Computing residue with bound $x0 and precision $prec")
   val = _term_bf(O, x0, ArbField(prec))
 
   valaddederror = deepcopy(val)
   ccall((:arb_add_error_arf, :libarb), Void,
               (Ptr{arb}, Ptr{arf_struct}), &valaddederror, &error_prime_arf)
 
-  while (!radiuslttwopower(val, der)) ||
-                ((radius(valaddederror)) > error)
+  while (!radiuslttwopower(val, -der)) ||
+                !((radius(valaddederror)) < error)
 
     #println("Precision is now $prec")
 
@@ -353,12 +346,12 @@ function zeta_log_residue(O::NfMaxOrd, error::Float64)
 end
 
 # This should go somewhere else
-function radiuslttwopower(x::arb, n::Int)
-  z = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &x)
-  r = ccall((:mag_cmp_2exp_si, :libarb), Cint, (Ptr{Nemo.mag_struct}, Int), z, n)
-  return r < 0
-end
-
-function radiuslttwopower(x::acb, n::Int)
-  return radiuslttwopower(real(x), n) && radiuslttwopower(imag(x), n)
-end
+#function radiuslttwopower(x::arb, n::Int)
+#  z = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &x)
+#  r = ccall((:mag_cmp_2exp_si, :libarb), Cint, (Ptr{Nemo.mag_struct}, Int), z, n)
+#  return r < 0
+#end
+#
+#function radiuslttwopower(x::acb, n::Int)
+#  return radiuslttwopower(real(x), n) && radiuslttwopower(imag(x), n)
+#end

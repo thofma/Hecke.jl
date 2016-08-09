@@ -1,0 +1,38 @@
+site_name:           Hecke.jl
+repo_url:            https://github.com/thofma/Hecke.jl
+site_description:    Hecke
+site_author:         Tommy Hofmann
+theme:               material
+
+extra:
+  palette:
+    primary: 'green'
+    accent: 'amber'
+
+pages:
+- Getting Started:      index.md
+- Number fields:
+  - Introduction:       numberfields/introduction.md
+  - Orders:             numberfields/orders.md
+#- Maximal Orders:
+#    - Introduction:    build/MaximalOrders/Introduction.md
+#    - Creation:        build/MaximalOrders/Creation.md
+#    - Elements:        build/MaximalOrders/Elements.md
+#    - Ideals:          build/MaximalOrders/Ideals.md
+#- Orders:              build/Orders.md
+
+markdown_extensions:
+- tables
+- fenced_code
+- codehilite
+- extra
+- tables
+- fenced_code
+- admonition
+- mdx_math:
+    enable_dollar_delimiter: True
+
+docs_dir: 'build'
+
+extra_javascript: ['mathjaxhelper.js', 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
+

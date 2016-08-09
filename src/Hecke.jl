@@ -204,17 +204,6 @@ function torsion_units_gen(K::AnticNumberField)
   return g
 end
 
-function maximal_order(K::AnticNumberField)
-  try
-    c = _get_maximal_order_of_nf(K)::NfMaxOrd
-    return c
-  catch
-    O = _MaximalOrder(K)::NfMaxOrd
-    _set_maximal_order_of_nf(K, O)
-    return O
-  end
-end
-
 ################################################################################
 #
 #  Version number
@@ -472,7 +461,7 @@ include("Misc.jl")
 include("LinearAlgebra.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("NfMaxOrd/NfOrdCls.jl")
+#include("NfMaxOrd/NfOrdCls.jl")
 include("NfOrd.jl")
 include("analytic.jl")
 include("NfMaxOrd.jl")
@@ -497,9 +486,9 @@ elem_type(::NfMaxOrd) = NfOrdElem{NfMaxOrd}
 
 elem_type(::Type{NfMaxOrd}) = NfOrdElem{NfMaxOrd}
 
-elem_type(::NfOrd) = NfOrdElem{NfOrd}
+elem_type(::NfOrdGen) = NfOrdElem{NfOrdGen}
 
-elem_type(::Type{NfOrd}) = NfOrdElem{NfOrd}
+elem_type(::Type{NfOrdGen}) = NfOrdElem{NfOrdGen}
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
 
@@ -594,5 +583,17 @@ end
 
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
+
+#
+# stuff for 0.5
+# 
+
+if VERSION > v"0.5.0-"
+  @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
+end
+
+if VERSION < v"0.5.0-"
+  @inline __get_rounding_mode() = Base.MPFR.ROUNDING_MODE[end]
+end
 
 end
