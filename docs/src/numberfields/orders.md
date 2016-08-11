@@ -59,6 +59,8 @@ minkowski_mat(::NfOrd)
 in(::nf_elem, ::NfOrd)
 den(::nf_elem, ::NfOrd)
 +(::NfOrd, ::NfOrd)
+poverorder(::NfOrd, ::fmpz)
+pmaximal_overorder(::NfOrd, ::fmpz)
 ```
 
 ## Elements
@@ -112,7 +114,6 @@ conjugates_arb(::NfOrdElem, ::Int)
 conjugates_arb_log(::NfOrdElem, ::Int)
 t2(::NfOrdElem, ::Int)
 ```
-
 
 ## Ideals
 

@@ -1,5 +1,9 @@
 using Documenter, Hecke
 
+function Markdown.plain(io::IO, ::Markdown.HorizontalRule)
+           println(io, "-"^3)
+end
+
 makedocs(
     modules = Hecke,
     clean   = true,
