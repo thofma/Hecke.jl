@@ -13,7 +13,8 @@ export pradical, pmaximal_overorder, MaximalOrder
 ################################################################################
 
 function _poverorder(O::NfOrd, p::fmpz)
-  OO = NfOrdGen(colon_ideal(pradical(O, p)))
+  #OO = NfOrdGen(colon_ideal(pradical(O, p)))
+  OO = ring_of_multipliers(pradical(O, p))
   #OO.basis_mat = hnf(OO.basis_mat)
   return OO
 end

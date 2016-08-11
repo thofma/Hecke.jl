@@ -530,3 +530,36 @@ function pradical(O::NfOrd, p::Integer)
   return pradical(O, fmpz(p))
 end
 
+################################################################################
+#
+#  Ring of multipliers
+#
+################################################################################
+
+doc"""
+***
+    ring_of_multipliers(I::NfOrdIdl) -> NfOrdGen
+
+> Computes the order $(I : I)$, which is the set of all $x \in K$
+> with $xI \subseteq I$.
+"""
+function ring_of_multipliers(a::NfOrdIdl)
+  B = basis(a)
+  O = order(a)
+  bmatinv = basis_mat_inv(a)
+  #print("First basis element is $(B[1]) \n with representation mat \n")
+  #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
+  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv
+  m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv)
+  for i in 2:degree(O)
+    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
+  end
+  n = hnf(transpose(m))
+  # n is upper right HNF
+  n = transpose(sub(n, 1:degree(O), 1:degree(O)))
+  b, d = pseudo_inv(n)
+  #z = frac_ideal(O, FakeFmpqMat(b, d))
+  return Order(nf(O), FakeFmpqMat(b, d)*basis_mat(O))
+end  
+
+

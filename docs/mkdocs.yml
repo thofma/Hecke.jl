@@ -6,8 +6,8 @@ theme:               material
 
 extra:
   palette:
-    primary: 'green'
-    accent: 'amber'
+    primary: 'indigo'
+    accent: 'blue'
 
 pages:
 - Getting Started:      index.md

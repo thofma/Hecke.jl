@@ -61,7 +61,7 @@ end
 doc"""
     Order(B::Array{nf_elem, 1}, check::Bool = true) -> NfOrd
 
-> Returns the order with $\Z$-basis $B$. If `check` is set, it is checked
+> Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
 > whether $B$ defines an order.
 """
 function Order(a::Array{nf_elem, 1}, check::Bool = true) 
@@ -122,4 +122,15 @@ function Base.call{S <: Integer}(O::NfOrdGen, arr::Array{S, 1})
 end
 
 Base.call(O::NfOrdGen) = NfOrdElem{NfOrdGen}(O)
+
+################################################################################
+#
+#  Creation from fractional ideals
+#
+################################################################################
+
+function NfOrdGen(a::NfOrdGenFracIdl)
+  z = NfOrdGen(nf(order(a)), a.basis_mat*order(a).basis_mat)
+  return z
+end
 

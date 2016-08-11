@@ -32,7 +32,8 @@
 #
 ################################################################################
 
-export parent, order, basis_mat, basis_mat_inv, basis, norm, colon_ideal, ==
+export parent, order, basis_mat, basis_mat_inv, basis, norm,
+       ring_of_multipliers, ==
 
 ################################################################################
 #
@@ -135,38 +136,6 @@ function norm(a::NfOrdFracIdl)
     return deepcopy(a.norm)
   end
 end
-
-################################################################################
-#
-#  Colon ideal
-#
-################################################################################
-
-doc"""
-***
-    colon_ideal(I::NfOrdIdl) -> NfOrdFracIdl
-
-> Computes the colon ideal $(I : I)$, which is the set of all $x \in K$
-> with $xI \subseteq I$.
-"""
-function colon_ideal(a::NfOrdIdl)
-  B = basis(a)
-  O = order(a)
-  bmatinv = basis_mat_inv(a)
-  #print("First basis element is $(B[1]) \n with representation mat \n")
-  #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
-  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv
-  m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv)
-  for i in 2:degree(O)
-    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
-  end
-  n = hnf(transpose(m))
-  # n is upper right HNF
-  n = transpose(sub(n, 1:degree(O), 1:degree(O)))
-  b, d = pseudo_inv(n)
-  z = frac_ideal(O, FakeFmpqMat(b, d))
-  return z
-end  
 
 ################################################################################
 #

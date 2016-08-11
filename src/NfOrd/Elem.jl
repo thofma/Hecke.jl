@@ -35,7 +35,7 @@
 export deepcopy, call, parent, elem_in_nf, elem_in_basis, discriminant, hash,
        ==, zero, one, iszero, isone, show, -, +, *, divexact, ^, mod, powermod,
        representation_mat, trace, norm, rand, rand!, add!, mul!, minkowski_map,
-       conjugates_arb, conjugates_arb_log
+       conjugates_arb, conjugates_arb_log, t2
 
 ################################################################################
 #
@@ -67,8 +67,7 @@ end
 
 #if VERSION < v"0.5.0-"
 #  doc"""
-#  ***
-#      call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
+#  #      call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
 #
 #  > Given an element $a$ of the ambient number field of $\mathcal O$, this
 #  > function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -91,8 +90,7 @@ end
 #  end
 #
 #  doc"""
-#  ***
-#      call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
+#  #      call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
 #
 #  > Given an element $a$ of type `fmpz` or `Integer`, this
 #  > function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -109,8 +107,7 @@ end
 #  end
 #
 #  doc"""
-#  ***
-#      call(O::NfOrd, arr::Array{fmpz, 1})
+#  #      call(O::NfOrd, arr::Array{fmpz, 1})
 #
 #  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #  """
@@ -126,8 +123,7 @@ end
 #
 #
 #  doc"""
-#  ***
-#      call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
+#  #      call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
 #
 #  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 #  """
@@ -142,8 +138,7 @@ end
 #  end
 #
 #  doc"""
-#  ***
-#      call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
+#  #      call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
 #
 #  > This function constructs the element of $\mathcal O$ with coefficient vector
 #  > `arr`. It is assumed that the corresponding element of the ambient number
@@ -160,8 +155,7 @@ end
 #  end
 #
 #  doc"""
-#  ***
-#      call(O::NfOrd) -> NfOrdElem
+#  #      call(O::NfOrd) -> NfOrdElem
 #
 #  > This function constructs a new element of $\mathcal O$ which is set to $0$.
 #  """
@@ -176,7 +170,7 @@ end
 #if VERSION > v"0.5.0-"
   doc"""
   ***
-      call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
+        call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
 
   > Given an element $a$ of the ambient number field of $\mathcal O$, this
   > function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -194,7 +188,7 @@ end
 
   doc"""
   ***
-      call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
+        call(O::NfOrd, a::nf_elem, check::Bool = true) -> NfOrdElem
 
   > Given an element $a$ of the ambient number field of $\mathcal O$, this
   > function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -212,7 +206,7 @@ end
 
   doc"""
   ***
-      call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
+        call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
 
   > Given an element $a$ of type `fmpz` or `Integer`, this
   > function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -224,7 +218,7 @@ end
 
   doc"""
   ***
-      call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
+        call(O::NfOrd, a::Union{fmpz, Integer}) -> NfOrdElem
 
   > Given an element $a$ of type `fmpz` or `Integer`, this
   > function coerces the element into $\mathcal O$. It will be checked that $a$
@@ -236,7 +230,7 @@ end
 
   doc"""
   ***
-      call(O::NfOrd, arr::Array{fmpz, 1})
+        call(O::NfOrd, arr::Array{fmpz, 1})
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
@@ -246,7 +240,7 @@ end
   
   doc"""
   ***
-      call(O::NfOrd, arr::Array{fmpz, 1})
+        call(O::NfOrd, arr::Array{fmpz, 1})
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
@@ -256,7 +250,7 @@ end
 
   doc"""
   ***
-      call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
+        call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
@@ -266,7 +260,7 @@ end
 
   doc"""
   ***
-      call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
+        call{T <: Integer}(O::NfOrd, arr::Array{T, 1})
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
@@ -274,10 +268,9 @@ end
     return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
   end
 
-
   doc"""
   ***
-      call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
+        call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
 
   > This function constructs the element of $\mathcal O$ with coefficient vector
   > `arr`. It is assumed that the corresponding element of the ambient number
@@ -289,7 +282,7 @@ end
   
   doc"""
   ***
-      call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
+        call(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
 
   > This function constructs the element of $\mathcal O$ with coefficient vector
   > `arr`. It is assumed that the corresponding element of the ambient number
@@ -301,7 +294,7 @@ end
 
   doc"""
   ***
-      call(O::NfOrd) -> NfOrdElem
+        call(O::NfOrd) -> NfOrdElem
 
   > This function constructs a new element of $\mathcal O$ which is set to $0$.
   """
@@ -309,7 +302,7 @@ end
   
   doc"""
   ***
-      call(O::NfOrd) -> NfOrdElem
+        call(O::NfOrd) -> NfOrdElem
 
   > This function constructs a new element of $\mathcal O$ which is set to $0$.
   """
@@ -679,8 +672,8 @@ doc"""
     mod(a::NfOrdElem, m::Union{fmpz, Int}) -> NfOrdElem
 
 > Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
-> element. The coefficient vector of the result will have entries in 
-> $0 \leq a \leq m$.
+> element. The coefficient vector of the result will have entries $x$ with 
+> $0 \leq x \leq m$.
 """
 function mod(a::NfOrdElem, m::Union{fmpz, Int})
   ar = elem_in_basis(a)
@@ -767,6 +760,7 @@ function representation_mat(a::NfOrdElem)
 end
 
 doc"""
+***
     representation_mat(a::NfOrdElem, K::AnticNumberField) -> FakeFmpqMat
 
 > Returns the representation matrix of the element $a$ considered as an element
@@ -1022,7 +1016,8 @@ end
 ################################################################################
 
 doc"""
-    T2(x::NfOrdElem, abs_tol::Int = 32) -> arb
+***
+    t2(x::NfOrdElem, abs_tol::Int = 32) -> arb
 
 > Return the $T_2$-norm of $x$. The radius of the result will be less than
 > `2^-abs_tol`.

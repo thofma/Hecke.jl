@@ -34,7 +34,7 @@
 
 export isequationorder, nf, parent, basis, basis_mat, basis_mat_inv,
        discriminant, degree, gen_index, index, is_index_divisor, deepcopy,
-       signature, minkowski_mat, norm_change_const, in, den
+       signature, minkowski_mat, norm_change_const, in, den, +
 
 ################################################################################
 #
@@ -43,7 +43,6 @@ export isequationorder, nf, parent, basis, basis_mat, basis_mat_inv,
 ################################################################################
 
 doc"""
-***
     isequationorder(O::NfOrd) -> Bool
 
 >  Returns whether $\mathcal O$ is the equation order.
@@ -57,7 +56,6 @@ isequationorder(O::NfOrd) = O.isequationorder
 ################################################################################
 
 doc"""
-***
     nf(O::NfOrd) -> AnticNumberField
 
 > Returns the ambient number field of $\mathcal O$.
@@ -71,7 +69,6 @@ nf(O::NfOrd) = O.nf
 ################################################################################
 
 doc"""
-***
     parent(O::NfOrd) -> NfOrdSet
 
 > Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
@@ -101,7 +98,6 @@ function basis_ord(O::NfOrd)
 end
 
 doc"""
-***
     basis(O::NfOrd) -> Array{NfOrdElem, 1}
 
 > Returns the $\mathbf Z$-basis of $\mathcal O$.
@@ -111,7 +107,6 @@ function basis(O::NfOrd)
 end
 
 doc"""
-***
     basis(O::NfOrd, K::AnticNumberField) -> Array{nf_elem, 1}
 
 > Returns the $\mathbf Z$-basis of $\mathcal O$ as elements of the ambient
@@ -129,7 +124,6 @@ end
 ################################################################################
 
 doc"""
-***
     basis_mat(O::NfOrd) -> FakeFmpqMat
 
 > Returns the basis matrix of $\mathcal O$ with respect to the power basis
@@ -145,7 +139,6 @@ function basis_mat(O::NfOrd)
 end
 
 doc"""
-***
     basis_mat_inv(O::NfOrd) -> FakeFmpqMat
 
 > Returns the inverse of the basis matrix of $\mathcal O$.
@@ -165,7 +158,6 @@ end
 ################################################################################
 
 doc"""
-***
     discriminant(O::NfOrd) -> fmpz
 
 > Returns the discriminant of $\mathcal O$.
@@ -203,7 +195,6 @@ degree(O::NfOrd) = degree(O.nf)
 ################################################################################
 
 doc"""
-***
     gen_index(O::NfOrd) -> fmpq
 
 > Generalized index of $\mathcal O$ with respect to the ambient equation
@@ -219,7 +210,6 @@ function gen_index(O::NfOrd)
 end
 
 doc"""
-***
     index(O::NfOrd) -> fmpz
 
 > Assuming that the order $\mathcal O$ contains the ambient equation order
@@ -260,7 +250,6 @@ end
 ################################################################################
 
 doc"""
-***
     deepcopy(O::NfOrd) -> NfOrd
 
 > Makes a copy of $\mathcal O$.
@@ -306,7 +295,6 @@ end
 ################################################################################
 
 doc"""
-***
     minkowski_mat(O::NfOrd, abs_tol::Int = 64) -> arb_mat
 
 > Returns the Minkowski matrix of $\mathcal O$.
@@ -359,7 +347,6 @@ function _check_elem_in_order(a::nf_elem, O::NfOrd)
 end  
 
 doc"""
-***
     in(a::nf_elem, O::NfOrd) -> Bool
 
 > Checks whether $a$ lies in $\mathcal O$.
@@ -376,7 +363,6 @@ end
 ################################################################################
 
 doc"""
-***
     den(a::nf_elem, O::NfOrd) -> fmpz
 
 > Returns the smallest positive integer $k$ such that $k \cdot a$ lies in O.
@@ -465,7 +451,6 @@ end
 ################################################################################
 
 doc"""
-***
     +(R::NfOrd, S::NfOrd) -> NfOrd
 
 > Given two orders $R$, $S$ of $K$, this function returns the smallest order
@@ -481,11 +466,6 @@ function +(a::NfOrd, b::NfOrd)
   c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
   O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den))
   return O
-end
-
-function NfOrdGen(a::NfOrdGenFracIdl)
-  z = NfOrdGen(nf(order(a)), a.basis_mat*order(a).basis_mat)
-  return z
 end
 
 

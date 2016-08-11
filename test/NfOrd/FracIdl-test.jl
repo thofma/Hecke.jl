@@ -63,9 +63,9 @@ function test_NfOrd_FracIdl()
   # colon
 
   i = ideal(O1, ZZ[2 0 0; 0 1 0; 0 0 1])
-  N = @inferred colon_ideal(i)
+  N = @inferred ring_of_multipliers(i)
 
-  @test N == frac_ideal(O1, ZZ[2 0 0; 0 2 0; 0 0 1], 2)
+  @test basis_mat(N) == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 2], fmpz(1))
 
   println("PASS")
 end
