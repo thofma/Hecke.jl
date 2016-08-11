@@ -1,45 +1,55 @@
 ################################################################################
 #
-#   NfMaxOrdIdls.jl : ideals in Nemo
+#    NfMaxOrdIdl.jl : Ideals of maximal orders in absolute number fields
+#
+# This file is part of Hecke.
+#
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+# (C) 2015, 2016 Tommy Hofmann
+# (C) 2016, 2016 Claus Fieker
 #
 ################################################################################
 
-export NfMaxOrdIdlSet
-
-export IdlSet, minimum, is_prime_known, MaximalOrderIdl, basis_mat,
-       valuation, defines_2_normal, *, /, ==, MaximalOrderIdlSet, norm, Ideal,
-       prime_decomposition_type, prime_decomposition
-
-set_assert_level(:NfMaxOrd, 1)
+export IdealSet, valuation, defines_2_normal, *, /, ==, norm,
+       prime_decomposition_type, 
+       prime_decomposition
 
 #################################################################################
 #
-#  User friendly constructor
+#  Parent constructor
 #
 #################################################################################
 
 function IdealSet(O::NfMaxOrd)
    return NfMaxOrdIdlSet(O)
 end
-
+ 
 ################################################################################
 #
-#  Field acess
-#
-################################################################################
-
-order(S::NfMaxOrdIdlSet) = S.order
-
-# a (bad) hash function
-# - slow (due to basis)
-# - unless basis is in HNF it si also non-unique
-function hash(A::NfMaxOrdIdl)
-  return hash(basis_mat(A))
-end  
-  
-################################################################################
-#
-#  Parent object overloading and user friendly constructors
+#  Construction
 #
 ################################################################################
 
@@ -64,7 +74,7 @@ end
 
 doc"""
 ***
-    ideal(O::NfMaxOrd, x::nf_elem, check::Bool = true) -> NfMaxOrdIdl
+    ideal(O::NfOrd, x::NfOrdElem) -> NfOrdIdl
 
 > Creates the principal ideal $(x)$ of $\mathcal O$.
 """
@@ -79,7 +89,8 @@ doc"""
 > Creates the ideal of $\mathcal O$ with basis matrix $x$. If check is set, then it is
 > checked whether $x$ defines an ideal (expensive).
 """
-function ideal(O::NfMaxOrd, x::fmpz_mat)
+function ideal(O::NfMaxOrd, x::fmpz_mat, check::Bool = false)
+  check && error("Not yet implemented")
   return NfMaxOrdIdl(O, deepcopy(x))
 end
 
@@ -101,12 +112,6 @@ function ideal(O::NfMaxOrd, x::fmpz)
   return NfMaxOrdIdl(O, x)
 end
 
-#doc"""
-#***
-#    ideal(O::NfMaxOrd) -> NfMaxOrdIdl
-#
-#> Creates an empty object of type NfMaxOrdIdl.
-#"""
 function ideal(O::NfMaxOrd)
   return NfMaxOrdIdl(O)
 end
@@ -117,57 +122,17 @@ end
 
 ################################################################################
 #
-#  Field access
+#  Number field
 #
 ################################################################################
-
-doc"""
-***
-    parent(x::NfMaxOrdIdl) -> NfMaxOrdIdlSet
-
-> Returns the set of ideals to which $x$ belongs.
-"""
-parent(x::NfMaxOrdIdl) = x.parent
-
-doc"""
-***
-    order(x::NfMaxOrdIdl) -> NfMaxOrd
-
-> Returns the order of which $x$ is an ideal.
-"""
-order(x::NfMaxOrdIdl) = order(parent(x))
 
 doc"""
 ***
     nf(x::NfMaxOrdIdl) -> AnticNumberField
 
 > Returns the number field, of which $x$ is an integral ideal.
-
 """
 nf(x::NfMaxOrdIdl) = nf(order(x))
-
-doc"""
-***
-    deepcopy(x::NfMaxOrdIdl) -> NfMaxOrdIdl
-
-> Returns a copy of the ideal $x$.
-"""
-function deepcopy(A::NfMaxOrdIdl)
-  B = NfMaxOrdIdl(order(A))
-  for i in fieldnames(A)
-    if i == :parent
-      continue
-    end
-    if isdefined(A, i)
-      if i == :basis
-        setfield!(B, i, NfOrdElem{NfMaxOrd}[ deepcopy(x) for x in A.basis])
-      else
-        setfield!(B, i, deepcopy(getfield(A, i)))
-      end
-    end
-  end
-  return B
-end
 
 ################################################################################
 #
@@ -203,23 +168,6 @@ function show(io::IO, id::NfMaxOrdIdl)
   end
 end
 
-doc"""
-***
-    vshow(A::NfMaxOrdIdl) -> Void
-
-> Prints all fields of $A$.
-"""
-function vshow(A)
-  for i in fieldnames(typeof(A))
-    if isdefined(A, i)
-      println("$i: ")
-      println(getfield(A, i), "\n")
-    else
-      println("$i: Not definied")
-    end
-  end
-end
-
 ################################################################################
 #
 #  Basic invariants
@@ -228,7 +176,7 @@ end
 
 doc"""
 ***
-    norm(A::NfMaxOrdIdl) -> fmpz
+    norm(A::NfOrdIdl) -> fmpz
 
 > Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
 > $\mathcal O$ is the order of $A$.
@@ -251,6 +199,12 @@ function norm(A::NfMaxOrdIdl)
     return A.norm
   end
 end
+
+################################################################################
+#
+#  Minimum
+#
+################################################################################
 
 doc"""
 ***
@@ -286,6 +240,12 @@ function minimum(A::NfMaxOrdIdl)
   A.minimum = basis_mat(A)[1,1]
   return fmpz(A.minimum)
 end 
+
+################################################################################
+#
+#  Predicates
+#
+################################################################################
 
 doc"""
 ***
@@ -360,14 +320,13 @@ end
 
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
 # see Pohst-Zassenhaus p. 404
-
 function defines_2_normal(A::NfMaxOrdIdl)
   m = A.gen_one
   gen = A.gen_two
   mg = den(inv(gen), order(A))
   # the minimum of ideal generated by g
   g = gcd(m,mg)
-  return gcd(m,div(m,g)) == 1
+  return gcd(m, div(m,g)) == 1
 end
 
 ################################################################################
@@ -429,7 +388,6 @@ function prod_via_2_elem_normal(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
 end
 
 # using the 2-weak-normal representation
-
 function prod_via_2_elem_weakly(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
   @hassert :NfMaxOrd 1 has_2_elem(a)
   @hassert :NfMaxOrd 1 has_2_elem(b)
@@ -512,13 +470,12 @@ function prod_via_2_elem_weakly(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
 end
 
 # dispatching 
-
-@doc """
-  *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
+doc"""
+***
+  *(x::NfMaxIdl, y::NfOrdIdl)
     
-    Returns the ideal x*y.
-
-""" ->
+> Returns the ideal x*y.
+"""
 function *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
   if x.is_zero == 1 || y.is_zero == 1
     z = ideal(order(x), zero(MatrixSpace(FlintZZ, degree(order(x)), degree(order(x)))))
@@ -531,7 +488,8 @@ function *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
   if has_2_elem(x) && has_2_elem(y)
     return prod_via_2_elem_weakly(x, y)
   end
-  # Fall back to the generic algorithm _mul(::NfOrdClsIdl, ::NfOrdClsIdl)
+  # Fall back to the generic algorithm _mul(::NfOrdIdl, ::NfOrdIdl)
+  # Could also use invoke
   return _mul(x, y)
 end
 
@@ -541,7 +499,7 @@ end
 #
 ################################################################################
 
-# Falls back to generic algorithm +(::NfOrdClsIdl, ::NfOrdClsIdl)
+# Falls back to generic case +(::NfOrd, ::NfOrd)
 
 ################################################################################
 #
@@ -549,7 +507,7 @@ end
 #
 ################################################################################
 
-# Falls back to generic algorithm intersection(::NfOrdClsIdl, ::NfOrdClsIdl)
+# Falls back to generic algorithm intersection(::NfOrdIdl, ::NfOrdIdl)
 
 ################################################################################
 #
@@ -596,7 +554,7 @@ end
 
 doc"""
 ***
-    *(x::NfMaxOrdIdl, y::fmpz) -> NfMaxOrdIdl
+    *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
 
 > Returns the ideal $x \cdot y$.
 """
@@ -620,13 +578,15 @@ end
 
 doc"""
 ***
-    *(x::NfMaxOrdIdl, y::Integer) -> NfMaxOrdIdl
+    *(x::NfOrdIdl, y::Integer) -> NfOrdIdl
 
 > Returns the ideal $x \cdot y$.
 """
 *(x::NfMaxOrdIdl, y::Integer) = x * fmpz(y)
 
 *(x::Integer, y::NfMaxOrdIdl) = y * x
+
+# The case ideal * element is missing
 
 #function *(A::NfMaxOrdIdl, b::nf_elem)
 #  if has_2_elem(A)
@@ -817,12 +777,13 @@ end
 #
 ###########################################################################################
 
-@doc """
+doc"""
+***
   inv(A::NfMaxOrdIdl) -> NfMaxOrdFracIdl
 
-    Computes the inverse of A.
-
-""" ->
+> Computes the inverse of A, that is, the fractional ideal $B$ such that
+> $AB = \mathcal O_K$.
+"""
 function inv(A::NfMaxOrdIdl) 
   if has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
@@ -859,22 +820,23 @@ end
 #
 ###########################################################################################
 
-@doc """
+doc"""
+***
   has_basis(A::NfMaxOrdIdl) -> Bool
 
     Returns wether A has a basis already computed.
 
-""" ->
+"""
 function has_basis(A::NfMaxOrdIdl)
   return isdefined(A, :basis)
 end
 
-@doc """
-  basis(A::NfMaxOrdIdl) -> Array{NfOrdElem, 1}
+doc"""
+***
+  basis(A::NfOrdIdl) -> Array{NfOrdElem, 1}
 
-    Returns the basis of A
-
-""" ->
+> Returns the basis of A
+"""
 function basis(A::NfMaxOrdIdl)
   if isdefined(A, :basis)
     return A.basis
@@ -916,13 +878,12 @@ function basis_mat_prime_deg_1(A::NfMaxOrdIdl)
   return b
 end
 
+doc"""
+***
+  basis_mat(A::NfOrdIdl) -> fmpz_mat
 
-@doc """
-  basis_mat(A::NfMaxOrdIdl) -> fmpz_mat
-
-    Returns the basis matrix of A.
-
-""" ->
+> Returns the basis matrix of A.
+""" 
 function basis_mat(A::NfMaxOrdIdl)
   if isdefined(A, :basis_mat)
     return A.basis_mat
@@ -953,6 +914,12 @@ function basis_mat(A::NfMaxOrdIdl)
   return c::fmpz_mat
 end
 
+doc"""
+***
+  basis_mat_inv(A::NfOrdIdl) -> FakeFmpqMat
+
+> Returns the inverse of the basis matrix of $A$.
+""" 
 function basis_mat_inv(A::NfMaxOrdIdl)
   if isdefined(A, :basis_mat_inv)
     return A.basis_mat_inv
@@ -997,11 +964,11 @@ end
 
 # The following function is broken
 
-@doc """
+doc"""
   reduce_ideal_class(A::NfMaxOrdIdl) -> NfMaxOrdIdl, nf_elem
 
-  This function is broken.
-""" ->
+> This function is broken.
+"""
 function reduce_ideal_class(A::NfMaxOrdIdl)
   B = inv(A)
   bas = basis_mat(B)
@@ -1013,26 +980,27 @@ function reduce_ideal_class(A::NfMaxOrdIdl)
   return B, a
 end
 
-###########################################################################################
+################################################################################
 #
 #  Valuation
 #
-###########################################################################################
+################################################################################
 
-# classical cohn algorithm, but take a valuation element with smaller(?)
-# coefficients. Core idea is that the val elt is, originally, den*gen_two(p)^-1
-# where gen_two(p) is "small". Acutually, we don't care about gen_two, we
-# need gen_two^-1 to be small, hence this version...
+# CF:
+# Classical algorithm of Cohen, but take a valuation element with smaller (?)
+# coefficients. Core idea is that the valuation elementt is, originally, den*gen_two(p)^-1
+# where gen_two(p) is "small". Actually, we don't care about gen_two, we
+# need gen_two^-1 to be small, hence this version.
 function val_func_no_index(p::NfMaxOrdIdl)
   P = p.gen_one
   K = nf(order(p))
   pi = inv(p)
   d = den(K(pi.num.gen_two))
-  @assert gcd(d, P)==1
+  @assert gcd(d, P) == 1
   e = K(pi.num.gen_two)*d
   M = MatrixSpace(ZZ, 1, degree(K))()
   elem_to_mat_row!(M, 1, d, e)
-  @assert d==1
+  @assert d == 1
   P2 = P^2
   P22 = div(P2, 2)
   for i=1:degree(K)
@@ -1056,11 +1024,12 @@ function val_func_no_index(p::NfMaxOrdIdl)
   end
 end
 
-# the idea is that valuations are mostly small, eg. in the class group algorithm
-# so this version computes the completion and the embedding into it at small
-# precision and can thus compute (small) valuation at the effective cost of 
-# mod(nmod_poly, nmod_poly)
-# isn't it nice?
+# CF:
+# The idea is that valuations are mostly small, eg. in the class group
+# algorithm. So this version computes the completion and the embedding into it
+# at small precision and can thus compute (small) valuation at the effective
+# cost of an mod(nmod_poly, nmod_poly) operation.
+# Isn't it nice?
 function val_func_no_index_small(p::NfMaxOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
@@ -1091,10 +1060,10 @@ function val_func_no_index_small(p::NfMaxOrdIdl)
 end
 
 function val_func_index(p::NfMaxOrdIdl)
-  # we are in the index divisor case. In larger examples, a lot of
+  # We are in the index divisor case. In larger examples, a lot of
   # time is spent computing denominators of order elements.
-  # By using the rep-mat to multiply, we can stay in the order
-  # and still be fast (faster even than in field)...
+  # By using the representation matrix to multiply, we can stay in the order
+  # and still be fast (faster even than in field).
 
   pi = inv(p)
   M = representation_mat(pi.num.gen_two)
@@ -1115,12 +1084,15 @@ function val_func_index(p::NfMaxOrdIdl)
   end
 end
 
-@doc """
+doc"""
+***
   valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
+  valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
+  valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
 
-    Computes the p-adic valuation of a, that is, the largest i such that a is contained in p^i.
-
-""" ->
+> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+> such that $a$ is contained in $\mathfrak p^i$.
+"""
 function valuation(a::nf_elem, p::NfMaxOrdIdl)
   @hassert :NfMaxOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
@@ -1157,28 +1129,42 @@ function valuation(a::nf_elem, p::NfMaxOrdIdl)
   return p.valuation(a)
 end
 
-@doc """
+doc"""
+***
+  valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
+  valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
   valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
 
-    Computes the p-adic valuation of a, that is, the largest i such that a is contained in p^i.
+> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+> such that $a$ is contained in $\mathfrak p^i$.
+"""
+valuation(a::NfOrdElem{NfMaxOrd}, p::NfMaxOrdIdl) = valuation(a.elem_in_nf, p)
 
-""" ->
+doc"""
+***
+  valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
+  valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
+  valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
+
+> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+> such that $a$ is contained in $\mathfrak p^i$.
+"""
 function valuation(a::fmpz, p::NfMaxOrdIdl)
   P = p.gen_one
   @assert p.splitting_type[1] != 0
   return valuation(a, P)[1]* p.splitting_type[1]
 end
 
-@doc """
+doc"""
+***
   valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl) -> fmpz
 
-    Computes the p-adic valuation of A, that is, the largest i such that A is contained in p^i.
-
-""" ->
+> Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
+> such that $A$ is contained in $\mathfrak p^i$.
+"""
 function valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl)
   return min(valuation(A.gen_one, p)[1], valuation(elem_in_nf(A.gen_two), p))
 end
-
 
 ################################################################################
 #
@@ -1194,7 +1180,7 @@ end
 #end
 
 # at the moment ==(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
-# falls back to ==(A::NfOrdClsIdl, B::NfOrdClsIdl)
+# falls back to ==(A::NfOrdIdl, B::NfOrdIdl)
 
 ################################################################################
 #
@@ -1202,27 +1188,25 @@ end
 #
 ################################################################################
 
-@doc """
-  *(O::NfMaxOrd, a::nf_elem) -> NfMaxOrdIdl
-  *(a::nf_elem, O::NfMaxOrd) -> NfMaxOrdIdl
-    
-    Returns the principal ideal (a) of O. Sanity checks are performed.
-
-""" ->
-function *(O::NfMaxOrd, a::nf_elem)
-  nf(O) != parent(a) && error("Number field of order must be parent of element")
-  return ideal(O, a)
-end
+#doc"""
+#  *(O::NfMaxOrd, a::nf_elem) -> NfMaxOrdIdl
+#  *(a::nf_elem, O::NfMaxOrd) -> NfMaxOrdIdl
+#    
+#> Returns the principal ideal (a) of O. Sanity checks are performed.
+#"""
+#function *(O::NfMaxOrd, a::nf_elem)
+#  nf(O) != parent(a) && error("Number field of order must be parent of element")
+#  return ideal(O, a)
+#end
 
 *(a::nf_elem, O::NfMaxOrd) = O*a
 
-@doc """
+doc"""
   *(O::NfMaxOrd, x::NfOrdElem) -> NfMaxOrdIdl
   *(x::NfOrdElem, O::NfMaxOrd) -> NfMaxOrdIdl
 
-    Returns the principal ideal (x) of O. Sanity checks are performed.
-
-""" ->
+> Returns the principal ideal (x) of O. Sanity checks are performed.
+"""
 function *(O::NfMaxOrd, x::NfOrdElem)
   parent(x) != O && error("Order of element does not coincide with order")
   return ideal(O, x)

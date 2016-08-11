@@ -39,6 +39,19 @@ export deepcopy, parent, order, basis, basis_mat, basis_mat_inv, minimum, norm,
 
 ################################################################################
 #
+#  Hashing
+#
+################################################################################
+
+# a (bad) hash function
+# - slow (due to basis)
+# - unless basis matrix is in HNF it is also non-unique
+function hash(A::NfOrdIdl)
+  return hash(basis_mat(A))
+end  
+ 
+################################################################################
+#
 #  Deepcopy
 #
 ################################################################################
@@ -57,7 +70,7 @@ function deepcopy(A::NfOrdIdl)
     end
     if isdefined(A, i)
       if i == :basis
-        setfield!(B, i, NfOrdElem{NfMaxOrd}[ deepcopy(x) for x in A.basis])
+        setfield!(B, i, NfOrdElem{typeof(parent(A))}[ deepcopy(x) for x in A.basis])
       else
         setfield!(B, i, deepcopy(getfield(A, i)))
       end

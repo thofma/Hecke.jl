@@ -476,6 +476,32 @@ end
 
 ################################################################################
 #
+#  Verbose printing
+#
+################################################################################
+
+doc"""
+***
+    vshow(A) -> Void
+
+> Prints all fields of $A$.
+"""
+function vshow(A)
+  for i in fieldnames(typeof(A))
+    if isdefined(A, i)
+      println("$i: ")
+      println(getfield(A, i), "\n")
+    else
+      println("$i: Not definied")
+    end
+  end
+end
+
+#
+
+
+################################################################################
+#
 #  Element types for parent types
 #
 ################################################################################

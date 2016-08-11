@@ -2,9 +2,9 @@
 #
 #       NfMaxOrd.jl : Maximal orders in absolute number fields
 #
-# This file is part of hecke.
+# This file is part of Hecke.
 #
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-# (C) 2015 Tommy Hofmann
+# (C) 2015, 2016 Tommy Hofmann
 #
 ################################################################################
 
-export NfMaxOrd
-
-export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
-       degree, index, is_index_divisor, discriminant, ring_of_integers,
-       make_maximal
+export maximal_order, ring_of_integers
 
 ################################################################################
 #
@@ -45,6 +41,7 @@ export _MaximalOrder, conjugate_data, basis, nf, basis_mat, basis_mat_inv,
 ################################################################################
 
 doc"""
+***
     MaximalOrder(K::AnticNumberField) -> NfMaxOrd
 
 > Returns the maximal order of $K$.
@@ -113,8 +110,8 @@ doc"""
 
 > Assuming that ``primes`` contains all the prime numbers at which the equation
 > order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal
-> (e.g. ``primes`` may contain all prime divisors of the discriminant of $\mathbf Z[\alpha]$),
-> this function returns the maximal order of $K$.
+> (e.g. ``primes`` may contain all prime divisors of the discriminant of
+> $\mathbf Z[\alpha]$), this function returns the maximal order of $K$.
 """
 function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
   O = _MaximalOrder(K, primes)
