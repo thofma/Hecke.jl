@@ -1,6 +1,6 @@
 ################################################################################
 #
-#    NfMaxOrdIdl.jl : Ideals of maximal orders in absolute number fields
+#    NfMaxOrd/Ideal.jl : Ideals of maximal orders in absolute number fields
 #
 # This file is part of Hecke.
 #
@@ -33,9 +33,8 @@
 #
 ################################################################################
 
-export IdealSet, valuation, defines_2_normal, *, /, ==, norm,
-       prime_decomposition_type, 
-       prime_decomposition
+export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
+       prime_ideals_up_to, factor, divexact, isramified
 
 #################################################################################
 #

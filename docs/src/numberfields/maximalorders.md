@@ -12,6 +12,13 @@ isramified(::NfMaxOrd, ::Int)
 prime_decomposition(::NfMaxOrd, ::Int)
 prime_ideals_up_to(::NfMaxOrd, ::Int)
 factor(::NfMaxOrdIdl)
-divexat(::NfMaxOrdIdl, ::fmpz)
-divexat(::NfMaxOrdIdl, ::NfMaxOrdIdl)
+divexact(::NfMaxOrdIdl, ::fmpz)
+divexact(::NfMaxOrdIdl, ::NfMaxOrdIdl)
+```
+
+## Fractional ideals
+
+```@docs
+*(::NfMaxOrdFracIdl, ::NfMaxOrdFracIdl)
+inv(::NfMaxOrdFracIdl)
 ```

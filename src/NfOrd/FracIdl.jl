@@ -149,6 +149,5 @@ doc"""
 
 > Returns whether $x$ and $y$ are equal.
 """
-
 ==(x::NfOrdFracIdl, y::NfOrdFracIdl) = basis_mat(x) == basis_mat(y)
 
