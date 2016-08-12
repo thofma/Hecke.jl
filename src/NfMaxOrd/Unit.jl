@@ -1302,7 +1302,7 @@ doc"""
     unit_group(O::NfMaxOrd) -> Map
 
 > Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
-> `A = codomain(f)`. Then a set of fundamental units of $\mathcal O$ can be
+> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
 > obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
 """
 function unit_group(O::NfMaxOrd)

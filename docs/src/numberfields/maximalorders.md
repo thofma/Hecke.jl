@@ -26,4 +26,19 @@ inv(::NfMaxOrdFracIdl)
 ## Class and unit group
 
 ```@docs
+unit_rank(::NfOrd)
+is_unit(::NfOrdElem)
+is_torsion_unit(::NfOrdElem)
+torsion_unit_order(::NfOrdElem)
+torsion_units(::NfOrd)
+torsion_units_gen(::NfOrd)
+is_independent(::NfOrdElem)
+regulator(::Array{NfOrdElem, 1})
+unit_group(::NfMaxOrd)
 ```
+
+## Residue rings
+
+## Residue fields
+
+

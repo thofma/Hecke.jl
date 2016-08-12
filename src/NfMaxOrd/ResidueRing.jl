@@ -76,8 +76,7 @@ needs_parentheses(::NfMaxOrdQuoRingElem) = true
 
 is_negative(::NfMaxOrdQuoRingElem) = false
 
-# This is dangerous
-parent_type(::Type{NfOrdElem}) = NfMaxOrd
+parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd
 
 Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
@@ -88,7 +87,8 @@ Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
 #
 ################################################################################
 
-deepcopy(x::NfMaxOrdQuoRingElem) = NfMaxOrdQuoRingElem(parent(x), deepcopy(x.elem))
+deepcopy(x::NfMaxOrdQuoRingElem) =
+        NfMaxOrdQuoRingElem(parent(x), deepcopy(x.elem))
 
 ################################################################################
 #

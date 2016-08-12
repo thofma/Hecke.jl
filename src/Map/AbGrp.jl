@@ -45,14 +45,14 @@ type AbToNfOrdUnitGrp{T, S} <: Map{FinGenGrpAbSnf, FacElemMon{T}}
 
   # This only works if there exists at least one independent unit
   # That is, ind_unit should not have length 1
-  function AbToNfOrdUnitGrp(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::S, tor_ord::Int)
+  function AbToNfOrdUnitGrp(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::NfOrdElem{NfMaxOrd}, tor_ord::Int)
     A = DiagonalGroup(vcat([tor_ord], [ 0 for i in 1:length(ind_unit) ]))
     z = new()
     z.ind_unit = ind_unit
     z.tor_unit = tor_unit
 
     function _image(a::FinGenGrpAbElem)
-      y = tor_unit^a[1]
+      y = Hecke.FacElem(tor_unit.elem_in_nf)^a[1]
 
       for i in 1:length(z.ind_unit)
         if a[i+1] == 0
