@@ -61,6 +61,7 @@ function _MaximalOrder(K::AnticNumberField)
 end
 
 doc"""
+***
     MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
 
 > Assuming that ``primes`` contains all the prime numbers at which the equation
@@ -76,6 +77,7 @@ function _MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
 end
 
 doc"""
+***
     make_maximal(O::NfOrd) -> NfMaxOrd
 
 > Assuming that $\mathcal O$ is an order, this function returns the same order
@@ -86,6 +88,7 @@ function make_maximal(O::NfOrd)
 end
 
 doc"""
+***
     maximal_order(K::AnticNumberField) -> NfMaxOrd
     ring_of_integers(K::AnticNumberField) -> NfMaxOrd
 
@@ -103,6 +106,7 @@ function maximal_order(K::AnticNumberField)
 end
 
 doc"""
+***
     maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
     maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
@@ -122,6 +126,7 @@ maximal_order{T}(K::AnticNumberField, primes::Array{T, 1}) =
   maximal_order(K, map(FlintZZ, primes))
 
 doc"""
+***
     maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd
     maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfMaxOrd
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfMaxOrd

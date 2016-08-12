@@ -22,3 +22,8 @@ divexact(::NfMaxOrdIdl, ::NfMaxOrdIdl)
 *(::NfMaxOrdFracIdl, ::NfMaxOrdFracIdl)
 inv(::NfMaxOrdFracIdl)
 ```
+
+## Class and unit group
+
+```@docs
+```

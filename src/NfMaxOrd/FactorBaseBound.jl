@@ -1,11 +1,11 @@
 ################################################################################
 #
-#  NfMaxOrd/FactorbaseBound.jl: Bounds for the factor base for Buchmann
-#                                     algorithm
+#  NfMaxOrd/FactorBaseBound.jl: Bounds for the factor base for Buchmann
+#                               algorithm
 #
 # This file is part of Hecke.
 #
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,6 @@
 #  Copyright (C) 2016 Tommy Hofmann
 #
 ################################################################################
-
-# Computing bounds for the size of the factor base.
 
 ################################################################################
 #

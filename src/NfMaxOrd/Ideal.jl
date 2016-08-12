@@ -778,7 +778,7 @@ end
 
 doc"""
 ***
-  inv(A::NfMaxOrdIdl) -> NfMaxOrdFracIdl
+    inv(A::NfMaxOrdIdl) -> NfMaxOrdFracIdl
 
 > Computes the inverse of A, that is, the fractional ideal $B$ such that
 > $AB = \mathcal O_K$.
@@ -964,6 +964,7 @@ end
 # The following function is broken
 
 doc"""
+***
     reduce_ideal_class(A::NfMaxOrdIdl) -> NfMaxOrdIdl, nf_elem
 
 > This function is broken.
@@ -1188,6 +1189,7 @@ end
 ################################################################################
 
 doc"""
+***
     isramified(O::NfMaxOrd, p::Int) -> Bool
 
 > Returns whether the integer $p$ is ramified in $\mathcal O$.
@@ -1210,6 +1212,7 @@ end
 ################################################################################
 
 doc"""
+***
     prime_decomposition(O::NfMaxOrd,
                         p::Integer,
                         degree_limit::Int = 0,
@@ -1421,6 +1424,7 @@ function prime_decomposition_type(O::NfMaxOrd, p::Integer)
 end
 
 doc"""
+***
     prime_ideals_up_to(O::NfMaxOrd,
                        B::Int;
                        degree_limit::Int = 0) -> Array{NfMaxOrdIdl, 1}
@@ -1458,6 +1462,7 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int;
 end
 
 doc"""
+***
     prime_ideals_up_to(O::NfMaxOrd,
                        B::Int;
                        complete::Bool = false,
@@ -1517,6 +1522,7 @@ end
 
 # We need to fix the two normal presentation of the trivial ideal
 doc"""
+***
     divexact(A::NfMaxOrdIdl, y::fmpz) -> NfMaxOrdIdl
 
 > Returns $A/y$ assuming that $A/y$ is again an integral ideal.
@@ -1540,6 +1546,7 @@ function divexact(A::NfMaxOrdIdl, y::fmpz)
 end
 
 doc"""
+***
     divexact(A::NfMaxOrdIdl, B::NfMaxOrdIdl) -> NfMaxOrdIdl
 
 > Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.
@@ -1581,6 +1588,7 @@ end
 ################################################################################
 
 doc"""
+***
     factor(A::NfMaxOrdIdl) -> Dict{NfMaxOrdIdl, Int}
 
 > Computes the prime ideal factorization $A$ as a dictionary, the keys being

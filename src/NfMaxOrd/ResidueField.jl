@@ -43,7 +43,6 @@ function disc_log(x::fq_nmod, g::fq_nmod)
 end
 
 function disc_log(x::fq_nmod, g::fq_nmod, p::Int)
-  #println("disc log for $x $g $p")
   F = parent(x)
   q = order(F)
   @assert mod(q - 1, p) == 0
@@ -54,13 +53,11 @@ function disc_log(x::fq_nmod, g::fq_nmod, p::Int)
   i = 1
   while i < p + 2
     if h == x
-      #println("disc log is $i")
       return i
     end
     h = h*g
     i = i + 1
   end
-  #println("F: $F\nx: $x\ng: $g\np: $p")
   error("something odd")
 end
 

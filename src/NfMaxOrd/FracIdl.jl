@@ -125,6 +125,7 @@ end
 ################################################################################
 
 doc"""
+***
     inv(A::NfMaxOrdFracIdl) -> NfMaxOrdFracIdl
 
 > Returns the fractional ideal $B$ such that $AB = \mathcal O$.
