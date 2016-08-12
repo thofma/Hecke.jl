@@ -125,6 +125,7 @@ ideal(::NfOrdGen, ::fmpz)
 ideal(::NfOrdGen, ::fmpz_mat)
 ideal(::NfOrdGen, ::NfOrdElem{NfOrdGen})
 ring_of_multipliers(::NfOrdIdl)
+*(::NfOrd, ::NfOrdElem)
 ```
 
 ### Arithmetic

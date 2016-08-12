@@ -26,7 +26,10 @@ function test_NfOrd_Idl()
   @test K.princ_gen == O1(-17)
   @test K.basis_mat == MatrixSpace(ZZ, 3, 3)(17)
 
-  @test I == J && J == K
+  M = @inferred O1(-17)*O1
+  L = @inferred O1*O1(-17)
+
+  @test I == J && J == K && K == M && M == L && L == I
 
   # minimum
 

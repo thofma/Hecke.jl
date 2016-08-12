@@ -105,6 +105,25 @@ order(a::NfOrdIdl) = order(parent(a))
 
 ################################################################################
 #
+#  Principal ideal creation
+#
+################################################################################
+
+doc"""
+    *(O::NfOrd, x::NfOrdElem) -> NfOrdIdl
+    *(x::NfOrdElem, O::NfOrd) -> NfOrdIdl
+
+> Returns the principal ideal $(x)$ of $\mathcal O$.
+"""
+function *(O::NfOrd, x::NfOrdElem)
+  parent(x) != O && error("Order of element does not coincide with order")
+  return ideal(O, x)
+end
+
+*(x::NfOrdElem, O::NfOrd) = O*x
+
+################################################################################
+#
 #  Basis
 #
 ################################################################################

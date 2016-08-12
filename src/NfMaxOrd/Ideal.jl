@@ -916,7 +916,7 @@ end
 
 doc"""
 ***
-  basis_mat_inv(A::NfOrdIdl) -> FakeFmpqMat
+    basis_mat_inv(A::NfOrdIdl) -> FakeFmpqMat
 
 > Returns the inverse of the basis matrix of $A$.
 """ 
@@ -965,7 +965,7 @@ end
 # The following function is broken
 
 doc"""
-  reduce_ideal_class(A::NfMaxOrdIdl) -> NfMaxOrdIdl, nf_elem
+    reduce_ideal_class(A::NfMaxOrdIdl) -> NfMaxOrdIdl, nf_elem
 
 > This function is broken.
 """
@@ -1086,9 +1086,9 @@ end
 
 doc"""
 ***
-  valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
-  valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
-  valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
 
 > Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 > such that $a$ is contained in $\mathfrak p^i$.
@@ -1131,9 +1131,9 @@ end
 
 doc"""
 ***
-  valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
-  valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
-  valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
 
 > Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 > such that $a$ is contained in $\mathfrak p^i$.
@@ -1142,9 +1142,9 @@ valuation(a::NfOrdElem{NfMaxOrd}, p::NfMaxOrdIdl) = valuation(a.elem_in_nf, p)
 
 doc"""
 ***
-  valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
-  valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
-  valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::nf_elem, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::NfOrdElem, p::NfMaxOrdIdl) -> fmpz
+    valuation(a::fmpz, p::NfMaxOrdIdl) -> fmpz
 
 > Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 > such that $a$ is contained in $\mathfrak p^i$.
@@ -1157,7 +1157,7 @@ end
 
 doc"""
 ***
-  valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl) -> fmpz
+    valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl) -> fmpz
 
 > Computes the $\mathfrak p$-adic valuation of $A$, that is, the largest $i$
 > such that $A$ is contained in $\mathfrak p^i$.
@@ -1179,40 +1179,8 @@ end
 #  return norm(C)==1 
 #end
 
-# at the moment ==(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
+# At the moment ==(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
 # falls back to ==(A::NfOrdIdl, B::NfOrdIdl)
-
-################################################################################
-#
-#  Principal ideals
-#
-################################################################################
-
-#doc"""
-#  *(O::NfMaxOrd, a::nf_elem) -> NfMaxOrdIdl
-#  *(a::nf_elem, O::NfMaxOrd) -> NfMaxOrdIdl
-#    
-#> Returns the principal ideal (a) of O. Sanity checks are performed.
-#"""
-#function *(O::NfMaxOrd, a::nf_elem)
-#  nf(O) != parent(a) && error("Number field of order must be parent of element")
-#  return ideal(O, a)
-#end
-
-*(a::nf_elem, O::NfMaxOrd) = O*a
-
-doc"""
-  *(O::NfMaxOrd, x::NfOrdElem) -> NfMaxOrdIdl
-  *(x::NfOrdElem, O::NfMaxOrd) -> NfMaxOrdIdl
-
-> Returns the principal ideal (x) of O. Sanity checks are performed.
-"""
-function *(O::NfMaxOrd, x::NfOrdElem)
-  parent(x) != O && error("Order of element does not coincide with order")
-  return ideal(O, x)
-end
-
-*(x::NfOrdElem, O::NfMaxOrd) = O*x
 
 ################################################################################
 #
@@ -1220,6 +1188,12 @@ end
 #
 ################################################################################
 
+doc"""
+    isramified(O::NfMaxOrd, p::Int) -> Bool
+
+> Returns whether the integer $p$ is ramified in $\mathcal O$.
+> It is assumed that $p$ is prime.
+"""
 function isramified(O::NfMaxOrd, p::Int)
   lp = prime_decomposition(O, p)
   for P in lp
@@ -1230,12 +1204,28 @@ function isramified(O::NfMaxOrd, p::Int)
   return false
 end
 
-@doc """
-  prime_decomposition(O::NfMaxOrd, p::Integer) -> Array{Tuple{NfMaxOrdIdl, Integer}, 1}
+################################################################################
+#
+#  Prime decomposition
+#
+################################################################################
 
-    Returns an array of tuples (p_i,e_i) such that pO is the product of the p_i^e_i.
+doc"""
+    prime_decomposition(O::NfMaxOrd,
+                        p::Integer,
+                        degree_limit::Int = 0,
+                        lower_limit::Int = 0) -> Array{Tuple{NfMaxOrdIdl, Int}, 1}
 
-""" ->
+> Returns an array of tuples $(\mathfrak p_i,e_i)$ such that $p \mathcal O$ is the product of
+> the $\mathfrak p_i^{e_i}$ and $\mathfrak p_i \neq \mathfrak p_j$ for $i \neq j$.
+>
+> If `degree_limit` is a nonzero integer $k > 0$, then only those prime ideals
+> $\mathfrak p$ with $\deg(\mathfrak p) \leq k$ will be returned.
+> Similarly if `\lower_limit` is a nonzero integer $l > 0$, then only those prime ideals
+> $\mathfrak p$ with $l \leq \deg(\mathfrak p)$ will be returned.
+> Note that in this case it may happen that $p\mathcal O$ is not the product of the
+> $\mathfrak p_i^{e_i}$.
+"""
 function prime_decomposition(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
   if mod(fmpz(index(O)),p) == 0
     return prime_dec_index(O, p, degree_limit, lower_limit)
@@ -1402,6 +1392,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 end
 
 # Don't use the following function. It does not work for index divisors
+# TH: Or does it?
 function prime_decomposition_type(O::NfMaxOrd, p::Integer)
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
     K = nf(O)
@@ -1430,11 +1421,16 @@ function prime_decomposition_type(O::NfMaxOrd, p::Integer)
   return res
 end
 
-@doc """
-  prime_ideals_up_to(O::NfMaxOrd, B::Int; complete::Bool = false, degree_limit::Int = 0)
+doc"""
+    prime_ideals_up_to(O::NfMaxOrd,
+                       B::Int;
+                       degree_limit::Int = 0) -> Array{NfMaxOrdIdl, 1}
 
-    Computes the prime ideals with norm up to B with parameters I forogt.
-""" ->
+> Computes the prime ideals $\mathcal O$ with norm up to $B$.
+> 
+> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+> with $\deg(\mathfrak p) > k$ will be discarded.
+"""
 function prime_ideals_up_to(O::NfMaxOrd, B::Int;
                             complete::Bool = false,
                             degree_limit::Int = 0)
@@ -1463,9 +1459,20 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int;
 end
 
 doc"""
-    prime_ideals_up_to(O::NfMaxOrd, B::Int; complete::Bool = false, degree_limit::Int = 0, F::Function, bad::fmpz)
+    prime_ideals_up_to(O::NfMaxOrd,
+                       B::Int;
+                       complete::Bool = false,
+                       degree_limit::Int = 0,
+                       F::Function,
+                       bad::fmpz)
 
-> Computes the prime ideals with norm up to B with parameters I forogt.
+> Computes the prime ideals $\mathcal O$ with norm up to $B$.
+> 
+> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+> with $\deg(\mathfrak p) > k$ will be discarded.
+>
+> The function $F$ must be a function on prime numbers not dividing `bad` such that
+> $F(p) = \deg(\mathfrak p)$ for all prime ideals $\mathfrak p$ lying above $p$.
 """
 function prime_ideals_up_to(O::NfMaxOrd, B::Int, F::Function, bad::fmpz = discriminant(O);
                             complete::Bool = false,
@@ -1510,6 +1517,11 @@ end
 ################################################################################
 
 # We need to fix the two normal presentation of the trivial ideal
+doc"""
+    divexact(A::NfMaxOrdIdl, y::fmpz) -> NfMaxOrdIdl
+
+> Returns $A/y$ assuming that $A/y$ is again an integral ideal.
+"""
 function divexact(A::NfMaxOrdIdl, y::fmpz)
 #  if has_2_elem(A)
 #    z = ideal(order(A), divexact(A.gen_one, y), divexact(A.gen_two, y))
@@ -1528,6 +1540,11 @@ function divexact(A::NfMaxOrdIdl, y::fmpz)
   end
 end
 
+doc"""
+    divexact(A::NfMaxOrdIdl, B::NfMaxOrdIdl) -> NfMaxOrdIdl
+
+> Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.
+"""
 function divexact(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
   # It is assumed that B divides A, that is, A \subseteq B
   t_prod = 0.0
@@ -1564,13 +1581,16 @@ end
 #
 ################################################################################
 
-@doc """
-  factor_dict(A::NfMaxOrdIdl) -> Dict{NfMaxOrdIdl, Int}
+doc"""
+    factor(A::NfMaxOrdIdl) -> Dict{NfMaxOrdIdl, Int}
 
-    Computes the prime ideal factorization as a dictionary, the keys being the prime ideal divisors.
-    If lp = factor_dict(A), then keys(lp) are the prime ideal divisors of A and lp[P] is the P-adic valuation of A for all P in keys(lp).
+> Computes the prime ideal factorization $A$ as a dictionary, the keys being
+> the prime ideal divisors:
+> If `lp = factor_dict(A)`, then `keys(lp)` are the prime ideal divisors of A
+> and `lp[P]` is the `P`-adic valuation of `A` for all `P` in `keys(lp)`.
+"""
+factor(A::NfMaxOrdIdl) = factor_dict(A)
 
-""" ->
 function factor_dict(A::NfMaxOrdIdl)
   ## this should be fixed
   lf = factor(BigInt(minimum(A)))
