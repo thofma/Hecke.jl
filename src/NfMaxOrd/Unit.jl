@@ -34,7 +34,7 @@
 
 export is_unit, is_torsion_unit, is_independent, unit_group
 
-add_verbose_scope(:UnitGrp)
+add_verbose_scope(:UnitGroup)
 
 ################################################################################
 #
@@ -294,7 +294,7 @@ function is_independent{T}(x::Array{T, 1})
     end
 
     B = A*transpose(A)
-    @vprint :UnitGrp 2 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
+    @vprint :UnitGroup 2 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
@@ -323,7 +323,7 @@ function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
 end
 
 function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
-  @vprint :UnitGrp 2 "Finding rational approximation in $v\n"
+  @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
   r = length(rel) - 1
 
   z = Array(fmpq, r)
@@ -351,7 +351,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
 
   if is_integer
     rel[r + 1] = -1
-    @vprint :UnitGrp 2 "Found rational relation.\n"
+    @vprint :UnitGroup 2 "Found rational relation.\n"
     return true
   end
 
@@ -368,7 +368,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
     if app[1]
       z[i] = app[2]
     else
-      @vprint :UnitGrp 2 "Something went wrong with the approximation.\n"
+      @vprint :UnitGroup 2 "Something went wrong with the approximation.\n"
       return false
     end
   end
@@ -397,7 +397,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
 
   @assert g == 1
 
-  @vprint :UnitGrp 2 "Found rational relation.\n"
+  @vprint :UnitGroup 2 "Found rational relation.\n"
   return true
 end
 
@@ -418,7 +418,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
 
   zz = Array(fmpz, r + 1)
 
-  @vprint :UnitGrp 1 "Computing conjugates log matrix ... \n"
+  @vprint :UnitGroup 1 "Computing conjugates log matrix ... \n"
   A = _conj_log_mat_cutoff(x, p)
 
   Ar = base_ring(A)
@@ -441,11 +441,11 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
   inv_succesful = false
 
   try
-    @vprint :UnitGrp 1 "Inverting matrix ... \n"
+    @vprint :UnitGroup 1 "Inverting matrix ... \n"
     B = inv(A)
     inv_succesful = true
   catch e
-    @vprint :UnitGrp 1 "Cannot invert matrix ... \n"
+    @vprint :UnitGroup 1 "Cannot invert matrix ... \n"
     rethrow(e)
   end
       
@@ -485,11 +485,11 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
 
     if !inv_succesful
       try
-        @vprint :UnitGrp 1 "Inverting matrix ... \n"
+        @vprint :UnitGroup 1 "Inverting matrix ... \n"
         B = inv(A)
         inv_succesful = true
       catch
-        @vprint :UnitGrp 1 "Cannot invert matrix. Increasing precision to $(2*p)\n"
+        @vprint :UnitGroup 1 "Cannot invert matrix. Increasing precision to $(2*p)\n"
       end
     end
         
@@ -497,7 +497,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
   end
 
   # Check if it is a relation modulo torsion units!
-  @vprint :UnitGrp 1 "Checking relation $rel \n"
+  @vprint :UnitGroup 1 "Checking relation $rel \n"
 
   if !_check_relation_mod_torsion(x, y, rel)
     #error("Dirty approximation did not work")
@@ -506,7 +506,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
     #return rel
   end
 
-  @vprint :UnitGrp 1 "Found a valid relation!\n"
+  @vprint :UnitGroup 1 "Found a valid relation!\n"
   return rel
 end
 
@@ -608,10 +608,10 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
 
   zz = Array(fmpz, r + 1)
 
-  @v_do :UnitGrp 1 pushindent()
+  @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
-  @v_do :UnitGrp 1 popindent()
-  @vprint :UnitGrp 2 "Precision is now $p\n"
+  @v_do :UnitGroup 1 popindent()
+  @vprint :UnitGroup 2 "Precision is now $p\n"
 
   Ar = base_ring(B)
 
@@ -629,9 +629,9 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
 
   inv_succesful = true
 
-  @vprint :UnitGrp 3 "For $p element b: $b\n"
+  @vprint :UnitGroup 3 "For $p element b: $b\n"
   v = b*B
-  @vprint :UnitGrp 3 "For $p the vector v: $v\n"
+  @vprint :UnitGroup 3 "For $p the vector v: $v\n"
 
   z = Array(fmpq, r)
 
@@ -650,9 +650,9 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
     rel[i] = zero(FlintZZ)
   end
   
-  @vprint :UnitGrp 2 "First iteration to find a rational relation ... \n"
+  @vprint :UnitGroup 2 "First iteration to find a rational relation ... \n"
   while !_find_rational_relation!(rel, v, bound)
-    @vprint :UnitGrp 2 "Precision not high enough, increasing from $p to $(2*p)\n"
+    @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
     p =  2*p
 
     p, B = _conj_log_mat_cutoff_inv(U, p)
@@ -665,17 +665,17 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
       b[1, i] = conlog[i]
     end
 
-    @vprint :UnitGrp 3 "For $p element b: $b\n"
+    @vprint :UnitGroup 3 "For $p element b: $b\n"
 
     v = b*B
-    @vprint :UnitGrp 3 "For $p the vector v: $v\n"
+    @vprint :UnitGroup 3 "For $p the vector v: $v\n"
   end
 
-  @vprint :UnitGrp 3 "For $p rel: $rel\n"
+  @vprint :UnitGroup 3 "For $p rel: $rel\n"
 
-  @vprint :UnitGrp 2 "Second iteration to check relation ... \n"
+  @vprint :UnitGroup 2 "Second iteration to check relation ... \n"
   while !_check_relation_mod_torsion(U.units, y, rel)
-    @vprint :UnitGrp 2 "Precision not high enough, increasing from $p to $(2*p)\n"
+    @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
     p = 2*p
     p, B = _conj_log_mat_cutoff_inv(U, p)
 
@@ -687,11 +687,11 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
       b[1, i] = conlog[i]
     end
 
-    @vprint :UnitGrp 3 "For $p element b: $b\n"
+    @vprint :UnitGroup 3 "For $p element b: $b\n"
     v = b*B
-    @vprint :UnitGrp 3 "For $p the vector v: $v\n"
+    @vprint :UnitGroup 3 "For $p the vector v: $v\n"
     _find_rational_relation!(rel, v, bound)
-    @vprint :UnitGrp 3 "For $p rel: $rel\n"
+    @vprint :UnitGroup 3 "For $p rel: $rel\n"
   end
 
   if abs(rel[r + 1]) == 1 || rel[r + 1] == 0
@@ -738,35 +738,35 @@ end
 
 function _conj_log_mat_cutoff(x::UnitGrpCtx, p::Int)
   if haskey(x.conj_log_mat_cutoff,  p)
-    @vprint :UnitGrp 2 "Conj matrix for $p cached\n"
+    @vprint :UnitGroup 2 "Conj matrix for $p cached\n"
     return x.conj_log_mat_cutoff[p]
   else
-    @vprint :UnitGrp 2 "Conj matrix for $p not cached\n"
+    @vprint :UnitGroup 2 "Conj matrix for $p not cached\n"
     x.conj_log_mat_cutoff[p] = _conj_log_mat_cutoff(x.units, p)
     return x.conj_log_mat_cutoff[p]
   end
 end
 
 function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
-  @vprint :UnitGrp 2 "Computing inverse of conjugates log matrix (starting with prec $p) ... \n"
+  @vprint :UnitGroup 2 "Computing inverse of conjugates log matrix (starting with prec $p) ... \n"
   if haskey(x.conj_log_mat_cutoff_inv,  p)
-    @vprint :UnitGrp 2 "Inverse matrix cached for $p\n"
+    @vprint :UnitGroup 2 "Inverse matrix cached for $p\n"
     return p, x.conj_log_mat_cutoff_inv[p]
   else
-    @vprint :UnitGrp 2 "Inverse matrix not cached for $p\n"
+    @vprint :UnitGroup 2 "Inverse matrix not cached for $p\n"
     try
-      @vprint :UnitGrp 2 "Trying to invert conj matrix with prec $p \n"
-      @vprint :UnitGrp 3 "Matrix to invert is $(_conj_log_mat_cutoff(x, p))"
+      @vprint :UnitGroup 2 "Trying to invert conj matrix with prec $p \n"
+      @vprint :UnitGroup 3 "Matrix to invert is $(_conj_log_mat_cutoff(x, p))"
       x.conj_log_mat_cutoff_inv[p] = inv(_conj_log_mat_cutoff(x, p))
-      @vprint :UnitGrp 2 "Successful. Returning with prec $p \n"
-      @vprint :UnitGrp 3 "$(x.conj_log_mat_cutoff_inv[p])\n"
+      @vprint :UnitGroup 2 "Successful. Returning with prec $p \n"
+      @vprint :UnitGroup 3 "$(x.conj_log_mat_cutoff_inv[p])\n"
       return p, x.conj_log_mat_cutoff_inv[p]
     catch e
       # I should check that it really is that error
-      @vprint :UnitGrp 2 "Increasing precision .."
-      @v_do :UnitGrp 2 pushindent()
+      @vprint :UnitGroup 2 "Increasing precision .."
+      @v_do :UnitGroup 2 pushindent()
       r = _conj_log_mat_cutoff_inv(x, 2*p)
-      @v_do :UnitGrp 2 popindent()
+      @v_do :UnitGroup 2 popindent()
       return r
     end
   end
@@ -869,11 +869,11 @@ end
 # In the first round try to find r independent units, r is the unit rank.
 # In the second round, try to enlarge the unit group.
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
-  @vprint :UnitGrp 1 "Processing ClassGrpCtx to find units ... \n"
+  @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
   O = order(u)
 
-  @vprint :UnitGrp 1 "Computing the kernel of relation matrix ... \n"
+  @vprint :UnitGroup 1 "Computing the kernel of relation matrix ... \n"
 
   #ker, rnk = nullspace(transpose(fmpz_mat(x.M)))
 
@@ -881,7 +881,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   time_kernel = @elapsed ker =  _kernel(fmpz_mat(x.M))
   rnk = rows(ker)
 
-  @vprint :UnitGrp 1 "Kernel has dimension $rnk\n"
+  @vprint :UnitGroup 1 "Kernel has dimension $rnk\n"
 
   #ker = transpose(ker)
 
@@ -896,7 +896,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   used_elts = Dict{Int, Bool}()
 
   while(length(A) < r)
-    @vprint :UnitGrp 1 "Found $(length(A)) independent units so far ($(r - length(A)) left to find)\n"
+    @vprint :UnitGroup 1 "Found $(length(A)) independent units so far ($(r - length(A)) left to find)\n"
     j = j + 1
 
     if j > rows(ker)
@@ -917,7 +917,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     _add_unit(u, y)
     used_elts[j] = true
   end
-  @vprint :UnitGrp 1 "Found $r linear independent units \n"
+  @vprint :UnitGroup 1 "Found $r linear independent units \n"
 
   u.full_rank = true
 
@@ -927,7 +927,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   time_add_dep_unit = 0.0
 
-  @vprint :UnitGrp 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
+  @vprint :UnitGroup 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
   while(j < rows(ker)) && not_larger < 5 
     j = j + 1
 
@@ -941,19 +941,19 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     y = FacElem(x, ker, j)
     
-    @vprint :UnitGrp 2 "Test if kernel element yields torsion unit ... \n"
-    @v_do :UnitGrp 2 pushindent()
+    @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
+    @v_do :UnitGroup 2 pushindent()
     if is_torsion_unit(y)
-      @v_do :UnitGrp 2 popindent()
+      @v_do :UnitGroup 2 popindent()
       #println("torsion unit: $y")
-      @vprint :UnitGrp 2 "Element is torsion unit\n"
+      @vprint :UnitGroup 2 "Element is torsion unit\n"
       continue
     end
-    @v_do :UnitGrp 2 popindent()
+    @v_do :UnitGroup 2 popindent()
 
-    @v_do :UnitGrp 2 pushindent()
+    @v_do :UnitGroup 2 pushindent()
     time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
-    @v_do :UnitGrp 2 popindent()
+    @v_do :UnitGroup 2 popindent()
 
     if !m
       not_larger = not_larger + 1
@@ -966,11 +966,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   u.tentative_regulator = regulator(u.units, 64)
 
-  @vprint :UnitGrp 1 "Finished processing\n"
-  @vprint :UnitGrp 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
-  @vprint :UnitGrp 1 "-"^80 * "\n"
-  @vprint :UnitGrp 1 "Kernel time: $time_kernel\n"
-  @vprint :UnitGrp 1 "Adding dependent unit time: $time_add_dep_unit\n"
+  @vprint :UnitGroup 1 "Finished processing\n"
+  @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
+  @vprint :UnitGroup 1 "-"^80 * "\n"
+  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+  @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
 end
 
 function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem})
@@ -1041,7 +1041,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   N = 3*unit_rank(order(U))
 
-  @vprint :UnitGrp 1 "Computing $N prime ideals for saturation ...\n"
+  @vprint :UnitGroup 1 "Computing $N prime ideals for saturation ...\n"
 
   primes =  _find_primes_for_saturation(order(U), p, N, B)
   
@@ -1051,7 +1051,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
     m = vcat(m, _matrix_for_saturation(U, primes[i], p))
   end
 
-  @vprint :UnitGrp 1 "Computing kernel of p-th power map ...\n"
+  @vprint :UnitGroup 1 "Computing kernel of p-th power map ...\n"
   (K, k) = _right_kernel(m)
 
   K = transpose(K)
@@ -1087,7 +1087,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
       b = evaluate(a)
 
-      @vprint :UnitGrp 1 "Testing/computing root ... \n"
+      @vprint :UnitGroup 1 "Testing/computing root ... \n"
 
       has_root, roota = root(b, p)
 
@@ -1248,40 +1248,40 @@ function _primitive_element(F::FqNmodFiniteField)
 end
 
 function _refine_with_saturation(c::ClassGrpCtx, u::UnitGrpCtx)
-  @vprint :UnitGrp "Enlarging unit group using saturation ... \n"
+  @vprint :UnitGroup "Enlarging unit group using saturation ... \n"
 
   b = _validate_class_unit_group(c, u)
 
   p = 2
 
   while b > 1
-    @vprint :UnitGrp 1 "Saturating at $p ... \n"
+    @vprint :UnitGroup 1 "Saturating at $p ... \n"
 
-    @v_do :UnitGrp 1 pushindent()
+    @v_do :UnitGroup 1 pushindent()
     issat, new_unit = _is_saturated(u, p)
-    @v_do :UnitGrp 1 popindent()
+    @v_do :UnitGroup 1 popindent()
 
     while !issat
       #println("I have found a new unit: $new_unit")
       _add_dependent_unit(u, FacElem(new_unit))
       #println("$(u.tentative_regulator)")
       
-      @v_do :UnitGrp 1 pushindent()
+      @v_do :UnitGroup 1 pushindent()
       b = _validate_class_unit_group(c, u)
-      @v_do :UnitGrp 1 popindent()
+      @v_do :UnitGroup 1 popindent()
 
       if b == 1
         break
       end
 
-      @v_do :UnitGrp 1 pushindent()
+      @v_do :UnitGroup 1 pushindent()
       issat, new_unit = _is_saturated(u, p)
-      @v_do :UnitGrp 1 popindent()
+      @v_do :UnitGroup 1 popindent()
     end
 
-    @v_do :UnitGrp 1 pushindent()
+    @v_do :UnitGroup 1 pushindent()
     b = _validate_class_unit_group(c, u)
-    @v_do :UnitGrp 1 popindent()
+    @v_do :UnitGroup 1 popindent()
 
     p = next_prime(p)
     if p > b

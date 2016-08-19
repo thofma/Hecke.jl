@@ -50,7 +50,7 @@ function is_unit(x::FacElem{nf_elem})
 end
 
 function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
-  @vprint :UnitGrp 1 "Checking if factored element is torsion\n"
+  @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
   if checkisunit
     _is_unit(x) ? nothing : return false
   end
@@ -65,13 +65,13 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
       error("Precision is too high")
     end
 
-    @vprint :UnitGrp 2 "Precision is now $(p) \n"
+    @vprint :UnitGroup 2 "Precision is now $(p) \n"
     l = 0
-    @vprint :UnitGrp 2 "Computing conjugates ... \n"
-    @v_do :UnitGrp 2 pushindent()
+    @vprint :UnitGroup 2 "Computing conjugates ... \n"
+    @v_do :UnitGroup 2 pushindent()
     cx = conjugates_arb_log(x, p)
-    @v_do :UnitGrp 2 popindent()
-    @vprint :UnitGrp 2 "Conjugates log are $cx\n"
+    @v_do :UnitGroup 2 popindent()
+    @vprint :UnitGroup 2 "Conjugates log are $cx\n"
     A = ArbField(p)
     B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
     for i in 1:r

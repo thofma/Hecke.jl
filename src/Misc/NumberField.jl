@@ -597,9 +597,9 @@ function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
   r, s = signature(K)
 
   while true
-    @vprint :UnitGrp 2 "Precision is now $(c.prec) \n"
+    @vprint :UnitGroup 2 "Precision is now $(c.prec) \n"
     l = 0
-    @vprint :UnitGrp 2 "Computing conjugates ... \n"
+    @vprint :UnitGroup 2 "Computing conjugates ... \n"
     cx = conjugates_arb(x, c.prec)
     A = ArbField(c.prec)
     for i in 1:r
