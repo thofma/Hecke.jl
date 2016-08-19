@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-# (C) 2015 Claus Fieker
+# (C) 2015, 2016 Claus Fieker
 #
 ################################################################################
 #
@@ -661,6 +661,7 @@ function shift!(g::fmpz_mat, l::Int)
 end
 
 global last_lat=9
+##TODO: if field is totally real, and no weights, use the exact Gram matrix
 function lll(rt_c::roots_ctx, A::NfMaxOrdIdl, v::fmpz_mat;
                 prec::Int = 100)
   c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
@@ -836,9 +837,31 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
                 limit::Int = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()
-  I = IdealRelationsCtx{Int, Float64, Float64}(clg, A, prec = prec, val = val, limit = limit)
-  @v_do :ClassGroup_time 2 _start += time_ns()-rt
-  return I
+  while true
+    try
+      I = IdealRelationsCtx{Int, Float64, Float64}(clg, A, prec = prec, val = val, limit = limit)
+      @v_do :ClassGroup_time 2 _start += time_ns()-rt
+      return I
+    catch e
+      if isa(e, LowPrecisionCholesky)
+        print_with_color(:red, "prec too low in cholesky,")
+        prec = Int(ceil(1.2*prec))
+        println(" increasing to ", prec)
+        if prec > 1000
+          error("1:too much prec")
+        end
+      elseif isa(e, LowPrecisionLLL)
+        print_with_color(:red, "prec too low in LLL,")
+        prec = Int(ceil(1.2*prec))
+        println(" increasing to ", prec)
+        if prec > 1000
+          error("2:too much prec")
+        end
+      else
+        rethrow(e)
+      end
+    end
+  end
 end
 
 global _elt = UInt(0)
@@ -993,32 +1016,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   f = 0
 
   for i in clg.FB.ideals
-    OK = false
-    while !OK
-      try
-        f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
+    f = class_group_small_real_elements_relation_start(clg, i, limit = limit,
                         prec = prec, val = val)
-        OK = true                
-      catch e
-        if isa(e, LowPrecisionCholesky)
-          print_with_color(:red, "prec too low in cholesky,")
-          prec = Int(ceil(1.2*prec))
-          println(" increasing to ", prec)
-          if prec > 1000
-            error("1:too much prec")
-          end
-        elseif isa(e, LowPrecisionLLL)
-          print_with_color(:red, "prec too low in LLL,")
-          prec = Int(ceil(1.2*prec))
-          println(" increasing to ", prec)
-          if prec > 1000
-            error("2:too much prec")
-          end
-        else
-          rethrow(e)
-        end
-      end
-    end  
 
     push!(I, f)
     f.vl = val
@@ -1097,22 +1096,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           end
           bad_norm = 0
 
-          try
-            I[i] = class_group_small_real_elements_relation_start(clg, A,
+          I[i] = class_group_small_real_elements_relation_start(clg, A,
                           val = E.vl, limit = limit, prec = prec)
-          catch e                
-            if isa(e, LowPrecisionCholesky)
-              print_with_color(:red, "2:prec too low in cholesky,")
-              prec = Int(ceil(1.2*prec))
-              println(" increasing to ", prec)
-            elseif isa(e, LowPrecisionLLL)
-              print_with_color(:red, "2:prec too low in LLL,")
-              prec = Int(ceil(1.2*prec))
-              println(" increasing to ", prec)
-            else
-              rethrow(e)
-            end  
-          end  
           E = I[i]
         end
         e = class_group_small_real_elements_relation_next(E)
@@ -1261,33 +1246,9 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   Idl = clg.FB.ideals
   for i in nI:-1:1
     I = Idl[i]
-    OK = false
     too_slow = false
-    while !OK
-      try
-        f = class_group_small_real_elements_relation_start(clg, I, 
+    f = class_group_small_real_elements_relation_start(clg, I, 
                                        limit = limit, prec = prec, val = val)
-        OK = true                
-      catch e
-        if isa(e, LowPrecisionCholesky)
-          print_with_color(:red, "prec too low in cholesky,")
-          prec = Int(ceil(1.2*prec))
-          println(" increasing to ", prec)
-          if prec > 1000
-            error("1:too much prec")
-          end
-        elseif isa(e, LowPrecisionLLL)
-          print_with_color(:red, "prec too low in LLL,")
-          prec = Int(ceil(1.2*prec))
-          println(" increasing to ", prec)
-          if prec > 1000
-            error("2:too much prec")
-          end
-        else
-          rethrow(e)
-        end
-      end
-    end  
 
     f.vl = val
     while true
@@ -1358,22 +1319,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
         bad_norm = 0
 
         E = 0
-        try
-          E = class_group_small_real_elements_relation_start(clg, A,
+        E = class_group_small_real_elements_relation_start(clg, A,
                         val = val, limit = limit, prec = prec)
-        catch e                
-          if isa(e, LowPrecisionCholesky)
-            print_with_color(:red, "2:prec too low in cholesky,")
-            prec = Int(ceil(1.2*prec))
-            println(" increasing to ", prec)
-          elseif isa(e, LowPrecisionLLL)
-            print_with_color(:red, "2:prec too low in LLL,")
-            prec = Int(ceil(1.2*prec))
-            println(" increasing to ", prec)
-          else
-            rethrow(e)
-          end  
-        end  
         no_rand_local = no_rand
         while true
           e = class_group_small_real_elements_relation_next(E)
@@ -1463,6 +1410,45 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   return class_group_current_result(clg)
 end
 
+
+################################################################################
+# add one/ a few more relations
+################################################################################
+function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
+                limit = 10, extra = 1)
+  if !isdefined(clg, :randomClsEnv)
+    clg.randomClsEnv = random_init(clg.c, clg.FB.ideals)
+  end  
+
+  O = parent(clg.FB.ideals[1]).order
+  sqrt_disc = isqrt(abs(discriminant(O)))
+  sqrt_disc = max(sqrt_disc, 1000)
+  np = nbits(sqrt_disc)+30
+
+  while true
+    I = random_get(clg.c, clg.randomClsEnv)
+    println("trying in ideal $I");
+    E = class_group_small_real_elements_relation_start(clg, I,
+                            val = val, limit = limit, prec = prec)
+
+    while true
+      e = class_group_small_real_elements_relation_next(E)
+      n = abs(norm_div(e, norm(E.A), np))
+      if nbits(num(n)) > np-10 || E.restart > 2
+        break;
+      end
+      if class_group_add_relation(clg, e, n, norm(E.A))
+        E.cnt += 1
+        extra -= 1
+        if extra <= 0 
+          return
+        end
+      else
+        E.bad += 1
+      end
+    end
+  end  
+end                
 
 ################################################################################
 #
@@ -1775,10 +1761,15 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
 
   U = UnitGrpCtx{FacElem{nf_elem}}(O)
 
-  @v_do :UnitGrp 1 pushindent() 
-  _unit_group_find_units(U, c)
-  @v_do :UnitGrp 1 popindent()
-
+  while true
+    @v_do :UnitGrp 1 pushindent() 
+    _unit_group_find_units(U, c)
+    @v_do :UnitGrp 1 popindent()
+    if U.full_rank
+      break
+    end
+    class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
+  end
   @assert U.full_rank
 
   return c, U, _validate_class_unit_group(c, U)
