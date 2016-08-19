@@ -1,5 +1,23 @@
 export is_zero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod
 
+# 
+
+function matrix{T <: RingElem}(A::Array{2, T})
+  r, c = size(A)
+  (r < 0 || c < 0) && error("Array must be non-empty")
+  m = MatrixSpace(parent(A[1, 1]))(A)
+  return m
+end
+
+function matrix{T}(R::Ring, n::Int, m::Int, A::Array{T, 1})
+  m = MatrixSpace(R, n, m, )
+  return m
+end
+
+function zeromatrix(R::Ring, n::Int, m::Int)
+  return MatrixSpace(R, n, m)()
+end
+
 function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
   A = Array(T, rows(a), cols(a))
   for i = 1:rows(a)
