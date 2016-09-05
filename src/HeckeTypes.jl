@@ -1261,6 +1261,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   largePrime_no_success::Int
   relNorm::Array{Tuple{nf_elem, fmpz}, 1}
   relPartialNorm::Array{Tuple{nf_elem, fmpz}, 1}
+  randomClsEnv::Array{NfMaxOrdIdl, 1}
 
   val_base::fmpz_mat      # a basis for the possible infinite ranodmization 
                           # vectors: conditions are
