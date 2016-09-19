@@ -868,7 +868,6 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
   # for the first time. In thise case new_rel is the full relation matrix
 
   new_rel = sub(clg.M, (clg.last_H+1):rows(clg.M), 1:cols(clg.M))
-  println("adding $(rows(new_rel)) many relations")
 
   # this can be removed once we use only Tommy's new stuff
   # then clg.H is always initialized
@@ -883,10 +882,7 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
     if rows(clg.rel_mat_mod) == cols(clg.rel_mat_mod)
       clg.rel_mat_full_rank = true
       clg.H = copy(clg.M)
-      println(clg.H)
       T = upper_triangular_with_trafo!(clg.H)
-      println(length(T))
-      println(clg.H)
       append!(clg.H_trafo, T)
     end
   else # we already full rank
