@@ -458,6 +458,9 @@ function class_group_init(O::NfMaxOrd, B::Int;
   t = sub(t, (1+clg.c.r2+1):rows(l), 1:rows(l))
   l = lll(t)
   clg.val_base = l
+
+  clg.rel_mat_mod = Smat{UIntMod}()
+
   return clg
 end
 
@@ -858,6 +861,81 @@ end
 
 # Do better: re-use partial hnf, check rank mod p, ...
 
+function class_group_process_relmatrix(clg::ClassGrpCtx)
+  global modu
+
+  # Note that last_H = 0 if and only if this function is called
+  # for the first time. In thise case new_rel is the full relation matrix
+
+  new_rel = sub(clg.M, (clg.last_H+1):rows(clg.M), 1:cols(clg.M))
+  println("adding $(rows(new_rel)) many relations")
+
+  # this can be removed once we use only Tommy's new stuff
+  # then clg.H is always initialized
+  if !isdefined(clg, :H)
+    clg.H = Smat{fmpz}()
+  end
+
+  if !clg.rel_mat_full_rank # we are still not full rank
+    new_rel_mod = mod(new_rel, modu)
+    vcat!(clg.rel_mat_mod, new_rel_mod)
+    upper_triangular!(clg.rel_mat_mod)
+    if rows(clg.rel_mat_mod) == cols(clg.rel_mat_mod)
+      clg.rel_mat_full_rank = true
+      clg.H = copy(clg.M)
+      println(clg.H)
+      T = upper_triangular_with_trafo!(clg.H)
+      println(length(T))
+      println(clg.H)
+      append!(clg.H_trafo, T)
+    end
+  else # we already full rank
+
+    last_diag = [clg.H[i,i] for i =1:min(rows(clg.H), cols(clg.H))]
+    #push!(clg.H_trafo, TrafoInsert{fmpz}(rows(clg.H) + 1, rows(new_rel)))
+    vcat!(clg.H, new_rel)
+
+    T = upper_triangular_with_trafo!(clg.H)
+
+    append!(clg.H_trafo, T)
+
+    last_diag = [ clg.H[i, i] for i in 1:min(rows(clg.H), cols(clg.H)) ]
+  end
+
+  clg.last_H = length(clg.R)
+end
+
+function class_group_get_pivot_info(clg::ClassGrpCtx)
+  # Extract information about (missing) pivot elements.
+  # If we are in the full rank case, they come from the hnf itself,
+  # Otherwise we look at the echelon form of the reduction.
+
+  piv = Array(Int, 0)
+
+  if clg.rel_mat_full_rank
+    for i in clg.H.rows
+      if abs(i.values[1]) == 1
+        push!(piv, i.pos[1])
+      end
+    end
+
+    clg.h = FlintZZ(abs(prod([clg.H[i,i] for i=1:cols(clg.H)])))
+  else # not full rank
+
+    for i in clg.rel_mat_mod.rows
+      push!(piv, i.pos[1])
+    end
+
+    clg.h = FlintZZ(0)
+  end
+
+  mis = setdiff(Set(1:cols(clg.M)), Set(piv))
+
+  clg.mis = mis
+  
+  return (clg.h, clg.mis)::Tuple{fmpz, Set{Int}}
+end
+
 const modu = next_prime(2^20)
 function class_group_current_result(clg::ClassGrpCtx)
   global modu
@@ -898,7 +976,9 @@ we do need redundant relations for the units.
     t = time_ns()
     h = sub(clg.M, 1:clg.M.r, 1:clg.M.c)
     if clg.H_is_modular
-      upper_triangular(h, mod = modu)
+      t1 = @elapsed upper_triangular(h, mod = modu)
+      hmod = mod(h, modu); t2 = @elapsed upper_triangular!(hmod);
+      println("t1:$t1\nt2:$t2")
       if rows(h) == cols(h)
         h = copy(clg.M)
 #        println("1st non modular hnf")
@@ -1055,7 +1135,9 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
 
   s = time_ns()
 
-  h, piv = class_group_current_result(clg)
+  #h, piv = class_group_current_result(clg)
+  class_group_process_relmatrix(clg)
+  h, piv = class_group_get_pivot_info(clg)
 
   idl = clg.FB.ideals
   want_extra = 5
@@ -1150,7 +1232,10 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     end
     last_h = h
     l_piv = piv
-    h, piv = class_group_current_result(clg)
+    #h, piv = class_group_current_result(clg)
+    class_group_process_relmatrix(clg)
+    h, piv = class_group_get_pivot_info(clg)
+
     if h != 0
       if h==1 
         return h, piv
@@ -1175,7 +1260,11 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
                   clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
-  return class_group_current_result(clg)
+  
+  class_group_process_relmatrix(clg)
+  h, piv = class_group_get_pivot_info(clg)
+
+  return h, piv #class_group_current_result(clg)
 end
 
 function rank_increase(clg::ClassGrpCtx)
