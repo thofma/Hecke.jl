@@ -79,7 +79,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
              howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
              FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear, lufact!
+             acb_vec_clear, lufact!, agm, height
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -469,6 +469,7 @@ include("Map.jl")
 include("basis.jl")
 include("helper.jl")
 include("misc2.jl")
+include("EllCrv.jl")
 
 for T in subtypes(Map)
   Base.call(M::T, a) = image(M, a)
