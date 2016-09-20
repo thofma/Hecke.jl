@@ -1,4 +1,4 @@
-import Nemo.setcoeff!, Nemo.exp, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift
+import Nemo.setcoeff!, Nemo.exp, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift, Nemo.rem
 export start, next, done, SetPrimes, psi_lower, psi_upper
 
 #function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.GenRes{Nemo.fmpz})
@@ -83,15 +83,24 @@ immutable SetPrimes{T}
   to::T
   mod::T # if set (i.e. >1), only primes p % mod == a are returned
   a::T
+  sv::UInt
   function SetPrimes(f::T, t::T)
-    r = new(f, t, T(1), T(0))
+    r = SetPrimes(f, t, T(1), T(0))
     return r
   end
   function SetPrimes(f::T, t::T, mod::T, val::T)
-    r = new(f, t, mod, val)
+    sv = UInt(1)
+    p = UInt(2)
+    while sv < 2^30
+      if mod % p != 0
+        sv *= p
+      end
+      p = next_prime(p, false)
+    end
     if gcd(mod, val) != 1
       error("modulus and value need to be coprime")
     end  
+    r = new(f, t, mod, val, sv)
     return r
   end
 end
@@ -104,17 +113,43 @@ function SetPrimes{T}(f::T, t::T, mod::T, val::T)
   return SetPrimes{T}(f, t, mod, val)
 end
 
+function rem(a::fmpz, b::UInt)
+  return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &a, b)
+end
 
-function start{T<: Union{Integer, fmpz}}(A::SetPrimes{T})
+function start{T<: Integer}(A::SetPrimes{T})
   curr = A.from 
-  if A.mod >1 && curr % A.mod != A.a
-    curr += A.mod - (curr % A.mod) + A.a
+  c = curr % A.mod
+  if A.mod >1 && c != A.a
+    curr += A.mod - c + A.a
   end
-  while !isprime(curr)
+  c_U = curr % A.sv
+  c_M = A.mod % A.sv
+  i = UInt(0)
+  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(curr)
     curr += A.mod
+    i += UInt(1)
   end
   return curr
 end
+
+function start(A::SetPrimes{fmpz})
+  curr = A.from 
+  c = curr % A.mod
+  if A.mod >1 && c != A.a
+    curr += A.mod - c + A.a
+  end
+
+  c_U = curr % A.sv
+  c_M = A.mod % A.sv
+  i = UInt(0)
+  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(curr)
+    curr += A.mod
+    i += UInt(1)
+  end
+  return curr
+end
+
 
 function next{T<: Union{Integer, fmpz}}(A::SetPrimes{T}, st::T)
   p = st
@@ -128,9 +163,14 @@ function next{T<: Union{Integer, fmpz}}(A::SetPrimes{T}, st::T)
     m = T(2)
   end
   st = p+m
-  while !isprime(st)
+  i = UInt(0)
+  c_U = st % A.sv
+  c_M = m % A.sv
+  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(st)
     st += m
+    i += UInt(1)
   end
+
   return p, st
 end
 
