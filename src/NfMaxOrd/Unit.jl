@@ -181,8 +181,6 @@ function _torsion_units(O::NfOrd)
   n = degree(O)
   K = nf(O)
   rts = conjugate_data_arb(K)
-  A = ArbField(rts.prec)
-  M = ArbMatSpace(A, n, n)()
   r1, r2 = signature(K)
   B = basis(O)
 
@@ -212,15 +210,29 @@ function _torsion_units(O::NfOrd)
 
   gram_found = false
 
-  while !gram_found
+  could_enumerate = false
+
+  A = ArbField(p)
+  M = ArbMatSpace(A, n, n)()
+  
+  while true
+    A = ArbField(p)
+    M = ArbMatSpace(A, n, n)()
+
+    gram_found = true
+
     for i in 1:n, j in 1:n
       M[i,j] = _t2_pairing(B[i], B[j], p)
       if !isfinite(M[i, j])
         p = 2*p
+        gram_found = false
         break
       end
     end
-    gram_found = true
+
+    if gram_found
+      break
+    end
   end
 
   l = enumerate_using_gram(M, A(n))
@@ -850,6 +862,21 @@ function _make_row_primitive(x::fmpz_mat, j::Int)
   end
 end
 
+function _make_row_primitive!(x::Array{fmpz, 1})
+  y = x[1]
+  for i in 2:length(x)
+    y = gcd(y, x[i])
+    if y == 1
+      return x
+    end
+  end
+  if y > 1
+    for i in 1:cols(x)
+      x[i] = div(x[i], y)
+    end
+  end
+end
+
 ################################################################################
 #
 #  Compute unit group from class group context
@@ -865,23 +892,14 @@ end
 # TH:
 # Current strategy
 # ================
-# Compute a basis of the kernel of the relation matrix (as fmpz_mat).
-# In the first round try to find r independent units, r is the unit rank.
-# In the second round, try to enlarge the unit group.
+# Compute some "random" kernel elements using the transformation matrix to first
+# find r independent units, where r is the unit rank.
+# In the second round, try to enlarge the unit group with some random kernel
+# elements.
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
   O = order(u)
-
-  @vprint :UnitGroup 1 "Computing the kernel of relation matrix ... \n"
-
-  #ker, rnk = nullspace(transpose(fmpz_mat(x.M)))
-
-  #println(ker)
-  time_kernel = @elapsed ker =  _kernel(fmpz_mat(x.M))
-  rnk = rows(ker)
-
-  @vprint :UnitGroup 1 "Kernel has dimension $rnk\n"
 
   #ker = transpose(ker)
 
@@ -893,30 +911,43 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   j = 0
 
-  used_elts = Dict{Int, Bool}()
+  dim_ker = rows(x.M) - rows(x.H)
+
+  kelem = fmpz[ 0 for i in 1:rows(x.M) ]
+
+  MAX_RND_RD_1 = 2*r
 
   while(length(A) < r)
+    if j > MAX_RND_RD_1
+      return 0
+    end
     @vprint :UnitGroup 1 "Found $(length(A)) independent units so far ($(r - length(A)) left to find)\n"
     j = j + 1
 
-    if j > rows(ker)
-      return length(A)
+    for i in 1:dim_ker
+      kelem[end - i + 1] = rand(-10:10)
     end
 
-    if is_zero_row(ker, j)
-      continue
+    for i in length(x.H_trafo):-1:1
+      apply_right!(kelem, x.H_trafo[i])
     end
 
-    _make_row_primitive(ker, j)
+    _make_row_primitive!(kelem)
 
-    y = FacElem(x, ker, j)
+    y = FacElem(x, kelem)
+
+    #@assert is_unit(y)
     
     if is_torsion_unit(y)
       continue
     end
     _add_unit(u, y)
-    used_elts[j] = true
+
+    for i in 1:length(kelem)
+      kelem[i] = 0
+    end
   end
+
   @vprint :UnitGroup 1 "Found $r linear independent units \n"
 
   u.full_rank = true
@@ -928,18 +959,17 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   time_add_dep_unit = 0.0
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
-  while(j < rows(ker)) && not_larger < 5 
-    j = j + 1
+  while not_larger < 5 
 
-    if haskey(used_elts, j)
-      continue
+    for i in 1:dim_ker
+      kelem[end - i + 1] = rand(-10:10)
     end
 
-    if is_zero_row(ker, j)
-      continue
+    for i in length(x.H_trafo):-1:1
+      apply_right!(kelem, x.H_trafo[i])
     end
 
-    y = FacElem(x, ker, j)
+    y = FacElem(x, kelem)
     
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
@@ -960,8 +990,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     else
       not_larger = 0
     end
+    
+    for i in 1:length(kelem)
+      kelem[i] = 0
+    end
 
-    #println(_reg(u.units))
   end
 
   u.tentative_regulator = regulator(u.units, 64)
@@ -969,8 +1002,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Finished processing\n"
   @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
   @vprint :UnitGroup 1 "-"^80 * "\n"
-  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
+  return 1
 end
 
 function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem})

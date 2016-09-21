@@ -37,6 +37,10 @@ function FacElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
   return FacElem(x.R, [ y[j, i] for i in 1:cols(y) ])
 end
 
+function FacElem(x::ClassGrpCtx, y::Array{fmpz, 1})
+  return FacElem(x.R, [ y[i] for i in 1:length(y) ])
+end
+
 # Get the trivial factored element from an ordinary element
 function FacElem(x::nf_elem)
   z = FacElem{nf_elem}()

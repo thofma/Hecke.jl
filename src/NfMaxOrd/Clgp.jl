@@ -1716,6 +1716,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   @vprint :UnitGroup 1 "Validating unit group and class group ... \n"
   O = U.order
 
+  @vprint :UnitGroup 1 "Computing torsion structure ... \n"
   U.torsion_units = torsion_units(O)
   U.torsion_units_order = length(U.torsion_units)
   U.torsion_units_gen = torsion_units_gen(O)
@@ -1724,6 +1725,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   r1, r2 = signature(O)
 
+  @vprint :UnitGroup 1 "Computing residue of Dedekind zeta function ... \n"
   residue = zeta_log_residue(O, 0.6931)
 
   pre = prec(parent(residue))
@@ -1771,12 +1773,13 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
 
   while true
     @v_do :UnitGroup 1 pushindent() 
-    _unit_group_find_units(U, c)
+    r = _unit_group_find_units(U, c)
     @v_do :UnitGroup 1 popindent()
-    if U.full_rank
+    if r == 1
       break
+    else
+      class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
     end
-    class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
   end
   @assert U.full_rank
 
