@@ -7,7 +7,7 @@ include("NfOrd.jl")
 
 #test_pseudohnf()
 
-#set_verbose_level(:UnitGrp, 1)
+set_verbose_level(:UnitGroup, 1)
 
 #test_NfOrdCls()
 test_NfOrd()

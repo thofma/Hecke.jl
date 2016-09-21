@@ -101,10 +101,16 @@ function torsion_units_gen(O::NfOrd)
 end
 
 function _torsion_units(O::NfOrd)
-  if isdefined(O, :torsion_units)
+   if isdefined(O, :torsion_units)
     return O.torsion_units
   end
 
+  z = _torsion_units_lifting(O)
+  O.torsion_units = z
+  return O.torsion_units
+end
+
+function _torsion_units_lattice_enum(O::NfOrd)
   n = degree(O)
   K = nf(O)
   r1, r2 = signature(K)
@@ -187,8 +193,57 @@ function _torsion_units(O::NfOrd)
     end
   end
 
-  O.torsion_units = R, deepcopy(R[i])
+  return R, R[i]
+end
 
-  return O.torsion_units
+################################################################################
+#
+#  Torsion units via root lifting
+#
+################################################################################
+
+function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
+  p = 1
+  m = fmpz(0)
+  m_old = fmpz(0)
+  stable = 0
+
+  while true
+    p = next_prime(p)
+    if isramified(O, p)
+      continue
+    end
+    lp = prime_decomposition(O, p)
+    m_new = m_old
+    for (P, e) in lp
+      m_new = gcd(m_new, norm(P) - 1)
+    end
+
+    if m_new == m_old
+      stable += 1
+    end
+
+    if stable == 5
+      return m_new
+    end
+
+    m_old = m_new
+  end
+end
+
+function _torsion_units_lifting(O::NfOrd)
+  m = _torsion_group_order_divisor(O)
+  Oy, y = O["y"]
+  f = y^Int(m) - 1
+  R = _roots_hensel(f)
+
+  i = 1
+  for i in 1:length(R)
+    if torsion_unit_order(R[i], length(R)) == length(R)
+      break
+    end
+  end
+
+  return R, R[i]
 end
 

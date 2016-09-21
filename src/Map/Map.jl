@@ -46,6 +46,7 @@ end
 function show(io::IO, M::CoerceMap)
   println(io, "Coerce: $(domain(M)) -> $(codomain(M))")
 end
-#######################################################
 
 \(f::Map, x) = preimage(f, x)
+
+
