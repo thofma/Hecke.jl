@@ -1,10 +1,10 @@
 ################################################################################
 #
-#          NfOrdUnits.jl : Units in generic number field orders 
+#       NfMaxOrd/Units.jl : Units in generic number field orders 
 #
-# This file is part of hecke.
+# This file is part of Hecke.
 #
-# Copyright (c) 2015: Claus Fieker, Tommy Hofmann
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -103,162 +103,6 @@ _is_unit(x::NfOrdElem) = is_unit(x)
 
 function _is_unit{T <: Union{nf_elem, FacElem{nf_elem}}}(x::T)
   return abs(norm(x)) == 1
-end
-
-################################################################################
-#
-#  Torsion unit test
-#
-################################################################################
-
-doc"""
-***
-    is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
-
-> Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
-> that $x^n = 1$.
-> 
-> If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
-> maximal order of the number field $x$ is lying in.
-"""
-function is_torsion_unit(x::NfOrdElem, checkisunit::Bool = false)
-  return is_torsion_unit(x.elem_in_nf, checkisunit)
-end
-
-################################################################################
-#
-#  Order of a single torsion unit
-#
-################################################################################
-
-doc"""
-***
-    torsion_unit_order(x::NfOrdElem, n::Int)
-
-> Given a torsion unit $x$ together with a multiple $n$ of its order, compute
-> the order of $x$, that is, the smallest $k \in \mathbb Z_{\geq 1}$ such
-> that $x^k = 1$.
->
-> It is not checked whether $x$ is a torsion unit.
-"""
-function torsion_unit_order(x::NfOrdElem, n::Int)
-  return torsion_unit_order(x.elem_in_nf, n)
-end
-
-################################################################################
-#
-#  Torsion unit group
-#
-################################################################################
-
-doc"""
-***
-    torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
-
-> Given an order $O$, compute the torsion units of $O$.
-"""
-function torsion_units(O::NfOrd)
-  ar, g = _torsion_units(O)
-  return ar
-end
-
-doc"""
-***
-    torsion_units(O::NfOrd) -> NfOrdElem
-
-> Given an order $O$, compute a generator of the torsion units of $O$.
-"""
-function torsion_units_gen(O::NfOrd)
-  ar, g = _torsion_units(O)
-  return g
-end
-
-function _torsion_units(O::NfOrd)
-  if isdefined(O, :torsion_units)
-    return O.torsion_units
-  end
-
-  n = degree(O)
-  K = nf(O)
-  rts = conjugate_data_arb(K)
-  r1, r2 = signature(K)
-  B = basis(O)
-
-  if r1 > 0
-    return [ O(1), -O(1) ], -O(1)
-  end
-
-  function _t2_pairing(x, y, p)
-    local i
-    v = minkowski_map(x, p)
-    w = minkowski_map(y, p)
- 
-    t = zero(parent(v[1]))
- 
-    for i in 1:r1
-      t = t + v[i]*w[i]
-    end
- 
-    for i in (r1 + 1):(r1 + 2*r2)
-      t = t + v[i]*w[i]
-    end
- 
-    return t
-  end
-
-  p = 64
-
-  gram_found = false
-
-  could_enumerate = false
-
-  A = ArbField(p)
-  M = ArbMatSpace(A, n, n)()
-  
-  while true
-    A = ArbField(p)
-    M = ArbMatSpace(A, n, n)()
-
-    gram_found = true
-
-    for i in 1:n, j in 1:n
-      M[i,j] = _t2_pairing(B[i], B[j], p)
-      if !isfinite(M[i, j])
-        p = 2*p
-        gram_found = false
-        break
-      end
-    end
-
-    if gram_found
-      break
-    end
-  end
-
-  l = enumerate_using_gram(M, A(n))
-
-  R = Array{NfOrdElem, 1}()
-
-  for i in l
-    if O(i) == zero(O)
-      continue
-    end
-    if is_torsion_unit(O(i))
-      push!(R, O(i))
-    end
-  end
-
-  i = 0
-
-  for i in 1:length(R)
-    if torsion_unit_order(R[i], length(R)) == length(R)
-      break
-    end
-  end
-
-  O.torsion_units = R, deepcopy(R[i])
-
-  return O.torsion_units
 end
 
 ################################################################################
