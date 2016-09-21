@@ -92,9 +92,6 @@ type MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
   end
 end
 
-Base.call(M::MapUnitGroupModM, a) = image(M, a)
-
-
 @doc """
   UnitGroup(R::GenResRing{fmpz}) -> FinGenGrpAb, Map
 

@@ -76,28 +76,6 @@ function Smat(A::fmpz_mat)
   return m
 end
 
-function Smat(A::fmpz_mat)
-  m = Smat{fmpz}()
-  m.c = cols(A)
-  m.r = 0
-  for i=1:rows(A)
-    if is_zero_row(A, i)
-      continue
-    end
-    r = SmatRow{fmpz}()
-    for j =1:cols(A)
-      if A[i,j] != 0
-        m.nnz += 1
-        push!(r.values, fmpz(A[i,j]))
-        push!(r.pos, j)
-      end
-    end
-    push!(m.rows, r)
-    m.r += 1
-  end
-  return m
-end
-
 @doc """
   Smat{T}(A::Array{T, 2}) -> Smat{T}
 
@@ -1279,7 +1257,7 @@ end
 ################################################################################
 
 function _one_step{T}(A::Smat{T}, sr = 1)
-  nr, T = _one_step_with_trafo(A, sr)
+  nr, trafo = _one_step_with_trafo(A, sr)
   return nr
 end
 

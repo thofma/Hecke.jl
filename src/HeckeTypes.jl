@@ -98,6 +98,16 @@ type TrafoPartialDense{S} <: Trafo
   rows::UnitRange{Int}
   cols::UnitRange{Int}
   U::S
+  
+  function TrafoPartialDense(i::Int, rows::UnitRange{Int},
+                             cols::UnitRange{Int}, U::S)
+    return new(i, rows, cols, U)
+  end
+end
+
+function TrafoPartialDense{S}(i::Int, rows::UnitRange{Int},
+                              cols::UnitRange{Int}, U::S)
+  return TrafoPartialDense{S}(i, rows, cols, U)
 end
 
 # this is shorthand for the permutation matrix corresponding to
@@ -105,9 +115,6 @@ end
 type TrafoDeleteZero{T} <: Trafo
   i::Int
 end
-
-TrafoPartialDense{S}(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) =
-        TrafoPartialDense{S}(i, rows, cols, U)
 
 ################################################################################
 #
@@ -1507,6 +1514,7 @@ end
 # Abelian Groups and their elements
 #
 ################################################################################
+
 abstract  GrpAb <: Nemo.Group
 abstract  GrpAbElem <: Nemo.GroupElem
 abstract  FinGenGrpAb <: GrpAb
@@ -1551,8 +1559,3 @@ include("Map/MapType.jl")
 
 type NoElements <: Exception end
 
-################################################################################
-#
-################################################################################
-
-parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd

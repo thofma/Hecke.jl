@@ -26,22 +26,12 @@ function preimage(M::Map, a)
   error("No preimage function known")
 end
 
-elem_type(::Type{AnticNumberField}) = nf_elem
-
-elem_type(::Type{FqNmodFiniteField}) = fq_nmod
-
-elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
-
 function image{D, C}(M::Map{D, C}, a)
   if isdefined(M.header, :image)
     return M.header.image(a)::elem_type(C)
   else
     error("No image function known")
   end
-end
-
-for T in subtypes(Map)
-  Base.call(M::T, a) = image(M, a)
 end
 
 function show(io::IO, M::InverseMap)

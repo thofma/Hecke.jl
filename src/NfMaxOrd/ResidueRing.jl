@@ -76,8 +76,6 @@ needs_parentheses(::NfMaxOrdQuoRingElem) = true
 
 is_negative(::NfMaxOrdQuoRingElem) = false
 
-parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd
-
 Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
 

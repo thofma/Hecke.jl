@@ -941,8 +941,6 @@ dot(x::Int, y::NfOrdElem) = dot(y, x)
 
 dot(x::NfOrdElem, y::fmpz) = x*y
 
-dot(x::fmpz, y::NfOrdElem) = dot(y, x)
-
 ################################################################################
 #
 #  Conversion

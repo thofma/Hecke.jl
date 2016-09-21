@@ -307,8 +307,6 @@ function /(A::NfMaxOrdFracIdl, a::nf_elem)
   return C
 end
 
-*(x::nf_elem, y::NfMaxOrdFracIdl) = y * x
-
 function *(x::nf_elem, y::NfMaxOrd)
   b, z = _check_elem_in_order(den(x, y)*x, y)
   return NfMaxOrdFracIdl(ideal(y, y(z)), den(x, y))

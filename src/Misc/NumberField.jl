@@ -444,10 +444,6 @@ function t2{T}(x::nf_elem, abs_tol::Int = 32, ::Type{T} = arb)
   return z
 end
 
-function t2(x::NfOrdElem, abs_tol::Int = 32)
-  return t2(x.elem_in_nf, abs_tol)
-end
-
 ################################################################################
 #
 #  Conjugates and real embeddings
