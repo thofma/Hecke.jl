@@ -989,13 +989,13 @@ function rank_increase(clg::ClassGrpCtx)
   if clg.rel_mat_full_rank
     old_h = rows(clg.H)
     new = rows(clg.M) - clg.last_H 
-    class_group_process_relmat(clg)
+    class_group_process_relmatrix(clg)
     h, piv = class_group_get_pivot_info(clg)
     return rows(clg.H)-old_h, new
   else
-    class_group_process_relmat(clg)
+    class_group_process_relmatrix(clg)
     h, piv = class_group_get_pivot_info(clg)
-    if clg_rel_mat_full_rank
+    if clg.rel_mat_full_rank
       return rows(clg.H), rows(clg.M)
     else
       return rows(clg.rel_mat_mod), rows(clg.M)
