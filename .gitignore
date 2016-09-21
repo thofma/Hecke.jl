@@ -1,0 +1,6 @@
+local/*
+deps/hecke/Makefile
+deps/hecke/build/*
+deps/hecke/libhecke.so
+deps/hecke/libhecke.so.0
+deps/hecke/libhecke.so.0.0.0
