@@ -1412,6 +1412,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.H_is_modular = true
     r.rel_mat_full_rank = false
     r.H_trafo = []
+    r.H = T()
     return r
   end  
 end
