@@ -202,7 +202,7 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
    res = zero(parent(y))
    for i=degree(f):-1:0
      res *= y
-     res += Qy(coeff(f, i))(x)
+     res += evaluate(Qy(coeff(f, i)), x)
    end
    return res
  end
@@ -222,7 +222,7 @@ function norm(f::PolyElem{nf_elem})
   Qx = PolynomialRing(QQ, "x")[1]
   Qxy = PolynomialRing(Qx, "y")[1]
 
-  T = K.pol(gen(Qxy))
+  T = evaluate(K.pol, gen(Qxy))
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
   return resultant(T, h)
 end
@@ -230,7 +230,7 @@ end
 doc"""
   factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
 
-> The factorisation of f (using Trager's method)
+> The factorisation of f (using Trager's method).
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)

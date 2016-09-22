@@ -743,6 +743,8 @@ end
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
+  @vprint :UnitGroup 1 "Relation matrix has size $(rows(x.M)) x $(cols(x.M))\n"
+
   O = order(u)
 
   #ker = transpose(ker)
@@ -769,7 +771,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     j = j + 1
 
     for i in 1:dim_ker
-      kelem[end - i + 1] = rand(-10:10)
+      kelem[end - i + 1] = rand(0:1)
     end
 
     for i in length(x.H_trafo):-1:1
@@ -785,6 +787,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     if is_torsion_unit(y)
       continue
     end
+
+    @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in kelem]))\n"
+
     _add_unit(u, y)
 
     for i in 1:length(kelem)
@@ -806,7 +811,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   while not_larger < 5 
 
     for i in 1:dim_ker
-      kelem[end - i + 1] = rand(-10:10)
+      kelem[end - i + 1] = rand(0:1)
     end
 
     for i in length(x.H_trafo):-1:1

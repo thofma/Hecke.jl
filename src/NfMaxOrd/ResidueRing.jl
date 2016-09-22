@@ -904,8 +904,8 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
 
     R, pi_R = quo(O, Q^2)
 
-    t1 = divexact(pi_R(f(pi_F\zero_mod_Q)), pi_R(Q_pi))
-    t2 = -inv(pi_R(fder(pi_F\zero_mod_Q)))
+    t1 = divexact(pi_R(subst(f, pi_F\zero_mod_Q)), pi_R(Q_pi))
+    t2 = -inv(pi_R(subst(fder,pi_F\zero_mod_Q)))
     new_a = pi_R\(pi_R(pi_F\zero_mod_Q) + t1*t2*pi_R(Q_pi))
     #return pi_R(f)
 
@@ -928,7 +928,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
       end
 
       if stabilized >= 3
-        if f(reconstructed_new) == 0
+        if subst(f, reconstructed_new) == 0
           push!(roots, reconstructed_new)
           break
         else
@@ -937,7 +937,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
       end
 
       if i == s
-        if iszero(f(reconstructed_new))
+        if iszero(subst(f, reconstructed_new))
           push!(roots, reconstructed_new)
         end
         break
@@ -951,8 +951,8 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
       # From Q^i -> Q^(i+1)
 
       RR, pi_RR = quo(O, I)
-      t1 = divexact(pi_RR(f(old_a)), pi_RR(Q_pi)^(i))
-      t2 = pi_RR(pi_F\(-inv(pi_F(fder(old_a)))))
+      t1 = divexact(pi_RR(subst(f, old_a)), pi_RR(Q_pi)^(i))
+      t2 = pi_RR(pi_F\(-inv(pi_F(subst(fder, old_a)))))
       new_a = pi_RR\(pi_RR(old_a) + t1*t2*pi_RR((Q_pi))^(i))
 
       # Try to reconstruct:
