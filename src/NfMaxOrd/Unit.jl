@@ -118,15 +118,17 @@ doc"""
 > Given an array of non-zero elements in a number field, returns whether they
 > are multiplicatively independent.
 """
-function is_independent{T}(x::Array{T, 1})
+function is_independent{T}(x::Array{T, 1}, p::Int = 32)
+  return _is_independent(x, p)
+end
+
+function _is_independent{T}(x::Array{T, 1}, p::Int = 32)
   K = _base_ring(x[1])
 
   deg = degree(K)
   r1, r2 = signature(K)
   rr = r1 + r2
   r = rr - 1 # unit rank
-
-  p = 32
 
   # This can be made more memory friendly
   while true
@@ -150,14 +152,66 @@ function is_independent{T}(x::Array{T, 1})
     end
 
     B = A*transpose(A)
-    @vprint :UnitGroup 2 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
+    @vprint :UnitGroup 1 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
     d = det(B)
 
     y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
     if isfinite(d) && ispositive(y - d)
-      return false
+      return false, p
     elseif isfinite(d) && ispositive(d)
-      return true
+      return true, p
+    end
+    p = 2*p
+  end
+end
+
+function _is_independent{T}(u::UnitGrpCtx{T}, y::FacElem{T})
+  K = _base_ring(x[1])
+  p = u.indep_prec
+
+  deg = degree(K)
+  r1, r2 = signature(K)
+  rr = r1 + r2
+  r = rr - 1 # unit rank
+
+  # This can be made more memory friendly
+  while true
+    @assert p != 0
+
+#    if length(u.units) == 0
+#      A = _conj_log_mat([y], p)
+#      B = MatrixSpace(base_ring(A), rows(A), rows(A))
+#      z.conj_log_mat_tranpose = (transpose(A), p)
+#      mul!(B, A, z.conj_log_mat_transpose)
+#      z.conj_log_mat = (A, p)
+#      z.conj_log_mat_times_transpose = (B, p)
+#    end
+#
+#    if z.conj_log_mat[2] == p # the old matrix has the same precision as our working precision
+#      A = z.conj_log_mat[1]
+#      conjlog = conjugates_arb_log(y, p)
+#      newrow = MatrixSpace(base_ring(A), 1, cols(A))()
+#      newcol = MatrixSpace(base_ring(A), cols(A), 1)()
+#      z.conj_log_mat = (vcat(A, newrow), p)
+#      z.conj_log_mat_transpose = (hcat(z.conj_log_mat_transpose[1], newcol), p)
+#
+#      for i in 1:cols(A)
+#        z.conj_log_mat[1][rows(A) + 1, i] = conjlog[i]
+#        z.conj_log_mat_transpose[1][i, rows(A) + 1]
+#      end
+#      A = z.conj_log_mat[1]
+#    end
+    A = _conj_log_mat(u.units, p)
+
+    B = A*transpose(A)
+    @vprint :UnitGroup 1 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"
+    d = det(B)
+
+    y = (Ar(1)//Ar(r))^r * (Ar(21)//Ar(128) * log(Ar(deg))//(Ar(deg)^2))^(2*r)
+    if isfinite(d) && ispositive(y - d)
+      return false, p
+    elseif isfinite(d) && ispositive(d)
+      return true, p
     end
     p = 2*p
   end
@@ -175,7 +229,8 @@ function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
 
   w = r*y^z[length(z)]
 
-  return is_torsion_unit(w)
+  b, _ = is_torsion_unit(w)
+  return b
 end
 
 function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
@@ -183,7 +238,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
   r = length(rel) - 1
 
   z = Array(fmpq, r)
-  
+
   # Compute an upper bound in the denominator of an entry in the relation
   # using Cramer's rule and lower regulator bounds
 
@@ -261,7 +316,7 @@ end
 # compute a basis z_1,...z_r such that <x_1,...x_r,y,T> = <z_1,...,z_r,T>,
 # where T are the torsion units
 function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
-  
+
   K = _base_ring(x[1])
 
   deg = degree(K)
@@ -270,7 +325,6 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
   r = rr - 1 # unit rank
 
   R = ArbField(p)
-  #println("precision is $(c.prec)");
 
   zz = Array(fmpz, r + 1)
 
@@ -304,11 +358,11 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
     @vprint :UnitGroup 1 "Cannot invert matrix ... \n"
     rethrow(e)
   end
-      
+
   v = b*B
 
   z = Array(fmpq, r)
-  
+
   rreg = det(A)
 
   bound = _denominator_bound_in_relation(rreg, K)
@@ -348,7 +402,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
         @vprint :UnitGroup 1 "Cannot invert matrix. Increasing precision to $(2*p)\n"
       end
     end
-        
+
     v = b*B
   end
 
@@ -416,7 +470,7 @@ function _frac_bounded_2(y::arb, bound::fmpz)
     if contains(y, new_q)
       return true, new_q
     end
-   
+
     n = n + 1
     c = cfrac(x, n)[1]
     new_q = fmpq(c)
@@ -456,10 +510,8 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  #println("precision is $(c.prec)");
-
   p = _rel_add_prec(U)
-  
+
   #p = 64
 
   zz = Array(fmpz, r + 1)
@@ -505,7 +557,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
-  
+
   @vprint :UnitGroup 2 "First iteration to find a rational relation ... \n"
   while !_find_rational_relation!(rel, v, bound)
     @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
@@ -554,7 +606,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
     U.rel_add_prec = p
     return false
   end
-  
+
   m = MatrixSpace(FlintZZ, r + 1, 1)(reshape(rel, r + 1, 1))
 
   h, u = hnf_with_transform(m)
@@ -572,6 +624,26 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
   return true
+end
+
+function  _conj_log_mat{T}(x::Array{T, 1}, p::Int)
+  conlog = conjugates_arb_log(x[1], p)
+
+  A = MatrixSpace(parent(conlog[1]), length(x), rr)()
+
+  for i in 1:rr
+    A[1, i] = conlog[i]
+  end
+
+  Ar = base_ring(A)
+
+  for k in 2:length(x)
+    conlog = conjugates_arb_log(x[k], p)
+    for i in 1:rr
+      A[k, i] = conlog[i]
+    end
+  end
+  return
 end
 
 function _conj_log_mat_cutoff{T}(x::Array{T, 1}, p::Int)
@@ -689,7 +761,7 @@ function regulator{T}(x::Array{T, 1}, abs_tol::Int)
     if isfinite(z) && radiuslttwopower(z, -abs_tol)
       return z
     end
-    
+
     p = 2*p
   end
 end
@@ -763,7 +835,17 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   MAX_RND_RD_1 = 2*r
 
+  time_indep = 0.0
+  time_add_dep_unit = 0.0
+  time_kernel = 0.0
+  time_torsion = 0.0
+
   while(length(A) < r)
+
+    for i in 1:length(kelem)
+      kelem[i] = 0
+    end
+
     if j > MAX_RND_RD_1
       return 0
     end
@@ -774,6 +856,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       kelem[end - i + 1] = rand(0:1)
     end
 
+    #time_kernel += @elapsed
     for i in length(x.H_trafo):-1:1
       apply_right!(kelem, x.H_trafo[i])
     end
@@ -782,22 +865,24 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     y = FacElem(x, kelem)
 
-    #@assert is_unit(y)
-    
-    if is_torsion_unit(y)
+    time_torsion += @elapsed is_tors, p = is_torsion_unit(y, false, u.tors_prec)
+    u.tors_prec = max(p, u.tors_prec)
+    if is_tors
       continue
     end
 
     @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in kelem]))\n"
 
-    _add_unit(u, y)
+    time_indep += @elapsed _add_unit(u, y)
 
-    for i in 1:length(kelem)
-      kelem[i] = 0
-    end
   end
 
   @vprint :UnitGroup 1 "Found $r linear independent units \n"
+
+  @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
+  @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
+  @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
+  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
 
   u.full_rank = true
 
@@ -805,24 +890,30 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   not_larger = 0
 
-  time_add_dep_unit = 0.0
-
   @vprint :UnitGroup 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
   while not_larger < 5 
 
-    for i in 1:dim_ker
-      kelem[end - i + 1] = rand(0:1)
+    for i in 1:length(kelem)
+      kelem[i] = 0
     end
 
-    for i in length(x.H_trafo):-1:1
+    for i in 1:dim_ker
+      kelem[end - i + 1] = rand(-2:2)
+    end
+
+    time_kernel += @elapsed for i in length(x.H_trafo):-1:1
       apply_right!(kelem, x.H_trafo[i])
     end
 
     y = FacElem(x, kelem)
-    
+
+    #!is_unit(y) && throw(BlaError(x, kelem))
+
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
-    if is_torsion_unit(y)
+    time_torsion += @elapsed is_tors, p = is_torsion_unit(y, false, u.tors_prec)
+    u.tors_prec = max(p, u.tors_prec)
+    if is_tors
       @v_do :UnitGroup 2 popindent()
       #println("torsion unit: $y")
       @vprint :UnitGroup 2 "Element is torsion unit\n"
@@ -839,11 +930,6 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     else
       not_larger = 0
     end
-    
-    for i in 1:length(kelem)
-      kelem[i] = 0
-    end
-
   end
 
   u.tentative_regulator = regulator(u.units, 64)
@@ -851,12 +937,17 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Finished processing\n"
   @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
   @vprint :UnitGroup 1 "-"^80 * "\n"
+  @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
+  @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
+  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
   return 1
 end
 
 function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem})
-  if is_independent(vcat(u.units, [x]))
+  isindep, p = is_independent(vcat(u.units, [x]), u.indep_prec)
+  u.indep_prec = max(p, u.indep_prec)
+  if isindep
     push!(u.units, x)
   end
   nothing
@@ -926,7 +1017,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
   @vprint :UnitGroup 1 "Computing $N prime ideals for saturation ...\n"
 
   primes =  _find_primes_for_saturation(order(U), p, N, B)
-  
+
   m = _matrix_for_saturation(U, primes[1], p)
 
   for i in 2:N
@@ -956,13 +1047,11 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
     return (true, zero(nf(order(U))))
   else
     for j in nonzerorows
-
-      
       a = U.units[1]^(L[j, 1])
       for i in 2:length(U.units)
         a = a*U.units[i]^L[j, i]
       end
-      
+
       if gcd(p, U.torsion_units_order) != 1
         a = a*elem_in_nf(U.torsion_units_gen)^L[j, length(U.units) + 1]
       end
@@ -998,7 +1087,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
     if v == parent(v)(0)# || sum([v[1, j] for j in 1:rows(K)-1]) == 0
       continue
     end
-    
+
     v = lift(v)
 
     a = U.units[1]^(v[1, 1])
@@ -1106,7 +1195,7 @@ function _find_primes_for_saturation(O::NfMaxOrd, p::Int, n::Int,
 
   return res
 end
-        
+
 function _primitive_element(F::FqNmodFiniteField)
   #println("Computing primitive element of $F")
   #println("Have to factor $(order(F) - 1)")
@@ -1147,7 +1236,7 @@ function _refine_with_saturation(c::ClassGrpCtx, u::UnitGrpCtx)
       #println("I have found a new unit: $new_unit")
       _add_dependent_unit(u, FacElem(new_unit))
       #println("$(u.tentative_regulator)")
-      
+
       @v_do :UnitGroup 1 pushindent()
       b = _validate_class_unit_group(c, u)
       @v_do :UnitGroup 1 popindent()
