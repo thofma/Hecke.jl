@@ -1093,7 +1093,12 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
   conj_log_mat_cutoff::Dict{Int, arb_mat}
   conj_log_mat_cutoff_inv::Dict{Int, arb_mat}
+  conj_log_mat::Tuple{arb_mat, Int}
+  conj_log_mat_transpose::Tuple{arb_mat, Int}
+  conj_log_mat_times_transpose::Tuple{arb_mat, Int}
   rel_add_prec::Int
+  tors_prec::Int
+  indep_prec::Int
 
   function UnitGrpCtx(O::NfOrd)
     z = new()
@@ -1106,6 +1111,8 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.conj_log_mat_cutoff = Dict{Int, arb_mat}()
     z.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
     z.rel_add_prec = 32
+    z.tors_prec = 16
+    z.indep_prec = 16
     return z
   end
 end
