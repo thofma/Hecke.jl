@@ -47,40 +47,46 @@ import Base.+, Nemo.snf, Nemo.parent, Base.rand
 ################################################################################
 
 function show(io::IO, A::FinGenGrpAbGen)
-  print(io, "(General) abelian group with relation matrix $(A.rels)")
+  print(io, "(General) abelian group with relation matrix\n$(A.rels)")
   if isdefined(A, :snf_map)
     println(io, "\nwith structure of ", codomain(A.snf_map))
   end
 end
 
 function show(io::IO, A::FinGenGrpAbSnf)
+  len = length(A.snf)
+
   println(io, "Abelian group")
-  nz = 0
-  for i=1:length(A.snf)
-    if A.snf[i] == 0
-      nz += 1
+
+  if len == 0
+    print(io, "Z/1")
+    return
+  end
+
+  if A.snf[1] == 0
+    if len == 1
+      print(io, "Z")
+    else
+      print(io, "Z^$(len)")
     end
+    return
   end
 
-  if A.snf[1] != 0
-    print(io, "Z/$(A.snf[1])")
-  end
-
+  print(io, "Z/$(A.snf[1])")
   i = 2
-  while i<= length(A.snf) && A.snf[i] != 0
+  while i <= len && A.snf[i] != 0
     print(io, " x Z/$(A.snf[i])")
     i += 1
   end
-  if i== length(A.snf)
+  if i == len
     print(io, " x Z")
-  elseif i < length(A.snf)
-    print(io, " x Z^$(length(A.snf)-i+1)")
+  elseif i < len
+    print(io, " x Z^$(len-i+1)")
   end
 end
 
 function show(io::IO, a::FinGenGrpAbElem)
   print(io, "Element of\n$(a.parent)\n with components\n$(a.coeff)")
-#  print(io, a.coeff)
 end
 
 ################################################################################
