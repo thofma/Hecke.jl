@@ -172,7 +172,7 @@ end
 function FinGenGrpAbElemCreate(A::FinGenGrpAbSnf, a::fmpz_mat)
   for i=1:ngens(A)
     if A.snf[i] != 0
-      a[1,i] = a[1,i] % A.snf[i]
+      a[1,i] = mod(a[1,i], A.snf[i])
     end
   end
   return FinGenGrpAbElem{FinGenGrpAbSnf}(A, a)
