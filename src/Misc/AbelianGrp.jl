@@ -791,7 +791,14 @@ function sub{T <: FinGenGrpAb}(G::T, s::Array{FinGenGrpAbElem{T}, 1})
     end
   end
   h = hnf(m)
-  r = sub(h, nrels(p)+1:rows(h), ngens(p)+1:cols(h))
+  fstWithoutOldGens = 1
+  for i in rows(h):-1:1, j in ngens(p):-1:1
+    if h[i,j] != 0
+      fstWithoutOldGens = i+1
+      break
+    end
+  end
+  r = sub(h, fstWithoutOldGens:rows(h), ngens(p)+1:cols(h))
   S = AbelianGroup(r)
   return S, FinGenGrpAbMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
 end
