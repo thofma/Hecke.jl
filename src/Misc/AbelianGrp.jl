@@ -149,7 +149,7 @@ end
 function reduce_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
   j = 1
   for i=1:min(rows(H), cols(H))
-    while H[i,j] == 0 && j <= cols(H)
+    while j <= cols(H) && H[i,j] == 0
       j+=1
     end
     if j > cols(H)
