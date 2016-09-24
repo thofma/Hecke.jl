@@ -9,3 +9,27 @@ function _arb_get_fmpq(x::arb)
   return fmpq(m, fmpz(1))*fmpq(2)^(ee)
 end
 
+function muleq!(z::arb, x::arb, y::arb)
+  ccall((:arb_mul, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{arb}, Int), &z, &x, &y, parent(x).prec)
+  return nothing
+end
+
+function muleq!(z::arb, x::arb, y::fmpz)
+  ccall((:arb_mul_fmpz, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{fmpz}, Int), &z, &x, &y, parent(x).prec)
+  return nothing
+end
+
+function addmul!(z::arb, x::arb, y::fmpz)
+  ccall((:arb_addmul_fmpz, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{fmpz}, Int), &z, &x, &y, parent(x).prec)
+  return nothing
+end
+
+function abs!(z::arb, x::arb)
+  ccall((:arb_abs, :libarb), Void, (Ptr{arb}, Ptr{arb}, Int), &z, &x, parent(x).prec)
+  return nothing
+end
+
+function log!(z::arb, x::arb)
+  ccall((:arb_log, :libarb), Void, (Ptr{arb}, Ptr{arb}, Int), &z, &x, parent(x).prec)
+  return nothing
+end

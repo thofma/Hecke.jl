@@ -1060,7 +1060,12 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
       @vprint :UnitGroup 1 "Testing/computing root ... \n"
 
-      has_root, roota = root(b, p)
+      @vprint :UnitGroup 1 "Bitsize of coefficient $([nbits(elem_in_basis(U.order(b))[i]) for i in 1:degree(U.order)])"
+
+      #has_root, roota = root(b, p)
+      has_root, _roota = is_power(U.order(b), p)
+      roota = elem_in_nf(_roota)
+
 
       if !has_root
         continue
@@ -1101,7 +1106,10 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
     b = evaluate(a)
 
-    has_root, roota = root(b, p)
+    #has_root, roota = root(b, p)
+    has_root, _roota = is_power(U.order(b), p)
+    roota = elem_in_nf(_roota)
+
 
     if has_root
       return (false, roota)

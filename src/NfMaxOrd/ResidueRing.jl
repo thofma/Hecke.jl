@@ -383,7 +383,6 @@ function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     q = rand(parent(x))
     r = x - q*y
     if cnt > 1000
-      println("Target valuation $e")
       error("Something odd in divrem for $x $y $(parent(x))")
     end
   end
@@ -793,9 +792,7 @@ end
 ################################################################################
 
 ## Hensel lifting of roots
-# This will fail for too large input
-# Need to incorporate the explicit lifting bounds
-function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
+function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   O = base_ring(f)
   n = degree(O)
   deg = degree(f)
@@ -892,6 +889,9 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
   s = Int(ss)
 
   for j in 1:length(lin_factor)
+    if length(roots) == max_roots
+      break
+    end
 
     zero_mod_Q = - coeff(lin_factor[j], 0)
     
@@ -987,6 +987,18 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}})
   return roots
 end
 
+function is_power(a::NfOrdElem{NfMaxOrd}, n::Int)
+  Ox, x = parent(a)["x"]
+  f = x^n - a
+  r = _roots_hensel(f, 1)
+  
+  if length(r) == 0
+    return false, parent(a)(0)
+  else
+    return true, r[1]
+  end
+end
+
 function probablity(O::NfMaxOrdQuoRing)
   p = 1.0
   I = O.ideal
@@ -998,4 +1010,4 @@ function probablity(O::NfMaxOrdQuoRing)
   end
   return p
 end
-    
+

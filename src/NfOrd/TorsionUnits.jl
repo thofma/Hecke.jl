@@ -203,6 +203,7 @@ end
 ################################################################################
 
 function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
+
   p = 1
   m = fmpz(0)
   m_old = fmpz(0)
@@ -232,6 +233,13 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
 end
 
 function _torsion_units_lifting(O::NfOrd)
+
+  r1, r2 = signature(O)
+
+  if r1 > 0
+    return [ O(1), -O(1) ], -O(1)
+  end
+
   m = _torsion_group_order_divisor(O)
   Oy, y = O["y"]
   f = y^Int(m) - 1
@@ -242,6 +250,10 @@ function _torsion_units_lifting(O::NfOrd)
     if torsion_unit_order(R[i], length(R)) == length(R)
       break
     end
+  end
+
+  if !(O(-1) in R)
+    push!(R, O(-1))
   end
 
   return R, R[i]

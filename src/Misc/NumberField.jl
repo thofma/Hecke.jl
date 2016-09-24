@@ -545,7 +545,17 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   # We should replace this using multipoint evaluation of libarb
   z = Array(arb, r1 + r2)
   for i in 1:r1
-    z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
+    z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
+    #xpoly = arb_poly(parent(K.pol)(x), c.prec)
+    #o = ArbField(c.prec)()
+    #ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], c.prec)
+    #abs!(o, o)
+    #log!(o, o)
+    #println("z[i]:$(z[i])")
+    #println("o:$(o)")
+    #z[i] = o
+
+    #z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
     if !isfinite(z[i]) || !radiuslttwopower(z[i], -abs_tol)
       refine(c)
       return conjugates_arb_log(x, abs_tol)

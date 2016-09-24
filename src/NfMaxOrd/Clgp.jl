@@ -1768,6 +1768,8 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   @v_do :UnitGroup 1 pushindent() 
   c = class_group(O, bound = bound, method = method, large = large)
   @v_do :UnitGroup 1 popindent()
+  
+  @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
   U = UnitGrpCtx{FacElem{nf_elem}}(O)
 
