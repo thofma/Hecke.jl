@@ -34,7 +34,11 @@
 
 # Get FacElem from ClassGrpCtx
 function FacElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
-  return FacElem(x.R, [ y[j, i] for i in 1:cols(y) ])
+  return FacElem(x.R, [ deepcopy(y[j, i]) for i in 1:cols(y) ])
+end
+
+function FacElem(x::ClassGrpCtx, y::Array{fmpz, 1})
+  return FacElem(x.R, [ deepcopy(y[i]) for i in 1:length(y) ])
 end
 
 # Get the trivial factored element from an ordinary element
@@ -77,7 +81,7 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
     for i in 1:r
       k = abs(cx[i])
       if ispositive(k)
-        return false
+        return false, p
       elseif isnonnegative(B - k)
         l = l + 1
       end
@@ -85,14 +89,14 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
     for i in 1:s
       k = cx[r + i]//2
       if ispositive(k)
-        return false
+        return false, p
       elseif isnonnegative(B - k)
         l = l + 1
       end
     end
 
     if l == r + s
-      return true
+      return true, p
     end
 
     p = 2*p
@@ -168,10 +172,15 @@ function conjugates_arb_log(x::FacElem{nf_elem}, abs_tol::Int)
     z = _conjugates_arb_log(parent(x), a, abs_tol)
     if i == 1
       for j in 1:d
-        res[j] = x.fac[a]*z[j]
+        #res[j] = parent(z[j])()
+        #muleq!(res[j], z[j], x.fac[a])
+        #println(parent(z[j]))
+        #println(parent(x.fac[a]))
+        res[j] = x.fac[a] * z[j]
       end
     else
       for j in 1:d
+        #addmul!(res[j], z[j], x.fac[a])
         res[j] = res[j] + x.fac[a]*z[j]
       end
     end

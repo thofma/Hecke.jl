@@ -202,7 +202,7 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
    res = zero(parent(y))
    for i=degree(f):-1:0
      res *= y
-     res += Qy(coeff(f, i))(x)
+     res += evaluate(Qy(coeff(f, i)), x)
    end
    return res
  end
@@ -222,7 +222,7 @@ function norm(f::PolyElem{nf_elem})
   Qx = PolynomialRing(QQ, "x")[1]
   Qxy = PolynomialRing(Qx, "y")[1]
 
-  T = K.pol(gen(Qxy))
+  T = evaluate(K.pol, gen(Qxy))
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
   return resultant(T, h)
 end
@@ -230,7 +230,7 @@ end
 doc"""
   factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
 
-> The factorisation of f (using Trager's method)
+> The factorisation of f (using Trager's method).
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
@@ -444,10 +444,6 @@ function t2{T}(x::nf_elem, abs_tol::Int = 32, ::Type{T} = arb)
   return z
 end
 
-function t2(x::NfOrdElem, abs_tol::Int = 32)
-  return t2(x.elem_in_nf, abs_tol)
-end
-
 ################################################################################
 #
 #  Conjugates and real embeddings
@@ -549,7 +545,17 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   # We should replace this using multipoint evaluation of libarb
   z = Array(arb, r1 + r2)
   for i in 1:r1
-    z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
+    z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
+    #xpoly = arb_poly(parent(K.pol)(x), c.prec)
+    #o = ArbField(c.prec)()
+    #ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], c.prec)
+    #abs!(o, o)
+    #log!(o, o)
+    #println("z[i]:$(z[i])")
+    #println("o:$(o)")
+    #z[i] = o
+
+    #z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
     if !isfinite(z[i]) || !radiuslttwopower(z[i], -abs_tol)
       refine(c)
       return conjugates_arb_log(x, abs_tol)

@@ -587,10 +587,6 @@ end
 
 *(x::fmpz, y::NfMaxOrdIdl) = y * x
 
-*(x::NfMaxOrdIdl, y::Integer) = x * fmpz(y)
-
-*(x::Integer, y::NfMaxOrdIdl) = y * x
-
 doc"""
 ***
     *(x::NfOrdIdl, y::Integer) -> NfOrdIdl
@@ -1731,8 +1727,6 @@ function _kernel_of_frobenius(R::quoringalg)
   return [ quoelem(R, r) for r in DD ]
 end
 
-dot(x::NfOrdElem, y::fmpz) = y*x
-
 function _lift(T::Array{GenRes{fmpz}, 1})
   return [ z.data for z in T ]
 end
@@ -1746,7 +1740,6 @@ function ^(x::quoelem, y::Int)
   z = mod(x.elem^y, x.parent.ideal)
   return quoelem(x.parent, z)
 end
-
 
 ##CF careful: this computes the char poly NOT the minpoly
 function minpoly(x::quoelem)

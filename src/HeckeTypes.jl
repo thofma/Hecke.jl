@@ -98,6 +98,16 @@ type TrafoPartialDense{S} <: Trafo
   rows::UnitRange{Int}
   cols::UnitRange{Int}
   U::S
+  
+  function TrafoPartialDense(i::Int, rows::UnitRange{Int},
+                             cols::UnitRange{Int}, U::S)
+    return new(i, rows, cols, U)
+  end
+end
+
+function TrafoPartialDense{S}(i::Int, rows::UnitRange{Int},
+                              cols::UnitRange{Int}, U::S)
+  return TrafoPartialDense{S}(i, rows, cols, U)
 end
 
 # this is shorthand for the permutation matrix corresponding to
@@ -105,9 +115,6 @@ end
 type TrafoDeleteZero{T} <: Trafo
   i::Int
 end
-
-TrafoPartialDense{S}(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) =
-        TrafoPartialDense{S}(i, rows, cols, U)
 
 ################################################################################
 #
@@ -1086,7 +1093,12 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
   conj_log_mat_cutoff::Dict{Int, arb_mat}
   conj_log_mat_cutoff_inv::Dict{Int, arb_mat}
+  conj_log_mat::Tuple{arb_mat, Int}
+  conj_log_mat_transpose::Tuple{arb_mat, Int}
+  conj_log_mat_times_transpose::Tuple{arb_mat, Int}
   rel_add_prec::Int
+  tors_prec::Int
+  indep_prec::Int
 
   function UnitGrpCtx(O::NfOrd)
     z = new()
@@ -1099,6 +1111,8 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.conj_log_mat_cutoff = Dict{Int, arb_mat}()
     z.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
     z.rel_add_prec = 32
+    z.tors_prec = 16
+    z.indep_prec = 16
     return z
   end
 end
@@ -1412,6 +1426,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.H_is_modular = true
     r.rel_mat_full_rank = false
     r.H_trafo = []
+    r.H = T()
     return r
   end  
 end
@@ -1506,6 +1521,7 @@ end
 # Abelian Groups and their elements
 #
 ################################################################################
+
 abstract  GrpAb <: Nemo.Group
 abstract  GrpAbElem <: Nemo.GroupElem
 abstract  FinGenGrpAb <: GrpAb
@@ -1550,8 +1566,3 @@ include("Map/MapType.jl")
 
 type NoElements <: Exception end
 
-################################################################################
-#
-################################################################################
-
-parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd

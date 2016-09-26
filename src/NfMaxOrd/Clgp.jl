@@ -903,9 +903,23 @@ end
 
 # Do better: re-use partial hnf, check rank mod p, ...
 
+################################################################################
+#
+#  Relation matrix processing
+#
+################################################################################
+
+# the module for the reduced relation matrix
+const modu = next_prime(2^20)
+
+# This computes an upper triangular form the relation matrix. It starts with
+# the echelonization of the reduced relation matrix (clg.rel_mat_mod) and once
+# we have full rank, an upper triangular form of the relation matrix will be
+# computed (clg.H).
 function class_group_process_relmatrix(clg::ClassGrpCtx)
   global modu
 
+  t = time_ns()
   # Note that last_H = 0 if and only if this function is called
   # for the first time. In thise case new_rel is the full relation matrix
 
@@ -913,19 +927,16 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
 
   # this can be removed once we use only Tommy's new stuff
   # then clg.H is always initialized
-  if !isdefined(clg, :H)
-    clg.H = Smat{fmpz}()
-  end
 
   if !clg.rel_mat_full_rank # we are still not full rank
     new_rel_mod = mod(new_rel, modu)
     vcat!(clg.rel_mat_mod, new_rel_mod)
     upper_triangular!(clg.rel_mat_mod)
     if rows(clg.rel_mat_mod) == cols(clg.rel_mat_mod)
-      clg.rel_mat_full_rank = true
       clg.H = copy(clg.M)
       T = upper_triangular_with_trafo!(clg.H)
       append!(clg.H_trafo, T)
+      clg.rel_mat_full_rank = true
     end
   else # we already full rank
 
@@ -939,6 +950,8 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
 
     last_diag = [ clg.H[i, i] for i in 1:min(rows(clg.H), cols(clg.H)) ]
   end
+  clg.hnf_time += time_ns()-t
+  clg.hnf_call += 1
 
   clg.last_H = length(clg.R)
 end
@@ -956,14 +969,11 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
         push!(piv, i.pos[1])
       end
     end
-
     clg.h = FlintZZ(abs(prod([clg.H[i,i] for i=1:cols(clg.H)])))
   else # not full rank
-
     for i in clg.rel_mat_mod.rows
       push!(piv, i.pos[1])
     end
-
     clg.h = FlintZZ(0)
   end
 
@@ -974,97 +984,23 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
   return (clg.h, clg.mis)::Tuple{fmpz, Set{Int}}
 end
 
-const modu = next_prime(2^20)
-function class_group_current_result(clg::ClassGrpCtx)
-  global modu
-  full_rank = false
-  if isdefined(clg, :H)
-    full_rank = rows(clg.H) == cols(clg.H)
-    new_rel = sub(clg.M, (clg.last_H+1):rows(clg.M), 1:cols(clg.M))
-    last_diag = [clg.H[i,i] for i =1:min(rows(clg.H), cols(clg.H))]
-    vcat!(clg.H, new_rel)
-    h = clg.H
-    t = time_ns()
-    if clg.H_is_modular
-      upper_triangular(h, mod = modu)
-      if rows(h) == cols(h)
-        h = copy(clg.M)
-        #println("1st non modular hnf")
-        upper_triangular(h)
-        clg.H_is_modular = false
-        full_rank = true
-      end
-    else
-      upper_triangular(h)
-    end
-    clg.hnf_time += time_ns()-t
-    clg.hnf_call += 1
-    diag = [clg.H[i,i] for i =1:min(rows(clg.H), cols(clg.H))]
-#=    
-we do need redundant relations for the units.
-=#    
-    if diag == last_diag
-      deleteat!(clg.M.rows, (clg.last_H+1):length(clg.R))
-      deleteat!(clg.R, (clg.last_H+1):length(clg.R))
-      clg.M.r = length(clg.M.rows)
-      @vprint :ClassGroup 1 "pruning again...\n"
-    end
+# Updates the upper triangular matrix
+function rank_increase(clg::ClassGrpCtx)
+  if clg.rel_mat_full_rank
+    old_h = rows(clg.H)
+    new = rows(clg.M) - clg.last_H 
+    class_group_process_relmatrix(clg)
+    h, piv = class_group_get_pivot_info(clg)
+    return rows(clg.H)-old_h, new
   else
-    full_rank = false
-    t = time_ns()
-    h = sub(clg.M, 1:clg.M.r, 1:clg.M.c)
-    if clg.H_is_modular
-      t1 = @elapsed upper_triangular(h, mod = modu)
-      hmod = mod(h, modu); t2 = @elapsed upper_triangular!(hmod);
-      println("t1:$t1\nt2:$t2")
-      if rows(h) == cols(h)
-        h = copy(clg.M)
-#        println("1st non modular hnf")
-        upper_triangular(h)
-        clg.H_is_modular = false
-        full_rank = true
-      end
+    class_group_process_relmatrix(clg)
+    h, piv = class_group_get_pivot_info(clg)
+    if clg.rel_mat_full_rank
+      return rows(clg.H), rows(clg.M)
     else
-      upper_triangular(h)
-    end
-    clg.hnf_time += time_ns()-t
-    clg.hnf_call += 1
-    last_H = 0
-  end
-  @v_do :ClassGroup 1 println("rank is currently ", rows(h), " need to be ",
-                  cols(h), " mat is ", clg.M)
-  clg.H = h
-  clg.last_H = length(clg.R)
-  if length(clg.R)/rows(h) > 4
-    #print_with_color(:yellow, "not enough useful relations\n")
-  end
-    
-  piv = Array(Int, 0)
-  if full_rank
-    for i = h.rows
-      if abs(i.values[1]) == 1
-        push!(piv, i.pos[1])
-      end
-    end
-  else
-    for i = h.rows
-      push!(piv, i.pos[1])
+      return rows(clg.rel_mat_mod), rows(clg.M)
     end
   end
-  mis = setdiff(Set(1:cols(h)), Set(piv))
-
-  if !full_rank
-    clg.mis = mis
-    clg.h = FlintZZ(0)
-    return (fmpz(0), mis)::Tuple{fmpz, Set{Int}}
-  end
-
-  if full_rank
-    clg.h = FlintZZ(abs(prod([h[i,i] for i=1:cols(h)])))
-  end
-
-  clg.mis = mis
-  return (clg.h, clg.mis)::Tuple{fmpz, Set{Int}}
 end
 
 ################################################################################
@@ -1149,7 +1085,6 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
 
   s = time_ns()
 
-  #h, piv = class_group_current_result(clg)
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
 
@@ -1232,7 +1167,6 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
     end
     last_h = h
     l_piv = piv
-    #h, piv = class_group_current_result(clg)
     class_group_process_relmatrix(clg)
     h, piv = class_group_get_pivot_info(clg)
 
@@ -1264,20 +1198,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
 
-  return h, piv #class_group_current_result(clg)
-end
-
-function rank_increase(clg::ClassGrpCtx)
-  if isdefined(clg, :H)
-    old_h = rows(clg.H)
-    new = rows(clg.M) - clg.last_H 
-    h, piv = class_group_current_result(clg)
-    return rows(clg.H)-old_h, new
-  end
-  if !isdefined(clg, :H)
-    h, piv = class_group_current_result(clg)
-    return rows(clg.H), rows(clg.M)
-  end
+  return h, piv
 end
 
 function random_init(c::roots_ctx, I::AbstractArray{NfMaxOrdIdl, 1})
@@ -1307,8 +1228,6 @@ function random_get(c::roots_ctx, J::Array{NfMaxOrdIdl, 1})
   end
   return I
 end
-
-
 
 function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
                 limit = 10)
@@ -1382,7 +1301,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   s = time_ns()
 
-  h, piv = class_group_current_result(clg)
+  class_group_process_relmatrix(clg)
+  h, piv = class_group_get_pivot_info(clg)
 
   want_extra = 5
   bad_h = false
@@ -1461,7 +1381,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     l_piv = piv
     last_rank = rows(clg.H)
     last_rels = clg.last_H
-    h, piv = class_group_current_result(clg)
+    class_group_process_relmatrix(clg)
+    h, piv = class_group_get_pivot_info(clg)
     if (rows(clg.H) - last_rank) < 0.5 * (clg.last_H - last_rels)
       #println("rank too slow, increasing randomness")
       no_rand += 5
@@ -1492,7 +1413,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
                   clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
-  return class_group_current_result(clg)
+  class_group_process_relmatrix(clg)
+  h, piv = class_group_get_pivot_info(clg)
 end
 
 
@@ -1533,6 +1455,7 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
       end
     end
   end  
+  class_group_process_relmatrix(clg)
 end                
 
 ################################################################################
@@ -1793,6 +1716,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   @vprint :UnitGroup 1 "Validating unit group and class group ... \n"
   O = U.order
 
+  @vprint :UnitGroup 1 "Computing torsion structure ... \n"
   U.torsion_units = torsion_units(O)
   U.torsion_units_order = length(U.torsion_units)
   U.torsion_units_gen = torsion_units_gen(O)
@@ -1801,6 +1725,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   r1, r2 = signature(O)
 
+  @vprint :UnitGroup 1 "Computing residue of Dedekind zeta function ... \n"
   residue = zeta_log_residue(O, 0.6931)
 
   pre = prec(parent(residue))
@@ -1843,17 +1768,20 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   @v_do :UnitGroup 1 pushindent() 
   c = class_group(O, bound = bound, method = method, large = large)
   @v_do :UnitGroup 1 popindent()
+  
+  @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
   U = UnitGrpCtx{FacElem{nf_elem}}(O)
 
   while true
     @v_do :UnitGroup 1 pushindent() 
-    _unit_group_find_units(U, c)
+    r = _unit_group_find_units(U, c)
     @v_do :UnitGroup 1 popindent()
-    if U.full_rank
+    if r == 1
       break
+    else
+      class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
     end
-    class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
   end
   @assert U.full_rank
 
