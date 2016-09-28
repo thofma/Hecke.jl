@@ -537,23 +537,21 @@ doc"""
 > less then `2^abs_tol`.
 """
 function conjugates_arb_log(x::nf_elem, abs_tol::Int)
-  K = parent(x)  
+  K = parent(x)
   d = degree(K)
   r1, r2 = signature(K)
   c = conjugate_data_arb(K)
 
   # We should replace this using multipoint evaluation of libarb
   z = Array(arb, r1 + r2)
+  xpoly = arb_poly(parent(K.pol)(x), c.prec)
   for i in 1:r1
-    z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
-    #xpoly = arb_poly(parent(K.pol)(x), c.prec)
-    #o = ArbField(c.prec)()
-    #ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], c.prec)
-    #abs!(o, o)
-    #log!(o, o)
-    #println("z[i]:$(z[i])")
-    #println("o:$(o)")
-    #z[i] = o
+    #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
+    o = ArbField(c.prec)()
+    ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], c.prec)
+    abs!(o, o)
+    log!(o, o)
+    z[i] = o
 
     #z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
     if !isfinite(z[i]) || !radiuslttwopower(z[i], -abs_tol)
@@ -561,8 +559,17 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
       return conjugates_arb_log(x, abs_tol)
     end
   end
+
+  tacb = AcbField(c.prec)()
   for i in 1:r2
-    z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
+    oo = ArbField(c.prec)()
+    ccall((:arb_poly_evaluate_acb, :libarb), Void, (Ptr{acb}, Ptr{arb_poly}, Ptr{acb}, Int), &tacb, &xpoly, &c.complex_roots[i], c.prec)
+    abs!(oo, tacb)
+    log!(oo, oo)
+    mul2exp!(oo, oo, 1)
+    z[r1 + i] = oo
+
+    #z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
     if !isfinite(z[r1 + i]) || !radiuslttwopower(z[r1 + i], -abs_tol)
       refine(c)
       return conjugates_arb_log(x, abs_tol)
