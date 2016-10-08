@@ -1,6 +1,8 @@
 include("header.jl")
 
-export EllipticCurve, is_on_curve, j, +, *, infinity, disc, inverse, compare_points, 
+import Base: zeros
+
+export EllCrv, EllipticCurve, is_on_curve, j, +, *, infinity, disc, inverse, compare_points, 
        ZXYAB, X, Y, A, B, division_polynomial, phi_polynomial, 
        Zx, Zxy, x, y, division_polynomialE, Psi_polynomial, psi_poly_field,
        torsion_points, torsion_divi, torsion_structure,
@@ -31,7 +33,7 @@ type EllCrv{T}
       if check
         d = 4*coeffs[1]^3 + 27*coeffs[2]^2
         if d != 0 
-          E.new()
+          E = new()
           E.short = true
           E.coeff = deepcopy(coeffs)
           #E.disc = d
@@ -39,7 +41,7 @@ type EllCrv{T}
           error("discriminant is zero")
         end
       else 
-        E.new()
+        E = new()
         E.short = true
         E.coeff = deepcopy(coeffs)
       end
@@ -63,7 +65,7 @@ type EllCrv{T}
           E.coeff = deepcopy(coeffs)
           E.short = false
           E.long_b = [ b2, b4, b6, b8]
-          E.disc = E
+          E.disc = d
         else 
           error("discriminant is zero")
         end
