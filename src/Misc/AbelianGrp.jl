@@ -552,7 +552,7 @@ doc"""
 
 > Returns whether $A$ is finite.
 """
-is_finite(A::FinGenGrpAbSnf) = A.snf[end] != 0
+is_finite(A::FinGenGrpAbSnf) = length(A.snf) == 0 || A.snf[end] != 0
 is_finite(A::FinGenGrpAbGen) = is_finite(snf(A)[1])
 
 doc"""
