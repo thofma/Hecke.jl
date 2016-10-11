@@ -549,7 +549,7 @@ doc"""
 > valuation at $p$ and $c$ is the local Tamagawa number at $p$.
 """
 # tate's algorithm, see Cremona, p. 66
-function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
+function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   p = FlintZZ(p)
 
@@ -568,7 +568,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
 
   # test for type I0
   if n == 0
-    return E, "I0", FlintZZ(0), FlintZZ(1)
+    return (E, "I0", FlintZZ(0), FlintZZ(1))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
   end
 
   # change coordinates so that p | a3, a4, a6
@@ -624,21 +624,21 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
     Kp = "I$(n)"
     fp = FlintZZ(1)
 
-    return E, Kp, fp, cp
+    return (E, Kp, fp, cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
   end
 
   if mod(a6, p^2) != 0
     Kp = "II"
     fp = FlintZZ(n)
     cp = FlintZZ(1)
-    return E, Kp, fp, cp
+    return (E, Kp, fp, cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
   end
 
   if mod(b8, p^3) != 0
     Kp = "III"
     fp = FlintZZ(n-1)
     cp = FlintZZ(2)
-    return E, Kp, fp, cp
+    return (E, Kp, fp, cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
   end
 
   if mod(b6, p^3) != 0
@@ -649,7 +649,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
     end
     Kp = "IV"
     fp = n - 2
-    return E, Kp, FlintZZ(fp), cp
+    return (E, Kp, FlintZZ(fp), cp)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
   end
 
   # change coordinates so that p | a1, a2; p^2 | a3, a4; p^3 | a6
@@ -684,7 +684,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
     Kp = "I0*"
     fp = FlintZZ(n - 4)
     cp = 1 + nrootscubic(b, c, d, p)
-    return E, Kp, fp, FlintZZ(cp)
+    return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
 
   # test for double root: type Im*
   elseif mod(x, p) != 0
@@ -789,7 +789,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
     fp = n - m - 4
     Kp = "I$(m)*"
 
-    return E, Kp, FlintZZ(fp), FlintZZ(cp)
+    return (E, Kp, FlintZZ(fp), FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
 
   else
     # Triple root case: types II*, III*, IV* or non-minimal
@@ -826,7 +826,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
       Kp = "IV*"
       fp = FlintZZ(n - 6)
 
-      return E, Kp, fp, FlintZZ(cp)
+      return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
     else
       if p == 2
         t = x6
@@ -853,16 +853,16 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)::Tuple{EllCrv{fmpq}, String, 
         fp = FlintZZ(n - 7)
         cp = FlintZZ(2)
 
-        return E, Kp, fp, FlintZZ(cp)
+        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
       elseif mod(a6, p^6) != 0
         Kp = "II*"
         fp = FlintZZ(n - 8)
         cp = FlintZZ(1)
 
-        return E, Kp, fp, FlintZZ(cp)
+        return (E, Kp, fp, FlintZZ(cp))::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
       else
         E = transform_rstu(E, [0, 0, 0, p])[1]
-        return tates_algorithm_local(E, p)
+        return tates_algorithm_local(E, p)::Tuple{EllCrv{fmpq}, String, fmpz, fmpz}
       end
     end
   end

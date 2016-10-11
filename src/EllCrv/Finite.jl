@@ -376,7 +376,7 @@ doc"""
 > this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
 > The characteristic must not be $2$ or $3$.
 """
-function order_via_schoof(E::EllCrv)::fmpz
+function order_via_schoof(E::EllCrv)
   R = base_field(E)
   q = order(R)
   p = characteristic(R)
@@ -419,7 +419,7 @@ function order_via_schoof(E::EllCrv)::fmpz
     t = t - product
   end
 
-  return q + 1 - t
+  return (q + 1 - t)::fmpz
 end
 
 #prime_set(M::Nemo.fmpz, char::Nemo.fmpz) -> Array{Nemo.fmpz}
