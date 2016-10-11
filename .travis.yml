@@ -3,17 +3,12 @@ os:
   - linux
   - osx
 julia:
-  - release
   - 0.4
+  - 0.5
   - nightly
 
 notifications:
   - email: false
-# uncomment the following lines to override the default test script
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia --check-bounds=yes -e 'Pkg.clone("https://github.com/Nemocas/Nemo.jl");'
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("Hecke"); Pkg.test("Hecke")'
 
 after_success:
   - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "build_non_master")'
