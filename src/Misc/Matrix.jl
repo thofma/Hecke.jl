@@ -39,6 +39,18 @@ function is_zero_row(M::fmpz_mat, i::Int)
   return true
 end
 
+function is_zero_row(M::nmod_mat, i::Int)
+  zero = UInt(0)
+  for j in 1:cols(M)
+    t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &M, i - 1, j - 1)
+    if t != zero
+      return false
+    end
+  end
+  return true
+end
+
+
 function is_zero_row{T}(M::MatElem{T}, i::Int)
   for j in 1:cols(M)
     if !iszero(M[i,j])

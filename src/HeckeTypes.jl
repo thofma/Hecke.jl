@@ -1,3 +1,127 @@
+################################################################################
+#
+#  Z/nZ modelled with UInt's
+#
+################################################################################
+
+immutable nmod_struct
+  n::UInt    # mp_limb_t
+  ninv::UInt # mp_limb_t
+  norm::UInt # mp_limb_t
+end
+
+type nmod_struct_non
+  n::UInt    # mp_limb_t
+  ninv::UInt # mp_limb_t
+  norm::UInt # mp_limb_t
+end
+
+immutable ZZModUInt <: Ring
+  mod::nmod_struct
+
+  function ZZModUInt(n::UInt)
+    mod = nmod_struct_non(0, 0, 0)
+    ccall((:nmod_init, :libflint), Void, (Ptr{nmod_struct_non}, UInt), &mod, n)
+    return new(nmod_struct(mod.n, mod.ninv, mod.norm))
+  end
+end
+
+immutable UIntMod <: RingElem
+  m::UInt
+  parent::ZZModUInt
+
+  function UIntMod(R::ZZModUInt)
+    z = new()
+    z.m = UInt(0)
+    z.parent = R
+  end
+
+  function UIntMod(R::ZZModUInt, m::UInt)
+    z = new(m, R)
+    return z
+  end
+end
+
+################################################################################
+#
+#  Transformations for matrices
+#
+################################################################################
+
+abstract Trafo
+
+type TrafoSwap{T} <: Trafo
+  i::Int
+  j::Int
+
+  function TrafoSwap(i, j)
+    return new{T}(i, j)
+  end
+end
+
+type TrafoAddScaled{T} <: Trafo
+  i::Int
+  j::Int
+  s::T
+
+  function TrafoAddScaled(i::Int, j::Int, s::T)
+    return new{T}(i, j, s)
+  end
+end
+
+TrafoAddScaled{T}(i::Int, j::Int, s::T) = TrafoAddScaled{T}(i, j, s)
+
+# if from right, then
+# row i -> a*row i + b * row j
+# row j -> c*row i + d * row j
+type TrafoParaAddScaled{T} <: Trafo
+  i::Int
+  j::Int
+  a::T
+  b::T
+  c::T
+  d::T
+
+  function TrafoParaAddScaled(i::Int, j::Int, a::T, b::T, c::T, d::T)
+    return new{T}(i, j, a, b, c, d)
+  end
+end
+
+TrafoParaAddScaled{T}(i::Int, j::Int, a::T, b::T, c::T, d::T) =
+      TrafoParaAddScaled{T}(i, j, a, b, c, d)
+
+type TrafoId{T} <: Trafo
+end
+
+type TrafoPartialDense{S} <: Trafo
+  i::Int
+  rows::UnitRange{Int}
+  cols::UnitRange{Int}
+  U::S
+  
+  function TrafoPartialDense(i::Int, rows::UnitRange{Int},
+                             cols::UnitRange{Int}, U::S)
+    return new(i, rows, cols, U)
+  end
+end
+
+function TrafoPartialDense{S}(i::Int, rows::UnitRange{Int},
+                              cols::UnitRange{Int}, U::S)
+  return TrafoPartialDense{S}(i, rows, cols, U)
+end
+
+# this is shorthand for the permutation matrix corresponding to
+# (i i+1)(i+1 i+2)...(rows-1 rows)
+type TrafoDeleteZero{T} <: Trafo
+  i::Int
+end
+
+################################################################################
+#
+#  Wrapper for fmpz_preinvn_struct
+#
+################################################################################
+
 type fmpz_preinvn_struct
   dinv::Ptr{UInt}
   n::Int
@@ -5,12 +129,18 @@ type fmpz_preinvn_struct
 
   function fmpz_preinvn_struct(f::fmpz)
     z = new()
-    ccall((:fmpz_preinvn_init, :libflint), Void, (Ptr{fmpz_preinvn_struct}, Ptr{fmpz}), &z, &f)
+    ccall((:fmpz_preinvn_init, :libflint), Void,
+          (Ptr{fmpz_preinvn_struct}, Ptr{fmpz}), &z, &f)
     finalizer(z, _fmpz_preinvn_struct_clear_fn)
     return z
   end
 end
 
+################################################################################
+#
+#  Root context for fmpq_polys and roots modelled as acbs
+#
+################################################################################
 type acb_root_ctx
   poly::fmpq_poly
   _roots::Ptr{acb_struct}
@@ -963,7 +1093,12 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
   conj_log_mat_cutoff::Dict{Int, arb_mat}
   conj_log_mat_cutoff_inv::Dict{Int, arb_mat}
+  conj_log_mat::Tuple{arb_mat, Int}
+  conj_log_mat_transpose::Tuple{arb_mat, Int}
+  conj_log_mat_times_transpose::Tuple{arb_mat, Int}
   rel_add_prec::Int
+  tors_prec::Int
+  indep_prec::Int
 
   function UnitGrpCtx(O::NfOrd)
     z = new()
@@ -976,6 +1111,8 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.conj_log_mat_cutoff = Dict{Int, arb_mat}()
     z.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
     z.rel_add_prec = 32
+    z.tors_prec = 16
+    z.indep_prec = 16
     return z
   end
 end
@@ -1269,6 +1406,12 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
                           #  - indices correspoding to complex pairs are
                           #    identical
                           # done via lll + nullspace
+
+  rel_mat_mod::Smat{UIntMod}  # the echelonization of relation matrix modulo
+                              # a small prime
+  rel_mat_full_rank::Bool
+  H_trafo::Array{Any, 1}
+
   function ClassGrpCtx()
     r = new()
     r.R = Array{nf_elem, 1}()
@@ -1281,6 +1424,9 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.relPartialNorm=Array{Tuple{nf_elem, fmpz}, 1}()
     r.B2 = 0
     r.H_is_modular = true
+    r.rel_mat_full_rank = false
+    r.H_trafo = []
+    r.H = T()
     return r
   end  
 end
@@ -1375,6 +1521,7 @@ end
 # Abelian Groups and their elements
 #
 ################################################################################
+
 abstract  GrpAb <: Nemo.Group
 abstract  GrpAbElem <: Nemo.GroupElem
 abstract  FinGenGrpAb <: GrpAb
@@ -1419,8 +1566,3 @@ include("Map/MapType.jl")
 
 type NoElements <: Exception end
 
-################################################################################
-#
-################################################################################
-
-parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd

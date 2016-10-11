@@ -76,8 +76,6 @@ needs_parentheses(::NfMaxOrdQuoRingElem) = true
 
 is_negative(::NfMaxOrdQuoRingElem) = false
 
-parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd
-
 Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
 
@@ -385,7 +383,6 @@ function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     q = rand(parent(x))
     r = x - q*y
     if cnt > 1000
-      println("Target valuation $e")
       error("Something odd in divrem for $x $y $(parent(x))")
     end
   end
@@ -795,10 +792,10 @@ end
 ################################################################################
 
 ## Hensel lifting of roots
-# This will fail for too large input
-# Need to incorporate the explicit lifting bounds
-function _root_hensel(f::GenPoly{NfOrdElem})
+function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   O = base_ring(f)
+  n = degree(O)
+  deg = degree(f)
 
   # First we find a prime ideal such that f is squarefree modulo P 
   # (The discriminant of f has only finitely many divisors).
@@ -848,8 +845,53 @@ function _root_hensel(f::GenPoly{NfOrdElem})
 
   fmodQ = pi_F(f)
 
+  # compute the lifting exponent a la Friedrich-Fieker
+
+  R = ArbField(64)
+  z = R(0)
+  (c1, c2) = norm_change_const(O)
+  (r1, r2) = signature(O) 
+
+  cc2 = (exp(3*log(R(3))//2) * R(3)^deg)//(const_pi(R) * R(deg))
+
+  bound_root = [ R(0) for i in 1:(r1 + r2) ]
+
+  for j in 0:deg-1
+    co = coeff(f, j)
+    co_conj = conjugates_arb(co)
+    for i in 1:r1+r2
+      bound_root[i] += inv(binom(R(deg), UInt(j))) * abs(co_conj[i])^2
+    end
+  end
+
+  for i in 1:r1
+    bound_root[i] = bound_root[i] * cc2
+  end
+
+  for i in r1+1:r2
+    bound_root[i] = 2 * bound_root[i] * cc2
+  end
+
+  boundt2 = sum(bound_root)
+
+  boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//4 + 2)*log(R(2))))//(2*Q.splitting_type[2]*log(R(p)))
+
+  t = arf_struct(0, 0, 0, 0)
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &t)
+
+  ss = fmpz()
+  ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}, Clong), &t, &boundk, 64)
+  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &ss, &t, 1) # 1 is round up
+  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &t)
+
+  roots = NfOrdElem[]
+
+  s = Int(ss)
 
   for j in 1:length(lin_factor)
+    if length(roots) == max_roots
+      break
+    end
 
     zero_mod_Q = - coeff(lin_factor[j], 0)
     
@@ -862,8 +904,8 @@ function _root_hensel(f::GenPoly{NfOrdElem})
 
     R, pi_R = quo(O, Q^2)
 
-    t1 = divexact(pi_R(f(pi_F\zero_mod_Q)), pi_R(Q_pi))
-    t2 = -inv(pi_R(fder(pi_F\zero_mod_Q)))
+    t1 = divexact(pi_R(subst(f, pi_F\zero_mod_Q)), pi_R(Q_pi))
+    t2 = -inv(pi_R(subst(fder,pi_F\zero_mod_Q)))
     new_a = pi_R\(pi_R(pi_F\zero_mod_Q) + t1*t2*pi_R(Q_pi))
     #return pi_R(f)
 
@@ -878,7 +920,7 @@ function _root_hensel(f::GenPoly{NfOrdElem})
 
     stabilized = -1
 
-    for i in 2:20
+    for i in 2:s
       if reconstructed_new == reconstructed_old
         stabilized = stabilized + 1
       else
@@ -886,11 +928,19 @@ function _root_hensel(f::GenPoly{NfOrdElem})
       end
 
       if stabilized >= 3
-        if f(reconstructed_new) == 0
-          return reconstructed_new
+        if subst(f, reconstructed_new) == 0
+          push!(roots, reconstructed_new)
+          break
         else
           stabilized = 0
         end
+      end
+
+      if i == s
+        if iszero(subst(f, reconstructed_new))
+          push!(roots, reconstructed_new)
+        end
+        break
       end
 
       reconstructed_old = reconstructed_new
@@ -901,8 +951,8 @@ function _root_hensel(f::GenPoly{NfOrdElem})
       # From Q^i -> Q^(i+1)
 
       RR, pi_RR = quo(O, I)
-      t1 = divexact(pi_RR(f(old_a)), pi_RR(Q_pi)^(i))
-      t2 = pi_RR(pi_F\(-inv(pi_F(fder(old_a)))))
+      t1 = divexact(pi_RR(subst(f, old_a)), pi_RR(Q_pi)^(i))
+      t2 = pi_RR(pi_F\(-inv(pi_F(subst(fder, old_a)))))
       new_a = pi_RR\(pi_RR(old_a) + t1*t2*pi_RR((Q_pi))^(i))
 
       # Try to reconstruct:
@@ -932,9 +982,20 @@ function _root_hensel(f::GenPoly{NfOrdElem})
       # There is no slower function
 
       reconstructed_new = O(fmpz[ divexact(w[1, i], cden) for i in 1:degree(O) ])
-
-      @hassert :NfMaxOrdQuoRing 1 iszero(pi_RR(f(new_a)))
     end
+  end
+  return roots
+end
+
+function is_power(a::NfOrdElem{NfMaxOrd}, n::Int)
+  Ox, x = parent(a)["x"]
+  f = x^n - a
+  r = _roots_hensel(f, 1)
+  
+  if length(r) == 0
+    return false, parent(a)(0)
+  else
+    return true, r[1]
   end
 end
 
@@ -949,4 +1010,4 @@ function probablity(O::NfMaxOrdQuoRing)
   end
   return p
 end
-    
+

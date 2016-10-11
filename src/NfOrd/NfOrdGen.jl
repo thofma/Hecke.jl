@@ -93,38 +93,6 @@ end
 
 ################################################################################
 #
-#  Parent object call overloading
-#
-################################################################################
-
-function Base.call(O::NfOrdGen, a::nf_elem, check::Bool = true)
-  nf(O) != parent(a) &&
-          error("Element is not an element of the number field of the order")
-  if check
-    (x,y) = _check_elem_in_order(a,O)
-    !x && error("Number field element not in the order")
-    return NfOrdElem{NfOrdGen}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
-  else
-    return NfOrdElem{NfOrdGen}(O, deepcopy(a))
-  end
-end
-
-function Base.call(O::NfOrdGen, a::Union{fmpz, Integer})
-  return NfOrdElem{NfOrdGen}(O, nf(O)(deepcopy(a)))
-end
-
-function Base.call(O::NfOrdGen, arr::Array{fmpz, 1})
-  return NfOrdElem{NfOrdGen}(O, fmpz[ deepcopy(x) for x in arr ])
-end
-
-function Base.call{S <: Integer}(O::NfOrdGen, arr::Array{S, 1})
-  return NfOrdElem{NfOrdGen}(O, deepcopy(arr))
-end
-
-Base.call(O::NfOrdGen) = NfOrdElem{NfOrdGen}(O)
-
-################################################################################
-#
 #  Creation from fractional ideals
 #
 ################################################################################

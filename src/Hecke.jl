@@ -459,7 +459,6 @@ Base.showerror(io::IO, e::LowPrecisionLLL) =
 # what is this function doing here?
 function checkbounds(a::Int, b::Int) nothing; end;
 
-
 ################################################################################
 #
 #  "Submodules"
@@ -508,9 +507,6 @@ function vshow(A)
   end
 end
 
-#
-
-
 ################################################################################
 #
 #  Element types for parent types
@@ -528,6 +524,12 @@ elem_type(::NfOrdGen) = NfOrdElem{NfOrdGen}
 elem_type(::Type{NfOrdGen}) = NfOrdElem{NfOrdGen}
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
+
+elem_type(::Type{AnticNumberField}) = nf_elem
+
+elem_type(::Type{FqNmodFiniteField}) = fq_nmod
+
+elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
 
 ################################################################################
 #
