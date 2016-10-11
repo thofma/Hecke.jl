@@ -887,3 +887,7 @@ end
 
 
 Base.call(R::Nemo.NmodPolyRing, a::nf_elem) = nf_elem_to_nmod_poly(R, a)
+
+# Characteristic
+
+characteristic(::AnticNumberField) = 0
