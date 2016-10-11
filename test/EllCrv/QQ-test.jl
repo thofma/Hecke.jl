@@ -136,25 +136,25 @@ function test_EllCrv_QQ()
 
     #  25350.a1
     E = EllipticCurve([1, 1, 0, 40050, 7557750])
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 2)
+    Ep, K, f, c = tates_algorithm_local(E, 2)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "I1"
     @test f == 1
     @test c == 1
 
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 3)
+    Ep, K, f, c = tates_algorithm_local(E, 3)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "I2"
     @test f == 1
     @test c == 2
 
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 5)
+    Ep, K, f, c = tates_algorithm_local(E, 5)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "III*"
     @test f == 2
     @test c == 2
 
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 13)
+    Ep, K, f, c = tates_algorithm_local(E, 13)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "IV*"
     @test f == 2
@@ -162,19 +162,19 @@ function test_EllCrv_QQ()
 
     # 150.a1
     E = EllipticCurve([1, 1, 0, -20700, 1134000])
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 2)
+    Ep, K, f, c = tates_algorithm_local(E, 2)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "I5"
     @test f == 1
     @test c == 1
 
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 3)
+    Ep, K, f, c = tates_algorithm_local(E, 3)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "I10"
     @test f == 1
     @test c == 2
 
-    Ep, K, f, c = @inferred tates_algorithm_local(E, 5)
+    Ep, K, f, c = tates_algorithm_local(E, 5)
     @test tidy_model(Ep).coeff == E.coeff
     @test K == "III*"
     @test f == 2

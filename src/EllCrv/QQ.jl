@@ -479,7 +479,7 @@ function laska_kraus_connell(E::EllCrv{fmpq})
   na4 = divexact(b4 - na1*na3, 2)
   na6 = divexact(b6 - na3, 4)
 
-  return EllipticCurve([na1, na2, na3, na4, na6])
+  return EllipticCurve([na1, na2, na3, na4, na6])::EllCrv{fmpq}
 end
 
 ################################################################################
@@ -891,7 +891,7 @@ function tates_algorithm_global(E)
   # reduce coefficients (see tidy_model)
   E = tidy_model(E)
 
-  return E
+  return E::EllCrv{fmpq}
 end
 
 ################################################################################

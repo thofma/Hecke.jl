@@ -430,19 +430,19 @@ doc"""
 
 > Computes the discriminant of $E$.
 """
-function disc(E::EllCrv)
+function disc{T}(E::EllCrv{T})
   if isdefined(E, :disc)
     return E.disc
   end
 
   if E.short == true
     # fall back to the formula for the long form
-    # this should be then in a more clever way
+    # this should be done in a more clever way
     R = base_field(E)
     F = EllipticCurve([R(0), R(0), R(0), E.coeff[1], E.coeff[2]])
     d = disc(F)
     E.disc = d
-    return d
+    return d::T
   else
     a1 = E.coeff[1]
     a2 = E.coeff[2]
@@ -454,7 +454,7 @@ function disc(E::EllCrv)
 
     d = -b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6
     E.disc = d
-    return d
+    return d::T
   end
 end
 
@@ -470,7 +470,7 @@ doc"""
 > Computes the j-invariant of $E$.
 """
 # p. 46 Washington, p. 72 Cohen
-function j_invariant(E::EllCrv)
+function j_invariant{T}(E::EllCrv{T})
   if isdefined(E, :j)
     return E.j
   end
@@ -479,9 +479,9 @@ function j_invariant(E::EllCrv)
 
     R = base_field(E)
     F = EllipticCurve([R(0), R(0), R(0), E.coeff[1], E.coeff[2]])
-    j = j(F)
+    j = j_invariant(F)
     E.j = j
-    return j
+    return j::T
   else
     a1 = E.coeff[1]
     a2 = E.coeff[2]
@@ -499,7 +499,7 @@ function j_invariant(E::EllCrv)
 
     j = divexact(c4^3, disc(E))
     E.j = j
-    return j
+    return j::T
   end
 end
 
