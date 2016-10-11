@@ -1,5 +1,3 @@
-__precompile__()
-
 ################################################################################
 #
 #     Hecke.jl : Hecke main file
@@ -32,6 +30,8 @@ __precompile__()
 # (C) 2015, 2016 Claus Fieker, Tommy Hofmann
 #
 ################################################################################
+
+__precompile__()
 
 module Hecke
 
@@ -79,16 +79,17 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
              howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
              FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear, lufact!, agm, height
+             acb_vec_clear, lufact!, agm, height, characteristic
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
-             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=
+             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule, precision, dot
-             first, StepRange, show, one, zero, inv, iseven, isodd
+             floor, max, BigFloat, promote_rule, precision, dot,
+             first, StepRange, show, one, zero, inv, iseven, isodd, convert,
+             angle, abs2, isless, exponent, base, isfinite, zeros
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -167,6 +168,15 @@ function __init__()
   global _set_ClassGrpCtx_of_order = t[2]
 
   global R = _RealRing()
+  
+  # Stuff for elliptic curves
+  # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
+  # will be removed eventually
+  global const _Zx = PolynomialRing(FlintZZ, "_x")[1]
+  global const _Zxy = PolynomialRing(_Zx, "_y")[1]
+  global const _x = gen(_Zx)
+  global const _y = gen(_Zxy)
+
 end
 
 function conjugate_data_arb(K::AnticNumberField)
