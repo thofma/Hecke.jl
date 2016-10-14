@@ -127,6 +127,8 @@ function isless(a::fmpq, b::Float64) return a*1.0<b; end
 function isless(a::Float64, b::fmpz) return a<b*1.0; end
 function isless(a::fmpz, b::Float64) return a*1.0<b; end
 
+function isless(a::fmpz, b::fmpz) return a < b; end
+
 function Base.call(a::FlintIntegerRing, b::fmpq)
   !isone(den(b)) && error("Denominator not 1")
   return deepcopy(num(b))

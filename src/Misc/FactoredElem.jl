@@ -169,6 +169,7 @@ end
 #
 ################################################################################
 
+# return (x1,...,xr)*y
 function _transform{T}(x::Array{FacElem{T}, 1}, y::fmpz_mat)
   length(x) != rows(y) &&
               error("Length of array must be number of rows of matrix")

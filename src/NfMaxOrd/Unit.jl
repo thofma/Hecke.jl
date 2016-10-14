@@ -629,6 +629,9 @@ end
 function  _conj_log_mat{T}(x::Array{T, 1}, p::Int)
   conlog = conjugates_arb_log(x[1], p)
 
+  r, s = signature(_base_ring(x[1]))
+  rr = r + s
+
   A = MatrixSpace(parent(conlog[1]), length(x), rr)()
 
   for i in 1:rr
@@ -643,7 +646,7 @@ function  _conj_log_mat{T}(x::Array{T, 1}, p::Int)
       A[k, i] = conlog[i]
     end
   end
-  return
+  return A
 end
 
 function _conj_log_mat_cutoff{T}(x::Array{T, 1}, p::Int)
@@ -885,6 +888,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
 
   u.full_rank = true
+
+  u.units = reduce(u.units, u.tors_prec)
 
   j = 0
 
@@ -1268,6 +1273,33 @@ function _refine_with_saturation(c::ClassGrpCtx, u::UnitGrpCtx)
     end
   end
   return b
+end
+
+################################################################################
+#
+#  Reduce units using LLL
+#
+################################################################################
+
+function reduce{T}(u::Array{T, 1}, prec::Int = 32)
+  r = length(u)
+  r,s = signature(_base_ring(u[1]))
+
+  A = MatrixSpace(ZZ, length(u), r + s)()
+
+  for i in 1:length(u)
+    c = conjugates_arb_log(u[i], prec)
+    for j in 1:length(c)
+      tt = fmpz()
+      t = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &c[j])
+      l = ccall((:arf_get_fmpz_fixed_si, :libarb), Int, (Ptr{fmpz}, Ptr{arf_struct}, Int), &tt, t, -prec)
+      A[i, j] = tt
+    end
+  end
+
+  L, U = lll_with_transform(A)
+
+  return transform(u, transpose(U))
 end
 
 ################################################################################

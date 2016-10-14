@@ -1,11 +1,12 @@
 using Hecke
 using Base.Test
 
-#include("NfMaxOrd-test.jl")
-#include("NfMaxOrd.jl")
+include("NfMaxOrd-test.jl")
+include("NfMaxOrd.jl")
 include("NfOrd.jl")
+include("EllCrv.jl")
 
-#test_pseudohnf()
+test_pseudohnf()
 
 set_verbose_level(:UnitGroup, 0)
 set_verbose_level(:ClassGroup, 0)
@@ -14,6 +15,9 @@ test_NfOrd()
 test_NfOrd_Elem()
 test_NfOrd_Idl()
 test_NfOrd_FracIdl()
+test_EllCrv()
+test_EllCrv_QQ()
+test_EllCrv_Finite()
 
 Qx, x = PolynomialRing(QQ, "x")
 

@@ -172,16 +172,14 @@ function conjugates_arb_log(x::FacElem{nf_elem}, abs_tol::Int)
     z = _conjugates_arb_log(parent(x), a, abs_tol)
     if i == 1
       for j in 1:d
-        #res[j] = parent(z[j])()
-        #muleq!(res[j], z[j], x.fac[a])
-        #println(parent(z[j]))
-        #println(parent(x.fac[a]))
-        res[j] = x.fac[a] * z[j]
+        res[j] = parent(z[j])()
+        muleq!(res[j], z[j], x.fac[a])
+        #res[j] = x.fac[a] * z[j]
       end
     else
       for j in 1:d
-        #addmul!(res[j], z[j], x.fac[a])
-        res[j] = res[j] + x.fac[a]*z[j]
+        addmul!(res[j], z[j], x.fac[a])
+        #res[j] = res[j] + x.fac[a]*z[j]
       end
     end
     i = i + 1
