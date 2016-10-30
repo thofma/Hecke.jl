@@ -171,6 +171,24 @@ end
 
 *(x::NfMaxOrdQuoRingElem, y::fmpz) = y*x
 
+function ^(a::NfMaxOrdQuoRingElem, f::fmpz)
+  f==0 && return one(parent(a))
+  f==1 && return a
+  if f<0
+    f=-f
+    a = inv(a)
+  end
+  b = a^(div(f, 2))
+  b *= b
+  if isodd(f)
+    b *= a
+  end
+  return b
+end
+
+^(a::NfMaxOrdQuoRingElem, f::Integer) = a^fmpz(f)
+
+
 ################################################################################
 #
 #  Special elements
