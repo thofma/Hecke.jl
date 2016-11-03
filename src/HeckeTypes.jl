@@ -1521,6 +1521,8 @@ type NfMaxOrdQuoRing <: Ring
   tmp_ann::fmpz_mat # used only by annihilator in NfMaxOrd/ResidueRing.jl
   tmp_euc::fmpz_mat # used only by euclid in NfMaxOrd/ResidueRing.jl
 
+  multiplicative_group::Map
+
   function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdl)
     z = new()
     z.base_ring = O
