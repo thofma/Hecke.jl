@@ -1,4 +1,16 @@
 using Hecke
+
+if VERSION < v"0.5.0-dev+7720"
+  """
+  Allows the `@testset` syntax from Julia 0.5 in Julia 0.4,
+  but without the additional features.
+  """
+  macro testset(args...)
+    isempty(args) && error("No arguments to @testset")
+    return esc(args[end])
+  end
+end
+
 using Base.Test
 
 include("NfMaxOrd-test.jl")
