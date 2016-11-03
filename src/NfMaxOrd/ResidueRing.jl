@@ -88,6 +88,8 @@ Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
 deepcopy(x::NfMaxOrdQuoRingElem) =
         NfMaxOrdQuoRingElem(parent(x), deepcopy(x.elem))
 
+copy(x::NfMaxOrdQuoRingElem) = deepcopy(x)
+
 ################################################################################
 #
 #  I/O
@@ -1029,3 +1031,31 @@ function probablity(O::NfMaxOrdQuoRing)
   return p
 end
 
+################################################################################
+#
+#  Group Structure
+#
+################################################################################
+
+doc"""
+***
+    group_structure(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf
+
+> Returns an abelian group with the structure of (Q,+).
+"""
+function group_structure(Q::NfMaxOrdQuoRing)
+  i = ideal(Q)
+  fac = factor(i)
+  structure = Vector{fmpz}()
+  for (p,vp) in fac
+    pnum = minimum(p)
+    e = valuation(pnum,p)
+    f = factor(norm(p))[pnum]
+    q, r = divrem(vp+e-1,e)
+    structure_pvp = [repeat([pnum^q],inner=[Int((r+1)*f)]) ; repeat([pnum^(q-1)],inner=[Int((e-r-1)*f)])]
+    append!(structure,structure_pvp)
+  end
+  G = DiagonalGroup(structure)
+  S, Smap = snf(G)
+  return S
+end
