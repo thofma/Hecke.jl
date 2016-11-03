@@ -78,3 +78,47 @@ end
 type AbToNfOrdFracIdlGrp <: Map{FinGenGrpAbSnf, NfMaxOrdIdl}
   header::MapHeader{FinGenGrpAbSnf, NfMaxOrdIdl}
 end
+
+################################################################################
+#
+#  Maps for multliplicative groups of residue rings of maximal orders
+#
+################################################################################
+
+type AbToResRingMultGrp <: Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
+  header::MapHeader{FinGenGrpAbSnf, NfMaxOrdQuoRing}
+  generators::Vector{NfMaxOrdQuoRingElem}
+  discrete_logarithm::Function
+
+  function AbToResRingMultGrp(Q::NfMaxOrdQuoRing,
+                              generators::Vector{NfMaxOrdQuoRingElem},
+                              snf_structure::Vector{fmpz},
+                              disc_log::Function)
+    @assert length(generators) == length(snf_structure)
+    @hassert :NfMaxOrdQuoRing 1 all(g->parent(g)==Q,generators)
+
+    G = DiagonalGroup(snf_structure)
+    @assert isa(G,FinGenGrpAbSnf)
+
+    function _image(a::FinGenGrpAbElem)
+      @assert parent(a) == G
+      y = one(Q)
+      for i in 1:length(generators)
+        a[i] == 0 && continue
+        y *= generators[i]^a[i]
+      end
+      return y
+    end
+
+    function _preimage(a::NfMaxOrdQuoRingElem)
+      @assert parent(a) == Q
+      return G(disc_log(a))
+    end
+
+    z = new()
+    z.header = MapHeader(G,Q,_image,_preimage)
+    z.generators = generators
+    z.discrete_logarithm = disc_log
+    return z
+  end
+end
