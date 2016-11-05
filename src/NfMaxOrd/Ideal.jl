@@ -881,10 +881,10 @@ function basis_mat_prime_deg_1(A::NfMaxOrdIdl)
   if isone(bas[1])
     b[1,1] = A.minimum
   else
-    b[1,1] = fmpz(coeff(mK(bas[1]), 0))
+    b[1,1] = fmpz(coeff(mK(-bas[1]), 0))
   end
   for i=2:n
-    b[i,1] = fmpz(coeff(mK(bas[i]), 0))
+    b[i,1] = fmpz(coeff(mK(-bas[i]), 0))
   end
   return b
 end
