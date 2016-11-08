@@ -402,7 +402,7 @@ end
 macro timeit(args...)
   loops = 50
   if length(args) == 2
-    loops = args[2]
+    loops = esc(args[2])
   end
 
   quote
