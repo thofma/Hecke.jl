@@ -871,6 +871,25 @@ function quo(G::FinGenGrpAbGen, n::Union{fmpz, Integer})
   return Q, m
 end
 
+doc"""
+***
+    multgrp_of_cyclic_grp(n::fmpz) -> FinGenGrpAb
+
+> Returns the multiplicative group of the cyclic group with $n$ elements.
+"""
+function multgrp_of_cyclic_grp(n::fmpz)
+  composition = Array{fmpz,1}()
+  for (p,mp) in factor(n)
+    if (p == 2) && (mp >= 2)
+      push!(composition,2)
+      push!(composition,fmpz(2)^(mp-2))
+    else
+      push!(composition,(p-1)*p^(mp-1))
+    end
+  end
+  return DiagonalGroup(composition)
+end
+multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(fmpz(n))
 
 #=  <example>
 M = MatrixSpace(ZZ, 2, 3)([1 2 3; 4 5 6])
