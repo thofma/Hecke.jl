@@ -334,10 +334,11 @@ type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
     end
 
     function preimage(a::FinGenGrpAbElem{C})
-      error("missing")
+      error("preimage map missing")
     end
-    
+
     r.header = MapHeader(From, To, image, preimage)
+    r.map = M
     return r
   end
 
@@ -350,8 +351,10 @@ type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
     function preimage(a::FinGenGrpAbElem{C})
       return FinGenGrpAbElemCreate(From, a.coeff*Mi)
     end
-    
+
     r.header = MapHeader(From, To, image, preimage)
+    r.map = M
+    r.imap = Mi
     return r
   end
 

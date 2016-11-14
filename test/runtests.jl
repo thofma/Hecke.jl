@@ -17,6 +17,7 @@ include("NfMaxOrd-test.jl")
 include("NfMaxOrd.jl")
 include("NfOrd.jl")
 include("EllCrv.jl")
+include("Misc/AbelianGrp.jl")
 
 test_pseudohnf()
 
