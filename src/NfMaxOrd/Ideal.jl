@@ -1931,3 +1931,38 @@ function split(R::quoringalg)
     break
   end
 end
+
+
+
+doc"""
+*
+  extended_euclid(A::NfMaxOrdIdl, B::NfMaxOrdIdl) -> (NfOrdElem{NfMaxOrd},NfOrdElem{NfMaxOrd})
+
+> Returns elements $a \in A$ and $b \in B$ such that $a + b = 1$.
+"""
+function extended_euclid(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
+  @assert order(A) == order(B)
+  O = order(A)
+  n = degree(O)
+  A_mat = hnf(basis_mat(A))
+  B_mat = hnf(basis_mat(B))
+  @hassert :NfMaxOrd 2 size(A_mat) == (n,n)
+  @hassert :NfMaxOrd 2 size(B_mat) == (n,n)
+  C = [ A_mat ; B_mat ]
+  H, T = hnf_with_transform(C)
+  @hassert :NfMaxOrd 2 submat(H,n+1,1,n,n) == 0
+  H = submat(H,1,1,n,n)
+  H != 1 && error("A and B not coprime")
+  X = MatrixSpace(ZZ,1,n)()
+  for i in 1:n
+    X[1,i] = T[1,i]
+  end
+  coeffs = X*A_mat
+  a = O(vec(Array(coeffs)))
+  b = 1 - a
+  @hassert :NfMaxOrd 2 a in A
+  @hassert :NfMaxOrd 2 b in B
+  return a, b
+end
+
+
