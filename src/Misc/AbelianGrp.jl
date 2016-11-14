@@ -632,6 +632,17 @@ is_trivial(A::FinGenGrpAbSnf) = order(A)==1
 is_trivial(A::FinGenGrpAbGen) = order(A)==1
 
 
+doc"""
+***
+    is_isomorphic(G::FinGenGrpAb, H::FinGenGrpAb) -> bool
+
+> Checks if G and H are isomorphic.
+"""
+function is_isomorphic(G::FinGenGrpAb, H::FinGenGrpAb)
+  return filter(x->x!=1,snf(G)[1].snf) == filter(x->x!=1,snf(H)[1].snf)
+end
+
+
 ##############################################################################
 #
 #  Creation
