@@ -921,7 +921,7 @@ doc"""
 ***
   basis_mat(A::NfOrdIdl) -> fmpz_mat
 
-> Returns the basis matrix of A.
+> Returns the basis matrix of $A$.
 """ 
 function basis_mat(A::NfMaxOrdIdl)
   if isdefined(A, :basis_mat)
