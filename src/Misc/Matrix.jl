@@ -9,6 +9,10 @@ function matrix{T <: RingElem}(A::Array{T, 2})
   return m
 end
 
+function matrix{T <: RingElem}(A::Array{T, 1})
+  return matrix(reshape(A,length(A),1))
+end
+
 function matrix{T}(R::Ring, n::Int, m::Int, A::Array{T, 2})
   m = MatrixSpace(R, n, m)(A)
   return m

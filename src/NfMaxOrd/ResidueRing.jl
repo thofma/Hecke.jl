@@ -88,6 +88,8 @@ Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
 deepcopy(x::NfMaxOrdQuoRingElem) =
         NfMaxOrdQuoRingElem(parent(x), deepcopy(x.elem))
 
+copy(x::NfMaxOrdQuoRingElem) = deepcopy(x)
+
 ################################################################################
 #
 #  I/O
@@ -170,6 +172,24 @@ function *(x::fmpz, y::NfMaxOrdQuoRingElem)
 end
 
 *(x::NfMaxOrdQuoRingElem, y::fmpz) = y*x
+
+function ^(a::NfMaxOrdQuoRingElem, f::fmpz)
+  f==0 && return one(parent(a))
+  f==1 && return a
+  if f<0
+    f=-f
+    a = inv(a)
+  end
+  b = a^(div(f, 2))
+  b *= b
+  if isodd(f)
+    b *= a
+  end
+  return b
+end
+
+^(a::NfMaxOrdQuoRingElem, f::Integer) = a^fmpz(f)
+
 
 ################################################################################
 #
@@ -1011,3 +1031,31 @@ function probablity(O::NfMaxOrdQuoRing)
   return p
 end
 
+################################################################################
+#
+#  Group Structure
+#
+################################################################################
+
+doc"""
+***
+    group_structure(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf
+
+> Returns an abelian group with the structure of (Q,+).
+"""
+function group_structure(Q::NfMaxOrdQuoRing)
+  i = ideal(Q)
+  fac = factor(i)
+  structure = Vector{fmpz}()
+  for (p,vp) in fac
+    pnum = minimum(p)
+    e = valuation(pnum,p)
+    f = factor(norm(p))[pnum]
+    q, r = divrem(vp+e-1,e)
+    structure_pvp = [repeat([pnum^q],inner=[Int((r+1)*f)]) ; repeat([pnum^(q-1)],inner=[Int((e-r-1)*f)])]
+    append!(structure,structure_pvp)
+  end
+  G = DiagonalGroup(structure)
+  S, Smap = snf(G)
+  return S
+end

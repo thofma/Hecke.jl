@@ -1472,6 +1472,7 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
 
   if bound == -1
     bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
+    (bound == 0) && (bound = 1)
   end
 
   c = class_group_init(O, bound, complete = false)

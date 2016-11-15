@@ -249,13 +249,15 @@ end
 
 ################################################################################
 #
-#  Inclusion of order elements in ideals
+#  Inclusion of elements in ideals
 #
 ################################################################################
 
 doc"""
 ***
     in(x::NfOrdElem, y::NfOrdIdl)
+    in(x::nf_elem, y::NfOrdIdl)
+    in(x::fmpz, y::NfOrdIdl)
 
 > Returns whether $x$ is contained in $y$.
 """
@@ -265,6 +267,13 @@ function in(x::NfOrdElem, y::NfOrdIdl)
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
   return t.den == 1
 end
+
+function in(x::nf_elem, y::NfOrdIdl)
+  parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
+  return in(order(y)(x),y)
+end
+
+in(x::fmpz, y::NfOrdIdl) = in(order(y)(x),y)
 
 
 ################################################################################

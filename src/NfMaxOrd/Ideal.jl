@@ -33,6 +33,8 @@
 #
 ################################################################################
 
+import Base.isprime
+
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
        prime_ideals_up_to, factor, divexact, isramified
 
@@ -270,6 +272,29 @@ doc"""
 """
 function is_prime_known(A::NfMaxOrdIdl)
   return A.is_prime != 0
+end
+
+doc"""
+***
+    isprime(A::NfMaxOrdIdl) -> Bool
+
+> Returns whether $A$ is a prime ideal.
+"""
+function isprime(A::NfMaxOrdIdl)
+  if is_prime_known(A)
+    return A.is_prime == 1
+  elseif minimum(A) == 0
+    A.is_prime = 2
+    return false
+  end
+  fac = factor(A)
+  if length(fac) == 1 && collect(values(fac))[1] == 1
+    A.is_prime = 1
+    return true
+  else
+    A.is_prime = 2
+    return false
+  end
 end
 
 doc"""
@@ -881,10 +906,10 @@ function basis_mat_prime_deg_1(A::NfMaxOrdIdl)
   if isone(bas[1])
     b[1,1] = A.minimum
   else
-    b[1,1] = fmpz(coeff(mK(bas[1]), 0))
+    b[1,1] = fmpz(coeff(mK(-bas[1]), 0))
   end
   for i=2:n
-    b[i,1] = fmpz(coeff(mK(bas[i]), 0))
+    b[i,1] = fmpz(coeff(mK(-bas[i]), 0))
   end
   return b
 end

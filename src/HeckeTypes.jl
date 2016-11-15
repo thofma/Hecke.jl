@@ -341,6 +341,8 @@ end
 #
 ################################################################################
 
+export FakeFmpqMat, FakeFmpqMatSpace
+
 const FakeFmpqMatSpaceID = ObjectIdDict()
 
 type FakeFmpqMatSpace
@@ -771,6 +773,8 @@ end
 #
 ################################################################################
 
+export NfMaxOrd
+
 const NfMaxOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
 
 const NfMaxOrdSetID = ObjectIdDict()
@@ -885,6 +889,8 @@ end
 #  NfMaxOrdIdlSet/NfMaxOrdIdl
 #
 ################################################################################
+
+export NfMaxOrdIdl
 
 const NfMaxOrdIdlSetID = ObjectIdDict()
 

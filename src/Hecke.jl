@@ -332,13 +332,13 @@ macro hassert(args...)
   if length(args) == 2
     quote
       if get_assert_level($(args[1])) >= 1
-        @assert $(args[2])
+        @assert $(esc(args[2]))
       end
     end
   elseif length(args) == 3
     quote
       if get_assert_level($(args[1])) >= $(args[2])
-        @assert $(args[3])
+        @assert $(esc(args[3]))
       end
     end
   end
@@ -402,7 +402,7 @@ end
 macro timeit(args...)
   loops = 50
   if length(args) == 2
-    loops = args[2]
+    loops = esc(args[2])
   end
 
   quote
