@@ -349,6 +349,35 @@ end
 
 doc"""
 ***
+    roots(f::GenPoly{nf_elem}) -> Array{nf_elem, 1}
+
+> Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
+> squarefree and monic.
+"""
+function roots(f::GenPoly{nf_elem})
+  O = maximal_order(base_ring(f))
+  d = degree(f)
+  deno = den(coeff(f, d), O)
+  for i in (d-1):-1:0
+    ai = coeff(f, i)
+    if !iszero(ai)
+      deno = lcm(deno, den(ai, O))
+    end
+  end
+
+  g = deno*f
+
+  Ox, x = PolynomialRing(O, "x")
+  goverO = Ox([ O(coeff(g, i)) for i in 0:d])
+
+  A = _roots_hensel(goverO)
+
+  return [ elem_in_nf(y) for y in A ]
+end
+
+
+doc"""
+***
     root(a::nf_elem, n::Int) -> Bool, nf_elem
 
 > Determines whether $a$ has an $n$-th root. If this is the case,
@@ -891,3 +920,7 @@ Base.call(R::Nemo.NmodPolyRing, a::nf_elem) = nf_elem_to_nmod_poly(R, a)
 # Characteristic
 
 characteristic(::AnticNumberField) = 0
+
+#
+
+show_minus_one(::Type{nf_elem}) = false

@@ -79,7 +79,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
              howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
              FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear, lufact!, agm, height, characteristic
+             acb_vec_clear, lufact!, agm, height, characteristic, roots
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
