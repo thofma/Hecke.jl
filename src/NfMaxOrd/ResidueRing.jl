@@ -813,6 +813,8 @@ end
 
 ## Hensel lifting of roots
 function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
+  # f must be squarefree
+  # i should check that
   O = base_ring(f)
   n = degree(O)
   deg = degree(f)
@@ -863,6 +865,8 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
     end
   end
 
+  #println("prime $p $(Q.gen_two)")
+
   fmodQ = pi_F(f)
 
   # compute the lifting exponent a la Friedrich-Fieker
@@ -908,12 +912,19 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
   s = Int(ss)
 
+  #println(length(lin_factor))
+  #println("lifting bound: ", s)
+
   for j in 1:length(lin_factor)
     if length(roots) == max_roots
       break
     end
 
     zero_mod_Q = - coeff(lin_factor[j], 0)
+
+    #println(zero_mod_Q)
+
+    #println(0, " ", pi_F\(zero_mod_Q))
     
     # The following should be a uniformizing element
     Q_pi = Q.gen_two
@@ -922,34 +933,37 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
     # This is the first step
 
-    R, pi_R = quo(O, Q^2)
+    I = Q^2
+
+    R, pi_R = quo(O, I)
 
     t1 = divexact(pi_R(subst(f, pi_F\zero_mod_Q)), pi_R(Q_pi))
     t2 = -inv(pi_R(subst(fder,pi_F\zero_mod_Q)))
     new_a = pi_R\(pi_R(pi_F\zero_mod_Q) + t1*t2*pi_R(Q_pi))
     #return pi_R(f)
 
+    #println(1, " ", new_a)
+
     old_a = new_a
 
     RR, pi_RR = R, pi_R
 
-    I = Q^2
-
     reconstructed_new = old_a
     reconstructed_old = reconstructed_new
 
-    stabilized = -1
+    stabilized = 0 
 
-    for i in 2:s
+    i = 1
+    while 2^i < s
       if reconstructed_new == reconstructed_old
         stabilized = stabilized + 1
       else
         stabilized = 0
       end
 
-      if stabilized >= 3
+      if stabilized >= 2
         if subst(f, reconstructed_new) == 0
-          push!(roots, reconstructed_new)
+          #push!(roots, reconstructed_new)
           break
         else
           stabilized = 0
@@ -966,14 +980,18 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
       reconstructed_old = reconstructed_new
       old_a = new_a
       R, pi_R = RR, pi_RR
-      I = I * Q
+      I = I^2
 
       # From Q^i -> Q^(i+1)
+      # From Q^(2^i) -> Q^(2^i+1)
 
       RR, pi_RR = quo(O, I)
-      t1 = divexact(pi_RR(subst(f, old_a)), pi_RR(Q_pi)^(i))
-      t2 = pi_RR(pi_F\(-inv(pi_F(subst(fder, old_a)))))
-      new_a = pi_RR\(pi_RR(old_a) + t1*t2*pi_RR((Q_pi))^(i))
+      #t1 = divexact(pi_RR(subst(f, old_a)), pi_RR(Q_pi)^(2^i))
+      #t2 = pi_RR(pi_F\(-inv(pi_F(subst(fder, old_a)))))
+      #new_a = pi_RR\(pi_RR(old_a) + t1*t2*pi_RR((Q_pi))^(2^i))
+      new_a = old_a - subst(f, old_a) * (pi_R\(divexact(one(R), pi_R(subst(fder, old_a)))))
+      new_a = pi_RR\(pi_RR(new_a))
+      #println(i + 1, " ", new_a)
 
       # Try to reconstruct:
 
@@ -985,15 +1003,15 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
       X, d = solve(lhs, rhs)
 
-      zz = [ fmpq(BigInt(X[i, 1])//BigInt(d) - round(BigInt(X[i, 1])//BigInt(d))) for i in 1:degree(O)]
+      zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
 
       cden = den(zz[1])
 
-      for i in 2:degree(O)
-        cden = lcm(cden, den(zz[i]))
+      for l in 2:degree(O)
+        cden = lcm(cden, den(zz[l]))
       end
 
-      zz_num = [ num(cden*zz[i]) for i in 1:degree(O) ]
+      zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
       v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
 
@@ -1001,7 +1019,14 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
       # There is no slower function
 
-      reconstructed_new = O(fmpz[ divexact(w[1, i], cden) for i in 1:degree(O) ])
+      reconstructed_new = O(fmpz[ divexact(w[1, l], cden) for l in 1:degree(O) ])
+
+      #println(i + 1, " ", reconstructed_new)
+
+      i = i + 1
+    end
+    if f(reconstructed_new) == 0
+      push!(roots, reconstructed_new)
     end
   end
   return roots
