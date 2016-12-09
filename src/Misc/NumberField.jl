@@ -367,8 +367,6 @@ function roots(f::GenPoly{nf_elem})
 
   g = deno*f
 
-  println(g)
-
   Ox, x = PolynomialRing(O, "x")
   goverO = Ox([ O(coeff(g, i)) for i in 0:d])
 
@@ -382,7 +380,6 @@ function roots(f::GenPoly{nf_elem})
     end
     setcoeff!(goverO, deg, one(O))
     r = _roots_hensel(goverO)
-    println(goverO)
     return [ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
   end
 
