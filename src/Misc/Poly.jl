@@ -34,6 +34,15 @@ end
 # faster algorithm. For Q possibly using CRT and fast Fp techniques
 # Algorithm copies from the bad-primes paper
 
+
+doc"""
+***
+  rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
+
+>  Returns true and x, y s.th. ay = x mod b and degree(x) <= n, degree(y) <= m
+   or false (and garbage) if this is not possible.
+"""
+
 function rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
   R = a.parent
   if degree(a) <= n return true, a, R(1); end
@@ -58,8 +67,83 @@ function rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::I
   return false, M[2,1], M[2,2]
 end
 
+doc"""
+***
+  rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
+
+>  Returns true and x/y s.th. ay = x mod b and degree(x), degree(y) <= degree(b)/2
+   or false (and garbage) if this is not possible. Shortcut to the more general function.
+"""
 function rational_reconstruction{T}(a::PolyElem{T}, b::PolyElem{T})
   return rational_reconstruction(a, b, div(degree(b), 2), div(degree(b), 2))
+end
+
+
+#Note: this is not the best (fastest) algorithm, not the most general
+#      signature, not the best (fastest) interface, ....
+#However: for now it works.
+
+doc"""
+***
+  rational_reconstruction(a::fmpz, b::fmpz)
+  rational_reconstruction(a::Integer, b::Integer)
+
+> Tries to solve ay=x mod b for x,y < sqrt(M/2). If possible, returns
+  (true, x, y) or (false, garbage) if not possible.
+"""
+function rational_reconstruction(a::fmpz, b::fmpz)
+  R = FlintZZ
+  sb = root(div(b-1, 2), 2)
+
+  M = MatrixSpace(R, 2, 2)()
+  M[1,1] = b
+  M[2,1] = a
+  M[2,2] = R(1)
+
+  T = MatrixSpace(R, 2, 2)()
+  T[1,2] = R(1)
+  T[2,1] = R(1)
+  while M[2,1] > sb
+    q, r = divrem(M[1,1], M[2,1])
+    T[2,2] = -q
+    M = T*M
+  end
+  if M[2,2] < sb 
+    return true, M[2,1], M[2,2]
+  end
+
+  return false, M[2,1], M[2,2]
+end
+function rational_reconstruction(a::Integer, b::Integer)
+  return rational_reconstruction(fmpz(a), fmpz(b))
+end
+
+#Note: the vector version might be useful - or the mult be previous den version
+#Note: missing reconstruction modulo a true ideal. W/o denominators
+
+doc"""
+***
+  rational_reconstruction(a::fmpz, b::fmpz)
+
+> Applies the rational_reconstruction function to each coefficient.
+"""
+function rational_reconstruction(a::nf_elem, b::fmpz)
+  K= parent(a)
+  Qx = parent(K.pol)
+  res = Qx(0)
+  for i=0:degree(K)-1
+    c = coeff(a, i)
+    if iszero(c)
+      continue
+    end
+    @assert den(c) == 1
+    fl, x, y = rational_reconstruction(num(c), b)
+    if !fl
+      return false, K(res)
+    end
+    setcoeff!(res, i, x//y)
+  end
+  return true, K(res)
 end
 
 # to appease the Singular crowd...
@@ -221,7 +305,7 @@ type HenselCtx
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, :libflint), UInt,
           (Ptr{Nemo.nmod_poly_factor}, Ptr{nmod_poly}), &(a.lf), &Rx(f))
-    r = a.lf._num
+    r = a.lf.num
     a.r = r  
     a.LF = fmpz_poly_factor()
     @assert r > 1  #flint restriction
@@ -231,7 +315,7 @@ type HenselCtx
       ccall((:fmpz_poly_init, :libflint), Void, (Ptr{fmpz_poly_raw}, ), a.v+(i-1)*sizeof(fmpz_poly_raw))
       ccall((:fmpz_poly_init, :libflint), Void, (Ptr{fmpz_poly_raw}, ), a.w+(i-1)*sizeof(fmpz_poly_raw))
     end
-    a.link = ccall((:flint_calloc, :libflint), Ptr{Int}, (Int, Int), r, sizeof(Int))
+    a.link = ccall((:flint_calloc, :libflint), Ptr{Int}, (Int, Int), 2*r-2, sizeof(Int))
     a.N = 0
     a.prev = 0
     finalizer(a, HenselCtx_free)
