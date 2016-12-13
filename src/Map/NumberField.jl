@@ -8,7 +8,7 @@ type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
     z.header = MapHeader()
     return r
   end
-  
+
   function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
     z = new()
     z.prim_img = y
@@ -42,7 +42,7 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
     tmp_nmod_poly = parent(g)()
 
     z.poly_of_the_field = g
-    
+
     function _image(x::NfOrdElem)
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
@@ -66,7 +66,92 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
 
     return z
   end
-  
+
+  function NfMaxOrdToFqNmodMor(O::NfMaxOrd, P::NfMaxOrdIdl)
+    z = new()
+
+    @assert abs(minimum(P)) <= typemax(Int)
+
+    p = Int(abs(minimum(P)))
+
+    R = ResidueRing(FlintZZ, p)
+
+    OP = quoringalg(O, P, p)
+    x = quoelem(OP, zero(O))
+    f = PolynomialRing(R, "x")[1]()
+    d = length(OP.basis)
+
+    while true
+      r = rand(0:p-1, d)
+      x = quoelem(OP, dot([ x for x in OP.basis], r))
+      f = minpoly(x)
+      if degree(f) == d
+        break
+      end
+    end
+
+    F = FqNmodFiniteField(f, Symbol("_\$"))
+
+    M2 = MatrixSpace(R, degree(O), d)()
+
+    for i in 1:d
+      coords = elem_in_basis((x^(i-1)).elem)
+      for j in 1:degree(O)
+        M2[j, i] = coords[j]
+      end
+    end
+
+    M3 = MatrixSpace(R, degree(O), degree(O))()
+
+    for i in 1:degree(O)
+      coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
+      for j in 1:degree(O)
+        M3[j, i] = coords[j]
+      end
+    end
+
+    X = _solve_unique(M3, M2)
+
+    #for i in 1:degree(O)
+    #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
+    #end
+
+    Mats = MatrixSpace(R, degree(O), 1)
+
+    function _image(y::NfOrdElem)
+      co = Mats()
+      coeff = elem_in_basis(mod(y, P))
+
+      for i in 1:degree(O)
+        co[i, 1] = coeff[i]
+      end
+
+      co = X*co
+
+      z = F(lift(co[1, 1])) # totally inefficient
+
+      for i in 2:rows(co)
+        z = z  + F(lift(co[i, 1]))*gen(F)^(i-1)
+      end
+
+      return z
+    end
+
+    function _preimage(y::fq_nmod)
+      z = nf(O)()
+
+      for i in 0:degree(F)-1
+        z = z + _get_coeff_raw(y, i)*(x.elem.elem_in_nf)^i
+      end
+
+      return mod(O(z, false), P)
+    end
+
+    z.header = MapHeader{NfMaxOrd, FqNmodFiniteField}(O, F, _image, _preimage)
+
+    return z
+  end
+
   function NfMaxOrdToFqNmodMor(O::NfMaxOrd, F::FqNmodFiniteField, y::fq_nmod)
     z = new()
 
@@ -87,8 +172,8 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
 
       ccall((:fmpq_poly_get_denominator, :libflint), Void,
             (Ptr{fmpz}, Ptr{fmpq_poly}), &t_fmpz, &g)
-      
-      ccall((:fq_nmod_set_fmpz, :libflint), Void, 
+
+      ccall((:fq_nmod_set_fmpz, :libflint), Void,
             (Ptr{fq_nmod}, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
             &tt_fq_nmod, &t_fmpz, &F)
 
@@ -101,7 +186,7 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
 
       evaluate!(t_fq_nmod, h, y)
       #@assert t_fq_nmod == evaluate(h, y)
-      return tt_fq_nmod * t_fq_nmod 
+      return tt_fq_nmod * t_fq_nmod
     end
 
     function _preimage(x::fq_nmod)
@@ -125,7 +210,7 @@ type NfMaxOrdQuoMap <: Map{NfMaxOrd, NfMaxOrdQuoRing}
 
   function NfMaxOrdQuoMap(O::NfMaxOrd, Q::NfMaxOrdQuoRing)
     z = new()
-    
+
     _image = function (x::NfOrdElem)
       return Q(x)
     end
@@ -181,7 +266,7 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
   z.header.image = _image
   return z
 end
-   
+
 
 function evaluate(f::fmpz_poly, r::fq_nmod)
   #Horner - stolen from Claus
@@ -196,7 +281,7 @@ function evaluate(f::fmpz_poly, r::fq_nmod)
     s = s*r + parent(r)(coeff(f, i))
   end
   return s
-end                                           
+end
 
 function evaluate!(z::fq_nmod, f::fmpz_poly, r::fq_nmod)
   #Horner - stolen from Claus
@@ -287,4 +372,48 @@ base_ring(::NfMaxOrd) = Union{}
 Nemo.needs_parentheses(::NfOrdElem) = true
 
 Nemo.is_negative(::NfOrdElem) = false
+
+# Assume A is mxd, B is mxl and there is a unique X of size lxd
+# with A = B * X
+# this function will find it!
+function _solve_unique(A::nmod_mat, B::nmod_mat)
+  X = MatrixSpace(base_ring(A), cols(B), rows(A))()
+
+  #println("solving\n $A \n = $B * X")
+
+  r, per, L, U = lufact(B) # P*M1 = L*U
+  @assert B == per*L*U
+  Ap = inv(per)*A
+  Y = parent(A)()
+
+  #println("first solve\n $Ap = $L * Y")
+
+  for i in 1:cols(Y)
+    for j in 1:rows(Y)
+      s = Ap[j, i]
+      for k in 1:j-1
+        s = s - Y[k, i]*L[j, k]
+      end
+      Y[j, i] = s
+    end
+  end
+
+  #println("I got Y: $Y")
+
+  #println("L*Y : $(L*Y)")
+  #println("need Ap: $Ap")
+
+  @assert Ap == L*Y
+
+  #println("solving \n $Y \n = $U * X")
+
+  YY = submat(Y, 1:r, 1:cols(Y))
+  UU = submat(U, 1:r, 1:r)
+  X = inv(UU)*YY
+
+  @assert Y == U * X
+
+  @assert B*X == A
+  return X
+end
 

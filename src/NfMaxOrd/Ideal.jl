@@ -1672,7 +1672,7 @@ type quoringalg <: Ring
   base_order::NfMaxOrd
   ideal::NfMaxOrdIdl
   prime::Int
-  basis::Array{NfOrdElem}
+  basis::Array{NfOrdElem, 1}
 
   function quoringalg(O::NfMaxOrd, I::NfMaxOrdIdl, p::Int)
     z = new()
@@ -1766,7 +1766,11 @@ function ^(x::quoelem, y::Int)
   return quoelem(x.parent, z)
 end
 
-##CF careful: this computes the char poly NOT the minpoly
+function ==(x::quoelem, y::quoelem)
+  z = mod(x.elem - y.elem, x.parent.ideal)
+  return zero(parent(z)) == z
+end
+
 function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
