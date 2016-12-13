@@ -882,7 +882,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
   for j in 0:deg-1
     co = coeff(f, j)
-    co_conj = conjugates_arb(co)
+    co_conj = conjugates_arb(co, -1)
     for i in 1:r1+r2
       bound_root[i] += inv(binom(R(deg), UInt(j))) * abs(co_conj[i])^2
     end

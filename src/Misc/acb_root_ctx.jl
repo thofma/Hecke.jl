@@ -253,7 +253,7 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol 
 
   wp = wp * 2
     if wp > 2^16
-      error("Something wrong")
+      error("Aborting since required precision is > 2^16")
     end
   end
          ccall((:_acb_vec_sort_pretty, :libarb), Void,

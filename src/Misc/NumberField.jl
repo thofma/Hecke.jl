@@ -354,7 +354,7 @@ doc"""
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::GenPoly{nf_elem})
+function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f))
   O = maximal_order(base_ring(f))
   d = degree(f)
   deno = den(coeff(f, d), O)
@@ -379,7 +379,7 @@ function roots(f::GenPoly{nf_elem})
       b = b*a
     end
     setcoeff!(goverO, deg, one(O))
-    r = _roots_hensel(goverO)
+    r = _roots_hensel(goverO, max_roots)
     return [ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
   end
 
@@ -514,7 +514,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 
   for i in 1:r
     conjugates[i] = CC(evaluate(parent(K.pol)(x), c.real_roots[i]))
-    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], -abs_tol)
+    if !isfinite(conjugates[i]) || (abs_tol != -1 && !radiuslttwopower(conjugates[i], -abs_tol))
       refine(c)
       return conjugates_arb(x, abs_tol)
     end
@@ -522,7 +522,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 
   for i in 1:s
     conjugates[r + i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
-    if !isfinite(conjugates[i]) || !radiuslttwopower(conjugates[i], -abs_tol)
+    if !isfinite(conjugates[i]) || (abs_tol != -1 && !radiuslttwopower(conjugates[i], -abs_tol))
       refine(c)
       return conjugates_arb(x, abs_tol)
     end
