@@ -36,7 +36,8 @@
 import Base.isprime
 
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
-       prime_ideals_up_to, factor, divexact, isramified
+       prime_ideals_up_to, factor, divexact, isramified, anti_uniformizer,
+       uniformizer
 
 #################################################################################
 #
@@ -1322,12 +1323,13 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
     ideal.gens_normal = p
     ideal.gens_weakly_normal = true
 
-    # Find an anti-uniformizer in case P is unramified
+    # Find an "anti-uniformizer" in case P is unramified
+    # We don't call it anti-unfiformizer anymore
 
-    if ideal.splitting_type[1] == 1
-      t = parent(f)(lift(Zx, divexact(fmodp, fi)))
-      ideal.anti_uniformizer = O(K(t), false)
-    end
+    #if ideal.splitting_type[1] == 1
+    #  t = parent(f)(lift(Zx, divexact(fmodp, fi)))
+    #  ideal.anti_uniformizer = O(K(t), false)
+    #end
 
     if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
       # Prime number is inert, in particular principal
@@ -1428,6 +1430,41 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
     push!(result, (P, e))
   end
   return result
+end
+
+function uniformizer(P::NfMaxOrdIdl)
+  p = minimum(P)
+  if P.gens_normal == p
+    return P.gen_two
+  else
+    if p > 250
+      r = 500  # should still have enough elements...
+    else
+      r = Int(div(p, 2))
+    end
+    while true
+      z = rand(P, r)
+      if valuation(z, P) == 1
+        break
+      end
+    end
+  end
+end
+
+# Belabas p. 40
+function anti_uniformizer(P::NfMaxOrdIdl)
+  if isdefined(P, :anti_uniformizer)
+    return P.anti_uniformizer
+  else
+    p = minimum(P)
+    M = representation_mat(uniformizer(P))
+    Mp = MatrixSpace(ResidueRing(FlintZZ, p), rows(M), cols(M))(M)
+    p > typemax(Int) && error("Not yet implemented")
+    K = kernel(Mp)
+    @assert length(K) > 0
+    P.anti_uniformizer = order(P)(_lift(K[1]))
+    return P.anti_uniformizer
+  end
 end
 
 # Don't use the following function. It does not work for index divisors

@@ -1,3 +1,4 @@
+export extend
 
 type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   header::MapHeader{AnticNumberField, AnticNumberField}
@@ -26,6 +27,7 @@ end
 type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
   header::MapHeader{NfMaxOrd, FqNmodFiniteField}
   poly_of_the_field::nmod_poly
+  P::NfMaxOrdIdl
 
   function NfMaxOrdToFqNmodMor()
     r = new()
@@ -148,6 +150,7 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
     end
 
     z.header = MapHeader{NfMaxOrd, FqNmodFiniteField}(O, F, _image, _preimage)
+    z.P = P
 
     return z
   end
@@ -232,7 +235,6 @@ function Mor(O::NfMaxOrd, F::FqNmodFiniteField, h::nmod_poly)
   return NfMaxOrdToFqNmodMor(O, F, h)
 end
 
-
 type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
   header::MapHeader
 
@@ -242,7 +244,6 @@ type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
     return r
   end
 end
-
 
 function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
@@ -254,13 +255,25 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
   p = characteristic(z.header.codomain)
   Zx = PolynomialRing(FlintIntegerRing(), "x")[1]
   y = f(NfOrdElem{NfMaxOrd}(domain(f), gen(K)))
+  pia = anti_uniformizer(f.P)
+  O = domain(f)
+  P = f.P
 
+  #function _image(x::nf_elem)
+  #  g = parent(K.pol)(x)
+  #  u = inv(z.header.codomain(den(g)))
+
+  #  g = Zx(den(g)*g)
+  #  return u*evaluate(g, y)
+  #end
   function _image(x::nf_elem)
-    g = parent(K.pol)(x)
-    u = inv(z.header.codomain(den(g)))
-
-    g = Zx(den(g)*g)
-    return u*evaluate(g, y)
+    m = den(x, domain(f))
+    l = valuation(m, P)
+    if l == 0
+      return f(O(m*x))//f(O(m))
+    else
+      return f(O(pia^l * m * x))//f(O(pia^l * m))
+    end
   end
 
   z.header.image = _image

@@ -1152,14 +1152,14 @@ function _matrix_for_saturation(U::UnitGrpCtx, P::NfMaxOrdIdl, p::Int)
     #println("$(P.gen_one), $b, $(P.gen_two)")
 
     for b in base(u)
-      t = b*K(P.gen_two)^(-valuation(b, P))
+      t = b*anti_uniformizer(P.gen_two)^(valuation(b, P))
 
-      if mod(den(t), minimum(P)) == 0
-        l = valuation(den(t), P)
-        y = y*(mK(t*elem_in_nf(P.anti_uniformizer)^l)*mF(P.anti_uniformizer)^(-l))^u.fac[b]
-      else
+      #if mod(den(t), minimum(P)) == 0
+      #  l = valuation(den(t), P)
+      #  y = y*(mK(t*elem_in_nf(P.anti_uniformizer)^l)*mF(P.anti_uniformizer)^(-l))^u.fac[b]
+      #else
         y = y*mK(t)^u.fac[b]
-      end
+      #end
     end
 
     res[1, i] = disc_log(y, g, p)

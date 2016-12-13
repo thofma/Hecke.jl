@@ -23,7 +23,9 @@ function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdl)
       F = FqNmodFiniteField(h, :$)
 
       #return F, Mor(O, F, gen(F))
-      return F, Mor(O, F, h)
+      g = Mor(O, F, h)
+      g.P = P
+      return F, g
     else
       error("Not yet implemented")
     end

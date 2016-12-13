@@ -356,7 +356,6 @@ function _coprime_norm_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
   return z, a 
 end
 
-
 function rand(I::NfMaxOrdIdl, B::Int)
   r = rand(1:B, degree(order(I)))
   b = basis(I)
