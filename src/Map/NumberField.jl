@@ -276,7 +276,13 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
     end
   end
 
+  function _preimage(x::fq_nmod)
+    return elem_in_nf(preimage(f, x))
+  end
+
   z.header.image = _image
+  z.header.preimage = _preimage
+
   return z
 end
 

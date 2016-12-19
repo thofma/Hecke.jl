@@ -1462,7 +1462,7 @@ function anti_uniformizer(P::NfMaxOrdIdl)
     p > typemax(Int) && error("Not yet implemented")
     K = kernel(Mp)
     @assert length(K) > 0
-    P.anti_uniformizer = order(P)(_lift(K[1]))
+    P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
     return P.anti_uniformizer
   end
 end

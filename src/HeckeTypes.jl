@@ -955,10 +955,7 @@ type NfMaxOrdIdl <: NfOrdIdl
                            # 2: third entry generates the ideal
   splitting_type::Tuple{Int, Int}
                            #
-  anti_uniformizer::NfOrdElem{NfMaxOrd}
-                           # If A is unramified, prime with minimum p,
-                           # this element is in pA^-1
-                           # Used for the residue map
+  anti_uniformizer::nf_elem
 
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime
