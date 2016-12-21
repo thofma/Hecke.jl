@@ -896,9 +896,15 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
     bound_root[i] = 2 * bound_root[i] * cc2
   end
 
-  boundt2 = sum(bound_root)
+  boundt2 = max(sum(bound_root), R(1))
+  
+  #println("t2 bound: $boundt2")
+
+  #println("c1: $c1, c2: $c2")
 
   boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//4 + 2)*log(R(2))))//(2*Q.splitting_type[2]*log(R(p)))
+
+  #println("bound for k: $boundk")
 
   t = arf_struct(0, 0, 0, 0)
   ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &t)
@@ -948,7 +954,34 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
     RR, pi_RR = R, pi_R
 
-    reconstructed_new = old_a
+    # reconstruction
+    B = basis_mat(I)
+    L = lll(B)
+
+    rhs = MatrixSpace(ZZ, degree(O), 1)(elem_in_basis(new_a)'')
+    lhs = transpose(L)
+
+    X, d = solve(lhs, rhs)
+
+    zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
+
+    cden = den(zz[1])
+
+    for l in 2:degree(O)
+      cden = lcm(cden, den(zz[l]))
+    end
+
+    zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
+
+    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
+
+    w = v*L
+
+    # There is no slower function
+
+    reconstructed_new = O(fmpz[ divexact(w[1, l], cden) for l in 1:degree(O) ])
+    # end reconstruction
+
     reconstructed_old = reconstructed_new
 
     stabilized = 0 
