@@ -834,7 +834,7 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaxOrdIdl,
   return E
 end
 
-global _start = 0.0
+_start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
                 A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
