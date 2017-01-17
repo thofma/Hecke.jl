@@ -318,7 +318,7 @@ end
 #
 ################################################################################
  
-function call(ord::NfMaxOrdIdlSet, b::NfMaxOrdFracIdl)
+function (ord::NfMaxOrdIdlSet)(b::NfMaxOrdFracIdl)
    b.den > 1 && error("not integral")
    return b.num
 end

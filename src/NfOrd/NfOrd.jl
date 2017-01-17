@@ -261,7 +261,7 @@ function deepcopy(O::NfOrd)
     # This is slow. Julia can't interfere the type of the right hand side.
     # (According to @code_warntype)
     if x != :nf && x != :parent && isdefined(O, x) 
-      z.(x) = deepcopy(getfield(O, x))
+      setfield!(z, x, deepcopy(getfield(O, x)))
     end
   end
   z.nf = O.nf

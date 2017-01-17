@@ -1571,12 +1571,12 @@ end
 #  Conversion to Magma
 #
 ################################################################################
-function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::ASCIIString = "M")
+function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::String = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")
 end
 
-function toMagma(s::ASCIIString, c::NfMaxOrdIdl, order::ASCIIString = "M")
+function toMagma(s::String, c::NfMaxOrdIdl, order::String = "M")
   f = open(s, "w")
   toMagma(f, c, order)
   close(f)
@@ -1606,13 +1606,13 @@ function toMagma(f::IOStream, clg::ClassGrpCtx)
   toMagma(f, clg.M, name = "MM")
 end
 
-function toMagma(s::ASCIIString, c::ClassGrpCtx)
+function toMagma(s::String, c::ClassGrpCtx)
   f = open(s, "w")
   toMagma(f, c)
   close(f)
 end
 
-function toMagma{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
+function toMagma{T}(f::IOStream, a::Array{T, 1}; name::String="R")
   print(f, name, " := [\n")
   for i=1:(length(a)-1)
     try
@@ -1646,7 +1646,7 @@ function toMagma(f::IOStream, t::Tuple)
   end
 end  
 
-function toMagma{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toMagma{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w")
   f = open(s, mode)
   toMagma(f, a, name = name)
   close(f)
@@ -1659,7 +1659,7 @@ end
 #
 ################################################################################
 
-function toNemo{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
+function toNemo{T}(f::IOStream, a::Array{T, 1}; name::String="R")
   print(f, name, " = [\n")
   for i=1:(length(a)-1)
     print(f, a[i], ",\n")
@@ -1667,7 +1667,7 @@ function toNemo{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   print(f, a[end], "];\n")
 end
 
-function toNemo{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toNemo{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w")
   f = open(s, mode)
   toNemo(f, a, name = name)
   close(f)

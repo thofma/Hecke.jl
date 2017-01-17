@@ -12,7 +12,7 @@ export transform
 
 const FacElemMonDict = ObjectIdDict()
 
-function call{T}(x::FacElemMon{T})
+function (x::FacElemMon{T}){T}()
   z = FacElem{T}()
   z.parent = x
   return z
@@ -278,7 +278,7 @@ end
 #
 ################################################################################
 
-function call{T}(F::FacElemMon{T}, a::T)
+function (F::FacElemMon{T}){T}(a::T)
   z = F()
   z.fac[a] = fmpz(1)
   return z

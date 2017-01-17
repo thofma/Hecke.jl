@@ -89,7 +89,7 @@ end
 #end
 
 
-function Base.call(a::FmpzPolyRing, b::fmpq_poly) 
+function (a::FmpzPolyRing)(b::fmpq_poly) 
   (den(b) != 1) && error("denominator has to be 1")
   z = a()
   ccall((:fmpq_poly_get_numerator, :libflint), Void,
@@ -761,7 +761,7 @@ end
 
 doc"""
 ***
-    write(file::ASCIIString, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Void
+    write(file::String, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Void
 
 > Writes the elements of `A` to the file `file`. The first line are the coefficients of
 > the defining polynomial of the ambient number field. The following lines
@@ -771,7 +771,7 @@ doc"""
 > Unless otherwise specified by the parameter `flag`, the content of `file` will be
 > overwritten.
 """
-function write(file::ASCIIString, A::Array{nf_elem, 1}, flag::ASCIIString = "w")
+function write(file::String, A::Array{nf_elem, 1}, flag::String = "w")
   f = open(file, flag)
   write(f, A)
   close(f)
@@ -821,7 +821,7 @@ end
 
 doc"""
 ***
-    read(file::ASCIIString, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
+    read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
 
 > Given a file with content adhering the format of the `write` procedure,
 > this functions returns the corresponding object of type `Array{nf_elem, 1}` such that
@@ -834,7 +834,7 @@ doc"""
     julia> write("interesting_elements", [1, a, a^2])
     julia> A = read("interesting_elements", K, Hecke.nf_elem)
 """
-function read(file::ASCIIString, K::AnticNumberField, ::Type{Hecke.nf_elem})
+function read(file::String, K::AnticNumberField, ::Type{Hecke.nf_elem})
   f = open(file, "r")
   A = read(f, K, Hecke.nf_elem)
   close(f)
@@ -928,7 +928,7 @@ function nf_elem_to_nmod_poly(Rx::Nemo.NmodPolyRing, a::nf_elem)
 end
 
 
-Base.call(R::Nemo.NmodPolyRing, a::nf_elem) = nf_elem_to_nmod_poly(R, a)
+(R::Nemo.NmodPolyRing)(a::nf_elem) = nf_elem_to_nmod_poly(R, a)
 
 # Characteristic
 

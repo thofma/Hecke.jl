@@ -114,22 +114,22 @@ end
 #
 ################################################################################
 
-function call(R::ZZModUInt)
+function (R::ZZModUInt)()
   return ZZModUInt(R)
 end
 
-function call(R::ZZModUInt, n::UInt)
+function (R::ZZModUInt)(n::UInt)
   return UIntMod(R, n % R.mod.n)
 end
 
-function call(R::ZZModUInt, n::fmpz)
+function (R::ZZModUInt)(n::fmpz)
   u = ccall((:fmpz_tdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &n, R.mod.n)
   return UIntMod(R, u)
 end
 
-call(R::ZZModUInt, n::Int) = R(UInt(n))
+(R::ZZModUInt)(n::Int) = R(UInt(n))
 
-function call(R::ZZModUInt, x::GenRes{fmpz})
+function (R::ZZModUInt)(x::GenRes{fmpz})
   R.mod.n != parent(x).modulus && error("moduli must be equal")
   return R(UInt(x.data))
 end

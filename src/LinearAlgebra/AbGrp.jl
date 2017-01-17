@@ -33,7 +33,7 @@
 ################################################################################
 
 export AbGrp, AbGrpElem, parent, is_finite, is_infinite, rank, length,
-       getindex, show, +, *, call
+       getindex, show, +, *
 
 ################################################################################
 #
@@ -260,12 +260,12 @@ end
 
 doc"""
 ***
-    call(A::AbGrp, x::Array{fmpz, 1}) -> AbGrpElem
+    (A::AbGrp)(x::Array{fmpz, 1}) -> AbGrpElem
 
 > Given an array of elements of type `fmpz` of the same length as $A$, this
 > function returns the element of $A$ with components `x`.
 """
-function call(A::AbGrp, x::Array{fmpz, 1})
+function (A::AbGrp)(x::Array{fmpz, 1})
   length(A) != length(x) && error("Lengths do not coincide")
   y = deepcopy(x)
   for i in A.inf_num + 1:length(y)
@@ -277,12 +277,12 @@ end
 
 doc"""
 ***
-    call{T <: Integer}(A::AbGrp, x::Array{T, 1}) -> AbGrpElem
+    (A::AbGrp, x::Array{Integer, 1}) -> AbGrpElem
 
 > Given an array of elements of type `Integer` of the same length as $A$, this
 > function returns the element of $A$ with components `x`.
 """
-function call{T <: Integer}(A::AbGrp, x::Array{T, 1})
+function (A::AbGrp){T <: Integer}(x::Array{T, 1})
   length(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z

@@ -165,7 +165,7 @@ function EllipticCurve(x::Array{fmpz, 1}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
 
-function call{T, S}(E::EllCrv{T}, coords::Array{S, 1}, check::Bool = true)
+function (E::EllCrv{T}){S, T}(coords::Array{S, 1}, check::Bool = true)
   if length(coords) != 2
     error("Need two coordinates")
   end

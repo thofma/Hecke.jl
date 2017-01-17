@@ -244,13 +244,13 @@ function toNemo(io::IOStream, A::Smat; name = "A")
 end
 
 @doc """
-  toNemo(io::ASCIIString, A::Smat; name = "A")
+  toNemo(io::String, A::Smat; name = "A")
 
   Prints the Smat as a julia-program into the file named io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """->  
-function toNemo(f::ASCIIString, A::Smat; name = "A")
+function toNemo(f::String, A::Smat; name = "A")
   io = open(f, "w")
   toNemo(io, A, name=name)
   close(io)
@@ -1148,8 +1148,7 @@ end
  
 #include("/home/claus/bigRel")
 
-# New stuff from tommy
-
+# New stuff from Tommy
 
 ################################################################################
 #

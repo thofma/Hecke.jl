@@ -110,16 +110,16 @@ end
 #
 ################################################################################
 
-function call(O::NfMaxOrdQuoRing, x::NfOrdElem)
+function (O::NfMaxOrdQuoRing)(x::NfOrdElem)
   parent(x) != base_ring(O) && error("Cannot coerce element into the quotient ring")
   return NfMaxOrdQuoRingElem(O, x)
 end
 
-function call(Q::NfMaxOrdQuoRing, x::Integer)
+function (Q::NfMaxOrdQuoRing)(x::Integer)
   return Q(base_ring(Q)(x))
 end
 
-function call(Q::NfMaxOrdQuoRing, x::fmpz)
+function (Q::NfMaxOrdQuoRing)(x::fmpz)
   return Q(base_ring(Q)(x))
 end
 
@@ -801,7 +801,7 @@ end
 #  return z
 #end
 
-function Base.call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem{NfMaxOrd}})
+function (M::GenMatSpace{NfMaxOrdQuoRingElem})(x::GenMat{NfOrdElem{NfMaxOrd}})
   z = map(base_ring(M), x.entries)::Array{NfMaxOrdQuoRingElem, 2}
   return M(z)::GenMat{NfMaxOrdQuoRingElem}
 end

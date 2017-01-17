@@ -175,45 +175,45 @@ parent(x::arf) = x.parent
 #
 ################################################################################
 
-function call(r::ArfField)
+function (r::ArfField)()
   z = arf()
   z.parent = r
   return z
 end
 
-function call(r::ArfField, x::Clong)
+function (r::ArfField)(x::Clong)
   z = arf(x, r.prec, r.rndmode)
   z.parent = r
   return z
 end
 
-function call(r::ArfField, x::Culong)
+function (r::ArfField)(x::Culong)
   z = arf(x, r.prec, r.rndmode)
   z.parent = r
   return z
 end
 
-function call(r::ArfField, x::fmpz)
+function (r::ArfField)(x::fmpz)
   z = arf(x, r.prec, r.rndmode)
   z.parent = r
   return z
 end
 
-function call(r::ArfField, x::Float64)
+function (r::ArfField)(x::Float64)
   z = arf(x)
   z = arf(z, r.prec, r.rndmode)
   z.parent = r
   return z
 end
 
-function call(r::ArfField, x::BigFloat)
+function (r::ArfField)(x::BigFloat)
   z = arf(x)
   z = arf(z, r.prec, r.rndmode)
   z.parent = r
   return z
 end
 
-function call(r::ArfField, x::mag)
+function (r::ArfField)(x::mag)
   z = arf(x)
   z = arf(z, r.prec, r.rndmode)
   z.parent = r

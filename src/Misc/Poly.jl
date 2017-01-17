@@ -22,7 +22,7 @@ function lift(R::FlintIntegerRing, a::GenRes{Nemo.fmpz})
   return a.data
 end
 
-function Base.call(R::FlintIntegerRing, a::GenRes{Nemo.fmpz})
+function (R::FlintIntegerRing)(a::GenRes{Nemo.fmpz})
   return a.data
 end
 

@@ -338,7 +338,7 @@ function _get_coeff_raw(x::fq, i::Int)
   return t
 end
 
-function call(f::NfMaxOrdToFqNmodMor, p::PolyElem{NfOrdElem{NfMaxOrd}})
+function (f::NfMaxOrdToFqNmodMor)(p::PolyElem{NfOrdElem{NfMaxOrd}})
   F = codomain(f)
   Fx,_ = PolynomialRing(F, "_\$")
 
@@ -351,7 +351,7 @@ end
 
 # this is super slow
 # improve
-function call(f::NfMaxOrdQuoMap, I::NfMaxOrdIdl)
+function (f::NfMaxOrdQuoMap)(I::NfMaxOrdIdl)
   O = domain(f)
   Q = codomain(f)
   B = Q.ideal + I
@@ -375,7 +375,7 @@ function call(f::NfMaxOrdQuoMap, I::NfMaxOrdIdl)
 end
 
 
-function call{T}(f::NfMaxOrdQuoMap, p::PolyElem{NfOrdElem{T}})
+function (f::NfMaxOrdQuoMap){T}(p::PolyElem{NfOrdElem{T}})
   F = codomain(f)
   Fx,_ = PolynomialRing(F, "_\$")
 

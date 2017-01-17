@@ -134,7 +134,7 @@ function ideal(O::NfMaxOrd)
   return NfMaxOrdIdl(O)
 end
 
-function call(S::NfMaxOrdIdlSet)
+function (S::NfMaxOrdIdlSet)()
    return NfMaxOrdIdl(order(S))
 end
 
