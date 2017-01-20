@@ -55,6 +55,26 @@ order(a::NfOrdFracIdl) = order(parent(a))
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(A::NfOrdFracIdl, dict::ObjectIdDict)
+  B = typeof(A)(order(A))
+  for i in fieldnames(A)
+    if i == :parent
+      continue
+    end
+    if isdefined(A, i)
+      setfield!(B, i, deepcopy(getfield(A, i)))
+    end
+  end
+  return B
+end
+
+
+################################################################################
+#
 #  (Inverse) basis matrix
 #
 ################################################################################

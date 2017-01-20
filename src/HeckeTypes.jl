@@ -59,6 +59,7 @@ type TrafoSwap{T} <: Trafo
   end
 end
 
+# j -> j + s*i
 type TrafoAddScaled{T} <: Trafo
   i::Int
   j::Int
@@ -406,15 +407,15 @@ end
 #
 ################################################################################
 
-type FacElemMon{T <: RingElem} <: Ring
-  base_ring::Ring  # for the base
+type FacElemMon{S} <: Ring
+  base_ring::S  # for the base
   basis_conjugates_log::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
-  function FacElemMon(R::Ring)
+  function FacElemMon(R::S)
     if haskey(FacElemMonDict, R)
-      return FacElemMonDict[R]::FacElemMon
+      return FacElemMonDict[R]::FacElemMon{S}
     else
       z = new()
       z.base_ring = R
@@ -427,9 +428,11 @@ type FacElemMon{T <: RingElem} <: Ring
   end
 end
 
-type FacElem{B}
+FacElemMon{S}(R::S) = FacElemMon{S}(R)
+
+type FacElem{B, S}
   fac::Dict{B, fmpz}
-  parent::FacElemMon
+  parent::FacElemMon{S}
 
   function FacElem()
     z = new()
@@ -1066,6 +1069,12 @@ type NfMaxOrdFracIdl <: NfOrdFracIdl
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
   parent::NfMaxOrdFracIdlSet
+
+  function NfMaxOrdFracIdl(O::NfMaxOrd)
+    z = new()
+    z.parent = NfMaxOrdFracIdlSet(O)
+    return z
+  end
 
   function NfMaxOrdFracIdl(x::NfMaxOrdIdl, y::fmpz)
     z = new()

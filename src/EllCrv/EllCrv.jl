@@ -189,7 +189,7 @@ function base_field{T}(E::EllCrv{T})
   return E.base_field::parent_type(T)
 end
 
-function deepcopy(E::EllCrv)
+function Base.deepcopy_internal(E::EllCrv, dict::ObjectIdDict)
     return EllipticCurve(E.coeff)
 end
 

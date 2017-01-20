@@ -43,9 +43,9 @@ end
 
 # Get the trivial factored element from an ordinary element
 function FacElem(x::nf_elem)
-  z = FacElem{nf_elem}()
+  z = FacElem{nf_elem, AnticNumberField}()
   z.fac[x] = fmpz(1)
-  z.parent = FacElemMon{nf_elem}(parent(x))
+  z.parent = FacElemMon(parent(x))
   return z
 end
 
@@ -120,7 +120,7 @@ _base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 
 *(x::NfOrdElem, y::FacElem{nf_elem}) = y*x
 
-function _conjugates_arb_log(A::FacElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
+function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_tol::Int)
   if haskey(A.conj_log_cache, abs_tol)
     if haskey(A.conj_log_cache[abs_tol], a)
       return A.conj_log_cache[abs_tol][a]
@@ -137,7 +137,7 @@ function _conjugates_arb_log(A::FacElemMon{nf_elem}, a::nf_elem, abs_tol::Int)
   end
 end
 
-function conjugates_arb(x::FacElem{nf_elem}, abs_tol::Int)
+function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   d = degree(_base_ring(x))
   res = Array(acb, d)
 
@@ -160,7 +160,7 @@ function conjugates_arb(x::FacElem{nf_elem}, abs_tol::Int)
   return res
 end
 
-function conjugates_arb_log(x::FacElem{nf_elem}, abs_tol::Int)
+function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   K = _base_ring(x)
   r1, r2 = signature(K)
   d = r1 + r2
@@ -188,7 +188,7 @@ function conjugates_arb_log(x::FacElem{nf_elem}, abs_tol::Int)
   return res
 end
 
-function conjugates_arb_log(x::FacElem{nf_elem}, R::ArbField)
+function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
   z = conjugates_arb_log(x, -R.prec)
   return map(R, z)
 end

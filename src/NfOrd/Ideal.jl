@@ -56,13 +56,14 @@ end
 #
 ################################################################################
 
-doc"""
-***
-    deepcopy(I::NfOrdIdl) -> NfOrdIdl
-
-> Returns a copy of the ideal $I$.
-"""
-function deepcopy(A::NfOrdIdl)
+# The valuation is an anonymous function which contains A in its environment.
+# Thus deepcopying A.valuation will call deepcopy(A) and we run in an
+# infinite recursion.
+#
+# We hack around it by don't deepcopying A.valuation.
+# Note that B therefore contains a reference to A (A cannot be freed unless
+# B is freed).
+function Base.deepcopy_internal(A::NfOrdIdl, dict::ObjectIdDict)
   B = typeof(A)(order(A))
   for i in fieldnames(A)
     if i == :parent
@@ -71,6 +72,8 @@ function deepcopy(A::NfOrdIdl)
     if isdefined(A, i)
       if i == :basis
         setfield!(B, i, NfOrdElem{typeof(parent(A))}[ deepcopy(x) for x in A.basis])
+      elseif i == :valuation
+        setfield!(B, i, getfield(A, i))
       else
         setfield!(B, i, deepcopy(getfield(A, i)))
       end

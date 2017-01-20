@@ -13,7 +13,7 @@
   Missing:
    full HNF, Howell, modular and not
    better elemination strategy
-=#  
+=#
 
 import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array
 
@@ -31,6 +31,7 @@ export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
 # The ring should actually be put into the type.
 base_ring(A::Smat) = parent(A.rows[1].values[1])
 
+=={T}(x::SmatRow{T}, y::SmatRow{T}) = (x.pos == y.pos) && (x.values == y.values)
 ################################################################################
 #
 #  SmatRow
@@ -230,7 +231,7 @@ end
   Prints the Smat as a julia-program into the file corresponding to io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
-"""->  
+"""->
 function toNemo(io::IOStream, A::Smat; name = "A")
   T = typeof(A.rows[1].values[1])
   println(io, name, " = Smat{$T}()")
@@ -249,7 +250,7 @@ end
   Prints the Smat as a julia-program into the file named io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
-"""->  
+"""->
 function toNemo(f::String, A::Smat; name = "A")
   io = open(f, "w")
   toNemo(io, A, name=name)
@@ -280,7 +281,7 @@ function transpose{T}(A::Smat{T})
       r = A.rows[i].pos[j]
       push!(B.rows[r].pos, i)
       push!(B.rows[r].values, A.rows[i].values[j])
-    end 
+    end
   end
   B.c = n
   B.r = m
@@ -382,7 +383,7 @@ function mul!{T}(c::fmpz_mat, A::Smat{T}, b::fmpz_mat)
       end
       c[i, m] = s
     end
-  end  
+  end
   return c
 end
 
@@ -518,7 +519,7 @@ function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_ro
 
     V = fmpz(leading_coefficient(f))
     pp = fmpz(p)
-      
+
     v = Array(typeof(k(1)), 2*degree(f)+1)
     while true
       p = next_prime(p)
@@ -560,8 +561,8 @@ end
 
 ################################################################################
 #
-# Basics: sub 
-#         vcat! 
+# Basics: sub
+#         vcat!
 #         push! (add a SmatRow to it)
 #         getindex -> A[i,j] for reading
 #         rows, cols
@@ -742,6 +743,51 @@ function swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
   A.rows[j] = a
 end
 
+doc"""
+    swap_cols!{T}(A::Smat{T}, i::Int, j::Int)
+
+> Swap the i-th and j-th column inplace.
+"""
+function swap_cols!{T}(A::Smat{T}, i::Int, j::Int)
+  @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
+
+  if i == j
+    return nothing
+  end
+
+  for r in A.rows
+    if i in r.pos
+      i_i = findfirst(r.pos, i)
+      val_i = r.values[i_i]
+      if j in r.pos
+        i_j = findfirst(r.pos, j)
+        val_j = r.values[i_j]
+
+        r.values[i_i], r.values[i_j] = r.values[i_j], r.values[i_i]
+      else
+        t = r.values[i_i]
+        deleteat!(r.pos, i_i)
+        deleteat!(r.values, i_i)
+        k = searchsortedfirst(r.pos, j)
+        insert!(r.pos, k, j)
+        insert!(r.values, k, t)
+      end
+    else
+      if j in r.pos
+        i_j = findfirst(r.pos, j)
+        val_j = r.values[i_j]
+
+        t = r.values[i_j]
+        deleteat!(r.pos, i_j)
+        deleteat!(r.values, i_j)
+        k = searchsortedfirst(r.pos, i)
+        insert!(r.pos, k, i)
+        insert!(r.values, k, t)
+      end
+    end
+  end
+  return nothing
+end
 
 # rows j -> row i*c + row j
 @doc """
@@ -788,6 +834,35 @@ function add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
   return A
 end
 
+# col j -> col i*c + col j
+doc"""
+    add_scaled_col!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+
+> Adds, inplace, the c*i-th column to the j-th column.
+"""
+function add_scaled_col!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+  @assert c != 0
+
+  @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
+
+  for r in A.rows
+    if i in r.pos
+      i_i = findfirst(r.pos, i)
+      val_i = r.values[i_i]
+      if j in r.pos
+        i_j = findfirst(r.pos, j)
+        val_j = r.values[i_j]
+
+        r.values[i_j] += c*r.values[i_i]
+      else
+        k = searchsortedfirst(r.pos, j)
+        insert!(r.pos, k, j)
+        insert!(r.values, k, c*r.values[i_i])
+      end
+    end
+  end
+  return nothing
+end
 
 # row i -> a*row i + b * row j
 # row j -> c*row i + d * row j
@@ -796,7 +871,7 @@ end
 
   Inplace, replaces the i-th row and the j-th row by
   [a,b; c,d] * [i-th-row ; j-th row]
-""" ->        
+""" ->
 function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
   sr = SmatRow{T}()
   tr = SmatRow{T}()
@@ -1026,7 +1101,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
     i += 1
   end
 
-  if length(all_r) == 0 
+  if length(all_r) == 0
     return A.r+1
   end
 #  println("found multiple $(length(all_r)) possibilities of weight $([length(A.rows[_i].pos) for _i in all_r])")
@@ -1123,7 +1198,7 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
       else
         h = nmod_mat(mod, h)
         rref!(h)
-        h = Array(lift(h)) 
+        h = Array(lift(h))
       end
       h = Smat(h)
       for j in h.rows
@@ -1135,7 +1210,7 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
         push!(A.rows, rw)
         A.r += 1
       end
-      
+
       return
     end
   end
@@ -1145,10 +1220,26 @@ end
 function sparsity{T}(A::Smat{T})
   return A.nnz/(A.r * A.c), nbits(abs_max(A))
 end
- 
-#include("/home/claus/bigRel")
 
-# New stuff from Tommy
+################################################################################
+#
+#  Inverses of elementary matrices
+#
+################################################################################
+
+function inv(t::TrafoSwap)
+  return T
+end
+
+function inv(t::TrafoAddScaled)
+  return TrafoAddScaled(t.i, t.j, -t.s)
+end
+
+function inv(t::TrafoPartialDense)
+  return TrafoPartialDense(t.i, t.rows, t.cols, inv(t.U))
+end
+
+# TrafoParaAddScaled is missing
 
 ################################################################################
 #
@@ -1156,13 +1247,15 @@ end
 #
 ################################################################################
 
+# The following function do not update the number of nonzero entries
+# properly
 function apply_left!{T}(A::Smat{T}, t::TrafoSwap{T})
   swap_rows!(A, t.i, t.j)
   return nothing
 end
 
 function apply_left!{T}(A::Smat{T}, t::TrafoAddScaled{T})
-  add_scaled_row!(A, t.i, t.j, t.s) 
+  add_scaled_row!(A, t.i, t.j, t.s)
   return nothing
 end
 
@@ -1177,6 +1270,7 @@ function apply_left!{T}(A::Smat{T}, t::TrafoDeleteZero{T})
 end
 
 function apply_left!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
+  R = parent(A.rows[1].values[1])
   i = t.i
   h = sub(A, t.rows, t.cols)
   deleteat!(A.rows, t.rows)
@@ -1188,6 +1282,53 @@ function apply_left!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
   #println(t.U)
 
   hdense = t.U * hdense
+
+  h = _Smat(hdense, R = R, zerorows = true)
+
+  for k in 1:length(h.rows)
+    j = h.rows[k]
+    rw = SmatRow{T}()
+    for e in 1:length(j.pos)
+      push!(rw.pos, j.pos[e] + i-1)
+      push!(rw.values, j.values[e])
+    end
+    insert!(A.rows, i + k - 1, rw)
+    A.r += 1
+  end
+  return nothing
+end
+
+################################################################################
+#
+#  Application of a transformation on the right side of a sparse matrix
+#
+################################################################################
+
+# The following function do not update the number of nonzero entries
+# properly
+function apply_right!{T}(A::Smat{T}, t::TrafoSwap{T})
+  swap_cols!(A, t.i, t.j)
+  return nothing
+end
+
+function apply_right!{T}(A::Smat{T}, t::TrafoAddScaled{T})
+  add_scaled_col!(A, t.j, t.i, t.s)
+  return nothing
+end
+
+function apply_right!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
+  # this works only if there are zeros left of the block to which we apply t
+  i = t.i
+  h = sub(A, t.rows, t.cols)
+  deleteat!(A.rows, t.rows)
+  A.r -= length(t.rows)
+  @assert length(A.rows) == A.r
+  # make dense matrix
+  hdense = typeof(t.U)(h)
+
+  #println(t.U)
+
+  hdense = hdense * t.U
 
   h = _Smat(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
 
@@ -1211,7 +1352,7 @@ end
 ################################################################################
 
 function apply_right!{T}(x::Array{T, 1}, t::TrafoAddScaled{T})
-  x[t.i] = x[t.i] + x[t.j]*t.s   
+  x[t.i] = x[t.i] + x[t.j]*t.s
   return nothing
 end
 
@@ -1251,10 +1392,38 @@ end
 
 ################################################################################
 #
+#  Application to the left of an Array of ideals
+#
+################################################################################
+
+function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoSwap)
+  x[y.i], x[y.j] = x[y.j], x[y.i]
+end
+
+function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoAddScaled)
+  x[y.j] = x[y.j] * x[y.i]^Int(y.s)
+end
+
+function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoPartialDense)
+  z = view(deepcopy(x), y.cols)
+  xx = view(x, y.cols)
+  for i in 1:rows(y.U)
+    xx[i] = z[1]^Int(y.U[i, 1])
+    for j in 2:cols(y.U)
+      xx[i] *= z[j]^Int(y.U[i, j])
+    end
+  end
+end
+
+################################################################################
+#
 #  One echelonization step w/o transformations
 #
 ################################################################################
 
+# Perform one step in the echelonization, that is, find a pivot and clear
+# elements below.
+# sr = starting row
 function _one_step{T}(A::Smat{T}, sr = 1)
   nr, trafo = _one_step_with_trafo(A, sr)
   return nr
@@ -1279,7 +1448,7 @@ function _one_step_with_trafo{T}(A::Smat{T}, sr = 1)
     i += 1
   end
 
-  if length(all_r) == 0 
+  if length(all_r) == 0
     return A.r+1, trafos
   end
 
@@ -1356,8 +1525,7 @@ end
 #
 ################################################################################
 
-# Tommy: They do not remove zero rows! Don't let them remove zero rows
-
+# The echelonization_via_dense must not remove zero rows automatically
 function echelonize_via_dense(h::Smat{UIntMod})
   R = parent(h.rows[1].values[1])
   # turn into dense structure
@@ -1437,7 +1605,7 @@ function upper_triangular_with_trafo!(M::Smat{fmpz},
   return _upper_triangular_with_trafo!(M, f)
 end
 
-# is_dense_enough is a function (::Smat{T}, i::Int) -> Bool 
+# is_dense_enough is a function (::Smat{T}, i::Int) -> Bool
 # At each level i, is_dense_enough(A, i) is called.
 # If it evaluates to true, then dense echelonization will be called.
 function _upper_triangular_with_trafo!{T}(A::Smat{T}, is_dense_enough::Function)
@@ -1451,7 +1619,7 @@ function _upper_triangular_with_trafo!{T}(A::Smat{T}, is_dense_enough::Function)
       return trafo
     end
 
-    if is_dense_enough(A, i) 
+    if is_dense_enough(A, i)
       h = sub(A, i:A.r, i:A.c)
 
       h, U = echelonize_via_dense_with_trafo(h)
@@ -1476,13 +1644,13 @@ function _upper_triangular_with_trafo!{T}(A::Smat{T}, is_dense_enough::Function)
         end
         rw = SmatRow{T}()
         for e in 1:length(j.pos)
-          push!(rw.pos, j.pos[e] + i-1)
+          push!(rw.pos, j.pos[e] + i - 1)
           push!(rw.values, j.values[e])
         end
         push!(A.rows, rw)
         A.r += 1
       end
-      
+
       k = A.r
 
       # Now delete trailing zero rows.
@@ -1491,6 +1659,12 @@ function _upper_triangular_with_trafo!{T}(A::Smat{T}, is_dense_enough::Function)
         A.r -= 1
         push!(trafo, TrafoDeleteZero{T}(k))
         k -= 1
+      end
+
+      # I guess I can do something more clever then the following:
+      A.nnz = 0
+      for r in A.rows
+        A.nnz += length(r.pos)
       end
 
       return trafo
@@ -1519,27 +1693,76 @@ function _upper_triangular!{T}(A::Smat{T}, is_dense_enough)
       return nothing
     end
 
-    if is_dense_enough(A, i) 
+    if is_dense_enough(A, i)
 
       h = sub(A, i:A.r, i:A.c)
       deleteat!(A.rows, i:A.r)
       A.r -= length(i:A.r)
       @assert length(A.rows) == A.r
+
       # make dense matrix
       h = echelonize_via_dense(h)
 
       for j in h.rows
         rw = SmatRow{T}()
         for e in 1:length(j.pos)
-          push!(rw.pos, j.pos[e] + i-1)
+          push!(rw.pos, j.pos[e] + i - 1)
           push!(rw.values, j.values[e])
         end
         push!(A.rows, rw)
         A.r += 1
       end
+
+      # I guess I can do something more clever then the following:
+      A.nnz = 0
+      for r in A.rows
+        A.nnz += length(r.pos)
+      end
+
       return nothing
     end
   end
   return nothing
 end
 
+################################################################################
+#
+#   Smith normal form
+#
+################################################################################
+
+function _snf_upper_triangular_with_trafo(A::Smat{fmpz})
+  # We assume that A is quadratic and upper triangular
+  essential_index = 1
+
+  for i in 1:rows(A)
+    @assert A.rows[i].pos[1] == i
+    if A.rows[i].values[1] != 1
+      essential_index = i
+      break
+    end
+  end
+
+  # Let us pick up the transformations
+
+  trafos_right = []
+  trafos_left = []
+
+  for i in 1:essential_index-1
+    for (j, a) in zip(A.rows[i].pos, A.rows[i].values)
+      if j == i
+        continue
+      end
+      push!(trafos_right, TrafoAddScaled(j, i, -a))
+    end
+  end
+
+  essential_part = fmpz_mat(sub(A, essential_index:rows(A), essential_index:cols(A)))
+
+  snfofess, ltr, rtr = snf_with_transform(essential_part; l = true, r = true)
+
+  push!(trafos_left, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), ltr))
+  push!(trafos_right, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), rtr))
+
+  return snfofess, trafos_left, trafos_right
+end

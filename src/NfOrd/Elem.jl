@@ -43,13 +43,7 @@ export deepcopy, call, parent, elem_in_nf, elem_in_basis, discriminant, hash,
 #
 ################################################################################
 
-doc"""
-***
-    deepcopy(x::NfOrdElem) -> NfOrdElem
-
-> Returns a copy of $x$.
-"""
-function deepcopy(x::NfOrdElem)
+function Base.deepcopy_internal(x::NfOrdElem, dict::ObjectIdDict)
   z = parent(x)()
   z.elem_in_nf = deepcopy(x.elem_in_nf)
   if x.has_coord

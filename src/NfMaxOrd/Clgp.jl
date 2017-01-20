@@ -358,6 +358,38 @@ function factor(FB::NfFactorBase, a::nf_elem)
   return M
 end
 
+function _factor!2{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
+                    error::Bool = true, n::fmpq = abs(norm(a)))
+  d = factor(FB.fb_int, num(n)*den(a))
+  rw = FB.rw
+  r = Array{Tuple{Int, Int}, 1}()
+  for p in keys(d)
+    vp = valuation(n, p)[1]
+    s, vp = FB.fb[p].doit(a, vp)
+    if vp != 0
+      if error
+        @hassert :ClassGroup 1 vp == 0
+      end
+      return false
+    end
+    r = vcat(r, s)
+  end
+  lg::Int = length(r)
+  if lg > 0
+    if length(rw) > FB.mx
+      FB.mx = length(rw)
+    end
+    sort!(r, lt=function(a,b) return a[1] < b[1]; end)
+    @hassert :ClassGroup 1 length(r) > 0
+    push!(M, SmatRow{T}(r))
+    return true
+  else 
+    # factor failed or I have a unit.
+    # sparse rel mat must not have zero-rows.
+    return false
+  end
+end
+
 function show(io::IO, I::IdealRelationsCtx)
   println(io, "IdealRelationCtx for ", I.A)
   println(io, "  current length bound ", I.c, " stats: ", I.cnt, " and ", I.bad)
@@ -1484,6 +1516,18 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
     class_group_find_relations2(c)
   end
 
+  # bring it into snf using factorized ideals and elements
+
+  s, l, r = _snf_upper_triangular_with_trafo(c.H)
+
+  ideals = [ FacElem([x], [ fmpz(1) ]) for x in c.FB.ideals ]
+
+  elts = [ FacElem(x) for x in c.R ]
+
+  for t in c.H_trafo
+    transform_left!(elts, t)
+  end
+
   _set_ClassGrpCtx_of_order(O, c)
 
   return c
@@ -1772,7 +1816,7 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
-  U = UnitGrpCtx{FacElem{nf_elem}}(O)
+  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
 
   while true
     @v_do :UnitGroup 1 pushindent() 

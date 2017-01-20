@@ -937,3 +937,7 @@ characteristic(::AnticNumberField) = 0
 #
 
 show_minus_one(::Type{nf_elem}) = false
+
+#
+
+elem_type(::Type{NfMaxOrdIdlSet}) = NfMaxOrdIdl
