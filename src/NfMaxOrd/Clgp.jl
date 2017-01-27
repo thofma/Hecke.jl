@@ -1336,6 +1336,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
 
+  @vprint :ClassGroup 1 "Target rank: $(cols(clg.M))\nCurrent rank: $(rows(clg.H))\nTentative class number: $(h)"
+
   want_extra = 5
   bad_h = false
   no_rand = 1
@@ -1425,6 +1427,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       if h==1 
         return h, piv
       end
+      @vprint :ClassGroup 1 "Now have $(clg.M)"
       @v_do :ClassGroup 1 println("full rank: current h = ", h,
                       " want ", want_extra, " more")
       if h == last_h 
@@ -1518,15 +1521,15 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
 
   # bring it into snf using factorized ideals and elements
 
-  s, l, r = _snf_upper_triangular_with_trafo(c.H)
-
-  ideals = [ FacElem([x], [ fmpz(1) ]) for x in c.FB.ideals ]
-
-  elts = [ FacElem(x) for x in c.R ]
-
-  for t in c.H_trafo
-    transform_left!(elts, t)
-  end
+#  s, l, r = _snf_upper_triangular_with_trafo(c.H)
+#
+#  ideals = [ FacElem([x], [ fmpz(1) ]) for x in c.FB.ideals ]
+#
+#  elts = [ FacElem(x) for x in c.R ]
+#
+#  for t in c.H_trafo
+#    transform_left!(elts, t)
+#  end
 
   _set_ClassGrpCtx_of_order(O, c)
 
