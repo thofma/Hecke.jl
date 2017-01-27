@@ -43,7 +43,7 @@ add_verbose_scope(:UnitGroup)
 ################################################################################
 
 function _unit_group_init(O::NfMaxOrd)
-  u = UnitGrpCtx{FacElem{nf_elem}}(O)
+  u = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
   return u
 end
 
@@ -101,7 +101,7 @@ end
 
 _is_unit(x::NfOrdElem) = is_unit(x)
 
-function _is_unit{T <: Union{nf_elem, FacElem{nf_elem}}}(x::T)
+function _is_unit{T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}(x::T)
   return abs(norm(x)) == 1
 end
 
@@ -803,7 +803,7 @@ end
 ################################################################################
 
 function _unit_group(O::NfMaxOrd, c::ClassGrpCtx)
-  u = UnitGrpCtx{FacElem{nf_elem}}(O)
+  u = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
   _unit_group_find_units(u, c)
   return u
 end
@@ -949,7 +949,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   return 1
 end
 
-function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem})
+function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
   isindep, p = is_independent(vcat(u.units, [x]), u.indep_prec)
   u.indep_prec = max(p, u.indep_prec)
   if isindep

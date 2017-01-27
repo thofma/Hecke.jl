@@ -79,7 +79,7 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
              intersect, lcm, strong_echelon_form, strong_echelon_form!,
              howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
              FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear, lufact!, agm, height, characteristic, roots
+             acb_vec_clear, lufact!, agm, height, characteristic, roots, isprime
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -115,9 +115,6 @@ const libdir = joinpath(pkgdir, "local", "lib")
 
 function __init__()
 
-  on_windows = @windows ? true : false
-  on_linux = @linux ? true : false
-  
   println("")
   print("Welcome to \n")
   print_with_color(:red, "
@@ -134,12 +131,12 @@ function __init__()
   print_with_color(:green, " $VERSION_NUMBER ")
   print("... \n ... which comes with absolutely no warrant whatsoever")
   println()
-  println("(c) 2015, 2016 by Claus Fieker and Tommy Hofmann")
+  println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
   println()
   
   if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
     push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  elseif on_linux
+  elseif is_linux()
     push!(Libdl.DL_LOAD_PATH, libdir)
     Libdl.dlopen(libhecke)
   else
@@ -280,13 +277,13 @@ macro v_do(args...)
   if length(args) == 2
     quote
       if get_verbose_level($(args[1])) >= 1
-       $(args[2])
+       $(esc(args[2]))
       end
     end
   elseif length(args) == 3
     quote
       if get_verbose_level($(args[1])) >= $(args[2])
-        $(args[3])
+        $(esc(args[3]))
       end
     end
   end
@@ -481,7 +478,7 @@ include("misc2.jl")
 include("EllCrv.jl")
 
 for T in subtypes(Map)
-  Base.call(M::T, a) = image(M, a)
+  (M::T)(a) = image(M, a)
 end
 
 ################################################################################

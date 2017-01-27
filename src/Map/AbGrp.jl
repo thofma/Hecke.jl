@@ -75,3 +75,6 @@ function AbToNfOrdUnitGrp{T, S}(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor
   return AbToNfOrdUnitGrp{T, S}(O, ind_unit, tor_unit, tor_ord)
 end
 
+type AbToNfOrdFracIdlGrp <: Map{FinGenGrpAbSnf, NfMaxOrdIdl}
+  header::MapHeader{FinGenGrpAbSnf, NfMaxOrdIdl}
+end

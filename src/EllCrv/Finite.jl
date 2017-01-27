@@ -242,7 +242,7 @@ doc"""
 > Given a point on an elliptic curve over a finite field, returns the order
 > of this point.
 """
-order(P::EllCrvPt) = order_via_bsgs(P)
+order(P::EllCrvPt) = elem_order_bsgs(P)
 
 ################################################################################
 #

@@ -255,13 +255,13 @@ doc"""
 
 > Makes a copy of $\mathcal O$.
 """
-function deepcopy(O::NfOrd)
+function Base.deepcopy_internal(O::NfOrd, dict::ObjectIdDict)
   z = NfOrdGen()
   for x in fieldnames(O)
     # This is slow. Julia can't interfere the type of the right hand side.
     # (According to @code_warntype)
     if x != :nf && x != :parent && isdefined(O, x) 
-      z.(x) = deepcopy(getfield(O, x))
+      setfield!(z, x, deepcopy(getfield(O, x)))
     end
   end
   z.nf = O.nf

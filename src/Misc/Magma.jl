@@ -19,7 +19,7 @@ function toNemo(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "println(\"Loaded ", name, "\")")
 end
 
-function toNemo(s::ASCIIString, A::fmpz_mat)
+function toNemo(s::String, A::fmpz_mat)
   f = open(s, "w")
   toNemo(f, A)
   close(f)
@@ -46,7 +46,7 @@ function toMagma(io::IOStream, A::fmpz_mat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function toMagma(s::ASCIIString, A::fmpz_mat)
+function toMagma(s::String, A::fmpz_mat)
   f = open(s, "w")
   toMagma(f, A)
   close(f)
@@ -71,7 +71,7 @@ function toMagma(io::IOStream, A::Smat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function toMagma(s::ASCIIString, A::Smat)
+function toMagma(s::String, A::Smat)
   f = open(s, "w")
   toMagma(f, A)
   close(f)

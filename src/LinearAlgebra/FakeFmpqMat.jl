@@ -161,7 +161,7 @@ function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
   return z
 end
 
-function deepcopy(x::FakeFmpqMat)
+function Base.deepcopy_internal(x::FakeFmpqMat, dict::ObjectIdDict)
   z = FakeFmpqMat(deepcopy(num(x)), den(x))
   return z
 end

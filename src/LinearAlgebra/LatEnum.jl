@@ -220,7 +220,7 @@ function enum_ctx_advance_level{A,B,C}(E::enum_ctx{A,B,C}, i::Int)
   end
 end
 
-global _next = 0.0
+_next = 0.0
 function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
   global _next
   @v_do :ClassGroup_time 2 rt = time_ns()

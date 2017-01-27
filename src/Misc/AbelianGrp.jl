@@ -33,7 +33,7 @@
 ################################################################################
 
 export FinGenGrpAb, FinGenGrpAbElem, parent, is_finite, is_infinite, rank,
-       getindex, show, +, *, call, ngens, snf_with_transform, nrels,
+       getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, is_trivial, order, exponent, AbelianGroup, DiagonalGroup,
        quo, sub
 
@@ -259,12 +259,12 @@ end
 
 doc"""
 ***
-    call(A::FinGenGrpAbSnf, x::Array{fmpz, 1}) -> FinGenGrpAbElem
+    (A::FinGenGrpAbSnf)(x::Array{fmpz, 1}) -> FinGenGrpAbElem
 
 > Given an array of elements of type `fmpz` of the same length as ngens($A$),
 > this function returns the element of $A$ with components `x`.
 """
-function call(A::FinGenGrpAbSnf, x::Array{fmpz, 1})
+function (A::FinGenGrpAbSnf)(x::Array{fmpz, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
   y = MatrixSpace(ZZ, 1, ngens(A))(x)
   z = FinGenGrpAbElemCreate(A, y)
@@ -273,12 +273,12 @@ end
 
 doc"""
 ***
-    call{T <: Integer}(A::FinGenGrpAbSnf, x::Array{T, 1}) -> FinGenGrpAbElem
+    (A::FinGenGrpAbSnf)(x::Array{Integer, 1}) -> FinGenGrpAbElem
 
 > Given an array of elements of type `Integer` of the same length as ngens($A$),
 > this function returns the element of $A$ with components `x`.
 """
-function call{T <: Integer}(A::FinGenGrpAbSnf, x::Array{T, 1})
+function (A::FinGenGrpAbSnf){T <: Integer}(x::Array{T, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z
@@ -286,12 +286,12 @@ end
 
 doc"""
 ***
-    call(A::FinGenGrpAbSnf, x::fmpz_mat) -> FinGenGrpAbElem
+    (A::FinGenGrpAbSnf)(x::fmpz_mat) -> FinGenGrpAbElem
 
 > Given a 1 x ngens(A) fmpz_mat,
 > this function returns the element of $A$ with components `x`.
 """
-function call(A::FinGenGrpAbSnf, x::fmpz_mat)
+function (A::FinGenGrpAbSnf)(x::fmpz_mat)
   ngens(A) != cols(x) && error("Lengths do not coincide")
   rows(x) != 1 && error("Matrix should have only one row")
   z = FinGenGrpAbElemCreate(A, x)
@@ -300,12 +300,12 @@ end
 
 doc"""
 ***
-    call(A::FinGenGrpAbGen, x::Array{fmpz, 1}) -> FinGenGrpAbElem
+    (A::FinGenGrpAbGen)(x::Array{fmpz, 1}) -> FinGenGrpAbElem
 
 > Given an array of elements of type `fmpz` of the same length as ngens($A$),
 > this function returns the element of $A$ with components `x`.
 """
-function call(A::FinGenGrpAbGen, x::Array{fmpz, 1})
+function (A::FinGenGrpAbGen)(x::Array{fmpz, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
   y = MatrixSpace(ZZ, 1, ngens(A))(x)
   z = FinGenGrpAbElemCreate(A, y)
@@ -314,12 +314,12 @@ end
 
 doc"""
 ***
-    call{T <: Integer}(A::FinGenGrpAbGen, x::Array{T, 1}) -> FinGenGrpAbElem
+    (A::FinGenGrpAbGen, x::Array{Integer, 1}) -> FinGenGrpAbElem
 
 > Given an array of elements of type `Integer` of the same length as ngens($A$),
 > this function returns the element of $A$ with components `x`.
 """
-function call{T <: Integer}(A::FinGenGrpAbGen, x::Array{T, 1})
+function (A::FinGenGrpAbGen){T <: Integer}(x::Array{T, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z
@@ -327,12 +327,12 @@ end
 
 doc"""
 ***
-    call(A::FinGenGrpAbGen, x::fmpz_mat) -> FinGenGrpAbElem
+    (A::FinGenGrpAbGen)(x::fmpz_mat) -> FinGenGrpAbElem
 
 > Given a 1 x ngens(A) fmpz_mat,
 > this function returns the element of $A$ with components `x`.
 """
-function call(A::FinGenGrpAbGen, x::fmpz_mat)
+function (A::FinGenGrpAbGen)(x::fmpz_mat)
   ngens(A) != cols(x) && error("Lengths do not coincide")
   rows(x) != 1 && error("Matrix should have only one row")
   z = FinGenGrpAbElemCreate(A, x)

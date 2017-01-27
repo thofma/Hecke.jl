@@ -358,6 +358,38 @@ function factor(FB::NfFactorBase, a::nf_elem)
   return M
 end
 
+function _factor!2{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
+                    error::Bool = true, n::fmpq = abs(norm(a)))
+  d = factor(FB.fb_int, num(n)*den(a))
+  rw = FB.rw
+  r = Array{Tuple{Int, Int}, 1}()
+  for p in keys(d)
+    vp = valuation(n, p)[1]
+    s, vp = FB.fb[p].doit(a, vp)
+    if vp != 0
+      if error
+        @hassert :ClassGroup 1 vp == 0
+      end
+      return false
+    end
+    r = vcat(r, s)
+  end
+  lg::Int = length(r)
+  if lg > 0
+    if length(rw) > FB.mx
+      FB.mx = length(rw)
+    end
+    sort!(r, lt=function(a,b) return a[1] < b[1]; end)
+    @hassert :ClassGroup 1 length(r) > 0
+    push!(M, SmatRow{T}(r))
+    return true
+  else 
+    # factor failed or I have a unit.
+    # sparse rel mat must not have zero-rows.
+    return false
+  end
+end
+
 function show(io::IO, I::IdealRelationsCtx)
   println(io, "IdealRelationCtx for ", I.A)
   println(io, "  current length bound ", I.c, " stats: ", I.cnt, " and ", I.bad)
@@ -834,7 +866,7 @@ function enum_ctx_from_ideal(c::roots_ctx, A::NfMaxOrdIdl,
   return E
 end
 
-global _start = 0.0
+_start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
                 A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
@@ -1304,6 +1336,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
 
+  @vprint :ClassGroup 1 "Target rank: $(cols(clg.M))\nCurrent rank: $(rows(clg.H))\nTentative class number: $(h)"
+
   want_extra = 5
   bad_h = false
   no_rand = 1
@@ -1393,6 +1427,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       if h==1 
         return h, piv
       end
+      @vprint :ClassGroup 1 "Now have $(clg.M)"
       @v_do :ClassGroup 1 println("full rank: current h = ", h,
                       " want ", want_extra, " more")
       if h == last_h 
@@ -1484,6 +1519,18 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
     class_group_find_relations2(c)
   end
 
+  # bring it into snf using factorized ideals and elements
+
+#  s, l, r = _snf_upper_triangular_with_trafo(c.H)
+#
+#  ideals = [ FacElem([x], [ fmpz(1) ]) for x in c.FB.ideals ]
+#
+#  elts = [ FacElem(x) for x in c.R ]
+#
+#  for t in c.H_trafo
+#    transform_left!(elts, t)
+#  end
+
   _set_ClassGrpCtx_of_order(O, c)
 
   return c
@@ -1571,12 +1618,12 @@ end
 #  Conversion to Magma
 #
 ################################################################################
-function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::ASCIIString = "M")
+function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::String = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")
 end
 
-function toMagma(s::ASCIIString, c::NfMaxOrdIdl, order::ASCIIString = "M")
+function toMagma(s::String, c::NfMaxOrdIdl, order::String = "M")
   f = open(s, "w")
   toMagma(f, c, order)
   close(f)
@@ -1606,13 +1653,13 @@ function toMagma(f::IOStream, clg::ClassGrpCtx)
   toMagma(f, clg.M, name = "MM")
 end
 
-function toMagma(s::ASCIIString, c::ClassGrpCtx)
+function toMagma(s::String, c::ClassGrpCtx)
   f = open(s, "w")
   toMagma(f, c)
   close(f)
 end
 
-function toMagma{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
+function toMagma{T}(f::IOStream, a::Array{T, 1}; name::String="R")
   print(f, name, " := [\n")
   for i=1:(length(a)-1)
     try
@@ -1646,7 +1693,7 @@ function toMagma(f::IOStream, t::Tuple)
   end
 end  
 
-function toMagma{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toMagma{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w")
   f = open(s, mode)
   toMagma(f, a, name = name)
   close(f)
@@ -1659,7 +1706,7 @@ end
 #
 ################################################################################
 
-function toNemo{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
+function toNemo{T}(f::IOStream, a::Array{T, 1}; name::String="R")
   print(f, name, " = [\n")
   for i=1:(length(a)-1)
     print(f, a[i], ",\n")
@@ -1667,7 +1714,7 @@ function toNemo{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   print(f, a[end], "];\n")
 end
 
-function toNemo{T}(s::ASCIIString, a::Array{T, 1}; name::ASCIIString="R", mode::ASCIIString ="w")
+function toNemo{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w")
   f = open(s, mode)
   toNemo(f, a, name = name)
   close(f)
@@ -1772,7 +1819,7 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
-  U = UnitGrpCtx{FacElem{nf_elem}}(O)
+  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
 
   while true
     @v_do :UnitGroup 1 pushindent() 

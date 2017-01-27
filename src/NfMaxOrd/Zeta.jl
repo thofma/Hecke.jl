@@ -42,16 +42,16 @@ export zeta_log_residue
 
 macro with_round_down(expr, T)
   quote
-    with_rounding($T, RoundDown) do
-      $expr
+    with_rounding($(esc(T)), RoundDown) do
+      $(esc(expr))
     end
   end
 end
 
 macro with_round_up(expr, T)
   quote
-    with_rounding($T, RoundUp) do
-      $expr
+    with_rounding($(esc(T)), RoundUp) do
+      $(esc(expr))
     end
   end
 end

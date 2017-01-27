@@ -42,7 +42,7 @@ export basis_mat, norm, inv, ==, *
 #
 ################################################################################
 
-function deepcopy(x::NfMaxOrdFracIdl)
+function Base.deepcopy_internal(x::NfMaxOrdFracIdl, dict::ObjectIdDict)
   z = NfMaxOrdFracIdl(deepcopy(x.num), deepcopy(x.den))
   if isdefined(x, :basis_mat)
     z.basis_mat = deepcopy(x.basis_mat)
@@ -268,6 +268,37 @@ doc"""
 
 ################################################################################
 #
+#  Powering
+#
+################################################################################
+
+function ^(A::NfMaxOrdFracIdl, a::Int)
+  if a == 0
+    B = NfMaxOrdFracIdl(ideal(order(A), 1), fmpz(1))
+    return B
+  end
+
+  if a == 1
+    return A # copy?
+  end
+
+  if a < 0
+    return inv(A^(-a))
+  end
+
+  if a == 2
+    return A*A
+  end
+
+  if mod(a, 2) == 0
+    return (A^div(a, 2))^2
+  else
+    return A * A^(a - 1)
+  end
+end
+
+################################################################################
+#
 #  Ad hoc binary operations
 #
 ################################################################################
@@ -318,7 +349,7 @@ end
 #
 ################################################################################
  
-function call(ord::NfMaxOrdIdlSet, b::NfMaxOrdFracIdl)
+function (ord::NfMaxOrdIdlSet)(b::NfMaxOrdFracIdl)
    b.den > 1 && error("not integral")
    return b.num
 end

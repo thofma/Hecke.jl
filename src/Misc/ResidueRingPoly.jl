@@ -170,7 +170,7 @@ function gcd!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
   return f
 end
 
-function Base.call(R::Nemo.NmodPolyRing, g::fmpq_poly)
+function (R::Nemo.NmodPolyRing)(g::fmpq_poly)
   return fmpq_poly_to_nmod_poly(R, g)
 end
 
