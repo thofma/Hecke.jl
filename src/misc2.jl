@@ -1,5 +1,5 @@
 
-function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int = 4, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0) )
+function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0) )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -16,7 +16,7 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int =
       end
     end
     iszero(a) && continue
-    n = norm_div(a, one, no_p)
+    n = norm_div(a, one, no_b)
     if cmpabs(num(n), bd) <= 0 
       if no_id != 0
         g = gcd(no_id, num(n))
@@ -34,7 +34,7 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_p::Int =
   end
 end
 
-function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_p::Int = 4, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0), smooth = 0 )
+function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::fmpz = fmpz(0), smooth = 0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -60,9 +60,9 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_p::Int = 
     end
     iszero(a) && continue
     if no_id != 0
-      n = norm_div(a, no_id, no_p)
+      n = norm_div(a, no_id, no_b)
     else
-      n = norm_div(a, one, no_p)
+      n = norm_div(a, one, no_b)
     end
     if smooth != 0
       !is_smooth(smooth, num(n))[1] && continue
@@ -84,6 +84,46 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_p::Int = 
   end
   return rels
 end
+
+function basis_rels_3(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::fmpz = fmpz(1), smooth = 0 )
+  a = b[1].parent()
+  t = b[1].parent()
+  nb = length(b)
+  rels = Dict{fmpz, nf_elem}()
+  i = 1
+  l = 0
+  while i < no_rel + 1
+    l = l + 1
+    #println(l)
+    if l % 1000 == 0
+      println("so far $l tries")
+    end
+    zero!(a)
+    for j=1:no_coeff
+      cf = rand([-1, 1])
+      cf = 1
+      p  = rand(1:nb)
+      if cf==1
+        Nemo.add!(a, a, b[p])
+      else
+        Hecke.sub!(a, a, b[p])
+      end
+    end
+    iszero(a) && continue
+    n = norm_div(a, no_id, no_b)
+    if smooth != 0
+      !is_smooth(smooth, num(n))[1] && continue
+    end
+    nn = abs(num(n))
+    if !haskey(rels, nn)
+      rels[nn] = deepcopy(a)
+      i = i + 1
+      println(i)
+    end
+  end
+  return rels
+end
+
 
 function improve(c::Hecke.ClassGrpCtx)
   H = sub(c.M, 1:rows(c.M), 1:cols(c.M))

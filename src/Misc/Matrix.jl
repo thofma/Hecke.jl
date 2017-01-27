@@ -522,6 +522,7 @@ end
 
 function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   @assert nr >= 0 && nc >= 0
+  @assert a+nr-1 <= rows(A) && b+nc-1 <= cols(A)
   M = MatrixSpace(FlintZZ, nr, nc)()::fmpz_mat
   t = ZZ()
   for i = 1:nr
