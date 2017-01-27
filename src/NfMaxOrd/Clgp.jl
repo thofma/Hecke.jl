@@ -1617,14 +1617,14 @@ function toMagma{T}(f::IOStream, a::Array{T, 1}; name::ASCIIString="R")
   for i=1:(length(a)-1)
     try
       toMagma(f, a[i]);
-    catch a
+    catch b
       print(f, a[i])
     end
     print(f, ",\n")
   end
   try
     toMagma(f, a[end])
-  catch
+  catch b
     print(f, a[end])
   end
   print(f, "];\n")

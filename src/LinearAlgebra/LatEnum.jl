@@ -50,7 +50,9 @@ add_verbose_scope(:LatEnum)
 
 function show(io::IO, E::enum_ctx)
   println(io, "EnumCtx")
-  println(io, "curr. length ", E.c, " elt ", E.x, "(", (typeof(E.x), typeof(E.C), typeof(E.U)), ")")
+  if isdefined(E, :c)
+    println(io, "curr. length ", E.c, " elt ", E.x, "(", (typeof(E.x), typeof(E.C), typeof(E.U)), ")")
+  end  
 end
 
 #need to only compute the top l x l submatrix when using limited enum

@@ -237,7 +237,7 @@ type fmpz_poly_raw  ## fmpz_poly without parent like in c
     error("should not get called")
     z = new()
     ccall((:fmpz_poly_init, :libflint), Void, (Ptr{fmpz_poly},), &z)
-        finalizer(z, _fmpz_poly_raw_clear_fn)
+    finalizer(z, _fmpz_poly_raw_clear_fn)
     return z
   end
 end

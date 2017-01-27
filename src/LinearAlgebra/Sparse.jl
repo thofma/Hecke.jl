@@ -394,50 +394,50 @@ end
 
 function SLP_AddRow{T}(i::Int, j::Int, v::T)
   assert(v != 0)
-  slp = SmatSLP_add_row(i, j, v)
+  slp = TrafoAddScaled(i, j, v)
   return slp
 end
 
 function SLP_SwapRows(i::Int, j::Int)
-  slp = SmatSLP_swap_row(i, j)
+  slp = TrafoSwap{fmpz}(i, j)
   return slp
 end
 
-function mul!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
-  t = a[s.row]
-  a[s.row] = a[s.col]
-  a[s.col] = t
-end
-
-function mul!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
-  a[s.row] = a[s.row]*s.val + a[s.col]
-end
-
-function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
-  t = a[s.row]
-  a[s.row] = a[s.col]
-  a[s.col] = t
-end
-
-function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
-  a[s.col] = a[s.col]*s.val + a[s.row]
-end
-
-
-function apply!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
-  for i=length(b):-1:1
-    mul!(a, b[i])
-  end
-  return a
-end
-
-function apply_t!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
-  for i=1:length(b)
-    mul_t!(a, b[i])
-  end
-  return a
-end
-
+# function mul!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
+#   t = a[s.row]
+#   a[s.row] = a[s.col]
+#   a[s.col] = t
+# end
+# 
+# function mul!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
+#   a[s.row] = a[s.row]*s.val + a[s.col]
+# end
+# 
+# function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
+#   t = a[s.row]
+#   a[s.row] = a[s.col]
+#   a[s.col] = t
+# end
+# 
+# function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
+#   a[s.col] = a[s.col]*s.val + a[s.row]
+# end
+# 
+# 
+# function apply!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
+#   for i=length(b):-1:1
+#     mul!(a, b[i])
+#   end
+#   return a
+# end
+# 
+# function apply_t!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
+#   for i=1:length(b)
+#     mul_t!(a, b[i])
+#   end
+#   return a
+# end
+# 
 function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
   a = Array(SmatSLP_add_row{Int}, i)
   for j=1:i
