@@ -175,7 +175,7 @@ function is_square(x::FinFieldElem)
     f = t^2 - x
     fac = factor(f)
 
-    p = first(keys(fac))
+    p = first(keys(fac.fac))
     
     if fac[p] == 2 # f has a double zero
         root = -coeff(p, 0)
@@ -209,7 +209,7 @@ function quadroots(a, b, c, p)
   end
 
   fac = factor(f)
-  p = first(keys(fac))
+  p = first(keys(fac.fac))
     
   if fac[p] == 2 # f has a double zero
     return true
@@ -235,7 +235,7 @@ function nrootscubic(b, c, d, p)
   fac = factor(f)
   
   if length(fac) == 1
-    if fac[first(keys(fac))] == 3
+    if fac[first(keys(fac.fac))] == 3
       return ZZ(3)
     else
       return ZZ(0)
