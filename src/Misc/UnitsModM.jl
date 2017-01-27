@@ -12,8 +12,8 @@ end
 >  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
 >  Intrinsically, only makes sense if the units of Z/MZ are cyclic.
 """ ->
-function is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64})
-  for p=keys(fM)
+function is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Fac{fmpz})
+  for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
     end

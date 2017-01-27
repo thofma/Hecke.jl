@@ -1219,7 +1219,7 @@ function _primitive_element(F::FqNmodFiniteField)
       continue
     end
     is_primitive = true
-    for l in keys(fac)
+    for (l, ll) in fac
       if isone(a^(div(order(F) - 1, l)))
         is_primitive = false
         break

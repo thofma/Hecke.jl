@@ -188,8 +188,8 @@ Then
 function euler_phi(a::Int)
   f = factor(a)
   e = 1
-  for p=keys(f)
-    e *= (p-1)*p^(f[p]-1)
+  for (p, l) in f
+    e *= (p-1)*p^(l-1)
   end
   return e
 end 

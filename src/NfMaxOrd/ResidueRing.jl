@@ -853,7 +853,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
       fac = factor(fmodP)
 
-      for i in keys(fac)
+      for (i, l) in fac
         if degree(i) == 1
           push!(lin_factor, i)
         end

@@ -49,6 +49,8 @@ function IdealSet(O::NfMaxOrd)
    return NfMaxOrdIdlSet(O)
 end
  
+elem_type(::Type{NfMaxOrdIdlSet}) = NfMaxOrdIdl
+
 ################################################################################
 #
 #  Construction
@@ -1283,11 +1285,11 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
   Zmodpx = PolynomialRing(ResidueRing(FlintIntegerRing(), p, cached=false), "y", cached=false)[1]
   fmodp = Zmodpx(Zf)
   fac = factor(fmodp)
-  _fac = typeof(fac)()
+  _fac = Dict{typeof(fmodp), Int}()
   if degree_limit == 0
     degree_limit = degree(K)
   end
-  for (k,v) = fac
+  for (k,v) in fac
     if degree(k) <= degree_limit && degree(k) >= lower_limit
       _fac[k] = v
     end
@@ -1873,7 +1875,7 @@ function split(R::quoringalg)
 
 #    # By theory, all factors should have degree 1 # exploit this if p is small!
     fac = factor(f)
-    F = first(fac)[1]
+    F = first(keys(fac.fac))
     @assert length(fac) == degree(f)
     H = divexact(f,F)
     E, U, V = gcdx(F, H)
