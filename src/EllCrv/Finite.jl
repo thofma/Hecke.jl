@@ -386,7 +386,7 @@ function order_via_schoof(E::EllCrv)
   end
 
   if E.short == false
-    E = get_short_finite_field(E)[1]
+    E = short_weierstrass_model(E)[1]
   end
 
   # step 1: get suitable set S of prime numbers
