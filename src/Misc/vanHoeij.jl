@@ -1,4 +1,41 @@
 import Nemo.lift
+
+function fmpz_poly_read!(a::fmpz_poly, b::String)
+  f = ccall((:fopen, :libc), Ptr{Void}, (Cstring, Cstring), b, "r")
+  ccall((:fmpz_poly_fread, :libflint), Void, (Ptr{Void}, Ptr{fmpz_poly}), f, &a)
+  ccall((:fclose), Void, (Ptr{Void}, ), f)
+  return a
+end
+
+function deflate(x::fmpz_poly, n::Int64)
+  y = parent(x)()
+  for i=0:div(degree(x), n)
+    setcoeff!(y, i, coeff(x, n*i))
+  end
+  return y
+end
+
+function inflate(x::fmpz_poly, n::Int64)
+  y = parent(x)()
+  for i=0:degree(x)
+    setcoeff!(y, n*i, coeff(x, i))
+  end
+  return y
+end
+
+function deflate(x::fmpz_poly)
+  g = 0
+  for i=0:degree(x)
+    if coeff(x, i) != 0
+      g = gcd(g, i)
+      if g==1
+        return x, 1
+      end
+    end
+  end
+  return deflate(x, g), g
+end
+
 function mahler_measure_bound(f::fmpz_poly)
   return root(sum([coeff(f, i)^2 for i=0:degree(f)])-1, 2)+1
 end 
@@ -36,6 +73,29 @@ function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,GenMat{GenRes{fmpz}}})
   return N
 end
 
+type fmpz_poly_factor_t
+  c::Int64 # actually an fmpz, the content
+  p::Int64 # actually a fmpz_poly_struct *
+  exp:: Int64 # slong *
+  num:: Int64
+  alloc::Int64
+  function fmpz_poly_factor_t()
+    n = new()
+    ccall((:fmpz_poly_factor_init, :libflint), Void, (Ptr{fmpz_poly_factor_t}, ), &n)
+    finalizer(n, fmpz_poly_factor_clear)
+    return n
+  end
+  function fmpz_poly_factor_clear(n::fmpz_poly_factor_t)
+    ccall((:fmpz_poly_factor_clear, :libflint), Void, (Ptr{fmpz_poly_factor_t}, ), &n)
+  end
+end
+
+function flint_factor(f::fmpz_poly)
+  n = fmpz_poly_factor_t()
+  ccall((:fmpz_poly_factor, :libflint), Void, (Ptr{fmpz_poly_factor_t}, Ptr{fmpz_poly}), &n, &f)
+  return n
+end
+
 _last = 1
 function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
 
@@ -62,14 +122,19 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
   n = degree(f)
   mmb = mahler_measure_bound(f)*n
   cld_bound = function(i)
-    return mmb*binom(n-1, i)
+    a = mmb*binom(n-1, i)
+    b = fmpz()
+    ccall((:fmpz_poly_CLD_bound, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz_poly}, Int64), &b, &f, i)
+    println("Compare: $(nbits(a)) vs $(nbits(b)) as a bound for $i")
+    return min(a,b)
   end
 
   # following Bill's paper
   # we build the matrix gradually...
 
-  k = _log(fmpz(p), cld_bound(div(n, 2)))+1
-  d = Int(ceil(4*nbits(n)/nbits(p))) * 2  + Int(ceil(0.2 * k))
+  k = min(_log(fmpz(p), cld_bound(0)), _log(fmpz(p), cld_bound(n-1)))+1
+  println("starting with k=k_max=$k")
+  d = Int(ceil(2*nbits(n)/nbits(p))) * 1  + Int(ceil(0.2 * k))
   k_max = k
 
 
@@ -118,9 +183,9 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
       end
       curr_col += 1
       println("adding col, now at $curr_col, $(rows(m))")
-      bd = _log(fmpz(p), cld_bound(c))+1 # bound for THIS coeff only
+      bd = _log(fmpz(p), cld_bound(n-1-c))+1 # bound for THIS coeff only
       if bd > k_max
-        print_with_color(:red, "prec change for next iteration\n")
+        print_with_color(:red, "prec change for next iteration was $k_max is $bd for $c\n")
       end  
       k_max = max(k_max, bd)
       rm = rows(m)
@@ -144,9 +209,11 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
         end
       else
         print_with_color(:yellow, "\n\n zero diag added \n\n")
+        d *= 2
+        break;
       end
 
-      if curr_col <= 2 # *div(nbits(r), 1)
+      if curr_col <= 1 # *div(nbits(r), 1)
         println("not enough cols")
         continue
       end
@@ -174,6 +241,13 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
       @assert rk > 0
       if rk < rows(m)
         println("loosing rows! now at $rk from $(rows(m))")
+      end
+      if rk==1
+        println("Poly is irreducible!")
+        fact = Dict{typeof(f), Int}()
+        Rx = PolynomialRing(ResidueRing(FlintZZ, p))[1]
+        fact[f] = valuation(Rx(f_orig), Rx(f))[1]
+        return fact
       end
       m = sub(l, 1:rk, 1:cols(m))
 
@@ -238,9 +312,12 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
           end
           return fact 
         end
-        if bad > 3
+        if bad > 1
           break
         end
+      end
+      if bad > 1
+        break
       end
     end
     d *= 2
