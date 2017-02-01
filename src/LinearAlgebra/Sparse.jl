@@ -15,11 +15,12 @@
    better elemination strategy
 =#
 
-import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array
+import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array, 
+       Base.endof, Base.start, Base.done, Base.next
 
 export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
-       valence_mc, swap_rows!
+     valence_mc, swap_rows!, endof, start, done, next
 
 ################################################################################
 #
@@ -288,6 +289,49 @@ function transpose{T}(A::Smat{T})
   B.nnz = A.nnz
 
   return B
+end
+
+################################################################################
+# Other stuff: support iterators
+################################################################################
+function endof{T}(A::Smat{T})
+  return length(A.rows)
+end
+
+function start{T}(A::Smat{T})
+  return 1
+end
+
+function next{T}(A::Smat{T}, st::Int)
+  return A.rows[st], st + 1
+end
+
+function done{T}(A::Smat{T}, st::Int)
+  return st > rows(A)
+end
+
+function length(A::Smat)
+  return rows(A)
+end
+
+function length(A::SmatRow)
+  return length(A.pos)
+end
+
+function endof{T}(A::SmatRow{T})
+  return length(A.pos)
+end
+
+function start{T}(A::SmatRow{T})
+  return 1
+end
+
+function next{T}(A::SmatRow{T}, st::Int)
+  return (A.pos[st], A.values[st]), st + 1
+end
+
+function done{T}(A::SmatRow{T}, st::Int)
+  return st > length(A.pos)
 end
 
 ################################################################################
