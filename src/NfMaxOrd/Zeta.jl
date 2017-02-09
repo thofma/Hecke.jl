@@ -42,7 +42,7 @@ export zeta_log_residue
 
 macro with_round_down(expr, T)
   quote
-    with_rounding($(esc(T)), RoundDown) do
+    setrounding($(esc(T)), RoundDown) do
       $(esc(expr))
     end
   end
@@ -50,7 +50,7 @@ end
 
 macro with_round_up(expr, T)
   quote
-    with_rounding($(esc(T)), RoundUp) do
+    setrounding($(esc(T)), RoundUp) do
       $(esc(expr))
     end
   end
@@ -95,11 +95,11 @@ function _approx_error_bf(disc::fmpz, degree::Int, Tc = BigFloat)
   logd_down = Tc(0)::Tc
   sqrt_logd_up = Tc(0)::Tc
   
-  with_rounding(Tc,RoundDown) do
+  setrounding(Tc,RoundDown) do
     logd_down = log(Tc(abs(disc)))
   end
 
-  with_rounding(Tc,RoundUp) do
+  setrounding(Tc,RoundUp) do
     logd_up = log(Tc(abs(disc)))
     sqrt_logd_up = sqrt(logd_up)
   end
