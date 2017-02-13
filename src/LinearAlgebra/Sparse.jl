@@ -757,7 +757,8 @@ end
   The same matrix, but as a two-dimensional julia-Array.
 """ ->
 function Array{T}(A::Smat{T})
-  R = Array(T, A.r, A.c)
+  R = zero(Array(T, A.r, A.c)) # otherwise, most entries will be #undef
+                               # at least if T is a flint-type
   for i=1:rows(A)
     for j=1:length(A.rows[i].pos)
       R[i,A.rows[i].pos[j]] = A.rows[i].values[j]
@@ -1451,7 +1452,7 @@ end
 function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoPartialDense)
   z = view(deepcopy(x), y.cols)
   xx = view(x, y.cols)
-  for i in 1:rows(y.U)
+  for i in 1:rows(y.U)  ## use power product instead
     xx[i] = z[1]^Int(y.U[i, 1])
     for j in 2:cols(y.U)
       xx[i] *= z[j]^Int(y.U[i, j])
