@@ -138,7 +138,7 @@ function improve(c::Hecke.ClassGrpCtx)
 end
 
 
-function rels_stat(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function rels_stat(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
   a = b[1].parent()
   t = b[1].parent()
   nb = length(b)
@@ -167,7 +167,7 @@ function rels_stat(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no
     if fixed!=0 && fixed(a) == a
       stat[-1] += 1
     end
-    n = norm_div(a, one, no_p)
+    n = norm_div(a, one, no_b)
     k = div(ndigits(num(n), 2), 5)
     if haskey(stat, k)
       stat[k] += 1
@@ -183,18 +183,18 @@ function rels_stat(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no
   return stat, all_g
 end
 
-function find_rels(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function find_rels(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
 
   for i=10:50
-    st, re = rels_stat(b, no_p = no_p, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
+    st, re = rels_stat(b, no_b = no_b, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
     toNemo("/home/fieker/Rels128/rels128.$i", re, name="R$i");
   end
 end
 
-function find_rels2(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
+function find_rels2(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
 
   for i=100:150
-    st, re = rels_stat(b, no_p = no_p, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
+    st, re = rels_stat(b, no_b = no_b, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
     toNemo("/home/fieker/Rels128/rels128.$i", re, name="R$i");
   end
 end
