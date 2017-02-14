@@ -15,11 +15,12 @@
    better elemination strategy
 =#
 
-import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array
+import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array, 
+       Base.endof, Base.start, Base.done, Base.next
 
 export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
-       valence_mc, swap_rows!
+     valence_mc, swap_rows!, endof, start, done, next
 
 ################################################################################
 #
@@ -288,6 +289,49 @@ function transpose{T}(A::Smat{T})
   B.nnz = A.nnz
 
   return B
+end
+
+################################################################################
+# Other stuff: support iterators
+################################################################################
+function endof{T}(A::Smat{T})
+  return length(A.rows)
+end
+
+function start{T}(A::Smat{T})
+  return 1
+end
+
+function next{T}(A::Smat{T}, st::Int)
+  return A.rows[st], st + 1
+end
+
+function done{T}(A::Smat{T}, st::Int)
+  return st > rows(A)
+end
+
+function length(A::Smat)
+  return rows(A)
+end
+
+function length(A::SmatRow)
+  return length(A.pos)
+end
+
+function endof{T}(A::SmatRow{T})
+  return length(A.pos)
+end
+
+function start{T}(A::SmatRow{T})
+  return 1
+end
+
+function next{T}(A::SmatRow{T}, st::Int)
+  return (A.pos[st], A.values[st]), st + 1
+end
+
+function done{T}(A::SmatRow{T}, st::Int)
+  return st > length(A.pos)
 end
 
 ################################################################################
@@ -713,7 +757,8 @@ end
   The same matrix, but as a two-dimensional julia-Array.
 """ ->
 function Array{T}(A::Smat{T})
-  R = Array(T, A.r, A.c)
+  R = zero(Array(T, A.r, A.c)) # otherwise, most entries will be #undef
+                               # at least if T is a flint-type
   for i=1:rows(A)
     for j=1:length(A.rows[i].pos)
       R[i,A.rows[i].pos[j]] = A.rows[i].values[j]
@@ -1407,7 +1452,7 @@ end
 function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoPartialDense)
   z = view(deepcopy(x), y.cols)
   xx = view(x, y.cols)
-  for i in 1:rows(y.U)
+  for i in 1:rows(y.U)  ## use power product instead
     xx[i] = z[1]^Int(y.U[i, 1])
     for j in 2:cols(y.U)
       xx[i] *= z[j]^Int(y.U[i, j])
