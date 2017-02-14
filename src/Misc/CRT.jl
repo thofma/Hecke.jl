@@ -1,4 +1,5 @@
 import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone
+export crt_env, crt
 
 isone(a::Int) = (a==1)
 
@@ -32,9 +33,16 @@ type crt_env{T}
     while 2*i <= length(pr)
       a = pr[2*i-1]
       b = pr[2*i]
-      g, u, v = gcdx(a, b)
-      @assert isone(g)
-      push!(id, v*b , u*a )
+      if false
+        g, u, v = gcdx(a, b)
+        @assert isone(g)
+        push!(id, v*b , u*a )
+      else
+        # we have 1 = g = u*a + v*b, so v*b = 1-u*a - which saves one mult.
+        u = invmod(a, b)
+        u *= b
+        push!(id, 1-u, u)
+      end
       push!(pr, a*b)
       i += 1
     end
@@ -60,8 +68,8 @@ doc"""
    crt_env(p::Array{T, 1}) -> crt_env{T}
 
 > Given coprime moduli in some euclidean ring (FlintZZ, nmod_poly, 
-  fmpz_mod_poly), prepare data for fast application of the chinese
-  remander theorem for those moduli.
+>  fmpz_mod_poly), prepare data for fast application of the chinese
+>  remander theorem for those moduli.
 """
 function crt_env{T}(p::Array{T, 1})
   return crt_env{T}(p)
@@ -73,12 +81,12 @@ end
 
 doc"""
 ***
-   crt{T}(a::crt_env{T}, b::Array{T}) -> T
+   crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
 
 > Given values in b and the environment prepared by crt_env, return the 
-  unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
+> unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """  
-function crt{T}(a::crt_env{T}, b::Array{T})
+function crt{T}(b::Array{T, 1}, a::crt_env{T})
   @assert a.n == length(b)
   bn = div(a.n, 2)
   if isodd(a.n)
@@ -141,7 +149,7 @@ end
 # growing list till the end
 # For the optimized version, we have tmp-array to hold the CRT results
 # plus t1, t2 for temporaty products.
-function crt(a::crt_env{Int}, b::Array{Int, 1})
+function crt(b::Array{Int, 1}, a::crt_env{Int})
   i = a.n+1
   j = 1
   while 2*j <= length(b)
@@ -159,10 +167,108 @@ function crt_test(a::crt_env{fmpz}, b::Int)
     for j=1:a.n
       rem!(z[j], b, a.pr[j])
     end
-    if b != crt(a, z)
+    if b != crt(z, a)
       println("problem: $b and $z")
     end
     @assert b == crt(a, z)
   end
 end
 
+
+doc"""
+***
+  crt(r1::GenPoly, m1::GenPoly, r2::GenPoly, m2::GenPoly) -> GenPoly
+
+> Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
+"""
+function crt{T}(r1::GenPoly{T}, m1::GenPoly{T}, r2::GenPoly{T}, m2::GenPoly{T})
+  g, u, v = gcdx(m1, m2)
+  m = m1*m2
+  return (r1*v*m2 + r2*u*m1) % m
+end
+
+doc"""
+***
+  crt_iterative(r::Array{T, 1}, m::Array{T,1}) -> T
+
+> Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
+> A plain iteration is performed.
+"""
+function crt_iterative{T}(r::Array{T, 1}, m::Array{T, 1})
+  p = crt(r[1], m[1], r[2], m[2])
+  d = m[1] * m[2]
+  for i = 3:length(m)
+    p = crt(p, d, r[i], m[i])
+    d *= m[i]
+  end
+  return p
+end
+
+doc"""
+***
+  crt_tree(r::Array{T, 1}, m::Array{T,1}) -> T
+
+> Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
+> A tree based strategy is used that is asymptotically fast.
+"""
+function crt_tree{T}(r::Array{T, 1}, m::Array{T, 1})
+  if isodd(length(m))
+    M = [m[end]]
+    V = [r[end]]
+  else
+    M = Array{T, 1}()
+    V = Array{T, 1}()
+  end
+
+  for i=1:div(length(m), 2)
+    push!(V, crt(r[2*i-1], m[2*i-1], r[2*i], m[2*i]))
+    push!(M, m[2*i-1]*m[2*i])
+  end
+  i = 1
+  while 2*i <= length(V)
+    push!(V, crt(V[2*i-1], M[2*i-1], V[2*i], M[2*i]))
+    push!(M, M[2*i-1] * M[2*i])
+    i += 1
+  end
+#  println("M = $M\nV = $V")
+  return V[end]
+end
+
+doc"""
+***
+  crt(r::Array{T, 1}, m::Array{T,1}) -> T
+
+> Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
+"""
+function crt{T}(r::Array{T, 1}, m::Array{T, 1}) 
+  length(r) == length(m) || error("Arrays need to be of same size")
+  if length(r) < 5
+    return crt_iterative(r, m)
+  else
+    return crt_tree(r, m)
+  end
+end
+
+function crt_test_time_all(np::Int, n::Int)
+  p = next_prime(fmpz(2)^60)
+  m = [p]
+  for i=1:np-1
+    push!(m, next_prime(m[end]))
+  end
+  v = [rand(0:x-1) for x = m]
+  println("crt_env...")
+  @time ce = crt_env(m)
+  @time for i=1:n 
+    x = crt(v, ce)
+  end
+  
+  println("iterative...")
+  @time for i=1:n
+    x = crt_iterative(v, m)
+  end
+
+  println("tree...")
+  @time for i=1:n
+    x = crt_tree(v, m)
+  end
+end  
