@@ -199,30 +199,32 @@ function find_rels2(b::Array{Hecke.nf_elem, 1}; no_p = 4, no_rel::Int = 10000, n
   end
 end
 
+is_prime(a::Int) = isprime(fmpz(a))
 function int_fb_max_real(f::Int, B::Int)
-  lp = filter(isprime, 2:B)
-  l1 = filter(x -> (x % f) ==1 || (x %f ) == f-1, lp) # the deg 1 primes
-  filter!(x -> !(x in l1), lp)
-  lr = filter(x -> f % x == 0, lp)  # ramified primes
-  filter!(x -> !(x in lr), lp)
-  lu = Array{Int, 1}()
+  p = 2
+  l1 = []
+  lr = []
+  lu = []
+  sB = sqrt(B)
 
-  d = euler_phi(f)
-  for r =2:d
-    if d % r != 0
-      continue
+
+  while p <=  B
+    if p % f == 1 || p % f == f-1
+      push!(l1, p)
+    elseif f % p == 0
+      push!(lr, p)
+    elseif p <= sB
+      pp = fmpz(p)^2
+      while pp <= B
+        if pp % f == 1 || pp % f == -1
+          push!(lu, p)
+        else
+          pp *= p
+        end
+      end  
     end
-    for p = lp
-      if fmpz(p)^r  > B
-        break
-      end
-      if powermod(p, r, f)==1 || powermod(p, r, f) == f-1
-        push!(lu, p)
-      end
-    end
-    filter!(x -> !(x in lu), lp)
+    p = next_prime(p)
   end
-
   return l1, lr, lu
 end
 
