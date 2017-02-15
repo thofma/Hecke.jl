@@ -40,7 +40,8 @@ type crt_env{T}
       else
         # we have 1 = g = u*a + v*b, so v*b = 1-u*a - which saves one mult.
         u = invmod(a, b)
-        u *= b
+#        @assert  (a*u) % b == 1
+        u *= a
         push!(id, 1-u, u)
       end
       push!(pr, a*b)
@@ -170,7 +171,7 @@ function crt_test(a::crt_env{fmpz}, b::Int)
     if b != crt(z, a)
       println("problem: $b and $z")
     end
-    @assert b == crt(a, z)
+    @assert b == crt(z, a)
   end
 end
 
@@ -272,3 +273,67 @@ function crt_test_time_all(np::Int, n::Int)
     x = crt_tree(v, m)
   end
 end  
+
+function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
+  K = a.parent
+  @assert n < degree(K) && n >=0
+  ra = pointer_from_objref(a)
+  if degree(K) == 1
+    ccall((:fmpz_set, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra, &c)
+    ccall((:fmpq_canonicalise, :libflint), Void, (Ptr{nf_elem}, ), &a)
+  elseif degree(K) == 2
+     ccall((:fmpz_set, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra+n*sizeof(Int), &c)
+  else
+    ccall((:fmpq_poly_set_coeff_fmpz, :libflint), Void, (Ptr{nf_elem}, Int, Ptr{fmpz}), &a, n, &c)
+   # includes canonicalisation and treatment of den.
+  end
+end
+
+function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
+  K = a.parent
+  @assert n < degree(K) && n >=0
+
+  ra = pointer_from_objref(a)
+   
+  if degree(K) == 1
+    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra, c)
+    ccall((:fmpq_canonicalise, :libflint), Void, (Ptr{nf_elem}, ), &a)
+  elseif degree(K) == 2
+    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra+n*sizeof(Int), c)
+  else
+    ccall((:fmpq_poly_set_coeff_ui, :libflint), Void, (Ptr{nf_elem}, Int, UInt), &a, n, c)
+   # includes canonicalisation and treatment of den.
+  end
+end
+
+function crt_init(K::AnticNumberField, p::fmpz)
+  @assert isprime(p)
+  Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
+  fp = Fpx(K.pol)
+  lp = factor(fp)
+  @assert Set(values(lp.fac)) == Set([1])
+  pols = collect(keys(lp.fac))
+  ce = crt_env(pols)
+  
+  function proj(a::nf_elem)
+    ap = Fpx(a)
+    return [ ap % f for f = pols]  #CF TODO: tree recursive!! 
+  end
+  function lift(a::Array{nmod_poly, 1})
+    ap = crt(a, ce)
+    println(ap)
+    r = K()
+    for i=0:ap.length-1
+      u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, i)
+      _num_setcoeff!(r, i, u)
+    end
+    return r
+  end
+  return proj, lift
+end
+
+function crt_init(K::AnticNumberField, p::Integer)
+  return crt_init(K, fmpz(p))
+end
+
+
