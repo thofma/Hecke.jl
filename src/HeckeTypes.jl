@@ -257,6 +257,14 @@ type SmatRow{T}
     end
     return r
   end
+
+  function SmatRow(pos::Array{Int, 1}, val::Array{T, 1})
+    length(pos) == length(val) || error("Arrays must have same length")
+    r = new()
+    r.values = val
+    r.pos = pos
+    return r
+  end
 end
 
 type Smat{T}

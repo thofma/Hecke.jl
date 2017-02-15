@@ -96,6 +96,13 @@ function rational_reconstruction(a::fmpz, b::fmpz)
   sb = root(div(b-1, 2), 2)
 
   M = MatrixSpace(R, 2, 2)()
+
+  a = a%b
+  if a<0
+    a+=b
+    @assert a<b 
+  end
+
   M[1,1] = b
   M[2,1] = a
   M[2,2] = R(1)
