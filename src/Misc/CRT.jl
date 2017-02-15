@@ -1,5 +1,5 @@
 import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone
-export crt_env, crt
+export crt_env, crt, crt_inv, crt_init
 
 isone(a::Int) = (a==1)
 
@@ -88,6 +88,11 @@ doc"""
 > unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """  
 function crt{T}(b::Array{T, 1}, a::crt_env{T})
+  res = zero(b[1])
+  return crt!(res, b, a)
+end
+
+function crt!{T}(res::T, b::Array{T, 1}, a::crt_env{T})
   @assert a.n == length(b)
   bn = div(a.n, 2)
   if isodd(a.n)
@@ -133,7 +138,57 @@ function crt{T}(b::Array{T, 1}, a::crt_env{T})
     bn += off
 #    println(a.tmp, " id_off=$id_off, pr_off=$pr_off, off=$off, bn=$bn")
   end
-  return deepcopy(a.tmp[1])
+  zero!(res)
+  add!(res, res, a.tmp[1])
+  return res
+end
+
+#in .pr we have the products of pairs, ... in the wrong order
+# so we traverse this list backwards, while building the remainders...
+#.. and then we do it again, efficiently to avoid resorting and re-allocation
+#=
+function crt_inv{T}(a::T, c::crt_env{T})
+  r = Array{T, 1}()
+  push!(r, a)
+  i = length(c.pr)-1
+  j = 1
+  while i>1 
+    push!(r, r[j] % c.pr[i], r[j] %c.pr[i-1])
+    i -= 2
+    j += 1
+  end
+  return reverse(r, length(r)-c.n+1:length(r))
+end
+=#
+
+function crt_inv!{T}(res::Array{T,1}, a::T, c::crt_env{T})
+  for i=1:c.n
+    if !isdefined(res, i)
+      res[i] = zero(a)
+    end
+  end
+
+  i = length(c.pr)-1
+  r = i
+  w = r + c.n - 1
+
+  zero!(res[r % c.n + 1])
+  add!(res[r % c.n + 1], res[r % c.n + 1], a)
+
+  while i>1 
+    rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
+    rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
+    w += 2*(c.n-1)
+    i -= 2
+    r += 1*(c.n-1)
+  end
+
+  return res
+end
+
+function crt_inv{T}(a::T, c::crt_env{T})
+  res = Array{T}(c.n)
+  return crt_inv!(res, a, c)
 end
     
 #explains the idea, but is prone to overflow.
@@ -317,11 +372,11 @@ function crt_init(K::AnticNumberField, p::fmpz)
   
   function proj(a::nf_elem)
     ap = Fpx(a)
-    return [ ap % f for f = pols]  #CF TODO: tree recursive!! 
+    return crt_inv(ap, ce)
   end
   function lift(a::Array{nmod_poly, 1})
     ap = crt(a, ce)
-    println(ap)
+#    println(ap)
     r = K()
     for i=0:ap.length-1
       u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, i)
