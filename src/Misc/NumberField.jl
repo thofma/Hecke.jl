@@ -886,7 +886,7 @@ function nf_elem_to_nmod_poly_no_den!(r::nmod_poly, a::nf_elem)
   p = r.mod_n
   if d == 1
     ra = pointer_from_objref(a)
-    s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), &, p)
+    s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra, p)
     ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 0, s)
   elseif d == 2  
     ra = pointer_from_objref(a)
@@ -947,6 +947,7 @@ elem_type(::Type{NfMaxOrdIdlSet}) = NfMaxOrdIdl
 #  Interface for modular algorithms
 #
 ################################################################################
+#= Moved to CRT.jl
 
 function modular_init(K::AnticNumberField, p::Int)
   # first get the defining polynomial as fmpz_poly (polynomial over integers)
@@ -1013,9 +1014,9 @@ function modular_init(K::AnticNumberField, p::Int)
       res[i] = u
     end
 
-    return res
-  end
+      return res
+    end
 
   return reduce
 end
-
+=#
