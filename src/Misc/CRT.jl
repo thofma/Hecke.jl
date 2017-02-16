@@ -1,10 +1,14 @@
 import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone
-export crt_env, crt, crt_inv, crt_init
+export crt_env, crt, crt_inv, crt_inv, modular_init
 
 isone(a::Int) = (a==1)
 
 function zero!(a::fmpz)
   ccall((:fmpz_zero, :libflint), Void, (Ptr{fmpz}, ), &a)
+end
+
+function zero!(a::fq_nmod_poly)
+  ccall((:fq_nmod_poly_zero, :libflint), Void, (Ptr{fq_nmod_poly}, ), &a)
 end
 
 function zero(a::PolyElem)
@@ -27,7 +31,7 @@ type crt_env{T}
   t2::T
   n::Int
   function crt_env(p::Array{T, 1})
-    pr = copy(p)
+    pr = deepcopy(p)
     id = Array{T, 1}()
     i = 1
     while 2*i <= length(pr)
@@ -163,7 +167,7 @@ end
 
 function crt_inv_iterative!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   for i=1:c.n
-    if isdefined(res[i])
+    if isdefined(res, i)
       rem!(res[i], a, c.pr[i])
     else
       res[i] = a % c.pr[i]
@@ -171,7 +175,6 @@ function crt_inv_iterative!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   end
   return res
 end
-
 
 function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   for i=1:c.n
@@ -198,6 +201,14 @@ function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   return res
 end
 
+doc"""
+***
+   crt_inv(a::T, crt_env{T}) -> Array{T, 1}
+
+> Given a \code{crt_env} and an element a, return
+> the modular data $a \bmod pr_i$ for all $i$.
+> This is essetially the inverse to the \code{crt} function.  
+"""
 function crt_inv{T}(a::T, c::crt_env{T})
   res = Array{T}(c.n)
   return crt_inv_tree!(res, a, c)
@@ -224,9 +235,9 @@ end
 function crt(b::Array{Int, 1}, a::crt_env{Int})
   i = a.n+1
   j = 1
-  while 2*j <= length(b)
-    push!(b, (b[2*j-1]*a.id[2*j-1] + b[2*j]*a.id[2*j]) % a.pr[i])
-    j += 1
+  while j <= length(b)
+    push!(b, (b[j-1]*a.id[j-1] + b[j]*a.id[j]) % a.pr[i])
+    j += 2
     i += 1
   end
   return b[end]
@@ -324,6 +335,7 @@ end
 function crt_test_time_all(np::Int, n::Int)
   p = next_prime(fmpz(2)^60)
   m = [p]
+  x = fmpz(1)
   for i=1:np-1
     push!(m, next_prime(m[end]))
   end
@@ -343,8 +355,26 @@ function crt_test_time_all(np::Int, n::Int)
   @time for i=1:n
     x = crt_tree(v, m)
   end
+
+  println("inv_tree")
+  @time for i=1:n
+    crt_inv_tree!(m, x, ce)
+  end
+  
+  println("inv_iterative")
+  @time for i=1:n
+    crt_inv_iterative!(m, x, ce)
+  end
 end  
 
+doc"""
+***
+  _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
+  _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
+
+> Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
+> only if you know what you're doing.
+"""
 function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   K = a.parent
   @assert n < degree(K) && n >=0
@@ -377,6 +407,17 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   end
 end
 
+doc"""
+***
+  modular_init(K::AnticNumberField, p::fmpz) -> proj, lift
+  modular_init(K::AnticNumberField, p::Integer) -> proj, lift
+
+> Given a number field $K$ and an ``easy'' prime $p$ (ie. fits into an 
+> \code{Int} and is coprime to the polynomial discriminant), compute
+> the residue class fields of the associated primes ideals above $p$.
+> Returns the projection function, returning the array of the images
+> as well as the lift, implementing an efficient CRT.
+"""
 function modular_init(K::AnticNumberField, p::fmpz)
   @assert isprime(p)
   @assert p < 2^62 # only nmod implemented (so far)
@@ -424,4 +465,77 @@ function modular_init(K::AnticNumberField, p::Integer)
   return modular_init(K, fmpz(p))
 end
 
+doc"""
+***
+  modular_init(K::GenPolyRing{nf_elem}, p::fmpz) -> proj, lift
+  modular_init(K::GenPolyRing{nf_elem}, p::Integer) -> proj, lift
+
+> Given a polynomial ring $Kx$ over a number field $K$ and 
+> an ``easy'' prime $p$ (ie. fits into an 
+> \code{Int} and is coprime to the polynomial discriminant of $K$), compute
+> the residue class fields of the associated primes ideals above $p$
+> and the canonical extension to the polynmial rings over them.
+> Returns the projection function, returning the array of the images
+> as well as the lift, implementing an efficient CRT.
+"""
+function modular_init(Kx::GenPolyRing{nf_elem}, p::fmpz)
+  K = base_ring(Kx)
+  @assert isprime(p)
+  @assert p < 2^62 # only nmod implemented (so far)
+
+  Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
+  fp = Fpx(K.pol)
+  lp = factor(fp)
+  @assert Set(values(lp.fac)) == Set([1])
+  pols = collect(keys(lp.fac))
+  ce = crt_env(pols)
+  fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
+                                   # and chacheing
+  fldx = [PolynomialRing(x, "_x")[1] for x = fld]                                 
+  rp = Array{nmod_poly}(length(pols))
+  Rp = Array{fq_nmod_poly}(length(pols))
+  for i =1:length(pols)
+    Rp[i] = fldx[i](0)
+  end
+
+  
+  function proj(a::GenPoly{nf_elem})
+    for j=1:ce.n
+      zero!(Rp[j])
+    end
+    for i=0:length(a)-1
+      crt_inv!(rp, Fpx(coeff(a, i)), ce)
+      for j=1:length(pols)
+        u = coeff(Rp[j], i)
+        ccall((:fq_nmod_set, :libflint), Void,
+                     (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                     &u, &rp[j], &fld[j])
+        setcoeff!(Rp[j], i, u)
+      end
+    end  
+    return Rp
+  end
+  function lift(a::Array{fq_nmod_poly, 1})
+    res = Kx()
+    d = maximum([x.length for x = a])
+    for i=0:d-1
+      for j=1:ce.n
+        ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &rp[j], &coeff(a[j], i))
+      end
+      ap = crt(rp, ce)
+      r = coeff(res, i)
+      for j=0:ap.length-1
+        u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, j)
+        _num_setcoeff!(r, j, u)
+      end
+      setcoeff!(res, i, r)
+    end  
+    return res
+  end
+  return proj, lift
+end
+
+function modular_init(Kx::GenPolyRing{nf_elem}, p::Integer)
+  return modular_init(Kx, fmpz(p))
+end
 
