@@ -379,7 +379,7 @@ end
 
 function modular_init(K::AnticNumberField, p::fmpz)
   @assert isprime(p)
-  @assert p < 2^63 # only nmod implemented (so far)
+  @assert p < 2^62 # only nmod implemented (so far)
 
   Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
   fp = Fpx(K.pol)
