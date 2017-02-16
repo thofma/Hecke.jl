@@ -161,7 +161,19 @@ function crt_inv{T}(a::T, c::crt_env{T})
 end
 =#
 
-function crt_inv!{T}(res::Array{T,1}, a::T, c::crt_env{T})
+function crt_inv_iterative!{T}(res::Array{T,1}, a::T, c::crt_env{T})
+  for i=1:c.n
+    if isdefined(res[i])
+      rem!(res[i], a, c.pr[i])
+    else
+      res[i] = a % c.pr[i]
+    end
+  end
+  return res
+end
+
+
+function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   for i=1:c.n
     if !isdefined(res, i)
       res[i] = zero(a)
@@ -188,7 +200,11 @@ end
 
 function crt_inv{T}(a::T, c::crt_env{T})
   res = Array{T}(c.n)
-  return crt_inv!(res, a, c)
+  return crt_inv_tree!(res, a, c)
+end
+    
+function crt_inv!{T}(res::Array{T, 1}, a::T, c::crt_env{T})
+  return crt_inv_tree!(res, a, c)
 end
     
 #explains the idea, but is prone to overflow.
@@ -361,22 +377,39 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   end
 end
 
-function crt_init(K::AnticNumberField, p::fmpz)
+function modular_init(K::AnticNumberField, p::fmpz)
   @assert isprime(p)
+  @assert p < 2^63 # only nmod implemented (so far)
+
   Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
   fp = Fpx(K.pol)
   lp = factor(fp)
   @assert Set(values(lp.fac)) == Set([1])
   pols = collect(keys(lp.fac))
   ce = crt_env(pols)
+  fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
+                                   # and chacheing
+  rp = Array{nmod_poly}(length(pols))
   
   function proj(a::nf_elem)
     ap = Fpx(a)
-    return crt_inv(ap, ce)
+    crt_inv!(rp, ap, ce)
+    res = Array{fq_nmod}(ce.n)
+    for i=1:ce.n
+      F = fld[i]
+      u = F()
+      ccall((:fq_nmod_set, :libflint), Void,
+                  (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                  &u, &rp[i], &F)
+      res[i] = u
+    end
+    return res
   end
-  function lift(a::Array{nmod_poly, 1})
-    ap = crt(a, ce)
-#    println(ap)
+  function lift(a::Array{fq_nmod, 1})
+    for i=1:ce.n
+      ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &rp[i], &a[i])
+    end
+    ap = crt(rp, ce)
     r = K()
     for i=0:ap.length-1
       u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, i)
@@ -387,8 +420,8 @@ function crt_init(K::AnticNumberField, p::fmpz)
   return proj, lift
 end
 
-function crt_init(K::AnticNumberField, p::Integer)
-  return crt_init(K, fmpz(p))
+function modular_init(K::AnticNumberField, p::Integer)
+  return modular_init(K, fmpz(p))
 end
 
 
