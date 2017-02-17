@@ -287,13 +287,6 @@ function one!(r::nf_elem)
    return r
 end
 
-function zero!(r::nf_elem)
-   a = parent(r)
-   ccall((:nf_elem_zero, :libflint), Void, 
-         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
-   return r
-end
-
 function one(r::nf_elem)
    a = parent(r)
    return one(a)

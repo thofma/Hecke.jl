@@ -61,11 +61,11 @@ include("compat.jl")
 #
 ################################################################################
 
-import Nemo: nf_elem, PariIdeal, AnticNumberField, degree,
-             den, num, lg, prime_decomposition, parent, length,
-             norm, real, imag, inv, rows, getindex!, lll, hnf, cols, basis,
-             trace, factor, mod, zero, pari_load, PariPolyRing,
-             PariRationalField, PariQQ, pari_vec, hash, PolynomialRing, coeff,
+import Nemo: nf_elem, AnticNumberField, degree,
+             den, num, parent, length,
+             norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
+             trace, factor, mod, zero, 
+             hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, order, signature,

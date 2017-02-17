@@ -3,14 +3,6 @@ export crt_env, crt, crt_inv, crt_inv, modular_init
 
 isone(a::Int) = (a==1)
 
-function zero!(a::fmpz)
-  ccall((:fmpz_zero, :libflint), Void, (Ptr{fmpz}, ), &a)
-end
-
-function zero!(a::fq_nmod_poly)
-  ccall((:fq_nmod_poly_zero, :libflint), Void, (Ptr{fq_nmod_poly}, ), &a)
-end
-
 function zero(a::PolyElem)
   return zero(parent(a))
 end
