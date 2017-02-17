@@ -1215,6 +1215,16 @@ type roots_ctx
     r = new()
     return r
   end
+  function roots_ctx(K::AnticNumberField)
+    try
+      c = _get_roots_ctx_of_nf(K)::roots_ctx
+      return c
+    catch
+      c = conjugates_init(K.pol)
+      _set_roots_ctx_of_nf(K, c)
+      return c
+    end
+  end
 end
 
 ################################################################################
@@ -1473,7 +1483,7 @@ type IdealRelationsCtx{Tx, TU, TC}
                   prec::Int = 100, val::Int=0, limit::Int = 0)
     v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
-    E = enum_ctx_from_ideal(clg.c, A, v, prec = prec, limit = limit,
+    E = enum_ctx_from_ideal(A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
     I = new()
     I.E = E

@@ -94,6 +94,9 @@ function hensel_lift(f::fmpz_poly, r::BigComplex)
   return r - evaluate(f, r)/evaluate(derivative(f), r)
 end
 
+function conjugates(K::AnticNumberField, p::Int)
+  return conjugates(roots_ctx(K), p)
+end
 
 function conjugates(c::roots_ctx, p::Int)
   prec = precision(c.r[1])
@@ -125,7 +128,8 @@ function set_precision(a::Array{BigComplex, 1}, p::Int)
   return b
 end
 
-function minkowski(c::roots_ctx, a::nf_elem, p::Int)
+function minkowski(a::nf_elem, p::Int)
+  c = roots_ctx(parent(a))
   r = conjugates(c, p)
   m = Array(BigFloat, 0);
   a = (parent(a).pol.parent)(a)
@@ -141,8 +145,8 @@ function minkowski(c::roots_ctx, a::nf_elem, p::Int)
   return m
 end
 
-function length(c::roots_ctx, a::nf_elem, p::Int = 50)
-  m = minkowski(c, a, p)
+function length(a::nf_elem, p::Int = 50)
+  m = minkowski(a, p)
   return sum([x*x for x in m])
 end
 
@@ -184,8 +188,8 @@ function minkowski_mat(c::roots_ctx, p::Int)
   return m
 end
 
-function minkowski_mat(c::roots_ctx, K::AnticNumberField, p::Int = 50)
-  return minkowski_mat(c, p)
+function minkowski_mat(K::AnticNumberField, p::Int = 50)
+  return minkowski_mat(roots_ctx(K), p)
 end
 
 function mult!(c::Array{BigFloat, 2}, a::fmpz_mat, b::Array{BigFloat, 2})

@@ -166,8 +166,8 @@ function __init__()
 
   t = create_accessors(AnticNumberField, roots_ctx, get_handle())
 
-  global _get_root_ctx_of_nf = t[1]
-  global _set_root_ctx_of_nf = t[2]
+  global _get_roots_ctx_of_nf = t[1]
+  global _set_roots_ctx_of_nf = t[2]
 
   global R = _RealRing()
   
@@ -188,17 +188,6 @@ function conjugate_data_arb(K::AnticNumberField)
   catch
     c = acb_root_ctx(K.pol)
     _set_nf_conjugate_data_arb(K, c)
-    return c
-  end
-end
-
-function root_ctx(K::AnticNumberField)
-  try
-    c = _get_root_ctx_of_nf(K)::root_ctx
-    return c
-  catch
-    c = conjugates_init(K.pol)
-    _set_root_ctx_of_nf(K, c)
     return c
   end
 end

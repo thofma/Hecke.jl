@@ -697,15 +697,17 @@ end
 
 global last_lat=9
 ##TODO: if field is totally real, and no weights, use the exact Gram matrix
-function lll(rt_c::roots_ctx, A::NfMaxOrdIdl, v::fmpz_mat;
-                prec::Int = 100)
-  c = minkowski_mat(rt_c, nf(order(A)), prec) ## careful: current iteration
+function lll(A::NfMaxOrdIdl, v::fmpz_mat; prec::Int = 100)
+
+  K = nf(order(A))
+  c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
                                               ## c is NOT a copy, so don't change.
   l, t1 = lll_with_transform(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
 
   n = degree(order(A))
 
+  rt_c = roots_ctx(K)
   if !isdefined(rt_c, :cache_z1)
     rt_c.cache_z1 = MatrixSpace(FlintZZ, n, n)()
     rt_c.cache_z2 = MatrixSpace(FlintZZ, n, n)()
@@ -781,47 +783,46 @@ end
 #
 ################################################################################
 
-function one_step(c::roots_ctx, b::NfMaxOrdFracIdl,
-                p::NfMaxOrdIdl; prec::Int = 100)
+function one_step(b::NfMaxOrdFracIdl, p::NfMaxOrdIdl; prec::Int = 100)
   b = p*b
   simplify(b)
-  g1 = short_elem(c, b, prec = prec)
+  g1 = short_elem(b, prec = prec)
   b = g1*inv(b) 
   simplify(b)
-  g2 = short_elem(c, b, prec = prec) 
+  g2 = short_elem(b, prec = prec) 
   return simplify(g2*inv(b)), g1, g2
 end
 
-function short_elem(c::roots_ctx, A::NfMaxOrdFracIdl,
+function short_elem(A::NfMaxOrdFracIdl,
                 v::fmpz_mat=MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
-  return divexact(short_elem(c, A.num, v, prec = prec), A.den)
+  return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
-function short_elem(c::roots_ctx, A::NfMaxOrdIdl,
+function short_elem(A::NfMaxOrdIdl,
                 v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
   b_den = temp.den
-  l, t = lll(c, A, v, prec = prec)
+  l, t = lll(A, v, prec = prec)
   w = window(t, 1,1, 1, cols(t))
   c = w*b
   q = elem_from_mat_row(K, c, 1, b_den)
   return q
 end
 
-function reduce_ideal(c::roots_ctx, A::NfMaxOrdIdl)
+function reduce_ideal(A::NfMaxOrdIdl)
   B = inv(A)
-  b = short_elem(c, B)
+  b = short_elem(B)
   C = b*A
   simplify(C)
   @assert C.den == 1
   return C.num
 end  
 
-function reduce_ideal(c::roots_ctx, A::NfMaxOrdFracIdl)
+function reduce_ideal(A::NfMaxOrdFracIdl)
   B = inv(A)
-  b = short_elem(c, B.num)
+  b = short_elem(B.num)
   C = divexact(b, B.den)*A
   simplify(C)
   @assert C.den == 1
@@ -833,10 +834,10 @@ end
 #
 ################################################################################
 
-function enum_ctx_from_ideal(c::roots_ctx, A::NfMaxOrdIdl,
+function enum_ctx_from_ideal(A::NfMaxOrdIdl,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
 
-  l, t = lll(c, A, v, prec = prec)
+  l, t = lll(A, v, prec = prec)
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
   b_den = temp.den
@@ -1233,30 +1234,30 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   return h, piv
 end
 
-function random_init(c::roots_ctx, I::AbstractArray{NfMaxOrdIdl, 1})
+function random_init(I::AbstractArray{NfMaxOrdIdl, 1})
   J = collect(I)
   for i=1:length(J)
     a = rand(1:length(J))
     b = rand(1:length(J))
     if isodd(rand(1:2))
-      J[a] = reduce_ideal(c, J[a]*inv(J[b]))
+      J[a] = reduce_ideal(J[a]*inv(J[b]))
     else
       J[a] *= J[b]
-      J[a] = reduce_ideal(c, J[1])
+      J[a] = reduce_ideal(J[1])
     end
   end
   return J
 end  
 
-function random_get(c::roots_ctx, J::Array{NfMaxOrdIdl, 1})
+function random_get(J::Array{NfMaxOrdIdl, 1})
   a = rand(1:length(J))
   I = J[a]
   b = rand(1:length(J))
   if isodd(rand(1:2))
-    J[a] = reduce_ideal(c, J[a]*inv(J[b]))
+    J[a] = reduce_ideal(J[a]*inv(J[b]))
   else
     J[a] *= J[b]
-    J[a] = reduce_ideal(c, J[a])
+    J[a] = reduce_ideal(J[a])
   end
   return I
 end
@@ -1731,12 +1732,11 @@ end
 function lll(M::NfMaxOrd)
   I = hecke.ideal(M, parent(basis_mat(M).num)(1))
   K = nf(M)
-  c = conjugates_init(K.pol)
 
   prec = 100
   while true
     try
-      q,w = lll(c, I, parent(basis_mat(M).num)(0), prec = prec)
+      q,w = lll(I, parent(basis_mat(M).num)(0), prec = prec)
       return NfMaxOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
     catch e
       if isa(e, LowPrecisionLLL)
