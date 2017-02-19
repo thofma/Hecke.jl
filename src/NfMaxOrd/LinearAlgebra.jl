@@ -40,7 +40,7 @@ function _det_bound(M::GenMat{NfOrdElem{NfMaxOrd}})
   n = rows(M)
   O = base_ring(M)
   d = degree(O)
-  c1, c2 = Hecke.base_change_const(O)
+  c1, c2 = Hecke.norm_change_const(O)
 
   return fmpz(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
 end
@@ -98,10 +98,15 @@ function _get_coeff_raw(x::nmod_poly, i::Int)
   return u
 end
 
-function det(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 62)
+function det(M::GenMat{NfOrdElem{NfMaxOrd}})
   O = base_ring(M)::NfMaxOrd
+  K = nf(O)
   B = _det_bound(M)
-  p = next_prime(2^b) # magic numbers
+  if Int==Int64
+    p = next_prime(2^61) # magic numbers
+  else
+    p = next_prime(2^30)
+  end  
   P = fmpz(1)
   i = 1
   res = O()
@@ -109,10 +114,8 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 62)
   t_reducing = 0.0
   t_splitting = 0.0
   used_primes = Array{UInt, 1}()
-  tmp_polys = Array{nmod_poly, 1}()
+  tmp_polys = Array{nf_elem, 1}()
 
-  Zx = PolynomialRing(FlintIntegerRing(), "x")[1]
-  tmp_fmpz_poly = Zx()
 
   while P < 2*B
     # reject some bad primes
@@ -120,20 +123,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 62)
       continue
     end
 
-    ttt = @elapsed lp = prime_decomposition(O, p)
-
-    ramified = false
-
-    for j in 1:length(ttt)
-      if lp[j][2] > 1 # || lp[j][1].splitting_type[2] > 3
-        ramified = true
-        break
-      end
-    end
-
-    if ramified
-      continue
-    end
+    ttt = @elapsed proj,lft = modular_init(K, p)
 
     push!(used_primes, UInt(p))
 
@@ -147,29 +137,29 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 62)
     polyprod = nmod_poly(UInt(p))
     tmp_nmod_poly = nmod_poly(UInt(p))
 
-    j = 1
-    for (Q, e) in lp
-      F, mF = ResidueField(O, Q)
-      
+    im = proj(K(M[1,1]))
+    Mp = []
+    for i=1:length(im)
+      F = parent(im[i])
       MmodQ = MatrixSpace(F, rows(M), cols(M))()
-      t_reducing += @elapsed __helper!(MmodQ, mF, M.entries)
-      t_det += @elapsed detmodQ = det(MmodQ)
-
-      # now the CRT step
-
-      if j == 1
-        polyprod = mF.poly_of_the_field
-        ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &detmodp, &detmodQ)
-      else
-        crt!(tmp_nmod_poly, detmodp, detmodQ, polyprod, mF.poly_of_the_field, s, t)
-        mul!(polyprod, polyprod, mF.poly_of_the_field)
-        set!(detmodp, tmp_nmod_poly)
-      end
-
-      j += 1
+      push!(Mp, MmodQ)
     end
 
-    push!(tmp_polys, detmodp)
+    t_reducing += @elapsed for i=1:rows(M)
+      for j=1:cols(M)
+        im = proj(K(M[i,j]))
+        for k=1:length(im)
+          setindex!(Mp[k], im[k], i, j)
+        end
+      end
+    end  
+    
+    t_det += @elapsed detmodQ = [det(x) for x = Mp]
+
+      # now the CRT step
+      detmodp = lft(detmodQ)
+
+      push!(tmp_polys, detmodp)
 
     P = P*p
     p = next_prime(p)
@@ -178,14 +168,22 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 62)
 
   # now the CRT on each coefficient
 
-  fc = fmpz_comb(used_primes)
-  fct = fmpz_comb_temp(fc)
+  fc = crt_env(fmpz[x for x = used_primes])
+  fv = Array{fmpz}(length(used_primes))
+  for i=1:length(used_primes)
+    fv[i] = fmpz(0)
+  end
   zz = fmpz()
 
   @assert length(used_primes) == length(tmp_polys)
 
+  tmp_fmpz_poly = PolynomialRing(FlintZZ)[1]()
+
   for i in 0:degree(O)
-    fmpz_multi_crt_ui!(zz, [ _get_coeff_raw(tmp_polys[j], i) for j in 1:length(tmp_polys) ], fc, fct)
+    for j=1:length(used_primes)
+      Nemo.num_coeff!(fv[j], tmp_polys[j], i)
+    end
+    crt!(zz, fv, fc)
     setcoeff!(tmp_fmpz_poly, i, zz)
   end
 
@@ -193,10 +191,10 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}}, b = 62)
   tut.parent = parent(nf(O).pol)
   res = mod_sym(O(nf(O)(tut)), P)
   
-  #println("Modular determinant time: $t_det");
-  #println("Time for reducing: $t_reducing");
-  #println("Time for splitting: $t_splitting");
-  #println("Used $i primes")
+  println("Modular determinant time: $t_det");
+  println("Time for reducing: $t_reducing");
+  println("Time for splitting: $t_splitting");
+  println("Used $(length(used_primes)) primes")
 
   return res
 end
