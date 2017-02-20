@@ -1,4 +1,4 @@
-import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone
+import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, crt_inv, modular_init
 
 isone(a::Int) = (a==1)
@@ -409,135 +409,144 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   end
 end
 
+type modular_env
+  p::fmpz
+  fld::Array{FqNmodFiniteField, 1}
+  fldx::Array{Ring, 1}
+  ce::crt_env{nmod_poly}
+  rp::Array{nmod_poly, 1}
+  res::Array{fq_nmod, 1}
+  Fpx::Ring
+  K::AnticNumberField
+  Rp
+  Kx::GenPolyRing{nf_elem}
+  function modular_env()
+    return new()
+  end
+end
+
+function show(io::IO, me::modular_env)
+  println("modular environment for p=$(me.p), using $(me.ce.n) ideals")
+end
+
 doc"""
 ***
-  modular_init(K::AnticNumberField, p::fmpz) -> proj, lift
-  modular_init(K::AnticNumberField, p::Integer) -> proj, lift
+  modular_init(K::AnticNumberField, p::fmpz) -> modular_env
+  modular_init(K::AnticNumberField, p::Integer) -> modular_env
 
 > Given a number field $K$ and an ``easy'' prime $p$ (ie. fits into an 
 > \code{Int} and is coprime to the polynomial discriminant), compute
 > the residue class fields of the associated primes ideals above $p$.
-> Returns the projection function, returning the array of the images
-> as well as the lift, implementing an efficient CRT.
+> Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
 function modular_init(K::AnticNumberField, p::fmpz)
   @assert isprime(p)
-  @assert p < 2^62 # only nmod implemented (so far)
+  UInt(p) # to enforce p being small
 
-  Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
-  fp = Fpx(K.pol)
+  me = modular_env()
+  me.Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
+  fp = me.Fpx(K.pol)
   lp = factor(fp)
   @assert Set(values(lp.fac)) == Set([1])
   pols = collect(keys(lp.fac))
-  ce = crt_env(pols)
-  fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
+  me.ce = crt_env(pols)
+  me.fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
                                    # and chacheing
-  rp = Array{nmod_poly}(length(pols))
-  res = Array{fq_nmod}(ce.n)
-  
-  function proj(a::nf_elem)
-    ap = Fpx(a)
-    crt_inv!(rp, ap, ce)
-    for i=1:ce.n
-      F = fld[i]
-      u = F()
-      ccall((:fq_nmod_set, :libflint), Void,
-                  (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                  &u, &rp[i], &F)
-      res[i] = u
-    end
-    return res
+  me.rp = Array{nmod_poly}(length(pols))
+  me.res = Array{fq_nmod}(me.ce.n)
+
+  me.p = p
+  me.K = K
+  return me
+end
+
+doc"""
+***
+  modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
+
+> Given an algebraic number $a$ and data \code{me} as computed by
+> \code{modular_init}, project $a$ onto the residue class fields.
+"""
+function modular_proj(a::nf_elem, me::modular_env)
+  ap = me.Fpx(a)
+  crt_inv!(me.rp, ap, me.ce)
+  for i=1:me.ce.n
+    F = me.fld[i]
+    u = F()
+    ccall((:fq_nmod_set, :libflint), Void,
+                (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                &u, &me.rp[i], &F)
+    me.res[i] = u
   end
-  function lift(a::Array{fq_nmod, 1})
-    for i=1:ce.n
-      ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &rp[i], &a[i])
-    end
-    ap = crt(rp, ce)
-    r = K()
-    for i=0:ap.length-1
-      u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, i)
-      _num_setcoeff!(r, i, u)
-    end
-    return r
+  return me.res
+end
+
+doc"""
+***
+  modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
+
+> Given an array of elements as computed by \code{modular_proj},
+> compute a global pre-image using some efficient CRT.
+"""
+function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
+  for i=1:me.ce.n
+    ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &me.rp[i], &a[i])
   end
-  return proj, lift
+  ap = crt(me.rp, me.ce)
+  r = me.K()
+  for i=0:ap.length-1
+    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, i)
+    _num_setcoeff!(r, i, u)
+  end
+  return r
 end
 
 function modular_init(K::AnticNumberField, p::Integer)
   return modular_init(K, fmpz(p))
 end
 
-doc"""
-***
-  modular_init(K::GenPolyRing{nf_elem}, p::fmpz) -> proj, lift
-  modular_init(K::GenPolyRing{nf_elem}, p::Integer) -> proj, lift
+function modular_proj(a::GenPoly{nf_elem}, me::modular_env)
 
-> Given a polynomial ring $Kx$ over a number field $K$ and 
-> an ``easy'' prime $p$ (ie. fits into an 
-> \code{Int} and is coprime to the polynomial discriminant of $K$), compute
-> the residue class fields of the associated primes ideals above $p$
-> and the canonical extension to the polynmial rings over them.
-> Returns the projection function, returning the array of the images
-> as well as the lift, implementing an efficient CRT.
-"""
-function modular_init(Kx::GenPolyRing{nf_elem}, p::fmpz)
-  K = base_ring(Kx)
-  @assert isprime(p)
-  @assert p < 2^62 # only nmod implemented (so far)
-
-  Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
-  fp = Fpx(K.pol)
-  lp = factor(fp)
-  @assert Set(values(lp.fac)) == Set([1])
-  pols = collect(keys(lp.fac))
-  ce = crt_env(pols)
-  fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
-                                   # and chacheing
-  fldx = [PolynomialRing(x, "_x")[1] for x = fld]                                 
-  rp = Array{nmod_poly}(length(pols))
-  Rp = Array{fq_nmod_poly}(length(pols))
-  for i =1:length(pols)
-    Rp[i] = fldx[i](0)
-  end
-
-  
-  function proj(a::GenPoly{nf_elem})
-    for j=1:ce.n
-      zero!(Rp[j])
+  if !isdefined(me, :fldx)
+    me.fldx = [PolynomialRing(x, "_x")[1] for x = me.fld]
+    me.Rp = Array{fq_nmod_poly}(me.ce.n)
+    for i =1:length(me.ce.n)
+      me.Rp[i] = me.fldx[i](0)
     end
-    for i=0:length(a)-1
-      crt_inv!(rp, Fpx(coeff(a, i)), ce)
-      for j=1:length(pols)
-        u = coeff(Rp[j], i)
-        ccall((:fq_nmod_set, :libflint), Void,
-                     (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                     &u, &rp[j], &fld[j])
-        setcoeff!(Rp[j], i, u)
-      end
-    end  
-    return Rp
+    me.Kx = parent(a)
+  end  
+
+  for j=1:me.ce.n
+    zero!(me.Rp[j])
   end
-  function lift(a::Array{fq_nmod_poly, 1})
-    res = Kx()
-    d = maximum([x.length for x = a])
-    for i=0:d-1
-      for j=1:ce.n
-        ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &rp[j], &coeff(a[j], i))
-      end
-      ap = crt(rp, ce)
-      r = coeff(res, i)
-      for j=0:ap.length-1
-        u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, j)
-        _num_setcoeff!(r, j, u)
-      end
-      setcoeff!(res, i, r)
-    end  
-    return res
-  end
-  return proj, lift
+  for i=0:length(a)-1
+    crt_inv!(me.rp, me.Fpx(coeff(a, i)), me.ce)
+    for j=1:length(me.ce.n)
+      u = coeff(me.Rp[j], i)
+      ccall((:fq_nmod_set, :libflint), Void,
+                   (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                   &u, &me.rp[j], &me.fld[j])
+      setcoeff!(me.Rp[j], i, u)
+    end
+  end  
+  return me.Rp
 end
 
-function modular_init(Kx::GenPolyRing{nf_elem}, p::Integer)
-  return modular_init(Kx, fmpz(p))
+function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
+  res = me.Kx()
+  d = maximum([x.length for x = a])
+  for i=0:d-1
+    for j=1:me.ce.n
+      ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &me.rp[j], &coeff(a[j], i))
+    end
+    ap = crt(me.rp, me.ce)
+    r = coeff(res, i)
+    for j=0:ap.length-1
+      u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, j)
+      _num_setcoeff!(r, j, u)
+    end
+    setcoeff!(res, i, r)
+  end  
+  return res
 end
 

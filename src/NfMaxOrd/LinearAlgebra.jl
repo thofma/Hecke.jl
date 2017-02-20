@@ -123,7 +123,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
       continue
     end
 
-    ttt = @elapsed proj,lft = modular_init(K, p)
+    ttt = @elapsed me = modular_init(K, p)
 
     push!(used_primes, UInt(p))
 
@@ -137,7 +137,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
     polyprod = nmod_poly(UInt(p))
     tmp_nmod_poly = nmod_poly(UInt(p))
 
-    im = proj(K(M[1,1]))
+    im = modular_proj(K(M[1,1]), me)
     Mp = []
     for i=1:length(im)
       F = parent(im[i])
@@ -147,7 +147,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
 
     t_reducing += @elapsed for i=1:rows(M)
       for j=1:cols(M)
-        im = proj(K(M[i,j]))
+        im = modular_proj(K(M[i,j]), me)
         for k=1:length(im)
           setindex!(Mp[k], im[k], i, j)
         end
@@ -157,7 +157,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
     t_det += @elapsed detmodQ = [det(x) for x = Mp]
 
       # now the CRT step
-      detmodp = lft(detmodQ)
+      detmodp = modular_lift(detmodQ, me)
 
       push!(tmp_polys, detmodp)
 
