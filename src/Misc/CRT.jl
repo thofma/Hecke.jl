@@ -460,6 +460,10 @@ function modular_init(K::AnticNumberField, p::fmpz)
   return me
 end
 
+function modular_init(K::AnticNumberField, p::Integer)
+  return modular_init(K, fmpz(p))
+end
+
 doc"""
 ***
   modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
@@ -501,10 +505,13 @@ function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
   return r
 end
 
-function modular_init(K::AnticNumberField, p::Integer)
-  return modular_init(K, fmpz(p))
-end
+doc"""
+***
+  modular_proj(a::GenPoly{nf_elem}, me::modular_env) -> Array
 
+> Apply the \code{modular_proj} function to each coeficient of $a$.
+> Computes an array of polynomials over the respective residue class fields.
+"""
 function modular_proj(a::GenPoly{nf_elem}, me::modular_env)
 
   if !isdefined(me, :fldx)
@@ -532,6 +539,13 @@ function modular_proj(a::GenPoly{nf_elem}, me::modular_env)
   return me.Rp
 end
 
+doc"""
+***
+  modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> GenPoly{nf_elem}
+
+> Apply the \code{modular_lift} function to each coeficient of $a$.
+> Computes a polynomial over the number field.
+"""
 function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   res = me.Kx()
   d = maximum([x.length for x = a])
@@ -550,3 +564,42 @@ function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   return res
 end
 
+doc"""
+***
+  modular_proj(a::GenMat{nf_elem}, me::modular_env) -> Array{Matrix}
+  modular_proj(a::GenMat{NfOrdElem{NfMaxOrd}}, me::modular_env) -> Array{Matrix}
+
+> Apply the \code{modular_proj} function to each entry of $a$.
+> Computes an array of matrices over the respective residue class fields.
+"""
+function modular_proj(a::GenMat{nf_elem}, me::modular_env)
+  Mp = []
+  for i=1:me.ce.n
+    push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())
+  end
+  for i=1:rows(a)
+    for j=1:cols(a)
+      im =modular_proj(a[i,j], me)
+      for k=1:me.ce.n
+        setindex!(Mp[k], im[k], i, j)
+      end
+    end
+  end  
+  return Mp
+end  
+
+function modular_proj(a::GenMat{NfOrdElem{NfMaxOrd}}, me::modular_env)
+  Mp = []
+  for i=1:me.ce.n
+    push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())
+  end
+  for i=1:rows(a)
+    for j=1:cols(a)
+      im =modular_proj(me.K(a[i,j]), me)
+      for k=1:me.ce.n
+        setindex!(Mp[k], im[k], i, j)
+      end
+    end
+  end  
+  return Mp
+end

@@ -129,37 +129,16 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
 
     t_splitting += ttt
 
-    s = nmod_poly(UInt(p))
-    t = nmod_poly(UInt(p))
-    g = nmod_poly(UInt(p))
-    z = nmod_poly(UInt(p))
     detmodp = nmod_poly(UInt(p))
-    polyprod = nmod_poly(UInt(p))
-    tmp_nmod_poly = nmod_poly(UInt(p))
 
-    im = modular_proj(K(M[1,1]), me)
-    Mp = []
-    for i=1:length(im)
-      F = parent(im[i])
-      MmodQ = MatrixSpace(F, rows(M), cols(M))()
-      push!(Mp, MmodQ)
-    end
-
-    t_reducing += @elapsed for i=1:rows(M)
-      for j=1:cols(M)
-        im = modular_proj(K(M[i,j]), me)
-        for k=1:length(im)
-          setindex!(Mp[k], im[k], i, j)
-        end
-      end
-    end  
+    t_reducing += @elapsed Mp = modular_proj(M, me)
     
     t_det += @elapsed detmodQ = [det(x) for x = Mp]
 
       # now the CRT step
-      detmodp = modular_lift(detmodQ, me)
+    detmodp = modular_lift(detmodQ, me)
 
-      push!(tmp_polys, detmodp)
+    push!(tmp_polys, detmodp)
 
     P = P*p
     p = next_prime(p)
