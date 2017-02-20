@@ -7,8 +7,12 @@ function zero(a::PolyElem)
   return zero(parent(a))
 end
 
-function rem!(a::fmpz, b::fmpz, c::fmpz)
+@inline function rem!(a::fmpz, b::fmpz, c::fmpz)
   ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &b, &c)
+end
+
+@inline function sub!(a::fmpz, b::fmpz, c::fmpz)
+  ccall((:fmpz_sub, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &b, &c)
 end
 
 function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
@@ -92,18 +96,18 @@ function crt!{T}(res::T, b::Array{T, 1}, a::crt_env{T})
   @assert a.n == length(b)
   bn = div(a.n, 2)
   if isodd(a.n)
-    zero!(a.tmp[1])
-    add!(a.tmp[1], a.tmp[1], b[end])
+    @inbounds zero!(a.tmp[1])
+    @inbounds add!(a.tmp[1], a.tmp[1], b[end])
     off = 1
   else
     off = 0
   end
 
   for i=1:bn
-    mul!(a.t1, b[2*i-1], a.id[2*i-1])
-    mul!(a.t2, b[2*i], a.id[2*i])
-    add!(a.tmp[i+off], a.t1, a.t2)
-    rem!(a.tmp[i+off], a.tmp[i+off], a.pr[a.n+i])
+    @inbounds mul!(a.t1, b[2*i-1], a.id[2*i-1])
+    @inbounds mul!(a.t2, b[2*i], a.id[2*i])
+    @inbounds add!(a.tmp[i+off], a.t1, a.t2)
+    @inbounds rem!(a.tmp[i+off], a.tmp[i+off], a.pr[a.n+i])
   end
 
   if isodd(a.n)
@@ -121,13 +125,19 @@ function crt!{T}(res::T, b::Array{T, 1}, a::crt_env{T})
     end
     bn = div(bn, 2)
     for i=1:bn
-      mul!(a.t1, a.tmp[2*i-1], a.id[id_off + 2*i-1])
-      mul!(a.t2, a.tmp[2*i], a.id[id_off + 2*i])
-      add!(a.tmp[i + off], a.t1, a.t2)
-      rem!(a.tmp[i + off], a.tmp[i + off], a.pr[pr_off+i])
+      if true  # that means we need only one co-factor!!!
+        @inbounds sub!(a.t1, a.tmp[2*i-1], a.tmp[2*i])
+        @inbounds mul!(a.t1, a.t1, a.id[id_off + 2*i-1])
+        @inbounds add!(a.tmp[i+off], a.t1, a.tmp[2*i])
+      else
+        @inbounds mul!(a.t1, a.tmp[2*i-1], a.id[id_off + 2*i-1])
+        @inbounds mul!(a.t2, a.tmp[2*i], a.id[id_off + 2*i])
+        @inbounds add!(a.tmp[i + off], a.t1, a.t2)
+      end  
+      @inbounds rem!(a.tmp[i + off], a.tmp[i + off], a.pr[pr_off+i])
     end
     if off == 1
-      a.tmp[1], a.tmp[2*bn+1] = a.tmp[2*bn+1], a.tmp[1] 
+      @inbounds a.tmp[1], a.tmp[2*bn+1] = a.tmp[2*bn+1], a.tmp[1] 
     end
     id_off += 2*bn
     pr_off += bn
@@ -135,7 +145,7 @@ function crt!{T}(res::T, b::Array{T, 1}, a::crt_env{T})
 #    println(a.tmp, " id_off=$id_off, pr_off=$pr_off, off=$off, bn=$bn")
   end
   zero!(res)
-  add!(res, res, a.tmp[1])
+  @inbounds add!(res, res, a.tmp[1])
   return res
 end
 
@@ -199,7 +209,7 @@ doc"""
 
 > Given a \code{crt_env} and an element a, return
 > the modular data $a \bmod pr_i$ for all $i$.
-> This is essetially the inverse to the \code{crt} function.  
+> This is essentially the inverse to the \code{crt} function.  
 """
 function crt_inv{T}(a::T, c::crt_env{T})
   res = Array{T}(c.n)
