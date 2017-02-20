@@ -517,7 +517,7 @@ function modular_proj(a::GenPoly{nf_elem}, me::modular_env)
   if !isdefined(me, :fldx)
     me.fldx = [PolynomialRing(x, "_x")[1] for x = me.fld]
     me.Rp = Array{fq_nmod_poly}(me.ce.n)
-    for i =1:length(me.ce.n)
+    for i =1:me.ce.n
       me.Rp[i] = me.fldx[i](0)
     end
     me.Kx = parent(a)
@@ -528,7 +528,7 @@ function modular_proj(a::GenPoly{nf_elem}, me::modular_env)
   end
   for i=0:length(a)-1
     crt_inv!(me.rp, me.Fpx(coeff(a, i)), me.ce)
-    for j=1:length(me.ce.n)
+    for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
       ccall((:fq_nmod_set, :libflint), Void,
                    (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
@@ -603,3 +603,5 @@ function modular_proj(a::GenMat{NfOrdElem{NfMaxOrd}}, me::modular_env)
   end  
   return Mp
 end
+
+
