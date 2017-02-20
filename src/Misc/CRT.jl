@@ -423,11 +423,11 @@ function modular_init(K::AnticNumberField, p::fmpz)
   fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
                                    # and chacheing
   rp = Array{nmod_poly}(length(pols))
+  res = Array{fq_nmod}(ce.n)
   
   function proj(a::nf_elem)
     ap = Fpx(a)
     crt_inv!(rp, ap, ce)
-    res = Array{fq_nmod}(ce.n)
     for i=1:ce.n
       F = fld[i]
       u = F()
