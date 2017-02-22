@@ -28,9 +28,6 @@ test_NfOrd()
 test_NfOrd_Elem()
 test_NfOrd_Idl()
 test_NfOrd_FracIdl()
-test_EllCrv()
-test_EllCrv_QQ()
-test_EllCrv_Finite()
 
 Qx, x = PolynomialRing(QQ, "x")
 
