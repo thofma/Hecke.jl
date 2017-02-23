@@ -124,6 +124,278 @@ function basis_rels_3(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   return rels
 end
 
+function local_norm!(n::fmpz, ap::Array{fq_nmod, 1}, me::Hecke.modular_env)
+  nn = UInt(1)
+  np = UInt(1)
+  for j=1:length(ap)
+    ccall((:fq_nmod_norm, :libflint), Void, (Ptr{fmpz}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &n, &ap[j], &ap[j].parent)
+    nn = ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
+  end
+  ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), &n, nn)
+  return n
+end
+
+function local_norm(a::nf_elem, me::Hecke.modular_env)
+  Fpx = me.Fpx
+  aa = Fpx(a)
+  ff = Fpx(parent(a).pol)
+  np = resultant(aa, ff, !true)
+  return fmpz(np)
+end
+
+function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
+  a = b[1].parent()
+  t = b[1].parent()
+
+  K = b[1].parent
+
+  n = degree(K)
+
+  if Int==Int32
+    p = 2^30
+  else
+    p = 2^60
+  end
+  sp = SetPrimes(p, 2*p, 1024, 1)
+  st = start(sp)
+  p, st = next(sp, st)
+  lp = [fmpz(p)]
+  i = no_b
+  while i>0
+    p, st = next(sp, st)
+    push!(lp, fmpz(p))
+    i -= nbits(p[end])
+  end
+
+  crt_env = Hecke.crt_env(lp)
+  np = Array{fmpz}(length(lp))
+  for i=1:length(lp)
+    np[i] = fmpz(0)
+  end
+
+
+  lpx = [modular_init(K, p) for p=lp]
+  bp = Array{fq_nmod}(length(lpx), n, n)
+  for i=1:length(lpx)
+    for k=1:n
+      ap = Hecke.modular_proj(b[k], lpx[i])
+      for l=1:n
+        bp[i, k, l] = ap[l]
+      end
+    end
+  end
+#  bp = [[deepcopy(Hecke.modular_proj(x, me)) for x = b] for me = lpx]
+
+  tmp = Array{fq_nmod}(length(lpx), n)
+  for i=1:length(lpx)
+    for j=1:n
+      tmp[i,j] = zero(parent(bp[i, 1, 1]))
+    end
+  end
+
+#  tmp = [[zero(parent(x)) for x=bp[i][1]] for i=1:length(lpx)]
+
+  lc = Array{Int, 1}()
+  for i=1:no_coeff
+    push!(lc, 0)
+  end
+
+  nb = length(b)
+  
+  rels = Dict{fmpz, Array{Int, 1}}()
+  i = 1
+  ll = 0
+  sum_nb = 0
+  while i < no_rel + 1
+    ll = ll + 1
+    if ll % 1000 == 0
+      println("so far $ll tries, avg nbits of norm ", sum_nb/ll)
+    end
+    for j=1:no_coeff
+      p  = rand(1:nb)
+      @inbounds lc[j] = p
+    end
+#    println("lc: $lc")
+    for j=1:length(lpx)
+      for k=1:n
+        @inbounds ccall((:fq_nmod_set, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}), &tmp[j, k], &bp[j, lc[1], k])
+        for l = 2:no_coeff
+#          tmp[j][k] +=  bp[j][lc[l]][k]
+          @inbounds add!(tmp[j, k], tmp[j, k], bp[j, lc[l], k])
+        end
+      end
+#      @assert tmp[j] == Hecke.modular_proj(sum(b[lc]), lpx[j])
+      local_norm!(np[j], tmp[j,:], lpx[j])
+#      println(lpx[j])
+#      println(np[j])
+#      println(local_norm(sum(b[lc]), lpx[j]))
+#      @assert local_norm(sum(b[lc]), lpx[j]) == np[j]
+    end
+    
+  
+    no = Hecke.crt_signed(np, crt_env)
+    sum_nb += nbits(no)
+#    println("testing $no")
+
+    if smooth != 0
+      !is_smooth(smooth, no)[1] && continue
+    end
+    nn = abs(no)
+    if !haskey(rels, nn)
+      rels[nn] = deepcopy(lc)
+      i = i + 1
+      println(i)
+    else
+      println("again $nn")
+    end
+  end
+  return rels
+end
+
+function local_norm!(n::fmpz, ap::nmod_mat, me::Hecke.modular_env)
+  nn = UInt(1)
+  np = UInt(1)
+  for j=1:rows(ap)
+    np = Nemo._get_entry_raw(ap, j, 1)
+    nn = ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
+  end
+  ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), &n, nn)
+  return n
+end
+
+function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
+  a = b[1].parent()
+  t = b[1].parent()
+
+  K = b[1].parent
+
+  n = degree(K)
+
+  if Int==Int32
+    p = 2^30
+  else
+    p = 2^60
+  end
+  sp = SetPrimes(p, 2*p, 1024, 1)
+  st = start(sp)
+  p, st = next(sp, st)
+  lp = [fmpz(p)]
+  i = no_b
+  while i>0
+    p, st = next(sp, st)
+    push!(lp, fmpz(p))
+    i -= nbits(p[end])
+  end
+
+  crt_env = Hecke.crt_env(lp)
+  np = Array{fmpz}(length(lp))
+  for i=1:length(lp)
+    np[i] = fmpz(0)
+  end
+
+
+  lpx = [modular_init(K, p) for p=lp]
+  bp = Array{nmod_mat}(length(lpx))
+  for i=1:length(lpx)
+    bp[i] = MatrixSpace(ResidueRing(FlintZZ, lpx[i].p), n, n)()
+    for k=1:n
+      ap = modular_proj(b[k], lpx[i])
+      for l=1:n
+        bp[i][l, k] = coeff(ap[l], 0)
+      end
+    end
+  end
+#  bp = [[deepcopy(modular_proj(x, me)) for x = b] for me = lpx]
+
+  tmp = Array{nmod_mat}(length(lpx))
+  lcp = Array{nmod_mat}(length(lpx))
+  for i=1:length(lpx)
+    tmp[i] = MatrixSpace(ResidueRing(FlintZZ, lpx[i].p), n, 1)()
+    lcp[i] = MatrixSpace(ResidueRing(FlintZZ, lpx[i].p), n, 1)()
+  end
+
+  lc = Array{Int, 1}()
+  for i=1:no_coeff
+    push!(lc, 0)
+  end
+
+  nb = length(b)
+  
+  rels = Dict{fmpz, Array{Int, 1}}()
+  i = 1
+  ll = 0
+  sum_nb = 0
+  while i < no_rel + 1
+    ll = ll + 1
+    if ll % 1000 == 0
+      println("so far $ll tries, avg nbits of norm ", sum_nb/ll)
+    end
+#    if ll > 100 return; end
+    for j=1:no_coeff
+      p  = rand(1:nb)
+      @inbounds lc[j] = p
+    end
+#    println("lc: $lc")
+    zero = false;
+    for j=1:length(lpx)
+      zero!(lcp[j])
+      for k=lc
+        Nemo.set_entry!(lcp[j], k, 1, UInt(1))
+      end
+      mul!(tmp[j], bp[j], lcp[j])
+      local_norm!(np[j], tmp[j], lpx[j])
+      if np[j] == UInt(0) zero = true; break; end;
+#      @assert local_norm(sum(b[lc]), lpx[j]) == np[j]
+    end
+
+    if zero continue; end
+    
+  
+    no = crt_signed(np, crt_env)
+    sum_nb += nbits(no)
+    if iszero(no) continue; end
+#    println("testing $no")
+
+    if smooth != 0
+      !is_smooth(smooth, no)[1] && continue
+    end
+    nn = abs(no)
+    if !haskey(rels, nn)
+      rels[nn] = deepcopy(lc)
+      i = i + 1
+      println(i)
+    else
+      println("again $nn")
+    end
+  end
+  return rels
+end
+
+
+#=
+
+Qx,x = PolynomialRing(QQ, "a")
+K, a = MaximalRealSubfield(1024, "a");
+@time fb_int = Hecke.int_fb_max_real(1024, 2^20);
+h = Hecke.auto_of_maximal_real(K, 3);
+b = [K(1), a]
+while length(b) < 256 push!(b, h(b[end])); end
+include("/tmp/rels_4.jl")
+fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
+@time basis_rels_4(b, 600, 10, 5, fb_int)
+
+Qx,x = PolynomialRing(QQ, "a")
+K, a = MaximalRealSubfield(512, "a");
+@time fb_int = Hecke.int_fb_max_real(512, 2^18);
+h = Hecke.auto_of_maximal_real(K, 3);
+b = [K(1), a]
+while length(b) < 128 push!(b, h(b[end])); end
+fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
+@time basis_rels_5(b, 300, 100, 5, fb_int)
+
+
+
+=#
 
 function improve(c::Hecke.ClassGrpCtx)
   H = sub(c.M, 1:rows(c.M), 1:cols(c.M))
@@ -181,22 +453,6 @@ function rels_stat(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, 
     end  
   end
   return stat, all_g
-end
-
-function find_rels(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
-
-  for i=10:50
-    st, re = rels_stat(b, no_b = no_b, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
-    toNemo("/home/fieker/Rels128/rels128.$i", re, name="R$i");
-  end
-end
-
-function find_rels2(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
-
-  for i=100:150
-    st, re = rels_stat(b, no_b = no_b, no_rel = no_rel, no_coeff = no_coeff, smooth =smooth)
-    toNemo("/home/fieker/Rels128/rels128.$i", re, name="R$i");
-  end
 end
 
 function int_fb_max_real(f::Int, B::Int)
@@ -274,7 +530,3 @@ function res_degree_in_max_real(p::Int, n::Int)
   f = Hecke.modord(p, n)
   return (powermod(p, div(f,2), n) == n-1) ? (return div(f, 2)) : (return f)
 end
-
-#function elem_type(::AnticNumberField)
-#  return Nemo.nf_elem
-#end
