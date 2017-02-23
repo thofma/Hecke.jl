@@ -380,9 +380,9 @@ K, a = MaximalRealSubfield(1024, "a");
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
 while length(b) < 256 push!(b, h(b[end])); end
-include("/tmp/rels_4.jl")
 fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
-@time basis_rels_4(b, 600, 10, 5, fb_int)
+@time Hecke.basis_rels_4(b, 600, 10, 5, fb_int)
+@time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
 Qx,x = PolynomialRing(QQ, "a")
 K, a = MaximalRealSubfield(512, "a");
@@ -391,6 +391,7 @@ h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
 while length(b) < 128 push!(b, h(b[end])); end
 fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
+@time basis_rels_4(b, 300, 100, 5, fb_int)
 @time basis_rels_5(b, 300, 100, 5, fb_int)
 
 
