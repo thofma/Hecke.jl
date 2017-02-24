@@ -1,3 +1,5 @@
-include("EllCrv/EllCrv-test.jl")
-include("EllCrv/QQ-test.jl")
-include("EllCrv/Finite-test.jl")
+@testset "Elliptic curves" begin
+  include("EllCrv/EllCrv.jl")
+  include("EllCrv/QQ.jl")
+  include("EllCrv/Finite.jl")
+end

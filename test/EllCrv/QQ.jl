@@ -1,8 +1,33 @@
-function test_EllCrv_QQ()
-  println("test_EllCrv_QQ() ... ")
+@testset "Rational elliptic curves" begin
 
-  print("  order ... ")
+  curves_to_test_tor_short = [
+  ([1, 2], 4),
+  ([2, 3], 2),
+  ([0, 1], 6),
+  ([1, 0], 2),
+  ([1, 1], 1)
+  ]
 
+  curves_to_test_tor_struc =
+  [
+  ([0, -1, 1, -7820, -263580], [1]),
+  ([1, 0, 1, -2731, -55146], [2]),
+  ([0, 1, 1, -9, -15], [3]),
+  ([1, 1, 1, -80, 242], [4]),
+  ([0, -1, 1, -10, -20], [5]),
+  ([1, 0, 1, -36, -70], [6]),
+  ([1, -1, 1, -3, 3], [7]),
+  ([1, 1, 1, 35, -28], [8]),
+  ([1, -1, 1, -14, 29], [9]),
+  ([1, 0, 0, -45, 81], [10]),
+  ([1, -1, 1, -122, 1721], [12]),
+  ([1, 1, 1, -135, -660], [2, 2]),
+  ([1, 1, 1, -10, -10], [2, 4]),
+  ([1, 0, 1, -19, 26], [2, 6]),
+  ([1, 0, 0, -1070, 7812], [2, 8]),
+  ]
+
+  @testset "Point order computation" begin
     E = EllipticCurve([0, -1, 1, -7820, -263580])
     @test 1 == @inferred order(infinity(E))
 
@@ -35,28 +60,23 @@ function test_EllCrv_QQ()
 
     E = EllipticCurve([1, -1, 1, -122, 1721])
     @test 12 == @inferred order(E([-9, 49]))
+  end
 
-  println("done")
-
-  print("  istorsion_point ... ")
-
+  @testset "Torsion test" begin
     E = EllipticCurve([1, -1, 1, -19353, 958713])
     @test @inferred istorsion_point(E([103,172]))
     @test @inferred !istorsion_point(E([-121,1292]))
+  end
 
-  println("done")
-
-  print("  torsion_points_lutz_nagell ... ")
+  @testset "Torsion points (Lutz-Nagell)" begin
     for c in curves_to_test_tor_short
       E = EllipticCurve(c[1])
       T = @inferred torsion_points_lutz_nagell(E)
       @test c[2] == length(T)
     end
+  end
 
-  println("done")
-
-  print("  torsion_points_division_poly ... ")
-
+  @testset "Torsion points (division polynomials" begin
     for c in curves_to_test_tor_short
       E = EllipticCurve(c[1])
       T = @inferred torsion_points_division_poly(E)
@@ -68,10 +88,9 @@ function test_EllCrv_QQ()
       T = @inferred torsion_points_division_poly(E)
       @test prod(c[2]) == length(T)
     end
-  println("done")
+  end
 
-  print("  torsion_points ... ")
-
+  @testset "Torsion points" begin
     for c in curves_to_test_tor_short
       E = EllipticCurve(c[1])
       T = @inferred torsion_points(E)
@@ -89,10 +108,9 @@ function test_EllCrv_QQ()
       T = @inferred torsion_points(E)
       @test prod(c[2]) == length(T)
     end
-  println("done")
+  end
 
-  print("  torsion_structure ... ")
-
+  @testset "Torsion point structure" begin
     for c in curves_to_test_tor_struc
       E = EllipticCurve(c[1])
       T = @inferred torsion_structure(E)
@@ -109,11 +127,9 @@ function test_EllCrv_QQ()
         @test order(T[2][2]) == T[1][2]
       end
     end
+  end
 
-  println("done")
-
-  print("  Laska-Kraus-Connell ... ")
-
+  @testset "Minimal model (Laska-Kraus-Connell" begin
     E = EllipticCurve([1,2,3,4,5])
     EE = @inferred laska_kraus_connell(E)
     @test EE.coeff == [1, -1, 0, 4, 3]
@@ -121,11 +137,9 @@ function test_EllCrv_QQ()
     E = EllipticCurve([625, -15625, 19531250, -2929687500, -34332275390625])
     EE = @inferred laska_kraus_connell(E)
     @test EE.coeff == [1, -1, 0, 4, 3]
+  end
 
-  println("done")
-
-  print("  Tates algorithm ... ")
-
+  @testset "Tates algorithm" begin
     E = EllipticCurve([625, -15625, 19531250, -2929687500, -34332275390625])
     EE = @inferred tates_algorithm_global(E)
     @test EE.coeff == [1, -1, 0, 4, 3]
@@ -179,36 +193,5 @@ function test_EllCrv_QQ()
     @test K == "III*"
     @test f == 2
     @test c == 2
-
-  println("done")
-
-  println("done")
+  end
 end
-
-global curves_to_test_tor_short = [
-([1, 2], 4),
-([2, 3], 2),
-([0, 1], 6),
-([1, 0], 2),
-([1, 1], 1)
-]
-
-global curves_to_test_tor_struc =
-[
-([0, -1, 1, -7820, -263580], [1]),
-([1, 0, 1, -2731, -55146], [2]),
-([0, 1, 1, -9, -15], [3]),
-([1, 1, 1, -80, 242], [4]),
-([0, -1, 1, -10, -20], [5]),
-([1, 0, 1, -36, -70], [6]),
-([1, -1, 1, -3, 3], [7]),
-([1, 1, 1, 35, -28], [8]),
-([1, -1, 1, -14, 29], [9]),
-([1, 0, 0, -45, 81], [10]),
-([1, -1, 1, -122, 1721], [12]),
-([1, 1, 1, -135, -660], [2, 2]),
-([1, 1, 1, -10, -10], [2, 4]),
-([1, 0, 1, -19, 26], [2, 6]),
-([1, 0, 0, -1070, 7812], [2, 8]),
-]
-

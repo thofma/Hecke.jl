@@ -1,5 +1,4 @@
-function test_EllCrv_Finite()
-  println("test_EllCrv_Finite() ... ")
+@testset "Elliptic curves over finite fields" begin
 
   R1 = ResidueRing(FlintZZ, 23)
   R2, a2 = FlintFiniteField(23, 1, "a")
@@ -11,25 +10,25 @@ function test_EllCrv_Finite()
   E3 = EllipticCurve(map(R3, [2, 3]))
   E4 = EllipticCurve(map(R4, [2, 3]))
 
-  print(" Random point ... ")
+  @testset "Random point contstruction" begin
     @inferred rand(E1)
     @inferred rand(E2)
     @inferred rand(E3)
     @inferred rand(E4)
-  println("done")
+  end
 
-  print("  Order via Legendre ... ")
+  @testset "Order computation (Legendre)" begin
     @test 24 == @inferred order_via_legendre(E1)
-  println("done")
+  end
 
-  print("  Order via BSGS ... ")
+  @testset "Order computation (BSGS)" begin
     @test 24 in @inferred order_via_bsgs(E1)
     @test 24 in @inferred order_via_bsgs(E2)
     @test 24 in @inferred order_via_bsgs(E3)
     @test 576 in @inferred order_via_bsgs(E4)
-  println("done")
+  end
 
-  print("  Hasse interval ... ")
+  @testset "Hasse interval" begin
     l = @inferred hasse_interval(E1)
     @test l[1] <= 24 && 24 <= l[2]
     l = @inferred hasse_interval(E2)
@@ -38,16 +37,16 @@ function test_EllCrv_Finite()
     @test l[1] <= 24 && 24 <= l[2]
     l = @inferred hasse_interval(E4)
     @test l[1] <= 576 && 576 <= l[2]
-  println("DONE")
+  end
 
-  print("  Schoof's algorithm ... ")
+  @testset "Schoofs algorithm" begin
     @test 24 == @inferred order_via_schoof(E1)
     @test 24 == @inferred order_via_schoof(E2)
     @test 24 == @inferred order_via_schoof(E3)
     @test 576 == @inferred order_via_schoof(E4)
-  println("DONE")
+  end
 
-  print("  Point counting ... ")
+  @testset "Point counting" begin
     RR = ResidueRing(ZZ, 2)
     E = EllipticCurve([RR(1), RR(1), RR(0), RR(0), RR(1)])
     @test 2 == @inferred order(E)
@@ -59,7 +58,5 @@ function test_EllCrv_Finite()
     @test 24 == @inferred order(E2)
     @test 24 == @inferred order(E3)
     @test 576 == @inferred order(E4)
-  println("DONE")
-
-	println("done")
+  end
 end
