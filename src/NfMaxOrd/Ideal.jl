@@ -1539,6 +1539,32 @@ end
 
 doc"""
 ***
+    prime_ideals_over(O::NfMaxOrd,
+                       lp::AbstractArray{Int, 1};
+                       degree_limit::Int = 0) -> Array{NfMaxOrdIdl, 1}
+
+> Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
+> 
+> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+> with $\deg(\mathfrak p) > k$ will be discarded.
+"""
+function prime_ideals_over(O::NfMaxOrd, lp::AbstractArray{Int};
+                            degree_limit::Int = 0)
+  p = 1
+  r = NfMaxOrdIdl[]
+  for p in lp
+    @vprint :ClassGroup 2 "decomposing $p ... (deg_lim $deg_lim)"
+    li = prime_decomposition(O, p, degree_limit)
+    for P in li
+      push!(r, P[1])
+    end
+  end
+  return r
+end
+
+
+doc"""
+***
     prime_ideals_up_to(O::NfMaxOrd,
                        B::Int;
                        complete::Bool = false,

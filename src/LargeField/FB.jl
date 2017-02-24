@@ -84,32 +84,55 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
   return G([x[2] for x = prm])
 end
 
-function add_orbit(c, R, S::Map, sz::Int, n_b::Int = 500)
-  p = induce(c.FB, S)
-  for r in R
-    println("adding $r")
-    n = norm_div(r, fmpz(1), n_b)
-    println("of norm $n")
-    if iszero(n)
-      println("zero found")
+#= implementation from Butler's Fundamntal Algorithm for Permutation Groups
+  Algo 4: Dimino
+  Tested for cyclic groups - unfortunately only.
+  I still need to generate other input
+=#  
+#function orbit_in_FB(op::Array{Tuple{Map, Nemo.perm}, 1}, a::nf_elem, s::SmatRow)
+function orbit_in_FB(op::Array, a::nf_elem, s::SmatRow)
+  function op_smat(n::SmatRow, p::Nemo.perm)
+    return typeof(n)([(p[i], v) for (i,v) = n])
+  end
+
+  Ss = Dict{typeof(s), nf_elem}()
+  Ss[s] = a
+  # start with the cyclic group be op[1]
+  n = op_smat(s, op[1][2])
+  b = a
+  while n != s
+    b = op[1][1](b)
+    Ss[n] = b
+    n = op_smat(n, op[1][2])
+  end
+
+  for i=2:length(op) 
+    n = op_smat(s, op[i][2])
+    if haskey(Ss, n)
       continue
     end
-    println("adding")
-    fl = Hecke.class_group_add_relation(c, r, n, fmpz(1))
-    if fl
-      n = c.M[end]
-      for i=1:sz
-        r = S(r)
-        if r in c.RS
-          break
+    old = collect(Ss)
+    for (n, b) in old # one redundant - step
+      Ss[op_smat(n, op[i][2])] = op[i][1](b)
+    end
+    while true
+      done = true
+      for j = 1:length(op)
+        nn = op_smat(n, op[j][2])
+        if haskey(Ss, nn)
+          continue;
         end
-        n = typeof(n)([(p[i], v) for (i,v) = n])
-        push!(c.M, n)
-        push!(c.R, r)
-        push!(c.RS, r)
+        done = false
+        n = nn
+        for (n,b) in old
+          Ss[op_smat(n, op[j][2])] = op[j][1](b)
+        end
+      end
+      if done
+        break
       end
     end
   end
+  return Ss
 end
-
 

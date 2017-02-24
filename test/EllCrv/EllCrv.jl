@@ -1,8 +1,6 @@
-function test_EllCrv()
-  println("test_EllCrv() ... ")
+@testset "Generic elliptic curve" begin
 
-  print("  Constructors ... ")
-
+  @testset "Constructors" begin
     @test_throws ErrorException EllipticCurve([1])
     @test_throws ErrorException EllipticCurve([1, 2, 3])
     @test_throws ErrorException EllipticCurve([1, 2, 3, 4, 5, 6])
@@ -35,11 +33,33 @@ function test_EllCrv()
     # short example
     Eshort = @inferred EllipticCurve([4, 0])
     @test typeof(Eshort) == EllCrv{fmpq}
+  end
 
-  println("done")
+  # The following curves will be used in later tests
+  # Creation of these was tested in previous testset
+  E11_a1 = EllipticCurve([0, -1, 1, -7820, -263580], false)
 
-  print("  Changing the model ... ")
+  E43_a1 = EllipticCurve([0, 1, 1, 0, 0])
 
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  K, a = NumberField(x^2 - x - 1)
+  OK = maximal_order(K)
+
+  E31_1_a1 = EllipticCurve([K(1), a + 1, a, a, K(0)])
+
+  E116_1_a1 =EllipticCurve([K(1), K(-1), a, -a, K(0)] )
+
+  Eshort = EllipticCurve([4, 0])
+
+  @testset "Field access" begin
+    @test base_field(E11_a1) == FlintQQ
+    @test base_field(E43_a1) == FlintQQ
+    @test base_field(E31_1_a1) == K
+    @test base_field(E116_1_a1) == K
+    @test base_field(Eshort) == FlintQQ
+  end
+
+  @testset "Weierstraß model computation" begin
     E = EllipticCurve([1,2,3,4,5])
     EE, f, g = @inferred short_weierstrass_model(E)
     @test isshort(EE)
@@ -55,21 +75,9 @@ function test_EllCrv()
     P = rand(EE)
     @test P == f(g(P))
     # @inferred will break the tests
+  end
 
-  println("done")
-
-  print("  Field access ... ")
-
-    @test base_field(E11_a1) == FlintQQ
-    @test base_field(E43_a1) == FlintQQ
-    @test base_field(E31_1_a1) == K
-    @test base_field(E116_1_a1) == K
-    @test base_field(Eshort) == FlintQQ
-
-  println("done")
-
-  print("  Point construction ... ")
-
+  @testset "Point construction" begin
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == E43_a1
@@ -114,26 +122,21 @@ function test_EllCrv()
     @test @inferred isfinite(P)
     @test typeof(P) == EllCrvPt{fmpq}
     @test parent(P) == Eshort
+  end
 
-  println("done")
-
-  print("  Discriminant ... ")
-
+  @testset "Discriminant" begin
     @test (2*a + 10)*OK == @inferred (disc(E116_1_a1)*OK)
     @test -43 == @inferred disc(E43_a1)
+  end
 
-  println("done")
-
-  print("  j invariant ... ")
-
+  @testset "j-invariant" begin
     b = (fmpq(-215055, 58) * a - fmpq(65799, 29))
     @test  b == @inferred j_invariant(E116_1_a1)
     @test fmpq(-4096, 43) == @inferred j_invariant(E43_a1)
+  end
 
-  println("done")
-
-  print("  Point addition ... ")
-
+  @testset "Point aritmetic" begin
+    #addition
     P = @inferred E43_a1([FlintQQ(-1), FlintQQ(0)])
     O = infinity(E43_a1)
 
@@ -154,10 +157,6 @@ function test_EllCrv()
     @test Eshort([0, 0]) == @inferred P + P
     @test P == @inferred O + P
 
-  println("done")
-
-  print("  Inverse ... ")
-
     P = Eshort([2, 4])
     @test Eshort([2, -4]) == @inferred -P
     P = infinity(Eshort)
@@ -168,15 +167,13 @@ function test_EllCrv()
     P = infinity(E43_a1)
     @test P == @inferred -P
 
+    # inversion
     P = @inferred E116_1_a1([K(0), -K(a)])
     @test E116_1_a1([0, 0]) == @inferred -P
     P = infinity(E116_1_a1)
     @test P == @inferred -P
 
-  println("done")
-
-  print("  Equality ... ")
-
+    # equality
     P1 = Eshort([2, 4])
     @test @inferred ==(P1, P1)
     P2 = infinity(Eshort)
@@ -195,10 +192,7 @@ function test_EllCrv()
     @test @inferred ==(P2, P2)
     @test @inferred !==(P2, P1)
 
-  println("done")
-
-  print("  Scalar multiplication ... ")
-
+    # scalar multiplication
     P1 = Eshort([2, 4])
     @test Eshort([0, 0]) == @inferred 2*P1
     @test infinity(Eshort) == @inferred 4*P1
@@ -209,6 +203,5 @@ function test_EllCrv()
     P1 = E116_1_a1([K(0), -K(a)])
     @test E116_1_a1([K(0), K(0)]) == @inferred 4*P1
     @test infinity(E116_1_a1) == @inferred 5*P1
-
-  println("done")
+  end
 end

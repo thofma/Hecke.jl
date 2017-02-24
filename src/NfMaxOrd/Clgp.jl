@@ -241,43 +241,28 @@ end
 ################################################################################
 
 function NfFactorBase(O::NfMaxOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+  @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
-  lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
-  FB = NfFactorBase()
-  FB.size = length(lp)
-  FB.ideals = lp
-
-  # Magic constant 20?
-  FB.rw = Array(Int, 20)
-  FB.mx = 20
-
-  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}()
-
-  for i = 1:length(lp)
-    if !haskey(fb, lp[i].gen_one)
-      fb[lp[i].gen_one] = [(i, lp[i])]
-    else
-      push!(fb[lp[i].gen_one], (i, lp[i]))
-    end
-  end
-
-  FB.fb = Dict{fmpz, FactorBaseSingleP}()
-  for p in keys(fb)
-    FB.fb[p] = FactorBaseSingleP(p, fb[p])
-  end
-
-  FB.fb_int = FactorBase(Set(keys(FB.fb)); check = false)
-
-  return FB
+  @vprint :ClassGroup 2 " done \n"
+  return NfFactorBase(O, lp)
 end
 
+function NfFactorBase(O::NfMaxOrd, lp::AbstractArray{Int, 1}, degree_limit::Int = 0)
+  @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
+  lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
+  @vprint :ClassGroup 2 " done \n"
+  return NfFactorBase(O, lP)
+end
 
 function NfFactorBase(O::NfMaxOrd, B::Int;
-                      complete::Bool = true, degree_limit::Int = 5)
+                        complete::Bool = true, degree_limit::Int = 5)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
-  lp = prime_ideals_up_to(O, B, complete = complete,
-                          degree_limit = degree_limit)
+  lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
+  return NfFactorBase(O, lp)
+end  
+
+function NfFactorBase(O::NfMaxOrd, lp::Array{NfMaxOrdIdl, 1})
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
   FB = NfFactorBase()
   FB.size = length(lp)
@@ -404,9 +389,9 @@ end
 
 global AllRels
 
-function class_group_init(O::NfMaxOrd, FB::NfFactorBase, T::DataType = Smat{fmpz})
+function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
   global AllRels = []
-
+  O = order(FB.ideals[1])
 
   clg = ClassGrpCtx{T}()
 
@@ -445,56 +430,29 @@ end
 
 function class_group_init(O::NfMaxOrd, B::Int;
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = Smat{fmpz})
-  global AllRels = []
-  clg = ClassGrpCtx{T}()
-
-  if degree_limit == 0 
-    degree_limit = degree(O)
-  end
-
-  clg.bad_rel = 0
-  clg.rel_cnt = 0
-  clg.last = 0
-
   @vprint :ClassGroup 2 "Computing factor base ...\n"
+
+  FB = NfFactorBase()
   while true
-    clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
-    if length(clg.FB.ideals) > 10
+    FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
+    if length(FB.ideals) > 10
       break
     end
     B *= 2
     @vprint :ClassGroup 2 "Increasing bound to $B ...\n"
   end
   @vprint :ClassGroup 2 " done\n"
-  clg.M = T()
-  clg.c = conjugates_init(nf(O).pol)
-  for I in clg.FB.ideals
-    a = nf(O)(I.gen_one)
-    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
-    a = nf(O)(I.gen_two)
-    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
-  end
-  n = degree(O)
-  l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
-  for i = 1:n
-    l[i,1] = 1
-  end
-  for i = 1:clg.c.r2
-    l[clg.c.r1+2*i, i+1] = 1
-    l[clg.c.r1+2*i-1, i+1] = -1
-  end
-  # what I want is a lll-reduced basis for the kernel
-  # it probably should be a sep. function
-  # however, there is nullspace - which is strange...
-  l,t = hnf_with_transform(l)
-  t = sub(t, (1+clg.c.r2+1):rows(l), 1:rows(l))
-  l = lll(t)
-  clg.val_base = l
-
-  clg.rel_mat_mod = Smat{UIntMod}()
-
-  return clg
+  return class_group_init(FB, T)
 end
+
+function class_group_add_auto(clg::ClassGrpCtx, f::Map)
+  p = induce(clg.FB, f)
+  if isdefined(clg, :op)
+    push!(clg.op, (f, p))
+  else
+    clg.op = [(f, p)]
+  end
+end  
 
 #=
   should probably just use an integer as hash: p*root of poly
@@ -514,7 +472,6 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   R = parent(f)
   Zx = PolynomialRing(FlintZZ)[1]
   Zpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "\$x_p", cached=false)[1]
-  g = Zpx()
   g = Zpx(a)  
   ff = Zpx(f)
   gcd!(g, g, ff)
@@ -546,7 +503,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
         b = a//lp[1]
         fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1))
         if fl 
-          clg.largePrime_success += 1
+          clg.largePrime_success += 0
         else
           clg.largePrime_no_success += 1
         end
@@ -564,6 +521,18 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n*nI)
     push!(clg.R, a)
     push!(clg.RS, a)
+    if isdefined(clg, :op)
+      n = clg.M[end]
+      o = orbit_in_FB(clg.op, a, n)
+      @v_do :ClassGroup 2 println(" adding orbit with $(length(o)) elements")
+      for (m, b) in o
+        if m != n
+          push!(clg.M, m)
+          push!(clg.R, b)
+          push!(clg.RS, b)
+        end
+      end
+    end  
     @hassert :ClassGroup 1 rows(clg.M) == length(clg.R)
     clg.rel_cnt += 1
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
