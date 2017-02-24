@@ -237,7 +237,7 @@ function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
 
-  f == 0 || error("poly is zero")
+  f == 0 && error("poly is zero")
 
   k = 0
   g = f
