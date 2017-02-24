@@ -1,4 +1,6 @@
-import Nemo.sub!
+import Nemo.sub!, Base.gcd
+export induce_rational_reconstruction, induce_crt
+
 ################################################################################
 #
 # convenience ...
@@ -194,8 +196,122 @@ function minpoly(a::nf_elem)
   return f(gen(parent(f))*d)
 end
 ###########################################################################
+# modular poly gcd and helpers
 ###########################################################################
+function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz)
+  #1 = gcd(p, q) = up + vq
+  # then u = modinv(p, q)
+  # vq = 1-up. i is up here
+  #crt: x = a (p), x = b(q) => x = avq + bup = a(1-up) + bup
+  #                              = (b-a)up + a            
+  return ((b-a)*up + a) % pq
+end
 
+function induce_inner_crt(a::nf_elem, b::nf_elem, pi::fmpz, pq::fmpz)
+  c = parent(a)()
+  ca = fmpz()
+  cb = fmpz()
+  for i=0:degree(parent(a))-1
+    Nemo.num_coeff!(ca, a, i)
+    Nemo.num_coeff!(cb, b, i)
+    Hecke._num_setcoeff!(c, i, inner_crt(ca, cb, pi, pq))
+  end
+  return c
+end
+
+doc"""
+  induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz) -> GenPoly{nf_elem}, fmpz
+
+> Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
+> to all coefficients recursively.
+> Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
+> denominators).
+"""
+function induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz)
+  c = parent(a)()
+  pi = invmod(p, q)
+  mul!(pi, pi, p)
+  pq = p*q
+  for i=0:max(degree(a), degree(b))
+    setcoeff!(c, i, induce_inner_crt(coeff(a, i), coeff(b, i), pi, pq))
+  end
+  return c, pq
+end
+
+doc"""
+  induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz) -> bool, GenPoly{nf_elem}
+
+> Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
+> the coefficients to be integral (no checks done)
+> returns true iff this is successful for all coefficients.
+"""
+function induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz)
+  b = parent(a)()
+  for i=0:degree(a)
+    fl, x = rational_reconstruction(coeff(a, i), M)
+    if fl
+      setcoeff!(b, i, x)
+    else
+      return false, b
+    end
+  end
+  return true, b
+end
+
+doc"""
+  gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}) -> GenPoly{nf_elem}
+
+> A modular $\gcd$
+"""
+function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  # naive version, kind of
+  # polys should be integral
+  # rat recon maybe replace by known den if poly integral (Kronnecker)
+  # if not monic, scale by gcd
+  # remove content?
+  a = a*(1//leading_coefficient(a))
+  b = b*(1//leading_coefficient(b))
+  p = 2^60
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = Hecke.modular_proj(b, me)
+    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]
+    gc = Hecke.modular_lift(gp, me)
+    if isone(gc)
+      return parent(a)(1)
+    end
+    if d == 1
+      g = gc
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, d = induce_crt(g, d, gc, fmpz(p))
+      end
+    end
+    fl, gg = induce_rational_reconstruction(g, d)
+    if fl  # not optimal
+      r = mod(a, gg)
+      if iszero(r)
+        r = mod(b, gg)
+        if iszero(r)
+          return gg
+        end
+      end
+    end
+  end
+end
+###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   K = base_ring(f)
   Qy = parent(K.pol)
