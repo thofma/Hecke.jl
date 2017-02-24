@@ -197,16 +197,16 @@ end
 ###########################################################################
 
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
-   K = base_ring(f)
-   Qy = parent(K.pol)
+  K = base_ring(f)
+  Qy = parent(K.pol)
 
-   res = zero(parent(y))
-   for i=degree(f):-1:0
-     res *= y
-     res += evaluate(Qy(coeff(f, i)), x)
-   end
-   return res
- end
+  res = zero(parent(y))
+  for i=degree(f):-1:0
+    res *= y
+    res += evaluate(Qy(coeff(f, i)), x)
+  end
+  return res
+end
 
 doc"""
   norm(f::PolyElem{nf_elem}) -> fmpq_poly
@@ -231,24 +231,27 @@ end
 doc"""
   factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
 
-> The factorisation of f (using Trager's method).
+> The factorisation of f (using Trager's method). f has to be squarefree.
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
+
+  f == 0 || error("poly is zero")
 
   k = 0
   g = f
   N = 0
 
   while true
-    N = norm(f)
+    N = norm(g)
 
     if !is_constant(N) && is_squarefree(N)
       break
     end
 
     k = k + 1
+ 
     g = compose(f, gen(Kx) - k*gen(K))
   end
   
@@ -256,7 +259,7 @@ function factor(f::PolyElem{nf_elem})
 
   res = Dict{PolyElem{nf_elem}, Int64}()
 
-  for i in keys(fac)
+  for i in keys(fac.fac)
     t = zero(Kx)
     for j in 0:degree(i)
       t = t + K(coeff(i, j))*gen(Kx)^j
@@ -265,7 +268,10 @@ function factor(f::PolyElem{nf_elem})
     res[gcd(f, t)] = 1
   end
 
-  return res
+  r = Fac{typeof(f)}()
+  r.fac = res
+  r.unit = Kx(1)
+  return r
 end
 
 ################################################################################
