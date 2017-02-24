@@ -259,7 +259,7 @@ function NfFactorBase(O::NfMaxOrd, B::Int;
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
-  return NfFactorBase(O, lP)
+  return NfFactorBase(O, lp)
 end  
 
 function NfFactorBase(O::NfMaxOrd, lp::Array{NfMaxOrdIdl, 1})
@@ -431,9 +431,11 @@ end
 function class_group_init(O::NfMaxOrd, B::Int;
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = Smat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
+
+  FB = NfFactorBase()
   while true
-    clg.FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
-    if length(clg.FB.ideals) > 10
+    FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
+    if length(FB.ideals) > 10
       break
     end
     B *= 2
@@ -442,6 +444,15 @@ function class_group_init(O::NfMaxOrd, B::Int;
   @vprint :ClassGroup 2 " done\n"
   return class_group_init(FB, T)
 end
+
+function class_group_add_auto(clg::ClassGrpCtx, f::Map)
+  p = induce(clg.FB, f)
+  if isdefined(clg, :op)
+    push!(clg.op, (f, p))
+  else
+    clg.op = [(f, p)]
+  end
+end  
 
 #=
   should probably just use an integer as hash: p*root of poly
@@ -461,7 +472,6 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   R = parent(f)
   Zx = PolynomialRing(FlintZZ)[1]
   Zpx = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "\$x_p", cached=false)[1]
-  g = Zpx()
   g = Zpx(a)  
   ff = Zpx(f)
   gcd!(g, g, ff)
@@ -493,7 +503,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
         b = a//lp[1]
         fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1))
         if fl 
-          clg.largePrime_success += 1
+          clg.largePrime_success += 0
         else
           clg.largePrime_no_success += 1
         end
@@ -511,6 +521,18 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n*nI)
     push!(clg.R, a)
     push!(clg.RS, a)
+    if isdefined(clg, :op)
+      n = clg.M[end]
+      o = orbit_in_FB(clg.op, a, n)
+      @v_do :ClassGroup 2 println(" adding orbit with $(length(o)) elements")
+      for (m, b) in o
+        if m != n
+          push!(clg.M, m)
+          push!(clg.R, b)
+          push!(clg.RS, b)
+        end
+      end
+    end  
     @hassert :ClassGroup 1 rows(clg.M) == length(clg.R)
     clg.rel_cnt += 1
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
