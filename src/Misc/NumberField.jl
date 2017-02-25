@@ -1,6 +1,12 @@
 import Nemo.sub!, Base.gcd
 export induce_rational_reconstruction, induce_crt
 
+if Int==Int32
+  global const p_start = 2^30
+else
+  global const p_start = 2^60
+end
+
 ################################################################################
 #
 # convenience ...
@@ -198,23 +204,32 @@ end
 ###########################################################################
 # modular poly gcd and helpers
 ###########################################################################
-function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz)
+function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
   #1 = gcd(p, q) = up + vq
   # then u = modinv(p, q)
   # vq = 1-up. i is up here
   #crt: x = a (p), x = b(q) => x = avq + bup = a(1-up) + bup
   #                              = (b-a)up + a            
-  return ((b-a)*up + a) % pq
+  if !iszero(pq2) 
+    r = ((b-a)*up + a) % pq
+    if r > pq2
+      return r-pq
+    else
+      return r
+    end
+  else
+    return ((b-a)*up + a) % pq
+  end
 end
 
-function induce_inner_crt(a::nf_elem, b::nf_elem, pi::fmpz, pq::fmpz)
+function induce_inner_crt(a::nf_elem, b::nf_elem, pi::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
   c = parent(a)()
   ca = fmpz()
   cb = fmpz()
   for i=0:degree(parent(a))-1
     Nemo.num_coeff!(ca, a, i)
     Nemo.num_coeff!(cb, b, i)
-    Hecke._num_setcoeff!(c, i, inner_crt(ca, cb, pi, pq))
+    Hecke._num_setcoeff!(c, i, inner_crt(ca, cb, pi, pq, pq2))
   end
   return c
 end
@@ -227,13 +242,18 @@ doc"""
 > Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
 > denominators).
 """
-function induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz)
+function induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
   pq = p*q
+  if signed
+    pq2 = div(pq, 2)
+  else
+    pq2 = fmpz(0)
+  end
   for i=0:max(degree(a), degree(b))
-    setcoeff!(c, i, induce_inner_crt(coeff(a, i), coeff(b, i), pi, pq))
+    setcoeff!(c, i, induce_inner_crt(coeff(a, i), coeff(b, i), pi, pq, pq2))
   end
   return c, pq
 end
@@ -264,6 +284,10 @@ doc"""
 > A modular $\gcd$
 """
 function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  return gcd_modular_kronnecker(a, b)
+end
+
+function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   # naive version, kind of
   # polys should be integral
   # rat recon maybe replace by known den if poly integral (Kronnecker)
@@ -271,7 +295,8 @@ function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   # remove content?
   a = a*(1//leading_coefficient(a))
   b = b*(1//leading_coefficient(b))
-  p = 2^60
+  global p_start
+  p = p_start
   K = base_ring(parent(a))
   @assert parent(a) == parent(b)
   g = zero(a)
@@ -311,6 +336,135 @@ function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
     end
   end
 end
+
+import Base.gcdx
+
+#similar to gcd_modular, but avoids rational reconstruction by controlling 
+#a/the denominator
+function gcd_modular_kronnecker(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  # rat recon maybe replace by known den if poly integral (Kronnecker)
+  # if not monic, scale by gcd
+  # remove content?
+  a = a*(1//leading_coefficient(a))
+  da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  b = b*(1//leading_coefficient(b))
+  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  d = gcd(da, db)
+  a = a*da
+  b = b*db
+  K = base_ring(parent(a))
+  fsa = evaluate(derivative(K.pol), gen(K))*d
+  #now gcd(a, b)*fsa should be in the equation order...
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  last_g = parent(a)(0)
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = Hecke.modular_proj(b, me)
+    fsap = Hecke.modular_proj(fsa, me)
+    gp = [fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
+    gc = Hecke.modular_lift(gp, me)
+    if isone(gc)
+      return parent(a)(1)
+    end
+    if d == 1
+      g = gc
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, d = induce_crt(g, d, gc, fmpz(p), true)
+      end
+    end
+    if g == last_g
+      r = mod(a, g)
+      if iszero(r)
+        r = mod(b, g)
+        if iszero(r)
+          return g
+        end
+      end
+    else
+      last_g = g
+    end
+  end
+end
+
+#seems to be faster than gcdx - if problem large enough.
+#rational reconstructio is expensive - enventually
+#TODO: figure out the denominators in advance. Resultants?
+
+function gcdx_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  a = a*(1//leading_coefficient(a))
+  b = b*(1//leading_coefficient(b))
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  last_g = parent(a)(0)
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = Hecke.modular_proj(b, me)
+    ap = similar(gp)
+    bp = similar(gp)
+    for i=1:length(gp)
+      gp[i], ap[i], bp[i] = gcdx(fp[i], gp[i])
+    end
+    gc = Hecke.modular_lift(gp, me)
+    aa = Hecke.modular_lift(ap, me)
+    bb = Hecke.modular_lift(bp, me)
+    if d == 1
+      g = gc
+      ca = aa
+      cb = bb
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        ca = aa
+        cb = bb
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, dd = induce_crt(g, d, gc, fmpz(p))
+        ca, dd = induce_crt(ca, d, aa, fmpz(p))
+        cb, d = induce_crt(cb, d, bb, fmpz(p))
+      end
+    end
+    fl, ccb = Hecke.induce_rational_reconstruction(cb, d)
+    if fl
+      fl, cca = Hecke.induce_rational_reconstruction(ca, d)
+    end
+    if fl
+      fl, gg = Hecke.induce_rational_reconstruction(g, d)
+    end
+    if fl
+      r = mod(a, g)
+      if iszero(r)
+        r = mod(b, g)
+        if iszero(r) && ((cca*a + ccb*b) == gg)
+          return gg, cca, ccb
+        end
+      end
+    end
+  end
+end
+  
 ###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   K = base_ring(f)
@@ -343,6 +497,24 @@ function norm(f::PolyElem{nf_elem})
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
   return resultant(T, h)
 end
+
+doc"""
+  factor(f::fmpz_poly, K::NumberField) -> Dict{PolyElem{nf_elem}, Int}
+  factor(f::fmpq_poly, K::NumberField) -> Dict{PolyElem{nf_elem}, Int}
+
+> The factorisation of f over K (using Trager's method).
+"""
+function factor(f::fmpq_poly, K::AnticNumberField)
+  Ky, y = PolynomialRing(K)
+  return factor(evaluate(f, y))
+end
+
+function factor(f::fmpz_poly, K::AnticNumberField)
+  Ky, y = PolynomialRing(K)
+  Qz, z = PolynomialRing(FlintQQ)
+  return factor(evaluate(Qz(f), y))
+end
+
 
 doc"""
   factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
