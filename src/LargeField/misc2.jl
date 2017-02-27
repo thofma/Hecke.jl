@@ -39,7 +39,7 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 
   t = b[1].parent()
   nb = length(b)
   one = fmpz(1)
-  rels = Array(Hecke.nf_elem, no_rel)
+  rels = Array{Hecke.nf_elem}(no_rel)
   i = 1
   l = 0
   while i < no_rel + 1

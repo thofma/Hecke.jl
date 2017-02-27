@@ -58,8 +58,8 @@ type ProdEnv{T}
   function ProdEnv(n::Int)
     r = new()
     m = nbits(n)
-    r.level = Array(Int, m)
-    r.val   = Array(T, m)
+    r.level = Array{Int}(m)
+    r.val   = Array{T}(m)
     r.last = 0
     for i=1:m
       r.val[i] = T()
@@ -121,7 +121,7 @@ end
 function pair_bach{E}(a::E, b::E)
   if isone(a)
     if isone(b)
-      return Array(E, 0)
+      return Array{E}(0)
     else
       return [b]
     end
@@ -153,7 +153,7 @@ function pair_bach{E}(a::E, b::E)
 end
 
 function augment_bach{E}(S::Array{E, 1}, m::E)
-  T = Array(E, 0)
+  T = Array{E}(0)
   i = 1
   while i <= length(S) && !isone(m)
     if !isone(S[i])
@@ -225,7 +225,7 @@ function ppgle{E}(a::E, b::E)
 end
 
 function pair_bernstein{E}(a::E, b::E)
-  T = Array(E, 0)
+  T = Array{E}(0)
   if isone(b)
     if isone(a)
       return T
@@ -291,7 +291,7 @@ function split_bernstein{T}(a::T, P::Array{T, 1})
 end
 
 function augment_bernstein{E}(P::Array{E, 1}, b::E)
-  T = Array(E, 0)
+  T = Array{E}(0)
   if length(P) == 0
     if isone(b)
       return T
@@ -371,7 +371,7 @@ function augment_steel{E}(S::Array{E, 1}, a::E, start::Int = 1)
 end
 
 function coprime_base_steel{E}(S::Array{E, 1})
-  T = Array(E, 1)
+  T = Array{E}(1)
   T[1] = S[1]
   for i=2:length(S)
     augment_steel(T, S[i])

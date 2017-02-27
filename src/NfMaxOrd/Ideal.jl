@@ -696,7 +696,7 @@ function _assure_weakly_normal_presentation(A::NfMaxOrdIdl)
   Amin2 = minimum(A)^2
   Amind = minimum(A)^degree(O)
 
-  B = Array(fmpz, 1, degree(O))
+  B = Array{fmpz}(degree(O))
 
   gen = O()
 
@@ -882,7 +882,7 @@ function basis(A::NfMaxOrdIdl)
   else
     O = order(A)
     M = basis_mat(A)
-    B = Array(NfOrdElem, degree(O))
+    B = Array{NfOrdElem}(degree(O))
     y = O()
     for i in 1:degree(O)
       z = O()
@@ -1295,7 +1295,7 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
     end
   end
   fac = _fac
-  result = Array(Tuple{typeof(I()),Int}, length(fac))
+  result = Array{Tuple{typeof(I()),Int}}(length(fac))
   k = 1
   t = fmpq_poly()
   b = K()
@@ -1483,7 +1483,7 @@ function prime_decomposition_type(O::NfMaxOrd, p::Integer)
     fmodp = PolynomialRing(ResidueRing(ZZ,p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
-    res = Array(Tuple{Int, Int}, g)
+    res = Array{Tuple{Int, Int}}(g)
     k = 1
     for (fi, ei) in fac 
       for j in 1:ei
@@ -1493,7 +1493,7 @@ function prime_decomposition_type(O::NfMaxOrd, p::Integer)
     end
   else
     lp = prime_decomposition(O, p)
-    res = Array(Tuple{Int, Int}, length(lp))
+    res = Array{Tuple{Int, Int}}(length(lp))
     for i in 1:length(lp)
       res[i] = (lp[i][1].splitting_type[2], lp[i][1].splitting_type[1])
     end
@@ -1757,8 +1757,8 @@ type quoringalg <: Ring
     B = rref(Amodp)
     r = rank(B)
     C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, degree(O)))
-    BB = Array(NfOrdElem, degree(O) - r)
-    pivots = Array(Int, 0)
+    BB = Array{NfOrdElem}(degree(O) - r)
+    pivots = Array{Int}(0)
 #    # get he pivots of B
     for i in 1:r
       for j in 1:degree(O)

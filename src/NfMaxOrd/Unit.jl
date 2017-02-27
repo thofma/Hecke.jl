@@ -237,7 +237,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
   @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
   r = length(rel) - 1
 
-  z = Array(fmpq, r)
+  z = Array{fmpq}(r)
 
   # Compute an upper bound in the denominator of an entry in the relation
   # using Cramer's rule and lower regulator bounds
@@ -326,7 +326,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
 
   R = ArbField(p)
 
-  zz = Array(fmpz, r + 1)
+  zz = Array{fmpz}(r + 1)
 
   @vprint :UnitGroup 1 "Computing conjugates log matrix ... \n"
   A = _conj_log_mat_cutoff(x, p)
@@ -361,7 +361,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
 
   v = b*B
 
-  z = Array(fmpq, r)
+  z = Array{fmpq}(r)
 
   rreg = det(A)
 
@@ -371,7 +371,7 @@ function _find_relation{S, T}(x::Array{S, 1}, y::T, p::Int = 64)
   # using Cramer's rule and lower regulator bounds
 
 
-  rel = Array(fmpz, r + 1)
+  rel = Array{fmpz}(r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
@@ -446,7 +446,7 @@ function _transform(x::Array{nf_elem}, y::fmpz_mat)
   n = length(x)
   @assert n == rows(y)
   m = cols(y)
-  z = Array(nf_elem, m)
+  z = Array{nf_elem}(m)
   for i in 1:m
     z[i] = x[1]^y[1, i]
     for j in 2:n
@@ -514,7 +514,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
 
   #p = 64
 
-  zz = Array(fmpz, r + 1)
+  zz = Array{fmpz}(r + 1)
 
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
@@ -541,7 +541,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
   v = b*B
   @vprint :UnitGroup 3 "For $p the vector v: $v\n"
 
-  z = Array(fmpq, r)
+  z = Array{fmpq}(r)
 
   rreg = arb()
 
@@ -553,7 +553,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T)
 
   bound = _denominator_bound_in_relation(rreg, K)
 
-    rel = Array(fmpz, r + 1)
+    rel = Array{fmpz}(r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
@@ -709,7 +709,7 @@ function _pow{T}(x::Array{T, 1}, y::Array{fmpz, 1})
 
   zz = deepcopy(y)
 
-  z = Array(fmpz, length(x))
+  z = Array{fmpz}(length(x))
 
   for i in 1:length(x)
     z[i] = mod(zz[i], 2)
@@ -1181,7 +1181,7 @@ end
 # starting at next_prime(st)
 function _find_primes_for_saturation(O::NfMaxOrd, p::Int, n::Int,
                                      st::Int = 0)
-  res = Array(NfMaxOrdIdl, n)
+  res = Array{NfMaxOrdIdl}(n)
   i = 0
 
   q = st

@@ -273,7 +273,7 @@ function transpose{T}(A::Smat{T})
   B = Smat{T}()
   n = rows(A)
   m = cols(A)
-  B.rows = Array(SmatRow{T}, m)
+  B.rows = Array{SmatRow{T}}(m)
   for i=1:m
     B.rows[i] = SmatRow{T}()
   end
@@ -357,7 +357,7 @@ end
 
 function mul{T}(A::Smat{T}, b::Array{T, 1})
   assert( length(b) == cols(A))
-  c = Array(T,rows(A))
+  c = Array{T}(rows(A))
   mul!(c, A, b)
   return c
 end
@@ -411,7 +411,7 @@ end
 function mul{T}(A::Smat{T}, b::Array{T, 2})
   sz = size(b)
   assert( sz[1] == cols(A))
-  c = Array(T, sz[1], sz[2])
+  c = Array{T}(sz[1], sz[2])
   return mul!(c, A, b)
 end
 
@@ -484,7 +484,7 @@ end
 # end
 # 
 function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
-  a = Array(SmatSLP_add_row{Int}, i)
+  a = Array{SmatSLP_add_row{Int}}(i)
   for j=1:i
     c = rand(v)
     while c==0
@@ -529,8 +529,8 @@ function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_ro
     mm = mul_mod!
     println("mul small case")
   end
-  c1 = Array(Int, cols(A))
-  c2 = Array(Int, rows(A))
+  c1 = Array{Int}(cols(A))
+  c2 = Array{Int}(rows(A))
 
   for i=1:cols(A)
     c1[i] = Int(rand(-10:10))
@@ -564,7 +564,7 @@ function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_ro
     V = fmpz(leading_coefficient(f))
     pp = fmpz(p)
 
-    v = Array(typeof(k(1)), 2*degree(f)+1)
+    v = Array{typeof(k(1))}(2*degree(f)+1)
     while true
       p = next_prime(p)
       println(p)
@@ -736,9 +736,9 @@ end
   The same matrix, but as a julia-sparse matrix
 """ ->
 function sparse{T}(A::Smat{T})
-  I = Array(Int, A.nnz)
-  J = Array(Int, A.nnz)
-  V = Array(T, A.nnz)
+  I = Array{Int}(A.nnz)
+  J = Array{Int}(A.nnz)
+  V = Array{T}(A.nnz)
   i = 1
   for r = 1:rows(A)
     for j=1:length(A.rows[r].pos)
@@ -757,7 +757,7 @@ end
   The same matrix, but as a two-dimensional julia-Array.
 """ ->
 function Array{T}(A::Smat{T})
-  R = zero(Array(T, A.r, A.c)) # otherwise, most entries will be #undef
+  R = zero(Array{T}(A.r, A.c)) # otherwise, most entries will be #undef
                                # at least if T is a flint-type
   for i=1:rows(A)
     for j=1:length(A.rows[i].pos)
@@ -1132,7 +1132,7 @@ end
 function one_step{T}(A::Smat{T}, sr = 1)
   i = sr
   assert(i>0)
-  all_r = Array(Int, 0)
+  all_r = Array{Int}(0)
   min = A.c
   while i <= length(A.rows)
     @assert length(A.rows[i].pos)>0
@@ -1478,7 +1478,7 @@ function _one_step_with_trafo{T}(A::Smat{T}, sr = 1)
   trafos = Trafo[]
   i = sr
   assert(i>0)
-  all_r = Array(Int, 0)
+  all_r = Array{Int}(0)
   min = A.c
 
   while i <= length(A.rows)

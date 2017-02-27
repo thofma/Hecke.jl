@@ -269,7 +269,7 @@ function NfFactorBase(O::NfMaxOrd, lp::Array{NfMaxOrdIdl, 1})
   FB.ideals = lp
 
   # Magic constant 20?
-  FB.rw = Array(Int, 20)
+  FB.rw = Array{Int}(20)
   FB.mx = 20
 
   fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}()
@@ -579,7 +579,7 @@ function class_group_small_elements_relation(clg::ClassGrpCtx,
   l = FakeFmpqMat(lll(basis_mat(A)))*basis_mat(order(A))
   K = nf(order(A))
   if cnt <= degree(A.parent.order)
-    lb = Array(nf_elem, degree(K))
+    lb = Array{nf_elem}(degree(K))
     for i = 1:cnt
       lb[i] = elem_from_mat_row(K, l.num, i, l.den)
     end
@@ -587,11 +587,11 @@ function class_group_small_elements_relation(clg::ClassGrpCtx,
   end
   r = Int(ceil((2*cnt)^(1/degree(K))))
   r = -div(r+1, 2):div(r+1, 2)
-  ll = Array(typeof(K()), degree(K))
+  ll = Array{typeof(K())}(degree(K))
   for i = 1:degree(K)
     ll[i] = elem_from_mat_row(K, l.num, i, l.den)
   end
-  lb = Array(typeof(K()), cnt)
+  lb = Array{typeof(K())}(cnt)
   for i = 1:cnt
     lb[i] = rand(ll, r)
   end
@@ -964,7 +964,7 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
   # If we are in the full rank case, they come from the hnf itself,
   # Otherwise we look at the echelon form of the reduction.
 
-  piv = Array(Int, 0)
+  piv = Array{Int}(0)
 
   if clg.rel_mat_full_rank
     for i in clg.H.rows

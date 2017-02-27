@@ -62,7 +62,7 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   @hassert :LatEnum 1 rows(G) == n
   limit = min(limit, n)
   t = ZZ()
-  C = Array(TC,limit,limit)
+  C = Array{TC}(limit, limit)
   for i=1:limit
     for j=1:limit
       getindex!(t, G, i, j)
@@ -108,11 +108,11 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
   E.x = MatrixSpace(ZZ, 1, n)()
     #coeffs limit+1:n are going to be zero, always
-  E.L = Array(TU, limit) #lower and
-  E.U = Array(TU, limit) #upper bounds for the coordinates
+  E.L = Array{TU}(limit) #lower and
+  E.U = Array{TU}(limit) #upper bounds for the coordinates
 
-  E.l = Array(TU, limit) #current length
-  E.tail = Array(TU, limit)
+  E.l = Array{TU}(limit) #current length
+  E.tail = Array{TU}(limit)
   return E
 end
 

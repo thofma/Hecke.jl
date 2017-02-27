@@ -166,8 +166,8 @@ type acb_root_ctx
     end
 
     z.prec = p
-    A = Array(arb, z.signature[1])
-    B = Array(acb, z.signature[2])
+    A = Array{arb}(z.signature[1])
+    B = Array{acb}(z.signature[2])
 
     for i in 1:r
       @assert isreal(z.roots[i])
@@ -250,7 +250,7 @@ type SmatRow{T}
 
   function SmatRow{S}(A::SmatRow{S})
     r = new()
-    r.values = Array(T, length(A.pos))
+    r.values = Array{T}(length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
       r.values[i] = T(A.values[i])
@@ -275,7 +275,7 @@ type Smat{T}
 
   function Smat()
     r = new()
-    r.rows = Array(SmatRow{T}, 0)
+    r.rows = Array{SmatRow{T}}(0)
     r.nnz = 0
     r.r = 0
     r.c = 0
@@ -284,7 +284,7 @@ type Smat{T}
 
   function Smat{S}(a::Smat{S})
     r = new()
-    r.rows = Array(SmatRow{T}, length(a.rows))
+    r.rows = Array{SmatRow{T}}(length(a.rows))
     for i=1:rows(a)
       r.rows[i] = SmatRow{T}(a.rows[i])
     end
@@ -469,7 +469,7 @@ type NfOrdElem{T <: NfOrd} <: RingElem
     z = new{T}()
     z.parent = O
     z.elem_in_nf = nf(O)() 
-    z.elem_in_basis = Array(fmpz, degree(O))
+    z.elem_in_basis = Array{fmpz}(degree(O))
     z.has_coord = false
     return z
   end
@@ -477,7 +477,7 @@ type NfOrdElem{T <: NfOrd} <: RingElem
   function NfOrdElem(O::T, a::nf_elem)
     z = new{T}()
     z.elem_in_nf = a
-    z.elem_in_basis = Array(fmpz, degree(O))
+    z.elem_in_basis = Array{fmpz}(degree(O))
     z.parent = O
     z.has_coord = false
     return z
@@ -597,8 +597,8 @@ type NfOrdGen <: NfOrd
       z.parent = NfOrdGenSet(K)
       z.nf = K
       z.basis_mat = x
-      B = Array(NfOrdElem{NfOrdGen}, degree(K))
-      BB = Array(nf_elem, degree(K))
+      B = Array{NfOrdElem{NfOrdGen}}(degree(K))
+      BB = Array{nf_elem}(degree(K))
       for i in 1:degree(K)
         t = elem_from_mat_row(K, x.num, i, x.den)
         BB[i] = t
@@ -624,7 +624,7 @@ type NfOrdGen <: NfOrd
       z.nf = K
       z.basis_nf = a
       z.basis_mat = A
-      z.basis_ord = Array(NfOrdElem{NfOrdGen}, degree(K))
+      z.basis_ord = Array{NfOrdElem{NfOrdGen}}(degree(K))
       for i in 1:degree(K)
         z.basis_ord[i] = z(a[i], false)
       end
@@ -835,7 +835,7 @@ type NfMaxOrd <: NfOrd
     r.parent = NfMaxOrdSet(a)
     r.signature = (-1,0)
     r.norm_change_const = (-1.0, -1.0)
-    r.auxilliary_data = Array(Any, 5)
+    r.auxilliary_data = Array{Any}(5)
     r.isequationorder = false
     return r
   end
@@ -847,14 +847,14 @@ type NfMaxOrd <: NfOrd
     z = NfMaxOrd(K)
     n = degree(K)
     B_K = basis(K)
-    d = Array(nf_elem, n)
+    d = Array{nf_elem}(n)
     for i in 1:n
       d[i] = elem_from_mat_row(K, x.num, i, x.den)
     end
     z.basis_nf = d
     z.basis_mat = x
     z.basis_mat_inv = inv(x)
-    B = Array(NfOrdElem{NfMaxOrd}, n)
+    B = Array{NfOrdElem{NfMaxOrd}}(n)
     for i in 1:n
       v = fill(zero(ZZ), n)
       v[i] = ZZ(1)
@@ -880,7 +880,7 @@ type NfMaxOrd <: NfOrd
     z.basis_mat = A
     z.basis_mat_inv = inv(A)
 
-    B = Array(NfOrdElem{NfMaxOrd}, n)
+    B = Array{NfOrdElem{NfMaxOrd}}(n)
 
     for i in 1:n
       v = fill(zero(ZZ), n)

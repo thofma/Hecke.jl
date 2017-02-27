@@ -88,7 +88,7 @@ function basis_ord(O::NfOrd)
     return O.basis_ord::Array{NfOrdElem{typeof(O)}, 1}
   end
   b = O.basis_nf
-  B = Array(NfOrdElem{typeof(O)}, length(b))
+  B = Array{NfOrdElem{typeof(O)}}(length(b))
   for i in 1:length(b)
     v = fill(FlintZZ(0), length(b))
     v[i] = FlintZZ(1)
@@ -308,7 +308,7 @@ function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
     A = deepcopy(O.minkowski_mat[1])
   else
-    T = Array(Array{arb, 1}, degree(O))
+    T = Array{Array{arb, 1}}(degree(O))
     B = O.basis_nf
     for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)
@@ -340,7 +340,7 @@ function _check_elem_in_order(a::nf_elem, O::NfOrd)
   t = FakeFmpqMat(M)
   elem_to_mat_row!(t.num, 1, t.den, a)
   x = t*basis_mat_inv(O)
-  v = Array(fmpz, degree(O))
+  v = Array{fmpz}(degree(O))
   for i in 1:degree(O)
     v[i] = deepcopy(x.num[1,i])
   end

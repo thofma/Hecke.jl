@@ -122,7 +122,7 @@ function basis(a::NfOrdFracIdl)
   O = order(a)
   K = nf(O)
   Oba = O.basis_nf
-  res = Array(nf_elem, d)
+  res = Array{nf_elem}(d)
 
   for i in 1:d
     z = K()

@@ -207,7 +207,7 @@ doc"""
 """
 function +(x::AbGrpElem, y::AbGrpElem)
   parent(x) != parent(y) && error("Parents must coincide")
-  z = Array(fmpz, length(x.coord))
+  z = Array{fmpz}(length(x.coord))
   for i in 1:length(z)
     z[i] = x.coord[i] + y.coord[i]
   end
@@ -296,7 +296,7 @@ doc"""
 > where the $1$ is at the $i$-th position.
 """
 function getindex(A::AbGrp, i::Int)
-  z = Array(fmpz, length(A.diagonal))
+  z = Array{fmpz}(length(A.diagonal))
   for j in 1:length(A.diagonal)
     z[j] = fmpz()
   end

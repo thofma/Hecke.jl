@@ -114,7 +114,7 @@ doc"""
 function basis(K::AnticNumberField)
   n = degree(K)
   g = gen(K);
-  d = Array(typeof(g), n)
+  d = Array{typeof(g)}(n)
   b = K(1)
   for i = 1:n-1
     d[i] = b
@@ -840,7 +840,7 @@ doc"""
 """
 function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   K = parent(a)
-  A = Array(arb, degree(K))
+  A = Array{arb}(degree(K))
   r, s = signature(K)
   c = conjugate_data_arb(K)
   R = PolynomialRing(AcbField(c.prec), "x")[1]
@@ -908,7 +908,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   d = degree(K)
   c = conjugate_data_arb(K)
   r, s = signature(K)
-  conjugates = Array(acb, r + 2*s)
+  conjugates = Array{acb}(r + 2*s)
   CC = AcbField(c.prec)
 
   for i in 1:r
@@ -943,7 +943,7 @@ doc"""
 function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   r1, r2 = signature(parent(x))
   c = conjugates_arb(x, abs_tol)
-  z = Array(arb, r1)
+  z = Array{arb}(r1)
 
   for i in 1:r
     z[i] = real(c[i])
@@ -984,7 +984,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   c = conjugate_data_arb(K)
 
   # We should replace this using multipoint evaluation of libarb
-  z = Array(arb, r1 + r2)
+  z = Array{arb}(r1 + r2)
   xpoly = arb_poly(parent(K.pol)(x), c.prec)
   for i in 1:r1
     #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
