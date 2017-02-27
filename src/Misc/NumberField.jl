@@ -211,14 +211,14 @@ function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
   #crt: x = a (p), x = b(q) => x = avq + bup = a(1-up) + bup
   #                              = (b-a)up + a            
   if !iszero(pq2) 
-    r = ((b-a)*up + a) % pq
+    r = mod(((b-a)*up + a), pq)
     if r > pq2
       return r-pq
     else
       return r
     end
   else
-    return ((b-a)*up + a) % pq
+    return mod(((b-a)*up + a), pq)
   end
 end
 
@@ -464,7 +464,118 @@ function gcdx_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
     end
   end
 end
-  
+ 
+
+function ismonic(a::GenPoly)
+  return leading_coefficient(a)==1
+end
+
+function eq_mod(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}, d::fmpz)
+  e = degree(a) == degree(b)
+  K= base_ring(parent(a))
+  i=0
+  while e && i<= degree(a)
+    j = 0
+    while e && j<degree(K)
+      e = e && (num(coeff(coeff(a, i), j)) - num(coeff(coeff(b, i), j))) % d == 0
+      j += 1
+    end
+    i += 1
+  end
+  return e
+end
+
+#similar to gcd_modular, but avoids rational reconstruction by controlling 
+#a/the denominator using resultant. Faster than above, but still slow.
+#mainly due to the generic resultant. Maybe use only deg-1-primes??
+#fact: g= gcd(a, b) and 1= gcd(a/g, b/g) = u*(a/g) + v*(b/g)
+#then u*res(a/g, b/g) is mathematically integeral, same for v
+#scaling by f'(a) makes it i nthe equation order
+#
+# missing/ nest attempt:
+#  write invmod using lifting
+#  write gcdx using lifting (lin/ quad)
+#  try using deg-1-primes only (& complicated lifting)
+#
+function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  a = a*(1//leading_coefficient(a))
+  da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  b = b*(1//leading_coefficient(b))
+  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  d = gcd(da, db)
+  a = a*da
+  b = b*db
+  K = base_ring(parent(a))
+  fsa = evaluate(derivative(K.pol), gen(K))*d
+  #now gcd(a, b)*fsa should be in the equation order...
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  r = zero(K)
+  fa = zero(a)
+  fb = zero(b)
+  last_g = (parent(a)(0), parent(a)(0), parent(a)(0), parent(a)(0))
+ 
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = (Hecke.modular_proj(b, me))
+    fsap = (Hecke.modular_proj(fsa, me))
+    g_ = similar(fp)
+    fa_ = similar(fp)
+    fb_ = similar(fp)
+    r_ = Array{fq_nmod}(length(fp))
+    for i=1:length(gp)
+      g_[i], fa_[i], fb_[i] = gcdx(fp[i], gp[i])
+      r_[i] = resultant(div(fp[i], g_[i]), div(gp[i], g_[i]))
+      g_[i] *= fsap[i]
+      fa_[i] *= (fsap[i]*r_[i])
+      fb_[i] *= (fsap[i]*r_[i])
+    end
+    rc = Hecke.modular_lift(r_, me)
+    gc = Hecke.modular_lift(g_, me)
+    fac = Hecke.modular_lift(fa_, me)
+    fbc = Hecke.modular_lift(fb_, me)
+    if d == 1
+      g = gc
+      r = rc
+      fa = fac
+      fb = fbc
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        r = rc
+        fa = fac
+        fb = fbc
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, d1 = induce_crt(g, d, gc, fmpz(p), true)
+        fa, d1 = induce_crt(fa, d, fac, fmpz(p), true)
+
+        r = Hecke.induce_inner_crt(r, rc, d*invmod(d, fmpz(p)), d1, div(d1, 2))
+        fb, d = induce_crt(fb, d, fbc, fmpz(p), true)
+
+      end
+    end
+    if (g, r, fa, fb) == last_g
+      if g*r == fa*a + fb*b
+        return g*r, fa, fb ## or normalise to make gcd monic??
+      else 
+        last_g = (g, r, fa, fb)
+      end
+    else
+      last_g = (g, r, fa, fb)
+    end
+  end
+end
+
 ###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   K = base_ring(f)
