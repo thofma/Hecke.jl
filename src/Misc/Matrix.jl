@@ -208,6 +208,41 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
    return x
 end
 
+function is_hnf(x::fmpz_mat, shape::Symbol)
+  if shape == :upperright
+    return is_hnf(x)
+  elseif shape == :lowerleft
+    r = rows(x)
+    i = 0
+    j_old = cols(x) + 1
+
+    for i in rows(x):-1:1
+
+      if is_zero_row(x, i)
+        break
+      end
+
+      j = cols(x)
+      while iszero(x[i, j])
+        j = j - 1
+      end
+      x[i, j] < 0 && return false
+      j >= j_old && return false
+      for k in i+1:r
+        x[k, j] < 0 && return false
+        x[k, j] >= x[i, j] && return false
+      end
+      j_old = j
+      i = i - 1
+    end
+
+    for k in i:-1:1
+      !is_zero_row(x, k) && return false
+    end
+    return true
+  end
+end
+
 #function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
 #  if shape == :lowerleft
 #    _swapcols!(x)
