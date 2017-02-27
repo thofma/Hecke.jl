@@ -1376,7 +1376,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 
     # The following does not work if there is only one prime ideal
     if length(AA) > 1 && (1-1/p)^degree(O) < 0.1
-      # Find the second element might take some time
+      # Finding the second element might take some time
       @vprint :NfMaxOrd 1 "chances are very low: ~$((1-1/p)^degree(O))"
       # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
       # number theory".
@@ -1400,6 +1400,8 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 
       u, v = idempotents(P, Vp)
 
+      x = zero(parent(u))
+
       if !iszero(mod(norm(u), norm(P)*p))
         x = u
       elseif !iszero(mod(norm(u + p), norm(P)*p))
@@ -1414,7 +1416,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
         end
       end
 
-      @hassert :NfMaxOrd 1 isdefined(:x)
+      @hassert :NfMaxOrd 1 !iszero(x)
       @hassert :NfMaxOrd 2 O*O(p) + O*x == P
       
       P.gen_one = p

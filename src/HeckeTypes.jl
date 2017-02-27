@@ -712,7 +712,7 @@ type NfOrdGenIdl <: NfOrdIdl
   end
 
   function NfOrdGenIdl(O::NfOrdGen, a::fmpz_mat)
-    @hassert :NfOrd 2 is_hnf(transpose(a)) # a must be lowerleft HNF
+    @hassert :NfOrd 2 is_hnf(a, :lowerleft) # a must be lowerleft HNF
     z = new()
     z.parent = NfOrdGenIdlSet(O)
     z.basis_mat = a
