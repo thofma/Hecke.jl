@@ -402,6 +402,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
   clg.last = 0
 
   clg.M = T()
+  clg.rel_mat_mod = Smat{UIntMod}()
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
     a = nf(O)(I.gen_one)
