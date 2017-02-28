@@ -325,27 +325,29 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   i = 1
   ll = 0
   sum_nb = 0
-  while i < no_rel + 1
+  @inbounds while i < no_rel + 1
     ll = ll + 1
     if ll % 1000 == 0
       println("so far $ll tries, avg nbits of norm ", sum_nb/ll)
     end
-#    if ll > 100 return; end
     for j=1:no_coeff
       p  = rand(1:nb)
-      @inbounds lc[j] = p
+      lc[j] = p
     end
-#    println("lc: $lc")
     zero = false;
     for j=1:length(lpx)
       zero!(lcp[j])
       for k=lc
-        Nemo.set_entry!(lcp[j], k, 1, UInt(1))
+        Nemo.set_entry!(lcp[j], k, 1, Nemo._get_entry_raw(lcp[j], k, 1) + UInt(1))
+        #should be unlikely - but seems to happen a lot:
+        # duplication!
       end
       mul!(tmp[j], bp[j], lcp[j])
       local_norm!(np[j], tmp[j], lpx[j])
       if np[j] == UInt(0) zero = true; break; end;
-#      @assert local_norm(sum(b[lc]), lpx[j]) == np[j]
+#      if local_norm(sum(b[lc]), lpx[j]) != np[j]
+#        return j, lpx, np[j], tmp[j], lc, bp, lcp
+#      end
     end
 
     if zero continue; end
@@ -353,7 +355,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   
     no = crt_signed(np, crt_env)
     sum_nb += nbits(no)
-    if iszero(no) continue; end
+    if iszero(no) continue; end #cannot (should not) happen. Tested above
 #    println("testing $no")
 
     if smooth != 0
@@ -361,6 +363,9 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     end
     nn = abs(no)
     if !haskey(rels, nn)
+#      z = sum(b[lc])
+#      nz = norm_div(z, fmpz(1), no_b)
+#      @assert norm_div(sum(b[lc]), fmpz(1), no_b) == no
       rels[nn] = deepcopy(lc)
       i = i + 1
       println(i)
