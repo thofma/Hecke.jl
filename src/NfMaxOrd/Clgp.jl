@@ -390,7 +390,6 @@ end
 global AllRels
 
 function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
-  global AllRels = []
   O = order(FB.ideals[1])
 
   clg = ClassGrpCtx{T}()
@@ -404,10 +403,13 @@ function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
   clg.M = T()
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
-    a = nf(O)(I.gen_one)
-    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
-    a = nf(O)(I.gen_two)
-    class_group_add_relation(clg, a, abs(norm(a)), fmpz(1))
+    a = I.gen_one
+    class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^degree(O)), fmpz(1))
+    b = nf(O)(I.gen_two)
+    bn = norm_div(b, fmpz(1), 600)
+    if nbits(bn) < 550
+      class_group_add_relation(clg, b, fmpq(abs(bn)), fmpz(1))
+    end
   end
   n = degree(O)
   l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
@@ -1040,7 +1042,6 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       n = abs(norm_div(e, norm(I[end].A), np))
 #      if n==0 || e==0
 ##        println("found ", e, " of norm ", n)
-#        global AllRels = I[end]
 #      end
 #        print_with_color(:blue, "norm OK:")
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
@@ -1054,8 +1055,6 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         break
       end
       f = class_group_add_relation(clg, e, n, norm(I[end].A))
-#      global AllRels
-#      push!(AllRels, (e, n))
       if f
         I[end].cnt += 1
         break
@@ -1162,7 +1161,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           E.bad += 1
         end
         if  clg.bad_rel - clg.last > 1000000
-          global AllRels = (i, I[i], E)
+#          global AllRels = (i, I[i], E)
           error("to bad in finding rel")
         end
       end
