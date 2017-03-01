@@ -25,7 +25,7 @@ end
 #
 
 function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
-  A = Array(T, rows(a), cols(a))
+  A = Array{T}(rows(a), cols(a))
   for i = 1:rows(a)
     for j = 1:cols(a)
       A[i,j] = T(a[i,j])
@@ -206,6 +206,41 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
    ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Void,
                 (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &d)
    return x
+end
+
+function is_hnf(x::fmpz_mat, shape::Symbol)
+  if shape == :upperright
+    return is_hnf(x)
+  elseif shape == :lowerleft
+    r = rows(x)
+    i = 0
+    j_old = cols(x) + 1
+
+    for i in rows(x):-1:1
+
+      if is_zero_row(x, i)
+        break
+      end
+
+      j = cols(x)
+      while iszero(x[i, j])
+        j = j - 1
+      end
+      x[i, j] < 0 && return false
+      j >= j_old && return false
+      for k in i+1:r
+        x[k, j] < 0 && return false
+        x[k, j] >= x[i, j] && return false
+      end
+      j_old = j
+      i = i - 1
+    end
+
+    for k in i:-1:1
+      !is_zero_row(x, k) && return false
+    end
+    return true
+  end
 end
 
 #function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
@@ -570,9 +605,9 @@ function kernel(a::nmod_mat)
   z,n = _right_kernel(x)
   z = transpose(z)
   #println(z)
-  ar = typeof(Array(GenRes{fmpz}, cols(z)))[]
+  ar = typeof(Array{GenRes{fmpz}}(cols(z)))[]
   for i in 1:n 
-    t = Array(GenRes{fmpz}, cols(z))
+    t = Array{GenRes{fmpz}}(cols(z))
     for j in 1:cols(z)
       t[j] = z[i,j]
     end
@@ -592,8 +627,8 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
-  pivots = Array(Int, r)
-  nonpivots = Array(Int, cols(b) - r)
+  pivots = Array{Int}(r)
+  nonpivots = Array{Int}(cols(b) - r)
   X = zero(MatrixSpace(ZZ,cols(b),cols(b)))
 
   if r == 0

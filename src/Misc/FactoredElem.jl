@@ -189,7 +189,7 @@ function _transform{T, S}(x::Array{FacElem{T, S}, 1}, y::fmpz_mat)
   length(x) != rows(y) &&
               error("Length of array must be number of rows of matrix")
 
-  z = Array(FacElem{T, S}, cols(y))
+  z = Array{FacElem{T, S}}(cols(y))
 
   t = parent(x[1])()
 

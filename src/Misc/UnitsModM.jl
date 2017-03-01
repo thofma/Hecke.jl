@@ -101,9 +101,9 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   m = R.modulus
   fm = factor(m)
   
-  r = Array(fmpz, 0)
-  g = Array(fmpz, 0)
-  mi = Array(fmpz, 0)
+  r = Array{fmpz}(0)
+  g = Array{fmpz}(0)
+  mi = Array{fmpz}(0)
   for p=keys(fm)
     k = fm[p]
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1

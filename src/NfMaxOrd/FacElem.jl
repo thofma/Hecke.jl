@@ -139,7 +139,7 @@ end
 
 function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   d = degree(_base_ring(x))
-  res = Array(acb, d)
+  res = Array{acb}(d)
 
   i = 1
 
@@ -164,7 +164,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   K = _base_ring(x)
   r1, r2 = signature(K)
   d = r1 + r2
-  res = Array(arb, d)
+  res = Array{arb}(d)
 
   i = 1
 

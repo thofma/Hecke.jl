@@ -399,7 +399,7 @@ end
 # we assume that span(P) \subseteq O^r
 function _matrix_for_reduced_span(P::PMat, m::NfMaxOrdIdl)
   O = order(m)
-  c = Array(NfMaxOrdIdl, rows(P))
+  c = Array{NfMaxOrdIdl}(rows(P))
   mat = deepcopy(P.matrix)
   for i in 1:rows(P)
     I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)

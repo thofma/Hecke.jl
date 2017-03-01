@@ -130,7 +130,7 @@ end
 
 doc"""
 ***
-  rational_reconstruction(a::fmpz, b::fmpz)
+  rational_reconstruction(a::nf_elem, b::fmpz)
 
 > Applies the rational_reconstruction function to each coefficient.
 """

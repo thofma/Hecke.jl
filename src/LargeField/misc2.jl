@@ -39,7 +39,7 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 
   t = b[1].parent()
   nb = length(b)
   one = fmpz(1)
-  rels = Array(Hecke.nf_elem, no_rel)
+  rels = Array{Hecke.nf_elem}(no_rel)
   i = 1
   l = 0
   while i < no_rel + 1
@@ -385,9 +385,9 @@ K, a = MaximalRealSubfield(1024, "a");
 h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
 while length(b) < 256 push!(b, h(b[end])); end
-include("/tmp/rels_4.jl")
 fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
-@time basis_rels_4(b, 600, 10, 5, fb_int)
+@time Hecke.basis_rels_4(b, 600, 10, 5, fb_int)
+@time Hecke.basis_rels_5(b, 600, 10, 5, fb_int)
 
 Qx,x = PolynomialRing(QQ, "a")
 K, a = MaximalRealSubfield(512, "a");
@@ -396,6 +396,7 @@ h = Hecke.auto_of_maximal_real(K, 3);
 b = [K(1), a]
 while length(b) < 128 push!(b, h(b[end])); end
 fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
+@time basis_rels_4(b, 300, 100, 5, fb_int)
 @time basis_rels_5(b, 300, 100, 5, fb_int)
 
 

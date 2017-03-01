@@ -973,7 +973,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
     zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
+    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
 
     w = v*L
 
@@ -1046,7 +1046,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
       zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
+      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
 
       w = v*L
 
