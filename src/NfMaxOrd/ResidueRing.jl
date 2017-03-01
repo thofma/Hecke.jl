@@ -812,6 +812,11 @@ end
 ################################################################################
 
 ## Hensel lifting of roots
+##todo: redo for equation order using the kronnecker basis (co-different)
+##      to avoid denominators
+##    : use double iteration to avoid division
+#     : use exponent chain to not overshoot (too much) in lifting
+#     : common case is f == K.pol. In this case we known a sharp T2-bound
 function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   # f must be squarefree
   # i should check that
@@ -874,29 +879,42 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   R = ArbField(64)
   z = R(0)
   (c1, c2) = norm_change_const(O)
+  #so   |x|_mink  <= c_1 |x|_coeff
+  #and  |x|_coeff <= c_2 |x|_mink
+  # hopefully
   (r1, r2) = signature(O) 
-
-  cc2 = (exp(3*log(R(3))//2) * R(3)^deg)//(const_pi(R) * R(deg))
 
   bound_root = [ R(0) for i in 1:(r1 + r2) ]
 
-  for j in 0:deg-1
+  #next, I want a bound on the roots of f
+  #according to Wikipedia, 
+  # Fujiwara bound is near optimal...
+
+  for j in 1:deg-1
     co = coeff(f, j)
     co_conj = conjugates_arb(co, -1)
     for i in 1:r1+r2
-      bound_root[i] += inv(binom(R(deg), UInt(j))) * abs(co_conj[i])^2
+      bound_root[i] = max(bound_root[i], root(abs(co_conj[i]), deg-j))
     end
   end
+  co = coeff(f, 0)
+  co_conj = conjugates_arb(co, -1)
+  for i in 1:r1+r2
+    bound_root[i] = max(bound_root[i], root(abs(co_conj[i])//2, deg))
+  end
 
+  bd = R(0)
   for i in 1:r1
-    bound_root[i] = bound_root[i] * cc2
+    bd += bound_root[i]^2
   end
-
-  for i in r1+1:r2
-    bound_root[i] = 2 * bound_root[i] * cc2
+  for i=1:r2
+    bd += 2*bound_root[i+r1]^2
   end
+  #bd should be a bound on the T2 of any root (|x|_mink)
+  #thus for coeffs we need to multiply by c_2
 
-  boundt2 = max(sum(bound_root), R(1))
+
+  boundt2 = max(bd, R(1))
   
   #println("t2 bound: $boundt2")
 
@@ -921,7 +939,9 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   #println(length(lin_factor))
   #println("lifting bound: ", s)
 
+  #println("aiming for $max_roots roots")
   for j in 1:length(lin_factor)
+  #  println("have $(length(roots)) found, want $max_roots")
     if length(roots) == max_roots
       break
     end
@@ -1065,6 +1085,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   return roots
 end
 
+#identical to hasroot - which one do we want?
 function is_power(a::NfOrdElem{NfMaxOrd}, n::Int)
   Ox, x = parent(a)["x"]
   f = x^n - a
