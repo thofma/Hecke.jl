@@ -1,5 +1,5 @@
 import Nemo.sub!, Base.gcd
-export induce_rational_reconstruction, induce_crt
+export induce_rational_reconstruction, induce_crt, hasroot, root, roots
 
 if Int==Int32
   global const p_start = 2^30
@@ -577,6 +577,13 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
 end
 
 ###########################################################################
+function issquarefree(x::GenPoly)
+  return degree(gcd(x, derivative(x))) == 0
+end
+function issquarefree(x::fq_nmod_poly)
+  return degree(gcd(x, derivative(x))) == 0
+end
+###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   K = base_ring(f)
   Qy = parent(K.pol)
@@ -630,13 +637,19 @@ end
 doc"""
   factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
 
-> The factorisation of f (using Trager's method). f has to be squarefree.
+> The factorisation of f (using Trager's method).
 """
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
 
   f == 0 && error("poly is zero")
+  f_orig = deepcopy(f)
+  g = gcd(f, derivative(f'))
+  if degree(g) > 0
+    f = div(f, g)
+  end
+  f = f*(1//lead(f))
 
   k = 0
   g = f
@@ -670,6 +683,25 @@ function factor(f::PolyElem{nf_elem})
   r = Fac{typeof(f)}()
   r.fac = res
   r.unit = Kx(1)
+  if f != f_orig
+    global p_start
+    p = p_start
+    while true
+      p = next_prime(p)
+      #todo: interface to get only one prime - or only limited degrees
+      me = modular_init(K, p)
+      fp = modular_proj(f, me)[1]
+      if issquarefree(fp)
+        fp = deepcopy(modular_proj(f_orig, me)[1])
+        for k in keys(res)
+          gp = modular_proj(k, me)[1]
+          res[k] = valuation(fp, gp)[1]
+        end
+        r.fac = res
+        return r
+      end
+    end  
+  end
   return r
 end
 
@@ -748,13 +780,38 @@ end
 
 doc"""
 ***
+    roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+    roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+
+> Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
+> squarefree and monic.
+"""
+function roots(f::fmpz_poly, K::AnticNumberField, max_roots::Int = degree(f))
+  Ky, y = PolynomialRing(K)
+  return roots(evaluate(f, y), max_roots)
+end
+
+function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
+  Ky, y = PolynomialRing(K)
+  return roots(evaluate(f, y), max_roots)
+end
+
+doc"""
+***
     roots(f::GenPoly{nf_elem}) -> Array{nf_elem, 1}
 
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f))
+function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
+  @assert issquarefree(f)
+
+  #todo: implement for equation order....
   O = maximal_order(base_ring(f))
+  if do_lll
+    O = lll(O)
+  end  
+
   d = degree(f)
   deno = den(coeff(f, d), O)
   for i in (d-1):-1:0
@@ -782,7 +839,7 @@ function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f))
     return [ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
   end
 
-  A = _roots_hensel(goverO)
+  A = _roots_hensel(goverO, max_roots)
 
   return [ elem_in_nf(y) for y in A ]
 end
@@ -790,10 +847,31 @@ end
 
 doc"""
 ***
-    root(a::nf_elem, n::Int) -> Bool, nf_elem
+    hasroot(a::nf_elem, n::Int) -> Bool, nf_elem
 
 > Determines whether $a$ has an $n$-th root. If this is the case,
 > the root is returned.
+"""
+function hasroot(a::nf_elem, n::Int)
+  #println("Compute $(n)th root of $a")
+  Kx, x = PolynomialRing(parent(a), "x")
+
+  f = x^n - a
+
+  rt = roots(f, 1)
+
+  if length(rt)>0
+    return true, rt[1]
+  else
+    return false, zero(a)
+  end
+end
+
+doc"""
+***
+    root(a::nf_elem, n::Int) -> Bool, nf_elem
+
+> Computes the $n$-th root of $a$. Throws an error if this is not possible.
 """
 function root(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
@@ -801,17 +879,15 @@ function root(a::nf_elem, n::Int)
 
   f = x^n - a
 
-  fac = factor(f)
-  #println("factorization is $fac")
+  rt = roots(f, 1)
 
-  for i in keys(fac)
-    if degree(i) == 1
-      return (true, -coeff(i, 0)//coeff(i, 1))
-    end
+  if length(rt)>0
+    return rt[1]
+  else
+    return error("$a has no $n-th root")
   end
-
-  return (false, zero(parent(a)))
 end
+
 
 function num(a::nf_elem)
    const _one = fmpz(1)
