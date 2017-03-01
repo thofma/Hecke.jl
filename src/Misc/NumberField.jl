@@ -577,10 +577,8 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
 end
 
 ###########################################################################
-function issquarefree(x::GenPoly)
-  return degree(gcd(x, derivative(x))) == 0
-end
-function issquarefree(x::fq_nmod_poly)
+import Nemo.issquarefree
+function issquarefree(x::GenPoly{nf_elem})
   return degree(gcd(x, derivative(x))) == 0
 end
 ###########################################################################
