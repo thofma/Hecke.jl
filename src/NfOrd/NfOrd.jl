@@ -409,7 +409,7 @@ function norm_change_const(O::NfOrd)
     return O.norm_change_const
   else
     d = degree(O)
-    M = transpose(minkowski_mat(O, 64))
+    M = minkowski_mat(O, 64)
     # I need to swap rows (really?)
     # I don't think we have to swap rows, since permutation matrices are orthogonal
     #r1, r2 = signature(O)
@@ -417,9 +417,35 @@ function norm_change_const(O::NfOrd)
     #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
     #end
 
-    M = [ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ]
-    N = transpose(M)*M
+    M= M*M'
+
+    N = Symmetric([ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ])
+    #forcing N to really be Symmetric helps julia - aparently
     r = sort(eigvals(N))
+    if !(r[1]>0) 
+      # more complicated methods are called for...
+      l_max = root(trace(M^d), d) #an upper bound within a factor of 2
+                                    #according to a paper by Victor Pan
+      pr = 128                              
+      l_min = l_max
+      if isodd(d) d+=1; end
+      while true
+        M = inv(M)
+        l_min = root(trace(M^d), d) #as above...
+        if !isfinite(l_min)
+          M = minkowski_mat(O, pr)
+          pr *= 2
+        else  
+          break
+        end
+      end  
+#      println("hard case in norm_change_const")
+      z = (Float64(l_max), Float64(l_min))
+      O.norm_change_const = z
+      return z
+    end  
+
+    @assert r[1]>0
 #    N = transpose(M)*M
 #    N = MatrixSpace(AcbField(prec(base_ring(N))), rows(N), cols(N))(N)
 #    chi = charpoly(PolynomialRing(base_ring(N), "x")[1], N)
