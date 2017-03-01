@@ -408,8 +408,8 @@ function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
     class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^degree(O)), fmpz(1))
     b = nf(O)(I.gen_two)
     bn = norm_div(b, fmpz(1), 600)
-    if nbits(bn) < 550
-      class_group_add_relation(clg, b, fmpq(abs(bn)), fmpz(1))
+    if nbits(num(bn)) < 550
+      class_group_add_relation(clg, b, abs(bn), fmpz(1))
     end
   end
   n = degree(O)
