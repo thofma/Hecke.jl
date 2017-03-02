@@ -307,7 +307,9 @@ end
 
 function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)))
-  d = factor(FB.fb_int, num(n)*den(a))
+  O = order(FB.ideals[1])                  
+
+  d = factor(FB.fb_int, num(n)*den(a, O))
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()
   for p in keys(d)
@@ -461,10 +463,12 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   if a in clg.RS 
     return false
   end
-  #print("trying relation of length ", Float64(length(clg.c, a)),
-  #      " and norm ", Float64(n));
-  fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a))
+  O = order(clg.FB.ideals[1]) 
+#  print("trying relation of length ", Float64(length(a)),
+#        " and norm ", Float64(n));
+  fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a, O))
   if !fl
+#    println("not int-smooth");
     # try for large prime?
     O = order(clg.FB.ideals[1])  ##CF: think about it and deal with index divisors properly
     if isprime(r) && abs(r) < clg.B2 && !isindex_divisor(O, r)
@@ -495,7 +499,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     if isdefined(clg, :op)
       n = clg.M[end]
       o = orbit_in_FB(clg.op, a, n)
-      @v_do :ClassGroup 2 println(" adding orbit with $(length(o)) elements")
+      @v_do :ClassGroup 0 println(" adding orbit with $(length(o)) elements")
       for (m, b) in o
         if m != n
           push!(clg.M, m)
@@ -512,7 +516,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     push!(clg.relNorm, (a, nI))
     return true
   else
-    #println(" -> 2:fail")
     clg.bad_rel += 1
     return false
   end
