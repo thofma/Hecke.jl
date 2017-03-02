@@ -46,7 +46,7 @@
 #    otherwise, it takes much too long if the ideal is non-trivial
 #  DONE (norm_div)
 #
-#  - move the various factor, is_smooth and similar to a sensible
+#  - move the various factor, issmooth and similar to a sensible
 #    spot. This has nothing to do with class groups
 #  - the SingleP version: 
 #      figure out if a union is better than the current version
@@ -69,7 +69,7 @@
 #
 ################################################################################
 
-export class_group, FactorBase, is_smooth, factor
+export class_group, FactorBase, issmooth, factor
 
 add_verbose_scope(:ClassGroup)
 add_verbose_scope(:ClassGroup_time)
@@ -121,7 +121,7 @@ function show{T}(io::IO, B::FactorBase{T})
   print(io, "Factor base with \n$(B.base) and type $T")
 end
 
-function is_smooth{T}(c::FactorBase{T}, a::T)
+function issmooth{T}(c::FactorBase{T}, a::T)
   @assert a != 0
   g = gcd(c.prod, a)
   while g != 1 
@@ -131,7 +131,7 @@ function is_smooth{T}(c::FactorBase{T}, a::T)
   return a == 1 || a==-1
 end
 
-function is_smooth!(c::FactorBase{fmpz}, a::fmpz)
+function issmooth!(c::FactorBase{fmpz}, a::fmpz)
   @assert a != 0
   g = gcd(c.prod, a)
   if g==1
@@ -187,7 +187,7 @@ function factor{T}(c::FactorBase{T}, a::T)
       v = remove(a, i)
       f[i] = v[1]
       a = v[2]
-      if a == 1 || a==-1  ## should be is_unit (think poly)
+      if a == 1 || a==-1  ## should be isunit (think poly)
         break
       end
     end
@@ -463,11 +463,11 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   end
   #print("trying relation of length ", Float64(length(clg.c, a)),
   #      " and norm ", Float64(n));
-  fl, r = is_smooth!(clg.FB.fb_int, num(n*nI)*den(a))
+  fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a))
   if !fl
     # try for large prime?
     O = order(clg.FB.ideals[1])  ##CF: think about it and deal with index divisors properly
-    if isprime(r) && abs(r) < clg.B2 && !is_index_divisor(O, r)
+    if isprime(r) && abs(r) < clg.B2 && !isindex_divisor(O, r)
       i = special_prime_ideal(r, a)
       if haskey(clg.largePrime, i)
         lp = clg.largePrime[i]
@@ -1531,7 +1531,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
 #          println("contains too many conjugates, bad")
           continue
         end
-        f, r = is_smooth!(clg.FB.fb_int, num(n))
+        f, r = issmooth!(clg.FB.fb_int, num(n))
         if f 
           M = Smat{Int}()
           fl = _factor!(M, 1, clg.FB, a, false, n)
