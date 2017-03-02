@@ -43,6 +43,10 @@ function show{T}(io::IO, A::SmatRow{T})
   print(io, "sparse row with positions $(A.pos) and values $(A.values)\n")
 end
 
+
+function hash{T}(A::SmatRow{T}, h::UInt)
+  return hash(A.pos, hash(A.values, h))
+end
 ################################################################################
 #
 #  Smat
