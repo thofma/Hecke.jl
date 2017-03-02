@@ -656,7 +656,7 @@ function factor(f::PolyElem{nf_elem})
   while true
     N = norm(g)
 
-    if !is_constant(N) && is_squarefree(N)
+    if !isconstant(N) && issquarefree(N)
       break
     end
 
@@ -1106,7 +1106,7 @@ end
 
 doc"""
 ***
-    is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
+    istorsionunit(x::nf_elem, checkisunit::Bool = false) -> Bool
     
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
@@ -1114,9 +1114,9 @@ doc"""
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
+function istorsionunit(x::nf_elem, checkisunit::Bool = false)
   if checkisunit
-    _is_unit(x) ? nothing : return false
+    _isunit(x) ? nothing : return false
   end
 
   K = parent(x)

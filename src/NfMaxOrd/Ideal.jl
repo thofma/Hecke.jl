@@ -241,7 +241,7 @@ function minimum(A::NfMaxOrdIdl)
     b = A.princ_gen.elem_in_nf
     if iszero(b)
       A.minimum = fmpz(0)
-      A.is_zero = 1
+      A.iszero = 1
     else
       bi = inv(b)
       A.minimum =  den(bi, order(A))
@@ -269,11 +269,11 @@ end
 
 doc"""
 ***
-    is_prime_known(A::NfMaxOrdIdl) -> Bool
+    isprime_known(A::NfMaxOrdIdl) -> Bool
 
 > Returns whether $A$ knows if it is prime.
 """
-function is_prime_known(A::NfMaxOrdIdl)
+function isprime_known(A::NfMaxOrdIdl)
   return A.is_prime != 0
 end
 
@@ -284,7 +284,7 @@ doc"""
 > Returns whether $A$ is a prime ideal.
 """
 function isprime(A::NfMaxOrdIdl)
-  if is_prime_known(A)
+  if isprime_known(A)
     return A.is_prime == 1
   elseif minimum(A) == 0
     A.is_prime = 2
@@ -520,9 +520,9 @@ doc"""
 > Returns the ideal x*y.
 """
 function *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
-  if x.is_zero == 1 || y.is_zero == 1
+  if x.iszero == 1 || y.iszero == 1
     z = ideal(order(x), zero(MatrixSpace(FlintZZ, degree(order(x)), degree(order(x)))))
-    z.is_zero = 1
+    z.iszero = 1
     return z
   end
   if has_2_elem_normal(x) && has_2_elem_normal(y)

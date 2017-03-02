@@ -390,7 +390,7 @@ base_ring(::NfMaxOrd) = Union{}
 
 Nemo.needs_parentheses(::NfOrdElem) = true
 
-Nemo.is_negative(::NfOrdElem) = false
+Nemo.isnegative(::NfOrdElem) = false
 
 # Assume A is mxd, B is mxl and there is a unique X of size lxd
 # with A = B * X

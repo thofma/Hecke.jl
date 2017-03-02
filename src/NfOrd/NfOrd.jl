@@ -33,7 +33,7 @@
 ################################################################################
 
 export isequationorder, nf, parent, basis, basis_mat, basis_mat_inv,
-       discriminant, degree, gen_index, index, is_index_divisor, deepcopy,
+       discriminant, degree, gen_index, index, isindexdivisor, deepcopy,
        signature, minkowski_mat, norm_change_const, in, den, +, poverorder,
        pmaximal_overorder
 
@@ -234,12 +234,12 @@ end
 ################################################################################
 
 doc"""
-    is_index_divisor(O::NfOrd, d::fmpz) -> Bool
-    is_index_divisor(O::NfOrd, d::Int) -> Bool
+    isindexdivisor(O::NfOrd, d::fmpz) -> Bool
+    isindexdivisor(O::NfOrd, d::Int) -> Bool
 
 > Returns whether $d$ is a divisor of the index of $\mathcal O$.
 """
-function is_index_divisor(O::NfOrd, d::Union{fmpz, Int})
+function isindexdivisor(O::NfOrd, d::Union{fmpz, Int})
   i = index(O)
   return i % d == 0
 end

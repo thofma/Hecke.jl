@@ -1,8 +1,8 @@
 export ResidueField
 
 function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdl)
-  if !is_index_divisor(O, minimum(P))
-    @assert has_2_elem(P) && is_prime_known(P)
+  if !isindexdivisor(O, minimum(P))
+    @assert has_2_elem(P) && isprime_known(P)
 
     gtwo = P.gen_two
 

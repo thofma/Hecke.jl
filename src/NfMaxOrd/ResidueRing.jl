@@ -74,7 +74,7 @@ parent_type(::Type{NfMaxOrdQuoRingElem}) = NfMaxOrdQuoRing
 
 needs_parentheses(::NfMaxOrdQuoRingElem) = true
 
-is_negative(::NfMaxOrdQuoRingElem) = false
+isnegative(::NfMaxOrdQuoRingElem) = false
 
 Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
@@ -198,8 +198,6 @@ end
 ################################################################################
 
 iszero(x::NfMaxOrdQuoRingElem) = iszero(x.elem)
-
-is_zero(x::NfMaxOrdQuoRingElem) = iszero(x)
 
 isone(x::NfMaxOrdQuoRingElem) = isone(x.elem)
 
@@ -343,7 +341,7 @@ end
 ################################################################################
 
 function euclid(x::NfMaxOrdQuoRingElem)
-  if is_zero(x)
+  if iszero(x)
     return fmpz(-1)
   end
 
@@ -486,9 +484,9 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   d = degree(O)
 
-  if is_zero(x)
+  if iszero(x)
     return deepcopy(y), Q(O(0)), Q(O(1)), Q(O(-1)), Q(O(0))
-  elseif is_zero(y)
+  elseif iszero(y)
     return deepcopy(x), Q(O(1)), Q(O(0)), Q(O(0)), Q(O(1))
   end
 
@@ -547,12 +545,12 @@ end
 ################################################################################
 
 function _pivot(A, start_row, col)
-  if !is_zero(A[start_row, col])
+  if !iszero(A[start_row, col])
     return 1;
   end
 
   for j in start_row + 1:rows(A)
-    if !is_zero(A[j, col])
+    if !iszero(A[j, col])
       swap_rows!(A, j, start_row)
       return -1
     end
@@ -668,7 +666,7 @@ function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
 
   # We do not normalize!
   for j in 1:m
-    if !is_zero(A[j,j]) != 0
+    if !iszero(A[j,j]) != 0
       # This is the reduction
       for i in 1:j-1
         if iszero(A[i, j])
@@ -735,11 +733,11 @@ function howell_form!(A::GenMat{NfMaxOrdQuoRingElem})
   strong_echelon_form!(A)
 
   for i in 1:rows(A)
-    if is_zero_row(A, i)
+    if iszero_row(A, i)
       k = k - 1
 
       for j in (i + 1):rows(A)
-        if !is_zero_row(A, j)
+        if !iszero_row(A, j)
           swap_rows!(A, i, j)
           j = rows(A)
           k = k + 1
@@ -841,7 +839,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   while !found_prime
     p = next_prime(p)
 
-    if is_index_divisor(O, p) || isramified(O, p)
+    if isindexdivisor(O, p) || isramified(O, p)
       continue
     end
 
@@ -1086,7 +1084,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 end
 
 #identical to hasroot - which one do we want?
-function is_power(a::NfOrdElem{NfMaxOrd}, n::Int)
+function ispower(a::NfOrdElem{NfMaxOrd}, n::Int)
   Ox, x = parent(a)["x"]
   f = x^n - a
   r = _roots_hensel(f, 1)

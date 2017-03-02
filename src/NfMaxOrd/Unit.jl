@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export is_unit, is_torsion_unit, is_independent, unit_group
+export isunit, istorsionunit, isindependent, unit_group
 
 add_verbose_scope(:UnitGroup)
 
@@ -91,17 +91,17 @@ end
 
 doc"""
 ***
-    is_unit(x::NfOrdElem) -> Bool
+    isunit(x::NfOrdElem) -> Bool
 
 > Returns whether $x$ is invertible or not.
 """
-function is_unit(x::NfOrdElem)
+function isunit(x::NfOrdElem)
   return abs(norm(x)) == 1 
 end
 
-_is_unit(x::NfOrdElem) = is_unit(x)
+_isunit(x::NfOrdElem) = isunit(x)
 
-function _is_unit{T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}(x::T)
+function _isunit{T <: Union{nf_elem, FacElem{nf_elem, AnticNumberField}}}(x::T)
   return abs(norm(x)) == 1
 end
 
@@ -113,16 +113,16 @@ end
 
 doc"""
 ***
-    is_independent{T}(x::Array{T, 1})
+    isindependent{T}(x::Array{T, 1})
 
 > Given an array of non-zero elements in a number field, returns whether they
 > are multiplicatively independent.
 """
-function is_independent{T}(x::Array{T, 1}, p::Int = 32)
-  return _is_independent(x, p)
+function isindependent{T}(x::Array{T, 1}, p::Int = 32)
+  return _isindependent(x, p)
 end
 
-function _is_independent{T}(x::Array{T, 1}, p::Int = 32)
+function _isindependent{T}(x::Array{T, 1}, p::Int = 32)
   K = _base_ring(x[1])
 
   deg = degree(K)
@@ -165,7 +165,7 @@ function _is_independent{T}(x::Array{T, 1}, p::Int = 32)
   end
 end
 
-function _is_independent{T}(u::UnitGrpCtx{T}, y::FacElem{T})
+function _isindependent{T}(u::UnitGrpCtx{T}, y::FacElem{T})
   K = _base_ring(x[1])
   p = u.indep_prec
 
@@ -229,7 +229,7 @@ function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
 
   w = r*y^z[length(z)]
 
-  b, _ = is_torsion_unit(w)
+  b, _ = istorsionunit(w)
   return b
 end
 
@@ -868,7 +868,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     y = FacElem(x, kelem)
 
-    time_torsion += @elapsed is_tors, p = is_torsion_unit(y, false, u.tors_prec)
+    time_torsion += @elapsed is_tors, p = istorsionunit(y, false, u.tors_prec)
     u.tors_prec = max(p, u.tors_prec)
     if is_tors
       continue
@@ -912,11 +912,11 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     y = FacElem(x, kelem)
 
-    #!is_unit(y) && throw(BlaError(x, kelem))
+    #!isunit(y) && throw(BlaError(x, kelem))
 
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
-    time_torsion += @elapsed is_tors, p = is_torsion_unit(y, false, u.tors_prec)
+    time_torsion += @elapsed is_tors, p = istorsionunit(y, false, u.tors_prec)
     u.tors_prec = max(p, u.tors_prec)
     if is_tors
       @v_do :UnitGroup 2 popindent()
@@ -950,7 +950,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 end
 
 function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
-  isindep, p = is_independent(vcat(u.units, [x]), u.indep_prec)
+  isindep, p = isindependent(vcat(u.units, [x]), u.indep_prec)
   u.indep_prec = max(p, u.indep_prec)
   if isindep
     push!(u.units, x)
@@ -1039,7 +1039,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
   nonzerorows = Array{Int, 1}()
 
   for j in 1:rows(L)
-    if !is_zero_row(L, j)
+    if !iszero_row(L, j)
       push!(nonzerorows, j)
     end
   end
@@ -1068,7 +1068,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
       @vprint :UnitGroup 1 "Bitsize of coefficient $([nbits(elem_in_basis(U.order(b))[i]) for i in 1:degree(U.order)])"
 
       #has_root, roota = root(b, p)
-      has_root, _roota = is_power(U.order(b), p)
+      has_root, _roota = ispower(U.order(b), p)
       roota = elem_in_nf(_roota)
 
 
@@ -1112,7 +1112,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
     b = evaluate(a)
 
     #has_root, roota = root(b, p)
-    has_root, _roota = is_power(U.order(b), p)
+    has_root, _roota = ispower(U.order(b), p)
     roota = elem_in_nf(_roota)
 
 

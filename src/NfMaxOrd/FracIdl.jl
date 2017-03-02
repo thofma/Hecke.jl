@@ -225,7 +225,7 @@ end
 #
 ################################################################################
 
-is_prime_known(A::NfMaxOrdFracIdl) = is_prime_known(A.num)
+isprime_known(A::NfMaxOrdFracIdl) = isprime_known(A.num)
 
 ################################################################################
 #

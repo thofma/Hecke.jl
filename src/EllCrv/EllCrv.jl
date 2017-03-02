@@ -36,7 +36,7 @@
 export EllCrv, EllCrvPt
 
 export base_field, disc, division_polynomialE, EllipticCurve, infinity,
-       inverse, isinfinite, isshort, is_on_curve, j_invariant, Psi_polynomial,
+       inverse, isinfinite, isshort, isoncurve, j_invariant, Psi_polynomial,
        psi_poly_field, short_weierstrass_model, +, *
 
 ################################################################################
@@ -125,7 +125,7 @@ type EllCrvPt{T}
 
   function EllCrvPt(E::EllCrv{T}, coords::Array{T, 1}, check::Bool = true)
     if check
-      if is_on_curve(E, coords)
+      if isoncurve(E, coords)
         P = new{T}(coords[1], coords[2], false, E)
         return P
       else
@@ -391,12 +391,12 @@ end
 
 doc"""
 ***
-    is_on_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
+    isoncurve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
 
 > Returns true if `coords` defines a point  on E and false otherwise. The array
 > `coords` must have length 2.
 """
-function is_on_curve{T}(E::EllCrv{T}, coords::Array{T, 1})
+function isoncurve{T}(E::EllCrv{T}, coords::Array{T, 1})
   length(coords) != 2 && error("Array must be of length 2")
 
   x = coords[1]

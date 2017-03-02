@@ -208,14 +208,14 @@ end
 
 doc"""
 ***
-    is_independent(S::Array{EllCrvPt{fmpq}}) -> Bool
+    isindependent(S::Array{EllCrvPt{fmpq}}) -> Bool
 
 > Tests whether a given set of points $S$ on a rational elliptic curve
 > is linearly independent. Returns true if they are independent, otherwise false.
 > This function may return false results.
 """
 # see Robledo, p. 47
-function is_independent(P)
+function isindependent(P)
   epsilon = 10.0^(-8)
   r = length(P)
   M = Matrix{Float64}(r,r)

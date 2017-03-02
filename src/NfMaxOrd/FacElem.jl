@@ -49,14 +49,14 @@ function FacElem(x::nf_elem)
   return z
 end
 
-function is_unit(x::FacElem{nf_elem})
+function isunit(x::FacElem{nf_elem})
   return abs(norm(x)) == 1
 end
 
-function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
+function istorsionunit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
   @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
   if checkisunit
-    _is_unit(x) ? nothing : return false
+    _isunit(x) ? nothing : return false
   end
 
   K = base_ring(x)

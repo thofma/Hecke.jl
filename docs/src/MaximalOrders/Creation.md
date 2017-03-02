@@ -15,6 +15,6 @@
 @{basis_mat_inv(::NfMaximalOrder)}
 @{index(::NfMaximalOrder)}
 @{signature(::NfMaximalOrder)}
-@{is_index_divisor(::NfMaximalOrder, ::fmpz)}
+@{isindexdivisor(::NfMaximalOrder, ::fmpz)}
 @{minkowski_mat(::NfMaximalOrder, ::Int)}
 
