@@ -91,13 +91,6 @@ function remove{T <: Integer}(z::Rational{T}, p::T)
   return w-v, n//d
 end 
 
-function remove(z::fmpq, p::fmpz)
-  z == 0 && error("Not yet implemented")
-  v, d = remove(den(z), p)
-  w, n = remove(num(z), p)
-  return w-v, n//d
-end 
-
 function valuation{T <: Integer}(z::T, p::T)
   z == 0 && error("Not yet implemented")
   const v = 0
@@ -109,13 +102,6 @@ function valuation{T <: Integer}(z::T, p::T)
 end 
 
 function valuation{T <: Integer}(z::Rational{T}, p::T)
-  z == 0 && error("Not yet implemented")
-  v = valuation(den(z), p)
-  w = valuation(num(z), p)
-  return w-v
-end 
-
-function valuation(z::fmpq, p::fmpz)
   z == 0 && error("Not yet implemented")
   v = valuation(den(z), p)
   w = valuation(num(z), p)
