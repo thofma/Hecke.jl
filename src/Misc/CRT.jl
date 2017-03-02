@@ -203,6 +203,10 @@ function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   end
 
   i = length(c.pr)-1
+  if i == 0
+    rem!(res[1], a, c.pr[1])
+    return res
+  end  
   r = i
   w = r + c.n - 1
 
@@ -459,7 +463,7 @@ doc"""
 > the residue class fields of the associated primes ideals above $p$.
 > Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
-function modular_init(K::AnticNumberField, p::fmpz)
+function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
   @assert isprime(p)
   UInt(p) # to enforce p being small
 
@@ -467,8 +471,16 @@ function modular_init(K::AnticNumberField, p::fmpz)
   me.Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
   lp = factor(fp)
-  @assert Set(values(lp.fac)) == Set([1])
+  if Set(values(lp.fac)) != Set([1])
+    error("bad prime")
+  end
   pols = collect(keys(lp.fac))
+  if deg_limit > 0
+    pols = pols[find(x -> degree(x) <= deg_limit, pols)]
+  end
+  if max_split > 0
+    pols = pols[1:min(length(pols), max_split)]
+  end
   me.ce = crt_env(pols)
   me.fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
                                    # and chacheing
