@@ -32,9 +32,9 @@
 #
 ################################################################################
 
-export FinGenGrpAb, FinGenGrpAbElem, parent, is_finite, is_infinite, rank,
+export FinGenGrpAb, FinGenGrpAbElem, parent, isfinite, isinfinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
-       -, ==, is_trivial, order, exponent, AbelianGroup, DiagonalGroup,
+       -, ==, istrivial, order, exponent, AbelianGroup, DiagonalGroup,
        quo, sub
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand
@@ -383,11 +383,11 @@ end
 
 doc"""
 ***
-  is_diag(A::fmpz_mat)
+  isdiag(A::fmpz_mat)
 
 > Tests if A is diagonal.
 """
-function is_diag(A::fmpz_mat)
+function isdiag(A::fmpz_mat)
   for i = 1:cols(A)
     for j= 1:rows(A)
       if i != j && A[j,i]!=0
@@ -426,7 +426,7 @@ function snf_with_transform(A::fmpz_mat; l::Bool = true, r::Bool = true)
   #       Rationale: most of the work is on the 1st HNF..
   #
   S = deepcopy(A)
-  while !is_diag(S)
+  while !isdiag(S)
     if l
       S, T = hnf_with_transform(S)
       L = T*L
@@ -434,7 +434,7 @@ function snf_with_transform(A::fmpz_mat; l::Bool = true, r::Bool = true)
       S = hnf(S)
     end
 
-    if is_diag(S)
+    if isdiag(S)
       break
     end
     if r
@@ -548,22 +548,22 @@ end
 
 doc"""
 ***
-    is_finite(A::FinGenGrpAbSnf) -> Bool
+    isfinite(A::FinGenGrpAbSnf) -> Bool
 
 > Returns whether $A$ is finite.
 """
-is_finite(A::FinGenGrpAbSnf) = length(A.snf) == 0 || A.snf[end] != 0
-is_finite(A::FinGenGrpAbGen) = is_finite(snf(A)[1])
+isfinite(A::FinGenGrpAbSnf) = length(A.snf) == 0 || A.snf[end] != 0
+isfinite(A::FinGenGrpAbGen) = isfinite(snf(A)[1])
 
 doc"""
 ***
-    is_infinite(A::FinGenGrpAbSnf) -> Bool
-    is_infinite(A::FinGenGrpAbGen) -> Bool
+    isinfinite(A::FinGenGrpAbSnf) -> Bool
+    isinfinite(A::FinGenGrpAbGen) -> Bool
 
 > Returns whether $A$ is infinite.
 """
-is_infinite(A::FinGenGrpAbSnf) = !is_finite(A)
-is_infinite(A::FinGenGrpAbGen) = !is_finite(A)
+isinfinite(A::FinGenGrpAbSnf) = !isfinite(A)
+isinfinite(A::FinGenGrpAbGen) = !isfinite(A)
 
 doc"""
 ***
@@ -603,7 +603,7 @@ doc"""
 > Returns the order of $A$. It is assumed that $A$ is not infinite.
 """
 function order(A::FinGenGrpAbSnf)
-  is_infinite(A) && error("Group must be finite")
+  isinfinite(A) && error("Group must be finite")
   return prod(A.snf)
 end
 order(A::FinGenGrpAbGen) = order(snf(A)[1])
@@ -616,29 +616,29 @@ doc"""
 > Returns the exponent of $A$. It is assumed that $A$ is not infinite.
 """
 function exponent(A::FinGenGrpAbSnf)
-  is_infinite(A) && error("Group must be finite")
+  isinfinite(A) && error("Group must be finite")
   return A.snf[end]
 end
 exponent(A::FinGenGrpAbGen) = exponent(snf(A)[1])
 
 doc"""
 ***
-    is_trivial(A::FinGenGrpAbSnf, i::Int) -> bool
-    is_trivial(A::FinGenGrpAbGen, i::Int) -> bool
+    istrivial(A::FinGenGrpAbSnf, i::Int) -> bool
+    istrivial(A::FinGenGrpAbGen, i::Int) -> bool
 
 > Checks if A is the trivial group.
 """
-is_trivial(A::FinGenGrpAbSnf) = order(A)==1
-is_trivial(A::FinGenGrpAbGen) = order(A)==1
+istrivial(A::FinGenGrpAbSnf) = order(A)==1
+istrivial(A::FinGenGrpAbGen) = order(A)==1
 
 
 doc"""
 ***
-    is_isomorphic(G::FinGenGrpAb, H::FinGenGrpAb) -> bool
+    isisomorphic(G::FinGenGrpAb, H::FinGenGrpAb) -> bool
 
 > Checks if G and H are isomorphic.
 """
-function is_isomorphic(G::FinGenGrpAb, H::FinGenGrpAb)
+function isisomorphic(G::FinGenGrpAb, H::FinGenGrpAb)
   return filter(x->x!=1,snf(G)[1].snf) == filter(x->x!=1,snf(H)[1].snf)
 end
 
@@ -697,7 +697,7 @@ function DiagonalGroup(M::fmpz_mat)
   for i=1:cols(M)
     N[i,i] = M[1,i]
   end
-  if is_snf(N)
+  if issnf(N)
     return FinGenGrpAbSnf(fmpz[M[1,i] for i=1:cols(M)])
   else
     return FinGenGrpAbGen(N)
@@ -709,7 +709,7 @@ function DiagonalGroup{T <: Union{Integer, fmpz}}(M::Array{T, 1})
   for i=1:length(M)
     N[i,i] = M[i]
   end
-  if is_snf(N)
+  if issnf(N)
     return FinGenGrpAbSnf(M)
   else
     return FinGenGrpAbGen(N)
@@ -732,7 +732,7 @@ doc"""
 > For a finite abelian group G, return an element chosen uniformly at random.
 """
 function rand(G::FinGenGrpAbSnf)
-  if !is_finite(G)
+  if !isfinite(G)
     error("Group is not finite")
   end
   return G([rand(1:G.snf[i]) for i in 1:ngens(G)])

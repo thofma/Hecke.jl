@@ -1,4 +1,4 @@
-export is_zero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, matrix, zeromatrix
+export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, matrix, zeromatrix
 
 # 
 
@@ -34,7 +34,7 @@ function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
   return A
 end
 
-function is_zero_row(M::fmpz_mat, i::Int)
+function iszero_row(M::fmpz_mat, i::Int)
   for j = 1:cols(M)
     if M[i,j] != 0 
       return false
@@ -43,7 +43,7 @@ function is_zero_row(M::fmpz_mat, i::Int)
   return true
 end
 
-function is_zero_row(M::nmod_mat, i::Int)
+function iszero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
   for j in 1:cols(M)
     t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &M, i - 1, j - 1)
@@ -55,7 +55,7 @@ function is_zero_row(M::nmod_mat, i::Int)
 end
 
 
-function is_zero_row{T}(M::MatElem{T}, i::Int)
+function iszero_row{T}(M::MatElem{T}, i::Int)
   for j in 1:cols(M)
     if !iszero(M[i,j])
       return false
@@ -64,7 +64,7 @@ function is_zero_row{T}(M::MatElem{T}, i::Int)
   return true
 end
 
-function is_zero_row{T <: Integer}(M::Array{T, 2}, i::Int)
+function iszero_row{T <: Integer}(M::Array{T, 2}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0 
       return false
@@ -73,7 +73,7 @@ function is_zero_row{T <: Integer}(M::Array{T, 2}, i::Int)
   return true
 end
 
-function is_zero_row(M::Array{fmpz, 2}, i::Int)
+function iszero_row(M::Array{fmpz, 2}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0 
       return false
@@ -82,7 +82,7 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function is_zero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
+function iszero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -129,7 +129,7 @@ end
 #  y = lift_unsigned(x)
 #  for i in cols(y):-1:1
 #    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-#    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+#    if Bool(ccall((:fmpz_iszero, :libflint), Int, (Ptr{fmpz}, ), z))
 ##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
 #      ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
 ##      for k in 1:i-1
@@ -167,7 +167,7 @@ end
 #  y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
 #  for i in cols(y):-1:1
 #    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-#    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+#    if Bool(ccall((:fmpz_iszero, :libflint), Int, (Ptr{fmpz}, ), z))
 #    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
 ##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
 #      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
@@ -208,9 +208,9 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
    return x
 end
 
-function is_hnf(x::fmpz_mat, shape::Symbol)
+function ishnf(x::fmpz_mat, shape::Symbol)
   if shape == :upperright
-    return is_hnf(x)
+    return ishnf(x)
   elseif shape == :lowerleft
     r = rows(x)
     i = 0
@@ -218,7 +218,7 @@ function is_hnf(x::fmpz_mat, shape::Symbol)
 
     for i in rows(x):-1:1
 
-      if is_zero_row(x, i)
+      if iszero_row(x, i)
         break
       end
 
@@ -237,7 +237,7 @@ function is_hnf(x::fmpz_mat, shape::Symbol)
     end
 
     for k in i:-1:1
-      !is_zero_row(x, k) && return false
+      !iszero_row(x, k) && return false
     end
     return true
   end
@@ -667,7 +667,7 @@ function _kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
   i = 1
   for i in 1:rows(H)
-    if is_zero_row(H, i)
+    if iszero_row(H, i)
       break
     end
   end

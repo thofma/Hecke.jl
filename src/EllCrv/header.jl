@@ -12,5 +12,5 @@ import Nemo: nf_elem, PariIdeal, AnticNumberField, FmpzPolyRing, degree,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
              minpoly, charpoly, det, howell_form, needs_parentheses,
-             is_negative, characteristic, order intersect, lcm, fmpq
+             isnegative, characteristic, order intersect, lcm, fmpq
 

@@ -138,12 +138,12 @@ end
 
 doc"""
 ***
-  is_square(x::ResElem{fmpz}) -> (Bool, ResElem)
+  issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
 
 > Checks if an element x of a ResidueRing of $Z$ is a square, say of y
 > returns (true, y) in that case and (false, 0) otherwise 
 """
-function is_square(x::ResElem{fmpz})
+function issquare(x::ResElem{fmpz})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
@@ -161,12 +161,12 @@ end
 
 doc"""
 ***
-    is_square(x::FinFieldElem) -> (Bool, FinFieldElem)
+    issquare(x::FinFieldElem) -> (Bool, FinFieldElem)
 
 > Checks if an element $x$ of $\mathbf F_q$ is a square, say of $y$.
 > Returns `(true, y)` in that case and `(false, 0)` otherwise 
 """
-function is_square(x::FinFieldElem)
+function issquare(x::FinFieldElem)
     R = parent(x)
     S, t = PolynomialRing(R, "t")
     

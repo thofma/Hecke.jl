@@ -61,7 +61,7 @@ function Smat(A::fmpz_mat)
   m.c = cols(A)
   m.r = 0
   for i=1:rows(A)
-    if is_zero_row(A, i)
+    if iszero_row(A, i)
       continue
     end
     r = SmatRow{fmpz}()
@@ -90,7 +90,7 @@ function Smat{T}(A::Array{T, 2})
   m.c = Base.size(A, 2)
   m.r = 0
   for i=1:Base.size(A, 1)
-    if is_zero_row(A, i)
+    if iszero_row(A, i)
       continue
     end
     r = SmatRow{T}()
@@ -125,7 +125,7 @@ function _Smat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
   m.r = 0
 
   for i=1:rows(A)
-    if is_zero_row(A, i)
+    if iszero_row(A, i)
       if !zerorows
         continue
       else
@@ -161,7 +161,7 @@ function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = fals
   m.r = 0
 
   for i=1:rows(A)
-    if is_zero_row(A, i)
+    if iszero_row(A, i)
       if !zerorows
         continue
       else

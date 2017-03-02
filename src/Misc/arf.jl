@@ -263,13 +263,13 @@ end
 #
 ################################################################################
 
-for (s,f) in (("iszero", "arf_is_zero"), ("isone", "arf_is_one"),
+for (s,f) in (("iszero", "arf_iszero"), ("isone", "arf_is_one"),
               ("isposinf", "arf_is_pos_inf"),
               ("isneginf", "arf_is_neg_inf"),
               ("isinf", "arf_is_inf"),
               ("isnan", "arf_is_nan"),
               ("isnormal", "arf_is_normal"),
-              ("isfinite", "arf_is_finite"),
+              ("isfinite", "arf_isfinite"),
               ("isspecial", "arf_is_special"))
   @eval begin
     function($(Symbol(s)))(x::arf)
