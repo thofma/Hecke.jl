@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export isunit, istorsionunit, isindependent, unit_group
+export isunit, istorsion_unit, isindependent, unit_group
 
 add_verbose_scope(:UnitGroup)
 
@@ -229,7 +229,7 @@ function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
 
   w = r*y^z[length(z)]
 
-  b, _ = istorsionunit(w)
+  b, _ = istorsion_unit(w)
   return b
 end
 
@@ -868,7 +868,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     y = FacElem(x, kelem)
 
-    time_torsion += @elapsed is_tors, p = istorsionunit(y, false, u.tors_prec)
+    time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
     u.tors_prec = max(p, u.tors_prec)
     if is_tors
       continue
@@ -916,7 +916,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
-    time_torsion += @elapsed is_tors, p = istorsionunit(y, false, u.tors_prec)
+    time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
     u.tors_prec = max(p, u.tors_prec)
     if is_tors
       @v_do :UnitGroup 2 popindent()

@@ -44,7 +44,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
-    if length(FP.lp) < 3 || isindexdivisor(O, p) || p > 2^60
+    if length(FP.lp) < 3 || isindex_divisor(O, p) || p > 2^60
       lp = [x[2] for x = FP.lp]
       for (i, P) in FP.lp 
         Q = induce_image(P, A)

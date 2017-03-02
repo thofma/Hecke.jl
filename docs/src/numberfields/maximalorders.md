@@ -28,7 +28,7 @@ inv(::NfMaxOrdFracIdl)
 ```@docs
 unit_rank(::NfOrd)
 isunit(::NfOrdElem)
-istorsionunit(::NfOrdElem)
+istorsion_unit(::NfOrdElem)
 torsion_unit_order(::NfOrdElem)
 torsion_units(::NfOrd)
 torsion_units_gen(::NfOrd)

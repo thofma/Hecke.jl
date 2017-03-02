@@ -839,7 +839,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   while !found_prime
     p = next_prime(p)
 
-    if isindexdivisor(O, p) || isramified(O, p)
+    if isindex_divisor(O, p) || isramified(O, p)
       continue
     end
 

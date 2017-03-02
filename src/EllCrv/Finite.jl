@@ -635,7 +635,7 @@ function _special_order2(E)
 
   for i = 0:1
     for j = 0:1
-      if isoncurve(E, [R(i), R(j)])
+      if ison_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end
@@ -653,7 +653,7 @@ function _special_order3(E)
 
   for i = 0:2
     for j = 0:2
-      if isoncurve(E, [R(i), R(j)])
+      if ison_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end

@@ -1332,7 +1332,7 @@ type FactorBaseSingleP
       return r, v
     end
 
-    if length(lp) < 3 || isindexdivisor(O, p) # ie. index divisor or so
+    if length(lp) < 3 || isindex_divisor(O, p) # ie. index divisor or so
       int_doit = naive_doit
     else
       Zx = PolynomialRing(ZZ, "x")[1]

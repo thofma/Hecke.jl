@@ -40,7 +40,7 @@
 
 doc"""
 ***
-    istorsionunit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
+    istorsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
@@ -48,8 +48,8 @@ doc"""
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function istorsionunit(x::NfOrdElem, checkisunit::Bool = false)
-  return istorsionunit(x.elem_in_nf, checkisunit)
+function istorsion_unit(x::NfOrdElem, checkisunit::Bool = false)
+  return istorsion_unit(x.elem_in_nf, checkisunit)
 end
 
 ################################################################################
@@ -180,7 +180,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
     if O(i) == zero(O)
       continue
     end
-    if istorsionunit(O(i))
+    if istorsion_unit(O(i))
       push!(R, O(i))
     end
   end

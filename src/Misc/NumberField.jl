@@ -686,8 +686,7 @@ function factor(f::PolyElem{nf_elem})
     p = p_start
     while true
       p = next_prime(p)
-      #todo: interface to get only one prime - or only limited degrees
-      me = modular_init(K, p)
+      me = modular_init(K, p, max_split=1)
       fp = modular_proj(f, me)[1]
       if issquarefree(fp)
         fp = deepcopy(modular_proj(f_orig, me)[1])
@@ -1106,7 +1105,7 @@ end
 
 doc"""
 ***
-    istorsionunit(x::nf_elem, checkisunit::Bool = false) -> Bool
+    istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
     
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
@@ -1114,7 +1113,7 @@ doc"""
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function istorsionunit(x::nf_elem, checkisunit::Bool = false)
+function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
   if checkisunit
     _isunit(x) ? nothing : return false
   end

@@ -119,7 +119,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
 
   while P < 2*B
     # reject some bad primes
-    if isindexdivisor(O, p) 
+    if isindex_divisor(O, p) 
       continue
     end
 

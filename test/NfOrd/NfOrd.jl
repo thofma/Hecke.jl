@@ -142,11 +142,11 @@
     b = @inferred index(O7)
     @test b == 6
 
-    @test !@inferred isindexdivisor(O1, 2)
-    @test !@inferred isindexdivisor(O1, 3)
-    @test @inferred isindexdivisor(O7, 2)
-    @test @inferred isindexdivisor(O7, fmpz(3))
-    @test !@inferred isindexdivisor(O7, 5)
+    @test !@inferred isindex_divisor(O1, 2)
+    @test !@inferred isindex_divisor(O1, 3)
+    @test @inferred isindex_divisor(O7, 2)
+    @test @inferred isindex_divisor(O7, fmpz(3))
+    @test !@inferred isindex_divisor(O7, 5)
   end
 
   @testset "Discriminant" begin

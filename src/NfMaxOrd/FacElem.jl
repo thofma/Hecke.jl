@@ -53,7 +53,7 @@ function isunit(x::FacElem{nf_elem})
   return abs(norm(x)) == 1
 end
 
-function istorsionunit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
+function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
   @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
   if checkisunit
     _isunit(x) ? nothing : return false
