@@ -7,12 +7,12 @@ end
 
 
 @doc """
-  is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
+  isprimitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
 
 >  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
 >  Intrinsically, only makes sense if the units of Z/MZ are cyclic.
 """ ->
-function is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Fac{fmpz})
+function isprimitive_root(x::GenRes{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -61,7 +61,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   Rpp = ResidueRing(FlintZZ, p*p)
 
   g = fmpz(2)
-  if is_primitive_root(Rp(g)^mi, gc, fp)
+  if isprimitive_root(Rp(g)^mi, gc, fp)
     if Rpp(g)^gc != 1
       return g
     else
@@ -72,7 +72,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   while true
 #    g = rand(3:p-2)
     g += 1
-    if is_primitive_root(Rp(g)^mi, gc, fp)
+    if isprimitive_root(Rp(g)^mi, gc, fp)
       if Rpp(g)^gc != 1
         return g
       else

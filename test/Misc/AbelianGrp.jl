@@ -11,7 +11,7 @@
 
     @testset "in hnf" begin
       M = ZZ[1 2 3; 0 3 6]                     :: fmpz_mat
-      G = Hecke.FinGenGrpAbGen(M, is_hnf=true) :: FinGenGrpAb
+      G = Hecke.FinGenGrpAbGen(M, ishnf=true) :: FinGenGrpAb
       @test G.rels == M
       @test G.hnf == M
       @test_throws UndefRefError G.snf_map

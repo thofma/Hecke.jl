@@ -494,8 +494,8 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   return me
 end
 
-function modular_init(K::AnticNumberField, p::Integer)
-  return modular_init(K, fmpz(p))
+function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_split::Int = 0)
+  return modular_init(K, fmpz(p), deg_limit = deg_limit, max_split = max_split)
 end
 
 doc"""

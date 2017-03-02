@@ -712,7 +712,7 @@ type NfOrdGenIdl <: NfOrdIdl
   end
 
   function NfOrdGenIdl(O::NfOrdGen, a::fmpz_mat)
-    @hassert :NfOrd 2 is_hnf(a, :lowerleft) # a must be lowerleft HNF
+    @hassert :NfOrd 2 ishnf(a, :lowerleft) # a must be lowerleft HNF
     z = new()
     z.parent = NfOrdGenIdlSet(O)
     z.basis_mat = a
@@ -956,7 +956,7 @@ type NfMaxOrdIdl <: NfOrdIdl
   is_prime::Int            # 0: don't know
                            # 1 known to be prime
                            # 2 known to be not prime
-  is_zero::Int             # as above
+  iszero::Int             # as above
   is_principal::Int        # as above
   princ_gen::NfOrdElem{NfMaxOrd}
   princ_gen_special::Tuple{Int, Int, fmpz}
@@ -979,7 +979,7 @@ type NfMaxOrdIdl <: NfOrdIdl
     r.parent = NfMaxOrdIdlSet(O)
     r.gens_short = false
     r.gens_weakly_normal = false
-    r.is_zero = 0
+    r.iszero = 0
     r.is_prime = 0
     r.is_principal = 0
     r.splitting_type = (0,0)
@@ -1017,7 +1017,7 @@ type NfMaxOrdIdl <: NfOrdIdl
     C.is_principal = 1
 
     if iszero(x)
-      C.is_zero = 1
+      C.iszero = 1
     end
 
     C.gen_one = norm(x)
@@ -1332,7 +1332,7 @@ type FactorBaseSingleP
       return r, v
     end
 
-    if length(lp) < 3 || is_index_divisor(O, p) # ie. index divisor or so
+    if length(lp) < 3 || isindex_divisor(O, p) # ie. index divisor or so
       int_doit = naive_doit
     else
       Zx = PolynomialRing(ZZ, "x")[1]
@@ -1345,7 +1345,7 @@ type FactorBaseSingleP
       int_doit = function(a::nf_elem, v::Int)
         g = Fpx(a)
         g = gcd(g, fp)
-        fl = is_smooth(FB.pt, g)[1]
+        fl = issmooth(FB.pt, g)[1]
         if fl
           d = factor(FB.pt, g)
           r = Array{Tuple{Int, Int}, 1}()
@@ -1568,10 +1568,10 @@ type FinGenGrpAbGen <: FinGenGrpAb
   hnf::fmpz_mat
   snf_map::Map{FinGenGrpAbGen, FinGenGrpAbSnf}
 
-  function FinGenGrpAbGen(R::fmpz_mat; is_hnf::Bool = false)
+  function FinGenGrpAbGen(R::fmpz_mat; ishnf::Bool = false)
     r = new()
     r.rels = R
-    if is_hnf
+    if ishnf
       r.hnf = R
     end
     return r

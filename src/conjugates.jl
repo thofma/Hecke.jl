@@ -1,13 +1,13 @@
 
-export conjugates_init, is_constant, is_squarefree, conjugates, angle, cos, 
+export conjugates_init, isconstant, issquarefree, conjugates, angle, cos, 
        sin, abs, abs2, sqrt
 
-function is_constant(f::PolyElem)
+function isconstant(f::PolyElem)
   return f.length<2
 end
 
-function is_squarefree(f::PolyElem)
-  return is_constant(gcd(f, derivative(f)))
+function issquarefree(f::PolyElem)
+  return isconstant(gcd(f, derivative(f)))
 end
 
 function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
@@ -20,7 +20,7 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
     g = PolynomialRing(ZZ, string(var(parent(f))))[1](g)
     f = g
   end
-  is_constant(gcd(f, derivative(f))) || error("poly should be square-free")
+  isconstant(gcd(f, derivative(f))) || error("poly should be square-free")
   c = roots_ctx()
   c.f = f
   r = _roots(f, 100)

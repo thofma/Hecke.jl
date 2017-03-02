@@ -470,7 +470,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   if !fl
 #    println("not int-smooth");
     # try for large prime?
-    O = order(clg.FB.ideals[1])  ##CF: think about it and deal with index divisors properly
     if isprime(r) && abs(r) < clg.B2 && !isindex_divisor(O, r)
       i = special_prime_ideal(r, a)
       if haskey(clg.largePrime, i)

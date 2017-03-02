@@ -65,7 +65,7 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 
       n = norm_div(a, one, no_b)
     end
     if smooth != 0
-      !is_smooth(smooth, num(n))[1] && continue
+      !issmooth(smooth, num(n))[1] && continue
     end
     if cmpabs(num(n), bd) <= 0 
       if no_id != 0
@@ -112,7 +112,7 @@ function basis_rels_3(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     iszero(a) && continue
     n = norm_div(a, no_id, no_b)
     if smooth != 0
-      !is_smooth(smooth, num(n))[1] && continue
+      !issmooth(smooth, num(n))[1] && continue
     end
     nn = abs(num(n))
     if !haskey(rels, nn)
@@ -238,7 +238,7 @@ function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
 #    println("testing $no")
 
     if smooth != 0
-      !is_smooth(smooth, no)[1] && continue
+      !issmooth(smooth, no)[1] && continue
     end
     nn = abs(no)
     if !haskey(rels, nn)
@@ -359,7 +359,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
 #    println("testing $no")
 
     if smooth != 0
-      !is_smooth(smooth, no)[1] && continue
+      !issmooth(smooth, no)[1] && continue
     end
     nn = abs(no)
     if !haskey(rels, nn)
@@ -452,7 +452,7 @@ function rels_stat(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, 
     else
       stat[k] = 1
     end
-    if smooth != 0 && is_smooth(smooth, num(n))[1]
+    if smooth != 0 && issmooth(smooth, num(n))[1]
       stat[-2] += 1
       push!(all_g, a)
       a =   a = b[1].parent()
