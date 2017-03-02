@@ -577,7 +577,7 @@ function _MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   disc = abs(discriminant(O))
   for i in 1:length(primes)
     p = primes[i]
-    (j, disc) = valuation(disc, p)
+    (j, disc) = remove(disc, p)
     if j == 1
       continue
     end

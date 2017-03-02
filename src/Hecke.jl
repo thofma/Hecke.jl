@@ -61,17 +61,17 @@ import Nemo: nf_elem, AnticNumberField, degree,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, order, signature,
-             base_ring, compose, root, arf_struct, fmpq, valuation,
+             base_ring, compose, root, arf_struct, fmpq, valuation, remove,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
-             minpoly, charpoly, det,
-             howell_form, needs_parentheses, is_hnf, is_negative, parent_type,
-             intersect, lcm, strong_echelon_form, strong_echelon_form!,
-             howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
-             FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear, lufact!, agm, height, characteristic, roots, isprime
+             minpoly, charpoly, det, howell_form, needs_parentheses, is_hnf,
+             is_negative, parent_type, intersect, lcm, strong_echelon_form,
+             strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
+             FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
+             acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
+             roots, isprime
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -121,7 +121,7 @@ function __init__()
   println()
   print("Version")
   print_with_color(:green, " $VERSION_NUMBER ")
-  print("... \n ... which comes with absolutely no warrant whatsoever")
+  print("... \n ... which comes with absolutely no warranty whatsoever")
   println()
   println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
   println()

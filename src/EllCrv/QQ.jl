@@ -453,7 +453,7 @@ function laska_kraus_connell(E::EllCrv{fmpq})
       end
 
     elseif p == 3
-      ord1 = valuation(c6, 3)[1]
+      ord1 = valuation(c6, 3)
 
       if (ord1 == 6*d + 2)
         d = d - 1
@@ -564,7 +564,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
   delta = disc(E)
   delta = num(delta)
 
-  n = valuation(delta, p)[1]
+  n = valuation(delta, p)
 
   # test for type I0
   if n == 0

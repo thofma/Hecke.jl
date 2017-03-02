@@ -693,7 +693,7 @@ function factor(f::PolyElem{nf_elem})
         fp = deepcopy(modular_proj(f_orig, me)[1])
         for k in keys(res)
           gp = modular_proj(k, me)[1]
-          res[k] = valuation(fp, gp)[1]
+          res[k] = valuation(fp, gp)
         end
         r.fac = res
         return r

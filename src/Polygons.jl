@@ -113,7 +113,7 @@ function newtonpolygon(f::Union(fmpz_poly,fmpq_poly),p::fmpz)
     #throw some error
   end
   for i = 0:degree(f)
-    iszero(coeff(f,i)) ? continue : a[i+1] = (i,valuation(coeff(f,i),p)[1])
+    iszero(coeff(f,i)) ? continue : a[i+1] = (i,valuation(coeff(f,i),p))
   end 
   return lowerconvexhull(a)
 end
@@ -135,15 +135,3 @@ function PartialPolygon(P::Polygon,t::Rational{BigInt})
   return true
 end
   
-
-function valuation(m::BigInt,p::BigInt)
-
-  a = mod(m,p)
-  i=ZZ(0)
-  while a == 0
-    i = i+1
-    m = div(m,p)
-    a = mod(m,p)
-  end
-  return i
-end

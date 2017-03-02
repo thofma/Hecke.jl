@@ -531,7 +531,7 @@ function _find_missing_pivot(M::Smat)
 end
 
 function res_degree_in_max_real(p::Int, n::Int)
-  r = valuation(n, 2)[2]
+  r = remove(n, 2)[2]
   r != 1 && error("Not yet implemented")
   f = Hecke.modord(p, n)
   return (powermod(p, div(f,2), n) == n-1) ? (return div(f, 2)) : (return f)

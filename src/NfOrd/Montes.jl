@@ -28,7 +28,7 @@ end
 
 function valuationf(p::Int)
   function v(x::fmpz)
-    return valuation(x,p)[1]
+    return valuation(x,p)
   end
   return v
 end

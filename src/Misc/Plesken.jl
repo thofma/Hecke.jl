@@ -175,7 +175,7 @@ end
 function primitive_root_r_div_qm1(R, r::Int)
   #Plesken, 1.39 essentially
   n = size(R)-1
-  k, e = valuation(n, r)
+  k, e = remove(n, r)
   @assert k>0
   @assert isprime(r)
 

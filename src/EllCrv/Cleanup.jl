@@ -72,25 +72,25 @@ function local_height_finite(P, p)
 
   L = 0
 
-  if (A != 0 && valuation(A, p)[1] <= 0) || (B != 0 && valuation(B, p) <= 0)
+  if (A != 0 && valuation(A, p) <= 0) || (B != 0 && valuation(B, p) <= 0)
     if x != 0
-      L = max(0, -valuation(x, p)[1])
+      L = max(0, -valuation(x, p))
     else
       L = 0
     end
-  elseif (c4 != 0 && valuation(c4, p)[1] == 0)
-      N = valuation(delta, p)[1]
+  elseif (c4 != 0 && valuation(c4, p) == 0)
+      N = valuation(delta, p)
       if B == 0
         M = N//2
         L = M*(M - N)//N
       else
-        M = min(valuation(B, p)[1], N//2)
+        M = min(valuation(B, p), N//2)
         L = M*(M - N)//N
       end
-  elseif ( C == 0 || ( C != 0 && B != 0 && valuation(C, p)[1] >= 3*valuation(B, p)[1]))
-        L = -2*valuation(B, p)[1]//3
+  elseif ( C == 0 || ( C != 0 && B != 0 && valuation(C, p) >= 3*valuation(B, p)))
+        L = -2*valuation(B, p)//3
   else
-        L = -valuation(C, p)[1]//4
+        L = -valuation(C, p)//4
   end
   
   return Float64(num(L))/Float64(den(L)) * log(Float64(p))

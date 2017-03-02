@@ -1060,7 +1060,7 @@ function val_func_no_index(p::NfMaxOrdIdl)
       v += 1
       mul!(x, x, e)
     end
-    return v-valuation(d, P)[1]*p.splitting_type[1]
+    return v-valuation(d, P)*p.splitting_type[1]
   end
 end
 
@@ -1090,12 +1090,12 @@ function val_func_no_index_small(p::NfMaxOrdIdl)
     nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
     h = rem!(h, h, g)      
     c = lift(FlintZZ, coeff(h, 0))
-    v = c==0 ? typemax(Int) : valuation(c, P)[1]
+    v = c==0 ? typemax(Int) : valuation(c, P)
     for i=1:degree(h)
       c = lift(FlintZZ, coeff(h, i))
-      v = min(v, c==0 ? typemax(Int) : valuation(c, P)[1])
+      v = min(v, c==0 ? typemax(Int) : valuation(c, P))
     end
-    return v-valuation(d, P)[1]
+    return v-valuation(d, P)
   end
 end
 
@@ -1120,7 +1120,7 @@ function val_func_index(p::NfMaxOrdIdl)
       Nemo.mul!(x_mat, x_mat, M)
       v += 1
     end
-    return v-valuation(d, P)[1]*p.splitting_type[1]
+    return v-valuation(d, P)*p.splitting_type[1]
   end
 end
 
@@ -1192,7 +1192,7 @@ doc"""
 function valuation(a::fmpz, p::NfMaxOrdIdl)
   P = p.gen_one
   @assert p.splitting_type[1] != 0
-  return valuation(a, P)[1]* p.splitting_type[1]
+  return valuation(a, P)* p.splitting_type[1]
 end
 
 doc"""
@@ -1203,7 +1203,7 @@ doc"""
 > such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl)
-  return min(valuation(A.gen_one, p)[1], valuation(elem_in_nf(A.gen_two), p))
+  return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
 end
 
 ################################################################################
@@ -1365,7 +1365,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 
     # First compute the residue degree
     for i in 1:degree(O)
-      f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
+      f = f + valuation(basis_mat(P)[i,i], fmpz(p))
     end
 
     P.norm = fmpz(p)^f

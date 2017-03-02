@@ -74,7 +74,7 @@ end
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....
 
-function valuation{T <: Integer}(z::T, p::T)
+function remove{T <: Integer}(z::T, p::T)
   z == 0 && error("Not yet implemented")
   const v = 0
   while mod(z, p) == 0
@@ -84,31 +84,43 @@ function valuation{T <: Integer}(z::T, p::T)
   return (v, z)
 end 
 
-function valuation{T <: Integer}(z::Rational{T}, p::T)
+function remove{T <: Integer}(z::Rational{T}, p::T)
   z == 0 && error("Not yet implemented")
-  v, d = valuation(den(z), p)
-  w, n = valuation(num(z), p)
+  v, d = remove(den(z), p)
+  w, n = remove(num(z), p)
   return w-v, n//d
 end 
 
-function valuation(z::fmpz, p::fmpz)
+function remove(z::fmpq, p::fmpz)
   z == 0 && error("Not yet implemented")
-  v = 0
+  v, d = remove(den(z), p)
+  w, n = remove(num(z), p)
+  return w-v, n//d
+end 
+
+function valuation{T <: Integer}(z::T, p::T)
+  z == 0 && error("Not yet implemented")
+  const v = 0
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
   end
-  return v, z
+  return v
+end 
+
+function valuation{T <: Integer}(z::Rational{T}, p::T)
+  z == 0 && error("Not yet implemented")
+  v = valuation(den(z), p)
+  w = valuation(num(z), p)
+  return w-v
 end 
 
 function valuation(z::fmpq, p::fmpz)
   z == 0 && error("Not yet implemented")
-  v, d = valuation(den(z), p)
-  w, n = valuation(num(z), p)
-  return w-v, n//d
+  v = valuation(den(z), p)
+  w = valuation(num(z), p)
+  return w-v
 end 
-
-valuation(z::fmpz, p::Int) = valuation(z, fmpz(p))
 
 function *(a::fmpz, b::BigFloat)
   return BigInt(a)*b

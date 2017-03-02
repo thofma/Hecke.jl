@@ -184,7 +184,7 @@ function factor{T}(c::FactorBase{T}, a::T)
   for i in lp
     if mod(a, i)==0  ## combine: use divmod and do val of rest
                      ## to save a division
-      v = valuation(a, i)
+      v = remove(a, i)
       f[i] = v[1]
       a = v[2]
       if a == 1 || a==-1  ## should be is_unit (think poly)
@@ -204,7 +204,7 @@ function factor{T}(c::FactorBase{T}, a::fmpq)  ## fractions over T
   lp = _split(c.ptree, n*d)
   for i in lp
     if mod(d, i)==0
-      v = valuation(d, i)
+      v = remove(d, i)
       if isdefined(f, :i)
         f[i] -= v[1]
       else
@@ -216,7 +216,7 @@ function factor{T}(c::FactorBase{T}, a::fmpq)  ## fractions over T
       end
     end
     if mod(n, i)==0
-      v = valuation(n, i)
+      v = remove(n, i)
       if isdefined(f, :i)
         f[i] += v[1]
       else
@@ -311,7 +311,7 @@ function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()
   for p in keys(d)
-    vp = valuation(n, p)[1]
+    vp = valuation(n, p)
     s, vp = FB.fb[p].doit(a, vp)
     if vp != 0
       if error
@@ -341,38 +341,6 @@ function factor(FB::NfFactorBase, a::nf_elem)
   M = Smat{Int}()
   _factor!(M, 1, FB, a)
   return M
-end
-
-function _factor!2{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
-                    error::Bool = true, n::fmpq = abs(norm(a)))
-  d = factor(FB.fb_int, num(n)*den(a))
-  rw = FB.rw
-  r = Array{Tuple{Int, Int}, 1}()
-  for p in keys(d)
-    vp = valuation(n, p)[1]
-    s, vp = FB.fb[p].doit(a, vp)
-    if vp != 0
-      if error
-        @hassert :ClassGroup 1 vp == 0
-      end
-      return false
-    end
-    r = vcat(r, s)
-  end
-  lg::Int = length(r)
-  if lg > 0
-    if length(rw) > FB.mx
-      FB.mx = length(rw)
-    end
-    sort!(r, lt=function(a,b) return a[1] < b[1]; end)
-    @hassert :ClassGroup 1 length(r) > 0
-    push!(M, SmatRow{T}(r))
-    return true
-  else 
-    # factor failed or I have a unit.
-    # sparse rel mat must not have zero-rows.
-    return false
-  end
 end
 
 function show(io::IO, I::IdealRelationsCtx)
