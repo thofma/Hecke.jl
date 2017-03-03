@@ -257,14 +257,14 @@ macro vprint(args...)
     quote
       if get_verbose_level($(args[1])) >= 1
         print(_global_indent())
-        print($(args[2]))
+        print($(esc((args[2]))))
       end
     end
   elseif length(args) == 3
     quote
       if get_verbose_level($(args[1])) >= $(args[2])
         print(_global_indent())
-        print($(args[3]))
+        print($(esc((args[3]))))
       end
     end
   end
