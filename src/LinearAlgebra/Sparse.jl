@@ -47,6 +47,10 @@ end
 function hash{T}(A::SmatRow{T}, h::UInt)
   return hash(A.pos, hash(A.values, h))
 end
+
+function iszero{T}(A::SmatRow{T})
+  return length(A.pos) == 0
+end
 ################################################################################
 #
 #  Smat
@@ -1188,6 +1192,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
       c = -div(y, x)
 #      @assert x*c == -y
       add_scaled_row!(A, sr, all_r[j], c)
+      @assert !iszero(A[sr])
     else
       g,a,b = gcdx(x, y)
 #      @assert g == a*x + b*y
@@ -1196,6 +1201,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
       d = div(x, g)
 #      @assert x == d*g
       transform_row!(A, sr, all_r[j], a, b, c, d)
+      @assert !iszero(A[sr])
     end
 
 #    @assert A.rows[sr].entry[1]valuesval == g
@@ -1213,7 +1219,7 @@ function one_step{T}(A::Smat{T}, sr = 1)
   end
   sort!(all_r)
   for j=length(all_r):-1:2
-    if length(A.rows[all_r[j]].pos) == 0
+    if iszero(A.rows[all_r[j]])
       deleteat!(A.rows, all_r[j])
       A.r -= 1
     end
