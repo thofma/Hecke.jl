@@ -92,7 +92,9 @@ end
 #function orbit_in_FB(op::Array{Tuple{Map, Nemo.perm}, 1}, a::nf_elem, s::SmatRow)
 function orbit_in_FB(op::Array, a::nf_elem, s::SmatRow)
   function op_smat(n::SmatRow, p::Nemo.perm)
-    return typeof(n)([(p[i], v) for (i,v) = n])
+    r = [(p[i], v) for (i,v) = n]
+    sort!(r, lt = (a,b)->a[1]<b[1])
+    return typeof(n)(r)
   end
 
   Ss = Dict{typeof(s), nf_elem}()
