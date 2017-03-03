@@ -3,7 +3,7 @@
   function verify_order(g::Hecke.NfMaxOrdQuoRingElem,o)
     g == 0 && return false
     g^o == 1 || return false
-    for l in keys(factor(o))
+    for l in keys(factor(o).fac)
       g^div(o,l) == 1 && return false
     end
     return true
@@ -12,7 +12,7 @@
   function verify_order(g,i,o)
     iszero(g) && return false
     powermod(g,o,i.gen_one) - 1 in i || return false
-    for l in keys(factor(o))
+    for l in keys(factor(o).fac)
       powermod(g,div(o,l),i.gen_one) - 1  in i && return false
     end
     return true
@@ -90,7 +90,7 @@
         @test order(G) == 3
         struct = [3]
         H = DiagonalGroup(struct)
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
           for exp in -5:10
@@ -115,7 +115,7 @@
         @test order(G) == 12
         struct = [3,2,2]
         H = DiagonalGroup(struct)
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
           for exp in -5:10
@@ -228,7 +228,7 @@
         end
         G = DiagonalGroup(structure)
         H = Hecke.multgrp_of_cyclic_grp(n)
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         #= # Test discrete logarithm =#
         for bas in gens
           for exp in [-1,0,1,6]
@@ -287,7 +287,7 @@
         G = DiagonalGroup(structure)
         @test order(G) == 3
         H = DiagonalGroup([3])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         #= # Test discrete logarithm =#
         for bas in gens
           for exp in [-11,4,12]
@@ -313,7 +313,7 @@
         G = DiagonalGroup(structure)
         @test order(G) == 12
         H = DiagonalGroup([3,2,2])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         #= # Test discrete logarithm =#
         for bas in gens
           for exp in [-8,0,2]
@@ -339,7 +339,7 @@
         G = DiagonalGroup(structure)
         @test order(G) == 16
         H = DiagonalGroup([4,4])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         #= # Test discrete logarithm =#
         for bas in gens
           for exp in [-3,2,4]
@@ -365,7 +365,7 @@
         G = DiagonalGroup(structure)
         @test order(G) == 192
         H = DiagonalGroup([3,2,2,4,4])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         #= # Test discrete logarithm =#
         for bas in gens
           for exp in [-4,1,7]
@@ -391,7 +391,7 @@
       K, a = NumberField(x,"a");
       O = maximal_order(K)
 
-      @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in primes(50), v in [1,2,4,17]]
+      @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if isprime(fmpz(x))], v in [1,2,4,17]]
         p = ideal(O,O(pnum))
         g , d , disc_log = Hecke._multgrp_mod_pv(p,v)
         @test length(g) == length(d)
@@ -400,7 +400,7 @@
         end
         G = DiagonalGroup(d)
         H = Hecke.multgrp_of_cyclic_grp(fmpz(pnum)^v)
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
         Q = NfMaxOrdQuoRing(O,p^v)
         for bas in g
@@ -460,7 +460,7 @@
         G = DiagonalGroup(d)
         @test order(G) == prod(structures[v])
         H = DiagonalGroup(structures[v])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
         Q = NfMaxOrdQuoRing(O,p^v)
         for bas in g
@@ -492,7 +492,7 @@
         G = DiagonalGroup(d)
         @test order(G) == prod(structures[v])
         H = DiagonalGroup(structures[v])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
         Q = NfMaxOrdQuoRing(O,p^v)
         for bas in g
@@ -524,7 +524,7 @@
         G = DiagonalGroup(d)
         @test order(G) == prod(structures[v])
         H = DiagonalGroup(structures[v])
-        @test Hecke.is_isomorphic(G,H)
+        @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
         Q = NfMaxOrdQuoRing(O,p^v)
         for bas in g
@@ -549,7 +549,7 @@
       K, a = NumberField(x,"a");
       O = maximal_order(K)
 
-      @testset "p = <$(pnum)>" for pnum in primes(50)
+      @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if isprime(fmpz(x))]
         p = ideal(O,O(pnum))
         g , n , dlog = Hecke._multgrp_mod_p(p)
         @test isa(g,NfOrdElem{NfMaxOrd})
@@ -568,7 +568,7 @@
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfMaxOrdIdl}()
-      for pnum in primes(40)
+      for pnum in [ x for x in 1:40 if isprime(fmpz(x))]
         append!(primeideals,collect(keys(factor(ideal(O,O(pnum))))))
       end
 
@@ -592,7 +592,7 @@
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfMaxOrdIdl}()
-      for pnum in primes(20)
+      for pnum in [ x for x in 1:20 if isprime(fmpz(x)) ]
         append!(primeideals,collect(keys(factor(ideal(O,O(pnum))))))
       end
 
@@ -645,7 +645,7 @@
         K, a = NumberField(x,"a");
         O = maximal_order(K)
 
-        @testset "p = <$(pnum)>, v = $(v)" for pnum in primes(30), v in [1,2,3,4,11,30]
+        @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if isprime(fmpz(x))], v in [1,2,3,4,11,30]
           i = ideal(O,O(pnum))
           p = collect(keys(factor(i)))[1]
           g, D , disc_log = Hecke._1_plus_p_mod_1_plus_pv(p,v;method=method)
@@ -666,7 +666,7 @@
           @test order(G) == div(order(H), order(I))
           check, J = Hecke._1_plus_pa_mod_1_plus_pb_structure(p,1,v)
           if check
-            @test Hecke.is_isomorphic(G,J)
+            @test Hecke.isisomorphic(G,J)
           end
           # Test discrete logarithm
           Q = NfMaxOrdQuoRing(O,p^v)
@@ -712,7 +712,7 @@
           check, J = Hecke._1_plus_pa_mod_1_plus_pb_structure(p,1,v)
           if check
             G = DiagonalGroup(D)
-            @test Hecke.is_isomorphic(G,J)
+            @test Hecke.isisomorphic(G,J)
           end
           # Test discrete logarithm
           Q = NfMaxOrdQuoRing(O,p^v)
@@ -759,7 +759,7 @@
           check, J = Hecke._1_plus_pa_mod_1_plus_pb_structure(p,1,v)
           if check
             G = DiagonalGroup(D)
-            @test Hecke.is_isomorphic(G,J)
+            @test Hecke.isisomorphic(G,J)
           end
           # Test discrete logarithm
           Q = NfMaxOrdQuoRing(O,p^v)

@@ -160,7 +160,7 @@ function _primitive_element_mod_p(p::NfMaxOrdIdl)
   O = order(p)
   Q , Q_map = quo(O,p)
   n = norm(p) - 1
-  primefactors_n = collect(keys(factor(n)))
+  primefactors_n = collect(keys(factor(n).fac))
   while true
     x = Q(rand(O,n))
     x == 0 && continue
@@ -434,7 +434,7 @@ function artin_hasse_exp(x::NfMaxOrdQuoRingElem)
   pl = ideal(Q)
   fac = factor(minimum(pl))
   @assert length(fac) == 1
-  pnum = collect(keys(fac))[1]
+  pnum = collect(keys(fac.fac))[1]
   s = 1
   fac_i = 1
   for i in 1:pnum-1
@@ -457,7 +457,7 @@ function artin_hasse_log(y::NfMaxOrdQuoRingElem)
   pl = ideal(Q)
   fac = factor(minimum(pl))
   @assert length(fac) == 1
-  pnum = collect(keys(fac))[1]
+  pnum = collect(keys(fac.fac))[1]
   x = y-1
   s = 0
   for i in 1:pnum-1
@@ -617,12 +617,12 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   @assert length(gens) == m
   (n==0 || m==0) && return gens, rels, dlog
 
-  if is_snf(rels)
+  if issnf(rels)
     gens_snf = gens
     rels_snf = rels
     dlog_snf = dlog
   else
-    if !is_hnf(rels)
+    if !ishnf(rels)
       rels = hnf(rels)
     end
     rels_hnf = hnf(rels)
@@ -660,7 +660,8 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
       end
     end
     T = Array(V')
-    dlog_snf = discrete_log(x) = T * dlog(x)
+    discrete_log(x) = T * dlog(x)
+    dlog_snf = discrete_log
   end
 
   # Count trivial components
@@ -688,10 +689,11 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   D = Vector{fmpz}([rels_trans[i,i] for i in 1:cols(rels_trans)])
   if (max_one!=0)
     gens_trans = gens_snf[max_one+1:end]
-    dlog_trans = discrete_logarithm(x) = mod(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D)
+    discrete_logarithm(x) = mod(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D)
+    dlog_trans = discrete_logarithm
   else
     gens_trans = gens_snf
-    dlog_trans = discrete_logarithm(x) = mod(Vector{fmpz}(dlog_snf(x)), D)
+    dlog_trans = (x -> mod(Vector{fmpz}(dlog_snf(x)), D))
   end
 
   return gens_trans, rels_trans, dlog_trans
