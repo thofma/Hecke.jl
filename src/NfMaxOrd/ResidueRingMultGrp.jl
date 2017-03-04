@@ -81,7 +81,8 @@ function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
     push!(disc_logs,dlog_p)
   end
 
-  function discrete_logarithm(x::NfMaxOrdQuoRingElem)
+
+  discrete_logarithm = function(x::NfMaxOrdQuoRingElem)
     result = Vector{fmpz}()
     for dlog in disc_logs
       append!(result,dlog(x.elem))
@@ -117,7 +118,7 @@ function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
   if v == 1
     gens = [gen_p]
     struct = [n_p]
-    discrete_logarithm(x::NfOrdElem{NfMaxOrd}) = [dlog_p(x)]
+    discrete_logarithm = function(x::NfOrdElem{NfMaxOrd}) return [dlog_p(x)] end
   else
     gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,v;method=method)
     obcs = prod(Set(struct_pv)) # order of biggest cyclic subgroup
@@ -127,13 +128,13 @@ function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
     struct = [[n_p] ; struct_pv]
 
     obcs_inv = gcdx(obcs,n_p)[2]
-    function discrete_logarithm(x::NfOrdElem{NfMaxOrd})
+    discrete_logarithm = function(x::NfOrdElem{NfMaxOrd})
       r = mod(dlog_p(x)*obcs_inv,n_p)
       x *= g_p_obcs^mod(-r,n_p)
       return [[r] ; dlog_pv(x)]
     end
   end
-  return gens , struct , discrete_logarithm
+  return gens, struct, discrete_logarithm
 end
 
 ################################################################################
@@ -151,7 +152,7 @@ function _multgrp_mod_p(p::NfMaxOrdIdl)
   Q = NfMaxOrdQuoRing(O,p)
   gen_quo = Q(gen)
   factor_n = factor(n)
-  discrete_logarithm(x::NfOrdElem{NfMaxOrd}) = pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n)
+  discrete_logarithm = function(x::NfOrdElem{NfMaxOrd}) pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n) end
   return gen , n, discrete_logarithm
 end
 
@@ -271,7 +272,7 @@ function _iterative_method(p::NfMaxOrdIdl, u, v; base_method=nothing, use_p_adic
     push!(dlogs,disc_log)
   end
 
-  function discrete_logarithm(b::NfOrdElem{NfMaxOrd})
+  discrete_logarithm = function(b::NfOrdElem{NfMaxOrd})
     Q = NfMaxOrdQuoRing(order(pl),pl)
     b = Q(b)
     a = []
@@ -289,9 +290,9 @@ function _iterative_method(p::NfMaxOrdIdl, u, v; base_method=nothing, use_p_adic
     return a
   end
 
-  g :: Vector{NfOrdElem{NfMaxOrd}}
-  M :: fmpz_mat
-  discrete_logarithm :: Function
+  #g :: Vector{NfOrdElem{NfMaxOrd}}
+  #M :: fmpz_mat
+  #discrete_logarithm :: Function
 
   return g, M, discrete_logarithm
 end
@@ -397,7 +398,7 @@ function _quadratic_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
   @assert 2*u >= v >= u >= 1
   g,M = _pu_mod_pv(pu,pv)
   map!(x->x+1,g)
-  discrete_logarithm(x) = _ideal_disc_log(mod(x-1,pv),basis_mat_inv(pu))
+  discrete_logarithm = function(x) _ideal_disc_log(mod(x-1,pv),basis_mat_inv(pu)) end
   return g, M, discrete_logarithm
 end
 
@@ -417,7 +418,7 @@ function _artin_hasse_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
   @assert pnum*u >= v >= u >= 1
   g,M = _pu_mod_pv(pu,pv)
   map!(x->artin_hasse_exp(pv,x),g)
-  discrete_logarithm(x) = _ideal_disc_log(artin_hasse_log(x,pv),basis_mat_inv(pu))
+  discrete_logarithm = function(x) return _ideal_disc_log(artin_hasse_log(x,pv),basis_mat_inv(pu)) end
   return g, M, discrete_logarithm
 end
 
@@ -491,7 +492,7 @@ function _p_adic_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
   @assert u >= k0
   g,M = _pu_mod_pv(pu,pv)
   map!(x->p_adic_exp(p,v,x;pv=pv),g)
-  discrete_logarithm(b) = _ideal_disc_log(p_adic_log(p,v,b;pv=pv),basis_mat_inv(pu))
+  discrete_logarithm = function(b) _ideal_disc_log(p_adic_log(p,v,b;pv=pv),basis_mat_inv(pu)) end
   return g, M, discrete_logarithm
 end
 
@@ -660,7 +661,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
       end
     end
     T = Array(V')
-    discrete_log(x) = T * dlog(x)
+    discrete_log = function(x) T * dlog(x) end
     dlog_snf = discrete_log
   end
 
@@ -689,7 +690,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   D = Vector{fmpz}([rels_trans[i,i] for i in 1:cols(rels_trans)])
   if (max_one!=0)
     gens_trans = gens_snf[max_one+1:end]
-    discrete_logarithm(x) = mod(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D)
+    discrete_logarithm = function(x) mod(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D) end
     dlog_trans = discrete_logarithm
   else
     gens_trans = gens_snf
