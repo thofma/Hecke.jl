@@ -2,6 +2,11 @@ export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, m
 
 # 
 
+function matrix(A::Array{fmpz, 2})
+  m = MatrixSpace(FlintZZ, size(A)...)(A)
+  return m
+end
+
 function matrix{T <: RingElem}(A::Array{T, 2})
   r, c = size(A)
   (r < 0 || c < 0) && error("Array must be non-empty")
