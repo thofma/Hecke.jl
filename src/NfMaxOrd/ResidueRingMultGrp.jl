@@ -50,7 +50,7 @@ doc"""
 """
 function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
   gens = Vector{NfMaxOrdQuoRingElem}()
-  struct = Vector{fmpz}()
+  structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   i = ideal(Q)
   fac = factor(i)
@@ -77,7 +77,7 @@ function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
 
     gens_p = map(Q,gens_p)
     append!(gens,gens_p)
-    append!(struct,struct_p)
+    append!(structt,struct_p)
     push!(disc_logs,dlog_p)
   end
 
@@ -91,7 +91,7 @@ function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
   end
 
   # Transform to SNF
-  rels = matrix(diagm(struct))
+  rels = matrix(diagm(structt))
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
   struct_trans = Vector{fmpz}([rels_trans[i,i] for i in 1:rows(rels_trans)])
 
@@ -117,7 +117,7 @@ function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
   gen_p, n_p, dlog_p = _multgrp_mod_p(p)
   if v == 1
     gens = [gen_p]
-    struct = [n_p]
+    structt = [n_p]
     discrete_logarithm = function(x::NfOrdElem{NfMaxOrd}) return [dlog_p(x)] end
   else
     gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,v;method=method)
@@ -125,7 +125,7 @@ function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
     g_p_obcs = powermod(gen_p,obcs,p.gen_one^v)
     gens = [[g_p_obcs] ; gens_pv]
 
-    struct = [[n_p] ; struct_pv]
+    structt = [[n_p] ; struct_pv]
 
     obcs_inv = gcdx(obcs,n_p)[2]
     discrete_logarithm = function(x::NfOrdElem{NfMaxOrd})
@@ -134,7 +134,7 @@ function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
       return [[r] ; dlog_pv(x)]
     end
   end
-  return gens, struct, discrete_logarithm
+  return gens, structt, discrete_logarithm
 end
 
 ################################################################################
@@ -192,8 +192,8 @@ function _1_plus_p_mod_1_plus_pv(p::NfMaxOrdIdl, v; method=nothing)
     rels = nothing
     disc_log = nothing
     try
-      gens, struct , disc_log = _one_unit_method(p,v)
-      rels = matrix(diagm(struct))
+      gens, structt , disc_log = _one_unit_method(p,v)
+      rels = matrix(diagm(structt))
     catch
       warn("Skipped p = <$(p.gen_one),$(p.gen_two)>, v = $(v)")
       gens, rels, disc_log = _iterative_method(p,v)

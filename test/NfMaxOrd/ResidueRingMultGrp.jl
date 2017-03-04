@@ -88,8 +88,8 @@
           @test verify_order(gens[i],SNF[i])
         end
         @test order(G) == 3
-        struct = [3]
-        H = DiagonalGroup(struct)
+        structt = [3]
+        H = DiagonalGroup(structt)
         @test Hecke.isisomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
@@ -113,8 +113,8 @@
           @test verify_order(gens[i],SNF[i])
         end
         @test order(G) == 12
-        struct = [3,2,2]
-        H = DiagonalGroup(struct)
+        structt = [3,2,2]
+        H = DiagonalGroup(structt)
         @test Hecke.isisomorphic(G,H)
         @test M(G(G.snf)) == Q(O(1))
         for g in gens
@@ -139,8 +139,8 @@
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 512000 =#
-      #=   struct = [80,80,80] =#
-      #=   H = DiagonalGroup(struct) =#
+      #=   structt = [80,80,80] =#
+      #=   H = DiagonalGroup(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -158,8 +158,8 @@
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14745600 =#
-      #=   struct = [15,2,2,2,2,15,4,4,4,4,2,2,2,2] =#
-      #=   H = DiagonalGroup(struct) =#
+      #=   structt = [15,2,2,2,2,15,4,4,4,4,2,2,2,2] =#
+      #=   H = DiagonalGroup(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -177,8 +177,8 @@
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 187500000 =#
-      #=   struct = [24,5,5,5,5,5,5,4,5,5,5] =#
-      #=   H = DiagonalGroup(struct) =#
+      #=   structt = [24,5,5,5,5,5,5,4,5,5,5] =#
+      #=   H = DiagonalGroup(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
@@ -196,8 +196,8 @@
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14155776*fmpz(10)^14 =#
-      #=   struct = [15,2,2,2,2,15,4,4,4,4,2,2,2,2,80,80,80,24,5,5,5,5,5,5,4,5,5,5] =#
-      #=   H = DiagonalGroup(struct) =#
+      #=   structt = [15,2,2,2,2,15,4,4,4,4,2,2,2,2,80,80,80,24,5,5,5,5,5,5,4,5,5,5] =#
+      #=   H = DiagonalGroup(structt) =#
       #=   @test Hecke.is_isomorphic(G,H) =#
       #=   @test M(G(G.snf)) == Q(O(1)) =#
       #=   for g in gens =#
