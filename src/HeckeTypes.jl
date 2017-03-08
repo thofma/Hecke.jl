@@ -950,7 +950,7 @@ type NfMaxOrdIdl <: NfOrdIdl
   gens_short::Bool
   gens_normal::fmpz
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
-                           # weaker than normality - at least potentialy
+                           # weaker than normality - at least potentially
   norm::fmpz
   minimum::fmpz
   is_prime::Int            # 0: don't know
@@ -1203,7 +1203,7 @@ type roots_ctx
   r::Array{BigComplex, 1}    # the complexes and at the end, the conjugated
   r1::Int
   r2::Int
-  minkowski_mat::Array{BigFloat, 2} # cacheing: I currently
+  minkowski_mat::Array{BigFloat, 2} # caching: I currently
                                     # cannot extend number fields, so I cache it
                                     # here...
   minkowski_mat_p::Int
@@ -1433,10 +1433,10 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   relPartialNorm::Array{Tuple{nf_elem, fmpz}, 1}
   randomClsEnv::Array{NfMaxOrdIdl, 1}
 
-  val_base::fmpz_mat      # a basis for the possible infinite ranodmization 
+  val_base::fmpz_mat      # a basis for the possible infinite randomization
                           # vectors: conditions are
                           #  - sum over all = 0
-                          #  - indices correspoding to complex pairs are
+                          #  - indices corresponding to complex pairs are
                           #    identical
                           # done via lll + nullspace
 
@@ -1520,6 +1520,8 @@ type NfMaxOrdQuoRing <: Ring
   tmp_div::fmpz_mat # used only by div in NfMaxOrd/ResidueRing.jl
   tmp_ann::fmpz_mat # used only by annihilator in NfMaxOrd/ResidueRing.jl
   tmp_euc::fmpz_mat # used only by euclid in NfMaxOrd/ResidueRing.jl
+
+  multiplicative_group::Map
 
   function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdl)
     z = new()
