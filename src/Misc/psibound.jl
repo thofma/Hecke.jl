@@ -1,5 +1,5 @@
 import Nemo.setcoeff!, Nemo.exp, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift, Nemo.rem
-export start, next, done, SetPrimes, psi_lower, psi_upper, show_psi
+export start, next, done, PrimesSet, psi_lower, psi_upper, show_psi
 
 #function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.GenRes{Nemo.fmpz})
 #  setcoeff!(g, i, lift(a))
@@ -78,17 +78,17 @@ function _exp(a::fmpz_mod_abs_series)
   return r
 end
 
-immutable SetPrimes{T}
+immutable PrimesSet{T}
   from::T
   to::T
   mod::T # if set (i.e. >1), only primes p % mod == a are returned
   a::T
   sv::UInt
-  function SetPrimes(f::T, t::T)
-    r = SetPrimes(f, t, T(1), T(0))
+  function PrimesSet(f::T, t::T)
+    r = PrimesSet(f, t, T(1), T(0))
     return r
   end
-  function SetPrimes(f::T, t::T, mod::T, val::T)
+  function PrimesSet(f::T, t::T, mod::T, val::T)
     sv = UInt(1)
     p = UInt(2)
     while sv < 2^30 && p < f
@@ -107,35 +107,35 @@ end
 
 doc"""
 ***
-  SetPrimes(f::Integer, t::Integer)
-  SetPrimes(f::fmpz, t::fmpz)
+    PrimesSet(f::Integer, t::Integer) -> PrimesSet
+    PrimesSet(f::fmpz, t::fmpz) -> PrimesSet
 
 > Returns an iterable object $S$ representing the prime numbers $p$
 > for $f \le p \le t$. If $t=-1$, then the upper bound is infinite.
 """  
-function SetPrimes{T}(f::T, t::T)
-  return SetPrimes{T}(f, t)
+function PrimesSet{T}(f::T, t::T)
+  return PrimesSet{T}(f, t)
 end
 
 doc"""
 ***
-  SetPrimes{f::Integer, t::Integer, mod::Integer, val::Integer}
-  SetPrimes{f::fmpz, t::fmpz, mod::fmpz, val::fmpz}
+    PrimesSet(f::Integer, t::Integer, mod::Integer, val::Integer)  
+    PrimesSet(f::fmpz, t::fmpz, mod::fmpz, val::fmpz) 
 
 > Returns an iterable object $S$ representing the prime numbers $p$
 > for $f \le p \le t$ and $p\equiv val \bmod mod$ (primes in arithmetic
 > progression).  
 >  If $t=-1$, then the upper bound is infinite.
 """  
-function SetPrimes{T}(f::T, t::T, mod::T, val::T)
-  return SetPrimes{T}(f, t, mod, val)
+function PrimesSet{T}(f::T, t::T, mod::T, val::T)
+  return PrimesSet{T}(f, t, mod, val)
 end
 
 function rem(a::fmpz, b::UInt)
   return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &a, b)
 end
 
-function start{T<: Integer}(A::SetPrimes{T})
+function start{T<: Integer}(A::PrimesSet{T})
   curr = A.from 
   c = curr % A.mod
   if A.mod >1 && c != A.a
@@ -151,7 +151,7 @@ function start{T<: Integer}(A::SetPrimes{T})
   return curr
 end
 
-function start(A::SetPrimes{fmpz})
+function start(A::PrimesSet{fmpz})
   curr = A.from 
   c = curr % A.mod
   if A.mod >1 && c != A.a
@@ -169,7 +169,7 @@ function start(A::SetPrimes{fmpz})
 end
 
 
-function next{T<: Union{Integer, fmpz}}(A::SetPrimes{T}, st::T)
+function next{T<: Union{Integer, fmpz}}(A::PrimesSet{T}, st::T)
   p = st
   if A.mod >1
     m = A.mod
@@ -192,11 +192,11 @@ function next{T<: Union{Integer, fmpz}}(A::SetPrimes{T}, st::T)
   return p, st
 end
 
-function done{T <: Union{Integer, fmpz}}(A::SetPrimes{T}, st::T)
+function done{T <: Union{Integer, fmpz}}(A::PrimesSet{T}, st::T)
   return A.to != -1 && st > A.to
 end
 
-eltype{T <: Union{Integer, fmpz}}(::SetPrimes{T}) = T
+eltype{T <: Union{Integer, fmpz}}(::PrimesSet{T}) = T
 
 function lift(R::FmpzAbsSeriesRing, f::fmpz_mod_abs_series)
   r = R()
@@ -253,11 +253,11 @@ doc"""
 > it defaults to 776.
 """
 function psi_lower(N::fmpz, B::Int, a::Int = 776)
-  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, ceil)
+  return psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
 function psi_lower(N::Integer, B::Int, a::Int = 776)
-  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, ceil)
+  return psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
 doc"""
@@ -275,11 +275,11 @@ doc"""
 > it defaults to 771.
 """
 function psi_upper(N::fmpz, B::Int, a::Int=771)
-  return psi_lower(N, SetPrimes{Int}(2, B), a, floor)
+  return psi_lower(N, PrimesSet{Int}(2, B), a, floor)
 end
 
 function psi_upper(N::Integer, B::Int, a::Int=771)
-  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, floor)
+  return psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, floor)
 end
 
 doc"""
@@ -346,7 +346,7 @@ end
 #=
 test:
 
-julia> sp = SetPrimes(2, 100);
+julia> sp = PrimesSet(2, 100);
 julia> fb = []; for x=sp push!(fb, fmpz(x)); end;
 julia> fb = FactorBase(fb)
 julia> length(find(x->issmooth(fb, fmpz(x)), 1:256))
