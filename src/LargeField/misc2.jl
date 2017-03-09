@@ -156,7 +156,7 @@ function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   else
     p = 2^60
   end
-  sp = SetPrimes(p, 2*p, 1024, 1)
+  sp = PrimesSet(p, 2*p, 1024, 1)
   st = start(sp)
   p, st = next(sp, st)
   lp = [fmpz(p)]
@@ -276,7 +276,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   else
     p = 2^60
   end
-  sp = SetPrimes(p, 2*p, 1024, 1)
+  sp = PrimesSet(p, 2*p, 1024, 1)
   st = start(sp)
   p, st = next(sp, st)
   lp = [fmpz(p)]
