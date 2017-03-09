@@ -105,10 +105,28 @@ immutable SetPrimes{T}
   end
 end
 
+doc"""
+***
+  SetPrimes(f::Integer, t::Integer)
+  SetPrimes(f::fmpz, t::fmpz)
+
+> Returns an iterable object $S$ representing the prime numbers $p$
+> for $f \le p \le t$. If $t=-1$, then the upper bound is infinite.
+"""  
 function SetPrimes{T}(f::T, t::T)
   return SetPrimes{T}(f, t)
 end
 
+doc"""
+***
+  SetPrimes{f::Integer, t::Integer, mod::Integer, val::Integer}
+  SetPrimes{f::fmpz, t::fmpz, mod::fmpz, val::fmpz}
+
+> Returns an iterable object $S$ representing the prime numbers $p$
+> for $f \le p \le t$ and $p\equiv val \bmod mod$ (primes in arithmetic
+> progression).  
+>  If $t=-1$, then the upper bound is infinite.
+"""  
 function SetPrimes{T}(f::T, t::T, mod::T, val::T)
   return SetPrimes{T}(f, t, mod, val)
 end
@@ -220,22 +238,59 @@ function psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
   return res, f  # res[i] <= psi(2^(i-1), B)
 end
 
-function psi_lower(N::fmpz, B::Int, a::Int = 776, cl = ceil)
-  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, cl)
+doc"""
+***
+  psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
+  psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
+
+> Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
+> to compute lower bounds on the psi function counting smooth numbers.
+> An array L is returned s.th $\psi(2^{i-1}, B) \ge L_i$ for
+> $1\le i\le \rceil \log_2(B)\lceil$.
+> The second return value is Bernstein's power series.
+>
+> The optional other parameter $a$ controls the precision of the result,
+> it defaults to 776.
+"""
+function psi_lower(N::fmpz, B::Int, a::Int = 776)
+  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, ceil)
 end
 
-function psi_lower(N::Integer, B::Int, a::Int = 776, cl = ceil)
-  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, cl)
+function psi_lower(N::Integer, B::Int, a::Int = 776)
+  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, ceil)
 end
 
-function psi_upper(N::fmpz, B::Int, a::Int=771, fl = floor) 
-  return psi_lower(N, SetPrimes{Int}(2, B), a, fl)
+doc"""
+***
+  psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
+  psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
+
+> Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
+> to compute upper bounds on the psi function counting smooth numbers.
+> An array U is returned s.th $\psi(2^{i-1}, B) \ge U_i$ for
+> $1\le i\le \rceil \log_2(B)\lceil$.
+> The second return value is Bernstein's power series.
+>
+> The optional other parameter $a$ controls the precision of the result,
+> it defaults to 771.
+"""
+function psi_upper(N::fmpz, B::Int, a::Int=771)
+  return psi_lower(N, SetPrimes{Int}(2, B), a, floor)
 end
 
-function psi_upper(N::Integer, B::Int, a::Int=771, fl = floor)
-  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, fl)
+function psi_upper(N::Integer, B::Int, a::Int=771)
+  return psi_lower(fmpz(N), SetPrimes{Int}(2, B), a, floor)
 end
 
+doc"""
+***
+  show_psi(N::Integer, B::Int)
+  show_psi(N::fmpz, B::Int)
+
+> Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
+> $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
+> Where $\psi(N, B) = \#\{1\le i\le N | \text{$i$ is $B$-smooth}\}$  
+"""
 function show_psi(N::Integer, B::Int)
   gl = psi_lower(N, B)[1]
   gu = psi_upper(N, B)[1]
@@ -253,24 +308,39 @@ function show_psi(N::Integer, B::Int)
   end
 end  
 
-function psi_lower(N::Integer, B::Hecke.NfFactorBase, a::Int=776, cl = ceil)
-  lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(fmpz(N), lp, a, cl)
+function show_psi(N::fmpz, B::Int)
+  show_psi(BigInt(N), B)
 end
 
-function psi_lower(N::fmpz, B::Hecke.NfFactorBase, a::Int=776, cl = ceil)
+doc"""
+***
+  psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+  psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+
+  psi_upper(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+  psi_upper(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+
+> Uses Bernstein's techniques to bound the number of ideals $A$
+> of norm bounded by $N$ that are smooth over the factor base $B$.
+"""
+function psi_lower(N::Integer, B::NfFactorBase, a::Int=776)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(N, lp, a, cl)
+  return psi_lower(fmpz(N), lp, a, ceil)
 end
 
-function psi_upper(N::Integer, B::Hecke.NfFactorBase, a::Int=771, cl = floor)
+function psi_lower(N::fmpz, B::NfFactorBase, a::Int=776)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(fmpz(N), lp, a, cl)
+  return psi_lower(N, lp, a, ceil)
 end
 
-function psi_upper(N::fmpz, B::Hecke.NfFactorBase, a::Int=771, cl = floor)
+function psi_upper(N::Integer, B::NfFactorBase, a::Int=771)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(N, lp, a, cl)
+  return psi_lower(fmpz(N), lp, a, floor)
+end
+
+function psi_upper(N::fmpz, B::NfFactorBase, a::Int=771)
+  lp = sort(fmpz[norm(x) for x=B.ideals])
+  return psi_lower(N, lp, a, floor)
 end
 
 #=
