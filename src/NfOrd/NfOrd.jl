@@ -170,10 +170,11 @@ function discriminant(O::NfOrd)
 
   if isequationorder(O)
     O.disc = num(discriminant(nf(O).pol))
-    return deepcopy(O.disc)
+  else
+    O.disc = discriminant(basis(O))
   end
 
-  return discriminant(basis(O))
+  return deepcopy(O.disc)
 end
 
 ################################################################################
@@ -430,19 +431,21 @@ function norm_change_const(O::NfOrd)
       l_min = l_max
       if isodd(d) d+=1; end
       while true
-        M = inv(M)
-        l_min = root(trace(M^d), d) #as above...
-        if !isfinite(l_min)
+        try 
+          M = inv(M)
+          l_min = root(trace(M^d), d) #as above...
+          if isfinite(l_min)
+            z = (Float64(l_max), Float64(l_min))
+            O.norm_change_const = z
+            return z
+          end
           M = minkowski_mat(O, pr)
           pr *= 2
-        else  
-          break
+        catch e  # should verify the correct error
+          M = minkowski_mat(O, pr)
+          pr *= 2
         end
       end  
-#      println("hard case in norm_change_const")
-      z = (Float64(l_max), Float64(l_min))
-      O.norm_change_const = z
-      return z
     end  
 
     @assert r[1]>0
