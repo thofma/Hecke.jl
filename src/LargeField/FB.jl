@@ -97,37 +97,38 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SmatRow)
     return typeof(n)(r)
   end
 
-  Ss = Dict{typeof(s), nf_elem}()
-  Ss[s] = a
+  Ss = Dict{nf_elem, typeof(s)}()
+#  Ss = Dict{typeof(s), nf_elem}()
+  Ss[a] = s
   # start with the cyclic group be op[1]
-  n = op_smat(s, op[1][2])
-  b = a
-  while n != s
-    b = op[1][1](b)
-    Ss[n] = b
+  n = s
+  b = op[1][1](a)
+  while b != a
     n = op_smat(n, op[1][2])
+    Ss[b] = n
+    b = op[1][1](b)
   end
 
   for i=2:length(op) 
-    n = op_smat(s, op[i][2])
-    if haskey(Ss, n)
+    bb = op[i][1](a)
+    if haskey(Ss, bb)
       continue
     end
     old = collect(Ss)
-    for (n, b) in old # one redundant - step
-      Ss[op_smat(n, op[i][2])] = op[i][1](b)
+    for (b, n) in old # one redundant - step
+      Ss[op[i][1](b)] = op_smat(n, op[i][2])
     end
     while true
       done = true
       for j = 1:length(op)
-        nn = op_smat(n, op[j][2])
-        if haskey(Ss, nn)
+        bb = op[j][1](b)
+        if haskey(Ss, bb)
           continue;
         end
         done = false
-        n = nn
-        for (n,b) in old
-          Ss[op_smat(n, op[j][2])] = op[j][1](b)
+        b = bb
+        for (b, n) in old
+          Ss[op[j][1](b)] = op_smat(n, op[j][2])
         end
       end
       if done
@@ -136,5 +137,57 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SmatRow)
     end
   end
   return Ss
+end
+
+function generated_subgroup(op::Array) #pairs: permutations and Map
+  elt = Array{Any, 1}()
+  push!(elt, (x->x, Nemo.eye(parent(op[1][2]))))
+  ord = 1
+  g = op[1]
+  while g[2] != Nemo.eye(parent(op[1][2]))
+    let c_g = g
+      push!(elt, c_g)
+      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
+    end  
+  end
+  ord = length(elt)
+
+  for i=2:length(op)
+    c_i = i
+    if op[i][2] in [x[2] for x=elt]
+      continue
+    end
+    pord = ord
+    push!(elt, op[i])
+    for j=2:pord
+      c_j = j
+      push!(elt, (x->elt[c_j][1](op[c_i][1](x)), elt[c_j][2]*op[c_i][2]))
+    end
+    ord = length(elt)
+    rpos = pord + 1
+    while true
+      for s in op
+        let c_rpos = rpos, c_s = s
+          g = (x->elt[c_rpos][1](c_s[1](x)), elt[c_rpos][2]*c_s[2])
+          if g[2] in [x[2] for x=elt]
+            continue
+          end
+        end  
+        let c_g = g
+          push!(elt, c_g)
+          for j = 2:pord
+            c_j = j
+            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
+          end
+        end  
+        ord = length(elt)
+      end
+      rpos += pord
+      if rpos > length(elt) 
+        break
+      end
+    end
+  end
+  return elt
 end
 
