@@ -306,10 +306,14 @@ function factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
 end
 
 function _factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem,
-                    error::Bool = true, n::fmpq = abs(norm(a)))
+                    error::Bool = true, n::fmpq = abs(norm(a))i, integral::Bool = true)
   O = order(FB.ideals[1])                  
 
-  d = factor(FB.fb_int, num(n)*den(a, O))
+  if integral
+    d = factor(FB.fb_int, num(n))
+  else
+    d = factor(FB.fb_int, num(n)*den(a, O))
+  end
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()
   for p in keys(d)
@@ -369,17 +373,18 @@ function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
   clg.bad_rel = 0
   clg.rel_cnt = 0
   clg.last = 0
+  clg.last_H = 0
 
   clg.M = T()
   clg.rel_mat_mod = Smat{UIntMod}()
   clg.c = conjugates_init(nf(O).pol)
   for I in clg.FB.ideals
     a = I.gen_one
-    class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^degree(O)), fmpz(1))
+    class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^degree(O)), fmpz(1), orbit = false)
     b = nf(O)(I.gen_two)
     bn = norm_div(b, fmpz(1), 600)
     if nbits(num(bn)) < 550
-      class_group_add_relation(clg, b, abs(bn), fmpz(1))
+      class_group_add_relation(clg, b, abs(bn), fmpz(1), orbit = false)
     end
   end
   n = degree(O)
@@ -425,6 +430,7 @@ function class_group_add_auto(clg::ClassGrpCtx, f::Map)
   else
     clg.op = [(f, p)]
   end
+  clg.aut_grp = generated_subgroup(clg.op)
 end  
 
 #=
@@ -456,7 +462,9 @@ function israt(a::nf_elem)
   return a.elem_length<2
 end
 
-function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz)
+#deal with integral and non-integral elements differently. Computing the order
+#denominator is expensive (and mostly unnecessary)
+function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true)
   if iszero(a)
     return false
   end
@@ -466,16 +474,21 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   O = order(clg.FB.ideals[1]) 
 #  print("trying relation of length ", Float64(length(a)),
 #        " and norm ", Float64(n));
-  fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a, O))
+  if integral #element is known to be integral
+    fl, r = issmooth!(clg.FB.fb_int, num(n*nI))
+  else  
+    fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a, O))
+  end  
   if !fl
 #    println("not int-smooth");
     # try for large prime?
     if isprime(r) && abs(r) < clg.B2 && !isindex_divisor(O, r)
       i = special_prime_ideal(r, a)
+      #TODO: check Galois orbit of special ideal
       if haskey(clg.largePrime, i)
         lp = clg.largePrime[i]
         b = a//lp[1]
-        fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1))
+        fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1), integral = false)
         if fl 
           clg.largePrime_success += 0
         else
@@ -492,23 +505,32 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     #println(" -> fail")
     return false
   end
-  if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n*nI)
+  if _factor!(clg.M, length(clg.R)+1, clg.FB, a, false, n*nI, integral)
     push!(clg.R, a)
     push!(clg.RS, a)
-    if isdefined(clg, :op)
+    if orbit && isdefined(clg, :sub_grp)
       n = clg.M[end]
-      o = orbit_in_FB(clg.op, a, n)
+      o = sub_grp
+      function op_smat(n::SmatRow, p::Nemo.perm)
+        r = [(p[i], v) for (i,v) = n]
+        sort!(r, lt = (a,b)->a[1]<b[1])
+        return typeof(n)(r)
+      end
+
       @v_do :ClassGroup 0 println(" adding orbit with $(length(o)) elements")
-      for (m, b) in o
-        if m != n
+      for (b, m) in o
+        nn - op_smat(n, m)
+        if nn != n
+          ba = b(a)
           push!(clg.M, m)
-          push!(clg.R, b)
-          push!(clg.RS, b)
+          push!(clg.R, ba)
+          push!(clg.RS, ba)
         end
       end
     end  
     @hassert :ClassGroup 1 rows(clg.M) == length(clg.R)
     clg.rel_cnt += 1
+#    @assert clg.rel_cnt < 2*cols(clg.M)
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
            clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
     clg.last = clg.bad_rel
@@ -637,13 +659,86 @@ function shift!(g::fmpz_mat, l::Int)
   return g
 end
 
+function istotally_real(K::AnticNumberField)
+  return signature(K)[1] == degree(K)
+end
+
+function isinteger(a::fmpq)
+  return isone(den(a))
+end
+
+function isposdef(a::fmpz_mat)
+  for i=1:rows(a)
+    if det(submat(a, 1, 1, i, i)) <= 0
+      return false
+    end
+  end
+  return true
+end
+
+function trace_matrix(O::NfOrd)
+  if isdefined(O, :trace_mat)
+    return O.trace_mat
+  end
+  K = nf(O)
+  b = basis(O, K)
+  n = degree(K)
+  g = MatrixSpace(FlintZZ, n, n)()
+  for i=1:n
+    t = trace(b[i]^2)
+    @assert isinteger(t)
+    g[i,i] = num(t)
+    for j=i+1:n
+      t = trace(b[i]*b[j])
+      @assert isinteger(t)
+      g[i,j] = num(t)
+      g[j,i] = num(t)
+    end
+  end
+  O.trace_mat = g
+  return g
+end
+
+function trace_matrix(A::NfMaxOrdIdl)
+  g = trace_matrix(order(A))
+  b = basis_mat(A)
+#  mul!(b, b, g)   #b*g*b' is what we want.
+#                  #g should not be changed? b is a copy.
+#  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
+  return b*g*b'
+end
+
+function _lll_gram(A::NfMaxOrdIdl)
+  K = nf(order(A))
+  @assert istotally_real(K)
+  g = trace_matrix(A)
+  @assert det(g) != 0
+  @assert isposdef(g)
+  l, t = lll_gram_with_transform(g)
+  return FakeFmpqMat(l, fmpz(1)), t
+end
+
+function _lll_gram(M::NfOrd)
+  K = nf(M)
+  @assert istotally_real(K)
+  g = trace_matrix(M)
+
+  q,w = lll_gram_with_transform(g)
+  return typeof(M)(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+end
+
 global last_lat=9
-##TODO: if field is totally real, and no weights, use the exact Gram matrix
 function lll(A::NfMaxOrdIdl, v::fmpz_mat; prec::Int = 100)
 
   K = nf(order(A))
+  if iszero(v) && istotally_real(K)
+    #in this case the gram-matrix of the minkowski lattice is the trace-matrix
+    #which is exact.
+    return _lll_gram(A)
+  end  
+
   c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
-                                              ## c is NOT a copy, so don't change.
+                                        ## c is NOT a copy, so don't change.
   l, t1 = lll_with_transform(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
 
@@ -716,7 +811,7 @@ function lll(A::NfMaxOrdIdl, v::fmpz_mat; prec::Int = 100)
     throw(LowPrecisionLLL())
   end
 
-  return deepcopy(l), t*t1
+  return FakeFmpqMat(deepcopy(l), fmpz(2)^prec), t*t1
 end
 
 ################################################################################
@@ -787,8 +882,8 @@ function enum_ctx_from_ideal(A::NfMaxOrdIdl,
   if limit == 0
     limit = rows(l)
   end
- 
-  E = enum_ctx_from_gram(l, FlintZZ(2)^prec, Tx = Tx, TC = TC, TU = TU,
+
+  E = enum_ctx_from_gram(l, Tx = Tx, TC = TC, TU = TU,
                   limit = limit)::enum_ctx{Tx, TC, TU}
   E.t = t*b
   E.t_den = b_den
@@ -802,9 +897,9 @@ function enum_ctx_from_ideal(A::NfMaxOrdIdl,
   den = basis_mat(order(A)).den ## we ignore the den above, but this
                                 ## changes the discriminant!!!
   b = min(den^2 * (root(d, E.n)+1)*E.n * E.d, E.G[E.limit, E.limit]*E.limit)
-  @v_do :ClassGroup 2 println("T_2 from disc ", (root(d, E.n)+1)*E.n * E.d)
-  @v_do :ClassGroup 2 println("    from Gram ", E.G[E.limit, E.limit]*E.limit)
-  @v_do :ClassGroup 2 println(" using ", b)
+  @v_do :ClassGroup 3 println("T_2 from disc ", (root(d, E.n)+1)*E.n * E.d)
+  @v_do :ClassGroup 3 println("    from Gram ", E.G[E.limit, E.limit]*E.limit)
+  @v_do :ClassGroup 3 println(" using ", b)
   enum_ctx_start(E, b)
   return E
 end
@@ -826,6 +921,7 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
         prec = Int(ceil(1.2*prec))
         println(" increasing to ", prec)
         if prec > 1000
+          _start = A
           error("1:too much prec")
         end
       elseif isa(e, LowPrecisionLLL)
@@ -849,7 +945,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
   K = nf(order(I.A))
   while true
     if enum_ctx_next(I.E)
-      # println("elt is", I.E.x)
+#       println("elt is", I.E.x)
       # should we (again) add content_is_one()?
       if !isone(content(I.E.x))
         continue
@@ -858,7 +954,7 @@ function class_group_small_real_elements_relation_next(I::IdealRelationsCtx)
 #      I.M = I.E.x * I.E.t
       ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz_mat}), &I.M, &I.E.x, &I.E.t)
       q = elem_from_mat_row(K, I.M, 1, I.E.t_den)
-      #println("found ", q, " norm ", norm(q)//norm(I.A))
+#      println("found ", q, " norm ", norm(q)//norm(I.A))
       @v_do :ClassGroup_time 2 _elt += time_ns()- rt
       return q
     end
@@ -897,6 +993,8 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
   t = time_ns()
   # Note that last_H = 0 if and only if this function is called
   # for the first time. In thise case new_rel is the full relation matrix
+  @assert rows(clg.M) == length(clg.R)
+#  @assert clg.last_H < length(clg.R)
 
   new_rel = sub(clg.M, (clg.last_H+1):rows(clg.M), 1:cols(clg.M))
 
@@ -905,8 +1003,12 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
 
   if !clg.rel_mat_full_rank # we are still not full rank
     new_rel_mod = mod(new_rel, modu)
+    println("last_H: $(clg.last_H) $new_rel $new_rel_mod")
+    print("not full rank case, $(clg.rel_mat_mod) ")
     vcat!(clg.rel_mat_mod, new_rel_mod)
+    print("after vcat $(clg.rel_mat_mod) ")
     upper_triangular!(clg.rel_mat_mod)
+    println("finally $(clg.rel_mat_mod)")
     if rows(clg.rel_mat_mod) == cols(clg.rel_mat_mod)
       clg.H = copy(clg.M)
       T = upper_triangular_with_trafo!(clg.H)
@@ -928,7 +1030,7 @@ function class_group_process_relmatrix(clg::ClassGrpCtx)
   clg.hnf_time += time_ns()-t
   clg.hnf_call += 1
 
-  clg.last_H = length(clg.R)
+  clg.last_H = length(clg.M)
 end
 
 function class_group_get_pivot_info(clg::ClassGrpCtx)
@@ -985,8 +1087,8 @@ end
 ################################################################################
 
 global last_E
-function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
-                limit = 10)
+function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
+                limit::Int = 10)
   clg.hnf_time = 0.0
   clg.hnf_call = 0
   clg.rel_cnt = 0
@@ -1018,14 +1120,14 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
       if nbits(num(n)) > np-10
 #        prec = Int(ceil(prec*1.2))
-#        print_with_color(:red, "norm too large:")
+        print_with_color(:red, "norm too large:")
 #        println(n, " should be ", sqrt_disc)
 #        println("offending element is ", e)
 #        println("offending ideal is ", I[end].A)
 #        println("skipping ideal (for now)")
         break
       end
-      f = class_group_add_relation(clg, e, n, norm(I[end].A))
+      f = class_group_add_relation(clg, e, n, norm(I[end].A), integral = true)
       if f
         I[end].cnt += 1
         break
@@ -1040,7 +1142,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
       end
     end
     @v_do :ClassGroup_gc 1 gc()
-    if cols(clg.M) < rows(clg.M)*1.1
+    #want 10% more relations than ideals...
+    if cols(clg.M) *1.1 < rows(clg.M)
       @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
       while length(I) < length(clg.FB.ideals)
         push!(I, class_group_small_real_elements_relation_start(clg, clg.FB.ideals[length(I)+1], limit = limit, prec = prec, val = val))
@@ -1055,10 +1158,14 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
 
+  @v_do :ClassGroup 1 println("total ", rows(clg.M), " relations (incl. orbit)")
+
   s = time_ns()
 
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
+
+  println("current h=$h")
 
   idl = clg.FB.ideals
   want_extra = 5
@@ -1087,20 +1194,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
         end
         e = class_group_small_real_elements_relation_next(E)
         n = abs(norm_div(e, norm(E.A), np))
-        #=
-        if n*norm(E.A) != abs(norm(e))
-          println("bad norm for ", e, " is ", n, " or ", n*norm(E.A),
-             " should be ", norm(e), " np ", np, " norm(I) = ", norm(E.A))
-          @assert false   
-        end
-        =#
+        
         if nbits(num(n)) > np-10
-          @v_do :ClassGroup 2 begin
-#            print_with_color(:red, "2:norm too large: $n of $(nbits(num(n))) vs $np")
-#            println(n, " should be ", sqrt_disc)
-#            println("offending element is ", e)
-#            println("prec now ", prec)
-          end  
           bad_norm += 1
           if bad_norm /(E.cnt + E.bad + 1) > 0.1
 #            print_with_color(:red, "too many large norms, changing ideal\n")
@@ -1122,11 +1217,8 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           =#
           continue;
         end
-        if class_group_add_relation(clg, e, n, norm(E.A))
+        if class_group_add_relation(clg, e, n, norm(E.A), orbit = false, integral = true)
           E.cnt += 1
-          if length(clg.R) - clg.last_H > 20
-            break
-          end
           break
         else
           E.bad += 1
@@ -1136,11 +1228,15 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec = 100,
           error("to bad in finding rel")
         end
       end
+      if rows(clg.M) - clg.last_H > 20
+        break
+      end
     end
     last_h = h
     l_piv = piv
     class_group_process_relmatrix(clg)
     h, piv = class_group_get_pivot_info(clg)
+    println("current h=$h from $(clg.M)")
 
     if h != 0
       if h==1 
@@ -1218,6 +1314,211 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   local f
 
+  old_a, old_b = rank_increase(clg)
+  println("starting with $old_a $old_b in rank increase")
+
+  nI = length(clg.FB.ideals)
+  Idl = clg.FB.ideals
+  for i in nI:-1:1
+    I = Idl[i]
+    too_slow = false
+    f = class_group_small_real_elements_relation_start(clg, I, 
+                                       limit = limit, prec = prec, val = val)
+
+    f.vl = val
+    while true
+      e = class_group_small_real_elements_relation_next(f)
+      n = abs(norm_div(e, norm(f.A), np))
+      @assert abs(norm(e)) == norm(f.A)*n
+      if nbits(num(n)) > np-10 || f.restart > 0
+        print_with_color(:red, "norm too large or restarting: $(f.restart)")
+#        println(n, " should be ", sqrt_disc)
+#        println("offending element is ", e)
+#        println("skipping ideal (for now)")
+        break
+      end
+      fl = class_group_add_relation(clg, e, n, norm(f.A), orbit = false)
+      if fl
+        f.cnt += 1
+        if rows(clg.M) % 20 == 0
+          a,b = rank_increase(clg)
+          if (a-old_a)/(b-old_b) < 0.6
+            @v_do :ClassGroup 2 println("rank too slow $a ($old_a) $b ($old_b) and $(clg.rel_mat_full_rank)")
+            break
+          end
+          old_a = a
+          old_b = b
+        end
+      else
+        f.bad += 1
+        if clg.bad_rel > clg.rel_cnt && f.bad > max(10, (clg.bad_rel/clg.rel_cnt)*2)
+          @v_do :ClassGroup 2 println("too slow in getting s.th. for ", i,
+                          "\ngood: ", f.cnt,  " bad: ",  f.bad,
+                          " ratio: ", (clg.bad_rel/clg.rel_cnt))
+          too_slow = true                
+          break
+        end
+      end
+    end
+    @v_do :ClassGroup_gc 1 gc()
+    if too_slow
+      break
+    end
+  end
+
+  @v_do :ClassGroup 1 println("used ", (time_ns()-t)/1e9,
+                  " sec for small elts, so far ", clg.hnf_time/1e9,
+                  " sec for hnf in ", clg.hnf_call, " calls");
+  @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
+                  clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
+
+  s = time_ns()
+
+  class_group_process_relmatrix(clg)
+  h, piv = class_group_get_pivot_info(clg)
+
+  @vprint :ClassGroup 1 "Target rank: $(cols(clg.M))\nCurrent rank: $(rows(clg.H))\nTentative class number: $(h)"
+
+  want_extra = 5
+  bad_h = false
+  no_rand = 1
+  a_old, b_old = rank_increase(clg)
+  while h != 1 && (h==0 || want_extra > 0)
+    for i in sort([ x for x in piv], lt = >)
+      I = Idl[i]
+      lt = max(100, round((clg.bad_rel/clg.rel_cnt)*2))
+
+      while true
+        #print_with_color(:red, "starting ideal no ")
+        #println(i, " now")
+        A = Idl[i]
+        j = 0
+        while j < no_rand #  && norm(A) < sqrt_disc
+          A *= rand(Idl)
+          j += 1
+        end
+        bad_norm = 0
+        println("using ideal of norm $(norm(A)) no_rand $no_rand")
+
+        E = 0
+        E = class_group_small_real_elements_relation_start(clg, A,
+                        val = val, limit = limit, prec = prec)
+        no_rand_local = no_rand
+        while true
+          e = class_group_small_real_elements_relation_next(E)
+          n = abs(norm_div(e, norm(E.A), np))
+          @assert abs(norm(e)) == norm(E.A)*n
+          if nbits(num(n)) > np-10 || E.restart > 5
+#            @v_do :ClassGroup 2 begin
+#              print_with_color(:red, "2:norm too large (or restarting):")
+#              println(n, " should be ", sqrt_disc)
+#              println("offending element is ", e)
+#              println("prec now ", prec)
+#            end  
+            A = Idl[i]
+            j = 0
+            # TH: without added no_rand_local < nI it crashes sometimes
+            #     but I don't know what I am doing
+            while norm(A) < sqrt_disc && j < no_rand_local && no_rand_local < nI
+              A *= rand(Idl[(nI-no_rand_local):nI])
+              j += 1
+            end
+            no_rand_local = min(nI-1, no_rand_local+1)
+            println("using ideal $A of norm $(norm(A))")
+            E = class_group_small_real_elements_relation_start(clg, A,
+                            val = E.vl, limit = limit, prec = prec)
+            #= CF: think careful here
+             - norm might be wrong as we did not use enough primes
+             - use as large prime variant
+             - bad chance for smooth
+             lets skip it for now
+            =#
+            continue;
+          end
+          if class_group_add_relation(clg, e, n, norm(E.A))
+            E.cnt += 1
+            #print_with_color(:green, "success\n")
+            break
+            if length(clg.R) - clg.last_H > 20
+              #print_with_color(:blue, "found rels, trying again\n")
+            end
+          else
+            E.bad += 1
+          end
+        end
+        if length(clg.R) - clg.last_H > 20 # cols(clg.M)*0.1
+          print_with_color(:blue, "2:found rels, trying again\n")
+          break
+        end
+      end
+      if length(clg.R) - clg.last_H > 20 # cols(clg.M)*0.1
+        print_with_color(:blue, "3:found rels, trying again\n")
+        break
+      end
+    end
+    last_h = h
+    l_piv = piv
+    last_rank = rows(clg.H)
+    last_rels = clg.last_H
+    class_group_process_relmatrix(clg)
+    a, b = rank_increase(clg)
+    println("rank increase gave $a and $b was $a_old $b_old")
+    h, piv = class_group_get_pivot_info(clg)
+    if (a-old_a)/(b-old_b) < 0.5 * clg.bad_rel/(rows(clg.M) + clg.bad_rel)
+      println("rank too slow $((a-a_old)/(b-b_old)) vs $(clg.bad_rel/(clg.bad_rel + rows(clg.M))), increasing randomness")
+      no_rand += 5
+      no_rand = min(no_rand, length(clg.FB.ideals))
+      no_rand = min(no_rand, Int(floor(length(clg.FB.ideals)*0.1)))
+      println("new is ", no_rand)
+    end
+    a_old = a
+    b_old = b
+    if h != 0
+      if h==1 
+        return h, piv
+      end
+      @vprint :ClassGroup 1 "Now have $(clg.M)"
+      @v_do :ClassGroup 1 println("full rank: current h = ", h,
+                      " want ", want_extra, " more")
+      if h == last_h 
+        want_extra -= 1
+      else
+        want_extra = 15
+      end
+    end
+    if length(l_piv) - length(piv) < length(l_piv)/2
+      bad_h = true
+    else
+      bad_h = false
+    end
+    @v_do :ClassGroup_gc 1 gc()
+  end
+
+  @v_do :ClassGroup 1 println("used ", (time_ns()-s)/1e9, " total so far ",
+                  clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
+  @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
+                  clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
+  class_group_process_relmatrix(clg)
+  h, piv = class_group_get_pivot_info(clg)
+end
+
+function class_group_find_relations3(clg::ClassGrpCtx; val = 0, prec = 100,
+                limit = 10)
+  clg.hnf_time = 0.0
+  clg.hnf_call = 0
+  clg.rel_cnt = 0
+  clg.bad_rel = 0
+
+  n = degree(clg.FB.ideals[1].parent.order)
+  t = time_ns()
+  I = []
+  O = parent(clg.FB.ideals[1]).order
+  sqrt_disc = isqrt(abs(discriminant(O)))
+  sqrt_disc = max(sqrt_disc, 1000)
+  np = nbits(sqrt_disc)+30
+
+  local f
+
   nI = length(clg.FB.ideals)
   Idl = clg.FB.ideals
   for i in nI:-1:1
@@ -1237,7 +1538,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 #        println("skipping ideal (for now)")
         break
       end
-      fl = class_group_add_relation(clg, e, n, norm(f.A))
+      fl = class_group_add_relation(clg, e, n, norm(f.A), integral = true)
       if fl
         f.cnt += 1
         if rows(clg.M) % 20 == 0
@@ -1391,6 +1692,8 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   class_group_process_relmatrix(clg)
   h, piv = class_group_get_pivot_info(clg)
 end
+
+
 
 
 ################################################################################
@@ -1669,8 +1972,13 @@ end
 # beware of the precision issue.
 #
 function lll(M::NfMaxOrd)
-  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
   K = nf(M)
+
+  if istotally_real(K)
+    return _lll_gram(M)
+  end  
+
+  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
 
   prec = 100
   while true
