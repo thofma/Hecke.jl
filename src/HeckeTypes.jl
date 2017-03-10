@@ -557,6 +557,7 @@ type NfOrdGen <: NfOrd
   norm_change_const::Tuple{Float64, Float64}
                                    # Tuple c1, c2 as in the paper of 
                                    # Fieker-Friedrich
+  trace_mat::fmpz_mat              # the trace matrix - if known                                 
 
   function NfOrdGen()
     z = new()
@@ -826,6 +827,7 @@ type NfMaxOrd <: NfOrd
   norm_change_const::Tuple{Float64, Float64}
                                    # Tuple c1, c2 as in the paper of 
                                    # Fieker-Friedrich
+  trace_mat::fmpz_mat              # the trace matrix - if known                                 
 
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
@@ -1423,6 +1425,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   op::Array # of pairs: Map, perm where Map is a field automorphism
             # and perm is the induced operation on the factor base
             # difficult to type since we have many map types...
+  aut_grp::Array # op contains the generators, sub_grp the entire group
 
   largePrimeCnt::Int
   B2::Int
