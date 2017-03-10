@@ -94,6 +94,15 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   return C
 end
 
+function enum_ctx_from_basis(B::FakeFmpqMat; Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
+  G = gram(num(B))
+  return enum_ctx_from_gram(G, den(B)^2, Tx=Tx, TC=TC, TU=TU, limit = limit)
+end
+
+function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = rows(G))
+  return enum_ctx_from_gram(num(G), den(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
+end  
+ 
 function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = ZZ(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
   G = gram(B)
   return enum_ctx_from_gram(G, den*den, Tx=Tx, TC=TC, TU=TU, limit = limit)
