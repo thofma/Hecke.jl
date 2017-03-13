@@ -54,6 +54,9 @@ parent(x::UIntMod) = x.parent
   return x.m == 0
 end
 
+@inline function isone(x::UIntMod)
+  return x.m == 1
+end
 ################################################################################
 #
 #  String I/O
@@ -119,15 +122,15 @@ function (R::ZZModUInt)()
 end
 
 function (R::ZZModUInt)(n::UInt)
-  return UIntMod(R, n % R.mod.n)
+  return UIntMod(R, mod(n, R.mod.n))
 end
 
 function (R::ZZModUInt)(n::fmpz)
-  u = ccall((:fmpz_tdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &n, R.mod.n)
+  u = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &n, R.mod.n)
   return UIntMod(R, u)
 end
 
-(R::ZZModUInt)(n::Int) = R(UInt(n))
+(R::ZZModUInt)(n::Int) = R(UInt(mod(n, R.mod.n)))
 
 function (R::ZZModUInt)(x::GenRes{fmpz})
   R.mod.n != parent(x).modulus && error("moduli must be equal")
