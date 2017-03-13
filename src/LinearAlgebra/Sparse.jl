@@ -20,7 +20,8 @@ import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array,
 
 export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
-     valence_mc, swap_rows!, endof, start, done, next
+       valence_mc, swap_rows!, endof, start, done, next, elementary_divisors,
+       randrow
 
 ################################################################################
 #
@@ -31,6 +32,7 @@ export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
 # This doesn't work for empty sparse matrices.
 # The ring should actually be put into the type.
 base_ring(A::Smat) = parent(A.rows[1].values[1])
+base_ring(A::SmatRow) = parent(A.values[1])
 
 =={T}(x::SmatRow{T}, y::SmatRow{T}) = (x.pos == y.pos) && (x.values == y.values)
 ################################################################################
@@ -161,7 +163,7 @@ end
 # it avoids the creation of elements in ResidueRing(ZZ, n)
 function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
   if R == base_ring(A)
-    return _Smat(A, R)
+    return _Smat(A, R = R)
   end
 
   m = Smat{elem_type(R)}()
@@ -201,7 +203,7 @@ function mod(A::Smat{fmpz}, n::Int)
   z.c = A.c
   for r in A.rows
     rz = SmatRow{UIntMod}()
-    for (i, v) in zip(r.pos, r.values)
+    for (i, v) in r
       if mod(v, n) == 0
         continue
       else
@@ -216,6 +218,36 @@ function mod(A::Smat{fmpz}, n::Int)
   end
   return z
 end
+
+# SmatRow{fmpz} -> SmatRow{UIntMod}
+function mod(A::SmatRow{fmpz}, n::Int)
+  z = SmatRow{UIntMod}()
+  R = ZZModUInt(UInt(n))
+  for (i, v) in A
+    if mod(v, n) == 0
+      continue
+    else
+      push!(z.pos, i)
+      push!(z.values, R(v))
+    end
+  end
+  return z
+end
+
+function mod(A::SmatRow{fmpz}, n::fmpz)
+  R = ResidueRing(FlintZZ, n)
+  z = SmatRow{GenRes{fmpz}}()
+  for (i, v) in A
+    if mod(v, n) == 0
+      continue
+    else
+      push!(z.pos, i)
+      push!(z.values, R(v))
+    end
+  end
+  return z
+end
+
 
 ################################################################################
 #
@@ -444,6 +476,100 @@ function mul{T}(A::Smat{T}, b::fmpz_mat)
   c = MatrixSpace(ZZ, rows(A), cols(b))()
   return mul!(c, A, b)
 end
+
+function mul{T}(A::SmatRow{T}, B::SmatRow{T})
+  v = 0*A.values[1]
+  b = 1
+  for a=1:length(A.pos)
+    while b<=length(B.values) && B.pos[b] < A.pos[a]
+      b += 1
+    end
+    if b>length(B.values)
+      return v
+    end
+    if B.pos[b] == A.pos[a]
+      v += B.values[b] * A.values[a]
+    end
+  end
+  return v
+end
+
+function mul{T}(A::Smat{T}, B::Smat{T})
+  @assert A.c == B.r
+  C = MatrixSpace(base_ring(A), A.r, B.c)()
+  for i=1:A.r
+    for j=1:B.c
+      C[i,j] = mul(A[i], B[j])
+    end
+  end
+  return C
+end
+
+function mul(A::Smat{UIntMod}, B::Smat{UIntMod})
+  @assert A.c == B.r
+  C = MatrixSpace(ResidueRing(FlintZZ, base_ring(A).mod.n), A.r, B.c)()
+  for i=1:A.r
+    for j=1:B.c
+      C[i,j] = mul(A[i], B[j])
+    end
+  end
+  return C
+end
+
+function mul{T}(A::SmatRow{T}, B::Smat{T})
+  C = SmatRow{T}()
+  for (p, v) = A
+    C = add_scaled_row(B[p], C, v)
+  end
+  return C
+end
+
+function +{T}(A::SmatRow{T}, B::SmatRow{T})
+  if length(A.values) == 0
+    return B 
+  end
+  return add_scaled_row(A, B, base_ring(A)(1))
+end
+
+function -{T}(A::SmatRow{T}, B::SmatRow{T})
+  if length(A.values) == 0
+    return B 
+  end
+  return add_scaled_row(B, A, base_ring(A)(-1))
+end
+
+function *{T}(b::T, A::SmatRow{T})
+  B = SmatRow{T}()
+  for (p,v) = A
+    push!(B.pos, p)
+    push!(B.values, v*b)
+  end
+  return B
+end
+
+#function *{T}(b::Integer, A::SmatRow{T})
+#  return base_ring(A)(b)*A
+#end
+#
+#function *{T}(b::fmpz, A::SmatRow{T})
+#  return base_ring(A)(b)*A
+#end
+
+function *{T}(b::T, A::Smat{T})
+  B = Smat{T}()
+  for a = A
+    push!(B, b*a)
+  end
+  return B
+end
+
+#function *{T}(b::Integer, A::Smat{T})
+#  return base_ring(A)(b)*A
+#end
+#
+#function *{T}(b::fmpz, A::Smat{T})
+#  return base_ring(A)(b)*A
+#end
 
 function SLP_AddRow{T}(i::Int, j::Int, v::T)
   assert(v != 0)
@@ -675,8 +801,17 @@ function getindex{T}(A::Smat{T}, i::Int)
   return SmatRow{T}()
 end
 
+function randrow{T}(A::Smat{T})
+  return rand(A.rows)
+end
+
+function setindex!{T}(A::Smat{T}, b::SmatRow{T}, i::Int)
+  A.rows[i] = b
+end
 
 function vcat!{T}(A::Smat{T}, B::Smat{T})
+  @assert length(A.rows) == A.r
+  @assert length(B.rows) == B.r
   A.r += B.r
   A.c = max(A.c, B.c)
   A.nnz += B.nnz
@@ -731,7 +866,6 @@ function fmpz_mat(A::Smat{fmpz})
   end
   return B
 end
-
 
 ################################################################################
 #
@@ -849,42 +983,46 @@ end
   adds, inplace, the c*i-th row to the j-th
 """ ->
 function add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+  A.nnz = A.nnz - length(A[j])
+  A.rows[j] = add_scaled_row(A[i], A[j], c)
+  A.nnz = A.nnz + length(A[j])
+end
+
+function add_scaled_row{T}(Ai::SmatRow{T}, Aj::SmatRow{T}, c::T)
   sr = SmatRow{T}()
   pi = 1
   pj = 1
   @assert c != 0
-  while pi <= length(A.rows[i].pos) && pj <= length(A.rows[j].pos)
-    if A.rows[i].pos[pi] < A.rows[j].pos[pj]
-      push!(sr.pos, A.rows[i].pos[pi])
-      push!(sr.values, c*A.rows[i].values[pi])
+  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
+    if Ai.pos[pi] < Aj.pos[pj]
+      push!(sr.pos, Ai.pos[pi])
+      push!(sr.values, c*Ai.values[pi])
       pi += 1
-    elseif A.rows[i].pos[pi] > A.rows[j].pos[pj]
-      push!(sr.pos, A.rows[j].pos[pj])
-      push!(sr.values, A.rows[j].values[pj])
+    elseif Ai.pos[pi] > Aj.pos[pj]
+      push!(sr.pos, Aj.pos[pj])
+      push!(sr.values, Aj.values[pj])
       pj += 1
     else
-      n = c*A.rows[i].values[pi] + A.rows[j].values[pj]
+      n = c*Ai.values[pi] + Aj.values[pj]
       if n != 0
-        push!(sr.pos, A.rows[i].pos[pi])
+        push!(sr.pos, Ai.pos[pi])
         push!(sr.values, n)
       end
       pi += 1
       pj += 1
     end
   end
-  while pi <= length(A.rows[i].pos)
-    push!(sr.pos, A.rows[i].pos[pi])
-    push!(sr.values, c*A.rows[i].values[pi])
+  while pi <= length(Ai.pos)
+    push!(sr.pos, Ai.pos[pi])
+    push!(sr.values, c*Ai.values[pi])
     pi += 1
   end
-  while pj <= length(A.rows[j].pos)
-    push!(sr.pos, A.rows[j].pos[pj])
-    push!(sr.values, A.rows[j].values[pj])
+  while pj <= length(Aj.pos)
+    push!(sr.pos, Aj.pos[pj])
+    push!(sr.values, Aj.values[pj])
     pj += 1
   end
-  A.nnz = A.nnz - length(A.rows[j].pos) + length(sr.pos)
-  A.rows[j] = sr
-  return A
+  return sr
 end
 
 # col j -> col i*c + col j
@@ -926,74 +1064,75 @@ end
   [a,b; c,d] * [i-th-row ; j-th row]
 """ ->
 function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+  A.nnz = A.nnz - length(A[i]) - length(A[j])
+  A.rows[i], A.rows[j] = transform_row(A[i], A[j], a, b, c, d)
+  A.nnz = A.nnz + length(A[i]) + length(A[j])
+end
+function transform_row{T}(Ai::SmatRow{T}, Aj::SmatRow{T}, a::T, b::T, c::T, d::T)
   sr = SmatRow{T}()
   tr = SmatRow{T}()
   pi = 1
   pj = 1
-  while pi <= length(A.rows[i].pos) && pj <= length(A.rows[j].pos)
-    if A.rows[i].pos[pi] < A.rows[j].pos[pj]
+  while pi <= length(Ai) && pj <= length(Aj)
+    if Ai.pos[pi] < Aj.pos[pj]
       if a != 0
-        push!(sr.pos, A.rows[i].pos[pi])
-        push!(sr.values, a*A.rows[i].values[pi])
+        push!(sr.pos, Ai.pos[pi])
+        push!(sr.values, a*Ai.values[pi])
       end
       if c != 0
-        push!(tr.pos, A.rows[i].pos[pi])
-        push!(tr.values, c*A.rows[i].values[pi])
+        push!(tr.pos, Ai.pos[pi])
+        push!(tr.values, c*Ai.values[pi])
       end
       pi += 1
-    elseif A.rows[i].pos[pi] > A.rows[j].pos[pj]
+    elseif Ai.pos[pi] > Aj.pos[pj]
       if b != 0
-        push!(sr.pos, A.rows[j].pos[pj])
-        push!(sr.values, b*A.rows[j].values[pj])
+        push!(sr.pos, Aj.pos[pj])
+        push!(sr.values, b*Aj.values[pj])
       end
       if d != 0
-        push!(tr.pos, A.rows[j].pos[pj])
-        push!(tr.values, d*A.rows[j].values[pj])
+        push!(tr.pos, Aj.pos[pj])
+        push!(tr.values, d*Aj.values[pj])
       end
       pj += 1
     else
-      m = a*A.rows[i].values[pi] + b*A.rows[j].values[pj]
-      n = c*A.rows[i].values[pi] + d*A.rows[j].values[pj]
+      m = a*Ai.values[pi] + b*Aj.values[pj]
+      n = c*Ai.values[pi] + d*Aj.values[pj]
       if m != 0
-        push!(sr.pos, A.rows[i].pos[pi])
+        push!(sr.pos, Ai.pos[pi])
         push!(sr.values, m)
       end
       if n != 0
-        push!(tr.pos, A.rows[i].pos[pi])
+        push!(tr.pos, Ai.pos[pi])
         push!(tr.values, n)
       end
       pi += 1
       pj += 1
     end
   end
-  while pi <= length(A.rows[i].pos)
+  while pi <= length(Ai.pos)
     if a != 0
-      push!(sr.pos, A.rows[i].pos[pi])
-      push!(sr.values, a*A.rows[i].values[pi])
+      push!(sr.pos, Ai.pos[pi])
+      push!(sr.values, a*Ai.values[pi])
     end
     if c != 0
-      push!(tr.pos, A.rows[i].pos[pi])
-      push!(tr.values, c*A.rows[i].values[pi])
+      push!(tr.pos, Ai.pos[pi])
+      push!(tr.values, c*Ai.values[pi])
     end
     pi += 1
   end
-  while pj <= length(A.rows[j].pos)
+  while pj <= length(Aj.pos)
     if b != 0
-      push!(sr.pos, A.rows[j].pos[pj])
-      push!(sr.values, b*A.rows[j].values[pj])
+      push!(sr.pos, Aj.pos[pj])
+      push!(sr.values, b*Aj.values[pj])
     end
     if d != 0
-      push!(tr.pos, A.rows[j].pos[pj])
-      push!(tr.values, d*A.rows[j].values[pj])
+      push!(tr.pos, Aj.pos[pj])
+      push!(tr.values, d*Aj.values[pj])
     end
     pj += 1
   end
-  A.nnz = A.nnz - length(A.rows[j].pos) + length(sr.pos) - length(A.rows[i].pos) + length(tr.pos)
-  A.rows[i] = sr
-  A.rows[j] = tr
-  @assert i<j
-
-  return A
+  
+  return sr, tr
 end
 
 function abs_max(A::Smat{Int})
@@ -1820,4 +1959,31 @@ function _snf_upper_triangular_with_trafo(A::Smat{fmpz})
   push!(trafos_right, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), rtr))
 
   return snfofess, trafos_left, trafos_right
+end
+
+doc"""
+    elementary_divisors(A::Smat{fmpz}) -> Array{fmpz, 1}
+
+> The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
+> form of $A$.
+"""
+function elementary_divisors(A::Smat{fmpz})
+  A = copy(A)
+  upper_triangular(A)
+
+  essential_index = 1
+
+  for i in 1:rows(A)
+    @assert A.rows[i].pos[1] == i
+    if A.rows[i].values[1] != 1 
+      essential_index = i
+      break
+    end
+  end
+
+  essential_part = fmpz_mat(sub(A, essential_index:rows(A), essential_index:cols(A)))
+
+  s = snf(essential_part)
+
+  return vcat(fmpz[1 for i=1:essential_index-1], fmpz[s[i,i] for i=1:rows(s)]) 
 end
