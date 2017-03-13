@@ -115,7 +115,7 @@ function rational_reconstruction(a::fmpz, b::fmpz)
     T[2,2] = -q
     M = T*M
   end
-  if M[2,2] < sb 
+  if abs(M[2,2]) < sb 
     return true, M[2,1], M[2,2]
   end
 
