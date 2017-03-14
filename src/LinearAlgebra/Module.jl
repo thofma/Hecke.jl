@@ -1,7 +1,8 @@
 #fin. gen. submodules of Z^n and F_p^n (and possibly more)
 import Base.show, Base.reduce, Base.inv, Nemo.inv, Base.solve, Hecke.solve,
-       Hecke.lift, Hecke.rational_reconstruction
+       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors
 
+const p = 13
 type ModuleCtx_UIntMod
   R::ZZModUInt
   basis::Smat{UIntMod}
@@ -20,17 +21,23 @@ type ModuleCtx_UIntMod
 end
 
 type ModuleCtx_fmpz
-  basis::Smat{fmpz}
-  bas_gens::Smat{fmpz}
-  rel_gens::Smat{fmpz}
+  bas_gens::Smat{fmpz}  # contains a max. indep system
+  max_indep::Smat{fmpz} # the bas_gens in upper-triangular shape
+  basis::Smat{fmpz}     # if set, probably a basis (in upper-triangular)
+  rel_gens::Smat{fmpz}  # more elements, used for relations
   Mp::ModuleCtx_UIntMod
+  rel_reps_p::Smat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
+                        # at least mod p...
+  basis_idx::fmpz                      
+  essential_elementary_divisors::Array{fmpz, 1}
   function ModuleCtx_fmpz(dim::Int)
     M = new()
-    M.basis = Smat{fmpz}()
-    M.basis.c = dim
+    M.max_indep = Smat{fmpz}()
+    M.max_indep.c = dim
     M.bas_gens = Smat{fmpz}()
     M.rel_gens = Smat{fmpz}()
-    M.Mp = ModuleCtx_UIntMod(13, dim)
+    M.rel_reps_p = Smat{UIntMod}()
+    M.Mp = ModuleCtx_UIntMod(p, dim)
     return M
   end
 end
@@ -39,7 +46,13 @@ function show(io::IO, M::ModuleCtx_UIntMod)
   println("Module over $(M.R) of (current) rank $(rows(M.basis)) and $(rows(M.gens))")
 end
 function show(io::IO, M::ModuleCtx_fmpz)
-  println("Module over FlintZZ of (current) rank $(rows(M.basis)) and further $(rows(M.rel_gens))")
+  println("Module over FlintZZ of (current) rank $(rows(M.max_indep)) and further $(rows(M.rel_gens))")
+  if isdefined(M, :basis_idx)
+    println("current index: $(M.basis_idx)")
+  end
+  if isdefined(M, :essential_elementary_divisors)
+    println("current structure: $(M.essential_elementary_divisors)")
+  end
 end
 
 function reduce(A::Smat{UIntMod}, g::SmatRow{UIntMod})
@@ -131,7 +144,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz})
       @assert length(g)==0 || g.pos[1] > A[j].pos[1]
     end
   end
-  if g.values[1] < 0
+  if length(g.values) > 0 && g.values[1] < 0
     for i=1:length(g.values)
       g.values[i] *= -1
     end
@@ -144,17 +157,17 @@ function add_gen!(M::ModuleCtx_fmpz, g::SmatRow{fmpz})
   if add_gen!(M.Mp, gp)
 #    push!(M.basis, g)
 #    return true
-    h = reduce(M.basis, g)
+    h = reduce(M.max_indep, g)
     @assert !iszero(h)
     i = 1
-    while i<= rows(M.basis) && M.basis.rows[i].pos[1] < h.pos[1]
+    while i<= rows(M.max_indep) && M.max_indep.rows[i].pos[1] < h.pos[1]
       i += 1
     end
-    @assert i > rows(M.basis) || M.basis[i].pos[1] > h.pos[1]
-    insert!(M.basis.rows, i, h)
-    M.basis.r += 1
-    M.basis.nnz += length(h)
-    M.basis.c = max(M.basis.c, h.pos[end])
+    @assert i > rows(M.max_indep) || M.max_indep[i].pos[1] > h.pos[1]
+    insert!(M.max_indep.rows, i, h)
+    M.max_indep.r += 1
+    M.max_indep.nnz += length(h)
+    M.max_indep.c = max(M.max_indep.c, h.pos[end])
     push!(M.bas_gens, g)
     return true
   else
@@ -168,15 +181,64 @@ function check_index(M::ModuleCtx_fmpz)
     return fmpz(0)
   end
 
-  C = copy(M.basis)
-  for i=1:5
-    push!(C, Hecke.randrow(M.rel_gens))
-    for j=1:5
-      C[end] = Hecke.add_scaled_row(C[end], Hecke.randrow(M.rel_gens), fmpz(rand(1:10)))
+  if isdefined(M, :basis)
+    C = copy(M.basis)
+  else
+    C = copy(M.max_indep)
+  end
+
+  for i=length(M.rel_reps_p)+1:length(M.rel_gens)
+    push!(M.rel_reps_p, solve(M.Mp.basis, mod(M.rel_gens[i], p)))
+  end
+
+  for l=1:5
+    mis = find(i->C[i,i] != 1, 1:rows(C))
+    if length(mis) == 0
+      break
+    end
+    println("mis: $mis")
+    for i = mis
+      if C[i,i] == 1
+        println("miracle for $i")
+        continue
+      end
+      r = find(x->i in M.rel_reps_p[x].pos, 1:length(M.rel_reps_p))
+      println("found $(length(r)) rows")
+      g = M.rel_gens[rand(r)]
+      for j=1:min(5, div(length(r), 2))
+        g += M.rel_gens[rand(r)]
+      end
+      println(reduce(C, g))
+      if C[i,i] == 1
+        println("bingo for i=$i")
+      end
     end
   end
-  Hecke.upper_triangular(C)
-  return prod([C[i,i] for i=1:rows(C)])
+
+  M.basis = C
+  M.basis_idx = prod([C[i,i] for i=1:rows(C)])
+
+  return M.basis_idx
+end
+
+function elementary_divisors(M::ModuleCtx_fmpz)
+  if !isdefined(M, :basis)
+    i = check_index(M)
+    if i == 0
+      return fmpz[]
+    end
+  end
+  C = M.basis
+  f = find(i -> C[i,i] != 1, 1:rows(C))
+  if length(f) == 0
+    M.essential_elementary_divisors = fmpz[]
+    return M.essential_elementary_divisors
+  end
+  e = minimum(f)
+  m = fmpz_mat(sub(C, e:rows(C), e:cols(C)))
+  s = snf(m)
+  M.essential_elementary_divisors = [s[i,i] for i=1:rows(s)]
+  return M.essential_elementary_divisors
 end
 
 
@@ -294,9 +356,6 @@ function dixon_solve(A::Smat{fmpz}, b::SmatRow{fmpz})
       b.values[i] = div(b.values[i], p)
     end
     bp = mod(b, p)
-    if nbits(pp) > 200 
-      return (false, nu, de, sol, pp)
-    end  
   end
 end
 
