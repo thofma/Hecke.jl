@@ -207,7 +207,7 @@ function __helper!(z, mF, entries)
   return z
 end
 
-function mod_sym(x, m)
+function mod_sym(x::NfOrdElem, m)
   z = elem_in_basis(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
@@ -218,7 +218,7 @@ function mod_sym(x, m)
   return parent(x)(z)
 end
 
-function _basis_coord_nonneg(x)
+function _basis_coord_nonneg(x::NfOrdElem)
   b = elem_in_basis(x)
   for i in 1:length(b)
     if b[i] < 0
