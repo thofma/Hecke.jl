@@ -240,8 +240,8 @@ end
 
 doc"""
 ***
-  psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
-  psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
 
 > Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 > to compute lower bounds on the psi function counting smooth numbers.
@@ -262,8 +262,8 @@ end
 
 doc"""
 ***
-  psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
-  psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
 
 > Uses Bernstein's ideas: https://cr.yp.to/papers/psi.pdf
 > to compute upper bounds on the psi function counting smooth numbers.
@@ -284,8 +284,8 @@ end
 
 doc"""
 ***
-  show_psi(N::Integer, B::Int)
-  show_psi(N::fmpz, B::Int)
+   show_psi(N::Integer, B::Int)
+   show_psi(N::fmpz, B::Int)
 
 > Uses \code{psi_lower} and \code{psi_upper} to find intervalls for
 > $\psi(2^i, B)$ to be in for $0\le i\le \log_2(N)$.
@@ -314,11 +314,11 @@ end
 
 doc"""
 ***
-  psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
-  psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+    psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
 
-  psi_upper(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
-  psi_upper(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
+    psi_upper(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
 
 > Uses Bernstein's techniques to bound the number of ideals $A$
 > of norm bounded by $N$ that are smooth over the factor base $B$.
