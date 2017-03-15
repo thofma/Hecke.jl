@@ -13,6 +13,11 @@
   Missing:
    full HNF, Howell, modular and not
    better elemination strategy
+
+   abs_max -> maxabs according to Julia
+
+  TODO: sort out the various upper_triangular implementations.
+  One (+one with trafo) is probably enough
 =#
 
 import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array, 
@@ -59,13 +64,12 @@ end
 #
 ################################################################################
 
-@doc """
-  Smat(A::fmpz_mat) -> Smat{fmpz}
+doc"""
+    Smat(A::fmpz_mat) -> Smat{fmpz}
 
-  Constructs the Smat (Hecke-sparse matrix) with coefficients fmpz
-  corresponding to A.
-
-""" ->
+>  Constructs the Smat (Hecke-sparse matrix) with coefficients fmpz
+>  corresponding to A.
+"""
 function Smat(A::fmpz_mat)
   m = Smat{fmpz}()
   m.c = cols(A)
@@ -88,13 +92,12 @@ function Smat(A::fmpz_mat)
   return m
 end
 
-@doc """
-  Smat{T}(A::Array{T, 2}) -> Smat{T}
+doc"""
+    Smat{T}(A::Array{T, 2}) -> Smat{T}
 
-  Constructs the Smat (Hecke-sparse matrix) with coefficients of
-  type T corresponding to A.
-
-""" ->
+> Constructs the Smat (Hecke-sparse matrix) with coefficients of
+> type T corresponding to A.
+"""
 function Smat{T}(A::Array{T, 2})
   m = Smat{T}()
   m.c = Base.size(A, 2)
@@ -161,6 +164,11 @@ end
 
 # a faster version for nmod_mat -> Smat{T}
 # it avoids the creation of elements in ResidueRing(ZZ, n)
+doc"""
+    Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
+  
+> "Lifts" the entries in $A$ to a sparse matrix over $R$.
+"""
 function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
   if R == base_ring(A)
     return _Smat(A, R = R)
@@ -195,22 +203,100 @@ function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = fals
   return m
 end
 
-# Smat{fmpz} -> Smat{UIntMod}
-function mod(A::Smat{fmpz}, n::Int)
+doc"""
+    mod!(A::SmatRow{fmpz}, n::Integer)
+    mod!(A::SmatRow{fmpz}, n::fmpz)
+
+    mod!(A::Smat{fmpz}, n::Integer)
+    mod!(A::Smat{fmpz}, n::fmpz)
+
+> Inplace reduction of all entries of $A$ to the positive residue system.
+"""
+function mod!(A::SmatRow{fmpz}, n::Integer)
+  i=1
+  while i<= length(A.pos)
+    v = mod(A.values[i], n)
+    if v == 0
+      deleteat!(A.pos, i)
+      deleteat!(A.values, i)
+    else
+      A.values[i] = v
+      i += 1
+    end
+  end
+end
+
+function mod!(A::SmatRow{fmpz}, n::fmpz)
+  i=1
+  while i<= length(A.pos)
+    v = mod(A.values[i], n)
+    if v == 0
+      deleteat!(A.pos, i)
+      deleteat!(A.values, i)
+    else
+      A.values[i] = v
+      i += 1
+    end
+  end
+end
+
+function mod_sym(a::fmpz, b::fmpz)
+  c = rem(a,b)
+  if 2*c >= b
+    return c-b
+  else
+    return c
+  end
+end
+
+doc"""
+    mod_sym!(A::SmatRow{fmpz}, n::Integer)
+    mod_sym!(A::SmatRow{fmpz}, n::fmpz)
+
+    mod_sym!(A::Smat{fmpz}, n::Integer)
+    mod_sym!(A::Smat{fmpz}, n::fmpz)
+
+> Inplace reduction of all entries of $A$ to the symmetric residue system.
+"""
+function mod_sym!(A::SmatRow{fmpz}, n::fmpz)
+  i=1
+  while i<= length(A.pos)
+    v = mod_sym(A.values[i], n)
+    if v == 0
+      deleteat!(A.pos, i)
+      deleteat!(A.values, i)
+    else
+      A.values[i] = v
+      i += 1
+    end
+  end
+end
+
+doc"""
+    Smat(A::Smat{fmpz}, n::Int) -> Smat{UIntMod}
+    SmatRow(A::Smat{fmpz}, n::Int) -> SmatRow{UIntMod}
+
+> Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
+"""
+
+function Smat(A::Smat{fmpz}, n::Int)
   z = Smat{UIntMod}()
   R = ZZModUInt(UInt(n))
+  return Smat(A, R)
+end
+
+doc"""
+    Smat(A::Smat{fmpz}, R::Ring) -> Smat{elem_type(R)}
+    SmatRow(A::Smat{fmpz}, R::Ring) -> SmatRow{elem_type(R)}
+
+> Convert the matrix (row) $A$ to be over $R$.
+"""
+function Smat{T <: Ring}(A::Smat{fmpz}, R::T)
+  z = Smat{elem_type(R)}()
   z.r = A.r
   z.c = A.c
-  for r in A.rows
-    rz = SmatRow{UIntMod}()
-    for (i, v) in r
-      if mod(v, n) == 0
-        continue
-      else
-        push!(rz.pos, i)
-        push!(rz.values, R(v))
-      end
-    end
+  for r in A
+    rz = SmatRow(r, R)
     if length(rz.pos) != 0
       push!(z.rows, rz)
       z.nnz += length(rz.pos)
@@ -219,35 +305,40 @@ function mod(A::Smat{fmpz}, n::Int)
   return z
 end
 
-# SmatRow{fmpz} -> SmatRow{UIntMod}
-function mod(A::SmatRow{fmpz}, n::Int)
-  z = SmatRow{UIntMod}()
+function SmatRow(A::SmatRow{fmpz}, n::Int)
+  z = Smat{UIntMod}()
   R = ZZModUInt(UInt(n))
+  return SmatRow(A, R)
+end
+
+function SmatRow{T <: Ring}(A::SmatRow{fmpz}, R::T)
+  z = SmatRow{elem_type(R)}()
   for (i, v) in A
-    if mod(v, n) == 0
+    nv = R(v)
+    if iszero(nv)
       continue
     else
       push!(z.pos, i)
-      push!(z.values, R(v))
+      push!(z.values, nv)
     end
   end
   return z
 end
 
-function mod(A::SmatRow{fmpz}, n::fmpz)
+doc"""
+    Smat(A::Smat{fmpz}, n::Int) -> Smat{GenRes{fmpz}}
+    SmatRow(A::Smat{fmpz}, n::Int) -> SmatRow{GenRes{fmpz}}
+
+> Converts $A$ to ba a sparse matrix (row) over $Z/nZ$ 
+"""
+function SmatRow(A::SmatRow{fmpz}, n::fmpz)
   R = ResidueRing(FlintZZ, n)
-  z = SmatRow{GenRes{fmpz}}()
-  for (i, v) in A
-    if mod(v, n) == 0
-      continue
-    else
-      push!(z.pos, i)
-      push!(z.values, R(v))
-    end
-  end
-  return z
+  return SmatRow(A, R)
 end
-
+function Smat(A::SmatRow{fmpz}, n::fmpz)
+  R = ResidueRing(FlintZZ, n)
+  return Smat(A, R)
+end
 
 ################################################################################
 #
@@ -266,13 +357,13 @@ end
 #
 ################################################################################
 
-@doc """
+doc"""
   toNemo(io::IOStream, A::Smat; name = "A")
 
   Prints the Smat as a julia-program into the file corresponding to io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
-"""->
+"""
 function toNemo(io::IOStream, A::Smat; name = "A")
   T = typeof(A.rows[1].values[1])
   println(io, name, " = Smat{$T}()")
@@ -285,13 +376,13 @@ function toNemo(io::IOStream, A::Smat; name = "A")
   end
 end
 
-@doc """
+doc"""
   toNemo(io::String, A::Smat; name = "A")
 
   Prints the Smat as a julia-program into the file named io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
-"""->
+"""
 function toNemo(f::String, A::Smat; name = "A")
   io = open(f, "w")
   toNemo(io, A, name=name)
@@ -304,11 +395,11 @@ end
 #
 ################################################################################
 
-@doc """
+doc"""
   transpose{T}(A::Smat{T}) -> Smat{T}
 
   The transpose of A
-""" ->
+"""
 function transpose{T}(A::Smat{T})
   B = Smat{T}()
   n = rows(A)
@@ -540,13 +631,20 @@ end
 
 function *{T}(b::T, A::SmatRow{T})
   B = SmatRow{T}()
+  if iszero(b)
+    return B
+  end
   for (p,v) = A
-    push!(B.pos, p)
-    push!(B.values, v*b)
+    nv = v*b
+    if !iszero(nv)  # there are zero divisors - potentially
+      push!(B.pos, p)
+      push!(B.values, v*b)
+    end
   end
   return B
 end
 
+# those two functions produce infinite recursion - why I'm not sure
 #function *{T}(b::Integer, A::SmatRow{T})
 #  return base_ring(A)(b)*A
 #end
@@ -557,6 +655,9 @@ end
 
 function *{T}(b::T, A::Smat{T})
   B = Smat{T}()
+  if iszero(b)
+    return B
+  end
   for a = A
     push!(B, b*a)
   end
@@ -635,10 +736,10 @@ function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
   return a
 end
 
-@doc """
+doc"""
   valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_row{T}, 1}()) -> T
 
-  Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the vaence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
+  Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the valence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
   typically f(0).
 
   The valence is computed modulo various primes until the computation
@@ -646,7 +747,7 @@ end
 
   trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then
   the valence of trans * A  is computed instead.
-""" ->
+"""
 function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_row{T}, 1}())
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
@@ -834,12 +935,12 @@ end
 # convert to fmpz_mat
 #
 ################################################################################
-@doc """
+doc"""
   fmpz_mat{T <: Integer}(A::Smat{T})
 
   The same matix A, but as an fmpz_mat.
   Requires a conversion from type T to fmpz.
-""" ->
+"""
 function fmpz_mat{T <: Integer}(A::Smat{T})
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
@@ -851,11 +952,11 @@ function fmpz_mat{T <: Integer}(A::Smat{T})
   return B
 end
 
-@doc """
+doc"""
   fmpz_mat(A::Smat{fmpz})
 
   The same matix A, but as an fmpz_mat.
-""" ->
+"""
 function fmpz_mat(A::Smat{fmpz})
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
@@ -872,11 +973,11 @@ end
 # convert to Julia
 #
 ################################################################################
-@doc """
+doc"""
   sparse{T}(A::Smat{T}) -> sparse{T}
 
   The same matrix, but as a julia-sparse matrix
-""" ->
+"""
 function sparse{T}(A::Smat{T})
   I = Array{Int}(A.nnz)
   J = Array{Int}(A.nnz)
@@ -893,11 +994,11 @@ function sparse{T}(A::Smat{T})
   return sparse(I, J, V)
 end
 
-@doc """
+doc"""
   Array{T}(A::Smat{T}) -> Array{T, 2}
 
   The same matrix, but as a two-dimensional julia-Array.
-""" ->
+"""
 function Array{T}(A::Smat{T})
   R = zero(Array{T}(A.r, A.c)) # otherwise, most entries will be #undef
                                # at least if T is a flint-type
@@ -919,11 +1020,11 @@ end
 #
 ################################################################################
 
-@doc """
+doc"""
   swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
 
   swaps, inplace, the i-th row and the j-th
-""" ->
+"""
 function swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
   a = A.rows[i]
   A.rows[i] = A.rows[j]
@@ -977,11 +1078,11 @@ function swap_cols!{T}(A::Smat{T}, i::Int, j::Int)
 end
 
 # rows j -> row i*c + row j
-@doc """
+doc"""
   add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
 
   adds, inplace, the c*i-th row to the j-th
-""" ->
+"""
 function add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
   A.nnz = A.nnz - length(A[j])
   A.rows[j] = add_scaled_row(A[i], A[j], c)
@@ -1057,12 +1158,12 @@ end
 
 # row i -> a*row i + b * row j
 # row j -> c*row i + d * row j
-@doc """
+doc"""
   transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 
   Inplace, replaces the i-th row and the j-th row by
   [a,b; c,d] * [i-th-row ; j-th row]
-""" ->
+"""
 function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
   A.nnz = A.nnz - length(A[i]) - length(A[j])
   A.rows[i], A.rows[j] = transform_row(A[i], A[j], a, b, c, d)
@@ -1158,13 +1259,29 @@ function abs_max(A::Smat{BigInt})
   return abs(m)
 end
 
-@doc """
+function abs_max{T <: Integer}(A::SmatRow{T})
+  return maxabs(A.values)
+end
+function abs_max{T <: fmpz}(A::SmatRow{T})
+  m = abs(A.values[1])
+  for v in A.values
+    if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}), &v, &m) > 0
+      m = v
+    end
+  end
+  return abs(v)
+end
+
+doc"""
   abs_max(A::Smat{Int}) -> Int
   abs_max(A::Smat{BigInt}) -> BigInt
   abs_max(A::Smat{fmpz}) -> fmpz
+  abs_max(A::SmatRow{Int}) -> Int
+  abs_max(A::SmatRow{BigInt}) -> BigInt
+  abs_max(A::SmatRow{fmpz}) -> fmpz
 
   Finds the largest, in absolute value, entry of A
-""" ->
+"""
 function abs_max(A::Smat{fmpz})
   m = abs(A.rows[1].values[1])
   for i in A.rows
@@ -1200,13 +1317,23 @@ function max(A::Smat{BigInt})
   return m
 end
 
-@doc """
+function max{T <: Integer}(A::SmatRow{T})
+  return maximum(A.values)
+end
+function max(A::SmatRow{fmpz})
+  return maximum(A.values)
+end
+
+doc"""
   max(A::Smat{Int}) -> Int
   max(A::Smat{BigInt}) -> BigInt
   max(A::Smat{fmpz}) -> fmpz
+  max(A::SmatRow{Int}) -> Int
+  max(A::SmatRow{BigInt}) -> BigInt
+  max(A::SmatRow{fmpz}) -> fmpz
 
   Finds the largest entry of A
-""" ->
+"""
 function max(A::Smat{fmpz})
   m = A.rows[1].values[1]
   for i in A.rows
@@ -1242,13 +1369,23 @@ function min(A::Smat{BigInt})
   return m
 end
 
-@doc """
+function min{T <: Integer}(A::SmatRow{T})
+  return minimum(A.values)
+end
+function min(A::SmatRow{fmpz})
+  return minimum(A.values)
+end
+
+doc"""
   min(A::Smat{Int}) -> Int
   min(A::Smat{BigInt}) -> BigInt
   min(A::Smat{fmpz}) -> fmpz
+  min(A::SmatRow{Int}) -> Int
+  min(A::SmatRow{BigInt}) -> BigInt
+  min(A::SmatRow{fmpz}) -> fmpz
 
   Finds the smallest entry of A
-""" ->
+"""
 function min(A::Smat{fmpz})
   m = fmpz(0)
   for i in A.rows
@@ -1265,12 +1402,12 @@ function nbits(a::BigInt)
   return ndigits(a, 2)
 end
 
-@doc """
+doc"""
   nbits(a::Int) -> Int
   nbits(a::BigInt) -> Int
 
   Returns the number of bits necessary to represent a
-""" ->
+"""
 function nbits(a::Int)
   a==0 && return 0
   return Int(ceil(log(abs(a))/log(2)))
@@ -1366,12 +1503,12 @@ function one_step{T}(A::Smat{T}, sr = 1)
   return sr+1
 end
 
-@doc """
+doc"""
   upper_triangular{T}(A::Smat{T}; mod = 0)
 
   Inplace: transform A into an upper triangular matrix. If mod
   is non-zero, reduce entries modulo mod during the computation.
-""" ->
+"""
 function upper_triangular{T}(A::Smat{T}; mod = 0)
   for i = 1:min(rows(A), cols(A))
     x = one_step(A, i)
