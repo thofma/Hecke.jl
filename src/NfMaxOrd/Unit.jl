@@ -1021,43 +1021,42 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   while not_larger < 5 
 
     add = []
-    rel = SmatRow{fmpz}()
-    for jj in 1:2 # div(rows(x.M.rel_gens), 10)+1
+    rel = Smat{fmpz}()
+    for jj in 1:min(div(rows(x.M.rel_gens), 10)+1, 20)
       xj = rand(1:rows(x.M.rel_gens))
       push!(add, xj)
-      rel += x.M.rel_gens[xj]
+      push!(rel, x.M.rel_gens[xj])
     end
-
-    println("using add:$add")
 
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
-    @assert gcd(foldr(gcd, k.values), d) == 1
+    time_kernel += @elapsed s = saturate(hcat(k, (-d)*id(Smat{fmpz}, k.r)))
 
-    y = FacElem(vcat(x.R_gen[k.pos], prod(x.R_rel[add])), vcat(k.values, -d))
+    ge = vcat(x.R_gen[1:k.c], x.R_rel[add])
+    for i=1:s.r
+      y = FacElem(ge[s[i].pos], s[i].values)
 
-    #!isunit(y) && throw(BlaError(x, kelem))
-
-    @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
-    @v_do :UnitGroup 2 pushindent()
-    time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
-    u.tors_prec = max(p, u.tors_prec)
-    if is_tors
+      @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
+      @v_do :UnitGroup 2 pushindent()
+      time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
+      u.tors_prec = max(p, u.tors_prec)
+      if is_tors
+        @v_do :UnitGroup 2 popindent()
+        #println("torsion unit: $y")
+        @vprint :UnitGroup 2 "Element is torsion unit\n"
+        continue
+      end
+      @vprint :UnitGroup 2 "Element is non-torsion unit\n"
       @v_do :UnitGroup 2 popindent()
-      #println("torsion unit: $y")
-      @vprint :UnitGroup 2 "Element is torsion unit\n"
-      continue
-    end
-    @vprint :UnitGroup 2 "Element is non-torsion unit\n"
-    @v_do :UnitGroup 2 popindent()
 
-    @v_do :UnitGroup 2 pushindent()
-    time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
-    @v_do :UnitGroup 2 popindent()
+      @v_do :UnitGroup 2 pushindent()
+      time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
+      @v_do :UnitGroup 2 popindent()
 
-    if !m
-      not_larger = not_larger + 1
-    else
-      not_larger = 0
+      if !m
+        not_larger = not_larger + 1
+      else
+        not_larger = 0
+      end
     end
   end
 
