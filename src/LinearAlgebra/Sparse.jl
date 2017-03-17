@@ -247,10 +247,11 @@ function mod!(A::SmatRow{fmpz}, n::fmpz)
 end
 
 function mod_sym(a::fmpz, b::fmpz)
-  c = rem(a,b)
-  if b > 0 && 2*c >= b
+  c = mod(a,b)
+  @assert c>=0
+  if b > 0 && 2*c > b
     return c-b
-  elseif b < 0 && 2*c >= -b
+  elseif b < 0 && 2*c > -b
     return c+b
   else
     return c
@@ -2227,7 +2228,7 @@ doc"""
     elementary_divisors(A::Smat{fmpz}) -> Array{fmpz, 1}
 
 > The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
-> form of $A$.
+> form of $A$. $A$ needs to be of full rank - currently.
 """
 function elementary_divisors(A::Smat{fmpz})
   A = copy(A)
