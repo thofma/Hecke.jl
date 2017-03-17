@@ -135,27 +135,26 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
       j += 1
     end  
     if j > rows(A) || A.rows[j].pos[1] > s
-      if g.values[1] < 0 || g.values[1] >= div(m, 2)
+      if mod_sym(g.values[1], m) < 0 
         for i=1:length(g.values)
           g.values[i] *= -1
         end
+#        @assert mod_sym(g.values[1], m) > 0
       end
-      if new_g
-        Hecke.mod_sym!(g, m)
-      else
+      if !new_g
         g = copy(g)
-        Hecke.mod_sym!(g, m)
       end
+      mod_sym!(g, m)
       return g
     end
     st_g = 2
     st_A = 2
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
-      g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
+      g = add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
       new_g = true
-      Hecke.mod_sym!(g, m)
-      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+      mod_sym!(g, m)
+#      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
       @assert x > 0
@@ -163,10 +162,11 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
       new_g = true
-      @assert A[j].values[1] == x
-      Hecke.mod_sym!(g, m)
-      Hecke.mod_sym!(A[j], m)
-      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+#      @assert A[j].values[1] == x
+      mod_sym!(g, m)
+      mod_sym!(A[j], m)
+#      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+#      @assert A[j].values[1] > 0
     end
   end
   if !new_g
@@ -178,6 +178,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
     end
   end
   Hecke.mod_sym!(g, m)
+#  @assert length(g.pos) == 0 || g.values[1] >= 0
   return g
 end
 
@@ -260,7 +261,7 @@ function check_index(M::ModuleCtx_fmpz)
         continue
       end
       r = find(x->i in M.rel_reps_p[x].pos, 1:length(M.rel_reps_p))
-      println("found $(length(r)) rows")
+#      println("found $(length(r)) rows")
       if length(r) == 0
         break
       end
@@ -268,7 +269,7 @@ function check_index(M::ModuleCtx_fmpz)
       for j=1:min(5, div(length(r), 2))
         g += M.rel_gens[rand(r)]
       end
-      println(reduce(C, g))
+      reduce(C, g)
       if C[i,i] == 1
 #        println("bingo for i=$i")
       end
@@ -715,5 +716,34 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
     end
   end
   return sol_all, den_all
+end
+
+doc"""
+    saturate(A::fmpz_mat)
+    saturate(A::Smat{fmpz})
+
+> Computes the \code{saturation} of $A$, ie. a basis for $Q\otimes [A] \meet Z^n$.
+> Equivalently, $TA$ for $T \in \Gl(n, Q)$ s.th. $TA\in Z^{n\times m}$ and
+> the elementary divisors of $TA$ are all trivial.
+> The Smat-case is using the dense code.
+"""
+function saturate(A::fmpz_mat)
+  #row saturation: want
+  #  TA in Z, T in Q and elem_div TA = [1]
+  #
+  #  AT = H (in HNF), then A = HT^-1 and H^-1A = T^-1
+  # since T is uni-mod, H^-1 A is in Z with triv. elm. div
+
+  H = hnf(A')
+  H = H'
+  Hi, d = pseudo_inv(sub(H, 1:rows(H), 1:rows(H)))
+  S = Hi*A
+  Sd = divexact(S, d)
+#  @assert d*Sd == S
+  return Sd
+end
+
+function saturate(A::Smat{fmpz})
+  return Smat(saturate(fmpz_mat(A)))
 end
 
