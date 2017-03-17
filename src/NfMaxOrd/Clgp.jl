@@ -1520,7 +1520,7 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   c = class_group_init(O, bound, complete = false)
   c.B2 = bound * large
 
-  if method==1
+  if false # method==1
     class_group_find_relations(c)
   else
     class_group_find_relations2(c)
