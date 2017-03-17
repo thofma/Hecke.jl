@@ -1397,6 +1397,56 @@ type NfFactorBase
   end
 end
 
+
+################################################################################
+#
+#  sparse Z-modules
+#
+################################################################################
+
+type ModuleCtx_UIntMod
+  R::ZZModUInt
+  basis::Smat{UIntMod}
+  gens::Smat{UIntMod}
+  function ModuleCtx_UIntMod()
+    return new()
+  end
+  function ModuleCtx_UIntMod(p::Int, dim::Int)
+    M = new()
+    M.R = ZZModUInt(UInt(p))
+    M.basis = Smat{UIntMod}()
+    M.basis.c = dim
+    M.gens = Smat{UIntMod}()
+    return M
+  end
+end
+
+type ModuleCtx_fmpz
+  bas_gens::Smat{fmpz}  # contains a max. indep system
+  max_indep::Smat{fmpz} # the bas_gens in upper-triangular shape
+  basis::Smat{fmpz}     # if set, probably a basis (in upper-triangular)
+  rel_gens::Smat{fmpz}  # more elements, used for relations
+  Mp::ModuleCtx_UIntMod
+  rel_reps_p::Smat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
+                        # at least mod p...
+  basis_idx::fmpz                      
+  essential_elementary_divisors::Array{fmpz, 1}
+  new::Bool
+  function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
+    M = new()
+    M.max_indep = Smat{fmpz}()
+    M.max_indep.c = dim
+    M.bas_gens = Smat{fmpz}()
+    M.bas_gens.c = dim
+    M.rel_gens = Smat{fmpz}()
+    M.rel_gens.c = dim
+    M.rel_reps_p = Smat{UIntMod}()
+    M.new = false
+    M.Mp = ModuleCtx_UIntMod(p, dim)
+    return M
+  end
+end
+
 ################################################################################
 #
 #  ClassGrpCtx
@@ -1405,18 +1455,18 @@ end
 
 type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   FB::NfFactorBase
-  M::T                    # the relation matrix, columns index by the
-                          # factor basis, rows by the relations
-  R::Array{nf_elem, 1}    # the relations
+
+  M::ModuleCtx_fmpz    
+  R_gen::Array{nf_elem, 1}# the relations
+  R_rel::Array{nf_elem, 1}
   RS::Set{nf_elem}
-  H::T                    # the last hnf, at least the non-trivial part
-                          # of it
-  last_H::Int             # the number of rows of M that went into H
+
   last_piv1::Array{Int, 1}
-  H_is_modular::Bool
   mis::Set{Int}
+
   h::fmpz
   c::roots_ctx
+
   rel_cnt::Int
   bad_rel::Int
   hnf_call::Int
@@ -1450,8 +1500,9 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
 
   function ClassGrpCtx()
     r = new()
-    r.R = Array{nf_elem, 1}()
-    r.RS = Set(r.R)
+    r.R_gen = Array{nf_elem, 1}()
+    r.R_rel = Array{nf_elem, 1}()
+    r.RS = Set(r.R_gen)
     r.largePrimeCnt = 0
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0
@@ -1459,10 +1510,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.relNorm=Array{Tuple{nf_elem, fmpz}, 1}()
     r.relPartialNorm=Array{Tuple{nf_elem, fmpz}, 1}()
     r.B2 = 0
-    r.H_is_modular = true
-    r.rel_mat_full_rank = false
     r.H_trafo = []
-    r.H = T()
     return r
   end  
 end

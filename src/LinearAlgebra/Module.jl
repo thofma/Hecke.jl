@@ -4,49 +4,15 @@
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
-const p = next_prime(2^20)
-type ModuleCtx_UIntMod
-  R::ZZModUInt
-  basis::Smat{UIntMod}
-  gens::Smat{UIntMod}
-  function ModuleCtx_UIntMod()
-    return new()
-  end
-  function ModuleCtx_UIntMod(p::Int, dim::Int)
-    M = new()
-    M.R = ZZModUInt(UInt(p))
-    M.basis = Smat{UIntMod}()
-    M.basis.c = dim
-    M.gens = Smat{UIntMod}()
-    return M
-  end
-end
+export det_mc, id, isid, isupper_triangular, norm2, hadamard_bound2, 
+       forall, exists
 
-type ModuleCtx_fmpz
-  bas_gens::Smat{fmpz}  # contains a max. indep system
-  max_indep::Smat{fmpz} # the bas_gens in upper-triangular shape
-  basis::Smat{fmpz}     # if set, probably a basis (in upper-triangular)
-  rel_gens::Smat{fmpz}  # more elements, used for relations
-  Mp::ModuleCtx_UIntMod
-  rel_reps_p::Smat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
-                        # at least mod p...
-  basis_idx::fmpz                      
-  essential_elementary_divisors::Array{fmpz, 1}
-  function ModuleCtx_fmpz(dim::Int)
-    M = new()
-    M.max_indep = Smat{fmpz}()
-    M.bas_gens = Smat{fmpz}()
-    M.bas_gens.c = dim
-    M.rel_gens = Smat{fmpz}()
-    M.rel_reps_p = Smat{UIntMod}()
-    M.Mp = ModuleCtx_UIntMod(p, dim)
-    return M
-  end
-end
+const p = next_prime(2^20)
 
 function show(io::IO, M::ModuleCtx_UIntMod)
   println("Module over $(M.R) of (current) rank $(rows(M.basis)) and $(rows(M.gens))")
 end
+
 function show(io::IO, M::ModuleCtx_fmpz)
   println("Module over FlintZZ of (current) rank $(rows(M.bas_gens)) and further $(rows(M.rel_gens))")
   if isdefined(M, :basis_idx)
@@ -56,7 +22,9 @@ function show(io::IO, M::ModuleCtx_fmpz)
     println("current structure: $(M.essential_elementary_divisors)")
   end
 end
-
+############################################################
+##
+############################################################
 function reduce(A::Smat{UIntMod}, g::SmatRow{UIntMod})
   @assert isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
@@ -159,6 +127,7 @@ end
 function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
   @assert isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
+  new_g = false
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -171,7 +140,12 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
           g.values[i] *= -1
         end
       end
-      Hecke.mod_sym!(g, m)
+      if new_g
+        Hecke.mod_sym!(g, m)
+      else
+        g = copy(g)
+        Hecke.mod_sym!(g, m)
+      end
       return g
     end
     st_g = 2
@@ -179,6 +153,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
       g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
+      new_g = true
       Hecke.mod_sym!(g, m)
       @assert length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -187,11 +162,15 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      new_g = true
+      @assert A[j].values[1] == x
       Hecke.mod_sym!(g, m)
       Hecke.mod_sym!(A[j], m)
-      @assert A[j].values[1] == x
       @assert length(g)==0 || g.pos[1] > A[j].pos[1]
     end
+  end
+  if !new_g
+    g = copy(g)
   end
   if length(g.values) > 0 && mod_sym(g.values[1], m) < 0
     for i=1:length(g.values)
@@ -224,9 +203,7 @@ function add_gen!(M::ModuleCtx_fmpz, g::SmatRow{fmpz})
   gp = SmatRow(g, M.Mp.R)
   if add_gen!(M.Mp, gp)
     push!(M.bas_gens, g)
-    return true
-
-
+    M.new = true
     return true
   else
     push!(M.rel_gens, g)
@@ -239,14 +216,20 @@ function check_index(M::ModuleCtx_fmpz)
     return fmpz(0)
   end
 
+  if !M.new
+    return M.basis_idx
+  end
+
+  M.new = false
+
   if isdefined(M, :basis)
     C = copy(M.basis)
   else
-    d = det(M.bas_gens)
+    d = abs(det(M.bas_gens))
     C = M.max_indep
     C.c = M.bas_gens.c
-    for i=M.bas_gens
-      h = reduce(C, i, 2*d) #to avoid problems with diag being 1...1 d
+    for ii = M.bas_gens
+      h = reduce(C, ii, 2*d) #to avoid problems with diag being 1...1 d
       @assert !iszero(h)
       i = 1
       while i<= rows(C) && C.rows[i].pos[1] < h.pos[1]
@@ -277,7 +260,10 @@ function check_index(M::ModuleCtx_fmpz)
         continue
       end
       r = find(x->i in M.rel_reps_p[x].pos, 1:length(M.rel_reps_p))
-#      println("found $(length(r)) rows")
+      println("found $(length(r)) rows")
+      if length(r) == 0
+        break
+      end
       g = M.rel_gens[rand(r)]
       for j=1:min(5, div(length(r), 2))
         g += M.rel_gens[rand(r)]
@@ -331,7 +317,7 @@ function non_trivial_pivot(M::ModuleCtx_fmpz)
 end
 
 function rank(M::ModuleCtx_fmpz)
-  return M.max_indep.r
+  return M.bas_gens.r
 end
 
 function rank(M::ModuleCtx_UIntMod)
@@ -416,63 +402,7 @@ function rational_reconstruction(A::SmatRow{fmpz}, M::fmpz)
   return true, B, de
 end
    
-function dixon_solve(A::Smat{fmpz}, b::SmatRow{fmpz})
-  @assert isupper_triangular(A)
-  #assumes A to be upper triangular of full rank - for now at least
-
-  p = next_prime(2^20)
-  b_orig = b
-
-  Ap = Smat(A, p)
-  bp = SmatRow(b, p)
-
-  sol = SmatRow{fmpz}()
-
-  pp = fmpz(1)
-
-  last = (sol, 1)
-  while true
-    zp = solve(Ap, bp)
-#    @assert Hecke.mul(zp, Ap) == bp
-
-    z = lift(zp)
-#    @assert SmatRow(z, p) == zp
-
-    sol += pp*z
-
-    pp *= fmpz(p)
-    if nbits(pp) > 10000
-      error("too large")
-    end
-
-#    @assert iszero(SmatRow(b_orig - Hecke.mul(sol, A), pp)) 
-
-    fl, nu, de = rational_reconstruction(sol, pp)
-    if fl 
-#      @assert SmatRow(de*sol, pp) == SmatRow(nu, pp)
-#      @assert SmatRow(mul(nu, A), pp) == SmatRow(de*b_orig, pp)
-      if last == (nu, de)
-        if Hecke.mul(nu, A) == de*b_orig
-          return nu, de
-        end
-        println("bad")
-      else
-        last = (nu, de)
-      end
-    end
-
-#    @assert SmatRow(Hecke.mul(z, A), p) == bp
-    b = b - Hecke.mul(z, A)
-
-    for i=1:length(b.values)
-#      @assert b.values[i] % p == 0
-      b.values[i] = div(b.values[i], p)
-    end
-    bp = SmatRow(b, p)
-  end
-end
-
-function direct_solve(A::Smat{fmpz}, b::SmatRow{fmpz})
+function solve_ut(A::Smat{fmpz}, b::SmatRow{fmpz})
   @assert isupper_triangular(A)
   #still assuming A to be upper-triag
 
@@ -490,7 +420,7 @@ function direct_solve(A::Smat{fmpz}, b::SmatRow{fmpz})
       den *= f
     end
     push!(sol.pos, p)
-    @assert Smat(v, A[p].values[1]) == 0
+    @assert mod(v, A[p].values[1]) == 0
     push!(sol.values, div(v, A[p].values[1]))
     b = b - sol.values[end]*A[p]
     @assert length(b) == 0 || b.pos[1] > p
@@ -536,6 +466,7 @@ doc"""
 
 > Computes the determinant of $A$ using a LasVegas style algorithm,
 > ie. the result is not proven to be correct.
+> Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det_mc(A::Smat{fmpz})
   @assert A.r == A.c
@@ -571,6 +502,7 @@ doc"""
     det(A::Smat{fmpz})
 
 > The determinant of $A$ using a modular algorithm.
+> Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det(A::Smat{fmpz})
   @assert A.r == A.c
@@ -588,5 +520,200 @@ function det(A::Smat{fmpz})
   #TODO: re-use the nmod_mat....
   ld = [fmpz(det(nmod_mat(Smat(A, Int(q))))) for q = lp]
   return crt_signed(ld, crt_env(lp))
+end
+
+doc"""
+    id{T}(::Type{Smat{T}}, n::Int) -> Smat{T}
+
+> The $n\times n$ identity matrix as a Smat of type T.
+"""
+function id{T}(::Type{Smat{T}}, n::Int)
+  A = Smat{T}()
+  for i=1:n
+    push!(A, SmatRow{T}([(i, T(1))]))
+  end
+  return A
+end
+
+doc"""
+    id{S}(::Type{Smat}, R::S, n::Int) -> Smat{elem_type(R)}
+    
+> The $n \times n$ identity over $R$ as a Smat.
+> Necessary if $T(1)$ for the type $T$ does not work.
+"""
+function id{S}(::Type{Smat}, R::S, n::Int)
+  T = elem_type(R)
+  A = Smat{T}()
+  for i=1:n
+    push!(A, SmatRow{T}([(i, R(1))]))
+  end
+  return A
+end
+
+doc"""
+    isid{T}(A::Smat{T})
+
+> Tests is $A$ is the $n \times n$ identity.
+"""
+function isid{T}(A::Smat{T})
+  if A.c != A.r
+    return false
+  end
+  for i = 1:A.r
+    if length(A.rows[i].pos) != 1
+      return false
+    end
+    if A.rows[i].pos[1] != i ||
+       !isone(A.rows[i].values[1])
+      return false
+    end
+  end
+  return true
+end
+
+function echelon_with_trafo(A::Smat{UIntMod})
+  z = hcat(A, id(Smat, base_ring(A), A.r))
+  M = Hecke.ModuleCtx_UIntMod(Int(base_ring(A).mod.n), z.c)
+  for i=z
+    Hecke.add_gen!(M, i)
+  end
+  return sub(M.basis, 1:A.r, 1:A.c), sub(M.basis, 1:A.r, A.c+1:z.c)
+end
+
+doc"""
+    forall(A, a::Function)
+
+> Tests wether the predicate (function) $a$ returns $true$ for all elements in 
+> $A$.
+"""
+function forall(A, a::Function)
+  for x = A
+    if !a(x)
+      return false
+    end
+  end
+  return true
+end
+
+doc"""
+    exists(A, a::Function)
+
+> Tests wether the predicate (function) $a$ returns $true$ for at least one 
+> element in $A$.
+"""
+function exists(A, a::Function)
+  for x = A
+    if a(x)
+      return true
+    end
+  end
+  return false
+end
+
+function solve_dixon_sf(A::Smat{fmpz}, b::SmatRow{fmpz}, is_int::Bool = false)
+  B = Smat{fmpz}()
+  push!(B, b)
+  s, d = solve_dixon_sf(A, B, is_int)
+  return s[1], d
+end
+
+function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
+  #for square matrices (s) of full rank (f) only.
+  p = next_prime(2^20)
+
+  Ap = Smat(A, p)
+
+  #want AT = upper_triag.
+  #Let J = anti-identity, so JA inverts the rows of A and AJ the columns
+  #
+  # B := (JA)' = A'J and TB = E in upper triag
+  # J (TB)' J = JE'J is still upper triag and
+  # J (TB)' J = J B' T' J = J (JA) T' J = A (JT)' = JE'J still upp-triag
+
+  Bp = copy(Ap)
+  invert_rows!(Bp)
+  Bp = Bp'
+  Ep, Tp = echelon_with_trafo(Bp)
+  @assert Ep.c == Ep.r
+#  @assert nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
+
+  invert_rows!(Ep)
+  Ep = Ep'
+  invert_rows!(Ep)
+#  @assert Hecke.isupper_triangular(Ep)
+
+  invert_rows!(Tp)
+  Tp = Tp'
+#  @assert nmod_mat(Ap)*nmod_mat(Tp) == nmod_mat(Ep)
+
+  #now, to solve xA = b, we do
+  #              xAT = bT since AT is upper-triag, we can do this!
+
+  sol_all = Smat{fmpz}()
+  den_all = fmpz(1)
+
+  for b in B
+    pp = fmpz(1)
+    b_orig = b
+
+    bp = SmatRow(b, p)
+
+    sol = SmatRow{fmpz}()
+    last = (sol, 1)
+
+    while true
+      bp = mul(bp, Tp)
+      zp = solve(Ep, bp)
+      z = lift(zp)
+
+      sol += pp*z
+
+      pp *= fmpz(p)
+#      if nbits(pp) > 1000
+#        error("too large")
+#      end
+
+  #    @assert iszero(SmatRow(b_orig - Hecke.mul(sol, A), pp)) 
+
+      if is_int
+        fl = true
+        nu = copy(sol)
+        Hecke.mod_sym!(nu, pp)
+        de = fmpz(1)
+      else
+        fl, nu, de = rational_reconstruction(sol, pp)
+      end
+      if fl 
+  #      @assert SmatRow(de*sol, pp) == SmatRow(nu, pp)
+  #      @assert SmatRow(mul(nu, A), pp) == SmatRow(de*b_orig, pp)
+        if last == (nu, de)
+          if Hecke.mul(nu, A) == de*b_orig
+            l = lcm(den_all, de)
+            if l == den_all
+              push!(sol_all, div(l, de)*nu)
+            else
+              sol_all = div(l, den_all)*sol_all
+              push!(sol_all, div(l, de)*nu)
+              den_all = l
+            end
+            break
+          end
+          println("bad")
+        else
+          last = (nu, de)
+        end
+      end
+
+  #    @assert SmatRow(Hecke.mul(z, A), p) == bp
+      b = b - Hecke.mul(z, A)
+
+      for i=1:length(b.values)
+  #      @assert b.values[i] % p == 0
+        b.values[i] = div(b.values[i], p)
+      end  
+      bp = SmatRow(b, p)
+    end
+  end
+  return sol_all, den_all
 end
 
