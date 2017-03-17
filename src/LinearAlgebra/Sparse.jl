@@ -21,12 +21,13 @@
 =#
 
 import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array, 
-       Base.endof, Base.start, Base.done, Base.next
+       Base.endof, Base.start, Base.done, Base.next, Base.hcat,
+       Base.vcat
 
 export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
        valence_mc, swap_rows!, endof, start, done, next, elementary_divisors,
-       randrow
+       randrow, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 
 ################################################################################
 #
@@ -40,6 +41,7 @@ base_ring(A::Smat) = parent(A.rows[1].values[1])
 base_ring(A::SmatRow) = parent(A.values[1])
 
 =={T}(x::SmatRow{T}, y::SmatRow{T}) = (x.pos == y.pos) && (x.values == y.values)
+=={T}(x::Smat{T}, y::Smat{T}) = x.rows == y.rows
 ################################################################################
 #
 #  SmatRow
@@ -53,6 +55,10 @@ end
 
 function hash{T}(A::SmatRow{T}, h::UInt)
   return hash(A.pos, hash(A.values, h))
+end
+
+function hash{T}(A::Smat{T}, h::UInt)
+  return hash(A.r, hash(A.c, hash(A.rows, h)))
 end
 
 function iszero{T}(A::SmatRow{T})
@@ -242,8 +248,10 @@ end
 
 function mod_sym(a::fmpz, b::fmpz)
   c = rem(a,b)
-  if 2*c >= b
+  if b > 0 && 2*c >= b
     return c-b
+  elseif b < 0 && 2*c >= -b
+    return c+b
   else
     return c
   end
@@ -271,6 +279,13 @@ function mod_sym!(A::SmatRow{fmpz}, n::fmpz)
     end
   end
 end
+
+function mod_sym!(A::Smat{fmpz}, b::fmpz)
+  for i=A
+    mod_sym!(i, b)
+  end
+end
+
 
 doc"""
     Smat(A::Smat{fmpz}, n::Int) -> Smat{UIntMod}
@@ -622,11 +637,44 @@ function +{T}(A::SmatRow{T}, B::SmatRow{T})
   return add_scaled_row(A, B, base_ring(A)(1))
 end
 
+function +{T}(A::Smat{T}, B::Smat{T})
+  C = Smat{T}()
+  m = min(rows(A), rows(B))
+  for i=1:m
+    push!(C, A[i]+B[i])
+  end
+  for i=m+1:rows(A)
+    push!(C, A[i])
+  end
+  for i=m+1:rows(B)
+    push!(C, B[i])
+  end
+  return C
+end
+
 function -{T}(A::SmatRow{T}, B::SmatRow{T})
   if length(A.values) == 0
     return B 
   end
   return add_scaled_row(B, A, base_ring(A)(-1))
+end
+
+function -{T}(A::Smat{T}, B::Smat{T})
+  C = Smat{T}()
+  m = min(rows(A), rows(B))
+  for i=1:m
+    push!(C, A[i]-B[i])
+  end
+  for i=m+1:rows(A)
+    push!(C, A[i])
+  end
+  if m < rows(B)
+    n = base_ring(B)(-1)
+    for i=m+1:rows(B)
+      push!(C, n*B[i])
+    end
+  end
+  return C
 end
 
 function *{T}(b::T, A::SmatRow{T})
@@ -875,6 +923,15 @@ function copy{T}(A::Smat{T})
   return sub(A, 1:rows(A), 1:cols(A))
 end
 
+function copy{T}(A::SmatRow{T})
+  sr = SmatRow{T}()
+  for (p, v) = A
+    push!(sr.pos, p)
+    push!(sr.values, v)
+  end
+  return sr
+end
+
 function rows(A::Smat)
   @assert A.r == length(A.rows)
   return A.r
@@ -910,6 +967,12 @@ function setindex!{T}(A::Smat{T}, b::SmatRow{T}, i::Int)
   A.rows[i] = b
 end
 
+doc"""
+    vcat!{T}(A::Smat{T}, B::Smat{T})
+
+> Vertically joins $A$ and $B$ inplace, ie. the rows of $B$ are
+> appended to $A$.
+"""
 function vcat!{T}(A::Smat{T}, B::Smat{T})
   @assert length(A.rows) == A.r
   @assert length(B.rows) == B.r
@@ -918,6 +981,57 @@ function vcat!{T}(A::Smat{T}, B::Smat{T})
   A.nnz += B.nnz
   A.rows = vcat(A.rows, B.rows)
   @assert length(A.rows) == A.r
+end
+
+
+doc"""
+    vcat{T}(A::Smat{T}, B::Smat{T})
+
+> Vertically joins $A$ and $B$
+"""
+function vcat{T}(A::Smat{T}, B::Smat{T})
+  @assert length(A.rows) == A.r
+  @assert length(B.rows) == B.r
+  C = copy(A)
+  vcat!(C, B)
+  return C
+end
+
+doc"""
+    hcat!{T}(A::Smat{T}, B::Smat{T})
+
+> Horizontally concatenates $A$ and $B$, inplace, changing $A$.
+"""
+function hcat!{T}(A::Smat{T}, B::Smat{T})
+  o = A.c
+  A.c += B.c
+  nnz = A.nnz
+  for i=1:min(rows(A), rows(B))
+    for (p,v) in B[i]
+      push!(A[i].pos, p+o)
+      push!(A[i].values, v)
+    end
+  end
+  for i=min(rows(A), rows(B))+1:rows(B)
+    sr = SmatRow{T}()
+    for (p,v) in B[i]
+      push!(sr.pos, p+o)
+      push!(sr.values, v)
+    end
+    push!(A, sr)
+  end
+  A.nnz = nnz + B.nnz #A.nnz may have changed - if B is longer
+end
+
+doc"""
+    hcat{T}(A::Smat{T}, B::Smat{T})
+
+> Horizontally concatenates $A$ and $B$.
+"""
+function hcat{T}(A::Smat{T}, B::Smat{T})
+  C = copy(A)
+  hcat!(C, B)
+  return C
 end
 
 function push!{T}(A::Smat{T}, B::SmatRow{T})
@@ -1026,10 +1140,21 @@ doc"""
   swaps, inplace, the i-th row and the j-th
 """
 function swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
-  a = A.rows[i]
-  A.rows[i] = A.rows[j]
-  A.rows[j] = a
+  A[i], A[j] = A[j], A[i]
 end
+
+doc"""
+    invert_rows!{T}(A::Smat{T})
+
+> Inplace, inverts the rows, ie. swaps the last and the 1st, the 2nd last and the
+> 2nd, ...
+"""
+function invert_rows!{T}(A::Smat{T})
+  for i=1:div(A.r, 2)
+    A[i], A[A.r+1-i] = A[A.r+1-i], A[i]
+  end
+end
+
 
 doc"""
     swap_cols!{T}(A::Smat{T}, i::Int, j::Int)
