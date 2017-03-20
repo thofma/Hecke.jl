@@ -49,7 +49,10 @@ function FacElem(x::nf_elem)
   return z
 end
 
-function isunit(x::FacElem{nf_elem})
+#CF: this does not test x to be a unit, x needs to be integral as well
+#    with current technology, we cannot test this
+#    thus I renamed/ removed this function
+function _isunit(x::FacElem{nf_elem})
   return abs(norm(x)) == 1
 end
 
@@ -105,11 +108,13 @@ function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16
 end
 
 function norm(x::FacElem{nf_elem})
-  z = fmpq(1)
-  for a in base(x)
-    z = z*norm(a)^x.fac[a]
+  b = fmpq[]
+  c = fmpz[] 
+  for (a, e) in x.fac
+    push!(b, norm(a))
+    push!(c, e)
   end
-  return z
+  return evaluate(FacElem(b, c))
 end
 
 _base_ring(x::nf_elem) = parent(x)::AnticNumberField
