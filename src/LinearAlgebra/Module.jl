@@ -202,9 +202,9 @@ end
 
 function add_gen!(M::ModuleCtx_fmpz, g::SmatRow{fmpz})
   gp = SmatRow(g, M.Mp.R)
+  M.new = true
   if add_gen!(M.Mp, gp)
     push!(M.bas_gens, g)
-    M.new = true
     return true
   else
     push!(M.rel_gens, g)

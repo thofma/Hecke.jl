@@ -328,7 +328,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
       if error
         @hassert :ClassGroup 1 vp == 0
       end
-      return false
+      return false, SmatRow{T}()
     end
     r = vcat(r, s)
   end
@@ -1280,7 +1280,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   local f
 
   old_r = rank(clg.M)
-  println("starting with $old_r in rank increase")
+#  println("starting with $old_r in rank increase")
 
   nI = length(clg.FB.ideals)
   Idl = clg.FB.ideals
@@ -1305,7 +1305,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       if fl
         f.cnt += 1
         if f.cnt % 20 == 0
-          a = rank(clg)
+          a = rank(clg.M)
           if (a-old_r) < 0.5
             @v_do :ClassGroup 2 println("rank too slow $a ($old_a) $b ($old_b) and $(clg.rel_mat_full_rank)")
             break
@@ -1408,12 +1408,12 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
           end
         end
         if length(clg.RS) % 20 == 0 # cols(clg.M)*0.1
-          print_with_color(:blue, "2:found rels, trying again\n")
+#          print_with_color(:blue, "2:found rels, trying again\n")
           break
         end
       end
       if length(clg.RS) % 20  == 0# cols(clg.M)*0.1
-        print_with_color(:blue, "3:found rels, trying again\n")
+#        print_with_color(:blue, "3:found rels, trying again\n")
         break
       end
     end
@@ -1422,7 +1422,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     last_rank = rank(clg.M)
     class_group_process_relmatrix(clg)
     a = rank(clg.M)
-    println("rank increase gave $a was $a_old")
+#    println("rank increase gave $a was $a_old")
     h, piv = class_group_get_pivot_info(clg)
     if (a-a_old) < 0.5 * clg.bad_rel/(length(clg.RS) + clg.bad_rel)
       no_rand += 5
