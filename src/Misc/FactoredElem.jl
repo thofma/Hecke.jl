@@ -31,7 +31,11 @@ function FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1})
     if exp[i] == 0
       continue
     end
-    z.fac[base[i]] = exp[i]
+    if haskey(z.fac, base[i])
+      z.fac[base[i]] += exp[i]
+    else
+      z.fac[base[i]] = exp[i]
+    end
   end
 
   z.parent = FacElemMon(parent(base[1]))
