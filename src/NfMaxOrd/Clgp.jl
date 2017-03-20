@@ -1295,7 +1295,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       e = class_group_small_real_elements_relation_next(f)
       n = abs(norm_div(e, norm(f.A), np))
       if nbits(num(n)) > np-10 || f.restart > 0
-        print_with_color(:red, "norm too large or restarting: $(f.restart)")
+#        print_with_color(:red, "norm too large or restarting: $(f.restart)")
 #        println(n, " should be ", sqrt_disc)
 #        println("offending element is ", e)
 #        println("skipping ideal (for now)")
@@ -1476,7 +1476,7 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
 
   while true
     I = random_get(clg.randomClsEnv)
-    println("trying in ideal $I");
+#    println("trying in ideal $I");
     E = class_group_small_real_elements_relation_start(clg, I,
                             val = val, limit = limit, prec = prec)
 
