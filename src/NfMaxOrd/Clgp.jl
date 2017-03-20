@@ -1385,7 +1385,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
               j += 1
             end
             no_rand_local = min(nI-1, no_rand_local+1)
-            println("using ideal $A of norm $(norm(A))")
+#            println("using ideal $A of norm $(norm(A))")
             E = class_group_small_real_elements_relation_start(clg, A,
                             val = E.vl, limit = limit, prec = prec)
             #= CF: think careful here
