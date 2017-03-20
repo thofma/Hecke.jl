@@ -242,7 +242,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
   # Compute an upper bound in the denominator of an entry in the relation
   # using Cramer's rule and lower regulator bounds
 
-  # No comes the rational approximation phase
+  # Now comes the rational approximation phase
 
   # First a trivial check:
   # If the relation contains only integers, it does not yield any information
@@ -459,6 +459,7 @@ end
 function _frac_bounded_2(y::arb, bound::fmpz)
   p = prec(parent(y))
   x = _arb_get_fmpq(y)
+
   n = 1
   c = cfrac(x, n)[1]
   q = fmpq(c)
@@ -471,7 +472,7 @@ function _frac_bounded_2(y::arb, bound::fmpz)
       return true, new_q
     end
 
-    n = n + 1
+    n += 1
     c = cfrac(x, n)[1]
     new_q = fmpq(c)
 
@@ -562,8 +563,9 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
   while !_find_rational_relation!(rel, v, bound)
     @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
     p =  2*p
-
     p, B = _conj_log_mat_cutoff_inv(U, p)
+
+    @assert p != 0
 
     conlog = conjugates_arb_log(y, p)
 
@@ -582,10 +584,13 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
   @vprint :UnitGroup 3 "For $p rel: $rel\n"
 
   @vprint :UnitGroup 2 "Second iteration to check relation ... \n"
+
   while !_check_relation_mod_torsion(U.units, y, rel)
     @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
     p = 2*p
     p, B = _conj_log_mat_cutoff_inv(U, p)
+
+    @assert p != 0
 
     conlog = conjugates_arb_log(y, p)
 
@@ -989,6 +994,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     @assert gcd(foldr(gcd, k.values), d) == 1
 
     y = FacElem(vcat(x.R_gen[k.pos], x.R_rel[xj]), vcat(k.values, -d))
+    @assert abs(norm(y)) == 1
+
+    @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 
     time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
     u.tors_prec = max(p, u.tors_prec)
@@ -1024,6 +1032,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     rel = Smat{fmpz}()
     for jj in 1:min(div(rows(x.M.rel_gens), 10)+1, 20)
       xj = rand(1:rows(x.M.rel_gens))
+      if xj in add
+        continue
+      end
       push!(add, xj)
       push!(rel, x.M.rel_gens[xj])
     end
@@ -1034,6 +1045,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add])
     for i=1:s.r
       y = FacElem(ge[s[i].pos], s[i].values)
+      @assert abs(norm(y)) == 1
+
+      @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 
       @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
       @v_do :UnitGroup 2 pushindent()
