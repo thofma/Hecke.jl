@@ -760,7 +760,7 @@ doc"""
     reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
 
 > Reduces $g$ modulo $A$, ie. all entries in $g$ in columns s.th. $A$ has
-> pivot elements for thos columns, reduce $g$ modulo the pivots.
+> pivot elements for those columns, reduce $g$ modulo the pivots.
 > Assumes $A$ to be upper-triangular.  
 > The second return value is the array of pivot element of $A$ that
 > changed.
