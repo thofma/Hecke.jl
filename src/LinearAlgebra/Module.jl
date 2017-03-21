@@ -4,10 +4,17 @@
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
+import Base.reduce
 export det_mc, id, isid, isupper_triangular, norm2, hadamard_bound2, 
-       forall, exists
+       hnf, hnf!, echelon_with_trafo
 
 const p = next_prime(2^20)
+
+add_verbose_scope(:HNF)
+
+add_assert_scope(:HNF)
+set_assert_level(:HNF, 1)
+
 
 function show(io::IO, M::ModuleCtx_UIntMod)
   println("Module over $(M.R) of (current) rank $(rows(M.basis)) and $(rows(M.gens))")
@@ -26,7 +33,7 @@ end
 ##
 ############################################################
 function reduce(A::Smat{UIntMod}, g::SmatRow{UIntMod})
-  @assert isupper_triangular(A)
+  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   # supposed to be a field...
   if A.r == A.c
@@ -41,11 +48,11 @@ function reduce(A::Smat{UIntMod}, g::SmatRow{UIntMod})
     if j > rows(A) || A.rows[j].pos[1] > s
       break
     end
-    @assert A.rows[j].pos[1] == g.pos[1]
-    @assert (A.rows[j].values[1]) == 1
+    @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
+    @hassert :HNF 2  (A.rows[j].values[1]) == 1
     p = g.values[1]
     g = Hecke.add_scaled_row(A[j], g, -p)
-    @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+    @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
   end
   if length(g) > 0
     li = inv(g.values[1])
@@ -71,7 +78,7 @@ function add_gen!(M::ModuleCtx_UIntMod, g::SmatRow{UIntMod})
     while i<= rows(M.basis) && M.basis.rows[i].pos[1] < h.pos[1]
       i += 1
     end
-    @assert i > rows(M.basis) || M.basis[i].pos[1] > h.pos[1]
+    @hassert :HNF 2  i > rows(M.basis) || M.basis[i].pos[1] > h.pos[1]
     insert!(M.basis.rows, i, h)
     M.basis.r += 1
     M.basis.nnz += length(h)
@@ -83,8 +90,9 @@ function add_gen!(M::ModuleCtx_UIntMod, g::SmatRow{UIntMod})
 end
 
 function reduce(A::Smat{fmpz}, g::SmatRow{fmpz})
-  @assert isupper_triangular(A)
+  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
+  #until the 1st (pivot) change in A
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -99,21 +107,18 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz})
       end
       return g
     end
-    h = typeof(g)()
-    st_g = 2
-    st_A = 2
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
       g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
-      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+      @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
-      @assert x > 0
+      @hassert :HNF 2  x > 0
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
-      @assert A[j].values[1] == x
-      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+      @hassert :HNF 2  A[j].values[1] == x
+      @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     end
   end
   if length(g.values) > 0 && g.values[1] < 0
@@ -125,7 +130,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz})
 end
 
 function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
-  @assert isupper_triangular(A)
+  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   new_g = false
   while length(g)>0
@@ -139,7 +144,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
         for i=1:length(g.values)
           g.values[i] *= -1
         end
-#        @assert mod_sym(g.values[1], m) > 0
+        @hassert :HNF 3  mod_sym(g.values[1], m) > 0
       end
       if !new_g
         g = copy(g)
@@ -154,19 +159,19 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
       g = add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
       new_g = true
       mod_sym!(g, m)
-#      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+      @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
-      @assert x > 0
+      @hassert :HNF 2  x > 0
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
       new_g = true
-#      @assert A[j].values[1] == x
+#      @hassert :HNF 2  A[j].values[1] == x
       mod_sym!(g, m)
       mod_sym!(A[j], m)
-#      @assert length(g)==0 || g.pos[1] > A[j].pos[1]
-#      @assert A[j].values[1] > 0
+#      @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
+#      @hassert :HNF 2  A[j].values[1] > 0
     end
   end
   if !new_g
@@ -178,7 +183,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
     end
   end
   Hecke.mod_sym!(g, m)
-#  @assert length(g.pos) == 0 || g.values[1] >= 0
+#  @hassert :HNF 1  length(g.pos) == 0 || g.values[1] >= 0
   return g
 end
 
@@ -231,12 +236,12 @@ function check_index(M::ModuleCtx_fmpz)
     C.c = M.bas_gens.c
     for ii = M.bas_gens
       h = reduce(C, ii, 2*d) #to avoid problems with diag being 1...1 d
-      @assert !iszero(h)
+      @hassert :HNF 2  !iszero(h)
       i = 1
       while i<= rows(C) && C.rows[i].pos[1] < h.pos[1]
         i += 1
       end
-      @assert i > rows(C) || C[i].pos[1] > h.pos[1]
+      @hassert :HNF 2  i > rows(C) || C[i].pos[1] > h.pos[1]
       insert!(C.rows, i, h)
       C.r += 1
       C.nnz += length(h)
@@ -313,7 +318,7 @@ function non_trivial_pivot(M::ModuleCtx_fmpz)
     return missing_pivot(M)
   end
   C = M.basis
-  @assert C.r == C.c
+  @hassert :HNF 2  C.r == C.c
   return setdiff(1:cols(C), find(i->C[i].values[1] == 1, 1:C.c))
 end
 
@@ -326,8 +331,8 @@ function rank(M::ModuleCtx_UIntMod)
 end
 
 function solve(A::Smat{UIntMod}, g::SmatRow{UIntMod})
-  @assert cols(A) == rows(A)
-  @assert isupper_triangular(A)
+  @hassert :HNF 1  cols(A) == rows(A)
+  @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
   # the tansformation
   # supposed to be a field...
@@ -343,12 +348,12 @@ function solve(A::Smat{UIntMod}, g::SmatRow{UIntMod})
     if j > rows(A) || A.rows[j].pos[1] > s
       break
     end
-    @assert A.rows[j].pos[1] == g.pos[1]
+    @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
     p = g.values[1]//A.rows[j].values[1]
     push!(sol.pos, j)
     push!(sol.values, p)
     g = Hecke.add_scaled_row(A[j], g, -p)
-    @assert length(g)==0 || g.pos[1] > A[j].pos[1]
+    @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
   end
   if length(g) > 0
     li = inv(g.values[1])
@@ -404,7 +409,7 @@ function rational_reconstruction(A::SmatRow{fmpz}, M::fmpz)
 end
    
 function solve_ut(A::Smat{fmpz}, b::SmatRow{fmpz})
-  @assert isupper_triangular(A)
+  @hassert :HNF 1  isupper_triangular(A)
   #still assuming A to be upper-triag
 
   sol = SmatRow{fmpz}()
@@ -421,10 +426,10 @@ function solve_ut(A::Smat{fmpz}, b::SmatRow{fmpz})
       den *= f
     end
     push!(sol.pos, p)
-    @assert mod(v, A[p].values[1]) == 0
+    @hassert :HNF 2  mod(v, A[p].values[1]) == 0
     push!(sol.values, div(v, A[p].values[1]))
     b = b - sol.values[end]*A[p]
-    @assert length(b) == 0 || b.pos[1] > p
+    @hassert :HNF 2  length(b) == 0 || b.pos[1] > p
   end
   return sol, den
 end
@@ -443,25 +448,6 @@ function isupper_triangular(A::Smat)
   return true
 end
 
-#TODO: to Kannem-Bachem style reduction which avoids the blow up
-#      also, do the "same" in reduce further up whenever
-#      a pivot changes
-function full_echelon!(A::Smat{fmpz})
-  @assert isupper_triangular(A)
-  for i=2:A.r
-    for j=i-1:-1:1
-      A[j] = A[j] - div(A[j, A[i].pos[1]], A[i].values[1])*A[i]
-      @assert length(find(iszero, A[j].values)) == 0
-    end
-  end
-end
-
-function full_echelon(A::Smat{fmpz})
-  B = copy(A)
-  full_echelon!(B)
-  return B
-end
-
 doc"""
     det_mc(A::Smat{fmpz}
 
@@ -470,7 +456,7 @@ doc"""
 > Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det_mc(A::Smat{fmpz})
-  @assert A.r == A.c
+  @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
     return prod([A[i,i] for i=1:A.r])
   end
@@ -506,7 +492,7 @@ doc"""
 > Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det(A::Smat{fmpz})
-  @assert A.r == A.c
+  @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
     return prod([A[i,i] for i=1:A.r])
   end
@@ -554,7 +540,7 @@ end
 doc"""
     isid{T}(A::Smat{T})
 
-> Tests is $A$ is the $n \times n$ identity.
+> Tests if $A$ is the $n \times n$ identity.
 """
 function isid{T}(A::Smat{T})
   if A.c != A.r
@@ -572,6 +558,12 @@ function isid{T}(A::Smat{T})
   return true
 end
 
+doc"""
+    echelon_with_trafo(A::Smat{UIntMod}) -> Smat, Smat
+
+> Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
+> $TA = E$ holds.
+"""
 function echelon_with_trafo(A::Smat{UIntMod})
   z = hcat(A, id(Smat, base_ring(A), A.r))
   M = Hecke.ModuleCtx_UIntMod(Int(base_ring(A).mod.n), z.c)
@@ -582,35 +574,17 @@ function echelon_with_trafo(A::Smat{UIntMod})
 end
 
 doc"""
-    forall(A, a::Function)
+    solve_dixon_sf(A::Smat{fmpz}, b::SmatRow{fmpz}, is_int::Bool = false) -> SmatRow{fmpz}, fmpz
+    solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false) -> Smat{fmpz}, fmpz
 
-> Tests wether the predicate (function) $a$ returns $true$ for all elements in 
-> $A$.
+> For an upper-triangular sparse matrix $A$ and a sparse matrix (row), find
+> a sparse matrix (row) $x$ and an integer $d$ s.th.
+> $$x A = bd$$
+> holds.
+> The algorithm is a Dixon-based linear p-adic lifting method.
+> If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
+> rational reconstriction is avoided.
 """
-function forall(A, a::Function)
-  for x = A
-    if !a(x)
-      return false
-    end
-  end
-  return true
-end
-
-doc"""
-    exists(A, a::Function)
-
-> Tests wether the predicate (function) $a$ returns $true$ for at least one 
-> element in $A$.
-"""
-function exists(A, a::Function)
-  for x = A
-    if a(x)
-      return true
-    end
-  end
-  return false
-end
-
 function solve_dixon_sf(A::Smat{fmpz}, b::SmatRow{fmpz}, is_int::Bool = false)
   B = Smat{fmpz}()
   push!(B, b)
@@ -635,17 +609,17 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
   invert_rows!(Bp)
   Bp = Bp'
   Ep, Tp = echelon_with_trafo(Bp)
-  @assert Ep.c == Ep.r
-#  @assert nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
+  @hassert :HNF 1  Ep.c == Ep.r
+#  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
 
   invert_rows!(Ep)
   Ep = Ep'
   invert_rows!(Ep)
-#  @assert Hecke.isupper_triangular(Ep)
+#  @hassert :HNF 1  Hecke.isupper_triangular(Ep)
 
   invert_rows!(Tp)
   Tp = Tp'
-#  @assert nmod_mat(Ap)*nmod_mat(Tp) == nmod_mat(Ep)
+#  @hassert :HNF 1  nmod_mat(Ap)*nmod_mat(Tp) == nmod_mat(Ep)
 
   #now, to solve xA = b, we do
   #              xAT = bT since AT is upper-triag, we can do this!
@@ -670,11 +644,8 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
       sol += pp*z
 
       pp *= fmpz(p)
-#      if nbits(pp) > 1000
-#        error("too large")
-#      end
 
-  #    @assert iszero(SmatRow(b_orig - Hecke.mul(sol, A), pp)) 
+  #    @hassert :HNF 1  iszero(SmatRow(b_orig - Hecke.mul(sol, A), pp)) 
 
       if is_int
         fl = true
@@ -685,8 +656,8 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
         fl, nu, de = rational_reconstruction(sol, pp)
       end
       if fl 
-  #      @assert SmatRow(de*sol, pp) == SmatRow(nu, pp)
-  #      @assert SmatRow(mul(nu, A), pp) == SmatRow(de*b_orig, pp)
+  #      @hassert :HNF 1  SmatRow(de*sol, pp) == SmatRow(nu, pp)
+  #      @hassert :HNF 1  SmatRow(mul(nu, A), pp) == SmatRow(de*b_orig, pp)
         if last == (nu, de)
           if Hecke.mul(nu, A) == de*b_orig
             l = lcm(den_all, de)
@@ -705,11 +676,11 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
         end
       end
 
-  #    @assert SmatRow(Hecke.mul(z, A), p) == bp
+  #    @hassert :HNF 1  SmatRow(Hecke.mul(z, A), p) == bp
       b = b - Hecke.mul(z, A)
 
       for i=1:length(b.values)
-  #      @assert b.values[i] % p == 0
+  #      @hassert :HNF 1  b.values[i] % p == 0
         b.values[i] = div(b.values[i], p)
       end  
       bp = SmatRow(b, p)
@@ -719,8 +690,8 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
 end
 
 doc"""
-    saturate(A::fmpz_mat)
-    saturate(A::Smat{fmpz})
+    saturate(A::fmpz_mat) -> fmpz_mat
+    saturate(A::Smat{fmpz}) -> Smat{fmpz}
 
 > Computes the \code{saturation} of $A$, ie. a basis for $Q\otimes [A] \meet Z^n$.
 > Equivalently, $TA$ for $T \in \Gl(n, Q)$ s.th. $TA\in Z^{n\times m}$ and
@@ -739,11 +710,221 @@ function saturate(A::fmpz_mat)
   Hi, d = pseudo_inv(sub(H, 1:rows(H), 1:rows(H)))
   S = Hi*A
   Sd = divexact(S, d)
-#  @assert d*Sd == S
+#  @hassert :HNF 1  d*Sd == S
   return Sd
 end
 
 function saturate(A::Smat{fmpz})
   return Smat(saturate(fmpz_mat(A)))
 end
+############################################################
+# HNF Kannam Bachem style
+############################################################
+
+doc"""
+    find_row_starting_with(A::Smat, p::Int)
+ 
+> Tries to find the index $i$ s.th. $A[i,p] != 0$ and $A[i, p-j] = 0$
+> holds for all $j$.
+> Assumes $A$ to be upper-triangular.
+> If such an index does not exist, find the smallest index
+> larger.
+"""
+function find_row_starting_with(A::Smat, p::Int)
+#  @hassert :HNF 1  isupper_triangular(A)
+  start = 0
+  stop = rows(A)+1
+  while start < stop - 1
+    mid = div((stop + start), 2)
+    if A[mid].pos[1] == p
+      return mid
+    elseif A[mid].pos[1] < p
+      start = mid 
+    else
+      stop = mid 
+    end
+  end
+  return stop
+end
+
+function reduce_up(A::Smat{fmpz}, piv::Array{Int, 1})
+  sort!(piv)
+  p = find_row_starting_with(A, piv[end])
+  for red=p-1:-1:1
+    # the last argument should be the smallest pivot larger then pos[1]
+    A[red] = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]))
+  end
+end
+
+doc"""
+    reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
+
+> Reduces $g$ modulo $A$, ie. all entries in $g$ in columns s.th. $A$ has
+> pivot elements for thos columns, reduce $g$ modulo the pivots.
+> Assumes $A$ to be upper-triangular.  
+> The second return value is the array of pivot element of $A$ that
+> changed.
+"""
+function reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
+#  @hassert :HNF 1  isupper_triangular(A)
+  #assumes A is upper triangular, reduces g modulo A
+  piv = Int[]
+  while length(g)>0
+    s = g.pos[1]
+    j = 1
+    while j<= rows(A) && A.rows[j].pos[1] < s
+      j += 1
+    end  
+    if j > rows(A) || A.rows[j].pos[1] > s
+      if g.values[1] < 0
+        for i=1:length(g.values)
+          g.values[i] *= -1
+        end
+      end
+      g = reduce_right(A, g)
+      if A.r == A.c
+        @hassert :HNF 1  length(g) == 0 || min(g) >= 0
+      end
+      return g, piv
+    end
+    p = g.values[1]
+    if divides(p, A.rows[j].values[1])[1]
+      g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
+      @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
+    else
+      x, a, b = gcdx(A.rows[j].values[1], p)
+      @hassert :HNF 1  x > 0
+      c = -div(p, x)
+      d = div(A.rows[j].values[1], x)
+      A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      @hassert :HNF 1  A[j].values[1] == x
+      @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
+      push!(piv, A[j].pos[1])
+      A[j] = reduce_right(A, A[j], A[j].pos[1]+1)
+      if A.r == A.c
+        @hassert :HNF 1  min(A[j]) >= 0
+      end
+    end
+  end
+  if length(g.values) > 0 && g.values[1] < 0
+    for i=1:length(g.values)
+      g.values[i] *= -1
+    end
+  end
+  g = reduce_right(A, g)
+  if A.r == A.c
+    @hassert :HNF 1  length(g) == 0 || min(g) >= 0
+  end
+  return g, piv
+end
+
+function reduce_right(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1)
+  if length(b.pos) == 0
+    return b
+  end
+  j = 1
+  while j <= length(b.pos) && b.pos[j] < start
+    j += 1
+  end
+  if j > length(b.pos)
+    return b
+  end
+  p = find_row_starting_with(A, b.pos[j])
+  if p > rows(A)
+    return b
+  end
+  @hassert :HNF 1  A[p] != b
+  while j <= length(b.pos)
+    while p<rows(A) && A[p].pos[1] < b.pos[j]
+      p += 1
+    end
+    if A[p].pos[1] == b.pos[j]
+      q, r = divrem(b.values[j], A[p].values[1])
+      if r < 0
+        q -= 1
+        r += A[p].values[1]
+        @hassert :HNF 1  r >= 0
+      end
+      if q != 0
+        b = Hecke.add_scaled_row(A[p], b, -q)
+        if r == 0
+          j -= 1
+        else
+          @hassert :HNF 1  b.values[j] == r
+        end
+      end
+    end
+    j += 1
+  end
+  return b
+end
+
+doc"""
+    hnf_kannan_bachem(A::Smat{fmpz})
+
+> Hermite Normal Form of $A$ using the Kannan-Bachem algorithm to avoid
+> intermediate coefficient swell.
+"""
+function hnf_kannan_bachem(A::Smat{fmpz})
+  @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
+  @vprint :HNF 1 A
+  @vprint :HNF 1 "with density $(A.nnz/(A.c*A.r))"
+
+  B = Smat{fmpz}()
+  B.c = A.c
+  nc = 0
+  for i=A
+    q, w = reduce_full(B, i)
+    if length(q) > 0
+      p = find_row_starting_with(B, q.pos[1])
+      if p > length(B.rows)
+        push!(B, q)
+      else
+        insert!(B.rows, p, q)
+        B.r += 1
+        B.nnz += length(q)
+        B.c = max(B.c, q.pos[end])
+      end
+      push!(w, q.pos[1])
+    end
+    if length(w) > 0
+      reduce_up(B, w)
+    end
+    @v_do :HNF 1 begin
+      if nc % 10 == 0
+        println("Now at $nc rows of $(A.r), HNF so far $(B.r) rows")
+        println("Current density: $(B.nnz/(B.c*B.r))")
+        println("and size of largest entry: $(nbits(abs_max(B))) bits")
+      end
+    end
+    nc += 1
+  end
+  return B
+end
+
+doc"""
+    hnf(A::Smat{fmpz}) -> Smat{fmpz}
+
+> The Hermite Normal Form of $A$, ie. an upper triangular matrix with non-negative
+> entries in echelon form that is row-equivalent to $A$.
+> Currently, Kannan-Bachem is used.
+"""
+function hnf(A::Smat{fmpz})
+  return hnf_kannan_bachem(A)
+end
+
+doc"""
+    hnf!(A::Smat{fmpz})
+
+> In-place reduction of $A$ into Hermite Normal Form.
+> Currently, Kannan-Bachem is used.
+"""
+function hnf!(A::Smat{fmpz})
+  B = hnf(A)
+  A.rows = B.rows
+  A.nnz = B.nnz
+  A.r = B.r
+  A.c = B.c
+end
+
 
