@@ -206,7 +206,7 @@ function minimum(a::NfOrdIdl)
   if isdefined(a, :minimum)
     return deepcopy(a.minimum)
   else
-    @hassert :NfOrd 2 isone(basis(order(a)))
+    @hassert :NfOrd 2 isone(basis(order(a))[1])
     a.minimum = basis_mat(a)[1, 1]
     return deepcopy(a.minimum)
   end
