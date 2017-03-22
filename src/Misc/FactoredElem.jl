@@ -93,10 +93,14 @@ end
 #
 ################################################################################
 
+#needed for FacElem{fmpq/fmpz, fmpz}^pow...
+elem_type(::Type{FlintRationalField}) = fmpq
+elem_type(::Type{FlintIntegerRing}) = fmpz
+
 function pow!{T <: Union{fmpz, Integer}}(z::FacElem, x::FacElem, y::T)
   z.fac = deepcopy(x.fac)
   for a in base(x)
-    # this should be inplac
+    # this should be inplace
     z.fac[a] = y*x.fac[a]
   end
 end
@@ -264,6 +268,7 @@ doc"""
 
 > Expands or evaluates the factored element, i.e. actually computes the
 > value. 
+> Does "square-and-multiply" on the exponent vectors.
 """
 function evaluate{T}(x::FacElem{T})
   function ev(d)#d::Dict{T, fmpz})
@@ -277,7 +282,7 @@ function evaluate{T}(x::FacElem{T})
     b = similar(d)
     for (k,v) in d
       if v>-10 && v<10
-        z *= k^v
+        z *= k^Int(v)
       else
         r = isodd(v) ? 1 :0
         vv = div(v-r, 2)
@@ -293,6 +298,61 @@ function evaluate{T}(x::FacElem{T})
   end
 
   return ev(x.fac)
+end
+
+doc"""
+***
+  evaluate(x::FacElem{fmpq}) -> fmpq
+  evaluate(x::FacElem{fmpz}) -> fmpz
+
+> Expands or evaluates the factored element, i.e. actually computes the
+> the element. 
+> Works by first obtaining a simplified version of the power product
+> into coprime base elements.
+"""
+function evaluate(x::FacElem{fmpq})
+  cp = coprime_base(vcat([den(y) for y = base(x)], [num(y) for y=base(x)]))
+  ev = Dict{fmpz, fmpz}()
+  for p = cp
+    if p == 1 || p == -1
+      continue
+    end
+    v = fmpz(0)
+    for b = base(x)
+      v += valuation(b, abs(p))*x.fac[b]
+    end
+    if v != 0
+      ev[p] = v
+    end
+  end
+  s = map(b -> b < 0 && isodd(x.fac[b]) ? -1 : 1, base(x))
+  # this is simplified. If exponents are too large, the element is toast.
+  # coprime base can have negative elements
+  return prod(s) * abs(prod([fmpq(a)^Int(b) for (a,b) = ev])) 
+end
+
+function evaluate(x::FacElem{fmpz})
+  cp = coprime_base(collect(base(x)))
+  ev = Dict{fmpz, fmpz}()
+  for p = cp
+    if p == 1 || p == -1
+      continue
+    end
+    v = fmpz(0)
+    for b = base(x)
+      v += valuation(b, abs(p))*x.fac[b]
+    end
+    if v < 0 
+      throw(DomainError())
+    end
+    if v != 0
+      ev[p] = v
+    end
+  end
+  s = map(b -> b < 0 && isodd(x.fac[b]) ? -1 : 1, base(x))
+  # this is simplified. If exponents are too large, the element is toast.
+  # coprime base can have negative elements
+  return prod(s) * abs(prod([a^Int(b) for (a,b) = ev])) 
 end
 
 doc"""
