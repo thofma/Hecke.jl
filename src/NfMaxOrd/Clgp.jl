@@ -1339,7 +1339,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   h, piv = class_group_get_pivot_info(clg)
 
-  @vprint :ClassGroup 1 "Target rank: $(length(clg.FB))\nCurrent rank: $(rank(clg.M))\nTentative class number: $(h)"
+  @vprint :ClassGroup 1 "Target rank: $(length(clg.FB.ideals))\nCurrent rank: $(rank(clg.M))\nTentative class number: $(h)"
 
   want_extra = 5
   bad_h = false
