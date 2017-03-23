@@ -50,6 +50,15 @@ end
 
 abstract Trafo
 
+type TrafoScale{T} <: Trafo
+  i::Int
+  c::T
+
+  function TrafoScale(i::Int, c::T)
+    return new{T}(i, c)
+  end
+end
+
 type TrafoSwap{T} <: Trafo
   i::Int
   j::Int

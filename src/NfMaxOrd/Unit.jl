@@ -1420,6 +1420,9 @@ end
 
 function reduce{T}(u::Array{T, 1}, prec::Int = 32)
   r = length(u)
+  if r == 0
+    return u
+  end
   r,s = signature(_base_ring(u[1]))
 
   A = MatrixSpace(ZZ, length(u), r + s)()
