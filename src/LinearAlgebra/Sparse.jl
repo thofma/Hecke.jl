@@ -1135,6 +1135,12 @@ end
 #
 ################################################################################
 
+function scale_row!{T}(A::Smat{T}, i::Int, c::T)
+  for j in 1:length(A.rows[i].values)
+    A.rows[i].values[j] *= c
+  end
+end
+
 doc"""
   swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
 
@@ -1706,6 +1712,12 @@ end
 
 # The following function do not update the number of nonzero entries
 # properly
+
+function apply_left!{T}(A::Smat{T}, t::TrafoScale{T})
+  scale_row!(A, t.i, t.c)
+  return nothing
+end
+  
 function apply_left!{T}(A::Smat{T}, t::TrafoSwap{T})
   swap_rows!(A, t.i, t.j)
   return nothing

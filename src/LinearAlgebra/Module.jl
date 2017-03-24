@@ -13,7 +13,7 @@ const p = next_prime(2^20)
 add_verbose_scope(:HNF)
 
 add_assert_scope(:HNF)
-set_assert_level(:HNF, 1)
+set_assert_level(:HNF, 0)
 
 
 function show(io::IO, M::ModuleCtx_UIntMod)
@@ -717,9 +717,12 @@ end
 function saturate(A::Smat{fmpz})
   return Smat(saturate(fmpz_mat(A)))
 end
-############################################################
-# HNF Kannam Bachem style
-############################################################
+
+################################################################################
+#
+#  Hermite normal form using Kannan-Bachem algorithm
+#
+################################################################################
 
 doc"""
     find_row_starting_with(A::Smat, p::Int)
@@ -747,27 +750,60 @@ function find_row_starting_with(A::Smat, p::Int)
   return stop
 end
 
-function reduce_up(A::Smat{fmpz}, piv::Array{Int, 1})
+# If trafo is set to Val{true}, then additionaly an Array of transformations
+# is returned.
+function reduce_up{N}(A::Smat{fmpz}, piv::Array{Int, 1},
+                                     trafo::Type{Val{N}} = Val{false})
+
+  with_trafo = (trafo == Val{true})
+  if with_trafo
+    trafos = []
+  end
+
   sort!(piv)
   p = find_row_starting_with(A, piv[end])
+
   for red=p-1:-1:1
     # the last argument should be the smallest pivot larger then pos[1]
-    A[red] = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]))
+    if with_trafo
+      A[red], new_trafos = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]), trafo)
+      for t in new_trafos
+        t.j = red
+      end
+      append!(trafos, new_trafos)
+    else
+      A[red] = reduce_right(A, A[red], max(A[red].pos[1]+1, piv[1]))
+    end
   end
+  with_trafo ? (return trafos) : nothing
 end
 
+# If trafo is set to Val{true}, then additionaly an Array of transformations
+# is returned.
 doc"""
-    reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
+    reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz}, trafo::Type{Val{Bool}} = Val{false})
 
-> Reduces $g$ modulo $A$, ie. all entries in $g$ in columns s.th. $A$ has
+> Reduces $g$ modulo $A$, that is, all entries in $g$ in columns where $A$ has
 > pivot elements for those columns, reduce $g$ modulo the pivots.
 > Assumes $A$ to be upper-triangular.  
+>
 > The second return value is the array of pivot element of $A$ that
 > changed.
+>
+> If `trafo` is set to `Val{true}`, then additionally an array of transformations
+> is returned.
 """
-function reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
+function reduce_full{T}(A::Smat{fmpz}, g::SmatRow{fmpz}, trafo::Type{Val{T}} = Val{false})
 #  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
+
+  with_trafo = (trafo == Val{true})
+  no_trafo = (trafo == Val{false})
+
+  if with_trafo
+    trafos = []
+  end 
+
   piv = Int[]
   while length(g)>0
     s = g.pos[1]
@@ -777,19 +813,34 @@ function reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
     end  
     if j > rows(A) || A.rows[j].pos[1] > s
       if g.values[1] < 0
+        # Multiply row g by -1
+        if with_trafo
+          push!(trafos, TrafoScale{fmpz}(rows(A) + 1, fmpz(-1)))
+        end
         for i=1:length(g.values)
           g.values[i] *= -1
         end
       end
-      g = reduce_right(A, g)
+
+      if with_trafo
+        g, new_trafos  = reduce_right(A, g, 1, trafo)
+        append!(trafos, new_trafos)
+      else
+        g = reduce_right(A, g)
+      end
+
       if A.r == A.c
         @hassert :HNF 1  length(g) == 0 || min(g) >= 0
       end
-      return g, piv
+
+      with_trafo ? (return g, piv, trafos) : (return g, piv)
+
     end
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
-      g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
+      sca =  -divexact(p, A.rows[j].values[1])
+      g = Hecke.add_scaled_row(A[j], g, sca)
+      with_trafo ? push!(trafos, TrafoAddScaled(j, rows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
@@ -797,10 +848,25 @@ function reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      if with_trafo
+        push!(trafos, TrafoParaAddScaled(j, rows(A) + 1, a, b, c, d))
+      end
       @hassert :HNF 1  A[j].values[1] == x
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
       push!(piv, A[j].pos[1])
-      A[j] = reduce_right(A, A[j], A[j].pos[1]+1)
+      if with_trafo
+        A[j], new_trafos = reduce_right(A, A[j], A[j].pos[1]+1, trafo)
+        # We are updating the jth row
+        # Have to adjust the transformations
+        for t in new_trafos
+          t.j = j
+        end
+        # Now append
+        append!(trafos, new_trafos)
+      else
+        A[j] = reduce_right(A, A[j], A[j].pos[1]+1, trafo)
+      end
+
       if A.r == A.c
         @hassert :HNF 1  min(A[j]) >= 0
       end
@@ -810,28 +876,36 @@ function reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz})
     for i=1:length(g.values)
       g.values[i] *= -1
     end
+    with_trafo ? push!(trafos, TrafoScale{fmpz}(rows(A) + 1, fmpz(-1))) : nothing
   end
-  g = reduce_right(A, g)
+  if with_trafo
+    g, new_trafos = reduce_right(A, g, 1, trafo)
+    append!(trafos, new_trafos)
+  else
+    g = reduce_right(A, g)
+  end
   if A.r == A.c
     @hassert :HNF 1  length(g) == 0 || min(g) >= 0
   end
-  return g, piv
+  with_trafo ? (return g, piv, trafos) : (return g, piv)
 end
 
-function reduce_right(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1)
+function reduce_right{N}(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1, trafo::Type{Val{N}} = Val{false})
+  with_trafo = (trafo == Val{true})
+  with_trafo ? trafos = [] : nothing
   if length(b.pos) == 0
-    return b
+    with_trafo ? (return b, trafos) : return b
   end
   j = 1
   while j <= length(b.pos) && b.pos[j] < start
     j += 1
   end
   if j > length(b.pos)
-    return b
+    with_trafo ? (return b, trafos) : return b
   end
   p = find_row_starting_with(A, b.pos[j])
   if p > rows(A)
-    return b
+    with_trafo ? (return b, trafos) : return b
   end
   @hassert :HNF 1  A[p] != b
   while j <= length(b.pos)
@@ -847,6 +921,7 @@ function reduce_right(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1)
       end
       if q != 0
         b = Hecke.add_scaled_row(A[p], b, -q)
+        with_trafo ? push!(trafos, TrafoAddScaled(p, rows(A) + 1, -q)) : nothing
         if r == 0
           j -= 1
         else
@@ -856,7 +931,7 @@ function reduce_right(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1)
     end
     j += 1
   end
-  return b
+  with_trafo ? (return b, trafos) : return b
 end
 
 doc"""
@@ -865,30 +940,58 @@ doc"""
 > Hermite Normal Form of $A$ using the Kannan-Bachem algorithm to avoid
 > intermediate coefficient swell.
 """
-function hnf_kannan_bachem(A::Smat{fmpz})
+function hnf_kannan_bachem{N}(A::Smat{fmpz}, trafo::Type{Val{N}} = Val{false})
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
   @vprint :HNF 1 "with density $(A.nnz/(A.c*A.r))"
+
+  with_trafo = (trafo == Val{true})
+  with_trafo ? trafos = [] : nothing
 
   B = Smat{fmpz}()
   B.c = A.c
   nc = 0
   for i=A
-    q, w = reduce_full(B, i)
+    if with_trafo 
+      q, w, new_trafos = reduce_full(B, i, trafo)
+      append!(trafos, new_trafos)
+    else
+      q, w = reduce_full(B, i)
+    end
+
     if length(q) > 0
       p = find_row_starting_with(B, q.pos[1])
       if p > length(B.rows)
+        # Appending row q to B
+        # Do not need to track a transformation
         push!(B, q)
       else
+        # Inserting row q at position p
         insert!(B.rows, p, q)
         B.r += 1
         B.nnz += length(q)
         B.c = max(B.c, q.pos[end])
+        # The transformation is swapping pairwise from rows(B) to p.
+        # This should be the permutation matrix corresponding to
+        # (k k-1)(k-1 k-2) ...(p+1 p) where k = rows(B)
+        if with_trafo
+          for j in rows(B):-1:(p+1)
+            push!(trafos, TrafoSwap{fmpz}(j, j - 1))
+          end
+        end
       end
       push!(w, q.pos[1])
+    else
+      # Row i was reduced to zero
+      with_trafo ? push!(trafos, TrafoDeleteZero{fmpz}(rows(B) + 1)) : nothing
     end
     if length(w) > 0
-      reduce_up(B, w)
+      if with_trafo
+        new_trafos = reduce_up(B, w, trafo)
+        append!(trafos, new_trafos)
+      else
+        reduce_up(B, w)
+      end
     end
     @v_do :HNF 1 begin
       if nc % 10 == 0
@@ -899,7 +1002,7 @@ function hnf_kannan_bachem(A::Smat{fmpz})
     end
     nc += 1
   end
-  return B
+  with_trafo ? (return B, trafos) : (return B)
 end
 
 doc"""
@@ -909,8 +1012,8 @@ doc"""
 > entries in echelon form that is row-equivalent to $A$.
 > Currently, Kannan-Bachem is used.
 """
-function hnf(A::Smat{fmpz})
-  return hnf_kannan_bachem(A)
+function hnf{N}(A::Smat{fmpz}, trafo::Type{Val{N}} = Val{true})
+  return hnf_kannan_bachem(A, trafo)
 end
 
 doc"""
@@ -926,5 +1029,4 @@ function hnf!(A::Smat{fmpz})
   A.r = B.r
   A.c = B.c
 end
-
 
