@@ -92,6 +92,12 @@ doc"""
   (true, x, y) or (false, garbage) if not possible.
 """
 function rational_reconstruction(a::fmpz, b::fmpz)
+#  res = fmpq()
+#  a = rem(a, b)
+#  fl = ccall((:fmpq_reconstruct_fmpz, :libflint), Int, (Ptr{fmpq}, Ptr{fmpz}, Ptr{fmpz}), &res, &a, &b)
+#  return fl!=0, num(res), den(res)
+
+
   R = FlintZZ
   sb = root(div(b-1, 2), 2)
 
