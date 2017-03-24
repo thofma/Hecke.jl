@@ -316,14 +316,6 @@ function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
   a.start+(i-1)*Base.step(a)
 end
 
-function ^(x::fmpq, y::fmpz)
-  if typemax(Int) > y
-    return x^Int(y)
-  else
-    error("Not implemented (yet)")
-  end
-end
-
 ################################################################################
 #
 #  Should go to Nemo?
