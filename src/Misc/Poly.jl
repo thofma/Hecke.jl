@@ -132,15 +132,16 @@ function rational_reconstruction(a::Integer, b::Integer)
 end
 
 doc"""
-    rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, N::fmpz) -> Bool, fmpz, fmpz
+    rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz) -> Bool, fmpz, fmpz
 > Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
 > satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
 """
-function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, N::fmpz)
+function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz)
   res = fmpq()
   a = mod(a, b)
   fl = ccall((:fmpq_reconstruct_fmpz_2, :libflint), Int, (Ptr{fmpq}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &res, &a, &b, &N, &D)
   return fl!=0, num(res), den(res)
+end
 
 #Note: the vector version might be useful - or the mult be previous den version
 #Note: missing reconstruction modulo a true ideal. W/o denominators
