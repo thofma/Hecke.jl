@@ -619,7 +619,7 @@ function *(x::NfMaxOrdIdl, y::fmpz)
   if has_2_elem(x) && has_2_elem_normal(x)
     return prod_by_int_2_elem_normal(x,y)
   else
-    error("Algorithm not yet implemented")
+    return ideal(order(x), y*basis_mat(x))
   end
 end
 
