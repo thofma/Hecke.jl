@@ -81,7 +81,7 @@ end
 
 TrafoAddScaled{T}(i::Int, j::Int, s::T) = TrafoAddScaled{T}(i, j, s)
 
-# if from right, then
+# if from left, then
 # row i -> a*row i + b * row j
 # row j -> c*row i + d * row j
 type TrafoParaAddScaled{T} <: Trafo
@@ -108,7 +108,7 @@ type TrafoPartialDense{S} <: Trafo
   rows::UnitRange{Int}
   cols::UnitRange{Int}
   U::S
-  
+
   function TrafoPartialDense(i::Int, rows::UnitRange{Int},
                              cols::UnitRange{Int}, U::S)
     return new(i, rows, cols, U)
@@ -216,7 +216,7 @@ end
 type SmatSLP_add_row{T}
   row::Int
   col::Int
-  val::T 
+  val::T
 end
 
 type SmatSLP_swap_row
@@ -226,16 +226,42 @@ end
 
 ################################################################################
 #
-#  Abstract types
+#  Abstract map type
 #
 ################################################################################
 
 abstract Map{D, C}
 
+################################################################################
+#
+#  Sparse rows
+#
+################################################################################
+
+const SmatRowSpaceDict = ObjectIdDict()
+
+type SmatRowSpace{T} <: Ring
+  base_ring::Ring
+
+  function SrowSpace(R::Ring, cached = true)
+    if haskey(SmatRowSpaceDict, R)
+      return SmatRowSpace[R]::SmatRowSpace{T}
+    else
+      z = new{T}(r, c, R)
+      if cached
+        SmatRowSpace[R, r, c] = z
+      end
+      return z
+    end
+  end
+end
+
 type SmatRow{T}
   #in this row, in column pos[1] we have value values[1]
   values::Array{T, 1}
   pos::Array{Int, 1}
+  parent::SmatRowSpace{T}
+
   function SmatRow()
     r = new()
     r.values = Array{T, 1}()
@@ -276,11 +302,38 @@ type SmatRow{T}
   end
 end
 
+################################################################################
+#
+#  Sparse matrices 
+#
+################################################################################
+
+const SmatSpaceDict = ObjectIdDict()
+
+type SmatSpace{T} <: Ring
+  rows::Int
+  cols::Int
+  base_ring::Ring
+
+  function SmatSpace(R::Ring, r::Int, c::Int, cached = true)
+    if haskey(SmatSpaceDict, (R, r, c))
+      return SmatSpace[R, r, c,]::SmatSpace{T}
+    else
+      z = new{T}(r, c, R)
+      if cached
+        SmatSpace[R, r, c] = z
+      end
+      return z
+    end
+  end
+end
+
 type Smat{T}
   r::Int
   c::Int
   rows::Array{SmatRow{T}, 1}
   nnz::Int
+  parent::SmatSpace{T}
 
   function Smat()
     r = new()
@@ -477,7 +530,7 @@ type NfOrdElem{T <: NfOrd} <: RingElem
   function NfOrdElem(O::T)
     z = new{T}()
     z.parent = O
-    z.elem_in_nf = nf(O)() 
+    z.elem_in_nf = nf(O)()
     z.elem_in_basis = Array{fmpz}(degree(O))
     z.has_coord = false
     return z
@@ -564,14 +617,14 @@ type NfOrdGen <: NfOrd
   torsion_units::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
                                    # (Torsion units, generator of torsion)
   norm_change_const::Tuple{Float64, Float64}
-                                   # Tuple c1, c2 as in the paper of 
+                                   # Tuple c1, c2 as in the paper of
                                    # Fieker-Friedrich
-  trace_mat::fmpz_mat              # the trace matrix - if known                                 
+  trace_mat::fmpz_mat              # the trace matrix - if known
 
   function NfOrdGen()
     z = new()
     # Populate with 'default' values
-    z.signature = (-1,0)      
+    z.signature = (-1,0)
     z.norm_change_const = (-1.0, -1.0)
     z.isequationorder = false
     return z
@@ -612,7 +665,7 @@ type NfOrdGen <: NfOrd
       for i in 1:degree(K)
         t = elem_from_mat_row(K, x.num, i, x.den)
         BB[i] = t
-        B[i] = z(t, false) 
+        B[i] = z(t, false)
       end
       z.basis_ord = B
       z.basis_nf = BB
@@ -658,7 +711,7 @@ NfOrdGenIdlSetID = ObjectIdDict()
 
 type NfOrdGenIdlSet <: NfOrdIdlSet
   order::NfOrdGen
-  
+
   function NfOrdGenIdlSet(a::NfOrdGen)
     try
       return NfOrdGenIdlSetID[a]
@@ -690,7 +743,7 @@ type NfOrdGenIdl <: NfOrdIdl
     z.princ_gen_special = (0, 0, fmpz(0))
     return z
   end
-    
+
   function NfOrdGenIdl(O::NfOrdGen, a::Int)
     z = new()
     z.parent = NfOrdGenIdlSet(O)
@@ -745,7 +798,7 @@ NfOrdGenFracIdlSetID = ObjectIdDict()
 
 type NfOrdGenFracIdlSet <: NfOrdFracIdlSet
   order::NfOrdGen
-  
+
   function NfOrdGenFracIdlSet(a::NfOrdGen)
     try
       return NfOrdGenFracIdlSetID[a]
@@ -765,7 +818,7 @@ type NfOrdGenFracIdl <: NfOrdFracIdl
   parent::NfOrdGenFracIdlSet
   norm::fmpq
   princ_gen::nf_elem
-  
+
   function NfOrdGenFracIdl(O::NfOrdGen, a::FakeFmpqMat)
     z = new()
     z.parent = NfOrdGenFracIdlSet(O)
@@ -834,9 +887,9 @@ type NfMaxOrd <: NfOrd
                                    # unit_group(O)
 
   norm_change_const::Tuple{Float64, Float64}
-                                   # Tuple c1, c2 as in the paper of 
+                                   # Tuple c1, c2 as in the paper of
                                    # Fieker-Friedrich
-  trace_mat::fmpz_mat              # the trace matrix - if known                                 
+  trace_mat::fmpz_mat              # the trace matrix - if known
 
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
@@ -940,12 +993,12 @@ end
 
     Creates the ideal (a,b) of the order of b.
     No sanity checks. Note data is copied, a and b should not be used anymore.
-  
+
   NfMaxOrdIdl(O::NfMaxOrd, a::fmpz, b::nf_elem) -> NfMaxOrdIdl
 
     Creates the ideal (a,b) of O.
     No sanity checks. No data is copied, a and b should be used anymore.
-  
+
   NfMaxOrdIdl(x::NfOrdElem) -> NfMaxOrdIdl
 
     Creates the principal ideal (x) of the order of O.
@@ -983,7 +1036,7 @@ type NfMaxOrdIdl <: NfOrdIdl
                            # mind that the ideal is not prime
 
   parent::NfMaxOrdIdlSet
-  
+
   function NfMaxOrdIdl(O::NfMaxOrd)
     # populate the bits types (Bool, Int) with default values
     r = new()
@@ -1012,7 +1065,7 @@ type NfMaxOrdIdl <: NfOrdIdl
     r.gen_two = b
     return r
   end
- 
+
   function NfMaxOrdIdl(O::NfMaxOrd, a::fmpz, b::nf_elem)
     # create ideal (a,b) of O
     r = NfMaxOrdIdl(a, O(b, false))
@@ -1168,7 +1221,7 @@ end
 #
 ################################################################################
 
-type BigComplex 
+type BigComplex
   re::BigFloat
   im::BigFloat
   function BigComplex(r::BigFloat)
@@ -1323,7 +1376,7 @@ type FactorBaseSingleP
   pt::FactorBase{nmod_poly}
   lp::Array{Tuple{Int,NfMaxOrdIdl}, 1}
   doit::Function
-  
+
   function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfMaxOrdIdl}, 1})
     FB = new()
     FB.lp = lp
@@ -1336,10 +1389,10 @@ type FactorBaseSingleP
       for x=1:length(lp)
         vl = valuation(a, lp[x][2])
         v -= vl*lp[x][2].splitting_type[2]
-        if vl !=0 
+        if vl !=0
           push!(r, (lp[x][1], vl))
-        end  
-      end  
+        end
+      end
       return r, v
     end
 
@@ -1380,16 +1433,16 @@ type FactorBaseSingleP
         else
           return Array{Tuple{Int, Int}, 1}(), -1
         end
-      end  
+      end
     end
     FB.doit = function(a::nf_elem, v::Int)
       d = den(a)
       if isone(gcd(d, p)) return int_doit(a, v); end
-      return naive_doit(a, v); 
-    end  
+      return naive_doit(a, v);
+    end
     return FB
   end
-end  
+end
 
 type NfFactorBase
   fb::Dict{fmpz, FactorBaseSingleP}
@@ -1438,7 +1491,7 @@ type ModuleCtx_fmpz
   Mp::ModuleCtx_UIntMod
   rel_reps_p::Smat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
                         # at least mod p...
-  basis_idx::fmpz                      
+  basis_idx::fmpz
   essential_elementary_divisors::Array{fmpz, 1}
   new::Bool
   function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
@@ -1465,7 +1518,7 @@ end
 type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
   FB::NfFactorBase
 
-  M::ModuleCtx_fmpz    
+  M::ModuleCtx_fmpz
   R_gen::Array{nf_elem, 1}# the relations
   R_rel::Array{nf_elem, 1}
   RS::Set{nf_elem}
@@ -1521,7 +1574,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
     r.B2 = 0
     r.H_trafo = []
     return r
-  end  
+  end
 end
 
 ################################################################################
@@ -1637,7 +1690,7 @@ type FinGenGrpAbGen <: FinGenGrpAb
       r.hnf = R
     end
     return r
-  end  
+  end
 end
 
 type FinGenGrpAbElem{T <: FinGenGrpAb} <: GrpAbElem
