@@ -526,7 +526,7 @@ end
 
 # If M is upper-triangular with more columns then rows,
 # this function returns the non-pivot column indices.
-function _find_missing_pivot(M::Smat)
+function _find_missing_pivot(M::SMat)
   return setdiff(Set(1:cols(M)), Set([y.pos[1] for y = M.rows ])) 
 end
 

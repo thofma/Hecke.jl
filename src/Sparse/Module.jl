@@ -32,12 +32,12 @@ end
 ############################################################
 ##
 ############################################################
-function reduce(A::Smat{UIntMod}, g::SmatRow{UIntMod})
+function reduce(A::SMat{UIntMod}, g::SRow{UIntMod})
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   # supposed to be a field...
   if A.r == A.c
-    return SmatRow{UIntMod}()
+    return SRow{UIntMod}()
   end
   while length(g)>0
     s = g.pos[1]
@@ -68,7 +68,7 @@ function inv(x::UIntMod)
 end
 
 #returns true if g enlarged M
-function add_gen!(M::ModuleCtx_UIntMod, g::SmatRow{UIntMod})
+function add_gen!(M::ModuleCtx_UIntMod, g::SRow{UIntMod})
   if M.basis.r == M.basis.c
     return false
   end
@@ -89,7 +89,7 @@ function add_gen!(M::ModuleCtx_UIntMod, g::SmatRow{UIntMod})
   return false 
 end
 
-function reduce(A::Smat{fmpz}, g::SmatRow{fmpz})
+function reduce(A::SMat{fmpz}, g::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
@@ -129,7 +129,7 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz})
   return g
 end
 
-function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
+function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   new_g = false
@@ -188,25 +188,25 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
 end
 
 doc"""
-    norm2(A::SmatRow{fmpz})
+    norm2(A::SRow{fmpz})
 
 > The square of the euclidean norm of $A$.
 """
-function norm2(A::SmatRow{fmpz})
+function norm2(A::SRow{fmpz})
   return sum([x*x for x= A.values])
 end
 
 doc"""
-    hadamard_bound2(A::Smat{fmpz})
+    hadamard_bound2(A::SMat{fmpz})
 
 > The square of the product of the norms of the rows of $A$.
 """
-function hadamard_bound2(A::Smat{fmpz})
+function hadamard_bound2(A::SMat{fmpz})
   return prod([norm2(x) for x=A])
 end
 
-function add_gen!(M::ModuleCtx_fmpz, g::SmatRow{fmpz})
-  gp = SmatRow(g, M.Mp.R)
+function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz})
+  gp = SRow(g, M.Mp.R)
   M.new = true
   if add_gen!(M.Mp, gp)
     push!(M.bas_gens, g)
@@ -251,7 +251,7 @@ function check_index(M::ModuleCtx_fmpz)
   end
 
   for i=length(M.rel_reps_p)+1:length(M.rel_gens)
-    push!(M.rel_reps_p, solve(M.Mp.basis, SmatRow(M.rel_gens[i], M.Mp.R)))
+    push!(M.rel_reps_p, solve(M.Mp.basis, SRow(M.rel_gens[i], M.Mp.R)))
   end
 
   for l=1:5
@@ -330,7 +330,7 @@ function rank(M::ModuleCtx_UIntMod)
   return M.basis.r
 end
 
-function solve(A::Smat{UIntMod}, g::SmatRow{UIntMod})
+function solve(A::SMat{UIntMod}, g::SRow{UIntMod})
   @hassert :HNF 1  cols(A) == rows(A)
   @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
@@ -365,12 +365,12 @@ function solve(A::Smat{UIntMod}, g::SmatRow{UIntMod})
 end
 
 doc"""
-    lift(a::SmatRow{UIntMod}) -> SmatRow{fmpz}
+    lift(a::SRow{UIntMod}) -> SRow{fmpz}
 
 > Lifts all entries in $a$.
 """
-function lift(a::SmatRow{UIntMod})
-  b = SmatRow{fmpz}()
+function lift(a::SRow{UIntMod})
+  b = SRow{fmpz}()
   for (p,v) = a
     push!(b.pos, p)
     push!(b.values, fmpz(v.m))
@@ -380,14 +380,14 @@ end
 
 #TODO: write vector reconstruction and use it here.
 doc"""
-    rational_reconstruction(A::SmatRow{fmpz}, M::fmpz) -> Bool, SmatRow{fmpz}, fmpz
+    rational_reconstruction(A::SRow{fmpz}, M::fmpz) -> Bool, SRow{fmpz}, fmpz
 
 > Apply rational reconstruction to the entries of $A$. Returns true iff 
 > successful. In this case, the numerator is returned as a matrix and the 
 > common denominator in the third value.
 """
-function rational_reconstruction(A::SmatRow{fmpz}, M::fmpz)
-  B = SmatRow{fmpz}()
+function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
+  B = SRow{fmpz}()
   de = fmpz(1)
   for (p,v) = A
     fl, n, d = rational_reconstruction(v, M)
@@ -408,11 +408,11 @@ function rational_reconstruction(A::SmatRow{fmpz}, M::fmpz)
   return true, B, de
 end
    
-function solve_ut(A::Smat{fmpz}, b::SmatRow{fmpz})
+function solve_ut(A::SMat{fmpz}, b::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
   #still assuming A to be upper-triag
 
-  sol = SmatRow{fmpz}()
+  sol = SRow{fmpz}()
   den = fmpz(1)
   while length(b) > 0
     p = b.pos[1]
@@ -435,11 +435,11 @@ function solve_ut(A::Smat{fmpz}, b::SmatRow{fmpz})
 end
 
 doc"""
-    isupper_triangular(A::Smat)
+    isupper_triangular(A::SMat)
  
 > Returns true iff $A$ is upper triangular.
 """
-function isupper_triangular(A::Smat)
+function isupper_triangular(A::SMat)
   for i=2:A.r
     if A[i-1].pos[1] >= A[i].pos[1]
       return false
@@ -449,13 +449,13 @@ function isupper_triangular(A::Smat)
 end
 
 doc"""
-    det_mc(A::Smat{fmpz}
+    det_mc(A::SMat{fmpz}
 
 > Computes the determinant of $A$ using a LasVegas style algorithm,
 > ie. the result is not proven to be correct.
 > Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
-function det_mc(A::Smat{fmpz})
+function det_mc(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
     return prod([A[i,i] for i=1:A.r])
@@ -467,7 +467,7 @@ function det_mc(A::Smat{fmpz})
   mm = fmpz(1)
   last = fmpz(0)
   while true
-    d = det(nmod_mat(Smat(A, q)))
+    d = det(nmod_mat(SMat(A, q)))
     if first
       dd = fmpz(d)
       mm = fmpz(q)
@@ -486,12 +486,12 @@ function det_mc(A::Smat{fmpz})
 end
 
 doc"""
-    det(A::Smat{fmpz})
+    det(A::SMat{fmpz})
 
 > The determinant of $A$ using a modular algorithm.
 > Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
-function det(A::Smat{fmpz})
+function det(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
     return prod([A[i,i] for i=1:A.r])
@@ -505,44 +505,44 @@ function det(A::Smat{fmpz})
   end
 
   #TODO: re-use the nmod_mat....
-  ld = [fmpz(det(nmod_mat(Smat(A, Int(q))))) for q = lp]
+  ld = [fmpz(det(nmod_mat(SMat(A, Int(q))))) for q = lp]
   return crt_signed(ld, crt_env(lp))
 end
 
 doc"""
-    id{T}(::Type{Smat{T}}, n::Int) -> Smat{T}
+    id{T}(::Type{SMat{T}}, n::Int) -> SMat{T}
 
-> The $n\times n$ identity matrix as a Smat of type T.
+> The $n\times n$ identity matrix as a SMat of type T.
 """
-function id{T}(::Type{Smat{T}}, n::Int)
-  A = Smat{T}()
+function id{T}(::Type{SMat{T}}, n::Int)
+  A = SMat{T}()
   for i=1:n
-    push!(A, SmatRow{T}([(i, T(1))]))
+    push!(A, SRow{T}([(i, T(1))]))
   end
   return A
 end
 
 doc"""
-    id{S}(::Type{Smat}, R::S, n::Int) -> Smat{elem_type(R)}
+    id{S}(::Type{SMat}, R::S, n::Int) -> SMat{elem_type(R)}
     
-> The $n \times n$ identity over $R$ as a Smat.
+> The $n \times n$ identity over $R$ as a SMat.
 > Necessary if $T(1)$ for the type $T$ does not work.
 """
-function id{S}(::Type{Smat}, R::S, n::Int)
+function id(::Type{SMat}, R::Ring, n::Int)
   T = elem_type(R)
-  A = Smat{T}()
+  A = SMat(R)
   for i=1:n
-    push!(A, SmatRow{T}([(i, R(1))]))
+    push!(A, SRow{T}([(i, R(1))]))
   end
   return A
 end
 
 doc"""
-    isid{T}(A::Smat{T})
+    isid{T}(A::SMat{T})
 
 > Tests if $A$ is the $n \times n$ identity.
 """
-function isid{T}(A::Smat{T})
+function isid{T}(A::SMat{T})
   if A.c != A.r
     return false
   end
@@ -559,13 +559,13 @@ function isid{T}(A::Smat{T})
 end
 
 doc"""
-    echelon_with_trafo(A::Smat{UIntMod}) -> Smat, Smat
+    echelon_with_trafo(A::SMat{UIntMod}) -> SMat, SMat
 
 > Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
 > $TA = E$ holds.
 """
-function echelon_with_trafo(A::Smat{UIntMod})
-  z = hcat(A, id(Smat, base_ring(A), A.r))
+function echelon_with_trafo(A::SMat{UIntMod})
+  z = hcat(A, id(SMat, base_ring(A), A.r))
   M = Hecke.ModuleCtx_UIntMod(Int(base_ring(A).mod.n), z.c)
   for i=z
     Hecke.add_gen!(M, i)
@@ -574,8 +574,8 @@ function echelon_with_trafo(A::Smat{UIntMod})
 end
 
 doc"""
-    solve_dixon_sf(A::Smat{fmpz}, b::SmatRow{fmpz}, is_int::Bool = false) -> SmatRow{fmpz}, fmpz
-    solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false) -> Smat{fmpz}, fmpz
+    solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false) -> SRow{fmpz}, fmpz
+    solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false) -> SMat{fmpz}, fmpz
 
 > For an upper-triangular sparse matrix $A$ and a sparse matrix (row), find
 > a sparse matrix (row) $x$ and an integer $d$ s.th.
@@ -585,18 +585,18 @@ doc"""
 > If \code{is_int} is given, then $d$ is assumed to be $1$. In this case
 > rational reconstriction is avoided.
 """
-function solve_dixon_sf(A::Smat{fmpz}, b::SmatRow{fmpz}, is_int::Bool = false)
-  B = Smat{fmpz}()
+function solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false)
+  B = SMat(FlintZZ)
   push!(B, b)
   s, d = solve_dixon_sf(A, B, is_int)
   return s[1], d
 end
 
-function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
+function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
 
-  Ap = Smat(A, p)
+  Ap = SMat(A, p)
 
   #want AT = upper_triag.
   #Let J = anti-identity, so JA inverts the rows of A and AJ the columns
@@ -624,16 +624,16 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
   #now, to solve xA = b, we do
   #              xAT = bT since AT is upper-triag, we can do this!
 
-  sol_all = Smat{fmpz}()
+  sol_all = SMat(FlintZZ)
   den_all = fmpz(1)
 
   for b in B
     pp = fmpz(1)
     b_orig = b
 
-    bp = SmatRow(b, p)
+    bp = SRow(b, p)
 
-    sol = SmatRow{fmpz}()
+    sol = SRow{fmpz}()
     last = (sol, 1)
 
     while true
@@ -645,7 +645,7 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
 
       pp *= fmpz(p)
 
-  #    @hassert :HNF 1  iszero(SmatRow(b_orig - Hecke.mul(sol, A), pp)) 
+  #    @hassert :HNF 1  iszero(SRow(b_orig - Hecke.mul(sol, A), pp)) 
 
       if is_int
         fl = true
@@ -656,8 +656,8 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
         fl, nu, de = rational_reconstruction(sol, pp)
       end
       if fl 
-  #      @hassert :HNF 1  SmatRow(de*sol, pp) == SmatRow(nu, pp)
-  #      @hassert :HNF 1  SmatRow(mul(nu, A), pp) == SmatRow(de*b_orig, pp)
+  #      @hassert :HNF 1  SRow(de*sol, pp) == SRow(nu, pp)
+  #      @hassert :HNF 1  SRow(mul(nu, A), pp) == SRow(de*b_orig, pp)
         if last == (nu, de)
           if Hecke.mul(nu, A) == de*b_orig
             l = lcm(den_all, de)
@@ -676,14 +676,14 @@ function solve_dixon_sf(A::Smat{fmpz}, B::Smat{fmpz}, is_int::Bool = false)
         end
       end
 
-  #    @hassert :HNF 1  SmatRow(Hecke.mul(z, A), p) == bp
+  #    @hassert :HNF 1  SRow(Hecke.mul(z, A), p) == bp
       b = b - Hecke.mul(z, A)
 
       for i=1:length(b.values)
   #      @hassert :HNF 1  b.values[i] % p == 0
         b.values[i] = div(b.values[i], p)
       end  
-      bp = SmatRow(b, p)
+      bp = SRow(b, p)
     end
   end
   return sol_all, den_all
@@ -691,12 +691,12 @@ end
 
 doc"""
     saturate(A::fmpz_mat) -> fmpz_mat
-    saturate(A::Smat{fmpz}) -> Smat{fmpz}
+    saturate(A::SMat{fmpz}) -> SMat{fmpz}
 
 > Computes the \code{saturation} of $A$, ie. a basis for $Q\otimes [A] \meet Z^n$.
 > Equivalently, $TA$ for $T \in \Gl(n, Q)$ s.th. $TA\in Z^{n\times m}$ and
 > the elementary divisors of $TA$ are all trivial.
-> The Smat-case is using the dense code.
+> The SMat-case is using the dense code.
 """
 function saturate(A::fmpz_mat)
   #row saturation: want
@@ -714,8 +714,8 @@ function saturate(A::fmpz_mat)
   return Sd
 end
 
-function saturate(A::Smat{fmpz})
-  return Smat(saturate(fmpz_mat(A)))
+function saturate(A::SMat{fmpz})
+  return SMat(saturate(fmpz_mat(A)))
 end
 
 ################################################################################
@@ -725,7 +725,7 @@ end
 ################################################################################
 
 doc"""
-    find_row_starting_with(A::Smat, p::Int)
+    find_row_starting_with(A::SMat, p::Int)
  
 > Tries to find the index $i$ s.th. $A[i,p] != 0$ and $A[i, p-j] = 0$
 > holds for all $j$.
@@ -733,7 +733,7 @@ doc"""
 > If such an index does not exist, find the smallest index
 > larger.
 """
-function find_row_starting_with(A::Smat, p::Int)
+function find_row_starting_with(A::SMat, p::Int)
 #  @hassert :HNF 1  isupper_triangular(A)
   start = 0
   stop = rows(A)+1
@@ -752,7 +752,7 @@ end
 
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
-function reduce_up{N}(A::Smat{fmpz}, piv::Array{Int, 1},
+function reduce_up{N}(A::SMat{fmpz}, piv::Array{Int, 1},
                                      trafo::Type{Val{N}} = Val{false})
 
   with_trafo = (trafo == Val{true})
@@ -781,7 +781,7 @@ end
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
 doc"""
-    reduce_full(A::Smat{fmpz}, g::SmatRow{fmpz}, trafo::Type{Val{Bool}} = Val{false})
+    reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{Bool}} = Val{false})
 
 > Reduces $g$ modulo $A$, that is, all entries in $g$ in columns where $A$ has
 > pivot elements for those columns, reduce $g$ modulo the pivots.
@@ -793,7 +793,7 @@ doc"""
 > If `trafo` is set to `Val{true}`, then additionally an array of transformations
 > is returned.
 """
-function reduce_full{T}(A::Smat{fmpz}, g::SmatRow{fmpz}, trafo::Type{Val{T}} = Val{false})
+function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{false})
 #  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
 
@@ -890,7 +890,7 @@ function reduce_full{T}(A::Smat{fmpz}, g::SmatRow{fmpz}, trafo::Type{Val{T}} = V
   with_trafo ? (return g, piv, trafos) : (return g, piv)
 end
 
-function reduce_right{N}(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1, trafo::Type{Val{N}} = Val{false})
+function reduce_right{N}(A::SMat{fmpz}, b::SRow{fmpz}, start::Int = 1, trafo::Type{Val{N}} = Val{false})
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = [] : nothing
   if length(b.pos) == 0
@@ -935,12 +935,12 @@ function reduce_right{N}(A::Smat{fmpz}, b::SmatRow{fmpz}, start::Int = 1, trafo:
 end
 
 doc"""
-    hnf_kannan_bachem(A::Smat{fmpz})
+    hnf_kannan_bachem(A::SMat{fmpz})
 
 > Hermite Normal Form of $A$ using the Kannan-Bachem algorithm to avoid
 > intermediate coefficient swell.
 """
-function hnf_kannan_bachem{N}(A::Smat{fmpz}, trafo::Type{Val{N}} = Val{false})
+function hnf_kannan_bachem{N}(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false})
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
   @vprint :HNF 1 "with density $(A.nnz/(A.c*A.r))"
@@ -948,7 +948,7 @@ function hnf_kannan_bachem{N}(A::Smat{fmpz}, trafo::Type{Val{N}} = Val{false})
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = [] : nothing
 
-  B = Smat{fmpz}()
+  B = SMat{fmpz}()
   B.c = A.c
   nc = 0
   for i=A
@@ -1006,23 +1006,23 @@ function hnf_kannan_bachem{N}(A::Smat{fmpz}, trafo::Type{Val{N}} = Val{false})
 end
 
 doc"""
-    hnf(A::Smat{fmpz}) -> Smat{fmpz}
+    hnf(A::SMat{fmpz}) -> SMat{fmpz}
 
 > The Hermite Normal Form of $A$, ie. an upper triangular matrix with non-negative
 > entries in echelon form that is row-equivalent to $A$.
 > Currently, Kannan-Bachem is used.
 """
-function hnf(A::Smat{fmpz})
+function hnf(A::SMat{fmpz})
   return hnf_kannan_bachem(A)
 end
 
 doc"""
-    hnf!(A::Smat{fmpz})
+    hnf!(A::SMat{fmpz})
 
 > In-place reduction of $A$ into Hermite Normal Form.
 > Currently, Kannan-Bachem is used.
 """
-function hnf!(A::Smat{fmpz})
+function hnf!(A::SMat{fmpz})
   B = hnf(A)
   A.rows = B.rows
   A.nnz = B.nnz

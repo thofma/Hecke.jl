@@ -467,6 +467,7 @@ function checkbounds(a::Int, b::Int) nothing; end;
 include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
+include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 #include("NfMaxOrd/NfOrdCls.jl")

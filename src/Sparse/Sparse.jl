@@ -1,7 +1,7 @@
 #= basic support for sparse matrices, more Magma style than Julia
-  a sparse matrix is a collection (Array) of sparse rows (SmatRow)
+  a sparse matrix is a collection (Array) of sparse rows (SRow)
   A sparse matrix cannot have 0 rows!
-  A SmatRow is two Arrays, one (pos) containing the columns, values
+  A SRow is two Arrays, one (pos) containing the columns, values
   contains the values.
   A[i,j] = A.rows[i].values[A.rows[i].pos[j]]
   to be formal
@@ -24,21 +24,40 @@ import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array,
        Base.endof, Base.start, Base.done, Base.next, Base.hcat,
        Base.vcat
 
-export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
+export upper_triangular, vcat!, show, sub, SMat, SRow, random_SMatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
        valence_mc, swap_rows!, endof, start, done, next, elementary_divisors,
        randrow, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 
-function SmatSpace(R::Ring, r::Int, c::Int; cached = true)
+################################################################################
+#
+#  Parent constructor
+#
+################################################################################
+
+function SRowSpace(R::Ring; cached = true)
   T = elem_type(R)
-  return SmatSpace{T}(R, r, c, cached)
+  return SMatSpace{T}(R)
 end
 
-base_ring(A::SmatSpace) = A.base_ring
+function SMatSpace(R::Ring, r::Int, c::Int; cached = true)
+  T = elem_type(R)
+  return SMatSpace{T}(R, r, c, cached)
+end
 
-parent(A::Smat) = A.parent
+################################################################################
+#
+#  Parent and base ring
+#
+################################################################################
 
-base_ring(A::Smat) = base_ring(parent(A))
+base_ring{T}(A::SMatSpace{T}) = A.base_ring::parent_type(T)
+
+parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
+
+base_ring{T}(A::SMat{T}) = A.base_ring::parent_type(T)
+
+base_ring(A::SRow) = parent(A.values[1])
 
 ################################################################################
 #
@@ -46,10 +65,12 @@ base_ring(A::Smat) = base_ring(parent(A))
 #
 ################################################################################
 
-function =={T}(x::Smat{T}, y::Smat{T})
+function =={T}(x::SMat{T}, y::SMat{T})
   parent(x) != parent(y) && error("Parents incompatible")
   return x.rows == y.rows
 end
+
+=={T}(x::SRow{T}, y::SRow{T}) = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
 #
@@ -57,20 +78,10 @@ end
 #
 ################################################################################
 
-function show{T}(io::IO, A::Smat{T})
+function show{T}(io::IO, A::SMat{T})
   print(io, "Sparse ", A.r, " x ", A.c, " matrix with ")
   print(io, A.nnz, " non-zero entries\n")
 end
-
-
-function SmatRowSpace(R::Ring; cached = true)
-  T = elem_Type(R)
-  return SmatSpace{T}(R, cached)
-end
-
-base_ring(A::SmatRow) = parent(A.values[1])
-
-=={T}(x::SmatRow{T}, y::SmatRow{T}) = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
 #
@@ -78,13 +89,19 @@ base_ring(A::SmatRow) = parent(A.values[1])
 #
 ################################################################################
 
+function SMat{T <: Ring}(R::T)
+  r = SMat{elem_type(R)}()
+  r.base_ring = R
+  return r
+end
+
 # The entries of the sparse matrix will be coerced into the ring R
 # It defaults to the base ring of the input matrix.
 # If zerorows is set, then zero rows will not be remove
-function Smat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
-                                              zerorows::Bool = false)
+function SMat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
+                                              zerorows::Bool = true)
 
-  m = Smat{elem_type(R)}()
+  m = SMat{elem_type(R)}()
   m.c = cols(A)
   m.r = 0
 
@@ -93,11 +110,11 @@ function Smat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
       if !zerorows
         continue
       else
-        r = SmatRow{elem_type(R)}()
-        #push!(m.rows, SmatRow{elem_type(R)}())
+        r = SRow{elem_type(R)}()
+        #push!(m.rows, SRow{elem_type(R)}())
       end
     else
-      r = SmatRow{elem_type(R)}()
+      r = SRow{elem_type(R)}()
       for j = 1:cols(A)
         t = A[i, j]
         if t != 0
@@ -113,49 +130,54 @@ function Smat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
   return m
 end
 
+function (M::SMatSpace){T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
+                                                          zerorows::Bool = true)
+  return SMat(A, R, zerorows)
+end
+
 ################################################################################
 #
-#  SmatRow
+#  SRow
 #
 ################################################################################
 
-function show{T}(io::IO, A::SmatRow{T})
+function show{T}(io::IO, A::SRow{T})
   print(io, "sparse row with positions $(A.pos) and values $(A.values)\n")
 end
 
 
-function hash{T}(A::SmatRow{T}, h::UInt)
+function hash{T}(A::SRow{T}, h::UInt)
   return hash(A.pos, hash(A.values, h))
 end
 
-function hash{T}(A::Smat{T}, h::UInt)
+function hash{T}(A::SMat{T}, h::UInt)
   return hash(A.r, hash(A.c, hash(A.rows, h)))
 end
 
-function iszero{T}(A::SmatRow{T})
+function iszero{T}(A::SRow{T})
   return length(A.pos) == 0
 end
 ################################################################################
 #
-#  Smat
+#  SMat
 #
 ################################################################################
 
 #doc"""
-#    Smat(A::fmpz_mat) -> Smat{fmpz}
+#    SMat(A::fmpz_mat) -> SMat{fmpz}
 #
-#>  Constructs the Smat (Hecke-sparse matrix) with coefficients fmpz
+#>  Constructs the SMat (Hecke-sparse matrix) with coefficients fmpz
 #>  corresponding to A.
 #"""
-#function Smat(A::fmpz_mat)
-#  m = Smat{fmpz}()
+#function SMat(A::fmpz_mat)
+#  m = SMat{fmpz}()
 #  m.c = cols(A)
 #  m.r = 0
 #  for i=1:rows(A)
 #    if iszero_row(A, i)
 #      continue
 #    end
-#    r = SmatRow{fmpz}()
+#    r = SRow{fmpz}()
 #    for j =1:cols(A)
 #      if A[i,j] != 0
 #        m.nnz += 1
@@ -170,20 +192,21 @@ end
 #end
 
 doc"""
-    Smat{T}(A::Array{T, 2}) -> Smat{T}
+    SMat{T}(A::Array{T, 2}) -> SMat{T}
 
-> Constructs the Smat (Hecke-sparse matrix) with coefficients of
+> Constructs the SMat (Hecke-sparse matrix) with coefficients of
 > type T corresponding to A.
 """
-function Smat{T}(A::Array{T, 2})
-  m = Smat{T}()
+function SMat{T}(A::Array{T, 2})
+  m = SMat{T}()
+  m.base_ring = parent(A[1, 1])
   m.c = Base.size(A, 2)
   m.r = 0
   for i=1:Base.size(A, 1)
     if iszero_row(A, i)
       continue
     end
-    r = SmatRow{T}()
+    r = SRow{T}()
     for j =1:Base.size(A, 2)
       if A[i,j] != 0
         m.nnz += 1
@@ -197,19 +220,19 @@ function Smat{T}(A::Array{T, 2})
   return m
 end
 
-# a faster version for nmod_mat -> Smat{T}
+# a faster version for nmod_mat -> SMat{T}
 # it avoids the creation of elements in ResidueRing(ZZ, n)
 doc"""
-    Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
+    SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
   
 > "Lifts" the entries in $A$ to a sparse matrix over $R$.
 """
-function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
+function SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = false)
   if R == base_ring(A)
-    return _Smat(A, R = R)
+    return _SMat(A, R = R)
   end
 
-  m = Smat{elem_type(R)}()
+  m = SMat{elem_type(R)}()
   m.c = cols(A)
   m.r = 0
 
@@ -218,11 +241,11 @@ function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = fals
       if !zerorows
         continue
       else
-        #push!(m.rows, SmatRow{elem_type(R)}())
-        r = SmatRow{elem_type(R)}()
+        #push!(m.rows, SRow{elem_type(R)}())
+        r = SRow{elem_type(R)}()
       end
     else
-      r = SmatRow{elem_type(R)}()
+      r = SRow{elem_type(R)}()
       for j =1:cols(A)
         t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &A, i - 1, j - 1)
         if t != 0
@@ -239,15 +262,15 @@ function Smat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), zerorows::Bool = fals
 end
 
 doc"""
-    mod!(A::SmatRow{fmpz}, n::Integer)
-    mod!(A::SmatRow{fmpz}, n::fmpz)
+    mod!(A::SRow{fmpz}, n::Integer)
+    mod!(A::SRow{fmpz}, n::fmpz)
 
-    mod!(A::Smat{fmpz}, n::Integer)
-    mod!(A::Smat{fmpz}, n::fmpz)
+    mod!(A::SMat{fmpz}, n::Integer)
+    mod!(A::SMat{fmpz}, n::fmpz)
 
 > Inplace reduction of all entries of $A$ to the positive residue system.
 """
-function mod!(A::SmatRow{fmpz}, n::Integer)
+function mod!(A::SRow{fmpz}, n::Integer)
   i=1
   while i<= length(A.pos)
     v = mod(A.values[i], n)
@@ -261,7 +284,7 @@ function mod!(A::SmatRow{fmpz}, n::Integer)
   end
 end
 
-function mod!(A::SmatRow{fmpz}, n::fmpz)
+function mod!(A::SRow{fmpz}, n::fmpz)
   i=1
   while i<= length(A.pos)
     v = mod(A.values[i], n)
@@ -288,15 +311,15 @@ function mod_sym(a::fmpz, b::fmpz)
 end
 
 doc"""
-    mod_sym!(A::SmatRow{fmpz}, n::Integer)
-    mod_sym!(A::SmatRow{fmpz}, n::fmpz)
+    mod_sym!(A::SRow{fmpz}, n::Integer)
+    mod_sym!(A::SRow{fmpz}, n::fmpz)
 
-    mod_sym!(A::Smat{fmpz}, n::Integer)
-    mod_sym!(A::Smat{fmpz}, n::fmpz)
+    mod_sym!(A::SMat{fmpz}, n::Integer)
+    mod_sym!(A::SMat{fmpz}, n::fmpz)
 
 > Inplace reduction of all entries of $A$ to the symmetric residue system.
 """
-function mod_sym!(A::SmatRow{fmpz}, n::fmpz)
+function mod_sym!(A::SRow{fmpz}, n::fmpz)
   i=1
   while i<= length(A.pos)
     v = mod_sym(A.values[i], n)
@@ -310,7 +333,7 @@ function mod_sym!(A::SmatRow{fmpz}, n::fmpz)
   end
 end
 
-function mod_sym!(A::Smat{fmpz}, b::fmpz)
+function mod_sym!(A::SMat{fmpz}, b::fmpz)
   for i=A
     mod_sym!(i, b)
   end
@@ -318,30 +341,30 @@ end
 
 
 doc"""
-    Smat(A::Smat{fmpz}, n::Int) -> Smat{UIntMod}
-    SmatRow(A::Smat{fmpz}, n::Int) -> SmatRow{UIntMod}
+    SMat(A::SMat{fmpz}, n::Int) -> SMat{UIntMod}
+    SRow(A::SMat{fmpz}, n::Int) -> SRow{UIntMod}
 
 > Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
 """
 
-function Smat(A::Smat{fmpz}, n::Int)
-  z = Smat{UIntMod}()
+function SMat(A::SMat{fmpz}, n::Int)
+  z = SMat{UIntMod}()
   R = ZZModUInt(UInt(n))
-  return Smat(A, R)
+  return SMat(A, R)
 end
 
 doc"""
-    Smat(A::Smat{fmpz}, R::Ring) -> Smat{elem_type(R)}
-    SmatRow(A::Smat{fmpz}, R::Ring) -> SmatRow{elem_type(R)}
+    SMat(A::SMat{fmpz}, R::Ring) -> SMat{elem_type(R)}
+    SRow(A::SMat{fmpz}, R::Ring) -> SRow{elem_type(R)}
 
 > Convert the matrix (row) $A$ to be over $R$.
 """
-function Smat{T <: Ring}(A::Smat{fmpz}, R::T)
-  z = Smat{elem_type(R)}()
+function SMat{T <: Ring}(A::SMat{fmpz}, R::T)
+  z = SMat(R)
   z.r = A.r
   z.c = A.c
   for r in A
-    rz = SmatRow(r, R)
+    rz = SRow(r, R)
     if length(rz.pos) != 0
       push!(z.rows, rz)
       z.nnz += length(rz.pos)
@@ -350,14 +373,14 @@ function Smat{T <: Ring}(A::Smat{fmpz}, R::T)
   return z
 end
 
-function SmatRow(A::SmatRow{fmpz}, n::Int)
-  z = Smat{UIntMod}()
+function SRow(A::SRow{fmpz}, n::Int)
+  z = SMat{UIntMod}()
   R = ZZModUInt(UInt(n))
-  return SmatRow(A, R)
+  return SRow(A, R)
 end
 
-function SmatRow{T <: Ring}(A::SmatRow{fmpz}, R::T)
-  z = SmatRow{elem_type(R)}()
+function SRow{T <: Ring}(A::SRow{fmpz}, R::T)
+  z = SRow{elem_type(R)}()
   for (i, v) in A
     nv = R(v)
     if iszero(nv)
@@ -371,18 +394,18 @@ function SmatRow{T <: Ring}(A::SmatRow{fmpz}, R::T)
 end
 
 doc"""
-    Smat(A::Smat{fmpz}, n::Int) -> Smat{GenRes{fmpz}}
-    SmatRow(A::Smat{fmpz}, n::Int) -> SmatRow{GenRes{fmpz}}
+    SMat(A::SMat{fmpz}, n::Int) -> SMat{GenRes{fmpz}}
+    SRow(A::SMat{fmpz}, n::Int) -> SRow{GenRes{fmpz}}
 
 > Converts $A$ to ba a sparse matrix (row) over $Z/nZ$ 
 """
-function SmatRow(A::SmatRow{fmpz}, n::fmpz)
+function SRow(A::SRow{fmpz}, n::fmpz)
   R = ResidueRing(FlintZZ, n)
-  return SmatRow(A, R)
+  return SRow(A, R)
 end
-function Smat(A::SmatRow{fmpz}, n::fmpz)
+function SMat(A::SMat{fmpz}, n::fmpz)
   R = ResidueRing(FlintZZ, n)
-  return Smat(A, R)
+  return SMat(A, R)
 end
 
 ################################################################################
@@ -398,17 +421,17 @@ end
 ################################################################################
 
 doc"""
-  toNemo(io::IOStream, A::Smat; name = "A")
+  toNemo(io::IOStream, A::SMat; name = "A")
 
-  Prints the Smat as a julia-program into the file corresponding to io.
+  Prints the SMat as a julia-program into the file corresponding to io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """
-function toNemo(io::IOStream, A::Smat; name = "A")
+function toNemo(io::IOStream, A::SMat; name = "A")
   T = typeof(A.rows[1].values[1])
-  println(io, name, " = Smat{$T}()")
+  println(io, name, " = SMat{$T}()")
   for i=A.rows
-    print(io, "push!($(name), SmatRow{$T}(Tuple{Int, $T}[");
+    print(io, "push!($(name), SRow{$T}(Tuple{Int, $T}[");
     for j=1:length(i.pos)-1
       print(io, "($(i.pos[j]), $(i.values[j])), ")
     end
@@ -417,13 +440,13 @@ function toNemo(io::IOStream, A::Smat; name = "A")
 end
 
 doc"""
-  toNemo(io::String, A::Smat; name = "A")
+  toNemo(io::String, A::SMat; name = "A")
 
-  Prints the Smat as a julia-program into the file named io.
+  Prints the SMat as a julia-program into the file named io.
   The file can be included to get the matrix.
   `name` controls the variable name of the matrix.
 """
-function toNemo(f::String, A::Smat; name = "A")
+function toNemo(f::String, A::SMat; name = "A")
   io = open(f, "w")
   toNemo(io, A, name=name)
   close(io)
@@ -436,17 +459,17 @@ end
 ################################################################################
 
 doc"""
-  transpose{T}(A::Smat{T}) -> Smat{T}
+  transpose{T}(A::SMat{T}) -> SMat{T}
 
   The transpose of A
 """
-function transpose{T}(A::Smat{T})
-  B = Smat{T}()
+function transpose{T}(A::SMat{T})
+  B = SMat(base_ring(A))
   n = rows(A)
   m = cols(A)
-  B.rows = Array{SmatRow{T}}(m)
+  B.rows = Array{SRow{T}}(m)
   for i=1:m
-    B.rows[i] = SmatRow{T}()
+    B.rows[i] = SRow{T}()
   end
   for i = 1:length(A.rows)
     for j = 1:length(A.rows[i].pos)
@@ -465,54 +488,54 @@ end
 ################################################################################
 # Other stuff: support iterators
 ################################################################################
-function endof{T}(A::Smat{T})
+function endof{T}(A::SMat{T})
   return length(A.rows)
 end
 
-function start{T}(A::Smat{T})
+function start{T}(A::SMat{T})
   return 1
 end
 
-function next{T}(A::Smat{T}, st::Int)
+function next{T}(A::SMat{T}, st::Int)
   return A.rows[st], st + 1
 end
 
-function done{T}(A::Smat{T}, st::Int)
+function done{T}(A::SMat{T}, st::Int)
   return st > rows(A)
 end
 
-function length(A::Smat)
+function length(A::SMat)
   return rows(A)
 end
 
-function length(A::SmatRow)
+function length(A::SRow)
   return length(A.pos)
 end
 
-function endof{T}(A::SmatRow{T})
+function endof{T}(A::SRow{T})
   return length(A.pos)
 end
 
-function start{T}(A::SmatRow{T})
+function start{T}(A::SRow{T})
   return 1
 end
 
-function next{T}(A::SmatRow{T}, st::Int)
+function next{T}(A::SRow{T}, st::Int)
   return (A.pos[st], A.values[st]), st + 1
 end
 
-function done{T}(A::SmatRow{T}, st::Int)
+function done{T}(A::SRow{T}, st::Int)
   return st > length(A.pos)
 end
 
 ################################################################################
 #
-# multiplication of Smat * Dense
+# multiplication of SMat * Dense
 # for Dense = {Array{T, 1}, Array{T, 2}, fmpz_mat}
 # both mul and mul! versions
 #
 ################################################################################
-function mul!{T}(c::Array{T, 1}, A::Smat{T}, b::Array{T, 1})
+function mul!{T}(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1})
   assert( length(b) == cols(A))
   assert( length(c) == rows(A))
   for i = 1:length(A.rows)
@@ -526,14 +549,14 @@ function mul!{T}(c::Array{T, 1}, A::Smat{T}, b::Array{T, 1})
   return c
 end
 
-function mul{T}(A::Smat{T}, b::Array{T, 1})
+function mul{T}(A::SMat{T}, b::Array{T, 1})
   assert( length(b) == cols(A))
   c = Array{T}(rows(A))
   mul!(c, A, b)
   return c
 end
 
-function mul_mod_big!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
+function mul_mod_big!{S, T}(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S)
   assert( length(b) == cols(A))
   assert( length(c) == rows(A))
   for i = 1:length(A.rows)
@@ -547,7 +570,7 @@ function mul_mod_big!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
   return c
 end
 
-function mul_mod!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
+function mul_mod!{S, T}(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S)
   assert( length(b) == cols(A))
   assert( length(c) == rows(A))
   for i = 1:length(A.rows)
@@ -561,7 +584,7 @@ function mul_mod!{S, T}(c::Array{S, 1}, A::Smat{T}, b::Array{S, 1}, mod::S)
   return c
 end
 
-function mul!{T}(c::Array{T, 2}, A::Smat{T}, b::Array{T, 2})
+function mul!{T}(c::Array{T, 2}, A::SMat{T}, b::Array{T, 2})
   sz = size(b)
   assert( sz[1] == cols(A))
   tz = size(c)
@@ -579,14 +602,14 @@ function mul!{T}(c::Array{T, 2}, A::Smat{T}, b::Array{T, 2})
   return c
 end
 
-function mul{T}(A::Smat{T}, b::Array{T, 2})
+function mul{T}(A::SMat{T}, b::Array{T, 2})
   sz = size(b)
   assert( sz[1] == cols(A))
   c = Array{T}(sz[1], sz[2])
   return mul!(c, A, b)
 end
 
-function mul!{T}(c::fmpz_mat, A::Smat{T}, b::fmpz_mat)
+function mul!{T}(c::fmpz_mat, A::SMat{T}, b::fmpz_mat)
   assert( rows(b) == cols(A))
   assert( rows(c) == rows(A))
   assert( cols(c) == cols(b))
@@ -602,13 +625,13 @@ function mul!{T}(c::fmpz_mat, A::Smat{T}, b::fmpz_mat)
   return c
 end
 
-function mul{T}(A::Smat{T}, b::fmpz_mat)
+function mul{T}(A::SMat{T}, b::fmpz_mat)
   assert( rows(b) == cols(A))
   c = MatrixSpace(ZZ, rows(A), cols(b))()
   return mul!(c, A, b)
 end
 
-function mul{T}(A::SmatRow{T}, B::SmatRow{T})
+function mul{T}(A::SRow{T}, B::SRow{T})
   v = 0*A.values[1]
   b = 1
   for a=1:length(A.pos)
@@ -625,7 +648,7 @@ function mul{T}(A::SmatRow{T}, B::SmatRow{T})
   return v
 end
 
-function mul{T}(A::Smat{T}, B::Smat{T})
+function mul{T}(A::SMat{T}, B::SMat{T})
   @assert A.c == B.r
   C = MatrixSpace(base_ring(A), A.r, B.c)()
   for i=1:A.r
@@ -636,7 +659,7 @@ function mul{T}(A::Smat{T}, B::Smat{T})
   return C
 end
 
-function mul(A::Smat{UIntMod}, B::Smat{UIntMod})
+function mul(A::SMat{UIntMod}, B::SMat{UIntMod})
   @assert A.c == B.r
   C = MatrixSpace(ResidueRing(FlintZZ, base_ring(A).mod.n), A.r, B.c)()
   for i=1:A.r
@@ -647,23 +670,23 @@ function mul(A::Smat{UIntMod}, B::Smat{UIntMod})
   return C
 end
 
-function mul{T}(A::SmatRow{T}, B::Smat{T})
-  C = SmatRow{T}()
+function mul{T}(A::SRow{T}, B::SMat{T})
+  C = SRow{T}()
   for (p, v) = A
     C = add_scaled_row(B[p], C, v)
   end
   return C
 end
 
-function +{T}(A::SmatRow{T}, B::SmatRow{T})
+function +{T}(A::SRow{T}, B::SRow{T})
   if length(A.values) == 0
     return B 
   end
   return add_scaled_row(A, B, base_ring(A)(1))
 end
 
-function +{T}(A::Smat{T}, B::Smat{T})
-  C = Smat{T}()
+function +{T}(A::SMat{T}, B::SMat{T})
+  C = SMat{T}()
   m = min(rows(A), rows(B))
   for i=1:m
     push!(C, A[i]+B[i])
@@ -677,15 +700,15 @@ function +{T}(A::Smat{T}, B::Smat{T})
   return C
 end
 
-function -{T}(A::SmatRow{T}, B::SmatRow{T})
+function -{T}(A::SRow{T}, B::SRow{T})
   if length(A.values) == 0
     return B 
   end
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
-function -{T}(A::Smat{T}, B::Smat{T})
-  C = Smat{T}()
+function -{T}(A::SMat{T}, B::SMat{T})
+  C = SMat{T}()
   m = min(rows(A), rows(B))
   for i=1:m
     push!(C, A[i]-B[i])
@@ -702,8 +725,8 @@ function -{T}(A::Smat{T}, B::Smat{T})
   return C
 end
 
-function *{T}(b::T, A::SmatRow{T})
-  B = SmatRow{T}()
+function *{T}(b::T, A::SRow{T})
+  B = SRow{T}()
   if iszero(b)
     return B
   end
@@ -718,16 +741,16 @@ function *{T}(b::T, A::SmatRow{T})
 end
 
 # those two functions produce infinite recursion - why I'm not sure
-#function *{T}(b::Integer, A::SmatRow{T})
+#function *{T}(b::Integer, A::SRow{T})
 #  return base_ring(A)(b)*A
 #end
 #
-#function *{T}(b::fmpz, A::SmatRow{T})
+#function *{T}(b::fmpz, A::SRow{T})
 #  return base_ring(A)(b)*A
 #end
 
-function *{T}(b::T, A::Smat{T})
-  B = Smat{T}()
+function *{T}(b::T, A::SMat{T})
+  B = SMat(base_ring(A))
   if iszero(b)
     return B
   end
@@ -737,11 +760,11 @@ function *{T}(b::T, A::Smat{T})
   return B
 end
 
-#function *{T}(b::Integer, A::Smat{T})
+#function *{T}(b::Integer, A::SMat{T})
 #  return base_ring(A)(b)*A
 #end
 #
-#function *{T}(b::fmpz, A::Smat{T})
+#function *{T}(b::fmpz, A::SMat{T})
 #  return base_ring(A)(b)*A
 #end
 
@@ -756,43 +779,43 @@ function SLP_SwapRows(i::Int, j::Int)
   return slp
 end
 
-# function mul!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
+# function mul!{T}(a::Array{T, 1}, s::SMatSLP_swap_row)
 #   t = a[s.row]
 #   a[s.row] = a[s.col]
 #   a[s.col] = t
 # end
 # 
-# function mul!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
+# function mul!{T}(a::Array{T, 1}, s::SMatSLP_add_row{T})
 #   a[s.row] = a[s.row]*s.val + a[s.col]
 # end
 # 
-# function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_swap_row)
+# function mul_t!{T}(a::Array{T, 1}, s::SMatSLP_swap_row)
 #   t = a[s.row]
 #   a[s.row] = a[s.col]
 #   a[s.col] = t
 # end
 # 
-# function mul_t!{T}(a::Array{T, 1}, s::SmatSLP_add_row{T})
+# function mul_t!{T}(a::Array{T, 1}, s::SMatSLP_add_row{T})
 #   a[s.col] = a[s.col]*s.val + a[s.row]
 # end
 # 
 # 
-# function apply!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
+# function apply!{T}(a::Array{T}, b::Array{SMatSLP_add_row{T}, 1})
 #   for i=length(b):-1:1
 #     mul!(a, b[i])
 #   end
 #   return a
 # end
 # 
-# function apply_t!{T}(a::Array{T}, b::Array{SmatSLP_add_row{T}, 1})
+# function apply_t!{T}(a::Array{T}, b::Array{SMatSLP_add_row{T}, 1})
 #   for i=1:length(b)
 #     mul_t!(a, b[i])
 #   end
 #   return a
 # end
 # 
-function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
-  a = Array{SmatSLP_add_row{Int}}(i)
+function random_SMatSLP{T}(A::SMat{T}, i::Int, v::UnitRange)
+  a = Array{SMatSLP_add_row{Int}}(i)
   for j=1:i
     c = rand(v)
     while c==0
@@ -810,7 +833,7 @@ function random_SmatSLP{T}(A::Smat{T}, i::Int, v::UnitRange)
 end
 
 doc"""
-  valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_row{T}, 1}()) -> T
+  valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
 
   Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the valence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
   typically f(0).
@@ -821,7 +844,7 @@ doc"""
   trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then
   the valence of trans * A  is computed instead.
 """
-function valence_mc{T}(A::Smat{T}; extra_prime = 2, trans = Array{SmatSLP_add_row{T}, 1}())
+function valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}())
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
   if false && cols(A) > rows(A)
@@ -915,18 +938,18 @@ end
 #
 # Basics: sub
 #         vcat!
-#         push! (add a SmatRow to it)
+#         push! (add a SRow to it)
 #         getindex -> A[i,j] for reading
 #         rows, cols
 #         copy
 #
 ################################################################################
 
-function sub{T}(A::Smat{T}, r::UnitRange, c::UnitRange)
-  B = Smat{T}()
+function sub{T}(A::SMat{T}, r::UnitRange, c::UnitRange)
+  B = SMat(base_ring(A))
   B.nnz = 0
   for i=r
-    rw = SmatRow{T}()
+    rw = SRow{T}()
     ra = A.rows[i]
     for j=1:length(ra.values)
       if ra.pos[j] in c
@@ -944,12 +967,12 @@ function sub{T}(A::Smat{T}, r::UnitRange, c::UnitRange)
   return B
 end
 
-function copy{T}(A::Smat{T})
+function copy{T}(A::SMat{T})
   return sub(A, 1:rows(A), 1:cols(A))
 end
 
-function copy{T}(A::SmatRow{T})
-  sr = SmatRow{T}()
+function copy{T}(A::SRow{T})
+  sr = SRow{T}()
   for (p, v) = A
     push!(sr.pos, p)
     push!(sr.values, v)
@@ -957,16 +980,16 @@ function copy{T}(A::SmatRow{T})
   return sr
 end
 
-function rows(A::Smat)
+function rows(A::SMat)
   @assert A.r == length(A.rows)
   return A.r
 end
 
-function cols(A::Smat)
+function cols(A::SMat)
   return A.c
 end
 
-function getindex{T}(A::Smat{T}, i::Int, j::Int)
+function getindex{T}(A::SMat{T}, i::Int, j::Int)
   if i in 1:A.r
     ra = A.rows[i]
     p = findfirst(x->x==j, ra.pos)
@@ -977,28 +1000,28 @@ function getindex{T}(A::Smat{T}, i::Int, j::Int)
   return T(0)
 end
 
-function getindex{T}(A::Smat{T}, i::Int)
+function getindex{T}(A::SMat{T}, i::Int)
   if i in 1:A.r
     return A.rows[i]
   end
-  return SmatRow{T}()
+  return SRow{T}()
 end
 
-function randrow{T}(A::Smat{T})
+function randrow{T}(A::SMat{T})
   return rand(A.rows)
 end
 
-function setindex!{T}(A::Smat{T}, b::SmatRow{T}, i::Int)
+function setindex!{T}(A::SMat{T}, b::SRow{T}, i::Int)
   A.rows[i] = b
 end
 
 doc"""
-    vcat!{T}(A::Smat{T}, B::Smat{T})
+    vcat!{T}(A::SMat{T}, B::SMat{T})
 
 > Vertically joins $A$ and $B$ inplace, ie. the rows of $B$ are
 > appended to $A$.
 """
-function vcat!{T}(A::Smat{T}, B::Smat{T})
+function vcat!{T}(A::SMat{T}, B::SMat{T})
   @assert length(A.rows) == A.r
   @assert length(B.rows) == B.r
   A.r += B.r
@@ -1010,11 +1033,11 @@ end
 
 
 doc"""
-    vcat{T}(A::Smat{T}, B::Smat{T})
+    vcat{T}(A::SMat{T}, B::SMat{T})
 
 > Vertically joins $A$ and $B$
 """
-function vcat{T}(A::Smat{T}, B::Smat{T})
+function vcat{T}(A::SMat{T}, B::SMat{T})
   @assert length(A.rows) == A.r
   @assert length(B.rows) == B.r
   C = copy(A)
@@ -1023,11 +1046,11 @@ function vcat{T}(A::Smat{T}, B::Smat{T})
 end
 
 doc"""
-    hcat!{T}(A::Smat{T}, B::Smat{T})
+    hcat!{T}(A::SMat{T}, B::SMat{T})
 
 > Horizontally concatenates $A$ and $B$, inplace, changing $A$.
 """
-function hcat!{T}(A::Smat{T}, B::Smat{T})
+function hcat!{T}(A::SMat{T}, B::SMat{T})
   o = A.c
   A.c += B.c
   nnz = A.nnz
@@ -1038,7 +1061,7 @@ function hcat!{T}(A::Smat{T}, B::Smat{T})
     end
   end
   for i=min(rows(A), rows(B))+1:rows(B)
-    sr = SmatRow{T}()
+    sr = SRow{T}()
     for (p,v) in B[i]
       push!(sr.pos, p+o)
       push!(sr.values, v)
@@ -1049,17 +1072,17 @@ function hcat!{T}(A::Smat{T}, B::Smat{T})
 end
 
 doc"""
-    hcat{T}(A::Smat{T}, B::Smat{T})
+    hcat{T}(A::SMat{T}, B::SMat{T})
 
 > Horizontally concatenates $A$ and $B$.
 """
-function hcat{T}(A::Smat{T}, B::Smat{T})
+function hcat{T}(A::SMat{T}, B::SMat{T})
   C = copy(A)
   hcat!(C, B)
   return C
 end
 
-function push!{T}(A::Smat{T}, B::SmatRow{T})
+function push!{T}(A::SMat{T}, B::SRow{T})
   if length(B.pos)>0
     push!(A.rows, B)
     A.r += 1
@@ -1075,12 +1098,12 @@ end
 #
 ################################################################################
 doc"""
-  fmpz_mat{T <: Integer}(A::Smat{T})
+  fmpz_mat{T <: Integer}(A::SMat{T})
 
   The same matix A, but as an fmpz_mat.
   Requires a conversion from type T to fmpz.
 """
-function fmpz_mat{T <: Integer}(A::Smat{T})
+function fmpz_mat{T <: Integer}(A::SMat{T})
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -1092,11 +1115,11 @@ function fmpz_mat{T <: Integer}(A::Smat{T})
 end
 
 doc"""
-  fmpz_mat(A::Smat{fmpz})
+  fmpz_mat(A::SMat{fmpz})
 
   The same matix A, but as an fmpz_mat.
 """
-function fmpz_mat(A::Smat{fmpz})
+function fmpz_mat(A::SMat{fmpz})
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -1113,11 +1136,11 @@ end
 #
 ################################################################################
 doc"""
-  sparse{T}(A::Smat{T}) -> sparse{T}
+  sparse{T}(A::SMat{T}) -> sparse{T}
 
   The same matrix, but as a julia-sparse matrix
 """
-function sparse{T}(A::Smat{T})
+function sparse{T}(A::SMat{T})
   I = Array{Int}(A.nnz)
   J = Array{Int}(A.nnz)
   V = Array{T}(A.nnz)
@@ -1134,11 +1157,11 @@ function sparse{T}(A::Smat{T})
 end
 
 doc"""
-  Array{T}(A::Smat{T}) -> Array{T, 2}
+  Array{T}(A::SMat{T}) -> Array{T, 2}
 
   The same matrix, but as a two-dimensional julia-Array.
 """
-function Array{T}(A::Smat{T})
+function Array{T}(A::SMat{T})
   R = zero(Array{T}(A.r, A.c)) # otherwise, most entries will be #undef
                                # at least if T is a flint-type
   for i=1:rows(A)
@@ -1159,28 +1182,28 @@ end
 #
 ################################################################################
 
-function scale_row!{T}(A::Smat{T}, i::Int, c::T)
+function scale_row!{T}(A::SMat{T}, i::Int, c::T)
   for j in 1:length(A.rows[i].values)
     A.rows[i].values[j] *= c
   end
 end
 
 doc"""
-  swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
+  swap_rows!{T}(A::SMat{T}, i::Int, j::Int)
 
   swaps, inplace, the i-th row and the j-th
 """
-function swap_rows!{T}(A::Smat{T}, i::Int, j::Int)
+function swap_rows!{T}(A::SMat{T}, i::Int, j::Int)
   A[i], A[j] = A[j], A[i]
 end
 
 doc"""
-    invert_rows!{T}(A::Smat{T})
+    invert_rows!{T}(A::SMat{T})
 
 > Inplace, inverts the rows, ie. swaps the last and the 1st, the 2nd last and the
 > 2nd, ...
 """
-function invert_rows!{T}(A::Smat{T})
+function invert_rows!{T}(A::SMat{T})
   for i=1:div(A.r, 2)
     A[i], A[A.r+1-i] = A[A.r+1-i], A[i]
   end
@@ -1188,11 +1211,11 @@ end
 
 
 doc"""
-    swap_cols!{T}(A::Smat{T}, i::Int, j::Int)
+    swap_cols!{T}(A::SMat{T}, i::Int, j::Int)
 
 > Swap the i-th and j-th column inplace.
 """
-function swap_cols!{T}(A::Smat{T}, i::Int, j::Int)
+function swap_cols!{T}(A::SMat{T}, i::Int, j::Int)
   @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
 
   if i == j
@@ -1235,18 +1258,18 @@ end
 
 # rows j -> row i*c + row j
 doc"""
-  add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+  add_scaled_row!{T}(A::SMat{T}, i::Int, j::Int, c::T)
 
   adds, inplace, the c*i-th row to the j-th
 """
-function add_scaled_row!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+function add_scaled_row!{T}(A::SMat{T}, i::Int, j::Int, c::T)
   A.nnz = A.nnz - length(A[j])
   A.rows[j] = add_scaled_row(A[i], A[j], c)
   A.nnz = A.nnz + length(A[j])
 end
 
-function add_scaled_row{T}(Ai::SmatRow{T}, Aj::SmatRow{T}, c::T)
-  sr = SmatRow{T}()
+function add_scaled_row{T}(Ai::SRow{T}, Aj::SRow{T}, c::T)
+  sr = SRow{T}()
   pi = 1
   pj = 1
   @assert c != 0
@@ -1284,11 +1307,11 @@ end
 
 # col j -> col i*c + col j
 doc"""
-    add_scaled_col!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+    add_scaled_col!{T}(A::SMat{T}, i::Int, j::Int, c::T)
 
 > Adds, inplace, the c*i-th column to the j-th column.
 """
-function add_scaled_col!{T}(A::Smat{T}, i::Int, j::Int, c::T)
+function add_scaled_col!{T}(A::SMat{T}, i::Int, j::Int, c::T)
   @assert c != 0
 
   @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
@@ -1315,19 +1338,19 @@ end
 # row i -> a*row i + b * row j
 # row j -> c*row i + d * row j
 doc"""
-  transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+  transform_row!{T}(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 
   Inplace, replaces the i-th row and the j-th row by
   [a,b; c,d] * [i-th-row ; j-th row]
 """
-function transform_row!{T}(A::Smat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+function transform_row!{T}(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
   A.nnz = A.nnz - length(A[i]) - length(A[j])
   A.rows[i], A.rows[j] = transform_row(A[i], A[j], a, b, c, d)
   A.nnz = A.nnz + length(A[i]) + length(A[j])
 end
-function transform_row{T}(Ai::SmatRow{T}, Aj::SmatRow{T}, a::T, b::T, c::T, d::T)
-  sr = SmatRow{T}()
-  tr = SmatRow{T}()
+function transform_row{T}(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T)
+  sr = SRow{T}()
+  tr = SRow{T}()
   pi = 1
   pj = 1
   while pi <= length(Ai) && pj <= length(Aj)
@@ -1392,7 +1415,7 @@ function transform_row{T}(Ai::SmatRow{T}, Aj::SmatRow{T}, a::T, b::T, c::T, d::T
   return sr, tr
 end
 
-function abs_max(A::Smat{Int})
+function abs_max(A::SMat{Int})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -1402,7 +1425,7 @@ function abs_max(A::Smat{Int})
   return m
 end
 
-function abs_max(A::Smat{BigInt})
+function abs_max(A::SMat{BigInt})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -1415,10 +1438,10 @@ function abs_max(A::Smat{BigInt})
   return abs(m)
 end
 
-function abs_max{T <: Integer}(A::SmatRow{T})
+function abs_max{T <: Integer}(A::SRow{T})
   return maxabs(A.values)
 end
-function abs_max{T <: fmpz}(A::SmatRow{T})
+function abs_max{T <: fmpz}(A::SRow{T})
   m = abs(A.values[1])
   for v in A.values
     if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}), &v, &m) > 0
@@ -1429,16 +1452,16 @@ function abs_max{T <: fmpz}(A::SmatRow{T})
 end
 
 doc"""
-  abs_max(A::Smat{Int}) -> Int
-  abs_max(A::Smat{BigInt}) -> BigInt
-  abs_max(A::Smat{fmpz}) -> fmpz
-  abs_max(A::SmatRow{Int}) -> Int
-  abs_max(A::SmatRow{BigInt}) -> BigInt
-  abs_max(A::SmatRow{fmpz}) -> fmpz
+  abs_max(A::SMat{Int}) -> Int
+  abs_max(A::SMat{BigInt}) -> BigInt
+  abs_max(A::SMat{fmpz}) -> fmpz
+  abs_max(A::SRow{Int}) -> Int
+  abs_max(A::SRow{BigInt}) -> BigInt
+  abs_max(A::SRow{fmpz}) -> fmpz
 
   Finds the largest, in absolute value, entry of A
 """
-function abs_max(A::Smat{fmpz})
+function abs_max(A::SMat{fmpz})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -1450,7 +1473,7 @@ function abs_max(A::Smat{fmpz})
   return abs(m)
 end
 
-function max(A::Smat{Int})
+function max(A::SMat{Int})
   m = A.rows[1].values[1]
   for i in A.rows
     for j in i.values
@@ -1460,7 +1483,7 @@ function max(A::Smat{Int})
   return m
 end
 
-function max(A::Smat{BigInt})
+function max(A::SMat{BigInt})
   m = A.rows[1].values[1]
   for i in A.rows
     for j in i.values
@@ -1473,24 +1496,24 @@ function max(A::Smat{BigInt})
   return m
 end
 
-function max{T <: Integer}(A::SmatRow{T})
+function max{T <: Integer}(A::SRow{T})
   return maximum(A.values)
 end
-function max(A::SmatRow{fmpz})
+function max(A::SRow{fmpz})
   return maximum(A.values)
 end
 
 doc"""
-  max(A::Smat{Int}) -> Int
-  max(A::Smat{BigInt}) -> BigInt
-  max(A::Smat{fmpz}) -> fmpz
-  max(A::SmatRow{Int}) -> Int
-  max(A::SmatRow{BigInt}) -> BigInt
-  max(A::SmatRow{fmpz}) -> fmpz
+  max(A::SMat{Int}) -> Int
+  max(A::SMat{BigInt}) -> BigInt
+  max(A::SMat{fmpz}) -> fmpz
+  max(A::SRow{Int}) -> Int
+  max(A::SRow{BigInt}) -> BigInt
+  max(A::SRow{fmpz}) -> fmpz
 
   Finds the largest entry of A
 """
-function max(A::Smat{fmpz})
+function max(A::SMat{fmpz})
   m = A.rows[1].values[1]
   for i in A.rows
     for j in i.values
@@ -1502,7 +1525,7 @@ function max(A::Smat{fmpz})
   return m
 end
 
-function min(A::Smat{Int})
+function min(A::SMat{Int})
   m = 0
   for i in A.rows
     for j in i.values
@@ -1512,7 +1535,7 @@ function min(A::Smat{Int})
   return m
 end
 
-function min(A::Smat{BigInt})
+function min(A::SMat{BigInt})
   m = BigInt(0)
   for i in A.rows
     for j in i.values
@@ -1525,24 +1548,24 @@ function min(A::Smat{BigInt})
   return m
 end
 
-function min{T <: Integer}(A::SmatRow{T})
+function min{T <: Integer}(A::SRow{T})
   return minimum(A.values)
 end
-function min(A::SmatRow{fmpz})
+function min(A::SRow{fmpz})
   return minimum(A.values)
 end
 
 doc"""
-  min(A::Smat{Int}) -> Int
-  min(A::Smat{BigInt}) -> BigInt
-  min(A::Smat{fmpz}) -> fmpz
-  min(A::SmatRow{Int}) -> Int
-  min(A::SmatRow{BigInt}) -> BigInt
-  min(A::SmatRow{fmpz}) -> fmpz
+  min(A::SMat{Int}) -> Int
+  min(A::SMat{BigInt}) -> BigInt
+  min(A::SMat{fmpz}) -> fmpz
+  min(A::SRow{Int}) -> Int
+  min(A::SRow{BigInt}) -> BigInt
+  min(A::SRow{fmpz}) -> fmpz
 
   Finds the smallest entry of A
 """
-function min(A::Smat{fmpz})
+function min(A::SMat{fmpz})
   m = fmpz(0)
   for i in A.rows
     for j in i.values
@@ -1569,7 +1592,7 @@ function nbits(a::Int)
   return Int(ceil(log(abs(a))/log(2)))
 end
 
-function one_step{T}(A::Smat{T}, sr = 1)
+function one_step{T}(A::SMat{T}, sr = 1)
   i = sr
   assert(i>0)
   all_r = Array{Int}(0)
@@ -1660,12 +1683,12 @@ function one_step{T}(A::Smat{T}, sr = 1)
 end
 
 doc"""
-  upper_triangular{T}(A::Smat{T}; mod = 0)
+  upper_triangular{T}(A::SMat{T}; mod = 0)
 
   Inplace: transform A into an upper triangular matrix. If mod
   is non-zero, reduce entries modulo mod during the computation.
 """
-function upper_triangular{T}(A::Smat{T}; mod = 0)
+function upper_triangular{T}(A::SMat{T}; mod = 0)
   for i = 1:min(rows(A), cols(A))
     x = one_step(A, i)
 #    println("after one step: ilog2(max) now ", nbits(max(A)))
@@ -1687,9 +1710,9 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
         rref!(h)
         h = Array(lift(h))
       end
-      h = Smat(h)
+      h = SMat(h)
       for j in h.rows
-        rw = SmatRow{T}()
+        rw = SRow{T}()
         for e in 1:length(j.pos)
           push!(rw.pos, j.pos[e] + i-1)
           push!(rw.values, j.values[e])
@@ -1704,7 +1727,7 @@ function upper_triangular{T}(A::Smat{T}; mod = 0)
   return
 end
 
-function sparsity{T}(A::Smat{T})
+function sparsity{T}(A::SMat{T})
   return A.nnz/(A.r * A.c), nbits(abs_max(A))
 end
 
@@ -1737,32 +1760,32 @@ end
 # The following function do not update the number of nonzero entries
 # properly
 
-function apply_left!{T}(A::Smat{T}, t::TrafoScale{T})
+function apply_left!{T}(A::SMat{T}, t::TrafoScale{T})
   scale_row!(A, t.i, t.c)
   return nothing
 end
   
-function apply_left!{T}(A::Smat{T}, t::TrafoSwap{T})
+function apply_left!{T}(A::SMat{T}, t::TrafoSwap{T})
   swap_rows!(A, t.i, t.j)
   return nothing
 end
 
-function apply_left!{T}(A::Smat{T}, t::TrafoAddScaled{T})
+function apply_left!{T}(A::SMat{T}, t::TrafoAddScaled{T})
   add_scaled_row!(A, t.i, t.j, t.s)
   return nothing
 end
 
-function apply_left!{T}(A::Smat{T}, t::TrafoParaAddScaled{T})
+function apply_left!{T}(A::SMat{T}, t::TrafoParaAddScaled{T})
   transform_row!(A, t.i, t.j, t.a, t.b, t.c, t.d)
   return nothing
 end
 
-function apply_left!{T}(A::Smat{T}, t::TrafoDeleteZero{T})
+function apply_left!{T}(A::SMat{T}, t::TrafoDeleteZero{T})
   deleteat!(A.rows, t.i)
   A.r -= 1
 end
 
-function apply_left!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
+function apply_left!{T, S}(A::SMat{T}, t::TrafoPartialDense{S})
   R = parent(A.rows[1].values[1])
   i = t.i
   h = sub(A, t.rows, t.cols)
@@ -1776,11 +1799,11 @@ function apply_left!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
 
   hdense = t.U * hdense
 
-  h = _Smat(hdense, R = R, zerorows = true)
+  h = _SMat(hdense, R = R, zerorows = true)
 
   for k in 1:length(h.rows)
     j = h.rows[k]
-    rw = SmatRow{T}()
+    rw = SRow{T}()
     for e in 1:length(j.pos)
       push!(rw.pos, j.pos[e] + i-1)
       push!(rw.values, j.values[e])
@@ -1799,17 +1822,17 @@ end
 
 # The following function do not update the number of nonzero entries
 # properly
-function apply_right!{T}(A::Smat{T}, t::TrafoSwap{T})
+function apply_right!{T}(A::SMat{T}, t::TrafoSwap{T})
   swap_cols!(A, t.i, t.j)
   return nothing
 end
 
-function apply_right!{T}(A::Smat{T}, t::TrafoAddScaled{T})
+function apply_right!{T}(A::SMat{T}, t::TrafoAddScaled{T})
   add_scaled_col!(A, t.j, t.i, t.s)
   return nothing
 end
 
-function apply_right!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
+function apply_right!{T, S}(A::SMat{T}, t::TrafoPartialDense{S})
   # this works only if there are zeros left of the block to which we apply t
   i = t.i
   h = sub(A, t.rows, t.cols)
@@ -1823,11 +1846,11 @@ function apply_right!{T, S}(A::Smat{T}, t::TrafoPartialDense{S})
 
   hdense = hdense * t.U
 
-  h = _Smat(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
+  h = _SMat(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
 
   for k in 1:length(h.rows)
     j = h.rows[k]
-    rw = SmatRow{T}()
+    rw = SRow{T}()
     for e in 1:length(j.pos)
       push!(rw.pos, j.pos[e] + i-1)
       push!(rw.values, j.values[e])
@@ -1917,12 +1940,12 @@ end
 # Perform one step in the echelonization, that is, find a pivot and clear
 # elements below.
 # sr = starting row
-function _one_step{T}(A::Smat{T}, sr = 1)
+function _one_step{T}(A::SMat{T}, sr = 1)
   nr, trafo = _one_step_with_trafo(A, sr)
   return nr
 end
 
-function _one_step_with_trafo{T}(A::Smat{T}, sr = 1)
+function _one_step_with_trafo{T}(A::SMat{T}, sr = 1)
   trafos = Trafo[]
   i = sr
   assert(i>0)
@@ -1993,7 +2016,7 @@ function _one_step_with_trafo{T}(A::Smat{T}, sr = 1)
   return sr + 1, trafos
 end
 
-function nmod_mat(A::Smat{UIntMod})
+function nmod_mat(A::SMat{UIntMod})
   R = parent(A.rows[1].values[1])
   B = nmod_mat(A.r, A.c, R.mod.n)
   B.parent = NmodMatSpace(ResidueRing(FlintZZ, R.mod.n), A.r, A.c)
@@ -2019,7 +2042,7 @@ end
 ################################################################################
 
 # The echelonization_via_dense must not remove zero rows automatically
-function echelonize_via_dense(h::Smat{UIntMod})
+function echelonize_via_dense(h::SMat{UIntMod})
   R = parent(h.rows[1].values[1])
   # turn into dense structure
   hdense = nmod_mat(h)
@@ -2027,24 +2050,24 @@ function echelonize_via_dense(h::Smat{UIntMod})
   # I need to the following trick since we do not have the transformation
   rref!(hdense)
   # put back into sparse matrix over R (!= base_ring h)
-  return _Smat(hdense, R = R)
+  return _SMat(hdense, R = R)
 end
 
-function echelonize_via_dense_with_trafo(h::Smat{fmpz})
+function echelonize_via_dense_with_trafo(h::SMat{fmpz})
   hdense = fmpz_mat(h)
   # echelonize
   hdense, U = hnf_with_transform(hdense)
   # put back into sparse matrix
-  h = _Smat(hdense, zerorows = true)
+  h = _SMat(hdense, zerorows = true)
   return h, U
 end
 
-function echelonize_via_dense(h::Smat{fmpz})
+function echelonize_via_dense(h::SMat{fmpz})
   hdense = fmpz_mat(h)
   # echelonize
   hdense = hnf(hdense)
   # put back into sparse matrix
-  h = _Smat(hdense)
+  h = _SMat(hdense)
   return h
 end
 
@@ -2057,14 +2080,14 @@ end
 # Given two rows i, j with entries x, y (x != 0) in the same column, this
 # function must produce a zero at entry y.
 
-function echelonize_basecase!{T}(x::T, y::T, i::Int, j::Int, A::Hecke.Smat{T})
+function echelonize_basecase!{T}(x::T, y::T, i::Int, j::Int, A::Hecke.SMat{T})
   c = -divexact(y, x)
   add_scaled_row!(A, i, j, c)
   return TrafoAddScaled(i, j, c)
 end
 
 function echelonize_basecase!(x::fmpz, y::fmpz, i::Int, j::Int,
-                              A::Hecke.Smat{fmpz})
+                              A::Hecke.SMat{fmpz})
   if y % x == 0
     c = -div(y, x)
     add_scaled_row!(A, i, j, c)
@@ -2086,22 +2109,22 @@ end
 
 # there is some density limit at level i, at which dense echelonization
 # will be invoked
-function upper_triangular_with_trafo!(M::Smat, density_limit::Float64 = 0.5)
+function upper_triangular_with_trafo!(M::SMat, density_limit::Float64 = 0.5)
   f = (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit)
   return _upper_triangular_with_trafo!(M, f)
 end
 
-function upper_triangular_with_trafo!(M::Smat{fmpz},
+function upper_triangular_with_trafo!(M::SMat{fmpz},
                                       density_limit::Float64 = 0.5,
                                       size_limit::Int = 200)
   f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(abs_max(A)) > size_limit)
   return _upper_triangular_with_trafo!(M, f)
 end
 
-# is_dense_enough is a function (::Smat{T}, i::Int) -> Bool
+# is_dense_enough is a function (::SMat{T}, i::Int) -> Bool
 # At each level i, is_dense_enough(A, i) is called.
 # If it evaluates to true, then dense echelonization will be called.
-function _upper_triangular_with_trafo!{T}(A::Smat{T}, is_dense_enough::Function)
+function _upper_triangular_with_trafo!{T}(A::SMat{T}, is_dense_enough::Function)
   trafo = Trafo[]
 
   for i = 1:min(rows(A), cols(A))
@@ -2131,11 +2154,11 @@ function _upper_triangular_with_trafo!{T}(A::Smat{T}, is_dense_enough::Function)
       for k in 1:length(h.rows)
         j = h.rows[k]
         if length(j.pos) == 0
-          push!(A.rows, SmatRow{T}())
+          push!(A.rows, SRow{T}())
           A.r += 1
           continue
         end
-        rw = SmatRow{T}()
+        rw = SRow{T}()
         for e in 1:length(j.pos)
           push!(rw.pos, j.pos[e] + i - 1)
           push!(rw.values, j.values[e])
@@ -2168,17 +2191,17 @@ end
 
 # now the same without transformation
 
-function upper_triangular!(M::Smat, density_limit::Float64 = 0.5)
+function upper_triangular!(M::SMat, density_limit::Float64 = 0.5)
   f = (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit)
   return _upper_triangular!(M, f)
 end
 
-function upper_triangular!(M::Smat{fmpz}, density_limit::Float64 = 0.5, size_limit::Int = 200)
+function upper_triangular!(M::SMat{fmpz}, density_limit::Float64 = 0.5, size_limit::Int = 200)
   f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(abs_max(A)) > size_limit)
   return _upper_triangular!(M, f)
 end
 
-function _upper_triangular!{T}(A::Smat{T}, is_dense_enough)
+function _upper_triangular!{T}(A::SMat{T}, is_dense_enough)
   for i = 1:min(rows(A), cols(A))
     x = _one_step(A, i)
 
@@ -2197,7 +2220,7 @@ function _upper_triangular!{T}(A::Smat{T}, is_dense_enough)
       h = echelonize_via_dense(h)
 
       for j in h.rows
-        rw = SmatRow{T}()
+        rw = SRow{T}()
         for e in 1:length(j.pos)
           push!(rw.pos, j.pos[e] + i - 1)
           push!(rw.values, j.values[e])
@@ -2224,7 +2247,7 @@ end
 #
 ################################################################################
 
-function _snf_upper_triangular_with_trafo(A::Smat{fmpz})
+function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
   # We assume that A is quadratic and upper triangular
   essential_index = 1
 
@@ -2261,12 +2284,12 @@ function _snf_upper_triangular_with_trafo(A::Smat{fmpz})
 end
 
 doc"""
-    elementary_divisors(A::Smat{fmpz}) -> Array{fmpz, 1}
+    elementary_divisors(A::SMat{fmpz}) -> Array{fmpz, 1}
 
 > The elementary divisors of $A$, ie. the diagonal elements of the Smith normal
 > form of $A$. $A$ needs to be of full rank - currently.
 """
-function elementary_divisors(A::Smat{fmpz})
+function elementary_divisors(A::SMat{fmpz})
   A = copy(A)
   upper_triangular(A)
 

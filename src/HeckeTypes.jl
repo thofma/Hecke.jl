@@ -209,17 +209,17 @@ end
 
 ################################################################################
 #
-#  SmatRow/Smat
+#  SRow/SMat
 #
 ################################################################################
 
-type SmatSLP_add_row{T}
+type SMatSLP_add_row{T}
   row::Int
   col::Int
   val::T
 end
 
-type SmatSLP_swap_row
+type SMatSLP_swap_row
   row::Int
   col::Int
 end
@@ -238,52 +238,52 @@ abstract Map{D, C}
 #
 ################################################################################
 
-const SmatRowSpaceDict = ObjectIdDict()
+const SRowSpaceDict = ObjectIdDict()
 
-type SmatRowSpace{T} <: Ring
+type SRowSpace{T} <: Ring
   base_ring::Ring
 
   function SrowSpace(R::Ring, cached = true)
-    if haskey(SmatRowSpaceDict, R)
-      return SmatRowSpace[R]::SmatRowSpace{T}
+    if haskey(SRowSpaceDict, R)
+      return SRowSpace[R]::SRowSpace{T}
     else
       z = new{T}(r, c, R)
       if cached
-        SmatRowSpace[R, r, c] = z
+        SRowSpace[R, r, c] = z
       end
       return z
     end
   end
 end
 
-type SmatRow{T}
+type SRow{T}
   #in this row, in column pos[1] we have value values[1]
   values::Array{T, 1}
   pos::Array{Int, 1}
-  parent::SmatRowSpace{T}
+  #parent::SRowSpace{T}
 
-  function SmatRow()
+  function SRow()
     r = new()
     r.values = Array{T, 1}()
     r.pos = Array{Int, 1}()
     return r
   end
 
-  function SmatRow(A::Array{Tuple{Int, T}, 1})
+  function SRow(A::Array{Tuple{Int, T}, 1})
     r = new()
     r.values = [x[2] for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SmatRow(A::Array{Tuple{Int, Int}, 1})
+  function SRow(A::Array{Tuple{Int, Int}, 1})
     r = new()
     r.values = [T(x[2]) for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SmatRow{S}(A::SmatRow{S})
+  function SRow{S}(A::SRow{S})
     r = new()
     r.values = Array{T}(length(A.pos))
     r.pos = copy(A.pos)
@@ -293,7 +293,7 @@ type SmatRow{T}
     return r
   end
 
-  function SmatRow(pos::Array{Int, 1}, val::Array{T, 1})
+  function SRow(pos::Array{Int, 1}, val::Array{T, 1})
     length(pos) == length(val) || error("Arrays must have same length")
     r = new()
     r.values = val
@@ -308,47 +308,47 @@ end
 #
 ################################################################################
 
-const SmatSpaceDict = ObjectIdDict()
+const SMatSpaceDict = ObjectIdDict()
 
-type SmatSpace{T} <: Ring
+type SMatSpace{T} <: Ring
   rows::Int
   cols::Int
   base_ring::Ring
 
-  function SmatSpace(R::Ring, r::Int, c::Int, cached = true)
-    if haskey(SmatSpaceDict, (R, r, c))
-      return SmatSpace[R, r, c,]::SmatSpace{T}
+  function SMatSpace(R::Ring, r::Int, c::Int, cached = true)
+    if haskey(SMatSpaceDict, (R, r, c))
+      return SMatSpace[R, r, c,]::SMatSpace{T}
     else
       z = new{T}(r, c, R)
       if cached
-        SmatSpace[R, r, c] = z
+        SMatSpace[R, r, c] = z
       end
       return z
     end
   end
 end
 
-type Smat{T}
+type SMat{T}
   r::Int
   c::Int
-  rows::Array{SmatRow{T}, 1}
+  rows::Array{SRow{T}, 1}
   nnz::Int
-  parent::SmatSpace{T}
+  base_ring::Ring
 
-  function Smat()
+  function SMat()
     r = new()
-    r.rows = Array{SmatRow{T}}(0)
+    r.rows = Array{SRow{T}}(0)
     r.nnz = 0
     r.r = 0
     r.c = 0
     return r
   end
 
-  function Smat{S}(a::Smat{S})
+  function SMat{S}(a::SMat{S})
     r = new()
-    r.rows = Array{SmatRow{T}}(length(a.rows))
+    r.rows = Array{SRow{T}}(length(a.rows))
     for i=1:rows(a)
-      r.rows[i] = SmatRow{T}(a.rows[i])
+      r.rows[i] = SRow{T}(a.rows[i])
     end
     r.c = a.c
     r.r = a.r
@@ -1468,41 +1468,44 @@ end
 
 type ModuleCtx_UIntMod
   R::ZZModUInt
-  basis::Smat{UIntMod}
-  gens::Smat{UIntMod}
+  basis::SMat{UIntMod}
+  gens::SMat{UIntMod}
+
   function ModuleCtx_UIntMod()
     return new()
   end
+
   function ModuleCtx_UIntMod(p::Int, dim::Int)
     M = new()
     M.R = ZZModUInt(UInt(p))
-    M.basis = Smat{UIntMod}()
+    M.basis = SMat(M.R)
     M.basis.c = dim
-    M.gens = Smat{UIntMod}()
+    M.gens = SMat(M.R)
     return M
   end
 end
 
 type ModuleCtx_fmpz
-  bas_gens::Smat{fmpz}  # contains a max. indep system
-  max_indep::Smat{fmpz} # the bas_gens in upper-triangular shape
-  basis::Smat{fmpz}     # if set, probably a basis (in upper-triangular)
-  rel_gens::Smat{fmpz}  # more elements, used for relations
+  bas_gens::SMat{fmpz}  # contains a max. indep system
+  max_indep::SMat{fmpz} # the bas_gens in upper-triangular shape
+  basis::SMat{fmpz}     # if set, probably a basis (in upper-triangular)
+  rel_gens::SMat{fmpz}  # more elements, used for relations
   Mp::ModuleCtx_UIntMod
-  rel_reps_p::Smat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
+  rel_reps_p::SMat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
                         # at least mod p...
   basis_idx::fmpz
   essential_elementary_divisors::Array{fmpz, 1}
   new::Bool
+
   function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
     M = new()
-    M.max_indep = Smat{fmpz}()
+    M.max_indep = SMat(FlintZZ)
     M.max_indep.c = dim
-    M.bas_gens = Smat{fmpz}()
+    M.bas_gens = SMat(FlintZZ)
     M.bas_gens.c = dim
-    M.rel_gens = Smat{fmpz}()
+    M.rel_gens = SMat(FlintZZ)
     M.rel_gens.c = dim
-    M.rel_reps_p = Smat{UIntMod}()
+    M.rel_reps_p = SMat(ZZModUInt(UInt(p)))
     M.new = false
     M.Mp = ModuleCtx_UIntMod(p, dim)
     return M
@@ -1515,7 +1518,7 @@ end
 #
 ################################################################################
 
-type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
+type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   FB::NfFactorBase
 
   M::ModuleCtx_fmpz
@@ -1555,7 +1558,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or Smat{}
                           #    identical
                           # done via lll + nullspace
 
-  rel_mat_mod::Smat{UIntMod}  # the echelonization of relation matrix modulo
+  rel_mat_mod::SMat{UIntMod}  # the echelonization of relation matrix modulo
                               # a small prime
   rel_mat_full_rank::Bool
   H_trafo::Array{Any, 1}
