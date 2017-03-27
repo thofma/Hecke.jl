@@ -140,14 +140,14 @@ function reduce(A::Smat{fmpz}, g::SmatRow{fmpz}, m::fmpz)
       j += 1
     end  
     if j > rows(A) || A.rows[j].pos[1] > s
+      if !new_g
+        g = copy(g)
+      end
       if mod_sym(g.values[1], m) < 0 
         for i=1:length(g.values)
           g.values[i] *= -1
         end
         @hassert :HNF 3  mod_sym(g.values[1], m) > 0
-      end
-      if !new_g
-        g = copy(g)
       end
       mod_sym!(g, m)
       return g
