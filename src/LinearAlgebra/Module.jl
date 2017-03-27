@@ -1012,8 +1012,8 @@ doc"""
 > entries in echelon form that is row-equivalent to $A$.
 > Currently, Kannan-Bachem is used.
 """
-function hnf{N}(A::Smat{fmpz}, trafo::Type{Val{N}} = Val{true})
-  return hnf_kannan_bachem(A, trafo)
+function hnf(A::Smat{fmpz})
+  return hnf_kannan_bachem(A)
 end
 
 doc"""

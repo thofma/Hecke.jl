@@ -29,19 +29,90 @@ export upper_triangular, vcat!, show, sub, Smat, SmatRow, random_SmatSLP,
        valence_mc, swap_rows!, endof, start, done, next, elementary_divisors,
        randrow, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 
+function SmatSpace(R::Ring, r::Int, c::Int; cached = true)
+  T = elem_type(R)
+  return SmatSpace{T}(R, r, c, cached)
+end
+
+base_ring(A::SmatSpace) = A.base_ring
+
+parent(A::Smat) = A.parent
+
+base_ring(A::Smat) = base_ring(parent(A))
+
 ################################################################################
 #
-#  Base rings for sparse matrices
+#  Comparison
 #
 ################################################################################
 
-# This doesn't work for empty sparse matrices.
-# The ring should actually be put into the type.
-base_ring(A::Smat) = parent(A.rows[1].values[1])
+function =={T}(x::Smat{T}, y::Smat{T})
+  parent(x) != parent(y) && error("Parents incompatible")
+  return x.rows == y.rows
+end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show{T}(io::IO, A::Smat{T})
+  print(io, "Sparse ", A.r, " x ", A.c, " matrix with ")
+  print(io, A.nnz, " non-zero entries\n")
+end
+
+
+function SmatRowSpace(R::Ring; cached = true)
+  T = elem_Type(R)
+  return SmatSpace{T}(R, cached)
+end
+
 base_ring(A::SmatRow) = parent(A.values[1])
 
 =={T}(x::SmatRow{T}, y::SmatRow{T}) = (x.pos == y.pos) && (x.values == y.values)
-=={T}(x::Smat{T}, y::Smat{T}) = x.rows == y.rows
+
+################################################################################
+#
+#  Sparse matrix from dense matrix (with more options)
+#
+################################################################################
+
+# The entries of the sparse matrix will be coerced into the ring R
+# It defaults to the base ring of the input matrix.
+# If zerorows is set, then zero rows will not be remove
+function Smat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
+                                              zerorows::Bool = false)
+
+  m = Smat{elem_type(R)}()
+  m.c = cols(A)
+  m.r = 0
+
+  for i=1:rows(A)
+    if iszero_row(A, i)
+      if !zerorows
+        continue
+      else
+        r = SmatRow{elem_type(R)}()
+        #push!(m.rows, SmatRow{elem_type(R)}())
+      end
+    else
+      r = SmatRow{elem_type(R)}()
+      for j = 1:cols(A)
+        t = A[i, j]
+        if t != 0
+          m.nnz += 1
+          push!(r.values, R(t))
+          push!(r.pos, j)
+        end
+      end
+    end
+    push!(m.rows, r)
+    m.r += 1
+  end
+  return m
+end
+
 ################################################################################
 #
 #  SmatRow
@@ -70,33 +141,33 @@ end
 #
 ################################################################################
 
-doc"""
-    Smat(A::fmpz_mat) -> Smat{fmpz}
-
->  Constructs the Smat (Hecke-sparse matrix) with coefficients fmpz
->  corresponding to A.
-"""
-function Smat(A::fmpz_mat)
-  m = Smat{fmpz}()
-  m.c = cols(A)
-  m.r = 0
-  for i=1:rows(A)
-    if iszero_row(A, i)
-      continue
-    end
-    r = SmatRow{fmpz}()
-    for j =1:cols(A)
-      if A[i,j] != 0
-        m.nnz += 1
-        push!(r.values, fmpz(A[i,j]))
-        push!(r.pos, j)
-      end
-    end
-    push!(m.rows, r)
-    m.r += 1
-  end
-  return m
-end
+#doc"""
+#    Smat(A::fmpz_mat) -> Smat{fmpz}
+#
+#>  Constructs the Smat (Hecke-sparse matrix) with coefficients fmpz
+#>  corresponding to A.
+#"""
+#function Smat(A::fmpz_mat)
+#  m = Smat{fmpz}()
+#  m.c = cols(A)
+#  m.r = 0
+#  for i=1:rows(A)
+#    if iszero_row(A, i)
+#      continue
+#    end
+#    r = SmatRow{fmpz}()
+#    for j =1:cols(A)
+#      if A[i,j] != 0
+#        m.nnz += 1
+#        push!(r.values, fmpz(A[i,j]))
+#        push!(r.pos, j)
+#      end
+#    end
+#    push!(m.rows, r)
+#    m.r += 1
+#  end
+#  return m
+#end
 
 doc"""
     Smat{T}(A::Array{T, 2}) -> Smat{T}
@@ -118,48 +189,6 @@ function Smat{T}(A::Array{T, 2})
         m.nnz += 1
         push!(r.values, T(A[i,j]))
         push!(r.pos, j)
-      end
-    end
-    push!(m.rows, r)
-    m.r += 1
-  end
-  return m
-end
-
-################################################################################
-#
-#  Sparse matrix from dense (with more options)
-#
-################################################################################
-
-# The the entries of the sparse matrix will be elements of the ring R
-# It defaults to the base ring of the input matrix.
-# If zerorows is set, then zero rows will not be remove
-
-function _Smat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
-                                              zerorows::Bool = false)
-
-  m = Smat{elem_type(R)}()
-  m.c = cols(A)
-  m.r = 0
-
-  for i=1:rows(A)
-    if iszero_row(A, i)
-      if !zerorows
-        continue
-      else
-        r = SmatRow{elem_type(R)}()
-        #push!(m.rows, SmatRow{elem_type(R)}())
-      end
-    else
-      r = SmatRow{elem_type(R)}()
-      for j = 1:cols(A)
-        t = A[i, j]
-        if t != 0
-          m.nnz += 1
-          push!(r.values, R(t))
-          push!(r.pos, j)
-        end
       end
     end
     push!(m.rows, r)
@@ -361,11 +390,6 @@ end
 #  String I/O
 #
 ################################################################################
-
-function show{T}(io::IO, A::Smat{T})
-  print(io, "Sparse ", A.r, " x ", A.c, " matrix with ")
-  print(io, A.nnz, " non-zero entries\n")
-end
 
 ################################################################################
 #
