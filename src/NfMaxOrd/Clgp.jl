@@ -300,7 +300,7 @@ end
 #
 ################################################################################
 
-function factor!{T}(M::Smat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
+function factor!{T}(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
                     error = true, n = abs(norm(a)))
   fl, res = _factor(FB, a, error=error, n=n)
   if fl
@@ -328,7 +328,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
       if error
         @hassert :ClassGroup 1 vp == 0
       end
-      return false, SmatRow{T}()
+      return false, SRow{T}()
     end
     r = vcat(r, s)
   end
@@ -339,16 +339,16 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     end
     sort!(r, lt=function(a,b) return a[1] < b[1]; end)
     @hassert :ClassGroup 1 length(r) > 0
-    return true, SmatRow{T}(r)
+    return true, SRow{T}(r)
   else 
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.
-    return false, SmatRow{T}()
+    return false, SRow{T}()
   end
 end
 
 function factor(FB::NfFactorBase, a::nf_elem)
-  M = Smat{Int}()
+  M = SMat{Int}()
   _factor!(M, 1, FB, a)
   return M
 end
@@ -367,7 +367,7 @@ end
 
 global AllRels
 
-function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
+function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   O = order(FB.ideals[1])
 
   clg = ClassGrpCtx{T}()
@@ -412,7 +412,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = Smat{fmpz})
 end
 
 function class_group_init(O::NfMaxOrd, B::Int;
-                          complete::Bool = true, degree_limit::Int = 0, T::DataType = Smat{fmpz})
+                          complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
 
   FB = NfFactorBase()
@@ -526,7 +526,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     if orbit && isdefined(clg, :sub_grp)
       n = clg.M[end]
       o = sub_grp
-      function op_smat(n::SmatRow, p::Nemo.perm)
+      function op_smat(n::SRow, p::Nemo.perm)
         r = [(p[i], v) for (i,v) = n]
         sort!(r, lt = (a,b)->a[1]<b[1])
         return typeof(n)(r)
@@ -1704,7 +1704,7 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
         end
         f, r = issmooth!(clg.FB.fb_int, num(n))
         if f 
-          M = Smat{Int}()
+          M = SMat{Int}()
           fl = _factor!(clg.FB, a, false, n)[1]
           if fl
             break

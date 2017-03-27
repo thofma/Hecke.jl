@@ -1029,7 +1029,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   while not_larger < 5 
 
     add = []
-    rel = Smat{fmpz}()
+    rel = SMat{fmpz}()
     for jj in 1:min(div(rows(x.M.rel_gens), 10)+1, 20)
       xj = rand(1:rows(x.M.rel_gens))
       if xj in add
@@ -1040,7 +1040,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     end
 
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
-    time_kernel += @elapsed s = saturate(hcat(k, (-d)*id(Smat{fmpz}, k.r)))
+    time_kernel += @elapsed s = saturate(hcat(k, (-d)*id(SMat, FlintZZ, k.r)))
 
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add])
     for i=1:s.r

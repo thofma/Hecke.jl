@@ -1,6 +1,4 @@
 include("LinearAlgebra/FakeFmpqMat.jl")
 include("LinearAlgebra/LatEnum.jl")
 include("LinearAlgebra/Howell.jl")
-include("LinearAlgebra/Module.jl")
-include("LinearAlgebra/Sparse.jl")
 #include("LinearAlgebra/AbGrp.jl")
