@@ -89,6 +89,10 @@ end
 
 divexact(x::UIntMod, y::UIntMod) = //(x, y)
 
+function inv(x::UIntMod)
+  return 1//x
+end
+
 ################################################################################
 #
 #  Unary operations
