@@ -347,4 +347,3 @@ function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly
   return g
 end
 
-

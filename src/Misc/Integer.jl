@@ -418,3 +418,43 @@ end
 function submul!(z::fmpz, x::fmpz, y::fmpz)
   ccall((:fmpz_submul, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
 end
+
+################################################################################
+#
+#  Number of bits
+#
+################################################################################
+
+function nbits(a::BigInt)
+  return ndigits(a, 2)
+end
+
+doc"""
+  nbits(a::Int) -> Int
+  nbits(a::BigInt) -> Int
+
+  Returns the number of bits necessary to represent a
+"""
+function nbits(a::Int)
+  a==0 && return 0
+  return Int(ceil(log(abs(a))/log(2)))
+end
+
+################################################################################
+#
+#  Modular reduction with symmetric residue system
+#
+################################################################################
+
+function mod_sym(a::fmpz, b::fmpz)
+  c = mod(a,b)
+  @assert c>=0
+  if b > 0 && 2*c > b
+    return c-b
+  elseif b < 0 && 2*c > -b
+    return c+b
+  else
+    return c
+  end
+end
+
