@@ -206,7 +206,7 @@ function lift(R::FmpzAbsSeriesRing, f::fmpz_mod_abs_series)
   return r
 end
 
-function psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
+function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
   p = fmpz(next_prime(2^60))
   n = nbits(N)
 #  println("precision of $n")
@@ -253,11 +253,11 @@ doc"""
 > it defaults to 776.
 """
 function psi_lower(N::fmpz, B::Int, a::Int = 776)
-  return psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
+  return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
 function psi_lower(N::Integer, B::Int, a::Int = 776)
-  return psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
+  return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
 doc"""
@@ -275,11 +275,11 @@ doc"""
 > it defaults to 771.
 """
 function psi_upper(N::fmpz, B::Int, a::Int=771)
-  return psi_lower(N, PrimesSet{Int}(2, B), a, floor)
+  return _psi_lower(N, PrimesSet{Int}(2, B), a, floor)
 end
 
 function psi_upper(N::Integer, B::Int, a::Int=771)
-  return psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, floor)
+  return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, floor)
 end
 
 doc"""
@@ -325,22 +325,22 @@ doc"""
 """
 function psi_lower(N::Integer, B::NfFactorBase, a::Int=776)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(fmpz(N), lp, a, ceil)
+  return _psi_lower(fmpz(N), lp, a, ceil)
 end
 
 function psi_lower(N::fmpz, B::NfFactorBase, a::Int=776)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(N, lp, a, ceil)
+  return _psi_lower(N, lp, a, ceil)
 end
 
 function psi_upper(N::Integer, B::NfFactorBase, a::Int=771)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(fmpz(N), lp, a, floor)
+  return _psi_lower(fmpz(N), lp, a, floor)
 end
 
 function psi_upper(N::fmpz, B::NfFactorBase, a::Int=771)
   lp = sort(fmpz[norm(x) for x=B.ideals])
-  return psi_lower(N, lp, a, floor)
+  return _psi_lower(N, lp, a, floor)
 end
 
 #=
