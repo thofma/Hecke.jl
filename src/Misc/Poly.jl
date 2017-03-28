@@ -92,6 +92,12 @@ doc"""
   (true, x, y) or (false, garbage) if not possible.
 """
 function rational_reconstruction(a::fmpz, b::fmpz)
+  res = fmpq()
+  a = mod(a, b)
+  fl = ccall((:fmpq_reconstruct_fmpz, :libflint), Int, (Ptr{fmpq}, Ptr{fmpz}, Ptr{fmpz}), &res, &a, &b)
+  return fl!=0, num(res), den(res)
+
+
   R = FlintZZ
   sb = root(div(b-1, 2), 2)
 
@@ -123,6 +129,18 @@ function rational_reconstruction(a::fmpz, b::fmpz)
 end
 function rational_reconstruction(a::Integer, b::Integer)
   return rational_reconstruction(fmpz(a), fmpz(b))
+end
+
+doc"""
+    rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz) -> Bool, fmpz, fmpz
+> Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
+> satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
+"""
+function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz)
+  res = fmpq()
+  a = mod(a, b)
+  fl = ccall((:fmpq_reconstruct_fmpz_2, :libflint), Int, (Ptr{fmpq}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &res, &a, &b, &N, &D)
+  return fl!=0, num(res), den(res)
 end
 
 #Note: the vector version might be useful - or the mult be previous den version
@@ -175,7 +193,6 @@ function berlekamp_massey{T}(a::Array{T, 1})
     return false, Rx(0)
   end
 end
-
 
 function div(f::PolyElem, g::PolyElem)
   q,r = divrem(f,g)

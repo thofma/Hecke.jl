@@ -115,18 +115,24 @@ function my_prod{T}(a::AbstractArray{T, 1})
   return prod_end(b)
 end
 
+function isunit(a::fmpz)
+  return isone(a) || a == -1
+end
+function isunit(a::Integer)
+  return a == 1 || a == -1
+end
 
 #coprime base Bach/ Schallit/ ???
 
 function pair_bach{E}(a::E, b::E)
-  if isone(a)
-    if isone(b)
+  if isunit(a)
+    if isunit(b)
       return Array{E}(0)
     else
       return [b]
     end
   end
-  if isone(b)
+  if isunit(b)
     return [a]
   end
 
@@ -140,10 +146,10 @@ function pair_bach{E}(a::E, b::E)
       n[i] = divexact!(n[i], g)
       n[i+1] = divexact!(n[i+1], g)
       insert!(n, i+1, g)
-      if isone(n[i+2])
+      if isunit(n[i+2])
         deleteat!(n, i+2)
       end
-      if isone(n[i])
+      if isunit(n[i])
         deleteat!(n, i)
       end
     end
@@ -155,18 +161,18 @@ end
 function augment_bach{E}(S::Array{E, 1}, m::E)
   T = Array{E}(0)
   i = 1
-  while i <= length(S) && !isone(m)
-    if !isone(S[i])
+  while i <= length(S) && !isunit(m)
+    if !isunit(S[i])
       Ts = pair_bach(m, S[i])
-      T = vcat(T, sub(Ts, 2:length(Ts)))
+      T = vcat(T, view(Ts, 2:length(Ts)))
       m = Ts[1]
     end
     i += 1
   end
   if i <= length(S)
-    T = vcat(T, sub(S, i:length(S)))
+    T = vcat(T, view(S, i:length(S)))
   end
-  if !isone(m) 
+  if !isunit(m) 
     push!(T, m)
   end
   return T
@@ -178,10 +184,10 @@ function coprime_base_bach{E}(a::Array{E, 1}) #T need to support GCDs
     return a
   end
 
-  T = pair_bach(abs(a[1]), abs(a[2]))
+  T = pair_bach(a[1], a[2])
   j = 3
   while j <= length(a)
-    T = augment_bach(T, abs(a[j]))
+    T = augment_bach(T, a[j])
     j += 1
   end
   return T
@@ -226,19 +232,19 @@ end
 
 function pair_bernstein{E}(a::E, b::E)
   T = Array{E}(0)
-  if isone(b)
-    if isone(a)
+  if isunit(b)
+    if isunit(a)
       return T
     else
       return push!(T, a)
     end
   end
-  if isone(a)
+  if isunit(a)
     return push!(T, b)
   end
 
-  a,r = Hecke.ppio(a,b)
-  if !isone(r)
+  a,r = ppio(a,b)
+  if !isunit(r)
     push!(T, r)
   end
   g,h,c = ppgle(a, b)
@@ -293,7 +299,7 @@ end
 function augment_bernstein{E}(P::Array{E, 1}, b::E)
   T = Array{E}(0)
   if length(P) == 0
-    if isone(b)
+    if isunit(b)
       return T
     else
       return push!(T, b)
@@ -301,7 +307,7 @@ function augment_bernstein{E}(P::Array{E, 1}, b::E)
   end
   F = FactorBase(P, check = false)
   a,r = Hecke.ppio(b, F.prod)
-  if ! isone(r)
+  if ! isunit(r)
     push!(T, r)
   end
   S = split_bernstein(a, F.ptree)
@@ -317,9 +323,9 @@ function merge_bernstein{E}(P::Array{E, 1}, Q::Array{E, 1})
   S = P
   i = 0
   while i<=b
-    R = prod(sub(Q, find(x -> x & (2^i) ==0, 1:length(Q))))
+    R = prod(view(Q, find(x -> x & (2^i) ==0, 1:length(Q))))
     T = augment_bernstein(S, R)
-    R = prod(sub(Q, find(x -> x & (2^i) !=0, 1:length(Q))))
+    R = prod(view(Q, find(x -> x & (2^i) !=0, 1:length(Q))))
     S = augment_bernstein(T, R)
     i += 1
   end
@@ -338,32 +344,32 @@ end
 
 function augment_steel{E}(S::Array{E, 1}, a::E, start::Int = 1)
   i = start
-  if isone(a)
+  if isunit(a)
     return S
   end
   
   g = E(0)
 
-  while i<=length(S) && !isone(a) 
+  while i<=length(S) && !isunit(a) 
     g = gcd_into!(g, S[i], a)
-    if isone(g)
+    if isunit(g)
       i += 1
       continue
     end
     si = divexact(S[i], g)
     a = divexact(a, g)
-    if isone(si) # g = S[i] and S[i] | a
+    if isunit(si) # g = S[i] and S[i] | a
       continue
     end
     S[i] = si
-    if isone(a) # g = a and a | S[i]
+    if isunit(a) # g = a and a | S[i]
       a = copy(g)
       continue
     end
     augment_steel(S, copy(g), i)
     continue
   end
-  if !isone(a)
+  if !isunit(a)
     push!(S, a)
   end
 

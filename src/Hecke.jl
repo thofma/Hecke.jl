@@ -81,7 +81,7 @@ import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
              floor, max, BigFloat, promote_rule, precision, dot,
              first, StepRange, show, one, zero, inv, iseven, isodd, convert,
-             angle, abs2, isless, exponent, base, isfinite, zeros
+             angle, abs2, isless, exponent, base, isfinite, zeros, rem
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -338,6 +338,11 @@ macro hassert(args...)
   end
 end
 
+################################################################################
+#   Do @infert and @test simultanously
+#
+################################################################################
+
 macro test_and_infer(f,args,res)
   quote
     if isa($(esc(args)), Tuple)
@@ -556,18 +561,19 @@ function update()
   cd("$pkgdir/deps/antic")
   run(`git pull`)
 
-  println("Updating arb ... ")
-  cd("$pkgdir/deps/arb")
-  run(`git pull`)
-  run(`make -j`)
-  run(`make install`)
-
   println("Updating flint ... ")
   cd("$pkgdir/deps/flint2")
   run(`git pull`)
   run(`make -j`)
   run(`make install`)
 
+  println("Updating arb ... ")
+  cd("$pkgdir/deps/arb")
+  run(`git pull`)
+  run(`make -j`)
+  run(`make install`)
+
+ 
   cd(olddir)
 end
 
@@ -615,6 +621,25 @@ end
 
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
+
+################################################################################
+#
+#  Testing only "submodules"
+#
+################################################################################
+
+function test_module(x, y = :all)
+   julia_exe = Base.julia_cmd()
+   if y == :all
+     test_file = joinpath(pkgdir, "test/$x.jl")
+   else
+     test_file = joinpath(pkgdir, "test/$x/$y.jl")
+   end
+
+   cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
+   info("spawning ", `$julia_exe -e \"$cmd\"`)
+   run(`$julia_exe --color=yes -e $cmd`)
+end
 
 #
 # stuff for 0.5

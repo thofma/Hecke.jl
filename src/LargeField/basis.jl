@@ -1,5 +1,5 @@
-function lll_basis_profile(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl; prec::Int = 100)
-  c = Hecke.minkowski_mat(rt_c, Hecke.nf(order(A)), prec)
+function lll_basis_profile(A::NfMaxOrdIdl; prec::Int = 100)
+  c = Hecke.minkowski_mat(Hecke.nf(order(A)), prec)
   l = lll(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
   if !isdefined(rt_c, :cache)
@@ -32,31 +32,14 @@ end
 #  return q
 #end
 
-
-function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl; 
-                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
-                      prec::Int = 100)
-  K = nf(order(A))
-  temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
-  b = temp.num
-  b_den = temp.den
-
-  l, t = lll(rt_c, A, v, prec = prec)
-
-  c = t*b
-  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
-
-  return q
-end
-
-function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl, bs::Int; 
+function bkz_basis(A::NfMaxOrdIdl, bs::Int; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
 
                       
   K = nf(order(A))
 
-  c = minkowski_mat(rt_c, K, prec)
+  c = minkowski_mat(K, prec)
 
   l, t1 = lll_with_transform(basis_mat(A))
   temp = FakeFmpqMat(l)*basis_mat(order(A))
@@ -75,39 +58,6 @@ function bkz_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl, bs::Int;
 
   #println("calling bkz")
   g, tt = bkz_trans(g, bs)  ## check: bkz_trans seems to s.t. kill the input
-
-  c = tt*b
-  q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]
-
-  return q
-end
-
-function lll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl, bs::Int; 
-                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
-                      prec::Int = 100)
-
-                      
-  K = nf(order(A))
-
-  c = minkowski_mat(rt_c, K, prec)
-
-  @time l, t1 = lll_with_transform(basis_mat(A))
-  @time temp = FakeFmpqMat(l)*basis_mat(order(A))
-  b = temp.num
-  b_den = temp.den
-
-  if !isdefined(rt_c, :cache)
-    rt_c.cache = 0*c
-  end
-  d = rt_c.cache
-  @time mult!(d, b, c)
-
-  #ignore v
-
-  @time g = round_scale(d, prec)
-
-  println("calling lll")
-  @time g, tt = lll_with_transform(g)  ## check: bkz_trans seems to s.t. kill the input
 
   c = tt*b
   q = nf_elem[elem_from_mat_row(K, c, i, b_den) for i=1:degree(K)]

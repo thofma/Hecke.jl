@@ -69,7 +69,7 @@
 #
 ################################################################################
 
-export class_group, FactorBase, issmooth, factor
+export class_group, FactorBase, issmooth, factor, lll_basis
 
 add_verbose_scope(:ClassGroup)
 add_verbose_scope(:ClassGroup_time)
@@ -467,6 +467,10 @@ function israt(a::nf_elem)
   return a.elem_length<2
 end
 
+function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem; orbit::Bool = true, integral::Bool = false)
+  return class_group_add_relation(clg, a, norm(a), fmpz(1), orbit = orbit, integral = integral)
+end
+
 #deal with integral and non-integral elements differently. Computing the order
 #denominator is expensive (and mostly unnecessary)
 function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true)
@@ -477,17 +481,18 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     return false
   end
   O = order(clg.FB.ideals[1]) 
-#  print("trying relation of length ", Float64(length(a)),
-#        " and norm ", Float64(n));
+  @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
   if integral #element is known to be integral
     fl, r = issmooth!(clg.FB.fb_int, num(n*nI))
   else  
     fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a, O))
   end  
   if !fl
+    @vprint :ClassGroup 3 "not int-smooth\n"
 #    println("not int-smooth");
     # try for large prime?
     if isprime(r) && abs(r) < clg.B2 && !isindex_divisor(O, r)
+      @vprint :ClassGroup 3 "gives potential large prime\n"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal
       if haskey(clg.largePrime, i)
@@ -527,7 +532,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
         return typeof(n)(r)
       end
 
-      @v_do :ClassGroup 0 println(" adding orbit with $(length(o)) elements")
+      @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
       for (b, m) in o
         nn - op_smat(n, m)
         if nn != n
@@ -550,6 +555,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     push!(clg.relNorm, (a, nI))
     return true
   else
+    @vprint :ClassGroup 3 "not alg-smooth\n"
     clg.bad_rel += 1
     return false
   end
@@ -757,7 +763,15 @@ function _lll_gram(M::NfOrd)
   return typeof(M)(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
 end
 
-function lll(A::NfMaxOrdIdl, v::fmpz_mat; prec::Int = 100)
+function lll_basis(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
+  L, T = lll(A, v, prec=prec)
+  S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
+  K = nf(order(A))
+  q = nf_elem[elem_from_mat_row(K, num(S), i, den(S)) for i=1:degree(K)]
+  return q
+end
+
+function lll(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
 
   K = nf(order(A))
   if iszero(v) && istotally_real(K)
@@ -920,13 +934,15 @@ function enum_ctx_from_ideal(A::NfMaxOrdIdl,
   ## |N(x)^2|^(1/n) <= T_2(x)/n 
   ## so if T_2(x) <= n * D^(1/n)
   ## then |N(x)| <= D^(1/2)
-  d = abs(discriminant(order(A))) * norm(A)^2
+  #d = abs(discriminant(order(A))) * norm(A)^2
+  #due to limit, the lattice is smaller and the disc as well.
+  d = fmpz(ceil(abs(prod([E.C[i,i] for i=1:E.limit]))))
   ## but we don't want to overshoot too much the length of the last
   ## basis element.
   den = basis_mat(order(A)).den ## we ignore the den above, but this
                                 ## changes the discriminant!!!
-  b = min(den^2 * (root(d, E.n)+1)*E.n * E.d, E.G[E.limit, E.limit]*E.limit)
-  @v_do :ClassGroup 3 println("T_2 from disc ", (root(d, E.n)+1)*E.n * E.d)
+  b = min(den^2 * (root(d, E.limit)+1)*E.limit * E.d, E.G[E.limit, E.limit]*E.limit)
+  @v_do :ClassGroup 3 println("T_2 from disc ", (root(d, E.limit)+1)*E.limit * E.d)
   @v_do :ClassGroup 3 println("    from Gram ", E.G[E.limit, E.limit]*E.limit)
   @v_do :ClassGroup 3 println(" using ", b)
   enum_ctx_start(E, b)
@@ -965,6 +981,86 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
       end
     end
   end
+end
+
+type SmallLLLRelationsCtx
+  A::NfMaxOrdIdl
+  b::Array{nf_elem, 1}
+  bd::Int
+  cnt::Int
+  elt::nf_elem
+  function SmallLLLRelationsCtx()
+    n = new()
+    n.bd = 1
+    n.cnt = 0
+    return n
+  end
+end
+
+function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
+                O::NfMaxOrd; prec::Int = 200, val::Int = 0,
+                limit::Int = 0)
+  return class_group_small_lll_elements_relation_start(clg, hecke.ideal(O, parent(basis_mat(O).num)(1)), prec = prec)
+end
+
+function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
+                A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
+                limit::Int = 0)
+  global _start
+  K = nf(order(A))
+  @v_do :ClassGroup_time 2 rt = time_ns()
+  while true
+    try
+      L, T = lll(A, prec = prec)
+      @v_do :ClassGroup_time 2 _start += time_ns()-rt
+      I = SmallLLLRelationsCtx()
+      S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
+      bd = abs(discriminant(order(A)))*norm(A)^2
+      bd = root(bd, degree(K))
+      bd *= den(L)
+      nL = num(L)
+      f = find(i-> nL[i,i] < bd, 1:degree(K))
+      m = div(degree(K), 4)
+      if m < 2
+        m = degree(K)
+      end
+      while length(f) <= m 
+        f = find(i-> nL[i,i] < bd, 1:degree(K))
+        bd *= 2
+      end
+      I.b = nf_elem[elem_from_mat_row(K, num(S), i, den(S)) for i=f]
+      #println([Float64(num(L)[i,i]//den(L)*1.0) for i=1:degree(K)])
+      #now select a subset that can yield "small" relations, where
+      #small means of effective norm <= sqrt(disc)
+      I.A = A
+      I.elt = K()
+      return I
+    catch e
+      if isa(e, LowPrecisionLLL)
+        print_with_color(:red, "prec too low in LLL,")
+        prec = Int(ceil(1.2*prec))
+        println(" increasing to ", prec)
+        if prec > 1000
+          error("2:too much prec")
+        end
+      else
+        rethrow(e)
+      end
+    end
+  end
+end
+
+function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
+  if I.cnt < length(I.b)
+    I.cnt += 1
+    return deepcopy(I.b[I.cnt])
+  end
+  if I.cnt > (2*I.bd+1)^div(length(I.b), 2)
+    I.bd += 1
+  end
+  I.cnt += 1
+  rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))
+  return deepcopy(I.elt)
 end
 
 global _elt = UInt(0)
@@ -1307,10 +1403,13 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
         if f.cnt % 20 == 0
           a = rank(clg.M)
           if (a-old_r) < 0.5
-            @v_do :ClassGroup 2 println("rank too slow $a ($old_a) $b ($old_b) and $(clg.rel_mat_full_rank)")
+            @v_do :ClassGroup 2 println("rank too slow $a ($old_r) and $(clg.rel_mat_full_rank)")
+            too_slow = true                
             break
           end
           old_r = a
+        else
+          break
         end
       else
         f.bad += 1
@@ -1339,7 +1438,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
 
   h, piv = class_group_get_pivot_info(clg)
 
-  @vprint :ClassGroup 1 "Target rank: $(length(clg.FB))\nCurrent rank: $(rank(clg.M))\nTentative class number: $(h)"
+  @vprint :ClassGroup 1 "Target rank: $(length(clg.FB.ideals))\nCurrent rank: $(rank(clg.M))\nTentative class number: $(h)"
 
   want_extra = 5
   bad_h = false
@@ -1351,8 +1450,6 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
       lt = max(100, round((clg.bad_rel/clg.rel_cnt)*2))
 
       while true
-        #print_with_color(:red, "starting ideal no ")
-        #println(i, " now")
         A = Idl[i]
         j = 0
         while j < no_rand #  && norm(A) < sqrt_disc
@@ -1385,7 +1482,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
               j += 1
             end
             no_rand_local = min(nI-1, no_rand_local+1)
-            println("using ideal $A of norm $(norm(A))")
+#            println("using ideal $A of norm $(norm(A))")
             E = class_group_small_real_elements_relation_start(clg, A,
                             val = E.vl, limit = limit, prec = prec)
             #= CF: think careful here
@@ -1474,6 +1571,8 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
   sqrt_disc = max(sqrt_disc, 1000)
   np = nbits(sqrt_disc)+30
 
+  rat = max(clg.bad_rel/clg.rel_cnt, 20.0)
+
   while true
     I = random_get(clg.randomClsEnv)
 #    println("trying in ideal $I");
@@ -1494,6 +1593,9 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
         end
       else
         E.bad += 1
+        if E.bad > rat
+          break
+        end
       end
     end
   end  
@@ -1728,13 +1830,11 @@ function toNemo{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w
 end
  
 
-################################################################################
-##  Garbage?
-################################################################################
+function lll_basis(M::NfMaxOrd)
+  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
+  return lll_basis(I)
+end
 
-#
-# beware of the precision issue.
-#
 function lll(M::NfMaxOrd)
   K = nf(M)
 

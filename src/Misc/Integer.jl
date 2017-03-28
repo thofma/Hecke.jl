@@ -69,6 +69,14 @@ function next_prime(z::fmpz)
   return z
 end
 
+function isless(a::BigFloat, b::Nemo.fmpz)
+  if _fmpz_is_small(b)
+    c = ccall((:mpfr_cmp_si, :libmpfr), Int32, (Ptr{BigFloat}, Int), &a, b.d)
+  else
+    c = ccall((:mpfr_cmp_z, :libmpfr), Int32, (Ptr{BigFloat}, UInt), &a, unsigned(b.d) << 2)
+  end
+  return c < 0
+end
 
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
@@ -308,14 +316,13 @@ function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
   a.start+(i-1)*Base.step(a)
 end
 
-function ^(x::fmpq, y::fmpz)
-  if typemax(Int) > y
-    return x^Int(y)
-  else
-    error("Not implemented (yet)")
-  end
-end
+################################################################################
+#
+#  Should go to Nemo?
+#
+################################################################################
 
+one(::Type{fmpq}) = fmpq(1)
 
 ############################################################
 # more unsafe function that Bill does not want to have....

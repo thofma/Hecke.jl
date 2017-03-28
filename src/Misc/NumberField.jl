@@ -63,16 +63,42 @@ doc"""
 """
 function rand(b::Array{nf_elem,1}, r::UnitRange)
   length(b) == 0 && error("Array must not be empty")
-
-  s = zero(b[1].parent)
-  t = zero(b[1].parent)
-
-  for i = 1:length(b)
-    mul!(t, b[i], rand(r))
-    add!(s, t, s)
-  end
+  s = parent(b[1])()
+  rand!(s, b, r)
   return s
 end
+
+doc"""
+***
+    rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int) -> nf_elem
+
+> A random linear combination of \code{terms} elements of $b$ with
+> coefficients in $r$.
+"""
+function rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int)
+  length(b) == 0 && error("Array must not be empty")
+  s = parent(b[1])()
+  rand!(s, b, r, terms)
+  return s
+end
+
+
+function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange, terms::Int)
+  length(b) == 0 && error("Array must not be empty")
+  (terms<=0 || terms > length(b)) && error("Number of terms should be at least 1 and cannot exceed the length of the array")
+
+  t = zero(b[1].parent)
+
+  terms = min(terms, length(b))
+  mul!(c, rand(b), rand(r))
+  for i=2:terms
+    mul!(t, rand(b), rand(r))
+    add!(c, t, c)
+  end
+
+  nothing
+end
+
 
 function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange)
   length(b) == 0 && error("Array must not be empty")
@@ -92,10 +118,6 @@ end
 #  fmpq_poly with denominator 1 to fmpz_poly
 #
 ################################################################################
-
-#function Base.call(a::Hecke.FmpqPolyRing, b::String)
-#  return a(1)
-#end
 
 
 function (a::FmpzPolyRing)(b::fmpq_poly) 
@@ -201,9 +223,11 @@ function minpoly(a::nf_elem)
   f = minpoly(Zx, representation_mat(d*a))
   return f(gen(parent(f))*d)
 end
+
 ###########################################################################
 # modular poly gcd and helpers
 ###########################################################################
+
 function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
   #1 = gcd(p, q) = up + vq
   # then u = modinv(p, q)
@@ -1409,4 +1433,119 @@ characteristic(::AnticNumberField) = 0
 #
 
 show_minus_one(::Type{nf_elem}) = false
+
+
+function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too slow
+  p = next_prime(2^60)
+  K = parent(a)
+  me = modular_init(K, p)
+  ap = Hecke.modular_proj(a, me)
+  bp = Hecke.modular_lift([inv(x) for x = ap], me)
+  pp = fmpz(p)
+  
+  fl, b = Hecke.rational_reconstruction(bp, pp)
+  t = K()
+  while !fl
+#    @assert mod_sym(a*bp - 1, pp) == 0
+    mul!(pp, pp, pp)
+    mul!(t, a, bp)
+    rem!(bp, pp)
+    sub!(t, 2, t)
+    mul!(bp, bp, t)
+    rem!(bp, pp)
+#    @assert mod_sym(a*bp - 1, pp) == 0
+    fl, b = rational_reconstruction(bp, pp)
+    if fl
+      if b*a == 1
+        return b
+      end
+      fl = false
+    end
+  end
+  return b
+end
+
+import Hecke.mod_sym!, Hecke.rem!, Hecke.mod!, Hecke.mod, Hecke.rem
+
+function mod_sym!(a::nf_elem, b::fmpz)
+  mod_sym!(a, b, div(b, 2))
+end
+
+function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
+  z = fmpz()
+  for i=0:a.elem_length-1
+    Nemo.num_coeff!(z, a, i)
+    rem!(z, z, b)
+    if z >= b2
+      sub!(z, z, b)
+    end
+    _num_setcoeff!(a, i, z)
+  end
+end
+
+function mod!(a::nf_elem, b::fmpz)
+  z = fmpz()
+  for i=0:a.elem_length-1
+    Nemo.num_coeff!(z, a, i)
+    mod!(z, z, b)
+    _num_setcoeff!(a, i, z)
+  end
+end
+
+function mod(a::nf_elem, b::fmpz)
+  c = deepcopy(a)
+  mod!(c, b)
+  return c
+end
+
+function rem!(a::nf_elem, b::fmpz)
+  z = fmpz()
+  for i=0:a.elem_length-1
+    Nemo.num_coeff!(z, a, i)
+    rem!(z, z, b)
+    _num_setcoeff!(a, i, z)
+  end
+end
+
+function rem(a::nf_elem, b::fmpz)
+  c = deepcopy(a)
+  rem!(c, b)
+  return c
+end
+
+function mod_sym(a::nf_elem, b::fmpz)
+  return mod_sym(a, b, div(b, 2))
+end
+
+function mod_sym(a::nf_elem, b::fmpz, b2::fmpz)
+  c = deepcopy(a)
+  mod_sym!(c, b, b2)
+  return c
+end
+
+function inv_lift(a::nf_elem)  # better, but not enough
+  p = next_prime(2^60)
+  K = parent(a)
+  me = modular_init(K, p)
+  ap = modular_proj(a, me)
+  bp = modular_lift([inv(x) for x = ap], me)
+  pp = fmpz(p)
+  fl, b = Hecke.rational_reconstruction(bp, pp)
+  t = K()
+  n = norm(a)
+  while !fl
+    Hecke.mul!(t, a, bp)
+    Hecke.mul!(pp, pp, pp)
+    rem!(t, pp)
+    Hecke.sub!(t, 2, t)
+    Hecke.mul!(bp, bp, t)
+    rem!(t, pp)
+    mul!(t, bp, n)
+    mod_sym!(t, pp)
+    if t*a == n
+      return t//n
+    end
+  end
+  return b
+end
 

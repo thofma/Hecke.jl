@@ -1,4 +1,4 @@
-export FacElem, FacElemMon
+export FacElem, FacElemMon, simplify
 
 export transform
 
@@ -18,7 +18,10 @@ function (x::FacElemMon{S}){S}()
   z.parent = x
   return z
 end
-    
+doc"""
+    FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
+> Returns the element $\prod b_i^{e_i}$, un-expanded.
+"""
 function FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1})
 
   length(base) == 0 && error("Array must not be empty")
@@ -31,10 +34,29 @@ function FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1})
     if exp[i] == 0
       continue
     end
-    z.fac[base[i]] = exp[i]
+    if haskey(z.fac, base[i])
+      z.fac[base[i]] += exp[i]
+    else
+      z.fac[base[i]] = exp[i]
+    end
   end
 
   z.parent = FacElemMon(parent(base[1]))
+  return z
+end
+
+doc"""
+    FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
+> Returns the element $\prod b^{d[p]}$, un-expanded.
+"""
+function FacElem{B}(d::Dict{B, fmpz})
+
+  length(d) == 0 && error("Dictionary must not be empty")
+
+  z = FacElem{B, typeof(parent(first(keys(d))))}()
+  z.fac = d
+
+  z.parent = FacElemMon(parent(first(keys(d))))
   return z
 end
 
@@ -74,12 +96,15 @@ end
 #  Inverse
 #
 ################################################################################
-
-function inv(x::FacElem{nf_elem, AnticNumberField})
-  y = deepcopy(x)
-  for a in base(y)
-    y.fac[a] = -y.fac[a]
+function inv!(x::FacElem)
+  for a in base(x)
+    x.fac[a] = -x.fac[a]
   end
+end
+
+function inv(x::FacElem)
+  y = deepcopy(x)
+  inv!(y)
   return y
 end
 
@@ -89,10 +114,14 @@ end
 #
 ################################################################################
 
+#needed for FacElem{fmpq/fmpz, fmpz}^pow...
+elem_type(::Type{FlintRationalField}) = fmpq
+elem_type(::Type{FlintIntegerRing}) = fmpz
+
 function pow!{T <: Union{fmpz, Integer}}(z::FacElem, x::FacElem, y::T)
   z.fac = deepcopy(x.fac)
   for a in base(x)
-    # this should be inplac
+    # this should be inplace
     z.fac[a] = y*x.fac[a]
   end
 end
@@ -260,6 +289,7 @@ doc"""
 
 > Expands or evaluates the factored element, i.e. actually computes the
 > value. 
+> Does "square-and-multiply" on the exponent vectors.
 """
 function evaluate{T}(x::FacElem{T})
   function ev(d)#d::Dict{T, fmpz})
@@ -273,7 +303,7 @@ function evaluate{T}(x::FacElem{T})
     b = similar(d)
     for (k,v) in d
       if v>-10 && v<10
-        z *= k^v
+        z *= k^Int(v)
       else
         r = isodd(v) ? 1 :0
         vv = div(v-r, 2)
@@ -293,12 +323,121 @@ end
 
 doc"""
 ***
-  naive_evaluate{T}(x::FacElem{T}) -> T
+    evaluate(x::FacElem{fmpq}) -> fmpq
+    evaluate(x::FacElem{fmpz}) -> fmpz
+
+> Expands or evaluates the factored element, i.e. actually computes the
+> the element. 
+> Works by first obtaining a simplified version of the power product
+> into coprime base elements.
+"""
+function evaluate(x::FacElem{fmpq})
+  return evaluate_naive(simplify(x))
+end
+
+function evaluate(x::FacElem{fmpz})
+  return evaluate_naive(simplify(x))
+end
+doc"""
+***
+  simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
+  simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
+
+> Simplfies the factored element, i.e. arranges for the base to be coprime.
+"""
+function simplify(x::FacElem{fmpq})
+  y = deepcopy(x)
+  simplify!(y)
+  return y
+end
+
+function simplify(x::FacElem{fmpz})
+  y = deepcopy(x)
+  simplify!(y)
+  return y
+end
+
+function simplify!(x::FacElem{fmpq})
+  cp = coprime_base(vcat([den(y) for y = base(x)], [num(y) for y=base(x)]))
+  ev = Dict{fmpq, fmpz}()
+  for p = cp
+    if p == 1 || p == -1
+      continue
+    end
+    v = fmpz(0)
+    for b = base(x)
+      v += valuation(b, abs(p))*x.fac[b]
+    end
+    if v != 0
+      ev[fmpq(abs(p))] = v
+    end
+  end
+  s = prod(map(b -> b < 0 && isodd(x.fac[b]) ? -1 : 1, base(x)))
+  if s == -1
+    ev[fmpq(-1)] = 1
+  else
+    if length(ev) == 0
+      ev[fmpq(1)] = 0
+    end
+  end
+  x.fac = ev
+  nothing
+end
+
+function simplify!(x::FacElem{fmpz})
+  cp = coprime_base(collect(base(x)))
+  ev = Dict{fmpz, fmpz}()
+  for p = cp
+    if p == 1 || p == -1
+      continue
+    end
+    v = fmpz(0)
+    for b = base(x)
+      v += valuation(b, abs(p))*x.fac[b]
+    end
+    if v < 0 
+      throw(DomainError())
+    end
+    if v != 0
+      ev[abs(p)] = v
+    end
+  end
+  s = prod(map(b -> b < 0 && isodd(x.fac[b]) ? -1 : 1, base(x)))
+  if s == -1
+    ev[-1] = 1
+  else
+    if length(ev) == 0
+      ev[fmpz(1)] = 0
+    end
+  end
+  x.fac = ev
+  nothing
+end
+
+doc"""
+***
+    isone(x::FacElem{fmpq}) -> Bool
+    isone(x::FacElem{fmpz}) -> Bool
+> Tests if $x$ represents $1$ without an evaluation.
+"""
+function isone(x::FacElem{fmpq})
+  y = simplify(x)
+  return all(iszero, values(y.fac))
+end
+
+function isone(x::FacElem{fmpz})
+  y = simplify(x)
+  return all(iszero, values(y.fac))
+end
+
+doc"""
+***
+  evaluate_naive{T}(x::FacElem{T}) -> T
 
 > Expands or evaluates the factored element, i.e. actually computes the
 > value. Uses the obvious naive algorithm. Faster for input in finite rings.
 """
-function naive_evaluate{T}(x::FacElem{T})
+function evaluate_naive{T}(x::FacElem{T})
   z = one(base_ring(x))
   d = x.fac
   if length(d)==0
@@ -309,6 +448,49 @@ function naive_evaluate{T}(x::FacElem{T})
   end
   return z
 end
+
+function ^(a::fmpz, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpz(1)
+    end
+    return fmpz(0)
+  end
+ 
+  if a == 1
+    return fmpz(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpz(-1)
+    else
+      return fmpz(1)
+    end
+  end
+  return a^Int(k)
+end
+
+function ^(a::fmpq, k::fmpz)
+  if a == 0
+    if k == 0
+      return fmpq(1)
+    end
+    return fmpq(0)
+  end
+ 
+  if a == 1
+    return fmpq(1)
+  end
+  if a == -1
+    if isodd(k)
+      return fmpq(-1)
+    else
+      return fmpq(1)
+    end
+  end
+  return a^Int(k)
+end
+
 
 
 #################################################################################
