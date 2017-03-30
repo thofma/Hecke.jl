@@ -1,10 +1,12 @@
+export SMatSpace
+
 ################################################################################
 #
 #  Parent constructor
 #
 ################################################################################
 
-function SMatSpace(R::Ring, r::Int, c::Int; cached = true)
+function SMatSpace(R::Ring, r::Int, c::Int, cached = true)
   T = elem_type(R)
   return SMatSpace{T}(R, r, c, cached)
 end
@@ -29,6 +31,31 @@ end
 function cols(A::SMat)
   return A.c
 end
+
+################################################################################
+#
+#  Parent object overloading
+#
+################################################################################
+
+function (M::SMatSpace){T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
+                                                         keepzrows::Bool = true)
+  return SMat(A, R, keepzrows)
+end
+
+function (M::SMatSpace{T}){T}()
+  z = SMat{T}()
+  z.r = M.rows
+  z.c = M.cols
+  z.rows = [ SRow(base_ring(M)) for i in 1:z.r]
+  z.base_ring = base_ring(M)
+  return z
+end
+
+function (M::SMatSpace){T <: MatElem}(A::Array{T, 2})
+  return SMat(A)
+end
+
 
 ################################################################################
 #
@@ -201,15 +228,6 @@ function SMat{T <: RingElem}(A::Array{T, 2})
     m.r += 1
   end
   return m
-end
-
-function (M::SMatSpace){T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
-                                                          keepzrows::Bool = true)
-  return SMat(A, R, keepzrows)
-end
-
-function (M::SMatSpace){T <: MatElem}(A::Array{T, 2})
-  return SMat(A)
 end
 
 # a faster version for nmod_mat -> SMat{T}
