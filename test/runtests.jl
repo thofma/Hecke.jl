@@ -20,6 +20,7 @@ end
 include("NfMaxOrd.jl")
 include("NfOrd.jl")
 include("EllCrv.jl")
+include("Sparse.jl")
 include("LinearAlgebra.jl")
 include("Misc.jl")
 

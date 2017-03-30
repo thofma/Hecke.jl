@@ -243,13 +243,13 @@ const SRowSpaceDict = ObjectIdDict()
 type SRowSpace{T} <: Ring
   base_ring::Ring
 
-  function SrowSpace(R::Ring, cached = true)
+  function SRowSpace(R::Ring, cached = true)
     if haskey(SRowSpaceDict, R)
-      return SRowSpace[R]::SRowSpace{T}
+      return SRowSpaceDict[R]::SRowSpace{T}
     else
-      z = new{T}(r, c, R)
+      z = new{T}(R)
       if cached
-        SRowSpace[R, r, c] = z
+        SRowSpaceDict[R] = z
       end
       return z
     end
@@ -294,7 +294,6 @@ type SRow{T}
   end
 
   function SRow(pos::Array{Int, 1}, val::Array{T, 1})
-    length(pos) == length(val) || error("Arrays must have same length")
     r = new()
     r.values = val
     r.pos = pos

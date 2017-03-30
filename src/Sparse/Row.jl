@@ -1,17 +1,21 @@
+export SRowSpace, mod_sym, mod_sym!, change_ring
+
 ################################################################################
 #
 #  Parent constructor
 #
 ################################################################################
 
-function SRowSpace(R::Ring; cached = true)
+function SRowSpace(R::Ring, cached = true)
   T = elem_type(R)
-  return SRowSpace{T}(R)
+  return SRowSpace{T}(R, cached)
 end
 
-base_ring(A::SRow) = parent(A.values[1])
+(A::SRowSpace)() = SRow(base_ring(A))
 
-=={T}(x::SRow{T}, y::SRow{T}) = (x.pos == y.pos) && (x.values == y.values)
+base_ring{T}(A::SRowSpace{T}) = A.base_ring::parent_type(T)
+
+base_ring{T}(A::SRow{T}) = parent(A.values[1])::parent_type(T)
 
 ################################################################################
 #
@@ -22,6 +26,37 @@ base_ring(A::SRow) = parent(A.values[1])
 function SRow(R::Ring)
   return SRow{elem_type(R)}()
 end
+
+function SRow{T}(A::Array{Tuple{Int, T}, 1})
+  return SRow{T}(A)
+end
+
+function SRow{T}(pos::Array{Int, 1}, val::Array{T, 1})
+  length(pos) == length(val) || error("Arrays must have same length")
+  return SRow{T}(pos, val)
+end
+
+function SRow{T <: Ring}(A::SRow{fmpz}, R::T)
+  z = SRow{elem_type(R)}()
+  for (i, v) in A
+    nv = R(v)
+    if iszero(nv)
+      continue
+    else
+      push!(z.pos, i)
+      push!(z.values, nv)
+    end
+  end
+  return z
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+=={T}(x::SRow{T}, y::SRow{T}) = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
 #
@@ -40,7 +75,7 @@ end
 ################################################################################
 
 function show{T}(io::IO, A::SRow{T})
-  print(io, "sparse row with positions $(A.pos) and values $(A.values)\n")
+  print(io, "Sparse row with positions $(A.pos) and values $(A.values)\n")
 end
 
 ################################################################################
@@ -116,6 +151,12 @@ function mod!(A::SRow{fmpz}, n::fmpz)
   end
 end
 
+function mod(A::SRow{fmpz}, n::Union{fmpz, Integer})
+  B = copy(A)
+  mod!(B, n)
+  return B
+end
+
 # Todo: Do not convert to fmpz
 doc"""
 ***
@@ -149,39 +190,19 @@ function mod_sym!(A::SRow{fmpz}, n::fmpz)
   end
 end
 
+function mod_sym(A::SRow{fmpz}, n::Union{fmpz, Integer})
+  B = copy(A)
+  mod_sym!(B, n)
+  return B
+end
+
 ################################################################################
 #
 #  Change ring
 #
 ################################################################################
 
-function SRow(A::SRow{fmpz}, n::Int)
-  R = ZZModUInt(UInt(n))
-  return SRow(A, R)
-end
-
-function SRow{T <: Ring}(A::SRow{fmpz}, R::T)
-  z = SRow{elem_type(R)}()
-  for (i, v) in A
-    nv = R(v)
-    if iszero(nv)
-      continue
-    else
-      push!(z.pos, i)
-      push!(z.values, nv)
-    end
-  end
-  return z
-end
-
-doc"""
-    SMat(A::SMat{fmpz}, n::Int) -> SMat{GenRes{fmpz}}
-    SRow(A::SMat{fmpz}, n::Int) -> SRow{GenRes{fmpz}}
-
-> Converts $A$ to ba a sparse matrix (row) over $Z/nZ$ 
-"""
-function SRow(A::SRow{fmpz}, n::fmpz)
-  R = ResidueRing(FlintZZ, n)
+function change_ring(A::SRow, R::Ring)
   return SRow(A, R)
 end
 

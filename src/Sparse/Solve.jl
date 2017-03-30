@@ -12,7 +12,7 @@ function solve(A::SMat{UIntMod}, g::SRow{UIntMod})
     j = 1
     while j<= rows(A) && A.rows[j].pos[1] < s
       j += 1
-    end  
+    end
     if j > rows(A) || A.rows[j].pos[1] > s
       break
     end
@@ -216,6 +216,8 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
 
   Ap = SMat(A, p)
 
+  R = base_ring(Ap)
+
   #want AT = upper_triag.
   #Let J = anti-identity, so JA inverts the rows of A and AJ the columns
   #
@@ -249,9 +251,9 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
     pp = fmpz(1)
     b_orig = b
 
-    bp = SRow(b, p)
+    bp = change_ring(b, R)
 
-    sol = SRow{fmpz}()
+    sol = SRow(FlintZZ)
     last = (sol, 1)
 
     while true
@@ -301,10 +303,9 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   #      @hassert :HNF 1  b.values[i] % p == 0
         b.values[i] = div(b.values[i], p)
       end  
-      bp = SRow(b, p)
+      bp = change_ring(b, R)
     end
   end
   return sol_all, den_all
 end
-
 
