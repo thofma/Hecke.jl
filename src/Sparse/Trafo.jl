@@ -266,7 +266,7 @@ function apply_left!{T}(A::SMat{T}, t::TrafoScale{T})
   scale_row!(A, t.i, t.c)
   return nothing
 end
-  
+
 function apply_left!{T}(A::SMat{T}, t::TrafoSwap{T})
   swap_rows!(A, t.i, t.j)
   return nothing
@@ -372,6 +372,10 @@ end
 function apply_right!{T}(x::Array{T, 1}, t::TrafoAddScaled{T})
   x[t.i] = x[t.i] + x[t.j]*t.s
   return nothing
+end
+
+function apply_right!{T}(x::Array{T, 1}, t::TrafoScale{T})
+  x[t.i] = x[t, i] * t.c
 end
 
 function apply_right!{T}(x::Array{T, 1}, t::TrafoSwap{T})
