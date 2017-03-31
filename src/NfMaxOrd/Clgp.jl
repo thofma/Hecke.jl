@@ -491,7 +491,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     @vprint :ClassGroup 3 "not int-smooth\n"
 #    println("not int-smooth");
     # try for large prime?
-    if isprime(r) && abs(r) < clg.B2 && !isindex_divisor(O, r)
+    if abs(r) < clg.B2 && isprime(r) && !isindex_divisor(O, r) 
       @vprint :ClassGroup 3 "gives potential large prime\n"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal
@@ -1144,7 +1144,6 @@ end
 #
 ################################################################################
 
-global last_E
 function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
                 limit::Int = 10)
   clg.hnf_time = 0.0
@@ -1556,6 +1555,105 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   h, piv = class_group_get_pivot_info(clg)
 end
 
+################################################################################
+# same with LLL
+################################################################################
+
+function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expect::Int, rat::Float64, max_good::Int = 2)
+  bad_norm = 0
+  rk = rank(c.M)
+  good = 0
+  while true
+    e = class_group_small_lll_elements_relation_next(I)
+    n = norm_div(e, norm(I.A), nb)
+    if nbits(num(n)) > nb - 20
+      bad_norm += 1
+      if bad_norm / I.cnt > 0.01
+        @vprint :ClassGroup 2 "norm too large, $(I.cnt)\n"
+        break
+      end
+      continue
+    end
+    fl = class_group_add_relation(c, e, n, norm(I.A), integral = true)
+    if !fl  && I.cnt/(good+1) > expect
+      @vprint :ClassGroup 2 "not enough progress $(I.cnt)\n"
+      break
+    end
+    if fl 
+      good += 1
+    end
+    if fl && max_good > -1
+      if max_good < good
+        @vprint :ClassGroup 2 "found enough $(I.cnt)\n"
+        break
+      end
+    end
+    if fl && (rank(c.M)- rk+1)/good < rat
+      @vprint :ClassGroup 2 "rank too slow $(I.cnt)\n"
+      break
+    end
+  end
+end
+
+function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.2)
+  O = order(c.FB.ideals[1])
+  nb = nbits(abs(discriminant(O)))
+  nb = div(nb, 2) + 30
+
+  rt = time_ns()
+  I = class_group_small_lll_elements_relation_start(c, O)
+  single_env(c, I, nb, expect, rat/10, -1)
+  @vprint :ClassGroup 1 "search in order:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
+
+  @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
+  if h == 1 return c; end
+
+  for p = piv
+    I = class_group_small_lll_elements_relation_start(c, c.FB.ideals[p])
+    single_env(c, I, nb, expect, rat, 1)
+  end
+
+  @vprint :ClassGroup 1 "search in ideals:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
+
+  @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
+  if h > 0 return c; end
+
+  @vprint :ClassGroup 1 "Now with random...\n"
+  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
+  @vprint :ClassGroup 1 "$(piv)\n"
+
+  rand_exp = 1
+  start = max(1, length(c.FB.ideals)-10)
+  stop = length(c.FB.ideals)
+  while true
+    rand_env = random_init(c.FB.ideals[start:stop])
+    for p = piv
+      @vprint :ClassGroup 1 "p: $p $rand_exp\n"
+      @vtime :ClassGroup 2 J = random_get(rand_env)
+      @vtime :ClassGroup 2 J *= c.FB.ideals[p]^rand_exp
+      @vtime :ClassGroup 2 I = class_group_small_lll_elements_relation_start(c, J)
+      @vtime :ClassGroup 2 single_env(c, I, nb, expect, rat, 1+rand_exp)
+    end
+    @vprint :ClassGroup 1 "eval info\n"
+    @vtime :ClassGroup 1 h, piv_new = class_group_get_pivot_info(c)
+    @vprint :ClassGroup 1 "length(piv) = $(length(piv_new)) and h = $h\n"
+    @vprint :ClassGroup 1 "$(piv_new)\n"
+    
+    if piv_new == piv
+      if h > 0
+        return
+      end
+      rand_exp += 1
+      if rand_exp % 3 == 0
+        start = max(start -10, 1)
+        rand_env = random_init(c.FB.ideals[start:stop])
+      end
+    end
+    piv = piv_new
+    if h == 1 return c; end
+  end
+end
+
 
 ################################################################################
 # add one/ a few more relations
@@ -1624,8 +1722,11 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
 
   if false # method==1
     class_group_find_relations(c)
-  else
+  elseif method == 2
     class_group_find_relations2(c)
+  else
+    d = root(abs(discriminant(O)), 2)
+    class_group_via_lll(c, class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100))
   end
 
   # bring it into snf using factorized ideals and elements
