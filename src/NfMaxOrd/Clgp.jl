@@ -315,10 +315,13 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   O = order(FB.ideals[1])                  
 
   if integral
-    d = factor(FB.fb_int, num(n))
+    df =num(n)
   else
-    d = factor(FB.fb_int, num(n)*den(a, O))
+    df = num(n)*den(a, O)
   end
+
+  d = factor(FB.fb_int, df)  #careful: if df is non-int-smooth, then error is ignored
+
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()
   for p in keys(d)
@@ -326,7 +329,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     s, vp = FB.fb[p].doit(a, vp)
     if vp != 0
       if error
-        @hassert :ClassGroup 1 vp == 0
+        @assert vp == 0
       end
       return false, SRow{T}()
     end
@@ -1024,7 +1027,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
       if m < 2
         m = degree(K)
       end
-      while length(f) <= m 
+      while length(f) < m 
         f = find(i-> nL[i,i] < bd, 1:degree(K))
         bd *= 2
       end
@@ -1059,8 +1062,12 @@ function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
     I.bd += 1
   end
   I.cnt += 1
-  rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))
-  return deepcopy(I.elt)
+  while true
+    rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))
+    if !iszero(I.elt)
+      return deepcopy(I.elt)
+    end
+  end
 end
 
 global _elt = UInt(0)
@@ -1821,6 +1828,242 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
   end
   println("success: used $no_primes numbers and $no_ideals ideals")
   gc_enable(true)
+end
+
+
+################################################################################
+# maps and disc_log and such
+################################################################################
+
+function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfMaxOrdIdl,
+                    error::Bool = true)
+  T = fmpz                  
+  O = order(A)
+
+  n = norm(A)
+  d = factor(FB.fb_int, n) # as above: fails - even if error is false - 
+  # if the norm is not smooth
+  
+  rw = FB.rw
+  r = Array{Tuple{Int, Int}, 1}()
+  for p in keys(d)
+    vp = valuation(n, p)
+    s = Array{Tuple{Int, Int}, 1}()
+    for P=FB.fb[p].lp
+      v = valuation(A, P[2])
+      if v != 0
+        push!(s, (P[1], v))
+        vp -= v*P[2].splitting_type[2]
+      end
+    end
+    if vp != 0
+      if error
+        @assert vp == 0
+      end
+      return false, SRow{T}()
+    end
+    r = vcat(r, s)
+  end
+  lg::Int = length(r)
+  if lg > 0
+    if length(rw) > FB.mx
+      FB.mx = length(rw)
+    end
+    sort!(r, lt=function(a,b) return a[1] < b[1]; end)
+    @hassert :ClassGroup 1 length(r) > 0
+    return true, SRow{T}(r)
+  else 
+    # factor failed or I have a unit.
+    # sparse rel mat must not have zero-rows.
+    return false, SRow{T}()
+  end
+end
+
+function power_class(A::NfMaxOrdIdl, e::fmpz)
+  if e == 0
+    O = order(A)
+    return Hecke.ideal(O, parent(basis_mat(O).num)(1))
+  end
+
+  if e < 0
+    A = inv(A)
+    e = -e
+    A = Hecke.reduce_ideal(A)
+  end
+
+  if e == 1
+    return A
+  elseif e == 2
+    return A*A
+  end
+
+  f = div(e, 2)
+  B = power_class(A, f)^2
+  if isodd(e)
+    B *= A
+  end
+  if norm(B) > root(abs(discriminant(order(A))), 2)
+    B = Hecke.reduce_ideal(B)
+  end
+  return B
+end
+
+function power_product_class(A::Array{Hecke.NfMaxOrdIdl, 1}, e::Array{fmpz, 1})
+  i = 1
+  while i <= length(e) && e[i] == 0
+    i += 1
+  end
+  if i > length(e)
+    return power_class(A[1], 0)
+  end
+  B = power_class(A[i], e[i])
+  i += 1
+  while i <= length(e)
+    if e[i] != 0
+      B *= power_class(A[i], e[i])
+      if norm(B) > root(abs(discriminant(order(B))), 2)
+        B = Hecke.reduce_ideal(B)
+      end
+    end
+    i += 1
+  end
+  return B
+end
+
+function class_group_disc_exp(a::Hecke.FinGenGrpAbElem, c::Hecke.ClassGrpCtx)
+  if length(c.dl_data) == 3
+    Ti = inv(c.dl_data[2])
+    c.dl_data = (c.dl_data[1], c.dl_data[2], c.dl_data[3], Ti)
+  else
+    Ti = c.dl_data[4]
+  end
+  e = a.coeff * sub(Ti, rows(Ti)-cols(a.coeff)+1:rows(Ti), 1:cols(Ti))
+  return power_product_class(c.FB.ideals[length(c.FB.ideals)-rows(Ti)+1:end], [mod(e[1, i], c.h) for i=1:cols(e)])
+end
+
+function class_group_disc_log(r::SRow{fmpz}, c::Hecke.ClassGrpCtx)
+  if c.h==1
+    return fmpz[1]
+  end
+  if length(c.dl_data) == 3
+    s, T, C = c.dl_data
+  else
+    s, T, C, Ti = c.dl_data
+  end
+#  println("start with $r")
+  while length(r.pos)>0 && r.pos[1] < s
+    r = Hecke.add_scaled_row(c.M.basis[r.pos[1]], r, -r.values[1])
+    Hecke.mod!(r, c.h)
+  end
+
+#  println("reduced to $r")
+  rr = MatrixSpace(FlintZZ, 1, rows(T))()
+  for i = 1:rows(T)
+    rr[1,i] = 0
+  end
+  for (p,v) = r
+    rr[1, p-s+1] = v
+  end
+  return C(sub(rr*T, 1:1, rows(T)-length(C.snf)+1:rows(T)))
+end
+
+function class_group_disc_log(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
+  #easy case: I factors over the FB...
+  n = norm(I)
+  if issmooth(c.FB.fb_int, n)
+    fl, r = _factor!(c.FB, I)
+    if fl 
+      return class_group_disc_log(r, c)
+    end
+  end
+  # ok, we have to work
+  I = Hecke.reduce_ideal(I) # not unneccessarily hard on us...
+#  println("reduce to $I")
+  n = norm(I)
+  if issmooth(c.FB.fb_int, n)
+    fl, r = _factor!(c.FB, I)
+    if fl 
+      return class_group_disc_log(r, c)
+    end
+  end
+  #really annoying, but we have a small(ish) ideal now
+
+#  println("have to work")
+  E = Hecke.class_group_small_lll_elements_relation_start(c, I)
+  iI = inv(I)
+  J = Hecke.NfMaxOrdIdl[]
+  while true
+    a = Hecke.class_group_small_lll_elements_relation_next(E)
+#    println("trying $a")
+    Ia = simplify(a*iI)
+    @assert Ia.den == 1
+    n = norm(Ia.num)
+    if issmooth(c.FB.fb_int, n)
+      fl, r = _factor!(c.FB, Ia.num)
+      if fl 
+        return -class_group_disc_log(r, c)
+      end
+    end
+    if E.cnt > 100
+      push!(J, rand(c.FB.ideals))
+      j = Hecke.random_get(J)*I
+      E = Hecke.class_group_small_lll_elements_relation_start(c, j) 
+      iI = inv(j)
+    end
+  end
+end
+
+type MapClassGrp{T} <: Map{T, Hecke.NfMaxOrdIdlSet}
+  header::Hecke.MapHeader
+
+  function MapClassGrp()
+    return new()
+  end
+end
+
+import Base.show
+
+function show(io::IO, mC::MapClassGrp)
+  println(io, "ClassGroup of $(codomain(mC))")
+end
+
+function class_group(c::Hecke.ClassGrpCtx)
+  C = class_group_grp(c)
+  r = MapClassGrp{typeof(C)}()
+  r.header = Hecke.MapHeader(C, parent(c.FB.ideals[1]), x->class_group_disc_exp(x, c), x->class_group_disc_log(x, c))
+
+  return C, r
+end
+
+function class_group_grp(c::Hecke.ClassGrpCtx)
+  h, p = Hecke.class_group_get_pivot_info(c)
+
+  if isdefined(c, :dl_data)
+    return c.dl_data[3]
+  end
+
+  @assert h>0
+
+  if h==1 # group is trivial...
+    C = DiagonalGroup([1])
+    #mC = x -> 1*O, inv x-> [1]
+    c.dl_data = (1, MatrixSpace(FlintZZ, 1, 1)(), C)
+    return C
+  end
+
+  s = minimum(p)
+  #essential bit starts at s..
+
+  n = length(c.FB.ideals)
+  es = sub(c.M.basis, s:n, s:n)
+  es_dense = fmpz_mat(es)
+  S, T = snf_with_transform(es_dense, l=false, r=true)
+
+  p = find(x->S[x,x]>1, 1:cols(S))
+
+  C = DiagonalGroup([S[x,x] for x= p])
+  c.dl_data = (s, T, C)
+  return C
 end
 
 ################################################################################

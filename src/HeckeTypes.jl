@@ -1563,6 +1563,8 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   rel_mat_full_rank::Bool
   H_trafo::Array{Any, 1}
 
+  dl_data # Tuple{Int, fmpz_mat, AbelianGrp, fmpz_mat}
+
   function ClassGrpCtx()
     r = new()
     r.R_gen = Array{nf_elem, 1}()
