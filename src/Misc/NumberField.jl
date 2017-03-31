@@ -1549,3 +1549,74 @@ function inv_lift(a::nf_elem)  # better, but not enough
   return b
 end
 
+############################################################
+# Better(?) norm computation in special situation...
+############################################################
+type NormCtx
+  me::Array{modular_env, 1}
+  nb::Int
+  K::AnticNumberField
+  ce::crt_env{fmpz}
+  ln::Array{fmpz, 1}
+
+  function NormCtx(K::AnticNumberField, nb::Int, deg_one::Bool = false)
+    p = p_start
+    me = Array{modular_env,1}()
+
+    r = new()
+    r.K = K
+    r.nb = nb
+
+    lp = fmpz[]
+
+    while nb > 0
+      local m  
+      while true
+        p = next_prime(p)
+        m = modular_init(K, p)
+        if deg_one && length(m.rp) < degree(K)
+          continue
+        end
+        break
+      end
+      push!(lp, fmpz(p))
+      push!(me, m)
+      nb = nb - nbits(p)
+    end
+    r.me = me
+    r.ce = crt_env(lp)
+    r.ln = Array{fmpz, 1}()
+    for i = me
+      push!(r.ln, fmpz(0))
+    end
+    return r
+  end
+end
+
+import Nemo.mulmod, Nemo.invmod
+
+function show(io::IO, a::NormCtx)
+  println(io, "NormCtx for $(a.K) for $(a.nb) bits, using $(length(a.me)) primes")
+end
+
+function mulmod(a::UInt, b::UInt, n::UInt, ni::UInt)
+  ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), a, b, n, ni)
+end
+
+function norm(a::nf_elem, N::NormCtx, div::fmpz = fmpz(1))
+  ln = N.ln
+  i = 1
+  for m = N.me
+    np = UInt(invmod(div, m.p))
+    ap = modular_proj(a, m)
+    for j=1:length(ap) 
+      # problem: norm costs memory (in fmpz formally, then new fq_nmod is created)
+      np = mulmod(np, coeff(norm(ap[j]), 0), m.rp[1].mod_n, m.rp[1].mod_ninv)
+    end
+    N.ln[i] = np # problem: np is UInt, ln is not...
+    i += 1
+  end
+  return crt_signed(N.ln, N.ce)
+end
+
+
