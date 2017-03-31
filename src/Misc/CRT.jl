@@ -210,12 +210,12 @@ function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   r = i
   w = r + c.n - 1
 
-  zero!(res[r % c.n + 1])
-  add!(res[r % c.n + 1], res[r % c.n + 1], a)
+  @inbounds zero!(res[r % c.n + 1])
+  @inbounds add!(res[r % c.n + 1], res[r % c.n + 1], a)
 
   while i>1 
-    rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
-    rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
+    @inbounds rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
+    @inbounds rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
     w += 2*(c.n-1)
     i -= 2
     r += 1*(c.n-1)
@@ -234,11 +234,19 @@ doc"""
 """
 function crt_inv{T}(a::T, c::crt_env{T})
   res = Array{T}(c.n)
-  return crt_inv_tree!(res, a, c)
+  if c.n < 50
+    return crt_inv_iterative!(res, a, c)
+  else
+    return crt_inv_tree!(res, a, c)
+  end
 end
     
 function crt_inv!{T}(res::Array{T, 1}, a::T, c::crt_env{T})
-  return crt_inv_tree!(res, a, c)
+  if c.n < 50
+    return crt_inv_iterative!(res, a, c)
+  else
+    return crt_inv_tree!(res, a, c)
+  end
 end
     
 #explains the idea, but is prone to overflow.
@@ -348,7 +356,7 @@ doc"""
 """
 function crt{T}(r::Array{T, 1}, m::Array{T, 1}) 
   length(r) == length(m) || error("Arrays need to be of same size")
-  if length(r) < 5
+  if length(r) < 15
     return crt_iterative(r, m)
   else
     return crt_tree(r, m)
@@ -510,7 +518,11 @@ function modular_proj(a::nf_elem, me::modular_env)
   crt_inv!(me.rp, ap, me.ce)
   for i=1:me.ce.n
     F = me.fld[i]
-    u = F()
+    if isdefined(me.res, i)
+      u = me.res[i]
+    else
+      u = F()
+    end
     ccall((:fq_nmod_set, :libflint), Void,
                 (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
                 &u, &me.rp[i], &F)
