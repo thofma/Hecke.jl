@@ -522,7 +522,7 @@ elem_type(::NfOrdGen) = NfOrdElem{NfOrdGen}
 
 elem_type(::Type{NfOrdGen}) = NfOrdElem{NfOrdGen}
 
-elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
+elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
 
 elem_type(::Type{AnticNumberField}) = nf_elem
 
@@ -628,7 +628,6 @@ whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 #  Testing only "submodules"
 #
 ################################################################################
-
 function test_module(x, y = :all)
    julia_exe = Base.julia_cmd()
    if y == :all
