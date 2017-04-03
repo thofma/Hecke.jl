@@ -215,7 +215,9 @@ end
 
 function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
 
-  p = 1
+  p = degree(O) # needs to be larger than anything that could happen
+    # an upper bound on phi^-1(degree(O))??
+  p = 2^30  
   m = fmpz(0)
   m_old = fmpz(0)
   stable = 0
@@ -263,9 +265,7 @@ function _torsion_units_lifting(O::NfOrd)
     end
   end
 
-  if !(O(-1) in R)
-    push!(R, O(-1))
-  end
+  @assert O(-1) in R
 
   return R, R[i]
 end
