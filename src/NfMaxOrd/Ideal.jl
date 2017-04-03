@@ -605,6 +605,26 @@ function prod_by_int_2_elem_normal(A::NfMaxOrdIdl, a::fmpz)
   return B
 end
 
+function prod_by_int_2_elem(A::NfMaxOrdIdl, a::fmpz)
+  @assert has_2_elem(A)
+
+  B = NfMaxOrdIdl(A.gen_one*a, A.gen_two*a)
+  B.gens_normal = A.gens_normal
+
+  if has_minimum(A)
+    B.minimum = A.minimum * a
+  end
+
+  if has_norm(A)
+    B.norm = A.norm * a^degree(A.parent.order)
+  end
+
+  @assert has_2_elem(B)
+  return B
+end
+
+
+global last_err
 doc"""
 ***
     *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
@@ -616,10 +636,16 @@ function *(x::NfMaxOrdIdl, y::fmpz)
     return x
   end
 
-  if has_2_elem(x) && has_2_elem_normal(x)
-    return prod_by_int_2_elem_normal(x,y)
+  if has_2_elem(x) 
+    if has_2_elem_normal(x)
+      return prod_by_int_2_elem_normal(x,y)
+    else
+      return prod_by_int_2_elem(x,y)
+    end  
   else
-    return ideal(order(x), y*basis_mat(x))
+    global last_err = (x, y)
+    println(x, " <-> ", y)
+    error("Algorithm not yet implemented")
   end
 end
 
