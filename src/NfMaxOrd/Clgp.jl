@@ -1736,11 +1736,14 @@ end
 #
 ################################################################################
 
-function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
-  #try 
-  #  c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
-  #  return c
-  #end
+function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 1000, redo::Bool = false)
+
+  if !redo                                
+    try 
+      c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
+      return c
+    end
+  end
 
   if bound == -1
     bound = Int(ceil(log(abs(discriminant(O)))^2*0.3))
@@ -1758,18 +1761,6 @@ function class_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
     d = root(abs(discriminant(O)), 2)
     class_group_via_lll(c, class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100))
   end
-
-  # bring it into snf using factorized ideals and elements
-
-#  s, l, r = _snf_upper_triangular_with_trafo(c.H)
-#
-#  ideals = [ FacElem([x], [ fmpz(1) ]) for x in c.FB.ideals ]
-#
-#  elts = [ FacElem(x) for x in c.R ]
-#
-#  for t in c.H_trafo
-#    transform_left!(elts, t)
-#  end
 
   _set_ClassGrpCtx_of_order(O, c)
 
@@ -2009,7 +2000,7 @@ function class_group_disc_log(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
       return class_group_disc_log(r, c)
     end
   end
-  #really annoying, but we have a small(ish) ideal now
+  #really annoying, but at least we have a small(ish) ideal now
 
 #  println("have to work")
   E = Hecke.class_group_small_lll_elements_relation_start(c, I)
@@ -2045,7 +2036,7 @@ type MapClassGrp{T} <: Map{T, Hecke.NfMaxOrdIdlSet}
 end
 
 function show(io::IO, mC::MapClassGrp)
-  println(io, "ClassGroup of $(codomain(mC))")
+  println(io, "ClassGroup map of $(codomain(mC))")
 end
 
 function class_group(c::Hecke.ClassGrpCtx; redo::Bool = false)
@@ -2286,7 +2277,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
-function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
+function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large::Int = 1000)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
@@ -2302,11 +2293,14 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
     @v_do :UnitGroup 1 pushindent() 
     r = _unit_group_find_units(U, c)
     @v_do :UnitGroup 1 popindent()
-    if r == 1
-      break
-    else
-      class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
+    if r == 1  # use saturation!!!!
+      if _validate_class_unit_group(c, U) == 1
+        break
+      end
     end
+    #TODO: use LLL?
+    class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
+    class_group_get_pivot_info(c)
   end
   @assert U.full_rank
 
@@ -2333,7 +2327,7 @@ function unit_group_ctx(c::ClassGrpCtx)
   end
 end
 
-type MapUnitGrp{T} <: Map{T, Hecke.NfOrd}
+type MapUnitGrp{T} <: Map{T, NfOrd}
   header::Hecke.MapHeader
 
   function MapUnitGrp()
@@ -2344,8 +2338,21 @@ end
 elem_type(::Type{NfOrd}) = NfOrdElem
 
 function show(io::IO, mC::MapUnitGrp)
-  println(io, "UnitGroup of $(codomain(mC))")
+  println(io, "UnitGroup map of $(codomain(mC))")
 end
+
+type MapUnitGrpFacElem{T} <: Map{T, Hecke.FacElemMon{AnticNumberField}}
+  header::Hecke.MapHeader
+
+  function MapUnitGrpFacElem()
+    return new()
+  end
+end
+
+function show(io::IO, mC::MapUnitGrpFacElem)
+  println(io, "UnitGroup map of $(codomain(mC)) in factored presentation")
+end
+
 
 function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
   K = nf(order(U))
@@ -2353,17 +2360,20 @@ function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
   for i=1:length(U.units)
     y *= U.units[i]^x.coeff[1,i+1]
   end
-  return order(U)(evaluate(y))
+  return y
 end
 
-function unit_group_disc_log(x::NfOrdElem, U::Hecke.UnitGrpCtx, G::Hecke.FinGenGrpAbSnf)
-  K = nf(parent(x))
-  y = FacElem([K(x)], fmpz[1])
-  r = Hecke._add_dependent_unit(U, y, rel_only = true)
+function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::Hecke.FinGenGrpAbSnf)
+
+  r = Hecke._add_dependent_unit(U, x, rel_only = true)
   @assert r[end] == -1
+
+  y = deepcopy(x)
   for i=1:length(r)-1
     y *= U.units[i]^-r[i]
   end
+
+  K = nf(order(U))
 
   p = next_prime(2^30)
   while (p-1) % U.torsion_units_order != 0
@@ -2385,14 +2395,20 @@ function unit_group_disc_log(x::NfOrdElem, U::Hecke.UnitGrpCtx, G::Hecke.FinGenG
       push!(res, i)
     end
   end
+  @assert length(res) == 1
+
   for i = 1:length(r)-1
     push!(res, r[i])
   end
   return G(res)
 end 
 
-function unit_group(c::ClassGrpCtx)
+function unit_group_fac_elem(c::ClassGrpCtx)
   u = unit_group_ctx(c)
+  return unit_group_fac_elem(c, u)
+end
+
+function unit_group_fac_elem(c::ClassGrpCtx, u::UnitGrpCtx)
   O = order(c.FB.ideals[1])
 
   zo = u.torsion_units_order
@@ -2407,10 +2423,28 @@ function unit_group(c::ClassGrpCtx)
   end
   U = DiagonalGroup(d)
 
-  r = MapUnitGrp{typeof(U)}()
-  r.header = Hecke.MapHeader(U, O,
+  r = MapUnitGrpFacElem{typeof(U)}()
+  r.header = Hecke.MapHeader(U, FacElemMon(nf(O)),
     x->unit_group_disc_exp(x, u),
     x->unit_group_disc_log(x, u, U))
   return U, r
 end
+
+function unit_group(c::ClassGrpCtx)
+  U = unit_group_ctx(c)
+  return unit_group(c, U)
+end
+
+function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
+  O = order(c.FB.ideals[1])
+  K = nf(O)
+  U, mU = unit_group_fac_elem(c, U)
+
+  r = MapUnitGrp{typeof(U)}()
+  r.header = Hecke.MapHeader(U, O,
+    x->O(evaluate(image(mU, x))),
+    x->preimage(mU, FacElem([K(x)], fmpz[1])))
+  return U, r
+end
  
+
