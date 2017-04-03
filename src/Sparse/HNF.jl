@@ -386,7 +386,7 @@ function hnf_kannan_bachem{N}(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false})
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = [] : nothing
 
-  B = SMat{fmpz}()
+  B = SMat(FlintZZ)
   B.c = A.c
   nc = 0
   for i=A
