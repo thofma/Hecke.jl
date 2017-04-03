@@ -1566,7 +1566,7 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int;
     else
       deg_lim = 0
     end
-    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)"
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)\n"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
