@@ -825,13 +825,13 @@ function lll(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::I
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
-  @v_do :ClassGroup 2 print_with_color(:green, "lll basis length profile\n");
-  @v_do :ClassGroup 2 for i=1:rows(l)
+  @v_do :ClassGroup 3 print_with_color(:green, "lll basis length profile\n");
+  @v_do :ClassGroup 3 for i=1:rows(l)
     print(div(l[i,i], fmpz(2)^prec), " : ")
   end
-  @v_do :ClassGroup 2 println("")
+  @v_do :ClassGroup 3 println("")
   if nbits(max(t)) >  div(prec, 2)
-    @v_do :ClassGroup 1 print_with_color(:red, "lll trafo too large\n");
+    @v_do :ClassGroup 2 print_with_color(:red, "lll trafo too large\n");
     throw(LowPrecisionLLL())
   end
   ## lattice has lattice disc = order_disc * norm^2
@@ -844,16 +844,16 @@ function lll(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::I
   d *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
   pr = fmpz(1)
   if l[1,1] > d 
-    @v_do :ClassGroup 1 print_with_color(:red, "LLL basis too large\n");
-    @v_do :ClassGroup 1 println("bound is ", d, " value at ", 1, " is ", l[1,1]); 
+    @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
+    @v_do :ClassGroup 3 println("bound is ", d, " value at ", 1, " is ", l[1,1]); 
     throw(LowPrecisionLLL())
   end
   for i=1:n
     pr = pr*l[i,i]
   end  
   if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
-    @v_do :ClassGroup 1 print_with_color(:red, "LLL basis too large\n");
-    @v_do :ClassGroup 1 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));
+    @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
+    @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));
     throw(LowPrecisionLLL())
   end
 
@@ -1576,7 +1576,7 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expe
     if nbits(num(n)) > nb - 20
       bad_norm += 1
       if bad_norm / I.cnt > 0.01
-        @vprint :ClassGroup 2 "norm too large, $(I.cnt)\n"
+        @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(num(n))) should be <= $(nb - 20)\n"
         break
       end
       continue
@@ -1623,7 +1623,26 @@ function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.
   @vprint :ClassGroup 1 "search in ideals:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
 
   @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
-  if h > 0 return c; end
+  if h == 1 return c; end
+
+  @vprint :ClassGroup 1 "Now with random...\n"
+  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
+  @vprint :ClassGroup 1 "$(piv)\n"
+
+  class_group_new_relations_via_lll(c, expect, rat, extra = -1)
+
+  return c
+end
+
+function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.2; extra::Int = 5)
+
+  O = order(c.FB.ideals[1])
+  nb = nbits(abs(discriminant(O)))
+  nb = div(nb, 2) + 30
+
+  st = c.rel_cnt
+
+  @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
 
   @vprint :ClassGroup 1 "Now with random...\n"
   @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
@@ -1632,15 +1651,19 @@ function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.
   rand_exp = 1
   start = max(1, length(c.FB.ideals)-10)
   stop = length(c.FB.ideals)
+  rand_env = random_init(c.FB.ideals[start:stop])
   while true
-    rand_env = random_init(c.FB.ideals[start:stop])
     for p = piv
-      @vprint :ClassGroup 1 "p: $p $rand_exp\n"
+      @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env))\n"
       @vtime :ClassGroup 2 J = random_get(rand_env)
       @vtime :ClassGroup 2 J *= c.FB.ideals[p]^rand_exp
       @vtime :ClassGroup 2 I = class_group_small_lll_elements_relation_start(c, J)
       @vtime :ClassGroup 2 single_env(c, I, nb, expect, rat, 1+rand_exp)
+      if extra > 0 && st + extra <= c.rel_cnt
+        return
+      end
     end
+
     @vprint :ClassGroup 1 "eval info\n"
     @vtime :ClassGroup 1 h, piv_new = class_group_get_pivot_info(c)
     @vprint :ClassGroup 1 "length(piv) = $(length(piv_new)) and h = $h\n"
@@ -1657,7 +1680,7 @@ function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.
       end
     end
     piv = piv_new
-    if h == 1 return c; end
+    if h == 1 return end
   end
 end
 
@@ -2021,27 +2044,25 @@ type MapClassGrp{T} <: Map{T, Hecke.NfMaxOrdIdlSet}
   end
 end
 
-import Base.show
-
 function show(io::IO, mC::MapClassGrp)
   println(io, "ClassGroup of $(codomain(mC))")
 end
 
-function class_group(c::Hecke.ClassGrpCtx)
-  C = class_group_grp(c)
+function class_group(c::Hecke.ClassGrpCtx; redo::Bool = false)
+  C = class_group_grp(c, redo = redo)
   r = MapClassGrp{typeof(C)}()
   r.header = Hecke.MapHeader(C, parent(c.FB.ideals[1]), x->class_group_disc_exp(x, c), x->class_group_disc_log(x, c))
 
   return C, r
 end
 
-function class_group_grp(c::Hecke.ClassGrpCtx)
-  h, p = Hecke.class_group_get_pivot_info(c)
+function class_group_grp(c::Hecke.ClassGrpCtx; redo::Bool = false)
 
-  if isdefined(c, :dl_data)
+  if !redo && isdefined(c, :dl_data)
     return c.dl_data[3]
   end
 
+  h, p = Hecke.class_group_get_pivot_info(c)
   @assert h>0
 
   if h==1 # group is trivial...
@@ -2056,6 +2077,7 @@ function class_group_grp(c::Hecke.ClassGrpCtx)
 
   n = length(c.FB.ideals)
   es = sub(c.M.basis, s:n, s:n)
+  hnf!(es)
   es_dense = fmpz_mat(es)
   S, T = snf_with_transform(es_dense, l=false, r=true)
 
@@ -2291,3 +2313,104 @@ function _class_unit_group(O::NfMaxOrd; bound = -1, method = 2, large = 1000)
   return c, U, _validate_class_unit_group(c, U)
 end
 
+function unit_group_ctx(c::ClassGrpCtx)
+  O = order(c.FB.ideals[1])
+  U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
+  E = 1
+  need_more = true
+  while true
+    r = _unit_group_find_units(U, c)
+    if r == 0
+      if need_more
+        d = root(abs(discriminant(O)), 2)
+        E = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
+        need_more = false
+      end
+      class_group_new_relations_via_lll(c, E)
+    else
+      return U
+    end
+  end
+end
+
+type MapUnitGrp{T} <: Map{T, Hecke.NfOrd}
+  header::Hecke.MapHeader
+
+  function MapUnitGrp()
+    return new()
+  end
+end
+
+elem_type(::Type{NfOrd}) = NfOrdElem
+
+function show(io::IO, mC::MapUnitGrp)
+  println(io, "UnitGroup of $(codomain(mC))")
+end
+
+function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
+  K = nf(order(U))
+  y = FacElem([K(U.torsion_units_gen)], [x.coeff[1,1]])
+  for i=1:length(U.units)
+    y *= U.units[i]^x.coeff[1,i+1]
+  end
+  return order(U)(evaluate(y))
+end
+
+function unit_group_disc_log(x::NfOrdElem, U::Hecke.UnitGrpCtx, G::Hecke.FinGenGrpAbSnf)
+  K = nf(parent(x))
+  y = FacElem([K(x)], fmpz[1])
+  r = Hecke._add_dependent_unit(U, y, rel_only = true)
+  @assert r[end] == -1
+  for i=1:length(r)-1
+    y *= U.units[i]^-r[i]
+  end
+
+  p = next_prime(2^30)
+  while (p-1) % U.torsion_units_order != 0
+    p = next_prime(p)
+  end
+  P = prime_decomposition(order(U), p)[1][1]
+  F, mF = ResidueField(order(U), P)
+  mK = extend(mF, K)
+
+  yp = F(1)
+  for (k,v) = y.fac
+    yp *= mK(k)^v
+  end
+
+  zp = mF(U.torsion_units_gen)
+  res = fmpz[]
+  for i=0:U.torsion_units_order-1
+    if zp^i == yp
+      push!(res, i)
+    end
+  end
+  for i = 1:length(r)-1
+    push!(res, r[i])
+  end
+  return G(res)
+end 
+
+function unit_group(c::ClassGrpCtx)
+  u = unit_group_ctx(c)
+  O = order(c.FB.ideals[1])
+
+  zo = u.torsion_units_order
+  if zo == -1
+    u.torsion_units_gen, u.torsion_units_order = torsion_units_gen_order(O)
+    zo = u.torsion_units_order
+  end
+  r = unit_rank(O)
+  d = fmpz[zo]
+  for i=1:r
+    push!(d, fmpz(0))
+  end
+  U = DiagonalGroup(d)
+
+  r = MapUnitGrp{typeof(U)}()
+  r.header = Hecke.MapHeader(U, O,
+    x->unit_group_disc_exp(x, u),
+    x->unit_group_disc_log(x, u, U))
+  return U, r
+end
+ 
