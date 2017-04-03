@@ -91,13 +91,24 @@ end
 
 doc"""
 ***
-    torsion_units(O::NfOrd) -> NfOrdElem
+    torsion_units_gen(O::NfOrd) -> NfOrdElem
 
 > Given an order $O$, compute a generator of the torsion units of $O$.
 """
 function torsion_units_gen(O::NfOrd)
   ar, g = _torsion_units(O)
   return g
+end
+
+doc"""
+***
+    torsion_units_gen_order(O::NfOrd) -> NfOrdElem
+
+> Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
+"""
+function torsion_units_gen_order(O::NfOrd)
+  ar, g = _torsion_units(O)
+  return g, length(ar)
 end
 
 function _torsion_units(O::NfOrd)
