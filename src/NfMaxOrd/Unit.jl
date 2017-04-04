@@ -1448,26 +1448,6 @@ end
 #
 ################################################################################
 
-doc"""
-***
-    unit_group(O::NfMaxOrd) -> Map
-
-> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
-> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
-"""
-function unit_group(O::NfMaxOrd)
-  if isdefined(O, :unit_group)
-    return O.unit_group::AbToNfOrdUnitGrp{Nemo.nf_elem,NfOrdElem{NfMaxOrd}}
-  else
-    c, U, b = _class_unit_group(O)
-    _refine_with_saturation(c, U)
-    f = AbToNfOrdUnitGrp(O, U.units, U.torsion_units_gen, U.torsion_units_order)
-    O.unit_group = f
-    return f
-  end
-end
-
 function lower_regulator_bound(K::AnticNumberField)
   return ArbField(64)("0.054")
 end

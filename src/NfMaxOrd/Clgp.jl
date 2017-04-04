@@ -69,7 +69,8 @@
 #
 ################################################################################
 
-export class_group, FactorBase, issmooth, factor, lll_basis
+export class_group, FactorBase, issmooth, factor, lll_basis, 
+       unit_group_fac_elem, unit_group
 
 add_verbose_scope(:ClassGroup)
 add_verbose_scope(:ClassGroup_time)
@@ -509,7 +510,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
         end
       else
         clg.largePrime[i] = (a, n*nI)
-        push!(clg.relPartialNorm, (a, nI))
       end
       clg.largePrimeCnt += 1
     else
@@ -555,7 +555,6 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
            clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
     clg.last = clg.bad_rel
-    push!(clg.relNorm, (a, nI))
     return true
   else
     @vprint :ClassGroup 3 "not alg-smooth\n"
@@ -1114,17 +1113,9 @@ end
 
 # a large protion is now outsourced to LinearAlgebra/Module.jl
 
-
-# This computes an upper triangular form the relation matrix. It starts with
-# the echelonization of the reduced relation matrix (clg.rel_mat_mod) and once
-# we have full rank, an upper triangular form of the relation matrix will be
-# computed (clg.H).
 function class_group_process_relmatrix(clg::ClassGrpCtx)
 
   t = time_ns()
-  # Note that last_H = 0 if and only if this function is called
-  # for the first time. In thise case new_rel is the full relation matrix
-
   clg.h = check_index(clg.M)
 
   clg.hnf_time += time_ns()-t
@@ -1139,10 +1130,6 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
   h = check_index(clg.M)
   clg.h = h
   return (h, non_trivial_pivot(clg.M))
-end
-
-# Updates the upper triangular matrix
-function rank_increase(clg::ClassGrpCtx)
 end
 
 ################################################################################
@@ -1736,7 +1723,7 @@ end
 #
 ################################################################################
 
-function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 1000, redo::Bool = false)
+function class_group_ctx(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 1000, redo::Bool = false)
 
   if !redo                                
     try 
@@ -2040,10 +2027,18 @@ function show(io::IO, mC::MapClassGrp)
 end
 
 function class_group(c::Hecke.ClassGrpCtx; redo::Bool = false)
+  if !redo
+    if isdefined(c, :cl_map)
+      mC = c.cl_map
+      C = domain(mC)
+      return C, mC
+    end
+  end  
   C = class_group_grp(c, redo = redo)
   r = MapClassGrp{typeof(C)}()
   r.header = Hecke.MapHeader(C, parent(c.FB.ideals[1]), x->class_group_disc_exp(x, c), x->class_group_disc_log(x, c))
 
+  c.cl_map = r
   return C, r
 end
 
@@ -2282,8 +2277,13 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
   @v_do :UnitGroup 1 pushindent() 
-  c = class_group(O, bound = bound, method = method, large = large)
+  c = class_group_ctx(O, bound = bound, method = method, large = large)
   @v_do :UnitGroup 1 popindent()
+  if c.finished
+    U = _get_UnitGrpCtx_of_order(O)
+    @assert U.finished
+    return c, U, 1
+  end  
   
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
@@ -2303,12 +2303,23 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
     class_group_get_pivot_info(c)
   end
   @assert U.full_rank
+  _set_UnitGrpCtx_of_order(O, U)
+
+  c.finished = true
+  U.finished = true
 
   return c, U, _validate_class_unit_group(c, U)
 end
 
-function unit_group_ctx(c::ClassGrpCtx)
+function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
   O = order(c.FB.ideals[1])
+  if !redo
+    try 
+      U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx
+      return U
+    end
+  end  
+
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
   E = 1
   need_more = true
@@ -2322,6 +2333,7 @@ function unit_group_ctx(c::ClassGrpCtx)
       end
       class_group_new_relations_via_lll(c, E)
     else
+      _set_UnitGrpCtx_of_order(O, U)
       return U
     end
   end
@@ -2403,8 +2415,13 @@ function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpC
   return G(res)
 end 
 
-function unit_group_fac_elem(c::ClassGrpCtx)
-  u = unit_group_ctx(c)
+function unit_group_fac_elem(c::ClassGrpCtx; redo::Bool = false)
+  u = unit_group_ctx(c, redo = redo)
+  if isdefined(u, :unit_map)
+    mU = u.unit_map
+    U = domain(mU)
+    return U, mU
+  end
   return unit_group_fac_elem(c, u)
 end
 
@@ -2427,6 +2444,9 @@ function unit_group_fac_elem(c::ClassGrpCtx, u::UnitGrpCtx)
   r.header = Hecke.MapHeader(U, FacElemMon(nf(O)),
     x->unit_group_disc_exp(x, u),
     x->unit_group_disc_log(x, u, U))
+
+  u.unit_map = r
+
   return U, r
 end
 
@@ -2447,4 +2467,45 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   return U, r
 end
  
+doc"""
+***
+    class_group(O::NfMaxOrd; bound = -1, method = 3) -> Map
+
+> Returns an isomorphism map $f$ from $A$ to the set of ideals of $O$.
+> `A = domain(f)`. 
+"""
+function class_group(O::NfMaxOrd; bound::Int = 01, method::Int = 3)
+  c, U, b = _class_unit_group(O, bound = bound, method = method)
+  @assert b==1
+  return class_group(c)
+end
+
+
+doc"""
+***
+    unit_group(O::NfMaxOrd) -> Map
+
+> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
+> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+"""
+function unit_group(O::NfMaxOrd)
+  c, U, b = _class_unit_group(O)
+  @assert b==1
+  return unit_group(c, U)
+end
+
+doc"""
+***
+    unit_group_fac_elem(O::NfMaxOrd) -> Map
+
+> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
+> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+"""
+function unit_group_fac_elem(O::NfMaxOrd)
+  c, U, b = _class_unit_group(O)
+  @assert b==1
+  return unit_group_fac_elem(c, U)
+end
 

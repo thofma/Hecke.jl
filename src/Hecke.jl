@@ -156,6 +156,11 @@ function __init__()
   global _get_ClassGrpCtx_of_order = t[1]
   global _set_ClassGrpCtx_of_order = t[2]
 
+  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
+
+  global _get_UnitGrpCtx_of_order = t[1]
+  global _set_UnitGrpCtx_of_order = t[2]
+
   t = create_accessors(AnticNumberField, roots_ctx, get_handle())
 
   global _get_roots_ctx_of_nf = t[1]

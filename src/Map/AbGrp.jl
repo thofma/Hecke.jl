@@ -34,53 +34,6 @@
 
 ################################################################################
 #
-#  Maps for unit groups of number fields
-#
-################################################################################
-
-type AbToNfOrdUnitGrp{T, S} <: Map{FinGenGrpAbSnf, FacElemMon{T}}
-  header::MapHeader{FinGenGrpAbSnf, FacElemMon{nf_elem}}
-  ind_unit::Array{FacElem{T}, 1}
-  tor_unit::S
-
-  # This only works if there exists at least one independent unit
-  # That is, ind_unit should not have length 1
-  function AbToNfOrdUnitGrp(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::NfOrdElem{NfMaxOrd}, tor_ord::Int)
-    A = DiagonalGroup(vcat([tor_ord], [ 0 for i in 1:length(ind_unit) ]))
-    z = new()
-    z.ind_unit = ind_unit
-    z.tor_unit = tor_unit
-
-    function _image(a::FinGenGrpAbElem)
-      y = Hecke.FacElem(tor_unit.elem_in_nf)^a[1]
-
-      for i in 1:length(z.ind_unit)
-        if a[i+1] == 0
-          continue
-        end
-        y = y*z.ind_unit[i]^a[i+1]
-      end
-
-      return y
-    end
-
-    z.header = MapHeader(A, parent(z.ind_unit[1]), _image)
-
-    return z
-  end
-end
-
-function AbToNfOrdUnitGrp{T, S}(O::NfMaxOrd, ind_unit::Array{FacElem{T}, 1}, tor_unit::S, tor_ord::Int)
-  length(ind_unit) == 0 && error("Not implemented yet")
-  return AbToNfOrdUnitGrp{T, S}(O, ind_unit, tor_unit, tor_ord)
-end
-
-type AbToNfOrdFracIdlGrp <: Map{FinGenGrpAbSnf, NfMaxOrdIdl}
-  header::MapHeader{FinGenGrpAbSnf, NfMaxOrdIdl}
-end
-
-################################################################################
-#
 #  Maps for multliplicative groups of residue rings of maximal orders
 #
 ################################################################################

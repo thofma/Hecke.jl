@@ -1184,6 +1184,9 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   tors_prec::Int
   indep_prec::Int
 
+  unit_map::Map
+  finished::Bool
+
   function UnitGrpCtx(O::NfOrd)
     z = new()
     z.order = O
@@ -1197,6 +1200,7 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
     z.rel_add_prec = 32
     z.tors_prec = 16
     z.indep_prec = 16
+    z.finished = false
     return z
   end
 end
@@ -1547,8 +1551,9 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   largePrime::Dict{fmpz_poly, Tuple{nf_elem, fmpq}}
   largePrime_success::Int
   largePrime_no_success::Int
-  relNorm::Array{Tuple{nf_elem, fmpz}, 1}
-  relPartialNorm::Array{Tuple{nf_elem, fmpz}, 1}
+
+  normStat::Dict{Int, Int}
+
   randomClsEnv::Array{NfMaxOrdIdl, 1}
 
   val_base::fmpz_mat      # a basis for the possible infinite randomization
@@ -1558,12 +1563,12 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
                           #    identical
                           # done via lll + nullspace
 
-  rel_mat_mod::SMat{UIntMod}  # the echelonization of relation matrix modulo
-                              # a small prime
   rel_mat_full_rank::Bool
   H_trafo::Array{Any, 1}
 
   dl_data # Tuple{Int, fmpz_mat, AbelianGrp, fmpz_mat}
+  cl_map::Map
+  finished::Bool
 
   function ClassGrpCtx()
     r = new()
@@ -1574,10 +1579,9 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0
     r.largePrime_no_success = 0
-    r.relNorm=Array{Tuple{nf_elem, fmpz}, 1}()
-    r.relPartialNorm=Array{Tuple{nf_elem, fmpz}, 1}()
     r.B2 = 0
     r.H_trafo = []
+    r.finished = false
     return r
   end
 end
