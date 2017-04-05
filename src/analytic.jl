@@ -303,6 +303,7 @@ function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 10)
   #we want
   # 1/sum (delta(psi)/delta(x)) * delta(vol)
 
+  d = max(d, fmpz(100))
   d = BigFloat(d)
   
   pg = psi_guess(d^(1/samples), B, 1:samples)
