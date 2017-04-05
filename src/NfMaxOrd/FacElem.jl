@@ -58,9 +58,12 @@ end
 
 function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
   @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
+
   if checkisunit
     _isunit(x) ? nothing : return false
   end
+
+  p = max(nbits(maxabs_exp(x))+nbits(length(x.fac)), p)
 
   K = base_ring(x)
   d = degree(K)
@@ -87,6 +90,8 @@ function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16
         return false, p
       elseif isnonnegative(B - k)
         l = l + 1
+      else
+        println("fail 1")
       end
     end
     for i in 1:s
@@ -95,6 +100,8 @@ function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16
         return false, p
       elseif isnonnegative(B - k)
         l = l + 1
+      else
+        println("fail 2")
       end
     end
 
@@ -103,7 +110,6 @@ function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16
     end
 
     p = 2*p
-
   end
 end
 
