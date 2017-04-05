@@ -358,6 +358,9 @@ function simplify(x::FacElem{fmpz})
 end
 
 function simplify!(x::FacElem{fmpq})
+  if length(x.fac) <= 1
+    return
+  end
   cp = coprime_base(vcat([den(y) for y = base(x)], [num(y) for y=base(x)]))
   ev = Dict{fmpq, fmpz}()
   for p = cp
@@ -385,6 +388,9 @@ function simplify!(x::FacElem{fmpq})
 end
 
 function simplify!(x::FacElem{fmpz})
+  if length(x.fac) <= 1
+    return
+  end
   cp = coprime_base(collect(base(x)))
   ev = Dict{fmpz, fmpz}()
   for p = cp
@@ -492,6 +498,31 @@ function ^(a::fmpq, k::fmpz)
 end
 
 
+
+#################################################################################
+doc"""
+    max_exp(a::FacElem)
+> Finds the largest exponent in the factored element $a$
+"""
+function max_exp(a::FacElem)
+  return maximum(values(a.fac))
+end
+
+doc"""
+    min_exp(a::FacElem)
+> Finds the smallest exponent in the factored element $a$
+"""
+function min_exp(a::FacElem)
+  return minimum(values(a.fac))
+end
+
+doc"""
+    maxabs_exp(a::FacElem)
+> Finds the largest exponent by absolute value the factored element $a$
+"""
+function maxabs_exp(a::FacElem)
+  return maxabs(values(a.fac))
+end
 
 #################################################################################
 ##
