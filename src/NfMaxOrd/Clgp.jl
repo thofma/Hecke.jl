@@ -1562,15 +1562,15 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expe
     n = norm_div(e, norm(I.A), nb)
     if nbits(num(n)) > nb - 20
       bad_norm += 1
-      if bad_norm / I.cnt > 0.01
-        @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(num(n))) should be <= $(nb - 20)\n"
+      if I.cnt > 100 && bad_norm / I.cnt > 0.1
+        @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(num(n))) should be <= $(nb - 20) $bad_norm $(I.cnt)\n"
         break
       end
       continue
     end
     fl = class_group_add_relation(c, e, n, norm(I.A), integral = true)
     if !fl  && I.cnt/(good+1) > expect
-      @vprint :ClassGroup 2 "not enough progress $(I.cnt)\n"
+      @vprint :ClassGroup 2 "not enough progress $(I.cnt) $expect $good\n"
       break
     end
     if fl 
@@ -1582,8 +1582,8 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expe
         break
       end
     end
-    if fl && (rank(c.M)- rk+1)/good < rat
-      @vprint :ClassGroup 2 "rank too slow $(I.cnt)\n"
+    if fl && good > 0 && (rank(c.M)- rk+1)/good < rat
+      @vprint :ClassGroup 2 "rank too slow $(I.cnt) $good $(rank(c.M)) $rk\n"
       break
     end
   end
@@ -1621,7 +1621,7 @@ function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.
   return c
 end
 
-function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.2; extra::Int = 5)
+function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.2; extra::Int = 5, rand_exp::Int = 1)
 
   O = order(c.FB.ideals[1])
   nb = nbits(abs(discriminant(O)))
@@ -1635,8 +1635,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat
   @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
   @vprint :ClassGroup 1 "$(piv)\n"
 
-  rand_exp = 1
-  start = max(1, length(c.FB.ideals)-10)
+  start = max(1, length(c.FB.ideals)-10*(1+div(rand_exp, 3)))
   stop = length(c.FB.ideals)
   rand_env = random_init(c.FB.ideals[start:stop])
   while true
@@ -1670,7 +1669,6 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat
     if h == 1 return end
   end
 end
-
 
 ################################################################################
 # add one/ a few more relations
@@ -2272,12 +2270,12 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
-function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large::Int = 1000)
+function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
   @v_do :UnitGroup 1 pushindent() 
-  c = class_group_ctx(O, bound = bound, method = method, large = large)
+  c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo)
   @v_do :UnitGroup 1 popindent()
   if c.finished
     U = _get_UnitGrpCtx_of_order(O)
@@ -2474,8 +2472,8 @@ doc"""
 > Returns an isomorphism map $f$ from $A$ to the set of ideals of $O$.
 > `A = domain(f)`. 
 """
-function class_group(O::NfMaxOrd; bound::Int = 01, method::Int = 3)
-  c, U, b = _class_unit_group(O, bound = bound, method = method)
+function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, redo::Bool = false)
+  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo)
   @assert b==1
   return class_group(c)
 end
