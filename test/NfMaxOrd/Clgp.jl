@@ -28,8 +28,8 @@
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
           K, a = NumberField(x^2-d, "a");
           O = maximal_order(K)
-          Cl = Hecke.class_group(O);
-          @test Cl.h == h
+          Cl, mCl = Hecke.class_group(O);
+          @test order(Cl) == h
         end
       end
 
@@ -37,8 +37,8 @@
         f = x^3 - 3*x - 1
         K, a = NumberField(f, "a");
         O = maximal_order(K)
-        Cl = Hecke.class_group(O);
-        @test Cl.h == 1
+        Cl, mCl = Hecke.class_group(O);
+        @test order(Cl) == 1
       end
 
       @testset "29th cyclotomic polynomial" begin
