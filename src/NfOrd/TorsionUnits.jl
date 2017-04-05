@@ -213,11 +213,35 @@ end
 #
 ################################################################################
 
+# For each n _euler_phi_inverse_maximum_ is the maximal i,
+# such that varphi(i) divides n
+#
+# Magma code:
+# [Maximum(&cat[ EulerPhiInverse(d) : d in Divisors(n)  | #EulerPhiInverse(d) ne 0 ]) : n in [1..250]];
+const _euler_phi_inverse_maximum =
+[ 2, 6, 2, 12, 2, 18, 2, 30, 2, 22, 2, 42, 2, 6, 2, 60, 2, 54, 2, 66, 2, 46, 2,
+90, 2, 6, 2, 58, 2, 62, 2, 120, 2, 6, 2, 126, 2, 6, 2, 150, 2, 98, 2, 138, 2,
+94, 2, 210, 2, 22, 2, 106, 2, 162, 2, 174, 2, 118, 2, 198, 2, 6, 2, 240, 2,
+134, 2, 12, 2, 142, 2, 270, 2, 6, 2, 12, 2, 158, 2, 330, 2, 166, 2, 294, 2, 6,
+2, 276, 2, 62, 2, 282, 2, 6, 2, 420, 2, 6, 2, 250, 2, 206, 2, 318, 2, 214, 2,
+378, 2, 242, 2, 348, 2, 18, 2, 354, 2, 6, 2, 462, 2, 6, 2, 12, 2, 254, 2, 510,
+2, 262, 2, 414, 2, 6, 2, 274, 2, 278, 2, 426, 2, 6, 2, 630, 2, 6, 2, 298, 2,
+302, 2, 30, 2, 46, 2, 474, 2, 6, 2, 660, 2, 486, 2, 498, 2, 334, 2, 588, 2, 22,
+2, 346, 2, 118, 2, 690, 2, 358, 2, 594, 2, 6, 2, 564, 2, 18, 2, 12, 2, 382, 2,
+840, 2, 6, 2, 394, 2, 398, 2, 750, 2, 6, 2, 618, 2, 6, 2, 636, 2, 422, 2, 642,
+2, 6, 2, 810, 2, 6, 2, 726, 2, 446, 2, 870, 2, 454, 2, 458, 2, 94, 2, 708, 2,
+158, 2, 12, 2, 478, 2, 1050, 2, 46, 2, 12, 2, 166, 2, 30, 2, 502 ]
+
+# One should/could also try to be closer to Algorithm 1
+# in Molin, "On the calculation of roots of unity in a number field"
 function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
 
-  p = degree(O) # needs to be larger than anything that could happen
-    # an upper bound on phi^-1(degree(O))??
-  p = 2^30  
+  if degree(O) <= 250
+    p = _euler_phi_inverse_maximum[degree(O)] + 1
+  else
+    p = 2^30
+  end
+
   m = fmpz(0)
   m_old = fmpz(0)
   stable = 0
