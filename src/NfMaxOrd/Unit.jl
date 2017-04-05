@@ -219,7 +219,7 @@ end
 
 # Checks whether x[1]^z[1] * ... x[n]^z[n]*y^[n+1] is a torsion unit
 # This can be improved
-function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
+function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1}, p::Int = 16)
   (length(x) + 1 != length(z)) && error("Lengths of arrays does not fit")
   r = x[1]^z[1]
 
@@ -229,7 +229,8 @@ function _check_relation_mod_torsion{T}(x::Array{T, 1}, y::T, z::Array{fmpz, 1})
 
   w = r*y^z[length(z)]
 
-  b, _ = istorsion_unit(w)
+  b, _ = istorsion_unit(w, false, p)
+#  b, _ = istorsion_unit(w)
   return b
 end
 
@@ -262,7 +263,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
 
   if is_integer
     rel[r + 1] = -1
-    @vprint :UnitGroup 2 "Found rational relation.\n"
+    @vprint :UnitGroup 2 "Found rational relation: $rel.\n"
     return true
   end
 
@@ -299,7 +300,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
   # Check that relation is primitive
   g = rel[1]
 
-  for i in 1:length(rel)
+  for i in 2:length(rel)
     g = gcd(g, rel[i])
     if g == 1
       break
@@ -308,7 +309,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
 
   @assert g == 1
 
-  @vprint :UnitGroup 2 "Found rational relation.\n"
+  @vprint :UnitGroup 2 "Found rational relation: $rel.\n"
   return true
 end
 
@@ -565,7 +566,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
     p =  2*p
     p, B = _conj_log_mat_cutoff_inv(U, p)
 
-    @assert p != 0
+    @assert p > 0
 
     conlog = conjugates_arb_log(y, p)
 
@@ -585,9 +586,10 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
 
   @vprint :UnitGroup 2 "Second iteration to check relation ... \n"
 
-  while !_check_relation_mod_torsion(U.units, y, rel)
+  while !_check_relation_mod_torsion(U.units, y, rel, p)
     @vprint :UnitGroup 2 "Precision not high enough, increasing from $p to $(2*p)\n"
     p = 2*p
+    @assert p > 0
     p, B = _conj_log_mat_cutoff_inv(U, p)
 
     @assert p != 0
@@ -632,6 +634,9 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
   U.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
+  if abs(rel[r+1]) > 100 # we enlarged
+    U.units = reduce(U.units, p)
+  end
   return true
 end
 
@@ -703,7 +708,7 @@ function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
       return p, x.conj_log_mat_cutoff_inv[p]
     catch e
       # I should check that it really is that error
-      @vprint :UnitGroup 2 "Increasing precision .."
+      @vprint :UnitGroup 2 "Increasing precision .. (error was $e)\n"
       @v_do :UnitGroup 2 pushindent()
       r = _conj_log_mat_cutoff_inv(x, 2*p)
       @v_do :UnitGroup 2 popindent()
@@ -961,12 +966,20 @@ end
 function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
-  @vprint :UnitGroup 1 "Relation module $(x.M))\n"
+  @vprint :UnitGroup 1 "Relation module $(x.M)\n"
 
   O = order(u)
 
   K = nf(order(x.FB.ideals[1]))
   r = unit_rank(O)
+  if r == 0
+    Ar = ArbField(u.indep_prec)
+    u.tentative_regulator = Ar(1)
+    u.regulator = Ar(1)
+    u.regulator_precision = u.indep_prec
+    u.full_rank = true
+    return 1
+  end
   r1, r2 = signature(O)
 
   A = u.units
@@ -1418,17 +1431,23 @@ end
 #
 ################################################################################
 
-function reduce{T}(u::Array{T, 1}, prec::Int = 32)
-  r = length(u)
-  if r == 0
-    return u
-  end
-  r,s = signature(_base_ring(u[1]))
+function scaled_log_matrix{T}(u::Array{T, 1}, prec::Int = 32)
 
+  r,s = signature(_base_ring(u[1]))
   A = MatrixSpace(ZZ, length(u), r + s)()
+  prec = max(prec, maximum([nbits(maxabs_exp(U))+nbits(length(U.fac)) for U = u]))
+  @vprint :UnitGroup 2 "starting prec in scaled_log_matrix: $prec\n"
 
   for i in 1:length(u)
     c = conjugates_arb_log(u[i], prec)
+    if any(x->radius(x) > 1e-9, c)  # too small...
+      @vprint :UnitGroup 2 "increasing prec in scaled_log_matrix, now: $prec"
+      prec *= 2
+      if prec > 2^32
+        error("cannot do lll on units")
+        break
+      end
+    end
     for j in 1:length(c)
       tt = fmpz()
       t = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &c[j])
@@ -1436,10 +1455,37 @@ function reduce{T}(u::Array{T, 1}, prec::Int = 32)
       A[i, j] = tt
     end
   end
+  return A, prec
+end
 
-  L, U = lll_with_transform(A)
+function row_norm(A::fmpz_mat, i::Int)
+  return sum([A[i,j]^2 for j=1:cols(A)])
+end
 
-  return transform(u, transpose(U))
+function row_norms(A::fmpz_mat)
+  return [row_norm(A, i) for i=1:rows(A)]
+end
+
+
+function reduce{T}(u::Array{T, 1}, prec::Int = 32)
+  r = length(u)
+  if r == 0
+    return u
+  end
+
+  while true
+    A, prec = scaled_log_matrix(u, prec)
+
+    L, U = lll_with_transform(A)
+    @vprint :UnitGroup 2 "reducing units by $U\n"
+    pA = prod(row_norms(A))
+    pL = prod(row_norms(L))
+    @vprint :UnitGroup 1 "reducing norms of logs from $pA -> $pL, rat is $(Float64(1.0*pA//pL))"
+    u = transform(u, transpose(U))
+    if pL >= pA
+      return u
+    end
+  end  
 end
 
 ################################################################################
