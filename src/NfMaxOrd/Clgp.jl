@@ -1634,6 +1634,14 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat
   @vprint :ClassGroup 1 "Now with random...\n"
   @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
   @vprint :ClassGroup 1 "$(piv)\n"
+  if length(piv) == 0
+    for i=1:5
+      push!(piv, rand(1:length(c.FB.ideals)))
+    end
+    @vprint :ClassGroup 1 "piv was empty, supplemented it to\n"
+    @vprint :ClassGroup 1 "$(piv)\n"
+  end  
+
 
   start = max(1, length(c.FB.ideals)-10*(1+div(rand_exp, 3)))
   stop = length(c.FB.ideals)
@@ -2235,7 +2243,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   r1, r2 = signature(O)
 
   @vprint :UnitGroup 1 "Computing residue of Dedekind zeta function ... \n"
-  residue = zeta_log_residue(O, 0.6931)
+  residue = zeta_log_residue(O, 0.6931/2)  #log(2)/2
 
   pre = prec(parent(residue))
 
@@ -2287,6 +2295,9 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
 
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
 
+  E = 1
+  need_more = true
+
   while true
     @v_do :UnitGroup 1 pushindent() 
     r = _unit_group_find_units(U, c)
@@ -2297,7 +2308,12 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
       end
     end
     #TODO: use LLL?
-    class_group_find_new_relation(c, extra = unit_rank(O) - length(U.units) +1)
+    if need_more
+      d = root(abs(discriminant(O)), 2)
+      E = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
+      need_more = false
+    end
+    class_group_new_relations_via_lll(c, E, extra = unit_rank(O) - length(U.units) +1)
     class_group_get_pivot_info(c)
   end
   @assert U.full_rank
