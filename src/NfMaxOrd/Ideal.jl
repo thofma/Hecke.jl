@@ -368,7 +368,8 @@ doc"""
 > Returns whether $A$ has normal two element generators.
 """
 function has_2_elem_normal(A::NfMaxOrdIdl)
-  return isdefined(A, :gens_normal) && A.gens_normal > 1
+  #the one ideal <1, ?> is automatomatically normal>
+  return isdefined(A, :gens_normal) && (A.gen_one == 1 || A.gens_normal > 1)
 end
 
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
