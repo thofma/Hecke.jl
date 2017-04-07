@@ -1,0 +1,84 @@
+type SmallLLLRelationsCtx
+  A::NfMaxOrdIdl
+  b::Array{nf_elem, 1}
+  bd::Int
+  cnt::Int
+  elt::nf_elem
+  function SmallLLLRelationsCtx()
+    n = new()
+    n.bd = 1
+    n.cnt = 0
+    return n
+  end
+end
+
+function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
+                O::NfMaxOrd; prec::Int = 200, val::Int = 0,
+                limit::Int = 0)
+  return class_group_small_lll_elements_relation_start(clg, hecke.ideal(O, parent(basis_mat(O).num)(1)), prec = prec)
+end
+
+function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
+                A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
+                limit::Int = 0)
+  global _start
+  K = nf(order(A))
+  @v_do :ClassGroup_time 2 rt = time_ns()
+  while true
+    try
+      L, T = lll(A, prec = prec)
+      @v_do :ClassGroup_time 2 _start += time_ns()-rt
+      I = SmallLLLRelationsCtx()
+      S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
+      bd = abs(discriminant(order(A)))*norm(A)^2
+      bd = root(bd, degree(K))
+      bd *= den(L)
+      nL = num(L)
+      f = find(i-> nL[i,i] < bd, 1:degree(K))
+      m = div(degree(K), 4)
+      if m < 2
+        m = degree(K)
+      end
+      while length(f) < m 
+        f = find(i-> nL[i,i] < bd, 1:degree(K))
+        bd *= 2
+      end
+      I.b = nf_elem[elem_from_mat_row(K, num(S), i, den(S)) for i=f]
+      #println([Float64(num(L)[i,i]//den(L)*1.0) for i=1:degree(K)])
+      #now select a subset that can yield "small" relations, where
+      #small means of effective norm <= sqrt(disc)
+      I.A = A
+      I.elt = K()
+      return I
+    catch e
+      if isa(e, LowPrecisionLLL)
+        print_with_color(:red, "prec too low in LLL,")
+        prec = Int(ceil(1.2*prec))
+        println(" increasing to ", prec)
+        if prec > 1000
+          error("2:too much prec")
+        end
+      else
+        rethrow(e)
+      end
+    end
+  end
+end
+
+function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
+  if I.cnt < length(I.b)
+    I.cnt += 1
+    return deepcopy(I.b[I.cnt])
+  end
+  if I.cnt > (2*I.bd+1)^div(length(I.b), 2)
+    I.bd += 1
+  end
+  I.cnt += 1
+  while true
+    rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))
+    if !iszero(I.elt)
+      return deepcopy(I.elt)
+    end
+  end
+end
+
