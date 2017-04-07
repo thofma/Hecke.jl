@@ -435,7 +435,7 @@ function hnf_kannan_bachem{N}(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false})
       if nc % 10 == 0
         println("Now at $nc rows of $(A.r), HNF so far $(B.r) rows")
         println("Current density: $(B.nnz/(B.c*B.r))")
-        println("and size of largest entry: $(nbits(abs_max(B))) bits")
+        println("and size of largest entry: $(nbits(maxabs(B))) bits")
       end
     end
     nc += 1

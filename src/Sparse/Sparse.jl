@@ -14,18 +14,16 @@
    full HNF, Howell, modular and not
    better elemination strategy
 
-   abs_max -> maxabs according to Julia
-
   TODO: sort out the various upper_triangular implementations.
   One (+one with trafo) is probably enough
 =#
 
 import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array, 
        Base.endof, Base.start, Base.done, Base.next, Base.hcat,
-       Base.vcat
+       Base.vcat, Base.maxabs, Base.max, Base.min
 
 export upper_triangular, vcat!, show, sub, SMat, SRow, random_SMatSLP,
-       fmpz_mat, rows, cols, copy, push!, mul, mul!, abs_max, toNemo, sparse,
+       fmpz_mat, rows, cols, copy, push!, mul, mul!, maxabs, toNemo, sparse,
        valence_mc, swap_rows!, endof, start, done, next, elementary_divisors,
        randrow, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 

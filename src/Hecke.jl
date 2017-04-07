@@ -81,7 +81,8 @@ import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
              floor, max, BigFloat, promote_rule, precision, dot,
              first, StepRange, show, one, zero, inv, iseven, isodd, convert,
-             angle, abs2, isless, exponent, base, isfinite, zeros, rem
+             angle, abs2, isless, exponent, base, isfinite, zeros, rem,
+             maxabs, min
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again

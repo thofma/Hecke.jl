@@ -59,7 +59,7 @@ end
 
 # this makes only sense for SMat{fmpz}
 function sparsity{T}(A::SMat{T})
-  return A.nnz/(A.r * A.c), nbits(abs_max(A))
+  return A.nnz/(A.r * A.c), nbits(maxabs(A))
 end
 
 ################################################################################
@@ -653,7 +653,7 @@ function valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_ro
   else
     At = transpose(A)
   end
-  if abs_max(A) > 2^20
+  if maxabs(A) > 2^20
     mm = mul_mod_big!
     println("mul big case")
   else
@@ -900,7 +900,7 @@ function hadamard_bound2(A::SMat{fmpz})
   return prod([norm2(x) for x=A])
 end
 
-#function abs_max(A::SMat{Int})
+#function maxabs(A::SMat{Int})
 #  m = abs(A.rows[1].values[1])
 #  for i in A.rows
 #    for j in i.values
@@ -910,7 +910,7 @@ end
 #  return m
 #end
 #
-#function abs_max(A::SMat{BigInt})
+#function maxabs(A::SMat{BigInt})
 #  m = abs(A.rows[1].values[1])
 #  for i in A.rows
 #    for j in i.values
@@ -923,11 +923,11 @@ end
 #  return abs(m)
 #end
 
-#function abs_max{T <: Integer}(A::SRow{T})
+#function maxabs{T <: Integer}(A::SRow{T})
 #  return maxabs(A.values)
 #end
 #
-#function abs_max{BigInt}(A::SRow{BigInt})
+#function maxabs{BigInt}(A::SRow{BigInt})
 #  m = abs(A.values[1])
 #  for v in A.values
 #    if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}), &v, &m) > 0
@@ -939,11 +939,11 @@ end
 
 doc"""
 ***
-    abs_max(A::SRow{fmpz}) -> fmpz
+    maxabs(A::SMat{fmpz}) -> fmpz
 
   Finds the largest, in absolute value, entry of $A$.
 """
-function abs_max(A::SMat{fmpz})
+function maxabs(A::SMat{fmpz})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
