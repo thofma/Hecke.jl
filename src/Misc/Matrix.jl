@@ -503,7 +503,7 @@ end
 # 
 ################################################################################
 
-function abs_max(a::fmpz_mat)
+function maxabs(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -705,3 +705,79 @@ function swap_rows!(M::MatElem, i::Int, j::Int)
     M[j, k] = t
   end
 end
+doc"""
+    isposdef(a::fmpz_mat) -> Bool
+
+> Tests if $a$ positive definite by testing if all principal minors
+> have positive determinant.
+"""
+function isposdef(a::fmpz_mat)
+  for i=1:rows(a)
+    if det(submat(a, 1, 1, i, i)) <= 0
+      return false
+    end
+  end
+  return true
+end
+
+#scales the i-th column of a by 2^d[1,i]
+function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
+  s = size(a)
+  R = RealRing()
+  tmp_mpz = R.z1
+  for i = 1:s[1]
+    for j = 1:s[2]
+      e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Clong, Int32), &a[i,j], &tmp_mpz, e+Clong(d[1,j]), __get_rounding_mode())
+    end
+  end
+end
+
+#converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
+function round_scale(a::Array{BigFloat, 2}, l::Int)
+  s = size(a)
+  b = MatrixSpace(FlintZZ, s[1], s[2])()
+  return round_scale!(b, a, l)
+end
+ 
+function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
+  s = size(a)
+  R = RealRing()
+  tmp_mpz = R.z1
+  tmp_fmpz = R.zz1
+  tmp_mpfr = R.t1
+  for i = 1:s[1]
+    for j = 1:s[2]
+      e = a[i,j].exp
+      a[i,j].exp += l
+      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], __get_rounding_mode())
+      a[i,j].exp = e
+      f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}),
+        &tmp_mpz, &tmp_mpfr)
+      ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
+        &tmp_fmpz, &tmp_mpz)
+      if f > 0  
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, f)
+      else
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, -f);
+      end
+      setindex!(b, tmp_fmpz, i, j)
+    end
+  end
+  return b
+end
+
+function shift!(g::fmpz_mat, l::Int)
+  for i=1:rows(g)
+    for j=1:cols(g)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &g, i-1, j-1)
+      if l > 0
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
+      else
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
+      end
+    end
+  end
+  return g
+end
+

@@ -604,3 +604,27 @@ function _MaximalOrder(O::NfOrd)
   end
   return OO
 end
+
+function trace_matrix(O::NfOrd)
+  if isdefined(O, :trace_mat)
+    return O.trace_mat
+  end
+  K = nf(O)
+  b = basis(O, K)
+  n = degree(K)
+  g = MatrixSpace(FlintZZ, n, n)()
+  for i=1:n
+    t = trace(b[i]^2)
+    @assert isinteger(t)
+    g[i,i] = num(t)
+    for j=i+1:n
+      t = trace(b[i]*b[j])
+      @assert isinteger(t)
+      g[i,j] = num(t)
+      g[j,i] = num(t)
+    end
+  end
+  O.trace_mat = g
+  return g
+end
+

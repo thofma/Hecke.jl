@@ -1620,3 +1620,21 @@ function norm(a::nf_elem, N::NormCtx, div::fmpz = fmpz(1))
 end
 
 
+function israt(a::nf_elem)
+  if degree(parent(a))==1 
+    return true
+  end
+  @assert degree(parent(a))>2 ## fails for 2 due to efficiency
+  return a.elem_length<2
+end
+
+doc"""
+    istotally_real(K::AnticNumberField) -> Bool
+
+> Returns true iff $K$ is totally real, ie. if all roots of the 
+> defining polynomial are real.
+"""
+function istotally_real(K::AnticNumberField)
+  return signature(K)[1] == degree(K)
+end
+

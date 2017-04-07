@@ -1993,3 +1993,56 @@ function extended_euclid(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
 end
 
 
+function trace_matrix(A::NfMaxOrdIdl)
+  g = trace_matrix(order(A))
+  b = basis_mat(A)
+#  mul!(b, b, g)   #b*g*b' is what we want.
+#                  #g should not be changed? b is a copy.
+#  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
+  return b*g*b'
+end
+
+function random_init(I::AbstractArray{NfMaxOrdIdl, 1})
+  J = collect(I)
+  for i=1:length(J)
+    a = rand(1:length(J))
+    b = rand(1:length(J))
+    if isodd(rand(1:2))
+      J[a] = reduce_ideal(J[a]*inv(J[b]))
+    else
+      J[a] *= J[b]
+      J[a] = reduce_ideal(J[1])
+    end
+  end
+  return J
+end  
+
+function random_get(J::Array{NfMaxOrdIdl, 1})
+  a = rand(1:length(J))
+  I = J[a]
+  b = rand(1:length(J))
+  if isodd(rand(1:2))
+    J[a] = reduce_ideal(J[a]*inv(J[b]))
+  else
+    J[a] *= J[b]
+    J[a] = reduce_ideal(J[a])
+  end
+  return I
+end
+
+################################################################################
+#
+#  Conversion to Magma
+#
+################################################################################
+function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::String = "M")
+  print(f, "ideal<$(order)| ", clg.gen_one, ", ",
+                    elem_in_nf(clg.gen_two), ">")
+end
+
+function toMagma(s::String, c::NfMaxOrdIdl, order::String = "M")
+  f = open(s, "w")
+  toMagma(f, c, order)
+  close(f)
+end
+

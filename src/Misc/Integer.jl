@@ -458,3 +458,12 @@ function mod_sym(a::fmpz, b::fmpz)
   end
 end
 
+doc"""
+    isinteger(a::fmpq) -> Bool
+
+> Returns true iff the denominator of $a$ is one.
+"""
+function isinteger(a::fmpq)
+  return isone(den(a))
+end
+
