@@ -145,7 +145,7 @@ end
 function SMat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
                                               keepzrows::Bool = true)
 
-  m = SMat{elem_type(R)}()
+  m = SMat(R)
   m.c = cols(A)
   m.r = 0
 
