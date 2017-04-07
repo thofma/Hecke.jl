@@ -375,7 +375,7 @@ function apply_right!{T}(x::Array{T, 1}, t::TrafoAddScaled{T})
 end
 
 function apply_right!{T}(x::Array{T, 1}, t::TrafoScale{T})
-  x[t.i] = x[t, i] * t.c
+  x[t.i] = x[t.i] * t.c
 end
 
 function apply_right!{T}(x::Array{T, 1}, t::TrafoSwap{T})
