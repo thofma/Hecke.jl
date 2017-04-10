@@ -138,4 +138,12 @@ function reduce_ideal(A::NfMaxOrdFracIdl)
   return C.num
 end  
 
+function reduce_ideal2(A::NfMaxOrdIdl)
+  B = inv(A)
+  b = short_elem(B)
+  C = b*A
+  simplify(C)
+  @assert C.den == 1
+  return C.num, b
+end  
 
