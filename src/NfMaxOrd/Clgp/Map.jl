@@ -90,23 +90,26 @@ function class_group_disc_log(r::SRow{fmpz}, c::Hecke.ClassGrpCtx)
   return C(sub(rr*T, 1:1, rows(T)-length(C.snf)+1:rows(T)))
 end
 
-function class_group_disc_log(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
+#finds x in K s.th. xI is c.FB-smooth. returns x and the factorisation 
+function class_group_ideal_relation(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
   #easy case: I factors over the FB...
+  O = order(I)
+  K = nf(O)
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I)
     if fl 
-      return class_group_disc_log(r, c)
+      return K(1), r
     end
   end
   # ok, we have to work
-  I = Hecke.reduce_ideal(I) # not unneccessarily hard on us...
+  I, b = Hecke.reduce_ideal2(I) # not unneccessarily hard on us...
 #  println("reduce to $I")
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I)
     if fl 
-      return class_group_disc_log(r, c)
+      return b, r
     end
   end
   #really annoying, but at least we have a small(ish) ideal now
@@ -124,7 +127,8 @@ function class_group_disc_log(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
     if issmooth(c.FB.fb_int, n)
       fl, r = _factor!(c.FB, Ia.num)
       if fl 
-        return -class_group_disc_log(r, c)
+        scale_row!(r, fmpz(-1))
+        return b//a, r
       end
     end
     if E.cnt > 100
@@ -134,6 +138,11 @@ function class_group_disc_log(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
       iI = inv(j)
     end
   end
+end
+
+
+function class_group_disc_log(I::Hecke.NfMaxOrdIdl, c::Hecke.ClassGrpCtx)
+  return class_group_disc_log(class_group_ideal_relation(I, c)[2], c)
 end
 
 type MapClassGrp{T} <: Map{T, Hecke.NfMaxOrdIdlSet}
@@ -194,5 +203,142 @@ function class_group_grp(c::Hecke.ClassGrpCtx; redo::Bool = false)
   C = DiagonalGroup([S[x,x] for x= p])
   c.dl_data = (s, T, C)
   return C
+end
+
+
+#the kannan_bachem needs to be cached somewhere.
+
+#we're missing the S-Unit group
+
+function principal_gen_fac_elem(A::NfMaxOrdIdl)
+  O = order(A)
+  c = Hecke._get_ClassGrpCtx_of_order(O)
+
+  H, T = Hecke.hnf_kannan_bachem(vcat(c.M.bas_gens,  c.M.rel_gens), Val{true})
+
+  x, r = Hecke.class_group_ideal_relation(A, c)
+
+  R, d = Hecke.solve_ut(H, r)
+  if d != 1
+    error("ideal not principal")
+  end
+  rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+  for (p,v) = R
+    rs[p] = v
+  end
+
+  for i in length(T):-1:1
+    Hecke.apply_right!(rs, T[i])
+  end
+
+  e = Hecke.FacElem(vcat(c.R_gen, c.R_rel), rs)*x
+
+  #reduce e modulo units.
+  e = reduce([e], Hecke._get_UnitGrpCtx_of_order(O))[1]
+
+  return e
+end
+
+#for all ideals A in I, this functions find a generator for
+#  A^order(A) 
+#in factored form
+#if the ideals are pairwise coprime primes, this will give a basis
+#for the S-unit group (modulo units)
+#if not: it's up to you...
+function sunits_mod_units(I::Array{NfMaxOrdIdl, 1})
+  O = order(I[1])
+  c = Hecke._get_ClassGrpCtx_of_order(O)
+
+  H, T = Hecke.hnf_kannan_bachem(vcat(c.M.bas_gens,  c.M.rel_gens), Val{true})
+
+  U = Array{Hecke.FacElem{Hecke.nf_elem, Nemo.AnticNumberField}, 1}()
+  for A = I
+    x, r = Hecke.class_group_ideal_relation(A, c)
+    R, d = Hecke.solve_ut(H, r)
+    rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+    for (p,v) = R
+      rs[p] = v
+    end
+
+    for i in length(T):-1:1
+      Hecke.apply_right!(rs, T[i])
+    end
+
+    e = Hecke.FacElem(vcat(c.R_gen, c.R_rel), rs)*x^-d
+
+    push!(U, e)
+  end
+  U = reduce(U, Hecke._get_UnitGrpCtx_of_order(O))
+  return U
+end
+
+#the normalise bit ensures that the "log" vector lies in the same vector space
+#well, the same hyper-plane, as the units
+function conjugates_arb_log_normalise(x::Hecke.FacElem{Hecke.nf_elem, AnticNumberField}, p::Int = 10)
+  K = base_ring(x)
+  r,s = signature(K)
+  c = conjugates_arb_log(x, p)
+  R = parent(c[1])
+  n = (log(root(R(abs(norm(x))), degree(K))))
+  for i=1:r
+    c[i] -= n
+  end
+  for i=r+1:r+s
+    c[i] -= n
+    c[i] -= n
+  end
+  return c
+end
+ 
+function _conj_arb_log_matrix_normalise_cutoff{T}(u::Array{T, 1}, prec::Int = 32)
+  z = conjugates_arb_log_normalise(u[1], prec)
+  A = ArbMatSpace(parent(z[1]), length(u), length(z)-1)()
+  for i=1:length(z)-1
+    A[1,i] = z[i]
+  end
+
+  for j=2:length(u)
+    z = conjugates_arb_log_normalise(u[j], prec)
+    for i=1:length(z)-1
+      A[j,i] = z[i]
+    end
+  end
+  return A
+end
+
+function reduce_mod_units{T}(a::Array{T, 1}, U::Hecke.UnitGrpCtx)
+  #for T of type FacElem, U cannot be found from the order as the order
+  #is not known
+  r = length(U.units)
+  if r == 0
+    return a
+  end
+
+  prec = U.tors_prec
+
+  b = deepcopy(a)
+  while true
+    prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
+    B = _conj_arb_log_matrix_normalise_cutoff(a, prec)
+    C = B*A
+
+    redo = false
+
+    for i=1:rows(C)
+      for j=1:cols(C)
+        fl, v = unique_integer(ceil(C[i,j]))
+        if !fl
+          prec *= 2
+          redo = true
+          break
+        end
+        b[i] *= U.units[j]^-v
+      end
+      if redo
+        break
+      end
+    end
+    return b
+  end  
 end
 
