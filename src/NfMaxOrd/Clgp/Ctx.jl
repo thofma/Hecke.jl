@@ -4,6 +4,12 @@
 #
 ################################################################################
 
+function show(io::IO, c::ClassGrpCtx)
+  println(io, "Ctx for class group of ", order(c.FB.ideals[1]))
+  println(io, "Factorbase with ", length(c.FB.ideals), " ideals of norm up to ", norm(c.FB.ideals[1]))
+  println(io, "Relations module: ", c.M)
+end
+
 function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   O = order(FB.ideals[1])
 
