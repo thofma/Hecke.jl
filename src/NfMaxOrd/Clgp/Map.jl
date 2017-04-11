@@ -234,17 +234,15 @@ function principal_gen_fac_elem(A::NfMaxOrdIdl)
   e = Hecke.FacElem(vcat(c.R_gen, c.R_rel), rs)*x
 
   #reduce e modulo units.
-  e = reduce([e], Hecke._get_UnitGrpCtx_of_order(O))[1]
+  e = reduce_mod_units([e], Hecke._get_UnitGrpCtx_of_order(O))[1]
 
   return e
 end
 
-#for all ideals A in I, this functions find a generator for
-#  A^order(A) 
-#in factored form
-#if the ideals are pairwise coprime primes, this will give a basis
-#for the S-unit group (modulo units)
-#if not: it's up to you...
+#Plan:
+# find x_i s.th. I[i]*x[i] is FB-smooth
+#  find T sth. T R = (I[i]*x[i])^d
+#  saturate T|-d??
 function sunits_mod_units(I::Array{NfMaxOrdIdl, 1})
   O = order(I[1])
   c = Hecke._get_ClassGrpCtx_of_order(O)
@@ -268,7 +266,7 @@ function sunits_mod_units(I::Array{NfMaxOrdIdl, 1})
 
     push!(U, e)
   end
-  U = reduce(U, Hecke._get_UnitGrpCtx_of_order(O))
+  U = reduce_mod_units(U, Hecke._get_UnitGrpCtx_of_order(O))
   return U
 end
 
@@ -330,12 +328,14 @@ function reduce_mod_units{T}(a::Array{T, 1}, U::Hecke.UnitGrpCtx)
         if !fl
           prec *= 2
           redo = true
+          b = deepcopy(a)
+          println("more prec")
+          break
+        end
+        if redo
           break
         end
         b[i] *= U.units[j]^-v
-      end
-      if redo
-        break
       end
     end
     return b
