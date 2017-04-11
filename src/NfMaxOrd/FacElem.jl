@@ -204,3 +204,50 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
   return map(R, z)
 end
 
+doc"""
+    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfMaxOrdIdl) -> fmpz
+> The valuation of $a$ at $P$.
+"""
+function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfMaxOrdIdl)
+  val = fmpz(0)
+  for (a, e) = a.fac
+    val += valuation(a, P)*e
+  end
+  return val
+end
+
+
+#the normalise bit ensures that the "log" vector lies in the same vector space
+#well, the same hyper-plane, as the units
+function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
+  K = base_ring(x)
+  r,s = signature(K)
+  c = conjugates_arb_log(x, p)
+  R = parent(c[1])
+  n = (log(root(R(abs(norm(x))), degree(K))))
+  for i=1:r
+    c[i] -= n
+  end
+  for i=r+1:r+s
+    c[i] -= n
+    c[i] -= n
+  end
+  return c
+end
+ 
+function _conj_arb_log_matrix_normalise_cutoff{T}(u::Array{T, 1}, prec::Int = 32)
+  z = conjugates_arb_log_normalise(u[1], prec)
+  A = ArbMatSpace(parent(z[1]), length(u), length(z)-1)()
+  for i=1:length(z)-1
+    A[1,i] = z[i]
+  end
+
+  for j=2:length(u)
+    z = conjugates_arb_log_normalise(u[j], prec)
+    for i=1:length(z)-1
+      A[j,i] = z[i]
+    end
+  end
+  return A
+end
+
