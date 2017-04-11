@@ -217,9 +217,7 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
     if unit_method == 1
       r = _unit_group_find_units(U, c)
     else
-      z = vcat(c.M.bas_gens, c.M.rel_gens)
-      hnftime += @elapsed h, t = hnf_kannan_bachem(z, Val{true})
-      c.M.trafo = t
+      hnftime += @elapsed module_trafo_assure(c.M)
       r = _unit_group_find_units_with_trafo(U, c)
     end
 
@@ -244,7 +242,7 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
   c.finished = true
   U.finished = true
 
-  println("hnftime $hnftime")
+  @vprint :ClassGroup 1 "hnftime $hnftime\n"
 
   return c, U, _validate_class_unit_group(c, U)
 end

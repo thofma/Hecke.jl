@@ -177,4 +177,16 @@ function rank(M::ModuleCtx_UIntMod)
   return M.basis.r
 end
 
+function module_trafo_assure(M::ModuleCtx_fmpz)
+  if !M.new && isdefined(M, :trafo)
+    return
+  end
+  z = vcat(M.bas_gens, M.rel_gens)
+  h, t = hnf_kannan_bachem(z, Val{true})
+  M.trafo = t
+  M.basis = h
+  M.basis_idx = det(h) # h is upp_triangular, hence det is trivial
+  M.new = false
+  nothing
+end
 
