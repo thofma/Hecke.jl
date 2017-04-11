@@ -235,6 +235,17 @@ function mul{T}(A::SRow{T}, B::SRow{T})
   return v
 end
 
+#in-place scaling
+function scale_row!(a::SRow{fmpz}, b::fmpz)
+  @assert !iszero(b)
+  if isone(b)
+    return
+  end
+  for i=1:length(a.pos)
+    a.values[i] *= b
+  end
+end
+
 ################################################################################
 #
 #  Addition
