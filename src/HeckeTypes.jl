@@ -1500,6 +1500,7 @@ type ModuleCtx_fmpz
   basis_idx::fmpz
   essential_elementary_divisors::Array{fmpz, 1}
   new::Bool
+  trafo::Any            # transformations bla
 
   function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
     M = new()

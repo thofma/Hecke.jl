@@ -189,13 +189,14 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
-function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false)
+function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
   @v_do :UnitGroup 1 pushindent() 
   c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo)
   @v_do :UnitGroup 1 popindent()
+
   if c.finished
     U = _get_UnitGrpCtx_of_order(O)
     @assert U.finished
@@ -209,9 +210,19 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
   E = 1
   need_more = true
 
+  hnftime = 0.0
+
   while true
-    @v_do :UnitGroup 1 pushindent() 
-    r = _unit_group_find_units(U, c)
+    @v_do :UnitGroup 1 pushindent()
+    if unit_method == 1
+      r = _unit_group_find_units(U, c)
+    else
+      z = vcat(c.M.bas_gens, c.M.rel_gens)
+      hnftime += @elapsed h, t = hnf_kannan_bachem(z, Val{true})
+      c.M.trafo = t
+      r = _unit_group_find_units_with_trafo(U, c)
+    end
+
     @v_do :UnitGroup 1 popindent()
     if r == 1  # use saturation!!!!
       if _validate_class_unit_group(c, U) == 1
@@ -232,6 +243,8 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
 
   c.finished = true
   U.finished = true
+
+  println("hnftime $hnftime")
 
   return c, U, _validate_class_unit_group(c, U)
 end

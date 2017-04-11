@@ -829,7 +829,7 @@ end
 # find r independent units, where r is the unit rank.
 # In the second round, try to enlarge the unit group with some random kernel
 # elements.
-function _unit_group_find_units2(u::UnitGrpCtx, x::ClassGrpCtx)
+function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
   @vprint :UnitGroup 1 "Relation matrix has size $(rows(x.M)) x $(cols(x.M))\n"
@@ -846,9 +846,13 @@ function _unit_group_find_units2(u::UnitGrpCtx, x::ClassGrpCtx)
 
   j = 0
 
-  dim_ker = rows(x.M) - rows(x.H)
+  dim_ker = length(x.M.rel_gens.rows) # dimension of the kernel
 
-  kelem = fmpz[ 0 for i in 1:rows(x.M) ]
+  total_dim = length(x.M.bas_gens.rows) + dim_ker
+
+  kelem = fmpz[ 0 for i in 1:total_dim ]
+
+  trafos = x.M.trafo
 
   MAX_RND_RD_1 = 2*r
 
@@ -873,14 +877,13 @@ function _unit_group_find_units2(u::UnitGrpCtx, x::ClassGrpCtx)
       kelem[end - i + 1] = rand(0:1)
     end
 
-    #time_kernel += @elapsed
-    for i in length(x.H_trafo):-1:1
-      apply_right!(kelem, x.H_trafo[i])
+    time_kernel += @elapsed for i in length(trafos):-1:1
+      apply_right!(kelem, trafos[i])
     end
 
     _make_row_primitive!(kelem)
 
-    y = FacElem(x, kelem)
+    y = FacElem(vcat(x.R_gen, x.R_rel), kelem)
 
     time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
     u.tors_prec = max(p, u.tors_prec)
@@ -909,7 +912,7 @@ function _unit_group_find_units2(u::UnitGrpCtx, x::ClassGrpCtx)
 
   not_larger = 0
 
-  @vprint :UnitGroup 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
+  @vprint :UnitGroup 1 "Enlarging unit group by adding more kernel basis elements ...\n"
   while not_larger < 5 
 
     for i in 1:length(kelem)
@@ -920,11 +923,11 @@ function _unit_group_find_units2(u::UnitGrpCtx, x::ClassGrpCtx)
       kelem[end - i + 1] = rand(-2:2)
     end
 
-    time_kernel += @elapsed for i in length(x.H_trafo):-1:1
-      apply_right!(kelem, x.H_trafo[i])
+    time_kernel += @elapsed for i in length(trafos):-1:1
+      apply_right!(kelem, trafos[i])
     end
 
-    y = FacElem(x, kelem)
+    y = FacElem(vcat(x.R_gen, x.R_rel), kelem)
 
     #!isunit(y) && throw(BlaError(x, kelem))
 
@@ -934,7 +937,6 @@ function _unit_group_find_units2(u::UnitGrpCtx, x::ClassGrpCtx)
     u.tors_prec = max(p, u.tors_prec)
     if is_tors
       @v_do :UnitGroup 2 popindent()
-      #println("torsion unit: $y")
       @vprint :UnitGroup 2 "Element is torsion unit\n"
       continue
     end
@@ -972,6 +974,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
   K = nf(order(x.FB.ideals[1]))
   r = unit_rank(O)
+
   if r == 0
     Ar = ArbField(u.indep_prec)
     u.tentative_regulator = Ar(1)
@@ -980,6 +983,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     u.full_rank = true
     return 1
   end
+
   r1, r2 = signature(O)
 
   A = u.units
