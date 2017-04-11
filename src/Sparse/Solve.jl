@@ -88,6 +88,26 @@ function solve_ut(A::SMat{fmpz}, b::SRow{fmpz})
   return sol, den
 end
 
+function solve_ut(A::SMat{fmpz}, b::SMat{fmpz})
+  @hassert :HNF 1  isupper_triangular(A)
+  #still assuming A to be upper-triag
+  d = fmpz(1)
+  r = SMat(FlintZZ)
+  for i = b
+    x, dx = solve_ut(A, i)
+    nd = lcm(d, dx)
+    if nd != d
+      dd = div(nd, d)
+      for j = 1:r.r
+        Hecke.scale_row!(r, j, dd)
+      end
+      d = nd
+    end
+    push!(r, div(d, dx)*x)
+  end
+  return r, d
+end
+
 ################################################################################
 #
 #  Determinant
