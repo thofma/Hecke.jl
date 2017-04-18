@@ -164,9 +164,10 @@ function bach_J{T <: Number}(u::T, v::T, w::T, prec)
                              sum([(B/C)^j/j for j=1:i]))
     end
     a = rho_coeff(k*1.0, prec)
-    return sum([a.coeff[i+1] * H_i(u, v, w, i) for i=0:(length(a.coeff)-1)])
+#H_i(...., 0) is zero as it is the empty sum. Lets omit this
+    return sum([a.coeff[i+1] * H_i(u, v, w, i) for i=1:(length(a.coeff)-1)])
   else
-    #println("recurse: k = ", Int(k))
+#    println("recurse: k = ", Int(k))
     return bach_J(w/(w-k+1), v, w, prec) + bach_J(u, w/(w-k+1), w, prec)
   end
 end
