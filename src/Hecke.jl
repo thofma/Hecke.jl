@@ -177,6 +177,13 @@ function __init__()
   global const _x = gen(_Zx)
   global const _y = gen(_Zxy)
 
+  let
+    Qx, x = QQ["x"]
+    K, a = NumberField(x^2 - 2, "a")
+    O = maximal_order(K)
+    class_group(O);
+    nothing
+  end
 end
 
 function conjugate_data_arb(K::AnticNumberField)
@@ -634,6 +641,7 @@ whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 #  Testing only "submodules"
 #
 ################################################################################
+
 function test_module(x, y = :all)
    julia_exe = Base.julia_cmd()
    if y == :all
@@ -658,5 +666,8 @@ end
 if VERSION < v"0.5.0-"
   @inline __get_rounding_mode() = Base.MPFR.ROUNDING_MODE[end]
 end
+
+precompile(maximal_order, (AnticNumberField, ))
+precompile(class_group, (NfMaxOrd, ))
 
 end
