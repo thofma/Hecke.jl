@@ -2002,30 +2002,34 @@ function trace_matrix(A::NfMaxOrdIdl)
   return b*g*b'
 end
 
-function random_init(I::AbstractArray{NfMaxOrdIdl, 1})
+function random_init(I::AbstractArray{NfMaxOrdIdl, 1}; reduce::Bool = true)
   J = collect(I)
   for i=1:length(J)
     a = rand(1:length(J))
     b = rand(1:length(J))
-    if isodd(rand(1:2))
+    if reduce && isodd(rand(1:2))
       J[a] = reduce_ideal(J[a]*inv(J[b]))
     else
       J[a] *= J[b]
-      J[a] = reduce_ideal(J[1])
+      if reduce
+        J[a] = reduce_ideal(J[a])
+      end
     end
   end
   return J
 end  
 
-function random_get(J::Array{NfMaxOrdIdl, 1})
+function random_get(J::Array{NfMaxOrdIdl, 1}; reduce::Bool = true)
   a = rand(1:length(J))
   I = J[a]
   b = rand(1:length(J))
-  if isodd(rand(1:2))
+  if reduce && isodd(rand(1:2))
     J[a] = reduce_ideal(J[a]*inv(J[b]))
   else
     J[a] *= J[b]
-    J[a] = reduce_ideal(J[a])
+    if reduce
+      J[a] = reduce_ideal(J[a])
+    end
   end
   return I
 end

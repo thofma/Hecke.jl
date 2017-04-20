@@ -66,13 +66,36 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
 end
 
 function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
+  #the 1st n relations are the basis elements
   if I.cnt < length(I.b)
     I.cnt += 1
     return deepcopy(I.b[I.cnt])
   end
+  #the next 2*n*(n-1)/2 relations are the ones of weight 2
+  #1st b[i] + b[j], all combinations, then b[i]-b[j]
+  #it may (or may not) be helpful
+  if I.cnt <= length(I.b)^2
+    n = length(I.b)
+    c = I.cnt - n # we already did n relations in the 1st if
+    if c > n*(n-1)/2
+      c -= div(n*(n-1), 2)
+      s = -1
+    else
+      s = 1
+    end
+    i = 1
+    while c+i-1 >= n
+      c -= (n-i)
+      i += 1
+    end
+    I.cnt += 1
+    return I.b[i] + s*I.b[c+i]
+  end
+
   if I.cnt > (2*I.bd+1)^div(length(I.b), 2)
     I.bd += 1
   end
+
   I.cnt += 1
   while true
     rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))

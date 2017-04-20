@@ -111,17 +111,21 @@ function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
   K = nf(O)
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
-    fl, r = _factor!(c.FB, I)
+    fl, r = _factor!(c.FB, I, false)
     if fl 
       return K(1), r
     end
   end
   # ok, we have to work
-  I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
+  _I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
 #  println("reduce to $I")
+#  J = simplify(b*_I)
+#  @assert den(J) == 1
+#  @assert num(J) == I
+  _I = I
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
-    fl, r = _factor!(c.FB, I)
+    fl, r = _factor!(c.FB, I, false)
     if fl 
       return b, r
     end
@@ -132,6 +136,8 @@ function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
   J = NfMaxOrdIdl[]
+  use_rand = false
+  last_j = I
   while true
     a = class_group_small_lll_elements_relation_next(E)
 #    println("trying $a")
@@ -139,24 +145,39 @@ function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
     @assert Ia.den == 1
     n = norm(Ia.num)
     if issmooth(c.FB.fb_int, n)
-      fl, r = _factor!(c.FB, Ia.num)
+      fl, r = _factor!(c.FB, Ia.num, false)
       if fl 
         scale_row!(r, fmpz(-1))
-        return b//a, r
+        if use_rand
+          fl, s = _factor!(c.FB, last_j)
+          @assert fl
+          return b//a, r-s
+        else
+          return b//a, r
+        end
       end
     end
     if E.cnt > 100
+      println("more random")
+      use_rand = true
       push!(J, rand(c.FB.ideals))
-      j = random_get(J)*I
-      E = class_group_small_lll_elements_relation_start(c, j) 
-      iI = inv(j)
+      last_j = random_get(J, reduce = false)
+      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
+      iI = inv(E.A)
     end
   end
 end
 
 
 function class_group_disc_log(I::NfMaxOrdIdl, c::ClassGrpCtx)
-  return class_group_disc_log(class_group_ideal_relation(I, c)[2], c)
+  q, w = class_group_ideal_relation(I, c)
+#  J = simplify(q*I)
+#  H = prod([v<0?inv(c.FB.ideals[p])^Int(-v):c.FB.ideals[p]^Int(v) for (p,v) = w])
+#  if J != H
+#    println("q: $q\nw: $w")
+#  end
+#  @assert J == H
+  return class_group_disc_log(w, c)
 end
 
 type MapClassGrp{T} <: Map{T, NfMaxOrdIdlSet}
