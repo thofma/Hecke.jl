@@ -1,6 +1,3 @@
-on_windows = @windows ? true : false
-on_osx = @osx ? true : false
-
 oldwdir = pwd()
 
 nemo_pkgdir = Pkg.dir("Nemo") 
@@ -32,7 +29,7 @@ DLCFLAGS = "-fPIC -fno-common"
 
 cd(wdir)
 
-if on_windows
+if is_windows()
    if Int == Int64
       download_dll("http://www.mathematik.uni-kl.de/~thofmann/hecke/bin/libhecke.dll", joinpath(vdir, "lib", "libhecke.dll"))
    else
