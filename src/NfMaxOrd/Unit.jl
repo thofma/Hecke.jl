@@ -1008,7 +1008,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     xj = rand(1:rows(x.M.rel_gens))
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, x.M.rel_gens[xj])
-    @assert length(k.values) == 0 || gcd(foldr(gcd, k.values), d) == 1
+    @assert length(k.values) == 0 || gcd(foldr(gcd, fmpz(0), k.values), d) == 1
 
     y = FacElem(vcat(x.R_gen[k.pos], x.R_rel[xj]), vcat(k.values, -d))
     @assert abs(norm(y)) == 1
