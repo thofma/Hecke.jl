@@ -298,7 +298,24 @@ function psi_guess(x::Number, B::Int, e::UnitRange)
 end
 
 
-function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 10)
+function class_group_expected(O::NfMaxOrd, B::Integer, samples::Int = 100)
+  d = root(abs(discriminant(O)), 2)
+  return class_group_expected(d, degree(O), Int(B), samples)
+end
+
+function class_group_expected(O::NfMaxOrd, B::fmpz, samples::Int = 100)
+  d = root(abs(discriminant(O)), 2)
+  return class_group_expected(d, degree(O), Int(B), samples)
+end
+
+function class_group_expected(c::ClassGrpCtx, samples::Int = 100)
+  id = c.FB.ideals
+  O = order(id[1])
+  B = norm(id[1])
+  return class_group_expected(O, B, samples)
+end
+
+function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
   #d is the norm of elements we can sample, typically, sqrt(disc)
   #B is the factor base bound
   #we want
