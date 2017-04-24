@@ -98,7 +98,11 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat
   while true
     for p = piv
       @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env))\n"
-      @vtime :ClassGroup 2 J = random_get(rand_env)
+      @vtime :ClassGroup 2 J = random_get(rand_env, reduce = false)
+      if norm(J) > abs(discriminant(O))
+        rand_env = random_init(c.FB.ideals[start:stop], reduce = false)
+        J = random_get(rand_env, reduce = false)
+      end
       @vtime :ClassGroup 2 J *= c.FB.ideals[p]^rand_exp
       @vtime :ClassGroup 2 I = class_group_small_lll_elements_relation_start(c, J)
       @vtime :ClassGroup 2 single_env(c, I, nb, expect, rat, 1+rand_exp)
@@ -119,7 +123,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat
       rand_exp += 1
       if rand_exp % 3 == 0
         start = max(start -10, 1)
-        rand_env = random_init(c.FB.ideals[start:stop])
+        rand_env = random_init(c.FB.ideals[start:stop], reduce = false)
       end
     end
     piv = piv_new
