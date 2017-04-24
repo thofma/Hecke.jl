@@ -7,12 +7,12 @@ end
 
 
 @doc """
-  is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
+  isprimitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
 
 >  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
 >  Intrinsically, only makes sense if the units of Z/MZ are cyclic.
 """ ->
-function is_primitive_root(x::GenRes{fmpz}, M::fmpz, fM::Fac{fmpz})
+function isprimitive_root(x::GenRes{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -61,7 +61,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   Rpp = ResidueRing(FlintZZ, p*p)
 
   g = fmpz(2)
-  if is_primitive_root(Rp(g)^mi, gc, fp)
+  if isprimitive_root(Rp(g)^mi, gc, fp)
     if Rpp(g)^gc != 1
       return g
     else
@@ -72,7 +72,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   while true
 #    g = rand(3:p-2)
     g += 1
-    if is_primitive_root(Rp(g)^mi, gc, fp)
+    if isprimitive_root(Rp(g)^mi, gc, fp)
       if Rpp(g)^gc != 1
         return g
       else
@@ -101,9 +101,9 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   m = R.modulus
   fm = factor(m)
   
-  r = Array(fmpz, 0)
-  g = Array(fmpz, 0)
-  mi = Array(fmpz, 0)
+  r = Array{fmpz}(0)
+  g = Array{fmpz}(0)
+  mi = Array{fmpz}(0)
   for p=keys(fm)
     k = fm[p]
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
@@ -346,5 +346,4 @@ function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly
   end
   return g
 end
-
 

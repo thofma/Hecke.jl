@@ -1,4 +1,12 @@
-import Nemo.sub!
+import Nemo.sub!, Base.gcd
+export induce_rational_reconstruction, induce_crt, hasroot, root, roots
+
+if Int==Int32
+  global const p_start = 2^30
+else
+  global const p_start = 2^60
+end
+
 ################################################################################
 #
 # convenience ...
@@ -55,16 +63,42 @@ doc"""
 """
 function rand(b::Array{nf_elem,1}, r::UnitRange)
   length(b) == 0 && error("Array must not be empty")
-
-  s = zero(b[1].parent)
-  t = zero(b[1].parent)
-
-  for i = 1:length(b)
-    mul!(t, b[i], rand(r))
-    add!(s, t, s)
-  end
+  s = parent(b[1])()
+  rand!(s, b, r)
   return s
 end
+
+doc"""
+***
+    rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int) -> nf_elem
+
+> A random linear combination of \code{terms} elements of $b$ with
+> coefficients in $r$.
+"""
+function rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int)
+  length(b) == 0 && error("Array must not be empty")
+  s = parent(b[1])()
+  rand!(s, b, r, terms)
+  return s
+end
+
+
+function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange, terms::Int)
+  length(b) == 0 && error("Array must not be empty")
+  (terms<=0 || terms > length(b)) && error("Number of terms should be at least 1 and cannot exceed the length of the array")
+
+  t = zero(b[1].parent)
+
+  terms = min(terms, length(b))
+  mul!(c, rand(b), rand(r))
+  for i=2:terms
+    mul!(t, rand(b), rand(r))
+    add!(c, t, c)
+  end
+
+  nothing
+end
+
 
 function rand!(c::nf_elem, b::Array{nf_elem,1}, r::UnitRange)
   length(b) == 0 && error("Array must not be empty")
@@ -85,10 +119,6 @@ end
 #
 ################################################################################
 
-#function Base.call(a::Hecke.FmpqPolyRing, b::String)
-#  return a(1)
-#end
-
 
 function (a::FmpzPolyRing)(b::fmpq_poly) 
   (den(b) != 1) && error("denominator has to be 1")
@@ -106,7 +136,7 @@ doc"""
 function basis(K::AnticNumberField)
   n = degree(K)
   g = gen(K);
-  d = Array(typeof(g), n)
+  d = Array{typeof(g)}(n)
   b = K(1)
   for i = 1:n-1
     d[i] = b
@@ -193,20 +223,400 @@ function minpoly(a::nf_elem)
   f = minpoly(Zx, representation_mat(d*a))
   return f(gen(parent(f))*d)
 end
+
 ###########################################################################
+# modular poly gcd and helpers
 ###########################################################################
 
+function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
+  #1 = gcd(p, q) = up + vq
+  # then u = modinv(p, q)
+  # vq = 1-up. i is up here
+  #crt: x = a (p), x = b(q) => x = avq + bup = a(1-up) + bup
+  #                              = (b-a)up + a            
+  if !iszero(pq2) 
+    r = mod(((b-a)*up + a), pq)
+    if r > pq2
+      return r-pq
+    else
+      return r
+    end
+  else
+    return mod(((b-a)*up + a), pq)
+  end
+end
+
+function induce_inner_crt(a::nf_elem, b::nf_elem, pi::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
+  c = parent(a)()
+  ca = fmpz()
+  cb = fmpz()
+  for i=0:degree(parent(a))-1
+    Nemo.num_coeff!(ca, a, i)
+    Nemo.num_coeff!(cb, b, i)
+    Hecke._num_setcoeff!(c, i, inner_crt(ca, cb, pi, pq, pq2))
+  end
+  return c
+end
+
+doc"""
+  induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz) -> GenPoly{nf_elem}, fmpz
+
+> Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
+> to all coefficients recursively.
+> Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
+> denominators).
+"""
+function induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz, signed::Bool = false)
+  c = parent(a)()
+  pi = invmod(p, q)
+  mul!(pi, pi, p)
+  pq = p*q
+  if signed
+    pq2 = div(pq, 2)
+  else
+    pq2 = fmpz(0)
+  end
+  for i=0:max(degree(a), degree(b))
+    setcoeff!(c, i, induce_inner_crt(coeff(a, i), coeff(b, i), pi, pq, pq2))
+  end
+  return c, pq
+end
+
+doc"""
+  induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz) -> bool, GenPoly{nf_elem}
+
+> Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
+> the coefficients to be integral (no checks done)
+> returns true iff this is successful for all coefficients.
+"""
+function induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz)
+  b = parent(a)()
+  for i=0:degree(a)
+    fl, x = rational_reconstruction(coeff(a, i), M)
+    if fl
+      setcoeff!(b, i, x)
+    else
+      return false, b
+    end
+  end
+  return true, b
+end
+
+doc"""
+  gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}) -> GenPoly{nf_elem}
+
+> A modular $\gcd$
+"""
+function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  return gcd_modular_kronnecker(a, b)
+end
+
+function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  # naive version, kind of
+  # polys should be integral
+  # rat recon maybe replace by known den if poly integral (Kronnecker)
+  # if not monic, scale by gcd
+  # remove content?
+  a = a*(1//leading_coefficient(a))
+  b = b*(1//leading_coefficient(b))
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = Hecke.modular_proj(b, me)
+    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]
+    gc = Hecke.modular_lift(gp, me)
+    if isone(gc)
+      return parent(a)(1)
+    end
+    if d == 1
+      g = gc
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, d = induce_crt(g, d, gc, fmpz(p))
+      end
+    end
+    fl, gg = induce_rational_reconstruction(g, d)
+    if fl  # not optimal
+      r = mod(a, gg)
+      if iszero(r)
+        r = mod(b, gg)
+        if iszero(r)
+          return gg
+        end
+      end
+    end
+  end
+end
+
+import Base.gcdx
+
+#similar to gcd_modular, but avoids rational reconstruction by controlling 
+#a/the denominator
+function gcd_modular_kronnecker(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  # rat recon maybe replace by known den if poly integral (Kronnecker)
+  # if not monic, scale by gcd
+  # remove content?
+  a = a*(1//leading_coefficient(a))
+  da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  b = b*(1//leading_coefficient(b))
+  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  d = gcd(da, db)
+  a = a*da
+  b = b*db
+  K = base_ring(parent(a))
+  fsa = evaluate(derivative(K.pol), gen(K))*d
+  #now gcd(a, b)*fsa should be in the equation order...
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  last_g = parent(a)(0)
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = Hecke.modular_proj(b, me)
+    fsap = Hecke.modular_proj(fsa, me)
+    gp = [fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
+    gc = Hecke.modular_lift(gp, me)
+    if isone(gc)
+      return parent(a)(1)
+    end
+    if d == 1
+      g = gc
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, d = induce_crt(g, d, gc, fmpz(p), true)
+      end
+    end
+    if g == last_g
+      r = mod(a, g)
+      if iszero(r)
+        r = mod(b, g)
+        if iszero(r)
+          return g
+        end
+      end
+    else
+      last_g = g
+    end
+  end
+end
+
+#seems to be faster than gcdx - if problem large enough.
+#rational reconstructio is expensive - enventually
+#TODO: figure out the denominators in advance. Resultants?
+
+function gcdx_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  a = a*(1//leading_coefficient(a))
+  b = b*(1//leading_coefficient(b))
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  last_g = parent(a)(0)
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = Hecke.modular_proj(b, me)
+    ap = similar(gp)
+    bp = similar(gp)
+    for i=1:length(gp)
+      gp[i], ap[i], bp[i] = gcdx(fp[i], gp[i])
+    end
+    gc = Hecke.modular_lift(gp, me)
+    aa = Hecke.modular_lift(ap, me)
+    bb = Hecke.modular_lift(bp, me)
+    if d == 1
+      g = gc
+      ca = aa
+      cb = bb
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        ca = aa
+        cb = bb
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, dd = induce_crt(g, d, gc, fmpz(p))
+        ca, dd = induce_crt(ca, d, aa, fmpz(p))
+        cb, d = induce_crt(cb, d, bb, fmpz(p))
+      end
+    end
+    fl, ccb = Hecke.induce_rational_reconstruction(cb, d)
+    if fl
+      fl, cca = Hecke.induce_rational_reconstruction(ca, d)
+    end
+    if fl
+      fl, gg = Hecke.induce_rational_reconstruction(g, d)
+    end
+    if fl
+      r = mod(a, g)
+      if iszero(r)
+        r = mod(b, g)
+        if iszero(r) && ((cca*a + ccb*b) == gg)
+          return gg, cca, ccb
+        end
+      end
+    end
+  end
+end
+ 
+
+function ismonic(a::GenPoly)
+  return leading_coefficient(a)==1
+end
+
+function eq_mod(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}, d::fmpz)
+  e = degree(a) == degree(b)
+  K= base_ring(parent(a))
+  i=0
+  while e && i<= degree(a)
+    j = 0
+    while e && j<degree(K)
+      e = e && (num(coeff(coeff(a, i), j)) - num(coeff(coeff(b, i), j))) % d == 0
+      j += 1
+    end
+    i += 1
+  end
+  return e
+end
+
+#similar to gcd_modular, but avoids rational reconstruction by controlling 
+#a/the denominator using resultant. Faster than above, but still slow.
+#mainly due to the generic resultant. Maybe use only deg-1-primes??
+#fact: g= gcd(a, b) and 1= gcd(a/g, b/g) = u*(a/g) + v*(b/g)
+#then u*res(a/g, b/g) is mathematically integeral, same for v
+#scaling by f'(a) makes it i nthe equation order
+#
+# missing/ nest attempt:
+#  write invmod using lifting
+#  write gcdx using lifting (lin/ quad)
+#  try using deg-1-primes only (& complicated lifting)
+#
+function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  a = a*(1//leading_coefficient(a))
+  da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  b = b*(1//leading_coefficient(b))
+  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  d = gcd(da, db)
+  a = a*da
+  b = b*db
+  K = base_ring(parent(a))
+  fsa = evaluate(derivative(K.pol), gen(K))*d
+  #now gcd(a, b)*fsa should be in the equation order...
+  global p_start
+  p = p_start
+  K = base_ring(parent(a))
+  @assert parent(a) == parent(b)
+  g = zero(a)
+  d = fmpz(1)
+  r = zero(K)
+  fa = zero(a)
+  fb = zero(b)
+  last_g = (parent(a)(0), parent(a)(0), parent(a)(0), parent(a)(0))
+ 
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    gp = (Hecke.modular_proj(b, me))
+    fsap = (Hecke.modular_proj(fsa, me))
+    g_ = similar(fp)
+    fa_ = similar(fp)
+    fb_ = similar(fp)
+    r_ = Array{fq_nmod}(length(fp))
+    for i=1:length(gp)
+      g_[i], fa_[i], fb_[i] = gcdx(fp[i], gp[i])
+      r_[i] = resultant(div(fp[i], g_[i]), div(gp[i], g_[i]))
+      g_[i] *= fsap[i]
+      fa_[i] *= (fsap[i]*r_[i])
+      fb_[i] *= (fsap[i]*r_[i])
+    end
+    rc = Hecke.modular_lift(r_, me)
+    gc = Hecke.modular_lift(g_, me)
+    fac = Hecke.modular_lift(fa_, me)
+    fbc = Hecke.modular_lift(fb_, me)
+    if d == 1
+      g = gc
+      r = rc
+      fa = fac
+      fb = fbc
+      d = fmpz(p)
+    else
+      if degree(gc) < degree(g)
+        g = gc
+        r = rc
+        fa = fac
+        fb = fbc
+        d = fmpz(p)
+      elseif degree(gc) > degree(g)
+        continue
+      else
+        g, d1 = induce_crt(g, d, gc, fmpz(p), true)
+        fa, d1 = induce_crt(fa, d, fac, fmpz(p), true)
+
+        r = Hecke.induce_inner_crt(r, rc, d*invmod(d, fmpz(p)), d1, div(d1, 2))
+        fb, d = induce_crt(fb, d, fbc, fmpz(p), true)
+
+      end
+    end
+    if (g, r, fa, fb) == last_g
+      if g*r == fa*a + fb*b
+        return g*r, fa, fb ## or normalise to make gcd monic??
+      else 
+        last_g = (g, r, fa, fb)
+      end
+    else
+      last_g = (g, r, fa, fb)
+    end
+  end
+end
+
+###########################################################################
+import Nemo.issquarefree
+function issquarefree(x::GenPoly{nf_elem})
+  return degree(gcd(x, derivative(x))) == 0
+end
+###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
-   K = base_ring(f)
-   Qy = parent(K.pol)
+  K = base_ring(f)
+  Qy = parent(K.pol)
 
-   res = zero(parent(y))
-   for i=degree(f):-1:0
-     res *= y
-     res += evaluate(Qy(coeff(f, i)), x)
-   end
-   return res
- end
+  res = zero(parent(y))
+  for i=degree(f):-1:0
+    res *= y
+    res += evaluate(Qy(coeff(f, i)), x)
+  end
+  return res
+end
 
 doc"""
   norm(f::PolyElem{nf_elem}) -> fmpq_poly
@@ -229,6 +639,24 @@ function norm(f::PolyElem{nf_elem})
 end
 
 doc"""
+  factor(f::fmpz_poly, K::NumberField) -> Dict{PolyElem{nf_elem}, Int}
+  factor(f::fmpq_poly, K::NumberField) -> Dict{PolyElem{nf_elem}, Int}
+
+> The factorisation of f over K (using Trager's method).
+"""
+function factor(f::fmpq_poly, K::AnticNumberField)
+  Ky, y = PolynomialRing(K)
+  return factor(evaluate(f, y))
+end
+
+function factor(f::fmpz_poly, K::AnticNumberField)
+  Ky, y = PolynomialRing(K)
+  Qz, z = PolynomialRing(FlintQQ)
+  return factor(evaluate(Qz(f), y))
+end
+
+
+doc"""
   factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
 
 > The factorisation of f (using Trager's method).
@@ -237,18 +665,27 @@ function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
 
+  f == 0 && error("poly is zero")
+  f_orig = deepcopy(f)
+  g = gcd(f, derivative(f'))
+  if degree(g) > 0
+    f = div(f, g)
+  end
+  f = f*(1//lead(f))
+
   k = 0
   g = f
   N = 0
 
   while true
-    N = norm(f)
+    N = norm(g)
 
-    if !is_constant(N) && is_squarefree(N)
+    if !isconstant(N) && issquarefree(N)
       break
     end
 
     k = k + 1
+ 
     g = compose(f, gen(Kx) - k*gen(K))
   end
   
@@ -256,7 +693,7 @@ function factor(f::PolyElem{nf_elem})
 
   res = Dict{PolyElem{nf_elem}, Int64}()
 
-  for i in keys(fac)
+  for i in keys(fac.fac)
     t = zero(Kx)
     for j in 0:degree(i)
       t = t + K(coeff(i, j))*gen(Kx)^j
@@ -265,7 +702,28 @@ function factor(f::PolyElem{nf_elem})
     res[gcd(f, t)] = 1
   end
 
-  return res
+  r = Fac{typeof(f)}()
+  r.fac = res
+  r.unit = Kx(1)
+  if f != f_orig
+    global p_start
+    p = p_start
+    while true
+      p = next_prime(p)
+      me = modular_init(K, p, max_split=1)
+      fp = modular_proj(f, me)[1]
+      if issquarefree(fp)
+        fp = deepcopy(modular_proj(f_orig, me)[1])
+        for k in keys(res)
+          gp = modular_proj(k, me)[1]
+          res[k] = valuation(fp, gp)
+        end
+        r.fac = res
+        return r
+      end
+    end  
+  end
+  return r
 end
 
 ################################################################################
@@ -343,13 +801,38 @@ end
 
 doc"""
 ***
+    roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+    roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+
+> Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
+> squarefree and monic.
+"""
+function roots(f::fmpz_poly, K::AnticNumberField, max_roots::Int = degree(f))
+  Ky, y = PolynomialRing(K)
+  return roots(evaluate(f, y), max_roots)
+end
+
+function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
+  Ky, y = PolynomialRing(K)
+  return roots(evaluate(f, y), max_roots)
+end
+
+doc"""
+***
     roots(f::GenPoly{nf_elem}) -> Array{nf_elem, 1}
 
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f))
+function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
+  @assert issquarefree(f)
+
+  #todo: implement for equation order....
   O = maximal_order(base_ring(f))
+  if do_lll
+    O = lll(O)
+  end  
+
   d = degree(f)
   deno = den(coeff(f, d), O)
   for i in (d-1):-1:0
@@ -377,7 +860,7 @@ function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f))
     return [ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
   end
 
-  A = _roots_hensel(goverO)
+  A = _roots_hensel(goverO, max_roots)
 
   return [ elem_in_nf(y) for y in A ]
 end
@@ -385,10 +868,31 @@ end
 
 doc"""
 ***
-    root(a::nf_elem, n::Int) -> Bool, nf_elem
+    hasroot(a::nf_elem, n::Int) -> Bool, nf_elem
 
 > Determines whether $a$ has an $n$-th root. If this is the case,
 > the root is returned.
+"""
+function hasroot(a::nf_elem, n::Int)
+  #println("Compute $(n)th root of $a")
+  Kx, x = PolynomialRing(parent(a), "x")
+
+  f = x^n - a
+
+  rt = roots(f, 1)
+
+  if length(rt)>0
+    return true, rt[1]
+  else
+    return false, zero(a)
+  end
+end
+
+doc"""
+***
+    root(a::nf_elem, n::Int) -> Bool, nf_elem
+
+> Computes the $n$-th root of $a$. Throws an error if this is not possible.
 """
 function root(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
@@ -396,17 +900,15 @@ function root(a::nf_elem, n::Int)
 
   f = x^n - a
 
-  fac = factor(f)
-  #println("factorization is $fac")
+  rt = roots(f, 1)
 
-  for i in keys(fac)
-    if degree(i) == 1
-      return (true, -coeff(i, 0)//coeff(i, 1))
-    end
+  if length(rt)>0
+    return rt[1]
+  else
+    return error("$a has no $n-th root")
   end
-
-  return (false, zero(parent(a)))
 end
+
 
 function num(a::nf_elem)
    const _one = fmpz(1)
@@ -435,7 +937,7 @@ doc"""
 """
 function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   K = parent(a)
-  A = Array(arb, degree(K))
+  A = Array{arb}(degree(K))
   r, s = signature(K)
   c = conjugate_data_arb(K)
   R = PolynomialRing(AcbField(c.prec), "x")[1]
@@ -503,7 +1005,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   d = degree(K)
   c = conjugate_data_arb(K)
   r, s = signature(K)
-  conjugates = Array(acb, r + 2*s)
+  conjugates = Array{acb}(r + 2*s)
   CC = AcbField(c.prec)
 
   for i in 1:r
@@ -538,7 +1040,7 @@ doc"""
 function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   r1, r2 = signature(parent(x))
   c = conjugates_arb(x, abs_tol)
-  z = Array(arb, r1)
+  z = Array{arb}(r1)
 
   for i in 1:r
     z[i] = real(c[i])
@@ -579,7 +1081,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   c = conjugate_data_arb(K)
 
   # We should replace this using multipoint evaluation of libarb
-  z = Array(arb, r1 + r2)
+  z = Array{arb}(r1 + r2)
   xpoly = arb_poly(parent(K.pol)(x), c.prec)
   for i in 1:r1
     #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
@@ -627,7 +1129,7 @@ end
 
 doc"""
 ***
-    is_torsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
+    istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
     
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
@@ -635,9 +1137,9 @@ doc"""
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
-function is_torsion_unit(x::nf_elem, checkisunit::Bool = false)
+function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
   if checkisunit
-    _is_unit(x) ? nothing : return false
+    _isunit(x) ? nothing : return false
   end
 
   K = parent(x)
@@ -931,4 +1433,208 @@ characteristic(::AnticNumberField) = 0
 #
 
 show_minus_one(::Type{nf_elem}) = false
+
+
+function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too slow
+  p = next_prime(2^60)
+  K = parent(a)
+  me = modular_init(K, p)
+  ap = Hecke.modular_proj(a, me)
+  bp = Hecke.modular_lift([inv(x) for x = ap], me)
+  pp = fmpz(p)
+  
+  fl, b = Hecke.rational_reconstruction(bp, pp)
+  t = K()
+  while !fl
+#    @assert mod_sym(a*bp - 1, pp) == 0
+    mul!(pp, pp, pp)
+    mul!(t, a, bp)
+    rem!(bp, pp)
+    sub!(t, 2, t)
+    mul!(bp, bp, t)
+    rem!(bp, pp)
+#    @assert mod_sym(a*bp - 1, pp) == 0
+    fl, b = rational_reconstruction(bp, pp)
+    if fl
+      if b*a == 1
+        return b
+      end
+      fl = false
+    end
+  end
+  return b
+end
+
+import Hecke.mod_sym!, Hecke.rem!, Hecke.mod!, Hecke.mod, Hecke.rem
+
+function mod_sym!(a::nf_elem, b::fmpz)
+  mod_sym!(a, b, div(b, 2))
+end
+
+function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
+  z = fmpz()
+  for i=0:a.elem_length-1
+    Nemo.num_coeff!(z, a, i)
+    rem!(z, z, b)
+    if z >= b2
+      sub!(z, z, b)
+    end
+    _num_setcoeff!(a, i, z)
+  end
+end
+
+function mod!(a::nf_elem, b::fmpz)
+  z = fmpz()
+  for i=0:a.elem_length-1
+    Nemo.num_coeff!(z, a, i)
+    mod!(z, z, b)
+    _num_setcoeff!(a, i, z)
+  end
+end
+
+function mod(a::nf_elem, b::fmpz)
+  c = deepcopy(a)
+  mod!(c, b)
+  return c
+end
+
+function rem!(a::nf_elem, b::fmpz)
+  z = fmpz()
+  for i=0:a.elem_length-1
+    Nemo.num_coeff!(z, a, i)
+    rem!(z, z, b)
+    _num_setcoeff!(a, i, z)
+  end
+end
+
+function rem(a::nf_elem, b::fmpz)
+  c = deepcopy(a)
+  rem!(c, b)
+  return c
+end
+
+function mod_sym(a::nf_elem, b::fmpz)
+  return mod_sym(a, b, div(b, 2))
+end
+
+function mod_sym(a::nf_elem, b::fmpz, b2::fmpz)
+  c = deepcopy(a)
+  mod_sym!(c, b, b2)
+  return c
+end
+
+function inv_lift(a::nf_elem)  # better, but not enough
+  p = next_prime(2^60)
+  K = parent(a)
+  me = modular_init(K, p)
+  ap = modular_proj(a, me)
+  bp = modular_lift([inv(x) for x = ap], me)
+  pp = fmpz(p)
+  fl, b = Hecke.rational_reconstruction(bp, pp)
+  t = K()
+  n = norm(a)
+  while !fl
+    Hecke.mul!(t, a, bp)
+    Hecke.mul!(pp, pp, pp)
+    rem!(t, pp)
+    Hecke.sub!(t, 2, t)
+    Hecke.mul!(bp, bp, t)
+    rem!(t, pp)
+    mul!(t, bp, n)
+    mod_sym!(t, pp)
+    if t*a == n
+      return t//n
+    end
+  end
+  return b
+end
+
+############################################################
+# Better(?) norm computation in special situation...
+############################################################
+type NormCtx
+  me::Array{modular_env, 1}
+  nb::Int
+  K::AnticNumberField
+  ce::crt_env{fmpz}
+  ln::Array{fmpz, 1}
+
+  function NormCtx(K::AnticNumberField, nb::Int, deg_one::Bool = false)
+    p = p_start
+    me = Array{modular_env,1}()
+
+    r = new()
+    r.K = K
+    r.nb = nb
+
+    lp = fmpz[]
+
+    while nb > 0
+      local m  
+      while true
+        p = next_prime(p)
+        m = modular_init(K, p)
+        if deg_one && length(m.rp) < degree(K)
+          continue
+        end
+        break
+      end
+      push!(lp, fmpz(p))
+      push!(me, m)
+      nb = nb - nbits(p)
+    end
+    r.me = me
+    r.ce = crt_env(lp)
+    r.ln = Array{fmpz, 1}()
+    for i = me
+      push!(r.ln, fmpz(0))
+    end
+    return r
+  end
+end
+
+import Nemo.mulmod, Nemo.invmod
+
+function show(io::IO, a::NormCtx)
+  println(io, "NormCtx for $(a.K) for $(a.nb) bits, using $(length(a.me)) primes")
+end
+
+function mulmod(a::UInt, b::UInt, n::UInt, ni::UInt)
+  ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), a, b, n, ni)
+end
+
+function norm(a::nf_elem, N::NormCtx, div::fmpz = fmpz(1))
+  ln = N.ln
+  i = 1
+  for m = N.me
+    np = UInt(invmod(div, m.p))
+    ap = modular_proj(a, m)
+    for j=1:length(ap) 
+      # problem: norm costs memory (in fmpz formally, then new fq_nmod is created)
+      np = mulmod(np, coeff(norm(ap[j]), 0), m.rp[1].mod_n, m.rp[1].mod_ninv)
+    end
+    N.ln[i] = np # problem: np is UInt, ln is not...
+    i += 1
+  end
+  return crt_signed(N.ln, N.ce)
+end
+
+
+function israt(a::nf_elem)
+  if degree(parent(a))==1 
+    return true
+  end
+  @assert degree(parent(a))>2 ## fails for 2 due to efficiency
+  return a.elem_length<2
+end
+
+doc"""
+    istotally_real(K::AnticNumberField) -> Bool
+
+> Returns true iff $K$ is totally real, ie. if all roots of the 
+> defining polynomial are real.
+"""
+function istotally_real(K::AnticNumberField)
+  return signature(K)[1] == degree(K)
+end
 

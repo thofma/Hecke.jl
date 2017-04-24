@@ -61,17 +61,17 @@ import Nemo: nf_elem, AnticNumberField, degree,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, order, signature,
-             base_ring, compose, root, arf_struct, fmpq, valuation,
+             base_ring, compose, root, arf_struct, fmpq, valuation, remove,
              Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
              resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
              ceil, //, setindex!, transpose, colon, nf_elem, isreal,
              MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
-             minpoly, charpoly, det,
-             howell_form, needs_parentheses, is_negative, parent_type,
-             intersect, lcm, strong_echelon_form, strong_echelon_form!,
-             howell_form!, add!, mul!, fmpq_poly, FmpzPolyRing, 
-             FlintFiniteField, addeq!, acb_vec, array, acb_struct,
-             acb_vec_clear, lufact!, agm, height, characteristic, roots, isprime
+             minpoly, charpoly, det, howell_form, needs_parentheses, ishnf,
+             isnegative, parent_type, intersect, lcm, strong_echelon_form,
+             strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
+             FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
+             acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
+             roots, isprime, nbits
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -81,7 +81,8 @@ import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
              floor, max, BigFloat, promote_rule, precision, dot,
              first, StepRange, show, one, zero, inv, iseven, isodd, convert,
-             angle, abs2, isless, exponent, base, isfinite, zeros
+             angle, abs2, isless, exponent, base, isfinite, zeros, rem,
+             maxabs, min
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -121,7 +122,7 @@ function __init__()
   println()
   print("Version")
   print_with_color(:green, " $VERSION_NUMBER ")
-  print("... \n ... which comes with absolutely no warrant whatsoever")
+  print("... \n ... which comes with absolutely no warranty whatsoever")
   println()
   println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
   println()
@@ -156,6 +157,11 @@ function __init__()
   global _get_ClassGrpCtx_of_order = t[1]
   global _set_ClassGrpCtx_of_order = t[2]
 
+  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
+
+  global _get_UnitGrpCtx_of_order = t[1]
+  global _set_UnitGrpCtx_of_order = t[2]
+
   t = create_accessors(AnticNumberField, roots_ctx, get_handle())
 
   global _get_roots_ctx_of_nf = t[1]
@@ -171,6 +177,13 @@ function __init__()
   global const _x = gen(_Zx)
   global const _y = gen(_Zxy)
 
+  let
+    Qx, x = QQ["x"]
+    K, a = NumberField(x^2 - 2, "a")
+    O = maximal_order(K)
+    class_group(O);
+    nothing
+  end
 end
 
 function conjugate_data_arb(K::AnticNumberField)
@@ -257,14 +270,14 @@ macro vprint(args...)
     quote
       if get_verbose_level($(args[1])) >= 1
         print(_global_indent())
-        print($(args[2]))
+        print($(esc((args[2]))))
       end
     end
   elseif length(args) == 3
     quote
       if get_verbose_level($(args[1])) >= $(args[2])
         print(_global_indent())
-        print($(args[3]))
+        print($(esc((args[3]))))
       end
     end
   end
@@ -337,6 +350,11 @@ macro hassert(args...)
     end
   end
 end
+
+################################################################################
+#   Do @infert and @test simultanously
+#
+################################################################################
 
 macro test_and_infer(f,args,res)
   quote
@@ -462,12 +480,13 @@ function checkbounds(a::Int, b::Int) nothing; end;
 include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
+include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
 #include("NfMaxOrd/NfOrdCls.jl")
 include("NfOrd.jl")
-include("analytic.jl")
 include("NfMaxOrd.jl")
+include("analytic.jl")
 include("Map.jl")
 include("helper.jl")
 include("EllCrv.jl")
@@ -516,7 +535,7 @@ elem_type(::NfOrdGen) = NfOrdElem{NfOrdGen}
 
 elem_type(::Type{NfOrdGen}) = NfOrdElem{NfOrdGen}
 
-elem_type{T}(::Type{FacElemMon{T}}) = FacElem{T}
+elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
 
 elem_type(::Type{AnticNumberField}) = nf_elem
 
@@ -556,18 +575,19 @@ function update()
   cd("$pkgdir/deps/antic")
   run(`git pull`)
 
-  println("Updating arb ... ")
-  cd("$pkgdir/deps/arb")
-  run(`git pull`)
-  run(`make -j`)
-  run(`make install`)
-
   println("Updating flint ... ")
   cd("$pkgdir/deps/flint2")
   run(`git pull`)
   run(`make -j`)
   run(`make install`)
 
+  println("Updating arb ... ")
+  cd("$pkgdir/deps/arb")
+  run(`git pull`)
+  run(`make -j`)
+  run(`make install`)
+
+ 
   cd(olddir)
 end
 
@@ -616,6 +636,25 @@ end
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
+################################################################################
+#
+#  Testing only "submodules"
+#
+################################################################################
+
+function test_module(x, y = :all)
+   julia_exe = Base.julia_cmd()
+   if y == :all
+     test_file = joinpath(pkgdir, "test/$x.jl")
+   else
+     test_file = joinpath(pkgdir, "test/$x/$y.jl")
+   end
+
+   cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
+   info("spawning ", `$julia_exe -e \"$cmd\"`)
+   run(`$julia_exe --color=yes -e $cmd`)
+end
+
 #
 # stuff for 0.5
 # 
@@ -627,5 +666,8 @@ end
 if VERSION < v"0.5.0-"
   @inline __get_rounding_mode() = Base.MPFR.ROUNDING_MODE[end]
 end
+
+precompile(maximal_order, (AnticNumberField, ))
+precompile(class_group, (NfMaxOrd, ))
 
 end

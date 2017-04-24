@@ -154,3 +154,45 @@ function addeq!(a::NfOrdElem{NfMaxOrd}, b::NfOrdElem{NfMaxOrd})
   addeq!(a.elem_in_nf, b.elem_in_nf)
 end
 
+function _lll_gram(M::NfOrd)
+  K = nf(M)
+  @assert istotally_real(K)
+  g = trace_matrix(M)
+
+  q,w = lll_gram_with_transform(g)
+  return typeof(M)(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+end
+
+function lll_basis(M::NfMaxOrd)
+  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
+  return lll_basis(I)
+end
+
+function lll(M::NfMaxOrd)
+  K = nf(M)
+
+  if istotally_real(K)
+    return _lll_gram(M)
+  end  
+
+  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
+
+  prec = 100
+  while true
+    try
+      q,w = lll(I, parent(basis_mat(M).num)(0), prec = prec)
+      return NfMaxOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+    catch e
+      if isa(e, LowPrecisionLLL)
+        prec = Int(round(prec*1.2))
+        if prec>1000
+          error("precision too large in LLL");
+        end
+        continue;
+      else
+        rethrow(e)
+      end
+    end
+  end
+end
+

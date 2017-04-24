@@ -119,7 +119,7 @@ function det(M::GenMat{NfOrdElem{NfMaxOrd}})
 
   while P < 2*B
     # reject some bad primes
-    if is_index_divisor(O, p) 
+    if isindex_divisor(O, p) 
       continue
     end
 
@@ -207,7 +207,7 @@ function __helper!(z, mF, entries)
   return z
 end
 
-function mod_sym(x, m)
+function mod_sym(x::NfOrdElem, m)
   z = elem_in_basis(x)
   for i in 1:length(z)
     z[i] = mod(z[i], m)
@@ -218,7 +218,7 @@ function mod_sym(x, m)
   return parent(x)(z)
 end
 
-function _basis_coord_nonneg(x)
+function _basis_coord_nonneg(x::NfOrdElem)
   b = elem_in_basis(x)
   for i in 1:length(b)
     if b[i] < 0
@@ -399,7 +399,7 @@ end
 # we assume that span(P) \subseteq O^r
 function _matrix_for_reduced_span(P::PMat, m::NfMaxOrdIdl)
   O = order(m)
-  c = Array(NfMaxOrdIdl, rows(P))
+  c = Array{NfMaxOrdIdl}(rows(P))
   mat = deepcopy(P.matrix)
   for i in 1:rows(P)
     I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)

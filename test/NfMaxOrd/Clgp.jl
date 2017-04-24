@@ -28,8 +28,8 @@
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
           K, a = NumberField(x^2-d, "a");
           O = maximal_order(K)
-          Cl = Hecke.class_group(O);
-          @test Cl.h == h
+          Cl, mCl = Hecke.class_group(O);
+          @test order(Cl) == h
         end
       end
 
@@ -37,8 +37,8 @@
         f = x^3 - 3*x - 1
         K, a = NumberField(f, "a");
         O = maximal_order(K)
-        Cl = Hecke.class_group(O);
-        @test Cl.h == 1
+        Cl, mCl = Hecke.class_group(O);
+        @test order(Cl) == 1
       end
 
       @testset "29th cyclotomic polynomial" begin
@@ -99,7 +99,16 @@
       @test Cl.h == 1
     end
 
-    @testset "f = x^5 - 11^2 * 7" begin
+    @testset "K = Q[x]/(f), f = x^3 - 2" begin
+      K, a = NumberField(x^2 - 3, "a");
+      O = maximal_order(K);
+      Cl, U, b = Hecke._class_unit_group(O);
+      @test b == 1
+      @test order(U) == O
+      @test Cl.h == 1
+    end
+
+    @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
       K, a = NumberField(x^5 - 11^2 * 7, "a");
       O = maximal_order(K)
       Cl, U, b = Hecke._class_unit_group(O);
@@ -110,6 +119,15 @@
       @test -1 in U.torsion_units
       @test contains(AF(2027.9289425180057),U.tentative_regulator)
       @test Cl.h == 5
+    end
+
+    @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
+      K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
+      O = maximal_order(K)
+      Cl, U, b = Hecke._class_unit_group(O);
+      @test b == 1
+      @test order(U) == O
+      @test Cl.h == 36
     end
 
   end

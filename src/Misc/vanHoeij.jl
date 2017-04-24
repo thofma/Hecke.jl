@@ -246,7 +246,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
         println("Poly is irreducible!")
         fact = Dict{typeof(f), Int}()
         Rx = PolynomialRing(ResidueRing(FlintZZ, p))[1]
-        fact[f] = valuation(Rx(f_orig), Rx(f))[1]
+        fact[f] = valuation(Rx(f_orig), Rx(f))
         return fact
       end
       m = sub(l, 1:rk, 1:cols(m))
@@ -308,7 +308,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
           Rx = PolynomialRing(ResidueRing(FlintZZ, p))[1]
           Rf = Rx(f_orig)
           for k in keys(fact)
-            fact[k] = valuation(Rf, Rx(k))[1]
+            fact[k] = valuation(Rf, Rx(k))
           end
           return fact 
         end

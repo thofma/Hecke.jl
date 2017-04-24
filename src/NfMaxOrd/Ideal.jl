@@ -142,6 +142,16 @@ end
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function copy(i::NfMaxOrdIdl)
+  return i
+end
+
+################################################################################
+#
 #  Number field
 #
 ################################################################################
@@ -241,7 +251,7 @@ function minimum(A::NfMaxOrdIdl)
     b = A.princ_gen.elem_in_nf
     if iszero(b)
       A.minimum = fmpz(0)
-      A.is_zero = 1
+      A.iszero = 1
     else
       bi = inv(b)
       A.minimum =  den(bi, order(A))
@@ -269,11 +279,11 @@ end
 
 doc"""
 ***
-    is_prime_known(A::NfMaxOrdIdl) -> Bool
+    isprime_known(A::NfMaxOrdIdl) -> Bool
 
 > Returns whether $A$ knows if it is prime.
 """
-function is_prime_known(A::NfMaxOrdIdl)
+function isprime_known(A::NfMaxOrdIdl)
   return A.is_prime != 0
 end
 
@@ -284,7 +294,7 @@ doc"""
 > Returns whether $A$ is a prime ideal.
 """
 function isprime(A::NfMaxOrdIdl)
-  if is_prime_known(A)
+  if isprime_known(A)
     return A.is_prime == 1
   elseif minimum(A) == 0
     A.is_prime = 2
@@ -358,7 +368,8 @@ doc"""
 > Returns whether $A$ has normal two element generators.
 """
 function has_2_elem_normal(A::NfMaxOrdIdl)
-  return isdefined(A, :gens_normal) && A.gens_normal > 1
+  #the one ideal <1, ?> is automatomatically normal>
+  return isdefined(A, :gens_normal) && (A.gen_one == 1 || A.gens_normal > 1)
 end
 
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
@@ -520,9 +531,9 @@ doc"""
 > Returns the ideal x*y.
 """
 function *(x::NfMaxOrdIdl, y::NfMaxOrdIdl)
-  if x.is_zero == 1 || y.is_zero == 1
+  if x.iszero == 1 || y.iszero == 1
     z = ideal(order(x), zero(MatrixSpace(FlintZZ, degree(order(x)), degree(order(x)))))
-    z.is_zero = 1
+    z.iszero = 1
     return z
   end
   if has_2_elem_normal(x) && has_2_elem_normal(y)
@@ -595,6 +606,26 @@ function prod_by_int_2_elem_normal(A::NfMaxOrdIdl, a::fmpz)
   return B
 end
 
+function prod_by_int_2_elem(A::NfMaxOrdIdl, a::fmpz)
+  @assert has_2_elem(A)
+
+  B = NfMaxOrdIdl(A.gen_one*a, A.gen_two*a)
+  B.gens_normal = A.gens_normal
+
+  if has_minimum(A)
+    B.minimum = A.minimum * a
+  end
+
+  if has_norm(A)
+    B.norm = A.norm * a^degree(A.parent.order)
+  end
+
+  @assert has_2_elem(B)
+  return B
+end
+
+
+global last_err
 doc"""
 ***
     *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
@@ -606,9 +637,15 @@ function *(x::NfMaxOrdIdl, y::fmpz)
     return x
   end
 
-  if has_2_elem(x) && has_2_elem_normal(x)
-    return prod_by_int_2_elem_normal(x,y)
+  if has_2_elem(x) 
+    if has_2_elem_normal(x)
+      return prod_by_int_2_elem_normal(x,y)
+    else
+      return prod_by_int_2_elem(x,y)
+    end  
   else
+    global last_err = (x, y)
+    println(x, " <-> ", y)
     error("Algorithm not yet implemented")
   end
 end
@@ -696,7 +733,7 @@ function _assure_weakly_normal_presentation(A::NfMaxOrdIdl)
   Amin2 = minimum(A)^2
   Amind = minimum(A)^degree(O)
 
-  B = Array(fmpz, 1, degree(O))
+  B = Array{fmpz}(degree(O))
 
   gen = O()
 
@@ -882,7 +919,7 @@ function basis(A::NfMaxOrdIdl)
   else
     O = order(A)
     M = basis_mat(A)
-    B = Array(NfOrdElem, degree(O))
+    B = Array{NfOrdElem}(degree(O))
     y = O()
     for i in 1:degree(O)
       z = O()
@@ -921,7 +958,7 @@ doc"""
 ***
   basis_mat(A::NfOrdIdl) -> fmpz_mat
 
-> Returns the basis matrix of A.
+> Returns the basis matrix of $A$.
 """ 
 function basis_mat(A::NfMaxOrdIdl)
   if isdefined(A, :basis_mat)
@@ -1060,7 +1097,7 @@ function val_func_no_index(p::NfMaxOrdIdl)
       v += 1
       mul!(x, x, e)
     end
-    return v-valuation(d, P)[1]*p.splitting_type[1]
+    return v-valuation(d, P)*p.splitting_type[1]
   end
 end
 
@@ -1090,12 +1127,12 @@ function val_func_no_index_small(p::NfMaxOrdIdl)
     nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
     h = rem!(h, h, g)      
     c = lift(FlintZZ, coeff(h, 0))
-    v = c==0 ? typemax(Int) : valuation(c, P)[1]
+    v = c==0 ? typemax(Int) : valuation(c, P)
     for i=1:degree(h)
       c = lift(FlintZZ, coeff(h, i))
-      v = min(v, c==0 ? typemax(Int) : valuation(c, P)[1])
+      v = min(v, c==0 ? typemax(Int) : valuation(c, P))
     end
-    return v-valuation(d, P)[1]
+    return v-valuation(d, P)
   end
 end
 
@@ -1120,7 +1157,7 @@ function val_func_index(p::NfMaxOrdIdl)
       Nemo.mul!(x_mat, x_mat, M)
       v += 1
     end
-    return v-valuation(d, P)[1]*p.splitting_type[1]
+    return v-valuation(d, P)*p.splitting_type[1]
   end
 end
 
@@ -1192,7 +1229,7 @@ doc"""
 function valuation(a::fmpz, p::NfMaxOrdIdl)
   P = p.gen_one
   @assert p.splitting_type[1] != 0
-  return valuation(a, P)[1]* p.splitting_type[1]
+  return valuation(a, P)* p.splitting_type[1]
 end
 
 doc"""
@@ -1203,7 +1240,7 @@ doc"""
 > such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl)
-  return min(valuation(A.gen_one, p)[1], valuation(elem_in_nf(A.gen_two), p))
+  return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
 end
 
 ################################################################################
@@ -1295,7 +1332,7 @@ function prime_dec_nonindex(O::NfMaxOrd, p::Integer, degree_limit::Int = 0, lowe
     end
   end
   fac = _fac
-  result = Array(Tuple{typeof(I()),Int}, length(fac))
+  result = Array{Tuple{typeof(I()),Int}}(length(fac))
   k = 1
   t = fmpq_poly()
   b = K()
@@ -1365,7 +1402,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 
     # First compute the residue degree
     for i in 1:degree(O)
-      f = f + valuation(basis_mat(P)[i,i], fmpz(p))[1]
+      f = f + valuation(basis_mat(P)[i,i], fmpz(p))
     end
 
     P.norm = fmpz(p)^f
@@ -1376,7 +1413,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 
     # The following does not work if there is only one prime ideal
     if length(AA) > 1 && (1-1/p)^degree(O) < 0.1
-      # Find the second element might take some time
+      # Finding the second element might take some time
       @vprint :NfMaxOrd 1 "chances are very low: ~$((1-1/p)^degree(O))"
       # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
       # number theory".
@@ -1400,6 +1437,8 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
 
       u, v = idempotents(P, Vp)
 
+      x = zero(parent(u))
+
       if !iszero(mod(norm(u), norm(P)*p))
         x = u
       elseif !iszero(mod(norm(u + p), norm(P)*p))
@@ -1414,7 +1453,7 @@ function prime_dec_index(O::NfMaxOrd, p::Int, degree_limit::Int = 0, lower_limit
         end
       end
 
-      @hassert :NfMaxOrd 1 isdefined(:x)
+      @hassert :NfMaxOrd 1 !iszero(x)
       @hassert :NfMaxOrd 2 O*O(p) + O*x == P
       
       P.gen_one = p
@@ -1481,7 +1520,7 @@ function prime_decomposition_type(O::NfMaxOrd, p::Integer)
     fmodp = PolynomialRing(ResidueRing(ZZ,p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
-    res = Array(Tuple{Int, Int}, g)
+    res = Array{Tuple{Int, Int}}(g)
     k = 1
     for (fi, ei) in fac 
       for j in 1:ei
@@ -1491,7 +1530,7 @@ function prime_decomposition_type(O::NfMaxOrd, p::Integer)
     end
   else
     lp = prime_decomposition(O, p)
-    res = Array(Tuple{Int, Int}, length(lp))
+    res = Array{Tuple{Int, Int}}(length(lp))
     for i in 1:length(lp)
       res[i] = (lp[i][1].splitting_type[2], lp[i][1].splitting_type[1])
     end
@@ -1528,7 +1567,7 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int;
     else
       deg_lim = 0
     end
-    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)"
+    @vprint :ClassGroup 2 "decomposing $p ... (bound is $B, deg_lim $deg_lim)\n"
     li = prime_decomposition(O, p, deg_lim)
     for P in li
       push!(r, P[1])
@@ -1536,6 +1575,32 @@ function prime_ideals_up_to(O::NfMaxOrd, B::Int;
   end
   return r
 end
+
+doc"""
+***
+    prime_ideals_over(O::NfMaxOrd,
+                       lp::AbstractArray{Int, 1};
+                       degree_limit::Int = 0) -> Array{NfMaxOrdIdl, 1}
+
+> Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
+> 
+> If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
+> with $\deg(\mathfrak p) > k$ will be discarded.
+"""
+function prime_ideals_over(O::NfMaxOrd, lp::AbstractArray{Int};
+                            degree_limit::Int = 0)
+  p = 1
+  r = NfMaxOrdIdl[]
+  for p in lp
+    @vprint :ClassGroup 2 "decomposing $p ... (deg_lim $deg_lim)"
+    li = prime_decomposition(O, p, degree_limit)
+    for P in li
+      push!(r, P[1])
+    end
+  end
+  return r
+end
+
 
 doc"""
 ***
@@ -1729,8 +1794,8 @@ type quoringalg <: Ring
     B = rref(Amodp)
     r = rank(B)
     C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, degree(O)))
-    BB = Array(NfOrdElem, degree(O) - r)
-    pivots = Array(Int, 0)
+    BB = Array{NfOrdElem}(degree(O) - r)
+    pivots = Array{Int}(0)
 #    # get he pivots of B
     for i in 1:r
       for j in 1:degree(O)
@@ -1893,3 +1958,95 @@ function split(R::quoringalg)
     break
   end
 end
+
+
+
+doc"""
+*
+  extended_euclid(A::NfMaxOrdIdl, B::NfMaxOrdIdl) -> (NfOrdElem{NfMaxOrd},NfOrdElem{NfMaxOrd})
+
+> Returns elements $a \in A$ and $b \in B$ such that $a + b = 1$.
+"""
+function extended_euclid(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
+  @assert order(A) == order(B)
+  O = order(A)
+  n = degree(O)
+  A_mat = hnf(basis_mat(A))
+  B_mat = hnf(basis_mat(B))
+  @hassert :NfMaxOrd 2 size(A_mat) == (n,n)
+  @hassert :NfMaxOrd 2 size(B_mat) == (n,n)
+  C = [ A_mat ; B_mat ]
+  H, T = hnf_with_transform(C)
+  @hassert :NfMaxOrd 2 submat(H,n+1,1,n,n) == 0
+  H = submat(H,1,1,n,n)
+  H != 1 && error("A and B not coprime")
+  X = MatrixSpace(ZZ,1,n)()
+  for i in 1:n
+    X[1,i] = T[1,i]
+  end
+  coeffs = X*A_mat
+  a = O(vec(Array(coeffs)))
+  b = 1 - a
+  @hassert :NfMaxOrd 2 a in A
+  @hassert :NfMaxOrd 2 b in B
+  return a, b
+end
+
+
+function trace_matrix(A::NfMaxOrdIdl)
+  g = trace_matrix(order(A))
+  b = basis_mat(A)
+#  mul!(b, b, g)   #b*g*b' is what we want.
+#                  #g should not be changed? b is a copy.
+#  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
+  return b*g*b'
+end
+
+function random_init(I::AbstractArray{NfMaxOrdIdl, 1}; reduce::Bool = true)
+  J = collect(I)
+  for i=1:length(J)
+    a = rand(1:length(J))
+    b = rand(1:length(J))
+    if reduce && isodd(rand(1:2))
+      J[a] = reduce_ideal(J[a]*inv(J[b]))
+    else
+      J[a] *= J[b]
+      if reduce
+        J[a] = reduce_ideal(J[a])
+      end
+    end
+  end
+  return J
+end  
+
+function random_get(J::Array{NfMaxOrdIdl, 1}; reduce::Bool = true)
+  a = rand(1:length(J))
+  I = J[a]
+  b = rand(1:length(J))
+  if reduce && isodd(rand(1:2))
+    J[a] = reduce_ideal(J[a]*inv(J[b]))
+  else
+    J[a] *= J[b]
+    if reduce
+      J[a] = reduce_ideal(J[a])
+    end
+  end
+  return I
+end
+
+################################################################################
+#
+#  Conversion to Magma
+#
+################################################################################
+function toMagma(f::IOStream, clg::NfMaxOrdIdl, order::String = "M")
+  print(f, "ideal<$(order)| ", clg.gen_one, ", ",
+                    elem_in_nf(clg.gen_two), ">")
+end
+
+function toMagma(s::String, c::NfMaxOrdIdl, order::String = "M")
+  f = open(s, "w")
+  toMagma(f, c, order)
+  close(f)
+end
+

@@ -1,0 +1,8 @@
+include("Sparse/Sparse.jl")
+include("Sparse/Matrix.jl")
+include("Sparse/Row.jl")
+include("Sparse/Module.jl")
+include("Sparse/Trafo.jl")
+include("Sparse/HNF.jl")
+include("Sparse/Solve.jl")
+include("Sparse/UpperTriangular.jl")

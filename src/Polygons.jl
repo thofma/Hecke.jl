@@ -43,7 +43,7 @@ type Polygon
       polygon.lines = lines
     end
           
-    polygon.slopes = Array(fmpq, length(lines))
+    polygon.slopes = Array{fmpq}(length(lines))
 
     for i in 1:length(lines)
       polygon.slopes[i] = lines[i].slope
@@ -108,12 +108,12 @@ function slope(a::Tuple{fmpq,fmpq},b::Tuple{fmpq,fmpq})
 end
 
 function newtonpolygon(f::Union(fmpz_poly,fmpq_poly),p::fmpz)
-  a = Array(Tuple{fmpq, fmpq}, degree(f)+1)
+  a = Array{Tuple{fmpq, fmpq}}(degree(f)+1)
   if !(isprime(p))
     #throw some error
   end
   for i = 0:degree(f)
-    iszero(coeff(f,i)) ? continue : a[i+1] = (i,valuation(coeff(f,i),p)[1])
+    iszero(coeff(f,i)) ? continue : a[i+1] = (i,valuation(coeff(f,i),p))
   end 
   return lowerconvexhull(a)
 end
@@ -135,15 +135,3 @@ function PartialPolygon(P::Polygon,t::Rational{BigInt})
   return true
 end
   
-
-function valuation(m::BigInt,p::BigInt)
-
-  a = mod(m,p)
-  i=ZZ(0)
-  while a == 0
-    i = i+1
-    m = div(m,p)
-    a = mod(m,p)
-  end
-  return i
-end

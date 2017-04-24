@@ -4,6 +4,9 @@
 #
 ################################################################################
 
+isprime(a::Integer) = isprime(fmpz(a))
+factor(a::Integer) = factor(fmpz(a))
+
 function next_prime(x::UInt, proof::Bool)
   z = ccall((:n_nextprime, :libflint), UInt, (UInt, Cint), x, Cint(proof))
   return z
@@ -66,12 +69,20 @@ function next_prime(z::fmpz)
   return z
 end
 
+function isless(a::BigFloat, b::Nemo.fmpz)
+  if _fmpz_is_small(b)
+    c = ccall((:mpfr_cmp_si, :libmpfr), Int32, (Ptr{BigFloat}, Int), &a, b.d)
+  else
+    c = ccall((:mpfr_cmp_z, :libmpfr), Int32, (Ptr{BigFloat}, UInt), &a, unsigned(b.d) << 2)
+  end
+  return c < 0
+end
 
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....
 
-function valuation{T <: Integer}(z::T, p::T)
+function remove{T <: Integer}(z::T, p::T)
   z == 0 && error("Not yet implemented")
   const v = 0
   while mod(z, p) == 0
@@ -81,31 +92,29 @@ function valuation{T <: Integer}(z::T, p::T)
   return (v, z)
 end 
 
-function valuation{T <: Integer}(z::Rational{T}, p::T)
+function remove{T <: Integer}(z::Rational{T}, p::T)
   z == 0 && error("Not yet implemented")
-  v, d = valuation(den(z), p)
-  w, n = valuation(num(z), p)
+  v, d = remove(den(z), p)
+  w, n = remove(num(z), p)
   return w-v, n//d
 end 
 
-function valuation(z::fmpz, p::fmpz)
+function valuation{T <: Integer}(z::T, p::T)
   z == 0 && error("Not yet implemented")
-  v = 0
+  const v = 0
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
   end
-  return v, z
+  return v
 end 
 
-function valuation(z::fmpq, p::fmpz)
+function valuation{T <: Integer}(z::Rational{T}, p::T)
   z == 0 && error("Not yet implemented")
-  v, d = valuation(den(z), p)
-  w, n = valuation(num(z), p)
-  return w-v, n//d
+  v = valuation(den(z), p)
+  w = valuation(num(z), p)
+  return w-v
 end 
-
-valuation(z::fmpz, p::Int) = valuation(z, fmpz(p))
 
 function *(a::fmpz, b::BigFloat)
   return BigInt(a)*b
@@ -307,14 +316,13 @@ function Base.getindex(a::StepRange{fmpz,fmpz}, i::fmpz)
   a.start+(i-1)*Base.step(a)
 end
 
-function ^(x::fmpq, y::fmpz)
-  if typemax(Int) > y
-    return x^Int(y)
-  else
-    error("Not implemented (yet)")
-  end
-end
+################################################################################
+#
+#  Should go to Nemo?
+#
+################################################################################
 
+one(::Type{fmpq}) = fmpq(1)
 
 ############################################################
 # more unsafe function that Bill does not want to have....
@@ -410,3 +418,52 @@ end
 function submul!(z::fmpz, x::fmpz, y::fmpz)
   ccall((:fmpz_submul, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
 end
+
+################################################################################
+#
+#  Number of bits
+#
+################################################################################
+
+function nbits(a::BigInt)
+  return ndigits(a, 2)
+end
+
+doc"""
+  nbits(a::Int) -> Int
+  nbits(a::BigInt) -> Int
+
+  Returns the number of bits necessary to represent a
+"""
+function nbits(a::Int)
+  a==0 && return 0
+  return Int(ceil(log(abs(a))/log(2)))
+end
+
+################################################################################
+#
+#  Modular reduction with symmetric residue system
+#
+################################################################################
+
+function mod_sym(a::fmpz, b::fmpz)
+  c = mod(a,b)
+  @assert c>=0
+  if b > 0 && 2*c > b
+    return c-b
+  elseif b < 0 && 2*c > -b
+    return c+b
+  else
+    return c
+  end
+end
+
+doc"""
+    isinteger(a::fmpq) -> Bool
+
+> Returns true iff the denominator of $a$ is one.
+"""
+function isinteger(a::fmpq)
+  return isone(den(a))
+end
+

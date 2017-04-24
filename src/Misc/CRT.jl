@@ -1,5 +1,5 @@
 import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
-export crt_env, crt, crt_inv, crt_inv, modular_init
+export crt_env, crt, crt_inv, modular_init, crt_signed
 
 isone(a::Int) = (a==1)
 
@@ -26,6 +26,7 @@ type crt_env{T}
   t1::T
   t2::T
   n::Int
+  M::T #for T=fmpz, holds prod/2
   function crt_env(p::Array{T, 1})
     pr = deepcopy(p)
     id = Array{T, 1}()
@@ -149,6 +150,22 @@ function crt!{T}(res::T, b::Array{T, 1}, a::crt_env{T})
   return res
 end
 
+function crt_signed!(res::fmpz, b::Array{fmpz, 1}, a::crt_env{fmpz})
+  crt!(res, b, a)
+  if !isdefined(a, :M)
+    a.M = div(prod(a.pr[1:a.n]), 2)
+  end
+  if res>a.M
+    sub!(res, res, a.pr[end])
+  end
+end
+
+function crt_signed(b::Array{fmpz, 1}, a::crt_env{fmpz})
+  res = fmpz()
+  crt_signed!(res, b, a)
+  return res
+end
+
 #in .pr we have the products of pairs, ... in the wrong order
 # so we traverse this list backwards, while building the remainders...
 #.. and then we do it again, efficiently to avoid resorting and re-allocation
@@ -186,15 +203,19 @@ function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   end
 
   i = length(c.pr)-1
+  if i == 0
+    rem!(res[1], a, c.pr[1])
+    return res
+  end  
   r = i
   w = r + c.n - 1
 
-  zero!(res[r % c.n + 1])
-  add!(res[r % c.n + 1], res[r % c.n + 1], a)
+  @inbounds zero!(res[r % c.n + 1])
+  @inbounds add!(res[r % c.n + 1], res[r % c.n + 1], a)
 
   while i>1 
-    rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
-    rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
+    @inbounds rem!(res[w % c.n + 1], res[r % c.n + 1], c.pr[i])
+    @inbounds rem!(res[(w+c.n - 1) % c.n + 1], res[r % c.n + 1], c.pr[i - 1])
     w += 2*(c.n-1)
     i -= 2
     r += 1*(c.n-1)
@@ -213,11 +234,19 @@ doc"""
 """
 function crt_inv{T}(a::T, c::crt_env{T})
   res = Array{T}(c.n)
-  return crt_inv_tree!(res, a, c)
+  if c.n < 50
+    return crt_inv_iterative!(res, a, c)
+  else
+    return crt_inv_tree!(res, a, c)
+  end
 end
     
 function crt_inv!{T}(res::Array{T, 1}, a::T, c::crt_env{T})
-  return crt_inv_tree!(res, a, c)
+  if c.n < 50
+    return crt_inv_iterative!(res, a, c)
+  else
+    return crt_inv_tree!(res, a, c)
+  end
 end
     
 #explains the idea, but is prone to overflow.
@@ -327,7 +356,7 @@ doc"""
 """
 function crt{T}(r::Array{T, 1}, m::Array{T, 1}) 
   length(r) == length(m) || error("Arrays need to be of same size")
-  if length(r) < 5
+  if length(r) < 15
     return crt_iterative(r, m)
   else
     return crt_tree(r, m)
@@ -411,6 +440,9 @@ end
 
 type modular_env
   p::fmpz
+  up::UInt
+  upinv::UInt
+
   fld::Array{FqNmodFiniteField, 1}
   fldx::Array{Ring, 1}
   ce::crt_env{nmod_poly}
@@ -439,7 +471,7 @@ doc"""
 > the residue class fields of the associated primes ideals above $p$.
 > Returns data that can be used by \code{modular_proj} and \code{modular_lift}.
 """
-function modular_init(K::AnticNumberField, p::fmpz)
+function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split::Int = 0)
   @assert isprime(p)
   UInt(p) # to enforce p being small
 
@@ -447,8 +479,16 @@ function modular_init(K::AnticNumberField, p::fmpz)
   me.Fpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
   lp = factor(fp)
-  @assert Set(values(lp.fac)) == Set([1])
+  if Set(values(lp.fac)) != Set([1])
+    error("bad prime")
+  end
   pols = collect(keys(lp.fac))
+  if deg_limit > 0
+    pols = pols[find(x -> degree(x) <= deg_limit, pols)]
+  end
+  if max_split > 0
+    pols = pols[1:min(length(pols), max_split)]
+  end
   me.ce = crt_env(pols)
   me.fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
                                    # and chacheing
@@ -457,11 +497,13 @@ function modular_init(K::AnticNumberField, p::fmpz)
 
   me.p = p
   me.K = K
+  me.up = UInt(p)
+  me.upinv = ccall((:n_preinvert_limb, :libflint), UInt, (UInt, ), me.up)
   return me
 end
 
-function modular_init(K::AnticNumberField, p::Integer)
-  return modular_init(K, fmpz(p))
+function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_split::Int = 0)
+  return modular_init(K, fmpz(p), deg_limit = deg_limit, max_split = max_split)
 end
 
 doc"""
@@ -476,7 +518,11 @@ function modular_proj(a::nf_elem, me::modular_env)
   crt_inv!(me.rp, ap, me.ce)
   for i=1:me.ce.n
     F = me.fld[i]
-    u = F()
+    if isdefined(me.res, i)
+      u = me.res[i]
+    else
+      u = F()
+    end
     ccall((:fq_nmod_set, :libflint), Void,
                 (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
                 &u, &me.rp[i], &F)

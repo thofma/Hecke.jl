@@ -49,15 +49,21 @@ function FacElem(x::nf_elem)
   return z
 end
 
-function is_unit(x::FacElem{nf_elem})
+#CF: this does not test x to be a unit, x needs to be integral as well
+#    with current technology, we cannot test this
+#    thus I renamed/ removed this function
+function _isunit(x::FacElem{nf_elem})
   return abs(norm(x)) == 1
 end
 
-function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
+function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
   @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
+
   if checkisunit
-    _is_unit(x) ? nothing : return false
+    _isunit(x) ? nothing : return false
   end
+
+  p = max(nbits(maxabs_exp(x))+nbits(length(x.fac)), p)
 
   K = base_ring(x)
   d = degree(K)
@@ -84,6 +90,8 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
         return false, p
       elseif isnonnegative(B - k)
         l = l + 1
+      else
+        println("fail 1")
       end
     end
     for i in 1:s
@@ -92,6 +100,8 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
         return false, p
       elseif isnonnegative(B - k)
         l = l + 1
+      else
+        println("fail 2")
       end
     end
 
@@ -100,16 +110,17 @@ function is_torsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 1
     end
 
     p = 2*p
-
   end
 end
 
 function norm(x::FacElem{nf_elem})
-  z = fmpq(1)
-  for a in base(x)
-    z = z*norm(a)^x.fac[a]
+  b = fmpq[]
+  c = fmpz[] 
+  for (a, e) in x.fac
+    push!(b, norm(a))
+    push!(c, e)
   end
-  return z
+  return evaluate(FacElem(b, c))
 end
 
 _base_ring(x::nf_elem) = parent(x)::AnticNumberField
@@ -139,7 +150,7 @@ end
 
 function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   d = degree(_base_ring(x))
-  res = Array(acb, d)
+  res = Array{acb}(d)
 
   i = 1
 
@@ -164,7 +175,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   K = _base_ring(x)
   r1, r2 = signature(K)
   d = r1 + r2
-  res = Array(arb, d)
+  res = Array{arb}(d)
 
   i = 1
 
@@ -191,5 +202,52 @@ end
 function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
   z = conjugates_arb_log(x, -R.prec)
   return map(R, z)
+end
+
+doc"""
+    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfMaxOrdIdl) -> fmpz
+> The valuation of $a$ at $P$.
+"""
+function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfMaxOrdIdl)
+  val = fmpz(0)
+  for (a, e) = a.fac
+    val += valuation(a, P)*e
+  end
+  return val
+end
+
+
+#the normalise bit ensures that the "log" vector lies in the same vector space
+#well, the same hyper-plane, as the units
+function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
+  K = base_ring(x)
+  r,s = signature(K)
+  c = conjugates_arb_log(x, p)
+  R = parent(c[1])
+  n = (log(root(R(abs(norm(x))), degree(K))))
+  for i=1:r
+    c[i] -= n
+  end
+  for i=r+1:r+s
+    c[i] -= n
+    c[i] -= n
+  end
+  return c
+end
+ 
+function _conj_arb_log_matrix_normalise_cutoff{T}(u::Array{T, 1}, prec::Int = 32)
+  z = conjugates_arb_log_normalise(u[1], prec)
+  A = ArbMatSpace(parent(z[1]), length(u), length(z)-1)()
+  for i=1:length(z)-1
+    A[1,i] = z[i]
+  end
+
+  for j=2:length(u)
+    z = conjugates_arb_log_normalise(u[j], prec)
+    for i=1:length(z)-1
+      A[j,i] = z[i]
+    end
+  end
+  return A
 end
 

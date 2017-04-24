@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export AbGrp, AbGrpElem, parent, is_finite, is_infinite, rank, length,
+export AbGrp, AbGrpElem, parent, isfinite, isinfinite, rank, length,
        getindex, show, +, *
 
 ################################################################################
@@ -107,19 +107,19 @@ end
 
 doc"""
 ***
-    is_finite(A::AbGrp) -> Bool
+    isfinite(A::AbGrp) -> Bool
 
 > Returns whether $A$ is finite.
 """
-is_finite(A::AbGrp) = A.inf_num == 0 ? true : false
+isfinite(A::AbGrp) = A.inf_num == 0 ? true : false
 
 doc"""
 ***
-    is_infinite(A::AbGrp) -> Bool
+    isinfinite(A::AbGrp) -> Bool
 
 > Returns whether $A$ is infinite.
 """
-is_infinite(A::AbGrp) = !is_finite(A)
+isinfinite(A::AbGrp) = !isfinite(A)
 
 doc"""
 ***
@@ -155,7 +155,7 @@ doc"""
 > Returns the order of $A$. It is assumed that $A$ is not infinite.
 """
 function order(A::AbGrp)
-  is_infinite(A) && error("Group must be finite")
+  isinfinite(A) && error("Group must be finite")
   return prod(A.diagonal)
 end
 
@@ -207,7 +207,7 @@ doc"""
 """
 function +(x::AbGrpElem, y::AbGrpElem)
   parent(x) != parent(y) && error("Parents must coincide")
-  z = Array(fmpz, length(x.coord))
+  z = Array{fmpz}(length(x.coord))
   for i in 1:length(z)
     z[i] = x.coord[i] + y.coord[i]
   end
@@ -296,7 +296,7 @@ doc"""
 > where the $1$ is at the $i$-th position.
 """
 function getindex(A::AbGrp, i::Int)
-  z = Array(fmpz, length(A.diagonal))
+  z = Array{fmpz}(length(A.diagonal))
   for j in 1:length(A.diagonal)
     z[j] = fmpz()
   end

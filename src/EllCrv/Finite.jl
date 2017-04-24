@@ -62,7 +62,7 @@ function rand(E::EllCrv)
     x = rand(R)
     square = x^3 + E.coeff[1]*x + E.coeff[2]
 
-    a = is_square(square)
+    a = issquare(square)
     if a[1] == true # square is a square in F_q, so have found point on the curve
       y = a[2]
       P = E([x, y])
@@ -331,7 +331,7 @@ function order_via_bsgs(E::EllCrv)
     boolie = true
     while boolie # get a quadratic non-residue mod p
       d = rand(R)
-      if is_square(d)[1] == false
+      if issquare(d)[1] == false
         boolie = false
       end
     end
@@ -506,7 +506,7 @@ function t_mod_prime(l, E)
       return ZZ(0)
     else
       # need square root of q (mod l)
-      w = is_square(k_mod)[2]
+      w = issquare(k_mod)[2]
       if w.data < 0
         w = w + l
       end
@@ -635,7 +635,7 @@ function _special_order2(E)
 
   for i = 0:1
     for j = 0:1
-      if is_on_curve(E, [R(i), R(j)])
+      if ison_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end
@@ -653,7 +653,7 @@ function _special_order3(E)
 
   for i = 0:2
     for j = 0:2
-      if is_on_curve(E, [R(i), R(j)])
+      if ison_curve(E, [R(i), R(j)])
         ord = ord + 1
       end
     end

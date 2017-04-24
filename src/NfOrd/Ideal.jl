@@ -142,10 +142,10 @@ function basis(a::NfOrdIdl)
   if isdefined(a, :basis)
     return a.basis
   end
-  B = Array(elem_type(O), degree(order(a)))
+  B = Array{elem_type(O)}(degree(order(a)))
   for i in 1:degree(O)
     t = zero(O)
-    v = Array(fmpz, degree(O))
+    v = Array{fmpz}(degree(O))
     for j in 1:degree(O)
       t += basis(O)[j]*basis_mat(a)[i,j]
       #v[j] = basis_mat(a)[i,j]
@@ -206,7 +206,7 @@ function minimum(a::NfOrdIdl)
   if isdefined(a, :minimum)
     return deepcopy(a.minimum)
   else
-    @hassert :NfOrd 2 isone(basis(order(a)))
+    @hassert :NfOrd 2 isone(basis(order(a))[1])
     a.minimum = basis_mat(a)[1, 1]
     return deepcopy(a.minimum)
   end

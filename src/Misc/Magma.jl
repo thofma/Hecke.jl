@@ -53,10 +53,10 @@ function toMagma(s::String, A::fmpz_mat)
 end
 
 ################################################################################
-# Smat -> magma file
+# SMat -> magma file
 # use as read(...)
 ################################################################################
-function toMagma(io::IOStream, A::Smat; name = "A")
+function toMagma(io::IOStream, A::SMat; name = "A")
   println(io, name, " := SparseMatrix(Integers(), ", rows(A), ", ", cols(A), ", [")
   for i = 1:rows(A)
     for xx = 1:length(A.rows[i].pos) 
@@ -71,7 +71,7 @@ function toMagma(io::IOStream, A::Smat; name = "A")
   println(io, "\"Loaded ", name, "\";")
 end
 
-function toMagma(s::String, A::Smat)
+function toMagma(s::String, A::SMat)
   f = open(s, "w")
   toMagma(f, A)
   close(f)

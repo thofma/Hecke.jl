@@ -44,7 +44,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
 
   for p in FB.fb_int.base
     FP = FB.fb[p]
-    if length(FP.lp) < 3 || is_index_divisor(O, p) || p > 2^60
+    if length(FP.lp) < 3 || isindex_divisor(O, p) || p > 2^60
       lp = [x[2] for x = FP.lp]
       for (i, P) in FP.lp 
         Q = induce_image(P, A)
@@ -84,32 +84,110 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
   return G([x[2] for x = prm])
 end
 
-function add_orbit(c, R, S::Map, sz::Int, n_b::Int = 500)
-  p = induce(c.FB, S)
-  for r in R
-    println("adding $r")
-    n = norm_div(r, fmpz(1), n_b)
-    println("of norm $n")
-    if iszero(n)
-      println("zero found")
+#= implementation from Butler's Fundamntal Algorithm for Permutation Groups
+  Algo 4: Dimino
+  Tested for cyclic groups - unfortunately only.
+  I still need to generate other input
+=#  
+#function orbit_in_FB(op::Array{Tuple{Map, Nemo.perm}, 1}, a::nf_elem, s::SRow)
+function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
+  function op_smat(n::SRow, p::Nemo.perm)
+    r = [(p[i], v) for (i,v) = n]
+    sort!(r, lt = (a,b)->a[1]<b[1])
+    return typeof(n)(r)
+  end
+
+  Ss = Dict{nf_elem, typeof(s)}()
+#  Ss = Dict{typeof(s), nf_elem}()
+  Ss[a] = s
+  # start with the cyclic group be op[1]
+  n = s
+  b = op[1][1](a)
+  while b != a
+    n = op_smat(n, op[1][2])
+    Ss[b] = n
+    b = op[1][1](b)
+  end
+
+  for i=2:length(op) 
+    bb = op[i][1](a)
+    if haskey(Ss, bb)
       continue
     end
-    println("adding")
-    fl = Hecke.class_group_add_relation(c, r, n, fmpz(1))
-    if fl
-      n = c.M[end]
-      for i=1:sz
-        r = S(r)
-        if r in c.RS
-          break
+    old = collect(Ss)
+    for (b, n) in old # one redundant - step
+      Ss[op[i][1](b)] = op_smat(n, op[i][2])
+    end
+    while true
+      done = true
+      for j = 1:length(op)
+        bb = op[j][1](b)
+        if haskey(Ss, bb)
+          continue;
         end
-        n = typeof(n)([(p[i], v) for (i,v) = n])
-        push!(c.M, n)
-        push!(c.R, r)
-        push!(c.RS, r)
+        done = false
+        b = bb
+        for (b, n) in old
+          Ss[op[j][1](b)] = op_smat(n, op[j][2])
+        end
+      end
+      if done
+        break
       end
     end
   end
+  return Ss
 end
 
+function generated_subgroup(op::Array) #pairs: permutations and Map
+  elt = Array{Any, 1}()
+  push!(elt, (x->x, Nemo.eye(parent(op[1][2]))))
+  ord = 1
+  g = op[1]
+  while g[2] != Nemo.eye(parent(op[1][2]))
+    let c_g = g
+      push!(elt, c_g)
+      g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
+    end  
+  end
+  ord = length(elt)
+
+  for i=2:length(op)
+    c_i = i
+    if op[i][2] in [x[2] for x=elt]
+      continue
+    end
+    pord = ord
+    push!(elt, op[i])
+    for j=2:pord
+      c_j = j
+      push!(elt, (x->elt[c_j][1](op[c_i][1](x)), elt[c_j][2]*op[c_i][2]))
+    end
+    ord = length(elt)
+    rpos = pord + 1
+    while true
+      for s in op
+        let c_rpos = rpos, c_s = s
+          g = (x->elt[c_rpos][1](c_s[1](x)), elt[c_rpos][2]*c_s[2])
+          if g[2] in [x[2] for x=elt]
+            continue
+          end
+        end  
+        let c_g = g
+          push!(elt, c_g)
+          for j = 2:pord
+            c_j = j
+            push!(elt, (x->elt[c_j][1](c_g[1](x)), elt[c_j][2]*c_g[2]))
+          end
+        end  
+        ord = length(elt)
+      end
+      rpos += pord
+      if rpos > length(elt) 
+        break
+      end
+    end
+  end
+  return elt
+end
 

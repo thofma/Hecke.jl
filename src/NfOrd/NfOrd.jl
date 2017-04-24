@@ -33,7 +33,7 @@
 ################################################################################
 
 export isequationorder, nf, parent, basis, basis_mat, basis_mat_inv,
-       discriminant, degree, gen_index, index, is_index_divisor, deepcopy,
+       discriminant, degree, gen_index, index, isindex_divisor, deepcopy,
        signature, minkowski_mat, norm_change_const, in, den, +, poverorder,
        pmaximal_overorder
 
@@ -88,7 +88,7 @@ function basis_ord(O::NfOrd)
     return O.basis_ord::Array{NfOrdElem{typeof(O)}, 1}
   end
   b = O.basis_nf
-  B = Array(NfOrdElem{typeof(O)}, length(b))
+  B = Array{NfOrdElem{typeof(O)}}(length(b))
   for i in 1:length(b)
     v = fill(FlintZZ(0), length(b))
     v[i] = FlintZZ(1)
@@ -170,10 +170,11 @@ function discriminant(O::NfOrd)
 
   if isequationorder(O)
     O.disc = num(discriminant(nf(O).pol))
-    return deepcopy(O.disc)
+  else
+    O.disc = discriminant(basis(O))
   end
 
-  return discriminant(basis(O))
+  return deepcopy(O.disc)
 end
 
 ################################################################################
@@ -234,12 +235,12 @@ end
 ################################################################################
 
 doc"""
-    is_index_divisor(O::NfOrd, d::fmpz) -> Bool
-    is_index_divisor(O::NfOrd, d::Int) -> Bool
+    isindex_divisor(O::NfOrd, d::fmpz) -> Bool
+    isindex_divisor(O::NfOrd, d::Int) -> Bool
 
 > Returns whether $d$ is a divisor of the index of $\mathcal O$.
 """
-function is_index_divisor(O::NfOrd, d::Union{fmpz, Int})
+function isindex_divisor(O::NfOrd, d::Union{fmpz, Int})
   i = index(O)
   return i % d == 0
 end
@@ -308,7 +309,7 @@ function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
     A = deepcopy(O.minkowski_mat[1])
   else
-    T = Array(Array{arb, 1}, degree(O))
+    T = Array{Array{arb, 1}}(degree(O))
     B = O.basis_nf
     for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)
@@ -340,7 +341,7 @@ function _check_elem_in_order(a::nf_elem, O::NfOrd)
   t = FakeFmpqMat(M)
   elem_to_mat_row!(t.num, 1, t.den, a)
   x = t*basis_mat_inv(O)
-  v = Array(fmpz, degree(O))
+  v = Array{fmpz}(degree(O))
   for i in 1:degree(O)
     v[i] = deepcopy(x.num[1,i])
   end
@@ -409,7 +410,7 @@ function norm_change_const(O::NfOrd)
     return O.norm_change_const
   else
     d = degree(O)
-    M = transpose(minkowski_mat(O, 64))
+    M = minkowski_mat(O, 64)
     # I need to swap rows (really?)
     # I don't think we have to swap rows, since permutation matrices are orthogonal
     #r1, r2 = signature(O)
@@ -417,9 +418,37 @@ function norm_change_const(O::NfOrd)
     #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
     #end
 
-    M = [ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ]
-    N = transpose(M)*M
+    M= M*M'
+
+    N = Symmetric([ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ])
+    #forcing N to really be Symmetric helps julia - aparently
     r = sort(eigvals(N))
+    if !(r[1]>0) 
+      # more complicated methods are called for...
+      l_max = root(trace(M^d), d) #an upper bound within a factor of 2
+                                    #according to a paper by Victor Pan
+      pr = 128                              
+      l_min = l_max
+      if isodd(d) d+=1; end
+      while true
+        try 
+          M = inv(M)
+          l_min = root(trace(M^d), d) #as above...
+          if isfinite(l_min)
+            z = (Float64(l_max), Float64(l_min))
+            O.norm_change_const = z
+            return z
+          end
+          M = minkowski_mat(O, pr)
+          pr *= 2
+        catch e  # should verify the correct error
+          M = minkowski_mat(O, pr)
+          pr *= 2
+        end
+      end  
+    end  
+
+    @assert r[1]>0
 #    N = transpose(M)*M
 #    N = MatrixSpace(AcbField(prec(base_ring(N))), rows(N), cols(N))(N)
 #    chi = charpoly(PolynomialRing(base_ring(N), "x")[1], N)
@@ -551,7 +580,7 @@ function _MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   disc = abs(discriminant(O))
   for i in 1:length(primes)
     p = primes[i]
-    (j, disc) = valuation(disc, p)
+    (j, disc) = remove(disc, p)
     if j == 1
       continue
     end
@@ -575,3 +604,27 @@ function _MaximalOrder(O::NfOrd)
   end
   return OO
 end
+
+function trace_matrix(O::NfOrd)
+  if isdefined(O, :trace_mat)
+    return O.trace_mat
+  end
+  K = nf(O)
+  b = basis(O, K)
+  n = degree(K)
+  g = MatrixSpace(FlintZZ, n, n)()
+  for i=1:n
+    t = trace(b[i]^2)
+    @assert isinteger(t)
+    g[i,i] = num(t)
+    for j=i+1:n
+      t = trace(b[i]*b[j])
+      @assert isinteger(t)
+      g[i,j] = num(t)
+      g[j,i] = num(t)
+    end
+  end
+  O.trace_mat = g
+  return g
+end
+

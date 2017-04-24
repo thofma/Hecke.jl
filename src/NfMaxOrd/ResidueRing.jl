@@ -74,7 +74,7 @@ parent_type(::Type{NfMaxOrdQuoRingElem}) = NfMaxOrdQuoRing
 
 needs_parentheses(::NfMaxOrdQuoRingElem) = true
 
-is_negative(::NfMaxOrdQuoRingElem) = false
+isnegative(::NfMaxOrdQuoRingElem) = false
 
 Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
@@ -198,8 +198,6 @@ end
 ################################################################################
 
 iszero(x::NfMaxOrdQuoRingElem) = iszero(x.elem)
-
-is_zero(x::NfMaxOrdQuoRingElem) = iszero(x)
 
 isone(x::NfMaxOrdQuoRingElem) = isone(x.elem)
 
@@ -343,7 +341,7 @@ end
 ################################################################################
 
 function euclid(x::NfMaxOrdQuoRingElem)
-  if is_zero(x)
+  if iszero(x)
     return fmpz(-1)
   end
 
@@ -486,9 +484,9 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   d = degree(O)
 
-  if is_zero(x)
+  if iszero(x)
     return deepcopy(y), Q(O(0)), Q(O(1)), Q(O(-1)), Q(O(0))
-  elseif is_zero(y)
+  elseif iszero(y)
     return deepcopy(x), Q(O(1)), Q(O(0)), Q(O(0)), Q(O(1))
   end
 
@@ -547,12 +545,12 @@ end
 ################################################################################
 
 function _pivot(A, start_row, col)
-  if !is_zero(A[start_row, col])
+  if !iszero(A[start_row, col])
     return 1;
   end
 
   for j in start_row + 1:rows(A)
-    if !is_zero(A[j, col])
+    if !iszero(A[j, col])
       swap_rows!(A, j, start_row)
       return -1
     end
@@ -668,7 +666,7 @@ function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
 
   # We do not normalize!
   for j in 1:m
-    if !is_zero(A[j,j]) != 0
+    if !iszero(A[j,j]) != 0
       # This is the reduction
       for i in 1:j-1
         if iszero(A[i, j])
@@ -735,11 +733,11 @@ function howell_form!(A::GenMat{NfMaxOrdQuoRingElem})
   strong_echelon_form!(A)
 
   for i in 1:rows(A)
-    if is_zero_row(A, i)
+    if iszero_row(A, i)
       k = k - 1
 
       for j in (i + 1):rows(A)
-        if !is_zero_row(A, j)
+        if !iszero_row(A, j)
           swap_rows!(A, i, j)
           j = rows(A)
           k = k + 1
@@ -812,6 +810,11 @@ end
 ################################################################################
 
 ## Hensel lifting of roots
+##todo: redo for equation order using the kronnecker basis (co-different)
+##      to avoid denominators
+##    : use double iteration to avoid division
+#     : use exponent chain to not overshoot (too much) in lifting
+#     : common case is f == K.pol. In this case we known a sharp T2-bound
 function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   # f must be squarefree
   # i should check that
@@ -836,7 +839,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   while !found_prime
     p = next_prime(p)
 
-    if is_index_divisor(O, p) || isramified(O, p)
+    if isindex_divisor(O, p) || isramified(O, p)
       continue
     end
 
@@ -874,29 +877,42 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   R = ArbField(64)
   z = R(0)
   (c1, c2) = norm_change_const(O)
+  #so   |x|_mink  <= c_1 |x|_coeff
+  #and  |x|_coeff <= c_2 |x|_mink
+  # hopefully
   (r1, r2) = signature(O) 
-
-  cc2 = (exp(3*log(R(3))//2) * R(3)^deg)//(const_pi(R) * R(deg))
 
   bound_root = [ R(0) for i in 1:(r1 + r2) ]
 
-  for j in 0:deg-1
+  #next, I want a bound on the roots of f
+  #according to Wikipedia, 
+  # Fujiwara bound is near optimal...
+
+  for j in 1:deg-1
     co = coeff(f, j)
     co_conj = conjugates_arb(co, -1)
     for i in 1:r1+r2
-      bound_root[i] += inv(binom(R(deg), UInt(j))) * abs(co_conj[i])^2
+      bound_root[i] = max(bound_root[i], root(abs(co_conj[i]), deg-j))
     end
   end
+  co = coeff(f, 0)
+  co_conj = conjugates_arb(co, -1)
+  for i in 1:r1+r2
+    bound_root[i] = max(bound_root[i], root(abs(co_conj[i])//2, deg))
+  end
 
+  bd = R(0)
   for i in 1:r1
-    bound_root[i] = bound_root[i] * cc2
+    bd += bound_root[i]^2
   end
-
-  for i in r1+1:r2
-    bound_root[i] = 2 * bound_root[i] * cc2
+  for i=1:r2
+    bd += 2*bound_root[i+r1]^2
   end
+  #bd should be a bound on the T2 of any root (|x|_mink)
+  #thus for coeffs we need to multiply by c_2
 
-  boundt2 = max(sum(bound_root), R(1))
+
+  boundt2 = max(bd, R(1))
   
   #println("t2 bound: $boundt2")
 
@@ -921,7 +937,9 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   #println(length(lin_factor))
   #println("lifting bound: ", s)
 
+  #println("aiming for $max_roots roots")
   for j in 1:length(lin_factor)
+  #  println("have $(length(roots)) found, want $max_roots")
     if length(roots) == max_roots
       break
     end
@@ -973,7 +991,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
     zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
+    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
 
     w = v*L
 
@@ -1046,7 +1064,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 
       zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num')
+      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
 
       w = v*L
 
@@ -1065,7 +1083,8 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   return roots
 end
 
-function is_power(a::NfOrdElem{NfMaxOrd}, n::Int)
+#identical to hasroot - which one do we want?
+function ispower(a::NfOrdElem{NfMaxOrd}, n::Int)
   Ox, x = parent(a)["x"]
   f = x^n - a
   r = _roots_hensel(f, 1)

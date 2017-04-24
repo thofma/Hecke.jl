@@ -1,6 +1,11 @@
-export is_zero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, matrix, zeromatrix
+export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, matrix, zeromatrix
 
 # 
+
+function matrix(A::Array{fmpz, 2})
+  m = MatrixSpace(FlintZZ, size(A)...)(A)
+  return m
+end
 
 function matrix{T <: RingElem}(A::Array{T, 2})
   r, c = size(A)
@@ -25,7 +30,7 @@ end
 #
 
 function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
-  A = Array(T, rows(a), cols(a))
+  A = Array{T}(rows(a), cols(a))
   for i = 1:rows(a)
     for j = 1:cols(a)
       A[i,j] = T(a[i,j])
@@ -34,7 +39,7 @@ function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
   return A
 end
 
-function is_zero_row(M::fmpz_mat, i::Int)
+function iszero_row(M::fmpz_mat, i::Int)
   for j = 1:cols(M)
     if M[i,j] != 0 
       return false
@@ -43,7 +48,7 @@ function is_zero_row(M::fmpz_mat, i::Int)
   return true
 end
 
-function is_zero_row(M::nmod_mat, i::Int)
+function iszero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
   for j in 1:cols(M)
     t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &M, i - 1, j - 1)
@@ -55,7 +60,7 @@ function is_zero_row(M::nmod_mat, i::Int)
 end
 
 
-function is_zero_row{T}(M::MatElem{T}, i::Int)
+function iszero_row{T}(M::MatElem{T}, i::Int)
   for j in 1:cols(M)
     if !iszero(M[i,j])
       return false
@@ -64,7 +69,7 @@ function is_zero_row{T}(M::MatElem{T}, i::Int)
   return true
 end
 
-function is_zero_row{T <: Integer}(M::Array{T, 2}, i::Int)
+function iszero_row{T <: Integer}(M::Array{T, 2}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0 
       return false
@@ -73,7 +78,7 @@ function is_zero_row{T <: Integer}(M::Array{T, 2}, i::Int)
   return true
 end
 
-function is_zero_row(M::Array{fmpz, 2}, i::Int)
+function iszero_row(M::Array{fmpz, 2}, i::Int)
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0 
       return false
@@ -82,7 +87,7 @@ function is_zero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function is_zero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
+function iszero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -129,7 +134,7 @@ end
 #  y = lift_unsigned(x)
 #  for i in cols(y):-1:1
 #    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-#    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+#    if Bool(ccall((:fmpz_iszero, :libflint), Int, (Ptr{fmpz}, ), z))
 ##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
 #      ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
 ##      for k in 1:i-1
@@ -167,7 +172,7 @@ end
 #  y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
 #  for i in cols(y):-1:1
 #    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-#    if Bool(ccall((:fmpz_is_zero, :libflint), Int, (Ptr{fmpz}, ), z))
+#    if Bool(ccall((:fmpz_iszero, :libflint), Int, (Ptr{fmpz}, ), z))
 #    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
 ##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
 #      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
@@ -206,6 +211,41 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
    ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Void,
                 (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &d)
    return x
+end
+
+function ishnf(x::fmpz_mat, shape::Symbol)
+  if shape == :upperright
+    return ishnf(x)
+  elseif shape == :lowerleft
+    r = rows(x)
+    i = 0
+    j_old = cols(x) + 1
+
+    for i in rows(x):-1:1
+
+      if iszero_row(x, i)
+        break
+      end
+
+      j = cols(x)
+      while iszero(x[i, j])
+        j = j - 1
+      end
+      x[i, j] < 0 && return false
+      j >= j_old && return false
+      for k in i+1:r
+        x[k, j] < 0 && return false
+        x[k, j] >= x[i, j] && return false
+      end
+      j_old = j
+      i = i - 1
+    end
+
+    for k in i:-1:1
+      !iszero_row(x, k) && return false
+    end
+    return true
+  end
 end
 
 #function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
@@ -463,7 +503,7 @@ end
 # 
 ################################################################################
 
-function abs_max(a::fmpz_mat)
+function maxabs(a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -570,9 +610,9 @@ function kernel(a::nmod_mat)
   z,n = _right_kernel(x)
   z = transpose(z)
   #println(z)
-  ar = typeof(Array(GenRes{fmpz}, cols(z)))[]
+  ar = typeof(Array{GenRes{fmpz}}(cols(z)))[]
   for i in 1:n 
-    t = Array(GenRes{fmpz}, cols(z))
+    t = Array{GenRes{fmpz}}(cols(z))
     for j in 1:cols(z)
       t[j] = z[i,j]
     end
@@ -592,8 +632,8 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
-  pivots = Array(Int, r)
-  nonpivots = Array(Int, cols(b) - r)
+  pivots = Array{Int}(r)
+  nonpivots = Array{Int}(cols(b) - r)
   X = zero(MatrixSpace(ZZ,cols(b),cols(b)))
 
   if r == 0
@@ -632,7 +672,7 @@ function _kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
   i = 1
   for i in 1:rows(H)
-    if is_zero_row(H, i)
+    if iszero_row(H, i)
       break
     end
   end
@@ -665,3 +705,79 @@ function swap_rows!(M::MatElem, i::Int, j::Int)
     M[j, k] = t
   end
 end
+doc"""
+    isposdef(a::fmpz_mat) -> Bool
+
+> Tests if $a$ positive definite by testing if all principal minors
+> have positive determinant.
+"""
+function isposdef(a::fmpz_mat)
+  for i=1:rows(a)
+    if det(submat(a, 1, 1, i, i)) <= 0
+      return false
+    end
+  end
+  return true
+end
+
+#scales the i-th column of a by 2^d[1,i]
+function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
+  s = size(a)
+  R = RealRing()
+  tmp_mpz = R.z1
+  for i = 1:s[1]
+    for j = 1:s[2]
+      e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Clong, Int32), &a[i,j], &tmp_mpz, e+Clong(d[1,j]), __get_rounding_mode())
+    end
+  end
+end
+
+#converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
+function round_scale(a::Array{BigFloat, 2}, l::Int)
+  s = size(a)
+  b = MatrixSpace(FlintZZ, s[1], s[2])()
+  return round_scale!(b, a, l)
+end
+ 
+function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
+  s = size(a)
+  R = RealRing()
+  tmp_mpz = R.z1
+  tmp_fmpz = R.zz1
+  tmp_mpfr = R.t1
+  for i = 1:s[1]
+    for j = 1:s[2]
+      e = a[i,j].exp
+      a[i,j].exp += l
+      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], __get_rounding_mode())
+      a[i,j].exp = e
+      f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}),
+        &tmp_mpz, &tmp_mpfr)
+      ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
+        &tmp_fmpz, &tmp_mpz)
+      if f > 0  
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, f)
+      else
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, -f);
+      end
+      setindex!(b, tmp_fmpz, i, j)
+    end
+  end
+  return b
+end
+
+function shift!(g::fmpz_mat, l::Int)
+  for i=1:rows(g)
+    for j=1:cols(g)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &g, i-1, j-1)
+      if l > 0
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
+      else
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
+      end
+    end
+  end
+  return g
+end
+

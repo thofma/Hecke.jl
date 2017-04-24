@@ -30,17 +30,29 @@ export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_
   Lots of powers are computed over and over again.
 =#
 
-function rho_coeff{T<: Number}(x::T, prec = 55)
+function rho_coeff{T<: Number}(x::T, prec::Int = 55; all::Bool = false)
   a = analytic_func{T}()
   k = ceil(x)
+  all_a = Array{analytic_func{T}, 1}()
+    
   a.coeff = vcat([ 1-log(T(2))] ,
                 [1/(i*T(2)^i) for i=1:prec])
   a.valid=(1,2)
+  if all
+    push!(all_a, deepcopy(a))
+  end
+
   while k>a.valid[2]
     d = [ sum([a.coeff[j+1]/(i*(a.valid[2]+1)^(i-j)) for j=0:(i-1) ])  for i=1:prec]
     d = vcat([1/(a.valid[2]) * sum([d[j]/(j+1) for j=1:prec ])] , d)
     a.coeff = d
     a.valid = (a.valid[1]+1, a.valid[2]+1)
+    if all
+      push!(all_a, deepcopy(a))
+    end
+  end
+  if all
+    return all_a
   end
   return a
 end
@@ -52,8 +64,13 @@ function analytic_eval{T<:Number}(a::analytic_func{T}, b::T)
   end
   return s
 end
- 
-function dickman_rho(x::Number, prec=55)
+
+doc"""
+***
+   dickman_rho(x::Number, prec::Int=55) -> Number
+> Evaluates the Dickman-$\rho$ function at $x$.
+"""
+function dickman_rho(x::Number, prec::Int=55)
   if x < 0
     error("argument must be positive")
   end
@@ -68,6 +85,50 @@ function dickman_rho(x::Number, prec=55)
   
   k = ceil(x)
   return analytic_eval(rho_coeff(x, prec), k-x)
+end
+
+doc"""
+***
+   dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) -> Number[]
+> Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
+"""
+function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
+  if b < 0
+    error("argument must be positive")
+  end
+
+  x = b*e.stop
+  k = ceil(x)
+  rc = rho_coeff(x, prec, all = true)
+  val = Array(typeof(b), length(e))
+
+  x = b*e.start
+  if x <= 1
+    val[1] = one(b)
+  elseif x <= 2
+    val[1] = 1-log(x)
+  else
+    k = ceil(x)
+    f = find(x->x.valid[2] == k, rc)
+    @assert length(f)==1
+    val[1] = analytic_eval(rc[f[1]], k-x)
+  end                                  
+  vi = 2
+  for l in (e.start+1):e.stop
+    x += b
+    if x <= 1
+      val[vi] = one(b)
+    elseif x <= 2
+      val[vi] = 1-log(x)
+    else
+      k = ceil(x)
+      f = find(x->x.valid[2] == k, rc)
+      @assert length(f)==1
+      val[vi] = analytic_eval(rc[f[1]], k-x)
+    end
+    vi += 1
+  end  
+  return val
 end
 
 function bach_F{T<: Number}(x::T)
@@ -103,21 +164,23 @@ function bach_J{T <: Number}(u::T, v::T, w::T, prec)
                              sum([(B/C)^j/j for j=1:i]))
     end
     a = rho_coeff(k*1.0, prec)
-    return sum([a.coeff[i+1] * H_i(u, v, w, i) for i=0:(length(a.coeff)-1)])
+#H_i(...., 0) is zero as it is the empty sum. Lets omit this
+    return sum([a.coeff[i+1] * H_i(u, v, w, i) for i=1:(length(a.coeff)-1)])
   else
-    #println("recurse: k = ", Int(k))
+#    println("recurse: k = ", Int(k))
     return bach_J(w/(w-k+1), v, w, prec) + bach_J(u, w/(w-k+1), w, prec)
   end
 end
 
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
-@doc """
+doc"""
+***
   exponential_integral(x::AbstractFloat) -> AbstractFloat
   ei(x::AbstractFloat) -> AbstractFloat
 
-  Compute the exponential integral function
-""" ->
+>  Compute the exponential integral function
+"""
 function exponential_integral(x::BigFloat)
   z = BigFloat()
   ccall((:mpfr_eint, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &z, &x, __get_rounding_mode())
@@ -130,14 +193,14 @@ end
 
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
-@doc """
+doc"""
+***
   logarithmic_integral(x::AbstractFloat) -> AbstractFloat
   li(x::AbstractFloat) -> AbstractFloat
 
-  Compute the logarithmic integral function. Used as an approximation
-  for the number of primes up to x
-""" ->
-
+>  Compute the logarithmic integral function. Used as an approximation
+>  for the number of primes up to x
+"""
 function logarithmic_integral(x::AbstractFloat)
   return exponential_integral(log(x))
 end
@@ -178,13 +241,12 @@ Then
   P(W=x) = exp(-l)l^x/x!
 =#  
 
-@doc """
+doc"""
   euler_phi(n::Int) -> Int
 
-  The Euler ϕ function of n
-  Ie. the number of integers 0<= i = n coprime to n
-""" ->
-
+>  The Euler ϕ function of n
+>  ie. the number of integers 0<= i = n coprime to n
+"""
 function euler_phi(a::Int)
   f = factor(a)
   e = 1
@@ -200,7 +262,6 @@ an easy excercise in induction...
   vol = b(sum_0^{n-1} (-1)^k/k! log(b)^k)
      -> b exp(log(1/b)) = 1 very rapidly for n-> infty
 =#
-
 function vol{T<:Number}(n::Int, b::T)
   lb = log(b)
   s = [typeof(b)(1)]
@@ -211,6 +272,67 @@ function vol{T<:Number}(n::Int, b::T)
   end
   return b*sum(s)
 end
+
+doc"""
+    psi_guess(x::Number, B::Int) -> Number
+> Uses the dickman_rho function to estimate $\psi(x, B)$ the number
+> of $B$-smooth integers bounded by $x$.
+"""
+function psi_guess(x::Number, B::Int)
+  return x*dickman_rho(log(x)/log(B))
+end
+
+doc"""
+    psi_guess(x::Number, e::UnitRange, B::Int) -> Number
+> Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
+> of $B$-smooth integers bounded by $x^i$ for $i \in e$.
+"""
+function psi_guess(x::Number, B::Int, e::UnitRange)
+  val = [x^e.start]
+  for i=(e.start + 1):e.stop
+    push!(val, val[end]*x)
+  end
+  d = dickman_rho(log(x)/log(B), e)
+  @assert length(val) == length(d)
+  return [d[i]*val[i] for i = 1:length(e)]
+end
+
+
+function class_group_expected(O::NfMaxOrd, B::Integer, samples::Int = 100)
+  d = root(abs(discriminant(O)), 2)
+  return class_group_expected(d, degree(O), Int(B), samples)
+end
+
+function class_group_expected(O::NfMaxOrd, B::fmpz, samples::Int = 100)
+  d = root(abs(discriminant(O)), 2)
+  return class_group_expected(d, degree(O), Int(B), samples)
+end
+
+function class_group_expected(c::ClassGrpCtx, samples::Int = 100)
+  id = c.FB.ideals
+  O = order(id[1])
+  B = norm(id[1])
+  return class_group_expected(O, B, samples)
+end
+
+function class_group_expected(d::fmpz, deg::Int, B::Int, samples::Int = 100)
+  #d is the norm of elements we can sample, typically, sqrt(disc)
+  #B is the factor base bound
+  #we want
+  # 1/sum (delta(psi)/delta(x)) * delta(vol)
+
+  d = max(d, fmpz(100))
+  d = BigFloat(d)
+  
+  pg = psi_guess(d^(1/samples), B, 1:samples)
+  x = log(d)/samples
+  xi = [ exp(i*x) for i=1:samples]
+  vo = [vol(deg, exp(i*x)/d) for i=1:samples]
+  @assert length(pg) == samples
+  @assert length(xi) == samples
+  @assert length(vo) == samples
+  return Int(ceil(1/sum([(pg[i+1]-pg[i])/(xi[i+1]-xi[i])*(vo[i+1]-vo[i]) for i=1:(samples-1)])))
+end                           
 
 #= D is supposed to be the disccriminant
    n the dimension
