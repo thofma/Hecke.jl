@@ -348,10 +348,16 @@ function augment_steel{E}(S::Array{E, 1}, a::E, start::Int = 1)
     return S
   end
   
-  g = E(0)
+  g = a
+  new = true
 
-  while i<=length(S) && !isunit(a) 
-    g = gcd_into!(g, S[i], a)
+  while i<=length(S) && !isone(a) 
+    if new
+      g = gcd(S[i], a)
+      new = false
+    else
+      g = gcd_into!(g, S[i], a)
+    end
     if isunit(g)
       i += 1
       continue
@@ -412,7 +418,7 @@ doc"""
 
 > Returns a coprime base for S, ie. the resulting array contains pairwise coprime objects that multiplicatively generate the same set as the input array.
 """
-coprime_base = coprime_base_steel
+coprime_base(x) = coprime_base_steel(x)
 
 doc"""
 ***
@@ -420,6 +426,6 @@ doc"""
 
 > Given a coprime array S, insert a new element, ie. find a coprime base for push(S, a)
 """
-coprime_base_insert = augment_steel
+coprime_base_insert(S, a) = augment_steel(S, a)
 
 
