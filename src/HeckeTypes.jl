@@ -1554,6 +1554,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   largePrime_no_success::Int
 
   normStat::Dict{Int, Int}
+  expect::Int
 
   randomClsEnv::Array{NfMaxOrdIdl, 1}
 

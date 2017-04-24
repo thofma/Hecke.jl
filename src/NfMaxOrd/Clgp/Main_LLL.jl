@@ -2,7 +2,7 @@
 # same with LLL
 ################################################################################
 
-function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expect::Int, rat::Float64, max_good::Int = 2)
+function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat::Float64, max_good::Int = 2)
   bad_norm = 0
   rk = rank(c.M)
   good = 0
@@ -18,8 +18,8 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expe
       continue
     end
     fl = class_group_add_relation(c, e, n, norm(I.A), integral = true)
-    if !fl  && I.cnt/(good+1) > expect
-      @vprint :ClassGroup 2 "not enough progress $(I.cnt) $expect $good\n"
+    if !fl  && I.cnt/(good+1) > 2*c.expect
+      @vprint :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good\n"
       break
     end
     if fl 
@@ -38,14 +38,14 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, expe
   end
 end
 
-function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.2)
+function class_group_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2)
   O = order(c.FB.ideals[1])
   nb = nbits(abs(discriminant(O)))
   nb = div(nb, 2) + 30
 
   rt = time_ns()
   I = class_group_small_lll_elements_relation_start(c, O)
-  single_env(c, I, nb, expect, rat/10, -1)
+  single_env(c, I, nb, rat/10, -1)
   @vprint :ClassGroup 1 "search in order:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
 
   @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
@@ -53,7 +53,7 @@ function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.
 
   for p = piv
     I = class_group_small_lll_elements_relation_start(c, c.FB.ideals[p])
-    single_env(c, I, nb, expect, rat, 1)
+    single_env(c, I, nb, rat, 1)
   end
 
   @vprint :ClassGroup 1 "search in ideals:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
@@ -65,12 +65,12 @@ function class_group_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.
   @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
   @vprint :ClassGroup 1 "$(piv)\n"
 
-  class_group_new_relations_via_lll(c, expect, rat, extra = -1)
+  class_group_new_relations_via_lll(c, rat, extra = -1)
 
   return c
 end
 
-function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat::Float64 = 0.2; extra::Int = 5, rand_exp::Int = 1)
+function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; extra::Int = 5, rand_exp::Int = 1)
 
   O = order(c.FB.ideals[1])
   nb = nbits(abs(discriminant(O)))
@@ -105,7 +105,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, expect::Int = 10, rat
       end
       @vtime :ClassGroup 2 J *= c.FB.ideals[p]^rand_exp
       @vtime :ClassGroup 2 I = class_group_small_lll_elements_relation_start(c, J)
-      @vtime :ClassGroup 2 single_env(c, I, nb, expect, rat, 1+rand_exp)
+      @vtime :ClassGroup 2 single_env(c, I, nb, rat, 1+rand_exp)
       if extra > 0 && st + extra <= c.rel_cnt
         return
       end

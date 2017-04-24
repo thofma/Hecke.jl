@@ -124,7 +124,8 @@ function class_group_ctx(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 
     class_group_find_relations2(c)
   else
     d = root(abs(discriminant(O)), 2)
-    class_group_via_lll(c, class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100))
+    c.expect = class_group_expected(c, 100)
+    class_group_via_lll(c)
   end
 
   _set_ClassGrpCtx_of_order(O, c)
@@ -207,7 +208,6 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
 
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
 
-  E = 1
   need_more = true
 
   hnftime = 0.0
@@ -230,10 +230,10 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
     #TODO: use LLL?
     if need_more
       d = root(abs(discriminant(O)), 2)
-      E = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
+      c.expect = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
       need_more = false
     end
-    class_group_new_relations_via_lll(c, E, extra = unit_rank(O) - length(U.units) +1)
+    class_group_new_relations_via_lll(c, extra = unit_rank(O) - length(U.units) +1)
     class_group_get_pivot_info(c)
   end
   @assert U.full_rank
@@ -257,14 +257,13 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
   end  
 
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
-  E = 1
   need_more = true
   while true
     r = _unit_group_find_units(U, c)
     if r == 0
       if need_more
         d = root(abs(discriminant(O)), 2)
-        E = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
+        c.expect = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
         need_more = false
       end
       class_group_new_relations_via_lll(c, E)
