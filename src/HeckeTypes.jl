@@ -1581,6 +1581,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0
     r.largePrime_no_success = 0
+    r.normStat = Dict{Int, Int}()
     r.B2 = 0
     r.H_trafo = []
     r.finished = false

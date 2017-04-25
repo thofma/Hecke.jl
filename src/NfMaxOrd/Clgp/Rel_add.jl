@@ -35,6 +35,14 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
   if a in clg.RS 
     return false
   end
+
+  nb = div(nbits(num(n)), 2)
+  if haskey(clg.normStat, nb)
+    clg.normStat[nb] += 1
+  else
+    clg.normStat[nb] = 1
+  end
+  
   O = order(clg.FB.ideals[1]) 
   @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
   if integral #element is known to be integral
@@ -55,7 +63,7 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
         b = a//lp[1]
         fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1), integral = false)
         if fl 
-          clg.largePrime_success += 0
+          clg.largePrime_success += 1
         else
           clg.largePrime_no_success += 1
         end
