@@ -117,6 +117,9 @@ function class_group_ctx(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 
 
   c = class_group_init(O, bound, complete = false)
   c.B2 = bound * large
+  c.hnf_time = 0.0
+  c.unit_time = 0.0
+  c.unit_hnf_time = 0.0
 
   if false # method==1
     class_group_find_relations(c)
@@ -215,10 +218,10 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
   while true
     @v_do :UnitGroup 1 pushindent()
     if unit_method == 1
-      r = _unit_group_find_units(U, c)
+      c.unit_time += @elapsed r = _unit_group_find_units(U, c)
     else
-      hnftime += @elapsed module_trafo_assure(c.M)
-      r = _unit_group_find_units_with_trafo(U, c)
+      c.unit_hnf_time += @elapsed module_trafo_assure(c.M)
+      c.unit_time += @elapsed r = _unit_group_find_units_with_trafo(U, c)
     end
 
     @v_do :UnitGroup 1 popindent()
@@ -242,7 +245,7 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
   c.finished = true
   U.finished = true
 
-  @vprint :ClassGroup 1 "hnftime $hnftime\n"
+  @vprint :ClassGroup 1 "hnftime $c.hnf_time\n"
 
   return c, U, _validate_class_unit_group(c, U)
 end

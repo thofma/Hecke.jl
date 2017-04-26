@@ -30,10 +30,7 @@ end
 
 function class_group_process_relmatrix(clg::ClassGrpCtx)
 
-  t = time_ns()
-  clg.h = check_index(clg.M)
-
-  clg.hnf_time += time_ns()-t
+  clg.hnf_time += @elapsed clg.h = check_index(clg.M)
   clg.hnf_call += 1
 end
 
@@ -42,7 +39,7 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
   # If we are in the full rank case, they come from the hnf itself,
   # Otherwise we look at the echelon form of the reduction.
 
-  h = check_index(clg.M)
+  clg.hnf_time += @elapsed h = check_index(clg.M)
   clg.h = h
   return (h, non_trivial_pivot(clg.M))
 end
@@ -56,6 +53,7 @@ end
 function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
                 limit::Int = 10)
   clg.hnf_time = 0.0
+  clg.unit_time = 0.0
   clg.hnf_call = 0
   clg.rel_cnt = 0
   clg.bad_rel = 0

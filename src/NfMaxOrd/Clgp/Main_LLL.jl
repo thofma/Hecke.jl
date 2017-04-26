@@ -11,7 +11,7 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat:
     n = norm_div(e, norm(I.A), nb)
     if nbits(num(n)) > nb - 20
       bad_norm += 1
-      if I.cnt > 100 && bad_norm / I.cnt > 0.1
+      if I.cnt > 100  && bad_norm / I.cnt > 0.1
         @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(num(n))) should be <= $(nb - 20) $bad_norm $(I.cnt)\n"
         break
       end

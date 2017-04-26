@@ -965,6 +965,7 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+  x.unit_hnf_time += time_kernel
   return 1
 end
 
@@ -1103,6 +1104,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+
+  x.unit_hnf_time += time_kernel
   return 1
 end
 
