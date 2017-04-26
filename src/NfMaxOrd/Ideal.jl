@@ -1240,7 +1240,10 @@ doc"""
 > such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl)
-  return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
+  if has_2_elem(A) 
+    return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
+  end
+  error("not implemented yet")
 end
 
 ################################################################################
