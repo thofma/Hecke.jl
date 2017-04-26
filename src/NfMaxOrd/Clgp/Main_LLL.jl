@@ -94,7 +94,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
 
   start = max(1, length(c.FB.ideals)-10*(1+div(rand_exp, 3)))
   stop = length(c.FB.ideals)
-  rand_env = random_init(c.FB.ideals[start:stop])
+  rand_env = random_init(c.FB.ideals[start:stop], reduce = false)
   while true
     for p = piv
       @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env))\n"

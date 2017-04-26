@@ -316,10 +316,10 @@ end
 function enum_ctx_short_elements{A,B,C}(E::enum_ctx{A,B,C}, c::fmpz, limit=-1)
   enum_ctx_start(E, c)
   if enum_ctx_next(E)
-    l = transpose(E.x)
+    l = E.x
   end
-  while enum_ctx_next{A,B,C}(E) && (limit == -1 || limit >= Base.size(l, 1))
-    l = vcat(l, transpose(E.x))
+  while enum_ctx_next(E) && (limit == -1 || limit >= Base.size(l, 1))
+    l = vcat(l, E.x)
   end
   return l
 end
