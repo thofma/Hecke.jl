@@ -77,8 +77,8 @@ add_verbose_scope(:ClassGroup_time)
 add_verbose_scope(:ClassGroup_gc)
 
 add_assert_scope(:ClassGroup)
-set_assert_level(:ClassGroup, 1)
-set_assert_level(:LatEnum, 1)
+set_assert_level(:ClassGroup, 0)
+set_assert_level(:LatEnum, 0)
 
 for i in ["Clgp/Ctx.jl" 
           "Clgp/FacBase_Euc.jl"
@@ -298,8 +298,8 @@ doc"""
 > Returns an isomorphism map $f$ from $A$ to the set of ideals of $O$.
 > `A = domain(f)`. 
 """
-function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, redo::Bool = false)
-  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo)
+function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1)
+  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method)
   @assert b==1
   return class_group(c)
 end
@@ -313,8 +313,8 @@ doc"""
 > `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
 > obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
 """
-function unit_group(O::NfMaxOrd)
-  c, U, b = _class_unit_group(O)
+function unit_group(O::NfMaxOrd; method::Int = 3, unit_method::Int = 1)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
   @assert b==1
   return unit_group(c, U)
 end
@@ -327,8 +327,8 @@ doc"""
 > `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
 > obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
 """
-function unit_group_fac_elem(O::NfMaxOrd)
-  c, U, b = _class_unit_group(O)
+function unit_group_fac_elem(O::NfMaxOrd; method::Int = 3, unit_method::Int = 1)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
   @assert b==1
   return unit_group_fac_elem(c, U)
 end
