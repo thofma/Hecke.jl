@@ -1099,6 +1099,12 @@ type NfMaxOrdIdl <: NfOrdIdl
     C = NfMaxOrdIdl(O)
     C.princ_gen = O(x)
     C.princ_gen_special = (1, Int(x), fmpz(0))
+    C.gen_one = x
+    C.gen_two = O(x)
+    C.norm = x^degree(O)
+    C.minimum = x
+    C.gens_normal = x
+    C.gens_weakly_normal = true
     return C
   end
 
@@ -1108,6 +1114,12 @@ type NfMaxOrdIdl <: NfOrdIdl
     C = NfMaxOrdIdl(O)
     C.princ_gen = O(x)
     C.princ_gen_special = (2, Int(0), abs(x))
+    C.gen_one = x
+    C.gen_two = O(x)
+    C.norm = x^degree(O)
+    C.minimum = x
+    C.gens_normal = x
+    C.gens_weakly_normal = true
     return C
   end
 
