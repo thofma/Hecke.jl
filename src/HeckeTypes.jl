@@ -317,11 +317,11 @@ type SMatSpace{T} <: Ring
 
   function SMatSpace(R::Ring, r::Int, c::Int, cached = true)
     if haskey(SMatSpaceDict, (R, r, c))
-      return SMatSpace[R, r, c,]::SMatSpace{T}
+      return SMatSpaceDict[R, r, c,]::SMatSpace{T}
     else
       z = new{T}(r, c, R)
       if cached
-        SMatSpace[R, r, c] = z
+        SMatSpaceDict[R, r, c] = z
       end
       return z
     end
