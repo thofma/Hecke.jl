@@ -35,6 +35,9 @@
 export isunit, istorsion_unit, isindependent, unit_group
 
 add_verbose_scope(:UnitGroup)
+add_assert_scope(:UnitGroup)
+set_assert_level(:UnitGroup, 0)
+
 
 ################################################################################
 #
@@ -832,7 +835,7 @@ end
 function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Processing ClassGrpCtx to find units ... \n"
 
-  @vprint :UnitGroup 1 "Relation matrix has size $(rows(x.M)) x $(cols(x.M))\n"
+  @vprint :UnitGroup 1 "Relation module  $(x.M)\n"
 
   O = order(u)
 
@@ -962,6 +965,7 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+  x.unit_hnf_time += time_kernel
   return 1
 end
 
@@ -1008,10 +1012,10 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     xj = rand(1:rows(x.M.rel_gens))
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, x.M.rel_gens[xj])
-    @assert length(k.values) == 0 || gcd(foldr(gcd, fmpz(0), k.values), d) == 1
+    @hassert :UnitGroup 1 length(k.values) == 0 || gcd(foldr(gcd, fmpz(0), k.values), d) == 1
 
     y = FacElem(vcat(x.R_gen[k.pos], x.R_rel[xj]), vcat(k.values, -d))
-    @assert abs(norm(y)) == 1
+    @hassert :UnitGroup 2 isunit(y)
 
     @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 
@@ -1062,7 +1066,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add])
     for i=1:s.r
       y = FacElem(ge[s[i].pos], s[i].values)
-      @assert abs(norm(y)) == 1
+      @hassert :UnitGroup 2 isunit(y)
 
       @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 
@@ -1100,6 +1104,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
+
+  x.unit_hnf_time += time_kernel
   return 1
 end
 

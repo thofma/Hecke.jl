@@ -49,13 +49,6 @@ function FacElem(x::nf_elem)
   return z
 end
 
-#CF: this does not test x to be a unit, x needs to be integral as well
-#    with current technology, we cannot test this
-#    thus I renamed/ removed this function
-function _isunit(x::FacElem{nf_elem})
-  return abs(norm(x)) == 1
-end
-
 function istorsion_unit{T}(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16)
   @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
 
@@ -224,7 +217,7 @@ function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::
   r,s = signature(K)
   c = conjugates_arb_log(x, p)
   R = parent(c[1])
-  n = (log(root(R(abs(norm(x))), degree(K))))
+  n = (log(root(R(abs(norm(x))), degree(K)))) #todo: don't compute the norm
   for i=1:r
     c[i] -= n
   end

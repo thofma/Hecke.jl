@@ -1553,6 +1553,9 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   bad_rel::Int
   hnf_call::Int
   hnf_time::Float64
+  unit_time::Float64
+  unit_hnf_time::Float64
+
   last::Int
   op::Array # of pairs: Map, perm where Map is a field automorphism
             # and perm is the induced operation on the factor base
