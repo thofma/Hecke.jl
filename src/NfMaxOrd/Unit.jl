@@ -932,7 +932,7 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
 
     y = FacElem(vcat(x.R_gen, x.R_rel), kelem)
 
-    #!isunit(y) && throw(BlaError(x, kelem))
+    @hassert :UnitGroup 2 _isunit(y)
 
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
@@ -1015,7 +1015,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     @hassert :UnitGroup 1 length(k.values) == 0 || gcd(foldr(gcd, fmpz(0), k.values), d) == 1
 
     y = FacElem(vcat(x.R_gen[k.pos], x.R_rel[xj]), vcat(k.values, -d))
-    @hassert :UnitGroup 2 isunit(y)
+    @hassert :UnitGroup 2 _isunit(y)
 
     @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 
@@ -1066,7 +1066,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add])
     for i=1:s.r
       y = FacElem(ge[s[i].pos], s[i].values)
-      @hassert :UnitGroup 2 isunit(y)
+      @hassert :UnitGroup 2 _isunit(y)
 
       @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 

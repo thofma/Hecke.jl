@@ -215,16 +215,19 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
 
   hnftime = 0.0
 
+  do_units = true
   while true
     @v_do :UnitGroup 1 pushindent()
-    if unit_method == 1
-      c.unit_time += @elapsed r = _unit_group_find_units(U, c)
-    else
-      c.unit_hnf_time += @elapsed module_trafo_assure(c.M)
-      c.unit_time += @elapsed r = _unit_group_find_units_with_trafo(U, c)
-    end
+    if do_units
+      if unit_method == 1
+        c.unit_time += @elapsed r = _unit_group_find_units(U, c)
+      else
+        c.unit_hnf_time += @elapsed module_trafo_assure(c.M)
+        c.unit_time += @elapsed r = _unit_group_find_units_with_trafo(U, c)
+      end
 
-    @v_do :UnitGroup 1 popindent()
+      @v_do :UnitGroup 1 popindent()
+    end
     if r == 1  # use saturation!!!!
       if _validate_class_unit_group(c, U) == 1
         break
@@ -237,7 +240,13 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
       need_more = false
     end
     class_group_new_relations_via_lll(c, extra = unit_rank(O) - length(U.units) +1)
+    h_old = c.h
     class_group_get_pivot_info(c)
+    if h_old == c.h
+      do_units = true
+    else
+      do_units = false
+    end
   end
   @assert U.full_rank
   _set_UnitGrpCtx_of_order(O, U)

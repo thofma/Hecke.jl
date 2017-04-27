@@ -33,6 +33,7 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   #until the 1st (pivot) change in A
+  new_g = false
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -41,6 +42,9 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
     end  
     if j > rows(A) || A.rows[j].pos[1] > s
       if g.values[1] < 0
+        if !new_g
+          g = copy(g)
+        end
         for i=1:length(g.values)
           g.values[i] *= -1
         end
@@ -50,6 +54,7 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
       g = Hecke.add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
+      new_g = true
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
@@ -57,11 +62,15 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      new_g = true
       @hassert :HNF 2  A[j].values[1] == x
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     end
   end
   if length(g.values) > 0 && g.values[1] < 0
+    if !new_g
+      g = copy(g)
+    end
     for i=1:length(g.values)
       g.values[i] *= -1
     end
@@ -242,6 +251,8 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
     trafos = []
   end 
 
+  new_g = false
+
   piv = Int[]
   while length(g)>0
     s = g.pos[1]
@@ -255,6 +266,9 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
         if with_trafo
           push!(trafos, TrafoScale{fmpz}(rows(A) + 1, fmpz(-1)))
         end
+        if !new_g
+          g = copy(g)
+        end
         for i=1:length(g.values)
           g.values[i] *= -1
         end
@@ -266,6 +280,7 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
       else
         g = reduce_right(A, g)
       end
+      new_g = true
 
       if A.r == A.c
         @hassert :HNF 1  length(g) == 0 || min(g) >= 0
@@ -278,6 +293,7 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
     if divides(p, A.rows[j].values[1])[1]
       sca =  -divexact(p, A.rows[j].values[1])
       g = Hecke.add_scaled_row(A[j], g, sca)
+      new_g = true
       with_trafo ? push!(trafos, TrafoAddScaled(j, rows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -286,6 +302,7 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
       c = -div(p, x)
       d = div(A.rows[j].values[1], x)
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
+      new_g = true
       if with_trafo
         push!(trafos, TrafoParaAddScaled(j, rows(A) + 1, a, b, c, d))
       end
@@ -311,6 +328,9 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
     end
   end
   if length(g.values) > 0 && g.values[1] < 0
+    if !new_g
+      g = copy(g)
+    end
     for i=1:length(g.values)
       g.values[i] *= -1
     end
