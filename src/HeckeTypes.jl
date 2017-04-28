@@ -1540,9 +1540,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   rel_cnt::Int
   bad_rel::Int
   hnf_call::Int
-  hnf_time::Float64
-  unit_time::Float64
-  unit_hnf_time::Float64
+  time::Dict{Symbol, Float64}
 
   last::Int
   op::Array # of pairs: Map, perm where Map is a field automorphism
@@ -1585,6 +1583,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
     r.largePrime_success = 0
     r.largePrime_no_success = 0
     r.normStat = Dict{Int, Int}()
+    r.time = Dict{Symbol, Float64}()
     r.B2 = 0
     r.H_trafo = []
     r.finished = false

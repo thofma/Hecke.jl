@@ -965,7 +965,7 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
-  x.unit_hnf_time += time_kernel
+  @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
   return 1
 end
 
@@ -1049,21 +1049,21 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
   while not_larger < 5 
 
-    add = []
+    add_units = []
     rel = SMat{fmpz}()
     for jj in 1:min(div(rows(x.M.rel_gens), 10)+1, 20)
       xj = rand(1:rows(x.M.rel_gens))
-      if xj in add
+      if xj in add_units
         continue
       end
-      push!(add, xj)
+      push!(add_units, xj)
       push!(rel, x.M.rel_gens[xj])
     end
 
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
-    time_kernel += @elapsed s = saturate(hcat(k, (-d)*id(SMat, FlintZZ, k.r)))
+    @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*id(SMat, FlintZZ, k.r)))
 
-    ge = vcat(x.R_gen[1:k.c], x.R_rel[add])
+    ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     for i=1:s.r
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
@@ -1105,7 +1105,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
 
-  x.unit_hnf_time += time_kernel
+  @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
   return 1
 end
 

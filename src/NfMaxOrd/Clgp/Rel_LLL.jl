@@ -69,6 +69,7 @@ function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
   #the 1st n relations are the basis elements
   if I.cnt < length(I.b)
     I.cnt += 1
+    I.elt = I.b[I.cnt]
     return deepcopy(I.b[I.cnt])
   end
   #the next 2*n*(n-1)/2 relations are the ones of weight 2
@@ -89,7 +90,8 @@ function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
       i += 1
     end
     I.cnt += 1
-    return I.b[i] + s*I.b[c+i]
+    I.elt = I.b[i] + s*I.b[c+i]
+    return I.elt
   end
 
   if I.cnt > (2*I.bd+1)^div(length(I.b), 2)

@@ -405,6 +405,36 @@ macro vtime(args...)
   end
 end
 
+#usage
+# @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
+# @vtime_add :ClassGroup 2 clg :saturate  0.5
+# -> clg.time[:saturate] += 
+function _vtime_add(D::Dict, k::Any, v::Any)
+  if haskey(D, k)
+    D[k] += v
+  else
+    D[k] = v
+  end
+end
+
+macro vtime_add(flag, level, var, key, value)
+  quote
+    if get_verbose_level($flag) >= $level
+      _vtime_add($(esc(var)).time, $key, $value)
+    end
+  end
+end
+
+macro vtime_add_elapsed(flag, level, var, key, stmt)
+  quote
+    tm = @elapsed $(esc(stmt))
+    if get_verbose_level($flag) >= $level
+      _vtime_add($(esc(var)).time, $key, tm)
+    end
+  end  
+end
+
+
 ################################################################################
 #
 #  Functions for timings
@@ -518,7 +548,6 @@ function vshow(A)
     end
   end
 end
-
 ################################################################################
 #
 #  Element types for parent types
