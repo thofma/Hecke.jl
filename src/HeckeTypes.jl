@@ -204,7 +204,7 @@ end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
   ccall((:_acb_vec_clear, :libarb), Void,
-              (Ptr{acb_struct}, Clong), x._roots, degree(x.poly))
+              (Ptr{acb_struct}, Int), x._roots, degree(x.poly))
 end
 
 ################################################################################

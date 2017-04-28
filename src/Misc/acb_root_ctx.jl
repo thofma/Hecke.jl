@@ -40,7 +40,7 @@
 function BigFloat(x::arb)
   a = BigFloat()
   b = BigFloat()
-  ccall((:arb_get_interval_mpfr, :libarb), Void, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{arb}, Clong), &a, &b, &x, precision(BigFloat))
+  ccall((:arb_get_interval_mpfr, :libarb), Void, (Ptr{BigFloat}, Ptr{BigFloat}, Ptr{arb}), &a, &b, &x)
   return (a+b)/2
 end
 

@@ -598,7 +598,7 @@ end
 
 function _right_kernel(x::nmod_mat)
   z = MatrixSpace(base_ring(x), cols(x), max(rows(x),cols(x)))()
-  n = ccall((:nmod_mat_nullspace, :libflint), Clong, (Ptr{nmod_mat}, Ptr{nmod_mat}), &z, &x)
+  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &z, &x)
   return z,n
 end
 
@@ -757,9 +757,9 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
       ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
         &tmp_fmpz, &tmp_mpz)
       if f > 0  
-        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, f)
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, UInt), &tmp_fmpz, &tmp_fmpz, f)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Culong), &tmp_fmpz, &tmp_fmpz, -f);
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, UInt), &tmp_fmpz, &tmp_fmpz, -f);
       end
       setindex!(b, tmp_fmpz, i, j)
     end
