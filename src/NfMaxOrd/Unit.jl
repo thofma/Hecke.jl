@@ -521,6 +521,7 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
 
   zz = Array{fmpz}(r + 1)
 
+  @vprint :UnitGroup 1 "Adding dependent unit ... \n"
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
   @v_do :UnitGroup 1 popindent()
@@ -553,7 +554,9 @@ function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
   if isdefined(U, :tentative_regulator)
     rreg = U.tentative_regulator
   else
+    @vprint :UnitGroup 1 "Computing regulator of independent units with 64 bits ... \n" 
     rreg = regulator(U.units, 64)
+    @vprint :UnitGroup 1 "done \n" 
   end
 
   bound = _denominator_bound_in_relation(rreg, K)
@@ -1490,7 +1493,7 @@ function reduce{T}(u::Array{T, 1}, prec::Int = 32)
     @vprint :UnitGroup 2 "reducing units by $U\n"
     pA = prod(row_norms(A))
     pL = prod(row_norms(L))
-    @vprint :UnitGroup 1 "reducing norms of logs from $pA -> $pL, rat is $(Float64(1.0*pA//pL))"
+    @vprint :UnitGroup 1 "reducing norms of logs from $pA -> $pL, rat is $(Float64(1.0*pA//pL))\n"
     u = transform(u, transpose(U))
     if pL >= pA
       return u

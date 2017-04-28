@@ -38,12 +38,12 @@ end
 
 type cfrac
   coeff::Ptr{fmpz}
-  n::Clong
-  l::Clong # real length
+  n::Int
+  l::Int # real length
 
-  function cfrac(x::Clong)
+  function cfrac(x::Int)
     z = new()
-    z.coeff = ccall((:_fmpz_vec_init, :libflint), Ptr{fmpz}, (Clong, ), x)
+    z.coeff = ccall((:_fmpz_vec_init, :libflint), Ptr{fmpz}, (Int, ), x)
     z.n = x
     finalizer(z, _cfrac_clear_fn)
     return z
@@ -51,7 +51,7 @@ type cfrac
 end
 
 function _cfrac_clear_fn(x::cfrac)
-  ccall((:_fmpz_vec_clear, :libflint), Void, (Ptr{fmpz}, Clong), x.coeff, x.n)
+  ccall((:_fmpz_vec_clear, :libflint), Void, (Ptr{fmpz}, Int), x.coeff, x.n)
 end
 
 function show(io::IO, x::cfrac)
@@ -68,20 +68,20 @@ end
 function cfrac(x::fmpq, y::Int)
   r = fmpq()
   z = cfrac(y)
-  l = ccall((:fmpq_get_cfrac, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpq}, Ptr{fmpq}, Clong), z.coeff, &r, &x, y)
+  l = ccall((:fmpq_get_cfrac, :libflint), Int, (Ptr{fmpz}, Ptr{fmpq}, Ptr{fmpq}, Int), z.coeff, &r, &x, y)
   z.l = l
   return z, r
 end
 
 function fmpq(x::cfrac)
   z = fmpq()
-  ccall((:fmpq_set_cfrac, :libflint), Void, (Ptr{fmpq}, Ptr{fmpz}, Clong), &z, x.coeff, x.l)
+  ccall((:fmpq_set_cfrac, :libflint), Void, (Ptr{fmpq}, Ptr{fmpz}, Int), &z, x.coeff, x.l)
   return z
 end
 
 function fmpq(x::cfrac, y::Int)
   z = fmpq()
-  ccall((:fmpq_set_cfrac, :libflint), Void, (Ptr{fmpq}, Ptr{fmpz}, Clong), &z, x.coeff, y)
+  ccall((:fmpq_set_cfrac, :libflint), Void, (Ptr{fmpq}, Ptr{fmpz}, Int), &z, x.coeff, y)
   return z
 end
 
