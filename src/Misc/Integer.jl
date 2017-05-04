@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-isprime(a::Integer) = isprime(fmpz(a))
-factor(a::Integer) = factor(fmpz(a))
+#isprime(a::Integer) = isprime(fmpz(a))
+#factor(a::Integer) = factor(fmpz(a))
 
 function next_prime(x::UInt, proof::Bool)
   z = ccall((:n_nextprime, :libflint), UInt, (UInt, Cint), x, Cint(proof))

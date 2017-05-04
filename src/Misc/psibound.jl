@@ -144,7 +144,7 @@ function start{T<: Integer}(A::PrimesSet{T})
   c_U = curr % A.sv
   c_M = A.mod % A.sv
   i = UInt(0)
-  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(curr)
+  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(fmpz(curr))
     curr += A.mod
     i += UInt(1)
   end
@@ -161,7 +161,7 @@ function start(A::PrimesSet{fmpz})
   c_U = curr % A.sv
   c_M = A.mod % A.sv
   i = UInt(0)
-  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(curr)
+  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(fmpz(curr))
     curr += A.mod
     i += UInt(1)
   end
@@ -184,7 +184,7 @@ function next{T<: Union{Integer, fmpz}}(A::PrimesSet{T}, st::T)
   i = UInt(0)
   c_U = st % A.sv
   c_M = m % A.sv
-  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(st)
+  while gcd(c_U +i*c_M, A.sv) != UInt(1) || !isprime(fmpz(st))
     st += m
     i += UInt(1)
   end

@@ -1741,7 +1741,7 @@ factor(A::NfMaxOrdIdl) = factor_dict(A)
 
 function factor_dict(A::NfMaxOrdIdl)
   ## this should be fixed
-  lf = factor(BigInt(minimum(A)))
+  lf = factor(minimum(A))
   lF = Dict{NfMaxOrdIdl, Int}()
   n = norm(A)
   O = order(A)
