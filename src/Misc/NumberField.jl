@@ -206,7 +206,7 @@ doc"""
 """
 function charpoly(a::nf_elem)
   d = den(a)
-  Zx = PolynomialRing(ZZ, string(parent(parent(a).pol).S))[1]
+  Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
   f = charpoly(Zx, representation_mat(d*a))
   return f(gen(parent(f))*d)
 end
@@ -372,7 +372,7 @@ function gcd_modular_kronnecker(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   a = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
-  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  db = Base.reduce(lcm, [den(coeff(b, i)) for i=0:degree(b)])
   d = gcd(da, db)
   a = a*da
   b = b*db
@@ -536,11 +536,11 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   p = p_start
   K = base_ring(parent(a))
   @assert parent(a) == parent(b)
-  g = zero(a)
+  g = zero(parent(a))
   d = fmpz(1)
   r = zero(K)
-  fa = zero(a)
-  fb = zero(b)
+  fa = zero(parent(a))
+  fb = zero(parent(b))
   last_g = (parent(a)(0), parent(a)(0), parent(a)(0), parent(a)(0))
  
   while true
@@ -601,10 +601,13 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
 end
 
 ###########################################################################
+
 import Nemo.issquarefree
+
 function issquarefree(x::GenPoly{nf_elem})
   return degree(gcd(x, derivative(x))) == 0
 end
+
 ###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   K = base_ring(f)
