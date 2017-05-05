@@ -6,8 +6,6 @@ type MapUnitGrp{T} <: Map{T, NfOrd}
   end
 end
 
-elem_type(::Type{NfOrd}) = NfOrdElem
-
 function show(io::IO, mC::MapUnitGrp)
   println(io, "UnitGroup map of $(codomain(mC))")
 end

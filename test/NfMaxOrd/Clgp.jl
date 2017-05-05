@@ -26,9 +26,10 @@
           ,(43,1),(44,1),(45,1),(46,1),(47,1),(48,1),(50,1)]
 
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
-          K, a = NumberField(x^2-d, "a");
+          K, a = NumberField(x^2-d, "a")
           O = maximal_order(K)
-          Cl, mCl = Hecke.class_group(O);
+          Cl, mCl = Hecke.class_group(O)
+          U, mU = Hecke.unit_group(O)
           @test order(Cl) == h
         end
       end
@@ -38,6 +39,7 @@
         K, a = NumberField(f, "a");
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O);
+        U, mU = Hecke.unit_group(O)
         @test order(Cl) == 1
       end
 
@@ -89,45 +91,53 @@
     @testset "K = Q[√2]" begin
       K, a = NumberField(x^2-2, "a");
       O = maximal_order(K)
-      Cl, U, b = Hecke._class_unit_group(O);
-      @test b == 1
+
+      Cl, mCl = Hecke.class_group(O);
+      UU, mU = Hecke.unit_group(O)
+
+      U = O.auxilliary_data[5]
+
       @test order(U) == O
       @test U.torsion_units_order == 2
       @test 1 in U.torsion_units
       @test -1 in U.torsion_units
       @test contains(AF(0.88137358701),U.tentative_regulator)
-      @test Cl.h == 1
+      @test order(Cl) == 1
     end
 
     @testset "K = Q[x]/(f), f = x^3 - 2" begin
       K, a = NumberField(x^2 - 3, "a");
       O = maximal_order(K);
-      Cl, U, b = Hecke._class_unit_group(O);
-      @test b == 1
-      @test order(U) == O
-      @test Cl.h == 1
+      Cl, mCl = Hecke.class_group(O);
+      UU, mU = Hecke.unit_group(O)
+
+      @test order(Cl) == 1
     end
 
     @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
       K, a = NumberField(x^5 - 11^2 * 7, "a");
       O = maximal_order(K)
-      Cl, U, b = Hecke._class_unit_group(O);
-      @test b == 1
+      Cl, mCl = Hecke.class_group(O);
+      UU, mU = Hecke.unit_group(O)
+
+      U = O.auxilliary_data[5]
+
       @test order(U) == O
       @test U.torsion_units_order == 2
       @test 1 in U.torsion_units
       @test -1 in U.torsion_units
       @test contains(AF(2027.9289425180057),U.tentative_regulator)
-      @test Cl.h == 5
+      @test order(Cl) == 5
     end
 
     @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
       K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
-      Cl, U, b = Hecke._class_unit_group(O);
-      @test b == 1
-      @test order(U) == O
-      @test Cl.h == 36
+
+      Cl, mCl = Hecke.class_group(O);
+      UU, mU = Hecke.unit_group(O)
+
+      @test order(Cl)== 36
     end
 
   end
