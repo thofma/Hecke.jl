@@ -3,7 +3,7 @@ function _arb_get_fmpq(x::arb)
   e = fmpz()
   m = fmpz()
   b = ccall((:arf_get_fmpz_2exp, :libarb), Cint, (Ptr{fmpz}, Ptr{fmpz}, Ptr{arf_struct}), &m, &e, mid)
-  @assert abs(e) < 2^63 - 1
+  @assert abs(e) < typemax(Int)
   ee = Int(e)
   return fmpq(m, fmpz(1))*fmpq(2)^(ee)
 end

@@ -53,7 +53,7 @@ function scaled_log_matrix{T}(u::Array{T, 1}, prec::Int = 32)
     if any(x->radius(x) > 1e-9, c)  # too small...
       @vprint :UnitGroup 2 "increasing prec in scaled_log_matrix, now: $prec"
       prec *= 2
-      if prec > 2^32
+      if prec > 2^30
         error("cannot do lll on units")
         break
       end
