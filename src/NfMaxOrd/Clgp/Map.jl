@@ -73,13 +73,13 @@ function class_group_disc_exp(a::FinGenGrpAbElem, c::ClassGrpCtx)
 end
 
 function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
-  if c.h==1
-    return fmpz[1]
-  end
   if length(c.dl_data) == 3
     s, T, C = c.dl_data
   else
     s, T, C, Ti = c.dl_data
+  end
+  if c.h==1
+    return C(fmpz[1])
   end
 #  println("start with $r")
   while length(r.pos)>0 && r.pos[1] < s
