@@ -231,7 +231,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   es = sub(c.M.basis, s:n, s:n)
   hnf!(es)
   es_dense = fmpz_mat(es)
-  S, T = snf_with_transform(es_dense, l=false, r=true)
+  S, _, T = snf_with_transform(es_dense, false, true)
 
   p = find(x->S[x,x]>1, 1:cols(S))
 

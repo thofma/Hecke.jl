@@ -564,7 +564,7 @@ function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   @assert nr >= 0 && nc >= 0
   @assert a+nr-1 <= rows(A) && b+nc-1 <= cols(A)
   M = MatrixSpace(FlintZZ, nr, nc)()::fmpz_mat
-  t = ZZ()
+  t = FlintZZ()
   for i = 1:nr
     for j = 1:nc
       getindex!(t, A, a+i-1, b+j-1)
@@ -659,9 +659,9 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
 
     for i in 1:cols(b) - r
       for j in 1:r
-        X[pivots[j],i] = - ZZ(b[j,nonpivots[i]])
+        X[pivots[j],i] = - FlintZZ(b[j,nonpivots[i]])
       end
-      X[nonpivots[i],i] = ZZ(1)
+      X[nonpivots[i],i] = FlintZZ(1)
     end
   end
   return X, r

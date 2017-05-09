@@ -109,7 +109,7 @@ function getindex{T}(A::SMat{T}, i::Int, j::Int)
       return ra.values[p]
     end
   end
-  return base_ring(A)
+  return zero(base_ring(A))
 end
 
 function getindex{T}(A::SMat{T}, i::Int)

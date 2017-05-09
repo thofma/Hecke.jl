@@ -627,7 +627,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
       rels = hnf(rels)
     end
     rels_hnf = hnf(rels)
-    rels_snf , V = snf_with_transform(rels_hnf;l=false)
+    rels_snf, _, V = snf_with_transform(rels_hnf, false, true)
     @assert size(rels_snf) == (n,m)
     @assert size(V) == (m,m)
     V_inv = inv(V)

@@ -130,7 +130,7 @@
     @testset "trivial" begin
       M = MatrixSpace(ZZ,1,1)([0])
       S = MatrixSpace(ZZ,1,1)([0])
-      T,L,R = snf_with_transform(M,l=true,r=true)
+      T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T
     end
@@ -138,7 +138,7 @@
     @testset "trivial" begin
       M = MatrixSpace(ZZ,1,1)([1])
       S = MatrixSpace(ZZ,1,1)([1])
-      T,L,R = snf_with_transform(M,l=true,r=true)
+      T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T
     end
@@ -146,9 +146,12 @@
     @testset "random" begin
       M = ZZ[834 599 214 915 ; 784 551 13 628 ; 986 5 649 100 ; 504 119 64 310 ]
       S = ZZ[1 0 0 0 ; 0 1 0 0 ; 0 0 1 0 ; 0 0 0 36533330310]
-      T,L,R = snf_with_transform(M,l=true,r=true)
+      T,L,R = snf_with_transform(M, true, true)
       @test S == T
       @test L*M*R == T
+      T,L,R = snf_with_transform(M, false, true)
+      T,L,R = snf_with_transform(M, true, false)
+      T,L,R = snf_with_transform(M, false, false)
     end
   end
 

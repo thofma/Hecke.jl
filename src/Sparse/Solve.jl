@@ -124,7 +124,8 @@ doc"""
 function det_mc(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    return prod([A[i,i] for i=1:A.r])
+    z = [ A[i, i] for i in 1:A.r]
+    return prod(z)
   end
   
   q = p
