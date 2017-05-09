@@ -311,6 +311,7 @@ function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   return gcd_modular_kronnecker(a, b)
 end
 
+# There is some weird type instability
 function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   # naive version, kind of
   # polys should be integral
@@ -328,10 +329,11 @@ function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   while true
     p = next_prime(p)
     me = modular_init(K, p)
-    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    t = Hecke.modular_proj(a, me)
+    fp = deepcopy(t)::Array{fq_nmod_poly, 1}  # bad!!!
     gp = Hecke.modular_proj(b, me)
-    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]
-    gc = Hecke.modular_lift(gp, me)
+    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Array{fq_nmod_poly, 1}
+    gc = Hecke.modular_lift(gp, me)::GenPoly{nf_elem}
     if isone(gc)
       return parent(a)(1)
     end
