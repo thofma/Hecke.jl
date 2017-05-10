@@ -295,6 +295,9 @@ function +(x::NfOrdIdl, y::NfOrdIdl)
   d = degree(order(x))
   H = vcat(basis_mat(x), basis_mat(y))
   g = gcd(minimum(x), minimum(y))
+  if isone(g)
+    return ideal(order(x), g)
+  end
   H = sub(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
   return ideal(order(x), H)
 end

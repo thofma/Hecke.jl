@@ -34,7 +34,7 @@
 #
 ################################################################################
 
-export basis_mat, norm, inv, ==, *
+export basis_mat, norm, inv, ==, *, integral_split
 
 ################################################################################
 #
@@ -297,6 +297,11 @@ function ^(A::NfMaxOrdFracIdl, a::Int)
   end
 end
 
+function //(A::NfMaxOrdFracIdl, B::NfMaxOrdFracIdl)
+  C = prod(A, inv(B))
+  return C
+end
+
 ################################################################################
 #
 #  Ad hoc binary operations
@@ -328,21 +333,49 @@ end
 
 *(a::nf_elem, A::NfMaxOrdIdl) = A*a
 
-function /(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl)
+function //(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl)
   C = prod(A, inv(B))
   return C
 end
 
-function /(A::NfMaxOrdFracIdl, a::nf_elem)
+function //(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
+  return A*inv(B)
+end
+
+function //(A::NfMaxOrdIdl, B::NfMaxOrdFracIdl)
+  return A*inv(B)
+end
+
+function //(A::NfMaxOrdFracIdl, a::nf_elem)
   C = prod(A, Idl((order(A), inv(a))))
   return C
+end
+
+function //(A::NfMaxOrdIdl, d::fmpz)
+  return Hecke.NfMaxOrdFracIdl(A, d)
+end
+
+function //(A::NfMaxOrdIdl, d::Integer)
+  return A//fmpz(d)
+end
+
+function +(A::NfMaxOrdIdl, B::NfMaxOrdFracIdl)
+  return (A*den(B)+num(B))//den(B)
+end
+
++(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl) = B+A
+
+function +(A::NfMaxOrdFracIdl, B::Hecke.NfMaxOrdFracIdl)
+  d = lcm(den(A), den(b))
+  ma = div(d, den(A))
+  mb = div(d, den(B))
+  return (num(A)*ma + num(B)*mb)//d
 end
 
 function *(x::nf_elem, y::NfMaxOrd)
   b, z = _check_elem_in_order(den(x, y)*x, y)
   return NfMaxOrdFracIdl(ideal(y, y(z)), den(x, y))
 end
-
 ################################################################################
 #
 #  Conversion
@@ -352,5 +385,22 @@ end
 function (ord::NfMaxOrdIdlSet)(b::NfMaxOrdFracIdl)
    b.den > 1 && error("not integral")
    return b.num
+end
+
+function ideal(O::NfMaxOrd, a::nf_elem)
+  return a*O
+end
+
+doc"""
+***
+    integral_split(A::NfMaxOrdFracIdl) -> NfMaxOrdIdl, NfMaxOrdIdl
+> Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = N//D$
+"""
+function integral_split(A::NfMaxOrdFracIdl)
+  d = simplify(inv(A + ideal(order(A), fmpz(1))))
+  @assert den(d) == 1
+  n = simplify(A*d)
+  @assert den(n) == 1
+  return num(n), num(d)
 end
 
