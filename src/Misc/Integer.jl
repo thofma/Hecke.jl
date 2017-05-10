@@ -261,6 +261,7 @@ function show(io::IO, a::StepRange{fmpz, fmpz})
   println(io, "2-element ", typeof(a), ":\n ", a.start, ",", a.stop)
 end
 
+#TODO
 # need to be mapped onto proper Flint primitives
 # flints needs a proper interface to randomness - I think
 # currently one simply cannot use it at all
@@ -466,4 +467,119 @@ doc"""
 function isinteger(a::fmpq)
   return isone(den(a))
 end
+
+################################################################################
+#
+#  sunit group
+#
+################################################################################
+
+type MapSUnitGrpZFacElem{T} <: Hecke.Map{T, FacElemMon{FlintRationalField}}
+  header::MapHeader
+  idl::Array{fmpz, 1}
+
+  function MapSUnitGrpZFacElem()
+    return new()
+  end
+end
+
+function show(io::IO, mC::MapSUnitGrpZFacElem)
+  println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
+end
+
+type MapSUnitGrpZ{T} <: Map{T, FlintRationalField}
+  header::MapHeader
+  idl::Array{fmpz, 1}
+
+  function MapSUnitGrpZ()
+    return new()
+  end
+end
+
+function show(io::IO, mC::MapSUnitGrpZ)
+  println(io, "SUnits map of $(codomain(mC)) for $(mC.idl)")
+end
+
+doc"""
+***
+    sunit_group_fac_elem(S::Array{fmpz, 1}) -> FinGenGrpAb, Map
+    sunit_group_fac_elem(S::Array{Integer, 1}) -> FinGenGrpAb, Map
+> The $S$-unit group of $Z$ supported at $S$: the group of
+> rational numbers divisible only by primes in $S$.
+> The second return value is the map mapping group elements to rationals
+> in factored form or rationals back to group elements.
+"""
+function sunit_group_fac_elem{T <: Integer}(S::Array{T, 1})
+  return sunit_group_fac_elem(fmpz[x for x=S])
+end
+
+function sunit_group_fac_elem(S::Array{fmpz, 1})
+  S = coprime_base(S)  #TODO: for S-units use factor???
+  G = DiagonalGroup(vcat([fmpz(2)], fmpz[0 for i=S]))
+  S = vcat(fmpz[-1], S)
+
+  mp = MapSUnitGrpZFacElem{typeof(G)}()
+  mp.idl = S
+
+  Sq = fmpq[x for x=S]
+
+  function dexp(a::FinGenGrpAbElem)
+    return FacElem(Sq, [a.coeff[1,i] for i=1:length(S)])
+  end
+
+  function dlog(a::fmpz)
+    g = [a>=0 ? 0 : 1]
+    g = vcat(g, [valuation(a, x) for x=S[2:end]])
+    return G(g)
+  end
+
+  function dlog(a::Integer)
+    return dlog(fmpz(a))
+  end
+
+  function dlog(a::Rational)
+    return dlog(fmpq(a))
+  end
+
+  function dlog(a::fmpq)
+    return dlog(num(a)) - dlog(den(a))
+  end
+
+  function dlog(a::FacElem)
+    return sum([e*dlog(k) for (k,e) = a.fac])
+  end
+
+  mp.header = Hecke.MapHeader(G, FacElemMon(FlintQQ), dexp, dlog)
+
+  return G, mp
+end
+
+doc"""
+***
+    sunit_group(S::Array{fmpz, 1}) -> FinGenGrpAb, Map
+    sunit_group(S::Array{Integer, 1}) -> FinGenGrpAb, Map
+> The $S$-unit group of $Z$ supported at $S$: the group of
+> rational numbers divisible only by primes in $S$.
+> The second return value is the map mapping group elements to rationals
+> or rationals back to group elements.
+"""
+function sunit_group{T <: Integer}(S::Array{T, 1})
+  return sunit_group(fmpz[x for x=S])
+end
+
+function sunit_group(S::Array{fmpz, 1})
+  u, mu = sunit_group_fac_elem(S)
+
+  mp = MapSUnitGrpZ{typeof(u)}()
+  mp.idl = S
+
+  function dexp(a::FinGenGrpAbElem)
+    return evaluate(image(mu, a))
+  end
+
+  mp.header = Hecke.MapHeader(u, FlintQQ, dexp, mu.header.preimage)
+
+  return u, mp
+end
+
 
