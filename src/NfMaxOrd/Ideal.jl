@@ -187,7 +187,7 @@ end
 
 doc"""
 ***
-    norm(A::NfOrdIdl) -> fmpz
+    norm(A::NfMaxOrdIdl) -> fmpz
 
 > Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
 > $\mathcal O$ is the order of $A$.
@@ -200,15 +200,13 @@ function norm(A::NfMaxOrdIdl)
     A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
     return A.norm
   end
-  @hassert :NfMaxOrd 1 has_2_elem(A) || has_basis_mat(A)
-  O = parent(A)
-  if has_basis_mat(A)
-    A.norm = abs(det(basis_mat(A)))
-    return A.norm
+
+  if isdefined(A, :princ_gen)
+    A.norm = abs(norm(A.princ_gen))
   else
     A.norm = abs(det(basis_mat(A)))
-    return A.norm
   end
+  return A.norm
 end
 
 ################################################################################
