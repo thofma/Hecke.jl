@@ -45,7 +45,7 @@ function power_product_class(A::Array{NfMaxOrdIdl, 1}, e::Array{fmpz, 1})
     i += 1
   end
   if i > length(e)
-    return power_class(A[1], 0)
+    return power_class(A[1], fmpz(0))
   end
   B = power_class(A[i], e[i])
   i += 1
@@ -220,7 +220,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   if h==1 # group is trivial...
     C = DiagonalGroup([1])
     #mC = x -> 1*O, inv x-> [1]
-    c.dl_data = (1, MatrixSpace(FlintZZ, 1, 1)(), C)
+    c.dl_data = (1, MatrixSpace(FlintZZ, 1, 1)(1), C)
     return C
   end
 
