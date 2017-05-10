@@ -213,7 +213,7 @@ end
 
 doc"""
 ***
-  minpoy(a::nf_elem) -> fmpz_poly
+  minpoly(a::nf_elem) -> fmpz_poly
 
 > The minimal polynomial of a.
 """
@@ -516,7 +516,7 @@ end
 #then u*res(a/g, b/g) is mathematically integeral, same for v
 #scaling by f'(a) makes it i nthe equation order
 #
-# missing/ nest attempt:
+# missing/ next attempt:
 #  write invmod using lifting
 #  write gcdx using lifting (lin/ quad)
 #  try using deg-1-primes only (& complicated lifting)
@@ -1639,5 +1639,64 @@ doc"""
 """
 function istotally_real(K::AnticNumberField)
   return signature(K)[1] == degree(K)
+end
+
+
+############################################################################
+#signs
+############################################################################
+doc"""
+***
+    signs(a::nf_elem) -> Array{Int, 1}
+> For a non-zero elements $a$ return the signs of all real embeddings.
+"""
+function signs(a::nf_elem)
+  if iszero(a)
+    error("element must not be zero")
+  end
+  p = 16
+  r1, r2 = signature(parent(a))
+  if r1 == 0
+    return Int[]
+  end
+
+  s = Array(Int, r1)
+  while true
+    c = conjugates_arb(a, p)
+    done = true
+    for i=1:r1
+      if contains(reim(c[i])[1], 0)
+        p *= 2
+        done = false
+        break
+      end
+      s[i] = reim(c[i])[1] > 0 ? 1 : -1
+    end
+    if done
+      return s
+    end
+  end
+end
+
+doc"""
+***
+    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
+> For a non-zero elements $a$ in factored form, 
+> return the signs of all real embeddings.
+"""
+function signs(a::FacElem{nf_elem, AnticNumberField})
+  r1, r2 = signature(base_ring(a))
+  if r1 == 0
+    return Int[]
+  end
+  s = ones(Int, r1)
+
+  for (k,e) = a.fac
+    if iseven(e)
+      continue
+    end
+    s .*= signs(k)
+  end
+  return s
 end
 
