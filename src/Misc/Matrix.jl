@@ -1,5 +1,7 @@
 export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, matrix, zeromatrix
 
+import Base.vcat
+
 # 
 
 function matrix(A::Array{fmpz, 2})
