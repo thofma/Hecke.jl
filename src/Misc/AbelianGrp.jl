@@ -35,7 +35,7 @@
 export FinGenGrpAb, FinGenGrpAbElem, parent, isfinite, isinfinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, istrivial, order, exponent, AbelianGroup, DiagonalGroup,
-       quo, sub
+       quo, sub, rels, hasimage, haspreimage
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand
 
@@ -121,7 +121,7 @@ end
 
 doc"""
 ***
-    nrels(G::FinGenGrpAbSnf ) -> Int
+    nrels(G::FinGenGrpAb) -> Int
 
 > Returns the number of relations of G in the current representation.
 """
@@ -143,6 +143,53 @@ function getindex(x::FinGenGrpAbElem, i::Int)
   return x.coeff[1,i]
 end
 
+doc"""
+***
+    rels(A::FinGenGrpAb) -> fmpz_mat
+> The currently used relations as a single matrix.
+"""
+function rels(A::Hecke.FinGenGrpAbGen)
+  return A.rels
+end
+
+function rels(A::Hecke.FinGenGrpAbSnf)
+  M = MatrixSpace(FlintZZ, ngens(A), ngens(A))()
+  for i=1:ngens(A)
+    M[i,i] = A.snf[i]
+  end
+  return M
+end
+
+################################################################################
+# Map support 
+#TODO: put elsewhere and make generic
+################################################################################
+function haspreimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbElem{T})
+  if isdefined(M, :imap)
+    return preimage(M, a)
+  end
+
+  m = vcat(M.map, rels(codomain(M)))
+  fl, p = cansolve(m', a.coeff')
+  if fl
+    return true, domain(M)(sub(p', 1:1, 1:ngens(domain(M))))
+  else
+    return false, domain(M)[1]
+  end
+end
+
+function hasimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbElem{S})
+  if isdefined(M, :map)
+    return image(M, a)
+  end
+  m = vcat(M.imap, rels(domain(M)))
+  fl, p = cansolve(m, a.coeff)
+  if fl
+    return true, codomain(M)(sub(p, 1:1, 1:ngens(codomain(M))))
+  else
+    return false, codomain(M)[1]
+  end
+end
 
 ################################################################################
 ################################################################################
@@ -887,6 +934,8 @@ function quo(G::FinGenGrpAbGen, n::Union{fmpz, Integer})
   m = FinGenGrpAbMap(G, Q, I, I)
   return Q, m
 end
+
+
 
 #TODO: rename - and move elsewhere.
 doc"""
