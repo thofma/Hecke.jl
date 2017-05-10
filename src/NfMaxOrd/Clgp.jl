@@ -296,10 +296,13 @@ end
 
 doc"""
 ***
-    class_group(O::NfMaxOrd; bound = -1, method = 3) -> Map
+    class_group(O::NfMaxOrd; bound = -1, method = 3, redo = false) -> FinGenGrpAb, Map
 
-> Returns an isomorphism map $f$ from $A$ to the set of ideals of $O$.
-> `A = domain(f)
+> Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
+> The inverse of the map is the projection onto the group of ideals modulo the 
+> group of principal ideals.
+> \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
+> \texttt{bound}, when given, is the bound for the factor base.
 """
 function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1)
   c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method)
@@ -310,11 +313,12 @@ end
 
 doc"""
 ***
-    unit_group(O::NfMaxOrd) -> Map
+    unit_group(O::NfMaxOrd) -> FinGenGrpAb, Map
 
-> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
-> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+> Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
+> A set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+> `f(U[1])` will give a generator for the torsion subgroup.
 """
 function unit_group(O::NfMaxOrd; method::Int = 3, unit_method::Int = 1)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
@@ -324,11 +328,13 @@ end
 
 doc"""
 ***
-    unit_group_fac_elem(O::NfMaxOrd) -> Map
+    unit_group_fac_elem(O::NfMaxOrd) -> FinGenGrpAb, Map
 
-> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
-> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+> Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
+> A set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+> `f(U[1])` will give a generator for the torsion subgroup.
+> All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfMaxOrd; method::Int = 3, unit_method::Int = 1)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
