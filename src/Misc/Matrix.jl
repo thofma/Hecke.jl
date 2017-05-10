@@ -125,26 +125,7 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   end
 end
 
-#function _lift_howell_to_hnf(x::nmod_mat)
-## Assume that x is square, in howell normal form and all non-zero rows are at the bottom
-## NOTE: _OUR_ Howell normal form algorithm always puts the rows at the right position
-## If row i is non-zero then i is the rightmost non-zero entry
-## Thus lifting is just replacing zero diagonal entries
-#  !issquare(x) && error("Matrix has to be square")
-#  y = lift_unsigned(x)
-#  for i in cols(y):-1:1
-#    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-#    if Bool(ccall((:fmpz_iszero, :libflint), Int, (Ptr{fmpz}, ), z))
-##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
-#      ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), z, x._n)
-##      for k in 1:i-1
-##        _swaprows!(y, k, k+1)
-##      end
-#    end
-#  end
-#  return y
-#end
-
+#TODO: rename/ replace by sub
 function submat{T <: Integer}(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T})
   z = deepcopy(window(x, r, c))
   return z
@@ -154,35 +135,6 @@ function submat{T <: Integer}(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T})
   z = deepcopy(window(x, r, c))
   return z
 end
-
-#function _hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
-#  if abs(m) < fmpz(typemax(UInt))
-#    y = MatrixSpace(ResidueRing(FlintZZ, m), rows(x), cols(x))(x)
-#    howell_form!(y, shape)
-#    y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
-#    return _lift_howell_to_hnf(y)
-#  end
-#  return __hnf_modular(x, m, shape)
-#end
-#
-#function __hnf_modular(x::fmpz_mat, m::fmpz, shape::Symbol = :lowerleft)
-## See remarks above
-#  y = deepcopy(x)
-#  howell_form!(y, m, shape)
-#  y = submat(y, rows(y) - cols(y) + 1:rows(y), 1:cols(y))
-#  for i in cols(y):-1:1
-#    z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, i - 1, i - 1)
-#    if Bool(ccall((:fmpz_iszero, :libflint), Int, (Ptr{fmpz}, ), z))
-#    #if ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, i - 1) == 0
-##      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &y, 0, i - 1)
-#      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), z, &m)
-##      for k in 1:i-1
-##        _swaprows!(y, k, k+1)
-##      end
-#    end
-#  end
-#  return y
-#end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   if shape == :lowerleft
@@ -248,40 +200,6 @@ function ishnf(x::fmpz_mat, shape::Symbol)
   end
 end
 
-#function howell_form!(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
-#  if shape == :lowerleft
-#    _swapcols!(x)
-#    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
-#    _swapcols!(x)
-#    _swaprows!(x)
-#  else
-#    ccall((:_fmpz_mat_howell, :libflint), Int, (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &m)
-#  end
-#end
-#
-#function howell_form(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
-#  y = deepcopy(x)
-#  howell_form!(y, m, shape)
-#  return y
-#end
-#
-#function howell_form!(x::nmod_mat, shape::Symbol = :upperright)
-#  if shape == :lowerleft
-#    _swapcols!(x)
-#    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
-#    _swapcols!(x)
-#    _swaprows!(x)
-#  else
-#    ccall((:_nmod_mat_howell, :libflint), Int, (Ptr{nmod_mat}, ), &x)
-#  end
-#end
-#
-#function howell_form(x::nmod_mat, shape::Symbol = :upperright)
-#  y = deepcopy(x)
-#  howell_form!(y, shape)
-#  return y
-#end
-
 function _swaprows(x::fmpz_mat)
   y = deepcopy(x)
   _swaprows!(y)
@@ -331,12 +249,6 @@ end
 
 function _swaprows!(x::nmod_mat, i::Int, j::Int)
   ccall((:_nmod_mat_swap_rows, :libflint), Void, (Ptr{nmod_mat}, Int, Int), &x, i-1, j-1)
-#  for k in 1:rows(x)
-#    s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Lim, (Ptr{nmod_mat}, Int, Int), &x, i, k)
-#    t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Lim, (Ptr{nmod_mat}, Int, Int), &x, j, k)
-#    set_entry!(x, i, k, t)
-#    set_entry!(y, j, k, s)
-#  end
   nothing
 end
   
@@ -518,7 +430,7 @@ function maxabs(a::fmpz_mat)
   return r
 end
 
-function max(a::fmpz_mat)  #should be maximum in julia
+function max(a::fmpz_mat)  #TODO should be maximum in julia
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -533,7 +445,7 @@ function max(a::fmpz_mat)  #should be maximum in julia
   return r
 end
 
-function min(a::fmpz_mat)  #should be minimum in julia
+function min(a::fmpz_mat)  #TODO: should be minimum in julia
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -779,5 +691,73 @@ function shift!(g::fmpz_mat, l::Int)
     end
   end
   return g
+end
+
+
+doc"""
+***
+    mod!(M::fmpz_mat, p::fmpz) 
+> Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
+"""
+function mod!(M::fmpz_mat, p::fmpz)
+  for i=1:rows(M)
+    for j=1:cols(M)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &M, i - 1, j - 1)
+      ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), z, z, &p)
+    end
+  end
+  nothing
+end
+
+doc"""
+***
+    mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
+> Reduces every entry modulo $p$, ie. applies the mod function to every entry.
+"""
+function mod(M::fmpz_mat, p::fmpz)
+  N = deepcopy(M)
+  mod!(N, p)
+  return N
+end
+
+doc"""
+***
+    vcat(A::Array{GenMat, 1}) -> GenMat
+    vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
+> Forms a big matrix my vertically concatenating the matrices in $A$.
+> All component matrices need to have the same number of columns.
+"""
+function vcat{T}(A::Array{GenMat{T}, 1})
+  if any(x->cols(x) != cols(A[1]), A)
+    error("Matrices must have same number of columns")
+  end
+  M = MatrixSpace(base_ring(A[1]), sum(rows, A), cols(A[1]))()
+  s = 0
+  for i=A
+    for j=1:rows(i)
+      for k=1:cols(i)
+        M[s+j, k] = i[j,k]
+      end
+    end
+    s += rows(i)
+  end
+  return M
+end
+
+function vcat(A::Array{fmpz_mat, 1})
+  if any(x->cols(x) != cols(A[1]), A)
+    error("Matrices must have same number of columns")
+  end
+  M = MatrixSpace(base_ring(A[1]), sum(rows, A), cols(A[1]))()
+  s = 0
+  for i=A
+    for j=1:rows(i)
+      for k=1:cols(i)
+        M[s+j, k] = i[j,k]
+      end
+    end
+    s += rows(i)
+  end
+  return M
 end
 
