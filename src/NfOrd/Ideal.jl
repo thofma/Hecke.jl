@@ -71,7 +71,7 @@ function Base.deepcopy_internal(A::NfOrdIdl, dict::ObjectIdDict)
     end
     if isdefined(A, i)
       if i == :basis
-        setfield!(B, i, NfOrdElem{typeof(parent(A))}[ deepcopy(x) for x in A.basis])
+        setfield!(B, i, NfOrdElem{typeof(order(A))}[ deepcopy(x) for x in A.basis])
       elseif i == :valuation
         setfield!(B, i, getfield(A, i))
       else
