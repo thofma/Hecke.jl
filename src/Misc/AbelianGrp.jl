@@ -454,19 +454,19 @@ then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
 doc"""
 ***
-  snf_with_transform(A::fmpz_mat; l::Bool = true, r::Bool = true) -> fmpz_mat [, fmpz_mat [, fmpz_mat]]
+  snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
 > Given some integer matrix A, compute the Smith normal form (elementary
 > divisor normal form) of A. If l and/ or r are true, then the corresponding
 > left and/ or right transformation matrices are computed as well.
 """
-function snf_with_transform(A::fmpz_mat; l::Bool = true, r::Bool = true)
+function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   if r
-    R = MatrixSpace(ZZ, cols(A), cols(A))(1)
+    R = MatrixSpace(FlintZZ, cols(A), cols(A))(1)
   end
 
   if l
-    L = MatrixSpace(ZZ, rows(A), rows(A))(1)
+    L = MatrixSpace(FlintZZ, rows(A), rows(A))(1)
   end
   # TODO: if only one trafo is required, start with the HNF that does not
   #       compute the trafo
@@ -535,20 +535,23 @@ function snf_with_transform(A::fmpz_mat; l::Bool = true, r::Bool = true)
     if r
       return S, L, R'
     else
-      return S, L
+      # last is dummy
+      return S, L, L
     end
   elseif r
-    return S, R'
+    # second is dummy
+    return S, R, R'
   else
-    return S
+    # last two are dummy
+    return S, S, S
   end
 end
 
 function snf(G::FinGenGrpAbGen)
   if isdefined(G, :snf_map)
-    return codomain(G.snf_map), G.snf_map
+    return codomain(G.snf_map)::FinGenGrpAbSnf, G.snf_map
   end
-  S, T = snf_with_transform(G.rels, l=false, r=true)
+  S, _, T = snf_with_transform(G.rels, false, true)
   d = fmpz[S[i,i] for i=1:min(rows(S), cols(S))]
   while length(d) < ngens(G)
     push!(d, 0)
@@ -559,7 +562,7 @@ function snf(G::FinGenGrpAbGen)
       push!(s, d[i])
     end
   end
-  TT = MatrixSpace(ZZ, rows(T), length(s))()
+  TT = MatrixSpace(FlintZZ, rows(T), length(s))()
   j = 1
   for i=1:length(d)
     if d[i] != 1
@@ -569,7 +572,8 @@ function snf(G::FinGenGrpAbGen)
       j += 1
     end
   end
-  TTi = MatrixSpace(ZZ, length(s), rows(T))()
+
+  TTi = MatrixSpace(FlintZZ, length(s), rows(T))()
   Ti = inv(T)
 
   j = 1
