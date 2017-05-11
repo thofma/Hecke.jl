@@ -204,7 +204,7 @@ end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
   ccall((:_acb_vec_clear, :libarb), Void,
-              (Ptr{acb_struct}, Clong), x._roots, degree(x.poly))
+              (Ptr{acb_struct}, Int), x._roots, degree(x.poly))
 end
 
 ################################################################################
@@ -317,11 +317,11 @@ type SMatSpace{T} <: Ring
 
   function SMatSpace(R::Ring, r::Int, c::Int, cached = true)
     if haskey(SMatSpaceDict, (R, r, c))
-      return SMatSpace[R, r, c,]::SMatSpace{T}
+      return SMatSpaceDict[R, r, c,]::SMatSpace{T}
     else
       z = new{T}(r, c, R)
       if cached
-        SMatSpace[R, r, c] = z
+        SMatSpaceDict[R, r, c] = z
       end
       return z
     end
@@ -1552,9 +1552,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   rel_cnt::Int
   bad_rel::Int
   hnf_call::Int
-  hnf_time::Float64
-  unit_time::Float64
-  unit_hnf_time::Float64
+  time::Dict{Symbol, Float64}
 
   last::Int
   op::Array # of pairs: Map, perm where Map is a field automorphism
@@ -1597,6 +1595,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
     r.largePrime_success = 0
     r.largePrime_no_success = 0
     r.normStat = Dict{Int, Int}()
+    r.time = Dict{Symbol, Float64}()
     r.B2 = 0
     r.H_trafo = []
     r.finished = false

@@ -479,7 +479,7 @@ function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
 
   essential_part = fmpz_mat(sub(A, essential_index:rows(A), essential_index:cols(A)))
 
-  snfofess, ltr, rtr = snf_with_transform(essential_part; l = true, r = true)
+  snfofess, ltr, rtr = snf_with_transform(essential_part, true, true)
 
   push!(trafos_left, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), ltr))
   push!(trafos_right, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), rtr))

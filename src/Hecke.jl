@@ -56,7 +56,7 @@ end
 import Nemo: nf_elem, AnticNumberField, degree,
              den, num, parent, length,
              norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
-             trace, factor, mod, zero, 
+             trace, mod, zero, 
              hash, PolynomialRing, coeff,
              var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
@@ -71,7 +71,7 @@ import Nemo: nf_elem, AnticNumberField, degree,
              strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
              FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
              acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
-             roots, isprime, nbits
+             roots, nbits, factor, isprime
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
@@ -177,13 +177,13 @@ function __init__()
   global const _x = gen(_Zx)
   global const _y = gen(_Zxy)
 
-  let
-    Qx, x = QQ["x"]
-    K, a = NumberField(x^2 - 2, "a")
-    O = maximal_order(K)
-    class_group(O);
-    nothing
-  end
+#  let
+#    Qx, x = QQ["x"]
+#    K, a = NumberField(x^2 - 2, "a")
+#    O = maximal_order(K)
+#    class_group(O);
+#    nothing
+#  end
 end
 
 function conjugate_data_arb(K::AnticNumberField)
@@ -227,7 +227,7 @@ end
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.1.5"
+global VERSION_NUMBER = v"0.2.0"
 
 ################################################################################
 #
@@ -405,6 +405,36 @@ macro vtime(args...)
   end
 end
 
+#usage
+# @vtime_add_ellapsed :ClassGroup 2 clg :saturate  s= hnf(a)
+# @vtime_add :ClassGroup 2 clg :saturate  0.5
+# -> clg.time[:saturate] += 
+function _vtime_add(D::Dict, k::Any, v::Any)
+  if haskey(D, k)
+    D[k] += v
+  else
+    D[k] = v
+  end
+end
+
+macro vtime_add(flag, level, var, key, value)
+  quote
+    if get_verbose_level($flag) >= $level
+      _vtime_add($(esc(var)).time, $key, $value)
+    end
+  end
+end
+
+macro vtime_add_elapsed(flag, level, var, key, stmt)
+  quote
+    tm = @elapsed $(esc(stmt))
+    if get_verbose_level($flag) >= $level
+      _vtime_add($(esc(var)).time, $key, tm)
+    end
+  end  
+end
+
+
 ################################################################################
 #
 #  Functions for timings
@@ -518,7 +548,6 @@ function vshow(A)
     end
   end
 end
-
 ################################################################################
 #
 #  Element types for parent types

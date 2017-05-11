@@ -148,7 +148,7 @@ function minpoly_pow{T <: Union{PolyElem, fq_nmod_poly}}(a::ResElem{T}, deg::Int
     b *= a
   end
   elem_to_mat_row!(B, 1, -b)
-  s = solve(M', B')
+  s = solve_rational(M', B')
   if isa(s, Tuple)
     s = s[1] * inv(s[2])
   end

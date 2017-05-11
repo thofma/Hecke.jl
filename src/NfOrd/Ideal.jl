@@ -71,7 +71,7 @@ function Base.deepcopy_internal(A::NfOrdIdl, dict::ObjectIdDict)
     end
     if isdefined(A, i)
       if i == :basis
-        setfield!(B, i, NfOrdElem{typeof(parent(A))}[ deepcopy(x) for x in A.basis])
+        setfield!(B, i, NfOrdElem{typeof(order(A))}[ deepcopy(x) for x in A.basis])
       elseif i == :valuation
         setfield!(B, i, getfield(A, i))
       else
@@ -295,6 +295,9 @@ function +(x::NfOrdIdl, y::NfOrdIdl)
   d = degree(order(x))
   H = vcat(basis_mat(x), basis_mat(y))
   g = gcd(minimum(x), minimum(y))
+  if isone(g)
+    return ideal(order(x), g)
+  end
   H = sub(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
   return ideal(order(x), H)
 end

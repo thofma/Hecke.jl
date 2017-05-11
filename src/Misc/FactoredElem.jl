@@ -70,7 +70,7 @@ base(x::FacElem) = keys(x.fac)
 
 function Base.deepcopy_internal{B, S}(x::FacElem{B, S}, dict::ObjectIdDict)
   z = FacElem{B, S}()
-  z.fac = deepcopy(x.fac)
+  z.fac = Base.deepcopy_internal(x.fac, dict)
   if isdefined(x, :parent)
     z.parent = x.parent
   end

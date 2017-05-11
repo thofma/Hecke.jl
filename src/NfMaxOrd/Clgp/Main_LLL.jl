@@ -9,7 +9,10 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat:
   while true
     e = class_group_small_lll_elements_relation_next(I)
     n = norm_div(e, norm(I.A), nb)
-    if nbits(num(n)) > nb - 20
+    if I.cnt > length(I.b)^2
+      break
+    end
+    if nbits(num(n)) > nb - 25
       bad_norm += 1
       if I.cnt > 100  && bad_norm / I.cnt > 0.1
         @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(num(n))) should be <= $(nb - 20) $bad_norm $(I.cnt)\n"
@@ -118,7 +121,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
     
     if piv_new == piv
       if h > 0
-        return
+        extra = 5
       end
       rand_exp += 1
       if rand_exp % 3 == 0

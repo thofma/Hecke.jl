@@ -73,7 +73,13 @@ function check_index(M::ModuleCtx_fmpz)
     return M.basis_idx
   end
 
+  if isdefined(M, :trafo)  #once we have trafo, we need to keep it!
+    module_trafo_assure(M)
+    return M.basis_idx
+  end
+
   M.new = false
+
 
   if isdefined(M, :basis)
     C = copy(M.basis)

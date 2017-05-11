@@ -155,7 +155,7 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
 end
 
 # Computing the g_K(X) term of Belabas-Friedmann
-function _term_bf(O::NfMaxOrd, B::Int64, R::ArbField)
+function _term_bf(O::NfMaxOrd, B::Int, R::ArbField)
 
   xx0 = B
 

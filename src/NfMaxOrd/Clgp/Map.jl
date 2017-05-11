@@ -45,7 +45,7 @@ function power_product_class(A::Array{NfMaxOrdIdl, 1}, e::Array{fmpz, 1})
     i += 1
   end
   if i > length(e)
-    return power_class(A[1], 0)
+    return power_class(A[1], fmpz(0))
   end
   B = power_class(A[i], e[i])
   i += 1
@@ -73,13 +73,13 @@ function class_group_disc_exp(a::FinGenGrpAbElem, c::ClassGrpCtx)
 end
 
 function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
-  if c.h==1
-    return fmpz[1]
-  end
   if length(c.dl_data) == 3
     s, T, C = c.dl_data
   else
     s, T, C, Ti = c.dl_data
+  end
+  if c.h==1
+    return C(fmpz[1])
   end
 #  println("start with $r")
   while length(r.pos)>0 && r.pos[1] < s
@@ -220,7 +220,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   if h==1 # group is trivial...
     C = DiagonalGroup([1])
     #mC = x -> 1*O, inv x-> [1]
-    c.dl_data = (1, MatrixSpace(FlintZZ, 1, 1)(), C)
+    c.dl_data = (1, MatrixSpace(FlintZZ, 1, 1)(1), C)
     return C
   end
 
@@ -231,7 +231,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   es = sub(c.M.basis, s:n, s:n)
   hnf!(es)
   es_dense = fmpz_mat(es)
-  S, T = snf_with_transform(es_dense, l=false, r=true)
+  S, _, T = snf_with_transform(es_dense, false, true)
 
   p = find(x->S[x,x]>1, 1:cols(S))
 

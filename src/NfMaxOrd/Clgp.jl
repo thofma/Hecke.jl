@@ -32,14 +32,14 @@
 #
 ################################################################################
 #
-# Todo: 
+# Todo:
 #  - make sure the precision for LLL is high enough (by checking that the
 #    resulting elements have a reasonable norm/ length? theory?)
 #    done
 #  - add reasonable verbose printing
 #    done
 #  - write hnf from upper_triangular
-#  - understand/use profiling information (memory, ...)     
+#  - understand/use profiling information (memory, ...)
 #
 #  - need different norm function: modular resultant? with a large known
 #    factor AND without any proof...
@@ -48,7 +48,7 @@
 #
 #  - move the various factor, issmooth and similar to a sensible
 #    spot. This has nothing to do with class groups
-#  - the SingleP version: 
+#  - the SingleP version:
 #      figure out if a union is better than the current version
 #      ie have a version for easy primes
 #         and a dumb version as fallback
@@ -57,19 +57,14 @@
 #
 #
 # Clean up:
-#  - sort the various data-types files
 #  - write show functions
-#  - remove debugging prints
-#  - arrange the functions in e.g. Sparse in a reasonable order
-#  - rename some of them
-#  - export 
-#  - use iterators in add_scaled and transform?
+#  - export
 #
 # Note: enumerating x,0,0,0 is pointless unless x==1
 #
 ################################################################################
 
-export class_group, FactorBase, issmooth, factor, lll_basis, 
+export class_group, FactorBase, issmooth, factor, lll_basis,
        unit_group_fac_elem, unit_group
 
 add_verbose_scope(:ClassGroup)
@@ -80,7 +75,7 @@ add_assert_scope(:ClassGroup)
 set_assert_level(:ClassGroup, 0)
 set_assert_level(:LatEnum, 0)
 
-for i in ["Clgp/Ctx.jl" 
+for i in ["Clgp/Ctx.jl"
           "Clgp/FacBase_Euc.jl"
           "Clgp/FacBase_Idl.jl"
           "Clgp/Main_enum.jl"
@@ -90,8 +85,7 @@ for i in ["Clgp/Ctx.jl"
           "Clgp/Rel_enum.jl"
           "Clgp/Rel_LLL.jl"
           "Clgp/Main_LLL.jl"
-          "Clgp/Rel_Schmettow.jl"
-          "Unit/Map.jl"]
+          "Clgp/Rel_Schmettow.jl"]
   include(i)
 end
 
@@ -103,8 +97,8 @@ end
 
 function class_group_ctx(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 1000, redo::Bool = false)
 
-  if !redo                                
-    try 
+  if !redo
+    try
       c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
       return c
     end
@@ -117,9 +111,6 @@ function class_group_ctx(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large = 
 
   c = class_group_init(O, bound, complete = false)
   c.B2 = bound * large
-  c.hnf_time = 0.0
-  c.unit_time = 0.0
-  c.unit_hnf_time = 0.0
 
   if false # method==1
     class_group_find_relations(c)
@@ -197,7 +188,7 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
-  @v_do :UnitGroup 1 pushindent() 
+  @v_do :UnitGroup 1 pushindent()
   c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo)
   @v_do :UnitGroup 1 popindent()
 
@@ -205,8 +196,8 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
     U = _get_UnitGrpCtx_of_order(O)
     @assert U.finished
     return c, U, 1
-  end  
-  
+  end
+
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
@@ -215,16 +206,19 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
 
   hnftime = 0.0
 
+  do_units = true
   while true
     @v_do :UnitGroup 1 pushindent()
-    if unit_method == 1
-      c.unit_time += @elapsed r = _unit_group_find_units(U, c)
-    else
-      c.unit_hnf_time += @elapsed module_trafo_assure(c.M)
-      c.unit_time += @elapsed r = _unit_group_find_units_with_trafo(U, c)
-    end
+    if do_units
+      if unit_method == 1
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+      else
+        @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_trafo(U, c)
+      end
 
-    @v_do :UnitGroup 1 popindent()
+      @v_do :UnitGroup 1 popindent()
+    end
     if r == 1  # use saturation!!!!
       if _validate_class_unit_group(c, U) == 1
         break
@@ -237,7 +231,13 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
       need_more = false
     end
     class_group_new_relations_via_lll(c, extra = unit_rank(O) - length(U.units) +1)
+    h_old = c.h
     class_group_get_pivot_info(c)
+    if h_old == c.h
+      do_units = true
+    else
+      do_units = false
+    end
   end
   @assert U.full_rank
   _set_UnitGrpCtx_of_order(O, U)
@@ -245,7 +245,7 @@ function _class_unit_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, large:
   c.finished = true
   U.finished = true
 
-  @vprint :ClassGroup 1 "hnftime $c.hnf_time\n"
+  @vprint :ClassGroup 1 "hnftime $(c.time[:hnf_time])\n"
 
   return c, U, _validate_class_unit_group(c, U)
 end
@@ -253,11 +253,11 @@ end
 function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
   O = order(c.FB.ideals[1])
   if !redo
-    try 
+    try
       U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx
       return U
     end
-  end  
+  end
 
   U = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
   need_more = true
@@ -287,19 +287,22 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   K = nf(O)
   U, mU = unit_group_fac_elem(c, U)
 
-  r = MapUnitGrp{typeof(U)}()
+  r = MapUnitGrp{typeof(U), typeof(O)}()
   r.header = Hecke.MapHeader(U, O,
     x->O(evaluate(image(mU, x))),
     x->preimage(mU, FacElem([K(x)], fmpz[1])))
   return U, r
 end
- 
+
 doc"""
 ***
-    class_group(O::NfMaxOrd; bound = -1, method = 3) -> Map
+    class_group(O::NfMaxOrd; bound = -1, method = 3, redo = false) -> FinGenGrpAb, Map
 
-> Returns an isomorphism map $f$ from $A$ to the set of ideals of $O$.
-> `A = domain(f)`. 
+> Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
+> The inverse of the map is the projection onto the group of ideals modulo the 
+> group of principal ideals.
+> \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
+> \texttt{bound}, when given, is the bound for the factor base.
 """
 function class_group(O::NfMaxOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1)
   c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method)
@@ -310,11 +313,12 @@ end
 
 doc"""
 ***
-    unit_group(O::NfMaxOrd) -> Map
+    unit_group(O::NfMaxOrd) -> FinGenGrpAb, Map
 
-> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
-> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+> Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
+> A set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+> `f(U[1])` will give a generator for the torsion subgroup.
 """
 function unit_group(O::NfMaxOrd; method::Int = 3, unit_method::Int = 1)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
@@ -324,11 +328,13 @@ end
 
 doc"""
 ***
-    unit_group_fac_elem(O::NfMaxOrd) -> Map
+    unit_group_fac_elem(O::NfMaxOrd) -> FinGenGrpAb, Map
 
-> Returns an isomorphism map $f \colon A \to \mathcal O^\times$. Let
-> `A = domain(f)`. Then a set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(A[i]) for i in 1:unit_rank(O) ]`.
+> Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
+> A set of fundamental units of $\mathcal O$ can be
+> obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+> `f(U[1])` will give a generator for the torsion subgroup.
+> All elements will be returned in factored form.
 """
 function unit_group_fac_elem(O::NfMaxOrd; method::Int = 3, unit_method::Int = 1)
   c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)

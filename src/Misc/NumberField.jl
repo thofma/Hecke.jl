@@ -206,14 +206,14 @@ doc"""
 """
 function charpoly(a::nf_elem)
   d = den(a)
-  Zx = PolynomialRing(ZZ, string(parent(parent(a).pol).S))[1]
+  Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
   f = charpoly(Zx, representation_mat(d*a))
   return f(gen(parent(f))*d)
 end
 
 doc"""
 ***
-  minpoy(a::nf_elem) -> fmpz_poly
+  minpoly(a::nf_elem) -> fmpz_poly
 
 > The minimal polynomial of a.
 """
@@ -311,6 +311,7 @@ function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   return gcd_modular_kronnecker(a, b)
 end
 
+# There is some weird type instability
 function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   # naive version, kind of
   # polys should be integral
@@ -328,10 +329,11 @@ function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   while true
     p = next_prime(p)
     me = modular_init(K, p)
-    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+    t = Hecke.modular_proj(a, me)
+    fp = deepcopy(t)::Array{fq_nmod_poly, 1}  # bad!!!
     gp = Hecke.modular_proj(b, me)
-    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]
-    gc = Hecke.modular_lift(gp, me)
+    gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Array{fq_nmod_poly, 1}
+    gc = Hecke.modular_lift(gp, me)::GenPoly{nf_elem}
     if isone(gc)
       return parent(a)(1)
     end
@@ -372,7 +374,7 @@ function gcd_modular_kronnecker(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   a = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
-  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  db = Base.reduce(lcm, [den(coeff(b, i)) for i=0:degree(b)])
   d = gcd(da, db)
   a = a*da
   b = b*db
@@ -516,7 +518,7 @@ end
 #then u*res(a/g, b/g) is mathematically integeral, same for v
 #scaling by f'(a) makes it i nthe equation order
 #
-# missing/ nest attempt:
+# missing/ next attempt:
 #  write invmod using lifting
 #  write gcdx using lifting (lin/ quad)
 #  try using deg-1-primes only (& complicated lifting)
@@ -536,11 +538,11 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   p = p_start
   K = base_ring(parent(a))
   @assert parent(a) == parent(b)
-  g = zero(a)
+  g = zero(parent(a))
   d = fmpz(1)
   r = zero(K)
-  fa = zero(a)
-  fb = zero(b)
+  fa = zero(parent(a))
+  fb = zero(parent(b))
   last_g = (parent(a)(0), parent(a)(0), parent(a)(0), parent(a)(0))
  
   while true
@@ -601,10 +603,13 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
 end
 
 ###########################################################################
+
 import Nemo.issquarefree
+
 function issquarefree(x::GenPoly{nf_elem})
   return degree(gcd(x, derivative(x))) == 0
 end
+
 ###########################################################################
 function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   K = base_ring(f)
@@ -1636,5 +1641,64 @@ doc"""
 """
 function istotally_real(K::AnticNumberField)
   return signature(K)[1] == degree(K)
+end
+
+
+############################################################################
+#signs
+############################################################################
+doc"""
+***
+    signs(a::nf_elem) -> Array{Int, 1}
+> For a non-zero elements $a$ return the signs of all real embeddings.
+"""
+function signs(a::nf_elem)
+  if iszero(a)
+    error("element must not be zero")
+  end
+  p = 16
+  r1, r2 = signature(parent(a))
+  if r1 == 0
+    return Int[]
+  end
+
+  s = Array(Int, r1)
+  while true
+    c = conjugates_arb(a, p)
+    done = true
+    for i=1:r1
+      if contains(reim(c[i])[1], 0)
+        p *= 2
+        done = false
+        break
+      end
+      s[i] = reim(c[i])[1] > 0 ? 1 : -1
+    end
+    if done
+      return s
+    end
+  end
+end
+
+doc"""
+***
+    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
+> For a non-zero elements $a$ in factored form, 
+> return the signs of all real embeddings.
+"""
+function signs(a::FacElem{nf_elem, AnticNumberField})
+  r1, r2 = signature(base_ring(a))
+  if r1 == 0
+    return Int[]
+  end
+  s = ones(Int, r1)
+
+  for (k,e) = a.fac
+    if iseven(e)
+      continue
+    end
+    s .*= signs(k)
+  end
+  return s
 end
 

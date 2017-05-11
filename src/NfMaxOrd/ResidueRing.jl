@@ -979,7 +979,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
     rhs = MatrixSpace(ZZ, degree(O), 1)(elem_in_basis(new_a)'')
     lhs = transpose(L)
 
-    X, d = solve(lhs, rhs)
+    X, d = solve_rational(lhs, rhs)
 
     zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
 
@@ -1052,7 +1052,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
       rhs = MatrixSpace(ZZ, degree(O), 1)(elem_in_basis(new_a)'')
       lhs = transpose(L)
 
-      X, d = solve(lhs, rhs)
+      X, d = solve_rational(lhs, rhs)
 
       zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
 

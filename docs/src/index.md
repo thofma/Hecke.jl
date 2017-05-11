@@ -3,6 +3,8 @@
 **Builds**
 
 [![Build Status](https://travis-ci.org/thofma/Hecke.jl.svg?branch=master)](https://travis-ci.org/thofma/Hecke.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/3qb0ce2h5melsjeb?svg=true)](https://ci.appveyor.com/project/thofma/hecke-jl)
+
 
 ## About
 
@@ -23,7 +25,7 @@ So far, Hecke provides the following features:
 
 ## Installation
 
-To use Hecke, a julia version of 0.4 or higher is necessary (the latest stable julia version will do).
+To use Hecke, a julia version of 0.5 or higher is necessary (the latest stable julia version will do).
 Please see [http://julialang.org/downloads](http://julialang.org/downloads/) for instructions on how to obtain julia for your system.
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 

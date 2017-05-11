@@ -30,7 +30,7 @@ end
 
 function class_group_process_relmatrix(clg::ClassGrpCtx)
 
-  clg.hnf_time += @elapsed clg.h = check_index(clg.M)
+  @vtime_add_elapsed :ClassGroup 1 clg :hnf_time clg.h = check_index(clg.M)
   clg.hnf_call += 1
 end
 
@@ -39,7 +39,7 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
   # If we are in the full rank case, they come from the hnf itself,
   # Otherwise we look at the echelon form of the reduction.
 
-  clg.hnf_time += @elapsed h = check_index(clg.M)
+  @vtime_add_elapsed :ClassGroup 1 clg :hnf_time h = check_index(clg.M)
   clg.h = h
   return (h, non_trivial_pivot(clg.M))
 end
@@ -52,8 +52,6 @@ end
 
 function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
                 limit::Int = 10)
-  clg.hnf_time = 0.0
-  clg.unit_time = 0.0
   clg.hnf_call = 0
   clg.rel_cnt = 0
   clg.bad_rel = 0
@@ -117,7 +115,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-t)/1e9,
-                  " sec for small elts, so far ", clg.hnf_time/1e9,
+                  " sec for small elts, so far ", clg.time[:hnf_time]/1e9,
                   " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
@@ -226,7 +224,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-s)/1e9, " total so far ",
-                  clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
+                  clg.time[:hnf_time]/1e9, " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
   
@@ -238,7 +236,6 @@ end
 
 function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
                 limit = 10)
-  clg.hnf_time = 0.0
   clg.hnf_call = 0
   clg.rel_cnt = 0
   clg.bad_rel = 0
@@ -307,7 +304,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-t)/1e9,
-                  " sec for small elts, so far ", clg.hnf_time/1e9,
+                  " sec for small elts, so far ", clg.time[:hnf_time]/1e9,
                   " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
@@ -427,7 +424,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-s)/1e9, " total so far ",
-                  clg.hnf_time/1e9, " sec for hnf in ", clg.hnf_call, " calls");
+                  clg.time[:hnf_time]/1e9, " sec for hnf in ", clg.hnf_call, " calls");
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
   class_group_process_relmatrix(clg)

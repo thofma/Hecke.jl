@@ -428,7 +428,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &u)
 
   ccall((:arf_set_mag, :libarb), Void, (Ptr{arf_struct}, Ptr{Nemo.mag_struct}), &u, tr_ptr)
-  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Clong, Cint), &u, tm_ptr, &u, p, 4) # 4 is round to -infty
+  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Int, Cint), &u, tm_ptr, &u, p, 4) # 4 is round to -infty
   lbfmpz = fmpz()
   ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &lbfmpz, &u, 4)
 
@@ -438,7 +438,7 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   tm = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &ub)
 
   ccall((:arf_set_mag, :libarb), Void, (Ptr{arf_struct}, Ptr{Nemo.mag_struct}), &u, tr)
-  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Clong, Cint), &u, tm, &u, p, 3) # 3 is round to +infty
+  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Int, Cint), &u, tm, &u, p, 3) # 3 is round to +infty
   ubfmpz = fmpz()
   ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &ubfmpz, &u, 3)
 

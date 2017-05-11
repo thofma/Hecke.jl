@@ -15,9 +15,9 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
     f = f*den(f)
     g = Array{fmpz}(length(f))
     for i = 1:f.length
-      g[i] = ZZ(num(coeff(f, i-1)))
+      g[i] = FlintZZ(num(coeff(f, i-1)))
     end
-    g = PolynomialRing(ZZ, string(var(parent(f))))[1](g)
+    g = PolynomialRing(FlintZZ, string(var(parent(f))))[1](g)
     f = g
   end
   isconstant(gcd(f, derivative(f))) || error("poly should be square-free")
@@ -246,10 +246,10 @@ for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:
   @eval begin
     function ($s)(a::Array{BigFloat, 2})
       s = Base.size(a)
-      m = MatrixSpace(ZZ, s[1], s[2])()
+      m = MatrixSpace(FlintZZ, s[1], s[2])()
       for i = 1:s[1]
         for j = 1:s[2]
-          m[i,j] = ZZ(BigInt(($f)(a[i,j])))
+          m[i,j] = FlintZZ(BigInt(($f)(a[i,j])))
         end
       end
       return m

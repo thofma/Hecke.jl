@@ -1,4 +1,4 @@
-type MapUnitGrp{T} <: Map{T, NfOrd}
+type MapUnitGrp{T, S} <: Map{T, S}
   header::Hecke.MapHeader
 
   function MapUnitGrp()
@@ -6,13 +6,11 @@ type MapUnitGrp{T} <: Map{T, NfOrd}
   end
 end
 
-elem_type(::Type{NfOrd}) = NfOrdElem
-
 function show(io::IO, mC::MapUnitGrp)
   println(io, "UnitGroup map of $(codomain(mC))")
 end
 
-type MapUnitGrpFacElem{T} <: Map{T, Hecke.FacElemMon{AnticNumberField}}
+type MapUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::Hecke.MapHeader
 
   function MapUnitGrpFacElem()
@@ -21,9 +19,8 @@ type MapUnitGrpFacElem{T} <: Map{T, Hecke.FacElemMon{AnticNumberField}}
 end
 
 function show(io::IO, mC::MapUnitGrpFacElem)
-  println(io, "UnitGroup map of $(codomain(mC)) in factored presentation")
+  println(io, "Unit group map of $(codomain(mC)) in factored presentation")
 end
-
 
 function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
   K = nf(order(U))
@@ -34,9 +31,9 @@ function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
   return y
 end
 
-function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::Hecke.FinGenGrpAbSnf)
+function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::FinGenGrpAbSnf)
 
-  r = Hecke._add_dependent_unit(U, x, rel_only = true)
+  r = _add_dependent_unit(U, x, rel_only = true)
   @assert r[end] == -1
 
   y = deepcopy(x)
@@ -100,7 +97,8 @@ function unit_group_fac_elem(c::ClassGrpCtx, u::UnitGrpCtx)
   U = DiagonalGroup(d)
 
   r = MapUnitGrpFacElem{typeof(U)}()
-  r.header = Hecke.MapHeader(U, FacElemMon(nf(O)),
+
+  r.header = MapHeader(U, FacElemMon(nf(O)),
     x->unit_group_disc_exp(x, u),
     x->unit_group_disc_log(x, u, U))
 

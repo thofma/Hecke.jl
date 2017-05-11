@@ -444,14 +444,15 @@ type modular_env
   upinv::UInt
 
   fld::Array{FqNmodFiniteField, 1}
-  fldx::Array{Ring, 1}
+  fldx::Array{FqNmodPolyRing, 1}
   ce::crt_env{nmod_poly}
   rp::Array{nmod_poly, 1}
   res::Array{fq_nmod, 1}
-  Fpx::Ring
+  Fpx::NmodPolyRing
   K::AnticNumberField
-  Rp
+  Rp::Array{fq_nmod_poly, 1}
   Kx::GenPolyRing{nf_elem}
+
   function modular_env()
     return new()
   end
@@ -486,6 +487,7 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   if deg_limit > 0
     pols = pols[find(x -> degree(x) <= deg_limit, pols)]
   end
+
   if max_split > 0
     pols = pols[1:min(length(pols), max_split)]
   end
