@@ -615,7 +615,7 @@ function sub{T}(A::SMat{T}, r::UnitRange, c::UnitRange)
         push!(rw.pos, ra.pos[j]-c.start+1)
       end
     end
-    if length(rw.pos)>0
+    if true || length(rw.pos)>0
       push!(B.rows, rw)
       B.nnz += length(rw.pos)
     end

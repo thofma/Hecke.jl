@@ -122,7 +122,7 @@ function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
 #  J = simplify(b*_I)
 #  @assert den(J) == 1
 #  @assert num(J) == I
-  _I = I
+  I = _I
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
     fl, r = _factor!(c.FB, I, false)
@@ -372,6 +372,7 @@ end
 # find x_i s.th. I[i]*x[i] is FB-smooth
 #  find T sth. T R = (I[i]*x[i])^d
 #  saturate T|-d??
+
 doc"""
     sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
@@ -382,6 +383,7 @@ doc"""
 function sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
   #deal with trivial case somehow!!!
   O = order(I[1])
+
   c = _get_ClassGrpCtx_of_order(O)
   module_trafo_assure(c.M)
   H = c.M.basis
@@ -394,6 +396,8 @@ function sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
   rr = SMat(FlintZZ)
   for A = I
     x, r = class_group_ideal_relation(A, c)
+# TODO: write == for Idl and FracIdl    
+#    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
   end
@@ -403,10 +407,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
   S = hnf(saturate(Rd))
   S1 = sub(S, 1:S.r, 1:S.r)
   S2 = sub(S, 1:S.r, S.r+1:S.c)
-  
-
-#  println(fmpz_mat(S1))
-
+  @assert rows(S1) == rows(S2) && rows(S1) == S.r
   
   g = vcat(c.R_gen, c.R_rel)
 
