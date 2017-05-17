@@ -17,6 +17,10 @@ end
 #
 ################################################################################
 
+elem_type{T}(A::SMatSpace{T}) = SMat{T}
+
+parent_type{T}(::Type{SMat{T}}) = SMatSpace{T}
+
 base_ring{T}(A::SMatSpace{T}) = A.base_ring::parent_type(T)
 
 parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
@@ -84,9 +88,8 @@ end
 #
 ################################################################################
 
-# this makes only sense for SMat{fmpz}
 function sparsity{T}(A::SMat{T})
-  return A.nnz/(A.r * A.c), nbits(maxabs(A))
+  return A.nnz/(A.r * A.c)
 end
 
 ################################################################################
