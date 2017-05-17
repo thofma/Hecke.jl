@@ -257,7 +257,7 @@ doc"""
 > Makes a copy of $\mathcal O$.
 """
 function Base.deepcopy_internal(O::NfOrd, dict::ObjectIdDict)
-  z = NfOrdGen()
+  z = typeof(O)(O.nf)
   for x in fieldnames(O)
     # This is slow. Julia can't interfere the type of the right hand side.
     # (According to @code_warntype)
