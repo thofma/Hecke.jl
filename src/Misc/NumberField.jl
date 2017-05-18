@@ -1,5 +1,6 @@
 import Nemo.sub!, Base.gcd
-export induce_rational_reconstruction, induce_crt, hasroot, root, roots
+export induce_rational_reconstruction, induce_crt, hasroot, root, roots, 
+       number_field
 
 if Int==Int32
   global const p_start = 2^30
@@ -40,6 +41,8 @@ function AnticNumberField(f::fmpz_poly)
   Qx, x = PolynomialRing(QQ, string(parent(f).S))
   return NumberField(Qx(f))
 end
+
+global const number_field = AnticNumberField
 
 ################################################################################
 #
@@ -644,8 +647,8 @@ function norm(f::PolyElem{nf_elem})
 end
 
 doc"""
-  factor(f::fmpz_poly, K::NumberField) -> Dict{PolyElem{nf_elem}, Int}
-  factor(f::fmpq_poly, K::NumberField) -> Dict{PolyElem{nf_elem}, Int}
+  factor(f::fmpz_poly, K::NumberField) -> Fac{GenPoly{nf_elem}}
+  factor(f::fmpq_poly, K::NumberField) -> Fac{GenPoly{nf_elem}}
 
 > The factorisation of f over K (using Trager's method).
 """
@@ -662,7 +665,7 @@ end
 
 
 doc"""
-  factor(f::PolyElem{nf_elem}) -> Dict{PolyElem{nf_elem}, Int}
+  factor(f::PolyElem{nf_elem}) -> Fac{GenPoly{nf_elem}}
 
 > The factorisation of f (using Trager's method).
 """
@@ -1436,8 +1439,7 @@ end
 characteristic(::AnticNumberField) = 0
 
 #
-
-show_minus_one(::Type{nf_elem}) = false
+Nemo.show_minus_one(::Type{nf_elem}) = false
 
 
 function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too slow
