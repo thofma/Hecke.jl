@@ -85,10 +85,10 @@ Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
 #
 ################################################################################
 
-deepcopy(x::NfMaxOrdQuoRingElem) =
-        NfMaxOrdQuoRingElem(parent(x), deepcopy(x.elem))
+Base.deepcopy_internal(x::NfMaxOrdQuoRingElem, dict::ObjectIdDict) =
+        NfMaxOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
 
-copy(x::NfMaxOrdQuoRingElem) = deepcopy(x)
+#copy(x::NfMaxOrdQuoRingElem) = deepcopy(x)
 
 ################################################################################
 #
