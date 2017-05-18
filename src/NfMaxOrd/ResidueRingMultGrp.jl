@@ -14,17 +14,21 @@ export multiplicative_group, multiplicative_group_generators
 
 doc"""
 ***
-    multiplicative_group(Q::NfMaxOrdQuoRing) -> Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
+    multiplicative_group(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf, Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
+    unit_group(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf, Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
 
-> Return an isomorphism map $f \colon A \to Q^\times$.
+> Returns the unit group of $Q$ as an abstract group $A$ and
+> an isomorphism map $f \colon A \to Q^\times$.
 """
 function multiplicative_group(Q::NfMaxOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
     gens , structure , disc_log = _multgrp(Q)
     Q.multiplicative_group = AbToResRingMultGrp(Q,gens,structure,disc_log)
   end
-  return Q.multiplicative_group
+  mQ = Q.multiplicative_group
+  return domain(mQ), mQ
 end
+unit_group(Q::NfMaxOrdQuoRing) = multiplicative_group(Q)
 
 doc"""
 ***

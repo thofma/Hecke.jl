@@ -29,8 +29,7 @@
       @testset "m0 = <$n>" for n in 1:50
         m0 = ideal(O,O(n))
         Q = NfMaxOrdQuoRing(O,m0)
-        M = multiplicative_group(Q)
-        G = domain(M)
+        G, M = multiplicative_group(Q)
         @test isa(G,Hecke.FinGenGrpAbSnf)
         SNF = G.snf
         gens = M.generators
@@ -50,8 +49,7 @@
       @testset "m0 = <1361>^3000" begin
         m0 = ideal(O,O(1361))^100
         Q = NfMaxOrdQuoRing(O,m0)
-        M = multiplicative_group(Q)
-        G = domain(M)
+        G, M = multiplicative_group(Q)
         @test isa(G,Hecke.FinGenGrpAbSnf)
         SNF = G.snf
         gens = M.generators
@@ -78,8 +76,7 @@
       @testset "m0 = <2>" begin
         m0 = ideal(O,O(2))
         Q = NfMaxOrdQuoRing(O,m0)
-        M = multiplicative_group(Q)
-        G = domain(M)
+        G, M = multiplicative_group(Q)
         @test isa(G,Hecke.FinGenGrpAbSnf)
         SNF = G.snf
         gens = M.generators
@@ -103,8 +100,7 @@
       @testset "m0 = <4>" begin
         m0 = ideal(O,O(4))
         Q = NfMaxOrdQuoRing(O,m0)
-        M = multiplicative_group(Q)
-        G = domain(M)
+        G, M = multiplicative_group(Q)
         @test isa(G,Hecke.FinGenGrpAbSnf)
         SNF = G.snf
         gens = M.generators

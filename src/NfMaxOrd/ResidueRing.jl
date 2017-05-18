@@ -126,14 +126,34 @@ end
 ################################################################################
 #
 #  Quotient function
+#  
+# (and standart helpers)
 #
 ################################################################################
-
+doc"""
+    quo(O::NfMaxOrd, I::NfMaxOrdIdl) -> NfMaxOrdQuoRing, Map
+    ResidueRing(O::NfMaxOrd, I::NfMaxOrdIdl) -> NfMaxOrdQuoRing, Map
+> The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
+> The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
+"""
 function quo(O::NfMaxOrd, I::NfMaxOrdIdl)
   # We should check that I is not zero
   Q = NfMaxOrdQuoRing(O, I)
   f = NfMaxOrdQuoMap(O, Q)
   return Q, f
+end
+
+function Nemo.ResidueRing(O::NfMaxOrd, I::NfMaxOrdIdl)
+  return quo(O, I)
+end
+
+doc"""
+    lift(O::NfMaxOrd, a::NfMaxOrdQuoRingElem) -> NfOrdElem
+> Returns a lift of $a$ back to $O$.
+"""
+function lift(O::NfMaxOrd, a::NfMaxOrdQuoRingElem)
+  f = NfMaxOrdQuoMap(O, parent(a))
+  return preimage(f, a)
 end
 
 ################################################################################
