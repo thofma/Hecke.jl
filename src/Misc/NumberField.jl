@@ -211,7 +211,8 @@ function charpoly(a::nf_elem)
   d = den(a)
   Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
   f = charpoly(Zx, representation_mat(d*a))
-  return f(gen(parent(f))*d)
+  f =  f(gen(parent(f))*d)
+  return divexact(f, content(f))
 end
 
 doc"""
@@ -224,7 +225,8 @@ function minpoly(a::nf_elem)
   d = den(a)
   Zx = PolynomialRing(ZZ, string(parent(parent(a).pol).S))[1]
   f = minpoly(Zx, representation_mat(d*a))
-  return f(gen(parent(f))*d)
+  f = f(gen(parent(f))*d)
+  return divexact(f, content(f))
 end
 
 ###########################################################################
@@ -835,7 +837,13 @@ doc"""
 function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
   @assert issquarefree(f)
 
-  #todo: implement for equation order....
+  #TODO: implement for equation order....
+  #TODO: use max_roots
+
+  if degree(f) == 1
+    return [-trailing_coefficient(f)//lead(f)]
+  end
+
   O = maximal_order(base_ring(f))
   if do_lll
     O = lll(O)
@@ -905,6 +913,10 @@ doc"""
 function root(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
   Kx, x = PolynomialRing(parent(a), "x")
+
+  if n==1 
+    return a
+  end
 
   f = x^n - a
 
@@ -1703,4 +1715,53 @@ function signs(a::FacElem{nf_elem, AnticNumberField})
   end
   return s
 end
+
+
+#Trager: p4, Algebraic Factoring and Rational Function Integration
+function absolute_field(K::GenResRing{GenPoly{nf_elem}})
+  f = K.modulus
+  kx = parent(f)
+  k = base_ring(kx)
+  Qx = parent(k.pol)
+
+  l = 0
+  g = f
+  N = 0
+
+  while true
+    N = norm(g)
+    @assert degree(N) == degree(g) * degree(k)
+
+    if !isconstant(N) && issquarefree(N)
+      break
+    end
+
+    l += 1
+ 
+    g = compose(f, gen(kx) - l*gen(k))
+  end
+
+  Ka = NumberField(N)[1]
+  KaT, T = PolynomialRing(Ka, "T")
+
+  # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
+
+  # gen(k) -> Root(gcd(g, poly(k)))  #gcd should be linear:
+  # g in kx = (Q[a])[x]. Want to map x -> gen(Ka), a -> T
+  gg = zero(KaT)
+  for i=degree(g):-1:0
+    gg = gg*gen(Ka) + evaluate(Qx(coeff(g, i)), gen(KaT))
+  end
+
+  q = gcd(gg, evaluate(k.pol, gen(KaT)))
+  @assert degree(q) == 1
+  al = -trailing_coefficient(q)//lead(q)
+  be = gen(Ka) - l*al
+  ga = gen(K) + l*gen(k)
+
+  #al -> gen(k) in Ka
+  #be -> gen(K) in Ka
+  #ga -> gen(Ka) in K
+  return Ka, al, be, ga
+end 
 
