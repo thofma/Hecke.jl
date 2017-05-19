@@ -40,6 +40,22 @@ function multiplicative_group_generators(Q::NfMaxOrdQuoRing)
   return multiplicative_group(Q).generators
 end
 
+
+function factor(Q::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+  if !all(isprime, keys(Q.fac))
+    S = factor_coprime(Q)
+    fac = Dict{NfMaxOrdIdl, Int}()
+    for (p, e)=S
+      lp = factor(p)
+      for q = keys(lp)
+        fac[q] = Int(valuation(p, q)*e)
+      end
+    end
+  else
+    fac = Dict(p=>Int(e) for (p,e) = Q.fac)
+  end
+  return fac
+end
 ################################################################################
 #
 #  Internals

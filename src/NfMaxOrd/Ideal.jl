@@ -1229,6 +1229,18 @@ function valuation(a::fmpz, p::NfMaxOrdIdl)
   return valuation(a, P)* p.splitting_type[1]
 end
 
+#TODO: some more intelligence here...
+function valuation_naive(A::NfMaxOrdIdl, B::NfMaxOrdIdl)
+  Bi = inv(B)
+  i = 0
+  C = simplify(A* Bi)
+  while den(C) == 1
+    C = simplify(Bi*C)
+    i += 1
+  end
+  return i
+end
+
 doc"""
 ***
     valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl) -> fmpz
@@ -1238,6 +1250,9 @@ doc"""
 """
 function valuation(A::NfMaxOrdIdl, p::NfMaxOrdIdl)
   _assure_weakly_normal_presentation(A) 
+  if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
+    return valuation_naive(A, p)
+  end
   return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
 end
 

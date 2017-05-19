@@ -1,4 +1,4 @@
-export FacElem, FacElemMon, simplify
+export FacElem, FacElemMon, simplify, factor_coprime
 
 export transform
 
@@ -283,6 +283,11 @@ end
 #
 ################################################################################
 
+function evaluate(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+  x = simplify(x) # the other method won't work due to one()
+  return prod([(p//1)^Int(k) for (p,k) = x.fac])
+end
+
 doc"""
 ***
   evaluate{T}(x::FacElem{T}) -> T
@@ -434,6 +439,55 @@ end
 function isone(x::FacElem{fmpz})
   y = simplify(x)
   return all(iszero, values(y.fac))
+end
+
+
+#TODO: expand the coprime stuff to automatically also get the exponents
+function simplify(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return z
+end
+
+function simplify!(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+  if length(x.fac) <= 1
+    p = first(keys(x.fac))
+    x.fac =  Dict(abs(p) => x.fac[p])
+    return 
+  end
+  cp = coprime_base(collect(base(x)))
+  ev = Dict{NfMaxOrdIdl, fmpz}()
+  for p = cp
+    if isone(p)
+      continue
+    end
+    v = fmpz(0)
+    for b = base(x)
+      v += valuation(b, p)*x.fac[b]
+    end
+    if v != 0
+      ev[p] = v
+    end
+  end
+  x.fac = ev
+end  
+
+function factor_coprime(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+  x = deepcopy(x)
+  simplify!(x)
+  return Dict(p=>Int(v) for (p,v) = x.fac)
+end
+
+function factor_coprime(x::FacElem{fmpz})
+  x = deepcopy(x)
+  simplify!(x)
+  d = Dict(abs(p) => Int(v) for (p,v) = x.fac)
+  if haskey(d, fmpz(-1))
+    delete!(d, fmpz(-1))
+    return Fac(fmpz(-1), d)
+  else
+    return Fac(fmpz(1), d)
+  end
 end
 
 doc"""
