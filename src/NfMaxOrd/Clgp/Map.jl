@@ -259,6 +259,7 @@ doc"""
 > For a principal ideal $A$, find a generator.
 """
 function principal_gen(A::NfMaxOrdIdl)
+  O = order(A)
   fl, e = isprincipal_fac_elem(A)
   if !fl
     error("Ideal is not principal")
