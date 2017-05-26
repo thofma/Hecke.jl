@@ -66,7 +66,7 @@ type TTrafo{T, S}
   cols::UnitRange{Int}
   U::S
 
-  TTrafo{T, S}() = new{T, S}()
+  TTrafo() = new{T, S}()
 end
 
 matrix_type(::Type{fmpz}) = fmpz_mat
@@ -119,8 +119,8 @@ function trafo_partial_dense{S}(i::Int, rows::UnitRange{Int},
   return z
 end
 
-function trafo_delete_zero{T}(i::Int)
-  z = TTrafo{T, matrix_type{T}}()
+function trafo_delete_zero{T}(i::Int, ::Type{T})
+  z = TTrafo{T, matrix_type(T)}()
   z.n = 6
   z.i = i
   return z
