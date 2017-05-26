@@ -1,6 +1,6 @@
-@testset "Sparse matrices" begin
+@testset "Hermite normal form" begin
 
-  @testset "Hermite normal form" begin
+  @testset "Sparse Kannan Bachem" begin
     for i in 1:10
       r = 200
       c = 100

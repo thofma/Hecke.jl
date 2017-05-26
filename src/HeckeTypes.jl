@@ -48,6 +48,84 @@ end
 #
 ################################################################################
 
+type TTrafo{T, S}
+  n::Int # 1 TrafoScale
+         # 2 TrafoSwap
+         # 3 TrafoAddScaled
+         # 4 TrafoParaAddScaled
+         # 5 TrafoPartialDense
+         # 6 TrafoDeleteZero
+  i::Int
+  j::Int
+  a::T
+  b::T
+  c::T
+  d::T
+  s::T
+  rows::UnitRange{Int}
+  cols::UnitRange{Int}
+  U::S
+
+  TTrafo{T, S}() = new{T, S}()
+end
+
+matrix_type(::Type{fmpz}) = fmpz_mat
+
+function trafo_scale{T}(i::Int, c::T)
+  z = TTrafo{T, matrix_type(T)}()
+  z.n = 1
+  z.i = i
+  z.c = c
+  return z
+end
+
+function trafo_swap{T}(i::Int, j::Int, ::Type{T})
+  z = TTrafo{T, matrix_type(T)}()
+  z.n = 2
+  z.i = i
+  z.j = j
+  return z
+end
+
+function trafo_add_scaled{T}(i::Int, j::Int, s::T)
+  z = TTrafo{T, matrix_type(T)}()
+  z.n = 3
+  z.i = i
+  z.j = j
+  z.s = s
+  return z
+end
+
+function trafo_para_add_scaled{T}(i::Int, j::Int, a::T, b::T, c::T, d::T)
+  z = TTrafo{T, matix_type(T)}()
+  z.n = 4
+  z.i = i
+  z.j = j
+  z.a = a
+  z.b = b
+  z.c = c
+  z.d = d
+  return z
+end
+
+function trafo_partial_dense{S}(i::Int, rows::UnitRange{Int},
+                             cols::UnitRange{Int}, U::S)
+  z = TTrafo{elem_type(S), S}()
+  z.n = 5
+  z.i = i
+  z.rows = rows
+  z.cols = cols
+  z.U = U
+  return z
+end
+
+function trafo_delete_zero{T}(i::Int)
+  z = TTrafo{T, matrix_type{T}}()
+  z.n = 6
+  z.i = i
+  return z
+end
+
 abstract Trafo
 
 type TrafoScale{T} <: Trafo
