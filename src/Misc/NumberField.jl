@@ -1450,10 +1450,6 @@ end
 
 characteristic(::AnticNumberField) = 0
 
-#
-Nemo.show_minus_one(::Type{nf_elem}) = false
-
-
 function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too slow
   p = next_prime(2^60)
   K = parent(a)
