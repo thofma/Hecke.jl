@@ -1,10 +1,9 @@
 #fin. gen. submodules of Z^n and F_p^n (and possibly more)
 #
-#import Base.show, Base.reduce, Base.inv, Nemo.inv, Base.solve, Hecke.solve,
+#import Base.show, Base.inv, Nemo.inv, Base.solve, Hecke.solve,
 #       Hecke.lift, Hecke.rational_reconstruction, Hecke.elementary_divisors,
 #       Hecke.rank, Hecke.det
 
-import Base.reduce
 export det_mc, id, isid, isupper_triangular, norm2, hadamard_bound2, 
        hnf, hnf!, echelon_with_trafo
 
