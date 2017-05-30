@@ -282,6 +282,7 @@ function isprincipal_fac_elem(A::NfMaxOrdIdl)
   T = c.M.trafo
 
   x, r = class_group_ideal_relation(A, c)
+  #so(?) x*A is c-smooth and x*A = evaluate(r)
 
   R, d = solve_ut(H, r)
   if d != 1
@@ -296,7 +297,7 @@ function isprincipal_fac_elem(A::NfMaxOrdIdl)
     apply_right!(rs, T[i])
   end
 
-  e = FacElem(vcat(c.R_gen, c.R_rel), rs)*x
+  e = FacElem(vcat(c.R_gen, c.R_rel), rs)*inv(x)  
 
   #reduce e modulo units.
   e = reduce_mod_units([e], _get_UnitGrpCtx_of_order(O))[1]
