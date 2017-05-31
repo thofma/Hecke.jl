@@ -50,7 +50,7 @@ function _coprime_ideal(a::NfMaxOrdIdl, b::NfMaxOrdIdl)
  
 end 
 
-#=
+
 type MapRayClassGrp{T} <: Map{T, Hecke.NfMaxOrdIdlSet}
   header::Hecke.MapHeader
 
@@ -68,7 +68,7 @@ type MapInfPGrp{T} <: Map{T, Nemo.AnticNumberField}
     return new()
   end
 end
-=#
+
 
 
 #
@@ -222,7 +222,6 @@ function ray_class_group(m::NfMaxOrdIdl, primes=[])
   else 
      x, P[i]=_coprime_ideal(mC(C[i]), m)
      x=x^(Int(order(C[i])))
-     println(x)
      y=Hecke.principal_gen(x)
   end
   b=(mG\(pi(y))).coeff
