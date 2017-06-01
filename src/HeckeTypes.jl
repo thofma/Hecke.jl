@@ -1692,7 +1692,7 @@ end
 
 ################################################################################
 #
-# Abelian Groups and their elements
+#  Abelian Groups and their elements
 #
 ################################################################################
 
@@ -1739,4 +1739,41 @@ include("Map/MapType.jl")
 ################################################################################
 
 type NoElements <: Exception end
+
+################################################################################
+#
+#  Infinite places
+#
+################################################################################
+
+abstract Place
+
+type InfinitePlace <: Place
+  K::AnticNumberField # Number field
+  i::Int              # The position of the root r in conjugates_arb(a),
+                      # where a is the primitive element of K
+  r::acb              # (Low precision) approximation of the root
+  isreal::Bool        # True if and only if r is real
+
+  function InfinitePlace(K::AnticNumberField, i::Int)
+    z = new()
+    z.K = K
+    c = conjugate_data_arb(K)
+    r1, r2 = c.signature
+    if 1 <= i <= r1
+      z.i = i
+      z.isreal = true
+      z.r = c.roots[i]
+    elseif r1 + 1 <= i <= r1 + r2
+      z.i = i
+      z.isreal = false
+      z.r = c.complex_roots[i - r1]
+    elseif r1 + r2  + 1 <= i <=  r1 + 2*r2
+      z.i = i - r2
+      z.isreal = false
+      z.r = c.complex_roots[i - r1 - r2]
+    end
+    return z
+  end
+end
 
