@@ -111,8 +111,10 @@ function elements_with_all_signs(L::NfMaxOrd)
   
   S = DiagonalGroup([2 for i=1:r1])
 
-  function logS(x::Array{Int, 1})
-    return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
+  inf_places = infinite_places(K)
+
+  function logS(x)
+    return S([x[P] > 0 ? 0 : 1 for P in inf_places])
   end
 
   s = typeof(S[1])[]
@@ -165,6 +167,9 @@ function narrow_class_group(L::NfMaxOrd)
 
   U, mU = unit_group_fac_elem(L)
 
+  K = nf(L)
+
+  inf_places = infinite_places(K)
 
   # 1 -> K^*/K^+U -> Cl^+ -> Cl -> 1
   # K^*/K^+ = C_2^{r_1}
@@ -173,8 +178,8 @@ function narrow_class_group(L::NfMaxOrd)
 
   S = DiagonalGroup([2 for i=1:r1])
 
-  function logS(x::Array{Int, 1})
-    return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
+  function logS(x)
+    return S([x[P] > 0 ? 0 : 1 for P in inf_places])
   end
   s, ms = quo(S, [logS(signs(mU(U[i]))) for i=1:ngens(U)])
   s, mms = snf(s)

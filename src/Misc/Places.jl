@@ -7,8 +7,8 @@
 #
 ################################################################################
 
-export iscomplex, ispositive, istotally_positive, _signs, _sign, real_places,
-       complex_places, infinite_places
+export iscomplex, ispositive, istotally_positive, signs, sign, real_places,
+       complex_places, infinite_places, infinite_place
 
 ################################################################################
 #
@@ -16,12 +16,12 @@ export iscomplex, ispositive, istotally_positive, _signs, _sign, real_places,
 #
 ################################################################################
 
-function Base.:(==)(P::Hecke.InfinitePlace, Q::Hecke.InfinitePlace)
+function Base.:(==)(P::InfPlc, Q::InfPlc)
   P.K != Q.K && error("Places are of different number fields")
   return P.i == Q.i
 end
 
-function Base.hash(P::Hecke.InfinitePlace, h::UInt)
+function Base.hash(P::InfPlc, h::UInt)
   return Base.hash(P.K, h) $ Base.hash(P.i, h)
 end
 
@@ -31,7 +31,7 @@ end
 #
 ################################################################################
 
-function Base.show(io::IO, P::Hecke.InfinitePlace)
+function Base.show(io::IO, P::InfPlc)
   if P.isreal
     print(io, "Real ")
   else
@@ -50,21 +50,21 @@ end
 
 doc"""
 ***
-    isreal(P::InfinitePlace) -> Bool
+    isreal(P::InfPlc) -> Bool
 
 > Returns whether the embedding into $\mathbf{C}$ defined by P is real or not.
 """
-function Base.isreal(P::Hecke.InfinitePlace)
+function Base.isreal(P::InfPlc)
   return P.isreal
 end
 
 doc"""
 ***
-    iscomplex(P::InfinitePlace) -> Bool
+    iscomplex(P::InfPlc) -> Bool
 
 > Returns whether the embedding into $\mathbf{C}$ defined by P is complex or not.
 """
-function iscomplex(P::Hecke.InfinitePlace)
+function iscomplex(P::InfPlc)
   return !isreal(P)
 end
 
@@ -76,47 +76,47 @@ end
 
 doc"""
 ***
-    infinite_place(K::AnticNumberField, i::Int) -> InfinitePlace
+    infinite_place(K::AnticNumberField, i::Int) -> InfPlc
 
 > This function returns the infinite place of $K$ corresponding to the root
 > `conjugates_arb(a)[i]`, where `a` is the primitive element of $K$.
 """
 function infinite_place(K::AnticNumberField, i::Int)
   !(1 <= i <= degree(K)) && error("Index must be between 1 and $(degree(K))")
-  return Hecke.InfinitePlace(K, i)
+  return InfPlc(K, i)
 end
 
 doc"""
 ***
-    infinite_places(K::AnticNumberField) -> Vector{InfinitePlace}
+    infinite_places(K::AnticNumberField) -> Vector{InfPlc}
 
 > This function returns all infinite places of $K$.
 """
 function infinite_places(K::AnticNumberField)
   r1, r2 = signature(K)
-  return [ Hecke.InfinitePlace(K, i) for i in 1:(r1 + r2)]
+  return [ InfPlc(K, i) for i in 1:(r1 + r2)]
 end
 
 doc"""
 ***
-    real_places(K::AnticNumberField) -> Vector{InfinitePlace}
+    real_places(K::AnticNumberField) -> Vector{InfPlc}
 
 > This function returns all infinite real places of $K$.
 """
 function real_places(K::AnticNumberField)
   r1, r2 = signature(K)
-  return [ Hecke.InfinitePlace(K, i) for i in 1:r1]
+  return [ InfPlc(K, i) for i in 1:r1]
 end
 
 doc"""
 ***
-    real_places(K::AnticNumberField) -> Vector{InfinitePlace}
+    complex_places(K::AnticNumberField) -> Vector{InfPlc}
 
 > This function returns all infinite complex places of $K$.
 """
 function complex_places(K::AnticNumberField)
   r1, r2 = signature(K)
-  return [ Hecke.InfinitePlace(K, i) for i in (r1 + 1):r2]
+  return [ InfPlc(K, i) for i in (r1 + 1):r1 + r2]
 end
 
 ################################################################################
@@ -127,21 +127,21 @@ end
 
 doc"""
 ***
-    signs(a::nf_elem)          -> Dict{InfinitePlace, Int}
-    signs(a::FacElem{nf_elem}) -> Dict{InfinitePlace, Int}
+    signs(a::nf_elem)          -> Dict{InfPlc, Int}
+    signs(a::FacElem{nf_elem}) -> Dict{InfPlc, Int}
 
 > This function returns a dictionary of the signs of $a$ at all infinite places
 > of the ambient number field. The keys are infinite places of the ambient
 > number field. The value is $1$ if the sign is positive and $-1$ if the sign
 > is negative.
 """
-function _signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
-  K = Hecke.base_ring(a)
+function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
+  K = _base_ring(a)
   r1, r2 = signature(K)
-  D = Dict{Hecke.InfinitePlace, Int}()
-  s = Hecke.signs(a)
+  D = Dict{InfPlc, Int}()
+  s = _signs(a)
   for i in 1:r1
-    P = Hecke.InfinitePlace(K, i)
+    P = InfPlc(K, i)
     D[P] = s[i]
   end
   return D
@@ -149,34 +149,35 @@ end
 
 doc"""
 ***
-    sign(a::nf_elem, P::InfinitePlace)          -> Int
-    sign(a::FacElem{nf_elem}, P::InfinitePlace) -> Int
+    sign(a::nf_elem, P::InfPlc)          -> Int
+    sign(a::FacElem{nf_elem}, P::InfPlc) -> Int
 
 > This function returns the sign of $a$ at the place $P$. The value is $1$ if
 > the sign is positive and $-1$ if the sign is negative.
 
 """
-function _sign(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::Hecke.InfinitePlace)
+function sign(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
-  return _signs(a, [P])[P]
+  return signs(a, [P])[P]
 end
 
 doc"""
 ***
-    signs(a::nf_elem, l::Vector{InfinitePlace})          -> Dict{InfinitePlace, Int}
-    signs(a::FacElem{nf_elem}, l::Vector{InfinitePlace}) -> Dict{InfinitePlace, Int}
+    signs(a::nf_elem, l::Vector{InfPlc})          -> Dict{InfPlc, Int}
+    signs(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Dict{InfPlc, Int}
 
 > This function returns a dictionary of the signs of $a$ at places in $l$. The
 > keys are the elements of $l$. The value is $1$ if the sign is positive and
-> $-1$ if the sign is negative.
+> $-1$ if the sign is negative. The result will contain as many signs as there
+> are real places contained in $l$.
 """
-function _signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{Hecke.InfinitePlace, 1})
-  K = Hecke._base_ring(a)
+function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{InfPlc, 1})
+  K = _base_ring(a)
   r1, r2 = signature(K)
-  D = Dict{Hecke.InfinitePlace, Int}()
-  s = Hecke.signs(a)
+  D = Dict{InfPlc, Int}()
+  s = _signs(a)
   for i in 1:r1
-    P = Hecke.InfinitePlace(K, i)
+    P = InfPlc(K, i)
     if P in l
       D[P] = s[i]
     end
@@ -186,12 +187,12 @@ end
 
 # extend functionality to elements of orders
 
-function _signs(a::NfOrdElem, args...)
-  return _signs(a.elem_in_nf, args...)
+function signs(a::NfOrdElem, args...)
+  return signs(a.elem_in_nf, args...)
 end
 
-function _sign(a::NfOrdElem, args...)
-  return _sign(a.elem_in_nf, args...)
+function sign(a::NfOrdElem, args...)
+  return sign(a.elem_in_nf, args...)
 end
 
 ################################################################################
@@ -202,26 +203,26 @@ end
 
 doc"""
 ***
-    ispositive(a::nf_elem, P::InfinitePlace)          -> Bool
-    ispositive(a::FacElem{nf_elem}, P::InfinitePlace) -> Bool
+    ispositive(a::nf_elem, P::InfPlc)          -> Bool
+    ispositive(a::FacElem{nf_elem}, P::InfPlc) -> Bool
 
 > Returns whether the element $a$ is positive at the embedding corresponding to
 > $P$. The place $P$ must be real.
 """
-function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::Hecke.InfinitePlace)
+function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   !isreal(P) && error("Place must be real")
-  return _sign(a, P) > 0
+  return sign(a, P) > 0
 end
 
 doc"""
 ***
-    ispositive(a::nf_elem, l::Vector{InfinitePlace})          -> Bool
-    ispositive(a::FacElem{nf_elem}, l::Vector{InfinitePlace}) -> Bool
+    ispositive(a::nf_elem, l::Vector{InfPlc})          -> Bool
+    ispositive(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Bool
 
 > Returns whether the element $a$ is positive at the embeddings corresponding to
 > the real places of $l$.
 """
-function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{Hecke.InfinitePlace, 1})
+function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Array{InfPlc, 1})
   return all(x -> ispositive(a, x), (y for y in l if isreal(y)))
 end
 

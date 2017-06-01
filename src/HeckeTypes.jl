@@ -1746,16 +1746,18 @@ type NoElements <: Exception end
 #
 ################################################################################
 
-abstract Place
+export Plc, InfPlc
 
-type InfinitePlace <: Place
+abstract Plc
+
+type InfPlc <: Plc
   K::AnticNumberField # Number field
   i::Int              # The position of the root r in conjugates_arb(a),
                       # where a is the primitive element of K
-  r::acb              # (Low precision) approximation of the root
+  r::acb              # Approximation of the root
   isreal::Bool        # True if and only if r is real
 
-  function InfinitePlace(K::AnticNumberField, i::Int)
+  function InfPlc(K::AnticNumberField, i::Int)
     z = new()
     z.K = K
     c = conjugate_data_arb(K)

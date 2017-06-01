@@ -1659,10 +1659,10 @@ end
 ############################################################################
 doc"""
 ***
-    signs(a::nf_elem) -> Array{Int, 1}
+    _signs(a::nf_elem) -> Array{Int, 1}
 > For a non-zero elements $a$ return the signs of all real embeddings.
 """
-function signs(a::nf_elem)
+function _signs(a::nf_elem)
   if iszero(a)
     error("element must not be zero")
   end
@@ -1696,7 +1696,7 @@ doc"""
 > For a non-zero elements $a$ in factored form, 
 > return the signs of all real embeddings.
 """
-function signs(a::FacElem{nf_elem, AnticNumberField})
+function _signs(a::FacElem{nf_elem, AnticNumberField})
   r1, r2 = signature(base_ring(a))
   if r1 == 0
     return Int[]
@@ -1707,7 +1707,7 @@ function signs(a::FacElem{nf_elem, AnticNumberField})
     if iseven(e)
       continue
     end
-    s .*= signs(k)
+    s .*= _signs(k)
   end
   return s
 end
