@@ -313,7 +313,8 @@ doc"""
 > A modular $\gcd$
 """
 function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
-  return gcd_modular_kronnecker(a, b)
+  g= gcd_modular_kronnecker(a, b)
+  return inv(lead(g))*g  # we want it monic...
 end
 
 # There is some weird type instability
@@ -709,7 +710,8 @@ function factor(f::PolyElem{nf_elem})
       t = t + K(coeff(i, j))*gen(Kx)^j
     end
     t = compose(t, gen(Kx) + k*gen(K))
-    res[gcd(f, t)] = 1
+    t = gcd(f, t)
+    res[t] = 1
   end
 
   r = Fac{typeof(f)}()
