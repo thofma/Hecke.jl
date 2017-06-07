@@ -933,7 +933,7 @@ type NfMaxOrd <: NfOrd
   function NfMaxOrd(b::Array{nf_elem, 1})
     K = parent(b[1])
     n = degree(K)
-    A = FakeFmpqMat(basis_mat(K,b))
+    A = FakeFmpqMat(basis_mat(b))
 
     if haskey(NfMaxOrdID, (K,A))
       return NfMaxOrdID[(K,A)]::NfMaxOrd
