@@ -85,9 +85,9 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
       push!(clg.R_rel, a)
     end
     push!(clg.RS, a)
-    if orbit && isdefined(clg, :sub_grp)
-      n = clg.M[end]
-      o = sub_grp
+    if orbit && isdefined(clg, :aut_grp)
+      n = res
+      o = clg.aut_grp
       function op_smat(n::SRow, p::Nemo.perm)
         r = [(p[i], v) for (i,v) = n]
         sort!(r, lt = (a,b)->a[1]<b[1])
@@ -96,10 +96,10 @@ function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, n
 
       @v_do :ClassGroup 1 println(" adding orbit with $(length(o)) elements")
       for (b, m) in o
-        nn - op_smat(n, m)
+        nn = op_smat(n, m)
         if nn != n
           ba = b(a)
-          if add_gen!(clg.M, m)
+          if add_gen!(clg.M, nn)
             push!(clg.R_gen, ba)
           else
             push!(clg.R_rel, ba)
