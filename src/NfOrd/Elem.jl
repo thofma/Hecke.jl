@@ -200,6 +200,26 @@ end
 
   doc"""
   ***
+        (O::NfOrd)(a::NfOrdElem, check::Bool = true) -> NfOrdElem
+
+  > Given an element $a$ of some order in the ambient number field of 
+  > $\mathcal O$, this function coerces the element into $\mathcal O$. It
+  > will be checked that $a$ is contained in $\mathcal O$ if and only if
+  > `check` is `true`.
+  """
+  (O::NfMaxOrd)(a::NfOrdElem, check::Bool = true) = begin
+    b = nf(parent(a))(a)
+    if check
+      (x,y) = _check_elem_in_order(b,O)
+      !x && error("Number field element not in the order")
+      return NfOrdElem{NfMaxOrd}(O, deepcopy(b), fmpz[ deepcopy(x) for x in y])
+    else
+      return NfOrdElem{NfMaxOrd}(O, deepcopy(b))
+    end
+  end
+
+  doc"""
+  ***
         (O::NfOrd)(a::Union{fmpz, Integer}) -> NfOrdElem
 
   > Given an element $a$ of type `fmpz` or `Integer`, this
