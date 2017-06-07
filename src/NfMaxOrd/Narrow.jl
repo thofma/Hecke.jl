@@ -54,7 +54,7 @@ end
 doc"""
 ***
     reduce_ideal2(A::FacElem{NfMaxOrdIdl}) -> NfMaxOrdIdl, FacElem{nf_elem}
-> Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$.
+> Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   O = order(first(keys(I.fac)))
