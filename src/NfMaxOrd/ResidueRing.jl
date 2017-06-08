@@ -1137,7 +1137,7 @@ end
 
 doc"""
 ***
-    group_structure(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf
+    group_structure(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf
 
 > Returns an abelian group with the structure of (Q,+).
 """

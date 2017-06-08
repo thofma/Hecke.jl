@@ -54,7 +54,7 @@ end
 doc"""
 ***
     reduce_ideal2(A::FacElem{NfMaxOrdIdl}) -> NfMaxOrdIdl, FacElem{nf_elem}
-> Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$.
+> Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
 function reduce_ideal2(I::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   O = order(first(keys(I.fac)))
@@ -141,7 +141,7 @@ function elements_with_all_signs(L::NfMaxOrd)
     end
   end
   X = DiagonalGroup([2 for i=1:r1])
-  hX = FinGenGrpAbMap(X, X, vcat([x.coeff for x=s]))
+  hX = GrpAbFinGenMap(X, X, vcat([x.coeff for x=s]))
   r = nf_elem[]
   for i=1:r1
     y = haspreimage(hX, X[i])[2]
@@ -152,7 +152,7 @@ end
 
 doc"""
 ***
-    narrow_class_group(L::NfMaxOrd) -> FinGenGrpAb, Map
+    narrow_class_group(L::NfMaxOrd) -> GrpAbFinGen, Map
 > Compute the narrow (or strict) class group of $L$, ie. the
 > group of invertable ideals modulo the group of totally positive elements.
 > In case the field has no real embedding, this is just the class group.
@@ -206,7 +206,7 @@ function narrow_class_group(L::NfMaxOrd)
   sign_gen = [preimage(ms, s[i]) for i=1:ngens(s)]
   sg = [ prod([el[i]^Int(x[i]) for i=1:length(el)]) for x=sign_gen]
 
-  function exp(a::FinGenGrpAbElem)
+  function exp(a::GrpAbFinGenElem)
     return L(prod([sg[i]^Int(a.coeff[1,i]) for i=1:length(sg)])) * image(mC, C([a.coeff[1, i+length(sg)] for i=1:ngens(C)]))
   end
 

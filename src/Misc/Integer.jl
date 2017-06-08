@@ -502,8 +502,8 @@ end
 
 doc"""
 ***
-    sunit_group_fac_elem(S::Array{fmpz, 1}) -> FinGenGrpAb, Map
-    sunit_group_fac_elem(S::Array{Integer, 1}) -> FinGenGrpAb, Map
+    sunit_group_fac_elem(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
+    sunit_group_fac_elem(S::Array{Integer, 1}) -> GrpAbFinGen, Map
 > The $S$-unit group of $Z$ supported at $S$: the group of
 > rational numbers divisible only by primes in $S$.
 > The second return value is the map mapping group elements to rationals
@@ -523,7 +523,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
 
   Sq = fmpq[x for x=S]
 
-  function dexp(a::FinGenGrpAbElem)
+  function dexp(a::GrpAbFinGenElem)
     return FacElem(Sq, [a.coeff[1,i] for i=1:length(S)])
   end
 
@@ -556,8 +556,8 @@ end
 
 doc"""
 ***
-    sunit_group(S::Array{fmpz, 1}) -> FinGenGrpAb, Map
-    sunit_group(S::Array{Integer, 1}) -> FinGenGrpAb, Map
+    sunit_group(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
+    sunit_group(S::Array{Integer, 1}) -> GrpAbFinGen, Map
 > The $S$-unit group of $Z$ supported at $S$: the group of
 > rational numbers divisible only by primes in $S$.
 > The second return value is the map mapping group elements to rationals
@@ -573,7 +573,7 @@ function sunit_group(S::Array{fmpz, 1})
   mp = MapSUnitGrpZ{typeof(u)}()
   mp.idl = S
 
-  function dexp(a::FinGenGrpAbElem)
+  function dexp(a::GrpAbFinGenElem)
     return evaluate(image(mu, a))
   end
 

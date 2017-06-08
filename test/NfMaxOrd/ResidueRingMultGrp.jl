@@ -30,7 +30,7 @@
         m0 = ideal(O,O(n))
         Q = NfMaxOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test isa(G,Hecke.FinGenGrpAbSnf)
+        @test issnf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -50,7 +50,7 @@
         m0 = ideal(O,O(1361))^100
         Q = NfMaxOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test isa(G,Hecke.FinGenGrpAbSnf)
+        @test issnf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -77,7 +77,7 @@
         m0 = ideal(O,O(2))
         Q = NfMaxOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test isa(G,Hecke.FinGenGrpAbSnf)
+        @test issnf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)
@@ -101,7 +101,7 @@
         m0 = ideal(O,O(4))
         Q = NfMaxOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
-        @test isa(G,Hecke.FinGenGrpAbSnf)
+        @test issnf(G)
         SNF = G.snf
         gens = M.generators
         @test length(SNF) == length(gens)

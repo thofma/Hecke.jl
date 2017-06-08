@@ -93,7 +93,7 @@ type MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
 end
 
 @doc """
-  UnitGroup(R::GenResRing{fmpz}) -> FinGenGrpAb, Map
+  UnitGroup(R::GenResRing{fmpz}) -> GrpAbFinGen, Map
 
 >  The unit group of R = Z/nZ together with the apropriate map.
 """ ->
@@ -155,7 +155,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   end
 
   G = DiagonalGroup(r)
-  function dexp(x::FinGenGrpAbElem)
+  function dexp(x::GrpAbFinGenElem)
     return prod([R(g[i])^x[i] for i=1:ngens(G)])
   end
   function dlog(x::GenRes{fmpz})

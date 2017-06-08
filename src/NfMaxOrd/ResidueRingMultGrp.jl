@@ -14,8 +14,8 @@ export multiplicative_group, multiplicative_group_generators
 
 doc"""
 ***
-    multiplicative_group(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf, Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
-    unit_group(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf, Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
+    multiplicative_group(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfMaxOrdQuoRing}
+    unit_group(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfMaxOrdQuoRing}
 
 > Returns the unit group of $Q$ as an abstract group $A$ and
 > an isomorphism map $f \colon A \to Q^\times$.

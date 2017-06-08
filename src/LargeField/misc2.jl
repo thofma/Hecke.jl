@@ -256,7 +256,7 @@ function local_norm!(n::fmpz, ap::nmod_mat, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
   for j=1:rows(ap)
-    np = Nemo._get_entry_raw(ap, j, 1)
+    np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
   ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), &n, nn)
@@ -338,7 +338,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     for j=1:length(lpx)
       zero!(lcp[j])
       for k=lc
-        Nemo.set_entry!(lcp[j], k, 1, Nemo._get_entry_raw(lcp[j], k, 1) + UInt(1))
+        Nemo.set_entry!(lcp[j], k, 1, Nemo.getindex_raw(lcp[j], k, 1) + UInt(1))
         #should be unlikely - but seems to happen a lot:
         # duplication!
       end

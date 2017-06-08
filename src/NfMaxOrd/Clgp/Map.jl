@@ -61,7 +61,7 @@ function power_product_class(A::Array{NfMaxOrdIdl, 1}, e::Array{fmpz, 1})
   return B
 end
 
-function class_group_disc_exp(a::FinGenGrpAbElem, c::ClassGrpCtx)
+function class_group_disc_exp(a::GrpAbFinGenElem, c::ClassGrpCtx)
   if length(c.dl_data) == 3
     Ti = inv(c.dl_data[2])
     c.dl_data = (c.dl_data[1], c.dl_data[2], c.dl_data[3], Ti)
@@ -436,7 +436,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
   r = MapSUnitModUnitGrpFacElem{typeof(C)}()
   r.idl = I
  
-  function exp(a::FinGenGrpAbElem)
+  function exp(a::GrpAbFinGenElem)
     b = U[1]^a.coeff[1, 1]
     for i=2:length(U)
       b *= U[i]^a.coeff[1, i]
@@ -501,7 +501,7 @@ function sunit_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
   r = MapSUnitGrpFacElem{typeof(G)}()
   r.idl = I
 
-  function exp(a::FinGenGrpAbElem)
+  function exp(a::GrpAbFinGenElem)
     return image(mU, U(sub(a.coeff, 1:1, 1:length(U.snf))))*
            image(mS, S(sub(a.coeff, 1:1, length(U.snf)+1:length(G.snf))))
 
@@ -549,7 +549,7 @@ function sunit_group(I::Array{NfMaxOrdIdl, 1})
   r = MapSUnitGrp{typeof(G)}()
   r.idl = I
 
-  function exp(a::FinGenGrpAbElem)
+  function exp(a::GrpAbFinGenElem)
     return evaluate(image(mG, a))
   end
 

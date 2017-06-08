@@ -296,7 +296,7 @@ end
 
 doc"""
 ***
-    class_group(O::NfMaxOrd; bound = -1, method = 3, redo = false) -> FinGenGrpAb, Map
+    class_group(O::NfMaxOrd; bound = -1, method = 3, redo = false) -> GrpAbFinGen, Map
 
 > Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
 > The inverse of the map is the projection onto the group of ideals modulo the 
@@ -313,7 +313,7 @@ end
 
 doc"""
 ***
-    unit_group(O::NfMaxOrd) -> FinGenGrpAb, Map
+    unit_group(O::NfMaxOrd) -> GrpAbFinGen, Map
 
 > Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 > A set of fundamental units of $\mathcal O$ can be
@@ -328,7 +328,7 @@ end
 
 doc"""
 ***
-    unit_group_fac_elem(O::NfMaxOrd) -> FinGenGrpAb, Map
+    unit_group_fac_elem(O::NfMaxOrd) -> GrpAbFinGen, Map
 
 > Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
 > A set of fundamental units of $\mathcal O$ can be

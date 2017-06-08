@@ -38,8 +38,8 @@
 #
 ################################################################################
 
-type AbToResRingMultGrp <: Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
-  header::MapHeader{FinGenGrpAbSnf, NfMaxOrdQuoRing}
+type AbToResRingMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
+  header::MapHeader{GrpAbFinGen, NfMaxOrdQuoRing}
   generators::Vector{NfMaxOrdQuoRingElem}
   discrete_logarithm::Function
 
@@ -51,9 +51,10 @@ type AbToResRingMultGrp <: Map{FinGenGrpAbSnf, NfMaxOrdQuoRing}
     @hassert :NfMaxOrdQuoRing 1 all(g->parent(g)==Q,generators)
 
     G = DiagonalGroup(snf_structure)
-    @assert isa(G,FinGenGrpAbSnf)
+    @assert isa(G,GrpAbFinGen)
+    @assert issnf(G)
 
-    function _image(a::FinGenGrpAbElem)
+    function _image(a::GrpAbFinGenElem)
       @assert parent(a) == G
       y = one(Q)
       for i in 1:length(generators)
