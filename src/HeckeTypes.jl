@@ -1696,22 +1696,17 @@ end
 #
 ################################################################################
 
-abstract  GrpAb <: Nemo.Group
-abstract  GrpAbElem <: Nemo.GroupElem
-#abstract  FinGenGrpAb <: GrpAb
+abstract GrpAb <: Nemo.Group
+abstract GrpAbElem <: Nemo.GroupElem
 
-#type FinGenGrpAb <: GrpAb
-#  snf::Array{fmpz, 1}
-#end
-
-type FinGenGrpAb <: GrpAb
+type GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
   issnf::Bool
   snf::Array{fmpz, 1}
-  snf_map::Map{FinGenGrpAb, FinGenGrpAb}
+  snf_map::Map{GrpAbFinGen, GrpAbFinGen}
 
-  function FinGenGrpAb(R::fmpz_mat, ishnf::Bool = false)
+  function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
     r.issnf = false
     r.rels = R
@@ -1721,14 +1716,14 @@ type FinGenGrpAb <: GrpAb
     return r
   end
   
-  function FinGenGrpAb(R::Array{fmpz, 1}, issnf::Bool = true)
+  function GrpAbFinGen(R::Array{fmpz, 1}, issnf::Bool = true)
     r = new()
     r.issnf = issnf
     r.snf = R
     return r
   end
   
-  function FinGenGrpAb{T <: Integer}(R::Array{T, 1}, issnf::Bool = true)
+  function GrpAbFinGen{T <: Integer}(R::Array{T, 1}, issnf::Bool = true)
     r = new()
     r.issnf = issnf
     r.snf = map(fmpz, R)
@@ -1737,9 +1732,11 @@ type FinGenGrpAb <: GrpAb
 
 end
 
-type FinGenGrpAbElem <: GrpAbElem
-  parent::FinGenGrpAb
+type GrpAbFinGenElem <: GrpAbElem
+  parent::GrpAbFinGen
   coeff::fmpz_mat
+
+  GrpAbFinGenElem() = new()
 end
 
 ################################################################################

@@ -22,7 +22,7 @@ function show(io::IO, mC::MapUnitGrpFacElem)
   println(io, "Unit group map of $(codomain(mC)) in factored presentation")
 end
 
-function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
+function unit_group_disc_exp(x::GrpAbFinGenElem, U::UnitGrpCtx)
   K = nf(order(U))
   y = FacElem([K(U.torsion_units_gen)], [x.coeff[1,1]])
   for i=1:length(U.units)
@@ -31,7 +31,7 @@ function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
   return y
 end
 
-function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::FinGenGrpAb) #snf
+function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::GrpAbFinGen) #snf
 
   r = _add_dependent_unit(U, x, rel_only = true)
   @assert r[end] == -1
