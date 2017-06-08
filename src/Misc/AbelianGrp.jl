@@ -46,14 +46,24 @@ import Base.+, Nemo.snf, Nemo.parent, Base.rand
 #
 ################################################################################
 
-function show(io::IO, A::FinGenGrpAbGen)
+issnf(A::FinGenGrpAb) = A.issnf
+
+function show(io::IO, A::FinGenGrpAb)
+  if issnf(A)
+    show_snf(io, A)
+  else
+    show_gen(io, A)
+  end
+end
+
+function show_gen(io::IO, A::FinGenGrpAb)
   print(io, "(General) abelian group with relation matrix\n$(A.rels)")
   if isdefined(A, :snf_map)
     println(io, "\nwith structure of ", codomain(A.snf_map))
   end
 end
 
-function show(io::IO, A::FinGenGrpAbSnf)
+function show_snf(io::IO, A::FinGenGrpAb)
   len = length(A.snf)
 
   println(io, "Abelian group")
@@ -107,15 +117,23 @@ end
 
 doc"""
 ***
-    ngens(G::FinGenGrpAbSnf ) -> Int
+    ngens(G::FinGenGrpAb) -> Int
 
 > Returns the number of generators of G in the current representation.
 """
-function ngens(A::FinGenGrpAbGen)
+function ngens(A::FinGenGrpAb)
+  if issnf(A)
+    return ngens_snf(A)
+  else
+    return ngens_gen(A)
+  end
+end
+
+function ngens_gen(A::FinGenGrpAb)
   return cols(A.rels)
 end
 
-function ngens(A::FinGenGrpAbSnf)
+function ngens_snf(A::FinGenGrpAb)
   return length(A.snf)
 end
 
@@ -125,11 +143,19 @@ doc"""
 
 > Returns the number of relations of G in the current representation.
 """
-function nrels(A::FinGenGrpAbGen)
+function nrels(A::FinGenGrpAb)
+  if issnf(A)
+    return nrels_snf(A)
+  else
+    return nrels_gen(A)
+  end
+end
+
+function nrels_gen(A::FinGenGrpAb)
   return rows(A.rels)
 end
 
-function nrels(A::FinGenGrpAbSnf)
+function nrels_snf(A::FinGenGrpAb)
   return length(A.snf)
 end
 
@@ -140,7 +166,7 @@ doc"""
 > Returns the $i$-th component of the element $x$.
 """
 function getindex(x::FinGenGrpAbElem, i::Int)
-  return x.coeff[1,i]
+  return x.coeff[1, i]
 end
 
 doc"""
@@ -148,11 +174,19 @@ doc"""
     rels(A::FinGenGrpAb) -> fmpz_mat
 > The currently used relations as a single matrix.
 """
-function rels(A::Hecke.FinGenGrpAbGen)
+function rels(A::FinGenGrpAb)
+  if issnf(A)
+    return rels_snf(A)
+  else
+    return rels_gen(A)
+  end
+end
+
+function rels_gen(A::FinGenGrpAb)
   return A.rels
 end
 
-function rels(A::Hecke.FinGenGrpAbSnf)
+function rels_snf(A::FinGenGrpAb)
   M = MatrixSpace(FlintZZ, ngens(A), ngens(A))()
   for i=1:ngens(A)
     M[i,i] = A.snf[i]
@@ -164,7 +198,7 @@ end
 # Map support 
 #TODO: put elsewhere and make generic
 ################################################################################
-function haspreimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbElem{T})
+function haspreimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbElem)
   if isdefined(M, :imap)
     return preimage(M, a)
   end
@@ -178,7 +212,7 @@ function haspreimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbEl
   end
 end
 
-function hasimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbElem{S})
+function hasimage{S, T}(M::Hecke.FinGenGrpAbMap{S, T}, a::Hecke.FinGenGrpAbElem)
   if isdefined(M, :map)
     return image(M, a)
   end
@@ -194,7 +228,7 @@ end
 ################################################################################
 ################################################################################
 ################################################################################
-function assert_hnf(A::FinGenGrpAbGen)
+function assert_hnf(A::FinGenGrpAb)
   isdefined(A, :hnf) && return
   A.hnf = hnf(A.rels)
 end
@@ -215,24 +249,33 @@ function reduce_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
   end
 end
 
-function FinGenGrpAbElemCreate(A::FinGenGrpAbGen, a::fmpz_mat)
-  assert_hnf(A::FinGenGrpAbGen)
+function elem(A::FinGenGrpAb, a::fmpz_mat)
+  if issnf(A)
+    return elem_snf(A, a)
+  else
+    return elem_gen(A, a)
+  end
+end
+
+function elem_gen(A::FinGenGrpAb, a::fmpz_mat)
+  assert_hnf(A)
   reduce_mod_hnf!(a, A.hnf)
-  return FinGenGrpAbElem{FinGenGrpAbGen}(A, a)
+  return FinGenGrpAbElem(A, a)
   # reduce mod hnf
 end
 
-function FinGenGrpAbElemCreate(A::FinGenGrpAbSnf, a::fmpz_mat)
+function elem_snf(A::FinGenGrpAb, a::fmpz_mat)
   for i=1:ngens(A)
     if A.snf[i] != 0
       a[1,i] = mod(a[1,i], A.snf[i])
     end
   end
-  return FinGenGrpAbElem{FinGenGrpAbSnf}(A, a)
+  return FinGenGrpAbElem(A, a)
 end
+
 ################################################################################
 #
-# Arithmetic
+#  Arithmetic
 #
 ################################################################################
 
@@ -249,7 +292,7 @@ doc"""
 """
 function +(x::FinGenGrpAbElem, y::FinGenGrpAbElem)
   x.parent == y.parent || error("elements must belong to the same group")
-  n = FinGenGrpAbElemCreate(x.parent, x.coeff + y.coeff)
+  n = elem(x.parent, x.coeff + y.coeff)
   return n
 end
 
@@ -261,7 +304,7 @@ doc"""
 """
 function -(x::FinGenGrpAbElem, y::FinGenGrpAbElem)
   x.parent == y.parent || error("elements must belong to the same group")
-  n = FinGenGrpAbElemCreate(x.parent, x.coeff - y.coeff)
+  n = elem(x.parent, x.coeff - y.coeff)
   return n
 end
 
@@ -272,7 +315,7 @@ doc"""
 > Computes $-x$.
 """
 function -(x::FinGenGrpAbElem)
-  n = FinGenGrpAbElemCreate(x.parent, -x.coeff)
+  n = elem(x.parent, -x.coeff)
   return n
 end
 
@@ -284,7 +327,7 @@ doc"""
 """
 function *(x::fmpz, y::FinGenGrpAbElem)
   n = x*y.coeff
-  return FinGenGrpAbElemCreate(y.parent, n)
+  return elem(y.parent, n)
 end
 
 doc"""
@@ -295,7 +338,7 @@ doc"""
 """
 function *(x::Integer, y::FinGenGrpAbElem)
   n = x*y.coeff
-  return FinGenGrpAbElemCreate(y.parent, n)
+  return elem(y.parent, n)
 end
 
 ################################################################################
@@ -306,26 +349,26 @@ end
 
 doc"""
 ***
-    (A::FinGenGrpAbSnf)(x::Array{fmpz, 1}) -> FinGenGrpAbElem
+    (A::FinGenGrpAb)(x::Array{fmpz, 1}) -> FinGenGrpAbElem
 
 > Given an array of elements of type `fmpz` of the same length as ngens($A$),
 > this function returns the element of $A$ with components `x`.
 """
-function (A::FinGenGrpAbSnf)(x::Array{fmpz, 1})
+function (A::FinGenGrpAb)(x::Array{fmpz, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
   y = MatrixSpace(ZZ, 1, ngens(A))(x)
-  z = FinGenGrpAbElemCreate(A, y)
+  z = elem(A, y)
   return z
 end
 
 doc"""
 ***
-    (A::FinGenGrpAbSnf)(x::Array{Integer, 1}) -> FinGenGrpAbElem
+    (A::FinGenGrpAb)(x::Array{Integer, 1}) -> FinGenGrpAbElem
 
 > Given an array of elements of type `Integer` of the same length as ngens($A$),
 > this function returns the element of $A$ with components `x`.
 """
-function (A::FinGenGrpAbSnf){T <: Integer}(x::Array{T, 1})
+function (A::FinGenGrpAb){T <: Integer}(x::Array{T, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z
@@ -333,63 +376,21 @@ end
 
 doc"""
 ***
-    (A::FinGenGrpAbSnf)(x::fmpz_mat) -> FinGenGrpAbElem
+    (A::FinGenGrpAb, x::fmpz_mat) -> FinGenGrpAbElem
 
 > Given a 1 x ngens(A) fmpz_mat,
 > this function returns the element of $A$ with components `x`.
 """
-function (A::FinGenGrpAbSnf)(x::fmpz_mat)
+function (A::FinGenGrpAb)(x::fmpz_mat)
   ngens(A) != cols(x) && error("Lengths do not coincide")
   rows(x) != 1 && error("Matrix should have only one row")
-  z = FinGenGrpAbElemCreate(A, x)
+  z = elem(A, x)
   return z
 end
 
 doc"""
 ***
-    (A::FinGenGrpAbGen)(x::Array{fmpz, 1}) -> FinGenGrpAbElem
-
-> Given an array of elements of type `fmpz` of the same length as ngens($A$),
-> this function returns the element of $A$ with components `x`.
-"""
-function (A::FinGenGrpAbGen)(x::Array{fmpz, 1})
-  ngens(A) != length(x) && error("Lengths do not coincide")
-  y = MatrixSpace(ZZ, 1, ngens(A))(x)
-  z = FinGenGrpAbElemCreate(A, y)
-  return z
-end
-
-doc"""
-***
-    (A::FinGenGrpAbGen, x::Array{Integer, 1}) -> FinGenGrpAbElem
-
-> Given an array of elements of type `Integer` of the same length as ngens($A$),
-> this function returns the element of $A$ with components `x`.
-"""
-function (A::FinGenGrpAbGen){T <: Integer}(x::Array{T, 1})
-  ngens(A) != length(x) && error("Lengths do not coincide")
-  z = A(map(fmpz, x))
-  return z
-end
-
-doc"""
-***
-    (A::FinGenGrpAbGen)(x::fmpz_mat) -> FinGenGrpAbElem
-
-> Given a 1 x ngens(A) fmpz_mat,
-> this function returns the element of $A$ with components `x`.
-"""
-function (A::FinGenGrpAbGen)(x::fmpz_mat)
-  ngens(A) != cols(x) && error("Lengths do not coincide")
-  rows(x) != 1 && error("Matrix should have only one row")
-  z = FinGenGrpAbElemCreate(A, x)
-  return z
-end
-
-
-doc"""
-***
-    getindex(A::FinGenGrpAbSnf, i::Int) -> FinGenGrpAbElem
+    getindex(A::FinGenGrpAb, i::Int) -> FinGenGrpAbElem
 
 > Returns the element of $A$ with components $(0,\dotsc,0,1,0,\dotsc,0)$,
 > where the $1$ is at the $i$-th position.
@@ -404,10 +405,7 @@ function getindex(A::FinGenGrpAb, i::Int)
   return A(z)
 end
 
-elem_type(G::FinGenGrpAbSnf) = FinGenGrpAbElem{FinGenGrpAbSnf}
-elem_type(G::FinGenGrpAbGen) = FinGenGrpAbElem{FinGenGrpAbGen}
-elem_type(::Type{FinGenGrpAbGen}) = FinGenGrpAbElem{FinGenGrpAbGen}
-elem_type(::Type{FinGenGrpAbSnf}) = FinGenGrpAbElem{FinGenGrpAbSnf}
+elem_type(G::FinGenGrpAb) = FinGenGrpAbElem
 elem_type(::Type{FinGenGrpAb}) = FinGenGrpAbElem # I have no idea what this
                                     # does, but it appears to be important
                                     # U, m = UnitGroup(ResidueRing(ZZ, 2^10))
@@ -417,14 +415,14 @@ elem_type(::Type{FinGenGrpAb}) = FinGenGrpAbElem # I have no idea what this
 
 doc"""
 ***
-  snf(A::FinGenGrpAbSnf) -> FinGenGrpAb, Map
+  snf(A::FinGenGrpAb) -> FinGenGrpAb, Map
 
 > Given some abelian group, return the "same" group in canonical form,
 > i.e. as the direct product of cyclic groups with dividing orders.
 > The second return value is the map to translate between the new and old
 > groups.
 """
-function snf(G::FinGenGrpAbSnf)
+function snf_snf(G::FinGenGrpAb)
   return G, IdentityMap(G)
 end
 
@@ -547,9 +545,9 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   end
 end
 
-function snf(G::FinGenGrpAbGen)
+function snf(G::FinGenGrpAb)
   if isdefined(G, :snf_map)
-    return codomain(G.snf_map)::FinGenGrpAbSnf, G.snf_map
+    return codomain(G.snf_map)::FinGenGrpAb, G.snf_map
   end
   S, _, T = snf_with_transform(G.rels, false, true)
   d = fmpz[S[i,i] for i=1:min(rows(S), cols(S))]
@@ -585,7 +583,7 @@ function snf(G::FinGenGrpAbGen)
       j += 1
     end
   end
-  H = FinGenGrpAbSnf(s)
+  H = FinGenGrpAb(s)
   mp = FinGenGrpAbMap(G, H, TT, TTi)
   G.snf_map = mp
   return H, mp
@@ -603,8 +601,9 @@ doc"""
 
 > Returns whether $A$ is finite.
 """
-isfinite(A::FinGenGrpAbSnf) = length(A.snf) == 0 || A.snf[end] != 0
-isfinite(A::FinGenGrpAbGen) = isfinite(snf(A)[1])
+isfinite(A::FinGenGrpAb) = issnf(A) ? isfinite_snf(A) : isfinite_gen(A)
+isfinite_snf(A::FinGenGrpAb) = length(A.snf) == 0 || A.snf[end] != 0
+isfinite_gen(A::FinGenGrpAb) = isfinite(snf(A)[1])
 
 doc"""
 ***
@@ -613,8 +612,9 @@ doc"""
 
 > Returns whether $A$ is infinite.
 """
-isinfinite(A::FinGenGrpAbSnf) = !isfinite(A)
-isinfinite(A::FinGenGrpAbGen) = !isfinite(A)
+isinfinite(A::FinGenGrpAb) = issnf(A) ? isinfinite_snf(A) : isinfinite_gen(A)
+isinfinite_snf(A::FinGenGrpAb) = !isfinite(A)
+isinfinite_gen(A::FinGenGrpAb) = !isfinite(A)
 
 doc"""
 ***
@@ -624,8 +624,9 @@ doc"""
 > Returns the rank of $A$, that is, the dimension of the
 > $\mathbf{Q}$-vectorspace $A \otimes_{\mathbf Z} \mathbf Q$.
 """
-rank(A::FinGenGrpAbSnf) = length(find(x->x==0, A.snf))
-rank(A::FinGenGrpAbGen) = rank(snf(A)[1])
+rank(A::FinGenGrpAb) = issnf(A) ? rank_snf(A) : rank_gen(A)
+rank_snf(A::FinGenGrpAb) = length(find(x->x==0, A.snf))
+rank_gen(A::FinGenGrpAb) = rank(snf(A)[1])
 
 doc"""
 ***
@@ -653,11 +654,14 @@ doc"""
 
 > Returns the order of $A$. It is assumed that $A$ is not infinite.
 """
-function order(A::FinGenGrpAbSnf)
+order(A::FinGenGrpAb) = issnf(A) ? order_snf(A) : order_gen(A)
+
+function order_snf(A::FinGenGrpAb)
   isinfinite(A) && error("Group must be finite")
   return prod(A.snf)
 end
-order(A::FinGenGrpAbGen) = order(snf(A)[1])
+
+order_gen(A::FinGenGrpAb) = order(snf(A)[1])
 
 doc"""
 ***
@@ -666,11 +670,14 @@ doc"""
 
 > Returns the exponent of $A$. It is assumed that $A$ is not infinite.
 """
-function exponent(A::FinGenGrpAbSnf)
+exponent(A::FinGenGrpAb) = issnf(A) ? exponent_snf(A) : exponent_gen(A)
+
+function exponent_snf(A::FinGenGrpAb)
   isinfinite(A) && error("Group must be finite")
   return A.snf[end]
 end
-exponent(A::FinGenGrpAbGen) = exponent(snf(A)[1])
+
+exponent_gen(A::FinGenGrpAb) = exponent(snf(A)[1])
 
 doc"""
 ***
@@ -679,8 +686,7 @@ doc"""
 
 > Checks if A is the trivial group.
 """
-istrivial(A::FinGenGrpAbSnf) = order(A)==1
-istrivial(A::FinGenGrpAbGen) = order(A)==1
+istrivial(A::FinGenGrpAb) = order(A)==1
 
 
 doc"""
@@ -712,7 +718,7 @@ doc"""
 > have cols(M) generators and each row describes one relation.
 """
 function AbelianGroup(M::fmpz_mat)
-  return FinGenGrpAbGen(M)
+  return FinGenGrpAb(M)
 end
 
 function AbelianGroup(M::Array{fmpz, 2})
@@ -749,9 +755,9 @@ function DiagonalGroup(M::fmpz_mat)
     N[i,i] = M[1,i]
   end
   if issnf(N)
-    return FinGenGrpAbSnf(fmpz[M[1,i] for i=1:cols(M)])
+    return FinGenGrpAb(fmpz[M[1,i] for i=1:cols(M)])
   else
-    return FinGenGrpAbGen(N)
+    return FinGenGrpAb(N)
   end
 end
 
@@ -761,9 +767,9 @@ function DiagonalGroup{T <: Union{Integer, fmpz}}(M::Array{T, 1})
     N[i,i] = M[i]
   end
   if issnf(N)
-    return FinGenGrpAbSnf(M)
+    return FinGenGrpAb(M)
   else
-    return FinGenGrpAbGen(N)
+    return FinGenGrpAb(N)
   end
 end
 
@@ -782,14 +788,16 @@ doc"""
 
 > For a finite abelian group G, return an element chosen uniformly at random.
 """
-function rand(G::FinGenGrpAbSnf)
+rand(A::FinGenGrpAb) = issnf(A) ? rand_snf(A) : rand_gen(A)
+
+function rand_snf(G::FinGenGrpAb)
   if !isfinite(G)
     error("Group is not finite")
   end
   return G([rand(1:G.snf[i]) for i in 1:ngens(G)])
 end
 
-function rand(G::FinGenGrpAbGen)
+function rand_gen(G::FinGenGrpAb)
   S, mS = snf(G)
   return preimage(mS, rand(S))
 end
@@ -804,20 +812,23 @@ doc"""
 > For a (potentially infinite) abelian group G, return an element
 > chosen uniformly at random with coefficients bounded by B.
 """
-function rand(G::FinGenGrpAbSnf, B::fmpz)
+rand(G::FinGenGrpAb, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
+rand(G::FinGenGrpAb, B::Integer) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
+
+function rand_snf(G::FinGenGrpAb, B::fmpz)
   return G([rand(1:(G.snf[i]==0 ? B : min(B, G.snf[i]))) for i in 1:ngens(G)])
 end
 
-function rand(G::FinGenGrpAbSnf, B::Integer)
+function rand_snf(G::FinGenGrpAb, B::Integer)
   return rand(G, fmpz(B))
 end
 
-function rand(G::FinGenGrpAbGen, B::fmpz)
+function rand_gen(G::FinGenGrpAb, B::fmpz)
   S, mS = snf(G)
   return preimage(mS, rand(S, fmpz(B)))
 end
 
-function rand(G::FinGenGrpAbGen, B::Integer)
+function rand_gen(G::FinGenGrpAb, B::Integer)
   return rand(G, fmpz(B))
 end
 
@@ -831,13 +842,14 @@ doc"""
 
 > Create the subgroup of G generated by the elements in s.
 """
-function sub{T <: FinGenGrpAb}(s::Array{FinGenGrpAbElem{T}, 1})
+function sub(s::Array{FinGenGrpAbElem, 1})
   return sub(parent(s[1]), s)
 end
-function sub{T <: FinGenGrpAb}(G::T, s::Array{FinGenGrpAbElem{T}, 1})
+
+function sub(G::FinGenGrpAb, s::Array{FinGenGrpAbElem, 1})
 
   if length(s) == 0
-    S = FinGenGrpAbSnf(fmpz[1])
+    S = FinGenGrpAb(fmpz[1])
     I = MatrixSpace(FlintZZ, ngens(S), ngens(G))()
     m = FinGenGrpAbMap(S, G, I)
     return S, m
@@ -852,7 +864,7 @@ function sub{T <: FinGenGrpAb}(G::T, s::Array{FinGenGrpAbElem{T}, 1})
     end
     m[i + nrels(p), i+ngens(p)] = 1
   end
-  if typeof(p) == FinGenGrpAbSnf
+  if issnf(p)
     for i=1:ngens(p)
       m[i, i] = p.snf[i]
     end
@@ -883,7 +895,7 @@ doc"""
 
 > Create the quotient of G by the elements in s.
 """
-function quo{T <: FinGenGrpAb}(G::FinGenGrpAb, s::Array{FinGenGrpAbElem{T}, 1})
+function quo(G::FinGenGrpAb, s::Array{FinGenGrpAbElem, 1})
   if length(s) == 0
     I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
     m = FinGenGrpAbMap(G, G, I, I)
@@ -898,7 +910,7 @@ function quo{T <: FinGenGrpAb}(G::FinGenGrpAb, s::Array{FinGenGrpAbElem{T}, 1})
       m[i + nrels(p),j] = s[i][j]
     end
   end
-  if typeof(p) == FinGenGrpAbSnf
+  if issnf(p)
     for i=1:ngens(p)
       m[i, i] = p.snf[i]
     end
@@ -923,7 +935,8 @@ doc"""
 
 > Create the quotient of G by n*G
 """
-function quo(G::FinGenGrpAbSnf, n::Union{fmpz, Integer})
+quo(G::FinGenGrpAb, n::Union{fmpz, Integer}) = issnf(G) ? quo_snf(G, n) : quo_gen(G, n)
+function quo_snf(G::FinGenGrpAb, n::Union{fmpz, Integer})
   r = [gcd(x, n) for x = G.snf]
   I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
   Q = DiagonalGroup(r)
@@ -931,7 +944,7 @@ function quo(G::FinGenGrpAbSnf, n::Union{fmpz, Integer})
   return Q, m
 end
 
-function quo(G::FinGenGrpAbGen, n::Union{fmpz, Integer})
+function quo_gen(G::FinGenGrpAb, n::Union{fmpz, Integer})
   m = vcat(G.rels, MatrixSpace(FlintZZ, ngens(G), ngens(G))(n))
   Q = AbelianGroup(m)
   I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)

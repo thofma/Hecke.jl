@@ -31,7 +31,7 @@ function unit_group_disc_exp(x::FinGenGrpAbElem, U::UnitGrpCtx)
   return y
 end
 
-function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::FinGenGrpAbSnf)
+function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::FinGenGrpAb) #snf
 
   r = _add_dependent_unit(U, x, rel_only = true)
   @assert r[end] == -1

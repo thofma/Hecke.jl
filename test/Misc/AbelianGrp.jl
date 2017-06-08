@@ -3,15 +3,15 @@
   @testset "constructor FinGenGrpAbGen" begin
     @testset "not in hnf" begin
       M = ZZ[1 2 3; 4 5 6]        :: fmpz_mat
-      G = Hecke.FinGenGrpAbGen(M) :: FinGenGrpAb
+      G = Hecke.FinGenGrpAb(M)    :: FinGenGrpAb
       @test G.rels == M
       @test_throws UndefRefError G.hnf
       @test_throws UndefRefError G.snf_map
     end
 
     @testset "in hnf" begin
-      M = ZZ[1 2 3; 0 3 6]                     :: fmpz_mat
-      G = Hecke.FinGenGrpAbGen(M, ishnf=true) :: FinGenGrpAb
+      M = ZZ[1 2 3; 0 3 6]           :: fmpz_mat
+      G = Hecke.FinGenGrpAb(M, true) :: FinGenGrpAb
       @test G.rels == M
       @test G.hnf == M
       @test_throws UndefRefError G.snf_map
@@ -20,22 +20,22 @@
 
   @testset "constructor FinGenGrpAbSnf" begin
     A = Array{fmpz,1}([3 ; 15 ; 0])
-    SNF = Hecke.FinGenGrpAbSnf(A)
+    SNF = Hecke.FinGenGrpAb(A)
     @test SNF.snf == A
   end
 
   @testset "constructor FinGenGrpAbElem" begin
     M = ZZ[1 2 3; 4 5 6]        :: fmpz_mat
-    G = Hecke.FinGenGrpAbGen(M) :: FinGenGrpAb
+    G = Hecke.FinGenGrpAb(M) :: FinGenGrpAb
     N = ZZ[1 2 3]               :: fmpz_mat
-    a = Hecke.FinGenGrpAbElemCreate(G, N)
+    a = Hecke.elem(G, N)
     @test a.parent == G
     @test a.coeff == N
   end
 
   @testset "parent" begin
     G = AbelianGroup(ZZ[1 2 3; 4 5 6])
-    a = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 1 0])
+    a = Hecke.elem(G, ZZ[0 1 0])
     @test parent(a) == G
   end
 
@@ -47,7 +47,7 @@
 
     @testset "Snf" begin
       A = Array{fmpz,1}([3 ; 0])
-      SNF = Hecke.FinGenGrpAbSnf(A)
+      SNF = Hecke.FinGenGrpAb(A)
       @test ngens(SNF) == 2
     end
   end
@@ -61,14 +61,14 @@
 
     @testset "Snf" begin
       A = Array{fmpz,1}([3 ; 0])
-      SNF = Hecke.FinGenGrpAbSnf(A)
+      SNF = Hecke.FinGenGrpAb(A)
       @test nrels(SNF) == 2
     end
   end
 
   @testset "getindex" begin
     G = AbelianGroup(ZZ[0 3 0])
-    a = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 4 0])
+    a = Hecke.elem(G, ZZ[0 4 0])
     @test getindex(a,1) == 0
     @test getindex(a,2) == 1
     @test getindex(a,3) == 0
@@ -105,10 +105,10 @@
     end
   end
 
-  @testset "FinGenGrpAbElemCreate" begin
+  @testset "Element creation" begin
     @testset "Gen" begin
       G = AbelianGroup(ZZ[0 0 3])
-      a = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 2 4])
+      a = Hecke.elem(G, ZZ[0 2 4])
       @test parent(a) == G
       @test getindex(a,1) == 0
       @test getindex(a,2) == 2
@@ -117,8 +117,8 @@
 
     @testset "Snf" begin
       A = Array{fmpz,1}([3 ; 15 ; 0])
-      SNF = Hecke.FinGenGrpAbSnf(A)
-      a = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[7 50 100])
+      SNF = Hecke.FinGenGrpAb(A)
+      a = Hecke.elem(SNF, ZZ[7 50 100])
       @test parent(a) == SNF
       @test getindex(a,1) == 1
       @test getindex(a,2) == 5
@@ -166,22 +166,22 @@
     preimage = SNF_map.header.preimage
 
     @testset "0 = 0" begin
-      a = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 0 0])
-      b = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[0 0])
+      a = Hecke.elem(G, ZZ[0 0 0])
+      b = Hecke.elem(SNF, ZZ[0 0])
       @test image(a) == b
       @test preimage(b) == a
     end
 
     @testset "0 != 100" begin
-      a = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 0 0])
-      b = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[100 100])
+      a = Hecke.elem(G, ZZ[0 0 0])
+      b = Hecke.elem(SNF, ZZ[100 100])
       @test image(a) != b
       @test preimage(b) != a
     end
 
     @testset "linearity" begin
-      x = Hecke.FinGenGrpAbElemCreate(G, ZZ[234 4355 3455])
-      y = Hecke.FinGenGrpAbElemCreate(G, ZZ[32 3090 34590])
+      x = Hecke.elem(G, ZZ[234 4355 3455])
+      y = Hecke.elem(G, ZZ[32 3090 34590])
       @test image(x+y) == image(x)+image(y)
       @test image(x-y) == image(x)-image(y)
       @test image(435*x) == 435*image(x)
@@ -191,14 +191,14 @@
   @testset "sub" begin
     @testset "S = G, Gen" begin
       G = AbelianGroup(ZZ[3 0 0 ; 0 15 0])
-      g1 = Hecke.FinGenGrpAbElemCreate(G, ZZ[1 0 0])
-      g2 = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 1 0])
-      g3 = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 0 1])
+      g1 = Hecke.elem(G, ZZ[1 0 0])
+      g2 = Hecke.elem(G, ZZ[0 1 0])
+      g3 = Hecke.elem(G, ZZ[0 0 1])
       S , S_map = sub(G, [g1, g2, g3])
       image = S_map.header.image
-      s1 = Hecke.FinGenGrpAbElemCreate(S, ZZ[1 0 0])
-      s2 = Hecke.FinGenGrpAbElemCreate(S, ZZ[0 1 0])
-      s3 = Hecke.FinGenGrpAbElemCreate(S, ZZ[0 0 1])
+      s1 = Hecke.elem(S, ZZ[1 0 0])
+      s2 = Hecke.elem(S, ZZ[0 1 0])
+      s3 = Hecke.elem(S, ZZ[0 0 1])
       @test S.hnf == G.hnf
       @test image(s1) == g1
       @test image(s2) == g2
@@ -209,14 +209,14 @@
     @testset "S = G, Snf" begin
       G = AbelianGroup(ZZ[3 0 0 ; 0 15 0])
       SNF, SNF_map = snf(G)
-      snf1 = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[1 0 0])
-      snf2 = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[0 1 0])
-      snf3 = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[0 0 1])
+      snf1 = Hecke.elem(SNF, ZZ[1 0 0])
+      snf2 = Hecke.elem(SNF, ZZ[0 1 0])
+      snf3 = Hecke.elem(SNF, ZZ[0 0 1])
       S , S_map = sub(SNF, [snf1, snf2, snf3])
       image = S_map.header.image
-      s1 = Hecke.FinGenGrpAbElemCreate(S, ZZ[1 0 0])
-      s2 = Hecke.FinGenGrpAbElemCreate(S, ZZ[0 1 0])
-      s3 = Hecke.FinGenGrpAbElemCreate(S, ZZ[0 0 1])
+      s1 = Hecke.elem(S, ZZ[1 0 0])
+      s2 = Hecke.elem(S, ZZ[0 1 0])
+      s3 = Hecke.elem(S, ZZ[0 0 1])
       @test image(s1) == snf1
       @test image(s2) == snf2
       @test image(s3) == snf3
@@ -225,10 +225,10 @@
 
     @testset "S = <g1>, Gen" begin
       G = AbelianGroup(ZZ[3 0 0 ; 0 15 0])
-      g1 = Hecke.FinGenGrpAbElemCreate(G, ZZ[1 0 0])
+      g1 = Hecke.elem(G, ZZ[1 0 0])
       S , S_map = sub(G, [g1])
       image = S_map.header.image
-      s1 = Hecke.FinGenGrpAbElemCreate(S, MatrixSpace(ZZ,1,1)([4]))
+      s1 = Hecke.elem(S, MatrixSpace(ZZ,1,1)([4]))
       @test S.rels == MatrixSpace(ZZ,1,1)([3])
       @test image(s1) == g1
     end
@@ -236,26 +236,26 @@
     @testset "S = <g1>, Snf" begin
       G = AbelianGroup(ZZ[3 0 0 ; 0 15 0])
       SNF, SNF_map = snf(G)
-      snf1 = Hecke.FinGenGrpAbElemCreate(SNF, ZZ[1 0 0])
+      snf1 = Hecke.elem(SNF, ZZ[1 0 0])
       S , S_map = sub(SNF, [snf1])
       image = S_map.header.image
-      s1 = Hecke.FinGenGrpAbElemCreate(S, MatrixSpace(ZZ,1,1)([4]))
+      s1 = Hecke.elem(S, MatrixSpace(ZZ,1,1)([4]))
       @test image(s1) == snf1
     end
 
     @testset "G contains empty relation" begin
       G = AbelianGroup(ZZ[3 0 0 ; 0 15 0 ; 0 0 30 ; 0 0 0])
-      g1 = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 0 1])
+      g1 = Hecke.elem(G, ZZ[0 0 1])
       S , S_map = sub(G, [g1])
       image = S_map.header.image
-      s1 = Hecke.FinGenGrpAbElemCreate(S, MatrixSpace(ZZ,1,1)([1]))
+      s1 = Hecke.elem(S, MatrixSpace(ZZ,1,1)([1]))
       @test image(s1) == g1
     end
   end
 
   @testset "quo" begin
     G = AbelianGroup(ZZ[3 0 0 ; 0 15 0])
-    g1 = Hecke.FinGenGrpAbElemCreate(G, ZZ[0 1 0])
+    g1 = Hecke.elem(G, ZZ[0 1 0])
     Q , Q_map = quo(G, [g1])
     SNF, SNF_map = snf(Q)
     @test SNF.snf == Array{fmpz,1}([3 ; 0])
