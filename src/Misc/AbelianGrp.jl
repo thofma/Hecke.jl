@@ -35,9 +35,9 @@
 export FinGenGrpAb, FinGenGrpAbElem, parent, isfinite, isinfinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, istrivial, order, exponent, AbelianGroup, DiagonalGroup,
-       quo, sub, rels, hasimage, haspreimage
+       quo, sub, rels, hasimage, haspreimage, issnf
 
-import Base.+, Nemo.snf, Nemo.parent, Base.rand
+import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
 
 ################################################################################
@@ -549,6 +549,12 @@ function snf(G::FinGenGrpAb)
   if isdefined(G, :snf_map)
     return codomain(G.snf_map)::FinGenGrpAb, G.snf_map
   end
+
+  if issnf(G)
+    G.snf_map = IdentityMap(G)
+    return G, G.snf_map
+  end
+
   S, _, T = snf_with_transform(G.rels, false, true)
   d = fmpz[S[i,i] for i=1:min(rows(S), cols(S))]
   while length(d) < ngens(G)

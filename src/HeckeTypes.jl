@@ -1727,6 +1727,13 @@ type FinGenGrpAb <: GrpAb
     r.snf = R
     return r
   end
+  
+  function FinGenGrpAb{T <: Integer}(R::Array{T, 1}, issnf::Bool = true)
+    r = new()
+    r.issnf = issnf
+    r.snf = map(fmpz, R)
+    return r
+  end
 
 end
 
