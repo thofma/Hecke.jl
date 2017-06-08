@@ -314,6 +314,7 @@ end
 
 # this is slow
 function _coprime_norm_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
+  # x must be nonzero
   O = order(y)
   c = conjugates_init(nf(O).pol)
   #num_x_inv = inv(num(x))
@@ -325,6 +326,9 @@ function _coprime_norm_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
   while check
     i += 1
     a = rand(x_inv, 10)
+    if a == 0
+      continue
+    end
     b = x*a
     z = divexact(num(b), den(b))
     gcd(norm(z), norm(y)) == 1 ? (check = false) : (check = true)
