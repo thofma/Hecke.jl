@@ -319,15 +319,15 @@ function CoerceMap{D, C}(domain::D, codomain::C)
   return CoerceMap{D, C}(domain, codomain)
 end
 
-type GrpAbFinGenMap{D <: GrpAbFinGen, C <: GrpAbFinGen} <: Map{D, C}
-  header::MapHeader{D, C}
+type GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
+  header::MapHeader{GrpAbFinGen, GrpAbFinGen}
 
   map::fmpz_mat
   imap::fmpz_mat
-  im:: GrpAbFinGen  # if set
-  ke:: GrpAbFinGen  # if set
+  im::GrpAbFinGen  # if set
+  ke::GrpAbFinGen  # if set
 
-  function GrpAbFinGenMap(From::D, To::C, M::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat)
     r = new()
     function image(a::GrpAbFinGenElem)
       return GrpAbFinGenElem(To, a.coeff*M)
@@ -342,7 +342,7 @@ type GrpAbFinGenMap{D <: GrpAbFinGen, C <: GrpAbFinGen} <: Map{D, C}
     return r
   end
 
-  function GrpAbFinGenMap(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat, Mi::fmpz_mat)
     r = new()
     function image(a::GrpAbFinGenElem)
       return GrpAbFinGenElem(To, a.coeff*M)
@@ -358,13 +358,5 @@ type GrpAbFinGenMap{D <: GrpAbFinGen, C <: GrpAbFinGen} <: Map{D, C}
     return r
   end
 
-end
-
-function GrpAbFinGenMap{D <: GrpAbFinGen, C <: GrpAbFinGen}(From::D, To::C, M::fmpz_mat)
-  return GrpAbFinGenMap{D, C}(From, To, M)
-end
-
-function GrpAbFinGenMap{D <: GrpAbFinGen, C <: GrpAbFinGen}(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
-  return GrpAbFinGenMap{D, C}(From, To, M, Mi)
 end
 

@@ -763,3 +763,111 @@ function vcat(A::Array{fmpz_mat, 1})
   return M
 end
 
+################################################################################
+#
+#  Smith normal form with trafo
+#
+################################################################################
+
+#=
+g, e,f = gcdx(a, b)
+U = [1 0 ; -divexact(b, g)*f 1]*[1 1; 0 1];
+V = [e -divexact(b, g) ; f divexact(a, g)];
+
+then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
+=#
+doc"""
+***
+  snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
+
+> Given some integer matrix A, compute the Smith normal form (elementary
+> divisor normal form) of A. If l and/ or r are true, then the corresponding
+> left and/ or right transformation matrices are computed as well.
+"""
+function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
+  if r
+    R = MatrixSpace(FlintZZ, cols(A), cols(A))(1)
+  end
+
+  if l
+    L = MatrixSpace(FlintZZ, rows(A), rows(A))(1)
+  end
+  # TODO: if only one trafo is required, start with the HNF that does not
+  #       compute the trafo
+  #       Rationale: most of the work is on the 1st HNF..
+  #
+  S = deepcopy(A)
+  while !isdiag(S)
+    if l
+      S, T = hnf_with_transform(S)
+      L = T*L
+    else
+      S = hnf(S)
+    end
+
+    if isdiag(S)
+      break
+    end
+    if r
+      S, T = hnf_with_transform(S')
+      R = T*R
+    else
+      S = hnf(S')
+    end
+    S = S'
+  end
+  #this is probably not really optimal...
+  for i=1:min(rows(S), cols(S))
+    if S[i,i] == 1
+      continue
+    end
+    for j=i+1:min(rows(S), cols(S))
+      if S[j,j] == 0
+        continue
+      end
+      if S[i,i] != 0 && S[j,j] % S[i,i] == 0
+        continue
+      end
+      g, e,f = gcdx(S[i,i], S[j,j])
+      a = divexact(S[i,i], g)
+      S[i,i] = g
+      b = divexact(S[j,j], g)
+      S[j,j] *= a
+      if l
+        # U = [1 0; -b*f 1] * [ 1 1; 0 1] = [1 1; -b*f -b*f+1]
+        # so row i and j of L will be transformed. We do it naively
+        # those 2x2 transformations of 2 rows should be a c-primitive
+        # or at least a Nemo/Hecke primitive
+        for k=1:cols(L)
+          x = -b*f
+#          L[i,k], L[j,k] = L[i,k]+L[j,k], x*L[i,k]+(x+1)*L[j,k]
+          L[i,k], L[j,k] = L[i,k]+L[j,k], x*(L[i,k]+L[j,k])+L[j,k]
+        end
+      end
+      if r
+        # V = [e -b ; f a];
+        # so col i and j of R will be transformed. We do it naively
+        # careful: at this point, R is still transposed
+        for k=1:rows(R)
+          R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
+        end
+      end
+    end
+  end
+
+  if l
+    if r
+      return S, L, R'
+    else
+      # last is dummy
+      return S, L, L
+    end
+  elseif r
+    # second is dummy
+    return S, R, R'
+  else
+    # last two are dummy
+    return S, S, S
+  end
+end
+
