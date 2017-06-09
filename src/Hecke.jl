@@ -79,7 +79,7 @@ export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
              getindex, setindex!, transpose, getindex, //, colon, exp, div,
-             floor, max, BigFloat, promote_rule, precision, dot,
+             floor, max, BigFloat, precision, dot,
              first, StepRange, show, one, zero, inv, iseven, isodd, convert,
              angle, abs2, isless, exponent, base, isfinite, zeros, rem,
              maxabs, min

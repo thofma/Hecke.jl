@@ -46,7 +46,7 @@ parent_type(::Type{UIntMod}) = ZZModUInt
 
 zero(R::ZZModUInt) = R(0)
 
-Base.promote_rule(::Type{UIntMod}, ::Type{Int}) = UIntMod
+Nemo.promote_rule(::Type{UIntMod}, ::Type{Int}) = UIntMod
 
 parent(x::UIntMod) = x.parent
 
