@@ -32,6 +32,8 @@
 #
 ################################################################################
 
+export absolute_field
+
 # In case the code has stabilized, the type definition should go into
 # src/HeckeTypes.jl 
 
@@ -41,12 +43,12 @@
 #
 ################################################################################
 
-type NfRel <: Nemo.Field
-  base_ring::AnticNumberField
-  pol::GenPoly{nf_elem}
+type NfRel{T} <: Nemo.Field
+  base_ring::Nemo.Field
+  pol::GenPoly{T}
   S::Symbol
 
-  function NfRel(f::GenPoly{nf_elem}, s::Symbol, cached::Bool = true)
+  function NfRel(f::GenPoly{T}, s::Symbol, cached::Bool = true)
     if haskey(NfRelID, (parent(f), f, s))
       return NfRelID[parent(f), f, s]
     else
@@ -62,14 +64,14 @@ type NfRel <: Nemo.Field
   end
 end
 
-const NfRelID = Dict{Tuple{GenPolyRing{nf_elem}, GenPoly{nf_elem}, Symbol},
+const NfRelID = Dict{Tuple{GenPolyRing, GenPoly, Symbol},
                      NfRel}()
 
-type NfRelElem <: Nemo.FieldElem
-  data::GenPoly{nf_elem}
-  parent::NfRel
+type NfRelElem{T} <: Nemo.FieldElem
+  data::GenPoly{T}
+  parent::NfRel{T}
 
-  NfRelElem(g::GenPoly{nf_elem}) = new(g)
+  NfRelElem(g::GenPoly{T}) = new{T}(g)
 end
 
 ################################################################################
@@ -78,8 +80,8 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelElem, dict::ObjectIdDict)
-  z = NfRelElem(Base.deepcopy_internal(data(a), dict))
+function Base.deepcopy_internal{T}(a::NfRelElem{T}, dict::ObjectIdDict)
+  z = NfRelElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
 end
@@ -90,17 +92,17 @@ end
 #
 ################################################################################
 
-Nemo.elem_type(::Type{NfRel}) = NfRelElem
+Nemo.elem_type{T}(::Type{NfRel{T}}) = NfRelElem{T}
 
-Nemo.elem_type(::NfRel) = NfRelElem
+Nemo.elem_type{T}(::NfRel{T}) = NfRelElem{T}
 
-Nemo.parent_type(::Type{NfRelElem}) = NfRel
+Nemo.parent_type{T}(::Type{NfRelElem{T}}) = NfRel{T}
 
 Nemo.needs_parentheses(::NfRelElem) = true
 
 Nemo.isnegative(x::NfRelElem) = Nemo.isnegative(data(x))
 
-Nemo.show_minus_one(::Type{NfRelElem}) = true
+Nemo.show_minus_one{T}(::Type{NfRelElem{T}}) = true
 
 function Nemo.iszero(a::NfRelElem)
   reduce!(a)
@@ -122,13 +124,13 @@ Nemo.one(K::NfRel) = K(Nemo.one(parent(K.pol)))
 #
 ################################################################################
 
-Nemo.promote_rule{T <: Integer}(::Type{NfRelElem}, ::Type{T}) = NfRelElem
+Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
 
-Nemo.promote_rule(::Type{NfRelElem}, ::Type{fmpz}) = NfRelElem
+Nemo.promote_rule{T}(::Type{NfRelElem{T}}, ::Type{fmpz}) = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem}, ::Type{fmpq}) = NfRelElem
+Nemo.promote_rule{T}(::Type{NfRelElem{T}}, ::Type{fmpq}) = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem}, ::Type{nf_elem}) = NfRelElem
+Nemo.promote_rule{T}(::Type{NfRelElem{T}}, ::Type{T}) = NfRelElem{T}
 
 ################################################################################
 #
@@ -136,11 +138,11 @@ Nemo.promote_rule(::Type{NfRelElem}, ::Type{nf_elem}) = NfRelElem
 #
 ################################################################################
 
-@inline Nemo.base_ring(a::NfRel) = a.base_ring
+@inline Nemo.base_ring{T}(a::NfRel{T}) = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRelElem) = a.data
 
-@inline Nemo.parent(a::NfRelElem) = a.parent
+@inline Nemo.parent{T}(a::NfRelElem{T}) = a.parent::NfRel{T}
 
 ################################################################################
 #
@@ -225,25 +227,25 @@ end
 #
 ################################################################################
 
-function number_field(f::GenPoly{nf_elem}, s::String)
+function number_field{T}(f::GenPoly{T}, s::String)
   S = Symbol(s)
-  K = NfRel(f, S)
+  K = NfRel{T}(f, S)
   return K, K(gen(parent(f)))
 end
 
-function number_field(f::GenPoly{nf_elem})
+function number_field{T}(f::GenPoly{T})
   return number_field(f, "_\$")
 end
  
-function (K::NfRel)(a::GenPoly{nf_elem})
-  z = NfRelElem(mod(a, K.pol))
+function (K::NfRel{T}){T}(a::GenPoly{T})
+  z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
   return z
 end
 
-function (K::NfRel)(a::nf_elem)
+function (K::NfRel{T}){T}(a::T)
   parent(a) != base_ring(parent(K.pol)) == error("Cannot coerce")
-  z = NfRelElem(parent(K.pol)(a))
+  z = NfRelElem{T}(parent(K.pol)(a))
   z.parent = K
   return z
 end
@@ -337,7 +339,7 @@ end
 #
 ################################################################################
 
-function Base.:(==)(a::NfRelElem, b::NfRelElem)
+function Base.:(==){T}(a::NfRelElem{T}, b::NfRelElem{T})
   reduce!(a)
   reduce!(b)
   return data(a) == data(b)
@@ -367,13 +369,13 @@ end
 #
 ################################################################################
 
-function absolute_field(K::NfRel)
+function absolute_field(K::NfRel{nf_elem})
   Ka, a, b, c = _absolute_field(K)
 
   return Ka, NfRelToNf(K, Ka, a, b, c)
 end
 
-function _absolute_field(K::NfRel)
+function _absolute_field(K::NfRel{nf_elem})
   f = K.pol
   kx = parent(f)
   k = base_ring(kx)

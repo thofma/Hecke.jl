@@ -32,10 +32,10 @@
 #
 ################################################################################
 
-type NfRelToNf <: Map{NfRel, AnticNumberField}
-  header::MapHeader{NfRel, AnticNumberField}
+type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
+  header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
-  function NfRelToNf(K::NfRel, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem)
+  function NfRelToNf(K::NfRel{nf_elem}, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
     # let K/k, k absolute number field
     # k -> L, gen(k) -> a
     # K -> L, gen(K) -> b
@@ -46,7 +46,7 @@ type NfRelToNf <: Map{NfRel, AnticNumberField}
     R = parent(k.pol)
     S = parent(L.pol)
 
-    function image(x::NfRelElem)
+    function image(x::NfRelElem{nf_elem})
       # x is an element of K
       f = data(x)
       # First evaluate the coefficients of f at a to get a polynomial over L
