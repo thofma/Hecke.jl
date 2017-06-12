@@ -84,6 +84,8 @@ type CompositeMap{D, C, R} <: Map{D, C}
 
     domain(f) == codomain(g) || throw("maps not compatible")
     z = new{D, C, R}()
+    z.f = f
+    z.g = g
 
     image = function(x)#x::elem_type(domain(z)))
       parent(x) != domain(g) && error("Element not in domain of map")
