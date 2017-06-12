@@ -124,7 +124,7 @@ function isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}=fmpz[])
     #@assert norm(evaluate(x)) == evaluate(image(mu, h[end]))
   end
   s, ms = sub(u, h)
-  mp = FinGenGrpAbMap(U, u, vcat([x.coeff for x=h]))
+  mp = GrpAbFinGenMap(U, u, vcat([x.coeff for x=h]))
 
   fl, p = haspreimage(mp, preimage(mu, a))
   if fl

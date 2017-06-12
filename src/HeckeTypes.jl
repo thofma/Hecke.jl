@@ -1692,36 +1692,51 @@ end
 
 ################################################################################
 #
-#  Abelian Groups and their elements
+#  Finitele generated abelian groups and their elements
 #
 ################################################################################
 
-abstract  GrpAb <: Nemo.Group
-abstract  GrpAbElem <: Nemo.GroupElem
-abstract  FinGenGrpAb <: GrpAb
+abstract GrpAb <: Nemo.Group
+abstract GrpAbElem <: Nemo.GroupElem
 
-type FinGenGrpAbSnf <: FinGenGrpAb
-  snf::Array{fmpz, 1}
-end
-
-type FinGenGrpAbGen <: FinGenGrpAb
+type GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
-  snf_map::Map{FinGenGrpAbGen, FinGenGrpAbSnf}
+  issnf::Bool
+  snf::Array{fmpz, 1}
+  snf_map::Map{GrpAbFinGen, GrpAbFinGen}
 
-  function FinGenGrpAbGen(R::fmpz_mat; ishnf::Bool = false)
+  function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
+    r.issnf = false
     r.rels = R
     if ishnf
       r.hnf = R
     end
     return r
   end
+  
+  function GrpAbFinGen(R::Array{fmpz, 1}, issnf::Bool = true)
+    r = new()
+    r.issnf = issnf
+    r.snf = R
+    return r
+  end
+  
+  function GrpAbFinGen{T <: Integer}(R::Array{T, 1}, issnf::Bool = true)
+    r = new()
+    r.issnf = issnf
+    r.snf = map(fmpz, R)
+    return r
+  end
+
 end
 
-type FinGenGrpAbElem{T <: FinGenGrpAb} <: GrpAbElem
-  parent::T
+type GrpAbFinGenElem <: GrpAbElem
+  parent::GrpAbFinGen
   coeff::fmpz_mat
+
+  GrpAbFinGenElem() = new()
 end
 
 ################################################################################

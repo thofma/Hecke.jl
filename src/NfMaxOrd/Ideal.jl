@@ -750,6 +750,13 @@ function _assure_weakly_normal_presentation(A::NfMaxOrdIdl)
 
   @hassert :NfMaxOrd 1 has_minimum(A)
 
+  if minimum(A) == 0
+    A.gen_one = minimum(A)
+    A.gen_two = zero(O)
+    A.gens_weakly_normal = 1
+    return nothing
+  end
+
   M = MatrixSpace(FlintZZ, 1, degree(O))
 
   Amin2 = minimum(A)^2

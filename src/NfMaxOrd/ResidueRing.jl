@@ -76,8 +76,10 @@ needs_parentheses(::NfMaxOrdQuoRingElem) = true
 
 isnegative(::NfMaxOrdQuoRingElem) = false
 
-Base.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
+Nemo.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
                                 ::Type{S}) = NfMaxOrdQuoRingElem
+
+Nemo.promote_rule(::Type{NfMaxOrdQuoRingElem}, ::Type{fmpz}) = NfMaxOrdQuoRingElem
 
 ################################################################################
 #
@@ -1137,7 +1139,7 @@ end
 
 doc"""
 ***
-    group_structure(Q::NfMaxOrdQuoRing) -> FinGenGrpAbSnf
+    group_structure(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf
 
 > Returns an abelian group with the structure of (Q,+).
 """

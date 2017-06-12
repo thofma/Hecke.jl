@@ -1044,5 +1044,7 @@ end
 #
 ################################################################################
 
-Base.promote_rule{T <: Integer, S <: NfOrd}(::Type{NfOrdElem{S}}, ::Type{T}) =
+Nemo.promote_rule{T <: Integer, S <: NfOrd}(::Type{NfOrdElem{S}}, ::Type{T}) =
         NfOrdElem{S}
+
+Nemo.promote_rule{S <: NfOrd}(::Type{NfOrdElem{S}}, ::Type{fmpz}) = NfOrdElem{S}

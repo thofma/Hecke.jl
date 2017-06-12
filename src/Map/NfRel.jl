@@ -1,10 +1,10 @@
 ################################################################################
 #
-#  Map/AbGrp.jl : Types for maps with domains of type AbGrp
+#  Map/NfRel.jl : Types for maps with domains of type NfRel
 #
 # This file is part of Hecke.
 #
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
+# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,51 +28,42 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2015, 2016 Tommy Hofmann
+#  Copyright (C) 2017 Tommy Hofmann
 #
 ################################################################################
 
-################################################################################
-#
-#  Maps for multliplicative groups of residue rings of maximal orders
-#
-################################################################################
+type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
+  header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
-type AbToResRingMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
-  header::MapHeader{GrpAbFinGen, NfMaxOrdQuoRing}
-  generators::Vector{NfMaxOrdQuoRingElem}
-  discrete_logarithm::Function
+  function NfRelToNf(K::NfRel{nf_elem}, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
+    # let K/k, k absolute number field
+    # k -> L, gen(k) -> a
+    # K -> L, gen(K) -> b
+    # L -> K, gen(L) -> c
 
-  function AbToResRingMultGrp(Q::NfMaxOrdQuoRing,
-                              generators::Vector{NfMaxOrdQuoRingElem},
-                              snf_structure::Vector{fmpz},
-                              disc_log::Function)
-    @assert length(generators) == length(snf_structure)
-    @hassert :NfMaxOrdQuoRing 1 all(g->parent(g)==Q,generators)
+    k = K.base_ring
+    Ly, y = PolynomialRing(L)
+    R = parent(k.pol)
+    S = parent(L.pol)
 
-    G = DiagonalGroup(snf_structure)
-    @assert isa(G,GrpAbFinGen)
-    @assert issnf(G)
-
-    function _image(a::GrpAbFinGenElem)
-      @assert parent(a) == G
-      y = one(Q)
-      for i in 1:length(generators)
-        a[i] == 0 && continue
-        y *= generators[i]^a[i]
-      end
-      return y
+    function image(x::NfRelElem{nf_elem})
+      # x is an element of K
+      f = data(x)
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      r = [ evaluate(R(coeff(f, i)), a) for i in 0:degree(f)]
+      return evaluate(Ly(r), b)
     end
 
-    function _preimage(a::NfMaxOrdQuoRingElem)
-      @assert parent(a) == Q
-      return G(disc_log(a))
+    function preimage(x::nf_elem)
+      # x is an element of L
+      f = S(x)
+      return evaluate(f, c)
     end
 
     z = new()
-    z.header = MapHeader(G,Q,_image,_preimage)
-    z.generators = generators
-    z.discrete_logarithm = disc_log
+    z.header = MapHeader(K, L, image, preimage)
     return z
   end
 end
+

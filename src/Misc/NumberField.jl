@@ -679,9 +679,11 @@ function factor(f::PolyElem{nf_elem})
   f == 0 && error("poly is zero")
   f_orig = deepcopy(f)
   g = gcd(f, derivative(f'))
+
   if degree(g) > 0
     f = div(f, g)
   end
+
   f = f*(1//lead(f))
 
   k = 0
@@ -717,6 +719,7 @@ function factor(f::PolyElem{nf_elem})
   r = Fac{typeof(f)}()
   r.fac = res
   r.unit = Kx(1)
+
   if f != f_orig
     global p_start
     p = p_start
@@ -731,10 +734,13 @@ function factor(f::PolyElem{nf_elem})
           res[k] = valuation(fp, gp)
         end
         r.fac = res
+        # adjust the unit of the factorization
+        r.unit = one(Kx) * lead(f_orig)//prod((lead(p) for (p, e) in r))
         return r
       end
     end  
   end
+  r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
   return r
 end
 

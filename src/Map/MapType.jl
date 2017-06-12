@@ -321,21 +321,21 @@ function CoerceMap{D, C}(domain::D, codomain::C)
   return CoerceMap{D, C}(domain, codomain)
 end
 
-type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
-  header::MapHeader{D, C}
+type GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
+  header::MapHeader{GrpAbFinGen, GrpAbFinGen}
 
   map::fmpz_mat
   imap::fmpz_mat
-  im:: FinGenGrpAb  # if set
-  ke:: FinGenGrpAb  # if set
+  im::GrpAbFinGen  # if set
+  ke::GrpAbFinGen  # if set
 
-  function FinGenGrpAbMap(From::D, To::C, M::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat)
     r = new()
-    function image(a::FinGenGrpAbElem{D})
-      return FinGenGrpAbElemCreate(To, a.coeff*M)
+    function image(a::GrpAbFinGenElem)
+      return GrpAbFinGenElem(To, a.coeff*M)
     end
 
-    function preimage(a::FinGenGrpAbElem{C})
+    function preimage(a::GrpAbFinGenElem)
       error("preimage map missing")
     end
 
@@ -344,14 +344,14 @@ type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
     return r
   end
 
-  function FinGenGrpAbMap(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat, Mi::fmpz_mat)
     r = new()
-    function image(a::FinGenGrpAbElem{D})
-      return FinGenGrpAbElemCreate(To, a.coeff*M)
+    function image(a::GrpAbFinGenElem)
+      return GrpAbFinGenElem(To, a.coeff*M)
     end
 
-    function preimage(a::FinGenGrpAbElem{C})
-      return FinGenGrpAbElemCreate(From, a.coeff*Mi)
+    function preimage(a::GrpAbFinGenElem)
+      return GrpAbFinGenElem(From, a.coeff*Mi)
     end
 
     r.header = MapHeader(From, To, image, preimage)
@@ -360,13 +360,5 @@ type FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb} <: Map{D, C}
     return r
   end
 
-end
-
-function FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb}(From::D, To::C, M::fmpz_mat)
-  return FinGenGrpAbMap{D, C}(From, To, M)
-end
-
-function FinGenGrpAbMap{D <: FinGenGrpAb, C <: FinGenGrpAb}(From::D, To::C, M::fmpz_mat, Mi::fmpz_mat)
-  return FinGenGrpAbMap{D, C}(From, To, M, Mi)
 end
 

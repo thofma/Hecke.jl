@@ -1,5 +1,5 @@
 
-export iscoprime, ray_class_group, conductor, isconductor, norm_group
+export iscoprime, ray_class_group, conductor, isconductor
 
 #
 # Test if two ideals $I,J$ in a maximal order are coprime.
@@ -25,7 +25,13 @@ end
 # Modify the map of the class group so that the chosen representatives are coprime to m
 # 
 
-function _coprime_ideal(C::FinGenGrpAb, mC::Map, m::NfMaxOrdIdl)
+#
+# Since we do not need a primitive element, isn't it better to change the representatives of the class group with small primes?
+# Because I think that at the moment this function produces big ideals.
+#
+
+
+function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfMaxOrdIdl)
  
   O=parent(m).order
   K=nf(O)
@@ -50,7 +56,7 @@ function _coprime_ideal(C::FinGenGrpAb, mC::Map, m::NfMaxOrdIdl)
     end
   end
   
-  function exp(a::FinGenGrpAbElem)
+  function exp(a::GrpAbFinGenElem)
     I=ideal(O,1)
     for i=1:ngens(C)
       if Int(a.coeff[1,i])!= 0
@@ -104,14 +110,14 @@ function _infinite_primes(O::NfMaxOrd, p::Array{InfPlc,1}, m::NfMaxOrdIdl)
       end
     end
   end
-  hS = Hecke.FinGenGrpAbMap(S, S, vcat([x.coeff for x=s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x=s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
   r = elem_type(O)[]
   for i=1:length(p)
     y = haspreimage(hS,S[i])[2]
     push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
   end
   
-  function exp(A::FinGenGrpAbElem)
+  function exp(A::GrpAbFinGenElem)
     s=O(1)
     for i=1:length(p)
       if Int(A.coeff[1,i]) == 1
@@ -134,12 +140,12 @@ end
 
 doc"""
 ***
-    direct_product(G::FinGenGrpAb, H::FinGenGrpAb) -> FinGenGrpAb
+    direct_product(G::GrpAbFinGen, H::GrpAbFinGen) -> GrpAbFinGen
 > Return the abelian group $G\times H$
 
 """
 
-function direct_product(G::FinGenGrpAb, H::FinGenGrpAb) 
+function direct_product(G::GrpAbFinGen, H::GrpAbFinGen) 
 
   A=vcat(rels(G), MatrixSpace(FlintZZ, rows(rels(H)), cols(rels(G)))())
   B=vcat(MatrixSpace(FlintZZ, rows(rels(G)), cols(rels(H)))(),rels(H))
@@ -160,7 +166,8 @@ end
 
 doc"""
 ***
-    ray_class_group(m::NfMaxOrdIdl, A::Array{Int64,1} (optional)) -> FinGenGrpAb, Map
+    ray_class_group(m::NfMaxOrdIdl, A::Array{InfPlc,1}=[]) -> FinGenGrpAb, Map
+
 > Compute the ray class group of the maximal order $L$ with respect to the modulus given by $m$ (the finite part) and the infinite primes of $A$
 > and return an abstract group isomorphic to the ray class group with a map 
 > from the group to the ideals of $L$
@@ -261,7 +268,7 @@ function ray_class_group(m::NfMaxOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
 #
 
 
-  function expo(a::FinGenGrpAbElem)
+  function expo(a::GrpAbFinGenElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
     if isempty(primes)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
@@ -306,15 +313,12 @@ Hecke.elem_type(A::Hecke.NfMaxOrdIdlSet) = NfMaxOrdIdl
 doc"""
 ***
 
-  function conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp)
+  function conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp) -> NfMaxOrdIdl (, Array{InfPlc,1})
 
-  > Return the conductor of the congruence subgroup S, mS of the Ray Class Group R,mR 
-  
+> Return the conductor of the congruence subgroup S, mS of the Ray Class Group R,mR 
 ***
 """
-
-
-function conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp)
+function conductor(S::GrpAbFinGen, mS::GrpAbFinGenMap, R::GrpAbFinGen, mR::MapRayClassGrp)
 
 
   cond=mR.modulus_fin
@@ -362,7 +366,7 @@ function conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRa
     end
     return cond, cond_inf
   end
-  return cond
+  return cond, InfPlc[]
   
 end 
 
@@ -370,7 +374,7 @@ end
 doc"""
 ***
 
-  function isconductor(R::FinGenGrpAb, mR::Map, m::NfMaxOrdIdl, infinite_primes::Array{InfPlc,1}=[])
+  function isconductor(R::FinGenGrpAb, mR::Map, m::NfMaxOrdIdl, infinite_primes::Array{InfPlc,1}=[]) -> Bool
 
   > Check if $m$ is the conductor of the congruence subgroup $S,mS$ of the Ray Class group R,mR
   
@@ -378,7 +382,7 @@ doc"""
 """
 
 
-function isconductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp, m::NfMaxOrdIdl, infinite_places::Array{InfPlc,1}=InfPlc[])
+function isconductor(S::GrpAbFinGen, mS::GrpAbFinGenMap, R::GrpAbFinGen, mR::MapRayClassGrp, m::NfMaxOrdIdl, infinite_places::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
 
@@ -402,7 +406,7 @@ function isconductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::Map
     end
   end
 
-  # Check the infinite primes. To be changed.
+  # Check the infinite primes.
   
   if !isempty(infinite_places)
     for i=1:length(infinite_places)
@@ -422,23 +426,24 @@ end
 
 doc"""
 ***
-  function norm_group(f::Nemo.GenPoly, R::FinGenGrpAb, mR::MapRayClassGrp) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
+  function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, fin_modulus::NfMaxOrdIdl, inf_modulus::Array{InfPlc,1}=InfPlc[]) -> Hecke.FinGenGrpAb, Hecke.FinGenGrpAbMap
 
  > Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension generated by the roots of $f$ 
  > Under GRH, it returns an error message if the extension is non-abelian
 
+ > Compute the subgroup of the Ray Class Group $R$ given by the norm of the abelian extension generated by the roots of $f$ 
+   
 ***
 """
 
-function norm_group(f::Nemo.PolyElem, R::FinGenGrpAb, mR::Hecke.MapRayClassGrp)
+function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, fin_modulus::NfMaxOrdIdl, inf_modulus::Array{InfPlc,1}=InfPlc[])
   
-  
-  O=mR.modulus_fin.parent.order
+  R=mR.header.domain
+  O=fin_modulus.parent.order
   K=O.nf
-
   d=discriminant(f)
   N=num(norm(K(d)))
-  N1=fmpz(norm(mR.modulus_fin))
+  N1=fmpz(norm(fin_modulus))
   n=degree(f)
   
   Q,mQ=quo(R,n)
@@ -454,20 +459,13 @@ function norm_group(f::Nemo.PolyElem, R::FinGenGrpAb, mR::Hecke.MapRayClassGrp)
   determinant=abs(det(M))
   listprimes=typeof(R[1])[]  
   new_mat=M
-
-  B=log(abs(discriminant(O)))*degree(f)+log(N)
-  B=4*B+2.5*degree(f)*degree(O)+5
-  B=B^2
   
   #
   # Adding small primes until they generate the norm group
   #
   
-  while determinant!= n 
+  while determinant!= n
     p=next_prime(p)
-    if p>B
-      error("The extension is not abelian!") #Bach bound says that the norm group must be generated by primes $\leq B$
-    end
     if !divisible(N,p) && !divisible(N1,p) 
       L=prime_decomposition(O,p)
       for i=1:length(L)
@@ -498,11 +496,89 @@ function norm_group(f::Nemo.PolyElem, R::FinGenGrpAb, mR::Hecke.MapRayClassGrp)
       push!(subgrp, n*R[i])
     end
     return sub(R, subgrp)
+    
   else  
      return sub(R,[])
   end    
 
 end
+
+
+
+doc"""
+***
+  function isabelian(f::Nemo.GenPoly) -> Bool
+
+ > Check if the extension generated by a root of the irreducible polynomial $f$ over a number field $K$ is abelian
+ > The function is probabilistic.
+
+***
+"""
+
+function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
+  
+  O=maximal_order(K)
+  d=discriminant(f)
+  N=num(norm(K(d)))
+  n=degree(f)
+  
+  inf_plc=real_places(K)
+  m=ideal(O,O(d))
+  R,mR=ray_class_group(m,inf_plc)
+  
+  S,mS=snf(R)
+  M=rels(S)
+  
+  p=1
+  Ox,x=O["y"]
+  f1=Ox([O(coeff(f,i)) for i=0:n])
+  
+  determinant=abs(det(M)) 
+  new_mat=M
+
+  B=log(abs(discriminant(O)))*degree(f)+log(N)
+  B=4*B+2.5*degree(f)*degree(O)+5
+  B=B^2
+  
+  #
+  # Adding small primes until they generate the norm group
+  #
+  
+  while determinant > n 
+    p=next_prime(p)
+    if p>B
+      return false #Bach bound says that the norm group must be generated by primes $\leq B$
+    end
+    if !divisible(N,p)
+      L=prime_decomposition(O,p)
+      for i=1:length(L)
+        F,mF=ResidueField(O,L[i][1])
+        Fz,z= F["z"]
+        g=mF(f1)
+        D=factor(g)
+        E=collect(keys(D.fac))
+        for j=1:length(E)-1
+          if degree(E[j])!=degree(E[j+1])
+            return false
+          end
+        end
+        candidate=mR\(((L[i][1]))^degree(E[1]))
+        new_mat=vcat(new_mat,(mS(candidate)).coeff)
+        new_mat=hnf(new_mat)
+        new_mat=submat(new_mat,1,1,ngens(S), ngens(S))  
+        determinant=abs(det(new_mat))
+      end
+    end
+  end
+  if determinant==n
+    return true
+  else 
+    return false
+  end
+
+end
+
+
 
 
 
