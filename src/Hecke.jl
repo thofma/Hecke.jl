@@ -167,6 +167,11 @@ function __init__()
   global _get_roots_ctx_of_nf = t[1]
   global _set_roots_ctx_of_nf = t[2]
 
+  t = create_accessors(AnticNumberField, Array, get_handle())
+
+  global _get_cyclotomic_ext_nf = t[1]
+  global _set_cyclotomic_ext_nf = t[2]
+
   global R = _RealRing()
   
   # Stuff for elliptic curves
