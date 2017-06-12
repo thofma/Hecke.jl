@@ -286,6 +286,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     push!(lp, fmpz(p))
     i -= nbits(p[end])
   end
+  println("using primes ", lp, " for modular norm")
 
   crt_env = Hecke.crt_env(lp)
   np = Array{fmpz}(length(lp))
@@ -331,7 +332,13 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
       println("so far $ll tries, avg nbits of norm ", sum_nb/ll)
     end
     for j=1:no_coeff
+      lc[j]=0
+    end
+    for j=1:no_coeff
       p  = rand(1:nb)
+      while p in lc
+        p = rand(1:nb)
+      end
       lc[j] = p
     end
     zero = false;
@@ -354,6 +361,7 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     
   
     no = crt_signed(np, crt_env)
+#    @assert no == norm(sum(b[lc]))
     sum_nb += nbits(no)
     if iszero(no) continue; end #cannot (should not) happen. Tested above
 #    println("testing $no")
