@@ -222,8 +222,9 @@ end
 
 function nmod_mat(A::SMat{UIntMod})
   R = parent(A.rows[1].values[1])
-  B = nmod_mat(A.r, A.c, R.mod.n)
-  B.parent = NmodMatSpace(ResidueRing(FlintZZ, R.mod.n), A.r, A.c)
+  #B = nmod_mat(A.r, A.c, R.mod.n)
+  #B.parent = NmodMatSpace(ResidueRing(FlintZZ, R.mod.n), A.r, A.c)
+  B = MatrixSpace(ResidueRing(FlintZZ, R.mod.n), A.r, A.c)()
 
   for i = 1:length(A.rows)
     ra = A.rows[i]
