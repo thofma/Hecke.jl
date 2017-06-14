@@ -569,6 +569,7 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
    k = 1
    for i = 1:n
       j = k
+      while j <= m && A[j, i] == 0
          j += 1
       end
       if j > m
