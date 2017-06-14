@@ -537,7 +537,28 @@ end
 pseudo_matrix(x...) = PseudoMatrix(x...)
 
 function pseudo_hnf_cohen(P::PMat)
+   return _pseudo_hnf_cohen(P, Val{false})
+end
+
+function pseudo_hnf_cohen_with_trafo(P::PMat)
+   return _pseudo_hnf_cohen(P, Val{true})
+end
+
+function _pseudo_hnf_cohen{T}(P::PMat, trafo::Type{Val{T}} = Val{false})
    H = deepcopy(P)
+   m = rows(H)
+   if trafo == Val{true}
+      U = one(MatrixSpace(base_ring(H.matrix), m, m))
+      pseudo_hnf_cohen!(H, U, true)
+      return H, U
+   else
+      U = zero(MatrixSpace(base_ring(H.matrix), 0, 0))
+      pseudo_hnf_cohen!(H, U, false)
+      return H
+   end
+end
+
+function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool = false)
    m = rows(H)
    n = cols(H)
    A = H.matrix
@@ -548,7 +569,6 @@ function pseudo_hnf_cohen(P::PMat)
    k = 1
    for i = 1:n
       j = k
-      while j <= m && A[j, i] == 0
          j += 1
       end
       if j > m
@@ -556,8 +576,10 @@ function pseudo_hnf_cohen(P::PMat)
       end
       if j > k
          swap_rows!(H, j, k)
+         with_trafo ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
+      with_trafo ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
          if iszero(A[j, i])
@@ -576,21 +598,31 @@ function pseudo_hnf_cohen(P::PMat)
             error("Ideals are not integral.")
          end
          u, v = map(K, idempotents(ad.num, bd.num))
-         u = divexact(u, A[j, i])
+         u = divexact(u, Aji)
          for c = i:n
             t = deepcopy(A[j, c])
             mul!(t1, A[k, c], -Aji)
             addeq!(A[j, c], t1)
             mul!(t1, t, u)
             mul!(t2, A[k, c], v)
-            add!(A[k,c], t1, t2)
+            add!(A[k, c], t1, t2)
+         end
+         if with_trafo
+            for c = 1:m
+               t = deepcopy(U[j, c])
+               mul!(t1, U[k, c], -Aji)
+               addeq!(U[j, c], t1)
+               mul!(t1, t, u)
+               mul!(t2, U[k, c], v)
+               add!(U[k, c], t1, t2)
+            end
          end
          H.coeffs[j] = a*b//d
          H.coeffs[k] = d
       end
       k += 1
    end
-   return H
+   return nothing
 end
 
 function swap_rows!(P::PMat, i::Int, j::Int)
