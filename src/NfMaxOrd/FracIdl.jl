@@ -366,7 +366,7 @@ end
 +(A::NfMaxOrdFracIdl, B::NfMaxOrdIdl) = B+A
 
 function +(A::NfMaxOrdFracIdl, B::Hecke.NfMaxOrdFracIdl)
-  d = lcm(den(A), den(b))
+  d = lcm(den(A), den(B))
   ma = div(d, den(A))
   mb = div(d, den(B))
   return (num(A)*ma + num(B)*mb)//d
