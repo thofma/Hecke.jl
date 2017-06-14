@@ -538,58 +538,60 @@ pseudo_matrix(x...) = PseudoMatrix(x...)
 
 function pseudo_hnf_cohen(P::PMat)
    H = deepcopy(P)
-   n = rows(H)
-   k = cols(H)
+   m = rows(H)
+   n = cols(H)
    A = H.matrix
    K = base_ring(A)
    t = K()
    t1 = K()
    t2 = K()
-   j = 1
-   for i = 1:k
-      m = j
-      while m <= n && A[m, i] == 0
-         m += 1
+   k = 1
+   for i = 1:n
+      j = k
+      while j <= m && A[j, i] == 0
+         j += 1
       end
-      if m > n
-         error("Matrix is not of rank $(cols(A)).")
+      if j > m
+         continue
       end
-      if m > j
-         swap_rows!(H, j, m)
+      if j > k
+         swap_rows!(H, j, k)
       end
-      H.coeffs[j] = H.coeffs[j]*A[j, i]
-      divide_row!(A, j, A[j, i])
-      for m = j+1:n
-         if iszero(A[m, i])
+      H.coeffs[k] = H.coeffs[k]*A[k, i]
+      divide_row!(A, k, A[k, i])
+      for j = k+1:m
+         if iszero(A[j, i])
             continue
          end
-         a = H.coeffs[m]
-         aa = A[m, i]*a
-         b = H.coeffs[j]
+         Aji = deepcopy(A[j, i])
+         a = H.coeffs[j]
+         aa = Aji*a
+         b = H.coeffs[k]
          d = aa + b
          ad = aa//d
+         simplify_exact(ad)
          bd = b//d
+         simplify_exact(bd)
          if ad.den != 1 || bd.den != 1
             error("Ideals are not integral.")
          end
-         u, v = idempotents(ad.num, bd.num)
-         u = divexact(K(u), A[m, i])
-         for c = i:k
-            t = deepcopy(A[m, c])
-            mul!(t1, A[j, c], -A[m, i])
-            addeq!(A[m, c], t1)
-            mul!(t1, t, K(u))
-            mul!(t2, A[j, c], K(v))
-            add!(A[j,c], t1, t2)
+         u, v = map(K, idempotents(ad.num, bd.num))
+         u = divexact(u, A[j, i])
+         for c = i:n
+            t = deepcopy(A[j, c])
+            mul!(t1, A[k, c], -Aji)
+            addeq!(A[j, c], t1)
+            mul!(t1, t, u)
+            mul!(t2, A[k, c], v)
+            add!(A[k,c], t1, t2)
          end
-         H.coeffs[m] = a*b//d
-         H.coeffs[j] = d
+         H.coeffs[j] = a*b//d
+         H.coeffs[k] = d
       end
-      j += 1
+      k += 1
    end
    return H
 end
-
 
 function swap_rows!(P::PMat, i::Int, j::Int)
    swap_rows!(P.matrix, i, j)
