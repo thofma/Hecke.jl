@@ -535,3 +535,64 @@ function in(x::nf_elem, y::NfMaxOrdFracIdl)
 end
 
 pseudo_matrix(x...) = PseudoMatrix(x...)
+
+function pseudo_hnf_cohen(P::PMat)
+   H = deepcopy(P)
+   n = rows(H)
+   k = cols(H)
+   A = H.matrix
+   K = base_ring(A)
+   t = K()
+   t1 = K()
+   t2 = K()
+   j = 1
+   for i = 1:k
+      m = j
+      while m <= n && A[m, i] == 0
+         m += 1
+      end
+      if m > n
+         error("Matrix is not of rank $(cols(A)).")
+      end
+      if m > j
+         swap_rows!(H, j, m)
+      end
+      H.coeffs[j] = H.coeffs[j]*A[j, i]
+      divide_row!(A, j, A[j, i])
+      for m = j+1:n
+         if iszero(A[m, i])
+            continue
+         end
+         a = H.coeffs[m]
+         aa = A[m, i]*a
+         b = H.coeffs[j]
+         d = aa + b
+         ad = aa//d
+         bd = b//d
+         if ad.den != 1 || bd.den != 1
+            error("Ideals are not integral.")
+         end
+         u, v = idempotents(ad.num, bd.num)
+         u = divexact(K(u), A[m, i])
+         for c = i:k
+            t = deepcopy(A[m, c])
+            mul!(t1, A[j, c], -A[m, i])
+            addeq!(A[m, c], t1)
+            mul!(t1, t, K(u))
+            mul!(t2, A[j, c], K(v))
+            add!(A[j,c], t1, t2)
+         end
+         H.coeffs[m] = a*b//d
+         H.coeffs[j] = d
+      end
+      j += 1
+   end
+   return H
+end
+
+
+function swap_rows!(P::PMat, i::Int, j::Int)
+   swap_rows!(P.matrix, i, j)
+   P.coeffs[i], P.coeffs[j] = P.coeffs[j], P.coeffs[i]
+   return nothing
+end
