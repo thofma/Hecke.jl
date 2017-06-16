@@ -32,6 +32,8 @@
 #
 ################################################################################
 
+export torsion_unit_group
+
 ################################################################################
 #
 #  Torsion unit test
@@ -74,7 +76,7 @@ end
 
 ################################################################################
 #
-#  Torsion units via lattice enumeration
+#  Functions for user
 #
 ################################################################################
 
@@ -111,6 +113,19 @@ function torsion_units_gen_order(O::NfOrd)
   return g, length(ar)
 end
 
+doc"""
+***
+    torsion_unit_group(O::NfOrd) -> GrpAb, Map
+
+> Given an order $O$, returns the torsion units as an abelian group $G$
+> together with a map $G \to \mathcal O^\times$.
+"""
+function torsion_unit_group(O::NfOrd)
+  ar, g = _torsion_units(O)
+  f = AbToNfOrdMultGrp(O, length(ar), g)
+  return domain(f), f
+end
+
 function _torsion_units(O::NfOrd)
    if isdefined(O, :torsion_units)
     return O.torsion_units
@@ -120,6 +135,13 @@ function _torsion_units(O::NfOrd)
   O.torsion_units = z
   return O.torsion_units
 end
+
+################################################################################
+#
+#  Torsion units via lattice enumeration
+#
+################################################################################
+
 
 function _torsion_units_lattice_enum(O::NfOrd)
   n = degree(O)

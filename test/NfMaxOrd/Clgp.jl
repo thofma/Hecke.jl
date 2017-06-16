@@ -97,6 +97,9 @@
 
       U = O.auxilliary_data[5]
 
+      G, mG = torsion_unit_group(O)
+      @test order(G) == 2
+      @test mG(G[1]) == O(-1)
       @test order(U) == O
       @test U.torsion_units_order == 2
       @test 1 in U.torsion_units
@@ -122,6 +125,9 @@
 
       U = O.auxilliary_data[5]
 
+      G, mG = torsion_unit_group(O)
+      @test order(G) == 2
+      @test mG(G[1]) == O(-1)
       @test order(U) == O
       @test U.torsion_units_order == 2
       @test 1 in U.torsion_units

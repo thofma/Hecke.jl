@@ -76,3 +76,24 @@ type AbToResRingMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
     return z
   end
 end
+
+type AbToNfOrdMultGrp{T} <: Map{GrpAbFinGen, T}
+  header::MapHeader{GrpAbFinGen, T}
+  
+  function AbToNfOrdMultGrp(O::T, order::Int, generator::NfOrdElem{T})
+    G = DiagonalGroup([order])
+
+    function _image(a::GrpAbFinGenElem)
+      @assert parent(a) == G
+      return generator^a[1]
+    end
+
+    z = new()
+    z.header = MapHeader(G, O, _image)
+    return z
+  end
+end
+
+function AbToNfOrdMultGrp{T}(O::T, order::Int, generator::NfOrdElem{T})
+  return AbToNfOrdMultGrp{T}(O, order, generator)
+end
