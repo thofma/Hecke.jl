@@ -51,6 +51,8 @@ end
  
 elem_type(::Type{NfMaxOrdIdlSet}) = NfMaxOrdIdl
 
+parent_type(::Type{NfMaxOrdIdl}) = NfMaxOrdIdlSet
+
 ################################################################################
 #
 #  Construction
