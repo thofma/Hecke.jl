@@ -284,6 +284,10 @@ end
 
 # I don't know what this function is doing mathematically
 # Everything has an image?
+# No, it does not. Suppose
+# s, ms = sub(...) so ms: s -> G
+# h = inv(ms)      so  h: G -> s
+# then hasimage(h, ..) would check if x in s
 function hasimage(M::Hecke.GrpAbFinGenMap, a::Hecke.GrpAbFinGenElem)
   if isdefined(M, :map)
     return image(M, a)
@@ -914,6 +918,7 @@ end
 ################################################################################
 
 # TH: Isn't this the same as UnitsModM.jl?
+# TODO: remove this from here. It does not belong here
 
 doc"""
 ***
@@ -934,16 +939,4 @@ function multgrp_of_cyclic_grp(n::fmpz)
   return DiagonalGroup(composition)
 end
 multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(fmpz(n))
-
-#= Example
-M = MatrixSpace(ZZ, 2, 3)([1 2 3; 4 5 6])
-G = Hecke.GrpAbFinGenGen(M)
-a = Hecke.GrpAbFinGenElemCreate(G, MatrixSpace(ZZ, 1, 3)([1 2 3]))
-100*a
-200*a
-300*a
-H, mp = snf(G)
-mp(a)
-G = Hecke.GrpAbFinGenSnf(fmpz[2,3,4])
-=#
 
