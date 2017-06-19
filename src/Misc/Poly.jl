@@ -523,6 +523,7 @@ function fmpz_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpz_poly)
   return g
 end
 
+#= this is handled bu subst (or by f(a))
 function evaluate{S <: RingElem, T <: RingElem}(f::PolyElem{S}, a::T)
   v = lead(f)
   for i=degree(f)-1:-1:0
@@ -531,3 +532,4 @@ function evaluate{S <: RingElem, T <: RingElem}(f::PolyElem{S}, a::T)
   return v
 end
 
+=#
