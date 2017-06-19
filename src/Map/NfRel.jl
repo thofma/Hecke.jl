@@ -28,9 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2017 Tommy Hofmann
+#  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
 #
 ################################################################################
+
+#why only simple relative?
 
 type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
   header::MapHeader{NfRel{nf_elem}, AnticNumberField}
@@ -63,6 +65,24 @@ type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
 
     z = new()
     z.header = MapHeader(K, L, image, preimage)
+    return z
+  end
+end
+
+type NfRelToNfRel <: Map{NfRel{nf_elem}, NfRel{nf_elem}}
+  header::MapHeader{NfRel{nf_elem}, NfRel{nf_elem}}
+
+  function NfRelToNfRel(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_elem})
+    function image(x::NfRelElem{nf_elem})
+      # x is an element of K
+      f = data(x)
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      return evaluate(f, a)
+    end
+
+    z = new()
+    z.header = MapHeader(K, L, image)
     return z
   end
 end
