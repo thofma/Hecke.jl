@@ -372,7 +372,7 @@ end
 function absolute_field(K::NfRel{nf_elem})
   Ka, a, b, c = _absolute_field(K)
 
-  return Ka, NfRelToNf(K, Ka, a, b, c)
+  return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
 function _absolute_field(K::NfRel{nf_elem})
