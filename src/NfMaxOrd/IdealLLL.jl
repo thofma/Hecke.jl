@@ -41,18 +41,19 @@ function lll(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::I
   d = rt_c.cache_z1
   g = rt_c.cache_z2
 
-  round_scale!(d, c, prec)
-  ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat},  Ptr{fmpz_mat}), &g, &(b.num), &d)
-  den = b.den
-
   if !iszero(v)
-    error("missing")
+  #  error("missing")
     @v_do :ClassGroup 2 println("using inf val", v)
     old = precision(BigFloat)
     setprecision(4*prec)
-    mult_by_2pow_diag!(d, v);
+    mult_by_2pow_diag!(c, v);
     setprecision(old)
   end
+
+
+  round_scale!(d, c, prec)
+  ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat},  Ptr{fmpz_mat}), &g, &(b.num), &d)
+  den = b.den
 
   ccall((:fmpz_mat_gram, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}), &d, &g)
   shift!(d, -prec)

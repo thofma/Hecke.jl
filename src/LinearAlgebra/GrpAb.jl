@@ -91,17 +91,26 @@ function show_snf(io::IO, A::GrpAbFinGen)
     return
   end
 
-  print(io, "Z/$(A.snf[1])")
-  i = 2
-  while i <= len && A.snf[i] != 0
-    print(io, " x Z/$(A.snf[i])")
-    i += 1
-  end
-  if i == len
-    print(io, " x Z")
-  elseif i < len
-    print(io, " x Z^$(len-i+1)")
-  end
+  i = 1
+  while i <= len
+    inv = A.snf[i]
+    j = 1
+    while i+j <= len && inv == A.snf[i+j] 
+      j += 1
+    end
+    if iszero(inv)
+      print(io, "Z")
+    else
+      print(io, "Z/$(inv)")
+    end
+    if j>1
+      print(io, "^$(j)")
+    end
+    if i+j < len
+      print(io, " x ")
+    end
+    i += j
+  end  
 end
 
 function show(io::IO, a::GrpAbFinGenElem)
