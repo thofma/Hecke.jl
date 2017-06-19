@@ -422,3 +422,9 @@ function _absolute_field(K::NfRel{nf_elem})
   return Ka, al, be, ga
 end 
 
+
+function coeff{T}(a::NfRelElem{T}, i::Int)
+  return coeff(a.data, i)
+end
+
+#TODO: missing: norm, trace...
