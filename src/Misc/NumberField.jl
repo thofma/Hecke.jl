@@ -1,6 +1,6 @@
 import Nemo.sub!, Base.gcd
 export induce_rational_reconstruction, induce_crt, hasroot, root, roots, 
-       number_field
+       number_field, ismonic
 
 if Int==Int32
   global const p_start = 2^30
