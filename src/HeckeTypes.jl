@@ -400,7 +400,7 @@ type EnumCtxArb
   function EnumCtxArb(G::arb_mat)
     z = new()
     z.G = G
-    z.x = MatrixSpace(ZZ, 1, rows(G))()
+    z.x = MatrixSpace(FlintZZ, 1, rows(G))()
     z.p = prec(base_ring(G))
     return z
   end
@@ -747,7 +747,7 @@ type NfOrdGenIdl <: NfOrdIdl
   function NfOrdGenIdl(O::NfOrdGen, a::Int)
     z = new()
     z.parent = NfOrdGenIdlSet(O)
-    z.basis_mat = MatrixSpace(ZZ, degree(O), degree(O))(abs(a))
+    z.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(a))
     z.princ_gen_special = (1, abs(a), fmpz(0))
     z.princ_gen = O(a)
     z.minimum = fmpz(abs(a))
@@ -757,7 +757,7 @@ type NfOrdGenIdl <: NfOrdIdl
   function NfOrdGenIdl(O::NfOrdGen, a::fmpz)
     z = new()
     z.parent = NfOrdGenIdlSet(O)
-    z.basis_mat = MatrixSpace(ZZ, degree(O), degree(O))(abs(a))
+    z.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(a))
     z.princ_gen_special = (2, Int(0), abs(a))
     z.princ_gen = O(a)
     z.minimum = abs(a)
@@ -920,7 +920,7 @@ type NfMaxOrd <: NfOrd
     z.basis_mat_inv = inv(x)
     B = Array{NfOrdElem{NfMaxOrd}}(n)
     for i in 1:n
-      v = fill(zero(ZZ), n)
+      v = fill(zero(FlintZZ), n)
       v[i] = ZZ(1)
       B[i] = z(d[i], v)
     end
@@ -947,7 +947,7 @@ type NfMaxOrd <: NfOrd
     B = Array{NfOrdElem{NfMaxOrd}}(n)
 
     for i in 1:n
-      v = fill(zero(ZZ), n)
+      v = fill(zero(FlintZZ), n)
       v[i] = ZZ(1)
       B[i] = z(b[i], v)
     end
@@ -1415,8 +1415,8 @@ type FactorBaseSingleP
     if length(lp) < 3 || isindex_divisor(O, p) # ie. index divisor or so
       int_doit = naive_doit
     else
-      Zx = PolynomialRing(ZZ, "x")[1]
-      Fpx = PolynomialRing(ResidueRing(ZZ, p), "x")[1]
+      Zx = PolynomialRing(FlintZZ, "x")[1]
+      Fpx = PolynomialRing(ResidueRing(FlintZZ, p), "x")[1]
       Qx = parent(K.pol)
       fp = Fpx(Zx(K.pol))
       lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]
@@ -1652,6 +1652,7 @@ type NfMaxOrdQuoRing <: Ring
   ideal::NfMaxOrdIdl
   basis_mat::fmpz_mat
   preinvn::Array{fmpz_preinvn_struct, 1}
+  factor::Dict{NfMaxOrdIdl, Int}
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
@@ -1669,10 +1670,10 @@ type NfMaxOrdQuoRing <: Ring
     z.basis_mat = basis_mat(I)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_mat[i, i]) for i in 1:degree(O)]
     d = degree(O)
-    z.tmp_div = MatrixSpace(ZZ, 2*d + 1, 2*d + 1)()
-    z.tmp_xxgcd = MatrixSpace(ZZ, 3*d + 1, 3*d + 1)()
-    z.tmp_ann = MatrixSpace(ZZ, 2*d, d)()
-    z.tmp_euc = MatrixSpace(ZZ, 2*d, d)()
+    z.tmp_div = MatrixSpace(FlintZZ, 2*d + 1, 2*d + 1)()
+    z.tmp_xxgcd = MatrixSpace(FlintZZ, 3*d + 1, 3*d + 1)()
+    z.tmp_ann = MatrixSpace(FlintZZ, 2*d, d)()
+    z.tmp_euc = MatrixSpace(FlintZZ, 2*d, d)()
     minimum(I) # compute the minimum
     return z
   end

@@ -28,6 +28,7 @@ function multiplicative_group(Q::NfMaxOrdQuoRing)
   mQ = Q.multiplicative_group
   return domain(mQ), mQ
 end
+
 unit_group(Q::NfMaxOrdQuoRing) = multiplicative_group(Q)
 
 doc"""
@@ -39,7 +40,6 @@ doc"""
 function multiplicative_group_generators(Q::NfMaxOrdQuoRing)
   return multiplicative_group(Q).generators
 end
-
 
 function factor(Q::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   if !all(isprime, keys(Q.fac))
@@ -56,6 +56,7 @@ function factor(Q::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   end
   return fac
 end
+
 ################################################################################
 #
 #  Internals
@@ -74,6 +75,7 @@ function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
   disc_logs = Vector{Function}()
   i = ideal(Q)
   fac = factor(i)
+  Q.factor = fac
   # TODO calculate each primepower only once
   for (p,vp) in fac
     gens_p , struct_p , dlog_p = _multgrp_mod_pv(p,vp;method=method)
@@ -251,7 +253,7 @@ function _iterative_method(p::NfMaxOrdIdl, u, v; base_method=nothing, use_p_adic
   @assert v >= u >= 1
   pnum = minimum(p)
   if use_p_adic
-    e = myvaluation(pnum,p)
+    e = valuation(pnum,p)
     k0 = 1 + div(fmpz(e),(pnum-1))
   end
   g = Vector{NfOrdElem{NfMaxOrd}}()
@@ -398,7 +400,7 @@ function _1_plus_pa_mod_1_plus_pb_structure(p::NfMaxOrdIdl,a,b)
   @hassert :NfMaxOrdQuoRing 2 isprime(p)
   O = order(p)
   pnum = minimum(p)
-  e = myvaluation(O(pnum),p)
+  e = valuation(O(pnum),p)
   k0 = 1 + div(fmpz(e),(pnum-1))
   a >= k0 || return false, nothing
   Q = NfMaxOrdQuoRing(O,p^(b-a))
@@ -507,7 +509,7 @@ function _p_adic_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
   @assert v > u >= 1
   @hassert :NfMaxOrdQuoRing 2 isprime(p)
   pnum = minimum(p)
-  e = myvaluation(pnum,p)
+  e = valuation(pnum,p)
   k0 = 1 + div(fmpz(e),(pnum-1))
   @assert u >= k0
   g,M = _pu_mod_pv(pu,pv)
@@ -521,10 +523,10 @@ function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
   x == 0 && return O(1)
   Q = NfMaxOrdQuoRing(O,pv)
   pnum = minimum(p)
-  val_p_x = Hecke.myvaluation(x,p)
-  e = Hecke.myvaluation(pnum,p)
+  val_p_x = valuation(x,p)
+  e = valuation(pnum,p)
   max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
-  val_p_maximum = Int(max_i*val_p_x - e * Hecke.myvaluation(fac(1),p)) + 1
+  val_p_maximum = Int(max_i*val_p_x - e * valuation(fac(1),p)) + 1
   Q_ = NfMaxOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
@@ -533,7 +535,7 @@ function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
   val_p_fac_i = 0
   i_old = 0
   for i in 1:max_i
-    val_pnum_i = Hecke.myvaluation(fmpz(i),pnum)
+    val_pnum_i = valuation(fmpz(i),pnum)
     val_p_i = val_pnum_i * e
     val_p_fac_i += val_p_i
     val_p_xi += val_p_x
@@ -570,15 +572,15 @@ function p_adic_log(p,v,y::NfOrdElem{NfMaxOrd};pv=p^v)
   Q = NfMaxOrdQuoRing(O,pv)
   pnum = minimum(p)
   x = y - 1
-  e = Hecke.myvaluation(pnum,p)
-  val_p_x = Hecke.myvaluation(x,p)
+  e = valuation(pnum,p)
+  val_p_x = valuation(x,p)
   s = zero(Q)
   xi = one(O)
   i_old = 0
   val_p_xi = 0
   pnum = Int(pnum)
   for i in [ 1:v ; (v+pnum-(v%pnum)):pnum:pnum*v ]
-    val_pnum_i = Hecke.myvaluation(i,pnum)
+    val_pnum_i = valuation(i,pnum)
     val_p_i = val_pnum_i * e
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
@@ -753,19 +755,19 @@ function baby_step_giant_step(g, n, h, cache::Dict)
   # NfOrdElem I convert them to strings first and use the strings as keys for the hash map...
   # TODO: The calls to string() should be removed as soon as the hash function is fixed.
   n = BigInt(n)
-  m = ceil(BigInt,sqrt(n))
+  m = ceil(BigInt, sqrt(n))
   if isempty(cache)
     it = g^0
     for j in 0:m
-      cache[string(it)] = j
+      cache[it] = j
       it *= g
     end
   end
   b = g^(-m)
   y = h
   for i in 0:m-1
-    if haskey(cache,string(y))
-      return fmpz(mod(i*m + cache[string(y)],n))
+    if haskey(cache, y)
+      return fmpz(mod(i*m + cache[y], n))
     else
       y *= b
     end
@@ -774,7 +776,7 @@ function baby_step_giant_step(g, n, h, cache::Dict)
 end
 
 function baby_step_giant_step(gen, n, a)
-  cache = Dict{Any,BigInt}()
+  cache = Dict{typeof(gen), BigInt}()
   return baby_step_giant_step(gen, n, a, cache)
 end
 
@@ -806,12 +808,12 @@ function _pohlig_hellman_prime_power(g,p,v,h)
   p_i = 1
   p_v_min_i_min_1 = p^(v-1)
   g_ = g^(p^(v-1))
-  a = Hecke.baby_step_giant_step(g_,p,h^(p^(v-1)),cache)
+  a = baby_step_giant_step(g_,p,h^(p^(v-1)),cache)
   h *= g^-a
   for i in 1:v-1
     p_i *= p
     p_v_min_i_min_1 = div(p_v_min_i_min_1,p)
-    ai = Hecke.baby_step_giant_step(g_,p,h^p_v_min_i_min_1,cache)
+    ai = baby_step_giant_step(g_,p,h^p_v_min_i_min_1,cache)
     ai_p_i = ai * p_i
     a += ai_p_i
     h *= g^(-ai_p_i)
@@ -844,29 +846,4 @@ function crt{T<:Union{fmpz,Int}}(l::Vector{Tuple{T,T}})
     M *= m
   end
   return X, M
-end
-
-# TODO Remove this. The normal valuation function didn't work in some cases
-function myvaluation(n,p::NfMaxOrdIdl)
-  p = collect(keys(factor(p)))[1]
-  try
-    e = valuation(n,p)
-    return e
-  end
-  n == 0 && return 0
-  n in p || return 0
-  e = 1
-  while n in p^e
-    e += 1
-  end
-  return e-1
-end
-
-# TODO Remove this. The normal valuation function didn't work in some cases
-function myvaluation(n,p)
-  e = 0
-  while mod(n,p^e) == 0
-    e += 1
-  end
-  return e-1
 end
