@@ -95,7 +95,7 @@ function show_snf(io::IO, A::GrpAbFinGen)
   while i <= len
     inv = A.snf[i]
     j = 1
-    while i+j <= len && inv == A.snf[i+j] 
+    while i + j <= len && inv == A.snf[i + j] 
       j += 1
     end
     if iszero(inv)
@@ -103,10 +103,10 @@ function show_snf(io::IO, A::GrpAbFinGen)
     else
       print(io, "Z/$(inv)")
     end
-    if j>1
+    if j > 1
       print(io, "^$(j)")
     end
-    if i+j < len
+    if i + j - 1 < len
       print(io, " x ")
     end
     i += j
