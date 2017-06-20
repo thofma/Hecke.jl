@@ -24,6 +24,15 @@ type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   end
 end
 
+function show(io::IO, h::NfToNfMor)
+  if domain(h) == codomain(h)
+    println(io, "Automorphism of ", domain(h))
+  else
+    println(io, "Injection of ", domain(h), " into ", codomain(h))
+  end
+  println(io, "defined by ", gen(domain(h)), " -> ", h.prim_img)
+end
+
 type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
   header::MapHeader{NfMaxOrd, FqNmodFiniteField}
   poly_of_the_field::nmod_poly
