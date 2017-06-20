@@ -95,14 +95,17 @@ doc"""
 > Returns the maximal order of $K$.
 """
 function maximal_order(K::AnticNumberField)
-#  try
-#    c = _get_maximal_order_of_nf(K)::NfMaxOrd
-#    return c
-#  catch
+  try
+    c = _get_maximal_order_of_nf(K)::NfMaxOrd
+    return c
+  catch e
+    if e != AccessorNotSetError()
+      rethrow(e)
+    end
     O = _MaximalOrder(K)::NfMaxOrd
-#    _set_maximal_order_of_nf(K, O)
+    _set_maximal_order_of_nf(K, O)
     return O
-#  end
+  end
 end
 
 doc"""
