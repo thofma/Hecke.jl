@@ -4,7 +4,7 @@ add_assert_scope(:NfOrd)
 #set_verbose_level(:NfOrd, 1)
 
 include("NfMaxOrd/NfMaxOrd.jl")
-include("NfMaxOrd/Ideal.jl")
+#include("NfMaxOrd/Ideal.jl")
 include("NfMaxOrd/Zeta.jl")
 include("NfMaxOrd/FracIdl.jl")
 include("NfMaxOrd/Clgp.jl")

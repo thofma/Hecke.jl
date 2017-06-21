@@ -2,7 +2,7 @@
 
   @testset "Pseudo matrices" begin
 
-    set_assert_level(:NfMaxOrdQuoRing, 1)
+    set_assert_level(:NfOrdQuoRing, 1)
 
     QQ = FlintRationalField()
     Qx, x = PolynomialRing(QQ, "x")
@@ -29,7 +29,7 @@
     de = fmpz(37684868701591492337245802520684209569420259)
     AoverO = MatrixSpace(O, 5, 5)(map(z -> O(z), A))
 
-    Apm = Hecke.PseudoMatrix( AoverO, [(O(1)*O)::Hecke.NfMaxOrdIdl for i in 1:5])
+    Apm = Hecke.PseudoMatrix( AoverO, [(O(1)*O)::Hecke.NfOrdIdl for i in 1:5])
 
     d = num(det(Apm))
 
@@ -59,7 +59,7 @@
         ll = rand(1:20)
         z = rand(MatrixSpace(O, l, l), fmpz(2)^ll)
         #println("    $l x $l matrix with $ll bits")
-        cc = [ (O(1)*O)::Hecke.NfMaxOrdIdl for i in 1:l]
+        cc = [ (O(1)*O)::Hecke.NfOrdIdl for i in 1:l]
         pm = Hecke.PseudoMatrix(z, cc)
         d = det(pm)
         ppm = Hecke.pseudo_hnf(pm, num(d))

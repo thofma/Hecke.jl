@@ -567,13 +567,13 @@ end
 
 # Nemo only provides element_types for parent objects
 
-#elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
-#
-#elem_type(::Type{AnticNumberField}) = nf_elem
-#
-#elem_type(::Type{FqNmodFiniteField}) = fq_nmod
-#
-#elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
+elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
+
+elem_type(::Type{AnticNumberField}) = nf_elem
+
+elem_type(::Type{FqNmodFiniteField}) = fq_nmod
+
+elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
 
 ################################################################################
 #
