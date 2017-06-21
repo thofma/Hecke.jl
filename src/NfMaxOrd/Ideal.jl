@@ -895,6 +895,9 @@ function inv(A::NfMaxOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
     O = order(A)
+    if iszero(A.gen_two)
+      return NfMaxOrdFracIdl(ideal(O,1), A.gen_one)
+    end
     alpha = inv(elem_in_nf(A.gen_two))
     d = den(alpha, O)
     m = A.gen_one
