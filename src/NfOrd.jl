@@ -30,7 +30,6 @@
 add_verbose_scope(:NfOrd)
 add_assert_scope(:NfOrd)
 
-include("NfOrd/NfOrd.jl")
 include("NfOrd/NfOrdGen.jl")
 include("NfOrd/Elem.jl")
 include("NfOrd/Ideal.jl")

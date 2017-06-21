@@ -511,278 +511,6 @@ type FacElem{B, S}
   end
 end
 
-################################################################################
-#
-#  NfOrd/NfOrdElem
-#
-################################################################################
-
-export NfOrdElem
-
-abstract NfOrd <: Ring
-
-type NfOrdElem{T <: NfOrd} <: RingElem
-  elem_in_nf::nf_elem
-  elem_in_basis::Array{fmpz, 1}
-  has_coord::Bool
-  parent::T
-
-  function NfOrdElem(O::T)
-    z = new{T}()
-    z.parent = O
-    z.elem_in_nf = nf(O)()
-    z.elem_in_basis = Array{fmpz}(degree(O))
-    z.has_coord = false
-    return z
-  end
-
-  function NfOrdElem(O::T, a::nf_elem)
-    z = new{T}()
-    z.elem_in_nf = a
-    z.elem_in_basis = Array{fmpz}(degree(O))
-    z.parent = O
-    z.has_coord = false
-    return z
-  end
-
-  function NfOrdElem(O::T, a::nf_elem, arr::Array{fmpz, 1})
-    z = new{T}()
-    z.parent = O
-    z.elem_in_nf = a
-    z.has_coord = true
-    z.elem_in_basis = arr
-    return z
-  end
-
-  function NfOrdElem(O::T, arr::Array{fmpz, 1})
-    z = new{T}()
-    z.elem_in_nf = dot(O.basis_nf, arr)
-    z.has_coord = true
-    z.elem_in_basis = arr
-    z.parent = O
-    return z
-  end
-
-  function NfOrdElem{S <: Integer}(O::T, arr::Array{S, 1})
-    return NfOrdElem{T}(O, map(FlintZZ, arr))
-  end
-
-  function NfOrdElem(x::NfOrdElem{T})
-    return deepcopy(x)  ### Check parent?
-  end
-end
-
-################################################################################
-#
-#  NfOrd
-#
-################################################################################
-
-export NfOrdGenSet, NfOrdGen
-
-const NfOrdGenSetID = ObjectIdDict()
-
-type NfOrdGenSet
-  nf::AnticNumberField
-
-  function NfOrdGenSet(a::AnticNumberField)
-  try
-    return NfOrdGenSetID[a]::NfOrdGenSet
-  end
-    NfOrdGenSetID[a] = new(a)
-    return NfOrdGenSetID[a]
-  end
-end
-
-#const NfOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
-const NfOrdGenID = ObjectIdDict()
-
-type NfOrdGen <: NfOrd
-  nf::AnticNumberField
-  basis_nf::Array{nf_elem, 1}      # Basis as number field elements
-  basis_ord                        # Basis as order elements
-  basis_mat::FakeFmpqMat           # Basis matrix with respect
-                                   # to number field basis
-  basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
-  gen_index::fmpq                  # Generalized index
-  index::fmpz                      # Index
-  disc::fmpz                       # Discriminant
-  disc_fac::Dict{fmpz, Int}        # Factorization of the discriminant
-  isequationorder::Bool            # Flag for being equation order
-  parent::NfOrdGenSet              # Parent object
-  signature::Tuple{Int, Int}       # Signature of the associated number field
-                                   # (-1, 0) means 'not set'
-  minkowski_mat::Tuple{arb_mat, Int}
-                                   # Minkowski matrix
-  torsion_units::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
-                                   # (Torsion units, generator of torsion)
-  norm_change_const::Tuple{Float64, Float64}
-                                   # Tuple c1, c2 as in the paper of
-                                   # Fieker-Friedrich
-  trace_mat::fmpz_mat              # the trace matrix - if known
-
-  function NfOrdGen()
-    z = new()
-    # Populate with 'default' values
-    z.signature = (-1,0)
-    z.norm_change_const = (-1.0, -1.0)
-    z.isequationorder = false
-    return z
-  end
-
-  function NfOrdGen(K::AnticNumberField)
-    A = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
-    if haskey(NfOrdGenID, (K,A))
-      return NfOrdGenID[(K,A)]::NfOrdGen
-    else
-      z = NfOrdGen()
-      z.parent = NfOrdGenSet(K)
-      z.nf = K
-      z.basis_mat = A
-      z.basis_nf = basis(K)
-      z.basis_ord = Array{NfOrdElem{NfOrdGen}, 1}(degree(K))
-      z.basis_ord[1] = z(K(1), false)
-      for i in 2:degree(K)
-        z.basis_ord[i] = z(gen(K)^(i-1), false)
-      end
-      NfOrdGenID[(K, A)] = z
-      return z::NfOrdGen
-    end
-  end
-
-  # Construct the order with basis matrix x
-  function NfOrdGen(K::AnticNumberField, x::FakeFmpqMat)
-    x = hnf(x)
-    if haskey(NfOrdGenID, (K,x))
-      return NfOrdGenID[(K,x)]::NfOrdGen
-    else
-      z = NfOrdGen()
-      z.parent = NfOrdGenSet(K)
-      z.nf = K
-      z.basis_mat = x
-      B = Array{NfOrdElem{NfOrdGen}}(degree(K))
-      BB = Array{nf_elem}(degree(K))
-      for i in 1:degree(K)
-        t = elem_from_mat_row(K, x.num, i, x.den)
-        BB[i] = t
-        B[i] = z(t, false)
-      end
-      z.basis_ord = B
-      z.basis_nf = BB
-      z.parent = NfOrdGenSet(z.nf)
-      NfOrdGenID[(K,x)] = z
-      return z::NfOrdGen
-    end
-  end
-
-  # Construct the order with basis a
-  function NfOrdGen(a::Array{nf_elem, 1})
-    K = parent(a[1])
-    A = hnf(basis_mat(a))
-    if haskey(NfOrdGenID, (K,A))
-      return NfOrdGenID[(K,A)]::NfOrdGen
-    else
-      z = NfOrdGen()
-      z.parent = NfOrdGenSet(K)
-      z.nf = K
-      z.basis_nf = a
-      z.basis_mat = A
-      z.basis_ord = Array{NfOrdElem{NfOrdGen}}(degree(K))
-      for i in 1:degree(K)
-        z.basis_ord[i] = z(a[i], false)
-      end
-      NfOrdGenID[(K,A)] = z
-      return z::NfOrdGen
-    end
-  end
-end
-
-################################################################################
-#
-#  NfOrdIdl/NfOrdIdlSet/NfOrdIdl
-#
-################################################################################
-
-abstract NfOrdIdlSet
-
-abstract NfOrdIdl
-
-NfOrdGenIdlSetID = ObjectIdDict()
-
-type NfOrdGenIdlSet <: NfOrdIdlSet
-  order::NfOrdGen
-
-  function NfOrdGenIdlSet(a::NfOrdGen)
-    try
-      return NfOrdGenIdlSetID[a]
-    catch
-      NfOrdGenIdlSetID[a] = new(a)
-      return NfOrdGenIdlSetID[a]
-    end
-  end
-end
-
-type NfOrdGenIdl <: NfOrdIdl
-  basis::Array{NfOrdElem{NfOrdGen}, 1}
-  basis_mat::fmpz_mat
-  basis_mat_inv::FakeFmpqMat
-  parent::NfOrdGenIdlSet
-
-  norm::fmpz
-  minimum::fmpz
-  princ_gen::NfOrdElem{NfOrdGen}
-  princ_gen_special::Tuple{Int, Int, fmpz}
-                           # first entry encodes the following:
-                           # 0: don't know
-                           # 1: second entry generates the ideal
-                           # 2: third entry generates the ideal
-
-  function NfOrdGenIdl(O::NfOrdGen)
-    z = new()
-    z.parent = NfOrdGenIdlSet(O)
-    z.princ_gen_special = (0, 0, fmpz(0))
-    return z
-  end
-
-  function NfOrdGenIdl(O::NfOrdGen, a::Int)
-    z = new()
-    z.parent = NfOrdGenIdlSet(O)
-    z.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(a))
-    z.princ_gen_special = (1, abs(a), fmpz(0))
-    z.princ_gen = O(a)
-    z.minimum = fmpz(abs(a))
-    return z
-  end
-
-  function NfOrdGenIdl(O::NfOrdGen, a::fmpz)
-    z = new()
-    z.parent = NfOrdGenIdlSet(O)
-    z.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(a))
-    z.princ_gen_special = (2, Int(0), abs(a))
-    z.princ_gen = O(a)
-    z.minimum = abs(a)
-    return z
-  end
-
-  function NfOrdGenIdl(O::NfOrdGen, a::NfOrdElem{NfOrdGen})
-    z = new()
-    z.parent = NfOrdGenIdlSet(O)
-    m = representation_mat(a)
-    z.basis_mat = _hnf(m, :lowerleft)
-    z.princ_gen = a
-    z.princ_gen_special = (0, 0, fmpz(0))
-    return z
-  end
-
-  function NfOrdGenIdl(O::NfOrdGen, a::fmpz_mat)
-    @hassert :NfOrd 2 ishnf(a, :lowerleft) # a must be lowerleft HNF
-    z = new()
-    z.parent = NfOrdGenIdlSet(O)
-    z.basis_mat = a
-    z.princ_gen_special = (0, 0, fmpz(0))
-    return z
-  end
-end
 
 ################################################################################
 #
@@ -790,82 +518,78 @@ end
 #
 ################################################################################
 
-abstract NfOrdFracIdlSet
-
-abstract NfOrdFracIdl
-
-NfOrdGenFracIdlSetID = ObjectIdDict()
-
-type NfOrdGenFracIdlSet <: NfOrdFracIdlSet
-  order::NfOrdGen
-
-  function NfOrdGenFracIdlSet(a::NfOrdGen)
-    try
-      return NfOrdGenFracIdlSetID[a]
-    catch
-      NfOrdGenFracIdlSetID[a] = new(a)
-      return NfOrdGenFracIdlSetID[a]
-    end
-  end
-end
-
-type NfOrdGenFracIdl <: NfOrdFracIdl
-  basis::Array{nf_elem, 1}
-  num::NfOrdGenIdl
-  den::fmpz
-  basis_mat::FakeFmpqMat
-  basis_mat_inv::FakeFmpqMat
-  parent::NfOrdGenFracIdlSet
-  norm::fmpq
-  princ_gen::nf_elem
-
-  function NfOrdGenFracIdl(O::NfOrdGen, a::FakeFmpqMat)
-    z = new()
-    z.parent = NfOrdGenFracIdlSet(O)
-    z.basis_mat = a
-    return z
-  end
-
-  function NfOrdGenFracIdl(O::NfOrdGen, a::NfOrdGenIdl, b::fmpz)
-    z = new()
-    z.parent = NfOrdGenFracIdlSet(O)
-    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
-    return z
-  end
-
-  function NfOrdGenFracIdl(O::NfOrdGen, a::nf_elem)
-    z = new()
-    z.parent = NfOrdGenFracIdlSet(O)
-    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(den(a, O)*a)), den(a, O)))
-    return z
-  end
-end
+#abstract NfOrdFracIdlSet
+#
+#abstract NfOrdFracIdl
+#
+#NfOrdGenFracIdlSetID = ObjectIdDict()
+#
+#type NfOrdGenFracIdlSet <: NfOrdFracIdlSet
+#  order::NfOrdGen
+#
+#  function NfOrdGenFracIdlSet(a::NfOrdGen)
+#    try
+#      return NfOrdGenFracIdlSetID[a]
+#    catch
+#      NfOrdGenFracIdlSetID[a] = new(a)
+#      return NfOrdGenFracIdlSetID[a]
+#    end
+#  end
+#end
+#
+#type NfOrdGenFracIdl <: NfOrdFracIdl
+#  basis::Array{nf_elem, 1}
+#  num::NfOrdGenIdl
+#  den::fmpz
+#  basis_mat::FakeFmpqMat
+#  basis_mat_inv::FakeFmpqMat
+#  parent::NfOrdGenFracIdlSet
+#  norm::fmpq
+#  princ_gen::nf_elem
+#
+#  function NfOrdGenFracIdl(O::NfOrdGen, a::FakeFmpqMat)
+#    z = new()
+#    z.parent = NfOrdGenFracIdlSet(O)
+#    z.basis_mat = a
+#    return z
+#  end
+#
+#  function NfOrdGenFracIdl(O::NfOrdGen, a::NfOrdGenIdl, b::fmpz)
+#    z = new()
+#    z.parent = NfOrdGenFracIdlSet(O)
+#    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
+#    return z
+#  end
+#
+#  function NfOrdGenFracIdl(O::NfOrdGen, a::nf_elem)
+#    z = new()
+#    z.parent = NfOrdGenFracIdlSet(O)
+#    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(den(a, O)*a)), den(a, O)))
+#    return z
+#  end
+#end
 
 ################################################################################
 #
-#  NfMaxOrdSet/NfMaxOrd
+#  NfOrdSet/NfOrd
 #
 ################################################################################
 
-export NfMaxOrd
-
-const NfMaxOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
-
-const NfMaxOrdSetID = ObjectIdDict()
-
-type NfMaxOrdSet
+type NfOrdSet
   nf::AnticNumberField
 
-  function NfMaxOrdSet(a::AnticNumberField)
+  function NfOrdSet(a::AnticNumberField)
   try
-    return NfMaxOrdSetID[a]::NfMaxOrdSet
+    return NfOrdSetID[a]::NfOrdSet
   end
-    NfMaxOrdSetID[a] = new(a)
-    return NfMaxOrdSetID[a]
+    NfOrdSetID[a] = new(a)
+    return NfOrdSetID[a]
   end
 end
 
-type NfMaxOrd <: NfOrd
+const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
+
+type NfOrd
   nf::AnticNumberField
   basis_nf::Array{nf_elem, 1}      # Array of number field elements
   basis_ord                        # Array of order elements
@@ -874,17 +598,21 @@ type NfMaxOrd <: NfOrd
   gen_index::fmpq                  # the det of basis_mat_inv
   index::fmpz                      # the det of basis_mat_inv
   disc::fmpz                       # discriminant
-  parent::NfMaxOrdSet              # parent object
+  parent::NfOrdSet              # parent object
   isequationorder::Bool            #
   signature::Tuple{Int, Int}       # signature of the parent object
                                    # (-1, 0) means 'not set'
   #conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
-  torsion_units::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
+  torsion_units#::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
   unit_group::Map                  # Abstract types in the field is usually bad,
                                    # but here it can be neglected.
                                    # We annotate the concrete type when doing
                                    # unit_group(O)
+
+  ismaximal::Int                   # 0 not known
+                                   # 1 known to be maximal
+                                   # 2 known to not be maximal
 
   norm_change_const::Tuple{Float64, Float64}
                                    # Tuple c1, c2 as in the paper of
@@ -894,9 +622,9 @@ type NfMaxOrd <: NfOrd
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
 
-  function NfMaxOrd(a::AnticNumberField)
+  function NfOrd(a::AnticNumberField)
     r = new(a)
-    r.parent = NfMaxOrdSet(a)
+    r.parent = NfOrdSet(a)
     r.signature = (-1,0)
     r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(5)
@@ -904,11 +632,11 @@ type NfMaxOrd <: NfOrd
     return r
   end
 
-  function NfMaxOrd(K::AnticNumberField, x::FakeFmpqMat)
-    if haskey(NfMaxOrdID, (K,x))
-      return NfMaxOrdID[(K,x)]::NfMaxOrd
+  function NfOrd(K::AnticNumberField, x::FakeFmpqMat)
+    if haskey(NfOrdID, (K,x))
+      return NfOrdID[(K,x)]::NfOrd
     end
-    z = NfMaxOrd(K)
+    z = NfOrd(K)
     n = degree(K)
     B_K = basis(K)
     d = Array{nf_elem}(n)
@@ -918,7 +646,7 @@ type NfMaxOrd <: NfOrd
     z.basis_nf = d
     z.basis_mat = x
     z.basis_mat_inv = inv(x)
-    B = Array{NfOrdElem{NfMaxOrd}}(n)
+    B = Array{NfOrdElem}(n)
     for i in 1:n
       v = fill(zero(FlintZZ), n)
       v[i] = ZZ(1)
@@ -926,25 +654,25 @@ type NfMaxOrd <: NfOrd
     end
 
     z.basis_ord = B
-    NfMaxOrdID[(K,x)] = z
+    NfOrdID[(K,x)] = z
     return z
   end
 
-  function NfMaxOrd(b::Array{nf_elem, 1})
+  function NfOrd(b::Array{nf_elem, 1})
     K = parent(b[1])
     n = degree(K)
     A = FakeFmpqMat(basis_mat(b))
 
-    if haskey(NfMaxOrdID, (K,A))
-      return NfMaxOrdID[(K,A)]::NfMaxOrd
+    if haskey(NfOrdID, (K,A))
+      return NfOrdID[(K,A)]::NfOrd
     end
 
-    z = NfMaxOrd(K)
+    z = NfOrd(K)
     z.basis_nf = b
     z.basis_mat = A
     z.basis_mat_inv = inv(A)
 
-    B = Array{NfOrdElem{NfMaxOrd}}(n)
+    B = Array{NfOrdElem}(n)
 
     for i in 1:n
       v = fill(zero(FlintZZ), n)
@@ -954,63 +682,124 @@ type NfMaxOrd <: NfOrd
 
     z.basis_ord = B
 
-    NfMaxOrdID[(K,A)] = z
+    NfOrdID[(K,A)] = z
     return z
   end
 end
 
+const NfOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
+
 ################################################################################
 #
-#  NfMaxOrdIdlSet/NfMaxOrdIdl
+#  NfOrd/NfOrdElem
 #
 ################################################################################
 
-export NfMaxOrdIdl
+export NfOrdElem
 
-const NfMaxOrdIdlSetID = ObjectIdDict()
+type NfOrdElem <: RingElem
+  elem_in_nf::nf_elem
+  elem_in_basis::Array{fmpz, 1}
+  has_coord::Bool
+  parent::Ring
 
-type NfMaxOrdIdlSet <: NfOrdIdlSet
-  order::NfMaxOrd
+  function NfOrdElem(O::NfOrd)
+    z = new()
+    z.parent = O
+    z.elem_in_nf = nf(O)()
+    z.elem_in_basis = Array{fmpz}(degree(O))
+    z.has_coord = false
+    return z
+  end
 
-  function NfMaxOrdIdlSet(O::NfMaxOrd)
-    if haskey(NfMaxOrdIdlSetID, O)
-      return NfMaxOrdIdlSetID[O]::NfMaxOrdIdlSet
+  function NfOrdElem(O::NfOrd, a::nf_elem)
+    z = new()
+    z.elem_in_nf = a
+    z.elem_in_basis = Array{fmpz}(degree(O))
+    z.parent = O
+    z.has_coord = false
+    return z
+  end
+
+  function NfOrdElem(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1})
+    z = new()
+    z.parent = O
+    z.elem_in_nf = a
+    z.has_coord = true
+    z.elem_in_basis = arr
+    return z
+  end
+
+  function NfOrdElem(O::NfOrd, arr::Array{fmpz, 1})
+    z = new()
+    z.elem_in_nf = dot(O.basis_nf, arr)
+    z.has_coord = true
+    z.elem_in_basis = arr
+    z.parent = O
+    return z
+  end
+
+  function NfOrdElem{S <: Integer}(O::NfOrd, arr::Array{S, 1})
+    return NfOrdElem(O, map(FlintZZ, arr))
+  end
+
+  function NfOrdElem(x::NfOrdElem)
+    return deepcopy(x)  ### Check parent?
+  end
+end
+
+################################################################################
+#
+#  NfOrdIdlSet/NfOrdIdl
+#
+################################################################################
+
+export NfOrdIdl
+
+type NfOrdIdlSet
+  order::NfOrd
+
+  function NfOrdIdlSet(O::NfOrd)
+    if haskey(NfOrdIdlSetID, O)
+      return NfOrdIdlSetID[O]::NfOrdIdlSet
     else
       r = new(O)
-      NfMaxOrdIdlSetID[O] = r
-      return r::NfMaxOrdIdlSet
+      NfOrdIdlSetID[O] = r
+      return r::NfOrdIdlSet
     end
   end
 end
 
+const NfOrdIdlSetID = Dict{NfOrd, NfOrdIdlSet}()
+
 @doc """
-  NfMaxOrdIdl(O::NfMaxOrd, a::fmpz_mat) -> NfMaxOrdIdl
+  NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
 
     Creates the ideal of O with basis matrix a.
     No sanity checks. No data is copied, a should not be used anymore.
 
-  NfMaxOrdIdl(a::fmpz, b::NfOrdElem) -> NfMaxOrdIdl
+  NfOrdIdl(a::fmpz, b::NfOrdElem) -> NfOrdIdl
 
     Creates the ideal (a,b) of the order of b.
     No sanity checks. Note data is copied, a and b should not be used anymore.
 
-  NfMaxOrdIdl(O::NfMaxOrd, a::fmpz, b::nf_elem) -> NfMaxOrdIdl
+  NfOrdIdl(O::NfOrd, a::fmpz, b::nf_elem) -> NfOrdIdl
 
     Creates the ideal (a,b) of O.
     No sanity checks. No data is copied, a and b should be used anymore.
 
-  NfMaxOrdIdl(x::NfOrdElem) -> NfMaxOrdIdl
+  NfOrdIdl(x::NfOrdElem) -> NfOrdIdl
 
     Creates the principal ideal (x) of the order of O.
     No sanity checks. No data is copied, x should not be used anymore.
 
 """ ->
-type NfMaxOrdIdl <: NfOrdIdl
-  basis::Array{NfOrdElem{NfMaxOrd}, 1}
+type NfOrdIdl
+  basis::Array{NfOrdElem, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   gen_one::fmpz
-  gen_two::NfOrdElem{NfMaxOrd}
+  gen_two::NfOrdElem
   gens_short::Bool
   gens_normal::fmpz
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
@@ -1022,7 +811,7 @@ type NfMaxOrdIdl <: NfOrdIdl
                            # 2 known to be not prime
   iszero::Int             # as above
   is_principal::Int        # as above
-  princ_gen::NfOrdElem{NfMaxOrd}
+  princ_gen::NfOrdElem
   princ_gen_special::Tuple{Int, Int, fmpz}
                            # first entry encodes the following:
                            # 0: don't know
@@ -1035,12 +824,12 @@ type NfMaxOrdIdl <: NfOrdIdl
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime
 
-  parent::NfMaxOrdIdlSet
+  parent::NfOrdIdlSet
 
-  function NfMaxOrdIdl(O::NfMaxOrd)
+  function NfOrdIdl(O::NfOrd)
     # populate the bits types (Bool, Int) with default values
     r = new()
-    r.parent = NfMaxOrdIdlSet(O)
+    r.parent = NfOrdIdlSet(O)
     r.gens_short = false
     r.gens_weakly_normal = false
     r.iszero = 0
@@ -1050,33 +839,37 @@ type NfMaxOrdIdl <: NfOrdIdl
     return r
   end
 
-  function NfMaxOrdIdl(O::NfMaxOrd, a::fmpz_mat)
+  function NfOrdIdl(O::NfOrd, a::fmpz_mat)
     # create ideal of O with basis_matrix a
     # Note that the constructor 'destroys' a, a should not be used anymore
-    r = NfMaxOrdIdl(O)
+    r = NfOrdIdl(O)
     r.basis_mat = a
     return r
   end
 
-  function NfMaxOrdIdl(a::fmpz, b::NfOrdElem{NfMaxOrd})
+  function NfOrdIdl(a::fmpz, b::NfOrdElem)
     # create ideal (a,b) of order(b)
-    r = NfMaxOrdIdl(parent(b))
+    r = NfOrdIdl(parent(b))
     r.gen_one = a
     r.gen_two = b
     return r
   end
 
-  function NfMaxOrdIdl(O::NfMaxOrd, a::fmpz, b::nf_elem)
+  function NfOrdIdl(O::NfOrd, a::fmpz, b::nf_elem)
     # create ideal (a,b) of O
-    r = NfMaxOrdIdl(a, O(b, false))
+    r = NfOrdIdl(a, O(b, false))
     return r
   end
 
-  function NfMaxOrdIdl(x::NfOrdElem{NfMaxOrd})
+  function NfOrdIdl(O::NfOrd, a::NfOrdElem)
+    return NfOrdIdl(x)
+  end
+
+  function NfOrdIdl(x::NfOrdElem)
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
-    C = NfMaxOrdIdl(O)
+    C = NfOrdIdl(O)
     C.princ_gen = x
     C.is_principal = 1
 
@@ -1093,10 +886,10 @@ type NfMaxOrdIdl <: NfOrdIdl
     return C
   end
 
-  function NfMaxOrdIdl(O::NfMaxOrd, x::Int)
+  function NfOrdIdl(O::NfOrd, x::Int)
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
-    C = NfMaxOrdIdl(O)
+    C = NfOrdIdl(O)
     C.princ_gen = O(x)
     C.princ_gen_special = (1, Int(x), fmpz(0))
     C.gen_one = x
@@ -1108,10 +901,10 @@ type NfMaxOrdIdl <: NfOrdIdl
     return C
   end
 
-  function NfMaxOrdIdl(O::NfMaxOrd, x::fmpz)
+  function NfOrdIdl(O::NfOrd, x::fmpz)
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
-    C = NfMaxOrdIdl(O)
+    C = NfOrdIdl(O)
     C.princ_gen = O(x)
     C.princ_gen_special = (2, Int(0), abs(x))
     C.gen_one = x
@@ -1127,42 +920,42 @@ end
 
 ################################################################################
 #
-#  NfMaxOrdFracIdlSet/NfMaxOrdFracIdl
+#  NfOrdFracIdlSet/NfOrdFracIdl
 #
 ################################################################################
 
-const NfMaxOrdFracIdlSetID = Dict{NfMaxOrd, NfOrdFracIdlSet}()
-
-type NfMaxOrdFracIdlSet <: NfOrdFracIdlSet
-   order::NfMaxOrd
-   function NfMaxOrdFracIdlSet(O::NfMaxOrd)
+type NfOrdFracIdlSet
+   order::NfOrd
+   function NfOrdFracIdlSet(O::NfOrd)
      try
-       return NfMaxOrdFracIdlSetID[O]::NfMaxOrdFracIdlSet
+       return NfOrdFracIdlSetID[O]::NfOrdFracIdlSet
      catch
        r = new()
        r.order = O
-       NfMaxOrdFracIdlSetID[O] = r
-       return r::NfMaxOrdFracIdlSet
+       NfOrdFracIdlSetID[O] = r
+       return r::NfOrdFracIdlSet
      end
    end
 end
 
-type NfMaxOrdFracIdl <: NfOrdFracIdl
-  num::NfMaxOrdIdl
+const NfOrdFracIdlSetID = Dict{NfOrd, NfOrdFracIdlSet}()
+
+type NfOrdFracIdl
+  num::NfOrdIdl
   den::fmpz
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
-  parent::NfMaxOrdFracIdlSet
+  parent::NfOrdFracIdlSet
 
-  function NfMaxOrdFracIdl(O::NfMaxOrd)
+  function NfOrdFracIdl(O::NfOrd)
     z = new()
-    z.parent = NfMaxOrdFracIdlSet(O)
+    z.parent = NfOrdFracIdlSet(O)
     return z
   end
 
-  function NfMaxOrdFracIdl(x::NfMaxOrdIdl, y::fmpz)
+  function NfOrdFracIdl(x::NfOrdIdl, y::fmpz)
     z = new()
-    z.parent = NfMaxOrdFracIdlSet(order(x))
+    z.parent = NfOrdFracIdlSet(order(x))
     z.num = x
     z.den = y
     return z
@@ -1183,9 +976,9 @@ type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   regulator::arb
   tentative_regulator::arb
   regulator_precision::Int
-  torsion_units::Array{NfOrdElem{NfMaxOrd}, 1}
+  torsion_units::Array{NfOrdElem, 1}
   torsion_units_order::Int
-  torsion_units_gen::NfOrdElem{NfMaxOrd}
+  torsion_units_gen::NfOrdElem
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}
   conj_log_mat_cutoff::Dict{Int, arb_mat}
   conj_log_mat_cutoff_inv::Dict{Int, arb_mat}
@@ -1390,10 +1183,10 @@ end
 type FactorBaseSingleP
   P::fmpz
   pt::FactorBase{nmod_poly}
-  lp::Array{Tuple{Int,NfMaxOrdIdl}, 1}
+  lp::Array{Tuple{Int,NfOrdIdl}, 1}
   doit::Function
 
-  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfMaxOrdIdl}, 1})
+  function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfOrdIdl}, 1})
     FB = new()
     FB.lp = lp
     FB.P = p
@@ -1464,12 +1257,12 @@ type NfFactorBase
   fb::Dict{fmpz, FactorBaseSingleP}
   size::Int
   fb_int::FactorBase{fmpz}
-  ideals::Array{NfMaxOrdIdl, 1}
+  ideals::Array{NfOrdIdl, 1}
   rw::Array{Int, 1}
   mx::Int
 
   function NfFactorBase()
-    r = new(Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}())
+    r = new(Dict{fmpz, Array{Tuple{Int, NfOrdIdl}, 1}}())
     r.size = 0
     return r
   end
@@ -1569,7 +1362,7 @@ type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   normStat::Dict{Int, Int}
   expect::Int
 
-  randomClsEnv::Array{NfMaxOrdIdl, 1}
+  randomClsEnv::Array{NfOrdIdl, 1}
 
   val_base::fmpz_mat      # a basis for the possible infinite randomization
                           # vectors: conditions are
@@ -1610,7 +1403,7 @@ end
 ################################################################################
 
 type IdealRelationsCtx{Tx, TU, TC}
-  A::NfMaxOrdIdl
+  A::NfOrdIdl
   v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
   E::enum_ctx{Tx, TU, TC}
   c::fmpz           # the last length
@@ -1621,7 +1414,7 @@ type IdealRelationsCtx{Tx, TU, TC}
   vl::Int
   rr::Range{Int}
 
-  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfMaxOrdIdl;
+  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfOrdIdl;
                   prec::Int = 100, val::Int=0, limit::Int = 0)
     v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
@@ -1647,23 +1440,23 @@ end
 #
 ################################################################################
 
-type NfMaxOrdQuoRing <: Ring
-  base_ring::NfMaxOrd
-  ideal::NfMaxOrdIdl
+type NfOrdQuoRing <: Ring
+  base_ring::NfOrd
+  ideal::NfOrdIdl
   basis_mat::fmpz_mat
   preinvn::Array{fmpz_preinvn_struct, 1}
-  factor::Dict{NfMaxOrdIdl, Int}
+  factor::Dict{NfOrdIdl, Int}
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
-  tmp_xxgcd::fmpz_mat # used only by xxgcd in NfMaxOrd/ResidueRing.jl
-  tmp_div::fmpz_mat # used only by div in NfMaxOrd/ResidueRing.jl
-  tmp_ann::fmpz_mat # used only by annihilator in NfMaxOrd/ResidueRing.jl
-  tmp_euc::fmpz_mat # used only by euclid in NfMaxOrd/ResidueRing.jl
+  tmp_xxgcd::fmpz_mat # used only by xxgcd in NfOrd/ResidueRing.jl
+  tmp_div::fmpz_mat # used only by div in NfOrd/ResidueRing.jl
+  tmp_ann::fmpz_mat # used only by annihilator in NfOrd/ResidueRing.jl
+  tmp_euc::fmpz_mat # used only by euclid in NfOrd/ResidueRing.jl
 
   multiplicative_group::Map
 
-  function NfMaxOrdQuoRing(O::NfMaxOrd, I::NfMaxOrdIdl)
+  function NfOrdQuoRing(O::NfOrd, I::NfOrdIdl)
     z = new()
     z.base_ring = O
     z.ideal = I
@@ -1679,11 +1472,11 @@ type NfMaxOrdQuoRing <: Ring
   end
 end
 
-type NfMaxOrdQuoRingElem <: RingElem
-  elem::NfOrdElem{NfMaxOrd}
-  parent::NfMaxOrdQuoRing
+type NfOrdQuoRingElem <: RingElem
+  elem::NfOrdElem
+  parent::NfOrdQuoRing
 
-  function NfMaxOrdQuoRingElem(O::NfMaxOrdQuoRing, x::NfOrdElem{NfMaxOrd})
+  function NfOrdQuoRingElem(O::NfOrdQuoRing, x::NfOrdElem)
     z = new()
     z.elem = mod(x, ideal(O), O.preinvn)
     z.parent = O

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#    NfOrd/NfOrdGenFracIdl.jl : Fractional ideals of generic
+#    NfOrd/NfOrdFracIdl.jl : Fractional ideals of generic
 #                               orders in number fields
 #
 # This file is part of hecke.
@@ -47,9 +47,9 @@ doc"""
 
 > Creates the fractional ideal of $\mathcal O$ with basis matrix $A$.
 """
-function frac_ideal(O::NfOrdGen, x::FakeFmpqMat)
+function frac_ideal(O::NfOrd, x::FakeFmpqMat)
   y = hnf(x)
-  z = NfOrdGenFracIdl(O, y)
+  z = NfOrdFracIdl(O, y)
   return z
 end
 
@@ -59,13 +59,13 @@ doc"""
 
 > Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$.
 """
-function frac_ideal(O::NfOrdGen, x::fmpz_mat, y::fmpz)
+function frac_ideal(O::NfOrd, x::fmpz_mat, y::fmpz)
   y = FakeFmpqMat(x, y)
-  z = NfOrdGenFracIdl(O, y)
+  z = NfOrdFracIdl(O, y)
   return z
 end
 
-frac_ideal(O::NfOrdGen, x::fmpz_mat, y::Integer) = frac_ideal(O, x, fmpz(y))
+frac_ideal(O::NfOrd, x::fmpz_mat, y::Integer) = frac_ideal(O, x, fmpz(y))
 
 doc"""
 ***
@@ -73,8 +73,8 @@ doc"""
 
 > Turns the ideal $I$ into a fractional ideal of $\mathcal O$.
 """
-function frac_ideal(O::NfOrdGen, x::NfOrdGenIdl)
-  z = NfOrdGenFracIdl(O, x, fmpz(1))
+function frac_ideal(O::NfOrd, x::NfOrdIdl)
+  z = NfOrdFracIdl(O, x, fmpz(1))
   return z
 end
 
@@ -84,12 +84,12 @@ doc"""
 
 > Creates the fractional ideal $I/b$ of $\mathcal O$.
 """
-function frac_ideal(O::NfOrdGen, x::NfOrdGenIdl, y::fmpz)
-  z = NfOrdGenFracIdl(O, x, deepcopy(y)) # deepcopy x?
+function frac_ideal(O::NfOrd, x::NfOrdIdl, y::fmpz)
+  z = NfOrdFracIdl(O, x, deepcopy(y)) # deepcopy x?
   return z
 end
 
-frac_ideal(O::NfOrdGen, x::NfOrdGenIdl, y::Integer) = frac_ideal(O, x, fmpz(y))
+frac_ideal(O::NfOrd, x::NfOrdIdl, y::Integer) = frac_ideal(O, x, fmpz(y))
 
 doc"""
 ***
@@ -97,8 +97,8 @@ doc"""
 
 > Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
-function frac_ideal(O::NfOrdGen, x::nf_elem)
-  z = NfOrdGenFracIdl(O, deepcopy(x))
+function frac_ideal(O::NfOrd, x::nf_elem)
+  z = NfOrdFracIdl(O, deepcopy(x))
   return z
 end
 
@@ -108,8 +108,8 @@ doc"""
 
 > Creates the principal fractional ideal $(a)$ of $\mathcal O$.
 """
-function frac_ideal(O::NfOrdGen, x::NfOrdElem{NfOrdGen})
-  z = NfOrdGenFracIdl(O, elem_in_nf(x))
+function frac_ideal(O::NfOrd, x::NfOrdElem)
+  z = NfOrdFracIdl(O, elem_in_nf(x))
   return z
 end
 
@@ -119,7 +119,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, x::NfOrdGenFracIdl)
+function show(io::IO, x::NfOrdFracIdl)
   print(io, "Fractional ideal of $(order(x)) with basis matrix\n")
   print(io, "$(basis_mat(x))\n")
 end

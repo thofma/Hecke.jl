@@ -32,8 +32,6 @@
 #
 ################################################################################
 
-export NfOrdGenIdl
-
 export deepcopy, parent, order, basis, basis_mat, basis_mat_inv, minimum, norm,
        ==, in, +, *, intersection, lcm, idempotents, mod, pradical
 
@@ -179,7 +177,7 @@ doc"""
 
 > Returns the inverse of the basis matrix of $I$.
 """
-function basis_mat_inv(a::NfOrdGenIdl)
+function basis_mat_inv(a::NfOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return deepcopy(a.basis_mat_inv)
   else

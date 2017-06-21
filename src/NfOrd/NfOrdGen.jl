@@ -1,6 +1,6 @@
 ################################################################################
 #
-#             NfOrd/NfOrdGen.jl : Generic orders in Number fields
+#             NfOrd/NfOrd.jl : Generic orders in Number fields
 #
 # This file is part of hecke.
 #
@@ -32,73 +32,5 @@
 #
 ################################################################################
 
-export EquationOrder, Order
 
-################################################################################
-#
-#  String I/O
-#
-################################################################################
-
-function show(io::IO, a::NfOrdGenSet)
-  print(io, "Set of orders of the number field ")
-  print(io, a.nf)
-end  
-
-function show(io::IO, a::NfOrdGen)
-  print(io, "Order of ")
-  println(io, a.nf)
-  print(io, "with Z-basis ")
-  print(io, basis(a))
-end
-
-################################################################################
-#
-#  Construction
-#
-################################################################################
-
-doc"""
-    Order(B::Array{nf_elem, 1}, check::Bool = true) -> NfOrd
-
-> Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
-> whether $B$ defines an order.
-"""
-function Order(a::Array{nf_elem, 1}, check::Bool = true) 
-  # We should check if it really is a basis and the elements are integral
-  return NfOrdGen(nf_elem[ deepcopy(x) for x in a])
-end
-
-doc"""
-    Order(K::AnticNumberField, A::FakeFmpqMat, check::Bool = true) -> NfOrd
-
-> Returns the order which has basis matrix $A$ with respect to the power basis of $K$.
-> If `check` is set, it is checked whether $A$ defines an order.
-"""
-function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true)
-  # We should check if a has full rank and the elements are integral?
-  return NfOrdGen(K, deepcopy(a))
-end
-
-doc"""
-    EquationOrder(K::AnticNumberField) -> NfOrd
-
-> Returns the equation of the number field $K$.
-"""
-function EquationOrder(K::AnticNumberField)
-  z = NfOrdGen(K)
-  z.isequationorder = true
-  return z
-end
-
-################################################################################
-#
-#  Creation from fractional ideals
-#
-################################################################################
-
-function NfOrdGen(a::NfOrdGenFracIdl)
-  z = NfOrdGen(nf(order(a)), a.basis_mat*order(a).basis_mat)
-  return z
-end
 
