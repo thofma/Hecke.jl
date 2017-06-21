@@ -1,5 +1,5 @@
 
-export iscoprime, ray_class_group, conductor, isconductor
+export iscoprime, ray_class_group, conductor, isconductor, isabelian, normgroup
 
 #
 # Test if two ideals $I,J$ in a maximal order are coprime.
@@ -312,7 +312,6 @@ Hecke.elem_type(A::Hecke.NfOrdIdlSet) = NfOrdIdl
 
 doc"""
 ***
-
   function conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp) -> NfOrdIdl (, Array{InfPlc,1})
 
 > Return the conductor of the congruence subgroup S, mS of the Ray Class Group R,mR 
@@ -373,7 +372,6 @@ end
 
 doc"""
 ***
-
   function isconductor(R::FinGenGrpAb, mR::Map, m::NfOrdIdl, infinite_primes::Array{InfPlc,1}=[]) -> Bool
 
   > Check if $m$ is the conductor of the congruence subgroup $S,mS$ of the Ray Class group R,mR
@@ -490,16 +488,12 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, fin_modulus::NfO
   #
   # Computing the Hermite normal form of the subgroup
   #
-  if !isempty(listprimes)
-    subgrp=[el for el in listprimes]
-    for i=1:ngens(R)
-      push!(subgrp, n*R[i])
-    end
-    return sub(R, subgrp)
-    
-  else  
-     return sub(R,[])
-  end    
+  subgrp=[el for el in listprimes]
+  for i=1:ngens(R)
+    push!(subgrp, n*R[i])
+  end
+  return sub(R, subgrp)
+
 
 end
 
@@ -527,13 +521,16 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
   R,mR=ray_class_group(m,inf_plc)
   
   S,mS=snf(R)
+  if !divides(order(S),n)
+    return false
+  end
   M=rels(S)
   
   p=1
   Ox,x=O["y"]
   f1=Ox([O(coeff(f,i)) for i=0:n])
   
-  determinant=abs(det(M)) 
+  determinant=order(S)
   new_mat=M
 
   B=log(abs(discriminant(O)))*degree(f)+log(N)
