@@ -819,18 +819,3 @@ doc"""
 """
 ring_of_integers(x...) = maximal_order(x...)
 
-################################################################################
-#
-#  Promotion rules
-#
-################################################################################
-
-Nemo.promote_rule{S <: Integer}(::Type{NfOrdElem}, ::Type{S}) = NfOrdElem
-
-# go to Elem.jl
-
-function addeq!(a::NfOrdElem, b::NfOrdElem)
-  addeq!(a.elem_in_nf, b.elem_in_nf)
-  return a
-end
-
