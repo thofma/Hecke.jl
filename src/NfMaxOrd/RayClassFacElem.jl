@@ -2,7 +2,7 @@
 
 export ray_class_group_fac_elem
 
-type MapRayClassGrpFacElem{T} <: Map{T, FacElem{NfMaxOrdIdl}}
+type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{NfMaxOrdIdlSet}}
   header::Hecke.MapHeader
   modulus_fin::NfMaxOrdIdl
   modulus_inf::Array{InfPlc,1}
@@ -182,7 +182,7 @@ function ray_class_group_fac_elem(m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   
   p = [ x for x in inf_plc if isreal(x) ]
   if !isempty(p)
-    H,lH,eH=_infinite_primes(O,p,m)
+    H,lH,eH=Hecke._infinite_primes(O,p,m)
     T=G
     G=direct_product(G,H)
   end
@@ -213,7 +213,7 @@ function ray_class_group_fac_elem(m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       end
     end
     a=a.coeff
-    if !isempty(inf_plc)
+    if !isempty(p)
       a=hcat(a, (lH(K(u))).coeff)
     end 
     for j=1:ngens(G)
@@ -239,7 +239,7 @@ function ray_class_group_fac_elem(m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
         end
       end
       b=b.coeff
-      if !isempty(inf_plc)
+      if !isempty(p)
         b=hcat(b, (lH(K(y))).coeff)
       end 
       for j=1: ngens(G)
