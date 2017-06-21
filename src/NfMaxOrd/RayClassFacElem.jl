@@ -401,14 +401,14 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
   
   
   fac=factor(m)
-  y1=Dict{NfMaxOrdIdl,fmpz}()
-  y2=Dict{NfMaxOrdIdl,fmpz}()
+  y1=Dict{NfMaxOrdIdl,Int}()
+  y2=Dict{NfMaxOrdIdl,Int}()
   for (q,e) in fac
     if divisible(norm(q)-1,p)
-      y1[q]=1
+      y1[q]=Int(1)
     else 
       if divisible(norm(q),p) && e>=2
-        y2[q]=e
+        y2[q]=Int(e)
       end
     end
   end
@@ -478,9 +478,9 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
       
       val=valuation(x,q)
       if val==0
-        return dlog_q(x)
+        return disclog_q(x)
       else 
-        return dlog_q(O(K(x)*uni_q^val))
+        return disclog_q(O(K(x)*uni_q^val))
       end
 
     end

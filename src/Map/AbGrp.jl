@@ -97,3 +97,4 @@ end
 function AbToNfOrdMultGrp{T}(O::T, order::Int, generator::NfOrdElem{T})
   return AbToNfOrdMultGrp{T}(O, order, generator)
 end
+
