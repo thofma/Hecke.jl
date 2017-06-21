@@ -746,7 +746,9 @@ function _MaximalOrder(K::AnticNumberField)
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
   O = _MaximalOrder(O)
   @vprint :NfOrd 1 "... done\n"
-  return NfOrd(K, basis_mat(O))
+  M = NfOrd(K, basis_mat(O))
+  M.ismaximal = 1
+  return M
 end
 
 doc"""
