@@ -1185,6 +1185,16 @@ function valuation(a::nf_elem, p::NfMaxOrdIdl)
   O = order(p)
   P = p.gen_one
 
+  # for generic ideals
+  if p.splitting_type[1] == 0
+    p.valuation = function(a::nf_elem)
+      d = den(a, O)
+      x = O(d*a)
+      return valuation_naive(ideal(O, x), p) - valuation_naive(ideal(O, d), p)
+    end
+    return p.valuation(a)
+  end
+
   if p.splitting_type[1]*p.splitting_type[2] == degree(O)
     p.valuation = function(a::nf_elem)
       return divexact(valuation(norm(a), P)[1], p.splitting_type[2])
@@ -1233,8 +1243,10 @@ doc"""
 > such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::fmpz, p::NfMaxOrdIdl)
+  if p.splitting_type[1] == 0
+    return valuation_naive(ideal(order(p), a), p)
+  end
   P = p.gen_one
-  @assert p.splitting_type[1] != 0
   return valuation(a, P)* p.splitting_type[1]
 end
 

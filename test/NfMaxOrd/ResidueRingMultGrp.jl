@@ -389,7 +389,7 @@
 
       @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if isprime(fmpz(x))], v in [1,2,4,17]]
         p = ideal(O,O(pnum))
-        p = collect(keys(factor(p)))[1]
+        #p = collect(keys(factor(p)))[1]
         g, d, disc_log = Hecke._multgrp_mod_pv(p,v)
         @test length(g) == length(d)
         for i in 1:length(g)
@@ -447,10 +447,10 @@
       K, a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O,O(3))
-      p = collect(keys(factor(p)))[1]
+      #p = collect(keys(factor(p)))[1]
       structures = Vector{fmpz}[[26],[26,3,3,3],[26,9,9,9],[26,27,27,27]]
       @testset "v = $v" for v in 1:length(structures)
-        g , d , disc_log = Hecke._multgrp_mod_pv(p,v)
+        g, d, disc_log = Hecke._multgrp_mod_pv(p, v)
         @test length(g) == length(d)
         for i in 1:length(g)
           @test verify_order(g[i],p^v,d[i])
@@ -480,7 +480,7 @@
       K, a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O,fmpz(3),O(2+a+a^2))
-      p = collect(keys(factor(p)))[1]
+      #p = collect(keys(factor(p)))[1]
       structures = Vector{fmpz}[[8],[8,3,3],[8,3,3,3,3],[8,3,3,3,3,9],[8,3,3,9,9,9],[8,3,9,9,9,27]]
       @testset "v = $v" for v in 1:length(structures)
         g , d , disc_log = Hecke._multgrp_mod_pv(p,v)
@@ -513,7 +513,7 @@
       K, a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O,fmpz(3),O(2+2*a+a^2))
-      p = collect(keys(factor(p)))[1]
+      #p = collect(keys(factor(p)))[1]
       structures = Vector{fmpz}[[8],[8,3,3],[8,3,3,3,3],[8,9,9,3,3],[8,9,9,3,3,3,3],[8,9,9,9,9,3,3]]
       @testset "v = $v" for v in 1:length(structures)
         g , d , disc_log = Hecke._multgrp_mod_pv(p,v)
@@ -551,7 +551,7 @@
 
       @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if isprime(fmpz(x))]
         p = ideal(O,O(pnum))
-        p = collect(keys(factor(p)))[1]
+        #p = collect(keys(factor(p)))[1]
         g , n , dlog = Hecke._multgrp_mod_p(p)
         @test isa(g,NfOrdElem{NfMaxOrd})
         @test isa(n,fmpz)
@@ -648,7 +648,8 @@
 
         @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if isprime(fmpz(x))], v in [1,2,3,4,11,30]
           i = ideal(O,O(pnum))
-          p = collect(keys(factor(i)))[1]
+          p = i
+          #p = collect(keys(factor(i)))[1]
           g, D , disc_log = Hecke._1_plus_p_mod_1_plus_pv(p,v;method=method)
           @test length(g) == length(D)
           # Test generators

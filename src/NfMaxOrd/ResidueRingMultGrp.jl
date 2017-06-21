@@ -527,6 +527,7 @@ function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
   e = valuation(pnum,p)
   max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x - e * valuation(fac(1),p)) + 1
+  valuation(fac(1), p)
   Q_ = NfMaxOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
@@ -535,7 +536,7 @@ function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
   val_p_fac_i = 0
   i_old = 0
   for i in 1:max_i
-    val_pnum_i = valuation(fmpz(i),pnum)
+    val_pnum_i = valuation(fmpz(i), pnum)
     val_p_i = val_pnum_i * e
     val_p_fac_i += val_p_i
     val_p_xi += val_p_x
@@ -572,15 +573,15 @@ function p_adic_log(p,v,y::NfOrdElem{NfMaxOrd};pv=p^v)
   Q = NfMaxOrdQuoRing(O,pv)
   pnum = minimum(p)
   x = y - 1
-  e = valuation(pnum,p)
-  val_p_x = valuation(x,p)
+  e = valuation(pnum, p)
+  val_p_x = valuation(x, p)
   s = zero(Q)
   xi = one(O)
   i_old = 0
   val_p_xi = 0
   pnum = Int(pnum)
   for i in [ 1:v ; (v+pnum-(v%pnum)):pnum:pnum*v ]
-    val_pnum_i = valuation(i,pnum)
+    val_pnum_i = valuation(i, pnum)
     val_p_i = val_pnum_i * e
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
