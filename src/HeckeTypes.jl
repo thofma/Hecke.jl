@@ -589,7 +589,7 @@ end
 
 const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
 
-type NfOrd
+type NfOrd <: Ring
   nf::AnticNumberField
   basis_nf::Array{nf_elem, 1}      # Array of number field elements
   basis_ord                        # Array of order elements
@@ -629,6 +629,7 @@ type NfOrd
     r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(5)
     r.isequationorder = false
+    r.ismaximal = 0
     return r
   end
 
@@ -891,11 +892,12 @@ type NfOrdIdl
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfOrdIdl(O)
     C.princ_gen = O(x)
-    C.princ_gen_special = (1, Int(x), fmpz(0))
+    C.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(x))
+    C.princ_gen_special = (1, abs(x), fmpz(0))
     C.gen_one = x
     C.gen_two = O(x)
-    C.norm = x^degree(O)
-    C.minimum = x
+    C.norm = abs(x)^degree(O)
+    C.minimum = fmpz(abs(x))
     C.gens_normal = x
     C.gens_weakly_normal = true
     return C
@@ -906,11 +908,12 @@ type NfOrdIdl
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfOrdIdl(O)
     C.princ_gen = O(x)
+    C.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(x))
     C.princ_gen_special = (2, Int(0), abs(x))
     C.gen_one = x
     C.gen_two = O(x)
-    C.norm = x^degree(O)
-    C.minimum = x
+    C.norm = abs(x)^degree(O)
+    C.minimum = abs(x)
     C.gens_normal = x
     C.gens_weakly_normal = true
     return C
@@ -943,6 +946,7 @@ const NfOrdFracIdlSetID = Dict{NfOrd, NfOrdFracIdlSet}()
 type NfOrdFracIdl
   num::NfOrdIdl
   den::fmpz
+  norm::fmpq
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
   parent::NfOrdFracIdlSet
@@ -953,6 +957,22 @@ type NfOrdFracIdl
     return z
   end
 
+  function NfOrdFracIdl(O::NfOrd, a::NfOrdIdl, b::fmpz)
+    z = new()
+    z.parent = NfOrdFracIdlSet(O)
+    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
+    z.num = a
+    z.den = b
+    return z
+  end
+
+  function NfOrdFracIdl(O::NfOrd, a::FakeFmpqMat)
+    z = new()
+    z.parent = NfOrdFracIdlSet(O)
+    z.basis_mat = a
+    return z
+  end
+
   function NfOrdFracIdl(x::NfOrdIdl, y::fmpz)
     z = new()
     z.parent = NfOrdFracIdlSet(order(x))
@@ -960,6 +980,16 @@ type NfOrdFracIdl
     z.den = y
     return z
   end
+  
+  function NfOrdFracIdl(O::NfOrd, a::nf_elem)
+    z = new()
+    z.parent = NfOrdFracIdlSet(O)
+    z.num = ideal(O, O(den(a, O)*a))
+    z.den = den(a, O)
+    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(den(a, O)*a)), den(a, O)))
+    return z
+  end
+
 end
 
 ################################################################################

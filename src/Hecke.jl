@@ -147,40 +147,40 @@ function __init__()
   global _get_nf_torsion_units = t[1]
   global _set_nf_torsion_units = t[2]
 
-#  t = create_accessors(AnticNumberField, NfMaxOrd, get_handle())
-#
-#  global _get_maximal_order_of_nf = t[1]
-#  global _set_maximal_order_of_nf = t[2]
-#
-#  t = create_accessors(NfMaxOrd, ClassGrpCtx, get_handle())
-#
-#  global _get_ClassGrpCtx_of_order = t[1]
-#  global _set_ClassGrpCtx_of_order = t[2]
-#
-#  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
-#
-#  global _get_UnitGrpCtx_of_order = t[1]
-#  global _set_UnitGrpCtx_of_order = t[2]
-#
-#  t = create_accessors(AnticNumberField, roots_ctx, get_handle())
-#
-#  global _get_roots_ctx_of_nf = t[1]
-#  global _set_roots_ctx_of_nf = t[2]
-#
-#  t = create_accessors(AnticNumberField, Array, get_handle())
-#
-#  global _get_cyclotomic_ext_nf = t[1]
-#  global _set_cyclotomic_ext_nf = t[2]
-#
-#  global R = _RealRing()
-#  
-#  # Stuff for elliptic curves
-#  # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
-#  # will be removed eventually
-#  global const _Zx = PolynomialRing(FlintZZ, "_x")[1]
-#  global const _Zxy = PolynomialRing(_Zx, "_y")[1]
-#  global const _x = gen(_Zx)
-#  global const _y = gen(_Zxy)
+  t = create_accessors(AnticNumberField, NfOrd, get_handle())
+
+  global _get_maximal_order_of_nf = t[1]
+  global _set_maximal_order_of_nf = t[2]
+
+  t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
+
+  global _get_ClassGrpCtx_of_order = t[1]
+  global _set_ClassGrpCtx_of_order = t[2]
+
+  t = create_accessors(NfOrd, UnitGrpCtx, get_handle())
+
+  global _get_UnitGrpCtx_of_order = t[1]
+  global _set_UnitGrpCtx_of_order = t[2]
+
+  t = create_accessors(AnticNumberField, roots_ctx, get_handle())
+
+  global _get_roots_ctx_of_nf = t[1]
+  global _set_roots_ctx_of_nf = t[2]
+
+  t = create_accessors(AnticNumberField, Array, get_handle())
+
+  global _get_cyclotomic_ext_nf = t[1]
+  global _set_cyclotomic_ext_nf = t[2]
+
+  global R = _RealRing()
+  
+  # Stuff for elliptic curves
+  # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
+  # will be removed eventually
+  global const _Zx = PolynomialRing(FlintZZ, "_x")[1]
+  global const _Zxy = PolynomialRing(_Zx, "_y")[1]
+  global const _x = gen(_Zx)
+  global const _y = gen(_Zxy)
 
 #  let
 #    Qx, x = QQ["x"]
@@ -513,13 +513,19 @@ function checkbounds(a::Int, b::Int) nothing; end;
 ################################################################################
 
 include("HeckeTypes.jl")
-#include("Misc.jl")
-#include("LinearAlgebra.jl")
-#include("Sparse.jl")
-#include("BigComplex.jl")
-#include("conjugates.jl")
-include("NfOrd.jl")
-#include("NfMaxOrd.jl")
+include("nNfOrd/NfOrd.jl")
+include("nNfOrd/Elem.jl")
+include("nNfOrd/Ideal.jl")
+include("nNfOrd/FracIdeal.jl")
+include("nNfOrd/DedekindCriterion.jl")
+include("nNfOrd/TorsionUnits.jl")
+include("Misc.jl")
+include("LinearAlgebra.jl")
+include("Sparse.jl")
+include("BigComplex.jl")
+include("conjugates.jl")
+#include("NfOrd.jl")
+include("NfMaxOrd.jl")
 #include("NfRel.jl")
 #include("analytic.jl")
 #include("Map.jl")
@@ -560,10 +566,6 @@ end
 ################################################################################
 
 # Nemo only provides element_types for parent objects
-
-elem_type(::NfOrd) = NfOrdElem
-
-elem_type(::Type{NfOrd}) = NfOrdElem
 
 #elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
 #

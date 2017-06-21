@@ -615,7 +615,7 @@ end
 doc"""
 ***
   modular_proj(a::GenMat{nf_elem}, me::modular_env) -> Array{Matrix}
-  modular_proj(a::GenMat{NfOrdElem{NfMaxOrd}}, me::modular_env) -> Array{Matrix}
+  modular_proj(a::GenMat{NfOrdElem}, me::modular_env) -> Array{Matrix}
 
 > Apply the \code{modular_proj} function to each entry of $a$.
 > Computes an array of matrices over the respective residue class fields.
@@ -636,7 +636,7 @@ function modular_proj(a::GenMat{nf_elem}, me::modular_env)
   return Mp
 end  
 
-function modular_proj(a::GenMat{NfOrdElem{NfMaxOrd}}, me::modular_env)
+function modular_proj(a::GenMat{NfOrdElem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
     push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())

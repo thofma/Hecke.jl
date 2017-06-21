@@ -283,7 +283,7 @@ end
 #
 ################################################################################
 
-function evaluate(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = simplify(x) # the other method won't work due to one()
   return prod([(p//1)^Int(k) for (p,k) = x.fac])
 end
@@ -443,20 +443,20 @@ end
 
 
 #TODO: expand the coprime stuff to automatically also get the exponents
-function simplify(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   z = deepcopy(x)
   simplify!(z)
   return z
 end
 
-function simplify!(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   if length(x.fac) <= 1
     p = first(keys(x.fac))
     x.fac =  Dict(abs(p) => x.fac[p])
     return 
   end
   cp = coprime_base(collect(base(x)))
-  ev = Dict{NfMaxOrdIdl, fmpz}()
+  ev = Dict{NfOrdIdl, fmpz}()
   for p = cp
     if isone(p)
       continue
@@ -472,7 +472,7 @@ function simplify!(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   x.fac = ev
 end  
 
-function factor_coprime(x::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = deepcopy(x)
   simplify!(x)
   return Dict(p=>Int(v) for (p,v) = x.fac)

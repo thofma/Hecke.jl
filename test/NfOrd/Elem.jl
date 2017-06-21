@@ -9,39 +9,39 @@
     b1 = @inferred O1(2*a1^0)
     @test b1.elem_in_nf == 2*a1^0
     @test parent(b1) == O1
-    @test typeof(b1) == NfOrdElem{NfOrdGen}
+    @test typeof(b1) == NfOrdElem
 
     b2 = @inferred O1(2)
     @test parent(b2) == O1
-    @test typeof(b2) == NfOrdElem{NfOrdGen}
+    @test typeof(b2) == NfOrdElem
     @test b1 == b2
 
     b3 = @inferred O1(fmpz(2))
     @test parent(b3) == O1
-    @test typeof(b3) == NfOrdElem{NfOrdGen}
+    @test typeof(b3) == NfOrdElem
     @test b1 == b3
 
     b4 = @inferred O1([2, 0, 0])
     @test parent(b4) == O1
-    @test typeof(b4) == NfOrdElem{NfOrdGen}
+    @test typeof(b4) == NfOrdElem
     @test b4.has_coord
     @test b1 == b4
 
     b5 = @inferred O1([ZZ(2), ZZ(0), ZZ(0)])
     @test parent(b5) == O1
-    @test typeof(b5) == NfOrdElem{NfOrdGen}
+    @test typeof(b5) == NfOrdElem
     @test b5.has_coord
     @test b1 == b5
 
     b6 = @inferred O1(2*a1^0, [ZZ(2), ZZ(0), ZZ(0)])
     @test parent(b6) == O1
-    @test typeof(b6) == NfOrdElem{NfOrdGen}
+    @test typeof(b6) == NfOrdElem
     @test b6.has_coord
     @test b1 == b6
 
     b7 = @inferred O1()
     @test parent(b6) == O1
-    @test typeof(b6) == NfOrdElem{NfOrdGen}
+    @test typeof(b6) == NfOrdElem
   end
 
   b1 = O1(2*a1^0)
@@ -72,10 +72,10 @@
 
   @testset "Discriminant" begin
 
-    b = @inferred discriminant([ O1(1), O1(2*a1), O1(4*a1^2) ])
+    b = @inferred discriminant([O1(1), O1(2*a1), O1(4*a1^2)])
     @test b == 64 * -108
 
-    @test_throws ErrorException discriminant( [ O1(1) ])
+    @test_throws ErrorException discriminant([O1(1)])
   end
 
   @testset "Hashing" begin

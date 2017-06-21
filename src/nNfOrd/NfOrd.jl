@@ -1,7 +1,7 @@
 
-export make_maximal, maximal_order, ring_of_integers
+export make_maximal, maximal_order, ring_of_integers, basis, basis_mat, basis_mat_inv
 
-export EquationOrder, Order
+export EquationOrder, Order, isequationorder, gen_index, minkowski_mat, index, isindex_divisor
 
 elem_type(::NfOrd) = NfOrdElem
 
@@ -20,9 +20,9 @@ end
 
 function show(io::IO, a::NfOrd)
   if ismaximal_known(a) && ismaximal(a)
-    show_maximal(a)
+    show_maximal(io, a)
   else
-    show_gen(a)
+    show_gen(io, a)
   end
 end
 
@@ -86,17 +86,17 @@ parent(O::NfOrd) = O.parent
 
 function basis_ord(O::NfOrd)
   if isdefined(O, :basis_ord)
-    return O.basis_ord::Array{NfOrdElem{typeof(O)}, 1}
+    return O.basis_ord::Vector{NfOrdElem}
   end
   b = O.basis_nf
-  B = Array{NfOrdElem{typeof(O)}}(length(b))
+  B = Array{NfOrdElem}(length(b))
   for i in 1:length(b)
     v = fill(FlintZZ(0), length(b))
     v[i] = FlintZZ(1)
     B[i] = O(b[i], v; check = false)
   end
   O.basis_ord = B
-  return B::Array{NfOrdElem{typeof(O)}, 1}
+  return B::Array{NfOrdElem, 1}
 end
 
 doc"""
@@ -509,7 +509,7 @@ doc"""
 > Returns the equation of the number field $K$.
 """
 function EquationOrder(K::AnticNumberField)
-  z = NfOrd(K)
+  z = NfOrd([gen(K)^i for i in 0:(degree(K) - 1)])
   z.isequationorder = true
   return z
 end
@@ -821,3 +821,10 @@ doc"""
 """
 ring_of_integers(x...) = maximal_order(x...)
 
+function ismaximal_known(O::NfOrd)
+  return O.ismaximal != 0
+end
+
+function ismaximal(O::NfOrd)
+  return O.ismaximal == 1
+end

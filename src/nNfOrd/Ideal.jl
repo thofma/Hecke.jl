@@ -1060,6 +1060,9 @@ end
 #
 ################################################################################
 
+# TH:
+# There is some annoying type instability since we pass to nmod_mat or
+# something else. Should use the trick with the function barrier.
 doc"""
 ***
     pradical(O::NfOrd, p::fmpz) -> NfOrdIdl
@@ -1070,12 +1073,13 @@ doc"""
 > \in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
 function pradical(O::NfOrd, p::fmpz)
-  j = clog(fmpz(degree(O)),p)
+  j = clog(fmpz(degree(O)), p)
+  local m::fmpz_mat
 
   @assert p^(j-1) < degree(O)
   @assert degree(O) <= p^j
 
-  R = ResidueRing(ZZ,p)
+  R = ResidueRing(FlintZZ, p)
   A = MatrixSpace(R, degree(O), degree(O))()
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
@@ -1085,18 +1089,19 @@ function pradical(O::NfOrd, p::fmpz)
     end
   end
   X = kernel(A)
-  Mat = MatrixSpace(ZZ, 1, degree(O))
+  Mat = MatrixSpace(FlintZZ, 1, degree(O))
   MMat = MatrixSpace(R, 1, degree(O))
   if length(X) != 0
     m = lift(MMat(X[1]))
     for x in 2:length(X)
       m = vcat(m,lift(MMat(X[x])))
     end
-    m = vcat(m,MatrixSpace(ZZ, degree(O), degree(O))(p))
+    m = vcat(m, MatrixSpace(FlintZZ, degree(O), degree(O))(p))
   else
-    m = MatrixSpace(ZZ, degree(O), degree(O))(p)
+    m = MatrixSpace(FlintZZ, degree(O), degree(O))(p)
   end
-  r = sub(_hnf(m, :lowerleft), rows(m) - degree(O) + 1:rows(m), 1:degree(O))
+  mm::fmpz_mat = _hnf(m, :lowerleft)
+  r = sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O))
   return ideal(O, r)
 end
 
@@ -1473,7 +1478,7 @@ function basis_mat(A::NfOrdIdl)
   c = _hnf_modular_eldiv(representation_mat(A.gen_two), A.gen_one, :lowerleft)
 #  c = sub(c, n + 1:2*n, 1:n)
   A.basis_mat = c
-  return c::fmpz_mat
+  return c
 end
 
 doc"""

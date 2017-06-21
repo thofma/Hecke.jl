@@ -10,18 +10,18 @@
     @test I.princ_gen_special[1] == 1
     @test I.princ_gen_special[2] == 17
     @test I.princ_gen == O1(-17)
-    @test I.basis_mat == MatrixSpace(ZZ, 3, 3)(17)
+    @test basis_mat(I) == MatrixSpace(ZZ, 3, 3)(17)
 
     J = @inferred ideal(O1, ZZ(-17))
     @test order(J) == O1
     @test J.princ_gen_special[1] == 2
     @test J.princ_gen_special[3] == ZZ(17)
     @test J.princ_gen == O1(-17)
-    @test J.basis_mat == MatrixSpace(ZZ, 3, 3)(17)
+    @test basis_mat(J) == MatrixSpace(ZZ, 3, 3)(17)
 
     K = @inferred ideal(O1, O1(-17))
     @test K.princ_gen == O1(-17)
-    @test K.basis_mat == MatrixSpace(ZZ, 3, 3)(17)
+    @test basis_mat(K) == MatrixSpace(ZZ, 3, 3)(17)
 
     M = @inferred O1(-17)*O1
     L = @inferred O1*O1(-17)
@@ -60,7 +60,7 @@
 
   @testset "Basis" begin
     b = @inferred basis(I)
-    @test b == NfOrdElem{NfOrdGen}[ O1(17), O1(34*a1), O1(68*a1^2) ]
+    @test b == NfOrdElem[ O1(17), O1(34*a1), O1(68*a1^2) ]
   end
 
   @testset "Basismatrix" begin

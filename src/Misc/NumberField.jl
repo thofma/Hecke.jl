@@ -1037,7 +1037,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   CC = AcbField(c.prec)
 
   for i in 1:r
-    conjugates[i] = CC(evaluate(parent(K.pol)(x), c.real_roots[i]))
+    conjugates[i] = CC(subst(parent(K.pol)(x), c.real_roots[i]))
     if !isfinite(conjugates[i]) || (abs_tol != -1 && !radiuslttwopower(conjugates[i], -abs_tol))
       refine(c)
       return conjugates_arb(x, abs_tol)
@@ -1045,7 +1045,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   end
 
   for i in 1:s
-    conjugates[r + i] = evaluate(parent(K.pol)(x), c.complex_roots[i])
+    conjugates[r + i] = subst(parent(K.pol)(x), c.complex_roots[i])
     if !isfinite(conjugates[i]) || (abs_tol != -1 && !radiuslttwopower(conjugates[i], -abs_tol))
       refine(c)
       return conjugates_arb(x, abs_tol)
