@@ -558,6 +558,11 @@ function _pseudo_hnf_cohen{T}(P::PMat, trafo::Type{Val{T}} = Val{false})
    end
 end
 
+#=
+Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
+by H. Cohen.
+The reductions in step 6 are not implemented.
+=#
 function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool = false)
    m = rows(H)
    n = cols(H)
@@ -630,4 +635,41 @@ function swap_rows!(P::PMat, i::Int, j::Int)
    swap_rows!(P.matrix, i, j)
    P.coeffs[i], P.coeffs[j] = P.coeffs[j], P.coeffs[i]
    return nothing
+end
+
+function _in_span(v::Vector{nf_elem}, P::PMat)
+   @assert length(v) == cols(P)
+   m = rows(P)
+   n = cols(P)
+   K = base_ring(P.matrix)
+   x = zeros(K, m)
+   t = K()
+   k = 0
+   for i = 1:n
+      l = 0
+      for j = k+1:m
+         if !iszero(P.matrix[j, i])
+            l = j
+            break
+         end
+      end
+      if l == 0 && !iszero(v[i])
+         return false, x
+      end
+      k = l
+      s = K()
+      for j = 1:k-1
+         t = mul!(t, P.matrix[j, i], x[j])
+         s = addeq!(s, t)
+      end
+      s = v[k] - s
+      x[k] = divexact(s, P.matrix[k, i])
+      if !(x[k] in P.coeffs[k])
+         return false, x
+      end
+      if k == min(m, n)
+         break
+      end
+   end
+   return true, x
 end
