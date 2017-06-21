@@ -1,7 +1,7 @@
-add_verbose_scope(:NfMaxOrd)
-add_assert_scope(:NfMaxOrd)
+add_verbose_scope(:NfOrd)
+add_assert_scope(:NfOrd)
 
-#set_verbose_level(:NfMaxOrd, 1)
+#set_verbose_level(:NfOrd, 1)
 
 include("NfMaxOrd/NfMaxOrd.jl")
 include("NfMaxOrd/Ideal.jl")
@@ -19,4 +19,4 @@ include("NfMaxOrd/IdealLLL.jl")
 include("NfMaxOrd/Narrow.jl")
 include("NfMaxOrd/norm_eqn.jl")
 include("NfMaxOrd/RayClass.jl")
-#include("NfMaxOrd/RayClassFacElem.jl")
+include("NfMaxOrd/RayClassFacElem.jl")

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#       NfMaxOrd.jl : Maximal orders in absolute number fields
+#       NfOrd.jl : Maximal orders in absolute number fields
 #
 # This file is part of Hecke.
 #

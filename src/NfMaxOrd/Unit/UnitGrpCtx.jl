@@ -21,7 +21,7 @@ end
 #
 ################################################################################
 
-function _unit_group_init(O::NfMaxOrd)
+function _unit_group_init(O::NfOrd)
   u = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
   return u
 end

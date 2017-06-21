@@ -1,6 +1,6 @@
 ################################################################################
 #
-#       NfMaxOrd/Units.jl : Units in generic number field orders 
+#       NfOrd/Units.jl : Units in generic number field orders 
 #
 # This file is part of Hecke.
 #

@@ -524,14 +524,14 @@ include("LinearAlgebra.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-#include("NfOrd.jl")
 include("NfMaxOrd.jl")
-#include("NfRel.jl")
-#include("analytic.jl")
-#include("Map.jl")
-#include("helper.jl")
-#include("EllCrv.jl")
-#include("LargeField.jl")
+#include("NfOrd.jl")
+include("NfRel.jl")
+include("analytic.jl")
+include("Map.jl")
+include("helper.jl")
+include("EllCrv.jl")
+include("LargeField.jl")
 
 for T in subtypes(Map)
   (M::T)(a) = image(M, a)
@@ -700,6 +700,6 @@ if VERSION < v"0.5.0-"
 end
 
 #precompile(maximal_order, (AnticNumberField, ))
-#precompile(class_group, (NfMaxOrd, ))
+#precompile(class_group, (NfOrd, ))
 
 end

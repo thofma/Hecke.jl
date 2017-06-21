@@ -1,4 +1,4 @@
-function _lll_gram(A::NfMaxOrdIdl)
+function _lll_gram(A::NfOrdIdl)
   K = nf(order(A))
   @assert istotally_real(K)
   g = trace_matrix(A)
@@ -8,7 +8,7 @@ function _lll_gram(A::NfMaxOrdIdl)
   return FakeFmpqMat(l, fmpz(1)), t
 end
 
-function lll_basis(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
+function lll_basis(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
   K = nf(order(A))
@@ -16,7 +16,7 @@ function lll_basis(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); p
   return q
 end
 
-function lll(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
+function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
 
   K = nf(order(A))
   if iszero(v) && istotally_real(K)
@@ -103,12 +103,12 @@ function lll(A::NfMaxOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::I
   return FakeFmpqMat(deepcopy(l), fmpz(2)^prec), t*t1
 end
 
-function short_elem(A::NfMaxOrdFracIdl,
+function short_elem(A::NfOrdFracIdl,
                 v::fmpz_mat=MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
-function short_elem(A::NfMaxOrdIdl,
+function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
@@ -121,7 +121,7 @@ function short_elem(A::NfMaxOrdIdl,
   return q
 end
 
-function reduce_ideal(A::NfMaxOrdIdl)
+function reduce_ideal(A::NfOrdIdl)
   B = inv(A)
   b = short_elem(B)
   C = b*A
@@ -130,7 +130,7 @@ function reduce_ideal(A::NfMaxOrdIdl)
   return C.num
 end  
 
-function reduce_ideal(A::NfMaxOrdFracIdl)
+function reduce_ideal(A::NfOrdFracIdl)
   B = inv(A)
   b = short_elem(B.num)
   C = divexact(b, B.den)*A
@@ -139,7 +139,7 @@ function reduce_ideal(A::NfMaxOrdFracIdl)
   return C.num
 end  
 
-function reduce_ideal2(A::NfMaxOrdIdl)
+function reduce_ideal2(A::NfOrdIdl)
   B = inv(A)
   b = short_elem(B)
   C = b*A

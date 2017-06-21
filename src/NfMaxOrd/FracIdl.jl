@@ -1,6 +1,6 @@
 ################################################################################
 #
-#   NfMaxOrd/FracIdl.jl : Fractional ideals of maximal orders in
+#   NfOrd/FracIdl.jl : Fractional ideals of maximal orders in
 #                         absolute number fields
 #
 # This file is part of Hecke.
