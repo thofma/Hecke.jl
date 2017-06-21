@@ -170,31 +170,13 @@ end
   > function coerces the element into $\mathcal O$. It will be checked that $a$
   > is contained in $\mathcal O$ if and only if `check` is `true`.
   """
-  (O::NfOrdGen)(a::nf_elem, check::Bool = true) = begin
+  (O::NfOrd)(a::nf_elem, check::Bool = true) = begin
     if check
       (x,y) = _check_elem_in_order(a,O)
       !x && error("Number field element not in the order")
-      return NfOrdElem{NfOrdGen}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
+      return NfOrdElem(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
     else
-      return NfOrdElem{NfOrdGen}(O, deepcopy(a))
-    end
-  end
-
-  doc"""
-  ***
-        (O::NfOrd)(a::nf_elem, check::Bool = true) -> NfOrdElem
-
-  > Given an element $a$ of the ambient number field of $\mathcal O$, this
-  > function coerces the element into $\mathcal O$. It will be checked that $a$
-  > is contained in $\mathcal O$ if and only if `check` is `true`.
-  """
-  (O::NfMaxOrd)(a::nf_elem, check::Bool = true) = begin
-    if check
-      (x,y) = _check_elem_in_order(a,O)
-      !x && error("Number field element not in the order")
-      return NfOrdElem{NfMaxOrd}(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
-    else
-      return NfOrdElem{NfMaxOrd}(O, deepcopy(a))
+      return NfOrdElem(O, deepcopy(a))
     end
   end
 
@@ -207,14 +189,14 @@ end
   > will be checked that $a$ is contained in $\mathcal O$ if and only if
   > `check` is `true`.
   """
-  (O::NfMaxOrd)(a::NfOrdElem, check::Bool = true) = begin
+  (O::NfOrd)(a::NfOrdElem, check::Bool = true) = begin
     b = nf(parent(a))(a)
     if check
       (x,y) = _check_elem_in_order(b,O)
       !x && error("Number field element not in the order")
-      return NfOrdElem{NfMaxOrd}(O, deepcopy(b), fmpz[ deepcopy(x) for x in y])
+      return NfOrdElem(O, deepcopy(b), fmpz[ deepcopy(x) for x in y])
     else
-      return NfOrdElem{NfMaxOrd}(O, deepcopy(b))
+      return NfOrdElem(O, deepcopy(b))
     end
   end
 
@@ -226,20 +208,8 @@ end
   > function coerces the element into $\mathcal O$. It will be checked that $a$
   > is contained in $\mathcal O$ if and only if `check` is `true`.
   """
-  (O::NfOrdGen)(a::Union{fmpz, Integer}) = begin
-    return NfOrdElem{NfOrdGen}(O, nf(O)(a))
-  end
-
-  doc"""
-  ***
-        (O::NfOrd)(a::Union{fmpz, Integer}) -> NfOrdElem
-
-  > Given an element $a$ of type `fmpz` or `Integer`, this
-  > function coerces the element into $\mathcal O$. It will be checked that $a$
-  > is contained in $\mathcal O$ if and only if `check` is `true`.
-  """
-  (O::NfMaxOrd)(a::Union{fmpz, Integer}) = begin
-    return NfOrdElem{NfMaxOrd}(O, nf(O)(a))
+  (O::NfOrd)(a::Union{fmpz, Integer}) = begin
+    return NfOrdElem(O, nf(O)(a))
   end
 
   doc"""
@@ -248,28 +218,8 @@ end
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
-  (O::NfOrdGen)(arr::Array{fmpz, 1}) = begin
-    return NfOrdElem{NfOrdGen}(O, fmpz[ deepcopy(x) for x in arr ])
-  end
-  
-  doc"""
-  ***
-        (O::NfOrd)(arr::Array{fmpz, 1})
-
-  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
-  """
-  (O::NfMaxOrd)(arr::Array{fmpz, 1}) = begin
-    return NfOrdElem{NfMaxOrd}(O, fmpz[ deepcopy(x) for x in arr ])
-  end
-
-  doc"""
-  ***
-        (O::NfOrd, arr::Array{Integer, 1})
-
-  > Returns the element of $\mathcal O$ with coefficient vector `arr`.
-  """
-  (O::NfOrdGen){S <: Integer}(arr::Array{S, 1}) = begin
-    return NfOrdElem{NfOrdGen}(O, deepcopy(arr))
+  (O::NfOrd)(arr::Array{fmpz, 1}) = begin
+    return NfOrdElem(O, fmpz[ deepcopy(x) for x in arr ])
   end
 
   doc"""
@@ -278,8 +228,8 @@ end
 
   > Returns the element of $\mathcal O$ with coefficient vector `arr`.
   """
-  (O::NfMaxOrd){S <: Integer}(arr::Array{S, 1}) = begin
-    return NfOrdElem{NfMaxOrd}(O, deepcopy(arr))
+  (O::NfOrd){S <: Integer}(arr::Array{S, 1}) = begin
+    return NfOrdElem(O, deepcopy(arr))
   end
 
   doc"""
@@ -290,20 +240,8 @@ end
   > `arr`. It is assumed that the corresponding element of the ambient number
   > field is $a$.
   """
-  (O::NfOrdGen)(a::nf_elem, arr::Array{fmpz, 1}) = begin
-    return NfOrdElem{NfOrdGen}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
-  end
-  
-  doc"""
-  ***
-        (O::NfOrd)(a::nf_elem, arr::Array{fmpz, 1}) -> NfOrdElem
-
-  > This function constructs the element of $\mathcal O$ with coefficient vector
-  > `arr`. It is assumed that the corresponding element of the ambient number
-  > field is $a$.
-  """
-  (O::NfMaxOrd)(a::nf_elem, arr::Array{fmpz, 1}) = begin
-    return NfOrdElem{NfMaxOrd}(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
+  (O::NfOrd)(a::nf_elem, arr::Array{fmpz, 1}) = begin
+    return NfOrdElem(O, deepcopy(a), fmpz[ deepcopy(x) for x in arr])
   end
 
   doc"""
@@ -312,15 +250,7 @@ end
 
   > This function constructs a new element of $\mathcal O$ which is set to $0$.
   """
-  (O::NfOrdGen)() = NfOrdElem{NfOrdGen}(O)
-  
-  doc"""
-  ***
-        (O::NfOrd)() -> NfOrdElem
-
-  > This function constructs a new element of $\mathcal O$ which is set to $0$.
-  """
-  (O::NfMaxOrd)() = NfOrdElem{NfMaxOrd}(O) 
+  (O::NfOrd)() = NfOrdElem(O) 
 #end
 
 ################################################################################
@@ -335,7 +265,7 @@ doc"""
 
 > Returns the order of which $a$ is an element.
 """
-parent(a::NfOrdElem) = a.parent
+parent(a::NfOrdElem) = a.parent::NfOrd
 
 ################################################################################
 #
@@ -393,7 +323,7 @@ doc"""
 
 > Returns the discriminant of the family $B$.
 """
-function discriminant{T}(B::Array{NfOrdElem{T}, 1})
+function discriminant(B::Array{NfOrdElem, 1})
   length(B) == 0 && error("Number of elements must be non-zero")
   length(B) != degree(parent(B[1])) &&
         error("Number of elements must be $(degree(parent(B[1])))")
@@ -1038,13 +968,20 @@ function t2(x::NfOrdElem, abs_tol::Int = 32)
   return t2(x.elem_in_nf, abs_tol)
 end
 
+# cleanup
+
+function addeq!(a::NfOrdElem, b::NfOrdElem)
+  addeq!(a.elem_in_nf, b.elem_in_nf)
+  return a
+end
+
 ################################################################################
 #
 #  Promotion
 #
 ################################################################################
 
-Nemo.promote_rule{T <: Integer, S <: NfOrd}(::Type{NfOrdElem{S}}, ::Type{T}) =
-        NfOrdElem{S}
+Nemo.promote_rule{T <: Integer}(::Type{NfOrdElem}, ::Type{T}) =
+        NfOrdElem
 
-Nemo.promote_rule{S <: NfOrd}(::Type{NfOrdElem{S}}, ::Type{fmpz}) = NfOrdElem{S}
+Nemo.promote_rule(::Type{NfOrdElem}, ::Type{fmpz}) = NfOrdElem

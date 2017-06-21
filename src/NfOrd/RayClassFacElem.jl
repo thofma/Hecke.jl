@@ -2,9 +2,9 @@
 
 export ray_class_group_fac_elem, ray_class_group_p_part
 
-type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{NfMaxOrdIdlSet}}
+type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{NfOrdIdlSet}}
   header::Hecke.MapHeader
-  modulus_fin::NfMaxOrdIdl
+  modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
   
   function MapRayClassGrpFacElem()
@@ -13,7 +13,7 @@ type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{NfMaxOrdIdlSet}}
 end
 
 
-type MapMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
+type MapMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
   header::Hecke.MapHeader
 
   function MapMultGrp()
@@ -36,11 +36,11 @@ function principal_gen_fac_elem(I::FacElem)
 end
 
 
-function _coprime_ideal_fac_elem(C::GrpAbFinGen, mC::Map, m::NfMaxOrdIdl)
+function _coprime_ideal_fac_elem(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
  
   O=parent(m).order
   K=nf(O)
-  L=NfMaxOrdIdl[]
+  L=NfOrdIdl[]
   
   for i=1:ngens(C)
     a=mC(C[i])
@@ -86,8 +86,8 @@ end
 
 
 
-function _multgrp_ray_class(Q::NfMaxOrdQuoRing)
-  gens = Vector{NfMaxOrdQuoRingElem}()
+function _multgrp_ray_class(Q::NfOrdQuoRing)
+  gens = Vector{NfOrdQuoRingElem}()
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   i = ideal(Q)
@@ -109,15 +109,15 @@ function _multgrp_ray_class(Q::NfMaxOrdQuoRing)
       alpha, beta = Hecke.extended_euclid(pvp,i_without_p)
       for i in 1:length(gens_p)
         g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfMaxOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
-        @hassert :NfMaxOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
         gens_p[i] = g_pi_new
       end
     end
     
     uni_p=Hecke.anti_uniformizer(p)
     
-    function dlog_p_norm(x::NfOrdElem{Hecke.NfMaxOrd})
+    function dlog_p_norm(x::NfOrdElem)
       
       val=valuation(x,p)
       if val==0
@@ -146,7 +146,7 @@ function _multgrp_ray_class(Q::NfMaxOrdQuoRing)
     return x
   end
   
-  function dlog(x::NfOrdElem{Hecke.NfMaxOrd})
+  function dlog(x::NfOrdElem)
     result = Vector{fmpz}()
     for disclog in disc_logs
       append!(result,disclog(x))
@@ -163,7 +163,7 @@ end
 
 
 
-function ray_class_group_fac_elem(m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
@@ -255,7 +255,7 @@ function ray_class_group_fac_elem(m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
 # Discrete logarithm
 #
 
-  function disclog(J::NfMaxOrdIdl)
+  function disclog(J::NfOrdIdl)
 
     if isone(J)
       return X([0 for i=1:ngens(X)])
@@ -329,7 +329,7 @@ function ray_class_group_fac_elem(m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   end 
 
   mp=MapRayClassGrpFacElem{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, FacElem{NfMaxOrdIdl} , expo, disclog)
+  mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
  
@@ -348,7 +348,7 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
    function exp1(a::GrpAbFinGenElem)
      return ideal(parent(mC(C[1])).order, O(1))
    end
-   function disclog1(I::NfMaxOrdIdl)
+   function disclog1(I::NfOrdIdl)
      return G([0])
    end
    mp=Hecke.MapClassGrp{typeof(G)}()
@@ -371,7 +371,7 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
       end
       return mC(x)
     end 
-    function disclog2(I::NfMaxOrdIdl)
+    function disclog2(I::NfOrdIdl)
       x=mC\I
       y=G([0 for j=1:ngens(G)])
       for i=ind:ngens(C)
@@ -389,20 +389,20 @@ end
 
 
 
-function _mult_grp(m::NfMaxOrdIdl, p::Integer)
+function _mult_grp(m::NfOrdIdl, p::Integer)
 
   O=parent(m).order
   K=nf(O)
   Q,pi=quo(O,m)
   
-  gens = Vector{NfMaxOrdQuoRingElem}()
+  gens = Vector{NfOrdQuoRingElem}()
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   
   
   fac=factor(m)
-  y1=Dict{NfMaxOrdIdl,fmpz}()
-  y2=Dict{NfMaxOrdIdl,fmpz}()
+  y1=Dict{NfOrdIdl,fmpz}()
+  y2=Dict{NfOrdIdl,fmpz}()
   for (q,e) in fac
     if divisible(norm(q)-1,p)
       y1[q]=1
@@ -423,8 +423,8 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
       end
       alpha, beta = Hecke.extended_euclid(q ,i_without_q)
       g_pi_new = beta*gens_q[1] + alpha
-      @hassert :NfMaxOrdQuoRing 2 (g_pi_new - gens_q[1] in q)
-      @hassert :NfMaxOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
+      @hassert :NfOrdQuoRing 2 (g_pi_new - gens_q[1] in q)
+      @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
       gens_q[1] = g_pi_new
     end
     
@@ -434,7 +434,7 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
     
     uni_q=Hecke.anti_uniformizer(q)
     
-    function dlog_q_norm(x::NfOrdElem{Hecke.NfMaxOrd})
+    function dlog_q_norm(x::NfOrdElem)
       
       val=valuation(x,q)
       if val==0
@@ -465,8 +465,8 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
       alpha, beta = Hecke.extended_euclid(qvq,i_without_q)
       for i in 1:length(gens_q)
         g_pi_new = beta*gens_q[i] + alpha
-        @hassert :NfMaxOrdQuoRing 2 (g_pi_new - gens_q[i] in qvq)
-        @hassert :NfMaxOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_q[i] in qvq)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
         gens_q[i] = g_pi_new
       end
     end
@@ -474,7 +474,7 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
  
     uni_q=Hecke.anti_uniformizer(q)
     
-    function dlog_q_norm(x::NfOrdElem{Hecke.NfMaxOrd})
+    function dlog_q_norm(x::NfOrdElem)
       
       val=valuation(x,q)
       if val==0
@@ -506,7 +506,7 @@ function _mult_grp(m::NfMaxOrdIdl, p::Integer)
   
   end
   
-  function dlog(x::NfOrdElem{Hecke.NfMaxOrd})
+  function dlog(x::NfOrdElem)
     result = Vector{fmpz}()
     for disclog in disc_logs
       append!(result,disclog(x))
@@ -523,7 +523,7 @@ end
 
 
 
-function ray_class_group_p_part(p::Integer, m::NfMaxOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
@@ -538,12 +538,12 @@ function ray_class_group_p_part(p::Integer, m::NfMaxOrdIdl, inf_plc::Array{InfPl
       return FacElem(Dict(ideal(O,1) => fmpz(1)))
     end
     
-    function disclog2(J::NfMaxOrdIdl)
+    function disclog2(J::NfOrdIdl)
       return X([0])
     end
     
     mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
-    mp.header = Hecke.MapHeader(X, FacElem{NfMaxOrdIdl} , exp2, disclog2)
+    mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , exp2, disclog2)
     mp.modulus_fin=m
     mp.modulus_inf=inf_plc
     
@@ -636,7 +636,7 @@ function ray_class_group_p_part(p::Integer, m::NfMaxOrdIdl, inf_plc::Array{InfPl
 # Discrete logarithm
 #
 
-  function disclog(J::NfMaxOrdIdl)
+  function disclog(J::NfOrdIdl)
 
     if isone(J)
       return X([0 for i=1:ngens(X)])
@@ -710,7 +710,7 @@ function ray_class_group_p_part(p::Integer, m::NfMaxOrdIdl, inf_plc::Array{InfPl
   end 
 
   mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, FacElem{NfMaxOrdIdl} , expo, disclog)
+  mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , expo, disclog)
   mp.modulus_fin=m
   if p==2 
     mp.modulus_inf=pr

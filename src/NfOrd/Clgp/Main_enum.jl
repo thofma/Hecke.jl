@@ -5,7 +5,7 @@
 ################################################################################
 
 function class_group_random_ideal_relation(clg::ClassGrpCtx, r::Int,
-                                           I::NfMaxOrdIdl = rand(clg.FB.ideals))
+                                           I::NfOrdIdl = rand(clg.FB.ideals))
   s = 1
   if r < 2
     r = 2

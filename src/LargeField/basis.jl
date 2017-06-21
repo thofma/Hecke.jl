@@ -1,4 +1,4 @@
-function lll_basis_profile(A::NfMaxOrdIdl; prec::Int = 100)
+function lll_basis_profile(A::NfOrdIdl; prec::Int = 100)
   c = Hecke.minkowski_mat(Hecke.nf(order(A)), prec)
   l = lll(basis_mat(A))
   b = FakeFmpqMat(l)*basis_mat(order(A))
@@ -23,7 +23,7 @@ function lll_basis_profile(A::NfMaxOrdIdl; prec::Int = 100)
   return lp
 end
 
-#function short_elem(c::roots_ctx, A::NfMaxOrdIdl,
+#function short_elem(c::roots_ctx, A::NfOrdIdl,
 #                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
 #  l, t = lll(c, A, v, prec = prec)
 #  w = window(t, 1,1, 1, cols(t))
@@ -32,7 +32,7 @@ end
 #  return q
 #end
 
-function bkz_basis(A::NfMaxOrdIdl, bs::Int; 
+function bkz_basis(A::NfOrdIdl, bs::Int; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
 
@@ -65,7 +65,7 @@ function bkz_basis(A::NfMaxOrdIdl, bs::Int;
   return q
 end
 
-function fplll_basis(rt_c::Hecke.roots_ctx, A::NfMaxOrdIdl, bs::Int; 
+function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int; 
                       v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
                       prec::Int = 100)
                       

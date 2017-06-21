@@ -147,12 +147,12 @@ function __init__()
   global _get_nf_torsion_units = t[1]
   global _set_nf_torsion_units = t[2]
 
-  t = create_accessors(AnticNumberField, NfMaxOrd, get_handle())
+  t = create_accessors(AnticNumberField, NfOrd, get_handle())
 
   global _get_maximal_order_of_nf = t[1]
   global _set_maximal_order_of_nf = t[2]
 
-  t = create_accessors(NfMaxOrd, ClassGrpCtx, get_handle())
+  t = create_accessors(NfOrd, ClassGrpCtx, get_handle())
 
   global _get_ClassGrpCtx_of_order = t[1]
   global _set_ClassGrpCtx_of_order = t[2]
@@ -515,11 +515,10 @@ function checkbounds(a::Int, b::Int) nothing; end;
 include("HeckeTypes.jl")
 include("Misc.jl")
 include("LinearAlgebra.jl")
+include("NfOrd.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
 include("conjugates.jl")
-include("NfOrd.jl")
-include("NfMaxOrd.jl")
 include("NfRel.jl")
 include("analytic.jl")
 include("Map.jl")
@@ -561,14 +560,6 @@ end
 
 # Nemo only provides element_types for parent objects
 
-elem_type(::NfMaxOrd) = NfOrdElem{NfMaxOrd}
-
-elem_type(::Type{NfMaxOrd}) = NfOrdElem{NfMaxOrd}
-
-elem_type(::NfOrdGen) = NfOrdElem{NfOrdGen}
-
-elem_type(::Type{NfOrdGen}) = NfOrdElem{NfOrdGen}
-
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
 
 elem_type(::Type{AnticNumberField}) = nf_elem
@@ -583,7 +574,7 @@ elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
 #
 ################################################################################
 
-parent_type(::Type{NfOrdElem{NfMaxOrd}}) = NfMaxOrd
+parent_type(::Type{NfOrdElem}) = NfOrd
 
 ################################################################################
 #
@@ -701,7 +692,7 @@ if VERSION < v"0.5.0-"
   @inline __get_rounding_mode() = Base.MPFR.ROUNDING_MODE[end]
 end
 
-precompile(maximal_order, (AnticNumberField, ))
-precompile(class_group, (NfMaxOrd, ))
+#precompile(maximal_order, (AnticNumberField, ))
+#precompile(class_group, (NfOrd, ))
 
 end

@@ -1,6 +1,6 @@
 @testset "ResidueRingMultGrp" begin
 
-  function verify_order(g::Hecke.NfMaxOrdQuoRingElem,o)
+  function verify_order(g::Hecke.NfOrdQuoRingElem,o)
     g == 0 && return false
     g^o == 1 || return false
     for l in keys(factor(o).fac)
@@ -28,7 +28,7 @@
 
       @testset "m0 = <$n>" for n in 1:50
         m0 = ideal(O,O(n))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test issnf(G)
         SNF = G.snf
@@ -48,7 +48,7 @@
 
       @testset "m0 = <1361>^3000" begin
         m0 = ideal(O,O(1361))^100
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test issnf(G)
         SNF = G.snf
@@ -75,7 +75,7 @@
 
       @testset "m0 = <2>" begin
         m0 = ideal(O,O(2))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test issnf(G)
         SNF = G.snf
@@ -99,7 +99,7 @@
 
       @testset "m0 = <4>" begin
         m0 = ideal(O,O(4))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         G, M = multiplicative_group(Q)
         @test issnf(G)
         SNF = G.snf
@@ -131,7 +131,7 @@
       #= @testset "m0 = <3>" begin =#
       #=   println("m0 = <3>") =#
       #=   m0 = ideal(O,O(3)) =#
-      #=   Q = NfMaxOrdQuoRing(O,m0) =#
+      #=   Q = NfOrdQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 512000 =#
@@ -150,7 +150,7 @@
       #= @testset "m0 = <4>" begin =#
       #=   println("m0 = <4>") =#
       #=   m0 = ideal(O,O(4)) =#
-      #=   Q = NfMaxOrdQuoRing(O,m0) =#
+      #=   Q = NfOrdQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14745600 =#
@@ -169,7 +169,7 @@
       #= @testset "m0 = <5>" begin =#
       #=   println("m0 = <5>") =#
       #=   m0 = ideal(O,O(5)) =#
-      #=   Q = NfMaxOrdQuoRing(O,m0) =#
+      #=   Q = NfOrdQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 187500000 =#
@@ -188,7 +188,7 @@
       #= @testset "m0 = <60>" begin =#
       #=   println("m0 = <60>") =#
       #=   m0 = ideal(O,O(60)) =#
-      #=   Q = NfMaxOrdQuoRing(O,m0) =#
+      #=   Q = NfOrdQuoRing(O,m0) =#
       #=   G = domain(Hecke.multiplicative_group(Q)) =#
       #=   println(snf(G)[1].snf) =#
       #=   @test order(G) == 14155776*fmpz(10)^14 =#
@@ -215,10 +215,10 @@
 
       @testset "m0 = <$n>" for n in 1:150
         m0 = ideal(O,O(n))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
         @test length(gens) == length(structure)
-        @test typeof(gens) == Vector{NfMaxOrdQuoRingElem}
+        @test typeof(gens) == Vector{NfOrdQuoRingElem}
         for i in 1:length(gens)
           @test verify_order(gens[i],structure[i])
         end
@@ -246,7 +246,7 @@
 
       @testset "m0 = <$n>" for n in 1:100
         m0 = ideal(O,O(n))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
         @test length(gens) == length(structure)
         for i in 1:length(gens)
@@ -274,7 +274,7 @@
 
       @testset "m0 = <2>" begin
         m0 = ideal(O,O(2))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
         @test length(gens) == length(structure)
         for i in 1:length(gens)
@@ -300,7 +300,7 @@
 
       @testset "m0 = <4>" begin
         m0 = ideal(O,O(4))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
         @test length(gens) == length(structure)
         for i in 1:length(gens)
@@ -326,7 +326,7 @@
 
       @testset "m0 = <5>" begin
         m0 = ideal(O,O(5))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
         @test length(gens) == length(structure)
         for i in 1:length(gens)
@@ -352,7 +352,7 @@
 
       @testset "m0 = <20>" begin
         m0 = ideal(O,O(20))
-        Q = NfMaxOrdQuoRing(O,m0)
+        Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
         @test length(gens) == length(structure)
         for i in 1:length(gens)
@@ -399,7 +399,7 @@
         H = Hecke.multgrp_of_cyclic_grp(fmpz(pnum)^v)
         @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
-        Q = NfMaxOrdQuoRing(O,p^v)
+        Q = NfOrdQuoRing(O,p^v)
         for bas in g
           for exp in [-1,1,6]
             el = Q(bas)^exp
@@ -427,7 +427,7 @@
           @test verify_order(gens[i],p^v,structure[i])
         end
         # Test discrete logarithm
-        Q = NfMaxOrdQuoRing(O,p^v)
+        Q = NfOrdQuoRing(O,p^v)
         for bas in gens
           for exp in [-1,0,1,2]
             el = Q(bas)^exp
@@ -460,7 +460,7 @@
         H = DiagonalGroup(structures[v])
         @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
-        Q = NfMaxOrdQuoRing(O,p^v)
+        Q = NfOrdQuoRing(O,p^v)
         for bas in g
           for exp in [-2,1,3]
             el = Q(bas)^exp
@@ -493,7 +493,7 @@
         H = DiagonalGroup(structures[v])
         @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
-        Q = NfMaxOrdQuoRing(O,p^v)
+        Q = NfOrdQuoRing(O,p^v)
         for bas in g
           for exp in [-4,1,6]
             el = Q(bas)^exp
@@ -526,7 +526,7 @@
         H = DiagonalGroup(structures[v])
         @test Hecke.isisomorphic(G,H)
         # Test discrete logarithm
-        Q = NfMaxOrdQuoRing(O,p^v)
+        Q = NfOrdQuoRing(O,p^v)
         for bas in g
           for exp in [-1,0,1,6]
             el = Q(bas)^exp
@@ -553,7 +553,7 @@
         p = ideal(O,O(pnum))
         #p = collect(keys(factor(p)))[1]
         g , n , dlog = Hecke._multgrp_mod_p(p)
-        @test isa(g,NfOrdElem{NfMaxOrd})
+        @test isa(g,NfOrdElem)
         @test isa(n,fmpz)
         @test order(p) == O
         @test n == pnum-1
@@ -568,20 +568,20 @@
       K, a = NumberField(x^2-2,"a");
       O = maximal_order(K)
 
-      primeideals = Vector{Hecke.NfMaxOrdIdl}()
+      primeideals = Vector{Hecke.NfOrdIdl}()
       for pnum in [ x for x in 1:40 if isprime(fmpz(x))]
         append!(primeideals,collect(keys(factor(ideal(O,O(pnum))))))
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
         g , n , dlog = Hecke._multgrp_mod_p(p)
-        @test isa(g,NfOrdElem{NfMaxOrd})
+        @test isa(g,NfOrdElem)
         @test order(p) == O
         @test isa(n,fmpz)
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g,p,n)
-        Q = NfMaxOrdQuoRing(O,p)
+        Q = NfOrdQuoRing(O,p)
         for exp in [0,1,2,n-2,n-1,n]
           @test dlog((Q(g)^exp).elem) == mod(fmpz(exp),n)
         end
@@ -592,20 +592,20 @@
       K, a = NumberField(x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20,"a");
       O = maximal_order(K)
 
-      primeideals = Vector{Hecke.NfMaxOrdIdl}()
+      primeideals = Vector{Hecke.NfOrdIdl}()
       for pnum in [ x for x in 1:20 if isprime(fmpz(x)) ]
         append!(primeideals,collect(keys(factor(ideal(O,O(pnum))))))
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
         g , n , dlog = Hecke._multgrp_mod_p(p)
-        @test isa(g,NfOrdElem{NfMaxOrd})
+        @test isa(g,NfOrdElem)
         @test order(p) == O
         @test isa(n,fmpz)
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g,p,n)
-        Q = NfMaxOrdQuoRing(O,p)
+        Q = NfOrdQuoRing(O,p)
         for exp in [24,n-345]
           @test dlog((Q(g)^exp).elem) == mod(fmpz(exp),n)
         end
@@ -616,20 +616,20 @@
       K, a = NumberField(x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1,"a");
       O = maximal_order(K)
 
-      primeideals = Vector{Hecke.NfMaxOrdIdl}()
+      primeideals = Vector{Hecke.NfOrdIdl}()
       for pnum in [2,3,5,11]
         append!(primeideals,collect(keys(factor(ideal(O,O(pnum))))))
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
         g , n , dlog = Hecke._multgrp_mod_p(p)
-        @test isa(g,NfOrdElem{NfMaxOrd})
+        @test isa(g,NfOrdElem)
         @test isa(n,fmpz)
         @test order(p) == O
         @test !iszero(g)
         @test !(g in p)
         @test verify_order(g,p,n)
-        Q = NfMaxOrdQuoRing(O,p)
+        Q = NfOrdQuoRing(O,p)
         for exp in [50,n-30]
           @test dlog((Q(g)^exp).elem) == mod(fmpz(exp),n)
         end
@@ -655,7 +655,7 @@
           # Test generators
           for i in 1:length(g)
             if(D[i] != 1)
-              @test isa(g[i],NfOrdElem{NfMaxOrd})
+              @test isa(g[i],NfOrdElem)
               @test parent(g[i]) == O
               @test g[i]-1 in p
               @test verify_order(g[i],p^v,D[i])
@@ -671,7 +671,7 @@
             @test Hecke.isisomorphic(G,J)
           end
           # Test discrete logarithm
-          Q = NfMaxOrdQuoRing(O,p^v)
+          Q = NfOrdQuoRing(O,p^v)
           for bas in g
             for exp in -1:2
               el = Q(bas)^exp
@@ -690,7 +690,7 @@
         K, a = NumberField(x^2 - 2,"a")
         O = maximal_order(K)
 
-        primeideals = Vector{Hecke.NfMaxOrdIdl}()
+        primeideals = Vector{Hecke.NfOrdIdl}()
         for pnum in [2,3,5,7,19]
           fac = factor(ideal(O,O(pnum)))
           ks = collect(keys(fac))
@@ -704,7 +704,7 @@
           # Test generators
           for i in 1:length(g)
             if(D[i] != 1)
-              @test isa(g[i],NfOrdElem{NfMaxOrd})
+              @test isa(g[i],NfOrdElem)
               @test parent(g[i]) == O
               @test g[i]-1 in p
               @test verify_order(g[i],p^v,D[i])
@@ -717,7 +717,7 @@
             @test Hecke.isisomorphic(G,J)
           end
           # Test discrete logarithm
-          Q = NfMaxOrdQuoRing(O,p^v)
+          Q = NfOrdQuoRing(O,p^v)
           for bas in g
             for exp in [-1,1,2]
               el = Q(bas)^exp
@@ -737,7 +737,7 @@
         K, a = NumberField(f,"a")
         O = maximal_order(K)
 
-        primeideals = Vector{Hecke.NfMaxOrdIdl}()
+        primeideals = Vector{Hecke.NfOrdIdl}()
         for pnum in [2,11,13]
           fac = factor(ideal(O,O(pnum)))
           ks = collect(keys(fac))
@@ -751,7 +751,7 @@
           # Test generators
           for i in 1:length(g)
             if(D[i] != 1)
-              @test isa(g[i],NfOrdElem{NfMaxOrd})
+              @test isa(g[i],NfOrdElem)
               @test parent(g[i]) == O
               @test g[i]-1 in p
               @test verify_order(g[i],p^v,D[i])
@@ -764,7 +764,7 @@
             @test Hecke.isisomorphic(G,J)
           end
           # Test discrete logarithm
-          Q = NfMaxOrdQuoRing(O,p^v)
+          Q = NfOrdQuoRing(O,p^v)
           for bas in g
             for exp in [-1,2]
               el = Q(bas)^exp

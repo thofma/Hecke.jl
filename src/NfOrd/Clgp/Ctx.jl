@@ -54,7 +54,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   return clg
 end
 
-function class_group_init(O::NfMaxOrd, B::Int;
+function class_group_init(O::NfOrd, B::Int;
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
 
