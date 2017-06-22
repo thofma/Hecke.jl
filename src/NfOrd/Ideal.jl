@@ -125,28 +125,37 @@ function show_gen(io::IO, a::NfOrdIdl)
 end
 
 function show_maximal(io::IO, id::NfOrdIdl)
-  if has_2_elem(id)
-    print(io, "<", id.gen_one, ", ", id.gen_two, ">" )
+  compact = get(io, :compact, false)
+  if compact
+    if has_2_elem(id)
+      print(io, "<", id.gen_one, ", ", id.gen_two, ">" )
+    else
+      print(io, "<no 2-elts present>");
+    end
   else
-    print(io, "<no 2-elts present>");
-  end
-  if has_norm(id)
-    print(io, "\nNorm: ", id.norm);
-  end
-  if has_minimum(id)
-    print(io, "\nMinimum: ", id.minimum);
-  end
-  if isdefined(id, :princ_gen)
-    print(io, "\nprincipal generator ", id.princ_gen)
-  end
-   if isdefined(id, :basis_mat)
-     print(io, "\nbasis_mat \n", id.basis_mat)
-   end
-  if isdefined(id, :gens_normal)
-    print(io, "\ntwo normal wrt: ", id.gens_normal)
+    if has_2_elem(id)
+      print(io, "<", id.gen_one, ", ", id.gen_two, ">" )
+    else
+      print(io, "<no 2-elts present>");
+    end
+
+    if has_norm(id)
+      print(io, "\nNorm: ", id.norm);
+    end
+    if has_minimum(id)
+      print(io, "\nMinimum: ", id.minimum);
+    end
+    if isdefined(id, :princ_gen)
+      print(io, "\nprincipal generator ", id.princ_gen)
+    end
+     if isdefined(id, :basis_mat)
+       print(io, "\nbasis_mat \n", id.basis_mat)
+     end
+    if isdefined(id, :gens_normal)
+      print(io, "\ntwo normal wrt: ", id.gens_normal)
+    end
   end
 end
-
 
 ################################################################################
 #
