@@ -585,6 +585,7 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          with_trafo ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
+      simplify_exact(H.coeffs[k])
       with_trafo ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
@@ -624,7 +625,9 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
             end
          end
          H.coeffs[j] = a*b//d
+         simplify_exact(H.coeffs[j])
          H.coeffs[k] = d
+         simplify_exact(H.coeffs[k])
       end
       k += 1
    end
@@ -672,4 +675,167 @@ function _in_span(v::Vector{nf_elem}, P::PMat)
       end
    end
    return true, x
+end
+
+
+function pseudo_hnf_kb(P::PMat)
+   return _pseudo_hnf_kb(P, Val{false})
+end
+
+function pseudo_hnf_kb_with_trafo(P::PMat)
+   return _pseudo_hnf_kb(P, Val{true})
+end
+
+function _pseudo_hnf_kb{T}(P::PMat, trafo::Type{Val{T}} = Val{false})
+   H = deepcopy(P)
+   m = rows(H)
+   if trafo == Val{true}
+      U = eye(H.matrix, m)
+      pseudo_hnf_kb!(H, U, true)
+      return H, U
+   else
+      U = similar(H.matrix, 0, 0)
+      pseudo_hnf_kb!(H, U, false)
+      return H
+   end
+end
+
+function kb_search_first_pivot(H::PMat, start_element::Int = 1)
+   for r = start_element:rows(H)
+      for c = start_element:cols(H)
+         if !iszero(H.matrix[r,c])
+            return r, c
+         end
+      end
+   end
+   return 0, 0
+end
+
+function kb_sort_rows!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1)
+   m = rows(H)
+   n = cols(H)
+   pivot2 = zeros(Int, m)
+   for i = 1:n
+      if pivot[i] == 0
+         continue
+      end
+      pivot2[pivot[i]] = i
+   end
+
+   r1 = start_element
+   for i = start_element:n
+      r2 = pivot[i]
+      if r2 == 0
+         continue
+      end
+      if r1 != r2
+         swap_rows!(H, r1, r2)
+         with_trafo ? swap_rows!(U, r1, r2) : nothing
+         p = pivot2[r1]
+         pivot[i] = r1
+         if p != 0
+            pivot[p] = r2
+         end
+         pivot2[r1] = i
+         pivot2[r2] = p
+      end
+      r1 += 1
+      if r1 == m
+         break
+      end
+   end
+   return nothing
+end
+
+function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
+   m = rows(H)
+   n = cols(H)
+   A = H.matrix
+   K = base_ring(A)
+   pivot = zeros(Int, n)
+   row1, col1 = kb_search_first_pivot(H, start_element)
+   if row1 == 0
+      return nothing
+   end
+   pivot[col1] = row1
+   pivot_max = col1
+   H.coeffs[row1] = H.coeffs[row1]*A[row1, col1]
+   with_trafo ? divide_row!(U, row1, A[row1, col1]) : nothing
+   divide_row!(A, row1, A[row1, col1])
+   t = K()
+   t1 = K()
+   t2 = K()
+   for i=row1:m-1
+      new_pivot = false
+      for j = start_element:pivot_max
+         if iszero(A[i+1,j])
+            continue
+         end
+         if pivot[j] == 0
+            pivot[j] = i+1
+            pivot_max = max(pivot_max, j)
+            new_pivot = true
+            H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
+            simplify_exact(H.coeffs[i+1])
+            with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
+            divide_row!(A, i+1, A[i+1, j])
+         else
+            p = pivot[j]
+            Aij = deepcopy(A[i+1, j])
+            a = H.coeffs[i+1]
+            aa = Aij*a
+            b = H.coeffs[p]
+            d = aa + b
+            ad = aa//d
+            simplify_exact(ad)
+            bd = b//d
+            simplify_exact(bd)
+            if ad.den != 1 || bd.den != 1
+               error("Ideals are not integral.")
+            end
+            u, v = map(K, idempotents(ad.num, bd.num))
+            u = divexact(u, Aij)
+            for c = j:n
+               t = deepcopy(A[i+1, c])
+               t1 = mul!(t1, A[p, c], -Aij)
+               A[i+1, c] = addeq!(A[i+1, c], t1)
+               t1 = mul!(t1, t, u)
+               t2 = mul!(t2, A[p, c], v)
+               A[p, c] = add!(A[p, c], t1, t2)
+            end
+            if with_trafo
+               for c = 1:m
+                  t = deepcopy(U[i+1, c])
+                  t1 = mul!(t1, U[p, c], -Aij)
+                  U[i+1, c] = addeq!(U[i+1, c], t1)
+                  t1 = mul!(t1, t, u)
+                  t2 = mul!(t2, U[p, c], v)
+                  U[p, c] = add!(U[p, c], t1, t2)
+               end
+            end
+            H.coeffs[i+1] = a*b//d
+            simplify_exact(H.coeffs[i+1])
+            H.coeffs[p] = d
+            simplify_exact(H.coeffs[p])
+         end
+         if new_pivot
+            break
+         end
+      end
+      if !new_pivot
+         for c = pivot_max+1:n
+            if !iszero(A[i+1,c])
+               pivot[c] = i+1
+               pivot_max = max(pivot_max, c)
+               H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
+               simplify_exact(H.coeffs[i+1])
+               with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
+               divide_row!(A, i+1, A[i+1, c])
+               break
+            end
+         end
+      end
+   end
+   kb_sort_rows!(H, U, pivot, with_trafo, start_element)
+   return nothing
 end
