@@ -580,3 +580,25 @@ function integral_split(A::NfOrdFracIdl)
   return num(n), num(d)
 end
 
+doc"""
+    factor(I::NfOrdFracIdl) -> Dict{NfOrdIdl, Int}
+> The factorisation of $I$.
+"""
+function factor(I::NfOrdFracIdl)
+  n, d = integral_split(I)
+  fn = factor(n)
+  fd = factor(d)
+  for (k, v) = fd
+    if haskey(fn, k)
+      fn[k] -= v
+    else
+      fn[k] = -v
+    end
+  end  
+  return fn  
+end
+
+function one(A::NfOrdIdl)
+  return NfOrdFracIdl(ideal(order(A), 1), fmpz(1))
+end
+
