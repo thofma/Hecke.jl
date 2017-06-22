@@ -3,10 +3,10 @@
 ################################################################################
 
 doc"""
-    power_class(A::NfMaxOrdIdl, e::fmpz) -> NfMaxOrdIdl
+    power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
 > Computes a (small) ideal in the same class as $A^e$
 """
-function power_class(A::NfMaxOrdIdl, e::fmpz)
+function power_class(A::NfOrdIdl, e::fmpz)
   if e == 0
     O = order(A)
     return ideal(O, parent(basis_mat(O).num)(1))
@@ -36,10 +36,10 @@ function power_class(A::NfMaxOrdIdl, e::fmpz)
 end
 
 doc"""
-    power_product_class(A::Array{NfMaxOrdIdl, 1}, e::Array{fmpz, 1}) -> NfMaxOrdIdl
+    power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1}) -> NfOrdIdl
 > Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
-function power_product_class(A::Array{NfMaxOrdIdl, 1}, e::Array{fmpz, 1})
+function power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1})
   i = 1
   while i <= length(e) && e[i] == 0
     i += 1
@@ -99,11 +99,11 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
 end
 
 doc"""
-    class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{fmpz}
+    class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{fmpz}
 > Finds a number field element $\alpha$ such that $\alpha I$ factors over
 > the factor base in $c$.
 """
-function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
+function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   #easy case: I factors over the FB...
   # should be done for a factor base, not the class group ctx.
   # the ctx is needed for the small_elements buisness
@@ -135,7 +135,7 @@ function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
 #  println("have to work")
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
-  J = NfMaxOrdIdl[]
+  J = NfOrdIdl[]
   use_rand = false
   last_j = I
   while true
@@ -169,7 +169,7 @@ function class_group_ideal_relation(I::NfMaxOrdIdl, c::ClassGrpCtx)
 end
 
 
-function class_group_disc_log(I::NfMaxOrdIdl, c::ClassGrpCtx)
+function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   q, w = class_group_ideal_relation(I, c)
 #  J = simplify(q*I)
 #  H = prod([v<0?inv(c.FB.ideals[p])^Int(-v):c.FB.ideals[p]^Int(v) for (p,v) = w])
@@ -180,7 +180,7 @@ function class_group_disc_log(I::NfMaxOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-type MapClassGrp{T} <: Map{T, NfMaxOrdIdlSet}
+type MapClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
 
   function MapClassGrp()
@@ -243,10 +243,10 @@ end
 #TODO: if an ideal is principal, store it on the ideal!!!
 
 doc"""
-    principal_gen_fac_elem(A::NfMaxOrdIdl) -> FacElem{nf_elem, NumberField}
+    principal_gen_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
 > For a principal ideal $A$, find a generator in factored form.
 """
-function principal_gen_fac_elem(A::NfMaxOrdIdl)
+function principal_gen_fac_elem(A::NfOrdIdl)
   fl, e = isprincipal_fac_elem(A)
   if !fl
     error("Ideal is not principal")
@@ -255,10 +255,10 @@ function principal_gen_fac_elem(A::NfMaxOrdIdl)
 end
 
 doc"""
-    principal_gen(A::NfMaxOrdIdl) -> NfOrdElem
+    principal_gen(A::NfOrdIdl) -> NfOrdElem
 > For a principal ideal $A$, find a generator.
 """
-function principal_gen(A::NfMaxOrdIdl)
+function principal_gen(A::NfOrdIdl)
   O = order(A)
   fl, e = isprincipal_fac_elem(A)
   if !fl
@@ -268,12 +268,12 @@ function principal_gen(A::NfMaxOrdIdl)
 end
 
 doc"""
-    isprincipal_fac_elem(A::NfMaxOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
+    isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
 > Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 > \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
 > The generator will be in factored form.
 """
-function isprincipal_fac_elem(A::NfMaxOrdIdl)
+function isprincipal_fac_elem(A::NfOrdIdl)
   O = order(A)
   c = _get_ClassGrpCtx_of_order(O)
 
@@ -307,11 +307,11 @@ function isprincipal_fac_elem(A::NfMaxOrdIdl)
 end
 
 doc"""
-    isprincipal(A::NfMaxOrdIdl) -> Bool, NfOrdElem
+    isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
 > Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 > \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
 """
-function isprincipal(A::NfMaxOrdIdl)
+function isprincipal(A::NfOrdIdl)
   O = order(A)
   fl, a = isprincipal_fac_elem(A)
   return fl, O(evaluate(a))
@@ -359,7 +359,7 @@ end
 
 type MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::MapHeader
-  idl::Array{NfMaxOrdIdl, 1}
+  idl::Array{NfOrdIdl, 1}
 
   function MapSUnitModUnitGrpFacElem()
     return new()
@@ -376,13 +376,13 @@ end
 #  saturate T|-d??
 
 doc"""
-    sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1}) -> GrpAb, Map
+    sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 > by $I$, ie. the group of non-zero field elements which are only divisible
 > by ideals in $I$ modulo the units of the field.
 > The map will return elements in factored form.
 """
-function sunit_mod_units_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
+function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #deal with trivial case somehow!!!
   O = order(I[1])
 
@@ -473,7 +473,7 @@ end
 
 type MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::MapHeader
-  idl::Array{NfMaxOrdIdl, 1}
+  idl::Array{NfOrdIdl, 1}
 
   function MapSUnitGrpFacElem()
     return new()
@@ -485,13 +485,13 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
 end
 
 doc"""
-    sunit_group_fac_elem(I::Array{NfMaxOrdIdl, 1}) -> GrpAb, Map
+    sunit_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 > by $I$, ie. the group of non-zero field elements which are only divisible
 > by ideals in $I$.
 > The map will return elements in factored form.
 """
-function sunit_group_fac_elem(I::Array{NfMaxOrdIdl, 1})
+function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   O = order(I[1])
   S, mS = sunit_mod_units_group_fac_elem(I)
   U, mU = unit_group_fac_elem(O)
@@ -525,7 +525,7 @@ end
 
 type MapSUnitGrp{T} <: Map{T, AnticNumberField}
   header::MapHeader
-  idl::Array{NfMaxOrdIdl, 1}
+  idl::Array{NfOrdIdl, 1}
 
   function MapSUnitGrp()
     return new()
@@ -537,12 +537,12 @@ function show(io::IO, mC::MapSUnitGrp)
 end
 
 doc"""
-    sunit_group(I::Array{NfMaxOrdIdl, 1}) -> GrpAb, Map
+    sunit_group(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 > by $I$, ie. the group of non-zero field elements which are only divisible
 > by ideals in $I$.
 """
-function sunit_group(I::Array{NfMaxOrdIdl, 1})
+function sunit_group(I::Array{NfOrdIdl, 1})
   O = order(I[1])
   G, mG = sunit_group_fac_elem(I)
 

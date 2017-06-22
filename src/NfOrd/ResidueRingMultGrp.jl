@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfMaxOrd/ResidueRingMultGrp.jl : Multiplicative group of Residue Rings
+#  NfOrd/ResidueRingMultGrp.jl : Multiplicative group of Residue Rings
 #
 ################################################################################
 
@@ -14,13 +14,13 @@ export multiplicative_group, multiplicative_group_generators
 
 doc"""
 ***
-    multiplicative_group(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfMaxOrdQuoRing}
-    unit_group(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfMaxOrdQuoRing}
+    multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfOrdQuoRing}
+    unit_group(Q::NfOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfOrdQuoRing}
 
 > Returns the unit group of $Q$ as an abstract group $A$ and
 > an isomorphism map $f \colon A \to Q^\times$.
 """
-function multiplicative_group(Q::NfMaxOrdQuoRing)
+function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
     gens , structure , disc_log = _multgrp(Q)
     Q.multiplicative_group = AbToResRingMultGrp(Q,gens,structure,disc_log)
@@ -28,23 +28,23 @@ function multiplicative_group(Q::NfMaxOrdQuoRing)
   mQ = Q.multiplicative_group
   return domain(mQ), mQ
 end
-unit_group(Q::NfMaxOrdQuoRing) = multiplicative_group(Q)
+
+unit_group(Q::NfOrdQuoRing) = multiplicative_group(Q)
 
 doc"""
 ***
-    multiplicative_group_generators(Q::NfMaxOrdQuoRing) -> Vector{NfMaxOrdQuoRingElem}
+    multiplicative_group_generators(Q::NfOrdQuoRing) -> Vector{NfOrdQuoRingElem}
 
 > Return a set of generators for $Q^\times$.
 """
-function multiplicative_group_generators(Q::NfMaxOrdQuoRing)
+function multiplicative_group_generators(Q::NfOrdQuoRing)
   return multiplicative_group(Q).generators
 end
 
-
-function factor(Q::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
   if !all(isprime, keys(Q.fac))
     S = factor_coprime(Q)
-    fac = Dict{NfMaxOrdIdl, Int}()
+    fac = Dict{NfOrdIdl, Int}()
     for (p, e)=S
       lp = factor(p)
       for q = keys(lp)
@@ -56,6 +56,7 @@ function factor(Q::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   end
   return fac
 end
+
 ################################################################################
 #
 #  Internals
@@ -64,16 +65,17 @@ end
 
 doc"""
 ***
-    _multgrp(Q::NfMaxOrdQuoRing) -> (Vector{NfMaxOrdQuoRingElem}, Vector{fmpz}, Function)
+    _multgrp(Q::NfOrdQuoRing) -> (Vector{NfOrdQuoRingElem}, Vector{fmpz}, Function)
 
 > Return generators, the snf structure and a discrete logarithm function for $Q^\times$.
 """
-function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
-  gens = Vector{NfMaxOrdQuoRingElem}()
+function _multgrp(Q::NfOrdQuoRing; method=nothing)
+  gens = Vector{NfOrdQuoRingElem}()
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   i = ideal(Q)
   fac = factor(i)
+  Q.factor = fac
   # TODO calculate each primepower only once
   for (p,vp) in fac
     gens_p , struct_p , dlog_p = _multgrp_mod_pv(p,vp;method=method)
@@ -89,8 +91,8 @@ function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
       alpha, beta = extended_euclid(pvp,i_without_p)
       for i in 1:length(gens_p)
         g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfMaxOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
-        @hassert :NfMaxOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
         gens_p[i] = g_pi_new
       end
     end
@@ -102,7 +104,7 @@ function _multgrp(Q::NfMaxOrdQuoRing; method=nothing)
   end
 
 
-  discrete_logarithm = function(x::NfMaxOrdQuoRingElem)
+  discrete_logarithm = function(x::NfOrdQuoRingElem)
     result = Vector{fmpz}()
     for dlog in disc_logs
       append!(result,dlog(x.elem))
@@ -126,19 +128,19 @@ end
 
 doc"""
 ***
-    _multgrp_mod_pv(p::NfMaxOrdIdl, v) -> (Vector{NfOrdElem{NfMaxOrd}}, Vector{fmpz}, Function)
+    _multgrp_mod_pv(p::NfOrdIdl, v) -> (Vector{NfOrdElem}, Vector{fmpz}, Function)
 
 > Given a prime ideal $p$ in a maximal order $\mathcal O$ and an integer $v > 0$, return generators,
 > the group structure and a discrete logarithm function for $(\mathcal O/p^v)^\times$.
 """
-function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _multgrp_mod_pv(p::NfOrdIdl, v; method=nothing)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
   gen_p, n_p, dlog_p = _multgrp_mod_p(p)
   if v == 1
     gens = [gen_p]
     structt = [n_p]
-    discrete_logarithm = function(x::NfOrdElem{NfMaxOrd}) return [dlog_p(x)] end
+    discrete_logarithm = function(x::NfOrdElem) return [dlog_p(x)] end
   else
     gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,v;method=method)
     obcs = prod(Set(struct_pv)) # order of biggest cyclic subgroup
@@ -148,7 +150,7 @@ function _multgrp_mod_pv(p::NfMaxOrdIdl, v; method=nothing)
     structt = [[n_p] ; struct_pv]
 
     obcs_inv = gcdx(obcs,n_p)[2]
-    discrete_logarithm = function(x::NfOrdElem{NfMaxOrd})
+    discrete_logarithm = function(x::NfOrdElem)
       r = mod(dlog_p(x)*obcs_inv,n_p)
       x *= g_p_obcs^mod(-r,n_p)
       return [[r] ; dlog_pv(x)]
@@ -164,20 +166,20 @@ end
 ################################################################################
 
 # Compute (O_K/p)*
-function _multgrp_mod_p(p::NfMaxOrdIdl)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _multgrp_mod_p(p::NfOrdIdl)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
-  Q = NfMaxOrdQuoRing(O,p)
+  Q = NfOrdQuoRing(O,p)
   gen_quo = Q(gen)
   factor_n = factor(n)
-  discrete_logarithm = function(x::NfOrdElem{NfMaxOrd}) pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n) end
+  discrete_logarithm = function(x::NfOrdElem) pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n) end
   return gen , n, discrete_logarithm
 end
 
-function _primitive_element_mod_p(p::NfMaxOrdIdl)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _primitive_element_mod_p(p::NfOrdIdl)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
   Q , Q_map = quo(O,p)
   n = norm(p) - 1
@@ -204,8 +206,8 @@ end
 ################################################################################
 
 # Compute (1+p)/(1+p^v)
-function _1_plus_p_mod_1_plus_pv(p::NfMaxOrdIdl, v; method=nothing)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v; method=nothing)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
   if method == :one_unit
     gens = nothing
@@ -242,19 +244,19 @@ end
 #
 ################################################################################
 
-function _iterative_method(p::NfMaxOrdIdl, v; base_method=nothing, use_p_adic=true)
+function _iterative_method(p::NfOrdIdl, v; base_method=nothing, use_p_adic=true)
   return _iterative_method(p,1,v;base_method=base_method,use_p_adic=use_p_adic)
 end
 
-function _iterative_method(p::NfMaxOrdIdl, u, v; base_method=nothing, use_p_adic=true)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=true)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= u >= 1
   pnum = minimum(p)
   if use_p_adic
-    e = myvaluation(pnum,p)
+    e = valuation(pnum,p)
     k0 = 1 + div(fmpz(e),(pnum-1))
   end
-  g = Vector{NfOrdElem{NfMaxOrd}}()
+  g = Vector{NfOrdElem}()
   M = MatrixSpace(ZZ,0,0)()
   dlogs = Vector{Function}()
 
@@ -292,8 +294,8 @@ function _iterative_method(p::NfMaxOrdIdl, u, v; base_method=nothing, use_p_adic
     push!(dlogs,disc_log)
   end
 
-  discrete_logarithm = function(b::NfOrdElem{NfMaxOrd})
-    Q = NfMaxOrdQuoRing(order(pl),pl)
+  discrete_logarithm = function(b::NfOrdElem)
+    Q = NfOrdQuoRing(order(pl),pl)
     b = Q(b)
     a = []
     k = 1
@@ -310,7 +312,7 @@ function _iterative_method(p::NfMaxOrdIdl, u, v; base_method=nothing, use_p_adic
     return a
   end
 
-  #g :: Vector{NfOrdElem{NfMaxOrd}}
+  #g :: Vector{NfOrdElem}
   #M :: fmpz_mat
   #discrete_logarithm :: Function
 
@@ -343,7 +345,7 @@ function _compute_P(g,M,h,N,disc_log,pl)
   O = order(pl)
   O_mod_pl , O_mod_pl_map = quo(O,pl)
 
-  Mg = Vector{NfOrdElem{NfMaxOrd}}(length(g))
+  Mg = Vector{NfOrdElem}(length(g))
   for i in 1:rows(M)
     Mg[i] = preimage(O_mod_pl_map,prod([ O_mod_pl_map(g[j])^M[i,j] for j in 1:length(g)]))
   end
@@ -357,8 +359,8 @@ function _compute_P(g,M,h,N,disc_log,pl)
     end
   end
 
-  @hassert :NfMaxOrdQuoRing 2 Mg == begin
-    Ph = Vector{NfOrdElem{NfMaxOrd}}(rows(P))
+  @hassert :NfOrdQuoRing 2 Mg == begin
+    Ph = Vector{NfOrdElem}(rows(P))
     for i in 1:rows(P)
       Ph[i] = preimage(O_mod_pl_map,prod([ O_mod_pl_map(h[j])^P[i,j] for j in 1:length(h)]))
     end
@@ -375,7 +377,7 @@ function _pu_mod_pv(pu,pv)
   return h,N
 end
 
-function _ideal_disc_log(x::NfOrdElem{NfMaxOrd}, basis_mat_inv::FakeFmpqMat)
+function _ideal_disc_log(x::NfOrdElem, basis_mat_inv::FakeFmpqMat)
   x_vector = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
   x_fakemat = FakeFmpqMat(x_vector, fmpz(1))
   res_fakemat = x_fakemat * basis_mat_inv
@@ -385,7 +387,7 @@ function _ideal_disc_log(x::NfOrdElem{NfMaxOrd}, basis_mat_inv::FakeFmpqMat)
   return vec(Array(res_mat))
 end
 
-function _ideal_disc_log(x::NfOrdElem{NfMaxOrd}, ideal::NfMaxOrdIdl)
+function _ideal_disc_log(x::NfOrdElem, ideal::NfOrdIdl)
   parent(x) != order(ideal) && error("Order of element and ideal must be equal")
   return _ideal_disc_log(x, basis_mat_inv(ideal))
 end
@@ -393,15 +395,15 @@ end
 # Let p be a prime ideal above a prime number pnum. Let e = v_p(pnum) be
 # its ramification index. If b > a >= e/(pnum-1) this function computes
 # the structure of (1+p^a)/(1+p^b) as an abelian group.
-function _1_plus_pa_mod_1_plus_pb_structure(p::NfMaxOrdIdl,a,b)
+function _1_plus_pa_mod_1_plus_pb_structure(p::NfOrdIdl,a,b)
   b > a >= 1 || return false, nothing
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
   pnum = minimum(p)
-  e = myvaluation(O(pnum),p)
+  e = valuation(O(pnum),p)
   k0 = 1 + div(fmpz(e),(pnum-1))
   a >= k0 || return false, nothing
-  Q = NfMaxOrdQuoRing(O,p^(b-a))
+  Q = NfOrdQuoRing(O,p^(b-a))
   return true, group_structure(Q)
 end
 
@@ -413,8 +415,8 @@ end
 
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v), where 2*u >= v >= u >= 1
-function _quadratic_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _quadratic_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   @assert 2*u >= v >= u >= 1
   g,M = _pu_mod_pv(pu,pv)
   map!(x->x+1,g)
@@ -432,8 +434,8 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v), where p is a prime ideal over pnum
 # and pnum*u >= v >= u >= 1
-function _artin_hasse_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+function _artin_hasse_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
   g,M = _pu_mod_pv(pu,pv)
@@ -442,15 +444,15 @@ function _artin_hasse_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
   return g, M, discrete_logarithm
 end
 
-function artin_hasse_exp(pl::NfMaxOrdIdl, x::NfOrdElem{NfMaxOrd})
+function artin_hasse_exp(pl::NfOrdIdl, x::NfOrdElem)
   @assert order(pl) == parent(x)
   O = order(pl)
-  Q = NfMaxOrdQuoRing(O,pl)
+  Q = NfOrdQuoRing(O,pl)
   x = Q(x)
   return artin_hasse_exp(x).elem
 end
 
-function artin_hasse_exp(x::NfMaxOrdQuoRingElem)
+function artin_hasse_exp(x::NfOrdQuoRingElem)
   Q = parent(x)
   pl = ideal(Q)
   fac = factor(minimum(pl))
@@ -465,15 +467,15 @@ function artin_hasse_exp(x::NfMaxOrdQuoRingElem)
   return s
 end
 
-function artin_hasse_log(y::NfOrdElem{NfMaxOrd}, pl::NfMaxOrdIdl)
+function artin_hasse_log(y::NfOrdElem, pl::NfOrdIdl)
   @assert order(pl) == parent(y)
   O = order(pl)
-  Q = NfMaxOrdQuoRing(O,pl)
+  Q = NfOrdQuoRing(O,pl)
   y = Q(y)
   return artin_hasse_log(y).elem
 end
 
-function artin_hasse_log(y::NfMaxOrdQuoRingElem)
+function artin_hasse_log(y::NfOrdQuoRingElem)
   Q = parent(y)
   pl = ideal(Q)
   fac = factor(minimum(pl))
@@ -496,18 +498,18 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p)/(1+p^v) if 1 >= k0, where p is a prime ideal over pnum,
 # e the p-adic valuation of pnum, and k0 = 1 + div(e,pnum-1)
-function _p_adic_method(p::NfMaxOrdIdl, v; pv=p^v)
+function _p_adic_method(p::NfOrdIdl, v; pv=p^v)
   return _p_adic_method(p,1,v)
 end
 
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v) if u >= k0, where p is a prime ideal over pnum,
 # e the p-adic valuation of pnum, and k0 = 1 + div(e,pnum-1)
-function _p_adic_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
+function _p_adic_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
   @assert v > u >= 1
-  @hassert :NfMaxOrdQuoRing 2 isprime(p)
+  @hassert :NfOrdQuoRing 2 isprime(p)
   pnum = minimum(p)
-  e = myvaluation(pnum,p)
+  e = valuation(pnum,p)
   k0 = 1 + div(fmpz(e),(pnum-1))
   @assert u >= k0
   g,M = _pu_mod_pv(pu,pv)
@@ -516,16 +518,17 @@ function _p_adic_method(p::NfMaxOrdIdl, u, v; pu=p^u, pv=p^v)
   return g, M, discrete_logarithm
 end
 
-function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
+function p_adic_exp(p::NfOrdIdl, v, x::NfOrdElem; pv=p^v)
   O = parent(x)
   x == 0 && return O(1)
-  Q = NfMaxOrdQuoRing(O,pv)
+  Q = NfOrdQuoRing(O,pv)
   pnum = minimum(p)
-  val_p_x = Hecke.myvaluation(x,p)
-  e = Hecke.myvaluation(pnum,p)
+  val_p_x = valuation(x,p)
+  e = valuation(pnum,p)
   max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
-  val_p_maximum = Int(max_i*val_p_x - e * Hecke.myvaluation(fac(1),p)) + 1
-  Q_ = NfMaxOrdQuoRing(O,p^val_p_maximum)
+  val_p_maximum = Int(max_i*val_p_x - e * valuation(fac(1),p)) + 1
+  valuation(fac(1), p)
+  Q_ = NfOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
   inc = 1
@@ -533,7 +536,7 @@ function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
   val_p_fac_i = 0
   i_old = 0
   for i in 1:max_i
-    val_pnum_i = Hecke.myvaluation(fmpz(i),pnum)
+    val_pnum_i = valuation(fmpz(i), pnum)
     val_p_i = val_pnum_i * e
     val_p_fac_i += val_p_i
     val_p_xi += val_p_x
@@ -546,10 +549,10 @@ function p_adic_exp(p::NfMaxOrdIdl, v, x::NfOrdElem{NfMaxOrd}; pv=p^v)
   return s.elem
 end
 
-function p_adic_exp2(x::NfMaxOrdQuoRingElem)
+function p_adic_exp2(x::NfOrdQuoRingElem)
   Q1 = parent(x)
   x = x.elem
-  Q = NfMaxOrdQuoRing(parent(x),ideal(Q1)^2) # TODO
+  Q = NfOrdQuoRing(parent(x),ideal(Q1)^2) # TODO
   x = Q(x)
   s = Q(1)
   i = 1
@@ -564,21 +567,21 @@ function p_adic_exp2(x::NfMaxOrdQuoRingElem)
   return Q1(s.elem)
 end
 
-function p_adic_log(p,v,y::NfOrdElem{NfMaxOrd};pv=p^v)
+function p_adic_log(p,v,y::NfOrdElem;pv=p^v)
   O = parent(y)
   y == 1 && return O(0)
-  Q = NfMaxOrdQuoRing(O,pv)
+  Q = NfOrdQuoRing(O,pv)
   pnum = minimum(p)
   x = y - 1
-  e = Hecke.myvaluation(pnum,p)
-  val_p_x = Hecke.myvaluation(x,p)
+  e = valuation(pnum, p)
+  val_p_x = valuation(x, p)
   s = zero(Q)
   xi = one(O)
   i_old = 0
   val_p_xi = 0
   pnum = Int(pnum)
   for i in [ 1:v ; (v+pnum-(v%pnum)):pnum:pnum*v ]
-    val_pnum_i = Hecke.myvaluation(i,pnum)
+    val_pnum_i = valuation(i, pnum)
     val_p_i = val_pnum_i * e
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
@@ -591,10 +594,10 @@ function p_adic_log(p,v,y::NfOrdElem{NfMaxOrd};pv=p^v)
   return s.elem
 end
 
-function p_adic_log2(y::NfMaxOrdQuoRingElem)
+function p_adic_log2(y::NfOrdQuoRingElem)
   Q1 = parent(y)
   y = y.elem
-  Q = NfMaxOrdQuoRing(parent(y),ideal(Q1)^2) # TODO
+  Q = NfOrdQuoRing(parent(y),ideal(Q1)^2) # TODO
   x = Q(y-1)
   s = Q(0)
   i = 1
@@ -620,17 +623,17 @@ doc"""
     snf_gens_rels_log(gens::Vector,
                       rels::fmpz_mat,
                       dlog::Function) -> (Vector, fmpz_mat, Function)
-    snf_gens_rels_log(gens::Vector{NfOrdElem{NfMaxOrd}},
+    snf_gens_rels_log(gens::Vector{NfOrdElem},
                       rels::fmpz_mat,
                       dlog::Function,
-                      i::NfMaxOrdIdl) -> (Vector{NfOrdElem{NfMaxOrd}}, fmpz_mat, Function)
+                      i::NfOrdIdl) -> (Vector{NfOrdElem}, fmpz_mat, Function)
 
 > Return the smith normal form of a mulitplicative group.
 
 > The group is represented by generators, a relationmatrix
 > and a function to compute the discrete logarithm with respect to the generators.
 > All trivial components of the group will be removed.
-> If the generators are of type `NfOrdElem{NfMaxOrd}` and an ideal `i` is supplied,
+> If the generators are of type `NfOrdElem` and an ideal `i` is supplied,
 > all transformations of the generators will be computed modulo `i`.
 """
 function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
@@ -720,7 +723,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   return gens_trans, rels_trans, dlog_trans
 end
 
-function snf_gens_rels_log(gens::Vector{NfOrdElem{NfMaxOrd}}, rels::fmpz_mat, dlog::Function, i::NfMaxOrdIdl)
+function snf_gens_rels_log(gens::Vector{NfOrdElem}, rels::fmpz_mat, dlog::Function, i::NfOrdIdl)
   Q , Qmap = quo(order(i),i)
   gens_quo = map(Q,gens)
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens_quo,rels,dlog)
@@ -753,19 +756,19 @@ function baby_step_giant_step(g, n, h, cache::Dict)
   # NfOrdElem I convert them to strings first and use the strings as keys for the hash map...
   # TODO: The calls to string() should be removed as soon as the hash function is fixed.
   n = BigInt(n)
-  m = ceil(BigInt,sqrt(n))
+  m = ceil(BigInt, sqrt(n))
   if isempty(cache)
     it = g^0
     for j in 0:m
-      cache[string(it)] = j
+      cache[it] = j
       it *= g
     end
   end
   b = g^(-m)
   y = h
   for i in 0:m-1
-    if haskey(cache,string(y))
-      return fmpz(mod(i*m + cache[string(y)],n))
+    if haskey(cache, y)
+      return fmpz(mod(i*m + cache[y], n))
     else
       y *= b
     end
@@ -774,7 +777,7 @@ function baby_step_giant_step(g, n, h, cache::Dict)
 end
 
 function baby_step_giant_step(gen, n, a)
-  cache = Dict{Any,BigInt}()
+  cache = Dict{typeof(gen), BigInt}()
   return baby_step_giant_step(gen, n, a, cache)
 end
 
@@ -806,12 +809,12 @@ function _pohlig_hellman_prime_power(g,p,v,h)
   p_i = 1
   p_v_min_i_min_1 = p^(v-1)
   g_ = g^(p^(v-1))
-  a = Hecke.baby_step_giant_step(g_,p,h^(p^(v-1)),cache)
+  a = baby_step_giant_step(g_,p,h^(p^(v-1)),cache)
   h *= g^-a
   for i in 1:v-1
     p_i *= p
     p_v_min_i_min_1 = div(p_v_min_i_min_1,p)
-    ai = Hecke.baby_step_giant_step(g_,p,h^p_v_min_i_min_1,cache)
+    ai = baby_step_giant_step(g_,p,h^p_v_min_i_min_1,cache)
     ai_p_i = ai * p_i
     a += ai_p_i
     h *= g^(-ai_p_i)
@@ -844,29 +847,4 @@ function crt{T<:Union{fmpz,Int}}(l::Vector{Tuple{T,T}})
     M *= m
   end
   return X, M
-end
-
-# TODO Remove this. The normal valuation function didn't work in some cases
-function myvaluation(n,p::NfMaxOrdIdl)
-  p = collect(keys(factor(p)))[1]
-  try
-    e = valuation(n,p)
-    return e
-  end
-  n == 0 && return 0
-  n in p || return 0
-  e = 1
-  while n in p^e
-    e += 1
-  end
-  return e-1
-end
-
-# TODO Remove this. The normal valuation function didn't work in some cases
-function myvaluation(n,p)
-  e = 0
-  while mod(n,p^e) == 0
-    e += 1
-  end
-  return e-1
 end

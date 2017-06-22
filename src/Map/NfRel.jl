@@ -69,21 +69,61 @@ type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
   end
 end
 
-type NfRelToNfRel <: Map{NfRel{nf_elem}, NfRel{nf_elem}}
-  header::MapHeader{NfRel{nf_elem}, NfRel{nf_elem}}
+function show(io::IO, h::NfRelToNf)
+  println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
+end
 
-  function NfRelToNfRel(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_elem})
-    function image(x::NfRelElem{nf_elem})
+type NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
+  header::MapHeader{NfRel{T}, NfRel{S}}
+  prim_img ::NfRelElem{S}
+  coeff_aut::NfToNfMor
+
+  function NfRelToNfRelMor(K::NfRel{T}, L::NfRel{S}, a::NfRelElem{S})
+    function image(x::NfRelElem{S})
       # x is an element of K
       f = data(x)
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
-      return evaluate(f, a)
+      return f(a)
     end
 
     z = new()
+    z.prim_img = a
     z.header = MapHeader(K, L, image)
     return z
+  end  
+
+  #so far, only for single relative.
+  function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
+    function image(x::NfRelElem{nf_elem})
+      # x is an element of K
+      f = data(x)
+      g = zero(f)
+      for i=0:degree(f)
+        setcoeff!(g, i, A(coeff(f, i)))
+      end
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      return g(a)
+    end
+
+    z = new()
+    z.prim_img = a
+    z.coeff_aut = A
+    z.header = MapHeader(K, L, image)
+    return z
+  end
+end
+
+function show(io::IO, h::NfRelToNfRelMor)
+  if domain(h) == codomain(h)
+    println(io, "Automorphism of ", domain(h))
+  else
+    println(io, "Injection of ", domain(h), " into ", codomain(h))
+  end
+  println(io, "defined by ", gen(domain(h)), " -> ", h.prim_img)
+  if isdefined(h, :coeff_aut)
+    println(io, "using coefficient map: ", h.coeff_aut)
   end
 end
 

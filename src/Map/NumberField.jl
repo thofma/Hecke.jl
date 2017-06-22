@@ -24,18 +24,27 @@ type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   end
 end
 
-type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
-  header::MapHeader{NfMaxOrd, FqNmodFiniteField}
-  poly_of_the_field::nmod_poly
-  P::NfMaxOrdIdl
+function show(io::IO, h::NfToNfMor)
+  if domain(h) == codomain(h)
+    println(io, "Automorphism of ", domain(h))
+  else
+    println(io, "Injection of ", domain(h), " into ", codomain(h))
+  end
+  println(io, "defined by ", gen(domain(h)), " -> ", h.prim_img)
+end
 
-  function NfMaxOrdToFqNmodMor()
+type NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
+  header::MapHeader{NfOrd, FqNmodFiniteField}
+  poly_of_the_field::nmod_poly
+  P::NfOrdIdl
+
+  function NfOrdToFqNmodMor()
     r = new()
-    r.header = MapHeader{NfMaxOrd, FqNmodFiniteField}()
+    r.header = MapHeader{NfOrd, FqNmodFiniteField}()
     return r
   end
 
-  function NfMaxOrdToFqNmodMor(O::NfMaxOrd, F::FqNmodFiniteField, g::nmod_poly)
+  function NfOrdToFqNmodMor(O::NfOrd, F::FqNmodFiniteField, g::nmod_poly)
     # assume that F = F_p[X]/(g) and g is a factor of f mod p
 
     z = new()
@@ -64,12 +73,12 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
       return O(zz, false)
     end
 
-    z.header = MapHeader{NfMaxOrd, FqNmodFiniteField}(O, F, _image, _preimage)
+    z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
 
     return z
   end
 
-  function NfMaxOrdToFqNmodMor(O::NfMaxOrd, P::NfMaxOrdIdl)
+  function NfOrdToFqNmodMor(O::NfOrd, P::NfOrdIdl)
     z = new()
 
     @assert abs(minimum(P)) <= typemax(Int)
@@ -149,13 +158,13 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
       return mod(O(z, false), P)
     end
 
-    z.header = MapHeader{NfMaxOrd, FqNmodFiniteField}(O, F, _image, _preimage)
+    z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
     z.P = P
 
     return z
   end
 
-  function NfMaxOrdToFqNmodMor(O::NfMaxOrd, F::FqNmodFiniteField, y::fq_nmod)
+  function NfOrdToFqNmodMor(O::NfOrd, F::FqNmodFiniteField, y::fq_nmod)
     z = new()
 
     p = characteristic(F)
@@ -202,23 +211,23 @@ type NfMaxOrdToFqNmodMor <: Map{NfMaxOrd, FqNmodFiniteField}
       return O(z, false)
     end
 
-    z.header = MapHeader{NfMaxOrd, FqNmodFiniteField}(O, F, _image, _preimage)
+    z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
 
     return z
   end
 end
 
-type NfMaxOrdQuoMap <: Map{NfMaxOrd, NfMaxOrdQuoRing}
-  header::MapHeader{NfMaxOrd, NfMaxOrdQuoRing}
+type NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing}
+  header::MapHeader{NfOrd, NfOrdQuoRing}
 
-  function NfMaxOrdQuoMap(O::NfMaxOrd, Q::NfMaxOrdQuoRing)
+  function NfOrdQuoMap(O::NfOrd, Q::NfOrdQuoRing)
     z = new()
 
     _image = function (x::NfOrdElem)
       return Q(x)
     end
 
-    _preimage = function (x::NfMaxOrdQuoRingElem)
+    _preimage = function (x::NfOrdQuoRingElem)
       return x.elem
     end
 
@@ -227,12 +236,12 @@ type NfMaxOrdQuoMap <: Map{NfMaxOrd, NfMaxOrdQuoRing}
   end
 end
 
-function Mor(O::NfMaxOrd, F::FqNmodFiniteField, y::fq_nmod)
-  return NfMaxOrdToFqNmodMor(O, F, y)
+function Mor(O::NfOrd, F::FqNmodFiniteField, y::fq_nmod)
+  return NfOrdToFqNmodMor(O, F, y)
 end
 
-function Mor(O::NfMaxOrd, F::FqNmodFiniteField, h::nmod_poly)
-  return NfMaxOrdToFqNmodMor(O, F, h)
+function Mor(O::NfOrd, F::FqNmodFiniteField, h::nmod_poly)
+  return NfOrdToFqNmodMor(O, F, h)
 end
 
 type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
@@ -245,7 +254,7 @@ type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
   end
 end
 
-function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
+function extend(f::NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
   z = NfToFqNmodMor()
@@ -254,7 +263,7 @@ function extend(f::NfMaxOrdToFqNmodMor, K::AnticNumberField)
 
   p = characteristic(z.header.codomain)
   Zx = PolynomialRing(FlintIntegerRing(), "x")[1]
-  y = f(NfOrdElem{NfMaxOrd}(domain(f), gen(K)))
+  y = f(NfOrdElem(domain(f), gen(K)))
   pia = anti_uniformizer(f.P)
   O = domain(f)
   P = f.P
@@ -338,7 +347,7 @@ function _get_coeff_raw(x::fq, i::Int)
   return t
 end
 
-function (f::NfMaxOrdToFqNmodMor)(p::PolyElem{NfOrdElem{NfMaxOrd}})
+function (f::NfOrdToFqNmodMor)(p::PolyElem{NfOrdElem})
   F = codomain(f)
   Fx,_ = PolynomialRing(F, "_\$")
 
@@ -351,7 +360,7 @@ end
 
 # this is super slow
 # improve
-function (f::NfMaxOrdQuoMap)(I::NfMaxOrdIdl)
+function (f::NfOrdQuoMap)(I::NfOrdIdl)
   O = domain(f)
   Q = codomain(f)
   B = Q.ideal + I
@@ -375,7 +384,7 @@ function (f::NfMaxOrdQuoMap)(I::NfMaxOrdIdl)
 end
 
 
-function (f::NfMaxOrdQuoMap){T}(p::PolyElem{NfOrdElem{T}})
+function (f::NfOrdQuoMap)(p::PolyElem{NfOrdElem})
   F = codomain(f)
   Fx,_ = PolynomialRing(F, "_\$")
 
@@ -386,7 +395,7 @@ function (f::NfMaxOrdQuoMap){T}(p::PolyElem{NfOrdElem{T}})
   return z
 end
 
-base_ring(::NfMaxOrd) = Union{}
+base_ring(::NfOrd) = Union{}
 
 Nemo.needs_parentheses(::NfOrdElem) = true
 

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function _unit_group(O::NfMaxOrd, c::ClassGrpCtx)
+function _unit_group(O::NfOrd, c::ClassGrpCtx)
   u = UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(O)
   _unit_group_find_units(u, c)
   return u

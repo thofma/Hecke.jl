@@ -8,7 +8,7 @@
 #
 ################################################################################
 
-function enum_ctx_from_ideal(A::NfMaxOrdIdl,
+function enum_ctx_from_ideal(A::NfOrdIdl,
                 v::fmpz_mat;prec::Int = 100, limit::Int = 0, Tx::DataType = Int, TU::DataType = Float64, TC::DataType = Float64)
 
   l, t = lll(A, v, prec = prec)
@@ -45,7 +45,7 @@ end
 
 _start = 0.0
 function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
-                A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
+                A::NfOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   global _start
   @v_do :ClassGroup_time 2 rt = time_ns()

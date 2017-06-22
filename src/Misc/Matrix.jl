@@ -156,6 +156,8 @@ function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
     return h
   elseif shape == :upperright
     return hnf_modular_eldiv(x, m)
+  else
+    error("shape $shape not supported")
   end
 end
 

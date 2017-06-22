@@ -130,7 +130,7 @@ end
 # elem_type(MatrixSpace(ResidueRing(ZZ, p), 1, rank(U) ( + 1))), so
 # nmod_mat or fmpz_mod_mat
 # THIS FUNCTION IS NOT TYPE STABLE
-function _matrix_for_saturation(U::UnitGrpCtx, P::NfMaxOrdIdl, p::Int)
+function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
   O = order(U)
   K = nf(O)
   F, mF = ResidueField(O, P)
@@ -181,9 +181,9 @@ end
 #
 # The function loops through all prime ideals ordered by the minimum,
 # starting at next_prime(st)
-function _find_primes_for_saturation(O::NfMaxOrd, p::Int, n::Int,
+function _find_primes_for_saturation(O::NfOrd, p::Int, n::Int,
                                      st::Int = 0)
-  res = Array{NfMaxOrdIdl}(n)
+  res = Array{NfOrdIdl}(n)
   i = 0
 
   q = st

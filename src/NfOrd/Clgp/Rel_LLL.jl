@@ -1,5 +1,5 @@
 type SmallLLLRelationsCtx
-  A::NfMaxOrdIdl
+  A::NfOrdIdl
   b::Array{nf_elem, 1}
   bd::Int
   cnt::Int
@@ -13,13 +13,13 @@ type SmallLLLRelationsCtx
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
-                O::NfMaxOrd; prec::Int = 200, val::Int = 0,
+                O::NfOrd; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   return class_group_small_lll_elements_relation_start(clg, hecke.ideal(O, parent(basis_mat(O).num)(1)), prec = prec)
 end
 
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
-                A::NfMaxOrdIdl; prec::Int = 200, val::Int = 0,
+                A::NfOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   global _start
   K = nf(order(A))

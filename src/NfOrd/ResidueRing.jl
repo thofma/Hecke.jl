@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfMaxOrd/ResidueRing.jl : Quotients of maximal orders of number fields
+#  NfOrd/ResidueRing.jl : Quotients of maximal orders of number fields
 #
 # This file is part of Hecke.
 #
@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export NfMaxOrdQuoRing, NfMaxOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
+export NfOrdQuoRing, NfOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
        gcd, inv, parent, show, divexact, isone, iszero, howell_form,
        strong_echelon_form, triangularize, det, euclid, xxgcd, annihilator
 
@@ -42,9 +42,9 @@ export NfMaxOrdQuoRing, NfMaxOrdQuoRingElem, quo, *, -, ==, deepcopy, divrem,
 #
 ################################################################################
 
-add_assert_scope(:NfMaxOrdQuoRing)
+add_assert_scope(:NfOrdQuoRing)
 
-set_assert_level(:NfMaxOrdQuoRing, 0)
+set_assert_level(:NfOrdQuoRing, 0)
 
 ################################################################################
 #
@@ -52,19 +52,27 @@ set_assert_level(:NfMaxOrdQuoRing, 0)
 #
 ################################################################################
 
-elem_type(::Type{NfMaxOrdQuoRing}) = NfMaxOrdQuoRingElem
+elem_type(::Type{NfOrdQuoRing}) = NfOrdQuoRingElem
 
-elem_type(::NfMaxOrdQuoRing) = NfMaxOrdQuoRingElem
+elem_type(::NfOrdQuoRing) = NfOrdQuoRingElem
 
-base_ring(Q::NfMaxOrdQuoRing) = Q.base_ring
+base_ring(Q::NfOrdQuoRing) = Q.base_ring
 
-ideal(Q::NfMaxOrdQuoRing) = Q.ideal
+ideal(Q::NfOrdQuoRing) = Q.ideal
 
-basis_mat(Q::NfMaxOrdQuoRing) = Q.basis_mat
+basis_mat(Q::NfOrdQuoRing) = Q.basis_mat
 
-parent(x::NfMaxOrdQuoRingElem) = x.parent
+parent(x::NfOrdQuoRingElem) = x.parent
 
-parent_type(::Type{NfMaxOrdQuoRingElem}) = NfMaxOrdQuoRing
+parent_type(::Type{NfOrdQuoRingElem}) = NfOrdQuoRing
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+hash(x::NfOrdQuoRingElem, h::UInt) = hash(x.elem, h)
 
 ################################################################################
 #
@@ -72,14 +80,14 @@ parent_type(::Type{NfMaxOrdQuoRingElem}) = NfMaxOrdQuoRing
 #
 ################################################################################
 
-needs_parentheses(::NfMaxOrdQuoRingElem) = true
+needs_parentheses(::NfOrdQuoRingElem) = true
 
-isnegative(::NfMaxOrdQuoRingElem) = false
+isnegative(::NfOrdQuoRingElem) = false
 
-Nemo.promote_rule{S <: Integer}(::Type{NfMaxOrdQuoRingElem},
-                                ::Type{S}) = NfMaxOrdQuoRingElem
+Nemo.promote_rule{S <: Integer}(::Type{NfOrdQuoRingElem},
+                                ::Type{S}) = NfOrdQuoRingElem
 
-Nemo.promote_rule(::Type{NfMaxOrdQuoRingElem}, ::Type{fmpz}) = NfMaxOrdQuoRingElem
+Nemo.promote_rule(::Type{NfOrdQuoRingElem}, ::Type{fmpz}) = NfOrdQuoRingElem
 
 ################################################################################
 #
@@ -87,10 +95,10 @@ Nemo.promote_rule(::Type{NfMaxOrdQuoRingElem}, ::Type{fmpz}) = NfMaxOrdQuoRingEl
 #
 ################################################################################
 
-Base.deepcopy_internal(x::NfMaxOrdQuoRingElem, dict::ObjectIdDict) =
-        NfMaxOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
+Base.deepcopy_internal(x::NfOrdQuoRingElem, dict::ObjectIdDict) =
+        NfOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
 
-#copy(x::NfMaxOrdQuoRingElem) = deepcopy(x)
+#copy(x::NfOrdQuoRingElem) = deepcopy(x)
 
 ################################################################################
 #
@@ -98,11 +106,11 @@ Base.deepcopy_internal(x::NfMaxOrdQuoRingElem, dict::ObjectIdDict) =
 #
 ################################################################################
 
-function show(io::IO, Q::NfMaxOrdQuoRing)
+function show(io::IO, Q::NfOrdQuoRing)
   print(io, "Quotient of $(Q.base_ring)")
 end
 
-function show(io::IO, x::NfMaxOrdQuoRingElem)
+function show(io::IO, x::NfOrdQuoRingElem)
   print(io, "$(x.elem)")
 end
 
@@ -112,16 +120,16 @@ end
 #
 ################################################################################
 
-function (O::NfMaxOrdQuoRing)(x::NfOrdElem)
+function (O::NfOrdQuoRing)(x::NfOrdElem)
   parent(x) != base_ring(O) && error("Cannot coerce element into the quotient ring")
-  return NfMaxOrdQuoRingElem(O, x)
+  return NfOrdQuoRingElem(O, x)
 end
 
-function (Q::NfMaxOrdQuoRing)(x::Integer)
+function (Q::NfOrdQuoRing)(x::Integer)
   return Q(base_ring(Q)(x))
 end
 
-function (Q::NfMaxOrdQuoRing)(x::fmpz)
+function (Q::NfOrdQuoRing)(x::fmpz)
   return Q(base_ring(Q)(x))
 end
 
@@ -133,29 +141,29 @@ end
 #
 ################################################################################
 doc"""
-    quo(O::NfMaxOrd, I::NfMaxOrdIdl) -> NfMaxOrdQuoRing, Map
+    quo(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing, Map
 > The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 > The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
-function quo(O::NfMaxOrd, I::NfMaxOrdIdl)
+function quo(O::NfOrd, I::NfOrdIdl)
   # We should check that I is not zero
-  Q = NfMaxOrdQuoRing(O, I)
-  f = NfMaxOrdQuoMap(O, Q)
+  Q = NfOrdQuoRing(O, I)
+  f = NfOrdQuoMap(O, Q)
   return Q, f
 end
 
 doc"""
-    ResidueRing(O::NfMaxOrd, I::NfMaxOrdIdl) -> NfMaxOrdQuoRing
+    ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
 > The quotient ring $O$ modulo $I$ as a new ring.
 """
-Nemo.ResidueRing(O::NfMaxOrd, I::NfMaxOrdIdl) = NfMaxOrdQuoRing(O, I)
+Nemo.ResidueRing(O::NfOrd, I::NfOrdIdl) = NfOrdQuoRing(O, I)
 
 doc"""
-    lift(O::NfMaxOrd, a::NfMaxOrdQuoRingElem) -> NfOrdElem
+    lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
 > Returns a lift of $a$ back to $O$.
 """
-function lift(O::NfMaxOrd, a::NfMaxOrdQuoRingElem)
-  f = NfMaxOrdQuoMap(O, parent(a))
+function lift(O::NfOrd, a::NfOrdQuoRingElem)
+  f = NfOrdQuoMap(O, parent(a))
   return preimage(f, a)
 end
 
@@ -165,38 +173,38 @@ end
 #
 ################################################################################
 
-function +(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function +(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
   return parent(x)(x.elem + y.elem)
 end
 
-function -(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function -(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
   return parent(x)(x.elem - y.elem)
 end
 
-function -(x::NfMaxOrdQuoRingElem)
+function -(x::NfOrdQuoRingElem)
   return parent(x)(-x.elem)
 end
 
-function *(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function *(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
   return parent(x)(x.elem * y.elem)
 end
 
-function *(x::Integer, y::NfMaxOrdQuoRingElem)
+function *(x::Integer, y::NfOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end
 
-*(x::NfMaxOrdQuoRingElem, y::Integer) = y*x
+*(x::NfOrdQuoRingElem, y::Integer) = y*x
 
-function *(x::fmpz, y::NfMaxOrdQuoRingElem)
+function *(x::fmpz, y::NfOrdQuoRingElem)
   return parent(x)(x * y.elem)
 end
 
-*(x::NfMaxOrdQuoRingElem, y::fmpz) = y*x
+*(x::NfOrdQuoRingElem, y::fmpz) = y*x
 
-function ^(a::NfMaxOrdQuoRingElem, f::fmpz)
+function ^(a::NfOrdQuoRingElem, f::fmpz)
   f==0 && return one(parent(a))
   f==1 && return a
   if f<0
@@ -211,7 +219,7 @@ function ^(a::NfMaxOrdQuoRingElem, f::fmpz)
   return b
 end
 
-^(a::NfMaxOrdQuoRingElem, f::Integer) = a^fmpz(f)
+^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
 
 
 ################################################################################
@@ -220,15 +228,15 @@ end
 #
 ################################################################################
 
-iszero(x::NfMaxOrdQuoRingElem) = iszero(x.elem)
+iszero(x::NfOrdQuoRingElem) = iszero(x.elem)
 
-isone(x::NfMaxOrdQuoRingElem) = isone(x.elem)
+isone(x::NfOrdQuoRingElem) = isone(x.elem)
 
-function one(Q::NfMaxOrdQuoRing)
+function one(Q::NfOrdQuoRing)
   return Q(one(Q.base_ring))
 end
 
-function zero(Q::NfMaxOrdQuoRing)
+function zero(Q::NfOrdQuoRing)
   return Q(zero(Q.base_ring))
 end
 
@@ -238,7 +246,7 @@ end
 #
 ################################################################################
 
-==(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem) = x.elem == y.elem
+==(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem) = x.elem == y.elem
 
 ################################################################################
 #
@@ -246,13 +254,13 @@ end
 #
 ################################################################################
 
-function divexact(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function divexact(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   b, z = isdivisible(x, y)
   @assert b
   return z
 end
 
-function isdivisible(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
 
   if iszero(x)
@@ -301,7 +309,7 @@ function isdivisible(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
-  @hassert :NfMaxOrdQuoRing 1 z*y == x
+  @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
 end
 
@@ -311,10 +319,10 @@ end
 #
 ################################################################################
 
-function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function _divexact_strong(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   n = euclid(x)
   m = euclid(y)
-  @hassert :NfMaxOrdQuoRing 1 mod(n, m) == 0
+  @hassert :NfOrdQuoRing 1 mod(n, m) == 0
   target = divexact(n, m)
 
   #println("target valuation: $target")
@@ -341,8 +349,8 @@ function _divexact_strong(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     end
   end
 
-  @hassert :NfMaxOrdQuoRing 1 q*y == x
-  @hassert :NfMaxOrdQuoRing 1 euclid(q) *euclid(y) == euclid(x)
+  @hassert :NfOrdQuoRing 1 q*y == x
+  @hassert :NfOrdQuoRing 1 euclid(q) *euclid(y) == euclid(x)
 
   return q
 end
@@ -353,7 +361,7 @@ end
 #
 ################################################################################
 
-function inv(x::NfMaxOrdQuoRingElem)
+function inv(x::NfOrdQuoRingElem)
   return divexact(one(parent(x)), x)
 end
 
@@ -363,7 +371,7 @@ end
 #
 ################################################################################
 
-function euclid(x::NfMaxOrdQuoRingElem)
+function euclid(x::NfOrdQuoRingElem)
   if iszero(x)
     return fmpz(-1)
   end
@@ -383,7 +391,7 @@ function euclid(x::NfMaxOrdQuoRingElem)
     mul!(z, z, U[i, i])
   end
 
-  @hassert :NfMaxOrdQuoRing 1 z == norm(ideal(parent(x.elem), x.elem) + parent(x).ideal)
+  @hassert :NfOrdQuoRing 1 z == norm(ideal(parent(x.elem), x.elem) + parent(x).ideal)
 
   return z
 end
@@ -394,7 +402,7 @@ end
 #
 ################################################################################
 
-function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   q = rand(parent(x))
   r = x - q*y
   e = euclid(y)
@@ -405,15 +413,15 @@ function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   if e == 1
     q = x*inv(y)
     r = x - q*y
-    @hassert :NfMaxOrdQuoRing 1 iszero(x - q*y)
-    @hassert :NfMaxOrdQuoRing 1 euclid(r) < e
+    @hassert :NfOrdQuoRing 1 iszero(x - q*y)
+    @hassert :NfOrdQuoRing 1 euclid(r) < e
     return q, r
   end
 
   try q = divexact(x, y)
     r = x - q*y
-    @hassert :NfMaxOrdQuoRing 1 iszero(x - q*y)
-    @hassert :NfMaxOrdQuoRing 1 euclid(r) < e
+    @hassert :NfOrdQuoRing 1 iszero(x - q*y)
+    @hassert :NfOrdQuoRing 1 euclid(r) < e
     return q, r
   catch
   end
@@ -428,7 +436,7 @@ function divrem(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
     end
   end
 
-  @hassert :NfMaxOrdQuoRing 1 euclid(r) < e
+  @hassert :NfOrdQuoRing 1 euclid(r) < e
 
   return q, r
 end
@@ -439,7 +447,7 @@ end
 #
 ################################################################################
 
-function rand(Q::NfMaxOrdQuoRing)
+function rand(Q::NfOrdQuoRing)
   A = basis_mat(Q)
   B = basis(base_ring(Q))
   z = rand(fmpz(1):A[1,1]) * B[1]
@@ -457,11 +465,11 @@ end
 #
 ################################################################################
 
-function annihilator(x::NfMaxOrdQuoRingElem)
+function annihilator(x::NfOrdQuoRingElem)
   I = parent(x).ideal
   O = base_ring(parent(x))
   d = degree(O)
-  f = NfMaxOrdQuoMap(O, parent(x))
+  f = NfOrdQuoMap(O, parent(x))
   U = parent(x).tmp_ann
   # We first compute a Z-basis of the annihilator ideal
   # The basis is the kernel of the following matrix
@@ -484,13 +492,13 @@ end
 #
 ################################################################################
 
-function gcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function gcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
 
   I = ideal(O, x.elem) + ideal(O, y.elem)
 
-  f = NfMaxOrdQuoMap(O, parent(x))
+  f = NfOrdQuoMap(O, parent(x))
 
   return f(I)
 end
@@ -501,7 +509,7 @@ end
 #
 ################################################################################
 
-function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
+function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
 
@@ -554,7 +562,7 @@ function xxgcd(x::NfMaxOrdQuoRingElem, y::NfMaxOrdQuoRingElem)
   u = Q(-O([ U[1,i] for i in (d + 2):(2*d + 1)]))
   v = Q(-O([ U[1,i] for i in (2*d + 2):(3*d + 1)]))
 
-  @hassert :NfMaxOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
+  @hassert :NfOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
@@ -582,7 +590,7 @@ function _pivot(A, start_row, col)
   return 0
 end
 
-function _strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem})
+function _strong_echelon_form(A::GenMat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -593,7 +601,7 @@ function _strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem})
   return B
 end
 
-function strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem}, shape::Symbol = :upperright)
+function strong_echelon_form(A::GenMat{NfOrdQuoRingElem}, shape::Symbol = :upperright)
   if shape == :lowerleft
     h = _strong_echelon_form(_swapcols(A))
     _swapcols!(h)
@@ -606,7 +614,7 @@ function strong_echelon_form(A::GenMat{NfMaxOrdQuoRingElem}, shape::Symbol = :up
   end
 end
 
-function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
+function triangularize!(A::GenMat{NfOrdQuoRingElem})
   n = rows(A)
   m = cols(A)
   d = one(base_ring(A))
@@ -637,10 +645,10 @@ function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
         for k in col:m
           t_arith += @elapsed A[i, k] = A[i, k] - q*A[row, k]
         end
-        @hassert :NfMaxOrdQuoRing 1 A[i, col] == zero(base_ring(A))
+        @hassert :NfOrdQuoRing 1 A[i, col] == zero(base_ring(A))
       else
         t_xxgcd += @elapsed g,s,t,u,v = xxgcd(A[row, col], A[i, col])
-        @hassert :NfMaxOrdQuoRing 1 isone(s*v - t*u)
+        @hassert :NfOrdQuoRing 1 isone(s*v - t*u)
 
         for k in col:m
           t_arith += @elapsed t1 = s*A[row, k] + t*A[i, k]
@@ -661,7 +669,7 @@ function triangularize!(A::GenMat{NfMaxOrdQuoRingElem})
   return d
 end
 
-function triangularize(A::GenMat{NfMaxOrdQuoRingElem})
+function triangularize(A::GenMat{NfOrdQuoRingElem})
   #println("copying ...")
   B = deepcopy(A)
   #println("done")
@@ -675,7 +683,7 @@ end
 #
 ################################################################################
 
-function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
+function strong_echelon_form!(A::GenMat{NfOrdQuoRingElem})
   #A = deepcopy(B)
   n = rows(A)
   m = cols(A)
@@ -726,7 +734,7 @@ function strong_echelon_form!(A::GenMat{NfMaxOrdQuoRingElem})
         for k in i:m
           T[1, k] = T[1, k] - q*A[i, k]
         end
-        @hassert :NfMaxOrdQuoRing 1 T[1, i] == zero(base_ring(A))
+        @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
       else
         g,s,t,u,v = xxgcd(A[i, i], T[1, i])
 
@@ -748,7 +756,7 @@ end
 #
 ################################################################################
 
-function howell_form!(A::GenMat{NfMaxOrdQuoRingElem})
+function howell_form!(A::GenMat{NfOrdQuoRingElem})
   @assert rows(A) >= cols(A)
 
   k = rows(A)
@@ -771,7 +779,7 @@ function howell_form!(A::GenMat{NfMaxOrdQuoRingElem})
   return k
 end
 
-function howell_form(A::GenMat{NfMaxOrdQuoRingElem})
+function howell_form(A::GenMat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -789,7 +797,7 @@ end
 #
 ################################################################################
 
-function det(M::GenMat{NfMaxOrdQuoRingElem})
+function det(M::GenMat{NfOrdQuoRingElem})
   rows(M) != cols(M) && error("Matrix must be square matrix")
   N = deepcopy(M)
   d = triangularize!(N)
@@ -799,7 +807,7 @@ function det(M::GenMat{NfMaxOrdQuoRingElem})
   end
   return z*d
   q, r = divrem(z, d)
-  @hassert :NfMaxOrdQuoRing 1 iszero(r)
+  @hassert :NfOrdQuoRing 1 iszero(r)
   return divexact(z, d)
 end
 
@@ -809,7 +817,7 @@ end
 #
 ################################################################################
 
-#function call(M::GenMatSpace{NfMaxOrdQuoRingElem}, x::GenMat{NfOrdElem{NfMaxOrd}})
+#function call(M::GenMatSpace{NfOrdQuoRingElem}, x::GenMat{NfOrdElem})
 #  base_ring(base_ring(M)) != base_ring(parent(x)) &&
 #      error("Base rings do not coincide")
 #  z = M()
@@ -822,9 +830,9 @@ end
 #  return z
 #end
 
-function (M::GenMatSpace{NfMaxOrdQuoRingElem})(x::GenMat{NfOrdElem{NfMaxOrd}})
-  z = map(base_ring(M), x.entries)::Array{NfMaxOrdQuoRingElem, 2}
-  return M(z)::GenMat{NfMaxOrdQuoRingElem}
+function (M::GenMatSpace{NfOrdQuoRingElem})(x::GenMat{NfOrdElem})
+  z = map(base_ring(M), x.entries)::Array{NfOrdQuoRingElem, 2}
+  return M(z)::GenMat{NfOrdQuoRingElem}
 end
 ################################################################################
 #
@@ -838,7 +846,7 @@ end
 ##    : use double iteration to avoid division
 #     : use exponent chain to not overshoot (too much) in lifting
 #     : common case is f == K.pol. In this case we known a sharp T2-bound
-function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
+function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
   # f must be squarefree
   # i should check that
   O = base_ring(f)
@@ -855,8 +863,8 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
   found_prime = false
 
   # Dummy variable
-  Q = NfMaxOrdIdl(O)
-  pi_F = NfMaxOrdToFqNmodMor()
+  Q = NfOrdIdl(O)
+  pi_F = NfOrdToFqNmodMor()
   lin_factor = Array{fq_nmod_poly, 1}()
 
   while !found_prime
@@ -976,7 +984,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
     # The following should be a uniformizing element
     Q_pi = Q.gen_two
 
-    @hassert :NfMaxOrdQuoRing 1 fmodQ(zero_mod_Q) == 0
+    @hassert :NfOrdQuoRing 1 fmodQ(zero_mod_Q) == 0
 
     # This is the first step
 
@@ -1107,7 +1115,7 @@ function _roots_hensel{T}(f::GenPoly{NfOrdElem{T}}, max_roots::Int = degree(f))
 end
 
 #identical to hasroot - which one do we want?
-function ispower(a::NfOrdElem{NfMaxOrd}, n::Int)
+function ispower(a::NfOrdElem, n::Int)
   Ox, x = parent(a)["x"]
   f = x^n - a
   r = _roots_hensel(f, 1)
@@ -1119,7 +1127,7 @@ function ispower(a::NfOrdElem{NfMaxOrd}, n::Int)
   end
 end
 
-function probablity(O::NfMaxOrdQuoRing)
+function probablity(O::NfOrdQuoRing)
   p = 1.0
   I = O.ideal
   f = factor(norm(I))
@@ -1139,11 +1147,11 @@ end
 
 doc"""
 ***
-    group_structure(Q::NfMaxOrdQuoRing) -> GrpAbFinGenSnf
+    group_structure(Q::NfOrdQuoRing) -> GrpAbFinGenSnf
 
 > Returns an abelian group with the structure of (Q,+).
 """
-function group_structure(Q::NfMaxOrdQuoRing)
+function group_structure(Q::NfOrdQuoRing)
   i = ideal(Q)
   fac = factor(i)
   structure = Vector{fmpz}()

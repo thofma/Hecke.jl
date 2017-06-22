@@ -1,6 +1,6 @@
 ################################################################################
 #
-# NfMaxOrd/FacElem.jl : Factored elements over number fields
+# NfOrd/FacElem.jl : Factored elements over number fields
 #
 # This file is part of hecke.
 #
@@ -198,10 +198,10 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
 end
 
 doc"""
-    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfMaxOrdIdl) -> fmpz
+    valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl) -> fmpz
 > The valuation of $a$ at $P$.
 """
-function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfMaxOrdIdl)
+function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
   val = fmpz(0)
   for (a, e) = a.fac
     val += valuation(a, P)*e
