@@ -74,7 +74,8 @@ import Nemo: nf_elem, AnticNumberField, degree,
              roots, nbits, factor, isprime, ispositive, sign
 
 
-export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order
+export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
+       ispower, hasroot
 
 import Base: show, minimum, rand, prod, copy, rand!, call, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
@@ -575,6 +576,14 @@ elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
 ################################################################################
 
 parent_type(::Type{NfOrdElem}) = NfOrd
+
+################################################################################
+#
+#  Aliases
+#
+################################################################################
+
+hasroot = ispower
 
 ################################################################################
 #

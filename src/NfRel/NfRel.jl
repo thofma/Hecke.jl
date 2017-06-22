@@ -423,8 +423,8 @@ function _absolute_field(K::NfRel{nf_elem})
 end 
 
 
-function coeff{T}(a::NfRelElem{T}, i::Int)
-  return coeff(a.data, i)
-end
+@inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
+
+@inline degree(L::Hecke.NfRel) = degre(L.pol)
 
 #TODO: missing: norm, trace...

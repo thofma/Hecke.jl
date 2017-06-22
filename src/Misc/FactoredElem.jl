@@ -47,6 +47,7 @@ end
 
 doc"""
     FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
+    FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
 > Returns the element $\prod b^{d[p]}$, un-expanded.
 """
 function FacElem{B}(d::Dict{B, fmpz})
@@ -59,6 +60,18 @@ function FacElem{B}(d::Dict{B, fmpz})
   z.parent = FacElemMon(parent(first(keys(d))))
   return z
 end
+
+function FacElem{B, T <: Integer}(d::Dict{B, T})
+
+  length(d) == 0 && error("Dictionary must not be empty")
+
+  z = FacElem{B, typeof(parent(first(keys(d))))}()
+  z.fac = Dict{B, fmpz}((k,fmpz(v)) for (k,v) = d) 
+
+  z.parent = FacElemMon(parent(first(keys(d))))
+  return z
+end
+
 
 parent(x::FacElem) = x.parent
 

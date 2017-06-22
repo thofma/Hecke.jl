@@ -4,9 +4,6 @@
 #
 ################################################################################
 
-#isprime(a::Integer) = isprime(fmpz(a))
-#factor(a::Integer) = factor(fmpz(a))
-
 function next_prime(x::UInt, proof::Bool)
   z = ccall((:n_nextprime, :libflint), UInt, (UInt, Cint), x, Cint(proof))
   return z
@@ -350,6 +347,94 @@ function inv!(a::perm)
   R = parent(a)
   ccall((:_perm_inv, :libflint), Void, (Ref{Int}, Ref{Int}, Int), a.d, a.d, R.n)
   nothing
+end
+
+################################################################################
+#
+#  power detection
+#
+################################################################################
+
+doc"""
+    ispower(a::fmpz) -> Int, fmpz
+    ispower(a::Integer) -> Int, Integer
+> Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+"""
+function ispower(a::fmpz)
+  if iszero(a)
+    error("must not be zero")
+  end
+  if isone(a)
+    return 0, a
+  end
+  if a < 0
+    e, r = ispower(-a)
+    if isone(e)
+      return 1, a
+    end
+    v, s = remove(e, 2)
+    return s, -r^(2^v)
+  end
+  rt = fmpz()
+  e = 1
+  while true
+    ex = ccall((:fmpz_is_perfect_power, :libflint), Int, (Ptr{fmpz}, Ptr{fmpz}), &rt, &a)
+    if ex == 1 || ex == 0
+      return e, a
+    end
+    e *= ex
+    a = rt
+  end
+end
+
+function ispower(a::Integer)
+  e,r = ispower(fmpz(a))
+  return e, typeof(a)(r)
+end
+
+doc"""
+    ispower(a::fmpq) -> Int, fmpq
+    ispower(a::Rational) -> Int, Rational
+> Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+"""
+function ispower(a::fmpq)
+  e, r = ispower(num(a))
+  if e==1
+    return e, a
+  end
+  f, s = ispower(den(a))
+  g = gcd(e, f)
+  return g, r^div(e, g)//s^div(f, g)
+end
+
+function ispower(a::Rational)
+  T = typeof(den(a))
+  e, r = ispower(fmpq(a))
+  return e, T(num(r))//T(den(r))
+end
+
+doc"""
+    ispower(a::fmpz, n::Int) -> Bool, fmpz
+    ispower(a::fmpq, n::Int) -> Bool, fmpq
+    ispower(a::Integer, n::Int) -> Bool, Integer
+> Tests if $a$ is an $n$-th power. Return {{{true}}} and the root if successful.
+"""    
+function ispower(a::fmpz, n::Int)
+  b = root(a, n)
+  return b^n==a, b
+end
+
+function ispower(a::Integer, n::Int)
+  return ispower(fmpz(a), n)
+end
+
+function ispower(a::fmpq, n::Int)
+  fl, nu = ispower(num(a), n)
+  if !fl 
+    return fl, a
+  end
+  fl, de = ispower(den(a), n)
+  return fl, fmpq(nu, de)
 end
 
 ################################################################################

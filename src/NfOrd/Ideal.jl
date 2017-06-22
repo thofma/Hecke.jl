@@ -2586,6 +2586,181 @@ end
 
 ################################################################################
 #
+#  Power detection
+#
+################################################################################
+
+doc"""
+    ispower(I::NfOrdIdl) -> Int, NfOrdIdl
+    ispower(a::NfOrdFracIdl) -> Int, NfOrdFracIdl
+> Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
+"""
+function ispower(I::NfOrdIdl)
+  m = minimum(I)
+  if isone(m)
+    return 0, I
+  end
+  d = discriminant(order(I))
+  b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
+
+  e, JJ = ispower_unram(gcd(I, a))
+
+  if isone(e)
+    return 1, I
+  end
+
+  g = e
+  J = one(I)
+  lp = factor(b)
+  for p = keys(lp.fac)
+    lP = prime_decomposition(order(I), Int(p))
+    for i=1:length(lP)
+      P = lP[i][1]
+      v = valuation(I, P)
+      gn = gcd(v, g)
+      if gn == 1 
+        return gn, I
+      end
+      if g != gn
+        J = J^div(g, gn)
+      end
+      if v != 0
+        J *= P^div(v, gn)
+      end
+      g = gn
+    end
+  end
+  return g, JJ^div(e, g)*J
+end
+
+function ispower_unram(I::NfOrdIdl)
+  m = minimum(I)
+  if isone(m)
+    return 0, I
+  end
+
+  e, ra = ispower(m)
+  J = gcd(I, ra)
+
+  II = J^e//I
+  II = simplify(II)
+  @assert isone(den(II))
+
+  f, s = ispower_unram(num(II))
+
+  g = gcd(f, e)
+  if isone(g) 
+    return 1, I
+  end
+
+  II = inv(s)^div(f, g) * J^div(e, g)
+  II = simplify(II)
+  @assert isone(den(II))
+  JJ = num(II)
+  e = g
+
+  return e, JJ
+end
+      
+function ispower(I::NfOrdFracIdl)
+  num, den = integral_split(I)
+  e, r = ispower(num)
+  if e == 1
+    return e, I
+  end
+  f, s = ispower(den)
+  g = gcd(e, f)
+  return g, r^div(e, g)//s^div(f, g)
+end
+
+doc"""
+    ispower(A::NfOrdIdl, n::Int) -> Bool, NfOrdIdl 
+    ispower(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl 
+> Computes, if possible, an ideal $B$ s.th. $B^n==A$ holds. In this
+> case, {{{true}}} and $B$ are returned.
+"""
+function ispower(A::NfOrdIdl, n::Int)
+  m = minimum(A)
+  if isone(m)
+    return true, A
+  end
+  d = discriminant(order(A))
+  b, a = ppio(m, d) # hopefully: gcd(a, d) = 1 = gcd(a, b) and ab = m
+
+  fl, JJ = ispower_unram(gcd(A, a), n)
+  A = gcd(A, b) # the ramified part
+
+  if !fl
+    return fl, A
+  end
+
+  J = one(A)
+  lp = factor(b)
+  for p = keys(lp.fac)
+    lP = prime_decomposition(order(A), Int(p))
+    for i=1:length(lP)
+      P = lP[i][1]
+      v = valuation(A, P)
+      if v % n != 0
+        return false, A
+      end
+      if v != 0
+        J *= P^div(v, n)
+      end
+    end
+  end
+  return true, JJ*J
+end
+
+function ispower_unram(I::NfOrdIdl, n::Int)
+  m = minimum(I)
+  if isone(m)
+    return true, I
+  end
+
+  fl, ra = ispower(m, n)
+  if !fl
+    return fl, I
+  end
+  J = gcd(I, ra)
+
+  II = J^n//I
+  II = simplify(II)
+  @assert isone(den(II))
+
+  fl, s = ispower_unram(num(II), n)
+
+  if !fl
+    return fl, I
+  end
+
+  II = inv(s)* J
+  II = simplify(II)
+  @assert isone(den(II))
+  JJ = num(II)
+
+  return true, JJ
+end
+
+#TODO: check if the integral_plit is neccessary or if one can just use 
+#      the existing denominator
+function ispower(A::NfOrdFracIdl, n::Int)
+  nu, de = integral_split(A)
+  fl, nu = ispower(nu, n)
+  if !fl 
+    return fl, A
+  end
+  fl, de = ispower(de, n)
+  return fl, nu//de
+end
+
+function one(A::NfOrdIdl)
+  return ideal(order(A), 1)
+end
+
+
+################################################################################
+#
 #  Conversion to Magma
 #
 ################################################################################
