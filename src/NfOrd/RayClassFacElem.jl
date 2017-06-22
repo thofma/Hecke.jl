@@ -401,6 +401,38 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
   end
 end 
 
+function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
+  @hassert :NfOrdQuoRing 2 isprime(p)
+  O = order(p)
+  Q , mQ = quo(O,p)
+  
+  n = norm(p) - 1
+  s=valuation(n,prime)
+  powerp=prime^s
+  m=div(n,powerp)
+  
+  powm=div(powerp,prime)
+  found=false
+  g=Q(1)
+  while found==false
+    g = rand(Q)
+    if g != Q(0) 
+      g=g^m
+      if g^powm != Q(1) 
+        found=true
+      end
+    end
+  end
+
+  function disclog(x::NfOrdElem)
+    t=mQ(x)^m
+    res=Hecke._pohlig_hellman_prime_power(g,prime,s,t)
+    inv=gcdx(m,fmpz(powerp))[2]
+    return [res*inv]
+  end
+  return mQ\g , [powerp], disclog
+end
+
 
 
 function _mult_grp(m::NfOrdIdl, p::Integer)
@@ -426,8 +458,10 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
       end
     end
   end
+  
+  
   for (q,vq) in y1
-    gens_q , struct_q , dlog_q = Hecke._multgrp_mod_pv(q,1)
+    gens_q , struct_q , dlog_q = prime_part_multgrp_mod_p(q,p)
   
     # Make generators coprime to other primes
     if length(fac) > 1
@@ -436,15 +470,11 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
         (q != q2) && (i_without_q *= q2^vq2)
       end
       alpha, beta = Hecke.extended_euclid(q ,i_without_q)
-      g_pi_new = beta*gens_q[1] + alpha
+      gens_q = beta*gens_q + alpha
       @hassert :NfOrdQuoRing 2 (g_pi_new - gens_q[1] in q)
       @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
-      gens_q[1] = g_pi_new
     end
-    
-    v=valuation(struct_q[1,1],p)
-    gens_q = map(Q,gens_q)    
-    struct_q[1,1]=p^v
+    gens_q = [pi(gens_q)]    
     
     uni_q=Hecke.anti_uniformizer(q)  
    
