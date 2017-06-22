@@ -38,17 +38,17 @@
 #
 ################################################################################
 
-type AbToResRingMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
-  header::MapHeader{GrpAbFinGen, NfMaxOrdQuoRing}
-  generators::Vector{NfMaxOrdQuoRingElem}
+type AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
+  header::MapHeader{GrpAbFinGen, NfOrdQuoRing}
+  generators::Vector{NfOrdQuoRingElem}
   discrete_logarithm::Function
 
-  function AbToResRingMultGrp(Q::NfMaxOrdQuoRing,
-                              generators::Vector{NfMaxOrdQuoRingElem},
+  function AbToResRingMultGrp(Q::NfOrdQuoRing,
+                              generators::Vector{NfOrdQuoRingElem},
                               snf_structure::Vector{fmpz},
                               disc_log::Function)
     @assert length(generators) == length(snf_structure)
-    @hassert :NfMaxOrdQuoRing 1 all(g->parent(g)==Q,generators)
+    @hassert :NfOrdQuoRing 1 all(g->parent(g)==Q,generators)
 
     G = DiagonalGroup(snf_structure)
     @assert isa(G,GrpAbFinGen)
@@ -64,7 +64,7 @@ type AbToResRingMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
       return y
     end
 
-    function _preimage(a::NfMaxOrdQuoRingElem)
+    function _preimage(a::NfOrdQuoRingElem)
       @assert parent(a) == Q
       return G(disc_log(a))
     end
@@ -77,10 +77,10 @@ type AbToResRingMultGrp <: Map{GrpAbFinGen, NfMaxOrdQuoRing}
   end
 end
 
-type AbToNfOrdMultGrp{T} <: Map{GrpAbFinGen, T}
-  header::MapHeader{GrpAbFinGen, T}
+type AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd}
+  header::MapHeader{GrpAbFinGen, NfOrd}
   
-  function AbToNfOrdMultGrp(O::T, order::Int, generator::NfOrdElem{T})
+  function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
     G = DiagonalGroup([order])
 
     function _image(a::GrpAbFinGenElem)
@@ -93,8 +93,3 @@ type AbToNfOrdMultGrp{T} <: Map{GrpAbFinGen, T}
     return z
   end
 end
-
-function AbToNfOrdMultGrp{T}(O::T, order::Int, generator::NfOrdElem{T})
-  return AbToNfOrdMultGrp{T}(O, order, generator)
-end
-

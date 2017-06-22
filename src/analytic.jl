@@ -298,12 +298,12 @@ function psi_guess(x::Number, B::Int, e::UnitRange)
 end
 
 
-function class_group_expected(O::NfMaxOrd, B::Integer, samples::Int = 100)
+function class_group_expected(O::NfOrd, B::Integer, samples::Int = 100)
   d = root(abs(discriminant(O)), 2)
   return class_group_expected(d, degree(O), Int(B), samples)
 end
 
-function class_group_expected(O::NfMaxOrd, B::fmpz, samples::Int = 100)
+function class_group_expected(O::NfOrd, B::fmpz, samples::Int = 100)
   d = root(abs(discriminant(O)), 2)
   return class_group_expected(d, degree(O), Int(B), samples)
 end

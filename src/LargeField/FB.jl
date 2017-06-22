@@ -1,7 +1,7 @@
 #Aim: have map operate on FB
 #
 
-function induce_image(A::NfMaxOrdIdl, S::Map)
+function induce_image(A::NfOrdIdl, S::Map)
   O = order(A)
   K = O.nf
   B = ideal(order(A), A.gen_one, O(S(K(A.gen_two)))) # set is prime, norm, ...

@@ -2,10 +2,10 @@ export narrow_class_group
 
 doc"""
 ***
-    power_reduce2(A::NfMaxOrdIdl, e::fmpz) -> NfMaxOrdIdl, FacElem{nf_elem}
+    power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
 > Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
 """
-function power_reduce2(A::NfMaxOrdIdl, e::fmpz)
+function power_reduce2(A::NfOrdIdl, e::fmpz)
   A_orig = deepcopy(A)
 
   O = order(A)
@@ -53,10 +53,10 @@ end
 
 doc"""
 ***
-    reduce_ideal2(A::FacElem{NfMaxOrdIdl}) -> NfMaxOrdIdl, FacElem{nf_elem}
+    reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
 > Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
 """
-function reduce_ideal2(I::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
+function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   O = order(first(keys(I.fac)))
   K = nf(O)
   fst = true
@@ -83,7 +83,7 @@ function reduce_ideal2(I::FacElem{NfMaxOrdIdl, NfMaxOrdIdlSet})
   return A, a
 end
 
-type MapNarrowClassGrp{T} <: Map{T, NfMaxOrdIdlSet}
+type MapNarrowClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
 
   function MapNarrowClassGrp()
@@ -100,12 +100,12 @@ end
 
 doc"""
 ***
-    elements_with_all_signs(L::NfMaxOrd) -> Array{nf_elem, 1}
+    elements_with_all_signs(L::NfOrd) -> Array{nf_elem, 1}
 > Finds elements $x_i$ in the number field s.th the elements
 > totally positive at all but the $i$-th real embedding, but 
 > negative at the $i$-th.
 """
-function elements_with_all_signs(L::NfMaxOrd)
+function elements_with_all_signs(L::NfOrd)
   r1, r2 = signature(L)
   K = nf(L)
   
@@ -152,12 +152,12 @@ end
 
 doc"""
 ***
-    narrow_class_group(L::NfMaxOrd) -> GrpAbFinGen, Map
+    narrow_class_group(L::NfOrd) -> GrpAbFinGen, Map
 > Compute the narrow (or strict) class group of $L$, ie. the
 > group of invertable ideals modulo the group of totally positive elements.
 > In case the field has no real embedding, this is just the class group.
 """
-function narrow_class_group(L::NfMaxOrd)
+function narrow_class_group(L::NfOrd)
   C, mC = class_group(L)
 
   r1, r2 = signature(L)
@@ -210,7 +210,7 @@ function narrow_class_group(L::NfMaxOrd)
     return L(prod([sg[i]^Int(a.coeff[1,i]) for i=1:length(sg)])) * image(mC, C([a.coeff[1, i+length(sg)] for i=1:ngens(C)]))
   end
 
-  function log(A::NfMaxOrdIdl)
+  function log(A::NfOrdIdl)
     a = preimage(mC, A)
     B = FacElem(Dict(A => fmpz(-1))) * FacElem(gensC, [a.coeff[1,i] for i=1:ngens(C)])
     A, c = reduce_ideal2(B)
@@ -219,7 +219,7 @@ function narrow_class_group(L::NfMaxOrd)
   end
 
   mp = MapNarrowClassGrp{typeof(X)}()
-  mp.header = MapHeader(X, NfMaxOrdIdlSet(L), exp, log)
+  mp.header = MapHeader(X, NfOrdIdlSet(L), exp, log)
   return X, mp
 end
 

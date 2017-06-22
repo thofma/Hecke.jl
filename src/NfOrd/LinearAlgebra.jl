@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  NfMaxOrd/LinearAlgebra.jl : Linear algebra over maximal orders
+#  NfOrd/LinearAlgebra.jl : Linear algebra over maximal orders
 #
 # This file is part of Hecke.
 #
@@ -36,7 +36,7 @@ using Hecke
 
 export pseudo_matrix, pseudo_hnf
 
-function _det_bound(M::GenMat{NfOrdElem{NfMaxOrd}})
+function _det_bound(M::GenMat{NfOrdElem})
   n = rows(M)
   O = base_ring(M)
   d = degree(O)
@@ -45,7 +45,7 @@ function _det_bound(M::GenMat{NfOrdElem{NfMaxOrd}})
   return fmpz(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
 end
 
-function _max_max(M::GenMat{NfOrdElem{NfMaxOrd}})
+function _max_max(M::GenMat{NfOrdElem})
   d = FlintZZ(1)
   for i in 1:rows(M)
     for j in 1:cols(M)
@@ -60,8 +60,8 @@ function _max_max(M::GenMat{NfOrdElem{NfMaxOrd}})
   return d
 end
   
-#function det(M::GenMat{NfOrdElem{NfMaxOrd}})
-#  O = base_ring(M)::NfMaxOrd
+#function det(M::GenMat{NfOrdElem})
+#  O = base_ring(M)::NfOrd
 #  B = _det_bound(M)
 #  p = next_prime(2^60) # magic numbers
 #  P = fmpz(1)
@@ -98,8 +98,8 @@ function _get_coeff_raw(x::nmod_poly, i::Int)
   return u
 end
 
-function det(M::GenMat{NfOrdElem{NfMaxOrd}})
-  O = base_ring(M)::NfMaxOrd
+function det(M::GenMat{NfOrdElem})
+  O = base_ring(M)::NfOrd
   K = nf(O)
   B = _det_bound(M)
   if Int==Int64
@@ -228,7 +228,7 @@ function _basis_coord_nonneg(x::NfOrdElem)
   return true
 end
 
-function rand(M::GenMatSpace{NfOrdElem{NfMaxOrd}}, B::Union{Int, fmpz})
+function rand(M::GenMatSpace{NfOrdElem}, B::Union{Int, fmpz})
   z = M()
   for i in 1:rows(z)
     for j in 1:cols(z)
@@ -241,9 +241,9 @@ end
 type PMat
   parent
   matrix::GenMat{nf_elem}
-  coeffs::Array{NfMaxOrdFracIdl, 1}
+  coeffs::Array{NfOrdFracIdl, 1}
 
-  function PMat(m::GenMat{nf_elem}, c::Array{NfMaxOrdFracIdl, 1})
+  function PMat(m::GenMat{nf_elem}, c::Array{NfOrdFracIdl, 1})
     z = new()
     z.matrix = m
     z.coeffs = c
@@ -258,15 +258,15 @@ function show(io::IO, P::PMat)
   end
 end
 
-function PseudoMatrix(m::GenMat{nf_elem}, c::Array{NfMaxOrdFracIdl, 1})
+function PseudoMatrix(m::GenMat{nf_elem}, c::Array{NfOrdFracIdl, 1})
   # sanity checks
   return PMat(m ,c)
 end
 
 
-function PseudoMatrix(m::GenMat{NfOrdElem{NfMaxOrd}}, c::Array{NfMaxOrdIdl, 1})
+function PseudoMatrix(m::GenMat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   mm = change_ring(m, nf(base_ring(m)))
-  cc = map(z -> NfMaxOrdFracIdl(z, fmpz(1)), c)
+  cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat(mm, cc)
 end
 
@@ -278,7 +278,7 @@ function cols(m::PMat)
   return cols(m.matrix)
 end
 
-function change_ring(m::GenMat{NfOrdElem{NfMaxOrd}}, K::AnticNumberField)
+function change_ring(m::GenMat{NfOrdElem}, K::AnticNumberField)
   return MatrixSpace(K, rows(m), cols(m))(map(z -> K(z), m.entries))
 end
 
@@ -293,7 +293,7 @@ function det(m::PMat)
 end
 
 # this is slow
-function _coprime_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
+function _coprime_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   O = order(y)
   c = conjugates_init(nf(O).pol)
   #num_x_inv = inv(num(x))
@@ -313,7 +313,7 @@ function _coprime_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
 end
 
 # this is slow
-function _coprime_norm_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
+function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
   c = conjugates_init(nf(O).pol)
@@ -337,7 +337,7 @@ function _coprime_norm_integral_ideal_class(x::NfMaxOrdFracIdl, y::NfMaxOrdIdl)
   return z, a 
 end
 
-function rand(I::NfMaxOrdIdl, B::Int)
+function rand(I::NfOrdIdl, B::Int)
   r = rand(-B:B, degree(order(I)))
   b = basis(I)
   z = r[1]*b[1]
@@ -347,12 +347,12 @@ function rand(I::NfMaxOrdIdl, B::Int)
   return z
 end
 
-function rand(I::NfMaxOrdFracIdl, B::Int)
+function rand(I::NfOrdFracIdl, B::Int)
   z = rand(num(I), B)
   return divexact(elem_in_nf(z), den(I))
 end
 
-function pseudo_hnf(P::PMat, m::NfMaxOrdIdl, shape::Symbol = :upperright)
+function pseudo_hnf(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   O = order(m)
 
   t_comp_red = 0.0
@@ -371,19 +371,19 @@ function pseudo_hnf(P::PMat, m::NfMaxOrdIdl, shape::Symbol = :upperright)
     end
   end
 
-  res = PMat(res_mat, [ deepcopy(x)::NfMaxOrdFracIdl for x in P.coeffs])
+  res = PMat(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
 
   for i in 1:rows(P)
     if iszero(zz[i, i].elem)
       res.matrix[i, i] = one(nf(O))
-      res.coeffs[i] = NfMaxOrdFracIdl(deepcopy(m), fmpz(1))
+      res.coeffs[i] = NfOrdFracIdl(deepcopy(m), fmpz(1))
     else
       o = ideal(O, zz[i, i].elem)
       t_sum += @elapsed g = o + m
       t_div += @elapsed oo = divexact(o, g)
       t_div += @elapsed mm = divexact(m, g)
       t_idem += @elapsed e, f = idempotents(oo, mm)
-      res.coeffs[i] = NfMaxOrdFracIdl(deepcopy(g), fmpz(1))
+      res.coeffs[i] = NfOrdFracIdl(deepcopy(g), fmpz(1))
       mul_row!(res.matrix, i, elem_in_nf(e))
       divide_row!(res.matrix, i, elem_in_nf(zz[i, i].elem))
       res.matrix[i, i] = one(nf(O))
@@ -401,9 +401,9 @@ end
 
 #this is Algorithm 4 of FH2014
 # we assume that span(P) \subseteq O^r
-function _matrix_for_reduced_span(P::PMat, m::NfMaxOrdIdl)
+function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
   O = order(m)
-  c = Array{NfMaxOrdIdl}(rows(P))
+  c = Array{NfOrdIdl}(rows(P))
   mat = deepcopy(P.matrix)
   for i in 1:rows(P)
     I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
@@ -426,7 +426,7 @@ end
 
 _check(a) = a.has_coord ? dot(a.elem_in_basis, basis(parent(a))) == a : true
 
-function _check(m::GenMat{NfOrdElem{NfMaxOrd}})
+function _check(m::GenMat{NfOrdElem})
   for i in 1:rows(m)
     for j in 1:cols(m)
       if !_check(m[i, j].elem)
@@ -437,7 +437,7 @@ function _check(m::GenMat{NfOrdElem{NfMaxOrd}})
   end
 end
 
-function _check(m::GenMat{NfMaxOrdQuoRingElem})
+function _check(m::GenMat{NfOrdQuoRingElem})
   for i in 1:rows(m)
     for j in 1:cols(m)
       if !_check(m[i, j].elem)
@@ -522,7 +522,7 @@ function sub(M::GenMat, rows::UnitRange{Int}, cols::UnitRange{Int})
   return z
 end
 
-function in(x::nf_elem, y::NfMaxOrdFracIdl)
+function in(x::nf_elem, y::NfOrdFracIdl)
   B = inv(basis_mat(y))
   O = order(y)
   M = MatrixSpace(FlintZZ, 1, degree(O))()
@@ -558,6 +558,11 @@ function _pseudo_hnf_cohen{T}(P::PMat, trafo::Type{Val{T}} = Val{false})
    end
 end
 
+#=
+Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
+by H. Cohen.
+The reductions in step 6 are not implemented.
+=#
 function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool = false)
    m = rows(H)
    n = cols(H)
@@ -630,4 +635,41 @@ function swap_rows!(P::PMat, i::Int, j::Int)
    swap_rows!(P.matrix, i, j)
    P.coeffs[i], P.coeffs[j] = P.coeffs[j], P.coeffs[i]
    return nothing
+end
+
+function _in_span(v::Vector{nf_elem}, P::PMat)
+   @assert length(v) == cols(P)
+   m = rows(P)
+   n = cols(P)
+   K = base_ring(P.matrix)
+   x = zeros(K, m)
+   t = K()
+   k = 0
+   for i = 1:n
+      l = 0
+      for j = k+1:m
+         if !iszero(P.matrix[j, i])
+            l = j
+            break
+         end
+      end
+      if l == 0 && !iszero(v[i])
+         return false, x
+      end
+      k = l
+      s = K()
+      for j = 1:k-1
+         t = mul!(t, P.matrix[j, i], x[j])
+         s = addeq!(s, t)
+      end
+      s = v[k] - s
+      x[k] = divexact(s, P.matrix[k, i])
+      if !(x[k] in P.coeffs[k])
+         return false, x
+      end
+      if k == min(m, n)
+         break
+      end
+   end
+   return true, x
 end

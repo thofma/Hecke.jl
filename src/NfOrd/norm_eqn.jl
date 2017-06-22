@@ -2,7 +2,7 @@ export isnorm, norm_equation
 
 #TODO: verbose printing
 
-function norm_1_generators(A::Array{NfMaxOrdIdl, 1})
+function norm_1_generators(A::Array{NfOrdIdl, 1})
   @assert all(isprime, A)
   @assert all(x->x.gen_one == A[1].gen_one, A)
 

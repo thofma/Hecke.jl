@@ -1,6 +1,6 @@
 export ResidueField
 
-function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdl)
+function ResidueField(O::NfOrd, P::NfOrdIdl)
   if !isindex_divisor(O, minimum(P))
     @assert has_2_elem(P) && isprime_known(P)
 
@@ -30,7 +30,7 @@ function ResidueField(O::NfMaxOrd, P::NfMaxOrdIdl)
       error("Not yet implemented")
     end
   else
-    f = NfMaxOrdToFqNmodMor(O, P)
+    f = NfOrdToFqNmodMor(O, P)
     return codomain(f), f
   end
 end

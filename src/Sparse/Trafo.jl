@@ -418,15 +418,15 @@ end
 #
 ################################################################################
 
-function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoSwap)
+function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoSwap)
   x[y.i], x[y.j] = x[y.j], x[y.i]
 end
 
-function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoAddScaled)
+function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoAddScaled)
   x[y.j] = x[y.j] * x[y.i]^Int(y.s)
 end
 
-function apply_left!(x::Vector{NfMaxOrdFracIdl}, y::TrafoPartialDense)
+function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoPartialDense)
   z = view(deepcopy(x), y.cols)
   xx = view(x, y.cols)
   for i in 1:rows(y.U)  ## use power product instead

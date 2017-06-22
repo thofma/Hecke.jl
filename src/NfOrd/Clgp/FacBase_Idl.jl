@@ -6,21 +6,21 @@
 #
 ################################################################################
 
-function NfFactorBase(O::NfMaxOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
+function NfFactorBase(O::NfOrd, B::Int, F::Function, complete::Bool = false, degree_limit::Int = 0)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lp = prime_ideals_up_to(O, B, F, complete = complete, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
   return NfFactorBase(O, lp)
 end
 
-function NfFactorBase(O::NfMaxOrd, lp::AbstractArray{Int, 1}, degree_limit::Int = 0)
+function NfFactorBase(O::NfOrd, lp::AbstractArray{Int, 1}, degree_limit::Int = 0)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lP = prime_ideals_over(O, lp, degree_limit = degree_limit)
   @vprint :ClassGroup 2 " done \n"
   return NfFactorBase(O, lP)
 end
 
-function NfFactorBase(O::NfMaxOrd, B::Int;
+function NfFactorBase(O::NfOrd, B::Int;
                         complete::Bool = true, degree_limit::Int = 5)
   @vprint :ClassGroup 2 "Splitting the prime ideals ...\n"
   lp = prime_ideals_up_to(O, B, complete = complete, degree_limit = degree_limit)
@@ -28,7 +28,7 @@ function NfFactorBase(O::NfMaxOrd, B::Int;
   return NfFactorBase(O, lp)
 end  
 
-function NfFactorBase(O::NfMaxOrd, lp::Array{NfMaxOrdIdl, 1})
+function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   lp = sort(lp, lt = function(a,b) return norm(a) > norm(b); end)
   FB = NfFactorBase()
   FB.size = length(lp)
@@ -38,7 +38,7 @@ function NfFactorBase(O::NfMaxOrd, lp::Array{NfMaxOrdIdl, 1})
   FB.rw = Array{Int}(20)
   FB.mx = 20
 
-  fb = Dict{fmpz, Array{Tuple{Int, NfMaxOrdIdl}, 1}}()
+  fb = Dict{fmpz, Array{Tuple{Int, NfOrdIdl}, 1}}()
 
   for i = 1:length(lp)
     if !haskey(fb, lp[i].gen_one)
@@ -122,7 +122,7 @@ function factor(FB::NfFactorBase, a::nf_elem)
   return M
 end
 
-function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfMaxOrdIdl,
+function _factor!(FB::Hecke.NfFactorBase, A::Hecke.NfOrdIdl,
                     error::Bool = true)
   T = fmpz                  
   O = order(A)
