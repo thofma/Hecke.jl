@@ -401,8 +401,8 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
   
   
   fac=factor(m)
-  y1=Dict{NfOrdIdl,fmpz}()
-  y2=Dict{NfOrdIdl,fmpz}()
+  y1=Dict{NfOrdIdl,Int}()
+  y2=Dict{NfOrdIdl,Int}()
   for (q,e) in fac
     if divisible(norm(q)-1,p)
       y1[q]=Int(1)
