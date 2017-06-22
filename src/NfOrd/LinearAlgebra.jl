@@ -254,7 +254,8 @@ end
 function show(io::IO, P::PMat)
   print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))\n")
   for i in 1:rows(P.matrix)
-    print(io, "$(P.coeffs[i]) with row vector $(sub(P.matrix, i:i, 1:cols(P.matrix)))\n")
+    showcompact(io, P.coeffs[i])
+    print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))\n")
   end
 end
 

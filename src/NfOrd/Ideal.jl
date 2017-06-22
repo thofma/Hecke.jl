@@ -890,12 +890,13 @@ function mul_maximal(x::NfOrdIdl, y::fmpz)
   if has_2_elem(x) 
     if has_2_elem_normal(x)
       return prod_by_int_2_elem_normal(x,y)
-    else
-      return prod_by_int_2_elem(x,y)
+# this does not make any sense since prod_by_int_2_elem(x, y) works only if has_2_elem_norm(x) == true
+#    else
+#      return prod_by_int_2_elem(x,y)
     end  
-  else
-    return x*ideal(order(x), y)
   end
+
+  return x*ideal(order(x), y)
 end
 
 *(x::fmpz, y::NfOrdIdl) = y * x
