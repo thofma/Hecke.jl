@@ -1,5 +1,5 @@
 import Nemo.sub!, Base.gcd
-export induce_rational_reconstruction, induce_crt, hasroot, root, roots, 
+export induce_rational_reconstruction, induce_crt, root, roots, 
        number_field, ismonic
 
 if Int==Int32
@@ -892,12 +892,12 @@ end
 
 doc"""
 ***
-    hasroot(a::nf_elem, n::Int) -> Bool, nf_elem
+    ispower(a::nf_elem, n::Int) -> Bool, nf_elem
 
 > Determines whether $a$ has an $n$-th root. If this is the case,
 > the root is returned.
 """
-function hasroot(a::nf_elem, n::Int)
+function ispower(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
   Kx, x = PolynomialRing(parent(a), "x")
 
