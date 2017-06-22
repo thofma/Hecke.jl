@@ -185,7 +185,7 @@ function _primitive_element_mod_p(p::NfOrdIdl)
   n = norm(p) - 1
   primefactors_n = collect(keys(factor(n).fac))
   while true
-    x = Q(rand(O,n))
+    x = rand(Q)
     x == 0 && continue
     order_to_small = false
     for l in primefactors_n
