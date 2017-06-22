@@ -36,6 +36,14 @@ function principal_gen_fac_elem(I::FacElem)
 end
 
 
+
+###############################################################################
+#
+#  Ray Class Group - Factored Form
+#
+###############################################################################
+
+
 function _coprime_ideal_fac_elem(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
  
   O=parent(m).order
@@ -339,6 +347,12 @@ end
 
 
 
+########################################################
+#
+#  Ray Class Group - p-part
+#
+########################################################
+
 
 function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer)
   
@@ -414,7 +428,7 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
   end
   for (q,vq) in y1
     gens_q , struct_q , dlog_q = Hecke._multgrp_mod_pv(q,1)
-
+  
     # Make generators coprime to other primes
     if length(fac) > 1
       i_without_q = 1
@@ -432,7 +446,8 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     gens_q = map(Q,gens_q)    
     struct_q[1,1]=p^v
     
-    uni_q=Hecke.anti_uniformizer(q)
+    uni_q=Hecke.anti_uniformizer(q)  
+   
     
     function dlog_q_norm(x::NfOrdElem)
       
@@ -455,6 +470,8 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
     # Make generators coprime to other primes
+    nq=norm(q)-1
+    
     if length(fac) > 1
       i_without_q = 1
       for (p2,vp2) in fac
@@ -471,6 +488,7 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
       end
     end
     
+    ciclmax=prod(Set(snf_q))
  
     uni_q=Hecke.anti_uniformizer(q)
     
@@ -478,9 +496,22 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
       
       val=valuation(x,q)
       if val==0
-        return disclog_q(x)
+        y=x^Int(nq)
+        y=disclog_q(y)
+        inv=gcdx(nq,ciclmax)[2]
+        for i=1:length(y)
+          y[i]*=inv
+        end
+        return y
       else 
-        return disclog_q(O(K(x)*uni_q^val))
+        y=O(K(x)*(uni_q^val))
+        y=y^Int(nq)
+        y=disclog_q(y)
+        inv=gcdx(nq,ciclmax)[2]
+        for i=1:length(y)
+          y[i]*=inv
+        end
+        return y
       end
 
     end
