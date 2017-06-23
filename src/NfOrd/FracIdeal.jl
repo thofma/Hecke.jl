@@ -601,7 +601,7 @@ function factor(I::NfOrdFracIdl)
   return fn  
 end
 
-function one(A::NfOrdIdl)
+function one(A::NfOrdFracIdl)
   return NfOrdFracIdl(ideal(order(A), 1), fmpz(1))
 end
 
