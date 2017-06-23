@@ -1,59 +1,50 @@
+################################################################################
+#
+#    NfOrd/NfOrd.jl : Orders in absolute number fields
+#
+# This file is part of hecke.
+#
+# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+#  Copyright (C) 2015, 2016, 2017 Tommy Hofmann
+#
+################################################################################
 
 export make_maximal, maximal_order, ring_of_integers, basis, basis_mat, basis_mat_inv
 
 export EquationOrder, Order, isequationorder, gen_index, minkowski_mat, index, isindex_divisor
 
-elem_type(::NfOrd) = NfOrdElem
+parent_type(::Type{NfOrdElem}) = NfOrd
 
 elem_type(::Type{NfOrd}) = NfOrdElem
 
-################################################################################
-#
-#  String I/O
-#
-################################################################################
-
-function show(io::IO, a::NfOrdSet)
-  print(io, "Set of orders of the number field ")
-  print(io, a.nf)
-end  
-
-function show(io::IO, a::NfOrd)
-  if ismaximal_known(a) && ismaximal(a)
-    show_maximal(io, a)
-  else
-    show_gen(io, a)
-  end
-end
-
-function show_gen(io::IO, a::NfOrd)
-  print(io, "Order of ")
-  println(io, a.nf)
-  print(io, "with Z-basis ")
-  print(io, basis(a))
-end
-
-function show_maximal(io::IO, O::NfOrd)
-  print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
-end
-
+elem_type(::NfOrd) = NfOrdElem
 
 ################################################################################
 #
-#  Predicates
-#
-################################################################################
-
-doc"""
-    isequationorder(O::NfOrd) -> Bool
-
->  Returns whether $\mathcal O$ is the equation order.
-"""
-isequationorder(O::NfOrd) = O.isequationorder
-
-################################################################################
-#
-#  Ambient number field
+#  Basic field access
 #
 ################################################################################
 
@@ -62,13 +53,7 @@ doc"""
 
 > Returns the ambient number field of $\mathcal O$.
 """
-nf(O::NfOrd) = O.nf
-
-################################################################################
-#
-#  Parent
-#
-################################################################################
+@inline nf(O::NfOrd) = O.nf
 
 doc"""
     parent(O::NfOrd) -> NfOrdSet
@@ -76,7 +61,15 @@ doc"""
 > Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
 > number field.
 """
-parent(O::NfOrd) = O.parent
+@inline parent(O::NfOrd) = O.parent
+
+doc"""
+    isequationorder(O::NfOrd) -> Bool
+
+> Returns whether $\mathcal O$ is the equation order of the ambient number
+> field.
+"""
+@inline isequationorder(O::NfOrd) = O.isequationorder
 
 ################################################################################
 #
@@ -89,14 +82,15 @@ function basis_ord(O::NfOrd)
     return O.basis_ord::Vector{NfOrdElem}
   end
   b = O.basis_nf
-  B = Array{NfOrdElem}(length(b))
+  d = degree(O)
+  B = Vector{NfOrdElem}(d)
   for i in 1:length(b)
-    v = fill(FlintZZ(0), length(b))
-    v[i] = FlintZZ(1)
-    B[i] = O(b[i], v; check = false)
+    v = [fmpz(0) for j in 1:d]
+    v[i] = fmpz(1)
+    B[i] = NfOrdElem(O, b[i], v)
   end
   O.basis_ord = B
-  return B::Array{NfOrdElem, 1}
+  return B
 end
 
 doc"""
@@ -109,10 +103,10 @@ function basis(O::NfOrd)
 end
 
 doc"""
-    basis(O::NfOrd, K::AnticNumberField) -> Array{nf_elem, 1}
+    basis(O::NfOrd, K::AnticNumberField) -> Vector{nf_elem}
 
-> Returns the $\mathbf Z$-basis of $\mathcal O$ as elements of the ambient
-> number field.
+> Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
+> ambient number field.
 """
 function basis(O::NfOrd, K::AnticNumberField)
   nf(O) != K && error()
@@ -152,6 +146,37 @@ function basis_mat_inv(O::NfOrd)
   O.basis_mat_inv = inv(basis_mat(O))
   return deepcopy(O.basis_mat_inv)
 end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, S::NfOrdSet)
+  print(io, "Set of orders of the number field ")
+  print(io, S.nf)
+end  
+
+function show(io::IO, O::NfOrd)
+  if ismaximal_known(O) && ismaximal(O)
+    show_maximal(io, O)
+  else
+    show_gen(io, O)
+  end
+end
+
+function show_gen(io::IO, O::NfOrd)
+  print(io, "Order of ")
+  println(io, nf(O))
+  print(io, "with Z-basis ")
+  print(io, basis(O))
+end
+
+function show_maximal(io::IO, O::NfOrd)
+  print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
+end
+
 
 ################################################################################
 #
@@ -337,6 +362,19 @@ end
 # Check if a number field element is contained in O
 # In this case, the second return value is the coefficient vector with respect
 # to the basis of O
+function _check_elem_in_order(a::nf_elem, Binv::FakeFmpqMat)
+  d = rows(Binv)
+  M = MatrixSpace(FlintZZ, 1, d)()
+  t = FakeFmpqMat(M)
+  elem_to_mat_row!(t.num, 1, t.den, a)
+  x = t*Binv
+  v = Array{fmpz}(d)
+  for i in 1:d
+    v[i] = deepcopy(x.num[1,i])
+  end
+  return (x.den == 1, v) 
+end  
+
 function _check_elem_in_order(a::nf_elem, O::NfOrd)
   M = MatrixSpace(FlintZZ, 1, degree(O))()
   t = FakeFmpqMat(M)
@@ -487,9 +525,28 @@ doc"""
 > Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
 > whether $B$ defines an order.
 """
-function Order(a::Array{nf_elem, 1}, check::Bool = true) 
-  # We should check if it really is a basis and the elements are integral
-  return NfOrd(nf_elem[ deepcopy(x) for x in a])
+function Order(::AnticNumberField, a::Array{nf_elem, 1}, check::Bool = true, cache::Bool = true) 
+  K = parent(a[1])
+  if check
+    b, bmat, bmat_inv, _ = defines_order(K, a)
+    if !b
+      error("The elements do not define an order")
+    else
+      return NfOrd(K, bmat, bmat_inv, deepcopy(a), cache)
+    end
+  else
+    return NfOrd(deepcopy(a), cache)
+  end
+end
+
+function Order(K::AnticNumberField, a::Vector, check::Bool = true, cache::Bool = true)
+  local b
+  try
+    b = map(K, a)
+  catch
+    error("Cannot coerce elements from array into the number field")
+  end
+  return Order(K, b, check, cache)
 end
 
 doc"""
@@ -498,31 +555,98 @@ doc"""
 > Returns the order which has basis matrix $A$ with respect to the power basis of $K$.
 > If `check` is set, it is checked whether $A$ defines an order.
 """
-function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true)
-  # We should check if a has full rank and the elements are integral?
-  return NfOrd(K, deepcopy(a))
+function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true, cache::Bool = true)
+  if check
+    b, ainv, d = defines_order(K, a)
+    if !b
+      error("The basis matrix does not define an order")
+    else
+      return NfOrd(K, deepcopy(a), ainv, d, cache)
+    end
+  else
+    return NfOrd(K, deepcopy(a), cache)
+  end
+end
+
+doc"""
+    Order(K::AnticNumberField, A::fmpq_mat, check::Bool = true) -> NfOrd
+
+> Returns the order which has basis matrix $A$ with respect to the power basis of $K$.
+> If `check` is set, it is checked whether $A$ defines an order.
+"""
+function Order(K::AnticNumberField, a::fmpq_mat, check::Bool = true, cache::Bool = true)
+  return Order(K, FakeFmpqMat(a), cache)
+end
+
+doc"""
+    Order(K::AnticNumberField, A::fmpz_mat, check::Bool = true) -> NfOrd
+
+> Returns the order which has basis matrix $A$ with respect to the power basis of $K$.
+> If `check` is set, it is checked whether $A$ defines an order.
+"""
+function Order(K::AnticNumberField, a::fmpz_mat, check::Bool = true, cache::Bool = true)
+  return Order(K, FakeFmpqMat(a), check, cache)
+end
+
+doc"""
+    Order(A::NfOrdFracIdl) -> NfOrd
+
+> Returns the fractional ideal $A$ as an order of the ambient number field.
+"""
+function Order(a::NfOrdFracIdl, check::Bool = true, cache::Bool = true)
+  return Order(nf(order(a)), basis_mat(a)*basis_mat(order(a)), check, cache)
 end
 
 doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
-> Returns the equation of the number field $K$.
+> Returns the equation order of the number field $K$.
 """
-function EquationOrder(K::AnticNumberField)
-  z = NfOrd([gen(K)^i for i in 0:(degree(K) - 1)])
+function EquationOrder(K::AnticNumberField, cache::Bool = true)
+  M = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
+  Minv = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
+  z = NfOrd(K, M, Minv, [gen(K)^i for i in 0:(degree(K) - 1)], cache)
   z.isequationorder = true
   return z
 end
 
 ################################################################################
 #
-#  Creation from fractional ideals
+#  Equality
 #
 ################################################################################
 
-function NfOrd(a::NfOrdFracIdl)
-  z = NfOrd(nf(order(a)), a.basis_mat*order(a).basis_mat)
-  return z
+function ==(R::NfOrd, S::NfOrd)
+  return nf(R) == nf(S) && basis_mat(R) == basis_mat(S)
+end
+
+################################################################################
+#
+#  Trace matrix
+#
+################################################################################
+
+function trace_matrix(O::NfOrd)
+  if isdefined(O, :trace_mat)
+    return O.trace_mat
+  end
+  K = nf(O)
+  b = basis(O, K)
+  n = degree(K)
+  g = MatrixSpace(FlintZZ, n, n)()
+  for i=1:n
+    t = trace(b[i]^2)
+    @assert isinteger(t)
+    g[i,i] = num(t)
+    for j in (i + 1):n
+      t = trace(b[i]*b[j])
+      @assert isinteger(t)
+      g[i,j] = num(t)
+      g[j,i] = num(t)
+    end
+  end
+  O.trace_mat = g
+  return g
 end
 
 ################################################################################
@@ -554,17 +678,14 @@ end
 #  p-Overorder
 #
 ################################################################################
-
     
 function _poverorder(O::NfOrd, p::fmpz)
-  #OO = NfOrdGen(colon_ideal(pradical(O, p)))
-  OO = ring_of_multipliers(pradical(O, p))
-  #OO.basis_mat = hnf(OO.basis_mat)
-  return OO
+  R = ring_of_multipliers(pradical(O, p))
+  return R
 end
 
 function _poverorder(O::NfOrd, p::Integer)
-  return _poverorder(O, ZZ(p))
+  return _poverorder(O, fmpz(p))
 end
 
 doc"""
@@ -604,6 +725,7 @@ doc"""
 function pmaximal_overorder(O::NfOrd, p::fmpz)
   @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
   if rem(discriminant(O), p) != 0
+    push!(O.primesofmaximality, p)
     return O
   end
 
@@ -619,14 +741,15 @@ function pmaximal_overorder(O::NfOrd, p::fmpz)
     OO = poverorder(OO, p)
     dd = discriminant(OO)
   end
+  push!(OO.primesofmaximality, p)
   return OO
 end
 
 function pmaximal_overorder(O::NfOrd, p::Integer)
-  return pmaximal_overorder(O, ZZ(p))
+  return pmaximal_overorder(O, fmpz(p))
 end
 
-function _MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
+function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   OO = deepcopy(O)
   disc = abs(discriminant(O))
   for i in 1:length(primes)
@@ -642,7 +765,7 @@ function _MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   return OO
 end
 
-function _MaximalOrder(O::NfOrd)
+function MaximalOrder(O::NfOrd)
   OO = deepcopy(O)
   @vtime :NfOrd fac = factor(Nemo.abs(discriminant(O)))
   for (p,j) in fac
@@ -654,29 +777,6 @@ function _MaximalOrder(O::NfOrd)
     @vprint :NfOrd 1 "done\n"
   end
   return OO
-end
-
-function trace_matrix(O::NfOrd)
-  if isdefined(O, :trace_mat)
-    return O.trace_mat
-  end
-  K = nf(O)
-  b = basis(O, K)
-  n = degree(K)
-  g = MatrixSpace(FlintZZ, n, n)()
-  for i=1:n
-    t = trace(b[i]^2)
-    @assert isinteger(t)
-    g[i,i] = num(t)
-    for j=i+1:n
-      t = trace(b[i]*b[j])
-      @assert isinteger(t)
-      g[i,j] = num(t)
-      g[j,i] = num(t)
-    end
-  end
-  O.trace_mat = g
-  return g
 end
 
 # don't know what this is doing
@@ -741,10 +841,10 @@ doc"""
     julia> K, a = NumberField(x^3 + 2, "a")
     julia> O = MaximalOrder(K)
 """
-function _MaximalOrder(K::AnticNumberField)
+function MaximalOrder(K::AnticNumberField)
   O = EquationOrder(K)
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
-  O = _MaximalOrder(O)
+  O = MaximalOrder(O)
   @vprint :NfOrd 1 "... done\n"
   M = NfOrd(K, basis_mat(O))
   M.ismaximal = 1
@@ -759,10 +859,10 @@ doc"""
 > order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
 > this function returns the maximal order of $K$.
 """
-function _MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
+function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   O = EquationOrder(K)
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
-  O = _MaximalOrder(O, primes)
+  O = MaximalOrder(O, primes)
   @vprint :NfOrd 1 "... done\n"
   return NfOrd(K, basis_mat(O))
 end
@@ -782,7 +882,7 @@ function maximal_order(K::AnticNumberField)
     if e != AccessorNotSetError()
       rethrow(e)
     end
-    O = _MaximalOrder(K)::NfOrd
+    O = MaximalOrder(K)::NfOrd
     _set_maximal_order_of_nf(K, O)
     return O
   end
@@ -801,7 +901,7 @@ doc"""
 > $\mathbf Z[\alpha]$), this function returns the maximal order of $K$.
 """
 function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
-  O = _MaximalOrder(K, primes)
+  O = MaximalOrder(K, primes)
   return O
 end
 
@@ -827,4 +927,59 @@ end
 
 function ismaximal(O::NfOrd)
   return O.ismaximal == 1
+end
+
+################################################################################
+#
+#  Check if something defines an order
+#
+################################################################################
+
+# if false, then this returns (false, garbage, garbage)
+# if true, then this return (true, basis_mat, basis_mat_inv)
+function defines_order(K::AnticNumberField, x::FakeFmpqMat)
+  if rows(x) != degree(K) || cols(x) != degree(K)
+    return false, x, Vector{nf_elem}()
+  end
+  local xinv
+  try
+    xinv = inv(x)
+  catch
+    return false, x, Vector{nf_elem}()
+  end
+  n = degree(K)
+  B_K = basis(K)
+  d = Vector{nf_elem}(n)
+  # Construct the basis elements from the basis matrix
+  for i in 1:n
+    d[i] = elem_from_mat_row(K, x.num, i, x.den)
+  end
+
+  # Check if Z-module spanned by x is closed under multiplcation
+  l = Vector{nf_elem}(n)
+  for i in 1:degree(K)
+    for j in 1:degree(K)
+      l[j] = d[i]*d[j]
+    end
+    Ml = basis_mat(l)
+    if !isone((Ml * xinv).den)
+      return false, x, Vector{nf_elem}()
+    end
+  end
+  # Check if 1 is contained in the Z-module
+  Ml = basis_mat([one(K)])
+  if !isone((Ml * xinv).den)
+    return false, x, Vector{nf_elem}()
+  end
+  return true, xinv, d
+end
+
+function defines_order(K::AnticNumberField, A::Vector{nf_elem})
+  if length(A) != degree(K)
+    return false, FakeFmpqMat(), FakeFmpqMat(), A
+  else
+    B = basis_mat(A)
+    b, Binv, _ = defines_order(K, B)
+    return b, B, Binv, A
+  end
 end

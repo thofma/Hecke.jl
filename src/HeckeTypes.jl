@@ -243,7 +243,7 @@ const SRowSpaceDict = ObjectIdDict()
 type SRowSpace{T} <: Ring
   base_ring::Ring
 
-  function SrowSpace(R::Ring, cached = true)
+  function SrowSpace(R::Ring, cached::Bool = true)
     if haskey(SRowSpaceDict, R)
       return SRowSpace[R]::SRowSpace{T}
     else
@@ -438,6 +438,11 @@ type FakeFmpqMat
   rows::Int
   cols::Int
 
+  function FakeFmpqMat()
+    z = new()
+    return z
+  end
+
   function FakeFmpqMat(x::fmpz_mat, y::fmpz)
     z = new()
     z.num = x
@@ -467,6 +472,29 @@ type FakeFmpqMat
     z.rows = rows(x)
     z.cols = cols(x)
     z.parent = FakeFmpqMatSpace(z.rows, z.cols)
+    return z
+  end
+
+  function FakeFmpqMat(x::fmpq_mat)
+    z = new()
+    d = den(x[1, 1])
+    for i in 1:rows(x)
+      for j in 1:cols(x)
+        d = lcm(d, den(x[i, j]))
+      end
+    end
+    n = fmpz_mat(rows(x), cols(x))
+    n.base_ring = FlintIntegerRing()
+    for i in 1:rows(x)
+      for j in 1:cols(x)
+        n[i, j] = FlintZZ(d*x[i, j])
+      end
+    end
+    z.parent = FakeFmpqMatSpace(rows(x), cols(x))
+    z.rows = rows(x)
+    z.cols = cols(x)
+    z.num = n
+    z.den = d
     return z
   end
 end
@@ -511,64 +539,6 @@ type FacElem{B, S}
   end
 end
 
-
-################################################################################
-#
-#  NfOrdFracIdlSet/NfOrdFracIdl
-#
-################################################################################
-
-#abstract NfOrdFracIdlSet
-#
-#abstract NfOrdFracIdl
-#
-#NfOrdGenFracIdlSetID = ObjectIdDict()
-#
-#type NfOrdGenFracIdlSet <: NfOrdFracIdlSet
-#  order::NfOrdGen
-#
-#  function NfOrdGenFracIdlSet(a::NfOrdGen)
-#    try
-#      return NfOrdGenFracIdlSetID[a]
-#    catch
-#      NfOrdGenFracIdlSetID[a] = new(a)
-#      return NfOrdGenFracIdlSetID[a]
-#    end
-#  end
-#end
-#
-#type NfOrdGenFracIdl <: NfOrdFracIdl
-#  basis::Array{nf_elem, 1}
-#  num::NfOrdGenIdl
-#  den::fmpz
-#  basis_mat::FakeFmpqMat
-#  basis_mat_inv::FakeFmpqMat
-#  parent::NfOrdGenFracIdlSet
-#  norm::fmpq
-#  princ_gen::nf_elem
-#
-#  function NfOrdGenFracIdl(O::NfOrdGen, a::FakeFmpqMat)
-#    z = new()
-#    z.parent = NfOrdGenFracIdlSet(O)
-#    z.basis_mat = a
-#    return z
-#  end
-#
-#  function NfOrdGenFracIdl(O::NfOrdGen, a::NfOrdGenIdl, b::fmpz)
-#    z = new()
-#    z.parent = NfOrdGenFracIdlSet(O)
-#    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
-#    return z
-#  end
-#
-#  function NfOrdGenFracIdl(O::NfOrdGen, a::nf_elem)
-#    z = new()
-#    z.parent = NfOrdGenFracIdlSet(O)
-#    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(den(a, O)*a)), den(a, O)))
-#    return z
-#  end
-#end
-
 ################################################################################
 #
 #  NfOrdSet/NfOrd
@@ -591,41 +561,49 @@ const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
 
 type NfOrd <: Ring
   nf::AnticNumberField
-  basis_nf::Array{nf_elem, 1}      # Array of number field elements
-  basis_ord                        # Array of order elements
-  basis_mat::FakeFmpqMat           # basis matrix of order wrt basis of K
-  basis_mat_inv::FakeFmpqMat       # inverse of basis matrix
-  gen_index::fmpq                  # the det of basis_mat_inv
-  index::fmpz                      # the det of basis_mat_inv
-  disc::fmpz                       # discriminant
-  parent::NfOrdSet              # parent object
-  isequationorder::Bool            #
-  signature::Tuple{Int, Int}       # signature of the parent object
-                                   # (-1, 0) means 'not set'
+  basis_nf::Vector{nf_elem}        # Basis as array of number field elements
+  basis_ord#::Vector{NfOrdElem}    # Basis as array of order elements
+  basis_mat::FakeFmpqMat           # Basis matrix of order wrt basis of K
+  basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
+  gen_index::fmpq                  # The det of basis_mat_inv as fmpq
+  index::fmpz                      # The det of basis_mat_inv
+                                   # (this is the index of the equation order
+                                   #  in the given order)
+  disc::fmpz                       # Discriminant
+  parent::NfOrdSet                 # Parent object
+  isequationorder::Bool            # Equation order of ambient number field?
+  signature::Tuple{Int, Int}       # Signature of the ambient number field
+                                   # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
-  torsion_units#::Tuple{Array{NfOrdElem, 1}, NfOrdElem}
+  torsion_units#::Tuple{Vector{NfOrd}, NfOrd}
   unit_group::Map                  # Abstract types in the field is usually bad,
                                    # but here it can be neglected.
-                                   # We annotate the concrete type when doing
-                                   # unit_group(O)
+                                   # We annotate the getter function
+                                   # (unit_group(O)) with type assertions.
 
-  ismaximal::Int                   # 0 not known
-                                   # 1 known to be maximal
-                                   # 2 known to not be maximal
+  ismaximal::Int                   # 0 Not known
+                                   # 1 Known to be maximal
+                                   # 2 Known to not be maximal
+
+  primesofmaximality::Vector{fmpz} # primes at the which the order is known to
+                                   # to be maximal
 
   norm_change_const::Tuple{Float64, Float64}
                                    # Tuple c1, c2 as in the paper of
                                    # Fieker-Friedrich
-  trace_mat::fmpz_mat              # the trace matrix - if known
+                                   # (-1, -1) means "not set"
+  trace_mat::fmpz_mat              # The trace matrix (if known)
 
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
 
   function NfOrd(a::AnticNumberField)
+    # "Default" constructor with default values.
     r = new(a)
     r.parent = NfOrdSet(a)
     r.signature = (-1,0)
+    r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(5)
     r.isequationorder = false
@@ -633,58 +611,57 @@ type NfOrd <: Ring
     return r
   end
 
-  function NfOrd(K::AnticNumberField, x::FakeFmpqMat)
-    if haskey(NfOrdID, (K,x))
-      return NfOrdID[(K,x)]::NfOrd
+  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{nf_elem}, cached::Bool = true)
+    if haskey(NfOrdID, (K, x))
+      return NfOrdID[(K, x)]
+    else
+      z = NfOrd(K)
+      n = degree(K)
+      z.basis_nf = B
+      z.basis_mat = x
+      z.basis_mat_inv = xinv
+      if cached
+        NfOrdID[(K, x)] = z
+      end
+      return z
     end
-    z = NfOrd(K)
-    n = degree(K)
-    B_K = basis(K)
-    d = Array{nf_elem}(n)
-    for i in 1:n
-      d[i] = elem_from_mat_row(K, x.num, i, x.den)
-    end
-    z.basis_nf = d
-    z.basis_mat = x
-    z.basis_mat_inv = inv(x)
-    B = Array{NfOrdElem}(n)
-    for i in 1:n
-      v = fill(zero(FlintZZ), n)
-      v[i] = ZZ(1)
-      B[i] = z(d[i], v)
-    end
-
-    z.basis_ord = B
-    NfOrdID[(K,x)] = z
-    return z
   end
 
-  function NfOrd(b::Array{nf_elem, 1})
+  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, cached::Bool = true)
+    if haskey(NfOrdID, (K, x))
+      return NfOrdID[(K, x)]
+    else
+      z = NfOrd(K)
+      n = degree(K)
+      B_K = basis(K)
+      d = Vector{nf_elem}(n)
+      for i in 1:n
+        d[i] = elem_from_mat_row(K, x.num, i, x.den)
+      end
+      z.basis_nf = d
+      z.basis_mat = x
+      if cached
+        NfOrdID[(K, x)] = z
+      end
+      return z
+    end
+  end
+
+  function NfOrd(b::Array{nf_elem, 1}, cached::Bool = true)
     K = parent(b[1])
-    n = degree(K)
     A = FakeFmpqMat(basis_mat(b))
 
     if haskey(NfOrdID, (K,A))
-      return NfOrdID[(K,A)]::NfOrd
+      return NfOrdID[(K,A)]
+    else
+      z = NfOrd(K)
+      z.basis_nf = b
+      z.basis_mat = A
+      if cached
+        NfOrdID[(K,A)] = z
+      end
+      return z
     end
-
-    z = NfOrd(K)
-    z.basis_nf = b
-    z.basis_mat = A
-    z.basis_mat_inv = inv(A)
-
-    B = Array{NfOrdElem}(n)
-
-    for i in 1:n
-      v = fill(zero(FlintZZ), n)
-      v[i] = ZZ(1)
-      B[i] = z(b[i], v)
-    end
-
-    z.basis_ord = B
-
-    NfOrdID[(K,A)] = z
-    return z
   end
 end
 
