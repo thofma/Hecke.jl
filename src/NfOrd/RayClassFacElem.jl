@@ -481,12 +481,12 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     
     function dlog_q_norm(x::NfOrdElem)
       
-      val=valuation(x,q)
-      if val==0
-        return dlog_q(x)
-      else 
-        return dlog_q(O(K(x)*uni_q^val))
+      y=x*uni_q
+      while y in O
+        x=y
+        y=x*uni_q
       end
+      return dlog_q(x)
 
     end
     
@@ -521,28 +521,21 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     ciclmax=prod(Set(snf_q))
  
     uni_q=Hecke.anti_uniformizer(q)
+    inv=gcdx(nq,ciclmax)[2]
     
     function dlog_q_norm(x::NfOrdElem)
       
-      val=valuation(x,q)
-      if val==0
-        y=Q(x)^Int(nq)
-        y=disclog_q(y.elem)
-        inv=gcdx(nq,ciclmax)[2]
-        for i=1:length(y)
-          y[i]*=inv
-        end
-        return y
-      else 
-        y=O(K(x)*(uni_q^val))
-        y=Q(y)^Int(nq)
-        y=disclog_q(y.elem)
-        inv=gcdx(nq,ciclmax)[2]
-        for i=1:length(y)
-          y[i]*=inv
-        end
-        return y
+      y=x*uni_q
+      while y in O
+        x=y
+        y=x*uni_q
       end
+      y=Q(x)^Int(nq)
+      y=disclog_q(y.elem)
+      for i=1:length(y)
+        y[i]*=inv
+      end
+      return y
 
     end
       
@@ -625,6 +618,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   
   M,pi=quo(O,m)
+  nm=norm(m)-1
   
   
 #
@@ -640,16 +634,16 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
-@time  for i=1:ngens(U)
+  for i=1:ngens(U)
     u=mU(U[i])
     a=G([0 for i=1:ngens(G)])
-    for (f,k) in u.fac
+    for (f,k) in u.fac      
       if f in O
-        a=a+k*(mG\(O(f)))
+        a=a+mod(k,order(G))*(mG\(O(f)))
       else 
         d=den(f,O)
         n=f*d
-        a=a+k*(mG\(O(n))) -k*(mG\(O(d)))
+        a=a+mod(k,order(G))*(mG\(O(n)) - mG\(O(d)))
       end
     end
     a=a.coeff
@@ -675,7 +669,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
         else 
           d=den(f,O)
           n=f*d
-          b=b+k*(mG\(O(n))) -k*(mG\(O(d)))
+          b=b+k*( mG\(O(n)) -mG\(O(d)) )
         end
       end
       b=b.coeff
