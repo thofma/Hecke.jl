@@ -541,10 +541,7 @@ end
 
 +(A::NfOrdFracIdl, B::NfOrdIdl) = B+A
 
-global bla = []
-
 function +(A::NfOrdFracIdl, B::Hecke.NfOrdFracIdl)
-  push!(bla, (A, B))
   d = lcm(den(A), den(B))
   ma = div(d, den(A))
   mb = div(d, den(B))
