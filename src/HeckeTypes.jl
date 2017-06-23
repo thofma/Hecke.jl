@@ -545,19 +545,24 @@ end
 #
 ################################################################################
 
+export NfOrdSet
+
 type NfOrdSet
   nf::AnticNumberField
 
   function NfOrdSet(a::AnticNumberField)
-  try
-    return NfOrdSetID[a]::NfOrdSet
-  end
-    NfOrdSetID[a] = new(a)
-    return NfOrdSetID[a]
+    if haskey(NfOrdSetID, a)
+      return NfOrdSetID[a]
+    else
+      NfOrdSetID[a] = new(a)
+      return NfOrdSetID[a]
+    end
   end
 end
 
 const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
+
+export NfOrd
 
 type NfOrd <: Ring
   nf::AnticNumberField
@@ -598,6 +603,9 @@ type NfOrd <: Ring
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
 
+  tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
+                                   # and den.
+
   function NfOrd(a::AnticNumberField)
     # "Default" constructor with default values.
     r = new(a)
@@ -608,6 +616,7 @@ type NfOrd <: Ring
     r.auxilliary_data = Array{Any}(5)
     r.isequationorder = false
     r.ismaximal = 0
+    r.tcontain = FakeFmpqMat(MatrixSpace(FlintZZ, 1, degree(a))())
     return r
   end
 

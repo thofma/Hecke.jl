@@ -36,11 +36,17 @@ export make_maximal, maximal_order, ring_of_integers, basis, basis_mat, basis_ma
 
 export EquationOrder, Order, isequationorder, gen_index, minkowski_mat, index, isindex_divisor
 
-parent_type(::Type{NfOrdElem}) = NfOrd
+################################################################################
+#
+#  Make NfOrd fully working Nemo ring 
+#
+################################################################################
 
-elem_type(::Type{NfOrd}) = NfOrdElem
+Nemo.parent_type(::Type{NfOrdElem}) = NfOrd
 
-elem_type(::NfOrd) = NfOrdElem
+Nemo.elem_type(::Type{NfOrd}) = NfOrdElem
+
+Nemo.elem_type(::NfOrd) = NfOrdElem
 
 ################################################################################
 #
@@ -73,13 +79,13 @@ doc"""
 
 ################################################################################
 #
-#  Basis
+#  Assertions for fields
 #
 ################################################################################
 
-function basis_ord(O::NfOrd)
+function assert_has_basis(O::NfOrd)
   if isdefined(O, :basis_ord)
-    return O.basis_ord::Vector{NfOrdElem}
+    return nothing
   end
   b = O.basis_nf
   d = degree(O)
@@ -90,7 +96,35 @@ function basis_ord(O::NfOrd)
     B[i] = NfOrdElem(O, b[i], v)
   end
   O.basis_ord = B
-  return B
+  return nothing
+end
+
+function assert_has_basis_mat(O::NfOrd)
+  if isdefined(O, :basis_mat)
+    return nothing
+  end
+  A = O.basis_nf
+  O.basis_mat = FakeFmpqMat(basis_mat(A))
+  return nothing
+end
+
+function assert_has_basis_mat_inv(O::NfOrd)
+  if isdefined(O, :basis_mat_inv)
+    return nothing
+  end
+  O.basis_mat_inv = inv(basis_mat(O))
+  return nothing
+end
+
+################################################################################
+#
+#  Basis
+#
+################################################################################
+
+function basis_ord(O::NfOrd)
+  assert_has_basis(O)
+  return deepcopy(O.basis_ord)::Vector{NfOrdElem}
 end
 
 doc"""
@@ -98,9 +132,7 @@ doc"""
 
 > Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
-function basis(O::NfOrd)
-  return basis_ord(O)
-end
+@inline basis(O::NfOrd) = basis_ord(O)
 
 doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Vector{nf_elem}
@@ -126,11 +158,7 @@ doc"""
 > of the ambient number field.
 """
 function basis_mat(O::NfOrd)
-  if isdefined(O, :basis_mat)
-    return deepcopy(O.basis_mat)
-  end
-  A = O.basis_nf
-  O.basis_mat = FakeFmpqMat(basis_mat(A))
+  assert_has_basis_mat(O)
   return deepcopy(O.basis_mat)
 end
 
@@ -140,10 +168,7 @@ doc"""
 > Returns the inverse of the basis matrix of $\mathcal O$.
 """
 function basis_mat_inv(O::NfOrd)
-  if isdefined(O, :basis_mat_inv)
-    return deepcopy(O.basis_mat_inv)
-  end
-  O.basis_mat_inv = inv(basis_mat(O))
+  assert_has_basis_mat_inv(O)
   return deepcopy(O.basis_mat_inv)
 end
 
@@ -176,7 +201,6 @@ end
 function show_maximal(io::IO, O::NfOrd)
   print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
 end
-
 
 ################################################################################
 #
@@ -362,29 +386,20 @@ end
 # Check if a number field element is contained in O
 # In this case, the second return value is the coefficient vector with respect
 # to the basis of O
-function _check_elem_in_order(a::nf_elem, Binv::FakeFmpqMat)
-  d = rows(Binv)
-  M = MatrixSpace(FlintZZ, 1, d)()
-  t = FakeFmpqMat(M)
-  elem_to_mat_row!(t.num, 1, t.den, a)
-  x = t*Binv
-  v = Array{fmpz}(d)
-  for i in 1:d
-    v[i] = deepcopy(x.num[1,i])
-  end
-  return (x.den == 1, v) 
-end  
-
 function _check_elem_in_order(a::nf_elem, O::NfOrd)
-  M = MatrixSpace(FlintZZ, 1, degree(O))()
-  t = FakeFmpqMat(M)
+  assert_has_basis_mat_inv(O)
+  t = O.tcontain
   elem_to_mat_row!(t.num, 1, t.den, a)
-  x = t*basis_mat_inv(O)
-  v = Array{fmpz}(degree(O))
-  for i in 1:degree(O)
-    v[i] = deepcopy(x.num[1,i])
+  t = mul!(t, t, O.basis_mat_inv)
+  if !isone(t.den) 
+    return false, Vector{fmpz}()
+  else
+    v = Vector{fmpz}(degree(O))
+    for i in 1:degree(O)
+      v[i] = deepcopy(t.num[1,i])
+    end
+    return true, v 
   end
-  return (x.den == 1, v) 
 end  
 
 doc"""
@@ -393,7 +408,7 @@ doc"""
 > Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
-  (x,y) = _check_elem_in_order(a,O)
+  (x, y) = _check_elem_in_order(a,O)
   return x
 end
 
@@ -409,13 +424,11 @@ doc"""
 > Returns the smallest positive integer $k$ such that $k \cdot a$ lies in O.
 """
 function den(a::nf_elem, O::NfOrd)
-  d = den(a)
-  b = d*a 
-  M = MatrixSpace(ZZ, 1, degree(O))()
-  elem_to_mat_row!(M, 1, fmpz(1), b)
-  t = FakeFmpqMat(M, d)
-  z = t*basis_mat_inv(O)
-  return z.den
+  assert_has_basis_mat_inv(O)
+  M = O.tcontain
+  elem_to_mat_row!(M.num, 1, M.den, a)
+  M = mul!(M, M, O.basis_mat_inv)
+  return deepcopy(M.den)
 end
 
 ##################################3#############################################
@@ -842,12 +855,12 @@ doc"""
     julia> K, a = NumberField(x^3 + 2, "a")
     julia> O = MaximalOrder(K)
 """
-function MaximalOrder(K::AnticNumberField)
+function MaximalOrder(K::AnticNumberField, cache::Bool = true)
   O = EquationOrder(K)
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
   O = MaximalOrder(O)
   @vprint :NfOrd 1 "... done\n"
-  M = NfOrd(K, basis_mat(O))
+  M = NfOrd(K, basis_mat(O), cache)
   M.ismaximal = 1
   return M
 end

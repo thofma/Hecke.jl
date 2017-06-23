@@ -723,13 +723,13 @@ function add!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
   else
     z.has_coord = false
   end
-  nothing
+  return z
 end
 
 function mul!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
   z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
   z.has_coord = false
-  nothing
+  return z
 end
 
 function mul!(z::NfOrdElem, x::fmpz, y::NfOrdElem)
@@ -742,7 +742,7 @@ function mul!(z::NfOrdElem, x::fmpz, y::NfOrdElem)
   else
     z.has_coord = false
   end
-  nothing
+  return z
 end
 
 mul!(z::NfOrdElem, x::Integer, y::NfOrdElem) =  mul!(z, ZZ(x), y)
@@ -752,7 +752,7 @@ mul!(z::NfOrdElem, x::NfOrdElem, y::Integer) = mul!(z, y, x)
 function add!(z::NfOrdElem, x::fmpz, y::NfOrdElem)
   z.elem_in_nf = y.elem_in_nf + x
   z.has_coord = false
-  nothing
+  return z
 end
 
 add!(z::NfOrdElem, x::NfOrdElem, y::fmpz) = add!(z, y, x)
@@ -760,7 +760,7 @@ add!(z::NfOrdElem, x::NfOrdElem, y::fmpz) = add!(z, y, x)
 function add!(z::NfOrdElem, x::Integer, y::NfOrdElem)
   z.elem_in_nf = x + y.elem_in_nf
   z.has_coord = false
-  nothing
+  return z
 end
 
 add!(z::NfOrdElem, x::NfOrdElem, y::Integer) = add!(z, y, x)
