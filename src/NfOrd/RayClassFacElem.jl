@@ -356,11 +356,11 @@ end
 
 function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer)
   
-
+  O=parent(mC(C[1])).order
   if !divisible(order(C[ngens(C)]),p)
    G=DiagonalGroup([1])
    function exp1(a::GrpAbFinGenElem)
-     return ideal(parent(mC(C[1])).order, O(1))
+     return ideal(O, O(1))
    end
    function disclog1(I::NfOrdIdl)
      return G([0])
@@ -640,7 +640,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
-  for i=1:ngens(U)
+@time  for i=1:ngens(U)
     u=mU(U[i])
     a=G([0 for i=1:ngens(G)])
     for (f,k) in u.fac
