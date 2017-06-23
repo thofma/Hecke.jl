@@ -526,8 +526,8 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
       
       val=valuation(x,q)
       if val==0
-        y=x^Int(nq)
-        y=disclog_q(y)
+        y=Q(x)^Int(nq)
+        y=disclog_q(y.elem)
         inv=gcdx(nq,ciclmax)[2]
         for i=1:length(y)
           y[i]*=inv
@@ -535,8 +535,8 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
         return y
       else 
         y=O(K(x)*(uni_q^val))
-        y=y^Int(nq)
-        y=disclog_q(y)
+        y=Q(y)^Int(nq)
+        y=disclog_q(y.elem)
         inv=gcdx(nq,ciclmax)[2]
         for i=1:length(y)
           y[i]*=inv
