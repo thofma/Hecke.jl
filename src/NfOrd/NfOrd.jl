@@ -670,6 +670,7 @@ function +(a::NfOrd, b::NfOrd)
   d = degree(a)
   c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
   O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den))
+  O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
   return O
 end
 
