@@ -330,17 +330,19 @@ function divexact!(z::fmpz, x::fmpz, y::fmpz)
     y == 0 && throw(DivideError())
     ccall((:fmpz_divexact, :libflint), Void, 
           (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
-    z
+    return z
 end
 
 function lcm!(z::fmpz, x::fmpz, y::fmpz)
    ccall((:fmpz_lcm, :libflint), Void, 
          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+   return z
 end
 
 function gcd!(z::fmpz, x::fmpz, y::fmpz)
    ccall((:fmpz_gcd, :libflint), Void, 
          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+   return z
 end
  
 function inv!(a::perm)

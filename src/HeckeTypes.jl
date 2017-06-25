@@ -443,13 +443,15 @@ type FakeFmpqMat
     return z
   end
 
-  function FakeFmpqMat(x::fmpz_mat, y::fmpz)
+  function FakeFmpqMat(x::fmpz_mat, y::fmpz, simplified::Bool = false)
     z = new()
     z.num = x
     z.den = y
     z.rows = rows(x)
     z.cols = cols(x)
-    simplify_content!(z)
+    if !simplified
+      simplify_content!(z)
+    end
     z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
@@ -468,7 +470,7 @@ type FakeFmpqMat
   function FakeFmpqMat(x::fmpz_mat)
     z = new()
     z.num = x
-    z.den = ZZ(1)
+    z.den = fmpz(1)
     z.rows = rows(x)
     z.cols = cols(x)
     z.parent = FakeFmpqMatSpace(z.rows, z.cols)

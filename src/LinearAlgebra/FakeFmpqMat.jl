@@ -6,9 +6,9 @@
 
 export num, den
 
-num(x::FakeFmpqMat) = x.num
+num(x::FakeFmpqMat) = deepcopy(x.num)
 
-den(x::FakeFmpqMat) = x.den
+den(x::FakeFmpqMat) = deepcopy(x.den)
 
 rows(x::FakeFmpqMat) = rows(x.num)
 
@@ -19,11 +19,11 @@ function simplify_content!(x::FakeFmpqMat)
   c = gcd(c, x.den)
   if c != 1 
     divexact!(x.num, x.num, c)
-    x.den = div(x.den, c)
+    divexact!(x.den, x.den, c)
   end
   y = canonical_unit(x.den)
   if !isone(y)
-    x.den *= y
+    mul!(x.den, x.den, y)
     mul!(x.num, x.num, y)
   end
 end
@@ -35,7 +35,7 @@ end
 ################################################################################
 
 function hash(a::FakeFmpqMat, b::UInt)
-  h = Base.hash(num(a)) $ Base.hash(den(a))
+  h = Base.hash(a.num, b) $ Base.hash(a.den, b)
   h = h $ Base.hash(b)
   h = (h << 1) | (h >> (sizeof(Int)*8 - 1))
   return h
@@ -48,7 +48,7 @@ end
 ################################################################################
 
 function show(io::IO, x::FakeFmpqMat)
-  print(io, "FakeFmpqMat with numerator\n", num(x), "\nand denominator ", den(x))
+  print(io, "FakeFmpqMat with numerator\n", x.num, "\nand denominator ", x.den)
 end
 
 ################################################################################
@@ -64,8 +64,8 @@ function -(x::FakeFmpqMat)
 end
 
 function inv(x::FakeFmpqMat)
-  i, d_i = pseudo_inv(num(x))
-  i *= den(x)
+  i, d_i = pseudo_inv(x.num)
+  i *= x.den
   z = FakeFmpqMat(i,d_i)
   simplify_content!(z)
   return z
@@ -78,17 +78,17 @@ end
 ################################################################################
 
 function +(x::FakeFmpqMat, y::FakeFmpqMat)
-  t = den(y)*num(x) + den(x)*num(y)
-  d = den(x)*den(y)
+  t = y.den*x.num + x.den*y.num
+  d = x.den*y.den
   z = FakeFmpqMat(t,d)
   simplify_content!(z)
   return z
 end
 
 function *(x::FakeFmpqMat, y::FakeFmpqMat)
-  t = num(x)*num(y)
-  d = den(x)*den(y)
-  z = FakeFmpqMat(t,d)
+  t = x.num*y.num
+  d = x.den * y.den
+  z = FakeFmpqMat(t, d)
   simplify_content!(z)
   return z
 end
@@ -126,7 +126,7 @@ end
 #
 ################################################################################
 
-==(x::FakeFmpqMat, y::FakeFmpqMat) = (num(x) == num(y)) && (den(x) == den(y))
+==(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
 
 ################################################################################
 #
@@ -137,7 +137,7 @@ end
 to_array(x::FakeFmpqMat) = (x.num, x.den)
 
 function to_fmpz_mat(x::FakeFmpqMat)
-  den(x) != 1 && error("Denominator has to be 1")
+  x.den != 1 && error("Denominator has to be 1")
   return num(x)
 end
 
@@ -148,13 +148,12 @@ end
 ################################################################################
 
 function hnf!(x::FakeFmpqMat)
-  h = hnf(num(x))
-  x.num = h
+  x.num = hnf(x.num)
 end
 
 function hnf(x::FakeFmpqMat, shape = :lowerleft)
-  h = _hnf(num(x), shape)
-  return FakeFmpqMat(h,den(x))
+  h = _hnf(x.num, shape)
+  return FakeFmpqMat(h, den(x))
 end
 
 ################################################################################
@@ -164,12 +163,17 @@ end
 ################################################################################
 
 function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
-  z = FakeFmpqMat(sub(num(x),r,c),den(x))
+  z = FakeFmpqMat(sub(x.num, r, c), x.den)
   return z
 end
 
 function Base.deepcopy_internal(x::FakeFmpqMat, dict::ObjectIdDict)
-  z = FakeFmpqMat(deepcopy(num(x)), den(x))
+  z = FakeFmpqMat()
+  z.num = Base.deepcopy_internal(x.num, dict)
+  z.den = Base.deepcopy_internal(x.den, dict)
+  z.rows = rows(x)
+  z.cols = cols(x)
+  z.parent = FakeFmpqMatSpace(z.rows, z.cols)
   return z
 end
 

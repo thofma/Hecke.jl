@@ -386,19 +386,23 @@ end
 # Check if a number field element is contained in O
 # In this case, the second return value is the coefficient vector with respect
 # to the basis of O
-function _check_elem_in_order(a::nf_elem, O::NfOrd)
+function _check_elem_in_order{T}(a::nf_elem, O::NfOrd, short::Type{Val{T}} = Val{false})
   assert_has_basis_mat_inv(O)
   t = O.tcontain
   elem_to_mat_row!(t.num, 1, t.den, a)
   t = mul!(t, t, O.basis_mat_inv)
-  if !isone(t.den) 
-    return false, Vector{fmpz}()
+  if short == Val{true}
+    return isone(t.den)
   else
-    v = Vector{fmpz}(degree(O))
-    for i in 1:degree(O)
-      v[i] = deepcopy(t.num[1,i])
+    if !isone(t.den)
+      return false, Vector{fmpz}()
+    else
+      v = Vector{fmpz}(degree(O))
+      for i in 1:degree(O)
+        v[i] = deepcopy(t.num[1,i])
+      end
+      return true, v
     end
-    return true, v 
   end
 end  
 
@@ -408,8 +412,7 @@ doc"""
 > Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
-  (x, y) = _check_elem_in_order(a,O)
-  return x
+  return _check_elem_in_order(a, O, Val{true})
 end
 
 ################################################################################
