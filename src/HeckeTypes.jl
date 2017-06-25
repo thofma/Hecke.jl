@@ -688,15 +688,15 @@ export NfOrdElem
 
 type NfOrdElem <: RingElem
   elem_in_nf::nf_elem
-  elem_in_basis::Array{fmpz, 1}
+  elem_in_basis::Vector{fmpz}
   has_coord::Bool
-  parent::Ring
+  parent::NfOrd
 
   function NfOrdElem(O::NfOrd)
     z = new()
     z.parent = O
     z.elem_in_nf = nf(O)()
-    z.elem_in_basis = Array{fmpz}(degree(O))
+    z.elem_in_basis = Vector{fmpz}(degree(O))
     z.has_coord = false
     return z
   end
@@ -704,7 +704,7 @@ type NfOrdElem <: RingElem
   function NfOrdElem(O::NfOrd, a::nf_elem)
     z = new()
     z.elem_in_nf = a
-    z.elem_in_basis = Array{fmpz}(degree(O))
+    z.elem_in_basis = Vector{fmpz}(degree(O))
     z.parent = O
     z.has_coord = false
     return z

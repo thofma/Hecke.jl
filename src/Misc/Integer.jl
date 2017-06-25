@@ -198,7 +198,7 @@ end
   modord(a::fmpz, m::fmpz) -> Int
   modord(a::Integer, m::Integer)
 
-  The multiplicative order of a modulo m, no good algorithm.
+  The multiplicative order of a modulo m (not a good algorithm).
 """ ->
 function modord(a::fmpz, m::fmpz)
   gcd(a,m)!=1 && throw("1st agrument not a unit")
@@ -230,6 +230,12 @@ end
 function iseven(a::fmpz)
   ccall((:fmpz_is_even, :libflint), Int, (Ptr{fmpz},), &a) == 1
 end
+
+function neg!(a::fmpz)
+  ccall((:fmpz_neg, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &a, &a)
+  return a
+end
+
 ##
 ## to support rand(fmpz:fmpz)....
 ##
@@ -344,7 +350,22 @@ function gcd!(z::fmpz, x::fmpz, y::fmpz)
          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
    return z
 end
- 
+
+function mul!(z::fmpz, x::fmpz, y::Int)
+  ccall((:fmpz_mul_si, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), &z, &x, y)
+  return z
+end
+
+function mul!(z::fmpz, x::fmpz, y::UInt)
+  ccall((:fmpz_mul_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, UInt), &z, &x, y)
+  return z
+end
+
+function mul!(z::fmpz, x::fmpz, y::Integer)
+  mul!(z, x, fmpz(y))
+  return z
+end
+
 function inv!(a::perm)
   R = parent(a)
   ccall((:_perm_inv, :libflint), Void, (Ref{Int}, Ref{Int}, Int), a.d, a.d, R.n)
