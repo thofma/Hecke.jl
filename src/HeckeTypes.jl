@@ -578,7 +578,7 @@ type NfOrd <: Ring
                                    #  in the given order)
   disc::fmpz                       # Discriminant
   parent::NfOrdSet                 # Parent object
-  isequationorder::Bool            # Equation order of ambient number field?
+  isequation_order::Bool            # Equation order of ambient number field?
   signature::Tuple{Int, Int}       # Signature of the ambient number field
                                    # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
@@ -616,7 +616,7 @@ type NfOrd <: Ring
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(5)
-    r.isequationorder = false
+    r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(MatrixSpace(FlintZZ, 1, degree(a))())
     return r

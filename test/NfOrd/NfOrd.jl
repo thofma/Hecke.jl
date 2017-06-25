@@ -103,11 +103,11 @@
     @test K2 == @inferred nf(O2)
     @test K3 == @inferred nf(O3)
 
-    @test @inferred isequationorder(O1)
-    @test @inferred isequationorder(O2)
-    @test @inferred !isequationorder(O3)
-    @test @inferred !isequationorder(O4)
-    @test @inferred isequationorder(O5)
+    @test @inferred isequation_order(O1)
+    @test @inferred isequation_order(O2)
+    @test @inferred !isequation_order(O3)
+    @test @inferred !isequation_order(O4)
+    @test @inferred isequation_order(O5)
 
     b = @inferred basis(O1)
     @test b == [ O1(1), O1(a1), O1(a1^2) ]
