@@ -31,6 +31,28 @@ function principal_gen_fac_elem(I::FacElem)
   x=x*inv(a)
   return x
   
+end
+
+
+function anti_uniformizers(d::Dict{NfOrdIdl, Int})
+  
+  
+  anti_uni=Dict{NfOrdIdl, nf_elem}()
+  for (q,v) in d
+    found=false
+    while found==false
+      anti_uni[q]=Hecke.anti_uniformizer(q)
+      found=true
+      for (q1,v1) in d
+        if q!= q1 && valuation(anti_uni[q],q1)!=0
+          found=false
+          break
+        end
+      end
+    end
+  end
+  
+  return anti_uni
   
 end
 
@@ -86,84 +108,6 @@ function _coprime_ideal_fac_elem(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
 end 
 
 
-
-function _multgrp_ray_class(Q::NfOrdQuoRing)
-  gens = Vector{NfOrdQuoRingElem}()
-  structt = Vector{fmpz}()
-  disc_logs = Vector{Function}()
-  i = ideal(Q)
-  O=parent(i).order
-  K=nf(O)
-  fac = factor(i)
-  # TODO calculate each primepower only once
-  for (p,vp) in fac
-    gens_p , struct_p , dlog_p = Hecke._multgrp_mod_pv(p,vp)
-
-    # Make generators coprime to other primes
-    if length(fac) > 1
-      i_without_p = 1
-      for (p2,vp2) in fac
-        (p != p2) && (i_without_p *= p2^vp2)
-      end
-
-      pvp = p^vp
-      alpha, beta = Hecke.extended_euclid(pvp,i_without_p)
-      for i in 1:length(gens_p)
-        g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
-        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
-        gens_p[i] = g_pi_new
-      end
-    end
-    
-    uni_p=Hecke.anti_uniformizer(p)
-    
-    function dlog_p_norm(x::NfOrdElem)
-      
-      val=valuation(x,p)
-      if val==0
-        return dlog_p(x)
-      else 
-        return dlog_p(O(K(x)*uni_p^val))
-      end
-
-    end
-
-    gens_p = map(Q,gens_p)
-    append!(gens,gens_p)
-    append!(structt,struct_p)
-    push!(disc_logs,dlog_p_norm)
-  end
-  
-  G=DiagonalGroup(structt)
-  
-  function expo(a::GrpAbFinGenElem)   
-    x=Q(1)
-    for i=1:ngens(G)
-      if Int(a.coeff[1,i])!= 0
-        x=x*(gens[i]^(Int(a.coeff[1,i])))
-      end
-    end
-    return x
-  end
-  
-  function dlog(x::NfOrdElem)
-    result = Vector{fmpz}()
-    for disclog in disc_logs
-      append!(result,disclog(x))
-    end
-    return G(result)
-  end
-  
-  mG=MapMultGrp()
-  mG.header=Hecke.MapHeader(G,Q,expo,dlog)
-  
-  return G, mG
-end
-
-
-
-
 function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
 #
@@ -178,8 +122,11 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   C, mC = class_group(O)
   exp_class=_coprime_ideal_fac_elem(C,mC,m)
   U, mU = unit_group_fac_elem(O)
-  M, pi= quo(O,m)
-  G, mG=_multgrp_ray_class(M)
+  Q, pi= quo(O,m)
+  G, mG=unit_group(Q)
+  
+  lp=Q.factor
+  anti_uni=anti_uniformizers(lp)
   
   p = [ x for x in inf_plc if isreal(x) ]
   if !isempty(p)
@@ -187,6 +134,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     T=G
     G=direct_product(G,H)
   end
+  
+  exponent=order(G[ngens(G)])
 
 #
 # We start to construct the relation matrix
@@ -203,24 +152,40 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 #
   for i=1:ngens(U)
     u=mU(U[i])
-    a=G([0 for i=1:ngens(G)])
+    el=Q(1)
     for (f,k) in u.fac
-      if f in O
-        a=a+k*(mG\(O(f)))
+      act_el=f
+      for (q,vq) in lp
+        val=valuation(act_el,q)
+        if val!=0
+          act_el=act_el*anti_uni[q]^val
+        end
+      end
+      if act_el in O
+        el=el*Q(O(act_el))^mod(k,exponent)
       else 
-        d=den(f,O)
-        n=f*d
-        a=a+k*(mG\(O(n))) -k*(mG\(O(d)))
+        d=den(act_el,O)
+        n=act_el*d
+        for (q,vq) in lp
+          val=valuation(d,q)
+          if val!=0
+            d=d*anti_uni[q]^val
+            n=n*anti_uni[q]^val
+          end
+        end
+        el=el* Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
       end
     end
-    a=a.coeff
+    a=(mG\el).coeff
     if !isempty(p)
-      a=hcat(a, (lH(K(u))).coeff)
+      b=sum([lH(f) for f in collect(keys(u.fac))])
+      a=hcat(a, b.coeff)
     end 
     for j=1:ngens(G)
       B[i+rows(RC)+rows(RG),j]=a[1,j]
     end
   end 
+  
 
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
@@ -229,22 +194,37 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   for i=1: ngens(C)
     if order(C[i])!=1
       y=principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
-      b=G([0 for i=1:ngens(G)])
+      el=Q(1)
       for (f,k) in y.fac
-        if f in O
-          b=b+k*(mG\(O(f)))
+        act_el=f
+        for (q,vq) in lp
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        if act_el in O
+          el=el*Q(O(act_el))^mod(k,exponent)
         else 
-          d=den(f,O)
-          n=f*d
-          b=b+k*(mG\(O(n))) -k*(mG\(O(d)))
+          d=den(act_el,O)
+          n=act_el*d
+          for (q,vq) in lp
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end
+          el=el* Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
         end
       end
-      b=b.coeff
+      a=(mG\el).coeff
       if !isempty(p)
-        b=hcat(b, (lH(K(y))).coeff)
+        b=sum([lH(f) for f in collect(keys(u.fac))])
+        a=hcat(a, b.coeff)
       end 
       for j=1: ngens(G)
-        B[i,j]=-b[1,j]
+        B[i,j]=-a[1,j]
       end 
     end
   end
@@ -265,30 +245,59 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       s=exp_class(L)
       I=FacElem(Dict(J => fmpz(-1)))* s
       A, c = Hecke.reduce_ideal2(I)
-      p=Hecke.principal_gen_fac_elem(A)
-      y=G([0 for i=1:ngens(G)])
-      for (f,k) in p.fac
-        if f in O
-          y=y+k*(mG\(O(f)))
+      z=Hecke.principal_gen_fac_elem(A)
+      el=Q(1)
+      for (f,k) in z.fac
+        act_el=f
+        for (q,vq) in lp
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        if act_el in O
+          el=el*Q(O(act_el))^mod(k,exponent)
         else 
-          d=den(f,O)
-          n=f*d
-          y=y+k*(mG\O(n) - mG\(O(d)))
+          d=den(act_el,O)
+          n=act_el*d
+          for (q,vq) in lp
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end  
+          el=el* Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
         end
       end
       for (f,k) in c.fac
-        if f in O
-          y=y-k*(mG\(O(f)))
+        act_el=f
+        for (q,vq) in lp
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        if act_el in O
+          el=el*Q(O(act_el))^mod(k,exponent)
         else 
-          d=den(f,O)
-          n=f*d
-          y=y-k*(mG\O(n) - mG\(O(d)))
+          d=den(act_el,O)
+          n=act_el*d
+          for (q,vq) in lp
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end  
+          el=el* Q(O(n))^mod(-k,exponent) * Q(O(d))^mod(k,exponent)
         end
       end
-      y=y.coeff
-      if !isempty(inf_plc)
-        z=lH(K(gamma))
-        y=hcat(y, z.coeff)
+      y=(mG\el).coeff
+      if !isempty(p)
+        b=sum([lH(f) for f in collect(keys(u.fac))])
+        c=sum([lH(f) for f in collect(keys(c.fac))])
+        y=hcat(y, (b-c).coeff)
       end 
       return X(hcat(L.coeff,y))
     end
@@ -302,7 +311,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 
   function expo(a::GrpAbFinGenElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
-    if isempty(inf_plc)
+    if isempty(p)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
       return exp_class(b)*ideal(O,pi\(mG(c)))
     else 
@@ -428,7 +437,7 @@ end
 
 
 
-function _mult_grp_mod_unit(m::NfOrdIdl, p::Integer, inf_plc::Array{InfPlc,1}=InfPlc[])
+function _mult_grp(m::NfOrdIdl, p::Integer, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
@@ -573,8 +582,11 @@ function _mult_grp_mod_unit(m::NfOrdIdl, p::Integer, inf_plc::Array{InfPlc,1}=In
     end
   end
   
-  return G, mG, y1, y2
+  return G, mG, merge(y1, y2)
 end
+
+
+
 
 
 
@@ -587,7 +599,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   C, mC = class_group(O)
   C, mC = _ptorsion_class_group(C,mC,p)
-  G, mG, y1,y2 = _mult_grp_mod_unit(m,p, inf_plc)
+  G, mG, lp = _mult_grp(m,p, inf_plc)
 
 
   
@@ -609,60 +621,17 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     return X,mp
   end
   
+  anti_uni=anti_uniformizers(lp)
   U, mU = unit_group_fac_elem(O)
   exp_class = Hecke._coprime_ideal_fac_elem(C,mC,m)
   Q,pi=quo(O,m)
 
 
 #
-#  Anti-uniformizers
-#  
-  anti_uni=Dict{NfOrdIdl, nf_elem}()
-  for (q,v) in y1
-    found=false
-    while found==false
-      anti_uni[q]=Hecke.anti_uniformizer(q)
-      found=true
-      for (q1,v1) in y1
-        if q1!= q && valuation(anti_uni[q],q1)!=0
-          found=false
-          break
-        end 
-      end
-      for (q1,v1) in y2
-        if valuation(anti_uni[q],q1)!=0
-          found=false
-          break
-        end 
-      end
-    end
-  end
-  
-  for (q,v) in y2
-    found=false
-    while found==false
-      anti_uni[q]=Hecke.anti_uniformizer(q)
-      found=true
-      for (q1,v1) in y1
-        if valuation(anti_uni[q],q1)!=0
-          found=false
-          break
-        end 
-      end
-      for (q1,v1) in y2  
-        if q1!=q && valuation(anti_uni[q],q1)!=0
-          found=false
-          break
-        end 
-      end
-    end
-  end
-  
-#
 # We start to construct the relation matrix
 #
 
-  exp=1
+  exp=1  # exponent of the unit group 
   for ind=1:ngens(G)
     if rels(G)[ind,ind]>exp
       exp=rels(G)[ind,ind]
@@ -684,13 +653,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     el=Q(1)
     for (f,k) in u.fac
       act_el=f
-      for (q,vq) in y1
-        val=valuation(act_el,q)
-        if val!=0
-          act_el=act_el*anti_uni[q]^val
-        end
-      end
-      for (q,vq) in y2
+      for (q,vq) in lp
         val=valuation(act_el,q)
         if val!=0
           act_el=act_el*anti_uni[q]^val
@@ -701,14 +664,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       else 
         d=den(act_el,O)
         n=act_el*d
-        for (q,vq) in y1
-          val=valuation(d,q)
-          if val!=0
-            d=d*anti_uni[q]^val
-            n=n*anti_uni[q]^val
-          end
-        end
-        for (q,vq) in y2
+        for (q,vq) in lp
           val=valuation(d,q)
           if val!=0
             d=d*anti_uni[q]^val
@@ -733,17 +689,10 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   for i=1: ngens(C)
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
-      b=G([0 for i=1:ngens(G)])
       el=Q(1)
       for (f,k) in y.fac
         act_el=f
-        for (q,vq) in y1
-          val=valuation(act_el,q)
-          if val!=0
-            act_el=act_el*anti_uni[q]^val
-          end
-        end
-        for (q,vq) in y2
+        for (q,vq) in lp
           val=valuation(act_el,q)
           if val!=0
             act_el=act_el*anti_uni[q]^val
@@ -754,20 +703,13 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
         else 
           d=den(act_el,O)
           n=act_el*d
-          for (q,vq) in y1
+          for (q,vq) in lp
             val=valuation(d,q)
             if val!=0
               d=d*anti_uni[q]^val
               n=n*anti_uni[q]^val
             end
-          end  
-          for (q,vq) in y2
-            val=valuation(d,q)
-            if val!=0
-              d=d*anti_uni[q]^val
-              n=n*anti_uni[q]^val
-            end
-          end
+          end 
           el=el* Q(O(n))^mod(k,exp) * Q(O(d))^mod(-k,exp)
         end
       end
@@ -800,13 +742,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       el=Q(1)
       for (f,k) in z.fac
         act_el=f
-        for (q,vq) in y1
-          val=valuation(act_el,q)
-          if val!=0
-            act_el=act_el*anti_uni[q]^val
-          end
-        end
-        for (q,vq) in y2
+        for (q,vq) in lp
           val=valuation(act_el,q)
           if val!=0
             act_el=act_el*anti_uni[q]^val
@@ -817,32 +753,19 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
         else 
           d=den(act_el,O)
           n=act_el*d
-          for (q,vq) in y1
+          for (q,vq) in lp
             val=valuation(d,q)
             if val!=0
               d=d*anti_uni[q]^val
               n=n*anti_uni[q]^val
             end
           end  
-          for (q,vq) in y2
-            val=valuation(d,q)
-            if val!=0
-              d=d*anti_uni[q]^val
-              n=n*anti_uni[q]^val
-            end
-          end
           el=el* Q(O(n))^mod(k,exp) * Q(O(d))^mod(-k,exp)
         end
       end
       for (f,k) in c.fac
         act_el=f
-        for (q,vq) in y1
-          val=valuation(act_el,q)
-          if val!=0
-            act_el=act_el*anti_uni[q]^val
-          end
-        end
-        for (q,vq) in y2
+        for (q,vq) in lp
           val=valuation(act_el,q)
           if val!=0
             act_el=act_el*anti_uni[q]^val
@@ -853,20 +776,13 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
         else 
           d=den(act_el,O)
           n=act_el*d
-          for (q,vq) in y1
+          for (q,vq) in lp
             val=valuation(d,q)
             if val!=0
               d=d*anti_uni[q]^val
               n=n*anti_uni[q]^val
             end
           end  
-          for (q,vq) in y2
-            val=valuation(d,q)
-            if val!=0
-              d=d*anti_uni[q]^val
-              n=n*anti_uni[q]^val
-            end
-          end
           el=el* Q(O(n))^mod(-k,exp) * Q(O(d))^mod(k,exp)
         end
       end
