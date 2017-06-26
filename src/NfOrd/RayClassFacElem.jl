@@ -1,8 +1,8 @@
 
-
 export ray_class_group_fac_elem, ray_class_group_p_part
 
-type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{NfOrdIdlSet}}
+
+type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   header::Hecke.MapHeader
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
@@ -20,7 +20,6 @@ type MapMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
     return new()
   end
 end
-
 
 
 
@@ -85,12 +84,6 @@ function _coprime_ideal_fac_elem(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
   return exp
 
 end 
-
-
-
-
-
-
 
 
 
@@ -435,7 +428,7 @@ end
 
 
 
-function _mult_grp(m::NfOrdIdl, p::Integer)
+function _mult_grp_mod_unit(m::NfOrdIdl, p::Integer, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
@@ -447,12 +440,9 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
   
   
   fac=factor(m)
-  
-  tot_fac=Dict{NfOrdIdl, NfOrdIdl}()
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
   for (q,e) in fac
-    tot_fac[q]=q^e
     if divisible(norm(q)-1,p)
       y1[q]=Int(1)
     else 
@@ -461,9 +451,7 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
       end
     end
   end
-  
-  anti_uni=Dict{NfOrdIdl, nf_elem}()
-  
+ 
   
   for (q,vq) in y1
     gens_q , struct_q , dlog_q = prime_part_multgrp_mod_p(q,p)
@@ -471,82 +459,50 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     # Make generators coprime to other primes
     if length(fac) > 1
       i_without_q = 1
-      qv=1
-      for (q2,qvq) in tot_fac
-        if q != q2
-          i_without_q *= qvq
-        else 
-          qv=qvq
-        end
+      for (q2,vq2) in fac
+        (q != q2) && (i_without_q *= q2^vq2)
       end
-      alpha, beta = Hecke.extended_euclid(qv ,i_without_q)
+      alpha, beta = Hecke.extended_euclid(q ,i_without_q)
       gens_q = beta*gens_q + alpha
     end
-    gens_q = [pi(gens_q)]    
-    
-    anti_uni[q]=Hecke.anti_uniformizer(q)  
-   
-    
-    function dlog_q_norm(x::NfOrdElem)
-      
-      y=K(x)*anti_uni[q]
-      while y in O
-        x=y
-        y=K(x)*anti_uni[q]
-      end
-      return dlog_q(O(x))
-
-    end
-    
-    append!(gens,gens_q)
+ 
+    append!(gens,[pi(gens_q)])
     append!(structt,struct_q)
-    push!(disc_logs,dlog_q_norm)
+    push!(disc_logs,dlog_q)
   
   end
   for (q,vq) in y2
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
-    # Make generators coprime 
+    # Make generators coprime to other primes
     nq=norm(q)-1
     
     if length(fac) > 1
       i_without_q = 1
-      qv=1
-      for (q2,qvq) in tot_fac
-        if q != q2
-          i_without_q *= qvq
-        else 
-          qv=qvq
-        end
+      for (p2,vp2) in fac
+        (q != p2) && (i_without_q *= p2^vp2)
       end
-      alpha, beta = Hecke.extended_euclid(qv,i_without_q)
+
+      qvq = q^Int(vq)
+      alpha, beta = Hecke.extended_euclid(qvq,i_without_q)
       for i in 1:length(gens_q)
         gens_q[i] = beta*gens_q[i] + alpha
       end
     end
     
     ciclmax=prod(Set(snf_q))
- 
-    anti_uni[q]=Hecke.anti_uniformizer(q)
-    inv=gcdx(nq,ciclmax)[2]
-    
-    Qq,mQq=quo(O,tot_fac[q])
-    
     function dlog_q_norm(x::NfOrdElem)
       
-      y=K(x)*anti_uni[q]
-      while y in O
-        x=y
-        y=K(x)*anti_uni[q]
-      end
-      y=Qq(O(x))^nq
-      y=disclog_q(y.elem)
-      for i=1:length(y)
-        y[i]*=inv
-      end
-      return y
+        y=Q(x)^Int(nq)
+        y=disclog_q(y.elem)
+        inv=gcdx(nq,ciclmax)[2]
+        for i=1:length(y)
+          y[i]*=inv
+        end
+        return y
 
     end
+      
     
     gens_q = map(Q,gens_q)
     append!(gens,gens_q)
@@ -579,7 +535,45 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
   mG=Hecke.MapMultGrp()
   mG.header=Hecke.MapHeader(G,Q,exp,dlog)
   
-  return G, mG
+  if p==2 
+    pr = [ x for x in inf_plc if isreal(x) ]
+    if !isempty(pr)
+      H,lH,eH=Hecke._infinite_primes(O,p,m)
+      T=G
+      G =Hecke.direct_product(G,H)
+      
+      function exptot(a::GrpAbFinGen)
+        c=T([a.coeff[1,i] for i=1:ngens(T)])
+        d=H([a.coeff[1,i] for i=ngens(T)+1: ngens(G)])
+        el=pi\(mG(c))
+        # I need to modify $el$ so that it has the correct sign at the embeddings contained in primes
+        vect=(lH(K(el))).coeff
+        if vect==d.coeff
+          return el
+        else 
+          correction=O(1)
+          for i=1:ngens(H)
+            if d.coeff[1,i]==1
+              correction=correction*eH(H[i])
+            end
+          end
+          while vect!=d.coeff
+            el=el+correction
+            vect=(lH(K(el))).coeff
+          end
+          return el
+        end 
+      end
+      
+      function disclogtot(x::NfOrdElem)
+        return G(hcat((mG\x).coeff, lH(x).coeff))
+      end
+      
+      mG.header=Hecke.MapHeader(G,Q,exptot,disclogtot)
+    end
+  end
+  
+  return G, mG, y1, y2
 end
 
 
@@ -593,9 +587,11 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   C, mC = class_group(O)
   C, mC = _ptorsion_class_group(C,mC,p)
-  G, mG = _mult_grp(m,p)
-  @show order(G)
-  if order(C)==1 && order(G)==1 && p!=2
+  G, mG, y1,y2 = _mult_grp_mod_unit(m,p, inf_plc)
+
+
+  
+  if order(C)==1 && order(G)==1
     X=DiagonalGroup([1])
     function exp2(a::GrpAbFinGen)
       return FacElem(Dict(ideal(O,1) => fmpz(1)))
@@ -613,55 +609,122 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     return X,mp
   end
   
-  if p==2 
-    pr = [ x for x in inf_plc if isreal(x) ]
-    if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,p,m)
-      T=G
-      G =Hecke.direct_product(G,H)
+  U, mU = unit_group_fac_elem(O)
+  exp_class = Hecke._coprime_ideal_fac_elem(C,mC,m)
+  Q,pi=quo(O,m)
+
+
+#
+#  Anti-uniformizers
+#  
+  anti_uni=Dict{NfOrdIdl, nf_elem}()
+  for (q,v) in y1
+    found=false
+    while found==false
+      anti_uni[q]=Hecke.anti_uniformizer(q)
+      found=true
+      for (q1,v1) in y1
+        if q1!= q && valuation(anti_uni[q],q1)!=0
+          found=false
+          break
+        end 
+      end
+      for (q1,v1) in y2
+        if valuation(anti_uni[q],q1)!=0
+          found=false
+          break
+        end 
+      end
     end
   end
   
-  exp_class = Hecke._coprime_ideal_fac_elem(C,mC,m)
-  U, mU = unit_group_fac_elem(O)
-
-  
-  M,pi=quo(O,m)
-  
+  for (q,v) in y2
+    found=false
+    while found==false
+      anti_uni[q]=Hecke.anti_uniformizer(q)
+      found=true
+      for (q1,v1) in y1
+        if valuation(anti_uni[q],q1)!=0
+          found=false
+          break
+        end 
+      end
+      for (q1,v1) in y2  
+        if q1!=q && valuation(anti_uni[q],q1)!=0
+          found=false
+          break
+        end 
+      end
+    end
+  end
   
 #
 # We start to construct the relation matrix
 #
+
+  exp=1
+  for ind=1:ngens(G)
+    if rels(G)[ind,ind]>exp
+      exp=rels(G)[ind,ind]
+    end
+  end
+  
   RG=rels(G)
   RC=rels(C)
 
-  A=vcat(RC, MatrixSpace(FlintZZ, ngens(G)+ngens(U), cols(RC))())
-  B=vcat(MatrixSpace(FlintZZ, ngens(C), cols(RG))(), RG)
-  B=vcat(B, MatrixSpace(FlintZZ, ngens(U) , cols(RG))())
- 
+  A=vcat(RC, MatrixSpace(FlintZZ,rows(RG)+ngens(U), cols(RC))())
+  B=vcat(RG, MatrixSpace(FlintZZ, ngens(U) , ngens(G))())
+  
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
+  
   for i=1:ngens(U)
     u=mU(U[i])
-    a=G([0 for i=1:ngens(G)])
-  @time  for (f,k) in u.fac      
-      if f in O
-        a=a+mod(k,order(G))*(mG\(O(f)))
+    el=Q(1)
+    for (f,k) in u.fac
+      act_el=f
+      for (q,vq) in y1
+        val=valuation(act_el,q)
+        if val!=0
+          act_el=act_el*anti_uni[q]^val
+        end
+      end
+      for (q,vq) in y2
+        val=valuation(act_el,q)
+        if val!=0
+          act_el=act_el*anti_uni[q]^val
+        end
+      end
+      if act_el in O
+        el=el*Q(O(act_el))^mod(k,exp)
       else 
-        d=den(f,O)
-        n=f*d
-        a=a+mod(k,order(G))*(mG\(O(n)) - mG\(O(d)))
+        d=den(act_el,O)
+        n=act_el*d
+        for (q,vq) in y1
+          val=valuation(d,q)
+          if val!=0
+            d=d*anti_uni[q]^val
+            n=n*anti_uni[q]^val
+          end
+        end
+        for (q,vq) in y2
+          val=valuation(d,q)
+          if val!=0
+            d=d*anti_uni[q]^val
+            n=n*anti_uni[q]^val
+          end
+        end
+        el=el* Q(O(n))^mod(k,exp) * Q(O(d))^mod(-k,exp)
       end
     end
-    a=a.coeff
-    if !isempty(inf_plc)
-      a=hcat(a, (lH(K(u))).coeff)
-    end 
+    a=(mG\(pi\(el))).coeff
     for j=1:ngens(G)
-      B[i+rows(RC)+rows(RG),j]=a[1,j]
+      B[i+ngens(G),j]=a[1,j]
     end
   end 
+  B=vcat(MatrixSpace(FlintZZ, ngens(C), cols(RG))(), B)
+
   
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
@@ -671,21 +734,46 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
       b=G([0 for i=1:ngens(G)])
+      el=Q(1)
       for (f,k) in y.fac
-        if f in O
-          b=b+k*(mG\(O(f)))
+        act_el=f
+        for (q,vq) in y1
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        for (q,vq) in y2
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        if act_el in O
+          el=el*Q(O(act_el))^mod(k,exp)
         else 
-          d=den(f,O)
-          n=f*d
-          b=b+k*( mG\(O(n)) -mG\(O(d)) )
+          d=den(act_el,O)
+          n=act_el*d
+          for (q,vq) in y1
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end  
+          for (q,vq) in y2
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end
+          el=el* Q(O(n))^mod(k,exp) * Q(O(d))^mod(-k,exp)
         end
       end
-      b=b.coeff
-      if p==2 && !isempty(pr)
-        b=hcat(b, (lH(K(y))).coeff)
-      end 
+      a=(mG\(pi\(el))).coeff
       for j=1: ngens(G)
-        B[i,j]=-b[1,j]
+        B[i,j]=-a[1,j]
       end 
     end
     
@@ -709,31 +797,81 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       I=FacElem(Dict(J => fmpz(-1)))* s
       A, c = Hecke.reduce_ideal2(I)
       z=Hecke.principal_gen_fac_elem(A)
-      y=G([0 for i=1:ngens(G)])
+      el=Q(1)
       for (f,k) in z.fac
-        if f in O
-          y=y+k*(mG\(O(f)))
+        act_el=f
+        for (q,vq) in y1
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        for (q,vq) in y2
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        if act_el in O
+          el=el*Q(O(act_el))^mod(k,exp)
         else 
-          d=den(f,O)
-          n=f*d
-          y=y+k*(mG\O(n) - mG\(O(d)))
+          d=den(act_el,O)
+          n=act_el*d
+          for (q,vq) in y1
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end  
+          for (q,vq) in y2
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end
+          el=el* Q(O(n))^mod(k,exp) * Q(O(d))^mod(-k,exp)
         end
       end
       for (f,k) in c.fac
-        if f in O
-          y=y-k*(mG\(O(f)))
+        act_el=f
+        for (q,vq) in y1
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        for (q,vq) in y2
+          val=valuation(act_el,q)
+          if val!=0
+            act_el=act_el*anti_uni[q]^val
+          end
+        end
+        if act_el in O
+          el=el*Q(O(act_el))^mod(k,exp)
         else 
-          d=den(f,O)
-          n=f*d
-          y=y-k*(mG\O(n) - mG\(O(d)))
+          d=den(act_el,O)
+          n=act_el*d
+          for (q,vq) in y1
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end  
+          for (q,vq) in y2
+            val=valuation(d,q)
+            if val!=0
+              d=d*anti_uni[q]^val
+              n=n*anti_uni[q]^val
+            end
+          end
+          el=el* Q(O(n))^mod(-k,exp) * Q(O(d))^mod(k,exp)
         end
       end
-      y=y.coeff
-      if p==2 && !isempty(pr)
-        z=lH(K(gamma))
-        y=hcat(y, z.coeff)
-      end 
-      return X(hcat(L.coeff,y))
+      y=mG\(pi\el)
+      return X(hcat(L.coeff,y.coeff))
     end
   end 
 
@@ -744,42 +882,17 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
 
   function expo(a::GrpAbFinGenElem)
+  
     b=C([a.coeff[1,i] for i=1:ngens(C)])
-    if p!=2 || isempty(pr)
-      c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
-      return exp_class(b)*ideal(O,pi\(mG(c)))
-    else     
-      c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
-      d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1: ngens(X)])
-      el=pi\(mG(c))
-      # I need to modify $el$ so that it has the correct sign at the embeddings contained in primes
-      vect=(lH(K(el))).coeff
-      if vect==d.coeff
-        return ideal(O,el)*exp_class(b)
-      else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
-        while vect!=d.coeff
-          el=el+correction
-          vect=(lH(K(el))).coeff
-        end
-        return ideal(O,el)*exp_class(b)
-      end 
-    end
+    c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
+    return exp_class(b)*ideal(O,pi\(mG(c)))
+    
   end 
 
   mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , expo, disclog)
   mp.modulus_fin=m
-  if p==2 
-    mp.modulus_inf=pr
-  else 
-    mp.modulus_inf=[]
-  end
+  mp.modulus_inf=inf_plc
 
   return X,mp
 end 
