@@ -447,9 +447,12 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
   
   
   fac=factor(m)
+  
+  tot_fac=Dict{NfOrdIdl, NfOrdIdl}()
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
   for (q,e) in fac
+    tot_fac[q]=q^e
     if divisible(norm(q)-1,p)
       y1[q]=Int(1)
     else 
@@ -459,6 +462,8 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     end
   end
   
+  anti_uni=Dict{NfOrdIdl, nf_elem}()
+  
   
   for (q,vq) in y1
     gens_q , struct_q , dlog_q = prime_part_multgrp_mod_p(q,p)
@@ -466,31 +471,33 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
     # Make generators coprime to other primes
     if length(fac) > 1
       i_without_q = 1
-      for (q2,vq2) in fac
-        (q != q2) && (i_without_q *= q2^vq2)
+      qv=1
+      for (q2,qvq) in tot_fac
+        if q != q2
+          i_without_q *= qvq
+        else 
+          qv=qvq
+        end
       end
-      alpha, beta = Hecke.extended_euclid(q ,i_without_q)
+      alpha, beta = Hecke.extended_euclid(qv ,i_without_q)
       gens_q = beta*gens_q + alpha
-      @hassert :NfOrdQuoRing 2 (g_pi_new - gens_q[1] in q)
-      @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
     end
     gens_q = [pi(gens_q)]    
     
-    uni_q=Hecke.anti_uniformizer(q)  
+    anti_uni[q]=Hecke.anti_uniformizer(q)  
    
     
     function dlog_q_norm(x::NfOrdElem)
       
-      y=x*uni_q
+      y=K(x)*anti_uni[q]
       while y in O
         x=y
-        y=x*uni_q
+        y=K(x)*anti_uni[q]
       end
-      return dlog_q(x)
+      return dlog_q(O(x))
 
     end
     
-
     append!(gens,gens_q)
     append!(structt,struct_q)
     push!(disc_logs,dlog_q_norm)
@@ -499,38 +506,40 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
   for (q,vq) in y2
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
-    # Make generators coprime to other primes
+    # Make generators coprime 
     nq=norm(q)-1
     
     if length(fac) > 1
       i_without_q = 1
-      for (p2,vp2) in fac
-        (q != p2) && (i_without_q *= p2^vp2)
+      qv=1
+      for (q2,qvq) in tot_fac
+        if q != q2
+          i_without_q *= qvq
+        else 
+          qv=qvq
+        end
       end
-
-      qvq = q^Int(vq)
-      alpha, beta = Hecke.extended_euclid(qvq,i_without_q)
+      alpha, beta = Hecke.extended_euclid(qv,i_without_q)
       for i in 1:length(gens_q)
-        g_pi_new = beta*gens_q[i] + alpha
-        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_q[i] in qvq)
-        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_q)
-        gens_q[i] = g_pi_new
+        gens_q[i] = beta*gens_q[i] + alpha
       end
     end
     
     ciclmax=prod(Set(snf_q))
  
-    uni_q=Hecke.anti_uniformizer(q)
+    anti_uni[q]=Hecke.anti_uniformizer(q)
     inv=gcdx(nq,ciclmax)[2]
+    
+    Qq,mQq=quo(O,tot_fac[q])
     
     function dlog_q_norm(x::NfOrdElem)
       
-      y=x*uni_q
+      y=K(x)*anti_uni[q]
       while y in O
         x=y
-        y=x*uni_q
+        y=K(x)*anti_uni[q]
       end
-      y=Q(x)^Int(nq)
+      y=Qq(O(x))^nq
       y=disclog_q(y.elem)
       for i=1:length(y)
         y[i]*=inv
@@ -538,7 +547,6 @@ function _mult_grp(m::NfOrdIdl, p::Integer)
       return y
 
     end
-      
     
     gens_q = map(Q,gens_q)
     append!(gens,gens_q)
@@ -586,6 +594,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   C, mC = class_group(O)
   C, mC = _ptorsion_class_group(C,mC,p)
   G, mG = _mult_grp(m,p)
+  @show order(G)
   if order(C)==1 && order(G)==1 && p!=2
     X=DiagonalGroup([1])
     function exp2(a::GrpAbFinGen)
@@ -618,7 +627,6 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   
   M,pi=quo(O,m)
-  nm=norm(m)-1
   
   
 #
@@ -637,7 +645,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   for i=1:ngens(U)
     u=mU(U[i])
     a=G([0 for i=1:ngens(G)])
-    for (f,k) in u.fac      
+  @time  for (f,k) in u.fac      
       if f in O
         a=a+mod(k,order(G))*(mG\(O(f)))
       else 
