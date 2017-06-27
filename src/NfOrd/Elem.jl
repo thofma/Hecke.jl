@@ -746,8 +746,7 @@ function add!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
   if x.has_coord && y.has_coord
     if isdefined(z.elem_in_basis, 1)
       for i in 1:degree(parent(x))
-        z.elem_in_basis[i] =
-              add!(z.elem_in_basis[i], x.elem_in_basis[i], y.elem_in_basis[i])
+        add!(z.elem_in_basis[i], x.elem_in_basis[i], y.elem_in_basis[i])
       end
     else
       for i in 1:degree(parent(x))
@@ -771,8 +770,7 @@ function addeq!(z::NfOrdElem, x::NfOrdElem)
   addeq!(z.elem_in_nf, x.elem_in_nf)
   if x.has_coord && z.has_coord
     for i in 1:degree(parent(z))
-      z.elem_in_basis[i] =
-            add!(z.elem_in_basis[i], z.elem_in_basis[i], x.elem_in_basis[i])
+      add!(z.elem_in_basis[i], z.elem_in_basis[i], x.elem_in_basis[i])
     end
   end
   return z
