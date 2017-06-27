@@ -229,6 +229,16 @@ end
 
 ################################################################################
 #
+#  Backwards compability for Nemo
+#
+################################################################################
+
+if Pkg.installed("Nemo") <= v"0.6.2"
+  AccessorNotSetError = Any
+end
+
+################################################################################
+#
 #  Version number
 #
 ################################################################################
@@ -305,7 +315,6 @@ macro v_do(args...)
   end
 end
 
-
 function set_verbose_level(s::Symbol, l::Int)
   !(s in VERBOSE_SCOPE) && error("Not a valid symbol")
   VERBOSE_LOOKUP[s] = l
@@ -358,6 +367,7 @@ macro hassert(args...)
 end
 
 ################################################################################
+#
 #   Do @infert and @test simultanously
 #
 ################################################################################
@@ -612,7 +622,6 @@ function update()
   run(`git pull`)
   run(`make -j`)
   run(`make install`)
-
  
   cd(olddir)
 end
