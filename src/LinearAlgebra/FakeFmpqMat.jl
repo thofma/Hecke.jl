@@ -94,8 +94,8 @@ function *(x::FakeFmpqMat, y::FakeFmpqMat)
 end
 
 function mul!(z::FakeFmpqMat, x::FakeFmpqMat, y::FakeFmpqMat)
-  z.num = mul!(z.num, x.num, y.num)
-  z.den = mul!(z.den, x.den, y.den)
+  mul!(z.num, x.num, y.num)
+  mul!(z.den, x.den, y.den)
   simplify_content!(z)
   return z
 end
