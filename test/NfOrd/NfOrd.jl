@@ -52,8 +52,8 @@
     @test !(O7 === O77)
 
     @test_throws ErrorException Order(K1, [a1, a1, a1])
-    @test_throws ErrorException Order(K1, [1, a1, a1])
-    @test_throws ErrorException Order(K1, [1.0, a1, a1])
+    #@test_throws ErrorException Order(K1, [1, a1, a1])
+    #@test_throws ErrorException Order(K1, [1.0, a1, a1])
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 2; 2 0], ZZ(6)))
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0], ZZ(6)))
