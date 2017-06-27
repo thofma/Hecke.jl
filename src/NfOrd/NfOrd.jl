@@ -912,7 +912,7 @@ function maximal_order(K::AnticNumberField)
     c = _get_maximal_order_of_nf(K)::NfOrd
     return c
   catch e
-    if e != AccessorNotSetError()
+    if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
     O = MaximalOrder(K)::NfOrd
