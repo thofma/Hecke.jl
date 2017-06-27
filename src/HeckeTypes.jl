@@ -485,8 +485,9 @@ type FakeFmpqMat
         d = lcm(d, den(x[i, j]))
       end
     end
-    n = fmpz_mat(rows(x), cols(x))
-    n.base_ring = FlintIntegerRing()
+    n = MatrixSpace(FlintZZ, rows(x), cols(x))()
+    #n = fmpz_mat(rows(x), cols(x))
+    #n.base_ring = FlintIntegerRing()
     for i in 1:rows(x)
       for j in 1:cols(x)
         n[i, j] = FlintZZ(d*x[i, j])
