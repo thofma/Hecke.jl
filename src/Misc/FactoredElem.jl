@@ -208,6 +208,16 @@ function *{B}(x::FacElem{B}, y::B)
   return z
 end
 
+function *{B}(y::B, x::FacElem{B})
+  z = deepcopy(x)
+  if haskey(x.fac, y)
+    z.fac[y] = z.fac[y] + 1
+  else
+    z.fac[y] = 1
+  end
+  return z
+end
+
 function div{B}(x::FacElem{B}, y::FacElem{B})
   z = deepcopy(x)
   for a in base(y)
