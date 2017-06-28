@@ -820,7 +820,9 @@ function _lll_gram(M::NfOrd)
   g = trace_matrix(M)
 
   q,w = lll_gram_with_transform(g)
-  return typeof(M)(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+  On.ismaximal = M.ismaximal
+  return On
 end
 
 function lll_basis(M::NfOrd)
@@ -841,7 +843,9 @@ function lll(M::NfOrd)
   while true
     try
       q,w = lll(I, parent(basis_mat(M).num)(0), prec = prec)
-      return NfOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+      On.ismaximal = M.ismaximal
+      return On
     catch e
       if isa(e, LowPrecisionLLL)
         prec = Int(round(prec*1.2))
