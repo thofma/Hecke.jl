@@ -2029,6 +2029,40 @@ function anti_uniformizer(P::NfOrdIdl)
   end
 end
 
+doc"""
+***
+    anti_uniformizers(d::Dict{NfOrdIdl, Int})
+    
+> Given a dictionary of prime ideals, the function returns a set of independent anti-uniformizers
+
+"""
+function anti_uniformizers(d::Dict{NfOrdIdl, Int})
+  
+  
+  anti_uni=Dict{NfOrdIdl, nf_elem}()
+  for (q,v) in d
+    found=false
+    while found==false
+      anti_uni[q]=Hecke.anti_uniformizer(q)
+      found=true
+      for (q1,v1) in d
+        if q!= q1 && valuation(anti_uni[q],q1)!=0
+          found=false
+          break
+        end
+      end
+    end
+  end
+  
+  return anti_uni
+  
+end
+
+
+
+
+
+
 # Don't use the following function. It does not work for index divisors
 # TH: Or does it?
 function prime_decomposition_type(O::NfOrd, p::Integer)

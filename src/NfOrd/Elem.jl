@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export deepcopy, call, parent, elem_in_nf, elem_in_basis, discriminant, hash,
+export deepcopy, parent, elem_in_nf, elem_in_basis, discriminant, hash,
        ==, zero, one, iszero, isone, show, -, +, *, divexact, ^, mod, powermod,
        representation_mat, trace, norm, rand, rand!, add!, mul!, minkowski_map,
        conjugates_arb, conjugates_arb_log, t2
@@ -69,9 +69,9 @@ doc"""
 """
 (O::NfOrd)(a::nf_elem, check::Bool = true) = begin
   if check
-    (x,y) = _check_elem_in_order(a,O)
+    (x, y) = _check_elem_in_order(a,O)
     !x && error("Number field element not in the order")
-    return NfOrdElem(O, deepcopy(a), fmpz[ deepcopy(x) for x in y])
+    return NfOrdElem(O, deepcopy(a), y)
   else
     return NfOrdElem(O, deepcopy(a))
   end
@@ -89,9 +89,9 @@ doc"""
 (O::NfOrd)(a::NfOrdElem, check::Bool = true) = begin
   b = nf(parent(a))(a)
   if check
-    (x,y) = _check_elem_in_order(b,O)
+    (x, y) = _check_elem_in_order(b,O)
     !x && error("Number field element not in the order")
-    return NfOrdElem(O, deepcopy(b), fmpz[ deepcopy(x) for x in y])
+    return NfOrdElem(O, deepcopy(b), y)
   else
     return NfOrdElem(O, deepcopy(b))
   end
@@ -99,11 +99,11 @@ end
 
 (O::NfOrd)(a::nf_elem, arr::Vector{fmpz}, check::Bool = false) = begin
   if check
-    (x,y) = _check_elem_in_order(a,O)
+    (x, y) = _check_elem_in_order(a,O)
     (!x || arr != y ) && error("Number field element not in the order")
-    return NfOrdElem(O, deepcopy(a), arr)
+    return NfOrdElem(O, deepcopy(a), y)
   else
-    return NfOrdElem(O, deepcopy(a), arr)
+    return NfOrdElem(O, deepcopy(a), deepcopy(arr))
   end
 end
 
@@ -126,7 +126,7 @@ doc"""
 > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
 (O::NfOrd)(arr::Array{fmpz, 1}) = begin
-  return NfOrdElem(O, fmpz[ deepcopy(x) for x in arr ])
+  return NfOrdElem(O, deepcopy(arr))
 end
 
 doc"""
@@ -159,7 +159,7 @@ doc"""
 
 > Returns the order of which $a$ is an element.
 """
-parent(a::NfOrdElem) = a.parent::NfOrd
+parent(a::NfOrdElem) = a.parent
 
 ################################################################################
 #
@@ -179,6 +179,23 @@ function elem_in_nf(a::NfOrdElem)
   end
   error("Not a valid order element")
 end
+################################################################################
+#
+#  "Assure" functions for fields
+#
+################################################################################
+
+function assure_has_coord(a::NfOrdElem)
+  if a.has_coord
+    return nothing
+  else
+    (x, y) = _check_elem_in_order(a.elem_in_nf, parent(a))
+    !x && error("Not a valid order element")
+    a.elem_in_basis = y
+    a.has_coord = true
+    return nothing
+  end
+end
 
 ################################################################################
 #
@@ -193,16 +210,9 @@ doc"""
 > Returns the coefficient vector of $a$.
 """
 function elem_in_basis(a::NfOrdElem)
-  if a.has_coord
-    return fmpz[ deepcopy(x) for x in a.elem_in_basis]
-  else
-    (x,y) = _check_elem_in_order(a.elem_in_nf, parent(a))
-    !x && error("Not a valid order element")
-    a.elem_in_basis = fmpz[ deepcopy(x) for x in y]
-    a.has_coord = true
-    @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
-    return fmpz[ deepcopy(x) for x in a.elem_in_basis]
-  end
+  assure_has_coord(a)
+  @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
+  return deepcopy(a.elem_in_basis)
 end
 
 ################################################################################
@@ -225,7 +235,7 @@ function discriminant(B::Array{NfOrdElem, 1})
   A = MatrixSpace(FlintZZ, degree(O), degree(O))()
   for i in 1:degree(O)
     for j in 1:degree(O)
-      A[i,j] = FlintZZ(trace(B[i]*B[j]))
+      A[i,j] = FlintZZ(trace(B[i] * B[j]))
     end
   end
   return det(A)
@@ -237,7 +247,7 @@ end
 #
 ################################################################################
 
-hash(x::NfOrdElem, h::UInt) = hash(x.elem_in_nf, h)
+Base.hash(x::NfOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 
 ################################################################################
 #
@@ -376,7 +386,7 @@ function +(x::NfOrdElem, y::NfOrdElem)
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   if x.has_coord && y.has_coord
     z.elem_in_basis =
-      fmpz[ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x))]
+      [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x))]
     z.has_coord = true
   end
   return z
@@ -393,9 +403,28 @@ function -(x::NfOrdElem, y::NfOrdElem)
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   if x.has_coord && y.has_coord
     z.elem_in_basis =
-      fmpz[ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x))]
+      [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x))]
     z.has_coord = true
   end
+  return z
+end
+
+doc"""
+***
+    divexact(x::NfOrdElem, y::NfOrdElem, check::Bool) -> NfOrdElem
+
+> Returns $x/y$. It is assumed that $x/y$ is an element of the same order
+> as $x$.
+"""
+function divexact(x::NfOrdElem, y::NfOrdElem, check::Bool = true)
+  a = divexact(x.elem_in_nf, y.elem_in_nf)
+  if check
+    if !in(a, parent(x))
+      error("Quotient not an element of the order")
+    end
+  end
+  z = parent(x)()
+  z.elem_in_nf = a
   return z
 end
 
@@ -429,39 +458,30 @@ end
 
 *(x::fmpz, y::NfOrdElem) = y * x
 
-Base.dot(x::fmpz, y::NfOrdElem) = y*x
 
-function +(x::NfOrdElem, y::Integer)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf + y
-  return z
+for T in [Integer, fmpz]
+  @eval begin
+    function +(x::NfOrdElem, y::$T)
+      z = parent(x)()
+      z.elem_in_nf = x.elem_in_nf + y
+      return z
+    end
+
+    +(x::$T, y::NfOrdElem) = y + x
+
+    function -(x::NfOrdElem, y::$T)
+      z = parent(x)()
+      z.elem_in_nf = x.elem_in_nf - y
+      return z
+    end
+
+    function -(x::$T, y::NfOrdElem)
+      z = parent(y)()
+      z.elem_in_nf = x - y.elem_in_nf
+      return z
+    end
+  end
 end
-
-+(x::Integer, y::NfOrdElem) = y + x
-
-function +(x::NfOrdElem, y::fmpz)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf + y
-  return z
-end
-
-+(x::fmpz, y::NfOrdElem) = y + x
-
-function -(x::NfOrdElem, y::fmpz)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf - y
-  return z
-end
-
-function -(x::NfOrdElem, y::Int)
-  z = parent(x)()
-  z.elem_in_nf = x.elem_in_nf - y
-  return z
-end
-
--(x::fmpz, y::NfOrdElem) = -(y - x)
-
--(x::Integer, y::NfOrdElem) = -(y - x)
 
 ################################################################################
 #
@@ -469,16 +489,20 @@ end
 #
 ################################################################################
 
-function divexact(x::NfOrdElem, y::Int)
-  z = parent(x)()
-  z.elem_in_nf = divexact(x.elem_in_nf, y)
-  return z
-end
-
-function divexact(x::NfOrdElem, y::fmpz)
-  z = parent(x)()
-  z.elem_in_nf = divexact(x.elem_in_nf, y)
-  return z
+for T in [Integer, fmpz]
+  @eval begin
+    function divexact(x::NfOrdElem, y::$T, check::Bool = true)
+      a = divexact(x.elem_in_nf, y)
+      if check
+        if !in(a, parent(x))
+          error("Quotient not an element of the order")
+        end
+      end
+      z = parent(x)()
+      z.elem_in_nf = a
+      return z
+    end
+  end
 end
 
 ################################################################################
@@ -514,11 +538,13 @@ doc"""
 > $0 \leq x \leq m$.
 """
 function mod(a::NfOrdElem, m::Union{fmpz, Int})
-  ar = elem_in_basis(a)
-  for i in 1:degree(parent(a))
-    ar[i] = mod(ar[i],m)
+  assure_has_coord(a)
+  d = degree(parent(a))
+  ar = Vector{fmpz}(d)
+  for i in 1:d
+    ar[i] = mod(a.elem_in_basis[i], m)
   end
-  return parent(a)(ar)
+  return NfOrdElem(parent(a), ar) # avoid making a copy of ar
 end
 
 ################################################################################
@@ -549,7 +575,7 @@ function powermod(a::NfOrdElem, i::fmpz, p::fmpz)
     b = mod(b,p)
     return b
   end
-  b = mod(a*powermod(a,i-1,p),p)
+  b = mod(a * powermod(a, i - 1, p), p)
   return b
 end  
 
@@ -559,7 +585,7 @@ doc"""
 
 > Returns the element $a^i$ modulo $m$.
 """
-powermod(a::NfOrdElem, i::Integer, m::Integer)  = powermod(a, fmpz(i), fmpz(m))
+powermod(a::NfOrdElem, i::Integer, m::Integer) = powermod(a, fmpz(i), fmpz(m))
 
 doc"""
 ***
@@ -591,8 +617,10 @@ doc"""
 """
 function representation_mat(a::NfOrdElem)
   O = parent(a)
-  A = representation_mat(a, nf(parent(a)))
-  A = basis_mat(O)*A*basis_mat_inv(O)
+  assure_has_basis_mat(O)
+  assure_has_basis_mat_inv(O)
+  A = representation_mat(a, nf(O))
+  A = O.basis_mat*A*O.basis_mat_inv
   !(A.den == 1) && error("Element not in order")
   return A.num
 end
@@ -631,7 +659,7 @@ doc"""
 > Returns the trace of $a$.
 """
 function trace(a::NfOrdElem)
-  return FlintZZ(trace(elem_in_nf(a)))
+  return FlintZZ(trace(a.elem_in_nf))
 end
 
 ################################################################################
@@ -647,7 +675,7 @@ doc"""
 > Returns the norm of $a$.
 """
 function norm(a::NfOrdElem)
-  return FlintZZ(norm(elem_in_nf(a)))
+  return FlintZZ(norm(a.elem_in_nf))
 end
 
 ################################################################################
@@ -714,58 +742,78 @@ end
 ################################################################################
 
 function add!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
-  z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
+  add!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   if x.has_coord && y.has_coord
-    for i in 1:degree(parent(x))
-      z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
+    if isdefined(z.elem_in_basis, 1)
+      for i in 1:degree(parent(x))
+        add!(z.elem_in_basis[i], x.elem_in_basis[i], y.elem_in_basis[i])
+      end
+    else
+      for i in 1:degree(parent(x))
+        z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
+      end
     end
     z.has_coord = true
   else
     z.has_coord = false
   end
-  nothing
+  return z
 end
 
 function mul!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
-  z.elem_in_nf = x.elem_in_nf * y.elem_in_nf
+  mul!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   z.has_coord = false
-  nothing
+  return z
 end
 
-function mul!(z::NfOrdElem, x::fmpz, y::NfOrdElem)
-  z.elem_in_nf = x * y.elem_in_nf
-  if y.has_coord
+function addeq!(z::NfOrdElem, x::NfOrdElem)
+  addeq!(z.elem_in_nf, x.elem_in_nf)
+  if x.has_coord && z.has_coord
     for i in 1:degree(parent(z))
-      z.elem_in_basis[i] = x*y.elem_in_basis[i]
+      add!(z.elem_in_basis[i], z.elem_in_basis[i], x.elem_in_basis[i])
     end
-    z.has_coord = true
-  else
-    z.has_coord = false
   end
-  nothing
+  return z
 end
 
-mul!(z::NfOrdElem, x::Integer, y::NfOrdElem) =  mul!(z, ZZ(x), y)
+# ad hoc
+for T in [Integer, fmpz]
+  @eval begin
+    function mul!(z::NfOrdElem, x::NfOrdElem, y::$T)
+      mul!(z.elem_in_nf, x.elem_in_nf, y)
+      if x.has_coord
+        if isdefined(z.elem_in_basis, 1)
+          for i in 1:degree(parent(z))
+            mul!(z.elem_in_basis[i], x.elem_in_basis[i], y)
+          end
+        else
+          for i in 1:degree(parent(z))
+            z.elem_in_basis[i] = x.elem_in_basis[i] * y
+          end
+        end
+        z.has_coord = true
+      else
+        z.has_coord = false
+      end
+      return z
+    end
 
-mul!(z::NfOrdElem, x::NfOrdElem, y::Integer) = mul!(z, y, x)
+    mul!(z::NfOrdElem, x::$T, y::NfOrdElem) = mul!(z, y, x)
 
-function add!(z::NfOrdElem, x::fmpz, y::NfOrdElem)
-  z.elem_in_nf = y.elem_in_nf + x
-  z.has_coord = false
-  nothing
+  end
 end
 
-add!(z::NfOrdElem, x::NfOrdElem, y::fmpz) = add!(z, y, x)
+for T in [Integer, fmpz]
+  @eval begin
+    function add!(z::NfOrdElem, x::NfOrdElem, y::$T)
+      add!(z.elem_in_nf, x.elem_in_nf, y)
+      z.has_coord = false
+      return z
+    end
 
-function add!(z::NfOrdElem, x::Integer, y::NfOrdElem)
-  z.elem_in_nf = x + y.elem_in_nf
-  z.has_coord = false
-  nothing
+    add!(z::NfOrdElem, x::$T, y::NfOrdElem) = add!(z, y, x)
+  end
 end
-
-add!(z::NfOrdElem, x::NfOrdElem, y::Integer) = add!(z, y, x)
-
-mul!(z::NfOrdElem, x::NfOrdElem, y::fmpz) = mul!(z, y, x)
 
 ################################################################################
 #
@@ -773,11 +821,13 @@ mul!(z::NfOrdElem, x::NfOrdElem, y::fmpz) = mul!(z, y, x)
 #
 ################################################################################
 
-dot(x::NfOrdElem, y::Int) = x*y
+dot(x::NfOrdElem, y::Integer) = x * y
 
-dot(x::Int, y::NfOrdElem) = dot(y, x)
+dot(x::Integer, y::NfOrdElem) = y * x
 
-dot(x::NfOrdElem, y::fmpz) = x*y
+dot(x::NfOrdElem, y::fmpz) = x * y
+
+dot(x::fmpz, y::NfOrdElem) = y * x
 
 ################################################################################
 #
@@ -862,20 +912,12 @@ function t2(x::NfOrdElem, abs_tol::Int = 32)
   return t2(x.elem_in_nf, abs_tol)
 end
 
-# cleanup
-
-function addeq!(a::NfOrdElem, b::NfOrdElem)
-  addeq!(a.elem_in_nf, b.elem_in_nf)
-  return a
-end
-
 ################################################################################
 #
 #  Promotion
 #
 ################################################################################
 
-Nemo.promote_rule{T <: Integer}(::Type{NfOrdElem}, ::Type{T}) =
-        NfOrdElem
+Nemo.promote_rule{T <: Integer}(::Type{NfOrdElem}, ::Type{T}) = NfOrdElem
 
 Nemo.promote_rule(::Type{NfOrdElem}, ::Type{fmpz}) = NfOrdElem

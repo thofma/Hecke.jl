@@ -1,22 +1,38 @@
-@testset "Oders" begin
+@testset "Ordes" begin
+
+  @test Nemo.elem_type(Nemo.parent_type(NfOrdElem)) === NfOrdElem
+  @test Nemo.parent_type(Nemo.elem_type(NfOrd)) === NfOrd
+
   @testset "Construction" begin
     Qx, x = PolynomialRing(FlintQQ, "x")
 
     K1, a1 = NumberField(x^3 - 2, "a")
     O1 = EquationOrder(K1)
 
+    @test @inferred nf(O1) == K1
+    @test parent(O1) == NfOrdSet(K1)
+
     K2, a2 = NumberField(x - 2, "a")
     O2 = EquationOrder(K2)
+
+    @test @inferred nf(O2) == K2
+    @test @inferred parent(O2) == NfOrdSet(K2)
 
     f3 = x^64 - 64*x^62 + 1952*x^60 - 37760*x^58 + 520144*x^56 - 5430656*x^54 + 44662464*x^52 - 296854272*x^50 + 1623421800*x^48 - 7398867840*x^46 + 28362326720*x^44 - 92043777280*x^42 + 254005423840*x^40 - 597659820800*x^38 + 1200442440064*x^36 - 2057901325824*x^34 + 3006465218196*x^32 - 3732682723968*x^30 + 3922021702720*x^28 - 3467892873984*x^26 + 2561511781920*x^24 - 1565841089280*x^22 + 782920544640*x^20 - 315492902400*x^18 + 100563362640*x^16 - 24754058496*x^14 + 4559958144*x^12 - 602516992*x^10 + 53796160*x^8 - 2968064*x^6 + 87296*x^4 - 1024*x^2 + 2
 
     K3, a3 = NumberField(f3, "a")
     O3 = Order(K3, [ a3^i for i in 0:63])
 
+    @test nf(O3) == K3
+    @test parent(O3) == NfOrdSet(K3)
+
     K4, a4 = NumberField(x^2 - 5, "a")
     O4 = Order(K4, Hecke.FakeFmpqMat(ZZ[1 0; 0 2], fmpz(1)))
     O44 = Order(K4, QQ[1 0; 0 2])
     O444 = Order(K4, ZZ[1 0; 0 2])
+
+    @test nf(O4) == K4
+    @test parent(O4) == NfOrdSet(K4)
 
     @test O4 == O44
     @test O44 == O444
@@ -26,6 +42,9 @@
     K6, a6 = NumberField(x^2 - 180, "a")
     O6 = EquationOrder(K6)
 
+    @test nf(O6) == K6
+    @test parent(O6) == NfOrdSet(K6)
+
     O7 = Order(K6, Hecke.FakeFmpqMat(ZZ[6 0; 0 1], ZZ(6)), true, false)
     O77 = Order(K6, QQ[6//6 0; 0 1//6])
 
@@ -33,8 +52,8 @@
     @test !(O7 === O77)
 
     @test_throws ErrorException Order(K1, [a1, a1, a1])
-    @test_throws ErrorException Order(K1, [1, a1, a1])
-    @test_throws ErrorException Order(K1, [1.0, a1, a1])
+    #@test_throws ErrorException Order(K1, [1, a1, a1])
+    #@test_throws ErrorException Order(K1, [1.0, a1, a1])
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 2; 2 0], ZZ(6)))
     @test_throws ErrorException Order(K6, Hecke.FakeFmpqMat(ZZ[0 0], ZZ(6)))
@@ -84,11 +103,11 @@
     @test K2 == @inferred nf(O2)
     @test K3 == @inferred nf(O3)
 
-    @test @inferred isequationorder(O1)
-    @test @inferred isequationorder(O2)
-    @test @inferred !isequationorder(O3)
-    @test @inferred !isequationorder(O4)
-    @test @inferred isequationorder(O5)
+    @test @inferred isequation_order(O1)
+    @test @inferred isequation_order(O2)
+    @test @inferred !isequation_order(O3)
+    @test @inferred !isequation_order(O4)
+    @test @inferred isequation_order(O5)
 
     b = @inferred basis(O1)
     @test b == [ O1(1), O1(a1), O1(a1^2) ]
@@ -182,7 +201,6 @@
   end
 
   @testset "Signature" begin
-
     @test 3 == @inferred degree(O1)
     @test 1 == @inferred degree(O2)
     @test 64 == @inferred degree(O3)
@@ -243,7 +261,6 @@
   end
 
   @testset "Element inclusion" begin
-
     b = @inferred in(a1, O1)
     @test b
 
@@ -270,7 +287,6 @@
   end
 
   @testset "Denoninator of elements" begin
-
     b = @inferred den(a1, O1)
     @test b == 1
     b = @inferred den(a1//7, O1)
@@ -293,7 +309,6 @@
   end
 
   @testset "Addition" begin
-
     O6_2 = Order(K6, Hecke.FakeFmpqMat(ZZ[2 0; 0 1], ZZ(2)))
     O6_3 = Order(K6, Hecke.FakeFmpqMat(ZZ[3 0; 0 1], ZZ(3)))
 

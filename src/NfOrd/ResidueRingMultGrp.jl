@@ -76,7 +76,13 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
   i = ideal(Q)
   fac = factor(i)
   Q.factor = fac
-  # TODO calculate each primepower only once
+  
+  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+  for (p,vp) in fac
+    prime_power[p]= p^vp
+  end
+  
+  
   for (p,vp) in fac
     gens_p , struct_p , dlog_p = _multgrp_mod_pv(p,vp;method=method)
 
@@ -84,11 +90,10 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
     if length(fac) > 1
       i_without_p = 1
       for (p2,vp2) in fac
-        (p != p2) && (i_without_p *= p2^vp2)
+        (p != p2) && (i_without_p *= prime_power[p2])
       end
 
-      pvp = p^vp
-      alpha, beta = extended_euclid(pvp,i_without_p)
+      alpha, beta = extended_euclid(prime_power[p],i_without_p)
       for i in 1:length(gens_p)
         g_pi_new = beta*gens_p[i] + alpha
         @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)

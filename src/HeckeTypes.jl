@@ -443,13 +443,15 @@ type FakeFmpqMat
     return z
   end
 
-  function FakeFmpqMat(x::fmpz_mat, y::fmpz)
+  function FakeFmpqMat(x::fmpz_mat, y::fmpz, simplified::Bool = false)
     z = new()
     z.num = x
     z.den = y
     z.rows = rows(x)
     z.cols = cols(x)
-    simplify_content!(z)
+    if !simplified
+      simplify_content!(z)
+    end
     z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
@@ -468,7 +470,7 @@ type FakeFmpqMat
   function FakeFmpqMat(x::fmpz_mat)
     z = new()
     z.num = x
-    z.den = ZZ(1)
+    z.den = fmpz(1)
     z.rows = rows(x)
     z.cols = cols(x)
     z.parent = FakeFmpqMatSpace(z.rows, z.cols)
@@ -483,8 +485,9 @@ type FakeFmpqMat
         d = lcm(d, den(x[i, j]))
       end
     end
-    n = fmpz_mat(rows(x), cols(x))
-    n.base_ring = FlintIntegerRing()
+    n = MatrixSpace(FlintZZ, rows(x), cols(x))()
+    #n = fmpz_mat(rows(x), cols(x))
+    #n.base_ring = FlintIntegerRing()
     for i in 1:rows(x)
       for j in 1:cols(x)
         n[i, j] = FlintZZ(d*x[i, j])
@@ -545,19 +548,24 @@ end
 #
 ################################################################################
 
+export NfOrdSet
+
 type NfOrdSet
   nf::AnticNumberField
 
   function NfOrdSet(a::AnticNumberField)
-  try
-    return NfOrdSetID[a]::NfOrdSet
-  end
-    NfOrdSetID[a] = new(a)
-    return NfOrdSetID[a]
+    if haskey(NfOrdSetID, a)
+      return NfOrdSetID[a]
+    else
+      NfOrdSetID[a] = new(a)
+      return NfOrdSetID[a]
+    end
   end
 end
 
 const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
+
+export NfOrd
 
 type NfOrd <: Ring
   nf::AnticNumberField
@@ -571,7 +579,7 @@ type NfOrd <: Ring
                                    #  in the given order)
   disc::fmpz                       # Discriminant
   parent::NfOrdSet                 # Parent object
-  isequationorder::Bool            # Equation order of ambient number field?
+  isequation_order::Bool            # Equation order of ambient number field?
   signature::Tuple{Int, Int}       # Signature of the ambient number field
                                    # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
@@ -598,6 +606,9 @@ type NfOrd <: Ring
   auxilliary_data::Array{Any, 1}   # eg. for the class group: the
                                    # type dependencies make it difficult
 
+  tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
+                                   # and den.
+
   function NfOrd(a::AnticNumberField)
     # "Default" constructor with default values.
     r = new(a)
@@ -606,8 +617,9 @@ type NfOrd <: Ring
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
     r.auxilliary_data = Array{Any}(5)
-    r.isequationorder = false
+    r.isequation_order = false
     r.ismaximal = 0
+    r.tcontain = FakeFmpqMat(MatrixSpace(FlintZZ, 1, degree(a))())
     return r
   end
 
@@ -677,15 +689,15 @@ export NfOrdElem
 
 type NfOrdElem <: RingElem
   elem_in_nf::nf_elem
-  elem_in_basis::Array{fmpz, 1}
+  elem_in_basis::Vector{fmpz}
   has_coord::Bool
-  parent::Ring
+  parent::NfOrd
 
   function NfOrdElem(O::NfOrd)
     z = new()
     z.parent = O
     z.elem_in_nf = nf(O)()
-    z.elem_in_basis = Array{fmpz}(degree(O))
+    z.elem_in_basis = Vector{fmpz}(degree(O))
     z.has_coord = false
     return z
   end
@@ -693,7 +705,7 @@ type NfOrdElem <: RingElem
   function NfOrdElem(O::NfOrd, a::nf_elem)
     z = new()
     z.elem_in_nf = a
-    z.elem_in_basis = Array{fmpz}(degree(O))
+    z.elem_in_basis = Vector{fmpz}(degree(O))
     z.parent = O
     z.has_coord = false
     return z

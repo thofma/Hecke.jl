@@ -33,7 +33,7 @@
 ################################################################################
 
 function dedekind_ispmaximal(O::NfOrd, p::fmpz)
-  !isequationorder(O) && error("Order must be an equation order")
+  !isequation_order(O) && error("Order must be an equation order")
   if rem(discriminant(O), p) != 0
     return true, O
   end
@@ -94,7 +94,7 @@ function dedekind_poverorder(O::NfOrd, p::Integer)
 end
 
 function dedekind_test(O::NfOrd, p::fmpz)
-  !isequationorder(O) && error("Order must be an equation order")
+  !isequation_order(O) && error("Order must be an equation order")
   
   if rem(discriminant(O), p) != 0
     return true, O
@@ -159,7 +159,7 @@ function dedekind_test(O::NfOrd, p::fmpz)
 
   OO = Order(nf(O), sub(hnf(b),degree(O) + 1:2*degree(O), 1:degree(O)))
 
-  OO.isequationorder = false
+  OO.isequation_order = false
 
   OO.disc = divexact(discriminant(O),p^(2*(degree(O)-degree(U))))
 

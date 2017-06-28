@@ -119,6 +119,17 @@
 
     c = @inferred O1([1, 0, 0]) - O1([0, 1, 0])
     @test c.has_coord
+
+    c = @inferred divexact(O1(a1^2), O1(a1))
+    @test c == O1(a1)
+    
+    c = @inferred divexact(O1(a1^2), O1(a1), true)
+    @test c == O1(a1)
+
+    c = @inferred divexact(O1(a1^2), O1(a1), false)
+    @test c == O1(a1)
+
+    @test_throws ErrorException divexact(O1(1), O1(2))
   end
 
   @testset "Ad hoc binary operations" begin
@@ -157,6 +168,12 @@
     @test c == O1(a1)
     c = @inferred divexact(b, fmpz(2))
     @test c == O1(a1)
+    c = @inferred divexact(b, fmpz(2), true)
+    @test c == O1(a1)
+    c = @inferred divexact(b, fmpz(2), false)
+    @test c == O1(a1)
+
+    @test_throws ErrorException divexact(b, O1(4*a1))
   end
   
   @testset "Exponentiation" begin
