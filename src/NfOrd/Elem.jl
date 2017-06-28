@@ -32,10 +32,10 @@
 #
 ################################################################################
 
-export deepcopy, parent, elem_in_nf, elem_in_basis, discriminant, hash,
-       ==, zero, one, iszero, isone, show, -, +, *, divexact, ^, mod, powermod,
-       representation_mat, trace, norm, rand, rand!, add!, mul!, minkowski_map,
-       conjugates_arb, conjugates_arb_log, t2
+export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
+       divexact, elem_in_nf, elem_in_basis, isone, iszero, minkowski_map, mod,
+       mul!, norm, one, parent, powermod, rand, rand!, representation_mat,
+       show, trace, t2, zero
 
 ################################################################################
 #
@@ -458,7 +458,6 @@ function *(x::NfOrdElem, y::fmpz)
 end
 
 *(x::fmpz, y::NfOrdElem) = y * x
-
 
 for T in [Integer, fmpz]
   @eval begin
