@@ -255,6 +255,21 @@ function principal_gen_fac_elem(A::NfOrdIdl)
 end
 
 doc"""
+    principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
+> For a principal ideal $A$ in factored form, find a generator in factored form.
+"""
+
+function principal_gen_fac_elem(I::FacElem)
+  
+  
+  J,a= Hecke.reduce_ideal2(I)
+  x = Hecke.principal_gen_fac_elem(J)
+  x=x*inv(a)
+  return x
+  
+end
+
+doc"""
     principal_gen(A::NfOrdIdl) -> NfOrdElem
 > For a principal ideal $A$, find a generator.
 """
