@@ -1365,6 +1365,9 @@ function inv_maximal(A::NfOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
     O = order(A)
+    if iszero(A.gen_two)
+      return ideal(O, 1)//A.gen_one
+    end
     alpha = inv(elem_in_nf(A.gen_two))
     d = den(alpha, O)
     m = A.gen_one
@@ -1656,7 +1659,8 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   P = p.gen_one
 
   # for generic ideals
-  if p.splitting_type[1] == 0
+  if p.splitting_type[2] == 0
+    global bad_ideal = p
     p.valuation = function(a::nf_elem)
       d = den(a, O)
       x = O(d*a)
@@ -1927,6 +1931,7 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
     end
 
     P.norm = fmpz(p)^f
+    P.splitting_type = (0, f)
 
     if f > degree_limit || f < lower_limit
       continue
