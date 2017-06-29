@@ -17,8 +17,17 @@ for scope in Hecke.ASSERT_SCOPE
   set_assert_level(scope, 3)
 end
 
-include("NfMaxOrd.jl")
-include("NfOrd.jl")
+include("NfMaxOrd/Clgp.jl")
+include("NfMaxOrd/LinearAlgebra.jl")
+include("NfMaxOrd/ResidueRingMultGrp.jl")
+
+include("NfOrd/NfOrd.jl")
+include("NfOrd/Elem.jl")
+include("NfOrd/Ideal.jl")
+include("NfOrd/FracIdl.jl")
+
+#include("NfMaxOrd.jl")
+#include("NfOrd.jl")
 include("EllCrv.jl")
 include("LinearAlgebra.jl")
 include("Misc.jl")
