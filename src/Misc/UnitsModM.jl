@@ -118,7 +118,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
         push!(mi, pk)
         gg = fmpz(-1)
         if m == pk
-          push(g, gg)
+          push!(g, gg)
         else
           push!(g, crt(fmpz(-1), pk, fmpz(1), divexact(m, pk)))
         end
