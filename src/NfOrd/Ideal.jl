@@ -1911,6 +1911,12 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
     degree_limit = degree(O)
   end
 
+  if haskey(O.index_div, fmpz(p))
+    lp = O.index_div[fmpz(p)]
+    println("retrieving info...")
+    return [(p, e) for (p,e) = lp if degree(p) <= degree_limit]
+  end
+
   # Firstly compute the p-radical of O
   Ip = pradical(O, p)
   R = quoringalg(O, Ip, p)
@@ -1995,6 +2001,9 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
     P.splitting_type = e, f
     P.is_prime = 1
     push!(result, (P, e))
+  end
+  if degree_limit >= degree(O)
+    O.index_div[fmpz(p)] = result
   end
   return result
 end
