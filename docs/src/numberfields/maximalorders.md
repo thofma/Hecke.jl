@@ -5,22 +5,22 @@ CurrentModule = Hecke
 ## Ideals
 
 ```@docs
-inv(::NfMaxOrdIdl)
-valuation(::nf_elem, ::NfMaxOrdIdl)
-valuation(::NfMaxOrdIdl, ::NfMaxOrdIdl)
-isramified(::NfMaxOrd, ::Int)
-prime_decomposition(::NfMaxOrd, ::Int)
-prime_ideals_up_to(::NfMaxOrd, ::Int)
-factor(::NfMaxOrdIdl)
-divexact(::NfMaxOrdIdl, ::fmpz)
-divexact(::NfMaxOrdIdl, ::NfMaxOrdIdl)
+inv(::NfOrdIdl)
+valuation(::nf_elem, ::NfOrdIdl)
+valuation(::NfOrdIdl, ::NfOrdIdl)
+isramified(::NfOrd, ::Int)
+prime_decomposition(::NfOrd, ::Int)
+prime_ideals_up_to(::NfOrd, ::Int)
+factor(::NfOrdIdl)
+divexact(::NfOrdIdl, ::fmpz)
+divexact(::NfOrdIdl, ::NfOrdIdl)
 ```
 
 ## Fractional ideals
 
 ```@docs
-*(::NfMaxOrdFracIdl, ::NfMaxOrdFracIdl)
-inv(::NfMaxOrdFracIdl)
+*(::NfOrdFracIdl, ::NfOrdFracIdl)
+inv(::NfOrdFracIdl)
 ```
 
 ## Class and unit group
@@ -34,7 +34,7 @@ torsion_units(::NfOrd)
 torsion_units_gen(::NfOrd)
 isindependent(::NfOrdElem)
 regulator(::Array{NfOrdElem, 1})
-unit_group(::NfMaxOrd)
+unit_group(::NfOrd)
 ```
 
 ## Residue rings
