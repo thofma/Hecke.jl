@@ -235,6 +235,14 @@ end
 
 if Pkg.installed("Nemo") <= v"0.6.2"
   AccessorNotSetError = Any
+
+  elem_type(::Type{AnticNumberField}) = nf_elem
+
+  elem_type(::Type{FqNmodFiniteField}) = fq_nmod
+
+  elem_type(::Type{FlintRationalField}) = fmpq
+
+  elem_type(::Type{FlintIntegerRing}) = fmpz
 end
 
 ################################################################################

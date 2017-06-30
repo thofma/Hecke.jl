@@ -407,7 +407,7 @@ Nemo.isnegative(::NfOrdElem) = false
 function _solve_unique(A::nmod_mat, B::nmod_mat)
   X = MatrixSpace(base_ring(A), cols(B), rows(A))()
 
-  #println("solving\n $A \n = $B * X")
+  println("solving\n $A \n = $B * X")
 
   r, per, L, U = lufact(B) # P*M1 = L*U
   @assert B == per*L*U
