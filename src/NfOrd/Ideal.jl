@@ -2046,15 +2046,45 @@ function anti_uniformizers(d::Dict{NfOrdIdl, Int})
   
   anti_uni=Dict{NfOrdIdl, nf_elem}()
   for (q,v) in d
-    found=false
+    anti_uni[q]=Hecke.anti_uniformizer(q)
+    found=true
+    for (q1,v1) in d
+      if q!= q1 && valuation(anti_uni[q],q1)!=0
+        found=false
+        break
+      end
+    end
     while found==false
-      anti_uni[q]=Hecke.anti_uniformizer(q)
-      found=true
-      for (q1,v1) in d
-        if q!= q1 && valuation(anti_uni[q],q1)!=0
-          found=false
+      p = minimum(q)
+      if p > 250
+        r = 500  # should still have enough elements...
+      else
+        r = Int(div(p, 2))
+      end
+      z=rand(q,r)
+      while true   
+        if z!= 0 && valuation(z, q) == 1
           break
         end
+        z = rand(q, r)
+      end
+      M = representation_mat(z)
+      Mp = MatrixSpace(ResidueRing(FlintZZ, p), rows(M), cols(M))(M)
+      p > typemax(Int) && error("Not yet implemented")
+      K = Hecke.kernel(Mp)
+      @assert length(K) > 0
+      i=1
+      while i<length(K)
+        q.anti_uniformizer = elem_in_nf(order(q)(Hecke._lift(K[i])))//p
+        anti_uni[q]=q.anti_uniformizer
+        found=true
+        for (q1,v1) in d
+          if q!= q1 && valuation(anti_uni[q],q1)!=0
+            found=false
+            break
+          end
+        end
+        i=i+1
       end
     end
   end
