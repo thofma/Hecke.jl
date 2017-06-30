@@ -68,11 +68,11 @@ pmaximal_overorder(::NfOrd, ::fmpz)
 ### Creation
 
 ```@docs
-call(::NfOrdGen, ::nf_elem)
-call(::NfOrdGen, ::fmpz)
-call(::NfOrdGen, ::Array{fmpz, 1})
-call(::NfOrdGen, ::Array{Int, 1})
-call(::NfOrdGen)
+call(::NfOrd, ::nf_elem)
+call(::NfOrd, ::fmpz)
+call(::NfOrd, ::Array{fmpz, 1})
+call(::NfOrd, ::Array{Int, 1})
+call(::NfOrd)
 ```
 
 ### Basic properties
@@ -120,10 +120,10 @@ t2(::NfOrdElem, ::Int)
 ### Creation
 
 ```@docs
-ideal(::NfOrdGen, ::Int)
-ideal(::NfOrdGen, ::fmpz)
-ideal(::NfOrdGen, ::fmpz_mat)
-ideal(::NfOrdGen, ::NfOrdElem{NfOrdGen})
+ideal(::NfOrd, ::Int)
+ideal(::NfOrd, ::fmpz)
+ideal(::NfOrd, ::fmpz_mat)
+ideal(::NfOrd, ::NfOrdElem{NfOrd})
 ring_of_multipliers(::NfOrdIdl)
 *(::NfOrd, ::NfOrdElem)
 ```
@@ -157,13 +157,13 @@ pradical(::NfOrd, p::fmpz)
 ### Creation
 
 ```@docs
-frac_ideal(::NfOrdGen, ::fmpz_mat)
-frac_ideal(::NfOrdGen, ::fmpz_mat, ::fmpz)
-frac_ideal(::NfOrdGen, ::FakeFmpqMat)
-frac_ideal(::NfOrdGen, ::NfOrdGenIdl)
-frac_ideal(::NfOrdGen, ::NfOrdGenIdl, ::fmpz)
-frac_ideal(::NfOrdGen, ::nf_elem)
-frac_ideal(::NfOrdGen, ::NfOrdElem{NfOrdGen})
+frac_ideal(::NfOrd, ::fmpz_mat)
+frac_ideal(::NfOrd, ::fmpz_mat, ::fmpz)
+frac_ideal(::NfOrd, ::FakeFmpqMat)
+frac_ideal(::NfOrd, ::NfOrdIdl)
+frac_ideal(::NfOrd, ::NfOrdIdl, ::fmpz)
+frac_ideal(::NfOrd, ::nf_elem)
+frac_ideal(::NfOrd, ::NfOrdElem{NfOrd})
 ```
 
 ### Arithmetic
