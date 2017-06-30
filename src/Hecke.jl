@@ -233,6 +233,8 @@ end
 #
 ################################################################################
 
+const oldNemo = Pkg.installed("Nemo") <= v"0.6.2"
+
 if Pkg.installed("Nemo") <= v"0.6.2"
   AccessorNotSetError = Any
 
