@@ -123,7 +123,7 @@ t2(::NfOrdElem, ::Int)
 ideal(::NfOrd, ::Int)
 ideal(::NfOrd, ::fmpz)
 ideal(::NfOrd, ::fmpz_mat)
-ideal(::NfOrd, ::NfOrdElem{NfOrd})
+ideal(::NfOrd, ::NfOrdElem)
 ring_of_multipliers(::NfOrdIdl)
 *(::NfOrd, ::NfOrdElem)
 ```
@@ -163,7 +163,7 @@ frac_ideal(::NfOrd, ::FakeFmpqMat)
 frac_ideal(::NfOrd, ::NfOrdIdl)
 frac_ideal(::NfOrd, ::NfOrdIdl, ::fmpz)
 frac_ideal(::NfOrd, ::nf_elem)
-frac_ideal(::NfOrd, ::NfOrdElem{NfOrd})
+frac_ideal(::NfOrd, ::NfOrdElem)
 ```
 
 ### Arithmetic
