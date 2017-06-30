@@ -372,6 +372,11 @@ function inv!(a::perm)
   nothing
 end
 
+function one!(a::fmpz)
+  ccall((:fmpz_one, :libflint), Void, (Ptr{fmpz}, ), &a)
+  return a
+end
+
 ################################################################################
 #
 #  power detection

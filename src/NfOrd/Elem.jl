@@ -32,10 +32,10 @@
 #
 ################################################################################
 
-export deepcopy, parent, elem_in_nf, elem_in_basis, discriminant, hash,
-       ==, zero, one, iszero, isone, show, -, +, *, divexact, ^, mod, powermod,
-       representation_mat, trace, norm, rand, rand!, add!, mul!, minkowski_map,
-       conjugates_arb, conjugates_arb_log, t2
+export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
+       divexact, elem_in_nf, elem_in_basis, isone, iszero, minkowski_map, mod,
+       mul!, norm, one, parent, powermod, rand, rand!, representation_mat,
+       show, trace, t2, zero
 
 ################################################################################
 #
@@ -45,10 +45,10 @@ export deepcopy, parent, elem_in_nf, elem_in_basis, discriminant, hash,
 
 function Base.deepcopy_internal(x::NfOrdElem, dict::ObjectIdDict)
   z = parent(x)()
-  z.elem_in_nf = deepcopy(x.elem_in_nf)
+  z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
     z.has_coord = true
-    z.elem_in_basis = fmpz[ deepcopy(y) for y in x.elem_in_basis ]
+    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)
   end
   return z
 end
@@ -179,6 +179,7 @@ function elem_in_nf(a::NfOrdElem)
   end
   error("Not a valid order element")
 end
+
 ################################################################################
 #
 #  "Assure" functions for fields
@@ -458,7 +459,6 @@ end
 
 *(x::fmpz, y::NfOrdElem) = y * x
 
-
 for T in [Integer, fmpz]
   @eval begin
     function +(x::NfOrdElem, y::$T)
@@ -620,7 +620,9 @@ function representation_mat(a::NfOrdElem)
   assure_has_basis_mat(O)
   assure_has_basis_mat_inv(O)
   A = representation_mat(a, nf(O))
-  A = O.basis_mat*A*O.basis_mat_inv
+  mul!(A, O.basis_mat, A)
+  mul!(A, A, O.basis_mat_inv)
+  #A = O.basis_mat*A*O.basis_mat_inv
   !(A.den == 1) && error("Element not in order")
   return A.num
 end

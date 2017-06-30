@@ -663,8 +663,10 @@ function _in_span(v::Vector{nf_elem}, P::PMat)
       k = l
       s = K()
       for j = 1:k-1
-         t = mul!(t, P.matrix[j, i], x[j])
-         s = addeq!(s, t)
+         #t = mul!(t, P.matrix[j, i], x[j])
+         mul!(t, P.matrix[j, i], x[j])
+         #s = addeq!(s, t)
+         addeq!(s, t)
       end
       s = v[k] - s
       x[k] = divexact(s, P.matrix[k, i])
@@ -798,20 +800,30 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             u = divexact(u, Aij)
             for c = j:n
                t = deepcopy(A[i+1, c])
-               t1 = mul!(t1, A[p, c], -Aij)
-               A[i+1, c] = addeq!(A[i+1, c], t1)
-               t1 = mul!(t1, t, u)
-               t2 = mul!(t2, A[p, c], v)
-               A[p, c] = add!(A[p, c], t1, t2)
+               #t1 = mul!(t1, A[p, c], -Aij)
+               mul!(t1, A[p, c], -Aij)
+               #A[i+1, c] = addeq!(A[i+1, c], t1)
+               addeq!(A[i+1, c], t1)
+               #t1 = mul!(t1, t, u)
+               mul!(t1, t, u)
+               #t2 = mul!(t2, A[p, c], v)
+               mul!(t2, A[p, c], v)
+               #A[p, c] = add!(A[p, c], t1, t2)
+               add!(A[p, c], t1, t2)
             end
             if with_trafo
                for c = 1:m
                   t = deepcopy(U[i+1, c])
-                  t1 = mul!(t1, U[p, c], -Aij)
-                  U[i+1, c] = addeq!(U[i+1, c], t1)
-                  t1 = mul!(t1, t, u)
-                  t2 = mul!(t2, U[p, c], v)
-                  U[p, c] = add!(U[p, c], t1, t2)
+                  #t1 = mul!(t1, U[p, c], -Aij)
+                  mul!(t1, U[p, c], -Aij)
+                  #U[i+1, c] = addeq!(U[i+1, c], t1)
+                  addeq!(U[i+1, c], t1)
+                  #t1 = mul!(t1, t, u)
+                  mul!(t1, t, u)
+                  #t2 = mul!(t2, U[p, c], v)
+                  mul!(t2, U[p, c], v)
+                  #U[p, c] = add!(U[p, c], t1, t2)
+                  add!(U[p, c], t1, t2)
                end
             end
             H.coeffs[i+1] = a*b//d

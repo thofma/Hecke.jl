@@ -53,7 +53,7 @@ end
 #
 ################################################################################
 
-import Nemo: nf_elem, AnticNumberField, degree,
+import Nemo: nf_elem, AnticNumberField, degree, one!,
              den, num, parent, length,
              norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
              trace, mod, zero, 
