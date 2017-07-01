@@ -562,7 +562,6 @@ end
 #=
 Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
 by H. Cohen.
-The reductions in step 6 are not implemented.
 =#
 function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool = false)
    m = rows(H)
@@ -630,9 +629,43 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          H.coeffs[k] = d
          simplify_exact(H.coeffs[k])
       end
+      if iszero(A[k, i])
+         continue
+      end
+      for j = 1:k-1
+         if iszero(A[j, i])
+            continue
+         end
+         d = H.coeffs[k]//H.coeffs[j]
+         q = mod(A[j, k], d)
+         q = q - A[j, k]
+         for c = k:n
+            t = mul!(t, q, A[k, c])
+            A[j, c] = addeq!(A[j, c], t)
+         end
+         if with_trafo
+            for c = 1:m
+               t = mul!(t, q, U[k, c])
+               U[j, c] = addeq!(U[j, c], t)
+            end
+         end
+      end
       k += 1
    end
    return nothing
+end
+
+# This probably shouldn't be in this file. Maybe in NfOrd/FracIdl.jl?
+function mod(x::nf_elem, y::Hecke.NfOrdFracIdl)
+   K = parent(x)
+   O = maximal_order(K)
+   d = K(lcm(den(x), den(y)))
+   dx = d*x
+   dy = d*y
+   simplify_exact(dy)
+   dz = mod(O(dx), dy.num)
+   z = divexact(K(dz), d)
+   return z
 end
 
 function swap_rows!(P::PMat, i::Int, j::Int)
