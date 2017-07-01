@@ -609,6 +609,10 @@ type NfOrd <: Ring
   tcontain::FakeFmpqMat            # Temporary variable for _check_elem_in_order
                                    # and den.
 
+  index_div::Dict{fmpz, Any}       # the index divisor splitting
+                                   # Any = Array{NfOrdIdl, Int}
+                                   # but forward references are illegal
+
   function NfOrd(a::AnticNumberField)
     # "Default" constructor with default values.
     r = new(a)
@@ -620,6 +624,7 @@ type NfOrd <: Ring
     r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(MatrixSpace(FlintZZ, 1, degree(a))())
+    r.index_div = Dict{fmpz, Any}()
     return r
   end
 

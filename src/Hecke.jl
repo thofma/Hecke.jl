@@ -53,7 +53,7 @@ end
 #
 ################################################################################
 
-import Nemo: nf_elem, AnticNumberField, degree,
+import Nemo: nf_elem, AnticNumberField, degree, one!,
              den, num, parent, length,
              norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
              trace, mod, zero, 
@@ -233,8 +233,18 @@ end
 #
 ################################################################################
 
+const oldNemo = Pkg.installed("Nemo") <= v"0.6.2"
+
 if Pkg.installed("Nemo") <= v"0.6.2"
   AccessorNotSetError = Any
+
+  elem_type(::Type{AnticNumberField}) = nf_elem
+
+  elem_type(::Type{FqNmodFiniteField}) = fq_nmod
+
+  elem_type(::Type{FlintRationalField}) = fmpq
+
+  elem_type(::Type{FlintIntegerRing}) = fmpz
 end
 
 ################################################################################
@@ -572,10 +582,6 @@ end
 # Nemo only provides element_types for parent objects
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
-
-elem_type(::Type{AnticNumberField}) = nf_elem
-
-elem_type(::Type{FqNmodFiniteField}) = fq_nmod
 
 elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
 

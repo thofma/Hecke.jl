@@ -99,7 +99,7 @@ end
 """ ->
 function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   m = R.modulus
-  fm = factor(m)
+  fm = factor(m).fac
   
   r = Array{fmpz}(0)
   g = Array{fmpz}(0)
@@ -118,7 +118,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
         push!(mi, pk)
         gg = fmpz(-1)
         if m == pk
-          push(g, gg)
+          push!(g, gg)
         else
           push!(g, crt(fmpz(-1), pk, fmpz(1), divexact(m, pk)))
         end
@@ -190,7 +190,7 @@ end
 """ ->
 #solves a^x = b (mod M) for M a prime power
 function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
-  fM = factor(M)
+  fM = factor(M).fac
   @assert length(keys(fM)) == 1
   p = first(keys(fM))
   if p==2

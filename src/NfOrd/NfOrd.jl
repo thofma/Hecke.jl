@@ -99,7 +99,7 @@ function assure_has_basis(O::NfOrd)
   B = Vector{NfOrdElem}(d)
   for i in 1:length(b)
     v = [fmpz(0) for j in 1:d]
-    v[i] = fmpz(1)
+    one!(v[i])
     B[i] = NfOrdElem(O, b[i], v)
   end
   O.basis_ord = B
@@ -129,9 +129,13 @@ end
 #
 ################################################################################
 
-function basis_ord(O::NfOrd)
+function basis_ord{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis(O)
-  return deepcopy(O.basis_ord)::Vector{NfOrdElem}
+  if copy == Val{true}
+    return deepcopy(O.basis_ord)::Vector{NfOrdElem}
+  else
+    return O.basis_ord::Vector{NfOrdElem}
+  end
 end
 
 doc"""
@@ -139,7 +143,7 @@ doc"""
 
 > Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
-@inline basis(O::NfOrd) = basis_ord(O)
+@inline basis{T}(O::NfOrd, copy::Type{Val{T}} = Val{true}) = basis_ord(O, copy)
 
 doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Vector{nf_elem}
@@ -263,7 +267,8 @@ function gen_index(O::NfOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
-    O.gen_index = QQ(basis_mat(O).den^degree(O), det(basis_mat(O).num))
+    assure_has_basis_mat(O)
+    O.gen_index = FlintQQ(O.basis_mat.den^degree(O), det(O.basis_mat.num))
     return deepcopy(O.gen_index)
   end
 end
@@ -280,7 +285,7 @@ function index(O::NfOrd)
     return deepcopy(O.index)
   else
     i = gen_index(O)
-    den(i) != 1 && error("Order does not contain the equation order")
+    !isone(den(i)) && error("Order does not contain the equation order")
     O.index = num(i)
     return deepcopy(O.index)
   end
@@ -315,12 +320,13 @@ doc"""
 > Makes a copy of $\mathcal O$.
 """
 function Base.deepcopy_internal(O::NfOrd, dict::ObjectIdDict)
-  z = typeof(O)(O.nf)
+  z = NfOrd(O.nf)
   for x in fieldnames(O)
-    # This is slow. Julia can't interfere the type of the right hand side.
-    # (According to @code_warntype)
+    # TODO
+    # This is slow. Julia can't infere the type of the right hand side.
+    # (According to @code_warntype).
     if x != :nf && x != :parent && isdefined(O, x)
-      setfield!(z, x, deepcopy(getfield(O, x)))
+      setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
     end
   end
   z.nf = O.nf
@@ -367,7 +373,7 @@ function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
     A = deepcopy(O.minkowski_mat[1])
   else
-    T = Array{Array{arb, 1}}(degree(O))
+    T = Vector{Vector{arb}}(degree(O))
     B = O.basis_nf
     for i in 1:degree(O)
       T[i] = minkowski_map(B[i], abs_tol)
@@ -408,7 +414,7 @@ function _check_elem_in_order{T}(a::nf_elem, O::NfOrd,
     else
       v = Vector{fmpz}(degree(O))
       for i in 1:degree(O)
-        v[i] = deepcopy(t.num[1,i])
+        v[i] = deepcopy(t.num[1, i])
       end
       return true, v
     end
@@ -483,7 +489,7 @@ function norm_change_const(O::NfOrd)
     #  swap_rows!(M, r1 + i, r1 + 2*r2 - i + 1)
     #end
 
-    M= M*M'
+    M = M*M'
 
     N = Symmetric([ Float64(M[i, j]) for i in 1:rows(M), j in 1:cols(M) ])
     #forcing N to really be Symmetric helps julia - aparently
@@ -659,25 +665,25 @@ end
 
 function trace_matrix(O::NfOrd)
   if isdefined(O, :trace_mat)
-    return O.trace_mat
+    return deepcopy(O.trace_mat)
   end
   K = nf(O)
-  b = basis(O, K)
+  b = O.basis_nf
   n = degree(K)
   g = MatrixSpace(FlintZZ, n, n)()
   for i=1:n
     t = trace(b[i]^2)
     @assert isinteger(t)
-    g[i,i] = num(t)
+    g[i, i] = num(t)
     for j in (i + 1):n
       t = trace(b[i]*b[j])
       @assert isinteger(t)
-      g[i,j] = num(t)
-      g[j,i] = num(t)
+      g[i, j] = num(t)
+      g[j, i] = num(t)
     end
   end
   O.trace_mat = g
-  return g
+  return deepcopy(g)
 end
 
 ################################################################################
@@ -695,9 +701,11 @@ doc"""
 """
 function +(a::NfOrd, b::NfOrd)
   parent(a) != parent(b) && error("Orders must have same ambient number field")
-  gcd(index(a), index(b)) != 1 && error("Indice must be coprime")
-  aB = basis_mat(a)
-  bB = basis_mat(b)
+  !isone(gcd(index(a), index(b))) && error("Indice must be coprime")
+  assure_has_basis_mat(a)
+  assure_has_basis_mat(b)
+  aB = a.basis_mat
+  bB = b.basis_mat
   d = degree(a)
   c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
   O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den))
@@ -739,7 +747,7 @@ function poverorder(O::NfOrd, p::fmpz)
 end
 
 function poverorder(O::NfOrd, p::Integer)
-  return poverorder(O::NfOrd, ZZ(p))
+  return poverorder(O::NfOrd, fmpz(p))
 end
 
 ################################################################################
@@ -820,7 +828,9 @@ function _lll_gram(M::NfOrd)
   g = trace_matrix(M)
 
   q,w = lll_gram_with_transform(g)
-  return typeof(M)(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+  On.ismaximal = M.ismaximal
+  return On
 end
 
 function lll_basis(M::NfOrd)
@@ -841,7 +851,9 @@ function lll(M::NfOrd)
   while true
     try
       q,w = lll(I, parent(basis_mat(M).num)(0), prec = prec)
-      return NfOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M).num, basis_mat(M).den))
+      On.ismaximal = M.ismaximal
+      return On
     catch e
       if isa(e, LowPrecisionLLL)
         prec = Int(round(prec*1.2))
@@ -867,7 +879,6 @@ doc"""
     MaximalOrder(K::AnticNumberField) -> NfOrd
 
 > Returns the maximal order of $K$.
-
 **Example**
 
     julia> Qx, x = QQ["x"]
