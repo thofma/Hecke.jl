@@ -347,5 +347,5 @@ function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly
   return g
 end
 
-Hecke.unit_group(A::GenResRing{fmpz}) = UnitGroup(A)
+unit_group(A::GenResRing{fmpz}) = UnitGroup(A)
 
