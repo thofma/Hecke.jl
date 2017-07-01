@@ -297,7 +297,7 @@ end
 # s, ms = sub(...) so ms: s -> G
 # h = inv(ms)      so  h: G -> s
 # then hasimage(h, ..) would check if x in s
-function hasimage(M::Hecke.GrpAbFinGenMap, a::Hecke.GrpAbFinGenElem)
+function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :map)
     return image(M, a)
   end
@@ -919,6 +919,141 @@ function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer})
   m = GrpAbFinGenMap(G, Q, I, I)
   return Q, m
 end
+
+############################################################
+# iterator
+############################################################
+function Base.start(G::GrpAbFinGen)
+  if order(G) > typemax(UInt)
+    error(" Group too large for iterator")
+  end
+  
+  return UInt(0)
+end
+
+function Base.next(G::GrpAbFinGen, st::UInt)
+  a = _elem_from_enum(G, st)
+  return a, st+1
+end
+
+function Base.done(G::GrpAbFinGen, st::UInt)
+  return st >= order(G)
+end
+
+function _elem_from_enum(G::GrpAbFinGen, st::UInt)
+  if G.issnf
+    el = fmpz[]
+    s = fmpz(st)
+    for i=1:ngens(G)
+      push!(el, s % G.snf[i])
+      s = div(s - el[end], G.snf[i])
+    end
+    return G(el)
+  end
+    
+  S, mS = snf(G)
+  return preimage(mS, _elem_from_enum(S, st))
+end
+
+Base.length(G::GrpAbFinGen) = UInt(order(G))
+
+############################################################
+# trivia
+############################################################
+doc"""
+    gens(G::GrpAbFinGen) -> Array{GrpAbFinGenElem, 1}
+> The sequence of generators of $G$
+"""
+gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i=1:ngens(G)]
+
+
+function make_snf{T}(m::Map{GrpAbFinGen, T})
+  G = domain(m)
+  if G.issnf
+    return m
+  end
+  S, mS = snf(G)
+  return m*inv(mS)
+end
+
+doc"""
+    iscyclic(G::GrpAbFinGen) -> Bool
+> Return {{{true}}} if $G$ is cyclic.
+"""
+function iscyclic(G::GrpAbFinGen)
+  if !G.issnf
+    G = snf(G)[1]
+  end
+  return ngens(G) == 1
+end
+
+############################################################
+# homs from set of generators
+############################################################
+
+#TODO: compact printing of group elements
+#TODO: should check consistency
+doc"""
+    hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
+> Creates the homomorphism $A[i] \mapsto B[i]$
+"""
+function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1})
+  GA = parent(A[1])
+  GB = parent(B[1])
+  M = vcat([hcat(A[i].coeff, B[i].coeff) for i=1:length(A)])
+  RA = rels(GA)
+  M = vcat(M, hcat(RA, MatrixSpace(FlintZZ, rows(RA), cols(B[1].coeff))()))
+  H = hnf(M)
+  H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
+  h = GrpAbFinGenMap(GA, GB, H)
+  return h
+end
+
+doc"""
+    hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
+> Creates the homomorphism $G[i] \mapsto B[i]$
+"""
+function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
+  GB = parent(B[1])
+  M = vcat([B[i].coeff for i=1:length(B)])
+  h = GrpAbFinGenMap(G, GB)
+  h.map = M
+  return h
+end
+
+
+#TODO: store and reuse on map. Maybe need to change map
+function kernel(h::GrpAbFinGenMap)
+  G = domain(h)
+  H = codomain(h)
+  hn, t = hnf_with_transform(vcat(h.map, rels(H))) 
+  for i=1:rows(hn)
+    if iszero_row(hn, i)
+      k = elem_type(G)[]
+      for j=i:rows(t)
+        push!(k, G(sub(t, j:j, 1:ngens(G))))
+      end
+      return sub(G, k)
+    end
+  end
+  error("JH")
+end
+
+function image(h::GrpAbFinGenMap)
+  G = domain(h)
+  H = codomain(h)
+  hn = hnf(vcat(h.map, rels(H))) 
+  im = GrpAbFinGenElem[]
+  for i=1:rows(hn)
+    if !iszero_row(hn, i)
+      push!(im, H(sub(hn, i:i, 1:ngens(H))))
+    else
+      break
+    end
+  end
+  return sub(H, im)  # too much, this is sub in hnf....
+end
+
 
 ################################################################################
 #
