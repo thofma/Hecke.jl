@@ -35,7 +35,7 @@
 export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, istrivial, order, exponent, AbelianGroup, DiagonalGroup,
-       quo, sub, rels, hasimage, haspreimage, issnf
+       quo, sub, rels, hasimage, haspreimage, issnf, iscyclic, hom, kernel
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -170,6 +170,9 @@ function elem_snf(A::GrpAbFinGen, a::fmpz_mat)
   return z
 end
 
+function Base.hash(a::GrpAbFinGenElem, s::UInt)
+  return hash(a.coeff, s)
+end
 ################################################################################
 #
 #  Field access
