@@ -306,13 +306,9 @@ function ray_class_group(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
   
 end
 
-
-Hecke.elem_type(A::Hecke.NfOrdIdlSet) = NfOrdIdl
-
-
 doc"""
 ***
-  function conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp) -> NfOrdIdl (, Array{InfPlc,1})
+    conductor(S::FinGenGrpAb, mS::FinGenGrpAbMap, R::FinGenGrpAb, mR::MapRayClassGrp) -> NfOrdIdl, Vector{InfPlc}
 
 > Return the conductor of the congruence subgroup S, mS of the Ray Class Group R,mR 
 ***
