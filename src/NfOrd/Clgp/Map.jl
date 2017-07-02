@@ -332,9 +332,47 @@ function isprincipal(A::NfOrdIdl)
   return fl, O(evaluate(a))
 end
  
+# does not work, cannot work. Problem
+#  x = 1/2 \pm 10^-n
+# then x+1/2 = 1 \pm 10^-n and ceil can be 1 or 2
+function unique_fmpz_mat(C::Nemo.arb_mat)
+  half = parent(C[1,1])(fmpq(1//2))  #TODO: does not work
+  half = parent(C[1,1])(1)//2
+  v = MatrixSpace(FlintZZ, rows(C), cols(C))()::fmpz_mat
+
+  for i=1:rows(C)
+    for j=1:cols(C)
+      fl, v[i,j] = unique_integer(floor(C[i,j] + half))
+      if !fl
+        return fl, v
+      end
+    end
+  end
+  return true, v
+end
+
+function Base.round(::Type{fmpz}, x::BigFloat)
+  return fmpz(BigInt(round(x)))
+end
+
+function Base.round(::Type{fmpz}, x::arb)
+  return round(fmpz, BigFloat(x))
+end
+
+function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
+  v = MatrixSpace(FlintZZ, rows(C), cols(C))()::fmpz_mat
+
+  for i=1:rows(C)
+    for j=1:cols(C)
+      v[i,j] = round(fmpz, C[i,j])
+    end
+  end
+  return v
+end
+  
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units{T}(a::Array{T, 1}, U::UnitGrpCtx)
+function reduce_mod_units{T}(a::Array{T, 1}, U)
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   r = length(U.units)
@@ -345,32 +383,44 @@ function reduce_mod_units{T}(a::Array{T, 1}, U::UnitGrpCtx)
   prec = U.tors_prec
 
   b = deepcopy(a)
+  cnt = 10
+  V = MatrixSpace(FlintZZ, 1, 1)()
   while true
-    prec, A = _conj_log_mat_cutoff_inv(U, prec)
-    B = _conj_arb_log_matrix_normalise_cutoff(a, prec)
-    C = B*A
-
-    redo = false
-
-    for i=1:rows(C)
-      for j=1:cols(C)
-        fl, v = unique_integer(ceil(C[i,j]))
-        if !fl
-          prec *= 2
-          redo = true
-          b = deepcopy(a)
-#          println("more prec")
-          break
+    while true
+      prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
+      B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
+      C = B*A
+      try
+        V  = round(fmpz_mat, C)
+      catch e
+        if !isa(e, InexactError)
+          throw(e)
         end
-        if redo
-          break
+        prec *= 2
+        if prec > 10000
+          error("too much prec")
         end
-        b[i] *= U.units[j]^-v
+        continue
+      end
+
+      if iszero(V)
+        return b
+      else
+        #println("trafo by $V")
+      end
+
+      for i=1:length(a)
+        b[i] *= prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
       end
     end
-    return b
+    #println("loop...")
+    cnt -= 1
+    if cnt <= 0
+      error("too much")
+    end
   end  
 end
+
 
 type MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::MapHeader
