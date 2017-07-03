@@ -46,7 +46,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
     @v_do :ClassGroup 2 println("using inf val", v)
     old = precision(BigFloat)
     setprecision(4*prec)
-    mult_by_2pow_diag!(c, v);
+    mult_by_2pow_diag!(c, v)
     setprecision(old)
   end
 

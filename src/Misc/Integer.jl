@@ -695,4 +695,17 @@ function sunit_group(S::Array{fmpz, 1})
   return u, mp
 end
 
+Hecke.gcd(a::fmpz, b::Integer) = Hecke.gcd(a, fmpz(b))
+Hecke.gcd(a::Integer, b::fmpz) = Hecke.gcd(fmpz(a), b)
+Hecke.lcm(a::fmpz, b::Integer) = Hecke.lcm(a, fmpz(b))
+Hecke.lcm(a::Integer, b::fmpz) = Hecke.lcm(fmpz(a), b)
+
+function isprime_power(n::fmpz)
+  e, p = ispower(n)
+  return isprime(p)
+end
+
+function isprime_power(n::Integer)
+  return isprime_power(fmpz(n))
+end
 

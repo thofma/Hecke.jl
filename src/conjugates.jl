@@ -161,7 +161,7 @@ function minkowski_mat(c::roots_ctx, p::Int)
   one = BigComplex(BigFloat(1.0), BigFloat(0.0))
   s2 = Base.sqrt(BigFloat(2.0))
   for i = 1:length(r)
-    d[i] = one
+    d[i] = deepcopy(one)
   end
 
   n = degree(c.f)

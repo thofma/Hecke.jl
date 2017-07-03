@@ -35,7 +35,7 @@
 export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
        gen_index, EquationOrder, index, isequation_order, isindex_divisor, lll,
        lll_basis, maximal_order, minkowski_mat, nf, norm_change_const, Order,
-       parent, poverorder, pmaximal_overorder, ring_of_integers, signture,
+       parent, poverorder, pmaximal_overorder, ring_of_integers, signature,
        trace_matrix
 
 ################################################################################
