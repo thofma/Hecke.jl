@@ -940,3 +940,40 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
    kb_sort_rows!(H, U, pivot, with_trafo, start_element)
    return nothing
 end
+
+mutable struct ModDed
+   pmatrix::PMat
+   is_triu::Bool
+   function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
+      if check
+         is_triu = istriu(P.matrix)
+      end
+      new(P, is_triu)
+   end
+end
+
+function Base.istriu(A::GenMat)
+   m = rows(A)
+   n = cols(A)
+   d = 0
+   for r = 1:m
+      for c = 1:n
+         if !iszero(A[r, c])
+            if c <= d
+               return false
+            end
+            d = c
+            break
+         end
+      end
+   end
+   return true
+end
+
+function show(io::IO, M::ModDed)
+   print(io, "Module over Dedekind domain with defining pseudo-matrix\n")
+   for i in 1:rows(M.pmatrix.matrix)
+      showcompact(io, M.pmatrix.coeffs[i])
+      print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))\n")
+   end
+end
