@@ -362,3 +362,26 @@ type GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
 
 end
 
+###########################################################
+# To turn a Function (method) into a map.
+###########################################################
+type MapFromFunc{R, T} <: Map{R, T}
+  header::Hecke.MapHeader{R, T}
+  f::Function
+  function MapFromFunc(f::Function, D::R, C::T)
+    n = new()
+    n.header = Hecke.MapHeader(D, C, x-> f(x))
+    n.f = f
+    return n
+  end
+end
+
+function Base.show(io::IO, M::MapFromFunc)
+  println(io, "Map from the $(M.f) julia-function")
+end
+
+function MapFromFunc(f::Function, D, C)
+  return MapFromFunc{typeof(D), typeof(C)}(f, D, C)
+end
+
+export MapFromFunc

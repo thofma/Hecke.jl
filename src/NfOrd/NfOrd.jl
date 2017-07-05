@@ -35,7 +35,7 @@
 export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
        gen_index, EquationOrder, index, isequation_order, isindex_divisor, lll,
        lll_basis, maximal_order, minkowski_mat, nf, norm_change_const, Order,
-       parent, poverorder, pmaximal_overorder, ring_of_integers, signture,
+       parent, poverorder, pmaximal_overorder, ring_of_integers, signature,
        trace_matrix
 
 ################################################################################
@@ -129,9 +129,13 @@ end
 #
 ################################################################################
 
-function basis_ord(O::NfOrd)
+function basis_ord{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis(O)
-  return deepcopy(O.basis_ord)::Vector{NfOrdElem}
+  if copy == Val{true}
+    return deepcopy(O.basis_ord)::Vector{NfOrdElem}
+  else
+    return O.basis_ord::Vector{NfOrdElem}
+  end
 end
 
 doc"""
@@ -139,7 +143,7 @@ doc"""
 
 > Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
-@inline basis(O::NfOrd) = basis_ord(O)
+@inline basis{T}(O::NfOrd, copy::Type{Val{T}} = Val{true}) = basis_ord(O, copy)
 
 doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Vector{nf_elem}

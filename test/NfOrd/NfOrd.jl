@@ -1,4 +1,4 @@
-@testset "Ordes" begin
+@testset "Orders" begin
 
   @test Nemo.elem_type(Nemo.parent_type(NfOrdElem)) === NfOrdElem
   @test Nemo.parent_type(Nemo.elem_type(NfOrd)) === NfOrd

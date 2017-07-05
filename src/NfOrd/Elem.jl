@@ -81,7 +81,7 @@ doc"""
 ***
       (O::NfOrd)(a::NfOrdElem, check::Bool = true) -> NfOrdElem
 
-> Given an element $a$ of some order in the ambient number field of 
+> Given an element $a$ of some order in the ambient number field of
 > $\mathcal O$, this function coerces the element into $\mathcal O$. It
 > will be checked that $a$ is contained in $\mathcal O$ if and only if
 > `check` is `true`.
@@ -145,7 +145,7 @@ doc"""
 
 > This function constructs a new element of $\mathcal O$ which is set to $0$.
 """
-(O::NfOrd)() = NfOrdElem(O) 
+(O::NfOrd)() = NfOrdElem(O)
 
 ################################################################################
 #
@@ -534,7 +534,7 @@ doc"""
     mod(a::NfOrdElem, m::Union{fmpz, Int}) -> NfOrdElem
 
 > Reduces the coefficient vector of $a$ modulo $m$ and returns the corresponding
-> element. The coefficient vector of the result will have entries $x$ with 
+> element. The coefficient vector of the result will have entries $x$ with
 > $0 \leq x \leq m$.
 """
 function mod(a::NfOrdElem, m::Union{fmpz, Int})
@@ -564,11 +564,11 @@ function powermod(a::NfOrdElem, i::fmpz, p::fmpz)
   if i == 0 then
     return one(parent(a))
   end
-  if i == 1 
+  if i == 1
     b = mod(a,p)
     return b
   end
-  if mod(i,2) == 0 
+  if mod(i,2) == 0
     j = div(i, 2)
     b = powermod(a, j, p)
     b = b^2
@@ -577,7 +577,7 @@ function powermod(a::NfOrdElem, i::fmpz, p::fmpz)
   end
   b = mod(a * powermod(a, i - 1, p), p)
   return b
-end  
+end
 
 doc"""
 ***
@@ -743,26 +743,27 @@ end
 #
 ################################################################################
 
-function add!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
+@inline function add!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
   add!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
-  if x.has_coord && y.has_coord
-    if isdefined(z.elem_in_basis, 1)
-      for i in 1:degree(parent(x))
-        add!(z.elem_in_basis[i], x.elem_in_basis[i], y.elem_in_basis[i])
-      end
-    else
-      for i in 1:degree(parent(x))
-        z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
-      end
-    end
-    z.has_coord = true
-  else
-    z.has_coord = false
-  end
+#  if x.has_coord && y.has_coord
+#    if isdefined(z.elem_in_basis, 1)
+#      for i in 1:degree(parent(x))
+#        add!(z.elem_in_basis[i], x.elem_in_basis[i], y.elem_in_basis[i])
+#      end
+#    else
+#      for i in 1:degree(parent(x))
+#        z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
+#      end
+#    end
+#    z.has_coord = true
+#  else
+#    z.has_coord = false
+#  end
+  z.has_coord = false
   return z
 end
 
-function mul!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
+@inline function mul!(z::NfOrdElem, x::NfOrdElem, y::NfOrdElem)
   mul!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   z.has_coord = false
   return z
@@ -781,22 +782,23 @@ end
 # ad hoc
 for T in [Integer, fmpz]
   @eval begin
-    function mul!(z::NfOrdElem, x::NfOrdElem, y::$T)
+    @inline function mul!(z::NfOrdElem, x::NfOrdElem, y::$T)
       mul!(z.elem_in_nf, x.elem_in_nf, y)
-      if x.has_coord
-        if isdefined(z.elem_in_basis, 1)
-          for i in 1:degree(parent(z))
-            mul!(z.elem_in_basis[i], x.elem_in_basis[i], y)
-          end
-        else
-          for i in 1:degree(parent(z))
-            z.elem_in_basis[i] = x.elem_in_basis[i] * y
-          end
-        end
-        z.has_coord = true
-      else
-        z.has_coord = false
-      end
+#      if x.has_coord
+#        if isdefined(z.elem_in_basis, 1)
+#          for i in 1:degree(parent(z))
+#            mul!(z.elem_in_basis[i], x.elem_in_basis[i], y)
+#          end
+#        else
+#          for i in 1:degree(parent(z))
+#            z.elem_in_basis[i] = x.elem_in_basis[i] * y
+#          end
+#        end
+#        z.has_coord = true
+#      else
+#        z.has_coord = false
+#      end
+      z.has_coord = false
       return z
     end
 
@@ -807,7 +809,7 @@ end
 
 for T in [Integer, fmpz]
   @eval begin
-    function add!(z::NfOrdElem, x::NfOrdElem, y::$T)
+    @inline function add!(z::NfOrdElem, x::NfOrdElem, y::$T)
       add!(z.elem_in_nf, x.elem_in_nf, y)
       z.has_coord = false
       return z

@@ -127,10 +127,6 @@ end
 #
 ################################################################################
 
-#needed for FacElem{fmpq/fmpz, fmpz}^pow...
-elem_type(::Type{FlintRationalField}) = fmpq
-elem_type(::Type{FlintIntegerRing}) = fmpz
-
 function pow!{T <: Union{fmpz, Integer}}(z::FacElem, x::FacElem, y::T)
   z.fac = deepcopy(x.fac)
   for a in base(x)

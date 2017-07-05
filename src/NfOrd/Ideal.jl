@@ -10,12 +10,9 @@
 #
 #
 #  Copyright (C) 2015, 2016, 2017 Tommy Hofmann
-#  Copyright (C) 2015, 2016, 2017 Claus Fieker 
+#  Copyright (C) 2015, 2016, 2017 Claus Fieker
 #
 ################################################################################
-
-add_verbose_scope(:NfOrd)
-add_assert_scope(:NfOrd)
 
 export show, ideal
 
@@ -50,12 +47,10 @@ function Base.deepcopy_internal(A::NfOrdIdl, dict::ObjectIdDict)
       continue
     end
     if isdefined(A, i)
-      if i == :basis
-        setfield!(B, i, NfOrdElem[ deepcopy(x) for x in A.basis])
-      elseif i == :valuation
+      if i == :valuation
         setfield!(B, i, getfield(A, i))
       else
-        setfield!(B, i, deepcopy(getfield(A, i)))
+        setfield!(B, i, Base.deepcopy_internal(getfield(A, i), dict))
       end
     end
   end
@@ -70,7 +65,6 @@ end
 
 parent(a::NfOrdIdl) = a.parent
 
-
 #################################################################################
 #
 #  Parent constructor
@@ -80,24 +74,25 @@ parent(a::NfOrdIdl) = a.parent
 function IdealSet(O::NfOrd)
    return NfOrdIdlSet(O)
 end
- 
+
 elem_type(::Type{NfOrdIdlSet}) = NfOrdIdl
+
+elem_type(::NfOrdIdlSet) = NfOrdIdl
 
 parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 
 ################################################################################
 #
-#  Construction
-#  Field acess
+#  Hashing
 #
 ################################################################################
 
 # a (bad) hash function
 # - slow (due to basis)
 # - unless basis is in HNF it si also non-unique
-function hash(A::NfOrdIdl, h::UInt)
-  return hash(basis_mat(A), h)
-end  
+function Base.hash(A::NfOrdIdl, h::UInt)
+  return Base.hash(basis_mat(A, Val{false}), h)
+end
 
 ################################################################################
 #
@@ -169,21 +164,6 @@ end
 
 ################################################################################
 #
-#  Number field
-#
-################################################################################
-
-doc"""
-***
-    nf(x::NfOrdIdl) -> AnticNumberField
-
-> Returns the number field, of which $x$ is an integral ideal.
-"""
-nf(x::NfOrdIdl) = nf(order(x))
-
-
-################################################################################
-#
 #  Parent object overloading and user friendly constructors
 #
 ################################################################################
@@ -213,7 +193,7 @@ end
 doc"""
 ***
     ideal(O::NfOrd, x::fmpz, y::NfOrdElem) -> NfOrdIdl
-  
+
 > Creates the ideal $(x,y)$ of $\mathcal O$.
 """
 function ideal(O::NfOrd, x::fmpz, y::NfOrdElem)
@@ -244,7 +224,28 @@ doc"""
 """
 ideal(O::NfOrd, a::Int) = NfOrdIdl(O, a)
 
+################################################################################
+#
+#  Basic field access
+#
+################################################################################
+
+doc"""
+***
+    order(x::NfOrdIdl) -> NfOrd
+
+> Returns the order, of which $x$ is an ideal.
+"""
 order(a::NfOrdIdlSet) = a.order
+
+doc"""
+***
+    nf(x::NfOrdIdl) -> AnticNumberField
+
+> Returns the number field, of which $x$ is an integral ideal.
+"""
+nf(x::NfOrdIdl) = nf(order(x))
+
 
 doc"""
 ***
@@ -273,35 +274,175 @@ end
 
 *(x::NfOrdElem, O::NfOrd) = O*x
 
+###########################################################################################
+#
+#   Basis
+#
+###########################################################################################
+
+doc"""
+***
+    has_basis(A::NfOrdIdl) -> Bool
+
+> Returns whether A has a basis already computed.
+"""
+@inline has_basis(A::NfOrdIdl) = isdefined(A, :basis)
+
+function assure_has_basis(A::NfOrdIdl)
+  if isdefined(A, :basis)
+    return nothing
+  else
+    assure_has_basis_mat(A)
+    O = order(A)
+    M = A.basis_mat
+    Ob = basis(O, Val{false})
+    B = Vector{NfOrdElem}(degree(O))
+    y = O()
+    for i in 1:degree(O)
+      z = O()
+      for k in 1:degree(O)
+        mul!(y, M[i, k], Ob[k])
+        add!(z, z, y)
+      end
+      B[i] = z
+    end
+    A.basis = B
+    return nothing
+  end
+end
+
+doc"""
+***
+    basis(A::NfOrdIdl) -> Array{NfOrdElem, 1}
+
+> Returns the basis of A.
+"""
+@inline function basis{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+  assure_has_basis(A::NfOrdIdl)
+  if copy == Val{true}
+    return deepcopy(A.basis)
+  else
+    return A.basis
+  end
+end
 
 ################################################################################
 #
-#  Basic invariants
+#  Basis matrix
 #
 ################################################################################
 
 doc"""
 ***
-    norm(A::NfOrdIdl) -> fmpz
+    has_basis_mat(A::NfOrdIdl) -> Bool
 
-> Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
-> $\mathcal O$ is the order of $A$.
+> Returns whether $A$ knows its basis matrix.
 """
-function norm(A::NfOrdIdl)
-  if isdefined(A, :norm)
-    return A.norm
+@inline has_basis_mat(A::NfOrdIdl) = isdefined(A, :basis_mat)
+
+doc"""
+***
+  basis_mat(A::NfOrdIdl) -> fmpz_mat
+
+> Returns the basis matrix of $A$.
+"""
+function basis_mat{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+  assure_has_basis_mat(A)
+  if copy == Val{true}
+    return deepcopy(A.basis_mat)
+  else
+    return A.basis_mat
   end
-  if has_2_elem(A) && A.gens_weakly_normal == 1
-    A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
-    return A.norm
+end
+
+function assure_has_basis_mat(A::NfOrdIdl)
+  if isdefined(A, :basis_mat)
+    return nothing
   end
 
-  if isdefined(A, :princ_gen)
-    A.norm = abs(norm(A.princ_gen))
-  else
-    A.norm = abs(det(basis_mat(A)))
+  if isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum
+    A.basis_mat = basis_mat_prime_deg_1(A)
+    return nothing
   end
-  return A.norm
+
+  if has_princ_gen(A)
+    m = representation_mat(A.princ_gen)
+    A.basis_mat = _hnf_modular_eldiv(m, minimum(A), :lowerleft)
+    return nothing
+  end
+
+  @hassert :NfOrd 1 has_2_elem(A)
+  K = nf(order(A))
+  n = degree(K)
+  c = _hnf_modular_eldiv(representation_mat(A.gen_two), A.gen_one, :lowerleft)
+  A.basis_mat = c
+  return nothing
+end
+
+function basis_mat_prime_deg_1(A::NfOrdIdl)
+  @assert A.is_prime == 1
+  @assert A.minimum == A.norm
+  O = order(A)
+  n = degree(O)
+  b = one(MatrixSpace(FlintZZ, n, n))
+  # TODO: replace with eye once we switch to new Nemo version
+
+  K, mK = ResidueField(O, A)
+  assure_has_basis(O)
+  bas = basis(O, Val{false})
+  if isone(bas[1])
+    b[1, 1] = A.minimum
+  else
+    b[1, 1] = fmpz(coeff(mK( -bas[1]), 0))
+  end
+  for i in 2:n
+    b[i, 1] = fmpz(coeff(mK( -bas[i]), 0))
+  end
+  return b
+end
+
+################################################################################
+#
+#  Basis matrix inverse
+#
+################################################################################
+
+doc"""
+***
+    has_basis_mat_inv(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ knows its inverse basis matrix.
+"""
+@inline has_basis_mat_inv(A::NfOrdIdl) = isdefined(A, :basis_mat_inv)
+
+doc"""
+***
+  basis_mat_inv(A::NfOrdIdl) -> fmpz_mat
+
+> Returns the inverse basis matrix of $A$.
+"""
+function basis_mat_inv{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+  assure_has_basis_mat_inv(A)
+  if copy == Val{true}
+    return deepcopy(A.basis_mat_inv)
+  else
+    return A.basis_mat_inv
+  end
+end
+
+doc"""
+***
+    basis_mat_inv(A::NfOrdIdl) -> FakeFmpqMat
+
+> Returns the inverse of the basis matrix of $A$.
+"""
+function assure_has_basis_mat_inv(A::NfOrdIdl)
+  if isdefined(A, :basis_mat_inv)
+    return nothing
+  else
+    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(A, Val{false})))
+    return nothing
+  end
 end
 
 ################################################################################
@@ -312,16 +453,35 @@ end
 
 doc"""
 ***
+    has_minimum(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ knows its mininum.
+"""
+function has_minimum(A::NfOrdIdl)
+  return isdefined(A, :minimum)
+end
+
+doc"""
+***
     minimum(A::NfOrdIdl) -> fmpz
 
-> Returns the smallest positive element in $A \cap \mathbf Z$.
+> Returns the smallest nonnegative element in $A \cap \mathbf Z$.
 """
-function minimum(A::NfOrdIdl)
-  if has_minimum(A) 
+function minimum{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+  assure_has_minimum(A)
+  if copy == Val{true}
+    return deepcopy(A.minimum)
+  else
     return A.minimum
   end
+end
 
-  if isdefined(A, :princ_gen)
+function assure_has_minimum(A::NfOrdIdl)
+  if has_minimum(A)
+    return nothing
+  end
+
+  if has_princ_gen(A)
     b = A.princ_gen.elem_in_nf
     if iszero(b)
       A.minimum = fmpz(0)
@@ -330,25 +490,180 @@ function minimum(A::NfOrdIdl)
       bi = inv(b)
       A.minimum =  den(bi, order(A))
     end
-    return deepcopy(A.minimum)
+    return nothing
   end
 
   if has_weakly_normal(A)
     K = A.parent.order.nf
-    d = den(inv(K(A.gen_two)), A.parent.order)
+    d = den(inv(K(A.gen_two)), order(A))
     d = gcd(d, ZZ(A.gen_one))
     A.minimum = d
-    return d
+    return nothing
   end
 
-  @hassert :NfOrd 2 isone(basis(order(A))[1])
-  A.minimum = basis_mat(A)[1, 1]
-  return deepcopy(A.minimum)
-end 
+  @hassert :NfOrd 2 isone(basis(order(A), Val{false})[1])
+  A.minimum = basis_mat(A, Val{false})[1, 1]
+  return nothing
+end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+doc"""
+***
+    has_norm(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ knows its norm.
+"""
+function has_norm(A::NfOrdIdl)
+  return isdefined(A, :norm)
+end
+
+function assure_has_norm(A::NfOrdIdl)
+  if has_norm(A)
+    return nothing
+  end
+
+  if has_princ_gen_special(A)
+    A.norm = princ_gen_special(A)^degree(order(A))
+    return nothing
+  end
+
+  if has_princ_gen(A)
+    A.norm = abs(norm(A.princ_gen))
+    return nothing
+  end
+
+  if has_2_elem(A) && A.gens_weakly_normal == 1
+    A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
+    return nothing
+  end
+
+  assure_has_basis_mat(A)
+  A.norm = abs(det(basis_mat(A, Val{false})))
+  return nothing
+end
+
+doc"""
+***
+    norm(A::NfOrdIdl) -> fmpz
+
+> Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
+> $\mathcal O$ is the order of $A$.
+"""
+function norm{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+  assure_has_norm(A)
+  if copy == Val{true}
+    return deepcopy(A.norm)
+  else
+    return A.norm
+  end
+end
+
+################################################################################
+#
+#  Principal generators
+#
+################################################################################
+
+doc"""
+***
+    has_basis_princ_gen(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ knows if it is generated by one element.
+"""
+function has_princ_gen(A::NfOrdIdl)
+  return isdefined(A, :princ_gen)
+end
+
+doc"""
+***
+    has_basis_princ_gen_special(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ knows if it is generated by a rational integer.
+"""
+function has_princ_gen_special(A::NfOrdIdl)
+  return isdefined(A, :princ_gen_special)
+end
+
+princ_gen_special(A::NfOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] + 1]
+
+################################################################################
+#
+#  Two element generated ideals
+#
+################################################################################
+
+doc"""
+***
+    has_2_elem(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ is generated by two elements.
+"""
+function has_2_elem(A::NfOrdIdl)
+  return isdefined(A, :gen_two)
+end
+
+doc"""
+***
+    has_weakly_normal(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ has weakly normal two element generators.
+"""
+function has_weakly_normal(A::NfOrdIdl)
+  return (isdefined(A, :gens_weakly_normal) &&
+        A.gens_weakly_normal == true) || has_2_elem_normal(A)
+end
+
+doc"""
+***
+    has_2_elem_normal(A::NfOrdIdl) -> Bool
+
+> Returns whether $A$ has normal two element generators.
+"""
+function has_2_elem_normal(A::NfOrdIdl)
+  #the one ideal <1, ?> is automatomatically normal>
+  return isdefined(A, :gens_normal) && (A.gen_one == 1 || A.gens_normal > 1)
+end
 
 ################################################################################
 #
 #  Predicates
+#
+################################################################################
+
+# check if gen_one,gen_two is a P(gen_one)-normal presentation
+# see Pohst-Zassenhaus p. 404
+function defines_2_normal(A::NfOrdIdl)
+  m = A.gen_one
+  gen = A.gen_two
+  mg = den(inv(gen), order(A))
+  # the minimum of ideal generated by g
+  g = gcd(m,mg)
+  return gcd(m, div(m,g)) == 1
+end
+
+doc"""
+***
+    isone(A::NfOrdIdl) -> Bool
+    isunit(A::NfOrdIdl) -> Bool
+
+> Tests if $A$ is the trivial ideal generated by $1$.
+"""
+function isone(I::NfOrdIdl)
+  return isone(minimum(I))
+end
+
+function isunit(I::NfOrdIdl)
+  return isunit(minimum(I))
+end
+
+################################################################################
+#
+#  Primality testing
 #
 ################################################################################
 
@@ -375,103 +690,32 @@ function isprime(A::NfOrdIdl)
     A.is_prime = 2
     return false
   end
-  fac = factor(A)
-  if length(fac) == 1 && collect(values(fac))[1] == 1
-    A.is_prime = 1
-    return true
-  else
+
+  (n, p) = ispower(norm(A, Val{false}))
+
+  if !isprime(p)
     A.is_prime = 2
     return false
   end
-end
 
-doc"""
-***
-    has_2_elem(A::NfOrdIdl) -> Bool
+  p > 2^62 && error("Not implemented (yet)")
 
-> Returns whether $A$ is generated by two elements.
-"""
-function has_2_elem(A::NfOrdIdl)
-  return isdefined(A, :gen_two)
-end
+  lp = prime_decomposition(order(A), Int(p))
 
-doc"""
-***
-    has_minimum(A::NfOrdIdl) -> Bool
+  for (P, f) in lp
+    e = valuation(A, P)
+    if e == 1 && n == degree(P)
+      A.is_prime = 1
+      return true
+    elseif e == 0
+      continue
+    else
+      A.is_prime = 2
+      return false
+    end
+  end
 
-> Returns whether $A$ knows its mininum.
-"""
-function has_minimum(A::NfOrdIdl)
-  return isdefined(A, :minimum)
-end
-
-doc"""
-***
-    has_norm(A::NfOrdIdl) -> Bool
-
-> Returns whether $A$ knows its norm.
-"""
-function has_norm(A::NfOrdIdl)
-  return isdefined(A, :norm)
-end
-
-doc"""
-***
-    has_basis_mat(A::NfOrdIdl) -> Bool
-
-> Returns whether $A$ knows its basis matrix.
-"""
-function has_basis_mat(A::NfOrdIdl)
-  return isdefined(A, :basis_mat)
-end
-
-doc"""
-***
-    has_weakly_normal(A::NfOrdIdl) -> Bool
-
-> Returns whether $A$ has weakly normal two element generators.
-""" 
-function has_weakly_normal(A::NfOrdIdl)
-  return (isdefined(A, :gens_weakly_normal) &&
-        A.gens_weakly_normal == true) || has_2_elem_normal(A)
-end
-
-doc"""
-***
-    has_2_elem_normal(A::NfOrdIdl) -> Bool
-    
-> Returns whether $A$ has normal two element generators.
-"""
-function has_2_elem_normal(A::NfOrdIdl)
-  #the one ideal <1, ?> is automatomatically normal>
-  return isdefined(A, :gens_normal) && (A.gen_one == 1 || A.gens_normal > 1)
-end
-
-# check if gen_one,gen_two is a P(gen_one)-normal presentation
-# see Pohst-Zassenhaus p. 404
-function defines_2_normal(A::NfOrdIdl)
-  m = A.gen_one
-  gen = A.gen_two
-  mg = den(inv(gen), order(A))
-  # the minimum of ideal generated by g
-  g = gcd(m,mg)
-  return gcd(m, div(m,g)) == 1
-end
-
-
-doc"""
-***
-    isone(A::NfOrdIdl) -> Bool
-    isunit(A::NfOrdIdl) -> Bool
-
-> Tests if $A$ is the trivial ideal generated by $1$.
-"""
-function isone(I::NfOrdIdl)
-  return isone(minimum(I))
-end
-
-function isunit(I::NfOrdIdl)
-  return isunit(minimum(I))
+  error("Something wrong in isprime")
 end
 
 ################################################################################
@@ -520,7 +764,7 @@ in(x::fmpz, y::NfOrdIdl) = in(order(y)(x),y)
 
 ################################################################################
 #
-#  Binary operations
+#  Ideal addition / GCD
 #
 ################################################################################
 
@@ -540,6 +784,12 @@ function +(x::NfOrdIdl, y::NfOrdIdl)
   H = sub(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
   return ideal(order(x), H)
 end
+
+################################################################################
+#
+#  Intersection / LCM
+#
+################################################################################
 
 doc"""
     intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
@@ -563,6 +813,12 @@ doc"""
 """
 lcm(x::NfOrdIdl, y::NfOrdIdl) = intersection(x, y)
 
+################################################################################
+#
+#  Ideal multiplication
+#
+################################################################################
+
 doc"""
     *(x::NfOrdIdl, y::NfOrdIdl)
 
@@ -580,15 +836,18 @@ function mul_gen(x::NfOrdIdl, y::NfOrdIdl)
   order(x) != order(y) && error("Not compatible")
   O = order(x)
   d = degree(O)
-  l = minimum(x)*minimum(y)
-  z = MatrixSpace(FlintZZ, degree(O)*degree(O), degree(O))()
-  X = basis(x)
-  Y = basis(y)
+  l = minimum(x, Val{false})*minimum(y, Val{false})
+  z = fmpz_mat(degree(O)*degree(O), degree(O))
+  z.base_ring = FlintZZ
+  X = basis(x, Val{false})
+  Y = basis(y, Val{false})
+  t = O()
   for i in 1:d
     for j in 1:d
-      t = elem_in_basis(X[i]*Y[j])
+      mul!(t, X[i], Y[j])
+      assure_has_coord(t)
       for k in 1:d
-        z[(i - 1)*d + j, k] = t[k]
+        z[(i - 1)*d + j, k] = t.elem_in_basis[k]
       end
     end
   end
@@ -609,24 +868,39 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
   if f == 1
     a2 = a.gen_two
   else
-    g, x, y = gcdx(f, a1^2) # we need to become normal at m, we are normal at a
-                            # higher powers in a are fine
-                            # CRT: the 2nd gen of a needs to stay the same at a
-                            # and should be  1 at f
-    a2 = a.gen_two*f*x + y*a1^2
-                            # now (a1, a2) should be m-normal for a
+    # we need to become normal at m, we are normal at a
+    # higher powers in a are fine
+    # CRT: the 2nd gen of a needs to stay the same at a
+    # and should be  1 at f
+
+    g, x, y = gcdx(f, e)
+
+    #a2 = a.gen_two*f*x + y*a1^2
+    mul!(e, a1, a1)
+    mul!(x, x, f)
+    a2 = x*a.gen_two
+    mul!(y, y, e)
+    add!(a2, a2, y)
+
+    # now (a1, a2) should be m-normal for a
   end
 
   e, f = ppio(m, b1)
   if f == 1
     b2 = b.gen_two
   else
-    g, x, y = gcdx(f, b1^2)
-    b2 = b.gen_two*f*x + y*b1^2
+    g, x, y = gcdx(f, e)
+
+    #b2 = b.gen_two*f*x + y*b1^2
+    mul!(e, b1, b1)
+    mul!(x, x, f)
+    b2 = x*b.gen_two
+    mul!(y, y, e)
+    add!(b2, b2, y)
   end
   C = ideal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
-#  
+#
 #CF: too expensive, need norm_mod to compute the norm only modulo...
 #
 #  if C.norm != gcd(C.gen_one^degree(O), ZZ(norm(C.gen_two)))
@@ -638,9 +912,16 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
 ##    assert(false)
 #  end
 
-  if has_minimum(a) && has_minimum(b) && gcd(minimum(a), minimum(b)) == 1 
-    C.minimum = minimum(a) * minimum(b) # otherwise, I don't know the
-                                        # correct value
+  if has_minimum(a) && has_minimum(b)
+    ma = minimum(a, Val{false})
+    mb = minimum(b, Val{false})
+
+    if gcd(ma, mb) == 1
+      C.minimum = ma * mb
+    end
+
+    # Otherwise, I don't know the
+    # correct value.
   end
 
   C.gens_normal = m
@@ -662,19 +943,19 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
   norm_c = norm(a) * norm(b)        # we ARE in the maximal order case
   norm_int_c = norm_c
   mod_c = fmpz(1)
-  
-  if has_minimum(a) 
+
+  if has_minimum(a)
     mod_c *= minimum(a)
   else
     mod_c *= norm(a)
   end
 
-  if has_minimum(b) 
+  if has_minimum(b)
     mod_c *= minimum(b)
   else
     mod_c *= norm(b)
   end
-  
+
   # Is this a good idea? Bad magic constants
 
   if mod_c > 250
@@ -721,7 +1002,7 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
 
   c.norm = norm_c
 
-  if has_minimum(a) && has_minimum(b) && gcd(minimum(a), minimum(b)) == 1 
+  if has_minimum(a) && has_minimum(b) && gcd(minimum(a), minimum(b)) == 1
     c.minimum = minimum(a) * minimum(b)
                     # otherwise, I don't know the correct value
   end
@@ -731,11 +1012,11 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
   return c
 end
 
-# dispatching 
+# dispatching
 doc"""
 ***
   *(x::NfMaxIdl, y::NfOrdIdl)
-    
+
 > Returns the ideal x*y.
 """
 function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
@@ -829,7 +1110,7 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
                            # higher powers in a are fine
                            # CRT: the 2nd gen of a needs to stay the same at a
                            # and should be  1 at f
-    assert(g==1)                       
+    assert(g==1)
     a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
 
@@ -883,17 +1164,17 @@ function *(x::NfOrdIdl, y::fmpz)
 end
 
 function mul_maximal(x::NfOrdIdl, y::fmpz)
-  if y == 1 || y == -1 
+  if y == 1 || y == -1
     return x
   end
 
-  if has_2_elem(x) 
+  if has_2_elem(x)
     if has_2_elem_normal(x)
       return prod_by_int_2_elem_normal(x,y)
 # this does not make any sense since prod_by_int_2_elem(x, y) works only if has_2_elem_norm(x) == true
 #    else
 #      return prod_by_int_2_elem(x,y)
-    end  
+    end
   end
 
   return x*ideal(order(x), y)
@@ -1011,7 +1292,7 @@ function mod(x::NfOrdElem, y::NfOrdIdl)
   parent(x) != order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
-  
+
   O = order(y)
   a = elem_in_basis(x)
   #a = deepcopy(b)
@@ -1039,7 +1320,7 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
   parent(x) != order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
-  
+
   O = order(y)
   a = elem_in_basis(x) # this is already a copy
 
@@ -1078,7 +1359,7 @@ doc"""
     pradical(O::NfOrd, p::fmpz) -> NfOrdIdl
 
 > Given a prime number $p$, this function returns the $p$-radical
-> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is 
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
 > just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 > \in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
@@ -1120,7 +1401,7 @@ doc"""
     pradical(O::NfOrd, p::Integer) -> NfOrdIdl
 
 > Given a prime number $p$, this function returns the $p$-radical
-> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is 
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
 > just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 > \in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
@@ -1158,7 +1439,7 @@ function ring_of_multipliers(a::NfOrdIdl)
   b, d = pseudo_inv(n)
   #z = frac_ideal(O, FakeFmpqMat(b, d))
   return Order(nf(O), FakeFmpqMat(b, d)*basis_mat(O))
-end  
+end
 
 ###########################################################################################
 #
@@ -1250,7 +1531,7 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
       ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), s, &B[i])
     end
 
-    if iszero(m) 
+    if iszero(m)
       continue
     end
 
@@ -1273,7 +1554,7 @@ end
 function assure_2_normal(A::NfOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
     return
-  end 
+  end
   O = A.parent.order
   K = nf(O)
   n = degree(K)
@@ -1289,7 +1570,7 @@ function assure_2_normal(A::NfOrdIdl)
     m = minimum(A)
     bas = basis(O)
     # Magic constants
-    if m > 1000 
+    if m > 1000
       r = -500:500
     else
       r = -div(Int(m)+1,2):div(Int(m)+1,2)
@@ -1322,7 +1603,7 @@ function assure_2_normal(A::NfOrdIdl)
 
       mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
-      if gcd(m, div(mg, g)) == 1 
+      if gcd(m, div(mg, g)) == 1
         if gcd(m^n, norm(gen)) != norm(A)
           @vprint :NfOrd 2 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
           cnt += 10
@@ -1353,7 +1634,7 @@ doc"""
 > Computes the inverse of A, that is, the fractional ideal $B$ such that
 > $AB = \mathcal O_K$.
 """
-function inv(A::NfOrdIdl) 
+function inv(A::NfOrdIdl)
   if ismaximal_known(order(A)) && ismaximal(order(A))
     return inv_maximal(A)
   else
@@ -1361,7 +1642,7 @@ function inv(A::NfOrdIdl)
   end
 end
 
-function inv_maximal(A::NfOrdIdl) 
+function inv_maximal(A::NfOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
     assure_2_normal(A)
     O = order(A)
@@ -1378,7 +1659,7 @@ function inv_maximal(A::NfOrdIdl)
     end
     Ai = parent(A)()
     dn = den(d*alpha, O)
-    Ai.gen_one = dn 
+    Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(A.parent.order)//norm(A)
     @hassert :NfOrd 1 den(temp) == 1
@@ -1396,125 +1677,10 @@ end
 
 ###########################################################################################
 #
-#   Basis
-#
-###########################################################################################
-
-doc"""
-***
-  has_basis(A::NfOrdIdl) -> Bool
-
-    Returns wether A has a basis already computed.
-
-"""
-function has_basis(A::NfOrdIdl)
-  return isdefined(A, :basis)
-end
-
-doc"""
-***
-  basis(A::NfOrdIdl) -> Array{NfOrdElem, 1}
-
-> Returns the basis of A
-"""
-function basis(A::NfOrdIdl)
-  if isdefined(A, :basis)
-    return A.basis
-  else
-    O = order(A)
-    M = basis_mat(A)
-    B = Array{NfOrdElem}(degree(O))
-    y = O()
-    for i in 1:degree(O)
-      z = O()
-      for k in 1:degree(O)
-        mul!(y, M[i,k], basis(O)[k])
-        add!(z, z, y)
-      end
-      B[i] = z
-    end
-    A.basis = B
-    return A.basis
-  end
-end
-    
-function basis_mat_prime_deg_1(A::NfOrdIdl)
-  @assert A.is_prime == 1
-  @assert A.minimum == A.norm
-  O = order(A)
-  n = degree(O)
-  b = MatrixSpace(ZZ, n, n)(1)
-
-  K, mK = ResidueField(O, A)
-  bas = basis(O)
-  if isone(bas[1])
-    b[1,1] = A.minimum
-  else
-    b[1,1] = fmpz(coeff(mK(-bas[1]), 0))
-  end
-  for i=2:n
-    b[i,1] = fmpz(coeff(mK(-bas[i]), 0))
-  end
-  return b
-end
-
-doc"""
-***
-  basis_mat(A::NfOrdIdl) -> fmpz_mat
-
-> Returns the basis matrix of $A$.
-""" 
-function basis_mat(A::NfOrdIdl)
-  if isdefined(A, :basis_mat)
-    return A.basis_mat
-  end
-
-  if isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum
-    A.basis_mat = basis_mat_prime_deg_1(A)
-    return A.basis_mat
-  else
-#    println("bas mat of $A")
-  end
-
-  if isdefined(A, :princ_gen)
-    m = representation_mat(A.princ_gen)
-    A.basis_mat = _hnf_modular_eldiv(m, minimum(A), :lowerleft)
-    return A.basis_mat
-  end
-
-  @hassert :NfOrd 1 has_2_elem(A)
-  K = nf(order(A))
-  n = degree(K)
-#  T = MatrixSpace(FlintZZ, n, n)::Nemo.FmpzMatSpace
-#  c = vcat(T(A.gen_one)::fmpz_mat, representation_mat(A.gen_two)::fmpz_mat)::fmpz_mat
-  #c = modular_hnf(A.gen_one, representation_mat(A.gen_two), :lowerleft)
-  c = _hnf_modular_eldiv(representation_mat(A.gen_two), A.gen_one, :lowerleft)
-#  c = sub(c, n + 1:2*n, 1:n)
-  A.basis_mat = c
-  return c
-end
-
-doc"""
-***
-    basis_mat_inv(A::NfOrdIdl) -> FakeFmpqMat
-
-> Returns the inverse of the basis matrix of $A$.
-""" 
-function basis_mat_inv(A::NfOrdIdl)
-  if isdefined(A, :basis_mat_inv)
-    return A.basis_mat_inv
-  else
-    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(A)))
-    return A.basis_mat_inv
-  end
-end
-
-###########################################################################################
-#
 #  Simplification
 #
 ###########################################################################################
-#CF: missing a function to compute the gcd(...) for the minimum 
+#CF: missing a function to compute the gcd(...) for the minimum
 #    without 1st computing the complete inv
 
 function simplify(A::NfOrdIdl)
@@ -1525,7 +1691,7 @@ function simplify(A::NfOrdIdl)
     if A.gen_one == 1 # || test other things to avoid the 1 ideal
       return A
     end
-    A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order)) 
+    A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
     A.gen_one = A.minimum
     n = gcd(A.gen_one^degree(A.parent.order), ZZ(norm(A.gen_two)))
     if isdefined(A, :norm)
@@ -1604,7 +1770,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   return function(x::nf_elem)
     d = den(x)
     nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
-    h = rem!(h, h, g)      
+    h = rem!(h, h, g)
     c = lift(FlintZZ, coeff(h, 0))
     v = c==0 ? typemax(Int) : valuation(c, P)
     for i=1:degree(h)
@@ -1682,7 +1848,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
         if v > 100  # can happen ONLY if the precision in the .._small function
                     # was too small.
           return f2(x)
-        else 
+        else
           return v
         end
       end
@@ -1744,7 +1910,7 @@ doc"""
 > such that $A$ is contained in $\mathfrak p^i$.
 """
 function valuation(A::NfOrdIdl, p::NfOrdIdl)
-  _assure_weakly_normal_presentation(A) 
+  _assure_weakly_normal_presentation(A)
   if !isdefined(p, :splitting_type) || p.splitting_type[1] == 0 #ie. if p is non-prime...
     return valuation_naive(A, p)
   end
@@ -1911,6 +2077,11 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
     degree_limit = degree(O)
   end
 
+  if haskey(O.index_div, fmpz(p))
+    lp = O.index_div[fmpz(p)]
+    return [(p, e) for (p,e) = lp if degree(p) <= degree_limit]
+  end
+
   # Firstly compute the p-radical of O
   Ip = pradical(O, p)
   R = quoringalg(O, Ip, p)
@@ -1939,8 +2110,6 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
 
     # The following does not work if there is only one prime ideal
     if length(AA) > 1 && (1-1/p)^degree(O) < 0.1
-      # Finding the second element might take some time
-      @vprint :NfOrd 1 "chances are very low: ~$((1-1/p)^degree(O))"
       # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
       # number theory".
 
@@ -1981,12 +2150,13 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
 
       @hassert :NfOrd 1 !iszero(x)
       @hassert :NfOrd 2 O*O(p) + O*x == P
-      
+
       P.gen_one = p
       P.gen_two = x
       P.gens_normal = p
       P.gens_weakly_normal = 1
     else
+      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/p))\n"
       _assure_weakly_normal_presentation(P)
       assure_2_normal(P)
     end
@@ -1995,6 +2165,9 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
     P.splitting_type = e, f
     P.is_prime = 1
     push!(result, (P, e))
+  end
+  if degree_limit >= degree(O)
+    O.index_div[fmpz(p)] = result
   end
   return result
 end
@@ -2048,7 +2221,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     g = sum([ x for x in values(fac)])
     res = Array{Tuple{Int, Int}}(g)
     k = 1
-    for (fi, ei) in fac 
+    for (fi, ei) in fac
       for j in 1:ei
         res[k] = (fi, 1)
         k = k + 1
@@ -2071,7 +2244,7 @@ doc"""
                        degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
 
 > Computes the prime ideals $\mathcal O$ with norm up to $B$.
-> 
+>
 > If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 > with $\deg(\mathfrak p) > k$ will be discarded.
 """
@@ -2109,7 +2282,7 @@ doc"""
                        degree_limit::Int = 0) -> Array{NfOrdIdl, 1}
 
 > Computes the prime ideals $\mathcal O$ over prime numbers in $lp$.
-> 
+>
 > If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 > with $\deg(\mathfrak p) > k$ will be discarded.
 """
@@ -2138,7 +2311,7 @@ doc"""
                        bad::fmpz)
 
 > Computes the prime ideals $\mathcal O$ with norm up to $B$.
-> 
+>
 > If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 > with $\deg(\mathfrak p) > k$ will be discarded.
 >
@@ -2196,7 +2369,7 @@ doc"""
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
 > A coprime base for the (principal) ideals in $A$, ie. the returned array
-> generated multiplicatively the same ideals as the input and are pairwise 
+> generated multiplicatively the same ideals as the input and are pairwise
 > coprime.
 """
 function coprime_base(A::Array{NfOrdIdl, 1})
@@ -2269,13 +2442,13 @@ function divexact(A::NfOrdIdl, B::NfOrdIdl)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
     t_prod += @elapsed I = A*inv(B)
-    t_simpl += @elapsed simplify_exact(I)
+    t_simpl += @elapsed simplify_exact!(I)
     #t_b_mat += @elapsed B = basis_mat(I)
     I.den != 1 && error("Division not exact")
     #I = ideal(order(A), B.num)
     #t_2_elem_weak += @elapsed _assure_weakly_normal_presentation(I)
     #t_2_elem += @elapsed assure_2_normal(I)
-    
+
     #println("  computation for product: $t_prod")
     #println("  simplification         : $t_simpl")
     #println("  basis matrix           : $t_b_mat")
@@ -2323,7 +2496,7 @@ function factor_dict(A::NfOrdIdl)
         lF[P[1]] = v
         n = n//norm(P[1])^v
       end
-      if n == 1 
+      if n == 1
         return lF
       end
     end
@@ -2398,11 +2571,11 @@ type quoelem
     z = new()
     z.parent = R
     z.elem = x
-    
+
     return z
   end
 end
-    
+
 function _kernel_of_frobenius(R::quoringalg)
   O = R.base_order
   BB = R.basis
@@ -2479,7 +2652,7 @@ function split(R::quoringalg)
     return [ R ]
   end
 
-  maxit = 1 
+  maxit = 1
 
   while true
     maxit = maxit + 1
@@ -2498,7 +2671,7 @@ function split(R::quoringalg)
     f = minpoly(x)
 
 
-    if degree(f) < 2 
+    if degree(f) < 2
       continue
     end
     @assert  issquarefree(f)
@@ -2582,7 +2755,7 @@ function random_init(I::AbstractArray{NfOrdIdl, 1}; reduce::Bool = true)
     end
   end
   return J
-end  
+end
 
 function random_get(J::Array{NfOrdIdl, 1}; reduce::Bool = true)
   a = rand(1:length(J))
@@ -2633,7 +2806,7 @@ function ispower(I::NfOrdIdl)
       P = lP[i][1]
       v = valuation(I, P)
       gn = gcd(v, g)
-      if gn == 1 
+      if gn == 1
         return gn, I
       end
       if g != gn
@@ -2664,7 +2837,7 @@ function ispower_unram(I::NfOrdIdl)
   f, s = ispower_unram(num(II))
 
   g = gcd(f, e)
-  if isone(g) 
+  if isone(g)
     return 1, I
   end
 
@@ -2676,7 +2849,7 @@ function ispower_unram(I::NfOrdIdl)
 
   return e, JJ
 end
-      
+
 function ispower(I::NfOrdFracIdl)
   num, den = integral_split(I)
   e, r = ispower(num)
@@ -2689,8 +2862,8 @@ function ispower(I::NfOrdFracIdl)
 end
 
 doc"""
-    ispower(A::NfOrdIdl, n::Int) -> Bool, NfOrdIdl 
-    ispower(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl 
+    ispower(A::NfOrdIdl, n::Int) -> Bool, NfOrdIdl
+    ispower(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl
 > Computes, if possible, an ideal $B$ s.th. $B^n==A$ holds. In this
 > case, {{{true}}} and $B$ are returned.
 """
@@ -2757,12 +2930,12 @@ function ispower_unram(I::NfOrdIdl, n::Int)
   return true, JJ
 end
 
-#TODO: check if the integral_plit is neccessary or if one can just use 
+#TODO: check if the integral_plit is neccessary or if one can just use
 #      the existing denominator
 function ispower(A::NfOrdFracIdl, n::Int)
   nu, de = integral_split(A)
   fl, nu = ispower(nu, n)
-  if !fl 
+  if !fl
     return fl, A
   end
   fl, de = ispower(de, n)
@@ -2773,12 +2946,12 @@ function one(A::NfOrdIdl)
   return ideal(order(A), 1)
 end
 
-
 ################################################################################
 #
 #  Conversion to Magma
 #
 ################################################################################
+
 function toMagma(f::IOStream, clg::NfOrdIdl, order::String = "M")
   print(f, "ideal<$(order)| ", clg.gen_one, ", ",
                     elem_in_nf(clg.gen_two), ">")

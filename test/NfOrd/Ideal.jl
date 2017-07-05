@@ -4,6 +4,9 @@
   K1, a1 = NumberField(x^3 - 2, "a")
   O1 = Order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
 
+  K2, a2 = NumberField(x^2 - 4^2*7^2*5, "a")
+  O2 = Order(K2, [K2(1), a2])
+
   @testset "Construction" begin
     I = @inferred ideal(O1, -17)
     @test order(I) == O1
@@ -27,12 +30,15 @@
     L = @inferred O1*O1(-17)
 
     @test I == J && J == K && K == M && M == L && L == I
+
+    I2 = @inferred ideal(O2, O2(1 + a2))
   end
 
   I = ideal(O1, -17)
   J = ideal(O1, ZZ(-17))
   K = ideal(O1, O1(-17))
   M = O1(-17)*O1
+  I2 = ideal(O2, O2(1 + a2))
 
   @testset "Minimum" begin
     @test 17 == @inferred minimum(I)

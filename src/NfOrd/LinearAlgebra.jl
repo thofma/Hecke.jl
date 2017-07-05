@@ -562,7 +562,6 @@ end
 #=
 Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
 by H. Cohen.
-The reductions in step 6 are not implemented.
 =#
 function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool = false)
    m = rows(H)
@@ -586,7 +585,7 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          with_trafo ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
-      simplify_exact(H.coeffs[k])
+      simplify_exact!(H.coeffs[k])
       with_trafo ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
@@ -599,9 +598,9 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          b = H.coeffs[k]
          d = aa + b
          ad = aa//d
-         simplify_exact(ad)
+         simplify_exact!(ad)
          bd = b//d
-         simplify_exact(bd)
+         simplify_exact!(bd)
          if ad.den != 1 || bd.den != 1
             error("Ideals are not integral.")
          end
@@ -626,13 +625,47 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
             end
          end
          H.coeffs[j] = a*b//d
-         simplify_exact(H.coeffs[j])
+         simplify_exact!(H.coeffs[j])
          H.coeffs[k] = d
-         simplify_exact(H.coeffs[k])
+         simplify_exact!(H.coeffs[k])
+      end
+      if iszero(A[k, i])
+         continue
+      end
+      for j = 1:k-1
+         if iszero(A[j, i])
+            continue
+         end
+         d = H.coeffs[k]//H.coeffs[j]
+         q = mod(A[j, k], d)
+         q = q - A[j, k]
+         for c = k:n
+            mul!(t, q, A[k, c])
+            addeq!(A[j, c], t)
+         end
+         if with_trafo
+            for c = 1:m
+               mul!(t, q, U[k, c])
+               addeq!(U[j, c], t)
+            end
+         end
       end
       k += 1
    end
    return nothing
+end
+
+# This probably shouldn't be in this file. Maybe in NfOrd/FracIdl.jl?
+function mod(x::nf_elem, y::Hecke.NfOrdFracIdl)
+   K = parent(x)
+   O = maximal_order(K)
+   d = K(lcm(den(x), den(y)))
+   dx = d*x
+   dy = d*y
+   simplify_exact!(dy)
+   dz = mod(O(dx), dy.num)
+   z = divexact(K(dz), d)
+   return z
 end
 
 function swap_rows!(P::PMat, i::Int, j::Int)
@@ -714,6 +747,58 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
+function kb_reduce_row!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool)
+   r = pivot[c]
+   A = H.matrix
+   t = base_ring(A)()
+   for i = c+1:cols(A)
+      p = pivot[i]
+      if p == 0 || iszero(A[r, i])
+         continue
+      end
+      d = H.coeffs[p]//H.coeffs[r]
+      q = mod(A[r, i], d)
+      q = q - A[r, i]
+      for j = i:cols(A)
+         mul!(t, q, A[p,j])
+         addeq!(A[r,j], t)
+      end
+      if with_trafo
+         for j = 1:cols(U)
+            mul!(t, q, U[p,j])
+            addeq!(U[r,j], t)
+         end
+      end
+   end
+   return nothing
+end
+
+function kb_reduce_column!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool, start_element::Int = 1)
+   r = pivot[c]
+   A = H.matrix
+   t = base_ring(A)()
+   for i = start_element:c-1
+      p = pivot[i]
+      if p == 0 || iszero(A[p, c])
+         continue
+      end
+      d = H.coeffs[r]//H.coeffs[p]
+      q = mod(A[p, c], d)
+      q = q - A[p, c]
+      for j = c:cols(A)
+         mul!(t, q, A[r,j])
+         addeq!(A[p,j], t)
+      end
+      if with_trafo
+         for j = 1:cols(U)
+            mul!(t, q, U[r,j])
+            addeq!(U[p,j], t)
+         end
+      end
+   end
+   return nothing
+end
+
 function kb_sort_rows!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1)
    m = rows(H)
    n = cols(H)
@@ -776,10 +861,11 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
          end
          if pivot[j] == 0
             pivot[j] = i+1
+            kb_reduce_row!(H, U, pivot, j, with_trafo)
             pivot_max = max(pivot_max, j)
             new_pivot = true
             H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
-            simplify_exact(H.coeffs[i+1])
+            simplify_exact!(H.coeffs[i+1])
             with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
             divide_row!(A, i+1, A[i+1, j])
          else
@@ -790,9 +876,9 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             b = H.coeffs[p]
             d = aa + b
             ad = aa//d
-            simplify_exact(ad)
+            simplify_exact!(ad)
             bd = b//d
-            simplify_exact(bd)
+            simplify_exact!(bd)
             if ad.den != 1 || bd.den != 1
                error("Ideals are not integral.")
             end
@@ -827,10 +913,11 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                end
             end
             H.coeffs[i+1] = a*b//d
-            simplify_exact(H.coeffs[i+1])
+            simplify_exact!(H.coeffs[i+1])
             H.coeffs[p] = d
-            simplify_exact(H.coeffs[p])
+            simplify_exact!(H.coeffs[p])
          end
+         kb_reduce_column!(H, U, pivot, j, with_trafo, start_element)
          if new_pivot
             break
          end
@@ -839,9 +926,10 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
          for c = pivot_max+1:n
             if !iszero(A[i+1,c])
                pivot[c] = i+1
+               kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
                pivot_max = max(pivot_max, c)
                H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
-               simplify_exact(H.coeffs[i+1])
+               simplify_exact!(H.coeffs[i+1])
                with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
                divide_row!(A, i+1, A[i+1, c])
                break
@@ -851,4 +939,41 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
    end
    kb_sort_rows!(H, U, pivot, with_trafo, start_element)
    return nothing
+end
+
+mutable struct ModDed
+   pmatrix::PMat
+   is_triu::Bool
+   function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
+      if check
+         is_triu = istriu(P.matrix)
+      end
+      new(P, is_triu)
+   end
+end
+
+function Base.istriu(A::GenMat)
+   m = rows(A)
+   n = cols(A)
+   d = 0
+   for r = 1:m
+      for c = 1:n
+         if !iszero(A[r, c])
+            if c <= d
+               return false
+            end
+            d = c
+            break
+         end
+      end
+   end
+   return true
+end
+
+function show(io::IO, M::ModDed)
+   print(io, "Module over Dedekind domain with defining pseudo-matrix\n")
+   for i in 1:rows(M.pmatrix.matrix)
+      showcompact(io, M.pmatrix.coeffs[i])
+      print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))\n")
+   end
 end

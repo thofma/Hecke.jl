@@ -425,6 +425,6 @@ end
 
 @inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
 
-@inline degree(L::Hecke.NfRel) = degre(L.pol)
+@inline degree(L::Hecke.NfRel) = degree(L.pol)
 
 #TODO: missing: norm, trace...
