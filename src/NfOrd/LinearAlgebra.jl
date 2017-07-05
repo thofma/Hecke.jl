@@ -1161,3 +1161,50 @@ ModDed(m::GenMat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed
 ModDed(c::Array{NfOrdFracIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
 
 ModDed(c::Array{NfOrdIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
+
+function in(v::Vector{nf_elem}, M::ModDed)
+   P = M.pmatrix
+   if !M.is_triu
+      P = pseudo_hnf_kb(M.pmatrix)
+   end
+   return _in_span(v, P)[1]
+end
+
+function simplify_basis!(M::ModDed)
+   if !M.is_triu
+      pseudo_hnf_kb!(M.pmatrix, M.pmatrix.matrix, false)
+   end
+   M.is_triu = true
+   P = M.pmatrix
+   r = rows(P)
+   for i = rows(P):-1:1
+      if !all([iszero(p) for p in P.matrix.entries[i, :]])
+         break
+      end
+      r -= 1
+   end
+   deleteat!(P.coeffs, r + 1:rows(P))
+   t = reshape(P.matrix.entries, rows(P)*cols(P))
+   for i = rows(P):-1:r + 1
+      deleteat!(t, [ i*j for j in 1:cols(P)])
+   end
+   P.matrix.entries = reshape(t, r, cols(P))
+   return nothing
+end
+
+function vcat(P::PMat, Q::PMat)
+   @assert base_ring(P.matrix) == base_ring(Q.matrix)
+   m = vcat(P.matrix, Q.matrix)
+   c = vcat(P.coeffs, Q.coeffs)
+   return PseudoMatrix(m, c)
+end
+
+function +(M::ModDed, N::ModDed)
+   @assert base_ring(M) == base_ring(N)
+   m = deepcopy(M.pmatrix)
+   n = deepcopy(N.pmatrix)
+   mn = vcat(m, n)
+   MN = ModDed(mn; check = false)
+   simplify_basis!(MN)
+   return MN
+end
