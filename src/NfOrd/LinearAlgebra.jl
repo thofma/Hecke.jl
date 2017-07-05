@@ -941,7 +941,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
    return nothing
 end
 
-mutable struct ModDed
+type ModDed
    pmatrix::PMat
    is_triu::Bool
    function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
