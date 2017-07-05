@@ -757,9 +757,6 @@ doc"""
 """
 function baby_step_giant_step(g, n, h, cache::Dict)
   @assert typeof(g) == typeof(h)
-  # Since the hash function doesn't work properly for
-  # NfOrdElem I convert them to strings first and use the strings as keys for the hash map...
-  # TODO: The calls to string() should be removed as soon as the hash function is fixed.
   n = BigInt(n)
   m = ceil(BigInt, sqrt(n))
   if isempty(cache)
@@ -810,7 +807,7 @@ function pohlig_hellman(g, n, h; factor_n=factor(n))
 end
 
 function _pohlig_hellman_prime_power(g,p,v,h)
-  cache = Dict{Any,BigInt}()
+  cache = Dict{typeof(g), BigInt}()
   p_i = 1
   p_v_min_i_min_1 = p^(v-1)
   g_ = g^(p^(v-1))
