@@ -653,8 +653,16 @@ end
 #
 ################################################################################
 
-function ==(R::NfOrd, S::NfOrd)
+# this is used in dictionaries
+function isequal(R::NfOrd, S::NfOrd)
   return R === S
+end
+
+function ==(R::NfOrd, S::NfOrd)
+  nf(R) != nf(S) && return false
+  assure_has_basis_mat(R)
+  assure_has_basis_mat(S)
+  return R.basis_mat == S.basis_mat
 end
 
 ################################################################################
