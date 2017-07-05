@@ -271,6 +271,22 @@ function PseudoMatrix(m::GenMat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   return PMat(mm, cc)
 end
 
+function PseudoMatrix(m::GenMat{nf_elem})
+   K = base_ring(m)
+   O = maximal_order(K)
+   return PseudoMatrix(m, [ideal(O, K(1)) for i = 1:rows(m)])
+end
+
+PseudoMatrix(m::GenMat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
+
+function PseudoMatrix(c::Array{NfOrdFracIdl, 1})
+   K = nf(order(c[1]))
+   m = one(MatrixSpace(K, length(c), length(c)))
+   return PseudoMatrix(m, c)
+end
+
+PseudoMatrix(c::Array{NfOrdIdl, 1}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, fmpz(1)), c))
+
 function rows(m::PMat)
   return rows(m.matrix)
 end
@@ -1095,14 +1111,21 @@ end
 
 type ModDed
    pmatrix::PMat
+   base_ring::NfOrd
    is_triu::Bool
    function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
       if check
          is_triu = istriu(P.matrix)
       end
-      new(P, is_triu)
+      z = new()
+      z.pmatrix = P
+      z.base_ring = maximal_order(base_ring(P.matrix))
+      z.is_triu = is_triu
+      return z
    end
 end
+
+base_ring(M::ModDed) = M.base_ring
 
 function Base.istriu(A::GenMat)
    m = rows(A)
@@ -1123,9 +1146,18 @@ function Base.istriu(A::GenMat)
 end
 
 function show(io::IO, M::ModDed)
-   print(io, "Module over Dedekind domain with defining pseudo-matrix\n")
+   print(io, "Module over $(M.base_ring) with defining pseudo-matrix")
    for i in 1:rows(M.pmatrix.matrix)
+      print(io, "\n")
       showcompact(io, M.pmatrix.coeffs[i])
-      print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))\n")
+      print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))")
    end
 end
+
+ModDed(m::GenMat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+
+ModDed(m::GenMat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+
+ModDed(c::Array{NfOrdFracIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
+
+ModDed(c::Array{NfOrdIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
