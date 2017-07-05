@@ -2499,7 +2499,7 @@ function divexact(A::NfOrdIdl, B::NfOrdIdl)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
     t_prod += @elapsed I = A*inv(B)
-    t_simpl += @elapsed simplify_exact(I)
+    t_simpl += @elapsed simplify_exact!(I)
     #t_b_mat += @elapsed B = basis_mat(I)
     I.den != 1 && error("Division not exact")
     #I = ideal(order(A), B.num)

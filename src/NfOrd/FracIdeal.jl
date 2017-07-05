@@ -313,7 +313,7 @@ end
 #
 ################################################################################
 
-function simplify_exact(A::NfOrdFracIdl)
+function simplify_exact!(A::NfOrdFracIdl)
   g = A.den
 
   A.den = divexact(A.den, g)

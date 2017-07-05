@@ -585,7 +585,7 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          with_trafo ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
-      simplify_exact(H.coeffs[k])
+      simplify_exact!(H.coeffs[k])
       with_trafo ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
@@ -598,9 +598,9 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          b = H.coeffs[k]
          d = aa + b
          ad = aa//d
-         simplify_exact(ad)
+         simplify_exact!(ad)
          bd = b//d
-         simplify_exact(bd)
+         simplify_exact!(bd)
          if ad.den != 1 || bd.den != 1
             error("Ideals are not integral.")
          end
@@ -625,9 +625,9 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
             end
          end
          H.coeffs[j] = a*b//d
-         simplify_exact(H.coeffs[j])
+         simplify_exact!(H.coeffs[j])
          H.coeffs[k] = d
-         simplify_exact(H.coeffs[k])
+         simplify_exact!(H.coeffs[k])
       end
       if iszero(A[k, i])
          continue
@@ -662,7 +662,7 @@ function mod(x::nf_elem, y::Hecke.NfOrdFracIdl)
    d = K(lcm(den(x), den(y)))
    dx = d*x
    dy = d*y
-   simplify_exact(dy)
+   simplify_exact!(dy)
    dz = mod(O(dx), dy.num)
    z = divexact(K(dz), d)
    return z
@@ -865,7 +865,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             pivot_max = max(pivot_max, j)
             new_pivot = true
             H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
-            simplify_exact(H.coeffs[i+1])
+            simplify_exact!(H.coeffs[i+1])
             with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
             divide_row!(A, i+1, A[i+1, j])
          else
@@ -876,9 +876,9 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             b = H.coeffs[p]
             d = aa + b
             ad = aa//d
-            simplify_exact(ad)
+            simplify_exact!(ad)
             bd = b//d
-            simplify_exact(bd)
+            simplify_exact!(bd)
             if ad.den != 1 || bd.den != 1
                error("Ideals are not integral.")
             end
@@ -913,9 +913,9 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                end
             end
             H.coeffs[i+1] = a*b//d
-            simplify_exact(H.coeffs[i+1])
+            simplify_exact!(H.coeffs[i+1])
             H.coeffs[p] = d
-            simplify_exact(H.coeffs[p])
+            simplify_exact!(H.coeffs[p])
          end
          kb_reduce_column!(H, U, pivot, j, with_trafo, start_element)
          if new_pivot
@@ -929,7 +929,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
                pivot_max = max(pivot_max, c)
                H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
-               simplify_exact(H.coeffs[i+1])
+               simplify_exact!(H.coeffs[i+1])
                with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
                divide_row!(A, i+1, A[i+1, c])
                break
