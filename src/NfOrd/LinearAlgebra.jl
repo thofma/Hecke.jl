@@ -271,6 +271,22 @@ function PseudoMatrix(m::GenMat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   return PMat(mm, cc)
 end
 
+function PseudoMatrix(m::GenMat{nf_elem})
+   K = base_ring(m)
+   O = maximal_order(K)
+   return PseudoMatrix(m, [ideal(O, K(1)) for i = 1:rows(m)])
+end
+
+PseudoMatrix(m::GenMat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
+
+function PseudoMatrix(c::Array{NfOrdFracIdl, 1})
+   K = nf(order(c[1]))
+   m = one(MatrixSpace(K, length(c), length(c)))
+   return PseudoMatrix(m, c)
+end
+
+PseudoMatrix(c::Array{NfOrdIdl, 1}) = PseudoMatrix(map(z -> NfOrdFracIdl(z, fmpz(1)), c))
+
 function rows(m::PMat)
   return rows(m.matrix)
 end
@@ -585,7 +601,6 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          with_trafo ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
-      simplify_exact(H.coeffs[k])
       with_trafo ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
@@ -598,9 +613,9 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          b = H.coeffs[k]
          d = aa + b
          ad = aa//d
-         simplify_exact(ad)
+         simplify_exact!(ad)
          bd = b//d
-         simplify_exact(bd)
+         simplify_exact!(bd)
          if ad.den != 1 || bd.den != 1
             error("Ideals are not integral.")
          end
@@ -625,9 +640,7 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
             end
          end
          H.coeffs[j] = a*b//d
-         simplify_exact(H.coeffs[j])
          H.coeffs[k] = d
-         simplify_exact(H.coeffs[k])
       end
       if iszero(A[k, i])
          continue
@@ -656,13 +669,13 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
 end
 
 # This probably shouldn't be in this file. Maybe in NfOrd/FracIdl.jl?
-function mod(x::nf_elem, y::Hecke.NfOrdFracIdl)
+function mod(x::nf_elem, y::NfOrdFracIdl)
    K = parent(x)
    O = maximal_order(K)
    d = K(lcm(den(x), den(y)))
    dx = d*x
    dy = d*y
-   simplify_exact(dy)
+   simplify_exact!(dy)
    dz = mod(O(dx), dy.num)
    z = divexact(K(dz), d)
    return z
@@ -865,7 +878,6 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             pivot_max = max(pivot_max, j)
             new_pivot = true
             H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
-            simplify_exact(H.coeffs[i+1])
             with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
             divide_row!(A, i+1, A[i+1, j])
          else
@@ -876,9 +888,9 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             b = H.coeffs[p]
             d = aa + b
             ad = aa//d
-            simplify_exact(ad)
+            simplify_exact!(ad)
             bd = b//d
-            simplify_exact(bd)
+            simplify_exact!(bd)
             if ad.den != 1 || bd.den != 1
                error("Ideals are not integral.")
             end
@@ -913,9 +925,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                end
             end
             H.coeffs[i+1] = a*b//d
-            simplify_exact(H.coeffs[i+1])
             H.coeffs[p] = d
-            simplify_exact(H.coeffs[p])
          end
          kb_reduce_column!(H, U, pivot, j, with_trafo, start_element)
          if new_pivot
@@ -929,7 +939,6 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
                pivot_max = max(pivot_max, c)
                H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
-               simplify_exact(H.coeffs[i+1])
                with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
                divide_row!(A, i+1, A[i+1, c])
                break
@@ -939,4 +948,263 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
    end
    kb_sort_rows!(H, U, pivot, with_trafo, start_element)
    return nothing
+end
+
+type PMat2
+   parent
+   matrix::GenMat{nf_elem}
+   row_coeffs::Array{NfOrdFracIdl, 1}
+   col_coeffs::Array{NfOrdFracIdl, 1}
+
+   function PMat2(m::GenMat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+      z = new()
+      z.matrix = m
+      z.row_coeffs = r
+      z.col_coeffs = c
+      return z
+   end
+end
+
+function show(io::IO, P::PMat2)
+   print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))\n")
+   print(io, "$(P.matrix)\n")
+   print(io, "\nwith row ideals\n")
+   for I in P.row_coeffs
+      showcompact(io, I)
+      print(io, "\n")
+   end
+   print(io, "\nand column ideals")
+   for I in P.col_coeffs
+      print(io, "\n")
+      showcompact(io, I)
+   end
+end
+
+function PseudoMatrix2(m::GenMat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+   ( rows(m) != length(r) || cols(m) != length(c) ) && error("Dimensions do not match.")
+   return PMat2(m, r, c)
+end
+
+
+function PseudoMatrix2(m::GenMat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
+   mm = change_ring(m, nf(base_ring(m)))
+   rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
+   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
+   return PMat(mm, rr, cc)
+end
+
+function rows(m::PMat2)
+   return rows(m.matrix)
+end
+
+function cols(m::PMat2)
+   return cols(m.matrix)
+end
+
+function pseudo_snf_kb(P::PMat2)
+   return _pseudo_snf_kb(P, Val{false})
+end
+
+function pseudo_snf_kb_with_trafo(P::PMat2)
+   return _pseudo_snf_kb(P, Val{true})
+end
+
+function _pseudo_snf_kb{T}(P::PMat2, trafo::Type{Val{T}} = Val{false})
+   S = deepcopy(P)
+   m = rows(S)
+   n = cols(S)
+   if trafo == Val{true}
+      U = eye(S.matrix, m)
+      K = eye(S.matrix, n)
+      pseudo_snf_kb!(S, U, K, true)
+      return S, U, K
+   else
+      U = similar(S.matrix, 0, 0)
+      K = U
+      pseudo_snf_kb!(S, U, K, false)
+      return S
+   end
+end
+
+function kb_clear_row!(S::PMat2, K::GenMat{nf_elem}, i::Int, with_trafo::Bool)
+   m = rows(S)
+   n = cols(S)
+   A = S.matrix
+   t = base_ring(A)()
+   t1 = base_ring(A)()
+   t2 = base_ring(A)()
+   for j = i+1:n
+      if A[i, j] == 0
+         continue
+      end
+      #Just for debugging, this should not happen.
+      if A[i, i] != 1
+         error("Pivot is not 1.")
+      end
+      Aij = deepcopy(A[i, j])
+      a = S.col_coeffs[j]
+      aa = Aij*a
+      b = S.col_coeffs[i]
+      d = aa + b
+      ad = aa//d
+      simplify_exact!(ad)
+      bd = b//d
+      simplify_exact!(bd)
+      if ad.den != 1 || bd.den != 1
+         error("Ideals are not integral.")
+      end
+      u, v = map(base_ring(A), idempotents(ad.num, bd.num))
+      u = divexact(u, Aij)
+      for r = i:m
+         t = deepcopy(A[r, j])
+         mul!(t1, A[r, i], -Aij)
+         addeq!(A[r,j], t1)
+         mul!(t1, t, u)
+         mul!(t2, A[r, i], v)
+         add!(A[r, i], t1, t2)
+      end
+      if with_trafo
+         for r = 1:n
+            t = deepcopy(K[r, j])
+            mul!(t1, K[r, i], -Aij)
+            addeq!(K[r,j], t1)
+            mul!(t1, t, u)
+            mul!(t2, K[r, i], v)
+            add!(K[r, i], t1, t2)
+         end
+      end
+      S.col_coeffs[j] = a*b//d
+      S.col_coeffs[i] = d
+   end
+   return nothing
+end
+
+function pseudo_snf_kb!(S::PMat2, U::GenMat{nf_elem}, K::GenMat{nf_elem}, with_trafo::Bool = false)
+   m = rows(S)
+   n = cols(S)
+   A = S.matrix
+   l = min(m,n)
+   i = 1
+   t = base_ring(A)()
+   t1 = base_ring(A)()
+   t2 = base_ring(A)()
+   H = PseudoMatrix(A, S.row_coeffs)
+   if !iszero(A[1, 1])
+      S.row_coeffs[1] = S.row_coeffs[1]*A[1, 1]
+      with_trafo ? divide_row!(U, 1, A[1, 1]) : nothing
+      divide_row!(A, 1, A[1, 1])
+   end
+   while i<=l
+      !iszero(A[i, i]) ? kb_clear_row!(S, K, i, with_trafo) : nothing
+      pseudo_hnf_kb!(H, U, with_trafo, i)
+      c = i + 1
+      while c <= n && iszero(A[i, c])
+         c += 1
+      end
+      if c != n + 1
+         continue
+      end
+      i += 1
+   end
+   return nothing
+end
+
+type ModDed
+   pmatrix::PMat
+   base_ring::NfOrd
+   is_triu::Bool
+   function ModDed(P::PMat, is_triu::Bool = false; check::Bool = true)
+      if check
+         is_triu = istriu(P.matrix)
+      end
+      z = new()
+      z.pmatrix = P
+      z.base_ring = maximal_order(base_ring(P.matrix))
+      z.is_triu = is_triu
+      return z
+   end
+end
+
+base_ring(M::ModDed) = M.base_ring
+
+function Base.istriu(A::GenMat)
+   m = rows(A)
+   n = cols(A)
+   d = 0
+   for r = 1:m
+      for c = 1:n
+         if !iszero(A[r, c])
+            if c <= d
+               return false
+            end
+            d = c
+            break
+         end
+      end
+   end
+   return true
+end
+
+function show(io::IO, M::ModDed)
+   print(io, "Module over $(M.base_ring) with defining pseudo-matrix")
+   for i in 1:rows(M.pmatrix.matrix)
+      print(io, "\n")
+      showcompact(io, M.pmatrix.coeffs[i])
+      print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))")
+   end
+end
+
+ModDed(m::GenMat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+
+ModDed(m::GenMat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+
+ModDed(c::Array{NfOrdFracIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
+
+ModDed(c::Array{NfOrdIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
+
+function in(v::Vector{nf_elem}, M::ModDed)
+   P = M.pmatrix
+   if !M.is_triu
+      P = pseudo_hnf_kb(M.pmatrix)
+   end
+   return _in_span(v, P)[1]
+end
+
+function simplify_basis!(M::ModDed)
+   if !M.is_triu
+      pseudo_hnf_kb!(M.pmatrix, M.pmatrix.matrix, false)
+   end
+   M.is_triu = true
+   P = M.pmatrix
+   r = rows(P)
+   for i = rows(P):-1:1
+      if !all([iszero(p) for p in P.matrix.entries[i, :]])
+         break
+      end
+      r -= 1
+   end
+   deleteat!(P.coeffs, r + 1:rows(P))
+   t = reshape(P.matrix.entries, rows(P)*cols(P))
+   for i = rows(P):-1:r + 1
+      deleteat!(t, [ i*j for j in 1:cols(P)])
+   end
+   P.matrix.entries = reshape(t, r, cols(P))
+   return nothing
+end
+
+function vcat(P::PMat, Q::PMat)
+   @assert base_ring(P.matrix) == base_ring(Q.matrix)
+   m = vcat(P.matrix, Q.matrix)
+   c = vcat(P.coeffs, Q.coeffs)
+   return PseudoMatrix(m, c)
+end
+
+function +(M::ModDed, N::ModDed)
+   @assert base_ring(M) == base_ring(N)
+   m = deepcopy(M.pmatrix)
+   n = deepcopy(N.pmatrix)
+   mn = vcat(m, n)
+   MN = ModDed(mn; check = false)
+   simplify_basis!(MN)
+   return MN
 end

@@ -837,8 +837,12 @@ function mul_gen(x::NfOrdIdl, y::NfOrdIdl)
   O = order(x)
   d = degree(O)
   l = minimum(x, Val{false})*minimum(y, Val{false})
-  z = fmpz_mat(degree(O)*degree(O), degree(O))
-  z.base_ring = FlintZZ
+  if oldNemo
+    z = MatrixSpace(FlintZZ, degree(O)*degree(O), degree(O))()
+  else
+    z = fmpz_mat(degree(O)*degree(O), degree(O))
+    z.base_ring = FlintZZ
+  end
   X = basis(x, Val{false})
   Y = basis(y, Val{false})
   t = O()
@@ -2207,63 +2211,6 @@ function anti_uniformizer(P::NfOrdIdl)
   end
 end
 
-doc"""
-***
-    anti_uniformizers(d::Dict{NfOrdIdl, Int})
-
-> Given a dictionary of prime ideals, the function returns a set of independent anti-uniformizers
-
-"""
-function anti_uniformizers(d::Dict{NfOrdIdl, Int})
-  anti_uni=Dict{NfOrdIdl, nf_elem}()
-  for (q,v) in d
-    anti_uni[q]=Hecke.anti_uniformizer(q)
-    found=true
-    for (q1,v1) in d
-      if q!= q1 && valuation(anti_uni[q],q1)!=0
-        found=false
-        break
-      end
-    end
-    while found==false
-      p = minimum(q)
-      if p > 250
-        r = 500  # should still have enough elements...
-      else
-        r = Int(div(p, 2))
-      end
-      z=rand(q,r)
-      while true
-        if z!= 0 && valuation(z, q) == 1
-          break
-        end
-        z = rand(q, r)
-      end
-      M = representation_mat(z)
-      Mp = MatrixSpace(ResidueRing(FlintZZ, p), rows(M), cols(M))(M)
-      p > typemax(Int) && error("Not yet implemented")
-      K = Hecke.kernel(Mp)
-      @assert length(K) > 0
-      i=1
-      while i<length(K)
-        q.anti_uniformizer = elem_in_nf(order(q)(Hecke._lift(K[i])))//p
-        anti_uni[q]=q.anti_uniformizer
-        found=true
-        for (q1,v1) in d
-          if q!= q1 && valuation(anti_uni[q],q1)!=0
-            found=false
-            break
-          end
-        end
-        i=i+1
-      end
-    end
-  end
-
-  return anti_uni
-
-end
-
 # Don't use the following function. It does not work for index divisors
 # TH: Or does it?
 function prime_decomposition_type(O::NfOrd, p::Integer)
@@ -2499,7 +2446,7 @@ function divexact(A::NfOrdIdl, B::NfOrdIdl)
     return ideal(order(A), one(FlintZZ), order(A)(1))
   else
     t_prod += @elapsed I = A*inv(B)
-    t_simpl += @elapsed simplify_exact(I)
+    t_simpl += @elapsed simplify_exact!(I)
     #t_b_mat += @elapsed B = basis_mat(I)
     I.den != 1 && error("Division not exact")
     #I = ideal(order(A), B.num)
