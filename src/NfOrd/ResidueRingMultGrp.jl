@@ -176,11 +176,21 @@ function _multgrp_mod_p(p::NfOrdIdl)
   O = order(p)
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
-  Q = NfOrdQuoRing(O,p)
-  gen_quo = Q(gen)
   factor_n = factor(n)
-  discrete_logarithm = function(x::NfOrdElem) pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n) end
-  return gen , n, discrete_logarithm
+  # TODO:
+  # Compute the discrete logarithm in a finite field F with O/p \cong F.
+  # Although P is always a prime, but not all of them work at the moment.
+  # Make this work for all of them!
+  if has_2_elem(p) && isprime_known(p)
+    Q, mQ = ResidueField(O, p)
+    gen_quo = mQ(gen)
+    discrete_logarithm = function(x::NfOrdElem) pohlig_hellman(gen_quo,n,mQ(x);factor_n=factor_n) end
+  else
+    Q = NfOrdQuoRing(O,p)
+    gen_quo = Q(gen)
+    discrete_logarithm = function(x::NfOrdElem) pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n) end
+  end
+  return gen, n, discrete_logarithm
 end
 
 function _primitive_element_mod_p(p::NfOrdIdl)
@@ -202,7 +212,6 @@ function _primitive_element_mod_p(p::NfOrdIdl)
     order_to_small || return Q_map\x
   end
 end
-
 
 ################################################################################
 #
@@ -766,7 +775,11 @@ function baby_step_giant_step(g, n, h, cache::Dict)
       it *= g
     end
   end
-  b = g^(-m)
+  if typeof(g) == fq_nmod
+    b = g^(-fmpz(m))
+  else
+    b = g^(-m)
+  end
   y = h
   for i in 0:m-1
     if haskey(cache, y)
