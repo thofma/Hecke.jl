@@ -837,8 +837,12 @@ function mul_gen(x::NfOrdIdl, y::NfOrdIdl)
   O = order(x)
   d = degree(O)
   l = minimum(x, Val{false})*minimum(y, Val{false})
-  z = fmpz_mat(degree(O)*degree(O), degree(O))
-  z.base_ring = FlintZZ
+  if oldNemo
+    z = MatrixSpace(FlintZZ, degree(O)*degree(O), degree(O))()
+  else
+    z = fmpz_mat(degree(O)*degree(O), degree(O))
+    z.base_ring = FlintZZ
+  end
   X = basis(x, Val{false})
   Y = basis(y, Val{false})
   t = O()
