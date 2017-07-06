@@ -1019,8 +1019,7 @@ doc"""
 function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
   GB = parent(B[1])
   M = vcat([B[i].coeff for i=1:length(B)])
-  h = GrpAbFinGenMap(G, GB)
-  h.map = M
+  h = GrpAbFinGenMap(G, GB, M)
   return h
 end
 
