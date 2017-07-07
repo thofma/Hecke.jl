@@ -387,7 +387,7 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
     function exp2(a::GrpAbFinGenElem)
       x=C([0 for i=1:ngens(C)])
       for i=ind:ngens(C)
-        x.coeff[1,i]=a.coeff[1,i-ind+1]*(div(order(C[i]),gcd(order(C[i]),fmpz(p^powerp)) ))
+        x.coeff[1,i]=a.coeff[1,i-ind+1]
       end
       return mC(x)
     end 
