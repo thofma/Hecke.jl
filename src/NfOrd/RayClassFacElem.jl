@@ -387,7 +387,7 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
     function exp2(a::GrpAbFinGenElem)
       x=C([0 for i=1:ngens(C)])
       for i=ind:ngens(C)
-        x.coeff[1,i]=a.coeff[1,i-ind+1]*(div(order(C[ind+i])),gcd(order(C[ind+j]),fmpz(p^powerp)) )
+        x.coeff[1,i]=a.coeff[1,i-ind+1]*(div(order(C[i]),gcd(order(C[i]),fmpz(p^powerp)) ))
       end
       return mC(x)
     end 
@@ -520,8 +520,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer, inf_plc::Array{InfPlc,1}=InfPlc[
         return y
 
     end
-      
-    
+        
     gens_q = map(Q,gens_q)
     append!(gens,gens_q)
     append!(structt,snf_q)
@@ -779,7 +778,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
           el=el* Q(O(n))^mod(-k,exp) * Q(O(d))^mod(k,exp)
         end
       end
-      y=mG\(pi\el).coeff
+      y=(mG\(pi\el)).coeff
       if p==2 && !isempty(pr)
         b=sum([lH(x) for x in keys(z.fac)])
         b=b+sum([lH(x) for x in keys(c.fac)])
