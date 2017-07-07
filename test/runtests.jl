@@ -20,6 +20,7 @@ end
 include("NfMaxOrd/Clgp.jl")
 include("NfMaxOrd/LinearAlgebra.jl")
 include("NfMaxOrd/ResidueRingMultGrp.jl")
+include("NfMaxOrd/RayClassGroup.jl")
 
 include("NfOrd/NfOrd.jl")
 include("NfOrd/Elem.jl")
@@ -31,5 +32,6 @@ include("NfOrd/FracIdl.jl")
 include("EllCrv.jl")
 include("LinearAlgebra.jl")
 include("Misc.jl")
+
 
 # x^5 + 514944*x^2 + 123904 test prime decomposition with this (2 is index divisor and only one prime ideal over 2)
