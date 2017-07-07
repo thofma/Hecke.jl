@@ -654,7 +654,7 @@ end
 ################################################################################
 
 # this is used in dictionaries
-function isequal(R::NfOrd, S::NfOrd)
+function Base.isequal(R::NfOrd, S::NfOrd)
   return R === S
 end
 

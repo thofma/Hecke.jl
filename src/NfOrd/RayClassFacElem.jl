@@ -1,6 +1,7 @@
 
 export ray_class_group_fac_elem, ray_class_group_p_part
 
+add_verbose_scope(:RayFacElem)
 
 type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   header::Hecke.MapHeader
@@ -129,6 +130,10 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     G=direct_product(G,H)
   end
   
+  @vprint :RayFacElem 1 "The multiplicative group is $G\n"
+  @vprint :RayFacElem 1 "The order of the class group is $C\n"
+  @vprint :RayFacElem 1 "The units are $U\n"
+    
   exponent=order(G[ngens(G)])
 
 #
@@ -145,6 +150,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
   for i=1:ngens(U)
+    @vprint :RayFacElem 1 "Processing unit number $i \n"
     u=mU(U[i])
     el=Q(1)
     for (f,k) in u.fac
@@ -170,6 +176,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
         el=el* Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
       end
     end
+    @vprint :RayFacElem 1 "Product computed, now discrete logarithm\n"
     a=(mG\el).coeff
     if !isempty(p)
       b=sum([lH(f) for f in keys(u.fac)])
@@ -180,12 +187,14 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     end
   end 
   
+  @vprint :RayFacElem 1 "Relation with the unit group computed\n"
 
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
 #
 
   for i=1: ngens(C)
+    @vprint :RayFacElem 1 "Processing class group generator number i \n"
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
       el=Q(1)
@@ -373,12 +382,12 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
     while !divisible(order(C[ind]),p)
       ind+=1
     end
-  
+    
     G=DiagonalGroup([gcd(order(C[ind+j]),fmpz(p^powerp)) for j=0:ngens(C)-ind])
     function exp2(a::GrpAbFinGenElem)
       x=C([0 for i=1:ngens(C)])
       for i=ind:ngens(C)
-        x.coeff[1,i]=a.coeff[1,i-ind+1]
+        x.coeff[1,i]=a.coeff[1,i-ind+1]*(div(order(C[ind+i])),gcd(order(C[ind+j]),fmpz(p^powerp)) )
       end
       return mC(x)
     end 
