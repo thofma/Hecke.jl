@@ -1,6 +1,7 @@
 import Nemo.sub!, Base.gcd
 export induce_rational_reconstruction, induce_crt, root, roots, 
-       number_field, ismonic
+       number_field, ismonic, pure_extension, ispure_extension, 
+       iskummer_extension, cyclotomic_field, wildanger_field
 
 if Int==Int32
   global const p_start = 2^30
@@ -43,6 +44,82 @@ function AnticNumberField(f::fmpz_poly)
 end
 
 global const number_field = AnticNumberField
+
+doc"""
+    pure_extension(n::Int, gen::Integer) -> AnticNumberField, nf_elem
+    pure_extension(n::Int, gen::fmpz) -> AnticNumberField, nf_elem
+> The number field with defining polynomial $x^n-gen$.
+"""
+function pure_extension(n::Int, gen::Integer)
+  return pure_extension(n, fmpz(gen))
+end
+
+function pure_extension(n::Int, gen::fmpz)
+  kx, x = FlintQQ["x"]
+  return number_field(x^n-gen)
+end
+
+doc"""
+    ispure_extension(K::AnticNumberField) -> Bool
+> Tests if $K$ is pure, ie. ifthe defining polynomial is $x^n-g$.
+"""
+function ispure_extension(K::AnticNumberField)
+  if !ismonic(K.pol)
+    return false
+  end
+  return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
+end
+
+doc"""
+    iskummer_extension(K::AnticNumberField) -> Bool
+> Tests if $K$ is a Kummer extension, here: if the polynomial
+> is $x^2-g$.
+"""
+function iskummer_extension(K::AnticNumberField)
+  if degree(K) != 2
+    return false
+  end
+  return ispure_extension(K)
+end
+
+doc"""
+    cyclotomic_field(n::Int) -> AnticNumberField, nf_elem
+> The $n$-th cyclotomic field, defined by the $n$-the cyclotomic polynomial.
+"""
+function cyclotomic_field(n::Int)
+  Zx, x = FlintZZ["x"]
+  return number_field(cyclotomic(n, x), "z_$n")
+end
+
+#fields with usually large class groups...
+doc"""
+    wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
+    wildanger_field(n::Int, B::Integer) -> AnticNumberField, nf_elem
+> Returns the field with defining polynomial $x^n + \sum (-1)^iBx^i$.
+> These fields tend to have non-trivial class groups.
+"""
+function wildanger_field(n::Int, B::fmpz)
+  Qx, x = PolynomialRing(FlintQQ)
+  f = x^n
+  for i=0:n-1
+    f += (-1)^(n-i)*B*x^i
+  end
+  return NumberField(f)
+end
+
+function wildanger_field(n::Int, B::Integer)
+  return wildanger_field(n, fmpz(B))
+end
+
+doc"""
+    class_group(K::AnticNumberField) -> GrpAbFinGen, Map
+> Shortcut for {{{class_group(maximal_order(K))}}}: returns the class
+> group as an abelian group and a map from this group to the set
+> of ideals of the maximal order.
+"""
+function class_group(K::AnticNumberField)
+  return class_group(maximal_order(K))
+end
 
 ################################################################################
 #

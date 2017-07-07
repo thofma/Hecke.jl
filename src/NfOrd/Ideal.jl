@@ -1079,7 +1079,7 @@ function gcd(A::NfOrdIdl, p::fmpz)
       return ideal(order(A), fmpz(1))
     end
   end
-  if Hecke.has_2_elem(A)
+  if has_2_elem(A)
     g = gcd(A.gen_one, p)
     @assert !isone(g)
     return ideal(order(A), g, A.gen_two)
@@ -1249,8 +1249,8 @@ function idempotents(x::NfOrdIdl, y::NfOrdIdl)
     V[1, i + 1] = u[i]
   end
 
-  Hecke._copy_matrix_into_matrix(V, 2, 2, basis_mat(x))
-  Hecke._copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y))
+  _copy_matrix_into_matrix(V, 2, 2, basis_mat(x))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y))
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
@@ -1980,8 +1980,119 @@ end
 #  Prime decomposition
 #
 ################################################################################
+doc"""
+    intersect_nonindex(f::Map, P::NfOrdIdl) -> NfOrdIdl
+> Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
+> of number fields, find the unique prime $p$ in $k$ below.
+"""
+function intersect_nonindex(f::Map, P::NfOrdIdl)
+  @assert P.is_prime == 1
+  #let g be minpoly of k, G minpoly of K and h in Qt the primitive
+  #element of k in K (image of gen(k))
+  #then
+  #  g(h) = 0 mod G
+  k = domain(f)
+  K = codomain(f)
+  G = K.pol
+  Qx = parent(G)
+  g = k.pol(gen(Qx))
+  h = Qx(f(gen(k)))
+
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, minimum(P)))
+  gp = factor(Fp(g))
+  hp = Fp(h)
+  Gp = gcd(Fp(K(P.gen_two)), Fp(G))
+  for (f, e) = gp.fac
+    if f(hp) % Gp == 0
+      Zk = maximal_order(k)
+      p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
+      return p
+    end
+  end
+end
+
+
+doc"""
+    prime_decomposition_nonindex(f::Map, p::NfOrdIdl) -> Array{Tuple{NfOrdIdl, Int}, 1}
+> Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
+> a prime ideal in the maximal order of $k$, find all prime ideals in
+> the maximal order of $K$ above.
+"""
+function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
+  @assert p.is_prime == 1
+  k = domain(f)
+  K = codomain(f)
+  ZK = maximal_order(K)
+  G = K.pol
+  Qx = parent(G)
+
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, minimum(p)))
+  Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
+  res = []
+  Zk = maximal_order(k)
+  for (f, e) = Gp.fac
+    P = ideal_from_poly(ZK, Int(minimum(p)), f, 1)
+    push!(res, (P, e))
+  end
+  return res
+end
+
+doc"""
+    lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
+> Given a polynomial $f$ over a finite field, lift it to an element of the
+> number field $K$. The lift if given by the eleemnt represented by the
+> canonical lift of $f$ to a polynomial over the integers.
+"""
+function lift(K::AnticNumberField, f::nmod_poly)
+  if degree(f)>=degree(K)
+    f = mod(f, parent(f)(K.pol))
+  end
+  r = K()
+  for i=0:f.length-1
+    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &f, i)
+    _num_setcoeff!(r, i, u)
+  end
+  return r
+end
 
 ##TODO: make fmpz-safe!!!!
+#return <p, lift(O, fi> in 2-element normal presentation given the data
+function ideal_from_poly(O::NfOrd, p::Int, fi::nmod_poly, ei::Int)
+  b = lift(nf(O), fi)
+  idl = ideal(O, fmpz(p), O(b, false))
+  idl.is_prime = 1
+  idl.splitting_type = ei, degree(fi)
+  idl.norm = FlintZZ(p)^degree(fi)
+  idl.minimum = FlintZZ(p)
+
+  # We have to do something to get 2-normal presentation:
+  # if ramified or valuation val(b,P) == 1, (p,b)
+  # is a P(p)-normal presentation
+  # otherwise we need to take p+b
+  # I SHOULD CHECK THAT THIS WORKS
+
+  if !((mod(norm(b),(idl.norm)^2) != 0) || (ei > 1))
+    idl.gen_two = idl.gen_two + O(p)
+  end
+
+  idl.gens_normal = p
+  idl.gens_weakly_normal = true
+
+  # Find an "anti-uniformizer" in case P is unramified
+  # We don't call it anti-unfiformizer anymore
+
+  #if ideal.splitting_type[1] == 1
+  #  t = parent(f)(lift(Zx, divexact(fmodp, fi)))
+  #  ideal.anti_uniformizer = O(K(t), false)
+  #end
+
+  if idl.splitting_type[2] == degree(O)
+    # Prime number is inert, in particular principal
+    idl.is_principal = 1
+    idl.princ_gen = O(p)
+  end
+  return idl
+end
 
 doc"""
 ***
@@ -2029,10 +2140,8 @@ function prime_dec_nonindex(O::NfOrd, p::Integer, degree_limit::Int = 0, lower_l
   fac = _fac
   result = Array{Tuple{typeof(I()),Int}}(length(fac))
   k = 1
-  t = fmpq_poly()
-  b = K()
-  #fill!(result,(I(),0))
   for (fi, ei) in fac
+    ideal = ideal_from_poly(O, p, fi, ei)
     t = parent(f)(lift(Zx,fi))
     b = K(t)
     ideal = I()
@@ -2365,7 +2474,7 @@ end
 ################################################################################
 function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   Ap = [gcd(x, p) for x = A if minimum(x) % p == 0]
-  return Hecke.coprime_base_steel(Ap)
+  return coprime_base_steel(Ap)
 end
 
 doc"""
