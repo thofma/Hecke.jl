@@ -428,3 +428,52 @@ end
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
 
 #TODO: missing: norm, trace...
+
+#######################################################################
+# convenience constructions
+#######################################################################
+doc"""
+    ispure_extension(K::NfRel) -> Bool
+> Tests if $K$ is pure, ie. if the defining polynomial is $x^n-g$.
+"""
+function ispure_extension(K::NfRel)
+  if !ismonic(K.pol)
+    return false
+  end
+  return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
+end
+
+doc"""
+    iskummer_extension(K::Hecke.NfRel{nf_elem}) -> Bool
+> Tests if $K$ is Kummer, ie. if the defining polynomial is $x^n-g$ and
+> if the coefficient field contains the $n$-th roots of unity.
+"""
+function iskummer_extension(K::Hecke.NfRel{nf_elem})
+  if !ispure_extension(K)
+    return false
+  end
+
+  k = base_ring(K)
+  Zk = maximal_order(k)
+  _, o = Hecke.torsion_units_gen_order(Zk)
+  if o % degree(K) != 0
+    return false
+  end
+  return true
+end
+
+doc"""
+    pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField}) -> NfRel{nf_elem}, NfRelElem
+    pure_extension(n::Int, gen::nf_elem) -> NfRel{nf_elem}, NfRelElem
+> Create the field extension with the defining polynomial $x^n-gen$.
+"""
+function pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField})
+  return pure_extension(n, evaluate(gen))
+end
+
+function pure_extension(n::Int, gen::nf_elem)
+  k = parent(gen)
+  kx, x = PolynomialRing(k)
+  return number_field(x^n-gen)
+end
+
