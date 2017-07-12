@@ -481,7 +481,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer, inf_plc::Array{InfPlc,1}=InfPlc[
       for (q2,vq2) in fac
         (q != q2) && (i_without_q *= prime_power[q2])
       end
-      alpha, beta = Hecke.extended_euclid(prime_power[q] ,i_without_q)
+      alpha, beta = idempotents(prime_power[q] ,i_without_q)
       gens_q = beta*gens_q + alpha
     end
  
@@ -502,7 +502,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer, inf_plc::Array{InfPlc,1}=InfPlc[
         (q != p2) && (i_without_q *= prime_power[p2])
       end
 
-      alpha, beta = Hecke.extended_euclid(prime_power[q],i_without_q)
+      alpha, beta = idempotents(prime_power[q],i_without_q)
       for i in 1:length(gens_q)
         gens_q[i] = beta*gens_q[i] + alpha
       end
