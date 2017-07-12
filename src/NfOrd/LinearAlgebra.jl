@@ -699,27 +699,20 @@ function _in_span(v::Vector{nf_elem}, P::PMat)
    K = base_ring(P.matrix)
    x = zeros(K, m)
    t = K()
-   k = 0
+   k = 1
    for i = 1:n
-      l = 0
-      for j = k+1:m
-         if !iszero(P.matrix[j, i])
-            l = j
-            break
-         end
-      end
-      if l == 0 && !iszero(v[i])
-         return false, x
-      end
-      k = l
       s = K()
       for j = 1:k-1
-         #t = mul!(t, P.matrix[j, i], x[j])
          mul!(t, P.matrix[j, i], x[j])
-         #s = addeq!(s, t)
          addeq!(s, t)
       end
-      s = v[k] - s
+      s = v[i] - s
+      if iszero(P.matrix[k, i])
+         if !iszero(s)
+            return false, x
+         end
+         continue
+      end
       x[k] = divexact(s, P.matrix[k, i])
       if !(x[k] in P.coeffs[k])
          return false, x
@@ -727,10 +720,10 @@ function _in_span(v::Vector{nf_elem}, P::PMat)
       if k == min(m, n)
          break
       end
+      k += 1
    end
    return true, x
 end
-
 
 function pseudo_hnf_kb(P::PMat)
    return _pseudo_hnf_kb(P, Val{false})
@@ -1195,7 +1188,7 @@ function simplify_basis!(M::ModDed)
    P = M.pmatrix
    r = rows(P)
    for i = rows(P):-1:1
-      if !all([iszero(p) for p in P.matrix.entries[i, :]])
+      if !iszero_row(P.matrix, i)
          break
       end
       r -= 1
@@ -1209,11 +1202,24 @@ function simplify_basis!(M::ModDed)
    return nothing
 end
 
-function vcat(P::PMat, Q::PMat)
+function simplify_basis(M::ModDed)
+   N = deepcopy(M)
+   simplify_basis!(N)
+   return N
+end
+
+function Base.vcat(P::PMat, Q::PMat)
    @assert base_ring(P.matrix) == base_ring(Q.matrix)
    m = vcat(P.matrix, Q.matrix)
    c = vcat(P.coeffs, Q.coeffs)
    return PseudoMatrix(m, c)
+end
+
+function Base.hcat(P::PMat, Q::PMat)
+   @assert base_ring(P.matrix) == base_ring(Q.matrix)
+   @assert P.coeffs == Q.coeffs
+   m = hcat(P.matrix, Q.matrix)
+   return PseudoMatrix(m, P.coeffs)
 end
 
 function +(M::ModDed, N::ModDed)
@@ -1222,6 +1228,33 @@ function +(M::ModDed, N::ModDed)
    n = deepcopy(N.pmatrix)
    mn = vcat(m, n)
    MN = ModDed(mn; check = false)
+   simplify_basis!(MN)
+   return MN
+end
+
+function intersection(M::ModDed, N::ModDed)
+   @assert base_ring(M) == base_ring(N)
+   MM = simplify_basis(M)
+   NN = simplify_basis(N)
+   A = deepcopy(MM.pmatrix)
+   B = deepcopy(NN.pmatrix)
+   @assert cols(A) == cols(B)
+   if rows(B) > rows(A)
+      A, B = B, A
+   end
+   C1 = hcat(A, deepcopy(A))
+   m = zero(MatrixSpace(base_ring(B.matrix), rows(B), cols(B)))
+   C2 = hcat(B, PseudoMatrix(m, B.coeffs))
+   C = vcat(C1, C2)
+   # C = [A A; B 0]
+   pseudo_hnf_kb!(C, C.matrix, false)
+   for i = 1:rows(B)
+      for j = 1:cols(B)
+         m[i, j] = C.matrix[i + rows(A), j + cols(A)]
+      end
+   end
+   D = PseudoMatrix(m, C.coeffs[rows(A) + 1:rows(C)])
+   MN = ModDed(D, true; check = false)
    simplify_basis!(MN)
    return MN
 end
