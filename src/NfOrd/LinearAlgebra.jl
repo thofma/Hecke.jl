@@ -601,6 +601,7 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          with_trafo ? swap_rows!(U, j, k) : nothing
       end
       H.coeffs[k] = H.coeffs[k]*A[k, i]
+      simplify(H.coeffs[k])
       with_trafo ? divide_row!(U, k, A[k, i]) : nothing
       divide_row!(A, k, A[k, i])
       for j = k+1:m
@@ -613,13 +614,15 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
          b = H.coeffs[k]
          d = aa + b
          ad = aa//d
-         simplify_exact!(ad)
+         simplify(ad)
          bd = b//d
-         simplify_exact!(bd)
+         simplify(bd)
          if ad.den != 1 || bd.den != 1
             error("Ideals are not integral.")
          end
-         u, v = map(K, idempotents(ad.num, bd.num))
+         g, u, v = map(K, gcdx(minimum(ad.num), minimum(bd.num)))
+         u = minimum(ad.num) * u
+         v = minimum(bd.num) * v
          u = divexact(u, Aji)
          for c = i:n
             t = deepcopy(A[j, c])
@@ -640,7 +643,9 @@ function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool
             end
          end
          H.coeffs[j] = a*b//d
+         simplify(H.coeffs[j])
          H.coeffs[k] = d
+         simplify(H.coeffs[k])
       end
       if iszero(A[k, i])
          continue
@@ -861,6 +866,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
    pivot[col1] = row1
    pivot_max = col1
    H.coeffs[row1] = H.coeffs[row1]*A[row1, col1]
+   simplify(H.coeffs[row1])
    with_trafo ? divide_row!(U, row1, A[row1, col1]) : nothing
    divide_row!(A, row1, A[row1, col1])
    t = K()
@@ -878,6 +884,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             pivot_max = max(pivot_max, j)
             new_pivot = true
             H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
+            simplify(H.coeffs[i+1])
             with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
             divide_row!(A, i+1, A[i+1, j])
          else
@@ -888,13 +895,15 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             b = H.coeffs[p]
             d = aa + b
             ad = aa//d
-            simplify_exact!(ad)
+            simplify(ad)
             bd = b//d
-            simplify_exact!(bd)
+            simplify(bd)
             if ad.den != 1 || bd.den != 1
                error("Ideals are not integral.")
             end
-            u, v = map(K, idempotents(ad.num, bd.num))
+            g, u, v = map(K, gcdx(minimum(ad.num), minimum(bd.num)))
+            u = minimum(ad.num) * u
+            v = minimum(bd.num) * v
             u = divexact(u, Aij)
             for c = j:n
                t = deepcopy(A[i+1, c])
@@ -925,7 +934,9 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                end
             end
             H.coeffs[i+1] = a*b//d
+            simplify(H.coeffs[i+1])
             H.coeffs[p] = d
+            simplify(H.coeffs[p])
          end
          kb_reduce_column!(H, U, pivot, j, with_trafo, start_element)
          if new_pivot
@@ -939,6 +950,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
                kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
                pivot_max = max(pivot_max, c)
                H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
+               simplify(H.coeffs[i+1])
                with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
                divide_row!(A, i+1, A[i+1, c])
                break
@@ -1047,13 +1059,15 @@ function kb_clear_row!(S::PMat2, K::GenMat{nf_elem}, i::Int, with_trafo::Bool)
       b = S.col_coeffs[i]
       d = aa + b
       ad = aa//d
-      simplify_exact!(ad)
+      simplify(ad)
       bd = b//d
-      simplify_exact!(bd)
+      simplify(bd)
       if ad.den != 1 || bd.den != 1
          error("Ideals are not integral.")
       end
-      u, v = map(base_ring(A), idempotents(ad.num, bd.num))
+      g, u, v = map(base_ring(A), gcdx(minimum(ad.num), minimum(bd.num)))
+      u = minimum(ad.num) * u
+      v = minimum(bd.num) * v
       u = divexact(u, Aij)
       for r = i:m
          t = deepcopy(A[r, j])
@@ -1074,7 +1088,9 @@ function kb_clear_row!(S::PMat2, K::GenMat{nf_elem}, i::Int, with_trafo::Bool)
          end
       end
       S.col_coeffs[j] = a*b//d
+      simplify(S.col_coeffs[j])
       S.col_coeffs[i] = d
+      simplify(S.col_coeffs[i])
    end
    return nothing
 end
@@ -1091,6 +1107,7 @@ function pseudo_snf_kb!(S::PMat2, U::GenMat{nf_elem}, K::GenMat{nf_elem}, with_t
    H = PseudoMatrix(A, S.row_coeffs)
    if !iszero(A[1, 1])
       S.row_coeffs[1] = S.row_coeffs[1]*A[1, 1]
+      simplify(S.row_coeffs[1])
       with_trafo ? divide_row!(U, 1, A[1, 1]) : nothing
       divide_row!(A, 1, A[1, 1])
    end
