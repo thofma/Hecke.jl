@@ -93,7 +93,7 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
         (p != p2) && (i_without_p *= prime_power[p2])
       end
 
-      alpha, beta = extended_euclid(prime_power[p],i_without_p)
+      alpha, beta = idempotents(prime_power[p],i_without_p)
       for i in 1:length(gens_p)
         g_pi_new = beta*gens_p[i] + alpha
         @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
