@@ -1,13 +1,14 @@
 site_name:           Hecke.jl
+repo_name:           thofma/Hecke
 repo_url:            https://github.com/thofma/Hecke.jl
 site_description:    Hecke
 site_author:         Tommy Hofmann
-theme:               material
+theme:               yeti
 
-extra:
-  palette:
-    primary: 'indigo'
-    accent: 'blue'
+#extra:
+#  palette:
+#    primary: 'indigo'
+#    accent: 'light blue'
 
 pages:
 - Getting Started:      index.md
@@ -30,6 +31,7 @@ markdown_extensions:
 - tables
 - fenced_code
 - admonition
+  #- pymdownx.inlinehilite
 - mdx_math:
     enable_dollar_delimiter: True
 
