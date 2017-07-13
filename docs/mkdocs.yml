@@ -1,4 +1,4 @@
-site_name:           Hecke.jl
+site_name:           Hecke
 repo_name:           thofma/Hecke
 repo_url:            https://github.com/thofma/Hecke.jl
 site_description:    Hecke
@@ -11,18 +11,16 @@ theme:               cinder
 #    accent: 'light blue'
 
 pages:
-- Getting Started:      index.md
-- Number fields:
-  - Introduction:       numberfields/introduction.md
-  - Orders:             numberfields/orders.md
-  - Maximal Orders:     numberfields/maximalorders.md
-#- Maximal Orders:
-#    - Introduction:    build/MaximalOrders/Introduction.md
-#    - Creation:        build/MaximalOrders/Creation.md
-#    - Elements:        build/MaximalOrders/Elements.md
-#    - Ideals:          build/MaximalOrders/Ideals.md
-#- Orders:              build/Orders.md
-
+- Home:                 index.md
+- Documentation:
+  - Table of contents:  toc.md
+  #- Introduction:       numberfields/introduction.md
+  - Orders and number fields:
+    - Introduction:     orders/introduction.md
+    - Basics:           orders/basics.md
+    - Ideals:           orders/ideals.md
+  - Abelian groups:
+    - Introduction:     abelian/introduction.md
 extra_css:
     - assets/Documenter.css
 # This are tricks to get syntax highlighting working
