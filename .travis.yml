@@ -16,5 +16,5 @@ notifications:
   - email: false
 
 after_success:
-  - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "build_non_master")'
+  - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
   - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
