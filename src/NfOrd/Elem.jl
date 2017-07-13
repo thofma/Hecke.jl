@@ -157,7 +157,7 @@ doc"""
 ***
     parent(a::NfOrdElem) -> NfOrd
 
-> Returns the order of which $a$ is an element.
+Returns the order of which $a$ is an element.
 """
 parent(a::NfOrdElem) = a.parent
 

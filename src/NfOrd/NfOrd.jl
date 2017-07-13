@@ -59,23 +59,23 @@ Nemo.elem_type(::NfOrd) = NfOrdElem
 doc"""
     nf(O::NfOrd) -> AnticNumberField
 
-> Returns the ambient number field of $\mathcal O$.
+Returns the ambient number field of $\mathcal O$.
 """
 @inline nf(O::NfOrd) = O.nf
 
 doc"""
     parent(O::NfOrd) -> NfOrdSet
 
-> Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
-> number field.
+Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
+number field.
 """
 @inline parent(O::NfOrd) = O.parent
 
 doc"""
     isequation_order(O::NfOrd) -> Bool
 
-> Returns whether $\mathcal O$ is the equation order of the ambient number
-> field.
+Returns whether $\mathcal O$ is the equation order of the ambient number
+field.
 """
 @inline isequation_order(O::NfOrd) = O.isequation_order
 
@@ -141,15 +141,15 @@ end
 doc"""
     basis(O::NfOrd) -> Array{NfOrdElem, 1}
 
-> Returns the $\mathbf Z$-basis of $\mathcal O$.
+Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
 @inline basis{T}(O::NfOrd, copy::Type{Val{T}} = Val{true}) = basis_ord(O, copy)
 
 doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Vector{nf_elem}
 
-> Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
-> ambient number field.
+Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
+ambient number field.
 """
 function basis(O::NfOrd, K::AnticNumberField)
   nf(O) != K && error()
@@ -165,8 +165,8 @@ end
 doc"""
     basis_mat(O::NfOrd) -> FakeFmpqMat
 
-> Returns the basis matrix of $\mathcal O$ with respect to the power basis
-> of the ambient number field.
+Returns the basis matrix of $\mathcal O$ with respect to the power basis
+of the ambient number field.
 """
 function basis_mat(O::NfOrd)
   assure_has_basis_mat(O)
@@ -176,7 +176,7 @@ end
 doc"""
     basis_mat_inv(O::NfOrd) -> FakeFmpqMat
 
-> Returns the inverse of the basis matrix of $\mathcal O$.
+Returns the inverse of the basis matrix of $\mathcal O$.
 """
 function basis_mat_inv(O::NfOrd)
   assure_has_basis_mat_inv(O)
@@ -222,7 +222,7 @@ end
 doc"""
     discriminant(O::NfOrd) -> fmpz
 
-> Returns the discriminant of $\mathcal O$.
+Returns the discriminant of $\mathcal O$.
 """
 function discriminant(O::NfOrd)
   if isdefined(O, :disc)
@@ -247,7 +247,7 @@ end
 doc"""
     degree(O::NfOrd) -> Int
 
-> Returns the degree of $\mathcal O$.
+Returns the degree of $\mathcal O$.
 """
 degree(O::NfOrd) = degree(O.nf)
 
@@ -260,8 +260,8 @@ degree(O::NfOrd) = degree(O.nf)
 doc"""
     gen_index(O::NfOrd) -> fmpq
 
-> Generalized index of $\mathcal O$ with respect to the ambient equation
-> order $\mathbf Z[\alpha]$.
+Generalized index of $\mathcal O$ with respect to the ambient equation
+order $\mathbf Z[\alpha]$.
 """
 function gen_index(O::NfOrd)
   if isdefined(O, :gen_index)
@@ -276,9 +276,9 @@ end
 doc"""
     index(O::NfOrd) -> fmpz
 
-> Assuming that the order $\mathcal O$ contains the ambient equation order
-> $\mathbf Z[\alpha]$, this function returns the index
-> $[ \mathcal O : \mathbf ZZ]$.
+Assuming that the order $\mathcal O$ contains the ambient equation order
+$\mathbf Z[\alpha]$, this function returns the index
+$[ \mathcal O : \mathbf ZZ]$.
 """
 function index(O::NfOrd)
   if isdefined(O, :index)
@@ -301,7 +301,7 @@ doc"""
     isindex_divisor(O::NfOrd, d::fmpz) -> Bool
     isindex_divisor(O::NfOrd, d::Int) -> Bool
 
-> Returns whether $d$ is a divisor of the index of $\mathcal O$.
+Returns whether $d$ is a divisor of the index of $\mathcal O$.
 """
 function isindex_divisor(O::NfOrd, d::Union{fmpz, Int})
   i = index(O)
@@ -317,7 +317,7 @@ end
 doc"""
     deepcopy(O::NfOrd) -> NfOrd
 
-> Makes a copy of $\mathcal O$.
+Makes a copy of $\mathcal O$.
 """
 function Base.deepcopy_internal(O::NfOrd, dict::ObjectIdDict)
   z = NfOrd(O.nf)
@@ -343,7 +343,7 @@ end
 doc"""
     signature(O::NfOrd) -> Tuple{Int, Int}
 
-> Returns the signature of the ambient number field of $\mathcal O$.
+Returns the signature of the ambient number field of $\mathcal O$.
 """
 function signature(x::NfOrd)
   if x.signature[1] != -1
@@ -363,11 +363,11 @@ end
 doc"""
     minkowski_mat(O::NfOrd, abs_tol::Int = 64) -> arb_mat
 
-> Returns the Minkowski matrix of $\mathcal O$.
-> Thus if $\mathcal O$ has degree $d$, then the
-> result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf R)$.
-> The entries of the matrix are real balls of type `arb` with radius
-> less then `2^-abs_tol`.
+Returns the Minkowski matrix of $\mathcal O$.
+Thus if $\mathcal O$ has degree $d$, then the
+result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf R)$.
+The entries of the matrix are real balls of type `arb` with radius
+less then `2^-abs_tol`.
 """
 function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
@@ -424,7 +424,7 @@ end
 doc"""
     in(a::nf_elem, O::NfOrd) -> Bool
 
-> Checks whether $a$ lies in $\mathcal O$.
+Checks whether $a$ lies in $\mathcal O$.
 """
 function in(a::nf_elem, O::NfOrd)
   return _check_elem_in_order(a, O, Val{true})
@@ -439,7 +439,7 @@ end
 doc"""
     den(a::nf_elem, O::NfOrd) -> fmpz
 
-> Returns the smallest positive integer $k$ such that $k \cdot a$ lies in O.
+Returns the smallest positive integer $k$ such that $k \cdot a$ lies in O.
 """
 function den(a::nf_elem, O::NfOrd)
   assure_has_basis_mat_inv(O)
@@ -468,12 +468,12 @@ end
 doc"""
     norm_change_const(O::NfOrd) -> (Float64, Float64)
 
-> Returns $(c_1, c_2) \in \mathbf R_{>0}^2$ such that for all
-> $x = \sum_{i=1}^d x_i \omega_i \in \mathcal O$ we have
-> $T_2(x) \leq c_1 \cdot \sum_i^d x_i^2$
-> and
-> $\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)$,
-> where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
+Returns $(c_1, c_2) \in \mathbf R_{>0}^2$ such that for all
+$x = \sum_{i=1}^d x_i \omega_i \in \mathcal O$ we have
+$T_2(x) \leq c_1 \cdot \sum_i^d x_i^2$
+and
+$\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)$,
+where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 """
 function norm_change_const(O::NfOrd)
   if O.norm_change_const[1] > 0
@@ -554,8 +554,8 @@ end
 doc"""
     Order(B::Array{nf_elem, 1}, check::Bool = true) -> NfOrd
 
-> Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
-> whether $B$ defines an order.
+Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
+whether $B$ defines an order.
 """
 function Order(::AnticNumberField, a::Array{nf_elem, 1}, check::Bool = true,
                cache::Bool = true)
@@ -586,8 +586,8 @@ end
 doc"""
     Order(K::AnticNumberField, A::FakeFmpqMat, check::Bool = true) -> NfOrd
 
-> Returns the order which has basis matrix $A$ with respect to the power basis
-> of $K$. If `check` is set, it is checked whether $A$ defines an order.
+Returns the order which has basis matrix $A$ with respect to the power basis
+of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true,
                cache::Bool = true)
@@ -606,8 +606,8 @@ end
 doc"""
     Order(K::AnticNumberField, A::fmpq_mat, check::Bool = true) -> NfOrd
 
-> Returns the order which has basis matrix $A$ with respect to the power basis
-> of $K$. If `check` is set, it is checked whether $A$ defines an order.
+Returns the order which has basis matrix $A$ with respect to the power basis
+of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::AnticNumberField, a::fmpq_mat, check::Bool = true,
                cache::Bool = true)
@@ -617,8 +617,8 @@ end
 doc"""
     Order(K::AnticNumberField, A::fmpz_mat, check::Bool = true) -> NfOrd
 
-> Returns the order which has basis matrix $A$ with respect to the power basis
-> of $K$. If `check` is set, it is checked whether $A$ defines an order.
+Returns the order which has basis matrix $A$ with respect to the power basis
+of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::AnticNumberField, a::fmpz_mat, check::Bool = true,
                cache::Bool = true)
@@ -628,7 +628,7 @@ end
 doc"""
     Order(A::NfOrdFracIdl) -> NfOrd
 
-> Returns the fractional ideal $A$ as an order of the ambient number field.
+Returns the fractional ideal $A$ as an order of the ambient number field.
 """
 function Order(a::NfOrdFracIdl, check::Bool = true, cache::Bool = true)
   return Order(nf(order(a)), basis_mat(a)*basis_mat(order(a)), check, cache)
@@ -637,7 +637,7 @@ end
 doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
-> Returns the equation order of the number field $K$.
+Returns the equation order of the number field $K$.
 """
 function EquationOrder(K::AnticNumberField, cache::Bool = true)
   M = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
@@ -703,9 +703,9 @@ end
 doc"""
     +(R::NfOrd, S::NfOrd) -> NfOrd
 
-> Given two orders $R$, $S$ of $K$, this function returns the smallest order
-> containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
-> equation order and have coprime index.
+Given two orders $R$, $S$ of $K$, this function returns the smallest order
+containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
+equation order and have coprime index.
 """
 function +(a::NfOrd, b::NfOrd)
   parent(a) != parent(b) && error("Orders must have same ambient number field")
@@ -740,11 +740,11 @@ doc"""
     poverorder(O::NfOrd, p::fmpz) -> NfOrd
     poverorder(O::NfOrd, p::Integer) -> NfOrd
 
-> This function tries to find an order that is locally larger than $\mathcal O$
-> at the prime $p$: If $p$ divides the index $[ \mathcal O_K : \mathcal O]$,
-> this function will return an order $R$ such that
-> $v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])$. Otherwise
-> $\mathcal O$ is returned.
+This function tries to find an order that is locally larger than $\mathcal O$
+at the prime $p$: If $p$ divides the index $[ \mathcal O_K : \mathcal O]$,
+this function will return an order $R$ such that
+$v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])$. Otherwise
+$\mathcal O$ is returned.
 """
 function poverorder(O::NfOrd, p::fmpz)
   if isequation_order(O)
@@ -768,8 +768,8 @@ doc"""
     pmaximal_overorder(O::NfOrd, p::fmpz) -> NfOrd
     pmaximal_overorder(O::NfOrd, p::Integer) -> NfOrd
 
-> This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
-> the index $[ \mathcal O_K : R]$ is not dividible by $p$.
+This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
+the index $[ \mathcal O_K : R]$ is not dividible by $p$.
 """
 function pmaximal_overorder(O::NfOrd, p::fmpz)
   @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
@@ -886,7 +886,7 @@ doc"""
 ***
     MaximalOrder(K::AnticNumberField) -> NfOrd
 
-> Returns the maximal order of $K$.
+Returns the maximal order of $K$.
 **Example**
 
     julia> Qx, x = QQ["x"]
@@ -907,9 +907,9 @@ doc"""
 ***
     MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
 
-> Assuming that ``primes`` contains all the prime numbers at which the equation
-> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
-> this function returns the maximal order of $K$.
+Assuming that ``primes`` contains all the prime numbers at which the equation
+order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
+this function returns the maximal order of $K$.
 """
 function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   O = EquationOrder(K)
@@ -924,7 +924,7 @@ doc"""
     maximal_order(K::AnticNumberField) -> NfOrd
     ring_of_integers(K::AnticNumberField) -> NfOrd
 
-> Returns the maximal order of $K$.
+Returns the maximal order of $K$.
 """
 function maximal_order(K::AnticNumberField)
   try
@@ -947,10 +947,10 @@ doc"""
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
 
-> Assuming that ``primes`` contains all the prime numbers at which the equation
-> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal
-> (e.g. ``primes`` may contain all prime divisors of the discriminant of
-> $\mathbf Z[\alpha]$), this function returns the maximal order of $K$.
+Assuming that ``primes`` contains all the prime numbers at which the equation
+order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal
+(e.g. ``primes`` may contain all prime divisors of the discriminant of
+$\mathbf Z[\alpha]$), this function returns the maximal order of $K$.
 """
 function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
   O = MaximalOrder(K, primes)
@@ -967,9 +967,9 @@ doc"""
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
 
-> Assuming that ``primes`` contains all the prime numbers at which the equation
-> order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
-> this function returns the maximal order of $K$.
+Assuming that ``primes`` contains all the prime numbers at which the equation
+order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
+this function returns the maximal order of $K$.
 """
 ring_of_integers(x...) = maximal_order(x...)
 

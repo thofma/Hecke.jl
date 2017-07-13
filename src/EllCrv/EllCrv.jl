@@ -250,8 +250,8 @@ doc"""
 ***
     short_weierstrass_model(E::EllCrv{fmpq}) -> (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
 
-> Transforms a curve given in long Weierstrass form over QQ to short Weierstrass form
-> returns short form and both transformations for points on the curve; first transformation from E (long form) to EE (short form), second transformation the other way round
+Transforms a curve given in long Weierstrass form over QQ to short Weierstrass form
+returns short form and both transformations for points on the curve; first transformation from E (long form) to EE (short form), second transformation the other way round
 """
 function short_weierstrass_model(E::EllCrv)
   return _short_weierstrass_model(E)

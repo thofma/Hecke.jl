@@ -25,6 +25,10 @@ pages:
 
 extra_css:
     - assets/Documenter.css
+# This are tricks to get syntax highlighting working
+# Copied from the Currencies gh-pages in latest/assets
+    - application-e2807e330f.css
+    - application-f78e5cb881.palette.css
 
 markdown_extensions:
 - codehilite

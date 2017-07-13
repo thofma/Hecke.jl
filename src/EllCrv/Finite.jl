@@ -81,9 +81,9 @@ doc"""
 ***
     order_via_legendre(E::EllCrv{GenRes{fmpz}) -> fmpz
 
-> Calculates the number of points on an elliptic curve $E$ over a finite field
-> $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
-> prime.
+Calculates the number of points on an elliptic curve $E$ over a finite field
+$\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
+prime.
 """
 # Th. 4.14
 function order_via_legendre(E::EllCrv{GenRes{fmpz}})
@@ -239,8 +239,8 @@ doc"""
 ***
     order(P::EllCrvPt) -> fmpz
 
-> Given a point on an elliptic curve over a finite field, returns the order
-> of this point.
+Given a point on an elliptic curve over a finite field, returns the order
+of this point.
 """
 order(P::EllCrvPt) = elem_order_bsgs(P)
 
@@ -254,10 +254,10 @@ doc"""
 ***
     order_via_bsgs(E::EllCrv) -> Array{fmpz, 1}
 
-> Calculates candidates for the number of points on an elliptic curve $E$ given
-> over a finite field $\mathbf F_q$, using the baby step giant step method. If
-> $q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
-> It is assumed that the characteristic is not 2.
+Calculates candidates for the number of points on an elliptic curve $E$ given
+over a finite field $\mathbf F_q$, using the baby step giant step method. If
+$q$ prime, $q > 229$, then the order is determined uniquely by this algorithm.
+It is assumed that the characteristic is not 2.
 """
 function order_via_bsgs(E::EllCrv)
   R = base_field(E)
@@ -372,9 +372,9 @@ doc"""
 ***
     order_via_schoof(E::EllCrv) -> fmpz
 
-> Given an elliptic curve $E$ elliptic curve given a finite field $\mathbf F$,
-> this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
-> The characteristic must not be $2$ or $3$.
+Given an elliptic curve $E$ elliptic curve given a finite field $\mathbf F$,
+this function computes the order of $E(\mathbf F)$ using Schoof's algorithm
+The characteristic must not be $2$ or $3$.
 """
 function order_via_schoof(E::EllCrv)
   R = base_field(E)
@@ -672,8 +672,8 @@ doc"""
 ***
     order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 
-> Given an elliptic curve $E$ over a finite field $\mathbf F$, computes
-> $\#E(\mathbf F)$.
+Given an elliptic curve $E$ over a finite field $\mathbf F$, computes
+$\#E(\mathbf F)$.
 """
 function order(E::EllCrv)
   R = base_field(E)

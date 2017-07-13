@@ -45,9 +45,10 @@ export integral_model, istorsion_point, laska_kraus_connell, minimal_model,
 ################################################################################
 
 doc"""
+***
     order(P::EllCrvPt{fmpq}) -> fmpz
 
-> Returns the order of the point $P$ or $0$ if the order is infinite.
+Returns the order of the point $P$ or $0$ if the order is infinite.
 """
 function order(P::EllCrvPt{fmpq})
   Q = P
