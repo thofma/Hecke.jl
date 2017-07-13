@@ -12,6 +12,10 @@ EquationOrder(::AnticNumberField)
 
 ### Example
 
+```julia
+a = Int(2)
+```
+
 ```@repl
 using Hecke; # hide
 Qx, x = PolynomialRing(QQ, "x");
