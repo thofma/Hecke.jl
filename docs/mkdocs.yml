@@ -3,7 +3,7 @@ repo_name:           thofma/Hecke
 repo_url:            https://github.com/thofma/Hecke.jl
 site_description:    Hecke
 site_author:         Tommy Hofmann
-theme:               yeti
+theme:               cinder
 
 #extra:
 #  palette:
@@ -23,17 +23,17 @@ pages:
 #    - Ideals:          build/MaximalOrders/Ideals.md
 #- Orders:              build/Orders.md
 
+extra_css:
+    - assets/Documenter.css
+
 markdown_extensions:
-- tables
-- fenced_code
 - codehilite
 - extra
 - tables
 - fenced_code
-- admonition
-  #- pymdownx.inlinehilite
 - mdx_math:
     enable_dollar_delimiter: True
+- admonition
 
 docs_dir: 'build'
 

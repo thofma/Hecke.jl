@@ -11,7 +11,10 @@ makedocs(
 )
 
 deploydocs(
-    deps = Deps.pip("pygments", "mkdocs", "mkdocs-material", "python-markdown-math", "mkdocs-bootswatch"),
+    deps = Deps.pip("pygments",
+                    "mkdocs",
+                    "python-markdown-math",
+                    "mkdocs-cinder"),
     repo = "github.com/thofma/Hecke.jl.git",
     julia = "0.5",
 )
