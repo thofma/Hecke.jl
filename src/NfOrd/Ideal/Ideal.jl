@@ -379,6 +379,7 @@ function assure_has_basis_mat(A::NfOrdIdl)
   end
 
   if isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum
+    # A is a prime ideal of degree 1
     A.basis_mat = basis_mat_prime_deg_1(A)
     return nothing
   end
@@ -411,11 +412,12 @@ function basis_mat_prime_deg_1(A::NfOrdIdl)
   if isone(bas[1])
     b[1, 1] = A.minimum
   else
-    b[1, 1] = fmpz(coeff(mK( -bas[1]), 0))
+    b[1, 1] = fmpz(coeff(mK(-bas[1]), 0))
   end
   for i in 2:n
-    b[i, 1] = fmpz(coeff(mK( -bas[i]), 0))
+    b[i, 1] = fmpz(coeff(mK(-bas[i]), 0))
   end
+  # b is Hermite normal form, but lower left
   return b
 end
 
