@@ -261,11 +261,13 @@ end
 
 function PseudoMatrix(m::GenMat{nf_elem}, c::Array{NfOrdFracIdl, 1})
   # sanity checks
+  @assert rows(m) == length(c)
   return PMat(m ,c)
 end
 
 
 function PseudoMatrix(m::GenMat{NfOrdElem}, c::Array{NfOrdIdl, 1})
+  @assert rows(m) == length(c)
   mm = change_ring(m, nf(base_ring(m)))
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat(mm, cc)
@@ -1257,4 +1259,21 @@ function intersection(M::ModDed, N::ModDed)
    MN = ModDed(D, true; check = false)
    simplify_basis!(MN)
    return MN
+end
+
+function mod(M::ModDed, p::NfOrdIdl)
+   O = base_ring(M)
+   N = zero(MatrixSpace(O, rows(M.pmatrix), cols(M.pmatrix)))
+   MM = M.pmatrix.matrix
+   ideals = M.pmatrix.coeffs
+   for i = 1:rows(N)
+      a = num(ideals[i]).gen_one
+      if valuation(a, p) > valuation(num(ideals[i]).gen_two, p)
+         a = num(ideals[i]).gen_two
+      end
+      for j = 1:cols(N)
+         N[i, j] = mod(O(MM[i, j]*a), p)
+      end
+   end
+   return N
 end
