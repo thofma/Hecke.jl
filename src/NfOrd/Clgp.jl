@@ -139,6 +139,17 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   @vprint :UnitGroup 1 "Validating unit group and class group ... \n"
   O = U.order
 
+  # The residue of the zeta function cannot be computed for degree 1 (K = Q),
+  # so we shortcircuit it.
+
+  if degree(O) == 1
+    if c.h == 1 && U.tentative_regulator == 1
+      return fmpz(1)
+    else
+      error("Something odd for K = Q")
+    end
+  end
+
   @vprint :UnitGroup 1 "Computing torsion structure ... \n"
   U.torsion_units = torsion_units(O)
   U.torsion_units_order = length(U.torsion_units)
