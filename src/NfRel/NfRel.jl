@@ -477,3 +477,7 @@ function pure_extension(n::Int, gen::nf_elem)
   return number_field(x^n-gen)
 end
 
+function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
+  return hash(a.data, b)
+end
+
