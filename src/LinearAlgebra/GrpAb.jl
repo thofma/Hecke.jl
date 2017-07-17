@@ -1000,9 +1000,24 @@ doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
 > Creates the homomorphism $A[i] \mapsto B[i]$
 """
-function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1})
+function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool= false)
   GA = parent(A[1])
   GB = parent(B[1])
+
+ if (check)
+    m = vcat([x.coeff for x=A])
+    m = vcat(m, rels(parent(A[1])))
+    T, i = nullspace(m')
+    T = T'
+    T = sub(T, 1:rows(T), 1:length(A))
+    n = vcat([x.coeff for x = B])
+    n = T*n
+    if !cansolve(parent(B[1]).rels', n')[1]
+      error("data does not define a homomorphism")
+    end
+  end
+
+
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i=1:length(A)])
   RA = rels(GA)
   M = vcat(M, hcat(RA, MatrixSpace(FlintZZ, rows(RA), cols(B[1].coeff))()))
@@ -1085,4 +1100,13 @@ function multgrp_of_cyclic_grp(n::fmpz)
   return DiagonalGroup(composition)
 end
 multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(fmpz(n))
+
+
+function issurjective(A::GrpAbFinGenMap)
+  return order(codomain(A)) == order(image(A)[1])
+end
+
+function isinjective(A::GrpAbFinGenMap)
+  return order(kernel(A)[1]) == 1
+end
 
