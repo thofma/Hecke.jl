@@ -873,3 +873,32 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   end
 end
 
+function Base.nullspace(M::nmod_mat)
+  R = base_ring(M)
+  if isprime(modulus(R))
+    k = MatrixSpace(R, cols(M), cols(M))()
+    n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &k, &M)
+    return (k, n)
+  end
+
+  N = hcat(M', MatrixSpace(R, cols(M), cols(M))(1))
+  ex = 0
+  if rows(N) < cols(N)
+    ex = cols(N) - rows(N)
+    N = vcat(N, MatrixSpace(R, ex, cols(N))())
+  end
+  H = howell_form(N)
+  nr = 1
+  while nr <= rows(H) && !iszero_row(H, nr)
+    nr += 1
+  end
+  nr -= 1
+  h = sub(H, 1:nr, 1:rows(M))
+  for i=1:rows(h)
+    if iszero_row(h, i)
+      k = sub(H, i:rows(h), rows(M)+1:cols(H))
+      return k', rows(k)
+    end
+  end
+end
+
