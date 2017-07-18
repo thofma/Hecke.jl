@@ -407,6 +407,10 @@ function reduce_mod_units{T}(a::Array{T, 1}, U)
         return b
       else
         #println("trafo by $V")
+        prec *= 2
+        if prec > 10000
+          error("too much prec")
+        end
       end
 
       for i=1:length(a)
