@@ -481,3 +481,39 @@ function hash(a::Hecke.NfRelElem{nf_elem}, b::UInt)
   return hash(a.data, b)
 end
 
+################################################################################
+#
+#  Representation Matrix
+#
+################################################################################
+
+function elem_to_mat_row!{T}(M::GenMat{T}, i::Int, a::NfRelElem{T})
+  for c = 1:cols(M)
+    M[i, c] = deepcopy(coeff(a, c - 1))
+  end
+  return nothing
+end
+
+function representation_mat(a::NfRelElem)
+  L = a.parent
+  n = degree(L)
+  M = MatrixSpace(base_ring(L), n, n)()
+  t = gen(L)
+  b = deepcopy(a)
+  for i = 1:n-1
+    elem_to_mat_row!(M, i, b)
+    mul!(b, b, t)
+  end
+  elem_to_mat_row!(M, n, b)
+  return M
+end
+
+function norm(a::NfRelElem)
+  M = representation_mat(a)
+  return det(M)
+end
+
+function trace(a::NfRelElem)
+  M = representation_mat(a)
+  return trace(M)
+end
