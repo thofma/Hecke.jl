@@ -1236,11 +1236,11 @@ end
 
 function intersection(M::ModDed, N::ModDed)
    @assert base_ring(M) == base_ring(N)
+   @assert cols(M.pmatrix) == cols(N.pmatrix)
    MM = simplify_basis(M)
    NN = simplify_basis(N)
    A = deepcopy(MM.pmatrix)
    B = deepcopy(NN.pmatrix)
-   @assert cols(A) == cols(B)
    if rows(B) > rows(A)
       A, B = B, A
    end
@@ -1263,7 +1263,8 @@ end
 
 function mod(M::ModDed, p::NfOrdIdl)
    O = base_ring(M)
-   N = zero(MatrixSpace(O, rows(M.pmatrix), cols(M.pmatrix)))
+   Op = ResidueRing(O, p)
+   N = zero(MatrixSpace(Op, rows(M.pmatrix), cols(M.pmatrix)))
    MM = M.pmatrix.matrix
    ideals = M.pmatrix.coeffs
    for i = 1:rows(N)
@@ -1272,7 +1273,7 @@ function mod(M::ModDed, p::NfOrdIdl)
          a = num(ideals[i]).gen_two
       end
       for j = 1:cols(N)
-         N[i, j] = mod(O(MM[i, j]*a), p)
+         N[i, j] = Op(O(MM[i, j]*a))
       end
    end
    return N
