@@ -110,6 +110,8 @@ function _modulus(mR::Map)
   end
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
+  elseif issubtype(typeof(mR), Hecke.MapRayClassGrpFacElem)
+    return mR.modulus_fin
   end
   @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
   return mR.modulus_fin
@@ -171,6 +173,14 @@ end
 # mp:: k -> K inclusion
 # builds a (projection) from B -> A identifying (pre)images of
 # prime ideals, the ideals are coprime to cp and ==1 mod n
+
+function order(A::FacElemMon{IdealSet})
+  return order(A.base_ring)
+end
+
+function order(A::FacElemMon{NfOrdIdlSet})
+  return order(A.base_ring)
+end
 
 function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
   #mR should be GrpAbFinGen -> IdlSet
@@ -325,9 +335,10 @@ function _rcf_find_kummer(CF::ClassField_pp)
   end
 
   n, i = nullspace(M)
+  @assert i>0
   n = lift(n)
   N = GrpAbFinGen([e for j=1:rows(n)])
-  s, ms = sub(N, [sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i])
+  s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i])
   ms = Hecke.make_snf(ms)
   @assert iscyclic(domain(ms))
   o = order(domain(ms)[1])
