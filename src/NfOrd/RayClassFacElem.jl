@@ -239,6 +239,16 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 # Discrete logarithm
 #
 
+
+  function disclog(J::FacElem)
+    a= X([0 for i=1:ngens(X)])
+    for (f,k) in J.fac
+      a+=k*disclog(f)
+    end
+    return a
+  end
+ 
+ 
   function disclog(J::NfOrdIdl)
 
     if isone(J)
@@ -720,6 +730,16 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 #
 # Discrete logarithm
 #
+
+
+  function disclog(J::FacElem)
+    a= X([0 for i=1:ngens(X)])
+    for (f,k) in J.fac
+      a+=k*disclog(f)
+    end
+    return a
+  end
+ 
 
   function disclog(J::NfOrdIdl)
 
