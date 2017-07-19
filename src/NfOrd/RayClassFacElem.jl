@@ -598,7 +598,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     end
     
     mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
-    mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , exp2, disclog2)
+    mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp2, disclog2)
     mp.modulus_fin=m
     mp.modulus_inf=inf_plc
     
@@ -824,7 +824,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   end 
 
   mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , expo, disclog)
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=inf_plc
   mp.fact_mod=Q.factor
