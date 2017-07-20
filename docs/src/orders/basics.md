@@ -5,16 +5,12 @@ CurrentModule = Hecke
 ## Creation
 
 ```@docs
-Order(::Array{nf_elem, 1}, ::Bool)
-Order(::AnticNumberField, ::FakeFmpqMat, ::Bool)
+Order(::AnticNumberField, ::Array{nf_elem, 1})
+Order(::AnticNumberField, ::FakeFmpqMat)
 EquationOrder(::AnticNumberField)
 ```
 
 ### Example
-
-```julia
-a = Int(2)
-```
 
 ```@repl
 using Hecke; # hide

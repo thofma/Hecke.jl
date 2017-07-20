@@ -146,7 +146,7 @@ Returns the $\mathbf Z$-basis of $\mathcal O$.
 @inline basis{T}(O::NfOrd, copy::Type{Val{T}} = Val{true}) = basis_ord(O, copy)
 
 doc"""
-    basis(O::NfOrd, K::AnticNumberField) -> Vector{nf_elem}
+    basis(O::NfOrd, K::AnticNumberField) -> Array{nf_elem, 1}
 
 Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
 ambient number field.
@@ -168,9 +168,13 @@ doc"""
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_mat(O::NfOrd)
+function basis_mat{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis_mat(O)
-  return deepcopy(O.basis_mat)
+  if copy == Val{true}
+    return deepcopy(O.basis_mat)
+  else
+    return O.basis_mat
+  end
 end
 
 doc"""
@@ -178,9 +182,13 @@ doc"""
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv(O::NfOrd)
+function basis_mat_inv{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis_mat_inv(O)
-  return deepcopy(O.basis_mat_inv)
+  if copy == Val{true}
+    return deepcopy(O.basis_mat_inv)
+  else
+    return O.basis_mat_inv
+  end
 end
 
 ################################################################################
@@ -219,22 +227,26 @@ end
 #
 ################################################################################
 
+function assure_has_discriminant(O::NfOrd)
+  if isdefined(O, :disc)
+    return nothing
+  else
+    if isequation_order(O)
+      O.disc = num(discriminant(nf(O).pol))
+    else
+      O.disc = discriminant(basis(O))
+    end
+  end
+  return nothing
+end
+
 doc"""
     discriminant(O::NfOrd) -> fmpz
 
 Returns the discriminant of $\mathcal O$.
 """
 function discriminant(O::NfOrd)
-  if isdefined(O, :disc)
-    return deepcopy(O.disc)
-  end
-
-  if isequation_order(O)
-    O.disc = num(discriminant(nf(O).pol))
-  else
-    O.disc = discriminant(basis(O))
-  end
-
+  assure_has_discriminant(O)
   return deepcopy(O.disc)
 end
 
@@ -260,15 +272,14 @@ degree(O::NfOrd) = degree(O.nf)
 doc"""
     gen_index(O::NfOrd) -> fmpq
 
-Generalized index of $\mathcal O$ with respect to the ambient equation
-order $\mathbf Z[\alpha]$.
+Returns the generalized index of $\mathcal O$ with respect to the equation
+order of the ambient number field.
 """
 function gen_index(O::NfOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
-    assure_has_basis_mat(O)
-    O.gen_index = FlintQQ(O.basis_mat.den^degree(O), det(O.basis_mat.num))
+    O.gen_index = inv(det(basis_mat(O, Val{false})))#FlintQQ(O.basis_mat.den^degree(O), det(O.basis_mat.num))
     return deepcopy(O.gen_index)
   end
 end
@@ -276,9 +287,9 @@ end
 doc"""
     index(O::NfOrd) -> fmpz
 
-Assuming that the order $\mathcal O$ contains the ambient equation order
-$\mathbf Z[\alpha]$, this function returns the index
-$[ \mathcal O : \mathbf ZZ]$.
+Assuming that the order $\mathcal O$ contains the equation order
+$\mathbf Z[\alpha]$ of the ambient number field, this function returns the
+index $[ \mathcal O : \mathbf ZZ]$.
 """
 function index(O::NfOrd)
   if isdefined(O, :index)
@@ -301,9 +312,10 @@ doc"""
     isindex_divisor(O::NfOrd, d::fmpz) -> Bool
     isindex_divisor(O::NfOrd, d::Int) -> Bool
 
-Returns whether $d$ is a divisor of the index of $\mathcal O$.
+Returns whether $d$ is a divisor of the index of $\mathcal O$. It is assumed
+that $\mathcal O$ contains the equation order of the ambient number field.
 """
-function isindex_divisor(O::NfOrd, d::Union{fmpz, Int})
+function isindex_divisor(O::NfOrd, d::Union{fmpz, Integer})
   i = index(O)
   return i % d == 0
 end
@@ -439,7 +451,8 @@ end
 doc"""
     den(a::nf_elem, O::NfOrd) -> fmpz
 
-Returns the smallest positive integer $k$ such that $k \cdot a$ lies in O.
+Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
+$\mathcal O$.
 """
 function den(a::nf_elem, O::NfOrd)
   assure_has_basis_mat_inv(O)
