@@ -238,12 +238,12 @@ function rand(M::GenMatSpace{NfOrdElem}, B::Union{Int, fmpz})
   return z
 end
 
-type PMat
+type PMat{T, S}
   parent
-  matrix::GenMat{nf_elem}
-  coeffs::Array{NfOrdFracIdl, 1}
+  matrix::GenMat{T}
+  coeffs::Array{S, 1}
 
-  function PMat(m::GenMat{nf_elem}, c::Array{NfOrdFracIdl, 1})
+  function PMat(m::GenMat{T}, c::Array{S, 1})
     z = new()
     z.matrix = m
     z.coeffs = c
@@ -259,10 +259,10 @@ function show(io::IO, P::PMat)
   end
 end
 
-function PseudoMatrix(m::GenMat{nf_elem}, c::Array{NfOrdFracIdl, 1})
+function PseudoMatrix{T, S}(m::GenMat{T}, c::Array{S, 1})
   # sanity checks
   @assert rows(m) == length(c)
-  return PMat(m ,c)
+  return PMat{T, S}(m ,c)
 end
 
 
@@ -270,7 +270,7 @@ function PseudoMatrix(m::GenMat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert rows(m) == length(c)
   mm = change_ring(m, nf(base_ring(m)))
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
-  return PMat(mm, cc)
+  return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
 
 function PseudoMatrix(m::GenMat{nf_elem})
@@ -281,7 +281,7 @@ end
 
 PseudoMatrix(m::GenMat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
 
-function PseudoMatrix(c::Array{NfOrdFracIdl, 1})
+function PseudoMatrix{S}(c::Array{S, 1})
    K = nf(order(c[1]))
    m = one(MatrixSpace(K, length(c), length(c)))
    return PseudoMatrix(m, c)
@@ -390,7 +390,7 @@ function pseudo_hnf(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
     end
   end
 
-  res = PMat(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
+  res = PMat{nf_elem, NfOrdFracIdl}(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
 
   for i in 1:rows(P)
     if iszero(zz[i, i].elem)
