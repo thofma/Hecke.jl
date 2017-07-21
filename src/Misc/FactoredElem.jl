@@ -471,7 +471,7 @@ end
 function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   if length(x.fac) <= 1
     p = first(keys(x.fac))
-    x.fac =  Dict(abs(p) => x.fac[p])
+    x.fac =  Dict(p => x.fac[p])
     return 
   end
   cp = coprime_base(collect(base(x)))
