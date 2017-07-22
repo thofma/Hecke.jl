@@ -302,7 +302,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
 
   R, d = solve_ut(H, r)
   if d != 1
-    false, FacElem([nf(O)(1)], fmpz[1])
+    return false, FacElem([nf(O)(1)], fmpz[1])
   end
   rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
   for (p,v) = R
