@@ -393,6 +393,9 @@ end
 
 *(x::GrpAbFinGenElem, y::Integer) = y*x
 
+iszero(a::GrpAbFinGenElem) = iszero(a.coeff)
+isone(a::GrpAbFinGenElem) = iszero(a.coeff)
+
 ################################################################################
 #
 #  Parent object overloading
@@ -637,7 +640,7 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 
 doc"""
 ***
-    istrivial(A::GrpAbFinGen, i::Int) -> Bool
+    istrivial(A::GrpAbFinGen) -> Bool
 
 > Checks if $A$ is the trivial group.
 """
