@@ -352,7 +352,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   end 
 
   mp=MapRayClassGrpFacElem{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, FacElem{NfOrdIdl} , expo, disclog)
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
   mp.fact_mod=Q.factor
@@ -394,10 +394,12 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
     end
     
     G=DiagonalGroup([gcd(order(C[ind+j]),fmpz(p^powerp)) for j=0:ngens(C)-ind])
+
     function exp2(a::GrpAbFinGenElem)
       x=C([0 for i=1:ngens(C)])
       for i=ind:ngens(C)
-        x.coeff[1,i]=a.coeff[1,i-ind+1]
+        x.coeff[1,i]=a.coeff[1,i-ind+1]  # careful!!! this ideal will not
+                                         # have a p-power order!
       end
       return mC(x)
     end 
