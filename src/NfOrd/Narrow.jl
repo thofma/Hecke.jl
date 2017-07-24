@@ -14,7 +14,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     A, a = reduce_ideal2(A)
     # A_old * a = A_new
     #so a^e A_old^e = A_new^e
-    al = FacElem(Dict(K(a) => e))
+    al = a^e
   else
     al = FacElem(Dict(K(1) => fmpz(1)))
   end
@@ -26,7 +26,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     al = al^-1
     B = inv(A)
     A = num(B)
-    al *= FacElem(Dict(K(den(B)) => fmpz(-1)))
+    al *= FacElem(Dict(K(den(B)) => fmpz(e)))
   end
   # A^e = A^(e/2)^2 A or A^(e/2)^2
   # al * A^old^(e/2) = A_new
@@ -42,7 +42,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
 
     if norm(A) > abs(discriminant(O))
       A, a = reduce_ideal2(A)
-      al *= FacElem(Dict(K(a) => fmpz(1)))
+      al *= a
     end
     return A, al
   else
