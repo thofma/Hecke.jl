@@ -41,13 +41,12 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
   d = rt_c.cache_z1
   g = rt_c.cache_z2
 
+  sv = fmpz(0)
   if !iszero(v)
-  #  error("missing")
     @v_do :ClassGroup 2 println("using inf val", v)
-    old = precision(BigFloat)
-    setprecision(4*prec)
+    c = deepcopy(c)
     mult_by_2pow_diag!(c, v)
-    setprecision(old)
+    sv = sum(v[1,i] for i=1:cols(l))
   end
 
 
@@ -57,11 +56,15 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
 
   ccall((:fmpz_mat_gram, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}), &d, &g)
   shift!(d, -prec)
+  prec = div(prec, 2)
+  shift!(d, -prec)  #TODO: remove?
+
   for i=1:n
     fmpz_mat_entry_add_ui!(d, i, i, UInt(rows(d)))
   end
 
   ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
+
   ccall((:fmpz_mat_one, :libflint), Void, (Ptr{fmpz_mat}, ), &g)
   ccall((:fmpz_lll, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{Nemo.lll_ctx}), &d, &g, &ctx)
 
@@ -82,7 +85,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = rows(l)
-  disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n)
+  disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * fmpz(2)^(2*sv)
   d = root(disc, n)+1
   d *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
   pr = fmpz(1)
