@@ -158,7 +158,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       end
     end
     if E.cnt > max(2*c.expect, 0)
-      println("more random")
+#      println("more random")
       use_rand = true
       push!(J, rand(c.FB.ideals))
       last_j = random_get(J, reduce = false)
