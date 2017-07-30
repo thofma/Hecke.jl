@@ -661,7 +661,9 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
   R = RealRing()
   tmp_mpz = R.z1
   tmp_fmpz = R.zz1
-  tmp_mpfr = R.t1
+  tmp_mpfr = deepcopy(a[1,1])  #cannot use the R.?? tmp variable as it may/will
+                               #have the wrong precision
+
   for i = 1:s[1]
     for j = 1:s[2]
       e = a[i,j].exp
