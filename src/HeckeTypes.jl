@@ -1513,7 +1513,7 @@ end
 
 ################################################################################
 #
-#  Finitele generated abelian groups and their elements
+#  Finitely generated abelian groups and their elements
 #
 ################################################################################
 
@@ -1615,3 +1615,33 @@ type InfPlc <: Plc
   end
 end
 
+
+
+################################################################################
+#
+#  G-Modules
+#
+################################################################################
+
+
+export GModule
+
+
+
+type GModule
+  K::Nemo.FqNmodFiniteField
+  G::Array{Any,1}
+  dim::Int
+  isirreducible::Bool
+  peakword_elem::Array{Int,1}
+  peakword_poly::PolyElem
+  
+  function GModule{T}(G::Array{T,1})
+    z=new()
+    z.G=G
+    z.K=parent(G[1][1,1])
+    z.dim=cols(G[1])
+    return z
+  end
+  
+end
