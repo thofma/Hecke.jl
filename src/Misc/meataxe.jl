@@ -109,9 +109,7 @@ function spinning(C::MatElem,G)
   while i != rows(B)+1
     for j=1:length(G)
       el=submatrix(B, i:i, 1:cols(B))*G[j]
-#      println("X=", X, "\n")
       res= cleanvect(X,el)
-#      println("el=", el, "\n res=", res, "\n")
       if !iszero(res)
         X=vcat(X,res)
         rref!(X)
@@ -164,6 +162,7 @@ end
 
 function _split(C::MatElem,G)
 # I am assuming that C is a Fp[G]-submodule
+
   equot=MatElem[]
   esub=MatElem[]
   pivotindex=Set{Int}()
@@ -191,59 +190,40 @@ function _split(C::MatElem,G)
     end
     push!(equot,s)
   end
-  return esub,equot,pivotindex
+  return GModule(esub),GModule(equot),pivotindex
 
 end
 
 #
-#  Function that determine if two G-modules are isomorphic
+#  Function that determine if two G-modules are isomorphic, provided that the first is irreducible
 #
 
-function isisomorphic{T}(G::Array{T,1},H::Array{T,1})
+function isisomorphic(M::GModule,N::GModule)
   
- @assert length(G)==length(H)
+  @assert M.isirreducible==true
+  @assert M.K==N.K
   
-#  println("Alive")
-  if cols(G[1])!=cols(H[1])
+  if M.dim!=N.dim
     return false
   end
-
-  K=parent(G[1][1,1])
-#  @assert isfinite(order(K))
-  Kx,x=K["x"]
-  n=cols(G[1])
+  n=M.dim
+    
+  K=M.K
+ 
+  G=M.G
+  H=N.G
+  if length(G)!=length(H)
+    return false
+  end
+  
+  
+  e,lincomb,f= _spl_field(M)
+  
   A=MatrixSpace(K,n,n)()
   B=MatrixSpace(K,n,n)()
-  lincomb=Int[]
-  f=Kx(1)
-#  counteris=0
-
-  while true
-    
-    for i=1:length(G)
-      push!(lincomb,rand(1:10))
-      A+=lincomb[i]*G[i]
-    end
-#    counteris+=1
-#    println("counteris:", counteris)
-
-    cp=char_poly(A)
-    sq=factor_squarefree(cp)
-    lf=factor(collect(keys(sq.fac))[1])
-    for t in keys(lf.fac)
-      if degree(t)==n-rank(t(A))
-        f=t
-        break  
-      end
-    end
-    if degree(f)==n-rank(f(A))
-      break
-    else 
-      lincomb=Int[]
-      A=MatrixSpace(K,n,n)()
-    end
-  end
+  
   for i=1:length(G)
+    A+=lincomb[i]*G[i]
     B+=lincomb[i]*H[i]
   end
   
@@ -270,6 +250,82 @@ function isisomorphic{T}(G::Array{T,1},H::Array{T,1})
   end
   return true
 end
+
+
+function _spl_field(M::GModule)
+  
+  @assert M.isirreducible==true
+  n=M.dim
+  K=M.K
+  G=M.G
+  posfac=n
+  lincomb=Int[]
+  Kx,x=K["x"]
+  f=Kx(1)
+  A=MatrixSpace(K,n,n)()
+  
+  while true
+    
+    for i=1:length(G)
+      push!(lincomb,rand(1:10))
+      A+=lincomb[i]*G[i]
+    end
+
+    cp=charpoly(A)
+    sq=factor_squarefree(cp)
+    lf=factor(collect(keys(sq.fac))[1])
+    for t in keys(lf.fac)
+      f=t
+      S=t(A)
+      a,kerA=nullspace(transpose(S))
+      if a==1
+        M.peakword_elem=lincomb
+        M.peakword_poly=f
+        return a, lincomb, f
+      end
+      kerA=transpose(kerA)
+      posfac=gcd(posfac,a)
+      if divisible(posfac,a)
+        v=submatrix(ker(A), 1:1, 1:n)
+        B=v
+        T,gensA, preimageA =spinning(v,G)
+        G1=[T*A*inv(T) for A in G]
+        i=2
+        E=[eye(T,a)]
+        while rows(B)!= a
+          w=submatrix(kerA, i:i, 1:n)
+          z=cleanvect(B,w)
+          if iszero(z)
+            continue
+          end
+          N,gensB, preimageB=spinning(w,G)
+          G2=[N*A*inv(N) for A in G]
+          if G1 == G2
+            b=kerA*N
+            x=transpose(solve(transpose(kerA),transpose(b)))
+            push!(E,x)
+            B=vcat(B,z)
+            B=closure(B,E)
+          else 
+            break
+          end
+          if rows(B)==a
+            M.peakword_elem=lincomb
+            M.peakword_poly=f
+            return a, lincomb, f
+          else
+            i+=1
+          end
+        end
+      end
+    end        
+    lincomb=Int[]
+    A=MatrixSpace(K,n,n)()
+
+  end
+  
+end
+
 
 ###############################################################
 #
@@ -379,22 +435,19 @@ end
 
 doc"""
 ***
-    meataxe(G::Array{MatElem,1}) -> Bool, MatElem
+    meataxe(M::GModule) -> Bool, MatElem
 
-> Given a set of matrices $G$, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule\
+> Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
 
 """
 
-function meataxe{T}(G::Array{T,1})
+function meataxe(M::GModule)
 
-  K=parent(G[1][1,1])
-#  @assert isfinite(order(K))
+  K=M.K
   Kx,x=K["x"]
-  n=cols(G[1])
-#  counter=0
+  n=M.dim
+  G=M.G
   while true
-#    counter+=1
- #   println(counter)
   #
   # First, choose a random combination of the generators of G
   #
@@ -412,35 +465,35 @@ function meataxe{T}(G::Array{T,1})
       sq=factor_squarefree(Kx(c))
       lf=factor(collect(keys(sq.fac))[1])
       for t in keys(lf.fac)
-        M=t(A)
-        a,kern=nullspace(transpose(M))
+        N=t(A)
+        a,kern=nullspace(transpose(N))
         kern=transpose(kern)
-#        println("kern=", kern, "\n")
   
         #
         #  Norton test
         #   
         for j=1:rows(kern)  
           B=closure(submatrix(kern,j:j, 1:n),G)
-  #        println("Spinning returns ", B, "\n")
           if rows(B)!=n
+            M.isirreducible=false
             return false, B
           end
-        end
-  #        println("Passing to dual\n")
-        
-        kernt=nullspace(M)[2]
+        end        
+        kernt=nullspace(N)[2]
         
         for j=1:cols(kernt)
           Bt=closure(transpose(submatrix(kernt,1:n,j:j)),[transpose(x) for x in G])
-  #        println("Dual spinning returns ",Bt, "\n")
           if rows(Bt)!=n
             subs=nullspace(transpose(Bt))[2]
+            M.isirreducible=false
             return false, transpose(subs)
           end
         end
         if degree(t)==a
-#           println("f is a good factor, irreducibility!")
+          #
+          # f is a good factor, irreducibility!
+          #
+          M.isirreducible=true
           return true, eye(G[1],n)
         end
       end
@@ -458,19 +511,25 @@ doc"""
 
 
 
-function composition_series{T}(G::Array{T,1})
+function composition_series(M::GModule)
 
-  K=parent(G[1][1,1])
-  bool, C = meataxe(G)
+  if isdefined(M, :isirreducible) && M.isirreducible==true
+    return [eye(M.G[1],M.dim)]
+  end
+
+  bool, C = meataxe(M)
   #
-  #  If the module is irreducible, we just return a basis of the space
+  #  If the module is irreducible, we return a basis of the space
   #
   if bool ==true
-    return [eye(G[1],rows(G[1]))]
+    return [eye(M.G[1],M.dim)]
   end
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
   #
+  G=M.G
+  K=M.K
+  
   esub,equot,pivotindex=_split(C,G)
   sub_list = composition_series(esub)
   quot_list = composition_series(equot)
@@ -516,16 +575,22 @@ doc"""
 
 
 
-function composition_factors{T}(G::Array{T,1})
+function composition_factors(M::GModule)
   
-  K=parent(G[1][1,1])
-  bool, C = meataxe(G)
+  if isdefined(M, :isirreducible) && M.isirreducible==true
+    return [[M,1]]
+  end 
+ 
+  K=M.K
+  
+  bool, C = meataxe(M)
   #
   #  If the module is irreducible, we just return a basis of the space
   #
   if bool == true
-    return [[G,1]]
+    return [[M,1]]
   end
+  G=M.G
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
   #
@@ -543,8 +608,9 @@ function composition_factors{T}(G::Array{T,1})
       if isisomorphic(list[i][1], list[j][1])
         list[i][2]+=list[j][2]
         deleteat!(list,j)
-      end
-      j+=1
+      else 
+        j+=1
+      end    
     end
     i+=1
   end
@@ -552,35 +618,3 @@ function composition_factors{T}(G::Array{T,1})
   return list
 
 end
-
-
-
-
-
-
-#=
-
-Qx,x=QQ["x"]
-K,a=NumberField(x^2+87,"a")
-O=maximal_order(K)
-prime_decomposition(O,5)
-F,mF=ResidueField(O,ans[1][1])
-
-M=MatrixSpace(F,3,3)([0,0,1,1,0,0,0,1,0])
-
-
-G=[M]
-
-meataxe(G)
-
-M=MatrixSpace(F,7,7)() 
-M[7,6]=F(1)
-M[6,5]=F(1)
-M[5,4]=F(1)
-M[4,3]=F(1)
-M[3,2]=F(1)
-M[2,1]=F(1)
-M[1,7]=F(1)
-=# 
-
-
