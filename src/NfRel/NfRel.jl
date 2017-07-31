@@ -494,6 +494,16 @@ function elem_to_mat_row!{T}(M::GenMat{T}, i::Int, a::NfRelElem{T})
   return nothing
 end
 
+function elem_from_mat_row{T}(L::NfRel{T}, M::GenMat{T}, i::Int)
+  t = L(1)
+  a = L()
+  for c = 1:cols(M)
+    a += M[i, c]*t
+    mul!(t, t, gen(L))
+  end
+  return a
+end
+
 function representation_mat(a::NfRelElem)
   L = a.parent
   n = degree(L)
