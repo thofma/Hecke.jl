@@ -247,9 +247,9 @@ type SRowSpace{T} <: Ring
     if haskey(SRowSpaceDict, R)
       return SRowSpace[R]::SRowSpace{T}
     else
-      z = new{T}(r, c, R)
+      z = new{T}(R)
       if cached
-        SRowSpace[R, r, c] = z
+        SRowSpace[R] = z
       end
       return z
     end
