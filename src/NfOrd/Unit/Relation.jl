@@ -209,19 +209,7 @@ function _denominator_bound_in_relation(rreg::arb, K::AnticNumberField)
   arb_bound = rreg * inv(lower_regulator_bound(K))
 
   # I want to get an upper bound as an fmpz
-  tm = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
-
-  ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}, Int), &tm, &arb_bound, 64)
-
-  bound = fmpz()
-
-  # round towards +oo
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &bound, &tm, 3)
-
-  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tm)
-
-  return bound
+  return abs_upper_bound(arb_bound, fmpz)
 end
 
 function _frac_bounded_2(y::arb, bound::fmpz)

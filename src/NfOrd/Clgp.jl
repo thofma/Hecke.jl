@@ -181,14 +181,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
       return fmpz(1)
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
-      t = arf_struct(0, 0, 0, 0)
-      ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &t)
-
-      s = fmpz()
-      ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}, Clong), &t, &e, pre)
-      ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &s, &t, 1) # 1 is round up
-      ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &t)
-      return s
+      return abs_upper_bound(e, fmpz)
     end
 
     error("Not yet implemented")

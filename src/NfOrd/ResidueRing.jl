@@ -971,13 +971,7 @@ function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
 
   #println("bound for k: $boundk")
 
-  t = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &t)
-
-  ss = fmpz()
-  ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}, Clong), &t, &boundk, 64)
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &ss, &t, 1) # 1 is round up
-  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &t)
+  ss = abs_upper_bound(boundk, fmpz)
 
   roots = NfOrdElem[]
 
