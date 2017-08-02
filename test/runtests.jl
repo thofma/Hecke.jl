@@ -26,6 +26,7 @@ include("NfOrd/NfOrd.jl")
 include("NfOrd/Elem.jl")
 include("NfOrd/Ideal.jl")
 include("NfOrd/FracIdl.jl")
+include("NfOrd/ResidueRing.jl")
 
 #include("NfMaxOrd.jl")
 #include("NfOrd.jl")
