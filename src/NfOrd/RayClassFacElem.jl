@@ -606,8 +606,22 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
+  @assert issnf(U)
+  if gcd(order(U[1]),p)!=1
+    u=mU(U[1])
+    el=Hecke._fac_elem_evaluation(O,u,lp,expo)
+    a=(mG\el).coeff
+    if p==2 && !isempty(pr)
+      b=sum([lH(x) for x in keys(u.fac)])
+      a=hcat(a, b.coeff)
+    end
+    for j=1:ngens(G)
+      B[1+ngens(G),j]=a[1,j]
+    end
+  end
   
-  for i=1:ngens(U)
+  
+  for i=2:ngens(U)
     u=mU(U[i])
     el=Hecke._fac_elem_evaluation(O,u,lp,expo)
     a=(mG\el).coeff
