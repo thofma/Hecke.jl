@@ -1623,12 +1623,11 @@ end
 #
 ################################################################################
 
+abstract GModule
 
-export GModule
+export FqGModule
 
-
-
-type GModule
+type FqGModule <: GModule
   K::Nemo.FqNmodFiniteField
   G::Array{Any,1}
   dim::Int
@@ -1636,11 +1635,14 @@ type GModule
   peakword_elem::Array{Int,1}
   peakword_poly::PolyElem
   
-  function GModule{T}(G::Array{T,1})
+  function FqGModule{T}(G::Array{T,1})
     z=new()
     z.G=G
     z.K=parent(G[1][1,1])
     z.dim=cols(G[1])
+    if z.dim==1
+      z.isirreducible=true
+    end
     return z
   end
   
