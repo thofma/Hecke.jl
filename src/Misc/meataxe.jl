@@ -17,7 +17,6 @@ function cleanvect(M::MatElem, v::MatElem)
   
   @assert rows(v)==1
   w=deepcopy(v)
-#  println("M=",M, "\n","v=",v, "\n")
   if iszero(v)
     return w  
   end
@@ -85,11 +84,12 @@ function closure(C::MatElem, G)
     for j=1:length(G)
       res= cleanvect(C,submatrix(C, i:i, 1:cols(C))*G[j])
       if !iszero(res)
-        C=vcat(C,res)
+        C=vcat(C,res)    
       end
     end  
     i+=1
   end
+  rref!(C)
   return C
 
 end
@@ -277,8 +277,12 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     return false
   end
   
-  
-  e,lincomb,f= _spl_field(M)
+  if isdefined(M, :peakword_poly)
+    lincomb=M.peakword_elem
+    f=M.peakword_poly
+  else
+    e,lincomb,f= _spl_field(M)
+  end
   
   A=MatrixSpace(K,n,n)()
   B=MatrixSpace(K,n,n)()
@@ -294,7 +298,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   
   N=f(B)
   b,kerB=nullspace(transpose(M))
-  kerA=transpose(kerA)
+  kerB=transpose(kerB)
 
   if a!=b
     return false
@@ -415,6 +419,50 @@ function _spl_field(M::FqGModule)
 
   end
   
+end
+
+
+
+function _solve_unique(A::GenMat{fq_nmod}, B::GenMat{fq_nmod})
+  X = MatrixSpace(base_ring(A), cols(B), rows(A))()
+
+  #println("solving\n $A \n = $B * X")
+  r, per, L, U = lufact(B) # P*M1 = L*U
+
+  if oldNemo
+    for i in 1:length(per.d)
+      per.d[i] += 1
+    end
+  end
+
+  @assert B == per*L*U
+  Ap = inv(per)*A
+  Y = parent(A)()
+
+  #println("first solve\n $Ap = $L * Y")
+
+  for i in 1:cols(Y)
+    for j in 1:rows(Y)
+      s = Ap[j, i]
+      for k in 1:j-1
+        s = s - Y[k, i]*L[j, k]
+      end
+      Y[j, i] = s
+    end
+  end
+
+  @assert Ap == L*Y
+
+  #println("solving \n $Y \n = $U * X")
+
+  YY = submatrix(Y, 1:r, 1:cols(Y))
+  UU = submatrix(U, 1:r, 1:r)
+  X = inv(UU)*YY
+
+  @assert Y == U * X
+
+  @assert B*X == A
+  return X
 end
 
 
@@ -599,9 +647,11 @@ function meataxe(M::FqGModule)
         for j=1:cols(kernt)
           Bt=closure(transpose(submatrix(kernt,1:n,j:j)),[transpose(x) for x in G])
           if rows(Bt)!=n
-            subs=nullspace(transpose(Bt))[2]
+            subs=nullspace(Bt)[2]
+            subst=transpose(subs)
+            @assert rows(subst)==rows(closure(subst,G))
             M.isirreducible=false
-            return false, transpose(subs)
+            return false, subst
           end
         end
         if degree(t)==a
@@ -644,6 +694,8 @@ function composition_series(M::FqGModule)
   #
   G=M.G
   K=M.K
+  
+  rref!(C)
   
   esub,equot,pivotindex=_split(C,G)
   sub_list = composition_series(esub)
@@ -709,6 +761,9 @@ function composition_factors(M::FqGModule)
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
   #
+  
+  rref!(C)
+  
   esub,equot,pivotindex=_split(C,G)
   sub_list = composition_factors(esub)
   quot_list = composition_factors(equot)
@@ -745,8 +800,10 @@ function _relations(M::FqGModule, N::FqGModule)
   
   preimage=[i for i=1:M.dim]
   gens=[0 for i=1:M.dim]
-  
-  rels=[]
+  sys=MatrixSpace(K,0,N.dim)()
+
+    
+
   B=MatrixSpace(K,1,M.dim)()
   B[1,1]=K(1)
   X=B
@@ -764,58 +821,64 @@ function _relations(M::FqGModule, N::FqGModule)
         preimage[rows(B)]=i
         gens[rows(B)]=j
       else
-        x=transpose(solve(transpose(B),transpose(v)))
+        x=transpose(_solve_unique(transpose(v),transpose(B)))
+        @assert cols(x)==rows(B)
         A=x[1,1]*eye(B,N.dim)
+        A1=x[1,1]*eye(B,M.dim)
         for t=2:cols(x)
           C=H[gens[t]]
+          C1=G[gens[t]]
           y=preimage[t]
           while y!=1
             C=C*H[gens[y]]
+            C1=C1*G[gens[y]]
             y=preimage[y]
           end
           A+=x[1,t]*C
+          A1+=x[1,t]*C1
         end
-        C=G[j]
         if i==1
-          A=A-C
+          A=A-H[j]
+          A1=A1-G[j]
         else  
-          C=H[gens[i]]
+          C=H[j]*H[gens[i]]
+          C1=G[j]*G[gens[i]]
           y=preimage[i]
           while y!=1
             C=C*H[gens[y]]
+            C1=C1*G[gens[y]]
             y=preimage[y]
           end
           A=A-C
+          A1=A1-C1
         end
-        push!(rels,A)
+        sys=vcat(sys,transpose(A))
       end
     end
     i=i+1
   end
-  return rels
+  return sys
 end
 
-function _multsubirr(M::FqGModule, N::FqGModule)
+function _irrsubs(M::FqGModule, N::FqGModule)
 
   @assert M.isirreducible==true
   
   K=M.K
   rel=_relations(M,N)
-  sys=MatrixSpace(K,0,N.dim)()
-  for i=1:length(rel)
-    sys=vcat(sys,transpose(rel[i]))
-  end
-  a,kern=nullspace(sys)
+  
+  a,kern=nullspace(rel)
+  kern=transpose(kern)
   if a==0
     return []
   end
   if a==1
-    return [closure(transpose(kern), N.G)]
+    return [closure(kern, N.G)]
   end  
-  candidate_comb=append(_enum_el(K,[0], a-1),_enum_el(K,[1],a-1))
+  candidate_comb=append!(_enum_el(K,[K(0)], a-1),_enum_el(K,[K(1)],a-1))
   list=[]
   for x in candidate_comb
-    push!(list, sum([x[i]*transpose(submatrix(kern, 1:N.dim, i:i)) for i=1:a]))
+    push!(list, sum([x[i]*submatrix(kern, i:i, 1:N.dim) for i=1:a]))
   end
   list[1]=closure(list[1], N.G)
   i=2
@@ -848,11 +911,18 @@ doc"""
 
 
 function minimal_submodules(M::FqGModule, index::Int=M.dim)
-
+  
+  if M.isirreducible==true
+    return []
+  end
+  
   K=M.K
   n=M.dim
   list=[]
   lf=composition_factors(M)
+  if length(lf)==1
+    return []
+  end
   if index!=n
     i=1
     while i <= length(lf)
@@ -863,7 +933,10 @@ function minimal_submodules(M::FqGModule, index::Int=M.dim)
       end
     end
   end
-  peakwords(lf)
+  if isempty(lf)
+    return list
+  end
+  Hecke.peakwords(lf)
   G=M.G
   for x in lf
     A=MatrixSpace(K,n,n)()
@@ -871,36 +944,33 @@ function minimal_submodules(M::FqGModule, index::Int=M.dim)
       A+=x[1].peakword_elem[i]*G[i]
     end
     A=x[1].peakword_poly(A)
-    kern=transpose(nullspace(transpose(A))[2])
-    if x[2]==1
-      a=closure(submatrix(kern,1:1, 1:n), G)
-      bool, sub=meataxe(actsub(a,G))
-      if bool==true
-        push!(list,a)
+    a,kern=nullspace(transpose(A))
+    if a==0
+      continue
+    end
+    kern=transpose(kern)
+    S=Hecke.closure(kern, G)
+    if x[1].dim>rows(S)
+      continue
+    end
+    N=Hecke.actsub(S,G)
+    if N.dim == x[1].dim
+      if isisomorphic(x[1],N)
+        push!(list, S)
       end
-    else # This is probably stupid. 
-      if rows(kern)==1
-        a=closure(kern,G)
-        bool, sub=meataxe(actsub(a,G))
-        if bool==true 
-          push!(list,a)
-          continue
-        end
-      end
-      S=closure(kern, G)
-      N=actsub(S,G)
-      H=_multsubirr(lf[1][1],N)
-      for a in H
-        m=MatrixSpace(K,rows(a), M.dim)()
-        for t=1:rows(a)
-          for s=1:cols(a)
-            for j=1:M.dim
-              m[t,j]+=a[t,s]*S[s,j]
-            end
+      continue
+    end 
+    H=Hecke._irrsubs(x[1],N)
+    for a in H
+      m=MatrixSpace(K,rows(a), M.dim)()
+      for t=1:rows(a)
+        for s=1:cols(a)
+          for j=1:M.dim
+            m[t,j]+=a[t,s]*S[s,j]
           end
         end
-        push!(list,m)
       end
+      push!(list,m)
     end
   end
   return list
@@ -910,20 +980,17 @@ end
 function _enum_el(K,v,dim)
   
   if dim == 0
-    return v
+    return [v]
   else 
-    list=[v for i=1:order(K)]
-    i=1
-    a=gen(K)
-    b=a
-    for i=1:order(K) #to be corrected
-      push!(list[i],b)
-      b*=a
-      i+=1
+    list=[]
+    push!(v,K(0))
+    for x in K 
+      v[length(v)]=x
+      push!(list,deepcopy(v))
     end
     list1=[]
     for x in list
-      push!(list1,_enum_el(K,list[i], dim-1))
+      append!(list1,_enum_el(K,x, dim-1))
     end
     return list1
   end
@@ -939,7 +1006,10 @@ doc"""
 
 function maximal_submodules(M::FqGModule, index::Int=M.dim)
 
-  minlist=minimal_submodules(M, index)
+
+  G=[transpose(A) for A in M.G]
+  M_dual=FqGModule(G)
+  minlist=minimal_submodules(M_dual, index)
   maxlist=[]
   for x in minlist
     push!(maxlist,transpose(nullspace(x)[2]))
@@ -1042,3 +1112,4 @@ function submodules(M::FqGModule, index::Int)
   end
     
 end
+    
