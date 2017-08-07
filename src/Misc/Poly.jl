@@ -6,6 +6,16 @@ function PolynomialRing(R::Ring)
   return PolynomialRing(R, "_x")
 end
 
+function PolynomialRing(R::FlintRationalField, a::Symbol; cached::Bool = true)
+  Qx = FmpqPolyRing(R, a, cached)
+  return Qx, gen(Qx)
+end
+
+function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
+  Zx = FmpzPolyRing(a, cached)
+  return Zx, gen(Zx)
+end
+
 function FlintFiniteField(p::Integer)
   return ResidueRing(ZZ, p)
 end
@@ -235,6 +245,26 @@ doc"""
 function trailing_coefficient(f::PolyElem)
   return coeff(f, 0)
 end
+
+doc"""
+    induce_rational_reconstruction(a::fmpz_poly, M::fmpz) -> fmpq_poly
+> Apply {{{rational_reconstruction}}} to each coefficient of $a$, resulting
+> in either a fail (return (false, s.th.)) or (true, g) for some rational
+> polynomial $g$ s.th. $g \equiv a \bmod M$.
+"""
+function induce_rational_reconstruction(a::fmpz_poly, M::fmpz) 
+  b = PolynomialRing(FlintQQ, parent(a).S)[1]()
+  for i=0:degree(a)
+    fl, x,y = rational_reconstruction(coeff(a, i), M)
+    if fl
+      setcoeff!(b, i, x//y)
+    else
+      return false, b
+    end
+  end
+  return true, b
+end
+
 
 constant_coefficient = trailing_coefficient
 

@@ -247,9 +247,9 @@ type SRowSpace{T} <: Ring
     if haskey(SRowSpaceDict, R)
       return SRowSpace[R]::SRowSpace{T}
     else
-      z = new{T}(r, c, R)
+      z = new{T}(R)
       if cached
-        SRowSpace[R, r, c] = z
+        SRowSpace[R] = z
       end
       return z
     end
@@ -1513,7 +1513,7 @@ end
 
 ################################################################################
 #
-#  Finitele generated abelian groups and their elements
+#  Finitely generated abelian groups and their elements
 #
 ################################################################################
 
@@ -1615,3 +1615,35 @@ type InfPlc <: Plc
   end
 end
 
+
+
+################################################################################
+#
+#  G-Modules
+#
+################################################################################
+
+abstract GModule
+
+export FqGModule
+
+type FqGModule <: GModule
+  K::Nemo.FqNmodFiniteField
+  G::Array{Any,1}
+  dim::Int
+  isirreducible::Bool
+  peakword_elem::Array{Int,1}
+  peakword_poly::PolyElem
+  
+  function FqGModule{T}(G::Array{T,1})
+    z=new()
+    z.G=G
+    z.K=parent(G[1][1,1])
+    z.dim=cols(G[1])
+    if z.dim==1
+      z.isirreducible=true
+    end
+    return z
+  end
+  
+end

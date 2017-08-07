@@ -399,6 +399,45 @@ function crt_test_time_all(np::Int, n::Int)
 end  
 
 doc"""
+    induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false) -> fmpz_poly
+> Given integral polynomials $a$ and $b$ as well as coprime integer moduli
+> $p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
+> If signed is set, the symmetric representative is used, the positive one
+> otherwise.
+"""
+function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false)
+  c = parent(a)()
+  pi = invmod(p, q)
+  mul!(pi, pi, p)
+  pq = p*q
+  if signed
+    pq2 = div(pq, 2)
+  else
+    pq2 = fmpz(0)
+  end
+  for i=0:max(degree(a), degree(b))
+    setcoeff!(c, i, Hecke.inner_crt(coeff(a, i), coeff(b, i), pi, pq, pq2))
+  end
+  return c, pq
+end
+
+doc"""
+    induce_crt(L::Array, c::crt_env{fmpz}) -> fmpz_poly
+> Given fmpz_poly polynomials $L[i]$ and a {{{crt_env}}}, apply the
+> {{{crt}}} function to each coefficient retsulting in a polynomial $f = L[i] \bmod p[i]$.
+"""
+function induce_crt(L::Array, c::crt_env{fmpz})
+  Zx, x = FlintZZ["x"]
+  res = Zx()
+  m = maximum(degree(x) for x = L)
+
+  for i=0:m
+    setcoeff!(res, i, crt([lift(coeff(x, i)) for x =L], c))
+  end
+  return res
+end
+
+doc"""
 ***
   _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
@@ -428,7 +467,7 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   ra = pointer_from_objref(a)
    
   if degree(K) == 1
-    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra, c)
+    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra, c)
     ccall((:fmpq_canonicalise, :libflint), Void, (Ptr{nf_elem}, ), &a)
   elseif degree(K) == 2
     ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra+n*sizeof(Int), c)
