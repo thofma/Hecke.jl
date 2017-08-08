@@ -1634,6 +1634,7 @@ type FqGModule <: GModule
   isirreducible::Bool
   peakword_elem::Array{Int,1}
   peakword_poly::PolyElem
+  dim_spl_fld::Int
   
   function FqGModule{T}(G::Array{T,1})
     z=new()
@@ -1642,7 +1643,12 @@ type FqGModule <: GModule
     z.dim=cols(G[1])
     if z.dim==1
       z.isirreducible=true
+      z.dim_spl_fld=1
+    else 
+      z.dim_spl_fld=0
+      z.isirreducible=false
     end
+    
     return z
   end
   
