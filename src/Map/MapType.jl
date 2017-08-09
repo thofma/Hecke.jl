@@ -24,11 +24,32 @@ end
 
 export Map, CoerceMap, ResidueRingPolyMap
 
+type MapCache{D, C, De, Ce}
+  lim::Int
+
+  im::Dict{De, Ce}
+  imStat::Dict{De, Int}
+
+  pr::Dict{Ce, De} 
+  prStat::Dict{Ce, Int}
+
+  function MapCache{D, C}(dom::D, cod::C, lim::Int = 100)
+    r = new()
+    r.lim = lim
+    r.im = Dict{De, Ce}()
+    r.imStat = Dict{De, Int}()
+    r.pr = Dict{Ce, De}()
+    r.prStat = Dict{Ce, Int}()
+    return r
+  end
+end
+
 type MapHeader{D, C}
   domain::D
   codomain::C
   image::Function
   preimage::Function
+  cache::MapCache
 
   function MapHeader()
     z = new{D, C}()
@@ -67,6 +88,7 @@ end
 function MapHeader{D, C}(domain::D, codomain::C, image::Function, preimage::Function)
   return MapHeader{D, C}(domain, codomain, image, preimage)
 end
+
 # this type represents a -> f(g(a))
 type CompositeMap{D, C, R} <: Map{D, C}
   header::MapHeader{D, C}
