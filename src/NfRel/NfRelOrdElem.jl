@@ -66,11 +66,23 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
 
 ################################################################################
 #
+#  Element in number field
+#
+################################################################################
+
+function elem_in_nf(a::NfRelOrdElem)
+  if isdefined(a, :elem_in_nf)
+    return deepcopy(a.elem_in_nf)
+  end
+  error("Not a valid order element")
+end
+################################################################################
+#
 #  Equality
 #
 ################################################################################
 
-==(a::Hecke.NfRelOrdElem, b::Hecke.NfRelOrdElem)  = parent(a) == parent(b) && a.elem_in_nf == b.elem_in_nf
+==(a::Hecke.NfRelOrdElem, b::Hecke.NfRelOrdElem) = parent(a) == parent(b) && a.elem_in_nf == b.elem_in_nf
 
 ################################################################################
 #
@@ -164,6 +176,16 @@ end
 ################################################################################
 
 trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
+
+################################################################################
+#
+#  Conversion
+#
+################################################################################
+
+(K::NfRel)(a::NfRelOrdElem) = elem_in_nf(a)
+
+
 
 # in, elem_in_basis
 
