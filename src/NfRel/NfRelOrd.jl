@@ -10,6 +10,8 @@ type NfRelOrd{T, S} <: Ring
   pseudo_basis#::Vector{Tuple{NfRelOrdElem{T}, S}} # julia does not like
                                                    # forward declarations (yet)
 
+  disc::NfOrdIdl
+
   function NfRelOrd(K::NfRel{T}, M::PMat{T, S})
     z = new()
     z.nf = K
@@ -184,6 +186,39 @@ function show(io::IO, O::NfRelOrd)
     print(io, "\n")
     print(io, pseudo_basis(O)[i])
   end
+end
+
+################################################################################
+#
+#  Discriminant
+#
+################################################################################
+
+function assure_has_discriminant(O::NfRelOrd)
+  if isdefined(O, :disc)
+    return nothing
+  end
+  A = MatrixSpace(base_ring(nf(O)), degree(O), degree(O))()
+  pb = pseudo_basis(O)
+  for i = 1:degree(O)
+    for j = 1:degree(O)
+      A[i, j] = trace(pb[i][1]*pb[j][1])
+    end
+  end
+  d = det(A)
+  a = pb[1][2]^2
+  for i = 2:degree(O)
+    a *= pb[i][2]^2
+  end
+  disc = d*a
+  simplify_exact!(disc)
+  O.disc = num(disc)
+  return nothing
+end
+
+function discriminant(O::NfRelOrd)
+  assure_has_discriminant(O)
+  return deepcopy(O.disc)
 end
 
 ################################################################################
