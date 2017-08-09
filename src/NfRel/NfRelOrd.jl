@@ -27,6 +27,12 @@ type NfRelOrd{T, S} <: Ring
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
+
+  function NfRelOrd(K::NfRel{T})
+    z = new()
+    z.nf = K
+    return z
+  end
 end
 
 ################################################################################
@@ -127,6 +133,23 @@ degree(O::NfRelOrd) = degree(nf(O))
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal{T, S}(O::NfRelOrd{T, S}, dict::ObjectIdDict)
+  z = NfRelOrd{T, S}(O.nf)
+  for x in fieldnames(O)
+    if x != :nf && isdefined(O, x)
+      setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
+    end
+  end
+  z.nf = O.nf
+  return z
+end
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -140,6 +163,18 @@ function Order{T, S}(L::NfRel{T}, M::PMat{T, S})
   # checks
   return NfRelOrd{T, S}(L, M)
 end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(R::NfRelOrd, S::NfRelOrd)
+  nf(R) != nf(S) && return false
+  return basis_pmat(R) == basis_pmat(S)
+end
+
 
 # discriminant
 

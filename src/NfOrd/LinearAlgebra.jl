@@ -249,13 +249,34 @@ type PMat{T, S}
     z.coeffs = c
     return z
   end
+
+  function PMat()
+    z = new()
+    return z
+  end
+end
+
+==(P::PMat, Q::PMat) = P.matrix == Q.matrix && P.coeffs == Q.coeffs
+
+function Base.deepcopy_internal{T, S}(P::PMat{T, S}, dict::ObjectIdDict)
+  z = PMat{T, S}()
+  for x in fieldnames(P)
+    if x != :parent && isdefined(P, x)
+      setfield!(z, x, Base.deepcopy_internal(getfield(P, x), dict))
+    end
+  end
+  if isdefined(P, :parent)
+    z.parent = P.parent
+  end
+  return z
 end
 
 function show(io::IO, P::PMat)
-  print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))\n")
+  print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
   for i in 1:rows(P.matrix)
+    print(io, "\n")
     showcompact(io, P.coeffs[i])
-    print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))\n")
+    print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
   end
 end
 
