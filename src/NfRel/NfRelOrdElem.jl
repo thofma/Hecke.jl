@@ -25,6 +25,22 @@ end
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(x::NfRelOrdElem, dict::ObjectIdDict)
+  z = parent(x)()
+  z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
+  if x.has_coord
+    z.has_coord = true
+    z.elem_in_basis = Base.deepcopy_internal(x.elem_in_basis, dict)
+  end
+  return z
+end
+
+################################################################################
+#
 #  Parent object overloading
 #
 ################################################################################
@@ -47,6 +63,14 @@ end
 parent{T}(x::NfRelOrdElem{NfRelElem{T}}) = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
 
 parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+==(a::Hecke.NfRelOrdElem, b::Hecke.NfRelOrdElem)  = parent(a) == parent(b) && a.elem_in_nf == b.elem_in_nf
 
 ################################################################################
 #
