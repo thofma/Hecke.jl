@@ -248,6 +248,44 @@ end
 
 ################################################################################
 #
+#  Inclusion of number field elements
+#
+################################################################################
+
+function _check_elem_in_order{T, S, V}(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false})
+  assure_has_basis_mat_inv(O)
+  assure_has_basis_pmat(O)
+  t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
+  elem_to_mat_row!(t, 1, a)
+  t = t*O.basis_mat_inv
+  if short == Val{true}
+    for i = 1:degree(O)
+      if !(t[1, i] in O.basis_pmat.coeffs[i])
+        return false
+      end
+    end
+    return true
+  else
+    for i = 1:degree(O)
+      if !(t[1, i] in O.basis_pmat.coeffs[i])
+        return false, Vector{T}()
+      end
+    end
+    v = Vector{T}(degree(O))
+    for i in 1:degree(O)
+      v[i] = deepcopy(t[1, i])
+    end
+    return true, v
+  end
+end
+
+function in{T, S}(a::NfRelElem{T}, O::NfRelOrd{T, S})
+  return _check_elem_in_order(a, O, Val{true})
+end
+
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -278,8 +316,6 @@ function ==(R::NfRelOrd, S::NfRelOrd)
   return basis_pmat(R) == basis_pmat(S)
 end
 
-
-# discriminant
 
 type NfRelOrdIdl{T} end
 

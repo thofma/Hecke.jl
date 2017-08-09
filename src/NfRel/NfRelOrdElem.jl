@@ -45,8 +45,10 @@ end
 #
 ################################################################################
 
-function (O::NfRelOrd){T}(a::NfRelElem{T})
-  # checks
+function (O::NfRelOrd){T}(a::NfRelElem{T}, check::Bool = true)
+  if check
+    !_check_elem_in_order(a, O, Val{true}) && error("Number field element not in the order.")
+  end
   return NfRelOrdElem{T}(O, deepcopy(a))
 end
 
@@ -187,5 +189,5 @@ trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
 
 
 
-# in, elem_in_basis
+# elem_in_basis
 
