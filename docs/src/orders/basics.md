@@ -19,6 +19,13 @@ K, a = NumberField(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
 
+## Basic properties
+
+```@docs
+signature(::NfOrd)
+nf(::NfOrd)
+```
+
 ```@docs
 maximal_order(::AnticNumberField)
 maximal_order(::AnticNumberField, ::Array{fmpz, 1})
@@ -31,29 +38,6 @@ Qx, x = PolynomialRing(QQ, "x");
 K, a = NumberField(x^2 - 2, "a");
 R = EquationOrder(K)
 T = maximal_order(R)
-```
-
-## Basic properties
-
-```@docs
-signature(::NfOrd)
-degree(::NfOrd)
-norm_change_const(::NfOrd)
-isequationorder(::NfOrd)
-nf(::NfOrd)
-basis(::NfOrd)
-basis_mat(::NfOrd)
-basis_mat_inv(::NfOrd)
-discriminant(::NfOrd)
-gen_index(::NfOrd)
-index(::NfOrd)
-isindex_divisor(::NfOrd, p::Int)
-minkowski_mat(::NfOrd)
-in(::nf_elem, ::NfOrd)
-den(::nf_elem, ::NfOrd)
-+(::NfOrd, ::NfOrd)
-poverorder(::NfOrd, ::fmpz)
-pmaximal_overorder(::NfOrd, ::fmpz)
 ```
 
 ## Elements

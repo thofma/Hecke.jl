@@ -1,16 +1,16 @@
 # I don't like that we have to drag S around
 # Still hoping for julia/#18466
 
-type NfOrdRel{T, S} <: Ring
+type NfRelOrd{T, S} <: Ring
   nf::NfRel{T}
-  basis_nf::T
+  basis_nf::Vector{NfRel{T}}
   basis_mat::GenMat{T}
   basis_mat_inv::GenMat{T}
   basis_pmat::PMat{T, S}
   pseudo_basis#::Vector{Tuple{NfRelOrdElem{T}, S}} # julia does not like
                                                    # forward declarations (yet)
 
-  function NfOrdRel(K::NfRel{T}, M::PMat{T, S})
+  function NfRelOrd(K::NfRel{T}, M::PMat{T, S})
     z = new()
     z.nf = K
     z.basis_pmat = M
@@ -19,7 +19,7 @@ type NfOrdRel{T, S} <: Ring
     return z
   end
   
-  function NfOrdRel(K::NfRel{T}, M::GenMat{T})
+  function NfRelOrd(K::NfRel{T}, M::GenMat{T})
     z = new()
     z.nf = K
     z.basis_mat = M
@@ -27,32 +27,157 @@ type NfOrdRel{T, S} <: Ring
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
-end
 
-# show, discriminant, nf, basis_mat, basis_mat_inv, basis_pmat, pseudo_basis
-
-type NfRelOrdElem{T} <: RingElem
-  parent#::NfOrdRel{T, S} # I don't want to drag the S around
-  elem_in_nf::NfRelElem{T}
-  elem_in_basis::Vector{T}
-  has_coord::Bool
-
-  function NfRelOrdElem(O::NfOrdRel{T})
+  function NfRelOrd(K::NfRel{T})
     z = new()
-    z.parent = O
-    z.elem_in_nf = zero(nf(O))
+    z.nf = K
     return z
   end
 end
 
+################################################################################
+#
+#  Basic field access
+#
+################################################################################
+
+nf(O::NfRelOrd) = O.nf
+
+################################################################################
+#
+#  "Assure" functions for fields
+#
+################################################################################
+
+function assure_has_pseudo_basis(O::NfRelOrd)
+  if isdefined(O, :pseudo_basis)
+    return nothing
+  end
+  pseudo_basis = Vector{Tuple{NfRelOrdElem, NfOrdFracIdl}}()
+  for i = 1:degree(O)
+    a = elem_from_mat_row(nf(O), basis_mat(O), i)
+    push!(pseudo_basis, (O(a), basis_pmat(O).coeffs[i]))
+  end
+  O.pseudo_basis = pseudo_basis
+  return nothing
+end
+
+################################################################################
+#
+#  Pseudo basis
+#
+################################################################################
+
+function pseudo_basis{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  assure_has_pseudo_basis(O)
+  if copy == Val{true}
+    return deepcopy(O.pseudo_basis)
+  else
+    return O.pseudo_basis
+  end
+end
+
+################################################################################
+#
+#  (Inverse) basis matrix
+#
+################################################################################
+
+function basis_pmat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  if copy == Val{true}
+    return deepcopy(O.basis_pmat)
+  else
+    return O.basis_pmat
+  end
+end
+
+function basis_mat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  if copy == Val{true}
+    return deepcopy(O.basis_mat)
+  else
+    return O.basis_mat
+  end
+end
+
+function basis_mat_inv{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  if copy == Val{true}
+    return deepcopy(O.basis_mat_inv)
+  else
+    return O.basis_mat_inv
+  end
+end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, O::NfRelOrd)
+  print(io, "Relative order of ")
+  println(io, nf(O))
+  print(io, "with pseudo-basis ")
+  for i = 1:degree(O)
+    print(io, "\n")
+    print(io, pseudo_basis(O)[i])
+  end
+end
+
+################################################################################
+#
+#  Degree
+#
+################################################################################
+
+degree(O::NfRelOrd) = degree(nf(O))
+
+################################################################################
+#
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal{T, S}(O::NfRelOrd{T, S}, dict::ObjectIdDict)
+  z = NfRelOrd{T, S}(O.nf)
+  for x in fieldnames(O)
+    if x != :nf && isdefined(O, x)
+      setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
+    end
+  end
+  z.nf = O.nf
+  return z
+end
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
+
+function Order{T}(L::NfRel{T}, M::GenMat{T})
+  # checks
+  return NfRelOrd{T, NfOrdFracIdl}(L, M)
+end
+
+function Order{T, S}(L::NfRel{T}, M::PMat{T, S})
+  # checks
+  return NfRelOrd{T, S}(L, M)
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(R::NfRelOrd, S::NfRelOrd)
+  nf(R) != nf(S) && return false
+  return basis_pmat(R) == basis_pmat(S)
+end
+
+
+# discriminant
+
 type NfRelOrdIdl{T} end
 
 type NfRelOrdFracIdl{T} end
-
-
-# show, one, zero, isone, iszero, +, -, *, in, elem_in_basis
-
-# help inference
-parent{T}(x::NfRelOrdElem{NfRelElem{T}}) = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
-
-parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
