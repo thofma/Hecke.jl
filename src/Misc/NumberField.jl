@@ -1,6 +1,6 @@
 import Nemo.sub!, Base.gcd
-export induce_rational_reconstruction, induce_crt, root, roots, 
-       number_field, ismonic, pure_extension, ispure_extension, 
+export induce_rational_reconstruction, induce_crt, root, roots,
+       number_field, ismonic, pure_extension, ispure_extension,
        iskummer_extension, cyclotomic_field, wildanger_field
 
 if Int==Int32
@@ -137,8 +137,8 @@ dot(x::nf_elem, y::fmpz) = x*y
 ################################################################################
 doc"""
 ***
-  rand(b::Array{nf_elem,1}, r::UnitRange)
- 
+    rand(b::Array{nf_elem,1}, r::UnitRange)
+
 > A random linear combination of elements in b with coefficients in r
 """
 function rand(b::Array{nf_elem,1}, r::UnitRange)
@@ -200,7 +200,7 @@ end
 ################################################################################
 
 
-function (a::FmpzPolyRing)(b::fmpq_poly) 
+function (a::FmpzPolyRing)(b::fmpq_poly)
   (den(b) != 1) && error("denominator has to be 1")
   z = a()
   ccall((:fmpq_poly_get_numerator, :libflint), Void,
@@ -246,7 +246,7 @@ function representation_mat(a::nf_elem)
   end
   elem_to_mat_row!(M, n, dummy, b)
   return M
-end 
+end
 
 function basis_mat(A::Array{nf_elem, 1})
   @assert length(A) > 0
@@ -272,9 +272,9 @@ function basis_mat(A::Array{nf_elem, 1})
 end
 
 function set_den!(a::nf_elem, d::fmpz)
-  ccall((:nf_elem_set_den, :libflint), 
-        Void, 
-       (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.AnticNumberField}), 
+  ccall((:nf_elem_set_den, :libflint),
+        Void,
+       (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.AnticNumberField}),
        &a, &d, &parent(a))
 end
 
@@ -315,8 +315,8 @@ function inner_crt(a::fmpz, b::fmpz, up::fmpz, pq::fmpz, pq2::fmpz = fmpz(0))
   # then u = modinv(p, q)
   # vq = 1-up. i is up here
   #crt: x = a (p), x = b(q) => x = avq + bup = a(1-up) + bup
-  #                              = (b-a)up + a            
-  if !iszero(pq2) 
+  #                              = (b-a)up + a
+  if !iszero(pq2)
     r = mod(((b-a)*up + a), pq)
     if r > pq2
       return r-pq
@@ -390,6 +390,17 @@ doc"""
 > A modular $\gcd$
 """
 function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+  # modular kronnecker assumes a, b !=n 0
+  if iszero(a)
+    if iszero(b)
+      return b
+    else
+      return  inv(lead(b))*b
+    end
+  elseif iszero(b)
+    return inv(lead(a))*a
+  end
+
   g= gcd_modular_kronnecker(a, b)
   return inv(lead(g))*g  # we want it monic...
 end
@@ -448,7 +459,7 @@ end
 
 import Base.gcdx
 
-#similar to gcd_modular, but avoids rational reconstruction by controlling 
+#similar to gcd_modular, but avoids rational reconstruction by controlling
 #a/the denominator
 function gcd_modular_kronnecker(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   # rat recon maybe replace by known den if poly integral (Kronnecker)
@@ -573,7 +584,7 @@ function gcdx_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
     end
   end
 end
- 
+
 
 function ismonic(a::GenPoly)
   return leading_coefficient(a)==1
@@ -594,7 +605,7 @@ function eq_mod(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}, d::fmpz)
   return e
 end
 
-#similar to gcd_modular, but avoids rational reconstruction by controlling 
+#similar to gcd_modular, but avoids rational reconstruction by controlling
 #a/the denominator using resultant. Faster than above, but still slow.
 #mainly due to the generic resultant. Maybe use only deg-1-primes??
 #fact: g= gcd(a, b) and 1= gcd(a/g, b/g) = u*(a/g) + v*(b/g)
@@ -627,7 +638,7 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
   fa = zero(parent(a))
   fb = zero(parent(b))
   last_g = (parent(a)(0), parent(a)(0), parent(a)(0), parent(a)(0))
- 
+
   while true
     p = next_prime(p)
     me = modular_init(K, p)
@@ -676,7 +687,7 @@ function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
     if (g, r, fa, fb) == last_g
       if g*r == fa*a + fb*b
         return g*r, fa, fb ## or normalise to make gcd monic??
-      else 
+      else
         last_g = (g, r, fa, fb)
       end
     else
@@ -717,7 +728,7 @@ function norm(f::PolyElem{nf_elem})
   Qy = parent(K.pol)
   y = gen(Qy)
   Qyx, x = PolynomialRing(Qy, "x")
- 
+
   Qx = PolynomialRing(QQ, "x")[1]
   Qxy = PolynomialRing(Qx, "y")[1]
 
@@ -775,10 +786,10 @@ function factor(f::PolyElem{nf_elem})
     end
 
     k = k + 1
- 
+
     g = compose(f, gen(Kx) - k*gen(K))
   end
-  
+
   fac = factor(N)
 
   res = Dict{PolyElem{nf_elem}, Int64}()
@@ -815,7 +826,7 @@ function factor(f::PolyElem{nf_elem})
         r.unit = one(Kx) * lead(f_orig)//prod((lead(p) for (p, e) in r))
         return r
       end
-    end  
+    end
   end
   r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
   return r
@@ -829,14 +840,14 @@ end
 
 function gen!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_gen, :libflint), Void, 
+   ccall((:nf_elem_gen, :libflint), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
 
 function one!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_one, :libflint), Void, 
+   ccall((:nf_elem_one, :libflint), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
@@ -875,7 +886,7 @@ end
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
    ccall((:nf_elem_sub, :libflint), Void,
          (Ptr{nf_elem}, Ptr{nf_elem}, Ptr{nf_elem}, Ptr{AnticNumberField}),
- 
+
          &a, &b, &c, &a.parent)
 end
 
@@ -932,7 +943,7 @@ function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = f
   O = maximal_order(base_ring(f))
   if do_lll
     O = lll(O)
-  end  
+  end
 
   d = degree(f)
   deno = den(coeff(f, d), O)
@@ -999,7 +1010,7 @@ function root(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
   Kx, x = PolynomialRing(parent(a), "x")
 
-  if n==1 
+  if n==1
     return a
   end
 
@@ -1129,7 +1140,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
     end
     conjugates[r + i + s] = Nemo.conj(conjugates[r + i])
   end
- 
+
   return conjugates
 end
 
@@ -1235,10 +1246,10 @@ end
 doc"""
 ***
     istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
-    
+
 > Returns whether $x$ is a torsion unit, that is, whether there exists $n$ such
 > that $x^n = 1$.
-> 
+>
 > If `checkisunit` is `true`, it is first checked whether $x$ is a unit of the
 > maximal order of the number field $x$ is lying in.
 """
@@ -1358,7 +1369,7 @@ function write(io::IO, A::Array{nf_elem, 1})
       print(io, "\n")
     end
   end
-end  
+end
 
 doc"""
 ***
@@ -1416,7 +1427,7 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
       i = i + 1
     end
   end
-  
+
   return A
 end
 
@@ -1489,7 +1500,7 @@ function nf_elem_to_nmod_poly_no_den!(r::nmod_poly, a::nf_elem)
     ra = pointer_from_objref(a)
     s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra, p)
     ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 0, s)
-  elseif d == 2  
+  elseif d == 2
     ra = pointer_from_objref(a)
     s = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra, p)
     ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 0, s)
@@ -1497,7 +1508,7 @@ function nf_elem_to_nmod_poly_no_den!(r::nmod_poly, a::nf_elem)
     ccall((:nmod_poly_set_coeff_ui, :libflint), Void, (Ptr{nmod_poly}, Int, UInt), &r, 1, s)
   else
     ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.elem_coeffs, a.elem_length)
-# this works without libhecke:    
+# this works without libhecke:
 #    ccall((:nmod_poly_fit_length, :libflint), Void, (Ptr{nmod_poly}, Int), &r, a.elem_length)
 #    ccall((:_fmpz_vec_get_nmod_vec, :libflint), Void, (Ptr{Void}, Ptr{Void}, Int, nmod_t), r._coeffs, a.elem_coeffs, a.elem_length, nmod_t(p, 0, 0))
 #    r._length = a.elem_length
@@ -1511,10 +1522,10 @@ function nf_elem_to_nmod_poly_den!(r::nmod_poly, a::nf_elem)
   if d == 1
     ra = pointer_from_objref(a)
     den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + sizeof(Int), p)
-  elseif d == 2  
+  elseif d == 2
     ra = pointer_from_objref(a)
     den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Void}, UInt), ra + 3*sizeof(Int), p)
-  else  
+  else
     den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.elem_den, p)
   end
   den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
@@ -1542,7 +1553,7 @@ function inv_lift_recon(a::nf_elem)  # not competitive....reconstruction is too 
   ap = Hecke.modular_proj(a, me)
   bp = Hecke.modular_lift([inv(x) for x = ap], me)
   pp = fmpz(p)
-  
+
   fl, b = Hecke.rational_reconstruction(bp, pp)
   t = K()
   while !fl
@@ -1670,7 +1681,7 @@ type NormCtx
     lp = fmpz[]
 
     while nb > 0
-      local m  
+      local m
       while true
         p = next_prime(p)
         m = modular_init(K, p)
@@ -1709,7 +1720,7 @@ function norm(a::nf_elem, N::NormCtx, div::fmpz = fmpz(1))
   for m = N.me
     np = UInt(invmod(div, m.p))
     ap = modular_proj(a, m)
-    for j=1:length(ap) 
+    for j=1:length(ap)
       # problem: norm costs memory (in fmpz formally, then new fq_nmod is created)
       np = mulmod(np, coeff(norm(ap[j]), 0), m.rp[1].mod_n, m.rp[1].mod_ninv)
     end
@@ -1721,7 +1732,7 @@ end
 
 
 function israt(a::nf_elem)
-  if degree(parent(a))==1 
+  if degree(parent(a))==1
     return true
   end
   @assert degree(parent(a))>2 ## fails for 2 due to efficiency
@@ -1731,7 +1742,7 @@ end
 doc"""
     istotally_real(K::AnticNumberField) -> Bool
 
-> Returns true iff $K$ is totally real, ie. if all roots of the 
+> Returns true iff $K$ is totally real, ie. if all roots of the
 > defining polynomial are real.
 """
 function istotally_real(K::AnticNumberField)
@@ -1778,7 +1789,7 @@ end
 doc"""
 ***
     signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
-> For a non-zero elements $a$ in factored form, 
+> For a non-zero elements $a$ in factored form,
 > return the signs of all real embeddings.
 """
 function _signs(a::FacElem{nf_elem, AnticNumberField})
@@ -1818,7 +1829,7 @@ function absolute_field(K::GenResRing{GenPoly{nf_elem}})
     end
 
     l += 1
- 
+
     g = compose(f, gen(kx) - l*gen(k))
   end
 
@@ -1844,5 +1855,5 @@ function absolute_field(K::GenResRing{GenPoly{nf_elem}})
   #be -> gen(K) in Ka
   #ga -> gen(Ka) in K
   return Ka, al, be, ga
-end 
+end
 

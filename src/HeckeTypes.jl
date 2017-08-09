@@ -247,9 +247,9 @@ type SRowSpace{T} <: Ring
     if haskey(SRowSpaceDict, R)
       return SRowSpace[R]::SRowSpace{T}
     else
-      z = new{T}(r, c, R)
+      z = new{T}(R)
       if cached
-        SRowSpace[R, r, c] = z
+        SRowSpace[R] = z
       end
       return z
     end
@@ -1623,24 +1623,32 @@ end
 #
 ################################################################################
 
+abstract GModule
 
-export GModule
+export FqGModule
 
-
-
-type GModule
+type FqGModule <: GModule
   K::Nemo.FqNmodFiniteField
   G::Array{Any,1}
   dim::Int
   isirreducible::Bool
   peakword_elem::Array{Int,1}
   peakword_poly::PolyElem
+  dim_spl_fld::Int
   
-  function GModule{T}(G::Array{T,1})
+  function FqGModule{T}(G::Array{T,1})
     z=new()
     z.G=G
     z.K=parent(G[1][1,1])
     z.dim=cols(G[1])
+    if z.dim==1
+      z.isirreducible=true
+      z.dim_spl_fld=1
+    else 
+      z.dim_spl_fld=0
+      z.isirreducible=false
+    end
+    
     return z
   end
   

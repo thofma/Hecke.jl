@@ -919,31 +919,49 @@ function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
   #according to Wikipedia, 
   # Fujiwara bound is near optimal...
 
-  for j in 1:deg-1
-    co = coeff(f, j)
-    co_conj = conjugates_arb(co, -1)
-    for i in 1:r1+r2
-      bound_root[i] = max(bound_root[i], root(abs(co_conj[i]), deg-j))
-    end
-  end
-  co = coeff(f, 0)
-  co_conj = conjugates_arb(co, -1)
-  for i in 1:r1+r2
-    bound_root[i] = max(bound_root[i], root(abs(co_conj[i])//2, deg))
-  end
-
-  bd = R(0)
-  for i in 1:r1
-    bd += bound_root[i]^2
-  end
-  for i=1:r2
-    bd += 2*bound_root[i+r1]^2
-  end
+#  for j in 1:deg-1
+#    co = coeff(f, j)
+#    co_conj = conjugates_arb(co, -1)
+#    for i in 1:r1+r2
+#      bound_root[i] = max(bound_root[i], root(abs(co_conj[i]), deg-j))
+#    end
+#  end
+#  co = coeff(f, 0)
+#  co_conj = conjugates_arb(co, -1)
+#  for i in 1:r1+r2
+#    bound_root[i] = max(bound_root[i], root(abs(co_conj[i])//2, deg))
+#  end
+#
+#  bd = R(0)
+#  for i in 1:r1
+#    bd += bound_root[i]^2
+#  end
+#  for i=1:r2
+#    bd += 2*bound_root[i+r1]^2
+#  end
   #bd should be a bound on the T2 of any root (|x|_mink)
   #thus for coeffs we need to multiply by c_2
 
+#  boundt2 = max(bd, R(1))
 
-  boundt2 = max(bd, R(1))
+  cc2 = (exp(3*log(R(3))//2) * R(3)^deg)//(const_pi(R) * R(deg))
+
+  for j in 0:deg-1
+    co = coeff(f, j)
+    co_conj = conjugates_arb(co, -1)
+    for i in 1:r1+r2
+      bound_root[i] += inv(binom(R(deg), UInt(j))) * abs(co_conj[i])^2
+    end
+  end
+
+  for i in 1:r1
+    bound_root[i] = bound_root[i] * cc2
+  end
+
+  for i in r1+1:r2
+    bound_root[i] = 2 * bound_root[i] * cc2
+  end
+  boundt2 = max(sum(bound_root), R(1))
   
   #println("t2 bound: $boundt2")
 
@@ -953,13 +971,7 @@ function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
 
   #println("bound for k: $boundk")
 
-  t = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &t)
-
-  ss = fmpz()
-  ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}, Clong), &t, &boundk, 64)
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &ss, &t, 1) # 1 is round up
-  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &t)
+  ss = abs_upper_bound(boundk, fmpz)
 
   roots = NfOrdElem[]
 

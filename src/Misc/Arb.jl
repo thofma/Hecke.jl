@@ -1,3 +1,5 @@
+export abs_upper_bound
+
 function _arb_get_fmpq(x::arb)
   mid = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &x)
   e = fmpz()
@@ -43,3 +45,62 @@ function log!(z::arb, x::arb)
   ccall((:arb_log, :libarb), Void, (Ptr{arb}, Ptr{arb}, Int), &z, &x, parent(x).prec)
   return nothing
 end
+
+################################################################################
+#
+#  Get upper bounds for absolute value
+#
+################################################################################
+
+# 1 = ARF_RND_UP = round away from zero
+# 3 = ARF_RND_CEIL = round towards +infinity
+
+doc"""
+***
+    abs_upper_bound(x::arb, ::Type{fmpz}) -> fmpz
+
+Returns a positive integer $b$ of type `fmpz` such that $\lvert x \rvert \leq
+b$. It is not guarenteed that $b$ is as tight as possible.
+"""
+function abs_upper_bound(x::arb, ::Type{fmpz})
+  tarf = arf_struct(0, 0, 0, 0)
+
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tarf)
+  ccall((:arb_get_abs_ubound_arf, :libarb), Void,
+        (Ptr{arf_struct}, Ptr{arb}, Int), &tarf, &x, 64)
+
+  bound = fmpz()
+
+  # round towards +oo
+  ccall((:arf_get_fmpz, :libarb), Void,
+        (Ptr{fmpz}, Ptr{arf_struct}, Cint), &bound, &tarf, 3)
+
+  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tarf)
+
+  return bound
+end
+
+doc"""
+***
+    abs_upper_bound(x::arb, ::Type{Float64}) -> Float64
+
+Returns a positive double $b$ such that $\lvert x \rvert \leq b$. It is not
+guarenteed that $b$ is as tight as possible.
+"""
+function abs_upper_bound(x::arb, ::Type{Float64})
+  tarf = arf_struct(0, 0, 0, 0)
+
+  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tarf)
+  ccall((:arb_get_abs_ubound_arf, :libarb), Void,
+        (Ptr{arf_struct}, Ptr{arb}, Int),
+          &tarf, &x, 64)
+
+  # round towards +oo
+  bound = ccall((:arf_get_d, :libarb), Cdouble,
+                (Ptr{arf_struct}, Cint), &tarf, 3)
+
+  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tarf)
+
+  return bound
+end
+
