@@ -283,7 +283,7 @@ doc"""
 ***
     one(O::NfOrd) -> NfOrdElem
 
-> Returns the zero element of $\mathcal O$.
+> Returns the one element of $\mathcal O$.
 """
 one(O::NfOrd) = O(fmpz(1))
 
@@ -321,7 +321,7 @@ doc"""
 ***
     iszero(a::NfOrd) -> Bool
 
-> Tests if $a$ is one.
+> Tests if $a$ is zero.
 """
 iszero(a::NfOrdElem) = iszero(a.elem_in_nf)
 
