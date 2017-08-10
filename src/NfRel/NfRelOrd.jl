@@ -10,7 +10,7 @@ type NfRelOrd{T, S} <: Ring
   pseudo_basis#::Vector{Tuple{NfRelOrdElem{T}, S}} # julia does not like
                                                    # forward declarations (yet)
 
-  disc::NfOrdIdl
+  disc #::NfOrdIdl or ::NfRelOrdIdl{T}
 
   function NfRelOrd(K::NfRel{T}, M::PMat{T, S})
     z = new()
@@ -40,6 +40,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      nf(O::NfRelOrd) -> NfRel
+
+> Returns the ambient number field of $\mathcal O$.
+"""
 nf(O::NfRelOrd) = O.nf
 
 ################################################################################
@@ -121,6 +127,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NfRelOrdElem{T}, S}}
+
+> Returns the pseudo-basis of $\mathcal O$.
+"""
 function pseudo_basis{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   assure_has_pseudo_basis(O)
   if copy == Val{true}
@@ -130,6 +142,13 @@ function pseudo_basis{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   end
 end
 
+doc"""
+***
+      basis_pmat(O::NfRelOrd) -> PMat
+
+> Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
+> of the ambient number field.
+"""
 function basis_pmat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis_pmat(O)
   if copy == Val{true}
@@ -145,6 +164,13 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      basis_nf(O::NfRelOrd) -> Array{NfRelElem, 1}
+
+> Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
+> ambient number field.
+"""
 function basis_nf{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis_nf(O)
   if copy == Val{true}
@@ -154,6 +180,13 @@ function basis_nf{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   end
 end
 
+doc"""
+***
+      basis_mat(O::NfRelOrd{T, S}) -> GenMat{T}
+
+> Returns the basis matrix of $\mathcal O$ with respect to the power basis
+> of the ambient number field.
+"""
 function basis_mat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis_mat(O)
   if copy == Val{true}
@@ -163,6 +196,12 @@ function basis_mat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   end
 end
 
+doc"""
+***
+      basis_mat_inv(O::NfRelOrd{T, S}) -> GenMat{T}
+
+> Returns the inverse of the basis matrix of $\mathcal O$.
+"""
 function basis_mat_inv{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
   assure_has_basis_mat_inv(O)
   if copy == Val{true}
@@ -182,9 +221,10 @@ function show(io::IO, O::NfRelOrd)
   print(io, "Relative order of ")
   println(io, nf(O))
   print(io, "with pseudo-basis ")
+  pb = pseudo_basis(O)
   for i = 1:degree(O)
     print(io, "\n")
-    print(io, pseudo_basis(O)[i])
+    print(io, pb[i])
   end
 end
 
@@ -227,6 +267,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      degree(O::NfRelOrd) -> Int
+
+> Returns the degree of $\mathcal O$.
+"""
 degree(O::NfRelOrd) = degree(nf(O))
 
 ################################################################################
@@ -235,6 +281,12 @@ degree(O::NfRelOrd) = degree(nf(O))
 #
 ################################################################################
 
+doc"""
+***
+      deepcopy(O::NfRelOrd) -> NfRelOrd
+
+> Makes a copy of $\mathcal O$.
+"""
 function Base.deepcopy_internal{T, S}(O::NfRelOrd{T, S}, dict::ObjectIdDict)
   z = NfRelOrd{T, S}(O.nf)
   for x in fieldnames(O)
@@ -279,10 +331,15 @@ function _check_elem_in_order{T, S, V}(a::NfRelElem{T}, O::NfRelOrd{T, S}, short
   end
 end
 
+doc"""
+***
+      in(a::NfRelElem, O::NfRelOrd) -> Bool
+
+> Checks whether $a$ lies in $\mathcal O$.
+"""
 function in{T, S}(a::NfRelElem{T}, O::NfRelOrd{T, S})
   return _check_elem_in_order(a, O, Val{true})
 end
-
 
 ################################################################################
 #
@@ -290,6 +347,13 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      Order(K::NfRel{T}, M::GenMat{T}) -> NfRelOrd
+
+> Returns the order which has basis matrix $M$ with respect to the power basis
+> of $K$.
+"""
 function Order(L::NfRel{nf_elem}, M::GenMat{nf_elem})
   # checks
   return NfRelOrd{nf_elem, NfOrdFracIdl}(L, M)
@@ -300,6 +364,13 @@ function Order{T}(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}})
   return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, M)
 end
 
+doc"""
+***
+      Order(K::NfRel, M::PMat) -> NfRelOrd
+
+> Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
+> of $K$.
+"""
 function Order{T, S}(L::NfRel{T}, M::PMat{T, S})
   # checks
   return NfRelOrd{T, S}(L, M)

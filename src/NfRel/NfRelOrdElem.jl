@@ -21,6 +21,15 @@ type NfRelOrdElem{T} <: RingElem
     z.has_coord = false
     return z
   end
+
+  function NfRelOrdElem(O::NfRelOrd{T}, a::NfRelElem{T}, arr::Vector{T})
+    z = new()
+    z.parent = O
+    z.elem_in_nf = a
+    z.elem_in_basis = arr
+    z.has_coord = true
+    return z
+  end
 end
 
 ################################################################################
@@ -45,16 +54,47 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      (O::NfRelOrd)(a::NfRelElem, check::Bool = true) -> NfRelOrdElem
+
+> Given an element $a$ of the ambient number field of $\mathcal O$, this
+> function coerces the element into $\mathcal O$. If `check` is `true`
+> it will be checked that $a$ is contained in $\mathcal O$.
+"""
 function (O::NfRelOrd){T}(a::NfRelElem{T}, check::Bool = true)
   if check
-    !_check_elem_in_order(a, O, Val{true}) && error("Number field element not in the order.")
+    x, y = _check_elem_in_order(a, O)
+    !x && error("Number field element not in the order.")
+    return NfRelOrdElem{T}(O, deepcopy(a), y)
+  else
+    return NfRelOrdElem{T}(O, deepcopy(a))
   end
-  return NfRelOrdElem{T}(O, deepcopy(a))
+end
+
+doc"""
+***
+      (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
+
+> Given an element $a$ of some order in the ambient number field of
+> $\mathcal O$, this function coerces the element into $\mathcal O$.
+> If `check` is `true` it will be checked that $a$ is contained in
+> $\mathcal O$.
+"""
+function (O::NfRelOrd){T}(a::NfRelOrdElem{T}, check::Bool = true)
+  b = nf(parent(a))(a)
+  return O(b, check)
 end
 
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 
-(O::NfRelOrd)() = O(nf(O)(0))
+doc"""
+***
+      (O::NfRelOrd)() -> NfRelOrdElem
+
+> Constructs a new element of $\mathcal O$ which is set to $0$.
+"""
+(O::NfRelOrd{T, S}){T, S}() = NfRelOrdElem{T}(O)
 
 ################################################################################
 #
@@ -62,6 +102,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      parent(a::NfRelOrdElem) -> NfRelOrd
+
+> Returns the order of which $a$ is an element.
+"""
 parent{T}(x::NfRelOrdElem{NfRelElem{T}}) = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
 
 parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
@@ -72,12 +118,59 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
 #
 ################################################################################
 
+doc"""
+***
+      elem_in_nf(a::NfRelOrdElem) -> NfRelElem
+
+> Returns the element $a$ considered as an element of the ambient number field.
+"""
+
 function elem_in_nf(a::NfRelOrdElem)
   if isdefined(a, :elem_in_nf)
     return deepcopy(a.elem_in_nf)
   end
-  error("Not a valid order element")
+  error("Not a valid order element.")
 end
+
+################################################################################
+#
+#  "Assure" functions for fields
+#
+################################################################################
+
+function assure_has_coord(a::NfRelOrdElem)
+  if a.has_coord
+    return nothing
+  else
+    x, y = _check_elem_in_order(a.elem_in_nf, parent(a))
+    !x && error("Not a valid order element.")
+    a.elem_in_basis = y
+    a.has_coord = true
+    return nothing
+  end
+end
+
+################################################################################
+#
+#  Coordinates
+#
+################################################################################
+
+doc"""
+***
+      elem_in_basis(a::NfRelOrdElem{T}) -> Vector{T}
+
+> Returns the coefficient vector of $a$.
+"""
+function elem_in_basis{T}(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true})
+  assure_has_coord(a)
+  if copy == Val{true}
+    return deepcopy(a.elem_in_basis)
+  else
+    return a.elem_in_basis
+  end
+end
+
 ################################################################################
 #
 #  Equality
@@ -92,13 +185,38 @@ end
 #
 ################################################################################
 
-one(O::NfRelOrd) = O(1)
+doc"""
+***
+      zero(O::NfRelOrd) -> NfRelOrdElem
 
+> Returns the zero element of $\mathcal O$.
+"""
 zero(O::NfRelOrd) = O(0)
 
-one(a::NfRelOrdElem) = parent(a)(1)
+doc"""
+***
+      one(O::NfRelOrd) -> NfRelOrdElem
 
+> Returns the one element of $\mathcal O$.
+"""
+one(O::NfRelOrd) = O(1)
+
+doc"""
+***
+      zero(a::NfRelOrdElem) -> NfRelOrdElem
+
+> Returns the zero element of the parent of $a$.
+"""
 zero(a::NfRelOrdElem) = parent(a)(0)
+
+doc"""
+***
+      one(a::NfRelOrdElem) -> NfRelOrdElem
+
+> Returns the one element of the parent of $a$.
+"""
+
+one(a::NfRelOrdElem) = parent(a)(1)
 
 ################################################################################
 #
@@ -106,7 +224,21 @@ zero(a::NfRelOrdElem) = parent(a)(0)
 #
 ################################################################################
 
+doc"""
+***
+      isone(a::NfRelOrd) -> Bool
+
+> Tests if $a$ is one.
+"""
+
 isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
+
+doc"""
+***
+      iszero(a::NfRelOrd) -> Bool
+
+> Tests if $a$ is zero.
+"""
 
 iszero(a::NfRelOrdElem) = iszero(a.elem_in_nf)
 
@@ -126,6 +258,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      -(a::NfRelOrdElem) -> NfRelOrdElem
+
+> Returns the additive inverse of $a$.
+"""
 function -(a::NfRelOrdElem)
   b = parent(a)()
   b.elem_in_nf = - a.elem_in_nf
@@ -142,6 +280,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      *(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
+
+> Returns $a \cdot b$.
+"""
 function *(a::NfRelOrdElem, b::NfRelOrdElem)
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)()
@@ -149,6 +293,12 @@ function *(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
+doc"""
+***
+      +(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
+
+> Returns $a + b$.
+"""
 function +(a::NfRelOrdElem, b::NfRelOrdElem)
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)()
@@ -160,6 +310,12 @@ function +(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
+doc"""
+***
+      -(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
+
+> Returns $a - b$.
+"""
 function -(a::NfRelOrdElem, b::NfRelOrdElem)
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)()
@@ -171,13 +327,97 @@ function -(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
+doc"""
+***
+      divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool) -> NfRelOrdElem
+
+> Returns $a/b$. It is assumed that $a/b$ is an element of the same order
+> as $a$.
+"""
+function divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool = true)
+  t = divexact(a.elem_in_nf, b.elem_in_nf)
+  if check
+    if !in(t, parent(a))
+      error("Quotient not an element of the order.")
+    end
+  end
+  c = parent(a)(t)
+  return c
+end
+
+################################################################################
+#
+#  Ad hoc operations
+#
+################################################################################
+
+for T in [Integer, fmpz]
+  @eval begin
+    doc"""
+    ***
+          *(a::NfRelOrdElem, b::Union{Integer, fmpz}) -> NfRelOrdElem
+
+    > Returns $a \cdot b$.
+    """
+    function *(a::NfRelOrdElem, b::$T)
+      c = parent(a)()
+      c.elem_in_nf = a.elem_in_nf*b
+      if a.has_coord
+        c.elem_in_basis = map(x -> b*x, a.elem_in_basis)
+        c.has_coord = true
+      end
+      return c
+    end
+
+    *(a::$T, b::NfRelOrdElem) = b*a
+
+    doc"""
+    ***
+          divexact(a::NfRelOrdElem, b::Union{Integer, fmpz}, check::Bool) -> NfRelOrdElem
+
+    > Returns $a/b$. It is assumed that $a/b$ is an element of the same order
+    > as $a$.
+    """
+    function divexact(a::NfRelOrdElem, b::$T, check::Bool = true)
+      t = divexact(a.elem_in_nf, b)
+      if check
+        if !in(t, parent(a))
+          error("Quotient not an element of the order.")
+        end
+      end
+      c  = parent(a)(t)
+      return c
+    end
+  end
+end
+
 ################################################################################
 #
 #  Trace
 #
 ################################################################################
 
+doc"""
+***
+      trace(a::NfRelOrdElem{T}) -> T
+
+> Returns the trace of $a$.
+"""
 trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
+doc"""
+***
+      norm(a::NfRelOrdElem{T}) -> T
+
+> Returns the norm of $a$.
+"""
+norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 
 ################################################################################
 #
@@ -186,8 +426,4 @@ trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
 ################################################################################
 
 (K::NfRel)(a::NfRelOrdElem) = elem_in_nf(a)
-
-
-
-# elem_in_basis
 
