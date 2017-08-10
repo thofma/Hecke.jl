@@ -573,11 +573,16 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     
     mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
     mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp2, disclog2)
-    mp.modulus_fin=m
-    mp.modulus_inf=inf_plc
+    mp.modulus_fin=ideal(O,1)
+    mp.modulus_inf=InfPlc[]
     
     return X,mp
   end
+  n=ideal(O,1)
+  for (q,vq) in lp
+    n*=q^vq
+  end
+
   
   U, mU = unit_group_fac_elem(O)
   exp_class = Hecke._coprime_ideal_fac_elem(C,mC,m)
@@ -732,7 +737,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
-  mp.modulus_fin=m
+  mp.modulus_fin=n
   mp.modulus_inf=inf_plc
   mp.fact_mod=Q.factor
 
@@ -741,3 +746,110 @@ end
 
 
 
+##################################################################################
+#
+#  Stable Subgroups of Ray Class Group
+#
+##################################################################################
+
+function automorphisms(K::AnticNumberField)
+
+  f=K.pol
+  lr=roots(f,K)
+  Aut=Hecke.NfToNfMor[]
+  for r in lr
+    push!(Aut, Hecke.NfToNfMor(K, K, r))
+  end
+  return Aut
+  
+end
+
+
+function _act_on_ray_class(mR::Map, p::Int)
+
+  R=mR.header.domain
+  O=mR.header.codomain.base_ring.order
+  K=nf(O)
+  Aut=automorphisms(K)
+  F, _=FiniteField(p,1, "_")  
+  G=MatElem[]
+  
+  for phi in Aut
+    M=MatrixSpace(F,ngens(R), ngens(R))()
+    for i=1:ngens(R) 
+      J=mR(R[i])
+      I=FacElem(Dict(ideal(O,1)=> 1))
+      for (f,k) in J.fac
+        I.fac[_aut_on_id(O, phi, f)]=k
+      end
+      elem=mR\I
+      for j=1:ngens(R)
+        M[i,j]=F(elem.coeff[1,j])
+      end
+    end
+    push!(G,M)
+  end
+  
+  return FqGModule(G)
+  
+end
+
+function _aut_on_id(O::NfOrd, phi::Map, I::NfOrdIdl)
+  
+  K=nf(O)
+  y=K(I.gen_two)
+  y=O(phi(y))
+  return ideal(O,I.gen_one,y)
+  
+end
+
+function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1)
+  
+  O=mR.header.codomain.base_ring.order
+  K=nf(O)
+  
+  R=mR.header.domain
+  Q,mQ=quo(R,p)
+  S,mS=snf(Q)
+
+  M=_act_on_ray_class(mR*inv(mQ)*inv(mS), p)
+
+  ls=submodules(M,index)
+  subgroups=Map[]
+  for s in ls
+    subs=GrpAbFinGenElem[]
+    for i=1:rows(s)
+      x=MatrixSpace(ZZ,1,cols(s))()
+      for j=1:cols(s)
+        x[1,j]=_lift(s[i,j]) #Find a way of doing this.
+      end
+      push!(subs, mQ\(mS\(S(x))))
+    end
+    W,mW=quo(R, subs)
+    push!(subgroups, mR*inv(mW))
+  end
+  return subgroups
+
+end
+
+function _lift(x::fq_nmod)
+
+  F=parent(x)
+  i=fmpz(0)
+  while i<order(F)
+    if F(i)==x
+      return i
+    else 
+      i=i+1
+    end
+  end
+ 
+end
+
+#=
+function coeff(x::fq_nmod, n::Int)
+  n < 0 && throw(DomainError())
+  return base_ring(x)(ccall((:nmod_poly_get_coeff_ui, :libflint), UInt,
+          (Ptr{fq_nmod}, Int), &x, n))
+end
+=#
