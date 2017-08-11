@@ -303,6 +303,9 @@ Base.:(//)(a::NfRelElem, b::NfRelElem) = divexact(a, b)
 #
 ################################################################################
 
+# gcdx of GenPoly{nf_elem} needs this:
+Nemo.canonical_unit(a::nf_elem) = a
+
 function Base.inv(a::NfRelElem)
   a == 0 && error("Element not invertible")
   g, s, _ = gcdx(data(a), parent(a).pol)

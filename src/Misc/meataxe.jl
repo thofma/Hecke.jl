@@ -876,9 +876,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   
   K=M.K
   rel=_relations(M,N)
-  
   a,kern=nullspace(rel)
-  
   if a==0
     return []
   end
@@ -888,9 +886,10 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   end  
   #Think about considering the action of the group on the homomorphisms and recursively search for submodules.
   candidate_comb=append!(_enum_el(K,[K(0)], a-1),_enum_el(K,[K(1)],a-1))
+  deleteat!(candidate_comb,1)
   list=[]
   for x in candidate_comb
-    push!(list, sum([x[i]*submatrix(kern, i:i, 1:N.dim) for i=1:a]))
+    push!(list, sum([x[i]*submatrix(kern,i:i, 1:N.dim) for i=1:a]))
   end
   list[1]=closure(list[1], N.G)
   i=2
@@ -935,7 +934,7 @@ function minimal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
   if isempty(lf)
     lf=composition_factors(M)
   end
-  if length(lf)==1
+  if length(lf)==1 && lf[1][2]==1
     return []
   end
   if index!=n
@@ -1099,53 +1098,60 @@ doc"""
 
 function submodules(M::FqGModule, index::Int)
   
+  K=M.K
   list=[]
-  lf=composition_factors(M)
   if index> M.dim/2
-    for i=1:index-1
-      maxlist=maximal_submodules(M,i,lf)
-      for x in maxlist
-        N=actsub(x,M.G)
-        ls=submodules(N,index-i)
-        for a in ls
-          m=MatrixSpace(K,rows(a), M.dim)()
-          for t=1:rows(a)
-            for s=1:cols(a)
-              for j=1:M.dim
-                m[t,j]+=a[t,s]*x[s,j]
-              end
-            end
-          end
-          push!(list,m)
-        end
-      end
-    end
-    return append!(list,maximal_submodules(M,index, lf))
-  else 
-    index=M.dim-index
-    for i=1:index-1
-      minlist=minimal_submodules(M,i, lf)
+    lf=composition_factors(M)
+    list=minimal_submodules(M,M.dim-index, lf)
+    for i=1: M.dim-index-1
+      minlist=minimal_submodules(M,i,lf)
       for x in minlist
-        N, pivotindex= actquo(x,M.G)
-        ls=submodules(N,index-i)
+        N, pivotindex= actquo(x, M.G)
+        ls=submodules(N,index)
         for a in ls
           s=MatrixSpace(K,rows(a), M.dim)()
           for t=1:rows(a)
             pos=0
             for j=1:M.dim
               if j in pivotindex
-                pos+=1
-              else
-                s[t,j]=a[t,j-pos]
+               pos+=1
+             else
+               s[t,j]=a[t,j-pos]
               end
-            end
+           end
           end
           push!(list,vcat(x,s))
         end
       end
-      return append!(list,minimal_submodules(M,index, lf))
     end
+  else 
+  #
+  #  Duality
+  # 
+    G=[transpose(A) for A in M.G]
+    M_dual=FqGModule(G)
+    dlist=submodules(M_dual, M.dim-index)
+    list=[transpose(nullspace(x)[2]) for x in dlist]
   end
+  #
+  #  Redundance!
+  #
+  for x in list
+    rref!(x)
+  end
+  i=1
+  while i<length(list)
+    j=i+1
+    while j<=length(list)
+      if iszero(list[j]-list[i])
+        deleteat!(list, j)
+      else 
+        j+=1
+      end
+    end
+    i+=1
+  end
+  return list
     
 end
     
