@@ -108,7 +108,6 @@ end
 =#
 
 function _modulus(mR::Map)
-  global bad = mR
   while issubtype(typeof(mR), Hecke.CompositeMap)
     mR = mR.f
   end
@@ -145,9 +144,12 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
     @vprint :ClassField 2 "doin` $p\n"
     np += 1
     if np > 5*ngens(R)
+      println(q)
+    end
+    if np > 15*ngens(R)
       error("cannot stop")
     end
-    lP = prime_decomposition(ZK, p)
+    lP = prime_decomposition(ZK, p, 1)
     f=R[1]
     for (P, e) = lP
       try
@@ -337,7 +339,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   KK = kummer_extension(Int(e), [mS(S[i]) for i=1:ngens(S)])
 
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
-  h = build_map(CF.mq, KK, C)
+  @vtime :ClassField 2 h = build_map(CF.mq, KK, C)
   @vprint :ClassField 2 "... done\n"
 
   k, mk = kernel(h) 
@@ -379,7 +381,6 @@ function _rcf_find_kummer(CF::ClassField_pp)
 end
 
 function _rcf_reduce(CF::ClassField_pp)
-  global last_gen = CF.a
   e = order(domain(CF.mq))
   CF.a = FacElem(reduce_mod_powers(CF.a, degree(CF.K)))
   CF.K = pure_extension(degree(CF.K), CF.a)[1]
@@ -564,7 +565,7 @@ function _rcf_descent(CF::ClassField_pp)
       error("Frob not found")
     end
     @vprint :ClassField 2 "finding Artin map...\n"
-    lp, f = find_gens(MapFromFunc(canFrob, IdealSet(maximal_order(k)), AutA),
+    @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(maximal_order(k)), AutA),
                       PrimesSet(200, -1), minimum(_modulus(CF.mq)))
     h = hom(f, [preimage(CF.mq, p) for p = lp])
     @hassert :ClassField 1 issurjective(h)
@@ -580,13 +581,6 @@ function _rcf_descent(CF::ClassField_pp)
   @vprint :ClassField 2 "computing orbit of primitive element\n"
   os = [Auto[preimage(mp, ms(j))] for j=s]
 
-#  n = prod(os) # maybe primitive??  
-  @vprint :ClassField 2 "trying relative trace\n"
-  t = sum(os)
-  #now the minpoly of t - via Galois as this is easiest to implement...
-  q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
-  @assert order(q) == order(domain(CF.mq))
-  AT, T = PolynomialRing(A, "T")
   function coerce_down(a)
     @assert a.data.length <= 1
     b = coeff(a, 0)
@@ -596,17 +590,39 @@ function _rcf_descent(CF::ClassField_pp)
   end
 
   function minpoly(a)
-    o = [grp_elem_to_map(AutA_gen, preimage(mp, mq(j)), t) for j = q]
-    f = prod(T-x for x=o)
+    @vtime :ClassField 2 o = [grp_elem_to_map(AutA_gen, preimage(mp, mq(j)), t) for j = q]
+    @vtime :ClassField 2 f = prod(T-x for x=o)
     @assert degree(f) == length(o)
     @assert length(o) == e
-    g = [coerce_down(coeff(f, i)) for i=0:Int(e)]
+    @vtime :ClassField 2 g = [coerce_down(coeff(f, i)) for i=0:Int(e)]
     return PolynomialRing(parent(g[1]))[1](g)
   end
+
+#  n = prod(os) # maybe primitive??  
+  @vprint :ClassField 2 "trying relative trace\n"
+  t = sum(os)
+  #now the minpoly of t - via Galois as this is easiest to implement...
+  q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
+  @assert order(q) == order(domain(CF.mq))
+  AT, T = PolynomialRing(A, "T")
   @vprint :ClassField 2 "char poly...\n"
   f = minpoly(t)
   @vprint :ClassField 2 "... done\n"
-  @assert issquarefree(f)
+  if !issquarefree(f)
+    @vprint :ClassField 2 "trying relative trace of squares\n"
+    for i=1:length(os)
+      os[i] *= os[i]
+    end
+    t = sum(os)
+    #now the minpoly of t - via Galois as this is easiest to implement...
+    q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
+    @assert order(q) == order(domain(CF.mq))
+    AT, T = PolynomialRing(A, "T")
+    @vprint :ClassField 2 "char poly...\n"
+    f = minpoly(t)
+    @vprint :ClassField 2 "... done\n"
+    @assert issquarefree(f)
+  end  
 
   CF.A = number_field(minpoly(t))[1]
   nothing
@@ -625,6 +641,16 @@ function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe)
   return res
 end
 
+#TODO: move elsewhere - and use. There are more calls to nmod_set/reduce
+function (A::FqNmodFiniteField)(x::nmod_poly)
+  u = A()
+  ccall((:fq_nmod_set, :libflint), Void,
+                     (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                                     &u, &x, &A)
+  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &A)                                   
+  return u
+end
+
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
@@ -633,21 +659,21 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   z.header.codomain = f.header.codomain
 
   p = characteristic(z.header.codomain)
-  Zx = PolynomialRing(FlintIntegerRing(), "x")[1]
   y = f(NfOrdElem(domain(f), gen(K)))
-  O = domain(f)
-  P = f.P
+  Ft, t = PolynomialRing(ResidueRing(FlintZZ, p))
+  K = number_field(domain(f))
+  g = gcd(Ft(K.pol), Ft(K(f.P.gen_two)))
 
   function _image(x::NfOrdElem)
     return f(x)
   end
 
-  function _image(x::nf_elem)
-    m = den(x, domain(f))
+  function _image(x::nf_elem)  # STUPID
+    m = den(x)
     if m %p == 0
       throw(BadPrime(p))
     end
-    return f(O(m*x))//f(O(m))
+    return codomain(f)(Ft(x)) 
   end
 
   function _image(x::FacElem{nf_elem, AnticNumberField})
@@ -659,7 +685,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
       end
       r *= kp^v
     end
-    @assert r == f(O(evaluate(x)))
+    @hassert :ClassField 3 r == f(O(evaluate(x)))
     return r
   end
 
@@ -728,7 +754,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
       try
         b = Hecke.short_elem(Iinv, -Matrix(FlintZZ, 1, length(l), l), prec=p)
       catch e
-        if e != Hecke.LowPrecisionLLL()
+        if e != Hecke.LowPrecisionLLL() 
           throw(e)
         end
         p *= 2

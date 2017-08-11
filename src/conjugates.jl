@@ -130,6 +130,20 @@ end
 
 function minkowski(a::nf_elem, p::Int)
   c = roots_ctx(parent(a))
+  x = conjugates_arb(a, p)
+  m = Array{BigFloat}(0)
+  for i=1:c.r1
+    push!(m, BigFloat(real(x[i])))
+  end
+  s2 = sqrt(BigFloat(2))
+  for i=1:c.r2
+    z = x[c.r1+i]
+    push!(m, s2*BigFloat(real(z)))
+    push!(m, s2*BigFloat(imag(z)))
+  end
+  return m
+
+
   r = conjugates(c, p)
   m = Array{BigFloat}(0);
   a = (parent(a).pol.parent)(a)
@@ -156,6 +170,12 @@ function minkowski_mat(c::roots_ctx, p::Int)
   end
   old = precision(BigFloat)
   setprecision(p)
+  m = vcat([minkowski(g^i, p) for i=0:n-1])
+  setprecision(old)
+  c.minkowski_mat = m
+  c.minkowski_mat_p = p
+  return m
+
   r = conjugates(c, p)
   d = Array{typeof(r[1])}(length(r))
   one = BigComplex(BigFloat(1.0), BigFloat(0.0))
@@ -189,10 +209,31 @@ function minkowski_mat(c::roots_ctx, p::Int)
 end
 
 function minkowski_mat(K::AnticNumberField, p::Int = 50)
-  return minkowski_mat(roots_ctx(K), p)
+  c = roots_ctx(K)
+
+  if false && isdefined(c, :minkowski_mat) && c.minkowski_mat_p == p
+    return c.minkowski_mat
+  end
+  old = precision(BigFloat)
+  setprecision(p)
+
+  g = gen(K)
+  n = degree(K)
+  mm = vcat([minkowski(g^i, p) for i=0:n-1])
+  m = Array{BigFloat}(n,n)
+  for i=1:n
+    for j=1:n
+      m[i,j] = mm[i][j]
+    end
+  end
+  setprecision(old)
+  c.minkowski_mat = m
+  c.minkowski_mat_p = p
+  return m
 end
 
 function mult!(c::Array{BigFloat, 2}, a::fmpz_mat, b::Array{BigFloat, 2})
+  error("dont")
   s = Base.size(b)
   t = Base.size(c)
   cols(a) == s[1] || error("dimensions do not match")
@@ -202,7 +243,7 @@ function mult!(c::Array{BigFloat, 2}, a::fmpz_mat, b::Array{BigFloat, 2})
   R = RealRing()
   tmp_mpz = R.z1
   tmp_mpz_r = R.t1
-  tmp_mpfr = R.t2
+  tmp_mpfr = deepcopy(c[1,1]) #R.t2
 
   ##CF: careful: one SHOULD use mpfr_mul_z, but this converts to
   ##    mpfr every time. I think mpfr_mul_z should be re-written
