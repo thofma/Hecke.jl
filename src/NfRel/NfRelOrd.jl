@@ -1,58 +1,393 @@
 # I don't like that we have to drag S around
 # Still hoping for julia/#18466
 
-type NfOrdRel{T, S} <: Ring
+type NfRelOrd{T, S} <: Ring
   nf::NfRel{T}
-  basis_nf::T
+  basis_nf::Vector{NfRelElem{T}}
   basis_mat::GenMat{T}
   basis_mat_inv::GenMat{T}
   basis_pmat::PMat{T, S}
   pseudo_basis#::Vector{Tuple{NfRelOrdElem{T}, S}} # julia does not like
                                                    # forward declarations (yet)
 
-  function NfOrdRel(K::NfRel{T}, M::PMat{T, S})
+  disc #::NfOrdIdl or ::NfRelOrdIdl{T}
+
+  function NfRelOrd(K::NfRel{T}, M::PMat{T, S})
     z = new()
     z.nf = K
     z.basis_pmat = M
-    z.basis_mat = M.matrix
-    z.basis_mat_inv = inv(M.matrix)
     return z
   end
   
-  function NfOrdRel(K::NfRel{T}, M::GenMat{T})
+  function NfRelOrd(K::NfRel{T}, M::GenMat{T})
     z = new()
     z.nf = K
     z.basis_mat = M
-    z.basis_mat_inv = inv(M)
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
-end
 
-# show, discriminant, nf, basis_mat, basis_mat_inv, basis_pmat, pseudo_basis
-
-type NfRelOrdElem{T} <: RingElem
-  parent#::NfOrdRel{T, S} # I don't want to drag the S around
-  elem_in_nf::NfRelElem{T}
-  elem_in_basis::Vector{T}
-  has_coord::Bool
-
-  function NfRelOrdElem(O::NfOrdRel{T})
+  function NfRelOrd(K::NfRel{T})
     z = new()
-    z.parent = O
-    z.elem_in_nf = zero(nf(O))
+    z.nf = K
     return z
   end
 end
+
+################################################################################
+#
+#  Basic field access
+#
+################################################################################
+
+doc"""
+***
+      nf(O::NfRelOrd) -> NfRel
+
+> Returns the ambient number field of $\mathcal O$.
+"""
+nf(O::NfRelOrd) = O.nf
+
+################################################################################
+#
+#  "Assure" functions for fields
+#
+################################################################################
+
+function assure_has_basis_pmat{T, S}(O::NfRelOrd{T, S})
+  if isdefined(O, :basis_pmat)
+    return nothing
+  end
+  if !isdefined(O, :pseudo_basis)
+    error("No pseudo_basis and no basis_pmat defined.")
+  end
+  pb = pseudo_basis(O)
+  L = nf(O)
+  M = MatrixSpace(base_ring(L), degree(O), degree(O))()
+  C = Vector{S}()
+  for i = 1:degree(O)
+    elem_to_mat_row!(M, i, L(pb[i][1]))
+    push!(C, pb[i][2])
+  end
+  O.basis_pmat = PseudoMatrix(M, C)
+  return nothing
+end
+
+function assure_has_pseudo_basis{T, S}(O::NfRelOrd{T, S})
+  if isdefined(O, :pseudo_basis)
+    return nothing
+  end
+  if !isdefined(O, :basis_pmat)
+    error("No pseudo_basis and no basis_pmat defined.")
+  end
+  P = basis_pmat(O)
+  L = nf(O)
+  pseudo_basis = Vector{Tuple{NfRelOrdElem{T}, S}}()
+  for i = 1:degree(O)
+    a = elem_from_mat_row(L, P.matrix, i)
+    push!(pseudo_basis, (O(a), P.coeffs[i]))
+  end
+  O.pseudo_basis = pseudo_basis
+  return nothing
+end
+
+function assure_has_basis_nf{T, S}(O::NfRelOrd{T, S})
+  if isdefined(O, :basis_nf)
+    return nothing
+  end
+  L = nf(O)
+  pb = pseudo_basis(O)
+  basis_nf = Vector{NfRelElem{T}}()
+  for i = 1:degree(O)
+    push!(basis_nf, L(pb[i][1]))
+  end
+  O.basis_nf = basis_nf
+  return nothing
+end
+
+function assure_has_basis_mat(O::NfRelOrd)
+  if isdefined(O, :basis_mat)
+    return nothing
+  end
+  O.basis_mat = basis_pmat(O).matrix
+  return nothing
+end
+
+function assure_has_basis_mat_inv(O::NfRelOrd)
+  if isdefined(O, :basis_mat_inv)
+    return nothing
+  end
+  O.basis_mat_inv = inv(basis_mat(O))
+  return nothing
+end
+
+################################################################################
+#
+#  Pseudo basis / basis pseudo-matrix
+#
+################################################################################
+
+doc"""
+***
+      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NfRelOrdElem{T}, S}}
+
+> Returns the pseudo-basis of $\mathcal O$.
+"""
+function pseudo_basis{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  assure_has_pseudo_basis(O)
+  if copy == Val{true}
+    return deepcopy(O.pseudo_basis)
+  else
+    return O.pseudo_basis
+  end
+end
+
+doc"""
+***
+      basis_pmat(O::NfRelOrd) -> PMat
+
+> Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
+> of the ambient number field.
+"""
+function basis_pmat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  assure_has_basis_pmat(O)
+  if copy == Val{true}
+    return deepcopy(O.basis_pmat)
+  else
+    return O.basis_pmat
+  end
+end
+
+################################################################################
+#
+#  Basis / (inverse) basis matrix
+#
+################################################################################
+
+doc"""
+***
+      basis_nf(O::NfRelOrd) -> Array{NfRelElem, 1}
+
+> Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
+> ambient number field.
+"""
+function basis_nf{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  assure_has_basis_nf(O)
+  if copy == Val{true}
+    return deepcopy(O.basis_nf)
+  else
+    return O.basis_nf
+  end
+end
+
+doc"""
+***
+      basis_mat(O::NfRelOrd{T, S}) -> GenMat{T}
+
+> Returns the basis matrix of $\mathcal O$ with respect to the power basis
+> of the ambient number field.
+"""
+function basis_mat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  assure_has_basis_mat(O)
+  if copy == Val{true}
+    return deepcopy(O.basis_mat)
+  else
+    return O.basis_mat
+  end
+end
+
+doc"""
+***
+      basis_mat_inv(O::NfRelOrd{T, S}) -> GenMat{T}
+
+> Returns the inverse of the basis matrix of $\mathcal O$.
+"""
+function basis_mat_inv{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+  assure_has_basis_mat_inv(O)
+  if copy == Val{true}
+    return deepcopy(O.basis_mat_inv)
+  else
+    return O.basis_mat_inv
+  end
+end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
+
+function show(io::IO, O::NfRelOrd)
+  print(io, "Relative order of ")
+  println(io, nf(O))
+  print(io, "with pseudo-basis ")
+  pb = pseudo_basis(O)
+  for i = 1:degree(O)
+    print(io, "\n")
+    print(io, pb[i])
+  end
+end
+
+################################################################################
+#
+#  Discriminant
+#
+################################################################################
+
+function assure_has_discriminant(O::NfRelOrd)
+  if isdefined(O, :disc)
+    return nothing
+  end
+  A = MatrixSpace(base_ring(nf(O)), degree(O), degree(O))()
+  pb = pseudo_basis(O)
+  for i = 1:degree(O)
+    for j = 1:degree(O)
+      A[i, j] = trace(pb[i][1]*pb[j][1])
+    end
+  end
+  d = det(A)
+  a = pb[1][2]^2
+  for i = 2:degree(O)
+    a *= pb[i][2]^2
+  end
+  disc = d*a
+  simplify_exact!(disc)
+  O.disc = num(disc)
+  return nothing
+end
+
+function discriminant(O::NfRelOrd)
+  assure_has_discriminant(O)
+  return deepcopy(O.disc)
+end
+
+################################################################################
+#
+#  Degree
+#
+################################################################################
+
+doc"""
+***
+      degree(O::NfRelOrd) -> Int
+
+> Returns the degree of $\mathcal O$.
+"""
+degree(O::NfRelOrd) = degree(nf(O))
+
+################################################################################
+#
+#  Deepcopy
+#
+################################################################################
+
+doc"""
+***
+      deepcopy(O::NfRelOrd) -> NfRelOrd
+
+> Makes a copy of $\mathcal O$.
+"""
+function Base.deepcopy_internal{T, S}(O::NfRelOrd{T, S}, dict::ObjectIdDict)
+  z = NfRelOrd{T, S}(O.nf)
+  for x in fieldnames(O)
+    if x != :nf && isdefined(O, x)
+      setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
+    end
+  end
+  z.nf = O.nf
+  return z
+end
+
+################################################################################
+#
+#  Inclusion of number field elements
+#
+################################################################################
+
+function _check_elem_in_order{T, S, V}(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false})
+  assure_has_basis_mat_inv(O)
+  assure_has_basis_pmat(O)
+  t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
+  elem_to_mat_row!(t, 1, a)
+  t = t*O.basis_mat_inv
+  if short == Val{true}
+    for i = 1:degree(O)
+      if !(t[1, i] in O.basis_pmat.coeffs[i])
+        return false
+      end
+    end
+    return true
+  else
+    for i = 1:degree(O)
+      if !(t[1, i] in O.basis_pmat.coeffs[i])
+        return false, Vector{T}()
+      end
+    end
+    v = Vector{T}(degree(O))
+    for i in 1:degree(O)
+      v[i] = deepcopy(t[1, i])
+    end
+    return true, v
+  end
+end
+
+doc"""
+***
+      in(a::NfRelElem, O::NfRelOrd) -> Bool
+
+> Checks whether $a$ lies in $\mathcal O$.
+"""
+function in{T, S}(a::NfRelElem{T}, O::NfRelOrd{T, S})
+  return _check_elem_in_order(a, O, Val{true})
+end
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
+
+doc"""
+***
+      Order(K::NfRel{T}, M::GenMat{T}) -> NfRelOrd
+
+> Returns the order which has basis matrix $M$ with respect to the power basis
+> of $K$.
+"""
+function Order(L::NfRel{nf_elem}, M::GenMat{nf_elem})
+  # checks
+  return NfRelOrd{nf_elem, NfOrdFracIdl}(L, M)
+end
+
+function Order{T}(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}})
+  # checks
+  return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, M)
+end
+
+doc"""
+***
+      Order(K::NfRel, M::PMat) -> NfRelOrd
+
+> Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
+> of $K$.
+"""
+function Order{T, S}(L::NfRel{T}, M::PMat{T, S})
+  # checks
+  return NfRelOrd{T, S}(L, M)
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(R::NfRelOrd, S::NfRelOrd)
+  nf(R) != nf(S) && return false
+  return basis_pmat(R) == basis_pmat(S)
+end
+
 
 type NfRelOrdIdl{T} end
 
 type NfRelOrdFracIdl{T} end
-
-
-# show, one, zero, isone, iszero, +, -, *, in, elem_in_basis
-
-# help inference
-parent{T}(x::NfRelOrdElem{NfRelElem{T}}) = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
-
-parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}

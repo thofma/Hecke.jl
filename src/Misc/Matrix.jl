@@ -116,7 +116,7 @@ end
 function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   c = vcat(parent(a)(m), a)
   n = cols(a)
-  w = window(c, n+1, 1, 2*n, n)
+  w = view(c, n+1, 1, 2*n, n)
   ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &w, &w, &m)
   if shape == :lowerleft
     c = _hnf(c, shape)
@@ -129,12 +129,12 @@ end
 
 #TODO: rename/ replace by sub
 function submat{T <: Integer}(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T})
-  z = deepcopy(window(x, r, c))
+  z = deepcopy(view(x, r, c))
   return z
 end
 
 function submat{T <: Integer}(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T})
-  z = deepcopy(window(x, r, c))
+  z = deepcopy(view(x, r, c))
   return z
 end
 

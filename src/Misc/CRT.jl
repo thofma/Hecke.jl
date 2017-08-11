@@ -467,7 +467,7 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   ra = pointer_from_objref(a)
    
   if degree(K) == 1
-    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra, c)
+    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra, c)
     ccall((:fmpq_canonicalise, :libflint), Void, (Ptr{nf_elem}, ), &a)
   elseif degree(K) == 2
     ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra+n*sizeof(Int), c)

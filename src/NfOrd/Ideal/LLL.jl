@@ -118,7 +118,7 @@ function short_elem(A::NfOrdIdl,
   b = temp.num
   b_den = temp.den
   l, t = lll(A, v, prec = prec)
-  w = window(t, 1,1, 1, cols(t))
+  w = view(t, 1,1, 1, cols(t))
   c = w*b
   q = elem_from_mat_row(K, c, 1, b_den)
   return q

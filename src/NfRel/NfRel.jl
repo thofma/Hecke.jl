@@ -303,6 +303,9 @@ Base.:(//)(a::NfRelElem, b::NfRelElem) = divexact(a, b)
 #
 ################################################################################
 
+# gcdx of GenPoly{nf_elem} needs this:
+Nemo.canonical_unit(a::nf_elem) = a
+
 function Base.inv(a::NfRelElem)
   a == 0 && error("Element not invertible")
   g, s, _ = gcdx(data(a), parent(a).pol)
@@ -492,6 +495,16 @@ function elem_to_mat_row!{T}(M::GenMat{T}, i::Int, a::NfRelElem{T})
     M[i, c] = deepcopy(coeff(a, c - 1))
   end
   return nothing
+end
+
+function elem_from_mat_row{T}(L::NfRel{T}, M::GenMat{T}, i::Int)
+  t = L(1)
+  a = L()
+  for c = 1:cols(M)
+    a += M[i, c]*t
+    mul!(t, t, gen(L))
+  end
+  return a
 end
 
 function representation_mat(a::NfRelElem)
