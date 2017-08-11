@@ -38,24 +38,6 @@ function cleanvect(M::MatElem, v::MatElem)
 
 end
 
-function cleanmat(M::MatElem,N::MatElem)
-  
-  S=MatrixSpace(parent(M[1,1]), rows(N),cols(N))()
-  for i=1:nrows(N)
-    v=MatrixSpace(parent(M[1,1]), 1 ,cols(N))()
-    for j=1:cols(N)
-      v[j]=N[i,j]
-    end
-    w=cleanvec(M,v)
-    for j=1:cols(N)
-      S[i,j]=w[j]
-    end
-  end
-  return S
-  
-end
-
-
 function submatrix(M::MatElem, x::UnitRange{Int}, y::UnitRange{Int})
   
   numrows=x.stop-x.start+1
@@ -84,12 +66,12 @@ function closure(C::MatElem, G)
     for j=1:length(G)
       res= cleanvect(C,submatrix(C, i:i, 1:cols(C))*G[j])
       if !iszero(res)
-        C=vcat(C,res)    
+        C=vcat(C,res) 
+        rref!(C)   
       end
     end  
     i+=1
   end
-  rref!(C)
   return C
 
 end
@@ -270,6 +252,10 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   G=M.G
   H=N.G
   
+  #
+  #  Get a peakword
+  #
+  
   lincomb,f= _spl_field(M)
   
   A=MatrixSpace(K,n,n)()
@@ -279,6 +265,11 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     A+=lincomb[i]*G[i]
     B+=lincomb[i]*H[i]
   end
+  
+  #
+  #  Get the standard basis
+  #
+
   
   M=f(A)
   a,kerA=nullspace(transpose(M))
@@ -295,14 +286,24 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   M= spinning(submatrix(kerA, 1:1, 1:n), G)
   N= spinning(submatrix(kerB, 1:1, 1:n), H)
   
-  
+  #
+  #  Check if the actions are conjugated
+  #
+  S=inv(N)*M
+  T=inv(S)
   for i=1:length(G)
-    if M*G[i]*inv(M) != N*H[i]*inv(N)
+    if S*G[i]* T != H[i]
       return false
     end
   end
   return true
 end
+
+
+#
+#  Computes peakwords for all composition factors
+#
+
 
 function peakwords(L)
   
@@ -339,6 +340,10 @@ function peakwords(L)
 
 end
 
+
+#
+#  Computes a candidate peakword for a factor 
+#
 
 function peakword(M::FqGModule)
 
@@ -561,7 +566,7 @@ function charpoly_fact(M::MatElem)
   v[1,1]=K(1)
   pol,B=ordpoly(M,MatrixSpace(K, 0, 0)(),v)
   push!(polys,pol)
-  if pol[1,cols(B)+1]!=0
+  if !iszero(pol[1,cols(B)+1])
     return polys
   end
   v[1,1]=K(0)
@@ -711,13 +716,11 @@ end
 
 doc"""
 ***
-    composition_series(G::Array{MatElem,1}) -> Array{MatElem,1}
+    composition_series(M::FqGModule) -> Array{MatElem,1}
 
-> Given a set of matrices $G$, returns a sequence of submodules such that the quotient of two consecutive submodules is irreducible
+> Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence of submodules such that the quotient of two consecutive element is irreducible.
 
 """
-
-
 
 function composition_series(M::FqGModule)
 
@@ -748,15 +751,7 @@ function composition_series(M::FqGModule)
   #
   list=MatElem[]
   for a in sub_list
-    m=MatrixSpace(K,rows(a), cols(C))()
-    for i=1:rows(a)
-      for s=1:cols(a)
-        for j=1:cols(C)
-          m[i,j]+=a[i,s]*C[s,j]
-        end
-      end
-    end
-    push!(list,m)
+    push!(list,a*C)
   end
   for a in quot_list
     s=MatrixSpace(K,rows(a), cols(C))()
@@ -779,11 +774,10 @@ doc"""
 ***
     composition_factors(M::FqGModule)
 
-> Given a $G$-module $M$, returns, up to isomorphism, the composition factors of $M$ with their multiplicity
+> Given a Fq[G]-module M, it returns, up to isomorphism, the composition factors of M with their multiplicity,
+> i.e. the isomorphism classes of modules appearing in a composition series of M
 
 """
-
-
 
 function composition_factors(M::FqGModule)
   
@@ -813,22 +807,17 @@ function composition_factors(M::FqGModule)
   #
   #  Now, we check if the factors are isomorphic
   #
-  list=vcat(sub_list,quot_list)
-  i=1
-  while i<=length(list)
-    j=i+1
-    while j<=length(list)
-      if isisomorphic(list[i][1], list[j][1])
-        list[i][2]+=list[j][2]
-        deleteat!(list,j)
-      else 
-        j+=1
+  for i=1:length(sub_list)
+    for j=1:length(quot_list)
+      if isisomorphic(sub_list[i][1], quot_list[j][1])
+        sub_list[i][2]+=quot_list[j][2]
+        deleteat!(quot_list,j)
+        break
       end    
     end
-    i+=1
   end
 
-  return list
+  return append!(sub_list,quot_list)
 
 end
 
@@ -836,6 +825,7 @@ end
 
 function _relations(M::FqGModule, N::FqGModule)
 
+  @assert M.isirreducible
   G=M.G
   H=N.G
   K=M.K
@@ -863,6 +853,8 @@ function _relations(M::FqGModule, N::FqGModule)
         A=sum([x[q,1]*matrices[q] for q=1:rows(x)])
         A=A-(matrices[i]*H[j])
         sys=vcat(sys,transpose(A))
+        rref!(sys)
+        sys=submatrix(sys, 1:N.dim, 1:N.dim)
       end
     end
     i=i+1
@@ -872,7 +864,7 @@ end
 
 function _irrsubs(M::FqGModule, N::FqGModule)
 
-  @assert M.isirreducible==true
+  @assert M.isirreducible
   
   K=M.K
   rel=_relations(M,N)
@@ -884,12 +876,35 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   if a==1
     return [closure(kern, N.G)]
   end  
-  #Think about considering the action of the group on the homomorphisms and recursively search for submodules.
-  candidate_comb=append!(_enum_el(K,[K(0)], a-1),_enum_el(K,[K(1)],a-1))
+  #
+  #  Reduce the number of homomorphism to try by considering the action of G on the homomorphisms
+  #
+  vects=[submatrix(kern, i:i, 1:N.dim) for i=1:a]
+  i=1
+  while i<length(vects)
+    X=closure(vects[i],N.G)
+    j=i+1
+    while j<= length(vects)
+      if iszero(cleanvect(X,vects[j]))
+        deleteat!(vects,j)
+      else
+        j+=1
+      end
+    end
+    i+=1
+  end
+  if length(vects)==1
+    return [closure(vects[1], N.G)]
+  end
+  
+  #
+  #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
+  #
+  candidate_comb=append!(_enum_el(K,[K(0)], length(vects)-1),_enum_el(K,[K(1)],length(vects)-1))
   deleteat!(candidate_comb,1)
   list=[]
   for x in candidate_comb
-    push!(list, sum([x[i]*submatrix(kern,i:i, 1:N.dim) for i=1:a]))
+    push!(list, sum([x[i]*vects[i] for i=1:length(vects)]))
   end
   list[1]=closure(list[1], N.G)
   i=2
@@ -916,13 +931,43 @@ doc"""
 ***
     minimal_submodules(M::FqGModule)
 
-> Given a $G$-module $M$, it returns all the minimal submodules of M
+> Given a Fq[G]-module M, it returns all the minimal submodules of M
 
 """
 
 
-function minimal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
+function minimal_submodules(M::FqGModule, dim::Int=M.dim, lf=[])
   
+  K=M.K
+  n=M.dim
+  
+  if M.isirreducible==true
+    return []
+  end
+
+  list=[]
+  if isempty(lf)
+    lf=composition_factors(M)
+  end
+  if length(lf)==1 && lf[1][2]==1
+    return []
+  end
+  if dim!=n
+    lf=[x for x in lf if x[1].dim==dim]
+  end
+  if isempty(lf)
+    return list
+  end
+  G=M.G
+  for x in lf
+    append!(list,Hecke._irrsubs(x[1],M)) 
+  end
+  return list
+end
+
+
+function minimal_with_peakwords(M::FqGModule, index::Int=M.dim, lf=[])
+
   K=M.K
   n=M.dim
   
@@ -943,12 +988,10 @@ function minimal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
   if isempty(lf)
     return list
   end
-#  Hecke.peakwords(lf)
+  Hecke.peakwords(lf)
   G=M.G
   for x in lf
-  
-  #  peakword function not trustable; need to randomize the choice of the element in a serious way
-#=    if isdefined(x[1],:peakword_poly)
+    if isdefined(x[1],:peakword_poly)
       A=MatrixSpace(K,n,n)()
       for i=1:length(G)
         A+=x[1].peakword_elem[i]*G[i]
@@ -972,21 +1015,14 @@ function minimal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
       end 
       H=Hecke._irrsubs(x[1],N)
       for a in H
-      m=MatrixSpace(K,rows(a), M.dim)()
-      for t=1:rows(a)
-        for s=1:cols(a)
-          for j=1:M.dim
-            m[t,j]+=a[t,s]*S[s,j]
-          end
-        end
+        push!(list,a*S)
       end
-      push!(list,m)
-    end
-   else =# 
+    else 
       append!(list,Hecke._irrsubs(x[1],M))
-#    end   
+    end   
   end
   return list
+
 end
 
 
@@ -1045,7 +1081,6 @@ function submodules(M::FqGModule)
   list=[]
   lf=composition_factors(M)
   minlist=minimal_submodules(M, M.dim, lf)
-  append!(list,minlist)
   for x in minlist
     rref!(x)
     N, pivotindex =actquo(x,M.G)
@@ -1084,7 +1119,7 @@ function submodules(M::FqGModule)
     end
     i+=1
   end
-  return list
+  return append!(list,minlist)
   
 end
 
@@ -1102,7 +1137,6 @@ function submodules(M::FqGModule, index::Int)
   list=[]
   if index> M.dim/2
     lf=composition_factors(M)
-    list=minimal_submodules(M,M.dim-index, lf)
     for i=1: M.dim-index-1
       minlist=minimal_submodules(M,i,lf)
       for x in minlist
@@ -1124,6 +1158,25 @@ function submodules(M::FqGModule, index::Int)
         end
       end
     end
+  #
+  #  Redundance!
+  #
+    for x in list
+      rref!(x)
+    end
+    i=1
+    while i<length(list)
+      j=i+1
+      while j<=length(list)
+        if iszero(list[j]-list[i])
+          deleteat!(list, j)
+        else 
+          j+=1
+        end
+      end
+      i+=1
+    end
+    append!(list,minimal_submodules(M,M.dim-index, lf))
   else 
   #
   #  Duality
@@ -1133,24 +1186,8 @@ function submodules(M::FqGModule, index::Int)
     dlist=submodules(M_dual, M.dim-index)
     list=[transpose(nullspace(x)[2]) for x in dlist]
   end
-  #
-  #  Redundance!
-  #
-  for x in list
-    rref!(x)
-  end
-  i=1
-  while i<length(list)
-    j=i+1
-    while j<=length(list)
-      if iszero(list[j]-list[i])
-        deleteat!(list, j)
-      else 
-        j+=1
-      end
-    end
-    i+=1
-  end
+
+  
   return list
     
 end
