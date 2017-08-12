@@ -62,16 +62,17 @@ function closure(C::MatElem, G)
 
   rref!(C)
   i=1
-  while i != rows(C)+1
+  while i <= rows(C)
+    w=submatrix(C, i:i, 1:cols(C))
     for j=1:length(G)
-      res= cleanvect(C,submatrix(C, i:i, 1:cols(C))*G[j])
+      res=cleanvect(C,w*G[j])
       if !iszero(res)
-        C=vcat(C,res) 
-        rref!(C)   
+        C=vcat(C,res)  
       end
     end  
     i+=1
   end
+  rref!(C)
   return C
 
 end
@@ -239,7 +240,7 @@ end
 
 function isisomorphic(M::FqGModule,N::FqGModule)
   
-  @assert M.isirreducible==true
+  @assert M.isirreducible
   @assert M.K==N.K
   @assert length(M.G)==length(N.G)
   if M.dim!=N.dim
@@ -248,22 +249,99 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   n=M.dim
     
   K=M.K
- 
-  G=M.G
-  H=N.G
+  Kx,x=K["x"]
+  f=Kx(1)
+  
+  G=[A for A in M.G]
+  H=[A for A in N.G]
   
   #
-  #  Get a peakword
+  #  Adding generators to obtain randomness
   #
   
-  lincomb,f= _spl_field(M)
+  for i=1:max(length(M.G),9)
+    l1=rand(1:length(G))
+    l2=rand(1:length(G))
+    while l1 !=l2
+      l2=rand(1:length(G))
+    end
+    push!(G, G[l1]*G[l2])
+    push!(H, H[l1]*H[l2])
+  end
+
+  #
+  #  Now, get the right element
+  #
   
-  A=MatrixSpace(K,n,n)()
-  B=MatrixSpace(K,n,n)()
+    A=MatrixSpace(K,n,n)()
+    B=MatrixSpace(K,n,n)()
   
-  for i=1:length(G)
-    A+=lincomb[i]*G[i]
-    B+=lincomb[i]*H[i]
+  found=false
+  
+  while !found
+    
+    A=MatrixSpace(K,n,n)()
+    B=MatrixSpace(K,n,n)()
+    l1=rand(1:length(G))
+    l2=rand(1:length(G))
+    push!(G, G[l1]*G[l2])
+    push!(H, H[l1]*H[l2])
+    
+    for i=1:length(G)
+      s=rand(K)
+      A+=s*G[i]
+      B+=s*H[i]
+    end
+
+    cp=charpoly(A)
+    sq=factor_squarefree(cp)
+    lf=factor(collect(keys(sq.fac))[1])
+    for t in keys(lf.fac)
+      f=t
+      S=t(A)
+      a,kerA=nullspace(transpose(S))
+      if a==1
+        M.dim_spl_fld=1
+        found=true
+        break
+      end
+      kerA=transpose(kerA)
+      posfac=gcd(posfac,a)
+      if divisible(fmpz(posfac),a)
+        v=submatrix(kerA, 1:1, 1:n)
+        B=v
+        T =spinning(v,G)
+        G1=[T*A*inv(T) for A in G]
+        i=2
+        E=[eye(T,a)]
+        while rows(B)!= a
+          w= submatrix(kerA, i:i, 1:n)
+          z= cleanvect(B,w)
+          if iszero(z)
+            continue
+          end
+          N =spinning(w,G)
+          G2=[N*A*inv(N) for A in G]
+          if G1 == G2
+            b=kerA*N
+            x=transpose(solve(transpose(kerA),transpose(b)))
+            push!(E,x)
+            B=vcat(B,z)
+            B=closure(B,E)
+          else 
+            break
+          end
+          if rows(B)==a
+            M.dim_spl_fld=a
+            found=true
+            break
+          else
+            i+=1
+          end
+        end
+      end
+    end        
+
   end
   
   #
@@ -537,7 +615,7 @@ function ordpoly(M::MatElem,S::MatElem,v::MatElem)
     for i=1:ind-1
       nonzero=1
       while iszero(D[i, nonzero])
-      nonzero+=1
+        nonzero+=1
       end
       mult=D[ind,nonzero]//D[i,nonzero]
       for j=1:cols(M)+1
@@ -637,34 +715,48 @@ function meataxe(M::FqGModule)
   if length(H)==1
     A=H[1]
     poly=charpoly_fact(A)
-    for fact in poly
-      c=[fact[1,i] for i=1:cols(fact)]
-      sq=factor_squarefree(Kx(c))
-      lf=factor(collect(keys(sq.fac))[1])
-      t=first(keys(lf.fac))
-      if degree(t)==n
-        M.isirreducible=true
-        return true, eye(H[1],n)
-      else 
-        N=t(A)
-        kern=transpose(nullspace(transpose(N))[2])
-        B=closure(submatrix(kern,1:1, 1:n),H)
-        return false, B
-      end
+    c=[poly[1][1,i] for i=1:cols(poly[1])]
+    sq=factor_squarefree(Kx(c))
+    lf=factor(collect(keys(sq.fac))[1])
+    t=first(keys(lf.fac))
+    if degree(t)==n
+      M.isirreducible=true
+      return true, eye(H[1],n)
+    else 
+      N=t(A)
+      kern=transpose(nullspace(transpose(N))[2])
+      B=closure(submatrix(kern,1:1, 1:n),H)
+      return false, B
     end
   end
   
+  #
+  #  Adding generators to obtain randomness
+  #
   G=[x for x in H]
+  
+  for i=1:max(length(M.G),9)
+    l1=rand(1:length(G))
+    l2=rand(1:length(G))
+    while l1 !=l2
+      l2=rand(1:length(G))
+    end
+    push!(G, G[l1]*G[l2])
+  end
+  
   
   while true
   
+  # At every step, we add a generator to the group.
+  
     push!(G, G[rand(1:length(G))]*G[rand(1:length(G))])
+    
   #
-  # First, choose a random combination of the generators of G
+  # Choose a random combination of the actual generators of G
   #
     A=MatrixSpace(K,n,n)()
     for i=1:length(G)
-      A+=rand(1:10)*G[i]
+      A+=rand(K)*G[i]
     end
  
   #
@@ -679,24 +771,23 @@ function meataxe(M::FqGModule)
         N=t(A)
         a,kern=nullspace(transpose(N))
         kern=transpose(kern)
-  
+        println("normal")
         #
         #  Norton test
         #   
-        for j=1:rows(kern)  
-          B=closure(submatrix(kern,j:j, 1:n),G)
+        for j=1:a 
+          B=closure(submatrix(kern,j:j, 1:n),M.G)
           if rows(B)!=n
             M.isirreducible=false
             return false, B
           end
         end        
         kernt=nullspace(N)[2]
-        
-        for j=1:cols(kernt)
-          Bt=closure(transpose(submatrix(kernt,1:n,j:j)),[transpose(x) for x in G])
+        println("dual")
+        for j=1:a
+          Bt=closure(transpose(submatrix(kernt,1:n,j:j)),[transpose(x) for x in M.G])
           if rows(Bt)!=n
-            subs=nullspace(Bt)[2]
-            subst=transpose(subs)
+            subst=transpose(nullspace(Bt)[2])
             @assert rows(subst)==rows(closure(subst,G))
             M.isirreducible=false
             return false, subst
@@ -781,7 +872,7 @@ doc"""
 
 function composition_factors(M::FqGModule)
   
-  if isdefined(M, :isirreducible) && M.isirreducible==true
+  if isdefined(M, :isirreducible) && M.isirreducible
     return [[M,1]]
   end 
  
@@ -791,7 +882,7 @@ function composition_factors(M::FqGModule)
   #
   #  If the module is irreducible, we just return a basis of the space
   #
-  if bool == true
+  if bool
     return [[M,1]]
   end
   G=M.G
@@ -816,7 +907,6 @@ function composition_factors(M::FqGModule)
       end    
     end
   end
-
   return append!(sub_list,quot_list)
 
 end
