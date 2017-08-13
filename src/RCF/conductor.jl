@@ -17,6 +17,9 @@ function conductor(C::Hecke.ClassField)
 
   mp=C.mq
   
+  #
+  #  First, we need to find the subgroup
+  #
   
   mR=mp.f
   mS=mp.g
@@ -44,6 +47,11 @@ function conductor(C::Hecke.ClassField)
   
   Sgens=[mR(mT(mW\w)) for w in gens(W)]
   
+  #
+  #  Some of the factors of the modulus are unnecessary for order reasons:
+  #
+  
+  
   L=factor(cond)
   for (p,vp) in L
     if gcd(E,p.gen_one)==1
@@ -63,8 +71,9 @@ function conductor(C::Hecke.ClassField)
 
   candidate=1
   
-  
-  # Test the finite primes.
+  #
+  # Test the finite primes dividing the modulus
+  #
   
   while !isempty(divisors)
     p=divisors[length(divisors)]
@@ -123,7 +132,9 @@ function conductor(C::Hecke.ClassField)
     cond*=p^vp
   end
   
-  # Test the infinite primes.
+  #
+  #  Test the infinite primes dividing the modulus
+  #
   
   if !isempty(inf_plc)
     l=valuation(E,2)
@@ -137,6 +148,7 @@ function conductor(C::Hecke.ClassField)
         cond_inf=candidate_inf
       end
     end
+    inf_plc=cond_inf
   end
   
   return cond, inf_plc
@@ -156,6 +168,9 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
 
   mp=C.mq
   
+  #
+  #  First, we need to find the subgroup
+  #
   
   mR=mp.f
   mS=mp.g
@@ -221,7 +236,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
     end
   end
   #
-  #  First, we need to check that m, inf_plc is a possible conductor
+  #  We check that m, inf_plc is a possible conductor
   #
   lp=factor(E)
   for (p,vp) in lp
@@ -241,7 +256,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   
   
-  divisors=collect(keys(L))
+  divisors=collect(keys(L1))
   candidate=1
   
   
@@ -249,10 +264,10 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   while !isempty(divisors)
     p=divisors[length(divisors)]
-    if L[p]==1
+    if L1[p]==1
       lp=factor(gcd(E, norm(p)-1))
       candidate=ideal(O,1)
-      for (q,vq) in L
+      for (q,vq) in L1
         if q !=p
           candidate*=q^Int(vq)
         end
@@ -274,12 +289,12 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
     else 
       l=valuation(E,p.gen_one)
       candidate=ideal(O,1)
-      for (q,vq) in L
+      for (q,vq) in L1
         if q !=p
           cand*=q^Int(vq)
         end
       end
-      candidate=candidate*p^(L[p]-1)
+      candidate=candidate*p^(L1[p]-1)
       iscandcond=true
       r, mr=ray_class_group(Int(p.gen_one),candidate,inf_plc)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
@@ -299,10 +314,13 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   if !isempty(inf_plc)
     l=valuation(E,2)
+    if iszero(l)
+      return false
+    end
     cond_inf=[x for x in inf_plc]
     for i=1:length(inf_plc)
       candidate_inf=[x for x in cond_inf if x !=inf_plc[i]]
-      r,mr=ray_class_group_p_part(2,cond,candidate_inf)
+      r,mr=ray_class_group_p_part(2,m,candidate_inf)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
       s,ms=quo(r,quot)
       if valuation(order(s),2)==l
