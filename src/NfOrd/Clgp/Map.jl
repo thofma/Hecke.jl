@@ -132,21 +132,26 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   #really annoying, but at least we have a small(ish) ideal now
 
-#  println("have to work")
+  #println("have to work")
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
   J = NfOrdIdl[]
   use_rand = false
   last_j = I
+  cnt = 0
   while true
     a = class_group_small_lll_elements_relation_next(E)
-#    println("trying $a")
-    Ia = simplify(a*iI)
-    @assert Ia.den == 1
-    n = norm(Ia.num)
+    #println("trying $a")
+    cnt += 1
+    na = norm(E.A)*abs(Hecke.norm_div(a, norm(E.A), div(nbits(discriminant(order(E.A))), 2)+20))
+    n = FlintZZ(norm(iI)*na)
     if issmooth(c.FB.fb_int, n)
+      Ia = simplify(a*iI)
+      @assert n == norm(Ia)
+      @assert Ia.den == 1
       fl, r = _factor!(c.FB, Ia.num, false)
       if fl 
+        #println("used $cnt attempts")
         scale_row!(r, fmpz(-1))
         if use_rand
           fl, s = _factor!(c.FB, last_j)
@@ -455,6 +460,8 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #deal with trivial case somehow!!!
   O = order(I[1])
 
+  @vprint :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals\n"
+
   c = _get_ClassGrpCtx_of_order(O)
   module_trafo_assure(c.M)
   H = c.M.basis
@@ -465,17 +472,22 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   X = Array{nf_elem, 1}()
 
   rr = SMat(FlintZZ)
-  for A = I
-    x, r = class_group_ideal_relation(A, c)
+  @vprint :ClassGroup 1 "finding relations ...\n"
+  @vtime :ClassGroup 1 for A = I
+    @vprint :ClassGroup 2 "doin' $A\n"
+    @vtime :ClassGroup 2 x, r = class_group_ideal_relation(A, c)
 # TODO: write == for Idl and FracIdl    
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
   end
-    
-  R, d = solve_ut(H, rr)
+  @vprint :ClassGroup 1 "... done\n"
+   
+  @vprint :ClassGroup 1 "solving...\n"
+  @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
   Rd = hcat(d*id(SMat, FlintZZ, R.r), fmpz(-1)*R)
-  S = hnf(saturate(Rd))
+  @vprint :ClassGroup 1 ".. done, now saturating ...\n"
+  @vtime :ClassGroup 1 S = hnf(saturate(Rd))
   S1 = sub(S, 1:S.r, 1:S.r)
   S2 = sub(S, 1:S.r, S.r+1:S.c)
   @assert rows(S1) == rows(S2) && rows(S1) == S.r
@@ -499,7 +511,9 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
     push!(U, inv(e))  # I don't understand the inv
   end
-  U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(O))
+  @vprint :ClassGroup 1 "reducing mod units\n"
+  @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(O))
+  @vprint :ClassGroup 1 "Done!\n"
 
   C = DiagonalGroup(fmpz[0 for i=U])
   r = MapSUnitModUnitGrpFacElem{typeof(C)}()
