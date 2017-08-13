@@ -33,6 +33,9 @@ type MapCache{D, C, De, Ce}
   pr::Dict{Ce, De} 
   prStat::Dict{Ce, Int}
 
+  old_im::Function
+  old_pr::Function
+
   function MapCache{D, C}(dom::D, cod::C, lim::Int = 100)
     r = new()
     r.lim = lim

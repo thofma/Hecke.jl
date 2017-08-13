@@ -72,11 +72,11 @@ end
 function _allow_cache!{D, C, De, Ce}(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Type{Ce})
   if isdefined(M.header, :cache)
     println("Cache already installed")
-    return
+  else
+    M.header.cache = MapCache{D, C, De, Ce}(domain(M), codomain(M), lim)
+    M.header.cache.old_pr = M.header.preimage
+    M.header.cache.old_im = M.header.image
   end
-  M.header.cache = MapCache{D, C, De, Ce}(domain(M), codomain(M), lim)
-  old_pr = M.header.preimage
-  old_im = M.header.image
   
   if length(methods(M.header.image)) > 1
     println("Cannot do image cache, too many types")
@@ -86,7 +86,7 @@ function _allow_cache!{D, C, De, Ce}(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::T
         inc(M.header.cache.imStat, a)
         return M.header.cache.im[a]::Ce
       else
-        b = old_im(a)::Ce
+        b = M.header.cache.old_im(a)::Ce
         M.header.cache.im[a] = b
         M.header.cache.imStat[a] = 0
         return b
@@ -104,7 +104,7 @@ function _allow_cache!{D, C, De, Ce}(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::T
         inc(M.header.cache.prStat, a)
         return M.header.cache.pr.vals[i]::De
       else
-        b = old_pr(a)::De
+        b = M.header.cache.old_pr(a)::De
         M.header.cache.pr[a] = b
         M.header.cache.prStat[a] = 0
         return b
@@ -117,5 +117,13 @@ end
 
 function allow_cache!(M::Map, lim::Int = 100)
   return _allow_cache!(M, lim, typeof(domain(M)), typeof(codomain(M)), elem_type(domain(M)), elem_type(codomain(M)))
+end
+
+function stop_cache!(M::Map)
+  if isdefined(M.header, :cache)
+    M.header.image = M.header.cache.old_im
+    M.header.preimage = M.header.cache.old_pr
+  end
+  nothing
 end
 

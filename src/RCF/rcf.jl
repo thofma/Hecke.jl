@@ -143,20 +143,22 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
     end
     @vprint :ClassField 2 "doin` $p\n"
     np += 1
-    if np > 5*ngens(R)
-      println(q)
-    end
-    if np > 15*ngens(R)
+
+    if false && np > 5*ngens(R)
       error("cannot stop")
     end
-    lP = prime_decomposition(ZK, p, 1)
+    if np % ngens(R) == 0
+      println("cannot stop")
+    end
+    lP = prime_decomposition(ZK, p)
+
     f=R[1]
     for (P, e) = lP
       try
         f = mR(P)
       catch e
         if !isa(e, BadPrime)
-          throw(e)
+          rethrow(e)
         end
         continue
       end
@@ -312,6 +314,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   
   @vprint :ClassField 2 "Class group of cyclotomic extension\n"
   c, mc = class_group(ZK)
+  allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
 
   q, mq = quo(c, e)
@@ -332,11 +335,11 @@ function _rcf_find_kummer(CF::ClassField_pp)
 
   lP = vcat(lP, Hecke.find_gens(inv(mc), PrimesSet(100, -1))[1])
 
-  @vprint :ClassField 2 "using $lP or length $(length(lP)) for s-units\n"
+  @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
 
-  S, mS = Hecke.sunit_group_fac_elem(lP)
+  @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
   @vprint :ClassField 2 "... done\n"
-  KK = kummer_extension(Int(e), [mS(S[i]) for i=1:ngens(S)])
+  @vtime :ClassField 2 KK = kummer_extension(Int(e), [mS(S[i]) for i=1:ngens(S)])
 
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
   @vtime :ClassField 2 h = build_map(CF.mq, KK, C)
@@ -373,7 +376,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
     c = div(e, o)
   end
   n = ms(domain(ms)[1])
-  @vprint :ClassField 2 "final $n of order $o and e=$e"
+  @vprint :ClassField 2 "final $n of order $o and e=$e\n"
   a = prod([KK.gen[i]^div(mod(n[i], e), c) for i=1:ngens(parent(n))])
   @vprint :ClassField 2 "generator $a\n"
   CF.a = a
@@ -651,6 +654,15 @@ function (A::FqNmodFiniteField)(x::nmod_poly)
   return u
 end
 
+function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_poly)
+  nf_elem_to_nmod_poly_den!(a_tmp, b)
+  ccall((:fq_nmod_set, :libflint), Void,
+                     (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                                     &a, &a_tmp, &K)
+  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &a, &K)                                   
+end
+  
+
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
@@ -662,28 +674,47 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   y = f(NfOrdElem(domain(f), gen(K)))
   Ft, t = PolynomialRing(ResidueRing(FlintZZ, p))
   K = number_field(domain(f))
-  g = gcd(Ft(K.pol), Ft(K(f.P.gen_two)))
+#  g = gcd(Ft(K.pol), Ft(K(f.P.gen_two)))
+#it would be cool to assert that g is the poly defining the codomain
+  qm1 = size(codomain(f))-1
 
   function _image(x::NfOrdElem)
     return f(x)
   end
 
-  function _image(x::nf_elem)  # STUPID
+  Fq = codomain(f)
+
+  function _image(x::nf_elem)
     m = den(x)
     if m %p == 0
       throw(BadPrime(p))
     end
-    return codomain(f)(Ft(x)) 
+    return Fq(Ft(x)) 
   end
 
+
   function _image(x::FacElem{nf_elem, AnticNumberField})
-    r = one(codomain(f))
+    r = one(Fq)
+    s = Fq()
+    t = Ft()
     for (k, v) = x.fac
-      kp = _image(k)
-      if iszero(kp)
+      if v == 0 || v%qm1 == 0
+        continue
+      end
+      if den(k) % p == 0
         throw(BadPrime(p))
       end
-      r *= kp^v
+      _nf_to_fq!(s, k, Fq, t)
+      if iszero(s)
+        throw(BadPrime(p))
+      end
+      vr = v % qm1
+      if vr < 0
+        vr = (-vr) %qm1
+        ccall((:fq_nmod_inv, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &s, &s, &Fq)
+      end
+      ccall((:fq_nmod_pow, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{fmpz}, Ptr{FqNmodFiniteField}), &s, &s, &vr, &Fq)
+      mul!(r, r, s)
     end
     @hassert :ClassField 3 r == f(O(evaluate(x)))
     return r
@@ -755,7 +786,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
         b = Hecke.short_elem(Iinv, -Matrix(FlintZZ, 1, length(l), l), prec=p)
       catch e
         if e != Hecke.LowPrecisionLLL() 
-          throw(e)
+          rethrow(e)
         end
         p *= 2
         if p> 40000
@@ -763,7 +794,13 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
         end
         continue
       end
-      if abs(norm(b)//norm(Iinv)) < abs(discriminant(Zk))
+#=
+  N(x) = prox x_i 
+  N(x)^(2/n) <= 1/n sum x_i^2 <= 1/n 2^((n-1)/2) disc^(1/n) (LLL)
+ so
+  N(x) <= (2^((n-1)/4)/n)^(n/2) disc^(1/2)
+=#
+      if abs(norm(b)//norm(Iinv)) < abs(discriminant(Zk)) 
         c = a*b^n
         @vprint :ClassField 3 "leaving with $c\n"
         return c
@@ -786,10 +823,12 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  return reduce_mod_powers(evaluate(a), n, primes)
+  b = evaluate(a)
+  return reduce_mod_powers(b, n, primes)
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
-  return reduce_mod_powers(evaluate(a), n)
+  b = evaluate(a)
+  return reduce_mod_powers(b, n)
 end
 
