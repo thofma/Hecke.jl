@@ -15,6 +15,7 @@ type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   header::Hecke.MapHeader
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
+  fact_mod::Dict{NfOrdIdl, Int}
   
   function MapRayClassGrpFacElem()
     return new()
