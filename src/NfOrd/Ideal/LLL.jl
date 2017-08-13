@@ -46,7 +46,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
     @v_do :ClassGroup 2 println("using inf val", v)
     c = deepcopy(c)
     mult_by_2pow_diag!(c, v)
-    sv = sum(v[1,i] for i=1:cols(l))
+    sv = max(fmpz(0), sum(v[1,i] for i=1:cols(l)))
   end
 
 
