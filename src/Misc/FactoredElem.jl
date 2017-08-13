@@ -307,6 +307,34 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   return prod([(p//1)^Int(k) for (p,k) = x.fac])
 end
 
+
+function _ev{T}(d::Dict{T, fmpz}, oe::T)
+  z = copy(oe)
+  if length(d)==0
+    return z
+  elseif length(d)==1
+    x = first(d)
+    return x[1]^x[2]
+  end
+  b = similar(d)
+  for (k,v) in d
+    if v>-10 && v<10
+      z *= k^Int(v)
+    else
+      r = isodd(v) ? 1 :0
+      vv = div(v-r, 2)
+      if vv!=0
+        b[k] = vv
+      end
+      if r!=0
+        z*= k
+      end
+    end
+  end
+  return _ev(b, oe)^2*z
+end
+
+
 doc"""
 ***
   evaluate{T}(x::FacElem{T}) -> T
@@ -316,33 +344,7 @@ doc"""
 > Does "square-and-multiply" on the exponent vectors.
 """
 function evaluate{T}(x::FacElem{T})
-  function ev(d)#d::Dict{T, fmpz})
-    z = one(base_ring(x))
-    if length(d)==0
-      return z
-    elseif length(d)==1
-      x = first(d)
-      return x[1]^x[2]
-    end
-    b = similar(d)
-    for (k,v) in d
-      if v>-10 && v<10
-        z *= k^Int(v)
-      else
-        r = isodd(v) ? 1 :0
-        vv = div(v-r, 2)
-        if vv!=0
-          b[k] = vv
-        end
-        if r!=0
-          z*= k
-        end
-      end
-    end
-    return ev(b)^2*z
-  end
-
-  return ev(x.fac)
+  return _ev(x.fac, one(base_ring(x)))
 end
 
 doc"""
