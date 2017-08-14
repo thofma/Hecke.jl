@@ -216,7 +216,9 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   L1=factor(m)
   for (p,vp) in L1
-    if haskey(L,p) && L1[p]>L[p]
+    if !haskey(L,p) &&
+      return false
+    elseif L1[p]>L[p]
       return false
     end
   end
@@ -291,17 +293,16 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       candidate=ideal(O,1)
       for (q,vq) in L1
         if q !=p
-          cand*=q^Int(vq)
+          candidate*=q^Int(vq)
         end
       end
       candidate=candidate*p^(L1[p]-1)
       iscandcond=true
-      r, mr=ray_class_group(Int(p.gen_one),candidate,inf_plc)
+      r, mr=ray_class_group_p_part(Int(p.gen_one),candidate,inf_plc)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
       s,ms=quo(r,quot) 
       if valuation(order(s),p.gen_one) < l
         iscandcond=false
-        break
       end
       if iscandcond
         return false
