@@ -571,7 +571,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       return FacElem(Dict(ideal(O,1) => fmpz(1)))
     end
     
-    function disclog2(J::NfOrdIdl)
+    function disclog2(J::Union{NfOrdIdl, FacElem{NfOrdIdl}})
       return X([0])
     end
     
