@@ -824,7 +824,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
     for i=1:rows(s)
       x=MatrixSpace(ZZ,1,cols(s))()
       for j=1:cols(s)
-        x[1,j]=_lift(s[i,j]) #Find a way of doing this.
+        x[1,j]=ZZ(coeff(s[i,j],0))
       end
       push!(subs, mQ\(mS\(S(x))))
     end
@@ -833,18 +833,4 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
   end
   return subgroups
 
-end
-
-function _lift(x::fq_nmod)
-
-  F=parent(x)
-  i=fmpz(0)
-  while i<order(F)
-    if F(i)==x
-      return i
-    else 
-      i=i+1
-    end
-  end
- 
 end
