@@ -30,7 +30,7 @@ export dickman_rho, bach_rho, bach_G, bach_F, logarithmic_integral, exponential_
   Lots of powers are computed over and over again.
 =#
 
-function rho_coeff{T<: Number}(x::T, prec::Int = 55; all::Bool = false)
+function rho_coeff(x::T, prec::Int = 55; all::Bool = false) where T<: Number
   a = analytic_func{T}()
   k = ceil(x)
   all_a = Array{analytic_func{T}, 1}()
@@ -57,7 +57,7 @@ function rho_coeff{T<: Number}(x::T, prec::Int = 55; all::Bool = false)
   return a
 end
 
-function analytic_eval{T<:Number}(a::analytic_func{T}, b::T)
+function analytic_eval(a::analytic_func{T}, b::T) where T<:Number
   s = T(0)
   for i=length(a.coeff):-1:1
     s = s*b + a.coeff[i]
@@ -131,11 +131,11 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
   return val
 end
 
-function bach_F{T<: Number}(x::T)
+function bach_F(x::T) where T<: Number
   return dickman_rho(1/x)
 end
 
-function bach_rho{T<:Number}(a::T, b::T, prec = 21)
+function bach_rho(a::T, b::T, prec = 21) where T<:Number
   if b>a || a<0 || b <0
     error("wrong values")
   end
@@ -149,7 +149,7 @@ function bach_G(a,b)
   return bach_rho(1/a, 1/b)
 end
 
-function bach_J{T <: Number}(u::T, v::T, w::T, prec)
+function bach_J(u::T, v::T, w::T, prec) where T <: Number
   k = ceil(w-w/u)
   function xi(t)#(t::T)
     return k-w+w/t
@@ -187,7 +187,7 @@ function exponential_integral(x::BigFloat)
   return z
 end
 
-function exponential_integral{T<:AbstractFloat}(x::T)
+function exponential_integral(x::T) where T<:AbstractFloat
   return T(exponential_integral(BigFloat(x)))
 end
 
@@ -262,7 +262,7 @@ an easy excercise in induction...
   vol = b(sum_0^{n-1} (-1)^k/k! log(b)^k)
      -> b exp(log(1/b)) = 1 very rapidly for n-> infty
 =#
-function vol{T<:Number}(n::Int, b::T)
+function vol(n::Int, b::T) where T<:Number
   lb = log(b)
   s = [typeof(b)(1)]
   t = typeof(b)(1)

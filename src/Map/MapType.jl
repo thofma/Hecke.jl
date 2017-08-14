@@ -24,7 +24,7 @@ end
 
 export Map, CoerceMap, ResidueRingPolyMap
 
-type MapCache{D, C, De, Ce}
+mutable struct MapCache{D, C, De, Ce}
   lim::Int
 
   im::Dict{De, Ce}
@@ -36,7 +36,7 @@ type MapCache{D, C, De, Ce}
   old_im::Function
   old_pr::Function
 
-  function MapCache{D, C}(dom::D, cod::C, lim::Int = 100)
+  function MapCache(dom::D, cod::C, lim::Int = 100) where {D, C}
     r = new()
     r.lim = lim
     r.im = Dict{De, Ce}()
@@ -47,7 +47,7 @@ type MapCache{D, C, De, Ce}
   end
 end
 
-type MapHeader{D, C}
+mutable struct MapHeader{D, C}
   domain::D
   codomain::C
   image::Function
@@ -84,16 +84,16 @@ type MapHeader{D, C}
   end
 end
 
-function MapHeader{D, C}(domain::D, codomain::C, image::Function)
+function MapHeader(domain::D, codomain::C, image::Function) where {D, C}
   return MapHeader{D, C}(domain, codomain, image)
 end
 
-function MapHeader{D, C}(domain::D, codomain::C, image::Function, preimage::Function)
+function MapHeader(domain::D, codomain::C, image::Function, preimage::Function) where {D, C}
   return MapHeader{D, C}(domain, codomain, image, preimage)
 end
 
 # this type represents a -> f(g(a))
-type CompositeMap{D, C, R} <: Map{D, C}
+mutable struct CompositeMap{D, C, R} <: Map{D, C}
   header::MapHeader{D, C}
   f::Map{R, C}
   g::Map{D, R}
@@ -130,11 +130,11 @@ type CompositeMap{D, C, R} <: Map{D, C}
   end
 end
 
-function *{D, C, R}(f::Map{R, C}, g::Map{D, R})
+function *(f::Map{R, C}, g::Map{D, R}) where {D, C, R}
   return CompositeMap{D, C, R}(f, g)
 end
 
-function compose{D, C, R}(f::Map{R, C}, g::Map{D, R})
+function compose(f::Map{R, C}, g::Map{D, R}) where {D, C, R}
   return CompositeMap{D, C, R}(f, g)
 end
 
@@ -142,7 +142,7 @@ function compose(f::Map, g::Map)
   return CompositeMap{typeof(domain(g)), typeof(codomain(f)), Any}(f, g)
 end
 
-type InverseMap{D, C} <: Map{D, C}
+mutable struct InverseMap{D, C} <: Map{D, C}
   header::MapHeader{D, C}
   origin::Map{C, D}
 
@@ -154,11 +154,11 @@ type InverseMap{D, C} <: Map{D, C}
   end
 end
 
-function InverseMap{D, C}(f::Map{C, D})
+function InverseMap(f::Map{C, D}) where {D, C}
   return InverseMap{D, C}(f)
 end
 
-type ResidueRingPolyMap{D, C, T} <: Map{D, C}
+mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C}
   header::MapHeader{D, C}
   gen_image::GenRes{T}
   coeff_map::Map # can be missing if domain and codomain have the same
@@ -250,15 +250,15 @@ type ResidueRingPolyMap{D, C, T} <: Map{D, C}
   end
 end
 
-function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, i::GenRes{T})
+function ResidueRingPolyMap(domain::D, codomain::C, i::GenRes{T}) where {D, C, T}
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i)
 end
 
-function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, i::GenRes{T}, coeff_map::Map)
+function ResidueRingPolyMap(domain::D, codomain::C, i::GenRes{T}, coeff_map::Map) where {D, C, T}
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i, coeff_map)
 end
 
-type IdentityMap{D} <: Map{D, D}
+mutable struct IdentityMap{D} <: Map{D, D}
   header::MapHeader{D, D}
 
   function IdentityMap(domain::D)
@@ -274,11 +274,11 @@ type IdentityMap{D} <: Map{D, D}
   end
 end
 
-function IdentityMap{D}(domain::D)
+function IdentityMap(domain::D) where D
   return IdentityMap{D}(domain)
 end
 
-type CoerceMap{D, C} <: Map{D, C}
+mutable struct CoerceMap{D, C} <: Map{D, C}
   header::MapHeader{D, C}
 
   function CoerceMap(domain::D, codomain::C)
@@ -322,7 +322,7 @@ type CoerceMap{D, C} <: Map{D, C}
     return z
   end
 
-  function CoerceMap{S, T <: PolyElem}(domain::GenResRing{S}, codomain::GenResRing{T})
+  function CoerceMap(domain::GenResRing{S}, codomain::GenResRing{T}) where {S, T <: PolyElem}
     z = new{GenResRing{S}, GenResRing{T}}()
 
     image = function(a::GenRes)
@@ -342,11 +342,11 @@ type CoerceMap{D, C} <: Map{D, C}
   end
 end
 
-function CoerceMap{D, C}(domain::D, codomain::C)
+function CoerceMap(domain::D, codomain::C) where {D, C}
   return CoerceMap{D, C}(domain, codomain)
 end
 
-type GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
+mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
   header::MapHeader{GrpAbFinGen, GrpAbFinGen}
 
   map::fmpz_mat
@@ -390,7 +390,7 @@ end
 ###########################################################
 # To turn a Function (method) into a map.
 ###########################################################
-type MapFromFunc{R, T} <: Map{R, T}
+mutable struct MapFromFunc{R, T} <: Map{R, T}
   header::Hecke.MapHeader{R, T}
   f::Function
   function MapFromFunc(f::Function, D::R, C::T)

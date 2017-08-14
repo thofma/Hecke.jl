@@ -499,7 +499,7 @@ function int_fb_max_real(f::Int, B::Int)
 end
 
 
-function statistic{T}(st::Dict{Int,T})
+function statistic(st::Dict{Int,T}) where T
   s = T(0)
   s2 = T(0)
   n = 0
@@ -518,7 +518,7 @@ function statistic{T}(st::Dict{Int,T})
   return av, si
 end
 
-function statistic{T}(st::Array{T, 1})
+function statistic(st::Array{T, 1}) where T
   s = T(0)
   s2 = T(0)
   n = length(st)

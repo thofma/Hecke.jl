@@ -19,7 +19,7 @@ function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
   ccall((:fmpz_mod_poly_rem, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}), &a, &b, &c)
 end
 
-type crt_env{T}
+mutable struct crt_env{T}
   pr::Array{T, 1}
   id::Array{T, 1}
   tmp::Array{T, 1}
@@ -73,11 +73,11 @@ doc"""
 >  fmpz_mod_poly), prepare data for fast application of the chinese
 >  remander theorem for those moduli.
 """
-function crt_env{T}(p::Array{T, 1})
+function crt_env(p::Array{T, 1}) where T
   return crt_env{T}(p)
 end
 
-function show{T}(io::IO, c::crt_env{T})
+function show(io::IO, c::crt_env{T}) where T
   print(io, "CRT data for moduli ", c.pr[1:c.n])
 end
 
@@ -88,12 +88,12 @@ doc"""
 > Given values in b and the environment prepared by crt_env, return the 
 > unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """  
-function crt{T}(b::Array{T, 1}, a::crt_env{T})
+function crt(b::Array{T, 1}, a::crt_env{T}) where T
   res = zero(b[1])
   return crt!(res, b, a)
 end
 
-function crt!{T}(res::T, b::Array{T, 1}, a::crt_env{T})
+function crt!(res::T, b::Array{T, 1}, a::crt_env{T}) where T
   @assert a.n == length(b)
   bn = div(a.n, 2)
   if isodd(a.n)
@@ -184,7 +184,7 @@ function crt_inv{T}(a::T, c::crt_env{T})
 end
 =#
 
-function crt_inv_iterative!{T}(res::Array{T,1}, a::T, c::crt_env{T})
+function crt_inv_iterative!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   for i=1:c.n
     if isdefined(res, i)
       rem!(res[i], a, c.pr[i])
@@ -195,7 +195,7 @@ function crt_inv_iterative!{T}(res::Array{T,1}, a::T, c::crt_env{T})
   return res
 end
 
-function crt_inv_tree!{T}(res::Array{T,1}, a::T, c::crt_env{T})
+function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   for i=1:c.n
     if !isdefined(res, i)
       res[i] = zero(a)
@@ -232,7 +232,7 @@ doc"""
 > the modular data $a \bmod pr_i$ for all $i$.
 > This is essentially the inverse to the \code{crt} function.  
 """
-function crt_inv{T}(a::T, c::crt_env{T})
+function crt_inv(a::T, c::crt_env{T}) where T
   res = Array{T}(c.n)
   if c.n < 50
     return crt_inv_iterative!(res, a, c)
@@ -241,7 +241,7 @@ function crt_inv{T}(a::T, c::crt_env{T})
   end
 end
     
-function crt_inv!{T}(res::Array{T, 1}, a::T, c::crt_env{T})
+function crt_inv!(res::Array{T, 1}, a::T, c::crt_env{T}) where T
   if c.n < 50
     return crt_inv_iterative!(res, a, c)
   else
@@ -295,7 +295,7 @@ doc"""
 
 > Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
 """
-function crt{T}(r1::GenPoly{T}, m1::GenPoly{T}, r2::GenPoly{T}, m2::GenPoly{T})
+function crt(r1::GenPoly{T}, m1::GenPoly{T}, r2::GenPoly{T}, m2::GenPoly{T}) where T
   g, u, v = gcdx(m1, m2)
   m = m1*m2
   return (r1*v*m2 + r2*u*m1) % m
@@ -308,7 +308,7 @@ doc"""
 > Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 > A plain iteration is performed.
 """
-function crt_iterative{T}(r::Array{T, 1}, m::Array{T, 1})
+function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
   p = crt(r[1], m[1], r[2], m[2])
   d = m[1] * m[2]
   for i = 3:length(m)
@@ -325,7 +325,7 @@ doc"""
 > Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 > A tree based strategy is used that is asymptotically fast.
 """
-function crt_tree{T}(r::Array{T, 1}, m::Array{T, 1})
+function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
   if isodd(length(m))
     M = [m[end]]
     V = [r[end]]
@@ -354,7 +354,7 @@ doc"""
 
 > Find $r$ such that $r \equiv r_i \pmod m_i$ for all $i$.
 """
-function crt{T}(r::Array{T, 1}, m::Array{T, 1}) 
+function crt(r::Array{T, 1}, m::Array{T, 1}) where T 
   length(r) == length(m) || error("Arrays need to be of same size")
   if length(r) < 15
     return crt_iterative(r, m)
@@ -477,7 +477,7 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   end
 end
 
-type modular_env
+mutable struct modular_env
   p::fmpz
   up::UInt
   upinv::UInt

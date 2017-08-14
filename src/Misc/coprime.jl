@@ -5,7 +5,7 @@ function isone(a::Integer)
   return a==1
 end
 
-function divexact{T <: Integer}(a::T, b::T)
+function divexact(a::T, b::T) where T <: Integer
   return div(a, b)::T
 end
 
@@ -21,11 +21,11 @@ function gcd_into!(a::fmpz, b::fmpz, c::fmpz)
   return a
 end
 
-function gcd_into!{T <: Integer}(a::T, b::T, c::T)
+function gcd_into!(a::T, b::T, c::T) where T <: Integer
   return gcd(b, c)::T
 end
 
-function mul_into!{T}(a::T, b::T, c::T)
+function mul_into!(a::T, b::T, c::T) where T
   return (b*c)::T
 end
 
@@ -50,7 +50,7 @@ end
 #for larger lists much better than Bill's (Nemo's) prod function
 # the build-in Julia is better than Bill's Nemo function anyway
 
-type ProdEnv{T}
+mutable struct ProdEnv{T}
   level :: Array{Int, 1}
   val   :: Array{T, 1}
   last  :: Int
@@ -68,7 +68,7 @@ type ProdEnv{T}
   end
 end
 
-function prod_mul!{T}(A::ProdEnv{T}, b::T)
+function prod_mul!(A::ProdEnv{T}, b::T) where T
   if A.last == 0
     A.level[1] = 1
     A.val[1] = copy_into!(A.val[1], b)
@@ -103,7 +103,7 @@ function prod_end(A::ProdEnv)
   return b
 end
 
-function my_prod{T}(a::AbstractArray{T, 1}) 
+function my_prod(a::AbstractArray{T, 1}) where T 
   if length(a) <100
     return prod(a)
   end
@@ -124,7 +124,7 @@ end
 
 #coprime base Bach/ Schallit/ ???
 
-function pair_bach{E}(a::E, b::E)
+function pair_bach(a::E, b::E) where E
   if isunit(a)
     if isunit(b)
       return Array{E}(0)
@@ -158,7 +158,7 @@ function pair_bach{E}(a::E, b::E)
   return n
 end
 
-function augment_bach{E}(S::Array{E, 1}, m::E)
+function augment_bach(S::Array{E, 1}, m::E) where E
   T = Array{E}(0)
   i = 1
   while i <= length(S) && !isunit(m)
@@ -179,7 +179,7 @@ function augment_bach{E}(S::Array{E, 1}, m::E)
 end
 
 
-function coprime_base_bach{E}(a::Array{E, 1}) #T need to support GCDs
+function coprime_base_bach(a::Array{E, 1}) where E #T need to support GCDs
   if length(a) < 2
     return a
   end
@@ -198,7 +198,7 @@ end
 #                         c*n = a
 # or c = gcd(a, b^infty)
 
-function ppio{E}(a::E, b::E) 
+function ppio(a::E, b::E) where E 
   c = gcd(a, b)
   n = div(a, c)
   m = c
@@ -217,7 +217,7 @@ end
 # could/ should be optimsed using divexact! and gcd_into!
 # probably should also be combined with ppio somewhere
 
-function ppgle{E}(a::E, b::E)
+function ppgle(a::E, b::E) where E
   n = gcd(a,b)
   r = divexact(a, n)
   m = n
@@ -230,7 +230,7 @@ function ppgle{E}(a::E, b::E)
   return m, r, n
 end
 
-function pair_bernstein{E}(a::E, b::E)
+function pair_bernstein(a::E, b::E) where E
   T = Array{E}(0)
   if isunit(b)
     if isunit(a)
@@ -267,7 +267,7 @@ function pair_bernstein{E}(a::E, b::E)
   return T
 end
 
-function split_bernstein{T}(a::T, P::Hecke.node{T})
+function split_bernstein(a::T, P::Hecke.node{T}) where T
   b = Hecke.ppio(a, P.content)[1]
   if !isdefined(P, :left)
     if !isdefined(P, :right)
@@ -284,7 +284,7 @@ function split_bernstein{T}(a::T, P::Hecke.node{T})
   end
 end
 
-function split_bernstein{T}(a::T, P::Array{T, 1})
+function split_bernstein(a::T, P::Array{T, 1}) where T
   if length(P) == 0
     return P
   end
@@ -296,7 +296,7 @@ function split_bernstein{T}(a::T, P::Array{T, 1})
   return vcat(split_bernstein(b, F.ptree.left), split_bernstein(b, F.ptree.right))
 end
 
-function augment_bernstein{E}(P::Array{E, 1}, b::E)
+function augment_bernstein(P::Array{E, 1}, b::E) where E
   T = Array{E}(0)
   if length(P) == 0
     if isunit(b)
@@ -317,7 +317,7 @@ function augment_bernstein{E}(P::Array{E, 1}, b::E)
   return T
 end
 
-function merge_bernstein{E}(P::Array{E, 1}, Q::Array{E, 1})
+function merge_bernstein(P::Array{E, 1}, Q::Array{E, 1}) where E
   m = length(Q)
   b = nbits(m)
   S = P
@@ -333,7 +333,7 @@ function merge_bernstein{E}(P::Array{E, 1}, Q::Array{E, 1})
 end
 
 
-function coprime_base_bernstein{E}(S::Array{E, 1})
+function coprime_base_bernstein(S::Array{E, 1}) where E
   if length(S)<2
     return S
   end
@@ -342,7 +342,7 @@ function coprime_base_bernstein{E}(S::Array{E, 1})
   return merge_bernstein(P1, P2)
 end
 
-function augment_steel{E}(S::Array{E, 1}, a::E, start::Int = 1)
+function augment_steel(S::Array{E, 1}, a::E, start::Int = 1) where E
   i = start
   if isunit(a)
     return S
@@ -382,7 +382,7 @@ function augment_steel{E}(S::Array{E, 1}, a::E, start::Int = 1)
   return S;
 end
 
-function coprime_base_steel{E}(S::Array{E, 1})
+function coprime_base_steel(S::Array{E, 1}) where E
   T = Array{E}(1)
   T[1] = S[1]
   for i=2:length(S)

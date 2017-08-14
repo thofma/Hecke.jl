@@ -238,7 +238,7 @@ function rand(M::GenMatSpace{NfOrdElem}, B::Union{Int, fmpz})
   return z
 end
 
-type PMat{T, S}
+mutable struct PMat{T, S}
   parent
   matrix::GenMat{T}
   coeffs::Array{S, 1}
@@ -258,7 +258,7 @@ end
 
 ==(P::PMat, Q::PMat) = P.matrix == Q.matrix && P.coeffs == Q.coeffs
 
-function Base.deepcopy_internal{T, S}(P::PMat{T, S}, dict::ObjectIdDict)
+function Base.deepcopy_internal(P::PMat{T, S}, dict::ObjectIdDict) where {T, S}
   z = PMat{T, S}()
   for x in fieldnames(P)
     if x != :parent && isdefined(P, x)
@@ -280,7 +280,7 @@ function show(io::IO, P::PMat)
   end
 end
 
-function PseudoMatrix{T, S}(m::GenMat{T}, c::Array{S, 1})
+function PseudoMatrix(m::GenMat{T}, c::Array{S, 1}) where {T, S}
   # sanity checks
   @assert rows(m) == length(c)
   return PMat{T, S}(m ,c)
@@ -302,7 +302,7 @@ end
 
 PseudoMatrix(m::GenMat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
 
-function PseudoMatrix{S}(c::Array{S, 1})
+function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
    m = one(MatrixSpace(K, length(c), length(c)))
    return PseudoMatrix(m, c)
@@ -488,13 +488,13 @@ function _check(m::GenMat{NfOrdQuoRingElem})
   end
 end
 
-function divide_row!{T}(M::GenMat{T}, i::Int, r::T)
+function divide_row!(M::GenMat{T}, i::Int, r::T) where T
   for j in 1:cols(M)
     M[i, j] = divexact(M[i, j], r)
   end
 end
 
-function mul_row!{T}(M::GenMat{T}, i::Int, r::T)
+function mul_row!(M::GenMat{T}, i::Int, r::T) where T
   for j in 1:cols(M)
     M[i, j] = M[i, j] * r
   end
@@ -584,7 +584,7 @@ function pseudo_hnf_cohen_with_trafo(P::PMat)
    return _pseudo_hnf_cohen(P, Val{true})
 end
 
-function _pseudo_hnf_cohen{T}(P::PMat, trafo::Type{Val{T}} = Val{false})
+function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
@@ -602,7 +602,7 @@ end
 Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
 by H. Cohen.
 =#
-function pseudo_hnf_cohen!{T <: nf_elem}(H::PMat, U::GenMat{T}, with_trafo::Bool = false)
+function pseudo_hnf_cohen!(H::PMat, U::GenMat{T}, with_trafo::Bool = false) where T <: nf_elem
    m = rows(H)
    n = cols(H)
    A = H.matrix
@@ -756,7 +756,7 @@ function pseudo_hnf_kb_with_trafo(P::PMat)
    return _pseudo_hnf_kb(P, Val{true})
 end
 
-function _pseudo_hnf_kb{T}(P::PMat, trafo::Type{Val{T}} = Val{false})
+function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
@@ -978,7 +978,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
    return nothing
 end
 
-type PMat2
+mutable struct PMat2
    parent
    matrix::GenMat{nf_elem}
    row_coeffs::Array{NfOrdFracIdl, 1}
@@ -1037,7 +1037,7 @@ function pseudo_snf_kb_with_trafo(P::PMat2)
    return _pseudo_snf_kb(P, Val{true})
 end
 
-function _pseudo_snf_kb{T}(P::PMat2, trafo::Type{Val{T}} = Val{false})
+function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
    S = deepcopy(P)
    m = rows(S)
    n = cols(S)
@@ -1142,7 +1142,7 @@ function pseudo_snf_kb!(S::PMat2, U::GenMat{nf_elem}, K::GenMat{nf_elem}, with_t
    return nothing
 end
 
-type ModDed
+mutable struct ModDed
    pmatrix::PMat
    base_ring::NfOrd
    is_triu::Bool

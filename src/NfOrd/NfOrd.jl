@@ -129,7 +129,7 @@ end
 #
 ################################################################################
 
-function basis_ord{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
+function basis_ord(O::NfOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis(O)
   if copy == Val{true}
     return deepcopy(O.basis_ord)::Vector{NfOrdElem}
@@ -168,7 +168,7 @@ doc"""
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_mat{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
+function basis_mat(O::NfOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat(O)
   if copy == Val{true}
     return deepcopy(O.basis_mat)
@@ -182,7 +182,7 @@ doc"""
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv{T}(O::NfOrd, copy::Type{Val{T}} = Val{true})
+function basis_mat_inv(O::NfOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat_inv(O)
   if copy == Val{true}
     return deepcopy(O.basis_mat_inv)
@@ -412,8 +412,8 @@ end
 # Check if a number field element is contained in O
 # In this case, the second return value is the coefficient vector with respect
 # to the basis of O
-function _check_elem_in_order{T}(a::nf_elem, O::NfOrd,
-                                 short::Type{Val{T}} = Val{false})
+function _check_elem_in_order(a::nf_elem, O::NfOrd,
+                              short::Type{Val{T}} = Val{false}) where T
   assure_has_basis_mat_inv(O)
   t = O.tcontain
   elem_to_mat_row!(t.num, 1, t.den, a)
@@ -970,7 +970,7 @@ function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
   return O
 end
 
-maximal_order{T}(K::AnticNumberField, primes::Array{T, 1}) =
+maximal_order(K::AnticNumberField, primes::Array{T, 1}) where {T} =
   maximal_order(K, map(FlintZZ, primes))
 
 doc"""

@@ -9,7 +9,7 @@
 # works (at least) for fmpz and nmod_poly, so it can be used for the
 # smoothness test
 
-function compose{T}(a::node{T}, b::node{T}, check = false)
+function compose(a::node{T}, b::node{T}, check = false) where T
   if check && !isone(gcd(a.content, b.content))
     error("input not coprime")
   end
@@ -17,7 +17,7 @@ function compose{T}(a::node{T}, b::node{T}, check = false)
 end
 
 # assume that the set or array consists of pairwise coprime elements
-function FactorBase{T}(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true)
+function FactorBase(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true) where T
   if length(x)==0
     z = FactorBase{T}(T(1), x)
     return z
@@ -35,11 +35,11 @@ function FactorBase{T}(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true
   return z
 end
 
-function show{T}(io::IO, B::FactorBase{T})
+function show(io::IO, B::FactorBase{T}) where T
   print(io, "Factor base with \n$(B.base) and type $T")
 end
 
-function issmooth{T}(c::FactorBase{T}, a::T)
+function issmooth(c::FactorBase{T}, a::T) where T
   @assert a != 0
   g = gcd(c.prod, a)
   while g != 1 
@@ -64,11 +64,11 @@ function issmooth!(c::FactorBase{fmpz}, a::fmpz)
 end
 
 
-function isleaf{T}(a::node{T})
+function isleaf(a::node{T}) where T
   return !(isdefined(a, :left) || isdefined(a, :right))
 end
 
-function _split{T}(c::node{T}, a::T)
+function _split(c::node{T}, a::T) where T
   if isleaf(c)
     return [gcd(a, c.content)]
   end
@@ -95,7 +95,7 @@ function _split{T}(c::node{T}, a::T)
   return vcat(ls, rs)
 end
 
-function factor{T}(c::FactorBase{T}, a::T)
+function factor(c::FactorBase{T}, a::T) where T
   @assert a != 0
   f = Dict{T, Int}()
   lp = _split(c.ptree, a)
@@ -114,7 +114,7 @@ function factor{T}(c::FactorBase{T}, a::T)
   return f
 end
 
-function factor{T}(c::FactorBase{T}, a::fmpq)  ## fractions over T
+function factor(c::FactorBase{T}, a::fmpq) where T  ## fractions over T
   @assert a != 0
   f = Dict{T, Int}()
   n = abs(num(a))

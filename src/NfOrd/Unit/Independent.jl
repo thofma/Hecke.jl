@@ -29,11 +29,11 @@ doc"""
 > Given an array of non-zero elements in a number field, returns whether they
 > are multiplicatively independent.
 """
-function isindependent{T}(x::Array{T, 1}, p::Int = 32)
+function isindependent(x::Array{T, 1}, p::Int = 32) where T
   return _isindependent(x, p)
 end
 
-function _isindependent{T}(x::Array{T, 1}, p::Int = 32)
+function _isindependent(x::Array{T, 1}, p::Int = 32) where T
   K = _base_ring(x[1])
 
   deg = degree(K)

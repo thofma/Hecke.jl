@@ -11,7 +11,7 @@ doc"""
 > Compute the regulator $r$ of the elements in $x$, such that the radius of $r$
 > is less then `-2^abs_tol`.
 """
-function regulator{T}(x::Array{T, 1}, abs_tol::Int)
+function regulator(x::Array{T, 1}, abs_tol::Int) where T
   K = _base_ring(x[1])
   deg = degree(K)
   r1, r2 = signature(K)

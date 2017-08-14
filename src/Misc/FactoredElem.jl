@@ -12,7 +12,7 @@ export transform
 
 const FacElemMonDict = ObjectIdDict()
 
-function (x::FacElemMon{S}){S}()
+function (x::FacElemMon{S})() where S
   z = FacElem{elem_type(S), S}()
   z.fac = Dict{elem_type(S), fmpz}()
   z.parent = x
@@ -22,7 +22,7 @@ doc"""
     FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
 > Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
-function FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1})
+function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
 
   length(base) == 0 && error("Array must not be empty")
 
@@ -50,7 +50,7 @@ doc"""
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
 > Returns the element $\prod b^{d[p]}$, un-expanded.
 """
-function FacElem{B}(d::Dict{B, fmpz})
+function FacElem(d::Dict{B, fmpz}) where B
 
   length(d) == 0 && error("Dictionary must not be empty")
 
@@ -61,7 +61,7 @@ function FacElem{B}(d::Dict{B, fmpz})
   return z
 end
 
-function FacElem{B, T <: Integer}(d::Dict{B, T})
+function FacElem(d::Dict{B, T}) where {B, T <: Integer}
 
   length(d) == 0 && error("Dictionary must not be empty")
 
@@ -81,7 +81,7 @@ base_ring(x::FacElem) = base_ring(parent(x))
 
 base(x::FacElem) = keys(x.fac)
 
-function Base.deepcopy_internal{B, S}(x::FacElem{B, S}, dict::ObjectIdDict)
+function Base.deepcopy_internal(x::FacElem{B, S}, dict::ObjectIdDict) where {B, S}
   z = FacElem{B, S}()
   z.fac = Base.deepcopy_internal(x.fac, dict)
   if isdefined(x, :parent)
@@ -127,7 +127,7 @@ end
 #
 ################################################################################
 
-function pow!{T <: Union{fmpz, Integer}}(z::FacElem, x::FacElem, y::T)
+function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
   z.fac = deepcopy(x.fac)
   for a in base(x)
     # this should be inplace
@@ -163,7 +163,7 @@ end
 #
 ################################################################################
 
-function mul!{B, S}(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S})
+function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   z.fac = deepcopy(x.fac)
   for a in base(y)
     if haskey(x.fac, a)
@@ -174,7 +174,7 @@ function mul!{B, S}(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S})
   end
 end
 
-function *{B, S}(x::FacElem{B, S}, y::FacElem{B, S})
+function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   if length(x.fac) == 0
     return deepcopy(y)
   end
@@ -194,7 +194,7 @@ function *{B, S}(x::FacElem{B, S}, y::FacElem{B, S})
   return z
 end
 
-function *{B}(x::FacElem{B}, y::B)
+function *(x::FacElem{B}, y::B) where B
   z = deepcopy(x)
   if haskey(x.fac, y)
     z.fac[y] = z.fac[y] + 1
@@ -204,7 +204,7 @@ function *{B}(x::FacElem{B}, y::B)
   return z
 end
 
-function *{B}(y::B, x::FacElem{B})
+function *(y::B, x::FacElem{B}) where B
   z = deepcopy(x)
   if haskey(x.fac, y)
     z.fac[y] = z.fac[y] + 1
@@ -214,7 +214,7 @@ function *{B}(y::B, x::FacElem{B})
   return z
 end
 
-function div{B}(x::FacElem{B}, y::FacElem{B})
+function div(x::FacElem{B}, y::FacElem{B}) where B
   z = deepcopy(x)
   for a in base(y)
     if haskey(x.fac, a)
@@ -233,7 +233,7 @@ end
 ################################################################################
 
 # return (x1,...,xr)*y
-function _transform{T, S}(x::Array{FacElem{T, S}, 1}, y::fmpz_mat)
+function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
   length(x) != rows(y) &&
               error("Length of array must be number of rows of matrix")
 
@@ -254,21 +254,21 @@ function _transform{T, S}(x::Array{FacElem{T, S}, 1}, y::fmpz_mat)
   return z
 end
 
-function transform{S, T}(x::Array{FacElem{S, T}, 1}, y::fmpz_mat)
+function transform(x::Array{FacElem{S, T}, 1}, y::fmpz_mat) where {S, T}
   return _transform(x, y)
 end
 
-function transform_left!{S, T}(x::Array{FacElem{S, T}, 1}, y::TrafoSwap{fmpz})
+function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoSwap{fmpz}) where {S, T}
   x[y.i], x[y.j] = x[y.j], x[y.i]
   nothing
 end
 
-function transform_left!{S, T}(x::Array{FacElem{S, T}, 1}, y::TrafoAddScaled{fmpz})
+function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoAddScaled{fmpz}) where {S, T}
   x[y.j] = x[y.j] * x[y.i]^y.s
   nothing
 end
 
-function transform_left!{S, T, R}(x::Array{FacElem{S, T}, 1}, y::TrafoPartialDense{R})
+function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoPartialDense{R}) where {S, T, R}
   z = view(deepcopy(x), y.rows)
   xx = view(x, y.rows)
   for i in 1:rows(y.U)
@@ -279,7 +279,7 @@ function transform_left!{S, T, R}(x::Array{FacElem{S, T}, 1}, y::TrafoPartialDen
   end
 end
 
-function transform_left!{S, T}(x::Array{T, 1}, t::TrafoDeleteZero{S})
+function transform_left!(x::Array{T, 1}, t::TrafoDeleteZero{S}) where {S, T}
   # move ith position to the back
   for j in t.i:length(x)-1
     r = x[j]
@@ -288,7 +288,7 @@ function transform_left!{S, T}(x::Array{T, 1}, t::TrafoDeleteZero{S})
   end
 end
 
-function transform_left!{S, T, R}(x::Array{FacElem{S, T}, 1}, y::TrafoParaAddScaled{R})
+function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoParaAddScaled{R}) where {S, T, R}
   # [ Ri; Rj] <- [a b; c d]* [ Ri; Rj ]
   ri = deepcopy(x[y.i])
   rj = deepcopy(x[y.j])
@@ -308,7 +308,7 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
 end
 
 
-function _ev{T}(d::Dict{T, fmpz}, oe::T)
+function _ev(d::Dict{T, fmpz}, oe::T) where T
   z = copy(oe)
   if length(d)==0
     return z
@@ -343,7 +343,7 @@ doc"""
 > value. 
 > Does "square-and-multiply" on the exponent vectors.
 """
-function evaluate{T}(x::FacElem{T})
+function evaluate(x::FacElem{T}) where T
   return _ev(x.fac, one(base_ring(x)))
 end
 
@@ -518,7 +518,7 @@ doc"""
 > Expands or evaluates the factored element, i.e. actually computes the
 > value. Uses the obvious naive algorithm. Faster for input in finite rings.
 """
-function evaluate_naive{T}(x::FacElem{T})
+function evaluate_naive(x::FacElem{T}) where T
   z = one(base_ring(x))
   d = x.fac
   if length(d)==0
@@ -619,7 +619,7 @@ end
 #
 ################################################################################
 
-function (F::FacElemMon{T}){T}(a::T)
+function (F::FacElemMon{T})(a::T) where T
   z = F()
   z.fac[a] = fmpz(1)
   return z

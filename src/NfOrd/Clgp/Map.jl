@@ -185,7 +185,7 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-type MapClassGrp{T} <: Map{T, NfOrdIdlSet}
+mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
 
   function MapClassGrp()
@@ -377,7 +377,7 @@ end
   
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
-function reduce_mod_units{T}(a::Array{T, 1}, U)
+function reduce_mod_units(a::Array{T, 1}, U) where T
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
   r = length(U.units)
@@ -431,7 +431,7 @@ function reduce_mod_units{T}(a::Array{T, 1}, U)
 end
 
 
-type MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
+mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
@@ -554,7 +554,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   return C, r
 end
 
-type MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
+mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
@@ -606,7 +606,7 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   return G, r
 end
 
-type MapSUnitGrp{T} <: Map{T, AnticNumberField}
+mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 

@@ -135,7 +135,7 @@ doc"""
 
 > Returns the element of $\mathcal O$ with coefficient vector `arr`.
 """
-(O::NfOrd){S <: Integer}(arr::Array{S, 1}) = begin
+(O::NfOrd)(arr::Array{S, 1}) where {S <: Integer} = begin
   return NfOrdElem(O, deepcopy(arr))
 end
 
@@ -686,7 +686,7 @@ end
 #
 ################################################################################
 
-function rand!{T <: Integer}(z::NfOrdElem, O::NfOrd, R::UnitRange{T})
+function rand!(z::NfOrdElem, O::NfOrd, R::UnitRange{T}) where T <: Integer
   y = O()
   ar = rand(R, degree(O))
   B = basis(O)
@@ -705,7 +705,7 @@ doc"""
 > Computes a coefficient vector with entries uniformly distributed in `R` and returns
 > the corresponding element of the order.
 """
-function rand{T <: Integer}(O::NfOrd, R::UnitRange{T})
+function rand(O::NfOrd, R::UnitRange{T}) where T <: Integer
   z = O()
   rand!(z, O, R)
   return z

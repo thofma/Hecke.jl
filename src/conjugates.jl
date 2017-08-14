@@ -67,7 +67,7 @@ function evaluate(f::fmpq_poly, r::BigComplex)
   return s
 end
 
-function evaluate{T <: RingElem}(f::fmpq_poly, r::T)
+function evaluate(f::fmpq_poly, r::T) where T <: RingElem
   R = parent(r)
   if iszero(f)
     return zero(R)

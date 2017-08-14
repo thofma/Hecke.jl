@@ -1,4 +1,4 @@
-function toMagma{T}(f::IOStream, a::Array{T, 1}; name::String="R")
+function toMagma(f::IOStream, a::Array{T, 1}; name::String="R") where T
   print(f, name, " := [\n")
   for i=1:(length(a)-1)
     try
@@ -32,7 +32,7 @@ function toMagma(f::IOStream, t::Tuple)
   end
 end  
 
-function toMagma{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w")
+function toMagma(s::String, a::Array{T, 1}; name::String="R", mode::String ="w") where T
   f = open(s, mode)
   toMagma(f, a, name = name)
   close(f)

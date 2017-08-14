@@ -34,7 +34,7 @@
 
 #why only simple relative?
 
-type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
+mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
   header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
   function NfRelToNf(K::NfRel{nf_elem}, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
@@ -73,7 +73,7 @@ function show(io::IO, h::NfRelToNf)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
-type NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
+mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
   header::MapHeader{NfRel{T}, NfRel{S}}
   prim_img ::NfRelElem{S}
   coeff_aut::NfToNfMor

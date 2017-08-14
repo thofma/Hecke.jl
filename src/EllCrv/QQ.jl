@@ -490,7 +490,7 @@ end
 ################################################################################
 
 # transformation T(r,s,t,u) as in cremona's book
-function transform_rstu{S}(E::EllCrv{fmpq}, T::Array{S, 1})
+function transform_rstu(E::EllCrv{fmpq}, T::Array{S, 1}) where S
   r = T[1]
   s = T[2]
   t = T[3]

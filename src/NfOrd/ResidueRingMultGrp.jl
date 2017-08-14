@@ -853,7 +853,7 @@ doc"""
 > Find $r$ and $m$ such that $r \equiv r_i (\mod m_i)$ for all $(r_i,m_i) \in l$
 > and $m$ is the product of al $m_i$.
 """
-function crt{T<:Union{fmpz,Int}}(l::Vector{Tuple{T,T}})
+function crt(l::Vector{Tuple{T,T}}) where T<:Union{fmpz,Int}
   isempty(l) && error("Input vector mustn't be empty")
   X = fmpz(l[1][1])
   M = fmpz(l[1][2])

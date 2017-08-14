@@ -1,7 +1,7 @@
 import Nemo.characteristic, Nemo.gen, Nemo.size
 export gen, characteristic, size, elem_to_mat_row!, rand
 
-function gen{T<:PolyElem}(R::GenResRing{T})  
+function gen(R::GenResRing{T}) where T<:PolyElem  
   return R(gen(base_ring(R)))
 end
 
@@ -21,7 +21,7 @@ function characteristic(R::GenResRing{nmod_poly})
   return characteristic(base_ring(base_ring(R)))
 end
 
-function characteristic{T<:PolyElem}(R::GenResRing{T})
+function characteristic(R::GenResRing{T}) where T<:PolyElem
   return characteristic(base_ring(base_ring(R)))
 end
 
@@ -30,7 +30,7 @@ function size(R::Nemo.GenResRing{Nemo.nmod_poly})
   return characteristic(R)^degree(modulus(R))
 end
 
-function size{T <: ResElem}(R::Nemo.GenResRing{T})
+function size(R::Nemo.GenResRing{T}) where T <: ResElem
   return size(base_ring(base_ring(R)))^degree(modulus(R))
 end
 
@@ -38,7 +38,7 @@ function size(R::Nemo.GenResRing{fmpz})
   return modulus(R)
 end
 
-function size{T<:PolyElem}(R::Nemo.GenResRing{T})
+function size(R::Nemo.GenResRing{T}) where T<:PolyElem
   return size(base_ring(base_ring(R)))^degree(R.modulus)
 end
 
@@ -56,7 +56,7 @@ end
 
 #################################################
 # in triplicate.... and probably cases missing...
-function elem_to_mat_row!{T <: PolyElem}(M::MatElem, i::Int, a::ResElem{T}) 
+function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem 
   z = zero(parent(M[1,1]))
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
@@ -88,7 +88,7 @@ function rand(R::GenResRing{fmpz})
   return R(rand(fmpz(0):(size(R)-1)))
 end
 
-function rand{T<:PolyElem}(R::GenResRing{T})
+function rand(R::GenResRing{T}) where T<:PolyElem
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
   for i=1:degree(R.modulus)
@@ -131,7 +131,7 @@ end
 ##
 #######################################################
 
-function gens{T<:PolyElem}(R::GenResRing{T}) ## probably needs more cases
+function gens(R::GenResRing{T}) where T<:PolyElem ## probably needs more cases
                                           ## as the other residue functions
   g = gen(R)
   r = Array{typeof(g), 1}()

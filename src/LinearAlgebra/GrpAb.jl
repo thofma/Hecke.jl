@@ -423,7 +423,7 @@ doc"""
 > Given an array `x` of elements of type `Integer` of the same length as
 > ngens($A$), this function returns the element of $A$ with components `x`.
 """
-function (A::GrpAbFinGen){T <: Integer}(x::Array{T, 1})
+function (A::GrpAbFinGen)(x::Array{T, 1}) where T <: Integer
   ngens(A) != length(x) && error("Lengths do not coincide")
   z = A(map(fmpz, x))
   return z
@@ -683,7 +683,7 @@ function AbelianGroup(M::Array{fmpz, 2})
   return AbelianGroup(MatrixSpace(FlintZZ, size(M)[1], size(M)[2])(M))
 end
 
-function AbelianGroup{T <: Integer}(M::Array{T, 2})
+function AbelianGroup(M::Array{T, 2}) where T <: Integer
   return AbelianGroup(MatrixSpace(FlintZZ, size(M)[1], size(M)[2])(M))
 end
 
@@ -691,7 +691,7 @@ function AbelianGroup(M::Array{fmpz, 1})
   return AbelianGroup(MatrixSpace(FlintZZ, 1, length(M))(M'))
 end
 
-function AbelianGroup{T <: Integer}(M::Array{T, 1})
+function AbelianGroup(M::Array{T, 1}) where T <: Integer
   return AbelianGroup(MatrixSpace(FlintZZ, 1, length(M))(M'))
 end
 
@@ -719,7 +719,7 @@ function DiagonalGroup(M::fmpz_mat)
   end
 end
 
-function DiagonalGroup{T <: Union{Integer, fmpz}}(M::Array{T, 1})
+function DiagonalGroup(M::Array{T, 1}) where T <: Union{Integer, fmpz}
   N = MatrixSpace(FlintZZ, length(M), length(M))()
   for i=1:length(M)
     N[i,i] = M[i]
@@ -973,7 +973,7 @@ doc"""
 gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i=1:ngens(G)]
 
 
-function make_snf{T}(m::Map{GrpAbFinGen, T})
+function make_snf(m::Map{GrpAbFinGen, T}) where T
   G = domain(m)
   if G.issnf
     return m

@@ -66,8 +66,8 @@ end
 #
 ################################################################################
 
-function factor!{T}(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
-                    error = true, n = abs(norm(a)))
+function factor!(M::SMat{T}, i::Int, FB::NfFactorBase, a::nf_elem;
+                 error = true, n = abs(norm(a))) where T
   fl, res = _factor(FB, a, error=error, n=n)
   if fl
     push!(M, res)

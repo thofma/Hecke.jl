@@ -1,6 +1,6 @@
 #TODO: create an interface using characters
 
-type BadPrime <: Exception
+mutable struct BadPrime <: Exception
   p
 end
 
@@ -12,9 +12,9 @@ function Base.show(io::IO, E::BadPrime)
   end
 end
 
-abstract AbelianExt
+abstract type AbelianExt end
 
-type KummerExt <: AbelianExt
+mutable struct KummerExt <: AbelianExt
   zeta::nf_elem
   n::Int
   gen::Array{FacElem{nf_elem}, 1}
@@ -44,7 +44,7 @@ function kummer_extension(n::Int, gen::Array{FacElem{nf_elem, AnticNumberField},
   return K
 end
 
-type ClassField_pp
+mutable struct ClassField_pp
   mq::Map
   a::FacElem
   K::Hecke.NfRel{nf_elem} # the target with the roots of unity
@@ -71,7 +71,7 @@ function Base.show(io::IO, C::ClassField_pp)
 end
 
 
-type ClassField
+mutable struct ClassField
   mq::Map
   cyc::Array{ClassField_pp, 1}
   function ClassField()

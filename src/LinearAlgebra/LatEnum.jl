@@ -125,7 +125,7 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   return E
 end
 
-function enum_ctx_local_bound{T}(a::Rational{T}, b::Rational{T})
+function enum_ctx_local_bound(a::Rational{T}, b::Rational{T}) where T
   #return L <= U sth.
   #L = ceil(a-sqrt(b)), U = floor(a+sqrt(b))
   #solves (gives bounds) for (a-x)^2 <= b
@@ -147,7 +147,7 @@ function enum_ctx_local_bound{T}(a::Rational{T}, b::Rational{T})
   return L, U
 end
 
-function enum_ctx_local_bound{Number}(a::Number, b::Number)
+function enum_ctx_local_bound(a::Number, b::Number) where Number
   #return L <= U sth.
   #L = ceil(a-sqrt(b)), U = floor(a+sqrt(b))
   #solves (gives bounds) for (a-x)^2 <= b
@@ -162,7 +162,7 @@ function enum_ctx_local_bound{Number}(a::Number, b::Number)
 end
 
 
-function enum_ctx_start{A,B,C}(E::enum_ctx{A,B,C}, c::fmpz)
+function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
   E.c = c
   zero!(E.x)
   for i=1:E.limit
@@ -206,7 +206,7 @@ function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
   ccall((:fmpz_add_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
 end
 
-function enum_ctx_advance_level{A,B,C}(E::enum_ctx{A,B,C}, i::Int)
+function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}
 #  println("i: ", i, "                                   "[1:2*i], "|")
   t = ZZ()
   if i == E.last_non_zero-1
@@ -230,7 +230,7 @@ function enum_ctx_advance_level{A,B,C}(E::enum_ctx{A,B,C}, i::Int)
 end
 
 _next = 0.0
-function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
+function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   global _next
   @v_do :ClassGroup_time 2 rt = time_ns()
   E.cnt += 1
@@ -313,7 +313,7 @@ function enum_ctx_next{A,B,C}(E::enum_ctx{A,B,C})
   return true
 end
 
-function enum_ctx_short_elements{A,B,C}(E::enum_ctx{A,B,C}, c::fmpz, limit=-1)
+function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::fmpz, limit=-1) where {A,B,C}
   enum_ctx_start(E, c)
   if enum_ctx_next(E)
     l = E.x
