@@ -12,23 +12,23 @@ mutable struct NfRelOrd{T, S} <: Ring
 
   disc #::NfOrdIdl or ::NfRelOrdIdl{T}
 
-  function NfRelOrd(K::NfRel{T}, M::PMat{T, S})
-    z = new()
+  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+    z = new{T, S}()
     z.nf = K
     z.basis_pmat = M
     return z
   end
   
-  function NfRelOrd(K::NfRel{T}, M::GenMat{T})
-    z = new()
+  function NfRelOrd{T, S}(K::NfRel{T}, M::GenMat{T}) where {T, S}
+    z = new{T, S}()
     z.nf = K
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
 
-  function NfRelOrd(K::NfRel{T})
-    z = new()
+  function NfRelOrd{T}(K::NfRel{T}) where {T}
+    z = new{T, S}()
     z.nf = K
     return z
   end

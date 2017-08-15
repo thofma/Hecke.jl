@@ -48,11 +48,11 @@ mutable struct NfRel{T} <: Nemo.Field
   pol::GenPoly{T}
   S::Symbol
 
-  function NfRel(f::GenPoly{T}, s::Symbol, cached::Bool = true)
+  function NfRel{T}(f::GenPoly{T}, s::Symbol, cached::Bool = true) where {T}
     if haskey(NfRelID, (parent(f), f, s))
       return NfRelID[parent(f), f, s]
     else
-      z = new()
+      z = new{T}()
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
@@ -71,7 +71,7 @@ mutable struct NfRelElem{T} <: Nemo.FieldElem
   data::GenPoly{T}
   parent::NfRel{T}
 
-  NfRelElem(g::GenPoly{T}) = new{T}(g)
+  NfRelElem{T}(g::GenPoly{T}) where {T} = new{T}(g)
 end
 
 ################################################################################

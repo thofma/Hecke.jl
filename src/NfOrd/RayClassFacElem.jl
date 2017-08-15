@@ -17,8 +17,8 @@ mutable struct MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   modulus_inf::Array{InfPlc,1}
   fact_mod::Dict{NfOrdIdl, Int}
   
-  function MapRayClassGrpFacElem()
-    return new()
+  function MapRayClassGrpFacElem{T}() where {T}
+    return new{T}()
   end
 end
 

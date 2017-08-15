@@ -86,8 +86,8 @@ end
 mutable struct MapNarrowClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
 
-  function MapNarrowClassGrp()
-    return new()
+  function MapNarrowClassGrp{T}() where {T}
+    return new{T}()
   end
 end
 

@@ -188,8 +188,8 @@ end
 mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
 
-  function MapClassGrp()
-    return new()
+  function MapClassGrp{T}() where {T}
+    return new{T}()
   end
 end
 
@@ -435,8 +435,8 @@ mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberFiel
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
-  function MapSUnitModUnitGrpFacElem()
-    return new()
+  function MapSUnitModUnitGrpFacElem{T}() where {T}
+    return new{T}()
   end
 end
 
@@ -558,8 +558,8 @@ mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
-  function MapSUnitGrpFacElem()
-    return new()
+  function MapSUnitGrpFacElem{T}() where {T}
+    return new{T}()
   end
 end
 
@@ -610,8 +610,8 @@ mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
-  function MapSUnitGrp()
-    return new()
+  function MapSUnitGrp{T}() where {T}
+    return new{T}()
   end
 end
 

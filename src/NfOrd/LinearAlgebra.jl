@@ -243,15 +243,15 @@ mutable struct PMat{T, S}
   matrix::GenMat{T}
   coeffs::Array{S, 1}
 
-  function PMat(m::GenMat{T}, c::Array{S, 1})
-    z = new()
+  function PMat{T, S}(m::GenMat{T}, c::Array{S, 1}) where {T, S}
+    z = new{T, S}()
     z.matrix = m
     z.coeffs = c
     return z
   end
 
-  function PMat()
-    z = new()
+  function PMat{T, S}() where {T, S}
+    z = new{T, S}()
     return z
   end
 end

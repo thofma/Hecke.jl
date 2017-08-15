@@ -4,8 +4,8 @@ mutable struct NfRelOrdElem{T} <: RingElem
   elem_in_basis::Vector{T}
   has_coord::Bool
 
-  function NfRelOrdElem(O::NfRelOrd{T})
-    z = new()
+  function NfRelOrdElem{T}(O::NfRelOrd{T}) where {T}
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = zero(nf(O))
     z.elem_in_basis = Vector{T}(degree(O))
@@ -13,8 +13,8 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem(O::NfRelOrd{T}, a::NfRelElem{T})
-    z = new()
+  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NfRelElem{T}) where {T}
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = a
     z.elem_in_basis = Vector{T}(degree(O))
@@ -22,8 +22,8 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem(O::NfRelOrd{T}, a::NfRelElem{T}, arr::Vector{T})
-    z = new()
+  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NfRelElem{T}, arr::Vector{T}) where {T}
+    z = new{T}()
     z.parent = O
     z.elem_in_nf = a
     z.elem_in_basis = arr

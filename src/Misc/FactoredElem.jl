@@ -596,7 +596,7 @@ doc"""
 > Finds the largest exponent by absolute value the factored element $a$
 """
 function maxabs_exp(a::FacElem)
-  return maxabs(values(a.fac))
+  return maximum(abs, values(a.fac))
 end
 
 #################################################################################

@@ -27,7 +27,8 @@ mutable struct crt_env{T}
   t2::T
   n::Int
   M::T #for T=fmpz, holds prod/2
-  function crt_env(p::Array{T, 1})
+
+  function crt_env{T}(p::Array{T, 1}) where {T}
     pr = deepcopy(p)
     id = Array{T, 1}()
     i = 1
@@ -48,7 +49,7 @@ mutable struct crt_env{T}
       push!(pr, a*b)
       i += 1
     end
-    r = new()
+    r = new{T}()
     r.pr = pr
     r.id = id
 
@@ -186,7 +187,7 @@ end
 
 function crt_inv_iterative!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   for i=1:c.n
-    if isdefined(res, i)
+    if isassigned(res, i)
       rem!(res[i], a, c.pr[i])
     else
       res[i] = a % c.pr[i]
@@ -197,7 +198,7 @@ end
 
 function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   for i=1:c.n
-    if !isdefined(res, i)
+    if !isassigned(res, i)
       res[i] = zero(a)
     end
   end
@@ -559,7 +560,7 @@ function modular_proj(a::nf_elem, me::modular_env)
   crt_inv!(me.rp, ap, me.ce)
   for i=1:me.ce.n
     F = me.fld[i]
-    if isdefined(me.res, i)
+    if isassigned(me.res, i)
       u = me.res[i]
     else
       u = F()

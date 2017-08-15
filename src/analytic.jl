@@ -100,7 +100,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
   x = b*e.stop
   k = ceil(x)
   rc = rho_coeff(x, prec, all = true)
-  val = Array(typeof(b), length(e))
+  val = Array{typeof(b)}(length(e))
 
   x = b*e.start
   if x <= 1
@@ -156,9 +156,9 @@ function bach_J(u::T, v::T, w::T, prec) where T <: Number
   end
 
   if xi(v) <= 1 
-    local A = w/v+k-w,
-          B = w/u+k-w,
-          C = k-w
+    local A = w/v+k-w
+    local B = w/u+k-w
+    local C = k-w
     function H_i(u, v, w, i)#u::T, v::T, w::T, i::Int)
       return C^i*(log(u/v) + sum([(A/C)^j/j for j=1:i]) -
                              sum([(B/C)^j/j for j=1:i]))

@@ -22,7 +22,7 @@ function Base.:(==)(P::InfPlc, Q::InfPlc)
 end
 
 function Base.hash(P::InfPlc, h::UInt)
-  return Base.hash(P.K, h) $ Base.hash(P.i, h)
+  return xor(Base.hash(P.K, h), Base.hash(P.i, h))
 end
 
 ################################################################################

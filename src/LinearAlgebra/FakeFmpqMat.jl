@@ -35,8 +35,8 @@ end
 ################################################################################
 
 function hash(a::FakeFmpqMat, b::UInt)
-  h = Base.hash(a.num, b) $ Base.hash(a.den, b)
-  h = h $ Base.hash(b)
+  h = xor(Base.hash(a.num, b), Base.hash(a.den, b))
+  h = xor(h, Base.hash(b))
   h = (h << 1) | (h >> (sizeof(Int)*8 - 1))
   return h
 end

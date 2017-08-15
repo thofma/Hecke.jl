@@ -54,7 +54,7 @@ mutable struct TrafoScale{T} <: Trafo
   i::Int
   c::T
 
-  function TrafoScale(i::Int, c::T)
+  function TrafoScale{T}(i::Int, c::T) where {T}
     return new{T}(i, c)
   end
 end
@@ -63,7 +63,7 @@ mutable struct TrafoSwap{T} <: Trafo
   i::Int
   j::Int
 
-  function TrafoSwap(i, j)
+  function TrafoSwap{T}(i, j) where {T}
     return new{T}(i, j)
   end
 end
@@ -74,7 +74,7 @@ mutable struct TrafoAddScaled{T} <: Trafo
   j::Int
   s::T
 
-  function TrafoAddScaled(i::Int, j::Int, s::T)
+  function TrafoAddScaled{T}(i::Int, j::Int, s::T) where {T}
     return new{T}(i, j, s)
   end
 end
@@ -92,7 +92,7 @@ mutable struct TrafoParaAddScaled{T} <: Trafo
   c::T
   d::T
 
-  function TrafoParaAddScaled(i::Int, j::Int, a::T, b::T, c::T, d::T)
+  function TrafoParaAddScaled{T}(i::Int, j::Int, a::T, b::T, c::T, d::T) where {T}
     return new{T}(i, j, a, b, c, d)
   end
 end
@@ -109,8 +109,8 @@ mutable struct TrafoPartialDense{S} <: Trafo
   cols::UnitRange{Int}
   U::S
 
-  function TrafoPartialDense(i::Int, rows::UnitRange{Int},
-                             cols::UnitRange{Int}, U::S)
+  function TrafoPartialDense{S}(i::Int, rows::UnitRange{Int},
+                                cols::UnitRange{Int}, U::S) where {S}
     return new(i, rows, cols, U)
   end
 end
@@ -315,7 +315,7 @@ mutable struct SMatSpace{T} <: Ring
   cols::Int
   base_ring::Ring
 
-  function SMatSpace(R::Ring, r::Int, c::Int, cached = true)
+  function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = true) where {T}
     if haskey(SMatSpaceDict, (R, r, c))
       return SMatSpaceDict[R, r, c,]::SMatSpace{T}
     else
@@ -380,8 +380,9 @@ mutable struct enum_ctx{Tx, TC, TU}
   t::fmpz_mat # if set, a transformation to be applied to all elements
   t_den::fmpz
   cnt::Int
-  function enum_ctx()
-    return new()
+
+  function enum_ctx{Tx, TC, TU}() where {Tx, TC, TU}
+    return new{Tx, TC, TU}()
   end
 end
 
@@ -514,7 +515,7 @@ mutable struct FacElemMon{S} <: Ring
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
-  function FacElemMon(R::S)
+  function FacElemMon{S}(R::S) where {S}
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{S}
     else
@@ -535,8 +536,8 @@ mutable struct FacElem{B, S}
   fac::Dict{B, fmpz}
   parent::FacElemMon{S}
 
-  function FacElem()
-    z = new()
+  function FacElem{B, S}() where {B, S}
+    z = new{B, S}()
     z.fac = Dict{B, fmpz}()
     return z
   end
@@ -1019,8 +1020,8 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   unit_map::Map
   finished::Bool
 
-  function UnitGrpCtx(O::NfOrd)
-    z = new()
+  function UnitGrpCtx{T}(O::NfOrd) where {T}
+    z = new{T}()
     z.order = O
     z.rank = -1
     z.full_rank = false
@@ -1046,8 +1047,9 @@ end
 mutable struct analytic_func{T<:Number}
   coeff::Array{T, 1}
   valid::Tuple{T, T}
-  function analytic_func()
-    return new()
+
+  function analytic_func{T}() where {T}
+    return new{T}()
   end
 end
 
@@ -1161,13 +1163,13 @@ mutable struct node{T}
   left::node{T}
   right::node{T}
 
-  function node(a::T)
-    f = new()
+  function node{T}(a::T) where {T}
+    f = new{T}()
     f.content = a
     return f
   end
 
-  function node(a::T, b::node{T}, c::node{T})
+  function node{T}(a::T, b::node{T}, c::node{T}) where {T}
     f = node{T}(a)
     f.content = a
     f.right = b
@@ -1187,14 +1189,15 @@ mutable struct FactorBase{T}
   base::Union{Set{T}, AbstractArray{T, 1}}
   ptree::node{T}
 
-  function FactorBase(a::T, b::Set{T})
-    f = new()
+  function FactorBase{T}(a::T, b::Set{T}) where {T}
+    f = new{T}()
     f.prod = a
     f.base = b
     return f
   end
-  function FactorBase(a::T, b::AbstractArray{T, 1})
-    f = new()
+
+  function FactorBase{T}(a::T, b::AbstractArray{T, 1}) where {T}
+    f = new{T}()
     f.prod = a
     f.base = b
     return f
@@ -1405,8 +1408,8 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   cl_map::Map
   finished::Bool
 
-  function ClassGrpCtx()
-    r = new()
+  function ClassGrpCtx{T}() where {T}
+    r = new{T}()
     r.R_gen = Array{nf_elem, 1}()
     r.R_rel = Array{nf_elem, 1}()
     r.RS = Set(r.R_gen)
@@ -1441,13 +1444,13 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
   vl::Int
   rr::Range{Int}
 
-  function IdealRelationsCtx(clg::ClassGrpCtx, A::NfOrdIdl;
-                  prec::Int = 100, val::Int=0, limit::Int = 0)
+  function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::NfOrdIdl;
+                 prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
     v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
-    I = new()
+    I = new{Tx, TU, TC}()
     I.E = E
     I.A = A
     I.c = 0

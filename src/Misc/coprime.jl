@@ -55,8 +55,8 @@ mutable struct ProdEnv{T}
   val   :: Array{T, 1}
   last  :: Int
 
-  function ProdEnv(n::Int)
-    r = new()
+  function ProdEnv{T}(n::Int) where {T}
+    r = new{T}()
     m = nbits(n)
     r.level = Array{Int}(m)
     r.val   = Array{T}(m)

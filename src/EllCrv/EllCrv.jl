@@ -58,7 +58,7 @@ mutable struct EllCrv{T}
   torsion_points#::Array{EllCrvPt, 1}
   torsion_structure#Tuple{Array{Int, 1}, Array{EllCrvPt, 1}}
 
-  function EllCrv(coeffs::Array{T, 1}, check::Bool = true)
+  function EllCrv{T}(coeffs::Array{T, 1}, check::Bool = true) where {T}
     if length(coeffs) == 2
       if check
         d = 4*coeffs[1]^3 + 27*coeffs[2]^2
@@ -123,7 +123,7 @@ mutable struct EllCrvPt{T}
   isinfinite::Bool
   parent::EllCrv{T}
 
-  function EllCrvPt(E::EllCrv{T}, coords::Array{T, 1}, check::Bool = true)
+  function EllCrvPt{T}(E::EllCrv{T}, coords::Array{T, 1}, check::Bool = true) where {T}
     if check
       if ison_curve(E, coords)
         P = new{T}(coords[1], coords[2], false, E)
@@ -137,7 +137,7 @@ mutable struct EllCrvPt{T}
     end
   end
 
-  function EllCrvPt(E::EllCrv{T})
+  function EllCrvPt{T}(E::EllCrv{T}) where {T}
     z = new{T}()
     z.parent = E
     z.isinfinite = true

@@ -1,8 +1,8 @@
 mutable struct MapUnitGrp{T, S} <: Map{T, S}
   header::Hecke.MapHeader
 
-  function MapUnitGrp()
-    return new()
+  function MapUnitGrp{T, S}() where {T, S}
+    return new{T, S}()
   end
 end
 
@@ -13,8 +13,8 @@ end
 mutable struct MapUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
   header::Hecke.MapHeader
 
-  function MapUnitGrpFacElem()
-    return new()
+  function MapUnitGrpFacElem{T}() where {T}
+    return new{T}()
   end
 end
 

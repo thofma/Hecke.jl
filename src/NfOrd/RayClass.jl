@@ -157,8 +157,8 @@ mutable struct MapRayClassGrp{T} <: Map{T, Hecke.NfOrdIdlSet}
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
   
-  function MapRayClassGrp()
-    return new()
+  function MapRayClassGrp{T}() where {T}
+    return new{T}()
   end
 end
 

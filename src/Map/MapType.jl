@@ -54,19 +54,19 @@ mutable struct MapHeader{D, C}
   preimage::Function
   cache::MapCache
 
-  function MapHeader()
+  function MapHeader{D, C}() where {D, C}
     z = new{D, C}()
     return z
   end
 
-  function MapHeader(domain::D, codomain::C)
+  function MapHeader{D, C}(domain::D, codomain::C) where {D, C}
     z = new{D, C}()
     z.domain = domain
     z.codomain = codomain
     return z
   end
 
-  function MapHeader(domain::D, codomain::C, image::Function)
+  function MapHeader{D, C}(domain::D, codomain::C, image::Function) where {D, C}
     z = new{D, C}()
     z.domain = domain
     z.codomain = codomain
@@ -74,7 +74,7 @@ mutable struct MapHeader{D, C}
     return z
   end
 
-  function MapHeader(domain::D, codomain::C, image::Function, preimage::Function)
+  function MapHeader{D, C}(domain::D, codomain::C, image::Function, preimage::Function) where {D, C}
     z = new{D, C}()
     z.domain = domain
     z.codomain = codomain
@@ -98,7 +98,7 @@ mutable struct CompositeMap{D, C, R} <: Map{D, C}
   f::Map{R, C}
   g::Map{D, R}
 
-  function CompositeMap(f::Map, g::Map)
+  function CompositeMap{D, C, R}(f::Map, g::Map) where {D, C, R}
   ##CF should be function CompositeMap(f::Map{R, C}, g::Map{D, R})
   ## but that seems to not work:
   # U, m = UnitGroup(ResidueRing(ZZ, 2^9));
@@ -146,7 +146,7 @@ mutable struct InverseMap{D, C} <: Map{D, C}
   header::MapHeader{D, C}
   origin::Map{C, D}
 
-  function InverseMap(f::Map{C, D})
+  function InverseMap{D, C}(f::Map{C, D}) where {D, C}
     z = new{D, C}()
     z.header = MapHeader(codomain(f), domain(f), preimage_function(f), image_function(f))
     z.origin = f
@@ -163,7 +163,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C}
   gen_image::GenRes{T}
   coeff_map::Map # can be missing if domain and codomain have the same
                  # base_ring(base_ring())
-  function ResidueRingPolyMap(domain::D, codomain::C, gen_image::GenRes{T}, coeff_map::Map)
+  function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, gen_image::GenRes{T}, coeff_map::Map) where {D, C, T}
     z = new{D, C, T}()
     z.gen_image = gen_image
     z.coeff_map = coeff_map
@@ -207,7 +207,7 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C}
     return z
   end
 
-  function ResidueRingPolyMap(domain::D, codomain::C, gen_image::GenRes{T})
+  function ResidueRingPolyMap{D, C, T}(domain::D, codomain::C, gen_image::GenRes{T}) where {D, C, T}
     z = new{D, C, T}()
     z.gen_image = gen_image
 
@@ -261,7 +261,7 @@ end
 mutable struct IdentityMap{D} <: Map{D, D}
   header::MapHeader{D, D}
 
-  function IdentityMap(domain::D)
+  function IdentityMap{D}(domain::D) where {D}
     z = new{D}()
 
     image = function(x)# (x::elem_type(D))
@@ -281,7 +281,7 @@ end
 mutable struct CoerceMap{D, C} <: Map{D, C}
   header::MapHeader{D, C}
 
-  function CoerceMap(domain::D, codomain::C)
+  function CoerceMap{D, C}(domain::D, codomain::C) where {D, C}
     z = new{D, C}()
     z.header = MapHeader(domain, codomain)
     return z
@@ -393,8 +393,9 @@ end
 mutable struct MapFromFunc{R, T} <: Map{R, T}
   header::Hecke.MapHeader{R, T}
   f::Function
-  function MapFromFunc(f::Function, D::R, C::T)
-    n = new()
+
+  function MapFromFunc{R, T}(f::Function, D::R, C::T) where {R, T}
+    n = new{R, T}()
     n.header = Hecke.MapHeader(D, C, x-> f(x))
     n.f = f
     return n

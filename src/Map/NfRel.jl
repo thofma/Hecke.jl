@@ -78,7 +78,7 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
   prim_img ::NfRelElem{S}
   coeff_aut::NfToNfMor
 
-  function NfRelToNfRelMor(K::NfRel{T}, L::NfRel{S}, a::NfRelElem{S})
+  function NfRelToNfRelMor{T, S}(K::NfRel{T}, L::NfRel{S}, a::NfRelElem{S}) where {T, S}
     function image(x::NfRelElem{S})
       # x is an element of K
       f = data(x)
@@ -87,7 +87,7 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
       return f(a)
     end
 
-    z = new()
+    z = new{T, S}()
     z.prim_img = a
     z.header = MapHeader(K, L, image)
     return z
@@ -107,7 +107,7 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
       return g(a)
     end
 
-    z = new()
+    z = new{nf_elem, nf_elem}()
     z.prim_img = a
     z.coeff_aut = A
     z.header = MapHeader(K, L, image)

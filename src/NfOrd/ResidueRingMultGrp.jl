@@ -433,7 +433,7 @@ function _quadratic_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert 2*u >= v >= u >= 1
   g,M = _pu_mod_pv(pu,pv)
-  map!(x->x+1,g)
+  map!(x -> x + 1, g, g)
   discrete_logarithm = function(x) _ideal_disc_log(mod(x-1,pv),basis_mat_inv(pu)) end
   return g, M, discrete_logarithm
 end
@@ -453,7 +453,7 @@ function _artin_hasse_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
   g,M = _pu_mod_pv(pu,pv)
-  map!(x->artin_hasse_exp(pv,x),g)
+  map!(x->artin_hasse_exp(pv,x), g, g)
   discrete_logarithm = function(x) return _ideal_disc_log(artin_hasse_log(x,pv),basis_mat_inv(pu)) end
   return g, M, discrete_logarithm
 end
@@ -527,7 +527,7 @@ function _p_adic_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
   k0 = 1 + div(fmpz(e),(pnum-1))
   @assert u >= k0
   g,M = _pu_mod_pv(pu,pv)
-  map!(x->p_adic_exp(p,v,x;pv=pv),g)
+  map!(x->p_adic_exp(p,v,x;pv=pv), g, g)
   discrete_logarithm = function(b) _ideal_disc_log(p_adic_log(p,v,b;pv=pv),basis_mat_inv(pu)) end
   return g, M, discrete_logarithm
 end
@@ -727,11 +727,11 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   D = Vector{fmpz}([rels_trans[i,i] for i in 1:cols(rels_trans)])
   if (max_one!=0)
     gens_trans = gens_snf[max_one+1:end]
-    discrete_logarithm = function(x) mod(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D) end
+    discrete_logarithm = function(x) mod.(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D) end
     dlog_trans = discrete_logarithm
   else
     gens_trans = gens_snf
-    dlog_trans = (x -> mod(Vector{fmpz}(dlog_snf(x)), D))
+    dlog_trans = (x -> mod.(Vector{fmpz}(dlog_snf(x)), D))
   end
 
   return gens_trans, rels_trans, dlog_trans

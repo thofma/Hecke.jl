@@ -84,11 +84,13 @@ struct PrimesSet{T}
   mod::T # if set (i.e. >1), only primes p % mod == a are returned
   a::T
   sv::UInt
-  function PrimesSet(f::T, t::T)
-    r = PrimesSet(f, t, T(1), T(0))
+
+  function PrimesSet{T}(f::T, t::T) where {T}
+    r = PrimesSet{T}(f, t, T(1), T(0))
     return r
   end
-  function PrimesSet(f::T, t::T, mod::T, val::T)
+
+  function PrimesSet{T}(f::T, t::T, mod::T, val::T) where {T}
     sv = UInt(1)
     p = UInt(2)
     while sv < 2^30 && p < f
@@ -100,7 +102,7 @@ struct PrimesSet{T}
     if gcd(mod, val) != 1
       error("modulus and value need to be coprime")
     end  
-    r = new(f, t, mod, val, sv)
+    r = new{T}(f, t, mod, val, sv)
     return r
   end
 end

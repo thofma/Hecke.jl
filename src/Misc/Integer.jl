@@ -591,8 +591,8 @@ mutable struct MapSUnitGrpZFacElem{T} <: Hecke.Map{T, FacElemMon{FlintRationalFi
   header::MapHeader
   idl::Array{fmpz, 1}
 
-  function MapSUnitGrpZFacElem()
-    return new()
+  function MapSUnitGrpZFacElem{T}() where {T}
+    return new{T}()
   end
 end
 
@@ -604,8 +604,8 @@ mutable struct MapSUnitGrpZ{T} <: Map{T, FlintRationalField}
   header::MapHeader
   idl::Array{fmpz, 1}
 
-  function MapSUnitGrpZ()
-    return new()
+  function MapSUnitGrpZ{T}() where {T}
+    return new{T}()
   end
 end
 
