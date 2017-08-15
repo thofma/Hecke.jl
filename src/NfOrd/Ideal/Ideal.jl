@@ -34,8 +34,6 @@
 
 export show, ideal
 
-import Base.isprime
-
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
        prime_ideals_up_to, factor, divexact, isramified, anti_uniformizer,
        uniformizer

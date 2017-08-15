@@ -63,7 +63,7 @@ mutable struct EllCrv{T}
       if check
         d = 4*coeffs[1]^3 + 27*coeffs[2]^2
         if d != 0
-          E = new()
+          E = new{T}()
           E.short = true
           # fixed on Nemo master
           E.coeff = [ deepcopy(z) for z in coeffs]
@@ -73,7 +73,7 @@ mutable struct EllCrv{T}
           error("discriminant is zero")
         end
       else
-        E = new()
+        E = new{T}()
         E.short = true
         E.coeff = [ deepcopy(z) for z in coeffs]
         E.base_field = parent(coeffs[1])
@@ -94,7 +94,7 @@ mutable struct EllCrv{T}
         d = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
 
         if d != 0
-          E = new()
+          E = new{T}()
           E.coeff = [ deepcopy(z) for z in coeffs]
           E.short = false
           E.b_invars = (b2, b4, b6, b8)
@@ -105,7 +105,7 @@ mutable struct EllCrv{T}
           error("Discriminant is zero")
         end
       else
-        E = new()
+        E = new{T}()
         E.short = false
         E.coeff = [ deepcopy(z) for z in coeffs]
         E.base_field = parent(coeffs[1])
