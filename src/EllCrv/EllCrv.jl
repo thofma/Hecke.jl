@@ -623,7 +623,7 @@ function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   end
 
   # one of them is infinite
-  if P.isinfinite $ Q.isinfinite
+  if xor(P.isinfinite, Q.isinfinite)
     return false
   end
 

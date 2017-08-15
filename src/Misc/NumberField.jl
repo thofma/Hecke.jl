@@ -1768,7 +1768,7 @@ function _signs(a::nf_elem)
     return Int[]
   end
 
-  s = Array(Int, r1)
+  s = Array{Int}(r1)
   while true
     c = conjugates_arb(a, p)
     done = true

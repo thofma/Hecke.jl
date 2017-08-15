@@ -78,6 +78,11 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
   prim_img ::NfRelElem{S}
   coeff_aut::NfToNfMor
 
+  function NfRelToNfRelMor{T, S}() where {T, S}
+    z = new{T, S}()
+    return z
+  end
+
   function NfRelToNfRelMor{T, S}(K::NfRel{T}, L::NfRel{S}, a::NfRelElem{S}) where {T, S}
     function image(x::NfRelElem{S})
       # x is an element of K
@@ -92,27 +97,27 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
     z.header = MapHeader(K, L, image)
     return z
   end  
+end
 
   #so far, only for single relative.
-  function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
-    function image(x::NfRelElem{nf_elem})
-      # x is an element of K
-      f = data(x)
-      g = zero(f)
-      for i=0:degree(f)
-        setcoeff!(g, i, A(coeff(f, i)))
-      end
-      # First evaluate the coefficients of f at a to get a polynomial over L
-      # Then evaluate at b
-      return g(a)
+function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
+  function image(x::NfRelElem{nf_elem})
+    # x is an element of K
+    f = data(x)
+    g = zero(f)
+    for i=0:degree(f)
+      setcoeff!(g, i, A(coeff(f, i)))
     end
-
-    z = new{nf_elem, nf_elem}()
-    z.prim_img = a
-    z.coeff_aut = A
-    z.header = MapHeader(K, L, image)
-    return z
+    # First evaluate the coefficients of f at a to get a polynomial over L
+    # Then evaluate at b
+    return g(a)
   end
+
+  z = NfRelToNfRelMor{nf_elem, nf_elem}()
+  z.prim_img = a
+  z.coeff_aut = A
+  z.header = MapHeader(K, L, image)
+  return z
 end
 
 function show(io::IO, h::NfRelToNfRelMor)

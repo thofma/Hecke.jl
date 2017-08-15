@@ -287,41 +287,6 @@ mutable struct CoerceMap{D, C} <: Map{D, C}
     return z
   end
 
-  function CoerceMap(domain::GenResRing{fmpz}, codomain::FqNmodFiniteField)
-    z = new{GenResRing{fmpz}, FqNmodFiniteField}()
-
-    image = function(a::GenRes{fmpz})
-        parent(a) != domain && error("Element not in domain")
-        return codomain(ZZ(a))
-    end
-
-    preimage = function(a::fq_nmod)
-      parent(a) != codomain && error("Element not in codomain")
-      a.length > 1 && throw("Element not in image")
-      return domain(coeff(a, 0))::GenRes{fmpz}
-    end
-
-    z.header = MapHeader(domain, codomain, image, preimage)
-    return z
-  end
-
-  function CoerceMap(domain::FqNmodFiniteField, codomain::GenResRing{fq_nmod_poly})
-    z = new{FqNmodFiniteField, GenResRing{fq_nmod_poly}}()
-
-    image = function(a::fq_nmod)
-      parent(a) != domain && error("Element not in domain")
-      return codomain(a)::GenRes{fq_nmod_poly}
-    end
-
-    preimage = function(a::GenRes{fq_nmod_poly})
-      degree(a.data) > 0 && throw("Element not in subfield")
-      return domain(coeff(a.data, 0))::fq_nmod
-    end
-
-    z.header = MapHeader(domain, codomain, image, preimage)
-    return z
-  end
-
   function CoerceMap(domain::GenResRing{S}, codomain::GenResRing{T}) where {S, T <: PolyElem}
     z = new{GenResRing{S}, GenResRing{T}}()
 
@@ -341,6 +306,43 @@ mutable struct CoerceMap{D, C} <: Map{D, C}
     return z
   end
 end
+
+function CoerceMap(domain::GenResRing{fmpz}, codomain::FqNmodFiniteField)
+  z = CoerceMap{GenResRing{fmpz}, FqNmodFiniteField}()
+
+  image = function(a::GenRes{fmpz})
+      parent(a) != domain && error("Element not in domain")
+      return codomain(ZZ(a))
+  end
+
+  preimage = function(a::fq_nmod)
+    parent(a) != codomain && error("Element not in codomain")
+    a.length > 1 && throw("Element not in image")
+    return domain(coeff(a, 0))::GenRes{fmpz}
+  end
+
+  z.header = MapHeader(domain, codomain, image, preimage)
+  return z
+end
+
+function CoerceMap(domain::FqNmodFiniteField, codomain::GenResRing{fq_nmod_poly})
+  z = CoerceMap{FqNmodFiniteField, GenResRing{fq_nmod_poly}}()
+
+  image = function(a::fq_nmod)
+    parent(a) != domain && error("Element not in domain")
+    return codomain(a)::GenRes{fq_nmod_poly}
+  end
+
+  preimage = function(a::GenRes{fq_nmod_poly})
+    degree(a.data) > 0 && throw("Element not in subfield")
+    return domain(coeff(a.data, 0))::fq_nmod
+  end
+
+  z.header = MapHeader(domain, codomain, image, preimage)
+  return z
+end
+
+
 
 function CoerceMap(domain::D, codomain::C) where {D, C}
   return CoerceMap{D, C}(domain, codomain)
