@@ -19,7 +19,7 @@ import Base.start, Base.next, Base.done
 # gen for ResidueRing(Poly) 
 
 
-immutable FmpzBits
+struct FmpzBits
   len::Int
   A::fmpz
   function FmpzBits(a::fmpz)
@@ -75,7 +75,7 @@ function steinitz(a::ResElem{fmpz})
   return lift(a)
 end
 
-function steinitz{T <: Union{nmod_poly, fq_nmod_poly, PolyElem}}(a::ResElem{T})
+function steinitz(a::ResElem{T}) where T <: Union{nmod_poly, fq_nmod_poly, PolyElem}
   f = [steinitz(coeff(a.data, i))::fmpz for i=0:degree(a.data)]
   ZZx = PolynomialRing(ZZ)[1]
   S = base_ring(base_ring(parent(a)))
@@ -106,7 +106,7 @@ end
 # this is expensive, but completely generic
 # possibly improve by using the fact that aut should be an automorphism
 # if the order of aut would be known, one could use this to proceed in layers
-function minpoly_aut{T <: Union{fq_nmod_poly, nmod_poly}}(a::ResElem{T}, aut :: Function)
+function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: Union{fq_nmod_poly, nmod_poly}
   R = parent(a)
   RX, X = PolynomialRing(R)
   o = Set{typeof(X)}()
@@ -122,7 +122,7 @@ function minpoly_aut{T <: Union{fq_nmod_poly, nmod_poly}}(a::ResElem{T}, aut :: 
   return f
 end
 
-function minpoly_aut{T <: PolyElem}(a::ResElem{T}, aut :: Function)
+function minpoly_aut(a::ResElem{T}, aut :: Function) where T <: PolyElem
   R = parent(a)
   RX, X = PolynomialRing(R)
   o = Set{typeof(X)}()
@@ -136,7 +136,7 @@ function minpoly_aut{T <: PolyElem}(a::ResElem{T}, aut :: Function)
   return f
 end
 
-function minpoly_pow{T <: Union{PolyElem, fq_nmod_poly}}(a::ResElem{T}, deg::Int)
+function minpoly_pow(a::ResElem{T}, deg::Int) where T <: Union{PolyElem, fq_nmod_poly}
   R = parent(a)
   S = base_ring(base_ring(R))
   M = MatrixSpace(S, deg, degree(R.modulus))()

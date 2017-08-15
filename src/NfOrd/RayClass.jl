@@ -152,7 +152,7 @@ function direct_product(G::GrpAbFinGen, H::GrpAbFinGen)
   
 end 
 
-type MapRayClassGrp{T} <: Map{T, Hecke.NfOrdIdlSet}
+mutable struct MapRayClassGrp{T} <: Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}

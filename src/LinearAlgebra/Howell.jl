@@ -126,7 +126,7 @@ end
 #
 ################################################################################
 
-function prem{T<:Integer}(a::Integer, m::T)
+function prem(a::Integer, m::T) where T<:Integer
   b = a % m
   if b < 0
     return m+b
@@ -135,7 +135,7 @@ function prem{T<:Integer}(a::Integer, m::T)
   end
 end
 
-function prem{T}(a::fmpz, m::T)
+function prem(a::fmpz, m::T) where T
   return prem(BigInt(a), m)
 end
      

@@ -78,7 +78,7 @@ function _exp(a::fmpz_mod_abs_series)
   return r
 end
 
-immutable PrimesSet{T}
+struct PrimesSet{T}
   from::T
   to::T
   mod::T # if set (i.e. >1), only primes p % mod == a are returned
@@ -113,7 +113,7 @@ doc"""
 > Returns an iterable object $S$ representing the prime numbers $p$
 > for $f \le p \le t$. If $t=-1$, then the upper bound is infinite.
 """  
-function PrimesSet{T}(f::T, t::T)
+function PrimesSet(f::T, t::T) where T
   return PrimesSet{T}(f, t)
 end
 
@@ -127,7 +127,7 @@ doc"""
 > progression).  
 >  If $t=-1$, then the upper bound is infinite.
 """  
-function PrimesSet{T}(f::T, t::T, mod::T, val::T)
+function PrimesSet(f::T, t::T, mod::T, val::T) where T
   return PrimesSet{T}(f, t, mod, val)
 end
 
@@ -135,7 +135,7 @@ function rem(a::fmpz, b::UInt)
   return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &a, b)
 end
 
-function start{T<: Integer}(A::PrimesSet{T})
+function start(A::PrimesSet{T}) where T<: Integer
   curr = A.from 
   c = curr % A.mod
   if A.mod >1 && c != A.a
@@ -169,7 +169,7 @@ function start(A::PrimesSet{fmpz})
 end
 
 
-function next{T<: Union{Integer, fmpz}}(A::PrimesSet{T}, st::T)
+function next(A::PrimesSet{T}, st::T) where T<: Union{Integer, fmpz}
   p = st
   if A.mod >1
     m = A.mod
@@ -192,7 +192,7 @@ function next{T<: Union{Integer, fmpz}}(A::PrimesSet{T}, st::T)
   return p, st
 end
 
-function done{T <: Union{Integer, fmpz}}(A::PrimesSet{T}, st::T)
+function done(A::PrimesSet{T}, st::T) where T <: Union{Integer, fmpz}
   return A.to != -1 && st > A.to
 end
 

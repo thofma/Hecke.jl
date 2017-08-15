@@ -49,7 +49,7 @@ export pos_inf, neg_inf, nan, isposinf, isneginf, isnan, isnormal, max, min
 
 const ArfFieldID = ObjectIdDict()
 
-type ArfField <: Field
+mutable struct ArfField <: Field
   prec::Int
   rndmode::Cint
   
@@ -64,7 +64,7 @@ type ArfField <: Field
   end
 end
 
-type arf
+mutable struct arf
   exp::Int # fmpz
   size::UInt64 # mp_size_t
   d1::Int64 # mantissa_struct

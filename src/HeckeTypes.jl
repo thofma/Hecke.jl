@@ -4,19 +4,19 @@
 #
 ################################################################################
 
-immutable nmod_struct
+struct nmod_struct
   n::UInt    # mp_limb_t
   ninv::UInt # mp_limb_t
   norm::UInt # mp_limb_t
 end
 
-type nmod_struct_non
+mutable struct nmod_struct_non
   n::UInt    # mp_limb_t
   ninv::UInt # mp_limb_t
   norm::UInt # mp_limb_t
 end
 
-immutable ZZModUInt <: Ring
+struct ZZModUInt <: Ring
   mod::nmod_struct
 
   function ZZModUInt(n::UInt)
@@ -26,7 +26,7 @@ immutable ZZModUInt <: Ring
   end
 end
 
-immutable UIntMod <: RingElem
+struct UIntMod <: RingElem
   m::UInt
   parent::ZZModUInt
 
@@ -48,9 +48,9 @@ end
 #
 ################################################################################
 
-abstract Trafo
+abstract type Trafo end
 
-type TrafoScale{T} <: Trafo
+mutable struct TrafoScale{T} <: Trafo
   i::Int
   c::T
 
@@ -59,7 +59,7 @@ type TrafoScale{T} <: Trafo
   end
 end
 
-type TrafoSwap{T} <: Trafo
+mutable struct TrafoSwap{T} <: Trafo
   i::Int
   j::Int
 
@@ -69,7 +69,7 @@ type TrafoSwap{T} <: Trafo
 end
 
 # j -> j + s*i
-type TrafoAddScaled{T} <: Trafo
+mutable struct TrafoAddScaled{T} <: Trafo
   i::Int
   j::Int
   s::T
@@ -79,12 +79,12 @@ type TrafoAddScaled{T} <: Trafo
   end
 end
 
-TrafoAddScaled{T}(i::Int, j::Int, s::T) = TrafoAddScaled{T}(i, j, s)
+TrafoAddScaled(i::Int, j::Int, s::T) where {T} = TrafoAddScaled{T}(i, j, s)
 
 # if from left, then
 # row i -> a*row i + b * row j
 # row j -> c*row i + d * row j
-type TrafoParaAddScaled{T} <: Trafo
+mutable struct TrafoParaAddScaled{T} <: Trafo
   i::Int
   j::Int
   a::T
@@ -97,13 +97,13 @@ type TrafoParaAddScaled{T} <: Trafo
   end
 end
 
-TrafoParaAddScaled{T}(i::Int, j::Int, a::T, b::T, c::T, d::T) =
+TrafoParaAddScaled(i::Int, j::Int, a::T, b::T, c::T, d::T) where {T} =
       TrafoParaAddScaled{T}(i, j, a, b, c, d)
 
-type TrafoId{T} <: Trafo
+mutable struct TrafoId{T} <: Trafo
 end
 
-type TrafoPartialDense{S} <: Trafo
+mutable struct TrafoPartialDense{S} <: Trafo
   i::Int
   rows::UnitRange{Int}
   cols::UnitRange{Int}
@@ -115,14 +115,14 @@ type TrafoPartialDense{S} <: Trafo
   end
 end
 
-function TrafoPartialDense{S}(i::Int, rows::UnitRange{Int},
-                              cols::UnitRange{Int}, U::S)
+function TrafoPartialDense(i::Int, rows::UnitRange{Int},
+                           cols::UnitRange{Int}, U::S) where S
   return TrafoPartialDense{S}(i, rows, cols, U)
 end
 
 # this is shorthand for the permutation matrix corresponding to
 # (i i+1)(i+1 i+2)...(rows-1 rows)
-type TrafoDeleteZero{T} <: Trafo
+mutable struct TrafoDeleteZero{T} <: Trafo
   i::Int
 end
 
@@ -132,7 +132,7 @@ end
 #
 ################################################################################
 
-type fmpz_preinvn_struct
+mutable struct fmpz_preinvn_struct
   dinv::Ptr{UInt}
   n::Int
   norm::Int
@@ -151,7 +151,7 @@ end
 #  Root context for fmpq_polys and roots modelled as acbs
 #
 ################################################################################
-type acb_root_ctx
+mutable struct acb_root_ctx
   poly::fmpq_poly
   _roots::Ptr{acb_struct}
   prec::Int
@@ -213,13 +213,13 @@ end
 #
 ################################################################################
 
-type SMatSLP_add_row{T}
+mutable struct SMatSLP_add_row{T}
   row::Int
   col::Int
   val::T
 end
 
-type SMatSLP_swap_row
+mutable struct SMatSLP_swap_row
   row::Int
   col::Int
 end
@@ -230,7 +230,7 @@ end
 #
 ################################################################################
 
-abstract Map{D, C}
+abstract type Map{D, C} end
 
 ################################################################################
 #
@@ -240,7 +240,7 @@ abstract Map{D, C}
 
 const SRowSpaceDict = ObjectIdDict()
 
-type SRowSpace{T} <: Ring
+mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
   function SrowSpace(R::Ring, cached::Bool = true)
@@ -256,35 +256,35 @@ type SRowSpace{T} <: Ring
   end
 end
 
-type SRow{T}
+mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
   values::Array{T, 1}
   pos::Array{Int, 1}
   #parent::SRowSpace{T}
 
-  function SRow()
-    r = new()
+  function SRow{T}() where T
+    r = new{T}()
     r.values = Array{T, 1}()
     r.pos = Array{Int, 1}()
     return r
   end
 
-  function SRow(A::Array{Tuple{Int, T}, 1})
-    r = new()
+  function SRow{T}(A::Array{Tuple{Int, T}, 1}) where T
+    r = new{T}()
     r.values = [x[2] for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SRow(A::Array{Tuple{Int, Int}, 1})
-    r = new()
+  function SRow{T}(A::Array{Tuple{Int, Int}, 1}) where T
+    r = new{T}()
     r.values = [T(x[2]) for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SRow{S}(A::SRow{S})
-    r = new()
+  function SRow{T}(A::SRow{S}) where {T, S}
+    r = new{T}()
     r.values = Array{T}(length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
@@ -293,9 +293,9 @@ type SRow{T}
     return r
   end
 
-  function SRow(pos::Array{Int, 1}, val::Array{T, 1})
+  function SRow{T}(pos::Array{Int, 1}, val::Array{T, 1}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = new()
+    r = new{T}()
     r.values = val
     r.pos = pos
     return r
@@ -310,7 +310,7 @@ end
 
 const SMatSpaceDict = ObjectIdDict()
 
-type SMatSpace{T} <: Ring
+mutable struct SMatSpace{T} <: Ring
   rows::Int
   cols::Int
   base_ring::Ring
@@ -328,15 +328,15 @@ type SMatSpace{T} <: Ring
   end
 end
 
-type SMat{T}
+mutable struct SMat{T}
   r::Int
   c::Int
   rows::Array{SRow{T}, 1}
   nnz::Int
   base_ring::Ring
 
-  function SMat()
-    r = new()
+  function SMat{T}() where {T}
+    r = new{T}()
     r.rows = Array{SRow{T}}(0)
     r.nnz = 0
     r.r = 0
@@ -344,8 +344,8 @@ type SMat{T}
     return r
   end
 
-  function SMat{S}(a::SMat{S})
-    r = new()
+  function SMat{T}(a::SMat{S}) where {S, T}
+    r = new{T}()
     r.rows = Array{SRow{T}}(length(a.rows))
     for i=1:rows(a)
       r.rows[i] = SRow{T}(a.rows[i])
@@ -364,7 +364,7 @@ end
 ################################################################################
 
 # now that x is a fmpz_mat, the type for x is not really used
-type enum_ctx{Tx, TC, TU}
+mutable struct enum_ctx{Tx, TC, TU}
   G::fmpz_mat
   n::Int
   limit :: Int # stop recursion at level limit, defaults to n
@@ -391,7 +391,7 @@ end
 #
 ################################################################################
 
-type EnumCtxArb
+mutable struct EnumCtxArb
   G::arb_mat
   L::Array{fmpz_mat, 1}
   x::fmpz_mat
@@ -416,7 +416,7 @@ export FakeFmpqMat, FakeFmpqMatSpace
 
 const FakeFmpqMatSpaceID = ObjectIdDict()
 
-type FakeFmpqMatSpace
+mutable struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
@@ -431,7 +431,7 @@ type FakeFmpqMatSpace
   end
 end
 
-type FakeFmpqMat
+mutable struct FakeFmpqMat
   num::fmpz_mat
   den::fmpz
   parent::FakeFmpqMatSpace
@@ -508,7 +508,7 @@ end
 #
 ################################################################################
 
-type FacElemMon{S} <: Ring
+mutable struct FacElemMon{S} <: Ring
   base_ring::S  # for the base
   basis_conjugates_log::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
@@ -529,9 +529,9 @@ type FacElemMon{S} <: Ring
   end
 end
 
-FacElemMon{S}(R::S) = FacElemMon{S}(R)
+FacElemMon(R::S) where {S} = FacElemMon{S}(R)
 
-type FacElem{B, S}
+mutable struct FacElem{B, S}
   fac::Dict{B, fmpz}
   parent::FacElemMon{S}
 
@@ -550,7 +550,7 @@ end
 
 export NfOrdSet
 
-type NfOrdSet
+mutable struct NfOrdSet
   nf::AnticNumberField
 
   function NfOrdSet(a::AnticNumberField)
@@ -567,7 +567,7 @@ const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
 
 export NfOrd
 
-type NfOrd <: Ring
+mutable struct NfOrd <: Ring
   nf::AnticNumberField
   basis_nf::Vector{nf_elem}        # Basis as array of number field elements
   basis_ord#::Vector{NfOrdElem}    # Basis as array of order elements
@@ -694,7 +694,7 @@ const NfOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
 
 export NfOrdElem
 
-type NfOrdElem <: RingElem
+mutable struct NfOrdElem <: RingElem
   elem_in_nf::nf_elem
   elem_in_basis::Vector{fmpz}
   has_coord::Bool
@@ -736,7 +736,7 @@ type NfOrdElem <: RingElem
     return z
   end
 
-  function NfOrdElem{S <: Integer}(O::NfOrd, arr::Array{S, 1})
+  function NfOrdElem(O::NfOrd, arr::Array{S, 1}) where S <: Integer
     return NfOrdElem(O, map(FlintZZ, arr))
   end
 
@@ -753,7 +753,7 @@ end
 
 export NfOrdIdl
 
-type NfOrdIdlSet
+mutable struct NfOrdIdlSet
   order::NfOrd
 
   function NfOrdIdlSet(O::NfOrd)
@@ -924,7 +924,7 @@ end
 #
 ################################################################################
 
-type NfOrdFracIdlSet
+mutable struct NfOrdFracIdlSet
    order::NfOrd
    function NfOrdFracIdlSet(O::NfOrd)
      try
@@ -940,7 +940,7 @@ end
 
 const NfOrdFracIdlSetID = Dict{NfOrd, NfOrdFracIdlSet}()
 
-type NfOrdFracIdl
+mutable struct NfOrdFracIdl
   num::NfOrdIdl
   den::fmpz
   norm::fmpq
@@ -995,7 +995,7 @@ end
 #
 ################################################################################
 
-type UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
+mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   order::NfOrd
   rank::Int
   full_rank::Bool
@@ -1043,7 +1043,7 @@ end
 #
 ################################################################################
 
-type analytic_func{T<:Number}
+mutable struct analytic_func{T<:Number}
   coeff::Array{T, 1}
   valid::Tuple{T, T}
   function analytic_func()
@@ -1057,7 +1057,7 @@ end
 #
 ################################################################################
 
-type BigComplex
+mutable struct BigComplex
   re::BigFloat
   im::BigFloat
   function BigComplex(r::BigFloat)
@@ -1097,7 +1097,7 @@ end
 #
 ################################################################################
 
-type roots_ctx
+mutable struct roots_ctx
   f::fmpz_poly
   r_d::Array{BigComplex, 1}  # the 1st r1 ones will be real
   r::Array{BigComplex, 1}    # the complexes and at the end, the conjugated
@@ -1133,7 +1133,7 @@ end
 #
 ################################################################################
 
-type _RealRing
+mutable struct _RealRing
   t1::BigFloat
   t2::BigFloat
   z1::BigInt
@@ -1156,7 +1156,7 @@ RealRing() = R
 #
 ################################################################################
 
-type node{T}
+mutable struct node{T}
   content::T
   left::node{T}
   right::node{T}
@@ -1182,7 +1182,7 @@ end
 #
 ################################################################################
 
-type FactorBase{T}
+mutable struct FactorBase{T}
   prod::T
   base::Union{Set{T}, AbstractArray{T, 1}}
   ptree::node{T}
@@ -1207,7 +1207,7 @@ end
 #
 ################################################################################
 
-type FactorBaseSingleP
+mutable struct FactorBaseSingleP
   P::fmpz
   pt::FactorBase{nmod_poly}
   lp::Array{Tuple{Int,NfOrdIdl}, 1}
@@ -1280,7 +1280,7 @@ type FactorBaseSingleP
   end
 end
 
-type NfFactorBase
+mutable struct NfFactorBase
   fb::Dict{fmpz, FactorBaseSingleP}
   size::Int
   fb_int::FactorBase{fmpz}
@@ -1302,7 +1302,7 @@ end
 #
 ################################################################################
 
-type ModuleCtx_UIntMod
+mutable struct ModuleCtx_UIntMod
   R::ZZModUInt
   basis::SMat{UIntMod}
   gens::SMat{UIntMod}
@@ -1321,7 +1321,7 @@ type ModuleCtx_UIntMod
   end
 end
 
-type ModuleCtx_fmpz
+mutable struct ModuleCtx_fmpz
   bas_gens::SMat{fmpz}  # contains a max. indep system
   max_indep::SMat{fmpz} # the bas_gens in upper-triangular shape
   basis::SMat{fmpz}     # if set, probably a basis (in upper-triangular)
@@ -1355,7 +1355,7 @@ end
 #
 ################################################################################
 
-type ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
+mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   FB::NfFactorBase
 
   M::ModuleCtx_fmpz
@@ -1429,7 +1429,7 @@ end
 #
 ################################################################################
 
-type IdealRelationsCtx{Tx, TU, TC}
+mutable struct IdealRelationsCtx{Tx, TU, TC}
   A::NfOrdIdl
   v::Array{Int, 1}  # the infinite valuation will be exp(v[i])
   E::enum_ctx{Tx, TU, TC}
@@ -1467,7 +1467,7 @@ end
 #
 ################################################################################
 
-type NfOrdQuoRing <: Ring
+mutable struct NfOrdQuoRing <: Ring
   base_ring::NfOrd
   ideal::NfOrdIdl
   basis_mat::fmpz_mat
@@ -1499,7 +1499,7 @@ type NfOrdQuoRing <: Ring
   end
 end
 
-type NfOrdQuoRingElem <: RingElem
+mutable struct NfOrdQuoRingElem <: RingElem
   elem::NfOrdElem
   parent::NfOrdQuoRing
 
@@ -1517,10 +1517,10 @@ end
 #
 ################################################################################
 
-abstract GrpAb <: Nemo.Group
-abstract GrpAbElem <: Nemo.GroupElem
+abstract type GrpAb <: Nemo.Group end
+abstract type GrpAbElem <: Nemo.GroupElem end
 
-type GrpAbFinGen <: GrpAb
+mutable struct GrpAbFinGen <: GrpAb
   rels::fmpz_mat
   hnf::fmpz_mat
   issnf::Bool
@@ -1544,7 +1544,7 @@ type GrpAbFinGen <: GrpAb
     return r
   end
   
-  function GrpAbFinGen{T <: Integer}(R::Array{T, 1}, issnf::Bool = true)
+  function GrpAbFinGen(R::Array{T, 1}, issnf::Bool = true) where T <: Integer
     r = new()
     r.issnf = issnf
     r.snf = map(fmpz, R)
@@ -1553,7 +1553,7 @@ type GrpAbFinGen <: GrpAb
 
 end
 
-type GrpAbFinGenElem <: GrpAbElem
+mutable struct GrpAbFinGenElem <: GrpAbElem
   parent::GrpAbFinGen
   coeff::fmpz_mat
 
@@ -1574,7 +1574,7 @@ include("Map/MapType.jl")
 #
 ################################################################################
 
-type NoElements <: Exception end
+mutable struct NoElements <: Exception end
 
 ################################################################################
 #
@@ -1584,9 +1584,9 @@ type NoElements <: Exception end
 
 export Plc, InfPlc
 
-abstract Plc
+abstract type Plc end
 
-type InfPlc <: Plc
+mutable struct InfPlc <: Plc
   K::AnticNumberField # Number field
   i::Int              # The position of the root r in conjugates_arb(a),
                       # where a is the primitive element of K
@@ -1623,11 +1623,11 @@ end
 #
 ################################################################################
 
-abstract GModule
+abstract type GModule end
 
 export FqGModule
 
-type FqGModule <: GModule
+mutable struct FqGModule <: GModule
   K::Nemo.FqNmodFiniteField
   G::Array{Any,1}
   dim::Int
@@ -1636,7 +1636,7 @@ type FqGModule <: GModule
   peakword_poly::PolyElem
   dim_spl_fld::Int
   
-  function FqGModule{T}(G::Array{T,1})
+  function FqGModule(G::Array{T,1}) where T
     z=new()
     z.G=G
     z.K=parent(G[1][1,1])

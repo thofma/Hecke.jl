@@ -73,7 +73,7 @@ function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,GenMat{GenRes{fmpz}}})
   return N
 end
 
-type fmpz_poly_factor_t
+mutable struct fmpz_poly_factor_t
   c::Int64 # actually an fmpz, the content
   p::Int64 # actually a fmpz_poly_struct *
   exp:: Int64 # slong *

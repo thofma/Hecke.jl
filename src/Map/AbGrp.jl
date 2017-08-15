@@ -38,7 +38,7 @@
 #
 ################################################################################
 
-type AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
+mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
   header::MapHeader{GrpAbFinGen, NfOrdQuoRing}
   generators::Vector{NfOrdQuoRingElem}
   discrete_logarithm::Function
@@ -77,7 +77,7 @@ type AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
   end
 end
 
-type AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd}
+mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd}
   header::MapHeader{GrpAbFinGen, NfOrd}
   
   function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)

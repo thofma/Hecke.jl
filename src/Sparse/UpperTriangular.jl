@@ -1,6 +1,6 @@
 # this is the old upper triangular code
 
-function one_step{T}(A::SMat{T}, sr = 1)
+function one_step(A::SMat{T}, sr = 1) where T
   i = sr
   assert(i>0)
   all_r = Array{Int}(0)
@@ -96,7 +96,7 @@ doc"""
   Inplace: transform A into an upper triangular matrix. If mod
   is non-zero, reduce entries modulo mod during the computation.
 """
-function upper_triangular{T}(A::SMat{T}; mod = 0)
+function upper_triangular(A::SMat{T}; mod = 0) where T
   for i = 1:min(rows(A), cols(A))
     x = one_step(A, i)
 #    println("after one step: ilog2(max) now ", nbits(max(A)))
@@ -144,12 +144,12 @@ end
 # Perform one step in the echelonization, that is, find a pivot and clear
 # elements below.
 # sr = starting row
-function _one_step{T}(A::SMat{T}, sr = 1)
+function _one_step(A::SMat{T}, sr = 1) where T
   nr, trafo = _one_step_with_trafo(A, sr)
   return nr
 end
 
-function _one_step_with_trafo{T}(A::SMat{T}, sr = 1)
+function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
   trafos = Trafo[]
   i = sr
   assert(i>0)
@@ -285,7 +285,7 @@ end
 # Given two rows i, j with entries x, y (x != 0) in the same column, this
 # function must produce a zero at entry y.
 
-function echelonize_basecase!{T}(x::T, y::T, i::Int, j::Int, A::Hecke.SMat{T})
+function echelonize_basecase!(x::T, y::T, i::Int, j::Int, A::Hecke.SMat{T}) where T
   c = -divexact(y, x)
   add_scaled_row!(A, i, j, c)
   return TrafoAddScaled(i, j, c)
@@ -329,7 +329,7 @@ end
 # is_dense_enough is a function (::SMat{T}, i::Int) -> Bool
 # At each level i, is_dense_enough(A, i) is called.
 # If it evaluates to true, then dense echelonization will be called.
-function _upper_triangular_with_trafo!{T}(A::SMat{T}, is_dense_enough::Function)
+function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) where T
   trafo = Trafo[]
 
   for i = 1:min(rows(A), cols(A))
@@ -406,7 +406,7 @@ function upper_triangular!(M::SMat{fmpz}, density_limit::Float64 = 0.5, size_lim
   return _upper_triangular!(M, f)
 end
 
-function _upper_triangular!{T}(A::SMat{T}, is_dense_enough)
+function _upper_triangular!(A::SMat{T}, is_dense_enough) where T
   for i = 1:min(rows(A), cols(A))
     x = _one_step(A, i)
 

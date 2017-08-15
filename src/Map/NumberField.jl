@@ -1,6 +1,6 @@
 export extend
 
-type NfToNfMor <: Map{AnticNumberField, AnticNumberField}
+mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   header::MapHeader{AnticNumberField, AnticNumberField}
   prim_img::nf_elem
 
@@ -33,7 +33,7 @@ function show(io::IO, h::NfToNfMor)
   println(io, "defined by ", gen(domain(h)), " -> ", h.prim_img)
 end
 
-type NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
+mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
   header::MapHeader{NfOrd, FqNmodFiniteField}
   poly_of_the_field::nmod_poly
   P::NfOrdIdl
@@ -217,7 +217,7 @@ type NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
   end
 end
 
-type NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing}
+mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing}
   header::MapHeader{NfOrd, NfOrdQuoRing}
 
   function NfOrdQuoMap(O::NfOrd, Q::NfOrdQuoRing)
@@ -244,7 +244,7 @@ function Mor(O::NfOrd, F::FqNmodFiniteField, h::nmod_poly)
   return NfOrdToFqNmodMor(O, F, h)
 end
 
-type NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
+mutable struct NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
   header::MapHeader
 
   function NfToFqNmodMor()

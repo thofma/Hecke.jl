@@ -53,7 +53,7 @@ doc"""
    or false (and garbage) if this is not possible.
 """
 
-function rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
+function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int) where S
   R = a.parent
   if degree(a) <= n return true, a, R(1); end
 
@@ -84,7 +84,7 @@ doc"""
 >  Returns true and x/y s.th. ay = x mod b and degree(x), degree(y) <= degree(b)/2
    or false (and garbage) if this is not possible. Shortcut to the more general function.
 """
-function rational_reconstruction{T}(a::PolyElem{T}, b::PolyElem{T})
+function rational_reconstruction(a::PolyElem{T}, b::PolyElem{T}) where T
   return rational_reconstruction(a, b, div(degree(b), 2), div(degree(b), 2))
 end
 
@@ -191,7 +191,7 @@ farey_lift = rational_reconstruction
 # Idea of using the same agorithm due to E. Thome
 #
 
-function berlekamp_massey{T}(a::Array{T, 1})
+function berlekamp_massey(a::Array{T, 1}) where T
   Rx,x = PolynomialRing(parent(a[1]))
   f = Rx(a)
   xn= x^length(a)
@@ -282,7 +282,7 @@ end
 #
 ##############################################################
 
-type fmpz_poly_raw  ## fmpz_poly without parent like in c
+mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
   coeffs::Ptr{Void}
   alloc::Int
   length::Int
@@ -301,7 +301,7 @@ function _fmpz_poly_raw_clear_fn(a::fmpz_poly)
 end
 
 
-type fmpz_poly_factor
+mutable struct fmpz_poly_factor
   c::Int   # really an fmpz  - but there is no fmpz_raw to be flint compatible
   poly::Ptr{fmpz_poly_raw}
   exp::Ptr{Int} 
@@ -337,7 +337,7 @@ function show(io::IO, a::fmpz_poly_factor)
   ccall((:fmpz_poly_factor_print, :libflint), Void, (Ptr{fmpz_poly_factor}, ), &a)
 end
 
-type HenselCtx
+mutable struct HenselCtx
   f::fmpz_poly
   p::UInt
 

@@ -11,7 +11,7 @@ add_verbose_scope(:RayFacElem)
 ###############################################################################
 
 
-type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
+mutable struct MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   header::Hecke.MapHeader
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
@@ -23,7 +23,7 @@ type MapRayClassGrpFacElem{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
 end
 
 
-type MapMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
+mutable struct MapMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
   header::Hecke.MapHeader
 
   function MapMultGrp()

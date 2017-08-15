@@ -512,13 +512,13 @@ end
 #
 ################################################################################
 
-type LowPrecisionCholesky <: Exception end
+mutable struct LowPrecisionCholesky <: Exception end
 
 Base.showerror(io::IO, e::LowPrecisionCholesky) =
     print(io, e.var, """
     Negative diagonal in Cholesky decomposition, probably a precision issue""")
 
-type LowPrecisionLLL <: Exception end
+mutable struct LowPrecisionLLL <: Exception end
 
 Base.showerror(io::IO, e::LowPrecisionLLL) =
     print(io, e.var, """
@@ -701,13 +701,8 @@ end
 # stuff for 0.5
 # 
 
-if VERSION > v"0.5.0-"
-  @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
-end
+@inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
-if VERSION < v"0.5.0-"
-  @inline __get_rounding_mode() = Base.MPFR.ROUNDING_MODE[end]
-end
 
 #precompile(maximal_order, (AnticNumberField, ))
 #precompile(class_group, (NfOrd, ))

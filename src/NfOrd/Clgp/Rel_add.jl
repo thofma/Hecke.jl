@@ -22,13 +22,13 @@ function special_prime_ideal(p::fmpz, a::nf_elem)
   return lift(Zx, g)
 end
 
-function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem; orbit::Bool = true, integral::Bool = false)
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem; orbit::Bool = true, integral::Bool = false) where T
   return class_group_add_relation(clg, a, norm(a), fmpz(1), orbit = orbit, integral = integral)
 end
 
 #deal with integral and non-integral elements differently. Computing the order
 #denominator is expensive (and mostly unnecessary)
-function class_group_add_relation{T}(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true)
+function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::fmpz; orbit::Bool = true, integral::Bool = true) where T
   if iszero(a)
     return false
   end

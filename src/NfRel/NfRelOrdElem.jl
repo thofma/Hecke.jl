@@ -1,4 +1,4 @@
-type NfRelOrdElem{T} <: RingElem
+mutable struct NfRelOrdElem{T} <: RingElem
   parent#::NfRelOrd{T, S} # I don't want to drag the S around
   elem_in_nf::NfRelElem{T}
   elem_in_basis::Vector{T}
@@ -62,7 +62,7 @@ doc"""
 > function coerces the element into $\mathcal O$. If `check` is `true`
 > it will be checked that $a$ is contained in $\mathcal O$.
 """
-function (O::NfRelOrd){T}(a::NfRelElem{T}, check::Bool = true)
+function (O::NfRelOrd)(a::NfRelElem{T}, check::Bool = true) where T
   if check
     x, y = _check_elem_in_order(a, O)
     !x && error("Number field element not in the order.")
@@ -81,7 +81,7 @@ doc"""
 > If `check` is `true` it will be checked that $a$ is contained in
 > $\mathcal O$.
 """
-function (O::NfRelOrd){T}(a::NfRelOrdElem{T}, check::Bool = true)
+function (O::NfRelOrd)(a::NfRelOrdElem{T}, check::Bool = true) where T
   b = nf(parent(a))(a)
   return O(b, check)
 end
@@ -94,7 +94,7 @@ doc"""
 
 > Constructs a new element of $\mathcal O$ which is set to $0$.
 """
-(O::NfRelOrd{T, S}){T, S}() = NfRelOrdElem{T}(O)
+(O::NfRelOrd{T, S})() where {T, S} = NfRelOrdElem{T}(O)
 
 ################################################################################
 #
@@ -108,7 +108,7 @@ doc"""
 
 > Returns the order of which $a$ is an element.
 """
-parent{T}(x::NfRelOrdElem{NfRelElem{T}}) = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
+parent(x::NfRelOrdElem{NfRelElem{T}}) where {T} = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
 
 parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
 
@@ -162,7 +162,7 @@ doc"""
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis{T}(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true})
+function elem_in_basis(a::NfRelOrdElem, copy::Type{Val{T}} = Val{true}) where T
   assure_has_coord(a)
   if copy == Val{true}
     return deepcopy(a.elem_in_basis)

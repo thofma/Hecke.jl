@@ -20,7 +20,7 @@ function next_prime(x::Int)
   return z
 end
 
-function next_prime{T <: Integer}(z::T)
+function next_prime(z::T) where T <: Integer
   z < 0 && error("Argument must be positive")
 
   Tone = one(z)
@@ -79,7 +79,7 @@ end
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....
 
-function remove{T <: Integer}(z::T, p::T)
+function remove(z::T, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
   const v = 0
   while mod(z, p) == 0
@@ -89,14 +89,14 @@ function remove{T <: Integer}(z::T, p::T)
   return (v, z)
 end 
 
-function remove{T <: Integer}(z::Rational{T}, p::T)
+function remove(z::Rational{T}, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
   v, d = remove(den(z), p)
   w, n = remove(num(z), p)
   return w-v, n//d
 end 
 
-function valuation{T <: Integer}(z::T, p::T)
+function valuation(z::T, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
   const v = 0
   while mod(z, p) == 0
@@ -106,7 +106,7 @@ function valuation{T <: Integer}(z::T, p::T)
   return v
 end 
 
-function valuation{T <: Integer}(z::Rational{T}, p::T)
+function valuation(z::Rational{T}, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
   v = valuation(den(z), p)
   w = valuation(num(z), p)
@@ -302,7 +302,7 @@ function length(a::StepRange{fmpz, fmpz})
   return a.stop - a.start +1
 end
 
-immutable RangeGeneratorfmpz <: Base.Random.RangeGenerator
+struct RangeGeneratorfmpz <: Base.Random.RangeGenerator
   a::StepRange{fmpz, fmpz}
 end
 
@@ -471,7 +471,7 @@ end
 #
 ################################################################################
 
-type fmpz_comb
+mutable struct fmpz_comb
   primes::Ptr{UInt}
   num_primes::Int
   n::Int
@@ -494,7 +494,7 @@ function _fmpz_comb_clear_fn(z::fmpz_comb)
   ccall((:fmpz_comb_clear, :libflint), Void, (Ptr{fmpz_comb}, ), &z)
 end
 
-type fmpz_comb_temp
+mutable struct fmpz_comb_temp
   n::Int
   comb_temp::Ptr{Ptr{fmpz}}
   temp::Ptr{fmpz}
@@ -587,7 +587,7 @@ end
 #
 ################################################################################
 
-type MapSUnitGrpZFacElem{T} <: Hecke.Map{T, FacElemMon{FlintRationalField}}
+mutable struct MapSUnitGrpZFacElem{T} <: Hecke.Map{T, FacElemMon{FlintRationalField}}
   header::MapHeader
   idl::Array{fmpz, 1}
 
@@ -600,7 +600,7 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-type MapSUnitGrpZ{T} <: Map{T, FlintRationalField}
+mutable struct MapSUnitGrpZ{T} <: Map{T, FlintRationalField}
   header::MapHeader
   idl::Array{fmpz, 1}
 
@@ -622,7 +622,7 @@ doc"""
 > The second return value is the map mapping group elements to rationals
 > in factored form or rationals back to group elements.
 """
-function sunit_group_fac_elem{T <: Integer}(S::Array{T, 1})
+function sunit_group_fac_elem(S::Array{T, 1}) where T <: Integer
   return sunit_group_fac_elem(fmpz[x for x=S])
 end
 
@@ -676,7 +676,7 @@ doc"""
 > The second return value is the map mapping group elements to rationals
 > or rationals back to group elements.
 """
-function sunit_group{T <: Integer}(S::Array{T, 1})
+function sunit_group(S::Array{T, 1}) where T <: Integer
   return sunit_group(fmpz[x for x=S])
 end
 

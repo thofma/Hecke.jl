@@ -1,6 +1,6 @@
 export CyclotomicExt, cyclotomic_extension
 
-type CyclotomicExt
+mutable struct CyclotomicExt
   k::AnticNumberField
   n::Int
   Kr::Hecke.NfRel

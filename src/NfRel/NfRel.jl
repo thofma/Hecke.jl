@@ -43,7 +43,7 @@ export absolute_field
 #
 ################################################################################
 
-type NfRel{T} <: Nemo.Field
+mutable struct NfRel{T} <: Nemo.Field
   base_ring::Nemo.Field
   pol::GenPoly{T}
   S::Symbol
@@ -67,7 +67,7 @@ end
 const NfRelID = Dict{Tuple{GenPolyRing, GenPoly, Symbol},
                      NfRel}()
 
-type NfRelElem{T} <: Nemo.FieldElem
+mutable struct NfRelElem{T} <: Nemo.FieldElem
   data::GenPoly{T}
   parent::NfRel{T}
 
@@ -80,7 +80,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal{T}(a::NfRelElem{T}, dict::ObjectIdDict)
+function Base.deepcopy_internal(a::NfRelElem{T}, dict::ObjectIdDict) where T
   z = NfRelElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
@@ -227,23 +227,23 @@ end
 #
 ################################################################################
 
-function number_field{T}(f::GenPoly{T}, s::String)
+function number_field(f::GenPoly{T}, s::String) where T
   S = Symbol(s)
   K = NfRel{T}(f, S)
   return K, K(gen(parent(f)))
 end
 
-function number_field{T}(f::GenPoly{T})
+function number_field(f::GenPoly{T}) where T
   return number_field(f, "_\$")
 end
  
-function (K::NfRel{T}){T}(a::GenPoly{T})
+function (K::NfRel{T})(a::GenPoly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
   return z
 end
 
-function (K::NfRel{T}){T}(a::T)
+function (K::NfRel{T})(a::T) where T
   parent(a) != base_ring(parent(K.pol)) == error("Cannot coerce")
   z = NfRelElem{T}(parent(K.pol)(a))
   z.parent = K
@@ -252,7 +252,7 @@ end
 
 (K::NfRel)(a::Integer) = K(parent(K.pol)(a))
 
-(K::NfRel){T <: Integer}(a::Rational{T}) = K(parent(K.pol)(a))
+(K::NfRel)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
 
 (K::NfRel)(a::fmpz) = K(parent(K.pol)(a))
 
@@ -342,7 +342,7 @@ end
 #
 ################################################################################
 
-function Base.:(==){T}(a::NfRelElem{T}, b::NfRelElem{T})
+function Base.:(==)(a::NfRelElem{T}, b::NfRelElem{T}) where T
   reduce!(a)
   reduce!(b)
   return data(a) == data(b)
@@ -490,14 +490,14 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!{T}(M::GenMat{T}, i::Int, a::NfRelElem{T})
+function elem_to_mat_row!(M::GenMat{T}, i::Int, a::NfRelElem{T}) where T
   for c = 1:cols(M)
     M[i, c] = deepcopy(coeff(a, c - 1))
   end
   return nothing
 end
 
-function elem_from_mat_row{T}(L::NfRel{T}, M::GenMat{T}, i::Int)
+function elem_from_mat_row(L::NfRel{T}, M::GenMat{T}, i::Int) where T
   t = L(1)
   a = L()
   for c = 1:cols(M)

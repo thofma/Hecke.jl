@@ -504,8 +504,8 @@ doc"""
 > If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 > with $\deg(\mathfrak p) > k$ will be discarded.
 """
-function prime_ideals_over{T <: Union{fmpz, Integer}}(O::NfOrd, lp::AbstractArray{T};
-                            degree_limit::Int = 0)
+function prime_ideals_over(O::NfOrd, lp::AbstractArray{T};
+ degree_limit::Int = 0) where T <: Union{fmpz, Integer}
   p = 1
   r = NfOrdIdl[]
   for p in lp
@@ -663,7 +663,7 @@ end
 #
 ################################################################################
 
-type quoringalg <: Ring
+mutable struct quoringalg <: Ring
   base_order::NfOrd
   ideal::NfOrdIdl
   prime::Int
@@ -715,7 +715,7 @@ type quoringalg <: Ring
   end
 end
 
-type quoelem
+mutable struct quoelem
   parent::quoringalg
   elem::NfOrdElem
   coord::Array{fmpz, 1}

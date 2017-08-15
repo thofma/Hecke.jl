@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function toNemo{T}(f::IOStream, a::Array{T, 1}; name::String="R")
+function toNemo(f::IOStream, a::Array{T, 1}; name::String="R") where T
   print(f, name, " = [\n")
   for i=1:(length(a)-1)
     print(f, a[i], ",\n")
@@ -12,7 +12,7 @@ function toNemo{T}(f::IOStream, a::Array{T, 1}; name::String="R")
   print(f, a[end], "];\n")
 end
 
-function toNemo{T}(s::String, a::Array{T, 1}; name::String="R", mode::String ="w")
+function toNemo(s::String, a::Array{T, 1}; name::String="R", mode::String ="w") where T
   f = open(s, mode)
   toNemo(f, a, name = name)
   close(f)

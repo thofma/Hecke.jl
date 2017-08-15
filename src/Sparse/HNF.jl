@@ -199,8 +199,8 @@ end
 
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
-function reduce_up{N}(A::SMat{fmpz}, piv::Array{Int, 1},
-                                     trafo::Type{Val{N}} = Val{false})
+function reduce_up(A::SMat{fmpz}, piv::Array{Int, 1},
+                                  trafo::Type{Val{N}} = Val{false}) where N
 
   with_trafo = (trafo == Val{true})
   if with_trafo
@@ -240,7 +240,7 @@ doc"""
 > If `trafo` is set to `Val{true}`, then additionally an array of transformations
 > is returned.
 """
-function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{false})
+function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{false}) where T
 #  @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
 
@@ -348,7 +348,7 @@ function reduce_full{T}(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{
   with_trafo ? (return g, piv, trafos) : (return g, piv)
 end
 
-function reduce_right{N}(A::SMat{fmpz}, b::SRow{fmpz}, start::Int = 1, trafo::Type{Val{N}} = Val{false})
+function reduce_right(A::SMat{fmpz}, b::SRow{fmpz}, start::Int = 1, trafo::Type{Val{N}} = Val{false}) where N
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = [] : nothing
   if length(b.pos) == 0
@@ -398,7 +398,7 @@ doc"""
 > Hermite Normal Form of $A$ using the Kannan-Bachem algorithm to avoid
 > intermediate coefficient swell.
 """
-function hnf_kannan_bachem{N}(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false})
+function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) where N
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
   @vprint :HNF 1 "with density $(A.nnz/(A.c*A.r))"
