@@ -25,7 +25,7 @@ So far, Hecke provides the following features:
 
 ## Installation
 
-To use Hecke, a julia version of 0.5 or higher is necessary (the latest stable julia version will do).
+To use Hecke, a julia version of 0.6 or higher is necessary (the latest stable julia version will do).
 Please see [http://julialang.org/downloads](http://julialang.org/downloads/) for instructions on how to obtain julia for your system.
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 
@@ -50,7 +50,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.2.1 ... 
+Version 0.3.0 ... 
  ... which comes with absolutely no warrant whatsoever
 (c) 2015 by Claus Fieker and Tommy Hofmann
 
