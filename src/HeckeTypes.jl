@@ -262,29 +262,29 @@ mutable struct SRow{T}
   pos::Array{Int, 1}
   #parent::SRowSpace{T}
 
-  function SRow()
-    r = new()
+  function SRow{T}() where T
+    r = new{T}()
     r.values = Array{T, 1}()
     r.pos = Array{Int, 1}()
     return r
   end
 
-  function SRow(A::Array{Tuple{Int, T}, 1})
-    r = new()
+  function SRow{T}(A::Array{Tuple{Int, T}, 1}) where T
+    r = new{T}()
     r.values = [x[2] for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SRow(A::Array{Tuple{Int, Int}, 1})
-    r = new()
+  function SRow{T}(A::Array{Tuple{Int, Int}, 1}) where T
+    r = new{T}()
     r.values = [T(x[2]) for x in A]
     r.pos = [x[1] for x in A]
     return r
   end
 
-  function SRow(A::SRow{S}) where S
-    r = new()
+  function SRow{T}(A::SRow{S}) where {T, S}
+    r = new{T}()
     r.values = Array{T}(length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
@@ -293,9 +293,9 @@ mutable struct SRow{T}
     return r
   end
 
-  function SRow(pos::Array{Int, 1}, val::Array{T, 1})
+  function SRow{T}(pos::Array{Int, 1}, val::Array{T, 1}) where {T}
     length(pos) == length(val) || error("Arrays must have same length")
-    r = new()
+    r = new{T}()
     r.values = val
     r.pos = pos
     return r
@@ -335,8 +335,8 @@ mutable struct SMat{T}
   nnz::Int
   base_ring::Ring
 
-  function SMat()
-    r = new()
+  function SMat{T}() where {T}
+    r = new{T}()
     r.rows = Array{SRow{T}}(0)
     r.nnz = 0
     r.r = 0
@@ -344,8 +344,8 @@ mutable struct SMat{T}
     return r
   end
 
-  function SMat(a::SMat{S}) where S
-    r = new()
+  function SMat{T}(a::SMat{S}) where {S, T}
+    r = new{T}()
     r.rows = Array{SRow{T}}(length(a.rows))
     for i=1:rows(a)
       r.rows[i] = SRow{T}(a.rows[i])

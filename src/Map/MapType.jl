@@ -37,7 +37,7 @@ mutable struct MapCache{D, C, De, Ce}
   old_pr::Function
 
   function MapCache(dom::D, cod::C, lim::Int = 100) where {D, C}
-    r = new()
+    r = new{D, C, De, Ce}()
     r.lim = lim
     r.im = Dict{De, Ce}()
     r.imStat = Dict{De, Int}()
