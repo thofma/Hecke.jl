@@ -1088,7 +1088,7 @@ function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   return A
 end
 
-function t2{T}(x::nf_elem, abs_tol::Int = 32, ::Type{T} = arb)
+function t2(x::nf_elem, abs_tol::Int = 32, ::Type{T} = arb) where T
   p = 2*abs_tol
   z = mapreduce(y -> y^2, +, minkowski_map(x, p))
   while !radiuslttwopower(z, -abs_tol)
@@ -1464,26 +1464,26 @@ function dot(a::Array{nf_elem, 1}, b::Array{fmpz, 1})
   return d
 end
 
-type nf_elem_deg_1_raw
+mutable struct nf_elem_deg_1_raw
   num::Int  ## fmpz!
   den::Int
 end
 
-type nf_elem_deg_2_raw
+mutable struct nf_elem_deg_2_raw
   nu0::Int  ## fmpz - actually an fmpz[3]
   nu1::Int
   nu2::Int
   den::Int
 end
 
-type nf_elem_deg_n_raw  #actually an fmpq_poly_raw
+mutable struct nf_elem_deg_n_raw  #actually an fmpq_poly_raw
   A::Ptr{Int} # fmpz
   den::Int # fmpz
   alloc::Int
   len::Int
 end
 
-type nmod_t
+mutable struct nmod_t
   n::Int
   ni::Int
   norm::Int
@@ -1663,7 +1663,7 @@ end
 ############################################################
 # Better(?) norm computation in special situation...
 ############################################################
-type NormCtx
+mutable struct NormCtx
   me::Array{modular_env, 1}
   nb::Int
   K::AnticNumberField
@@ -1768,7 +1768,7 @@ function _signs(a::nf_elem)
     return Int[]
   end
 
-  s = Array(Int, r1)
+  s = Array{Int}(r1)
   while true
     c = conjugates_arb(a, p)
     done = true

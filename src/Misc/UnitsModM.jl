@@ -82,11 +82,11 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-type MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
+mutable struct MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
   header::Hecke.MapHeader
 
-  function MapUnitGroupModM(G::T, R::GenResRing{fmpz}, dexp::Function, dlog::Function)
-    r = new()
+  function MapUnitGroupModM{T}(G::T, R::GenResRing{fmpz}, dexp::Function, dlog::Function) where {T}
+    r = new{T}()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
   end

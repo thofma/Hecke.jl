@@ -4,7 +4,7 @@ export SortPoints, lowerconvexhull, newtonpolygon, Line, Polygon, PartialPolygon
 
 #using Nemo.Fields
 
-type Line
+mutable struct Line
   points :: Array{Tuple{fmpq, fmpq},1}
   slope :: fmpq
 
@@ -20,7 +20,7 @@ type Line
   end
 end
 
-type Polygon
+mutable struct Polygon
   lines :: Array{Line,1}
   slopes :: Array{fmpq ,1}
 

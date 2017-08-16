@@ -34,8 +34,6 @@
 
 export show, ideal
 
-import Base.isprime
-
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
        prime_ideals_up_to, factor, divexact, isramified, anti_uniformizer,
        uniformizer
@@ -364,7 +362,7 @@ doc"""
 
 > Returns the basis matrix of $A$.
 """
-function basis_mat{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+function basis_mat(A::NfOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat(A)
   if copy == Val{true}
     return deepcopy(A.basis_mat)
@@ -441,7 +439,7 @@ doc"""
 
 > Returns the inverse basis matrix of $A$.
 """
-function basis_mat_inv{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+function basis_mat_inv(A::NfOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat_inv(A)
   if copy == Val{true}
     return deepcopy(A.basis_mat_inv)
@@ -487,7 +485,7 @@ doc"""
 
 > Returns the smallest nonnegative element in $A \cap \mathbf Z$.
 """
-function minimum{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+function minimum(A::NfOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_minimum(A)
   if copy == Val{true}
     return deepcopy(A.minimum)
@@ -574,7 +572,7 @@ doc"""
 > Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
 > $\mathcal O$ is the order of $A$.
 """
-function norm{T}(A::NfOrdIdl, copy::Type{Val{T}} = Val{true})
+function norm(A::NfOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_norm(A)
   if copy == Val{true}
     return deepcopy(A.norm)

@@ -1,4 +1,4 @@
-type fmpr
+mutable struct fmpr
   _man::Int
   _exp::Int
 
@@ -36,7 +36,7 @@ function fmpq(x::fmpr)
   return z
 end
 
-type cfrac
+mutable struct cfrac
   coeff::Ptr{fmpz}
   n::Int
   l::Int # real length

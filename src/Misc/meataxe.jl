@@ -734,6 +734,7 @@ function meataxe(M::FqGModule)
   #  Adding generators to obtain randomness
   #
   G=[x for x in H]
+  Gt=[transpose(x) for x in M.G]
   
   for i=1:max(length(M.G),9)
     l1=rand(1:length(G))
@@ -770,28 +771,21 @@ function meataxe(M::FqGModule)
       for t in keys(lf.fac)
         N=t(A)
         a,kern=nullspace(transpose(N))
-        kern=transpose(kern)
-        println("normal")
         #
         #  Norton test
         #   
-        for j=1:a 
-          B=closure(submatrix(kern,j:j, 1:n),M.G)
-          if rows(B)!=n
-            M.isirreducible=false
-            return false, B
-          end
-        end        
+        B=closure(transpose(submatrix(kern,1:n, 1:1)),M.G)
+        if rows(B)!=n
+          M.isirreducible=false
+          return false, B
+        end
         kernt=nullspace(N)[2]
-        println("dual")
-        for j=1:a
-          Bt=closure(transpose(submatrix(kernt,1:n,j:j)),[transpose(x) for x in M.G])
-          if rows(Bt)!=n
-            subst=transpose(nullspace(Bt)[2])
-            @assert rows(subst)==rows(closure(subst,G))
-            M.isirreducible=false
-            return false, subst
-          end
+        Bt=closure(transpose(submatrix(kernt,1:n,1:1)),Gt)
+        if rows(Bt)!=n
+          subst=transpose(nullspace(Bt)[2])
+          @assert rows(subst)==rows(closure(subst,G))
+          M.isirreducible=false
+          return false, subst
         end
         if degree(t)==a
           #

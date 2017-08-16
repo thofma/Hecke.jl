@@ -26,7 +26,7 @@ function _unit_group_init(O::NfOrd)
   return u
 end
 
-function _add_dependent_unit{S, T}(U::UnitGrpCtx{S}, y::T; rel_only = false)
+function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S, T}
   K = nf(order(U))
   deg = degree(K)
   r1, r2 = signature(K)
@@ -200,7 +200,7 @@ function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
   end
 end
 
-function _isindependent{T}(u::UnitGrpCtx{T}, y::FacElem{T})
+function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
   K = _base_ring(x[1])
   p = u.indep_prec
 
@@ -256,7 +256,7 @@ function _rel_add_prec(U)
   return U.rel_add_prec
 end
 
-function  _conj_log_mat{T}(x::Array{T, 1}, p::Int)
+function  _conj_log_mat(x::Array{T, 1}, p::Int) where T
   conlog = conjugates_arb_log(x[1], p)
 
   r, s = signature(_base_ring(x[1]))
@@ -279,7 +279,7 @@ function  _conj_log_mat{T}(x::Array{T, 1}, p::Int)
   return A
 end
 
-function _conj_log_mat_cutoff{T}(x::Array{T, 1}, p::Int)
+function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
   r = length(x)
   conlog = conjugates_arb_log(x[1], p)
   A = ArbMatSpace(parent(conlog[1]), r, r)()
@@ -298,7 +298,7 @@ function _conj_log_mat_cutoff{T}(x::Array{T, 1}, p::Int)
 end
 
 # Powering function for fmpz exponents
-function _pow{T}(x::Array{T, 1}, y::Array{fmpz, 1})
+function _pow(x::Array{T, 1}, y::Array{fmpz, 1}) where T
   K = _base_ring(x[1])
 
   zz = deepcopy(y)

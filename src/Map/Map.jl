@@ -26,7 +26,7 @@ function preimage(M::Map, a)
   error("No preimage function known")
 end
 
-function image{D, C}(M::Map{D, C}, a)
+function image(M::Map{D, C}, a) where {D, C}
   if isdefined(M.header, :image)
     return M.header.image(a)::elem_type(C)
   else
@@ -50,7 +50,7 @@ end
 \(f::Map, x) = preimage(f, x)
 
 
-function change{K, V}(D::Dict{K, V}, k::K, def::V, new::Function)
+function change(D::Dict{K, V}, k::K, def::V, new::Function) where {K, V}
   i = Base.ht_keyindex(D, k)
   if i>0
     D.vals[i] = new(D.vals[i])
@@ -59,7 +59,7 @@ function change{K, V}(D::Dict{K, V}, k::K, def::V, new::Function)
   end
 end
 
-function inc{K}(D::Dict{K, Int}, k::K, def::Int = 0)
+function inc(D::Dict{K, Int}, k::K, def::Int = 0) where K
   i = Base.ht_keyindex(D, k)
   if i>0
     D.vals[i] += 1
@@ -69,7 +69,7 @@ function inc{K}(D::Dict{K, Int}, k::K, def::Int = 0)
 end
 
 
-function _allow_cache!{D, C, De, Ce}(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Type{Ce})
+function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Type{Ce}) where {D, C, De, Ce}
   if isdefined(M.header, :cache)
     println("Cache already installed")
   else

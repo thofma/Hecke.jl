@@ -4,7 +4,7 @@ function index_p_subgroups(A::GrpAbFinGen, p::Integer)
   return index_p_subgroups(A, fmpz(p))
 end
 
-type IndexPSubgroups
+mutable struct IndexPSubgroups
   p::Int
   n::UInt
   st::Int

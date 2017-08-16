@@ -29,7 +29,7 @@ export upper_triangular, vcat!, show, sub, SMat, SRow, random_SMatSLP,
 
 
 
-function SLP_AddRow{T}(i::Int, j::Int, v::T)
+function SLP_AddRow(i::Int, j::Int, v::T) where T
   assert(v != 0)
   slp = TrafoAddScaled(i, j, v)
   return slp
@@ -75,7 +75,7 @@ end
 #   return a
 # end
 # 
-function random_SMatSLP{T}(A::SMat{T}, i::Int, v::UnitRange)
+function random_SMatSLP(A::SMat{T}, i::Int, v::UnitRange) where T
   a = Array{SMatSLP_add_row{Int}}(i)
   for j=1:i
     c = rand(v)

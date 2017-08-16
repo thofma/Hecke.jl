@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function _reduce_size{T}(x::Array{T, 1}, prec::Int = 64)
+function _reduce_size(x::Array{T, 1}, prec::Int = 64) where T
   K = _base_ring(x[1])
 
   deg = degree(K)
@@ -41,7 +41,7 @@ end
 #
 ################################################################################
 
-function scaled_log_matrix{T}(u::Array{T, 1}, prec::Int = 32)
+function scaled_log_matrix(u::Array{T, 1}, prec::Int = 32) where T
 
   r,s = signature(_base_ring(u[1]))
   A = MatrixSpace(ZZ, length(u), r + s)()
@@ -77,7 +77,7 @@ function row_norms(A::fmpz_mat)
 end
 
 
-function reduce{T}(u::Array{T, 1}, prec::Int = 32)
+function reduce(u::Array{T, 1}, prec::Int = 32) where T
   r = length(u)
   if r == 0
     return u

@@ -83,11 +83,11 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
   return A, a
 end
 
-type MapNarrowClassGrp{T} <: Map{T, NfOrdIdlSet}
+mutable struct MapNarrowClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
 
-  function MapNarrowClassGrp()
-    return new()
+  function MapNarrowClassGrp{T}() where {T}
+    return new{T}()
   end
 end
 

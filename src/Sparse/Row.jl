@@ -11,7 +11,7 @@ end
 
 base_ring(A::SRow) = parent(A.values[1])
 
-=={T}(x::SRow{T}, y::SRow{T}) = (x.pos == y.pos) && (x.values == y.values)
+==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
 #
@@ -39,7 +39,7 @@ end
 #
 ################################################################################
 
-function show{T}(io::IO, A::SRow{T})
+function show(io::IO, A::SRow{T}) where T
   print(io, "sparse row with positions $(A.pos) and values $(A.values)\n")
 end
 
@@ -49,7 +49,7 @@ end
 #
 ################################################################################
 
-function copy{T}(A::SRow{T})
+function copy(A::SRow{T}) where T
   sr = SRow{T}()
   for (p, v) = A
     push!(sr.pos, p)
@@ -160,7 +160,7 @@ function SRow(A::SRow{fmpz}, n::Int)
   return SRow(A, R)
 end
 
-function SRow{T <: Ring}(A::SRow{fmpz}, R::T)
+function SRow(A::SRow{fmpz}, R::T) where T <: Ring
   z = SRow{elem_type(R)}()
   for (i, v) in A
     nv = R(v)
@@ -217,7 +217,7 @@ end
 #
 ################################################################################
 
-function mul{T}(A::SRow{T}, B::SRow{T})
+function mul(A::SRow{T}, B::SRow{T}) where T
   @assert length(A) != 0
   v = 0*A.values[1]
   b = 1
@@ -252,7 +252,7 @@ end
 #
 ################################################################################
 
-function +{T}(A::SRow{T}, B::SRow{T})
+function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
     return B 
   elseif length(B.values) == 0
@@ -273,7 +273,7 @@ end
 #  return r*A
 #end
 
-function *{T}(b::T, A::SRow{T})
+function *(b::T, A::SRow{T}) where T
   B = SRow{T}()
   if iszero(b)
     return B
@@ -288,7 +288,7 @@ function *{T}(b::T, A::SRow{T})
   return B
 end
 
-function *{T}(b::Integer, A::SRow{T})
+function *(b::Integer, A::SRow{T}) where T
   return base_ring(A)(b)*A
 end
 

@@ -45,7 +45,7 @@ export base_field, disc, division_polynomialE, EllipticCurve, infinity,
 #
 ################################################################################
 
-type EllCrv{T}
+mutable struct EllCrv{T}
   base_field::Ring
   short::Bool
   coeff::Array{T, 1}
@@ -58,12 +58,12 @@ type EllCrv{T}
   torsion_points#::Array{EllCrvPt, 1}
   torsion_structure#Tuple{Array{Int, 1}, Array{EllCrvPt, 1}}
 
-  function EllCrv(coeffs::Array{T, 1}, check::Bool = true)
+  function EllCrv{T}(coeffs::Array{T, 1}, check::Bool = true) where {T}
     if length(coeffs) == 2
       if check
         d = 4*coeffs[1]^3 + 27*coeffs[2]^2
         if d != 0
-          E = new()
+          E = new{T}()
           E.short = true
           # fixed on Nemo master
           E.coeff = [ deepcopy(z) for z in coeffs]
@@ -73,7 +73,7 @@ type EllCrv{T}
           error("discriminant is zero")
         end
       else
-        E = new()
+        E = new{T}()
         E.short = true
         E.coeff = [ deepcopy(z) for z in coeffs]
         E.base_field = parent(coeffs[1])
@@ -94,7 +94,7 @@ type EllCrv{T}
         d = (-b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6)
 
         if d != 0
-          E = new()
+          E = new{T}()
           E.coeff = [ deepcopy(z) for z in coeffs]
           E.short = false
           E.b_invars = (b2, b4, b6, b8)
@@ -105,7 +105,7 @@ type EllCrv{T}
           error("Discriminant is zero")
         end
       else
-        E = new()
+        E = new{T}()
         E.short = false
         E.coeff = [ deepcopy(z) for z in coeffs]
         E.base_field = parent(coeffs[1])
@@ -117,13 +117,13 @@ type EllCrv{T}
   end
 end
 
-type EllCrvPt{T}
+mutable struct EllCrvPt{T}
   coordx::T
   coordy::T
   isinfinite::Bool
   parent::EllCrv{T}
 
-  function EllCrvPt(E::EllCrv{T}, coords::Array{T, 1}, check::Bool = true)
+  function EllCrvPt{T}(E::EllCrv{T}, coords::Array{T, 1}, check::Bool = true) where {T}
     if check
       if ison_curve(E, coords)
         P = new{T}(coords[1], coords[2], false, E)
@@ -137,7 +137,7 @@ type EllCrvPt{T}
     end
   end
 
-  function EllCrvPt(E::EllCrv{T})
+  function EllCrvPt{T}(E::EllCrv{T}) where {T}
     z = new{T}()
     z.parent = E
     z.isinfinite = true
@@ -151,7 +151,7 @@ end
 #
 ################################################################################
 
-function EllipticCurve{T}(x::Array{T, 1}, check::Bool = true)
+function EllipticCurve(x::Array{T, 1}, check::Bool = true) where T
   E = EllCrv{T}(x, check)
   return E
 end
@@ -165,7 +165,7 @@ function EllipticCurve(x::Array{fmpz, 1}, check::Bool = true)
   return EllipticCurve(fmpq[ FlintQQ(z) for z in x], check)
 end
 
-function (E::EllCrv{T}){S, T}(coords::Array{S, 1}, check::Bool = true)
+function (E::EllCrv{T})(coords::Array{S, 1}, check::Bool = true) where {S, T}
   if length(coords) != 2
     error("Need two coordinates")
   end
@@ -185,7 +185,7 @@ end
 #
 ################################################################################
 
-function base_field{T}(E::EllCrv{T})
+function base_field(E::EllCrv{T}) where T
   return E.base_field::parent_type(T)
 end
 
@@ -257,7 +257,7 @@ function short_weierstrass_model(E::EllCrv)
   return _short_weierstrass_model(E)
 end
 
-function _short_weierstrass_model{T}(E::EllCrv{T})
+function _short_weierstrass_model(E::EllCrv{T}) where T
   R = base_field(E)
   p = characteristic(R)
 
@@ -378,7 +378,7 @@ doc"""
 
 > Creates the point at infinity.
 """
-function infinity{T}(E::EllCrv{T})
+function infinity(E::EllCrv{T}) where T
   infi = EllCrvPt{T}(E)
   return infi
 end
@@ -396,7 +396,7 @@ doc"""
 > Returns true if `coords` defines a point  on E and false otherwise. The array
 > `coords` must have length 2.
 """
-function ison_curve{T}(E::EllCrv{T}, coords::Array{T, 1})
+function ison_curve(E::EllCrv{T}, coords::Array{T, 1}) where T
   length(coords) != 2 && error("Array must be of length 2")
 
   x = coords[1]
@@ -430,7 +430,7 @@ doc"""
 
 > Computes the discriminant of $E$.
 """
-function disc{T}(E::EllCrv{T})
+function disc(E::EllCrv{T}) where T
   if isdefined(E, :disc)
     return E.disc
   end
@@ -470,7 +470,7 @@ doc"""
 > Computes the j-invariant of $E$.
 """
 # p. 46 Washington, p. 72 Cohen
-function j_invariant{T}(E::EllCrv{T})
+function j_invariant(E::EllCrv{T}) where T
   if isdefined(E, :j)
     return E.j
   end
@@ -516,7 +516,7 @@ doc"""
 > does not work in characteristic 2
 """
 # washington p. 14, cohen p. 270
-function +{T}(P::EllCrvPt{T}, Q::EllCrvPt{T})
+function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
 
   characteristic(base_field(parent(P))) == 2 &&
@@ -616,14 +616,14 @@ doc"""
 > Returns true if $P$ and $Q$ are equal and live over the same elliptic curve
 > $E$.
 """
-function =={T}(P::EllCrvPt{T}, Q::EllCrvPt{T})
+function ==(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   # both are infinite
   if P.isinfinite && Q.isinfinite
     return true
   end
 
   # one of them is infinite
-  if P.isinfinite $ Q.isinfinite
+  if xor(P.isinfinite, Q.isinfinite)
     return false
   end
 

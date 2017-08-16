@@ -1,7 +1,7 @@
 # I don't like that we have to drag S around
 # Still hoping for julia/#18466
 
-type NfRelOrd{T, S} <: Ring
+mutable struct NfRelOrd{T, S} <: Ring
   nf::NfRel{T}
   basis_nf::Vector{NfRelElem{T}}
   basis_mat::GenMat{T}
@@ -12,23 +12,23 @@ type NfRelOrd{T, S} <: Ring
 
   disc #::NfOrdIdl or ::NfRelOrdIdl{T}
 
-  function NfRelOrd(K::NfRel{T}, M::PMat{T, S})
-    z = new()
+  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+    z = new{T, S}()
     z.nf = K
     z.basis_pmat = M
     return z
   end
   
-  function NfRelOrd(K::NfRel{T}, M::GenMat{T})
-    z = new()
+  function NfRelOrd{T, S}(K::NfRel{T}, M::GenMat{T}) where {T, S}
+    z = new{T, S}()
     z.nf = K
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
 
-  function NfRelOrd(K::NfRel{T})
-    z = new()
+  function NfRelOrd{T}(K::NfRel{T}) where {T}
+    z = new{T, S}()
     z.nf = K
     return z
   end
@@ -54,7 +54,7 @@ nf(O::NfRelOrd) = O.nf
 #
 ################################################################################
 
-function assure_has_basis_pmat{T, S}(O::NfRelOrd{T, S})
+function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   if isdefined(O, :basis_pmat)
     return nothing
   end
@@ -73,7 +73,7 @@ function assure_has_basis_pmat{T, S}(O::NfRelOrd{T, S})
   return nothing
 end
 
-function assure_has_pseudo_basis{T, S}(O::NfRelOrd{T, S})
+function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   if isdefined(O, :pseudo_basis)
     return nothing
   end
@@ -91,7 +91,7 @@ function assure_has_pseudo_basis{T, S}(O::NfRelOrd{T, S})
   return nothing
 end
 
-function assure_has_basis_nf{T, S}(O::NfRelOrd{T, S})
+function assure_has_basis_nf(O::NfRelOrd{T, S}) where {T, S}
   if isdefined(O, :basis_nf)
     return nothing
   end
@@ -133,7 +133,7 @@ doc"""
 
 > Returns the pseudo-basis of $\mathcal O$.
 """
-function pseudo_basis{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+function pseudo_basis(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_pseudo_basis(O)
   if copy == Val{true}
     return deepcopy(O.pseudo_basis)
@@ -149,7 +149,7 @@ doc"""
 > Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
 > of the ambient number field.
 """
-function basis_pmat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+function basis_pmat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_pmat(O)
   if copy == Val{true}
     return deepcopy(O.basis_pmat)
@@ -171,7 +171,7 @@ doc"""
 > Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
 > ambient number field.
 """
-function basis_nf{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+function basis_nf(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_nf(O)
   if copy == Val{true}
     return deepcopy(O.basis_nf)
@@ -187,7 +187,7 @@ doc"""
 > Returns the basis matrix of $\mathcal O$ with respect to the power basis
 > of the ambient number field.
 """
-function basis_mat{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+function basis_mat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat(O)
   if copy == Val{true}
     return deepcopy(O.basis_mat)
@@ -202,7 +202,7 @@ doc"""
 
 > Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv{T}(O::NfRelOrd, copy::Type{Val{T}} = Val{true})
+function basis_mat_inv(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat_inv(O)
   if copy == Val{true}
     return deepcopy(O.basis_mat_inv)
@@ -287,7 +287,7 @@ doc"""
 
 > Makes a copy of $\mathcal O$.
 """
-function Base.deepcopy_internal{T, S}(O::NfRelOrd{T, S}, dict::ObjectIdDict)
+function Base.deepcopy_internal(O::NfRelOrd{T, S}, dict::ObjectIdDict) where {T, S}
   z = NfRelOrd{T, S}(O.nf)
   for x in fieldnames(O)
     if x != :nf && isdefined(O, x)
@@ -304,7 +304,7 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order{T, S, V}(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false})
+function _check_elem_in_order(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
   assure_has_basis_mat_inv(O)
   assure_has_basis_pmat(O)
   t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
@@ -337,7 +337,7 @@ doc"""
 
 > Checks whether $a$ lies in $\mathcal O$.
 """
-function in{T, S}(a::NfRelElem{T}, O::NfRelOrd{T, S})
+function in(a::NfRelElem{T}, O::NfRelOrd{T, S}) where {T, S}
   return _check_elem_in_order(a, O, Val{true})
 end
 
@@ -359,7 +359,7 @@ function Order(L::NfRel{nf_elem}, M::GenMat{nf_elem})
   return NfRelOrd{nf_elem, NfOrdFracIdl}(L, M)
 end
 
-function Order{T}(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}})
+function Order(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}}) where T
   # checks
   return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, M)
 end
@@ -371,7 +371,7 @@ doc"""
 > Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
 > of $K$.
 """
-function Order{T, S}(L::NfRel{T}, M::PMat{T, S})
+function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
   # checks
   return NfRelOrd{T, S}(L, M)
 end
@@ -388,6 +388,6 @@ function ==(R::NfRelOrd, S::NfRelOrd)
 end
 
 
-type NfRelOrdIdl{T} end
+mutable struct NfRelOrdIdl{T} end
 
-type NfRelOrdFracIdl{T} end
+mutable struct NfRelOrdFracIdl{T} end

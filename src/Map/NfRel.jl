@@ -34,7 +34,7 @@
 
 #why only simple relative?
 
-type NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
+mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
   header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
   function NfRelToNf(K::NfRel{nf_elem}, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
@@ -73,12 +73,17 @@ function show(io::IO, h::NfRelToNf)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
-type NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
+mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
   header::MapHeader{NfRel{T}, NfRel{S}}
   prim_img ::NfRelElem{S}
   coeff_aut::NfToNfMor
 
-  function NfRelToNfRelMor(K::NfRel{T}, L::NfRel{S}, a::NfRelElem{S})
+  function NfRelToNfRelMor{T, S}() where {T, S}
+    z = new{T, S}()
+    return z
+  end
+
+  function NfRelToNfRelMor{T, S}(K::NfRel{T}, L::NfRel{S}, a::NfRelElem{S}) where {T, S}
     function image(x::NfRelElem{S})
       # x is an element of K
       f = data(x)
@@ -87,32 +92,32 @@ type NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
       return f(a)
     end
 
-    z = new()
+    z = new{T, S}()
     z.prim_img = a
     z.header = MapHeader(K, L, image)
     return z
   end  
+end
 
   #so far, only for single relative.
-  function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
-    function image(x::NfRelElem{nf_elem})
-      # x is an element of K
-      f = data(x)
-      g = zero(f)
-      for i=0:degree(f)
-        setcoeff!(g, i, A(coeff(f, i)))
-      end
-      # First evaluate the coefficients of f at a to get a polynomial over L
-      # Then evaluate at b
-      return g(a)
+function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
+  function image(x::NfRelElem{nf_elem})
+    # x is an element of K
+    f = data(x)
+    g = zero(f)
+    for i=0:degree(f)
+      setcoeff!(g, i, A(coeff(f, i)))
     end
-
-    z = new()
-    z.prim_img = a
-    z.coeff_aut = A
-    z.header = MapHeader(K, L, image)
-    return z
+    # First evaluate the coefficients of f at a to get a polynomial over L
+    # Then evaluate at b
+    return g(a)
   end
+
+  z = NfRelToNfRelMor{nf_elem, nf_elem}()
+  z.prim_img = a
+  z.coeff_aut = A
+  z.header = MapHeader(K, L, image)
+  return z
 end
 
 function show(io::IO, h::NfRelToNfRelMor)

@@ -15,11 +15,11 @@ end
 #
 ################################################################################
 
-base_ring{T}(A::SMatSpace{T}) = A.base_ring::parent_type(T)
+base_ring(A::SMatSpace{T}) where {T} = A.base_ring::parent_type(T)
 
 parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
 
-base_ring{T}(A::SMat{T}) = A.base_ring::parent_type(T)
+base_ring(A::SMat{T}) where {T} = A.base_ring::parent_type(T)
 
 function rows(A::SMat)
   @assert A.r == length(A.rows)
@@ -46,7 +46,7 @@ end
 #
 ################################################################################
 
-function =={T}(x::SMat{T}, y::SMat{T})
+function ==(x::SMat{T}, y::SMat{T}) where T
   parent(x) != parent(y) && error("Parents incompatible")
   return x.rows == y.rows
 end
@@ -58,7 +58,7 @@ end
 ################################################################################
 
 # this makes only sense for SMat{fmpz}
-function sparsity{T}(A::SMat{T})
+function sparsity(A::SMat{T}) where T
   return A.nnz/(A.r * A.c), nbits(maxabs(A))
 end
 
@@ -68,7 +68,7 @@ end
 #
 ################################################################################
 
-function show{T}(io::IO, A::SMat{T})
+function show(io::IO, A::SMat{T}) where T
   print(io, "Sparse ", A.r, " x ", A.c, " matrix with ")
   print(io, A.nnz, " non-zero entries\n")
 end
@@ -79,7 +79,7 @@ end
 #
 ################################################################################
 
-function SMat{T <: Ring}(R::T)
+function SMat(R::T) where T <: Ring
   r = SMat{elem_type(R)}()
   r.base_ring = R
   return r
@@ -91,7 +91,7 @@ end
 #
 ################################################################################
 
-function copy{T}(A::SMat{T})
+function copy(A::SMat{T}) where T
   return sub(A, 1:rows(A), 1:cols(A))
 end
 
@@ -101,7 +101,7 @@ end
 #
 ################################################################################
 
-function getindex{T}(A::SMat{T}, i::Int, j::Int)
+function getindex(A::SMat{T}, i::Int, j::Int) where T
   if i in 1:A.r
     ra = A.rows[i]
     p = findfirst(x->x==j, ra.pos)
@@ -112,14 +112,14 @@ function getindex{T}(A::SMat{T}, i::Int, j::Int)
   return zero(base_ring(A))
 end
 
-function getindex{T}(A::SMat{T}, i::Int)
+function getindex(A::SMat{T}, i::Int) where T
   if i in 1:A.r
     return A.rows[i]
   end
   return SRow{T}()
 end
 
-function setindex!{T}(A::SMat{T}, b::SRow{T}, i::Int)
+function setindex!(A::SMat{T}, b::SRow{T}, i::Int) where T
   A.rows[i] = b
 end
 
@@ -129,7 +129,7 @@ end
 #
 ################################################################################
 
-function randrow{T}(A::SMat{T})
+function randrow(A::SMat{T}) where T
   return rand(A.rows)
 end
 
@@ -142,8 +142,8 @@ end
 # The entries of the sparse matrix will be coerced into the ring R.
 # It defaults to the base ring of the input matrix.
 # If keepzrows is set, then zero rows will not be remove
-function SMat{T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
-                                              keepzrows::Bool = true)
+function SMat(A::T; R::S = base_ring(A),
+                     keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
 
   m = SMat(R)
   m.c = cols(A)
@@ -180,7 +180,7 @@ doc"""
 > Constructs the SMat (Hecke-sparse matrix) with coefficients of
 > type T corresponding to A.
 """
-function SMat{T <: RingElem}(A::Array{T, 2})
+function SMat(A::Array{T, 2}) where T <: RingElem
   length(A) == 0 && error("Cannot create sparse matrix from empty array")
   m = SMat(parent(A[1, 1]))
   m.c = Base.size(A, 2)
@@ -203,12 +203,12 @@ function SMat{T <: RingElem}(A::Array{T, 2})
   return m
 end
 
-function (M::SMatSpace){T <: MatElem, S <: Ring}(A::T; R::S = base_ring(A),
-                                                          keepzrows::Bool = true)
+function (M::SMatSpace)(A::T; R::S = base_ring(A),
+                                 keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
   return SMat(A, R, keepzrows)
 end
 
-function (M::SMatSpace){T <: MatElem}(A::Array{T, 2})
+function (M::SMatSpace)(A::Array{T, 2}) where T <: MatElem
   return SMat(A)
 end
 
@@ -219,7 +219,7 @@ doc"""
   
 > "Lifts" the entries in $A$ to a sparse matrix over $R$.
 """
-function SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
+function SMat(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false) where S <: Ring
   if R == base_ring(A)
     return _SMat(A, R = R)
   end
@@ -295,7 +295,7 @@ doc"""
 
 > Convert the matrix (row) $A$ to be over $R$.
 """
-function SMat{T <: Ring}(A::SMat{fmpz}, R::T)
+function SMat(A::SMat{fmpz}, R::T) where T <: Ring
   z = SMat(R)
   z.r = A.r
   z.c = A.c
@@ -383,7 +383,7 @@ end
 
 # (dense Array{T, 1}) * Smat{T} as (dense Array{T, 1}) 
 # inplace
-function mul!{T}(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1})
+function mul!(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1}) where T
   assert(length(b) == cols(A))
   assert(length(c) == rows(A))
   for i = 1:length(A.rows)
@@ -398,7 +398,7 @@ function mul!{T}(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1})
 end
 
 # (dense Array{T, 1}) * Smat{T} as (dense Array{T, 1}) 
-function mul{T}(A::SMat{T}, b::Array{T, 1})
+function mul(A::SMat{T}, b::Array{T, 1}) where T
   assert(length(b) == cols(A))
   c = Array{T}(rows(A))
   mul!(c, A, b)
@@ -408,7 +408,7 @@ end
 # - (dense Array{S, 1}) * Smat{T} as (dense Array{S, 1}) modulo mod::S
 # - Inplace
 # - Reduction as the last step, no intermediate reductions.
-function mul_mod!{S, T}(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S)
+function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
   assert( length(b) == cols(A))
   assert( length(c) == rows(A))
   for i = 1:length(A.rows)
@@ -425,7 +425,7 @@ end
 # - (dense Array{S, 1}) * Smat{T} as (dense Array{S, 1}) modulo mod::S
 # - Inplace
 # - Intermediate reductions.
-function mul_mod_big!{S, T}(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S)
+function mul_mod_big!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
   assert(length(b) == cols(A))
   assert(length(c) == rows(A))
   for i = 1:length(A.rows)
@@ -441,7 +441,7 @@ end
 
 # - Smat{T} * Array{T, 2} as Array{T, 2}
 # - Inplace
-function mul!{T}(c::Array{T, 2}, A::SMat{T}, b::Array{T, 2})
+function mul!(c::Array{T, 2}, A::SMat{T}, b::Array{T, 2}) where T
   sz = size(b)
   assert(sz[1] == cols(A))
   tz = size(c)
@@ -460,7 +460,7 @@ function mul!{T}(c::Array{T, 2}, A::SMat{T}, b::Array{T, 2})
 end
 
 # - Smat{T} * Array{T, 2} as Array{T, 2}
-function mul{T}(A::SMat{T}, b::Array{T, 2})
+function mul(A::SMat{T}, b::Array{T, 2}) where T
   sz = size(b)
   assert(sz[1] == cols(A))
   c = Array{T}(sz[1], sz[2])
@@ -469,7 +469,7 @@ end
 
 # - Smat{T} * fmpz_mat as fmpz_mat
 # - Inplace
-function mul!{T}(c::fmpz_mat, A::SMat{T}, b::fmpz_mat)
+function mul!(c::fmpz_mat, A::SMat{T}, b::fmpz_mat) where T
   assert(rows(b) == cols(A))
   assert(rows(c) == rows(A))
   assert(cols(c) == cols(b))
@@ -486,14 +486,14 @@ function mul!{T}(c::fmpz_mat, A::SMat{T}, b::fmpz_mat)
 end
 
 # - Smat{T} * fmpz_mat as fmpz_mat
-function mul{T}(A::SMat{T}, b::fmpz_mat)
+function mul(A::SMat{T}, b::fmpz_mat) where T
   assert(rows(b) == cols(A))
   c = MatrixSpace(ZZ, rows(A), cols(b))()
   return mul!(c, A, b)
 end
 
 # - Smat{T} * Smat{T} as MatElem{T}
-function mul{T}(A::SMat{T}, B::SMat{T})
+function mul(A::SMat{T}, B::SMat{T}) where T
   @assert A.c == B.r
   C = MatrixSpace(base_ring(A), A.r, B.c)()
   for i=1:A.r
@@ -517,7 +517,7 @@ function mul(A::SMat{UIntMod}, B::SMat{UIntMod})
 end
 
 # - SRow{T} * Smat{T} as SRow{T}
-function mul{T}(A::SRow{T}, B::SMat{T})
+function mul(A::SRow{T}, B::SMat{T}) where T
   C = SRow{T}()
   for (p, v) = A
     C = add_scaled_row(B[p], C, v)
@@ -531,7 +531,7 @@ end
 #
 ################################################################################
 
-function +{T}(A::SMat{T}, B::SMat{T})
+function +(A::SMat{T}, B::SMat{T}) where T
   C = SMat(base_ring(A))
   m = min(rows(A), rows(B))
   for i=1:m
@@ -546,7 +546,7 @@ function +{T}(A::SMat{T}, B::SMat{T})
   return C
 end
 
-function -{T}(A::SMat{T}, B::SMat{T})
+function -(A::SMat{T}, B::SMat{T}) where T
   C = SMat{T}()
   m = min(rows(A), rows(B))
   for i=1:m
@@ -564,7 +564,7 @@ function -{T}(A::SMat{T}, B::SMat{T})
   return C
 end
 
-function -{T}(A::SRow{T}, B::SRow{T})
+function -(A::SRow{T}, B::SRow{T}) where T
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
@@ -579,7 +579,7 @@ end
 #  return base_ring(A)(b)*A
 #end
 
-function *{T}(b::T, A::SMat{T})
+function *(b::T, A::SMat{T}) where T
   B = SMat(base_ring(A))
   if iszero(b)
     return B
@@ -590,7 +590,7 @@ function *{T}(b::T, A::SMat{T})
   return B
 end
 
-function *{T}(b::Integer, A::SMat{T})
+function *(b::Integer, A::SMat{T}) where T
   return base_ring(A)(b)*A
 end
 
@@ -600,7 +600,7 @@ end
 #
 ################################################################################
 
-function sub{T}(A::SMat{T}, r::UnitRange, c::UnitRange)
+function sub(A::SMat{T}, r::UnitRange, c::UnitRange) where T
   B = SMat(base_ring(A))
   B.nnz = 0
   for i=r
@@ -641,7 +641,7 @@ doc"""
   trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then
   the valence of trans * A  is computed instead.
 """
-function valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}())
+function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
   if false && cols(A) > rows(A)
@@ -744,7 +744,7 @@ doc"""
 > Vertically joins $A$ and $B$ inplace, that is, the rows of $B$ are
 > appended to $A$.
 """
-function vcat!{T}(A::SMat{T}, B::SMat{T})
+function vcat!(A::SMat{T}, B::SMat{T}) where T
   @assert length(A.rows) == A.r
   @assert length(B.rows) == B.r
   A.r += B.r
@@ -761,7 +761,7 @@ doc"""
 
 > Vertically joins $A$ and $B$.
 """
-function vcat{T}(A::SMat{T}, B::SMat{T})
+function vcat(A::SMat{T}, B::SMat{T}) where T
   @assert length(A.rows) == A.r
   @assert length(B.rows) == B.r
   C = copy(A)
@@ -781,7 +781,7 @@ doc"""
 
 > Horizontally concatenates $A$ and $B$, inplace, changing $A$.
 """
-function hcat!{T}(A::SMat{T}, B::SMat{T})
+function hcat!(A::SMat{T}, B::SMat{T}) where T
   o = A.c
   A.c += B.c
   nnz = A.nnz
@@ -808,7 +808,7 @@ doc"""
 
 > Horizontally concatenates $A$ and $B$.
 """
-function hcat{T}(A::SMat{T}, B::SMat{T})
+function hcat(A::SMat{T}, B::SMat{T}) where T
   C = copy(A)
   hcat!(C, B)
   return C
@@ -820,15 +820,13 @@ end
 #
 ################################################################################
 
-function push!{T}(A::SMat{T}, B::SRow{T})
-  if true || length(B.pos) > 0
-    push!(A.rows, B)
-    A.r += 1
-    @assert length(A.rows) == A.r
-    A.nnz += length(B.pos)
-    if length(B.pos) > 0
-      A.c = max(A.c, B.pos[end])
-    end
+function push!(A::SMat{T}, B::SRow{T}) where T
+  push!(A.rows, B)
+  A.r += 1
+  @assert length(A.rows) == A.r
+  A.nnz += length(B.pos)
+  if length(B.pos) > 0
+    A.c = max(A.c, B.pos[end])
   end
 end
 
@@ -845,7 +843,7 @@ doc"""
 > The same matix $A$, but as an fmpz_mat.
 > Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
 """
-function fmpz_mat{T <: Integer}(A::SMat{T})
+function fmpz_mat(A::SMat{T}) where T <: Integer
   B = MatrixSpace(FlintZZ, A.r, A.c)()
   for i = 1:length(A.rows)
     ra = A.rows[i]
@@ -1104,7 +1102,7 @@ doc"""
 
 > Tests if $A$ is the $n \times n$ identity.
 """
-function isid{T}(A::SMat{T})
+function isid(A::SMat{T}) where T
   if A.c != A.r
     return false
   end
@@ -1170,7 +1168,7 @@ doc"""
 
 > The same matrix, but as a sparse matrix of julia type.
 """
-function sparse{T}(A::SMat{T})
+function sparse(A::SMat{T}) where T
   I = Array{Int}(A.nnz)
   J = Array{Int}(A.nnz)
   V = Array{T}(A.nnz)
@@ -1192,7 +1190,7 @@ doc"""
 
 > The same matrix, but as a two-dimensional julia array.
 """
-function Array{T}(A::SMat{T})
+function Array(A::SMat{T}) where T
   R = zero(Array{T}(A.r, A.c)) # otherwise, most entries will be #undef
                                # at least if T is a flint-type
   for i=1:rows(A)

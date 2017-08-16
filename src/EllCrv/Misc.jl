@@ -252,7 +252,7 @@ function nrootscubic(b, c, d, p)
   end  
 end
 
-function smod{T, S}(a::T, b::S)
+function smod(a::T, b::S) where {T, S}
   z = mod(a, b)
   if 2*z > b
     z = z - b

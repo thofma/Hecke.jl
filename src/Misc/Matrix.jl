@@ -9,18 +9,18 @@ function matrix(A::Array{fmpz, 2})
   return m
 end
 
-function matrix{T <: RingElem}(A::Array{T, 2})
+function matrix(A::Array{T, 2}) where T <: RingElem
   r, c = size(A)
   (r < 0 || c < 0) && error("Array must be non-empty")
   m = MatrixSpace(parent(A[1, 1]), size(A)...)(A)
   return m
 end
 
-function matrix{T <: RingElem}(A::Array{T, 1})
+function matrix(A::Array{T, 1}) where T <: RingElem
   return matrix(reshape(A,length(A),1))
 end
 
-function matrix{T}(R::Ring, n::Int, m::Int, A::Array{T, 2})
+function matrix(R::Ring, n::Int, m::Int, A::Array{T, 2}) where T
   m = MatrixSpace(R, n, m)(A)
   return m
 end
@@ -31,7 +31,7 @@ end
 
 #
 
-function Array{T}(a::fmpz_mat; S::Type{T} = fmpz)
+function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   A = Array{T}(rows(a), cols(a))
   for i = 1:rows(a)
     for j = 1:cols(a)
@@ -62,7 +62,7 @@ function iszero_row(M::nmod_mat, i::Int)
 end
 
 
-function iszero_row{T}(M::MatElem{T}, i::Int)
+function iszero_row(M::MatElem{T}, i::Int) where T
   for j in 1:cols(M)
     if !iszero(M[i,j])
       return false
@@ -71,7 +71,7 @@ function iszero_row{T}(M::MatElem{T}, i::Int)
   return true
 end
 
-function iszero_row{T <: Integer}(M::Array{T, 2}, i::Int)
+function iszero_row(M::Array{T, 2}, i::Int) where T <: Integer
   for j = 1:Base.size(M, 2)
     if M[i,j] != 0 
       return false
@@ -89,7 +89,7 @@ function iszero_row(M::Array{fmpz, 2}, i::Int)
   return true
 end
 
-function iszero_row{T <: RingElem}(M::Array{T, 2}, i::Int)
+function iszero_row(M::Array{T, 2}, i::Int) where T <: RingElem
   for j in 1:Base.size(M, 2)
     if !iszero(M[i,j])
       return false
@@ -128,12 +128,12 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
 end
 
 #TODO: rename/ replace by sub
-function submat{T <: Integer}(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T})
+function submat(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T}) where T <: Integer
   z = deepcopy(view(x, r, c))
   return z
 end
 
-function submat{T <: Integer}(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T})
+function submat(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T}) where T <: Integer
   z = deepcopy(view(x, r, c))
   return z
 end
@@ -490,7 +490,7 @@ function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   return M
 end
 
-function submat{T <: Integer}(A::fmpz_mat, r::UnitRange{T}, c::UnitRange)
+function submat(A::fmpz_mat, r::UnitRange{T}, c::UnitRange) where T <: Integer
   @assert !isdefined(r, :step) || r.step==1
   @assert !isdefined(c, :step) || c.step==1
   return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
@@ -733,7 +733,7 @@ doc"""
 > Forms a big matrix my vertically concatenating the matrices in $A$.
 > All component matrices need to have the same number of columns.
 """
-function vcat{T}(A::Array{GenMat{T}, 1})
+function vcat(A::Array{GenMat{T}, 1}) where T
   if any(x->cols(x) != cols(A[1]), A)
     error("Matrices must have same number of columns")
   end

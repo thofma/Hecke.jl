@@ -1,6 +1,6 @@
 # Everything related to transformation on sparse matrices
 
-function scale_row!{T}(A::SMat{T}, i::Int, c::T)
+function scale_row!(A::SMat{T}, i::Int, c::T) where T
   for j in 1:length(A.rows[i].values)
     A.rows[i].values[j] *= c
   end
@@ -11,7 +11,7 @@ doc"""
 
   swaps, inplace, the i-th row and the j-th
 """
-function swap_rows!{T}(A::SMat{T}, i::Int, j::Int)
+function swap_rows!(A::SMat{T}, i::Int, j::Int) where T
   A[i], A[j] = A[j], A[i]
 end
 
@@ -21,7 +21,7 @@ doc"""
 > Inplace, inverts the rows, ie. swaps the last and the 1st, the 2nd last and the
 > 2nd, ...
 """
-function invert_rows!{T}(A::SMat{T})
+function invert_rows!(A::SMat{T}) where T
   for i=1:div(A.r, 2)
     A[i], A[A.r+1-i] = A[A.r+1-i], A[i]
   end
@@ -33,7 +33,7 @@ doc"""
 
 > Swap the i-th and j-th column inplace.
 """
-function swap_cols!{T}(A::SMat{T}, i::Int, j::Int)
+function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
   @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
 
   if i == j
@@ -80,13 +80,13 @@ doc"""
 
   adds, inplace, the c*i-th row to the j-th
 """
-function add_scaled_row!{T}(A::SMat{T}, i::Int, j::Int, c::T)
+function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
   A.nnz = A.nnz - length(A[j])
   A.rows[j] = add_scaled_row(A[i], A[j], c)
   A.nnz = A.nnz + length(A[j])
 end
 
-function add_scaled_row{T}(Ai::SRow{T}, Aj::SRow{T}, c::T)
+function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
   sr = SRow{T}()
   pi = 1
   pj = 1
@@ -129,7 +129,7 @@ doc"""
 
 > Adds, inplace, the c*i-th column to the j-th column.
 """
-function add_scaled_col!{T}(A::SMat{T}, i::Int, j::Int, c::T)
+function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
   @assert c != 0
 
   @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
@@ -161,12 +161,12 @@ doc"""
   Inplace, replaces the i-th row and the j-th row by
   [a,b; c,d] * [i-th-row ; j-th row]
 """
-function transform_row!{T}(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+function transform_row!(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T) where T
   A.nnz = A.nnz - length(A[i]) - length(A[j])
   A.rows[i], A.rows[j] = transform_row(A[i], A[j], a, b, c, d)
   A.nnz = A.nnz + length(A[i]) + length(A[j])
 end
-function transform_row{T}(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T)
+function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
   sr = SRow{T}()
   tr = SRow{T}()
   pi = 1
@@ -262,32 +262,32 @@ end
 # The following function do not update the number of nonzero entries
 # properly
 
-function apply_left!{T}(A::SMat{T}, t::TrafoScale{T})
+function apply_left!(A::SMat{T}, t::TrafoScale{T}) where T
   scale_row!(A, t.i, t.c)
   return nothing
 end
 
-function apply_left!{T}(A::SMat{T}, t::TrafoSwap{T})
+function apply_left!(A::SMat{T}, t::TrafoSwap{T}) where T
   swap_rows!(A, t.i, t.j)
   return nothing
 end
 
-function apply_left!{T}(A::SMat{T}, t::TrafoAddScaled{T})
+function apply_left!(A::SMat{T}, t::TrafoAddScaled{T}) where T
   add_scaled_row!(A, t.i, t.j, t.s)
   return nothing
 end
 
-function apply_left!{T}(A::SMat{T}, t::TrafoParaAddScaled{T})
+function apply_left!(A::SMat{T}, t::TrafoParaAddScaled{T}) where T
   transform_row!(A, t.i, t.j, t.a, t.b, t.c, t.d)
   return nothing
 end
 
-function apply_left!{T}(A::SMat{T}, t::TrafoDeleteZero{T})
+function apply_left!(A::SMat{T}, t::TrafoDeleteZero{T}) where T
   deleteat!(A.rows, t.i)
   A.r -= 1
 end
 
-function apply_left!{T, S}(A::SMat{T}, t::TrafoPartialDense{S})
+function apply_left!(A::SMat{T}, t::TrafoPartialDense{S}) where {T, S}
   R = parent(A.rows[1].values[1])
   i = t.i
   h = sub(A, t.rows, t.cols)
@@ -324,17 +324,17 @@ end
 
 # The following function do not update the number of nonzero entries
 # properly
-function apply_right!{T}(A::SMat{T}, t::TrafoSwap{T})
+function apply_right!(A::SMat{T}, t::TrafoSwap{T}) where T
   swap_cols!(A, t.i, t.j)
   return nothing
 end
 
-function apply_right!{T}(A::SMat{T}, t::TrafoAddScaled{T})
+function apply_right!(A::SMat{T}, t::TrafoAddScaled{T}) where T
   add_scaled_col!(A, t.j, t.i, t.s)
   return nothing
 end
 
-function apply_right!{T, S}(A::SMat{T}, t::TrafoPartialDense{S})
+function apply_right!(A::SMat{T}, t::TrafoPartialDense{S}) where {T, S}
   # this works only if there are zeros left of the block to which we apply t
   i = t.i
   h = sub(A, t.rows, t.cols)
@@ -369,23 +369,23 @@ end
 #
 ################################################################################
 
-function apply_right!{T}(x::Array{T, 1}, t::TrafoAddScaled{T})
+function apply_right!(x::Array{T, 1}, t::TrafoAddScaled{T}) where T
   x[t.i] = x[t.i] + x[t.j]*t.s
   return nothing
 end
 
-function apply_right!{T}(x::Array{T, 1}, t::TrafoScale{T})
+function apply_right!(x::Array{T, 1}, t::TrafoScale{T}) where T
   x[t.i] = x[t.i] * t.c
 end
 
-function apply_right!{T}(x::Array{T, 1}, t::TrafoSwap{T})
+function apply_right!(x::Array{T, 1}, t::TrafoSwap{T}) where T
   r = x[t.i]
   x[t.i] = x[t.j]
   x[t.j] = r
   return nothing
 end
 
-function apply_right!{T}(x::Array{T, 1}, t::TrafoParaAddScaled{T})
+function apply_right!(x::Array{T, 1}, t::TrafoParaAddScaled{T}) where T
   r = t.a * x[t.i] + t.c * x[t.j]
   s = t.b * x[t.i] + t.d * x[t.j]
   x[t.i] = r
@@ -393,7 +393,7 @@ function apply_right!{T}(x::Array{T, 1}, t::TrafoParaAddScaled{T})
   return nothing
 end
 
-function apply_right!{T}(x::Array{T, 1}, t::TrafoDeleteZero{T})
+function apply_right!(x::Array{T, 1}, t::TrafoDeleteZero{T}) where T
   # move ith position to the back
   for j in length(x):-1:t.i+1
     r = x[j]
@@ -402,7 +402,7 @@ function apply_right!{T}(x::Array{T, 1}, t::TrafoDeleteZero{T})
   end
 end
 
-function apply_right!{T}(x::Array{T, 1}, t::TrafoPartialDense)
+function apply_right!(x::Array{T, 1}, t::TrafoPartialDense) where T
   s = MatrixSpace(parent(x[1]), 1, rows(t.U))(x[t.rows])
   #println("s :$s")
   s = s*t.U

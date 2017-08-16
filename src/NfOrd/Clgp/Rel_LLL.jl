@@ -1,4 +1,4 @@
-type SmallLLLRelationsCtx
+mutable struct SmallLLLRelationsCtx
   A::NfOrdIdl
   b::Array{nf_elem, 1}
   bd::Int
