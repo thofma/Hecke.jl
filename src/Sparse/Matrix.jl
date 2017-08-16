@@ -565,9 +565,6 @@ function -{T}(A::SMat{T}, B::SMat{T})
 end
 
 function -{T}(A::SRow{T}, B::SRow{T})
-  if length(A.values) == 0
-    return B 
-  end
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
@@ -824,12 +821,14 @@ end
 ################################################################################
 
 function push!{T}(A::SMat{T}, B::SRow{T})
-  if length(B.pos) > 0
+  if true || length(B.pos) > 0
     push!(A.rows, B)
     A.r += 1
     @assert length(A.rows) == A.r
     A.nnz += length(B.pos)
-    A.c = max(A.c, B.pos[end])
+    if length(B.pos) > 0
+      A.c = max(A.c, B.pos[end])
+    end
   end
 end
 
