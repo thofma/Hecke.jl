@@ -683,6 +683,8 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   end
 
   Fq = codomain(f)
+  s = Fq()
+  t = Ft()
 
   function _image(x::nf_elem)
     m = den(x)
@@ -695,8 +697,6 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
 
   function _image(x::FacElem{nf_elem, AnticNumberField})
     r = one(Fq)
-    s = Fq()
-    t = Ft()
     for (k, v) = x.fac
       if v == 0 || v%qm1 == 0
         continue
