@@ -73,7 +73,7 @@ function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Typ
   if isdefined(M.header, :cache)
     println("Cache already installed")
   else
-    M.header.cache = MapCache{D, C, De, Ce}(domain(M), codomain(M), lim)
+    M.header.cache = MapCache(domain(M), codomain(M), De, Ce, lim)
     M.header.cache.old_pr = M.header.preimage
     M.header.cache.old_im = M.header.image
   end
@@ -115,11 +115,11 @@ function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Typ
   nothing
 end
 
-function allow_cache!(M::Map, lim::Int = 100)
+function allow_cache!(M::T, lim::Int = 100) where T <: Map
   return _allow_cache!(M, lim, typeof(domain(M)), typeof(codomain(M)), elem_type(domain(M)), elem_type(codomain(M)))
 end
 
-function stop_cache!(M::Map)
+function stop_cache!(M::T) where T <: Map
   if isdefined(M.header, :cache)
     M.header.image = M.header.cache.old_im
     M.header.preimage = M.header.cache.old_pr

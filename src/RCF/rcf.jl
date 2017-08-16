@@ -31,7 +31,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   fl, b = hasroot(a, degree(K))
   @assert fl
 
-  return NfRelToNfRelMor{nf_elem, nf_elem}(K, K, h, 1//b*gen(K)^r)
+  return NfRelToNfRelMor(K, K, h, 1//b*gen(K)^r)
 end
 
 
