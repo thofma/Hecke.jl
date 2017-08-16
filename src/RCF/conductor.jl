@@ -619,7 +619,7 @@ function conductor_min(C::Hecke.ClassField)
             while divisors[i] != pd[j][1]
               j+=1
             end
-            if L[divisors[i]]< pd[j][2]
+            if L[divisors[i]]<= pd[j][2]
               delete!(L,p)
               deleteat!(divisors,i)
               continue
@@ -668,7 +668,7 @@ function conductor_min(C::Hecke.ClassField)
             while divisors[i] != pd[j][1]
               j+=1
             end
-            if L[divisors[i]]< k*pd[j][2]
+            if L[divisors[i]]<= k*pd[j][2]
               delete!(L,p)
               deleteat!(divisors,i)
               continue
