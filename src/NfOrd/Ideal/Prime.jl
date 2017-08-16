@@ -1045,7 +1045,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
       return divexact(valuation(norm(a), P)[1], p.splitting_type[2])
     end
   elseif mod(index(O),P) != 0 && p.splitting_type[1] == 1
-    if p.gen_one <= typemax(UInt)
+    if p.gen_one^2 <= typemax(UInt) 
       f1 = val_func_no_index_small(p)
       f2 = val_func_no_index(p)
       p.valuation = function(x::nf_elem)
@@ -1058,7 +1058,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
         end
       end
     else
-      return val_func_no_index(p)
+      p.valuation = val_func_no_index(p)
     end
   else
     p.valuation = val_func_index(p)
