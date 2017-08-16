@@ -95,7 +95,9 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
   for (p,v) = r
     rr[1, p-s+1] = v
   end
-  return C(sub(rr*T, 1:1, rows(T)-length(C.snf)+1:rows(T)))
+  d = C(sub(rr*T, 1:1, rows(T)-length(C.snf)+1:rows(T)))
+#  println(d)
+  return d
 end
 
 doc"""
@@ -140,6 +142,16 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   last_j = I
   cnt = 0
   while true
+
+    if E.cnt > max(2*c.expect, 0)
+#      println("more random")
+      use_rand = true
+      push!(J, rand(c.FB.ideals))
+      last_j = random_get(J, reduce = false)
+      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
+      iI = inv(E.A)
+    end
+
     a = class_group_small_lll_elements_relation_next(E)
     #println("trying $a")
     cnt += 1
@@ -149,26 +161,25 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       Ia = simplify(a*iI)
       @assert n == norm(Ia)
       @assert Ia.den == 1
-      fl, r = _factor!(c.FB, Ia.num, false)
-      if fl 
-        #println("used $cnt attempts")
-        scale_row!(r, fmpz(-1))
-        if use_rand
-          fl, s = _factor!(c.FB, last_j)
-          @assert fl
-          return b//a, r-s
-        else
-          return b//a, r
+      local r::SRow{fmpz}
+      if isone(n)
+        @assert isone(Ia.num)
+        r = SRow(FlintZZ)
+      else
+        fl, r = _factor!(c.FB, Ia.num, false)
+        if !fl 
+          continue
         end
+        scale_row!(r, fmpz(-1))
       end
-    end
-    if E.cnt > max(2*c.expect, 0)
-#      println("more random")
-      use_rand = true
-      push!(J, rand(c.FB.ideals))
-      last_j = random_get(J, reduce = false)
-      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
-      iI = inv(E.A)
+#      println("used $cnt attempts")
+      if use_rand
+        fl, s = _factor!(c.FB, last_j)
+        @assert fl
+        return b//a, r-s
+      else
+        return b//a, r
+      end
     end
   end
 end
