@@ -846,9 +846,11 @@ end
 ##    : use double iteration to avoid division
 #     : use exponent chain to not overshoot (too much) in lifting
 #     : common case is f == K.pol. In this case we known a sharp T2-bound
+#     : for torsion polynomials, embedd torsion units faithully and 
+#     : lift only one root of maximal order
 function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
   # f must be squarefree
-  # i should check that
+  # I should check that
   O = base_ring(f)
   n = degree(O)
   deg = degree(f)
@@ -915,61 +917,33 @@ function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
 
   bound_root = [ R(0) for i in 1:(r1 + r2) ]
 
-  #next, I want a bound on the roots of f
-  #according to Wikipedia, 
-  # Fujiwara bound is near optimal...
-
-#  for j in 1:deg-1
-#    co = coeff(f, j)
-#    co_conj = conjugates_arb(co, -1)
-#    for i in 1:r1+r2
-#      bound_root[i] = max(bound_root[i], root(abs(co_conj[i]), deg-j))
-#    end
-#  end
-#  co = coeff(f, 0)
-#  co_conj = conjugates_arb(co, -1)
-#  for i in 1:r1+r2
-#    bound_root[i] = max(bound_root[i], root(abs(co_conj[i])//2, deg))
-#  end
-#
-#  bd = R(0)
-#  for i in 1:r1
-#    bd += bound_root[i]^2
-#  end
-#  for i=1:r2
-#    bd += 2*bound_root[i+r1]^2
-#  end
-  #bd should be a bound on the T2 of any root (|x|_mink)
-  #thus for coeffs we need to multiply by c_2
-
-#  boundt2 = max(bd, R(1))
-
-  cc2 = (exp(3*log(R(3))//2) * R(3)^deg)//(const_pi(R) * R(deg))
-
-  for j in 0:deg-1
-    co = coeff(f, j)
-    co_conj = conjugates_arb(co, -1)
-    for i in 1:r1+r2
-      bound_root[i] += inv(binom(R(deg), UInt(j))) * abs(co_conj[i])^2
-    end
-  end
+  CC = AcbField(64)
+  CCt, t = PolynomialRing(CC, "t")
+  conjugates_of_coeffs = [ conjugates_arb(coeff(f, i), -1) for i in 0:degree(f) ]
 
   for i in 1:r1
-    bound_root[i] = bound_root[i] * cc2
+    g = CCt([ conjugates_of_coeffs[j + 1][i] for j in 0:degree(f) ])
+    bound_root[i] = roots_upper_bound(g)
   end
 
-  for i in r1+1:r2
-    bound_root[i] = 2 * bound_root[i] * cc2
+  for i in 1:r2
+    g = CCt([ conjugates_of_coeffs[j + 1][r1 + i] for j in 0:degree(f) ])
+    bound_root[r1 + i] = roots_upper_bound(g)
   end
-  boundt2 = max(sum(bound_root), R(1))
-  
-  #println("t2 bound: $boundt2")
 
-  #println("c1: $c1, c2: $c2")
+  bd = R(0)
+
+  for i in 1:r1
+    bd += bound_root[i]^2
+  end
+
+  for i=1:r2
+    bd += 2*bound_root[i+r1]^2
+  end
+
+  boundt2 = max(bd, R(1))
 
   boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//4 + 2)*log(R(2))))//(2*Q.splitting_type[2]*log(R(p)))
-
-  #println("bound for k: $boundk")
 
   ss = abs_upper_bound(boundk, fmpz)
 
