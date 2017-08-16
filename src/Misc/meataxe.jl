@@ -734,6 +734,7 @@ function meataxe(M::FqGModule)
   #  Adding generators to obtain randomness
   #
   G=[x for x in H]
+  Gt=[transpose(x) for x in M.G]
   
   for i=1:max(length(M.G),9)
     l1=rand(1:length(G))
@@ -771,29 +772,40 @@ function meataxe(M::FqGModule)
         N=t(A)
         a,kern=nullspace(transpose(N))
         kern=transpose(kern)
-        println("normal")
         #
         #  Norton test
         #   
-        for j=1:a 
-          B=closure(submatrix(kern,j:j, 1:n),M.G)
+        if a==1 
+          B=closure(kern,M.G)
           if rows(B)!=n
             M.isirreducible=false
             return false, B
           end
-        end        
-        kernt=nullspace(N)[2]
-        println("dual")
-        for j=1:a
-          Bt=closure(transpose(submatrix(kernt,1:n,j:j)),[transpose(x) for x in M.G])
+        else
+          vects=[submatrix(kern, j:j, 1:n) for j=1:a]
+          candidate_comb=append!(_enum_el(K, [K(0)], a-1),_enum_el(K, [K(1)], a-1))
+          deleteat!(candidate_comb,1)
+          list=[]
+          for x in candidate_comb
+            push!(list, sum([x[i]*vects[i] for i=1:length(vects)]))
+          end
+          for x in list
+            B=closure(submatrix(kern,j:j, 1:n),M.G)
+            if rows(B)!=n
+              M.isirreducible=false
+              return false, B
+            end
+          end        
+        end
+        if degree(t)==a
+          kernt=nullspace(N)[2]
+          Bt=closure(transpose(submatrix(kernt,1:n,1:1)),Gt)
           if rows(Bt)!=n
             subst=transpose(nullspace(Bt)[2])
             @assert rows(subst)==rows(closure(subst,G))
             M.isirreducible=false
             return false, subst
           end
-        end
-        if degree(t)==a
           #
           # f is a good factor, irreducibility!
           #
