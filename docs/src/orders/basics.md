@@ -7,7 +7,10 @@ CurrentModule = Hecke
 ```@docs
 Order(::AnticNumberField, ::Array{nf_elem, 1})
 Order(::AnticNumberField, ::FakeFmpqMat)
+Order(::NfOrdFracIdl)
 EquationOrder(::AnticNumberField)
+MaximalOrder(::AnticNumberField)
+MaximalOrder(::NfOrd)
 ```
 
 ### Example
@@ -22,22 +25,27 @@ O = EquationOrder(K)
 ## Basic properties
 
 ```@docs
+parent(::NfOrd)
+isequation_order(::NfOrd)
 signature(::NfOrd)
 nf(::NfOrd)
-```
-
-```@docs
-maximal_order(::AnticNumberField)
-maximal_order(::AnticNumberField, ::Array{fmpz, 1})
-make_maximal(::NfOrd)
-```
-
-```@repl
-using Hecke; # hide
-Qx, x = PolynomialRing(QQ, "x");
-K, a = NumberField(x^2 - 2, "a");
-R = EquationOrder(K)
-T = maximal_order(R)
+degree(::NfOrd)
+basis(::NfOrd)
+basis(::NfOrd, ::AnticNumberField)
+basis_mat(::NfOrd)
+basis_mat_inv(::NfOrd)
+discriminant(::NfOrd)
+gen_index(O::NfOrd)
+index(O::NfOrd)
+isindex_divisor(::NfOrd, ::fmpz)
+minkowski_mat(::NfOrd, ::Int)
+in(::nf_elem, ::NfOrd)
+den(::nf_elem, ::NfOrd)
+norm_change_const(::NfOrd)
+trace_matrix(::NfOrd)
++(::NfOrd, ::NfOrd)
+poverorder(::NfOrd, ::fmpz)
+pmaximal_overorder(::NfOrd, ::fmpz)
 ```
 
 ## Elements
@@ -45,11 +53,7 @@ T = maximal_order(R)
 ### Creation
 
 ```@docs
-call(::NfOrd, ::nf_elem)
-call(::NfOrd, ::fmpz)
-call(::NfOrd, ::Array{fmpz, 1})
-call(::NfOrd, ::Array{Int, 1})
-call(::NfOrd)
+(O::NfOrd)(::nf_elem)
 ```
 
 ### Basic properties

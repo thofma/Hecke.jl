@@ -34,9 +34,9 @@
 
 export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
        gen_index, EquationOrder, index, isequation_order, isindex_divisor, lll,
-       lll_basis, maximal_order, minkowski_mat, nf, norm_change_const, Order,
-       parent, poverorder, pmaximal_overorder, ring_of_integers, signature,
-       trace_matrix
+       lll_basis, maximal_order, MaximalOrder, minkowski_mat, nf,
+       norm_change_const, Order, parent, poverorder, pmaximal_overorder,
+       ring_of_integers, signature, trace_matrix
 
 ################################################################################
 #
@@ -47,8 +47,6 @@ export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
 Nemo.parent_type(::Type{NfOrdElem}) = NfOrd
 
 Nemo.elem_type(::Type{NfOrd}) = NfOrdElem
-
-Nemo.elem_type(::NfOrd) = NfOrdElem
 
 ################################################################################
 #
@@ -83,6 +81,20 @@ field.
 
 # The following function should actually do more!
 @inline ismaximal(O::NfOrd) = O.ismaximal == 1
+
+################################################################################
+#
+#  Degree
+#
+################################################################################
+
+doc"""
+    degree(O::NfOrd) -> Int
+
+Returns the degree of $\mathcal O$.
+"""
+degree(O::NfOrd) = degree(O.nf)
+
 
 ################################################################################
 #
@@ -252,19 +264,6 @@ end
 
 ################################################################################
 #
-#  Degree
-#
-################################################################################
-
-doc"""
-    degree(O::NfOrd) -> Int
-
-Returns the degree of $\mathcal O$.
-"""
-degree(O::NfOrd) = degree(O.nf)
-
-################################################################################
-#
 #  (Generalized) index
 #
 ################################################################################
@@ -289,7 +288,7 @@ doc"""
 
 Assuming that the order $\mathcal O$ contains the equation order
 $\mathbf Z[\alpha]$ of the ambient number field, this function returns the
-index $[ \mathcal O : \mathbf ZZ]$.
+index $[ \mathcal O : \mathbf Z]$.
 """
 function index(O::NfOrd)
   if isdefined(O, :index)
@@ -334,9 +333,6 @@ Makes a copy of $\mathcal O$.
 function Base.deepcopy_internal(O::NfOrd, dict::ObjectIdDict)
   z = NfOrd(O.nf)
   for x in fieldnames(O)
-    # TODO
-    # This is slow. Julia can't infere the type of the right hand side.
-    # (According to @code_warntype).
     if x != :nf && x != :parent && isdefined(O, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
     end
@@ -375,11 +371,10 @@ end
 doc"""
     minkowski_mat(O::NfOrd, abs_tol::Int = 64) -> arb_mat
 
-Returns the Minkowski matrix of $\mathcal O$.
-Thus if $\mathcal O$ has degree $d$, then the
-result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf R)$.
-The entries of the matrix are real balls of type `arb` with radius
-less then `2^-abs_tol`.
+Returns the Minkowski matrix of $\mathcal O$.  Thus if $\mathcal O$ has degree
+$d$, then the result is a matrix in $\operatorname{Mat}_{d\times d}(\mathbf
+R)$. The entries of the matrix are real balls of type `arb` with radius less
+then `2^-abs_tol`.
 """
 function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
   if isdefined(O, :minkowski_mat) && O.minkowski_mat[2] > abs_tol
@@ -420,7 +415,7 @@ function _check_elem_in_order(a::nf_elem, O::NfOrd,
   t = mul!(t, t, O.basis_mat_inv)
   if short == Val{true}
     return isone(t.den)
-  else
+  elseif short == Val{false}
     if !isone(t.den)
       return false, Vector{fmpz}()
     else
@@ -478,6 +473,9 @@ end
 # Fieker, Friedrichs
 # On Reconstruction of Algebraic Numbers
 # (in particular p. 288)
+#
+# TODO: Make this rigorous using interval arithmetic. The only problem is that
+#       the characteristic polynomial might not be squarefree.
 doc"""
     norm_change_const(O::NfOrd) -> (Float64, Float64)
 
@@ -494,7 +492,6 @@ function norm_change_const(O::NfOrd)
   else
     d = degree(O)
     M = minkowski_mat(O, 64)
-    # I need to swap rows (really?)
     # I don't think we have to swap rows,
     # since permutation matrices are orthogonal
     #r1, r2 = signature(O)
@@ -666,7 +663,7 @@ end
 #
 ################################################################################
 
-# this is used in dictionaries
+# This is the function which is used in dictionaries
 function Base.isequal(R::NfOrd, S::NfOrd)
   return R === S
 end
@@ -684,6 +681,12 @@ end
 #
 ################################################################################
 
+doc"""
+    trace_matrix(O::NfOrd) -> fmpz_mat
+
+Returns the trace matrix of `\mathcal O`, that is, the matrix
+$(\operatorname{tr}_{K/\mathbf Q}(b_i \cdot b_j))_{1 \leq i, j \leq d}$.
+"""
 function trace_matrix(O::NfOrd)
   if isdefined(O, :trace_mat)
     return deepcopy(O.trace_mat)
@@ -827,6 +830,12 @@ function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   return OO
 end
 
+doc"""
+***
+    MaximalOrder(K::NfOrd) -> NfOrd
+
+Returns the maximal order of $K$.
+"""
 function MaximalOrder(O::NfOrd)
   OO = deepcopy(O)
   @vtime :NfOrd fac = factor(Nemo.abs(discriminant(O)))
@@ -992,9 +1001,9 @@ ring_of_integers(x...) = maximal_order(x...)
 #
 ################################################################################
 
-# this is not optimizied for performance
-# if false, then this returns (false, garbage, garbage)
-# if true, then this return (true, basis_mat, basis_mat_inv)
+# This is not optimizied for performance.
+# If false, then this returns (false, garbage, garbage).
+# If true, then this return (true, basis_mat, basis_mat_inv).
 function defines_order(K::AnticNumberField, x::FakeFmpqMat)
   if rows(x) != degree(K) || cols(x) != degree(K)
     return false, x, Vector{nf_elem}()
