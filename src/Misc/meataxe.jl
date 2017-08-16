@@ -771,41 +771,23 @@ function meataxe(M::FqGModule)
       for t in keys(lf.fac)
         N=t(A)
         a,kern=nullspace(transpose(N))
-        kern=transpose(kern)
         #
         #  Norton test
         #   
-        if a==1 
-          B=closure(kern,M.G)
-          if rows(B)!=n
-            M.isirreducible=false
-            return false, B
-          end
-        else
-          vects=[submatrix(kern, j:j, 1:n) for j=1:a]
-          candidate_comb=append!(_enum_el(K, [K(0)], a-1),_enum_el(K, [K(1)], a-1))
-          deleteat!(candidate_comb,1)
-          list=[]
-          for x in candidate_comb
-            push!(list, sum([x[i]*vects[i] for i=1:length(vects)]))
-          end
-          for x in list
-            B=closure(submatrix(kern,j:j, 1:n),M.G)
-            if rows(B)!=n
-              M.isirreducible=false
-              return false, B
-            end
-          end        
+        B=closure(transpose(submatrix(kern,1:n, 1:1)),M.G)
+        if rows(B)!=n
+          M.isirreducible=false
+          return false, B
+        end
+        kernt=nullspace(N)[2]
+        Bt=closure(transpose(submatrix(kernt,1:n,1:1)),Gt)
+        if rows(Bt)!=n
+          subst=transpose(nullspace(Bt)[2])
+          @assert rows(subst)==rows(closure(subst,G))
+          M.isirreducible=false
+          return false, subst
         end
         if degree(t)==a
-          kernt=nullspace(N)[2]
-          Bt=closure(transpose(submatrix(kernt,1:n,1:1)),Gt)
-          if rows(Bt)!=n
-            subst=transpose(nullspace(Bt)[2])
-            @assert rows(subst)==rows(closure(subst,G))
-            M.isirreducible=false
-            return false, subst
-          end
           #
           # f is a good factor, irreducibility!
           #
