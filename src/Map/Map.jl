@@ -71,7 +71,7 @@ end
 
 function _allow_cache!(M::Map, lim::Int, ::Type{D}, ::Type{C}, ::Type{De}, ::Type{Ce}) where {D, C, De, Ce}
   if isdefined(M.header, :cache)
-    println("Cache already installed")
+#    println("Cache already installed")
   else
     M.header.cache = MapCache(domain(M), codomain(M), De, Ce, lim)
     M.header.cache.old_pr = M.header.preimage

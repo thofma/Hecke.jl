@@ -144,11 +144,8 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
     @vprint :ClassField 2 "doin` $p\n"
     np += 1
 
-    if false && np > 5*ngens(R)
-      error("cannot stop")
-    end
     if np % ngens(R) == 0
-      println("cannot stop")
+      @vprint :ClassField 3 "need many generators... $np for group with $(ngens(R))"
     end
     lP = prime_decomposition(ZK, p)
 
@@ -477,9 +474,9 @@ function _rcf_descent(CF::ClassField_pp)
     zeta_i = inv(zeta)^div(e, n)
     mi = coeff(m, 1) 
     @hassert :ClassField 1 iszero(m-mi*gen(A))
-    @hassert :ClassField 2 m == mi*gen(A)  # there is a bug in RelNf
-                            # or the underlying ResidueRing
-                            # I've got a non-simplified coeff
+#    @hassert :ClassField 2 m == mi*gen(A)  # there is a bug in RelNf
+#                            # or the underlying ResidueRing
+#                            # I've got a non-simplified coeff
     while mi != 1
       mi *= zeta_i
       j += 1
@@ -666,6 +663,7 @@ end
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
 
+  O = domain(f) #used for the hassert and thus the testing
   z = Hecke.NfToFqNmodMor()
   z.header.domain = K
   z.header.codomain = f.header.codomain
