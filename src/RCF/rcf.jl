@@ -798,7 +798,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
  so
   N(x) <= (2^((n-1)/4)/n)^(n/2) disc^(1/2)
 =#
-      if abs(norm(b)//norm(Iinv)) < abs(discriminant(Zk)) 
+      if abs(norm(b)//norm(Iinv)) <= abs(discriminant(Zk)) 
         c = a*b^n
         @vprint :ClassField 3 "leaving with $c\n"
         return c
