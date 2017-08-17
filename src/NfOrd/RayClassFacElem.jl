@@ -567,7 +567,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   
   if order(C)==1 && order(G)==1
     X=DiagonalGroup([1])
-    function exp2(a::GrpAbFinGen)
+    function exp2(a::GrpAbFinGenElem)
       return FacElem(Dict(ideal(O,1) => fmpz(1)))
     end
     
@@ -582,17 +582,41 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     
     return X,mp
   end
+
+  U, mU = unit_group_fac_elem(O)
+  exp_class = Hecke._coprime_ideal_fac_elem(C,mC,m)
+
+  if order(G)==1
+    X=deepcopy(C)
+    function exp3(a::GrpAbFinGenElem)
+      return exp_class(a)
+    end
+    
+    function disclog3(J::NfOrdIdl)
+      return X((mC\J).coeff)
+    end
+    
+    function disclog3(J::FacElem)
+      a= X([0 for i=1:ngens(X)])
+      for (f,k) in J.fac
+        a+=k*disclog3(f)
+      end
+      return a
+    end
+    
+    mp=Hecke.MapRayClassGrpFacElem{typeof(X)}()
+    mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp3, disclog3)
+    mp.modulus_fin=ideal(O,1)
+    mp.modulus_inf=InfPlc[]
+    
+    return X,mp
+    
+  end
+
   n=ideal(O,1)
   for (q,vq) in lp
     n*=q^vq
   end
-
-  
-  U, mU = unit_group_fac_elem(O)
-  exp_class = Hecke._coprime_ideal_fac_elem(C,mC,m)
-
-
-
 #
 # We start to construct the relation matrix
 #
@@ -768,12 +792,11 @@ function automorphisms(K::AnticNumberField)
 end
 
 
-function _act_on_ray_class(mR::Map, p::Int)
+function _act_on_ray_class(mR::Map, p::Int, Aut::Array{Hecke.NfToNfMor,1})
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
-  Aut=automorphisms(K)
   F, _=FiniteField(p,1, "_")  
   G=MatElem[]
   
@@ -797,7 +820,7 @@ function _act_on_ray_class(mR::Map, p::Int)
   
 end
 
-function _aut_on_id(O::NfOrd, phi::Map, I::NfOrdIdl)
+function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl) 
   
   K=nf(O)
   y=K(I.gen_two)
@@ -806,16 +829,24 @@ function _aut_on_id(O::NfOrd, phi::Map, I::NfOrdIdl)
   
 end
 
-function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1)
+function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, Aut::Array{Hecke.NfToNfMor,1}=Hecke.NfToNfMor[], index::Int=1)
   
   O=mR.header.codomain.base_ring.order
   K=nf(O)
+  
+  if isempty(Aut)
+    Aut=automorphisms(K)
+  end
+  
+  for phi in Aut
+    @assert mR.modulus_fin==_aut_on_id(O,phi, mR.modulus_fin)
+  end 
   
   R=mR.header.domain
   Q,mQ=quo(R,p)
   S,mS=snf(Q)
 
-  M=_act_on_ray_class(mR*inv(mQ)*inv(mS), p)
+  M=_act_on_ray_class(mR*inv(mQ)*inv(mS), p, Aut)
 
   ls=submodules(M,index)
   subgroups=Map[]
