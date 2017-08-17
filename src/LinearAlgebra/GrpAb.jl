@@ -600,8 +600,12 @@ function order(a::GrpAbFinGenElem)
   b = m(a)
   o = fmpz(1)
   for i=1:ngens(G)
-    if G.snf[i] == 0 && b[i] != 0
-      error("Element has infinite order")
+    if G.snf[i] == 0 
+      if b[i] != 0
+        error("Element has infinite order")
+      else
+        continue
+      end
     end
     o = lcm(o, divexact(G.snf[i], gcd(G.snf[i], b[i])))
   end
