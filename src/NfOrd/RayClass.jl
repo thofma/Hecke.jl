@@ -91,6 +91,9 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
   cnt = 0
   while true
     a = rand(m, b)
+    if a==0
+      continue
+    end
     emb=signs(K(a),p)
     t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
     if !Hecke.haspreimage(mu, t)[1]
