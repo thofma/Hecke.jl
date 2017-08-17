@@ -68,7 +68,11 @@ function closure(C::MatElem, G)
       res=cleanvect(C,w*G[j])
       if !iszero(res)
         C=vcat(C,res)  
-      end
+        if rows(C)==cols(C)
+          i=cols(C)+1
+          break
+        end
+      end 
     end  
     i+=1
   end
@@ -247,6 +251,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     return false
   end
   n=M.dim
+  posfac=n
     
   K=M.K
   Kx,x=K["x"]
