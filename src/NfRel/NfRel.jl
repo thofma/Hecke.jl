@@ -37,42 +37,7 @@ export absolute_field
 # In case the code has stabilized, the type definition should go into
 # src/HeckeTypes.jl 
 
-################################################################################
-#
-#  Types
-#
-################################################################################
 
-mutable struct NfRel{T} <: Nemo.Field
-  base_ring::Nemo.Field
-  pol::GenPoly{T}
-  S::Symbol
-
-  function NfRel{T}(f::GenPoly{T}, s::Symbol, cached::Bool = true) where {T}
-    if haskey(NfRelID, (parent(f), f, s))
-      return NfRelID[parent(f), f, s]
-    else
-      z = new{T}()
-      z.base_ring = base_ring(parent(f))
-      z.pol = f
-      z.S = s
-      if cached
-        NfRelID[parent(f), f, s] = z
-      end
-      return z
-    end
-  end
-end
-
-const NfRelID = Dict{Tuple{GenPolyRing, GenPoly, Symbol},
-                     NfRel}()
-
-mutable struct NfRelElem{T} <: Nemo.FieldElem
-  data::GenPoly{T}
-  parent::NfRel{T}
-
-  NfRelElem{T}(g::GenPoly{T}) where {T} = new{T}(g)
-end
 
 ################################################################################
 #
