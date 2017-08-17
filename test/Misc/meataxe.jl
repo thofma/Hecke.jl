@@ -62,6 +62,21 @@
     @test length(cs)==2
     x=Hecke.actsub(cs[1],M.G)
     @test Hecke.isisomorphic(lf[1][1],x)
+    x,_=Hecke.actquo(cs[1],M.G)
+    @test Hecke.isisomorphic(lf[1][1],x)
+  end
+  
+  
+  @testset "Submodules" begin
+  
+    F, a = FiniteField(3, 1, "a")
+    Q=MatrixSpace(F,0,0)()
+    G=[eye(Q,3)]
+    M=FqGModule(G)
+    ls=minimal_submodules(M)
+    @test length(ls)==13
+    
+  
   end
   
 end
