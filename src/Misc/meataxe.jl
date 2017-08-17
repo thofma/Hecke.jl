@@ -254,9 +254,9 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   posfac=n
     
   K=M.K
+  
   Kx,x=K["x"]
   f=Kx(1)
-  
   G=[A for A in M.G]
   H=[A for A in N.G]
   
@@ -274,30 +274,29 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     push!(H, H[l1]*H[l2])
   end
 
-  #
-  #  Now, get the right element
-  #
+    #
+    #  Now, get the right element
+    #
   
-    A=MatrixSpace(K,n,n)()
-    B=MatrixSpace(K,n,n)()
-  
+  A=MatrixSpace(K,n,n)()
+  B=MatrixSpace(K,n,n)()
   found=false
   
   while !found
-    
+  
     A=MatrixSpace(K,n,n)()
     B=MatrixSpace(K,n,n)()
     l1=rand(1:length(G))
     l2=rand(1:length(G))
     push!(G, G[l1]*G[l2])
     push!(H, H[l1]*H[l2])
-    
+  
     for i=1:length(G)
       s=rand(K)
       A+=s*G[i]
       B+=s*H[i]
     end
-
+  
     cp=charpoly(A)
     sq=factor_squarefree(cp)
     lf=factor(collect(keys(sq.fac))[1])
@@ -314,29 +313,29 @@ function isisomorphic(M::FqGModule,N::FqGModule)
       posfac=gcd(posfac,a)
       if divisible(fmpz(posfac),a)
         v=submatrix(kerA, 1:1, 1:n)
-        B=v
+        U=v
         T =spinning(v,G)
-        G1=[T*A*inv(T) for A in G]
+        G1=[T*A*inv(T) for A in M.G]
         i=2
         E=[eye(T,a)]
-        while rows(B)!= a
+        while rows(U)!= a
           w= submatrix(kerA, i:i, 1:n)
-          z= cleanvect(B,w)
+          z= cleanvect(U,w)
           if iszero(z)
             continue
           end
-          N =spinning(w,G)
-          G2=[N*A*inv(N) for A in G]
+          O =spinning(w,G)
+          G2=[O*A*inv(O) for A in N.G]
           if G1 == G2
-            b=kerA*N
+            b=kerA*O
             x=transpose(solve(transpose(kerA),transpose(b)))
             push!(E,x)
-            B=vcat(B,z)
-            B=closure(B,E)
+            U=vcat(U,z)
+            U=closure(U,E)
           else 
             break
           end
-          if rows(B)==a
+          if rows(U)==a
             M.dim_spl_fld=a
             found=true
             break
@@ -345,37 +344,39 @@ function isisomorphic(M::FqGModule,N::FqGModule)
           end
         end
       end
-    end        
-
+      if found==true
+        break
+      end
+    end           
   end
-  
+    
   #
   #  Get the standard basis
   #
 
   
-  M=f(A)
-  a,kerA=nullspace(transpose(M))
+  L=f(A)
+  a,kerA=nullspace(transpose(L))
   kerA=transpose(kerA)
   
-  N=f(B)
-  b,kerB=nullspace(transpose(M))
+  I=f(B)
+  b,kerB=nullspace(transpose(I))
   kerB=transpose(kerB)
 
   if a!=b
     return false
   end
   
-  M= spinning(submatrix(kerA, 1:1, 1:n), G)
-  N= spinning(submatrix(kerB, 1:1, 1:n), H)
+  Q= spinning(submatrix(kerA, 1:1, 1:n), M.G)
+  W= spinning(submatrix(kerB, 1:1, 1:n), N.G)
   
   #
   #  Check if the actions are conjugated
   #
-  S=inv(N)*M
+  S=inv(W)*Q
   T=inv(S)
-  for i=1:length(G)
-    if S*G[i]* T != H[i]
+  for i=1:length(M.G)
+    if S*M.G[i]* T != N.G[i]
       return false
     end
   end
@@ -1223,6 +1224,9 @@ doc"""
 function submodules(M::FqGModule, index::Int)
   
   K=M.K
+  if index==M.dim
+    return [MatrixSpace(K,1,M.dim)()]
+  end
   list=[]
   if index> M.dim/2
     lf=composition_factors(M)
