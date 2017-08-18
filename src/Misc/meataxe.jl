@@ -1228,7 +1228,7 @@ function submodules(M::FqGModule, index::Int)
     return [MatrixSpace(K,1,M.dim)()]
   end
   list=[]
-  if index> M.dim/2
+  if index>= M.dim/2
     lf=composition_factors(M)
     for i=1: M.dim-index-1
       minlist=minimal_submodules(M,i,lf)
