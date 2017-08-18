@@ -564,7 +564,15 @@ function -(A::SMat{T}, B::SMat{T}) where T
   return C
 end
 
+#TODO: this is a problem in anther ops as well: a length zero row does not have a base_ring
 function -(A::SRow{T}, B::SRow{T}) where T
+  if length(A) == 0
+    if length(B) == 0
+      return A
+    else
+      return add_scaled_row(B, A, base_ring(A)(-1))
+    end
+  end  
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
