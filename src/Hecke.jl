@@ -536,6 +536,7 @@ function checkbounds(a::Int, b::Int) nothing; end;
 include("HeckeTypes.jl")
 include("Map.jl")
 include("Misc.jl")
+include("GrpAb.jl")
 include("LinearAlgebra.jl")
 include("NfOrd.jl")
 include("Sparse.jl")
@@ -702,7 +703,6 @@ end
 # 
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
-
 
 #precompile(maximal_order, (AnticNumberField, ))
 #precompile(class_group, (NfOrd, ))
