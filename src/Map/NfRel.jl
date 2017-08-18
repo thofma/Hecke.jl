@@ -120,6 +120,24 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::
   return z
 end
 
+function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_elem})
+  function image(x::NfRelElem{nf_elem})
+    # x is an element of K
+    f = data(x)
+    g = zero(f)
+    for i=0:degree(f)
+      setcoeff!(g, i, coeff(f, i))
+    end
+    return g(a)
+  end
+
+  z = NfRelToNfRelMor{nf_elem, nf_elem}()
+  z.prim_img = a
+  z.header = MapHeader(K, L, image)
+  return z
+end
+
+
 function show(io::IO, h::NfRelToNfRelMor)
   if domain(h) == codomain(h)
     println(io, "Automorphism of ", domain(h))

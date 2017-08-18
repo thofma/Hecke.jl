@@ -829,7 +829,46 @@ function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl)
   
 end
 
-function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, Aut::Array{Hecke.NfToNfMor,1}=Hecke.NfToNfMor[], index::Int=1)
+function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1, act::Array{T, 1}=GrpAbFinGenMap[]) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+  
+  O=mR.header.codomain.base_ring.order
+  K=nf(O)
+  
+  R=mR.header.domain
+  Q,mQ=quo(R,p)
+  S,mS=snf(Q)
+
+  @assert length(act)>0
+
+  println("instable: S=$S\n")
+  F, _ = FiniteField(p, 1, "_")
+  FM = MatrixSpace(F, ngens(S), ngens(S))
+  mp = mS*mQ
+  println([vcat([mp(X(preimage(mp, S[i]))).coeff for i=1:ngens(S)]) for X = act])
+  G = MatElem[ FM(vcat([mp(X(preimage(mp, S[i]))).coeff for i=1:ngens(S)])) for X = act]
+  println(G)
+  M = FqGModule(G)
+
+  ls=submodules(M,index)
+  subgroups=Map[]
+  for s in ls
+    subs=GrpAbFinGenElem[]
+    for i=1:rows(s)
+      x=MatrixSpace(ZZ,1,cols(s))()
+      for j=1:cols(s)
+        x[1,j]=ZZ(coeff(s[i,j],0))
+      end
+      push!(subs, mQ\(mS\(S(x))))
+    end
+    W,mW=quo(R, subs)
+    push!(subgroups, mR*inv(mW))
+  end
+  println("after all: found", length(subgroups))
+  return subgroups
+
+end
+
+function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1, Aut::Array{NfToNfMor, 1}=NfToNfMor[])
   
   O=mR.header.codomain.base_ring.order
   K=nf(O)
@@ -862,6 +901,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, Aut::
     W,mW=quo(R, subs)
     push!(subgroups, mR*inv(mW))
   end
+  println("after all: found", length(subgroups))
   return subgroups
 
 end
