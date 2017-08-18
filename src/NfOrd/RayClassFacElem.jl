@@ -829,28 +829,24 @@ function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl)
   
 end
 
-function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1, act::Array{T, 1}=GrpAbFinGenMap[]) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
   
-  O=mR.header.codomain.base_ring.order
-  K=nf(O)
-  
-  R=mR.header.domain
-  Q,mQ=quo(R,p)
-  S,mS=snf(Q)
+  S,mS=snf(R)
 
   @assert length(act)>0
+  p = S.snf[1]
+  @assert isprime(p)
+  @assert all(x -> x==p, S.snf)
 
   println("instable: S=$S\n")
-  F, _ = FiniteField(p, 1, "_")
+  F, _ = FiniteField(Int(p), 1, "_")
   FM = MatrixSpace(F, ngens(S), ngens(S))
-  mp = mS*mQ
-  println([vcat([mp(X(preimage(mp, S[i]))).coeff for i=1:ngens(S)]) for X = act])
-  G = MatElem[ FM(vcat([mp(X(preimage(mp, S[i]))).coeff for i=1:ngens(S)])) for X = act]
+  G = MatElem[ FM(vcat([mS(X(preimage(mS, S[i]))).coeff for i=1:ngens(S)])) for X = act]
   println(G)
   M = FqGModule(G)
 
   ls=submodules(M,index)
-  subgroups=Map[]
+  subgroups=[]
   for s in ls
     subs=GrpAbFinGenElem[]
     for i=1:rows(s)
@@ -858,14 +854,12 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
       for j=1:cols(s)
         x[1,j]=ZZ(coeff(s[i,j],0))
       end
-      push!(subs, mQ\(mS\(S(x))))
+      push!(subs, mS\(S(x)))
     end
-    W,mW=quo(R, subs)
-    push!(subgroups, mR*inv(mW))
+    push!(subgroups, op(R, subs))
   end
   println("after all: found", length(subgroups))
   return subgroups
-
 end
 
 function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1, Aut::Array{NfToNfMor, 1}=NfToNfMor[])
@@ -898,7 +892,8 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
       end
       push!(subs, mQ\(mS\(S(x))))
     end
-    W,mW=quo(R, subs)
+    W,mW=quo(R, subs) #TODO: probably wrong if R has exponent > p as the p*R
+                      # need not be contained in subs
     push!(subgroups, mR*inv(mW))
   end
   println("after all: found", length(subgroups))
