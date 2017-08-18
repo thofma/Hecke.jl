@@ -570,7 +570,7 @@ function -(A::SRow{T}, B::SRow{T}) where T
     if length(B) == 0
       return A
     else
-      return add_scaled_row(B, A, base_ring(A)(-1))
+      return add_scaled_row(B, A, base_ring(B)(-1))
     end
   end  
   return add_scaled_row(B, A, base_ring(A)(-1))
