@@ -334,12 +334,12 @@ function _ptorsion_class_group(C::GrpAbFinGen, mC::Hecke.MapClassGrp, p::Integer
   
   O=parent(mC(C[1])).order
   if !divisible(order(C[ngens(C)]),p)
-   G=DiagonalGroup([1])
+   G=DiagonalGroup(Int[])
    function exp1(a::GrpAbFinGenElem)
      return ideal(O, O(1))
    end
    function disclog1(I::NfOrdIdl)
-     return G([0])
+     return G(Int[])
    end
    mp=Hecke.MapClassGrp{typeof(G)}()
    mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
