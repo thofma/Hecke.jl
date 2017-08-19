@@ -478,10 +478,6 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
     end
   end
 
-  for i in cols(P) + 1:rows(P)
-    res.coeffs[i] = ideal(O, nf(O)())
-  end
-
   #println("computation of reduction : $t_comp_red")
   #println("modular computation      : $t_mod_comp")
   #println("computation of ideal sum : $t_sum")
