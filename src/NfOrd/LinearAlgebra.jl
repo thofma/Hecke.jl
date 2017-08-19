@@ -392,7 +392,55 @@ function rand(I::NfOrdFracIdl, B::Int)
   return divexact(elem_in_nf(z), den(I))
 end
 
-function pseudo_hnf(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
+  K = parent(P.matrix[1, 1])
+  O = maximal_order(K)
+  if rows(P) == cols(P)
+    m = det(P)
+  else
+    p = next_prime(2^61)
+    rowPerm = PermGroup(rows(P))()
+    rank = 0
+    while rank != cols(P)
+      lp = prime_decomposition(O, p)
+      for t in lp
+        F, mF = ResidueField(O, t[1])
+        mFF = extend(mF, K)
+        Pt = MatrixSpace(codomain(mFF), rows(P), cols(P))()
+        nextIdeal = false
+        for i = 1:rows(P)
+          for j = 1:cols(P)
+            try Pt[i, j] = mFF(P.matrix[i, j])
+            catch
+              nextIdeal = true
+              break
+            end
+          end
+          if nextIdeal
+            break
+          end
+        end
+        if nextIdeal
+          continue
+        end
+        rank = lufact!(rowPerm, Pt)
+      end
+      p = next_prime(p)
+    end
+    Minor = MatrixSpace(K, cols(P), cols(P))()
+    for i = 1:cols(P)
+      for j = 1:cols(P)
+        Minor[i, j] = P.matrix[rowPerm[i], j]
+      end
+    end
+    PMinor = PseudoMatrix(Minor, [P.coeffs[rowPerm[i]] for i in 1:rank])
+    m = det(PMinor)
+  end
+  simplify(m)
+  return pseudo_hnf_mod(P, num(m), shape)
+end
+
+function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   O = order(m)
 
   t_comp_red = 0.0
@@ -413,7 +461,7 @@ function pseudo_hnf(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
 
   res = PMat{nf_elem, NfOrdFracIdl}(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
 
-  for i in 1:rows(P)
+  for i in 1:cols(P)
     if iszero(zz[i, i].elem)
       res.matrix[i, i] = one(nf(O))
       res.coeffs[i] = NfOrdFracIdl(deepcopy(m), fmpz(1))
@@ -428,6 +476,10 @@ function pseudo_hnf(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
       divide_row!(res.matrix, i, elem_in_nf(zz[i, i].elem))
       res.matrix[i, i] = one(nf(O))
     end
+  end
+
+  for i in cols(P) + 1:rows(P)
+    res.coeffs[i] = ideal(O, nf(O)())
   end
 
   #println("computation of reduction : $t_comp_red")
