@@ -17,6 +17,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     z = new{T, S}()
     z.nf = K
     z.basis_pmat = M
+    z.basis_mat = M.matrix
     return z
   end
   
@@ -384,12 +385,12 @@ doc"""
 """
 function Order(L::NfRel{nf_elem}, M::GenMat{nf_elem})
   # checks
-  return NfRelOrd{nf_elem, NfOrdFracIdl}(L, M)
+  return NfRelOrd{nf_elem, NfOrdFracIdl}(L, deepcopy(M))
 end
 
 function Order(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}}) where T
   # checks
-  return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, M)
+  return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
 doc"""
@@ -401,7 +402,7 @@ doc"""
 """
 function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
   # checks
-  return NfRelOrd{T, S}(L, M)
+  return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
 ################################################################################
@@ -416,6 +417,6 @@ function ==(R::NfRelOrd, S::NfRelOrd)
 end
 
 
-mutable struct NfRelOrdIdl{T} end
+#mutable struct NfRelOrdIdl{T} end
 
-mutable struct NfRelOrdFracIdl{T} end
+#mutable struct NfRelOrdFracIdl{T} end
