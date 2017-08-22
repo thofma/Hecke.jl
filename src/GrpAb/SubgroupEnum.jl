@@ -309,13 +309,12 @@ end
 
 function psylow_subgroup(G::GrpAbFinGen, p::Int)
   S, mS = snf(G)
-  @show S
   z = _psylow_subgroup_gens(S, p)
   zz = [ preimage(mS, x) for x in z ]
   return sub(G, zz)
 end
 
-function psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
+function _psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
                                             fun = sub)
   S, mS = psylow_subgroup(G, p)
   return ( fun(G, map(mS, z)) for z in _psubgroups_gens(S, p, sub_type))
@@ -365,11 +364,20 @@ function pSubgroupIterator(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1
   !( length(quot_type) == 1 && quot_type[1] == -1) &&
   error("Specify either subgroup type or quotient type but not both")
 
-  it = psubgroups(G, p; sub_type = sub_type, fun = fun)
+  it = _psubgroups(G, p; sub_type = sub_type, fun = fun)
   E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, sub_type, quot_type, fun, it)
   return z
 end
+
+function psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
+                                                   quot_type::Array{Int, 1} = [-1],
+                                                   fun = sub)
+  return pSubgroupIterator(G, p; sub_type = sub_type,
+                                 quot_type = quot_type,
+                                 fun = fun)
+end
+
 
 Base.start(S::pSubgroupIterator) = Base.start(S.it)
 
