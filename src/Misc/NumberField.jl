@@ -281,6 +281,7 @@ end
 doc"""
 ***
   charpoly(a::nf_elem) -> fmpz_poly
+  charpoly(a::NfOrdElem) -> fmpz_poly
 
 > The characteristic polynomial of a.
 """
@@ -291,10 +292,14 @@ function charpoly(a::nf_elem)
   f =  f(gen(parent(f))*d)
   return divexact(f, content(f))
 end
+function charpoly(a::NfOrdElem)
+  return charpoly(number_field(parent(a))(a))
+end
 
 doc"""
 ***
   minpoly(a::nf_elem) -> fmpz_poly
+  minpoly(a::NfOrdElem) -> fmpz_poly
 
 > The minimal polynomial of a.
 """
@@ -304,6 +309,9 @@ function minpoly(a::nf_elem)
   f = minpoly(Zx, representation_mat(d*a))
   f = f(gen(parent(f))*d)
   return divexact(f, content(f))
+end
+function minpoly(a::NfOrdElem)
+  return minpoly(number_field(parent(a))(a))
 end
 
 ###########################################################################
