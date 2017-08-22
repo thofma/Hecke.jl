@@ -1521,6 +1521,7 @@ end
 ################################################################################
 
 abstract type GrpAb <: Nemo.Group end
+
 abstract type GrpAbElem <: Nemo.GroupElem end
 
 mutable struct GrpAbFinGen <: GrpAb
@@ -1689,5 +1690,4 @@ mutable struct FqGModule <: GModule
     
     return z
   end
-  
 end

@@ -10,12 +10,14 @@ mutable struct NfRelOrd{T, S} <: Ring
   pseudo_basis#::Vector{Tuple{NfRelOrdElem{T}, S}} # julia does not like
                                                    # forward declarations (yet)
 
-  disc #::NfOrdIdl or ::NfRelOrdIdl{T}
+  disc_abs::NfOrdIdl # used if T == nf_elem
+  disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
 
   function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
     z = new{T, S}()
     z.nf = K
     z.basis_pmat = M
+    z.basis_mat = M.matrix
     return z
   end
   
@@ -27,7 +29,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T}(K::NfRel{T}) where {T}
+  function NfRelOrd{T}(K::NfRel{T}) where T
     z = new{T, S}()
     z.nf = K
     return z
@@ -234,8 +236,8 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::NfRelOrd)
-  if isdefined(O, :disc)
+function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
+  if isdefined(O, :disc_abs)
     return nothing
   end
   A = MatrixSpace(base_ring(nf(O)), degree(O), degree(O))()
@@ -252,13 +254,40 @@ function assure_has_discriminant(O::NfRelOrd)
   end
   disc = d*a
   simplify_exact!(disc)
-  O.disc = num(disc)
+  O.disc_abs = num(disc)
   return nothing
 end
 
-function discriminant(O::NfRelOrd)
+function discriminant(O::NfRelOrd{nf_elem, S}) where S
   assure_has_discriminant(O)
-  return deepcopy(O.disc)
+  return deepcopy(O.disc_abs)
+end
+
+function assure_has_discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
+  if isdefined(O, :disc_rel)
+    return nothing
+  end
+  A = MatrixSpace(base_ring(nf(O)), degree(O), degree(O))()
+  pb = pseudo_basis(O)
+  for i = 1:degree(O)
+    for j = 1:degree(O)
+      A[i, j] = trace(pb[i][1]*pb[j][1])
+    end
+  end
+  d = det(A)
+  a = pb[1][2]^2
+  for i = 2:degree(O)
+    a *= pb[i][2]^2
+  end
+  disc = d*a
+  simplify_exact!(disc)
+  O.disc_rel = num(disc)
+  return nothing
+end
+
+function discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
+  assure_has_discriminant(O)
+  return deepcopy(O.disc_rel)
 end
 
 ################################################################################
@@ -356,12 +385,12 @@ doc"""
 """
 function Order(L::NfRel{nf_elem}, M::GenMat{nf_elem})
   # checks
-  return NfRelOrd{nf_elem, NfOrdFracIdl}(L, M)
+  return NfRelOrd{nf_elem, NfOrdFracIdl}(L, deepcopy(M))
 end
 
 function Order(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}}) where T
   # checks
-  return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, M)
+  return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
 doc"""
@@ -373,7 +402,7 @@ doc"""
 """
 function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
   # checks
-  return NfRelOrd{T, S}(L, M)
+  return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
 ################################################################################
@@ -388,6 +417,6 @@ function ==(R::NfRelOrd, S::NfRelOrd)
 end
 
 
-mutable struct NfRelOrdIdl{T} end
+#mutable struct NfRelOrdIdl{T} end
 
-mutable struct NfRelOrdFracIdl{T} end
+#mutable struct NfRelOrdFracIdl{T} end
