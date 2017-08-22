@@ -110,7 +110,9 @@ function s3_with_discriminant(I::NfOrdIdl)
         @assert order(S[1]) == 3
         s, ms = snf(S[1])
         if ms(S[2](sigma_R(S[2](ms\s[1])))) == s[1]
-          println("actio is trivial, no S3")
+          #TODO: factor out the part with trivial action
+          # ie. kern(sigma_R-I)
+          println("action is trivial, no S3")
           continue
         end
         A = ray_class_field(mR*inv(S[2]))
@@ -119,9 +121,31 @@ function s3_with_discriminant(I::NfOrdIdl)
           println("wrong conductor")
           continue
         end
-        B = number_field(A)[1]
-        push!(res, B)
-        #need to extend sigma to B to get Aut(B/k)
+        B = number_field(number_field(A)[1])[1]
+        Ba = absolute_field(B)[1]
+        r = roots(Ba.pol, Ba)
+        @assert degree(Ba) == 6
+        @assert length(r) == 6
+        for rr = r
+          if rr == gen(Ba)
+            continue
+          end
+          h = Hecke.NfToNfMor(Ba, Ba, rr)
+          if h(h(gen(Ba))) == gen(Ba)
+            #found auto or order 2!
+            g = gen(Ba) + h(gen(Ba))
+            mg = minpoly(g)
+            i = 0
+            while degree(mg) < 3
+              g = (gen(Ba)+i)*(h(gen(Ba))+i)
+              mg = minpoly(g)
+              i+=1
+            end
+            @assert degree(mg) == 3
+            push!(res, mg)
+            break;
+          end
+        end
       end
     end
   end
