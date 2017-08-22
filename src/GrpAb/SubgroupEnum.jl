@@ -1,6 +1,56 @@
-# Buttler
+################################################################################
+#
+#  GrpAb/SubgroupEnum.jl : Subgroup enumeration for finitely generated
+#                          abelian groups.
+#
+# This file is part of Hecke.
+#
+# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+#
+#  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
+#
+################################################################################
 
-# Iterator for all possible y's
+################################################################################
+#
+#  Subgroup iterators for p-groups
+#
+################################################################################
+
+# We use the algorithm of Butler, Subgroup Lattices and Symmetric Functions,
+# Section 1.6. But we use the description of Cohen, Advanced Topics in
+# Computational Number Theory, Theorem 4.1.18.
+
+# Some notation/convention:
+# An abelian p-group A has a unique type (n_1,...,n_r), which is decreasing
+# with the property that A \cong Z/p^{n_1} x ... x Z/p^{n_r}.
+
+# Given a p-group with type x, the following function enumerates all possible
+# types y of a subgroup of length t. The only restrictions on y are
+# length(y) <= length(x), y_1 \leq x_1 and y_i \leq min(y_{i-1}, x_i) for
+# 2 \leq i \leq length(y). This is part (1) of Theorem 4.1.18.
 
 struct yIterator
   t::Int
@@ -49,28 +99,47 @@ Base.iteratorsize(::Type{yIterator}) = Base.SizeUnknown()
 
 Base.eltype(::Type{yIterator}) = Array{Int, 1}
 
-function Base.collect(Y::yIterator)
-  s = Array{Int, 1}[]
-  for x in Y
-    push!(s, x)
-  end
-  return s
-end
+# Given a type y for the subgroup, we can iterator through all possible
+# valid permutations. This is part (2) of Theorem 4.1.18.
 
 struct SigmaIteratorGivenY{T}
   gen::T
 end
 
-#SigmaIteratorGivenY{T}(x) where {T} = SigmaIteratorGivenY{T}(x)
+@inline function _isvalid(s, t, x, y, sigma)
+  for i in 1:t
+    if y[i] > x[sigma[i]]
+      return false
+    end
+  end
+  for i in 1:(s-1)
+    # TODO: Precompute the indicies where they are equal
+    if y[i] == y[i + 1]
+      if sigma[i] < sigma[i + 1]
+        return false
+      end
+    end
+  end
+  return true
+end
 
 SigmaIteratorGivenY(s, t, x, y) = SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma), Nemo.AllPerms(s)))
 
 Base.start(S::SigmaIteratorGivenY) = Base.start(S.gen)
 
 Base.next(S::SigmaIteratorGivenY, s) = Base.next(S.gen, s)
+
 Base.done(S::SigmaIteratorGivenY, s) = Base.done(S.gen, s)
-Base.length(S::SigmaIteratorGivenY) = Base.start(S.gen)
+
+Base.iteratorsize(::Type{SigmaIteratorGivenY}) = Base.SizeUnknown()
+
 Base.eltype(::Type{SigmaIteratorGivenY}) = Array{Int, 1}
+
+# for some reason this is type unstable.
+
+# Finally we have to enumerate the possible matrices defining the generators
+# of the subgroup (step (3)). There are two parts to this. First we compute,
+# for a given sigma, the indice in the matrix.
 
 function compute_indice(s, t, x, y, sigma)
   tau = Nemo.inv!(perm(sigma))
@@ -91,47 +160,11 @@ function compute_indice(s, t, x, y, sigma)
   return [( indice, tau )]
 end
 
-#Base.iteratorsize(::Type{SigmaIteratorGivenY}) = Base.SizeUnknown()
-#
-#Base.eltype(::Type{SigmaIteratorGivenY}) = Array{Int, 1}
-#
-#
-#function Base.start(F::SigmaIteratorGivenY)
-#  perm_state = start(F.perms)
-#  old_perm_state = copy_perm_state(perm_state)
-#
-#  sigma, perm_state = next(F.perms, perm_state)
-#
-#  while !_isvalid(F, sigma) && !done(F.perms, perm_state)
-#    old_perm_state = copy_perm_state(perm_state)
-#    sigma, perm_state = next(F.perms, perm_state)
-#  end
-#
-#  return old_perm_state
-#end
-#
-#function copy_perm_state(perm_state)
-#  return (copy(perm_state[1]), perm_state[2], perm_state[3], copy(perm_state[4]))
-#end
-#
-@inline function _isvalid(s, t, x, y, sigma)
-  for i in 1:t
-    if y[i] > x[sigma[i]]
-      return false
-    end
-  end
-  for i in 1:(s-1)
-    # TODO: Precompute the indicies where they are equal
-    if y[i] == y[i + 1]
-      if sigma[i] < sigma[i + 1]
-        return false
-      end
-    end
-  end
-  return true
-end
+# Given sigma, we can iteraterate through all possible choices of intergers
+# c_{i,j}. To do this we collect the single ranges at the indice and the
+# produce a product iterator.
 
-type cIteratorGivenSigma
+mutable struct cIteratorGivenSigma{T}
   s::Int
   t::Int
   x::Array{Int, 1}
@@ -140,33 +173,21 @@ type cIteratorGivenSigma
   sigma::Array{Int, 1}
   tau::Array{Int, 1}
   indice::Array{Tuple{Int, Int, Int}, 1}
-  it
-
-
-  function cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1}, y::Array{Int, 1}, p::Int, sigma::Array{Int, 1})
-    tau = Nemo.inv!(perm(sigma))
-    z = new(s, t, x, y, p, sigma, tau)
-    a, b = getintervals(z)
-    z.indice = a
-    z.it = b
-    return z
-  end
+  it::T
 end
 
-function getintervals(C::cIteratorGivenSigma)
+function _cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1}, y::Array{Int, 1}, p::Int, sigma::Array{Int, 1})
+  tau = Nemo.inv!(perm(sigma))
+  indice, it = getintervals(t, s, x, y, p, sigma, tau)
+  return cIteratorGivenSigma{typeof(it)}(s, t, x, y, p, sigma, tau, indice, it)
+end
+
+function getintervals(t, s, x, y, p, sigma, tau)
   indice = Tuple{Int, Int, Int}[]
   ranges = UnitRange{Int}[]
 
-  t = C.t
-  s = C.s
-  y = C.y
-  x = C.x
-  p = C.p
-  sigma = C.sigma
-  tau = C.tau
-
-  for j in 1:C.t
-    for i in 1:C.s
+  for j in 1:t
+    for i in 1:s
       if tau[i] > j
         if i < sigma[j] # case a)
           push!(indice, (i, j, 0))
@@ -181,7 +202,7 @@ function getintervals(C::cIteratorGivenSigma)
       end
     end
   end
-  return indice, Base.product(ranges...)
+  return indice, Base.product(ranges)
 end
 
 Base.start(C::cIteratorGivenSigma) = Base.start(C.it)
@@ -192,13 +213,29 @@ Base.done(C::cIteratorGivenSigma, s) = Base.done(C.it, s)
 
 Base.length(C::cIteratorGivenSigma) = Base.length(C.it)
 
-function get_matrix(s, t, ind::Array{Tuple{Int, Int, Int}, 1}, c, sigma, tau, p, x, y)
+Base.eltype(::Type{cIteratorGivenSigma{T}}) where {T} = Base.eltype(T)
+
+# Now we have the y, the permutation sigma with inverse tau, the indices ind
+# and the corresponding ranges describing the exponents in the generator
+# matrix. Now get the matrix!
+
+function get_matrix(s, t, ind, c, sigma, tau, p, x, y)
   M = Array{Int}(s, t)
   get_matrix!(M, s, t, ind, c, sigma, tau, p, x, y)
   return M
 end
 
 function get_matrix!(M, s, t, ind::Array{Tuple{Int, Int, Int}, 1}, c, sigma, tau, p, x, y)
+  @show M
+  @show s
+  @show t
+  @show ind
+  @show c
+  @show sigma
+  @show tau
+  @show p
+  @show x
+  @show y
   for j in 1:t
     for i in 1:s
       if tau[i] < j
@@ -218,23 +255,34 @@ function get_matrix!(M, s, t, ind::Array{Tuple{Int, Int, Int}, 1}, c, sigma, tau
       M[i, j] = c[k]
     elseif _case == 2 # case c)
       M[i, j] = c[k] * p^(x[i] - y[j] + 1)
-    #else
-    #  error("sdas")
     end
   end
   return M
 end
 
-function _SubgroupTypeIterator(x, y, p)
+# Put everything together:
+# Given the type x of a p-group G and a type y, this function iterates
+# through all generating matrices of subgroups of type y.
+# (The matrix is with respect to the canonical form
+# G = Z/p^x[1] x .... x Z/p^x[r]
+
+function _subgroup_type_iterator(x, y, p)
   s = length(x)
   t = findlast(!iszero, y)
-  return (get_matrix(s, t, f[1], c, sigma, f[2], p, x, y)
+
+  # have to treat the empty y separately
+  if t == 0
+    return ( x for x in [zeros(Int, s, 0)])
+  end
+
+  return ((println(f); get_matrix(s, t, f[1], c, sigma, f[2], p, x, y))
           for sigma in SigmaIteratorGivenY(s, t, x, y)
           for f in compute_indice(s, t, x, y, sigma)
-          for c in cIteratorGivenSigma(s, t, x, y, p, sigma))
+          for c in _cIteratorGivenSigma(s, t, x, y, p, sigma))
 end
 
-function _SubgroupIterator(x, p)
+# Same as above but for all subgroups.
+function _subgroup_iterator(x, p)
   s = length(x)
   # We have to treat the trivial group separately.
   # Flatten just concatenates two iterators.
@@ -245,11 +293,6 @@ function _SubgroupIterator(x, p)
           for f in compute_indice(s, t, x, y, sigma)
           for c in cIteratorGivenSigma(s, t, x, y, p, sigma))))
 end
-
-#    z = new(s, t, x, y, SigmaIteratorGivenY(s, t, x, y, Nemo.AllPerms(s)))
-#    return z
-#  end
-#end
 
 function _matrix_to_generators(G::GrpAbFinGen, M::Array{Int, 2}, indices::Array{Int, 1} = collect(1:ngens(G)))
   numgenssub = size(M, 2)
@@ -284,10 +327,10 @@ function __psubgroups_gens(G::GrpAbFinGen, p, t::Array{Int, 1} = [-1])
   indice = [ t[2] for t in x ]
   # x is the "type" of the p-group G as a partition
   if length(t) == 1 && t[1] == -1
-    return (_matrix_to_generators(G, M, indice) for M in _SubgroupIterator(Gtype, p))
+    return (_matrix_to_generators(G, M, indice) for M in _subgroup_iterator(Gtype, p))
   else
     t = vcat(t, zeros(Int, length(x) - length(t)))
-    return  (_matrix_to_generators(G, M, indice) for M in _SubgroupTypeIterator(Gtype, t, p))
+    return  (_matrix_to_generators(G, M, indice) for M in _subgroup_type_iterator(Gtype, t, p))
     #return  Gtype, indice, (M  for M in _SubgroupTypeIterator(Gtype, t, p))
   end
   return Gtype, indice
