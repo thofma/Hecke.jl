@@ -3,6 +3,8 @@ export induce_rational_reconstruction, induce_crt, root, roots,
        number_field, ismonic, pure_extension, ispure_extension,
        iskummer_extension, cyclotomic_field, wildanger_field
 
+add_verbose_scope(:PolyFactor)       
+
 if Int==Int32
   global const p_start = 2^30
 else
@@ -725,6 +727,158 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   return res
 end
 
+function inv(a::RelSeriesElem{nf_elem})
+  @assert valuation(a)==0
+  # x -> x*(2-xa) is the lifting recursino
+  x = parent(a)(inv(coeff(a, 0)))
+  set_prec!(x, 1)
+  p = precision(a)
+  la = [p]
+  while la[end]>1
+    push!(la, div(la[end]+1, 2))
+  end
+
+  two = parent(a)(base_ring(a)(2))
+  set_prec!(two, p)
+
+  n = length(la)-1
+  y = parent(a)()
+  while n>0
+    set_prec!(x, la[n])
+    set_prec!(y, la[n])
+    y = mul!(y, a, x)
+    y = two-y #sub! is missing...
+    x = mul!(x, x, y)
+#    x = x*(two-x*a)
+    n -=1 
+  end
+  return x
+end
+
+doc"""
+    derivative(f::RelSeriesElem{T}) -> RelSeriesElem
+> Return the derivative of the power series $f$.
+"""
+function derivative(f::RelSeriesElem{T}) where T
+  g = parent(f)()
+  v = valuation(f)
+  if v==0
+    for i=1:Nemo.pol_length(f)
+      setcoeff!(g, i-1, (i+v)*Nemo.polcoeff(f, i))
+    end
+    Nemo.set_val!(g, 0)
+  else
+    for i=0:Nemo.pol_length(f)
+      setcoeff!(g, i, (i+v)*Nemo.polcoeff(f, i))
+    end
+    Nemo.set_val!(g, v-1)
+  end
+  Nemo.renormalize!(g)  
+  set_prec!(g, precision(g)-1)
+  return g
+end
+
+doc"""
+    integral(f::RelSeriesElem{T}) -> RelSeriesElem
+> Return the integral of the power series $f$.
+"""
+function Nemo.integral(f::RelSeriesElem{T}) where T
+  g = parent(f)()
+  set_prec!(g, precision(f)+1)
+  v = valuation(f)
+  for i=0:Nemo.pol_length(f)
+    setcoeff!(g, i, divexact(Nemo.polcoeff(f, i), i+v+1))
+  end
+  Nemo.set_val!(g, v+1)
+  Nemo.renormalize!(g) 
+  return g
+end
+
+doc"""
+    polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) -> Array{T, 1}
+> Uses Newton (or Newton-Girard) formulas to compute the first $n$
+> power sums from the coefficients of $f$.
+"""
+function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: FieldElem
+  d = degree(f)
+  R = base_ring(f)
+  S = PowerSeriesRing(R, n+1, "gen(S)")[1]
+  fs = derivative(f)
+
+  A = S([coeff(reverse(fs), i) for i=0:d-1], d, n+1, 0)
+  B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
+  L = A*inv(B)
+  return [coeff(L, i) for i=1:n]
+end
+
+#plain vanilla recursion
+function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T 
+  d = degree(f)
+  R = base_ring(f)
+  E = T[(-1)^i*coeff(f, d-i) for i=0:min(d, n)] #should be the elementary symm.
+  while length(E) <= n
+    push!(E, R(0))
+  end
+  P = T[]
+
+  push!(P, E[1+1])
+  for k=2:n
+    push!(P, (-1)^(k-1)*k*E[k+1] + sum((-1)^(k-1+i)*E[k-i+1]*P[i] for i=1:k-1))
+  end
+  return P
+end
+
+doc"""
+    power_sums_to_polynomial(P::Array{T, 1}) -> PolyElem{T}
+> Uses the Newton (or Newton-Girard) identities to obtain the polynomial
+> coefficients (the elementary symmetric functions) from the power sums.
+"""
+function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
+  d = length(P)
+  R = parent(P[1])
+  S = PowerSeriesRing(R, d+1, "gen(S)")[1]
+  s = S(P, length(P), d+1, 0)
+  r = S([1, -P[1]], 2, d+1, 0) 
+  la = [d+1]
+  while la[end]>1
+    push!(la, div(la[end]+1, 2))
+  end
+  n = length(la)-1
+  while n > 0
+    set_prec!(r, la[n])
+    rr = derivative(r)*inv(r)
+    md = -(rr+s)
+    m = 1+integral(md)
+    r *= m
+    n -= 1
+  end
+  d = Nemo.pol_length(r)
+  v = valuation(r)
+  @assert v==0
+  while d>=0 && iszero(Nemo.polcoeff(r, d))
+    d -= 1
+  end
+  return PolynomialRing(R)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
+end
+
+function power_sums_to_polynomial(P::Array{T, 1}) where T
+  E = T[1]
+  R = parent(P[1])
+  last_non_zero = 0
+  for k=1:length(P)
+    push!(E, divexact(sum((-1)^(i-1)*E[k-i+1]*P[i] for i=1:k), R(k)))
+    if E[end] != 0
+      last_non_zero = k
+    end
+  end
+  E = E[1:last_non_zero+1]
+  d = length(E) #the length of the resulting poly...
+  for i=1:div(d, 2)
+    E[i], E[d-i+1] = (-1)^(d-i)*E[d-i+1], (-1)^(i-1)*E[i]
+  end
+  return PolynomialRing(R)[1](E)
+end
+
 doc"""
   norm(f::PolyElem{nf_elem}) -> fmpq_poly
 
@@ -733,6 +887,12 @@ doc"""
 function norm(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
+  if degree(f) > 10 # TODO: find a good cross-over
+    P = polynomial_to_power_sums(f, degree(f)*degree(K))
+    PQ = [trace(x) for x=P]
+    return power_sums_to_polynomial(PQ)
+  end
+
   Qy = parent(K.pol)
   y = gen(Qy)
   Qyx, x = PolynomialRing(Qy, "x")
@@ -774,7 +934,8 @@ function factor(f::PolyElem{nf_elem})
 
   f == 0 && error("poly is zero")
   f_orig = deepcopy(f)
-  g = gcd(f, derivative(f'))
+  @vprint :PolyFactor 1 "Factoring $f\n"
+  @vtime :PolyFactor 2 g = gcd(f, derivative(f'))
 
   if degree(g) > 0
     f = div(f, g)
@@ -787,7 +948,7 @@ function factor(f::PolyElem{nf_elem})
   N = 0
 
   while true
-    N = norm(g)
+    @vtime :PolyFactor 2 N = norm(g)
 
     if !isconstant(N) && issquarefree(N)
       break
@@ -798,7 +959,7 @@ function factor(f::PolyElem{nf_elem})
     g = compose(f, gen(Kx) - k*gen(K))
   end
 
-  fac = factor(N)
+  @vtime :PolyFactor 2 fac = factor(N)
 
   res = Dict{PolyElem{nf_elem}, Int64}()
 
@@ -808,7 +969,7 @@ function factor(f::PolyElem{nf_elem})
       t = t + K(coeff(i, j))*gen(Kx)^j
     end
     t = compose(t, gen(Kx) + k*gen(K))
-    t = gcd(f, t)
+    @vtime :PolyFactor 2 t = gcd(f, t)
     res[t] = 1
   end
 
@@ -819,7 +980,7 @@ function factor(f::PolyElem{nf_elem})
   if f != f_orig
     global p_start
     p = p_start
-    while true
+    @vtime :PolyFactor 2 while true
       p = next_prime(p)
       me = modular_init(K, p, max_split=1)
       fp = modular_proj(f, me)[1]
@@ -1865,3 +2026,60 @@ function absolute_field(K::GenResRing{GenPoly{nf_elem}})
   return Ka, al, be, ga
 end
 
+function resultant_mod(f::GenPoly{nf_elem}, g::GenPoly{nf_elem})
+  global p_start
+  p = p_start
+  K = base_ring(parent(f))
+  @assert parent(f) == parent(g)
+  r = K()
+  d = fmpz(1)
+  last_r = K()
+  first = true
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    fp = deepcopy(Hecke.modular_proj(f, me))  # bad!!!
+    gp = Hecke.modular_proj(g, me)
+    rp = Array{fq_nmod}(length(gp))
+    for i=1:length(gp)
+      rp[i] = resultant(fp[i], gp[i])
+    end
+    rc = Hecke.modular_lift(rp, me)
+    if d == 1
+      r = rc
+      d = fmpz(p)
+    else
+      r, d = induce_crt(r, d, rc, fmpz(p))
+    end
+    fl, ccb = Hecke.rational_reconstruction(r, d)
+    if fl
+      if first
+        first = false
+        last_r = ccb
+#        println("first: $ccb")
+      else
+        if ccb == last_r
+          return ccb
+        else
+#      println("fail2: $ccb")
+          last_r = ccb
+        end
+      end
+    else
+#      println("fail")
+    end
+  end
+end
+
+function induce_crt(a::nf_elem, p::fmpz, b::nf_elem, q::fmpz, signed::Bool = false)
+  c = parent(a)()
+  pi = invmod(p, q)
+  mul!(pi, pi, p)
+  pq = p*q
+  if signed
+    pq2 = div(pq, 2)
+  else
+    pq2 = fmpz(0)
+  end
+  return induce_inner_crt(a, b, pi, pq, pq2), pq
+end
