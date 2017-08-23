@@ -33,7 +33,105 @@
 #
 ################################################################################
 
-export psubgroups
+export psubgroups, index_p_subgroups
+
+################################################################################
+#
+#  Enumeration of subgroups of index p
+#
+################################################################################
+
+function index_p_subgroups(A::GrpAbFinGen, p::Integer)
+  return index_p_subgroups(A, fmpz(p))
+end
+
+mutable struct IndexPSubgroups{S, T}
+  p::Int
+  n::UInt
+  st::Int
+  mp::S
+  c::fmpz_mat
+  mthd::T
+
+  function IndexPSubgroups{T}(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
+    if order(A) % p != 0
+      r = new{IdentityMap{GrpAbFinGen}, T}()
+      r.n = 0
+      return r
+    end
+    s, ms = snf(A)  # ms: A -> s
+    r = new{typeof(ms), T}()
+    @assert s.issnf
+    r.p = Int(p)
+    r.mp = ms
+    i=1
+    while s.snf[i] % p != 0
+      i += 1
+    end
+    r.st = i
+    r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
+    r.c = MatrixSpace(FlintZZ, length(s.snf), length(s.snf))()
+    r.mthd = mthd
+    return r
+  end
+end
+
+function index_p_subgroups(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
+  @assert isprime(p)
+  return IndexPSubgroups{T}(A, p, mthd)
+
+  #a subgroup of index p corresponds to a HNF with exactly one p on the
+  #diagonal - and the other entries arbitrary reduced.
+  #so it should be 1 + p + p^2 + + p^(n-1) = ((p^n)-1)/(p-1) many
+end
+
+function index_to_group(s::IndexPSubgroups, i::UInt)
+  j = 1
+  x = 1
+  while i>=x
+    i -= x
+    x *= s.p
+    j += 1
+  end
+  c = s.c
+  zero!(c)
+  for k=1:rows(c)
+    if s.st+j-1 != k
+      c[k, k] = 1
+    end
+  end
+  k = 1
+  while i != 0
+    c[k+s.st-1, s.st + j-1] = i%s.p
+    i = div(i, s.p)
+    k += 1
+  end
+  c[s.st + j-1, s.st + j-1] = s.p
+  gen = [s.mp\(codomain(s.mp)(sub(c, l:l, 1:cols(c)))) for l=1:rows(c)]
+  return s.mthd(domain(s.mp), gen)
+end
+
+function Base.start(s::IndexPSubgroups)
+  return UInt(0)
+end
+
+function Base.next(s::IndexPSubgroups, i::UInt)
+  return index_to_group(s, i), i+1
+end
+
+function Base.length(s::IndexPSubgroups)
+  return s.n
+end
+
+function Base.done(s::IndexPSubgroups, i::UInt)
+  return i>=s.n
+end
+
+#=
+example:
+ julia> sg = index_p_subgroups(GrpAbFinGen([3,3,3,3]), 3)
+ julia> index_to_group(sg, UInt(6));
+=#
 
 ################################################################################
 #
@@ -327,7 +425,7 @@ end
 # Given a finitely generated p-group G in Smith normal form, and a type t,
 # this function returns an iterator, which iterates over generators of
 # subgroups of type t. If t = [-1], then there is no restriction on the type.
-function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index, t::Array{Int, 1})
+function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer}, order, index, t::Array{Int, 1})
   @assert isfinite(G)
   @assert issnf(G)
   # The SNF can contain 1's and 0's
@@ -349,7 +447,7 @@ function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index, t::Array{Int, 1
   return Gtype, indice
 end
 
-function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index, types)
+function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer}, order, index, types)
   @assert isfinite(G)
   @assert issnf(G)
   # The SNF can contain 1's and 0's
@@ -375,7 +473,7 @@ function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index, types)
   return Gtype, indice
 end
 
-function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index)
+function __psubgroups_gens(G::GrpAbFinGen, p::Union{Integer, fmpz}, order, index)
   @assert isfinite(G)
   @assert issnf(G)
   # The SNF can contain 1's and 0's
@@ -404,33 +502,38 @@ end
 
 # Same as above but now for arbitrary p-groups
 function _psubgroups_gens(G::GrpAbFinGen, p, t, order, index)
+  @show G
   if issnf(G)
     if t == [-1]
+      @show "here"
       return __psubgroups_gens(G, p, order, index)
     else
+      @show "there"
       return __psubgroups_gens(G, p, order, index, t)
     end
   else
     S, mS = snf(G)
     if t == [-1]
+      @show "here2"
       return ( map(x -> preimage(mS, x), z) for z in __psubgroups_gens(S, p, order, index))
     else
+      @show "there2"
       return ( map(x -> preimage(mS, x), z) for z in __psubgroups_gens(S, p, order, index, t))
     end
   end
 end
 
 # Same as above but now allow a function to be applied to the output
-function _psubgroups(G::GrpAbFinGen, p::Int; sub_type = [-1], order = -1, index = -1,
+function _psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = [-1], order = -1, index = -1,
                                             fun = sub)
-  return ( fun(G, z) for z in _psubgroups_gens(G, p, sub_type, order, index))
+  return ( fun(G, z) for z in _psubgroups_gens(G, p, subtype, order, index))
 end
 
 # We use a custom type for the iterator to have pretty printing.
 mutable struct pSubgroupIterator{F, T, E}
   G::GrpAbFinGen
-  sub_type::Array{Int, 1}
-  quo_type::Array{Int, 1}
+  subtype::Array{Int, 1}
+  quotype::Array{Int, 1}
   index::fmpz
   order::fmpz
   fun::F
@@ -440,16 +543,16 @@ end
 function Base.show(io::IO, I::pSubgroupIterator)
   print(io, "p-subgroup iterator of \n$(I.G)\n")
 
-  if I.sub_type == [-1]
+  if I.subtype == [-1]
     print(io, "subgroup type: any\n")
   else
-    print(io, "subgroup type: $(I.sub_type)\n")
+    print(io, "subgroup type: $(I.subtype)\n")
   end
 
-  if I.quo_type == [-1]
+  if I.quotype == [-1]
     print(io, "quotient type: any\n")
   else
-    print(io, "quotient type: $(I.quo_type)\n")
+    print(io, "quotient type: $(I.quotype)\n")
   end
 
   if I.index == -1
@@ -470,7 +573,7 @@ function Base.show(io::IO, I::pSubgroupIterator)
 end
 
 # this is wrong.
-function _quo_type_get_sub_type(x::Array{Int, 1}, y::Array{Int, 1})
+function _quotype_get_subtype(x::Array{Int, 1}, y::Array{Int, 1})
   y = vcat(y, zeros(Int, length(x) - length(y)))
   z = x .- y
   sort!(z, rev = true)
@@ -478,22 +581,22 @@ function _quo_type_get_sub_type(x::Array{Int, 1}, y::Array{Int, 1})
   return z[1:t]
 end
 
-function pSubgroupIterator(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
+function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer}; subtype::Array{Int, 1} = [-1],
                                                    index::Union{fmpz, Int} = -1,
                                                    order::Union{fmpz, Int} = -1,
                                                    fun = sub)
   if index == p
     return index_p_subgroups(G, p, fun)
   end
-  it = _psubgroups(G, p; sub_type = sub_type, fun = fun, index = index, order = order)
+  it = _psubgroups(G, p; subtype = subtype, fun = fun, index = index, order = order)
   E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
-  z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, sub_type, [-1], fmpz(index), fmpz(order), fun, it)
+  z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, [-1], fmpz(index), fmpz(order), fun, it)
   return z
 end
 
-function psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1], index =  -1, order = -1,
+function psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype::Array{Int, 1} = [-1], index =  -1, order = -1,
                                                    fun = sub)
-  return pSubgroupIterator(G, p; sub_type = sub_type, order = order, index = index,
+  return pSubgroupIterator(G, p; subtype = subtype, order = order, index = index,
                                  fun = fun)
 end
 
@@ -509,99 +612,62 @@ Base.eltype(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = E
 
 ################################################################################
 #
-#  index p subgroup enumeration
+#  Subgroup enumeration
 #
 ################################################################################
 
-function index_p_subgroups(A::GrpAbFinGen, p::Integer)
-  return index_p_subgroups(A, fmpz(p))
+mutable struct SubgroupIterator{F, T, E}
+  G::GrpAbFinGen
+  subtype::Array{Int, 1}
+  quotype::Array{Int, 1}
+  index::fmpz
+  order::fmpz
+  fun::F
+  it::T
 end
 
-mutable struct IndexPSubgroups{S, T}
-  p::Int
-  n::UInt
-  st::Int
-  mp::S
-  c::fmpz_mat
-  mthd::T
+function _subgroups(G::GrpAbFinGen, subtype::Array{T, 1} = [-1]) where T <: Union{Integer, fmpz}
+  primes = fmpz[]
 
-  function IndexPSubgroups{T}(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
-    if order(A) % p != 0
-      r = new{IdentityMap{GrpAbFinGen}, T}()
-      r.n = 0
-      return r
-    end
-    s, ms = snf(A)  # ms: A -> s
-    r = new{typeof(ms), T}()
-    @assert s.issnf
-    r.p = Int(p)
-    r.mp = ms
-    i=1
-    while s.snf[i] % p != 0
-      i += 1
-    end
-    r.st = i
-    r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
-    r.c = MatrixSpace(FlintZZ, length(s.snf), length(s.snf))()
-    r.mthd = mthd
-    return r
-  end
-end
+  pgens = []
 
-function index_p_subgroups(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
-  @assert isprime(p)
-  return IndexPSubgroups{T}(A, p, mthd)
-
-  #a subgroup of index p corresponds to a HNF with exactly one p on the
-  #diagonal - and the other entries arbitrary reduced.
-  #so it should be 1 + p + p^2 + + p^(n-1) = ((p^n)-1)/(p-1) many
-end
-
-function index_to_group(s::IndexPSubgroups, i::UInt)
-  j = 1
-  x = 1
-  while i>=x
-    i -= x
-    x *= s.p
-    j += 1
-  end
-  c = s.c
-  zero!(c)
-  for k=1:rows(c)
-    if s.st+j-1 != k
-      c[k, k] = 1
+  if length(subtype) == 1 && subtype[1] == -1
+    fac = factor(order(G))
+    for (p, e) in fac
+      Gp, mGp = psylow_subgroup(G, Int(p))
+      @show Int(p)
+      T = psubgroups(Gp, Int(p))
+      return Gp, T
+      gens = ( mGp(map(t[2], gens(t[1]))) for t in T)
+      push!(pgens, gens)
     end
   end
-#  println("i: $i  j: $j")
-  k = 1
-  while i != 0
-    c[k+s.st-1, s.st + j-1] = i%s.p
-    i = div(i, s.p)
-    k += 1
+
+  final_it = Iterators.product(pgens...)
+ 
+  return ( c for c in final_it )
+  #return ( @show c; sub(G, vcat(c...)::Array{GrpAbFinGen, 1}) for c in final_it )
+
+  for l in subtype
+    fac = factor(fmpz(l))
+    for (p, e) in fac
+      push!(primes, p)
+    end
   end
-  c[s.st + j-1, s.st + j-1] = s.p
-  gen = [s.mp\(codomain(s.mp)(sub(c, l:l, 1:cols(c)))) for l=1:rows(c)]
-  return s.mthd(domain(s.mp), gen)
-end
 
-function Base.start(s::IndexPSubgroups)
-  return UInt(0)
-end
+  res = []
 
-function Base.next(s::IndexPSubgroups, i::UInt)
-  return index_to_group(s, i), i+1
+  primes = unique(primes)
+  for p in primes
+    if !iszero(mod(order(G), p))
+      error("no subgroup exists")
+    end
+    @show p
+    ptype = map(l -> valuation(l, p), subtype)
+    filter!( z -> z > 0, ptype)
+    Gp, mGp = psylow_subgroup(G, Int(p))
+    @show typeof(ptype)
+    piterator = psubgroups(G, ptype)
+    @show ptype
+  end
 end
-
-function Base.length(s::IndexPSubgroups)
-  return s.n
-end
-
-function Base.done(s::IndexPSubgroups, i::UInt)
-  return i>=s.n
-end
-
-#=
-example:
- julia> sg = index_p_subgroups(GrpAbFinGen([3,3,3,3]), 3)
- julia> index_to_group(sg, UInt(6));
-=#
