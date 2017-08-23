@@ -33,6 +33,8 @@
 #
 ################################################################################
 
+export psubgroups
+
 ################################################################################
 #
 #  Subgroup iterators for p-groups
@@ -64,9 +66,12 @@ struct yIterator
   end
 end
 
-Base.start(F::yIterator) = (z = ones(Int, F.t); z[1] = 0; return z)
+Base.start(F::yIterator) = (z = ones(Int, F.t); F.t > 0 ? z[1] = 0 : nothing; return z)
 
 function Base.next(F::yIterator, i::Array{Int, 1})
+  if length(i) == 0
+    return copy(F.res), copy(F.x) # this will make it abort
+  end
   if i[1] < F.x[1]
     i[1] = i[1] + 1
   else # the first one is as large as possible
@@ -77,16 +82,21 @@ function Base.next(F::yIterator, i::Array{Int, 1})
         for k in j-1:-1:1
           i[k] = i[j]
         end
+        break
       end
     end
   end
   for j in 1:F.t
     F.res[j] = i[j]
   end
-  return F.res, i
+  return copy(F.res), i
 end
 
 function Base.done(F::yIterator, i::Array{Int, 1})
+  # note that this is a hack to make the case t = 0 work
+  if length(i) == 0
+    return false
+  end
   for j in 1:length(i)
     if i[j] != F.x[j]
       return false
@@ -98,6 +108,8 @@ end
 Base.iteratorsize(::Type{yIterator}) = Base.SizeUnknown()
 
 Base.eltype(::Type{yIterator}) = Array{Int, 1}
+
+_subpartitions(x) = Iterators.flatten(( yIterator(x, t) for t in 0:length(x)))
 
 # Given a type y for the subgroup, we can iterator through all possible
 # valid permutations. This is part (2) of Theorem 4.1.18.
@@ -123,7 +135,11 @@ end
   return true
 end
 
-SigmaIteratorGivenY(s, t, x, y) = SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma), Nemo.AllPerms(s)))
+function SigmaIteratorGivenY(s, x, y)
+  t = findlast(!iszero(y))
+  SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma),
+                                       Nemo.AllPerms(s)))
+end
 
 Base.start(S::SigmaIteratorGivenY) = Base.start(S.gen)
 
@@ -131,9 +147,11 @@ Base.next(S::SigmaIteratorGivenY, s) = Base.next(S.gen, s)
 
 Base.done(S::SigmaIteratorGivenY, s) = Base.done(S.gen, s)
 
-Base.iteratorsize(::Type{SigmaIteratorGivenY}) = Base.SizeUnknown()
+Base.length(S::SigmaIteratorGivenY) = Base.length(S.gen)
 
-Base.eltype(::Type{SigmaIteratorGivenY}) = Array{Int, 1}
+Base.iteratorsize(::Type{SigmaIteratorGivenY{T}}) where {T} = Base.iteratorsize(T)
+
+Base.eltype(::Type{SigmaIteratorGivenY{T}}) where {T} = Array{Int, 1}
 
 # for some reason this is type unstable.
 
@@ -176,7 +194,8 @@ mutable struct cIteratorGivenSigma{T}
   it::T
 end
 
-function _cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1}, y::Array{Int, 1}, p::Int, sigma::Array{Int, 1})
+function _cIteratorGivenSigma(s::Int, t::Int, x::Array{Int, 1},
+                              y::Array{Int, 1}, p::Int, sigma::Array{Int, 1})
   tau = Nemo.inv!(perm(sigma))
   indice, it = getintervals(t, s, x, y, p, sigma, tau)
   return cIteratorGivenSigma{typeof(it)}(s, t, x, y, p, sigma, tau, indice, it)
@@ -202,7 +221,10 @@ function getintervals(t, s, x, y, p, sigma, tau)
       end
     end
   end
-  return indice, Base.product(ranges)
+  if length(indice) == 0
+    return indice, (z for z in 2:1)
+  end
+  return indice, Base.product(ranges...)
 end
 
 Base.start(C::cIteratorGivenSigma) = Base.start(C.it)
@@ -220,22 +242,12 @@ Base.eltype(::Type{cIteratorGivenSigma{T}}) where {T} = Base.eltype(T)
 # matrix. Now get the matrix!
 
 function get_matrix(s, t, ind, c, sigma, tau, p, x, y)
-  M = Array{Int}(s, t)
+  M = zeros(Int, s, t)
   get_matrix!(M, s, t, ind, c, sigma, tau, p, x, y)
   return M
 end
 
-function get_matrix!(M, s, t, ind::Array{Tuple{Int, Int, Int}, 1}, c, sigma, tau, p, x, y)
-  @show M
-  @show s
-  @show t
-  @show ind
-  @show c
-  @show sigma
-  @show tau
-  @show p
-  @show x
-  @show y
+function get_matrix!(M, s, t, ind, c, sigma, tau, p, x, y)
   for j in 1:t
     for i in 1:s
       if tau[i] < j
@@ -267,6 +279,7 @@ end
 # G = Z/p^x[1] x .... x Z/p^x[r]
 
 function _subgroup_type_iterator(x, y, p)
+  @assert length(x) == length(y)
   s = length(x)
   t = findlast(!iszero, y)
 
@@ -275,26 +288,25 @@ function _subgroup_type_iterator(x, y, p)
     return ( x for x in [zeros(Int, s, 0)])
   end
 
-  return ((println(f); get_matrix(s, t, f[1], c, sigma, f[2], p, x, y))
-          for sigma in SigmaIteratorGivenY(s, t, x, y)
+  return (get_matrix(s, t, f[1], c, sigma, f[2], p, x, y)
+          for sigma in SigmaIteratorGivenY(s, x, y)
           for f in compute_indice(s, t, x, y, sigma)
           for c in _cIteratorGivenSigma(s, t, x, y, p, sigma))
 end
 
 # Same as above but for all subgroups.
-function _subgroup_iterator(x, p)
+function _subgroup_iterator(x, p, types = ( y for t in 0:length(x) for y in yIterator(x, t)))
   s = length(x)
-  # We have to treat the trivial group separately.
   # Flatten just concatenates two iterators.
-  return Iterators.flatten(([Array{Int}(s, 0)], (get_matrix(s, t, f[1], c, sigma, f[2], p, x, y)
-          for t in 1:s
-          for y in yIterator(x, t)
-          for sigma in SigmaIteratorGivenY(s, t, x, y)
-          for f in compute_indice(s, t, x, y, sigma)
-          for c in cIteratorGivenSigma(s, t, x, y, p, sigma))))
+  #return #Iterators.flatten(([Array{Int}(s, 0)],
+  return Iterators.flatten(( _subgroup_type_iterator(x, y, p) for y in types))
 end
 
-function _matrix_to_generators(G::GrpAbFinGen, M::Array{Int, 2}, indices::Array{Int, 1} = collect(1:ngens(G)))
+# Given a matrix M and a group G, this function constructs elemenets from
+# the columns of M. The indice allows to handle the case, where the
+# generators of G correspond to a permutation of the rows of M.
+function _matrix_to_elements(G::GrpAbFinGen, M::Array{Int, 2},
+                             indice::Array{Int, 1} = collect(1:ngens(G)))
   numgenssub = size(M, 2)
   numgen = ngens(G)
   r = size(M, 1)
@@ -302,71 +314,125 @@ function _matrix_to_generators(G::GrpAbFinGen, M::Array{Int, 2}, indices::Array{
   v = zeros(Int, numgen)
   for i in 1:numgenssub
     for j in 1:r
-      v[indices[j]] = M[j, i]
+      v[indice[j]] = M[j, i]
     end
     z[i] = G(v)
     for j in 1:numgen
       v[j] = 0
     end
   end
-  #H, m =  sub(G, z)
   return z
 end
 
-function _psubgroups_gens(G::GrpAbFinGen, p, t::Array{Int, 1} = [-1])
-  S, mS = snf(G)
-  return ( map(x -> preimage(mS, x),z) for z in __psubgroups_gens(S, p, t))
-end
-
-function __psubgroups_gens(G::GrpAbFinGen, p, t::Array{Int, 1} = [-1])
+# Given a finitely generated p-group G in Smith normal form, and a type t,
+# this function returns an iterator, which iterates over generators of
+# subgroups of type t. If t = [-1], then there is no restriction on the type.
+function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index, t::Array{Int, 1})
+  @assert isfinite(G)
+  @assert issnf(G)
   # The SNF can contain 1's and 0's
   # Have to help inference here with the explicit type
-  x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i) for i in 1:length(G.snf) if G.snf[i] > 1]
+  x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
+                       for i in 1:length(G.snf) if G.snf[i] > 1]
   reverse!(x)
   Gtype = [ t[1] for t in x ]
   indice = [ t[2] for t in x ]
   # x is the "type" of the p-group G as a partition
   if length(t) == 1 && t[1] == -1
-    return (_matrix_to_generators(G, M, indice) for M in _subgroup_iterator(Gtype, p))
+    return (_matrix_to_elements(G, M, indice) for
+            M in _subgroup_iterator(Gtype, p))
   else
     t = vcat(t, zeros(Int, length(x) - length(t)))
-    return  (_matrix_to_generators(G, M, indice) for M in _subgroup_type_iterator(Gtype, t, p))
-    #return  Gtype, indice, (M  for M in _SubgroupTypeIterator(Gtype, t, p))
+    return  (_matrix_to_elements(G, M, indice) for
+             M in _subgroup_type_iterator(Gtype, t, p))
   end
   return Gtype, indice
 end
 
-function _psylow_subgroup_gens(G::GrpAbFinGen, p::Int)
+function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index, types)
+  @assert isfinite(G)
   @assert issnf(G)
-  z = GrpAbFinGenElem[]
-  for i in 1:ngens(G)
-    k, m = remove(G.snf[i], p)
-    #@show m, k
-    if k != 0
-      #@show m, G[i]
-      push!(z, m*G[i])
+  # The SNF can contain 1's and 0's
+  # Have to help inference here with the explicit type
+  x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
+                       for i in 1:length(G.snf) if G.snf[i] > 1]
+  reverse!(x)
+  Gtype = [ t[1] for t in x ]
+  indice = [ t[2] for t in x ]
+  # x is the "type" of the p-group G as a partition
+  if order != -1
+    v = valuation(order, p)
+    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types if sum(t) == v)
+  elseif index != -1
+    v = sum(Gtype) - valuation(index, p)
+    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types if sum(t) == v)
+  else
+    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types)
+  end
+
+  return  (_matrix_to_elements(G, M, indice)
+           for M in _subgroup_iterator(Gtype, p, adjusted_types))
+  return Gtype, indice
+end
+
+function __psubgroups_gens(G::GrpAbFinGen, p::Int, order, index)
+  @assert isfinite(G)
+  @assert issnf(G)
+  # The SNF can contain 1's and 0's
+  # Have to help inference here with the explicit type
+  x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
+                       for i in 1:length(G.snf) if G.snf[i] > 1]
+  reverse!(x)
+  Gtype = [ t[1] for t in x ]
+  indice = [ t[2] for t in x ]
+  types = _subpartitions(Gtype)
+  # x is the "type" of the p-group G as a partition
+  if order != -1
+    v = valuation(order, p)
+    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types if sum(t) == v)
+  elseif index != -1
+    v = sum(Gtype) - valuation(index, p)
+    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types if sum(t) == v)
+  else
+    adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types)
+  end
+
+  return  (_matrix_to_elements(G, M, indice)
+           for M in _subgroup_iterator(Gtype, p, adjusted_types))
+  return Gtype, indice
+end
+
+# Same as above but now for arbitrary p-groups
+function _psubgroups_gens(G::GrpAbFinGen, p, t, order, index)
+  if issnf(G)
+    if t == [-1]
+      return __psubgroups_gens(G, p, order, index)
+    else
+      return __psubgroups_gens(G, p, order, index, t)
+    end
+  else
+    S, mS = snf(G)
+    if t == [-1]
+      return ( map(x -> preimage(mS, x), z) for z in __psubgroups_gens(S, p, order, index))
+    else
+      return ( map(x -> preimage(mS, x), z) for z in __psubgroups_gens(S, p, order, index, t))
     end
   end
-  return z
 end
 
-function psylow_subgroup(G::GrpAbFinGen, p::Int)
-  S, mS = snf(G)
-  z = _psylow_subgroup_gens(S, p)
-  zz = [ preimage(mS, x) for x in z ]
-  return sub(G, zz)
-end
-
-function _psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
+# Same as above but now allow a function to be applied to the output
+function _psubgroups(G::GrpAbFinGen, p::Int; sub_type = [-1], order = -1, index = -1,
                                             fun = sub)
-  S, mS = psylow_subgroup(G, p)
-  return ( fun(G, map(mS, z)) for z in _psubgroups_gens(S, p, sub_type))
+  return ( fun(G, z) for z in _psubgroups_gens(G, p, sub_type, order, index))
 end
 
+# We use a custom type for the iterator to have pretty printing.
 mutable struct pSubgroupIterator{F, T, E}
   G::GrpAbFinGen
   sub_type::Array{Int, 1}
-  quot_type::Array{Int, 1}
+  quo_type::Array{Int, 1}
+  index::fmpz
+  order::fmpz
   fun::F
   it::T
 end
@@ -380,10 +446,22 @@ function Base.show(io::IO, I::pSubgroupIterator)
     print(io, "subgroup type: $(I.sub_type)\n")
   end
 
-  if I.quot_type == [-1]
+  if I.quo_type == [-1]
     print(io, "quotient type: any\n")
   else
-    print(io, "quotient type: $(I.quot_type)\n")
+    print(io, "quotient type: $(I.quo_type)\n")
+  end
+
+  if I.index == -1
+    print(io, "index: any\n")
+  else
+    print(io, "index: $(I.index)\n")
+  end
+
+  if I.order == -1
+    print(io, "order: any\n")
+  else
+    print(io, "order: $(I.order)\n")
   end
 
   if I.fun != sub
@@ -401,26 +479,23 @@ function _quo_type_get_sub_type(x::Array{Int, 1}, y::Array{Int, 1})
 end
 
 function pSubgroupIterator(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
-                                                   quot_type::Array{Int, 1} = [-1],
+                                                   index::Union{fmpz, Int} = -1,
+                                                   order::Union{fmpz, Int} = -1,
                                                    fun = sub)
-  !(length(sub_type) == 1 && sub_type[1] == -1) &&
-  !( length(quot_type) == 1 && quot_type[1] == -1) &&
-  error("Specify either subgroup type or quotient type but not both")
-
-  it = _psubgroups(G, p; sub_type = sub_type, fun = fun)
+  if index == p
+    return index_p_subgroups(G, p, fun)
+  end
+  it = _psubgroups(G, p; sub_type = sub_type, fun = fun, index = index, order = order)
   E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
-  z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, sub_type, quot_type, fun, it)
+  z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, sub_type, [-1], fmpz(index), fmpz(order), fun, it)
   return z
 end
 
-function psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1],
-                                                   quot_type::Array{Int, 1} = [-1],
+function psubgroups(G::GrpAbFinGen, p::Int; sub_type::Array{Int, 1} = [-1], index =  -1, order = -1,
                                                    fun = sub)
-  return pSubgroupIterator(G, p; sub_type = sub_type,
-                                 quot_type = quot_type,
+  return pSubgroupIterator(G, p; sub_type = sub_type, order = order, index = index,
                                  fun = fun)
 end
-
 
 Base.start(S::pSubgroupIterator) = Base.start(S.it)
 
@@ -428,9 +503,105 @@ Base.next(S::pSubgroupIterator, s) = Base.next(S.it, s)
 
 Base.done(S::pSubgroupIterator, s) = Base.done(S.it, s)
 
-Base.length(S::pSubgroupIterator) = Base.start(S.it)
+Base.iteratorsize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = Base.SizeUnknown()
 
 Base.eltype(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = E
 
-Base.collect(S::pSubgroupIterator) = Base.collect(S.it)
+################################################################################
+#
+#  index p subgroup enumeration
+#
+################################################################################
 
+function index_p_subgroups(A::GrpAbFinGen, p::Integer)
+  return index_p_subgroups(A, fmpz(p))
+end
+
+mutable struct IndexPSubgroups{S, T}
+  p::Int
+  n::UInt
+  st::Int
+  mp::S
+  c::fmpz_mat
+  mthd::T
+
+  function IndexPSubgroups{T}(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
+    if order(A) % p != 0
+      r = new{IdentityMap{GrpAbFinGen}, T}()
+      r.n = 0
+      return r
+    end
+    s, ms = snf(A)  # ms: A -> s
+    r = new{typeof(ms), T}()
+    @assert s.issnf
+    r.p = Int(p)
+    r.mp = ms
+    i=1
+    while s.snf[i] % p != 0
+      i += 1
+    end
+    r.st = i
+    r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
+    r.c = MatrixSpace(FlintZZ, length(s.snf), length(s.snf))()
+    r.mthd = mthd
+    return r
+  end
+end
+
+function index_p_subgroups(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
+  @assert isprime(p)
+  return IndexPSubgroups{T}(A, p, mthd)
+
+  #a subgroup of index p corresponds to a HNF with exactly one p on the
+  #diagonal - and the other entries arbitrary reduced.
+  #so it should be 1 + p + p^2 + + p^(n-1) = ((p^n)-1)/(p-1) many
+end
+
+function index_to_group(s::IndexPSubgroups, i::UInt)
+  j = 1
+  x = 1
+  while i>=x
+    i -= x
+    x *= s.p
+    j += 1
+  end
+  c = s.c
+  zero!(c)
+  for k=1:rows(c)
+    if s.st+j-1 != k
+      c[k, k] = 1
+    end
+  end
+#  println("i: $i  j: $j")
+  k = 1
+  while i != 0
+    c[k+s.st-1, s.st + j-1] = i%s.p
+    i = div(i, s.p)
+    k += 1
+  end
+  c[s.st + j-1, s.st + j-1] = s.p
+  gen = [s.mp\(codomain(s.mp)(sub(c, l:l, 1:cols(c)))) for l=1:rows(c)]
+  return s.mthd(domain(s.mp), gen)
+end
+
+function Base.start(s::IndexPSubgroups)
+  return UInt(0)
+end
+
+function Base.next(s::IndexPSubgroups, i::UInt)
+  return index_to_group(s, i), i+1
+end
+
+function Base.length(s::IndexPSubgroups)
+  return s.n
+end
+
+function Base.done(s::IndexPSubgroups, i::UInt)
+  return i>=s.n
+end
+
+#=
+example:
+ julia> sg = index_p_subgroups(GrpAbFinGen([3,3,3,3]), 3)
+ julia> index_to_group(sg, UInt(6));
+=#

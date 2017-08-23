@@ -1078,6 +1078,32 @@ function image(h::GrpAbFinGenMap)
   return sub(H, im)  # too much, this is sub in hnf....
 end
 
+################################################################################
+#
+#  p-Sylow subgroup
+#
+################################################################################
+
+function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
+  @assert issnf(G)
+  z = GrpAbFinGenElem[]
+  for i in 1:ngens(G)
+    k, m = remove(G.snf[i], p)
+    #@show m, k
+    if k != 0
+      #@show m, G[i]
+      push!(z, m*G[i])
+    end
+  end
+  return z
+end
+
+function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
+  S, mS = snf(G)
+  z = _psylow_subgroup_gens(S, p)
+  zz = [ preimage(mS, x) for x in z ]
+  return sub(G, zz)
+end
 
 ################################################################################
 #
