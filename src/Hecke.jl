@@ -71,11 +71,12 @@ import Nemo: nf_elem, AnticNumberField, degree, one!,
              strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
              FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
              acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
-             roots, nbits, factor, ispositive, sign, isprime
+             roots, nbits, factor, ispositive, sign, isprime,
+             NumberField, CyclotomicField, MaximalRealSubfield
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
-       ispower, hasroot
+       ispower, hasroot, NumberField, CyclotomicField, MaximalRealSubfield
 
 import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
