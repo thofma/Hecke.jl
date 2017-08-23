@@ -39,10 +39,6 @@ end
   return O.nf
 end
 
-#TODO: extend mF to FacElem - hopefully it applies to nf_elem at all
-#TODO: allow mF to fail grateously
-#TODO: extend mF to nf_elem where this makes sense
-
 function can_frobenius(p::NfOrdIdl, K::KummerExt)
   Zk = order(p)
   if index(Zk) % minimum(p) == 0 
@@ -473,10 +469,8 @@ function _rcf_descent(CF::ClassField_pp)
     j = 0
     zeta_i = inv(zeta)^div(e, n)
     mi = coeff(m, 1) 
-    @hassert :ClassField 1 iszero(m-mi*gen(A))
-#    @hassert :ClassField 2 m == mi*gen(A)  # there is a bug in RelNf
-#                            # or the underlying ResidueRing
-#                            # I've got a non-simplified coeff
+    @hassert :ClassField 1 m == mi*gen(A) 
+
     while mi != 1
       mi *= zeta_i
       j += 1
