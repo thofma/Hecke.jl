@@ -617,6 +617,11 @@ function sub(M::GenMat, rows::UnitRange{Int}, cols::UnitRange{Int})
   return z
 end
 
+function sub(P::PMat, rows::UnitRange{Int}, cols::UnitRange{Int})
+  m = sub(P.matrix, rows, cols)
+  return PseudoMatrix(m, P.coeffs[rows])
+end
+
 function in(x::nf_elem, y::NfOrdFracIdl)
   B = inv(basis_mat(y))
   O = order(y)

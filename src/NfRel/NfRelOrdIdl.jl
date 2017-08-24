@@ -68,7 +68,7 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
     elem_to_mat_row!(M, i, L(pb[i][1]))
     push!(C, pb[i][2])
   end
-  a.basis_pmat = PseudoMatrix(M, C)
+  a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
   return nothing
 end
 
@@ -81,10 +81,13 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
   end
   P = basis_pmat(a)
   L = nf(order(a))
+  K = base_ring(L)
   pseudo_basis = Vector{Tuple{NfRelOrdElem{T}, S}}()
   for i = 1:degree(L)
     x = elem_from_mat_row(L, P.matrix, i)
-    push!(pseudo_basis, (order(a)(x), P.coeffs[i]))
+    x = order(a)(x*minimum(P.coeffs[i]))
+    y = P.coeffs[i]*inv(K(minimum(P.coeffs[i])))
+    push!(pseudo_basis, (x, simplify(y)))
   end
   a.pseudo_basis = pseudo_basis
   return nothing
@@ -156,13 +159,11 @@ end
 
 function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   # checks
-  return NfRelOrdIdl{T, S}(O, deepcopy(M))
+  H = pseudo_hnf(M, :lowerleft)
+  return NfRelOrdIdl{T, S}(O, H)
 end
 
-function ideal(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S}
-  # checks
-  return NfRelOrdIdl{T, S}(O, deepcopy(M))
-end
+ideal(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
 
 function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::ObjectIdDict) where {T, S}
   z = NfRelOrdIdl{T, S}(a.order)
@@ -178,6 +179,66 @@ end
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) != order(b) && return false
   return basis_pmat(a) == basis_pmat(b)
+end
+
+function norm(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_norm(a)
+  if copy == Val{true}
+    return deepcopy(a.norm)
+  else
+    return a.norm
+  end
+end
+
+function assure_has_norm(a::NfRelOrdIdl)
+  if a.has_norm
+    return nothing
+  end
+  c = basis_pmat(a).coeffs
+  d = basis_pmat(order(a)).coeffs
+  n = c[1]*inv(d[1])
+  for i = 2:degree(order(a))
+    n *= c[i]*inv(d[i])
+  end
+  a.norm = n
+  a.has_norm = true
+  return nothing
+end
+
+function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  d = degree(order(a))
+  H = vcat(basis_pmat(a), basis_pmat(b))
+  m = num(det(basis_pmat(a)))
+  H = sub(pseudo_hnf_mod(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  return NfRelOrdIdl{T, S}(order(a), H)
+end
+
+function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
+  bp = basis_pmat(a)
+  P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
+  return NfRelOrdIdl{T, S}(order(a), P)
+end
+
+*(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
+
+function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  pba = pseudo_basis(a, Val{false})
+  pbb = pseudo_basis(b, Val{false})
+  L = nf(order(a))
+  K = base_ring(L)
+  d = degree(order(a))
+  m = MatrixSpace(K, d^2, d)()
+  c = Array{S, 1}(d^2)
+  t = L()
+  for i = 1:d
+    for j = 1:d
+      mul!(t, L(pba[i][1]), L(pbb[i][1]))
+      elem_to_mat_row!(m, (i - 1)*d + j, t)
+      c[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
+    end
+  end
+  H = sub(pseudo_hnf(PseudoMatrix(m, c), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  return NfRelOrdIdl{T, S}(order(a), H)
 end
 
 mutable struct NfRelOrdFracIdlSet{T, S}
@@ -196,10 +257,14 @@ mutable struct NfRelOrdFracIdl{T, S}
   den_abs::NfOrdElem # used if T == nf_elem
   den_rel::NfRelOrdElem # used otherwise
 
+  norm
+  has_norm::Bool
+
   function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
     z.order = O
     z.parent = NfRelOrdFracIdlSet{T, S}(O)
+    z.has_norm = false
     return z
   end
 
@@ -209,6 +274,7 @@ mutable struct NfRelOrdFracIdl{T, S}
     z.parent = NfRelOrdFracIdlSet{nf_elem, S}(O)
     z.num = a
     z.den_abs = d
+    z.has_norm = false
     return z
   end
 
@@ -218,6 +284,7 @@ mutable struct NfRelOrdFracIdl{T, S}
     z.parent = NfRelOrdFracIdlSet{T, S}(O)
     z.num = a
     z.den_rel = d
+    z.has_norm = false
     return z
   end
 end
@@ -242,7 +309,7 @@ function show(io::IO, a::NfRelOrdFracIdl)
   print(io, "Fractional ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis pseudo-matrix\n")
-  print(io, Hecke.basis_pmat(num(a)), "\n")
+  print(io, basis_pmat(num(a)), "\n")
   print(io, "and denominator ", den(a))
 end
 
@@ -268,4 +335,39 @@ end
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   order(a) != order(b) && return false
   return den(a) == den(b) && num(a) == num(b)
+end
+
+function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_norm(a)
+  if copy == Val{true}
+    return deepcopy(a.norm)
+  else
+    return a.norm
+  end
+end
+
+function assure_has_norm(a::NfRelOrdFracIdl)
+  if a.has_norm
+    return nothing
+  end
+  n = norm(num(a))
+  d = den(a)^degree(order(a))
+  a.norm = n*inv(nf(parent(den(a)))(d))
+  a.has_norm = true
+  return nothing
+end
+
+function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  K = nf(parent(den(a)))
+  da = K(den(a))
+  db = K(den(b))
+  d = divexact(da*db, gcd(da, db))
+  ma = divexact(d, da)
+  mb = divexact(d, db)
+  c = ma*num(a) + mb*num(b)
+  return NfRelOrdFracIdl{T, S}(order(a), c, parent(den(a))(d))
+end
+
+function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  return NfRelOrdFracIdl{T, S}(order(a), num(a)*num(b), den(a)*den(b))
 end
