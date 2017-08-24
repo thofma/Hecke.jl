@@ -463,20 +463,25 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
 
   res = PMat{nf_elem, NfOrdFracIdl}(res_mat, [ deepcopy(x)::NfOrdFracIdl for x in P.coeffs])
 
+  shift = 0
+  if shape == :lowerleft
+    shift = rows(P) - cols(P)
+  end
+
   for i in 1:cols(P)
-    if iszero(zz[i, i].elem)
-      res.matrix[i, i] = one(nf(O))
-      res.coeffs[i] = NfOrdFracIdl(deepcopy(m), fmpz(1))
+    if iszero(zz[i + shift, i].elem)
+      res.matrix[i + shift, i] = one(nf(O))
+      res.coeffs[i + shift] = NfOrdFracIdl(deepcopy(m), fmpz(1))
     else
-      o = ideal(O, zz[i, i].elem)
+      o = ideal(O, zz[i + shift, i].elem)
       t_sum += @elapsed g = o + m
       t_div += @elapsed oo = divexact(o, g)
       t_div += @elapsed mm = divexact(m, g)
       t_idem += @elapsed e, f = idempotents(oo, mm)
-      res.coeffs[i] = NfOrdFracIdl(deepcopy(g), fmpz(1))
-      mul_row!(res.matrix, i, elem_in_nf(e))
-      divide_row!(res.matrix, i, elem_in_nf(zz[i, i].elem))
-      res.matrix[i, i] = one(nf(O))
+      res.coeffs[i + shift] = NfOrdFracIdl(deepcopy(g), fmpz(1))
+      mul_row!(res.matrix, i + shift, elem_in_nf(e))
+      divide_row!(res.matrix, i + shift, elem_in_nf(zz[i + shift, i].elem))
+      res.matrix[i + shift, i] = one(nf(O))
     end
   end
 
