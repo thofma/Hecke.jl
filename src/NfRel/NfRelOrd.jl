@@ -1,6 +1,15 @@
 # I don't like that we have to drag S around
 # Still hoping for julia/#18466
 
+mutable struct NfRelOrdSet{T}
+  nf::NfRel{T}
+
+  function NfRelOrdSet{T}(K::NfRel{T}) where {T}
+    a = new(K)
+    return a
+  end
+end
+
 mutable struct NfRelOrd{T, S} <: Ring
   nf::NfRel{T}
   basis_nf::Vector{NfRelElem{T}}
@@ -12,10 +21,12 @@ mutable struct NfRelOrd{T, S} <: Ring
 
   disc_abs::NfOrdIdl # used if T == nf_elem
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
+  parent::NfRelOrdSet{T}
 
   function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
     z = new{T, S}()
     z.nf = K
+    z.parent = NfRelOrdSet{T}(K)
     z.basis_pmat = M
     z.basis_mat = M.matrix
     return z
@@ -24,6 +35,7 @@ mutable struct NfRelOrd{T, S} <: Ring
   function NfRelOrd{T, S}(K::NfRel{T}, M::GenMat{T}) where {T, S}
     z = new{T, S}()
     z.nf = K
+    z.parent = NfRelOrdSet{T}(K)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
     return z
@@ -32,6 +44,7 @@ mutable struct NfRelOrd{T, S} <: Ring
   function NfRelOrd{T}(K::NfRel{T}) where T
     z = new{T, S}()
     z.nf = K
+    z.parent = NfRelOrdSet{T}(K)
     return z
   end
 end
@@ -49,6 +62,14 @@ doc"""
 > Returns the ambient number field of $\mathcal O$.
 """
 nf(O::NfRelOrd) = O.nf
+
+doc"""
+    parent(O::NfRelOrd) -> NfRelOrdSet
+
+Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
+number field.
+"""
+parent(O::NfRelOrd) = O.parent
 
 ################################################################################
 #
@@ -218,6 +239,11 @@ end
 #  String I/O
 #
 ################################################################################
+
+function show(io::IO, S::NfRelOrdSet)
+  print(io, "Set of orders of the number field ")
+  print(io, S.nf)
+end
 
 function show(io::IO, O::NfRelOrd)
   print(io, "Relative order of ")

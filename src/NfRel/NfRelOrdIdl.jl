@@ -1,5 +1,15 @@
+mutable struct NfRelOrdIdlSet{T, S}
+  order::NfRelOrd{T, S}
+
+  function NfRelOrdIdlSet{T, S}(O::NfRelOrd{T, S}) where {T, S}
+    a = new(O)
+    return a
+  end
+end
+
 mutable struct NfRelOrdIdl{T, S}
   order::NfRelOrd{T, S}
+  parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{NfRelOrdElem{T}, S}}
   basis_mat::GenMat{T}
@@ -11,6 +21,7 @@ mutable struct NfRelOrdIdl{T, S}
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
     z.order = O
+    z.parent = NfRelOrdIdlSet{T, S}(O)
     z.has_norm = false
     return z
   end
@@ -18,6 +29,7 @@ mutable struct NfRelOrdIdl{T, S}
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
     z = new{T, S}()
     z.order = O
+    z.parent = NfRelOrdIdlSet{T, S}(O)
     z.basis_pmat = M
     z.basis_mat = M.matrix
     z.has_norm = false
@@ -27,6 +39,7 @@ mutable struct NfRelOrdIdl{T, S}
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S}
     z = new{T, S}()
     z.order = O
+    z.parent = NfRelOrdIdlSet{T, S}(O)
     z.basis_pmat = pseudo_matrix(M)
     z.basis_mat = M
     z.has_norm = false
@@ -37,6 +50,8 @@ end
 order(a::NfRelOrdIdl) = a.order
 
 nf(a::NfRelOrdIdl) = nf(order(a))
+
+parent(a::NfRelOrdIdl) = a.parent
 
 function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   if isdefined(a, :basis_pmat)
@@ -127,6 +142,11 @@ function basis_mat_inv(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+function show(io::IO, s::NfRelOrdIdlSet)
+  print(io, "Set of ideals of ")
+  print(io, s.order)
+end
+
 function show(io::IO, a::NfRelOrdIdl)
   print(io, "Ideal of (")
   print(io, order(a), ")\n")
@@ -160,8 +180,18 @@ function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   return basis_pmat(a) == basis_pmat(b)
 end
 
+mutable struct NfRelOrdFracIdlSet{T, S}
+  order::NfRelOrd{T, S}
+
+  function NfRelOrdFracIdlSet{T, S}(O::NfRelOrd{T, S}) where {T, S}
+    a = new(O)
+    return a
+  end
+end
+
 mutable struct NfRelOrdFracIdl{T, S}
   order::NfRelOrd{T, S}
+  parent::NfRelOrdFracIdlSet{T, S}
   num::NfRelOrdIdl{T, S}
   den_abs::NfOrdElem # used if T == nf_elem
   den_rel::NfRelOrdElem # used otherwise
@@ -169,12 +199,14 @@ mutable struct NfRelOrdFracIdl{T, S}
   function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
     z.order = O
+    z.parent = NfRelOrdFracIdlSet{T, S}(O)
     return z
   end
 
   function NfRelOrdFracIdl{nf_elem, S}(O::NfRelOrd{nf_elem, S}, a::NfRelOrdIdl{nf_elem, S}, d::NfOrdElem) where S
     z = new{nf_elem, S}()
     z.order = O
+    z.parent = NfRelOrdFracIdlSet{nf_elem, S}(O)
     z.num = a
     z.den_abs = d
     return z
@@ -183,6 +215,7 @@ mutable struct NfRelOrdFracIdl{T, S}
   function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem) where {T, S}
     z = new{T, S}()
     z.order = O
+    z.parent = NfRelOrdFracIdlSet{T, S}(O)
     z.num = a
     z.den_rel = d
     return z
@@ -193,12 +226,19 @@ order(a::NfRelOrdFracIdl) = a.order
 
 nf(a::NfRelOrdFracIdl) = nf(order(a))
 
+parent(a::NfRelOrdFracIdl) = a.parent
+
 num(a::NfRelOrdFracIdl) = a.num
 
 den(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = a.den_abs
 den(a::NfRelOrdFracIdl{T, S}) where {S, T} = a.den_rel
 
-function Base.show(io::IO, a::NfRelOrdFracIdl)
+function show(io::IO, s::NfRelOrdFracIdlSet)
+  print(io, "Set of fractional ideals of ")
+  print(io, s.order)
+end
+
+function show(io::IO, a::NfRelOrdFracIdl)
   print(io, "Fractional ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis pseudo-matrix\n")
