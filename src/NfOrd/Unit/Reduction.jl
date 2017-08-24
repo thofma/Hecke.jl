@@ -44,7 +44,7 @@ end
 function scaled_log_matrix(u::Array{T, 1}, prec::Int = 32) where T
 
   r,s = signature(_base_ring(u[1]))
-  A = MatrixSpace(ZZ, length(u), r + s)()
+  A = MatrixSpace(FlintZZ, length(u), r + s)()
   prec = max(prec, maximum([nbits(maxabs_exp(U))+nbits(length(U.fac)) for U = u]))
   @vprint :UnitGroup 2 "starting prec in scaled_log_matrix: $prec\n"
 

@@ -40,8 +40,8 @@ function dedekind_ispmaximal(O::NfOrd, p::fmpz)
 
   pmaximal = true
 
-  Zy, y = PolynomialRing(ZZ, "y")
-  Kx, x = PolynomialRing(ResidueRing(ZZ, p, cached=false), "x", cached=false)
+  Zy, y = PolynomialRing(FlintZZ, "y")
+  Kx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -81,7 +81,7 @@ function dedekind_ispmaximal(O::NfOrd, p::fmpz)
 end
 
 function dedekind_ispmaximal(O::NfOrd, p::Integer)
-  return dedekind_ispmaximal(O, ZZ(p))
+  return dedekind_ispmaximal(O, FlintZZ(p))
 end
 
 function dedekind_poverorder(O::NfOrd, p::fmpz)
@@ -90,7 +90,7 @@ function dedekind_poverorder(O::NfOrd, p::fmpz)
 end
 
 function dedekind_poverorder(O::NfOrd, p::Integer)
-  return dedekind_poverorder(O, ZZ(p))
+  return dedekind_poverorder(O, FlintZZ(p))
 end
 
 function dedekind_test(O::NfOrd, p::fmpz)
@@ -102,8 +102,8 @@ function dedekind_test(O::NfOrd, p::fmpz)
 
   pmaximal = true
   
-  Zy, y = PolynomialRing(ZZ, "y")
-  Kx, x = PolynomialRing(ResidueRing(ZZ, p, cached=false), "x", cached=false)
+  Zy, y = PolynomialRing(FlintZZ, "y")
+  Kx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -167,5 +167,5 @@ function dedekind_test(O::NfOrd, p::fmpz)
 end
 
 function dedekind_test(O::NfOrd, p::Integer)
-  return dedekind_test(O, ZZ(p))
+  return dedekind_test(O, FlintZZ(p))
 end

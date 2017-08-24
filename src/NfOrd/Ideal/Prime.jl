@@ -255,8 +255,8 @@ function prime_dec_nonindex(O::NfOrd, p::Integer, degree_limit::Int = 0, lower_l
     ideal.is_prime = 1
     ideal.parent = I
     ideal.splitting_type = ei, degree(fi)
-    ideal.norm = ZZ(p)^degree(fi)
-    ideal.minimum = ZZ(p)
+    ideal.norm = FlintZZ(p)^degree(fi)
+    ideal.minimum = FlintZZ(p)
 
     # We have to do something to get 2-normal presentation:
     # if ramified or valuation val(b,P) == 1, (p,b)
@@ -432,9 +432,9 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     K = nf(O)
     f = K.pol
     R = parent(f)
-    Zx, x = PolynomialRing(ZZ,"x")
+    Zx, x = PolynomialRing(FlintZZ,"x")
     Zf = Zx(f)
-    fmodp = PolynomialRing(ResidueRing(ZZ,p, cached = false), "y", cached = false)[1](Zf)
+    fmodp = PolynomialRing(ResidueRing(FlintZZ,p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
     res = Array{Tuple{Int, Int}}(g)
@@ -676,15 +676,15 @@ mutable struct quoringalg <: Ring
     z.prime = p
 
     # compute a basis
-    Amodp = MatrixSpace(ResidueRing(ZZ, p), degree(O), degree(O))(basis_mat(I))
-    Amodp = vcat(Amodp, MatrixSpace(ResidueRing(ZZ, p), 1, degree(O))())
+    Amodp = MatrixSpace(ResidueRing(FlintZZ, p), degree(O), degree(O))(basis_mat(I))
+    Amodp = vcat(Amodp, MatrixSpace(ResidueRing(FlintZZ, p), 1, degree(O))())
     Amodp[1,1] = 1
     Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
 
     # I think rref can/should also return the rank
     B = rref(Amodp)
     r = rank(B)
-    C = zero(MatrixSpace(ResidueRing(ZZ, p), degree(O)-r, degree(O)))
+    C = zero(MatrixSpace(ResidueRing(FlintZZ, p), degree(O)-r, degree(O)))
     BB = Array{NfOrdElem}(degree(O) - r)
     pivots = Array{Int}(0)
 #    # get he pivots of B
@@ -733,8 +733,8 @@ function _kernel_of_frobenius(R::quoringalg)
   O = R.base_order
   BB = R.basis
   p = R.prime
-  C = zero(MatrixSpace(ResidueRing(ZZ, R.prime), length(BB)+1, degree(O)))
-  D = zero(MatrixSpace(ResidueRing(ZZ, R.prime), length(BB), degree(O)))
+  C = zero(MatrixSpace(ResidueRing(FlintZZ, R.prime), length(BB)+1, degree(O)))
+  D = zero(MatrixSpace(ResidueRing(FlintZZ, R.prime), length(BB), degree(O)))
   for i in 1:length(BB)
     A = elem_in_basis(mod(BB[i]^p - BB[i], R.ideal))
     for j in 1:degree(O)
@@ -770,8 +770,8 @@ function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
 
-  A = MatrixSpace(ResidueRing(ZZ, p), 0, degree(O))()
-  B = MatrixSpace(ResidueRing(ZZ, p), 1, degree(O))()
+  A = MatrixSpace(ResidueRing(FlintZZ, p), 0, degree(O))()
+  B = MatrixSpace(ResidueRing(FlintZZ, p), 1, degree(O))()
 
   for i in 0:degree(O)
     ar =  elem_in_basis( (x^i).elem)
@@ -782,7 +782,7 @@ function minpoly(x::quoelem)
     K = kernel(A)
     if length(K)>0
       @assert length(K)==1
-      f = PolynomialRing(ResidueRing(ZZ, p), "x")[1](K[1])
+      f = PolynomialRing(ResidueRing(FlintZZ, p), "x")[1](K[1])
       return f
     end
   end
@@ -925,7 +925,7 @@ function val_func_no_index(p::NfOrdIdl)
   d = den(K(pi.num.gen_two))
   @assert gcd(d, P) == 1
   e = K(pi.num.gen_two)*d
-  M = MatrixSpace(ZZ, 1, degree(K))()
+  M = MatrixSpace(FlintZZ, 1, degree(K))()
   elem_to_mat_row!(M, 1, d, e)
   @assert d == 1
   P2 = P^2
