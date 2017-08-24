@@ -480,7 +480,7 @@
       K, a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O,fmpz(3),O(2+a+a^2))
-      #p = collect(keys(factor(p)))[1]
+      p = collect(keys(factor(p)))[1]
       structures = Vector{fmpz}[[8],[8,3,3],[8,3,3,3,3],[8,3,3,3,3,9],[8,3,3,9,9,9],[8,3,9,9,9,27]]
       @testset "v = $v" for v in 1:length(structures)
         g , d , disc_log = Hecke._multgrp_mod_pv(p,v)
@@ -513,7 +513,7 @@
       K, a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O,fmpz(3),O(2+2*a+a^2))
-      #p = collect(keys(factor(p)))[1]
+      p = collect(keys(factor(p)))[1]
       structures = Vector{fmpz}[[8],[8,3,3],[8,3,3,3,3],[8,9,9,3,3],[8,9,9,3,3,3,3],[8,9,9,9,9,3,3]]
       @testset "v = $v" for v in 1:length(structures)
         g , d , disc_log = Hecke._multgrp_mod_pv(p,v)

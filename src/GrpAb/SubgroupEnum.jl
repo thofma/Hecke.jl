@@ -494,31 +494,24 @@ function __psubgroups_gens(G::GrpAbFinGen, p::Union{Integer, fmpz}, order, index
   else
     adjusted_types = (vcat(t, zeros(Int, length(x) - length(t))) for t in types)
   end
-
   return  (_matrix_to_elements(G, M, indice)
            for M in _subgroup_iterator(Gtype, p, adjusted_types))
-  return Gtype, indice
 end
 
 # Same as above but now for arbitrary p-groups
 function _psubgroups_gens(G::GrpAbFinGen, p, t, order, index)
-  @show G
   if issnf(G)
     if t == [-1]
-      @show "here"
       return __psubgroups_gens(G, p, order, index)
     else
-      @show "there"
       return __psubgroups_gens(G, p, order, index, t)
     end
   else
     S, mS = snf(G)
     if t == [-1]
-      @show "here2"
-      return ( map(x -> preimage(mS, x), z) for z in __psubgroups_gens(S, p, order, index))
+      return ( map(x -> preimage(mS, x)::GrpAbFinGenElem, z) for z in __psubgroups_gens(S, p, order, index))
     else
-      @show "there2"
-      return ( map(x -> preimage(mS, x), z) for z in __psubgroups_gens(S, p, order, index, t))
+      return ( map(x -> preimage(mS, x)::GrpAbFinGenElem, z) for z in __psubgroups_gens(S, p, order, index, t))
     end
   end
 end
@@ -637,11 +630,12 @@ function _subgroups(G::GrpAbFinGen, subtype::Array{T, 1} = [-1]) where T <: Unio
       Gp, mGp = psylow_subgroup(G, Int(p))
       @show Int(p)
       T = psubgroups(Gp, Int(p))
-      return Gp, T
-      gens = ( mGp(map(t[2], gens(t[1]))) for t in T)
-      push!(pgens, gens)
+      genss = ( [ mGp(t[2](x)) for x in gens(t[1]) ] for t in T )#map(mGp, map(t[2], gens(t[1]))) for t in T)
+      push!(pgens, genss)
     end
   end
+
+  return pgens
 
   final_it = Iterators.product(pgens...)
  
