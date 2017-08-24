@@ -391,7 +391,7 @@ function assure_has_basis_mat(A::NfOrdIdl)
   @hassert :NfOrd 1 has_2_elem(A)
   K = nf(order(A))
   n = degree(K)
-  c = _hnf_modular_eldiv(representation_mat(A.gen_two), A.gen_one, :lowerleft)
+  c = _hnf_modular_eldiv(representation_mat(A.gen_two), abs(A.gen_one), :lowerleft)
   A.basis_mat = c
   return nothing
 end
@@ -514,7 +514,7 @@ function assure_has_minimum(A::NfOrdIdl)
   if has_weakly_normal(A)
     K = A.parent.order.nf
     d = den(inv(K(A.gen_two)), order(A))
-    d = gcd(d, ZZ(A.gen_one))
+    d = gcd(d, FlintZZ(A.gen_one))
     A.minimum = d
     return nothing
   end
@@ -725,7 +725,7 @@ function simplify(A::NfOrdIdl)
     end
     A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
     A.gen_one = A.minimum
-    n = gcd(A.gen_one^degree(A.parent.order), ZZ(norm(A.gen_two)))
+    n = gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
     if isdefined(A, :norm)
     end
     A.norm = n
@@ -1094,10 +1094,10 @@ function ring_of_multipliers(a::NfOrdIdl)
   bmatinv = basis_mat_inv(a)
   #print("First basis element is $(B[1]) \n with representation mat \n")
   #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
-  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv
-  m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),ZZ(1))*bmatinv)
+  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
+  m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv)
   for i in 2:degree(O)
-    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),ZZ(1))*basis_mat_inv(a)),m)
+    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*basis_mat_inv(a)),m)
   end
   n = hnf(transpose(m))
   # n is upper right HNF
@@ -1193,7 +1193,7 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
     A.gen_two = x
     A.norm = abs(num(norm(b)))
     @hassert :NfOrd 1 gcd(A.gen_one^degree(order(A)),
-                    ZZ(norm(A.gen_two))) == A.norm
+                    FlintZZ(norm(A.gen_two))) == A.norm
 
     if A.gen_one == 1
       A.gens_normal = 2*A.gen_one

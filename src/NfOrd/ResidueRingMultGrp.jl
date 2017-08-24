@@ -96,7 +96,7 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
       alpha, beta = idempotents(prime_power[p],i_without_p)
       for i in 1:length(gens_p)
         g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in prime_power[p])
         @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
         gens_p[i] = g_pi_new
       end
@@ -271,7 +271,7 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
     k0 = 1 + div(fmpz(e),(pnum-1))
   end
   g = Vector{NfOrdElem}()
-  M = MatrixSpace(ZZ,0,0)()
+  M = MatrixSpace(FlintZZ,0,0)()
   dlogs = Vector{Function}()
 
   l = u
@@ -349,7 +349,7 @@ function _expand(g,M,h,N,disc_log,pl)
   isempty(g) && return h,N
   isempty(h) && return g,M
   P = _compute_P(g,M,h,N,disc_log,pl)
-  Z = MatrixSpace(ZZ,rows(N),cols(M))()
+  Z = MatrixSpace(FlintZZ,rows(N),cols(M))()
   M = [M -P ; Z N]
   g = [g ; h]
   return g,M
@@ -364,7 +364,7 @@ function _compute_P(g,M,h,N,disc_log,pl)
     Mg[i] = preimage(O_mod_pl_map,prod([ O_mod_pl_map(g[j])^M[i,j] for j in 1:length(g)]))
   end
 
-  P = MatrixSpace(ZZ,rows(M),cols(N))()
+  P = MatrixSpace(FlintZZ,rows(M),cols(N))()
   for i in 1:rows(P)
     b = Mg[i]
     alpha = disc_log(b)
@@ -713,7 +713,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
 
   # Remove trivial components and empty relations
   if (max_one!=0) || (n!=m)
-    rels_trans = MatrixSpace(ZZ,n-max_one,n-max_one)()
+    rels_trans = MatrixSpace(FlintZZ,n-max_one,n-max_one)()
     for i in 1:rows(rels_trans)
       for j in 1:cols(rels_trans)
         rels_trans[i,j] = rels_snf[max_one+i,max_one+j]

@@ -7,6 +7,7 @@ doc"""
 """
 function power_reduce2(A::NfOrdIdl, e::fmpz)
   A_orig = deepcopy(A)
+  e_orig = e
 
   O = order(A)
   K= nf(O)
@@ -14,7 +15,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     A, a = reduce_ideal2(A)
     # A_old * a = A_new
     #so a^e A_old^e = A_new^e
-    al = a^e
+    al = FacElem(Dict(a=>e))
   else
     al = FacElem(Dict(K(1) => fmpz(1)))
   end
@@ -22,11 +23,10 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   #now A^e, A small
 
   if e < 0
-    e = -e
-    al = al^-1
     B = inv(A)
     A = num(B)
     al *= FacElem(Dict(K(den(B)) => fmpz(e)))
+    e = -e
   end
   # A^e = A^(e/2)^2 A or A^(e/2)^2
   # al * A^old^(e/2) = A_new
@@ -48,6 +48,16 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   else
     @assert e==1
     return A, al
+  end
+end
+
+function ==(A::NfOrdIdl, B::NfOrdFracIdl)
+  C = simplify(B)
+  if C.den != 1 ||
+     C.num != A
+    return false
+  else
+    return true
   end
 end
 

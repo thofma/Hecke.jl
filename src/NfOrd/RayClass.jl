@@ -133,6 +133,11 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
     return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
   end 
   
+  function log(B::FacElem{nf_elem})
+    emb=Hecke.signs(B,p)
+    return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+  end 
+  
   return S,log,exp
 
 end

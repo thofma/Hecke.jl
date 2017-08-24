@@ -188,7 +188,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   @vprint :RayFacElem 1 "The order of the class group is $C\n"
   @vprint :RayFacElem 1 "The units are $U\n"
     
-  exponent=Int(order(G[ngens(G)]))
+  expo=Int(exponent(G))
 
 #
 # We start to construct the relation matrix
@@ -206,11 +206,11 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   for i=1:ngens(U)
     u=mU(U[1])
     @vprint :RayFacElem 1 "Processing unit number $i \n"
-    el=Hecke._fac_elem_evaluation(O,u,lp,exponent)
+    el=Hecke._fac_elem_evaluation(O,u,lp,expo)
     @vprint :RayFacElem 1 "Product computed, now discrete logarithm\n"
     a=(mG\Q(el)).coeff
     if !isempty(p)
-      b=sum([lH(f) for f in keys(u.fac)])
+      b=lH(u)
       a=hcat(a, b.coeff)
     end 
     for j=1:ngens(G)
@@ -228,10 +228,10 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     @vprint :RayFacElem 1 "Processing class group generator number i \n"
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
-      el=Hecke._fac_elem_evaluation(O,y,lp,exponent)
+      el=Hecke._fac_elem_evaluation(O,y,lp,expo)
       a=(mG\Q(el)).coeff
       if !isempty(p)
-        b=sum([lH(f) for f in keys(y.fac)])
+        b=lH(u)
         a=hcat(a, b.coeff)
       end 
       for j=1: ngens(G)
@@ -266,10 +266,10 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       s=exp_class(L)
       I=J* inv(s)
       z=Hecke.principal_gen_fac_elem(I)
-      el=_fac_elem_evaluation(O,z,lp,exponent)
+      el=_fac_elem_evaluation(O,z,lp,expo)
       y=(mG\Q(el)).coeff
       if !isempty(p)
-        b=sum([lH(f) for f in keys(z.fac)])
+        b=lH(z)
         y=hcat(y, b.coeff)
       end 
       return X(hcat(L.coeff,y))
@@ -312,7 +312,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   end 
 
   mp=MapRayClassGrpFacElem{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expo, disclog)
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
   mp.fact_mod=Q.factor
@@ -621,13 +621,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 # We start to construct the relation matrix
 #
 
-  expo=Int(1)  # exponent of the unit group of the residue ring
-  for ind=1:ngens(G)
-    if rels(G)[ind,ind]>expo
-      expo=Int(rels(G)[ind,ind])
-    end
-  end
-  
+  expo=Int(exponent(G))
   inverse_d=gcdx(nonppartclass,expo)[2]
   
   RG=rels(G)
@@ -645,7 +639,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     el=Hecke._fac_elem_evaluation(O,u,lp,expo)
     a=(mG\el).coeff
     if p==2 && !isempty(pr)
-      b=sum([lH(x) for x in keys(u.fac)])
+      b=lH(u)
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
@@ -659,7 +653,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     el=Hecke._fac_elem_evaluation(O,u,lp,expo)
     a=(mG\el).coeff
     if p==2 && !isempty(pr)
-      b=sum([lH(x) for x in keys(u.fac)])
+      b=lH(u)
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
@@ -679,7 +673,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       el=Hecke._fac_elem_evaluation(O,y,lp,expo)
       a=((mG\el)*inverse_d).coeff
       if p==2 && !isempty(pr)
-        b=sum([lH(x) for x in keys(y.fac)])
+        b=lH(y)
         a=hcat(a, b.coeff)
       end
       for j=1: ngens(G)
@@ -718,10 +712,11 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       I=J* inv(s)
       I=I^Int(nonppartclass)
       z=Hecke.principal_gen_fac_elem(I)
+      @assert evaluate(I) == ideal(order(J), evaluate(z))
       el=Hecke._fac_elem_evaluation(O,z,lp,expo)
       y=((mG\el)*inverse_d).coeff
       if p==2 && !isempty(pr)
-        b=sum([lH(x) for x in keys(z.fac)])
+        b=lH(z)
         y=hcat(y, b.coeff)
       end
       return X(hcat(L.coeff,y))
@@ -838,11 +833,9 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
   @assert isprime(p)
   @assert all(x -> x==p, S.snf)
 
-  println("instable: S=$S\n")
   F, _ = FiniteField(Int(p), 1, "_")
   FM = MatrixSpace(F, ngens(S), ngens(S))
   G = MatElem[ FM(vcat([mS(X(preimage(mS, S[i]))).coeff for i=1:ngens(S)])) for X = act]
-  println(G)
   M = FqGModule(G)
 
   ls=submodules(M,index)
@@ -858,7 +851,6 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
     end
     push!(subgroups, op(R, subs))
   end
-  println("after all: found", length(subgroups))
   return subgroups
 end
 
@@ -896,7 +888,6 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
                       # need not be contained in subs
     push!(subgroups, mR*inv(mW))
   end
-  println("after all: found", length(subgroups))
   return subgroups
 
 end
