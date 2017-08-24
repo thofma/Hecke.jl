@@ -17,9 +17,9 @@ function show(io::IO, M::Map)
   print(io, "$(codomain(M))\n")
 end
 
-function preimage(M::Map, a)
+function preimage(M::Map{D, C}, a) where {D, C}
   if isdefined(M.header, :preimage)
-    p = M.header.preimage(a)#::elem_type(D)
+    p = M.header.preimage(a)::elem_type(D)
     @assert parent(p) == domain(M)
     return p
   end

@@ -96,7 +96,7 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
       alpha, beta = idempotents(prime_power[p],i_without_p)
       for i in 1:length(gens_p)
         g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in pvp)
+        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in prime_power[p])
         @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
         gens_p[i] = g_pi_new
       end

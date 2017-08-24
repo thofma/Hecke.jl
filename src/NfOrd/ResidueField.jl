@@ -2,7 +2,8 @@ export ResidueField
 
 function ResidueField(O::NfOrd, P::NfOrdIdl)
   if !isindex_divisor(O, minimum(P))
-    @assert has_2_elem(P) && isprime_known(P)
+    # This code assumes that P comes from prime_decomposition
+    @assert has_2_elem(P) && isprime_known(P) && isprime(P)
 
     gtwo = P.gen_two
 
@@ -10,7 +11,7 @@ function ResidueField(O::NfOrd, P::NfOrdIdl)
     g = parent(f)(elem_in_nf(gtwo))
 
     if nbits(P.gen_one) < 64
-      R = ResidueRing(FlintZZ, P.gen_one)
+      R = ResidueRing(FlintZZ, minimum(P))
 
       Zy, y = PolynomialRing(FlintZZ, "y")
       Rx, x = PolynomialRing(R, "x")::Tuple{NmodPolyRing, nmod_poly}
