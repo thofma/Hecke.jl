@@ -210,7 +210,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     @vprint :RayFacElem 1 "Product computed, now discrete logarithm\n"
     a=(mG\Q(el)).coeff
     if !isempty(p)
-      b=sum([lH(f) for f in keys(u.fac) if isodd(u.fac[x])])
+      b=lH(u)
       a=hcat(a, b.coeff)
     end 
     for j=1:ngens(G)
@@ -231,7 +231,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       el=Hecke._fac_elem_evaluation(O,y,lp,expo)
       a=(mG\Q(el)).coeff
       if !isempty(p)
-        b=sum([lH(f) for f in keys(y.fac) if isodd(u.fac[x])])
+        b=lH(u)
         a=hcat(a, b.coeff)
       end 
       for j=1: ngens(G)
@@ -269,7 +269,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       el=_fac_elem_evaluation(O,z,lp,expo)
       y=(mG\Q(el)).coeff
       if !isempty(p)
-        b=sum([lH(f) for f in keys(z.fac) if isodd(z.fac[x])])
+        b=lH(z)
         y=hcat(y, b.coeff)
       end 
       return X(hcat(L.coeff,y))
@@ -639,7 +639,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     el=Hecke._fac_elem_evaluation(O,u,lp,expo)
     a=(mG\el).coeff
     if p==2 && !isempty(pr)
-      b=sum([lH(x) for x in keys(u.fac) if isodd(u.fac[x])])
+      b=lH(u)
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
@@ -653,7 +653,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     el=Hecke._fac_elem_evaluation(O,u,lp,expo)
     a=(mG\el).coeff
     if p==2 && !isempty(pr)
-      b=sum([lH(x) for x in keys(u.fac) if isodd(u.fac[x])])
+      b=lH(u)
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
@@ -673,7 +673,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       el=Hecke._fac_elem_evaluation(O,y,lp,expo)
       a=((mG\el)*inverse_d).coeff
       if p==2 && !isempty(pr)
-        b=sum(lH(x) for x in keys(y.fac) if isodd(y.fac[x]))
+        b=lH(y)
         a=hcat(a, b.coeff)
       end
       for j=1: ngens(G)
@@ -716,7 +716,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       el=Hecke._fac_elem_evaluation(O,z,lp,expo)
       y=((mG\el)*inverse_d).coeff
       if p==2 && !isempty(pr)
-        b=sum(lH(x) for x in keys(z.fac) if isodd(z.fac[x]))
+        b=lH(z)
         y=hcat(y, b.coeff)
       end
       return X(hcat(L.coeff,y))
