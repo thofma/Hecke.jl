@@ -391,7 +391,7 @@ function assure_has_basis_mat(A::NfOrdIdl)
   @hassert :NfOrd 1 has_2_elem(A)
   K = nf(order(A))
   n = degree(K)
-  c = _hnf_modular_eldiv(representation_mat(A.gen_two), A.gen_one, :lowerleft)
+  c = _hnf_modular_eldiv(representation_mat(A.gen_two), abs(A.gen_one), :lowerleft)
   A.basis_mat = c
   return nothing
 end
