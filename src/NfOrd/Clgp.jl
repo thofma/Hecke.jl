@@ -75,19 +75,17 @@ add_assert_scope(:ClassGroup)
 set_assert_level(:ClassGroup, 0)
 set_assert_level(:LatEnum, 0)
 
-for i in ["Clgp/Ctx.jl"
-          "Clgp/FacBase_Euc.jl"
-          "Clgp/FacBase_Idl.jl"
-          "Clgp/Main_enum.jl"
-          "Clgp/Map.jl"
-          "Clgp/Proof.jl"
-          "Clgp/Rel_add.jl"
-          "Clgp/Rel_enum.jl"
-          "Clgp/Rel_LLL.jl"
-          "Clgp/Main_LLL.jl"
-          "Clgp/Rel_Schmettow.jl"]
-  include(i)
-end
+include("Clgp/Ctx.jl")
+include("Clgp/FacBase_Euc.jl")
+include("Clgp/FacBase_Idl.jl")
+include("Clgp/Main_enum.jl")
+include("Clgp/Map.jl")
+include("Clgp/Proof.jl")
+include("Clgp/Rel_add.jl")
+include("Clgp/Rel_enum.jl")
+include("Clgp/Rel_LLL.jl")
+include("Clgp/Main_LLL.jl")
+include("Clgp/Rel_Schmettow.jl")
 
 ################################################################################
 #

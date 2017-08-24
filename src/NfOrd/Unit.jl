@@ -38,17 +38,15 @@ add_verbose_scope(:UnitGroup)
 add_assert_scope(:UnitGroup)
 set_assert_level(:UnitGroup, 0)
 
-for i in ["Unit/FindUnits.jl",
-          "Unit/Helper.jl",
-          "Unit/Independent.jl",
-          "Unit/IsUnit.jl",
-          "Unit/Map.jl",
-          "Unit/Reduction.jl",
-          "Unit/Regulator.jl",
-          "Unit/Relation.jl",
-          "Unit/Saturation.jl",
-          "Unit/UnitGrpCtx.jl"]
-  include(i)
-end
+include("Unit/FindUnits.jl")
+include("Unit/Helper.jl")
+include("Unit/Independent.jl")
+include("Unit/IsUnit.jl")
+include("Unit/Map.jl")
+include("Unit/Reduction.jl")
+include("Unit/Regulator.jl")
+include("Unit/Relation.jl")
+include("Unit/Saturation.jl")
+include("Unit/UnitGrpCtx.jl")
 
 
