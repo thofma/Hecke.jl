@@ -399,7 +399,8 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
     m = det(P)
   else
     p = next_prime(2^61)
-    rowPerm = PermGroup(rows(P))()
+    permGroup = PermGroup(rows(P))
+    rowPerm = permGroup()
     rank = 0
     while rank != cols(P)
       lp = prime_decomposition(O, p)
@@ -423,6 +424,7 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
         if nextIdeal
           continue
         end
+        rowPerm = permGroup()
         rank = lufact!(rowPerm, Pt)
       end
       p = next_prime(p)
@@ -691,9 +693,7 @@ function pseudo_hnf_cohen!(H::PMat, U::GenMat{T}, with_trafo::Bool = false) wher
          if ad.den != 1 || bd.den != 1
             error("Ideals are not integral.")
          end
-         g, u, v = map(K, gcdx(minimum(ad.num), minimum(bd.num)))
-         u = minimum(ad.num) * u
-         v = minimum(bd.num) * v
+         u, v = map(K, idempotents(ad.num, bd.num))
          u = divexact(u, Aji)
          for c = i:n
             t = deepcopy(A[j, c])
@@ -965,9 +965,7 @@ function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, s
             if ad.den != 1 || bd.den != 1
                error("Ideals are not integral.")
             end
-            g, u, v = map(K, gcdx(minimum(ad.num), minimum(bd.num)))
-            u = minimum(ad.num) * u
-            v = minimum(bd.num) * v
+            u, v = map(K, idempotents(ad.num, bd.num))
             u = divexact(u, Aij)
             for c = j:n
                t = deepcopy(A[i+1, c])
@@ -1129,9 +1127,7 @@ function kb_clear_row!(S::PMat2, K::GenMat{nf_elem}, i::Int, with_trafo::Bool)
       if ad.den != 1 || bd.den != 1
          error("Ideals are not integral.")
       end
-      g, u, v = map(base_ring(A), gcdx(minimum(ad.num), minimum(bd.num)))
-      u = minimum(ad.num) * u
-      v = minimum(bd.num) * v
+      u, v = map(base_ring(A), idempotents(ad.num, bd.num))
       u = divexact(u, Aij)
       for r = i:m
          t = deepcopy(A[r, j])
