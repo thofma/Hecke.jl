@@ -304,9 +304,10 @@ end
 
 function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = simplify(x) # the other method won't work due to one()
+  # still doesn't work
+
   return prod([(p//1)^Int(k) for (p,k) = x.fac])
 end
-
 
 function _ev(d::Dict{T, fmpz}, oe::T) where T
   z = copy(oe)

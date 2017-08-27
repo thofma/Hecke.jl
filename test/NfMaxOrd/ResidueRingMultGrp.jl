@@ -20,7 +20,7 @@
 
 
   @testset "multiplicative_group" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
       K, a = NumberField(x,"a");
@@ -207,7 +207,7 @@
   end
 
   @testset "_multgrp" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
       K, a = NumberField(x,"a");
@@ -381,7 +381,7 @@
   end
 
   @testset "_multgrp_mod_pv" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
       K, a = NumberField(x,"a");
@@ -543,7 +543,7 @@
   end
 
   @testset "_multgrp_mod_p" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
       K, a = NumberField(x,"a");
@@ -638,7 +638,7 @@
   end
 
   @testset "_1_plus_p_mod_1_plus_pv" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "Method: $method" for method in [:quadratic,:artin_hasse,:p_adic]
 

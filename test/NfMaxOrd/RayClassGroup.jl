@@ -2,7 +2,7 @@
 
   @testset "quadratic field" begin
     
-    Qx,x=PolynomialRing(QQ,"x")
+    Qx,x=PolynomialRing(FlintQQ,"x")
     K,a=NumberField(x^2+87,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
@@ -14,7 +14,7 @@
      @test R[1]==mR\x
     end
     
-    Qx,x=PolynomialRing(QQ,"x")
+    Qx,x=PolynomialRing(FlintQQ,"x")
     K,a=NumberField(x^2-5,"a")
     O=maximal_order(K)
     C,mC=class_group(O, redo = true)

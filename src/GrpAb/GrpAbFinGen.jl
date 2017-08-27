@@ -35,7 +35,8 @@
 export GrpAbFinGen, GrpAbFinGenElem, parent, isfinite, isinfinite, rank,
        getindex, show, +, *, ngens, snf_with_transform, nrels,
        -, ==, istrivial, order, exponent, AbelianGroup, DiagonalGroup,
-       quo, sub, rels, hasimage, haspreimage, issnf, iscyclic, hom, kernel
+       quo, sub, rels, hasimage, haspreimage, issnf, iscyclic, hom, kernel,
+       psylow_subgroup
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 

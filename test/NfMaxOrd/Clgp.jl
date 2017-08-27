@@ -1,7 +1,7 @@
 @testset "Clgp" begin
 
   @testset "class_group" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin # TODO Fix class_group for K = Q
       #= K, a = NumberField(x, "a"); =#
@@ -73,7 +73,7 @@
   end
 
   @testset "_class_unit_group" begin
-    Qx, x = PolynomialRing(QQ, "x");
+    Qx, x = PolynomialRing(FlintQQ, "x");
     AF = ArbField(20)
 
     @testset "K = Q" begin # TODO Fix _class_unit_group for K = Q

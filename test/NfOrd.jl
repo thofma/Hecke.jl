@@ -6,5 +6,4 @@ r = @testset "Orders in absolute number fields" begin
   include("NfOrd/ResidueRing.jl")
 end
 
-# for 0.6
-#Base.Test.print_test_results(r, 1) 
+Base.Test.print_test_results(r, 1) 
