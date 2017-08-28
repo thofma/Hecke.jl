@@ -1,17 +1,16 @@
-@testset "AbelianGrp" begin
-
-  @testset "constructor GrpAbFinGenGen" begin
+@testset "GrpAbFinGen" begin
+  @testset "constructor GrpAbFinGen" begin
     @testset "not in hnf" begin
-      M = FlintZZ[1 2 3; 4 5 6]        :: fmpz_mat
-      G = Hecke.GrpAbFinGen(M)    :: GrpAbFinGen
+      M = FlintZZ[1 2 3; 4 5 6]
+      G = @inferred Hecke.GrpAbFinGen(M)
       @test G.rels == M
       @test_throws UndefRefError G.hnf
       @test_throws UndefRefError G.snf_map
     end
 
     @testset "in hnf" begin
-      M = FlintZZ[1 2 3; 0 3 6]           :: fmpz_mat
-      G = Hecke.GrpAbFinGen(M, true) :: GrpAbFinGen
+      M = FlintZZ[1 2 3; 0 3 6]
+      G = @inferred Hecke.GrpAbFinGen(M, true)
       @test G.rels == M
       @test G.hnf == M
       @test_throws UndefRefError G.snf_map
@@ -19,16 +18,16 @@
   end
 
   @testset "constructor GrpAbFinGenSnf" begin
-    A = Array{fmpz,1}([3 ; 15 ; 0])
+    A = Array{fmpz, 1}([3 ; 15 ; 0])
     SNF = Hecke.GrpAbFinGen(A)
     @test SNF.snf == A
   end
 
   @testset "constructor GrpAbFinGenElem" begin
-    M = FlintZZ[1 2 3; 4 5 6]        :: fmpz_mat
-    G = Hecke.GrpAbFinGen(M) :: GrpAbFinGen
-    N = FlintZZ[1 2 3]               :: fmpz_mat
-    a = Hecke.GrpAbFinGenElem(G, N)
+    M = FlintZZ[1 2 3; 4 5 6]
+    G = @inferred Hecke.GrpAbFinGen(M)
+    N = FlintZZ[1 2 3]
+    a = @inferred Hecke.GrpAbFinGenElem(G, N)
     @test a.parent == G
     @test a.coeff == N
   end

@@ -383,6 +383,11 @@ function _subgroup_type_iterator(x, y, p)
   t = findlast(!iszero, y)
 
   # have to treat the empty y separately
+
+  if any( y[i] > x[i] for i in 1:length(x))
+    return ( x for x in 1:-1)
+  end
+
   if t == 0
     return ( x for x in [zeros(Int, s, 0)])
   elseif x == y
@@ -440,6 +445,9 @@ function __psubgroups_gens(G::GrpAbFinGen, p::Union{fmpz, Integer},
   reverse!(x)
   Gtype = [ t[1] for t in x ]
   indice = [ t[2] for t in x ]
+  if length(t) > length(Gtype)
+    return ( i for i in 1:-1)
+  end
   # x is the "type" of the p-group G as a partition
   if length(t) == 1 && t[1] == -1
     return (_matrix_to_elements(G, M, indice) for
@@ -683,6 +691,8 @@ Base.iteratorsize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = Base.Siz
 
 Base.eltype(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = E
 
+Base.length(S::pSubgroupIterator) = Base.length(S.it)
+
 ################################################################################
 #
 #  Subgroup enumeration
@@ -736,6 +746,8 @@ Base.start(S::SubgroupIterator) = Base.start(S.it)
 Base.next(S::SubgroupIterator, s) = Base.next(S.it, s)
 
 Base.done(S::SubgroupIterator, s) = Base.done(S.it, s)
+
+Base.length(S::SubgroupIterator) = Base.length(S.it)
 
 Base.iteratorsize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = Base.SizeUnknown()
 
@@ -835,7 +847,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
 end
 
 doc"""
-    subgroups(g::GrpAbFinGen, p::Integer;
+    subgroups(g::GrpAbFinGen;
               subtype = :all ,
               quotype = :all,
               index = -1,
