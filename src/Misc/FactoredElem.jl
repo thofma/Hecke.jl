@@ -303,7 +303,11 @@ end
 ################################################################################
 
 function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+  O = order(base_ring(x))
   x = simplify(x) # the other method won't work due to one()
+  if length(x.fac)==0
+    return frac_ideal(O, O(1))
+  end
   # still doesn't work
 
   return prod([(p//1)^Int(k) for (p,k) = x.fac])

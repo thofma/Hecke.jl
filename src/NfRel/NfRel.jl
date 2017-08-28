@@ -445,7 +445,7 @@ function Nemo.check_parent(a, b)
   return a==b
 end
 
-function Nemo.content(a::GenPoly{T}) where T <: Field
+function Nemo.content(a::GenPoly{T}) where T <: Nemo.Field
   return base_ring(a)(1)
 end
 function Nemo.canonical_unit(a::NfRelElem)
