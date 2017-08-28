@@ -343,6 +343,7 @@ function absolute_field(K::NfRel{nf_elem})
   return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
+#Trager: p4, Algebraic Factoring and Rational Function Integration
 function _absolute_field(K::NfRel{nf_elem})
   f = K.pol
   kx = parent(f)
@@ -389,6 +390,83 @@ function _absolute_field(K::NfRel{nf_elem})
   #ga -> gen(Ka) in K
   return Ka, al, be, ga
 end 
+
+function _absolute_field(K::NfRel{NfRelElem{nf_elem}})
+  f = K.pol
+  kx = parent(f)
+  k = base_ring(kx)
+  Qx = parent(k.pol)
+
+  l = 0
+  g = f
+  N = 0
+
+  while true
+    N = norm(g)
+    @assert degree(N) == degree(g) * degree(k)
+
+    if !isconstant(N) && issquarefree(N)
+      break
+    end
+
+    l += 1
+ 
+    g = compose(f, gen(kx) - l*gen(k))
+  end
+
+  Ka = number_field(N)[1]
+  println("have Ka=$Ka")
+  KaT, T = PolynomialRing(Ka, "T")
+
+  # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
+
+  # gen(k) -> Root(gcd(g, poly(k)))  #gcd should be linear:
+  # g in kx = (Q[a])[x]. Want to map x -> gen(Ka), a -> T
+
+  gg = zero(KaT)
+  for i=degree(g):-1:0
+    println("i: $i")
+    gg = gg*gen(Ka) + coeff(g, i).data(gen(KaT))
+  end
+
+  q = gcd(gg, k.pol(gen(KaT)))
+  @assert degree(q) == 1
+  al = -trailing_coefficient(q)//lead(q)
+  be = gen(Ka) - l*al
+  ga = gen(K) + l*gen(k)
+
+  #al -> gen(k) in Ka
+  #be -> gen(K) in Ka
+  #ga -> gen(Ka) in K
+  return Ka, al, be, ga
+end 
+
+function Nemo.check_parent(a, b)
+  return a==b
+end
+
+function Nemo.content(a::GenPoly{T}) where T <: Field
+  return base_ring(a)(1)
+end
+function Nemo.canonical_unit(a::NfRelElem)
+  return parent(a)(1)
+end
+
+function +(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
+  c = deepcopy(a)
+  setcoeff!(c.data, 0, coeff(c.data, 0)+b)
+  return c
+end
+
++(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b+a
+
+function *(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
+  c = deepcopy(a)
+  setcoeff!(c.data, 0, coeff(c.data, 0)*b)
+  return c
+end
+
+*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
 
 
 @inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
@@ -486,7 +564,19 @@ function representation_mat(a::NfRelElem)
   return M
 end
 
-function norm(a::NfRelElem)
+function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
+  if new && ismonic(parent(a).pol) #should be much faster - eventually
+    return resultant_mod(a.data, parent(a).pol)
+  end
+  M = representation_mat(a)
+  return det(M)
+end
+
+
+function norm(a::NfRelElem, new::Bool = true)
+  if new && ismonic(parent(a).pol)
+    return resultant(a.data, parent(a).pol)
+  end
   M = representation_mat(a)
   return det(M)
 end
@@ -495,3 +585,85 @@ function trace(a::NfRelElem)
   M = representation_mat(a)
   return trace(M)
 end
+
+######################################################################
+# fun in towers..
+######################################################################
+
+isunit(a::NfRelElem) = !iszero(a)
+
+absolute_degree(A::AnticNumberField) = degree(A)
+
+function absolute_degree(A::NfRel)
+  return absolute_degree(base_ring(A))*degree(A)
+end
+
+function trace(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+  b = trace(a)
+  while parent(b) != k
+    b = trace(b)
+  end
+  return b
+end
+
+function norm(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+  b = norm(a)
+  while parent(b) != k
+    b = norm(b)
+  end
+  return b
+end
+
+function absolute_trace(a::NfRelElem)
+  return trace(a, FlintQQ)
+end
+
+function absolute_norm(a::NfRelElem)
+  return norm(a, FlintQQ)
+end
+
+#TODO: investigate charpoly/ minpoly from power_sums, aka trace(a^i) and
+#      Newton identities
+#TODO: cache traces of powers of the generator on the field, then
+#      the trace does not need the matrix
+
+function charpoly(a::NfRelElem)
+  M = representation_mat(a)
+  R = PolynomialRing(base_ring(parent(a)))[1]
+  return minpoly(R, M, true)
+end
+
+function minpoly(a::NfRelElem)
+  M = representation_mat(a)
+  R = PolynomialRing(base_ring(parent(a)))[1]
+  return minpoly(R, M, false)
+end
+
+function charpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+  f = charpoly(a)
+  while base_ring(f) != k
+    f = norm(f)
+  end
+  return f
+end
+
+function absolute_charpoly(a::NfRelElem)
+  return charpoly(a, FlintQQ)
+end
+
+function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+  f = minpoly(a)
+  while base_ring(f) != k
+    f = norm(f)
+    g = gcd(f, derivative(f))
+    if !isone(g)
+      f = divexact(f, g)
+    end
+  end
+  return f
+end
+
+function absolute_minpoly(a::NfRelElem)
+  return minpoly(a, FlintQQ)
+end
+

@@ -115,9 +115,6 @@ function my_prod(a::AbstractArray{T, 1}) where T
   return prod_end(b)
 end
 
-function isunit(a::fmpz)
-  return isone(a) || a == -1
-end
 function isunit(a::Integer)
   return a == 1 || a == -1
 end

@@ -838,7 +838,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   R = parent(P[1])
   S = PowerSeriesRing(R, d+1, "gen(S)")[1]
   s = S(P, length(P), d+1, 0)
-  r = S([1, -P[1]], 2, d+1, 0) 
+  r = S(T[R(1), -P[1]], 2, d+1, 0) 
   la = [d+1]
   while la[end]>1
     push!(la, div(la[end]+1, 2))
@@ -904,6 +904,16 @@ function norm(f::PolyElem{nf_elem})
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
   return resultant(T, h)
 end
+
+function norm(f::PolyElem{T}) where T <: NfRelElem
+  Kx = parent(f)
+  K = base_ring(f)
+
+  P = polynomial_to_power_sums(f, degree(f)*degree(K))
+  PQ = [trace(x) for x=P]
+  return power_sums_to_polynomial(PQ)
+end
+
 
 doc"""
   factor(f::fmpz_poly, K::NumberField) -> Fac{GenPoly{nf_elem}}
@@ -1977,54 +1987,6 @@ function _signs(a::FacElem{nf_elem, AnticNumberField})
   return s
 end
 
-
-#Trager: p4, Algebraic Factoring and Rational Function Integration
-function absolute_field(K::GenResRing{GenPoly{nf_elem}})
-  f = K.modulus
-  kx = parent(f)
-  k = base_ring(kx)
-  Qx = parent(k.pol)
-
-  l = 0
-  g = f
-  N = 0
-
-  while true
-    N = norm(g)
-    @assert degree(N) == degree(g) * degree(k)
-
-    if !isconstant(N) && issquarefree(N)
-      break
-    end
-
-    l += 1
-
-    g = compose(f, gen(kx) - l*gen(k))
-  end
-
-  Ka = NumberField(N)[1]
-  KaT, T = PolynomialRing(Ka, "T")
-
-  # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
-
-  # gen(k) -> Root(gcd(g, poly(k)))  #gcd should be linear:
-  # g in kx = (Q[a])[x]. Want to map x -> gen(Ka), a -> T
-  gg = zero(KaT)
-  for i=degree(g):-1:0
-    gg = gg*gen(Ka) + evaluate(Qx(coeff(g, i)), gen(KaT))
-  end
-
-  q = gcd(gg, evaluate(k.pol, gen(KaT)))
-  @assert degree(q) == 1
-  al = -trailing_coefficient(q)//lead(q)
-  be = gen(Ka) - l*al
-  ga = gen(K) + l*gen(k)
-
-  #al -> gen(k) in Ka
-  #be -> gen(K) in Ka
-  #ga -> gen(Ka) in K
-  return Ka, al, be, ga
-end
 
 function resultant_mod(f::GenPoly{nf_elem}, g::GenPoly{nf_elem})
   global p_start
