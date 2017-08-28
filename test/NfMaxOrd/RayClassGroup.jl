@@ -21,7 +21,6 @@
     inf_plc=real_places(K)
     
     for i=3:11
-     @show i
      R,mR=ray_class_group_p_part(2,ideal(O,i),inf_plc)
      x=mR(R[1])
      x=evaluate(x).num

@@ -2,7 +2,7 @@
   Qx, x = PolynomialRing(FlintQQ, "x")
 
   K1, a1 = NumberField(x^3 - 2, "a")
-  O1 = Order(K1, Hecke.FakeFmpqMat(ZZ[1 0 0; 0 2 0; 0 0 4], one(ZZ)))
+  O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
 
   K2, a2 = NumberField(x^2 - 4^2*7^2*5, "a")
   O2 = Order(K2, [K2(1), a2])
@@ -13,18 +13,18 @@
     @test I.princ_gen_special[1] == 1
     @test I.princ_gen_special[2] == 17
     @test I.princ_gen == O1(-17)
-    @test basis_mat(I) == MatrixSpace(ZZ, 3, 3)(17)
+    @test basis_mat(I) == MatrixSpace(FlintZZ, 3, 3)(17)
 
-    J = @inferred ideal(O1, ZZ(-17))
+    J = @inferred ideal(O1, FlintZZ(-17))
     @test order(J) == O1
     @test J.princ_gen_special[1] == 2
-    @test J.princ_gen_special[3] == ZZ(17)
+    @test J.princ_gen_special[3] == FlintZZ(17)
     @test J.princ_gen == O1(-17)
-    @test basis_mat(J) == MatrixSpace(ZZ, 3, 3)(17)
+    @test basis_mat(J) == MatrixSpace(FlintZZ, 3, 3)(17)
 
     K = @inferred ideal(O1, O1(-17))
     @test K.princ_gen == O1(-17)
-    @test basis_mat(K) == MatrixSpace(ZZ, 3, 3)(17)
+    @test basis_mat(K) == MatrixSpace(FlintZZ, 3, 3)(17)
 
     M = @inferred O1(-17)*O1
     L = @inferred O1*O1(-17)
@@ -35,7 +35,7 @@
   end
 
   I = ideal(O1, -17)
-  J = ideal(O1, ZZ(-17))
+  J = ideal(O1, FlintZZ(-17))
   K = ideal(O1, O1(-17))
   M = O1(-17)*O1
   I2 = ideal(O2, O2(1 + a2))
@@ -73,16 +73,16 @@
     M = @inferred ideal(O1, O1(4*a1^2))
 
     b = @inferred basis_mat(M)
-    @test b == ZZ[16 0 0; 0 16 0; 0 0 1]
+    @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
     b = @inferred basis_mat_inv(M)
-    @test b == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 1 0; 0 0 16], ZZ(16))
+    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
 
     b = @inferred basis_mat(M)
-    @test b == ZZ[16 0 0; 0 16 0; 0 0 1]
+    @test b == FlintZZ[16 0 0; 0 16 0; 0 0 1]
 
     b = @inferred basis_mat_inv(M)
-    @test b == Hecke.FakeFmpqMat(ZZ[1 0 0; 0 1 0; 0 0 16], ZZ(16))
+    @test b == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 1 0; 0 0 16], FlintZZ(16))
   end
 
   @testset "Inclusion" begin
@@ -174,6 +174,6 @@
 
   @testset "p-Radical" begin
     I = @inferred pradical(O1, 2)
-    @test I == ideal(O1, ZZ[2 0 0; 0 1 0; 0 0 1])
+    @test I == ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
   end
 end

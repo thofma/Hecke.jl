@@ -47,10 +47,10 @@
   end
 
   @testset "Point counting" begin
-    RR = ResidueRing(ZZ, 2)
+    RR = ResidueRing(FlintZZ, 2)
     E = EllipticCurve([RR(1), RR(1), RR(0), RR(0), RR(1)])
     @test 2 == @inferred order(E)
-    RR = ResidueRing(ZZ, 3)
+    RR = ResidueRing(FlintZZ, 3)
     E = EllipticCurve([RR(1), RR(1)])
     @test 4 == @inferred order(E)
 

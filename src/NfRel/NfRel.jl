@@ -91,11 +91,19 @@ Nemo.one(K::NfRel) = K(Nemo.one(parent(K.pol)))
 
 Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
 
-Nemo.promote_rule{T}(::Type{NfRelElem{T}}, ::Type{fmpz}) = NfRelElem{T}
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T} = NfRelElem{T}
 
-Nemo.promote_rule{T}(::Type{NfRelElem{T}}, ::Type{fmpq}) = NfRelElem{T}
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T} = NfRelElem{T}
 
-Nemo.promote_rule{T}(::Type{NfRelElem{T}}, ::Type{T}) = NfRelElem{T}
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
+
+function Nemo.promote_rule1(::Type{NfRelElem{T}}, ::Type{NfRelElem{U}}) where {T, U}
+   Nemo.promote_rule(T, NfRelElem{U}) == T ? NfRelElem{T} : Union{}
+end
+
+function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T, U} 
+   Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Nemo.promote_rule1(U, NfRelElem{T})
+end
 
 ################################################################################
 #
@@ -243,24 +251,24 @@ end
 #
 ################################################################################
 
-function Base.:(+)(a::NfRelElem, b::NfRelElem)
+function Base.:(+)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return parent(a)(data(a) + data(b))
 end
 
-function Base.:(-)(a::NfRelElem, b::NfRelElem)
+function Base.:(-)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return parent(a)(data(a) - data(b))
 end
 
-function Base.:(*)(a::NfRelElem, b::NfRelElem)
+function Base.:(*)(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   return parent(a)(data(a) * data(b))
 end
 
-function Nemo.divexact(a::NfRelElem, b::NfRelElem)
+function Nemo.divexact(a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   b == 0 && error("Element not invertible")
   return a*inv(b)
 end
 
-Base.:(//)(a::NfRelElem, b::NfRelElem) = divexact(a, b)
+Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 
 ################################################################################
 #
@@ -319,13 +327,13 @@ end
 #
 ################################################################################
 
-function Nemo.mul!(c::NfRelElem, a::NfRelElem, b::NfRelElem)
+function Nemo.mul!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
   mul!(c.data, a.data, b.data)
   c = reduce!(c)
   return c
 end
 
-function Nemo.addeq!(b::NfRelElem, a::NfRelElem)
+function Nemo.addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
@@ -452,22 +460,21 @@ function Nemo.canonical_unit(a::NfRelElem)
   return parent(a)(1)
 end
 
-function +(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
-  c = deepcopy(a)
-  setcoeff!(c.data, 0, coeff(c.data, 0)+b)
-  return c
-end
-
-+(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b+a
-
-function *(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
-  c = deepcopy(a)
-  setcoeff!(c.data, 0, coeff(c.data, 0)*b)
-  return c
-end
-
-*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
-
+#function +(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
+#  c = deepcopy(a)
+#  setcoeff!(c.data, 0, coeff(c.data, 0)+b)
+#  return c
+#end
+#
+#+(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b+a
+#
+#function *(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
+#  c = deepcopy(a)
+#  setcoeff!(c.data, 0, coeff(c.data, 0)*b)
+#  return c
+#end
+#
+#*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
 
 @inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
 
@@ -666,4 +673,14 @@ end
 function absolute_minpoly(a::NfRelElem)
   return minpoly(a, FlintQQ)
 end
+
+#
+
+(K::NfRel)(x::NfRelElem) = K(base_ring(K)(x))
+
+(K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
+
+(K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
+
+(K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
 

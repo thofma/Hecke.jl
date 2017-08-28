@@ -469,7 +469,9 @@ function _rcf_descent(CF::ClassField_pp)
     j = 0
     zeta_i = inv(zeta)^div(e, n)
     mi = coeff(m, 1) 
-    @hassert :ClassField 1 m == mi*gen(A) 
+    #@hassert :ClassField 1 m == mi*gen(A) 
+    # TODO: Replace once the antic bug is resolved
+    @hassert :ClassField 1 iszero(m - mi*gen(A))
 
     while mi != 1
       mi *= zeta_i

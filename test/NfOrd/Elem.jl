@@ -27,13 +27,13 @@
     @test b4.has_coord
     @test b1 == b4
 
-    b5 = @inferred O1([ZZ(2), ZZ(0), ZZ(0)])
+    b5 = @inferred O1([FlintZZ(2), FlintZZ(0), FlintZZ(0)])
     @test parent(b5) == O1
     @test typeof(b5) == NfOrdElem
     @test b5.has_coord
     @test b1 == b5
 
-    b6 = @inferred O1(2*a1^0, [ZZ(2), ZZ(0), ZZ(0)])
+    b6 = @inferred O1(2*a1^0, [FlintZZ(2), FlintZZ(0), FlintZZ(0)])
     @test parent(b6) == O1
     @test typeof(b6) == NfOrdElem
     @test b6.has_coord
@@ -58,7 +58,7 @@
     @test b == K1(2)
 
     b = @inferred elem_in_basis(b1)
-    @test b == [ ZZ(2), ZZ(0), ZZ(0) ]
+    @test b == [ FlintZZ(2), FlintZZ(0), FlintZZ(0) ]
 
     b = O1(a1//2, false)
     @test_throws ErrorException elem_in_basis(b)
@@ -210,9 +210,9 @@
     @test c == one(MatrixSpace(FlintZZ, 3, 3))
     b = O1(a1)
     c = @inferred representation_mat(b)
-    @test c == ZZ[0 1 0; 0 0 1; 2 0 0]
+    @test c == FlintZZ[0 1 0; 0 0 1; 2 0 0]
     c = @inferred representation_mat(b, K1)
-    @test c == Hecke.FakeFmpqMat(ZZ[0 1 0; 0 0 1; 2 0 0], one(FlintZZ))
+    @test c == Hecke.FakeFmpqMat(FlintZZ[0 1 0; 0 0 1; 2 0 0], one(FlintZZ))
   end
 
   @testset "Trace" begin
@@ -247,7 +247,7 @@
       @test -B <= elem_in_basis(b)[i] && elem_in_basis(b)[i] <= B
     end
 
-    B = ZZ(10)
+    B = FlintZZ(10)
     b = @inferred rand(O1, B)
     for i in 1:degree(O1)
       @test -B <= elem_in_basis(b)[i] && elem_in_basis(b)[i] <= B

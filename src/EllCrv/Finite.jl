@@ -171,7 +171,7 @@ function elem_order_bsgs(P::EllCrvPt)
   # step 3
   k = -m
   H = (2*m)*P
-  M = ZZ(0) # initialize M, so that it is known after the while loop
+  M = FlintZZ(0) # initialize M, so that it is known after the while loop
 
   while k < m + 1
     Snew = Q + (k*H)
@@ -408,7 +408,7 @@ function order_via_schoof(E::EllCrv)
   t = 0
   for i = 1:L
     n_i = div(product, S[i])
-    B = ResidueRing(ZZ, S[i])
+    B = ResidueRing(FlintZZ, S[i])
     M_i = inv(B(n_i))
     M_i = M_i.data
     t = t + (M_i * n_i * t_mod_l[i])
@@ -454,7 +454,7 @@ function t_mod_prime(l, E)
 
   S, x = PolynomialRing(R, "x")
   T, y = PolynomialRing(S, "y")
-  Z = ResidueRing(ZZ, l)
+  Z = ResidueRing(FlintZZ, l)
 
   f = x^3 + E.coeff[1]*x + E.coeff[2]
   fl = fn_from_schoof(E, l, x)
@@ -475,9 +475,9 @@ function t_mod_prime(l, E)
     x_q = powmod(x, q_int, f)
     ggt = gcd(f, x_q - x)
     if ggt == 1
-      t = ZZ(1)
+      t = FlintZZ(1)
     else
-      t = ZZ(0)
+      t = FlintZZ(0)
     end
 
     return t
@@ -502,8 +502,8 @@ function t_mod_prime(l, E)
   end
 
   if ggT != 1 # case 1
-    if jacobi(ZZ(k), ZZ(l)) == -1
-      return ZZ(0)
+    if jacobi(FlintZZ(k), FlintZZ(l)) == -1
+      return FlintZZ(0)
     else
       # need square root of q (mod l)
       w = issquare(k_mod)[2]
@@ -525,7 +525,7 @@ function t_mod_prime(l, E)
       end
 
       if ggT == 1
-        return ZZ(0)
+        return FlintZZ(0)
       else
         fwmz = Fnschoof[w_int]
         fwpz = Fnschoof[w_int+4]

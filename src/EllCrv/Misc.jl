@@ -196,7 +196,7 @@ doc"""
 > $ax^2 + bx + c = 0$ has a root modulo $p$.
 """
 function quadroots(a, b, c, p)
-  F_p = ResidueRing(ZZ, p)
+  F_p = ResidueRing(FlintZZ, p)
   R, x = PolynomialRing(F_p, "x")
   f = F_p(a)*x^2 + F_p(b)*x + F_p(c)
     
@@ -228,7 +228,7 @@ doc"""
 > modulo $p$.
 """
 function nrootscubic(b, c, d, p)
-  F_p = ResidueRing(ZZ, p)
+  F_p = ResidueRing(FlintZZ, p)
   R, x = PolynomialRing(F_p, "x")
   f = x^3 + F_p(b)*x^2 + F_p(c)*x + F_p(d)
   
@@ -236,19 +236,19 @@ function nrootscubic(b, c, d, p)
   
   if length(fac) == 1
     if fac[first(keys(fac.fac))] == 3
-      return ZZ(3)
+      return FlintZZ(3)
     else
-      return ZZ(0)
+      return FlintZZ(0)
     end
   elseif length(fac) == 2
     if fac[first(keys(fac))]== 1 && fac[first(keys(fac))] == 1
       # one linear and one irreducible quadratic factor
-      return ZZ(1)
+      return FlintZZ(1)
     else 
-      return ZZ(3) #one double and one single root
+      return FlintZZ(3) #one double and one single root
     end
   else 
-    return ZZ(3)
+    return FlintZZ(3)
   end  
 end
 

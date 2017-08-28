@@ -2,7 +2,7 @@
 
   @testset "cleanvect" begin
   
-    F, a = FiniteField(3, 1, "a")
+    F, a = Nemo.FiniteField(3, 1, "a")
     M=MatrixSpace(F,2,3)([1,1,0,0,1,0])
     v=MatrixSpace(F,1,3)([2,2,0])
     @test iszero(Hecke.cleanvect(M,v))
@@ -13,7 +13,7 @@
   
   @testset "closure and spinning" begin
   
-   F, a = FiniteField(3, 1, "a")
+   F, a = Nemo.FiniteField(3, 1, "a")
    G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
    M=FqGModule(G)
    v=MatrixSpace(F,1,4)([1,0,0,0])
@@ -31,7 +31,7 @@
   
   @testset "meataxe" begin
   
-    F, a = FiniteField(3, 1, "a")
+    F, a = Nemo.FiniteField(3, 1, "a")
     G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
     M=FqGModule(G)
     bool,B=meataxe(M)
@@ -53,7 +53,7 @@
   
   @testset "composition factors and series" begin
   
-    F, a = FiniteField(3, 1, "a")
+    F, a = Nemo.FiniteField(3, 1, "a")
     G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
     M=FqGModule(G)
     lf=composition_factors(M)
@@ -69,7 +69,7 @@
   
   @testset "Submodules" begin
   
-    F, a = FiniteField(3, 1, "a")
+    F, a = Nemo.FiniteField(3, 1, "a")
     Q=MatrixSpace(F,0,0)()
     G=[eye(Q,3)]
     M=FqGModule(G)
