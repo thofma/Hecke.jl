@@ -72,7 +72,9 @@ import Nemo: nf_elem, AnticNumberField, degree, one!,
              FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
              acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
              roots, nbits, factor, ispositive, sign, isprime, isunit,
-             NumberField, CyclotomicField, MaximalRealSubfield
+             NumberField, CyclotomicField, MaximalRealSubfield,
+             addmul!, deflate, gens, inflate, isconstant, issquare, 
+             swap_rows!
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
