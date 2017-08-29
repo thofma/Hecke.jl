@@ -761,6 +761,7 @@ doc"""
 """
 function derivative(f::RelSeriesElem{T}) where T
   g = parent(f)()
+  set_prec!(g, precision(f)-1)
   v = valuation(f)
   if v==0
     for i=1:Nemo.pol_length(f)
@@ -774,7 +775,6 @@ function derivative(f::RelSeriesElem{T}) where T
     Nemo.set_val!(g, v-1)
   end
   Nemo.renormalize!(g)  
-  set_prec!(g, precision(g)-1)
   return g
 end
 
