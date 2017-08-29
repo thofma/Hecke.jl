@@ -395,3 +395,48 @@ function evaluate{S <: RingElem, T <: RingElem}(f::PolyElem{S}, a::T)
 end
 
 =#
+
+doc"""
+    deflate(f::PolyElem, n::Int64) -> PolyElem
+> Given a polynomial $f$ in $x^n$, write it as a polynomial in $x$, ie. divide
+> all exponents by $n$.
+"""
+function deflate(x::PolyElem, n::Int64)
+  y = parent(x)()
+  for i=0:div(degree(x), n)
+    setcoeff!(y, i, coeff(x, n*i))
+  end
+  return y
+end
+
+doc"""
+    inflate(f::PolyElem, n::Int64) -> PolyElem
+> Given a polynomial $f$ in $x$, return $f(x^n)$, ie. multiply 
+> all exponents by $n$.
+"""
+function inflate(x::PolyElem, n::Int64)
+  y = parent(x)()
+  for i=0:degree(x)
+    setcoeff!(y, n*i, coeff(x, i))
+  end
+  return y
+end
+
+doc"""
+    deflate(x::PolyElem) -> PolyElem
+> Deflate the polynomial $f$ maximally, ie. find the largest $n$ s.th.
+> $f$ can be deflated by $n$, ie. $f$ is actually a polynomial in $x^n$.
+"""
+function deflate(x::PolyElem)
+  g = 0
+  for i=0:degree(x)
+    if coeff(x, i) != 0
+      g = gcd(g, i)
+      if g==1
+        return x, 1
+      end
+    end
+  end
+  return deflate(x, g), g
+end
+

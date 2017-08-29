@@ -7,35 +7,6 @@ function fmpz_poly_read!(a::fmpz_poly, b::String)
   return a
 end
 
-function deflate(x::fmpz_poly, n::Int64)
-  y = parent(x)()
-  for i=0:div(degree(x), n)
-    setcoeff!(y, i, coeff(x, n*i))
-  end
-  return y
-end
-
-function inflate(x::fmpz_poly, n::Int64)
-  y = parent(x)()
-  for i=0:degree(x)
-    setcoeff!(y, n*i, coeff(x, i))
-  end
-  return y
-end
-
-function deflate(x::fmpz_poly)
-  g = 0
-  for i=0:degree(x)
-    if coeff(x, i) != 0
-      g = gcd(g, i)
-      if g==1
-        return x, 1
-      end
-    end
-  end
-  return deflate(x, g), g
-end
-
 function mahler_measure_bound(f::fmpz_poly)
   return root(sum([coeff(f, i)^2 for i=0:degree(f)])-1, 2)+1
 end 
@@ -61,18 +32,6 @@ end
 function _log(p::fmpz, m::fmpz)
   return Int(ceil(log(m)/log(p)))
 end
-
-function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,GenMat{GenRes{fmpz}}})
-  @assert M.cols == cols(Mp) && M.rows == rows(Mp)
-  N = M()
-  for i=1:M.rows
-    for j=1:M.cols
-      N[i,j] = lift(Mp[i,j])
-    end
-  end
-  return N
-end
-
 mutable struct fmpz_poly_factor_t
   c::Int64 # actually an fmpz, the content
   p::Int64 # actually a fmpz_poly_struct *

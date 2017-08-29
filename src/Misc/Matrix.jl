@@ -904,3 +904,14 @@ function Base.nullspace(M::nmod_mat)
   end
 end
 
+function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,GenMat{GenRes{fmpz}}})
+  @assert M.cols == cols(Mp) && M.rows == rows(Mp)
+  N = M()
+  for i=1:M.rows
+    for j=1:M.cols
+      N[i,j] = lift(Mp[i,j])
+    end
+  end
+  return N
+end
+
