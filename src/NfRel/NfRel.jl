@@ -347,59 +347,17 @@ end
 
 function absolute_field(K::NfRel{nf_elem})
   Ka, a, b, c = _absolute_field(K)
-
   return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
+function absolute_field(K::NfRel{NfRelElem{T}}) where T
+  Ka, a, b, c = _absolute_field(K)
+  return Ka, NfRelRelToNfRel(K, Ka, a, b, c), NfRelToNfRelMor(base_ring(K), Ka, a)
+end
+
+
 #Trager: p4, Algebraic Factoring and Rational Function Integration
-function _absolute_field(K::NfRel{nf_elem})
-  f = K.pol
-  kx = parent(f)
-  k = base_ring(kx)
-  Qx = parent(k.pol)
-
-  l = 0
-  g = f
-  N = 0
-
-  while true
-    N = norm(g)
-    @assert degree(N) == degree(g) * degree(k)
-
-    if !isconstant(N) && issquarefree(N)
-      break
-    end
-
-    l += 1
- 
-    g = compose(f, gen(kx) - l*gen(k))
-  end
-
-  Ka = NumberField(N)[1]
-  KaT, T = PolynomialRing(Ka, "T")
-
-  # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
-
-  # gen(k) -> Root(gcd(g, poly(k)))  #gcd should be linear:
-  # g in kx = (Q[a])[x]. Want to map x -> gen(Ka), a -> T
-  gg = zero(KaT)
-  for i=degree(g):-1:0
-    gg = gg*gen(Ka) + evaluate(Qx(coeff(g, i)), gen(KaT))
-  end
-
-  q = gcd(gg, evaluate(k.pol, gen(KaT)))
-  @assert degree(q) == 1
-  al = -trailing_coefficient(q)//lead(q)
-  be = gen(Ka) - l*al
-  ga = gen(K) + l*gen(k)
-
-  #al -> gen(k) in Ka
-  #be -> gen(K) in Ka
-  #ga -> gen(Ka) in K
-  return Ka, al, be, ga
-end 
-
-function _absolute_field(K::NfRel{NfRelElem{nf_elem}})
+function _absolute_field(K::NfRel)
   f = K.pol
   kx = parent(f)
   k = base_ring(kx)
@@ -423,7 +381,7 @@ function _absolute_field(K::NfRel{NfRelElem{nf_elem}})
   end
 
   Ka = number_field(N)[1]
-  println("have Ka=$Ka")
+
   KaT, T = PolynomialRing(Ka, "T")
 
   # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
@@ -433,8 +391,7 @@ function _absolute_field(K::NfRel{NfRelElem{nf_elem}})
 
   gg = zero(KaT)
   for i=degree(g):-1:0
-    println("i: $i")
-    gg = gg*gen(Ka) + coeff(g, i).data(gen(KaT))
+    gg = gg*gen(Ka) + Qx(coeff(g, i))(gen(KaT))
   end
 
   q = gcd(gg, k.pol(gen(KaT)))
@@ -456,9 +413,8 @@ end
 function Nemo.content(a::GenPoly{T}) where T <: Nemo.Field
   return base_ring(a)(1)
 end
-function Nemo.canonical_unit(a::NfRelElem)
-  return parent(a)(1)
-end
+
+Nemo.canonical_unit(a::NfRelElem) = a
 
 #function +(a::NfRelElem{NfRelElem{T}}, b::NfRelElem{T}) where T
 #  c = deepcopy(a)
@@ -479,8 +435,6 @@ end
 @inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
 
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
-
-#TODO: missing: norm, trace...
 
 #######################################################################
 # convenience constructions
@@ -683,4 +637,38 @@ end
 (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
 
 (K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
+
+function (R::GenPolyRing{nf_elem})(a::NfRelElem{nf_elem})
+  if base_ring(R)==base_ring(parent(a))
+    return a.data
+  end
+  error("wrong ring")
+end
+
+function (R::GenPolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
+  if base_ring(R)==base_ring(parent(a))
+    return a.data
+  end
+  error("wrong ring")
+end
+
+function factor(f::GenPoly{NfRelElem{T}}) where T
+  K = base_ring(f)
+  Ka, rel_abs, _ = absolute_field(K)
+  function map_poly(P::Ring, mp::Map, f::GenPoly)
+    return P([mp(coeff(f, i)) for i=0:degree(f)])
+  end
+
+  fa = map_poly(Ka["T"][1], rel_abs, f)
+  lf = factor(fa)
+  res = Fac(map_poly(parent(f), inv(rel_abs), lf.unit), Dict(map_poly(parent(f), inv(rel_abs), k)=>v for (k,v) = lf.fac))
+
+  return res
+end
+
+
+function factor(f::PolyElem, K::Nemo.Field)
+  Kt, t = PolynomialRing(K)
+  return factor(Kt([K(coeff(f, i)) for i=0:degree(f)]))
+end
 

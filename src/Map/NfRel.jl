@@ -73,6 +73,46 @@ function show(io::IO, h::NfRelToNf)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
+mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}} 
+  header::MapHeader{NfRel{NfRelElem{T}}, NfRel{T}}
+
+  function NfRelRelToNfRel(K::NfRel{NfRelElem{T}}, L::NfRel{T}, a::NfRelElem{T}, b::NfRelElem{T}, c::NfRelElem{NfRelElem{T}}) where T
+    # let K/k, k absolute number field
+    # k -> L, gen(k) -> a
+    # K -> L, gen(K) -> b
+    # L -> K, gen(L) -> c
+
+    k = K.base_ring
+    Ly, y = PolynomialRing(L)
+    R = parent(k.pol)
+    S = parent(L.pol)
+
+    function image(x::NfRelElem{NfRelElem{T}}) where T
+      # x is an element of K
+      f = data(x)
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      r = [ R(coeff(f, i))( a) for i in 0:degree(f)]
+      return Ly(r)(b)
+    end
+
+    function preimage(x::NfRelElem{T}) where T
+      # x is an element of L
+      f = S(x)
+      return f(c)
+    end
+
+    z = new{T}()
+    z.header = MapHeader(K, L, image, preimage)
+    return z
+  end
+end
+
+function show(io::IO, h::NfRelRelToNfRel)
+  println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
+end
+
+
 mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
   header::MapHeader{NfRel{T}, NfRel{S}}
   prim_img ::NfRelElem{S}
