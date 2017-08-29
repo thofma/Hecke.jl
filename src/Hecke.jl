@@ -185,7 +185,7 @@ function __init__()
   global const _y = gen(_Zxy)
 
 #  let
-#    Qx, x = QQ["x"]
+#    Qx, x = FlintQQ["x"]
 #    K, a = NumberField(x^2 - 2, "a")
 #    O = maximal_order(K)
 #    class_group(O);

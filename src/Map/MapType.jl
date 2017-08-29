@@ -101,7 +101,7 @@ mutable struct CompositeMap{D, C, R} <: Map{D, C}
   function CompositeMap{D, C, R}(f::Map, g::Map) where {D, C, R}
   ##CF should be function CompositeMap(f::Map{R, C}, g::Map{D, R})
   ## but that seems to not work:
-  # U, m = UnitGroup(ResidueRing(ZZ, 2^9));
+  # U, m = UnitGroup(ResidueRing(FlintZZ, 2^9));
   # q, mq = Hecke.quo(U, [preimage(m, codomain(m)(fmpz(-1)))])
   # z = Hecke.compose(m, inv(mq))
   # btw: m*inv(mq) also fails.
@@ -312,7 +312,7 @@ function CoerceMap(domain::GenResRing{fmpz}, codomain::FqNmodFiniteField)
 
   image = function(a::GenRes{fmpz})
       parent(a) != domain && error("Element not in domain")
-      return codomain(ZZ(a))
+      return codomain(fmpz(a))
   end
 
   preimage = function(a::fq_nmod)

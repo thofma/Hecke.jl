@@ -843,9 +843,9 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
   for s in ls
     subs=GrpAbFinGenElem[]
     for i=1:rows(s)
-      x=MatrixSpace(ZZ,1,cols(s))()
+      x=MatrixSpace(FlintZZ,1,cols(s))()
       for j=1:cols(s)
-        x[1,j]=ZZ(coeff(s[i,j],0))
+        x[1,j]=FlintZZ(coeff(s[i,j],0))
       end
       push!(subs, mS\(S(x)))
     end
@@ -878,9 +878,9 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
   for s in ls
     subs=GrpAbFinGenElem[]
     for i=1:rows(s)
-      x=MatrixSpace(ZZ,1,cols(s))()
+      x=MatrixSpace(FlintZZ,1,cols(s))()
       for j=1:cols(s)
-        x[1,j]=ZZ(coeff(s[i,j],0))
+        x[1,j]=FlintZZ(coeff(s[i,j],0))
       end
       push!(subs, mQ\(mS\(S(x))))
     end

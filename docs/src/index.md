@@ -54,7 +54,7 @@ Version 0.3.0 ...
  ... which comes with absolutely no warrant whatsoever
 (c) 2015 by Claus Fieker and Tommy Hofmann
 
-julia> Qx, x = PolynomialRing(QQ, "x");
+julia> Qx, x = PolynomialRing(FlintQQ, "x");
 julia> f = x^3 + 2;
 julia> K, a = NumberField(f, "a");
 julia> O = maximal_order(K);

@@ -307,7 +307,7 @@ doc"""
 """
 function minpoly(a::nf_elem)
   d = den(a)
-  Zx = PolynomialRing(ZZ, string(parent(parent(a).pol).S))[1]
+  Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
   f = minpoly(Zx, representation_mat(d*a))
   f = f(gen(parent(f))*d)
   return divexact(f, content(f))

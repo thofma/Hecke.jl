@@ -550,10 +550,10 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
   pivots = Array{Int}(r)
   nonpivots = Array{Int}(cols(b) - r)
-  X = zero(MatrixSpace(ZZ,cols(b),cols(b)))
+  X = zero(MatrixSpace(FlintZZ,cols(b),cols(b)))
 
   if r == 0
-    return one(MatrixSpace(ZZ, cols(b), cols(b)))
+    return one(MatrixSpace(FlintZZ, cols(b), cols(b)))
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1

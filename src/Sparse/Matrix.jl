@@ -213,7 +213,7 @@ function (M::SMatSpace)(A::Array{T, 2}) where T <: MatElem
 end
 
 # a faster version for nmod_mat -> SMat{T}
-# it avoids the creation of elements in ResidueRing(ZZ, n)
+# it avoids the creation of elements in ResidueRing(FlintZZ, n)
 doc"""
     SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
   
@@ -488,7 +488,7 @@ end
 # - Smat{T} * fmpz_mat as fmpz_mat
 function mul(A::SMat{T}, b::fmpz_mat) where T
   assert(rows(b) == cols(A))
-  c = MatrixSpace(ZZ, rows(A), cols(b))()
+  c = MatrixSpace(FlintZZ, rows(A), cols(b))()
   return mul!(c, A, b)
 end
 

@@ -17,7 +17,7 @@ MaximalOrder(::NfOrd)
 
 ```@repl
 using Hecke; # hide
-Qx, x = PolynomialRing(QQ, "x");
+Qx, x = PolynomialRing(FlintQQ, "x");
 K, a = NumberField(x^2 - 2, "a");
 O = EquationOrder(K)
 ```

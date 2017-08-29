@@ -3,7 +3,7 @@
 # use as include(...)
 ################################################################################
 function toNemo(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " = MatrixSpace(ZZ, ", rows(A), ", ", cols(A), ")([")
+  println(io, name, " = MatrixSpace(FlintZZ, ", rows(A), ", ", cols(A), ")([")
   for i = 1:rows(A)
     for j = 1:cols(A)
       print(io, A[i,j])

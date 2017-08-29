@@ -178,7 +178,7 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
 #
 #CF: too expensive, need norm_mod to compute the norm only modulo...
 #
-#  if C.norm != gcd(C.gen_one^degree(O), ZZ(norm(C.gen_two)))
+#  if C.norm != gcd(C.gen_one^degree(O), FlintZZ(norm(C.gen_two)))
 #    println("a:", a)
 #    println("b:", b)
 #    println("C:", C)
@@ -263,7 +263,7 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
     add!(gen, u, gen)          # Nemo.add_into!(u, gen, gen)
 #    gen2 += (r1*K(a.gen_two) + r2*a.gen_one) *
 #           (r3*K(b.gen_two) + r4*b.gen_one)
-    gen = mod(gen, mod_c^2)    # = element_reduce_mod(gen, O, ZZ(mod_c)^2)
+    gen = mod(gen, mod_c^2)    # = element_reduce_mod(gen, O, FlintZZ(mod_c)^2)
 
     if gcd(norm(gen), norm_int_c^2) == norm_int_c # should be ^n, but for
                                                   # the test ^2 is sufficient

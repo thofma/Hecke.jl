@@ -115,7 +115,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
   # i=n/2 roughly.
 
   p = next_prime(degree(f))
-  while discriminant(PolynomialRing(ResidueRing(ZZ, p))[1](f)) == 0
+  while discriminant(PolynomialRing(ResidueRing(FlintZZ, p))[1](f)) == 0
     p = next_prime(p)
   end
 
@@ -199,7 +199,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
           _n[i,1] = div(_n[i,1], fmpz(p)^bd)
         end
       end
-      m = hcat(m, vcat(_n, MatrixSpace(ZZ, rows(m)-rows(_n), 1)()))
+      m = hcat(m, vcat(_n, MatrixSpace(FlintZZ, rows(m)-rows(_n), 1)()))
       if k+d > bd
         m = vcat(m, MatrixSpace(FlintZZ, 1, cols(m))())
         if trunk && bd <= k

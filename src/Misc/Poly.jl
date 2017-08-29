@@ -17,11 +17,11 @@ function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
 end
 
 function FlintFiniteField(p::Integer)
-  return ResidueRing(ZZ, p)
+  return ResidueRing(FlintZZ, p)
 end
 
 function FlintFiniteField(p::fmpz)
-  return ResidueRing(ZZ, p)
+  return ResidueRing(FlintZZ, p)
 end
 
 function fmpz(a::GenRes{Nemo.fmpz})

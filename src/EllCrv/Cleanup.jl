@@ -118,8 +118,8 @@ function local_height_infinite(P, d = 20)
   b2, b4, b6, b8 = get_b_integral(E)   
     
   H = max(4, abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
-  b2prime = b2 - ZZ(12)
-  b4prime = b4 - b2 + ZZ(6)
+  b2prime = b2 - fmpz(12)
+  b4prime = b4 - b2 + fmpz(6)
   b6prime = b6 - 2*b4 + b2 - 4
   b8prime = b8 - 3*b6 + 3*b4 - b2 + 3
     
@@ -346,7 +346,7 @@ function points_with_bounded_naive_height(E, B)
   torsiontwo = sort(fzeros(f))
   x0 = torsiontwo[1]
   
-  R, z = PolynomialRing(ZZ, "z")
+  R, z = PolynomialRing(FlintZZ, "z")
   
   points = []
   
@@ -361,7 +361,7 @@ function points_with_bounded_naive_height(E, B)
               
         if length(zeros) != 0
           for b in zeros
-            P = E([QQ(a,c^2), QQ(b, c^3)])
+            P = E([FlintQQ(a,c^2), FlintQQ(b, c^3)])
             push!(points, P)
           end
         end
@@ -495,7 +495,7 @@ function mod_red(E, B)
     
     for i in 1:length(P)
         p = P[i]
-        R = ResidueRing(ZZ, p)
+        R = ResidueRing(FlintZZ, p)
         Ep = EllipticCurve([R(num(minmodel.coeff[1])), R(num(minmodel.coeff[2])), R(num(minmodel.coeff[3])), R(num(minmodel.coeff[4])), R(num(minmodel.coeff[5]))],  false) # reduction of E mod p 
         
         if  disc(Ep) != 0 # can only determine group order if curve is non-singular

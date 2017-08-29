@@ -911,7 +911,7 @@ doc"""
 Returns the maximal order of $K$.
 **Example**
 
-    julia> Qx, x = QQ["x"]
+    julia> Qx, x = FlintQQ["x"]
     julia> K, a = NumberField(x^3 + 2, "a")
     julia> O = MaximalOrder(K)
 """

@@ -61,7 +61,7 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   n = cols(G)
   @hassert :LatEnum 1 rows(G) == n
   limit = min(limit, n)
-  t = ZZ()
+  t = fmpz()
   C = Array{TC}(limit, limit)
   for i=1:limit
     for j=1:limit
@@ -103,7 +103,7 @@ function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, 
   return enum_ctx_from_gram(num(G), den(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
 end  
  
-function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = ZZ(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
+function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = fmpz(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
   G = gram(B)
   return enum_ctx_from_gram(G, den*den, Tx=Tx, TC=TC, TU=TU, limit = limit)
 end
@@ -115,7 +115,7 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   E.limit = limit = min(limit, n)
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
-  E.x = MatrixSpace(ZZ, 1, n)()
+  E.x = MatrixSpace(FlintZZ, 1, n)()
     #coeffs limit+1:n are going to be zero, always
   E.L = Array{TU}(limit) #lower and
   E.U = Array{TU}(limit) #upper bounds for the coordinates
@@ -208,7 +208,7 @@ end
 
 function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}
 #  println("i: ", i, "                                   "[1:2*i], "|")
-  t = ZZ()
+  t = fmpz()
   if i == E.last_non_zero-1
     fmpz_mat_entry_incref!(E.x, 1, i)
 #    E.x[1, i] = getindex!(t, E.x, 1, i) + 1
@@ -368,7 +368,7 @@ end
 
 function enumerate_using_gram(G::arb_mat, c::arb)
   E = EnumCtxArb(pseudo_cholesky(G))
-  return _enumerate(E, c, rows(G), MatrixSpace(ZZ, 1, rows(G))())
+  return _enumerate(E, c, rows(G), MatrixSpace(FlintZZ, 1, rows(G))())
 end
 
 function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)

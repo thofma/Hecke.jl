@@ -127,7 +127,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 end
 
 # The output will be of type
-# elem_type(MatrixSpace(ResidueRing(ZZ, p), 1, rank(U) ( + 1))), so
+# elem_type(MatrixSpace(ResidueRing(FlintZZ, p), 1, rank(U) ( + 1))), so
 # nmod_mat or fmpz_mod_mat
 # THIS FUNCTION IS NOT TYPE STABLE
 function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
