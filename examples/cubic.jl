@@ -122,7 +122,8 @@ function s3_with_discriminant(I::NfOrdIdl)
           continue
         end
         B = number_field(number_field(A)[1])[1]
-        Ba = absolute_field(B)[1]
+        BB = number_field(Kr["t"][1]([m1\coeff(B.pol, i) for i=0:degree(B)]))[1]
+        Ba = absolute_field(BB)[1]
         r = roots(Ba.pol, Ba)
         @assert degree(Ba) == 6
         @assert length(r) == 6
@@ -130,7 +131,7 @@ function s3_with_discriminant(I::NfOrdIdl)
           if rr == gen(Ba)
             continue
           end
-          h = Hecke.NfToNfMor(Ba, Ba, rr)
+          h = Hecke.NfRelToNfRelMor(Ba, Ba, rr)
           if h(h(gen(Ba))) == gen(Ba)
             #found auto or order 2!
             g = gen(Ba) + h(gen(Ba))
