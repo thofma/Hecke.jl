@@ -666,9 +666,22 @@ function factor(f::GenPoly{NfRelElem{T}}) where T
   return res
 end
 
-
 function factor(f::PolyElem, K::Nemo.Field)
   Kt, t = PolynomialRing(K)
   return factor(Kt([K(coeff(f, i)) for i=0:degree(f)]))
 end
+
+function roots(f::PolyElem, K::Nemo.Field)
+  Kt, t = PolynomialRing(K)
+  return roots(Kt([K(coeff(f, i)) for i=0:degree(f)]))
+end
+
+function roots(f::GenPoly{NfRelElem{T}}) where T
+  lf = factor(f)
+  @assert degree(lf.unit) == 0
+  scale = inv(coeff(lf.unit, 0))
+  return [-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x)==1]
+end
+
+
 
