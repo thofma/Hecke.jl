@@ -420,7 +420,7 @@ function ==(A::NfOrdFracIdl, B::NfOrdFracIdl)
   D = inv(B)
   E = prod(A, D)
   C = simplify(E)
-  return norm(C) == 1 && C.den == 1
+  return isone(C.den) && isone(norm(C))
 end
 
 ################################################################################
