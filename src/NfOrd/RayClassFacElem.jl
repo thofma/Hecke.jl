@@ -712,7 +712,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       I=J* inv(s)
       I=I^Int(nonppartclass)
       z=Hecke.principal_gen_fac_elem(I)
-      @assert evaluate(I) == ideal(order(J), evaluate(z))
+      @hassert :PID_Test 1 evaluate(I) == ideal(order(J), evaluate(z))
       el=Hecke._fac_elem_evaluation(O,z,lp,expo)
       y=((mG\el)*inverse_d).coeff
       if p==2 && !isempty(pr)
@@ -792,7 +792,7 @@ function _act_on_ray_class(mR::Map, p::Int, Aut::Array{Hecke.NfToNfMor,1})
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
-  F, _=FiniteField(p,1, "_")  
+  F, _=Nemo.FiniteField(p,1, "_")  
   G=MatElem[]
   
   for phi in Aut
@@ -833,7 +833,7 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
   @assert isprime(p)
   @assert all(x -> x==p, S.snf)
 
-  F, _ = FiniteField(Int(p), 1, "_")
+  F, _ = Nemo.FiniteField(Int(p), 1, "_")
   FM = MatrixSpace(F, ngens(S), ngens(S))
   G = MatElem[ FM(vcat([mS(X(preimage(mS, S[i]))).coeff for i=1:ngens(S)])) for X = act]
   M = FqGModule(G)

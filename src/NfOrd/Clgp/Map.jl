@@ -120,10 +120,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   end
   # ok, we have to work
   _I, b = reduce_ideal2(I) # do the obvious reduction to an ideal of bounded norm
-#  println("reduce to $I")
-#  J = simplify(b*_I)
-#  @assert den(J) == 1
-#  @assert num(J) == I
+  @hassert :PID_Test 1 b*I == _I
   I = _I
   n = norm(I)
   if issmooth(c.FB.fb_int, n)
@@ -276,11 +273,11 @@ doc"""
 """
 
 function principal_gen_fac_elem(I::FacElem)
-  
-  
-  J,a= Hecke.reduce_ideal2(I)
+  J,a= reduce_ideal2(I)
+  @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)
-  x=x*inv(a)
+  @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
+  x=x*a
   return x
   
 end

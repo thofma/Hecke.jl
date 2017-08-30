@@ -13,14 +13,15 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   K= nf(O)
   if norm(A) > abs(discriminant(O))
     A, a = reduce_ideal2(A)
-    # A_old * a = A_new
+    @hassert :PID_Test 1 a*A_orig == A
+    # A_old * inv(a) = A_new
     #so a^e A_old^e = A_new^e
-    al = FacElem(Dict(a=>e))
+    al = FacElem(Dict(a=>-e))
   else
     al = FacElem(Dict(K(1) => fmpz(1)))
   end
 
-  #now A^e, A small
+  #we have A_orig^e = (A*a)^e = A^e*a^e = A^e*al and A is now small
 
   if e < 0
     B = inv(A)
@@ -32,6 +33,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
   # al * A^old^(e/2) = A_new
   if e>1
     C, cl = power_reduce2(A, div(e, 2))
+    @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
 
     if isodd(e)
       A = C^2*A
@@ -42,7 +44,7 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
 
     if norm(A) > abs(discriminant(O))
       A, a = reduce_ideal2(A)
-      al *= a
+      al *= inv(a)
     end
     return A, al
   else
@@ -60,6 +62,7 @@ function ==(A::NfOrdIdl, B::NfOrdFracIdl)
     return true
   end
 end
+==(A::NfOrdFracIdl, B::NfOrdIdl) = B==A
 
 doc"""
 ***
@@ -79,17 +82,20 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
     end
     if fst
       A, a = power_reduce2(k, v)
+      @hassert :PID_Test 1 (v>0? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
       fst = false
     else
       B, b = power_reduce2(k, v)
+      @hassert :PID_Test (v>0? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
       A = A*B
       a = a*b
       if norm(A) > abs(discriminant(O))
         A, c = reduce_ideal2(A)
-        a = a*FacElem(Dict(K(c) => fmpz(1)))
+        a = a*FacElem(Dict(K(c) => fmpz(-1)))
       end
     end
   end
+  @hassert :PID_Test 1 A*evaluate(a) == evaluate(I)
   return A, a
 end
 

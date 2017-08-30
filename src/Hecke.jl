@@ -531,6 +531,10 @@ Base.showerror(io::IO, e::LowPrecisionLLL) =
 function checkbounds(a::Int, b::Int) nothing; end;
 
 ################################################################################
+add_assert_scope(:PID_Test)
+set_assert_level(:PID_Test, 0)
+
+################################################################################
 #
 #  "Submodules"
 #
