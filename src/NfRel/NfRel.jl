@@ -632,11 +632,15 @@ end
 
 (K::NfRel)(x::NfRelElem) = K(base_ring(K)(x))
 
+(K::NfRel)(x::nf_elem) = K(base_ring(K)(x))
+
 (K::NfRel{T})(x::NfRelElem{T}) where {T} = K(x.data)
 
 (K::NfRel{NfRelElem{T}})(x::NfRelElem{T}) where {T} = K(parent(K.pol)(x))
 
 (K::NfRel{nf_elem})(x::nf_elem) = K(parent(K.pol)(x))
+
+#
 
 function (R::GenPolyRing{nf_elem})(a::NfRelElem{nf_elem})
   if base_ring(R)==base_ring(parent(a))

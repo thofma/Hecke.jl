@@ -283,7 +283,7 @@ doc"""
 """
 function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :imap)
-    return preimage(M, a)
+    return true, preimage(M, a)
   end
 
   m = vcat(M.map, rels(codomain(M)))
