@@ -876,7 +876,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
   ls=submodules(M,index)
   subgroups=Map[]
   for s in ls
-    subs=GrpAbFinGenElem[]
+    subs=[p*R[i] for i=1:ngens(R)]
     for i=1:rows(s)
       x=MatrixSpace(FlintZZ,1,cols(s))()
       for j=1:cols(s)
@@ -884,8 +884,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index
       end
       push!(subs, mQ\(mS\(S(x))))
     end
-    W,mW=quo(R, subs) #TODO: probably wrong if R has exponent > p as the p*R
-                      # need not be contained in subs
+    W,mW=quo(R, subs) 
     push!(subgroups, mR*inv(mW))
   end
   return subgroups
