@@ -19,7 +19,8 @@ mutable struct KummerExt <: AbelianExt
   n::Int
   gen::Array{FacElem{nf_elem}, 1}
 
-  AutG::Hecke.GrpAbFinGen
+  AutG::GrpAbFinGen
+  frob_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
 
   function KummerExt()
     return new()
@@ -41,6 +42,7 @@ function kummer_extension(n::Int, gen::Array{FacElem{nf_elem, AnticNumberField},
   K.n = n
   K.gen = gen
   K.AutG = Hecke.GrpAbFinGen(fmpz[n for i=gen])
+  K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
   return K
 end
 
@@ -51,6 +53,7 @@ mutable struct ClassField_pp
   A::Hecke.NfRel{nf_elem} # the target
   AutG::Array
   AutR::fmpz_mat
+  bigK::KummerExt
 
   function ClassField_pp()
     return new()

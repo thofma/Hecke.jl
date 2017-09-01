@@ -727,7 +727,7 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
   return res
 end
 
-function inv(a::RelSeriesElem{nf_elem})
+function inv(a::RelSeriesElem{<:Nemo.FieldElem}) 
   @assert valuation(a)==0
   # x -> x*(2-xa) is the lifting recursino
   x = parent(a)(inv(coeff(a, 0)))
@@ -754,6 +754,35 @@ function inv(a::RelSeriesElem{nf_elem})
   end
   return x
 end
+
+function log(a::RelSeriesElem{<:Nemo.FieldElem}) 
+  @assert valuation(a)==0 
+  return integral(derivative(a)*inv(a))
+end
+
+function exp(a::RelSeriesElem{<:Nemo.FieldElem})
+  @assert valuation(a) >0
+  R = base_ring(parent(a))
+  x = parent(a)([R(1)], 1, 2, 0)
+  p = precision(a)
+  la = [p]
+  while la[end]>1
+    push!(la, div(la[end]+1, 2))
+  end
+
+  one = parent(a)([R(1)], 1, 2, 0)
+
+  n = length(la)-1
+  # x -> x*(1-log(a)+a) is the recursion
+  while n>0
+    set_prec!(x, la[n])
+    set_prec!(one, la[n])
+    x = x*(one - log(x) + a) # TODO: can be optimized...
+    n -=1 
+  end
+  return x
+end
+
 
 doc"""
     derivative(f::RelSeriesElem{T}) -> RelSeriesElem
@@ -803,9 +832,10 @@ function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: F
   d = degree(f)
   R = base_ring(f)
   S = PowerSeriesRing(R, n+1, "gen(S)")[1]
-  fs = derivative(f)
-
-  A = S([coeff(reverse(fs), i) for i=0:d-1], d, n+1, 0)
+  #careful: converting to power series and derivative do not commute
+  #I also don't quite get this: I thought this was just the log,
+  #but it isn't
+  A = S([coeff(reverse(derivative(f)), i) for i=0:d], d+1, n+1, 0)
   B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
   L = A*inv(B)
   return [coeff(L, i) for i=1:n]
@@ -836,21 +866,29 @@ doc"""
 function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   d = length(P)
   R = parent(P[1])
-  S = PowerSeriesRing(R, d+1, "gen(S)")[1]
-  s = S(P, length(P), d+1, 0)
-  r = S(T[R(1), -P[1]], 2, d+1, 0) 
-  la = [d+1]
-  while la[end]>1
-    push!(la, div(la[end]+1, 2))
+  S = PowerSeriesRing(R, d, "gen(S)")[1]
+  s = S(P, length(P), d, 0)
+  if !false
+    r = - integral(s)
+    r = exp(r)
   end
-  n = length(la)-1
-  while n > 0
-    set_prec!(r, la[n])
-    rr = derivative(r)*inv(r)
-    md = -(rr+s)
-    m = 1+integral(md)
-    r *= m
-    n -= 1
+
+  if false
+    r = S(T[R(1), -P[1]], 2, 2, 0) 
+    la = [d+1]
+    while la[end]>1
+      push!(la, div(la[end]+1, 2))
+    end
+    n = length(la)-1
+    while n > 0
+      set_prec!(r, la[n])
+      rr = derivative(r)*inv(r)
+      md = -(rr+s)
+      m = S([R(1)], 1, la[n], 0)+integral(md)
+      r *= m
+      n -= 1
+    end
+    println("new exp $r")
   end
   d = Nemo.pol_length(r)
   v = valuation(r)

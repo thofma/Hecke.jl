@@ -1,5 +1,36 @@
 using Hecke
 
+function ideals_with_pp_norm(lp::Array{NfOrdIdl, 1}, k::Int)
+  l = [degree(x) for x= lp]
+#  println("pp with $l and $k")
+  #need sum([e[i]*l[i] == k, e[i] >= 0])
+  C = CartesianRange(Tuple((0:div(k, l[j])) for j = 1:length(l)))
+  r = [prod(lp[i]^c[i] for i=1:length(l)) for c = C if sum(c[i]*l[i] for i=1:length(l)) == k]
+#  println("r: $r")
+  return r
+end
+
+function ideals_with_norm(i::fmpz, M::NfOrd)
+  @assert M.ismaximal == 1
+  lf = factor(i)
+  lp = [ideals_with_pp_norm([x[1] for x = prime_decomposition(M, Int(k))], v) for (k, v) = lf.fac]
+#  println(lp)
+  return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = CartesianRange(Tuple(1:length(lp[i]) for i=1:length(lp)))]
+end
+
+function orbit_reps(I::Array{NfOrdIdl, 1}, s::Hecke.NfToNfMor)
+  O = Set([I[1], Hecke.induce_image(I[1], s)])
+  R = [I[1]]
+  for i=I
+    if i in O
+      continue
+    end
+    push!(R, i)
+    push!(O, i)
+    push!(O, Hecke.induce_image(i, s))
+  end
+  return R
+end
 
 #Note: this is not optimised, but hopefully correct.
 #if you need more, analyse Hasse...
@@ -48,8 +79,16 @@ function s3_with_discriminant(I::NfOrdIdl)
     if e==1
       d *= i
     elseif e==2
+      if norm(f) % 3 != 1
+        println("no 3 in the prime, cannot work")
+        return []
+      end
       f *= i
     elseif e==3
+      if norm(f) % 3 != 1
+        println("no 3 in the prime, cannot work")
+        return []
+      end
       f *= i
       d *= i
     else
@@ -73,7 +112,7 @@ function s3_with_discriminant(I::NfOrdIdl)
     println("need to try $D and $F as conductors")
     #all quadratics with conductor D:
     r, mr = ray_class_group_p_part(2, D)
-    println(r)
+    
     for s in index_p_subgroups(r, fmpz(2), (A,x) -> quo(A, x)[2])
       a = ray_class_field(mr*inv(s))
 #      println(a, " with cond ", conductor(a))
@@ -91,7 +130,6 @@ function s3_with_discriminant(I::NfOrdIdl)
       Ka, m1, m2 = absolute_field(Kr)
       sigma = Hecke.NfToNfMor(Ka, Ka, m1(conj(preimage(m1, gen(Ka))))) 
       #m1: Kr -> Ka, m2: base_ring(Kr) -> Ka
-      println("Field: ", Ka)
       M = lll(maximal_order(Ka))
       FF = ideal(M, F.gen_one, M(m2(k(F.gen_two))))
       R, mR = ray_class_group_p_part(3, FF)
@@ -151,6 +189,48 @@ function s3_with_discriminant(I::NfOrdIdl)
     end
   end
   return res
+end
+
+
+function Gunter_Qi(r::UnitRange, pref="Qi.new")
+  Qt, t = FlintQQ["t"]
+  k, a = number_field(t^2+1, "k.1")
+  s = Hecke.NfToNfMor(k, k, -a)
+  M = maximal_order(k)
+  kx, x = k["kx.1"]
+  f = open("/tmp/$pref", "a")
+  g = open("/tmp/$pref.err", "a")
+  err_cnt = 0
+
+  for i = r
+    try
+      I = ideals_with_norm(fmpz(i), M)
+      if length(I)==0
+        continue
+      end
+      I = NfOrdIdl[I[x] for x = linearindices(I)]
+      R = orbit_reps(I, s)
+      for r in R
+        z = s3_with_discriminant(r)
+        if length(z)==0
+          continue
+        end
+        for j=z
+          println(f, "<$i, $(kx([coeff(j, jj) for jj=0:3]))>, ")
+        end
+      end
+    catch e
+      err_cnt += 1
+      println("i: $i")
+      println(e)
+      println(g, "i: $i")
+      println(g, e)
+      if err_cnt > 10
+        rethrow(e)
+      end
+    end
+  end
+  close(f)
 end
 
 

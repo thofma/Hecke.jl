@@ -40,6 +40,9 @@ end
 end
 
 function can_frobenius(p::NfOrdIdl, K::KummerExt)
+  if haskey(K.frob_cache, p)
+    return K.frob_cache[p]
+  end
   Zk = order(p)
   if index(Zk) % minimum(p) == 0 
     #index divisors and residue class fields don't agree
@@ -71,7 +74,9 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     end
     push!(aut, fmpz(i))
   end
-  return K.AutG(aut)
+  z = K.AutG(aut)
+  K.frob_cache[p] = z
+  return z
 end
 
 #=
@@ -200,6 +205,7 @@ function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
   ZK = maximal_order(c.Ka)
   @assert order(domain(cf)) == ZK
   Zk = order(codomain(mR))
+  Id_Zk = Hecke.NfOrdIdlSet(Zk)
   k = nf(Zk)
   @assert k == domain(mp)
   Qx = parent(k.pol)
@@ -213,7 +219,7 @@ function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
   sR = elem_type(R)[]
 
   for P = lp
-    p = intersect_nonindex(mp, P)
+    p = Id_Zk(intersect_nonindex(mp, P))
     push!(sR, valuation(norm(P), norm(p))*preimage(mR, p))
   end
   @assert order(quo(G, sG)[1]) == 1
@@ -223,6 +229,36 @@ function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
   # now the map G -> R sG[i] -> sR[i] 
   h = hom(sG, sR)
   return h
+end
+
+function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
+  if parent(a) == I_Zk
+    return a
+  end
+  Zk = order(I_Zk)
+  Zl = order(a)
+  @assert has_2_elem(a)
+  b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
+  for i in [:gens_normal, :gens_weakly_normal, :iszero, :minimum]
+    if isdefined(a, i)
+      setfield!(b, i, getfield(a, i))
+    end
+  end
+  n = divexact(degree(Zk.nf), degree(Zl.nf))
+  if isdefined(a, :norm)
+    b.norm = a.norm^n
+  end
+  if isdefined(a, :princ_gen)
+    b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
+  end
+  if isdefined(a, :isprime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
+    Zl.ismaximal == 1
+    b.isprime = a.isprime
+    if isdefined(a, :splitting_type)
+      b.splitting_type = a.splitting_type
+    end
+  end
+  return b
 end
 
 doc"""
@@ -333,6 +369,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
   @vprint :ClassField 2 "... done\n"
   @vtime :ClassField 2 KK = kummer_extension(Int(e), [mS(S[i]) for i=1:ngens(S)])
+  CF.bigK = KK
 
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
   @vtime :ClassField 2 h = build_map(CF.mq, KK, C)
@@ -427,7 +464,7 @@ function _rcf_descent(CF::ClassField_pp)
                               # have to pass to a subgroup
     @assert order(g) % degree(C.Kr) == 0
     f = C.Kr.pol
-    s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(mg(x))))])
+    s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))])
     g = s
     mg = mg*ms
   end
@@ -784,6 +821,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
         end
         p *= 2
         if p> 40000
+          println("\n\nELT\n\n", a, "\n\nn: $n $primes\n\n")
           error("too much prec")
         end
         continue

@@ -760,6 +760,23 @@ function vcat(A::Array{fmpz_mat, 1})
   return M
 end
 
+function vcat(A::Array{nmod_mat, 1})
+  if any(x->cols(x) != cols(A[1]), A)
+    error("Matrices must have same number of columns")
+  end
+  M = MatrixSpace(base_ring(A[1]), sum(rows, A), cols(A[1]))()
+  s = 0
+  for i=A
+    for j=1:rows(i)
+      for k=1:cols(i)
+        M[s+j, k] = i[j,k]
+      end
+    end
+    s += rows(i)
+  end
+  return M
+end
+
 ################################################################################
 #
 #  Smith normal form with trafo
