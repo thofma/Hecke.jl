@@ -11,7 +11,7 @@ mutable struct NfRelOrdIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NfRelOrdElem{T}, S}}
+  pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
   basis_mat::GenMat{T}
   basis_mat_inv::GenMat{T}
 
@@ -65,7 +65,7 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   M = MatrixSpace(base_ring(L), degree(L), degree(L))()
   C = Vector{S}()
   for i = 1:degree(L)
-    elem_to_mat_row!(M, i, L(pb[i][1]))
+    elem_to_mat_row!(M, i, pb[i][1])
     push!(C, pb[i][2])
   end
   a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
@@ -82,12 +82,10 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
   P = basis_pmat(a)
   L = nf(order(a))
   K = base_ring(L)
-  pseudo_basis = Vector{Tuple{NfRelOrdElem{T}, S}}()
+  pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(L)
     x = elem_from_mat_row(L, P.matrix, i)
-    x = order(a)(x*minimum(P.coeffs[i]))
-    y = P.coeffs[i]*inv(K(minimum(P.coeffs[i])))
-    push!(pseudo_basis, (x, simplify(y)))
+    push!(pseudo_basis, (x, P.coeffs[i]))
   end
   a.pseudo_basis = pseudo_basis
   return nothing
@@ -200,7 +198,9 @@ function assure_has_norm(a::NfRelOrdIdl)
   for i = 2:degree(order(a))
     n *= c[i]*inv(d[i])
   end
-  a.norm = n
+  simplify(n)
+  @assert n.den == 1
+  a.norm = n.num
   a.has_norm = true
   return nothing
 end
@@ -208,7 +208,7 @@ end
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmat(a), basis_pmat(b))
-  m = num(det(basis_pmat(a)))
+  m = norm(a) + norm(b)
   H = sub(pseudo_hnf_mod(H, m, :lowerleft), (d + 1):2*d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
@@ -227,17 +227,31 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   L = nf(order(a))
   K = base_ring(L)
   d = degree(order(a))
-  m = MatrixSpace(K, d^2, d)()
-  c = Array{S, 1}(d^2)
+  M = MatrixSpace(K, d^2, d)()
+  C = Array{S, 1}(d^2)
   t = L()
   for i = 1:d
     for j = 1:d
-      mul!(t, L(pba[i][1]), L(pbb[i][1]))
-      elem_to_mat_row!(m, (i - 1)*d + j, t)
-      c[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
+      mul!(t, pba[i][1], pbb[i][1])
+      elem_to_mat_row!(M, (i - 1)*d + j, t)
+      C[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
     end
   end
-  H = sub(pseudo_hnf(PseudoMatrix(m, c), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  m = norm(a)*norm(b)
+  H = sub(pseudo_hnf_mod(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  return NfRelOrdIdl{T, S}(order(a), H)
+end
+
+function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  d = degree(order(a))
+  Ma = basis_pmat(a)
+  Mb = basis_pmat(b)
+  M1 = hcat(Ma, deepcopy(Ma))
+  z = zero(MatrixSpace(base_ring(Ma.matrix), d, d))
+  M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
+  M = vcat(M1, M2)
+  m = intersection(norm(a), norm(b))
+  H = sub(pseudo_hnf_mod(M, m, :lowerleft), 1:d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
 
