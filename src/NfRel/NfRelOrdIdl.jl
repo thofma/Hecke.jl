@@ -420,3 +420,78 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   H = sub(pseudo_hnf_mod(M, m, :lowerleft), 1:d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
+
+################################################################################
+#
+#  P-radical
+#
+################################################################################
+
+function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
+  d = degree(O)
+  L = nf(O)
+  K = base_ring(L)
+  OK = maximal_order(K)
+  pb = pseudo_basis(O, Val{false})
+  pbint = Vector{Tuple{NfRelOrdElem{T}, NfOrdIdl}}()
+  for i = 1:d
+    push!(pbint, (deepcopy(pb[i][1]), deepcopy(num(pb[i][2]))))
+    if den(pb[i][2]) != 1
+      pbint[i][1] = divexact(pbint[i][1], den(pb[i][2]))
+    end
+  end
+  pOK = ideal(OK, OK(minimum(p)))
+  prime_ideals = factor(pOK)
+  elts_max_val = Vector{NfOrdElem}(d)
+  for i = 1:d
+    products = Vector{NfOrdIdl}()
+    for (prime, e) in prime_ideals
+      push!(products, pbint[i][2]*prime)
+    end
+    while true
+      a = rand(pbint[i][2], 2^63) # magic number
+      foundOne = true
+      for pp in products
+        if a in pp
+          foundOne = false
+          break
+        end
+      end
+      if foundOne
+        elts_max_val[i] = a
+        break
+      end
+    end
+  end
+  q = norm(p)
+  k = clog(fmpz(degree(OK)), q)
+  F, mF = ResidueField(OK, p)
+  A = MatrixSpace(F, d, d)()
+  for i = 1:d
+    t = (O(elts_max_val[i])*pbint[i][1])^(q^k)
+    ar = elem_in_basis(t)
+    for j = 1:d
+      if !(ar[j] in pbint[j][2])
+        println("D'oh!")
+      end
+      A[i, j] = mF(divexact(OK(ar[j]), elts_max_val[j]))
+    end
+  end
+  B = nullspace(A)[2]
+  M1 = zero(MatrixSpace(OK, d, d))
+  imF = inv(mF)
+  for i = 1:rows(B)
+    for j = 1:cols(B)
+      M1[i, j] = imF(B[j, i])
+    end
+  end
+  M2 = eye(M1)
+  PM1 = PseudoMatrix(M1)
+  PM2 = PseudoMatrix(M2, fill(p, d))
+  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
+  N = PM.matrix*basis_mat(O)
+  PN = PseudoMatrix(N, PM.coeffs)
+  println(PN)
+  PN = pseudo_hnf(PN, :lowerleft)
+  return NfRelOrdIdl{T, S}(O, PN)
+end
