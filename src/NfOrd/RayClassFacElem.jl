@@ -188,7 +188,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   @vprint :RayFacElem 1 "The order of the class group is $C\n"
   @vprint :RayFacElem 1 "The units are $U\n"
     
-  expo=Int(exponent(G))
+  expon=Int(exponent(G))
 
 #
 # We start to construct the relation matrix
@@ -206,7 +206,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   for i=1:ngens(U)
     u=mU(U[1])
     @vprint :RayFacElem 1 "Processing unit number $i \n"
-    el=Hecke._fac_elem_evaluation(O,u,lp,expo)
+    el=Hecke._fac_elem_evaluation(O,u,lp,expon)
     @vprint :RayFacElem 1 "Product computed, now discrete logarithm\n"
     a=(mG\Q(el)).coeff
     if !isempty(p)
@@ -228,7 +228,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     @vprint :RayFacElem 1 "Processing class group generator number i \n"
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
-      el=Hecke._fac_elem_evaluation(O,y,lp,expo)
+      el=Hecke._fac_elem_evaluation(O,y,lp,expon)
       a=(mG\Q(el)).coeff
       if !isempty(p)
         b=lH(u)
@@ -266,7 +266,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       s=exp_class(L)
       I=J* inv(s)
       z=Hecke.principal_gen_fac_elem(I)
-      el=_fac_elem_evaluation(O,z,lp,expo)
+      el=_fac_elem_evaluation(O,z,lp,expon)
       y=(mG\Q(el)).coeff
       if !isempty(p)
         b=lH(z)
@@ -852,6 +852,139 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
     push!(subgroups, op(R, subs))
   end
   return subgroups
+end
+
+
+function _act_on_ray_class(mR::Map)
+
+  R=mR.header.domain
+  O=mR.header.codomain.base_ring.order
+  K=nf(O)
+  Aut=automorphisms(K)
+  G=Hecke.GrpAbFinGenMap[]
+  
+  for phi in Aut
+    M=MatrixSpace(ZZ,ngens(R), ngens(R))()
+    for i=1:ngens(R) 
+      J=mR(R[i])
+      I=FacElem(Dict(ideal(O,1)=> 1))
+      for (f,k) in J.fac
+        I.fac[_aut_on_id(O, phi, f)]=k
+      end
+      elem=mR\I
+      for j=1:ngens(R)
+        M[i,j]=elem.coeff[1,j]
+      end
+    end
+    push!(G,GrpAbFinGenMap(R,R,M))
+  end
+  
+  return G
+  
+end
+
+function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}, op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+  
+  @assert length(act)>0
+  c=lcm(quotype)
+  Q,mQ=quo(R,c)
+  lf=factor(order(Q)).fac
+  list=[]
+  for p in keys(lf)
+    
+    G,mG=psylow_subgroup(Q, p)
+    S,mS=snf(G)
+    #
+    #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
+    #
+    x=valuation(c,p)
+    if x==1
+    
+      F, _ = Nemo.FiniteField(Int(p), 1, "_")
+      act_mat=Array{GenMat{fq_nmod},1}(length(act))
+      for z=1:length(act)
+        A=MatrixSpace(F,ngens(S), ngens(S))()
+        for i=1:ngens(S)
+          y=mS(haspreimage(mG,act[z](mG(mS\(S[i]))))[2])
+          for j=1:ngens(S)
+            A[i,j]=y.coeff[1,j]
+          end
+        end
+        act_mat[z]=A
+      end
+      M=FqGModule(act_mat)
+      #
+      #  Searching for submodules
+      #
+      
+      ind=0
+      for i=1:length(quotype)
+        if divisible(fmpz(quotype[i]),p)
+          ind+=1
+        end
+      end
+      plist=submodules(M,ind)
+      psubs=[]
+      for el in plist
+        newsub=[c*R[i] for i=1:ngens(R)]
+        for i=1:rows(el)
+          y=submatrix(el,i:i,1:cols(el))
+          z=MatrixSpace(ZZ,1,cols(el))()
+          for j=1:cols(z)
+            z[1,j]=ZZ(coeff(y[i,j],0))
+          end
+          push!(newsub,mQ\(mG(mS\(S(z)))))
+        end
+        push!(psubs,newsub)
+      end
+      push!(list, psubs)
+
+    else    
+    
+      R=ResidueRing(ZZ,p^x)
+      act_mat=Array{nmod_mat,1}(length(act))
+      for z=1:length(act)
+        A=MatrixSpace(R,ngens(G), ngens(G))()
+        for i=1:ngens(G)
+          y=haspreimage(mG,act[z](mG(G[i])))[2]
+          for j=1:ngens(G)
+            A[i,j]=y.coeff[1,j]
+          end
+        end
+        act_mat[z]=A
+      end
+      #
+      #  Searching for submodules
+      #
+      
+      M=Hecke.ZpnGModule(G,act_mat)
+    
+      quotype_p=Int[]
+      for i=1:length(quotype)
+        v=valuation(quotype[i],p)
+        if v>0
+          push!(quotype_p,v)
+        end
+      end
+      plist=Hecke.submodules_with_quo_struct(M,quotype_p)
+      psubs=[]
+      for el in plist
+        newsub=[c*R[i] for i=1:ngens(R)]
+        for i=1:rows(el)
+          y=view(el,i:i,1:cols(el))
+          push!(newsub,mQ\(mG(mS\(S(lift(y))))))
+        end
+        push!(psubs,newsub)
+      end
+      push!(list, psubs)
+      
+    end
+  end
+
+  final_it = ( op(R,vcat(c...)) for c in Iterators.product(list...))
+  return final_it
+
+  
 end
 
 function stable_index_p_subgroups(mR::Hecke.MapRayClassGrpFacElem, p::Int, index::Int=1, Aut::Array{NfToNfMor, 1}=NfToNfMor[])
