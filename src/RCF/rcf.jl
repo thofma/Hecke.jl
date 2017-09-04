@@ -306,7 +306,7 @@ function number_field(CF::ClassField)
     q[i] = G[i]
   end
   CF.cyc = res
-  return [x.A.pol for x = CF.cyc]
+  return number_field([x.A.pol for x = CF.cyc])
 end
 
 function ray_class_field_cyclic_pp(mq::Map)
