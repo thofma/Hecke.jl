@@ -862,6 +862,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   for (q,e) in fac
     if gcd(norm(q)-1,n)!=1
       y1[q]=Int(1)
+      if gcd(norm(q),n)!=1 && e>=2
+        y2[q]=Int(e)
+      end
     else 
       if gcd(norm(q),n)!=1 && e>=2
         y2[q]=Int(e)
@@ -957,7 +960,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   mG=Hecke.MapMultGrp()
   mG.header=Hecke.MapHeader(G,Q,exp,dlog)
   
-  return G, mG, merge(y1, y2)
+  return G, mG, merge(max,y1, y2)
 end
 
 doc"""
