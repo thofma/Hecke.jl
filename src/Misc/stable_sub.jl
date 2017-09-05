@@ -459,6 +459,23 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   end  
   
   return list
-  
+  act
+end
+
+
+
+function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+
+  S=mS.domain
+  for s in gens(S)
+    x=mS(s)
+    for g in M.G
+      if !haspreimage(mS,x*g)[1]
+        return false
+      end
+    end
+  end
+  return true
+
 end
 
