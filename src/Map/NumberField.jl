@@ -217,6 +217,19 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
   end
 end
 
+
+function automorphisms(K::AnticNumberField)
+
+  f=K.pol
+  lr=roots(f,K)
+  Aut=Hecke.NfToNfMor[]
+  for r in lr
+    push!(Aut, Hecke.NfToNfMor(K, K, r))
+  end
+  return Aut
+  
+end
+
 mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing}
   header::MapHeader{NfOrd, NfOrdQuoRing}
 
