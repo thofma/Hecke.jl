@@ -184,11 +184,47 @@ function _multgrp_mod_p(p::NfOrdIdl)
   if has_2_elem(p) && isprime_known(p)
     Q, mQ = ResidueField(O, p)
     gen_quo = mQ(gen)
-    discrete_logarithm = function(x::NfOrdElem) pohlig_hellman(gen_quo,n,mQ(x);factor_n=factor_n) end
+    discrete_logarithm = function (x::NfOrdElem)
+      y=mQ(x)
+      if y==Q(1)
+        return 0
+      elseif y==Q(-1) && mod(n,2)==0
+        return divexact(n,2)
+      end
+      if n<11
+        res=1
+        el=gen_quo
+        while el!=y
+          el*=gen_quo
+          res+=1
+        end
+        return res
+      else 
+        return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
+      end
+    end
   else
     Q = NfOrdQuoRing(O,p)
     gen_quo = Q(gen)
-    discrete_logarithm = function(x::NfOrdElem) pohlig_hellman(gen_quo,n,Q(x);factor_n=factor_n) end
+    discrete_logarithm= function (x::NfOrdElem)
+      y=mQ(x)
+      if y==Q(1)
+        return 0
+      elseif y==Q(-1) && mod(n,2)==0
+        return divexact(n,2)
+      end
+      if n<11
+        res=1
+        el=gen_quo
+        while el!=y
+          el*=gen_quo
+          res+=1
+        end
+        return res
+      else 
+        return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
+      end
+    end
   end
   return gen, n, discrete_logarithm
 end
@@ -202,14 +238,14 @@ function _primitive_element_mod_p(p::NfOrdIdl)
   while true
     x = rand(Q)
     x == 0 && continue
-    order_to_small = false
+    order_too_small = false
     for l in primefactors_n
       if x^div(n, l) == 1
-        order_to_small = true
+        order_too_small = true
         break
       end
     end
-    order_to_small || return Q_map\x
+    order_too_small || return Q_map\x
   end
 end
 
@@ -749,7 +785,7 @@ end
 #  Discrete Logarithm In Cyclic Groups
 #
 ################################################################################
-# TODO compare with implementations ins UnitsModM.jl
+# TODO compare with implementations in UnitsModM.jl
 
 doc"""
 ***
