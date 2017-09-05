@@ -481,6 +481,7 @@ Nemo.canonical_unit(a::NfRelElem) = a
 #*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
 
 @inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
+@inline setcoeff!{T}(a::NfRelElem{T}, i::Int, c::T) = setcoeff!(a.data, i, c)
 
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
 
