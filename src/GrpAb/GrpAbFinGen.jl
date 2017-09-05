@@ -303,7 +303,7 @@ end
 # then hasimage(h, ..) would check if x in s
 function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   if isdefined(M, :map)
-    return image(M, a)
+    return true, image(M, a)
   end
 
   m = vcat(M.imap, rels(domain(M)))
