@@ -385,6 +385,19 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   R=M.R 
   S,mS=snf(M)
   wish=DiagonalGroup([(M.p)^typequo[i] for i=1:length(typequo)])
+  t,_=snf(wish)
+  if isisomorphic(t,S.V)
+    return nmod_mat[MatrixSpace(R, 1, ngens(M.V))()]
+  end
+  v=t.snf
+  if length(v)>length(S.V.snf)
+    return nmod_mat[]
+  end
+  for i=1:length(typequo)
+    if !divisible((M.p)^typequo[length(typequo)+1-i], S.V.snf[ngens(S.V)+1-i])
+      return nmod_mat[]
+    end
+  end
   
   #
   #  Matrices giving the action of the group on the dual module
@@ -401,6 +414,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
     end
     transpose!(G1[i])
   end
+  
   #
   #  Dual Module and candidate submodules
   #
@@ -430,7 +444,6 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
     end
   end
   
-  
   #
   #  Write the submodules in terms of the given generators
   #
@@ -440,7 +453,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   end  
   
   return list
-  act
+  
 end
 
 function subm_to_subg(M::ZpnGModule, S::nmod_mat)
