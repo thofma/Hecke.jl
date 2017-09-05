@@ -521,8 +521,8 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
   emb::Array{NfRel_nsElem{T}, 1}
   coeff_aut::NfToNfMor
 
-  function NfRel_nsToNfRel_nsMor(K::NfRel_ns{T}, L::NfRel_ns{T}, a::NfRel_nsElem{T}, emb::Array{NfRel_nsElem{T}, 1}) where {T}
-    function image(x::NfRelElem{T})
+  function NfRel_nsToNfRel_nsMor(K::NfRel_ns{T}, L::NfRel_ns{T}, emb::Array{NfRel_nsElem{T}, 1}) where {T}
+    function image(x::NfRel_nsElem{T})
       # x is an element of K
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
@@ -551,6 +551,20 @@ function msubst(f::GenMPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   end
   return r
 end
+function msubst(f::GenMPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
+  k = base_ring(parent(f))
+  n = length(v)
+  println(n)
+  println(f)
+  println(ngens(parent(f)))
+  @assert n == ngens(parent(f))
+  r = zero(k)
+  for i=1:length(f)
+    r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
+  end
+  return r
+end
+
 
 #find isomorphic simple field AND the map
 function simple_extension(K::NfRel_ns)
