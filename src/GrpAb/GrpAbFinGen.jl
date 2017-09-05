@@ -736,8 +736,41 @@ function DiagonalGroup(M::Array{T, 1}) where T <: Union{Integer, fmpz}
   end
 end
 
-# missing:
-# is_torsion, torsion_subgroup, subgroups, ...
+doc"""
+***
+    direct_product(G::GrpAbFinGen, H::GrpAbFinGen) -> GrpAbFinGen
+> It returns the abelian group $G\times H$
+
+"""
+
+function direct_product(G::GrpAbFinGen, H::GrpAbFinGen) 
+
+  A=vcat(rels(G), MatrixSpace(FlintZZ, rows(rels(H)), cols(rels(G)))())
+  B=vcat(MatrixSpace(FlintZZ, rows(rels(G)), cols(rels(H)))(),rels(H))
+ 
+  return AbelianGroup(hcat(A,B))
+  
+end 
+
+function istorsion(G::GrpAbFinGen)
+
+  S=snf(G)[1]
+  return S.snf[ngens(S)]!=0
+  
+end
+
+function torsion_subgroup(G::GrpAbFinGen)
+  
+  S,mS=snf(G)
+  subs=GrpAbFinGenElem[]
+  i=1
+  while S.snf[i]!=0
+    push!(subs, mS\(S[i]))
+  end
+  return sub(G,subs)
+  
+end
+
 
 ##############################################################################
 #
