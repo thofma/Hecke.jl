@@ -22,15 +22,6 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
 end
 
 
-mutable struct MapMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
-  header::Hecke.MapHeader
-
-  function MapMultGrp()
-    return new()
-  end
-end
-
-
 ###############################################################################
 #
 #  Ray Class Group interface
@@ -559,8 +550,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
     return G(result)
   end
   
-  mG=Hecke.MapMultGrp()
-  mG.header=Hecke.MapHeader(G,Q,exp,dlog)
+  mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
   
   return G, mG, merge(y1, y2)
 end
@@ -996,8 +986,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
     return G(result)
   end
   
-  mG=Hecke.MapMultGrp()
-  mG.header=Hecke.MapHeader(G,Q,exp,dlog)
+  mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
   
   return G, mG, merge(max,y1, y2)
 end
