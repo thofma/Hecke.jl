@@ -286,7 +286,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 #
 
   for i=1:ngens(U)
-    u=mU(U[1])
+    u=mU(U[i])
     @vprint :RayFacElem 1 "Processing unit number $i \n"
     el=Hecke._fac_elem_evaluation(O,u,lp,expon)
     @vprint :RayFacElem 1 "Product computed, now discrete logarithm\n"
@@ -411,7 +411,7 @@ end
 function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
-  Q , mQ = quo(O,p)
+  Q , mQ = ResidueField(O,p)
   
   n = norm(p) - 1
   s=valuation(n,prime)
@@ -434,17 +434,18 @@ function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   
   function disclog(x::NfOrdElem)
     t=mQ(x)^m
-    if powerp<10
-      s=1
+#=    if powerp<10
+      w=1
       el=g
       while el!=t
-        s+=1
+        w+=1
         el*=g
       end
-      return [s*inv]
-    else 
+      return [w*inv]
+    else
+=# 
       res=Hecke._pohlig_hellman_prime_power(g,prime,s,t)
-    end
+ #   end
     return [res*inv]
   end
   
