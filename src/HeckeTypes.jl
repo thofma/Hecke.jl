@@ -1688,14 +1688,14 @@ end
 
 mutable struct FqGModule <: GModule
   K::Nemo.FqNmodFiniteField
-  G::Array{Any,1}
+  G::Array{GenMat{fq_nmod},1}
   dim::Int
   isirreducible::Bool
   peakword_elem::Array{Int,1}
   peakword_poly::PolyElem
   dim_spl_fld::Int
   
-  function FqGModule(G::Array{T,1}) where T
+  function FqGModule(G::Array{GenMat{fq_nmod},1})
     z=new()
     z.G=G
     z.K=parent(G[1][1,1])
