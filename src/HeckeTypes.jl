@@ -1664,7 +1664,27 @@ end
 
 abstract type GModule end
 
-export FqGModule
+export FqGModule, ZpnGModule
+
+mutable struct ZpnGModule <: GModule
+  R::GenResRing
+  V::GrpAbFinGen
+  G::Array{nmod_mat,1}
+  p::Int
+  
+  function ZpnGModule(V::GrpAbFinGen,G::Array{nmod_mat,1})
+    @assert ngens(V)==cols(G[1]) && ngens(V)==rows(G[1])
+    z=new()
+    z.G=G
+    z.V=V
+    z.R=parent(G[1][1,1]) 
+    f=factor(z.R.modulus)
+    @assert length(f.fac)==1
+    z.p=Int(first(keys(f.fac)))
+    return z
+  end
+  
+end
 
 mutable struct FqGModule <: GModule
   K::Nemo.FqNmodFiniteField
