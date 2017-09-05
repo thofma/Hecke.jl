@@ -75,6 +75,14 @@ mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
     z.discrete_logarithm = disc_log
     return z
   end
+  
+  function AbToResRingMultGrp(G::GrpAbFinGen, Q::NfOrdQuoRing, exp::Function, disc_log::Function)
+    z = new()
+    z.header = MapHeader(G,Q,exp,disc_log)
+    
+    return z
+  end
+  
 end
 
 mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd}

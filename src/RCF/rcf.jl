@@ -114,8 +114,6 @@ function _modulus(mR::Map)
   end
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
-  elseif issubtype(typeof(mR), Hecke.MapRayClassGrpFacElem)
-    return mR.modulus_fin
   end
   @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
   return mR.modulus_fin

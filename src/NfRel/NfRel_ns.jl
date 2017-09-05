@@ -139,20 +139,36 @@ Nemo.one(a::NfRel_nsElem) = one(a.parent)
 #
 ################################################################################
 
-Nemo.promote_rule{T <: Integer, S}(::Type{NfRel_nsElem{S}}, ::Type{T}) = NfRel_nsElem{S}
+if isdefined(Nemo, :promote_rule1)
+  Nemo.promote_rule{T <: Integer, S}(::Type{NfRel_nsElem{S}}, ::Type{T}) = NfRel_nsElem{S}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T} = NfRel_nsElem{T}
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T} = NfRel_nsElem{T}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T} = NfRel_nsElem{T}
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T} = NfRel_nsElem{T}
 
-Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
 
-function Nemo.promote_rule1(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{U}}) where {T, U}
-   Nemo.promote_rule(T, NfRel_nsElem{U}) == T ? NfRel_nsElem{T} : Union{}
-end
+  function Nemo.promote_rule1(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{U}}) where {T, U}
+     Nemo.promote_rule(T, NfRel_nsElem{U}) == T ? NfRel_nsElem{T} : Union{}
+  end
 
-function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T, U} 
-   Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Nemo.promote_rule1(U, NfRel_nsElem{T})
+  function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T, U} 
+    Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Nemo.promote_rule1(U, NfRel_nsElem{T})
+  end
+else
+  Nemo.promote_rule{T <: Integer, S}(::Type{NfRel_nsElem{S}}, ::Type{T}) = NfRel_nsElem{S}
+
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T} = NfRel_nsElem{T}
+
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T} = NfRel_nsElem{T}
+
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
+
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{T}}) where T <: Nemo.RingElement = NfRel_nsElem{T}
+  
+  function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
+    Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Union{}
+  end
 end
 
 ################################################################################
@@ -598,5 +614,4 @@ end
 function Base.copy(a::NfRelElem)
   return parent(a)(a.data)
 end
-
 

@@ -36,7 +36,7 @@ export show, ideal
 
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
        prime_ideals_up_to, factor, divexact, isramified, anti_uniformizer,
-       uniformizer
+       uniformizer, iscoprime
 
 export NfOrdIdl
 
@@ -1393,3 +1393,27 @@ function toMagma(s::String, c::NfOrdIdl, order::String = "M")
   close(f)
 end
 
+###################################################################################
+#
+#  Coprimality between ideals
+#
+###################################################################################
+
+doc"""
+***
+    iscoprime(I::NfOrdIdl, J::NfOrdIdl) -> Bool
+> Test if ideals $I,J$ are coprime
+
+"""
+
+function iscoprime(I::NfOrdIdl, J::NfOrdIdl)
+  
+  @assert parent(I)==parent(J)
+  
+  if gcd(minimum(I), minimum(J))==1
+    return true
+  else 
+    return isone(I+J)
+  end
+
+end 
