@@ -1,23 +1,3 @@
-mutable struct ZpnGModule <: GModule
-  R::GenResRing
-  V::GrpAbFinGen
-  G::Array{nmod_mat,1}
-  p::Int
-  
-  function ZpnGModule(V::GrpAbFinGen,G::Array{T,1}) where T
-    @assert ngens(V)==cols(G[1]) && ngens(V)==rows(G[1])
-    z=new()
-    z.G=G
-    z.V=V
-    z.R=parent(G[1][1,1]) 
-    f=factor(z.R.modulus)
-    @assert length(f.fac)==1
-    z.p=Int(first(keys(f.fac)))
-    return z
-  end
-  
-end
-
 #
 #  Action of a matrix on an element of the group
 #
@@ -51,18 +31,16 @@ function Nemo.snf(M::ZpnGModule)
   end
   S,mS=snf(A)
   W=[mS\s for s in gens(S)]
-  H=[]
+  H=Array{nmod_mat,1}(length(G))
   for i=1:length(G)
-    N=MatrixSpace(M.R, 0,ngens(S))()
+    N=MatrixSpace(M.R, ngens(S),ngens(S))()
     for j=1:length(W)
       y=mS(G[i]*W[j])
-      aux=MatrixSpace(M.R,1,ngens(S))()
       for k=1:ngens(S)
-        aux[1,k]=y.coeff[1,k]
+        N[j,k]=y.coeff[1,k]
       end
-      N=vcat(N,aux)
     end
-    push!(H,N)
+    H[i]=N
   end
   return ZpnGModule(S,H), mS
     
@@ -70,14 +48,14 @@ end
 
 
 #
-#  Given a list of square matrices G, returns a list of matrices given by the minors 
+#  Given a list of square matrices G, it returns a list of matrices given by the minors 
 #  (n-s) x (n-s) of the matrices G[i] projected mod p 
 #
 
 
-function _change_ring(G, F, s::Int)
+function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
   
-  G1=MatElem[]
+  G1=Array{GenMat{fq_nmod},1}(length(G))
   n=rows(G[1])
   for i=1:length(G)
     M=MatrixSpace(F,n-s+1,n-s+1)()
@@ -86,7 +64,7 @@ function _change_ring(G, F, s::Int)
         M[j-s+1,k-s+1]=(G[i][j,k]).data
       end
     end
-    push!(G1,M)
+    G1[i]=M
   end
   return G1
 
@@ -109,7 +87,7 @@ function _mult_by_p(M::ZpnGModule)
   F,a=FiniteField(p,1,"a")
   n=ngens(V)
   Gq=_change_ring(G,F,1)
-  spaces=[FqGModule(Gq)]
+  spaces=FqGModule[FqGModule(Gq)]
   #
   #  Now, the others
   #
@@ -157,15 +135,17 @@ function _exponent_p_sub(M::ZpnGModule)
   hV = GrpAbFinGenMap(V, V, MatrixSpace(ZZ,ngens(V),ngens(V))(p))  #Can make it more efficient if necessary, working with matrices
   K,mK=Hecke.kernel(hV)
   S,mS=snf(K)
-  G1=MatElem[]
-  for g in G
-    A=MatrixSpace(F,0,ngens(S))()
+  G1=Array{GenMat{fq_nmod},1}(length(G))
+  for z=1:length(G)
+    A=MatrixSpace(F,ngens(S),ngens(S))()
     for i=1:ngens(S)
       x=g*(mK(mS(S[i])))
       x=(mS\(haspreimage(mK,x)[2])).coeff
-      A=vcat(A,x)
+      for j=1:ngens(S)
+        A[i,j]=x[1,j]
+      end
     end
-    push!(G1,A)
+    G1[z]=A
   end
   return FqGModule(G1)
   
@@ -182,17 +162,18 @@ function minimal_submodules(M::ZpnGModule)
   list=nmod_mat[]
   v=[valuation(order(S.V[i]), M.p) for i=1:ngens(S.V)]
   for x in list_sub
-    A=MatrixSpace(R,0, ngens(M.V))()
+    A=MatrixSpace(R,rows(x), ngens(M.V))()
     for k=1:rows(x)
-      A=vcat(A, (haspreimage( mS , S.V([ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))[2]).coeff)
+      y=(haspreimage( mS , S.V([ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))[2]).coeff
+      for s=1:cols(x)
+        A[k,s]=y[1,s]
+      end
     end
     push!(list,A)
   end
   return list
 
 end
-
-
 
 function quo(M::ZpnGModule, S::MatElem)
 
@@ -404,6 +385,19 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   R=M.R 
   S,mS=snf(M)
   wish=DiagonalGroup([(M.p)^typequo[i] for i=1:length(typequo)])
+  t,_=snf(wish)
+  if isisomorphic(t,S.V)
+    return nmod_mat[MatrixSpace(R, 1, ngens(M.V))()]
+  end
+  v=t.snf
+  if length(v)>length(S.V.snf)
+    return nmod_mat[]
+  end
+  for i=1:length(typequo)
+    if !divisible((M.p)^typequo[length(typequo)+1-i], S.V.snf[ngens(S.V)+1-i])
+      return nmod_mat[]
+    end
+  end
   
   #
   #  Matrices giving the action of the group on the dual module
@@ -420,6 +414,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
     end
     transpose!(G1[i])
   end
+  
   #
   #  Dual Module and candidate submodules
   #
@@ -449,7 +444,6 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
     end
   end
   
-  
   #
   #  Write the submodules in terms of the given generators
   #
@@ -459,10 +453,18 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   end  
   
   return list
-  act
+  
 end
 
-
+function subm_to_subg(M::ZpnGModule, S::nmod_mat)
+  
+  G=M.V
+  subg=Array{GrpAbFinGenElem,1}(rows(S))
+  for i=1:rows(S)
+    subg[i]=G(lift(view(S, i:i,1:cols(S))))
+  end
+  return sub(G,subg)
+end
 
 function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
