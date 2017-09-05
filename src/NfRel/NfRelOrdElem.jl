@@ -96,6 +96,12 @@ doc"""
 """
 (O::NfRelOrd{T, S})() where {T, S} = NfRelOrdElem{T}(O)
 
+function (O::NfRelOrd)(a::NfOrdElem, check::Bool = true)
+  OO = parent(a)
+  b = nf(O)(nf(OO)(a))
+  return O(b, check)
+end
+
 ################################################################################
 #
 #  Parent
@@ -389,6 +395,24 @@ for T in [Integer, fmpz]
       return c
     end
   end
+end
+
+################################################################################
+#
+#  Exponentiation
+#
+################################################################################
+
+doc"""
+***
+    ^(a::NfRelOrdElem, b::Union{fmpz, Int}) -> NfRelOrdElem
+
+> Returns $a^b$.
+"""
+function ^(a::NfRelOrdElem, b::Union{fmpz, Int})
+  c = parent(a)()
+  c.elem_in_nf = a.elem_in_nf^b
+  return c
 end
 
 ################################################################################

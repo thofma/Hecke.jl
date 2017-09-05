@@ -11,7 +11,7 @@ mutable struct NfRelOrdIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NfRelOrdElem{T}, S}}
+  pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
   basis_mat::GenMat{T}
   basis_mat_inv::GenMat{T}
 
@@ -47,11 +47,41 @@ mutable struct NfRelOrdIdl{T, S}
   end
 end
 
+################################################################################
+#
+#  Basic field access
+#
+################################################################################
+
+doc"""
+***
+    order(a::NfRelOrdIdl) -> NfRelOrd
+
+> Returns the order of $a$.
+"""
 order(a::NfRelOrdIdl) = a.order
 
+doc"""
+***
+    nf(a::NfRelOrdIdl) -> NfRel
+
+> Returns the number field, of which $a$ is an integral ideal.
+"""
 nf(a::NfRelOrdIdl) = nf(order(a))
 
+################################################################################
+#
+#  Parent
+#
+################################################################################
+
 parent(a::NfRelOrdIdl) = a.parent
+
+################################################################################
+#
+#  "Assure" functions for fields
+#
+################################################################################
 
 function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   if isdefined(a, :basis_pmat)
@@ -65,7 +95,7 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   M = MatrixSpace(base_ring(L), degree(L), degree(L))()
   C = Vector{S}()
   for i = 1:degree(L)
-    elem_to_mat_row!(M, i, L(pb[i][1]))
+    elem_to_mat_row!(M, i, pb[i][1])
     push!(C, pb[i][2])
   end
   a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
@@ -82,12 +112,10 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
   P = basis_pmat(a)
   L = nf(order(a))
   K = base_ring(L)
-  pseudo_basis = Vector{Tuple{NfRelOrdElem{T}, S}}()
+  pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(L)
     x = elem_from_mat_row(L, P.matrix, i)
-    x = order(a)(x*minimum(P.coeffs[i]))
-    y = P.coeffs[i]*inv(K(minimum(P.coeffs[i])))
-    push!(pseudo_basis, (x, simplify(y)))
+    push!(pseudo_basis, (x, P.coeffs[i]))
   end
   a.pseudo_basis = pseudo_basis
   return nothing
@@ -109,6 +137,18 @@ function assure_has_basis_mat_inv(a::NfRelOrdIdl)
   return nothing
 end
 
+################################################################################
+#
+#  Pseudo basis / basis pseudo-matrix
+#
+################################################################################
+
+doc"""
+***
+      pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{NfRelElem{T}, S}}
+
+> Returns the pseudo-basis of $a$.
+"""
 function pseudo_basis(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_pseudo_basis(a)
   if copy == Val{true}
@@ -118,6 +158,12 @@ function pseudo_basis(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+doc"""
+***
+      basis_pmat(a::NfRelOrdIdl) -> PMat
+
+> Returns the basis pseudo-matrix of $a$.
+"""
 function basis_pmat(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_pmat(a)
   if copy == Val{true}
@@ -127,6 +173,18 @@ function basis_pmat(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+################################################################################
+#
+#  Basis / (inverse) basis matrix
+#
+################################################################################
+
+doc"""
+***
+      basis_mat(a::NfRelOrdIdl{T, S}) -> GenMat{T}
+
+> Returns the basis matrix of $a$.
+"""
 function basis_mat(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat(a)
   if copy == Val{true}
@@ -136,6 +194,12 @@ function basis_mat(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+doc"""
+***
+      basis_mat_inv(a::NfRelOrdIdl{T, S}) -> GenMat{T}
+
+> Returns the inverse of the basis matrix of $a$.
+"""
 function basis_mat_inv(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat_inv(a)
   if copy == Val{true}
@@ -144,6 +208,12 @@ function basis_mat_inv(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
     return a.basis_mat_inv
   end
 end
+
+################################################################################
+#
+#  String I/O
+#
+################################################################################
 
 function show(io::IO, s::NfRelOrdIdlSet)
   print(io, "Set of ideals of ")
@@ -157,13 +227,37 @@ function show(io::IO, a::NfRelOrdIdl)
   print(io, basis_pmat(a))
 end
 
+################################################################################
+#
+#  Parent object overloading and user friendly constructors
+#
+################################################################################
+
+doc"""
+***
+    ideal(O::NfRelOrd, M::PMat) -> NfRelOrdIdl
+
+> Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$.
+"""
 function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   # checks
   H = pseudo_hnf(M, :lowerleft)
   return NfRelOrdIdl{T, S}(O, H)
 end
 
+doc"""
+***
+    ideal(O::NfRelOrd, M::GenMat) -> NfRelOrdIdl
+
+> Creates the ideal of $\mathcal O$ with basis matrix $M$.
+"""
 ideal(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
+
+################################################################################
+#
+#  Deepcopy
+#
+################################################################################
 
 function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::ObjectIdDict) where {T, S}
   z = NfRelOrdIdl{T, S}(a.order)
@@ -176,19 +270,28 @@ function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::ObjectIdDict) where 
   return z
 end
 
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+doc"""
+***
+    ==(a::NfRelOrdIdl, b::NfRelOrdIdl) -> Bool
+
+> Returns whether $a$ and $b$ are equal.
+"""
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) != order(b) && return false
   return basis_pmat(a) == basis_pmat(b)
 end
 
-function norm(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
-  assure_has_norm(a)
-  if copy == Val{true}
-    return deepcopy(a.norm)
-  else
-    return a.norm
-  end
-end
+################################################################################
+#
+#  Norm
+#
+################################################################################
 
 function assure_has_norm(a::NfRelOrdIdl)
   if a.has_norm
@@ -200,144 +303,20 @@ function assure_has_norm(a::NfRelOrdIdl)
   for i = 2:degree(order(a))
     n *= c[i]*inv(d[i])
   end
-  a.norm = n
+  simplify(n)
+  @assert n.den == 1
+  a.norm = n.num
   a.has_norm = true
   return nothing
 end
 
-function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
-  d = degree(order(a))
-  H = vcat(basis_pmat(a), basis_pmat(b))
-  m = num(det(basis_pmat(a)))
-  H = sub(pseudo_hnf_mod(H, m, :lowerleft), (d + 1):2*d, 1:d)
-  return NfRelOrdIdl{T, S}(order(a), H)
-end
+doc"""
+***
+    norm(a::NfRelOrdIdl) -> NfOrdIdl
 
-function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
-  bp = basis_pmat(a)
-  P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
-  return NfRelOrdIdl{T, S}(order(a), P)
-end
-
-*(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
-
-function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
-  pba = pseudo_basis(a, Val{false})
-  pbb = pseudo_basis(b, Val{false})
-  L = nf(order(a))
-  K = base_ring(L)
-  d = degree(order(a))
-  m = MatrixSpace(K, d^2, d)()
-  c = Array{S, 1}(d^2)
-  t = L()
-  for i = 1:d
-    for j = 1:d
-      mul!(t, L(pba[i][1]), L(pbb[i][1]))
-      elem_to_mat_row!(m, (i - 1)*d + j, t)
-      c[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
-    end
-  end
-  H = sub(pseudo_hnf(PseudoMatrix(m, c), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-  return NfRelOrdIdl{T, S}(order(a), H)
-end
-
-mutable struct NfRelOrdFracIdlSet{T, S}
-  order::NfRelOrd{T, S}
-
-  function NfRelOrdFracIdlSet{T, S}(O::NfRelOrd{T, S}) where {T, S}
-    a = new(O)
-    return a
-  end
-end
-
-mutable struct NfRelOrdFracIdl{T, S}
-  order::NfRelOrd{T, S}
-  parent::NfRelOrdFracIdlSet{T, S}
-  num::NfRelOrdIdl{T, S}
-  den_abs::NfOrdElem # used if T == nf_elem
-  den_rel::NfRelOrdElem # used otherwise
-
-  norm
-  has_norm::Bool
-
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
-    z = new{T, S}()
-    z.order = O
-    z.parent = NfRelOrdFracIdlSet{T, S}(O)
-    z.has_norm = false
-    return z
-  end
-
-  function NfRelOrdFracIdl{nf_elem, S}(O::NfRelOrd{nf_elem, S}, a::NfRelOrdIdl{nf_elem, S}, d::NfOrdElem) where S
-    z = new{nf_elem, S}()
-    z.order = O
-    z.parent = NfRelOrdFracIdlSet{nf_elem, S}(O)
-    z.num = a
-    z.den_abs = d
-    z.has_norm = false
-    return z
-  end
-
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem) where {T, S}
-    z = new{T, S}()
-    z.order = O
-    z.parent = NfRelOrdFracIdlSet{T, S}(O)
-    z.num = a
-    z.den_rel = d
-    z.has_norm = false
-    return z
-  end
-end
-
-order(a::NfRelOrdFracIdl) = a.order
-
-nf(a::NfRelOrdFracIdl) = nf(order(a))
-
-parent(a::NfRelOrdFracIdl) = a.parent
-
-num(a::NfRelOrdFracIdl) = a.num
-
-den(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = a.den_abs
-den(a::NfRelOrdFracIdl{T, S}) where {S, T} = a.den_rel
-
-function show(io::IO, s::NfRelOrdFracIdlSet)
-  print(io, "Set of fractional ideals of ")
-  print(io, s.order)
-end
-
-function show(io::IO, a::NfRelOrdFracIdl)
-  print(io, "Fractional ideal of (")
-  print(io, order(a), ")\n")
-  print(io, "with basis pseudo-matrix\n")
-  print(io, basis_pmat(num(a)), "\n")
-  print(io, "and denominator ", den(a))
-end
-
-function frac_ideal(O::NfRelOrd{nf_elem, S}, a::NfRelOrdIdl{nf_elem, S}, d::NfOrdElem) where S
-  return NfRelOrdFracIdl{nf_elem, S}(O, a, d)
-end
-
-function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem{T}) where {T, S}
-  return NfRelOrdFracIdl{T, S}(O, a, d)
-end
-
-function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S}, dict::ObjectIdDict) where {T, S}
-  z = NfRelOrdFracIdl{T, S}(a.order)
-  for x in fieldnames(a)
-    if x != :order && isdefined(a, x)
-      setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
-    end
-  end
-  z.order = a.order
-  return z
-end
-
-function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
-  order(a) != order(b) && return false
-  return den(a) == den(b) && num(a) == num(b)
-end
-
-function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
+> Returns the norm of $a$.
+"""
+function norm(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_norm(a)
   if copy == Val{true}
     return deepcopy(a.norm)
@@ -346,28 +325,173 @@ function norm(a::NfRelOrdFracIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-function assure_has_norm(a::NfRelOrdFracIdl)
-  if a.has_norm
-    return nothing
+################################################################################
+#
+#  Ideal addition / GCD
+#
+################################################################################
+
+doc"""
+***
+    +(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
+
+> Returns $a + b$.
+"""
+function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  d = degree(order(a))
+  H = vcat(basis_pmat(a), basis_pmat(b))
+  m = norm(a) + norm(b)
+  H = sub(pseudo_hnf_mod(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  return NfRelOrdIdl{T, S}(order(a), H)
+end
+
+################################################################################
+#
+#  Ideal multiplication
+#
+################################################################################
+
+doc"""
+    *(a::NfRelOrdIdl, b::NfRelOrdIdl)
+
+> Returns $a \cdot b$.
+"""
+function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  pba = pseudo_basis(a, Val{false})
+  pbb = pseudo_basis(b, Val{false})
+  L = nf(order(a))
+  K = base_ring(L)
+  d = degree(order(a))
+  M = MatrixSpace(K, d^2, d)()
+  C = Array{S, 1}(d^2)
+  t = L()
+  for i = 1:d
+    for j = 1:d
+      mul!(t, pba[i][1], pbb[i][1])
+      elem_to_mat_row!(M, (i - 1)*d + j, t)
+      C[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
+    end
   end
-  n = norm(num(a))
-  d = den(a)^degree(order(a))
-  a.norm = n*inv(nf(parent(den(a)))(d))
-  a.has_norm = true
-  return nothing
+  m = norm(a)*norm(b)
+  H = sub(pseudo_hnf_mod(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  return NfRelOrdIdl{T, S}(order(a), H)
 end
 
-function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
-  K = nf(parent(den(a)))
-  da = K(den(a))
-  db = K(den(b))
-  d = divexact(da*db, gcd(da, db))
-  ma = divexact(d, da)
-  mb = divexact(d, db)
-  c = ma*num(a) + mb*num(b)
-  return NfRelOrdFracIdl{T, S}(order(a), c, parent(den(a))(d))
+################################################################################
+#
+#  Ad hoc multiplication
+#
+################################################################################
+
+doc"""
+***
+    *(a:NfRelOrdIdl{T, S}, x::T) -> NfRelOrdIdl{T, S}
+
+> Returns the ideal $x\cdot a$.
+"""
+function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
+  bp = basis_pmat(a)
+  P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
+  return NfRelOrdIdl{T, S}(order(a), P)
 end
 
-function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
-  return NfRelOrdFracIdl{T, S}(order(a), num(a)*num(b), den(a)*den(b))
+*(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
+
+################################################################################
+#
+#  Intersection / LCM
+#
+################################################################################
+
+doc"""
+    intersection(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
+
+> Returns $a \cap b$.
+"""
+function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  d = degree(order(a))
+  Ma = basis_pmat(a)
+  Mb = basis_pmat(b)
+  M1 = hcat(Ma, deepcopy(Ma))
+  z = zero(MatrixSpace(base_ring(Ma.matrix), d, d))
+  M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
+  M = vcat(M1, M2)
+  m = intersection(norm(a), norm(b))
+  H = sub(pseudo_hnf_mod(M, m, :lowerleft), 1:d, 1:d)
+  return NfRelOrdIdl{T, S}(order(a), H)
+end
+
+################################################################################
+#
+#  P-radical
+#
+################################################################################
+
+function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
+  d = degree(O)
+  L = nf(O)
+  K = base_ring(L)
+  OK = maximal_order(K)
+  pb = pseudo_basis(O, Val{false})
+  pbint = Vector{Tuple{NfRelOrdElem{T}, NfOrdIdl}}()
+  for i = 1:d
+    push!(pbint, (deepcopy(pb[i][1]), deepcopy(num(pb[i][2]))))
+    if den(pb[i][2]) != 1
+      pbint[i][1] = divexact(pbint[i][1], den(pb[i][2]))
+    end
+  end
+  pOK = ideal(OK, OK(minimum(p)))
+  prime_ideals = factor(pOK)
+  elts_max_val = Vector{NfOrdElem}(d)
+  for i = 1:d
+    products = Vector{NfOrdIdl}()
+    for (prime, e) in prime_ideals
+      push!(products, pbint[i][2]*prime)
+    end
+    while true
+      a = rand(pbint[i][2], 2^63) # magic number
+      foundOne = true
+      for pp in products
+        if a in pp
+          foundOne = false
+          break
+        end
+      end
+      if foundOne
+        elts_max_val[i] = a
+        break
+      end
+    end
+  end
+  q = norm(p)
+  k = clog(fmpz(degree(OK)), q)
+  F, mF = ResidueField(OK, p)
+  A = MatrixSpace(F, d, d)()
+  for i = 1:d
+    t = (O(elts_max_val[i])*pbint[i][1])^(q^k)
+    ar = elem_in_basis(t)
+    for j = 1:d
+      if !(ar[j] in pbint[j][2])
+        println("D'oh!")
+      end
+      A[i, j] = mF(divexact(OK(ar[j]), elts_max_val[j]))
+    end
+  end
+  B = nullspace(A)[2]
+  M1 = zero(MatrixSpace(OK, d, d))
+  imF = inv(mF)
+  for i = 1:rows(B)
+    for j = 1:cols(B)
+      M1[i, j] = imF(B[j, i])
+    end
+  end
+  M2 = eye(M1)
+  PM1 = PseudoMatrix(M1)
+  PM2 = PseudoMatrix(M2, fill(p, d))
+  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
+  N = PM.matrix*basis_mat(O)
+  PN = PseudoMatrix(N, PM.coeffs)
+  println(PN)
+  PN = pseudo_hnf(PN, :lowerleft)
+  return NfRelOrdIdl{T, S}(O, PN)
 end

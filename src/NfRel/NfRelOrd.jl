@@ -266,14 +266,8 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
   if isdefined(O, :disc_abs)
     return nothing
   end
-  A = MatrixSpace(base_ring(nf(O)), degree(O), degree(O))()
-  pb = pseudo_basis(O)
-  for i = 1:degree(O)
-    for j = 1:degree(O)
-      A[i, j] = trace(pb[i][1]*pb[j][1])
-    end
-  end
-  d = det(A)
+  d = det(trace_matrix(O))
+  pb = pseudo_basis(O, Val{false})
   a = pb[1][2]^2
   for i = 2:degree(O)
     a *= pb[i][2]^2
@@ -293,14 +287,8 @@ function assure_has_discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
   if isdefined(O, :disc_rel)
     return nothing
   end
-  A = MatrixSpace(base_ring(nf(O)), degree(O), degree(O))()
-  pb = pseudo_basis(O)
-  for i = 1:degree(O)
-    for j = 1:degree(O)
-      A[i, j] = trace(pb[i][1]*pb[j][1])
-    end
-  end
-  d = det(A)
+  d = det(trace_matrix(O))
+  pb = pseudo_basis(O, Val{false})
   a = pb[1][2]^2
   for i = 2:degree(O)
     a *= pb[i][2]^2
@@ -442,7 +430,26 @@ function ==(R::NfRelOrd, S::NfRelOrd)
   return basis_pmat(R) == basis_pmat(S)
 end
 
+################################################################################
+#
+#  Trace matrix
+#
+################################################################################
 
-#mutable struct NfRelOrdIdl{T} end
-
-#mutable struct NfRelOrdFracIdl{T} end
+function trace_matrix(O::NfRelOrd)
+  L = nf(O)
+  K = base_ring(L)
+  b = basis_nf(O, Val{false})
+  d = degree(L)
+  g = MatrixSpace(K, d, d)()
+  for i = 1:d
+    t = trace(b[i]*b[i])
+    g[i, i] = t
+    for j = (i + 1):d
+      t = trace(b[i]*b[j])
+      g[i, j] = t
+      g[j, i] = t
+    end
+  end
+  return g
+end

@@ -83,26 +83,47 @@ Nemo.zero(K::NfRel) = K(Nemo.zero(parent(K.pol)))
 
 Nemo.one(K::NfRel) = K(Nemo.one(parent(K.pol)))
 
+function Nemo.zero!(a::NfRelElem)
+  Nemo.zero!(a.data)
+  return a
+end
+
 ################################################################################
 #
 #  Promotion
 #
 ################################################################################
 
-Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
+if isdefined(Nemo, :promote_rule1)
+  Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T} = NfRelElem{T}
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T} = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T} = NfRelElem{T}
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T} = NfRelElem{T}
 
-Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
 
-function Nemo.promote_rule1(::Type{NfRelElem{T}}, ::Type{NfRelElem{U}}) where {T, U}
-   Nemo.promote_rule(T, NfRelElem{U}) == T ? NfRelElem{T} : Union{}
-end
+  function Nemo.promote_rule1(::Type{NfRelElem{T}}, ::Type{NfRelElem{U}}) where {T, U}
+     Nemo.promote_rule(T, NfRelElem{U}) == T ? NfRelElem{T} : Union{}
+  end
 
-function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T, U} 
-   Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Nemo.promote_rule1(U, NfRelElem{T})
+  function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T, U} 
+    Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Nemo.promote_rule1(U, NfRelElem{T})
+  end
+else
+  Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
+
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T} = NfRelElem{T}
+
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T} = NfRelElem{T}
+
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
+
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: Nemo.RingElement = NfRelElem{T}
+  
+  function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
+    Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
+  end
 end
 
 ################################################################################
@@ -272,6 +293,27 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 
 ################################################################################
 #
+#  Exponentiation
+#
+################################################################################
+
+function Base.:(^)(a::NfRelElem, b::fmpz)
+  if b < 0
+    return inv(a)^(-b)
+  elseif b == 0
+    return parent(a)(1)
+  elseif b == 1
+    return deepcopy(a)
+  elseif mod(b, 2) == 0
+    c = a^(div(b, 2))
+    return c*c
+  elseif mod(b, 2) == 1
+    return a^(b - 1)*a
+  end
+end
+
+################################################################################
+#
 #  Inversion
 #
 ################################################################################
@@ -319,6 +361,12 @@ function Base.:(==)(a::NfRelElem{T}, b::NfRelElem{T}) where T
   reduce!(a)
   reduce!(b)
   return data(a) == data(b)
+end
+
+if !isdefined(Nemo, :promote_rule1)
+  function Base.:(==)(a::NfRelElem{T}, b::Union{Integer, Rational}) where T
+    return a == parent(a)(b)
+  end
 end
 
 ################################################################################

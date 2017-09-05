@@ -235,7 +235,7 @@ end
 end
 
 function SigmaIteratorGivenY(s, x, y)
-  t = findlast(!iszero(y))
+  t = findlast(!iszero, y)
   SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma),
                                        Nemo.AllPerms(s)))
 end
