@@ -286,7 +286,7 @@ doc"""
 """
 function number_field(CF::ClassField)
   if isdefined(CF, :cyc)
-    return [x.A.pol for x = CF.cyc]
+    return number_field([x.A.pol for x = CF.cyc])
   end
   m = CF.mq
   
