@@ -48,6 +48,7 @@ end
 
 function s3_with_discriminant(I::NfOrdIdl)
   lI = factor(I)
+  kx = PolynomialRing(order(I).nf)[1]
   #we need deccompositions I = df^2
   #and f is squarefree - exccept at 3
   #there can only be wild ramification at primes dividing the degree
@@ -119,10 +120,10 @@ function s3_with_discriminant(I::NfOrdIdl)
       if conductor(a)[1] != D
         continue
       end
-      K = number_field(a)
+      K = number_field(a)[1].pol
 #      println("have K: $K")
       @assert length(K) == 1
-      Kr = number_field(K[1])[1]
+      Kr = number_field(kx(K[1]))[1]
       @assert degree(Kr) == 2
       @assert Hecke.ispure_extension(Kr)
       conj = Hecke.NfRelToNfRelMor(Kr, Kr, -gen(Kr))
@@ -142,8 +143,8 @@ function s3_with_discriminant(I::NfOrdIdl)
 
       sigma_R = induce_action(sigma, mR)
 #      println(sigma_R)
+      Kax = PolynomialRing(Ka)[1]
       
-#      for S = Hecke.stable_index_p_subgroups(mR, 1, [Hecke.MapFromFunc(x->x, R, R), sigma_R])
       for S = Hecke.stable_index_p_subgroups(R, 1, [sigma_R], quo)
         @assert order(S[1]) == 3
         s, ms = snf(S[1])
@@ -159,7 +160,7 @@ function s3_with_discriminant(I::NfOrdIdl)
           println("wrong conductor")
           continue
         end
-        B = number_field(number_field(A)[1])[1]
+        B = number_field(Kax(number_field(A)[1].pol[1]))[1]
         BB = number_field(Kr["t"][1]([m1\coeff(B.pol, i) for i=0:degree(B)]))[1]
         Ba = absolute_field(BB)[1]
         r = roots(Ba.pol, Ba)
@@ -220,6 +221,7 @@ function Gunter_Qi(r::UnitRange, pref="Qi.new")
         end
       end
     catch e
+        rethrow(e)
       err_cnt += 1
       println("i: $i")
       println(e)

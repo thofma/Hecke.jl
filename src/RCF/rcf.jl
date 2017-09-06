@@ -114,8 +114,6 @@ function _modulus(mR::Map)
   end
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
-  elseif issubtype(typeof(mR), Hecke.MapRayClassGrpFacElem)
-    return mR.modulus_fin
   end
   @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
   return mR.modulus_fin
@@ -306,7 +304,7 @@ function number_field(CF::ClassField)
     q[i] = G[i]
   end
   CF.cyc = res
-  return [x.A.pol for x = CF.cyc]
+  return number_field([x.A.pol for x = CF.cyc])
 end
 
 function ray_class_field_cyclic_pp(mq::Map)

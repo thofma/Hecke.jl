@@ -227,7 +227,7 @@ end
 #
 ################################################################################
 
-function Hecke.number_field(f::Array{GenPoly{T}, 1}, s::String="_\$") where T
+function number_field(f::Array{GenPoly{T}, 1}, s::String="_\$") where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
@@ -353,8 +353,31 @@ function total_degree(f::GenMPoly)
   return Int(maximum([sum(f.exps[:, i]) for i=1:length(f)]))
 end
 
+function (R::GenPolyRing{nf_elem})(f::GenMPoly)
+  if length(f)==0
+    return R()
+  end
+  j = 1
+  c = 0
+  while j<= ngens(parent(f))
+    if f.exps[j, 1] != 0
+      if c==0
+        c = j
+      else 
+        error("poly is not univariate")
+      end
+    end
+    j += 1
+  end
+  g = R()
+  for i=1:length(f)
+    setcoeff!(g, Int(f.exps[c, i]), f.coeffs[i])
+  end
+  return g
+end
+
 #non-optimal...
-function Hecke.basis(K::NfRel_ns)
+function basis(K::NfRel_ns)
   b = NfRel_nsElem[]
   g = gens(K)
   for i=CartesianRange(Tuple(1:total_degree(f) for f = K.pol))
@@ -364,7 +387,7 @@ function Hecke.basis(K::NfRel_ns)
 end
 
 #TODO: a sparse version
-function Hecke.elem_to_mat_row!(M::GenMat{T}, i::Int, a::NfRel_nsElem{T}) where T
+function elem_to_mat_row!(M::GenMat{T}, i::Int, a::NfRel_nsElem{T}) where T
   K = parent(a)
   C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol))
   C = [UInt[c[i] for i=1:length(K.pol)] for c = C]
@@ -379,7 +402,30 @@ function Hecke.elem_to_mat_row!(M::GenMat{T}, i::Int, a::NfRel_nsElem{T}) where 
   end
 end
 
-function Hecke.minpoly(a::NfRel_nsElem)
+function monomial_to_index(i::Int, a::NfRel_nsElem)
+  K = parent(a)
+  n = ngens(K)
+  idx = a.data.exps[n, i]
+  for j=n-1:-1:1
+    idx *= total_degree(K.pol[j+1])
+    idx += a.data.exps[j, i]
+  end
+  return idx+1
+end
+
+function SRow(a::NfRel_nsElem)
+  sr = SRow(base_ring(parent(a)))
+  for i=1:length(a.data)
+    push!(sr.pos, monomial_to_index(i, a))
+    push!(sr.values, a.data.coeffs[i])
+  end
+  p = sortperm(sr.pos)
+  sr.pos = sr.pos[p]
+  sr.values = sr.values[p]
+  return sr
+end
+  
+function minpoly(a::NfRel_nsElem)
   K = parent(a)
   n = degree(K)
   k = base_ring(K)
@@ -402,7 +448,7 @@ function Hecke.minpoly(a::NfRel_nsElem)
   end
 end
 
-function Hecke.inv(a::NfRel_nsElem)
+function inv(a::NfRel_nsElem)
   if iszero(a)
     error("division by zero")
   end
@@ -414,23 +460,23 @@ function Hecke.inv(a::NfRel_nsElem)
   return -z*inv(coeff(f, 0))
 end
 
-function Hecke.charpoly(a::NfRel_nsElem)
+function charpoly(a::NfRel_nsElem)
   f = minpoly(a)
   return f^div(degree(parent(a)), degree(f))
 end
 
-function Hecke.norm(a::NfRel_nsElem)
+function norm(a::NfRel_nsElem)
   f = minpoly(a)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
-function Hecke.trace(a::NfRel_nsElem)
+function trace(a::NfRel_nsElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
 #TODO: also provide a sparse version
-function Hecke.representation_mat(a::NfRel_nsElem)
+function representation_mat(a::NfRel_nsElem)
   K = parent(a)
   b = basis(K)
   k = base_ring(K)
@@ -441,16 +487,16 @@ function Hecke.representation_mat(a::NfRel_nsElem)
   return M
 end
 
-@inline Hecke.ngens(K::NfRel_ns) = length(K.pol)
+@inline ngens(K::NfRel_ns) = length(K.pol)
 
-mutable struct NfRelToNfRel_nsMor{T} <: Map{Hecke.NfRel{T}, NfRel_ns{T}}
-  header::Hecke.MapHeader{Hecke.NfRel{T}, NfRel_ns{T}}
+mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}}
+  header::MapHeader{NfRel{T}, NfRel_ns{T}}
   prim_img::NfRel_nsElem{T}
-  emb::Array{Hecke.NfRelElem{T}, 1}
-  coeff_aut::Hecke.NfToNfMor
+  emb::Array{NfRelElem{T}, 1}
+  coeff_aut::NfToNfMor
 
-  function NfRelToNfRel_nsMor(K::Hecke.NfRel{T}, L::NfRel_ns{T}, a::NfRel_nsElem{T}, emb::Array{Hecke.NfRelElem{T}, 1}) where {T}
-    function image(x::Hecke.NfRelElem{T})
+  function NfRelToNfRel_nsMor(K::NfRel{T}, L::NfRel_ns{T}, a::NfRel_nsElem{T}, emb::Array{NfRelElem{T}, 1}) where {T}
+    function image(x::NfRelElem{T})
       # x is an element of K
       f = data(x)
       # First evaluate the coefficients of f at a to get a polynomial over L
@@ -465,15 +511,37 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{Hecke.NfRel{T}, NfRel_ns{T}}
     z = new{T}()
     z.prim_img = a
     z.emb = emb
-    z.header = Hecke.MapHeader(K, L, image, preimage)
+    z.header = MapHeader(K, L, image, preimage)
     return z
   end  
 end
 
-Hecke.ngens(R::Nemo.GenMPolyRing) = R.num_vars
+mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
+  header::MapHeader{NfRel_ns{T}, NfRel_ns{T}}
+  emb::Array{NfRel_nsElem{T}, 1}
+  coeff_aut::NfToNfMor
+
+  function NfRel_nsToNfRel_nsMor(K::NfRel_ns{T}, L::NfRel_ns{T}, emb::Array{NfRel_nsElem{T}, 1}) where {T}
+    function image(x::NfRel_nsElem{T})
+      # x is an element of K
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      return msubst(x.data, emb)
+    end
+
+    z = new{T}()
+    z.emb = emb
+    z.header = MapHeader(K, L, image)
+    return z
+  end  
+end
+
+
+@inline ngens(R::Nemo.GenMPolyRing) = R.num_vars
 
 #aparently, should be called evaluate, talk to Bill...
-function msubst(f::GenMPoly{T}, v::Array{Hecke.NfRelElem{T}, 1}) where T
+#definitely non-optimal, in particular for automorphisms
+function msubst(f::GenMPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -483,6 +551,20 @@ function msubst(f::GenMPoly{T}, v::Array{Hecke.NfRelElem{T}, 1}) where T
   end
   return r
 end
+function msubst(f::GenMPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
+  k = base_ring(parent(f))
+  n = length(v)
+  println(n)
+  println(f)
+  println(ngens(parent(f)))
+  @assert n == ngens(parent(f))
+  r = zero(k)
+  for i=1:length(f)
+    r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
+  end
+  return r
+end
+
 
 #find isomorphic simple field AND the map
 function simple_extension(K::NfRel_ns)
@@ -493,6 +575,7 @@ function simple_extension(K::NfRel_ns)
   i = 1
   ind = [1]
   local f::GenPoly{nf_elem}
+  #todo: use resultants rather than minpoly??
   while i < n
     i += 1
     j = 1
@@ -528,7 +611,7 @@ function simple_extension(K::NfRel_ns)
 end
 
 #trivia, missing in NfRel
-function Hecke.basis(K::Hecke.NfRel)
+function basis(K::NfRel)
   a = gen(K)
   z = one(K)
   b = [z, a]
@@ -538,11 +621,11 @@ function Hecke.basis(K::Hecke.NfRel)
   return b
 end  
 
-function Base.one(a::Hecke.NfRelElem)
+function Base.one(a::NfRelElem)
   return one(parent(a))
 end
 
-function Base.copy(a::Hecke.NfRelElem)
+function Base.copy(a::NfRelElem)
   return parent(a)(a.data)
 end
 
