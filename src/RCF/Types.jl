@@ -35,13 +35,13 @@ function kummer_extension(n::Int, gen::Array{FacElem{nf_elem, AnticNumberField},
   K = KummerExt()
   k = base_ring(gen[1])
   L = maximal_order(k)
-  zeta, o = Hecke.torsion_units_gen_order(L)
+  zeta, o = torsion_units_gen_order(L)
   @assert o % n == 0
 
   K.zeta = k(zeta)^div(o, n)
   K.n = n
   K.gen = gen
-  K.AutG = Hecke.GrpAbFinGen(fmpz[n for i=gen])
+  K.AutG = GrpAbFinGen(fmpz[n for i=gen])
   K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
   return K
 end
@@ -49,8 +49,9 @@ end
 mutable struct ClassField_pp
   mq::Map
   a::FacElem
-  K::Hecke.NfRel{nf_elem} # the target with the roots of unity
-  A::Hecke.NfRel{nf_elem} # the target
+  K::NfRel{nf_elem} # the target with the roots of unity
+  A::NfRel{nf_elem} # the target
+  pe::NfRelElem{nf_elem}
   AutG::Array
   AutR::fmpz_mat
   bigK::KummerExt

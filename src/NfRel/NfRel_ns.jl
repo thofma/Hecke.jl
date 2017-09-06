@@ -514,6 +514,43 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}}
     z.header = MapHeader(K, L, image, preimage)
     return z
   end  
+
+  function NfRelToNfRel_nsMor(K::NfRel{T}, L::NfRel_ns{T}, a::NfRel_nsElem{T}) where {T}
+    function image(x::NfRelElem{T})
+      # x is an element of K
+      f = data(x)
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      return f(a)
+    end
+
+    z = new{T}()
+    z.prim_img = a
+    z.header = MapHeader(K, L, image)
+    return z
+  end  
+
+  function NfRelToNfRel_nsMor(K::NfRel{T}, L::NfRel_ns{T}, aut::Map, a::NfRel_nsElem{T}) where {T}
+    aut = NfToNfMor(domain(aut), codomain(aut), aut(gen(domain(aut))))
+    function image(x::NfRelElem{T})
+      # x is an element of K
+      f = deepcopy(data(x))
+      for i=0:degree(f)
+        setcoeff!(f, i, aut(coeff(f, i)))
+      end
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      return f(a)
+    end
+
+    z = new{T}()
+    z.prim_img = a
+    z.coeff_aut = aut
+    z.header = MapHeader(K, L, image)
+    return z
+  end  
+
+
 end
 
 mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
@@ -534,6 +571,26 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
     z.header = MapHeader(K, L, image)
     return z
   end  
+
+  function NfRel_nsToNfRel_nsMor(K::NfRel_ns{T}, L::NfRel_ns{T}, aut::Map, emb::Array{NfRel_nsElem{T}, 1}) where {T}
+    function image(x::NfRel_nsElem{T})
+      # x is an element of K
+      # First evaluate the coefficients of f at a to get a polynomial over L
+      # Then evaluate at b
+      y = deepcopy(x)
+      for i=1:length(y.data)
+        y.data.coeffs[i] = aut(y.data.coeffs[i])
+      end
+      return msubst(y.data, emb)
+    end
+
+    z = new{T}()
+    z.emb = emb
+    z.coeff_aut = aut
+    z.header = MapHeader(K, L, image)
+    return z
+  end  
+
 end
 
 
@@ -554,9 +611,6 @@ end
 function msubst(f::GenMPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
-  println(n)
-  println(f)
-  println(ngens(parent(f)))
   @assert n == ngens(parent(f))
   r = zero(k)
   for i=1:length(f)
