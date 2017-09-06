@@ -668,12 +668,22 @@ function psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = :all,
   if subtype == :all
     _subtype = [-1]
   else
+    for i in 1:(length(subtype) - 1)
+      if subtype[i + 1] > subtype[i]
+        error("Subtype must be a partition")
+      end
+    end
     _subtype = subtype
   end
   
   if quotype == :all
     _quotype = [-1]
   else
+    for i in 1:(length(quotype) - 1)
+      if quotype[i + 1] > quotype[i]
+        error("Subtype must be a partition")
+      end
+    end
     _quotype = quotype
   end
 
@@ -768,6 +778,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1], quotype = 
       end
       ptype = map(l -> valuation(l, p), quotype)
       filter!( z -> z > 0, ptype)
+      sort!(ptype, rev = true)
       T = psubgroups(G, Int(p), quotype = ptype)
       genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
@@ -788,6 +799,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1], quotype = 
       end
       ptype = map(l -> valuation(l, p), subtype)
       filter!( z -> z > 0, ptype)
+      sort!(ptype, rev = true)
       T = psubgroups(G, Int(p), subtype = ptype)
       genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
