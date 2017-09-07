@@ -17,6 +17,8 @@ function *(M::nmod_mat, x::GrpAbFinGenElem)
 end
 
 
+
+
 #
 #  Smith Normal Form for a ZpnGModule
 #
@@ -175,9 +177,9 @@ function minimal_submodules(M::ZpnGModule)
 
 end
 
-function quo(M::ZpnGModule, S::MatElem)
+function quo(M::ZpnGModule, S:: nmod_mat)
 
-  subm=[M.V(lift(sub(S,i:i, 1:cols(S)))) for i=1:rows(S)]
+  subm=[M.V(lift(view(S,i:i, 1:cols(S)))) for i=1:rows(S)]
   return ZpnGModule(quo(M.V,subm)[1],M.G)
   
 end
@@ -291,9 +293,9 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
     N=quo(M,x)
     newlist=submodules(N, typesub1)
     if !isempty(newlist)
-      t=[sub(x, i:i, 1:cols(y)) for i=1:rows(y)]
+      t=[view(x, i:i, 1:cols(y)) for i=1:rows(y)]
       for y in newlist
-        s=vcat([sub(y, i:i, 1:cols(y)) for i=1:rows(y)], t)
+        s=vcat([view(y, i:i, 1:cols(y)) for i=1:rows(y)], t)
         H=sub(M.V,s)
         if isisomorphic(G,H)
           push!(list,vcat(y,x))
@@ -312,7 +314,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   N=Hecke._exponent_p_sub(S)
   lf=composition_factors(N)
   list=nmod_mat[]
-  v=[valuation(order(S.V[i]), M.p) for i=1:ngens(S.V)]
+  v=[valuation(S.V.snf[i], M.p) for i=1:ngens(S.V)]
   W=MatrixSpace(R,1, ngens(S.V))
   for i=1:ord-1
     minlist=minimal_submodules(N,i,lf)
@@ -327,7 +329,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   end
   
   #
-  #  Check for redundance
+  #  Check for redundance: to be improved, avoiding unnecessary comparisons.
   #
   
   listhf=Array{nmod_mat,1}(length(list))
@@ -338,7 +340,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
     end
     for j=1:cols(x)
       for k=1:rows(list[i])
-        x[k,j]*=divexact(R.modulus, order(S.V[j]))
+        x[k,j]*=divexact(R.modulus, S.V.snf[j])
       end
     end
     howell_form!(x)
@@ -379,6 +381,24 @@ function submodules_order(M::ZpnGModule, ord::Int)
   
 end
 
+function dual_module(M::ZpnGModule)
+
+  @assert issnf(M.V)
+  G1=deepcopy(M.G)
+  for i=1:length(G1)
+    for j=1:ngens(M.V)-1
+      for k=j+1:ngens(M.V)
+        x=divexact(M.V.snf[k], M.V.snf[j])
+        G1[i][j,k]=divexact(G1[i][j,k].data, x)
+        G1[i][k,j]*=x
+      end
+    end
+    transpose!(G1[i])
+  end 
+  return ZpnGModule(M.V, G1)
+  
+end
+
 
 function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   
@@ -398,31 +418,16 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
       return nmod_mat[]
     end
   end
-  
-  #
-  #  Matrices giving the action of the group on the dual module
-  #
-  G1=deepcopy(S.G)
-  for i=1:length(G1)
-    for j=1:ngens(S.V)-1
-      for k=j+1:ngens(S.V)
-        x=divexact(order(S.V[k]), order(S.V[j]))
-        G1[i][j,k].data=divexact(G1[i][j,k].data, x)
-        G1[i][k,j]*=x
-      end
-    end
-    transpose!(G1[i])
-  end
-  
+
   #
   #  Dual Module and candidate submodules
   #
-  M_dual=ZpnGModule(S.V, G1)
+  M_dual=dual_module(S)
   candidates=submodules_order(M_dual,Int(sum(typequo)))
   i=1
   list=nmod_mat[]
   W=MatrixSpace(R,1,ngens(S.V))
-  v=[divexact(R.modulus,order(S.V[j])) for j=1:ngens(S.V) ]
+  v=[divexact(R.modulus,S.V.snf[j]) for j=1:ngens(S.V) ]
   while i<=length(candidates)
   #
   #  First, compute the kernel of the corresponding homomorphisms
@@ -462,14 +467,17 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   
 end
 
-function subm_to_subg(M::ZpnGModule, S::nmod_mat)
+function subm_to_subg(M::ZpnGModule, S::nmod_mat, op=sub)
   
   G=M.V
-  subg=Array{GrpAbFinGenElem,1}(rows(S))
+  subg=Array{GrpAbFinGenElem,1}()
   for i=1:rows(S)
-    subg[i]=G(lift(view(S, i:i,1:cols(S))))
+    x=view(S, i:i,1:cols(S))
+    if !iszero(x)
+      push!(subg,G(lift(x)))
+    end
   end
-  return sub(G,subg)
+  return op(G,subg)
 end
 
 function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
@@ -484,5 +492,42 @@ function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFin
     end
   end
   return true
+
+end
+
+function issubmodule(M::ZpnGModule, S::nmod_mat)
+  
+  @assert issnf(M.V)
+  s, ms=subm_to_subg(M,S)
+  for x in gens(s)
+    el=ms(x)
+    for g in M.G
+      if !haspreimage(ms,g*el)[1]
+        return false
+      end
+    end
+  end
+  return true
+  
+end
+
+
+function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpAbFinGen} 
+
+  expon=Int(exponent(V))
+  @assert length(factor(order(V)).fac)==1
+  RR=ResidueRing(FlintZZ, expon)
+  act_mat=Array{nmod_mat,1}(length(act))
+  for z=1:length(act)
+    A=MatrixSpace(RR,ngens(V), ngens(V))()
+    for i=1:ngens(V)
+      y=act[z](V[i])
+      for j=1:ngens(V)
+        A[i,j]=y.coeff[1,j]
+      end
+    end
+    act_mat[z]=A
+  end
+  return ZpnGModule(V,act_mat)
 
 end
