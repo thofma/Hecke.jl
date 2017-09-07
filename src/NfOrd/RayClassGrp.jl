@@ -1099,8 +1099,8 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   expo=Int(exponent(G))
   inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   
-  A=vcat(rels(C), MatrixSpace(ZZ,ngens(G)+ngens(U), ngens(C))())
-  B=vcat(rels(G), MatrixSpace(ZZ, ngens(U) , ngens(G))())
+  A=vcat(rels(C), MatrixSpace(FlintZZ,ngens(G)+ngens(U), ngens(C))())
+  B=vcat(rels(G), MatrixSpace(FlintZZ, ngens(U) , ngens(G))())
   
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
@@ -1136,7 +1136,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       B[i+ngens(G),j]=a[1,j]
     end
   end 
-  B=vcat(MatrixSpace(ZZ, ngens(C), ngens(G))(), B)
+  B=vcat(MatrixSpace(FlintZZ, ngens(C), ngens(G))(), B)
 
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
@@ -1159,7 +1159,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   end
   
   R=hcat(A,B)
-  R=vcat(R, MatrixSpace(ZZ,cols(R), cols(R))(n))
+  R=vcat(R, MatrixSpace(FlintZZ,cols(R), cols(R))(n))
   X=AbelianGroup(R)
    
 #
@@ -1389,9 +1389,9 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         newsub=[c*R[i] for i=1:ngens(R)]
         for i=1:rows(el)
           y=submatrix(el,i:i,1:cols(el))
-          z=MatrixSpace(ZZ,1,cols(el))()
+          z=MatrixSpace(FlintZZ,1,cols(el))()
           for j=1:cols(z)
-            z[1,j]=ZZ(coeff(y[i,j],0))
+            z[1,j]=FlintZZ(coeff(y[i,j],0))
           end
           push!(newsub,mQ\(mG(mS\(S(z)))))
         end
@@ -1401,7 +1401,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
 
     else    
     
-      RR=ResidueRing(ZZ,p^x)
+      RR=ResidueRing(FlintZZ,p^x)
       act_mat=Array{nmod_mat,1}(length(act))
       for z=1:length(act)
         A=MatrixSpace(RR,ngens(G), ngens(G))()
