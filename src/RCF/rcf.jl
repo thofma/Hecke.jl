@@ -149,6 +149,9 @@ function _modulus(mR::Map)
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
   end
+  if issubtype(typeof(mR), Hecke.MapRayClassGrpFacElem)
+    return mR.modulus_fin
+  end
   @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
   return mR.modulus_fin
 end
@@ -319,8 +322,8 @@ doc"""
 > for all prime power cyclic subfields.
 """
 function number_field(CF::ClassField)
-  if isdefined(CF, :cyc)
-    return number_field([x.A.pol for x = CF.cyc])
+  if isdefined(CF, :A)
+    return CF.A
   end
   m = CF.mq
   
@@ -338,7 +341,8 @@ function number_field(CF::ClassField)
     q[i] = G[i]
   end
   CF.cyc = res
-  return number_field([x.A.pol for x = CF.cyc])
+  CF.A = number_field([x.A.pol for x = CF.cyc])[1]
+  return CF.A
 end
 
 function ray_class_field_cyclic_pp(mq::Map)
@@ -498,8 +502,9 @@ function _rcf_descent(CF::ClassField_pp)
     @assert order(g) % degree(C.Kr) == 0
     f = C.Kr.pol
     s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))])
-    g = s
-    mg = mg*ms
+    ss, mss = snf(s)
+    g = ss
+    mg = mg*ms*inv(mss)
   end
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
@@ -575,7 +580,7 @@ function _rcf_descent(CF::ClassField_pp)
         pe += gen(C.Ka)
         cnt += 1
         if cnt > 100
-          error("")
+          error("", Im, CF)
         end
         break
       else
@@ -914,9 +919,10 @@ function rel_auto(A::ClassField_pp)
   tau = NfRelToNfRelMor(A.K, A.K, A.bigK.zeta*gen(A.K))
   N = MatrixSpace(base_ring(A.K), 1, degree(A.K))()
   elem_to_mat_row!(N, 1, tau(A.pe))
-  # mat need to be constructed over k. This only matters if Q(zeta) meet k 
-  # is no-trivial...
-  s = solve(M', N')
+  C = cyclotomic_extension(base_field(A), degree(A))
+  Mk = _expand(M, C.mp[1])
+  Nk = _expand(N, C.mp[1])
+  s = solve(Mk', Nk')
   im = A.A()
   C = cyclotomic_extension(base_field(A), degree(A))
   for i=1:degree(A)
@@ -934,6 +940,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
   @assert k == codomain(tau)
   @assert k == base_field(A)
   lp = factor(fmpz(degree(A)))
+  all_h = [A.A() for x=A.cyc]
   for (p, v) = lp.fac
 #    println("doin' $p^$v")
     Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
@@ -1011,12 +1018,12 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       fl, s = cansolve(z, y)
       @assert fl
       s = [s[x, 1] % om for x=1:length(Cp[im].bigK.gen)]
-#      println(s)
+      println(s)
 
       fl, tau_s = cansolve(tau_z, y)
       @assert fl
       tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
-#      println(tau_s)
+      println(tau_s)
 
       # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
       push!(all_s, s)
@@ -1029,11 +1036,14 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       ts = all_tau_s[j]
       x = Cp[im].bigK.AutG(ts)
       fl, y = haspreimage(msG, x)
-#      println(fl, " -> $(x.coeff) -> $(y.coeff)")
+      println(fl, " -> $(x.coeff) -> $(y.coeff)")
       @assert fl
       #need to establish the embeddings (which are also needed below)
+      println([Int(y[i]*div(om, degree(Cp[i]))) for i=1:length(Cp)])
+      println(div(om, degree(Cp[j])))
       mu = prod(all_emb[i][1]^Int(y[i]*div(om, degree(Cp[i]))) for i=1:length(Cp)) * inv(all_emb[j][2])^div(om, degree(Cp[j]))
       mmu = evaluate(mu)
+      global last_rt = (mmu, om)
       rt = root(mmu, om) 
       push!(all_b, (rt, y))
     end
@@ -1097,8 +1107,32 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       im = -sum(n[2][i, 1]*b_AA[i] for i=1:d) * inv(n[2][d+1, 1])
       push!(all_im, im)
     end
-    return NfRel_nsToNfRel_nsMor(AA, AA, tau, all_im)
+    im = NfRel_nsElem{nf_elem}
+    i = 1
+    j = 1
+    while j<=length(A.cyc)
+      if degree(A.cyc[j]) == degree(Cp[i])
+        push!(im, gens(A)[j])
+        i += 1
+        j += 1
+      else
+        j += 1
+      end
+    end
+    emb = NfRel_nsToNfRel_nsMor(KK, A.A, im)
+    i = 1
+    j = 1
+    while j<=length(A.cyc)
+      if degree(A.cyc[j]) == degree(Cp[i])
+        all_h[j] = emb(all_im[i])
+        i += 1
+        j += 1
+      else
+        j += 1
+      end
+    end
   end
+  return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
 end
 
 function _expand(M::GenMat{nf_elem}, mp::Map)
