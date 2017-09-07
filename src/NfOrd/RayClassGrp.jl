@@ -799,6 +799,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   return X,mp
 end 
 
+
 #####################################################################################################
 #
 #  Quotient by n of the Ray Class Group
@@ -810,7 +811,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
   
   @assert issnf(C)
   O=parent(mC(C[1])).order
-  if gcd(order(C[ngens(C)]),n)==1
+  if gcd(C.snf[ngens(C)],n)==1
    G=DiagonalGroup(Int[])
    function exp1(a::GrpAbFinGenElem)
      return ideal(O, O(1))
@@ -829,7 +830,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
       ind+=1
     end
     
-    G=DiagonalGroup([gcd(order(C[ind+j]),n) for j=0:ngens(C)-ind])
+    G=DiagonalGroup([gcd(C.snf[ind+j],n) for j=0:ngens(C)-ind])
 
     function exp2(a::GrpAbFinGenElem)
       x=C([0 for i=1:ngens(C)])
@@ -1323,7 +1324,7 @@ function _act_on_ray_class(mR::Map)
   G=Hecke.GrpAbFinGenMap[]
   
   for phi in Aut
-    M=MatrixSpace(ZZ,ngens(R), ngens(R))()
+    M=MatrixSpace(FlintZZ,ngens(R), ngens(R))()
     for i=1:ngens(R) 
       J=mR(R[i])
       I=FacElem(Dict(ideal(O,1)=> 1))
