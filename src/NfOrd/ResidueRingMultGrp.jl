@@ -431,7 +431,7 @@ function _ideal_disc_log(x::NfOrdElem, basis_mat_inv::FakeFmpqMat)
   x_vector = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
   x_fakemat = FakeFmpqMat(x_vector, fmpz(1))
   res_fakemat = x_fakemat * basis_mat_inv
-  den(res_fakemat) != 1 && error("Element is not in the ideal")
+  den(res_fakemat) != 1 && error("Element is in the ideal")
   res_mat = num(res_fakemat)
   @assert size(res_mat)[1] == 1
   return vec(Array(res_mat))
