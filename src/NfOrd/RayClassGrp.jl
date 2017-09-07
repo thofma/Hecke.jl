@@ -5,7 +5,7 @@ add_verbose_scope(:RayFacElem)
 
 ###############################################################################
 #  
-#  Types
+#  Map Type
 #
 ###############################################################################
 
@@ -33,9 +33,7 @@ doc"""
 ***
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
     
-> Given a modulus with finite part $m$ and infinite part inf_plc, it returns the Ray Class Group Cl_m
-> If p_part is set to a prime, the function will return the largest quotient of the Ray Class Group of p-power order 
-> If n_quo is set to an integer, it will return the quotient of the Ray Class Group by n
+> Given a modulus with finite part $m$ and infinite part inf_plc, it returns the Ray Class Group Cl_m. If p_part is given, the function will return the largest quotient of the Ray Class Group of p-power order. If n_quo is given, it will return the quotient of the Ray Class Group by n
 
 """
 
@@ -70,7 +68,7 @@ function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdI
   I=ideal(O,1)
   for (p,vp) in primes
     q=p^vp
-    y=_eval_quo(O, J, p, q, anti_uniformizer(p),exponent)
+    y=_eval_quo(O, J, p, q, anti_uniformizer(p),exponent, vp)
     a,b=idempotents(I,q)
     el=y*a+el*b
     I=I*q
@@ -79,32 +77,67 @@ function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdI
 
 end
 
-function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::Int)
+function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::Int, mult::Int)
   
-  Q,mQ=quo(O,q)
-  el=Q(1)
-  for (f,k) in J.fac
-    act_el=f
-    val=valuation(act_el,p)
-    if val!=0
+  if mult==1
+    Q,mQ=ResidueField(O,q)
+    el=Q(1)
+    for (f,k) in J.fac
+      act_el=f
+      if (act_el in O) && mQ(O(act_el))!=0
+        el*=mQ(O(act_el))^mod(k,exponent)
+        continue
+      end
+      val=valuation(act_el,p)
       act_el=act_el*(anti_uni^val)
-    end
-    if act_el in O
-      el=el*Q(O(act_el))^mod(k,exponent)
-    else 
-      d=den(act_el,O)
-      n=act_el*d
-      val=valuation(d,p)
-      if val!=0
+      if act_el in O
+        el=el*mQ(O(act_el))^mod(k,exponent)
+      else 
+        d=den(act_el,O)
+        n=act_el*d
+        if mQ(O(d))!=0
+          el*=mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
+          continue
+        end
+        val=valuation(d,p)
         d=d*anti_uni^(val)
         n=n*anti_uni^(val)
+        el=el* mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
       end
-      el=el* Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
     end
+    return mQ\el
+  else
+    Q,mQ=quo(O,q)
+    Q1,mQ1=ResidueField(O,p)
+    el=Q(1)
+    for (f,k) in J.fac
+      act_el=f
+      if act_el in O && mQ1(O(act_el))!=0
+        el*=mQ(O(act_el))^mod(k,exponent)
+        continue
+      end
+      val=valuation(act_el,p)
+      act_el=act_el*(anti_uni^val)
+      if act_el in O
+        el=el*Q(O(act_el))^mod(k,exponent)
+      else 
+        d=den(act_el,O)
+        n=act_el*d
+        if mQ1(O(d))!=0
+          el*=mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
+          continue
+        end
+        val=valuation(d,p)
+        d=d*anti_uni^(val)
+        n=n*anti_uni^(val)
+        el*= Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
+      end
+    end
+    return el.elem
   end
-  return el.elem
-  
+ 
 end
+
 
 
 #
@@ -425,7 +458,7 @@ function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   
   function disclog(x::NfOrdElem)
     t=mQ(x)^m
-#=    if powerp<10
+    if powerp<10
       w=1
       el=g
       while el!=t
@@ -434,10 +467,8 @@ function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
       end
       return [w*inv]
     else
-=# 
-      res=Hecke._pohlig_hellman_prime_power(g,prime,s,t)
- #   end
-    return [res*inv]
+      return [Hecke._pohlig_hellman_prime_power(g,prime,s,t)*inv]
+    end
   end
   
   return mQ\g , [powerp], disclog
@@ -991,14 +1022,6 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   return G, mG, merge(max,y1, y2)
 end
 
-doc"""
-***
-    ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[], n::Integer)
-    
-> Given a modulus with finite part m and infinite part inf_plc, it returns the quotient of the ray class group Cl_m by n
-
-"""
-
 function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
@@ -1085,24 +1108,28 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
 
   @assert issnf(U)
   if gcd(order(U[1]),n)!=1
-    u=mU(U[1])
-    el=Hecke._fac_elem_evaluation(O,u,lp,expo)
+    @vprint :RayFacElem 1 "Processing unit 1"
+    el=Hecke._fac_elem_evaluation(O,mU(U[1]),lp,expo)
+    #
+    #  This is slow. Examples show that this is the time-consuming part of the algorithm.
+    #  Ideas: working over K reducing the elements mod min(prod(lp))
+    #         
+    #
     a=(mG\el).coeff
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(u)
+      b=lH(mU(U[1]))
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
       B[1+ngens(G),j]=a[1,j]
     end
   end
-  
   for i=2:ngens(U)
-    u=mU(U[i])
-    el=Hecke._fac_elem_evaluation(O,u,lp,expo)
+    @vprint :RayFacElem 1 "Processing unit", i
+    el=Hecke._fac_elem_evaluation(O,mU(U[i]),lp,expo)
     a=(mG\el).coeff
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(u)
+      b=lH(mU(U[i]))
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
@@ -1345,6 +1372,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         act_mat[z]=A
       end
       M=FqGModule(act_mat)
+      
       #
       #  Searching for submodules
       #
@@ -1385,6 +1413,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         end
         act_mat[z]=A
       end
+      
       #
       #  Searching for submodules
       #
@@ -1404,7 +1433,9 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         newsub=[c*R[i] for i=1:ngens(R)]
         for i=1:rows(el)
           y=view(el,i:i,1:cols(el))
-          push!(newsub,mQ\(mG(mS\(S(lift(y))))))
+          if !iszero(y)
+            push!(newsub,mQ\(mG(mS\(S(lift(y))))))
+          end       
         end
         push!(psubs,newsub)
       end

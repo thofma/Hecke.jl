@@ -189,6 +189,11 @@
       T = subgroups(G, subtype = [5, 5, 9, 3])
       @test 1 == length(collect(T))
       @test all([snf(t[1])[1].snf == fmpz[15, 45] for t in T])
+      
+      T = subgroups(G, subtype = [3, 5, 9, 5])
+      @test 1 == length(collect(T))
+      @test all([snf(t[1])[1].snf == fmpz[15, 45] for t in T])
+
     end
 
     @testset "Given quotype" begin

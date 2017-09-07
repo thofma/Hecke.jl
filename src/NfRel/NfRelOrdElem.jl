@@ -96,12 +96,6 @@ doc"""
 """
 (O::NfRelOrd{T, S})() where {T, S} = NfRelOrdElem{T}(O)
 
-function (O::NfRelOrd)(a::NfOrdElem, check::Bool = true)
-  OO = parent(a)
-  b = nf(O)(nf(OO)(a))
-  return O(b, check)
-end
-
 ################################################################################
 #
 #  Parent
