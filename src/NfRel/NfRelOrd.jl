@@ -16,8 +16,7 @@ mutable struct NfRelOrd{T, S} <: Ring
   basis_mat::GenMat{T}
   basis_mat_inv::GenMat{T}
   basis_pmat::PMat{T, S}
-  pseudo_basis#::Vector{Tuple{NfRelOrdElem{T}, S}} # julia does not like
-                                                   # forward declarations (yet)
+  pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
 
   disc_abs::NfOrdIdl # used if T == nf_elem
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
@@ -89,7 +88,7 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   M = MatrixSpace(base_ring(L), degree(O), degree(O))()
   C = Vector{S}()
   for i = 1:degree(O)
-    elem_to_mat_row!(M, i, L(pb[i][1]))
+    elem_to_mat_row!(M, i, pb[i][1])
     push!(C, pb[i][2])
   end
   O.basis_pmat = PseudoMatrix(M, C)
@@ -105,10 +104,10 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   end
   P = basis_pmat(O)
   L = nf(O)
-  pseudo_basis = Vector{Tuple{NfRelOrdElem{T}, S}}()
+  pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(O)
     a = elem_from_mat_row(L, P.matrix, i)
-    push!(pseudo_basis, (O(a), P.coeffs[i]))
+    push!(pseudo_basis, (a, P.coeffs[i]))
   end
   O.pseudo_basis = pseudo_basis
   return nothing
@@ -122,7 +121,7 @@ function assure_has_basis_nf(O::NfRelOrd{T, S}) where {T, S}
   pb = pseudo_basis(O)
   basis_nf = Vector{NfRelElem{T}}()
   for i = 1:degree(O)
-    push!(basis_nf, L(pb[i][1]))
+    push!(basis_nf, pb[i][1])
   end
   O.basis_nf = basis_nf
   return nothing
@@ -152,7 +151,7 @@ end
 
 doc"""
 ***
-      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NfRelOrdElem{T}, S}}
+      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NfRelElem{T}, S}}
 
 > Returns the pseudo-basis of $\mathcal O$.
 """
