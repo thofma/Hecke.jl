@@ -433,12 +433,10 @@ function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
-  pbint = Vector{Tuple{NfRelOrdElem{T}, NfOrdIdl}}()
+  pbint = Vector{Tuple{NfRelElem{T}, NfOrdIdl}}()
   for i = 1:d
-    push!(pbint, (deepcopy(pb[i][1]), deepcopy(num(pb[i][2]))))
-    if den(pb[i][2]) != 1
-      pbint[i][1] = divexact(pbint[i][1], den(pb[i][2]))
-    end
+    t = divexact(pb[i][1], den(pb[i][2]))
+    push!(pbint, (t, deepcopy(num(pb[i][2]))))
   end
   pOK = ideal(OK, OK(minimum(p)))
   prime_ideals = factor(pOK)
@@ -463,25 +461,32 @@ function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
       end
     end
   end
-  q = norm(p)
-  k = clog(fmpz(degree(OK)), q)
   F, mF = ResidueField(OK, p)
   A = MatrixSpace(F, d, d)()
-  for i = 1:d
-    t = (O(elts_max_val[i])*pbint[i][1])^(q^k)
-    ar = elem_in_basis(t)
-    for j = 1:d
-      if !(ar[j] in pbint[j][2])
-        println("D'oh!")
+  if minimum(p) <= d
+    q = norm(p)
+    k = clog(fmpz(degree(OK)), q)
+    for i = 1:d
+      t = O((L(K(elts_max_val[i]))*pbint[i][1])^(q^k))
+      ar = elem_in_basis(t)
+      for j = 1:d
+        A[i, j] = mF(divexact(OK(ar[j]), elts_max_val[j]))
       end
-      A[i, j] = mF(divexact(OK(ar[j]), elts_max_val[j]))
+    end
+  else
+    for i = 1:d
+      for j = i:d
+        t = L(K(elts_max_val[i]))*pbint[i][1]*L(K(elts_max_val[j]))*pbint[j][1]
+        A[i, j] = mF(OK(trace(t)))
+        A[j, i] = deepcopy(A[i, j])
+      end
     end
   end
   B = nullspace(A)[2]
   M1 = zero(MatrixSpace(OK, d, d))
   imF = inv(mF)
-  for i = 1:rows(B)
-    for j = 1:cols(B)
+  for i = 1:cols(B)
+    for j = 1:rows(B)
       M1[i, j] = imF(B[j, i])
     end
   end
@@ -491,7 +496,35 @@ function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
   N = PM.matrix*basis_mat(O)
   PN = PseudoMatrix(N, PM.coeffs)
-  println(PN)
   PN = pseudo_hnf(PN, :lowerleft)
   return NfRelOrdIdl{T, S}(O, PN)
+end
+
+################################################################################
+#
+#  Ring of multipliers
+#
+################################################################################
+
+function ring_of_multipliers(a::NfRelOrdIdl{T, S}) where {T, S}
+  O = order(a)
+  d = degree(O)
+  pb = pseudo_basis(a, Val{false})
+  m = basis_mat(O, Val{false})*basis_mat_inv(a, Val{false})
+  M = m*representation_mat(pb[1][1])
+  for i = 2:d
+    M = hcat(M, m*representation_mat(pb[i][1]))
+  end
+  invcoeffs = [ inv(pb[i][2]) for i = 1:d ]
+  C = Array{NfOrdFracIdl}(d^2)
+  for i = 1:d
+    for j = 1:d
+      C[(i - 1)*d + j] = pb[i][2]*invcoeffs[j]
+    end
+  end
+  PM = PseudoMatrix(transpose(M), C)
+  PM = sub(pseudo_hnf(PM), 1:d, 1:d)
+  N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
+  PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  return NfRelOrd{T, S}(nf(O), PN)
 end
