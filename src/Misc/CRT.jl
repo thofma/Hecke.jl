@@ -292,11 +292,11 @@ end
 
 doc"""
 ***
-  crt(r1::GenPoly, m1::GenPoly, r2::GenPoly, m2::GenPoly) -> GenPoly
+  crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
 
 > Find $r$ such that $r \equiv r_1 \pmod m_1$ and $r \equiv r_2 \pmod m_2$
 """
-function crt(r1::GenPoly{T}, m1::GenPoly{T}, r2::GenPoly{T}, m2::GenPoly{T}) where T
+function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T}) where T
   g, u, v = gcdx(m1, m2)
   m = m1*m2
   return (r1*v*m2 + r2*u*m1) % m

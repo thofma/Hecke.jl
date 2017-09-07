@@ -628,7 +628,7 @@ function simple_extension(K::NfRel_ns)
   pe = g[1]
   i = 1
   ind = [1]
-  local f::GenPoly{nf_elem}
+  f = minpoly(pe)
   #todo: use resultants rather than minpoly??
   while i < n
     i += 1

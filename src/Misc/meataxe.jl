@@ -1043,7 +1043,7 @@ doc"""
 """
 
 
-function minimal_submodules(M::FqGModule, dim::Int=M.dim, lf=[])
+function minimal_submodules(M::FqGModule, dim::Int=M.dim+1, lf=[])
   
   K=M.K
   n=M.dim
@@ -1059,7 +1059,7 @@ function minimal_submodules(M::FqGModule, dim::Int=M.dim, lf=[])
   if length(lf)==1 && lf[1][2]==1
     return GenMat{fq_nmod}[]
   end
-  if dim!=n
+  if dim!=n+1
     lf=[x for x in lf if x[1].dim==dim]
   end
   if isempty(lf)
