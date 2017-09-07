@@ -27,7 +27,7 @@ function Nemo.snf(M::ZpnGModule)
   A=M.V
   G=M.G
   if issnf(A)
-    return M, GrpAbFinGenMap(A, A, MatrixSpace(ZZ,ngens(A),ngens(A))(1))
+    return M, GrpAbFinGenMap(A, A, MatrixSpace(FlintZZ,ngens(A),ngens(A))(1))
   end
   S,mS=snf(A)
   W=[mS\s for s in gens(S)]
@@ -84,7 +84,7 @@ function _mult_by_p(M::ZpnGModule)
   #
   #  First, the quotient M/pM
   #
-  F,a=FiniteField(p,1,"a")
+  F,a=Nemo.FiniteField(p,1,"a")
   n=ngens(V)
   Gq=_change_ring(G,F,1)
   spaces=FqGModule[FqGModule(Gq)]
@@ -131,8 +131,8 @@ function _exponent_p_sub(M::ZpnGModule)
   G=M.G
   V=M.V
   p=M.p
-  F, a = FiniteField(p, 1, "a")
-  hV = GrpAbFinGenMap(V, V, MatrixSpace(ZZ,ngens(V),ngens(V))(p))  #Can make it more efficient if necessary, working with matrices
+  F, a = Nemo.FiniteField(p, 1, "a")
+  hV = GrpAbFinGenMap(V, V, MatrixSpace(FlintZZ,ngens(V),ngens(V))(p))  #Can make it more efficient if necessary, working with matrices
   K,mK=Hecke.kernel(hV)
   S,mS=snf(K)
   G1=Array{GenMat{fq_nmod},1}(length(G))
@@ -164,7 +164,7 @@ function minimal_submodules(M::ZpnGModule)
   for x in list_sub
     A=MatrixSpace(R,rows(x), ngens(M.V))()
     for k=1:rows(x)
-      y=(haspreimage( mS , S.V([ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))[2]).coeff
+      y=(haspreimage( mS , S.V([FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))[2]).coeff
       for s=1:cols(x)
         A[k,s]=y[1,s]
       end
@@ -259,7 +259,7 @@ function minimal_submodules(M::ZpnGModule, dim::Int)
   v=[valuation(order(S.V[i]), M.p) for i=1:ngens(S.V)]
   for i=1:length(list)
     W=MatrixSpace(R,rows(x), ngens(M.V))
-    list[i]= vcat([W((mS\(S.V([ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:rows(x)])
+    list[i]= vcat([W((mS\(S.V([FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:rows(x)])
   end
   return list
 
@@ -317,7 +317,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   for i=1:ord-1
     minlist=minimal_submodules(N,i,lf)
     for x in minlist   
-      A=vcat([W([ZZ(coeff(x[k,j],0))*((M.p)^(v[j]-1)) for j=1:ngens(S.V)]) for k=1:rows(x)])
+      A=vcat([W([FlintZZ(coeff(x[k,j],0))*((M.p)^(v[j]-1)) for j=1:ngens(S.V)]) for k=1:rows(x)])
       L=quo(S,A)
       newlist=Hecke.submodules_order(L,ord-i)
       for z=1:length(newlist)
@@ -373,7 +373,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   
   minlist=minimal_submodules(N,ord, lf)
   for x in minlist
-    push!(list, vcat([W((haspreimage(mS, S.V([ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))[2]).coeff) for k=1:rows(x) ]))
+    push!(list, vcat([W((haspreimage(mS, S.V([FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))[2]).coeff) for k=1:rows(x) ]))
   end
   return list
   
