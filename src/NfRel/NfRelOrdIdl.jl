@@ -262,11 +262,12 @@ ideal(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
 function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::ObjectIdDict) where {T, S}
   z = NfRelOrdIdl{T, S}(a.order)
   for x in fieldnames(a)
-    if x != :order && isdefined(a, x)
+    if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
     end
   end
   z.order = a.order
+  z.parent = a.parent
   return z
 end
 
@@ -427,17 +428,20 @@ end
 #
 ################################################################################
 
-function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
+function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
-  pbint = Vector{Tuple{NfRelElem{T}, NfOrdIdl}}()
+  basis_mat_int = MatrixSpace(K, d, d)()
+  pbint = Vector{Tuple{NfRelElem{nf_elem}, NfOrdIdl}}()
   for i = 1:d
     t = divexact(pb[i][1], den(pb[i][2]))
     push!(pbint, (t, deepcopy(num(pb[i][2]))))
+    elem_to_mat_row!(basis_mat_int, i, t)
   end
+  Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
   pOK = ideal(OK, OK(minimum(p)))
   prime_ideals = factor(pOK)
   elts_max_val = Vector{NfOrdElem}(d)
@@ -467,7 +471,7 @@ function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
     q = norm(p)
     k = clog(fmpz(degree(OK)), q)
     for i = 1:d
-      t = O((L(K(elts_max_val[i]))*pbint[i][1])^(q^k))
+      t = Oint((L(K(elts_max_val[i]))*pbint[i][1])^(q^k))
       ar = elem_in_basis(t)
       for j = 1:d
         A[i, j] = mF(divexact(OK(ar[j]), elts_max_val[j]))
@@ -494,10 +498,10 @@ function pradical(O::NfRelOrd{T, S}, p::NfOrdIdl) where {T, S}
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(M2, fill(p, d))
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
-  N = PM.matrix*basis_mat(O)
+  N = PM.matrix*basis_mat_int
   PN = PseudoMatrix(N, PM.coeffs)
   PN = pseudo_hnf(PN, :lowerleft)
-  return NfRelOrdIdl{T, S}(O, PN)
+  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PN)
 end
 
 ################################################################################
@@ -506,14 +510,14 @@ end
 #
 ################################################################################
 
-function ring_of_multipliers(a::NfRelOrdIdl{T, S}) where {T, S}
+function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
-  m = basis_mat(O, Val{false})*basis_mat_inv(a, Val{false})
-  M = m*representation_mat(pb[1][1])
+  S = basis_mat(O, Val{false})*basis_mat_inv(a, Val{false})
+  M = S*representation_mat(pb[1][1])
   for i = 2:d
-    M = hcat(M, m*representation_mat(pb[i][1]))
+    M = hcat(M, S*representation_mat(pb[i][1]))
   end
   invcoeffs = [ inv(pb[i][2]) for i = 1:d ]
   C = Array{NfOrdFracIdl}(d^2)
@@ -523,8 +527,8 @@ function ring_of_multipliers(a::NfRelOrdIdl{T, S}) where {T, S}
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = sub(pseudo_hnf(PM), 1:d, 1:d)
+  PM = sub(pseudo_hnf_kb(PM), 1:d, 1:d)
   N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
-  return NfRelOrd{T, S}(nf(O), PN)
+  return NfRelOrd{nf_elem, NfOrdFracIdl}(nf(O), PN)
 end

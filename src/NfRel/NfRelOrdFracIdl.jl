@@ -137,11 +137,12 @@ end
 function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S}, dict::ObjectIdDict) where {T, S}
   z = NfRelOrdFracIdl{T, S}(a.order)
   for x in fieldnames(a)
-    if x != :order && isdefined(a, x)
+    if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
     end
   end
   z.order = a.order
+  z.parent = a.parent
   return z
 end
 
