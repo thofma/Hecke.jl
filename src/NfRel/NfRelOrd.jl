@@ -40,7 +40,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
 
-  function NfRelOrd{T}(K::NfRel{T}) where T
+  function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
     z = new{T, S}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -332,11 +332,12 @@ doc"""
 function Base.deepcopy_internal(O::NfRelOrd{T, S}, dict::ObjectIdDict) where {T, S}
   z = NfRelOrd{T, S}(O.nf)
   for x in fieldnames(O)
-    if x != :nf && isdefined(O, x)
+    if x != :nf && x != :parent && isdefined(O, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
     end
   end
   z.nf = O.nf
+  z.parent = O.parent
   return z
 end
 
@@ -418,6 +419,16 @@ function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
   return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
+function EquationOrder(L::NfRel{T}) where T
+  M = one(MatrixSpace(base_ring(L), degree(L), degree(L)))
+  return Order(L, M)
+end
+
+function MaximalOrder(L::NfRel)
+  O = EquationOrder(L)
+  return MaximalOrder(O)
+end
+
 ################################################################################
 #
 #  Equality
@@ -451,4 +462,51 @@ function trace_matrix(O::NfRelOrd)
     end
   end
   return g
+end
+
+################################################################################
+#
+#  p-maximal overorder
+#
+################################################################################
+
+function pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl)
+  d = discriminant(O)
+  OO = ring_of_multipliers(pradical(O, p))
+  dd = discriminant(OO)
+  while d != dd
+    d = dd
+    OO = ring_of_multipliers(pradical(OO, p))
+    dd = discriminant(OO)
+  end
+  return OO
+end
+
+function MaximalOrder(O::NfRelOrd)
+  disc = discriminant(O)
+  fac = factor(disc)
+  OO = deepcopy(O)
+  for (p, e) in fac
+    if e == 1
+      continue
+    end
+    OO += pmaximal_overorder(O, p)
+  end
+  return OO
+end
+
+################################################################################
+#
+#  Addition of orders
+#
+################################################################################
+
+function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
+  # checks
+  aB = basis_pmat(a, Val{false})
+  bB = basis_pmat(b, Val{false})
+  M = aB.matrix*basis_mat_inv(a, Val{false})
+  PM = pseudo_hnf_kb(PseudoMatrix(M, deepcopy(bB.coeffs)))
+  PM.matrix = PM.matrix*aB.matrix
+  return NfRelOrd{T, S}(nf(O), PM)
 end
