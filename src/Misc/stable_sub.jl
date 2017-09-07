@@ -139,7 +139,7 @@ function _exponent_p_sub(M::ZpnGModule)
   for z=1:length(G)
     A=MatrixSpace(F,ngens(S),ngens(S))()
     for i=1:ngens(S)
-      x=g*(mK(mS(S[i])))
+      x=G[z]*(mK(mS(S[i])))
       x=(mS\(haspreimage(mK,x)[2])).coeff
       for j=1:ngens(S)
         A[i,j]=x[1,j]
@@ -309,7 +309,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   
   R=M.R
   S,mS=snf(M)
-  N=_exponent_p_sub(S)
+  N=Hecke._exponent_p_sub(S)
   lf=composition_factors(N)
   list=nmod_mat[]
   v=[valuation(order(S.V[i]), M.p) for i=1:ngens(S.V)]
@@ -317,11 +317,11 @@ function submodules_order(M::ZpnGModule, ord::Int)
   for i=1:ord-1
     minlist=minimal_submodules(N,i,lf)
     for x in minlist   
-      A=vcat([W([ZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]) for k=1:rows(x)])
+      A=vcat([W([ZZ(coeff(x[k,j],0))*((M.p)^(v[j]-1)) for j=1:ngens(S.V)]) for k=1:rows(x)])
       L=quo(S,A)
-      newlist=submodules_order(L,ord-i)
-      for i=1:length(newlist)
-        push!(list,vcat(newlist[i],A))
+      newlist=Hecke.submodules_order(L,ord-i)
+      for z=1:length(newlist)
+        push!(list,vcat(newlist[z],A))
       end
     end
   end
@@ -394,7 +394,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
     return nmod_mat[]
   end
   for i=1:length(typequo)
-    if !divisible((M.p)^typequo[length(typequo)+1-i], S.V.snf[ngens(S.V)+1-i])
+    if !divisible(S.V.snf[ngens(S.V)+1-i],fmpz((M.p)^typequo[length(typequo)+1-i]))
       return nmod_mat[]
     end
   end
@@ -402,7 +402,6 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Matrices giving the action of the group on the dual module
   #
-
   G1=deepcopy(S.G)
   for i=1:length(G1)
     for j=1:ngens(S.V)-1
@@ -423,12 +422,19 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   i=1
   list=nmod_mat[]
   W=MatrixSpace(R,1,ngens(S.V))
+  v=[divexact(R.modulus,order(S.V[j])) for j=1:ngens(S.V) ]
   while i<=length(candidates)
   #
   #  First, compute the kernel of the corresponding homomorphisms
   #
-    K=DiagonalGroup([R.modulus for i=1:rows(candidates[i])])
-    mH=GrpAbFinGenMap(S.V,K,lift(transpose(candidates[i])))
+    K=DiagonalGroup([R.modulus for j=1:rows(candidates[i])])
+    A=lift(transpose(candidates[i]))
+    for j=1:rows(A)
+      for k=1:cols(A)
+        A[j,k]*=v[j]
+      end
+    end 
+    mH=Hecke.GrpAbFinGenMap(S.V,K,A)
     sg,msg=kernel(mH)
      
   #
@@ -436,7 +442,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
     sub=[msg(g) for g in gens(sg)]
     q,mq=quo(S.V,sub)
-    if isisomorphic(q,wish)
+    if Hecke.isisomorphic(q,wish)
       push!(list, vcat([W(x.coeff) for x in sub]))
       i+=1
     else
@@ -468,11 +474,11 @@ end
 
 function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
-  S=mS.domain
+  S=mS.header.domain
   for s in gens(S)
     x=mS(s)
-    for g in M.G
-      if !haspreimage(mS,x*g)[1]
+    for g in act
+      if !haspreimage(mS,g(x))[1]
         return false
       end
     end
@@ -480,4 +486,3 @@ function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFin
   return true
 
 end
-
