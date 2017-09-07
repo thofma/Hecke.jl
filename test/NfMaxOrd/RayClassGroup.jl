@@ -8,7 +8,7 @@
     C,mC=class_group(O)
     
     for i=3:11
-     R,mR=ray_class_group_p_part(3,ideal(O,i))
+     R,mR=ray_class_group(ideal(O,i), p_part=3)
      x=mR(R[1])
      x=evaluate(x).num
      @test R[1]==mR\x
@@ -21,7 +21,7 @@
     inf_plc=real_places(K)
     
     for i=3:11
-     R,mR=ray_class_group_p_part(2,ideal(O,i),inf_plc)
+     R,mR=ray_class_group(ideal(O,i),inf_plc,p_part=2)
      x=mR(R[1])
      x=evaluate(x).num
      @test R[1]==mR\x
@@ -34,7 +34,7 @@
     end
     
     for i=3:11
-     R,mR=ray_class_group_fac_elem(ideal(O,i),inf_plc)
+     R,mR=ray_class_group(ideal(O,i),inf_plc)
      x=mR(R[1])
      x=evaluate(x).num
      @test R[1]==mR\x

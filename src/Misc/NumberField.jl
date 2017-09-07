@@ -728,8 +728,9 @@ function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
 end
 
 function inv(a::RelSeriesElem{<:Nemo.FieldElem}) 
+#function inv(a::RelSeriesElem{nf_elem})
   @assert valuation(a)==0
-  # x -> x*(2-xa) is the lifting recursino
+  # x -> x*(2-xa) is the lifting recursion
   x = parent(a)(inv(coeff(a, 0)))
   set_prec!(x, 1)
   p = precision(a)
@@ -746,10 +747,10 @@ function inv(a::RelSeriesElem{<:Nemo.FieldElem})
   while n>0
     set_prec!(x, la[n])
     set_prec!(y, la[n])
-    y = mul!(y, a, x)
-    y = two-y #sub! is missing...
-    x = mul!(x, x, y)
-#    x = x*(two-x*a)
+#    y = mul!(y, a, x)
+#    y = two-y #sub! is missing...
+#    x = mul!(x, x, y)
+    x = x*(two-x*a)
     n -=1 
   end
   return x
@@ -835,10 +836,11 @@ function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: F
   #careful: converting to power series and derivative do not commute
   #I also don't quite get this: I thought this was just the log,
   #but it isn't
-  A = S([coeff(reverse(derivative(f)), i) for i=0:d], d+1, n+1, 0)
+  A = S([coeff(reverse(derivative(f)), i) for i=0:d-1], d, n+1, 0)
   B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
   L = A*inv(B)
-  return [coeff(L, i) for i=1:n]
+  s = [coeff(L, i) for i=1:n]
+  return s
 end
 
 #plain vanilla recursion

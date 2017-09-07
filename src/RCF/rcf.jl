@@ -79,6 +79,40 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   return z
 end
 
+function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
+  Zk = order(p)
+  if index(Zk) % minimum(p) == 0 
+    #index divisors and residue class fields don't agree
+    # ex: x^2-10, rcf of 29*Zk, 7. 239 is tricky...
+    throw(BadPrime(p))
+  end
+
+  F, mF = ResidueField(Zk, p)
+  mF = extend_easy(mF, number_field(Zk))
+
+  #K = sqrt[n](gen), an automorphism will be
+  # K[i] -> zeta^? K[i]
+  # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
+  # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
+
+  z_p = inv(mF(Zk(K.zeta)))
+  @assert norm(p) % K.n == 1
+  ex = div(norm(p)-1, K.n)
+  aut = fmpz[]
+
+  mu = mF(g)^ex  # can throw bad prime!
+  i = 0
+  while !isone(mu)
+    i += 1
+    if i > K.n
+    end
+    @assert i <= K.n
+    mu *= z_p
+  end
+  return i
+end
+
+
 #=
   next, to piece things together:
     have a quo of some ray class group in k,
@@ -114,8 +148,6 @@ function _modulus(mR::Map)
   end
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
-  elseif issubtype(typeof(mR), Hecke.MapRayClassGrpFacElem)
-    return mR.modulus_fin
   end
   @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
   return mR.modulus_fin
@@ -288,7 +320,7 @@ doc"""
 """
 function number_field(CF::ClassField)
   if isdefined(CF, :cyc)
-    return [x.A.pol for x = CF.cyc]
+    return number_field([x.A.pol for x = CF.cyc])
   end
   m = CF.mq
   
@@ -306,7 +338,7 @@ function number_field(CF::ClassField)
     q[i] = G[i]
   end
   CF.cyc = res
-  return [x.A.pol for x = CF.cyc]
+  return number_field([x.A.pol for x = CF.cyc])
 end
 
 function ray_class_field_cyclic_pp(mq::Map)
@@ -410,6 +442,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   a = prod([KK.gen[i]^div(mod(n[i], e), c) for i=1:ngens(parent(n))])
   @vprint :ClassField 2 "generator $a\n"
   CF.a = a
+  CF.bigK = KK
   CF.K = pure_extension(Int(o), a)[1]
 end
 
@@ -634,6 +667,7 @@ function _rcf_descent(CF::ClassField_pp)
 #  n = prod(os) # maybe primitive??  
   @vprint :ClassField 2 "trying relative trace\n"
   t = sum(os)
+  CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
   q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
   @assert order(q) == order(domain(CF.mq))
@@ -647,6 +681,7 @@ function _rcf_descent(CF::ClassField_pp)
       os[i] *= os[i]
     end
     t = sum(os)
+    CF.pe = t
     #now the minpoly of t - via Galois as this is easiest to implement...
     q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
     @assert order(q) == order(domain(CF.mq))
@@ -862,5 +897,251 @@ end
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   b = evaluate(a)
   return reduce_mod_powers(b, n)
+end
+
+function rel_auto(A::ClassField_pp)
+  # sqrt[n](a) -> zeta sqrt[n](a) on A.A
+  @assert isdefined(A, :A)
+  #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
+  #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
+  M = MatrixSpace(base_ring(A.K), degree(A), degree(A.K))()
+  b = A.K(1)
+  elem_to_mat_row!(M, 1, b)
+  for i=2:degree(A)
+    b *= A.pe
+    elem_to_mat_row!(M, i, b)
+  end
+  tau = NfRelToNfRelMor(A.K, A.K, A.bigK.zeta*gen(A.K))
+  N = MatrixSpace(base_ring(A.K), 1, degree(A.K))()
+  elem_to_mat_row!(N, 1, tau(A.pe))
+  # mat need to be constructed over k. This only matters if Q(zeta) meet k 
+  # is no-trivial...
+  s = solve(M', N')
+  im = A.A()
+  C = cyclotomic_extension(base_field(A), degree(A))
+  for i=1:degree(A)
+    c = C.mp[1]\s[i,1]
+    @assert degree(c.data) == 0
+    setcoeff!(im, i-1, coeff(c, 0))
+  end
+
+  return NfRelToNfRelMor(A.A, A.A, im)
+end
+
+function extend_aut(A::ClassField, tau::T) where T <: Map
+  # tau: k       -> k
+  k = domain(tau)
+  @assert k == codomain(tau)
+  @assert k == base_field(A)
+  lp = factor(fmpz(degree(A)))
+  for (p, v) = lp.fac
+#    println("doin' $p^$v")
+    Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
+    i = 1
+    om = 0
+    im = 0
+    while i <= length(Cp)
+      if degree(Cp[i]) > om
+        om = degree(Cp[i])
+        im = i
+      end
+      i += 1
+    end
+    #now Cp[im] is of maximal exponent - hence, it should have the maximal
+    # big Kummer extension. By construction (above), the set of s-units
+    # SHOULD guarantee this....
+    # Now I want all generators in terms of this large Kummer field.
+    #
+    # Idea: similar to pSelmer in Magma:
+    #  look at frob(p, k(zeta_n)(sqrt[n](a)))(sqrt[n](a)):
+    #  sqrt[n](a) -> zeta_n^i sqrt[n](a) = sqrt[n](a)^N(p) mod p
+    # so N(p) = en+f => f = 1 (otherwise the congruence cannot work)
+    # zeta_n^i = a^e mod p for any prime p in k(zeta_n)
+    # since a = S-Unit (mod n-th powers) I can compare frob(p, a) to
+    # the frob(sqrt[n](U_S)) and find the presentation:
+    # next, we want the "same" for sqrt[n](tau(a)).
+    # Given, that can_frob is kind of non-cheap, we want to be clever
+    # zeta_n^i = tau(a)^e mod p =>
+    # tau^-1(zeta_n)^i = a^e mod tau^-1(p) or
+    # zeta_n^(ij) = a^e mod tau^-1(p)
+    # So: need j = j(tau) and the permutation on lp...
+    # in particular, tau need to be extened to k(zeta_n)
+    # Cheat: g = Kr.pol => g(zeta) = 0
+    #  tau(g)(zeta^r) = 0 for some suitable r
+    # then zeta -> zeta^r should be a valid extension....
+    #
+    C = cyclotomic_extension(k, Int(om))
+    g = C.Kr.pol
+    tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])
+#    println("g: $g")
+#    println("tau(g): $tau_g")
+    i = 1
+    z = gen(C.Kr)
+    while gcd(i, om) != 1 || !iszero(tau_g(z))
+      i *= 1
+      z *= gen(C.Kr) 
+    end
+    z_i = i
+
+    z_i_inv = invmod(z_i, om)
+    Tau = NfRelToNfRelMor(C.Kr, C.Kr, tau, z)
+    tau_Ka = NfToNfMor(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))))
+
+    lp = collect(keys(Cp[im].bigK.frob_cache))
+    z = vcat([can_frobenius(p, Cp[im].bigK).coeff for p = lp])
+#    println("z: $z")
+    tau_z = vcat([can_frobenius(induce_image(p, tau_Ka), Cp[im].bigK).coeff for p = lp])
+#    println("tau(z): $tau_z")
+    z = hcat(z, MatrixSpace(FlintZZ, length(lp), length(lp))(om))
+    tau_z = hcat(tau_z, MatrixSpace(FlintZZ, length(lp), length(lp))(om))
+    @assert C.Ka == base_ring(Cp[im].K)
+
+    all_s = []
+    all_tau_s = []
+    all_emb = []
+    for c in Cp
+#      println("om: $om -> ", degree(c))
+      Cs = cyclotomic_extension(k, Int(degree(c)))
+      Emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)))
+      emb = C.mp[1] * Emb * inv(Cs.mp[1])
+      a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
+      tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
+      push!(all_emb, (a, tau_a, emb))
+      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, a^div(om, degree(c))) for p = lp])
+      fl, s = cansolve(z, y)
+      @assert fl
+      s = [s[x, 1] % om for x=1:length(Cp[im].bigK.gen)]
+#      println(s)
+
+      fl, tau_s = cansolve(tau_z, y)
+      @assert fl
+      tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
+#      println(tau_s)
+
+      # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
+      push!(all_s, s)
+      push!(all_tau_s, tau_s)
+    end
+    sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(x) for x=all_s])
+    all_b = []
+    # if the above is correct, then tau_s in <s>
+    for j = 1:length(Cp)
+      ts = all_tau_s[j]
+      x = Cp[im].bigK.AutG(ts)
+      fl, y = haspreimage(msG, x)
+#      println(fl, " -> $(x.coeff) -> $(y.coeff)")
+      @assert fl
+      #need to establish the embeddings (which are also needed below)
+      mu = prod(all_emb[i][1]^Int(y[i]*div(om, degree(Cp[i]))) for i=1:length(Cp)) * inv(all_emb[j][2])^div(om, degree(Cp[j]))
+      mmu = evaluate(mu)
+      rt = root(mmu, om) 
+      push!(all_b, (rt, y))
+    end
+    Ka = C.Ka
+    KaT, X = Ka["T"]
+    KK, gKK = number_field([X^degree(Cp[j]) - evaluate(all_emb[j][1]) for j=1:length(Cp)])
+    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(all_b[i][2][j]) for j=1:length(Cp)) for i=1:length(Cp)])
+
+    # now "all" that remains is to restrict h to the subfield, using lin. alg..
+    # .. and of course move away form the Cp stuff.
+
+    all_pe =[]
+    for j=1:length(Cp)
+      emb = NfRelToNfRel_nsMor(Cp[j].K, KK, all_emb[j][3], gens(KK)[j])
+#      println("start:")
+#      println(gen(Cp[j].K), " -> ", emb(gen(Cp[j].K)))
+#      println(Cp[j].K.pol, " -> ", minpoly(emb(gen(Cp[j].K))))
+      pe = emb(Cp[j].pe)
+      tau_pe = h(pe)
+#      println("$(Cp[j].pe) pe: $pe -> $tau_pe")
+#      println(norm(minpoly(Cp[j].pe)))
+#      println(norm(minpoly(pe)))
+#      println(norm(minpoly(tau_pe)))
+#      println("=======")
+      push!(all_pe, (pe, tau_pe))
+    end
+
+    B = [KK(1), all_pe[1][1]]
+    d = degree(Cp[1])
+    while length(B) < degree(Cp[1])
+      push!(B, B[end]*all_pe[1][1])
+    end
+  
+
+    for j=2:length(Cp)
+      d *= degree(Cp[j])
+      D = copy(B)
+      while length(B) < d
+        D = [x*all_pe[j][1] for x = D]
+        append!(B, D)
+      end
+    end
+    M = MatrixSpace(Ka, d, degree(KK))()
+    for i=1:d
+      elem_to_mat_row!(M, i, B[i])
+    end
+    AA, gAA = number_field([c.A.pol for c = Cp])
+    @assert d == degree(AA)
+    @assert d == length(B)
+    b_AA = basis(AA)
+    Mk = _expand(M, C.mp[1])
+    @hassert :ClassField 2 nullspace(Mk')[1] == 0
+    all_im = NfRel_nsElem{nf_elem}[]
+    for j=1:length(Cp)
+      N = MatrixSpace(Ka, 1, degree(KK))()
+      elem_to_mat_row!(N, 1, all_pe[j][2])
+      Nk = _expand(N, C.mp[1])
+      _M = vcat(Mk, Nk)
+      n = nullspace(_M')
+#      println(n)
+      im = -sum(n[2][i, 1]*b_AA[i] for i=1:d) * inv(n[2][d+1, 1])
+      push!(all_im, im)
+    end
+    return NfRel_nsToNfRel_nsMor(AA, AA, tau, all_im)
+  end
+end
+
+function _expand(M::GenMat{nf_elem}, mp::Map)
+  Kr = domain(mp)
+  Ka = codomain(mp)
+  k = base_ring(Kr)
+  d = degree(Kr)
+  N = MatrixSpace(k, rows(M), cols(M) * d)()
+  for i=1:rows(M)
+    for j = 1:cols(M)
+      a = mp\M[i,j]
+      for k=0:d-1
+        N[i, (j-1)*d+k+1] = coeff(a, k)
+      end
+    end
+  end
+  return N
+end
+
+
+
+function base_ring(A::ClassField)
+  return order(_modulus(A.mq))
+end
+
+function base_field(A::ClassField)
+  return number_field(base_ring(A))
+end
+
+function base_ring(A::ClassField_pp)
+  return order(_modulus(A.mq))
+end
+
+function base_field(A::ClassField_pp)
+  return number_field(base_ring(A))
+end
+
+
+function degree(A::ClassField)
+  return Int(order(domain(A.mq)))
+end
+
+function degree(A::ClassField_pp)
+  return Int(order(domain(A.mq)))
 end
 
