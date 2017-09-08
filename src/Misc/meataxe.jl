@@ -391,177 +391,6 @@ function isisomorphic(M::FqGModule,N::FqGModule)
 end
 
 
-#
-#  Computes peakwords for all composition factors
-#
-
-
-function peakwords(L)
-  
-  K=L[1][1].K
-  i=1
-  for i=1:length(L)
-    if L[i][1].dim_spl_fld==0
-      _spl_field(L[i][1])
-    end
-  end
-  while i<=length(L)
-    lincomb,f= peakword(L[i][1])
-    if isempty(lincomb)
-      i=i+1
-      continue
-    end
-    found=true
-    for j=1:i-1
-      A=MatrixSpace(K,L[j][1].dim,L[j][1].dim)()
-      for k=1:length(L[1][1].G)
-        A+=lincomb[k]*L[j][1].G[k]
-      end
-      A=f(A)
-      if rank(A)!=L[j][1].dim
-        found=false
-        break
-      end
-    end
-    if found
-      i=i+1
-    end
-  end
-  return L
-
-end
-
-
-#
-#  Computes a candidate peakword for a factor 
-#
-
-function peakword(M::FqGModule)
-
-  @assert M.isirreducible
-  n=M.dim
-  K=M.K
-  G=M.G
-  e=M.dim_spl_fld
-  lincomb=[]
-  Kx,x=K["x"]
-  f=Kx(1)
-  A=MatrixSpace(K,n,n)()
-  for i=1:100
-    
-    for i=1:length(G)
-      push!(lincomb,rand(K))
-      A+=lincomb[i]*G[i]
-    end
-
-    cp=charpoly(A)
-    sq=factor_squarefree(cp)
-    lf=factor(collect(keys(sq.fac))[1])
-    for t in keys(lf.fac)
-      f=t^2
-      S=f(A)
-      a=n-rank(S)
-      if a==e
-        M.peakword_elem=lincomb
-        M.peakword_poly=f
-        return lincomb, t
-      end
-    end        
-    lincomb=[]
-    A=MatrixSpace(K,n,n)()
-
-  end
-  return lincomb, Kx(0)
-
-end
-
-
-
-
-
-function _spl_field(M::FqGModule)
-  
-  @assert M.isirreducible==true
-  n=M.dim
-  K=M.K
-  G=M.G
-  posfac=n
-  lincomb=[]
-  Kx,x=K["x"]
-  f=Kx(1)
-  A=MatrixSpace(K,n,n)()
-  
-  while true
-    
-    for i=1:length(G)
-      push!(lincomb,rand(K))
-      A+=lincomb[i]*G[i]
-    end
-
-    cp=charpoly(A)
-    sq=first(keys(factor_squarefree(cp)))
-    pol=gcd(sq,x^order(K)-x)
-    lf=factor(pol)
-    for t in lf.fac
-      f=t
-      S=t(A)
-      a,kerA=nullspace(transpose(S))
-      if a==1
-        if divides(cp,f^2)[1]
-          M.peakword_elem=lincomb
-          M.peakword_poly=f
-        end
-        M.dim_spl_fld=1
-        return lincomb, f
-      end
-      kerA=transpose(kerA)
-      posfac=gcd(posfac,a)
-      if divisible(fmpz(posfac),a)
-        v=submatrix(kerA, 1:1, 1:n)
-        B=v
-        T =spinning(v,G)
-        G1=[T*A*inv(T) for A in G]
-        i=2
-        E=[eye(T,a)]
-        while rows(B)!= a
-          w= submatrix(kerA, i:i, 1:n)
-          z= cleanvect(B,w)
-          if iszero(z)
-            continue
-          end
-          N =spinning(w,G)
-          G2=[N*A*inv(N) for A in G]
-          if G1 == G2
-            b=kerA*N
-            x=transpose(solve(transpose(kerA),transpose(b)))
-            push!(E,x)
-            B=vcat(B,z)
-            B=closure(B,E)
-          else 
-            break
-          end
-          if rows(B)==a
-            if divides(cp,f^2)[1]
-              M.peakword_elem=lincomb
-              M.peakword_poly=f
-            end
-            M.dim_spl_fld=a
-            return lincomb, f
-          else
-            i+=1
-          end
-        end
-      end
-    end        
-    lincomb=[]
-    A=MatrixSpace(K,n,n)()
-
-  end
-  
-end
-
-
-
 function _solve_unique(A::GenMat{fq_nmod}, B::GenMat{fq_nmod})
   X = MatrixSpace(base_ring(A), cols(B), rows(A))()
 
@@ -602,6 +431,25 @@ function _solve_unique(A::GenMat{fq_nmod}, B::GenMat{fq_nmod})
 
   @assert B*X == A
   return X
+end
+
+function _enum_el(K,v,dim)
+  
+  if dim == 0
+    return [v]
+  else 
+    list=[]
+    push!(v,K(0))
+    for x in K 
+      v[length(v)]=x
+      push!(list,deepcopy(v))
+    end
+    list1=[]
+    for x in list
+      append!(list1,_enum_el(K,x, dim-1))
+    end
+    return list1
+  end
 end
 
 
@@ -1073,85 +921,6 @@ function minimal_submodules(M::FqGModule, dim::Int=M.dim+1, lf=[])
 end
 
 
-function minimal_with_peakwords(M::FqGModule, index::Int=M.dim, lf=[])
-
-  K=M.K
-  n=M.dim
-  
-  if M.isirreducible==true
-    return []
-  end
-
-  list=[]
-  if isempty(lf)
-    lf=composition_factors(M)
-  end
-  if length(lf)==1 && lf[1][2]==1
-    return []
-  end
-  if index!=n
-    lf=[x for x in lf if x[1].dim==index]
-  end
-  if isempty(lf)
-    return list
-  end
-  Hecke.peakwords(lf)
-  G=M.G
-  for x in lf
-    if isdefined(x[1],:peakword_poly)
-      A=MatrixSpace(K,n,n)()
-      for i=1:length(G)
-        A+=x[1].peakword_elem[i]*G[i]
-      end
-      A=x[1].peakword_poly(A)
-      a,kern=nullspace(transpose(A))
-      if a==0
-        continue
-      end
-      kern=transpose(kern)
-      S=Hecke.closure(kern, G)
-      if x[1].dim>rows(S)
-        continue
-      end
-      N=Hecke.actsub(S,G)
-      if N.dim == x[1].dim
-        if isisomorphic(x[1],N)
-          push!(list, S)
-        end
-        continue
-      end 
-      H=Hecke._irrsubs(x[1],N)
-      for a in H
-        push!(list,a*S)
-      end
-    else 
-      append!(list,Hecke._irrsubs(x[1],M))
-    end   
-  end
-  return list
-
-end
-
-
-function _enum_el(K,v,dim)
-  
-  if dim == 0
-    return [v]
-  else 
-    list=[]
-    push!(v,K(0))
-    for x in K 
-      v[length(v)]=x
-      push!(list,deepcopy(v))
-    end
-    list1=[]
-    for x in list
-      append!(list1,_enum_el(K,x, dim-1))
-    end
-    return list1
-  end
-end
-
 doc"""
 ***
     maximal_submodules(M::FqGModule)
@@ -1187,7 +956,7 @@ function submodules(M::FqGModule)
   K=M.K
   list=GenMat{fq_nmod}[]
   lf=composition_factors(M)
-  minlist=minimal_submodules(M, M.dim, lf)
+  minlist=minimal_submodules(M, M.dim+1, lf)
   for x in minlist
     rref!(x)
     N, pivotindex =actquo(x,M.G)
@@ -1238,7 +1007,7 @@ doc"""
 
 """
 
-function submodules(M::FqGModule, index::Int)
+function submodules(M::FqGModule, index::Int; comp_factors=[])
   
   K=M.K
   if index==M.dim
@@ -1246,12 +1015,33 @@ function submodules(M::FqGModule, index::Int)
   end
   list=GenMat{fq_nmod}[]
   if index>= M.dim/2
-    lf=composition_factors(M)
+    if comp_factors==[]
+      lf=composition_factors(M)
+    else 
+      lf=comp_factors
+    end
+    diffmod=Int[0]
     for i=1: M.dim-index-1
       minlist=minimal_submodules(M,i,lf)
       for x in minlist
         N, pivotindex= actquo(x, M.G)
-        ls=submodules(N,index)
+        #
+        #  Rescue the composition factors of the quotient
+        #
+        Sub=actsub(x, M.G)
+        lf1=[]
+        for j=1:length(lf)
+          if !isisomorphic(lf[j][1], Sub)
+            push!(lf1,lf[j])
+          elseif lf[j][2]>1
+            push!(lf1,lf[j])
+            lf1[length(lf1)][2]-=1            
+          end
+        end
+        #
+        #  Recursively ask for submodules and write their bases in terms of the given set of generators
+        #
+        ls=submodules(N,index,comp_factors=lf1)
         for a in ls
           s=MatrixSpace(K,rows(a), M.dim)()
           for t=1:rows(a)
@@ -1267,24 +1057,31 @@ function submodules(M::FqGModule, index::Int)
           push!(list,vcat(x,s))
         end
       end
+      push!(diffmod,length(list))
     end
+   
   #
-  #  Redundance!
+  #  Eliminating repetitions
   #
+    if length(diffmod)==2
+      return append!(list,minimal_submodules(M,M.dim-index, lf))
+    end
     for x in list
       rref!(x)
     end
-    i=1
-    while i<length(list)
-      j=i+1
-      while j<=length(list)
-        if iszero(list[j]-list[i])
-          deleteat!(list, j)
-        else 
-          j+=1
+    for z=1:length(diffmod)-2
+      i=diffmod[length(diffmod)-z-1]+1
+      j=diffmod[length(diffmod)-z]
+      for s=i:j
+        k=j+1
+        while k<=length(list)
+          if iszero(list[s]-list[k])
+            deleteat!(list, k)
+          else 
+            k+=1
+          end
         end
       end
-      i+=1
     end
     append!(list,minimal_submodules(M,M.dim-index, lf))
   else 
