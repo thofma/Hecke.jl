@@ -1389,10 +1389,9 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       for el in plist
         newsub=[c*R[i] for i=1:ngens(R)]
         for i=1:rows(el)
-          y=submatrix(el,i:i,1:cols(el))
           z=MatrixSpace(FlintZZ,1,cols(el))()
           for j=1:cols(z)
-            z[1,j]=FlintZZ(coeff(y[i,j],0))
+            z[1,j]=FlintZZ(coeff(el[i,j],0))
           end
           push!(newsub,mQ\(mG(mS\(S(z)))))
         end
@@ -1428,7 +1427,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
           push!(quotype_p,v)
         end
       end
-      plist=Hecke.submodules_with_quo_struct(M,quotype_p)
+      plist=Hecke.submodules(M,typequo=quotype_p)
       psubs=[]
       for el in plist
         newsub=[c*R[i] for i=1:ngens(R)]
