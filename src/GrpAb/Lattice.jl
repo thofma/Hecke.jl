@@ -87,25 +87,43 @@ function Base.append!(G::GrpAbLattice, f::Map)
   end
 end
 
-function update!(G::Graph)
-  if G.nvertices != length(G.weak_vertices)
-    println("something was deleteted")
-    for k in keys(G.avertices)
-      println("checking if $k was removed")
-      if any(k == object_id(x) for x in keys(G.weak_vertices))
-        continue
-      else
-        println("object with id $k was deleted")
-        delete!(G.avertices, k)
-        G.nvertices = G.nvertices - 1
-        delete!(G.edges, k)
-        for e in values(G.edges)
-          delete!(e, k)
-        end
-      end
+function delete!(G::GrpAbLattice, A::GrpAbFinGen)
+  @assert haskey(G.weak_vertices, A)
+  delete!(G.graph, object_id(A))
+  delete!(G.weak_vertices, A)
+  @assert !haskey(G.block_gc, A)
+  G.nvertices -= 1
+end
+
+function update!(G::GrpAbLattice)
+  for a in G.block_gc
+    if G.graph.degrees[object_id(a)] < 2
+      println("move $a to weak dictionary")
+      G.weak_vertices[a] = true
+      delete!(G.block_gc, a)
     end
   end
 end
+
+#function update!(G::GrpAbLattice)
+#  if G.nvertices != length(G.weak_vertices)
+#    println("something was deleteted")
+#    for k in keys(G.avertices)
+#      println("checking if $k was removed")
+#      if any(k == object_id(x) for x in keys(G.weak_vertices))
+#        continue
+#      else
+#        println("object with id $k was deleted")
+#        delete!(G.avertices, k)
+#        G.nvertices = G.nvertices - 1
+#        delete!(G.edges, k)
+#        for e in values(G.edges)
+#          delete!(e, k)
+#        end
+#      end
+#    end
+#  end
+#end
 
 function find_shortest(G::Graph{T, M}, root::T, target::T) where {T, M}
   S = T[]
