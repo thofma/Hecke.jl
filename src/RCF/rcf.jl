@@ -149,9 +149,6 @@ function _modulus(mR::Map)
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
   end
-  if issubtype(typeof(mR), Hecke.MapRayClassGrpFacElem)
-    return mR.modulus_fin
-  end
   @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
   return mR.modulus_fin
 end
@@ -399,7 +396,20 @@ function _rcf_find_kummer(CF::ClassField_pp)
   c = q
 
   lP = vcat(lP, Hecke.find_gens(inv(mc), PrimesSet(100, -1))[1])
-
+  @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
+if false
+  println("enlarging to be Galois closed - just in case...", length(lP))
+  lP = Set(lP)
+  _lp = Set(minimum(x) for x = lP)
+  for p = _lp
+    fp = prime_decomposition(ZK, Int(p))
+    for I = fp
+      push!(lP, I[1])
+    end
+  end
+  lP = collect(lP)
+  println("finally:", length(lP))
+end
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
 
   @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
@@ -980,8 +990,8 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     C = cyclotomic_extension(k, Int(om))
     g = C.Kr.pol
     tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])
-#    println("g: $g")
-#    println("tau(g): $tau_g")
+    println("g: $g")
+    println("tau(g): $tau_g")
     i = 1
     z = gen(C.Kr)
     while gcd(i, om) != 1 || !iszero(tau_g(z))
@@ -991,6 +1001,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     z_i = i
 
     z_i_inv = invmod(z_i, om)
+println("z_i: $z_i")
     Tau = NfRelToNfRelMor(C.Kr, C.Kr, tau, z)
     tau_Ka = NfToNfMor(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))))
 
@@ -1007,23 +1018,31 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     all_tau_s = []
     all_emb = []
     for c in Cp
-#      println("om: $om -> ", degree(c))
+      println("om: $om -> ", degree(c))
       Cs = cyclotomic_extension(k, Int(degree(c)))
       Emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)))
       emb = C.mp[1] * Emb * inv(Cs.mp[1])
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
+println(evaluate(a))
+println(evaluate(tau_a))
       push!(all_emb, (a, tau_a, emb))
-      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, a^div(om, degree(c))) for p = lp])
+      y = Matrix(FlintZZ, length(lp), 1, [div(om, degree(c))*can_frobenius(p, Cp[im].bigK, a) for p = lp])
+      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, a) for p = lp])
+#      println("raw y: ", y')
       fl, s = cansolve(z, y)
       @assert fl
-      s = [s[x, 1] % om for x=1:length(Cp[im].bigK.gen)]
-      println(s)
+      s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
+      println("s: $s")
 
-      fl, tau_s = cansolve(tau_z, y)
+      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
+#      println("raw y: ", y')
+      fl, tau_s = cansolve(z, y)
+#      println((tau_z*tau_s)')
       @assert fl
       tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
-      println(tau_s)
+      println("tau(s): $tau_s")
+      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
 
       # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
       push!(all_s, s)
@@ -1033,24 +1052,26 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     all_b = []
     # if the above is correct, then tau_s in <s>
     for j = 1:length(Cp)
+      sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)])
+      sG, msG = sub(Cp[im].bigK.AutG, vcat([(degree(Cp[j]) > om ? div(om, degree(Cp[i])):1)*Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], [degree(Cp[j])*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]))
       ts = all_tau_s[j]
       x = Cp[im].bigK.AutG(ts)
       fl, y = haspreimage(msG, x)
       println(fl, " -> $(x.coeff) -> $(y.coeff)")
       @assert fl
       #need to establish the embeddings (which are also needed below)
-      println([Int(y[i]*div(om, degree(Cp[i]))) for i=1:length(Cp)])
+      println([Int(y[i]) for i=1:length(Cp)])
       println(div(om, degree(Cp[j])))
-      mu = prod(all_emb[i][1]^Int(y[i]*div(om, degree(Cp[i]))) for i=1:length(Cp)) * inv(all_emb[j][2])^div(om, degree(Cp[j]))
+      mu = prod(all_emb[i][1]^Int(y[i]) for i=1:length(Cp)) * inv(all_emb[j][2])
       mmu = evaluate(mu)
-      global last_rt = (mmu, om)
-      rt = root(mmu, om) 
+      global last_rt = (mmu, degree(Cp[j]))
+      rt = root(mmu, degree(Cp[j]))
       push!(all_b, (rt, y))
     end
     Ka = C.Ka
     KaT, X = Ka["T"]
     KK, gKK = number_field([X^degree(Cp[j]) - evaluate(all_emb[j][1]) for j=1:length(Cp)])
-    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(all_b[i][2][j]) for j=1:length(Cp)) for i=1:length(Cp)])
+    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, degree(Cp[j])))) for j=1:length(Cp)) for i=1:length(Cp)])
 
     # now "all" that remains is to restrict h to the subfield, using lin. alg..
     # .. and of course move away form the Cp stuff.
@@ -1070,6 +1091,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #      println("=======")
       push!(all_pe, (pe, tau_pe))
     end
+
 
     B = [KK(1), all_pe[1][1]]
     d = degree(Cp[1])
@@ -1107,23 +1129,27 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       im = -sum(n[2][i, 1]*b_AA[i] for i=1:d) * inv(n[2][d+1, 1])
       push!(all_im, im)
     end
-    im = NfRel_nsElem{nf_elem}
+    im = NfRel_nsElem{nf_elem}[]
     i = 1
     j = 1
+#    println("deg A: ", [degree(x) for x=A.cyc])
+#    println("deg C: ", [degree(x) for x=Cp])
     while j<=length(A.cyc)
-      if degree(A.cyc[j]) == degree(Cp[i])
-        push!(im, gens(A)[j])
+      if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
+        push!(im, gens(A.A)[j])
         i += 1
         j += 1
       else
         j += 1
       end
     end
+    println(KK)
+    println(length(im))
     emb = NfRel_nsToNfRel_nsMor(KK, A.A, im)
     i = 1
     j = 1
     while j<=length(A.cyc)
-      if degree(A.cyc[j]) == degree(Cp[i])
+      if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
         all_h[j] = emb(all_im[i])
         i += 1
         j += 1
