@@ -893,6 +893,21 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1})
   return S, GrpAbFinGenMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
 end
 
+doc"""
+***
+    sub(G::GrpAbFinGen, n) -> GrpAbFinGen, Map
+
+> Create the subgroup $n*G$ of $G$ together
+> with the injection $\iota : n*G \to G$.
+"""
+
+function sub(G::GrpAbFinGen, n::Int)
+  
+  sg=[n*g for g in gens(G) if !iszero(n*g)]
+  return sub(G,sg)
+  
+end
+
 ################################################################################
 #
 #  Quotients
