@@ -55,7 +55,7 @@ end
 #  Action of a matrix on an element of the group
 #
 
-function *(M::nmod_mat, x::GrpAbFinGenElem)
+function *(x::GrpAbFinGenElem, M::nmod_mat)
 
   G=parent(x)
   @assert ngens(G)==rows(M)
@@ -88,7 +88,7 @@ function Nemo.snf(M::ZpnGModule)
   for i=1:length(G)
     N=MatrixSpace(M.R, ngens(S),ngens(S))()
     for j=1:length(W)
-      y=mS(G[i]*W[j])
+      y=mS(W[j]*G[i])
       for k=1:ngens(S)
         N[j,k]=y.coeff[1,k]
       end
@@ -155,53 +155,6 @@ function _mult_by_p(M::ZpnGModule)
 
 end
 
-
-function quo(M::ZpnGModule, S:: nmod_mat)
-
-  subm=[M.V(lift(view(S,i:i, 1:cols(S)))) for i=1:rows(S)]
-  return ZpnGModule(quo(M.V,subm)[1],M.G)
-  
-end
-
-
-function _exponent_p_sub(M::ZpnGModule)
-
-  G=M.G
-  V=M.V
-  p=M.p
-  F, a = Nemo.FiniteField(p, 1, "a")
-  hV = GrpAbFinGenMap(V, V, MatrixSpace(FlintZZ,ngens(V),ngens(V))(p))  #Can make it more efficient if necessary, working with matrices
-  K,mK=Hecke.kernel(hV)
-  S,mS=snf(K)
-  G1=Array{GenMat{fq_nmod},1}(length(G))
-  for z=1:length(G)
-    A=MatrixSpace(F,ngens(S),ngens(S))()
-    for i=1:ngens(S)
-      x=G[z]*(mK(mS(S[i])))
-      x=(mS\(haspreimage(mK,x)[2])).coeff
-      for j=1:ngens(S)
-        A[i,j]=x[1,j]
-      end
-    end
-    G1[z]=A
-  end
-  return FqGModule(G1)
-  
-end
-
-function subm_to_subg(M::ZpnGModule, S::nmod_mat, op=sub)
-  
-  G=M.V
-  subg=Array{GrpAbFinGenElem,1}()
-  for i=1:rows(S)
-    x=view(S, i:i,1:cols(S))
-    if !iszero(x)
-      push!(subg,G(lift(x)))
-    end
-  end
-  return op(G,subg)
-end
-
 function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
   S=mS.header.domain
@@ -224,7 +177,7 @@ function issubmodule(M::ZpnGModule, S::nmod_mat)
   for x in gens(s)
     el=ms(x)
     for g in M.G
-      if !haspreimage(ms,g*el)[1]
+      if !haspreimage(ms,el*g)[1]
         return false
       end
     end
@@ -256,6 +209,103 @@ function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpA
   return ZpnGModule(V,act_mat)
 
 end
+
+
+########################################################################################################
+#
+#  Quotients and subgroups of ZpnGModules
+#
+########################################################################################################
+
+
+function quo(M::ZpnGModule, S:: nmod_mat)
+
+  subm=[M.V(lift(view(S,i:i, 1:cols(S)))) for i=1:rows(S)]
+  Q,mQ=quo(M.V,subm)
+  return ZpnGModule(Q,M.G), mQ
+  
+end
+
+function sub(M::ZpnGModule, S::nmod_mat)
+
+  sg,msg=subm_to_subg(M,S)
+  G=Array{nmod_mat,1}(length(M.G))
+  for k=1:length(M.G)
+    A=MatrixSpace(M.R, ngens(sg), ngens(sg))()
+    for i=1:ngens(sg)
+      x=msg(sg[i])*M.G[k]
+      x=haspreimage(msg, x)[2].coeff
+      for j=1:ngens(sg)
+        A[i,j]=x[1,j]
+      end
+    end
+    G[k]=A
+  end
+  return ZpnGModule(sg,G), msg
+
+end
+
+
+function sub(M::ZpnGModule, n::Int)
+  
+  sg,msg=sub(M.V,n)
+  G=Array{nmod_mat,1}(length(M.G))
+  for k=1:length(M.G)
+    A=MatrixSpace(M.R, ngens(sg), ngens(sg))()
+    for i=1:ngens(sg)
+      x=msg(sg[i])*M.G[k]
+      x=haspreimage(msg, x)[2].coeff
+      for j=1:ngens(sg)
+        A[i,j]=x[1,j]
+      end
+    end
+    G[k]=A
+  end
+  return ZpnGModule(sg,G), msg
+  
+end
+
+
+function _exponent_p_sub(M::ZpnGModule)
+
+  G=M.G
+  V=M.V
+  p=M.p
+  F, a = Nemo.FiniteField(p, 1, "a")
+  hV = GrpAbFinGenMap(V, V, MatrixSpace(FlintZZ,ngens(V),ngens(V))(p))  #Can make it more efficient if necessary, working with matrices
+  K,mK=Hecke.kernel(hV)
+  S,mS=snf(K)
+  G1=Array{GenMat{fq_nmod},1}(length(G))
+  for z=1:length(G)
+    A=MatrixSpace(F,ngens(S),ngens(S))()
+    for i=1:ngens(S)
+      x=(mK(mS(S[i])))*G[z]
+      x=(mS\(haspreimage(mK,x)[2])).coeff
+      for j=1:ngens(S)
+        A[i,j]=x[1,j]
+      end
+    end
+    G1[z]=A
+  end
+  return FqGModule(G1)
+  
+end
+
+function subm_to_subg(M::ZpnGModule, S::nmod_mat, op=sub)
+  
+  G=M.V
+  subg=Array{GrpAbFinGenElem,1}()
+  for i=1:rows(S)
+    x=view(S, i:i,1:cols(S))
+    if !iszero(x)
+      push!(subg,G(lift(x)))
+    end
+  end
+  return op(G,subg)
+  
+end
+
+
 
 
 ##########################################################################
@@ -315,8 +365,9 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
     end 
     mH=Hecke.GrpAbFinGenMap(S.V,K,A)
     sg,msg=kernel(mH)
-    push!(list, vcat([W(msg(y).coeff) for y in gens(sg)]))
+    push!(list, vcat([ (mS\(msg(y))).coeff for y in gens(sg)]))
   end
+  return list
 
 end
 
@@ -336,10 +387,13 @@ function composition_factors(M::ZpnGModule)
     append!(list, composition_factors(x))
   end
   for i=1:length(list)
-    for j=i+1:length(list)
+    j=i+1
+    while j<=length(list)
       if Hecke.isisomorphic(list[i][1], list[j][1])
         list[i][2]+=list[j][2]
         deleteat!(list,j)
+      else 
+        j+=1
       end    
     end
   end
@@ -381,7 +435,7 @@ function submodules_all(M::ZpnGModule)
   #
   
   for x in minlist
-    N=quo(S,x)
+    N,_=quo(S,x)
     newlist=submodules(N)
     for y in newlist
       push!(list,vcat(y,x))
@@ -439,6 +493,50 @@ end
 function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   
   R=M.R
+  if length(typesub)==1
+  #
+  #  The same approach can be used in general, but it is more complicated to be implemented.
+  #  Since we are searching for a stable subgroup, we search for an element in p^(typesub[1]-1)*G
+  #
+    s,ms=sub(M, M.p^(typesub[1]-1))
+    S,mS=snf(s)
+    N=_exponent_p_sub(S)
+    submod=minimal_submodules(N,1,composition_factors(N))
+    list1=Array{nmod_mat,1}(length(submod))
+    v=[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
+    for i=1:length(submod)
+      list1[i]=lift(submod[i],R)
+      @assert rows(list1[i])==1
+      for k=1:cols(list1[i])
+        list1[i][1,k]*=v[k]
+      end
+    end  
+    W=MatrixSpace(R,1, ngens(M.V))
+    for j=1:length(list1)
+      list1[j]=W((ms(mS \ S.V(lift(list1[j]))).coeff))
+    end
+    if typesub[1]==1
+      return list1
+    end
+    list=nmod_mat[]
+    for x in list1  
+      L,_=quo(M,x)
+      newlist=submodules_with_struct(L,[typesub[1]-1])
+      i=1
+      el=M.V(lift(x))
+      while i<=length(newlist)
+        @assert rows(newlist[i])==1
+        if (M.p^(typesub[1]-1))*M.V(lift(newlist[i]))!=el
+          deleteat!(newlist,i)
+        else 
+          i+=1
+        end
+      end
+      append!(list, newlist)
+    end
+    return list
+ 
+  end
   sort!(typesub)
   S,mS=snf(M)
   N=Hecke._exponent_p_sub(S)
@@ -471,7 +569,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   new_subtype=[typesub[j]-1 for j=i:length(typesub)]
   diffmod=Int[0]
   for x in list1  
-    L=quo(S,x)
+    L, _=quo(S,x)
     newlist=submodules_with_struct(L,new_subtype)
     for j=1:length(newlist)
       newlist[j]=vcat(newlist[j],x)
@@ -568,7 +666,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
           A[s,t]*=v[t]
         end
       end
-      L=quo(S,A)
+      L, _=quo(S,A)
       newlist=Hecke.submodules_order(L,ord-i)
       for z=1:length(newlist)
         push!(list,vcat(newlist[z],A))
