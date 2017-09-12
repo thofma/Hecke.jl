@@ -340,9 +340,27 @@ doc"""
 > Returns $x + y$.
 """
 function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
-  x.parent == y.parent || error("Elements must belong to the same group")
-  n = GrpAbFinGenElem(x.parent, x.coeff + y.coeff)
-  return n
+  if x.parent === y.parent
+    n = GrpAbFinGenElem(x.parent, x.coeff + y.coeff)
+    return n
+  end
+
+  b, m = can_map_into(GroupLattice, x.parent, y.parent)
+  if b
+    return GrapAbFinGenElem(y.parent, x.coeff*m) + y
+  end
+
+  b, m = can_map_into(GroupLattice, y.parent, x.parent)
+  if b
+    return x + GrpAbFinGenElem(x.parent, y.coeff*m)
+  end
+
+  b, G, m1, m2 = can_map_into_overstructure(GroupLattice, x.parent, y.parent)
+  if b
+    return GrpAbFinGenElem(G, x.coeff * m1 + y.coeff * m2)
+  end
+
+  error("asd")
 end
 
 doc"""
@@ -744,23 +762,18 @@ doc"""
 """
 
 function direct_product(G::GrpAbFinGen, H::GrpAbFinGen) 
-
   A=vcat(rels(G), MatrixSpace(FlintZZ, rows(rels(H)), cols(rels(G)))())
-  B=vcat(MatrixSpace(FlintZZ, rows(rels(G)), cols(rels(H)))(),rels(H))
+  B=vcat(MatrixSpace(FlintZZ, rows(rels(G)), cols(rels(H)))(), rels(H))
  
   return AbelianGroup(hcat(A,B))
-  
 end 
 
 function istorsion(G::GrpAbFinGen)
-
   S=snf(G)[1]
   return S.snf[ngens(S)]!=0
-  
 end
 
 function torsion_subgroup(G::GrpAbFinGen)
-  
   S,mS=snf(G)
   subs=GrpAbFinGenElem[]
   i=1
@@ -768,9 +781,7 @@ function torsion_subgroup(G::GrpAbFinGen)
     push!(subs, mS\(S[i]))
   end
   return sub(G,subs)
-  
 end
-
 
 ##############################################################################
 #
@@ -890,7 +901,11 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1})
   end
   r = sub(h, fstWithoutOldGens:rows(h), ngens(p)+1:cols(h))
   S = AbelianGroup(r)
-  return S, GrpAbFinGenMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
+  mS = GrpAbFinGenMap(S, p, sub(m, nrels(p)+1:rows(h), 1:ngens(p)))
+
+  #append!(GroupLattice, mS)
+
+  return S, mS
 end
 
 doc"""

@@ -78,6 +78,7 @@ end
 mutable struct ClassField
   mq::Map
   cyc::Array{ClassField_pp, 1}
+  A::NfRel_ns{nf_elem}
   function ClassField()
     return new()
   end
