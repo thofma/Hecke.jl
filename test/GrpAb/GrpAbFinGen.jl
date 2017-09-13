@@ -1,29 +1,26 @@
 @testset "GrpAbFinGen" begin
-  @testset "constructor GrpAbFinGen" begin
-    @testset "not in hnf" begin
-      M = FlintZZ[1 2 3; 4 5 6]
-      G = @inferred Hecke.GrpAbFinGen(M)
-      @test G.rels == M
-      @test_throws UndefRefError G.hnf
-      @test_throws UndefRefError G.snf_map
-    end
+  @testset "Constructor" begin
+    # Generic
+    M = FlintZZ[1 2 3; 4 5 6]
+    G = @inferred Hecke.GrpAbFinGen(M)
+    @test G.rels == M
+    @test_throws UndefRefError G.hnf
+    @test_throws UndefRefError G.snf_map
 
-    @testset "in hnf" begin
-      M = FlintZZ[1 2 3; 0 3 6]
-      G = @inferred Hecke.GrpAbFinGen(M, true)
-      @test G.rels == M
-      @test G.hnf == M
-      @test_throws UndefRefError G.snf_map
-    end
-  end
+    # HNF
+    M = FlintZZ[1 2 3; 0 3 6]
+    G = @inferred Hecke.GrpAbFinGen(M, true)
+    @test G.rels == M
+    @test G.hnf == M
+    @test_throws UndefRefError G.snf_map
 
-  @testset "constructor GrpAbFinGenSnf" begin
+    # SNF
     A = Array{fmpz, 1}([3 ; 15 ; 0])
     SNF = Hecke.GrpAbFinGen(A)
     @test SNF.snf == A
   end
 
-  @testset "constructor GrpAbFinGenElem" begin
+  @testset "Element constructor" begin
     M = FlintZZ[1 2 3; 4 5 6]
     G = @inferred Hecke.GrpAbFinGen(M)
     N = FlintZZ[1 2 3]

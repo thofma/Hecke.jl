@@ -356,6 +356,22 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
   im::GrpAbFinGen  # if set
   ke::GrpAbFinGen  # if set
 
+  function GrpAbFinGenMap(G::GrpAbFinGen)
+    r = new()
+
+    function image(a::GrpAbFinGenElem)
+      return a
+    end
+
+    function preimage(a::GrpAbFinGenElem)
+      return a
+    end
+
+    r.header = MapHeader(G, G, image, preimage)
+    r.map = one(MatrixSpace(FlintZZ, ngens(G), ngens(G)))
+    return r
+  end
+
   function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat)
     r = new()
     function image(a::GrpAbFinGenElem)

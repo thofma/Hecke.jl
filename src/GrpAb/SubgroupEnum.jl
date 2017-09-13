@@ -527,10 +527,10 @@ function _psubgroups_gens(G::GrpAbFinGen, p, t, order, index)
   else
     S, mS = snf(G)
     if t == [-1]
-      return ( map(x -> preimage(mS, x)::GrpAbFinGenElem, z)
+      return ( map(x -> image(mS, x)::GrpAbFinGenElem, z)
                for z in __psubgroups_gens(S, p, order, index))
     else
-      return ( map(x -> preimage(mS, x)::GrpAbFinGenElem, z)
+      return ( map(x -> image(mS, x)::GrpAbFinGenElem, z)
                for z in __psubgroups_gens(S, p, order, index, t))
     end
   end
@@ -548,7 +548,7 @@ function _psubgroups_gens_quotype(G::GrpAbFinGen, p, t, order, index)
     return __psubgroups_gens(G, p, order, index, filtered_types)
   else
     S, mS = snf(G)
-    return ( map(x -> preimage(mS, x)::GrpAbFinGenElem, z)
+    return ( map(x -> image(mS, x)::GrpAbFinGenElem, z)
              for z in _psubgroups_gens_quotype(S, p, t, order, index))
   end
 end
