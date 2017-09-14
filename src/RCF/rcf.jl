@@ -514,7 +514,7 @@ function _rcf_descent(CF::ClassField_pp)
     s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))])
     ss, mss = snf(s)
     g = ss
-    mg = mg*ms*inv(mss)
+    mg = mg*ms*mss
   end
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
@@ -650,7 +650,7 @@ function _rcf_descent(CF::ClassField_pp)
                       PrimesSet(200, -1), minimum(_modulus(CF.mq)))
     h = hom(f, [preimage(CF.mq, p) for p = lp])
     @hassert :ClassField 1 issurjective(h)
-    h = h*inv(mp)
+    h = h*mp
     h = hom(AutA_snf, [h(AutA_snf[i]) for i=1:ngens(AutA_snf)])
     s, ms = kernel(h)
     @vprint :ClassField 2 "... done, have subgroup!\n"
@@ -660,7 +660,7 @@ function _rcf_descent(CF::ClassField_pp)
   #norm, trace relative to s, the subgroup
 
   @vprint :ClassField 2 "computing orbit of primitive element\n"
-  os = [Auto[preimage(mp, ms(j))] for j=s]
+  os = [Auto[mp(ms(j))] for j=s]
 
   function coerce_down(a)
     @assert a.data.length <= 1
@@ -671,7 +671,7 @@ function _rcf_descent(CF::ClassField_pp)
   end
 
   function minpoly(a)
-    @vtime :ClassField 2 o = [grp_elem_to_map(AutA_gen, preimage(mp, mq(j)), t) for j = q]
+    @vtime :ClassField 2 o = [grp_elem_to_map(AutA_gen, mp(mq(j)), t) for j = q]
     @vtime :ClassField 2 f = prod(T-x for x=o)
     @assert degree(f) == length(o)
     @assert length(o) == e
