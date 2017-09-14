@@ -200,7 +200,7 @@ function narrow_class_group(L::NfOrd)
   end
   s, ms = quo(S, [logS(signs(mU(U[i]))) for i=1:ngens(U)])
   s, mms = snf(s)
-  ms = mms*ms
+  ms = mms*inv(ms)
 
   # we want the extension 1-> s -> X -> C -> 1
   # generators are gensC supplemented by gens(s)
