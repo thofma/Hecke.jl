@@ -14,8 +14,8 @@ export multiplicative_group, multiplicative_group_generators
 
 doc"""
 ***
-    multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfOrdQuoRing}
-    unit_group(Q::NfOrdQuoRing) -> GrpAbFinGenSnf, Map{GrpAbFinGenSnf, NfOrdQuoRing}
+    multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
+    unit_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
 
 > Returns the unit group of $Q$ as an abstract group $A$ and
 > an isomorphism map $f \colon A \to Q^\times$.
@@ -680,7 +680,7 @@ doc"""
 
 > Return the smith normal form of a mulitplicative group.
 
-> The group is represented by generators, a relationmatrix
+> The group is represented by generators, a relation matrix
 > and a function to compute the discrete logarithm with respect to the generators.
 > All trivial components of the group will be removed.
 > If the generators are of type `NfOrdElem` and an ideal `i` is supplied,
