@@ -60,10 +60,10 @@ mutable struct IndexPSubgroups{S, T}
       return r
     end
     s, ms = snf(A)  # ms: A -> s
-    r = new{typeof(ms), T}()
+    r = new{typeof(inv(ms)), T}()
     @assert s.issnf
     r.p = Int(p)
-    r.mp = ms
+    r.mp = inv(ms)
     i=1
     while s.snf[i] % p != 0
       i += 1
