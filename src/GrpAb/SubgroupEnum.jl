@@ -267,7 +267,7 @@ function compute_indice(s, t, x, y, sigma)
         if i < sigma[j] # case a)
           push!(indice, (i, j, 0))
         elseif i > sigma[j] && x[i] < y[j] #case b)
-          push!(indice, (i, j, 1)) 
+          push!(indice, (i, j, 1))
         elseif i > sigma[j] && x[i] >= y[j] # case c)
           push!(indice, (i, j, 2))
         end
@@ -311,7 +311,7 @@ function getintervals(t, s, x, y, p, sigma, tau)
           push!(indice, (i, j, 0))
           push!(ranges, 1:p^(y[j] - y[tau[i]]))
         elseif i > sigma[j] && x[i] < y[j] #case b)
-          push!(indice, (i, j, 1)) 
+          push!(indice, (i, j, 1))
           push!(ranges, 1:p^(x[i] - y[tau[i]]))
         elseif i > sigma[j] && x[i] >= y[j] # case c)
           push!(indice, (i, j, 2))
@@ -660,7 +660,7 @@ function psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = :all,
                                                              fun = sub)
 
   options = Int16[ subtype != :all, quotype != :all, index != -1, order != -1 ]
-  
+
   if sum(options) > 1
     error("Currently only one non-default parameter is supported.")
   end
@@ -675,7 +675,7 @@ function psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = :all,
     end
     _subtype = subtype
   end
-  
+
   if quotype == :all
     _quotype = [-1]
   else
@@ -697,7 +697,8 @@ Base.next(S::pSubgroupIterator, s) = Base.next(S.it, s)
 
 Base.done(S::pSubgroupIterator, s) = Base.done(S.it, s)
 
-Base.iteratorsize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = Base.SizeUnknown()
+Base.iteratorsize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} =
+      Base.SizeUnknown()
 
 Base.eltype(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = E
 
@@ -759,11 +760,14 @@ Base.done(S::SubgroupIterator, s) = Base.done(S.it, s)
 
 Base.length(S::SubgroupIterator) = Base.length(S.it)
 
-Base.iteratorsize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = Base.SizeUnknown()
+Base.iteratorsize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} =
+    Base.SizeUnknown()
 
 Base.eltype(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = E
 
-function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1], quotype = [-1], suborder = -1, subindex = -1) where S <: Union{Integer, fmpz}
+function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
+                         quotype = [-1], suborder = -1,
+                         subindex = -1) where S <: Union{Integer, fmpz}
   primes = fmpz[]
 
   pgens = []
