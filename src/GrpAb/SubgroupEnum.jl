@@ -554,7 +554,7 @@ function _psubgroups_gens_quotype(G::GrpAbFinGen, p, t, order, index)
 end
 
 function _ptype(G, p)
-  Gsnf = codomain(snf(G)[2])
+  Gsnf = domain(snf(G)[2])
   x = Int[ valuation(Gsnf.snf[i], p)
                        for i in 1:length(Gsnf.snf) if Gsnf.snf[i] > 1]
   reverse!(x)
