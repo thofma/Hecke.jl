@@ -45,7 +45,7 @@ function conductor(C::Hecke.ClassField)
   T,mT=Hecke.kernel(S1)
   W,mW=snf(T)
   
-  Sgens=[mR(mT(mW\w)) for w in gens(W)]
+  Sgens= [ mR(mT(mW(w))) for w in gens(W) ]
   
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
@@ -196,7 +196,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   T,mT=Hecke.kernel(S1)
   W,mW=snf(T)
   
-  Sgens=[mR(mT(mW\w)) for w in gens(W)]
+  Sgens=[mR(mT(mW(w))) for w in gens(W)]
   
   L=factor(cond)
   for (p,vp) in L

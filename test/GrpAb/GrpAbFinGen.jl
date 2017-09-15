@@ -156,14 +156,14 @@
     G = AbelianGroup(M)
     SNF, SNF_map = snf(G)
     @test SNF.snf == Array{fmpz,1}([45 ; 0])
-    @test SNF_map.header.domain == G
-    @test SNF_map.header.codomain == SNF
+    @test SNF_map.header.codomain == G
+    @test SNF_map.header.domain == SNF
     image = SNF_map.header.image
     preimage = SNF_map.header.preimage
 
     @testset "0 = 0" begin
-      a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 0])
-      b = Hecke.GrpAbFinGenElem(SNF, FlintZZ[0 0])
+      a = Hecke.GrpAbFinGenElem(SNF, FlintZZ[0 0])
+      b = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 0])
       @test image(a) == b
       @test preimage(b) == a
     end
@@ -171,16 +171,16 @@
     @testset "0 != 100" begin
       a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 0])
       b = Hecke.GrpAbFinGenElem(SNF, FlintZZ[100 100])
-      @test image(a) != b
-      @test preimage(b) != a
+      @test preimage(a) != b
+      @test image(b) != a
     end
 
     @testset "linearity" begin
       x = Hecke.GrpAbFinGenElem(G, FlintZZ[234 4355 3455])
       y = Hecke.GrpAbFinGenElem(G, FlintZZ[32 3090 34590])
-      @test image(x+y) == image(x)+image(y)
-      @test image(x-y) == image(x)-image(y)
-      @test image(435*x) == 435*image(x)
+      @test preimage(x+y) == preimage(x)+preimage(y)
+      @test preimage(x-y) == preimage(x)-preimage(y)
+      @test preimage(435*x) == 435*preimage(x)
     end
   end
 

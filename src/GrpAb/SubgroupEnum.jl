@@ -60,10 +60,10 @@ mutable struct IndexPSubgroups{S, T}
       return r
     end
     s, ms = snf(A)  # ms: A -> s
-    r = new{typeof(ms), T}()
+    r = new{typeof(inv(ms)), T}()
     @assert s.issnf
     r.p = Int(p)
-    r.mp = ms
+    r.mp = inv(ms)
     i=1
     while s.snf[i] % p != 0
       i += 1
@@ -554,7 +554,7 @@ function _psubgroups_gens_quotype(G::GrpAbFinGen, p, t, order, index)
 end
 
 function _ptype(G, p)
-  Gsnf = codomain(snf(G)[2])
+  Gsnf = domain(snf(G)[2])
   x = Int[ valuation(Gsnf.snf[i], p)
                        for i in 1:length(Gsnf.snf) if Gsnf.snf[i] > 1]
   reverse!(x)

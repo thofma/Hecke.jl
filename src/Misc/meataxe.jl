@@ -857,9 +857,9 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   #
   candidate_comb=append!(_enum_el(K,[K(0)], length(vects)-1),_enum_el(K,[K(1)],length(vects)-1))
   deleteat!(candidate_comb,1)
-  list=GenMat{fq_nmod}[]
-  for x in candidate_comb
-    push!(list, sum([x[i]*vects[i] for i=1:length(vects)]))
+  list=Array{GenMat{fq_nmod},1}(length(candidate_comb))
+  for j=1:length(candidate_comb)
+    list[j] = sum([candidate_comb[j][i]*vects[i] for i=1:length(vects)])
   end
   list[1]=closure(list[1], N.G)
   i=2
@@ -1043,7 +1043,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
         #
         ls=submodules(N,index,comp_factors=lf1)
         for a in ls
-          s=MatrixSpace(K,rows(a), M.dim)()
+          s=MatrixSpace(K,rows(a)+rows(x), M.dim)()
           for t=1:rows(a)
             pos=0
             for j=1:M.dim
@@ -1052,9 +1052,14 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
              else
                s[t,j]=a[t,j-pos]
               end
-           end
+            end
           end
-          push!(list,vcat(x,s))
+          for t=rows(a)+1:rows(s)
+            for j=1:cols(s)
+              s[t,j]=x[t-rows(a),j]
+            end
+          end
+          push!(list,s)
         end
       end
       push!(diffmod,length(list))

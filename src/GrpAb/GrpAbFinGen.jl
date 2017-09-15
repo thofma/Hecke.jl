@@ -778,7 +778,7 @@ function torsion_subgroup(G::GrpAbFinGen)
   subs=GrpAbFinGenElem[]
   i=1
   while S.snf[i]!=0
-    push!(subs, mS\(S[i]))
+    push!(subs, mS(S[i]))
   end
   return sub(G,subs)
 end
@@ -1047,7 +1047,7 @@ function make_snf(m::Map{GrpAbFinGen, T}) where T
     return m
   end
   S, mS = snf(G)
-  return m*inv(mS)
+  return m*mS
 end
 
 doc"""
