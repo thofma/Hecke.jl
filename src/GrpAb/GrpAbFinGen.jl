@@ -69,7 +69,7 @@ end
 function show_gen(io::IO, A::GrpAbFinGen)
   print(io, "(General) abelian group with relation matrix\n$(A.rels)")
   if isdefined(A, :snf_map)
-    println(io, "\nwith structure of ", codomain(A.snf_map))
+    println(io, "\nwith structure of ", domain(A.snf_map))
   end
 end
 
@@ -511,11 +511,11 @@ doc"""
 """
 function snf(G::GrpAbFinGen)
   if isdefined(G, :snf_map)
-    return codomain(G.snf_map)::GrpAbFinGen, G.snf_map
+    return domain(G.snf_map)::GrpAbFinGen, G.snf_map
   end
 
   if issnf(G)
-    G.snf_map = IdentityMap(G)
+    G.snf_map = GrpAbFinGenMap(G) # identity
     return G, G.snf_map
   end
 
@@ -558,7 +558,7 @@ function snf(G::GrpAbFinGen)
   end
 
   H = GrpAbFinGen(s)
-  mp = GrpAbFinGenMap(G, H, TT, TTi)
+  mp = GrpAbFinGenMap(H, G, TTi, TT)
   G.snf_map = mp
   return H, mp
 end
@@ -778,7 +778,7 @@ function torsion_subgroup(G::GrpAbFinGen)
   subs=GrpAbFinGenElem[]
   i=1
   while S.snf[i]!=0
-    push!(subs, mS\(S[i]))
+    push!(subs, mS(S[i]))
   end
   return sub(G,subs)
 end
@@ -806,7 +806,7 @@ end
 
 function rand_gen(G::GrpAbFinGen)
   S, mS = snf(G)
-  return preimage(mS, rand(S))
+  return image(mS, rand(S))
 end
 
 doc"""
@@ -830,7 +830,7 @@ end
 
 function rand_gen(G::GrpAbFinGen, B::fmpz)
   S, mS = snf(G)
-  return preimage(mS, rand(S, fmpz(B)))
+  return image(mS, rand(S, fmpz(B)))
 end
 
 function rand_gen(G::GrpAbFinGen, B::Integer)
@@ -1026,7 +1026,7 @@ function _elem_from_enum(G::GrpAbFinGen, st::UInt)
   end
     
   S, mS = snf(G)
-  return preimage(mS, _elem_from_enum(S, st))
+  return image(mS, _elem_from_enum(S, st))
 end
 
 Base.length(G::GrpAbFinGen) = UInt(order(G))
@@ -1047,7 +1047,7 @@ function make_snf(m::Map{GrpAbFinGen, T}) where T
     return m
   end
   S, mS = snf(G)
-  return m*inv(mS)
+  return m*mS
 end
 
 doc"""
@@ -1165,7 +1165,7 @@ end
 function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
-  zz = [ preimage(mS, x) for x in z ]
+  zz = [ image(mS, x) for x in z ]
   return sub(G, zz)
 end
 

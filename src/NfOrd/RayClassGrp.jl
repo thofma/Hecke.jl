@@ -1307,7 +1307,7 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
       for j=1:cols(s)
         x[1,j]=FlintZZ(coeff(s[i,j],0))
       end
-      push!(subs, mS\(S(x)))
+      push!(subs, mS(S(x)))
     end
     push!(subgroups, op(R, subs))
   end
@@ -1365,7 +1365,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       for z=1:length(act)
         A=MatrixSpace(F,ngens(S), ngens(S))()
         for i=1:ngens(S)
-          y=mS(haspreimage(mG,act[z](mG(mS\(S[i]))))[2])
+          y=mS\(haspreimage(mG,act[z](mG(mS(S[i]))))[2])
           for j=1:ngens(S)
             A[i,j]=y.coeff[1,j]
           end
@@ -1393,7 +1393,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
           for j=1:cols(z)
             z[1,j]=FlintZZ(coeff(el[i,j],0))
           end
-          push!(newsub,mQ\(mG(mS\(S(z)))))
+          push!(newsub,mQ\(mG(mS(S(z)))))
         end
         push!(psubs,newsub)
       end
@@ -1404,9 +1404,9 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       RR=ResidueRing(FlintZZ,p^x)
       act_mat=Array{nmod_mat,1}(length(act))
       for z=1:length(act)
-        A=MatrixSpace(RR,ngens(G), ngens(G))()
+        A=MatrixSpace(RR,ngens(S), ngens(S))()
         for i=1:ngens(G)
-          y=haspreimage(mG,act[z](mG(G[i])))[2]
+          y=mS\(haspreimage(mG,act[z](mG(mS(S[i]))))[2])
           for j=1:ngens(G)
             A[i,j]=y.coeff[1,j]
           end
@@ -1418,7 +1418,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #  Searching for submodules
       #
       
-      M=Hecke.ZpnGModule(G,act_mat)
+      M=Hecke.ZpnGModule(S,act_mat)
     
       quotype_p=Int[]
       for i=1:length(quotype)
@@ -1434,7 +1434,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         for i=1:rows(el)
           y=view(el,i:i,1:cols(el))
           if !iszero(y)
-            push!(newsub,mQ\(mG(mS\(S(lift(y))))))
+            push!(newsub,mQ\(mG(mS(S(lift(y))))))
           end       
         end
         push!(psubs,newsub)
@@ -1466,7 +1466,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrp, p::Int, index::Int=1
   Q,mQ=quo(R,p)
   S,mS=snf(Q)
 
-  M=_act_on_ray_class(mR*inv(mQ)*inv(mS), p, Aut)
+  M=_act_on_ray_class(mR*inv(mQ)*mS, p, Aut)
 
   ls=submodules(M,index)
   subgroups=Map[]
@@ -1477,7 +1477,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrp, p::Int, index::Int=1
       for j=1:cols(s)
         x[1,j]=FlintZZ(coeff(s[i,j],0))
       end
-      push!(subs, mQ\(mS\(S(x))))
+      push!(subs, mQ\(mS(S(x))))
     end
     W,mW=quo(R, subs) 
     push!(subgroups, mR*inv(mW))
