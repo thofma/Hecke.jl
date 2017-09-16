@@ -15,6 +15,10 @@ matrix:
 notifications:
   - email: false
 
+after_failure:
+  - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
+  - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
+
 after_success:
   - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
   - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
