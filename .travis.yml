@@ -17,8 +17,8 @@ notifications:
 
 script:
   - julia -e 'Pkg.clone(pwd())'
+  - julia -e 'Pkg.checkout("Nemo", "e13039ad5dd04000a50c8d1337580615953503f3")'
   - julia -e 'Pkg.build("Hecke")'
-  - julia -e 'Pkg.checkout("Nemo")'
   - julia --check-bounds=yes -e 'Pkg.test("Hecke")'
 
 after_failure:
