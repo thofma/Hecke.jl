@@ -15,6 +15,12 @@ matrix:
 notifications:
   - email: false
 
+script:
+  - julia -e 'Pkg.clone(pwd())'
+  - julia -e 'Pkg.build("Hecke")'
+  - julia -e 'Pkg.checkout("Nemo")'
+  - julia --check-bounds=yes -e 'Pkg.test("$name", coverage=true)'
+
 after_failure:
   - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
   - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
