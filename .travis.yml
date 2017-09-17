@@ -19,7 +19,7 @@ script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.build("Hecke")'
   - julia -e 'Pkg.checkout("Nemo")'
-  - julia --check-bounds=yes -e 'Pkg.test("$name", coverage=true)'
+  - julia --check-bounds=yes -e 'Pkg.test("Hecke")'
 
 after_failure:
   - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
