@@ -452,6 +452,13 @@ function _enum_el(K,v,dim)
   end
 end
 
+function dual_space(M::FqGModule)
+  
+  G=GenMat{fq_nmod}[transpose(g) for g in M.G]
+  return FqGModule(G)
+
+end
+
 
 ###############################################################
 #
@@ -854,6 +861,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   
   #
   #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
+  #  Notice that we eliminate lots of candidates considering the action of the group on the homomorphisms space
   #
   candidate_comb=append!(_enum_el(K,[K(0)], length(vects)-1),_enum_el(K,[K(1)],length(vects)-1))
   deleteat!(candidate_comb,1)
@@ -931,13 +939,11 @@ doc"""
 
 function maximal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
 
-
-  G=[transpose(A) for A in M.G]
-  M_dual=FqGModule(G)
+  M_dual=dual_space(M)
   minlist=minimal_submodules(M_dual, index, lf)
-  maxlist=GenMat{fq_nmod}[]
-  for x in minlist
-    push!(maxlist,transpose(nullspace(x)[2]))
+  maxlist=Array{GenMat{fq_nmod},1}(length(minlist))
+  for j=1:length(minlist)
+    maxlist[j]=transpose(nullspace(minlist[j])[2])
   end
   return maxlist
 
@@ -985,12 +991,10 @@ function submodules(M::FqGModule)
     while j<=length(list)
       if rows(list[j])!=rows(list[i])
         j+=1
-      else
-        if iszero(list[j]-list[i])
-          deleteat!(list, j)
-        else 
-          j+=1
-        end
+      elseif list[j]==list[i]
+        deleteat!(list, j)
+      else 
+        j+=1
       end
     end
     i+=1
@@ -1020,28 +1024,32 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
     else 
       lf=comp_factors
     end
-    diffmod=Int[0]
     for i=1: M.dim-index-1
       minlist=minimal_submodules(M,i,lf)
       for x in minlist
         N, pivotindex= actquo(x, M.G)
+        #=
         #
         #  Rescue the composition factors of the quotient
         #
         Sub=actsub(x, M.G)
-        lf1=[]
-        for j=1:length(lf)
-          if !isisomorphic(lf[j][1], Sub)
-            push!(lf1,lf[j])
-          elseif lf[j][2]>1
-            push!(lf1,lf[j])
-            lf1[length(lf1)][2]-=1            
+        lf1=[x for x in lf]
+        for j=1:length(lf1)
+          if isisomorphic(lf1[j][1], Sub)
+            if lf1[j][2]==1
+              deleteat!(lf1,j)
+            else
+              lf1[j][2]=lf1[j][2]-1
+            end
+            break
           end
         end
+        println(lf1)
+        =#
         #
         #  Recursively ask for submodules and write their bases in terms of the given set of generators
         #
-        ls=submodules(N,index,comp_factors=lf1)
+        ls=submodules(N,index) #,comp_factors=lf1)
         for a in ls
           s=MatrixSpace(K,rows(a)+rows(x), M.dim)()
           for t=1:rows(a)
@@ -1062,44 +1070,36 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
           push!(list,s)
         end
       end
-      push!(diffmod,length(list))
     end
    
   #
   #  Eliminating repetitions
   #
-    if length(diffmod)==2
-      return append!(list,minimal_submodules(M,M.dim-index, lf))
-    end
+
     for x in list
       rref!(x)
     end
-    for z=1:length(diffmod)-2
-      i=diffmod[length(diffmod)-z-1]+1
-      j=diffmod[length(diffmod)-z]
-      for s=i:j
-        k=j+1
-        while k<=length(list)
-          if iszero(list[s]-list[k])
-            deleteat!(list, k)
-          else 
-            k+=1
-          end
+    i=1
+    while i<=length(list)
+      k=i+1
+      while k<=length(list)
+        if list[i]==list[k]
+          deleteat!(list, k)
+        else 
+          k+=1
         end
       end
+      i+=1
     end
     append!(list,minimal_submodules(M,M.dim-index, lf))
   else 
   #
   #  Duality
   # 
-    G=[transpose(A) for A in M.G]
-    M_dual=FqGModule(G)
+    M_dual=dual_space(M)
     dlist=submodules(M_dual, M.dim-index)
     list=GenMat{fq_nmod}[transpose(nullspace(x)[2]) for x in dlist]
-  end
-
-  
+  end 
   return list
     
 end
