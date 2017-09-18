@@ -21,6 +21,6 @@ deploydocs(
                     "python-markdown-math",
                     "mkdocs-cinder"),
     repo = "github.com/thofma/Hecke.jl.git",
-    julia = "0.5",
+    julia = "0.6",
 )
 
