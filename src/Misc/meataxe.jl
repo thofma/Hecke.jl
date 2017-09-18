@@ -1028,12 +1028,11 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
       minlist=minimal_submodules(M,i,lf)
       for x in minlist
         N, pivotindex= actquo(x, M.G)
-        #=
         #
         #  Rescue the composition factors of the quotient
         #
         Sub=actsub(x, M.G)
-        lf1=[x for x in lf]
+        lf1=[[x[1], x[2]] for x in lf]
         for j=1:length(lf1)
           if isisomorphic(lf1[j][1], Sub)
             if lf1[j][2]==1
@@ -1044,8 +1043,6 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
             break
           end
         end
-        println(lf1)
-        =#
         #
         #  Recursively ask for submodules and write their bases in terms of the given set of generators
         #
