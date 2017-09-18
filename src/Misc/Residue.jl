@@ -1,5 +1,5 @@
 
-function lift(a::GenRes)
+function lift(a::Generic.Res)
   return a.data
 end
 

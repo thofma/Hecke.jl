@@ -593,7 +593,7 @@ end
 
 elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
 
-elem_type{T}(::Type{GenResRing{T}}) = GenRes{T}
+elem_type{T}(::Type{Generic.ResRing{T}}) = Generic.Res{T}
 
 ################################################################################
 #

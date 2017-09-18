@@ -747,7 +747,7 @@ function _kernel_of_frobenius(R::quoringalg)
   return [ quoelem(R, r) for r in DD ]
 end
 
-function _lift(T::Array{GenRes{fmpz}, 1})
+function _lift(T::Array{Generic.Res{fmpz}, 1})
   return [ z.data for z in T ]
 end
 

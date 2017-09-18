@@ -12,8 +12,8 @@ mutable struct NfRelOrdIdl{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
-  basis_mat::GenMat{T}
-  basis_mat_inv::GenMat{T}
+  basis_mat::Generic.Mat{T}
+  basis_mat_inv::Generic.Mat{T}
 
   norm
   has_norm::Bool
@@ -36,7 +36,7 @@ mutable struct NfRelOrdIdl{T, S}
     return z
   end
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S}
+  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
     z = new{T, S}()
     z.order = O
     z.parent = NfRelOrdIdlSet{T, S}(O)
@@ -181,7 +181,7 @@ end
 
 doc"""
 ***
-      basis_mat(a::NfRelOrdIdl{T, S}) -> GenMat{T}
+      basis_mat(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
 
 > Returns the basis matrix of $a$.
 """
@@ -196,7 +196,7 @@ end
 
 doc"""
 ***
-      basis_mat_inv(a::NfRelOrdIdl{T, S}) -> GenMat{T}
+      basis_mat_inv(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
 
 > Returns the inverse of the basis matrix of $a$.
 """
@@ -247,11 +247,11 @@ end
 
 doc"""
 ***
-    ideal(O::NfRelOrd, M::GenMat) -> NfRelOrdIdl
+    ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdIdl
 
 > Creates the ideal of $\mathcal O$ with basis matrix $M$.
 """
-ideal(O::NfRelOrd{T, S}, M::GenMat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
+ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
 
 ################################################################################
 #

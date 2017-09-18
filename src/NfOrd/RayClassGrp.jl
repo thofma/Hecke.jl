@@ -1361,7 +1361,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     if x==1
     
       F, _ = Nemo.FiniteField(Int(p), 1, "_")
-      act_mat=Array{GenMat{fq_nmod},1}(length(act))
+      act_mat=Array{Generic.Mat{fq_nmod},1}(length(act))
       for z=1:length(act)
         A=MatrixSpace(F,ngens(S), ngens(S))()
         for i=1:ngens(S)

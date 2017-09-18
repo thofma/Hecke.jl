@@ -590,7 +590,7 @@ function _pivot(A, start_row, col)
   return 0
 end
 
-function _strong_echelon_form(A::GenMat{NfOrdQuoRingElem})
+function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -601,7 +601,7 @@ function _strong_echelon_form(A::GenMat{NfOrdQuoRingElem})
   return B
 end
 
-function strong_echelon_form(A::GenMat{NfOrdQuoRingElem}, shape::Symbol = :upperright)
+function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright)
   if shape == :lowerleft
     h = _strong_echelon_form(_swapcols(A))
     _swapcols!(h)
@@ -614,7 +614,7 @@ function strong_echelon_form(A::GenMat{NfOrdQuoRingElem}, shape::Symbol = :upper
   end
 end
 
-function triangularize!(A::GenMat{NfOrdQuoRingElem})
+function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
   n = rows(A)
   m = cols(A)
   d = one(base_ring(A))
@@ -669,7 +669,7 @@ function triangularize!(A::GenMat{NfOrdQuoRingElem})
   return d
 end
 
-function triangularize(A::GenMat{NfOrdQuoRingElem})
+function triangularize(A::Generic.Mat{NfOrdQuoRingElem})
   #println("copying ...")
   B = deepcopy(A)
   #println("done")
@@ -683,7 +683,7 @@ end
 #
 ################################################################################
 
-function strong_echelon_form!(A::GenMat{NfOrdQuoRingElem})
+function strong_echelon_form!(A::Generic.Mat{NfOrdQuoRingElem})
   #A = deepcopy(B)
   n = rows(A)
   m = cols(A)
@@ -756,7 +756,7 @@ end
 #
 ################################################################################
 
-function howell_form!(A::GenMat{NfOrdQuoRingElem})
+function howell_form!(A::Generic.Mat{NfOrdQuoRingElem})
   @assert rows(A) >= cols(A)
 
   k = rows(A)
@@ -779,7 +779,7 @@ function howell_form!(A::GenMat{NfOrdQuoRingElem})
   return k
 end
 
-function howell_form(A::GenMat{NfOrdQuoRingElem})
+function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
@@ -797,7 +797,7 @@ end
 #
 ################################################################################
 
-function det(M::GenMat{NfOrdQuoRingElem})
+function det(M::Generic.Mat{NfOrdQuoRingElem})
   rows(M) != cols(M) && error("Matrix must be square matrix")
   N = deepcopy(M)
   d = triangularize!(N)
@@ -817,7 +817,7 @@ end
 #
 ################################################################################
 
-#function call(M::GenMatSpace{NfOrdQuoRingElem}, x::GenMat{NfOrdElem})
+#function call(M::Generic.MatSpace{NfOrdQuoRingElem}, x::Generic.Mat{NfOrdElem})
 #  base_ring(base_ring(M)) != base_ring(parent(x)) &&
 #      error("Base rings do not coincide")
 #  z = M()
@@ -830,9 +830,9 @@ end
 #  return z
 #end
 
-function (M::GenMatSpace{NfOrdQuoRingElem})(x::GenMat{NfOrdElem})
+function (M::Generic.MatSpace{NfOrdQuoRingElem})(x::Generic.Mat{NfOrdElem})
   z = map(base_ring(M), x.entries)::Array{NfOrdQuoRingElem, 2}
-  return M(z)::GenMat{NfOrdQuoRingElem}
+  return M(z)::Generic.Mat{NfOrdQuoRingElem}
 end
 ################################################################################
 #
@@ -848,7 +848,7 @@ end
 #     : common case is f == K.pol. In this case we known a sharp T2-bound
 #     : for torsion polynomials, embedd torsion units faithully and 
 #     : lift only one root of maximal order
-function _roots_hensel(f::GenPoly{NfOrdElem}, max_roots::Int = degree(f))
+function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   # f must be squarefree
   # I should check that
   O = base_ring(f)

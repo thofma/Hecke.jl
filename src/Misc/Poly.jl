@@ -24,15 +24,15 @@ function FlintFiniteField(p::fmpz)
   return ResidueRing(FlintZZ, p)
 end
 
-function fmpz(a::GenRes{Nemo.fmpz})
+function fmpz(a::Generic.Res{Nemo.fmpz})
   return a.data
 end
 
-function lift(R::FlintIntegerRing, a::GenRes{Nemo.fmpz})
+function lift(R::FlintIntegerRing, a::Generic.Res{Nemo.fmpz})
   return a.data
 end
 
-function (R::FlintIntegerRing)(a::GenRes{Nemo.fmpz})
+function (R::FlintIntegerRing)(a::Generic.Res{Nemo.fmpz})
   return a.data
 end
 

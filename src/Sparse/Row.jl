@@ -175,8 +175,8 @@ function SRow(A::SRow{fmpz}, R::T) where T <: Ring
 end
 
 doc"""
-    SMat(A::SMat{fmpz}, n::Int) -> SMat{GenRes{fmpz}}
-    SRow(A::SMat{fmpz}, n::Int) -> SRow{GenRes{fmpz}}
+    SMat(A::SMat{fmpz}, n::Int) -> SMat{Generic.Res{fmpz}}
+    SRow(A::SMat{fmpz}, n::Int) -> SRow{Generic.Res{fmpz}}
 
 > Converts $A$ to ba a sparse matrix (row) over $Z/nZ$ 
 """

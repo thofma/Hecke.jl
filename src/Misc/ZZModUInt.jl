@@ -136,7 +136,7 @@ end
 
 (R::ZZModUInt)(n::Int) = R(UInt(mod(n, R.mod.n)))
 
-function (R::ZZModUInt)(x::GenRes{fmpz})
+function (R::ZZModUInt)(x::Generic.Res{fmpz})
   R.mod.n != parent(x).modulus && error("moduli must be equal")
   return R(UInt(x.data))
 end

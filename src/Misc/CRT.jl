@@ -491,7 +491,7 @@ mutable struct modular_env
   Fpx::NmodPolyRing
   K::AnticNumberField
   Rp::Array{fq_nmod_poly, 1}
-  Kx::GenPolyRing{nf_elem}
+  Kx::Generic.PolyRing{nf_elem}
 
   function modular_env()
     return new()
@@ -595,12 +595,12 @@ end
 
 doc"""
 ***
-  modular_proj(a::GenPoly{nf_elem}, me::modular_env) -> Array
+  modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
 
 > Apply the \code{modular_proj} function to each coeficient of $a$.
 > Computes an array of polynomials over the respective residue class fields.
 """
-function modular_proj(a::GenPoly{nf_elem}, me::modular_env)
+function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 
   if !isdefined(me, :fldx)
     me.fldx = [PolynomialRing(x, "_x")[1] for x = me.fld]
@@ -629,7 +629,7 @@ end
 
 doc"""
 ***
-  modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> GenPoly{nf_elem}
+  modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> Generic.Poly{nf_elem}
 
 > Apply the \code{modular_lift} function to each coeficient of $a$.
 > Computes a polynomial over the number field.
@@ -654,13 +654,13 @@ end
 
 doc"""
 ***
-  modular_proj(a::GenMat{nf_elem}, me::modular_env) -> Array{Matrix}
-  modular_proj(a::GenMat{NfOrdElem}, me::modular_env) -> Array{Matrix}
+  modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
+  modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}
 
 > Apply the \code{modular_proj} function to each entry of $a$.
 > Computes an array of matrices over the respective residue class fields.
 """
-function modular_proj(a::GenMat{nf_elem}, me::modular_env)
+function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
     push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())
@@ -676,7 +676,7 @@ function modular_proj(a::GenMat{nf_elem}, me::modular_env)
   return Mp
 end  
 
-function modular_proj(a::GenMat{NfOrdElem}, me::modular_env)
+function modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
     push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())

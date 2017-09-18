@@ -1,18 +1,18 @@
 export UnitGroup, solvemod, gen_mod_pk, 
        disc_log_bs_gs, disc_log_ph, disc_log_mod
 
-function order(x::GenRes{fmpz}, fp::Dict{fmpz, Int64})
+function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
   error("missing")
 end
 
 
 @doc """
-  isprimitive_root(x::GenRes{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
+  isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
 
 >  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
 >  Intrinsically, only makes sense if the units of Z/MZ are cyclic.
 """ ->
-function isprimitive_root(x::GenRes{fmpz}, M::fmpz, fM::Fac{fmpz})
+function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
     if x^divexact(M, p) == 1
       return false
@@ -82,10 +82,10 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-mutable struct MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
+mutable struct MapUnitGroupModM{T} <: Map{T, Generic.ResRing{fmpz}}
   header::Hecke.MapHeader
 
-  function MapUnitGroupModM{T}(G::T, R::GenResRing{fmpz}, dexp::Function, dlog::Function) where {T}
+  function MapUnitGroupModM{T}(G::T, R::Generic.ResRing{fmpz}, dexp::Function, dlog::Function) where {T}
     r = new{T}()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -93,11 +93,11 @@ mutable struct MapUnitGroupModM{T} <: Map{T, GenResRing{fmpz}}
 end
 
 @doc """
-  UnitGroup(R::GenResRing{fmpz}) -> GrpAbFinGen, Map
+  UnitGroup(R::Generic.ResRing{fmpz}) -> GrpAbFinGen, Map
 
 >  The unit group of R = Z/nZ together with the apropriate map.
 """ ->
-function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
+function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
   m = R.modulus
   fm = factor(m).fac
   
@@ -158,7 +158,7 @@ function UnitGroup(R::GenResRing{fmpz}, mod::fmpz=fmpz(0))
   function dexp(x::GrpAbFinGenElem)
     return prod([R(g[i])^x[i] for i=1:ngens(G)])
   end
-  function dlog(x::GenRes{fmpz})
+  function dlog(x::Generic.Res{fmpz})
     return G([disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
   end
   return G, MapUnitGroupModM{typeof(G)}(G, R, dexp, dlog)
@@ -282,12 +282,12 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 end
 
 @doc """
-  disc_log_bs_gs{T}(a::GenRes{T}, b::GenRes{T}, o::fmpz)
+  disc_log_bs_gs{T}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
 
 >  Tries to find g s.th. a^g == b under the assumption that g <= o.
 >  Uses Baby-Step-Giant-Step
 """ ->
-function disc_log_bs_gs{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}(a::GenRes{T}, b::GenRes{T}, o::fmpz)
+function disc_log_bs_gs{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
   b==1 && return fmpz(0)  
   b==a && return fmpz(1)
   if o < 100 
@@ -333,7 +333,7 @@ end
 >  Tries to find g s.th. a^g == b under the assumption that ord(a) | o^r
 >  Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size(o) steps.
   """ ->
-function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}(a::GenRes{T}, b::GenRes{T}, o::fmpz, r::Int)
+function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz, r::Int)
   #searches for g sth. a^g = b
   # a is of order o^r
   # Pohlig-Hellmann a^g = b => (a^o)^g = b^g
@@ -347,5 +347,5 @@ function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly
   return g
 end
 
-unit_group(A::GenResRing{fmpz}) = UnitGroup(A)
+unit_group(A::Generic.ResRing{fmpz}) = UnitGroup(A)
 

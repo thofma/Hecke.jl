@@ -366,7 +366,7 @@ function mul!(z::fmpz, x::fmpz, y::Integer)
   return z
 end
 
-function inv!(a::perm)
+function inv!(a::Generic.perm)
   R = parent(a)
   ccall((:_perm_inv, :libflint), Void, (Ref{Int}, Ref{Int}, Int), a.d, a.d, R.n)
   nothing

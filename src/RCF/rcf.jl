@@ -473,11 +473,11 @@ function _rcf_descent(CF::ClassField_pp)
 
   @vprint :ClassField 2 "Descending ...\n"
                
-  mq = CF.mq
-  e = Int(order(domain(mq)))
-  k = nf(order(codomain(mq)))
-  C = cyclotomic_extension(k, e)
-  A = CF.K
+  const mq = CF.mq
+  const e = Int(order(domain(mq)))
+  const k = nf(order(codomain(mq)))
+  const C = cyclotomic_extension(k, e)
+  const A = CF.K
 #= 
     now the automorphism group of A OVER k
     A = k(zeta, a^(1/n))
@@ -521,8 +521,8 @@ function _rcf_descent(CF::ClassField_pp)
 
   AutA_gen = []
   AutA_rel = MatrixSpace(FlintZZ, ngens(g)+1, ngens(g)+1)()
-  zeta = C.mp[1](gen(C.Kr))
-  n = degree(A)
+  const zeta = C.mp[1](gen(C.Kr))
+  const n = degree(A)
   @assert e % n == 0
 
   @vprint :ClassField 2 "... the trivial one (Kummer)\n"
@@ -530,7 +530,7 @@ function _rcf_descent(CF::ClassField_pp)
   push!(AutA_gen, tau)
 
   AutA_rel[1,1] = n  # the order of tau
-  zeta  = C.mp[1](gen(C.Kr))
+
   K = C.Ka
   @vprint :ClassField 2 "... need to extend $(ngens(g)) from the cyclo ext\n"
   for i=1:ngens(g)
@@ -546,14 +546,14 @@ function _rcf_descent(CF::ClassField_pp)
  
     @vprint :ClassField 2 "... finding relation ...\n"
     m = gen(A)
-    for j=1:order(g[i])
+    for j=1:Int(order(g[i]))
       m = sigma(m)
     end
     # now m SHOULD be tau^?(gen(A)), so sigma^order(g[i]) = tau^?
     # the ? is what I want...
     j = 0
-    zeta_i = inv(zeta)^div(e, n)
-    mi = coeff(m, 1) 
+    local zeta_i::nf_elem = (inv(zeta)^div(e, n))::nf_elem
+    local mi::nf_elem = coeff(m, 1)
     #@hassert :ClassField 1 m == mi*gen(A) 
     # TODO: Replace once the antic bug is resolved
     @hassert :ClassField 1 iszero(m - mi*gen(A))
@@ -1166,7 +1166,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
   return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
 end
 
-function _expand(M::GenMat{nf_elem}, mp::Map)
+function _expand(M::Generic.Mat{nf_elem}, mp::Map)
   Kr = domain(mp)
   Ka = codomain(mp)
   k = base_ring(Kr)

@@ -13,8 +13,8 @@ end
 mutable struct NfRelOrd{T, S} <: Ring
   nf::NfRel{T}
   basis_nf::Vector{NfRelElem{T}}
-  basis_mat::GenMat{T}
-  basis_mat_inv::GenMat{T}
+  basis_mat::Generic.Mat{T}
+  basis_mat_inv::Generic.Mat{T}
   basis_pmat::PMat{T, S}
   pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
 
@@ -31,7 +31,7 @@ mutable struct NfRelOrd{T, S} <: Ring
     return z
   end
   
-  function NfRelOrd{T, S}(K::NfRel{T}, M::GenMat{T}) where {T, S}
+  function NfRelOrd{T, S}(K::NfRel{T}, M::Generic.Mat{T}) where {T, S}
     z = new{T, S}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -204,7 +204,7 @@ end
 
 doc"""
 ***
-      basis_mat(O::NfRelOrd{T, S}) -> GenMat{T}
+      basis_mat(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 > Returns the basis matrix of $\mathcal O$ with respect to the power basis
 > of the ambient number field.
@@ -220,7 +220,7 @@ end
 
 doc"""
 ***
-      basis_mat_inv(O::NfRelOrd{T, S}) -> GenMat{T}
+      basis_mat_inv(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
 > Returns the inverse of the basis matrix of $\mathcal O$.
 """
@@ -392,17 +392,17 @@ end
 
 doc"""
 ***
-      Order(K::NfRel{T}, M::GenMat{T}) -> NfRelOrd
+      Order(K::NfRel{T}, M::Generic.Mat{T}) -> NfRelOrd
 
 > Returns the order which has basis matrix $M$ with respect to the power basis
 > of $K$.
 """
-function Order(L::NfRel{nf_elem}, M::GenMat{nf_elem})
+function Order(L::NfRel{nf_elem}, M::Generic.Mat{nf_elem})
   # checks
   return NfRelOrd{nf_elem, NfOrdFracIdl}(L, deepcopy(M))
 end
 
-function Order(L::NfRel{NfRelElem{T}}, M::GenMat{NfRelElem{T}}) where T
+function Order(L::NfRel{NfRelElem{T}}, M::Generic.Mat{NfRelElem{T}}) where T
   # checks
   return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end

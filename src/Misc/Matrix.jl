@@ -351,13 +351,13 @@ function _swapcols!(x::fmpz_mat)
   nothing
 end
 
-function _swapcols(x::GenMat)
+function _swapcols(x::Generic.Mat)
   z = deepcopy(x)
   _swapcols!(z)
   return z
 end
 
-function _swapcols!(x::GenMat)
+function _swapcols!(x::Generic.Mat)
   r = rows(x)
   c = cols(x)
   t = base_ring(x)(0)
@@ -384,13 +384,13 @@ function _swapcols!(x::GenMat)
   nothing
 end
 
-function _swaprows(x::GenMat)
+function _swaprows(x::Generic.Mat)
   z = deepcopy(x)
   _swaprows(z)
   return z
 end
 
-function _swaprows!(x::GenMat)
+function _swaprows!(x::Generic.Mat)
   r = rows(x)
   c = cols(x)
 
@@ -526,9 +526,9 @@ function kernel(a::nmod_mat)
   z,n = _right_kernel(x)
   z = transpose(z)
   #println(z)
-  ar = typeof(Array{GenRes{fmpz}}(cols(z)))[]
+  ar = typeof(Array{Generic.Res{fmpz}}(cols(z)))[]
   for i in 1:n 
-    t = Array{GenRes{fmpz}}(cols(z))
+    t = Array{Generic.Res{fmpz}}(cols(z))
     for j in 1:cols(z)
       t[j] = z[i,j]
     end
@@ -721,12 +721,12 @@ end
 
 doc"""
 ***
-    vcat(A::Array{GenMat, 1}) -> GenMat
+    vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
 > Forms a big matrix my vertically concatenating the matrices in $A$.
 > All component matrices need to have the same number of columns.
 """
-function vcat(A::Array{GenMat{T}, 1}) where T
+function vcat(A::Array{Generic.Mat{T}, 1}) where T
   if any(x->cols(x) != cols(A[1]), A)
     error("Matrices must have same number of columns")
   end
@@ -914,7 +914,7 @@ function Base.nullspace(M::nmod_mat)
   end
 end
 
-function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,GenMat{GenRes{fmpz}}})
+function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,Generic.Mat{Generic.Res{fmpz}}})
   @assert M.cols == cols(Mp) && M.rows == rows(Mp)
   N = M()
   for i=1:M.rows

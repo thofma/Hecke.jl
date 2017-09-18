@@ -62,10 +62,10 @@ end
 
 mutable struct NfRel_ns{T} <: Nemo.Field 
   base_ring::Nemo.Field
-  pol::Array{Nemo.GenMPoly{T}, 1}
+  pol::Array{Nemo.Generic.MPoly{T}, 1}
   S::Array{Symbol, 1}
 
-  function NfRel_ns(f::Array{Nemo.GenMPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
+  function NfRel_ns(f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.base_ring = base_ring(f[1])
@@ -77,10 +77,10 @@ end
 #mostly copied from NfRel I am afraid..
 
 mutable struct NfRel_nsElem{T} <: Nemo.FieldElem
-  data::Nemo.GenMPoly{T}
+  data::Nemo.Generic.MPoly{T}
   parent::NfRel_ns{T}
 
-  NfRel_nsElem{T}(g::GenMPoly{T}) where {T} = new{T}(g)
+  NfRel_nsElem{T}(g::Generic.MPoly{T}) where {T} = new{T}(g)
 end
 
 ################################################################################
@@ -227,7 +227,7 @@ end
 #
 ################################################################################
 
-function number_field(f::Array{GenPoly{T}, 1}, s::String="_\$") where T
+function number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
@@ -237,7 +237,7 @@ end
 
 Nemo.gens(K::NfRel_ns) = [K(x) for x = gens(parent(K.pol[1]))]
 
-function (K::NfRel_ns{T})(a::GenMPoly{T}) where T
+function (K::NfRel_ns{T})(a::Generic.MPoly{T}) where T
   q, w = divrem(a, K.pol)
   z = NfRel_nsElem{T}(w)
   z.parent = K
@@ -349,11 +349,11 @@ function Nemo.degree(K::NfRel_ns)
   return prod([total_degree(x) for x=K.pol])
 end
 
-function total_degree(f::GenMPoly)
+function total_degree(f::Generic.MPoly)
   return Int(maximum([sum(f.exps[:, i]) for i=1:length(f)]))
 end
 
-function (R::GenPolyRing{nf_elem})(f::GenMPoly)
+function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)
   if length(f)==0
     return R()
   end
@@ -387,7 +387,7 @@ function basis(K::NfRel_ns)
 end
 
 #TODO: a sparse version
-function elem_to_mat_row!(M::GenMat{T}, i::Int, a::NfRel_nsElem{T}) where T
+function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   K = parent(a)
   C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol))
   C = [UInt[c[i] for i=1:length(K.pol)] for c = C]
@@ -594,11 +594,11 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
 end
 
 
-@inline ngens(R::Nemo.GenMPolyRing) = R.num_vars
+@inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
 
 #aparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
-function msubst(f::GenMPoly{T}, v::Array{NfRelElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
@@ -608,7 +608,7 @@ function msubst(f::GenMPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   end
   return r
 end
-function msubst(f::GenMPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
+function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))

@@ -79,14 +79,14 @@ end
 
 doc"""
 ***
-    order_via_legendre(E::EllCrv{GenRes{fmpz}) -> fmpz
+    order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
 
 Calculates the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
 # Th. 4.14
-function order_via_legendre(E::EllCrv{GenRes{fmpz}})
+function order_via_legendre(E::EllCrv{Generic.Res{fmpz}})
   R = base_field(E)
   p = characteristic(R)
   q = order(R)

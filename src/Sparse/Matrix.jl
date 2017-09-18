@@ -504,7 +504,7 @@ function mul(A::SMat{T}, B::SMat{T}) where T
   return C
 end
 
-# - Smat{UIntMod} * Smat{UIntMod} as MatElem{GenRes{fmpz}}
+# - Smat{UIntMod} * Smat{UIntMod} as MatElem{Generic.Res{fmpz}}
 function mul(A::SMat{UIntMod}, B::SMat{UIntMod})
   @assert A.c == B.r
   C = MatrixSpace(ResidueRing(FlintZZ, base_ring(A).mod.n), A.r, B.c)()

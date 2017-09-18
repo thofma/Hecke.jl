@@ -221,17 +221,17 @@ end
 #
 ################################################################################
 
-function number_field(f::GenPoly{T}, s::String) where T
+function number_field(f::Generic.Poly{T}, s::String) where T
   S = Symbol(s)
   K = NfRel{T}(f, S)
   return K, K(gen(parent(f)))
 end
 
-function number_field(f::GenPoly{T}) where T
+function number_field(f::Generic.Poly{T}) where T
   return number_field(f, "_\$")
 end
  
-function (K::NfRel{T})(a::GenPoly{T}) where T
+function (K::NfRel{T})(a::Generic.Poly{T}) where T
   z = NfRelElem{T}(mod(a, K.pol))
   z.parent = K
   return z
@@ -318,7 +318,7 @@ end
 #
 ################################################################################
 
-# gcdx of GenPoly{nf_elem} needs this:
+# gcdx of Generic.Poly{nf_elem} needs this:
 Nemo.canonical_unit(a::nf_elem) = a
 
 function Base.inv(a::NfRelElem)
@@ -458,7 +458,7 @@ function Nemo.check_parent(a, b)
   return a==b
 end
 
-function Nemo.content(a::GenPoly{T}) where T <: Nemo.Field
+function Nemo.content(a::Generic.Poly{T}) where T <: Nemo.Field
   return base_ring(a)(1)
 end
 
@@ -543,14 +543,14 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!(M::GenMat{T}, i::Int, a::NfRelElem{T}) where T
+function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelElem{T}) where T
   for c = 1:cols(M)
     M[i, c] = deepcopy(coeff(a, c - 1))
   end
   return nothing
 end
 
-function elem_from_mat_row(L::NfRel{T}, M::GenMat{T}, i::Int) where T
+function elem_from_mat_row(L::NfRel{T}, M::Generic.Mat{T}, i::Int) where T
   t = L(1)
   a = L()
   for c = 1:cols(M)
@@ -691,24 +691,24 @@ end
 
 #
 
-function (R::GenPolyRing{nf_elem})(a::NfRelElem{nf_elem})
+function (R::Generic.PolyRing{nf_elem})(a::NfRelElem{nf_elem})
   if base_ring(R)==base_ring(parent(a))
     return a.data
   end
   error("wrong ring")
 end
 
-function (R::GenPolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
+function (R::Generic.PolyRing{NfRelElem{T}})(a::NfRelElem{NfRelElem{T}}) where T
   if base_ring(R)==base_ring(parent(a))
     return a.data
   end
   error("wrong ring")
 end
 
-function factor(f::GenPoly{NfRelElem{T}}) where T
+function factor(f::Generic.Poly{NfRelElem{T}}) where T
   K = base_ring(f)
   Ka, rel_abs, _ = absolute_field(K)
-  function map_poly(P::Ring, mp::Map, f::GenPoly)
+  function map_poly(P::Ring, mp::Map, f::Generic.Poly)
     return P([mp(coeff(f, i)) for i=0:degree(f)])
   end
 
@@ -729,7 +729,7 @@ function roots(f::PolyElem, K::Nemo.Field)
   return roots(Kt([K(coeff(f, i)) for i=0:degree(f)]))
 end
 
-function roots(f::GenPoly{NfRelElem{T}}) where T
+function roots(f::Generic.Poly{NfRelElem{T}}) where T
   lf = factor(f)
   @assert degree(lf.unit) == 0
   scale = inv(coeff(lf.unit, 0))

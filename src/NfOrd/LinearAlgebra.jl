@@ -36,7 +36,7 @@ using Hecke
 
 export pseudo_matrix, pseudo_hnf
 
-function _det_bound(M::GenMat{NfOrdElem})
+function _det_bound(M::Generic.Mat{NfOrdElem})
   n = rows(M)
   O = base_ring(M)
   d = degree(O)
@@ -45,7 +45,7 @@ function _det_bound(M::GenMat{NfOrdElem})
   return fmpz(BigInt(ceil(sqrt(c2)*c1^(n/2)*BigInt(n)^n*BigInt(d)^n*BigInt(_max_max(M))^n)))
 end
 
-function _max_max(M::GenMat{NfOrdElem})
+function _max_max(M::Generic.Mat{NfOrdElem})
   d = FlintZZ(1)
   for i in 1:rows(M)
     for j in 1:cols(M)
@@ -60,7 +60,7 @@ function _max_max(M::GenMat{NfOrdElem})
   return d
 end
   
-#function det(M::GenMat{NfOrdElem})
+#function det(M::Generic.Mat{NfOrdElem})
 #  O = base_ring(M)::NfOrd
 #  B = _det_bound(M)
 #  p = next_prime(2^60) # magic numbers
@@ -98,7 +98,7 @@ function _get_coeff_raw(x::nmod_poly, i::Int)
   return u
 end
 
-function det(M::GenMat{NfOrdElem})
+function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
   K = nf(O)
   B = _det_bound(M)
@@ -228,7 +228,7 @@ function _basis_coord_nonneg(x::NfOrdElem)
   return true
 end
 
-function rand(M::GenMatSpace{NfOrdElem}, B::Union{Int, fmpz})
+function rand(M::Generic.MatSpace{NfOrdElem}, B::Union{Int, fmpz})
   z = M()
   for i in 1:rows(z)
     for j in 1:cols(z)
@@ -240,10 +240,10 @@ end
 
 mutable struct PMat{T, S}
   parent
-  matrix::GenMat{T}
+  matrix::Generic.Mat{T}
   coeffs::Array{S, 1}
 
-  function PMat{T, S}(m::GenMat{T}, c::Array{S, 1}) where {T, S}
+  function PMat{T, S}(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
     z = new{T, S}()
     z.matrix = m
     z.coeffs = c
@@ -280,27 +280,27 @@ function show(io::IO, P::PMat)
   end
 end
 
-function PseudoMatrix(m::GenMat{T}, c::Array{S, 1}) where {T, S}
+function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
   # sanity checks
   @assert rows(m) == length(c)
   return PMat{T, S}(m ,c)
 end
 
 
-function PseudoMatrix(m::GenMat{NfOrdElem}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert rows(m) == length(c)
   mm = change_ring(m, nf(base_ring(m)))
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
 
-function PseudoMatrix(m::GenMat{nf_elem})
+function PseudoMatrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)
    O = maximal_order(K)
    return PseudoMatrix(m, [ideal(O, K(1)) for i = 1:rows(m)])
 end
 
-PseudoMatrix(m::GenMat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
+PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
@@ -318,7 +318,7 @@ function cols(m::PMat)
   return cols(m.matrix)
 end
 
-function change_ring(m::GenMat{NfOrdElem}, K::AnticNumberField)
+function change_ring(m::Generic.Mat{NfOrdElem}, K::AnticNumberField)
   return MatrixSpace(K, rows(m), cols(m))(map(z -> K(z), m.entries))
 end
 
@@ -521,7 +521,7 @@ end
 
 _check(a) = a.has_coord ? dot(a.elem_in_basis, basis(parent(a))) == a : true
 
-function _check(m::GenMat{NfOrdElem})
+function _check(m::Generic.Mat{NfOrdElem})
   for i in 1:rows(m)
     for j in 1:cols(m)
       if !_check(m[i, j].elem)
@@ -532,7 +532,7 @@ function _check(m::GenMat{NfOrdElem})
   end
 end
 
-function _check(m::GenMat{NfOrdQuoRingElem})
+function _check(m::Generic.Mat{NfOrdQuoRingElem})
   for i in 1:rows(m)
     for j in 1:cols(m)
       if !_check(m[i, j].elem)
@@ -543,19 +543,19 @@ function _check(m::GenMat{NfOrdQuoRingElem})
   end
 end
 
-function divide_row!(M::GenMat{T}, i::Int, r::T) where T
+function divide_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   for j in 1:cols(M)
     M[i, j] = divexact(M[i, j], r)
   end
 end
 
-function mul_row!(M::GenMat{T}, i::Int, r::T) where T
+function mul_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   for j in 1:cols(M)
     M[i, j] = M[i, j] * r
   end
 end
 
-function _contained_in_span_of_pseudohnf(v::GenMat{nf_elem}, P::PMat)
+function _contained_in_span_of_pseudohnf(v::Generic.Mat{nf_elem}, P::PMat)
   # assumes that P is upper right pseudo-HNF
   w = deepcopy(v)
   for i in 1:rows(P)
@@ -573,7 +573,7 @@ function _contained_in_span_of_pseudohnf(v::GenMat{nf_elem}, P::PMat)
   return true
 end
 
-function _contained_in_span_of_pseudohnf_lowerleft(v::GenMat{nf_elem}, P::PMat)
+function _contained_in_span_of_pseudohnf_lowerleft(v::Generic.Mat{nf_elem}, P::PMat)
   # assumes that P is lowerleft pseudo-HNF
   w = deepcopy(v)
   for i in rows(P):-1:1
@@ -606,7 +606,7 @@ function _spans_subset_of_pseudohnf(M::PMat, P::PMat)
   return true
 end
 
-function sub(M::GenMat, rows::UnitRange{Int}, cols::UnitRange{Int})
+function sub(M::Generic.Mat, rows::UnitRange{Int}, cols::UnitRange{Int})
   @assert step(rows) == 1 && step(cols) == 1
   z = MatrixSpace(base_ring(M), length(rows), length(cols))()
   for i in rows
@@ -662,7 +662,7 @@ end
 Algorithm 2.6 in "Hermite and Smith normal form algorithms over Dedekind domains"
 by H. Cohen.
 =#
-function pseudo_hnf_cohen!(H::PMat, U::GenMat{T}, with_trafo::Bool = false) where T <: nf_elem
+function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_trafo::Bool = false) where T <: nf_elem
    m = rows(H)
    n = cols(H)
    A = H.matrix
@@ -839,7 +839,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
-function kb_reduce_row!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool)
+function kb_reduce_row!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool)
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -865,7 +865,7 @@ function kb_reduce_row!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, c::In
    return nothing
 end
 
-function kb_reduce_column!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool, start_element::Int = 1)
+function kb_reduce_column!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool, start_element::Int = 1)
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -891,7 +891,7 @@ function kb_reduce_column!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, c:
    return nothing
 end
 
-function kb_sort_rows!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1)
+function kb_sort_rows!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1)
    m = rows(H)
    n = cols(H)
    pivot2 = zeros(Int, m)
@@ -927,7 +927,7 @@ function kb_sort_rows!(H::PMat, U::GenMat{nf_elem}, pivot::Array{Int, 1}, with_t
    return nothing
 end
 
-function pseudo_hnf_kb!(H::PMat, U::GenMat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
+function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
    m = rows(H)
    n = cols(H)
    A = H.matrix
@@ -1036,11 +1036,11 @@ end
 
 mutable struct PMat2
    parent
-   matrix::GenMat{nf_elem}
+   matrix::Generic.Mat{nf_elem}
    row_coeffs::Array{NfOrdFracIdl, 1}
    col_coeffs::Array{NfOrdFracIdl, 1}
 
-   function PMat2(m::GenMat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+   function PMat2(m::Generic.Mat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
       z = new()
       z.matrix = m
       z.row_coeffs = r
@@ -1064,13 +1064,13 @@ function show(io::IO, P::PMat2)
    end
 end
 
-function PseudoMatrix2(m::GenMat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
+function PseudoMatrix2(m::Generic.Mat{nf_elem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdFracIdl, 1})
    ( rows(m) != length(r) || cols(m) != length(c) ) && error("Dimensions do not match.")
    return PMat2(m, r, c)
 end
 
 
-function PseudoMatrix2(m::GenMat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
+function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
    mm = change_ring(m, nf(base_ring(m)))
    rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
    cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
@@ -1110,7 +1110,7 @@ function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
    end
 end
 
-function kb_clear_row!(S::PMat2, K::GenMat{nf_elem}, i::Int, with_trafo::Bool)
+function kb_clear_row!(S::PMat2, K::Generic.Mat{nf_elem}, i::Int, with_trafo::Bool)
    m = rows(S)
    n = cols(S)
    A = S.matrix
@@ -1165,7 +1165,7 @@ function kb_clear_row!(S::PMat2, K::GenMat{nf_elem}, i::Int, with_trafo::Bool)
    return nothing
 end
 
-function pseudo_snf_kb!(S::PMat2, U::GenMat{nf_elem}, K::GenMat{nf_elem}, with_trafo::Bool = false)
+function pseudo_snf_kb!(S::PMat2, U::Generic.Mat{nf_elem}, K::Generic.Mat{nf_elem}, with_trafo::Bool = false)
    m = rows(S)
    n = cols(S)
    A = S.matrix
@@ -1214,7 +1214,7 @@ end
 
 base_ring(M::ModDed) = M.base_ring
 
-function Base.istriu(A::GenMat)
+function Base.istriu(A::Generic.Mat)
    m = rows(A)
    n = cols(A)
    d = 0
@@ -1241,9 +1241,9 @@ function show(io::IO, M::ModDed)
    end
 end
 
-ModDed(m::GenMat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+ModDed(m::Generic.Mat{nf_elem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
 
-ModDed(m::GenMat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
+ModDed(m::Generic.Mat{NfOrdElem}, is_triu::Bool = false; check::Bool = true) = ModDed(PseudoMatrix(m), is_triu; check = check)
 
 ModDed(c::Array{NfOrdFracIdl, 1}) = ModDed(PseudoMatrix(c), true; check = false)
 

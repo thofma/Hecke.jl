@@ -88,7 +88,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     if orbit && isdefined(clg, :aut_grp)
       n = res
       o = clg.aut_grp
-      function op_smat(n::SRow, p::Nemo.perm)
+      function op_smat(n::SRow, p::Nemo.Generic.perm)
         r = [(p[i], v) for (i,v) = n]
         sort!(r, lt = (a,b)->a[1]<b[1])
         return typeof(n)(r)

@@ -1627,10 +1627,10 @@ end
 
 mutable struct NfRel{T} <: Nemo.Field
   base_ring::Nemo.Field
-  pol::GenPoly{T}
+  pol::Generic.Poly{T}
   S::Symbol
 
-  function NfRel{T}(f::GenPoly{T}, s::Symbol, cached::Bool = true) where {T}
+  function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = true) where {T}
     if haskey(NfRelID, (parent(f), f, s))
       return NfRelID[parent(f), f, s]
     else
@@ -1646,14 +1646,14 @@ mutable struct NfRel{T} <: Nemo.Field
   end
 end
 
-const NfRelID = Dict{Tuple{GenPolyRing, GenPoly, Symbol},
+const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
 mutable struct NfRelElem{T} <: Nemo.FieldElem
-  data::GenPoly{T}
+  data::Generic.Poly{T}
   parent::NfRel{T}
 
-  NfRelElem{T}(g::GenPoly{T}) where {T} = new{T}(g)
+  NfRelElem{T}(g::Generic.Poly{T}) where {T} = new{T}(g)
 end
 
 ################################################################################
@@ -1667,7 +1667,7 @@ abstract type GModule end
 export FqGModule, ZpnGModule
 
 mutable struct ZpnGModule <: GModule
-  R::GenResRing
+  R::Generic.ResRing
   V::GrpAbFinGen
   G::Array{nmod_mat,1}
   p::Int
@@ -1688,14 +1688,14 @@ end
 
 mutable struct FqGModule <: GModule
   K::Nemo.FqNmodFiniteField
-  G::Array{GenMat{fq_nmod},1}
+  G::Array{Generic.Mat{fq_nmod},1}
   dim::Int
   isirreducible::Bool
   peakword_elem::Array{Int,1}
   peakword_poly::PolyElem
   dim_spl_fld::Int
   
-  function FqGModule(G::Array{GenMat{fq_nmod},1})
+  function FqGModule(G::Array{Generic.Mat{fq_nmod},1})
     z=new()
     z.G=G
     z.K=parent(G[1][1,1])

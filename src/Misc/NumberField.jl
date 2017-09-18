@@ -351,14 +351,14 @@ function induce_inner_crt(a::nf_elem, b::nf_elem, pi::fmpz, pq::fmpz, pq2::fmpz 
 end
 
 doc"""
-  induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz) -> GenPoly{nf_elem}, fmpz
+  induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz) -> Generic.Poly{nf_elem}, fmpz
 
 > Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
 > to all coefficients recursively.
 > Implicitly assumes that $a$ and $b$ have integral coefficients (ie. no
 > denominators).
 """
-function induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz, signed::Bool = false)
+function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz, signed::Bool = false)
   c = parent(a)()
   pi = invmod(p, q)
   mul!(pi, pi, p)
@@ -375,13 +375,13 @@ function induce_crt(a::GenPoly{nf_elem}, p::fmpz, b::GenPoly{nf_elem}, q::fmpz, 
 end
 
 doc"""
-  induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz) -> bool, GenPoly{nf_elem}
+  induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz) -> bool, Generic.Poly{nf_elem}
 
 > Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
 > the coefficients to be integral (no checks done)
 > returns true iff this is successful for all coefficients.
 """
-function induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz)
+function induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz)
   b = parent(a)()
   for i=0:degree(a)
     fl, x = rational_reconstruction(coeff(a, i), M)
@@ -395,11 +395,11 @@ function induce_rational_reconstruction(a::GenPoly{nf_elem}, M::fmpz)
 end
 
 doc"""
-  gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}) -> GenPoly{nf_elem}
+  gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
 > A modular $\gcd$
 """
-function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   # modular kronnecker assumes a, b !=n 0
   if iszero(a)
     if iszero(b)
@@ -416,7 +416,7 @@ function gcd(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
 end
 
 # There is some weird type instability
-function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+function gcd_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   # naive version, kind of
   # polys should be integral
   # rat recon maybe replace by known den if poly integral (Kronnecker)
@@ -437,7 +437,7 @@ function gcd_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
     fp = deepcopy(t)::Array{fq_nmod_poly, 1}  # bad!!!
     gp = Hecke.modular_proj(b, me)
     gp = [gcd(fp[i], gp[i]) for i=1:length(gp)]::Array{fq_nmod_poly, 1}
-    gc = Hecke.modular_lift(gp, me)::GenPoly{nf_elem}
+    gc = Hecke.modular_lift(gp, me)::Generic.Poly{nf_elem}
     if isone(gc)
       return parent(a)(1)
     end
@@ -471,7 +471,7 @@ import Base.gcdx
 
 #similar to gcd_modular, but avoids rational reconstruction by controlling
 #a/the denominator
-function gcd_modular_kronnecker(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   # rat recon maybe replace by known den if poly integral (Kronnecker)
   # if not monic, scale by gcd
   # remove content?
@@ -534,7 +534,7 @@ end
 #rational reconstructio is expensive - enventually
 #TODO: figure out the denominators in advance. Resultants?
 
-function gcdx_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+function gcdx_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   a = a*(1//leading_coefficient(a))
   b = b*(1//leading_coefficient(b))
   global p_start
@@ -596,11 +596,11 @@ function gcdx_modular(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
 end
 
 
-function ismonic(a::GenPoly)
+function ismonic(a::Generic.Poly)
   return leading_coefficient(a)==1
 end
 
-function eq_mod(a::GenPoly{nf_elem}, b::GenPoly{nf_elem}, d::fmpz)
+function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::fmpz)
   e = degree(a) == degree(b)
   K= base_ring(parent(a))
   i=0
@@ -627,7 +627,7 @@ end
 #  write gcdx using lifting (lin/ quad)
 #  try using deg-1-primes only (& complicated lifting)
 #
-function gcdx_mod_res(a::GenPoly{nf_elem}, b::GenPoly{nf_elem})
+function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   a = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
@@ -710,7 +710,7 @@ end
 
 import Nemo.issquarefree
 
-function issquarefree(x::GenPoly{nf_elem})
+function issquarefree(x::Generic.Poly{nf_elem})
   return degree(gcd(x, derivative(x))) == 0
 end
 
@@ -956,8 +956,8 @@ end
 
 
 doc"""
-  factor(f::fmpz_poly, K::NumberField) -> Fac{GenPoly{nf_elem}}
-  factor(f::fmpq_poly, K::NumberField) -> Fac{GenPoly{nf_elem}}
+  factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
+  factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
 
 > The factorisation of f over K (using Trager's method).
 """
@@ -974,7 +974,7 @@ end
 
 
 doc"""
-  factor(f::PolyElem{nf_elem}) -> Fac{GenPoly{nf_elem}}
+  factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
 > The factorisation of f (using Trager's method).
 """
@@ -1144,12 +1144,12 @@ end
 
 doc"""
 ***
-    roots(f::GenPoly{nf_elem}) -> Array{nf_elem, 1}
+    roots(f::Generic.Poly{nf_elem}) -> Array{nf_elem, 1}
 
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::GenPoly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
+function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
   @assert issquarefree(f)
 
   #TODO: implement for equation order....
@@ -2028,7 +2028,7 @@ function _signs(a::FacElem{nf_elem, AnticNumberField})
 end
 
 
-function resultant_mod(f::GenPoly{nf_elem}, g::GenPoly{nf_elem})
+function resultant_mod(f::Generic.Poly{nf_elem}, g::Generic.Poly{nf_elem})
   global p_start
   p = p_start
   K = base_ring(parent(f))

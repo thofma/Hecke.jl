@@ -1,7 +1,7 @@
 import Nemo.setcoeff!, Nemo.exp, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift, Nemo.rem
 export start, next, done, PrimesSet, psi_lower, psi_upper, show_psi
 
-#function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.GenRes{Nemo.fmpz})
+#function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.Generic.Res{Nemo.fmpz})
 #  setcoeff!(g, i, lift(a))
 #end
 
