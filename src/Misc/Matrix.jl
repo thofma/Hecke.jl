@@ -925,3 +925,25 @@ function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,GenMat{GenRes{fmpz}}})
   return N
 end
 
+################################################################################
+#
+#  Is diagonal
+#
+################################################################################
+
+doc"""
+***
+  isdiag(A::fmpz_mat)
+
+> Tests if A is diagonal.
+"""
+function isdiag(A::fmpz_mat)
+  for i = 1:cols(A)
+    for j = 1:rows(A)
+      if i != j && !iszero(A[j, i])
+        return false
+      end
+    end
+  end
+  return true
+end

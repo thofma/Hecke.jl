@@ -508,5 +508,5 @@ function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
   M = aB.matrix*basis_mat_inv(a, Val{false})
   PM = pseudo_hnf_kb(PseudoMatrix(M, deepcopy(bB.coeffs)))
   PM.matrix = PM.matrix*aB.matrix
-  return NfRelOrd{T, S}(nf(O), PM)
+  return NfRelOrd{T, S}(nf(a), PM)
 end

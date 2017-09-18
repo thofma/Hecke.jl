@@ -1,270 +1,281 @@
 @testset "GrpAbFinGen" begin
+  @testset "Type stuff" begin
+    @test elem_type(GrpAbFinGen) == GrpAbFinGenElem
+    @test parent_type(GrpAbFinGenElem) == GrpAbFinGen
+  end
+
   @testset "Constructor" begin
-    # Generic
-    M = FlintZZ[1 2 3; 4 5 6]
-    G = @inferred Hecke.GrpAbFinGen(M)
-    @test G.rels == M
-    @test_throws UndefRefError G.hnf
-    @test_throws UndefRefError G.snf_map
+    M1 = Matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
+    G = @inferred AbelianGroup(M1)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == M1
 
-    # HNF
-    M = FlintZZ[1 2 3; 0 3 6]
-    G = @inferred Hecke.GrpAbFinGen(M, true)
-    @test G.rels == M
-    @test G.hnf == M
-    @test_throws UndefRefError G.snf_map
+    M = FlintZZ[1 2 3; 4 5 6] # fmpz_mat
+    G = @inferred AbelianGroup(M)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == M1
 
-    # SNF
-    A = Array{fmpz, 1}([3 ; 15 ; 0])
-    SNF = Hecke.GrpAbFinGen(A)
-    @test SNF.snf == A
-  end
+    M = fmpz[1 2 3; 4 5 6]
+    G = @inferred AbelianGroup(M)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == M1
 
-  @testset "Element constructor" begin
-    M = FlintZZ[1 2 3; 4 5 6]
-    G = @inferred Hecke.GrpAbFinGen(M)
-    N = FlintZZ[1 2 3]
-    a = @inferred Hecke.GrpAbFinGenElem(G, N)
-    @test a.parent == G
-    @test a.coeff == N
-  end
+    M = [1 2 3; 4 5 6]
+    G = @inferred AbelianGroup(M)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == M1
 
-  @testset "parent" begin
-    G = AbelianGroup(FlintZZ[1 2 3; 4 5 6])
-    a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 1 0])
-    @test parent(a) == G
-  end
+    M = fmpz[1, 2, 3, 4, 5, 6]
+    G = @inferred AbelianGroup(M)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == Matrix(FlintZZ, 1, 6, M)
 
-  @testset "ngens" begin
-    @testset "Gen" begin
-      G = AbelianGroup(FlintZZ[1 2 3; 4 5 6])
-      @test ngens(G) == 3
+    M = [1, 2, 3, 4, 5, 6]
+    G = @inferred AbelianGroup(M)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == Matrix(FlintZZ, 1, 6, M)
+
+    M = [3, 0]
+    G = @inferred DiagonalGroup(M)
+    @test isa(G, GrpAbFinGen)
+
+    M = fmpz[3, 0]
+    G = @inferred DiagonalGroup(M)
+    @test isa(G, GrpAbFinGen)
+
+    M = Matrix(FlintZZ, 1, 2, [3, 0])
+    G = @inferred DiagonalGroup(M)
+    @test isa(G, GrpAbFinGen)
+
+    N = [3, 5]
+    G = @inferred DiagonalGroup(N)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+
+    N = fmpz[3, 5]
+    G = @inferred DiagonalGroup(N)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+
+    N = Matrix(FlintZZ, 1, 2, [3, 5])
+    G = @inferred DiagonalGroup(N)
+    @test isa(G, GrpAbFinGen)
+    @test G.rels == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+
+    @test_throws ErrorException DiagonalGroup(FlintZZ[1 2; 3 4])
+
+    @testset "String I/O" begin
+      @test issnf(M)
+      @test isa(string(M), String)
+      @test isa(string(N), String)
     end
 
-    @testset "Snf" begin
-      A = Array{fmpz,1}([3 ; 0])
-      SNF = Hecke.GrpAbFinGen(A)
-      @test ngens(SNF) == 2
-    end
-  end
+    @testset "Field access" begin
+      S = DiagonalGroup([3, 0])
+      @test @inferred issnf(S)
+      @test @inferred ngens(S) == 2
+      @test @inferred nrels(S) == 2
+      @test @inferred rels(S) == Matrix(FlintZZ, 2, 2, [3, 0, 0, 0])
 
-  @testset "nrels" begin
-    @testset "Gen" begin
-      M = FlintZZ[1 2 3; 4 5 6]
+      G = DiagonalGroup([3, 5])
+      @test @inferred !issnf(G)
+      @test @inferred ngens(G) == 2
+      @test @inferred nrels(G) == 2
+      @test @inferred rels(G) == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    end
+
+    @testset "Hermite normal form" begin
+      M   = FlintZZ[1 2 3; 4 5 6]
+      HNF = FlintZZ[1 2 3; 0 3 6]
       G = AbelianGroup(M)
-      @test nrels(G) == 2
+      Hecke.assure_has_hnf(G)
+      @test G.hnf == HNF
     end
 
-    @testset "Snf" begin
-      A = Array{fmpz,1}([3 ; 0])
-      SNF = Hecke.GrpAbFinGen(A)
-      @test nrels(SNF) == 2
-    end
-  end
-
-  @testset "getindex" begin
-    G = AbelianGroup(FlintZZ[0 3 0])
-    a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 4 0])
-    @test getindex(a,1) == 0
-    @test getindex(a,2) == 1
-    @test getindex(a,3) == 0
-  end
-
-  @testset "assert_hnf" begin
-    M   = FlintZZ[1 2 3; 4 5 6]
-    HNF = FlintZZ[1 2 3; 0 3 6]
-    G = AbelianGroup(M)
-    Hecke.assert_hnf(G)
-    @test G.hnf == HNF
-  end
-
-  @testset "reduce_mod_hnf" begin
-    @testset "TODO" begin
-      a = FlintZZ[21 32 43]
-      H = FlintZZ[2 0 0 ; 0 3 0 ; 0 0 5]
-      Hecke.reduce_mod_hnf!(a, H)
-      @test a == FlintZZ[1 2 3]
+    @testset "Smith normal form" begin
+      M = FlintZZ[16 17 2 ; 19 23 8 ; 16 17 2]
+      G = AbelianGroup(M)
+      S, mS = @inferred snf(G)
+      @test issnf(S)
+      @test S.snf == fmpz[45, 0]
+      @test codomain(mS) == G
+      @test domain(mS) == S
     end
 
-    @testset "TODO" begin
-      a = FlintZZ[1 3 42]
-      H = FlintZZ[1 1 14 ; 0 2 11 ; 0 0 17]
-      Hecke.reduce_mod_hnf!(a, H)
-      @test a == FlintZZ[0 0 0]
+    @testset "Finiteness" begin
+      G = DiagonalGroup([3, 15])
+      @test issnf(G)
+      @test @inferred isfinite(G)
+      @test @inferred !isinfinite(G)
+
+      G = DiagonalGroup([3, 5])
+      @test @inferred isfinite(G)
+      @test @inferred !isinfinite(G)
+
+      G = DiagonalGroup([3, 15, 0])
+      @test issnf(G)
+      @test @inferred !isfinite(G)
+      @test @inferred isinfinite(G)
+
+      G = DiagonalGroup([3, 5, 0])
+      @test @inferred !isfinite(G)
+      @test @inferred isinfinite(G)
     end
 
-    @testset "TODO" begin
-      a = FlintZZ[0 0 1]
-      H = FlintZZ[1 32 62 ; 0 45 90 ; 0 0 0]
-      Hecke.reduce_mod_hnf!(a, H)
-      @test a == FlintZZ[0 0 1]
-    end
-  end
+    @testset "Rank" begin
+      G = DiagonalGroup([3, 15])
+      @test @inferred rank(G) == 0
 
-  @testset "Element creation" begin
-    @testset "Gen" begin
-      G = AbelianGroup(FlintZZ[0 0 3])
-      a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 2 4])
-      @test parent(a) == G
-      @test getindex(a,1) == 0
-      @test getindex(a,2) == 2
-      @test getindex(a,3) == 1
+      G = DiagonalGroup([3, 5])
+      @test @inferred rank(G) == 0
+
+      G = DiagonalGroup([3, 15, 0])
+      @test @inferred rank(G) == 1
+
+      G = DiagonalGroup([3, 5, 0])
+      @test @inferred rank(G) == 1
     end
 
-    @testset "Snf" begin
-      A = Array{fmpz,1}([3 ; 15 ; 0])
-      SNF = Hecke.GrpAbFinGen(A)
-      a = Hecke.GrpAbFinGenElem(SNF, FlintZZ[7 50 100])
-      @test parent(a) == SNF
-      @test getindex(a,1) == 1
-      @test getindex(a,2) == 5
-      @test getindex(a,3) == 100
-    end
-  end
-
-  @testset "snf_with_transform" begin
-    @testset "trivial" begin
-      M = MatrixSpace(FlintZZ,1,1)([0])
-      S = MatrixSpace(FlintZZ,1,1)([0])
-      T,L,R = snf_with_transform(M, true, true)
-      @test S == T
-      @test L*M*R == T
+    @testset "Order" begin
+      G = DiagonalGroup([3, 5])
+      @test @inferred order(G) == 15
+      G = DiagonalGroup([3, 15])
+      @test @inferred order(G) == 45
+      G = DiagonalGroup([3, 5, 0])
+      @test_throws ErrorException order(G)
     end
 
-    @testset "trivial" begin
-      M = MatrixSpace(FlintZZ,1,1)([1])
-      S = MatrixSpace(FlintZZ,1,1)([1])
-      T,L,R = snf_with_transform(M, true, true)
-      @test S == T
-      @test L*M*R == T
+    @testset "Exponent" begin
+      G = DiagonalGroup([3, 5])
+      @test @inferred exponent(G) == 15
+      G = DiagonalGroup([3, 15])
+      @test @inferred exponent(G) == 15
     end
 
-    @testset "random" begin
-      M = FlintZZ[834 599 214 915 ; 784 551 13 628 ; 986 5 649 100 ; 504 119 64 310 ]
-      S = FlintZZ[1 0 0 0 ; 0 1 0 0 ; 0 0 1 0 ; 0 0 0 36533330310]
-      T,L,R = snf_with_transform(M, true, true)
-      @test S == T
-      @test L*M*R == T
-      T,L,R = snf_with_transform(M, false, true)
-      T,L,R = snf_with_transform(M, true, false)
-      T,L,R = snf_with_transform(M, false, false)
-    end
-  end
-
-  @testset "snf" begin
-    M = FlintZZ[16 17 2 ; 19 23 8 ; 16 17 2]
-    G = AbelianGroup(M)
-    SNF, SNF_map = snf(G)
-    @test SNF.snf == Array{fmpz,1}([45 ; 0])
-    @test SNF_map.header.domain == G
-    @test SNF_map.header.codomain == SNF
-    image = SNF_map.header.image
-    preimage = SNF_map.header.preimage
-
-    @testset "0 = 0" begin
-      a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 0])
-      b = Hecke.GrpAbFinGenElem(SNF, FlintZZ[0 0])
-      @test image(a) == b
-      @test preimage(b) == a
+    @testset "Trivial" begin
+      G = DiagonalGroup([1])
+      @test @inferred istrivial(G)
+      G = DiagonalGroup([1, 1, 1])
+      @test @inferred istrivial(G)
+      G = DiagonalGroup([3, 3])
+      @test @inferred !istrivial(G)
+      G = DiagonalGroup([3, 5])
+      @test @inferred !istrivial(G)
     end
 
-    @testset "0 != 100" begin
-      a = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 0])
-      b = Hecke.GrpAbFinGenElem(SNF, FlintZZ[100 100])
-      @test image(a) != b
-      @test preimage(b) != a
+    @testset "Isomorphism" begin
+      b = @inferred isisomorphic(DiagonalGroup(Int[]), DiagonalGroup(Int[]))
+      @test b
+
+      G = DiagonalGroup([2, 3, 5])
+      H = DiagonalGroup([30])
+      @test @inferred isisomorphic(G, H)
     end
 
-    @testset "linearity" begin
-      x = Hecke.GrpAbFinGenElem(G, FlintZZ[234 4355 3455])
-      y = Hecke.GrpAbFinGenElem(G, FlintZZ[32 3090 34590])
-      @test image(x+y) == image(x)+image(y)
-      @test image(x-y) == image(x)-image(y)
-      @test image(435*x) == 435*image(x)
+    @testset "Direct product" begin
+      G = DiagonalGroup([5, 3])
+      H = DiagonalGroup([4])
+      K = @inferred direct_product(G, H)
+      @test isisomorphic(K, DiagonalGroup([60]))
     end
-  end
 
-  @testset "sub" begin
-    @testset "S = G, Gen" begin
+    @testset "Torsion" begin
+      G = DiagonalGroup([5, 4])
+      @test @inferred istorsion(G)
+      H, mH = torsion_subgroup(G)
+      @test order(H) == 20
+
+      G = DiagonalGroup([5, 0, 4, 0])
+      @test @inferred !istorsion(G)
+      H, mH = torsion_subgroup(G)
+      @test isisomorphic(H, DiagonalGroup([5, 4]))
+    end 
+
+    @testset "Subgroup" begin
+      @test_throws ErrorException sub(GrpAbFinGenElem[])
+
       G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0])
-      g1 = Hecke.GrpAbFinGenElem(G, FlintZZ[1 0 0])
-      g2 = Hecke.GrpAbFinGenElem(G, FlintZZ[0 1 0])
-      g3 = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 1])
-      S , S_map = sub(G, [g1, g2, g3])
-      image = S_map.header.image
-      s1 = Hecke.GrpAbFinGenElem(S, FlintZZ[1 0 0])
-      s2 = Hecke.GrpAbFinGenElem(S, FlintZZ[0 1 0])
-      s3 = Hecke.GrpAbFinGenElem(S, FlintZZ[0 0 1])
-      @test S.hnf == G.hnf
-      @test image(s1) == g1
-      @test image(s2) == g2
-      @test image(s3) == g3
-      @test image(100*s1+456*s2-789*s3) == 100*g1+456*g2-789*g3
-    end
+      g1 = G[1]
+      g2 = G[2]
+      g3 = G[3]
+      S, S_map = @inferred sub([g1, g2, g3])
+      @test isisomorphic(G, S)
 
-    @testset "S = G, Snf" begin
       G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0])
-      SNF, SNF_map = snf(G)
-      snf1 = Hecke.GrpAbFinGenElem(SNF, FlintZZ[1 0 0])
-      snf2 = Hecke.GrpAbFinGenElem(SNF, FlintZZ[0 1 0])
-      snf3 = Hecke.GrpAbFinGenElem(SNF, FlintZZ[0 0 1])
-      S , S_map = sub(SNF, [snf1, snf2, snf3])
-      image = S_map.header.image
-      s1 = Hecke.GrpAbFinGenElem(S, FlintZZ[1 0 0])
-      s2 = Hecke.GrpAbFinGenElem(S, FlintZZ[0 1 0])
-      s3 = Hecke.GrpAbFinGenElem(S, FlintZZ[0 0 1])
-      @test image(s1) == snf1
-      @test image(s2) == snf2
-      @test image(s3) == snf3
-      @test image(100*s1+456*s2-789*s3) == 100*snf1+456*snf2-789*snf3
-    end
+      S, mS = snf(G)
+      s1 = S[1]
+      s2 = S[2]
+      s3 = S[3]
+      H, mH = @inferred sub(S, [s1, s2, s3])
+      @test isisomorphic(H, G)
 
-    @testset "S = <g1>, Gen" begin
       G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0])
-      g1 = Hecke.GrpAbFinGenElem(G, FlintZZ[1 0 0])
-      S , S_map = sub(G, [g1])
-      image = S_map.header.image
-      s1 = Hecke.GrpAbFinGenElem(S, MatrixSpace(FlintZZ,1,1)([4]))
-      @test S.rels == MatrixSpace(FlintZZ,1,1)([3])
-      @test image(s1) == g1
-    end
+      g1 = G[1]
+      H, mH = @inferred sub(G, [g1])
+      @test isisomorphic(H, DiagonalGroup([3]))
 
-    @testset "S = <g1>, Snf" begin
       G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0])
-      SNF, SNF_map = snf(G)
-      snf1 = Hecke.GrpAbFinGenElem(SNF, FlintZZ[1 0 0])
-      S , S_map = sub(SNF, [snf1])
-      image = S_map.header.image
-      s1 = Hecke.GrpAbFinGenElem(S, MatrixSpace(FlintZZ,1,1)([4]))
-      @test image(s1) == snf1
-    end
+      S, mS = snf(G)
+      s1 = S[1]
+      H, mH = @inferred sub(S, [s1])
+      @test isisomorphic(H, DiagonalGroup([3]))
 
-    @testset "G contains empty relation" begin
+      # G contains empty relation
       G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0 ; 0 0 30 ; 0 0 0])
-      g1 = Hecke.GrpAbFinGenElem(G, FlintZZ[0 0 1])
-      S , S_map = sub(G, [g1])
-      image = S_map.header.image
-      s1 = Hecke.GrpAbFinGenElem(S, MatrixSpace(FlintZZ,1,1)([1]))
-      @test image(s1) == g1
+      g1 = G[3]
+      S, mS = @inferred sub(G, [g1])
+      @test isisomorphic(S, DiagonalGroup([30]))
+
+      # n*G
+
+      G = DiagonalGroup([6, 6, 12, 5])
+      H, mH = @inferred sub(G, 2)
+      @test isisomorphic(H, DiagonalGroup([3, 3, 6, 5]))
+
+      H, mH = @inferred sub(G, fmpz(2))
+      @test isisomorphic(H, DiagonalGroup([3, 3, 6, 5]))
+    end
+
+    @testset "Quotient" begin
+      G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0])
+
+      Q, mQ = @inferred quo(G, GrpAbFinGenElem[])
+      @test isisomorphic(Q, G)
+
+      g2 = G[2]
+      Q, mQ = @inferred quo(G, [g2])
+      @test isisomorphic(Q, DiagonalGroup([3, 0]))
+
+      S = DiagonalGroup([3, 15, 0])
+      @test issnf(S)
+      g2 = S[2]
+      Q, mQ = @inferred quo(S, [g2])
+      @test isisomorphic(Q, DiagonalGroup([3, 0]))
+
+      G = DiagonalGroup([6, 6, 12, 5, 0])
+      H, mH = @inferred quo(G, 2)
+      @test isisomorphic(H, DiagonalGroup([2, 2, 2, 2]))
+
+      H, mH = @inferred quo(G, fmpz(2))
+      @test isisomorphic(H, DiagonalGroup([2, 2, 2, 2]))
+    end
+
+    @testset "Cyclic" begin
+      G = DiagonalGroup([3, 5])
+      @test @inferred iscyclic(G)
+
+      G = DiagonalGroup([3, 15])
+      @test @inferred !iscyclic(G)
+    end
+
+    @testset "p-Sylow subgroup" begin
+      G = DiagonalGroup([1, 3, 9, 5, 15, 20, 7])
+      P, mP = psylow_subgroup(G, 3)
+      @test order(P) == 3^valuation(order(G), 3)
+      P, mP = psylow_subgroup(G, 5)
+      @test order(P) == 5^valuation(order(G), 5)
+      P, mP = psylow_subgroup(G, 11)
+      @test order(P) == 11^valuation(order(G), 11)
     end
   end
-
-  @testset "quo" begin
-    G = AbelianGroup(FlintZZ[3 0 0 ; 0 15 0])
-    g1 = Hecke.GrpAbFinGenElem(G, FlintZZ[0 1 0])
-    Q , Q_map = quo(G, [g1])
-    SNF, SNF_map = snf(Q)
-    @test SNF.snf == Array{fmpz,1}([3 ; 0])
-  end
-
-  @testset "psylow subgroup" begin
-    G = DiagonalGroup([1, 3, 9, 5, 15, 20, 7])
-    P, mP = psylow_subgroup(G, 3)
-    @test order(P) == 3^valuation(order(G), 3)
-    P, mP = psylow_subgroup(G, 5)
-    @test order(P) == 5^valuation(order(G), 5)
-    P, mP = psylow_subgroup(G, 11)
-    @test order(P) == 11^valuation(order(G), 11)
-  end
-
 end

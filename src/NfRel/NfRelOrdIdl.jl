@@ -451,7 +451,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
       push!(products, pbint[i][2]*prime)
     end
     while true
-      a = rand(pbint[i][2], 2^63) # magic number
+      a = rand(pbint[i][2], 2^61) # magic number
       foundOne = true
       for pp in products
         if a in pp
@@ -466,15 +466,16 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     end
   end
   F, mF = ResidueField(OK, p)
+  mmF = extend(mF, K)
   A = MatrixSpace(F, d, d)()
   if minimum(p) <= d
     q = norm(p)
-    k = clog(fmpz(degree(OK)), q)
+    k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
       t = Oint((L(K(elts_max_val[i]))*pbint[i][1])^(q^k))
       ar = elem_in_basis(t)
       for j = 1:d
-        A[i, j] = mF(divexact(OK(ar[j]), elts_max_val[j]))
+        A[j, i] = mmF(divexact(ar[j], K(elts_max_val[j])))
       end
     end
   else
@@ -491,7 +492,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   imF = inv(mF)
   for i = 1:cols(B)
     for j = 1:rows(B)
-      M1[i, j] = imF(B[j, i])
+      M1[i, j] = imF(B[j, i])*elts_max_val[j]
     end
   end
   M2 = eye(M1)
@@ -514,21 +515,21 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
-  S = basis_mat(O, Val{false})*basis_mat_inv(a, Val{false})
-  M = S*representation_mat(pb[1][1])
+  S = basis_mat_inv(a, Val{false})*basis_mat(O, Val{false})
+  M = representation_mat(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, S*representation_mat(pb[i][1]))
+    M = hcat(M, representation_mat(pb[i][1])*S)
   end
-  invcoeffs = [ inv(pb[i][2]) for i = 1:d ]
+  invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{NfOrdFracIdl}(d^2)
   for i = 1:d
     for j = 1:d
-      C[(i - 1)*d + j] = pb[i][2]*invcoeffs[j]
+      C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = sub(pseudo_hnf_kb(PM), 1:d, 1:d)
-  N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
+  PM = sub(pseudo_hnf(PM), 1:d, 1:d)
+  N = basis_mat(O, Val{false})*inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return NfRelOrd{nf_elem, NfOrdFracIdl}(nf(O), PN)
 end
