@@ -103,7 +103,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   g = k.pol(gen(Qx))
   h = Qx(f(gen(k)))
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, minimum(P)))
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(P))))
   gp = factor(Fp(g))
   hp = Fp(h)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
@@ -131,7 +131,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
   G = K.pol
   Qx = parent(G)
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, minimum(p)))
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p))))
   Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
   res = []
   Zk = maximal_order(k)
