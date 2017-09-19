@@ -1385,23 +1385,11 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         end
       end
       plist=submodules(M,ind)
-      psubs=[]
-      for el in plist
-        newsub=[c*R[i] for i=1:ngens(R)]
-        for i=1:rows(el)
-          z=MatrixSpace(FlintZZ,1,cols(el))()
-          for j=1:cols(z)
-            z[1,j]=FlintZZ(coeff(el[i,j],0))
-          end
-          push!(newsub,mQ\(mG(mS(S(z)))))
-        end
-        push!(psubs,newsub)
-      end
-      push!(list, psubs)
+      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
 
     else    
     
-      RR=ResidueRing(FlintZZ,p^x)
+      RR=ResidueRing(FlintZZ, Int(p^x))
       act_mat=Array{nmod_mat,1}(length(act))
       for z=1:length(act)
         A=MatrixSpace(RR,ngens(S), ngens(S))()
@@ -1428,18 +1416,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
         end
       end
       plist=Hecke.submodules(M,typequo=quotype_p)
-      psubs=[]
-      for el in plist
-        newsub=[c*R[i] for i=1:ngens(R)]
-        for i=1:rows(el)
-          y=view(el,i:i,1:cols(el))
-          if !iszero(y)
-            push!(newsub,mQ\(mG(mS(S(lift(y))))))
-          end       
-        end
-        push!(psubs,newsub)
-      end
-      push!(list, psubs)
+      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
       
     end
   end
@@ -1448,6 +1425,36 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
   return final_it
 
 end
+
+function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c::Int)
+  
+  R=mQ.header.domain
+  newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+  for i=1:rows(A)
+    y=view(A,i:i,1:cols(A))
+    if !iszero(y)
+      push!(newsub,mQ\(mG(mS(mS.header.domain(lift(y))))))
+    end       
+  end
+  return newsub
+
+end
+
+function _lift_and_construct(A::Generic.Mat{fq_nmod}, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c ::Int)
+  
+  R=mQ.header.domain
+  newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+  for i=1:rows(A)
+    z=MatrixSpace(FlintZZ,1,cols(A))()
+    for j=1:cols(z)
+      z[1,j]=FlintZZ(coeff(A[i,j],0))
+    end
+    push!(newsub,mQ\(mG(mS(mS.header.domain(z)))))
+  end
+  return newsub
+
+end
+
 
 function stable_index_p_subgroups(mR::Hecke.MapRayClassGrp, p::Int, index::Int=1, Aut::Array{NfToNfMor, 1}=NfToNfMor[])
   
