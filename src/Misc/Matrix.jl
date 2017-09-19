@@ -887,7 +887,7 @@ end
 
 function Base.nullspace(M::nmod_mat)
   R = base_ring(M)
-  if isprime(modulus(R))
+  if isprime(fmpz(modulus(R)))
     k = MatrixSpace(R, cols(M), cols(M))()
     n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &k, &M)
     return (k, n)
