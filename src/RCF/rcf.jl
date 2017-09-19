@@ -753,7 +753,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
 
   p = characteristic(z.header.codomain)
   y = f(NfOrdElem(domain(f), gen(K)))
-  Ft, t = PolynomialRing(ResidueRing(FlintZZ, p))
+  Ft, t = PolynomialRing(ResidueRing(FlintZZ, UInt(p)))
   K = number_field(domain(f))
 #  g = gcd(Ft(K.pol), Ft(K(f.P.gen_two)))
 #it would be cool to assert that g is the poly defining the codomain
