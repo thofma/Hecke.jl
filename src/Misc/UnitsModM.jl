@@ -82,10 +82,20 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-mutable struct MapUnitGroupModM{T} <: Map{T, Generic.ResRing{fmpz}}
+mutable struct MapUnitGroupModMGenRes{T} <: Map{T, Generic.ResRing{fmpz}}
   header::Hecke.MapHeader
 
-  function MapUnitGroupModM{T}(G::T, R::Generic.ResRing{fmpz}, dexp::Function, dlog::Function) where {T}
+  function MapUnitGroupModMGenRes{T}(G::T, R::Generic.ResRing{fmpz}, dexp::Function, dlog::Function) where {T}
+    r = new{T}()
+    r.header = Hecke.MapHeader(G, R, dexp, dlog)
+    return r
+  end
+end
+
+mutable struct MapUnitGroupModM{T} <: Map{T, Nemo.NmodRing}
+  header::Hecke.MapHeader
+
+  function MapUnitGroupModM{T}(G::T, R::Nemo.NmodRing, dexp::Function, dlog::Function) where {T}
     r = new{T}()
     r.header = Hecke.MapHeader(G, R, dexp, dlog)
     return r
@@ -98,8 +108,77 @@ end
 >  The unit group of R = Z/nZ together with the apropriate map.
 """ ->
 function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
+
   m = R.modulus
   fm = factor(m).fac
+  
+  r = Array{fmpz}(0)
+  g = Array{fmpz}(0)
+  mi = Array{fmpz}(0)
+  for p=keys(fm)
+    k = fm[p]
+    if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
+      continue
+    end
+    pk = p^k
+    if p==2  && iseven(mod)
+      if k==1
+        continue
+      elseif k==2 
+        push!(r, 2)
+        push!(mi, pk)
+        gg = fmpz(-1)
+        if m == pk
+          push!(g, gg)
+        else
+          push!(g, crt(fmpz(-1), pk, fmpz(1), divexact(m, pk)))
+        end
+      else
+        mpk = divexact(m, pk)
+        push!(r, 2)
+        push!(r, gcd(p^(k-2), mod))  # cannot be trivial since mod is even
+        push!(mi, fmpz(4))
+        push!(mi, pk)
+        if mpk == 1
+          push!(g, fmpz(-1))
+          push!(g, fmpz(5))
+        else
+          push!(g, crt(fmpz(-1), pk, fmpz(1), mpk))
+          push!(g, crt(fmpz(5), pk, fmpz(1), mpk))
+        end
+      end
+    else
+      mpk = divexact(m, pk)
+      s = gcd((p-1)*p^(fm[p]-1), mod)
+      if s==1 
+        continue
+      end
+      push!(r, s)
+      push!(mi, pk)
+      gg = gen_mod_pk(p, mod)
+      gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), m)
+      if mpk == 1
+        push!(g, gg)
+      else
+        push!(g, crt(gg, pk, fmpz(1), mpk))
+      end
+    end
+  end
+
+  G = DiagonalGroup(r)
+  function dexp(x::GrpAbFinGenElem)
+    return prod([R(g[i])^x[i] for i=1:ngens(G)])
+  end
+  function dlog(x::Generic.Res{fmpz})
+    return G([disc_log_mod(g[i], lift(x), mi[i]) for i=1:ngens(G)])
+  end
+  return G, MapUnitGroupModMGenRes{typeof(G)}(G, R, dexp, dlog)
+end
+
+function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
+
+  m = Int(R.n)
+  fm = factor(fmpz(m)).fac
   
   r = Array{fmpz}(0)
   g = Array{fmpz}(0)
@@ -348,4 +427,5 @@ function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly
 end
 
 unit_group(A::Generic.ResRing{fmpz}) = UnitGroup(A)
+unit_group(A::Nemo.NmodRing) = UnitGroup(A)
 
