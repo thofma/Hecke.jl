@@ -11,7 +11,7 @@ function ResidueField(O::NfOrd, P::NfOrdIdl)
     g = parent(f)(elem_in_nf(gtwo))
 
     if nbits(P.gen_one) < 64
-      R = ResidueRing(FlintZZ, minimum(P))
+      R = ResidueRing(FlintZZ, UInt(minimum(P)))
 
       Zy, y = PolynomialRing(FlintZZ, "y")
       Rx, x = PolynomialRing(R, "x")::Tuple{NmodPolyRing, nmod_poly}

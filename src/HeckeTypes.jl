@@ -1239,7 +1239,7 @@ mutable struct FactorBaseSingleP
       int_doit = naive_doit
     else
       Zx = PolynomialRing(FlintZZ, "x")[1]
-      Fpx = PolynomialRing(ResidueRing(FlintZZ, p), "x")[1]
+      Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p)), "x")[1]
       Qx = parent(K.pol)
       fp = Fpx(Zx(K.pol))
       lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]

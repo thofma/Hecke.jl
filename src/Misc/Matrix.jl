@@ -526,9 +526,9 @@ function kernel(a::nmod_mat)
   z,n = _right_kernel(x)
   z = transpose(z)
   #println(z)
-  ar = typeof(Array{Generic.Res{fmpz}}(cols(z)))[]
+  ar = typeof(Array{Nemo.nmod}(cols(z)))[]
   for i in 1:n 
-    t = Array{Generic.Res{fmpz}}(cols(z))
+    t = Array{Nemo.nmod}(cols(z))
     for j in 1:cols(z)
       t[j] = z[i,j]
     end

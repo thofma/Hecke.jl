@@ -54,6 +54,14 @@ function size(R::FqNmodFiniteField)
   return order(R)
 end
 
+function order(R::Nemo.NmodRing)
+  return fmpz(R.n)
+end
+
+function characteristic(R::Nemo.NmodRing)
+  return fmpz(R.n)
+end
+
 #################################################
 # in triplicate.... and probably cases missing...
 function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem 

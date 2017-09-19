@@ -28,12 +28,24 @@ function fmpz(a::Generic.Res{Nemo.fmpz})
   return a.data
 end
 
-function lift(R::FlintIntegerRing, a::Generic.Res{Nemo.fmpz})
+function fmpz(a::Nemo.nmod)
+  return fmpz(a.data)
+end
+
+function lift(::FlintIntegerRing, a::Generic.Res{Nemo.fmpz})
   return a.data
 end
 
-function (R::FlintIntegerRing)(a::Generic.Res{Nemo.fmpz})
+function (::FlintIntegerRing)(a::Generic.Res{Nemo.fmpz})
   return a.data
+end
+
+function lift(::FlintIntegerRing, a::Nemo.nmod)
+  return fmpz(a.data)
+end
+
+function (::FlintIntegerRing)(a::Nemo.nmod)
+  return fmpz(a.data)
 end
 
 function div(f::PolyElem, g::PolyElem)

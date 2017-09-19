@@ -158,6 +158,22 @@ function issquare(x::ResElem{fmpz})
         return false, zero(R)
     end
 end
+function issquare(x::Nemo.nmod)
+    R = parent(x)
+    p = modulus(R)
+    xnew = x.data
+    
+    j = jacobi(fmpz(xnew), fmpz(p))
+    if j == 0
+        return true, zero(R)
+    elseif j == 1
+        root = sqrtmod(fmpz(xnew), fmpz(p))
+        return true, R(root)
+    else
+        return false, zero(R)
+    end
+end
+
 
 doc"""
 ***

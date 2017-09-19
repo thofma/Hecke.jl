@@ -1036,7 +1036,7 @@ function pradical(O::NfOrd, p::fmpz)
   @assert p^(j-1) < degree(O)
   @assert degree(O) <= p^j
 
-  R = ResidueRing(FlintZZ, p)
+  R = ResidueRing(FlintZZ, UInt(p))
   A = MatrixSpace(R, degree(O), degree(O))()
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
