@@ -17,7 +17,7 @@ notifications:
 
 script:
   - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'cd(Pkg.dir("Nemo")); run(`git checkout e13039ad5dd04000a50c8d1337580615953503f3`);'
+  - julia -e 'Pkg.checkout("Nemo")'
   - julia -e 'Pkg.build("Hecke")'
   - julia --check-bounds=yes -e 'Pkg.test("Hecke")'
 
