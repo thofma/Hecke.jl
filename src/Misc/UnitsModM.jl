@@ -224,7 +224,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
       push!(r, s)
       push!(mi, pk)
       gg = gen_mod_pk(p, mod)
-      gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), m)
+      gg = powmod(gg, divexact(p-1, gcd(p-1, mod)), fmpz(m))
       if mpk == 1
         push!(g, gg)
       else
