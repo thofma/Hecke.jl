@@ -28,6 +28,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
 
   a = -coeff(K.pol, 0)
   a = a^r//h(a) # this assumes K/k to be abelian
+#  global last_rt = (a, degree(K))
   fl, b = hasroot(a, degree(K))
   @assert fl
 
@@ -724,13 +725,23 @@ function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe)
   return res
 end
 
+function _reduce(a::fq_nmod)
+  A = parent(a)
+  if a.length < 2*degree(A)
+    ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &a, &A)
+  else
+    ccall((:nmod_poly_rem, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{Void}, Ptr{Void}), &a, &a, pointer_from_objref(A)+6*sizeof(Int) + 2*sizeof(Ptr{Void}), pointer_from_objref(A)+sizeof(fmpz))
+  end
+end
+
 #TODO: move elsewhere - and use. There are more calls to nmod_set/reduce
 function (A::FqNmodFiniteField)(x::nmod_poly)
   u = A()
   ccall((:fq_nmod_set, :libflint), Void,
                      (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
                                      &u, &x, &A)
-  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &A)                                   
+  _reduce(u)
+#  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &A)                                   
   return u
 end
 
@@ -739,7 +750,8 @@ function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_po
   ccall((:fq_nmod_set, :libflint), Void,
                      (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
                                      &a, &a_tmp, &K)
-  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &a, &K)                                   
+  _reduce(a)
+#  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &a, &K)                                   
 end
   
 

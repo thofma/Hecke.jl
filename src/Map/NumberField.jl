@@ -58,7 +58,9 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
       fmpq_poly_to_nmod_poly_raw!(tmp_nmod_poly, gg)
+      ccall((:nmod_poly_rem, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{Void}), &tmp_nmod_poly, &tmp_nmod_poly, &g, pointer_from_objref(F)+sizeof(fmpz))
       ccall((:fq_nmod_set, :libflint), Void, (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}), &u, &tmp_nmod_poly, &F)
+
       ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &F)
       return u
     end
