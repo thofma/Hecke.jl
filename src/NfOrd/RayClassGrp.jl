@@ -1315,12 +1315,14 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
 end
 
 
-function _act_on_ray_class(mR::Map)
+function _act_on_ray_class(mR::Map, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
-  Aut=automorphisms(K)
+  if isempty(Aut)
+    Aut=automorphisms(K)
+  end
   G=Hecke.GrpAbFinGenMap[]
   
   for phi in Aut
