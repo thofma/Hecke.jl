@@ -409,7 +409,7 @@ function _subgroup_iterator(x, p, types = ( y for t in 0:length(x)
   return Iterators.flatten(( _subgroup_type_iterator(x, y, p) for y in types))
 end
 
-# Given a matrix M and a group G, this function constructs elemenets from
+# Given a matrix M and a group G, this function constructs elements from
 # the columns of M. The indice allows to handle the case, where the
 # generators of G correspond to a permutation of the rows of M.
 function _matrix_to_elements(G::GrpAbFinGen, M::Array{Int, 2},
@@ -536,8 +536,13 @@ function _psubgroups_gens(G::GrpAbFinGen, p, t, order, index)
   end
 end
 
+
 function _psubgroups_gens_quotype(G::GrpAbFinGen, p, t, order, index)
   if issnf(G)
+  #=
+    v=[divexact(G.snf[end], G.snf[i]) for i=1:ngens(G)]
+    return (_dualize(G, x, v) for x in _psubgroups_gens(G, p, t, order, index))
+  =#
     x = Tuple{Int, Int}[ (valuation(G.snf[i], p), i)
                        for i in 1:length(G.snf) if G.snf[i] > 1]
     reverse!(x)
@@ -551,6 +556,25 @@ function _psubgroups_gens_quotype(G::GrpAbFinGen, p, t, order, index)
     return ( map(x -> image(mS, x)::GrpAbFinGenElem, z)
              for z in _psubgroups_gens_quotype(S, p, t, order, index))
   end
+end
+
+function _dualize(G::GrpAbFinGen, x::Array{GrpAbFinGenElem,1}, v::Array{fmpz,1})
+
+  if isempty(x)
+    return gens(G)
+  end
+  @assert parent(x[1])==G
+  M=MatrixSpace(FlintZZ, ngens(G), length(x))()
+  for i = 1:length(x)
+    for j = 1:ngens(G)
+      M[j,i] = (x[i][j])*v[j]
+    end
+  end
+  D = DiagonalGroup([G.snf[end] for i = 1:length(x)])
+  f = GrpAbFinGenMap(G,D,M)
+  K, mK = kernel(f)
+  return map(x -> image(mK, x)::GrpAbFinGenElem, gens(K))
+  
 end
 
 function _ptype(G, p)
@@ -578,6 +602,8 @@ function _psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = [-1],
 
   return ( fun(G, map(mP, z)) for z in _psubgroups_gens(P, p, subtype, order, index))
 end
+
+
 
 # We use a custom type for the iterator to have pretty printing.
 mutable struct pSubgroupIterator{F, T, E}
