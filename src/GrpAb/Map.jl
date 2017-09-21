@@ -33,7 +33,7 @@
 #
 ################################################################################
 
-export haspreimage, hasimage, home, kernel, image, isinjective, issurjective,
+export haspreimage, hasimage, hom, kernel, image, isinjective, issurjective,
        isbijective
 
 ################################################################################
@@ -194,17 +194,20 @@ end
 ################################################################################
 
 # TODO: Make this work for infinite groups
+# Is this the right way of doing it? (Carlo)
 doc"""
     issurjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is surjective.
 """
 function issurjective(A::GrpAbFinGenMap)
-  H = image(A)[1]
+  H, mH = image(A)
   if isfinite(codomain(A)) && isfinite(H)
     return order(codomain(A)) == order(H)
   else
-    error("Not yet implemented for infinite groups")
+    Q, mQ = quo(codomain(A), GrpAbFinGenElem[mH(g) for g in gens(H)])
+    S,mS=snf(Q)
+    return prod(S.snf)==1
   end
 end
 
