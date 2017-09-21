@@ -1083,26 +1083,28 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   
   if order(G)==1
     X=deepcopy(C)
+    Q,mQ=quo(X,n)
+    
     function exp3(a::GrpAbFinGenElem)
       return exp_class(a)
     end
     
     function disclog3(J::NfOrdIdl)
-      return X((mC\J).coeff)
+      return Q((mC\J).coeff)
     end
     
     function disclog3(J::FacElem)
-      a= X([0 for i=1:ngens(X)])
+      a= Q([0 for i=1:ngens(X)])
       for (f,k) in J.fac
         a+=k*disclog3(f)
       end
       return a
     end 
-    mp=Hecke.MapRayClassGrp{typeof(X)}()
-    mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp3, disclog3)
+    mp=Hecke.MapRayClassGrp{typeof(Q)}()
+    mp.header = Hecke.MapHeader(Q, FacElemMon(parent(m)) , exp3, disclog3)
     mp.modulus_fin=ideal(O,1)
     mp.modulus_inf=InfPlc[]  
-    return X,mp
+    return Q,mp
     
   end
 
