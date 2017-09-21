@@ -37,32 +37,36 @@ function conductor(C::Hecke.ClassField)
   
   mS=inv(mS)
   dom=domain(mS)
-  M=MatrixSpace(FlintZZ,0, ngens(codomain(mS)))()
+  M=MatrixSpace(FlintZZ,ngens(dom), ngens(codomain(mS)))()
   for i=1:ngens(dom)
-    M=vcat(M,(mS(dom[i])).coeff)
+    elem=mS(dom[i]).coeff
+    for j=1:ngens(codomain(mS))
+      M[i,j]=elem[1,j]
+    end
   end
   S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
   W,mW=snf(T)
-  
-  Sgens= [ mR(mT(mW(w))) for w in gens(W) ]
-  
+  mapinv=inv(mR*mT*mW)
+  Sgens=[]
+  if ngens(W)!=0
+    Sgens=find_gens(mapinv,Hecke.PrimesSet(2,-1),cond.gen_one)[1]
+  end
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
   #
-  
-  
+    
   L=factor(cond)
   for (p,vp) in L
     if gcd(E,p.gen_one)==1
       if gcd(E, norm(p)-1)==1
-        delete!(L,p)
+        Base.delete!(L,p)
       else
         L[p]=1
       end  
     else
       if L[p]==1
-        delete!(L,p)
+        Base.delete!(L,p)
       end
     end
   end
@@ -87,7 +91,7 @@ function conductor(C::Hecke.ClassField)
       end
       iscandcond=true
       for (q,vq) in lp
-        r,mr=ray_class_group_p_part(Int(q),candidate,inf_plc)
+        r,mr=ray_class_group(candidate,inf_plc,n_quo=Int(q^vq))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot)
         if valuation(order(s),q)<valuation(E,q)
@@ -96,7 +100,7 @@ function conductor(C::Hecke.ClassField)
         end
       end
       if iscandcond
-        delete!(L,p)
+        Base.delete!(L,p)
       end
       pop!(divisors)
     else 
@@ -111,7 +115,7 @@ function conductor(C::Hecke.ClassField)
       for j=1:L[p]-1
         candidate=cand*p^(L[p]-j)
         iscandcond=true
-        r, mr=ray_class_group_p_part(Int(p.gen_one),candidate,inf_plc)
+        r, mr=ray_class_group(candidate,inf_plc, n_quo=Int(p.gen_one^l))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot) 
         if valuation(order(s),p.gen_one) < l
@@ -141,7 +145,7 @@ function conductor(C::Hecke.ClassField)
     cond_inf=[x for x in inf_plc]
     for i=1:length(inf_plc)
       candidate_inf=[x for x in cond_inf if x !=inf_plc[i]]
-      r,mr=ray_class_group_p_part(2,cond,candidate_inf)
+      r,mr=ray_class_group(cond,candidate_inf, n_quo=2^l)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
       s,ms=quo(r,quot)
       if valuation(order(s),2)==l
@@ -188,27 +192,34 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   mS=inv(mS)
   dom=domain(mS)
-  M=MatrixSpace(FlintZZ,0, ngens(codomain(mS)))()
+  M=MatrixSpace(FlintZZ,ngens(dom), ngens(codomain(mS)))()
   for i=1:ngens(dom)
-    M=vcat(M,(mS(dom[i])).coeff)
+    elem=mS(dom[i]).coeff
+    for j=1:ngens(codomain(mS))
+      M[i,j]=elem[1,j]
+    end
   end
   S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
   W,mW=snf(T)
+  mapinv=inv(mR*mT*mW)
+  Sgens=[]
+  if ngens(W)!=0
+    Sgens=find_gens(mapinv,Hecke.PrimesSet(2,-1),m.gen_one)[1]
+  end
   
-  Sgens=[mR(mT(mW(w))) for w in gens(W)]
   
   L=factor(cond)
   for (p,vp) in L
     if gcd(E,p.gen_one)==1
       if gcd(E, norm(p)-1)==1
-        delete!(L,p)
+        Base.delete!(L,p)
       else
         L[p]=1
       end  
     else
       if L[p]==1
-        delete!(L,p)
+        Base.delete!(L,p)
       end
     end
   end
@@ -242,11 +253,10 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   #
   lp=factor(E)
   for (p,vp) in lp
-    r,mr=ray_class_group_p_part(Int(p),m,inf_plc)
+    r,mr=ray_class_group(m,inf_plc, n_quo= Int(p^vp))
     quot=GrpAbFinGenElem[mr\s for s in Sgens]
     s,ms=quo(r,quot)
     if valuation(order(s),p)<vp
-      println("m is not in the congruence subgroup\n")
       return false
     end
   end
@@ -273,7 +283,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       end
       iscandcond=true
       for (q,vq) in lp
-        r,mr=ray_class_group_p_part(Int(q),candidate,inf_plc)
+        r,mr=ray_class_group(candidate,inf_plc, n_quo=Int(q^vq))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot)
         if valuation(order(s),q)<valuation(E,q)
@@ -295,7 +305,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       end
       candidate=candidate*p^(L1[p]-1)
       iscandcond=true
-      r, mr=ray_class_group_p_part(Int(p.gen_one),candidate,inf_plc)
+      r, mr=ray_class_group(candidate,inf_plc, n_quo=Int(p.gen_one)^l)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
       s,ms=quo(r,quot) 
       if valuation(order(s),p.gen_one) < l
@@ -318,7 +328,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
     cond_inf=[x for x in inf_plc]
     for i=1:length(inf_plc)
       candidate_inf=[x for x in cond_inf if x !=inf_plc[i]]
-      r,mr=ray_class_group_p_part(2,m,candidate_inf)
+      r,mr=ray_class_group(m,candidate_inf, n_quo = 2^l)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
       s,ms=quo(r,quot)
       if valuation(order(s),2)==l
@@ -540,16 +550,21 @@ function conductor_min(C::Hecke.ClassField)
   
   mS=inv(mS)
   dom=domain(mS)
-  M=MatrixSpace(FlintZZ,0, ngens(codomain(mS)))()
+  M=MatrixSpace(FlintZZ,ngens(dom), ngens(codomain(mS)))()
   for i=1:ngens(dom)
-    M=vcat(M,(mS(dom[i])).coeff)
+    elem=mS(dom[i]).coeff
+    for j=1:ngens(codomain(mS))
+      M[i,j]=elem[1,j]
+    end
   end
   S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
   W,mW=snf(T)
-  
-  Sgens=[mR(mT(mW\w)) for w in gens(W)]
-  
+  mapinv=inv(mR*mT*mW)
+  Sgens=[]
+  if ngens(W)!=0
+    Sgens=find_gens(mapinv,Hecke.PrimesSet(2,-1),cond.gen_one)[1]
+  end
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
   #
@@ -558,13 +573,13 @@ function conductor_min(C::Hecke.ClassField)
   for (p,vp) in L
     if gcd(E,p.gen_one)==1
       if gcd(E, norm(p)-1)==1
-        delete!(L,p)
+        Base.delete!(L,p)
       else
         L[p]=1
       end  
     else
       if L[p]==1
-        delete!(L,p)
+        Base.delete!(L,p)
       end
     end
   end
@@ -589,7 +604,7 @@ function conductor_min(C::Hecke.ClassField)
       end
       iscandcond=true
       for (q,vq) in lp
-        r,mr=ray_class_group_p_part(Int(q),candidate,inf_plc)
+        r,mr=ray_class_group(candidate,inf_plc, n_quo=Int(q^vq))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot)
         if valuation(order(s),q)<valuation(E,q)
@@ -598,7 +613,7 @@ function conductor_min(C::Hecke.ClassField)
         end
       end
       if iscandcond
-        delete!(L,p)
+        Base.delete!(L,p)
       else 
         i=1
         if !divisible(fmpz(cond),p.gen_one)
@@ -612,7 +627,7 @@ function conductor_min(C::Hecke.ClassField)
               j+=1
             end
             if L[divisors[i]]<= pd[j][2]
-              delete!(L,p)
+              Base.delete!(L,p)
               deleteat!(divisors,i)
               continue
             end
@@ -633,7 +648,7 @@ function conductor_min(C::Hecke.ClassField)
       for j=1:L[p]-1
         candidate=cand*p^(L[p]-j)
         iscandcond=true
-        r, mr=ray_class_group_p_part(Int(p.gen_one),candidate,inf_plc)
+        r, mr=ray_class_group(candidate,inf_plc, Int(p.gen_one^l))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot) 
         if valuation(order(s),p.gen_one) < l
@@ -661,7 +676,7 @@ function conductor_min(C::Hecke.ClassField)
               j+=1
             end
             if L[divisors[i]]<= k*pd[j][2]
-              delete!(L,p)
+              Base.delete!(L,p)
               deleteat!(divisors,i)
               continue
             end
