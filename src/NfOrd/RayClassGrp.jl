@@ -830,8 +830,11 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
       ind+=1
     end
     
-    G=DiagonalGroup([gcd(C.snf[ind+j],n) for j=0:ngens(C)-ind])
-
+    vect=[gcd(C.snf[ind+j],n) for j=0:ngens(C)-ind]
+    G=DiagonalGroup(vect)
+    G.issnf=true
+    G.snf=vect
+    
     function exp2(a::GrpAbFinGenElem)
       x=C([0 for i=1:ngens(C)])
       for i=ind:ngens(C)
@@ -871,6 +874,9 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   npart=prod([f[i]^(val[i]) for i=1:length(f) if val[i]!=0])
   m=div(np,npart)
   powm=[divexact(npart,f[i]) for i=1:length(f) if val[i]!=0]
+  #
+  #  We search for a random element with the right order
+  #
   
   found=false
   g=Q(1)
@@ -889,7 +895,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   end
   k=gcd(npart,n)
   inv=gcdx(m,fmpz(npart))[2]
-  quot=divexact(npart, gcd(npart,n))
+  quot=divexact(npart, k)
   
   function disclog(x::NfOrdElem)
     t=mQ(x)^(m*quot)
@@ -1030,8 +1036,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   Q,pi=quo(O,m)
   G, mG, lp = _mult_grp_mod_n(Q,n)
   C, mC = class_group(O)
-  valclass=gcd(order(C[ngens(C)]),n)
-  nonnclass=divexact(order(C[ngens(C)]), valclass)
   
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
@@ -1042,7 +1046,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     end
   end
   
-  if valclass==1 && order(G)==1
+  if gcd(C.snf[end],n)==1 && order(G)==1
     X=DiagonalGroup(Int[])
     function exp2(a::GrpAbFinGenElem)
       return FacElem(Dict(ideal(O,1) => fmpz(1)))
@@ -1059,8 +1063,21 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     
     return X,mp
   end
+  
+  f=collect(keys(factor(fmpz(n)).fac))
+  val=Array{Int,1}(length(f))
+  for i=1:length(f)
+    val[i]=valuation(C.snf[end],f[i])
+  end
+  valclass=1
+  for i=1:length(f)
+    if val[i]!=0
+      valclass*=f[i]^(val[i])
+    end
+  end
+  nonnclass=divexact(C.snf[end], valclass)
 
-  C, mC = _class_group_mod_n(C,mC,n)
+  C, mC = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
   exp_class = Hecke._coprime_ideal(C,mC,m)
   
