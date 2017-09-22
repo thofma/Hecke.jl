@@ -1333,6 +1333,53 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
   return subgroups
 end
 
+#
+#  Find small primes that generate the ray class group (or a quotient)
+#  It needs a map GrpAbFinGen -> NfOrdIdlSet
+#
+function find_gens(mR::Map)
+
+  O = order(codomain(mR))
+  R = domain(mR) 
+  
+  m=Hecke._modulus(mR)
+  cp=m.gen_one
+  
+  sR = elem_type(R)[]
+  lp = []
+
+  S=Hecke.PrimesSet(2,-1)
+  
+  st = start(S)
+  np = 0
+
+  q, mq = quo(R, sR)
+  while true
+    p, st = next(S, st)
+    if cp % p == 0
+      continue
+    end
+
+    lP = prime_decomposition(O, p)
+
+    f=R[1]
+    for (P,e) in lP
+      f= mR\P
+      if iszero(mq(f))
+        continue
+      end
+      push!(sR, f)
+      push!(lp, P)
+      q, mq = quo(R, sR)
+    end
+    if order(q) == 1   
+      break
+    end
+  end
+
+  return lp, sR
+end
+
 
 function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
@@ -1348,16 +1395,15 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
   #  class group map
   #
-  m=_modulus(mR)
-  lgens=find_gens(inv(mR),PrimesSet(2,-1), m.gen_one)[1]
+
+  lgens,subs=find_gens(mR)
   #
   #  Write the matrices for the change of basis
   #
   Mr=MatrixSpace(FlintZZ,length(lgens), ngens(R))()
   for i=1:length(lgens)
-    y=mR\lgens[i]
     for j=1:ngens(R)
-      Mr[i,j]=y[j]
+      Mr[i,j]=subs[i][j]
     end
   end
   
