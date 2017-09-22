@@ -1334,7 +1334,7 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
 end
 
 
-function _act_on_ray_class(mR::Map, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
+function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
@@ -1343,21 +1343,48 @@ function _act_on_ray_class(mR::Map, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.Nf
     Aut=automorphisms(K)
   end
   G=Hecke.GrpAbFinGenMap[]
+  #
+  #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
+  #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
+  #  class group map
+  #
+  m=_modulus(mR)
+  lgens=find_gens(inv(mR),PrimesSet(2,-1), m.gen_one)[1]
+  #
+  #  Write the matrices for the change of basis
+  #
+  Mr=MatrixSpace(FlintZZ,length(lgens), ngens(R))()
+  for i=1:length(lgens)
+    y=mR\lgens[i]
+    for j=1:ngens(R)
+      Mr[i,j]=y[j]
+    end
+  end
+  
+  auxmat=hcat(Mr',rels(R)')
+  Ml=MatrixSpace(FlintZZ,ngens(R), length(lgens))()
+  for i=1:ngens(R)
+    solfound,y=cansolve(auxmat,R[i].coeff')
+    @assert solfound
+    for j=1:length(lgens)
+      Ml[i,j]=y[j,1]
+    end
+  end
+  
+  #
+  #  Now, we compute the action on the group
+  #
   
   for phi in Aut
-    M=MatrixSpace(FlintZZ,ngens(R), ngens(R))()
-    for i=1:ngens(R) 
-      J=mR(R[i])
-      I=FacElem(Dict(ideal(O,1)=> 1))
-      for (f,k) in J.fac
-        I.fac[_aut_on_id(O, phi, f)]=k
-      end
-      elem=mR\I
+    M=MatrixSpace(FlintZZ,length(lgens), ngens(R))()
+    for i=1:length(lgens) 
+      J=_aut_on_id(O,phi,lgens[i])
+      elem=mR\J
       for j=1:ngens(R)
-        M[i,j]=elem.coeff[1,j]
+        M[i,j]=elem[j]
       end
     end
-    push!(G,GrpAbFinGenMap(R,R,M))
+    push!(G,GrpAbFinGenMap(R,R,Ml*M))
   end
   
   return G
