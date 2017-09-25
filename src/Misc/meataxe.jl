@@ -454,7 +454,7 @@ end
 
 function dual_space(M::FqGModule)
   
-  G=GenMat{fq_nmod}[transpose(g) for g in M.G]
+  G=Generic.Mat{fq_nmod}[transpose(g) for g in M.G]
   return FqGModule(G)
 
 end
