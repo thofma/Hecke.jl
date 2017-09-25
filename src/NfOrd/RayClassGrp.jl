@@ -180,20 +180,30 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
       end
     end
   end
-  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x=s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
   r = elem_type(O)[]
   for i=1:length(p)
     y = haspreimage(hS,S[i])[2]
     push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
   end
-  
+#=  
+  Q,mQ=quo(O,m)
+  for i=1:length(r)
+    @assert mQ(r[i])==0
+  end
+=#  
   function exp(A::GrpAbFinGenElem)
-    s=O(1)
+    
+    s=O(abs(m.gen_one))
+    if iszero(A.coeff)
+      return s
+    end  
     for i=1:length(p)
       if Int(A.coeff[1,i]) == 1
         s=s*r[i]
       end 
     end
+#    @assert mQ(s)==0
     return s
   end 
 
@@ -331,7 +341,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 #
 
   for i=1: ngens(C)
-    @vprint :RayFacElem 1 "Processing class group generator number i \n"
+    @vprint :RayFacElem 1 "Processing class group generator number $i \n"
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
       el=Hecke._fac_elem_evaluation(O,y,lp,expon)
@@ -355,6 +365,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 
 
   function disclog(J::FacElem)
+    
+    @vprint :RayFacElem 1 "Disc log of element $J \n"
     a= X([0 for i=1:ngens(X)])
     for (f,k) in J.fac
       a+=k*disclog(f)
@@ -366,16 +378,22 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   function disclog(J::NfOrdIdl)
 
     if isone(J)
+    @vprint :RayFacElem 1 "J is one \n"
       return X([0 for i=1:ngens(X)])
     else
       L=mC\J
+      @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
       s=exp_class(L)
       I=J* inv(s)
+      @vprint :RayFacElem 1 "This ideal is principal: $I \n"
       z=Hecke.principal_gen_fac_elem(I)
       el=_fac_elem_evaluation(O,z,lp,expon)
+      @vprint :RayFacElem 1 "and 'generated' by $el \n"
       y=(mG\Q(el)).coeff
+      @vprint :RayFacElem 1 "in the unit group, $y \n"
       if !isempty(p)
         b=lH(z)
+        @vprint :RayFacElem 1 "the signs are $b \n"
         y=hcat(y, b.coeff)
       end 
       return X(hcat(L.coeff,y))
@@ -395,17 +413,15 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
       d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1:ngens(X)])
       el=pi\(mG(c))
+      @vprint :RayFacElem 1 "I have the element $el \n"
+      @vprint :RayFacElem 1 "I want $(d.coeff) \n"
       # I need to modify $el$ so that it has the correct sign at the embeddings contained in primes
       vect=(lH(K(el))).coeff
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
       else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
+        correction=eH(d)
+        @hassert correction in m
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
@@ -776,12 +792,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
       else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
+        correction=eH(d)
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
@@ -1221,7 +1232,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
 
   function expon(a::GrpAbFinGenElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
-    if p!=2 || isempty(pr)
+    if mod(n,2)!=0  || isempty(pr)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
       return exp_class(b)*ideal(O,pi\(mG(c)))
     else 
@@ -1233,12 +1244,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
       else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
+        correction=eH(d)
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
@@ -1341,22 +1347,18 @@ function find_gens(mR::Map)
 
   O = order(codomain(mR))
   R = domain(mR) 
-  
   m=Hecke._modulus(mR)
-  cp=m.gen_one
   
   sR = elem_type(R)[]
   lp = []
 
   S=Hecke.PrimesSet(2,-1)
-  
   st = start(S)
-  np = 0
-
+  
   q, mq = quo(R, sR)
   while true
     p, st = next(S, st)
-    if cp % p == 0
+    if m.gen_one % p == 0
       continue
     end
 
