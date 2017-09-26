@@ -22,8 +22,25 @@ mutable struct NfRelOrd{T, S} <: Ring
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
   parent::NfRelOrdSet{T}
 
-  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+  isequation_order::Bool
+
+  ismaximal::Int                   # 0 Not known
+                                   # 1 Known to be maximal
+                                   # 2 Known to not be maximal
+
+  trace_mat::Generic.Mat{T}
+
+  function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
     z = new{T, S}()
+    z.nf = K
+    z.parent = NfRelOrdSet{T}(K)
+    z.isequation_order = false
+    z.ismaximal = 0
+    return z
+  end
+
+  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+    z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_pmat = M
@@ -32,18 +49,11 @@ mutable struct NfRelOrd{T, S} <: Ring
   end
   
   function NfRelOrd{T, S}(K::NfRel{T}, M::Generic.Mat{T}) where {T, S}
-    z = new{T, S}()
+    z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
-    return z
-  end
-
-  function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
-    z = new{T, S}()
-    z.nf = K
-    z.parent = NfRelOrdSet{T}(K)
     return z
   end
 end
@@ -69,6 +79,18 @@ Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
 number field.
 """
 parent(O::NfRelOrd) = O.parent
+
+doc"""
+    isequation_order(O::NfRelOrd) -> Bool
+
+> Returns whether $\mathcal O$ is the equation order of the ambient number
+> field.
+"""
+isequation_order(O::NfRelOrd) = O.isequation_order
+
+ismaximal_known(O::NfRelOrd) = O.ismaximal != 0
+
+ismaximal(O::NfRelOrd) = O.ismaximal == 1
 
 ################################################################################
 #
@@ -245,7 +267,11 @@ function show(io::IO, S::NfRelOrdSet)
 end
 
 function show(io::IO, O::NfRelOrd)
-  print(io, "Relative order of ")
+  if ismaximal_known(O) && ismaximal(O)
+    print(io, "Relative maximal order of ")
+  else
+    print(io, "Relative order of ")
+  end
   println(io, nf(O))
   print(io, "with pseudo-basis ")
   pb = pseudo_basis(O, Val{false})
@@ -420,7 +446,10 @@ end
 
 function EquationOrder(L::NfRel{T}) where T
   M = one(MatrixSpace(base_ring(L), degree(L), degree(L)))
-  return Order(L, M)
+  O = Order(L, M)
+  O.basis_mat_inv = M
+  O.isequation_order = true
+  return O
 end
 
 function MaximalOrder(L::NfRel)
@@ -446,6 +475,9 @@ end
 ################################################################################
 
 function trace_matrix(O::NfRelOrd)
+  if isdefined(O, :trace_mat)
+    return deepcopy(O.trace_mat)
+  end
   L = nf(O)
   K = base_ring(L)
   b = basis_nf(O, Val{false})
@@ -460,7 +492,8 @@ function trace_matrix(O::NfRelOrd)
       g[j, i] = t
     end
   end
-  return g
+  O.trace_mat = g
+  return deepcopy(g)
 end
 
 ################################################################################
@@ -491,6 +524,7 @@ function MaximalOrder(O::NfRelOrd)
     end
     OO += pmaximal_overorder(O, p)
   end
+  OO.ismaximal = 1
   return OO
 end
 
