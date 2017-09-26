@@ -502,11 +502,12 @@ end
 ################################################################################
 
 function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
-  # checks
-  aB = basis_pmat(a, Val{false})
-  bB = basis_pmat(b, Val{false})
-  M = aB.matrix*basis_mat_inv(a, Val{false})
-  PM = pseudo_hnf_kb(PseudoMatrix(M, deepcopy(bB.coeffs)))
-  PM.matrix = PM.matrix*aB.matrix
+  @assert parent(a) != parent(b)
+  aB = basis_pmat(a)
+  bB = basis_pmat(b)
+  d = degree(a)
+  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
+    catch sub(pseudo_hnf_kb(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
+    end
   return NfRelOrd{T, S}(nf(a), PM)
 end

@@ -98,6 +98,7 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, pb[i][2])
   end
+  M = M*basis_mat_inv(order(a), Val{false})
   a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
   return nothing
 end
@@ -110,12 +111,16 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
     error("No pseudo_basis and no basis_pmat defined.")
   end
   P = basis_pmat(a)
+  B = basis_nf(order(a))
   L = nf(order(a))
   K = base_ring(L)
   pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(L)
-    x = elem_from_mat_row(L, P.matrix, i)
-    push!(pseudo_basis, (x, P.coeffs[i]))
+    t = L()
+    for j = 1:degree(L)
+      t += P.matrix[i, j]*B[j]
+    end
+    push!(pseudo_basis, (t, P.coeffs[i]))
   end
   a.pseudo_basis = pseudo_basis
   return nothing
@@ -499,10 +504,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(M2, fill(p, d))
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
-  N = PM.matrix*basis_mat_int
-  PN = PseudoMatrix(N, PM.coeffs)
-  PN = pseudo_hnf(PN, :lowerleft)
-  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PN)
+  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
 end
 
 ################################################################################
@@ -515,10 +517,10 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
-  S = basis_mat_inv(a, Val{false})*basis_mat(O, Val{false})
-  M = representation_mat(pb[1][1])*S
+  S = basis_mat_inv(O, Val{false})*basis_mat_inv(a, Val{false})
+  M = basis_mat(O, Val{false})*representation_mat(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, representation_mat(pb[i][1])*S)
+    M = hcat(M, basis_mat(O, Val{false})*representation_mat(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{NfOrdFracIdl}(d^2)
@@ -528,8 +530,10 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = sub(pseudo_hnf(PM), 1:d, 1:d)
-  N = basis_mat(O, Val{false})*inv(transpose(PM.matrix))
+  PM = try sub(pseudo_hnf(PM), 1:d, 1:d)
+    catch sub(pseudo_hnf_kb(PM), 1:d, 1:d)
+    end
+  N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return NfRelOrd{nf_elem, NfOrdFracIdl}(nf(O), PN)
 end
