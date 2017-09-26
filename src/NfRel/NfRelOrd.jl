@@ -83,13 +83,13 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   if !isdefined(O, :pseudo_basis)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  pb = pseudo_basis(O)
+  pb = pseudo_basis(O, Val{false})
   L = nf(O)
   M = MatrixSpace(base_ring(L), degree(O), degree(O))()
   C = Vector{S}()
   for i = 1:degree(O)
     elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, pb[i][2])
+    push!(C, deepcopy(pb[i][2]))
   end
   O.basis_pmat = PseudoMatrix(M, C)
   return nothing
@@ -102,12 +102,12 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   if !isdefined(O, :basis_pmat)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  P = basis_pmat(O)
+  P = basis_pmat(O, Val{false})
   L = nf(O)
   pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(O)
     a = elem_from_mat_row(L, P.matrix, i)
-    push!(pseudo_basis, (a, P.coeffs[i]))
+    push!(pseudo_basis, (a, deepcopy(P.coeffs[i])))
   end
   O.pseudo_basis = pseudo_basis
   return nothing
@@ -139,7 +139,7 @@ function assure_has_basis_mat_inv(O::NfRelOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O))
+  O.basis_mat_inv = inv(basis_mat(O, Val{false}))
   return nothing
 end
 
@@ -248,7 +248,7 @@ function show(io::IO, O::NfRelOrd)
   print(io, "Relative order of ")
   println(io, nf(O))
   print(io, "with pseudo-basis ")
-  pb = pseudo_basis(O)
+  pb = pseudo_basis(O, Val{false})
   for i = 1:degree(O)
     print(io, "\n")
     print(io, pb[i])
@@ -348,21 +348,20 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
-  assure_has_basis_mat_inv(O)
-  assure_has_basis_pmat(O)
+  b_pmat = basis_pmat(O, Val{false})
   t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
   elem_to_mat_row!(t, 1, a)
-  t = t*O.basis_mat_inv
+  t = t*basis_mat_inv(O, Val{false})
   if short == Val{true}
     for i = 1:degree(O)
-      if !(t[1, i] in O.basis_pmat.coeffs[i])
+      if !(t[1, i] in b_pmat.coeffs[i])
         return false
       end
     end
     return true
   else
     for i = 1:degree(O)
-      if !(t[1, i] in O.basis_pmat.coeffs[i])
+      if !(t[1, i] in b_pmat.coeffs[i])
         return false, Vector{T}()
       end
     end
@@ -437,7 +436,7 @@ end
 
 function ==(R::NfRelOrd, S::NfRelOrd)
   nf(R) != nf(S) && return false
-  return basis_pmat(R) == basis_pmat(S)
+  return basis_pmat(R, Val{false}) == basis_pmat(S, Val{false})
 end
 
 ################################################################################

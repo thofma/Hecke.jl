@@ -90,13 +90,13 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   if !isdefined(a, :pseudo_basis)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  pb = pseudo_basis(a)
+  pb = pseudo_basis(a, Val{false})
   L = nf(order(a))
   M = MatrixSpace(base_ring(L), degree(L), degree(L))()
   C = Vector{S}()
   for i = 1:degree(L)
     elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, pb[i][2])
+    push!(C, deepcopy(pb[i][2]))
   end
   M = M*basis_mat_inv(order(a), Val{false})
   a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
@@ -110,8 +110,8 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
   if !isdefined(a, :basis_pmat)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  P = basis_pmat(a)
-  B = basis_nf(order(a))
+  P = basis_pmat(a, Val{false})
+  B = basis_nf(order(a), Val{false})
   L = nf(order(a))
   K = base_ring(L)
   pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
@@ -120,7 +120,7 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
     for j = 1:degree(L)
       t += P.matrix[i, j]*B[j]
     end
-    push!(pseudo_basis, (t, P.coeffs[i]))
+    push!(pseudo_basis, (t, deepcopy(P.coeffs[i])))
   end
   a.pseudo_basis = pseudo_basis
   return nothing
@@ -138,7 +138,7 @@ function assure_has_basis_mat_inv(a::NfRelOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  a.basis_mat_inv = inv(basis_mat(a))
+  a.basis_mat_inv = inv(basis_mat(a, Val{false}))
   return nothing
 end
 
@@ -229,7 +229,7 @@ function show(io::IO, a::NfRelOrdIdl)
   print(io, "Ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis pseudo-matrix\n")
-  print(io, basis_pmat(a))
+  print(io, basis_pmat(a, Val{false}))
 end
 
 ################################################################################
@@ -290,7 +290,7 @@ doc"""
 """
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) != order(b) && return false
-  return basis_pmat(a) == basis_pmat(b)
+  return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
 end
 
 ################################################################################
@@ -303,8 +303,8 @@ function assure_has_norm(a::NfRelOrdIdl)
   if a.has_norm
     return nothing
   end
-  c = basis_pmat(a).coeffs
-  d = basis_pmat(order(a)).coeffs
+  c = basis_pmat(a, Val{false}).coeffs
+  d = basis_pmat(order(a), Val{false}).coeffs
   n = c[1]*inv(d[1])
   for i = 2:degree(order(a))
     n *= c[i]*inv(d[i])

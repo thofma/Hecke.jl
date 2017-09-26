@@ -103,7 +103,7 @@ function show(io::IO, a::NfRelOrdFracIdl)
   print(io, "Fractional ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis pseudo-matrix\n")
-  print(io, basis_pmat(num(a)), "\n")
+  print(io, basis_pmat(num(a), Val{false}), "\n")
   print(io, "and denominator ", den(a))
 end
 
