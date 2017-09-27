@@ -861,7 +861,7 @@ type NfOrdIdl
   end
 
   function NfOrdIdl(O::NfOrd, a::NfOrdElem)
-    return NfOrdIdl(x)
+    return NfOrdIdl(a)
   end
 
   function NfOrdIdl(x::NfOrdElem)
