@@ -494,10 +494,18 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   last_g = parent(a)(0)
   while true
     p = next_prime(p)
-    me = modular_init(K, p)
-    fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
-    gp = Hecke.modular_proj(b, me)
-    fsap = Hecke.modular_proj(fsa, me)
+    local me, fp, gp, fsap
+    try 
+      me = modular_init(K, p)
+      fp = deepcopy(Hecke.modular_proj(a, me))  # bad!!!
+      gp = Hecke.modular_proj(b, me)
+      fsap = Hecke.modular_proj(fsa, me)
+    catch ee
+      if typeof(ee) != Hecke.BadPrime
+        rethrow(ee)
+      end
+      continue
+    end
     gp = [fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
     gc = Hecke.modular_lift(gp, me)
     if isone(gc)
