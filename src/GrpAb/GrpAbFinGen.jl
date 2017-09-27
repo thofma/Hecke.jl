@@ -708,7 +708,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat)
   m = vcat(rels(G),M)
   Q = AbelianGroup(m)
   I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
-  m = GrpAbFinGenMap(p, Q, I, I)
+  m = GrpAbFinGenMap(G, Q, I, I)
   return Q, m
   
 end

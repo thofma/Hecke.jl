@@ -4,32 +4,6 @@
 #
 ###############################################################################
 
-
-
-#
-#  Dual module
-#
-
-function dual_module(M::ZpnGModule)
-
-  @assert issnf(M.V)
-  G1=deepcopy(M.G)
-  for i=1:length(G1)
-    for j=1:ngens(M.V)-1
-      for k=j+1:ngens(M.V)
-        x=divexact(M.V.snf[k], M.V.snf[j])
-        G1[i][j,k]=divexact(G1[i][j,k].data, x)
-        G1[i][k,j]*=x
-      end
-    end
-    transpose!(G1[i])
-  end 
-  return ZpnGModule(M.V, G1)
-  
-end
-
-
-
 #
 #  Lifts a matrix from F_p to Z/p^nZ
 #
@@ -99,62 +73,6 @@ function Nemo.snf(M::ZpnGModule)
     
 end
 
-
-#
-#  Given a list of square matrices G, it returns a list of matrices given by the minors 
-#  (n-s) x (n-s) of the matrices G[i] mod p 
-#
-
-function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
-  
-  G1=Array{Generic.Mat{fq_nmod},1}(length(G))
-  n=rows(G[1])
-  for i=1:length(G)
-    M=MatrixSpace(F,n-s+1,n-s+1)()
-    for j=s:n
-      for k=s:n
-        M[j-s+1,k-s+1]=(G[i][j,k]).data
-      end
-    end
-    G1[i]=M
-  end
-  return G1
-
-end
-
-#
-#  Cut the module in submodules with exponent p, returning the quotients p^i M /p^(i+1) M
-#
-
-function _mult_by_p(M::ZpnGModule)
-
-  G=M.G
-  V=M.V
-  p=M.p
-  @assert issnf(V)
-  #
-  #  First, the quotient M/pM
-  #
-  F,a=Nemo.FiniteField(p,1,"a")
-  n=ngens(V)
-  Gq=_change_ring(G,F,1)
-  spaces=FqGModule[FqGModule(Gq)]
-  #
-  #  Now, the others
-  #
-  s=valuation(fmpz(M.R.n),p)
-  j=1
-  for i=2:s
-    while !divisible(V.snf[j],p^i)
-      j+=1
-    end
-    GNew=_change_ring(G,F,j)
-    push!(spaces, FqGModule(GNew))
-  end
-  return spaces  
-
-end
-
 function is_stable(act::Array{T, 1}, mS::GrpAbFinGenMap) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
   S=mS.header.domain
@@ -211,6 +129,71 @@ function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpA
 end
 
 
+#################################################################################
+#
+#  Duality
+#
+#################################################################################
+
+#=
+  To get the transpose map of a homomorphism, and so the action on the dual module,
+  you need to transpose the matrix and multiply or the elements for a power of p, assuming that the group is in snf.
+  Precisely, let p^e be the exponent of the group and let p^t_i be the powers of p appearing in the snf. Then 
+  ( p^(e-t_1)     )                  ( p^(e-t_1)     )
+  (          ...  )  x ^t A  = A  x  (          ...  )
+  (              1)                  (              1)
+=#
+
+
+function dual_module(M::ZpnGModule)
+
+  @assert issnf(M.V)
+  G1=deepcopy(M.G)
+  for i=1:length(G1)
+    for j=1:ngens(M.V)-1
+      for k=j+1:ngens(M.V)
+        x=divexact(M.V.snf[k], M.V.snf[j])
+        G1[i][j,k]=divexact(G1[i][j,k].data, x)
+        G1[i][k,j]*=x
+      end
+    end
+    transpose!(G1[i])
+  end 
+  return ZpnGModule(M.V, G1)
+  
+end
+
+function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})    
+  #
+  #  First, compute the kernel of the corresponding homomorphisms
+  # 
+  K=DiagonalGroup([Int(parent(M[1,1]).n) for j=1:rows(M)])
+  A=lift(transpose(M))
+  for j=1:rows(A)
+    for k=1:cols(A)
+      A[j,k]*=v[j]
+    end
+  end 
+  mH=Hecke.GrpAbFinGenMap(V,K,A)
+  newel=kernel_as_submodule(mH)
+  W=MatrixSpace(parent(M[1,1]),rows(newel), cols(newel))
+  return W(newel)
+  
+end
+
+function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
+
+  A=nullspace(transpose(M))
+  B=vcat(transpose(A),MatrixSpace(M[1,1].parent, cols(A),cols(A))())
+  for j=1:cols(A)
+    B[rows(A)+j,j]=snf_struct[j]
+  end
+  S=nullspace(B)
+  C=vcat(transpose(A),MatrixSpace(M[1,1].parent, cols(A),cols(A))())
+  return S*C
+ 
+end
+
 function kernel_as_submodule(h::GrpAbFinGenMap)
   G = domain(h)
   H = codomain(h)
@@ -224,6 +207,7 @@ function kernel_as_submodule(h::GrpAbFinGenMap)
 end
 
 
+
 ########################################################################################################
 #
 #  Quotients and subgroups of ZpnGModules
@@ -233,15 +217,14 @@ end
 
 function quo(M::ZpnGModule, S:: nmod_mat)
 
-  subm=[M.V(lift(view(S,i:i, 1:cols(S)))) for i=1:rows(S)]
-  Q,mQ=quo(M.V,subm)
+  Q,mQ=quo(M.V,lift(S))
   return ZpnGModule(Q,M.G), mQ
   
 end
 
 function sub(M::ZpnGModule, S::nmod_mat)
 
-  sg,msg=subm_to_subg(M,S)
+  sg,msg=sub(M.V,S)
   G=Array{nmod_mat,1}(length(M.G))
   for k=1:length(M.G)
     A=MatrixSpace(M.R, ngens(sg), ngens(sg))()
@@ -339,9 +322,9 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   end
   list=Array{nmod_mat,1}(length(list_sub))
   v=[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
-  for i=1:length(list)
-    W=MatrixSpace(R,rows(x), ngens(M.V))
-    list[i]= vcat([W((mS(S.V([FlintZZ(coeff(x[k,i],0))*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:rows(x)])
+  for z=1:length(list)
+    W=MatrixSpace(R,1, ngens(M.V))
+    list[z]= vcat([W((mS(S.V([FlintZZ(coeff(list_sub[z][k,i],0))*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:rows(list_sub[z])])
   end
   return list
 
@@ -390,6 +373,61 @@ end
 #
 ##########################################################################################
 
+#
+#  Given a list of square matrices G, it returns a list of matrices given by the minors 
+#  (n-s) x (n-s) of the matrices G[i] mod p 
+#
+
+function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
+  
+  G1=Array{Generic.Mat{fq_nmod},1}(length(G))
+  n=rows(G[1])
+  for i=1:length(G)
+    M=MatrixSpace(F,n-s+1,n-s+1)()
+    for j=s:n
+      for k=s:n
+        M[j-s+1,k-s+1]=(G[i][j,k]).data
+      end
+    end
+    G1[i]=M
+  end
+  return G1
+
+end
+
+#
+#  Cut the module in submodules with exponent p, returning the quotients p^i M /p^(i+1) M
+#
+
+function _mult_by_p(M::ZpnGModule)
+
+  G=M.G
+  V=M.V
+  p=M.p
+  @assert issnf(V)
+  #
+  #  First, the quotient M/pM
+  #
+  F,a=Nemo.FiniteField(p,1,"a")
+  n=ngens(V)
+  Gq=_change_ring(G,F,1)
+  spaces=FqGModule[FqGModule(Gq)]
+  #
+  #  Now, the others
+  #
+  s=valuation(fmpz(M.R.n),p)
+  j=1
+  for i=2:s
+    while !divisible(V.snf[j],p^i)
+      j+=1
+    end
+    GNew=_change_ring(G,F,j)
+    push!(spaces, FqGModule(GNew))
+  end
+  return spaces  
+
+end
+
 function composition_factors(M::ZpnGModule)
 
   N,_=snf(M)
@@ -419,6 +457,11 @@ end
 #
 #######################################################################################
 
+doc"""
+    submodules(M::ZpnGModule; typequo, typesub, order)
+> Given a ZpnGModule M, the function returns all the submodules of M. 
+> 
+"""
 
 function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
 
@@ -479,7 +522,12 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   s,ms=sub(M, M.p^(ord-1))
   S,mS=snf(s)
   N=_exponent_p_sub(S)
-  submod=minimal_submodules(N,1,composition_factors(N))
+  submod=Generic.Mat{fq_nmod}[]
+  if N.dim==1
+    push!(submod, MatrixSpace(N.K,1,1)(1))
+  else
+    submod=minimal_submodules(N,1,composition_factors(N))
+  end
   list1=Array{nmod_mat,1}(length(submod))
   v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   for i=1:length(submod)
@@ -748,37 +796,6 @@ function submodules_order(M::ZpnGModule, ord::Int)
   end
   return (x for x in list)
   
-end
-
-function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})    
-  #
-  #  First, compute the kernel of the corresponding homomorphisms
-  # 
-  K=DiagonalGroup([Int(parent(M[1,1]).n) for j=1:rows(M)])
-  A=lift(transpose(M))
-  for j=1:rows(A)
-    for k=1:cols(A)
-      A[j,k]*=v[j]
-    end
-  end 
-  mH=Hecke.GrpAbFinGenMap(V,K,A)
-  newel=kernel_as_submodule(mH)
-  W=MatrixSpace(parent(M[1,1]),rows(newel), cols(newel))
-  return W(newel)
-  
-end
-
-function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
-
-  A=nullspace(transpose(M))
-  B=vcat(transpose(A),MatrixSpace(M[1,1].parent, cols(A),cols(A))())
-  for j=1:cols(A)
-    B[rows(A)+j,j]=snf_struct[j]
-  end
-  S=nullspace(B)
-  C=vcat(transpose(A),MatrixSpace(M[1,1].parent, cols(A),cols(A))())
-  return S*C
- 
 end
 
 

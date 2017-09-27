@@ -806,12 +806,33 @@ function _in_span(v::Vector{nf_elem}, P::PMat)
    return true, x
 end
 
-function pseudo_hnf_kb(P::PMat)
-   return _pseudo_hnf_kb(P, Val{false})
+function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    H = _pseudo_hnf_kb(PseudoMatrix(_swapcols(P.matrix), P.coeffs), Val{false})
+    _swapcols!(H.matrix)
+    _swaprows!(H.matrix)
+    reverse!(H.coeffs)
+    return H
+  elseif shape == :upperright
+    return _pseudo_hnf_kb(P, Val{false})
+  else
+    error("Not yet implemented")
+  end
 end
 
-function pseudo_hnf_kb_with_trafo(P::PMat)
-   return _pseudo_hnf_kb(P, Val{true})
+function pseudo_hnf_kb_with_trafo(P::PMat, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    H, U = _pseudo_hnf_kb(PseudoMatrix(_swapcols(P.matrix), P.coeffs), Val{true})
+    _swapcols!(H.matrix)
+    _swaprows!(H.matrix)
+    reverse!(H.coeffs)
+    _swaprows!(U)
+    return H, U
+  elseif shape == :upperright
+    return _pseudo_hnf_kb(P, Val{true})
+  else
+    error("Not yet implemented")
+  end
 end
 
 function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T

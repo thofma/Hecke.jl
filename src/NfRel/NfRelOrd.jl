@@ -22,8 +22,25 @@ mutable struct NfRelOrd{T, S} <: Ring
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
   parent::NfRelOrdSet{T}
 
-  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+  isequation_order::Bool
+
+  ismaximal::Int                   # 0 Not known
+                                   # 1 Known to be maximal
+                                   # 2 Known to not be maximal
+
+  trace_mat::Generic.Mat{T}
+
+  function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
     z = new{T, S}()
+    z.nf = K
+    z.parent = NfRelOrdSet{T}(K)
+    z.isequation_order = false
+    z.ismaximal = 0
+    return z
+  end
+
+  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+    z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_pmat = M
@@ -32,18 +49,11 @@ mutable struct NfRelOrd{T, S} <: Ring
   end
   
   function NfRelOrd{T, S}(K::NfRel{T}, M::Generic.Mat{T}) where {T, S}
-    z = new{T, S}()
+    z = NfRelOrd{T, S}(K)
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
-    return z
-  end
-
-  function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
-    z = new{T, S}()
-    z.nf = K
-    z.parent = NfRelOrdSet{T}(K)
     return z
   end
 end
@@ -70,6 +80,18 @@ number field.
 """
 parent(O::NfRelOrd) = O.parent
 
+doc"""
+    isequation_order(O::NfRelOrd) -> Bool
+
+> Returns whether $\mathcal O$ is the equation order of the ambient number
+> field.
+"""
+isequation_order(O::NfRelOrd) = O.isequation_order
+
+ismaximal_known(O::NfRelOrd) = O.ismaximal != 0
+
+ismaximal(O::NfRelOrd) = O.ismaximal == 1
+
 ################################################################################
 #
 #  "Assure" functions for fields
@@ -83,13 +105,13 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   if !isdefined(O, :pseudo_basis)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  pb = pseudo_basis(O)
+  pb = pseudo_basis(O, Val{false})
   L = nf(O)
   M = MatrixSpace(base_ring(L), degree(O), degree(O))()
   C = Vector{S}()
   for i = 1:degree(O)
     elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, pb[i][2])
+    push!(C, deepcopy(pb[i][2]))
   end
   O.basis_pmat = PseudoMatrix(M, C)
   return nothing
@@ -102,12 +124,12 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   if !isdefined(O, :basis_pmat)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  P = basis_pmat(O)
+  P = basis_pmat(O, Val{false})
   L = nf(O)
   pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(O)
     a = elem_from_mat_row(L, P.matrix, i)
-    push!(pseudo_basis, (a, P.coeffs[i]))
+    push!(pseudo_basis, (a, deepcopy(P.coeffs[i])))
   end
   O.pseudo_basis = pseudo_basis
   return nothing
@@ -139,7 +161,7 @@ function assure_has_basis_mat_inv(O::NfRelOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O))
+  O.basis_mat_inv = inv(basis_mat(O, Val{false}))
   return nothing
 end
 
@@ -245,10 +267,14 @@ function show(io::IO, S::NfRelOrdSet)
 end
 
 function show(io::IO, O::NfRelOrd)
-  print(io, "Relative order of ")
+  if ismaximal_known(O) && ismaximal(O)
+    print(io, "Relative maximal order of ")
+  else
+    print(io, "Relative order of ")
+  end
   println(io, nf(O))
   print(io, "with pseudo-basis ")
-  pb = pseudo_basis(O)
+  pb = pseudo_basis(O, Val{false})
   for i = 1:degree(O)
     print(io, "\n")
     print(io, pb[i])
@@ -348,21 +374,20 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
-  assure_has_basis_mat_inv(O)
-  assure_has_basis_pmat(O)
+  b_pmat = basis_pmat(O, Val{false})
   t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
   elem_to_mat_row!(t, 1, a)
-  t = t*O.basis_mat_inv
+  t = t*basis_mat_inv(O, Val{false})
   if short == Val{true}
     for i = 1:degree(O)
-      if !(t[1, i] in O.basis_pmat.coeffs[i])
+      if !(t[1, i] in b_pmat.coeffs[i])
         return false
       end
     end
     return true
   else
     for i = 1:degree(O)
-      if !(t[1, i] in O.basis_pmat.coeffs[i])
+      if !(t[1, i] in b_pmat.coeffs[i])
         return false, Vector{T}()
       end
     end
@@ -421,7 +446,10 @@ end
 
 function EquationOrder(L::NfRel{T}) where T
   M = one(MatrixSpace(base_ring(L), degree(L), degree(L)))
-  return Order(L, M)
+  O = Order(L, M)
+  O.basis_mat_inv = M
+  O.isequation_order = true
+  return O
 end
 
 function MaximalOrder(L::NfRel)
@@ -437,7 +465,7 @@ end
 
 function ==(R::NfRelOrd, S::NfRelOrd)
   nf(R) != nf(S) && return false
-  return basis_pmat(R) == basis_pmat(S)
+  return basis_pmat(R, Val{false}) == basis_pmat(S, Val{false})
 end
 
 ################################################################################
@@ -447,6 +475,9 @@ end
 ################################################################################
 
 function trace_matrix(O::NfRelOrd)
+  if isdefined(O, :trace_mat)
+    return deepcopy(O.trace_mat)
+  end
   L = nf(O)
   K = base_ring(L)
   b = basis_nf(O, Val{false})
@@ -461,7 +492,8 @@ function trace_matrix(O::NfRelOrd)
       g[j, i] = t
     end
   end
-  return g
+  O.trace_mat = g
+  return deepcopy(g)
 end
 
 ################################################################################
@@ -492,6 +524,7 @@ function MaximalOrder(O::NfRelOrd)
     end
     OO += pmaximal_overorder(O, p)
   end
+  OO.ismaximal = 1
   return OO
 end
 
@@ -502,11 +535,12 @@ end
 ################################################################################
 
 function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
-  # checks
-  aB = basis_pmat(a, Val{false})
-  bB = basis_pmat(b, Val{false})
-  M = aB.matrix*basis_mat_inv(a, Val{false})
-  PM = pseudo_hnf_kb(PseudoMatrix(M, deepcopy(bB.coeffs)))
-  PM.matrix = PM.matrix*aB.matrix
+  @assert parent(a) != parent(b)
+  aB = basis_pmat(a)
+  bB = basis_pmat(b)
+  d = degree(a)
+  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
+    catch sub(pseudo_hnf_kb(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
+    end
   return NfRelOrd{T, S}(nf(a), PM)
 end

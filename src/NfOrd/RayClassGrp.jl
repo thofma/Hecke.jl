@@ -1,5 +1,5 @@
 
-export ray_class_group
+export ray_class_group, stable_subgroups
 
 add_verbose_scope(:RayFacElem)
 
@@ -180,20 +180,30 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
       end
     end
   end
-  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x=s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
   r = elem_type(O)[]
   for i=1:length(p)
     y = haspreimage(hS,S[i])[2]
     push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
   end
-  
+#=  
+  Q,mQ=quo(O,m)
+  for i=1:length(r)
+    @assert mQ(r[i])==0
+  end
+=#  
   function exp(A::GrpAbFinGenElem)
-    s=O(1)
+    
+    s=O(abs(m.gen_one))
+    if iszero(A.coeff)
+      return s
+    end  
     for i=1:length(p)
       if Int(A.coeff[1,i]) == 1
         s=s*r[i]
       end 
     end
+#    @assert mQ(s)==0
     return s
   end 
 
@@ -331,7 +341,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 #
 
   for i=1: ngens(C)
-    @vprint :RayFacElem 1 "Processing class group generator number i \n"
+    @vprint :RayFacElem 1 "Processing class group generator number $i \n"
     if order(C[i])!=1
       y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))))
       el=Hecke._fac_elem_evaluation(O,y,lp,expon)
@@ -355,6 +365,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 
 
   function disclog(J::FacElem)
+    
+    @vprint :RayFacElem 1 "Disc log of element $J \n"
     a= X([0 for i=1:ngens(X)])
     for (f,k) in J.fac
       a+=k*disclog(f)
@@ -366,16 +378,22 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   function disclog(J::NfOrdIdl)
 
     if isone(J)
+    @vprint :RayFacElem 1 "J is one \n"
       return X([0 for i=1:ngens(X)])
     else
       L=mC\J
+      @vprint :RayFacElem 1 "Disc log of element J in the Class Group: $(L.coeff) \n"
       s=exp_class(L)
       I=J* inv(s)
+      @vprint :RayFacElem 1 "This ideal is principal: $I \n"
       z=Hecke.principal_gen_fac_elem(I)
       el=_fac_elem_evaluation(O,z,lp,expon)
+      @vprint :RayFacElem 1 "and 'generated' by $el \n"
       y=(mG\Q(el)).coeff
+      @vprint :RayFacElem 1 "in the unit group, $y \n"
       if !isempty(p)
         b=lH(z)
+        @vprint :RayFacElem 1 "the signs are $b \n"
         y=hcat(y, b.coeff)
       end 
       return X(hcat(L.coeff,y))
@@ -395,17 +413,15 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
       c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
       d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1:ngens(X)])
       el=pi\(mG(c))
+      @vprint :RayFacElem 1 "I have the element $el \n"
+      @vprint :RayFacElem 1 "I want $(d.coeff) \n"
       # I need to modify $el$ so that it has the correct sign at the embeddings contained in primes
       vect=(lH(K(el))).coeff
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
       else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
+        correction=eH(d)
+        @hassert correction in m
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
@@ -776,12 +792,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
       else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
+        correction=eH(d)
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
@@ -1119,29 +1130,42 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   expo=Int(exponent(G))
   inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   
-  A=vcat(rels(C), MatrixSpace(FlintZZ,ngens(G)+ngens(U), ngens(C))())
-  B=vcat(rels(G), MatrixSpace(FlintZZ, ngens(U) , ngens(G))())
+  R=MatrixSpace(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))()
+  for i=1:ngens(C)
+    R[i,i]=C.snf[i]
+  end
+  if issnf(G)
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.snf[i]
+    end
+  else
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
+    end
+  end
+  for i=1:cols(R)
+    R[ngens(C)+ngens(U)+ngens(G)+i,i]=n
+  end
   
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
 
   @assert issnf(U)
-  if gcd(order(U[1]),n)!=1
+  if gcd(U.snf[1],n)!=1
     @vprint :RayFacElem 1 "Processing unit 1"
     el=Hecke._fac_elem_evaluation(O,mU(U[1]),lp,expo)
     #
     #  This is slow. Examples show that this is the time-consuming part of the algorithm.
     #  Ideas: working over K reducing the elements mod min(prod(lp))
-    #         
+    #  To be tested again after the changes in Nemo       
     #
     a=(mG\el).coeff
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(mU(U[1]))
-      a=hcat(a, b.coeff)
+      a=hcat(a, MatrixSpace(FlintZZ,1,length(pr))([1 for i in pr]))
     end
     for j=1:ngens(G)
-      B[1+ngens(G),j]=a[1,j]
+      R[1+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
     end
   end
   for i=2:ngens(U)
@@ -1153,10 +1177,9 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       a=hcat(a, b.coeff)
     end
     for j=1:ngens(G)
-      B[i+ngens(G),j]=a[1,j]
+      R[i+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
     end
   end 
-  B=vcat(MatrixSpace(FlintZZ, ngens(C), ngens(G))(), B)
 
 #
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
@@ -1172,14 +1195,11 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
         a=hcat(a, b.coeff)
       end
       for j=1: ngens(G)
-        B[i,j]=-a[1,j]
+        R[i,ngens(C)+j]=-a[1,j]
       end 
     end
-    
   end
   
-  R=hcat(A,B)
-  R=vcat(R, MatrixSpace(FlintZZ,cols(R), cols(R))(n))
   X=AbelianGroup(R)
    
 #
@@ -1221,7 +1241,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
 
   function expon(a::GrpAbFinGenElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
-    if p!=2 || isempty(pr)
+    if mod(n,2)!=0  || isempty(pr)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
       return exp_class(b)*ideal(O,pi\(mG(c)))
     else 
@@ -1233,12 +1253,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       if vect==d.coeff
         return exp_class(b)*ideal(O,el)
       else 
-        correction=O(1)
-        for i=1:ngens(H)
-          if d.coeff[1,i]==1
-            correction=correction*eH(H[i])
-          end
-        end
+        correction=eH(d)
         while vect!=d.coeff
           el=el+correction
           vect=(lH(K(el))).coeff
@@ -1333,8 +1348,51 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
   return subgroups
 end
 
+#
+#  Find small primes that generate the ray class group (or a quotient)
+#  It needs a map GrpAbFinGen -> NfOrdIdlSet
+#
+function find_gens(mR::Map)
 
-function _act_on_ray_class(mR::Map, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
+  O = order(codomain(mR))
+  R = domain(mR) 
+  m=Hecke._modulus(mR)
+  
+  sR = elem_type(R)[]
+  lp = []
+
+  S=Hecke.PrimesSet(2,-1)
+  st = start(S)
+  
+  q, mq = quo(R, sR)
+  while true
+    p, st = next(S, st)
+    if m.gen_one % p == 0
+      continue
+    end
+
+    lP = prime_decomposition(O, p)
+
+    f=R[1]
+    for (P,e) in lP
+      f= mR\P
+      if iszero(mq(f))
+        continue
+      end
+      push!(sR, f)
+      push!(lp, P)
+      q, mq = quo(R, sR)
+    end
+    if order(q) == 1   
+      break
+    end
+  end
+
+  return lp, sR
+end
+
+
+function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
@@ -1343,55 +1401,99 @@ function _act_on_ray_class(mR::Map, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.Nf
     Aut=automorphisms(K)
   end
   G=Hecke.GrpAbFinGenMap[]
+  if ngens(R)==0
+    return G
+  end
+  #
+  #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
+  #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
+  #  class group map
+  #
+
+  lgens,subs=find_gens(mR)
   
-  for phi in Aut
-    M=MatrixSpace(FlintZZ,ngens(R), ngens(R))()
-    for i=1:ngens(R) 
-      J=mR(R[i])
-      I=FacElem(Dict(ideal(O,1)=> 1))
-      for (f,k) in J.fac
-        I.fac[_aut_on_id(O, phi, f)]=k
-      end
-      elem=mR\I
-      for j=1:ngens(R)
-        M[i,j]=elem.coeff[1,j]
+  if isempty(lgens)
+    push!(G, GrpAbFinGenMap(R))
+    return G
+  end
+  #
+  #  Write the matrices for the change of basis
+  #
+  auxmat=MatrixSpace(FlintZZ, ngens(R), length(lgens)+nrels(R))()
+  for i=1:length(lgens)
+    for j=1:ngens(R)
+      auxmat[j,i]=subs[i][j]
+    end
+  end
+  if issnf(R)
+    for i=1:ngens(R)
+      auxmat[i,length(lgens)+i]=R.snf[i]
+    end
+  else
+    for i=1:ngens(R)
+      for j=1:nrels(R)
+        auxmat[i,length(lgens)+j]=R.rels[j,i]
       end
     end
-    push!(G,GrpAbFinGenMap(R,R,M))
+  end
+
+  Ml=solve(auxmat,eye(auxmat,ngens(R)))'
+  
+  #
+  #  Now, we compute the action on the group
+  #
+  
+  for phi in Aut
+    M=MatrixSpace(FlintZZ,length(lgens), ngens(R))()
+    for i=1:length(lgens) 
+      J=_aut_on_id(O,phi,lgens[i])
+      elem=mR\J
+      for j=1:ngens(R)
+        M[i,j]=elem[j]
+      end
+    end
+    push!(G,GrpAbFinGenMap(R,R,view(Ml,1:rows(Ml),1:length(lgens))*M))
   end
   
   return G
   
 end
 
-function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}, op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+doc"""
+***
+    stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
+    
+> Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 
+> subgroups of R such that the corresponding quotient has the required type.
+"""
+
+
+function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
   
-  @assert length(act)>0
   c=lcm(quotype)
   Q,mQ=quo(R,c)
   lf=factor(order(Q)).fac
   list=[]
   for p in keys(lf)
     
+    x=valuation(c,p)
+    if x==0
+      continue
+    end
     G,mG=psylow_subgroup(Q, p)
     S,mS=snf(G)
     #
     #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
     #
-    x=valuation(c,p)
+    
     if x==1
     
       F, _ = Nemo.FiniteField(Int(p), 1, "_")
       act_mat=Array{Generic.Mat{fq_nmod},1}(length(act))
       for z=1:length(act)
-        A=MatrixSpace(F,ngens(S), ngens(S))()
-        for i=1:ngens(S)
-          y=mS\(haspreimage(mG,act[z](mG(mS(S[i]))))[2])
-          for j=1:ngens(S)
-            A[i,j]=y.coeff[1,j]
-          end
-        end
-        act_mat[z]=A
+        y=transpose(solve(hcat(mG.map', rels(Q)'), (mS.map*mG.map*act[z].map)'))
+        y=view(y,1:ngens(S), 1:ngens(G))*mS.imap
+        act_mat[z]=MatrixSpace(F,ngens(S), ngens(S))(y)
       end
       M=FqGModule(act_mat)
       
@@ -1412,15 +1514,12 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     
       RR=ResidueRing(FlintZZ, Int(p^x))
       act_mat=Array{nmod_mat,1}(length(act))
+      auxmat1=hcat(mG.map', rels(Q)')
+      auxmat2=mS.map*mG.map
       for z=1:length(act)
-        A=MatrixSpace(RR,ngens(S), ngens(S))()
-        for i=1:ngens(G)
-          y=mS\(haspreimage(mG,act[z](mG(mS(S[i]))))[2])
-          for j=1:ngens(G)
-            A[i,j]=y.coeff[1,j]
-          end
-        end
-        act_mat[z]=A
+        y=transpose(solve(auxmat1, (auxmat2*act[z].map)'))
+        y=view(y,1:ngens(S), 1:ngens(G))*mS.imap
+        act_mat[z]=MatrixSpace(RR,ngens(S), ngens(S))(y)
       end
       
       #
@@ -1436,10 +1535,13 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
           push!(quotype_p,v)
         end
       end
-      plist=Hecke.submodules(M,typequo=quotype_p)
+      plist=submodules(M,typequo=quotype_p)
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
       
     end
+  end
+  if isempty(list)
+    return ([])
   end
 
   final_it = ( op(R,vcat(c...)) for c in Iterators.product(list...))

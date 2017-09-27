@@ -90,14 +90,15 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   if !isdefined(a, :pseudo_basis)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  pb = pseudo_basis(a)
+  pb = pseudo_basis(a, Val{false})
   L = nf(order(a))
   M = MatrixSpace(base_ring(L), degree(L), degree(L))()
   C = Vector{S}()
   for i = 1:degree(L)
     elem_to_mat_row!(M, i, pb[i][1])
-    push!(C, pb[i][2])
+    push!(C, deepcopy(pb[i][2]))
   end
+  M = M*basis_mat_inv(order(a), Val{false})
   a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
   return nothing
 end
@@ -109,13 +110,17 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
   if !isdefined(a, :basis_pmat)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  P = basis_pmat(a)
+  P = basis_pmat(a, Val{false})
+  B = basis_nf(order(a), Val{false})
   L = nf(order(a))
   K = base_ring(L)
   pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
   for i = 1:degree(L)
-    x = elem_from_mat_row(L, P.matrix, i)
-    push!(pseudo_basis, (x, P.coeffs[i]))
+    t = L()
+    for j = 1:degree(L)
+      t += P.matrix[i, j]*B[j]
+    end
+    push!(pseudo_basis, (t, deepcopy(P.coeffs[i])))
   end
   a.pseudo_basis = pseudo_basis
   return nothing
@@ -133,7 +138,7 @@ function assure_has_basis_mat_inv(a::NfRelOrdIdl)
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  a.basis_mat_inv = inv(basis_mat(a))
+  a.basis_mat_inv = inv(basis_mat(a, Val{false}))
   return nothing
 end
 
@@ -224,7 +229,7 @@ function show(io::IO, a::NfRelOrdIdl)
   print(io, "Ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis pseudo-matrix\n")
-  print(io, basis_pmat(a))
+  print(io, basis_pmat(a, Val{false}))
 end
 
 ################################################################################
@@ -285,7 +290,7 @@ doc"""
 """
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) != order(b) && return false
-  return basis_pmat(a) == basis_pmat(b)
+  return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
 end
 
 ################################################################################
@@ -298,8 +303,8 @@ function assure_has_norm(a::NfRelOrdIdl)
   if a.has_norm
     return nothing
   end
-  c = basis_pmat(a).coeffs
-  d = basis_pmat(order(a)).coeffs
+  c = basis_pmat(a, Val{false}).coeffs
+  d = basis_pmat(order(a), Val{false}).coeffs
   n = c[1]*inv(d[1])
   for i = 2:degree(order(a))
     n *= c[i]*inv(d[i])
@@ -499,10 +504,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(M2, fill(p, d))
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
-  N = PM.matrix*basis_mat_int
-  PN = PseudoMatrix(N, PM.coeffs)
-  PN = pseudo_hnf(PN, :lowerleft)
-  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PN)
+  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
 end
 
 ################################################################################
@@ -515,10 +517,10 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
-  S = basis_mat_inv(a, Val{false})*basis_mat(O, Val{false})
-  M = representation_mat(pb[1][1])*S
+  S = basis_mat_inv(O, Val{false})*basis_mat_inv(a, Val{false})
+  M = basis_mat(O, Val{false})*representation_mat(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, representation_mat(pb[i][1])*S)
+    M = hcat(M, basis_mat(O, Val{false})*representation_mat(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{NfOrdFracIdl}(d^2)
@@ -528,8 +530,10 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = sub(pseudo_hnf(PM), 1:d, 1:d)
-  N = basis_mat(O, Val{false})*inv(transpose(PM.matrix))
+  PM = try sub(pseudo_hnf(PM), 1:d, 1:d)
+    catch sub(pseudo_hnf_kb(PM), 1:d, 1:d)
+    end
+  N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   return NfRelOrd{nf_elem, NfOrdFracIdl}(nf(O), PN)
 end

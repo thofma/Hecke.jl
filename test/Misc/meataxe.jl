@@ -70,12 +70,19 @@
   @testset "Submodules" begin
   
     F, a = Nemo.FiniteField(3, 1, "a")
-    Q=MatrixSpace(F,0,0)()
-    G=[eye(Q,3)]
-    M=FqGModule(G)
+    A=MatrixSpace(F,3,3)(1)
+    M=FqGModule([A])
     ls=minimal_submodules(M)
     @test length(ls)==13
     
+    F, a = Nemo.FiniteField(2, 1, "a")
+    A=MatrixSpace(F,6,6)(1)
+    A[5,6]=1
+    M=FqGModule([A])
+    ls=minimal_submodules(M)
+    @test length(ls)==31
+    ls=submodules(M,4)
+    @test length(ls)==171
   
   end
   

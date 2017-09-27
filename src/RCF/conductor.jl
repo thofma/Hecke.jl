@@ -46,12 +46,10 @@ function conductor(C::Hecke.ClassField)
   end
   S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
-  W,mW=snf(T)
-  mapinv=inv(mR*mT*mW)
-  Sgens=[]
-  if ngens(W)!=0
-    Sgens=find_gens(mapinv,Hecke.PrimesSet(2,-1),cond.gen_one)[1]
-  end
+
+
+  Sgens=find_gens_sub(mR,mT)
+
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
   #
@@ -159,6 +157,50 @@ function conductor(C::Hecke.ClassField)
   
 end 
 
+#
+#  Find small primes generating a subgroup of the ray class group
+#
+
+function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
+
+  O = order(codomain(mR))
+  R = domain(mR) 
+  T = domain(mT)
+  m = Hecke._modulus(mR)
+  lp = []
+  sR = GrpAbFinGenElem[]
+  S=Hecke.PrimesSet(2,-1)
+  
+  st = start(S)
+  q, mq = quo(T, sR)
+  while true
+    p, st = next(S, st)
+    if m.gen_one % p == 0
+      continue
+    end
+    lP = prime_decomposition(O, p)
+
+    f=R[1]
+    for (P,e) in lP
+      f= mR\P
+      bool, pre=haspreimage(mT,f)
+      if !bool
+        continue
+      end
+      if iszero(mq(pre))
+        continue
+      end
+      push!(sR, pre)
+      push!(lp, P)
+      q, mq = quo(T, sR)
+    end
+    if order(q) == 1   
+      break
+    end
+  end
+
+  return lp
+end
 
 doc"""
 ***
@@ -201,12 +243,9 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   end
   S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
-  W,mW=snf(T)
-  mapinv=inv(mR*mT*mW)
-  Sgens=[]
-  if ngens(W)!=0
-    Sgens=find_gens(mapinv,Hecke.PrimesSet(2,-1),m.gen_one)[1]
-  end
+
+  Sgens=find_gens_sub(mR,mT)
+
   
   
   L=factor(cond)
@@ -559,12 +598,9 @@ function conductor_min(C::Hecke.ClassField)
   end
   S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
   T,mT=Hecke.kernel(S1)
-  W,mW=snf(T)
-  mapinv=inv(mR*mT*mW)
-  Sgens=[]
-  if ngens(W)!=0
-    Sgens=find_gens(mapinv,Hecke.PrimesSet(2,-1),cond.gen_one)[1]
-  end
+
+  Sgens=find_gens_sub(mR,mT)
+
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
   #
