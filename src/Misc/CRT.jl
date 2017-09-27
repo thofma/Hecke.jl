@@ -521,7 +521,7 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   fp = me.Fpx(K.pol)
   lp = factor(fp)
   if Set(values(lp.fac)) != Set([1])
-    error("bad prime")
+    throw(BadPrime(p))
   end
   pols = collect(keys(lp.fac))
   if deg_limit > 0
