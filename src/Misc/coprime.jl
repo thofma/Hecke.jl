@@ -1,14 +1,6 @@
 import Nemo.isone, Nemo.divexact, Base.copy
 export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
-function isone(a::Integer)
-  return a==1
-end
-
-function divexact(a::T, b::T) where T <: Integer
-  return div(a, b)::T
-end
-
 function divexact!(a::fmpz, b::fmpz)
   ccall((:fmpz_divexact, :libflint), Void, 
           (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &a, &b)
@@ -113,10 +105,6 @@ function my_prod(a::AbstractArray{T, 1}) where T
     prod_mul!(b, x)
   end
   return prod_end(b)
-end
-
-function isunit(a::Integer)
-  return a == 1 || a == -1
 end
 
 #coprime base Bach/ Schallit/ ???
