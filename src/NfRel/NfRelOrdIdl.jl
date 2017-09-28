@@ -502,7 +502,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   end
   M2 = eye(M1)
   PM1 = PseudoMatrix(M1)
-  PM2 = PseudoMatrix(M2, fill(p, d))
+  PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
   return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
 end

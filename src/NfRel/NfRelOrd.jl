@@ -498,17 +498,111 @@ end
 
 ################################################################################
 #
+#  Dedekind criterion
+#
+################################################################################
+
+function nf_elem_poly_to_fq_nmod_poly(R::FqNmodPolyRing, m::NfToFqNmodMor, f::Generic.Poly{nf_elem})
+  @assert codomain(m) == base_ring(R)
+  @assert domain(m) == base_ring(parent(f))
+
+  g = zero(R)
+  for i = 0:degree(f)
+    setcoeff!(g, i, m(coeff(f, i)))
+  end
+  return g
+end
+
+function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::NfToFqNmodMor, f::fq_nmod_poly)
+  @assert domain(m) == base_ring(R)
+  @assert codomain(m) == base_ring(parent(f))
+
+  g = zero(R)
+  iM = inv(m)
+  for i = 0:degree(f)
+    setcoeff!(g, i, iM(coeff(f, i)))
+  end
+  return g
+end
+
+function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = Val{true}) where S
+  !isequation_order(O) && error("Order must be an equation order")
+
+  L = nf(O)
+  K = base_ring(L)
+  T = L.pol
+  Kx = parent(T)
+  OK = maximal_order(K)
+  F, mF = ResidueField(OK, p)
+  mmF = extend(mF, K)
+  Fy, y = F["y"]
+
+  Tmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, T)
+  fac = factor(Tmodp)
+  g = Kx(1)
+  for (t, e) in fac
+    mul!(g, g, fq_nmod_poly_to_nf_elem_poly(Kx, mmF, t))
+  end
+  gmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, g)
+  hmodp = divexact(Tmodp, gmodp)
+  h = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, hmodp)
+  a = anti_uniformizer(p)
+  f = a*(g*h - T)
+  fmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, f)
+
+  d = gcd(fmodp, gcd(gmodp, hmodp))
+
+  if compute_order == Val{false}
+    return isone(d)
+  else
+    if isone(d)
+      return true, O
+    end
+
+    Umodp = divexact(Tmodp, d)
+    U = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, Umodp)
+    PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
+    PN = vcat(basis_pmat(O), PM)
+    PN = try sub(pseudo_hnf(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+    catch sub(pseudo_hnf_kb(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+    end
+    OO = Order(L, PN)
+    OO.isequation_order = false
+    return false, OO
+  end
+end
+
+dedekind_ispmaximal(O::NfRelOrd, p::NfOrdIdl) = dedekind_test(O, p, Val{false})
+
+dedekind_poverorder(O::NfRelOrd, p::NfOrdIdl) = dedekind_test(O, p)[2]
+
+################################################################################
+#
+#  p-overorder
+#
+################################################################################
+
+function poverorder(O::NfRelOrd, p::NfOrdIdl)
+  if isequation_order(O)
+    return dedekind_poverorder(O, p)
+  else
+    return ring_of_multipliers(pradical(O, p))
+  end
+end
+
+################################################################################
+#
 #  p-maximal overorder
 #
 ################################################################################
 
 function pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl)
   d = discriminant(O)
-  OO = ring_of_multipliers(pradical(O, p))
+  OO = poverorder(O, p)
   dd = discriminant(OO)
   while d != dd
     d = dd
-    OO = ring_of_multipliers(pradical(OO, p))
+    OO = poverorder(OO, p)
     dd = discriminant(OO)
   end
   return OO
@@ -535,7 +629,7 @@ end
 ################################################################################
 
 function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
-  @assert parent(a) != parent(b)
+  @assert nf(a) == nf(b)
   aB = basis_pmat(a)
   bB = basis_pmat(b)
   d = degree(a)
