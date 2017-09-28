@@ -628,9 +628,10 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
     end 
   end 
   
+  auxmat=mS.imap*ms.map
   for j=1:length(list1)
     W=MatrixSpace(R,rows(list1[j]), ngens(S1.V))
-    list1[j]=W(lift(list1[j])*mS.imap*ms.map)
+    list1[j]=W(lift(list1[j])*auxmat)
   end
   #
   #  I create the group to check if the candidates are isomorphic to it

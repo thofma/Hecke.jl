@@ -1046,7 +1046,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
         #
         #  Recursively ask for submodules and write their bases in terms of the given set of generators
         #
-        ls=submodules(N,index) #,comp_factors=lf1)
+        ls=submodules(N,index, comp_factors=lf1)
         for a in ls
           s=MatrixSpace(K,rows(a)+rows(x), M.dim)()
           for t=1:rows(a)
