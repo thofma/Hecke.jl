@@ -386,7 +386,6 @@ function basis(K::NfRel_ns)
   return b
 end
 
-#TODO: a sparse version
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   K = parent(a)
   C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol))
@@ -407,7 +406,7 @@ function monomial_to_index(i::Int, a::NfRel_nsElem)
   n = ngens(K)
   idx = a.data.exps[n, i]
   for j=n-1:-1:1
-    idx *= total_degree(K.pol[j+1])
+    idx *= total_degree(K.pol[j])
     idx += a.data.exps[j, i]
   end
   return idx+1
@@ -424,8 +423,20 @@ function SRow(a::NfRel_nsElem)
   sr.values = sr.values[p]
   return sr
 end
+
+function SRow(a::NfRelElem)
+  sr = SRow(base_ring(parent(a)))
+  for i=0:length(a.data)
+    c = coeff(a.data, i)
+    if !iszero(c)
+      push!(sr.pos, i+1)
+      push!(sr.values, c)
+    end  
+  end
+  return sr
+end
   
-function minpoly(a::NfRel_nsElem)
+function minpoly_dense(a::NfRel_nsElem)
   K = parent(a)
   n = degree(K)
   k = base_ring(K)
@@ -446,6 +457,57 @@ function minpoly(a::NfRel_nsElem)
     elem_to_mat_row!(M, i+1, z)
     i += 1
   end
+end
+
+function Base.Matrix(a::SMat)
+  A = MatrixSpace(base_ring(a), rows(a), cols(a))()
+  for i = 1:rows(a)
+    for (k, c) = a[i]
+      A[i, k] = c
+    end
+  end
+  return A
+end  
+
+function minpoly_sparse(a::NfRel_nsElem)
+  K = parent(a)
+  n = degree(K)
+  k = base_ring(K)
+  M = SMat(k)
+  z = a^0
+  sz = SRow(z)
+  i = 0
+  push!(sz.values, k(1))
+  push!(sz.pos, n+i+1)
+  push!(M, sz)
+  z *= a
+  sz = SRow(z)
+  i = 1
+  while true
+    if n % i == 0
+      echelon!(M)
+      fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
+      if fl
+        so = mul(so, sub(M, 1:i, n+1:cols(M)))
+        kt, t = k["t"]
+        f = t^i - sum(c*t^(k-1) for (k,c) = so)
+        return f
+      end
+    end  
+    push!(sz.values, k(1))
+    push!(sz.pos, n+i+1)
+    push!(M, sz)
+    z *= a
+    sz = SRow(z)
+    i += 1
+    if i > degree(parent(a))
+      error("too large")
+    end
+  end
+end
+
+function minpoly(a::NfRel_nsElem)
+  return minpoly_sparse(a)
 end
 
 function inv(a::NfRel_nsElem)
