@@ -425,12 +425,6 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
   #println("solving\n $A \n = $B * X")
   r, per, L, U = lufact(B) # P*M1 = L*U
 
-  if oldNemo
-    for i in 1:length(per.d)
-      per.d[i] += 1
-    end
-  end
-
   @assert B == per*L*U
   Ap = inv(per)*A
   Y = parent(A)()
