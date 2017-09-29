@@ -1,4 +1,4 @@
-function solve(A::SMat{UIntMod}, g::SRow{UIntMod})
+function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, UIntMod}
   @hassert :HNF 1  cols(A) == rows(A)
   @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
@@ -20,15 +20,29 @@ function solve(A::SMat{UIntMod}, g::SRow{UIntMod})
     p = g.values[1]//A.rows[j].values[1]
     push!(sol.pos, j)
     push!(sol.values, p)
-    g = Hecke.add_scaled_row(A[j], g, -p)
+    _g = Hecke.add_scaled_row(A[j], g, -p)
+    @assert _g != g
+    g = _g
     @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
   end
+  if length(g) == 0
+    return true, sol
+  else
+    return false, sol
+  end
+
   if length(g) > 0
     li = inv(g.values[1])
     for i=1:length(g)
       g.values[i] *= li
     end
   end
+  return sol
+end
+
+function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, UIntMod}
+  fl, sol = cansolve_ut(A, g)
+  @assert fl
   return sol
 end
 
@@ -256,7 +270,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
 
     while true
       bp = mul(bp, Tp)
-      zp = solve(Ep, bp)
+      zp = solve_ut(Ep, bp)
       z = lift(zp)
 
       sol += pp*z
@@ -307,4 +321,55 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   return sol_all, den_all
 end
 
+function echelon!(S::SMat{T}) where T <: FieldElem
+  i = 1
+  while i <= rows(S)
+    m = cols(S)+1
+    mp = 0
+    for j=i:rows(S)
+      if m > S[j].pos[1]
+        m = S[j].pos[1]
+        mp = j
+      end  
+    end  
+    if mp == 0
+      return
+    end
+    if mp != i
+      swap_rows!(S, i, mp)
+    end
+    Si = -inv(S[i].values[1])
+    j = i+1
+    while j <= rows(S)
+      if S[j].pos[1] == m
+        add_scaled_row!(S, i, j, S[j].values[1]*Si)
+        if length(S[j].values) == 0
+          deleteat!(S.rows, j)
+        else
+          j += 1
+        end  
+      else
+        j += 1
+      end
+    end
+    i += 1  
+  end  
+end
+
+function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+  fl, sol = cansolve(a, b)
+  @assert fl
+  return sol
+end
+
+function Nemo.cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+  c = hcat(a, id(SMat, base_ring(a), a.r))
+  echelon!(c)
+  fl, sol = cansolve_ut(sub(c, 1:rows(c), 1:a.c), b)
+  if fl
+    return fl, mul(sol, sub(c, 1:rows(c), a.c+1:c.c))
+  else
+    return fl, sol
+  end  
+end
 
