@@ -163,7 +163,7 @@ end
 
 ######################################################################
 #mR: SetIdl -> GrpAb (inv of ray_class_group or Frobenius or so)
-#TODO: remove gens that are redundant.
+#
 function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   ZK = order(domain(mR))
 
@@ -1014,29 +1014,39 @@ function rel_auto(A::ClassField_pp)
   @assert isdefined(A, :A)
   #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
   #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
-  M = MatrixSpace(base_ring(A.K), degree(A), degree(A.K))()
+  M = SMat(base_ring(A.K))
   b = A.K(1)
-  elem_to_mat_row!(M, 1, b)
+  push!(M, SRow(b))
   for i=2:degree(A)
     b *= A.pe
-    elem_to_mat_row!(M, i, b)
+    push!(M, SRow(b))
   end
   tau = NfRelToNfRelMor(A.K, A.K, A.bigK.zeta*gen(A.K))
-  N = MatrixSpace(base_ring(A.K), 1, degree(A.K))()
-  elem_to_mat_row!(N, 1, tau(A.pe))
+  N = SRow(tau(A.pe))
   C = cyclotomic_extension(base_field(A), degree(A))
   Mk = _expand(M, C.mp[1])
   Nk = _expand(N, C.mp[1])
-  s = solve(Mk', Nk') # will not work, matrix non-square...
+  s = solve(Mk, Nk) # will not work, matrix non-square...
   im = A.A()
   C = cyclotomic_extension(base_field(A), degree(A))
-  for i=1:degree(A)
-    c = C.mp[1]\s[i,1]
+  for (i, v) = s
+    c = C.mp[1]\v
     @assert degree(c.data) == 0
     setcoeff!(im, i-1, coeff(c, 0))
   end
 
   return NfRelToNfRelMor(A.A, A.A, im)
+end
+
+function rel_auto(A::ClassField)
+  aut = [rel_auto(x) for x = A.cyc]
+  K = number_field(A)
+  g = gens(K)
+  Aut = []
+  for i=1:length(aut)
+    push!(Aut, NfRel_nsToNfRel_nsMor(K, K, [j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)]))
+  end
+  return Aut
 end
 
 function extend_aut(A::ClassField, tau::T) where T <: Map
@@ -1210,9 +1220,11 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       end
     end
 #TODO: sparse matrices - we're lacking solve here...
-    M = MatrixSpace(Ka, d, degree(KK))()
+#    M = MatrixSpace(Ka, d, degree(KK))()
+    M = SMat(Ka)
     for i=1:d
-      elem_to_mat_row!(M, i, B[i])
+      push!(M, SRow(B[i]))
+#      elem_to_mat_row!(M, i, B[i])
     end
     AA, gAA = number_field([c.A.pol for c = Cp])
     @assert d == degree(AA)
@@ -1279,7 +1291,34 @@ function _expand(M::Generic.Mat{nf_elem}, mp::Map)
   return N
 end
 
+function _expand(M::SRow{nf_elem}, mp::Map)
+  Kr = domain(mp)
+  k = base_ring(Kr)
+  d = degree(Kr)
+  sr = SRow(k)
+  for (j, v) = M
+    a = mp\v
+    for l=0:d-1
+      c = coeff(a, l)
+      if !iszero(c)
+        push!(sr.pos, (j-1)*d+1+l+1)
+        push!(sr.values, c)
+      end
+    end
+  end
+  return sr
+end
 
+function _expand(M::SMat{nf_elem}, mp::Map)
+  Kr = domain(mp)
+  k = base_ring(Kr)
+  N = SMat(k)
+  for i=1:rows(M)
+    sr = _expand(M[i], mp)
+    push!(N, sr)
+  end
+  return N
+end
 
 doc"""
   base_ring(A::ClassField)
