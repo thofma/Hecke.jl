@@ -101,8 +101,8 @@
     # For testing don't use the global lattice
     L = Hecke.GrpAbLattice()
     G = DiagonalGroup([3,3,4,5])
-    H, mH = sub(G, [G[1]], L, true)
-    Q, mQ = quo(G, [G[2]], L, true)
+    H, mH = sub(G, [G[1]], true, L)
+    Q, mQ = quo(G, [G[2]], true, L)
 
     b, M = @inferred Hecke.can_map_into(L, H, G)
     @test b
@@ -119,7 +119,7 @@
     b, M = @inferred Hecke.can_map_into(L, Q, H)
     @test !b
     
-    HH, mHH = sub(G, [G[2]], L, true)
+    HH, mHH = sub(G, [G[2]], true, L)
     b, GG, MH, MHH = @inferred Hecke.can_map_into_overstructure(L, H, HH)
     @test b
     @test GG == G
@@ -128,14 +128,14 @@
     @test_throws ErrorException H[1] + HH[1]
     @test +(H[1], HH[1], L) == G[1] + G[2]
 
-    HHH, mHHH = sub(H, [H[1]], L, true)
+    HHH, mHHH = sub(H, [H[1]], true, L)
     b, GG, MHHH, MHH = @inferred Hecke.can_map_into_overstructure(L, HHH, HH)
     @test b
     @test GG == G
     @test_throws ErrorException HHH[1] + HH[1]
     @test +(HHH[1], HH[1], L) == G[1] + G[2]
 
-    Q2, mQ2 = quo(G, [G[1]], L, true)
+    Q2, mQ2 = quo(G, [G[1]], true, L)
     b, GG, MHHH, MHH = @inferred Hecke.can_map_into_overstructure(L, Q, Q2)
     @test !b
   end
