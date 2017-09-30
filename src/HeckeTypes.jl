@@ -1530,6 +1530,7 @@ mutable struct GrpAbFinGen <: GrpAb
   issnf::Bool
   snf::Array{fmpz, 1}
   snf_map::Map{GrpAbFinGen, GrpAbFinGen}
+  isfinalized::Bool
 
   function GrpAbFinGen(R::fmpz_mat, ishnf::Bool = false)
     r = new()
@@ -1538,6 +1539,7 @@ mutable struct GrpAbFinGen <: GrpAb
     if ishnf
       r.hnf = R
     end
+    r.isfinalized = false
     return r
   end
   
@@ -1545,6 +1547,7 @@ mutable struct GrpAbFinGen <: GrpAb
     r = new()
     r.issnf = issnf
     r.snf = R
+    r.isfinalized = false
     return r
   end
   
@@ -1552,6 +1555,7 @@ mutable struct GrpAbFinGen <: GrpAb
     r = new()
     r.issnf = issnf
     r.snf = map(fmpz, R)
+    r.isfinalized = false
     return r
   end
 
@@ -1711,3 +1715,38 @@ mutable struct FqGModule <: GModule
     return z
   end
 end
+
+mutable struct Graph{T, M}
+  edges::Dict{T, Dict{T, M}}
+  degrees::Dict{T, Int}
+  new_low_degrees::Dict{T, Void}
+
+  function Graph{T, M}() where {T, M}
+    z = new{T, M}()
+    z.edges = Dict{T, Dict{T, M}}()
+    z.degrees = Dict{T, Int}()
+    z.new_low_degrees = Dict{T, Void}()
+    return z
+  end
+end
+
+
+mutable struct GrpAbLattice
+  weak_vertices::WeakKeyDict{GrpAbFinGen, Void}
+  graph::Graph{UInt, fmpz_mat}
+  block_gc::Dict{GrpAbFinGen, Void}
+  weak_vertices_rev::Dict{UInt, WeakRef}
+  to_delete::Array{UInt, 1}
+
+  function GrpAbLattice()
+    z = new()
+    z.weak_vertices = WeakKeyDict{GrpAbFinGen, Void}()
+    z.graph = Graph{UInt, fmpz_mat}()
+    z.weak_vertices_rev = Dict{UInt, WeakRef}()
+    z.to_delete = Array{UInt, 1}()
+    z.block_gc = Dict{GrpAbFinGen, Void}()
+    return z
+  end
+end
+
+const GroupLattice = GrpAbLattice()

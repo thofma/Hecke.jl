@@ -3,6 +3,5 @@
   include("GrpAb/Elem.jl")
   include("GrpAb/SubgroupEnum.jl")
   include("GrpAb/Map.jl")
+  include("GrpAb/Lattice.jl")
 end
-
-#Base.Test.print_test_results(r, 3) 

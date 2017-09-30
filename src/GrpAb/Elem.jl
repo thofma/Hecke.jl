@@ -170,26 +170,26 @@ doc"""
 
 > Returns $x + y$.
 """
-function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
+function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattice)
   if x.parent === y.parent
     n = GrpAbFinGenElem(x.parent, x.coeff + y.coeff)
     return n
   end
 
-  #b, m = can_map_into(GroupLattice, x.parent, y.parent)
-  #if b
-  #  return GrapAbFinGenElem(y.parent, x.coeff*m) + y
-  #end
+  b, m = can_map_into(L, x.parent, y.parent)
+  if b
+    return GrpAbFinGenElem(y.parent, x.coeff*m) + y
+  end
 
-  #b, m = can_map_into(GroupLattice, y.parent, x.parent)
-  #if b
-  #  return x + GrpAbFinGenElem(x.parent, y.coeff*m)
-  #end
+  b, m = can_map_into(L, y.parent, x.parent)
+  if b
+    return x + GrpAbFinGenElem(x.parent, y.coeff*m)
+  end
 
-  #b, G, m1, m2 = can_map_into_overstructure(GroupLattice, x.parent, y.parent)
-  #if b
-  #  return GrpAbFinGenElem(G, x.coeff * m1 + y.coeff * m2)
-  #end
+  b, G, m1, m2 = can_map_into_overstructure(L, x.parent, y.parent)
+  if b
+    return GrpAbFinGenElem(G, x.coeff * m1 + y.coeff * m2)
+  end
 
   error("Cannot coerce elements into common structure")
 end
@@ -198,7 +198,7 @@ doc"""
 ***
     -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
-> Returns  $x - y$.
+> Returns $x - y$.
 """
 function -(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
   x.parent == y.parent || error("Elements must belong to the same group")
