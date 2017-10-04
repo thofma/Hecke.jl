@@ -64,10 +64,11 @@ end
 
 function _exp(a::fmpz_mod_abs_series)
   R = base_ring(parent(a))
+  R = ResidueRing(FlintZZ, Int(modulus(R)))
   Rx,x = PolynomialRing(R)
   A = Rx()
   for i=0:length(a)
-    setcoeff!(A, i, coeff(a, i))
+    setcoeff!(A, i, lift(coeff(a, i)))
   end
   E = Rx()
   ccall((:nmod_poly_exp_series, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}, Int64), &E, &A, length(a))
