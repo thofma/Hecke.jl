@@ -216,38 +216,52 @@ doc"""
 > Note that in this case it may happen that $p\mathcal O$ is not the product of the
 > $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfOrd, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
-  if mod(fmpz(index(O)),p) == 0
+function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+  if typeof(p) == fmpz && nbits(p) < 64
+    return prime_decomposition(O, Int(p), degree_limit, lower_limit)
+  end
+
+  if mod(index(O),fmpz(p)) == 0
     return prime_dec_index(O, p, degree_limit, lower_limit)
   end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
 
-function prime_dec_nonindex(O::NfOrd, p::Integer, degree_limit::Int = 0, lower_limit::Int = 0)
+function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
+  Zx = parent(f)
+  Zmodpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "y", cached = false)[1]
+  fmodp = Zmodpx(f)
+  fac = factor(fmodp)
+  lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
+  for (k, v) in fac
+    if degree(k) <= degree_limit && degree(k) >= lower_limit
+      push!(lifted_fac, (lift(Zx, k), v))
+    end
+  end
+  return lifted_fac
+end
+
+function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
   K = nf(O)
   f = K.pol
   I = IdealSet(O)
   R = parent(f)
   Zx, x = PolynomialRing(FlintIntegerRing(),"x")
   Zf = Zx(f)
-  Zmodpx = PolynomialRing(ResidueRing(FlintIntegerRing(), p, cached=false), "y", cached=false)[1]
-  fmodp = Zmodpx(Zf)
-  fac = factor(fmodp)
-  _fac = Dict{typeof(fmodp), Int}()
+
   if degree_limit == 0
     degree_limit = degree(K)
   end
-  for (k,v) in fac
-    if degree(k) <= degree_limit && degree(k) >= lower_limit
-      _fac[k] = v
-    end
-  end
-  fac = _fac
+
+  fac = _fac_and_lift(Zf, p, degree_limit, lower_limit)
+
   result = Array{Tuple{typeof(I()),Int}}(length(fac))
-  k = 1
-  for (fi, ei) in fac
-    ideal = ideal_from_poly(O, p, fi, ei)
-    t = parent(f)(lift(Zx,fi))
+
+  for k in 1:length(fac)
+    fi = fac[k][1]
+    ei = fac[k][2]
+    #ideal = ideal_from_poly(O, p, fi, ei)
+    t = parent(f)(fi)
     b = K(t)
     ideal = I()
     ideal.gen_one = p
@@ -290,14 +304,20 @@ function prime_dec_nonindex(O::NfOrd, p::Integer, degree_limit::Int = 0, lower_l
   return result
 end
 
-function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
   if degree_limit == 0
     degree_limit = degree(O)
   end
 
   if haskey(O.index_div, fmpz(p))
     lp = O.index_div[fmpz(p)]
-    return [(p, e) for (p,e) = lp if degree(p) <= degree_limit]
+    z = Tuple{NfOrdIdl, Int}[]
+    for (Q, e) in lp
+      if degree(Q) <= degree_limit
+        push!(z, (Q, e))
+      end
+    end
+    return z
   end
 
   # Firstly compute the p-radical of O
@@ -327,7 +347,7 @@ function prime_dec_index(O::NfOrd, p::Int, degree_limit::Int = 0, lower_limit::I
     end
 
     # The following does not work if there is only one prime ideal
-    if length(AA) > 1 && (1-1/p)^degree(O) < 0.1
+    if length(AA) > 1 && (1-1/BigInt(p))^degree(O) < 0.1
       # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
       # number theory".
 
@@ -407,6 +427,7 @@ function uniformizer(P::NfOrdIdl)
       end
     end
   end
+  return z
 end
 
 # Belabas p. 40
@@ -663,28 +684,27 @@ end
 #
 ################################################################################
 
-mutable struct quoringalg <: Ring
+mutable struct quoringalg{T} <: Ring
   base_order::NfOrd
   ideal::NfOrdIdl
-  prime::Int
+  prime::T
   basis::Array{NfOrdElem, 1}
 
-  function quoringalg(O::NfOrd, I::NfOrdIdl, p::Int)
-    z = new()
+  function quoringalg(O::NfOrd, I::NfOrdIdl, p::T) where {T}
+    z = new{T}()
     z.base_order = O
     z.ideal = I
     z.prime = p
 
     # compute a basis
-    Rp = ResidueRing(FlintZZ, UInt(p))
+    Rp = ResidueRing(FlintZZ, p)
     Amodp = MatrixSpace(Rp, degree(O), degree(O))(basis_mat(I))
     Amodp = vcat(Amodp, MatrixSpace(Rp, 1, degree(O))())
     Amodp[1,1] = 1
     Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
 
     # I think rref can/should also return the rank
-    B = rref(Amodp)
-    r = rank(B)
+    r, B = _rref(Amodp)
     C = zero(MatrixSpace(Rp, degree(O)-r, degree(O)))
     BB = Array{NfOrdElem}(degree(O) - r)
     pivots = Array{Int}(0)
@@ -734,11 +754,18 @@ function _kernel_of_frobenius(R::quoringalg)
   O = R.base_order
   BB = R.basis
   p = R.prime
-  Rp = ResidueRing(FlintZZ, UInt(R.prime))
+  Rp = ResidueRing(FlintZZ, R.prime)
   C = zero(MatrixSpace(Rp, length(BB)+1, degree(O)))
   D = zero(MatrixSpace(Rp, length(BB), degree(O)))
+
+  Q, mQ = quo(O, R.ideal)
+
+  function g(x)
+    return mQ\(mQ(x)^p)
+  end
+
   for i in 1:length(BB)
-    A = elem_in_basis(mod(BB[i]^p - BB[i], R.ideal))
+    A = elem_in_basis(mod(g(BB[i]) - BB[i], R.ideal))
     for j in 1:degree(O)
       D[i,j] = A[j]
     end
@@ -768,6 +795,12 @@ function ^(x::quoelem, y::Int)
   return quoelem(x.parent, z)
 end
 
+function ^(x::quoelem, y::Union{Integer, fmpz})
+  # Do something stupid
+  R, m = quo(x.parent.base_order, x.parent.ideal)
+  return quoelem(x.parent, (m\(m(x.elem)^y)))
+end
+
 function ==(x::quoelem, y::quoelem)
   z = mod(x.elem - y.elem, x.parent.ideal)
   return zero(parent(z)) == z
@@ -777,19 +810,19 @@ function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
 
-  Rp = ResidueRing(FlintZZ, UInt(p))
+  Rp = ResidueRing(FlintZZ, p)
   A = MatrixSpace(Rp, 0, degree(O))()
   B = MatrixSpace(Rp, 1, degree(O))()
 
   for i in 0:degree(O)
-    ar =  elem_in_basis( (x^i).elem)
+    ar = elem_in_basis((x^i).elem)
     for j in 1:degree(O)
       B[1, j] = ar[j]
     end
     A = vcat(A, B)
     K = kernel(A)
-    if length(K)>0
-      @assert length(K)==1
+    if length(K) > 0
+      @assert length(K) == 1
       f = PolynomialRing(Rp, "x")[1](K[1])
       return f
     end
@@ -830,7 +863,6 @@ function split(R::quoringalg)
     end
 
     f = minpoly(x)
-
 
     if degree(f) < 2
       continue

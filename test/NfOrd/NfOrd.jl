@@ -320,4 +320,16 @@
     @test_throws ErrorException O4 + O4
     @test_throws ErrorException O6_2 + O6_2
   end
+
+  @testset "Maximal Order" begin
+    KK, _a = number_field(x^18 - 78*x^17 + 2613*x^16 - 49085*x^15 + 567645*x^14
+                          - 4204473*x^13 + 20464879*x^12 - 68501589*x^11 +
+                          169973505*x^10 - 322856306*x^9 + 493384242*x^8 -
+                          631138365*x^7 + 698201471*x^6 - 646804899*x^5 +
+                          437728161*x^4 - 236413590*x^3 + 186076059*x^2 -
+                          128459175*x + 34393321)
+
+    O_KK = maximal_order(KK)
+    @test discriminant(O_KK) == -82506874955368517242637353371059355648
+  end
 end

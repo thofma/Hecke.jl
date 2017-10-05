@@ -521,21 +521,87 @@ end
 # compute basis for the left kernel space
 # output is array of arrays, which span the kernel
 
-function kernel(a::nmod_mat)
+function kernel(a)
   x = transpose(a)
-  z,n = _right_kernel(x)
+  z, n = _right_kernel(x)
   z = transpose(z)
-  #println(z)
-  ar = typeof(Array{Nemo.nmod}(cols(z)))[]
+  T = elem_type(base_ring(a))
+  ar = typeof(Array{T}(cols(z)))[]
   for i in 1:n 
-    t = Array{Nemo.nmod}(cols(z))
+    t = Array{T}(cols(z))
     for j in 1:cols(z)
-      t[j] = z[i,j]
+      t[j] = z[i, j]
     end
     push!(ar,t)
   end
-  #println(ar)
   return ar
+end
+
+function lift(a::Generic.Mat{Generic.Res{fmpz}})
+  z = MatrixSpace(FlintZZ, rows(a), cols(a))()
+  for i in 1:rows(a)
+    for j in 1:cols(a)
+      z[i, j] = lift(a[i, j])
+    end
+  end
+  return z
+end
+
+function _rref(a::Generic.Mat{Generic.Res{fmpz}})
+  m = modulus(base_ring(a))
+  b = MatrixSpace(FlintZZ, rows(a), cols(a))()
+  # I actually don't know if this is necessary
+  for i in 1:rows(b)
+    for j in 1:cols(b)
+      b[i,j] = lift(a[i,j]) % m
+    end
+  end
+
+  # fmpz_mat_rref_mod assumes that input is reduced modulo m
+  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
+  return r, parent(a)(b)
+end
+
+function _rref(a::nmod_mat)
+  b = rref(a)
+  return rank(b), b
+end
+
+function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
+  r, b = _rref(a)
+  pivots = Array{Int}(r)
+  nonpivots = Array{Int}(cols(b) - r)
+  X = zero(MatrixSpace(base_ring(a),cols(b),cols(b) - r))
+
+  if r == 0
+    return one(MatrixSpace(FlintZZ, cols(b), cols(b) - r))
+  elseif !((cols(b) - r) == 0)
+    i = 1
+    j = 1
+    k = 1
+    for i in 1:r
+      while b[i,j] == 0
+        nonpivots[k] = j
+        k += 1
+        j += 1
+      end
+      pivots[i] = j
+      j += 1
+    end
+    while k <= cols(b) - r
+      nonpivots[k] = j
+      k += 1
+      j += 1
+    end
+
+    for i in 1:cols(b) - r
+      for j in 1:r
+        X[pivots[j],i] = - b[j,nonpivots[i]]
+      end
+      X[nonpivots[i],i] = 1
+    end
+  end
+  return X, cols(b) - r
 end
 
 function kernel_mod(a::fmpz_mat, m::fmpz)
