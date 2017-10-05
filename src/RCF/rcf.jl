@@ -859,7 +859,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   @vprint :ClassField 2 "reducing modulo $(n)-th powers\n"
   @vprint :ClassField 3 "starting with $a\n"
   Zk = maximal_order(parent(a))
-  val = [ div(valuation(a, x), n) for x = primes]
+  val = [ div(valuation(a, x), n) for x = primes if !isone(x)]
   if all(x->x==0, val)
     I = ideal(maximal_order(parent(a)), 1)
   else
@@ -968,6 +968,9 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
         A[D] = -v
       end
     end
+  end
+  if length(A) == 0
+    A[ideal(Zk, 1)] = 1
   end
   return factor_coprime(FacElem(A))
 end
