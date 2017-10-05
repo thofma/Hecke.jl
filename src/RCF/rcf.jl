@@ -1222,12 +1222,9 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
         append!(B, D)
       end
     end
-#TODO: sparse matrices - we're lacking solve here...
-#    M = MatrixSpace(Ka, d, degree(KK))()
     M = SMat(Ka)
     for i=1:d
       push!(M, SRow(B[i]))
-#      elem_to_mat_row!(M, i, B[i])
     end
     AA, gAA = number_field([c.A.pol for c = Cp])
     @assert d == degree(AA)
@@ -1237,20 +1234,15 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     @hassert :ClassField 2 nullspace(Mk')[1] == 0
     all_im = NfRel_nsElem{nf_elem}[]
     for j=1:length(Cp)
-      N = MatrixSpace(Ka, 1, degree(KK))()
-      elem_to_mat_row!(N, 1, all_pe[j][2])
+      N = SRow(all_pe[j][2])
       Nk = _expand(N, C.mp[1])
-      _M = vcat(Mk, Nk)
-      n = nullspace(_M')
-#      println(n)
-      im = -sum(n[2][i, 1]*b_AA[i] for i=1:d) * inv(n[2][d+1, 1])
+       n = solve(Mk, Nk)
+      im = sum(v*b_AA[i] for (i, v) = n)
       push!(all_im, im)
     end
     im = NfRel_nsElem{nf_elem}[]
     i = 1
     j = 1
-#    println("deg A: ", [degree(x) for x=A.cyc])
-#    println("deg C: ", [degree(x) for x=Cp])
     while j<=length(A.cyc)
       if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
         push!(im, gens(A.A)[j])
