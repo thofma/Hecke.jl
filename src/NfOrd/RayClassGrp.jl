@@ -1154,7 +1154,9 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   @assert issnf(U)
   if gcd(U.snf[1],n)!=1
     @vprint :RayFacElem 1 "Processing unit 1"
-    el=Hecke._fac_elem_evaluation(O,mU(U[1]),lp,expo)
+    @vprint :RayFacElem 1 "Evaluation time:"
+    @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[1]),lp,expo)
+    @vprint :RayFacElem 1 "\n"
     #
     #  This is slow. Examples show that this is the time-consuming part of the algorithm.
     #  Ideas: working over K reducing the elements mod min(prod(lp))
@@ -1169,8 +1171,10 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     end
   end
   for i=2:ngens(U)
-    @vprint :RayFacElem 1 "Processing unit", i
-    el=Hecke._fac_elem_evaluation(O,mU(U[i]),lp,expo)
+    @vprint :RayFacElem 1 "Processing unit", i, "\n"
+    @vprint :RayFacElem 1 "Evaluation time:"
+    @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[i]),lp,expo)
+    @vprint :RayFacElem 1 "\n"
     a=(mG\el).coeff
     if mod(n,2)==0 && !isempty(pr)
       b=lH(mU(U[i]))
