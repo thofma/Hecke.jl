@@ -69,7 +69,7 @@ function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdI
   for (p,vp) in primes
     q=p^vp
     y=_eval_quo(O, J, p, q, anti_uniformizer(p),exponent, vp)
-    a,b=idempotents(I,q)
+    @vtime :RayFacElem 1 a,b=idempotents(I,q)
     el=y*a+el*b
     I=I*q
   end
@@ -80,7 +80,7 @@ end
 function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::Int, mult::Int)
   
   if mult==1
-    Q,mQ=ResidueField(O,q)
+    @vtime :RayFacElem 1 Q,mQ=ResidueField(O,q)
     el=Q(1)
     for (f,k) in J.fac
       act_el=f
@@ -100,19 +100,19 @@ function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti
           continue
         end
         val=valuation(d,p)
-        d=d*anti_uni^(val)
-        n=n*anti_uni^(val)
+        l=anti_uni^(val)
+        d=d*l
+        n=n*l
         el=el* mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
       end
     end
     return mQ\el
   else
-    Q,mQ=quo(O,q)
-    Q1,mQ1=ResidueField(O,p)
+    @vtime :RayFacElem 1 Q,mQ=quo(O,q)
     el=Q(1)
     for (f,k) in J.fac
       act_el=f
-      if act_el in O && mQ1(O(act_el))!=0
+      if act_el in O && mod(O(act_el), p)!=0
         el*=mQ(O(act_el))^mod(k,exponent)
         continue
       end
@@ -123,13 +123,14 @@ function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti
       else 
         d=den(act_el,O)
         n=act_el*d
-        if mQ1(O(d))!=0
+        if mod(O(d),p)!=0
           el*=mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
           continue
         end
         val=valuation(d,p)
-        d=d*anti_uni^(val)
-        n=n*anti_uni^(val)
+        l=anti_uni^(val)
+        d=d*l
+        n=n*l
         el*= Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
       end
     end
@@ -1171,7 +1172,8 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     end
   end
   for i=2:ngens(U)
-    @vprint :RayFacElem 1 "Processing unit", i, "\n"
+    @vprint :RayFacElem 1 "Processing unit" i
+    @vprint :RayFacElem 1 "\n"
     @vprint :RayFacElem 1 "Evaluation time:"
     @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[i]),lp,expo)
     @vprint :RayFacElem 1 "\n"
