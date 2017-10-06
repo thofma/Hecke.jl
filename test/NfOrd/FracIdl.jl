@@ -69,4 +69,17 @@
 
     @test basis_mat(N) == Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 2], fmpz(1))
   end
+
+  @testset "Denominator" begin
+    # This was once a bug found by Johannes
+    @testset begin
+      R, x = PolynomialRing(FlintQQ, "x")
+      K, a = NumberField(x, "a")
+      O = maximal_order(K)
+      I = Hecke.NfOrdFracIdl(ideal(O, O(2)), fmpz(2))
+      @test den(I) == fmpz(2)
+      basis_mat(I)
+      @test den(I) == fmpz(2)
+    end
+  end
 end

@@ -68,6 +68,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
     function _preimage(x::fq_nmod)
       zz = nf(O)()
 
+      # TODO: Make this better
       for i in 0:degree(F)-1
         zz = zz + _get_coeff_raw(x, i)*a^i
       end
@@ -447,7 +448,7 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
 
   YY = submat(Y, 1:r, 1:cols(Y))
   UU = submat(U, 1:r, 1:r)
-  X = inv(UU)*YY
+  X = _inv(UU)*YY
 
   @assert Y == U * X
 
@@ -455,3 +456,256 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
   return X
 end
 
+function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic.Res{fmpz}})
+  X = MatrixSpace(base_ring(A), cols(B), rows(A))()
+
+  #println("solving\n $A \n = $B * X")
+  r, per, L, U = _lufact(B) # P*M1 = L*U
+
+  @assert B == per*L*U
+  Ap = inv(per)*A
+  Y = parent(A)()
+
+  #println("first solve\n $Ap = $L * Y")
+
+  for i in 1:cols(Y)
+    for j in 1:rows(Y)
+      s = Ap[j, i]
+      for k in 1:j-1
+        s = s - Y[k, i]*L[j, k]
+      end
+      Y[j, i] = s
+    end
+  end
+
+  @assert Ap == L*Y
+
+  #println("solving \n $Y \n = $U * X")
+
+  YY = submat(Y, 1:r, 1:cols(Y))
+  UU = submat(U, 1:r, 1:r)
+  X = _inv(UU)*YY
+
+  @assert Y == U * X
+
+  @assert B*X == A
+  return X
+end
+
+function _lufact!(P::Generic.perm, A::Nemo.MatElem{T}) where {T}
+   m = rows(A)
+   n = cols(A)
+   rank = 0
+   r = 1
+   c = 1
+   R = base_ring(A)
+   t = R()
+   while r <= m && c <= n
+      if A[r, c] == 0
+         i = r + 1
+         while i <= m
+            if !iszero(A[i, c])
+               for j = 1:n
+                  A[i, j], A[r, j] = A[r, j], A[i, j]
+               end
+               P[r], P[i] = P[i], P[r]
+               break
+            end
+            i += 1
+         end
+         if i > m
+            c += 1
+            continue
+         end
+      end
+      rank += 1
+      d = -inv(A[r, c])
+      for i = r + 1:m
+         q = A[i, c]*d
+         for j = c + 1:n
+            t = mul!(t, A[r, j], q)
+            A[i, j] = addeq!(A[i, j], t)
+         end
+         A[i, c] = R()
+         A[i, rank] = -q
+      end
+      r += 1
+      c += 1
+   end
+   return rank
+end
+
+function _lufact(A::Nemo.MatElem{T}, P = PermGroup(rows(A))) where {T}
+   m = rows(A)
+   n = cols(A)
+   P.n != m && error("Permutation does not match matrix")
+   p = P()
+   R = base_ring(A)
+   U = deepcopy(A)
+   L = similar(A, m, m)
+   rank = _lufact!(p, U)
+   for i = 1:m
+      for j = 1:n
+         if i > j
+            L[i, j] = U[i, j]
+            U[i, j] = R()
+         elseif i == j
+            L[i, j] = R(1)
+         elseif j <= m
+            L[i, j] = R()
+         end
+      end
+   end
+   return rank, p, L, U
+end
+
+
+mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
+  header::MapHeader{NfOrd, FqFiniteField}
+  poly_of_the_field::fmpz_mod_poly
+  P::NfOrdIdl
+
+  function NfOrdToFqMor(O::NfOrd, F::FqFiniteField, g::fmpz_mod_poly)
+    # assume that F = F_p[X]/(g) and g is a factor of f mod p
+
+    z = new()
+    p = characteristic(F)
+    a = gen(nf(O))
+    tmp_fmpz_mod_poly = parent(g)()
+    t_fmpz_poly = fmpz_poly()
+    t_fmpz = fmpz()
+
+    z.poly_of_the_field = g
+
+    function _image(x::NfOrdElem)
+      u = F()
+      gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
+      fmpq_poly_to_fmpz_mod_poly!(tmp_fmpz_mod_poly, gg, t_fmpz_poly, t_fmpz)
+      ccall((:fmpz_mod_poly_rem, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}), &tmp_fmpz_mod_poly, &tmp_fmpz_mod_poly, &g)
+      ccall((:fq_set, :libflint), Void, (Ptr{fq}, Ptr{fmpz_mod_poly}, Ptr{FqFiniteField}), &u, &tmp_fmpz_mod_poly, &F)
+      ccall((:fq_reduce, :libflint), Void, (Ptr{fq}, Ptr{FqFiniteField}), &u, &F)
+      return u
+    end
+
+    function _preimage(x::fq)
+      zz = nf(O)()
+
+      # TODO: Do something more clever here
+      for i in 0:degree(F)-1
+        zz = zz + coeff(x, i)*a^i
+      end
+
+      return O(zz, false)
+    end
+
+    z.header = MapHeader{NfOrd, FqFiniteField}(O, F, _image, _preimage)
+
+    return z
+  end
+  
+  function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)
+    z = new()
+
+    p = abs(minimum(P))
+
+    R = ResidueRing(FlintZZ, p)
+
+    OP = quoringalg(O, P, p)
+    x = quoelem(OP, zero(O))
+    f = PolynomialRing(R, "x")[1]()
+    d = length(OP.basis)
+
+    while true
+      r = rand(0:p-1, d)
+      x = quoelem(OP, dot([ x for x in OP.basis], r))
+      f = minpoly(x)
+      if degree(f) == d
+        break
+      end
+    end
+
+    F = FqFiniteField(f, Symbol("_\$"))
+
+    M2 = MatrixSpace(R, degree(O), d)()
+
+    for i in 1:d
+      coords = elem_in_basis((x^(i-1)).elem)
+      for j in 1:degree(O)
+        M2[j, i] = coords[j]
+      end
+    end
+
+    M3 = MatrixSpace(R, degree(O), degree(O))()
+
+    for i in 1:degree(O)
+      coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
+      for j in 1:degree(O)
+        M3[j, i] = coords[j]
+      end
+    end
+
+    X = _solve_unique(M3, M2)
+
+    #for i in 1:degree(O)
+    #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
+    #end
+
+    Mats = MatrixSpace(R, degree(O), 1)
+
+    function _image(y::NfOrdElem)
+      co = Mats()
+      coeff = elem_in_basis(mod(y, P))
+
+      for i in 1:degree(O)
+        co[i, 1] = coeff[i]
+      end
+
+      co = X*co
+
+      z = F(lift(co[1, 1])) # totally inefficient
+
+      for i in 2:rows(co)
+        z = z  + F(lift(co[i, 1]))*gen(F)^(i-1)
+      end
+
+      return z
+    end
+
+    function _preimage(y::fq_nmod)
+      z = nf(O)()
+
+      for i in 0:degree(F)-1
+        z = z + coeff(y, i)*(x.elem.elem_in_nf)^i
+      end
+
+      return mod(O(z, false), P)
+    end
+
+    z.header = MapHeader{NfOrd, FqFiniteField}(O, F, _image, _preimage)
+    z.P = P
+
+    return z
+  end
+
+end
+
+function Mor(O::NfOrd, F::FqFiniteField, h::fmpz_mod_poly)
+  return NfOrdToFqMor(O, F, h)
+end
+
+function submat(M::Nemo.MatElem{T}, r::UnitRange{<:Integer}, c::UnitRange{<:Integer}) where {T}
+  z = similar(M, length(r), length(c))
+  for i in 1:length(r)
+    for j in 1:length(c)
+      z[i, j] = M[r[i], c[j]]
+    end
+  end
+  return z
+end
+
+_inv(a::nmod_mat) = inv(a)
+
+function _inv(a::MatElem{Generic.Res{fmpz}})
+  b, d = inv(a)
+  return divexact(b, d)
+end

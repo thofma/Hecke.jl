@@ -523,6 +523,7 @@ end
 
 function kernel(a)
   x = transpose(a)
+  R = base_ring(a)
   z, n = _right_kernel(x)
   z = transpose(z)
   T = elem_type(base_ring(a))
@@ -530,7 +531,7 @@ function kernel(a)
   for i in 1:n 
     t = Array{T}(cols(z))
     for j in 1:cols(z)
-      t[j] = z[i, j]
+      t[j] = R(z[i, j])
     end
     push!(ar,t)
   end
@@ -574,7 +575,7 @@ function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   X = zero(MatrixSpace(base_ring(a),cols(b),cols(b) - r))
 
   if r == 0
-    return one(MatrixSpace(FlintZZ, cols(b), cols(b) - r))
+    return one(MatrixSpace(FlintZZ, cols(b), cols(b) - r)), cols(b)
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1

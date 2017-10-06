@@ -238,7 +238,7 @@ end
 
 num(x::NfOrdFracIdl) = x.num
 
-den(x::NfOrdFracIdl) = x.den
+den(x::NfOrdFracIdl) = deepcopy(x.den)
 
 ################################################################################
 #

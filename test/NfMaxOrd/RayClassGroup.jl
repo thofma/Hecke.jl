@@ -1,5 +1,13 @@
 @testset "RayClassGroup" begin
 
+  @testset "Big prime" begin
+    k, _ = wildanger_field(2, 13)
+    Zk = maximal_order(k)
+    p = next_prime(fmpz(2)^100)
+    r, mr = ray_class_group(ideal(Zk, p), n_quo = 2)
+    @test order(domain(mr)) == 2
+  end
+
   @testset "quadratic field" begin
     
     Qx,x=PolynomialRing(FlintQQ,"x")
