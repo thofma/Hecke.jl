@@ -609,12 +609,12 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = MatrixSpace(FlintZZ, rows(M) + nrels(G), ngens(G) + rows(M))()
   for i = 1:rows(M)
-    for j = 1:ngens(p)
+    for j = 1:ngens(G)
       m[i + nrels(G), j] = M[i,j]
     end
-    m[i + nrels(G), i + ngens(p)] = 1
+    m[i + nrels(G), i + ngens(G)] = 1
   end
-  if issnf(p)
+  if issnf(G)
     for i = 1:ngens(G)
       m[i, i] = G.snf[i]
     end
