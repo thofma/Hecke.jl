@@ -437,8 +437,7 @@ function anti_uniformizer(P::NfOrdIdl)
   else
     p = minimum(P)
     M = representation_mat(uniformizer(P))
-    Mp = MatrixSpace(ResidueRing(FlintZZ, UInt(p)), rows(M), cols(M))(M)
-    p > typemax(Int) && error("Not yet implemented")
+    Mp = MatrixSpace(ResidueRing(FlintZZ, p), rows(M), cols(M))(M)
     K = kernel(Mp)
     @assert length(K) > 0
     P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
@@ -658,11 +657,6 @@ function factor_dict(A::NfOrdIdl)
   n = norm(A)
   O = order(A)
   for (i, (p, v)) in enumerate(lf)
-    try
-      p = Int(p)
-    catch
-      error("Prime divisor lying over prime > 2^63. Too large.")
-    end
     lP = prime_decomposition(O, p)
     for P in lP
       v = valuation(A, P[1])
