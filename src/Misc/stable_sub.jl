@@ -1,3 +1,6 @@
+
+add_verbose_scope(:StabSub)
+
 ###############################################################################
 #
 #  Tools for ZpnGModules
@@ -224,7 +227,7 @@ end
 
 function sub(M::ZpnGModule, S::nmod_mat)
 
-  sg,msg=sub(M.V,S)
+  sg,msg=sub(M.V,lift(S))
   G=Array{nmod_mat,1}(length(M.G))
   for k=1:length(M.G)
     A=MatrixSpace(M.R, ngens(sg), ngens(sg))()
@@ -288,19 +291,9 @@ end
 
 function subm_to_subg(M::ZpnGModule, S::nmod_mat; op=sub)
   
-  G=M.V
-  subg=Array{GrpAbFinGenElem,1}()
-  for i=1:rows(S)
-    x=view(S, i:i,1:cols(S))
-    if !iszero(x)
-      push!(subg,G(lift(x)))
-    end
-  end
-  return op(G,subg)
+  return op(M.V,lift(S))
   
 end
-
-
 
 
 ##########################################################################
@@ -526,7 +519,7 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   if N.dim==1
     push!(submod, MatrixSpace(N.K,1,1)(1))
   else
-    submod=minimal_submodules(N,1,composition_factors(N))
+    @vtime :StabSub 1 submod=minimal_submodules(N,1,composition_factors(N))
   end
   list1=Array{nmod_mat,1}(length(submod))
   v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
@@ -550,7 +543,7 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
     newlist=collect(submodules_with_struct_cyclic(L,ord-1))
     i=1
     el=M.V(lift(x))
-    while i<=length(newlist)
+    @vtime :StabSub 1 while i<=length(newlist)
       t,mt=sub(M.V,GrpAbFinGenElem[el,M.V(lift(newlist[i]))])
       t1,mt1=snf(t)
       if length(t1.snf)>1
@@ -613,7 +606,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   S,mS=snf(s)
   N=_exponent_p_sub(S)
   lf=composition_factors(N)
-  submod=submodules(N,(N.dim)-a,comp_factors=lf)
+  @vtime :StabSub 1 submod=submodules(N,(N.dim)-a,comp_factors=lf)
   #
   #  Write the modules as elements of S
   #
