@@ -581,8 +581,8 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
       fmpq_poly_to_fmpz_mod_poly!(tmp_fmpz_mod_poly, gg, t_fmpz_poly, t_fmpz)
-      ccall((:fmpz_mod_poly, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}), &tmp_fmpz_mod_poly, &tmp_fmpz_mod_poly, &g)
-      ccall((:fq_set, :libflint), Void, (Ptr{fq}, Ptr{fmpz_mod_poly}, Ptr{FqFiniteField}), &u, &fmpz_mod_poly, &F)
+      ccall((:fmpz_mod_poly_rem, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}), &tmp_fmpz_mod_poly, &tmp_fmpz_mod_poly, &g)
+      ccall((:fq_set, :libflint), Void, (Ptr{fq}, Ptr{fmpz_mod_poly}, Ptr{FqFiniteField}), &u, &tmp_fmpz_mod_poly, &F)
       ccall((:fq_reduce, :libflint), Void, (Ptr{fq}, Ptr{FqFiniteField}), &u, &F)
       return u
     end
