@@ -535,6 +535,7 @@ doc"""
 """
 function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
+
   if length(s) == 0
     S = GrpAbFinGen(fmpz[1])
     I = MatrixSpace(FlintZZ, ngens(S), ngens(G))()
@@ -836,11 +837,12 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
   return z
 end
 
-function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
+function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
+                         to_lattice::Bool = true)
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
   zz = [ image(mS, x) for x in z ]
-  return sub(G, zz)
+  return sub(G, zz, to_lattice)
 end
 
 ################################################################################
