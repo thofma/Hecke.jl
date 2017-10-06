@@ -379,6 +379,17 @@ function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
   end
 end
 
+function fmpq_poly_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
+  ccall((:fmpq_poly_get_numerator, :libflint), Void, (Ptr{fmpz_poly}, Ptr{fmpq_poly}), &t1, &a)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_poly}), &r, &t1)
+  ccall((:fmpq_poly_get_denominator, :libflint), Void, (Ptr{fmpz}, Ptr{fmpq_poly}), &t2, &a)
+  if !isone(t2)
+    res = ccall((:fmpz_invmod, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &t2, &t2, &base_ring(r).modulus)
+    @assert res != 0
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz}), &r, &r, &t2)
+  end
+end
+
 function fmpq_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpq_poly)
   g = Rx()
   fmpq_poly_to_nmod_poly_raw!(g, f)
