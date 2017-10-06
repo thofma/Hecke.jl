@@ -58,6 +58,20 @@ function Base.append!(G::Graph{T, M}, a::T) where {T, M}
   G.new_low_degrees[a] = nothing
 end
 
+# For debugging purposes
+function _compute_degrees(G::Hecke.Graph{T, N}) where {T, N}
+  l = Dict{T, Int}()
+  for e in keys(G.edges)
+    l[e] = length(G.edges[e])
+    for a in keys(G.edges)
+      if haskey(G.edges[a], e)
+        l[e] += 1
+      end
+    end
+  end
+  return l
+end
+
 # Append an edge to a graph
 function Base.append!(G::Graph{T, M}, e::Tuple{T, T}, data::M) where {T, M}
   if !haskey(G.edges, e[1])
@@ -98,6 +112,7 @@ function Base.delete!(G::Graph{T, M}, a::T) where {T, M}
     Base.delete!(G.edges, a)
   end
 
+  #@show "iterating over $(length(keys(G.edges)))"
   for e in keys(G.edges)
     if haskey(G.edges[e], a)
       G.degrees[e] -= 1
@@ -105,6 +120,64 @@ function Base.delete!(G::Graph{T, M}, a::T) where {T, M}
       if G.degrees[e] < 2
         G.new_low_degrees[e] = nothing
       end
+    end
+  end
+end
+
+function Base.deepcopy_internal(G::Graph{T, M}, dict::ObjectIdDict) where {T, M}
+  GG = Graph{T, M}()
+  for g in keys(G.edges)
+    GG.edges[g] = Base.deepcopy_internal(G.edges[g], dict)
+  end
+  GG.degrees = Base.deepcopy_internal(G.degrees, dict)
+  GG.new_low_degrees = Base.deepcopy_internal(G.new_low_degrees, dict)
+  return GG
+end
+
+function Base.delete!(G::Graph{T, M}, to_delete::Array{T, 1}) where {T, M}
+  if length(to_delete) == 0
+    return
+  end
+  #@show "have to delete $(length(to_delete)) many things"
+  #@show "there will be $(length(G.edges) - length(to_delete)) left"
+  if length(G.edges) - length(to_delete) < 1000
+    #@show "Going through the fast path"
+    #GG = deepcopy(G)
+    _delete_fastpath(G, to_delete)
+  else
+    while length(to_delete) > 0
+      a = pop!(to_delete)
+      Base.delete!(G, a)
+    end
+  end
+end
+
+function _delete_fastpath(G::Graph{T, M}, to_delete::Array{T, 1}) where {T, M}
+  _to_delete = T[]
+
+  while length(to_delete) > 0
+    a = pop!(to_delete)
+    Base.delete!(G.new_low_degrees, a)
+    Base.delete!(G.degrees, a)
+    Base.delete!(G.edges, a)
+    push!(_to_delete, a)
+  end
+
+  for e in keys(G.edges)
+    for a in _to_delete
+      delete!(G.edges[e], a)
+    end
+  end
+  # Now compute the degrees new
+  for e in keys(G.edges)
+    G.degrees[e] = length(G.edges[e])
+    for a in keys(G.edges)
+      if haskey(G.edges[a], e)
+        G.degrees[e] += 1
+      end
+    end
+    if G.degrees[e] < 2
+      G.new_low_degrees[e] = nothing
     end
   end
 end
@@ -265,7 +338,7 @@ end
 # Now things get complicated (interesting) due to the presence of the gc.
 # Here is the most important rule:
 #
-#   A vertex in the lattice of groups is allowed to be represented only if
+#   A vertex in the lattice of groups is allowed to be removed only if
 #   the degree is < 2. 
 #
 # We achieve this by keeping an additional dictionary L.block_gc, which
@@ -295,7 +368,13 @@ function Base.show(io::IO, L::GrpAbLattice)
 end
 
 # The finalizer, which must be attached to a every group in the lattice.
+# Note that it may happen to a lot of groups are gc'ed so that the
+# L.to_delete queue get's too big. We cut it off at 100.
 function finalizer_lattice(L::GrpAbLattice, A::GrpAbFinGen)
+  # TODO: Find out why the following does not work
+  #if length(L.to_delete) > 1000
+  #  Hecke.update!(L)
+  #end
   push!(L.to_delete, object_id(A))
 end
 
@@ -348,18 +427,27 @@ function delete_from_lattice!(L::GrpAbLattice, u::UInt)
   Base.delete!(L.weak_vertices_rev, u)
 end
 
+function delete_from_lattice!(L::GrpAbLattice, us::Array{UInt, 1})
+  Base.delete!(L.graph, us)
+  for u in us
+    Base.delete!(L.weak_vertices_rev, u)
+  end
+end
+
 # Update a lattice of groups.
 function update!(L::GrpAbLattice)
-  while length(L.to_delete) > 0
-    u = pop!(L.to_delete)
-    delete_from_lattice!(L, u)
-  end
+  #while length(L.to_delete) > 0
+  #  u = pop!(L.to_delete)
+  #  delete_from_lattice!(L, u)
+  #end
+  delete_from_lattice!(L, L.to_delete)
+  #L.to_delete = UInt[]
   
   for k in keys(L.graph.new_low_degrees)
+    @assert haskey(L.graph.degrees, k)
     @assert L.weak_vertices_rev[k].value != nothing
     a = L.weak_vertices_rev[k].value
     @assert k == object_id(a)
-    @assert haskey(L.graph.degrees, k)
     @assert L.graph.degrees[k] < 2
     L.weak_vertices[a] = nothing
     Base.delete!(L.block_gc, a)
