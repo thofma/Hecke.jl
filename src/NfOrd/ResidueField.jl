@@ -1,38 +1,71 @@
 export ResidueField
 
-function ResidueField(O::NfOrd, P::NfOrdIdl)
-  if !isindex_divisor(O, minimum(P))
-    # This code assumes that P comes from prime_decomposition
-    @assert has_2_elem(P) && isprime_known(P) && isprime(P)
+function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
+  R = ResidueRing(FlintZZ, p)
 
-    gtwo = P.gen_two
+  Zy, y = PolynomialRing(FlintZZ, "y")
+  Rx, x = PolynomialRing(R, "x")#::Tuple{NmodPolyRing, nmod_poly}
 
-    f = nf(O).pol
-    g = parent(f)(elem_in_nf(gtwo))
+  gmodp = Rx(Zy(g))#::nmod_poly
+  fmodp = Rx(Zy(f))#::nmod_poly
 
-    if nbits(P.gen_one) < 64
-      R = ResidueRing(FlintZZ, UInt(minimum(P)))
+  h = gcd(gmodp,fmodp)
 
-      Zy, y = PolynomialRing(FlintZZ, "y")
-      Rx, x = PolynomialRing(R, "x")::Tuple{NmodPolyRing, nmod_poly}
+  if typeof(p) == Int
+    F = FqNmodFiniteField(h, :$)
+  elseif typeof(p) == fmpz
+    F = FqFiniteField(h, :$)
+  end
 
-      gmodp = Rx(Zy(g))::nmod_poly
-      fmodp = Rx(Zy(f))::nmod_poly
+  #F = FqNmodFiniteField(h, :$)
 
-      h = gcd(gmodp,fmodp)
+  #return F, Mor(O, F, gen(F))
+  #g = Mor(O, F, h)
+  #g.P = P
+  return F, h
+end
 
-      F = FqNmodFiniteField(h, :$)
+function _residue_field_nonindex_divisor(O, P)
+  # This code assumes that P comes from prime_decomposition
+  @assert has_2_elem(P) && isprime_known(P) && isprime(P)
 
-      #return F, Mor(O, F, gen(F))
-      g = Mor(O, F, h)
-      g.P = P
-      return F, g
-    else
-      error("Not yet implemented")
-    end
+  gtwo = P.gen_two
+
+  f = nf(O).pol
+  g = parent(f)(elem_in_nf(gtwo))
+
+  if nbits(P.gen_one) < 64
+    F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)))
+
+    #return F, Mor(O, F, gen(F))
+    mF = Mor(O, F, h)
+    mF.P = P
+    return F, mF
   else
+    F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P))
+
+    #return F, Mor(O, F, gen(F))
+    mF = Mor(O, F, h)
+    mF.P = P
+    return F, mF
+  end
+end
+
+function _residue_field_index_divisor(O, P)
+  if nbits(minimum(P)) < 64
     f = NfOrdToFqNmodMor(O, P)
     return codomain(f), f
+  else
+    f = NfOrdToFqMor(O, P)
+    return codomain(f), f
+  end
+end
+
+function ResidueField(O::NfOrd, P::NfOrdIdl)
+  if !isindex_divisor(O, minimum(P))
+    return _residue_field_nonindex_divisor(O, P)
+  else
+    return _residue_field_index_divisor(O, P)
   end
 end
 
