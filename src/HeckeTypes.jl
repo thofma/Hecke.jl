@@ -927,6 +927,7 @@ end
 
 mutable struct NfOrdFracIdlSet
    order::NfOrd
+
    function NfOrdFracIdlSet(O::NfOrd)
      try
        return NfOrdFracIdlSetID[O]::NfOrdFracIdlSet

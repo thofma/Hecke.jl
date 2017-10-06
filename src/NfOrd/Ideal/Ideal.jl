@@ -513,8 +513,13 @@ function assure_has_minimum(A::NfOrdIdl)
 
   if has_weakly_normal(A)
     K = A.parent.order.nf
-    d = den(inv(K(A.gen_two)), order(A))
-    d = gcd(d, FlintZZ(A.gen_one))
+    if iszero(A.gen_two)
+      # A = (A.gen_one, 0) = (A.gen_one)
+      d = abs(A.gen_one)
+    else
+      d = den(inv(K(A.gen_two)), order(A))
+      d = gcd(d, FlintZZ(A.gen_one))
+    end
     A.minimum = d
     return nothing
   end

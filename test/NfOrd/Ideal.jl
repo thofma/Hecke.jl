@@ -47,6 +47,16 @@
     @test 17 == @inferred minimum(I)
     @test 17 == @inferred minimum(J)
     @test 17 == @inferred minimum(K)
+
+    # Test where gens are weakly normal and second generator is zero
+    @testset begin
+      R, x = PolynomialRing(FlintQQ, "x")
+      _K, _a = NumberField(x, "a")
+      _O = maximal_order(_K)
+      _I = frac_ideal(_O, _K(1))
+      _J = _I*_K(fmpq(-1, 5))
+      @test minimum(num(_J)) == 1
+    end
   end
 
   @testset "Norm" begin
