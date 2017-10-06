@@ -393,6 +393,17 @@ function rand(I::NfOrdFracIdl, B::Int)
 end
 
 function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
+  PP = deepcopy(P)
+  K = parent(PP.matrix[1, 1])
+  ints = _make_integral!(PP)
+  PPhnf = pseudo_hnf_integral(PP, shape)
+  for i in 1:length(ints)
+    mul_row!(PPhnf.matrix, i, inv(K(ints[i])))
+  end
+  return PPhnf
+end
+
+function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
   K = parent(P.matrix[1, 1])
   O = maximal_order(K)
   if rows(P) == cols(P)
@@ -440,6 +451,24 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
   end
   simplify(m)
   return pseudo_hnf_mod(P, num(m), shape)
+end
+
+function _make_integral!(P::PMat{T, S}) where {T, S}
+  K = parent(P.matrix[1, 1])
+  O = maximal_order(K)
+  integralizers = Array{fmpz, 1}(rows(P))
+
+  for i in 1:rows(P)
+    z = one(FlintZZ)
+    for j in 1:cols(P)
+      z = lcm(z, den(P.matrix[i, j], O))
+    end
+    mul_row!(P.matrix, i, K(z))
+    integralizers[i] = den(P.coeffs[i]) * z
+    P.coeffs[i] = P.coeffs[i] * K(den(P.coeffs[i]))
+    simplify(P.coeffs[i])
+  end
+  return integralizers
 end
 
 function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
@@ -518,6 +547,8 @@ function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
   end
   return z
 end
+
+(::NfOrdQuoRing)(a::NfOrdQuoRingElem) = a
 
 _check(a) = a.has_coord ? dot(a.elem_in_basis, basis(parent(a))) == a : true
 
