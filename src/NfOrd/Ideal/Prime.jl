@@ -39,14 +39,10 @@ doc"""
 > Returns whether the integer $p$ is ramified in $\mathcal O$.
 > It is assumed that $p$ is prime.
 """
-function isramified(O::NfOrd, p::Int)
-  lp = prime_decomposition(O, p)
-  for P in lp
-    if P[2] > 1
-      return true
-    end
-  end
-  return false
+function isramified(O::NfOrd, p::Union{Int, fmpz})
+  @assert ismaximal_known(O) && ismaximal(O)
+
+  return mod(discriminant(O), p) == 0
 end
 
 doc"""
