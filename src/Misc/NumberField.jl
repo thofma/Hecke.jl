@@ -2093,3 +2093,40 @@ function induce_crt(a::nf_elem, p::fmpz, b::nf_elem, q::fmpz, signed::Bool = fal
   end
   return induce_inner_crt(a, b, pi, pq, pq2), pq
 end
+
+#################################################################################################
+#
+#  Normal Basis
+#
+#################################################################################################
+
+doc"""
+***
+    normal_basis(K::Nemo.AnticNumberField) -> nf_elem
+> Given a number field K which is normal over Q, it returns 
+> an element generating a normal basis of K over Q
+"""
+function normal_basis(K::Nemo.AnticNumberField)
+
+  n=degree(K)
+  Aut=Hecke.automorphisms(K)
+  length(Aut) != degree(K) && error("The field is not normal over the rationals!")
+
+  A=MatrixSpace(FlintQQ, n, n)()
+  r=K(1)
+  while true
+  
+    r=rand(basis(K),-n:n)
+    for i=1:n
+      y=Aut[i](r)
+      for j=1:n
+        A[i,j]=coeff(y,j-1)
+      end
+    end
+    if det(A)!=0
+      break
+    end
+  end
+  return r
+end
+
