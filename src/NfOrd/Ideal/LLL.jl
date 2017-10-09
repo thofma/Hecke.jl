@@ -8,7 +8,7 @@ function _lll_gram(A::NfOrdIdl)
   return FakeFmpqMat(l, fmpz(1)), t
 end
 
-function lll_basis(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
+function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
   K = nf(order(A))
@@ -16,7 +16,7 @@ function lll_basis(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec
   return q
 end
 
-function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int = 100)
+function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
 
   K = nf(order(A))
   if iszero(v) && istotally_real(K)
@@ -34,8 +34,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
 
   rt_c = roots_ctx(K)
   if !isdefined(rt_c, :cache_z1)
-    rt_c.cache_z1 = MatrixSpace(FlintZZ, n, n)()
-    rt_c.cache_z2 = MatrixSpace(FlintZZ, n, n)()
+    rt_c.cache_z1 = zero_matrix(FlintZZ, n, n)
+    rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
   end
   
   d = rt_c.cache_z1
@@ -107,12 +107,12 @@ function lll(A::NfOrdIdl, v::fmpz_mat = MatrixSpace(FlintZZ, 1, 1)(); prec::Int 
 end
 
 function short_elem(A::NfOrdFracIdl,
-                v::fmpz_mat=MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
+                v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
 
 function short_elem(A::NfOrdIdl,
-                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
+                v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   K = nf(order(A))
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num

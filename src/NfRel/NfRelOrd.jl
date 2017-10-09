@@ -107,7 +107,7 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   end
   pb = pseudo_basis(O, Val{false})
   L = nf(O)
-  M = MatrixSpace(base_ring(L), degree(O), degree(O))()
+  M = zero_matrix(base_ring(L), degree(O), degree(O))
   C = Vector{S}()
   for i = 1:degree(O)
     elem_to_mat_row!(M, i, pb[i][1])
@@ -375,7 +375,7 @@ end
 
 function _check_elem_in_order(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
   b_pmat = basis_pmat(O, Val{false})
-  t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
+  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, Val{false})
   if short == Val{true}
@@ -482,7 +482,7 @@ function trace_matrix(O::NfRelOrd)
   K = base_ring(L)
   b = basis_nf(O, Val{false})
   d = degree(L)
-  g = MatrixSpace(K, d, d)()
+  g = zero_matrix(K, d, d)
   for i = 1:d
     t = trace(b[i]*b[i])
     g[i, i] = t

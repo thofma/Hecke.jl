@@ -37,7 +37,7 @@ function conductor(C::Hecke.ClassField)
   
   mS=inv(mS)
   dom=domain(mS)
-  M=MatrixSpace(FlintZZ,ngens(dom), ngens(codomain(mS)))()
+  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
   for i=1:ngens(dom)
     elem=mS(dom[i]).coeff
     for j=1:ngens(codomain(mS))
@@ -234,7 +234,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   mS=inv(mS)
   dom=domain(mS)
-  M=MatrixSpace(FlintZZ,ngens(dom), ngens(codomain(mS)))()
+  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
   for i=1:ngens(dom)
     elem=mS(dom[i]).coeff
     for j=1:ngens(codomain(mS))
@@ -485,7 +485,7 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
   inf_plc=real_places(K)
   m=ideal(O,O(d))
   lp=collect(keys(factor(n)))
-  M=MatrixSpace(FlintZZ,0,0)()
+  M=zero_matrix(FlintZZ,0,0)
   Grps=Any[]
   R=AbelianGroup(fmpz[])
   for i=1:length(lp)
@@ -589,7 +589,7 @@ function conductor_min(C::Hecke.ClassField)
   
   mS=inv(mS)
   dom=domain(mS)
-  M=MatrixSpace(FlintZZ,ngens(dom), ngens(codomain(mS)))()
+  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
   for i=1:ngens(dom)
     elem=mS(dom[i]).coeff
     for j=1:ngens(codomain(mS))

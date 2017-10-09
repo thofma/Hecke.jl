@@ -89,7 +89,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
   for i in 1:MAX
 
     ra = rand(0:p-1, rows(K))
-    v = MatrixSpace(base_ring(K), 1, cols(K))(0)
+    v = zero_matrix(base_ring(K), 1, cols(K))
     for j in 1:cols(K)
       for l in 1:rows(K)
         v[1, j] = v[1, j] + ra[l]*K[l,j]
@@ -139,9 +139,9 @@ function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
 
   # We have to add the generator of the torsion group
   if gcd(p, U.torsion_units_order) != 1
-    res = MatrixSpace(ResidueRing(FlintZZ, p), 1, unit_rank(O) + 1)()
+    res = zero_matrix(ResidueRing(FlintZZ, p), 1, unit_rank(O) + 1)
   else
-    res = MatrixSpace(ResidueRing(FlintZZ, p), 1, unit_rank(O))()
+    res = zero_matrix(ResidueRing(FlintZZ, p), 1, unit_rank(O))
   end
 
   t = K()

@@ -83,7 +83,7 @@
 
       K, a = NumberField(x)
       O = maximal_order(K)
-      A = Hecke.PseudoMatrix(Matrix(O, 4, 4, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
+      A = Hecke.PseudoMatrix(matrix(O, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]
       @test Hecke._in_span(map(K, [5, 6, 7, 8]), A)[1] == false
     end

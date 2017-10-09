@@ -233,7 +233,7 @@ function discriminant(B::Array{NfOrdElem, 1})
   length(B) != degree(parent(B[1])) &&
         error("Number of elements must be $(degree(parent(B[1])))")
   O = parent(B[1])
-  A = MatrixSpace(FlintZZ, degree(O), degree(O))()
+  A = zero_matrix(FlintZZ, degree(O), degree(O))
   for i in 1:degree(O)
     for j in 1:degree(O)
       A[i,j] = FlintZZ(trace(B[i] * B[j]))

@@ -52,9 +52,6 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
     if radius(v[1, i]) > 1
       # This is a strange case I cannot handle at the moment
       return false
-      #no_change_matrix = MatrixSpace(FlintZZ, r, r)(1)
-      #no_change_matrix = vcat(no_change_matrix, MatrixSpace(FlintZZ, 1, r)(0))
-      #return x, no_change_matrix
     end
 
     app =  _frac_bounded_2(v[1, i], bound)

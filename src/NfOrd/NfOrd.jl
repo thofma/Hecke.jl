@@ -694,7 +694,7 @@ function trace_matrix(O::NfOrd)
   K = nf(O)
   b = O.basis_nf
   n = degree(K)
-  g = MatrixSpace(FlintZZ, n, n)()
+  g = zero_matrix(FlintZZ, n, n)
   for i=1:n
     t = trace(b[i]^2)
     @assert isinteger(t)

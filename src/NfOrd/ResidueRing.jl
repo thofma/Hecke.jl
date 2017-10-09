@@ -594,7 +594,7 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
-    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
   end
 
   strong_echelon_form!(B)
@@ -693,7 +693,7 @@ function strong_echelon_form!(A::Generic.Mat{NfOrdQuoRingElem})
   #print("triangularizing ... ")
   triangularize!(A)
 
-  T = MatrixSpace(base_ring(A), 1, cols(A))()
+  T = zero_matrix(base_ring(A), 1, cols(A))
 
   # We do not normalize!
   for j in 1:m
@@ -783,7 +783,7 @@ function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
-    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
   end
 
   howell_form!(B)
@@ -1008,7 +1008,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
     zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
+    v = matrix(FlintZZ, 1, degree(O), zz_num)
 
     w = v*L
 
@@ -1081,7 +1081,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
       zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
+      v = matrix(FlintZZ, 1, degree(O), zz_num)
 
       w = v*L
 
