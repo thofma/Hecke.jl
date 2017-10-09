@@ -72,6 +72,16 @@
       end
     end
     @test i==length(ls)
+    
+    ls=submodules(M,typesub=[3])
+    y=subgroups(V,quotype=[8])
+    i=0
+    for el in y
+      if Hecke.is_stable(act,el[2])
+        i+=1
+      end
+    end
+    @test i==length(ls)
   
   end
 
