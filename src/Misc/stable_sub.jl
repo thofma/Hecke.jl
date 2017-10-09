@@ -542,11 +542,8 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
     L,_=quo(M,x)
     newlist=collect(submodules_with_struct_cyclic(L,ord-1))
     i=1
-    el=M.V(lift(x))
-    @vtime :StabSub 1 while i<=length(newlist)
-      t,mt=sub(M.V,GrpAbFinGenElem[el,M.V(lift(newlist[i]))])
-      t1,mt1=snf(t)
-      if length(t1.snf)>1
+    while i<=length(newlist)
+      if iszero(M.p^(ord-1)*M.V(lift(newlist[i])))
         deleteat!(newlist,i)
       else 
         i+=1
