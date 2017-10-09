@@ -395,10 +395,10 @@ end
 function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
   K = parent(PP.matrix[1, 1])
-  ints = _make_integral!(PP)
+  integralizer = _make_integral!(PP)
   PPhnf = pseudo_hnf_integral(PP, shape)
-  for i in 1:length(ints)
-    mul_row!(PPhnf.matrix, i, inv(K(ints[i])))
+  for i in 1:rows(PP)
+    mul_row!(PPhnf.matrix, i, inv(K(integralizer)))
   end
   return PPhnf
 end
@@ -456,19 +456,26 @@ end
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
   O = maximal_order(K)
-  integralizers = Array{fmpz, 1}(rows(P))
+  integralizer = one(FlintZZ)
 
+  z = one(FlintZZ)
   for i in 1:rows(P)
-    z = one(FlintZZ)
     for j in 1:cols(P)
       z = lcm(z, den(P.matrix[i, j], O))
     end
+  end
+
+  for i in 1:rows(P)
     mul_row!(P.matrix, i, K(z))
-    integralizers[i] = den(P.coeffs[i]) * z
+  end
+
+  for i in 1:rows(P)
+    z = den(P.coeffs[i]) * z
     P.coeffs[i] = P.coeffs[i] * K(den(P.coeffs[i]))
     simplify(P.coeffs[i])
   end
-  return integralizers
+
+  return z
 end
 
 function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
@@ -539,7 +546,12 @@ function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
   for i in 1:rows(z)
     for j in 1:cols(z)
       @assert norm(c[i])*mat[i, j] in O
-      @assert euclid(OtoOm(O(norm(c[i])))) == 1
+      # TH TODO:
+      # The following assertion will fail in case Om is the zero ring.
+      # (This happens if m is the whole ring).
+      # But if m is the whole ring, we actually don't have to do
+      # anything.
+      #@assert euclid(OtoOm(O(norm(c[i])))) == 1
       q = OtoOm(O(norm(c[i])*mat[i,j]))
       qq = inv(OtoOm(O(norm(c[i]))))
       z[i, j] = q*qq
