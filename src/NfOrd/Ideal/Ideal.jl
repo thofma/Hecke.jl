@@ -1000,9 +1000,18 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
     return O(a)
+  else
+    return mod(x, basis_mat(y, Val{false}), preinv)
   end
+end
 
-  c = basis_mat(y)
+function mod(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+
+  O = parent(x)
+  a = elem_in_basis(x) # this is already a copy
+
   q = fmpz()
   r = fmpz()
   for i in degree(O):-1:1
@@ -1014,6 +1023,22 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
 
   z = typeof(x)(O, a)
   return z
+end
+
+function mod(x::NfOrdElem, Q::NfOrdQuoRing)
+  O = parent(x)
+  a = elem_in_basis(x) # this is already a copy
+
+  y = ideal(Q)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
+  return mod(x, Q.basis_mat_array, Q.preinvn)
 end
 
 ################################################################################

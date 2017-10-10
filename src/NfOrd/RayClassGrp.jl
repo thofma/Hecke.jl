@@ -63,7 +63,6 @@ end
 #
 
 function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdIdl, Int}, exponent::Int)
-  
   el=O(1)
   I=ideal(O,1)
   for (p,vp) in primes
@@ -78,7 +77,6 @@ function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdI
 end
 
 function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::Int, mult::Int)
-  
   if mult==1
     @vtime :RayFacElem 1 Q,mQ=ResidueField(O,q)
     el=Q(1)
