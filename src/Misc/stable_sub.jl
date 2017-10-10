@@ -170,7 +170,7 @@ function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})
   #
   #  First, compute the kernel of the corresponding homomorphisms
   # 
-  K=DiagonalGroup([Int(parent(M[1,1]).n) for j=1:rows(M)])
+  K=DiagonalGroup([V.snf[end] for j=1:rows(M)])
   A=lift(transpose(M))
   for j=1:rows(A)
     for k=1:cols(A)
@@ -587,7 +587,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
     return submodules_with_struct_cyclic(M,typesub[1])
   end
   sort!(typesub)
-  # If the subgroups we are seacrhing for have exponent p, it is easier
+  # If the subgroups we are searching for have exponent p, it is easier
   if typesub[end]==1
     return submodule_with_struct_exp_p(M,length(typesub))
   end
@@ -643,7 +643,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #
   #  Recursion on the quotient
   #
-  w=fmpz[divexact(fmpz(R.n), S1.V.snf[j]) for j=1:ngens(S1.V)]
+  
   list=nmod_mat[]
   for x in list1  
     L, _=quo(S1,x)
@@ -667,7 +667,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #
   #  Check for redundancy
   #
-  
+  w=fmpz[divexact(fmpz(R.n), S1.V.snf[j]) for j=1:ngens(S1.V)]
   list=_no_redundancy(list,w)
 
   #
@@ -821,7 +821,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Dualize the modules
   #
-  v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
+  v=[divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
   list=(_dualize(x, S.V, v) for x in candidates)  
   #
   #  Write the submodules in terms of the given generators
