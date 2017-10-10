@@ -457,6 +457,28 @@ function MaximalOrder(L::NfRel)
   return MaximalOrder(O)
 end
 
+maximal_order(L::NfRel) = MaximalOrder(L)
+
+function maximal_order_via_absolute(L::NfRel{T}) where T
+  K = base_ring(L)
+  OK = MaximalOrder(K)
+
+  Labs, lToLabs, kToLabs = absolute_field(L)
+  OLabs = MaximalOrder(Labs)
+  labsToL = inv(lToLabs)
+  B = basis(OLabs, Val{false})
+
+  d = degree(L)
+  dabs = degree(Labs)
+  M = MatrixSpace(K, dabs, d)()
+  for i = 1:dabs
+    elem_to_mat_row!(M, i, labsToL(Labs(B[i])))
+  end
+  PM = sub(pseudo_hnf_kb(PseudoMatrix(M), :lowerleft), (dabs - d + 1):dabs, 1:d)
+  S = typeof(PM.coeffs[1])
+  return NfRelOrd{T, S}(L, PM)
+end
+
 ################################################################################
 #
 #  Equality
