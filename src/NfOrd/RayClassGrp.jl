@@ -312,9 +312,9 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   RG=rels(G)
   RC=rels(C)
 
-  A=vcat(RC, MatrixSpace(FlintZZ, ngens(G)+ngens(U), cols(RC))())
-  B=vcat(MatrixSpace(FlintZZ, ngens(C), cols(RG))(), RG)
-  B=vcat(B, MatrixSpace(FlintZZ, ngens(U) , cols(RG))())
+  A=vcat(RC, zero_matrix(FlintZZ, ngens(G)+ngens(U), cols(RC)))
+  B=vcat(zero_matrix(FlintZZ, ngens(C), cols(RG)), RG)
+  B=vcat(B, zero_matrix(FlintZZ, ngens(U) , cols(RG)))
  
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
@@ -686,8 +686,8 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   expo=Int(exponent(G))
   inverse_d=gcdx(nonppartclass,expo)[2]
   
-  A=vcat(rels(C), MatrixSpace(FlintZZ, ngens(G)+ngens(U), ngens(C))())
-  B=vcat(rels(G), MatrixSpace(FlintZZ, ngens(U) , ngens(G))())
+  A=vcat(rels(C), zero_matrix(FlintZZ, ngens(G)+ngens(U), ngens(C)))
+  B=vcat(rels(G), zero_matrix(FlintZZ, ngens(U) , ngens(G)))
   
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
@@ -718,7 +718,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
       B[i+ngens(G),j]=a[1,j]
     end
   end 
-  B=vcat(MatrixSpace(FlintZZ, ngens(C), ngens(G))(), B)
+  B=vcat(zero_matrix(FlintZZ, ngens(C), ngens(G)), B)
 
   
 #
@@ -1131,7 +1131,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   expo=Int(exponent(G))
   inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   
-  R=MatrixSpace(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))()
+  R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
   for i=1:ngens(C)
     R[i,i]=C.snf[i]
   end
@@ -1165,7 +1165,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     #
     a=(mG\el).coeff
     if mod(n,2)==0 && !isempty(pr)
-      a=hcat(a, MatrixSpace(FlintZZ,1,length(pr))([1 for i in pr]))
+      a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
     end
     for j=1:ngens(G)
       R[1+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
@@ -1297,7 +1297,7 @@ function _act_on_ray_class(mR::Map, p::Int, Aut::Array{Hecke.NfToNfMor,1})
   G=MatElem[]
   
   for phi in Aut
-    M=MatrixSpace(F,ngens(R), ngens(R))()
+    M=zero_matrix(F,ngens(R), ngens(R))
     for i=1:ngens(R) 
       J=mR(R[i])
       I=FacElem(Dict(ideal(O,1)=> 1))
@@ -1343,7 +1343,7 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
   for s in ls
     subs=GrpAbFinGenElem[]
     for i=1:rows(s)
-      x=MatrixSpace(FlintZZ,1,cols(s))()
+      x=zero_matrix(FlintZZ,1,cols(s))()
       for j=1:cols(s)
         x[1,j]=FlintZZ(coeff(s[i,j],0))
       end
@@ -1425,7 +1425,7 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   #
   #  Write the matrices for the change of basis
   #
-  auxmat=MatrixSpace(FlintZZ, ngens(R), length(lgens)+nrels(R))()
+  auxmat=zero_matrix(FlintZZ, ngens(R), length(lgens)+nrels(R))
   for i=1:length(lgens)
     for j=1:ngens(R)
       auxmat[j,i]=subs[i][j]
@@ -1450,7 +1450,7 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   #
   
   for phi in Aut
-    M=MatrixSpace(FlintZZ,length(lgens), ngens(R))()
+    M=zero_matrix(FlintZZ,length(lgens), ngens(R))
     for i=1:length(lgens) 
       J=_aut_on_id(O,phi,lgens[i])
       elem=mR\J
@@ -1574,7 +1574,7 @@ function _lift_and_construct(A::Generic.Mat{fq_nmod}, mQ::GrpAbFinGenMap, mG::Gr
   R=mQ.header.domain
   newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
   for i=1:rows(A)
-    z=MatrixSpace(FlintZZ,1,cols(A))()
+    z=zero_matrix(FlintZZ,1,cols(A))
     for j=1:cols(z)
       z[1,j]=FlintZZ(coeff(A[i,j],0))
     end
@@ -1609,7 +1609,7 @@ function stable_index_p_subgroups(mR::Hecke.MapRayClassGrp, p::Int, index::Int=1
   for s in ls
     subs=[p*R[i] for i=1:ngens(R)]
     for i=1:rows(s)
-      x=MatrixSpace(FlintZZ,1,cols(s))()
+      x=zero_matrix(FlintZZ,1,cols(s))
       for j=1:cols(s)
         x[1,j]=FlintZZ(coeff(s[i,j],0))
       end

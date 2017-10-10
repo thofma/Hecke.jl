@@ -307,7 +307,7 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
     k0 = 1 + div(fmpz(e),(pnum-1))
   end
   g = Vector{NfOrdElem}()
-  M = MatrixSpace(FlintZZ,0,0)()
+  M = zero_matrix(FlintZZ,0,0)
   dlogs = Vector{Function}()
 
   l = u
@@ -385,7 +385,7 @@ function _expand(g,M,h,N,disc_log,pl)
   isempty(g) && return h,N
   isempty(h) && return g,M
   P = _compute_P(g,M,h,N,disc_log,pl)
-  Z = MatrixSpace(FlintZZ,rows(N),cols(M))()
+  Z = zero_matrix(FlintZZ,rows(N),cols(M))
   M = [M -P ; Z N]
   g = [g ; h]
   return g,M
@@ -400,7 +400,7 @@ function _compute_P(g,M,h,N,disc_log,pl)
     Mg[i] = preimage(O_mod_pl_map,prod([ O_mod_pl_map(g[j])^M[i,j] for j in 1:length(g)]))
   end
 
-  P = MatrixSpace(FlintZZ,rows(M),cols(N))()
+  P = zero_matrix(FlintZZ,rows(M),cols(N))
   for i in 1:rows(P)
     b = Mg[i]
     alpha = disc_log(b)
@@ -428,7 +428,7 @@ function _pu_mod_pv(pu,pv)
 end
 
 function _ideal_disc_log(x::NfOrdElem, basis_mat_inv::FakeFmpqMat)
-  x_vector = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
+  x_vector = transpose(matrix(FlintZZ, degree(parent(x)), 1, elem_in_basis(x)))
   x_fakemat = FakeFmpqMat(x_vector, fmpz(1))
   res_fakemat = x_fakemat * basis_mat_inv
   den(res_fakemat) != 1 && error("Element is in the ideal")
@@ -749,7 +749,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
 
   # Remove trivial components and empty relations
   if (max_one!=0) || (n!=m)
-    rels_trans = MatrixSpace(FlintZZ,n-max_one,n-max_one)()
+    rels_trans = zero_matrix(FlintZZ,n-max_one,n-max_one)
     for i in 1:rows(rels_trans)
       for j in 1:cols(rels_trans)
         rels_trans[i,j] = rels_snf[max_one+i,max_one+j]

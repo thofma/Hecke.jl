@@ -689,13 +689,13 @@ mutable struct quoringalg{T} <: Ring
     # compute a basis
     Rp = ResidueRing(FlintZZ, p)
     Amodp = MatrixSpace(Rp, degree(O), degree(O))(basis_mat(I))
-    Amodp = vcat(Amodp, MatrixSpace(Rp, 1, degree(O))())
+    Amodp = vcat(Amodp, zero_matrix(Rp, 1, degree(O)))
     Amodp[1,1] = 1
     Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
 
     # I think rref can/should also return the rank
     r, B = _rref(Amodp)
-    C = zero(MatrixSpace(Rp, degree(O)-r, degree(O)))
+    C = zero_matrix(Rp, degree(O)-r, degree(O))
     BB = Array{NfOrdElem}(degree(O) - r)
     pivots = Array{Int}(0)
 #    # get he pivots of B
@@ -745,8 +745,8 @@ function _kernel_of_frobenius(R::quoringalg)
   BB = R.basis
   p = R.prime
   Rp = ResidueRing(FlintZZ, R.prime)
-  C = zero(MatrixSpace(Rp, length(BB)+1, degree(O)))
-  D = zero(MatrixSpace(Rp, length(BB), degree(O)))
+  C = zero_matrix(Rp, length(BB)+1, degree(O))
+  D = zero_matrix(Rp, length(BB), degree(O))
 
   Q, mQ = quo(O, R.ideal)
 
@@ -801,8 +801,8 @@ function minpoly(x::quoelem)
   p = x.parent.prime
 
   Rp = ResidueRing(FlintZZ, p)
-  A = MatrixSpace(Rp, 0, degree(O))()
-  B = MatrixSpace(Rp, 1, degree(O))()
+  A = zero_matrix(Rp, 0, degree(O))
+  B = zero_matrix(Rp, 1, degree(O))
 
   for i in 0:degree(O)
     ar = elem_in_basis((x^i).elem)
@@ -955,7 +955,7 @@ function val_func_no_index(p::NfOrdIdl)
   d = den(K(pi.num.gen_two))
   @assert gcd(d, P) == 1
   e = K(pi.num.gen_two)*d
-  M = MatrixSpace(FlintZZ, 1, degree(K))()
+  M = zero_matrix(FlintZZ, 1, degree(K))
   elem_to_mat_row!(M, 1, d, e)
   @assert d == 1
   P2 = P^2
@@ -1030,7 +1030,7 @@ function val_func_index(p::NfOrdIdl)
     v = 0
     d = den(x, O)
     x *= d
-    x_mat = MatrixSpace(FlintZZ, 1, degree(O))(elem_in_basis(O(x)))
+    x_mat = matrix(FlintZZ, 1, degree(O), elem_in_basis(O(x)))
     Nemo.mul!(x_mat, x_mat, M)
     while gcd(content(x_mat), P) == P  # should divide and test in place
       divexact!(x_mat, x_mat, P)

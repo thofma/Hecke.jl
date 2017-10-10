@@ -646,7 +646,7 @@ doc"""
 """
 function in(x::NfOrdElem, y::NfOrdIdl)
   parent(x) != order(y) && error("Order of element and ideal must be equal")
-  v = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
+  v = transpose(matrix(FlintZZ, degree(parent(x)), 1, elem_in_basis(x)))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
   return t.den == 1
 end
@@ -1046,7 +1046,7 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
   @assert degree(O) <= p^j
 
   R = ResidueRing(FlintZZ, p)
-  A = MatrixSpace(R, degree(O), degree(O))()
+  A = zero_matrix(R, degree(O), degree(O))
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
     ar = elem_in_basis(t)

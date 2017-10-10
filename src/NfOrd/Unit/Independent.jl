@@ -47,7 +47,7 @@ function _isindependent(x::Array{T, 1}, p::Int = 32) where T
 
     conlog = conjugates_arb_log(x[1], p)
 
-    A = MatrixSpace(parent(conlog[1]), length(x), rr)()
+    A = zero_matrix(parent(conlog[1]), length(x), rr)
 
     for i in 1:rr
       A[1, i] = conlog[i]

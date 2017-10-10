@@ -92,7 +92,7 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
   end
   pb = pseudo_basis(a, Val{false})
   L = nf(order(a))
-  M = MatrixSpace(base_ring(L), degree(L), degree(L))()
+  M = zero_matrix(base_ring(L), degree(L), degree(L))
   C = Vector{S}()
   for i = 1:degree(L)
     elem_to_mat_row!(M, i, pb[i][1])
@@ -368,7 +368,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   L = nf(order(a))
   K = base_ring(L)
   d = degree(order(a))
-  M = MatrixSpace(K, d^2, d)()
+  M = zero_matrix(K, d^2, d)
   C = Array{S, 1}(d^2)
   t = L()
   for i = 1:d
@@ -419,7 +419,7 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   Ma = basis_pmat(a)
   Mb = basis_pmat(b)
   M1 = hcat(Ma, deepcopy(Ma))
-  z = zero(MatrixSpace(base_ring(Ma.matrix), d, d))
+  z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   m = intersection(norm(a), norm(b))
@@ -439,7 +439,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
-  basis_mat_int = MatrixSpace(K, d, d)()
+  basis_mat_int = zero_matrix(K, d, d)()
   pbint = Vector{Tuple{NfRelElem{nf_elem}, NfOrdIdl}}()
   for i = 1:d
     t = divexact(pb[i][1], den(pb[i][2]))
@@ -472,7 +472,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   end
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
-  A = MatrixSpace(F, d, d)()
+  A = zero_matrix(F, d, d)
   if minimum(p) <= d
     q = norm(p)
     k = clog(fmpz(degree(Oint)), q)
@@ -493,7 +493,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     end
   end
   B = nullspace(A)[2]
-  M1 = zero(MatrixSpace(OK, d, d))
+  M1 = zero_matrix(OK, d, d)
   imF = inv(mF)
   for i = 1:cols(B)
     for j = 1:rows(B)

@@ -33,7 +33,7 @@ end
 #end
 
 function bkz_basis(A::NfOrdIdl, bs::Int; 
-                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
+                      v::fmpz_mat = zero_matrix(FlintZZ, 1, 1),
                       prec::Int = 100)
 
                       
@@ -66,7 +66,7 @@ function bkz_basis(A::NfOrdIdl, bs::Int;
 end
 
 function fplll_basis(rt_c::Hecke.roots_ctx, A::NfOrdIdl, bs::Int; 
-                      v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(),
+                      v::fmpz_mat = zero_matrix(FlintZZ, 1,1),
                       prec::Int = 100)
                       
   K = nf(order(A))

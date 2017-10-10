@@ -440,7 +440,7 @@ function minpoly_dense(a::NfRel_nsElem)
   K = parent(a)
   n = degree(K)
   k = base_ring(K)
-  M = MatrixSpace(k, degree(K)+1, degree(K))()
+  M = zero_matrix(k, degree(K)+1, degree(K))
   z = a^0
   elem_to_mat_row!(M, 1, z)
   z *= a
@@ -460,7 +460,7 @@ function minpoly_dense(a::NfRel_nsElem)
 end
 
 function Base.Matrix(a::SMat)
-  A = MatrixSpace(base_ring(a), rows(a), cols(a))()
+  A = zero_matrix(base_ring(a), rows(a), cols(a))
   for i = 1:rows(a)
     for (k, c) = a[i]
       A[i, k] = c
@@ -555,7 +555,7 @@ function representation_mat(a::NfRel_nsElem)
   K = parent(a)
   b = basis(K)
   k = base_ring(K)
-  M = MatrixSpace(k, degree(K), degree(K))()
+  M = zero_matrix(k, degree(K), degree(K))
   for i=1:degree(K)
     elem_to_mat_row!(M, i, a*b[i])
   end
@@ -718,7 +718,7 @@ function simple_extension(K::NfRel_ns)
   end
   Ka, a = number_field(f)
   k = base_ring(K)
-  M = MatrixSpace(k, degree(K), degree(K))()
+  M = zero_matrix(k, degree(K), degree(K))
   z = one(K)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
@@ -727,7 +727,7 @@ function simple_extension(K::NfRel_ns)
     z *= pe
     elem_to_mat_row!(M, i, z)
   end
-  N = MatrixSpace(k, 1, degree(K))()
+  N = zero_matrix(k, 1, degree(K))
   b = basis(Ka)
   emb = typeof(b)()
   for i=1:n

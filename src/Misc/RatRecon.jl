@@ -21,12 +21,12 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
   R = a.parent
   if degree(a) <= n return true, a, R(1); end
 
-  M = MatrixSpace(R, 2, 2)()
+  M = zero_matrix(R, 2, 2)
   M[1,1] = b
   M[2,1] = a
   M[2,2] = R(1)
 
-  T = MatrixSpace(R, 2, 2)()
+  T = zero_matrix(R, 2, 2)
   T[1,2] = R(1)
   T[2,1] = R(1)
   while degree(M[2,1]) > n

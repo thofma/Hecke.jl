@@ -17,7 +17,7 @@ function lift(M::Generic.Mat{fq_nmod}, R::Nemo.NmodRing)
   x=factor(fmpz(R.n))
   @assert length(x.fac)==1
   @assert order(parent(M[1,1]))==first(keys(x.fac))
-  N=MatrixSpace(R,rows(M),cols(M))()
+  N=zero_matrix(R,rows(M),cols(M))
   for i=1:rows(M)
     for j=1:cols(M)
       N[i,j]=FlintZZ(coeff(M[i,j],0))
@@ -37,7 +37,7 @@ function *(x::GrpAbFinGenElem, M::nmod_mat)
   G=parent(x)
   @assert ngens(G)==rows(M)
   R=parent(M[1,1]) 
-  coeff=MatrixSpace(R,1,cols(M))()
+  coeff=zero_matrix(R,1,cols(M))
   for i=1:cols(M)
     coeff[1,i]=x.coeff[1,i]
   end
@@ -63,7 +63,7 @@ function Nemo.snf(M::ZpnGModule)
   W=[mS(s) for s in gens(S)]
   H=Array{nmod_mat,1}(length(G))
   for i=1:length(G)
-    N=MatrixSpace(M.R, ngens(S),ngens(S))()
+    N=zero_matrix(M.R, ngens(S),ngens(S))
     for j=1:length(W)
       y=mS\(W[j]*G[i])
       for k=1:ngens(S)
@@ -118,7 +118,7 @@ function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpA
   RR=ResidueRing(FlintZZ, expon)
   act_mat=Array{nmod_mat,1}(length(act))
   for z=1:length(act)
-    A=MatrixSpace(RR,ngens(V), ngens(V))()
+    A=zero_matrix(RR,ngens(V), ngens(V))
     for i=1:ngens(V)
       y=act[z](V[i])
       for j=1:ngens(V)
@@ -187,12 +187,12 @@ end
 function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
 
   A=nullspace(transpose(M))
-  B=vcat(transpose(A),MatrixSpace(M[1,1].parent, cols(A),cols(A))())
+  B=vcat(transpose(A),zero_matrix(M[1,1].parent, cols(A),cols(A)))
   for j=1:cols(A)
     B[rows(A)+j,j]=snf_struct[j]
   end
   S=nullspace(B)
-  C=vcat(transpose(A),MatrixSpace(M[1,1].parent, cols(A),cols(A))())
+  C=vcat(transpose(A),zero_matrix(M[1,1].parent, cols(A),cols(A)))
   return S*C
  
 end
@@ -230,7 +230,7 @@ function sub(M::ZpnGModule, S::nmod_mat)
   sg,msg=sub(M.V,lift(S))
   G=Array{nmod_mat,1}(length(M.G))
   for k=1:length(M.G)
-    A=MatrixSpace(M.R, ngens(sg), ngens(sg))()
+    A=zero_matrix(M.R, ngens(sg), ngens(sg))
     for i=1:ngens(sg)
       x=msg(sg[i])*M.G[k]
       x=haspreimage(msg, x)[2].coeff
@@ -250,7 +250,7 @@ function sub(M::ZpnGModule, n::Int)
   sg,msg=sub(M.V,n)
   G=Array{nmod_mat,1}(length(M.G))
   for k=1:length(M.G)
-    A=MatrixSpace(M.R, ngens(sg), ngens(sg))()
+    A=zero_matrix(M.R, ngens(sg), ngens(sg))
     for i=1:ngens(sg)
       x=msg(sg[i])*M.G[k]
       x=haspreimage(msg, x)[2].coeff
@@ -376,7 +376,7 @@ function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
   G1=Array{Generic.Mat{fq_nmod},1}(length(G))
   n=rows(G[1])
   for i=1:length(G)
-    M=MatrixSpace(F,n-s+1,n-s+1)()
+    M=zero_matrix(F,n-s+1,n-s+1)
     for j=s:n
       for k=s:n
         M[j-s+1,k-s+1]=(G[i][j,k]).data
@@ -542,11 +542,8 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
     L,_=quo(M,x)
     newlist=collect(submodules_with_struct_cyclic(L,ord-1))
     i=1
-    el=M.V(lift(x))
-    @vtime :StabSub 1 while i<=length(newlist)
-      t,mt=sub(M.V,GrpAbFinGenElem[el,M.V(lift(newlist[i]))])
-      t1,mt1=snf(t)
-      if length(t1.snf)>1
+    while i<=length(newlist)
+      if iszero(M.p^(ord-1)*M.V(lift(newlist[i])))
         deleteat!(newlist,i)
       else 
         i+=1

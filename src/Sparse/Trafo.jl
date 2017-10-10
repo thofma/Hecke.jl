@@ -403,7 +403,7 @@ function apply_right!(x::Array{T, 1}, t::TrafoDeleteZero{T}) where T
 end
 
 function apply_right!(x::Array{T, 1}, t::TrafoPartialDense) where T
-  s = MatrixSpace(parent(x[1]), 1, rows(t.U))(x[t.rows])
+  s = matrix(parent(x[1]), 1, rows(t.U), x[t.rows])
   #println("s :$s")
   s = s*t.U
   for (i, j) in zip(t.rows,1:rows(t.U))
