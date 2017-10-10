@@ -27,22 +27,22 @@ mutable struct NfRelOrdIdl{T, S}
   end
 
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
-    z = new{T, S}()
-    z.order = O
-    z.parent = NfRelOrdIdlSet{T, S}(O)
+    z = NfRelOrdIdl{T, S}(O)
     z.basis_pmat = M
     z.basis_mat = M.matrix
-    z.has_norm = false
     return z
   end
 
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
-    z = new{T, S}()
-    z.order = O
-    z.parent = NfRelOrdIdlSet{T, S}(O)
+    z = NfRelOrdIdl{T, S}(O)
     z.basis_pmat = pseudo_matrix(M)
     z.basis_mat = M
-    z.has_norm = false
+    return z
+  end
+
+  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{NfRelElem{T}, S}}) where{T, S}
+    z = NfRelOrdIdl{T, S}(O)
+    z.pseudo_basis = a
     return z
   end
 end
@@ -258,6 +258,11 @@ doc"""
 """
 ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
 
+function ideal(O::NfRelOrd{T, S}, a::Array{Tuple{NfRelElem{T}, S}}) where {T, S}
+  # checks
+  return NfRelOrdIdl{T, S}(O, a)
+end
+
 ################################################################################
 #
 #  Deepcopy
@@ -433,6 +438,26 @@ end
 #
 ################################################################################
 
+function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
+  products = Vector{NfOrdIdl}()
+  for p in primes
+    push!(products, a*p)
+  end
+  foundOne = false
+  x = order(a)()
+  while !foundOne
+    x = rand(a, 2^61) # magic number
+    foundOne = true
+    for p in products
+      if x in p
+          foundOne = false
+          break
+      end
+    end
+  end
+  return x
+end
+
 function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   d = degree(O)
   L = nf(O)
@@ -449,26 +474,9 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
   pOK = ideal(OK, OK(minimum(p)))
   prime_ideals = factor(pOK)
-  elts_max_val = Vector{NfOrdElem}(d)
+  elts_with_val = Vector{NfOrdElem}(d)
   for i = 1:d
-    products = Vector{NfOrdIdl}()
-    for (prime, e) in prime_ideals
-      push!(products, pbint[i][2]*prime)
-    end
-    while true
-      a = rand(pbint[i][2], 2^61) # magic number
-      foundOne = true
-      for pp in products
-        if a in pp
-          foundOne = false
-          break
-        end
-      end
-      if foundOne
-        elts_max_val[i] = a
-        break
-      end
-    end
+    elts_with_val[i] = element_with_valuation(pbint[i][2], [ p for (p, e) in prime_ideals ])
   end
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
@@ -477,16 +485,16 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     q = norm(p)
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
-      t = Oint((L(K(elts_max_val[i]))*pbint[i][1])^(q^k))
+      t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
       ar = elem_in_basis(t)
       for j = 1:d
-        A[j, i] = mmF(divexact(ar[j], K(elts_max_val[j])))
+        A[j, i] = mmF(divexact(ar[j], K(elts_with_val[j])))
       end
     end
   else
     for i = 1:d
       for j = i:d
-        t = L(K(elts_max_val[i]))*pbint[i][1]*L(K(elts_max_val[j]))*pbint[j][1]
+        t = L(K(elts_with_val[i]))*pbint[i][1]*L(K(elts_with_val[j]))*pbint[j][1]
         A[i, j] = mF(OK(trace(t)))
         A[j, i] = deepcopy(A[i, j])
       end
@@ -497,14 +505,21 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   imF = inv(mF)
   for i = 1:cols(B)
     for j = 1:rows(B)
-      M1[i, j] = imF(B[j, i])*elts_max_val[j]
+      M1[i, j] = imF(B[j, i])*elts_with_val[j]
     end
   end
   M2 = eye(M1)
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
-  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft), (d + 1):2*d, 1:d) 
-  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
+  PM = vcat(PM1, PM2)
+  for j = 1:d
+    t = K(den(pb[j][2]))
+    for i = 1:2*d
+      PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
+    end
+  end
+  PM = sub(pseudo_hnf_kb(PM, :lowerleft), (d + 1):2*d, 1:d)
+  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
 end
 
 ################################################################################
