@@ -68,7 +68,8 @@ function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdI
   I=ideal(O,1)
   for (p,vp) in primes
     q=p^vp
-    y=_eval_quo(O, J, p, q, anti_uniformizer(p),exponent, vp)
+    @vtime :RayFacElem ant=anti_uniformizer(p)
+    y=_eval_quo(O, J, p, q, ant ,exponent, vp)
     @vtime :RayFacElem 1 a,b=idempotents(I,q)
     el=y*a+el*b
     I=I*q
@@ -1046,7 +1047,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   O=parent(m).order
   K=nf(O)
   Q,pi=quo(O,m)
-  G, mG, lp = _mult_grp_mod_n(Q,n)
+  @vtime :RayFacElem G, mG, lp = _mult_grp_mod_n(Q,n)
   C, mC = class_group(O)
   
   if mod(n,2)==0 
@@ -1172,7 +1173,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     end
   end
   for i=2:ngens(U)
-    @vprint :RayFacElem 1 "Processing unit" i
+    @vprint :RayFacElem 1 "Processing unit $i"
     @vprint :RayFacElem 1 "\n"
     @vprint :RayFacElem 1 "Evaluation time:"
     @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[i]),lp,expo)
