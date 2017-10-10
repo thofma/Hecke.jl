@@ -572,8 +572,8 @@ function _dualize(G::GrpAbFinGen, x::Array{GrpAbFinGenElem,1}, v::Array{fmpz,1})
   end
   D = DiagonalGroup([G.snf[end] for i = 1:length(x)])
   f = GrpAbFinGenMap(G,D,M)
-  K, mK = kernel(f)
-  return map(x -> image(mK, x)::GrpAbFinGenElem, gens(K))
+  K = kernel_as_submodule(f)
+  return GrpAbFinGenElem[G(view(K,i:i,1:cols(K))) for i=1:rows(K)]
   
 end
 
