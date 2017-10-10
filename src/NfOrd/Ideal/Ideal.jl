@@ -646,7 +646,7 @@ doc"""
 """
 function in(x::NfOrdElem, y::NfOrdIdl)
   parent(x) != order(y) && error("Order of element and ideal must be equal")
-  v = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
+  v = transpose(matrix(FlintZZ, degree(parent(x)), 1, elem_in_basis(x)))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
   return t.den == 1
 end
@@ -1000,9 +1000,18 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
     return O(a)
+  else
+    return mod(x, basis_mat(y, Val{false}), preinv)
   end
+end
 
-  c = basis_mat(y)
+function mod(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+
+  O = parent(x)
+  a = elem_in_basis(x) # this is already a copy
+
   q = fmpz()
   r = fmpz()
   for i in degree(O):-1:1
@@ -1014,6 +1023,22 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
 
   z = typeof(x)(O, a)
   return z
+end
+
+function mod(x::NfOrdElem, Q::NfOrdQuoRing)
+  O = parent(x)
+  a = elem_in_basis(x) # this is already a copy
+
+  y = ideal(Q)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
+  return mod(x, Q.basis_mat_array, Q.preinvn)
 end
 
 ################################################################################
@@ -1046,7 +1071,7 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
   @assert degree(O) <= p^j
 
   R = ResidueRing(FlintZZ, p)
-  A = MatrixSpace(R, degree(O), degree(O))()
+  A = zero_matrix(R, degree(O), degree(O))
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
     ar = elem_in_basis(t)

@@ -32,11 +32,11 @@ function ResidueRingPolyMap_preimage(M::ResidueRingPolyMap{D, C}, a::Generic.Res
   g = gens(domain(M))
   im_gen = map(x->M(x), g) ## possibly should be cached and stored
   ## need to write the elements in a matrix, solve the eqn for a
-  Mt = MatrixSpace(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))()
+  Mt = zero_matrix(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))
   for i=1:degree(R.modulus)
     elem_to_mat_row!(Mt, i, im_gen[i])
   end
-  b = MatrixSpace(base_ring(base_ring(R)), 1, degree(R.modulus))()
+  b = zero_matrix(base_ring(base_ring(R)), 1, degree(R.modulus))
   elem_to_mat_row!(b, 1, a)
   s = solve_rational(Mt', b') # why, oh why is solve operating on columns????
   if isa(s, Tuple) ## again, why, oh why is solve doing things differently

@@ -563,7 +563,7 @@ end
 function representation_mat(a::NfRelElem)
   L = a.parent
   n = degree(L)
-  M = MatrixSpace(base_ring(L), n, n)()
+  M = zero_matrix(base_ring(L), n, n)
   t = gen(L)
   b = deepcopy(a)
   for i = 1:n-1

@@ -488,14 +488,14 @@ end
 # - Smat{T} * fmpz_mat as fmpz_mat
 function mul(A::SMat{T}, b::fmpz_mat) where T
   assert(rows(b) == cols(A))
-  c = MatrixSpace(FlintZZ, rows(A), cols(b))()
+  c = zero_matrix(FlintZZ, rows(A), cols(b))
   return mul!(c, A, b)
 end
 
 # - Smat{T} * Smat{T} as MatElem{T}
 function mul(A::SMat{T}, B::SMat{T}) where T
   @assert A.c == B.r
-  C = MatrixSpace(base_ring(A), A.r, B.c)()
+  C = zero_matrix(base_ring(A), A.r, B.c)
   for i=1:A.r
     for j=1:B.c
       C[i,j] = mul(A[i], B[j])
@@ -507,7 +507,7 @@ end
 # - Smat{UIntMod} * Smat{UIntMod} as MatElem{Generic.Res{fmpz}}
 function mul(A::SMat{UIntMod}, B::SMat{UIntMod})
   @assert A.c == B.r
-  C = MatrixSpace(ResidueRing(FlintZZ, base_ring(A).mod.n), A.r, B.c)()
+  C = zero_matrix(ResidueRing(FlintZZ, base_ring(A).mod.n), A.r, B.c)
   for i=1:A.r
     for j=1:B.c
       C[i,j] = mul(A[i], B[j])
@@ -852,7 +852,7 @@ doc"""
 > Requires a conversion from the base ring of $A$ to $\mathbf ZZ$.
 """
 function fmpz_mat(A::SMat{T}) where T <: Integer
-  B = MatrixSpace(FlintZZ, A.r, A.c)()
+  B = zero_matrix(FlintZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
     for j = 1:length(ra.pos)
@@ -869,7 +869,7 @@ doc"""
 > The same matix $A$, but as an fmpz_mat.
 """
 function fmpz_mat(A::SMat{fmpz})
-  B = MatrixSpace(FlintZZ, A.r, A.c)()
+  B = zero_matrix(FlintZZ, A.r, A.c)
   for i = 1:length(A.rows)
     ra = A.rows[i]
     for j = 1:length(ra.pos)

@@ -88,7 +88,7 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
   end
 
 #  println("reduced to $r")
-  rr = MatrixSpace(FlintZZ, 1, rows(T))()
+  rr = zero_matrix(FlintZZ, 1, rows(T))
   for i = 1:rows(T)
     rr[1,i] = 0
   end
@@ -351,7 +351,7 @@ end
 function unique_fmpz_mat(C::Nemo.arb_mat)
   half = parent(C[1,1])(fmpq(1//2))  #TODO: does not work
   half = parent(C[1,1])(1)//2
-  v = MatrixSpace(FlintZZ, rows(C), cols(C))()::fmpz_mat
+  v = zero_matrix(FlintZZ, rows(C), cols(C))
 
   for i=1:rows(C)
     for j=1:cols(C)
@@ -373,7 +373,7 @@ function Base.round(::Type{fmpz}, x::arb)
 end
 
 function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
-  v = MatrixSpace(FlintZZ, rows(C), cols(C))()::fmpz_mat
+  v = zero_matrix(FlintZZ, rows(C), cols(C))
 
   for i=1:rows(C)
     for j=1:cols(C)
@@ -397,7 +397,7 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
 
   b = deepcopy(a)
   cnt = 10
-  V = MatrixSpace(FlintZZ, 1, 1)()
+  V = zero_matrix(FlintZZ, 1, 1)
   while true
     while true
       prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)

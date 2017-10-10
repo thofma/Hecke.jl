@@ -106,7 +106,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
 
     F = FqNmodFiniteField(f, Symbol("_\$"))
 
-    M2 = MatrixSpace(R, degree(O), d)()
+    M2 = zero_matrix(R, degree(O), d)
 
     for i in 1:d
       coords = elem_in_basis((x^(i-1)).elem)
@@ -115,7 +115,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
       end
     end
 
-    M3 = MatrixSpace(R, degree(O), degree(O))()
+    M3 = zero_matrix(R, degree(O), degree(O))
 
     for i in 1:degree(O)
       coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
@@ -130,10 +130,8 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
     #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
     #end
 
-    Mats = MatrixSpace(R, degree(O), 1)
-
     function _image(y::NfOrdElem)
-      co = Mats()
+      co = zero_matrix(R, degree(O), 1)
       coeff = elem_in_basis(mod(y, P))
 
       for i in 1:degree(O)
@@ -421,7 +419,7 @@ Nemo.isnegative(::NfOrdElem) = false
 # with A = B * X
 # this function will find it!
 function _solve_unique(A::nmod_mat, B::nmod_mat)
-  X = MatrixSpace(base_ring(A), cols(B), rows(A))()
+  X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
   r, per, L, U = lufact(B) # P*M1 = L*U
@@ -457,7 +455,7 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
 end
 
 function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic.Res{fmpz}})
-  X = MatrixSpace(base_ring(A), cols(B), rows(A))()
+  X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
   r, per, L, U = _lufact(B) # P*M1 = L*U
@@ -626,7 +624,7 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
 
     F = FqFiniteField(f, Symbol("_\$"))
 
-    M2 = MatrixSpace(R, degree(O), d)()
+    M2 = zero_matrix(R, degree(O), d)
 
     for i in 1:d
       coords = elem_in_basis((x^(i-1)).elem)
@@ -635,7 +633,7 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
       end
     end
 
-    M3 = MatrixSpace(R, degree(O), degree(O))()
+    M3 = zero_matrix(R, degree(O), degree(O))
 
     for i in 1:degree(O)
       coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
@@ -650,10 +648,8 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
     #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
     #end
 
-    Mats = MatrixSpace(R, degree(O), 1)
-
     function _image(y::NfOrdElem)
-      co = Mats()
+      co = zero_matrix(R, degree(O), 1)
       coeff = elem_in_basis(mod(y, P))
 
       for i in 1:degree(O)

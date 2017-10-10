@@ -192,6 +192,12 @@ function *(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   return parent(x)(x.elem * y.elem)
 end
 
+function mul!(z::NfOrdQuoRingElem, x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+  mul!(z.elem, x.elem, y.elem)
+  z.elem = mod(z.elem, parent(z))
+  return z
+end
+
 function *(x::Integer, y::NfOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end
@@ -205,6 +211,9 @@ end
 *(x::NfOrdQuoRingElem, y::fmpz) = y*x
 
 function ^(a::NfOrdQuoRingElem, f::fmpz)
+ # if nbits(f) < 64
+ #   return a^Int(f)
+ # end
   f==0 && return one(parent(a))
   f==1 && return a
   if f<0
@@ -219,8 +228,34 @@ function ^(a::NfOrdQuoRingElem, f::fmpz)
   return b
 end
 
-^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
+#^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
 
+function ^(a::NfOrdQuoRingElem, b::Int)
+  if b == 0
+    return one(parent(a))
+  elseif b == 1
+    return deepcopy(a)
+  else
+    if b < 0
+      a = inv(a)
+      b = -b
+    end
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = deepcopy(a)
+    bit >>= 1
+    while bit != 0
+      z = mul!(z, z, z)
+      if (UInt(bit) & b) != 0
+        z = mul!(z, z, a)
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
 
 ################################################################################
 #
@@ -594,7 +629,7 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
-    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
   end
 
   strong_echelon_form!(B)
@@ -693,7 +728,7 @@ function strong_echelon_form!(A::Generic.Mat{NfOrdQuoRingElem})
   #print("triangularizing ... ")
   triangularize!(A)
 
-  T = MatrixSpace(base_ring(A), 1, cols(A))()
+  T = zero_matrix(base_ring(A), 1, cols(A))
 
   # We do not normalize!
   for j in 1:m
@@ -783,7 +818,7 @@ function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
-    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
   end
 
   howell_form!(B)
@@ -1008,7 +1043,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
     zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
+    v = matrix(FlintZZ, 1, degree(O), zz_num)
 
     w = v*L
 
@@ -1081,7 +1116,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
       zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
+      v = matrix(FlintZZ, 1, degree(O), zz_num)
 
       w = v*L
 

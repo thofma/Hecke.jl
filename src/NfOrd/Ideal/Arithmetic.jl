@@ -292,7 +292,7 @@ doc"""
 """
 function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
   if x.iszero == 1 || y.iszero == 1
-    z = ideal(order(x), zero(MatrixSpace(FlintZZ, degree(order(x)), degree(order(x)))))
+    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
     return z
   end
