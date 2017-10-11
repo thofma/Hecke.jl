@@ -1475,6 +1475,7 @@ mutable struct NfOrdQuoRing <: Ring
   base_ring::NfOrd
   ideal::NfOrdIdl
   basis_mat::fmpz_mat
+  basis_mat_array::Array{fmpz, 2}
   preinvn::Array{fmpz_preinvn_struct, 1}
   factor::Dict{NfOrdIdl, Int}
 
@@ -1492,6 +1493,7 @@ mutable struct NfOrdQuoRing <: Ring
     z.base_ring = O
     z.ideal = I
     z.basis_mat = basis_mat(I)
+    z.basis_mat_array = Array(z.basis_mat)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_mat[i, i]) for i in 1:degree(O)]
     d = degree(O)
     z.tmp_div = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
@@ -1509,7 +1511,7 @@ mutable struct NfOrdQuoRingElem <: RingElem
 
   function NfOrdQuoRingElem(O::NfOrdQuoRing, x::NfOrdElem)
     z = new()
-    z.elem = mod(x, ideal(O), O.preinvn)
+    z.elem = mod(x, O)
     z.parent = O
     return z
   end
