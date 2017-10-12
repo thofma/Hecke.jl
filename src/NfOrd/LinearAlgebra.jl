@@ -286,6 +286,11 @@ function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
   return PMat{T, S}(m ,c)
 end
 
+function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
+  @assert rows(m) == length(c)
+  cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
+  return PMat{nf_elem, NfOrdFracIdl}(m, cc)
+end
 
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert rows(m) == length(c)
@@ -398,7 +403,8 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
   integralizer = _make_integral!(PP)
   PPhnf = pseudo_hnf_integral(PP, shape)
   for i in 1:rows(PP)
-    mul_row!(PPhnf.matrix, i, inv(K(integralizer)))
+    PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
+    simplify(PPhnf.coeffs[i])
   end
   return PPhnf
 end
@@ -453,10 +459,17 @@ function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
   return pseudo_hnf_mod(P, num(m), shape)
 end
 
+#TODO: das kann man besser machen
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
   O = maximal_order(K)
   integralizer = one(FlintZZ)
+
+  for i = 1:rows(P)
+    divide_row!(P.matrix, i, K(den(P.coeffs[i])))
+    P.coeffs[i] = P.coeffs[i]*K(den(P.coeffs[i]))
+    simplify(P.coeffs[i])
+  end
 
   z = one(FlintZZ)
   for i in 1:rows(P)
@@ -467,12 +480,6 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
 
   for i in 1:rows(P)
     mul_row!(P.matrix, i, K(z))
-  end
-
-  for i in 1:rows(P)
-    z = den(P.coeffs[i]) * z
-    P.coeffs[i] = P.coeffs[i] * K(den(P.coeffs[i]))
-    simplify(P.coeffs[i])
   end
 
   return z
