@@ -120,9 +120,7 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
   # Transform to SNF
   rels = matrix(diagm(structt))
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
-  struct_trans = Vector{fmpz}([rels_trans[i,i] for i in 1:rows(rels_trans)])
-
-  return gens_trans, struct_trans, dlog_trans
+  return gens_trans, rels_trans, dlog_trans
 end
 
 ################################################################################
@@ -281,9 +279,7 @@ function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v; method=nothing)
   end
 
   @assert size(rels) == (length(gens),length(gens))
-
-  gens_snf , rels_snf , disc_log_snf = snf_gens_rels_log(gens,rels,disc_log,p^v)
-  struct_snf = Vector{fmpz}([rels_snf[i,i] for i in 1:cols(rels_snf)])
+  @vtime :RayFacElem 1 gens_snf , struct_snf , disc_log_snf = snf_gens_rels_log(gens, rels, disc_log, p^v)
 
   return gens_snf, struct_snf, disc_log_snf
 end
@@ -337,15 +333,15 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
 
     d = Int(div(fmpz(l),k))
     pl = l == d*k ? pk^d : p^l
-
+    @vprint :RayFacElem 1 next_method
     h,N,disc_log = next_method(p,k,l;pu=pk,pv=pl)
 
     g,M = _expand(g,M,h,N,disc_log,pl)
     push!(dlogs,disc_log)
   end
 
+  Q = NfOrdQuoRing(order(pl),pl)
   discrete_logarithm = function(b::NfOrdElem)
-    Q = NfOrdQuoRing(order(pl),pl)
     b = Q(b)
     a = []
     k = 1
@@ -361,10 +357,6 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
     end
     return a
   end
-
-  #g :: Vector{NfOrdElem}
-  #M :: fmpz_mat
-  #discrete_logarithm :: Function
 
   return g, M, discrete_logarithm
 end
@@ -422,9 +414,8 @@ end
 function _pu_mod_pv(pu,pv)
   h = copy(basis(pu))
   N = basis_mat(pv)*basis_mat_inv(pu)
-  @assert den(N) == 1
-  N = num(N)
-  return h,N
+  @hassert :NfOrdQuoRing 2 den(N) == 1
+  return h, num(N)
 end
 
 function _ideal_disc_log(x::NfOrdElem, basis_mat_inv::FakeFmpqMat)
@@ -532,9 +523,15 @@ function artin_hasse_log(y::NfOrdQuoRingElem)
   @assert length(fac) == 1
   pnum = collect(keys(fac.fac))[1]
   x = y-1
-  s = 0
+  s = Q(0)
+  t= Q(1)
   for i in 1:pnum-1
-    s += Q(-1)^(i-1) * divexact(x^i,Q(i))
+    t *=x
+    if i % 2 == 0
+      s -= divexact(t,Q(i))
+    else 
+      s += divexact(t,Q(i))
+    end
   end
   return s
 end
@@ -575,9 +572,8 @@ function p_adic_exp(p::NfOrdIdl, v, x::NfOrdElem; pv=p^v)
   pnum = minimum(p)
   val_p_x = valuation(x,p)
   e = valuation(pnum,p)
-  max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
-  val_p_maximum = Int(max_i*val_p_x - e * valuation(fac(1),p)) + 1
-  valuation(fac(1), p)
+  max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) 
+  val_p_maximum = Int(max_i*val_p_x) + 1
   Q_ = NfOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
@@ -689,8 +685,32 @@ doc"""
 function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   n, m = size(rels)
   @assert length(gens) == m
-  (n==0 || m==0) && return gens, rels, dlog
-
+  (n==0 || m==0) && return gens, fmpz[], dlog
+  @assert typeof(gens[1])==NfOrdQuoRingElem
+  G=GrpAbFinGen(rels)
+  S,mS=snf(G)
+  
+  function disclog(x)
+    y=dlog(x)
+    z=fmpz[s for s in y]
+    a=(mS\(G(z)))
+    return fmpz[a[j] for j=1:ngens(S)]
+  end
+  gens_snf=typeof(gens)(ngens(S))
+  for i=1:ngens(S)
+    x=mS(S[i])
+    y=parent(gens[1])(1)
+    for j=1:ngens(G)
+      if x[j]!=0
+        y*=gens[j]^(x[j])
+      end
+    end
+    gens_snf[i]= y
+  end
+  @assert typeof(S.snf)!=typeof(rels)
+  return gens_snf, S.snf, disclog
+  
+#=
   if issnf(rels)
     gens_snf = gens
     rels_snf = rels
@@ -771,12 +791,14 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   end
 
   return gens_trans, rels_trans, dlog_trans
+  =#
 end
 
 function snf_gens_rels_log(gens::Vector{NfOrdElem}, rels::fmpz_mat, dlog::Function, i::NfOrdIdl)
   Q , Qmap = quo(order(i),i)
   gens_quo = map(Q,gens)
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens_quo,rels,dlog)
+  @assert typeof(rels_trans)==Array{fmpz,1}
   return map(x->Qmap\x,gens_trans), rels_trans, dlog_trans
 end
 
