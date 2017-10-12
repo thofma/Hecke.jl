@@ -67,9 +67,9 @@ function _fac_elem_evaluation(O::NfOrd, J::FacElem{nf_elem}, primes::Dict{NfOrdI
   I=ideal(O,1)
   for (p,vp) in primes
     q=p^vp
-    @vtime :RayFacElem ant=anti_uniformizer(p)
+    @vtime :RayFacElem 2 ant=anti_uniformizer(p)
     y=_eval_quo(O, J, p, q, ant ,exponent, vp)
-    @vtime :RayFacElem 1 a,b=idempotents(I,q)
+    @vtime :RayFacElem 2 a,b=idempotents(I,q)
     el=y*a+el*b
     I=I*q
   end
@@ -79,7 +79,7 @@ end
 
 function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::Int, mult::Int)
   if mult==1
-    @vtime :RayFacElem 1 Q,mQ=ResidueField(O,q)
+    @vtime :RayFacElem 2 Q,mQ=ResidueField(O,q)
     el=Q(1)
     for (f,k) in J.fac
       act_el=f
@@ -107,7 +107,7 @@ function _eval_quo(O::NfOrd, J::FacElem{nf_elem}, p::NfOrdIdl, q::NfOrdIdl, anti
     end
     return mQ\el
   else
-    @vtime :RayFacElem 1 Q,mQ=quo(O,q)
+    @vtime :RayFacElem 2 Q,mQ=quo(O,q)
     el=Q(1)
     for (f,k) in J.fac
       act_el=f
@@ -603,6 +603,8 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
 end
 
 
+
+
 function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
@@ -927,7 +929,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
     end
   end
   
-  return mQ\g , [k], disclog
+  return mQ\g , k, disclog
 end
 
 function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
@@ -963,7 +965,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
  
   
   for (q,vq) in y1
-    gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
+    @vtime :RayFacElem 1 gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
   
     # Make generators coprime to other primes
     if length(fac) > 1
@@ -975,13 +977,13 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
       gens_q = beta*gens_q + alpha
     end
  
-    append!(gens,[Q(gens_q)])
-    append!(structt,struct_q)
+    push!(gens,Q(gens_q))
+    push!(structt,struct_q)
     push!(disc_logs,dlog_q)
   
   end
   for (q,vq) in y2
-    gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
+    @vtime :RayFacElem 1 gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
     # Make generators coprime to other primes
     nq=norm(q)-1  
@@ -997,8 +999,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
       end
     end
     
-    ciclmax=prod(Set(snf_q))
-    inv=gcdx(nq,ciclmax)[2]
+    inv=gcdx(nq,snf_q[end])[2]
        
     function dlog_q_norm(x::NfOrdElem)
       y=Q(x)^Int(nq)
@@ -1038,6 +1039,92 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
   
   return G, mG, merge(max,y1, y2)
+end
+
+function fac_elems_eval(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, lp::Dict{NfOrdIdl, Int}, exponent::Int)
+
+  el=[O(1) for i=1:length(elems)]
+  I=ideal(O,1)
+  for (p,vp) in lp
+    q=p^vp
+    y=_eval_quo(O, elems, p, q, anti_uniformizer(p), exponent, vp)
+    a,b=idempotents(I,q)
+    for i=1:length(el)
+      el[i]=y[i]*a+el[i]*b
+    end
+    I=I*q
+  end
+  return el
+
+end
+
+function _eval_quo(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, exponent::Int, mult::Int)
+  
+  
+  if mult==1
+    @vtime :RayFacElem 2 Q,mQ=ResidueField(O,q)
+    el=[Q(1) for i=1:length(elems)]
+    for i=1:length(elems)
+      J=elems[i]
+      for (f,k) in J.fac
+        act_el=f
+        if (act_el in O) && mQ(O(act_el))!=0
+          el[i]*=mQ(O(act_el))^mod(k,exponent)
+          continue
+        end
+        val=valuation(act_el,p)
+        act_el=act_el*(anti_uni^val)
+        if act_el in O
+          el[i]*= mQ(O(act_el))^mod(k,exponent)
+        else 
+          d=den(act_el,O)
+          n=act_el*d
+          if mQ(O(d))!=0
+            el[i]*=mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
+            continue
+          end
+          val=valuation(d,p)
+          l=anti_uni^(val)
+          d=d*l
+          n=n*l
+          el[i]*= mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
+        end
+      end
+    end
+    return [mQ\el[i] for i=1:length(el)]
+  else
+    @vtime :RayFacElem 2 Q,mQ=quo(O,q)
+    el=[Q(1) for i=1:length(elems)]
+    for i=1:length(elems)
+      J=elems[i]
+      for (f,k) in J.fac
+        act_el=f
+        if act_el in O && mod(O(act_el), p)!=0
+          el[i]*=mQ(O(act_el))^mod(k,exponent)
+          continue
+        end
+        val=valuation(act_el,p)
+        act_el=act_el*(anti_uni^val)
+        if act_el in O
+          el[i]*=Q(O(act_el))^mod(k,exponent)
+        else 
+          d=den(act_el,O)
+          n=act_el*d
+          if mod(O(d),p)!=0
+            el[i]*=mQ(O(n))^mod(k,exponent) * mQ(O(d))^mod(-k,exponent)
+            continue
+          end
+          val=valuation(d,p)
+          l=anti_uni^(val)
+          d=d*l
+          n=n*l
+          el[i]*= Q(O(n))^mod(k,exponent) * Q(O(d))^mod(-k,exponent)
+        end
+      end
+    end
+    return [mQ\el[i] for i=1:length(el)]
+  end
+ 
 end
 
 function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
@@ -1154,14 +1241,13 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   @assert issnf(U)
   if gcd(U.snf[1],n)!=1
     @vprint :RayFacElem 1 "Processing unit 1"
-    @vprint :RayFacElem 1 "Evaluation time:"
-    @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[1]),lp,expo)
+    if U.snf[1]==2
+      el=O(-1)
+    else
+      @vprint :RayFacElem 1 "Evaluation time:"
+      @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[1]),lp,expo)
+    end
     @vprint :RayFacElem 1 "\n"
-    #
-    #  This is slow. Examples show that this is the time-consuming part of the algorithm.
-    #  Ideas: working over K reducing the elements mod min(prod(lp))
-    #  To be tested again after the changes in Nemo       
-    #
     a=(mG\el).coeff
     if mod(n,2)==0 && !isempty(pr)
       a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
@@ -1170,13 +1256,19 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       R[1+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
     end
   end
+  
+  @vprint :RayFacElem 1 "Evaluating the other units and elements of the class group"
+  
+  tobeeval=FacElem{nf_elem, AnticNumberField}[mU(U[i]) for i=2:ngens(U)]
+  for i=1:ngens(C)
+    @vtime :RayFacElem 1 push!(tobeeval, Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))*nonnclass)))
+  end
+  
+  @vtime :RayFacElem 1 evals = fac_elems_eval(O,tobeeval,lp,expo)
   for i=2:ngens(U)
-    @vprint :RayFacElem 1 "Processing unit $i"
+    @vprint :RayFacElem 1 "Disclog of unit $i"
     @vprint :RayFacElem 1 "\n"
-    @vprint :RayFacElem 1 "Evaluation time:"
-    @vtime :RayFacElem 1 el=Hecke._fac_elem_evaluation(O,mU(U[i]),lp,expo)
-    @vprint :RayFacElem 1 "\n"
-    a=(mG\el).coeff
+    a=(mG\evals[i-1]).coeff
     if mod(n,2)==0 && !isempty(pr)
       b=lH(mU(U[i]))
       a=hcat(a, b.coeff)
@@ -1191,18 +1283,14 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
 #
 
   for i=1: ngens(C)
-    if order(C[i])!=1
-      y=Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))*nonnclass))
-      el=Hecke._fac_elem_evaluation(O,y,lp,expo)
-      a=((mG\el)*inverse_d).coeff
-      if mod(n,2)==0 && !isempty(pr)
-        b=lH(y)
-        a=hcat(a, b.coeff)
-      end
-      for j=1: ngens(G)
-        R[i,ngens(C)+j]=-a[1,j]
-      end 
+    a=((mG\evals[i+ngens(U)-1])*inverse_d).coeff
+    if mod(n,2)==0 && !isempty(pr)
+      b=lH(evals[i+ngens(U)-1])
+      a=hcat(a, b.coeff)
     end
+    for j=1: ngens(G)
+      R[i,ngens(C)+j]=-a[1,j]
+    end 
   end
   
   X=AbelianGroup(R)
