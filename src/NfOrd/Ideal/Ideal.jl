@@ -1024,6 +1024,38 @@ function mod(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmp
   return z
 end
 
+function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+
+  O = parent(x)
+  a = elem_in_basis(x, Val{false}) # this is already a copy
+
+  q = fmpz()
+  r = fmpz()
+  for i in degree(O):-1:1
+    if iszero(a[i])
+      continue
+    end
+    fdiv_qr_with_preinvn!(q, r, a[i], c[i, i], preinv[i])
+    for j in 1:i
+      submul!(a[j], q, c[i, j])
+    end
+  end
+  # We need to adjust the underlying nf_elem
+  t = nf(O)()
+  B = O.basis_nf
+  zero!(x.elem_in_nf)
+  for i in 1:degree(O)
+    mul!(t, B[i], a[i])
+    add!(x.elem_in_nf, x.elem_in_nf, t)
+  end
+
+  @hassert :NfOrd 2 x.elem_in_nf == dot(a, O.basis_nf)
+
+  return x
+end
+
 function mod(x::NfOrdElem, Q::NfOrdQuoRing)
   O = parent(x)
   a = elem_in_basis(x) # this is already a copy
@@ -1038,6 +1070,22 @@ function mod(x::NfOrdElem, Q::NfOrdQuoRing)
   end
 
   return mod(x, Q.basis_mat_array, Q.preinvn)
+end
+
+function mod!(x::NfOrdElem, Q::NfOrdQuoRing)
+  O = parent(x)
+  a = elem_in_basis(x, Val{false}) # this is already a copy
+
+  y = ideal(Q)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
+  return mod!(x, Q.basis_mat_array, Q.preinvn)
 end
 
 ################################################################################

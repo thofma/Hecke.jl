@@ -194,7 +194,7 @@ end
 
 function mul!(z::NfOrdQuoRingElem, x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   mul!(z.elem, x.elem, y.elem)
-  z.elem = mod(z.elem, parent(z))
+  mod!(z.elem, parent(z))
   return z
 end
 
@@ -320,14 +320,14 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   V[1, 1] = 1
 
-  a = elem_in_basis(x.elem)
+  a = elem_in_basis(x.elem, Val{false})
 
   for i in 1:d
     V[1, 1 + i] = a[i]
   end
 
   _copy_matrix_into_matrix(V, 2, 2, A)   # this really is a copy
-  _copy_matrix_into_matrix(V, 2+d, 2, B) # this really is a copy
+  _copy_matrix_into_matrix(V, 2 + d, 2, B) # this really is a copy
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
@@ -572,7 +572,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  a = elem_in_basis(Q(O(1)).elem)
+  a = elem_in_basis(Q(O(1)).elem, Val{false})
 
   V = parent(x).tmp_xxgcd
 

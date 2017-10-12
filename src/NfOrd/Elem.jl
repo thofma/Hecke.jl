@@ -210,10 +210,14 @@ doc"""
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfOrdElem)
+function elem_in_basis(a::NfOrdElem, copy::Type{Val{T}} = Val{true}) where {T}
   assure_has_coord(a)
   @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
-  return deepcopy(a.elem_in_basis)
+  if copy == Val{true}
+    return deepcopy(a.elem_in_basis)
+  else
+    return a.elem_in_basis
+  end
 end
 
 ################################################################################
