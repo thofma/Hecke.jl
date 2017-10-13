@@ -333,7 +333,6 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
 
     d = Int(div(fmpz(l),k))
     pl = l == d*k ? pk^d : p^l
-    @vprint :RayFacElem 1 next_method
     h,N,disc_log = next_method(p,k,l;pu=pk,pv=pl)
 
     g,M = _expand(g,M,h,N,disc_log,pl)
