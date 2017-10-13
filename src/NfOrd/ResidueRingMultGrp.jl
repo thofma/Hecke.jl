@@ -698,12 +698,13 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   end
   gens_snf=typeof(gens)(ngens(S))
   for i=1:ngens(S)
-    x=mS(S[i])
+    x=(mS(S[i])).coeff
+    for j=1:ngens(G)
+      x[1,j]=mod(x[1,j],S.snf[end])
+    end
     y=parent(gens[1])(1)
     for j=1:ngens(G)
-      if x[j]!=0
-        y*=gens[j]^(x[j])
-      end
+      y*=gens[j]^(x[1,j])
     end
     gens_snf[i]= y
   end
