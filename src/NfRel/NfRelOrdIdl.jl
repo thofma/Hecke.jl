@@ -99,7 +99,7 @@ function assure_has_basis_pmat(a::NfRelOrdIdl{T, S}) where {T, S}
     push!(C, deepcopy(pb[i][2]))
   end
   M = M*basis_mat_inv(order(a), Val{false})
-  a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft)
+  a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
   return nothing
 end
 
@@ -246,7 +246,7 @@ doc"""
 """
 function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   # checks
-  H = pseudo_hnf(M, :lowerleft)
+  H = pseudo_hnf(M, :lowerleft, true)
   return NfRelOrdIdl{T, S}(O, H)
 end
 
@@ -545,7 +545,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = try sub(pseudo_hnf(PM), 1:d, 1:d)
+  PM = try sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
     catch sub(pseudo_hnf_kb(PM), 1:d, 1:d)
     end
   N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})

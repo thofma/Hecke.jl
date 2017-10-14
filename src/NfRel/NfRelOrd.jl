@@ -474,7 +474,7 @@ function maximal_order_via_absolute(L::NfRel{T}) where T
   for i = 1:dabs
     elem_to_mat_row!(M, i, labsToL(Labs(B[i])))
   end
-  PM = sub(pseudo_hnf_kb(PseudoMatrix(M), :lowerleft), (dabs - d + 1):dabs, 1:d)
+  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
   S = typeof(PM.coeffs[1])
   return NfRelOrd{T, S}(L, PM)
 end
@@ -585,7 +585,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
     U = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, Umodp)
     PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
-    PN = try sub(pseudo_hnf(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+    PN = try sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
     catch sub(pseudo_hnf_kb(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
     end
     OO = Order(L, PN)
@@ -655,7 +655,7 @@ function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
   aB = basis_pmat(a)
   bB = basis_pmat(b)
   d = degree(a)
-  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
+  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
     catch sub(pseudo_hnf_kb(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
     end
   return NfRelOrd{T, S}(nf(a), PM)

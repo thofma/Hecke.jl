@@ -397,7 +397,21 @@ function rand(I::NfOrdFracIdl, B::Int)
   return divexact(elem_in_nf(z), den(I))
 end
 
-function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
+function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = false)
+  if full_rank
+    return pseudo_hnf_full_rank(P, shape)
+  else
+    # TODO: If P is not of full rank and rows(P) > cols(P)
+    # pseudo_hnf_integral (called by pseudo_hnf_full_rank)
+    # starts an infinite loop.
+    Q = try pseudo_hnf_full_rank(P, shape)
+    catch pseudo_hnf_kb(P, shape)
+    end
+    return Q
+  end
+end
+
+function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
   K = parent(PP.matrix[1, 1])
   integralizer = _make_integral!(PP)
@@ -525,6 +539,40 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
       mul_row!(res.matrix, i + shift, elem_in_nf(e))
       divide_row!(res.matrix, i + shift, elem_in_nf(zz[i + shift, i].elem))
       res.matrix[i + shift, i] = one(nf(O))
+    end
+  end
+
+  if shape == :upperright
+    t = nf(O)()
+    for i = (cols(res) - 1):-1:1
+      for j = (i + 1):cols(res)
+        if iszero(res.matrix[i, j])
+          continue
+        end
+        d = res.coeffs[j]//res.coeffs[i]
+        q = mod(res.matrix[i, j], d)
+        q = q - res.matrix[i, j]
+        for c = j:cols(res)
+          mul!(t, q, res.matrix[j, c])
+          addeq!(res.matrix[i, c], t)
+        end
+      end
+    end
+  elseif shape == :lowerleft
+    t = nf(O)()
+    for i = (shift + 2):rows(res)
+      for j = (i - shift - 1):-1:1
+        if iszero(res.matrix[i, j])
+          continue
+        end
+        d = res.coeffs[j + shift]//res.coeffs[i]
+        q = mod(res.matrix[i, j], d)
+        q = q - res.matrix[i, j]
+        for c = 1:j
+          mul!(t, q, res.matrix[j + shift, c])
+          addeq!(res.matrix[i, c], t)
+        end
+      end
     end
   end
 
