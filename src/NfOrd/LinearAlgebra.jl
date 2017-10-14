@@ -309,7 +309,7 @@ PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ri
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
-   m = one(MatrixSpace(K, length(c), length(c)))
+   m = identity_matrix(K, length(c))
    return PseudoMatrix(m, c)
 end
 
@@ -698,11 +698,11 @@ function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
-      U = one(MatrixSpace(base_ring(H.matrix), m, m))
+      U = eye(H.matrix, m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
    else
-      U = zero(MatrixSpace(base_ring(H.matrix), 0, 0))
+      U = similar(H.matrix, 0, 0)
       pseudo_hnf_cohen!(H, U, false)
       return H
    end

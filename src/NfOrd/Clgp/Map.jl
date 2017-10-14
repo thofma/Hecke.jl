@@ -233,7 +233,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   if h==1 # group is trivial...
     C = DiagonalGroup([1])
     #mC = x -> 1*O, inv x-> [1]
-    c.dl_data = (1, MatrixSpace(FlintZZ, 1, 1)(1), C)
+    c.dl_data = (1, identity_matrix(FlintZZ, 1), C)
     return C
   end
 

@@ -57,7 +57,7 @@ function Nemo.snf(M::ZpnGModule)
   A=M.V
   G=M.G
   if issnf(A)
-    return M, GrpAbFinGenMap(A,A, MatrixSpace(FlintZZ,ngens(A),ngens(A))(1))
+    return M, GrpAbFinGenMap(A,A, identity_matrix(FlintZZ, ngens(A)))
   end
   S,mS=snf(A)
   W=[mS(s) for s in gens(S)]
@@ -517,7 +517,7 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   N=_exponent_p_sub(S)
   submod=Generic.Mat{fq_nmod}[]
   if N.dim==1
-    push!(submod, MatrixSpace(N.K,1,1)(1))
+    push!(submod, identity_matrix(N.K, 1))
   else
     @vtime :StabSub 1 submod=minimal_submodules(N,1,composition_factors(N))
   end

@@ -401,8 +401,7 @@ function basis_mat_prime_deg_1(A::NfOrdIdl)
   @assert A.minimum == A.norm
   O = order(A)
   n = degree(O)
-  b = one(MatrixSpace(FlintZZ, n, n))
-  # TODO: replace with eye once we switch to new Nemo version
+  b = identity_matrix(FlintZZ, n)
 
   K, mK = ResidueField(O, A)
   assure_has_basis(O)
@@ -1087,9 +1086,9 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
     for x in 2:length(X)
       m = vcat(m,lift(MMat(X[x])))
     end
-    m = vcat(m, MatrixSpace(FlintZZ, degree(O), degree(O))(p))
+    m = vcat(m, p*identity_matrix(FlintZZ, degree(O)))
   else
-    m = MatrixSpace(FlintZZ, degree(O), degree(O))(p)
+    m = p*identity_matrix(FlintZZ, degree(O))
   end
   mm::fmpz_mat = _hnf(m, :lowerleft)
   r = sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O))

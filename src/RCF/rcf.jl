@@ -1123,8 +1123,8 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #    println("z: $z")
     tau_z = vcat([can_frobenius(induce_image(p, tau_Ka), Cp[im].bigK).coeff for p = lp])
 #    println("tau(z): $tau_z")
-    z = hcat(z, MatrixSpace(FlintZZ, length(lp), length(lp))(om))
-    tau_z = hcat(tau_z, MatrixSpace(FlintZZ, length(lp), length(lp))(om))
+    z = hcat(z, om*identity_matrix(FlintZZ, length(lp)))
+    tau_z = hcat(tau_z, om*identity_matrix(FlintZZ, length(lp)))
     @assert C.Ka == base_ring(Cp[im].K)
 
     all_s = []

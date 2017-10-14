@@ -293,7 +293,7 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  If the modulus is prime, the second part of the Howell form computation is useless and I can directly call the rref
   #  but I have to test if the modulus is prime. What is better?
   #
-  N = hcat(M', MatrixSpace(R, cols(M), cols(M))(1))
+  N = hcat(M', identity_matrix(R, cols(M)))
   N = howell_form(N)
   if gcd(prod([N[i,i] for i=1:rows(N)]).data,modulus(R))==1
     return 0, MatrixSpace(R,cols(M),1)

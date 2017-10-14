@@ -566,7 +566,7 @@ function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   X = zero_matrix(base_ring(a),cols(b),cols(b) - r)
 
   if r == 0
-    return one(MatrixSpace(FlintZZ, cols(b), cols(b) - r)), cols(b)
+    return vcat(identity_matrix(FlintZZ, cols(b) - r), zero_matrix(FlintZZ, r, cols(b) - r)), cols(b)
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1
@@ -611,7 +611,7 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   X = zero_matrixSpace(FlintZZ,cols(b),cols(b))
 
   if r == 0
-    return one(MatrixSpace(FlintZZ, cols(b), cols(b)))
+    return identity_matrix(FlintZZ, cols(b))
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1
@@ -858,11 +858,11 @@ doc"""
 """
 function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   if r
-    R = MatrixSpace(FlintZZ, cols(A), cols(A))(1)
+    R = identity_matrix(FlintZZ, cols(A))
   end
 
   if l
-    L = MatrixSpace(FlintZZ, rows(A), rows(A))(1)
+    L = identity_matrix(FlintZZ, rows(A))
   end
   # TODO: if only one trafo is required, start with the HNF that does not
   #       compute the trafo
@@ -951,7 +951,7 @@ function Base.nullspace(M::nmod_mat)
     return (k, n)
   end
 
-  N = hcat(M', MatrixSpace(R, cols(M), cols(M))(1))
+  N = hcat(M', identity_matrix(R, cols(M)))
   ex = 0
   if rows(N) < cols(N)
     ex = cols(N) - rows(N)

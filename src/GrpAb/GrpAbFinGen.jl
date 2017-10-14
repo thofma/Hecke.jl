@@ -687,7 +687,7 @@ doc"""
 function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   if length(s) == 0
-    I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+    I = identity_matrix(FlintZZ, ngens(G))
     m = GrpAbFinGenMap(G, G, I, I)
     if add_to_lattice
       append!(L, m)
@@ -716,7 +716,7 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   end
 
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(p), ngens(p))(1)
+  I = identity_matrix(FlintZZ, ngens(p))
   m = GrpAbFinGenMap(p, Q, I, I)
   if add_to_lattice
     append!(L, m)
@@ -735,7 +735,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(rels(G), M)
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  I = identity_matrix(FlintZZ, ngens(G))
   m = GrpAbFinGenMap(G, Q, I, I)
   if add_to_lattice
     append!(L, m)
@@ -762,7 +762,7 @@ end
 function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   r = [gcd(x, n) for x = G.snf]
-  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  I = identity_matrix(FlintZZ, ngens(G))
   Q = DiagonalGroup(r)
   m = GrpAbFinGenMap(G, Q, I, I)
   if add_to_lattice
@@ -773,9 +773,9 @@ end
 
 function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  m = vcat(G.rels, MatrixSpace(FlintZZ, ngens(G), ngens(G))(n))
+  m = vcat(G.rels, n*identity_matrix(FlintZZ, ngens(G)))
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  I = identity_matrix(FlintZZ, ngens(G))
   m = GrpAbFinGenMap(G, Q, I, I)
   if add_to_lattice
     append!(L, m)

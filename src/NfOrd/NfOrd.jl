@@ -650,8 +650,8 @@ doc"""
 Returns the equation order of the number field $K$.
 """
 function EquationOrder(K::AnticNumberField, cache::Bool = true)
-  M = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
-  Minv = FakeFmpqMat(one(MatrixSpace(FlintZZ, degree(K), degree(K))))
+  M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+  Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   z = NfOrd(K, M, Minv, [gen(K)^i for i in 0:(degree(K) - 1)], cache)
   z.isequation_order = true
   return z

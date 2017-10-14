@@ -464,7 +464,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
-  basis_mat_int = zero_matrix(K, d, d)()
+  basis_mat_int = zero_matrix(K, d, d)
   pbint = Vector{Tuple{NfRelElem{nf_elem}, NfOrdIdl}}()
   for i = 1:d
     t = divexact(pb[i][1], den(pb[i][2]))

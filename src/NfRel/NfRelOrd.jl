@@ -445,7 +445,7 @@ function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
 end
 
 function EquationOrder(L::NfRel{T}) where T
-  M = one(MatrixSpace(base_ring(L), degree(L), degree(L)))
+  M = identity_matrix(base_ring(L), degree(L))
   O = Order(L, M)
   O.basis_mat_inv = M
   O.isequation_order = true
@@ -470,7 +470,7 @@ function maximal_order_via_absolute(L::NfRel{T}) where T
 
   d = degree(L)
   dabs = degree(Labs)
-  M = MatrixSpace(K, dabs, d)()
+  M = zero_matrix(K, dabs, d)
   for i = 1:dabs
     elem_to_mat_row!(M, i, labsToL(Labs(B[i])))
   end

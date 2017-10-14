@@ -368,7 +368,7 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
     end
 
     r.header = MapHeader(G, G, image, preimage)
-    r.map = one(MatrixSpace(FlintZZ, ngens(G), ngens(G)))
+    r.map = identity_matrix(FlintZZ, ngens(G))
     return r
   end
 
