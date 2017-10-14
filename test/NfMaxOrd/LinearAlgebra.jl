@@ -46,6 +46,12 @@
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])
 
+    B = Hecke.PseudoMatrix(matrix(K, [1 1; 1 1; 1 0]), [ ideal(O, K(1)), ideal(O, K(fmpq(1, 2))), ideal(O, K(1)) ])
+
+    Bhnf = pseudo_hnf(B, :lowerleft, true)
+
+    @test Bhnf.matrix == matrix(K, [0 0; 1 0; 1 1])
+
     # Construct random pseudo-matrices over different fields and check if the
     # pseudo hermite normal form span the same module
     
