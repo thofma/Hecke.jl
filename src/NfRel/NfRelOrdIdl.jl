@@ -226,10 +226,10 @@ function show(io::IO, s::NfRelOrdIdlSet)
 end
 
 function show(io::IO, a::NfRelOrdIdl)
-  print(io, "Ideal of (")
-  print(io, order(a), ")\n")
+  print(io, "Ideal of\n")
+  print(io, order(a), "\n\n")
   print(io, "with basis pseudo-matrix\n")
-  print(io, basis_pmat(a, Val{false}))
+  showcompact(io, basis_pmat(a, Val{false}))
 end
 
 ################################################################################
@@ -501,24 +501,26 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     end
   end
   B = nullspace(A)[2]
-  M1 = zero_matrix(OK, d, d)
+  M1 = zero_matrix(K, d, d)
   imF = inv(mF)
   for i = 1:cols(B)
     for j = 1:rows(B)
-      M1[i, j] = imF(B[j, i])*elts_with_val[j]
+      M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
     end
   end
-  M2 = eye(M1)
-  PM1 = PseudoMatrix(M1)
-  PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
-  PM = vcat(PM1, PM2)
+  M2 = zero_matrix(K, d, d)
   for j = 1:d
     t = K(den(pb[j][2]))
-    for i = 1:2*d
-      PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
+    M2[j, j] = inv(t)
+    for i = 1:d
+      M1[i, j] = divexact(M1[i, j], t)
     end
   end
-  PM = sub(pseudo_hnf_kb(PM, :lowerleft), (d + 1):2*d, 1:d)
+  PM1 = PseudoMatrix(M1)
+  PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
+  println(vcat(PM1, PM2))
+  println()
+  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
   return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
 end
 
@@ -530,6 +532,7 @@ end
 
 function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
+  K = base_ring(nf(O))
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
   S = basis_mat_inv(O, Val{false})*basis_mat_inv(a, Val{false})
@@ -541,7 +544,11 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   C = Array{NfOrdFracIdl}(d^2)
   for i = 1:d
     for j = 1:d
-      C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
+      if i == j
+        C[(i - 1)*d + j] = ideal(order(pb[i][2]), K(1))
+      else
+        C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
+      end
     end
   end
   PM = PseudoMatrix(transpose(M), C)
@@ -550,5 +557,31 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     end
   N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_hnf(PN, :lowerleft, true)
   return NfRelOrd{nf_elem, NfOrdFracIdl}(nf(O), PN)
+end
+
+################################################################################
+#
+#  Absolute to relative
+#
+################################################################################
+
+function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
+  L = domain(m)
+  Labs = codomain(m)
+  @assert nf(order(a)) == Labs
+  K = base_ring(L)
+  O = relative_order(order(a), m)
+  mm = inv(m)
+  B = basis(a, Val{false})
+  d = degree(L)
+  dabs = degree(Labs)
+  M = zero_matrix(K, dabs, d)
+  for i = 1:dabs
+    elem_to_mat_row!(M, i, mm(Labs(B[i])))
+  end
+  M = M*basis_mat_inv(O, Val{false})
+  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
+  return NfRelOrdIdl{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(O, PM)
 end

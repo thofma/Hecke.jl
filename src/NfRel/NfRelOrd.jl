@@ -276,8 +276,11 @@ function show(io::IO, O::NfRelOrd)
   print(io, "with pseudo-basis ")
   pb = pseudo_basis(O, Val{false})
   for i = 1:degree(O)
-    print(io, "\n")
-    print(io, pb[i])
+    print(io, "\n(")
+    print(io, pb[i][1])
+    print(io, ", ")
+    showcompact(io, pb[i][2])
+    print(io, ")")
   end
 end
 
@@ -298,7 +301,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
     a *= pb[i][2]^2
   end
   disc = d*a
-  simplify_exact!(disc)
+  simplify(disc)
   O.disc_abs = num(disc)
   return nothing
 end
@@ -319,7 +322,7 @@ function assure_has_discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
     a *= pb[i][2]^2
   end
   disc = d*a
-  simplify_exact!(disc)
+  simplify(disc)
   O.disc_rel = num(disc)
   return nothing
 end
@@ -459,24 +462,15 @@ end
 
 maximal_order(L::NfRel) = MaximalOrder(L)
 
-function maximal_order_via_absolute(L::NfRel{T}) where T
-  K = base_ring(L)
-  OK = MaximalOrder(K)
-
+function maximal_order_via_absolute(L::NfRel)
   Labs, lToLabs, kToLabs = absolute_field(L)
-  OLabs = MaximalOrder(Labs)
-  labsToL = inv(lToLabs)
-  B = basis(OLabs, Val{false})
+  Oabs = MaximalOrder(Labs)
+  return relative_order(Oabs, lToLabs)
+end
 
-  d = degree(L)
-  dabs = degree(Labs)
-  M = zero_matrix(K, dabs, d)
-  for i = 1:dabs
-    elem_to_mat_row!(M, i, labsToL(Labs(B[i])))
-  end
-  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
-  S = typeof(PM.coeffs[1])
-  return NfRelOrd{T, S}(L, PM)
+function maximal_order_via_absolute(m::NfRelToNf)
+  Oabs = MaximalOrder(codomain(m))
+  return relative_order(Oabs, m)
 end
 
 ################################################################################
@@ -622,7 +616,10 @@ function pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl)
   d = discriminant(O)
   OO = poverorder(O, p)
   dd = discriminant(OO)
+  i = 1
   while d != dd
+    i += 1
+    println(i)
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
@@ -659,4 +656,28 @@ function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
     catch sub(pseudo_hnf_kb(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
     end
   return NfRelOrd{T, S}(nf(a), PM)
+end
+
+################################################################################
+#
+#  Absolute to relative
+#
+################################################################################
+
+function relative_order(O::NfOrd, m::NfRelToNf)
+  L = domain(m)
+  Labs = codomain(m)
+  @assert nf(O) == Labs
+  K = base_ring(L)
+  OK = MaximalOrder(K)
+  mm = inv(m)
+  B = basis(O, Val{false})
+  d = degree(L)
+  dabs = degree(Labs)
+  M = zero_matrix(K, dabs, d)
+  for i = 1:dabs
+    elem_to_mat_row!(M, i, mm(Labs(B[i])))
+  end
+  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
+  return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L, PM)
 end
