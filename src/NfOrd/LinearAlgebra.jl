@@ -272,11 +272,22 @@ function Base.deepcopy_internal(P::PMat{T, S}, dict::ObjectIdDict) where {T, S}
 end
 
 function show(io::IO, P::PMat)
-  print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
-  for i in 1:rows(P.matrix)
-    print(io, "\n")
-    showcompact(io, P.coeffs[i])
-    print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
+  compact = get(io, :compact, false)
+  if compact
+    for i in 1:rows(P.matrix)
+      i == 1 || print(io, "\n")
+      print(io, "(")
+      showcompact(io, P.coeffs[i])
+      print(io, ") * ")
+      print(io, sub(P.matrix, i:i, 1:cols(P.matrix)))
+    end
+  else
+    print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
+    for i in 1:rows(P.matrix)
+      print(io, "\n")
+      showcompact(io, P.coeffs[i])
+      print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
+    end
   end
 end
 
