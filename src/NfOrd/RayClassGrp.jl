@@ -1196,7 +1196,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
  
   
   for (q,vq) in y1
-    @vtime :RayFacElem 1 gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
+    gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
   
     # Make generators coprime to other primes
     if length(fac) > 1
@@ -1214,7 +1214,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   
   end
   for (q,vq) in y2
-    @vtime :RayFacElem 1 gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
+    gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
     # Make generators coprime to other primes
     nq=norm(q)-1  
