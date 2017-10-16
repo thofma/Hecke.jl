@@ -1082,7 +1082,14 @@ function mod!(x::NfOrdElem, Q::NfOrdQuoRing)
     for i in 1:length(a)
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
-    return O(a)
+    t = nf(O)()
+    B = O.basis_nf
+    zero!(x.elem_in_nf)
+    for i in 1:degree(O)
+      mul!(t, B[i], a[i])
+      add!(x.elem_in_nf, x.elem_in_nf, t)
+    end
+    return x
   end
 
   return mod!(x, Q.basis_mat_array, Q.preinvn)
