@@ -1821,6 +1821,11 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
   end
 end
 
+function mod!(z::fmpz, x::fmpz, y::fmpz)
+  ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+  return z
+end
+
 function mod!(a::nf_elem, b::fmpz)
   z = fmpz()
   for i=0:a.elem_length-1
