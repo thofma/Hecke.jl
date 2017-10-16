@@ -211,11 +211,11 @@ end
 *(x::NfOrdQuoRingElem, y::fmpz) = y*x
 
 function ^(a::NfOrdQuoRingElem, f::fmpz)
- # if nbits(f) < 64
- #   return a^Int(f)
- # end
+  if nbits(f) < 64
+    return a^Int(f)
+  end
   f==0 && return one(parent(a))
-  f==1 && return a
+  f==1 && return deepcopy(a)
   if f<0
     f=-f
     a = inv(a)
