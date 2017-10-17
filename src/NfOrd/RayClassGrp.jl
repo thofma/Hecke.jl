@@ -63,14 +63,14 @@ end
 
 function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem, AnticNumberField},1}, lp::Dict{NfOrdIdl, Int}, exponent::Int)
 
-  newelems=_reduce_exponents(elems,exponent)
+  newelems=_preproc(O,elems,exponent)
   quots=[]
   idemps=[]
   el=[Q(1) for i=1:length(newelems)]
   I=ideal(O,1)
   for (p,vp) in lp
     q=p^vp
-    y, Qn=_eval_quo(O, newelems, p, q, anti_uniformizer(p), vp)
+    y, Qn=_eval_quo(O, newelems, p, q, anti_uniformizer(p), vp, exponent)
     push!(quots,Qn)
     a,b=idempotents(I,q)
     push!(idemps,(a,b))
@@ -83,18 +83,45 @@ function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem,
 
 end
 
-function _reduce_exponents(elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::Int)
+#
+#  Reduces the elements modulo the exponents and computes a representation as a product of elements in O
+#
+
+function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::Int)
   
-  newelems=FacElem{nf_elem, AnticNumberField}[]
+  assure_has_basis_mat_inv(O)
+  M = O.tcontain
+  newelems=FacElem{NfOrdElem, NfOrd}[]
   for el in elems
-    x=Dict{nf_elem, fmpz}()
+    x=Dict{NfOrdElem, fmpz}()
     for (f,k) in el.fac
       l=mod(k,exponent)
       if !iszero(l)
-        x[f]=l
+        elem_to_mat_row!(M.num, 1, M.den, f)
+        M = mul!(M, M, O.basis_mat_inv)
+        if M.den==1
+          el=O(vec(Array(M.num)))
+          if haskey(x,el)
+            x[el]+=l
+          else
+            x[el]=l
+          end
+        else
+          d=O(M.den)
+          n=O(vec(Array(M.num)))
+          if haskey(x,n)
+            x[n]=mod(x[n]+l,exponent)
+          else
+            x[n]=l
+          end
+          if haskey(x,d)
+            x[d]=mod(x[d]+exponent-l,exponent)
+          else
+            x[d]=exponent-l
+          end
+        end
       end
     end
-    @vprint
     if !isempty(x)
       push!(newelems, FacElem(x))
     else 
@@ -107,8 +134,7 @@ function _reduce_exponents(elems::Array{FacElem{nf_elem, AnticNumberField},1}, e
 end
 
 
-function _eval_quo(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, mult::Int)
-  
+function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, mult::Int, exp::Int)
   
   if mult==1
     @vtime :RayFacElem 2 Q,mQ=ResidueField(O,p)
@@ -118,31 +144,14 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1},
       neg_el=Q(1)
       for (f,k) in J.fac
         act_el=f
-        if (act_el in O) && mQ(O(act_el))!=0
-          el[i]*=mQ(O(act_el))^k
+        if mQ(act_el)!=0
+          el[i]*=mQ(act_el)^k
           continue
         end
         val=valuation(act_el,p)
-        act_el=act_el*(anti_uni^val)
-        if act_el in O
-          el[i]*= mQ(O(act_el))^k
-        else 
-          d=den(act_el)
-          n=num(act_el)
-          if mQ(O(d))!=0
-            el[i]*=mQ(O(n))^k 
-            neg_el*= mQ(O(d))^(k)
-            continue
-          end
-          val=valuation(d,p)
-          l=anti_uni^(val)
-          d=d*l
-          n=n*l
-          el[i]*=mQ(O(n))^k 
-          neg_el*= mQ(O(d))^k
-        end
+        act_el=O(act_el*(anti_uni^val),false)
+        el[i]*= mQ(O(act_el))^k
       end
-      el[i]*=neg_el^(-1)
     end
     return [mQ\el[i] for i=1:length(el)], (Q,mQ)
   else
@@ -150,34 +159,16 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1},
     el=[Q(1) for i=1:length(elems)]
     for i=1:length(elems)
       J=elems[i]
-      neg_el=Q(1)
       for (f,k) in J.fac
         act_el=f
-        if act_el in O && mod(O(act_el), p)!=0
-          el[i]*=mQ(O(act_el))^k
+        if mod(act_el, p)!=0
+          el[i]*=mQ(act_el)^k
           continue
         end
         val=valuation(act_el,p)
-        act_el=act_el*(anti_uni^val)
-        if act_el in O
-          el[i]*=Q(O(act_el))^k
-        else 
-          d=den(act_el)
-          n=num(act_el)
-          if mod(O(d),p)!=0
-            el[i]*=mQ(O(n))^k 
-            neg_el*=mQ(O(d))^k
-            continue
-          end
-          val=valuation(d,p)
-          l=anti_uni^(val)
-          d=d*l
-          n=n*l
-          el[i]*= Q(O(n))^k 
-          neg_el*= Q(O(d))^k
-        end
+        act_el=O(act_el*(anti_uni^val),false)
+        el[i]*=Q(act_el)^k
       end
-      el[i]*=neg_el^(-1)
     end
     return [mQ\el[i] for i=1:length(el)], Q
   end
@@ -192,14 +183,38 @@ end
 
 function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::Array, J::FacElem{nf_elem,AnticNumberField}, primes::Dict{NfOrdIdl, Int}, exponent::Int)
   
+  assure_has_basis_mat_inv(O)
+  M=O.tcontain
   el=Q(1)
   i=0
-  #Reduce the exponents
-  x=Dict{nf_elem, fmpz}()
+  #Reduce the exponents and reduce to elements in O
+  x=Dict{NfOrdElem, fmpz}()
   for (f,k) in J.fac
     l=mod(k,exponent)
     if !iszero(l)
-      x[f]=l
+      elem_to_mat_row!(M.num, 1, M.den, f)
+      M = mul!(M, M, O.basis_mat_inv)
+      if M.den==1
+        el=O(vec(Array(M.num)))
+        if haskey(x,el)
+          x[el]=mod(x[el]+l,exponent)
+        else
+          x[el]=l
+        end
+      else
+        d=O(M.den)
+        n=O(vec(Array(M.num)))
+        if haskey(x,n)
+          x[n]=mod(x[n]+l,exponent)
+        else
+          x[n]=l
+        end
+        if haskey(x,d)
+          x[d]=mod(x[d]+exponent-l,exponent)
+        else
+          x[d]=exponent-l
+        end
+      end
     end
   end
   if isempty(x)
@@ -216,71 +231,35 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
 
 end
 
-function _eval_quo(O::NfOrd, Q1, J::FacElem{nf_elem}, p::NfOrdIdl, anti_uni::nf_elem,  mult::Int)
+function _eval_quo(O::NfOrd, Q1, J::FacElem{NfOrdElem, NfOrd}, p::NfOrdIdl, anti_uni::nf_elem,  mult::Int)
   if mult==1
     Q=Q1[1]
     mQ=Q1[2]
     el=Q(1)
-    neg_el=Q(1)
     for (f,k) in J.fac
       act_el=f
-      if (act_el in O) && mQ(O(act_el))!=0
-        el*=mQ(O(act_el))^k
+      if mQ(act_el)!=0
+        el*=mQ(act_el)^k
         continue
       end
       val=valuation(act_el,p)
-      act_el=act_el*(anti_uni^val)
-      if act_el in O
-        el=el*mQ(O(act_el))^k
-      else 
-        d=den(act_el)
-        n=num(act_el)
-        if mQ(O(d))!=0
-          el*=mQ(O(n))^k
-          neg_el*= mQ(O(d))^k
-          continue
-        end
-        val=valuation(d,p)
-        l=anti_uni^(val)
-        d=d*l
-        n=n*l
-        el*=mQ(O(n))^k
-        neg_el*= mQ(O(d))^k
-      end
+      act_el=O(act_el*(anti_uni^val),false)
+      el*= mQ(act_el)^k
     end
-    el*=neg_el^(-1)
     return mQ\el
   else
     Q=Q1
     el=Q(1)
-    neg_el=Q(1)
     for (f,k) in J.fac
       act_el=f
-      if act_el in O && mod(O(act_el), p)!=0
-        el*=Q(O(act_el))^k
+      if mod(act_el, p)!=0
+        el*=Q(act_el)^k
         continue
       end
       val=valuation(act_el,p)
-      act_el=act_el*(anti_uni^val)
-      if act_el in O
-        el*= Q(O(act_el))^k
-      else 
-        d=den(act_el)
-        n=num(act_el)
-        if mod(O(d),p)!=0
-          el*=Q(O(n))^k
-          neg_el*=Q(O(d))^k
-          continue
-        end
-        val=valuation(d,p)
-        l=anti_uni^(val)
-        d=d*l
-        n=n*l
-        el*=Q(O(n))^k
-        neg_el*=Q(O(d))^k
-      end
+      act_el=O(act_el*(anti_uni^val),false)
+      el*= Q(act_el)^k
     end
-    el*=neg_el^(-1)
     return el.elem
   end
  
@@ -571,8 +550,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   append!(tobeeval,princ_gens)
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp,expon)
-  @vtime :RayFacElem 1 append!(evals,ev)
+  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp,expon)
+  append!(evals,ev)
   @vprint :RayFacElem 1 "\n"
   
   for i=1:ngens(U)
