@@ -434,7 +434,7 @@ function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   return PPhnf
 end
 
-function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
+function pseudo_hnf_integral(P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
   K = parent(P.matrix[1, 1])
   O = maximal_order(K)
   if rows(P) == cols(P)
@@ -472,12 +472,17 @@ function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
       p = next_prime(p)
     end
     Minor = zero_matrix(K, cols(P), cols(P))
-    for i = 1:cols(P)
-      for j = 1:cols(P)
-        Minor[i, j] = P.matrix[rowPerm[i], j]
+    C = Array{S, 1}(rank)
+    for i = 1:rows(P)
+      if rowPerm[i] > rank
+        continue
       end
+      for j = 1:cols(P)
+        Minor[rowPerm[i], j] = P.matrix[i, j]
+      end
+      C[rowPerm[i]] = P.coeffs[i]
     end
-    PMinor = PseudoMatrix(Minor, [P.coeffs[rowPerm[i]] for i in 1:rank])
+    PMinor = PseudoMatrix(Minor, C)
     m = det(PMinor)
   end
   simplify(m)

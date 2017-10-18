@@ -518,8 +518,6 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   end
   PM1 = PseudoMatrix(M1)
   PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
-  println(vcat(PM1, PM2))
-  println()
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
   return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
 end
