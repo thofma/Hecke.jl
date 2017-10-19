@@ -287,7 +287,7 @@ for (s,f) in ((:trunc, Base.trunc), (:round, Base.round), (:ceil, Base.ceil), (:
   @eval begin
     function ($s)(a::Array{BigFloat, 2})
       s = Base.size(a)
-      m = MatrixSpace(FlintZZ, s[1], s[2])()
+      m = zero_matrix(FlintZZ, s[1], s[2])
       for i = 1:s[1]
         for j = 1:s[2]
           m[i,j] = FlintZZ(BigInt(($f)(a[i,j])))

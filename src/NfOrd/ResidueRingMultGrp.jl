@@ -120,9 +120,7 @@ function _multgrp(Q::NfOrdQuoRing; method=nothing)
   # Transform to SNF
   rels = matrix(diagm(structt))
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
-  struct_trans = Vector{fmpz}([rels_trans[i,i] for i in 1:rows(rels_trans)])
-
-  return gens_trans, struct_trans, dlog_trans
+  return gens_trans, rels_trans, dlog_trans
 end
 
 ################################################################################
@@ -281,9 +279,7 @@ function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v; method=nothing)
   end
 
   @assert size(rels) == (length(gens),length(gens))
-
-  gens_snf , rels_snf , disc_log_snf = snf_gens_rels_log(gens,rels,disc_log,p^v)
-  struct_snf = Vector{fmpz}([rels_snf[i,i] for i in 1:cols(rels_snf)])
+  gens_snf , struct_snf , disc_log_snf = snf_gens_rels_log(gens, rels, disc_log, p^v)
 
   return gens_snf, struct_snf, disc_log_snf
 end
@@ -307,7 +303,7 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
     k0 = 1 + div(fmpz(e),(pnum-1))
   end
   g = Vector{NfOrdElem}()
-  M = MatrixSpace(FlintZZ,0,0)()
+  M = zero_matrix(FlintZZ,0,0)
   dlogs = Vector{Function}()
 
   l = u
@@ -337,15 +333,16 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
 
     d = Int(div(fmpz(l),k))
     pl = l == d*k ? pk^d : p^l
-
     h,N,disc_log = next_method(p,k,l;pu=pk,pv=pl)
-
+    
     g,M = _expand(g,M,h,N,disc_log,pl)
+    
+    
     push!(dlogs,disc_log)
   end
 
-  discrete_logarithm = function(b::NfOrdElem)
-    Q = NfOrdQuoRing(order(pl),pl)
+  Q = NfOrdQuoRing(order(pl),pl)
+  function discrete_logarithm(b::NfOrdElem)
     b = Q(b)
     a = []
     k = 1
@@ -362,10 +359,6 @@ function _iterative_method(p::NfOrdIdl, u, v; base_method=nothing, use_p_adic=tr
     return a
   end
 
-  #g :: Vector{NfOrdElem}
-  #M :: fmpz_mat
-  #discrete_logarithm :: Function
-
   return g, M, discrete_logarithm
 end
 
@@ -381,65 +374,76 @@ function _calculate_steps(stepsize,maximum)
   return steps
 end
 
+#
+# Given generators and relations for groups of two consecutives steps, this function computes 
+# generators and relations for the product
+#
 function _expand(g,M,h,N,disc_log,pl)
   isempty(g) && return h,N
   isempty(h) && return g,M
-  P = _compute_P(g,M,h,N,disc_log,pl)
-  Z = MatrixSpace(FlintZZ,rows(N),cols(M))()
-  M = [M -P ; Z N]
-  g = [g ; h]
-  return g,M
-end
-
-function _compute_P(g,M,h,N,disc_log,pl)
+  
+  # I am assuming that N is a diagonal matrix
+  @assert issnf(N)
   O = order(pl)
-  O_mod_pl , O_mod_pl_map = quo(O,pl)
+  Q , mQ = quo(O,pl)
+  Z = zero_matrix(FlintZZ,rows(M)+rows(N),cols(M)+cols(N))
+  for i=1:rows(M)
+    for j=1:cols(M)
+      Z[i,j]=M[i,j]
+    end
+  end
+  for i=1:rows(N)
+    Z[i+rows(M),i+rows(M)]=N[i,i]
+  end
 
-  Mg = Vector{NfOrdElem}(length(g))
   for i in 1:rows(M)
-    Mg[i] = preimage(O_mod_pl_map,prod([ O_mod_pl_map(g[j])^M[i,j] for j in 1:length(g)]))
-  end
-
-  P = MatrixSpace(FlintZZ,rows(M),cols(N))()
-  for i in 1:rows(P)
-    b = Mg[i]
-    alpha = disc_log(b)
-    for j in 1:cols(P)
-      P[i,j] = alpha[j]
+    el = prod([Q(g[j])^M[i,j] for j=1:cols(M) ]).elem
+    alpha = disc_log(el)
+    for j in 1:cols(N)
+      Z[i,j+cols(M)] = -alpha[j]
     end
   end
 
-  @hassert :NfOrdQuoRing 2 Mg == begin
-    Ph = Vector{NfOrdElem}(rows(P))
-    for i in 1:rows(P)
-      Ph[i] = preimage(O_mod_pl_map,prod([ O_mod_pl_map(h[j])^P[i,j] for j in 1:length(h)]))
-    end
-    Ph
-  end
-  return P
+  append!(g,h)
+  
+  return g,Z
 end
+
+
+#
+#  This function returns a set of generators with the corresponding relations and disclog
+#
 
 function _pu_mod_pv(pu,pv)
-  h = copy(basis(pu))
+
+  O=order(pu)
+  b=basis(pu)
   N = basis_mat(pv)*basis_mat_inv(pu)
-  @assert den(N) == 1
-  N = num(N)
-  return h,N
-end
-
-function _ideal_disc_log(x::NfOrdElem, basis_mat_inv::FakeFmpqMat)
-  x_vector = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
-  x_fakemat = FakeFmpqMat(x_vector, fmpz(1))
-  res_fakemat = x_fakemat * basis_mat_inv
-  den(res_fakemat) != 1 && error("Element is in the ideal")
-  res_mat = num(res_fakemat)
-  @assert size(res_mat)[1] == 1
-  return vec(Array(res_mat))
-end
-
-function _ideal_disc_log(x::NfOrdElem, ideal::NfOrdIdl)
-  parent(x) != order(ideal) && error("Order of element and ideal must be equal")
-  return _ideal_disc_log(x, basis_mat_inv(ideal))
+  @hassert :NfOrdQuoRing 1 den(N) == 1
+  G=AbelianGroup(num(N))
+  S,mS=snf(G)
+  
+  #Generators
+  gens=Array{NfOrdElem,1}(ngens(S))
+  for i=1:ngens(S)
+    x=mS(S[i])
+    gens[i]=O(0)
+    for j=1:ngens(G)
+      gens[i]+=mod(x[j], S.snf[end])*b[j]
+    end
+  end
+  
+  #Disclog  
+  M=basis_mat_inv(pu)*mS.imap
+  function disclog(x::NfOrdElem)
+    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x)), fmpz(1))
+    res_fakemat = x_fakemat * M
+    den(res_fakemat) != 1 && error("Element is in the ideal")
+    return vec(Array(num(res_fakemat)))
+  end
+  
+  return gens, rels(S), disclog
+  
 end
 
 # Let p be a prime ideal above a prime number pnum. Let e = v_p(pnum) be
@@ -468,9 +472,11 @@ end
 function _quadratic_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert 2*u >= v >= u >= 1
-  g,M = _pu_mod_pv(pu,pv)
+  g,M, dlog = _pu_mod_pv(pu,pv)
   map!(x -> x + 1, g, g)
-  discrete_logarithm = function(x) _ideal_disc_log(mod(x-1,pv),basis_mat_inv(pu)) end
+  function discrete_logarithm(x::NfOrdElem)
+    return dlog(mod(x-1,pv))
+  end
   return g, M, discrete_logarithm
 end
 
@@ -486,57 +492,46 @@ end
 # and pnum*u >= v >= u >= 1
 function _artin_hasse_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
   @hassert :NfOrdQuoRing 2 isprime(p)
+  
   pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
-  g,M = _pu_mod_pv(pu,pv)
-  map!(x->artin_hasse_exp(pv,x), g, g)
-  discrete_logarithm = function(x) return _ideal_disc_log(artin_hasse_log(x,pv),basis_mat_inv(pu)) end
+  Q, mQ=quo(order(p), pv)
+  g,M, dlog = _pu_mod_pv(pu,pv)
+  map!(x->artin_hasse_exp(Q(x),pnum), g, g)
+  
+  function discrete_logarithm(x::NfOrdElem)
+    return dlog(artin_hasse_log(Q(x), pnum)) 
+  end
   return g, M, discrete_logarithm
 end
 
-function artin_hasse_exp(pl::NfOrdIdl, x::NfOrdElem)
-  @assert order(pl) == parent(x)
-  O = order(pl)
-  Q = NfOrdQuoRing(O,pl)
-  x = Q(x)
-  return artin_hasse_exp(x).elem
-end
-
-function artin_hasse_exp(x::NfOrdQuoRingElem)
+function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
   Q = parent(x)
-  pl = ideal(Q)
-  fac = factor(minimum(pl))
-  @assert length(fac) == 1
-  pnum = collect(keys(fac.fac))[1]
   s = 1
   fac_i = 1
+  t=Q(1)
   for i in 1:pnum-1
+    t*=x
     fac_i *= Q(i)
-    s += divexact(x^i,fac_i)
+    s += divexact(t,fac_i)
   end
-  return s
+  return s.elem
 end
 
-function artin_hasse_log(y::NfOrdElem, pl::NfOrdIdl)
-  @assert order(pl) == parent(y)
-  O = order(pl)
-  Q = NfOrdQuoRing(O,pl)
-  y = Q(y)
-  return artin_hasse_log(y).elem
-end
-
-function artin_hasse_log(y::NfOrdQuoRingElem)
+function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
   Q = parent(y)
-  pl = ideal(Q)
-  fac = factor(minimum(pl))
-  @assert length(fac) == 1
-  pnum = collect(keys(fac.fac))[1]
   x = y-1
-  s = 0
+  s = Q(0)
+  t= Q(1)
   for i in 1:pnum-1
-    s += Q(-1)^(i-1) * divexact(x^i,Q(i))
+    t *=x
+    if i % 2 == 0
+      s -= divexact(t,Q(i))
+    else 
+      s += divexact(t,Q(i))
+    end
   end
-  return s
+  return s.elem
 end
 
 ################################################################################
@@ -555,29 +550,31 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v) if u >= k0, where p is a prime ideal over pnum,
 # e the p-adic valuation of pnum, and k0 = 1 + div(e,pnum-1)
-function _p_adic_method(p::NfOrdIdl, u, v; pu=p^u, pv=p^v)
+function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @assert v > u >= 1
   @hassert :NfOrdQuoRing 2 isprime(p)
   pnum = minimum(p)
-  e = valuation(pnum,p)
+  e = valuation(pnum,p) #ramification index
   k0 = 1 + div(fmpz(e),(pnum-1))
   @assert u >= k0
-  g,M = _pu_mod_pv(pu,pv)
-  map!(x->p_adic_exp(p,v,x;pv=pv), g, g)
-  discrete_logarithm = function(b) _ideal_disc_log(p_adic_log(p,v,b;pv=pv),basis_mat_inv(pu)) end
+  g,M, dlog = _pu_mod_pv(pu,pv)
+  Q = NfOrdQuoRing(order(p),pv)
+  map!(x->p_adic_exp(Q,p,v,x,e;pv=pv), g, g)
+ 
+  function discrete_logarithm(b::NfOrdElem) 
+    return dlog(p_adic_log(Q,p,v,b,e;pv=pv))
+  end
+ 
   return g, M, discrete_logarithm
 end
 
-function p_adic_exp(p::NfOrdIdl, v, x::NfOrdElem; pv=p^v)
+function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv=p^v)
   O = parent(x)
   x == 0 && return O(1)
-  Q = NfOrdQuoRing(O,pv)
   pnum = minimum(p)
   val_p_x = valuation(x,p)
-  e = valuation(pnum,p)
-  max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
-  val_p_maximum = Int(max_i*val_p_x - e * valuation(fac(1),p)) + 1
-  valuation(fac(1), p)
+  max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) 
+  val_p_maximum = Int(max_i*val_p_x) + 1
   Q_ = NfOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
@@ -599,31 +596,11 @@ function p_adic_exp(p::NfOrdIdl, v, x::NfOrdElem; pv=p^v)
   return s.elem
 end
 
-function p_adic_exp2(x::NfOrdQuoRingElem)
-  Q1 = parent(x)
-  x = x.elem
-  Q = NfOrdQuoRing(parent(x),ideal(Q1)^2) # TODO
-  x = Q(x)
-  s = Q(1)
-  i = 1
-  fac_i = Q(1)
-  while true
-    inc = divexact(x^i,fac_i)
-    inc == 0 && break
-    s += inc
-    i += 1
-    fac_i *= i
-  end
-  return Q1(s.elem)
-end
-
-function p_adic_log(p,v,y::NfOrdElem;pv=p^v)
+function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(y)
   y == 1 && return O(0)
-  Q = NfOrdQuoRing(O,pv)
   pnum = minimum(p)
   x = y - 1
-  e = valuation(pnum, p)
   val_p_x = valuation(x, p)
   s = zero(Q)
   xi = one(O)
@@ -644,22 +621,6 @@ function p_adic_log(p,v,y::NfOrdElem;pv=p^v)
   return s.elem
 end
 
-function p_adic_log2(y::NfOrdQuoRingElem)
-  Q1 = parent(y)
-  y = y.elem
-  Q = NfOrdQuoRing(parent(y),ideal(Q1)^2) # TODO
-  x = Q(y-1)
-  s = Q(0)
-  i = 1
-  while true
-    inc = divexact(x^i,i)
-    inc *= Q(-1)^(i-1)
-    inc == 0 && break
-    s += inc
-    i += 1
-  end
-  return Q1(s.elem)
-end
 
 
 ################################################################################
@@ -689,8 +650,34 @@ doc"""
 function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   n, m = size(rels)
   @assert length(gens) == m
-  (n==0 || m==0) && return gens, rels, dlog
-
+  (n==0 || m==0) && return gens, fmpz[], dlog
+  @assert typeof(gens[1])==NfOrdQuoRingElem
+  
+  G=GrpAbFinGen(rels)
+  S,mS=snf(G)
+  
+  function disclog(x)
+    y=dlog(x)
+    z=fmpz[s for s in y]
+    a=(mS\(G(z)))
+    return fmpz[a[j] for j=1:ngens(S)]
+  end
+  
+  gens_snf=typeof(gens)(ngens(S))
+  for i=1:ngens(S)
+    x=(mS(S[i])).coeff
+    for j=1:ngens(G)
+      x[1,j]=mod(x[1,j],S.snf[end])
+    end
+    y=parent(gens[1])(1)
+    for j=1:ngens(G)
+      y*=gens[j]^(x[1,j])
+    end
+    gens_snf[i]= y
+  end
+  return gens_snf, S.snf, disclog
+  
+#=
   if issnf(rels)
     gens_snf = gens
     rels_snf = rels
@@ -749,7 +736,7 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
 
   # Remove trivial components and empty relations
   if (max_one!=0) || (n!=m)
-    rels_trans = MatrixSpace(FlintZZ,n-max_one,n-max_one)()
+    rels_trans = zero_matrix(FlintZZ,n-max_one,n-max_one)
     for i in 1:rows(rels_trans)
       for j in 1:cols(rels_trans)
         rels_trans[i,j] = rels_snf[max_one+i,max_one+j]
@@ -771,12 +758,14 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   end
 
   return gens_trans, rels_trans, dlog_trans
+  =#
 end
 
 function snf_gens_rels_log(gens::Vector{NfOrdElem}, rels::fmpz_mat, dlog::Function, i::NfOrdIdl)
   Q , Qmap = quo(order(i),i)
   gens_quo = map(Q,gens)
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens_quo,rels,dlog)
+  @assert typeof(rels_trans)==Array{fmpz,1}
   return map(x->Qmap\x,gens_trans), rels_trans, dlog_trans
 end
 

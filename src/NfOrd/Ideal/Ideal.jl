@@ -401,8 +401,7 @@ function basis_mat_prime_deg_1(A::NfOrdIdl)
   @assert A.minimum == A.norm
   O = order(A)
   n = degree(O)
-  b = one(MatrixSpace(FlintZZ, n, n))
-  # TODO: replace with eye once we switch to new Nemo version
+  b = identity_matrix(FlintZZ, n)
 
   K, mK = ResidueField(O, A)
   assure_has_basis(O)
@@ -646,7 +645,7 @@ doc"""
 """
 function in(x::NfOrdElem, y::NfOrdIdl)
   parent(x) != order(y) && error("Order of element and ideal must be equal")
-  v = transpose(MatrixSpace(FlintZZ, degree(parent(x)), 1)(elem_in_basis(x)))
+  v = transpose(matrix(FlintZZ, degree(parent(x)), 1, elem_in_basis(x)))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
   return t.den == 1
 end
@@ -1000,9 +999,18 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
       a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
     end
     return O(a)
+  else
+    return mod(x, basis_mat(y, Val{false}), preinv)
   end
+end
 
-  c = basis_mat(y)
+function mod(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+
+  O = parent(x)
+  a = elem_in_basis(x) # this is already a copy
+
   q = fmpz()
   r = fmpz()
   for i in degree(O):-1:1
@@ -1014,6 +1022,77 @@ function mod(x::NfOrdElem, y::NfOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
 
   z = typeof(x)(O, a)
   return z
+end
+
+function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+  # this function assumes that HNF is lower left
+  # !!! This must be changed as soon as HNF has a different shape
+
+  O = parent(x)
+  a = elem_in_basis(x, Val{false}) # this is already a copy
+
+  q = fmpz()
+  r = fmpz()
+  for i in degree(O):-1:1
+    if iszero(a[i])
+      continue
+    end
+    fdiv_qr_with_preinvn!(q, r, a[i], c[i, i], preinv[i])
+    for j in 1:i
+      submul!(a[j], q, c[i, j])
+    end
+  end
+  # We need to adjust the underlying nf_elem
+  t = nf(O)()
+  B = O.basis_nf
+  zero!(x.elem_in_nf)
+  for i in 1:degree(O)
+    mul!(t, B[i], a[i])
+    add!(x.elem_in_nf, x.elem_in_nf, t)
+  end
+
+  @hassert :NfOrd 2 x.elem_in_nf == dot(a, O.basis_nf)
+
+  return x
+end
+
+function mod(x::NfOrdElem, Q::NfOrdQuoRing)
+  O = parent(x)
+  a = elem_in_basis(x) # this is already a copy
+
+  y = ideal(Q)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    return O(a)
+  end
+
+  return mod(x, Q.basis_mat_array, Q.preinvn)
+end
+
+function mod!(x::NfOrdElem, Q::NfOrdQuoRing)
+  O = parent(x)
+  a = elem_in_basis(x, Val{false}) # this is already a copy
+
+  y = ideal(Q)
+
+  if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
+    for i in 1:length(a)
+      a[i] = mod(a[i], y.princ_gen_special[1 + y.princ_gen_special[1]])
+    end
+    t = nf(O)()
+    B = O.basis_nf
+    zero!(x.elem_in_nf)
+    for i in 1:degree(O)
+      mul!(t, B[i], a[i])
+      add!(x.elem_in_nf, x.elem_in_nf, t)
+    end
+    return x
+  end
+
+  return mod!(x, Q.basis_mat_array, Q.preinvn)
 end
 
 ################################################################################
@@ -1046,7 +1125,7 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
   @assert degree(O) <= p^j
 
   R = ResidueRing(FlintZZ, p)
-  A = MatrixSpace(R, degree(O), degree(O))()
+  A = zero_matrix(R, degree(O), degree(O))
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
     ar = elem_in_basis(t)
@@ -1062,9 +1141,9 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
     for x in 2:length(X)
       m = vcat(m,lift(MMat(X[x])))
     end
-    m = vcat(m, MatrixSpace(FlintZZ, degree(O), degree(O))(p))
+    m = vcat(m, p*identity_matrix(FlintZZ, degree(O)))
   else
-    m = MatrixSpace(FlintZZ, degree(O), degree(O))(p)
+    m = p*identity_matrix(FlintZZ, degree(O))
   end
   mm::fmpz_mat = _hnf(m, :lowerleft)
   r = sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O))

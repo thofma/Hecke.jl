@@ -268,7 +268,7 @@ doc"""
 """
 function (A::GrpAbFinGen)(x::Array{fmpz, 1})
   ngens(A) != length(x) && error("Lengths do not coincide")
-  y = Matrix(FlintZZ, 1, ngens(A), x)
+  y = matrix(FlintZZ, 1, ngens(A), x)
   z = GrpAbFinGenElem(A, y)
   return z
 end
@@ -309,7 +309,7 @@ doc"""
 """
 function getindex(A::GrpAbFinGen, i::Int)
   (i < 1 || i > ngens(A)) && error("Index out of range")
-  z = MatrixSpace(FlintZZ, 1, ngens(A))()
+  z = zero_matrix(FlintZZ, 1, ngens(A))
   for j in 1:ngens(A)
     z[1, j] = fmpz()
   end

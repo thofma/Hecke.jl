@@ -272,11 +272,22 @@ function Base.deepcopy_internal(P::PMat{T, S}, dict::ObjectIdDict) where {T, S}
 end
 
 function show(io::IO, P::PMat)
-  print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
-  for i in 1:rows(P.matrix)
-    print(io, "\n")
-    showcompact(io, P.coeffs[i])
-    print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
+  compact = get(io, :compact, false)
+  if compact
+    for i in 1:rows(P.matrix)
+      i == 1 || print(io, "\n")
+      print(io, "(")
+      showcompact(io, P.coeffs[i])
+      print(io, ") * ")
+      print(io, sub(P.matrix, i:i, 1:cols(P.matrix)))
+    end
+  else
+    print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
+    for i in 1:rows(P.matrix)
+      print(io, "\n")
+      showcompact(io, P.coeffs[i])
+      print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
+    end
   end
 end
 
@@ -286,6 +297,11 @@ function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
   return PMat{T, S}(m ,c)
 end
 
+function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
+  @assert rows(m) == length(c)
+  cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
+  return PMat{nf_elem, NfOrdFracIdl}(m, cc)
+end
 
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert rows(m) == length(c)
@@ -304,7 +320,7 @@ PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ri
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
-   m = one(MatrixSpace(K, length(c), length(c)))
+   m = identity_matrix(K, length(c))
    return PseudoMatrix(m, c)
 end
 
@@ -319,7 +335,7 @@ function cols(m::PMat)
 end
 
 function change_ring(m::Generic.Mat{NfOrdElem}, K::AnticNumberField)
-  return MatrixSpace(K, rows(m), cols(m))(map(z -> K(z), m.entries))
+  return matrix(K, map(z -> K(z), m.entries))
 end
 
 function det(m::PMat)
@@ -392,18 +408,33 @@ function rand(I::NfOrdFracIdl, B::Int)
   return divexact(elem_in_nf(z), den(I))
 end
 
-function pseudo_hnf(P::PMat, shape::Symbol = :upperright)
+function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = false)
+  if full_rank
+    return pseudo_hnf_full_rank(P, shape)
+  else
+    # TODO: If P is not of full rank and rows(P) > cols(P)
+    # pseudo_hnf_integral (called by pseudo_hnf_full_rank)
+    # starts an infinite loop.
+    Q = try pseudo_hnf_full_rank(P, shape)
+    catch pseudo_hnf_kb(P, shape)
+    end
+    return Q
+  end
+end
+
+function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
   K = parent(PP.matrix[1, 1])
-  ints = _make_integral!(PP)
+  integralizer = _make_integral!(PP)
   PPhnf = pseudo_hnf_integral(PP, shape)
-  for i in 1:length(ints)
-    mul_row!(PPhnf.matrix, i, inv(K(ints[i])))
+  for i in 1:rows(PP)
+    PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
+    simplify(PPhnf.coeffs[i])
   end
   return PPhnf
 end
 
-function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
+function pseudo_hnf_integral(P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
   K = parent(P.matrix[1, 1])
   O = maximal_order(K)
   if rows(P) == cols(P)
@@ -418,7 +449,7 @@ function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
       for t in lp
         F, mF = ResidueField(O, t[1])
         mFF = extend(mF, K)
-        Pt = MatrixSpace(codomain(mFF), rows(P), cols(P))()
+        Pt = zero_matrix(codomain(mFF), rows(P), cols(P))
         nextIdeal = false
         for i = 1:rows(P)
           for j = 1:cols(P)
@@ -440,35 +471,48 @@ function pseudo_hnf_integral(P::PMat, shape::Symbol = :upperright)
       end
       p = next_prime(p)
     end
-    Minor = MatrixSpace(K, cols(P), cols(P))()
-    for i = 1:cols(P)
-      for j = 1:cols(P)
-        Minor[i, j] = P.matrix[rowPerm[i], j]
+    Minor = zero_matrix(K, cols(P), cols(P))
+    C = Array{S, 1}(rank)
+    for i = 1:rows(P)
+      if rowPerm[i] > rank
+        continue
       end
+      for j = 1:cols(P)
+        Minor[rowPerm[i], j] = P.matrix[i, j]
+      end
+      C[rowPerm[i]] = P.coeffs[i]
     end
-    PMinor = PseudoMatrix(Minor, [P.coeffs[rowPerm[i]] for i in 1:rank])
+    PMinor = PseudoMatrix(Minor, C)
     m = det(PMinor)
   end
   simplify(m)
   return pseudo_hnf_mod(P, num(m), shape)
 end
 
+#TODO: das kann man besser machen
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
   O = maximal_order(K)
-  integralizers = Array{fmpz, 1}(rows(P))
+  integralizer = one(FlintZZ)
 
+  for i = 1:rows(P)
+    divide_row!(P.matrix, i, K(den(P.coeffs[i])))
+    P.coeffs[i] = P.coeffs[i]*K(den(P.coeffs[i]))
+    simplify(P.coeffs[i])
+  end
+
+  z = one(FlintZZ)
   for i in 1:rows(P)
-    z = one(FlintZZ)
     for j in 1:cols(P)
       z = lcm(z, den(P.matrix[i, j], O))
     end
-    mul_row!(P.matrix, i, K(z))
-    integralizers[i] = den(P.coeffs[i]) * z
-    P.coeffs[i] = P.coeffs[i] * K(den(P.coeffs[i]))
-    simplify(P.coeffs[i])
   end
-  return integralizers
+
+  for i in 1:rows(P)
+    mul_row!(P.matrix, i, K(z))
+  end
+
+  return z
 end
 
 function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
@@ -483,7 +527,7 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
   t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
 
-  res_mat = MatrixSpace(nf(O), rows(P), cols(P))()
+  res_mat = zero_matrix(nf(O), rows(P), cols(P))
   for i in 1:rows(P)
     for j in 1:cols(P)
       res_mat[i, j] = elem_in_nf(zz[i, j].elem)
@@ -514,6 +558,40 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
     end
   end
 
+  if shape == :upperright
+    t = nf(O)()
+    for i = (cols(res) - 1):-1:1
+      for j = (i + 1):cols(res)
+        if iszero(res.matrix[i, j])
+          continue
+        end
+        d = res.coeffs[j]//res.coeffs[i]
+        q = mod(res.matrix[i, j], d)
+        q = q - res.matrix[i, j]
+        for c = j:cols(res)
+          mul!(t, q, res.matrix[j, c])
+          addeq!(res.matrix[i, c], t)
+        end
+      end
+    end
+  elseif shape == :lowerleft
+    t = nf(O)()
+    for i = (shift + 2):rows(res)
+      for j = (i - shift - 1):-1:1
+        if iszero(res.matrix[i, j])
+          continue
+        end
+        d = res.coeffs[j + shift]//res.coeffs[i]
+        q = mod(res.matrix[i, j], d)
+        q = q - res.matrix[i, j]
+        for c = 1:j
+          mul!(t, q, res.matrix[j + shift, c])
+          addeq!(res.matrix[i, c], t)
+        end
+      end
+    end
+  end
+
   #println("computation of reduction : $t_comp_red")
   #println("modular computation      : $t_mod_comp")
   #println("computation of ideal sum : $t_sum")
@@ -535,11 +613,16 @@ function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
     c[i] = I
   end
   Om, OtoOm = quo(O, m)
-  z = MatrixSpace(Om, rows(P), cols(P))()
+  z = zero_matrix(Om, rows(P), cols(P))
   for i in 1:rows(z)
     for j in 1:cols(z)
       @assert norm(c[i])*mat[i, j] in O
-      @assert euclid(OtoOm(O(norm(c[i])))) == 1
+      # TH TODO:
+      # The following assertion will fail in case Om is the zero ring.
+      # (This happens if m is the whole ring).
+      # But if m is the whole ring, we actually don't have to do
+      # anything.
+      #@assert euclid(OtoOm(O(norm(c[i])))) == 1
       q = OtoOm(O(norm(c[i])*mat[i,j]))
       qq = inv(OtoOm(O(norm(c[i]))))
       z[i, j] = q*qq
@@ -639,7 +722,7 @@ end
 
 function sub(M::Generic.Mat, rows::UnitRange{Int}, cols::UnitRange{Int})
   @assert step(rows) == 1 && step(cols) == 1
-  z = MatrixSpace(base_ring(M), length(rows), length(cols))()
+  z = zero_matrix(base_ring(M), length(rows), length(cols))
   for i in rows
     for j in cols
       z[i - start(rows) + 1, j - start(cols) + 1] = M[i, j]
@@ -656,7 +739,7 @@ end
 function in(x::nf_elem, y::NfOrdFracIdl)
   B = inv(basis_mat(y))
   O = order(y)
-  M = MatrixSpace(FlintZZ, 1, degree(O))()
+  M = zero_matrix(FlintZZ, 1, degree(O))
   t = FakeFmpqMat(M)
   elem_to_mat_row!(t.num, 1, t.den, x)
   v = t*basis_mat_inv(O)
@@ -679,11 +762,11 @@ function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
-      U = one(MatrixSpace(base_ring(H.matrix), m, m))
+      U = eye(H.matrix, m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
    else
-      U = zero(MatrixSpace(base_ring(H.matrix), 0, 0))
+      U = similar(H.matrix, 0, 0)
       pseudo_hnf_cohen!(H, U, false)
       return H
    end
@@ -1372,7 +1455,7 @@ function intersection(M::ModDed, N::ModDed)
       A, B = B, A
    end
    C1 = hcat(A, deepcopy(A))
-   m = zero(MatrixSpace(base_ring(B.matrix), rows(B), cols(B)))
+   m = zero_matrix(base_ring(B.matrix), rows(B), cols(B))
    C2 = hcat(B, PseudoMatrix(m, B.coeffs))
    C = vcat(C1, C2)
    # C = [A A; B 0]
@@ -1391,7 +1474,7 @@ end
 function mod(M::ModDed, p::NfOrdIdl)
    O = base_ring(M)
    Op = ResidueRing(O, p)
-   N = zero(MatrixSpace(Op, rows(M.pmatrix), cols(M.pmatrix)))
+   N = zero_matrix(Op, rows(M.pmatrix), cols(M.pmatrix))
    MM = M.pmatrix.matrix
    ideals = M.pmatrix.coeffs
    for i = 1:rows(N)

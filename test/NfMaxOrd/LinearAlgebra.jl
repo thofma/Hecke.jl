@@ -46,6 +46,12 @@
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])
 
+    B = Hecke.PseudoMatrix(matrix(K, [1 1; 1 1; 1 0]), [ ideal(O, K(1)), ideal(O, K(fmpq(1, 2))), ideal(O, K(1)) ])
+
+    Bhnf = pseudo_hnf(B, :lowerleft, true)
+
+    @test Bhnf.matrix == matrix(K, [0 0; 1 0; 1 1])
+
     # Construct random pseudo-matrices over different fields and check if the
     # pseudo hermite normal form span the same module
     
@@ -83,7 +89,7 @@
 
       K, a = NumberField(x)
       O = maximal_order(K)
-      A = Hecke.PseudoMatrix(Matrix(O, 4, 4, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
+      A = Hecke.PseudoMatrix(matrix(O, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]
       @test Hecke._in_span(map(K, [5, 6, 7, 8]), A)[1] == false
     end

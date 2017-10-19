@@ -115,7 +115,7 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   E.limit = limit = min(limit, n)
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
-  E.x = MatrixSpace(FlintZZ, 1, n)()
+  E.x = zero_matrix(FlintZZ, 1, n)
     #coeffs limit+1:n are going to be zero, always
   E.L = Array{TU}(limit) #lower and
   E.U = Array{TU}(limit) #upper bounds for the coordinates
@@ -368,7 +368,7 @@ end
 
 function enumerate_using_gram(G::arb_mat, c::arb)
   E = EnumCtxArb(pseudo_cholesky(G))
-  return _enumerate(E, c, rows(G), MatrixSpace(FlintZZ, 1, rows(G))())
+  return _enumerate(E, c, rows(G), zero_matrix(FlintZZ, 1, rows(G)))
 end
 
 function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)

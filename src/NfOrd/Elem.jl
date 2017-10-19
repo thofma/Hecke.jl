@@ -210,10 +210,14 @@ doc"""
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfOrdElem)
+function elem_in_basis(a::NfOrdElem, copy::Type{Val{T}} = Val{true}) where {T}
   assure_has_coord(a)
   @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
-  return deepcopy(a.elem_in_basis)
+  if copy == Val{true}
+    return deepcopy(a.elem_in_basis)
+  else
+    return a.elem_in_basis
+  end
 end
 
 ################################################################################
@@ -233,7 +237,7 @@ function discriminant(B::Array{NfOrdElem, 1})
   length(B) != degree(parent(B[1])) &&
         error("Number of elements must be $(degree(parent(B[1])))")
   O = parent(B[1])
-  A = MatrixSpace(FlintZZ, degree(O), degree(O))()
+  A = zero_matrix(FlintZZ, degree(O), degree(O))
   for i in 1:degree(O)
     for j in 1:degree(O)
       A[i,j] = FlintZZ(trace(B[i] * B[j]))

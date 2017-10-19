@@ -445,6 +445,11 @@ function update!(L::GrpAbLattice)
   
   for k in keys(L.graph.new_low_degrees)
     @assert haskey(L.graph.degrees, k)
+    # TODO: Why does it crash without the following?
+    if !haskey(L.weak_vertices_rev, k)
+      delete!(L.graph.new_low_degrees, k)
+      continue
+    end
     @assert L.weak_vertices_rev[k].value != nothing
     a = L.weak_vertices_rev[k].value
     @assert k == object_id(a)

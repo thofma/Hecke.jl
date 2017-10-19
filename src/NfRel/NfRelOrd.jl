@@ -107,7 +107,7 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   end
   pb = pseudo_basis(O, Val{false})
   L = nf(O)
-  M = MatrixSpace(base_ring(L), degree(O), degree(O))()
+  M = zero_matrix(base_ring(L), degree(O), degree(O))
   C = Vector{S}()
   for i = 1:degree(O)
     elem_to_mat_row!(M, i, pb[i][1])
@@ -276,8 +276,11 @@ function show(io::IO, O::NfRelOrd)
   print(io, "with pseudo-basis ")
   pb = pseudo_basis(O, Val{false})
   for i = 1:degree(O)
-    print(io, "\n")
-    print(io, pb[i])
+    print(io, "\n(")
+    print(io, pb[i][1])
+    print(io, ", ")
+    showcompact(io, pb[i][2])
+    print(io, ")")
   end
 end
 
@@ -298,7 +301,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
     a *= pb[i][2]^2
   end
   disc = d*a
-  simplify_exact!(disc)
+  simplify(disc)
   O.disc_abs = num(disc)
   return nothing
 end
@@ -319,7 +322,7 @@ function assure_has_discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
     a *= pb[i][2]^2
   end
   disc = d*a
-  simplify_exact!(disc)
+  simplify(disc)
   O.disc_rel = num(disc)
   return nothing
 end
@@ -375,7 +378,7 @@ end
 
 function _check_elem_in_order(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
   b_pmat = basis_pmat(O, Val{false})
-  t = MatrixSpace(base_ring(nf(O)), 1, degree(O))()
+  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = t*basis_mat_inv(O, Val{false})
   if short == Val{true}
@@ -445,7 +448,7 @@ function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
 end
 
 function EquationOrder(L::NfRel{T}) where T
-  M = one(MatrixSpace(base_ring(L), degree(L), degree(L)))
+  M = identity_matrix(base_ring(L), degree(L))
   O = Order(L, M)
   O.basis_mat_inv = M
   O.isequation_order = true
@@ -455,6 +458,19 @@ end
 function MaximalOrder(L::NfRel)
   O = EquationOrder(L)
   return MaximalOrder(O)
+end
+
+maximal_order(L::NfRel) = MaximalOrder(L)
+
+function maximal_order_via_absolute(L::NfRel)
+  Labs, lToLabs, kToLabs = absolute_field(L)
+  Oabs = MaximalOrder(Labs)
+  return relative_order(Oabs, lToLabs)
+end
+
+function maximal_order_via_absolute(m::NfRelToNf)
+  Oabs = MaximalOrder(codomain(m))
+  return relative_order(Oabs, m)
 end
 
 ################################################################################
@@ -482,7 +498,7 @@ function trace_matrix(O::NfRelOrd)
   K = base_ring(L)
   b = basis_nf(O, Val{false})
   d = degree(L)
-  g = MatrixSpace(K, d, d)()
+  g = zero_matrix(K, d, d)
   for i = 1:d
     t = trace(b[i]*b[i])
     g[i, i] = t
@@ -563,7 +579,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
     U = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, Umodp)
     PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
-    PN = try sub(pseudo_hnf(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+    PN = try sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
     catch sub(pseudo_hnf_kb(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
     end
     OO = Order(L, PN)
@@ -600,7 +616,10 @@ function pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl)
   d = discriminant(O)
   OO = poverorder(O, p)
   dd = discriminant(OO)
+  i = 1
   while d != dd
+    i += 1
+    println(i)
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
@@ -633,8 +652,32 @@ function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
   aB = basis_pmat(a)
   bB = basis_pmat(b)
   d = degree(a)
-  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
+  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
     catch sub(pseudo_hnf_kb(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
     end
   return NfRelOrd{T, S}(nf(a), PM)
+end
+
+################################################################################
+#
+#  Absolute to relative
+#
+################################################################################
+
+function relative_order(O::NfOrd, m::NfRelToNf)
+  L = domain(m)
+  Labs = codomain(m)
+  @assert nf(O) == Labs
+  K = base_ring(L)
+  OK = MaximalOrder(K)
+  mm = inv(m)
+  B = basis(O, Val{false})
+  d = degree(L)
+  dabs = degree(Labs)
+  M = zero_matrix(K, dabs, d)
+  for i = 1:dabs
+    elem_to_mat_row!(M, i, mm(Labs(B[i])))
+  end
+  PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
+  return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L, PM)
 end

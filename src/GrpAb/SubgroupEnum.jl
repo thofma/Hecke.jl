@@ -70,7 +70,7 @@ mutable struct IndexPSubgroups{S, T}
     end
     r.st = i
     r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
-    r.c = MatrixSpace(FlintZZ, length(s.snf), length(s.snf))()
+    r.c = zero_matrix(FlintZZ, length(s.snf), length(s.snf))
     r.mthd = mthd
     return r
   end
@@ -564,7 +564,7 @@ function _dualize(G::GrpAbFinGen, x::Array{GrpAbFinGenElem,1}, v::Array{fmpz,1})
     return gens(G)
   end
   @assert parent(x[1])==G
-  M=MatrixSpace(FlintZZ, ngens(G), length(x))()
+  M = zero_matrix(FlintZZ, ngens(G), length(x))
   for i = 1:length(x)
     for j = 1:ngens(G)
       M[j,i] = (x[i][j])*v[j]
@@ -572,8 +572,8 @@ function _dualize(G::GrpAbFinGen, x::Array{GrpAbFinGenElem,1}, v::Array{fmpz,1})
   end
   D = DiagonalGroup([G.snf[end] for i = 1:length(x)])
   f = GrpAbFinGenMap(G,D,M)
-  K, mK = kernel(f)
-  return map(x -> image(mK, x)::GrpAbFinGenElem, gens(K))
+  K = kernel_as_submodule(f)
+  return GrpAbFinGenElem[G(view(K,i:i,1:cols(K))) for i=1:rows(K)]
   
 end
 

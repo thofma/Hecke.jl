@@ -663,7 +663,7 @@ doc"""
 function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
-    push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())
+    push!(Mp, zero_matrix(me.fld[i], rows(a), cols(a)))
   end
   for i=1:rows(a)
     for j=1:cols(a)
@@ -679,7 +679,7 @@ end
 function modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
-    push!(Mp, MatrixSpace(me.fld[i], rows(a), cols(a))())
+    push!(Mp, zero_matrix(me.fld[i], rows(a), cols(a)))
   end
   for i=1:rows(a)
     for j=1:cols(a)

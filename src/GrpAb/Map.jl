@@ -115,7 +115,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
 
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
-  M = vcat(M, hcat(RA, MatrixSpace(FlintZZ, rows(RA), cols(B[1].coeff))()))
+  M = vcat(M, hcat(RA, zero_matrix(FlintZZ, rows(RA), cols(B[1].coeff))))
   H = hnf(M)
   H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
   h = GrpAbFinGenMap(GA, GB, H)
