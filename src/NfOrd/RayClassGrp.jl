@@ -1335,7 +1335,7 @@ function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, 
 
   F, _ = Nemo.FiniteField(Int(p), 1, "_")
   FM = MatrixSpace(F, ngens(S), ngens(S))
-  G = MatElem[ FM(vcat([mS(X(preimage(mS, S[i]))).coeff for i=1:ngens(S)])) for X = act]
+  G = Generic.Mat{fq_nmod}[ FM(vcat([mS(X(preimage(mS, S[i]))).coeff for i=1:ngens(S)])) for X = act]
   M = FqGModule(G)
 
   ls=submodules(M,index)
