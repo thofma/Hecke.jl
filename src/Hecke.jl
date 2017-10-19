@@ -71,7 +71,7 @@ import Nemo: nf_elem, AnticNumberField, degree, one!,
              strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
              FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
              acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
-             roots, nbits, factor, ispositive, sign, isprime, isunit,
+             roots, nbits, ispositive, sign, isprime, isunit,
              NumberField, CyclotomicField, MaximalRealSubfield,
              addmul!, deflate, gens, inflate, isconstant, issquare, 
              swap_rows!
@@ -185,6 +185,8 @@ function __init__()
   global const _Zxy = PolynomialRing(_Zx, "_y")[1]
   global const _x = gen(_Zx)
   global const _y = gen(_Zxy)
+
+  global const flint_rand_ctx = flint_rand_state()
 
 #  let
 #    Qx, x = FlintQQ["x"]
