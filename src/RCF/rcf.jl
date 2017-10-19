@@ -393,7 +393,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   lf = factor(minimum(f)*e)
   lP = Hecke.NfOrdIdl[]
   for p = keys(lf.fac)
-    lp = prime_decomposition(ZK, Int(p))  #TODO: make it work for fmpz
+    lp = prime_decomposition(ZK, p)  #TODO: make it work for fmpz
     lP = vcat(lP, [x[1] for x = lp])
   end
   g = elem_type(c)[preimage(mc, x) for x = lP]
@@ -933,6 +933,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
+  global last_a = a
   b = evaluate(a)
   return reduce_mod_powers(b, n, primes)
 end
@@ -1031,11 +1032,10 @@ function rel_auto(A::ClassField_pp)
   Nk = _expand(N, C.mp[1])
   s = solve(Mk, Nk) # will not work, matrix non-square...
   im = A.A()
-  C = cyclotomic_extension(base_field(A), degree(A))
-  for (i, v) = s
-    c = C.mp[1]\v
-    @assert degree(c.data) == 0
-    setcoeff!(im, i-1, coeff(c, 0))
+  r = degree(C.Kr)
+  for (i, c) = s
+    @assert i % r == 0
+    setcoeff!(im, div(i, r)-1, c)
   end
 
   return NfRelToNfRelMor(A.A, A.A, im)
