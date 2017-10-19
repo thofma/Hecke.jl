@@ -751,3 +751,69 @@ function isprime_power(n::Integer)
   return isprime_power(fmpz(n))
 end
 
+#######################################################
+
+function factor_trial_range(N::fmpz, start::Int=0, np::Int=10^5)
+   F = Nemo.fmpz_factor()
+   ccall((:fmpz_factor_trial_range, :libflint), Void, (Ptr{Nemo.fmpz_factor}, Ptr{fmpz}, UInt, UInt), &F, &N, start, np)
+   res = Dict{fmpz, Int}()
+   for i in 1:F.num
+     z = fmpz()
+     ccall((:fmpz_factor_get_fmpz, :libflint), Void,
+           (Ptr{fmpz}, Ptr{Nemo.fmpz_factor}, Int), &z, &F, i - 1)
+     res[z] = unsafe_load(F.exp, i)
+   end
+   return res, canonical_unit(N)
+end
+
+big_primes = fmpz[]
+
+function factor(N::fmpz)
+  global big_primes
+  r, c = factor_trial_range(N)
+  for (p, v) = r
+    N = divexact(N, p^v)
+  end
+  if isunit(N)
+    return Nemo.Fac(c, r)
+  end
+  N *= c
+  @assert N > 0
+
+  for p = big_primes
+    v, N = remove(N, p)
+    if v > 0
+      r[p] = v
+    end
+  end
+
+  e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
+  while e != 0
+    ee, f = ispower(f)
+    ee *= valuation(N, f)
+    if isprime(f)
+      r[f] = ee
+    else
+      s = factor(f)
+      for (p, ex) = s.fac
+        r[p] = ex*ee
+      end
+    end
+    N = divexact(N, f^ee)
+    if isone(N)
+      break
+    end
+    e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
+  end
+  s = Nemo.factor(N)
+  for (p, ex) = s.fac
+    r[p] = ex
+  end
+  for p = keys(r)
+    if nbits(p) > 20 && !(p in big_primes)
+      push!(big_primes, p)
+    end
+  end
+  return Nemo.Fac(c, r)
+end
+
