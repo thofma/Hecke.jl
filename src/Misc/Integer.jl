@@ -768,7 +768,7 @@ end
 
 big_primes = fmpz[]
 
-function factor(N::fmpz)
+function _factor(N::fmpz)
   global big_primes
   r, c = factor_trial_range(N)
   for (p, v) = r
