@@ -265,6 +265,11 @@ function pushindent()
   nothing
 end
 
+function clearindent()
+  VERBOSE_PRINT_INDENT[1] = 0
+  nothing
+end
+
 function popindent()
   a = VERBOSE_PRINT_INDENT[1]
   VERBOSE_PRINT_INDENT[1] = a - 1
