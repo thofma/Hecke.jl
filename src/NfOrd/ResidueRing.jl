@@ -192,6 +192,12 @@ function *(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   return parent(x)(x.elem * y.elem)
 end
 
+function mul!(z::NfOrdQuoRingElem, x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+  mul!(z.elem, x.elem, y.elem)
+  mod!(z.elem, parent(z))
+  return z
+end
+
 function *(x::Integer, y::NfOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end
@@ -205,8 +211,11 @@ end
 *(x::NfOrdQuoRingElem, y::fmpz) = y*x
 
 function ^(a::NfOrdQuoRingElem, f::fmpz)
+  if nbits(f) < 64
+    return a^Int(f)
+  end
   f==0 && return one(parent(a))
-  f==1 && return a
+  f==1 && return deepcopy(a)
   if f<0
     f=-f
     a = inv(a)
@@ -219,8 +228,34 @@ function ^(a::NfOrdQuoRingElem, f::fmpz)
   return b
 end
 
-^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
+#^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
 
+function ^(a::NfOrdQuoRingElem, b::Int)
+  if b == 0
+    return one(parent(a))
+  elseif b == 1
+    return deepcopy(a)
+  else
+    if b < 0
+      a = inv(a)
+      b = -b
+    end
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = deepcopy(a)
+    bit >>= 1
+    while bit != 0
+      z = mul!(z, z, z)
+      if (UInt(bit) & b) != 0
+        z = mul!(z, z, a)
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
 
 ################################################################################
 #
@@ -285,14 +320,14 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   V[1, 1] = 1
 
-  a = elem_in_basis(x.elem)
+  a = elem_in_basis(x.elem, Val{false})
 
   for i in 1:d
     V[1, 1 + i] = a[i]
   end
 
   _copy_matrix_into_matrix(V, 2, 2, A)   # this really is a copy
-  _copy_matrix_into_matrix(V, 2+d, 2, B) # this really is a copy
+  _copy_matrix_into_matrix(V, 2 + d, 2, B) # this really is a copy
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
@@ -537,7 +572,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  a = elem_in_basis(Q(O(1)).elem)
+  a = elem_in_basis(Q(O(1)).elem, Val{false})
 
   V = parent(x).tmp_xxgcd
 
@@ -594,7 +629,7 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
-    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
   end
 
   strong_echelon_form!(B)
@@ -693,7 +728,7 @@ function strong_echelon_form!(A::Generic.Mat{NfOrdQuoRingElem})
   #print("triangularizing ... ")
   triangularize!(A)
 
-  T = MatrixSpace(base_ring(A), 1, cols(A))()
+  T = zero_matrix(base_ring(A), 1, cols(A))
 
   # We do not normalize!
   for j in 1:m
@@ -783,7 +818,7 @@ function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
   if rows(B) < cols(B)
-    B = vcat(B, MatrixSpace(base_ring(B), cols(B) - rows(B), cols(B))())
+    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
   end
 
   howell_form!(B)
@@ -1008,7 +1043,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
     zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-    v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
+    v = matrix(FlintZZ, 1, degree(O), zz_num)
 
     w = v*L
 
@@ -1081,7 +1116,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
       zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
 
-      v = MatrixSpace(FlintZZ, 1, degree(O))(zz_num)
+      v = matrix(FlintZZ, 1, degree(O), zz_num)
 
       w = v*L
 

@@ -438,7 +438,7 @@ end
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
   R = ResidueRing(FlintZZ, C.n)
-  M = MatrixSpace(R, ngens(k), ngens(G))()
+  M = zero_matrix(R, ngens(k), ngens(G))
   for i=1:ngens(k)
     ki = mk(k[i])
     for j=1:ngens(G)
@@ -527,7 +527,7 @@ function _rcf_descent(CF::ClassField_pp)
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
 
   AutA_gen = []
-  AutA_rel = MatrixSpace(FlintZZ, ngens(g)+1, ngens(g)+1)()
+  AutA_rel = zero_matrix(FlintZZ, ngens(g)+1, ngens(g)+1)
   const zeta = C.mp[1](gen(C.Kr))
   const n = degree(A)
   @assert e % n == 0
@@ -892,7 +892,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
     end
     if abs(sum(l)) <= length(l) 
       try
-        b = Hecke.short_elem(Iinv, -Matrix(FlintZZ, 1, length(l), l), prec=p)
+        b = Hecke.short_elem(Iinv, -matrix(FlintZZ, 1, length(l), l), prec=p)
       catch e
         if e != Hecke.LowPrecisionLLL() 
           rethrow(e)
@@ -926,7 +926,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
       error("too much prec")
     end
   end
-  b = Hecke.short_elem(Iinv, -Matrix(FlintZZ, 1, length(l), l), prec=p)
+  b = Hecke.short_elem(Iinv, -matrix(FlintZZ, 1, length(l), l), prec=p)
   c = a*b^n
   @vprint :ClassField 3 "leaving with $c\n"
   return c
@@ -1123,8 +1123,8 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #    println("z: $z")
     tau_z = vcat([can_frobenius(induce_image(p, tau_Ka), Cp[im].bigK).coeff for p = lp])
 #    println("tau(z): $tau_z")
-    z = hcat(z, MatrixSpace(FlintZZ, length(lp), length(lp))(om))
-    tau_z = hcat(tau_z, MatrixSpace(FlintZZ, length(lp), length(lp))(om))
+    z = hcat(z, om*identity_matrix(FlintZZ, length(lp)))
+    tau_z = hcat(tau_z, om*identity_matrix(FlintZZ, length(lp)))
     @assert C.Ka == base_ring(Cp[im].K)
 
     all_s = []
@@ -1138,22 +1138,22 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb))
-      y = Matrix(FlintZZ, length(lp), 1, [div(om, degree(c))*can_frobenius(p, Cp[im].bigK, a) for p = lp])
-      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, a) for p = lp])
+      y = matrix(FlintZZ, length(lp), 1, [div(om, degree(c))*can_frobenius(p, Cp[im].bigK, a) for p = lp])
+      y = matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, a) for p = lp])
 #      println("raw y: ", y')
       fl, s = cansolve(z, y)
       @assert fl
       s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
       println("s: $s")
 
-      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
+      y = matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
 #      println("raw y: ", y')
       fl, tau_s = cansolve(z, y)
 #      println((tau_z*tau_s)')
       @assert fl
       tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
 #      println("tau(s): $tau_s")
-      y = Matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
+      y = matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
 
       # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
       push!(all_s, s)
@@ -1274,7 +1274,7 @@ function _expand(M::Generic.Mat{nf_elem}, mp::Map)
   Ka = codomain(mp)
   k = base_ring(Kr)
   d = degree(Kr)
-  N = MatrixSpace(k, rows(M), cols(M) * d)()
+  N = zero_matrix(k, rows(M), cols(M) * d)
   for i=1:rows(M)
     for j = 1:cols(M)
       a = mp\M[i,j]

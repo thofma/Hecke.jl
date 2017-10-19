@@ -184,12 +184,12 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C}
       g = gens(domain)
       im_gen = map(z, g) # apply x -> z(x) to the generatotrs ## possibly should be cached and stored
           ## need to write the elements in a matrix, solve the eqn for a
-      Mt = MatrixSpace(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))()
+      Mt = zero_matrix(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))
 
       for i=1:degree(R.modulus)
         elem_to_mat_row!(Mt, i, im_gen[i])
       end
-      b = MatrixSpace(base_ring(base_ring(R)), 1, degree(R.modulus))()
+      b = zero_matrix(base_ring(base_ring(R)), 1, degree(R.modulus))
       elem_to_mat_row!(b, 1, a)
       s = solve_rational(Mt', b') # why, oh why is solve operating on columns????
       # This is the worst
@@ -225,12 +225,12 @@ mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C}
       g = gens(domain)
       im_gen = map(x -> z(x), g) # apply x -> z(x) to the generatotrs ## possibly should be cached and stored
           ## need to write the elements in a matrix, solve the eqn for a
-      Mt = MatrixSpace(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))()
+      Mt = zero_matrix(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))
 
       for i=1:degree(R.modulus)
         elem_to_mat_row!(Mt, i, im_gen[i])
       end
-      b = MatrixSpace(base_ring(base_ring(R)), 1, degree(R.modulus))()
+      b = zero_matrix(base_ring(base_ring(R)), 1, degree(R.modulus))
       elem_to_mat_row!(b, 1, a)
       s = solve_rational(Mt', b') # why, oh why is solve operating on columns????
       # This is the worst
@@ -368,7 +368,7 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
     end
 
     r.header = MapHeader(G, G, image, preimage)
-    r.map = one(MatrixSpace(FlintZZ, ngens(G), ngens(G)))
+    r.map = identity_matrix(FlintZZ, ngens(G))
     return r
   end
 

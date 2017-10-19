@@ -70,7 +70,7 @@ mutable struct IndexPSubgroups{S, T}
     end
     r.st = i
     r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
-    r.c = MatrixSpace(FlintZZ, length(s.snf), length(s.snf))()
+    r.c = zero_matrix(FlintZZ, length(s.snf), length(s.snf))
     r.mthd = mthd
     return r
   end
@@ -564,7 +564,7 @@ function _dualize(G::GrpAbFinGen, x::Array{GrpAbFinGenElem,1}, v::Array{fmpz,1})
     return gens(G)
   end
   @assert parent(x[1])==G
-  M=MatrixSpace(FlintZZ, ngens(G), length(x))()
+  M = zero_matrix(FlintZZ, ngens(G), length(x))
   for i = 1:length(x)
     for j = 1:ngens(G)
       M[j,i] = (x[i][j])*v[j]
@@ -572,8 +572,8 @@ function _dualize(G::GrpAbFinGen, x::Array{GrpAbFinGenElem,1}, v::Array{fmpz,1})
   end
   D = DiagonalGroup([G.snf[end] for i = 1:length(x)])
   f = GrpAbFinGenMap(G,D,M)
-  K, mK = kernel(f)
-  return map(x -> image(mK, x)::GrpAbFinGenElem, gens(K))
+  K = kernel_as_submodule(f)
+  return GrpAbFinGenElem[G(view(K,i:i,1:cols(K))) for i=1:rows(K)]
   
 end
 
@@ -592,12 +592,12 @@ function _psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = [-1],
                                                               order = -1,
                                                               index = -1,
                                                               fun = sub)
-  P, mP = psylow_subgroup(G, p)
+  P, mP = psylow_subgroup(G, p, false)
 
   if quotype != [-1]
     return ( fun(G, map(mP, z))
             for z in _psubgroups_gens_quotype(P, p, quotype, order, index)
-            if _ptype(quo(G, map(mP, z))[1], p) == quotype)
+            if _ptype(quo(G, map(mP, z), false)[1], p) == quotype)
   end
 
   return ( fun(G, map(mP, z)) for z in _psubgroups_gens(P, p, subtype, order, index))
@@ -809,7 +809,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
       ptype = map(l -> valuation(l, p), quotype)
       filter!( z -> z > 0, ptype)
       sort!(ptype, rev = true)
-      T = psubgroups(G, Int(p), quotype = ptype)
+      T = psubgroups(G, Int(p), quotype = ptype, fun = (g, m) -> sub(g, m, false))
       genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
@@ -830,7 +830,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
       ptype = map(l -> valuation(l, p), subtype)
       filter!( z -> z > 0, ptype)
       sort!(ptype, rev = true)
-      T = psubgroups(G, Int(p), subtype = ptype)
+      T = psubgroups(G, Int(p), subtype = ptype, fun = (g, m) -> sub(g, m, false))
       genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
@@ -844,14 +844,14 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
     fac = factor(fmpz(_suborder))
     for (p, e) in fac
       orderatp = p^e
-      T = psubgroups(G, Int(p), order = orderatp)
+      T = psubgroups(G, Int(p), order = orderatp, fun = (g, m) -> sub(g, m, false))
       genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
   else
     fac = factor(order(G))
     for (p, e) in fac
-      T = psubgroups(G, Int(p))
+      T = psubgroups(G, Int(p), fun = (g, m) -> sub(g, m, false))
       genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end

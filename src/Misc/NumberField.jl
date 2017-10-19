@@ -239,7 +239,7 @@ function representation_mat(a::nf_elem)
   @assert den(a) == 1
   dummy = fmpz(0)
   n = degree(a.parent)
-  M = MatrixSpace(FlintZZ, n,n)()::fmpz_mat
+  M = zero_matrix(FlintZZ, n, n)
   t = gen(a.parent)
   b = deepcopy(a)
   for i = 1:n-1
@@ -255,7 +255,7 @@ function basis_mat(A::Array{nf_elem, 1})
   n = length(A)
   d = degree(parent(A[1]))
 
-  M = MatrixSpace(FlintZZ, n, d)()
+  M = zero_matrix(FlintZZ, n, d)
 
   deno = one(FlintZZ)
   dummy = one(FlintZZ)
@@ -1821,6 +1821,11 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
   end
 end
 
+function mod!(z::fmpz, x::fmpz, y::fmpz)
+  ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+  return z
+end
+
 function mod!(a::nf_elem, b::fmpz)
   z = fmpz()
   for i=0:a.elem_length-1
@@ -2093,3 +2098,40 @@ function induce_crt(a::nf_elem, p::fmpz, b::nf_elem, q::fmpz, signed::Bool = fal
   end
   return induce_inner_crt(a, b, pi, pq, pq2), pq
 end
+
+#################################################################################################
+#
+#  Normal Basis
+#
+#################################################################################################
+
+doc"""
+***
+    normal_basis(K::Nemo.AnticNumberField) -> nf_elem
+> Given a number field K which is normal over Q, it returns 
+> an element generating a normal basis of K over Q
+"""
+function normal_basis(K::Nemo.AnticNumberField)
+
+  n=degree(K)
+  Aut=Hecke.automorphisms(K)
+  length(Aut) != degree(K) && error("The field is not normal over the rationals!")
+
+  A=zero_matrix(FlintQQ, n, n)
+  r=K(1)
+  while true
+  
+    r=rand(basis(K),-n:n)
+    for i=1:n
+      y=Aut[i](r)
+      for j=1:n
+        A[i,j]=coeff(y,j-1)
+      end
+    end
+    if det(A)!=0
+      break
+    end
+  end
+  return r
+end
+

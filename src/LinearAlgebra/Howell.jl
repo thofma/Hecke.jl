@@ -6,7 +6,7 @@ function howell_form2(A::nmod_mat)
   n = A.r
   m = A.c
   if n < m
-    A = vcat(A, MatrixSpace(base_ring(A), m-n, m)())
+    A = vcat(A, zero_matrix(base_ring(A), m-n, m))
   end
   for j in 1:m
     for i in j+1:n
@@ -26,7 +26,7 @@ function howell_form2(A::nmod_mat)
   end
   #println("I have a triangular matrix:")
   #println(A)
-  T = MatrixSpace(base_ring(A), 1, A.c)()
+  T = zero_matrix(base_ring(A), 1, A.c)
   for j in 1:m
     if _raw_getindex(A,j,j) != 0
       #println("nonzero case")
@@ -178,7 +178,7 @@ end
 function howell_form(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   B=deepcopy(A)
   if rows(B)<cols(B)
-    B=vcat(B, MatrixSpace(base_ring(B), cols(B)-rows(B), cols(B))())
+    B=vcat(B, zero_matrix(base_ring(B), cols(B)-rows(B), cols(B)))
   end
   howell_form!(B)
   return B
@@ -215,7 +215,7 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  Multiply the rows by annihlator of the pivot element and reduce 
   #
   
-  T = MatrixSpace(R, 1, cols(A))()
+  T = zero_matrix(R, 1, cols(A))
   for j in 1:cols(A)
     if A[j,j] != 0
        u = _unit(A[j,j].data, n)
@@ -293,7 +293,7 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  If the modulus is prime, the second part of the Howell form computation is useless and I can directly call the rref
   #  but I have to test if the modulus is prime. What is better?
   #
-  N = hcat(M', MatrixSpace(R, cols(M), cols(M))(1))
+  N = hcat(M', identity_matrix(R, cols(M)))
   N = howell_form(N)
   if gcd(prod([N[i,i] for i=1:rows(N)]).data,modulus(R))==1
     return 0, MatrixSpace(R,cols(M),1)

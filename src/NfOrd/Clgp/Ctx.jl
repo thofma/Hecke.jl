@@ -36,7 +36,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
     end
   end
   n = degree(O)
-  l = MatrixSpace(FlintZZ, n, 1+clg.c.r2)()
+  l = zero_matrix(FlintZZ, n, 1+clg.c.r2)
   for i = 1:n
     l[i,1] = 1
   end

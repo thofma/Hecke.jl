@@ -77,7 +77,7 @@ doc"""
 > have `cols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::Array{fmpz, 2})
-  return AbelianGroup(Matrix(FlintZZ, size(M)[1], size(M)[2], M))
+  return AbelianGroup(matrix(FlintZZ, M))
 end
 
 doc"""
@@ -88,7 +88,7 @@ doc"""
 > have `cols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::Array{T, 2}) where T <: Integer
-  return AbelianGroup(Matrix(FlintZZ, size(M)[1], size(M)[2], M))
+  return AbelianGroup(matrix(FlintZZ, M))
 end
 
 doc"""
@@ -99,7 +99,7 @@ doc"""
 > have `length(M)` generators and one relation.
 """
 function AbelianGroup(M::Array{fmpz, 1})
-  return AbelianGroup(Matrix(FlintZZ, 1, length(M), M))
+  return AbelianGroup(matrix(FlintZZ, 1, length(M), M))
 end
 
 doc"""
@@ -110,7 +110,7 @@ doc"""
 > have `length(M)` generators and one relation.
 """
 function AbelianGroup(M::Array{T, 1}) where T <: Integer
-  return AbelianGroup(Matrix(FlintZZ, 1, length(M), M))
+  return AbelianGroup(matrix(FlintZZ, 1, length(M), M))
 end
 
 doc"""
@@ -125,7 +125,7 @@ function DiagonalGroup(M::fmpz_mat)
     error("The argument must have only one row")
   end
 
-  N = MatrixSpace(FlintZZ, cols(M), cols(M))()
+  N = zero_matrix(FlintZZ, cols(M), cols(M))
   for i = 1:cols(M)
     N[i,i] = M[1, i]
   end
@@ -144,7 +144,7 @@ Creates the direct product of the cyclic groups $\mathbf{Z}/m_i$,
 where $m_i$ is the $i$th entry of `M`.
 """
 function DiagonalGroup(M::Array{T, 1}) where T <: Union{Integer, fmpz}
-  N = MatrixSpace(FlintZZ, length(M), length(M))()
+  N = zero_matrix(FlintZZ, length(M), length(M))
   for i = 1:length(M)
     N[i,i] = M[i]
   end
@@ -279,7 +279,7 @@ function rels_gen(A::GrpAbFinGen)
 end
 
 function rels_snf(A::GrpAbFinGen)
-  M = MatrixSpace(FlintZZ, ngens(A), ngens(A))()
+  M = zero_matrix(FlintZZ, ngens(A), ngens(A))
   for i = 1:ngens(A)
     M[i,i] = A.snf[i]
   end
@@ -334,7 +334,7 @@ function snf(G::GrpAbFinGen)
   #    push!(s, d[i])
   #  end
   #end
-  TT = MatrixSpace(FlintZZ, rows(T), length(s))()
+  TT = zero_matrix(FlintZZ, rows(T), length(s))
   j = 1
   for i = 1:length(d)
     if d[i] != 1
@@ -345,7 +345,7 @@ function snf(G::GrpAbFinGen)
     end
   end
 
-  TTi = MatrixSpace(FlintZZ, length(s), rows(T))()
+  TTi = zero_matrix(FlintZZ, length(s), rows(T))
   Ti = inv(T)
 
   j = 1
@@ -495,8 +495,8 @@ doc"""
 > Returns the abelian group $G\times H$.
 """
 function direct_product(G::GrpAbFinGen, H::GrpAbFinGen)
-  A = vcat(rels(G), MatrixSpace(FlintZZ, rows(rels(H)), cols(rels(G)))())
-  B = vcat(MatrixSpace(FlintZZ, rows(rels(G)), cols(rels(H)))(), rels(H))
+  A = vcat(rels(G), zero_matrix(FlintZZ, rows(rels(H)), cols(rels(G))))
+  B = vcat(zero_matrix(FlintZZ, rows(rels(G)), cols(rels(H))), rels(H))
 
   return AbelianGroup(hcat(A,B))
 end
@@ -535,9 +535,10 @@ doc"""
 """
 function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
+
   if length(s) == 0
     S = GrpAbFinGen(fmpz[1])
-    I = MatrixSpace(FlintZZ, ngens(S), ngens(G))()
+    I = zero_matrix(FlintZZ, ngens(S), ngens(G))
     m = GrpAbFinGenMap(S, G, I)
     if add_to_lattice
       append!(L, m)
@@ -547,7 +548,7 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 
   p = s[1].parent
   @assert G == p
-  m = MatrixSpace(FlintZZ, length(s) + nrels(p), ngens(p) + length(s))()
+  m = zero_matrix(FlintZZ, length(s) + nrels(p), ngens(p) + length(s))
   for i = 1:length(s)
     for j = 1:ngens(p)
       m[i + nrels(p), j] = s[i][j]
@@ -607,14 +608,14 @@ doc"""
 """
 function sub(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  m = MatrixSpace(FlintZZ, rows(M) + nrels(G), ngens(G) + rows(M))()
+  m = zero_matrix(FlintZZ, rows(M) + nrels(G), ngens(G) + rows(M))
   for i = 1:rows(M)
-    for j = 1:ngens(p)
+    for j = 1:ngens(G)
       m[i + nrels(G), j] = M[i,j]
     end
-    m[i + nrels(G), i + ngens(p)] = 1
+    m[i + nrels(G), i + ngens(G)] = 1
   end
-  if issnf(p)
+  if issnf(G)
     for i = 1:ngens(G)
       m[i, i] = G.snf[i]
     end
@@ -686,7 +687,7 @@ doc"""
 function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   if length(s) == 0
-    I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+    I = identity_matrix(FlintZZ, ngens(G))
     m = GrpAbFinGenMap(G, G, I, I)
     if add_to_lattice
       append!(L, m)
@@ -696,7 +697,7 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 
   p = s[1].parent
   @assert G == p
-  m = MatrixSpace(FlintZZ, length(s)+nrels(p), ngens(p))()
+  m = zero_matrix(FlintZZ, length(s)+nrels(p), ngens(p))
   for i = 1:length(s)
     for j = 1:ngens(p)
       m[i + nrels(p),j] = s[i][j]
@@ -715,7 +716,7 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   end
 
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(p), ngens(p))(1)
+  I = identity_matrix(FlintZZ, ngens(p))
   m = GrpAbFinGenMap(p, Q, I, I)
   if add_to_lattice
     append!(L, m)
@@ -734,7 +735,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   m = vcat(rels(G), M)
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  I = identity_matrix(FlintZZ, ngens(G))
   m = GrpAbFinGenMap(G, Q, I, I)
   if add_to_lattice
     append!(L, m)
@@ -761,7 +762,7 @@ end
 function quo_snf(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
   r = [gcd(x, n) for x = G.snf]
-  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  I = identity_matrix(FlintZZ, ngens(G))
   Q = DiagonalGroup(r)
   m = GrpAbFinGenMap(G, Q, I, I)
   if add_to_lattice
@@ -772,9 +773,9 @@ end
 
 function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer},
                  add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  m = vcat(G.rels, MatrixSpace(FlintZZ, ngens(G), ngens(G))(n))
+  m = vcat(G.rels, n*identity_matrix(FlintZZ, ngens(G)))
   Q = AbelianGroup(m)
-  I = MatrixSpace(FlintZZ, ngens(G), ngens(G))(1)
+  I = identity_matrix(FlintZZ, ngens(G))
   m = GrpAbFinGenMap(G, Q, I, I)
   if add_to_lattice
     append!(L, m)
@@ -836,11 +837,12 @@ function _psylow_subgroup_gens(G::GrpAbFinGen, p::Union{fmpz, Integer})
   return z
 end
 
-function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer})
+function psylow_subgroup(G::GrpAbFinGen, p::Union{fmpz, Integer},
+                         to_lattice::Bool = true)
   S, mS = snf(G)
   z = _psylow_subgroup_gens(S, p)
   zz = [ image(mS, x) for x in z ]
-  return sub(G, zz)
+  return sub(G, zz, to_lattice)
 end
 
 ################################################################################

@@ -401,7 +401,7 @@ mutable struct EnumCtxArb
   function EnumCtxArb(G::arb_mat)
     z = new()
     z.G = G
-    z.x = MatrixSpace(FlintZZ, 1, rows(G))()
+    z.x = zero_matrix(FlintZZ, 1, rows(G))
     z.p = prec(base_ring(G))
     return z
   end
@@ -486,7 +486,7 @@ mutable struct FakeFmpqMat
         d = lcm(d, den(x[i, j]))
       end
     end
-    n = MatrixSpace(FlintZZ, rows(x), cols(x))()
+    n = zero_matrix(FlintZZ, rows(x), cols(x))
     #n = fmpz_mat(rows(x), cols(x))
     #n.base_ring = FlintIntegerRing()
     for i in 1:rows(x)
@@ -625,8 +625,8 @@ mutable struct NfOrd <: Ring
     r.auxilliary_data = Array{Any}(5)
     r.isequation_order = false
     r.ismaximal = 0
-    r.tcontain = FakeFmpqMat(MatrixSpace(FlintZZ, 1, degree(a))())
-    r.tidempotents = MatrixSpace(FlintZZ, 1 + 2*degree(a), 1 + 2*degree(a))()
+    r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
+    r.tidempotents = zero_matrix(FlintZZ, 1 + 2*degree(a), 1 + 2*degree(a))
     r.index_div = Dict{fmpz, Any}()
     return r
   end
@@ -890,7 +890,7 @@ type NfOrdIdl
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfOrdIdl(O)
     C.princ_gen = O(x)
-    C.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(x))
+    C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (1, abs(x), fmpz(0))
     C.gen_one = x
     C.gen_two = O(x)
@@ -906,7 +906,7 @@ type NfOrdIdl
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfOrdIdl(O)
     C.princ_gen = O(x)
-    C.basis_mat = MatrixSpace(FlintZZ, degree(O), degree(O))(abs(x))
+    C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (2, Int(0), abs(x))
     C.gen_one = x
     C.gen_two = O(x)
@@ -1447,7 +1447,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
 
   function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::NfOrdIdl;
                  prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
-    v = MatrixSpace(FlintZZ, 1, rows(clg.val_base))(Base.rand(-val:val, 1,
+    v = matrix(FlintZZ, 1, rows(clg.val_base), Base.rand(-val:val, 1,
                     rows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
@@ -1460,7 +1460,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
     I.restart = 0
     I.vl = 0
     I.rr = 1:0
-    I.M = MatrixSpace(FlintZZ, 1, I.E.n)()
+    I.M = zero_matrix(FlintZZ, 1, I.E.n)
     return I
   end
 end
@@ -1475,6 +1475,7 @@ mutable struct NfOrdQuoRing <: Ring
   base_ring::NfOrd
   ideal::NfOrdIdl
   basis_mat::fmpz_mat
+  basis_mat_array::Array{fmpz, 2}
   preinvn::Array{fmpz_preinvn_struct, 1}
   factor::Dict{NfOrdIdl, Int}
 
@@ -1492,12 +1493,13 @@ mutable struct NfOrdQuoRing <: Ring
     z.base_ring = O
     z.ideal = I
     z.basis_mat = basis_mat(I)
+    z.basis_mat_array = Array(z.basis_mat)
     z.preinvn = [ fmpz_preinvn_struct(z.basis_mat[i, i]) for i in 1:degree(O)]
     d = degree(O)
-    z.tmp_div = MatrixSpace(FlintZZ, 2*d + 1, 2*d + 1)()
-    z.tmp_xxgcd = MatrixSpace(FlintZZ, 3*d + 1, 3*d + 1)()
-    z.tmp_ann = MatrixSpace(FlintZZ, 2*d, d)()
-    z.tmp_euc = MatrixSpace(FlintZZ, 2*d, d)()
+    z.tmp_div = zero_matrix(FlintZZ, 2*d + 1, 2*d + 1)
+    z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
+    z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
+    z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
     minimum(I) # compute the minimum
     return z
   end
@@ -1509,7 +1511,7 @@ mutable struct NfOrdQuoRingElem <: RingElem
 
   function NfOrdQuoRingElem(O::NfOrdQuoRing, x::NfOrdElem)
     z = new()
-    z.elem = mod(x, ideal(O), O.preinvn)
+    z.elem = mod(x, O)
     z.parent = O
     return z
   end

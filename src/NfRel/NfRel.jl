@@ -113,9 +113,9 @@ if isdefined(Nemo, :promote_rule1)
 else
   Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
 
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T} = NfRelElem{T}
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelElem{T}
 
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T} = NfRelElem{T}
+  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelElem{T}
 
   Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
 
@@ -563,7 +563,7 @@ end
 function representation_mat(a::NfRelElem)
   L = a.parent
   n = degree(L)
-  M = MatrixSpace(base_ring(L), n, n)()
+  M = zero_matrix(base_ring(L), n, n)
   t = gen(L)
   b = deepcopy(a)
   for i = 1:n-1

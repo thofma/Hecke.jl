@@ -1,35 +1,26 @@
-export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod, matrix, zeromatrix
+export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod
+
+import Nemo.matrix
 
 import Base.vcat
 
 # 
 
 function matrix(A::Array{fmpz, 2})
-  m = MatrixSpace(FlintZZ, size(A)...)(A)
+  m = matrix(FlintZZ, A)
   return m
 end
 
 function matrix(A::Array{T, 2}) where T <: RingElem
   r, c = size(A)
   (r < 0 || c < 0) && error("Array must be non-empty")
-  m = MatrixSpace(parent(A[1, 1]), size(A)...)(A)
+  m = matrix(parent(A[1, 1]), A)
   return m
 end
 
 function matrix(A::Array{T, 1}) where T <: RingElem
   return matrix(reshape(A,length(A),1))
 end
-
-function matrix(R::Ring, n::Int, m::Int, A::Array{T, 2}) where T
-  m = MatrixSpace(R, n, m)(A)
-  return m
-end
-
-function zeromatrix(R::Ring, n::Int, m::Int)
-  return MatrixSpace(R, n, m)()
-end
-
-#
 
 function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
   A = Array{T}(rows(a), cols(a))
@@ -465,7 +456,7 @@ function min(a::fmpz_mat)  #TODO: should be minimum in julia
 end
 
 function lift_unsigned(a::nmod_mat)
-  z = MatrixSpace(FlintZZ, rows(a), cols(a))()
+  z = zero_matrix(FlintZZ, rows(a), cols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Void,
           (Ptr{fmpz_mat}, Ptr{nmod_mat}), &z, &a)
   return z
@@ -479,7 +470,7 @@ end
 function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
   @assert nr >= 0 && nc >= 0
   @assert a+nr-1 <= rows(A) && b+nc-1 <= cols(A)
-  M = MatrixSpace(FlintZZ, nr, nc)()::fmpz_mat
+  M = zero_matrix(FlintZZ, nr, nc)::fmpz_mat
   t = FlintZZ()
   for i = 1:nr
     for j = 1:nc
@@ -513,7 +504,7 @@ end
 # look at flint documentation of nmod_mat_nullspace
 
 function _right_kernel(x::nmod_mat)
-  z = MatrixSpace(base_ring(x), cols(x), max(rows(x),cols(x)))()
+  z = zero_matrix(base_ring(x), cols(x), max(rows(x),cols(x)))
   n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &z, &x)
   return z,n
 end
@@ -539,7 +530,7 @@ function kernel(a)
 end
 
 function lift(a::Generic.Mat{Generic.Res{fmpz}})
-  z = MatrixSpace(FlintZZ, rows(a), cols(a))()
+  z = zero_matrix(FlintZZ, rows(a), cols(a))
   for i in 1:rows(a)
     for j in 1:cols(a)
       z[i, j] = lift(a[i, j])
@@ -550,7 +541,7 @@ end
 
 function _rref(a::Generic.Mat{Generic.Res{fmpz}})
   m = modulus(base_ring(a))
-  b = MatrixSpace(FlintZZ, rows(a), cols(a))()
+  b = zero_matrix(FlintZZ, rows(a), cols(a))
   # I actually don't know if this is necessary
   for i in 1:rows(b)
     for j in 1:cols(b)
@@ -572,10 +563,10 @@ function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   r, b = _rref(a)
   pivots = Array{Int}(r)
   nonpivots = Array{Int}(cols(b) - r)
-  X = zero(MatrixSpace(base_ring(a),cols(b),cols(b) - r))
+  X = zero_matrix(base_ring(a),cols(b),cols(b) - r)
 
   if r == 0
-    return one(MatrixSpace(FlintZZ, cols(b), cols(b) - r)), cols(b)
+    return vcat(identity_matrix(FlintZZ, cols(b) - r), zero_matrix(FlintZZ, r, cols(b) - r)), cols(b)
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1
@@ -617,10 +608,10 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
   pivots = Array{Int}(r)
   nonpivots = Array{Int}(cols(b) - r)
-  X = zero(MatrixSpace(FlintZZ,cols(b),cols(b)))
+  X = zero_matrixSpace(FlintZZ,cols(b),cols(b))
 
   if r == 0
-    return one(MatrixSpace(FlintZZ, cols(b), cols(b)))
+    return identity_matrix(FlintZZ, cols(b))
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1
@@ -712,7 +703,7 @@ end
 #converts BigFloat -> fmpz via round(a*2^l), in a clever(?) way
 function round_scale(a::Array{BigFloat, 2}, l::Int)
   s = size(a)
-  b = MatrixSpace(FlintZZ, s[1], s[2])()
+  b = zero_matrix(FlintZZ, s[1], s[2])
   return round_scale!(b, a, l)
 end
  
@@ -797,7 +788,7 @@ function vcat(A::Array{Generic.Mat{T}, 1}) where T
   if any(x->cols(x) != cols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = MatrixSpace(base_ring(A[1]), sum(rows, A), cols(A[1]))()
+  M = zero_matrix(base_ring(A[1]), sum(rows, A), cols(A[1]))
   s = 0
   for i=A
     for j=1:rows(i)
@@ -814,7 +805,7 @@ function vcat(A::Array{fmpz_mat, 1})
   if any(x->cols(x) != cols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = MatrixSpace(base_ring(A[1]), sum(rows, A), cols(A[1]))()
+  M = zero_matrix(base_ring(A[1]), sum(rows, A), cols(A[1]))
   s = 0
   for i=A
     for j=1:rows(i)
@@ -831,7 +822,7 @@ function vcat(A::Array{nmod_mat, 1})
   if any(x->cols(x) != cols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = MatrixSpace(base_ring(A[1]), sum(rows, A), cols(A[1]))()
+  M = zero_matrix(base_ring(A[1]), sum(rows, A), cols(A[1]))
   s = 0
   for i=A
     for j=1:rows(i)
@@ -867,11 +858,11 @@ doc"""
 """
 function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   if r
-    R = MatrixSpace(FlintZZ, cols(A), cols(A))(1)
+    R = identity_matrix(FlintZZ, cols(A))
   end
 
   if l
-    L = MatrixSpace(FlintZZ, rows(A), rows(A))(1)
+    L = identity_matrix(FlintZZ, rows(A))
   end
   # TODO: if only one trafo is required, start with the HNF that does not
   #       compute the trafo
@@ -955,16 +946,16 @@ end
 function Base.nullspace(M::nmod_mat)
   R = base_ring(M)
   if isprime(fmpz(modulus(R)))
-    k = MatrixSpace(R, cols(M), cols(M))()
+    k = zero_matrix(R, cols(M), cols(M))
     n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &k, &M)
     return (k, n)
   end
 
-  N = hcat(M', MatrixSpace(R, cols(M), cols(M))(1))
+  N = hcat(M', identity_matrix(R, cols(M)))
   ex = 0
   if rows(N) < cols(N)
     ex = cols(N) - rows(N)
-    N = vcat(N, MatrixSpace(R, ex, cols(N))())
+    N = vcat(N, zero_matrix(R, ex, cols(N)))
   end
   H = howell_form(N)
   nr = 1

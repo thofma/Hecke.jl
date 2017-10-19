@@ -276,6 +276,8 @@
         m0 = ideal(O,O(2))
         Q = NfOrdQuoRing(O,m0)
         gens, structure, disc_log = Hecke._multgrp(Q)
+        @test typeof(structure)==Array{fmpz,1}
+        @test typeof(gens)== Array{NfOrdQuoRingElem,1}
         @test length(gens) == length(structure)
         for i in 1:length(gens)
           @test verify_order(gens[i],structure[i])
@@ -651,6 +653,7 @@
           p = i
           #p = collect(keys(factor(i)))[1]
           g, D , disc_log = Hecke._1_plus_p_mod_1_plus_pv(p,v;method=method)
+          @test typeof(D)==Array{fmpz,1}
           @test length(g) == length(D)
           # Test generators
           for i in 1:length(g)

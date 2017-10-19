@@ -206,7 +206,7 @@ function narrow_class_group(L::NfOrd)
   # generators are gensC supplemented by gens(s)
 
   RC = rels(C)
-  R = hcat(MatrixSpace(FlintZZ, rows(RC), ngens(s))(), RC)
+  R = hcat(zero_matrix(FlintZZ, rows(RC), ngens(s)), RC)
   for i=1:ngens(C)
     A, al = power_reduce2(gensC[i], order(C[i]))
     be = principal_gen_fac_elem(A)
@@ -215,7 +215,7 @@ function narrow_class_group(L::NfOrd)
       R[i,j] = x.coeff[1, j]
     end
   end
-  R = vcat(R, hcat(rels(s), MatrixSpace(FlintZZ, nrels(s), ngens(C))()))
+  R = vcat(R, hcat(rels(s), zero_matrix(FlintZZ, nrels(s), ngens(C))))
 
   X = AbelianGroup(R)
 

@@ -142,7 +142,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
     return false
   end
 
-  m = MatrixSpace(FlintZZ, r + 1, 1)(reshape(rel, r + 1, 1))
+  m = matrix(FlintZZ, reshape(rel, r + 1, 1))
 
   h, u = hnf_with_transform(m)
 
@@ -213,29 +213,6 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
   while true
     @assert p != 0
 
-#    if length(u.units) == 0
-#      A = _conj_log_mat([y], p)
-#      B = MatrixSpace(base_ring(A), rows(A), rows(A))
-#      z.conj_log_mat_tranpose = (transpose(A), p)
-#      mul!(B, A, z.conj_log_mat_transpose)
-#      z.conj_log_mat = (A, p)
-#      z.conj_log_mat_times_transpose = (B, p)
-#    end
-#
-#    if z.conj_log_mat[2] == p # the old matrix has the same precision as our working precision
-#      A = z.conj_log_mat[1]
-#      conjlog = conjugates_arb_log(y, p)
-#      newrow = MatrixSpace(base_ring(A), 1, cols(A))()
-#      newcol = MatrixSpace(base_ring(A), cols(A), 1)()
-#      z.conj_log_mat = (vcat(A, newrow), p)
-#      z.conj_log_mat_transpose = (hcat(z.conj_log_mat_transpose[1], newcol), p)
-#
-#      for i in 1:cols(A)
-#        z.conj_log_mat[1][rows(A) + 1, i] = conjlog[i]
-#        z.conj_log_mat_transpose[1][i, rows(A) + 1]
-#      end
-#      A = z.conj_log_mat[1]
-#    end
     A = _conj_log_mat(u.units, p)
 
     B = A*transpose(A)
@@ -262,7 +239,7 @@ function  _conj_log_mat(x::Array{T, 1}, p::Int) where T
   r, s = signature(_base_ring(x[1]))
   rr = r + s
 
-  A = MatrixSpace(parent(conlog[1]), length(x), rr)()
+  A = zero_matrix(parent(conlog[1]), length(x), rr)
 
   for i in 1:rr
     A[1, i] = conlog[i]
