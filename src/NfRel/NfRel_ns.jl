@@ -209,6 +209,9 @@ end
 #TODO: this is a terrible show func.
 function Base.show(io::IO, a::NfRel_nsElem)
   f = data(a)
+  show(io, f, [string(s) for s = a.parent.S])
+  return nothing
+
   for i=1:length(f)
     if i>1
       print(io, " + ")

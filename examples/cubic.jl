@@ -12,8 +12,11 @@ end
 
 function ideals_with_norm(i::fmpz, M::NfOrd)
   @assert M.ismaximal == 1
+  if isone(i)
+    return [ideal(M, 1)]
+  end
   lf = factor(i)
-  lp = [ideals_with_pp_norm([x[1] for x = prime_decomposition(M, Int(k))], v) for (k, v) = lf.fac]
+  lp = [ideals_with_pp_norm([x[1] for x = prime_decomposition(M, k)], v) for (k, v) = lf.fac]
 #  println(lp)
   return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = CartesianRange(Tuple(1:length(lp[i]) for i=1:length(lp)))]
 end
@@ -112,7 +115,7 @@ function s3_with_discriminant(I::NfOrdIdl)
     end
     println("need to try $D and $F as conductors")
     #all quadratics with conductor D:
-    r, mr = ray_class_group_p_part(2, D)
+    r, mr = ray_class_group(D, n_quo = 2)
     
     for s in index_p_subgroups(r, fmpz(2), (A,x) -> quo(A, x)[2])
       a = ray_class_field(mr*inv(s))
@@ -120,22 +123,21 @@ function s3_with_discriminant(I::NfOrdIdl)
       if conductor(a)[1] != D
         continue
       end
-      K = number_field(a)[1].pol
-#      println("have K: $K")
-      @assert length(K) == 1
-      Kr = number_field(kx(K[1]))[1]
+      K = number_field(a)
+      println("have K: $K")
+      @assert length(gens(K)) == 1
+      Kr = K
       @assert degree(Kr) == 2
-      @assert Hecke.ispure_extension(Kr)
-      conj = Hecke.NfRelToNfRelMor(Kr, Kr, -gen(Kr))
+#      @assert Hecke.ispure_extension(Kr)
+      conj = Hecke.rel_auto(a.cyc[1])
+      Kr = a.cyc[1].A
       k = base_ring(Kr)
       Ka, m1, m2 = absolute_field(Kr)
       sigma = Hecke.NfToNfMor(Ka, Ka, m1(conj(preimage(m1, gen(Ka))))) 
       #m1: Kr -> Ka, m2: base_ring(Kr) -> Ka
       M = lll(maximal_order(Ka))
       FF = ideal(M, F.gen_one, M(m2(k(F.gen_two))))
-      R, mR = ray_class_group_p_part(3, FF)
-      R, mq = quo(R, 3)
-      mR = mR*inv(mq) 
+      R, mR = ray_class_group(FF, n_quo = 3)
       if order(R) == 1
         println("RCG empty")
         continue
@@ -143,12 +145,11 @@ function s3_with_discriminant(I::NfOrdIdl)
 
       sigma_R = induce_action(sigma, mR)
 #      println(sigma_R)
-      Kax = PolynomialRing(Ka)[1]
       
       for S = Hecke.stable_index_p_subgroups(R, 1, [sigma_R], quo)
         @assert order(S[1]) == 3
         s, ms = snf(S[1])
-        if ms(S[2](sigma_R(S[2](ms\s[1])))) == s[1]
+        if ms\(S[2](sigma_R(S[2]\(ms(s[1]))))) == s[1]
           #TODO: factor out the part with trivial action
           # ie. kern(sigma_R-I)
           println("action is trivial, no S3")
@@ -160,32 +161,18 @@ function s3_with_discriminant(I::NfOrdIdl)
           println("wrong conductor")
           continue
         end
-        B = number_field(Kax(number_field(A)[1].pol[1]))[1]
-        BB = number_field(Kr["t"][1]([m1\coeff(B.pol, i) for i=0:degree(B)]))[1]
-        Ba = absolute_field(BB)[1]
-        r = roots(Ba.pol, Ba)
-        @assert degree(Ba) == 6
-        @assert length(r) == 6
-        for rr = r
-          if rr == gen(Ba)
-            continue
-          end
-          h = Hecke.NfRelToNfRelMor(Ba, Ba, rr)
-          if h(h(gen(Ba))) == gen(Ba)
-            #found auto or order 2!
-            g = gen(Ba) + h(gen(Ba))
-            mg = minpoly(g)
-            i = 0
-            while degree(mg) < 3
-              g = (gen(Ba)+i)*(h(gen(Ba))+i)
-              mg = minpoly(g)
-              i+=1
-            end
-            @assert degree(mg) == 3
-            push!(res, mg)
-            break;
-          end
+        B = number_field(A)
+        Tau = Hecke.extend_aut(A, sigma)
+        g = gens(B)[1]
+        g += Tau(g)
+        if iszero(g)
+          g = gens(B)[1]
+          g *= Tau(g)
         end
+        mg = minpoly(g)
+        @assert degree(mg) == 3
+        mg = kx([coeff(m1\coeff(mg, i), 0) for i=0:4])
+        push!(res, mg)
       end
     end
   end
@@ -193,7 +180,7 @@ function s3_with_discriminant(I::NfOrdIdl)
 end
 
 
-function Gunter_Qi(r::UnitRange, pref="Qi.new")
+function Gunter_Qi(r::Range, pref="Qi.new")
   Qt, t = FlintQQ["t"]
   k, a = number_field(t^2+1, "k.1")
   s = Hecke.NfToNfMor(k, k, -a)
@@ -221,7 +208,7 @@ function Gunter_Qi(r::UnitRange, pref="Qi.new")
         end
       end
     catch e
-        rethrow(e)
+      rethrow(e)
       err_cnt += 1
       println("i: $i")
       println(e)
