@@ -1142,7 +1142,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   return mQ\g , k, disclog
 end
 
-function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
+function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int},n::Integer)
 
   O=Q.base_ring
   K=nf(O)
@@ -1151,25 +1151,8 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   
-  fac=factor(Q.ideal)
-  Q.factor=fac
-  y1=Dict{NfOrdIdl,Int}()
-  y2=Dict{NfOrdIdl,Int}()
-  for (q,e) in fac
-    if gcd(norm(q)-1,n)!=1
-      y1[q]=Int(1)
-      if gcd(norm(q),n)!=1 && e>=2
-        y2[q]=Int(e)
-      end
-    else 
-      if gcd(norm(q),n)!=1 && e>=2
-        y2[q]=Int(e)
-      end
-    end
-  end
-  
   prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-  for (q,vq) in fac
+  for (q,vq) in Q.factor
     prime_power[q]=q^vq
   end
  
@@ -1178,9 +1161,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
     gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
   
     # Make generators coprime to other primes
-    if length(fac) > 1
+    if length(Q.factor) > 1
       i_without_q = 1
-      for (q2,vq2) in fac
+      for (q2,vq2) in Q.factor
         (q != q2) && (i_without_q *= prime_power[q2])
       end
       alpha, beta = idempotents(prime_power[q] ,i_without_q)
@@ -1197,9 +1180,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
 
     # Make generators coprime to other primes
     nq=norm(q)-1  
-    if length(fac) > 1
+    if length(Q.factor) > 1
       i_without_q = 1
-      for (p2,vp2) in fac
+      for (p2,vp2) in Q.factor
         (q != p2) && (i_without_q *= prime_power[p2])
       end
 
@@ -1248,17 +1231,57 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, n::Integer)
   
   mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
   
-  return G, mG, merge(max,y1, y2)
+  return G, mG 
 end
-
 
 
 function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
-  Q,pi=quo(O,m)
-  @vtime :RayFacElem G, mG, lp = _mult_grp_mod_n(Q,n)
+  
+  #
+  #  Take the relevant part of the modulus
+  #
+  
+  fac=factor(m)
+  y1=Dict{NfOrdIdl,Int}()
+  y2=Dict{NfOrdIdl,Int}()
+  for (q,e) in fac
+    if gcd(norm(q)-1,n)!=1
+      y1[q]=Int(1)
+      if gcd(norm(q),n)!=1 && e>=2
+        y2[q]=Int(e)
+      end
+    else 
+      if gcd(norm(q),n)!=1 && e>=2
+        y2[q]=Int(e)
+      end
+    end
+  end
+  return ray_class_group(n, m, y1, y2, inf_plc)
+  
+end
+
+
+function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=InfPlc[])
+
+  O=parent(m).order
+  K=nf(O)
+  
+  # Compute the modulus of the quotient
+  I=ideal(O,1)
+  for (q,vq) in y1
+    I*=q^vq
+  end
+  for (q,vq) in y2
+    I*=q^vq
+  end
+  lp=merge(max,y1,y2)
+  
+  Q,pi=quo(O,I)
+  Q.factor=lp
+  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,y1,y2,n)
   C, mC = class_group(O)
   
   if mod(n,2)==0 
@@ -1295,11 +1318,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     return class_as_ray_class(C,mC,exp_class,m,n)    
   end
 
-  # Compute the modulus of the quotient
-  I=ideal(O,1)
-  for (q,vq) in lp
-    I*=q^vq
-  end
+
   
 #
 # We start to construct the relation matrix
@@ -1428,11 +1447,11 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     b=C([a.coeff[1,i] for i=1:ngens(C)])
     if mod(n,2)!=0  || isempty(pr)
       c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
-      return exp_class(b)*ideal(O,pi\(mG(c)))
+      return exp_class(b)*ideal(O,mG(c).elem)
     else 
       c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
       d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1: ngens(X)])
-      el=pi\(mG(c))
+      el=mG(c).elem
       # I need to modify $el$ so that it has the correct sign at the embeddings contained in primes
       vect=(lH(K(el))).coeff
       if vect==d.coeff
