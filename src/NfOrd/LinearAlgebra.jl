@@ -436,7 +436,7 @@ end
 
 function pseudo_hnf_integral(P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
   K = parent(P.matrix[1, 1])
-  O = maximal_order(K)
+  O = order(P.coeffs[1])
   if rows(P) == cols(P)
     m = det(P)
   else
@@ -492,7 +492,7 @@ end
 #TODO: das kann man besser machen
 function _make_integral!(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
-  O = maximal_order(K)
+  O = order(P.coeffs[1])
   integralizer = one(FlintZZ)
 
   for i = 1:rows(P)
@@ -871,7 +871,7 @@ end
 # This probably shouldn't be in this file. Maybe in NfOrd/FracIdl.jl?
 function mod(x::nf_elem, y::NfOrdFracIdl)
    K = parent(x)
-   O = maximal_order(K)
+   O = order(y)
    d = K(lcm(den(x), den(y)))
    dx = d*x
    dy = d*y
@@ -1341,7 +1341,7 @@ mutable struct ModDed
       end
       z = new()
       z.pmatrix = P
-      z.base_ring = maximal_order(base_ring(P.matrix))
+      z.base_ring = order(P.coeffs[1])
       z.is_triu = is_triu
       return z
    end
