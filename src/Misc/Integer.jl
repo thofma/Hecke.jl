@@ -466,48 +466,6 @@ function ispower(a::fmpq, n::Int)
 end
 
 ################################################################################
-# random and factor
-factor(a::RingElem) = Nemo.factor(a)
-factor(a::Integer) = factor(fmpz(a))
-
-mutable struct flint_rand_ctx_t
-  a::Ptr{Void}
-  function flint_rand_ctx_t()
-    return new()
-  end
-end  
-
-function show(io::IO, A::flint_rand_ctx_t)
-  println(io, "Flint random state\n")
-end
-
-function flint_rand_state()
-  A = flint_rand_ctx_t()
-  A.a = ccall((:flint_rand_alloc, :libflint), Ptr{Void}, (Int, ), 1)
-  ccall((:flint_randinit, :libflint), Void, (Ptr{Void}, ), A.a)
-  
-  function clean_rand_state(A::flint_rand_ctx_t)
-    ccall((:flint_rand_clear, :libflint), Void, (Ptr{Void}, ), A.a)
-    ccall((:flint_rand_free, :libflint), Void, (Ptr{Void}, ), A.a)
-    nothing
-  end  
-  finalizer(A, clean_rand_state)
-  return A
-end  
-
-global flint_rand_ctx 
-
-function ecm(a::fmpz, B1::UInt, B2::UInt, ncrv::UInt, rnd = flint_rand_ctx)
-  f = fmpz()
-  r = ccall((:fmpz_factor_ecm, :libflint), Int32, (Ptr{fmpz}, UInt, UInt, UInt, Ptr{Void}, Ptr{fmpz}), &f, ncrv, B1, B2, rnd.a, &a)
-  return r, f
-end  
-
-function ecm(a::fmpz, B1::Int, B2::Int, ncrv::Int, rnd = flint_rand_ctx)
-  return ecm(a, UInt(B1), UInt(B2), UInt(ncrv), rnd)
-end
-
-################################################################################
 #
 #  Chinese remaindering modulo UInts to fmpz
 #
@@ -751,7 +709,50 @@ function isprime_power(n::Integer)
   return isprime_power(fmpz(n))
 end
 
-#######################################################
+################################################################################
+# random and factor
+################################################################################
+
+factor(a::RingElem) = Nemo.factor(a)
+factor(a::Integer) = factor(fmpz(a))
+
+mutable struct flint_rand_ctx_t
+  a::Ptr{Void}
+  function flint_rand_ctx_t()
+    return new()
+  end
+end  
+
+function show(io::IO, A::flint_rand_ctx_t)
+  println(io, "Flint random state\n")
+end
+
+function flint_rand_state()
+  A = flint_rand_ctx_t()
+  A.a = ccall((:flint_rand_alloc, :libflint), Ptr{Void}, (Int, ), 1)
+  ccall((:flint_randinit, :libflint), Void, (Ptr{Void}, ), A.a)
+  
+  function clean_rand_state(A::flint_rand_ctx_t)
+    ccall((:flint_randclear, :libflint), Void, (Ptr{Void}, ), A.a)
+    ccall((:flint_rand_free, :libflint), Void, (Ptr{Void}, ), A.a)
+    nothing
+  end  
+  finalizer(A, clean_rand_state)
+  return A
+end  
+
+global flint_rand_ctx 
+
+function ecm(a::fmpz, B1::UInt, B2::UInt, ncrv::UInt, rnd = flint_rand_ctx)
+  f = fmpz()
+  r = ccall((:fmpz_factor_ecm, :libflint), Int32, (Ptr{fmpz}, UInt, UInt, UInt, Ptr{Void}, Ptr{fmpz}), &f, ncrv, B1, B2, rnd.a, &a)
+  return r, f
+end  
+
+function ecm(a::fmpz, B1::Int, B2::Int, ncrv::Int, rnd = flint_rand_ctx)
+  return ecm(a, UInt(B1), UInt(B2), UInt(ncrv), rnd)
+end
+
 
 function factor_trial_range(N::fmpz, start::Int=0, np::Int=10^5)
    F = Nemo.fmpz_factor()
@@ -775,6 +776,8 @@ function factor(N::fmpz)
     N = divexact(N, p^v)
   end
   if isunit(N)
+#    @assert all(isprime, keys(r))
+    @assert isone(N)
     return Nemo.Fac(c, r)
   end
   N *= c
@@ -783,6 +786,7 @@ function factor(N::fmpz)
   for p = big_primes
     v, N = remove(N, p)
     if v > 0
+      @assert !haskey(r, p)
       r[p] = v
     end
   end
@@ -790,15 +794,17 @@ function factor(N::fmpz)
   e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
   while e != 0
     ee, f = ispower(f)
-    ee *= valuation(N, f)
+    ee = valuation(N, f)
     if isprime(f)
       r[f] = ee
     else
       s = factor(f)
       for (p, ex) = s.fac
+        @assert !haskey(r, p)
         r[p] = ex*ee
       end
     end
+    @assert N % f^ee == 0
     N = divexact(N, f^ee)
     if isone(N)
       break
@@ -807,13 +813,16 @@ function factor(N::fmpz)
   end
   s = Nemo.factor(N)
   for (p, ex) = s.fac
+    @assert !haskey(r, p)
     r[p] = ex
   end
   for p = keys(r)
-    if nbits(p) > 20 && !(p in big_primes)
+    if nbits(p) > 60 && !(p in big_primes)
       push!(big_primes, p)
     end
   end
+#  @assert all(isprime, keys(r))
+#  @assert prod(a^b for (a,b) = r) * c == N_in
   return Nemo.Fac(c, r)
 end
 
