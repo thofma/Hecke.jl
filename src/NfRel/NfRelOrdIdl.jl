@@ -309,10 +309,9 @@ function assure_has_norm(a::NfRelOrdIdl)
     return nothing
   end
   c = basis_pmat(a, Val{false}).coeffs
-  d = basis_pmat(order(a), Val{false}).coeffs
-  n = c[1]*inv(d[1])
+  n = c[1]
   for i = 2:degree(order(a))
-    n *= c[i]*inv(d[i])
+    n *= c[i]
   end
   simplify(n)
   @assert n.den == 1
