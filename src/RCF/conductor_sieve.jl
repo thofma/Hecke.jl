@@ -368,4 +368,25 @@ function conductors(O::NfOrd, ram_primes::Array{Int,1}, n::Int, bound::Int)
 
 end
 
+################################################################################
+#
+#   First stupid iterator
+#
+################################################################################
 
+function _it_single(x, A, B)
+  return Iterators.flatten(( x for x in [((push!(copy(a), x), x*b) for (a, b) in A if x*b <= B), (a for a in A)]))
+end
+
+function squarefree_numbers_from_primes(P, B)
+  sort!(P, rev=true)
+  @assert P[1] <= B
+  A = [ (Int[1], 1) ]
+  p = pop!(P)
+  it = _it_single(p, A, B)
+  while length(P) > 0
+    p = pop!(P)
+    it = _it_single(p, it, B)
+  end
+  return it
+end
