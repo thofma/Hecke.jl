@@ -309,9 +309,10 @@ function assure_has_norm(a::NfRelOrdIdl)
     return nothing
   end
   c = basis_pmat(a, Val{false}).coeffs
-  n = c[1]
+  d = basis_pmat(order(a), Val{false}).coeffs
+  n = c[1]*inv(d[1])
   for i = 2:degree(order(a))
-    n *= c[i]
+    n *= c[i]*inv(d[i])
   end
   simplify(n)
   @assert n.den == 1
@@ -517,7 +518,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
 #  end
   M2 = identity_matrix(K, d)
   PM1 = PseudoMatrix(M1)
-  PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
+  PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
   for j = 1:d
     t = K(den(pb[j][2]))
