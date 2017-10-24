@@ -817,8 +817,11 @@ function factor(N::fmpz)
   end
   s = Nemo.factor(N)
   for (p, ex) = s.fac
-    @assert !haskey(r, p)
-    r[p] = ex
+    if haskey(r, p)
+      r[p] += ex
+    else
+      r[p] = ex
+    end
   end
   for p = keys(r)
     if nbits(p) > 60 && !(p in big_primes)
