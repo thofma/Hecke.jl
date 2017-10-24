@@ -792,6 +792,7 @@ function factor(N::fmpz)
   end
 
   e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
+  #TODO: use coprime basis to refine stuff...
   while e != 0
     ee, f = ispower(f)
     ee = valuation(N, f)
@@ -800,8 +801,11 @@ function factor(N::fmpz)
     else
       s = factor(f)
       for (p, ex) = s.fac
-        @assert !haskey(r, p)
-        r[p] = ex*ee
+        if haskey(r, p)
+          r[p] += ex*ee
+        else
+          r[p] = ex*ee
+        end
       end
     end
     @assert N % f^ee == 0
