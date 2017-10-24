@@ -155,21 +155,24 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
     Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
   end
   conductors=tame_conductors_degree_2(O,bound)
+  @vprint :QuadraticExt "Number of conductors: $(length(conductors)) \n"
   fields=[]
   for k in conductors
-    println("Conductor: $k \n")
+    println("Conductor: $k ")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,2,k)
-    println("Computing action \n")
+    println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
-    println("Searching for subgroups \n")
+    println("\n Searching for subgroups ")
     @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=quo)
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
+      println("\n Computing fields")
       if conductor_min(C)==k
-        println("Computing field \n")
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
+
       end
     end
+    println("\n")
   end
   return fields
 
