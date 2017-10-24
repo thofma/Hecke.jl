@@ -292,6 +292,7 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
   b = 10
   cnt = 0
   while true
+    @assert b > 0
     a = rand(m, b)
     if a==0
       continue
@@ -307,7 +308,7 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
       end
     else
       cnt += 1
-      if cnt > 100
+      if cnt > 1000 
         b *= 2
         cnt = 0
       end
