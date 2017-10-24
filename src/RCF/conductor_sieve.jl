@@ -1,3 +1,6 @@
+add_verbose_scope(:QuadraticExt)
+
+
 ##############################################################################
 #
 #  Sieves for primes and squarefree numbers
@@ -134,17 +137,37 @@ end
 function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
   
   K=nf(O)
+  a=gen(K)
   Aut=Hecke.automorphisms(K)
+  #Getting a good set of generators
+  b=ceil(Int,log(2,degree(O)))
+  Identity=1
+  for i=1:length(Aut)
+    if Aut[i](a)==a
+      Identity=Aut[i]
+      break
+    end
+  end
+  gens=[ rand(Aut) for i=1:b ]
+  Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+  while length(Aut1)!=length(Aut)
+    gens=[ rand(Aut) for i=1:b ]
+    Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+  end
   conductors=tame_conductors_degree_2(O,bound)
   fields=[]
   for k in conductors
-    r,mr=tommy_ray_class_group(O,2,k)
-    act=_act_on_ray_class(mr,Aut)
-    ls=stable_subgroups(r,[2],act, op=quo)
+    println("Conductor: $k \n")
+    @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,2,k)
+    println("Computing action \n")
+    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
+    println("Searching for subgroups \n")
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=quo)
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
       if conductor_min(C)==k
-        push!(fields,number_field(C))
+        println("Computing field \n")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
   end
