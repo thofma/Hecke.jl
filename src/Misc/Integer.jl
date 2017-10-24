@@ -777,7 +777,7 @@ function factor(N::fmpz)
   end
   if isunit(N)
 #    @assert all(isprime, keys(r))
-    @assert isone(N)
+    @assert N == c
     return Nemo.Fac(c, r)
   end
   N *= c
