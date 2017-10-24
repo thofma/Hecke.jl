@@ -4,13 +4,13 @@
 #
 ##############################################################################
 
-function squarefree_up_to(n::Int; coprime_to::Array{Int,1}=[])
+function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
 
   list= trues(n)
   for x in coprime_to
     t=x
-    while t<= bound 
-      list[t]=false
+    while t<= n
+      list[Int(t)]=false
       t+=x
     end
   end
@@ -64,185 +64,92 @@ function primes_up_to(n::Int)
   
 end
 
+
 ###########################################################################
 #
-#  Conductors detection function
+#  Conductors detection function 
 #
 ###########################################################################
 
-function _squarefree_up_to_bitarray(n::Int; coprime_to::Array{fmpz,1}=[])
 
-  list= trues(n)
-  for x in coprime_to
-    t=x
-    while t<= n 
-      list[Int(t)]=false
-      t+=x
-    end
-  end
-  i=2
-  b=sqrt(n)
-  while i<=b
-    if list[i]
-      j=i^2
-      if !list[j]
-        i+=1
-        continue
-      else 
-        list[j]=false
-        t=2*j
-        while t<= n
-          list[t]=false
-          t+=j
-        end
-      end
-    end
-    i+=1
-  end
-  return list
-
-end
-
-function primes_for_conductors(O::NfOrd, n::Int, p::Int)
-  
-  list= trues(n)
-  list[1]=false
-  
-  i=2
-  b=sqrt(n)
-  
-  #case p=2 is easier
-  if p==2
-    s=2
-    while s<=n
-      list[s]=false
-      s+=2
-    end
-    i=3
-    while i<=b
-      if list[i]
-        j=3*i
-        s=2*i
-        while j<= n
-          list[j]=false
-          j+=s
-        end
-      end
-      i+=1
-    end
-    return Int[i for i=1:n if list[i]]
-  end
-  
-  #general case
-  s=4
-  while s<=n
-    list[s]=false
-    s+=2
-  end
-  i=3
-  while i<=b
-    if list[i]
-      j=3*i
-      s=2*i
-      while j<= n
-        list[j]=false
-        j+=s
-      end
-      if divisible(fmpz(i-1),p)
-        i+=1
-        continue
-      end
-      lp=prime_decomposition_type(O,i)
-      f=lp[1][1]
-      if !divisible(fmpz(i)^f-1, p)
-        list[i]=false
-      end
-    end
-    i+=1
-  end
-  while i<=n && list[i] 
-    if divisible(fmpz(i-1),p)
-      i+=1
-      continue
-    end
-    lp=prime_decomposition_type(O,i)
-    f=lp[1][1]
-    if !divisible(fmpz(i)^f-1, p)
-      list[i]=false
-    end
-    i+=1
-  end
-  return Int[i for i=1:n if list[i]]
-  
-end
-
-function conductors_cyclic(O::NfOrd, ram_primes::Array{Int,1}, p::Int, bound::Int)
-
+function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
+ 
   K=nf(O)
   n=degree(O)
-  
-  r=p-1
-  b1=Int(root(fmpz(bound),Int(n*r)))
-  
-  prime_list=primes_for_conductors(O,b1,p)
-  filter!(x -> !(x in ram_primes), prime_list)
-  @show length(prime_list)
-
-  candidates=Tuple{Array{Int, 1}, Int}[(Int[1], 1)]
-  exp=n*r
-  for q in prime_list
-    nq=q^exp
-    l=length(candidates)
-    for i =1:l
-      k=nq*candidates[i][2]
-      if k>bound  
+  p=2
+  b1=Int(root(bound,n))
+  ram_primes=collect(keys(factor(abs(O.disc)).fac))
+  sort!(ram_primes)
+  filter!(x -> x!=p ,ram_primes)
+  cond_list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,p))
+  extra_list=Tuple{Int, Int}[(1,1)]
+  for q in ram_primes
+    tr=prime_decomposition_type(O,Int(q))
+    f=tr[1][1]
+    nq=Int(q)^f
+    if nq> bound
+      break
+    end
+    l=length(extra_list)
+    for i=1:l
+      n=extra_list[i][2]*nq
+      if n> bound
         continue
       end
-      # If we insert the new element so that th array is sorted, 
-      # we can break at this point if k>bound.
-      push!(candidates, (vcat(candidates[i][1], q), k))
+      push!(extra_list, (extra_list[i][1]*q, n))
     end
   end
-  return candidates
-  #
-  # now we take care of the possible wild ramification
-  #
-  
-  lp=prime_decomposition(O,p)
-  f=divexact(degree(O), length(lp)*lp[1][2])
-  np=p^(f*(p-1))
-  l=length(candidates)
-  for i=1:l
-    k=np^2*candidates[i][4]
-    s=2
-    while k<=bound
-      x=Tuple{NfOrdIdl, Int}[]
-      for i=1:length(lp)
-        push!(x, (lp[i][1], s))
+  deleteat!(extra_list,1)
+
+  l=length(cond_list)
+  for (el,norm) in extra_list
+    for i=1:l
+      if cond_list[i]^n*norm>bound
+        continue
       end
-      push!(candidates, [candidates[i][1], x, inf_plc, k])
-      k*=np
-      s+=1
+      push!(cond_list, cond_list[i]*el)
     end
   end
   
-  #
-  #  infinite places
-  #
-  if p==2
-    inf_plc=real_places(K)
-    if !isempty(inf_plc)
-      l=length(candidates)
-      resize!(candidates, length(candidates)*2)
-      for i=1:l
-        x=copy(candidates[i])
-        x[3]=inf_plc
-        candidates[l+i]=x
+  return cond_list
+  
+end
+
+function tommy_ray_class_group(O::NfOrd, n_quo::Int, m::Int)
+  
+  K=nf(O)
+  d1=Dict{NfOrdIdl, Int}()
+  lp=factor(m)
+  for q in keys(lp.fac)
+    lq=prime_decomposition(O,q) 
+    for (P,e) in lq
+      d1[P]=1
+    end   
+  end
+  return ray_class_group(n_quo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), real_places(K))
+  
+end
+
+
+function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
+  
+  K=nf(O)
+  Aut=Hecke.automorphisms(K)
+  conductors=tame_conductors_degree_2(O,bound)
+  fields=[]
+  for k in conductors
+    r,mr=tommy_ray_class_group(O,2,k)
+    act=_act_on_ray_class(mr,Aut)
+    ls=stable_subgroups(r,[2],act, op=quo)
+    for s in ls
+      C=ray_class_field(mr*inv(s[2]))
+      if conductor_min(C)==k
+        push!(fields,number_field(C))
       end
     end
   end
-  return candidates
-  
+  return fields
+
 end
 
 function conductors(O::NfOrd, ram_primes::Array{Int,1}, n::Int, bound::Int)
