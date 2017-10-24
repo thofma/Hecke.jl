@@ -312,6 +312,33 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
         b *= 2
         cnt = 0
       end
+      if b <= 0
+        b = 10
+        cnt = 0
+        bas = lll_basis(m)
+        while true
+          a = rand(bas, b)
+          if a==0
+            continue
+          end
+          emb=signs(a,p)
+          t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+          if !Hecke.haspreimage(mu, t)[1]
+            push!(s, t)
+            push!(g, O(a))
+            u, mu = sub(S, s, false)
+            if order(u) == order(S)
+              break
+            end
+          else
+            cnt += 1
+            if cnt > 1000 
+              b *= 2
+              cnt = 0
+            end
+          end
+        end
+      end
     end
   end
   hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
@@ -1288,7 +1315,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,m)
+      H,lH,eH=Hecke._infinite_primes(O,pr,I)
       T=G
       G =Hecke.direct_product(G,H)
     end
