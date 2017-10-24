@@ -185,7 +185,7 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
   
   assure_has_basis_mat_inv(O)
   M=O.tcontain
-  el=Q(1)
+  element=Q(1)
   i=0
   #Reduce the exponents and reduce to elements in O
   x=Dict{NfOrdElem, fmpz}()
@@ -225,9 +225,9 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
     i+=1
     y=_eval_quo(O, quots[i], tobeeval, p, anti_uniformizer(p), vp)
     a,b=idemps[i]
-    el=Q(y)*Q(a)+el*Q(b)
+    element=Q(Q(y)*Q(a)+element*Q(b))
   end
-  return el.elem
+  return element.elem
 
 end
 
