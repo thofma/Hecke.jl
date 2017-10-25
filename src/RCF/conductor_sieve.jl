@@ -171,10 +171,7 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
       C=ray_class_field(mr*inv(s[2]))
       println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
-        @assert Hecke.conductor_min(C)==k
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
-      else 
-        @assert  Hecke.conductor_min(C)!=k
       end
     end
     println("\n")
