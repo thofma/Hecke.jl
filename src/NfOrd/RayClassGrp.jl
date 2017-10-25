@@ -1713,7 +1713,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     if x==0
       continue
     end
-    G,mG=psylow_subgroup(Q, p)
+    G,mG=psylow_subgroup(Q, p, false)
     S,mS=snf(G)
     #
     #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
