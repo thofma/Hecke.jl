@@ -157,8 +157,9 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
   conductors=tame_conductors_degree_2(O,bound)
   @vprint :QuadraticExt "Number of conductors: $(length(conductors)) \n"
   fields=[]
-  for k in conductors
+  for (i, k) in enumerate(conductors)
     println("Conductor: $k ")
+    println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,2,k)
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
