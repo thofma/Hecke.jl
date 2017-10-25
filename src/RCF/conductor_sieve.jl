@@ -164,7 +164,7 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
     println("\n Searching for subgroups ")
-    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=quo)
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> quo(x, y, false))
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
       println("\n Computing fields")
