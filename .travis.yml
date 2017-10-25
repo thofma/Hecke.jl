@@ -16,8 +16,9 @@ notifications:
   - email: false
 
 script:
+  - julia -e 'Pkg.clone("https://github.com/Nemocas/Nemo.jl.git")'
   - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.checkout("Nemo")'
+    #- julia -e 'Pkg.checkout("Nemo")'
   - julia -e 'Pkg.build("Hecke")'
   - julia --check-bounds=yes -e 'Pkg.test("Hecke")'
 
