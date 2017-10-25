@@ -317,7 +317,8 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
         cnt = 0
         bas = lll_basis(m)
         while true
-          a = rand(bas, b)
+          @assert b>0
+          a = rand(bas, 1:b)
           if a==0
             continue
           end
