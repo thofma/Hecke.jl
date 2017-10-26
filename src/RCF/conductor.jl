@@ -91,7 +91,7 @@ function conductor(C::Hecke.ClassField)
       for (q,vq) in lp
         r,mr=ray_class_group(candidate,inf_plc,n_quo=Int(q^vq))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
-        s,ms=quo(r,quot)
+        s,ms=quo(r,quot, false)
         if valuation(order(s),q)<valuation(E,q)
           iscandcond=false
           break
@@ -115,7 +115,7 @@ function conductor(C::Hecke.ClassField)
         iscandcond=true
         r, mr=ray_class_group(candidate,inf_plc, n_quo=Int(p.gen_one^l))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
-        s,ms=quo(r,quot) 
+        s,ms=quo(r,quot, false) 
         if valuation(order(s),p.gen_one) < l
           iscandcond=false
           break
@@ -145,7 +145,7 @@ function conductor(C::Hecke.ClassField)
       candidate_inf=[x for x in cond_inf if x !=inf_plc[i]]
       r,mr=ray_class_group(cond,candidate_inf, n_quo=2^l)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
-      s,ms=quo(r,quot)
+      s,ms=quo(r,quot, false)
       if valuation(order(s),2)==l
         cond_inf=candidate_inf
       end
@@ -172,7 +172,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
   S=Hecke.PrimesSet(2,-1)
   
   st = start(S)
-  q, mq = quo(T, sR)
+  q, mq = quo(T, sR, false)
   while true
     p, st = next(S, st)
     if m.gen_one % p == 0
@@ -192,7 +192,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
       end
       push!(sR, pre)
       push!(lp, P)
-      q, mq = quo(T, sR)
+      q, mq = quo(T, sR, false)
     end
     if order(q) == 1   
       break
@@ -294,7 +294,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   for (p,vp) in lp
     r,mr=ray_class_group(m,inf_plc, n_quo= Int(p^vp))
     quot=GrpAbFinGenElem[mr\s for s in Sgens]
-    s,ms=quo(r,quot)
+    s,ms=quo(r,quot, false)
     if valuation(order(s),p)<vp
       return false
     end
@@ -324,7 +324,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       for (q,vq) in lp
         r,mr=ray_class_group(candidate,inf_plc, n_quo=Int(q^vq))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
-        s,ms=quo(r,quot)
+        s,ms=quo(r,quot, false)
         if valuation(order(s),q)<valuation(E,q)
           iscandcond=false
           break
@@ -346,7 +346,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       iscandcond=true
       r, mr=ray_class_group(candidate,inf_plc, n_quo=Int(p.gen_one)^l)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
-      s,ms=quo(r,quot) 
+      s,ms=quo(r,quot, false) 
       if valuation(order(s),p.gen_one) < l
         iscandcond=false
       end
@@ -369,7 +369,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       candidate_inf=[x for x in cond_inf if x !=inf_plc[i]]
       r,mr=ray_class_group(m,candidate_inf, n_quo = 2^l)
       quot=GrpAbFinGenElem[mr\s for s in Sgens]
-      s,ms=quo(r,quot)
+      s,ms=quo(r,quot, false)
       if valuation(order(s),2)==l
         return false
       end
@@ -413,7 +413,7 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
   N1=fmpz(norm(mR.modulus_fin))
   n=degree(f)
   
-  Q,mQ=quo(R,n)
+  Q,mQ=quo(R,n, false)
   
   S,mS=snf(Q)
   M=rels(S)
@@ -460,7 +460,7 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
   for i=1:ngens(R)
     push!(subgrp, n*R[i])
   end
-  return sub(R, subgrp)
+  return sub(R, subgrp, false)
 
 end
 
@@ -642,7 +642,7 @@ function conductor_min(C::Hecke.ClassField)
       for (q,vq) in lp
         r,mr=ray_class_group(candidate,inf_plc, n_quo=Int(q^vq))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
-        s,ms=quo(r,quot)
+        s,ms=quo(r,quot, false)
         if valuation(order(s),q)<valuation(E,q)
           iscandcond=false
           break
@@ -686,7 +686,7 @@ function conductor_min(C::Hecke.ClassField)
         iscandcond=true
         r, mr=ray_class_group(candidate,inf_plc, Int(p.gen_one^l))
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
-        s,ms=quo(r,quot) 
+        s,ms=quo(r,quot, false) 
         if valuation(order(s),p.gen_one) < l
           iscandcond=false
           break
@@ -726,5 +726,75 @@ function conductor_min(C::Hecke.ClassField)
     end
   end 
   return cond
+  
+end 
+
+#
+#  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
+#  The input must be a multiple of the minimum of the conductor, we don't check for consistancy. 
+#
+
+function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
+
+  mp=C.mq
+  
+  #
+  #  First, we need to find the subgroup
+  #
+  
+  mR=mp.f
+  mS=mp.g
+  while issubtype(typeof(mR), Hecke.CompositeMap)
+    mS = mR.g*mS
+    mR = mR.f
+  end
+  
+  R=domain(mR)
+  cond=mR.modulus_fin
+  inf_plc=mR.modulus_inf
+  O=parent(cond).order
+  E=Int(order(domain(mp)))
+  expo=Int(exponent(domain(mp)))
+  K=O.nf
+  
+  mS=inv(mS)
+  dom=domain(mS)
+  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
+  for i=1:ngens(dom)
+    elem=mS(dom[i]).coeff
+    for j=1:ngens(codomain(mS))
+      M[i,j]=elem[1,j]
+    end
+  end
+  S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
+  T,mT=Hecke.kernel(S1)
+
+  Sgens=find_gens_sub(mR,mT)
+
+  lp=collect(keys(factor(a).fac))
+  lq=[prime_decomposition(O,p) for p in lp]
+  for i=1:length(lp)
+    P=lq[i][1][1]
+    g=gcd(E, norm(P)-1)
+    if g==1
+      return false
+    end
+    d1=Dict{NfOrdIdl,Int}()
+    for j=1:length(lq)
+      if j!=i
+        for k=1:length(lq[j])
+          d1[lq[j][k][1]]=1
+        end
+      end
+    end
+    r,mr=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), inf_plc)
+    quot=GrpAbFinGenElem[mr\s for s in Sgens]
+    s,ms=quo(r,quot)
+    if order(s)==E
+      return false
+    end
+  end
+  return true
+
   
 end 

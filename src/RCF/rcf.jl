@@ -176,7 +176,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   np = 0
   extra = 1
 
-  q, mq = quo(R, sR)
+  q, mq = quo(R, sR, false)
   while true
     p, st = next(S, st)
     if cp % p == 0
@@ -205,7 +205,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
       end
       push!(sR, f)
       push!(lp, P)
-      q, mq = quo(R, sR)
+      q, mq = quo(R, sR, false)
     end
     if order(q) == 1   
       break
@@ -261,7 +261,7 @@ function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
     p = Id_Zk(intersect_nonindex(mp, P))
     push!(sR, valuation(norm(P), norm(p))*preimage(mR, p))
   end
-  @assert order(quo(G, sG)[1]) == 1
+  @assert order(quo(G, sG, false)[1]) == 1
        # if think if the quo(G, ..) == 1, then the other is automatic
        # it is not, in general it will never be.
        #example: Q[sqrt(10)], rcf of 16*Zk
@@ -311,7 +311,7 @@ doc"""
 function ray_class_field(m::Map, p::Int=0)
   CF = ClassField()
   if p != 0
-    q, mq = quo(domain(m), p)
+    q, mq = quo(domain(m), p, false)
     m = m*inv(mq)
   end
   m = Hecke.make_snf(m)
@@ -339,7 +339,7 @@ function number_field(CF::ClassField)
     lo = factor(o)
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
-      S, mQ = quo(G, q)
+      S, mQ = quo(G, q, false)
       push!(res, ray_class_field_cyclic_pp(m*inv(mQ)))
     end
     q[i] = G[i]
@@ -386,7 +386,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
 
-  q, mq = quo(c, e)
+  q, mq = quo(c, e, false)
   mc = mc*inv(mq)
   c = q
 
@@ -398,7 +398,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   end
   g = elem_type(c)[preimage(mc, x) for x = lP]
 
-  q, mq = quo(c, g)
+  q, mq = quo(c, g, false)
   mc = mc * inv(mq)
   c = q
 
@@ -450,7 +450,7 @@ end
   @assert i>0
   n = lift(n)
   N = GrpAbFinGen([e for j=1:rows(n)])
-  s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i])
+  s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i], false)
   ms = Hecke.make_snf(ms)
   @assert iscyclic(domain(ms))
   o = order(domain(ms)[1])
@@ -518,7 +518,7 @@ function _rcf_descent(CF::ClassField_pp)
                               # have to pass to a subgroup
     @assert order(g) % degree(C.Kr) == 0
     f = C.Kr.pol
-    s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))])
+    s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))], false)
     ss, mss = snf(s)
     g = ss
     mg = mg*ms*mss
@@ -613,7 +613,7 @@ function _rcf_descent(CF::ClassField_pp)
 
   if iscyclic(AutA_snf)  # the subgroup is trivial to find!
     @vprint :ClassField 2 ".. trivial as automorphism group is cyclic\n"
-    s, ms = sub(AutA_snf, [e*AutA_snf[1]])
+    s, ms = sub(AutA_snf, [e*AutA_snf[1]], false)
   else
     @vprint :ClassField 2 ".. interesting...\n"
     #want: hom: AutA = Gal(A/k) -> Gal(K/k) = domain(mq)
@@ -691,7 +691,7 @@ function _rcf_descent(CF::ClassField_pp)
   t = sum(os)
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
-  q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
+  q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
   @assert order(q) == order(domain(CF.mq))
   AT, T = PolynomialRing(A, "T")
   @vprint :ClassField 2 "char poly...\n"
@@ -705,7 +705,7 @@ function _rcf_descent(CF::ClassField_pp)
     t = sum(os)
     CF.pe = t
     #now the minpoly of t - via Galois as this is easiest to implement...
-    q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)])
+    q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
     @assert order(q) == order(domain(CF.mq))
     AT, T = PolynomialRing(A, "T")
     @vprint :ClassField 2 "char poly...\n"
@@ -1159,12 +1159,12 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       push!(all_s, s)
       push!(all_tau_s, tau_s)
     end
-    sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(x) for x=all_s])
+    sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(x) for x=all_s], false)
     all_b = []
     # if the above is correct, then tau_s in <s>
     for j = 1:length(Cp)
-      sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)])
-      sG, msG = sub(Cp[im].bigK.AutG, vcat([(degree(Cp[j]) > om ? div(om, degree(Cp[i])):1)*Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], [degree(Cp[j])*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]))
+      sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], false)
+      sG, msG = sub(Cp[im].bigK.AutG, vcat([(degree(Cp[j]) > om ? div(om, degree(Cp[i])):1)*Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], [degree(Cp[j])*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
       ts = all_tau_s[j]
       x = Cp[im].bigK.AutG(ts)
       fl, y = haspreimage(msG, x)

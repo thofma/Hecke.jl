@@ -508,17 +508,25 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
       M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
     end
   end
-  M2 = zero_matrix(K, d, d)
+#  M2 = zero_matrix(K, d, d)
+#  for j = 1:d
+#    t = K(den(pb[j][2]))
+#    M2[j, j] = inv(t)
+#    for i = 1:d
+#      M1[i, j] = divexact(M1[i, j], t)
+#    end
+#  end
+  M2 = identity_matrix(K, d)
+  PM1 = PseudoMatrix(M1)
+  PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
+  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
   for j = 1:d
     t = K(den(pb[j][2]))
-    M2[j, j] = inv(t)
     for i = 1:d
-      M1[i, j] = divexact(M1[i, j], t)
+      PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
     end
   end
-  PM1 = PseudoMatrix(M1)
-  PM2 = PseudoMatrix(M2, [ deepcopy(p) for i = 1:d ])
-  PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
+  PM = pseudo_hnf(PM, :lowerleft, true)
   return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
 end
 
