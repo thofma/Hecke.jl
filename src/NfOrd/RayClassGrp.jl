@@ -377,6 +377,27 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
 
 end
 
+#
+#  Function that stores the principal generators element of the powers of the generators
+#  in the class group map
+#
+
+function _assure_princ_gen(mC::MapClassGrp)
+
+  if isdefined(mC, :princ_gens)
+    return true
+  end
+  C=domain(mC)
+  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(ngens(C))
+  for i=1:ngens(C)
+    I=FacElem(Dict(mC(C[i])=> fmpz(1)))
+    pr=principal_gen_fac_elem(I^C.snf[i])
+    mC.princ_gens[i]=(I,pr)
+  end
+  return true
+
+end
+
 
 #
 #  Changes the exponential map of the class group so that the chosen representatives are coprime to the modulus
@@ -422,7 +443,48 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
 
 end 
 
+function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
+ 
+  O=parent(m).order
+  K=nf(O)
+  L=Array{NfOrdIdl,1}(ngens(C))
+  el=Array{nf_elem,1}(ngens(C))
 
+  for i=1:ngens(C)
+    a=first(keys(mC.princ_gens[i][1].fac))
+    if iscoprime(a,m)
+      L[i]=a
+      el[i]=K(1)
+    else  
+      J=inv(a)
+      s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
+      I=s*a
+      simplify(I)
+      I = num(I)
+      while !iscoprime(I,m)
+        s=K(rand(J.num,5))//J.den  
+        I=s*a
+        simplify(I)
+        I = num(I)
+      end
+      L[i]=I
+      el[i]=s
+    end
+  end
+  
+  function exp(a::GrpAbFinGenElem)  
+    e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
+    for i=1:ngens(C)
+      if Int(a.coeff[1,i])!= 0
+        e*=FacElem(Dict(L[i] => a.coeff[1,i]))
+      end
+    end
+    return e
+  end
+  
+  return exp, el
+
+end 
 function empty_ray_class(m::NfOrdIdl)
   O=order(parent(m))
   X=DiagonalGroup(Int[])
@@ -869,6 +931,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   Q,pi=quo(O,m)
   G, mG, lp = _mult_grp(Q,p)
   C, mC = class_group(O)
+  _assure_princ_gen(mC)
   
   if p==2 
     pr = [ x for x in inf_plc if isreal(x) ]
@@ -888,7 +951,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   
   C, mC = _class_group_mod_n(C,mC,valclassp)
   U, mU = unit_group_fac_elem(O)
-  exp_class = Hecke._coprime_ideal(C,mC,m)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
     
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m)    
@@ -941,7 +1004,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    @vtime :RayFacElem 1 push!(tobeeval, Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))*nonppartclass)))
+    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
@@ -1106,7 +1169,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
   
     mp=Hecke.MapClassGrp{typeof(G)}()
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
-    
+    mp.princ_gens=mC.princ_gens[ind:end]
     return G,mp
   end
 end 
@@ -1312,6 +1375,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   Q.factor=lp
   @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,y1,y2,n)
   C, mC = class_group(O)
+  _assure_princ_gen(mC)
   
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
@@ -1341,7 +1405,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 
   C, mC = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
-  exp_class = Hecke._coprime_ideal(C,mC,m)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
   
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m,n)    
@@ -1394,7 +1458,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    @vtime :RayFacElem 1 push!(tobeeval, Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))*nonnclass)))
+    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
