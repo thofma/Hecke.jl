@@ -166,9 +166,10 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
     println("\n Searching for subgroups ")
-    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> quo(x, y, false))
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> (quo(x, y, false), sub(x,y,false)))
     for s in ls
-      C=ray_class_field(mr*inv(s[2]))
+      C=ray_class_field(mr*inv(s[1][2]))
+      C.norm_group=s[2][2]
       println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
@@ -278,21 +279,23 @@ end
 
 function conductors_tame(O::NfOrd, n::Int, bound::Int)
 
-  #TODO: Add the p=2 case and optimize it
-  
+  if n==2
+    return tame_conductors_degree_2(O,bound)
+  end
   #
   #  First, conductors coprime to the ramified primes and to the 
   #  degree of the extension we are searching for.
   # 
 
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
+  
   K=nf(O)
-  
-  ram_primes=collect(keys(factor(abs(O.disc)).fac))
-  filter!(x -> !divisible(n,x) ,ram_primes)
+  wild_ram=collect(keys(factor(fmpz(n)).fac))
+  ram_primes=collect(keys(factor(O.disc).fac))
+  filter!(x -> !divisible(n,x), ram_primes)
   sort!(ram_primes)
-  
-  b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)))) #Maybe it is n-1 instead of minimun(wild_ram)-1. Check.
+  m=minimum(wild_ram)
+  k=divexact(n,m)
+  b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
   coprime_to=cat(1,ram_primes, wild_ram)
   list= _squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
@@ -327,6 +330,85 @@ function conductors_tame(O::NfOrd, n::Int, bound::Int)
   return list
 end
 
+# Bound= Norm of the discriminant of the upper extension
+function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
+  
+  K=nf(O)
+  a=gen(K)
+  real_plc=real_places(K)
+  n=prod(gtype)
+  expo=lcm(gtype)
+  #
+  # Getting a small set of generators
+  # for the automorphisms group
+  #
+  Aut=Hecke.automorphisms(K)
+  b=ceil(Int,log(2,degree(O)))
+  Identity=1
+  for i=1:length(Aut)
+    if Aut[i](a)==a
+      Identity=Aut[i]
+      break
+    end
+  end
+  gens=[ rand(Aut) for i=1:b ]
+  Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+  while length(Aut1)!=length(Aut)
+    gens=[ rand(Aut) for i=1:b ]
+    Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+  end
+  #Getting conductors
+  conductors=conductors_tame(O,n,bound)
+  @vprint :QuadraticExt "Number of conductors: $(length(conductors)) \n"
+  fields=[]
+  #Now, the big loop
+  for (i, k) in enumerate(conductors)
+    println("Conductor: $k ")
+    println("Left: $(length(conductors) - i)")
+    @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
+    println("\n Computing action ")
+    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
+    println("\n Searching for subgroups ")
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false))
+    for s in ls
+      C=ray_class_field(mr*inv(s[2]))
+      println("\n Computing fields")
+      if Hecke._is_conductor_min_tame_normal(C, k)
+        println("\n Discriminant computation")
+        if k^degree(O)>=bound
+          fac=keys(factor(k).fac)
+          lp=[prime_decomposition(O,q) for q in fac]
+          discr=1
+          for j=1:length(lp)
+            d1=Dict{NfOrdIdl, Int}()
+            for l=1:length(lp)
+              if l!=j
+                for (P,e) in lp[l]
+                  d1[P]=1
+                end   
+              else
+                for s=2:length(lp[j])
+                  d1[lp[j][s][1]]=1
+                end
+              end
+            end
+            R,mR=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), real_plc(K))
+            ap= n-order(R)
+            discr*=fac[j]^(divexact(degree(O),lp[j][1][2])*ap)
+          end
+          if discr>bound
+            continue
+          end
+        end
+        println("\n New Field!")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
+      end
+    end
+    println("\n")
+  end
+  return fields
+
+end
 ################################################################################
 #
 #   First stupid iterator
