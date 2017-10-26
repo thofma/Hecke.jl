@@ -312,6 +312,34 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
         b *= 2
         cnt = 0
       end
+      if b <= 0
+        b = 10
+        cnt = 0
+        bas = lll_basis(m)
+        while true
+          @assert b>0
+          a = rand(bas, 1:b)
+          if a==0
+            continue
+          end
+          emb=signs(a,p)
+          t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+          if !Hecke.haspreimage(mu, t)[1]
+            push!(s, t)
+            push!(g, O(a))
+            u, mu = sub(S, s, false)
+            if order(u) == order(S)
+              break
+            end
+          else
+            cnt += 1
+            if cnt > 1000 
+              b *= 2
+              cnt = 0
+            end
+          end
+        end
+      end
     end
   end
   hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
@@ -346,6 +374,27 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
   end 
   
   return S,log,exp
+
+end
+
+#
+#  Function that stores the principal generators element of the powers of the generators
+#  in the class group map
+#
+
+function _assure_princ_gen(mC::MapClassGrp)
+
+  if isdefined(mC, :princ_gens)
+    return true
+  end
+  C=domain(mC)
+  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(ngens(C))
+  for i=1:ngens(C)
+    I=FacElem(Dict(mC(C[i])=> fmpz(1)))
+    pr=principal_gen_fac_elem(I^C.snf[i])
+    mC.princ_gens[i]=(I,pr)
+  end
+  return true
 
 end
 
@@ -394,7 +443,48 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
 
 end 
 
+function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
+ 
+  O=parent(m).order
+  K=nf(O)
+  L=Array{NfOrdIdl,1}(ngens(C))
+  el=Array{nf_elem,1}(ngens(C))
 
+  for i=1:ngens(C)
+    a=first(keys(mC.princ_gens[i][1].fac))
+    if iscoprime(a,m)
+      L[i]=a
+      el[i]=K(1)
+    else  
+      J=inv(a)
+      s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
+      I=s*a
+      simplify(I)
+      I = num(I)
+      while !iscoprime(I,m)
+        s=K(rand(J.num,5))//J.den  
+        I=s*a
+        simplify(I)
+        I = num(I)
+      end
+      L[i]=I
+      el[i]=s
+    end
+  end
+  
+  function exp(a::GrpAbFinGenElem)  
+    e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
+    for i=1:ngens(C)
+      if Int(a.coeff[1,i])!= 0
+        e*=FacElem(Dict(L[i] => a.coeff[1,i]))
+      end
+    end
+    return e
+  end
+  
+  return exp, el
+
+end 
 function empty_ray_class(m::NfOrdIdl)
   O=order(parent(m))
   X=DiagonalGroup(Int[])
@@ -841,6 +931,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   Q,pi=quo(O,m)
   G, mG, lp = _mult_grp(Q,p)
   C, mC = class_group(O)
+  _assure_princ_gen(mC)
   
   if p==2 
     pr = [ x for x in inf_plc if isreal(x) ]
@@ -860,7 +951,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   
   C, mC = _class_group_mod_n(C,mC,valclassp)
   U, mU = unit_group_fac_elem(O)
-  exp_class = Hecke._coprime_ideal(C,mC,m)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
     
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m)    
@@ -913,7 +1004,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    @vtime :RayFacElem 1 push!(tobeeval, Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))*nonppartclass)))
+    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
@@ -1078,7 +1169,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
   
     mp=Hecke.MapClassGrp{typeof(G)}()
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
-    
+    mp.princ_gens=mC.princ_gens[ind:end]
     return G,mp
   end
 end 
@@ -1284,11 +1375,12 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   Q.factor=lp
   @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,y1,y2,n)
   C, mC = class_group(O)
+  _assure_princ_gen(mC)
   
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,m)
+      H,lH,eH=Hecke._infinite_primes(O,pr,I)
       T=G
       G =Hecke.direct_product(G,H)
     end
@@ -1313,7 +1405,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 
   C, mC = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
-  exp_class = Hecke._coprime_ideal(C,mC,m)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
   
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m,n)    
@@ -1366,7 +1458,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    @vtime :RayFacElem 1 push!(tobeeval, Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i]))*nonnclass)))
+    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
@@ -1685,7 +1777,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     if x==0
       continue
     end
-    G,mG=psylow_subgroup(Q, p)
+    G,mG=psylow_subgroup(Q, p, false)
     S,mS=snf(G)
     #
     #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)

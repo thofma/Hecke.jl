@@ -77,6 +77,7 @@ end
 
 mutable struct ClassField
   mq::Map
+  norm_group::GrpAbFinGenMap
   cyc::Array{ClassField_pp, 1}
   A::NfRel_ns{nf_elem}
   function ClassField()

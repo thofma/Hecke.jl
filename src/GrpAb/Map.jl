@@ -159,7 +159,7 @@ function kernel(h::GrpAbFinGenMap)
       for j = i:rows(t)
         push!(k, G(sub(t, j:j, 1:ngens(G))))
       end
-      return sub(G, k)
+      return sub(G, k, false)
     end
   end
   error("Something went terribly wrong in kernel computation")
@@ -184,7 +184,7 @@ function image(h::GrpAbFinGenMap)
       break
     end
   end
-  return sub(H, im)  # too much, this is sub in hnf....
+  return sub(H, im, false)  # too much, this is sub in hnf....
 end
 
 ################################################################################
@@ -205,7 +205,7 @@ function issurjective(A::GrpAbFinGenMap)
   if isfinite(codomain(A)) && isfinite(H)
     return order(codomain(A)) == order(H)
   else
-    Q, mQ = quo(codomain(A), GrpAbFinGenElem[mH(g) for g in gens(H)])
+    Q, mQ = quo(codomain(A), GrpAbFinGenElem[mH(g) for g in gens(H)], false)
     S,mS=snf(Q)
     return prod(S.snf)==1
   end
