@@ -195,7 +195,8 @@ end
 
 mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet}
   header::MapHeader
-
+  princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
+  
   function MapClassGrp{T}() where {T}
     return new{T}()
   end
