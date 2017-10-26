@@ -1,6 +1,7 @@
 
 export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
-       trailing_coefficient, constant_coefficient, factor_mod_pk, factor_mod_pk_init, hensel_lift
+       trailing_coefficient, constant_coefficient, factor_mod_pk,
+       factor_mod_pk_init, hensel_lift, resultant_sircana
 
 function PolynomialRing(R::Ring)
   return PolynomialRing(R, "_x")
@@ -17,10 +18,12 @@ function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
 end
 
 function FlintFiniteField(p::Integer)
+  @assert isprime(p)
   return ResidueRing(FlintZZ, p)
 end
 
 function FlintFiniteField(p::fmpz)
+  @assert isprime(p)
   return ResidueRing(FlintZZ, p)
 end
 
@@ -75,9 +78,7 @@ doc"""
 
 >  The last leading coefficient of f.
 """
-function leading_coefficient(f::PolyElem)
-  return coeff(f, degree(f))
-end
+leading_coefficient(f::PolyElem) = lead(f)
 
 doc"""
 ***
@@ -462,4 +463,232 @@ function deflate(x::PolyElem)
   end
   return deflate(x, g), g
 end
+
+
+function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T}, t::PolyElem{T}) where T <: RingElem #from von zur Gathen: h needs to be monic
+  e = f-g*h 
+  @assert ismonic(h)
+  q, r = divrem(s*e, h)
+#  @assert s*e == q*h+r
+  g = g+t*e+q*g
+  h = h+r
+#  @assert ismonic(h)
+  b = s*g+t*h-1
+  c, d = divrem(s*b, h)
+  s = s-d
+  t = t-t*b-c*g
+
+  return g, h, s, t
+end
+
+#factors f as monic * (unit mod lead(f))
+# requires some coefficient of f to be a unit
+function fun_factor(f::PolyElem{<:RingElem})
+  local g0
+  local h0
+  if isunit(lead(f))
+    l= lead(f)
+    return f*inv(l), parent(f)(l)
+  end
+  t = gen(parent(f))
+  g0 = parent(f)(0)
+  for i=degree(f):-1:0
+    if isunit(coeff(f, i))
+      h0 = f - g0
+      break
+    else
+      setcoeff!(g0, i, coeff(f, i))
+    end
+  end
+
+  #co-factors:
+  g0 = parent(f)()
+  setcoeff!(g0, degree(f) - degree(h0), lead(f))
+  setcoeff!(g0, 0, lead(h0))
+  s = parent(f)(lead(h0))
+  h0 *= inv(lead(h0))
+  t = parent(f)(0)
+
+  g, h, s,t = _hensel(f, g0, h0, s, t)
+  i = 1
+  while g!= g0 || h != h0
+    i += 1
+    g0 = g
+    h0 = h
+    g, h, s, t = _hensel(f, g0, h0, s, t)
+#    if i>3 
+#      error("too long")
+#    end
+  end
+
+  return g0, h0
+end
+
+function my_div(a::T, b::T) where T <: RingElem
+  if iszero(a)
+    return a
+  end
+  A = lift(a)
+  B = lift(b)
+  R = parent(a)
+  m = fmpz(modulus(R))
+  ga = gcd(A, m)
+  ua = div(A, ga)
+  gb = gcd(B, m)
+  ub = div(B, gb)
+  _, x = Hecke.ppio(m, ub)
+  r = R(div(ga, gb)*ua*invmod(ub, x))
+  return r
+end
+
+doc"""
+    resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+> The resultant of $f$ anf $g$ using a quadratic-time algorithm.
+"""
+function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Rt = parent(f)
+  R = base_ring(Rt)
+  m = fmpz(modulus(R))
+  Zx = PolynomialRing(FlintZZ)[1]
+
+  if degree(f) < 1 && degree(g) < 1
+    if iszero(f) || iszero(g)
+      res = R(0)
+    else
+      res = R(1)
+    end
+    return res
+  end
+
+  if degree(f) < 1
+    res = lead(f)^degree(g)
+    return res
+  end
+
+  if degree(g) < 1
+    res = lead(g)^degree(f)
+    return res
+  end
+
+  c = content(f)
+  if !isunit(c)
+    f = deepcopy(f)
+    for i=0:degree(f)
+      setcoeff!(f, i, my_div(coeff(f, i), c))
+    end
+    res = c^degree(g)*resultant_sircana(f, g)
+    return res
+  end
+
+  c = content(g)
+  if !isunit(c)
+    g = deepcopy(g)
+    for i=0:degree(g)
+      setcoeff!(g, i, my_div(coeff(g, i), c))
+    end
+    res = c^degree(f)*resultant_sircana(f, g)
+    return res
+  end
+
+  if degree(f) < degree(g)
+    res = (-1)^(degree(f)*degree(g))*resultant_sircana(g, f)
+    return res
+  end
+
+  #want f % g which works iff lead(g) | lead(f)
+  if isunit(lead(g)) ||
+    gcd(lift(lead(f)), m)  % gcd(lift(lead(g)), m) == 0
+    q = my_div(lead(f), lead(g))
+    ff = f - q*g*gen(Rt)^(degree(f) - degree(g))
+    @assert degree(f) > degree(ff)
+    res = lead(g)^(degree(f) - degree(ff))
+    res *= resultant_sircana(ff, g)*R(-1)^(degree(g)*(degree(f) - degree(ff)))
+    return res
+  end
+
+  #factoring case, need to split the ring as well.
+  #merde : we need a coprime factorisation: take
+  # 6t^2+2t+3 mod 36....
+  cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+  push!(cp, m)
+  cp = [x for x = cp if !iszero(x)]
+  cp = coprime_base(cp)
+  cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+  resp = fmpz[]
+  pg = fmpz[]
+  for p = cp
+    lg = p^valuation(m, p)
+    push!(pg, lg)
+
+    R1 = ResidueRing(FlintZZ, S(lg))
+    R1t = PolynomialRing(R1)[1]
+    #g is bad in R1, so factor it
+    gR1 = R1t(lift(Zx, g))
+    fR1 = R1t(lift(Zx, f))
+
+    if degree(fR1) < degree(f) &&
+       degree(gR1) < degree(g)
+       res1 = R1(0)
+    elseif degree(fR1) < degree(f)
+        res1 = R1(-1)^(degree(g) * (degree(f) - degree(fR1))) *
+               lead(gR1)^(degree(f) - degree(fR1))
+    elseif degree(gR1) < degree(g)
+        res1 = lead(fR1)^(degree(g) - degree(gR1))
+    else
+        res1 = R1(1)
+    end
+
+    if !isunit(lead(gR1))
+      g1, g2 = fun_factor(gR1)
+    
+      #careful: lead(g) = 0 mod lg is possible, so the degree drops!
+      #from Wiki:
+      # phi: R -> S
+      # phi(res(f, g)) = res(phi(f), phi(g)) if the degrees are the same
+      #                = 0                   if both degrees drop (zero column in 
+      #                                         sylvester matrix)
+      #                = (-1)^(delta(f)*deg(g))*
+      #                  phi(l(g))^delta(f)  if only degree(f) drops
+      #                = phi(l(f))^delta(g)  if only degree(g) drops
+      #
+      # we use res(f, gh) = res(f, g)res(f, h) which seems to be true in general                  
+      #next: res(fR1, gR1) = res(phi(f), g1)
+      #g1 is = 1 mod p
+      #however, reverse(fR1) can have a smaller degree then fR1 (eg. x^2 -> 1)
+      # res(f, g) = t(g)^delta(f) * (-1)^(deg(g)*delta(f)) * res(rev(f), rev(g))
+      # there is a (-1)^deg(f)*deg(g) from Wiki for the reverse on top.
+
+      res1 *= resultant_sircana(reverse(fR1), reverse(g1))
+      v = valuation(fR1, gen(parent(fR1))) 
+           #should be delta(f) = degree(rev(f)) - degree(f)
+      res1 *= constant_coefficient(g1)^v*R1(-1)^(v*degree(g1))
+      res1 *= R1(-1)^(degree(g1)*degree(fR1))
+
+      res1 *= resultant_sircana(fR1, g2)
+      push!(resp, lift(res1))
+    else
+      #gR1 has a invertible leading coeff
+      res1 *= resultant_sircana(fR1, gR1)
+      push!(resp, lift(res1))
+    end
+  end
+  res = length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
+  return res
+end
+
+doc"""
+    Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}
+> Find a random polynomial of degree(n)
+"""
+function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  f = Rt()
+  R = base_ring(Rt)
+  for i=0:n
+    setcoeff!(f, i, rand(R))
+  end
+  return f
+end
+
 
