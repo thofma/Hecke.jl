@@ -604,8 +604,8 @@ function gcdx_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
 end
 
 
-function ismonic(a::Generic.Poly)
-  return leading_coefficient(a)==1
+function ismonic(a::PolyElem)
+  return isone(lead(a))
 end
 
 function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::fmpz)
