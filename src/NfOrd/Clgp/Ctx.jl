@@ -98,10 +98,11 @@ function toMagma(f::IOStream, clg::ClassGrpCtx)
   end
   print(f, "];\n")
 
+  R = vcat(clg.R_gen, clg.R_rel)
   print(f, "R := [ ")
-  for i = 1:length(clg.R)
-    print(f, clg.R[i])
-    if i < length(clg.R)
+  for i = 1:length(R)
+    print(f, R[i])
+    if i < length(R)
       print(f, ",\n")
     end
   end
@@ -113,6 +114,29 @@ end
 function toMagma(s::String, c::ClassGrpCtx)
   f = open(s, "w")
   toMagma(f, c)
+  close(f)
+end
+
+################################################################################
+function toNemo(f::IOStream, clg::ClassGrpCtx)
+  print(f, "K, _a = number_field(", nf(order(clg.FB.ideals[1])).pol, ");\n");
+  print(f, "O = Order(K, \n")
+  toNemo(f, basis(order(clg.FB.ideals[1])))
+  print(f, ");\n")
+  print(f, "O.ismaximal = 1\n")
+
+  print(f, "c = Hecke.class_group_init(O, ", norm(clg.FB.ideals[1]), ")\n")
+
+  R = vcat(clg.R_gen, clg.R_rel)
+  for i = 1:length(R)
+    print(f, "Hecke.class_group_add_relation(c, K(", R[i], "))\n")
+  end
+
+end
+
+function toNemo(s::String, c::ClassGrpCtx)
+  f = open(s, "w")
+  toNemo(f, c)
   close(f)
 end
 
