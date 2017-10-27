@@ -85,6 +85,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   sort!(ram_primes)
   filter!(x -> x!=p ,ram_primes)
   cond_list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,p))
+
   extra_list=Tuple{Int, Int}[(1,1)]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
@@ -113,7 +114,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
       push!(cond_list, cond_list[i]*el)
     end
   end
-  
+
   return cond_list
   
 end
@@ -148,10 +149,12 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
       break
     end
   end
-  gens=[ rand(Aut) for i=1:b ]
+  gens=[ rand(Aut), rand(Aut) ]
+  s=1
   Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
   while length(Aut1)!=length(Aut)
-    gens=[ rand(Aut) for i=1:b ]
+    s+=1
+    gens=[ rand(Aut) for i=1:minimum([s,b]) ]
     Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
   end
   #Getting conductors
@@ -164,12 +167,12 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,2,k)
     println("\n Computing action ")
-    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
+    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
-    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> (quo(x, y, false), sub(x,y,false)))
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]))
     for s in ls
-      C=ray_class_field(mr*inv(s[1][2]))
-      C.norm_group=s[2][2]
+      C=ray_class_field(mr*inv(s[1]))
+      C.norm_group=s[2]
       println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
         @vtime :QuadraticExt 1 push!(fields,number_field(C))

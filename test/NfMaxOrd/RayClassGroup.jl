@@ -16,17 +16,16 @@
     C,mC=class_group(O)
     
     for i=9:13
-     R,mR=ray_class_group(ideal(O,i), p_part=3)
-     for r in R
-       @test r== mR\(mR(r))
-     end
-    end
-    
-    for i=9:13
-     R,mR=ray_class_group(ideal(O,i), n_quo=3)
-     for r in R
-       @test r== mR\(mR(r))
-     end
+      R,mR=ray_class_group(ideal(O,i), p_part=3)
+      for r in R
+        @test r== mR\(mR(r))
+      end
+      R1,mR1=ray_class_group(ideal(O,i), n_quo=3)
+      for r in R1
+        @test r== mR1\(mR1(r))
+      end
+      q,mq=quo(R,3)
+      @test Hecke.isisomorphic(R1,q)
     end
     
     Qx,x=PolynomialRing(FlintQQ,"x")
@@ -36,27 +35,22 @@
     inf_plc=real_places(K)
     
     for i=9:13
-     R,mR=ray_class_group(ideal(O,i),inf_plc,p_part=2)
-     for r in R
-       x=mR\(mR(r))
-       @test r== x
-     end
-    end
-    
-    for i=9:13
-     R,mR=ray_class_group(ideal(O,i),inf_plc)
-     mR=Hecke.make_snf(mR)
-     for r in domain(mR)
-       x=mR\(mR(r))
-       @test r== x
-     end
-    end
-    
-    for i=9:13
-     R,mR=ray_class_group(ideal(O,i), inf_plc, n_quo=2)
-     for r in R
-       @test r== mR\(mR(r))
-     end
+      R,mR=ray_class_group(ideal(O,i),inf_plc,p_part=2)
+      for r in R
+        @test r== mR\(mR(r))
+      end
+      R1,mR1=ray_class_group(ideal(O,i),inf_plc)
+      for r in R1
+        @test r== mR1\(mR1(r))
+      end
+      R2,mR2=ray_class_group(ideal(O,i), inf_plc, n_quo=2)
+      for r in R2
+        @test r== mR2\(mR2(r))
+      end
+      q,mq=quo(R,2)
+      @test Hecke.isisomorphic(q,R2)
+      q1,mq1=quo(R1,2)
+      @test Hecke.isisomorphic(q1,R2)
     end
 
   end

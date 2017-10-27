@@ -15,9 +15,13 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
   fact_mod::Dict{NfOrdIdl, Int}
+  prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
+  prime_ideal_cache::Array{NfOrdIdl, 1}
   
   function MapRayClassGrp{T}() where {T}
-    return new{T}()
+    z = new{T}()
+    z.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+    return z
   end
 end
 
@@ -1170,6 +1174,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     mp=Hecke.MapClassGrp{typeof(G)}()
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
     mp.princ_gens=mC.princ_gens[ind:end]
+    
     return G,mp
   end
 end 
@@ -1511,7 +1516,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     end
     return a
   end
-
+  
   function disclog(J::NfOrdIdl)
 
     if isone(J)
@@ -1563,6 +1568,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   mp=Hecke.MapRayClassGrp{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin=I
+
   if mod(n,2)==0
     mp.modulus_inf=pr
   else
@@ -1649,20 +1655,22 @@ end
 #  Find small primes that generate the ray class group (or a quotient)
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
 #
-function find_gens(mR::Map)
+function find_gens(mR::MapRayClassGrp)
 
   O = order(codomain(mR))
   R = domain(mR) 
   m=Hecke._modulus(mR)
   
   sR = elem_type(R)[]
-  lp = []
-
+  lp = NfOrdIdl[]
+#=
   S=Hecke.PrimesSet(2,-1)
   st = start(S)
   
   q, mq = quo(R, sR,false)
+  counter=0
   while true
+    counter+=1
     p, st = next(S, st)
     if m.gen_one % p == 0
       continue
@@ -1684,12 +1692,39 @@ function find_gens(mR::Map)
       break
     end
   end
-
+  @vprint :RayFacElem 3 "Attempts: $counter \n"
+  return lp, sR
+=#
+  q, mq = quo(R, sR,false)
+  if isdefined(mR, :prime_ideal_cache)
+    S = mR.prime_ideal_cache
+  else
+    S = prime_ideals_up_to(O, 1000)
+    mR.prime_ideal_cache = S
+  end
+  q, mq = quo(R, sR, false)
+  for (i,P) in enumerate(S)
+    if haskey(mR.prime_ideal_preimage_cache, P)
+      f = mR.prime_ideal_preimage_cache[P]
+    else
+      f = mR\P
+      mR.prime_ideal_preimage_cache[P] = f
+    end
+    if iszero(mq(f))
+      continue
+    end
+    push!(sR, f)
+    push!(lp, P)
+    q, mq = quo(R, sR, false)
+    if order(q) == 1 
+      break
+    end
+  end
   return lp, sR
 end
 
 
-function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
+function _act_on_ray_class(mR::MapRayClassGrp , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
@@ -1707,7 +1742,7 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   #  class group map
   #
 
-  lgens,subs=find_gens(mR)
+  @vtime :RayFacElem 3 lgens,subs=find_gens(mR)
   
   if isempty(lgens)
     push!(G, GrpAbFinGenMap(R))
@@ -1743,8 +1778,8 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   for phi in Aut
     M=zero_matrix(FlintZZ,length(lgens), ngens(R))
     for i=1:length(lgens) 
-      J=_aut_on_id(O,phi,lgens[i])
-      elem=mR\J
+      @vtime :RayFacElem 3 J=_aut_on_id(O,phi,lgens[i])
+      @vtime :RayFacElem 3 elem=mR\J
       for j=1:ngens(R)
         M[i,j]=elem[j]
       end
