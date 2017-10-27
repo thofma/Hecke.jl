@@ -29,6 +29,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
   R = domain(mR) 
   T = domain(mT)
   m = Hecke._modulus(mR)
+  l = minimum(m)
   lp = NfOrdIdl[]
   sR = GrpAbFinGenElem[]
 #=
@@ -73,6 +74,9 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
   end
   q, mq = quo(T, sR, false)
   for (i,P) in enumerate(S)
+    if divisible(l,minimum(P))
+      continue
+    end
     if haskey(mR.prime_ideal_preimage_cache, P)
       f = mR.prime_ideal_preimage_cache[P]
     else
@@ -694,7 +698,7 @@ function conductor_min(C::Hecke.ClassField)
       for j=1:L[p]-1
         candidate=cand*p^(L[p]-j)
         iscandcond=true
-        r, mr=ray_class_group(candidate,inf_plc, Int(minimum(p)^l))
+        r, mr=ray_class_group(candidate,inf_plc, Int(minimum(p))^l)
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot, false) 
         if valuation(order(s),minimum(p)) < l
@@ -801,14 +805,85 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
         end
       end
     end
-    r,mr=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), inf_plc)
-    quot=GrpAbFinGenElem[mr\s for s in Sgens]
+    r,mr=ray_class_group(O,cond, expo, mR, d1, inf_plc)
+    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E
       return false
     end
   end
   return true
+
+  
+end 
+
+function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
+
+  mp=C.mq
+  
+  #
+  #  First, we need to find the subgroup
+  #
+  
+  mR=mp.f
+  mS=mp.g
+  while issubtype(typeof(mR), Hecke.CompositeMap)
+    mS = mR.g*mS
+    mR = mR.f
+  end
+  
+  R=domain(mR)
+  cond=mR.modulus_fin
+  inf_plc=mR.modulus_inf
+  O=parent(cond).order
+  E=Int(order(domain(mp)))
+  expo=Int(exponent(domain(mp)))
+  K=O.nf
+  
+  if isdefined(C, :norm_group)
+    mT=C.norm_group
+  else
+    mS=inv(mS)
+    dom=domain(mS)
+    M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
+    for i=1:ngens(dom)
+      elem=mS(dom[i]).coeff
+      for j=1:ngens(codomain(mS))
+        M[i,j]=elem[1,j]
+      end
+    end
+    S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
+    _,mT=Hecke.kernel(S1)
+  end
+
+  Sgens=find_gens_sub(mR,mT)
+  cond=1
+  lp=collect(keys(factor(a).fac))
+  lq=[prime_decomposition(O,p) for p in lp]
+  for i=1:length(lp)
+    P=lq[i][1][1]
+    g=gcd(E, norm(P)-1)
+    if g==1
+      continue
+    end
+    d1=Dict{NfOrdIdl,Int}()
+    for j=1:length(lq)
+      if j!=i
+        for k=1:length(lq[j])
+          d1[lq[j][k][1]]=1
+        end
+      end
+    end
+    r,mr=ray_class_group(O,cond, expo, mR, d1, inf_plc)
+    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
+    s,ms=quo(r,quot)
+    if order(s)==E
+      continue
+    else 
+      cond*=lp[i]
+    end
+  end
+  return cond
 
   
 end 
