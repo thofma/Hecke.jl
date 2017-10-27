@@ -118,25 +118,31 @@ function toMagma(s::String, c::ClassGrpCtx)
 end
 
 ################################################################################
-function toNemo(f::IOStream, clg::ClassGrpCtx)
-  print(f, "K, _a = number_field(", nf(order(clg.FB.ideals[1])).pol, ");\n");
-  print(f, "O = Order(K, \n")
-  toNemo(f, basis(order(clg.FB.ideals[1])))
-  print(f, ");\n")
+
+function toNemo(f::IOStream, clg::ClassGrpCtx; field_name = "K")
+  O = order(clg.FB.ideals[1])
+  L = nf(O)
+  var = string(L.S)
+  print(f, "$field_name, $var = number_field(", nf(order(clg.FB.ideals[1])).pol, ", \"$var\");\n");
+  O = order(clg.FB.ideals[1])
+  toNemo(f, basis(O))
+  print(f, "O = Order($field_name, map($field_name, R))\n")
   print(f, "O.ismaximal = 1\n")
 
   print(f, "c = Hecke.class_group_init(O, ", norm(clg.FB.ideals[1]), ")\n")
 
+  #_print_nf_elem_array_serialize(a)
+
   R = vcat(clg.R_gen, clg.R_rel)
   for i = 1:length(R)
-    print(f, "Hecke.class_group_add_relation(c, K(", R[i], "))\n")
+    print(f, "Hecke.class_group_add_relation(c, $field_name(", R[i], "))\n")
   end
 
 end
 
-function toNemo(s::String, c::ClassGrpCtx)
+function toNemo(s::String, c::ClassGrpCtx; T...)
   f = open(s, "w")
-  toNemo(f, c)
+  toNemo(f, c; T...)
   close(f)
 end
 
