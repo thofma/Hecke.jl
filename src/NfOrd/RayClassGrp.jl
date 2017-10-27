@@ -17,6 +17,10 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   fact_mod::Dict{NfOrdIdl, Int}
   prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
   prime_ideal_cache::Array{NfOrdIdl, 1}
+  evals::Array{NfOrdQuoRingElem,1}
+  quots::Array
+  idemps::Array{Tuple{NfOrdElem, NfOrdElem},1}
+  coprime_elems::Array{nf_elem,1}
   
   function MapRayClassGrp{T}() where {T}
     z = new{T}()
@@ -69,7 +73,7 @@ function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem,
 
   newelems=_preproc(O,elems,exponent)
   quots=[]
-  idemps=[]
+  idemps=Tuple{NfOrdElem, NfOrdElem}[]
   el=[Q(1) for i=1:length(newelems)]
   I=ideal(O,1)
   for (p,vp) in lp
@@ -1130,17 +1134,19 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
   
   @assert issnf(C)
   O=parent(mC(C[1])).order
+  K=nf(O)
   if gcd(C.snf[ngens(C)],n)==1
-   G=DiagonalGroup(Int[])
-   function exp1(a::GrpAbFinGenElem)
-     return ideal(O, O(1))
-   end
-   function disclog1(I::NfOrdIdl)
-     return G(Int[])
-   end
-   mp=Hecke.MapClassGrp{typeof(G)}()
-   mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
-   return G,mp
+    G=DiagonalGroup(Int[])
+    function exp1(a::GrpAbFinGenElem)
+      return ideal(O, O(1))
+    end
+    function disclog1(I::NfOrdIdl)
+      return G(Int[])
+    end
+    mp=Hecke.MapClassGrp{typeof(G)}()
+    mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
+    mp.princ_gens=[(FacElem(Dict(ideal(O,1)=> fmpz(1))), FacElem(Dict(K(1)=> 1)))]
+    return G,mp
   
   else
     
@@ -1219,6 +1225,9 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   
   function disclog(x::NfOrdElem)
     t=mQ(x)^(m*quot)
+    if iszero(t)
+      error("Not coprime!")
+    end
     if t==Q(1)
       return [Int(0)]
     end
@@ -1568,6 +1577,11 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   mp=Hecke.MapRayClassGrp{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin=I
+  mp.evals=evals
+  mp.quots=quots
+  mp.idemps=idemps
+  mp.coprime_elems=Kel
+  mp.fact_mod=lp
 
   if mod(n,2)==0
     mp.modulus_inf=pr
@@ -1577,6 +1591,193 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   return X,mp
   
 end
+
+##################################################################################
+#
+#  Ray Class Group map for conductors
+#
+##################################################################################
+
+
+function ray_class_group(O::NfOrd, m::NfOrdIdl, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1})
+
+  K=nf(O)
+  evals=mR.evals
+  quots=mR.quots
+  idemps=mR.idemps
+  Kel=mR.coprime_elems
+  
+  
+  # Compute the modulus of the quotient
+  I=ideal(O,1)
+  for (q,vq) in lp
+    I*=q^vq
+  end
+  
+  Q,pi=quo(O,I)
+  Q.factor=lp
+  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,lp,Dict{NfOrdIdl,Int}(),n)
+  C, mC = class_group(O)
+  _assure_princ_gen(mC)
+  
+  if mod(n,2)==0 
+    pr = [ x for x in inf_plc if isreal(x) ]
+    if !isempty(pr)
+      H,lH,eH=Hecke._infinite_primes(O,pr,I)
+      T=G
+      G =Hecke.direct_product(G,H)
+    end
+  end
+  
+  if gcd(C.snf[end],n)==1 && order(G)==1
+    G=DiagonalGroup(Int[])
+    function mp1(a::GrpAbFinGenElem)
+      return G(Int[])
+    end
+    return G,mp1
+  end
+  
+  f=collect(keys(factor(fmpz(n)).fac))
+  val=Array{Int,1}(length(f))
+  for i=1:length(f)
+    val[i]=valuation(C.snf[end],f[i])
+  end
+  valclass=1
+  for i=1:length(f)
+    if val[i]!=0
+      valclass*=f[i]^(val[i])
+    end
+  end
+  nonnclass=divexact(C.snf[end], valclass)
+
+  C, mC = _class_group_mod_n(C,mC,Int(valclass))
+  U, mU = unit_group_fac_elem(O)
+  princ_gens=mC.princ_gens
+  
+  L=Array{FacElem{NfOrdIdl, NfOrdIdlSet},1}(ngens(C))
+  for i=1:length(L)
+    L[i]=princ_gens[i][1]*Kel[i]
+  end
+  
+  function exp_class(a::GrpAbFinGenElem)  
+    e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
+    for i=1:ngens(C)
+      if Int(a.coeff[1,i])!= 0
+        e*=FacElem(Dict(L[i] => a.coeff[1,i]))
+      end
+    end
+    return e
+  end
+  for i=1:ngens(C)
+    nt=num(evaluate(exp_class(C[i])))
+    println("$nt")
+    @assert iscoprime(nt, I) 
+  end
+  
+  if order(G)==1
+    return C, mC.header.preimage   
+  end
+  
+#
+# We start to construct the relation matrix
+#
+
+  expo=Int(exponent(G))
+  inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
+  
+  R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
+  for i=1:ngens(C)
+    R[i,i]=C.snf[i]
+  end
+  if issnf(G)
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.snf[i]
+    end
+  else
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
+    end
+  end
+  for i=1:cols(R)
+    R[ngens(C)+ngens(U)+ngens(G)+i,i]=n
+  end
+  
+#
+# We compute the relation matrix given by the image of the map U -> (O/m)^*
+#
+  
+  for i=1:ngens(U)
+    @vprint :RayFacElem 1 "Disclog of unit $i \n"
+    a=(mG\(evals[i].elem)).coeff
+    if mod(n,2)==0 && !isempty(pr)
+      if i==1
+        a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
+      else
+        b=lH(mU(U[i]))
+        a=hcat(a, b.coeff)
+      end
+    end
+    for j=1:ngens(G)
+      R[i+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
+    end
+  end 
+
+#
+# We compute the relation between generators of Cl and (O/m)^* in Cl^m
+#
+
+  for i=1: ngens(C)
+    @vprint :RayFacElem 1 "Disclog of class group element $i \n"
+    a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
+    if mod(n,2)==0 && !isempty(pr)
+      b=lH(mC.princ_gens[i][2]*Kel^(C.snf[i]))
+      a=hcat(a, b.coeff)
+    end
+    for j=1: ngens(G)
+      R[i,ngens(C)+j]=-a[1,j]
+    end 
+  end
+  
+  X=AbelianGroup(R)
+   
+#
+# Discrete logarithm
+#
+
+  function disclog(J::FacElem)
+    a= X([0 for i=1:ngens(X)])
+    for (f,k) in J.fac
+      a+=k*disclog(f)
+    end
+    return a
+  end
+  
+  function disclog(J::NfOrdIdl)
+
+    if isone(J)
+      return X([0 for i=1:ngens(X)])
+    else
+      @assert iscoprime(I,J)
+      W=mC\J
+      s=exp_class(W)
+      Id=J* inv(s)
+      Id=Id^Int(nonnclass)
+      z=principal_gen_fac_elem(Id)
+      el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, mR.fact_mod, gcd(expo,n))    
+      y=((mG\(el))*inverse_d).coeff
+      if mod(n,2)==0 && !isempty(pr)
+        b=lH(z)
+        y=hcat(y, b.coeff)
+      end
+      return X(hcat(W.coeff,y))
+    end
+  end 
+  
+  return X, disclog
+
+  
+end
+
 
 ##################################################################################
 #
