@@ -447,7 +447,13 @@ function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
   return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
-function EquationOrder(L::NfRel{T}) where T
+doc"""
+***
+      EquationOrder(L::NfRel) -> NfRelOrd
+
+> Returns the equation order of the number field $L$.
+"""
+function EquationOrder(L::NfRel)
   M = identity_matrix(base_ring(L), degree(L))
   O = Order(L, M)
   O.basis_mat_inv = M
@@ -455,6 +461,12 @@ function EquationOrder(L::NfRel{T}) where T
   return O
 end
 
+doc"""
+***
+      MaximalOrder(L::NfRel) -> NfRelOrd
+
+> Returns the maximal order of $L$.
+"""
 function MaximalOrder(L::NfRel)
   O = EquationOrder(L)
   return MaximalOrder(O)
@@ -490,6 +502,12 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
+
+> Returns the trace matrix of $\mathcal O$.
+"""
 function trace_matrix(O::NfRelOrd)
   if isdefined(O, :trace_mat)
     return deepcopy(O.trace_mat)
@@ -541,6 +559,8 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::NfToFqNmo
   return g
 end
 
+# Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = Val{true}) where S
   !isequation_order(O) && error("Order must be an equation order")
 
@@ -579,9 +599,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
     U = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, Umodp)
     PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
-    PN = try sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
-    catch sub(pseudo_hnf_kb(PN, :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
-    end
+    PN = sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
     OO = Order(L, PN)
     OO.isequation_order = false
     return false, OO
@@ -598,6 +616,13 @@ dedekind_poverorder(O::NfRelOrd, p::NfOrdIdl) = dedekind_test(O, p)[2]
 #
 ################################################################################
 
+doc"""
+***
+      poverorder(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrd
+
+> This function tries to find an order that is locally larger than $\mathcal O$
+> at the prime $p$.
+"""
 function poverorder(O::NfRelOrd, p::NfOrdIdl)
   if isequation_order(O)
     return dedekind_poverorder(O, p)
@@ -612,14 +637,17 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrd
+
+> This function finds a $p$-maximal order $R$ containing $\mathcal O$.
+"""
 function pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl)
   d = discriminant(O)
   OO = poverorder(O, p)
   dd = discriminant(OO)
-  i = 1
   while d != dd
-    i += 1
-    println(i)
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
@@ -647,14 +675,20 @@ end
 #
 ################################################################################
 
+doc"""
+***
+      +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
+
+> Given two orders $R$, $S$ of $K$, this function returns the smallest order
+> containing both $R$ and $S$.
+"""
 function +(a::NfRelOrd{T, S}, b::NfRelOrd{T, S}) where {T, S}
+  # checks
   @assert nf(a) == nf(b)
   aB = basis_pmat(a)
   bB = basis_pmat(b)
   d = degree(a)
-  PM = try sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
-    catch sub(pseudo_hnf_kb(vcat(aB, bB), :lowerleft), d + 1:2*d, 1:d)
-    end
+  PM = sub(pseudo_hnf(vcat(aB, bB), :lowerleft, true), d + 1:2*d, 1:d)
   return NfRelOrd{T, S}(nf(a), PM)
 end
 

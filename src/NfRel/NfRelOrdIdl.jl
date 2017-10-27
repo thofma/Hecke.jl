@@ -438,6 +438,7 @@ end
 #
 ################################################################################
 
+# Returns an element x with v_p(x) = v_p(a) for all p in primes.
 function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
   products = Vector{NfOrdIdl}()
   for p in primes
@@ -458,12 +459,25 @@ function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
   return x
 end
 
+doc"""
+***
+      pradical(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrdIdl
+
+> Given a prime ideal number $p$, this function returns the $p$-radical
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
+> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+"""
+# Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
+
+  # Compute a pseudo basis of O with integral ideals:
   basis_mat_int = zero_matrix(K, d, d)
   pbint = Vector{Tuple{NfRelElem{nf_elem}, NfOrdIdl}}()
   for i = 1:d
@@ -472,6 +486,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     elem_to_mat_row!(basis_mat_int, i, t)
   end
   Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+
   pOK = ideal(OK, OK(minimum(p)))
   prime_ideals = factor(pOK)
   elts_with_val = Vector{NfOrdElem}(d)
@@ -481,6 +496,8 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
   A = zero_matrix(F, d, d)
+
+  # If minimum(p) is too small one can't use the trace.
   if minimum(p) <= d
     q = norm(p)
     k = clog(fmpz(degree(Oint)), q)
@@ -500,32 +517,30 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
       end
     end
   end
+
   B = nullspace(A)[2]
   M1 = zero_matrix(K, d, d)
   imF = inv(mF)
+  # Write a basis of the kernel of A in the rows of M1.
   for i = 1:cols(B)
     for j = 1:rows(B)
       M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
     end
   end
-#  M2 = zero_matrix(K, d, d)
-#  for j = 1:d
-#    t = K(den(pb[j][2]))
-#    M2[j, j] = inv(t)
-#    for i = 1:d
-#      M1[i, j] = divexact(M1[i, j], t)
-#    end
-#  end
   M2 = identity_matrix(K, d)
   PM1 = PseudoMatrix(M1)
+  # PM2 is the basis pseudo matrix of p*Oint
   PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
+
+  # Write PM in the basis of O (and not Oint)
   for j = 1:d
     t = K(den(pb[j][2]))
-    for i = 1:d
+    for i = j:d
       PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
     end
   end
+  # TODO: Use that the matrix is already triangular
   PM = pseudo_hnf(PM, :lowerleft, true)
   return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
 end
@@ -536,6 +551,16 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
+
+> Computes the order $(a : a)$, which is the set of all $x \in K$
+> with $xa \subseteq a$, where $K$ is the ambient number field
+> of $a$.
+"""
+# Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
   K = base_ring(nf(O))
@@ -558,9 +583,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = try sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-    catch sub(pseudo_hnf_kb(PM), 1:d, 1:d)
-    end
+  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
