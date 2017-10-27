@@ -705,15 +705,22 @@ function _contained_in_span_of_pseudohnf_lowerleft(v::Generic.Mat{nf_elem}, P::P
   return true
 end
 
-function _spans_subset_of_pseudohnf(M::PMat, P::PMat)
-# P upperright
+function _spans_subset_of_pseudohnf(M::PMat, P::PMat, shape::Symbol = :upperright)
+  # accepts :upperright or :lowerleft for the shape of P
+  (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   for i in rows(M)
     A = M.coeffs[i]
     v = sub(M.matrix, i:i, 1:cols(P))
     for b in basis(A.num)
       bb = divexact(elem_in_nf(b), A.den)
-      if !Hecke._contained_in_span_of_pseudohnf(bb*v, P)
-        return false
+      if shape == :upperright
+        if !Hecke._contained_in_span_of_pseudohnf(bb*v, P)
+          return false
+        end
+      elseif shape == :lowerleft
+        if !Hecke._contained_in_span_of_pseudohnf_lowerleft(bb*v, P)
+          return false
+        end
       end
     end
   end
