@@ -234,7 +234,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   while i<=b
     if primes[i]
       dt=prime_decomposition_type(O,i)
-      if gcd(deg,i^dt[1][1])==1
+      if gcd(deg,i^dt[1][1]-1)==1
         primes[i]=false
         sqf[i]=false
         j=3*i
@@ -264,7 +264,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   while i<=n
     if primes[i]
       dt=prime_decomposition_type(O,i)
-      if gcd(deg,i^dt[1][1])==1
+      if gcd(deg,i^dt[1][1]-1)==1
         sqf[i]=false
         j=3*i
         s=2*i
@@ -280,7 +280,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   
 end
 
-function conductors_tame(O::NfOrd, n::Int, bound::Int)
+function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
 
   if n==2
     return tame_conductors_degree_2(O,bound)
@@ -290,17 +290,16 @@ function conductors_tame(O::NfOrd, n::Int, bound::Int)
   #  degree of the extension we are searching for.
   # 
 
-  
   K=nf(O)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
   ram_primes=collect(keys(factor(O.disc).fac))
-  filter!(x -> !divisible(n,x), ram_primes)
+  filter!(x -> !divisible(fmpz(n),x), ram_primes)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)
   b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
   coprime_to=cat(1,ram_primes, wild_ram)
-  list= _squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
+  list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
   extra_list=Tuple{Int, Int}[(1,1)]
   for q in ram_primes
@@ -321,7 +320,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::Int)
   end
   deleteat!(extra_list,1)
   
-  l=length(cond_list)
+  l=length(list)
   for (el,norm) in extra_list
     for i=1:l
       if list[i]^n*norm>bound
@@ -346,19 +345,23 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   # for the automorphisms group
   #
   Aut=Hecke.automorphisms(K)
-  b=ceil(Int,log(2,degree(O)))
-  Identity=1
-  for i=1:length(Aut)
-    if Aut[i](a)==a
-      Identity=Aut[i]
-      break
+  if degree(O)==1
+    gens=[Aut[1]]
+  else
+    b=ceil(Int,log(2,degree(O)))
+    Identity=1
+    for i=1:length(Aut)
+      if Aut[i](a)==a
+        Identity=Aut[i]
+        break
+      end
     end
-  end
-  gens=[ rand(Aut) for i=1:b ]
-  Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
-  while length(Aut1)!=length(Aut)
     gens=[ rand(Aut) for i=1:b ]
     Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+    while length(Aut1)!=length(Aut)
+      gens=[ rand(Aut) for i=1:b ]
+      Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+    end
   end
   #Getting conductors
   conductors=conductors_tame(O,n,bound)
@@ -370,7 +373,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
     println("\n Computing action ")
-    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,Aut1)
+    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
     @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false))
     for s in ls
