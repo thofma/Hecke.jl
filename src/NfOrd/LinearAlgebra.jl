@@ -413,7 +413,7 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = fals
     return pseudo_hnf_full_rank(P, shape)
   else
     # TODO: If P is not of full rank and rows(P) > cols(P)
-    # pseudo_hnf_integral (called by pseudo_hnf_full_rank)
+    # find_pseudo_hnf_modulus (called by pseudo_hnf_full_rank)
     # starts an infinite loop.
     Q = try pseudo_hnf_full_rank(P, shape)
     catch pseudo_hnf_kb(P, shape)
@@ -426,7 +426,8 @@ function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
   K = parent(PP.matrix[1, 1])
   integralizer = _make_integral!(PP)
-  PPhnf = pseudo_hnf_integral(PP, shape)
+  m = find_pseudo_hnf_modulus(PP)
+  PPhnf = pseudo_hnf_mod(PP, m, shape)
   for i in 1:rows(PP)
     PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
     simplify(PPhnf.coeffs[i])
@@ -434,7 +435,19 @@ function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   return PPhnf
 end
 
-function pseudo_hnf_integral(P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+function pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+  PP = deepcopy(P)
+  K = parent(PP.matrix[1, 1])
+  integralizer = _make_integral!(PP)
+  PPhnf = pseudo_hnf_mod(PP, m, shape)
+  for i in 1:rows(PP)
+    PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))
+    simplify(PPhnf.coeffs[i])
+  end
+  return PPhnf
+end
+
+function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
   K = parent(P.matrix[1, 1])
   O = order(P.coeffs[1])
   if rows(P) == cols(P)
@@ -486,7 +499,7 @@ function pseudo_hnf_integral(P::PMat{T, S}, shape::Symbol = :upperright) where {
     m = det(PMinor)
   end
   simplify(m)
-  return pseudo_hnf_mod(P, num(m), shape)
+  return num(m)
 end
 
 #TODO: das kann man besser machen
