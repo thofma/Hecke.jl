@@ -140,24 +140,22 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
   K=nf(O)
   a=gen(K)
   Aut=Hecke.automorphisms(K)
+  @assert length(Aut) == degree(K)
+
   #Getting a good set of generators
-  b=ceil(Int,log(2,degree(O)))
-  Identity=1
-  for i=1:length(Aut)
-    if Aut[i](a)==a
-      Identity=Aut[i]
+  Identity = Aut[1]
+  for i in 1:degree(K)
+    Au = Aut[i]
+    if Au.prim_img == a
+      Identity = Aut[i]
       break
     end
   end
-  gens=[ rand(Aut), rand(Aut) ]
-  s=1
-  Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
-  while length(Aut1)!=length(Aut)
-    s+=1
-    gens=[ rand(Aut) for i=1:minimum([s,b]) ]
-    Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
-  end
+
+  gens = Hecke.small_generating_set(Aut, *, Identity)
+
   #Getting conductors
+
   conductors=tame_conductors_degree_2(O,bound)
   @vprint :QuadraticExt "Number of conductors: $(length(conductors)) \n"
   fields=[]
