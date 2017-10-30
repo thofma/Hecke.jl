@@ -1599,7 +1599,7 @@ end
 ##################################################################################
 
 
-function ray_class_group(O::NfOrd, m::NfOrdIdl, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1})
+function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1})
 
   K=nf(O)
   evals=mR.evals
@@ -1667,11 +1667,6 @@ function ray_class_group(O::NfOrd, m::NfOrdIdl, n::Int, mR::MapRayClassGrp, lp::
       end
     end
     return e
-  end
-  for i=1:ngens(C)
-    nt=num(evaluate(exp_class(C[i])))
-    println("$nt")
-    @assert iscoprime(nt, I) 
   end
   
   if order(G)==1

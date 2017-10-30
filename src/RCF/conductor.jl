@@ -786,9 +786,11 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
     S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
     _,mT=Hecke.kernel(S1)
   end
-
-  Sgens=find_gens_sub(mR,mT)
-
+  if isdefined(C, :small_gens)
+    Sgens=C.small_gens
+  else
+    Sgens=find_gens_sub(mR,mT)
+  end
   lp=collect(keys(factor(a).fac))
   lq=[prime_decomposition(O,p) for p in lp]
   for i=1:length(lp)
@@ -805,7 +807,7 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
         end
       end
     end
-    r,mr=ray_class_group(O,cond, expo, mR, d1, inf_plc)
+    r,mr=ray_class_group(O, expo, mR, d1, inf_plc)
     quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E
@@ -854,9 +856,13 @@ function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
     end
     S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
     _,mT=Hecke.kernel(S1)
+    C.norm_group=mT
   end
-
-  Sgens=find_gens_sub(mR,mT)
+  if isdefined(C, :small_gens)
+    Sgens=C.small_gens
+  else
+    Sgens=find_gens_sub(mR,mT)
+  end
   cond=1
   lp=collect(keys(factor(a).fac))
   lq=[prime_decomposition(O,p) for p in lp]
@@ -874,7 +880,7 @@ function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
         end
       end
     end
-    r,mr=ray_class_group(O,cond, expo, mR, d1, inf_plc)
+    r,mr=ray_class_group(O, expo, mR, d1, inf_plc)
     quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E

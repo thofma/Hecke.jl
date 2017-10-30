@@ -204,9 +204,9 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   end
   
   #sieving procedure
-  i=3
+  
   if !(2 in coprime_to)
-    dt=prime_decomposition_type(O,i)
+    dt=prime_decomposition_type(O,2)
     if gcd(2^dt[1][1], deg)==1
       j=2
       while j<=n
@@ -228,6 +228,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
       end
     end
   end
+  i=3
   b=sqrt(n)
   while i<=b
     if primes[i]
@@ -251,9 +252,9 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
         end
         j=i^2
         t=2*j
-        while t<= n
-          sqf[t]=false
-          t+=j
+        while j<= n
+          sqf[j]=false
+          j+=t
         end
       end
     end
@@ -330,6 +331,23 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   return list
 end
 
+
+function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
+
+  H=DiagonalGroup(gtype)
+  H, _=snf(H)
+  G1, _=snf(G)
+  if length(G1.snf)<length(H.snf)
+    return false
+  end
+  for i=0:length(H.snf)-1
+    if !divisible(G1.snf[end-i],H.snf[end-i])
+      return false
+    end
+  end
+  return true
+  
+end
 function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
   inf_plc= InfPlc[]
@@ -343,6 +361,9 @@ function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
     println("\n Searching for subgroups ")
+    if !_are_there_subs(r,gtype)
+      continue
+    end
     @vtime :QuadraticExt 1 ls=subgroups(r, quotype=gtype, fun= (x, y) -> quo(x, y, false))
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
@@ -366,8 +387,10 @@ function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
                 end
               end
             end
-            R,mR=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), inf_plc)
-            ap= n-order(R)
+            R,mR=ray_class_group(O, expo, mr, d1, inf_plc)
+            dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
+            q,mq=quo(R,dlogs)
+            ap= n-order(q)
             discr*=fac[j]^(divexact(degree(O),lp[j][1][2])*ap)
           end
           if discr>bound
@@ -380,6 +403,13 @@ function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     end
     println("\n")
   end
+end
+
+
+function divisors(n::Int)
+ 
+ return collect(keys(factor(n).fac))
+ 
 end
 
 
@@ -399,41 +429,44 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   # for the automorphisms group
   #
   Aut=Hecke.automorphisms(K)
-  if degree(O)==1
-    gens=[Aut[1]]
-  else
-    b=ceil(Int,log(2,degree(O)))
-    Identity=1
-    for i=1:length(Aut)
-      if Aut[i](a)==a
-        Identity=Aut[i]
-        break
-      end
-    end
-    gens=[ rand(Aut) for i=1:b ]
-    Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
-    while length(Aut1)!=length(Aut)
-      gens=[ rand(Aut) for i=1:b ]
-      Aut1=Hecke._closing_under_generators_dimino(gens, (x, y) -> [ g for g in Aut if g(a) == (x*y)(a)][1], Identity, (x,y) -> x(a) == y(a))
+  @assert length(Aut)==degree(O)
+  
+  Identity = Aut[1]
+  for i in 1:degree(K)
+    Au = Aut[i]
+    if Au.prim_img == a
+      Identity = Aut[i]
+      break
     end
   end
+  gens = Hecke.small_generating_set(Aut, *, Identity)
+  
   #Getting conductors
   conductors=conductors_tame(O,n,bound)
+  sort!(conductors, rev=true)
   @vprint :QuadraticExt "Number of conductors: $(length(conductors)) \n"
   fields=[]
+  found_conds=Set(Int[])
+  
   #Now, the big loop
   for (i, k) in enumerate(conductors)
+    if k in found_conds
+      continue
+    end
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
+    println("$found_conds")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
     @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false))
+    new_conds=divisors(k)
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
       println("\n Computing fields")
-      if Hecke._is_conductor_min_tame_normal(C, k)
+      c=Hecke._conductor_min_tame_normal(C, k)
+      if !(c in found_conds)
         println("\n Discriminant computation")
         if k^degree(O)>=bound
           fac=keys(factor(k).fac)
@@ -452,8 +485,10 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
                 end
               end
             end
-            R,mR=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), real_plc(K))
-            ap= n-order(R)
+            R,mR=ray_class_group(O, expo, mr, d1, inf_plc)
+            dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
+            q,mq=quo(R,dlogs)
+            ap= n-order(q)
             discr*=fac[j]^(divexact(degree(O),lp[j][1][2])*ap)
           end
           if discr>bound
@@ -463,6 +498,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
         println("\n New Field!")
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
+    end
+    for w in new_conds
+      push!(found_conds, w)
     end
     println("\n")
   end
