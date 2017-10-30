@@ -350,7 +350,7 @@ function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
 end
 
 
-function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
+function abelian_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
   inf_plc= InfPlc[]
   n=prod(gtype)
@@ -426,13 +426,19 @@ function divisors(n::Int)
  
 end
 
+function abelian_normal_extensions(O::FlintIntegerRing, gtype::Array{Int,1}, bound::fmpz)
+  Qx,x = PolynomialRing(Rationals())
+  K, a = NumberField(x - 1, "a")
+  OK = maximal_order(K)
+  
+  fields = abelian_extensions_Q(OK, gtype, bound)
+  return fields
+end
+  
 
 # Bound= Norm of the discriminant of the upper extension
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
-  if degree(O)==1
-    return abelian_extension_Q(O,gtype,bound)
-  end
   K=nf(O)
   a=gen(K)
   real_plc=real_places(K)
