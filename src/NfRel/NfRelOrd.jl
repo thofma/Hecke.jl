@@ -30,6 +30,8 @@ mutable struct NfRelOrd{T, S} <: Ring
 
   trace_mat::Generic.Mat{T}
 
+  inv_coeff_ideals::Vector{S}
+
   function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
     z = new{T, S}()
     z.nf = K
@@ -165,6 +167,15 @@ function assure_has_basis_mat_inv(O::NfRelOrd)
   return nothing
 end
 
+function assure_has_inv_coeff_ideals(O::NfRelOrd)
+  if isdefined(O, :inv_coeff_ideals)
+    return nothing
+  end
+  pb = pseudo_basis(O, Val{false})
+  O.inv_coeff_ideals = [ inv(pb[i][2]) for i in 1:degree(O) ]
+  return nothing
+end
+
 ################################################################################
 #
 #  Pseudo basis / basis pseudo-matrix
@@ -199,6 +210,21 @@ function basis_pmat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
     return deepcopy(O.basis_pmat)
   else
     return O.basis_pmat
+  end
+end
+
+doc"""
+***
+      inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
+
+> Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
+"""
+function inv_coeff_ideals(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_inv_coeff_ideals(O)
+  if copy == Val{true}
+    return deepcopy(O.inv_coeff_ideals)
+  else
+    return O.inv_coeff_ideals
   end
 end
 

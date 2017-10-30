@@ -26,22 +26,16 @@ mutable struct NfRelOrdFracIdl{T, S}
   end
 
   function NfRelOrdFracIdl{nf_elem, S}(O::NfRelOrd{nf_elem, S}, a::NfRelOrdIdl{nf_elem, S}, d::NfOrdElem) where S
-    z = new{nf_elem, S}()
-    z.order = O
-    z.parent = NfRelOrdFracIdlSet{nf_elem, S}(O)
+    z = NfRelOrdFracIdl{nf_elem, S}(O)
     z.num = a
     z.den_abs = d
-    z.has_norm = false
     return z
   end
 
   function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem) where {T, S}
-    z = new{T, S}()
-    z.order = O
-    z.parent = NfRelOrdFracIdlSet{T, S}(O)
+    z = NfRelOrdFracIdl{T, S}(O)
     z.num = a
     z.den_rel = d
-    z.has_norm = false
     return z
   end
 end
@@ -100,11 +94,11 @@ function show(io::IO, s::NfRelOrdFracIdlSet)
 end
 
 function show(io::IO, a::NfRelOrdFracIdl)
-  print(io, "Fractional ideal of (")
-  print(io, order(a), ")\n")
+  print(io, "Fractional ideal of\n")
+  print(io, order(a), "\n\n")
   print(io, "with basis pseudo-matrix\n")
-  print(io, basis_pmat(num(a), Val{false}), "\n")
-  print(io, "and denominator ", den(a))
+  showcompact(io, basis_pmat(num(a), Val{false}))
+  print(io, "\nand denominator ", den(a))
 end
 
 ################################################################################
@@ -225,10 +219,29 @@ end
 ################################################################################
 
 doc"""
-    *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
+***
+      *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
 
 > Returns $a \cdot b$.
 """
 function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   return NfRelOrdFracIdl{T, S}(order(a), num(a)*num(b), den(a)*den(b))
+end
+
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+doc"""
+***
+      inv(a::NfRelOrdFracIdl) -> NfRelOrdFracIdl
+
+> Returns the fractional ideal $b$ such that $ab = O$ where $O$ is the ambient 
+> order of $a$.
+"""
+function inv(a::NfRelOrdFracIdl{T, S}) where {T, S}
+  b = inv(a.num)
+  return NfRelOrdFracIdl{T, S}(order(a), b*den(a), order(a)(1))
 end

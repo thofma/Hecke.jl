@@ -309,10 +309,10 @@ function assure_has_norm(a::NfRelOrdIdl)
     return nothing
   end
   c = basis_pmat(a, Val{false}).coeffs
-  d = basis_pmat(order(a), Val{false}).coeffs
-  n = c[1]*inv(d[1])
+  d = inv_coeff_ideals(order(a), Val{false})
+  n = c[1]*d[1]
   for i = 2:degree(order(a))
-    n *= c[i]*inv(d[i])
+    n *= c[i]*d[i]
   end
   simplify(n)
   @assert n.den == 1
@@ -351,8 +351,9 @@ doc"""
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmat(a), basis_pmat(b))
-  m = norm(a) + norm(b)
-  H = sub(pseudo_hnf_mod(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  #m = norm(a) + norm(b)
+  #H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  H = sub(pseudo_hnf(H, :lowerleft, true), (d + 1):2*d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
 
@@ -370,6 +371,8 @@ doc"""
 function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   pba = pseudo_basis(a, Val{false})
   pbb = pseudo_basis(b, Val{false})
+  ma = basis_mat(a, Val{false})
+  mb = basis_mat(b, Val{false})
   L = nf(order(a))
   K = base_ring(L)
   d = degree(order(a))
@@ -378,13 +381,17 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   t = L()
   for i = 1:d
     for j = 1:d
-      mul!(t, pba[i][1], pbb[i][1])
+      mul!(t, pba[i][1], pbb[j][1])
       elem_to_mat_row!(M, (i - 1)*d + j, t)
-      C[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
+      C[(i - 1)*d + j] = simplify(pba[i][2]*pbb[j][2])
     end
   end
-  m = norm(a)*norm(b)
-  H = sub(pseudo_hnf_mod(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  #m = norm(a)*norm(b)
+  #H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true), (d*(d - 1) + 1):d^2, 1:d)
+  H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+  #H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
+  H = pseudo_hnf(H, :lowerleft, true)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
 
@@ -427,9 +434,69 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  m = intersection(norm(a), norm(b))
-  H = sub(pseudo_hnf_mod(M, m, :lowerleft), 1:d, 1:d)
+  #m = intersection(norm(a), norm(b))
+  #H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
+  H = sub(pseudo_hnf(M, :lowerleft, true), 1:d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
+end
+
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+doc"""
+***
+      inv(a::NfRelOrdIdl) -> NfRelOrdIdl
+> Computes the inverse of $a$, that is, the ideal $b$ such that
+> $ab = O$, where $O$ is the ambient order of $a$. $O$ must be maximal.
+"""
+function inv(a::NfRelOrdIdl{T, S}) where {T, S}
+  if !ismaximal(order(a))
+    error("Not implemented (yet).")
+  end
+  O = order(a)
+  d = degree(O)
+  pb = pseudo_basis(a, Val{false})
+  bmO = basis_mat(O, Val{false})
+  bmOinv = basis_mat_inv(O, Val{false})
+  M = bmO*representation_mat(pb[1][1])*bmOinv
+  for i = 2:d
+    M = hcat(M, bmO*representation_mat(pb[i][1])*bmOinv)
+  end
+  invcoeffs = inv_coeff_ideals(O, Val{false})
+  C = Array{S}(d^2)
+  for i = 1:d
+    for j = 1:d
+      C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
+    end
+  end
+  PM = PseudoMatrix(transpose(M), C)
+  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  #= N = inv(transpose(PM.matrix))*bmO =#
+  N = inv(transpose(PM.matrix))
+  PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_hnf(PN, :lowerleft, true)
+  #= PN.matrix = PN.matrix*bmOinv =#
+  #= PN = pseudo_hnf(PN, :lowerleft, true) =#
+  return NfRelOrdIdl{T, S}(O, PN)
+end
+
+################################################################################
+#
+#  Division
+#
+################################################################################
+
+doc"""
+***
+      divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
+
+> Returns $ab^{-1}$.
+"""
+function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  return a*inv(b)
 end
 
 ################################################################################

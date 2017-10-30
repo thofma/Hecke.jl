@@ -24,6 +24,23 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField}
   end
 end
 
+function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
+  if (domain(f) != domain(g)) || (codomain(f) != codomain(g))
+    return false
+  end
+
+  return f.prim_img == g.prim_img
+end
+
+function *(f::NfToNfMor, g::NfToNfMor)
+  domain(f) == codomain(g) || throw("Maps not compatible")
+
+  a = gen(domain(g))
+  y = f(g(a))
+
+  return NfToNfMor(domain(g), codomain(f), y)
+end
+
 function show(io::IO, h::NfToNfMor)
   if domain(h) == codomain(h)
     println(io, "Automorphism of ", domain(h))
