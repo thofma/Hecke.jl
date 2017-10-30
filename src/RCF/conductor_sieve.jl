@@ -332,9 +332,65 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   return list
 end
 
+function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
+  
+  inf_plc= InfPlc[]
+  n=prod(gtype)
+  expo=lcm(gtype)
+  conductors=conductors_tame(O,n,bound)
+  fields=[]
+  #Now, the big loop
+  for (i, k) in enumerate(conductors)
+    println("Conductor: $k ")
+    println("Left: $(length(conductors) - i)")
+    @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
+    println("\n Searching for subgroups ")
+    @vtime :QuadraticExt 1 ls=subgroups(r, quotype=gtype, fun= (x, y) -> quo(x, y, false))
+    for s in ls
+      C=ray_class_field(mr*inv(s[2]))
+      println("\n Computing fields")
+      if Hecke._is_conductor_min_tame_normal(C, k)
+        println("\n Discriminant computation")
+        if k^degree(O)>=bound
+          fac=keys(factor(k).fac)
+          lp=[prime_decomposition(O,q) for q in fac]
+          discr=1
+          for j=1:length(lp)
+            d1=Dict{NfOrdIdl, Int}()
+            for l=1:length(lp)
+              if l!=j
+                for (P,e) in lp[l]
+                  d1[P]=1
+                end   
+              else
+                for s=2:length(lp[j])
+                  d1[lp[j][s][1]]=1
+                end
+              end
+            end
+            R,mR=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), inf_plc)
+            ap= n-order(R)
+            discr*=fac[j]^(divexact(degree(O),lp[j][1][2])*ap)
+          end
+          if discr>bound
+            continue
+          end
+        end
+        println("\n New Field!")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
+      end
+    end
+    println("\n")
+  end
+end
+
+
 # Bound= Norm of the discriminant of the upper extension
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
+  if degree(O)==1
+    return abelian_extension_Q(O,gtype,bound)
+  end
   K=nf(O)
   a=gen(K)
   real_plc=real_places(K)
