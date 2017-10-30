@@ -712,7 +712,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   
   p = [ x for x in inf_plc if isreal(x) ]
   if !isempty(p)
-    H,lH,eH=Hecke._infinite_primes(O,p,m)
+    H,eH,lH=Hecke._infinite_primes(O,p,m)
     T=G
     G=direct_product(G,H)
   end
@@ -1056,7 +1056,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   if p==2 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,m)
+      H,eH,lH=Hecke._infinite_primes(O,pr,m)
       T=G
       G =Hecke.direct_product(G,H)
     end
