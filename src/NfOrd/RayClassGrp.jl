@@ -284,105 +284,217 @@ end
 #
 # Function that finds the generators of the infinite part
 #
+function carlos_units(O::NfOrd)
+  try
+    c = _get_carlos_units_of_order(O)
+    return c
+  catch
+    K=O.nf
+    p=real_places(K)
+    S=DiagonalGroup([2 for i=1:length(p)])
 
-function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
-
-  K=O.nf
-  S=DiagonalGroup([2 for i=1:length(p)])
-
-  function logS(x::Array{Int, 1})
-    return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
-  end
-
-  s = typeof(S[1])[]
-  g = elem_type(O)[]
-  u, mu = sub(S, s, false)
-  b = 10
-  cnt = 0
-  while true
-    @assert b > 0
-    a = rand(m, b)
-    if a==0
-      continue
+    function logS(x::Array{Int, 1})
+      return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
     end
-    emb=signs(K(a),p)
-    t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-    if !Hecke.haspreimage(mu, t)[1]
-      push!(s, t)
-      push!(g, a)
-      u, mu = sub(S, s, false)
-      if order(u) == order(S)
-        break
+  
+    s = typeof(S[1])[]
+    g = elem_type(O)[]
+    u, mu = sub(S, s, false)
+    b = 10
+    cnt = 0
+    while true
+      @assert b > 0
+      a = rand(O, b)
+      if a==0
+        continue
       end
-    else
-      cnt += 1
-      if cnt > 1000 
-        b *= 2
-        cnt = 0
-      end
-      if b <= 0
-        b = 10
-        cnt = 0
-        bas = lll_basis(m)
-        while true
-          @assert b>0
-          a = rand(bas, 1:b)
-          if a==0
-            continue
-          end
-          emb=signs(a,p)
-          t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-          if !Hecke.haspreimage(mu, t)[1]
-            push!(s, t)
-            push!(g, O(a))
-            u, mu = sub(S, s, false)
-            if order(u) == order(S)
-              break
+      emb=signs(K(a),p)
+      t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      if !Hecke.haspreimage(mu, t)[1]
+        push!(s, t)
+        push!(g, a)
+        u, mu = sub(S, s, false)
+        if order(u) == order(S)
+          break
+        end
+      else
+        cnt += 1
+        if cnt > 1000 
+          b *= 2
+          cnt = 0
+        end
+        if b <= 0
+          b = 10
+          cnt = 0
+          bas = lll_basis(O)
+          while true
+            @assert b>0
+            a = rand(bas, 1:b)
+            if a==0
+              continue
             end
-          else
-            cnt += 1
-            if cnt > 1000 
-              b *= 2
-              cnt = 0
+            emb=signs(a,p)
+            t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+            if !Hecke.haspreimage(mu, t)[1]
+              push!(s, t)
+              push!(g, O(a))
+              u, mu = sub(S, s, false)
+              if order(u) == order(S)
+                break
+              end
+            else
+              cnt += 1
+              if cnt > 1000 
+                b *= 2
+                cnt = 0
+              end
             end
           end
         end
       end
     end
-  end
-  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
-  r = elem_type(O)[]
-  for i=1:length(p)
-    y = haspreimage(hS,S[i])[2]
-    push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
-  end
-
-  function exp(A::GrpAbFinGenElem)
-    
-    s=O(abs(m.gen_one))
-    if iszero(A.coeff)
-      return s
-    end  
+    hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+    r = elem_type(O)[]
     for i=1:length(p)
-      if Int(A.coeff[1,i]) == 1
-        s=s*r[i]
-      end 
+      y = haspreimage(hS,S[i])[2]
+      push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
     end
-    return s
-  end 
-
-  function log(B::nf_elem)
-    emb=Hecke.signs(B,p)
-    return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-  end 
   
-  function log(B::FacElem{nf_elem})
-    emb=Hecke.signs(B,p)
-    return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-  end 
-  
-  return S,log,exp
+    function exp(A::GrpAbFinGenElem)
+      
+      s=O(1)
+      if iszero(A.coeff)
+        return s
+      end  
+      for i=1:length(p)
+        if Int(A.coeff[1,i]) == 1
+          s=s*r[i]
+        end 
+      end
+      return s
+    end 
 
+    function log(B::nf_elem)
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+    
+    function log(B::FacElem{nf_elem})
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+    
+    _set_carlos_units_of_order(O, (S,exp,log))
+    return (S,exp,log)
+  end
+end
+
+
+function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
+    
+    K=O.nf
+    if p==real_places(K)
+      S,exp1,log1= carlos_units(O)
+      function exp2(a::GrpAbFinGenElem)
+        return m.gen_one*exp1(a)
+      end
+      return S, exp2, log1
+    end
+
+    S=DiagonalGroup([2 for i=1:length(p)])
+
+    function logS(x::Array{Int, 1})
+      return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
+    end
+  
+    s = typeof(S[1])[]
+    g = elem_type(O)[]
+    u, mu = sub(S, s, false)
+    b = 10
+    cnt = 0
+    while true
+      @assert b > 0
+      a = rand(m, b)
+      if a==0
+        continue
+      end
+      emb=signs(K(a),p)
+      t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      if !Hecke.haspreimage(mu, t)[1]
+        push!(s, t)
+        push!(g, a)
+        u, mu = sub(S, s, false)
+        if order(u) == order(S)
+          break
+        end
+      else
+        cnt += 1
+        if cnt > 1000 
+          b *= 2
+          cnt = 0
+        end
+        if b <= 0
+          b = 10
+          cnt = 0
+          bas = lll_basis(O)
+          while true
+            @assert b>0
+            a = rand(bas, 1:b)
+            if a==0
+              continue
+            end
+            emb=signs(a,p)
+            t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+            if !Hecke.haspreimage(mu, t)[1]
+              push!(s, t)
+              push!(g, O(a))
+              u, mu = sub(S, s, false)
+              if order(u) == order(S)
+                break
+              end
+            else
+              cnt += 1
+              if cnt > 1000 
+                b *= 2
+                cnt = 0
+              end
+            end
+          end
+        end
+      end
+    end
+    hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+    r = elem_type(O)[]
+    for i=1:length(p)
+      y = haspreimage(hS,S[i])[2]
+      push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
+    end
+  
+    function exp(A::GrpAbFinGenElem)
+      
+      s=O(m.gen_one)
+      if iszero(A.coeff)
+        return s
+      end  
+      for i=1:length(p)
+        if Int(A.coeff[1,i]) == 1
+          s=s*r[i]
+        end 
+      end
+      return s
+    end 
+
+    function log(B::nf_elem)
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+    
+    function log(B::FacElem{nf_elem})
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+  return S, exp, log
+  
 end
 
 #
@@ -1395,7 +1507,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      @vtime :RayFacElem 1 H,lH,eH=Hecke._infinite_primes(O,pr,I)
+      @vtime :RayFacElem 1 H,eH,lH=Hecke._infinite_primes(O,pr,I)
       T=G
       G =Hecke.direct_product(G,H)
     end
@@ -1420,7 +1532,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 
   C, mC = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
-  @time exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
   
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m,n)    
@@ -1624,7 +1736,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,I)
+      H,eH,lH=Hecke._infinite_primes(O,pr,I)
       T=G
       G =Hecke.direct_product(G,H)
     end
