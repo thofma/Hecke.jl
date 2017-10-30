@@ -348,15 +348,22 @@ function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
   return true
   
 end
+
+
 function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
   inf_plc= InfPlc[]
   n=prod(gtype)
   expo=lcm(gtype)
-  conductors=conductors_tame(O,n,bound)
+  conductors=conductors_tame(O,n,bound) 
+#  sort!(conductors, rev=true)
+#  found_conds=Set(Int[])
   fields=[]
   #Now, the big loop
   for (i, k) in enumerate(conductors)
+#    if k in found_conds
+#      continue
+#    end
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
@@ -365,9 +372,12 @@ function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
       continue
     end
     @vtime :QuadraticExt 1 ls=subgroups(r, quotype=gtype, fun= (x, y) -> quo(x, y, false))
+#    new_conds=divisors(k)
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
       println("\n Computing fields")
+#      c= Hecke._conductor_min_tame_normal(C, k)
+#      if !(c in found_conds)
       if Hecke._is_conductor_min_tame_normal(C, k)
         println("\n Discriminant computation")
         if k^degree(O)>=bound
@@ -401,8 +411,12 @@ function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
+#    for w in new_conds
+#      push!(found_conds, w)
+#    end
     println("\n")
   end
+  return fields
 end
 
 
@@ -443,30 +457,31 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
   #Getting conductors
   conductors=conductors_tame(O,n,bound)
-  sort!(conductors, rev=true)
+#  sort!(conductors, rev=true)
   @vprint :QuadraticExt "Number of conductors: $(length(conductors)) \n"
   fields=[]
-  found_conds=Set(Int[])
+#  found_conds=Set(Int[])
   
   #Now, the big loop
   for (i, k) in enumerate(conductors)
-    if k in found_conds
-      continue
-    end
+#    if k in found_conds
+#      continue
+#    end
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
-    println("$found_conds")
+#    println("$found_conds")
     @vtime :QuadraticExt 1 r,mr=tommy_ray_class_group(O,expo,k)
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
     @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false))
-    new_conds=divisors(k)
+#    new_conds=divisors(k)
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
       println("\n Computing fields")
-      c=Hecke._conductor_min_tame_normal(C, k)
-      if !(c in found_conds)
+#      c=Hecke._conductor_min_tame_normal(C, k)
+#      if !(c in found_conds)
+      if Hecke._is_conductor_min_tame_normal(C, k)
         println("\n Discriminant computation")
         if k^degree(O)>=bound
           fac=keys(factor(k).fac)
@@ -499,9 +514,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
-    for w in new_conds
-      push!(found_conds, w)
-    end
+#    for w in new_conds
+#      push!(found_conds, w)
+#    end
     println("\n")
   end
   return fields
