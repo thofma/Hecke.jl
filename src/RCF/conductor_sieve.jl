@@ -403,6 +403,7 @@ function abelian_extension_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     end
     println("\n")
   end
+  return fields
 end
 
 
