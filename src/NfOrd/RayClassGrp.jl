@@ -1631,7 +1631,7 @@ function ray_class_group(O::NfOrd, m::NfOrdIdl, n::Int, mR::MapRayClassGrp, lp::
   
   if gcd(C.snf[end],n)==1 && order(G)==1
     G=DiagonalGroup(Int[])
-    function mp1(a::GrpAbFinGenElem)
+    function mp1(J::NfOrdIdl)
       return G(Int[])
     end
     return G,mp1
