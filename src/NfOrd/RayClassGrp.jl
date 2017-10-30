@@ -226,7 +226,7 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
     end
   end
   if isempty(x)
-    return el
+    return element.elem
   end
   tobeeval=FacElem(x)
   for (p,vp) in primes
@@ -1387,14 +1387,15 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   Q,pi=quo(O,I)
   Q.factor=lp
-  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,y1,y2,n)
   C, mC = class_group(O)
   _assure_princ_gen(mC)
+  @vtime :RayFacElem 1 G, mG= _mult_grp_mod_n(Q,y1,y2,n)
+
   
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,I)
+      @vtime :RayFacElem 1 H,lH,eH=Hecke._infinite_primes(O,pr,I)
       T=G
       G =Hecke.direct_product(G,H)
     end
@@ -1419,7 +1420,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 
   C, mC = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
-  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
+  @time exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
   
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m,n)    
@@ -1472,7 +1473,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
+    push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
@@ -1656,14 +1657,16 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   
   L=Array{FacElem{NfOrdIdl, NfOrdIdlSet},1}(ngens(C))
   for i=1:length(L)
-    L[i]=princ_gens[i][1]*Kel[i]
+    e1=den(Kel[i])
+    e2=num(Kel[i])
+    L[i]=princ_gens[i][1]*FacElem(Dict(ideal(O,O(e1))=> fmpz(-1), ideal(O,O(e2))=> fmpz(1)))
   end
   
   function exp_class(a::GrpAbFinGenElem)  
     e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
     for i=1:ngens(C)
       if Int(a.coeff[1,i])!= 0
-        e*=FacElem(Dict(L[i] => a.coeff[1,i]))
+        e*=L[i]^a.coeff[1,i]
       end
     end
     return e
@@ -1725,7 +1728,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(mC.princ_gens[i][2]*Kel^(C.snf[i]))
+      b=lH(mC.princ_gens[i][2]*Kel[i]^(C.snf[i]))
       a=hcat(a, b.coeff)
     end
     for j=1: ngens(G)
