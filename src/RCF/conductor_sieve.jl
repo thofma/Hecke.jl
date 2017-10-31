@@ -355,7 +355,9 @@ function abelian_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   inf_plc= InfPlc[]
   n=prod(gtype)
   expo=lcm(gtype)
+  println("Computing the conductors ... ")
   conductors=conductors_tame(O,n,bound) 
+  println("Done")
 #  sort!(conductors, rev=true)
 #  found_conds=Set(Int[])
   fields=[]
@@ -427,7 +429,7 @@ function divisors(n::Int)
 end
 
 function abelian_normal_extensions(O::FlintIntegerRing, gtype::Array{Int,1}, bound::fmpz)
-  Qx,x = PolynomialRing(Rationals())
+  Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x - 1, "a")
   OK = maximal_order(K)
   
