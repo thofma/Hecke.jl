@@ -645,6 +645,7 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
     end
 
     z = new{T}()
+    z.coeff_aut = NfToNfMor(K.base_ring, K.base_ring, gen(K.base_ring))
     z.emb = emb
     z.header = MapHeader(K, L, image)
     return z
@@ -668,8 +669,37 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
     z.header = MapHeader(K, L, image)
     return z
   end  
-
 end
+
+function Base.:(*)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}
+  domain(f) == codomain(g) || throw("Maps not compatible")
+
+  a = gens(domain(g))
+  return NfRel_nsToNfRel_nsMor(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, [ f(g(x)) for x in a])
+end
+
+function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}
+  if domain(f) != domain(g) || codomain(f) != codomain(g)
+    return false
+  end
+
+  L = domain(f)
+  K = base_ring(L)
+
+  if f(L(gen(K))) != g(L(gen(K)))
+    return false
+  end
+
+  for a in gens(L)
+    if f(a) != g(a)
+      return false
+    end
+  end
+
+  return true
+end
+
+
 
 
 @inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars

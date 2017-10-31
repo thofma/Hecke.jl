@@ -135,7 +135,7 @@ function tommy_ray_class_group(O::NfOrd, n_quo::Int, m::Int)
 end
 
 
-function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
+function quadratic_normal_extensions(O::NfOrd, bound::fmpz; compute_automorphisms::Bool = false)
   
   K=nf(O)
   a=gen(K)
@@ -173,7 +173,12 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
       C.norm_group=s[2]
       println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
-        @vtime :QuadraticExt 1 push!(fields,number_field(C))
+        L = number_field(C)
+        #if compute_automorphisms
+        #  rel_auto = Hecke.rel_auto(C)
+        #  autK = Aut
+        #end
+        @vtime :QuadraticExt 1 push!(fields, L)
       end
     end
     println("\n")
