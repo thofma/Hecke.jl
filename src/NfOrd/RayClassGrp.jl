@@ -15,9 +15,17 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   modulus_fin::NfOrdIdl
   modulus_inf::Array{InfPlc,1}
   fact_mod::Dict{NfOrdIdl, Int}
+  prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
+  prime_ideal_cache::Array{NfOrdIdl, 1}
+  evals::Array{NfOrdQuoRingElem,1}
+  quots::Array
+  idemps::Array{Tuple{NfOrdElem, NfOrdElem},1}
+  coprime_elems::Array{nf_elem,1}
   
   function MapRayClassGrp{T}() where {T}
-    return new{T}()
+    z = new{T}()
+    z.prime_ideal_preimage_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
+    return z
   end
 end
 
@@ -65,7 +73,7 @@ function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem,
 
   newelems=_preproc(O,elems,exponent)
   quots=[]
-  idemps=[]
+  idemps=Tuple{NfOrdElem, NfOrdElem}[]
   el=[Q(1) for i=1:length(newelems)]
   I=ideal(O,1)
   for (p,vp) in lp
@@ -218,7 +226,7 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
     end
   end
   if isempty(x)
-    return el
+    return element.elem
   end
   tobeeval=FacElem(x)
   for (p,vp) in primes
@@ -276,105 +284,217 @@ end
 #
 # Function that finds the generators of the infinite part
 #
+function carlos_units(O::NfOrd)
+  try
+    c = _get_carlos_units_of_order(O)
+    return c
+  catch
+    K=O.nf
+    p=real_places(K)
+    S=DiagonalGroup([2 for i=1:length(p)])
 
-function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
-
-  K=O.nf
-  S=DiagonalGroup([2 for i=1:length(p)])
-
-  function logS(x::Array{Int, 1})
-    return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
-  end
-
-  s = typeof(S[1])[]
-  g = elem_type(O)[]
-  u, mu = sub(S, s, false)
-  b = 10
-  cnt = 0
-  while true
-    @assert b > 0
-    a = rand(m, b)
-    if a==0
-      continue
+    function logS(x::Array{Int, 1})
+      return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
     end
-    emb=signs(K(a),p)
-    t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-    if !Hecke.haspreimage(mu, t)[1]
-      push!(s, t)
-      push!(g, a)
-      u, mu = sub(S, s, false)
-      if order(u) == order(S)
-        break
+  
+    s = typeof(S[1])[]
+    g = elem_type(O)[]
+    u, mu = sub(S, s, false)
+    b = 10
+    cnt = 0
+    while true
+      @assert b > 0
+      a = rand(O, b)
+      if a==0
+        continue
       end
-    else
-      cnt += 1
-      if cnt > 1000 
-        b *= 2
-        cnt = 0
-      end
-      if b <= 0
-        b = 10
-        cnt = 0
-        bas = lll_basis(m)
-        while true
-          @assert b>0
-          a = rand(bas, 1:b)
-          if a==0
-            continue
-          end
-          emb=signs(a,p)
-          t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-          if !Hecke.haspreimage(mu, t)[1]
-            push!(s, t)
-            push!(g, O(a))
-            u, mu = sub(S, s, false)
-            if order(u) == order(S)
-              break
+      emb=signs(K(a),p)
+      t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      if !Hecke.haspreimage(mu, t)[1]
+        push!(s, t)
+        push!(g, a)
+        u, mu = sub(S, s, false)
+        if order(u) == order(S)
+          break
+        end
+      else
+        cnt += 1
+        if cnt > 1000 
+          b *= 2
+          cnt = 0
+        end
+        if b <= 0
+          b = 10
+          cnt = 0
+          bas = lll_basis(O)
+          while true
+            @assert b>0
+            a = rand(bas, 1:b)
+            if a==0
+              continue
             end
-          else
-            cnt += 1
-            if cnt > 1000 
-              b *= 2
-              cnt = 0
+            emb=signs(a,p)
+            t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+            if !Hecke.haspreimage(mu, t)[1]
+              push!(s, t)
+              push!(g, O(a))
+              u, mu = sub(S, s, false)
+              if order(u) == order(S)
+                break
+              end
+            else
+              cnt += 1
+              if cnt > 1000 
+                b *= 2
+                cnt = 0
+              end
             end
           end
         end
       end
     end
-  end
-  hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
-  r = elem_type(O)[]
-  for i=1:length(p)
-    y = haspreimage(hS,S[i])[2]
-    push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
-  end
-
-  function exp(A::GrpAbFinGenElem)
-    
-    s=O(abs(m.gen_one))
-    if iszero(A.coeff)
-      return s
-    end  
+    hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+    r = elem_type(O)[]
     for i=1:length(p)
-      if Int(A.coeff[1,i]) == 1
-        s=s*r[i]
-      end 
+      y = haspreimage(hS,S[i])[2]
+      push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
     end
-    return s
-  end 
-
-  function log(B::nf_elem)
-    emb=Hecke.signs(B,p)
-    return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-  end 
   
-  function log(B::FacElem{nf_elem})
-    emb=Hecke.signs(B,p)
-    return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-  end 
-  
-  return S,log,exp
+    function exp(A::GrpAbFinGenElem)
+      
+      s=O(1)
+      if iszero(A.coeff)
+        return s
+      end  
+      for i=1:length(p)
+        if Int(A.coeff[1,i]) == 1
+          s=s*r[i]
+        end 
+      end
+      return s
+    end 
 
+    function log(B::nf_elem)
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+    
+    function log(B::FacElem{nf_elem})
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+    
+    _set_carlos_units_of_order(O, (S,exp,log))
+    return (S,exp,log)
+  end
+end
+
+
+function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
+    
+    K=O.nf
+    if p==real_places(K)
+      S,exp1,log1= carlos_units(O)
+      function exp2(a::GrpAbFinGenElem)
+        return m.gen_one*exp1(a)
+      end
+      return S, exp2, log1
+    end
+
+    S=DiagonalGroup([2 for i=1:length(p)])
+
+    function logS(x::Array{Int, 1})
+      return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
+    end
+  
+    s = typeof(S[1])[]
+    g = elem_type(O)[]
+    u, mu = sub(S, s, false)
+    b = 10
+    cnt = 0
+    while true
+      @assert b > 0
+      a = rand(m, b)
+      if a==0
+        continue
+      end
+      emb=signs(K(a),p)
+      t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      if !Hecke.haspreimage(mu, t)[1]
+        push!(s, t)
+        push!(g, a)
+        u, mu = sub(S, s, false)
+        if order(u) == order(S)
+          break
+        end
+      else
+        cnt += 1
+        if cnt > 1000 
+          b *= 2
+          cnt = 0
+        end
+        if b <= 0
+          b = 10
+          cnt = 0
+          bas = lll_basis(O)
+          while true
+            @assert b>0
+            a = rand(bas, 1:b)
+            if a==0
+              continue
+            end
+            emb=signs(a,p)
+            t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+            if !Hecke.haspreimage(mu, t)[1]
+              push!(s, t)
+              push!(g, O(a))
+              u, mu = sub(S, s, false)
+              if order(u) == order(S)
+                break
+              end
+            else
+              cnt += 1
+              if cnt > 1000 
+                b *= 2
+                cnt = 0
+              end
+            end
+          end
+        end
+      end
+    end
+    hS = Hecke.GrpAbFinGenMap(S, S, vcat([x.coeff for x in s]))   # Change of coordinates so that the canonical basis elements are mapped to the elements found above
+    r = elem_type(O)[]
+    for i=1:length(p)
+      y = haspreimage(hS,S[i])[2]
+      push!(r, prod([g[i]^Int(y[i]) for i=1:length(p)]))
+    end
+  
+    function exp(A::GrpAbFinGenElem)
+      
+      s=O(m.gen_one)
+      if iszero(A.coeff)
+        return s
+      end  
+      for i=1:length(p)
+        if Int(A.coeff[1,i]) == 1
+          s=s*r[i]
+        end 
+      end
+      return s
+    end 
+
+    function log(B::nf_elem)
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+    
+    function log(B::FacElem{nf_elem})
+      emb=Hecke.signs(B,p)
+      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+    end 
+  return S, exp, log
+  
 end
 
 #
@@ -592,7 +712,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   
   p = [ x for x in inf_plc if isreal(x) ]
   if !isempty(p)
-    H,lH,eH=Hecke._infinite_primes(O,p,m)
+    H,eH,lH=Hecke._infinite_primes(O,p,m)
     T=G
     G=direct_product(G,H)
   end
@@ -936,7 +1056,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   if p==2 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,m)
+      H,eH,lH=Hecke._infinite_primes(O,pr,m)
       T=G
       G =Hecke.direct_product(G,H)
     end
@@ -1126,17 +1246,19 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
   
   @assert issnf(C)
   O=parent(mC(C[1])).order
+  K=nf(O)
   if gcd(C.snf[ngens(C)],n)==1
-   G=DiagonalGroup(Int[])
-   function exp1(a::GrpAbFinGenElem)
-     return ideal(O, O(1))
-   end
-   function disclog1(I::NfOrdIdl)
-     return G(Int[])
-   end
-   mp=Hecke.MapClassGrp{typeof(G)}()
-   mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
-   return G,mp
+    G=DiagonalGroup(Int[])
+    function exp1(a::GrpAbFinGenElem)
+      return ideal(O, O(1))
+    end
+    function disclog1(I::NfOrdIdl)
+      return G(Int[])
+    end
+    mp=Hecke.MapClassGrp{typeof(G)}()
+    mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
+    mp.princ_gens=[(FacElem(Dict(ideal(O,1)=> fmpz(1))), FacElem(Dict(K(1)=> 1)))]
+    return G,mp
   
   else
     
@@ -1170,6 +1292,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     mp=Hecke.MapClassGrp{typeof(G)}()
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
     mp.princ_gens=mC.princ_gens[ind:end]
+    
     return G,mp
   end
 end 
@@ -1214,6 +1337,9 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   
   function disclog(x::NfOrdElem)
     t=mQ(x)^(m*quot)
+    if iszero(t)
+      error("Not coprime!")
+    end
     if t==Q(1)
       return [Int(0)]
     end
@@ -1373,14 +1499,15 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   Q,pi=quo(O,I)
   Q.factor=lp
-  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,y1,y2,n)
   C, mC = class_group(O)
   _assure_princ_gen(mC)
+  @vtime :RayFacElem 1 G, mG= _mult_grp_mod_n(Q,y1,y2,n)
+
   
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,lH,eH=Hecke._infinite_primes(O,pr,I)
+      @vtime :RayFacElem 1 H,eH,lH=Hecke._infinite_primes(O,pr,I)
       T=G
       G =Hecke.direct_product(G,H)
     end
@@ -1458,7 +1585,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
+    push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
@@ -1511,7 +1638,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     end
     return a
   end
-
+  
   function disclog(J::NfOrdIdl)
 
     if isone(J)
@@ -1563,6 +1690,12 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   mp=Hecke.MapRayClassGrp{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin=I
+  mp.evals=evals
+  mp.quots=quots
+  mp.idemps=idemps
+  mp.coprime_elems=Kel
+  mp.fact_mod=lp
+
   if mod(n,2)==0
     mp.modulus_inf=pr
   else
@@ -1571,6 +1704,190 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   return X,mp
   
 end
+
+##################################################################################
+#
+#  Ray Class Group map for conductors
+#
+##################################################################################
+
+
+function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1})
+
+  K=nf(O)
+  evals=mR.evals
+  quots=mR.quots
+  idemps=mR.idemps
+  Kel=mR.coprime_elems
+  
+  
+  # Compute the modulus of the quotient
+  I=ideal(O,1)
+  for (q,vq) in lp
+    I*=q^vq
+  end
+  
+  Q,pi=quo(O,I)
+  Q.factor=lp
+  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,lp,Dict{NfOrdIdl,Int}(),n)
+  C, mC = class_group(O)
+  _assure_princ_gen(mC)
+  
+  if mod(n,2)==0 
+    pr = [ x for x in inf_plc if isreal(x) ]
+    if !isempty(pr)
+      H,eH,lH=Hecke._infinite_primes(O,pr,I)
+      T=G
+      G =Hecke.direct_product(G,H)
+    end
+  end
+  
+  if gcd(C.snf[end],n)==1 && order(G)==1
+    G=DiagonalGroup(Int[])
+    function mp1(J::NfOrdIdl)
+      return G(Int[])
+    end
+    return G,mp1
+  end
+  
+  f=collect(keys(factor(fmpz(n)).fac))
+  val=Array{Int,1}(length(f))
+  for i=1:length(f)
+    val[i]=valuation(C.snf[end],f[i])
+  end
+  valclass=1
+  for i=1:length(f)
+    if val[i]!=0
+      valclass*=f[i]^(val[i])
+    end
+  end
+  nonnclass=divexact(C.snf[end], valclass)
+
+  C, mC = _class_group_mod_n(C,mC,Int(valclass))
+  U, mU = unit_group_fac_elem(O)
+  princ_gens=mC.princ_gens
+  
+  L=Array{FacElem{NfOrdIdl, NfOrdIdlSet},1}(ngens(C))
+  for i=1:length(L)
+    e1=den(Kel[i])
+    e2=num(Kel[i])
+    L[i]=princ_gens[i][1]*FacElem(Dict(ideal(O,O(e1))=> fmpz(-1), ideal(O,O(e2))=> fmpz(1)))
+  end
+  
+  function exp_class(a::GrpAbFinGenElem)  
+    e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
+    for i=1:ngens(C)
+      if Int(a.coeff[1,i])!= 0
+        e*=L[i]^a.coeff[1,i]
+      end
+    end
+    return e
+  end
+  
+  if order(G)==1
+    return C, mC.header.preimage   
+  end
+  
+#
+# We start to construct the relation matrix
+#
+
+  expo=Int(exponent(G))
+  inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
+  
+  R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
+  for i=1:ngens(C)
+    R[i,i]=C.snf[i]
+  end
+  if issnf(G)
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.snf[i]
+    end
+  else
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
+    end
+  end
+  for i=1:cols(R)
+    R[ngens(C)+ngens(U)+ngens(G)+i,i]=n
+  end
+  
+#
+# We compute the relation matrix given by the image of the map U -> (O/m)^*
+#
+  
+  for i=1:ngens(U)
+    @vprint :RayFacElem 1 "Disclog of unit $i \n"
+    a=(mG\(evals[i].elem)).coeff
+    if mod(n,2)==0 && !isempty(pr)
+      if i==1
+        a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
+      else
+        b=lH(mU(U[i]))
+        a=hcat(a, b.coeff)
+      end
+    end
+    for j=1:ngens(G)
+      R[i+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
+    end
+  end 
+
+#
+# We compute the relation between generators of Cl and (O/m)^* in Cl^m
+#
+
+  for i=1: ngens(C)
+    @vprint :RayFacElem 1 "Disclog of class group element $i \n"
+    a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
+    if mod(n,2)==0 && !isempty(pr)
+      b=lH(mC.princ_gens[i][2]*Kel[i]^(C.snf[i]))
+      a=hcat(a, b.coeff)
+    end
+    for j=1: ngens(G)
+      R[i,ngens(C)+j]=-a[1,j]
+    end 
+  end
+  
+  X=AbelianGroup(R)
+   
+#
+# Discrete logarithm
+#
+
+  function disclog(J::FacElem)
+    a= X([0 for i=1:ngens(X)])
+    for (f,k) in J.fac
+      a+=k*disclog(f)
+    end
+    return a
+  end
+  
+  function disclog(J::NfOrdIdl)
+
+    if isone(J)
+      return X([0 for i=1:ngens(X)])
+    else
+      @assert iscoprime(I,J)
+      W=mC\J
+      s=exp_class(W)
+      Id=J* inv(s)
+      Id=Id^Int(nonnclass)
+      z=principal_gen_fac_elem(Id)
+      el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, mR.fact_mod, gcd(expo,n))    
+      y=((mG\(el))*inverse_d).coeff
+      if mod(n,2)==0 && !isempty(pr)
+        b=lH(z)
+        y=hcat(y, b.coeff)
+      end
+      return X(hcat(W.coeff,y))
+    end
+  end 
+  
+  return X, disclog
+
+  
+end
+
 
 ##################################################################################
 #
@@ -1649,20 +1966,22 @@ end
 #  Find small primes that generate the ray class group (or a quotient)
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
 #
-function find_gens(mR::Map)
+function find_gens(mR::MapRayClassGrp)
 
   O = order(codomain(mR))
   R = domain(mR) 
   m=Hecke._modulus(mR)
   
   sR = elem_type(R)[]
-  lp = []
-
+  lp = NfOrdIdl[]
+#=
   S=Hecke.PrimesSet(2,-1)
   st = start(S)
   
   q, mq = quo(R, sR,false)
+  counter=0
   while true
+    counter+=1
     p, st = next(S, st)
     if m.gen_one % p == 0
       continue
@@ -1684,12 +2003,39 @@ function find_gens(mR::Map)
       break
     end
   end
-
+  @vprint :RayFacElem 3 "Attempts: $counter \n"
+  return lp, sR
+=#
+  q, mq = quo(R, sR,false)
+  if isdefined(mR, :prime_ideal_cache)
+    S = mR.prime_ideal_cache
+  else
+    S = prime_ideals_up_to(O, 1000)
+    mR.prime_ideal_cache = S
+  end
+  q, mq = quo(R, sR, false)
+  for (i,P) in enumerate(S)
+    if haskey(mR.prime_ideal_preimage_cache, P)
+      f = mR.prime_ideal_preimage_cache[P]
+    else
+      f = mR\P
+      mR.prime_ideal_preimage_cache[P] = f
+    end
+    if iszero(mq(f))
+      continue
+    end
+    push!(sR, f)
+    push!(lp, P)
+    q, mq = quo(R, sR, false)
+    if order(q) == 1 
+      break
+    end
+  end
   return lp, sR
 end
 
 
-function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
+function _act_on_ray_class(mR::MapRayClassGrp , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
@@ -1707,7 +2053,7 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   #  class group map
   #
 
-  lgens,subs=find_gens(mR)
+  @vtime :RayFacElem 3 lgens,subs=find_gens(mR)
   
   if isempty(lgens)
     push!(G, GrpAbFinGenMap(R))
@@ -1743,8 +2089,8 @@ function _act_on_ray_class(mR::Map , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.N
   for phi in Aut
     M=zero_matrix(FlintZZ,length(lgens), ngens(R))
     for i=1:length(lgens) 
-      J=_aut_on_id(O,phi,lgens[i])
-      elem=mR\J
+      @vtime :RayFacElem 3 J=_aut_on_id(O,phi,lgens[i])
+      @vtime :RayFacElem 3 elem=mR\J
       for j=1:ngens(R)
         M[i,j]=elem[j]
       end

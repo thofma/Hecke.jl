@@ -1,5 +1,106 @@
 export conductor, isconductor
 
+########################################################################################
+#
+#  Tools for conductor
+#
+########################################################################################
+
+
+function _modulus_with_inf(mR::Map)
+  global bad = mR
+  while issubtype(typeof(mR), Hecke.CompositeMap)
+    mR = mR.f
+  end
+  if issubtype(typeof(mR), Hecke.MapClassGrp)
+    return ideal(order(codomain(mR)), 1),InfPlc[]
+  end
+  @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
+  return mR.modulus_fin, mR.modulus_inf
+end
+
+#
+#  Find small primes generating a subgroup of the ray class group
+#
+
+function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
+
+  O = order(codomain(mR))
+  R = domain(mR) 
+  T = domain(mT)
+  m = Hecke._modulus(mR)
+  l = minimum(m)
+  lp = NfOrdIdl[]
+  sR = GrpAbFinGenElem[]
+#=
+  S=Hecke.PrimesSet(2,-1)
+  
+  st = start(S)
+  q, mq = quo(T, sR, false)
+  i = 0
+  while true
+    i = i + 1
+    p, st = next(S, st)
+    if m.gen_one % p == 0
+      continue
+    end
+    lP = prime_decomposition(O, p)
+
+    f=R[1]
+    for (P,e) in lP
+      f= mR\P
+      bool, pre=haspreimage(mT,f)
+      if !bool
+        continue
+      end
+      if iszero(mq(pre))
+        continue
+      end
+      push!(sR, pre)
+      push!(lp, P)
+      q, mq = quo(T, sR, false)
+    end
+    if order(q) == 1
+      println("I had to use $i prime ideals")
+      break
+    end
+  end
+=#
+  if isdefined(mR, :prime_ideal_cache)
+    S = mR.prime_ideal_cache
+  else
+    S = prime_ideals_up_to(O, 1000)
+    mR.prime_ideal_cache = S
+  end
+  q, mq = quo(T, sR, false)
+  for (i,P) in enumerate(S)
+    if divisible(l,minimum(P))
+      continue
+    end
+    if haskey(mR.prime_ideal_preimage_cache, P)
+      f = mR.prime_ideal_preimage_cache[P]
+    else
+      f = mR\P
+      mR.prime_ideal_preimage_cache[P] = f
+    end
+    bool, pre = haspreimage(mT, f)
+    if !bool
+      continue
+    end
+    if iszero(mq(pre))
+      continue
+    end
+    push!(sR, pre)
+    push!(lp, P)
+    q, mq = quo(T, sR, false)
+    if order(q) == 1 
+      break
+    end
+  end
+
+  return lp
+end
+
 #######################################################################################
 #
 #  Conductor functions
@@ -149,50 +250,7 @@ function conductor(C::Hecke.ClassField)
   
 end 
 
-#
-#  Find small primes generating a subgroup of the ray class group
-#
 
-function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
-
-  O = order(codomain(mR))
-  R = domain(mR) 
-  T = domain(mT)
-  m = Hecke._modulus(mR)
-  lp = NfOrdIdl[]
-  sR = GrpAbFinGenElem[]
-  S=Hecke.PrimesSet(2,-1)
-  
-  st = start(S)
-  q, mq = quo(T, sR, false)
-  while true
-    p, st = next(S, st)
-    if m.gen_one % p == 0
-      continue
-    end
-    lP = prime_decomposition(O, p)
-
-    f=R[1]
-    for (P,e) in lP
-      f= mR\P
-      bool, pre=haspreimage(mT,f)
-      if !bool
-        continue
-      end
-      if iszero(mq(pre))
-        continue
-      end
-      push!(sR, pre)
-      push!(lp, P)
-      q, mq = quo(T, sR, false)
-    end
-    if order(q) == 1   
-      break
-    end
-  end
-
-  return lp
-end
 
 doc"""
 ***
@@ -354,19 +412,6 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   return true
 
-end
-
-
-function _modulus_with_inf(mR::Map)
-  global bad = mR
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mR = mR.f
-  end
-  if issubtype(typeof(mR), Hecke.MapClassGrp)
-    return ideal(order(codomain(mR)), 1),InfPlc[]
-  end
-  @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
-  return mR.modulus_fin, mR.modulus_inf
 end
 
 
@@ -653,7 +698,7 @@ function conductor_min(C::Hecke.ClassField)
       for j=1:L[p]-1
         candidate=cand*p^(L[p]-j)
         iscandcond=true
-        r, mr=ray_class_group(candidate,inf_plc, Int(minimum(p)^l))
+        r, mr=ray_class_group(candidate,inf_plc, Int(minimum(p))^l)
         quot=GrpAbFinGenElem[mr\s for s in Sgens]
         s,ms=quo(r,quot, false) 
         if valuation(order(s),minimum(p)) < l
@@ -725,6 +770,7 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
   E=Int(order(domain(mp)))
   expo=Int(exponent(domain(mp)))
   K=O.nf
+  
   if isdefined(C, :norm_group)
     mT=C.norm_group
   else
@@ -740,9 +786,11 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
     S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
     _,mT=Hecke.kernel(S1)
   end
-
-  Sgens=find_gens_sub(mR,mT)
-
+  if isdefined(C, :small_gens)
+    Sgens=C.small_gens
+  else
+    Sgens=find_gens_sub(mR,mT)
+  end
   lp=collect(keys(factor(a).fac))
   lq=[prime_decomposition(O,p) for p in lp]
   for i=1:length(lp)
@@ -759,14 +807,89 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
         end
       end
     end
-    r,mr=ray_class_group(expo, ideal(O,1), d1, Dict{NfOrdIdl,Int}(), inf_plc)
-    quot=GrpAbFinGenElem[mr\s for s in Sgens]
+    r,mr=ray_class_group(O, expo, mR, d1, inf_plc)
+    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E
       return false
     end
   end
   return true
+
+  
+end 
+
+function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
+
+  mp=C.mq
+  
+  #
+  #  First, we need to find the subgroup
+  #
+  
+  mR=mp.f
+  mS=mp.g
+  while issubtype(typeof(mR), Hecke.CompositeMap)
+    mS = mR.g*mS
+    mR = mR.f
+  end
+  
+  R=domain(mR)
+  cond=mR.modulus_fin
+  inf_plc=mR.modulus_inf
+  O=parent(cond).order
+  E=Int(order(domain(mp)))
+  expo=Int(exponent(domain(mp)))
+  K=O.nf
+  
+  if isdefined(C, :norm_group)
+    mT=C.norm_group
+  else
+    mS=inv(mS)
+    dom=domain(mS)
+    M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
+    for i=1:ngens(dom)
+      elem=mS(dom[i]).coeff
+      for j=1:ngens(codomain(mS))
+        M[i,j]=elem[1,j]
+      end
+    end
+    S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
+    _,mT=Hecke.kernel(S1)
+    C.norm_group=mT
+  end
+  if isdefined(C, :small_gens)
+    Sgens=C.small_gens
+  else
+    Sgens=find_gens_sub(mR,mT)
+  end
+  cond=1
+  lp=collect(keys(factor(a).fac))
+  lq=[prime_decomposition(O,p) for p in lp]
+  for i=1:length(lp)
+    P=lq[i][1][1]
+    g=gcd(E, norm(P)-1)
+    if g==1
+      continue
+    end
+    d1=Dict{NfOrdIdl,Int}()
+    for j=1:length(lq)
+      if j!=i
+        for k=1:length(lq[j])
+          d1[lq[j][k][1]]=1
+        end
+      end
+    end
+    r,mr=ray_class_group(O, expo, mR, d1, inf_plc)
+    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
+    s,ms=quo(r,quot)
+    if order(s)==E
+      continue
+    else 
+      cond*=lp[i]
+    end
+  end
+  return cond
 
   
 end 

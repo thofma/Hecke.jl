@@ -309,10 +309,10 @@ function assure_has_norm(a::NfRelOrdIdl)
     return nothing
   end
   c = basis_pmat(a, Val{false}).coeffs
-  d = basis_pmat(order(a), Val{false}).coeffs
-  n = c[1]*inv(d[1])
+  d = inv_coeff_ideals(order(a), Val{false})
+  n = c[1]*d[1]
   for i = 2:degree(order(a))
-    n *= c[i]*inv(d[i])
+    n *= c[i]*d[i]
   end
   simplify(n)
   @assert n.den == 1
@@ -351,8 +351,9 @@ doc"""
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmat(a), basis_pmat(b))
-  m = norm(a) + norm(b)
-  H = sub(pseudo_hnf_mod(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  #m = norm(a) + norm(b)
+  #H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  H = sub(pseudo_hnf(H, :lowerleft, true), (d + 1):2*d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
 
@@ -370,6 +371,8 @@ doc"""
 function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   pba = pseudo_basis(a, Val{false})
   pbb = pseudo_basis(b, Val{false})
+  ma = basis_mat(a, Val{false})
+  mb = basis_mat(b, Val{false})
   L = nf(order(a))
   K = base_ring(L)
   d = degree(order(a))
@@ -378,13 +381,17 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   t = L()
   for i = 1:d
     for j = 1:d
-      mul!(t, pba[i][1], pbb[i][1])
+      mul!(t, pba[i][1], pbb[j][1])
       elem_to_mat_row!(M, (i - 1)*d + j, t)
-      C[(i - 1)*d + j] = pba[i][2]*pbb[i][2]
+      C[(i - 1)*d + j] = simplify(pba[i][2]*pbb[j][2])
     end
   end
-  m = norm(a)*norm(b)
-  H = sub(pseudo_hnf_mod(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  #m = norm(a)*norm(b)
+  #H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true), (d*(d - 1) + 1):d^2, 1:d)
+  H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+  #H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
+  H = pseudo_hnf(H, :lowerleft, true)
   return NfRelOrdIdl{T, S}(order(a), H)
 end
 
@@ -427,9 +434,69 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  m = intersection(norm(a), norm(b))
-  H = sub(pseudo_hnf_mod(M, m, :lowerleft), 1:d, 1:d)
+  #m = intersection(norm(a), norm(b))
+  #H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
+  H = sub(pseudo_hnf(M, :lowerleft, true), 1:d, 1:d)
   return NfRelOrdIdl{T, S}(order(a), H)
+end
+
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+doc"""
+***
+      inv(a::NfRelOrdIdl) -> NfRelOrdIdl
+> Computes the inverse of $a$, that is, the ideal $b$ such that
+> $ab = O$, where $O$ is the ambient order of $a$. $O$ must be maximal.
+"""
+function inv(a::NfRelOrdIdl{T, S}) where {T, S}
+  if !ismaximal(order(a))
+    error("Not implemented (yet).")
+  end
+  O = order(a)
+  d = degree(O)
+  pb = pseudo_basis(a, Val{false})
+  bmO = basis_mat(O, Val{false})
+  bmOinv = basis_mat_inv(O, Val{false})
+  M = bmO*representation_mat(pb[1][1])*bmOinv
+  for i = 2:d
+    M = hcat(M, bmO*representation_mat(pb[i][1])*bmOinv)
+  end
+  invcoeffs = inv_coeff_ideals(O, Val{false})
+  C = Array{S}(d^2)
+  for i = 1:d
+    for j = 1:d
+      C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
+    end
+  end
+  PM = PseudoMatrix(transpose(M), C)
+  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
+  #= N = inv(transpose(PM.matrix))*bmO =#
+  N = inv(transpose(PM.matrix))
+  PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
+  PN = pseudo_hnf(PN, :lowerleft, true)
+  #= PN.matrix = PN.matrix*bmOinv =#
+  #= PN = pseudo_hnf(PN, :lowerleft, true) =#
+  return NfRelOrdIdl{T, S}(O, PN)
+end
+
+################################################################################
+#
+#  Division
+#
+################################################################################
+
+doc"""
+***
+      divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
+
+> Returns $ab^{-1}$.
+"""
+function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  return a*inv(b)
 end
 
 ################################################################################
@@ -438,6 +505,7 @@ end
 #
 ################################################################################
 
+# Returns an element x with v_p(x) = v_p(a) for all p in primes.
 function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
   products = Vector{NfOrdIdl}()
   for p in primes
@@ -458,12 +526,25 @@ function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
   return x
 end
 
+doc"""
+***
+      pradical(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrdIdl
+
+> Given a prime ideal number $p$, this function returns the $p$-radical
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
+> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+"""
+# Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
+
+  # Compute a pseudo basis of O with integral ideals:
   basis_mat_int = zero_matrix(K, d, d)
   pbint = Vector{Tuple{NfRelElem{nf_elem}, NfOrdIdl}}()
   for i = 1:d
@@ -472,6 +553,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     elem_to_mat_row!(basis_mat_int, i, t)
   end
   Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+
   pOK = ideal(OK, OK(minimum(p)))
   prime_ideals = factor(pOK)
   elts_with_val = Vector{NfOrdElem}(d)
@@ -481,6 +563,8 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
   A = zero_matrix(F, d, d)
+
+  # If minimum(p) is too small one can't use the trace.
   if minimum(p) <= d
     q = norm(p)
     k = clog(fmpz(degree(Oint)), q)
@@ -500,32 +584,30 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
       end
     end
   end
+
   B = nullspace(A)[2]
   M1 = zero_matrix(K, d, d)
   imF = inv(mF)
+  # Write a basis of the kernel of A in the rows of M1.
   for i = 1:cols(B)
     for j = 1:rows(B)
       M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
     end
   end
-#  M2 = zero_matrix(K, d, d)
-#  for j = 1:d
-#    t = K(den(pb[j][2]))
-#    M2[j, j] = inv(t)
-#    for i = 1:d
-#      M1[i, j] = divexact(M1[i, j], t)
-#    end
-#  end
   M2 = identity_matrix(K, d)
   PM1 = PseudoMatrix(M1)
+  # PM2 is the basis pseudo matrix of p*Oint
   PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
+
+  # Write PM in the basis of O (and not Oint)
   for j = 1:d
     t = K(den(pb[j][2]))
-    for i = 1:d
+    for i = j:d
       PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
     end
   end
+  # TODO: Use that the matrix is already triangular
   PM = pseudo_hnf(PM, :lowerleft, true)
   return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
 end
@@ -536,6 +618,16 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
+
+> Computes the order $(a : a)$, which is the set of all $x \in K$
+> with $xa \subseteq a$, where $K$ is the ambient number field
+> of $a$.
+"""
+# Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   O = order(a)
   K = base_ring(nf(O))
@@ -558,9 +650,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     end
   end
   PM = PseudoMatrix(transpose(M), C)
-  PM = try sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-    catch sub(pseudo_hnf_kb(PM), 1:d, 1:d)
-    end
+  PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
   N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
