@@ -545,6 +545,7 @@ end
 
 doc"""
   nbits(a::Int) -> Int
+  nbits(a::UInt) -> Int
   nbits(a::BigInt) -> Int
 
   Returns the number of bits necessary to represent a
@@ -553,6 +554,11 @@ function nbits(a::Int)
   a==0 && return 0
   return Int(ceil(log(abs(a))/log(2)))
 end
+function nbits(a::UInt)
+  a==0 && return 0
+  return Int(ceil(log(a)/log(2)))
+end
+
 
 ################################################################################
 #
