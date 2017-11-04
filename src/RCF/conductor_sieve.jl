@@ -135,8 +135,19 @@ function tommy_ray_class_group(O::NfOrd, n_quo::Int, m::Int)
 end
 
 
-function quadratic_normal_extensions(O::NfOrd, bound::fmpz; compute_automorphisms::Bool = false)
+function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
+                                     absolute_discriminant_bound::fmpz = -1,
+                                     absolute_galois_group::Symbol = :all)
   
+  if absolute_discriminant_bound != -1
+    bo = ceil(Rational{BigInt}(absolute_discriminant_bound//discriminant(O)^2))
+    bound = FlintZZ(fmpq(bo))
+    @assert absolute_discriminant_bound <= discriminant(O)^2 * bound
+    @assert absolute_discriminant_bound > discriminant(O)^2 * (bound - 1)
+  end
+
+  @show bound
+
   K=nf(O)
   a=gen(K)
   Aut=Hecke.automorphisms(K)
@@ -174,17 +185,39 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz; compute_automorphism
       println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
         L = number_field(C)
-        #if compute_automorphisms
-        #  rel_auto = Hecke.rel_auto(C)
-        #  autK = Aut
-        #end
-        @vtime :QuadraticExt 1 push!(fields, L)
+        if absolute_galois_group != :all
+          autabs = absolute_automorphism_group(C, gens)
+          M = multiplication_table(autabs, *)
+          if defines_group_isomorphic_to_16T7(M)
+            @vtime :QuadraticExt 1 push!(fields, L)
+          end
+        else
+          @vtime :QuadraticExt 1 push!(fields, L)
+        end
       end
     end
     println("\n")
   end
   return fields
 
+end
+
+function absolute_automorphism_group(C::ClassField)
+  L = number_field(C)
+  K = base_field(C)
+  autK = automorphisms(K)
+  id = find_identity(autK, *)
+  autK_gen = small_generating_set(autK, *, id)
+  return absolute_automorphism_group(C, autK_gen)
+end
+
+function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field)
+  L = number_field(C)
+  aut_L_rel = rel_auto(C)
+  rel_extend = [ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
+  rel_gens = vcat(aut_L_rel, rel_extend)
+  id = find_identity(rel_gens, *)
+  return closure(rel_gens, *, id)
 end
 
 
