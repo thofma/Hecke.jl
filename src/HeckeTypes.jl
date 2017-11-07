@@ -622,7 +622,7 @@ mutable struct NfOrd <: Ring
     r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
-    r.auxilliary_data = Array{Any}(5)
+    r.auxilliary_data = Array{Any}(10)
     r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))

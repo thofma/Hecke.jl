@@ -302,8 +302,7 @@ function carlos_units(O::NfOrd)
     u, mu = sub(S, s, false)
     b = 10
     cnt = 0
-    while true
-      @assert b > 0
+    while b > 0
       a = rand(O, b)
       if a==0
         continue
@@ -323,32 +322,32 @@ function carlos_units(O::NfOrd)
           b *= 2
           cnt = 0
         end
-        if b <= 0
-          b = 10
-          cnt = 0
-          bas = lll_basis(O)
-          while true
-            @assert b>0
-            a = rand(bas, 1:b)
-            if a==0
-              continue
-            end
-            emb=signs(a,p)
-            t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
-            if !Hecke.haspreimage(mu, t)[1]
-              push!(s, t)
-              push!(g, O(a))
-              u, mu = sub(S, s, false)
-              if order(u) == order(S)
-                break
-              end
-            else
-              cnt += 1
-              if cnt > 1000 
-                b *= 2
-                cnt = 0
-              end
-            end
+      end
+    end
+    if b <= 0
+      b = 10
+      cnt = 0
+      bas = lll_basis(O)
+      while true
+        @assert b>0
+        a = rand(bas, 1:b)
+        if a==0
+          continue
+        end
+        emb=signs(a,p)
+        t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+        if !Hecke.haspreimage(mu, t)[1]
+          push!(s, t)
+          push!(g, O(a))
+          u, mu = sub(S, s, false)
+          if order(u) == order(S)
+            break
+          end
+        else
+          cnt += 1
+          if cnt > 1000 
+            b *= 2
+            cnt = 0
           end
         end
       end
@@ -1384,7 +1383,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       for (q2,vq2) in Q.factor
         (q != q2) && (i_without_q *= prime_power[q2])
       end
-      alpha, beta = idempotents(prime_power[q] ,i_without_q)
+      alpha, beta = idempotents(prime_power[q], i_without_q)
       gens_q = beta*gens_q + alpha
     end
  
@@ -1478,6 +1477,21 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
     end
   end
   return ray_class_group(n, m, y1, y2, inf_plc)
+  
+end
+
+function ray_class_group(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}())
+  
+  K=nf(O)
+  d1=Dict{NfOrdIdl, Int}()
+  lp=factor(m)
+  for q in keys(lp.fac)
+    lq=prime_decomposition(O,q) 
+    for (P,e) in lq
+      d1[P]=1
+    end   
+  end
+  return ray_class_group(n_quo, ideal(O,1), d1, wprimes, real_places(K))
   
 end
 
@@ -1595,12 +1609,15 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
+    c=O(evaluate(mU(U[i])))
+    c= (mG\c).coeff
     a=(mG\(evals[i].elem)).coeff
+    @assert c==a
     if mod(n,2)==0 && !isempty(pr)
       if i==1
         a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
       else
-        b=lH(tobeeval[length(tobeeval)-ngens(C)-ngens(U)+i])
+        b=lH(mU(U[i]))
         a=hcat(a, b.coeff)
       end
     end
@@ -1616,8 +1633,11 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   for i=1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
+    x=evaluate(mC.princ_gens[i][2]*Kel[i])
+    c=((mG\O(num(x))-mG\O(den(x)))*inverse_d).coeff
+    @assert c==a
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(tobeeval[length(tobeeval)-ngens(C)+i])
+      b=lH(mC.princ_gens[i][2]*Kel[i])
       a=hcat(a, b.coeff)
     end
     for j=1: ngens(G)
@@ -1705,6 +1725,8 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
 end
 
+
+
 ##################################################################################
 #
 #  Ray Class Group map for conductors
@@ -1712,7 +1734,7 @@ end
 ##################################################################################
 
 
-function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1})
+function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, wprimes::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc,1})
 
   K=nf(O)
   evals=mR.evals
@@ -1726,10 +1748,13 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   for (q,vq) in lp
     I*=q^vq
   end
+  for (q,vq) in wprimes
+    I*=q^vq
+  end
   
   Q,pi=quo(O,I)
-  Q.factor=lp
-  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,lp,Dict{NfOrdIdl,Int}(),n)
+  Q.factor=merge(max,lp,wprimes)
+  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,lp,wprimes,n)
   C, mC = class_group(O)
   _assure_princ_gen(mC)
   
@@ -1972,41 +1997,10 @@ function find_gens(mR::MapRayClassGrp)
   R = domain(mR) 
   m=Hecke._modulus(mR)
   
-  sR = elem_type(R)[]
+  sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
-#=
-  S=Hecke.PrimesSet(2,-1)
-  st = start(S)
+  q, mq = quo(R, sR,false)
   
-  q, mq = quo(R, sR,false)
-  counter=0
-  while true
-    counter+=1
-    p, st = next(S, st)
-    if m.gen_one % p == 0
-      continue
-    end
-
-    lP = prime_decomposition(O, p)
-
-    f=R[1]
-    for (P,e) in lP
-      f= mR\P
-      if iszero(mq(f))
-        continue
-      end
-      push!(sR, f)
-      push!(lp, P)
-      q, mq = quo(R, sR, false)
-    end
-    if order(q) == 1   
-      break
-    end
-  end
-  @vprint :RayFacElem 3 "Attempts: $counter \n"
-  return lp, sR
-=#
-  q, mq = quo(R, sR,false)
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
@@ -2015,6 +2009,9 @@ function find_gens(mR::MapRayClassGrp)
   end
   q, mq = quo(R, sR, false)
   for (i,P) in enumerate(S)
+    if !iscoprime(P,m)
+      continue
+    end
     if haskey(mR.prime_ideal_preimage_cache, P)
       f = mR.prime_ideal_preimage_cache[P]
     else
@@ -2035,7 +2032,7 @@ function find_gens(mR::MapRayClassGrp)
 end
 
 
-function _act_on_ray_class(mR::MapRayClassGrp , Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
+function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
@@ -2053,12 +2050,13 @@ function _act_on_ray_class(mR::MapRayClassGrp , Aut::Array{Hecke.NfToNfMor,1}=Ar
   #  class group map
   #
 
-  @vtime :RayFacElem 3 lgens,subs=find_gens(mR)
+  lgens,subs=find_gens(mR)
   
   if isempty(lgens)
     push!(G, GrpAbFinGenMap(R))
     return G
   end
+  
   #
   #  Write the matrices for the change of basis
   #
@@ -2081,7 +2079,6 @@ function _act_on_ray_class(mR::MapRayClassGrp , Aut::Array{Hecke.NfToNfMor,1}=Ar
   end
 
   Ml=solve(auxmat,eye(auxmat,ngens(R)))'
-  
   #
   #  Now, we compute the action on the group
   #
@@ -2095,9 +2092,10 @@ function _act_on_ray_class(mR::MapRayClassGrp , Aut::Array{Hecke.NfToNfMor,1}=Ar
         M[i,j]=elem[j]
       end
     end
-    push!(G,GrpAbFinGenMap(R,R,view(Ml,1:rows(Ml),1:length(lgens))*M))
+    mp=GrpAbFinGenMap(R,R,sub(Ml,1:rows(Ml),1:length(lgens))*M)
+    @hassert :RayFacElem isbijective(mp)
+    push!(G,mp)
   end
-  
   return G
   
 end
