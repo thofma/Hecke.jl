@@ -559,15 +559,16 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   
 end
 
-global bla = []
+
 
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
-  global bla
+
   K=nf(O)
   inf_plc=real_places(K)
   n=prod(gtype)
   expo=lcm(gtype)
-  
+  _,mC=class_group(O)
+  allow_cache!(mC)
   #
   # Getting a small set of generators
   # for the automorphisms group
@@ -593,10 +594,12 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     for s in ls
       C=ray_class_field(mr*inv(s[2]))
       println("\n Computing fields")
-      push!(bla, (C, k[1], k[2]))
-      if Hecke._is_conductor_min_normal(C, k[1], k[2]) && Hecke.discriminant_conductor(O,C,k[1],k[2],mr,inf_plc,bound,expo,n)
-        println("\n New Field!")
-        @vtime :QuadraticExt 1 push!(fields,number_field(C))
+      if Hecke._is_conductor_min_normal(C, k[1], k[2]) 
+        println("Right conductor; now check discriminant")
+        if Hecke.discriminant_conductor(O,C,k[1],k[2],mr,inf_plc,bound,expo,n)
+          println("\n New Field!")
+          @vtime :QuadraticExt 1 push!(fields,number_field(C))
+        end
       end
     end
     println("\n")
@@ -611,8 +614,6 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
   lp=[prime_decomposition(O,q) for q in fac]
   noprimeideals = sum(length(x) for x in lp)
   discr=fmpz(1)
-  
-  println("$(conductor(C))\n")
   
   #first, tamely ramified part
   for j=1:length(lp)
@@ -641,7 +642,12 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
   end
   
   #now, wild ramification
-  d=mr.fact_mod
+  d=Dict{NfOrdIdl,Int}()
+  for (Q, e) in mr.fact_mod
+    if e==1
+      d[Q]=1
+    end
+  end
   lw=Set{Int}([minimum(p) for p in keys(wprimes)])
   for w in lw
     i=0
@@ -651,7 +657,9 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       if minimum(P)==w
         if i==0
           i+=1
-          wprimes_new[P]=e-1
+          if e>=2
+            wprimes_new[P]=e-1
+          end
           I=P
         else
           wprimes_new[P]=e
@@ -665,13 +673,23 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
     ap-=order(q)
-    while wprimes_new[P]!=0
-      wprimes_new[P]-=1
+    while haskey(wprimes_new,I) && wprimes_new[I]!=1
+      wprimes_new[I]-=1
       R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
       dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
       q,mq=quo(R,dlogs)
       ap-=order(q)
     end
+    d1=Dict{NfOrdIdl, Int}()
+    for (J,e) in d
+      d1[J]=1
+    end
+    d[I]=1
+    wprimes_new[I]=0
+    R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
+    dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
+    q,mq=quo(R,dlogs)
+    ap-=order(q)
     td=prime_decomposition_type(O,minimum(I))
     np=minimum(I)^(td[1][2])
     discr*=fmpz(np)^ap

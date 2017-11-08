@@ -63,8 +63,11 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
       break
     end
   end
-
-  return lp
+  if order(q) == 1
+    return lp
+  else
+    error("Not enough primes")
+  end
 end
 
 #######################################################################################
@@ -770,7 +773,6 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfO
     P=lq[i][1][1]
     g=gcd(E, norm(P)-1)
     if g==1
-      @show "this should not happen"
       return false
     end
     d1=Dict{NfOrdIdl,Int}()
@@ -781,18 +783,8 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfO
         end
       end
     end
-    I=ideal(O,1)
-    for el in keys(d1)
-      I*=el
-    end
-    for (el,e) in wprimes
-      I*=el^e
-    end
-    @show I
-    r,mr=ray_class_group(I, inf_plc, n_quo=expo)
-    quot=GrpAbFinGenElem[mr\(s) for s in Sgens]
-#    r,mr=ray_class_group(O, expo, mR, d1, wprimes, inf_plc)
-#    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
+    r,mr=ray_class_group(O, expo, mR, d1, wprimes, inf_plc)
+    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E
       return false
@@ -823,13 +815,6 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfO
       if order(s)==E
         return false
       end
-    end
-    w=ideal(O,1)
-    for I in keys(d)
-      w*=I
-    end
-    for I in keys(wprimes)
-      w*=I
     end
   end
   return true

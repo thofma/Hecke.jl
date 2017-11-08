@@ -2,6 +2,7 @@
 export ray_class_group, stable_subgroups
 
 add_verbose_scope(:RayFacElem)
+add_assert_scope(:RayFacElem)
 
 ###############################################################################
 #  
@@ -589,6 +590,9 @@ function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
       L[i]=I
       el[i]=s
     end
+  end
+  for i=1:ngens(C)
+    @assert iscoprime(L[i],m)
   end
   
   function exp(a::GrpAbFinGenElem)  
@@ -1257,7 +1261,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     mp=Hecke.MapClassGrp{typeof(G)}()
     mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
     mp.princ_gens=[(FacElem(Dict(ideal(O,1)=> fmpz(1))), FacElem(Dict(K(1)=> 1)))]
-    return G,mp
+    return G,mp, fmpz[]
   
   else
     
@@ -1272,11 +1276,13 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     G.snf=vect
     
     function exp2(a::GrpAbFinGenElem)
-      x=C([0 for i=1:ngens(C)])
-      for i=ind:ngens(C)
-        x.coeff[1,i]=a.coeff[1,i-ind+1]  
+      x=ideal(O,1)
+      for i=1:ngens(G)
+        if a[i]!=0
+          x*=num(evaluate(mC.princ_gens[ind+i-1][1]))^(Int(a[i]))
+        end
       end
-      return mC(x)
+      return x
     end 
     
     function disclog2(I::NfOrdIdl)
@@ -1292,7 +1298,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     mp.header=Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
     mp.princ_gens=mC.princ_gens[ind:end]
     
-    return G,mp
+    return G,mp, [divexact(C.snf[ind+j],gcd(C.snf[ind+j],n)) for j=0:ngens(C)-ind]
   end
 end 
 
@@ -1304,6 +1310,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   
   f=collect(keys(factor(fmpz(n)).fac))
   np = norm(p) - 1
+  @assert gcd(n,np)!=1
   val=Array{Int,1}(length(f))
   for i=1:length(f)
     val[i]=valuation(np,f[i])
@@ -1393,6 +1400,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   
   end
   for (q,vq) in y2
+    @assert vq>=2
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
     # Make generators coprime to other primes
@@ -1413,11 +1421,11 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
        
     function dlog_q_norm(x::NfOrdElem)
       y=Q(x)^Int(nq)
-      y=disclog_q(y.elem)
-      for i=1:length(y)
-        y[i]*=inv
+      Y=disclog_q(y.elem)
+      for i=1:length(Y)
+        Y[i]*=inv
       end
-      return y
+      return Y
     end
         
     gens_q = map(Q,gens_q)
@@ -1544,7 +1552,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   end
   nonnclass=divexact(C.snf[end], valclass)
 
-  C, mC = _class_group_mod_n(C,mC,Int(valclass))
+  C, mC, vect = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
   
@@ -1559,7 +1567,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 #
 
   expo=Int(exponent(G))
-  inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   
   R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
   for i=1:ngens(C)
@@ -1582,7 +1589,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
 #
 
-  @assert issnf(U)
+  @hassert :RayFacElem 1 issnf(U)
   @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
   evals=NfOrdQuoRingElem[]
   tobeeval=FacElem{nf_elem, AnticNumberField}[]
@@ -1599,7 +1606,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
   for i=1:ngens(C)
-    push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
+    push!(tobeeval, mC.princ_gens[i][2]*Kel[i]^(C.snf[i]*vect[i]))
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
@@ -1609,10 +1616,21 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
-    c=O(evaluate(mU(U[i])))
-    c= (mG\c).coeff
     a=(mG\(evals[i].elem)).coeff
-    @assert c==a
+#=
+      c=O(evaluate(mU(U[i])))
+      d= (mG\c).coeff
+      if d!=a
+        J=ideal(O,1)
+        for (P,e) in y1
+          J*=P
+        end
+        Q1,mQ1=quo(O,J)
+        Q1.factor=y1
+        G1, mG1=_mult_grp_mod_n(Q1,y1,Dict{NfOrdIdl, Int}(),n)
+        @hassert :RayFacElem 1 mG1\c== mG1\(evals[i].elem)
+      end
+=#
     if mod(n,2)==0 && !isempty(pr)
       if i==1
         a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
@@ -1632,10 +1650,14 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 
   for i=1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
-    a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
-    x=evaluate(mC.princ_gens[i][2]*Kel[i])
-    c=((mG\O(num(x))-mG\O(den(x)))*inverse_d).coeff
-    @assert c==a
+    invn=gcdx(vect[i], C.snf[i])[2]
+    a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
+#=
+    x=evaluate(mC.princ_gens[i][2])*Kel[i]^(C.snf[i]*vect[i])
+    for (P,e) in lp
+      @assert valuation(x,P)==0
+    end
+=#
     if mod(n,2)==0 && !isempty(pr)
       b=lH(mC.princ_gens[i][2]*Kel[i])
       a=hcat(a, b.coeff)
@@ -1658,6 +1680,8 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     end
     return a
   end
+  
+  inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   
   function disclog(J::NfOrdIdl)
 
@@ -1788,7 +1812,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   end
   nonnclass=divexact(C.snf[end], valclass)
 
-  C, mC = _class_group_mod_n(C,mC,Int(valclass))
+  C, mC, vect = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
   princ_gens=mC.princ_gens
   
@@ -1863,9 +1887,10 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
 
   for i=1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
-    a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
+    invn=gcdx(vect[i], C.snf[i])[2]
+    a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(mC.princ_gens[i][2]*Kel[i]^(C.snf[i]))
+      b=lH(mC.princ_gens[i][2]*Kel[i])
       a=hcat(a, b.coeff)
     end
     for j=1: ngens(G)
@@ -2004,7 +2029,7 @@ function find_gens(mR::MapRayClassGrp)
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
-    S = prime_ideals_up_to(O, 1000)
+    S = prime_ideals_up_to(O, 1000*clog(discriminant(O),10)^2)
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)
@@ -2093,7 +2118,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
       end
     end
     mp=GrpAbFinGenMap(R,R,sub(Ml,1:rows(Ml),1:length(lgens))*M)
-    @hassert :RayFacElem isbijective(mp)
+    @hassert :RayFacElem 1 isbijective(mp)
     push!(G,mp)
   end
   return G
