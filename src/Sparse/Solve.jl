@@ -1,4 +1,4 @@
-function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, UIntMod}
+function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   @hassert :HNF 1  cols(A) == rows(A)
   @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
@@ -17,7 +17,7 @@ function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, UIntMod
       break
     end
     @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
-    p = g.values[1]//A.rows[j].values[1]
+    p = divexact(g.values[1], A.rows[j].values[1])
     push!(sol.pos, j)
     push!(sol.values, p)
     _g = Hecke.add_scaled_row(A[j], g, -p)
@@ -40,7 +40,7 @@ function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, UIntMod
   return sol
 end
 
-function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, UIntMod}
+function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   fl, sol = cansolve_ut(A, g)
   @assert fl
   return sol
@@ -186,19 +186,19 @@ function det(A::SMat{fmpz})
   end
 
   #TODO: re-use the nmod_mat....
-  ld = [fmpz(det(nmod_mat(SMat(A, Int(q))))) for q = lp]
+  ld = [fmpz(det(matrix(SMat(A, Int(q))))) for q = lp]
   return crt_signed(ld, crt_env(lp))
 end
 
 doc"""
-    echelon_with_trafo(A::SMat{UIntMod}) -> SMat, SMat
+    echelon_with_trafo(A::SMat{nmod}) -> SMat, SMat
 
 > Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
 > $TA = E$ holds.
 """
-function echelon_with_trafo(A::SMat{UIntMod})
+function echelon_with_trafo(A::SMat{nmod})
   z = hcat(A, id(SMat, base_ring(A), A.r))
-  M = Hecke.ModuleCtx_UIntMod(Int(base_ring(A).mod.n), z.c)
+  M = Hecke.ModuleCtxNmod(base_ring(A), z.c)
   for i=z
     Hecke.add_gen!(M, i)
   end

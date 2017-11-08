@@ -472,7 +472,7 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
 #  @assert s*e == q*h+r
   g = g+t*e+q*g
   h = h+r
-#  @assert ismonic(h)
+  @assert ismonic(h)
   b = s*g+t*h-1
   c, d = divrem(s*b, h)
   s = s-d
@@ -482,6 +482,7 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
 end
 
 #factors f as monic * (unit mod lead(f))
+#seems to not like 3*x^2+3*x+1 mod 108! mod 27 it is fine.
 # requires some coefficient of f to be a unit
 function fun_factor(f::PolyElem{<:RingElem})
   local g0
@@ -505,25 +506,36 @@ function fun_factor(f::PolyElem{<:RingElem})
   g0 = parent(f)()
   setcoeff!(g0, degree(f) - degree(h0), lead(f))
   setcoeff!(g0, 0, lead(h0))
-  s = parent(f)(lead(h0))
-  h0 *= inv(lead(h0))
+  s = parent(f)(inv(lead(h0)))
+  h0 *= lead(s)
   t = parent(f)(0)
 
+#      @show content(g0*s-t*h0-1)
   g, h, s,t = _hensel(f, g0, h0, s, t)
+#      @show content(g*s-t*h-1)
   i = 1
   while g!= g0 || h != h0
+#      @show content(g*s-t*h-1)
     i += 1
     g0 = g
     h0 = h
     g, h, s, t = _hensel(f, g0, h0, s, t)
-#    if i>3 
-#      error("too long")
-#    end
+    if i>4 #in general: loop forever... one could check that the
+      # contents of f-gh and s*g+t*h - 1 is nilpotent.
+      # this SHOULD ensure convergence
+      @show f
+      @show parent(f)
+      @show g, h, s, t
+      @show content(f-g*h)
+      @show content(g*s-t*h-1)
+      error("too long")
+    end
   end
 
   return g0, h0
 end
 
+#too slow
 function my_div(a::T, b::T) where T <: RingElem
   if iszero(a)
     return a
@@ -542,6 +554,19 @@ function my_div(a::T, b::T) where T <: RingElem
 end
 
 doc"""
+    Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}
+> Find a random polynomial of degree(n)
+"""
+function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  f = Rt()
+  R = base_ring(Rt)
+  for i=0:n
+    setcoeff!(f, i, rand(R))
+  end
+  return f
+end
+
+doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The resultant of $f$ anf $g$ using a quadratic-time algorithm.
 """
@@ -551,82 +576,108 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
+  e, p = ispower(m)
+  easy = isprime(p)
+
   Zx = PolynomialRing(FlintZZ)[1]
 
-  if degree(f) < 1 && degree(g) < 1
-    if iszero(f) || iszero(g)
-      res = R(0)
-    else
-      res = R(1)
+  res = R(1)
+
+  while true
+    if degree(f) < 1 && degree(g) < 1
+      if iszero(f) || iszero(g)
+        res *= R(0)
+      else
+        res *= R(1)
+      end
+      return res
     end
-    return res
-  end
 
-  if degree(f) < 1
-    res = lead(f)^degree(g)
-    return res
-  end
-
-  if degree(g) < 1
-    res = lead(g)^degree(f)
-    return res
-  end
-
-  c = content(f)
-  if !isunit(c)
-    f = deepcopy(f)
-    for i=0:degree(f)
-      setcoeff!(f, i, my_div(coeff(f, i), c))
+    if degree(f) < 1
+      res *= lead(f)^degree(g)
+      return res
     end
-    res = c^degree(g)*resultant_sircana(f, g)
-    return res
-  end
 
-  c = content(g)
-  if !isunit(c)
-    g = deepcopy(g)
-    for i=0:degree(g)
-      setcoeff!(g, i, my_div(coeff(g, i), c))
+    if degree(g) < 1
+      res *= lead(g)^degree(f)
+      return res
     end
-    res = c^degree(f)*resultant_sircana(f, g)
-    return res
-  end
 
-  if degree(f) < degree(g)
-    res = (-1)^(degree(f)*degree(g))*resultant_sircana(g, f)
-    return res
-  end
+    c = content(f)
+    if !isunit(c)
+      f = deepcopy(f)
+      for i=0:degree(f)
+        setcoeff!(f, i, my_div(coeff(f, i), c))
+      end
+      res *= c^degree(g)
+    end
 
-  #want f % g which works iff lead(g) | lead(f)
-  if isunit(lead(g)) ||
-    gcd(lift(lead(f)), m)  % gcd(lift(lead(g)), m) == 0
-    q = my_div(lead(f), lead(g))
-    ff = f - q*g*gen(Rt)^(degree(f) - degree(g))
-    @assert degree(f) > degree(ff)
-    res = lead(g)^(degree(f) - degree(ff))
-    res *= resultant_sircana(ff, g)*R(-1)^(degree(g)*(degree(f) - degree(ff)))
-    return res
+    c = content(g)
+    if !isunit(c)
+      g = deepcopy(g)
+      for i=0:degree(g)
+        setcoeff!(g, i, my_div(coeff(g, i), c))
+      end
+      res *= c^degree(f)
+    end
+
+    if degree(f) < degree(g)
+      res *= (-1)^(degree(f)*degree(g))
+      f, g = g, f
+    end
+
+    #want f % g which works iff lead(g) | lead(f)
+
+    if isunit(lead(g)) #accelerate a bit...possibly.
+      q, r = divrem(f, g)
+      res *= lead(g)^(degree(f) - degree(r))
+      res *= R(-1)^(degree(g)*(degree(f) - degree(r)))
+      f = r
+      continue
+    end
+
+    if gcd(lift(lead(f)), m)  % gcd(lift(lead(g)), m) == 0
+      q = my_div(lead(f), lead(g))
+      ff = f - q*g*gen(Rt)^(degree(f) - degree(g))
+      @assert degree(f) > degree(ff)
+      res *= lead(g)^(degree(f) - degree(ff))
+      res *= R(-1)^(degree(g)*(degree(f) - degree(ff)))
+      f = ff
+      continue
+    end
+    break
   end
 
   #factoring case, need to split the ring as well.
   #merde : we need a coprime factorisation: take
   # 6t^2+2t+3 mod 36....
-  cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
-  push!(cp, m)
-  cp = [x for x = cp if !iszero(x)]
-  cp = coprime_base(cp)
-  cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+  if easy
+    cp = [m]
+  else
+    cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+    push!(cp, m)
+    cp = [x for x = cp if !iszero(x)]
+    cp = coprime_base(cp)
+    cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+  end
   resp = fmpz[]
   pg = fmpz[]
   for p = cp
     lg = p^valuation(m, p)
     push!(pg, lg)
 
-    R1 = ResidueRing(FlintZZ, S(lg))
-    R1t = PolynomialRing(R1)[1]
-    #g is bad in R1, so factor it
-    gR1 = R1t(lift(Zx, g))
-    fR1 = R1t(lift(Zx, f))
+    if lg != m
+      R1 = ResidueRing(FlintZZ, S(lg))
+      R1t = PolynomialRing(R1)[1]
+      #g is bad in R1, so factor it
+      gR1 = R1t(lift(Zx, g))
+      fR1 = R1t(lift(Zx, f))
+    else
+      gR1 = g
+      fR1 = f
+      R1 = R
+      R1t = Rt
+    end
 
     if degree(fR1) < degree(f) &&
        degree(gR1) < degree(g)
@@ -674,21 +725,207 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
       push!(resp, lift(res1))
     end
   end
-  res = length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
+  res *= length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
   return res
 end
 
+
+#key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit 
+# in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
+#Thus rres(f,g ) = rres(f, b).... and the division can continue
 doc"""
-    Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}
-> Find a random polynomial of degree(n)
+    rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+> The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
+> That is a generator for the $(f, g) \cap Z$
 """
-function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer}
-  f = Rt()
+function rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  return rres_sircana(f, g)
+end
+
+doc"""
+    rres(f::fmpz_poly, g::fmpz_poly) -> fmpz
+> The reduced resultant of $f$ and $g$,
+> that is a generator for the $(f, g) \cap Z$
+"""
+function rres(f::fmpz_poly, g::fmpz_poly)
+  return rres_bez(f,g)
+end
+
+function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Rt = parent(f)
   R = base_ring(Rt)
-  for i=0:n
-    setcoeff!(f, i, rand(R))
+  m = fmpz(modulus(R))
+  e, p = ispower(m)
+  easy = isprime(p)
+
+  Zx = PolynomialRing(FlintZZ)[1]
+
+  while true
+    if degree(f) < 1 && degree(g) < 1
+      if iszero(f) || iszero(g)
+        res = R(0)
+      else
+        res = R(gcd(lift(lead(f)), lift(lead(g))))
+      end
+      return res
+    end
+
+    if degree(f) < degree(g)
+      f, g = g, f
+    end
+
+    if degree(g) < 1
+      if !isunit(lead(f))
+        #need the constant coeff * the annihilator of the others...
+        a = coeff(f, 1)
+        for i = 2:degree(f)
+          a = gcd(a, coeff(f, i))
+          if isone(a)
+            break
+          end
+        end
+        a = annihilator(a)
+        if iszero(a)
+          return lead(g)
+        else
+          return gcd(lead(g), a*constant_coefficient(f))
+        end
+      else
+        return constant_coefficient(g)
+      end
+    end
+
+    if !isunit(lead(g))
+      if easy
+        cp = [m]
+      else
+        cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+        push!(cp, m)
+        cp = [x for x = cp if !iszero(x)]
+        cp = coprime_base(cp)
+        cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+      end
+      resp = fmpz[]
+      pg = fmpz[]
+      for p = cp
+        lg = p^valuation(m, p)
+        push!(pg, lg)
+
+        if lg != m
+          R1 = ResidueRing(FlintZZ, S(lg))
+          R1t = PolynomialRing(R1)[1]
+          #g is bad in R1, so factor it
+          gR1 = R1t(lift(Zx, g))
+          fR1 = R1t(lift(Zx, f))
+        else
+          gR1 = g
+          fR1 = f
+          R1 = R
+          R1t = Rt
+        end
+        c = content(gR1)
+        for i=0:degree(gR1)
+          setcoeff!(gR1, i, my_div(coeff(gR1, i), c))
+        end
+        if isunit(lead(gR1))
+          g2 = gR1
+        else
+          g1, g2 = fun_factor(gR1)
+        end
+        push!(resp, lift(c*rres_sircana(fR1, g2)))
+      end
+      res = length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
+      return gcd(R(0), res)
+    end
+
+    q, f = divrem(f, g)
   end
-  return f
+end
+
+function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
+  m = modulus(a)
+  return parent(a)(gcd(gcd(a.data, m), b.data))
+end
+
+function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
+  R = parent(a)
+  m = modulus(R)
+  return R(divexact(m, gcd(m, a.data)))
+end
+
+function Nemo.isunit(f::Union{fmpz_mod_poly,nmod_poly}) 
+  if !isunit(constant_coefficient(f))
+    return false
+  end
+  for i=1:degree(f)
+    if !isnilpotent(coeff(f, i))
+      return false
+    end
+  end
+  return true
+end
+
+function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
+  #a is nilpontent if it is divisible by all primes divising the modulus
+  # the largest exponent a prime can divide is nbits(m)
+  l = nbits(modulus(a))
+  return iszero(a^l)
+end
+
+function Nemo.inv(f::Union{fmpz_mod_poly,nmod_poly}) 
+  if !isunit(f)
+    error("impossible inverse")
+  end
+  g = parent(f)(inv(trailing_coefficient(f)))
+  #lifting: to invert a, start with an inverse b mod m, then
+  # then b -> b*(2-ab) is an inverse mod m^2
+  # starting with this g, and using the fact that all coeffs are nilpotent
+  # we have an invers modulo s.th. nilpotent. Hence it works
+  c = f*g
+  while !isone(c)
+    g = g*(2-c)
+    c = f*g
+  end
+  return g
+end
+
+#for testing: the obvious(?) naive method(s)
+function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  R = base_ring(f)
+  Zx = FlintZZ["x"][1]
+  s = Nemo.Generic.sylvester_matrix(lift(Zx, f), lift(Zx, g))
+  h = hnf(s)
+  return gcd(R(0), R(h[rows(h), cols(h)]))
+end
+
+function rres_bez(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  R = base_ring(f)
+  Zx = FlintZZ["x"][1]
+  Qx = FlintQQ["x"][1]
+  g, q, w = gcdx(Qx(lift(Zx, f)), Qx(lift(Zx, g)))
+  return gcd(R(0), R(lcm(den(q), den(w))))
+end
+
+function rres_hnf(f::fmpz_poly, g::fmpz_poly)
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  s = Nemo.Generic.sylvester_matrix(f, g)
+  h = hnf(s)
+  return abs(h[rows(h), cols(h)])
+end
+
+function rres_bez(f::fmpz_poly, g::fmpz_poly)
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Qx = FlintQQ["x"][1]
+  g, q, w = gcdx(Qx(f), Qx(g))
+  return lcm(den(q), den(w))
 end
 
 

@@ -163,8 +163,19 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
 end
 
 
-function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
+function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
+                                     absolute_discriminant_bound::fmpz = -1,
+                                     absolute_galois_group::Symbol = :all)
   
+  if absolute_discriminant_bound != -1
+    bo = ceil(Rational{BigInt}(absolute_discriminant_bound//discriminant(O)^2))
+    bound = FlintZZ(fmpq(bo))
+    @assert absolute_discriminant_bound <= discriminant(O)^2 * bound
+    @assert absolute_discriminant_bound > discriminant(O)^2 * (bound - 1)
+  end
+
+  @show bound
+
   K=nf(O)
   Aut=Hecke.automorphisms(K)
   @assert length(Aut) == degree(K)
@@ -189,7 +200,16 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
       C.norm_group=s[2]
       println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
-        @vtime :QuadraticExt 1 push!(fields,number_field(C))
+        L = number_field(C)
+        if absolute_galois_group != :all
+          autabs = absolute_automorphism_group(C, gens)
+          M = multiplication_table(autabs, *)
+          if defines_group_isomorphic_to_16T7(M)
+            @vtime :QuadraticExt 1 push!(fields, L)
+          end
+        else
+          @vtime :QuadraticExt 1 push!(fields, L)
+        end
       end
     end
     println("\n")
@@ -197,6 +217,25 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz)
   return fields
 
 end
+
+function absolute_automorphism_group(C::ClassField)
+  L = number_field(C)
+  K = base_field(C)
+  autK = automorphisms(K)
+  id = find_identity(autK, *)
+  autK_gen = small_generating_set(autK, *, id)
+  return absolute_automorphism_group(C, autK_gen)
+end
+
+function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field)
+  L = number_field(C)
+  aut_L_rel = rel_auto(C)
+  rel_extend = [ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
+  rel_gens = vcat(aut_L_rel, rel_extend)
+  id = find_identity(rel_gens, *)
+  return closure(rel_gens, *, id)
+end
+
 
 ###########################################################################################################
 #
@@ -369,9 +408,11 @@ function abelian_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   inf_plc= InfPlc[]
   n=prod(gtype)
   expo=lcm(gtype)
+  println("Computing the conductors ... ")
   conductors=conductors_tame(O,n,bound) 
-
+  println("Done")
   fields=[]
+  
   #Now, the big loop
   for (i, k) in enumerate(conductors)
     println("Conductor: $k ")
@@ -396,7 +437,7 @@ function abelian_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
 end
 
 function abelian_normal_extensions(O::FlintIntegerRing, gtype::Array{Int,1}, bound::fmpz)
-  Qx,x = PolynomialRing(Rationals())
+  Qx, x = PolynomialRing(FlintQQ, "x")
   K, a = NumberField(x - 1, "a")
   OK = maximal_order(K)
   

@@ -220,26 +220,6 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
   return sr + 1, trafos
 end
 
-function nmod_mat(A::SMat{UIntMod})
-  R = parent(A.rows[1].values[1])
-  #B = nmod_mat(A.r, A.c, R.mod.n)
-  #B.parent = NmodMatSpace(ResidueRing(FlintZZ, R.mod.n), A.r, A.c)
-  B = zero_matrix(ResidueRing(FlintZZ, R.mod.n), A.r, A.c)
-
-  for i = 1:length(A.rows)
-    ra = A.rows[i]
-    for j = 1:length(ra.pos)
-      # alternatively, @inline the set_entry function in Nemo/src/flint/nmod_mat
-      ccall((:nmod_mat_set_entry, :libflint), Void,
-          (Ptr{nmod_mat}, Int, Int, UInt), &B, i - 1, ra.pos[j] - 1, ra.values[j].m)
-
-      #set_entry!(B, i, ra.pos[j], ra.values[j].m)
-      # B[i, ra.pos[j]] = ra.values[j].m
-    end
-  end
-  return B
-end
-
 ################################################################################
 #
 #  Echelonization via dense matrix
@@ -247,7 +227,7 @@ end
 ################################################################################
 
 # The echelonization_via_dense must not remove zero rows automatically
-function echelonize_via_dense(h::SMat{UIntMod})
+function echelonize_via_dense(h::SMat{nmod})
   R = parent(h.rows[1].values[1])
   # turn into dense structure
   hdense = nmod_mat(h)
