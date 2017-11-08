@@ -177,6 +177,10 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
   @show bound
 
   K=nf(O)
+  C,mC=class_group(O)
+  allow_cache!(mC)
+  S = prime_ideals_up_to(O, 100*clog(discriminant(O),10)^2)
+  
   Aut=Hecke.automorphisms(K)
   @assert length(Aut) == degree(K)
   gens = Hecke.small_generating_set(Aut)
@@ -191,6 +195,7 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=ray_class_group(O,2,k)
+    mr.prime_ideal_cache = S
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
@@ -452,6 +457,10 @@ function abelian_normal_tame_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fm
   real_plc=real_places(K)
   n=prod(gtype)
   expo=lcm(gtype)
+  C,mC=class_group(O)
+  allow_cache!(mC)
+  S = prime_ideals_up_to(O, 100*clog(discriminant(O),10)^2)
+  
   #
   # Getting a small set of generators
   # for the automorphisms group
@@ -471,12 +480,14 @@ function abelian_normal_tame_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fm
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k)
+    mr.prime_ideal_cache = S
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
-    @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false))
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]) )
     for s in ls
-      C=ray_class_field(mr*inv(s[2]))
+      C=ray_class_field(mr*inv(s[1]))
+      C.norm_group=s[2]
       if Hecke._is_conductor_min_tame_normal(C, k) && discriminant_conductor(O,C,k,Dict{NfOrdIdl,Int}(),mr,real_plc,bound,expo,n)
         println("\n New Field!")
         @vtime :QuadraticExt 1 push!(fields,number_field(C))
@@ -610,6 +621,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   expo=lcm(gtype)
   _,mC=class_group(O)
   allow_cache!(mC)
+  S = prime_ideals_up_to(O, 100*clog(discriminant(O),10)^2)
   #
   # Getting a small set of generators
   # for the automorphisms group
@@ -628,15 +640,17 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     println("Conductor: $k ")
     println("Left: $(length(l_conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k[1], k[2])
+    mr.prime_ideal_cache = S
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
     println("\n Searching for subgroups ")
-    @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false))
+    @vtime :QuadraticExt 1 ls=stable_subgroups(r,gtype,act, op=(x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]))
     for s in ls
-      C=ray_class_field(mr*inv(s[2]))
-      println("\n Computing fields")
+      C=ray_class_field(mr*inv(s[1]))
+      C.norm_group=s[2]
+      println("\n Checking conductor")
       if Hecke._is_conductor_min_normal(C, k[1], k[2]) 
-        println("Right conductor; now check discriminant")
+        println("Right conductor; now checking discriminant")
         if Hecke.discriminant_conductor(O,C,k[1],k[2],mr,inf_plc,bound,expo,n)
           println("\n New Field!")
           @vtime :QuadraticExt 1 push!(fields,number_field(C))
@@ -651,6 +665,20 @@ end
 
 function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{NfOrdIdl, Int}, mr::MapRayClassGrp, inf_plc::Array{InfPlc,1}, bound::fmpz, expo::Int, n::Int)
   
+  
+  #first naive fast check
+  s=fmpz(k)^n
+  lw=Set{Int}([minimum(p) for p in keys(wprimes)])
+  if !isempty(lw)
+    maxs=maximum(values(wprimes))
+    for w in lw
+      s*=fmpz(w)^(n^2*maxs)  
+    end
+  end
+  if s<=bound
+    return true
+  end
+  #now, conductor discriminant formula
   fac=collect(keys(factor(k).fac))
   lp=[prime_decomposition(O,q) for q in fac]
   noprimeideals = sum(length(x) for x in lp)
@@ -689,7 +717,6 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       d[Q]=1
     end
   end
-  lw=Set{Int}([minimum(p) for p in keys(wprimes)])
   for w in lw
     i=0
     wprimes_new=Dict{NfOrdIdl, Int}()
@@ -698,7 +725,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       if minimum(P)==w
         if i==0
           i+=1
-          if e>=2
+          if e>2
             wprimes_new[P]=e-1
           end
           I=P
@@ -714,24 +741,29 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
     ap-=order(q)
-    while haskey(wprimes_new,I) && wprimes_new[I]!=1
+    if haskey(wprimes_new,I) 
       wprimes_new[I]-=1
-      R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
-      dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
-      q,mq=quo(R,dlogs)
-      ap-=order(q)
-    end
+      while wprimes_new[I]!=1
+        R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
+        dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
+        q,mq=quo(R,dlogs)
+        ap-=order(q)
+        wprimes_new[I]-=1
+      end
+    end  
     d1=Dict{NfOrdIdl, Int}()
     for (J,e) in d
       d1[J]=1
     end
-    d[I]=1
-    wprimes_new[I]=0
+    if gcd(norm(I)-1, expo)!=1
+      d[I]=1
+    end
+    Base.delete!(wprimes_new,I)
     R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
     ap-=order(q)
-    td=prime_decomposition_type(O,minimum(I))
+    td=prime_decomposition_type(O,Int(minimum(I)))
     np=minimum(I)^(td[1][2])
     discr*=fmpz(np)^ap
     if discr>bound
