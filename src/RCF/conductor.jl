@@ -758,6 +758,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfO
     end
     S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
     _,mT=Hecke.kernel(S1)
+    C.norm_group=mT
   end
   if isdefined(C, :small_gens)
     Sgens=C.small_gens
