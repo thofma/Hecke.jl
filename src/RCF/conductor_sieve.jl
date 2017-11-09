@@ -410,7 +410,8 @@ end
 
 function abelian_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   
-  inf_plc= InfPlc[]
+  K=nf(O)
+  inf_plc= real_places(K)
   n=prod(gtype)
   expo=lcm(gtype)
   println("Computing the conductors ... ")
@@ -427,13 +428,17 @@ function abelian_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     if !_are_there_subs(r,gtype)
       continue
     end
-    @vtime :QuadraticExt 1 ls=subgroups(r, quotype=gtype, fun= (x, y) -> quo(x, y, false))
+    @vtime :QuadraticExt 1 ls=subgroups(r, quotype=gtype, fun= (x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]))
     for s in ls
-      C=ray_class_field(mr*inv(s[2]))
-      println("\n Computing fields")
-      if Hecke._is_conductor_min_tame_normal(C, k) && discriminant_conductor(O,C,k,Dict{NfOrdIdl,Int}(),mr,inf_plc,bound,expo,n)
-        println("\n New Field!")
-        @vtime :QuadraticExt 1 push!(fields,number_field(C))
+      C=ray_class_field(mr*inv(s[1]))
+      C.norm_group=s[2]
+      println("\n Checking conductor")
+      if Hecke._is_conductor_min_tame_normal(C, k) 
+         println("Checking discriminant")
+        if discriminant_conductor(O,C,k,Dict{NfOrdIdl,Int}(),mr,inf_plc,bound,expo,n)
+          println("\n New Field!")
+          @vtime :QuadraticExt 1 push!(fields,number_field(C))
+        end
       end
     end
     println("\n")
@@ -545,7 +550,6 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
       push!(list, (list[i][1]*q, nn))
     end
   end
-  deleteat!(list,1)
   
   l=length(list)
   for el in sqf_list
@@ -699,9 +703,13 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       end
     end
     @assert length(d1) == noprimeideals - 1
+    println("$d1")
+    println("$(C.small_gens)")
     R,mR=ray_class_group(O, expo, mr, d1, wprimes, inf_plc)
+    println("$(snf(R)[1])")
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
+    println("$(order(q))")
     ap= n-order(q)
     qw=fmpz(divexact(degree(O),lp[j][1][2])*ap)
     discr*=fmpz(fac[j])^qw
