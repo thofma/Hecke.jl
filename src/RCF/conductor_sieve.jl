@@ -365,7 +365,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
   
   list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
-
+  println("$(length(list))")
   extra_list=Tuple{Int, Int}[(1,1)]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
@@ -514,6 +514,7 @@ end
 function conductors(O::NfOrd, n::Int, bound::fmpz)
   
   K=nf(O)
+  d=degree(O)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
   ram_primes=collect(keys(factor(O.disc).fac))
   if length(wild_ram)==1
@@ -526,13 +527,13 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   m=minimum(wild_ram)
   k=divexact(n,m)
   b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
-  
+  println("$b1")
   #
   # First, conductors for tamely ramified extensions
   #
   
   sqf_list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
-  @vprint :QuadraticExt 1 "Sqf found \n"
+
   list=Tuple{Int, Int}[(1,1)]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
@@ -553,7 +554,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   
   l=length(list)
   for el in sqf_list
-    nel=el^n
+    nel=el^d
     for i=1:l
       if list[i][2]*nel>bound
         continue
@@ -562,6 +563,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
     end
   end
   @vprint :QuadraticExt 1 "tamely found \n"
+    println("$(length(list))")
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
@@ -625,7 +627,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   expo=lcm(gtype)
   _,mC=class_group(O)
   allow_cache!(mC)
-  S = prime_ideals_up_to(O, 100*clog(discriminant(O),10)^2)
+  S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2))
   #
   # Getting a small set of generators
   # for the automorphisms group
@@ -703,13 +705,9 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       end
     end
     @assert length(d1) == noprimeideals - 1
-    println("$d1")
-    println("$(C.small_gens)")
     R,mR=ray_class_group(O, expo, mr, d1, wprimes, inf_plc)
-    println("$(snf(R)[1])")
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
-    println("$(order(q))")
     ap= n-order(q)
     qw=fmpz(divexact(degree(O),lp[j][1][2])*ap)
     discr*=fmpz(fac[j])^qw

@@ -915,7 +915,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     return empty_ray_class(m)
   end
   
-  C, mC = _class_group_mod_n(C,mC,valclassp)
+  C, mC, vect = _class_group_mod_n(C,mC,valclassp)
   U, mU = unit_group_fac_elem(O)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
     
@@ -1000,7 +1000,8 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   for i=1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
-    a=((mG\(evals[i+ngens(U)].elem))*inverse_d).coeff
+    invn=gcdx(vect[i], C.snf[i])[2]
+    a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
     if p==2 && !isempty(pr)
       b=lH(tobeeval[length(tobeeval)-ngens(C)+i])
       a=hcat(a, b.coeff)
@@ -1715,7 +1716,7 @@ function find_gens(mR::MapRayClassGrp)
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
-    @time S = prime_ideals_up_to(O, 100*clog(discriminant(O),10)^2)
+    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2))
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)

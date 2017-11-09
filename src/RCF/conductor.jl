@@ -23,7 +23,7 @@ end
 #  Find small primes generating a subgroup of the ray class group
 #
 
-function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
+function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
 
   O = order(codomain(mR))
   R = domain(mR) 
@@ -32,6 +32,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
   l = minimum(m)
   lp = NfOrdIdl[]
   sR = GrpAbFinGenElem[]
+  
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
@@ -49,7 +50,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
       f = mR\P
       mR.prime_ideal_preimage_cache[P] = f
     end
-    bool, pre = haspreimage(mT, f)
+    @vtime :QuadraticExt 1 bool, pre = haspreimage(mT, f)
     if !bool
       continue
     end
