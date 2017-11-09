@@ -70,6 +70,14 @@ end
 
 ###########################################################################
 #
+#  Abelian Extensions Interface
+#
+###########################################################################
+
+#function abelian__normal_extensions(O::NfOrd, gtype::Array{Int,1}, )
+
+###########################################################################
+#
 #  Some useful functions
 #
 ###########################################################################
@@ -87,7 +95,6 @@ function small_generating_set(Aut::Array{NfToNfMor, 1})
   end
   return  Hecke.small_generating_set(Aut, *, Identity)
 end
-
 
 function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
 
@@ -108,6 +115,24 @@ end
 
 function divisors(n::Int)
  return collect(keys(factor(n).fac))
+end
+
+function absolute_automorphism_group(C::ClassField)
+  L = number_field(C)
+  K = base_field(C)
+  autK = automorphisms(K)
+  id = find_identity(autK, *)
+  autK_gen = small_generating_set(autK, *, id)
+  return absolute_automorphism_group(C, autK_gen)
+end
+
+function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field)
+  L = number_field(C)
+  aut_L_rel = rel_auto(C)
+  rel_extend = [ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
+  rel_gens = vcat(aut_L_rel, rel_extend)
+  id = find_identity(rel_gens, *)
+  return closure(rel_gens, *, id)
 end
 
 
@@ -221,24 +246,6 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
   end
   return fields
 
-end
-
-function absolute_automorphism_group(C::ClassField)
-  L = number_field(C)
-  K = base_field(C)
-  autK = automorphisms(K)
-  id = find_identity(autK, *)
-  autK_gen = small_generating_set(autK, *, id)
-  return absolute_automorphism_group(C, autK_gen)
-end
-
-function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field)
-  L = number_field(C)
-  aut_L_rel = rel_auto(C)
-  rel_extend = [ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
-  rel_gens = vcat(aut_L_rel, rel_extend)
-  id = find_identity(rel_gens, *)
-  return closure(rel_gens, *, id)
 end
 
 
@@ -527,7 +534,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   m=minimum(wild_ram)
   k=divexact(n,m)
   b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
-  println("$b1")
+
   #
   # First, conductors for tamely ramified extensions
   #
@@ -562,8 +569,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
       push!(list, (list[i][1]*el, list[i][2]*nel))
     end
   end
-  @vprint :QuadraticExt 1 "tamely found \n"
-    println("$(length(list))")
+
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
@@ -583,9 +589,8 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
       To find ap, it is enough to compute a logarithm.
     =#
     sq=q^(divexact(degree(O),lp[1][2]))
-    @vprint :QuadraticExt 1 "$q, $sq, $bound \n"
     bound_max_ap=clog(bound,sq) #bound on ap
-    bound_max_exp=divexact(q*bound_max_ap, n*(q-1))
+    bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
     for i=2:bound_max_exp
       d1=Dict{NfOrdIdl, Int}()
       for j=1:length(lp)
@@ -687,7 +692,6 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
   #now, conductor discriminant formula
   fac=collect(keys(factor(k).fac))
   lp=[prime_decomposition(O,q) for q in fac]
-  noprimeideals = sum(length(x) for x in lp)
   discr=fmpz(1)
   
   #first, tamely ramified part
@@ -704,7 +708,6 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
         end
       end
     end
-    @assert length(d1) == noprimeideals - 1
     R,mR=ray_class_group(O, expo, mr, d1, wprimes, inf_plc)
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
@@ -762,13 +765,22 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       d1[J]=1
     end
     if gcd(norm(I)-1, expo)!=1
-      d[I]=1
+      d1[I]=1
     end
     Base.delete!(wprimes_new,I)
     R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
     dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
     q,mq=quo(R,dlogs)
     ap-=order(q)
+    if !haskey(d1,I)
+      ap-=order(q)
+    else 
+      Base.delete!(wprimes_new,I)
+      R,mR=ray_class_group(O, expo, mr, d, wprimes_new, inf_plc)
+      dlogs=GrpAbFinGenElem[mR(s) for s in C.small_gens]
+      q,mq=quo(R,dlogs)
+      ap-=order(q)
+    end
     td=prime_decomposition_type(O,Int(minimum(I)))
     np=minimum(I)^(td[1][2])
     discr*=fmpz(np)^ap
