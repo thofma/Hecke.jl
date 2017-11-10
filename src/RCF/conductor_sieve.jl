@@ -558,6 +558,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
       push!(list, (list[i][1]*q, nn))
     end
   end
+
   
   l=length(list)
   for el in sqf_list
@@ -569,6 +570,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
       push!(list, (list[i][1]*el, list[i][2]*nel))
     end
   end
+  deleteat!(list,1)
 
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
