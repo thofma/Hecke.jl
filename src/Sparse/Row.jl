@@ -156,7 +156,7 @@ end
 ################################################################################
 
 function SRow(A::SRow{fmpz}, n::Int)
-  R = ZZModUInt(UInt(n))
+  R = ResidueRing(FlintZZ, n)
   return SRow(A, R)
 end
 
@@ -325,16 +325,15 @@ end
 ################################################################################
 
 doc"""
-    lift(a::SRow{UIntMod}) -> SRow{fmpz}
+    lift(a::SRow{nmod}) -> SRow{fmpz}
 
 > Lifts all entries in $a$.
 """
-function lift(a::SRow{UIntMod})
+function lift(a::SRow{nmod})
   b = SRow{fmpz}()
   for (p,v) = a
     push!(b.pos, p)
-    push!(b.values, fmpz(v.m))
+    push!(b.values, lift(v))
   end
   return b
 end
-

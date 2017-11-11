@@ -15,7 +15,7 @@ add_assert_scope(:HNF)
 set_assert_level(:HNF, 0)
 
 
-function show(io::IO, M::ModuleCtx_UIntMod)
+function show(io::IO, M::ModuleCtxNmod)
   println("Sparse module over $(M.R) of (current) rank $(rows(M.basis)) and $(rows(M.gens))")
 end
 
@@ -29,8 +29,7 @@ function show(io::IO, M::ModuleCtx_fmpz)
   end
 end
 
-#returns true if g enlarged M
-function add_gen!(M::ModuleCtx_UIntMod, g::SRow{UIntMod})
+function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
   if M.basis.r == M.basis.c
     return false
   end
@@ -178,7 +177,7 @@ function rank(M::ModuleCtx_fmpz)
   return M.bas_gens.r
 end
 
-function rank(M::ModuleCtx_UIntMod)
+function rank(M::ModuleCtxNmod)
   return M.basis.r
 end
 

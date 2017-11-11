@@ -16,32 +16,6 @@ mutable struct nmod_struct_non
   norm::UInt # mp_limb_t
 end
 
-struct ZZModUInt <: Ring
-  mod::nmod_struct
-
-  function ZZModUInt(n::UInt)
-    mod = nmod_struct_non(0, 0, 0)
-    ccall((:nmod_init, :libflint), Void, (Ptr{nmod_struct_non}, UInt), &mod, n)
-    return new(nmod_struct(mod.n, mod.ninv, mod.norm))
-  end
-end
-
-struct UIntMod <: RingElem
-  m::UInt
-  parent::ZZModUInt
-
-  function UIntMod(R::ZZModUInt)
-    z = new()
-    z.m = UInt(0)
-    z.parent = R
-  end
-
-  function UIntMod(R::ZZModUInt, m::UInt)
-    z = new(m, R)
-    return z
-  end
-end
-
 ################################################################################
 #
 #  Transformations for matrices
@@ -622,7 +596,7 @@ mutable struct NfOrd <: Ring
     r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
-    r.auxilliary_data = Array{Any}(5)
+    r.auxilliary_data = Array{Any}(10)
     r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
@@ -1306,18 +1280,27 @@ end
 #
 ################################################################################
 
-mutable struct ModuleCtx_UIntMod
-  R::ZZModUInt
-  basis::SMat{UIntMod}
-  gens::SMat{UIntMod}
+mutable struct ModuleCtxNmod
+  R::NmodRing
+  basis::SMat{nmod}
+  gens::SMat{nmod}
 
-  function ModuleCtx_UIntMod()
+  function ModuleCtxNmod()
     return new()
   end
 
-  function ModuleCtx_UIntMod(p::Int, dim::Int)
+  function ModuleCtxNmod(R::NmodRing, dim::Int)
     M = new()
-    M.R = ZZModUInt(UInt(p))
+    M.R = R
+    M.basis = SMat(M.R)
+    M.basis.c = dim
+    M.gens = SMat(M.R)
+    return M
+  end
+
+  function ModuleCtxNmod(p::Int, dim::Int)
+    M = new()
+    M.R = ResidueRing(FlintZZ, p)
     M.basis = SMat(M.R)
     M.basis.c = dim
     M.gens = SMat(M.R)
@@ -1330,8 +1313,8 @@ mutable struct ModuleCtx_fmpz
   max_indep::SMat{fmpz} # the bas_gens in upper-triangular shape
   basis::SMat{fmpz}     # if set, probably a basis (in upper-triangular)
   rel_gens::SMat{fmpz}  # more elements, used for relations
-  Mp::ModuleCtx_UIntMod
-  rel_reps_p::SMat{UIntMod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
+  Mp::ModuleCtxNmod
+  rel_reps_p::SMat{nmod}  # rel_reps_p[i] * Mp.basis = rel_gens[i] - if set
                         # at least mod p...
   basis_idx::fmpz
   essential_elementary_divisors::Array{fmpz, 1}
@@ -1346,9 +1329,10 @@ mutable struct ModuleCtx_fmpz
     M.bas_gens.c = dim
     M.rel_gens = SMat(FlintZZ)
     M.rel_gens.c = dim
-    M.rel_reps_p = SMat(ZZModUInt(UInt(p)))
+    R = ResidueRing(FlintZZ, p)
+    M.rel_reps_p = SMat(R)
     M.new = false
-    M.Mp = ModuleCtx_UIntMod(p, dim)
+    M.Mp = ModuleCtxNmod(R, dim)
     return M
   end
 end

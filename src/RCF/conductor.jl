@@ -23,7 +23,7 @@ end
 #  Find small primes generating a subgroup of the ray class group
 #
 
-function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
+function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
 
   O = order(codomain(mR))
   R = domain(mR) 
@@ -32,40 +32,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
   l = minimum(m)
   lp = NfOrdIdl[]
   sR = GrpAbFinGenElem[]
-#=
-  S=Hecke.PrimesSet(2,-1)
   
-  st = start(S)
-  q, mq = quo(T, sR, false)
-  i = 0
-  while true
-    i = i + 1
-    p, st = next(S, st)
-    if m.gen_one % p == 0
-      continue
-    end
-    lP = prime_decomposition(O, p)
-
-    f=R[1]
-    for (P,e) in lP
-      f= mR\P
-      bool, pre=haspreimage(mT,f)
-      if !bool
-        continue
-      end
-      if iszero(mq(pre))
-        continue
-      end
-      push!(sR, pre)
-      push!(lp, P)
-      q, mq = quo(T, sR, false)
-    end
-    if order(q) == 1
-      println("I had to use $i prime ideals")
-      break
-    end
-  end
-=#
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
@@ -83,7 +50,7 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
       f = mR\P
       mR.prime_ideal_preimage_cache[P] = f
     end
-    bool, pre = haspreimage(mT, f)
+    @vtime :QuadraticExt 1 bool, pre = haspreimage(mT, f)
     if !bool
       continue
     end
@@ -97,8 +64,11 @@ function find_gens_sub(mR::Map, mT::GrpAbFinGenMap)
       break
     end
   end
-
-  return lp
+  if order(q) == 1
+    return lp
+  else
+    error("Not enough primes")
+  end
 end
 
 #######################################################################################
@@ -748,14 +718,15 @@ end
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistancy. 
 #
 
+
+
 function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
+  return _is_conductor_min_normal(C, a, Dict{NfOrdIdl,Int}())
+end
+
+function _is_conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfOrdIdl, Int})
 
   mp=C.mq
-  
-  #
-  #  First, we need to find the subgroup
-  #
-  
   mR=mp.f
   mS=mp.g
   while issubtype(typeof(mR), Hecke.CompositeMap)
@@ -771,6 +742,9 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
   expo=Int(exponent(domain(mp)))
   K=O.nf
   
+  #
+  #  First, we need to find the subgroup
+  #
   if isdefined(C, :norm_group)
     mT=C.norm_group
   else
@@ -785,12 +759,16 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
     end
     S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
     _,mT=Hecke.kernel(S1)
+    C.norm_group=mT
   end
   if isdefined(C, :small_gens)
     Sgens=C.small_gens
   else
     Sgens=find_gens_sub(mR,mT)
+    C.small_gens=Sgens
   end
+  
+  # We try to remove the integers from the factorization
   lp=collect(keys(factor(a).fac))
   lq=[prime_decomposition(O,p) for p in lp]
   for i=1:length(lp)
@@ -807,11 +785,38 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
         end
       end
     end
-    r,mr=ray_class_group(O, expo, mR, d1, inf_plc)
+    r,mr=ray_class_group(O, expo, mR, d1, wprimes, inf_plc)
     quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E
       return false
+    end
+  end
+  if !isempty(wprimes)
+    d=Dict{NfOrdIdl, Int}()
+    for j=1:length(lq)
+      for k=1:length(lq[j])
+        d[lq[j][k][1]]=1
+      end
+    end
+    lpw=Set([minimum(p) for p in keys(wprimes)])
+    for q in lpw
+      newwp=Dict{NfOrdIdl,Int}()
+      for (P,e) in wprimes
+        if minimum(P)==q 
+          if e > 2
+            newwp[P]=e-1
+          end
+        else
+          newwp[P]=e
+        end
+      end 
+      r,mr=ray_class_group(O, expo, mR, d, newwp, inf_plc)
+      quot=GrpAbFinGenElem[mr(s) for s in Sgens]
+      s,ms=quo(r,quot)
+      if order(s)==E
+        return false
+      end
     end
   end
   return true
@@ -819,7 +824,13 @@ function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
   
 end 
 
+
 function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
+  return _conductor_min_normal(C::Hecke.ClassField, a::Int, Dict{NfOrdIdl, Int}())
+end
+
+
+function _conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfOrdIdl, Int})
 
   mp=C.mq
   
@@ -862,6 +873,7 @@ function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
     Sgens=C.small_gens
   else
     Sgens=find_gens_sub(mR,mT)
+    C.small_gens=Sgens
   end
   cond=1
   lp=collect(keys(factor(a).fac))
@@ -880,7 +892,7 @@ function _conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
         end
       end
     end
-    r,mr=ray_class_group(O, expo, mR, d1, inf_plc)
+    r,mr=ray_class_group(O, expo, mR, d1, wprimes, inf_plc)
     quot=GrpAbFinGenElem[mr(s) for s in Sgens]
     s,ms=quo(r,quot)
     if order(s)==E
