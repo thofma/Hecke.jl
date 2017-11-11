@@ -520,8 +520,9 @@ doc"""
 > If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 > with $\deg(\mathfrak p) > k$ will be discarded.
 """
-function prime_ideals_over(O::NfOrd, lp::AbstractArray{T};
- degree_limit::Int = 0) where T <: Union{fmpz, Integer}
+function prime_ideals_over(O::NfOrd,
+                           lp::AbstractArray{T};
+                           degree_limit::Int = 0) where T <: Union{fmpz, Integer}
   p = 1
   r = NfOrdIdl[]
   for p in lp
@@ -1152,4 +1153,54 @@ function valuation(A::NfOrdIdl, p::NfOrdIdl)
   return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
 end
 
+################################################################################
+#
+#  Prime ideal iterators
+#
+################################################################################
+
+mutable struct PrimeIdealsSet{S, T}
+  primes::PrimesSet{S}
+  order::NfOrd
+  iscoprimeto::Bool
+  coprimeto::T # if set (i.e. >1), only primes p % mod == a are returned
+  decomposition::Array{Tuple{T, Int}, 1}
+  currentindex::Int
+  currentprime
+
+  function PrimeIdealsSet(O::NfOrd, f::S, t::S) where {S}
+    z = new{S, NfOrdIdl}()
+    z.primes = PrimesSet(f, t)
+    z.iscoprimeto = false
+    z.order = O
+    return z
+  end
+end
+
+function Base.start(P::PrimeIdealsSet)
+  p = start(P.primes)
+  O = P.order
+  lp = prime_decomposition(O, p)
+  P.decomposition = lp
+  P.currentindex = 0
+  P.currentprime = p
+  return lp[1][1]
+end
+
+function Base.next(P::PrimeIdealsSet, ::Any)
+  if P.currentindex < length(P.decomposition)
+    P.currentindex += 1
+    return P.decomposition[P.currentindex][1], true
+  else
+    q, p = next(P.primes, P.currentprime)
+    P.decomposition = prime_decomposition(P.order, q)
+    P.currentindex = 1
+    P.currentprime = p
+    return P.decomposition[1][1], true
+  end
+end
+
+function Base.done(P::PrimeIdealsSet, ::Any)
+  return Base.done(P.primes, P.currentprime) && P.currentindex == length(P.decomposition)
+end
 
