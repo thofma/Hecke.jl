@@ -107,15 +107,13 @@ function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
     end
   end
   return true
-  
-end
-
-function divisors(n::Union{Int,fmpz})
- return collect(keys(factor(n).fac))
 end
 
 function issquarefree(n::Union{Int,fmpz})
-  return n==1 ||maximum(values(factor(n).fac))==1
+  if iszero(n)
+    throw(error("Argument must be non-zero"))
+  end
+  return isone(n) || maximum(values(factor(n).fac)) == 1
 end
 
 function absolute_automorphism_group(C::ClassField)
