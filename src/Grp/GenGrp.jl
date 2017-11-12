@@ -398,13 +398,13 @@ function defines_group_isomorphic_to_16T7(m)
     end
   end
 
-  id = find_identity(m)
+  id = _find_identity(m)
 
   img_of_gens = Iterators.product(elements_by_orders[4],
                                   elements_by_orders[4],
                                   elements_by_orders[2])
 
-  mult = (i, j) -> mul(i, j, m)
+  mult = (i, j) -> m[i, j]
 
   for (g1, g2, g3) in img_of_gens
     g2inv = inv(g2, m)
@@ -450,6 +450,16 @@ function defines_group_isomorphic_to_16T7(m)
     return true
   end
   return false
+end
+
+function order(i::Int, m::Array{Int, 2})
+  k = 2
+  j = m[i, i]
+  while j != i
+    j = m[i, j]
+    k = k + 1
+  end
+  return k - 1
 end
 
 function order(g::GrpGenElem)
