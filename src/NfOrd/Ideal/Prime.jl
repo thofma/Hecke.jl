@@ -32,6 +32,8 @@
 #
 ################################################################################
 
+export PrimeIdealsSet
+
 doc"""
 ***
     isramified(O::NfOrd, p::Int) -> Bool
@@ -1155,7 +1157,193 @@ end
 
 ################################################################################
 #
-#  Prime ideal iterators
+#   Prime ideals iterator
 #
 ################################################################################
 
+mutable struct PrimeIdealsSet
+  order::NfOrd
+  from::fmpz
+  to::fmpz
+  primes::PrimesSet{fmpz}
+  currentprime::fmpz
+  currentindex::Int
+  decomposition::Array{Tuple{NfOrdIdl, Int}, 1}
+  proof::Bool
+  indexdivisors::Bool
+  ramified::Bool
+  iscoprimeto::Bool
+  coprimeto::NfOrdIdl
+  degreebound::Int
+  unbound::Bool
+
+  function PrimeIdealsSet(O::NfOrd)
+    z = new()
+    z.order = O
+    z.proof = false
+    z.indexdivisors = true
+    z.ramified = true
+    z.unbound = false
+    z.degreebound =  degree(O)
+    z.iscoprimeto = false
+    return z
+  end
+end
+
+doc"""
+***
+    PrimeIdealsSet(O::NfOrd, f, t; proof = false,
+                                   indexdivisors = true,
+                                   ramified = true,
+                                   degreebound = degree(O),
+                                   coprimeto = false)  
+
+Returns an iterable object $S$ representing the prime ideals $\mathfrak p$
+of $\mathcal O$ with $f \leq \min(\mathfrak p) \leq t$. 
+
+The optional arguments can be used to exclude index divisors, ramified prime
+ideals and to include only prime ideals with degree less or equal than
+`degreebound` and which are coprime to `coprimeto`.
+
+If $t=-1$, then the upper bound is infinite.
+
+If `coprimeto` is supplied, it must be either an integer, an element of $\mathcal O$,
+or a non-zero ideal of $\mathcal O$.
+"""  
+function PrimeIdealsSet(O::NfOrd, from::T, to::S;
+                       proof::Bool = false,
+                       indexdivisors::Bool = true,
+                       ramified::Bool = true,
+                       degreebound::Int = degree(O),
+                       coprimeto = false) where {T <: Union{fmpz, Integer},
+                                                 S <: Union{fmpz, Integer}}
+  from < 0 && error("Lower bound must be non-negative")
+  to < -1 && error("Upper bound must be non-negative or -1")
+
+  z = PrimeIdealsSet(O)
+  z.from = fmpz(from)
+  z.to = fmpz(to)
+  z.primes = PrimesSet(z.from, z.to)
+  if to == -1
+    z.unbound = true
+  end
+  z.proof = proof
+  z.indexdivisors = indexdivisors
+  z.ramified = ramified
+  z.degreebound = degreebound
+  if !(coprimeto isa Bool)
+    if coprimeto isa NfOrdIdl
+      z.coprimeto = coprimeto
+    elseif coprimeto isa Union{Integer, fmpz, NfOrdElem}
+      z.coprimeto = ideal(O, coprimeto)
+    else
+      error("Coprime argument of wrong type ($(typeof(coprimeto)))")
+    end
+    z.iscoprimeto = true
+  end
+  return z
+end
+
+function Base.start(S::PrimeIdealsSet)
+  O = S.order
+  pstate = start(S.primes)
+  found_prime = false
+  while !found_prime
+    (p, pstate) = next(S.primes, pstate)
+    if !S.indexdivisors && isindex_divisor(O, p)
+      continue
+    end
+    lP = prime_decomposition(O, p)
+    j = -1
+    for i in 1:length(lP)
+      e = lP[i][2]
+      if !S.ramified && e > 1
+        continue
+      end
+      P = lP[i][1]
+      if P.splitting_type[2] > S.degreebound
+        continue
+      end
+      if S.iscoprimeto && !iscoprime(P, S.coprimeto)
+        continue
+      end
+      j = i
+      break
+    end
+    if j != -1
+      S.decomposition = lP
+      S.currentprime = p
+      S.currentindex = j
+      return (p, j)
+    end
+  end
+end
+
+function Base.next(S::PrimeIdealsSet, x)
+  pstate = x[1]
+  j = x[2]
+  Q = S.decomposition[j][1] # This we want to return
+  newindex = -1
+  lP = S.decomposition
+  O = S.order
+
+  # Find the next prime ideal in the current decomposition
+  for i in (j + 1):length(S.decomposition)
+    e = lP[i][2]
+    if !S.ramified && e > 1
+      continue
+    end
+    P = lP[i][1]
+    if P.splitting_type[2] > S.degreebound
+      continue
+    end
+    newindex = i
+    break
+  end
+
+  if newindex != -1
+    return Q, (pstate, newindex)
+  else
+    # We have to change the prime
+    found_prime = false
+    while !found_prime
+      (p, pstate) = next(S.primes, pstate)
+      if !S.indexdivisors && isindex_divisor(O, pstate)
+        continue
+      end
+      lP = prime_decomposition(O, pstate)
+      j = -1
+      for i in 1:length(lP)
+        e = lP[i][2]
+        if !S.ramified && e > 1
+          continue
+        end
+        P = lP[i][1]
+        if P.splitting_type[2] > S.degreebound
+          continue
+        end
+        if S.iscoprimeto && !iscoprime(P, S.coprimeto)
+          continue
+        end
+        j = i
+        break
+      end
+      if j != -1
+        S.decomposition = lP
+        S.currentprime = p
+        S.currentindex = j
+        return Q, (pstate, j)
+      end
+    end
+  end
+end
+
+function Base.done(S::PrimeIdealsSet, x)
+  pstate = x[1]
+  index = x[2]
+  return !S.unbound && pstate > S.to
+end
+
+Base.eltype(::PrimeIdealsSet) = NfOrdIdl
+
+Base.iteratorsize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()

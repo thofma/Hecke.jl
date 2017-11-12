@@ -186,4 +186,6 @@
     I = @inferred pradical(O1, 2)
     @test I == ideal(O1, FlintZZ[2 0 0; 0 1 0; 0 0 1])
   end
+
+  include("Ideal/Prime.jl")
 end
