@@ -4,66 +4,8 @@
 #
 ################################################################################
 
-function next_prime(x::UInt, proof::Bool)
-  z = ccall((:n_nextprime, :libflint), UInt, (UInt, Cint), x, Cint(proof))
-  return z
-end
-
-function next_prime(x::Int, proof::Bool)
-  z = next_prime(UInt(x), proof)
-  z > typemax(Int) && error("Next prime of input is not an Int")
-  return Int(z)
-end
-
-function next_prime(x::Int)
-  z = next_prime(x, false)
-  return z
-end
-
-function next_prime(z::T) where T <: Integer
-  z < 0 && error("Argument must be positive")
-
-  Tone = one(z)
-  Tzero = zero(z)
-  Ttwo = one(z) + one(z)
-
-  if z == Tone || z == Tzero
-    return Ttwo
-  end
-
-  if iseven(z)
-    z += Tone
-  else z += Ttwo
-  end
-
-  while !isprime(z)
-    z += Ttwo
-  end
-
-  return z
-end
-
-function next_prime(z::fmpz)
-  z < 0 && error("Argument must be positive")
-
-  Tone = one(z)
-  Tzero = zero(z)
-  Ttwo = one(z) + one(z)
-
-  if z == Tone || z == Tzero
-    return Ttwo
-  end
-
-  if iseven(z)
-    z += Tone
-  else z += Ttwo
-  end
-
-  while !isprime(z)
-    Nemo.addeq!(z, Ttwo)
-  end
-
-  return z
+function rem(a::fmpz, b::UInt)
+  return ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{fmpz}, UInt), &a, b)
 end
 
 function isless(a::BigFloat, b::Nemo.fmpz)
@@ -75,6 +17,7 @@ function isless(a::BigFloat, b::Nemo.fmpz)
   return c < 0
 end
 
+# TODO (CF):
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....

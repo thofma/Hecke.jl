@@ -513,13 +513,13 @@ end
 mutable struct LowPrecisionCholesky <: Exception end
 
 Base.showerror(io::IO, e::LowPrecisionCholesky) =
-    print(io, e.var, """
+    print(io, """
     Negative diagonal in Cholesky decomposition, probably a precision issue""")
 
 mutable struct LowPrecisionLLL <: Exception end
 
 Base.showerror(io::IO, e::LowPrecisionLLL) =
-    print(io, e.var, """
+    print(io, """
     Transformation matrix has too large entries relative to precision in LLL""")
 
 # what is this function doing here?

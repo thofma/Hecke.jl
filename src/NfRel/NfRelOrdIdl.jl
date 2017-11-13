@@ -33,13 +33,6 @@ mutable struct NfRelOrdIdl{T, S}
     return z
   end
 
-#  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
-#    z = NfRelOrdIdl{T, S}(O)
-#    z.basis_pmat = pseudo_matrix(M)
-#    z.basis_mat = M
-#    return z
-#  end
-
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{NfRelElem{T}, S}}) where{T, S}
     z = NfRelOrdIdl{T, S}(O)
     z.pseudo_basis = a

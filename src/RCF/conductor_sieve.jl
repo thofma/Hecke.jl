@@ -234,6 +234,7 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
           autabs = absolute_automorphism_group(C, gens)
           M = _multiplication_table(autabs, *)
           if defines_group_isomorphic_to_16T7(M)
+            @vprint :QuadraticExt 1 "I found a field with Galois group 16T7"
             @vtime :QuadraticExt 1 push!(fields, L)
           end
         else

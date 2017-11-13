@@ -520,8 +520,9 @@ doc"""
 > If `degree_limit` is a nonzero integer $k$, then prime ideals $\mathfrak p$
 > with $\deg(\mathfrak p) > k$ will be discarded.
 """
-function prime_ideals_over(O::NfOrd, lp::AbstractArray{T};
- degree_limit::Int = 0) where T <: Union{fmpz, Integer}
+function prime_ideals_over(O::NfOrd,
+                           lp::AbstractArray{T};
+                           degree_limit::Int = 0) where T <: Union{fmpz, Integer}
   p = 1
   r = NfOrdIdl[]
   for p in lp
@@ -1152,4 +1153,9 @@ function valuation(A::NfOrdIdl, p::NfOrdIdl)
   return min(valuation(A.gen_one, p), valuation(elem_in_nf(A.gen_two), p))
 end
 
+################################################################################
+#
+#  Prime ideal iterators
+#
+################################################################################
 

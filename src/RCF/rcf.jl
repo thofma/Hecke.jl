@@ -873,6 +873,9 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   no = abs(norm(a))
   l = Int[]
   while true
+    if p > 40000
+      error("Something wrong in reduce_mod_powers")
+    end
     setprecision(BigFloat, p)
     l = Int[]
     try
