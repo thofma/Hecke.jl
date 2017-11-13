@@ -570,7 +570,7 @@ end
 doc"""
 ***
     integral_split(A::NfOrdFracIdl) -> NfOrdIdl, NfOrdIdl
-> Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = N//D$
+> Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
 """
 function integral_split(A::NfOrdFracIdl)
   d = simplify(inv(A + ideal(order(A), fmpz(1))))

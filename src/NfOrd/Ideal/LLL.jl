@@ -23,7 +23,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact.
     return _lll_gram(A)
-  end  
+  end
 
   c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
                                         ## c is NOT a copy, so don't change.
@@ -37,7 +37,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     rt_c.cache_z1 = zero_matrix(FlintZZ, n, n)
     rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
   end
-  
+
   d = rt_c.cache_z1
   g = rt_c.cache_z2
 
@@ -110,6 +110,10 @@ function short_elem(A::NfOrdFracIdl,
                 v::fmpz_mat=zero_matrix(FlintZZ, 1,1); prec::Int = 100)
   return divexact(short_elem(A.num, v, prec = prec), A.den)
 end
+function _short_elem(A::NfOrdFracIdl,
+                v::fmpz_mat=zero_matrix(FlintZZ, 1, 1))
+  return divexact(_short_elem(A.num, v), A.den)
+end
 
 function short_elem(A::NfOrdIdl,
                 v::fmpz_mat = zero_matrix(FlintZZ, 1,1); prec::Int = 100)
@@ -124,30 +128,51 @@ function short_elem(A::NfOrdIdl,
   return q
 end
 
+function _short_elem(A::NfOrdIdl,
+                v::fmpz_mat = zero_matrix(FlintZZ, 1, 1))
+  p = 64
+  while true
+    if p > 40000
+      error("Something wrong in reduce_ideal")
+    end
+    try
+      b = short_elem(A, v, prec = p)
+      return b
+    catch e
+      if e isa LowPrecisionLLL
+        p = 2*p
+      else
+        rethrow(e)
+      end
+    end
+  end
+end
+
 function reduce_ideal(A::NfOrdIdl)
   B = inv(A)
-  b = short_elem(B)
+  success = false
+  b = _short_elem(B)
   C = b*A
   simplify(C)
   @assert C.den == 1
   return C.num
-end  
+end
 
 function reduce_ideal(A::NfOrdFracIdl)
   B = inv(A)
-  b = short_elem(B.num)
+  b = _short_elem(B.num)
   C = divexact(b, B.den)*A
   simplify(C)
   @assert C.den == 1
   return C.num
-end  
+end
 
 function reduce_ideal2(A::NfOrdIdl)
   B = inv(A)
-  b = short_elem(B)
+  b = _short_elem(B)
   C = b*A
   simplify(C)
   @assert C.den == 1
   return C.num, b
-end  
+end
 
