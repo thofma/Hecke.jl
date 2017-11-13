@@ -380,7 +380,7 @@ function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
   end
 end
 
-function fmpq_poly_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
+function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
   ccall((:fmpq_poly_get_numerator, :libflint), Void, (Ptr{fmpz_poly}, Ptr{fmpq_poly}), &t1, &a)
   ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_poly}), &r, &t1)
   ccall((:fmpq_poly_get_denominator, :libflint), Void, (Ptr{fmpz}, Ptr{fmpq_poly}), &t2, &a)
@@ -408,6 +408,25 @@ function fmpz_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpz_poly)
   fmpz_poly_to_nmod_poly_raw!(g, f)
   return g
 end
+
+function fmpq_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpq_poly)
+  g = Rx()
+  fmpq_poly_to_fmpz_mod_poly_raw!(g, f)
+  return g
+end
+
+function fmpz_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpz_poly)
+  ccall((:fmpz_poly_get_fmpz_mod_poly, :libflint), Void,
+                  (Ptr{fmpz_mod_poly}, Ptr{fmpz_poly}), &r, &a)
+
+end
+
+function fmpz_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpz_poly)
+  g = Rx()
+  fmpz_poly_to_fmpz_mod_poly_raw!(g, f)
+  return g
+end
+
 
 #= this is handled bu subst (or by f(a))
 function evaluate{S <: RingElem, T <: RingElem}(f::PolyElem{S}, a::T)

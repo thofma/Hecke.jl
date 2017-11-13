@@ -1769,6 +1769,48 @@ end
 
 (R::Nemo.NmodPolyRing)(a::nf_elem) = nf_elem_to_nmod_poly(R, a)
 
+#now the same for fmpz_mod_poly
+
+function nf_elem_to_fmpz_mod_poly_no_den!(r::fmpz_mod_poly, a::nf_elem)
+  d = degree(a.parent)
+  zero!(r)
+  if d == 1
+    ccall((:fmpz_mod_poly_fit_length, :libflint), Void, (Ptr{fmpz_mod_poly}, Int), &r, 1)
+    ra = pointer_from_objref(a)
+    ccall((:fmpz_mod, :libflint), Void, (Ptr{Void}, Ptr{Void}, Ptr{Int}), r.coeffs, ra, &r.p)
+  elseif d == 2
+    ccall((:fmpz_mod_poly_fit_length, :libflint), Void, (Ptr{fmpz_mod_poly}, Int), &r, 2)
+    ra = pointer_from_objref(a)
+    ccall((:fmpz_mod, :libflint), Void, (Ptr{Void}, Ptr{Void}, Ptr{Int}), r.coeffs, ra, &r.p)
+    ccall((:fmpz_mod, :libflint), Void, (Ptr{Void}, Ptr{Void}, Ptr{Int}), r.coeffs+sizeof(Int), ra+sizeof(Int), &r.p)
+  else
+    ccall((:fmpz_mod_poly_fit_length, :libflint), Void, (Ptr{fmpz_mod_poly}, Int), &r, a.elem_length)
+    for i=0:a.elem_length-1
+      ccall((:fmpz_mod, :libflint), Void, (Ptr{Void}, Ptr{Void}, Ptr{Int}), r.coeffs+sizeof(Int)*i, a.elem_coeffs+sizeof(Int)*i, &r.p)
+    end
+    r.length = a.elem_length
+  end
+  ccall((:_fmpz_mod_poly_normalise, :libflint), Void, (Ptr{fmpz_mod_poly}, ), &r)
+end
+
+function nf_elem_to_fmpz_mod_poly_den!(r::fmpz_mod_poly, a::nf_elem)
+  d = degree(a.parent)
+  nf_elem_to_fmpz_mod_poly_no_den!(r, a)
+  dn = den(a)
+  ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{Int}), &dn, &dn, &(r.p))
+  ccall((:fmpz_invmod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{Int}), &dn, &dn, &(r.p))
+  ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz}), &r, &r, &dn)
+end
+
+function nf_elem_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, a::nf_elem)
+  r = Rx()
+  nf_elem_to_fmpz_mod_poly_den!(r, a)
+  return r
+end
+
+(R::Nemo.FmpzModPolyRing)(a::nf_elem) = nf_elem_to_fmpz_mod_poly(R, a)
+
+
 # Characteristic
 
 characteristic(::AnticNumberField) = 0
