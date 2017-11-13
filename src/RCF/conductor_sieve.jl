@@ -232,10 +232,19 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
         L = number_field(C)
         if absolute_galois_group != :all
           autabs = absolute_automorphism_group(C, gens)
-          M = _multiplication_table(autabs, *)
-          if defines_group_isomorphic_to_16T7(M)
-            @vprint :QuadraticExt 1 "I found a field with Galois group 16T7"
-            @vtime :QuadraticExt 1 push!(fields, L)
+          G = generic_group(autabs, *)
+          if absolute_galois_group == :_16T7
+            if isisomorphic_to_16T7(G)
+              @vprint :QuadraticExt 1 "I found a field with Galois group 16T7 (C_2 x Q_8)"
+              @vtime :QuadraticExt 1 push!(fields, L)
+            end
+          elseif absolute_galois_group == :_8T5
+            if isisomorphic_to_8T5(G)
+              @vprint :QuadraticExt 1 "I found a field with Galois group 8T5 (Q_8)"
+              @vtime :QuadraticExt 1 push!(fields, L)
+            end
+          else
+            error("Group not supported (yet)")
           end
         else
           @vtime :QuadraticExt 1 push!(fields, L)

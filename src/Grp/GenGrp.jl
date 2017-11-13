@@ -6,7 +6,7 @@ export closure, small_generating_set
 #
 ################################################################################
 
-# It is assumed that the elements have finite with respect to op.
+# It is assumed that the elements have finite order with respect to op.
 function find_identity(S, op)
   @assert length(S) > 0
   g = S[1]
@@ -233,7 +233,7 @@ end
 ################################################################################
 
 function generic_group(G, op)
-  return GenGrp(_multiplication_table(G, op))
+  return GrpGen(_multiplication_table(G, op))
 end
 
 ################################################################################
@@ -258,6 +258,32 @@ end
 
 function ==(g::GrpGenElem, h::GrpGenElem)
   return parent(g) == parent(h) && g.i == h.i
+end
+
+################################################################################
+#
+#  Order
+#
+################################################################################
+
+function order(G::GrpGen)
+  return size(G.mult_table, 1)
+end
+
+################################################################################
+#
+#  Order of an element
+#
+################################################################################
+
+function order(g::GrpGenElem)
+  k = 2
+  h = g * g
+  while h != g
+    h = g * h
+    k = k + 1
+  end
+  return k - 1
 end
 
 ################################################################################
@@ -345,10 +371,6 @@ end
 ################################################################################
 
 function isisomorphic_to_16T7(G::GrpGen)
-  return defines_group_isomorphic_to_16T7(G.mult_table)
-end
-
-function defines_group_isomorphic_to_16T7(m)
   ordershape = [ (1, 1), (2, 3), (4, 12) ]
   # Use algorithm of Tarjahn (or something like that)
   # 16T7 has the following presentation:
@@ -366,24 +388,25 @@ function defines_group_isomorphic_to_16T7(m)
                [(1, -1), (3, 1), (1, 1), (3, 1)],
                [(2, -1), (3, 1), (2, 1), (3, 1)]]
 
-  l = size(m, 1)
+  l = order(G)
 
   if l != 16
     return false
   end
 
-  if defines_abelian_group(m)
+  if isabelian(G)
     return false
   end
 
-  elements_by_orders = Dict{Int, Array{Int, 1}}()
+  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
 
   for i in 1:l
-    o = order(i, m)
+    g = G[i]
+    o = order(g)
     if haskey(elements_by_orders, o)
-      push!(elements_by_orders[o], i)
+      push!(elements_by_orders[o], g)
     else
-      elements_by_orders[o] = [i]
+      elements_by_orders[o] = [g]
     end
   end
 
@@ -398,51 +421,49 @@ function defines_group_isomorphic_to_16T7(m)
     end
   end
 
-  id = _find_identity(m)
+  ide = id(G)
 
   img_of_gens = Iterators.product(elements_by_orders[4],
                                   elements_by_orders[4],
                                   elements_by_orders[2])
 
-  mult = (i, j) -> m[i, j]
-
   for (g1, g2, g3) in img_of_gens
-    g2inv = inv(g2, m)
-    g1inv = inv(g1, m)
+    g2inv = inv(g2)
+    g1inv = inv(g1)
     #  $.2^-1 * $.1^2 * $.2^-1 = Id($)
     z = g2inv
-    z = mult(z, g1)
-    z = mult(z, g1)
-    z = mult(z, g2inv)
-    if z != id
+    z = z * g1
+    z = z * g1
+    z = z * g2inv
+    if z != ide
       continue
     end
     #  $.1^-1 * $.2^-1 * $.1 * $.2^-1 = Id($)
     z = g1inv
-    z = mult(z, g2inv)
-    z = mult(z, g1)
-    z = mult(z, g2inv)
-    if z != id
+    z = z * g2inv
+    z = z * g1
+    z = z * g2inv
+    if z != ide
       continue
     end
     #  $.1^-1 * $.3 * $.1 * $.3 = Id($)
     z = g1inv
-    z = mult(z, g3)
-    z = mult(z, g1)
-    z = mult(z, g3)
-    if z != id
+    z = z * g3
+    z = z * g1
+    z = z * g3
+    if z != ide
       continue
     end
     #  $.2^-1 * $.3 * $.2 * $.3 = Id($)
     z = g2inv
-    z = mult(z, g3)
-    z = mult(z, g2)
-    z = mult(z, g3)
-    if z != id
+    z = z * g3
+    z = z * g2
+    z = z * g3
+    if z != ide
       continue
     end
 
-    cl = closure([g1, g2, g3], mult, id)
+    cl = closure([g1, g2, g3], *, ide)
 
     if length(cl) < 16
       continue
@@ -452,24 +473,32 @@ function defines_group_isomorphic_to_16T7(m)
   return false
 end
 
-function order(i::Int, m::Array{Int, 2})
-  k = 2
-  j = m[i, i]
-  while j != i
-    j = m[i, j]
-    k = k + 1
+function isisomorphic_to_8T5(G::GrpGen)
+  l = order(G)
+
+  if l != 8
+    return false
   end
-  return k - 1
-end
 
-function order(g::GrpGenElem)
-  k = 2
-  h = g * g
-  while h != g
-    h = g * h
-    k = k + 1
+  # First check if it is abelian or not.
+  if isabelian(G)
+    return false
   end
-  return k - 1
+
+  # Now G is D_8 (aka D_4 or 8T4) or Q_8
+  # But D_8 has 5 elements of order 2, where as Q_8 has only 1 element of order 2.
+
+  z = 0
+  for i in 1:l
+    g = G[i]
+    o = order(g)
+    if o == 2
+      z += 1
+    end
+    if z > 1
+      return false
+    end
+  end
+  @assert z == 1
+  return true
 end
-
-
