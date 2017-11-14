@@ -179,23 +179,7 @@ function coprime_base_bach(a::Array{E, 1}) where E #T need to support GCDs
 end
    
 # Bernstein: coprime bases
-# ppio(a,b) = (c,n) where v_p(c) = v_p(a) if v_p(b) !=0, 0 otherwise
-#                         c*n = a
-# or c = gcd(a, b^infty)
-
-function ppio(a::E, b::E) where E 
-  c = gcd(a, b)
-  n = div(a, c)
-  m = c
-  g = gcd(c, n)
-  while g != 1
-    c = c*g
-    n = div(n, g)
-    g = gcd(c, n)
-  end
-  return (c, n)
-end
-
+#
 #Note: Bernstein needs bigints, either Integer or fmpz 
 #      well, polys are also OK, small integers are not.
 
