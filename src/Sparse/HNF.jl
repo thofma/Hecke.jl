@@ -1,9 +1,9 @@
-function reduce(A::SMat{UIntMod}, g::SRow{UIntMod})
+function reduce(A::SMat{nmod}, g::SRow{nmod})
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
   # supposed to be a field...
   if A.r == A.c
-    return SRow{UIntMod}()
+    return SRow{nmod}()
   end
   while length(g)>0
     s = g.pos[1]

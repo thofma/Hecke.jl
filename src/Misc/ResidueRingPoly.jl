@@ -182,3 +182,7 @@ function (R::Nemo.NmodPolyRing)(g::fmpq_poly)
   return fmpq_poly_to_nmod_poly(R, g)
 end
 
+function (R::Nemo.FmpzModPolyRing)(g::fmpq_poly)
+  return fmpq_poly_to_fmpz_mod_poly(R, g)
+end
+

@@ -279,13 +279,12 @@ end
 ################################################################################
 
 doc"""
-    SMat(A::SMat{fmpz}, n::Int) -> SMat{UIntMod}
-    SRow(A::SMat{fmpz}, n::Int) -> SRow{UIntMod}
+    SMat(A::SMat{fmpz}, n::Int) -> SMat{nmod}
 
 > Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
 """
 function SMat(A::SMat{fmpz}, n::Int)
-  R = ZZModUInt(UInt(n))
+  R = ResidueRing(FlintZZ, n)
   return SMat(A, R)
 end
 
@@ -504,10 +503,10 @@ function mul(A::SMat{T}, B::SMat{T}) where T
   return C
 end
 
-# - Smat{UIntMod} * Smat{UIntMod} as MatElem{Generic.Res{fmpz}}
-function mul(A::SMat{UIntMod}, B::SMat{UIntMod})
+# - Smat{nmod} * Smat{nmod} as nmod_mat
+function mul(A::SMat{nmod}, B::SMat{nmod})
   @assert A.c == B.r
-  C = zero_matrix(ResidueRing(FlintZZ, base_ring(A).mod.n), A.r, B.c)
+  C = zero_matrix(base_ring(A), A.r, B.c)
   for i=1:A.r
     for j=1:B.c
       C[i,j] = mul(A[i], B[j])
@@ -1069,6 +1068,23 @@ function isupper_triangular(A::SMat)
     end
   end
   return true
+end
+
+################################################################################
+#
+#  Sparse to dense
+#
+################################################################################
+
+function Nemo.matrix(A::SMat)
+  R = base_ring(A)
+  M = zero_matrix(R, rows(A), cols(A))
+  for i=1:rows(A)
+    for j=1:length(A.rows[i].pos)
+      M[i, A.rows[i].pos[j]] = A.rows[i].values[j]
+    end
+  end
+  return M
 end
 
 ################################################################################

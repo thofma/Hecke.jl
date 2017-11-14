@@ -33,13 +33,6 @@ mutable struct NfRelOrdIdl{T, S}
     return z
   end
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
-    z = NfRelOrdIdl{T, S}(O)
-    z.basis_pmat = pseudo_matrix(M)
-    z.basis_mat = M
-    return z
-  end
-
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{NfRelElem{T}, S}}) where{T, S}
     z = NfRelOrdIdl{T, S}(O)
     z.pseudo_basis = a
@@ -238,29 +231,38 @@ end
 #
 ################################################################################
 
+function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
+  K = base_ring(nf(O))
+  coeffs = basis_pmat(O, Val{false}).coeffs
+  I = PseudoMatrix(identity_matrix(K, degree(O)), deepcopy(coeffs))
+  return _spans_subset_of_pseudohnf(M, I, :lowerleft)
+end
+
 doc"""
 ***
-    ideal(O::NfRelOrd, M::PMat) -> NfRelOrdIdl
+    ideal(O::NfRelOrd, M::PMat, check::Bool = true) -> NfRelOrdIdl
 
-> Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$.
+> Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
+> then it is checked whether $M$ defines an ideal.
 """
-function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
-  # checks
+function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true) where {T, S}
+  if check
+    !defines_ideal(O, M) && error("The pseudo-matrix does not define an ideal.")
+  end
   H = pseudo_hnf(M, :lowerleft, true)
   return NfRelOrdIdl{T, S}(O, H)
 end
 
 doc"""
 ***
-    ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdIdl
+    ideal(O::NfRelOrd, M::Generic.Mat, check::Bool = true) -> NfRelOrdIdl
 
-> Creates the ideal of $\mathcal O$ with basis matrix $M$.
+> Creates the ideal of $\mathcal O$ with basis matrix $M$. If check is set,
+> then it is checked whether $M$ defines an ideal.
 """
-ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S} = ideal(O, PseudoMatrix(M))
-
-function ideal(O::NfRelOrd{T, S}, a::Array{Tuple{NfRelElem{T}, S}}) where {T, S}
-  # checks
-  return NfRelOrdIdl{T, S}(O, a)
+function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S}
+  coeffs = deepcopy(basis_pmat(O, Val{false})).coeffs
+  return ideal(O, PseudoMatrix(M, coeffs), check)
 end
 
 ################################################################################
@@ -304,6 +306,7 @@ end
 #
 ################################################################################
 
+# Assumes, that det(basis_mat(a)) == 1
 function assure_has_norm(a::NfRelOrdIdl)
   if a.has_norm
     return nothing
@@ -410,6 +413,7 @@ doc"""
 function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   bp = basis_pmat(a)
   P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
+  !defines_ideal(order(a), P) && error("The pseudo-matrix does not define an ideal.")
   return NfRelOrdIdl{T, S}(order(a), P)
 end
 
@@ -448,8 +452,8 @@ end
 
 doc"""
 ***
-      inv(a::NfRelOrdIdl) -> NfRelOrdIdl
-> Computes the inverse of $a$, that is, the ideal $b$ such that
+      inv(a::NfRelOrdIdl) -> NfRelOrdFracIdl
+> Computes the inverse of $a$, that is, the fractional ideal $b$ such that
 > $ab = O$, where $O$ is the ambient order of $a$. $O$ must be maximal.
 """
 function inv(a::NfRelOrdIdl{T, S}) where {T, S}
@@ -480,7 +484,8 @@ function inv(a::NfRelOrdIdl{T, S}) where {T, S}
   PN = pseudo_hnf(PN, :lowerleft, true)
   #= PN.matrix = PN.matrix*bmOinv =#
   #= PN = pseudo_hnf(PN, :lowerleft, true) =#
-  return NfRelOrdIdl{T, S}(O, PN)
+  OO = order(basis_pmat(a, Val{false}).coeffs[1])
+  return NfRelOrdFracIdl{T, S}(O, NfRelOrdIdl{T, S}(O, PN), OO(1))
 end
 
 ################################################################################
@@ -491,12 +496,14 @@ end
 
 doc"""
 ***
-      divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
+      divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
 
 > Returns $ab^{-1}$.
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
-  return a*inv(b)
+  O = order(a)
+  OO = order(basis_pmat(a, Val{false}).coeffs[1])
+  return NfRelOrdFracIdl{T, S}(O, a, OO(1))*inv(b)
 end
 
 ################################################################################

@@ -873,6 +873,9 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   no = abs(norm(a))
   l = Int[]
   while true
+    if p > 40000
+      error("Something wrong in reduce_mod_powers")
+    end
     setprecision(BigFloat, p)
     l = Int[]
     try
@@ -1119,12 +1122,28 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     # currently, this is not used as it did not work.
 
     lp = collect(keys(Cp[im].bigK.frob_cache))
-    z = vcat([can_frobenius(p, Cp[im].bigK).coeff for p = lp])
+    use_p = []
+    z = matrix(FlintZZ, 0, length(Cp[im].bigK.gen), fmpz[])
+    tau_z = matrix(FlintZZ, 0, length(Cp[im].bigK.gen), fmpz[])
+    for p = lp
+      local f
+      local tau_f
+      try
+        f = can_frobenius(p, Cp[im].bigK).coeff
+        tau_f = can_frobenius(induce_image(p, tau_Ka), Cp[im].bigK).coeff
+      catch e
+        if typeof(e) != BadPrime
+          rethrow(e)
+        end
+      end
+      z = vcat(z, f)
+      tau_z = vcat(tau_z, tau_f)
+      push!(use_p, p)
+    end
 #    println("z: $z")
-    tau_z = vcat([can_frobenius(induce_image(p, tau_Ka), Cp[im].bigK).coeff for p = lp])
 #    println("tau(z): $tau_z")
-    z = hcat(z, om*identity_matrix(FlintZZ, length(lp)))
-    tau_z = hcat(tau_z, om*identity_matrix(FlintZZ, length(lp)))
+    z = hcat(z, om*identity_matrix(FlintZZ, rows(z)))
+    tau_z = hcat(tau_z, om*identity_matrix(FlintZZ, rows(z)))
     @assert C.Ka == base_ring(Cp[im].K)
 
     all_s = []
@@ -1138,22 +1157,22 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb))
-      y = matrix(FlintZZ, length(lp), 1, [div(om, degree(c))*can_frobenius(p, Cp[im].bigK, a) for p = lp])
-      y = matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, a) for p = lp])
+      y = matrix(FlintZZ, length(use_p), 1, [div(om, degree(c))*can_frobenius(p, Cp[im].bigK, a) for p = use_p])
+      y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, a) for p = use_p])
 #      println("raw y: ", y')
       fl, s = cansolve(z, y)
       @assert fl
       s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
       println("s: $s")
 
-      y = matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
+      y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = use_p])
 #      println("raw y: ", y')
       fl, tau_s = cansolve(z, y)
 #      println((tau_z*tau_s)')
       @assert fl
       tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
 #      println("tau(s): $tau_s")
-      y = matrix(FlintZZ, length(lp), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = lp])
+      y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = use_p])
 
       # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
       push!(all_s, s)

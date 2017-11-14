@@ -6,8 +6,8 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
   Zy, y = PolynomialRing(FlintZZ, "y")
   Rx, x = PolynomialRing(R, "x")#::Tuple{NmodPolyRing, nmod_poly}
 
-  gmodp = Rx(Zy(g))#::nmod_poly
-  fmodp = Rx(Zy(f))#::nmod_poly
+  gmodp = Rx(g)#::nmod_poly
+  fmodp = Rx(f)#::nmod_poly
 
   h = gcd(gmodp,fmodp)
 
