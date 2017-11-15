@@ -873,7 +873,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   no = abs(norm(a))
   l = Int[]
   while true
-    if p > 40000
+   if p > 40000
       error("Something wrong in reduce_mod_powers")
     end
     setprecision(BigFloat, p)
@@ -1164,7 +1164,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       fl, s = cansolve(z, y)
       @assert fl
       s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
-      println("s: $s")
+      #println("s: $s")
 
       y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = use_p])
 #      println("raw y: ", y')
