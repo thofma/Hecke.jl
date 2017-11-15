@@ -936,16 +936,17 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  global last_a = a
-  b = evaluate(a)
-  return reduce_mod_powers(b, n, primes)
+  lp = Dict((p, valuation(a, p)) for p = primes)
+  b = compact_presentation(a, n, decom = lp)
+  b = prod([k for (k,v) = b.fac if v == 1])
+  return b  
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
+  global last_data = a
   Zk = maximal_order(base_ring(a))
   lp = factor_coprime(a, IdealSet(Zk))
-  b = evaluate(a)
-  return reduce_mod_powers(b, n, collect(keys(lp)))
+  return reduce_mod_powers(a, n, collect(keys(lp)))
 end
 
 doc"""
