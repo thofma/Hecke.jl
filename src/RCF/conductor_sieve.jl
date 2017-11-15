@@ -153,11 +153,11 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   filter!(x -> x!=p ,ram_primes)
   cond_list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,p))
 
-  extra_list=Tuple{Int, Int}[(1,1)]
+  extra_list=Tuple{Int, fmpz}[(1,fmpz(1))]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
     f=tr[1][1]
-    nq=Int(q)^f
+    nq=fmpz(q)^f
     if nq> bound
       break
     end
@@ -175,7 +175,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   l=length(cond_list)
   for (el,norm) in extra_list
     for i=1:l
-      if cond_list[i]^n*norm>bound
+      if fmpz(cond_list[i])^n*norm>bound
         continue
       end
       push!(cond_list, cond_list[i]*el)
@@ -218,12 +218,12 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
   for (i, k) in enumerate(conductors)
     #println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
-    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,2,k)
+    @vtime :QuadraticExt 2 r,mr=ray_class_group(O,2,k)
     mr.prime_ideal_cache = S
     #println("\n Computing action ")
-    @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
+    @vtime :QuadraticExt 2 act=_act_on_ray_class(mr,gens)
     #println("\n Searching for subgroups ")
-    @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]))
+    @vtime :QuadraticExt 2 ls=stable_subgroups(r,[2],act, op=(x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]))
     for s in ls
       C=ray_class_field(mr*inv(s[1]))
       C.norm_group=s[2]
@@ -444,11 +444,11 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   
   sqf_list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
-  list=Tuple{Int, Int}[(1,1)]
+  list=Tuple{Int, fmpz}[(1,fmpz(1))]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
     f=tr[1][1]
-    nq=Int(q)^f
+    nq=fmpz(q)^f
     if nq> bound
       break
     end
@@ -465,7 +465,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   
   l=length(list)
   for el in sqf_list
-    nel=el^d
+    nel=fmpz(el)^d
     for i=1:l
       if list[i][2]*nel>bound
         continue
@@ -493,7 +493,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
       To find ap, it is enough to compute a logarithm.
     =#
-    sq=q^(divexact(degree(O),lp[1][2]))
+    sq=fmpz(q)^(divexact(degree(O),lp[1][2]))
     bound_max_ap=clog(bound,sq) #bound on ap
     bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
     for i=2:bound_max_exp
@@ -527,11 +527,6 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
   
 end
 
-function conductorsQ(bound::fmpz, n::Int)
-  
-  
-
-end
 
 ###########################################################################################################
 #
@@ -646,6 +641,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   K=nf(O)
   inf_plc=real_places(K)
   n=prod(gtype)
+  d=degree(O)
   expo=lcm(gtype)
   _,mC=class_group(O)
   allow_cache!(mC)
@@ -748,6 +744,7 @@ function discriminant(C::ClassField)
   for q in keys(lp)
     prime_powers[q]=q^(lp[q])
   end
+  O=order(m)
   discriminant=ideal(O,1)
   for (q,e) in lp
     aq=e*n
@@ -775,9 +772,9 @@ end
 
 function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{NfOrdIdl, Int}, mr::MapRayClassGrp, inf_plc::Array{InfPlc,1}, bound::fmpz, expo::Int, n::Int)
   
-  
+  d=degree(O)
   #first naive fast check
-  s=fmpz(k)^n
+  s=fmpz(k)^d
   lw=Set{Int}([minimum(p) for p in keys(wprimes)])
   if !isempty(lw)
     maxs=maximum(values(wprimes))
@@ -905,16 +902,18 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
       end
     end
     td=prime_decomposition_type(O,Int(minimum(I)))
-    np=minimum(I)^(td[1][2])
-    discr*=fmpz(np)^ap
+    np=fmpz(minimum(I))^(td[1][2])
+    discr*=np^ap
     if discr>bound
-      @show discr
+      println("$discr")
       return false
     end
   end 
+  println("$(discr)")
   return true
 
 end
+
 ################################################################################
 #
 #   First stupid iterator

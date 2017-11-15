@@ -50,7 +50,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
       f = mR\P
       mR.prime_ideal_preimage_cache[P] = f
     end
-    @vtime :QuadraticExt 1 bool, pre = haspreimage(mT, f)
+    bool, pre = haspreimage(mT, f)
     if !bool
       continue
     end
@@ -69,6 +69,42 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   else
     error("Not enough primes")
   end
+end
+
+function _norm_group_gens_small(C::ClassField)
+
+  mp=C.mq
+  mR=mp.f
+  mS=mp.g
+  while issubtype(typeof(mR), Hecke.CompositeMap)
+    mS = mR.g*mS
+    mR = mR.f
+  end
+  
+  R=domain(mR)
+  cond=mR.modulus_fin
+  inf_plc1=mR.modulus_inf
+  O=parent(cond).order
+  E=order(domain(mp))
+  expo=Int(exponent(domain(mp)))
+  K=O.nf
+  
+  mS=inv(mS)
+  dom=domain(mS)
+  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
+  for i=1:ngens(dom)
+    elem=mS(dom[i]).coeff
+    for j=1:ngens(codomain(mS))
+      M[i,j]=elem[1,j]
+    end
+  end
+  S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
+  T,mT=Hecke.kernel(S1)
+
+  Sgens=find_gens_sub(mR,mT)
+  
+  return Sgens
+  
 end
 
 #######################################################################################
@@ -219,6 +255,8 @@ function conductor(C::Hecke.ClassField)
   return cond, inf_plc
   
 end 
+
+
 
 
 
