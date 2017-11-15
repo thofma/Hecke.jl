@@ -188,7 +188,7 @@ end
 
 
 function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
-                                     absolute_discriminant_bound::fmpz = -1,
+                                     absolute_discriminant_bound::fmpz = fmpz(-1),
                                      absolute_galois_group::Symbol = :all)
   
   if absolute_discriminant_bound != -1
@@ -216,18 +216,17 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
   
   #Now, the big loop
   for (i, k) in enumerate(conductors)
-    println("Conductor: $k ")
+    #println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
     @vtime :QuadraticExt 1 r,mr=ray_class_group(O,2,k)
     mr.prime_ideal_cache = S
-    println("\n Computing action ")
+    #println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
-    println("\n Searching for subgroups ")
+    #println("\n Searching for subgroups ")
     @vtime :QuadraticExt 1 ls=stable_subgroups(r,[2],act, op=(x, y) -> (quo(x, y, false)[2], sub(x,y,false)[2]))
     for s in ls
       C=ray_class_field(mr*inv(s[1]))
       C.norm_group=s[2]
-      println("\n Computing fields")
       if Hecke._is_conductor_min_tame_normal(C, k)
         L = number_field(C)
         if absolute_galois_group != :all
@@ -251,7 +250,6 @@ function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
         end
       end
     end
-    println("\n")
   end
   return fields
 
