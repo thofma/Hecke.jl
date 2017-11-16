@@ -2177,3 +2177,60 @@ function normal_basis(K::Nemo.AnticNumberField)
   return r
 end
 
+function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom=false, arb_prec = 100, short_prec = 1000)
+  K = base_ring(a)
+  ZK = maximal_order(K)
+  if typeof(decom) == Bool
+    de::Dict{NfOrdIdl, Int} = factor_coprime(a, IdealSet(ZK))
+  else
+    de = deepcopy(decom)
+  end
+
+  r1, r2 = signature(K)
+ 
+  v = conjugates_arb_log(a, arb_prec)
+  m = maximum(values(de))
+  fl, mm = unique_integer(ceil(log(maxabs(v))))
+  @assert fl
+  k = max(Int(ceil(log(m))), Int(mm))
+
+  be = FacElem(K(1))
+  B = ideal(ZK, 1)
+  while k>=1
+    A = FacElem(Dict((p, div(v, n^k)) for (p, v) = de))
+    vv = [x//n^k for x = v]
+    s = sum([(i <= r1)? vv[i] : 2*vv[i] for i=1:length(vv)])/degree(K)
+    vv = [(vv[i] - s)/log(parent(s)(2))/2 for i=1:length(vv)]
+    #                                   A
+    #                                   |
+    #                              I don't really get the 2, but it seems
+    #                      to be important...
+    vvv = fmpz[]
+    for i=1:r1
+      push!(vvv, round(fmpz, vv[i]))
+    end
+    for i=r1+1:r1+r2
+      push!(vvv, round(fmpz, vv[i]))
+      push!(vvv, round(fmpz, vv[i]))
+    end
+    @assert abs(sum(vvv)) <= degree(K)
+    B = simplify(B^n)
+    b = short_elem(inv(evaluate(A)*B), matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
+    B = simplify(B*ideal(ZK, b))
+    for p = keys(de)
+      local v = valuation(b, p)
+      de[p] += n^k*valuation(b, p)
+      B *= inv(p)^v
+    end
+    v_b = conjugates_arb_log(b, arb_prec)
+#    old_n = sum(x^2 for x = v)
+    v += n^k*v_b
+#    new_n = sum(x^2 for x = v)
+#    @show old_n / new_n 
+#    @assert isone(b) || new_n < old_n  *2
+    be  *= FacElem(b)^(n^k)
+    k -= 1
+  end
+  b = evaluate(a*be)
+  return inv(be)*b
+end

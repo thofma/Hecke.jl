@@ -463,13 +463,20 @@ end
   a = prod([KK.gen[i]^div(mod(n[i], e), c) for i=1:ngens(parent(n))])
   @vprint :ClassField 2 "generator $a\n"
   CF.a = a
+  CF.sup = lP
+  CF.sup_known = true
   CF.bigK = KK
   CF.K = pure_extension(Int(o), a)[1]
 end
 
 function _rcf_reduce(CF::ClassField_pp)
   e = order(domain(CF.mq))
-  CF.a = FacElem(reduce_mod_powers(CF.a, degree(CF.K)))
+  if CF.sup_known
+    CF.a = reduce_mod_powers(CF.a, degree(CF.K), CF.sup)
+    CF.sup_known = false
+  else
+    CF.a = reduce_mod_powers(CF.a, degree(CF.K))
+  end
   CF.K = pure_extension(degree(CF.K), CF.a)[1]
 end
 
@@ -908,7 +915,7 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
         continue
       end
 #=
-  N(x) = prox x_i 
+  N(x) = prod x_i 
   N(x)^(2/n) <= 1/n sum x_i^2 <= 1/n 2^((n-1)/2) disc^(1/n) (LLL)
  so
   N(x) <= (2^((n-1)/4)/n)^(n/2) disc^(1/2)
@@ -935,17 +942,23 @@ function reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1})
   return c
 end
 
+function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, Int})
+  b = compact_presentation(a, n, decom = decom)
+  b = prod([k for (k,v) = b.fac if v == 1])
+  return FacElem(b)  
+end
+
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
-  global last_a = a
-  b = evaluate(a)
-  return reduce_mod_powers(b, n, primes)
+  lp = Dict((p, Int(valuation(a, p))) for p = primes)
+  return reduce_mod_powers(a, n, lp)
+  return b  
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
+  global last_data = a
   Zk = maximal_order(base_ring(a))
   lp = factor_coprime(a, IdealSet(Zk))
-  b = evaluate(a)
-  return reduce_mod_powers(b, n, collect(keys(lp)))
+  return reduce_mod_powers(a, n, Dict((p, Int(v)) for (p, v) = lp))
 end
 
 doc"""

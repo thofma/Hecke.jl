@@ -49,6 +49,10 @@ end
 mutable struct ClassField_pp
   mq::Map
   a::FacElem
+
+  sup::Array{NfOrdIdl, 1} # the support of a - if known
+  sup_known::Bool
+
   K::NfRel{nf_elem} # the target with the roots of unity
   A::NfRel{nf_elem} # the target
   pe::NfRelElem{nf_elem}

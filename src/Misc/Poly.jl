@@ -88,6 +88,9 @@ doc"""
 >  The constant coefficient of f.
 """
 function trailing_coefficient(f::PolyElem)
+  if iszero(f)
+    return base_ring(f)(0)
+  end
   return coeff(f, 0)
 end
 
@@ -485,8 +488,10 @@ end
 
 
 function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T}, t::PolyElem{T}) where T <: RingElem #from von zur Gathen: h needs to be monic
-  e = f-g*h 
   @assert ismonic(h)
+#  @assert isnilpotent(content(f-g*h))  #this guarantees useful lifting
+#  @assert isnilpotent(content(g*s+h*t-1))
+  e = f-g*h 
   q, r = divrem(s*e, h)
 #  @assert s*e == q*h+r
   g = g+t*e+q*g
@@ -494,6 +499,7 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
   @assert ismonic(h)
   b = s*g+t*h-1
   c, d = divrem(s*b, h)
+#  @assert s*b == c*h+d
   s = s-d
   t = t-t*b-c*g
 
@@ -510,6 +516,9 @@ function fun_factor(f::PolyElem{<:RingElem})
     l= lead(f)
     return f*inv(l), parent(f)(l)
   end
+  if isunit(f)
+    return f, parent(f)(1)
+  end
   t = gen(parent(f))
   g0 = parent(f)(0)
   for i=degree(f):-1:0
@@ -517,21 +526,19 @@ function fun_factor(f::PolyElem{<:RingElem})
       h0 = f - g0
       break
     else
-      setcoeff!(g0, i, coeff(f, i))
+      setcoeff!(g0, i, deepcopy(coeff(f, i)))
     end
   end
 
   #co-factors:
-  g0 = parent(f)()
+  g0 = parent(f)(0)
   setcoeff!(g0, degree(f) - degree(h0), lead(f))
   setcoeff!(g0, 0, lead(h0))
   s = parent(f)(inv(lead(h0)))
   h0 *= lead(s)
   t = parent(f)(0)
 
-#      @show content(g0*s-t*h0-1)
   g, h, s,t = _hensel(f, g0, h0, s, t)
-#      @show content(g*s-t*h-1)
   i = 1
   while g!= g0 || h != h0
 #      @show content(g*s-t*h-1)
@@ -539,7 +546,7 @@ function fun_factor(f::PolyElem{<:RingElem})
     g0 = g
     h0 = h
     g, h, s, t = _hensel(f, g0, h0, s, t)
-    if i>4 #in general: loop forever... one could check that the
+    if i>20 #in general: loop forever... one could check that the
       # contents of f-gh and s*g+t*h - 1 is nilpotent.
       # this SHOULD ensure convergence
       @show f
@@ -552,24 +559,6 @@ function fun_factor(f::PolyElem{<:RingElem})
   end
 
   return g0, h0
-end
-
-#too slow
-function my_div(a::T, b::T) where T <: RingElem
-  if iszero(a)
-    return a
-  end
-  A = lift(a)
-  B = lift(b)
-  R = parent(a)
-  m = fmpz(modulus(R))
-  ga = gcd(A, m)
-  ua = div(A, ga)
-  gb = gcd(B, m)
-  ub = div(B, gb)
-  _, x = Hecke.ppio(m, ub)
-  r = R(div(ga, gb)*ua*invmod(ub, x))
-  return r
 end
 
 doc"""
@@ -626,7 +615,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
     if !isunit(c)
       f = deepcopy(f)
       for i=0:degree(f)
-        setcoeff!(f, i, my_div(coeff(f, i), c))
+        setcoeff!(f, i, divexact(coeff(f, i), c))
       end
       res *= c^degree(g)
     end
@@ -635,7 +624,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
     if !isunit(c)
       g = deepcopy(g)
       for i=0:degree(g)
-        setcoeff!(g, i, my_div(coeff(g, i), c))
+        setcoeff!(g, i, divexact(coeff(g, i), c))
       end
       res *= c^degree(f)
     end
@@ -656,7 +645,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
     end
 
     if gcd(lift(lead(f)), m)  % gcd(lift(lead(g)), m) == 0
-      q = my_div(lead(f), lead(g))
+      q = divexact(lead(f), lead(g))
       ff = f - q*g*gen(Rt)^(degree(f) - degree(g))
       @assert degree(f) > degree(ff)
       res *= lead(g)^(degree(f) - degree(ff))
@@ -812,11 +801,16 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
           return gcd(lead(g), a*constant_coefficient(f))
         end
       else
-        return constant_coefficient(g)
+        return gcd(R(0), constant_coefficient(g))
       end
     end
 
     if !isunit(lead(g))
+      c = content(g)
+      g = deepcopy(g)
+      for i=0:degree(g)
+        setcoeff!(g, i, divexact(coeff(g, i), c))
+      end
       if easy
         cp = [m]
       else
@@ -844,16 +838,12 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
           R1 = R
           R1t = Rt
         end
-        c = content(gR1)
-        for i=0:degree(gR1)
-          setcoeff!(gR1, i, my_div(coeff(gR1, i), c))
-        end
         if isunit(lead(gR1))
           g2 = gR1
         else
           g1, g2 = fun_factor(gR1)
         end
-        push!(resp, lift(c*rres_sircana(fR1, g2)))
+        push!(resp, lift(lift(c)*rres_sircana(fR1, g2)))
       end
       res = length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
       return gcd(R(0), res)
@@ -863,9 +853,185 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
   end
 end
 
+function rresx(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  return rresx_sircana(f, g)
+end
+
+function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  @assert isunit(lead(f)) || isunit(lead(g)) #can be weakened to invertable lead
+  res::T, u::PolyElem{T}, v::PolyElem{T} = _rresx_sircana(f, g)::Tuple{T, PolyElem{T}, PolyElem{T}}
+  if !iszero(res)
+    cu = canonical_unit(res)
+    cu = inv(cu)
+    res *= cu
+    u *= cu
+    v *= cu
+  end
+  if isunit(lead(g))
+    q::PolyElem{T}, r::PolyElem{T} = divrem(u, g)
+    return res, r, v+q*f
+  else
+    q, r = divrem(v, f)
+    return res, u+q*g, r
+  end
+end
+
+function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+
+  Rt = parent(f)
+  R = base_ring(Rt)
+  Zx = FlintZZ["x"][1]
+  m::fmpz = fmpz(modulus(R))
+  e, p::fmpz = ispower(m)
+  easy = isprime(p)
+
+  u::PolyElem{T}, v::PolyElem{T} = Rt(0), Rt(1)
+  U::PolyElem{T}, V::PolyElem{T} = Rt(1), Rt(0)
+#  res::T, uu::T, vv::T
+
+#  u, v = Rt(0), Rt(1)  #g = u f_in + v g_in
+#  U, V = Rt(1), Rt(0)  #f = U f_in + V g_in
+
+
+  Zx = PolynomialRing(FlintZZ)[1]
+
+  while true
+    if degree(f) < 1 && degree(g) < 1
+      if iszero(f) || iszero(g)
+        res = R(0)
+        u = Rt(0)
+        v = Rt(0)
+      else
+        res, uu, vv = gcdx(lead(f), lead(g)) 
+        #res = uu*f + vv*g = uu*(U f_in + V g_in) + vv*(u f_in + v g_in)
+        #    = uu*U + vv*u  uu*V + vv*v
+        u, v = (uu*U + vv*u), (uu*V + vv*v)
+      end
+      return res, u, v
+    end
+
+    if degree(f) < degree(g)
+      f, g = g, f
+      U, u = u, U
+      V, v = v, V
+    end
+
+    if degree(g) < 1
+      if !isunit(lead(f))
+        #need the constant coeff * the annihilator of the others...
+        a = coeff(f, 1)
+        for i = 2:degree(f)
+          a = gcd(a, coeff(f, i))
+          if isone(a)
+            break
+          end
+        end
+        a = annihilator(a)
+        if iszero(a)
+          return lead(g), u, v
+        else
+          res, uu, vv = gcdx(a*constant_coefficient(f), lead(g))
+          u, v = (uu*a*U + vv*u), (uu*a*V + vv*v)
+
+          return res, u, v
+        end
+      else
+        return constant_coefficient(g), u, v
+      end
+    end
+
+    if !isunit(lead(g))
+      c = content(g)
+      g = deepcopy(g)
+      for i=0:degree(g)
+        setcoeff!(g, i, divexact(coeff(g, i), c))
+      end
+      if easy
+        cp = [m]
+      else
+        cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+        push!(cp, m)
+        cp = [x for x = cp if !iszero(x)]
+        cp = coprime_base(cp)
+        cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+      end
+      resp = fmpz[]
+      resB = []
+      pg = fmpz[]
+      for p = cp
+        lg = p^valuation(m, p)
+        push!(pg, lg)
+
+        #gR1::PolyElem{T}, fR1::PolyElem{T}
+        #c::T
+        #g1::PolyElem{T}, g2::PolyElem{T}
+        if lg != m
+          R1 = ResidueRing(FlintZZ, S(lg))
+          R1t = PolynomialRing(R1)[1]
+          #g is bad in R1, so factor it
+          gR1 = R1t(lift(Zx, g))
+          fR1 = R1t(lift(Zx, f))
+        else
+          gR1 = g
+          fR1 = f
+          R1 = R
+          R1t = Rt
+        end
+        if iszero(R1(lift(c)))
+          push!(resp, fmpz(0))
+          push!(resB, (R1t(0), R1t(1))) #relation need to be primitive
+        else
+          if isunit(lead(gR1))
+            g2 = gR1
+            g1 = R1t(1)
+          else
+            g1, g2 = fun_factor(gR1)
+          end
+          @assert isunit(g1)
+          rr, uu, vv = rresx_sircana(fR1, g2)
+          push!(resp, lift(lift(c)*rr))
+          push!(resB, (uu*lift(c), inv(g1)*vv))
+        end
+      end
+      if length(cp) == 1
+        res, u_, v_ = R(resp[1]), Rt(resB[1][1]), Rt(resB[1][2])
+      else
+        ce = crt_env(pg)
+        res = R(crt(resp, ce))
+        u_ = Rt(induce_crt([x[1] for x = resB], ce))
+        v_ = Rt(induce_crt([x[2] for x = resB], ce))
+      end
+      # f = U*f_in + V*g_in
+      # g = u*f_in + v*g_in
+      # r = u_ * f + v_ * g 
+
+      (u_*U + v_*u), (u_*V + v_*v)
+      return res, (u_*U + v_*u), (u_*V + v_*v)
+    end
+
+    q, f = divrem(f, g)
+    #f -> f-qg, so U*f_in + V * g_in -> ...
+    U = U - q*u
+    V = V - q*v
+  end
+end
+
+
 function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
   m = modulus(a)
   return parent(a)(gcd(gcd(a.data, m), b.data))
+end
+
+function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
+  m = modulus(a)
+  R = parent(a)
+  g, u, v = gcdx(fmpz(a.data), fmpz(b.data))
+  G, U, V = gcdx(g, fmpz(m))
+  return R(G), R(U)*R(u), R(U)*R(v)
 end
 
 function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
@@ -944,6 +1110,17 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
   @assert typeof(f) == typeof(g)
   Qx = FlintQQ["x"][1]
   g, q, w = gcdx(Qx(f), Qx(g))
+  return lcm(den(q), den(w))
+end
+
+function rresx(f::fmpz_poly, g::fmpz_poly)
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Qx = FlintQQ["x"][1]
+  g, q, w = gcdx(Qx(f), Qx(g))
+  l = lcm(den(q), den(w))
+  Zx = parent(f)
+  return l, Zx(num(l*q)), Zx(num(l*w))
   return lcm(den(q), den(w))
 end
 
