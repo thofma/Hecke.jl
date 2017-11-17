@@ -113,7 +113,7 @@ function issquarefree(n::Union{Int,fmpz})
   if iszero(n)
     throw(error("Argument must be non-zero"))
   end
-  return isone(n) || maximum(values(factor(n).fac)) == 1
+  return isone(abs(n)) || maximum(values(factor(n).fac)) == 1
 end
 
 function absolute_automorphism_group(C::ClassField)
@@ -963,43 +963,47 @@ function C22_extensions(bound::Int)
     pairs[b1+2,i]=false
   end
   
-  #remove quadratic extensions that for sure have too large discriminant
-  for i=ceil(Int,b1/4):b1
-    r=mod(i,4)
-    if r==1
-      pairs[poszero-i, 1:n]=false
-    elseif r==3
-      pairs[poszero+i, 1:n]=false
-    elseif r==2
-      pairs[poszero-i, 1:n]=false
-      pairs[poszero+i, 1:n]=false
-    end
-  end
-  
-  #sieve for squarefree
-  poszero=b1+1
-  i=Int(0)
-  b2=sqrt(poszero)
-  while i<=b2
-    if pairs[1,i+poszero]
+  #sieve for squarefree  
+  list= trues(b1)
+  i=2
+  b=sqrt(b1)
+  while i<=b
+    if list[i]
       j=i^2
-      if !pairs[1,j+poszero]
+      if !list[j]
         i+=1
         continue
       else 
-        pairs[1:n,j+poszero]=false
-        pairs[1:n,poszero-j]=false
+        list[j]=false
         t=2*j
-        while t<= b1
-          pairs[1:n,poszero+t]=false
-          pairs[1:n,poszero-t]=false
+        while t <= b1
+          list[t]=false
           t+=j
         end
       end
     end
     i+=1
   end
-  
+  #now translate it into the matrix
+  for i=1:b1
+    if !list[i]
+      pairs[poszero+i,1:n]=false
+      pairs[1:n,poszero+i]=false
+      pairs[poszero-i,1:n]=false
+      pairs[1:n,poszero-i]=false
+    end
+  end
+  #check
+#=  
+  for i=1:n
+    for j=1:n
+      if pairs[i,j]
+        @assert issquarefree(i-poszero)
+        @assert issquarefree(j-poszero)
+      end
+    end
+  end
+=#
   #removing diagonal
   for i=1:n
     pairs[i,i]=false
@@ -1023,11 +1027,11 @@ function C22_extensions(bound::Int)
           second=j-poszero
           d1=_discn(first)
           d2=_discn(second)
-          d3=_discn(third)
           g1=d1*d2
           if abs(g1)<b1
             continue
           else 
+            d3=_discn(third)
             g2=d1*d3
             if abs(g2)<b1
               continue
@@ -1039,7 +1043,7 @@ function C22_extensions(bound::Int)
                 g=gcd(g1,g2,g3)
                 if abs(g)<b1
                   continue
-                else
+                elseif check_disc(first, second, third, bound)
                   pairs[i,j]=false
                 end
               end
@@ -1049,11 +1053,24 @@ function C22_extensions(bound::Int)
       end
     end
   end
-  return pairs
   
-  final_list=Tuple{Int,Int}[(i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j]]
+  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
   
-  return (_ext(Kx,x,i,j) for (i,j) in final_list)
+end
+
+function check_disc(a::Int,b::Int,c::Int,bound::Int)
+  
+  if mod(a,4)!=2 && mod(b,4)!=2
+    return true
+  end 
+  if mod(a,4)==1 || mod(b,4)==1 || mod(c,4)==1
+    return true
+  end
+  if 64*a*b*c>=bound
+    return true
+  else
+    return false
+  end
   
 end
 
@@ -1091,6 +1108,86 @@ function _discn(n::Int)
   
 end
 
+function C22_extensions_tame_real(bound::Int)
+  
+  
+  Qx,x=PolynomialRing(FlintZZ, "x")
+  K,_=NumberField(x-1)
+  Kx,x=PolynomialRing(K,"x")
+
+  b1=floor(Int,sqrt(bound))
+  n=b1
+  pairs=trues(b1,b1)
+  
+  #sieve for squarefree number congruent to 1 mod 4
+  i=2
+  j=3
+  k=4
+  while k<=b1
+    pairs[1:n,i]=false
+    pairs[1:n,j]=false
+    pairs[1:n,k]=false
+    pairs[i,1:n]=false
+    pairs[j,1:n]=false
+    pairs[k,1:n]=false
+    i+=4
+    j+=4
+    k+=4
+  end
+  i=5
+  b=sqrt(b1)
+  while i<=b
+    if pairs[1,i]
+      j=i^2
+      if !pairs[1,j]
+        i+=4
+        continue
+      else 
+        pairs[1:n,j]=false
+        pairs[j,1:n]=false
+        t=4*j
+        while t <= b1
+          pairs[t,1:n]=false
+          pairs[1:n,t]=false
+          t+=j
+        end
+      end
+    end
+    i+=4
+  end
+ 
+  for i=1:b1
+    pairs[i,i]=false
+  end
+  pairs[1,1:n]=false
+  pairs[1:n,1]=false
+  
+  #counting extensions  
+  for i=5:b1
+    for j=i+1:b1
+      if pairs[i,j]
+        pairs[j,i]=false
+        k=divexact(i*j, gcd(i, j)^2)
+        if k>b1
+          pairs[i,j]=false
+        else
+          pairs[k,i]=false
+          pairs[k,j]=false
+          pairs[i,k]=false
+          pairs[j,k]=false
+          if i*j*k<bound
+            continue
+          else 
+            pairs[i,j]=false
+          end
+        end
+      end
+    end
+  end
+  
+  return (_ext(Kx,x,i,j) for i=5:b1 for j=i+1:b1 if pairs[i,j])
+  
+end
 ################################################################################
 #
 #   First stupid iterator
