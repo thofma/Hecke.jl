@@ -41,26 +41,30 @@ function _isindependent(x::Array{T, 1}, p::Int = 32) where T
   rr = r1 + r2
   r = rr - 1 # unit rank
 
+  conlog = Vector{Vector{arb}}(length(x))
+
   # This can be made more memory friendly
   while true
     @assert p != 0
 
-    conlog = conjugates_arb_log(x[1], p)
+    q = 2
+    for i in 1:length(x)
+      conlog[i] = conjugates_arb_log(x[i], p)
+      for j in 1:rr
+        q = max(q, bits(conlog[i][j]))
+      end
+    end
 
-    A = zero_matrix(parent(conlog[1]), length(x), rr)
+    A = zero_matrix(ArbField(q), length(x), rr)
 
-    for i in 1:rr
-      A[1, i] = conlog[i]
+    for i in 1:length(x)
+      for j in 1:rr
+        A[i, j] = conlog[i][j]
+        @assert radiuslttwopower(A[i, j], -p)
+      end
     end
 
     Ar = base_ring(A)
-
-    for k in 2:length(x)
-      conlog = conjugates_arb_log(x[k], p)
-      for i in 1:rr
-        A[k, i] = conlog[i]
-      end
-    end
 
     B = A*transpose(A)
     @vprint :UnitGroup 1 "Computing det of $(rows(B))x$(cols(B)) matrix with precision $(p) ... \n"

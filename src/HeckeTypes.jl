@@ -125,6 +125,14 @@ end
 #  Root context for fmpq_polys and roots modelled as acbs
 #
 ################################################################################
+
+struct acb_roots
+  p::Int
+  roots::Array{acb, 1}
+  real_roots::Array{arb, 1}
+  complex_roots::Array{acb, 1}
+end
+
 mutable struct acb_root_ctx
   poly::fmpq_poly
   _roots::Ptr{acb_struct}

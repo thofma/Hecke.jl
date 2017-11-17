@@ -14,20 +14,21 @@ function mul2exp!(z::arb, x::arb, y::Int)
   ccall((:arb_mul_2exp_si, :libarb), Void, (Ptr{arb}, Ptr{arb}, Int), &z, &x, y)
   return nothing
 end
- 
 
 function muleq!(z::arb, x::arb, y::arb)
-  ccall((:arb_mul, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{arb}, Int), &z, &x, &y, parent(x).prec)
+  q = max(bits(x), bits(y))
+  ccall((:arb_mul, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{arb}, Int), &z, &x, &y, q)
   return nothing
 end
 
 function muleq!(z::arb, x::arb, y::fmpz)
-  ccall((:arb_mul_fmpz, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{fmpz}, Int), &z, &x, &y, parent(x).prec)
+  ccall((:arb_mul_fmpz, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{fmpz}, Int), &z, &x, &y, bits(x))
   return nothing
 end
 
 function addmul!(z::arb, x::arb, y::fmpz)
-  ccall((:arb_addmul_fmpz, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{fmpz}, Int), &z, &x, &y, parent(x).prec)
+  q = max(bits(z), bits(x))
+  ccall((:arb_addmul_fmpz, :libarb), Void, (Ptr{arb}, Ptr{arb}, Ptr{fmpz}, Int), &z, &x, &y, q)
   return nothing
 end
 

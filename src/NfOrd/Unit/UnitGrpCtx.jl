@@ -79,7 +79,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
   bound = _denominator_bound_in_relation(rreg, K)
 
-    rel = Array{fmpz}(r + 1)
+  rel = Array{fmpz}(r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
@@ -94,7 +94,10 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
     conlog = conjugates_arb_log(y, p)
 
-    b = ArbMatSpace(parent(conlog[1]), 1, r)()
+    # This is not totally fool proof.
+    # It could still be the case that conlog has higher precision then the
+    # elements in B.
+    b = ArbMatSpace(base_ring(B), 1, r)()
 
     for i in 1:r
       b[1, i] = conlog[i]
@@ -165,14 +168,14 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 end
 
 function _conj_log_mat_cutoff(x::UnitGrpCtx, p::Int)
-  if haskey(x.conj_log_mat_cutoff,  p)
-    @vprint :UnitGroup 2 "Conj matrix for $p cached\n"
-    return x.conj_log_mat_cutoff[p]
-  else
+  #if haskey(x.conj_log_mat_cutoff,  p)
+  #  @vprint :UnitGroup 2 "Conj matrix for $p cached\n"
+  #  return x.conj_log_mat_cutoff[p]
+  #else
     @vprint :UnitGroup 2 "Conj matrix for $p not cached\n"
     x.conj_log_mat_cutoff[p] = _conj_log_mat_cutoff(x.units, p)
     return x.conj_log_mat_cutoff[p]
-  end
+  #end
 end
 
 function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
@@ -182,18 +185,28 @@ function _conj_log_mat_cutoff_inv(x::UnitGrpCtx, p::Int)
     return p, x.conj_log_mat_cutoff_inv[p]
   else
     @vprint :UnitGroup 2 "Inverse matrix not cached for $p\n"
+    @vprint :UnitGroup 2 "Trying to invert conj matrix with prec $p \n"
+    local y
     try
-      @vprint :UnitGroup 2 "Trying to invert conj matrix with prec $p \n"
-      @vprint :UnitGroup 3 "Matrix to invert is $(_conj_log_mat_cutoff(x, p))"
-      x.conj_log_mat_cutoff_inv[p] = inv(_conj_log_mat_cutoff(x, p))
-      @vprint :UnitGroup 2 "Successful. Returning with prec $p \n"
-      @vprint :UnitGroup 3 "$(x.conj_log_mat_cutoff_inv[p])\n"
+      y = _conj_log_mat_cutoff(x, p)
+    catch e
+      #println("I failed to find the _conj_log_mat_cutoff(x, p) for $p")
+      println("Error computing the cutoff matrix with precision $p")
+      rethrow(e)
+    end
+    local yy
+    try
+      yy = inv(y)
+      x.conj_log_mat_cutoff_inv[p] = yy
       return p, x.conj_log_mat_cutoff_inv[p]
     catch e
-      # I should check that it really is that error
+      if !(e isa ErrorException)
+        rethrow(e)
+      end
+      @vprint :UnitGroup 2 "Could not invert with prec $p \n"
       @vprint :UnitGroup 2 "Increasing precision .. (error was $e)\n"
       @v_do :UnitGroup 2 pushindent()
-      r = _conj_log_mat_cutoff_inv(x, 2*p)
+      r = _conj_log_mat_cutoff_inv(x, 2 * p)
       @v_do :UnitGroup 2 popindent()
       return r
     end
@@ -258,19 +271,24 @@ end
 
 function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
   r = length(x)
-  conlog = conjugates_arb_log(x[1], p)
-  A = ArbMatSpace(parent(conlog[1]), r, r)()
 
-  for i in 1:r
-    A[1, i] = conlog[i]
-  end
-
-  for k in 2:r
-    conlog = conjugates_arb_log(x[k], p)
-    for i in 1:r
-      A[k, i] = conlog[i]
+  conlog = Vector{Vector{arb}}(length(x))
+  q = 2
+  for i in 1:length(x)
+    conlog[i] = conjugates_arb_log(x[i], p)
+    for j in 1:length(conlog[i])
+      q = max(q, bits(conlog[i][j]))
     end
   end
+
+  A = zero_matrix(ArbField(q), r, r)
+
+  for i in 1:r
+    for j in 1:r
+      A[i, j] = conlog[i][j]
+    end
+  end
+
   return A
 end
 
