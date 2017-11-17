@@ -1121,31 +1121,27 @@ function C22_extensions_tame_real(bound::Int)
   
   #sieve for squarefree number congruent to 1 mod 4
   i=2
-  j=3
   k=4
   while k<=b1
     pairs[1:n,i]=false
-    pairs[1:n,j]=false
     pairs[1:n,k]=false
     pairs[i,1:n]=false
-    pairs[j,1:n]=false
     pairs[k,1:n]=false
     i+=4
-    j+=4
     k+=4
   end
-  i=5
+  i=3
   b=sqrt(b1)
   while i<=b
     if pairs[1,i]
       j=i^2
       if !pairs[1,j]
-        i+=4
+        i+=2
         continue
       else 
         pairs[1:n,j]=false
         pairs[j,1:n]=false
-        t=4*j
+        t=2*j
         while t <= b1
           pairs[t,1:n]=false
           pairs[1:n,t]=false
@@ -1153,9 +1149,14 @@ function C22_extensions_tame_real(bound::Int)
         end
       end
     end
-    i+=4
+    i+=2
   end
- 
+  k=3
+  while k<=b1
+    pairs[1:n,k]=false
+    pairs[k,1:n]=false
+    k+=4
+  end
   for i=1:b1
     pairs[i,i]=false
   end
