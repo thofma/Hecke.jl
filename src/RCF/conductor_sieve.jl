@@ -113,7 +113,7 @@ function issquarefree(n::Union{Int,fmpz})
   if iszero(n)
     throw(error("Argument must be non-zero"))
   end
-  return isone(n) || maximum(values(factor(n).fac)) == 1
+  return isone(abs(n)) || maximum(values(factor(n).fac)) == 1
 end
 
 function absolute_automorphism_group(C::ClassField)
@@ -145,10 +145,10 @@ end
 function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
  
   K=nf(O)
-  n=degree(O)
+  d=degree(O)
   p=2
-  b1=Int(root(bound,n))
-  ram_primes=collect(keys(factor(abs(O.disc)).fac))
+  b1=Int(root(bound,d))
+  ram_primes=collect(keys(factor(O.disc).fac))
   sort!(ram_primes)
   filter!(x -> x!=p ,ram_primes)
   cond_list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,p))
@@ -156,8 +156,8 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   extra_list=Tuple{Int, fmpz}[(1,fmpz(1))]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
-    f=tr[1][1]
-    nq=fmpz(q)^f
+    e=tr[1][2]
+    nq=fmpz(q)^(divexact(d,e))
     if nq> bound
       break
     end
@@ -175,7 +175,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   l=length(cond_list)
   for (el,norm) in extra_list
     for i=1:l
-      if fmpz(cond_list[i])^n*norm>bound
+      if fmpz(cond_list[i])^d*norm>bound
         continue
       end
       push!(cond_list, cond_list[i]*el)
@@ -914,6 +914,281 @@ function discriminant_conductor(O::NfOrd, C::ClassField, k::Int, wprimes::Dict{N
 
 end
 
+################################################################################
+#
+#  Quadratic Extensions of Q
+#
+################################################################################
+
+function quadratic_extensions(bound::Int)
+
+  Qx,x=PolynomialRing(FlintZZ, "x")
+  sqf=squarefree_up_to(bound);
+  sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  final_list=Int[]
+  for i=1:length(sqf)
+    if sqf[i]*4< bound
+      push!(final_list,sqf[i])
+      continue
+    end
+    if mod(sqf[i],4)==1
+      push!(final_list,sqf[i])
+    end
+  end
+  return ( mod(i,4)!=1 ? NumberField(x^2-i)[1] : NumberField(x^2-x+divexact(1-i,4))[1] for i in final_list)
+end
+
+################################################################################
+#
+#  C2 x C2 extensions of Q
+#
+################################################################################
+
+function C22_extensions(bound::Int)
+  
+  
+  Qx,x=PolynomialRing(FlintZZ, "x")
+  K,_=NumberField(x-1)
+  Kx,x=PolynomialRing(K,"x")
+
+  b1=ceil(Int,sqrt(bound))
+  n=2*b1+1
+  pairs=trues(n,n)
+  poszero=b1+1
+  
+  for i=1:n
+    pairs[i,poszero]=false
+    pairs[i,b1+2]=false
+    pairs[poszero,i]=false
+    pairs[b1+2,i]=false
+  end
+  
+  #sieve for squarefree  
+  list= trues(b1)
+  i=2
+  b=sqrt(b1)
+  while i<=b
+    if list[i]
+      j=i^2
+      if !list[j]
+        i+=1
+        continue
+      else 
+        list[j]=false
+        t=2*j
+        while t <= b1
+          list[t]=false
+          t+=j
+        end
+      end
+    end
+    i+=1
+  end
+  #now translate it into the matrix
+  for i=1:b1
+    if !list[i]
+      pairs[poszero+i,1:n]=false
+      pairs[1:n,poszero+i]=false
+      pairs[poszero-i,1:n]=false
+      pairs[1:n,poszero-i]=false
+    end
+  end
+  #check
+#=  
+  for i=1:n
+    for j=1:n
+      if pairs[i,j]
+        @assert issquarefree(i-poszero)
+        @assert issquarefree(j-poszero)
+      end
+    end
+  end
+=#
+  #removing diagonal
+  for i=1:n
+    pairs[i,i]=false
+  end
+  
+  #counting extensions  
+  for i=1:n
+    for j=i+1:n
+      if pairs[i,j]
+        pairs[j,i]=false
+        third=divexact((i-poszero)*(j-poszero), gcd(i-poszero, j-poszero)^2)
+        if abs(third)>b1
+          pairs[i,j]=false
+        else
+          y=third+poszero
+          pairs[y,i]=false
+          pairs[y,j]=false
+          pairs[i,y]=false
+          pairs[j,y]=false
+          first=i-poszero
+          second=j-poszero
+          d1=_discn(first)
+          d2=_discn(second)
+          g1=d1*d2
+          if abs(g1)<b1
+            continue
+          else 
+            d3=_discn(third)
+            g2=d1*d3
+            if abs(g2)<b1
+              continue
+            else
+              g3=d2*d3
+              if abs(g3)<b1
+                continue
+              else
+                g=gcd(g1,g2,g3)
+                if abs(g)<b1
+                  continue
+                elseif check_disc(first, second, third, bound)
+                  pairs[i,j]=false
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  
+  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+  
+end
+
+function check_disc(a::Int,b::Int,c::Int,bound::Int)
+  
+  if mod(a,4)!=2 && mod(b,4)!=2
+    return true
+  end 
+  if mod(a,4)==1 || mod(b,4)==1 || mod(c,4)==1
+    return true
+  end
+  if 64*a*b*c>=bound
+    return true
+  else
+    return false
+  end
+  
+end
+
+#given integers i,j, this function returns the extension Q(sqrt(i))Q(sqrt(j))
+function _ext(Ox,x,i,j)
+ 
+  y=mod(i,4)
+  pol1=Ox(1)
+  if y!=1
+    pol1=x^2-i
+  else
+    pol1=x^2-x+divexact(1-i,4)
+  end
+  y=mod(j,4)
+  pol2=Ox(1)
+  if y!=1
+    pol2=x^2-j
+  else
+    pol2=x^2-x+divexact(1-j,4)
+  end
+  return number_field([pol1,pol2])
+
+end
+
+# Given a squarefree integer n, this function computes the absolute value
+# of the discriminant of the extension Q(sqrt(n))
+function _discn(n::Int)
+  
+  x=mod(n,4)
+  if x!=1
+    return 4*n
+  else
+    return n
+  end
+  
+end
+
+function C22_extensions_tame_real(bound::Int)
+  
+  
+  Qx,x=PolynomialRing(FlintZZ, "x")
+  K,_=NumberField(x-1)
+  Kx,x=PolynomialRing(K,"x")
+
+  b1=floor(Int,sqrt(bound))
+  n=b1
+  pairs=trues(b1,b1)
+  
+  #sieve for squarefree number congruent to 1 mod 4
+  i=2
+  k=4
+  while k<=b1
+    pairs[1:n,i]=false
+    pairs[1:n,k]=false
+    pairs[i,1:n]=false
+    pairs[k,1:n]=false
+    i+=4
+    k+=4
+  end
+  i=3
+  b=sqrt(b1)
+  while i<=b
+    if pairs[1,i]
+      j=i^2
+      if !pairs[1,j]
+        i+=2
+        continue
+      else 
+        pairs[1:n,j]=false
+        pairs[j,1:n]=false
+        t=2*j
+        while t <= b1
+          pairs[t,1:n]=false
+          pairs[1:n,t]=false
+          t+=j
+        end
+      end
+    end
+    i+=2
+  end
+  k=3
+  while k<=b1
+    pairs[1:n,k]=false
+    pairs[k,1:n]=false
+    k+=4
+  end
+  for i=1:b1
+    pairs[i,i]=false
+  end
+  pairs[1,1:n]=false
+  pairs[1:n,1]=false
+  
+  #counting extensions  
+  for i=5:b1
+    for j=i+1:b1
+      if pairs[i,j]
+        pairs[j,i]=false
+        k=divexact(i*j, gcd(i, j)^2)
+        if k>b1
+          pairs[i,j]=false
+        else
+          pairs[k,i]=false
+          pairs[k,j]=false
+          pairs[i,k]=false
+          pairs[j,k]=false
+          if i*j*k<bound
+            continue
+          else 
+            pairs[i,j]=false
+          end
+        end
+      end
+    end
+  end
+  
+  return (_ext(Kx,x,i,j) for i=5:b1 for j=i+1:b1 if pairs[i,j])
+  
+end
 ################################################################################
 #
 #   First stupid iterator
