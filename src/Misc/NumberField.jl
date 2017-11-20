@@ -2190,6 +2190,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2;
  
   v = conjugates_arb_log(a, arb_prec)
   m = maximum(values(de))
+  m = max(m, 1)
   fl, mm = unique_integer(ceil(log(maxabs(v))))
   @assert fl
   k = max(Int(ceil(log(m))), Int(mm))
@@ -2197,7 +2198,12 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2;
   be = FacElem(K(1))
   B = ideal(ZK, 1)
   while k>=1
-    A = FacElem(Dict((p, div(v, n^k)) for (p, v) = de))
+    D = Dict((p, div(v, n^k)) for (p, v) = de)
+    if length(D) == 0
+      A = FacElem(ideal(ZK, 1))
+    else
+      A = FacElem(D)
+    end    
     vv = [x//n^k for x = v]
     s = sum([(i <= r1)? vv[i] : 2*vv[i] for i=1:length(vv)])/degree(K)
     vv = [(vv[i] - s)/log(parent(s)(2))/2 for i=1:length(vv)]
