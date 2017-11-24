@@ -22,6 +22,9 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   quots::Array
   idemps::Array{Tuple{NfOrdElem, NfOrdElem},1}
   coprime_elems::Array{nf_elem,1}
+  tame_mult_grp::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}
+  wild_mult_grp::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}
+  
   
   function MapRayClassGrp{T}() where {T}
     z = new{T}()
@@ -1210,8 +1213,9 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   Q.factor=lp
   C, mC = class_group(O)
   _assure_princ_gen(mC)
-  @vtime :RayFacElem 1 G, mG= _mult_grp_mod_n(Q,y1,y2,n)
+  @vtime :RayFacElem 1 G, mG, tame, wild= _mult_grp_mod_n(Q,y1,y2,n)
 
+  
   
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
@@ -1426,6 +1430,8 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   mp.idemps=idemps
   mp.coprime_elems=Kel
   mp.fact_mod=lp
+  mp.tame_mult_grp=tame
+  mp.wild_mult_grp=wild
 
   if mod(n,2)==0
     mp.modulus_inf=pr
@@ -1444,6 +1450,98 @@ end
 #
 ##################################################################################
 
+
+function _mult_grp_reconstruction(Q::NfOrdQuoRing, lp::Dict{NfOrdIdl, Int}, wprimes::Dict{NfOrdIdl, Int}, mr::MapRayClassGrp)
+  #Notice that we don't need the exponential map.
+  #first, tame part.
+  
+  tmg=mr.tame_mult_grp
+  O=Q.base_ring
+  structt = Array{fmpz,1}(length(lp))
+  disc_logs=Array{Function,1}(length(lp))
+  i=1
+  for (p,e) in lp
+    structt[i]=tmg[p][2]
+    disc_logs[i]=tmg[p][3]
+    i+=1
+  end
+  
+  #wild part
+  if !isempty(wprimes)
+    wmg=mr.wild_mult_grp
+    prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+    for (q,vq) in Q.factor
+      prime_power[q]=q^vq
+    end
+    for (q,vq) in wprimes
+      @assert vq>=2
+      if mr.fact_mod[q]==vq
+        append!(structt,wmg[q][2])
+        push!(disc_logs,wmg[q][3])
+        continue
+      end
+      if mr.fact_mod[q]<=2*vq
+        pu=prime_power[q]
+        pv=q^mr.fact_mod[q]
+        b=basis(pu)
+        N = basis_mat(pv)*basis_mat_inv(pu)
+        G=AbelianGroup(num(N))
+        S,mS=snf(G)
+  
+        #Generators
+        gens=Array{NfOrdElem,1}(ngens(S))
+        for i=1:ngens(S)
+          x=mS(S[i])
+          gens[i]=O(0)
+          for j=1:ngens(G)
+            gens[i]+=mod(x[j], S.snf[end])*b[j]
+          end
+        end
+        
+        G1=DiagonalGroup(wmg[q][2])
+        mG1=wmg[q][3]
+        quots=GrpAbFinGenElem[G1(mG1(1+x)) for x in gens]
+        Q,mQ=quo(G1,quots, false)
+        S1,mS1=snf(Q)
+        append!(structt, S1.snf)
+        function dlog(x::NfOrdElem)
+          y=mS1\(G1(mG1(x)))
+          res=Array{fmpz,1}(ngens(S1))
+          for i=1:ngens(S1)
+            res[i]=y[i]
+          end
+          return res  
+        end
+        push!(disc_logs,dlog)
+        continue
+      end
+      gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
+      nq=norm(q)-1  
+      inv=gcdx(nq,snf_q[end])[2]
+       
+      function dlog_q_norm(x::NfOrdElem)
+        y=Q(x)^Int(nq)
+        Y=disclog_q(y.elem)
+        for i=1:length(Y)
+          Y[i]*=inv
+        end
+        return Y
+      end
+      append!(structt,snf_q)
+      push!(disc_logs,dlog_q_norm)
+    end 
+  end
+  G=DiagonalGroup(structt)
+  
+  function mG(x::NfOrdElem)
+    result = Array{fmpz,1}()
+    for disclog in disc_logs
+      append!(result,disclog(x))
+    end
+    return G(result)
+  end
+  return G, mG
+end
 
 function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl,Int}, wprimes::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc,1})
 
@@ -1465,7 +1563,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   
   Q,pi=quo(O,I)
   Q.factor=merge(max,lp,wprimes)
-  @vtime :RayFacElem G, mG= _mult_grp_mod_n(Q,lp,wprimes,n)
+  G, mG= _mult_grp_reconstruction(Q,lp,wprimes,mR)
   C, mC = class_group(O)
   _assure_princ_gen(mC)
   
@@ -1554,7 +1652,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
-    a=(mG\(evals[i].elem)).coeff
+    a=(mG(evals[i].elem)).coeff
     if mod(n,2)==0 && !isempty(pr)
       if i==1
         a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
@@ -1575,7 +1673,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   for i=1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn=gcdx(vect[i], C.snf[i])[2]
-    a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
+    a=((mG(evals[i+ngens(U)].elem))*invn).coeff
     if mod(n,2)==0 && !isempty(pr)
       b=lH(mC.princ_gens[i][2]*Kel[i])
       a=hcat(a, b.coeff)
@@ -1611,7 +1709,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
       Id=Id^Int(nonnclass)
       z=principal_gen_fac_elem(Id)
       el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, mR.fact_mod, gcd(expo,n))    
-      y=((mG\(el))*inverse_d).coeff
+      y=((mG(el))*inverse_d).coeff
       if mod(n,2)==0 && !isempty(pr)
         b=lH(z)
         y=hcat(y, b.coeff)
