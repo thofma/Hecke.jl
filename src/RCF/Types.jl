@@ -55,6 +55,7 @@ mutable struct ClassField_pp
 
   K::NfRel{nf_elem} # the target with the roots of unity
   A::NfRel{nf_elem} # the target
+  o # the degree of K - note, in general this is a divisor of the degree of A
   pe::NfRelElem{nf_elem}
   AutG::Array
   AutR::fmpz_mat
