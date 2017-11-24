@@ -209,15 +209,57 @@ function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
   return val
 end
 
+doc"""
+    valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
+    valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+> The valuation of $A$ at $P$.
+"""
+function valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
+  return sum(valuation(I, p)*v for (I, v) = A.fac)
+end
 
+function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
+  return sum(valuation(I, p)*v for (I, v) = A.fac)
+end
+
+doc"""
+     ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
+> The factored fractional ideal $a*O$.
+"""
+function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
+  return FacElem(Dict((ideal(O, x), v) for (x, v) = a.fac))
+end
+
+#the normalise bit ensures that the "log" vector lies in the same vector space
+#well, the same hyper-plane, as the units
+doc"""
+    conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
+    conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
+> The "normalised" logarithms, ie. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
+> so the (weighted) sum adds up to zero.
+"""
+function conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
+  K = parent(x)
+  r,s = signature(K)
+  c = conjugates_arb_log(x, p)
+  n = sum(c)//degree(K)
+  for i=1:r
+    c[i] -= n
+  end
+  for i=r+1:r+s
+    c[i] -= n
+    c[i] -= n
+  end
+  return c
+end
+ 
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
 function conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
   K = base_ring(x)
   r,s = signature(K)
   c = conjugates_arb_log(x, p)
-  R = parent(c[1])
-  n = (log(root(R(abs(norm(x))), degree(K)))) #todo: don't compute the norm
+  n = sum(c)//degree(K)
   for i=1:r
     c[i] -= n
   end
