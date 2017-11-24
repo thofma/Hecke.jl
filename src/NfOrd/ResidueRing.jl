@@ -1083,7 +1083,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
       reconstructed_old = reconstructed_new
       old_a = new_a
       R, pi_R = RR, pi_RR
-      I = I^2
+      I = simplify(I^2)
 
       # From Q^i -> Q^(i+1)
       # From Q^(2^i) -> Q^(2^i+1)
