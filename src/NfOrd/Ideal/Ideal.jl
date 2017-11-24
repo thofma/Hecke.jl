@@ -43,12 +43,19 @@ export NfOrdIdl
 export deepcopy, parent, order, basis, basis_mat, basis_mat_inv, minimum, norm,
        ==, in, +, *, intersection, lcm, idempotents, mod, pradical
 
+
+add_assert_scope(:Rres)
+new = !true
+
+function toggle()
+  global new = !new
+end
+
 ################################################################################
 #
 #  Deepcopy
 #
 ################################################################################
-
 # The valuation is an anonymous function which contains A in its environment.
 # Thus deepcopying A.valuation will call deepcopy(A) and we run in an
 # infinite recursion.
@@ -504,8 +511,14 @@ function assure_has_minimum(A::NfOrdIdl)
       A.minimum = fmpz(0)
       A.iszero = 1
     else
-      bi = inv(b)
-      A.minimum =  den(bi, order(A))
+      if new && order(A).ismaximal == 1
+        A.minimum = _minmod(A.gen_one, A.gen_two)
+        bi = inv(b)
+        @hassert :Rres 1 A.minimum == den(bi, order(A))
+      else
+        bi = inv(b)
+        A.minimum =  den(bi, order(A))
+      end
     end
     return nothing
   end
@@ -560,7 +573,12 @@ function assure_has_norm(A::NfOrdIdl)
   end
 
   if has_2_elem(A) && A.gens_weakly_normal == 1
-    A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
+    if new 
+      A.norm = _normmod(A.gen_one^degree(order(A)), A.gen_two)
+      @hassert :Rres 1 A.norm == gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
+    else  
+      A.norm = gcd(norm(order(A)(A.gen_one)), norm(A.gen_two))
+    end  
     return nothing
   end
 
@@ -685,14 +703,15 @@ function inv_maximal(A::NfOrdIdl)
     if iszero(A.gen_two)
       return ideal(O, 1)//A.gen_one
     end
-    alpha = inv(elem_in_nf(A.gen_two))
-    d = den(alpha, O)
-    m = A.gen_one
-    g = gcd(m, d)
-    while g > 1
-      d = div(d, g)
-      g = gcd(m, d)
-    end
+    if new
+      alpha = _invmod(A.gen_one, A.gen_two)
+      _, d = ppio(den(alpha, O), A.gen_one)
+    else  
+      alpha = inv(elem_in_nf(A.gen_two))
+      d = den(alpha, O)
+      m = A.gen_one
+      _, d = ppio(d, m)
+    end  
     Ai = parent(A)()
     dn = den(d*alpha, O)
     Ai.gen_one = dn
@@ -701,7 +720,8 @@ function inv_maximal(A::NfOrdIdl)
     @hassert :NfOrd 1 den(temp) == 1
     Ai.norm = num(temp)
     Ai.gens_normal = A.gens_normal
-    return NfOrdFracIdl(Ai, dn)
+    AAi = NfOrdFracIdl(Ai, dn)
+    return AAi
   else
     # I don't know if this is a good idea
     _assure_weakly_normal_presentation(A)
@@ -718,6 +738,80 @@ end
 ###########################################################################################
 #CF: missing a function to compute the gcd(...) for the minimum
 #    without 1st computing the complete inv
+# .../ enter rresx and rres!
+
+function (A::Nemo.AnticNumberField)(a::Nemo.fmpz_poly)
+  return A(FlintQQ["x"][1](a))
+end
+
+function _minmod(a::fmpz, b::NfOrdElem)
+#  @show "MinMod"
+  if isone(a) 
+    return a
+  end
+  Zk = parent(b)
+  k = number_field(Zk)
+  d = den(b.elem_in_nf)
+  S = ResidueRing(FlintZZ, a*d*index(Zk))
+  St = PolynomialRing(S)[1]
+  B = St(d*b.elem_in_nf)
+  F = St(k.pol)
+  m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
+  U = lift(FlintZZ["x"][1], u)
+  # m can be zero...
+  m = lift(m)
+  if iszero(m)
+    m = a*d*index(Zk)
+  end
+  bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
+  d = den(bi, Zk)
+  return gcd(d, a)
+  # min(<a, b>) = min(<ad, bd>)/d and bd is in the equation order, hence max as well
+  # min(a, b) = gcd(a, den(b))
+  # rres(b, f) = <b, f> meet Z = <r> and
+  # ub + vf = r
+  # so u/r is the inverse and r is the den in the field
+  # we want gcd(r, a). so we use rres
+  #at this point, min(<a, b*d>) SHOULD be 
+end
+
+function _invmod(a::fmpz, b::NfOrdElem)
+#  @show "InvMod"
+  Zk = parent(b)
+  k = number_field(Zk)
+  if isone(a)
+    return one(k)
+  end
+  d = den(b.elem_in_nf)
+  S = ResidueRing(FlintZZ, a^2*d*index(Zk))
+  St = PolynomialRing(S)[1]
+  B = St(d*b.elem_in_nf)
+  F = St(k.pol)
+  m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
+  c = inv(canonical_unit(m))
+  U = lift(FlintZZ["x"][1], u*c)
+  bi = k(U)//lift(m*c)*d # at this point, bi*d*b = m mod a*d*idx
+  return bi
+end
+
+
+function _normmod(a::fmpz, b::NfOrdElem)
+#  @show "NormMod"
+  if isone(a)
+    return a
+  end
+  Zk = parent(b)
+  k = number_field(Zk)
+  d = den(b.elem_in_nf)
+  S = ResidueRing(FlintZZ, a*d^degree(parent(b)))
+  St = PolynomialRing(S)[1]
+  B = St(d*b.elem_in_nf)
+  F = St(k.pol)
+  m = resultant_sircana(B, F)  # u*B + v*F = m mod modulus(S)
+  m = gcd(modulus(m), lift(m))
+  return divexact(m, d^degree(parent(b)))
+end
+
 
 function simplify(A::NfOrdIdl)
   if has_2_elem(A) && has_weakly_normal(A)
@@ -725,12 +819,32 @@ function simplify(A::NfOrdIdl)
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
     #end
     if A.gen_one == 1 # || test other things to avoid the 1 ideal
+      A.gen_two = order(A)(1)
+      A.minimum = fmpz(1)
+      A.norm = fmpz(1)
       return A
     end
-    A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
+    if new
+      A.minimum = _minmod(A.gen_one, A.gen_two)
+      global last_data = A
+      if A.minimum != gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
+        println(A)
+        println(order(A))
+      end
+
+      @hassert :Rres 1 A.minimum == gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
+    else  
+      A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
+    end  
     A.gen_one = A.minimum
-    n = gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
+    if new
+      n = _normmod(A.gen_one^degree(A.parent.order), A.gen_two)
+      @hassert :Rres 1 n == gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
+    else  
+      n = gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
+    end  
     if isdefined(A, :norm)
+      @assert n == A.norm
     end
     A.norm = n
     A.gen_two = mod(A.gen_two, A.gen_one^2)
