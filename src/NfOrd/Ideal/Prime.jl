@@ -975,6 +975,7 @@ function val_func_no_index(p::NfOrdIdl)
   return function(x::nf_elem)
     v = 0
     d = den(x)
+    x *= d
     x = x*e
     while den(x) % P != 0
       v += 1
@@ -1130,6 +1131,7 @@ end
 
 #TODO: some more intelligence here...
 function valuation_naive(A::NfOrdIdl, B::NfOrdIdl)
+  @assert !isone(B)
   Bi = inv(B)
   i = 0
   C = simplify(A* Bi)

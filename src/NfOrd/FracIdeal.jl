@@ -602,3 +602,11 @@ function one(A::NfOrdFracIdl)
   return NfOrdFracIdl(ideal(order(A), 1), fmpz(1))
 end
 
+doc"""
+    valuation(A::NfOrdFracIdl, p::NfOrdIdl)
+> The valuation of $A$ at $p$.
+"""
+function valuation(A::NfOrdFracIdl, p::NfOrdIdl)
+  return valuation(A.num, p) - valuation(ideal(order(A), A.den), p)
+end
+

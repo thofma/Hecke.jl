@@ -1059,6 +1059,11 @@ function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
   return iszero(a^l)
 end
 
+function iszerodivisor(f::Union{fmpz_mod_poly,nmod_poly})
+  c = content(f)
+  return isnilpotent(c)
+end
+
 function Nemo.inv(f::Union{fmpz_mod_poly,nmod_poly}) 
   if !isunit(f)
     error("impossible inverse")
