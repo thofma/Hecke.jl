@@ -4,7 +4,7 @@ HNF algorithm due to Arne Storjohann
 =#
 
 # This function only changes CC, zero_cols and N but not T.
-function conditioning_with_trafo!{S <: Nemo.RingElement}(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, zero_cols::BitArray, row::Int, col1::Int)
+function conditioning_with_trafo!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, zero_cols::BitArray, row::Int, col1::Int) where S <: Nemo.RingElement
   @assert col1 < cols(T)
   @assert T[row, col1] > 0
   R = base_ring(T)
@@ -101,7 +101,7 @@ function conditioning_with_trafo!{S <: Nemo.RingElement}(T::MatElem{S}, N::MatEl
 end
 
 # This function only changes N and QC, but not T.
-function column_reduction_with_trafo!{ S <: Nemo.RingElement}(T::MatElem{S}, N::MatElem{S}, QC::MatElem{S}, row::Int, col1::Int, col2::Int)
+function column_reduction_with_trafo!(T::MatElem{S}, N::MatElem{S}, QC::MatElem{S}, row::Int, col1::Int, col2::Int) where S <: Nemo.RingElement
   @assert T[ row, col1] > 0
   @assert rows(T) == rows(QC)
   R = base_ring(T)
@@ -184,7 +184,7 @@ function column_reduction_with_trafo!{ S <: Nemo.RingElement}(T::MatElem{S}, N::
   return nothing
 end
 
-function hnf_storjohann_with_trafo{ S <: Nemo.RingElement}(A::MatElem{S})
+function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
   #timeRed = 0
   #timeProdC = 0
   #timeBuildQC = 0
@@ -367,7 +367,7 @@ function hnf_storjohann_with_trafo{ S <: Nemo.RingElement}(A::MatElem{S})
   return sub(Q, 2:n1, 2:n1), sub(C, 2:n1, 2:n1), sub(U, 2:n1, 2:n1), sub(T, 2:n1, 2:m1)
 end
 
-function conditioning!{S <: Nemo.RingElement}(T::MatElem{S}, row::Int, col1::Int)
+function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingElement
   @assert col1 < cols(T)
   @assert T[row, col1] > 0
   R = base_ring(T)
@@ -447,7 +447,7 @@ function conditioning!{S <: Nemo.RingElement}(T::MatElem{S}, row::Int, col1::Int
   return col2
 end
 
-function column_reduction!{ S <: Nemo.RingElement}(T::MatElem{S}, row::Int, col1::Int, col2::Int)
+function column_reduction!(T::MatElem{S}, row::Int, col1::Int, col2::Int) where S <: Nemo.RingElement
   @assert T[ row, col1] > 0
   R = base_ring(T)
   row1 = row + 1
@@ -517,7 +517,7 @@ function column_reduction!{ S <: Nemo.RingElement}(T::MatElem{S}, row::Int, col1
   return nothing
 end
 
-function hnf_storjohann{ S <: Nemo.RingElement}(A::MatElem{S})
+function hnf_storjohann(A::MatElem{S}) where S <: Nemo.RingElement
   R = base_ring(A)
   T = similar(A, rows(A) + 2, cols(A) + 2)
   n = rows(T)
