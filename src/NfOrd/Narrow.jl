@@ -35,16 +35,21 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
     C, cl = power_reduce2(A, div(e, 2))
     @hassert :PID_Test 1 C*evaluate(cl) == A^Int(div(e, 2))
 
-    if isodd(e)
-      A = C^2*A
-    else
-      A = C^2
-    end
+    C2 = C^2
     al = al*cl^2
-
-    if norm(A) > abs(discriminant(O))
-      A, a = reduce_ideal2(A)
+    if norm(C2) > abs(discriminant(O))
+      C2, a = reduce_ideal2(C2)
       al *= inv(a)
+    end
+
+    if isodd(e)
+      A = C2*A
+      if norm(A) > abs(discriminant(O))
+        A, a = reduce_ideal2(A)
+        al *= inv(a)
+      end
+    else
+      A = C2
     end
     return A, al
   else
