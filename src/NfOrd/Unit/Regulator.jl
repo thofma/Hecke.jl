@@ -20,19 +20,22 @@ function regulator(x::Array{T, 1}, abs_tol::Int) where T
 
   p = 32
 
+  conlog = Vector{Vector{arb}}(r)
+
   while true
-    conlog = conjugates_arb_log(x[1], p)
-
-    A = ArbMatSpace(parent(conlog[1]), r, r)()
-
-    for j in 1:r
-      A[1, j] = conlog[j]
+    q = 2
+    for i in 1:r
+      conlog[i] = conjugates_arb_log(x[i], p)
+      for j in 1:r
+        q = max(q, bits(conlog[i][j]))
+      end
     end
 
-    for i in 2:r
-      conlog = conjugates_arb_log(x[i], p)
+    A = zero_matrix(ArbField(q), r, r)
+
+    for i in 1:r
       for j in 1:r
-        A[i, j] = conlog[j]
+        A[i, j] = conlog[i][j]
       end
     end
 

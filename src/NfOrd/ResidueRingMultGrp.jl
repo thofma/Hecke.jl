@@ -1138,8 +1138,8 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       return Y
     end
         
-    gens = map(Q,gens_q)
-    append!(gens,gens)
+    gens_new = map(Q,gens_q)
+    append!(gens,gens_new)
     append!(structt,snf_q)
     push!(disc_logs,dlog_q_norm)
     wild_mult_grp[q]=(gens_q, snf_q,dlog_q_norm)

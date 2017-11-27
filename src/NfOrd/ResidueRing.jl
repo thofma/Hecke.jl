@@ -954,7 +954,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
   CC = AcbField(64)
   CCt, t = PolynomialRing(CC, "t")
-  conjugates_of_coeffs = [ conjugates_arb(coeff(f, i), -1) for i in 0:degree(f) ]
+  conjugates_of_coeffs = [ conjugates_arb(coeff(f, i), 32) for i in 0:degree(f) ]
 
   for i in 1:r1
     g = CCt([ conjugates_of_coeffs[j + 1][i] for j in 0:degree(f) ])

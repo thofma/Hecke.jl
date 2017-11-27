@@ -50,13 +50,19 @@ function scaled_log_matrix(u::Array{T, 1}, prec::Int = 32) where T
 
   for i in 1:length(u)
     c = conjugates_arb_log(u[i], prec)
+    for k in 1:length(c)
+      #@show T
+      @assert radiuslttwopower(c[k], -prec)
+    end
+
     if any(x->radius(x) > 1e-9, c)  # too small...
-      @vprint :UnitGroup 2 "increasing prec in scaled_log_matrix, now: $prec"
+      @vprint :UnitGroup 2 "increasing prec in scaled_log_matrix, now: $prec\n"
       prec *= 2
       if prec > 2^30
         error("cannot do lll on units")
         break
       end
+      return scaled_log_matrix(u, prec)
     end
     for j in 1:length(c)
       tt = fmpz()
@@ -75,7 +81,6 @@ end
 function row_norms(A::fmpz_mat)
   return [row_norm(A, i) for i=1:rows(A)]
 end
-
 
 function reduce(u::Array{T, 1}, prec::Int = 32) where T
   r = length(u)

@@ -49,7 +49,7 @@
     O77 = Order(K6, FlintQQ[6//6 0; 0 1//6])
 
     @test O7 == O77
-    @test !(O7 === O77)
+    #@test !(O7 === O77)
 
     @test_throws ErrorException Order(K1, [a1, a1, a1])
     #@test_throws ErrorException Order(K1, [1, a1, a1])
