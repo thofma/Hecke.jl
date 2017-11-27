@@ -2177,16 +2177,6 @@ function normal_basis(K::Nemo.AnticNumberField)
   return r
 end
 
-for f in (:/, :\, :*, :+, :-)
-    if f != :/
-        @eval ($f)(A::RingElem, B::AbstractArray) = broadcast($f, A, B)
-    end
-    if f != :\
-        @eval ($f)(A::AbstractArray, B::RingElem) = broadcast($f, A, B)
-    end
-end
-
-
 doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
 > Computes a presentation $a = \prod a_i^{n_i}$ where all the exponents $n_i$ are powers of $n$
@@ -2221,7 +2211,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     end
     A, alpha = reduce_ideal2(FacElem(B))
     be *= alpha^(-Int(n^_k))
-    v -= Int(n^_k)*conjugates_arb_log_normalise(alpha, arb_prec)
+    v -= n^_k .* conjugates_arb_log_normalise(alpha, arb_prec)
   end
   if length(be.fac) > 1
     delete!(be.fac, K(1))
@@ -2272,7 +2262,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     end
     v_b = conjugates_arb_log_normalise(b, arb_prec)
 #    @show old_n = sum(x^2 for x = v)
-    v += n^k*v_b
+    v += n^k .* v_b
 #    @show new_n = sum(x^2 for x = v)
 #    @show old_n / new_n 
 #    @assert isone(b) || new_n < old_n  *2
@@ -2300,7 +2290,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   re = K(0)
   while (true)
     me = modular_init(K, p)
-    mp = modular_proj(a, me)*dB
+    mp = dB .* modular_proj(a, me)
     m = modular_lift(mp, me)
     if pp == 1
       re = m
