@@ -185,7 +185,7 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, abs_tol = 32, initial_prec = 0, 
     end
 
   wp = wp * 2
-    if wp > 2^16
+    if wp > 2^17
       error("Something wrong")
     end
   end
@@ -252,8 +252,8 @@ function _roots(x::Union{fmpq_poly, fmpz_poly}, roots::Ptr{acb_struct}, abs_tol 
     end
 
   wp = wp * 2
-    if wp > 2^16
-      error("Aborting since required precision is > 2^16")
+    if wp > 2^18
+      error("Aborting since required precision is > 2^18")
     end
   end
          ccall((:_acb_vec_sort_pretty, :libarb), Void,
@@ -283,3 +283,100 @@ function radiuslttwopower(x::acb, e::Int)
   return ok
 end
 
+function round(x::arb, p::Int)
+  z = ArbField(p)()
+  ccall((:arb_set_round, :libarb), Void, (Ptr{Nemo.arb}, Ptr{Nemo.arb}, Int), &z, &x, p)
+  return z
+end
+
+function round(x::acb, p::Int)
+  z = AcbField(p)()
+  ccall((:acb_set_round, :libarb), Void, (Ptr{Nemo.acb}, Ptr{Nemo.acb}, Int), &z, &x, p)
+  return z
+end
+
+function arb_trim(x::arb)
+  z = arb()
+  ccall((:arb_trim, :libarb), Void, (Ptr{Nemo.arb}, Ptr{Nemo.arb}), &z, &x)
+  z.parent = ArbField(arb_bits(z))
+  return z
+end
+
+function round!(z::arb, x::arb, p::Int)
+  ccall((:arb_set_round, :libarb), Void, (Ptr{Nemo.arb}, Ptr{Nemo.arb}, Int), &z, &x, p)
+  z.parent = ArbField(p)
+  return z
+end
+
+function round!(z::acb, x::acb, p::Int)
+  ccall((:acb_set_round, :libarb), Void, (Ptr{Nemo.acb}, Ptr{Nemo.acb}, Int), &z, &x, p)
+  z.parent = AcbField(p)
+  return z
+end
+
+function bits(x::arb)
+  return ccall((:arb_bits, :libarb), Int, (Ptr{Nemo.arb}, ), &x)
+end
+
+function rel_error_bits(x::arb)
+  return ccall((:arb_rel_error_bits, :libarb), Int, (Ptr{Nemo.arb}, ), &x)
+end
+
+function rel_accuracy(x::arb)
+  return ccall((:arb_rel_accuracy_bits, :libarb), Int, (Ptr{Nemo.arb}, ), &x)
+end
+
+function set!(z::arb, x::arb)
+  ccall((:arb_set, :libarb), Void, (Ptr{Nemo.arb}, Ptr{Nemo.arb}), &z, &x)
+  return z
+end
+
+function bits(x::acb)
+  return ccall((:acb_bits, :libarb), Int, (Ptr{Nemo.acb}, ), &x)
+end
+
+function rel_error_bits(x::acb)
+  return ccall((:acb_rel_error_bits, :libarb), Int, (Ptr{Nemo.acb}, ), &x)
+end
+
+function rel_accuracy(x::acb)
+  return ccall((:acb_rel_accuracy_bits, :libarb), Int, (Ptr{Nemo.acb}, ), &x)
+end
+
+function set!(z::acb, x::acb)
+  ccall((:acb_set, :libarb), Void, (Ptr{Nemo.acb}, Ptr{Nemo.acb}), &z, &x)
+  return z
+end
+
+function expand!(x::Union{arb, acb}, max_radius_2exp::Int)
+  if rel_accuracy(x) < 0
+    # Radius has less precision then the midpoint
+    # Think of 0.100001 +/- 10
+    # Reducing the precision of the midpoint won't help.
+    return x
+  end
+  if isexact(x)
+    return x
+  end
+  z = deepcopy(x)
+  p = bits(x)
+  q = div(p, 2)
+  if q < 2
+    return x
+  end
+  y = round(x, q)
+  while radiuslttwopower(y, max_radius_2exp) && q > 4
+    q = div(q, 2)
+    set!(x, y)
+    y = round!(y, y, q)
+  end
+  x.parent = parent_type(typeof(x))(max(2, bits(x)))
+  @assert radiuslttwopower(x, max_radius_2exp)
+  return x
+end
+
+function expand(x::Union{arb, acb}, max_radius_2exp::Int)
+  z = deepcopy(x)
+  expand!(z, max_radius_2exp)
+  return z
+end

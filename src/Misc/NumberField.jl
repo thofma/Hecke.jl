@@ -1346,29 +1346,68 @@ doc"""
 function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   K = parent(x)
   d = degree(K)
-  c = conjugate_data_arb(K)
-  r, s = signature(K)
-  conjugates = Array{acb}(r + 2*s)
-  CC = AcbField(c.prec)
+  r1, r2 = signature(K)
+  conjugates = Array{acb}(r1 + 2*r2)
+  target_tol = abs_tol
 
-  for i in 1:r
-    conjugates[i] = CC(subst(parent(K.pol)(x), c.real_roots[i]))
-    if !isfinite(conjugates[i]) || (abs_tol != -1 && !radiuslttwopower(conjugates[i], -abs_tol))
-      refine(c)
-      return conjugates_arb(x, abs_tol)
+  while true
+    prec_too_low = false
+    c = conjugate_data_arb_2(K, abs_tol)
+
+    if abs_tol > 2^18
+      error("Something wrong in conjugates_arb_log")
     end
-  end
 
-  for i in 1:s
-    conjugates[r + i] = subst(parent(K.pol)(x), c.complex_roots[i])
-    if !isfinite(conjugates[i]) || (abs_tol != -1 && !radiuslttwopower(conjugates[i], -abs_tol))
-      refine(c)
-      return conjugates_arb(x, abs_tol)
+    CC = AcbField(abs_tol)
+    RR = ArbField(abs_tol)
+
+    xpoly = arb_poly(parent(K.pol)(x), abs_tol)
+    RR = ArbField(abs_tol)
+    for i in 1:r1
+      #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
+      o = RR()
+      ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], abs_tol)
+
+      #z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
+      if !isfinite(o) || !radiuslttwopower(o, -target_tol)
+        abs_tol = 2*abs_tol
+        prec_too_low = true
+        #@show "restart in the reals"
+        break
+      end
+      conjugates[i] = CC(o)
     end
-    conjugates[r + i + s] = Nemo.conj(conjugates[r + i])
-  end
 
-  return conjugates
+    if prec_too_low
+      continue
+    end
+
+    for i in 1:r2
+      tacb = CC()
+      ccall((:arb_poly_evaluate_acb, :libarb), Void, (Ptr{acb}, Ptr{arb_poly}, Ptr{acb}, Int), &tacb, &xpoly, &c.complex_roots[i], abs_tol)
+
+      #z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
+      if !isfinite(tacb) || !radiuslttwopower(tacb, -target_tol)
+        abs_tol = 2*abs_tol
+        prec_too_low = true
+        #@show "restart in the complex"
+        break
+      end
+
+      conjugates[r1 + i] = tacb
+      conjugates[r1 + i + r2] = Nemo.conj(conjugates[r1 + i])
+    end
+
+    if prec_too_low
+      continue
+    end
+
+    for i in 1:r1 + 2*r2
+      expand!(conjugates[i], -target_tol)
+      @assert radiuslttwopower(conjugates[i], -target_tol)
+    end
+    return conjugates
+  end
 end
 
 doc"""
@@ -1415,48 +1454,78 @@ doc"""
 > $(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert),
 > \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc,
 > 2\log(\lvert \sigma_{r+s}(x)\rvert))$ as elements of type `arb` radius
-> less then `2^abs_tol`.
+> less then `2^-abs_tol`.
 """
 function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   K = parent(x)
   d = degree(K)
   r1, r2 = signature(K)
-  c = conjugate_data_arb(K)
+  target_tol = abs_tol
+  #abs_tol = Int(ceil(abs_tol * 1.3))
 
   # We should replace this using multipoint evaluation of libarb
   z = Array{arb}(r1 + r2)
-  xpoly = arb_poly(parent(K.pol)(x), c.prec)
-  for i in 1:r1
-    #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
-    o = ArbField(c.prec)()
-    ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], c.prec)
-    abs!(o, o)
-    log!(o, o)
-    z[i] = o
-
-    #z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
-    if !isfinite(z[i]) || !radiuslttwopower(z[i], -abs_tol)
-      refine(c)
-      return conjugates_arb_log(x, abs_tol)
+  while true
+    prec_too_low = false
+    c = conjugate_data_arb_2(K, abs_tol)
+    if abs_tol > 2^18
+      error("Something wrong in conjugates_arb_log")
     end
-  end
+    xpoly = arb_poly(parent(K.pol)(x), abs_tol)
+    RR = ArbField(abs_tol)
+    for i in 1:r1
+      #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
+      o = RR()
+      ccall((:arb_poly_evaluate, :libarb), Void, (Ptr{arb}, Ptr{arb_poly}, Ptr{arb}, Int), &o, &xpoly, &c.real_roots[i], abs_tol)
+      abs!(o, o)
+      log!(o, o)
+      z[i] = o
 
-  tacb = AcbField(c.prec)()
-  for i in 1:r2
-    oo = ArbField(c.prec)()
-    ccall((:arb_poly_evaluate_acb, :libarb), Void, (Ptr{acb}, Ptr{arb_poly}, Ptr{acb}, Int), &tacb, &xpoly, &c.complex_roots[i], c.prec)
-    abs!(oo, tacb)
-    log!(oo, oo)
-    mul2exp!(oo, oo, 1)
-    z[r1 + i] = oo
-
-    #z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
-    if !isfinite(z[r1 + i]) || !radiuslttwopower(z[r1 + i], -abs_tol)
-      refine(c)
-      return conjugates_arb_log(x, abs_tol)
+      #z[i] = log(abs(evaluate(parent(K.pol)(x),c.real_roots[i])))
+      if !isfinite(z[i]) || !radiuslttwopower(z[i], -target_tol)
+        abs_tol = 2*abs_tol
+        prec_too_low = true
+        #@show "restart in the reals"
+        break
+      end
     end
+
+    if prec_too_low
+      continue
+    end
+
+    CC = AcbField(abs_tol)
+
+    tacb = CC()
+    for i in 1:r2
+      oo = RR()
+      ccall((:arb_poly_evaluate_acb, :libarb), Void, (Ptr{acb}, Ptr{arb_poly}, Ptr{acb}, Int), &tacb, &xpoly, &c.complex_roots[i], abs_tol)
+      abs!(oo, tacb)
+      log!(oo, oo)
+      mul2exp!(oo, oo, 1)
+      z[r1 + i] = oo
+
+      #z[r1 + i] = 2*log(abs(evaluate(parent(K.pol)(x), c.complex_roots[i])))
+      if !isfinite(z[r1 + i]) || !radiuslttwopower(z[r1 + i], -target_tol)
+        abs_tol = 2*abs_tol
+        prec_too_low = true
+        #@show "restart in the complex"
+        break
+      end
+    end
+
+    if prec_too_low
+      continue
+    end
+
+    for i in 1:r1 + r2
+      #@show z[i]
+      #@show -target_tol
+      zz = deepcopy(z[i])
+      expand!(z[i], -target_tol)
+    end
+    return z
   end
-  return z
 end
 
 function conjugates_arb_log(x::nf_elem, R::ArbField)
@@ -2177,16 +2246,6 @@ function normal_basis(K::Nemo.AnticNumberField)
   return r
 end
 
-for f in (:/, :\, :*, :+, :-)
-    if f != :/
-        @eval ($f)(A::RingElem, B::AbstractArray) = broadcast($f, A, B)
-    end
-    if f != :\
-        @eval ($f)(A::AbstractArray, B::RingElem) = broadcast($f, A, B)
-    end
-end
-
-
 doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
 > Computes a presentation $a = \prod a_i^{n_i}$ where all the exponents $n_i$ are powers of $n$
@@ -2221,7 +2280,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     end
     A, alpha = reduce_ideal2(FacElem(B))
     be *= alpha^(-Int(n^_k))
-    v -= Int(n^_k)*conjugates_arb_log_normalise(alpha, arb_prec)
+    v -= n^_k .* conjugates_arb_log_normalise(alpha, arb_prec)
   end
   if length(be.fac) > 1
     delete!(be.fac, K(1))
@@ -2272,7 +2331,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     end
     v_b = conjugates_arb_log_normalise(b, arb_prec)
 #    @show old_n = sum(x^2 for x = v)
-    v += n^k*v_b
+    v += n^k .* v_b
 #    @show new_n = sum(x^2 for x = v)
 #    @show old_n / new_n 
 #    @assert isone(b) || new_n < old_n  *2
@@ -2300,7 +2359,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   re = K(0)
   while (true)
     me = modular_init(K, p)
-    mp = modular_proj(a, me)*dB
+    mp = dB .* modular_proj(a, me)
     m = modular_lift(mp, me)
     if pp == 1
       re = m

@@ -28,7 +28,7 @@
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
           K, a = NumberField(x^2-d, "a")
           O = maximal_order(K)
-          Cl, mCl = Hecke.class_group(O)
+          Cl, mCl = Hecke.class_group(O, redo = true)
           U, mU = Hecke.unit_group(O)
           @test order(Cl) == h
         end
@@ -38,7 +38,7 @@
         f = x^3 - 3*x - 1
         K, a = NumberField(f, "a");
         O = maximal_order(K)
-        Cl, mCl = Hecke.class_group(O);
+        Cl, mCl = Hecke.class_group(O, redo = true);
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == 1
       end
@@ -92,10 +92,10 @@
       K, a = NumberField(x^2-2, "a");
       O = maximal_order(K)
 
-      Cl, mCl = Hecke.class_group(O);
+      Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
-      U = O.auxilliary_data[5]
+      U = O.auxilliary_data[6]
 
       G, mG = torsion_unit_group(O)
       @test order(G) == 2
@@ -111,7 +111,7 @@
     @testset "K = Q[x]/(f), f = x^3 - 2" begin
       K, a = NumberField(x^2 - 3, "a");
       O = maximal_order(K);
-      Cl, mCl = Hecke.class_group(O);
+      Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
       @test order(Cl) == 1
@@ -120,10 +120,10 @@
     @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
       K, a = NumberField(x^5 - 11^2 * 7, "a");
       O = maximal_order(K)
-      Cl, mCl = Hecke.class_group(O);
+      Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
-      U = O.auxilliary_data[5]
+      U = O.auxilliary_data[6]
 
       G, mG = torsion_unit_group(O)
       @test order(G) == 2
@@ -140,7 +140,7 @@
       K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
 
-      Cl, mCl = Hecke.class_group(O);
+      Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
       @test order(Cl)== 36
