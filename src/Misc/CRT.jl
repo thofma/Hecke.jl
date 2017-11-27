@@ -575,6 +575,34 @@ end
 
 doc"""
 ***
+  modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
+
+> Given an algebraic number $a$ in factored form and data \code{me} as computed by
+> \code{modular_init}, project $a$ onto the residue class fields.
+"""
+function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
+  for i=1:me.ce.n
+    me.res[i] = one(me.fld[i])
+  end
+  for (a, v) = A.fac
+    ap = me.Fpx(a)
+    crt_inv!(me.rp, ap, me.ce)
+    for i=1:me.ce.n
+      F = me.fld[i]
+      u = F()
+      ccall((:fq_nmod_set, :libflint), Void,
+                  (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+                  &u, &me.rp[i], &F)
+      u = u^(v % (size(F)-1))            
+      me.res[i] *= u
+    end
+  end  
+  return me.res
+end
+
+
+doc"""
+***
   modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
 
 > Given an array of elements as computed by \code{modular_proj},
