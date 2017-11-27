@@ -2210,7 +2210,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       B[A] = n
     end
     A, alpha = reduce_ideal2(FacElem(B))
-    be *= alpha^(-Int(n^_k))
+    be *= alpha^(-(n^_k))
     v -= n^_k .* conjugates_arb_log_normalise(alpha, arb_prec)
   end
   if length(be.fac) > 1

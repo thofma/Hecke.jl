@@ -945,7 +945,7 @@ end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, Int})
   b = compact_presentation(a, n, decom = decom)
-  b = prod([k^v for (k,v) = b.fac if !iszero(v % n)])
+  b = prod([k^(v % n) for (k,v) = b.fac if !iszero(v % n)])
   return FacElem(b)  
 end
 
