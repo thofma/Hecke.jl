@@ -515,7 +515,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
     e = FacElem(g, rs)
     for (p,v) = S1[s]
-      e *= X[p]^v
+      e *= FacElem(Dict(X[p]=>v))
     end
 
     push!(U, inv(e))  # I don't understand the inv
