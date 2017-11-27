@@ -395,16 +395,16 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use
   Q = NfOrdQuoRing(order(pl),pl)
   function discrete_logarithm(b::NfOrdElem)
     b = Q(b)
-    a = []
+    a = fmpz[]
     k = 1
     for i in 1:length(dlogs)
       a_ = dlogs[i](b.elem)
-      prod = 1
+      prod = Q(1)
       for j in 1:length(a_)
         prod *= Q(g[k])^a_[j]
         k += 1
       end
-      a = [a ; a_]
+      a = fmpz[a ; a_]
       b = divexact(b,prod)
     end
     return a
@@ -547,7 +547,7 @@ end
 
 function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
   Q = parent(x)
-  s = 1
+  s = Q(1)
   fac_i = 1
   t=Q(1)
   for i in 1:pnum-1
@@ -618,7 +618,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::N
   Q_ = NfOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
-  inc = 1
+  inc = Q_(1)
   val_p_xi = 0
   val_p_fac_i = 0
   i_old = 0
@@ -639,14 +639,13 @@ end
 function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(y)
   y == 1 && return O(0)
-  pnum = minimum(p)
+  pnum = Int(minimum(p))
   x = y - 1
   val_p_x = valuation(x, p)
   s = zero(Q)
   xi = one(O)
   i_old = 0
   val_p_xi = 0
-  pnum = Int(pnum)
   for i in [ 1:v ; (v+pnum-(v%pnum)):pnum:pnum*v ]
     val_pnum_i = valuation(i, pnum)
     val_p_i = val_pnum_i * e
@@ -717,88 +716,6 @@ function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
   end
   return gens_snf, S.snf, disclog
   
-#=
-  if issnf(rels)
-    gens_snf = gens
-    rels_snf = rels
-    dlog_snf = dlog
-  else
-    if !ishnf(rels)
-      rels = hnf(rels)
-    end
-    rels_hnf = hnf(rels)
-    rels_snf, _, V = snf_with_transform(rels_hnf, false, true)
-    @assert size(rels_snf) == (n,m)
-    @assert size(V) == (m,m)
-    V_inv = inv(V)
-
-    # Reduce V_inv
-    rels_lll = lll(rels_hnf)
-    Ln, Ld = pseudo_inv(rels_lll)
-    R = V_inv * Ln
-    for j in 1:cols(R)
-      for i in 1:rows(R)
-        R[i,j] = round(R[i,j]//Ld)
-      end
-    end
-    V_inv = V_inv - R * rels_lll
-
-    gens_snf = typeof(gens)(m)
-    for i in 1:m
-      pos_exp = 1
-      neg_exp = 1
-      for j in 1:m
-        if V_inv[i,j] >= 0
-          pos_exp *= gens[j]^V_inv[i,j]
-        else
-          neg_exp *= gens[j]^(-V_inv[i,j])
-        end
-      end
-      if neg_exp != 1 # TODO remove this
-        gens_snf[i] = divexact(pos_exp,neg_exp)
-      else
-        gens_snf[i] = pos_exp
-      end
-    end
-    T = Array(V')
-    discrete_log = function(x) T * dlog(x) end
-    dlog_snf = discrete_log
-  end
-
-  # Count trivial components
-  max_one = 0
-  for i in 1:m
-    if rels_snf[i,i] != 1
-      max_one = i-1
-      break
-    end
-  end
-
-  # Remove trivial components and empty relations
-  if (max_one!=0) || (n!=m)
-    rels_trans = zero_matrix(FlintZZ,n-max_one,n-max_one)
-    for i in 1:rows(rels_trans)
-      for j in 1:cols(rels_trans)
-        rels_trans[i,j] = rels_snf[max_one+i,max_one+j]
-      end
-    end
-  else
-    rels_trans = rels_snf
-  end
-
-  # Remove trivial components and reduce logarithm modulo relations
-  D = Vector{fmpz}([rels_trans[i,i] for i in 1:cols(rels_trans)])
-  if (max_one!=0)
-    gens_trans = gens_snf[max_one+1:end]
-    discrete_logarithm = function(x) mod.(Vector{fmpz}(dlog_snf(x)[max_one+1:end]), D) end
-    dlog_trans = discrete_logarithm
-  else
-    gens_trans = gens_snf
-    dlog_trans = (x -> mod.(Vector{fmpz}(dlog_snf(x)), D))
-  end
-
-  return gens_trans, rels_trans, dlog_trans
-  =#
 end
 
 function snf_gens_rels_log(gens::Vector{NfOrdElem}, rels::fmpz_mat, dlog::Function, i::NfOrdIdl)
@@ -986,7 +903,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
   K=nf(O)
 
   
-  gens = Vector{NfOrdQuoRingElem}()
+  gens = Vector{}()
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   
@@ -1010,6 +927,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
     prime_power[q]=q^vq
   end
   
+  
   for (q,vq) in y1
     gens_q , struct_q , dlog_q = prime_part_multgrp_mod_p(q,p)
   
@@ -1026,7 +944,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
     append!(gens,[Q(gens_q)])
     append!(structt,struct_q)
     push!(disc_logs,dlog_q)
-  
+   
   end
   for (q,vq) in y2
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
@@ -1169,6 +1087,8 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     prime_power[q]=q^vq
   end
  
+  tame_mult_grp=Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}()
+  wild_mult_grp=Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}()
   
   for (q,vq) in y1
     gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
@@ -1186,6 +1106,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     push!(gens,Q(gens_q))
     push!(structt,struct_q)
     push!(disc_logs,dlog_q)
+    tame_mult_grp[q]=(gens_q, struct_q, dlog_q)
   
   end
   for (q,vq) in y2
@@ -1217,10 +1138,11 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
       return Y
     end
         
-    gens_q = map(Q,gens_q)
-    append!(gens,gens_q)
+    gens = map(Q,gens_q)
+    append!(gens,gens)
     append!(structt,snf_q)
     push!(disc_logs,dlog_q_norm)
+    wild_mult_grp[q]=(gens_q, snf_q,dlog_q_norm)
   end 
   
   G=DiagonalGroup(structt)
@@ -1245,7 +1167,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   
   mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
   
-  return G, mG 
+  return G, mG , tame_mult_grp, wild_mult_grp
 end
 
 #=

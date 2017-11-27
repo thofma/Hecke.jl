@@ -10,7 +10,9 @@ mutable struct NfRelOrdSet{T}
   end
 end
 
-mutable struct NfRelOrd{T, S} <: Ring
+abstract type RelativeOrder{T, S} <: Ring end
+
+mutable struct NfRelOrd{T, S} <: RelativeOrder{T, S}
   nf::NfRel{T}
   basis_nf::Vector{NfRelElem{T}}
   basis_mat::Generic.Mat{T}
@@ -43,21 +45,71 @@ mutable struct NfRelOrd{T, S} <: Ring
 
   function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
     z = NfRelOrd{T, S}(K)
-    z.nf = K
-    z.parent = NfRelOrdSet{T}(K)
     z.basis_pmat = M
     z.basis_mat = M.matrix
     return z
   end
-  
+
   function NfRelOrd{T, S}(K::NfRel{T}, M::Generic.Mat{T}) where {T, S}
     z = NfRelOrd{T, S}(K)
-    z.nf = K
-    z.parent = NfRelOrdSet{T}(K)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
+end
+
+mutable struct NfRelNsOrd{T, S} <: RelativeOrder{T, S}
+  nf::NfRel_ns{T}
+  basis_nf::Vector{NfRel_nsElem{T}}
+  basis_mat::Generic.Mat{T}
+  basis_mat_inv::Generic.Mat{T}
+  basis_pmat::PMat{T, S}
+  pseudo_basis::Vector{Tuple{NfRel_nsElem{T}, S}}
+
+  disc_abs::NfOrdIdl # used if T == nf_elem
+  disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
+  # parent::NfRelOrdSet{T}
+
+  isequation_order::Bool
+
+  ismaximal::Int                   # 0 Not known
+                                   # 1 Known to be maximal
+                                   # 2 Known to not be maximal
+
+  trace_mat::Generic.Mat{T}
+
+  inv_coeff_ideals::Vector{S}
+
+  function NfRelNsOrd{T, S}(K::NfRel_ns{T}) where {T, S}
+    z = new{T, S}()
+    z.nf = K
+    # z.parent = NfRelOrdSet{T}(K)
+    z.isequation_order = false
+    z.ismaximal = 0
+    return z
+  end
+
+  function NfRelNsOrd{T, S}(K::NfRel_ns{T}, M::PMat{T, S}) where {T, S}
+    z = NfRelNsOrd{T, S}(K)
+    z.basis_pmat = M
+    z.basis_mat = M.matrix
+    return z
+  end
+
+  function NfRelNsOrd{T, S}(K::NfRel_ns{T}, M::Generic.Mat{T}) where {T, S}
+    z = NfRelNsOrd{T, S}(K)
+    z.basis_mat = M
+    z.basis_pmat = pseudo_matrix(M)
+    return z
+  end
+end
+
+function RelativeOrder{T, S}(K::NfRel{T}, x...) where {T, S}
+  return NfRelOrd{T, S}(K, x...)
+end
+
+function RelativeOrder{T, S}(K::NfRel_ns{T}, x...) where {T, S}
+  return NfRelNsOrd{T, S}(K, x...)
 end
 
 ################################################################################
