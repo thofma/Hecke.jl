@@ -751,108 +751,104 @@ function conductor_min(C::Hecke.ClassField)
   
 end 
 
+
+function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Int)
+  
+  O=maximal_order(K)
+  b=basis(pk)
+  N = basis_mat(pv)*basis_mat_inv(pk)
+  G=AbelianGroup(num(N))
+  S,mS=snf(G)
+  #Generators
+  gens=Array{NfOrdElem,1}(ngens(S))
+  for i=1:ngens(S)
+    x=mS(S[i])
+    gens[i]=O(0)
+    for j=1:ngens(G)
+      gens[i]+=mod(x[j], S.snf[end])*b[j]
+    end
+  end
+  for i=1:ngens(S)
+    gens[i]+=1
+  end
+  if length(lp) > 1
+    i_without_p = ideal(O,1)
+    for (p2,vp2) in lp
+      (p != p2) && (i_without_p *= prime_power[p2])
+    end
+
+    alpha, beta = idempotents(prime_power[p],i_without_p)
+    for i in 1:length(gens)
+      gens[i] = beta*gens[i] + alpha
+    end   
+  end
+  for i=1:length(gens)
+    while !istotally_positive(gens[i])
+      gens[i]+=200*a
+    end
+  end
+  return gens
+end
 #
 #  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistancy. 
 #
 
-
-
-function _is_conductor_min_tame_normal(C::Hecke.ClassField, a::Int)
-  return _is_conductor_min_normal(C, a, Dict{NfOrdIdl,Int}())
-end
-
-function _is_conductor_min_normal(C::Hecke.ClassField, a::Int, wprimes::Dict{NfOrdIdl, Int})
+function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
+# a is a positive integer in the modulus
 
   mp=C.mq
-  mR=mp.f
-  mS=mp.g
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = mR.g*mS
-    mR = mR.f
+  R=domain(mp)
+  mr=mp.f
+  while issubtype(typeof(mr), Hecke.CompositeMap)
+    mr = mr.f
   end
-  
-  R=domain(mR)
-  cond=mR.modulus_fin
-  inf_plc=mR.modulus_inf
-  O=parent(cond).order
-  E=Int(order(domain(mp)))
-  expo=Int(exponent(domain(mp)))
-  K=O.nf
-  
-  #
-  #  First, we need to find the subgroup
-  #
-  if isdefined(C, :norm_group)
-    mT=C.norm_group
-  else
-    mS=inv(mS)
-    dom=domain(mS)
-    M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
-    for i=1:ngens(dom)
-      elem=mS(dom[i]).coeff
-      for j=1:ngens(codomain(mS))
-        M[i,j]=elem[1,j]
-      end
-    end
-    S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
-    _,mT=Hecke.kernel(S1)
-    C.norm_group=mT
+  lp=mr.fact_mod
+  if isempty(lp)
+    return true
   end
-  if isdefined(C, :small_gens)
-    Sgens=C.small_gens
-  else
-    Sgens=find_gens_sub(mR,mT)
-    C.small_gens=Sgens
-  end
-  
-  # We try to remove the integers from the factorization
-  lp=collect(keys(factor(a).fac))
-  lq=[prime_decomposition(O,p) for p in lp]
-  for i=1:length(lp)
-    P=lq[i][1][1]
-    g=gcd(E, norm(P)-1)
-    if g==1
-      return false
+  O=order(first(keys(lp)))
+  K=nf(O)
+  #first, tame part
+  tmg=mr.tame_mult_grp
+  primes_done=fmpz[]
+  for p in keys(tmg)
+    if minimum(p) in primes_done || (isdefined(mr,:wild_mult_grp) && haskey(mr.wild_mult_grp, p))
+      continue
     end
-    d1=Dict{NfOrdIdl,Int}()
-    for j=1:length(lq)
-      if j!=i
-        for k=1:length(lq[j])
-          d1[lq[j][k][1]]=1
-        end
-      end
-    end
-    r,mr=ray_class_group(O, expo, mR, d1, wprimes, inf_plc)
-    quot=GrpAbFinGenElem[mr(s) for s in Sgens]
-    s,ms=quo(r,quot)
-    if order(s)==E
+    push!(primes_done, minimum(p))
+    el=mp\ideal(O,tmg[p][1])
+    if iszero(el)
       return false
     end
   end
-  if !isempty(wprimes)
-    d=Dict{NfOrdIdl, Int}()
-    for j=1:length(lq)
-      for k=1:length(lq[j])
-        d[lq[j][k][1]]=1
-      end
+  
+  #wild part
+  if isdefined(mr,:wild_mult_grp) && !isempty(mr.wild_mult_grp)
+    prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+    for (p,v) in lp
+      prime_power[p]=p^v
     end
-    lpw=Set([minimum(p) for p in keys(wprimes)])
-    for q in lpw
-      newwp=Dict{NfOrdIdl,Int}()
-      for (P,e) in wprimes
-        if minimum(P)==q 
-          if e > 2
-            newwp[P]=e-1
-          end
-        else
-          newwp[P]=e
+    wldg=mr.wild_mult_grp
+    primes_done=fmpz[]
+    for p in keys(wldg)
+      if minimum(p) in primes_done
+        continue
+      end
+      push!(primes_done, minimum(p))
+      @assert lp[p]>=2
+      k=lp[p]-1
+      pk=p^k
+      pv=prime_power[p]
+      gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a)
+      iscond=false
+      for i in 1:length(gens)
+        if !iszero(mp\ideal(O,gens[i]))
+          iscond=true
+          break
         end
-      end 
-      r,mr=ray_class_group(O, expo, mR, d, newwp, inf_plc)
-      quot=GrpAbFinGenElem[mr(s) for s in Sgens]
-      s,ms=quo(r,quot)
-      if order(s)==E
+      end
+      if !iscond
         return false
       end
     end
