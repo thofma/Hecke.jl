@@ -719,11 +719,16 @@ end
 big_primes = fmpz[]
 
 function factor(N::fmpz)
+#  N_in = N
   global big_primes
   r, c = factor_trial_range(N)
   for (p, v) = r
     N = divexact(N, p^v)
   end
+  if length(r)==0
+    r[1] = 1
+  end
+#  @assert prod(p^v for (p, v) = r)*N == N_in
   if isunit(N)
 #    @assert all(isprime, keys(r))
     @assert N == c
@@ -739,14 +744,19 @@ function factor(N::fmpz)
       r[p] = v
     end
   end
+#  @assert prod(p^v for (p, v) = r)*N == N_in
 
   e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
   #TODO: use coprime basis to refine stuff...
   while e != 0
     ee, f = ispower(f)
-    ee = valuation(N, f)
+    ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
     if isprime(f)
-      r[f] = ee
+      if haskey(r, f)
+        r[f] += ee
+      else
+        r[f] = ee
+      end
     else
       s = factor(f)
       for (p, ex) = s.fac
@@ -757,8 +767,10 @@ function factor(N::fmpz)
         end
       end
     end
-    @assert N % f^ee == 0
+#    @assert N % f^ee == 0
+#    @assert N % f^(ee+1) != 0
     N = divexact(N, f^ee)
+#    @assert prod(p^v for (p, v) = r)*N == N_in
     if isone(N)
       break
     end
