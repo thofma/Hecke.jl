@@ -1308,20 +1308,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
     a=(mG\(evals[i].elem)).coeff
-#=
-      c=O(evaluate(mU(U[i])))
-      d= (mG\c).coeff
-      if d!=a
-        J=ideal(O,1)
-        for (P,e) in y1
-          J*=P
-        end
-        Q1,mQ1=quo(O,J)
-        Q1.factor=y1
-        G1, mG1=_mult_grp_mod_n(Q1,y1,Dict{NfOrdIdl, Int}(),n)
-        @hassert :RayFacElem 1 mG1\c== mG1\(evals[i].elem)
-      end
-=#
     if mod(n,2)==0 && !isempty(pr)
       if i==1
         a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
@@ -1343,12 +1329,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn=gcdx(vect[i], C.snf[i])[2]
     a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
-#=
-    x=evaluate(mC.princ_gens[i][2])*Kel[i]^(C.snf[i]*vect[i])
-    for (P,e) in lp
-      @assert valuation(x,P)==0
-    end
-=#
     if mod(n,2)==0 && !isempty(pr)
       b=lH(mC.princ_gens[i][2]*Kel[i])
       a=hcat(a, b.coeff)
@@ -1373,24 +1353,46 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   end
   
   inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
+  @assert gcd(fmpz(nonnclass),fmpz(expo))==1
   
   function disclog(J::NfOrdIdl)
 
     if isone(J)
       return X([0 for i=1:ngens(X)])
     else
-      L=mC\J
-      s=exp_class(L)
-      I=J* inv(s)
-      I=I^Int(nonnclass)
-      z=principal_gen_fac_elem(I)
-      el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
-      y=((mG\(el))*inverse_d).coeff
-      if mod(n,2)==0 && !isempty(pr)
-        b=lH(z)
-        y=hcat(y, b.coeff)
-      end
-      return X(hcat(L.coeff,y))
+      if J.is_principal==1
+        if isdefined(J,:princ_gen)
+          el=J.princ_gen
+          y=(mG\(el)).coeff
+          if mod(n,2)==0 && !isempty(pr)
+            b=lH(K(el))
+            y=hcat(y, b.coeff)
+          end
+          return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
+        else
+          z=principal_gen_fac_elem(J)
+          el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
+          y=(mG\(el)).coeff
+          if mod(n,2)==0 && !isempty(pr)
+            b=lH(z)
+            y=hcat(y, b.coeff)
+          end
+          return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
+        end
+      else
+        W=mC\J
+        s=exp_class(W)
+        Id=J* inv(s)
+        Id=Id^Int(nonnclass)
+        z=principal_gen_fac_elem(Id)
+        el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
+        y=((mG\(el))*inverse_d).coeff
+        if mod(n,2)==0 && !isempty(pr)
+          b=lH(z)
+          y=hcat(y, b.coeff)
+        end
+        return X(hcat(W.coeff,y))
+      end    
     end
   end 
 
@@ -1703,18 +1705,39 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
       return X([0 for i=1:ngens(X)])
     else
       @assert iscoprime(I,J)
-      W=mC\J
-      s=exp_class(W)
-      Id=J* inv(s)
-      Id=Id^Int(nonnclass)
-      z=principal_gen_fac_elem(Id)
-      el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, mR.fact_mod, gcd(expo,n))    
-      y=((mG(el))*inverse_d).coeff
-      if mod(n,2)==0 && !isempty(pr)
-        b=lH(z)
-        y=hcat(y, b.coeff)
-      end
-      return X(hcat(W.coeff,y))
+      if J.is_principal==1
+        if isdefined(J,:princ_gen)
+          el=J.princ_gen
+          y=(mG(el)).coeff
+          if mod(n,2)==0 && !isempty(pr)
+            b=lH(el)
+            y=hcat(y, b.coeff)
+          end
+          return X(hcat([fmpz(0) for i=1:ngens(C)],y))
+        else
+          z=principal_gen_fac_elem(J)
+          el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, mR.fact_mod, gcd(expo,n))
+          y=(mG(el)).coeff
+          if mod(n,2)==0 && !isempty(pr)
+            b=lH(z)
+            y=hcat(y, b.coeff)
+          end
+          return X(hcat([fmpz(0) for i=1:ngens(C)],y))
+        end
+      else
+        W=mC\J
+        s=exp_class(W)
+        Id=J* inv(s)
+        Id=Id^Int(nonnclass)
+        z=principal_gen_fac_elem(Id)
+        el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, mR.fact_mod, gcd(expo,n))
+        y=((mG(el))*inverse_d).coeff
+        if mod(n,2)==0 && !isempty(pr)
+          b=lH(z)
+          y=hcat(y, b.coeff)
+        end
+        return X(hcat(W.coeff,y))
+      end    
     end
   end 
   
@@ -1923,6 +1946,9 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
   
   c=lcm(quotype)
   Q,mQ=quo(R,c, false)
+  if !_are_there_subs(Q,quotype)
+    return ([])
+  end
   lf=factor(order(Q)).fac
   list=[]
   for p in keys(lf)
