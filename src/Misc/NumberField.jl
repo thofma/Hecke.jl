@@ -2291,8 +2291,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
  
   m = maximum(abs, values(de))
   m = max(m, 1)
-  mm = abs_upper_bound(log(1+maximum(abs, v)), fmpz)
-  k = max(ceil(Int, log(m)), Int(mm))
+  mm = abs_upper_bound(log(1+maximum(abs, v))//log(n), fmpz)
+  k = max(ceil(Int, log(m)/log(n)), Int(mm))
 
   de = Dict(A => fmpz(1))
   delete!(de, ideal(ZK, 1))

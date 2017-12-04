@@ -725,9 +725,9 @@ function factor(N::fmpz)
   for (p, v) = r
     N = divexact(N, p^v)
   end
-  if length(r)==0
-    r[1] = 1
-  end
+#  if length(r)==0
+#    r[1] = 1
+#  end
 #  @assert prod(p^v for (p, v) = r)*N == N_in
   if isunit(N)
 #    @assert all(isprime, keys(r))
