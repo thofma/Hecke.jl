@@ -2308,10 +2308,10 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     vv = [x//n^k for x = v]
     vvv = fmpz[]
     for i=1:r1
-      push!(vvv, round(fmpz, vv[i]))
+      push!(vvv, round(fmpz, vv[i]//log(2)))
     end
     for i=r1+1:r1+r2
-      local r = round(fmpz, vv[i]//2)
+      local r = round(fmpz, vv[i]//log(2)//2)
       push!(vvv, r)
       push!(vvv, r)
     end
