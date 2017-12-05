@@ -85,12 +85,27 @@ function totally_positive_generators(mr::MapRayClassGrp, a::Int)
     tmg=mr.tame_mult_grp
     for (p,v) in tmg
       g=v[1]
-      while !istotally_positive(g)
-        g+=200*a
-      end
-      tmg[p]=(g,v[2],v[3])
+      tmg[p]=(make_positive(g,a),v[2],v[3])
     end
   end
+end
+
+function make_positive(x::NfOrdElem, a::Int)
+ 
+  els=conjugates_arb(x)
+  m=1
+  for i=1:length(els)
+    if isreal(els[1])
+      y=BigFloat(midpoint(real(els[i]/a)))
+      if y>0
+        continue
+      else
+        m=max(m,1-ceil(Int,y))
+      end
+    end
+  end
+  return x+m*a
+  
 end
 
 
@@ -282,11 +297,11 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   #remove primes that can be wildly ramified or
   #that are ramified in the base field
   for x in coprime_to
-    t=x
+    t=Int(x)
     while t<= n
-      sqf[Int(t)]=false
-      primes[Int(t)]=false
-      t+=x
+      sqf[t]=false
+      primes[t]=false
+      t+=Int(x)
     end
   end
   
@@ -323,19 +338,17 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
       if gcd(deg,i^dt[1][1]-1)==1
         primes[i]=false
         sqf[i]=false
-        j=3*i
-        s=2*i
+        j=i
         while j<= n
          primes[j]=false
          sqf[j]=false
-         j+=s
+         j+=i
         end
       else 
-        j=3*i
-        s=2*i
+        j=i
         while j<= n
           primes[j]=false
-          j+=s
+          j+=i
         end
         j=i^2
         t=2*j
@@ -352,11 +365,10 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
       dt=prime_decomposition_type(O,i)
       if gcd(deg,i^dt[1][1]-1)==1
         sqf[i]=false
-        j=3*i
-        s=2*i
+        j=i
         while j<= n
          sqf[j]=false
-         j+=s
+         j+=i
         end
       end
     end
@@ -398,7 +410,10 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
     f=tr[1][1]
-    nq=Int(q)^f
+    nq=Int(q)^f    
+    if gcd(nq-1,n)==1
+      continue
+    end
     if nq> bound
       break
     end
@@ -464,6 +479,9 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
     tr=prime_decomposition_type(O,Int(q))
     f=tr[1][1]
     nq=fmpz(q)^f
+    if gcd(nq-1,n)==1
+      continue
+    end
     if nq> bound
       break
     end
@@ -693,7 +711,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   #Getting conductors
   l_conductors=conductors(O,n,bound)
   @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
-  fields=[]
+  fields=NfRel_ns[]
   
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
@@ -814,12 +832,17 @@ end
 
 function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClassGrp, bound::fmpz, n::Int)
   
+ 
+  lp=mr.fact_mod
+  if isempty(lp)
+    return true
+  end
+
+  K=nf(O)
   discr=fmpz(1)
   mp=C.mq
   R=domain(mp)
-  lp=mr.fact_mod
-  K=nf(O)
-
+  
   #first, tamely ramified part
   tmg=mr.tame_mult_grp
   primes_done=fmpz[]
@@ -828,11 +851,10 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
       continue
     end
     push!(primes_done, minimum(p))
-    @hassert :QuadraticExt 1 istotally_positive(tmg[p][1])
     el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
     q,mq=quo(R,[el])
     ap= n-order(q)
-    qw=fmpz(divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap)
+    qw=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
     discr*=fmpz(minimum(p))^qw
     if discr>bound
       return false
@@ -881,8 +903,8 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
       ap-=order(quo(R,els)[1])
       @hassert :QuadraticExt 1 ap>0
       td=prime_decomposition_type(O,Int(minimum(p)))
-      np=fmpz(minimum(p))^(td[1][2])
-      discr*=np^ap
+      np=fmpz(minimum(p))^(td[1][1]*length(td)*ap)
+      discr*=np
       if discr>bound
         return false
       end
@@ -898,11 +920,20 @@ end
 #
 ################################################################################
 
-function quadratic_extensions(bound::Int)
+function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false)
 
+  
   Qx,x=PolynomialRing(FlintZZ, "x")
   sqf=squarefree_up_to(bound);
-  sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  if !real
+    sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  else 
+    deleteat!(sqf,1)
+  end
+  if tame
+    filter!( x -> mod(x,4)==1, sqf)
+    return ( NumberField(x^2-x+divexact(1-i,4))[1] for i in sqf)
+  end
   final_list=Int[]
   for i=1:length(sqf)
     if sqf[i]*4< bound
@@ -1168,6 +1199,111 @@ function C22_extensions_tame_real(bound::Int)
   return (_ext(Kx,x,i,j) for i=5:b1 for j=i+1:b1 if pairs[i,j])
   
 end
+
+################################################################################
+#
+#  Dihedral group Dn with n odd
+#
+################################################################################
+
+function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, tame::Bool=false)
+
+  if mod(n,2)==0
+    error("Not yet implemented")
+  end
+  
+  bound_quadratic= Int(root(absolute_bound, n))
+  println(bound_quadratic)
+  list_quad=quadratic_extensions(bound_quadratic, tame=tame, real=totally_real)
+  fields=NfRel_ns[]
+  
+  fac=factor(n).fac
+  for K in list_quad
+    
+    println("Field: $K")
+    O=maximal_order(K)
+    D=abs(discriminant(O))
+    if D^n>absolute_bound
+      continue
+    end
+    bo = ceil(Rational{BigInt}(absolute_bound//D^n))
+    bound = FlintZZ(fmpq(bo))
+   
+    _,mC=class_group(O)
+    allow_cache!(mC)
+    S = prime_ideals_up_to(O, max(1000,100*clog(D,10)^2))
+
+    gens=Hecke.automorphisms(K)
+    a=gen(K)
+    if gens[1](a)==a
+      deleteat!(gens,1)
+    else
+      deleteat!(gens,2)
+    end
+    
+    inf_plc=InfPlc[]
+    if !totally_real
+      inf_plc=real_places(K)
+    end
+      
+    #Getting conductors
+    if tame
+      l_conductor=[(k,Dict{NfOrdIdl,Int}()) for k in conductors_tame(O,n,bound)]
+    else
+      l_conductors=conductors(O,n,bound)
+    end
+    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  
+    #Now, the big loop
+    for (i, k) in enumerate(l_conductors)
+      r,mr=ray_class_group(O,n,k[1], k[2], inf_plc)
+      if !_are_there_subs(r,[n])
+        continue
+      end
+      mr.prime_ideal_cache = S
+      act=_act_on_ray_class(mr,gens)
+      ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
+      a=_min_wild(k[2])*k[1]
+      if !totally_real
+        totally_positive_generators(mr,a)
+      end
+      for s in ls
+        if _trivial_action(s,act,fac,n)
+          continue
+        end
+        C=ray_class_field(mr*inv(s))
+        if Hecke._is_conductor_min_normal(C,a) 
+          if Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+            println("\n New Field!")
+            @vtime :QuadraticExt 1 push!(fields,number_field(C))
+          end
+        end
+      end
+    end
+    
+  end
+  
+  return fields
+  
+end
+
+function _trivial_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1}, fac::Dict{fmpz,Int}, n::Int)
+
+  @assert length(act)==1
+  S=codomain(s)
+  T,mT=snf(S)
+  @assert T.snf[1]==n
+  @assert ngens(T)==1
+  new_el=mT\(s(act[1](s\mT(T[1]))))
+  for (k,s) in fac
+    if mod(new_el[1],k^s)==1
+      return true
+    end
+  end
+  return false
+end
+
+
 ################################################################################
 #
 #   First stupid iterator
