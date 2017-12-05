@@ -1943,8 +1943,11 @@ doc"""
 > subgroups of R such that the corresponding quotient has the required type.
 """
 
+global debug= []
 function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
   
+  global debug
+  debug=(R,quotype,act)
   c=lcm(quotype)
   Q,mQ=quo(R,c, false)
   if !_are_there_subs(Q,quotype)
@@ -1968,10 +1971,17 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     
       F, _ = Nemo.FiniteField(Int(p), 1, "_")
       act_mat=Array{Generic.Mat{fq_nmod},1}(length(act))
-      for z=1:length(act)
-        y=transpose(solve(hcat(mG.map', rels(Q)'), (mS.map*mG.map*act[z].map)'))
-        y=view(y,1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat[z]=MatrixSpace(F,ngens(S), ngens(S))(y)
+      for w=1:length(act)
+        act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
+      end
+      for w=1:ngens(S)
+        el=mG(mS(S[w]))
+        for z=1:length(act)
+          elz=mS\(haspreimage(mG,act[z](el))[2])
+          for l=1:ngens(S)
+            act_mat[z][w,l]=elz[l]
+          end
+        end
       end
       M=FqGModule(act_mat)
       
