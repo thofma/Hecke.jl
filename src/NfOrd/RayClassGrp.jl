@@ -655,6 +655,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.modulus_fin=ideal(O,1)
   mp.modulus_inf=InfPlc[]
+  mp.fact_mod=Dict{NfOrdIdl, Int}()
     
   return X,mp
 end
@@ -683,7 +684,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
     mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
     mp.modulus_fin=ideal(O,1)
     mp.modulus_inf=InfPlc[]
-    
+    mp.fact_mod=Dict{NfOrdIdl, Int}()
     return X,mp
 
 end
@@ -1178,7 +1179,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
   
 end
 
-function ray_class_group(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}())
+function ray_class_group(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1}=InfPlc[])
   
   K=nf(O)
   d1=Dict{NfOrdIdl, Int}()
@@ -1189,7 +1190,7 @@ function ray_class_group(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,In
       d1[P]=1
     end   
   end
-  return ray_class_group(n_quo, ideal(O,1), d1, wprimes, real_places(K))
+  return ray_class_group(n_quo, ideal(O,1), d1, wprimes, inf_plc)
   
 end
 
