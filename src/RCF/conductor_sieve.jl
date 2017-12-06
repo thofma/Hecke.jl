@@ -1213,10 +1213,9 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
   end
   
   bound_quadratic= Int(root(absolute_bound, n))
-  println(bound_quadratic)
   list_quad=quadratic_extensions(bound_quadratic, tame=tame, real=totally_real)
   fields=NfRel_ns[]
-  
+  autos=NfToNfMor[]
   fac=factor(n).fac
   for K in list_quad
     
@@ -1276,6 +1275,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
           if Hecke.discriminant_conductor(O,C,a,mr,bound,n)
             println("\n New Field!")
             @vtime :QuadraticExt 1 push!(fields,number_field(C))
+            push!(autos,absolute_automorphism_group(C,gens))
           end
         end
       end
@@ -1283,7 +1283,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
     
   end
   
-  return fields
+  return fields, autos
   
 end
 
