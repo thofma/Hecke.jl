@@ -657,6 +657,53 @@ function EquationOrder(K::AnticNumberField, cache::Bool = true)
   return z
 end
 
+function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
+  o = one(K)
+
+  if !(o in elt)
+    push!(elt, o)
+  end
+
+  n = degree(K)
+
+  closed = false
+
+  dold = fmpq(0)
+
+  # Since 1 is in elt, prods will contain all elements
+  
+  while !closed
+    prods = nf_elem[]
+    for u in elt
+      for v in elt
+        push!(prods, u * v)
+      end
+    end
+    #prods = nf_elem[ u * v for u in elt for v in elt ]
+    B = basis_mat(prods)
+    H = sub(hnf(B), (rows(B) - 1):rows(B), 1:degree(K))
+
+    d = det(H)
+
+    if iszero(d)
+      error("Elements do not define a module of full rank")
+    end
+
+    if dold == d
+      closed = true
+    else
+      dold = d
+      elt = nf_elem[]
+      for i in 1:n
+        push!(elt, elem_from_mat_row(K, H.num, i, H.den))
+      end
+    end
+  end
+
+  # Make an explicit check
+  return Order(K, elt, true)
+end
+
 ################################################################################
 #
 #  Equality
@@ -725,16 +772,19 @@ equation order and have coprime index.
 """
 function +(a::NfOrd, b::NfOrd)
   parent(a) != parent(b) && error("Orders must have same ambient number field")
-  !isone(gcd(index(a), index(b))) && error("Indice must be coprime")
-  assure_has_basis_mat(a)
-  assure_has_basis_mat(b)
-  aB = a.basis_mat
-  bB = b.basis_mat
-  d = degree(a)
-  c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
-  O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den))
-  O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
-  return O
+  if isone(gcd(index(a), index(b)))
+    assure_has_basis_mat(a)
+    assure_has_basis_mat(b)
+    aB = a.basis_mat
+    bB = b.basis_mat
+    d = degree(a)
+    c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
+    O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den))
+    O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
+    return O
+  else
+    return _order(nf(a), vcat(a.basis_nf, b.basis_nf))
+  end
 end
 
 ################################################################################
