@@ -1050,8 +1050,7 @@ function rel_auto(A::ClassField_pp)
   im = A.A()
   r = degree(C.Kr)
   for (i, c) = s
-    @assert i % r == 0
-    setcoeff!(im, div(i, r)-1, c)
+    setcoeff!(im, i-1, c)
   end
 
   return NfRelToNfRelMor(A.A, A.A, im)
