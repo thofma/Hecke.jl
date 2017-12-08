@@ -120,6 +120,7 @@ doc"""
 > Return generators, the snf structure and a discrete logarithm function for $Q^\times$.
 """
 function _multgrp(Q::NfOrdQuoRing; method=nothing)
+
   gens = Vector{NfOrdQuoRingElem}()
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
@@ -846,10 +847,109 @@ function crt(l::Vector{Tuple{T,T}}) where T<:Union{fmpz,Int}
   return X, M
 end
 
+################################################################################
+#
+#   Multiplicative group for ray class group
+#
+################################################################################
+
+function _multgrp_ray(Q::NfOrdQuoRing; method=nothing)
+
+  gens = Vector{NfOrdQuoRingElem}()
+  structt = Vector{fmpz}()
+  disc_logs = Vector{Function}()
+  i = ideal(Q)
+  O = order(i)
+  fac = factor(i)
+  Q.factor = fac
+  
+  tame_part=Dict{NfOrdIdl, Tuple{NfOrdElem, fmpz, Function}}()
+  wild_part=Dict{NfOrdIdl, Tuple{Array{NfOrdElem,1}, Array{fmpz,1}, Function}}()
+  
+  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+  for (p,vp) in fac
+    prime_power[p]= p^vp
+  end
+  
+  
+  for (p,vp) in fac
+    gen_p, n_p, disclog_p = _multgrp_mod_p(p)
+    tame_part[p]=(gen_p,n_p,disclog_p)
+    dlog_p=1
+    if vp == 1
+      gens_p = [gen_p]
+      struct_p = [n_p]
+      dlog_p = function(x::NfOrdElem) return [disclog_p(x)] end
+      
+    else
+      gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,vp;method=method)
+      obcs = lcm(struct_pv) # order of biggest cyclic subgroup
+      g_p_obcs = powermod(gen_p,obcs,p.gen_one^vp)
+      gens_p = [[g_p_obcs] ; gens_pv]
+
+      struct_p = [[n_p] ; struct_pv]
+
+      
+      obcs_inv = gcdx(obcs,n_p)[2]
+      function dlog_p(x::NfOrdElem)
+        r = mod(disclog_p(x)*obcs_inv,n_p)
+        x *= g_p_obcs^mod(-r,n_p)
+        return [[r] ; dlog_pv(x)]
+      end
+    end
+    
+    # Make generators coprime to other primes
+    if length(fac) > 1
+      i_without_p = ideal(O,1)
+      for (p2,vp2) in fac
+        (p != p2) && (i_without_p *= prime_power[p2])
+      end
+
+      alpha, beta = idempotents(prime_power[p],i_without_p)
+      for i in 1:length(gens_p)
+        g_pi_new = beta*gens_p[i] + alpha
+        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in prime_power[p])
+        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
+        gens_p[i] = g_pi_new
+      end
+    end
+
+    gens_new = map(Q,gens_p)
+    append!(gens,gens_new)
+    append!(structt,struct_p)
+    push!(disc_logs,dlog_p)
+    
+    tame_part[p]=(gens_p[1],struct_p[1], disclog_p)
+    if length(gens_p)>1
+      wild_part[p]=(gens_p[2:end], struct_p[2:end], dlog_pv)
+    end
+  end
+
+
+
+  function discrete_logarithm(x::NfOrdQuoRingElem)
+    result = Vector{fmpz}()
+    for dlog in disc_logs
+      append!(result,dlog(x.elem))
+    end
+    return result
+  end
+
+  # Transform to SNF
+  rels = matrix(diagm(structt))
+  gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
+
+  mG=AbToResRingMultGrp(Q,gens_trans, rels_trans, dlog_trans)
+  G=domain(mG)
+  mG.tame=tame_part
+  mG.wild=wild_part
+  return G,mG
+  
+end
 
 #################################################################################
 #
-#  Quotients of the multiplicative group
+#  p-part of the multiplicative group
 #
 #################################################################################
 
@@ -907,6 +1007,8 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
   structt = Vector{fmpz}()
   disc_logs = Vector{Function}()
   
+  tame=Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}() 
+  wild=Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}()
   
   fac=factor(Q.ideal)
   Q.factor=fac
@@ -944,7 +1046,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
     append!(gens,[Q(gens_q)])
     append!(structt,struct_q)
     push!(disc_logs,dlog_q)
-   
+    tame[q]=(gens_q, struct_q[1], dlog_q)
   end
   for (q,vq) in y2
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
@@ -976,10 +1078,11 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
       return y
     end
         
-    gens_q = map(Q,gens_q)
-    append!(gens,gens_q)
+    gensn = map(Q,gens_q)
+    append!(gens,gensn)
     append!(structt,snf_q)
     push!(disc_logs,dlog_q_norm)
+    wild[q]=(gens_q,snf_q,dlog_q_norm)
   end 
   
   G=DiagonalGroup(structt)
@@ -1005,10 +1108,16 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
   end
   
   mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
-  
+  mG.tame=tame
+  mG.wild=wild
   return G, mG, merge(y1, y2)
 end
 
+####################################################################################
+#
+#  multiplicative group mod n
+#
+####################################################################################
 
 function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
@@ -1170,178 +1279,3 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   return G, mG , tame_mult_grp, wild_mult_grp
 end
 
-#=
-
-function _iterative_method_n(p::NfOrdIdl, v::Int)
-  @hassert :NfOrdQuoRing 2 isprime(p)
-  @assert v >=  2
-  pnum = minimum(p)
-  e = valuation(pnum,p)
-  k0 = 1 + div(fmpz(e),(pnum-1))
-
-  g = Vector{NfOrdElem}()
-  M = zero_matrix(FlintZZ,0,0)
-  dlogs = Vector{Function}()
-
-  l = u
-  pl = p^l
-
-  while l != v
-    k = l
-    pk = pl
-
-    if k>=k0
-      next_method = _p_adic_method_n
-      l = v
-    else
-      next_method = _artin_hasse_method_n
-      l = min(pnum*k,v)
-    end
-
-    d = Int(div(fmpz(l),k))
-    pl = l == d*k ? pk^d : p^l
-    h,N,disc_log = next_method(p,k,l;pu=pk,pv=pl)
-    
-    g,M = _expand(g,M,h,N,disc_log,pl)
-    
-    
-    push!(dlogs,disc_log)
-  end
-
-  Q = NfOrdQuoRing(order(pl),pl)
-  function discrete_logarithm(b::NfOrdElem)
-    b = Q(b)
-    a = []
-    k = 1
-    for i in 1:length(dlogs)
-      a_ = dlogs[i](b.elem)
-      prod = 1
-      for j in 1:length(a_)
-        prod *= Q(g[k])^a_[j]
-        k += 1
-      end
-      a = [a ; a_]
-      b = divexact(b,prod)
-    end
-    return a
-  end
-
-  return g, M, discrete_logarithm
-end
-
-#
-# Given generators and relations for groups of two consecutives steps, this function computes 
-# generators and relations for the product mod n
-#
-function _expand_n(g,M,h,N,disc_log,pl)
-  isempty(g) && return h,N
-  isempty(h) && return g,M
-  
-  # I am assuming that N is a diagonal matrix
-  @assert issnf(N)
-  O = order(pl)
-  Q , mQ = quo(O,pl)
-  Z = zero_matrix(FlintZZ,rows(M)+rows(N),cols(M)+cols(N))
-  for i=1:rows(M)
-    for j=1:cols(M)
-      Z[i,j]=M[i,j]
-    end
-  end
-  for i=1:rows(N)
-    Z[i+rows(M),i+rows(M)]=N[i,i]
-  end
-
-  for i in 1:rows(M)
-    el = prod([Q(g[j])^M[i,j] for j=1:cols(M) ]).elem
-    alpha = disc_log(el)
-    for j in 1:cols(N)
-      Z[i,j+cols(M)] = -alpha[j]
-    end
-  end
-
-  append!(g,h)
-  
-  return g,Z
-end
-
-#
-#  This function returns a set of generators with the corresponding relations and disclog
-#
-
-function _pu_mod_pv_n(pu::NfOrdIdl,pv::NfOrdIdl, n::Int)
-
-  O=order(pu)
-  d=degree(O)
-  b=basis(pu)
-  N = basis_mat(pv)*basis_mat_inv(pu)
-  @hassert :NfOrdQuoRing 1 den(N) == 1
-  G=AbelianGroup(num(N))
-  S,mS=snf(G)
-
-  exp=gcd(S.snf[end], n)
-  #Generators
-  gens=Array{NfOrdElem,1}(ngens(S))
-  for i=1:ngens(S)
-    x=mS(S[i])
-    gens[i]=O(0)
-    for j=1:ngens(G)
-      gens[i]+=mod(x[j], exp)*b[j]
-    end
-  end
-  R=rels(S)
-  for i=1:ngens(S)
-    R[i,i]=mod(R[i,i], exp)
-  end
-  
-  #Disclog  
-  M=basis_mat_inv(pu)*mS.imap
-  function disclog(x::NfOrdElem)
-    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, d, elem_in_basis(x)), fmpz(1))
-    res_fakemat = x_fakemat * M
-    den(res_fakemat) != 1 && error("Element is in the ideal")
-    return vec(Array(num(res_fakemat)))
-  end
-  return gens, rels(S), disclog
-  
-end
-
-# Compute generators, a relation matrix and a function to compute discrete
-# logarithms for (1+p^u)/(1+p^v), where p is a prime ideal over pnum
-# and pnum*u >= v >= u >= 1
-function _artin_hasse_method_n(p::NfOrdIdl, u::Int, v::Int, n::Int; pu=p^u, pv=p^v)
-  @hassert :NfOrdQuoRing 2 isprime(p)
-  pnum = minimum(p)
-  @assert pnum*u >= v >= u >= 1
-  Q, mQ=quo(order(p), pv)
-  g,M, dlog = _pu_mod_pv_n(pu, pv, n)
-  map!(x -> artin_hasse_exp(Q(x), pnum), g, g)
-  
-  function discrete_logarithm(x::NfOrdElem)
-    return dlog(artin_hasse_log(Q(x), pnum)) 
-  end
-  return g, M, discrete_logarithm
-end
-
-
-# Compute generators, a relation matrix and a function to compute discrete
-# logarithms for (1+p^u)/(1+p^v) if u >= k0, where p is a prime ideal over pnum,
-# e the p-adic valuation of pnum, and k0 = 1 + div(e,pnum-1)
-function _p_adic_method(p::NfOrdIdl, u::Int, v::Int, n::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
-  @assert v > u >= 1
-  @hassert :NfOrdQuoRing 2 isprime(p)
-  pnum = minimum(p)
-  e = valuation(pnum,p) #ramification index
-  k0 = 1 + div(fmpz(e),(pnum-1))
-  @assert u >= k0
-  g,M, dlog = _pu_mod_pv_n(pu,pv,n)
-  Q = NfOrdQuoRing(order(p),pv)
-  map!(x->p_adic_exp(Q,p,v,x,e;pv=pv), g, g)
- 
-  function discrete_logarithm(b::NfOrdElem) 
-    return dlog(p_adic_log(Q,p,v,b,e;pv=pv))
-  end
- 
-  return g, M, discrete_logarithm
-end
-
-=#

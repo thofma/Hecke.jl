@@ -42,8 +42,11 @@ mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
   header::MapHeader{GrpAbFinGen, NfOrdQuoRing}
   generators::Vector{NfOrdQuoRingElem}
   discrete_logarithm::Function
-
-  function AbToResRingMultGrp(Q::NfOrdQuoRing,
+  
+  tame::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}} #The multiplicative group, tame part
+  wild::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}} #Multiplicative group, wild part
+  
+  function AbToResRingMultGrp(Q::NfOrdQuoRing, 
                               generators::Vector{NfOrdQuoRingElem},
                               snf_structure::Vector{fmpz},
                               disc_log::Function)
