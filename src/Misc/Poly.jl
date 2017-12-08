@@ -506,7 +506,7 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
   return g, h, s, t
 end
 
-#factors f as monic * (unit mod lead(f))
+#factors f as unit * monic 
 #seems to not like 3*x^2+3*x+1 mod 108! mod 27 it is fine.
 # requires some coefficient of f to be a unit
 function fun_factor(f::PolyElem{<:RingElem})
@@ -514,7 +514,7 @@ function fun_factor(f::PolyElem{<:RingElem})
   local h0
   if isunit(lead(f))
     l= lead(f)
-    return f*inv(l), parent(f)(l)
+    return parent(f)(l), f*inv(l)
   end
   if isunit(f)
     return f, parent(f)(1)
@@ -1020,6 +1020,47 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   end
 end
 
+function my_divrem(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  @show f, g
+  @show g1, g2 = fun_factor(g)
+  if degree(g2) < 1 # g is monic, so it's 1
+    return parent(f)(0), g2
+  end
+  u = _invmod(g1, g2)
+  q, r = divrem(f, g2)
+  q, r = divrem(r*u, g2)
+  return g1*r, g2
+end  
+
+#polynomial remainder sequence - almost
+function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Rt = parent(f)
+  R = base_ring(Rt)
+  m = fmpz(modulus(R))
+  e, p = ispower(m)
+  easy = isprime(p)
+  @assert easy
+
+  Zx = PolynomialRing(FlintZZ)[1]
+
+  rs = []
+
+  while degree(g) >0
+    g *= inv(canonical_unit(lead(g)))
+    c = content(g)
+    gg = parent(g)()
+    for i=0:degree(g)
+      setcoeff!(gg, i, divexact(coeff(g, i), c))
+    end
+    @show f, (g, mu) = gg, my_divrem(f, gg)
+    push!(rs, (c, gg, mu))
+  end
+  return rs
+end
+
+
 
 function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
   m = modulus(a)
@@ -1080,6 +1121,30 @@ function Nemo.inv(f::Union{fmpz_mod_poly,nmod_poly})
   end
   return g
 end
+
+function _invmod(f::T, M::T) where T <: Union{fmpz_mod_poly,nmod_poly}
+  if !isunit(f)
+    error("impossible inverse")
+  end
+  if !isunit(lead(M))
+    error("modulus must be monic")
+  end
+  g = parent(f)(inv(trailing_coefficient(f)))
+  #lifting: to invert a, start with an inverse b mod m, then
+  # then b -> b*(2-ab) is an inverse mod m^2
+  # starting with this g, and using the fact that all coeffs are nilpotent
+  # we have an invers modulo s.th. nilpotent. Hence it works
+  c = f*g
+  q, c = divrem(c, M)
+  while !isone(c)
+    g = g*(2-c)
+    q, g = divrem(g, M)
+    c = f*g
+    q, c = divrem(c, M)
+  end
+  return g
+end
+
 
 #for testing: the obvious(?) naive method(s)
 function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
