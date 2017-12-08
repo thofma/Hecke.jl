@@ -826,18 +826,15 @@ function simplify(A::NfOrdIdl)
     end
     if new
       A.minimum = _minmod(A.gen_one, A.gen_two)
-      global last_data = A
-      if A.minimum != gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
-        println(A)
-        println(order(A))
-      end
-
       @hassert :Rres 1 A.minimum == gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
     else  
       A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
     end  
     A.gen_one = A.minimum
-    if new
+    if false && new
+      #norm seems to be cheap, while inv is expensive
+      #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
+      #      order basis. For this it would better be small in the field basis....
       n = _normmod(A.gen_one^degree(A.parent.order), A.gen_two)
       @hassert :Rres 1 n == gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
     else  
