@@ -13,18 +13,22 @@ add_assert_scope(:RayFacElem)
 
 mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}}
   header::Hecke.MapHeader
-  modulus_fin::NfOrdIdl
-  modulus_inf::Array{InfPlc,1}
-  fact_mod::Dict{NfOrdIdl, Int}
-  prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem}
-  prime_ideal_cache::Array{NfOrdIdl, 1}
-  evals::Array{NfOrdQuoRingElem,1}
-  quots::Array
-  idemps::Array{Tuple{NfOrdElem, NfOrdElem},1}
-  coprime_elems::Array{nf_elem,1}
-  tame_mult_grp::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}
-  wild_mult_grp::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}
+  modulus_fin::NfOrdIdl #The finite part of the modulus
+  modulus_inf::Array{InfPlc,1} #The infinite part of the modulus
+  fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the modulus
   
+  #Dictionaries to cache preimages. Used in the action on the ray class group
+  prime_ideal_preimage_cache::Dict{NfOrdIdl, GrpAbFinGenElem} 
+  prime_ideal_cache::Array{NfOrdIdl, 1}
+  
+  
+  evals::Array{NfOrdQuoRingElem,1}# Evaluations of the units and class group generators.
+  quots::Array  #Quotients of the ring by p^n for p dividing the modulus
+  idemps::Array{Tuple{NfOrdElem, NfOrdElem},1} #Idempotents for discrete logarithm
+  coprime_elems::Array{nf_elem,1}
+  
+  tame_mult_grp::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}} #The multiplicative group, tame part
+  wild_mult_grp::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}} #Multiplicative group, wild part
   
   function MapRayClassGrp{T}() where {T}
     z = new{T}()
@@ -690,6 +694,8 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
 end
 
 
+
+
 ###################################################################################
 #
 #  Ray Class Group
@@ -707,13 +713,12 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   O=parent(m).order
   K=nf(O)
   
-
   C, mC = class_group(O)
 
   exp_class=Hecke._coprime_ideal(C,mC,m)
   U, mU = unit_group_fac_elem(O)
   Q, pi= quo(O,m)
-  G, mG=unit_group(Q)
+  G, mG=_multgrp_ray(Q)
   
   lp=Q.factor
   
@@ -882,6 +887,8 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   mp.modulus_fin=m
   mp.modulus_inf=p
   mp.fact_mod=Q.factor
+  mp.tame_mult_grp=mG.tame
+  mp.wild_mult_grp=mG.wild
   return X, mp
   
 end
@@ -1081,6 +1088,9 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin=n
   mp.modulus_inf=inf_plc
+  mp.fact_mod=lp
+  mp.tame_mult_grp=mG.tame
+  mp.wild_mult_grp=mG.wild
 
   return X,mp
 end 
@@ -1747,40 +1757,11 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   
 end
 
-
 ##################################################################################
 #
-#  Stable Subgroups of Ray Class Group
+#  Action of the Galois Group on the Ray Class Group
 #
 ##################################################################################
-
-
-function _act_on_ray_class(mR::Map, p::Int, Aut::Array{Hecke.NfToNfMor,1})
-
-  R=mR.header.domain
-  O=mR.header.codomain.base_ring.order
-  K=nf(O)
-  F, _=Nemo.FiniteField(p,1, "_")  
-  G=MatElem[]
-  
-  for phi in Aut
-    M=zero_matrix(F,ngens(R), ngens(R))
-    for i=1:ngens(R) 
-      J=mR(R[i])
-      I=FacElem(Dict(ideal(O,1)=> 1))
-      for (f,k) in J.fac
-        I.fac[_aut_on_id(O, phi, f)]=k
-      end
-      elem=mR\I
-      for j=1:ngens(R)
-        M[i,j]=F(elem.coeff[1,j])
-      end
-    end
-    push!(G,M)
-  end 
-  return FqGModule(G)
-  
-end
 
 function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl) 
   
@@ -1789,36 +1770,6 @@ function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl)
   y=O(phi(y))
   return ideal(O,I.gen_one,y)
   
-end
-
-function stable_index_p_subgroups(R::GrpAbFinGen, index::Int, act::Array{T, 1}, op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
-  
-  S,mS=snf(R)
-
-  @assert length(act)>0
-  p = S.snf[1]
-  @assert isprime(p)
-  @assert all(x -> x==p, S.snf)
-
-  F, _ = Nemo.FiniteField(Int(p), 1, "_")
-  FM = MatrixSpace(F, ngens(S), ngens(S))
-  G = Generic.Mat{fq_nmod}[ FM(vcat([mS(X(preimage(mS, S[i]))).coeff for i=1:ngens(S)])) for X = act]
-  M = FqGModule(G)
-
-  ls=submodules(M,index)
-  subgroups=[]
-  for s in ls
-    subs=GrpAbFinGenElem[]
-    for i=1:rows(s)
-      x=zero_matrix(FlintZZ,1,cols(s))()
-      for j=1:cols(s)
-        x[1,j]=FlintZZ(coeff(s[i,j],0))
-      end
-      push!(subs, mS(S(x)))
-    end
-    push!(subgroups, op(R, subs))
-  end
-  return subgroups
 end
 
 #
@@ -1935,6 +1886,12 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
   
 end
 
+##################################################################################
+#
+#  Stable Subgroups function
+#
+##################################################################################
+
 doc"""
 ***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
@@ -1943,11 +1900,8 @@ doc"""
 > subgroups of R such that the corresponding quotient has the required type.
 """
 
-global debug= []
 function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
   
-  global debug
-  debug=(R,quotype,act)
   c=lcm(quotype)
   Q,mQ=quo(R,c, false)
   if !_are_there_subs(Q,quotype)
@@ -2063,43 +2017,5 @@ function _lift_and_construct(A::Generic.Mat{fq_nmod}, mQ::GrpAbFinGenMap, mG::Gr
     push!(newsub,mQ\(mG(mS(mS.header.domain(z)))))
   end
   return newsub
-
-end
-
-
-function stable_index_p_subgroups(mR::Hecke.MapRayClassGrp, p::Int, index::Int=1, Aut::Array{NfToNfMor, 1}=NfToNfMor[])
-  
-  O=mR.header.codomain.base_ring.order
-  K=nf(O)
-  
-  if isempty(Aut)
-    Aut=automorphisms(K)
-  end
-  
-  for phi in Aut
-    @assert mR.modulus_fin==_aut_on_id(O,phi, mR.modulus_fin)
-  end 
-  
-  R=mR.header.domain
-  Q,mQ=quo(R,p, false)
-  S,mS=snf(Q)
-
-  M=_act_on_ray_class(mR*inv(mQ)*mS, p, Aut)
-
-  ls=submodules(M,index)
-  subgroups=Map[]
-  for s in ls
-    subs=[p*R[i] for i=1:ngens(R)]
-    for i=1:rows(s)
-      x=zero_matrix(FlintZZ,1,cols(s))
-      for j=1:cols(s)
-        x[1,j]=FlintZZ(coeff(s[i,j],0))
-      end
-      push!(subs, mQ\(mS(S(x))))
-    end
-    W,mW=quo(R, subs, false) 
-    push!(subgroups, mR*inv(mW))
-  end
-  return subgroups
 
 end
