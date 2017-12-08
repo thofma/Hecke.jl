@@ -1023,7 +1023,7 @@ end
 function my_divrem(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   @show f, g
   @show g1, g2 = fun_factor(g)
-  if degree(g2) < 1 # g is monic, so it's 1
+  if degree(g2) < 1 # g2 is monic, so it's 1
     return parent(f)(0), g2
   end
   u = _invmod(g1, g2)
@@ -1057,7 +1057,7 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
     @show f, (g, mu) = gg, my_divrem(f, gg)
     push!(rs, (c, gg, mu))
   end
-  return rs
+  return rs, g
 end
 
 
