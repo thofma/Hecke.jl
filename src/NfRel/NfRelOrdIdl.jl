@@ -555,8 +555,8 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   basis_mat_int = zero_matrix(K, d, d)
   pbint = Vector{Tuple{elem_type(L), NfOrdIdl}}()
   for i = 1:d
-    t = divexact(pb[i][1], den(pb[i][2]))
-    push!(pbint, (t, deepcopy(num(pb[i][2]))))
+    t = divexact(pb[i][1], denominator(pb[i][2]))
+    push!(pbint, (t, deepcopy(numerator(pb[i][2]))))
     elem_to_mat_row!(basis_mat_int, i, t)
   end
   Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
@@ -609,7 +609,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
 
   # Write PM in the basis of O (and not Oint)
   for j = 1:d
-    t = K(den(pb[j][2]))
+    t = K(denominator(pb[j][2]))
     for i = j:d
       PM.matrix[i, j] = divexact(PM.matrix[i, j], t)
     end

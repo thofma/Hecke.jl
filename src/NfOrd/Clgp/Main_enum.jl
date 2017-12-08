@@ -80,7 +80,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
 #      end
 #        print_with_color(:blue, "norm OK:")
 #        println(n//norm(I[end].A), " should be ", sqrt_disc)
-      if nbits(num(n)) > np-10
+      if nbits(numerator(n)) > np-10
 #        prec = Int(ceil(prec*1.2))
 #        print_with_color(:red, "norm too large:")
 #        println(n, " should be ", sqrt_disc)
@@ -158,7 +158,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
         e = class_group_small_real_elements_relation_next(E)
         n = abs(norm_div(e, norm(E.A), np))
         
-        if nbits(num(n)) > np-10
+        if nbits(numerator(n)) > np-10
           bad_norm += 1
           if bad_norm /(E.cnt + E.bad + 1) > 0.1
 #            print_with_color(:red, "too many large norms, changing ideal\n")
@@ -265,7 +265,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     while true
       e = class_group_small_real_elements_relation_next(f)
       n = abs(norm_div(e, norm(f.A), np))
-      if nbits(num(n)) > np-10 || f.restart > 0
+      if nbits(numerator(n)) > np-10 || f.restart > 0
 #        print_with_color(:red, "norm too large or restarting: $(f.restart)")
 #        println(n, " should be ", sqrt_disc)
 #        println("offending element is ", e)
@@ -341,7 +341,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
         while true
           e = class_group_small_real_elements_relation_next(E)
           n = abs(norm_div(e, norm(E.A), np))
-          if nbits(num(n)) > np-10 || E.restart > 5
+          if nbits(numerator(n)) > np-10 || E.restart > 5
 #            @v_do :ClassGroup 2 begin
 #              print_with_color(:red, "2:norm too large (or restarting):")
 #              println(n, " should be ", sqrt_disc)
@@ -455,7 +455,7 @@ function class_group_find_new_relation(clg::ClassGrpCtx; val = 0, prec = 100,
     while true
       e = class_group_small_real_elements_relation_next(E)
       n = abs(norm_div(e, norm(E.A), np))
-      if nbits(num(n)) > np-10 || E.restart > 2
+      if nbits(numerator(n)) > np-10 || E.restart > 2
         break;
       end
       if class_group_add_relation(clg, e, n, norm(E.A))

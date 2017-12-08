@@ -1164,7 +1164,7 @@ function rres_bez(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S 
   Zx = FlintZZ["x"][1]
   Qx = FlintQQ["x"][1]
   g, q, w = gcdx(Qx(lift(Zx, f)), Qx(lift(Zx, g)))
-  return gcd(R(0), R(lcm(den(q), den(w))))
+  return gcd(R(0), R(lcm(denominator(q), denominator(w))))
 end
 
 function rres_hnf(f::fmpz_poly, g::fmpz_poly)
@@ -1180,7 +1180,7 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
   @assert typeof(f) == typeof(g)
   Qx = FlintQQ["x"][1]
   g, q, w = gcdx(Qx(f), Qx(g))
-  return lcm(den(q), den(w))
+  return lcm(denominator(q), denominator(w))
 end
 
 function rresx(f::fmpz_poly, g::fmpz_poly)
@@ -1188,10 +1188,10 @@ function rresx(f::fmpz_poly, g::fmpz_poly)
   @assert typeof(f) == typeof(g)
   Qx = FlintQQ["x"][1]
   g, q, w = gcdx(Qx(f), Qx(g))
-  l = lcm(den(q), den(w))
+  l = lcm(denominator(q), denominator(w))
   Zx = parent(f)
-  return l, Zx(num(l*q)), Zx(num(l*w))
-  return lcm(den(q), den(w))
+  return l, Zx(numerator(l*q)), Zx(numerator(l*w))
+  return lcm(denominator(q), denominator(w))
 end
 
 

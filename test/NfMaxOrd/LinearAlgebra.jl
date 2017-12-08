@@ -31,7 +31,7 @@
 
     Apm = Hecke.PseudoMatrix( AoverO, [(O(1)*O)::Hecke.NfOrdIdl for i in 1:5])
 
-    d = num(det(Apm))
+    d = numerator(det(Apm))
 
     Apseudohnf = Hecke.pseudo_hnf_mod(Apm, d)
 
@@ -41,7 +41,7 @@
       Hecke.mul_row!(z, i, K(norm(Apseudohnf.coeffs[i])))
     end
 
-    zinZ = MatrixSpace(FlintZZ, 5, 5)(map(zz -> num(elem_in_basis(O(zz))[1]), z.entries))
+    zinZ = MatrixSpace(FlintZZ, 5, 5)(map(zz -> numerator(elem_in_basis(O(zz))[1]), z.entries))
     c = parent(zinZ)(Ahnf) - zinZ
 
     @test all([ mod(c[i,j], de) == 0 for i in 1:5, j in 1:5])

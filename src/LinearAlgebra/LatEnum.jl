@@ -95,12 +95,12 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
 end
 
 function enum_ctx_from_basis(B::FakeFmpqMat; Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
-  G = gram(num(B))
-  return enum_ctx_from_gram(G, den(B)^2, Tx=Tx, TC=TC, TU=TU, limit = limit)
+  G = gram(numerator(B))
+  return enum_ctx_from_gram(G, denominator(B)^2, Tx=Tx, TC=TC, TU=TU, limit = limit)
 end
 
 function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = rows(G))
-  return enum_ctx_from_gram(num(G), den(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
+  return enum_ctx_from_gram(numerator(G), denominator(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
 end  
  
 function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = fmpz(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
@@ -131,8 +131,8 @@ function enum_ctx_local_bound(a::Rational{T}, b::Rational{T}) where T
   #solves (gives bounds) for (a-x)^2 <= b
   b >= 0 || return a, a-1
   @hassert :LatEnum 1 b >= 0
-  d = den(b)
-  i = isqrt(num(b*d*d))
+  d = denominator(b)
+  i = isqrt(numerator(b*d*d))
   L = Base.ceil(a-i//d)
   U = Base.floor(a+i//d)
   if (a-L)^2 >b 

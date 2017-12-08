@@ -56,11 +56,11 @@ function local_height_finite(P, p)
   x = P.coordx
   y = P.coordy
   
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
   
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)   
   
@@ -93,7 +93,7 @@ function local_height_finite(P, p)
         L = -valuation(C, p)//4
   end
   
-  return Float64(num(L))/Float64(den(L)) * log(Float64(p))
+  return Float64(numerator(L))/Float64(denominator(L)) * log(Float64(p))
 end
 
 doc"""
@@ -109,11 +109,11 @@ function local_height_infinite(P, d = 20)
   E = P.parent
   x = P.coordx
    
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
     
   b2, b4, b6, b8 = get_b_integral(E)   
     
@@ -125,11 +125,11 @@ function local_height_infinite(P, d = 20)
     
   N = ceil( (5/3)*Float64(d) + (1/2) + (3/4)*log(7 + (4/3)*log(Float64(H))) )
     
-  if abs(Float64(num(x))/Float64(den(x))) < 0.5
-    t = 1/((Float64(num(x))/Float64(den(x))) + 1)
+  if abs(Float64(numerator(x))/Float64(denominator(x))) < 0.5
+    t = 1/((Float64(numerator(x))/Float64(denominator(x))) + 1)
     beta = 0
   else
-    t = 1/((Float64(num(x))/Float64(den(x))))
+    t = 1/((Float64(numerator(x))/Float64(denominator(x))))
     beta = 1
   end
     
@@ -184,11 +184,11 @@ function canonical_height(P)
   E = P.parent
   x = P.coordx
   delta = disc(E)
-  d = den(x)
+  d = denominator(x)
   
   h = local_height_infinite(P) + log(Float64(d))
   
-  fac = factor(num(delta))
+  fac = factor(numerator(delta))
   p_list = [i[1] for i in fac]
   
   for p in p_list
@@ -269,11 +269,11 @@ doc"""
 """
 # see Cohen
 function real_period(E)
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
   
   b2, b4, b6, b8 = get_b_integral(E)
   
@@ -309,8 +309,8 @@ doc"""
 > Computes the height of a rational number x.
 """
 function log_height(x::fmpq) 
-  a = Float64(num(x))
-  b = Float64(den(x)) 
+  a = Float64(numerator(x))
+  b = Float64(denominator(x)) 
   return log(max(abs(a),abs(b))) 
 end
 
@@ -322,8 +322,8 @@ doc"""
 """
 function naive_height(P)
   x = P.coordx
-  a = Float64(num(x))
-  c2 = Float64(den(x))
+  a = Float64(numerator(x))
+  c2 = Float64(denominator(x))
   
   h = log(max(abs(a), abs(c2)))
   return h
@@ -335,11 +335,11 @@ doc"""
 """
 # p.75 Cremona
 function points_with_bounded_naive_height(E, B)
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
   
   # 2-torsion
   f(x) = x^3 + Float64(a2)*x^2 + Float64(a4)*x + Float64(a6)
@@ -384,9 +384,9 @@ function torsion_points_via_height(E::EllCrv{fmpq})
   
   jay = j(E)
   hj = log_height(jay) # height of the j-invariant
-  jfloat = Float64(num(jay))/Float64(den(jay))
+  jfloat = Float64(numerator(jay))/Float64(denominator(jay))
   
-  delta = num(disc(E))
+  delta = numerator(disc(E))
   b2, b4, b6, b8 = get_b_integral(E)
   twostar = 2
   if b2 == 0
@@ -496,7 +496,7 @@ function mod_red(E, B)
     for i in 1:length(P)
         p = P[i]
         R = ResidueRing(FlintZZ, p)
-        Ep = EllipticCurve([R(num(minmodel.coeff[1])), R(num(minmodel.coeff[2])), R(num(minmodel.coeff[3])), R(num(minmodel.coeff[4])), R(num(minmodel.coeff[5]))],  false) # reduction of E mod p 
+        Ep = EllipticCurve([R(numerator(minmodel.coeff[1])), R(numerator(minmodel.coeff[2])), R(numerator(minmodel.coeff[3])), R(numerator(minmodel.coeff[4])), R(numerator(minmodel.coeff[5]))],  false) # reduction of E mod p 
         
         if  disc(Ep) != 0 # can only determine group order if curve is non-singular
             ord = order_best(Ep)

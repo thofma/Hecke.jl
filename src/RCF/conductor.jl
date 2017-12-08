@@ -402,7 +402,7 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
   O=mR.modulus_fin.parent.order
   K=O.nf
   d=discriminant(f)
-  N=num(norm(K(d)))
+  N=numerator(norm(K(d)))
   N1=fmpz(norm(mR.modulus_fin))
   n=degree(f)
   
@@ -472,7 +472,7 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
   
   O=maximal_order(K)
   d=discriminant(f)
-  N=num(norm(K(d)))
+  N=numerator(norm(K(d)))
   n=degree(f)
   
   inf_plc=real_places(K)
@@ -721,7 +721,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   O=maximal_order(K)
   b=basis(pk)
   N = basis_mat(pv)*basis_mat_inv(pk)
-  G=AbelianGroup(num(N))
+  G=AbelianGroup(numerator(N))
   S,mS=snf(G)
   #Generators
   gens=Array{NfOrdElem,1}(ngens(S))

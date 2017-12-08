@@ -330,7 +330,7 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
   end
   disc = d*a
   simplify(disc)
-  O.disc_abs = num(disc)
+  O.disc_abs = numerator(disc)
   return nothing
 end
 
@@ -351,7 +351,7 @@ function assure_has_discriminant(O::NfRelOrd{RelativeElement{T}, S}) where {T, S
   end
   disc = d*a
   simplify(disc)
-  O.disc_rel = num(disc)
+  O.disc_rel = numerator(disc)
   return nothing
 end
 

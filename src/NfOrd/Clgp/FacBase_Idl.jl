@@ -81,9 +81,9 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   O = order(FB.ideals[1])                  
 
   if integral
-    df =num(n)
+    df =numerator(n)
   else
-    df = num(n)*den(a, O)
+    df = numerator(n)*denominator(a, O)
   end
 
   d = factor(FB.fb_int, df)  #careful: if df is non-int-smooth, then error is ignored

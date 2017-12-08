@@ -244,7 +244,7 @@ function assure_has_discriminant(O::NfOrd)
     return nothing
   else
     if isequation_order(O)
-      O.disc = num(discriminant(nf(O).pol))
+      O.disc = numerator(discriminant(nf(O).pol))
     else
       O.disc = discriminant(basis(O))
     end
@@ -295,8 +295,8 @@ function index(O::NfOrd)
     return deepcopy(O.index)
   else
     i = gen_index(O)
-    !isone(den(i)) && error("Order does not contain the equation order")
-    O.index = num(i)
+    !isone(denominator(i)) && error("Order does not contain the equation order")
+    O.index = numerator(i)
     return deepcopy(O.index)
   end
 end
@@ -444,12 +444,12 @@ end
 ################################################################################
 
 doc"""
-    den(a::nf_elem, O::NfOrd) -> fmpz
+    denominator(a::nf_elem, O::NfOrd) -> fmpz
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
 """
-function den(a::nf_elem, O::NfOrd)
+function denominator(a::nf_elem, O::NfOrd)
   assure_has_basis_mat_inv(O)
   M = O.tcontain
   elem_to_mat_row!(M.num, 1, M.den, a)
@@ -745,12 +745,12 @@ function trace_matrix(O::NfOrd)
   for i=1:n
     t = trace(b[i]^2)
     @assert isinteger(t)
-    g[i, i] = num(t)
+    g[i, i] = numerator(t)
     for j in (i + 1):n
       t = trace(b[i]*b[j])
       @assert isinteger(t)
-      g[i, j] = num(t)
-      g[j, i] = num(t)
+      g[i, j] = numerator(t)
+      g[j, i] = numerator(t)
     end
   end
   O.trace_mat = g

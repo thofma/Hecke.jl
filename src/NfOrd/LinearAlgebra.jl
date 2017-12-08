@@ -352,7 +352,7 @@ end
 function _coprime_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   O = order(y)
   c = conjugates_init(nf(O).pol)
-  #num_x_inv = inv(num(x))
+  #num_x_inv = inv(numerator(x))
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
@@ -362,7 +362,7 @@ function _coprime_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
     i += 1
     a = rand(x_inv, 10)
     b = x*a
-    z = divexact(num(b), den(b))
+    z = divexact(numerator(b), denominator(b))
     norm(z + y) == 1 ? (check = false) : (check = true)
   end
   return z, a 
@@ -373,7 +373,7 @@ function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   # x must be nonzero
   O = order(y)
   c = conjugates_init(nf(O).pol)
-  #num_x_inv = inv(num(x))
+  #num_x_inv = inv(numerator(x))
   x_inv = inv(x)
   check = true
   z = ideal(O, O(1))
@@ -386,7 +386,7 @@ function _coprime_norm_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
       continue
     end
     b = x*a
-    z = divexact(num(b), den(b))
+    z = divexact(numerator(b), denominator(b))
     gcd(norm(z), norm(y)) == 1 ? (check = false) : (check = true)
   end
   @assert gcd(norm(z), norm(y)) == 1
@@ -404,8 +404,8 @@ function rand(I::NfOrdIdl, B::Int)
 end
 
 function rand(I::NfOrdFracIdl, B::Int)
-  z = rand(num(I), B)
-  return divexact(elem_in_nf(z), den(I))
+  z = rand(numerator(I), B)
+  return divexact(elem_in_nf(z), denominator(I))
 end
 
 function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = false)
@@ -499,7 +499,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
     m = det(PMinor)
   end
   simplify(m)
-  return num(m)
+  return numerator(m)
 end
 
 #TODO: das kann man besser machen
@@ -509,15 +509,15 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
   integralizer = one(FlintZZ)
 
   for i = 1:rows(P)
-    divide_row!(P.matrix, i, K(den(P.coeffs[i])))
-    P.coeffs[i] = P.coeffs[i]*K(den(P.coeffs[i]))
+    divide_row!(P.matrix, i, K(denominator(P.coeffs[i])))
+    P.coeffs[i] = P.coeffs[i]*K(denominator(P.coeffs[i]))
     simplify(P.coeffs[i])
   end
 
   z = one(FlintZZ)
   for i in 1:rows(P)
     for j in 1:cols(P)
-      z = lcm(z, den(P.matrix[i, j], O))
+      z = lcm(z, denominator(P.matrix[i, j], O))
     end
   end
 
@@ -892,7 +892,7 @@ end
 function mod(x::nf_elem, y::NfOrdFracIdl)
    K = parent(x)
    O = order(y)
-   d = K(lcm(den(x), den(y)))
+   d = K(lcm(denominator(x), denominator(y)))
    dx = d*x
    dy = d*y
    simplify_exact!(dy)
@@ -1498,9 +1498,9 @@ function mod(M::ModDed, p::NfOrdIdl)
    MM = M.pmatrix.matrix
    ideals = M.pmatrix.coeffs
    for i = 1:rows(N)
-      a = num(ideals[i]).gen_one
-      if valuation(a, p) > valuation(num(ideals[i]).gen_two, p)
-         a = num(ideals[i]).gen_two
+      a = numerator(ideals[i]).gen_one
+      if valuation(a, p) > valuation(numerator(ideals[i]).gen_two, p)
+         a = numerator(ideals[i]).gen_two
       end
       for j = 1:cols(N)
          N[i, j] = Op(O(MM[i, j]*a))

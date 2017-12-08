@@ -12,7 +12,7 @@ function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
   K = nf(order(A))
-  q = nf_elem[elem_from_mat_row(K, num(S), i, den(S)) for i=1:degree(K)]
+  q = nf_elem[elem_from_mat_row(K, numerator(S), i, denominator(S)) for i=1:degree(K)]
   return q
 end
 

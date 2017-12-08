@@ -19,7 +19,7 @@
 @{==(::NfOrderElem, ::NfOrderElem)}
 @{deepcopy(::NfOrderElem)}
 @{in(::nf_elem, ::NfMaximalOrder)}
-@{den(::nf_elem, ::NfMaximalOrder)}
+@{denominator(::nf_elem, ::NfMaximalOrder)}
 
 ## Binary and unary operations
 

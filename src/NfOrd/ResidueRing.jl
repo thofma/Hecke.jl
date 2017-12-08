@@ -1035,13 +1035,13 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
     zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
 
-    cden = den(zz[1])
+    cden = denominator(zz[1])
 
     for l in 2:degree(O)
-      cden = lcm(cden, den(zz[l]))
+      cden = lcm(cden, denominator(zz[l]))
     end
 
-    zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
+    zz_num = [ numerator(cden*zz[l]) for l in 1:degree(O) ]
 
     v = matrix(FlintZZ, 1, degree(O), zz_num)
 
@@ -1108,13 +1108,13 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
       zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
 
-      cden = den(zz[1])
+      cden = denominator(zz[1])
 
       for l in 2:degree(O)
-        cden = lcm(cden, den(zz[l]))
+        cden = lcm(cden, denominator(zz[l]))
       end
 
-      zz_num = [ num(cden*zz[l]) for l in 1:degree(O) ]
+      zz_num = [ numerator(cden*zz[l]) for l in 1:degree(O) ]
 
       v = matrix(FlintZZ, 1, degree(O), zz_num)
 

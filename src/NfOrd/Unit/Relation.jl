@@ -63,14 +63,14 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
     end
   end
 
-  dlcm = den(z[1])
+  dlcm = denominator(z[1])
 
   for i in 2:length(z)
-    dlcm = lcm(dlcm, den(z[i]))
+    dlcm = lcm(dlcm, denominator(z[i]))
   end
 
   for i in 1:r
-    rel[i] = num(z[i]*dlcm)
+    rel[i] = numerator(z[i]*dlcm)
   end 
 
   rel[r + 1] = -dlcm
@@ -219,7 +219,7 @@ function _frac_bounded_2(y::arb, bound::fmpz)
 
   new_q = q
 
-  while nbits(num(new_q)) < div(p, 2) && nbits(den(new_q)) < div(p, 2) && den(new_q) < bound
+  while nbits(numerator(new_q)) < div(p, 2) && nbits(denominator(new_q)) < div(p, 2) && denominator(new_q) < bound
 
     if contains(y, new_q)
       return true, new_q
@@ -238,13 +238,13 @@ function _max_frac_bounded(x::fmpq, b::fmpz)
   c = cfrac(x, n)[1]
   q = fmpq(c)
 
-  while abs(den(q)) < b && q != x
+  while abs(denominator(q)) < b && q != x
     n = 2*n
     c = cfrac(x, n)[1]
     q = fmpq(c)
   end
 
-  while abs(den(q)) > b
+  while abs(denominator(q)) > b
     n = n - 1
     c = cfrac(x, n)[1]
     q = fmpq(c)

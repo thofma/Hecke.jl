@@ -34,8 +34,8 @@ end
 
 function remove(z::Rational{T}, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
-  v, d = remove(den(z), p)
-  w, n = remove(num(z), p)
+  v, d = remove(denominator(z), p)
+  w, n = remove(numerator(z), p)
   return w-v, n//d
 end 
 
@@ -51,8 +51,8 @@ end
 
 function valuation(z::Rational{T}, p::T) where T <: Integer
   z == 0 && error("Not yet implemented")
-  v = valuation(den(z), p)
-  w = valuation(num(z), p)
+  v = valuation(denominator(z), p)
+  w = valuation(numerator(z), p)
   return w-v
 end 
 
@@ -77,8 +77,8 @@ function isless(a::Float64, b::fmpz) return a<b*1.0; end
 function isless(a::fmpz, b::Float64) return a*1.0<b; end
 
 function (a::FlintIntegerRing)(b::fmpq)
-  !isone(den(b)) && error("Denominator not 1")
-  return deepcopy(num(b))
+  !isone(denominator(b)) && error("Denominator not 1")
+  return deepcopy(numerator(b))
 end
 
 function //(a::fmpq, b::fmpz)
@@ -107,7 +107,7 @@ end
 
 function Float64(a::fmpq)
   b = a*fmpz(2)^53
-  Float64(div(num(b), den(b)))/(Float64(2)^53) #CF 2^53 is bad in 32bit
+  Float64(div(numerator(b), denominator(b)))/(Float64(2)^53) #CF 2^53 is bad in 32bit
 end
 
 function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.fmpz)
@@ -115,11 +115,11 @@ function convert(R::Type{Rational{Base.GMP.BigInt}}, a::Nemo.fmpz)
 end
 
 log(a::fmpz) = log(BigInt(a))
-log(a::fmpq) = log(num(a)) - log(den(a))
+log(a::fmpq) = log(numerator(a)) - log(denominator(a))
 
 function round(a::fmpq)
-  n = num(a)
-  d = den(a)
+  n = numerator(a)
+  d = denominator(a)
   q = div(n, d)
   r = mod(n, d)
   if r >= d//2
@@ -369,19 +369,19 @@ doc"""
 > Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
 """
 function ispower(a::fmpq)
-  e, r = ispower(num(a))
+  e, r = ispower(numerator(a))
   if e==1
     return e, a
   end
-  f, s = ispower(den(a))
+  f, s = ispower(denominator(a))
   g = gcd(e, f)
   return g, r^div(e, g)//s^div(f, g)
 end
 
 function ispower(a::Rational)
-  T = typeof(den(a))
+  T = typeof(denominator(a))
   e, r = ispower(fmpq(a))
-  return e, T(num(r))//T(den(r))
+  return e, T(numerator(r))//T(denominator(r))
 end
 
 doc"""
@@ -400,11 +400,11 @@ function ispower(a::Integer, n::Int)
 end
 
 function ispower(a::fmpq, n::Int)
-  fl, nu = ispower(num(a), n)
+  fl, nu = ispower(numerator(a), n)
   if !fl 
     return fl, a
   end
-  fl, de = ispower(den(a), n)
+  fl, de = ispower(denominator(a), n)
   return fl, fmpq(nu, de)
 end
 
@@ -527,7 +527,7 @@ doc"""
 > Returns true iff the denominator of $a$ is one.
 """
 function isinteger(a::fmpq)
-  return isone(den(a))
+  return isone(denominator(a))
 end
 
 ################################################################################
@@ -604,7 +604,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
   end
 
   function dlog(a::fmpq)
-    return dlog(num(a)) - dlog(den(a))
+    return dlog(numerator(a)) - dlog(denominator(a))
   end
 
   function dlog(a::FacElem)

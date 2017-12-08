@@ -804,7 +804,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   t = Ft()
 
   function _image(x::nf_elem)
-    m = den(x)
+    m = denominator(x)
     if m %p == 0
       throw(BadPrime(p))
     end
@@ -818,7 +818,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
       if v == 0 || v%qm1 == 0
         continue
       end
-      if den(k) % p == 0
+      if denominator(k) % p == 0
         throw(BadPrime(p))
       end
       _nf_to_fq!(s, k, Fq, t)
@@ -1021,8 +1021,8 @@ doc"""
 > Factor the rational number $a$ into prime numbers
 """
 function factor(a::fmpq, ::FlintIntegerRing)
-  fn = factor(num(a))
-  fd = factor(den(a))
+  fn = factor(numerator(a))
+  fd = factor(denominator(a))
   for (p,e) = fd.fac
     fn.fac[p] = -e
   end

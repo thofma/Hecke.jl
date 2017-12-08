@@ -38,8 +38,8 @@ function isnorm(K::AnticNumberField, a::Integer)
   return isnorm(K, fmpz(a))
 end
 function isnorm(K::AnticNumberField, a::fmpq)
-  fl, s = isnorm(K, num(a)*den(a)^(degree(K)-1))
-  return fl, s * FacElem(Dict(K(den(a)) => fmpz(-1)))
+  fl, s = isnorm(K, num(a)*denominator(a)^(degree(K)-1))
+  return fl, s * FacElem(Dict(K(denominator(a)) => fmpz(-1)))
 end
 function isnorm(K::AnticNumberField, a::Rational)
   return isnorm(K, fmpq(a))

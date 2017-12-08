@@ -117,8 +117,8 @@ end
 function factor(c::FactorBase{T}, a::fmpq) where T  ## fractions over T
   @assert a != 0
   f = Dict{T, Int}()
-  n = abs(num(a))
-  d = den(a)
+  n = abs(numerator(a))
+  d = denominator(a)
   lp = _split(c.ptree, n*d)
   for i in lp
     if mod(d, i)==0

@@ -197,8 +197,8 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
       g = parent(nf(O).pol)(elem_in_nf(x))
 
       #pseudocode:
-      #u = inv(F(den(g)))
-      #return u*evaluate(num(g), y)
+      #u = inv(F(denominator(g)))
+      #return u*evaluate(numerator(g), y)
 
       ccall((:fmpq_poly_get_denominator, :libflint), Void,
             (Ptr{fmpz}, Ptr{fmpq_poly}), &t_fmpz, &g)
@@ -301,13 +301,13 @@ function extend(f::NfOrdToFqNmodMor, K::AnticNumberField)
 
   #function _image(x::nf_elem)
   #  g = parent(K.pol)(x)
-  #  u = inv(z.header.codomain(den(g)))
+  #  u = inv(z.header.codomain(denominator(g)))
 
-  #  g = Zx(den(g)*g)
+  #  g = Zx(denominator(g)*g)
   #  return u*evaluate(g, y)
   #end
   function _image(x::nf_elem)
-    m = den(x, domain(f))
+    m = denominator(x, domain(f))
     l = valuation(m, P)
     if l == 0
       return f(O(m*x))//f(O(m))

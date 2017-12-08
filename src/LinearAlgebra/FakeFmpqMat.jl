@@ -6,9 +6,9 @@
 
 export num, den
 
-num(x::FakeFmpqMat) = deepcopy(x.num)
+numerator(x::FakeFmpqMat) = deepcopy(x.num)
 
-den(x::FakeFmpqMat) = deepcopy(x.den)
+denominator(x::FakeFmpqMat) = deepcopy(x.den)
 
 rows(x::FakeFmpqMat) = rows(x.num)
 
@@ -108,14 +108,14 @@ end
 
 function *(x::FakeFmpqMat, y::fmpz_mat)
   t = x.num*y
-  z = FakeFmpqMat(t, den(x))
+  z = FakeFmpqMat(t, denominator(x))
   simplify_content!(z)
   return z
 end
 
 function *(x::fmpz_mat, y::FakeFmpqMat)
   t = x*y.num
-  z = FakeFmpqMat(t, den(y))
+  z = FakeFmpqMat(t, denominator(y))
   simplify_content!(z)
   return z
 end
@@ -138,7 +138,7 @@ to_array(x::FakeFmpqMat) = (x.num, x.den)
 
 function to_fmpz_mat(x::FakeFmpqMat)
   x.den != 1 && error("Denominator has to be 1")
-  return num(x)
+  return numerator(x)
 end
 
 ################################################################################
@@ -153,7 +153,7 @@ end
 
 function hnf(x::FakeFmpqMat, shape = :lowerleft)
   h = _hnf(x.num, shape)
-  return FakeFmpqMat(h, den(x))
+  return FakeFmpqMat(h, denominator(x))
 end
 
 ################################################################################

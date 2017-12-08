@@ -460,8 +460,8 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   O=order(pu)
   b=basis(pu)
   N = basis_mat(pv)*basis_mat_inv(pu)
-  @hassert :NfOrdQuoRing 1 den(N) == 1
-  G=AbelianGroup(num(N))
+  @hassert :NfOrdQuoRing 1 denominator(N) == 1
+  G=AbelianGroup(numerator(N))
   S,mS=snf(G)
   
   #Generators
@@ -479,8 +479,8 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   function disclog(x::NfOrdElem)
     x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x)), fmpz(1))
     res_fakemat = x_fakemat * M
-    den(res_fakemat) != 1 && error("Element is in the ideal")
-    return vec(Array(num(res_fakemat)))
+    denominator(res_fakemat) != 1 && error("Element is in the ideal")
+    return vec(Array(numerator(res_fakemat)))
   end
   
   return gens, rels(S), disclog
@@ -654,7 +654,7 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
     val_p_xi - val_p_i >= v && continue
     xi *= x^(i-i_old)
     fraction = divexact(xi.elem_in_nf,i)
-    inc = divexact(Q(O(num(fraction))),Q(O(den(fraction))))
+    inc = divexact(Q(O(numerator(fraction))),Q(O(denominator(fraction))))
     isodd(i) ? s+=inc : s-=inc
     i_old = i
   end

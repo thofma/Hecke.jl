@@ -156,8 +156,8 @@ function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
     for b in base(u)
       t = b*anti_uniformizer(P.gen_two)^(valuation(b, P))
 
-      #if mod(den(t), minimum(P)) == 0
-      #  l = valuation(den(t), P)
+      #if mod(denominator(t), minimum(P)) == 0
+      #  l = valuation(denominator(t), P)
       #  y = y*(mK(t*elem_in_nf(P.anti_uniformizer)^l)*mF(P.anti_uniformizer)^(-l))^u.fac[b]
       #else
         y = y*mK(t)^u.fac[b]

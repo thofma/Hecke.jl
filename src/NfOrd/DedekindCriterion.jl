@@ -105,7 +105,7 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
     # build the new basis matrix
     # we have to take the representation matrix of alpha!
     # concatenating the coefficient vector won't help
-    n = vcat(num(basis_mat(O))*p,representation_mat(alpha))
+    n = vcat(numerator(basis_mat(O))*p,representation_mat(alpha))
 
     b = FakeFmpqMat(n,p)
 

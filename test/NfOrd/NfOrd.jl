@@ -287,24 +287,24 @@
   end
 
   @testset "Denoninator of elements" begin
-    b = @inferred den(a1, O1)
+    b = @inferred denominator(a1, O1)
     @test b == 1
-    b = @inferred den(a1//7, O1)
+    b = @inferred denominator(a1//7, O1)
     @test b == 7
 
-    b = @inferred den(a2, O2)
+    b = @inferred denominator(a2, O2)
     @test b == 1
-    b = @inferred den(a2//4, O2)
+    b = @inferred denominator(a2//4, O2)
     @test b == 2
 
-    b = @inferred den(a3, O3)
+    b = @inferred denominator(a3, O3)
     @test b == 1
-    b = @inferred den(a3^3//2, O3)
+    b = @inferred denominator(a3^3//2, O3)
     @test b == 2
 
-    b = @inferred den(a4, O4)
+    b = @inferred denominator(a4, O4)
     @test b == 2
-    b = @inferred den(a4//2, O4)
+    b = @inferred denominator(a4//2, O4)
     @test b == 4
   end
 
