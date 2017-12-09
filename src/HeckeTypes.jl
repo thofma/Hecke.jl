@@ -1624,7 +1624,9 @@ end
 #
 ################################################################################
 
-mutable struct NfRel{T} <: Nemo.Field
+abstract type RelativeExtension{T} <: Nemo.Field end
+
+mutable struct NfRel{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
@@ -1648,7 +1650,9 @@ end
 const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
-mutable struct NfRelElem{T} <: Nemo.FieldElem
+abstract type RelativeElement{T} <: Nemo.FieldElem end
+
+mutable struct NfRelElem{T} <: RelativeElement{T}
   data::Generic.Poly{T}
   parent::NfRel{T}
 

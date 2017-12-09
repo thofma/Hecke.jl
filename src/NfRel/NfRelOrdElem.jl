@@ -1,6 +1,6 @@
 mutable struct NfRelOrdElem{T} <: RingElem
   parent#::NfRelOrd{T, S} # I don't want to drag the S around
-  elem_in_nf::NfRelElem{T}
+  elem_in_nf::RelativeElement{T}
   elem_in_basis::Vector{T}
   has_coord::Bool
 
@@ -13,7 +13,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NfRelElem{T}) where {T}
+  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::RelativeElement{T}) where {T}
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
@@ -22,7 +22,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     return z
   end
 
-  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::NfRelElem{T}, arr::Vector{T}) where {T}
+  function NfRelOrdElem{T}(O::NfRelOrd{T}, a::RelativeElement{T}, arr::Vector{T}) where {T}
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
@@ -56,13 +56,13 @@ end
 
 doc"""
 ***
-      (O::NfRelOrd)(a::NfRelElem, check::Bool = true) -> NfRelOrdElem
+      (O::NfRelOrd)(a::RelativeElement, check::Bool = true) -> NfRelOrdElem
 
 > Given an element $a$ of the ambient number field of $\mathcal O$, this
 > function coerces the element into $\mathcal O$. If `check` is `true`
 > it will be checked that $a$ is contained in $\mathcal O$.
 """
-function (O::NfRelOrd)(a::NfRelElem{T}, check::Bool = true) where T
+function (O::NfRelOrd)(a::RelativeElement{T}, check::Bool = true) where T
   if check
     x, y = _check_elem_in_order(a, O)
     !x && error("Number field element not in the order.")
@@ -108,7 +108,7 @@ doc"""
 
 > Returns the order of which $a$ is an element.
 """
-parent(x::NfRelOrdElem{NfRelElem{T}}) where {T} = x.parent::NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}
+parent(x::NfRelOrdElem{RelativeElement{T}}) where {T} = x.parent::NfRelOrd{RelativeElement{T}, NfRelOrdFracIdl{T}}
 
 parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
 
@@ -120,7 +120,7 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
 
 doc"""
 ***
-      elem_in_nf(a::NfRelOrdElem) -> NfRelElem
+      elem_in_nf(a::NfRelOrdElem) -> RelativeElement
 
 > Returns the element $a$ considered as an element of the ambient number field.
 """
@@ -444,4 +444,6 @@ norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 ################################################################################
 
 (K::NfRel)(a::NfRelOrdElem) = elem_in_nf(a)
+
+(K::NfRel_ns)(a::NfRelOrdElem) = elem_in_nf(a)
 

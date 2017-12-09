@@ -56,7 +56,7 @@ order(a::NfRelOrdFracIdl) = a.order
 
 doc"""
 ***
-    nf(a::NfRelOrdFracIdl) -> NfRel
+    nf(a::NfRelOrdFracIdl) -> RelativeExtension
 
 > Returns the number field, of which $a$ is an fractional ideal.
 """

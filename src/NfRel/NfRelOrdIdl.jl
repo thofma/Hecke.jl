@@ -11,7 +11,7 @@ mutable struct NfRelOrdIdl{T, S}
   order::NfRelOrd{T, S}
   parent::NfRelOrdIdlSet{T, S}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
+  pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
   basis_mat::Generic.Mat{T}
   basis_mat_inv::Generic.Mat{T}
 
@@ -33,7 +33,7 @@ mutable struct NfRelOrdIdl{T, S}
     return z
   end
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{NfRelElem{T}, S}}) where{T, S}
+  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{RelativeElement{T}, S}}) where{T, S}
     z = NfRelOrdIdl{T, S}(O)
     z.pseudo_basis = a
     return z
@@ -56,7 +56,7 @@ order(a::NfRelOrdIdl) = a.order
 
 doc"""
 ***
-    nf(a::NfRelOrdIdl) -> NfRel
+    nf(a::NfRelOrdIdl) -> RelativeExtension
 
 > Returns the number field, of which $a$ is an integral ideal.
 """
@@ -107,7 +107,7 @@ function assure_has_pseudo_basis(a::NfRelOrdIdl{T, S}) where {T, S}
   B = basis_nf(order(a), Val{false})
   L = nf(order(a))
   K = base_ring(L)
-  pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
+  pseudo_basis = Vector{Tuple{elem_type(L), S}}()
   for i = 1:degree(L)
     t = L()
     for j = 1:degree(L)
@@ -143,7 +143,7 @@ end
 
 doc"""
 ***
-      pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{NfRelElem{T}, S}}
+      pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
 
 > Returns the pseudo-basis of $a$.
 """
@@ -553,7 +553,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
 
   # Compute a pseudo basis of O with integral ideals:
   basis_mat_int = zero_matrix(K, d, d)
-  pbint = Vector{Tuple{NfRelElem{nf_elem}, NfOrdIdl}}()
+  pbint = Vector{Tuple{elem_type(L), NfOrdIdl}}()
   for i = 1:d
     t = divexact(pb[i][1], den(pb[i][2]))
     push!(pbint, (t, deepcopy(num(pb[i][2]))))

@@ -2,23 +2,21 @@
 # Still hoping for julia/#18466
 
 mutable struct NfRelOrdSet{T}
-  nf::NfRel{T}
+  nf::RelativeExtension{T}
 
-  function NfRelOrdSet{T}(K::NfRel{T}) where {T}
+  function NfRelOrdSet{T}(K::RelativeExtension{T}) where {T}
     a = new(K)
     return a
   end
 end
 
-abstract type RelativeOrder{T, S} <: Ring end
-
-mutable struct NfRelOrd{T, S} <: RelativeOrder{T, S}
-  nf::NfRel{T}
-  basis_nf::Vector{NfRelElem{T}}
+mutable struct NfRelOrd{T, S} <: Ring
+  nf::RelativeExtension{T}
+  basis_nf::Vector{RelativeElement{T}}
   basis_mat::Generic.Mat{T}
   basis_mat_inv::Generic.Mat{T}
   basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NfRelElem{T}, S}}
+  pseudo_basis::Vector{Tuple{RelativeElement{T}, S}}
 
   disc_abs::NfOrdIdl # used if T == nf_elem
   disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
@@ -34,7 +32,7 @@ mutable struct NfRelOrd{T, S} <: RelativeOrder{T, S}
 
   inv_coeff_ideals::Vector{S}
 
-  function NfRelOrd{T, S}(K::NfRel{T}) where {T, S}
+  function NfRelOrd{T, S}(K::RelativeExtension{T}) where {T, S}
     z = new{T, S}()
     z.nf = K
     z.parent = NfRelOrdSet{T}(K)
@@ -43,73 +41,23 @@ mutable struct NfRelOrd{T, S} <: RelativeOrder{T, S}
     return z
   end
 
-  function NfRelOrd{T, S}(K::NfRel{T}, M::PMat{T, S}) where {T, S}
+  function NfRelOrd{T, S}(K::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
     z = NfRelOrd{T, S}(K)
-    z.basis_pmat = M
-    z.basis_mat = M.matrix
-    return z
-  end
-
-  function NfRelOrd{T, S}(K::NfRel{T}, M::Generic.Mat{T}) where {T, S}
-    z = NfRelOrd{T, S}(K)
-    z.basis_mat = M
-    z.basis_pmat = pseudo_matrix(M)
-    return z
-  end
-end
-
-mutable struct NfRelNsOrd{T, S} <: RelativeOrder{T, S}
-  nf::NfRel_ns{T}
-  basis_nf::Vector{NfRel_nsElem{T}}
-  basis_mat::Generic.Mat{T}
-  basis_mat_inv::Generic.Mat{T}
-  basis_pmat::PMat{T, S}
-  pseudo_basis::Vector{Tuple{NfRel_nsElem{T}, S}}
-
-  disc_abs::NfOrdIdl # used if T == nf_elem
-  disc_rel#::NfRelOrdIdl{T} # used otherwise; is a forward declaration
-  # parent::NfRelOrdSet{T}
-
-  isequation_order::Bool
-
-  ismaximal::Int                   # 0 Not known
-                                   # 1 Known to be maximal
-                                   # 2 Known to not be maximal
-
-  trace_mat::Generic.Mat{T}
-
-  inv_coeff_ideals::Vector{S}
-
-  function NfRelNsOrd{T, S}(K::NfRel_ns{T}) where {T, S}
-    z = new{T, S}()
     z.nf = K
-    # z.parent = NfRelOrdSet{T}(K)
-    z.isequation_order = false
-    z.ismaximal = 0
-    return z
-  end
-
-  function NfRelNsOrd{T, S}(K::NfRel_ns{T}, M::PMat{T, S}) where {T, S}
-    z = NfRelNsOrd{T, S}(K)
+    z.parent = NfRelOrdSet{T}(K)
     z.basis_pmat = M
     z.basis_mat = M.matrix
     return z
   end
 
-  function NfRelNsOrd{T, S}(K::NfRel_ns{T}, M::Generic.Mat{T}) where {T, S}
-    z = NfRelNsOrd{T, S}(K)
+  function NfRelOrd{T, S}(K::RelativeExtension{T}, M::Generic.Mat{T}) where {T, S}
+    z = NfRelOrd{T, S}(K)
+    z.nf = K
+    z.parent = NfRelOrdSet{T}(K)
     z.basis_mat = M
     z.basis_pmat = pseudo_matrix(M)
     return z
   end
-end
-
-function RelativeOrder{T, S}(K::NfRel{T}, x...) where {T, S}
-  return NfRelOrd{T, S}(K, x...)
-end
-
-function RelativeOrder{T, S}(K::NfRel_ns{T}, x...) where {T, S}
-  return NfRelNsOrd{T, S}(K, x...)
 end
 
 ################################################################################
@@ -120,7 +68,7 @@ end
 
 doc"""
 ***
-      nf(O::NfRelOrd) -> NfRel
+      nf(O::NfRelOrd) -> RelativeExtension
 
 > Returns the ambient number field of $\mathcal O$.
 """
@@ -145,6 +93,8 @@ isequation_order(O::NfRelOrd) = O.isequation_order
 ismaximal_known(O::NfRelOrd) = O.ismaximal != 0
 
 ismaximal(O::NfRelOrd) = O.ismaximal == 1
+
+issimple(O::NfRelOrd) = issimple(nf(O))
 
 ################################################################################
 #
@@ -180,7 +130,7 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   end
   P = basis_pmat(O, Val{false})
   L = nf(O)
-  pseudo_basis = Vector{Tuple{NfRelElem{T}, S}}()
+  pseudo_basis = Vector{Tuple{elem_type(L), S}}()
   for i = 1:degree(O)
     a = elem_from_mat_row(L, P.matrix, i)
     push!(pseudo_basis, (a, deepcopy(P.coeffs[i])))
@@ -195,7 +145,7 @@ function assure_has_basis_nf(O::NfRelOrd{T, S}) where {T, S}
   end
   L = nf(O)
   pb = pseudo_basis(O)
-  basis_nf = Vector{NfRelElem{T}}()
+  basis_nf = Vector{elem_type(L)}()
   for i = 1:degree(O)
     push!(basis_nf, pb[i][1])
   end
@@ -236,7 +186,7 @@ end
 
 doc"""
 ***
-      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{NfRelElem{T}, S}}
+      pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{RelativeElement{T}{T}, S}}
 
 > Returns the pseudo-basis of $\mathcal O$.
 """
@@ -288,7 +238,7 @@ end
 
 doc"""
 ***
-      basis_nf(O::NfRelOrd) -> Array{NfRelElem, 1}
+      basis_nf(O::NfRelOrd) -> Array{RelativeElement, 1}
 
 > Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
 > ambient number field.
@@ -389,7 +339,7 @@ function discriminant(O::NfRelOrd{nf_elem, S}) where S
   return deepcopy(O.disc_abs)
 end
 
-function assure_has_discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
+function assure_has_discriminant(O::NfRelOrd{RelativeElement{T}, S}) where {T, S}
   if isdefined(O, :disc_rel)
     return nothing
   end
@@ -405,7 +355,7 @@ function assure_has_discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
   return nothing
 end
 
-function discriminant(O::NfRelOrd{NfRelElem{T}, S}) where {T, S}
+function discriminant(O::NfRelOrd{RelativeElement{T}, S}) where {T, S}
   assure_has_discriminant(O)
   return deepcopy(O.disc_rel)
 end
@@ -454,7 +404,7 @@ end
 #
 ################################################################################
 
-function _check_elem_in_order(a::NfRelElem{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
+function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
   b_pmat = basis_pmat(O, Val{false})
   t = zero_matrix(base_ring(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
@@ -482,11 +432,11 @@ end
 
 doc"""
 ***
-      in(a::NfRelElem, O::NfRelOrd) -> Bool
+      in(a::RelativeElement, O::NfRelOrd) -> Bool
 
 > Checks whether $a$ lies in $\mathcal O$.
 """
-function in(a::NfRelElem{T}, O::NfRelOrd{T, S}) where {T, S}
+function in(a::RelativeElement{T}, O::NfRelOrd{T, S}) where {T, S}
   return _check_elem_in_order(a, O, Val{true})
 end
 
@@ -498,40 +448,40 @@ end
 
 doc"""
 ***
-      Order(K::NfRel{T}, M::Generic.Mat{T}) -> NfRelOrd
+      Order(K::RelativeExtension{T}, M::Generic.Mat{T}) -> NfRelOrd
 
 > Returns the order which has basis matrix $M$ with respect to the power basis
 > of $K$.
 """
-function Order(L::NfRel{nf_elem}, M::Generic.Mat{nf_elem})
+function Order(L::RelativeExtension{nf_elem}, M::Generic.Mat{nf_elem})
   # checks
   return NfRelOrd{nf_elem, NfOrdFracIdl}(L, deepcopy(M))
 end
 
-function Order(L::NfRel{NfRelElem{T}}, M::Generic.Mat{NfRelElem{T}}) where T
+function Order(L::RelativeExtension{RelativeElement{T}}, M::Generic.Mat{RelativeElement{T}}) where T
   # checks
-  return NfRelOrd{NfRelElem{T}, NfRelOrdFracIdl{T}}(L, deepcopy(M))
+  return NfRelOrd{elem_type(parent(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
 doc"""
 ***
-      Order(K::NfRel, M::PMat) -> NfRelOrd
+      Order(K::RelativeExtension, M::PMat) -> NfRelOrd
 
 > Returns the order which has basis pseudo-matrix $M$ with respect to the power basis
 > of $K$.
 """
-function Order(L::NfRel{T}, M::PMat{T, S}) where {T, S}
+function Order(L::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
   # checks
   return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
 doc"""
 ***
-      EquationOrder(L::NfRel) -> NfRelOrd
+      EquationOrder(L::RelativeExtension) -> NfRelOrd
 
 > Returns the equation order of the number field $L$.
 """
-function EquationOrder(L::NfRel)
+function EquationOrder(L::RelativeExtension)
   M = identity_matrix(base_ring(L), degree(L))
   O = Order(L, M)
   O.basis_mat_inv = M
@@ -541,16 +491,16 @@ end
 
 doc"""
 ***
-      MaximalOrder(L::NfRel) -> NfRelOrd
+      MaximalOrder(L::RelativeExtension) -> NfRelOrd
 
 > Returns the maximal order of $L$.
 """
-function MaximalOrder(L::NfRel)
+function MaximalOrder(L::RelativeExtension)
   O = EquationOrder(L)
   return MaximalOrder(O)
 end
 
-maximal_order(L::NfRel) = MaximalOrder(L)
+maximal_order(L::RelativeExtension) = MaximalOrder(L)
 
 function maximal_order_via_absolute(L::NfRel)
   Labs, lToLabs, kToLabs = absolute_field(L)
@@ -641,6 +591,7 @@ end
 # Round-2-Algorithmus" by C. Friedrichs.
 function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = Val{true}) where S
   !isequation_order(O) && error("Order must be an equation order")
+  !issimple(O) && error("Not implemented for non-simple extensions")
 
   L = nf(O)
   K = base_ring(L)
@@ -702,7 +653,7 @@ doc"""
 > at the prime $p$.
 """
 function poverorder(O::NfRelOrd, p::NfOrdIdl)
-  if isequation_order(O)
+  if isequation_order(O) && issimple(O)
     return dedekind_poverorder(O, p)
   else
     return ring_of_multipliers(pradical(O, p))
