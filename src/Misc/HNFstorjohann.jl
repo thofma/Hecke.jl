@@ -364,7 +364,7 @@ function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
   #println("Time to compute QC: $timeBuildQC")
   #println("Time products with QC: $timeProdQC")
   #println("Time to compute U: $timeU")
-  return sub(Q, 2:n1, 2:n1), sub(C, 2:n1, 2:n1), sub(U, 2:n1, 2:n1), sub(T, 2:n1, 2:m1)
+  return sub(T, 2:n1, 2:m1), sub(Q, 2:n1, 2:n1), sub(C, 2:n1, 2:n1), sub(U, 2:n1, 2:n1)
 end
 
 function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingElement
