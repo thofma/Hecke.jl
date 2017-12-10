@@ -33,7 +33,7 @@ mutable struct NfRelOrdIdl{T, S}
     return z
   end
 
-  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{RelativeElement{T}, S}}) where{T, S}
+  function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}, a::Array{Tuple{T1, S}}) where {T1 <: RelativeElement{T}, S} where T
     z = NfRelOrdIdl{T, S}(O)
     z.pseudo_basis = a
     return z

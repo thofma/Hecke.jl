@@ -458,9 +458,9 @@ function Order(L::RelativeExtension{nf_elem}, M::Generic.Mat{nf_elem})
   return NfRelOrd{nf_elem, NfOrdFracIdl}(L, deepcopy(M))
 end
 
-function Order(L::RelativeExtension{RelativeElement{T}}, M::Generic.Mat{RelativeElement{T}}) where T
+function Order(L::RelativeExtension{S}, M::Generic.Mat{S}) where S <: RelativeElement{T} where T
   # checks
-  return NfRelOrd{elem_type(parent(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
+  return NfRelOrd{elem_type(base_ring(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
 doc"""
@@ -575,14 +575,13 @@ function nf_elem_poly_to_fq_nmod_poly(R::FqNmodPolyRing, m::NfToFqNmodMor, f::Ge
   return g
 end
 
-function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::NfToFqNmodMor, f::fq_nmod_poly)
-  @assert domain(m) == base_ring(R)
-  @assert codomain(m) == base_ring(parent(f))
+function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fq_nmod_poly)
+  @assert codomain(m) == base_ring(R)
+  @assert domain(m) == base_ring(parent(f))
 
   g = zero(R)
-  iM = inv(m)
   for i = 0:degree(f)
-    setcoeff!(g, i, iM(coeff(f, i)))
+    setcoeff!(g, i, m(coeff(f, i)))
   end
   return g
 end
@@ -600,17 +599,18 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
   OK = maximal_order(K)
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
+  immF = inv(mmF)
   Fy, y = F["y"]
 
   Tmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, T)
   fac = factor(Tmodp)
   g = Kx(1)
   for (t, e) in fac
-    mul!(g, g, fq_nmod_poly_to_nf_elem_poly(Kx, mmF, t))
+    mul!(g, g, fq_nmod_poly_to_nf_elem_poly(Kx, immF, t))
   end
   gmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, g)
   hmodp = divexact(Tmodp, gmodp)
-  h = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, hmodp)
+  h = fq_nmod_poly_to_nf_elem_poly(Kx, immF, hmodp)
   a = anti_uniformizer(p)
   f = a*(g*h - T)
   fmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, f)
@@ -625,7 +625,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
     end
 
     Umodp = divexact(Tmodp, d)
-    U = fq_nmod_poly_to_nf_elem_poly(Kx, mmF, Umodp)
+    U = fq_nmod_poly_to_nf_elem_poly(Kx, immF, Umodp)
     PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
     PN = sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
