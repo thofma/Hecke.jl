@@ -96,7 +96,7 @@ doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
 > Creates the homomorphism $A[i] \mapsto B[i]$
 """
-function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool= false)
+function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = false)
   GA = parent(A[1])
   GB = parent(B[1])
 
@@ -132,6 +132,47 @@ function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
   M = vcat([B[i].coeff for i = 1:length(B)])
   h = GrpAbFinGenMap(G, GB, M)
   return h
+end
+
+# TODO: Extend the check to non-endomorphisms
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
+  if check
+    if A == B
+      G = A
+      images = [ G([M[i, j] for j in 1:ngens(G)]) for i in 1:ngens(G) ]
+      a = 0 * G[1]
+      for i in 1:nrels(G)
+        for j in 1:ngens(G)
+          a = a + G.rels[i, j] * images[j]
+        end
+        if !iszero(a)
+          error("Matrix does not define a morphism of abelian groups")
+        end
+      end
+    end
+  end
+
+  return GrpAbFinGenMap(A, B, M)
+end
+
+function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, Minv, check::Bool = true)
+  if check
+    if A == B
+      G = A
+      images = [ G([M[i, j] for j in 1:ngens(G)]) for i in 1:ngens(G) ]
+      a = 0 * G[1]
+      for i in 1:nrels(G)
+        for j in 1:ngens(G)
+          a = a + G.rels[i, j] * images[j]
+        end
+        if !iszero(a)
+          error("Matrix does not define a morphism of abelian groups")
+        end
+      end
+    end
+  end
+
+  return GrpAbFinGenMap(A, B, M, Minv)
 end
 
 ################################################################################

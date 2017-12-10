@@ -1878,7 +1878,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
         M[i,j]=elem[j]
       end
     end
-    mp=GrpAbFinGenMap(R,R,sub(Ml,1:rows(Ml),1:length(lgens))*M)
+    mp = hom(R, R, sub(Ml,1:rows(Ml), 1:length(lgens))*M)
     @hassert :RayFacElem 1 isbijective(mp)
     push!(G,mp)
   end

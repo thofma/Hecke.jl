@@ -372,8 +372,9 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
     return r
   end
 
-  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat)
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat, check::Bool = false)
     r = new()
+
     function image(a::GrpAbFinGenElem)
       return GrpAbFinGenElem(To, a.coeff*M)
     end
