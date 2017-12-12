@@ -79,6 +79,23 @@ end
 #
 ###########################################################################
 
+
+function _min_wild(D::Dict{NfOrdIdl, Int})
+
+  res=1
+  primes_done=fmpz[]
+  for (p,v) in D
+    s=minimum(p)
+    if s in primes_done
+      continue
+    end
+    push!(primes_done, s)
+    res*=Int(s)^v
+  end  
+  return res  
+
+end
+
 function totally_positive_generators(mr::MapRayClassGrp, a::Int)
 
   if isdefined(mr, :tame_mult_grp)
@@ -217,7 +234,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
 end
 
 
-function quadratic_normal_extensions(O::NfOrd, bound::fmpz;
+function quadratic_normal_real_extensions(O::NfOrd, bound::fmpz;
                                      absolute_discriminant_bound::fmpz = fmpz(-1),
                                      absolute_galois_group::Symbol = :all)
   
@@ -583,8 +600,7 @@ function abelian_tame_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   for (i, k) in enumerate(conductors)
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
-    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k)
-    println("\n Searching for subgroups ")
+    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k,Dict{NfOrdIdl, Int}(),inf_plc)
     if !_are_there_subs(r,gtype)
       continue
     end
@@ -593,12 +609,9 @@ function abelian_tame_extensions_Q(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     for s in ls
       C=ray_class_field(mr*inv(s))
       println("\n Checking conductor")
-      if Hecke._is_conductor_min_normal(C,k) 
-         println("Checking discriminant")
-        if discriminant_conductor(O,C,k,mr,bound,n)
-          println("\n New Field!")
-          @vtime :QuadraticExt 1 push!(fields,number_field(C))
-        end
+      if Hecke._is_conductor_min_normal(C,k) && discriminant_conductor(O,C,k,mr,bound,n)
+        println("\n New Field!")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
     println("\n")
@@ -644,7 +657,7 @@ function abelian_normal_tame_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fm
   for (i, k) in enumerate(conductors)
     println("Conductor: $k ")
     println("Left: $(length(conductors) - i)")
-    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k)
+    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k,Dict{NfOrdIdl, Int}(), real_plc)
     mr.prime_ideal_cache = S
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
@@ -654,12 +667,9 @@ function abelian_normal_tame_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fm
     for s in ls
       C=ray_class_field(mr*inv(s))
       println("\n Checking conductor")
-      if Hecke._is_conductor_min_normal(C,k) 
-        println("\n Now discriminant")
-        if discriminant_conductor(O,C,k,mr,bound,n)
-          println("\n New Field!")
-          @vtime :QuadraticExt 1 push!(fields,number_field(C))
-        end
+      if Hecke._is_conductor_min_normal(C,k) && discriminant_conductor(O,C,k,mr,bound,n)
+        println("\n New Field!")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
     println("\n")
@@ -674,21 +684,7 @@ end
 #
 ##################################################################################################
 
-function _min_wild(D::Dict{NfOrdIdl, Int})
 
-  res=1
-  primes_done=fmpz[]
-  for (p,v) in D
-    s=minimum(p)
-    if s in primes_done
-      continue
-    end
-    push!(primes_done, s)
-    res*=Int(s)^v
-  end  
-  return res  
-
-end
 
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
 
@@ -717,7 +713,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
   for (i, k) in enumerate(l_conductors)
     println("Conductor: $k ")
     println("Left: $(length(l_conductors) - i)")
-    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k[1], k[2])
+    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k[1], k[2],inf_plc)
     mr.prime_ideal_cache = S
     println("\n Computing action ")
     @vtime :QuadraticExt 1 act=_act_on_ray_class(mr,gens)
@@ -728,12 +724,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, bound::fmpz)
     for s in ls
       C=ray_class_field(mr*inv(s))
       println("\n Checking conductor")
-      if Hecke._is_conductor_min_normal(C,a) 
-        println("Right conductor; now checking discriminant")
-        if Hecke.discriminant_conductor(O,C,a,mr,bound,n)
-          println("\n New Field!")
-          @vtime :QuadraticExt 1 push!(fields,number_field(C))
-        end
+      if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+        println("\n New Field!")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
     println("\n")
@@ -759,19 +752,16 @@ function abelian_normal_extension_Q(gtype::Array{Int,1},bound::fmpz)
   for (i, k) in enumerate(l_conductors)
     println("Conductor: $k ")
     println("Left: $(length(l_conductors) - i)")
-    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k[1], k[2])
+    @vtime :QuadraticExt 1 r,mr=ray_class_group(O,expo,k[1], k[2], inf_plc)
     @vtime :QuadraticExt 1 ls=subgroups(r,quotype=gtype, fun=(x, y) -> quo(x, y, false)[2])
     a=_min_wild(k[2])*k[1]
     totally_positive_generators(mr,a)
     for s in ls
       C=ray_class_field(mr*inv(s))
       println("\n Checking conductor")
-      if Hecke._is_conductor_min_normal(C,a) 
-        println("Right conductor; now checking discriminant")
-        if Hecke.discriminant_conductor(O,C,a,mr,bound,n)
-          println("\n New Field!")
-          @vtime :QuadraticExt 1 push!(fields,number_field(C))
-        end
+      if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+        println("\n New Field!")
+        @vtime :QuadraticExt 1 push!(fields,number_field(C))
       end
     end
     println("\n")
@@ -784,52 +774,6 @@ end
 #
 #######################################################################################
 
-function discriminant(C::ClassField)
-  
-  if isdefined(C,:conductor)
-    m=C.conductor[1]
-    inf_plc=C.conductor[2]
-  else
-    C.conductor=conductor(C)
-    m=C.conductor[1]
-    inf_plc=C.conductor[2]  
-  end
-  @assert typeof(m)==NfOrdIdl
-  small_gens=_norm_group_gens_small(C)
-  
-  expo=exponent(domain(C.mq))
-  n=order(domain(C.mq))
-  lp=factor(m)
-  prime_powers=Dict{NfOrdIdl,Int}()
-  for (q,v) in lp
-    prime_powers[q]=q^v
-  end
-  O=order(m)
-  discriminant=ideal(O,1)
-  for (q,e) in lp
-    aq=e*n
-    I=ideal(O,1)
-    for (p,w) in lp
-      if p!=q
-        I*=prime_powers[p]
-      end
-    end
-    for i=0:e-1
-      R,mR=ray_class_group(I, inf_plc, n_quo=expo)
-      # From the second step, we can use the other ray class group function
-      # that takes advantage of the things already computed 
-      dlogs=GrpAbFinGenElem[mR\s for s in small_gens]
-      q,mq=quo(R,dlogs)
-      aq-=order(q)      
-      I*=q
-    end    
-    discriminant*=q^aq
-  end
-  return discriminant
-  
-end
-
-
 function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClassGrp, bound::fmpz, n::Int)
   
  
@@ -839,6 +783,8 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
   end
 
   K=nf(O)
+  relative_disc=Dict{NfOrdIdl,Int}()
+  abs_disc=Dict{fmpz,fmpz}()
   discr=fmpz(1)
   mp=C.mq
   R=domain(mp)
@@ -850,14 +796,26 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
     if minimum(p) in primes_done || haskey(mr.wild_mult_grp, p)
       continue
     end
+    ap=n
     push!(primes_done, minimum(p))
-    el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
-    q,mq=quo(R,[el])
-    ap= n-order(q)
+    if isprime(n)
+      ap-=1
+    else
+      el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
+      q,mq=quo(R,[el])
+      ap-= order(q)
+    end
     qw=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
     discr*=fmpz(minimum(p))^qw
     if discr>bound
       return false
+    else
+      abs_disc[minimum(p)]=qw
+      for q in keys(tmg)
+        if minimum(q)==minimum(p) 
+          relative_disc[q]=ap
+        end
+      end
     end
   end
   
@@ -874,42 +832,55 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
         continue
       end 
       push!(primes_done, minimum(p)) 
-      if length(lp) > 1
-        i_without_p = ideal(O,1)
-        for (p2,vp2) in lp
-          (p != p2) && (i_without_p *= prime_power[p2])
-        end
+      ap=n*lp[p]
+      if isprime(n)
+        ap-=lp[p]
+      else
+        if length(lp) > 1
+          i_without_p = ideal(O,1)
+          for (p2,vp2) in lp
+            (p != p2) && (i_without_p *= prime_power[p2])
+          end
 
-        alpha, beta = idempotents(prime_power[p],i_without_p)
-      end
-      s=lp[p]
-      @hassert :QuadraticExt 1 s>=2
-      ap=n*s
-      els=GrpAbFinGenElem[]
-      for k=2:lp[p]      
-        s=s-1
-        pk=p^s
-        pv=p^(s+1)
-        gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a)
-        for i=1:length(gens)
-          push!(els,mp\ideal(O,gens[i]))
+          alpha, beta = idempotents(prime_power[p],i_without_p)
+        end
+        s=lp[p]
+        @hassert :QuadraticExt 1 s>=2
+        els=GrpAbFinGenElem[]
+        for k=2:lp[p]      
+          s=s-1
+          pk=p^s
+          pv=pk*p
+          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a)
+          for i=1:length(gens)
+            push!(els,mp\ideal(O,gens[i]))
+          end
+          ap-=order(quo(R,els)[1])
+          @hassert :QuadraticExt 1 ap>0
+        end
+        if haskey(tmg, p)
+          push!(els, mp\ideal(O,tmg[p][1]))
         end
         ap-=order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
       end
-      if haskey(tmg, p)
-        push!(els, mp\ideal(O,tmg[p][1]))
-      end
-      ap-=order(quo(R,els)[1])
-      @hassert :QuadraticExt 1 ap>0
       td=prime_decomposition_type(O,Int(minimum(p)))
       np=fmpz(minimum(p))^(td[1][1]*length(td)*ap)
       discr*=np
       if discr>bound
         return false
+      else
+        abs_disc[minimum(p)]=td[1][1]*length(td)*ap
+        for q in keys(tmg)
+          if minimum(q)==minimum(p) 
+            relative_disc[q]=ap
+          end
+        end
       end
     end
   end
+  C.relative_discriminant=relative_disc
+  C.absolute_discriminant=abs_disc
   return true
 
 end
@@ -1215,7 +1186,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
   bound_quadratic= Int(root(absolute_bound, n))
   list_quad=quadratic_extensions(bound_quadratic, tame=tame, real=totally_real)
   fields=NfRel_ns[]
-  autos=NfToNfMor[]
+  autos=[]
   fac=factor(n).fac
   for K in list_quad
     
@@ -1301,8 +1272,101 @@ function _trivial_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1}, fac::D
     end
   end
   return false
+  
 end
 
+###############################################################################
+#
+#  C3 x D5 extensions
+#
+###############################################################################
+
+
+function C3xD5_extensions(absolute_bound::fmpz)
+
+  n=15
+  bound_quadratic= Int(root(absolute_bound, 15))
+  list_quad=quadratic_extensions(bound_quadratic)
+  fields=NfRel_ns[]
+  autos=[]
+  fac=factor(15).fac
+  for K in list_quad
+    
+    println("Field: $K")
+    O=maximal_order(K)
+    D=abs(discriminant(O))
+    if D^15>absolute_bound
+      continue
+    end
+    bo = ceil(Rational{BigInt}(absolute_bound//D^n))
+    bound = FlintZZ(fmpq(bo))
+   
+    _,mC=class_group(O)
+    allow_cache!(mC)
+    S = prime_ideals_up_to(O, max(1000,100*clog(D,10)^2))
+
+    gens=Hecke.automorphisms(K)
+    a=gen(K)
+    if gens[1](a)==a
+      deleteat!(gens,1)
+    else
+      deleteat!(gens,2)
+    end
+    
+    inf_plc=real_places(K)
+      
+    #Getting conductors
+    l_conductors=conductors(O,n,bound)
+    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  
+    #Now, the big loop
+    for (i, k) in enumerate(l_conductors)
+      r,mr=ray_class_group(O,n,k[1], k[2], inf_plc)
+      if !_are_there_subs(r,[n])
+        continue
+      end
+      mr.prime_ideal_cache = S
+      act=_act_on_ray_class(mr,gens)
+      ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
+      a=_min_wild(k[2])*k[1]
+      totally_positive_generators(mr,a)
+      for s in ls
+        if !_right_action(s,act)
+          continue
+        end
+        C=ray_class_field(mr*inv(s))
+        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+          println("\n New Field!")
+          @vtime :QuadraticExt 1 push!(fields,number_field(C))
+          push!(autos,absolute_automorphism_group(C,gens))
+        end
+      end
+    end
+    
+  end
+  
+  return fields, autos
+  
+end
+
+function _right_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+
+  @assert length(act)==1
+  S=codomain(s)
+  T,mT=snf(S)
+  @assert T.snf[1]==15
+  @assert ngens(T)==1
+  new_el=mT\(s(act[1](s\mT(T[1]))))
+  if mod(new_el[1],5)==1
+    return false
+  end
+  @assert 3*new_el!=3*T[1]
+  if mod(new_el[1],3)!=1
+    return false
+  end
+  @assert 5*new_el==5*T[1]
+  return true
+end
 
 ################################################################################
 #
