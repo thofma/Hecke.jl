@@ -82,9 +82,10 @@ end
 
 mutable struct ClassField
   mq::Map
-  norm_group::GrpAbFinGenMap
-  small_gens::Array{NfOrdIdl,1}
+
   conductor::Tuple{NfOrdIdl, Array{InfPlc,1}}
+  relative_discriminant::Dict{NfOrdIdl, Int}
+  absolute_discriminant::Dict{fmpz,fmpz}
   cyc::Array{ClassField_pp, 1}
   A::NfRel_ns{nf_elem}
   function ClassField()
