@@ -118,14 +118,15 @@ log(a::fmpz) = log(BigInt(a))
 log(a::fmpq) = log(numerator(a)) - log(denominator(a))
 
 function round(a::fmpq)
-  n = numerator(a)
+  s = sign(numerator(a))
+  n = abs(numerator(a))
   d = denominator(a)
   q = div(n, d)
   r = mod(n, d)
-  if r >= d//2
-    return q+1
+  if r >= div(d, 2)
+    return s*(q+1)
   else
-    return q
+    return s*q
   end
 end
 
