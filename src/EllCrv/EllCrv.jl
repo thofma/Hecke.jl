@@ -688,8 +688,8 @@ end
 # computes the n-th division polynomial psi_n in ZZ[x,y] for a given elliptic curve E over ZZ
 function division_polynomialE(E::EllCrv, n::Int)
 
-  A = num(E.coeff[1])
-  B = num(E.coeff[2])
+  A = numerator(E.coeff[1])
+  B = numerator(E.coeff[2])
 
   if n == 1
     return one(_Zxy)
@@ -740,7 +740,7 @@ function Psi_polynomial(E::EllCrv, n::Int)
     end
 
     # g = y^2
-    g = _Zx(_x)^3 + (num(E.coeff[1]))*_Zx(_x) + num(E.coeff[2])
+    g = _Zx(_x)^3 + (numerator(E.coeff[1]))*_Zx(_x) + numerator(E.coeff[2])
 
     h = division_polynomialE(E, n)
     # make h into an element of ZZ[x]

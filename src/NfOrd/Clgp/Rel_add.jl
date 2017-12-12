@@ -36,7 +36,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     return false
   end
 
-  nb = div(nbits(num(n)), 2)
+  nb = div(nbits(numerator(n)), 2)
   if haskey(clg.normStat, nb)
     clg.normStat[nb] += 1
   else
@@ -46,9 +46,9 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   O = order(clg.FB.ideals[1]) 
   @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
   if integral #element is known to be integral
-    fl, r = issmooth!(clg.FB.fb_int, num(n*nI))
+    fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI))
   else  
-    fl, r = issmooth!(clg.FB.fb_int, num(n*nI)*den(a, O))
+    fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI)*denominator(a, O))
   end  
   if !fl
     @vprint :ClassGroup 3 "not int-smooth\n"

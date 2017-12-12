@@ -203,7 +203,7 @@ end
 
 
 function (a::FmpzPolyRing)(b::fmpq_poly)
-  (den(b) != 1) && error("denominator has to be 1")
+  (denominator(b) != 1) && error("denominator has to be 1")
   z = a()
   ccall((:fmpq_poly_get_numerator, :libflint), Void,
               (Ptr{fmpz_poly}, Ptr{fmpq_poly}), &z, &b)
@@ -233,10 +233,10 @@ doc"""
 
 > The right regular representation of a, i.e. the matrix representing
 > the multiplication by a map on the number field.
-> den(a) must be one
+> denominator(a) must be one
 """
 function representation_mat(a::nf_elem)
-  @assert den(a) == 1
+  @assert denominator(a) == 1
   dummy = fmpz(0)
   n = degree(a.parent)
   M = zero_matrix(FlintZZ, n, n)
@@ -261,7 +261,7 @@ function basis_mat(A::Array{nf_elem, 1})
   dummy = one(FlintZZ)
 
   for i in 1:n
-    deno = lcm(deno, den(A[i]))
+    deno = lcm(deno, denominator(A[i]))
   end
 
   for i in 1:n
@@ -288,7 +288,7 @@ doc"""
 > The characteristic polynomial of a.
 """
 function charpoly(a::nf_elem)
-  d = den(a)
+  d = denominator(a)
   Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
   f = charpoly(Zx, representation_mat(d*a))
   f =  f(gen(parent(f))*d)
@@ -306,7 +306,7 @@ doc"""
 > The minimal polynomial of a.
 """
 function minpoly(a::nf_elem)
-  d = den(a)
+  d = denominator(a)
   Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
   f = minpoly(Zx, representation_mat(d*a))
   f = f(gen(parent(f))*d)
@@ -476,9 +476,9 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   # if not monic, scale by gcd
   # remove content?
   a = a*(1//leading_coefficient(a))
-  da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
-  db = Base.reduce(lcm, [den(coeff(b, i)) for i=0:degree(b)])
+  db = Base.reduce(lcm, [denominator(coeff(b, i)) for i=0:degree(b)])
   d = gcd(da, db)
   a = a*da
   b = b*db
@@ -615,7 +615,7 @@ function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::fmpz)
   while e && i<= degree(a)
     j = 0
     while e && j<degree(K)
-      e = e && (num(coeff(coeff(a, i), j)) - num(coeff(coeff(b, i), j))) % d == 0
+      e = e && (numerator(coeff(coeff(a, i), j)) - numerator(coeff(coeff(b, i), j))) % d == 0
       j += 1
     end
     i += 1
@@ -637,9 +637,9 @@ end
 #
 function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   a = a*(1//leading_coefficient(a))
-  da = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
-  db = Base.reduce(lcm, [den(coeff(a, i)) for i=0:degree(a)])
+  db = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
   d = gcd(da, db)
   a = a*da
   b = b*db
@@ -1102,7 +1102,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    #CF the resultant code has trouble with denominators,
    #   this "solves" the problem, but it should probably be
    #   adressed in c
-   de = den(a)
+   de = denominator(a)
    n = degree(parent(a))
    ccall((:nf_elem_norm_div, :libflint), Void,
          (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
@@ -1173,11 +1173,11 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
   end
 
   d = degree(f)
-  deno = den(coeff(f, d), O)
+  deno = denominator(coeff(f, d), O)
   for i in (d-1):-1:0
     ai = coeff(f, i)
     if !iszero(ai)
-      deno = lcm(deno, den(ai, O))
+      deno = lcm(deno, denominator(ai, O))
     end
   end
 
@@ -1253,7 +1253,7 @@ function root(a::nf_elem, n::Int)
 end
 
 
-function num(a::nf_elem)
+function numerator(a::nf_elem)
    const _one = fmpz(1)
    z = copy(a)
    ccall((:nf_elem_set_den, :libflint), Void,
@@ -1640,7 +1640,7 @@ function write(io::IO, A::Array{nf_elem, 1})
 
     # print the defining polynomial
     g = K.pol
-    d = den(g)
+    d = denominator(g)
 
     for j in 0:degree(g)
       print(io, coeff(g, j)*d)
@@ -1653,7 +1653,7 @@ function write(io::IO, A::Array{nf_elem, 1})
     for i in 1:length(A)
 
       f = polring(A[i])
-      d = den(f)
+      d = denominator(f)
 
       for j in 0:degree(K)-1
         print(io, coeff(f, j)*d)
@@ -1865,7 +1865,7 @@ end
 function nf_elem_to_fmpz_mod_poly_den!(r::fmpz_mod_poly, a::nf_elem)
   d = degree(a.parent)
   nf_elem_to_fmpz_mod_poly_no_den!(r, a)
-  dn = den(a)
+  dn = denominator(a)
   ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{Int}), &dn, &dn, &(r.p))
   ccall((:fmpz_invmod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{Int}), &dn, &dn, &(r.p))
   ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz}), &r, &r, &dn)
@@ -2352,7 +2352,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   p = fmpz(next_prime(p_start))
   K = base_ring(a)
   ZK = maximal_order(K)
-  dB = den(B)*index(ZK)
+  dB = denominator(B)*index(ZK)
 
   @assert order(B) == ZK
   pp = fmpz(1)

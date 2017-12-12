@@ -225,7 +225,7 @@ function basis_mat(x::NfOrdFracIdl)
   if isdefined(x, :basis_mat)
     return deepcopy(x.basis_mat)
   else
-    x.basis_mat = FakeFmpqMat(basis_mat(num(x)), den(x))
+    x.basis_mat = FakeFmpqMat(basis_mat(numerator(x)), denominator(x))
     return deepcopy(x.basis_mat)
   end
 end
@@ -236,9 +236,9 @@ end
 #
 ################################################################################
 
-num(x::NfOrdFracIdl) = x.num
+numerator(x::NfOrdFracIdl) = x.num
 
-den(x::NfOrdFracIdl) = deepcopy(x.den)
+denominator(x::NfOrdFracIdl) = deepcopy(x.den)
 
 ################################################################################
 #
@@ -339,7 +339,7 @@ end
 function simplify(A::NfOrdFracIdl)
   simplify(A.num)
   b = basis_mat(A.num)
-  g = den(A)
+  g = denominator(A)
   for i in 1:rows(b)
     for j in 1:cols(b)
       g = gcd(g, b[i, j])
@@ -536,21 +536,21 @@ function //(A::NfOrdIdl, d::Integer)
 end
 
 function +(A::NfOrdIdl, B::NfOrdFracIdl)
-  return (A*den(B)+num(B))//den(B)
+  return (A*denominator(B)+numerator(B))//denominator(B)
 end
 
 +(A::NfOrdFracIdl, B::NfOrdIdl) = B+A
 
 function +(A::NfOrdFracIdl, B::Hecke.NfOrdFracIdl)
-  d = lcm(den(A), den(B))
-  ma = div(d, den(A))
-  mb = div(d, den(B))
-  return (num(A)*ma + num(B)*mb)//d
+  d = lcm(denominator(A), denominator(B))
+  ma = div(d, denominator(A))
+  mb = div(d, denominator(B))
+  return (numerator(A)*ma + numerator(B)*mb)//d
 end
 
 function *(x::nf_elem, y::NfOrd)
-  b, z = _check_elem_in_order(den(x, y)*x, y)
-  return NfOrdFracIdl(ideal(y, y(z)), den(x, y))
+  b, z = _check_elem_in_order(denominator(x, y)*x, y)
+  return NfOrdFracIdl(ideal(y, y(z)), denominator(x, y))
 end
 ################################################################################
 #
@@ -574,10 +574,10 @@ doc"""
 """
 function integral_split(A::NfOrdFracIdl)
   d = simplify(inv(A + ideal(order(A), fmpz(1))))
-  @assert den(d) == 1
+  @assert denominator(d) == 1
   n = simplify(A*d)
-  @assert den(n) == 1
-  return num(n), num(d)
+  @assert denominator(n) == 1
+  return numerator(n), numerator(d)
 end
 
 doc"""

@@ -56,7 +56,7 @@ order(a::NfRelOrdFracIdl) = a.order
 
 doc"""
 ***
-    nf(a::NfRelOrdFracIdl) -> NfRel
+    nf(a::NfRelOrdFracIdl) -> RelativeExtension
 
 > Returns the number field, of which $a$ is an fractional ideal.
 """
@@ -76,11 +76,11 @@ parent(a::NfRelOrdFracIdl) = a.parent
 #
 ################################################################################
 
-num(a::NfRelOrdFracIdl) = a.num
+numerator(a::NfRelOrdFracIdl) = a.num
 
-den(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = a.den_abs
+denominator(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = a.den_abs
 
-den(a::NfRelOrdFracIdl{T, S}) where {S, T} = a.den_rel
+denominator(a::NfRelOrdFracIdl{T, S}) where {S, T} = a.den_rel
 
 ################################################################################
 #
@@ -97,8 +97,8 @@ function show(io::IO, a::NfRelOrdFracIdl)
   print(io, "Fractional ideal of\n")
   print(io, order(a), "\n\n")
   print(io, "with basis pseudo-matrix\n")
-  showcompact(io, basis_pmat(num(a), Val{false}))
-  print(io, "\nand denominator ", den(a))
+  showcompact(io, basis_pmat(numerator(a), Val{false}))
+  print(io, "\nand denominator ", denominator(a))
 end
 
 ################################################################################
@@ -154,7 +154,7 @@ doc"""
 """
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   order(a) != order(b) && return false
-  return den(a) == den(b) && num(a) == num(b)
+  return denominator(a) == denominator(b) && numerator(a) == numerator(b)
 end
 
 ################################################################################
@@ -167,9 +167,9 @@ function assure_has_norm(a::NfRelOrdFracIdl)
   if a.has_norm
     return nothing
   end
-  n = norm(num(a))
-  d = den(a)^degree(order(a))
-  a.norm = n*inv(nf(parent(den(a)))(d))
+  n = norm(numerator(a))
+  d = denominator(a)^degree(order(a))
+  a.norm = n*inv(nf(parent(denominator(a)))(d))
   a.has_norm = true
   return nothing
 end
@@ -202,14 +202,14 @@ doc"""
 > Returns $a + b$.
 """
 function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
-  K = nf(parent(den(a)))
-  da = K(den(a))
-  db = K(den(b))
+  K = nf(parent(denominator(a)))
+  da = K(denominator(a))
+  db = K(denominator(b))
   d = divexact(da*db, gcd(da, db))
   ma = divexact(d, da)
   mb = divexact(d, db)
-  c = ma*num(a) + mb*num(b)
-  return NfRelOrdFracIdl{T, S}(order(a), c, parent(den(a))(d))
+  c = ma*numerator(a) + mb*numerator(b)
+  return NfRelOrdFracIdl{T, S}(order(a), c, parent(denominator(a))(d))
 end
 
 ################################################################################
@@ -225,7 +225,7 @@ doc"""
 > Returns $a \cdot b$.
 """
 function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
-  return NfRelOrdFracIdl{T, S}(order(a), num(a)*num(b), den(a)*den(b))
+  return NfRelOrdFracIdl{T, S}(order(a), numerator(a)*numerator(b), denominator(a)*denominator(b))
 end
 
 ################################################################################
@@ -243,5 +243,5 @@ doc"""
 """
 function inv(a::NfRelOrdFracIdl{T, S}) where {T, S}
   b = inv(a.num)
-  return NfRelOrdFracIdl{T, S}(order(a), b*den(a), order(a)(1))
+  return NfRelOrdFracIdl{T, S}(order(a), b*denominator(a), order(a)(1))
 end

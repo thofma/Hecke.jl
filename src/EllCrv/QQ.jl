@@ -104,7 +104,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
   (E, trafo_int, trafo_rat) = integral_model(G)
 
   #!E.short && error("Elliptic curve must be given by short form")
-  #if (den(E.coeff[1]) != 1) || (den(E.coeff[2]) != 1)
+  #if (denominator(E.coeff[1]) != 1) || (denominator(E.coeff[2]) != 1)
   #  error("Need integer coefficients")
   #end
 
@@ -113,7 +113,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
 
   # Lutz-Nagell: necessary: y = 0 or y^2 divides d
 
-  ycand = squaredivisors(num(d)) # candidates for y-coordinate
+  ycand = squaredivisors(numerator(d)) # candidates for y-coordinate
 
   push!(ycand,0)
 
@@ -122,7 +122,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
   # Lutz-Nagell: coordinates of torsion points need to be in ZZ
   for i = 1:length(ycand)
     # are there corresponding integer x-values?
-    xcand = zeros(_Zx(_x)^3 + (num(E.coeff[1]))*_Zx(_x) + (num(E.coeff[2])) - ycand[i]^2)
+    xcand = zeros(_Zx(_x)^3 + (numerator(E.coeff[1]))*_Zx(_x) + (numerator(E.coeff[2])) - ycand[i]^2)
     if length(xcand) != 0
       for j = 1: length(xcand)
         push!(pcand, (xcand[j], ycand[i])) # add to candidates
@@ -198,8 +198,8 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
   end
 
   # curve has integer coefficients
-  A = num(E.coeff[1])
-  B = num(E.coeff[2])
+  A = numerator(E.coeff[1])
+  B = numerator(E.coeff[2])
 
   torsionpoints = [infinity(E)]
 
@@ -359,7 +359,7 @@ function integral_model(E::EllCrv{fmpq})
   A = E.coeff[1]
   B = E.coeff[2]
 
-  if (den(A) == 1) && (den(B) == 1) # curve already has integer coefficients
+  if (denominator(A) == 1) && (denominator(B) == 1) # curve already has integer coefficients
 
     trafo_int = function(P)
      return P
@@ -373,7 +373,7 @@ function integral_model(E::EllCrv{fmpq})
 
   end
 
-  mue = lcm(den(A), den(B))
+  mue = lcm(denominator(A), denominator(B))
   Anew = mue^4 * A
   Bnew = mue^6 * B
   E_int = EllipticCurve([Anew, Bnew])
@@ -418,11 +418,11 @@ doc"""
 """
 # algorithm of Laska-Kraus-Connell
 function laska_kraus_connell(E::EllCrv{fmpq})
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -554,16 +554,16 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   p = FlintZZ(p)
 
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
   delta = disc(E)
-  delta = num(delta)
+  delta = numerator(delta)
 
   n = valuation(delta, p)
 
@@ -604,11 +604,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
   trans = transform_rstu(E, [r, 0, t, 1])
   E = trans[1]
 
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -665,11 +665,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
   trans = transform_rstu(E, [0, s, t, 1])
   E = trans[1]
 
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
 
   b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -704,11 +704,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1 = num(E.coeff[1])
-    a2 = num(E.coeff[2])
-    a3 = num(E.coeff[3])
-    a4 = num(E.coeff[4])
-    a6 = num(E.coeff[5])
+    a1 = numerator(E.coeff[1])
+    a2 = numerator(E.coeff[2])
+    a3 = numerator(E.coeff[3])
+    a4 = numerator(E.coeff[4])
+    a6 = numerator(E.coeff[5])
 
     b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -741,11 +741,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
         trans = transform_rstu(E, [0, 0, t, 1])
         E = trans[1]
 
-        a1 = num(E.coeff[1])
-        a2 = num(E.coeff[2])
-        a3 = num(E.coeff[3])
-        a4 = num(E.coeff[4])
-        a6 = num(E.coeff[5])
+        a1 = numerator(E.coeff[1])
+        a2 = numerator(E.coeff[2])
+        a3 = numerator(E.coeff[3])
+        a4 = numerator(E.coeff[4])
+        a6 = numerator(E.coeff[5])
 
         b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -773,11 +773,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
           trans = transform_rstu(E, [r, 0, 0, 1])
           E = trans[1]
 
-          a1 = num(E.coeff[1])
-          a2 = num(E.coeff[2])
-          a3 = num(E.coeff[3])
-          a4 = num(E.coeff[4])
-          a6 = num(E.coeff[5])
+          a1 = numerator(E.coeff[1])
+          a2 = numerator(E.coeff[2])
+          a3 = numerator(E.coeff[3])
+          a4 = numerator(E.coeff[4])
+          a6 = numerator(E.coeff[5])
 
           b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -806,11 +806,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     trans = transform_rstu(E, [r, 0, 0, 1])
     E = trans[1]
 
-    a1 = num(E.coeff[1])
-    a2 = num(E.coeff[2])
-    a3 = num(E.coeff[3])
-    a4 = num(E.coeff[4])
-    a6 = num(E.coeff[5])
+    a1 = numerator(E.coeff[1])
+    a2 = numerator(E.coeff[2])
+    a3 = numerator(E.coeff[3])
+    a4 = numerator(E.coeff[4])
+    a6 = numerator(E.coeff[5])
 
     b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -840,11 +840,11 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       trans = transform_rstu(E, [0, 0, t, 1])
       E = trans[1]
 
-      a1 = num(E.coeff[1])
-      a2 = num(E.coeff[2])
-      a3 = num(E.coeff[3])
-      a4 = num(E.coeff[4])
-      a6 = num(E.coeff[5])
+      a1 = numerator(E.coeff[1])
+      a2 = numerator(E.coeff[2])
+      a3 = numerator(E.coeff[3])
+      a4 = numerator(E.coeff[4])
+      a6 = numerator(E.coeff[5])
 
       b2, b4, b6, b8, c4, c6 = get_b_c_integral(E)
 
@@ -876,7 +876,7 @@ doc"""
 > Returns a global reduced minimal model for $E$ using Tate's algorithm.
 """
 function tates_algorithm_global(E)
-  delta = abs(num(disc(E)))
+  delta = abs(numerator(disc(E)))
   fac = factor(delta)
 
   p_list = [i[1] for i in fac]
@@ -932,11 +932,11 @@ doc"""
 """
 function tidy_model(E::EllCrv{fmpq})
 
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
 
   if mod(a1, 2) == 0
     s = -divexact(a1, 2)
@@ -975,11 +975,11 @@ doc"""
 > Computes the invariants b2, b4, b6, b8 of an elliptic curve E with integer coefficients.
 """
 function get_b_integral(E)
-  a1 = num(E.coeff[1])
-  a2 = num(E.coeff[2])
-  a3 = num(E.coeff[3])
-  a4 = num(E.coeff[4])
-  a6 = num(E.coeff[5])
+  a1 = numerator(E.coeff[1])
+  a2 = numerator(E.coeff[2])
+  a3 = numerator(E.coeff[3])
+  a4 = numerator(E.coeff[4])
+  a6 = numerator(E.coeff[5])
 
   b2 = a1^2 + 4*a2
   b4 = a1*a3 + 2*a4
@@ -994,11 +994,11 @@ doc"""
 > Computes the invariants b2, b4, b6, b8, c4, c6 of an elliptic curve E with integer coefficients.
 """
 function get_b_c_integral(E)
-    a1 = num(E.coeff[1])
-    a2 = num(E.coeff[2])
-    a3 = num(E.coeff[3])
-    a4 = num(E.coeff[4])
-    a6 = num(E.coeff[5])
+    a1 = numerator(E.coeff[1])
+    a2 = numerator(E.coeff[2])
+    a3 = numerator(E.coeff[3])
+    a4 = numerator(E.coeff[4])
+    a6 = numerator(E.coeff[5])
 
     b2 = a1^2 + 4*a2
     b4 = a1*a3 + 2*a4

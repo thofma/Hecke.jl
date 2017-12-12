@@ -514,10 +514,10 @@ function assure_has_minimum(A::NfOrdIdl)
       if new && order(A).ismaximal == 1
         A.minimum = _minmod(A.gen_one, A.gen_two)
         bi = inv(b)
-        @hassert :Rres 1 A.minimum == den(bi, order(A))
+        @hassert :Rres 1 A.minimum == denominator(bi, order(A))
       else
         bi = inv(b)
-        A.minimum =  den(bi, order(A))
+        A.minimum =  denominator(bi, order(A))
       end
     end
     return nothing
@@ -529,7 +529,7 @@ function assure_has_minimum(A::NfOrdIdl)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
     else
-      d = den(inv(K(A.gen_two)), order(A))
+      d = denominator(inv(K(A.gen_two)), order(A))
       d = gcd(d, FlintZZ(A.gen_one))
     end
     A.minimum = d
@@ -705,20 +705,20 @@ function inv_maximal(A::NfOrdIdl)
     end
     if new
       alpha = _invmod(A.gen_one, A.gen_two)
-      _, d = ppio(den(alpha, O), A.gen_one)
+      _, d = ppio(denominator(alpha, O), A.gen_one)
     else  
       alpha = inv(elem_in_nf(A.gen_two))
-      d = den(alpha, O)
+      d = denominator(alpha, O)
       m = A.gen_one
       _, d = ppio(d, m)
     end  
     Ai = parent(A)()
-    dn = den(d*alpha, O)
+    dn = denominator(d*alpha, O)
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(A.parent.order)//norm(A)
-    @hassert :NfOrd 1 den(temp) == 1
-    Ai.norm = num(temp)
+    @hassert :NfOrd 1 denominator(temp) == 1
+    Ai.norm = numerator(temp)
     Ai.gens_normal = A.gens_normal
     AAi = NfOrdFracIdl(Ai, dn)
     return AAi
@@ -751,7 +751,7 @@ function _minmod(a::fmpz, b::NfOrdElem)
   end
   Zk = parent(b)
   k = number_field(Zk)
-  d = den(b.elem_in_nf)
+  d = denominator(b.elem_in_nf)
   S = ResidueRing(FlintZZ, a*d*index(Zk))
   St = PolynomialRing(S)[1]
   B = St(d*b.elem_in_nf)
@@ -764,10 +764,10 @@ function _minmod(a::fmpz, b::NfOrdElem)
     m = a*d*index(Zk)
   end
   bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
-  d = den(bi, Zk)
+  d = denominator(bi, Zk)
   return gcd(d, a)
   # min(<a, b>) = min(<ad, bd>)/d and bd is in the equation order, hence max as well
-  # min(a, b) = gcd(a, den(b))
+  # min(a, b) = gcd(a, denominator(b))
   # rres(b, f) = <b, f> meet Z = <r> and
   # ub + vf = r
   # so u/r is the inverse and r is the den in the field
@@ -782,7 +782,7 @@ function _invmod(a::fmpz, b::NfOrdElem)
   if isone(a)
     return one(k)
   end
-  d = den(b.elem_in_nf)
+  d = denominator(b.elem_in_nf)
   S = ResidueRing(FlintZZ, a^2*d*index(Zk))
   St = PolynomialRing(S)[1]
   B = St(d*b.elem_in_nf)
@@ -802,7 +802,7 @@ function _normmod(a::fmpz, b::NfOrdElem)
   end
   Zk = parent(b)
   k = number_field(Zk)
-  d = den(b.elem_in_nf)
+  d = denominator(b.elem_in_nf)
   S = ResidueRing(FlintZZ, a*d^degree(parent(b)))
   St = PolynomialRing(S)[1]
   B = St(d*b.elem_in_nf)
@@ -826,18 +826,15 @@ function simplify(A::NfOrdIdl)
     end
     if new
       A.minimum = _minmod(A.gen_one, A.gen_two)
-      global last_data = A
-      if A.minimum != gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
-        println(A)
-        println(order(A))
-      end
-
-      @hassert :Rres 1 A.minimum == gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
+      @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), A.parent.order))
     else  
-      A.minimum = gcd(A.gen_one, den(inv(A.gen_two.elem_in_nf), A.parent.order))
+      A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), A.parent.order))
     end  
     A.gen_one = A.minimum
-    if new
+    if false && new
+      #norm seems to be cheap, while inv is expensive
+      #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
+      #      order basis. For this it would better be small in the field basis....
       n = _normmod(A.gen_one^degree(A.parent.order), A.gen_two)
       @hassert :Rres 1 n == gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
     else  
@@ -927,9 +924,9 @@ function ispower_unram(I::NfOrdIdl)
 
   II = J^e//I
   II = simplify(II)
-  @assert isone(den(II))
+  @assert isone(denominator(II))
 
-  f, s = ispower_unram(num(II))
+  f, s = ispower_unram(numerator(II))
 
   g = gcd(f, e)
   if isone(g)
@@ -938,8 +935,8 @@ function ispower_unram(I::NfOrdIdl)
 
   II = inv(s)^div(f, g) * J^div(e, g)
   II = simplify(II)
-  @assert isone(den(II))
-  JJ = num(II)
+  @assert isone(denominator(II))
+  JJ = numerator(II)
   e = g
 
   return e, JJ
@@ -1009,9 +1006,9 @@ function ispower_unram(I::NfOrdIdl, n::Int)
 
   II = J^n//I
   II = simplify(II)
-  @assert isone(den(II))
+  @assert isone(denominator(II))
 
-  fl, s = ispower_unram(num(II), n)
+  fl, s = ispower_unram(numerator(II), n)
 
   if !fl
     return fl, I
@@ -1019,8 +1016,8 @@ function ispower_unram(I::NfOrdIdl, n::Int)
 
   II = inv(s)* J
   II = simplify(II)
-  @assert isone(den(II))
-  JJ = num(II)
+  @assert isone(denominator(II))
+  JJ = numerator(II)
 
   return true, JJ
 end
@@ -1345,7 +1342,7 @@ end
 function defines_2_normal(A::NfOrdIdl)
   m = A.gen_one
   gen = A.gen_two
-  mg = den(inv(gen), order(A))
+  mg = denominator(inv(gen), order(A))
   # the minimum of ideal generated by g
   g = gcd(m,mg)
   return gcd(m, div(m,g)) == 1
@@ -1377,10 +1374,10 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
 
     bi = inv(b)
 
-    A.gen_one = den(bi, order(A))
+    A.gen_one = denominator(bi, order(A))
     A.minimum = A.gen_one
     A.gen_two = x
-    A.norm = abs(num(norm(b)))
+    A.norm = abs(numerator(norm(b)))
     @hassert :NfOrd 1 gcd(A.gen_one^degree(order(A)),
                     FlintZZ(norm(A.gen_two))) == A.norm
 
@@ -1446,13 +1443,13 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
     end
 
     mul!(m, m, basis_mat(A))
-    Q = num(basis_mat(O))
-    d = den(basis_mat(O))
+    Q = numerator(basis_mat(O))
+    d = denominator(basis_mat(O))
     mul!(m, m, Q)
     gen = elem_from_mat_row(nf(O), m, 1, d)
     # the following should be done inplace
     #gen = dot(reshape(Array(mm), degree(O)), basis(O))
-    if norm(A) == gcd(Amind, num(norm(gen)))
+    if norm(A) == gcd(Amind, numerator(norm(gen)))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)
       A.gens_weakly_normal = 1
@@ -1511,7 +1508,7 @@ function assure_2_normal(A::NfOrdIdl)
         continue
       end
 
-      mg = den(inv(elem_in_nf(gen)), O) # the minimum of <gen>
+      mg = denominator(inv(elem_in_nf(gen)), O) # the minimum of <gen>
       g = gcd(m, mg)
       if gcd(m, div(mg, g)) == 1
         if gcd(m^n, norm(gen)) != norm(A)

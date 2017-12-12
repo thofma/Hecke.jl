@@ -50,12 +50,12 @@ function class_group_proof(clg::ClassGrpCtx, lb::fmpz, ub::fmpz; extra :: fmpz=f
         sucess = false
         a = class_group_small_real_elements_relation_next(E)
         n = norm_div(a, norm(k), np)
-        if gcd(num(n), p) > extra 
+        if gcd(numerator(n), p) > extra 
           println("a: $a, $(norm(a)), $(norm(k)), $n")
 #          println("contains too many conjugates, bad")
           continue
         end
-        f, r = issmooth!(clg.FB.fb_int, num(n))
+        f, r = issmooth!(clg.FB.fb_int, numerator(n))
         if f 
           M = SMat{Int}()
           fl = _factor!(clg.FB, a, false, n)[1]

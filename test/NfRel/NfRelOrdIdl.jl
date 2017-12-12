@@ -28,7 +28,7 @@
   @test norm(A) == OK(9)*OK
   @test norm(I) == OK(1)*OK
   D = divexact(C, B)
-  D.num = K(2)*num(D)
+  D.num = K(2)*numerator(D)
   @test D == A1
 end
 

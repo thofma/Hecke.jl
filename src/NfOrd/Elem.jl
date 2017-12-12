@@ -641,7 +641,7 @@ doc"""
 """
 function representation_mat(a::NfOrdElem, K::AnticNumberField)
   nf(parent(a)) != K && error("Element not in this field")
-  d = den(a.elem_in_nf)
+  d = denominator(a.elem_in_nf)
   b = d*a.elem_in_nf
   A = representation_mat(b)
   z = FakeFmpqMat(A, d)

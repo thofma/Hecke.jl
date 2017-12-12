@@ -55,7 +55,7 @@
       _O = maximal_order(_K)
       _I = frac_ideal(_O, _K(1))
       _J = _I*_K(fmpq(-1, 5))
-      @test minimum(num(_J)) == 1
+      @test minimum(numerator(_J)) == 1
     end
   end
 

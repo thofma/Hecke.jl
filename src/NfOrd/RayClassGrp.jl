@@ -545,12 +545,12 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
       s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
       I=s*a
       simplify(I)
-      I = num(I)
+      I = numerator(I)
       while !iscoprime(I,m)
         s=K(rand(J.num,5))//J.den  
         I=s*a
         simplify(I)
-        I = num(I)
+        I = numerator(I)
       end
       push!(L,I)
     end
@@ -587,12 +587,12 @@ function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
       s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
       I=s*a
       simplify(I)
-      I = num(I)
+      I = numerator(I)
       while !iscoprime(I,m)
         s=K(rand(J.num,5))//J.den  
         I=s*a
         simplify(I)
-        I = num(I)
+        I = numerator(I)
       end
       L[i]=I
       el[i]=s
@@ -1137,7 +1137,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
       x=ideal(O,1)
       for i=1:ngens(G)
         if a[i]!=0
-          x*=num(evaluate(mC.princ_gens[ind+i-1][1]))^(Int(a[i]))
+          x*=numerator(evaluate(mC.princ_gens[ind+i-1][1]))^(Int(a[i]))
         end
       end
       return x
@@ -1498,7 +1498,7 @@ function _mult_grp_reconstruction(Q::NfOrdQuoRing, lp::Dict{NfOrdIdl, Int}, wpri
         pv=q^mr.fact_mod[q]
         b=basis(pu)
         N = basis_mat(pv)*basis_mat_inv(pu)
-        G=AbelianGroup(num(N))
+        G=AbelianGroup(numerator(N))
         S,mS=snf(G)
   
         #Generators
@@ -1616,8 +1616,8 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
   
   L=Array{FacElem{NfOrdIdl, NfOrdIdlSet},1}(ngens(C))
   for i=1:length(L)
-    e1=den(Kel[i])
-    e2=num(Kel[i])
+    e1=denominator(Kel[i])
+    e2=numerator(Kel[i])
     L[i]=princ_gens[i][1]*FacElem(Dict(ideal(O,O(e1))=> fmpz(-1), ideal(O,O(e2))=> fmpz(1)))
   end
   
@@ -1878,7 +1878,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
         M[i,j]=elem[j]
       end
     end
-    mp=GrpAbFinGenMap(R,R,sub(Ml,1:rows(Ml),1:length(lgens))*M)
+    mp = hom(R, R, sub(Ml,1:rows(Ml), 1:length(lgens))*M)
     @hassert :RayFacElem 1 isbijective(mp)
     push!(G,mp)
   end

@@ -17,10 +17,10 @@ function basis_rels(b::Array{nf_elem, 1}, c; bd::fmpz = fmpz(10^35), no_b::Int =
     end
     iszero(a) && continue
     n = norm_div(a, one, no_b)
-    if cmpabs(num(n), bd) <= 0 
+    if cmpabs(numerator(n), bd) <= 0 
       if no_id != 0
-        g = gcd(no_id, num(n))
-        if g==1 || gcd(div(num(n), g), g) == 1
+        g = gcd(no_id, numerator(n))
+        if g==1 || gcd(div(numerator(n), g), g) == 1
           if class_group_add_relation(c, a, n, one)
             a = b[1].parent()
           end
@@ -65,12 +65,12 @@ function basis_rels_2(b::Array{nf_elem, 1}, bd::fmpz = fmpz(10^35), no_b::Int = 
       n = norm_div(a, one, no_b)
     end
     if smooth != 0
-      !issmooth(smooth, num(n))[1] && continue
+      !issmooth(smooth, numerator(n))[1] && continue
     end
-    if cmpabs(num(n), bd) <= 0 
+    if cmpabs(numerator(n), bd) <= 0 
       if no_id != 0
-        g = gcd(no_id, num(n))
-        if g==1 || gcd(div(num(n), g), g) == 1
+        g = gcd(no_id, numerator(n))
+        if g==1 || gcd(div(numerator(n), g), g) == 1
           rels[i] = deepcopy(a)
           i = i +1
           println(i)
@@ -112,9 +112,9 @@ function basis_rels_3(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
     iszero(a) && continue
     n = norm_div(a, no_id, no_b)
     if smooth != 0
-      !issmooth(smooth, num(n))[1] && continue
+      !issmooth(smooth, numerator(n))[1] && continue
     end
-    nn = abs(num(n))
+    nn = abs(numerator(n))
     if !haskey(rels, nn)
       rels[nn] = deepcopy(a)
       i = i + 1
@@ -454,13 +454,13 @@ function rels_stat(b::Array{Hecke.nf_elem, 1}; no_b = 250, no_rel::Int = 10000, 
       stat[-1] += 1
     end
     n = norm_div(a, one, no_b)
-    k = div(ndigits(num(n), 2), 5)
+    k = div(ndigits(numerator(n), 2), 5)
     if haskey(stat, k)
       stat[k] += 1
     else
       stat[k] = 1
     end
-    if smooth != 0 && issmooth(smooth, num(n))[1]
+    if smooth != 0 && issmooth(smooth, numerator(n))[1]
       stat[-2] += 1
       push!(all_g, a)
       a =   a = b[1].parent()

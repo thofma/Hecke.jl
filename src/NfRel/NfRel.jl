@@ -138,6 +138,8 @@ end
 
 @inline Nemo.parent{T}(a::NfRelElem{T}) = a.parent::NfRel{T}
 
+issimple(a::NfRel) = true
+
 ################################################################################
 #
 #  Reduction
@@ -293,27 +295,6 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 
 ################################################################################
 #
-#  Exponentiation
-#
-################################################################################
-
-function Base.:(^)(a::NfRelElem, b::fmpz)
-  if b < 0
-    return inv(a)^(-b)
-  elseif b == 0
-    return parent(a)(1)
-  elseif b == 1
-    return deepcopy(a)
-  elseif mod(b, 2) == 0
-    c = a^(div(b, 2))
-    return c*c
-  elseif mod(b, 2) == 1
-    return a^(b - 1)*a
-  end
-end
-
-################################################################################
-#
 #  Inversion
 #
 ################################################################################
@@ -349,6 +330,21 @@ function Base.:(^)(a::NfRelElem, n::Int)
   end
 
   return K(powmod(data(a), n, K.pol))
+end
+
+function Base.:(^)(a::NfRelElem, b::fmpz)
+  if b < 0
+    return inv(a)^(-b)
+  elseif b == 0
+    return parent(a)(1)
+  elseif b == 1
+    return deepcopy(a)
+  elseif mod(b, 2) == 0
+    c = a^(div(b, 2))
+    return c*c
+  elseif mod(b, 2) == 1
+    return a^(b - 1)*a
+  end
 end
 
 ################################################################################

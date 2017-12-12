@@ -955,7 +955,7 @@ function val_func_no_index(p::NfOrdIdl)
   P = p.gen_one
   K = nf(order(p))
   pi = inv(p)
-  d = den(K(pi.num.gen_two))
+  d = denominator(K(pi.num.gen_two))
   @assert gcd(d, P) == 1
   e = K(pi.num.gen_two)*d
   M = zero_matrix(FlintZZ, 1, degree(K))
@@ -974,10 +974,10 @@ function val_func_no_index(p::NfOrdIdl)
   # e is still a valuation element, but with smaller coefficients.
   return function(x::nf_elem)
     v = 0
-    d = den(x)
+    d = denominator(x)
     x *= d
     x = x*e
-    while den(x) % P != 0
+    while denominator(x) % P != 0
       v += 1
       mul!(x, x, e)
     end
@@ -1007,7 +1007,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = Sx(g)
   h = Sx()
   return function(x::nf_elem)
-    d = den(x)
+    d = denominator(x)
     nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
     h = rem!(h, h, g)
     c = lift(FlintZZ, coeff(h, 0))
@@ -1032,7 +1032,7 @@ function val_func_index(p::NfOrdIdl)
   P = p.gen_one
   return function(x::nf_elem)
     v = 0
-    d = den(x, O)
+    d = denominator(x, O)
     x *= d
     x_mat = matrix(FlintZZ, 1, degree(O), elem_in_basis(O(x)))
     Nemo.mul!(x_mat, x_mat, M)
@@ -1067,7 +1067,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   if p.splitting_type[2] == 0
     global bad_ideal = p
     p.valuation = function(a::nf_elem)
-      d = den(a, O)
+      d = denominator(a, O)
       x = O(d*a)
       return valuation_naive(ideal(O, x), p) - valuation_naive(ideal(O, d), p)
     end
@@ -1135,7 +1135,7 @@ function valuation_naive(A::NfOrdIdl, B::NfOrdIdl)
   Bi = inv(B)
   i = 0
   C = simplify(A* Bi)
-  while den(C) == 1
+  while denominator(C) == 1
     C = simplify(Bi*C)
     i += 1
   end

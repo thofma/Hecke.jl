@@ -462,10 +462,10 @@ mutable struct FakeFmpqMat
 
   function FakeFmpqMat(x::fmpq_mat)
     z = new()
-    d = den(x[1, 1])
+    d = denominator(x[1, 1])
     for i in 1:rows(x)
       for j in 1:cols(x)
-        d = lcm(d, den(x[i, j]))
+        d = lcm(d, denominator(x[i, j]))
       end
     end
     n = zero_matrix(FlintZZ, rows(x), cols(x))
@@ -965,9 +965,9 @@ mutable struct NfOrdFracIdl
   function NfOrdFracIdl(O::NfOrd, a::nf_elem)
     z = new()
     z.parent = NfOrdFracIdlSet(O)
-    z.num = ideal(O, O(den(a, O)*a))
-    z.den = den(a, O)
-    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(den(a, O)*a)), den(a, O)))
+    z.num = ideal(O, O(denominator(a, O)*a))
+    z.den = denominator(a, O)
+    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(denominator(a, O)*a)), denominator(a, O)))
     return z
   end
 
@@ -1258,7 +1258,7 @@ mutable struct FactorBaseSingleP
       end
     end
     FB.doit = function(a::nf_elem, v::Int)
-      d = den(a)
+      d = denominator(a)
       if isone(gcd(d, p)) return int_doit(a, v); end
       return naive_doit(a, v);
     end
@@ -1624,7 +1624,9 @@ end
 #
 ################################################################################
 
-mutable struct NfRel{T} <: Nemo.Field
+abstract type RelativeExtension{T} <: Nemo.Field end
+
+mutable struct NfRel{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
@@ -1648,7 +1650,9 @@ end
 const NfRelID = Dict{Tuple{Generic.PolyRing, Generic.Poly, Symbol},
                      NfRel}()
 
-mutable struct NfRelElem{T} <: Nemo.FieldElem
+abstract type RelativeElement{T} <: Nemo.FieldElem end
+
+mutable struct NfRelElem{T} <: RelativeElement{T}
   data::Generic.Poly{T}
   parent::NfRel{T}
 

@@ -60,7 +60,7 @@ end
 #this could be extended to arbitrary zero-dimensional quotients, but
 #I don't need this here.
 
-mutable struct NfRel_ns{T} <: Nemo.Field 
+mutable struct NfRel_ns{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   S::Array{Symbol, 1}
@@ -76,7 +76,7 @@ end
 
 #mostly copied from NfRel I am afraid..
 
-mutable struct NfRel_nsElem{T} <: Nemo.FieldElem
+mutable struct NfRel_nsElem{T} <: RelativeElement{T}
   data::Nemo.Generic.MPoly{T}
   parent::NfRel_ns{T}
 
@@ -158,9 +158,9 @@ if isdefined(Nemo, :promote_rule1)
 else
   Nemo.promote_rule{T <: Integer, S}(::Type{NfRel_nsElem{S}}, ::Type{T}) = NfRel_nsElem{S}
 
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T} = NfRel_nsElem{T}
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
 
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T} = NfRel_nsElem{T}
+  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
 
   Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
 
@@ -182,6 +182,8 @@ end
 @inline Nemo.data(a::NfRel_nsElem) = a.data
 
 @inline Nemo.parent{T}(a::NfRel_nsElem{T}) = a.parent::NfRel_ns{T}
+
+issimple(a::NfRel_ns) = false
 
 ################################################################################
 #
@@ -256,15 +258,15 @@ end
 
 (K::NfRel_ns)(a::Integer) = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))
+(K::NfRel_ns)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)(a::fmpz) = K(parent(K.pol)(a))
+(K::NfRel_ns)(a::fmpz) = K(parent(K.pol[1])(a))
 
-(K::NfRel_ns)(a::fmpq) = K(parent(K.pol)(a))
+(K::NfRel_ns)(a::fmpq) = K(parent(K.pol[1])(a))
 
 (K::NfRel_ns)() = zero(K)
 
-Nemo.gen(K::NfRel_ns) = K(Nemo.gen(parent(K.pol)))
+Nemo.gen(K::NfRel_ns) = K(Nemo.gen(parent(K.pol[1])))
 
 ################################################################################
 #
@@ -309,6 +311,22 @@ Nemo.divexact(a::NfRel_nsElem, b::NfRel_nsElem) = div(a, b)
 #
 ################################################################################
 #via julia
+
+function Base.:(^)(a::NfRel_nsElem, b::fmpz)
+  if b < 0
+    return inv(a)^(-b)
+  elseif b == 0
+    return parent(a)(1)
+  elseif b == 1
+    return deepcopy(a)
+  elseif mod(b, 2) == 0
+    c = a^(div(b, 2))
+    return c*c
+  elseif mod(b, 2) == 1
+    return a^(b - 1)*a
+  end
+end
+
 ################################################################################
 #
 #  Comparison
@@ -402,6 +420,16 @@ function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
     @assert p!=0
     M[i, p] = a.data.coeffs[j]
   end
+end
+
+function elem_from_mat_row(K::NfRel_ns{T}, M::Generic.Mat{T}, i::Int) where T
+  a = K()
+  t = K()
+  b = basis(K)
+  for c = 1:cols(M)
+    a += M[i, c]*b[c]
+  end
+  return a
 end
 
 function monomial_to_index(i::Int, a::NfRel_nsElem)

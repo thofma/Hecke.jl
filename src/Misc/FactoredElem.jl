@@ -392,7 +392,7 @@ function simplify!(x::FacElem{fmpq})
   if length(x.fac) <= 1
     return
   end
-  cp = coprime_base(vcat([den(y) for y = base(x)], [num(y) for y=base(x)]))
+  cp = coprime_base(vcat([denominator(y) for y = base(x)], [numerator(y) for y=base(x)]))
   ev = Dict{fmpq, fmpz}()
   for p = cp
     if p == 1 || p == -1

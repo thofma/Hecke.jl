@@ -32,8 +32,8 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
       S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
       bd = abs(discriminant(order(A)))*norm(A)^2
       bd = root(bd, degree(K))
-      bd *= den(L)
-      nL = num(L)
+      bd *= denominator(L)
+      nL = numerator(L)
       f = find(i-> nL[i,i] < bd, 1:degree(K))
       m = div(degree(K), 4)
       if m < 2
@@ -43,8 +43,8 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
         f = find(i-> nL[i,i] < bd, 1:degree(K))
         bd *= 2
       end
-      I.b = nf_elem[elem_from_mat_row(K, num(S), i, den(S)) for i=f]
-      #println([Float64(num(L)[i,i]//den(L)*1.0) for i=1:degree(K)])
+      I.b = nf_elem[elem_from_mat_row(K, numerator(S), i, denominator(S)) for i=f]
+      #println([Float64(numerator(L)[i,i]//denominator(L)*1.0) for i=1:degree(K)])
       #now select a subset that can yield "small" relations, where
       #small means of effective norm <= sqrt(disc)
       I.A = A

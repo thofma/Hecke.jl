@@ -1186,7 +1186,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
   bound_quadratic= Int(root(absolute_bound, n))
   list_quad=quadratic_extensions(bound_quadratic, tame=tame, real=totally_real)
   fields=NfRel_ns[]
-  autos=[]
+  autos=Vector{NfRel_nsToNfRel_nsMor}[]
   fac=factor(n).fac
   for K in list_quad
     

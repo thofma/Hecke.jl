@@ -25,8 +25,8 @@ function power_reduce2(A::NfOrdIdl, e::fmpz)
 
   if e < 0
     B = inv(A)
-    A = num(B)
-    al *= FacElem(Dict(K(den(B)) => fmpz(e)))
+    A = numerator(B)
+    al *= FacElem(Dict(K(denominator(B)) => fmpz(e)))
     e = -e
   end
   # A^e = A^(e/2)^2 A or A^(e/2)^2

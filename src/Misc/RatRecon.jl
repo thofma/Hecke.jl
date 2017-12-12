@@ -72,7 +72,7 @@ function rational_reconstruction(a::fmpz, b::fmpz)
   res = fmpq()
   a = mod(a, b)
   fl = ccall((:fmpq_reconstruct_fmpz, :libflint), Int, (Ptr{fmpq}, Ptr{fmpz}, Ptr{fmpz}), &res, &a, &b)
-  return fl!=0, num(res), den(res)
+  return fl!=0, numerator(res), denominator(res)
 end
 
 function rational_reconstruction(a::Integer, b::Integer)
@@ -88,7 +88,7 @@ function rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz)
   res = fmpq()
   a = mod(a, b)
   fl = ccall((:fmpq_reconstruct_fmpz_2, :libflint), Int, (Ptr{fmpq}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &res, &a, &b, &N, &D)
-  return fl!=0, num(res), den(res)
+  return fl!=0, numerator(res), denominator(res)
 end
 
 #Note: the vector version might be useful - or the mult be previous den version
@@ -109,8 +109,8 @@ function rational_reconstruction(a::nf_elem, b::fmpz)
     if iszero(c)
       continue
     end
-    @assert den(c) == 1
-    fl, x, y = rational_reconstruction(num(c), b)
+    @assert denominator(c) == 1
+    fl, x, y = rational_reconstruction(numerator(c), b)
     if !fl
       return false, K(res)
     end
@@ -374,9 +374,9 @@ end
 
 function testPrime_jl(f::fmpq_poly, p::fmpz)
     # BAD!!! missing: num_coeff(f, i)
-    nd = den(f)
+    nd = denominator(f)
     fg = nd*f
-    return !(divides(nd, p)[1]) || !(divides(num(lead(fg)), p)[1])
+    return !(divides(nd, p)[1]) || !(divides(numerator(lead(fg)), p)[1])
 end
 
 ################################################################################

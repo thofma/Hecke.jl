@@ -12,10 +12,10 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat:
     if I.cnt > length(I.b)^2
       break
     end
-    if nbits(num(n)) > nb - 25
+    if nbits(numerator(n)) > nb - 25
       bad_norm += 1
       if I.cnt > 100  && bad_norm / I.cnt > 0.1
-        @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(num(n))) should be <= $(nb - 20) $bad_norm $(I.cnt)\n"
+        @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(numerator(n))) should be <= $(nb - 20) $bad_norm $(I.cnt)\n"
         break
       end
       continue

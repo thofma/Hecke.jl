@@ -30,12 +30,12 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
       s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
       I=s*a
       simplify(I)
-      I = num(I)
+      I = numerator(I)
       while !iscoprime(I,m)
         s=K(rand(J.num,5))//J.den  
         I=s*a
         simplify(I)
-        I = num(I)
+        I = numerator(I)
       end
       push!(L,I)
     end

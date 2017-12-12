@@ -12,10 +12,10 @@ end
 
 function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
   if typeof(f) == fmpq_poly
-    f = f*den(f)
+    f = f*denominator(f)
     g = Array{fmpz}(length(f))
     for i = 1:f.length
-      g[i] = FlintZZ(num(coeff(f, i-1)))
+      g[i] = FlintZZ(numerator(coeff(f, i-1)))
     end
     g = PolynomialRing(FlintZZ, string(var(parent(f))))[1](g)
     f = g
