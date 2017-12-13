@@ -138,7 +138,7 @@ end
 # TODO: Extend the check to non-endomorphisms
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
   if check
-    if A == B
+    #if A == B
       G = A
       images = [ G([M[i, j] for j in 1:ngens(G)]) for i in 1:ngens(G) ]
       a = 0 * G[1]
@@ -150,7 +150,7 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
           error("Matrix does not define a morphism of abelian groups")
         end
       end
-    end
+    #end
   end
 
   return GrpAbFinGenMap(A, B, M)

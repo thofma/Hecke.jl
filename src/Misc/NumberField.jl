@@ -1,4 +1,4 @@
-import Nemo.sub!, Base.gcd
+import Nemo.sub!, Base.gcd, Nemo.exp
 export induce_rational_reconstruction, induce_crt, root, roots,
        number_field, ismonic, pure_extension, ispure_extension,
        iskummer_extension, cyclotomic_field, wildanger_field
