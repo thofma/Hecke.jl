@@ -874,6 +874,177 @@ end
 #  Hensel Lifting
 #
 ################################################################################
+#with multiplicity??? without full factor?
+
+function roots(f::fq_nmod_poly)
+  l = factor(f).fac
+  return fq_nmod[-trail(x) for x = keys(l) if degree(x)==1]
+end
+
+function lift(R::NmodPolyRing, a::fq_nmod)
+  f = R()
+  for i=0:degree(parent(a))-1
+    setcoeff!(f, i, _get_coeff_raw(a, i))
+  end
+  return f
+end
+
+function (Zx::FmpzPolyRing)(a::nf_elem)
+  b = Zx()
+  @assert denominator(a) == 1
+  for i=0:a.elem_length
+    setcoeff!(b, i, numerator(coeff(a, i)))
+  end
+  return b
+end
+
+#missing:
+#  assertion on the lifting
+#  filtering of the roots (maybe we don't want all?)
+#  find all/ one/ few roots
+#  break down in various modules:
+#  - find powers of ideal
+#  - find LLL/HNF basis
+#  - lifting?
+#  use ResRing(Poly) instead of doing % pgg?
+#  an open variant where k is increased until we have a root?
+function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int)
+  ZX, X = FlintZZ["X"]
+  Rp = ResidueRing(FlintZZ, p)
+  Rpt, t = Rp["t"]
+  K = base_ring(f)
+  gp = Rpt(K.pol)
+  #to avoid embarrasment...
+  @assert !iszero(discriminant(gp))
+
+  #find the prime ideal - as I don't want to use orders, this is 
+  #fun (computing a max order just for this is wasteful)
+  #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
+  #so instead of powering, and simplify and such, lets write it down
+  lp = factor(gp).fac
+  if length(lp) > 1
+    g1 = lift(ZX, first(keys(lp)))
+    gg = hensel_lift(ZX(K.pol), g1, fmpz(p), k)
+  else
+    gg = ZX(K.pol)
+  end
+  # now for all i<= k, <p^i, K(gg)+p^i> is a normal presentation for
+  #                                     the prime ideal power.
+  #later we'll get the HNF matrix for selected powers as well
+
+  #set up the mod p data:
+  #need FiniteField as I need to factor (roots)
+  S = FqNmodFiniteField(first(keys(lp)), :z)
+  ST, T = S["T"]
+  fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
+  rt = roots(fp)
+  #we're going to lift the roots - and for efficiency 1/f'(rt) as well:
+  fps = derivative(fp)
+  irt = [inv(fps(x)) for x= rt]
+
+  # this is in the finite field, but now I need it in the res. ring.
+  # in ZX for ease of transport.
+  RT = [lift(ZX, lift(Rpt, x)) for x = rt]
+  IRT = [lift(ZX, lift(Rpt, x)) for x = irt]
+
+  #the den: ala Kronnecker:
+  den = ZX(derivative(K.pol)(gen(K)))
+  iden = inv(derivative(K.pol)(gen(K)))
+
+  #for the result, to check for stabilising
+
+  res = nf_elem[K(0) for x = RT]
+
+  #we'll be working in (Z/p^k)[t]/gg
+
+  #an "optimal" lifting chain:
+  pr = [k]
+  while k>1
+    k = div(k+1, 2)
+    push!(pr, k)
+  end
+  pr = reverse(pr)
+
+  #lets start:
+
+  for i=2:length(pr)
+    pp = fmpz(p)^pr[i]
+    Q = ResidueRing(FlintZZ, pp)
+    Qt, t = Q["t"]
+
+    #possibly this should be done with max precision and then adjusted down
+    #the poly mod P^??
+    fp = [Qt(ZX(coeff(f, k))) for k=0:degree(f)]
+
+    #we need to evaluate fp and fp' at the roots (later)
+    #given that we evaluate "by hand" we don't need polynomials
+
+    pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
+
+    #the lattice for reco:
+    n = degree(K)
+    M = MatrixSpace(FlintZZ, n, n)()
+    pt = Qt(1)
+    for j=1:degree(pgg)
+      M[j,j] = pp
+    end
+    for j=degree(pgg)+1:n
+      pt = (pt*t) % pgg
+      M[j,j] = 1
+      for k=0:degree(pt)
+        M[j, k+1] = -lift(coeff(pt, k))
+      end
+    end
+    #this is (or should be) the HNF basis for P^??
+
+    M = lll(M)
+    Mi, d = pseudo_inv(M)
+
+    for j=1:length(RT)
+      #to eval fp and the derivative, we pre-compute the powers of the
+      #evaluation point - to save on large products...
+
+      pow = [Qt(1), Qt(RT[j])]
+      while length(pow) <= degree(f)+1
+        push!(pow, pow[2]*pow[end] % pgg)
+      end
+
+      eval_f = sum(pow[k] * fp[k] for k=1:length(fp)) % pgg
+      eval_fs = sum(pow[k-1] *(k-1)*fp[k] for k=2:length(fp)) % pgg
+
+      #double lift:
+      #IRT = invmod(fp'(rt), p^k)
+      # using x -> x(2-xy) to compute the inverse of y
+      IRT[j] = lift(ZX, Qt(IRT[j])*(Qt(2-IRT[j]*eval_fs) % pgg) %pgg)
+      #RT = rt mod p^k normal Newton
+      # using x -> x-fp(x)//fp'(x) = x-fp(x) * IRT
+      RT[j] = lift(ZX, Qt(pow[2] - eval_f*Qt(IRT[j])) % pgg)
+
+      #before the reconstruction, we need to scale by den
+      cf = lift(ZX, Qt(RT[j]*den) % pgg)
+      ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
+      _ve = ve*Mi
+      mu = matrix(FlintZZ, 1, n,  [ round(_ve[1, k]//d) for k=1:n])
+      ve = ve - mu*M
+      z = ZX()
+      for k=1:n
+        setcoeff!(z, k-1, ve[1, k])
+      end
+      zz = K(z)*iden
+      if res[j] == zz
+       @show f(zz)
+        if f(zz) == 0
+          return zz
+        end
+      else
+        res[j] = zz
+      end
+    end
+  end  
+  return res
+end
+
+
 
 ## Hensel lifting of roots
 ##todo: redo for equation order using the kronnecker basis (co-different)
@@ -985,6 +1156,8 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   roots = NfOrdElem[]
 
   s = Int(ss)
+
+  #here one could call the _hensel from above...
 
   #println(length(lin_factor))
   #println("lifting bound: ", s)

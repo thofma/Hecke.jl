@@ -1424,7 +1424,7 @@ function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   c = conjugates_arb(x, abs_tol)
   z = Array{arb}(r1)
 
-  for i in 1:r
+  for i in 1:r1
     z[i] = real(c[i])
   end
 
