@@ -144,7 +144,7 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
       a = 0 * G[1]
       for i in 1:nrels(G)
         for j in 1:ngens(G)
-          a = a + G.rels[i, j] * images[j]
+          a = a + rels(G)[i, j] * images[j]
         end
         if !iszero(a)
           error("Matrix does not define a morphism of abelian groups")
