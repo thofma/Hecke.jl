@@ -226,7 +226,7 @@ function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::A
           x[n]=l
         end
         if haskey(x,d)
-          x[d]=mod(x[d]+exponent-l,exponent)
+          x[d]=mod(x[d]-l,exponent)
         else
           x[d]=exponent-l
         end
@@ -1257,6 +1257,9 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   C, mC, vect = _class_group_mod_n(C,mC,Int(valclass))
   U, mU = unit_group_fac_elem(O)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
+  for i=1:ngens(C)
+    @hassert :RayFacElem 1 iscoprime(numerator(evaluate(exp_class(C[i]))), m)
+  end
   
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m,n)    
@@ -1354,57 +1357,73 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 #
 # Discrete logarithm
 #
-
-  function disclog(J::FacElem)
-    a= X([0 for i=1:ngens(X)])
-    for (f,k) in J.fac
-      a+=k*disclog(f)
-    end
-    return a
-  end
-  
   inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   @assert gcd(fmpz(nonnclass),fmpz(expo))==1
-  
-  function disclog(J::NfOrdIdl)
 
-    if isone(J)
-      return X([0 for i=1:ngens(X)])
-    else
-      if J.is_principal==1
-        if isdefined(J,:princ_gen)
-          el=J.princ_gen
-          y=(mG\(el)).coeff
-          if mod(n,2)==0 && !isempty(pr)
-            b=lH(K(el))
-            y=hcat(y, b.coeff)
-          end
-          return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
-        else
-          z=principal_gen_fac_elem(J)
-          el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
-          y=(mG\(el)).coeff
-          if mod(n,2)==0 && !isempty(pr)
-            b=lH(z)
-            y=hcat(y, b.coeff)
-          end
-          return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
+  function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
+  
+    a= C([0 for i=1:ngens(C)])
+    for (f,k) in J.fac
+      a+=k*(mC\f)
+    end
+    Id=J* inv(exp_class(a))
+    Id=Id^Int(nonnclass)
+    z=principal_gen_fac_elem(Id)
+    el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
+    y=((mG\(el))*inverse_d).coeff
+    if mod(n,2)==0 && !isempty(pr)
+      b=lH(z)
+      y=hcat(y, b.coeff)
+    end
+    return X(hcat(a.coeff,y))
+  end
+  
+
+  function disclog(J::NfOrdIdl)
+    
+    @assert iscoprime(J,m)
+    if J.is_principal==1
+      if isdefined(J,:princ_gen)
+        el=J.princ_gen
+        y=(mG\(el)).coeff
+        if mod(n,2)==0 && !isempty(pr)
+          b=lH(K(el))
+          y=hcat(y, b.coeff)
         end
+        return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
       else
-        W=mC\J
-        s=exp_class(W)
-        Id=J* inv(s)
-        Id=Id^Int(nonnclass)
-        z=principal_gen_fac_elem(Id)
+        z=principal_gen_fac_elem(J)
         el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
-        y=((mG\(el))*inverse_d).coeff
+        y=(mG\(el)).coeff
         if mod(n,2)==0 && !isempty(pr)
           b=lH(z)
           y=hcat(y, b.coeff)
         end
-        return X(hcat(W.coeff,y))
-      end    
-    end
+        return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
+      end 
+    else
+      W=mC\J
+      s=exp_class(W)
+      Id=J* inv(s)
+      Id=Id^Int(nonnclass)
+      z=principal_gen_fac_elem(Id)
+      #z1=evaluate(z)
+      #@assert ideal(O,z1)==evaluate(Id)
+      #n1=O(num(z1))
+      #d1=O(den(z1))
+      #y=((mG\n1 - mG\d1)*inverse_d).coeff
+      el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
+      y=((mG\(el))*inverse_d).coeff
+      #if y1!=y
+      #  @assert !iscoprime(m,ideal(O,n1)) || !iscoprime(m,ideal(O,d1))
+      #end
+      if mod(n,2)==0 && !isempty(pr)
+        b=lH(z)
+        y=hcat(y, b.coeff)
+      end
+      return X(hcat(W.coeff,y))
+    end    
+    
   end 
 
 #
@@ -1786,6 +1805,19 @@ function find_gens(mR::MapRayClassGrp)
   lp = NfOrdIdl[]
   q, mq = quo(R, sR,false)
   
+  #
+  #  First, generators of the multiplicative group. 
+  #  If the class group is trivial, they are almost enough (except for the infinite places)
+  #
+  #=
+  if !isempty(mR.fact_mod) 
+    totally_positive_generators(mR,minimum(m), true)
+    tmg=mR.tame_mult_grp
+    wld=mR.wild_mult_grp
+    
+  end
+  =#
+  
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
@@ -1826,10 +1858,32 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
   if isempty(Aut)
     Aut=automorphisms(K)
   end
-  G=Hecke.GrpAbFinGenMap[]
   if ngens(R)==0
-    return G
+    return GrpAbFinGenMap[]
   end
+  
+  lgens,subs=find_gens(mR)
+  
+  if isempty(lgens)
+    return GrpAbFinGenMap[]
+  end
+
+  G=Array{GrpAbFinGenMap,1}(length(Aut))
+  for i=1:length(G)
+    M=zero_matrix(FlintZZ, ngens(R), ngens(R))
+    list_images=Array{GrpAbFinGenElem,1}(length(lgens))
+    for j=1:length(lgens) 
+      J=_aut_on_id(O,Aut[i],lgens[j])
+      list_images[j]=mR\J
+    end
+    G[i]=hom(subs,list_images, check=true)
+    @hassert :RayFacElem 1 isbijective(G[i])
+  end
+  
+  return G
+  
+  
+#=
   #
   #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
@@ -1882,8 +1936,9 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
     @hassert :RayFacElem 1 isbijective(mp)
     push!(G,mp)
   end
+
   return G
-  
+=#  
 end
 
 ##################################################################################

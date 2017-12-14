@@ -10,7 +10,7 @@
       r, mr = ray_class_group(I, n_quo=p)
       for s in index_p_subgroups(r, fmpz(p), (A,x) -> quo(A, x)[2])
         a = ray_class_field(mr*inv(s))
-        if isconductor(a, I)
+        if isconductor(a, I, check=false)
           K = number_field(a)
           cnt += 1
         end

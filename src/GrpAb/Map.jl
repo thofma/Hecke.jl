@@ -99,7 +99,8 @@ doc"""
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = false)
   GA = parent(A[1])
   GB = parent(B[1])
-
+  @assert length(B)==length(A)
+  @assert length(A)>0
   if (check)
     m = vcat([x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
@@ -108,7 +109,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
     T = sub(T, 1:rows(T), 1:length(A))
     n = vcat([x.coeff for x in B])
     n = T*n
-    if !cansolve(parent(B[1]).rels', n')[1]
+    if !cansolve(rels(parent(B[1]))', n')[1]
       error("Data does not define a homomorphism")
     end
   end
@@ -190,6 +191,7 @@ Let $G$ be the domain of $h$. This functions returns an abelian group $A$ and an
 injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
+
 function kernel(h::GrpAbFinGenMap)
   G = domain(h)
   H = codomain(h)

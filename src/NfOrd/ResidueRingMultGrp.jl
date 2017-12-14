@@ -1134,6 +1134,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   npart=prod([f[i]^(val[i]) for i=1:length(f) if val[i]!=0])
   m=div(np,npart)
   powm=[divexact(npart,f[i]) for i=1:length(f) if val[i]!=0]
+  
   #
   #  We search for a random element with the right order
   #
@@ -1153,10 +1154,12 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
       end     
     end
   end
+
   k=gcd(npart,n)
   inv=gcdx(m,fmpz(npart))[2]
   quot=divexact(npart, k)
-  
+
+
   function disclog(x::NfOrdElem)
     t=mQ(x)^(m*quot)
     if iszero(t)
@@ -1165,7 +1168,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
     if t==Q(1)
       return [Int(0)]
     end
-    if k<10
+    if k<20
       s=1
       w=g^quot
       el=w
@@ -1173,7 +1176,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
         s+=1
         el*=w
       end
-      return [s*inv]
+      return [mod(s*inv,k) ]
     else 
       return [pohlig_hellman(g^quot,k,t)*inv] 
     end
