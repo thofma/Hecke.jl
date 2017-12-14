@@ -1339,7 +1339,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
 #
 
-  for i=1: ngens(C)
+  for i=1:ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn=invmod(vect[i],fmpz(expo))
     investigated=evaluate(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
