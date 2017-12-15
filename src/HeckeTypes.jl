@@ -872,6 +872,7 @@ type NfOrdIdl
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfOrdIdl(O)
     C.princ_gen = O(x)
+    C.is_principal = 1
     C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (1, abs(x), fmpz(0))
     C.gen_one = x
@@ -888,6 +889,7 @@ type NfOrdIdl
     # Note that the constructor 'destroys' x, x should not be used anymore
     C = NfOrdIdl(O)
     C.princ_gen = O(x)
+    C.is_principal = 1
     C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (2, Int(0), abs(x))
     C.gen_one = x

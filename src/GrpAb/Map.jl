@@ -99,7 +99,8 @@ doc"""
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = false)
   GA = parent(A[1])
   GB = parent(B[1])
-
+  @assert length(B)==length(A)
+  @assert length(A)>0
   if (check)
     m = vcat([x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
@@ -108,7 +109,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
     T = sub(T, 1:rows(T), 1:length(A))
     n = vcat([x.coeff for x in B])
     n = T*n
-    if !cansolve(parent(B[1]).rels', n')[1]
+    if !cansolve(rels(parent(B[1]))', n')[1]
       error("Data does not define a homomorphism")
     end
   end
@@ -137,19 +138,19 @@ end
 # TODO: Extend the check to non-endomorphisms
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
   if check
-    if A == B
+    #if A == B
       G = A
       images = [ G([M[i, j] for j in 1:ngens(G)]) for i in 1:ngens(G) ]
       a = 0 * G[1]
       for i in 1:nrels(G)
         for j in 1:ngens(G)
-          a = a + G.rels[i, j] * images[j]
+          a = a + rels(G)[i, j] * images[j]
         end
         if !iszero(a)
           error("Matrix does not define a morphism of abelian groups")
         end
       end
-    end
+    #end
   end
 
   return GrpAbFinGenMap(A, B, M)
@@ -190,6 +191,7 @@ Let $G$ be the domain of $h$. This functions returns an abelian group $A$ and an
 injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
+
 function kernel(h::GrpAbFinGenMap)
   G = domain(h)
   H = codomain(h)

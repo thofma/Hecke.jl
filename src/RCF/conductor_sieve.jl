@@ -96,14 +96,20 @@ function _min_wild(D::Dict{NfOrdIdl, Int})
 
 end
 
-function totally_positive_generators(mr::MapRayClassGrp, a::Int)
+function totally_positive_generators(mr::MapRayClassGrp, a::Int, wild::Bool=false)
 
   if isdefined(mr, :tame_mult_grp)
     tmg=mr.tame_mult_grp
     for (p,v) in tmg
-      g=v[1]
-      tmg[p]=(make_positive(g,a),v[2],v[3])
+      mr.tame_mult_grp[p]=(make_positive(v[1],a),v[2],v[3])
     end
+  end
+  if wild && isdefined(mr, :wild_mult_grp)
+    wld=mr.wild_mult_grp
+    for (p,v) in wld
+      mr.wild_mult_grp[p]=(make_positive(v[1],a),v[2],v[3])
+    end
+  
   end
 end
 
@@ -1231,6 +1237,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
         continue
       end
       mr.prime_ideal_cache = S
+      println(k)
       act=_act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
@@ -1246,7 +1253,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
           if Hecke.discriminant_conductor(O,C,a,mr,bound,n)
             println("\n New Field!")
             @vtime :QuadraticExt 1 push!(fields,number_field(C))
-            push!(autos,absolute_automorphism_group(C,gens))
+            #push!(autos,absolute_automorphism_group(C,gens))
           end
         end
       end

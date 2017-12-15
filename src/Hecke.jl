@@ -82,11 +82,11 @@ export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
 
 import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
-             getindex, setindex!, transpose, getindex, //, colon, exp, div,
+             getindex, setindex!, transpose, getindex, //, colon, div,
              floor, max, BigFloat, precision, dot,
              first, StepRange, show, one, zero, inv, iseven, isodd, convert,
              angle, abs2, isless, exponent, base, isfinite, zeros, rem,
-             maxabs, min, numerator, denominator
+             maxabs, min, numerator, denominator, exp
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
