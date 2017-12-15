@@ -220,7 +220,7 @@ doc"""
 > "Lifts" the entries in $A$ to a sparse matrix over $R$.
 """
 function SMat(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false) where S <: Ring
-  if R == base_ring(A)
+  if false && R == base_ring(A)
     return _SMat(A, R = R)
   end
 
@@ -688,7 +688,8 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
       mm(c1, At, c2, p)
       push!(v, k(c1[1]))
     end
-    fl, f = berlekamp_massey(v)
+    f = berlekamp_massey(v)
+    fl = true
     if !fl || degree(f) > div(d, 2)-1
       d += 10
       continue
@@ -715,7 +716,8 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
         mm(c1, At, c2, p)
         v[i+1] = k(c1[1])
       end
-      @time fl, f = berlekamp_massey(v)
+      f = berlekamp_massey(v)
+      fl = true
       if !fl || degree(f) > df
         println("initial guess was wrong...")
         d += 10
@@ -737,6 +739,54 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
     end
   end
 end
+
+function valence_mc(A::SMat{T}, p::Int)
+  # we work in At * A (or A * At) where we choose the smaller of the 2
+  # matrices
+  if false && cols(A) > rows(A)
+    At = A
+    A = transpose(A)
+  else
+    At = transpose(A)
+  end
+  if maxabs(A) > 2^20
+    mm = mul_mod_big!
+    println("mul big case")
+  else
+    mm = mul_mod!
+    println("mul small case")
+  end
+  c1 = Array{Int}(cols(A))
+  c2 = Array{Int}(rows(A))
+
+  for i=1:cols(A)
+    c1[i] = Int(rand(-10:10))
+  end
+
+  c = copy(c1) ## need the starting value for the other primes as well
+
+  k = FiniteField(p)
+  d = 10
+  v = Array{typeof(k(1)), 1}()
+  push!(v, k(c1[1]))
+  while true
+    while length(v) <= d
+      mm(c2, A, c1, p)
+      mm(c1, At, c2, p)
+      push!(v, k(c1[1]))
+    end
+    f = berlekamp_massey(v)
+    fl = true
+    if !fl || degree(f) > div(d, 2)-1
+      d += 10
+      continue
+    end
+    df = degree(f)
+    println("Poly degree is $df, dims $(rows(A)) x $(cols(A))")
+    return f
+  end  
+end
+
 
 ################################################################################
 #
