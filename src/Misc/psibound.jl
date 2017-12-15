@@ -1,4 +1,4 @@
-import Nemo.setcoeff!, Nemo.exp, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift, Nemo.rem
+import Nemo.setcoeff!, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift, Nemo.rem
 export psi_lower, psi_upper, show_psi
 
 #function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.Generic.Res{Nemo.fmpz})
