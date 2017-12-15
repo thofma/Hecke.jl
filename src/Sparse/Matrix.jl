@@ -740,7 +740,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
   end
 end
 
-function valence_mc(A::SMat{T}, p::Int)
+function valence_mc(A::SMat{T}, p::Int) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
   if false && cols(A) > rows(A)
