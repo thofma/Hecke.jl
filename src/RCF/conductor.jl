@@ -219,20 +219,21 @@ function conductor(C::Hecke.ClassField)
   if !isempty(inf_plc)
     S, ex, lo=carlos_units(O)
     for i=1:length(inf_plc)
-      i=1
+      pl=inf_plc[i]
+      j=1
       while true
-        if !ispositive(ex(S[i]),pl)
+        if !ispositive(ex(S[j]),pl)
           break
         end
         i+=1
       end
-      el=1+minimum(cond)*ex(S[i])
+      el=1+minimum(cond)*ex(S[j])
       while !ispositive(el, pl)
-        el+=minimum(cond)*ex(S[i])
+        el+=minimum(cond)*ex(S[j])
       end
       Q,mQ=quo(G,mp\ideal(O,el),false)
       if order(Q)!=e
-        push!(cond_inf, inf_plc[i])
+        push!(cond_inf, pl)
       end
     end
   end

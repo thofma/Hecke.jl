@@ -1816,6 +1816,8 @@ function find_gens(mR::MapRayClassGrp)
   O = order(codomain(mR))
   R = domain(mR) 
   m=Hecke._modulus(mR)
+  mm=minimum(m)
+  
   
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
@@ -1823,17 +1825,64 @@ function find_gens(mR::MapRayClassGrp)
   
   #
   #  First, generators of the multiplicative group. 
-  #  If the class group is trivial, they are almost enough (except for the infinite places)
+  #  If the class group is trivial, they are enough 
   #
   
-  #=
   if !isempty(mR.fact_mod) 
-    totally_positive_generators(mR,minimum(m), true)
+    totally_positive_generators(mR, Int(mm), true)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
-    
+    for (p,v) in tmg
+      f=mR\ideal(O,v[1])
+      if iszero(mq(f))
+        continue
+      end
+      push!(sR, f)
+      push!(lp, ideal(O,v[1]))
+      q, mq = quo(R, sR, false)
+      if order(q) == 1 
+        return lp,sR
+      end
+    end
+
+    for (p,v) in wld
+      for i=1:length(v[1])
+        f=mR\ideal(O,v[1][i])
+        if iszero(mq(f))
+          continue
+        end
+        push!(sR, f)
+        push!(lp, ideal(O,v[1][i]))
+        q, mq = quo(R, sR, false)
+        if order(q) == 1 
+          return lp, sR
+        end
+      end
+    end
   end
-  =#
+  
+  if !isempty(mR.modulus_inf)
+    S, ex, lo=carlos_units(O)
+    for i=1:length(mR.modulus_inf)      
+      pl=mR.modulus_inf[i]
+      @assert isreal(pl)
+      delta=mm*ex(S[i])
+      el=1+delta
+      con=abs_upper_bound(1/real(conjugates_arb(delta))[i], fmpz)
+      el+=con*delta
+      f=mR\ideal(O,el)
+      if iszero(mq(f))
+        continue
+      end
+      push!(sR, f)
+      push!(lp, ideal(O,el))
+      q, mq = quo(R, sR, false)
+      if order(q)==1
+        return lp, sR
+      end
+    end
+  
+  end
   
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache

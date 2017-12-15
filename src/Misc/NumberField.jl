@@ -2246,6 +2246,7 @@ function normal_basis(K::Nemo.AnticNumberField)
   return r
 end
 
+#global last_red=[]
 doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
 > Computes a presentation $a = \prod a_i^{n_i}$ where all the exponents $n_i$ are powers of $n$
@@ -2256,7 +2257,7 @@ doc"""
 """
 function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2; decom=false, arb_prec = 100, short_prec = 1000)
   n = fmpz(nn)
-#  global last_red = (a, n, decom)
+  #push!(last_red, (a, n, decom))
   K = base_ring(a)
   ZK = maximal_order(K)
   if typeof(decom) == Bool
