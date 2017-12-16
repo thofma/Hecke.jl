@@ -513,6 +513,17 @@ function maximal_order_via_absolute(m::NfRelToNf)
   return relative_order(Oabs, m)
 end
 
+function maximal_order_via_simple(L::NfRel_ns)
+  Ls, m = simple_extension(L)
+  Os = MaximalOrder(Ls)
+  return non_simple_order(Os, m)
+end
+
+function maximal_order_via_simple(m::NfRelToNfRel_nsMor)
+  Os = MaximalOrder(domain(m))
+  return non_simple_order(Os, m)
+end
+
 ################################################################################
 #
 #  Equality
@@ -520,7 +531,7 @@ end
 ################################################################################
 
 function ==(R::NfRelOrd, S::NfRelOrd)
-  nf(R) != nf(S) && return false
+  nf(R) != nf(S) && return false
   return basis_pmat(R, Val{false}) == basis_pmat(S, Val{false})
 end
 
@@ -743,4 +754,25 @@ function relative_order(O::NfOrd, m::NfRelToNf)
   end
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
   return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L, PM)
+end
+
+################################################################################
+#
+#  Simple to non-simple
+#
+################################################################################
+
+function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
+  L = domain(m)
+  L_ns = codomain(m)
+  @assert nf(O) == L
+  K = base_ring(L)
+  B = basis_nf(O, Val{false})
+  d = degree(L)
+  M = zero_matrix(K, d, d)
+  for i = 1:d
+    elem_to_mat_row!(M, i, m(L(B[i])))
+  end
+  PM = pseudo_hnf(PseudoMatrix(M, Hecke.basis_pmat(O).coeffs), :lowerleft, true)
+  return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L_ns, PM)
 end
