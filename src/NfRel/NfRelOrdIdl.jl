@@ -17,12 +17,18 @@ mutable struct NfRelOrdIdl{T, S}
 
   norm
   has_norm::Bool
+  is_prime::Int            # 0: don't know
+                           # 1 known to be prime
+                           # 2 known to be not prime
+  splitting_type::Tuple{Int, Int}
 
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
     z.order = O
     z.parent = NfRelOrdIdlSet{T, S}(O)
     z.has_norm = false
+    z.is_prime = 0
+    z.splitting_type = (0,0)
     return z
   end
 
@@ -263,6 +269,37 @@ doc"""
 function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S}
   coeffs = deepcopy(basis_pmat(O, Val{false})).coeffs
   return ideal(O, PseudoMatrix(M, coeffs), check)
+end
+
+doc"""
+***
+    ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) -> NfRelOrdIdl{T, S}
+
+> Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
+> then it is checked whether these elements define an ideal.
+"""
+function ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) where {T, S}
+  !Hecke.ismaximal(O) && error("Order must be maximal")
+
+  d = degree(O)
+  pb = Hecke.pseudo_basis(O, Val{false})
+  M = MatrixSpace(base_ring(nf(O)), 2*d, d)()
+  C = Array{S}(2*d)
+  for i = 1:d
+    elem_to_mat_row!(M, i, pb[i][1]*x)
+    C[i] = pb[i][2]*a
+  end
+  for i = (d + 1):2*d
+    elem_to_mat_row!(M, i, pb[i - d][1]*y)
+    C[i] = pb[i - d][2]*b
+  end
+  M = M*basis_mat_inv(O, Val{false})
+  PM = PseudoMatrix(M, C)
+  if check
+    !Hecke.defines_ideal(O, PM) && error("The elements do not define an ideal.")
+  end
+  PM = sub(pseudo_hnf(PM, :lowerleft), (d + 1):2*d, 1:d)
+  return NfRelOrdIdl{T, S}(O, PM)
 end
 
 ################################################################################
@@ -687,4 +724,45 @@ function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
   M = M*basis_mat_inv(O, Val{false})
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
   return NfRelOrdIdl{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(O, PM)
+end
+
+################################################################################
+#
+#  Prime decomposition
+#
+################################################################################
+
+function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  f = nf(O).pol
+  if valuation(discriminant(f), p) != valuation(discriminant(O), p)
+    error("Not implemented (yet)")
+  end
+
+  return prime_dec_nonindex(O, p)
+end
+
+function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  L = nf(O)
+  a = gen(L)
+  K = base_ring(L)
+  OK = MaximalOrder(K)
+  @assert order(p) == OK
+  f = L.pol
+
+  Kx = parent(f)
+  Fp, mF = ResidueField(OK, p)
+  mmF = extend(mF, K)
+  immF = inv(mmF)
+  Fy, y = Fp["y"]
+  fmodp = Hecke.nf_elem_poly_to_fq_nmod_poly(Fy, mmF, f)
+  fac = factor(fmodp)
+  result = Array{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}, 1}()
+  for (q, e) in fac
+    g = Hecke.fq_nmod_poly_to_nf_elem_poly(Kx, immF, q)
+    P = ideal(O, L(1), g(a), frac_ideal(OK, p), ideal(OK, K(1)))
+    P.is_prime = 1
+    P.splitting_type = (e, degree(q))
+    push!(result, (P, e))
+  end
+  return result
 end
