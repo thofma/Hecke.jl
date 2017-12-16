@@ -106,7 +106,7 @@ function wildanger_field(n::Int, B::fmpz)
   for i=0:n-1
     f += (-1)^(n-i)*B*x^i
   end
-  return NumberField(f)
+  return NumberField(f, "_\$")
 end
 
 function wildanger_field(n::Int, B::Integer)
