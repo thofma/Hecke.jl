@@ -30,5 +30,10 @@
   D = divexact(C, B)
   D.num = K(2)*numerator(D)
   @test D == A1
+
+  p = prime_decomposition(OK, fmpz(11))[1][1]
+  (p1, e1), (p2, e2) = prime_decomposition(OL, p)
+  @test e1 == 1 && e2 == 1
+  @test p1*p2 == ideal(OL, L(1), L(1), frac_ideal(OK, p, 1), frac_ideal(OK, p, 1))
 end
 
