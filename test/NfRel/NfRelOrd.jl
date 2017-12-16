@@ -5,7 +5,7 @@
   K, a = NumberField(f, "a")
   Ky, y = K["y"]
   g = y^3 - 51*y^2 + 30*y - 28
-  L, b = NumberField(g, "b")
+  L, b = number_field(g, "b")
 
   Orel = MaximalOrder(L)
   Oabs = Hecke.maximal_order_via_absolute(L)
@@ -38,7 +38,7 @@
     while length(factor(g)) != 1
       g = monic_randpoly(Ky, 2, 3, 100)
     end
-    L, b = NumberField(g, "b")
+    L, b = number_field(g, "b")
 
     Orel = MaximalOrder(L)
     Oabs = Hecke.maximal_order_via_absolute(L)
@@ -55,7 +55,7 @@
     while length(factor(f)) != 1
       f = monic_randpoly(Ky, 8, 10, 100)
     end
-    L, b = NumberField(f, "b")
+    L, b = number_field(f, "b")
 
     Orel = MaximalOrder(L)
     Oabs = Hecke.maximal_order_via_absolute(L)

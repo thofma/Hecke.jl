@@ -5,7 +5,7 @@
   OK = MaximalOrder(K)
   Ky, y = K["y"]
   g = y^2 - 54*y - 73
-  L, b = NumberField(g, "b")
+  L, b = number_field(g, "b")
   OL = MaximalOrder(L)
 
   coeff_ideals = [ deepcopy(Hecke.pseudo_basis(OL, Val{false})[i][2]) for i = 1:2 ]

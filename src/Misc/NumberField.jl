@@ -37,7 +37,7 @@ end
 
 function AnticNumberField(f::fmpz_poly, s::AbstractString, cached::Bool = true)
   Qx, x = PolynomialRing(FlintQQ, string(parent(f).S))
-  return NumberField(Qx(f), s, cached=cached)
+  return AnticNumberField(Qx(f), s, cached=cached)
 end
 
 function AnticNumberField(f::fmpz_poly, cached::Bool = true)

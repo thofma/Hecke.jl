@@ -1,6 +1,6 @@
 @testset "RCF" begin
   Qx, x = PolynomialRing(FlintQQ)
-  k, a = number_field(x-1)
+  k, a = NumberField(x - 1, "a")
   Z = maximal_order(k)
 
   function doit(u::UnitRange, p::Int = 3)

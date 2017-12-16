@@ -37,8 +37,6 @@ export absolute_field
 # In case the code has stabilized, the type definition should go into
 # src/HeckeTypes.jl 
 
-
-
 ################################################################################
 #
 #  Copy
@@ -424,7 +422,7 @@ function _absolute_field(K::NfRel)
     g = compose(f, gen(kx) - l*gen(k))
   end
 
-  Ka = number_field(N)[1]
+  Ka = NumberField(N, "_\$")[1]
 
   KaT, T = PolynomialRing(Ka, "T")
 
