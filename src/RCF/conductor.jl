@@ -71,7 +71,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   end
 end
 
-function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Int)
+function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Int, n::Int)
   
   O=maximal_order(K)
   b=basis(pk)
@@ -101,8 +101,10 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
       gens[i] = beta*gens[i] + alpha
     end   
   end
-  for i=1:length(gens)
+  if mod(n,2)==0
+    for i=1:length(gens)
       gens[i]=make_positive(gens[i],a)
+    end
   end
   return gens
 end
@@ -191,7 +193,7 @@ function conductor(C::Hecke.ClassField)
       gens=GrpAbFinGenElem[]
       Q=DiagonalGroup(Int[])
       while k1>=1
-        multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, Int(cond.gen_one))
+        multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
         for i=1:length(multg)
           push!(gens, mp\ideal(O,multg[i]))
         end
@@ -348,7 +350,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
         return false
       end  
     else     
-      multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, Int(cond.gen_one))
+      multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
       gens=Array{GrpAbFinGenElem,1}(length(multg))
       for i=1:length(multg)
         gens[i]= mp\ideal(O,multg[i])
@@ -604,7 +606,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
       k=lp[p]-1
       pk=p^k
       pv=prime_power[p]
-      gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a)
+      gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, Int(order(R)))
       iscond=false
       for i in 1:length(gens)
         if !iszero(mp\ideal(O,gens[i]))
@@ -781,7 +783,7 @@ function discriminant(C::ClassField)
           s=s-1
           pk=p^s
           pv=pk*p
-          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a)
+          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a,n)
           for i=1:length(gens)
             push!(els,mp\ideal(O,gens[i]))
           end

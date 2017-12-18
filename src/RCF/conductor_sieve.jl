@@ -102,6 +102,7 @@ function totally_positive_generators(mr::MapRayClassGrp, a::Int, wild::Bool=fals
     tmg=mr.tame_mult_grp
     for (p,v) in tmg
       mr.tame_mult_grp[p]=(make_positive(v[1],a),v[2],v[3])
+      @hassert :RayFacElem 1 istotally_positive(mr.tame_mult_grp[p][1])
     end
   end
   if wild && isdefined(mr, :wild_mult_grp)
@@ -110,10 +111,12 @@ function totally_positive_generators(mr::MapRayClassGrp, a::Int, wild::Bool=fals
       x=v[1]
       for i=1:length(x)
         x[i]=make_positive(x[i],a)
+        @hassert :RayFacElem 1 iscoprime(ideal(parent(x[i]), x[i]), ideal(parent(x[i]), a))
       end
       mr.wild_mult_grp[p]=(x,v[2],v[3])
     end 
   end
+
 end
 
 function make_positive(x::NfOrdElem, a::Int)
@@ -121,7 +124,7 @@ function make_positive(x::NfOrdElem, a::Int)
   els=conjugates_arb(x)
   m=1
   for i=1:length(els)
-    if isreal(els[1])
+    if isreal(els[i])
       y=BigFloat(midpoint(real(els[i]/a)))
       if y>0
         continue
@@ -130,6 +133,8 @@ function make_positive(x::NfOrdElem, a::Int)
       end
     end
   end
+  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+m*a), ideal(parent(x), a))
+  @hassert :RayFacElem 1 istotally_positive(x+m*a)
   return x+m*a
   
 end
@@ -588,6 +593,8 @@ function conductors(O::NfOrd, n::Int, bound::fmpz)
 end
 
 
+
+
 ###########################################################################################################
 #
 #  Tamely ramified abelian extensions
@@ -858,7 +865,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
           s=s-1
           pk=p^s
           pv=pk*p
-          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a)
+          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a,n)
           for i=1:length(gens)
             push!(els,mp\ideal(O,gens[i]))
           end
@@ -1180,18 +1187,65 @@ end
 
 ###############################################################################
 #
-#  Dihedral group Dn with n odd
+#  Dihedral group D5
 #
 ###############################################################################
 
-function Dn_extensions(n::Int, absolute_bound::fmpz, quad_fields::Array{AnticNumberField,1})
+
+function conductorsD5(O::NfOrd, bound::fmpz)
+
+  K=nf(O)
+  ram_primes=collect(keys(factor(O.disc).fac))
+  coprime_to=cat(1,ram_primes, fmpz(5))
+  sort!(ram_primes)
+  b1=Int(root(fmpz(bound),8)) 
+
+  #
+  # First, conductors for tamely ramified extensions
+  #
   
-  if mod(n,2)==0
-    error("Not yet implemented")
+  sqf_list= squarefree_for_conductors(O, b1, 5, coprime_to=coprime_to)
+
+  #
+  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
+  #
+
+  wild_list=Tuple{Dict{NfOrdIdl, Int}, Int}[(Dict{NfOrdIdl, Int}(),1)]
+  lp=prime_decomposition(O,5)
+  sq=fmpz(5)^(divexact(2,lp[1][2]))
+  bound_max_ap=clog(bound,sq) #bound on ap
+  bound_max_exp=div(bound_max_ap, 4) #bound on the exponent in the conductor
+  for i=2:bound_max_exp
+    if 5 in ram_primes && i % 2 == 1
+      continue
+    end
+    d1=Dict{NfOrdIdl, Int}()
+    for j=1:length(lp)
+      d1[lp[j][1]]=i
+    end
+    nq= sq^i
+    push!(wild_list, (d1, nq))
   end
+
+  #the final list
+  final_list=Set(Tuple{Int, Dict{NfOrdIdl, Int}}[])
+  for el in sqf_list
+    nm=el^2
+    for (dic,nm2) in wild_list
+      if nm*nm2 > bound
+        continue
+      end
+      push!(final_list, (el,dic))
+    end
+  end
+
+  return final_list
+
+end
+function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField,1})
+  
   fields=NfRel_ns[]
   len=length(quad_fields)
-  fac=factor(n).fac
   for K in quad_fields
     len-=1
     
@@ -1199,16 +1253,16 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, quad_fields::Array{AnticNum
     println("Fields left:", len)
     O=maximal_order(K)
     D=abs(discriminant(O))
-    if D^n>absolute_bound
+    if D^5>absolute_bound
       continue
     end
-    bo = ceil(Rational{BigInt}(absolute_bound//D^n))
+    bo = ceil(Rational{BigInt}(absolute_bound//D^5))
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
     allow_cache!(mC)
     cgrp=false
-    if gcd(C.snf[end],n)!=1
+    if gcd(C.snf[end],5)!=1
       cgrp=true
       S = prime_ideals_up_to(O, max(1000,100*clog(D,10)^2))
     end
@@ -1221,35 +1275,29 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, quad_fields::Array{AnticNum
       deleteat!(gens,2)
     end
     
-    inf_plc=real_places(K)
-          
+             
     #Getting conductors
-    l_conductors=conductors(O,n,bound)
+    l_conductors=conductorsD5(O,bound)
 
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for k in l_conductors
-      r,mr=ray_class_group(O,n,k[1], k[2], inf_plc)
-      if !_are_there_subs(r,[n])
-        continue
-      end
+      r,mr=ray_class_group(O,5,k[1], k[2])
       if cgrp
         mr.prime_ideal_cache = S
       end
       act=_act_on_ray_class(mr,gens)
-      ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
+      ls=stable_subgroups(r,[5],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
-      totally_positive_generators(mr,a)
       for s in ls
-        if _trivial_action(s,act,fac,n)
+        if _trivial_actionD5(s,act)
           continue
         end
         C=ray_class_field(mr*inv(s))
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,5)
           println("\n New Field!")
           @time push!(fields,number_field(C))
-          #push!(autos,absolute_automorphism_group(C,gens))
         end
       end
     end
@@ -1257,6 +1305,27 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, quad_fields::Array{AnticNum
   end
   
 end
+
+function _trivial_actionD5(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+
+  @assert length(act)==1
+  S=codomain(s)
+  T,mT=snf(S)
+  @assert T.snf[1]==5
+  @assert ngens(T)==1
+  new_el=mT\(s(act[1](s\mT(T[1]))))
+  if mod(new_el[1],5)==1
+    return true
+  end
+  return false
+  
+end
+
+###############################################################################
+#
+#  Dihedral group Dn with n odd
+#
+###############################################################################
 
 function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, tame::Bool=false)
 
@@ -1299,14 +1368,9 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
       deleteat!(gens,2)
     end
     
-    inf_plc=InfPlc[]
-    if !totally_real
-      inf_plc=real_places(K)
-    end
-      
     #Getting conductors
     if tame
-      l_conductor=[(k,Dict{NfOrdIdl,Int}()) for k in conductors_tame(O,n,bound)]
+      l_conductors=[(k,Dict{NfOrdIdl,Int}()) for k in conductors_tame(O,n,bound)]
     else
       l_conductors=conductors(O,n,bound)
     end
@@ -1314,7 +1378,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
   
     #Now, the big loop
     for k in l_conductors
-      r,mr=ray_class_group(O,n,k[1], k[2], inf_plc)
+      r,mr=ray_class_group(O,n,k[1], k[2])
       if !_are_there_subs(r,[n])
         continue
       end
@@ -1324,9 +1388,6 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, t
       act=_act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
-      if !totally_real
-        totally_positive_generators(mr,a)
-      end
       for s in ls
         if _trivial_action(s,act,fac,n)
           continue

@@ -1179,10 +1179,8 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       if gcd(norm(q),n)!=1 && e>=2
         y2[q]=Int(e)
       end
-    else 
-      if gcd(norm(q),n)!=1 && e>=2
-        y2[q]=Int(e)
-      end
+    elseif gcd(norm(q),n)!=1 && e>=2
+      y2[q]=Int(e)
     end
   end
   return ray_class_group(n, m, y1, y2, inf_plc)
@@ -1383,7 +1381,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 
   function disclog(J::NfOrdIdl)
     
-    @hassert :RayFacElem 1 iscoprime(J,m)
+    @hassert :RayFacElem 1 iscoprime(J,I)
     if J.is_principal==1
       if isdefined(J,:princ_gen)
         el=J.princ_gen
@@ -1817,6 +1815,7 @@ function find_gens(mR::MapRayClassGrp)
   R = domain(mR) 
   m=Hecke._modulus(mR)
   mm=minimum(m)
+
   
   
   sR = GrpAbFinGenElem[]
