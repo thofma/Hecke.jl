@@ -92,7 +92,7 @@ end
     end
     push!(g, gg)
     gg = monic_randpoly(Ky, 2, 2, 100)
-    while gg == g[1] &&!isirreducible(gg)
+    while gg == g[1] || !isirreducible(gg)
       gg = monic_randpoly(Ky, 2, 2, 100)
     end
     push!(g, gg)
