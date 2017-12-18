@@ -193,7 +193,7 @@ function conductor(C::Hecke.ClassField)
       gens=GrpAbFinGenElem[]
       Q=DiagonalGroup(Int[])
       while k1>=1
-        multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, Int(cond.gen_one),E)
+        multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
         for i=1:length(multg)
           push!(gens, mp\ideal(O,multg[i]))
         end
@@ -350,7 +350,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
         return false
       end  
     else     
-      multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, Int(cond.gen_one),E)
+      multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
       gens=Array{GrpAbFinGenElem,1}(length(multg))
       for i=1:length(multg)
         gens[i]= mp\ideal(O,multg[i])
