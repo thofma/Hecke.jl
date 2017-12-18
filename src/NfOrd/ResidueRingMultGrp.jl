@@ -332,7 +332,6 @@ function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int; method=nothing)
 
   @assert size(rels) == (length(gens),length(gens))
   gens_snf , struct_snf , disc_log_snf = snf_gens_rels_log(gens, rels, disc_log, p^v)
-
   return gens_snf, struct_snf, disc_log_snf
 end
 
@@ -605,7 +604,7 @@ function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   function discrete_logarithm(b::NfOrdElem) 
     return dlog(p_adic_log(Q,p,v,b,e;pv=pv))
   end
- 
+  
   return g, M, discrete_logarithm
 end
 
@@ -1224,7 +1223,8 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   for (q,vq) in y2
     @assert vq>=2
     gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
-
+    
+    
     # Make generators coprime to other primes
     nq=norm(q)-1  
     if length(Q.factor) > 1
