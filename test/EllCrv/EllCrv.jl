@@ -20,7 +20,7 @@
     E43_a1 = @inferred EllipticCurve([0, 1, 1, 0, 0])
 
     Qx, x = PolynomialRing(FlintQQ, "x")
-    K, a = NumberField(x^2 - x - 1)
+    K, a = NumberField(x^2 - x - 1, "a")
     OK = maximal_order(K)
 
     E31_1_a1 = @inferred EllipticCurve([K(1), a + 1, a, a, K(0)])
@@ -42,7 +42,7 @@
   E43_a1 = EllipticCurve([0, 1, 1, 0, 0])
 
   Qx, x = PolynomialRing(FlintQQ, "x")
-  K, a = NumberField(x^2 - x - 1)
+  K, a = NumberField(x^2 - x - 1, "a")
   OK = maximal_order(K)
 
   E31_1_a1 = EllipticCurve([K(1), a + 1, a, a, K(0)])

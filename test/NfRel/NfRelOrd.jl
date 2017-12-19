@@ -9,6 +9,17 @@ function monic_randpoly(S::PolyRing, dmin::Int, dmax::Int, n::Int)
   return r
 end
 
+function Nemo.isirreducible(f::PolyElem)
+  fac = factor(f)
+  if length(fac) != 1
+    return false
+  end
+  if first(values(fac.fac)) != 1
+    return false
+  end
+  return true
+end
+
 @testset "Relative maximal orders of simple extensions" begin
   Qx, x = FlintQQ["x"]
   f = x^2 + 36*x + 16
@@ -25,14 +36,14 @@ end
 
   for i = 1:5
     f = monic_randpoly(Qx, 2, 3, 100)
-    while length(factor(f)) != 1
+    while !isirreducible(f)
       f = monic_randpoly(Qx, 2, 3, 100)
     end
     K, a = NumberField(f, "a")
 
     Ky, y = K["y"]
     g = monic_randpoly(Ky, 2, 3, 100)
-    while length(factor(g)) != 1
+    while !isirreducible(g)
       g = monic_randpoly(Ky, 2, 3, 100)
     end
     L, b = number_field(g, "b")
@@ -49,7 +60,7 @@ end
   Ky, y = K["y"]
   for i = 1:5
     f = monic_randpoly(Ky, 8, 10, 100)
-    while length(factor(f)) != 1
+    while !isirreducible(f)
       f = monic_randpoly(Ky, 8, 10, 100)
     end
     L, b = number_field(f, "b")
@@ -68,20 +79,23 @@ end
   Qx, x = FlintQQ["x"]
   for i = 1:5
     f = monic_randpoly(Qx, 2, 2, 100)
-    while length(factor(f)) != 1
+    while !isirreducible(f)
       f = monic_randpoly(Qx, 2, 2, 100)
     end
     K, a = NumberField(f, "a")
 
     Ky, y = K["y"]
     g = Vector{Generic.Poly{nf_elem}}()
-    for j = 1:2
+    gg = monic_randpoly(Ky, 2, 2, 100)
+    while !isirreducible(gg)
       gg = monic_randpoly(Ky, 2, 2, 100)
-      while length(factor(gg)) != 1
-        gg = monic_randpoly(Ky, 2, 2, 100)
-      end
-      push!(g, gg)
     end
+    push!(g, gg)
+    gg = monic_randpoly(Ky, 2, 2, 100)
+    while gg == g[1] || !isirreducible(gg)
+      gg = monic_randpoly(Ky, 2, 2, 100)
+    end
+    push!(g, gg)
     L, b = number_field(g, "b")
 
     Ons = MaximalOrder(L)
