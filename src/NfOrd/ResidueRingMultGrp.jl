@@ -57,13 +57,7 @@ function factor(Q::FacElem{NfOrdIdl, NfOrdIdlSet})
   return fac
 end
 
-doc"""
-     factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
-> A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
-> a coprime basis is computed.
-> This does {\bf not} use any factorisation.
-"""
-function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
   D = Dict{NfOrdIdl, fmpz}()
   for (I, v) = Q.fac
     if isone(I.den)
@@ -86,7 +80,19 @@ function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
       end
     end
   end
-  S = factor_coprime(FacElem(D))
+  return FacElem(D)
+end
+
+
+doc"""
+     factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
+> A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
+> a coprime basis is computed.
+> This does {\bf not} use any factorisation.
+"""
+function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  D = FacElem(Q, NfOrdIdlSet(order(base_ring(Q))))
+  S = factor_coprime(D)
   return S
 end
 

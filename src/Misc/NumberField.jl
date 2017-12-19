@@ -4,6 +4,8 @@ export induce_rational_reconstruction, induce_crt, root, roots,
        iskummer_extension, cyclotomic_field, wildanger_field
 
 add_verbose_scope(:PolyFactor)       
+add_verbose_scope(:CompactPresentation)       
+add_assert_scope(:CompactPresentation)       
 
 if Int==Int32
   global const p_start = 2^30
@@ -2246,6 +2248,39 @@ function normal_basis(K::Nemo.AnticNumberField)
   return r
 end
 
+function norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
+  B = simplify(A)
+  b = Dict{fmpz, fmpz}()
+  for (p, k) = B.fac
+    n = norm(p)
+    if haskey(b, n)
+      b[n] += k
+    else
+      b[n] = k
+    end
+  end
+  bb = FacElem(b)
+  simplify!(bb)
+  return evaluate(bb)
+end
+
+function ==(A::NfOrdIdl, B::FacElem{NfOrdIdl, NfOrdIdlSet})
+  C = inv(B)*A
+  simplify!(C)
+  c = evaluate(C)
+  return isone(c.num) && isone(c.den)
+end
+==(B::FacElem{NfOrdIdl, NfOrdIdlSet}, A::NfOrdIdl) = A == B
+
+function ==(A::NfOrdFracIdl, B::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  C = FacElem(inv(B)*A, NfOrdIdlSet(order(A)))
+  c = factor_coprime(C)
+  return all(iszero, values(c))
+end
+==(B::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, A::NfOrdIdl) = A == B
+
+
+
 global last_red=[]
 doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
@@ -2257,7 +2292,9 @@ doc"""
 """
 function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2; decom=false, arb_prec = 100, short_prec = 1000)
   n = fmpz(nn)
-  push!(last_red, (a, n, decom))
+
+  @v_do :CompactPresentation 1 push!(last_red, (a, n, decom))
+
   K = base_ring(a)
   ZK = maximal_order(K)
   if typeof(decom) == Bool
@@ -2268,9 +2305,13 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   be = FacElem(K(1))
 
+  @hassert :CompactPresentation 1 abs(norm(a)) == norm(FacElem(decom))
+
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
+
   #Step 1: reduce the ideal in a p-power way...
+
   A = ideal(ZK, 1)
   for _k = floor(Int, log(Int(n), Int(_v))):-1:0
     B = Dict((p, div(v, Int(n^_k)) % Int(n)) for (p, v) = de)
@@ -2286,6 +2327,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   if length(be.fac) > 1
     delete!(be.fac, K(1))
   end
+
   #Step 2: now reduce the infinite valuation
 
   r1, r2 = signature(K)
@@ -2299,6 +2341,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   delete!(de, ideal(ZK, 1))
   B=0
   
+  @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
+
   while k>=1
     D = Dict((p, div(fmpz(v), n^k)) for (p, v) = de if v >= n^k)
     if length(D) == 0
@@ -2321,33 +2365,29 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B = simplify(ideal(ZK, b))
     for p = keys(de)
       local _v = valuation(b, p)
-#      @assert valuation(B, p) == _v
+      @hassert :CompactPresentation 1 valuation(B, p) == _v
       de[p] += n^k*_v
       B *= inv(p)^_v
       B = simplify(B)
-#      @assert valuation(B, p) == 0
+      @hassert :CompactPresentation 1 valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
     for (p, _v) = factor(B)
       @assert !haskey(de, p)
       @assert !isone(p)
-      insert_prime_into_coprime(de, p, _v*m^k)
-#      de[p] = _v*n^k
+      insert_prime_into_coprime(de, p, _v*n^k)
     end
     v_b = conjugates_arb_log_normalise(b, arb_prec)
-#    @show old_n = sum(x^2 for x = v)
+    @v_do :CompactPresentation 2 @show old_n = sum(x^2 for x = v)
     v += n^k .* v_b
-#    @show new_n = sum(x^2 for x = v)
-#    @show old_n / new_n 
-#    @assert isone(b) || new_n < old_n  *2
+    @v_do :CompactPresentation 2 @show new_n = sum(x^2 for x = v)
+    @v_do :CompactPresentation 2 @show old_n / new_n 
+
     be  *= FacElem(b)^(n^k)
+    @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
     k -= 1
   end
-  if B == 0 #nothing happened in the loop, element was small
-    b = evaluate(a*be)
-  else
-    b = evaluate_mod(a*be, B)
-  end
+  b = evaluate_mod(a*be, evaluate(FacElem(de)))
   return inv(be)*b
 end
 
@@ -2373,6 +2413,7 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
       end
     end
   end
+  de[p] = e
 end
 
 #TODO: use the log as a stopping condition as well
@@ -2386,6 +2427,9 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   K = base_ring(a)
   ZK = maximal_order(K)
   dB = denominator(B)*index(ZK)
+
+  @hassert :CompactPresentation 1 norm(B) == abs(norm(a))
+  @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
   @assert order(B) == ZK
   pp = fmpz(1)
@@ -2406,9 +2450,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
       end
       pp = p2
     end
-    if nbits(pp) > 10000
-      error("done")
-    end
+    @hassert :CompactPresentation 1 nbits(pp) < 10000
     p = next_prime(p)
   end
 end
