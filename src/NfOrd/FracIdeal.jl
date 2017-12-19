@@ -607,6 +607,6 @@ doc"""
 > The valuation of $A$ at $p$.
 """
 function valuation(A::NfOrdFracIdl, p::NfOrdIdl)
-  return valuation(A.num, p) - valuation(ideal(order(A), A.den), p)
+  return valuation(A.num, p) - valuation(A.den, p)
 end
 
