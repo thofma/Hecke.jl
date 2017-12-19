@@ -2321,14 +2321,18 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     B = simplify(ideal(ZK, b))
     for p = keys(de)
       local _v = valuation(b, p)
+#      @assert valuation(B, p) == _v
       de[p] += n^k*_v
       B *= inv(p)^_v
+      B = simplify(B)
+#      @assert valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
     for (p, _v) = factor(B)
       @assert !haskey(de, p)
       @assert !isone(p)
-      de[p] = _v*n^k
+      insert_prime_into_coprime(de, p, _v*m^k)
+#      de[p] = _v*n^k
     end
     v_b = conjugates_arb_log_normalise(b, arb_prec)
 #    @show old_n = sum(x^2 for x = v)
@@ -2339,8 +2343,36 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     be  *= FacElem(b)^(n^k)
     k -= 1
   end
-  b = evaluate_mod(a*be, B)
+  if B == 0 #nothing happened in the loop, element was small
+    b = evaluate(a*be)
+  else
+    b = evaluate_mod(a*be, B)
+  end
   return inv(be)*b
+end
+
+function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
+  P = p.gen_one
+  for k=keys(de)
+    if k.gen_one % P == 0
+      if k.splitting_type[2] == 0
+        #k is not known to be prime, so p could divide...
+        v1 = valuation(k, p)
+        if v1 == 0
+          continue
+        end
+        #since it divides k it cannot divide any other (coprime!)
+        p2 = simplify(k*inv(p)^v1).num
+        de[p2] = de[k]
+        de[p] = de[k]*v1+e
+        delete!(de, k)
+        return
+      else
+        #both are know to be prime, and p is new to the dict.
+        @assert p != k
+      end
+    end
+  end
 end
 
 #TODO: use the log as a stopping condition as well
