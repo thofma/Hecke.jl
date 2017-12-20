@@ -809,6 +809,126 @@ function discriminant(C::ClassField)
   
 end
 =#
+
+#######################################################################################
+#
+#  Functions to compute the relative discriminant of a class field
+#
+#######################################################################################
+
+function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClassGrp, bound::fmpz, n::Int)
+  
+ 
+  lp=mr.fact_mod
+  if isempty(lp)
+    return true
+  end
+
+  K=nf(O)
+  #relative_disc=Dict{NfOrdIdl,Int}()
+  #abs_disc=Dict{fmpz,fmpz}()
+  discr=fmpz(1)
+  mp=C.mq
+  R=domain(mp)
+  
+  cyc_prime= isprime(n)==true
+  
+  #first, tamely ramified part
+  tmg=mr.tame_mult_grp
+  primes_done=fmpz[]
+  for p in keys(tmg) 
+    if minimum(p) in primes_done || haskey(mr.wild_mult_grp, p)
+      continue
+    end
+    ap=n
+    push!(primes_done, minimum(p))
+    if cyc_prime
+      ap-=1
+    else
+      el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
+      q,mq=quo(R,[el])
+      ap-= order(q)
+    end
+    qw=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
+    discr*=fmpz(minimum(p))^qw
+    if discr>bound
+      return false
+    #else
+    #  abs_disc[minimum(p)]=qw
+    #  for q in keys(tmg)
+    #    if minimum(q)==minimum(p) 
+    #      relative_disc[q]=ap
+    #    end
+    #  end
+    end
+  end
+  
+  #now, wild ramification
+  if !isempty(mr.wild_mult_grp)
+    prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+    for (p,v) in lp
+      prime_power[p]=p^v
+    end
+    wldg=mr.wild_mult_grp
+    primes_done=fmpz[]
+    for p in keys(wldg)
+      if minimum(p) in primes_done
+        continue
+      end 
+      push!(primes_done, minimum(p)) 
+      ap=n*lp[p]
+      if cyc_prime
+        ap-=lp[p]
+      else
+        if length(lp) > 1
+          i_without_p = ideal(O,1)
+          for (p2,vp2) in lp
+            (p != p2) && (i_without_p *= prime_power[p2])
+          end
+
+          alpha, beta = idempotents(prime_power[p],i_without_p)
+        end
+        s=lp[p]
+        @hassert :QuadraticExt 1 s>=2
+        els=GrpAbFinGenElem[]
+        for k=2:lp[p]      
+          s=s-1
+          pk=p^s
+          pv=pk*p
+          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a,n)
+          for i=1:length(gens)
+            push!(els,mp\ideal(O,gens[i]))
+          end
+          ap-=order(quo(R,els)[1])
+          @hassert :QuadraticExt 1 ap>0
+        end
+        if haskey(tmg, p)
+          push!(els, mp\ideal(O,tmg[p][1]))
+        end
+        ap-=order(quo(R,els)[1])
+        @hassert :QuadraticExt 1 ap>0
+      end
+      td=prime_decomposition_type(O,Int(minimum(p)))
+      np=fmpz(minimum(p))^(td[1][1]*length(td)*ap)
+      discr*=np
+      if discr>bound
+        return false
+      #else
+      #  abs_disc[minimum(p)]=td[1][1]*length(td)*ap
+      #  for q in keys(tmg)
+      #    if minimum(q)==minimum(p) 
+      #      relative_disc[q]=ap
+      #    end
+      #  end
+      end
+    end
+  end
+  #C.relative_discriminant=relative_disc
+  #C.absolute_discriminant=abs_disc
+  return true
+
+end
+
 ##############################################################################
 #
 #  Is Abelian function
