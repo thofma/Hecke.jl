@@ -2387,6 +2387,9 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
     k -= 1
   end
+  if length(de) == 0
+    de[ideal(ZK, 1)] = 1
+  end
   b = evaluate_mod(a*be, evaluate(FacElem(de)))
   return inv(be)*b
 end
@@ -2454,3 +2457,189 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
     p = next_prime(p)
   end
 end
+
+function simplify(K::AnticNumberField)
+  ZK = lll(maximal_order(K))
+  I = index(ZK)^2
+  D = discriminant(ZK)
+  B = basis(ZK)
+  b = gen(K)
+  f = K.pol
+  for i=1:length(B)
+    ff = minpoly(B[i])
+    if degree(ff) < degree(K)
+      continue
+    end
+    i = div(discriminant(ff), D)
+    if i<I
+      b = B[i]
+      I = i
+      f = ff
+    end
+  end
+  return b
+end
+
+function factor(f::fmpq_poly, R::NmodRing)
+  Rt, t = R["t"]
+  return factor(Rt(f))
+end
+
+function factor(f::fmpz_poly, R::NmodRing)
+  Rt, t = R["t"]
+  return factor(Rt(f))
+end
+
+function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
+  Rt, t = R["t"]
+  fp = FlintZZ["t"][1](f)
+  fpp = Rt(fp)
+  lf = factor(fpp)
+  return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+end
+
+function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
+   ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Void,
+         (Ptr{fq_nmod_poly}, Int, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
+         &z, n, &x, &base_ring(parent(z)))
+     return z
+ end
+
+function block(a::nf_elem, R::Array{fq_nmod, 1}, Zx, Ft, ap)
+#  F = parent(R[1])
+#  Zx = FlintZZ["x"][1]
+#  Ft = F["t"][1]
+  c = FlintZZ()
+  for i=0:a.elem_length
+    Nemo.num_coeff!(c, a, i)
+    setcoeff!(ap, i, c)
+  end
+#  ap = Ft(Zx(a*denominator(a)))
+  s = [ap(x) for x = R]
+  b = []
+  a = IntSet()
+  i = 0
+  n = length(R)
+  while i < n
+    i += 1
+    if i in a
+      continue
+    end
+    z = s[i]
+    push!(b, find(x->s[x] == z, 1:n))
+    for j in b[end]
+      push!(a, j)
+    end
+  end
+  return b
+end
+
+function meet(b1, b2)
+  b = []
+  for i=b1
+    for j = i
+      for h = b2
+        if j in h
+          s = intersect(i, h)
+          if ! (s in b)
+            push!(b, s)
+          end
+        end
+      end
+    end
+  end
+  return b
+end
+
+function simplify2(K::AnticNumberField)
+  ZK = lll(maximal_order(K))
+  I = index(ZK)^2
+  D = discriminant(ZK)
+  B = basis(ZK)
+  b = gen(K)
+  f = K.pol
+  
+  p = 2^20
+  d = 1
+  while true
+    p = next_prime(p)
+    R = ResidueRing(FlintZZ, p)
+    lp = factor(K.pol, R)
+    if any(t->t>1, values(lp.fac))
+      continue
+    end
+    d = Base.reduce(lcm, 1, [degree(x) for x = keys(lp.fac)])
+    if d < degree(f)^2
+      break
+    end
+  end
+
+  F, w = FiniteField(p, d, "w")
+  Ft, t = F["t"]
+  ap = Ft()
+  R = roots(K.pol, F)
+  Zx = FlintZZ["x"][1]
+  n = degree(K)
+
+  b = block(B[1].elem_in_nf, R, Zx, Ft, ap)
+  i = 2
+  while length(b) < degree(K)
+    bb = block(B[i].elem_in_nf, R, Zx, Ft, ap)
+    b = meet(b, bb)
+    i += 1
+  end
+  i -= 1
+  println("need to use at least the first $i basis elements...")
+  pr = 100
+  E = 1
+  while true
+    try
+      @show pr
+      E = enum_ctx_from_ideal(ideal(ZK, 1), MatrixSpace(FlintZZ, 1, 1)(), prec = pr, TU = BigFloat, TC = BigFloat)
+      break
+    catch e
+      @show e
+      if isa(e, InexactError)
+        @show pr *= 2
+        continue
+      end
+      rethrow(e)
+    end
+  end
+
+  while enum_ctx_next(E)
+    if E.x[1,i] != 0
+      break
+    end
+  end
+  @show "starting"
+  if E.x[1, i] == 0
+    error("enum too short")
+  end
+  a = gen(K)
+  la = length(a)*BigFloat(E.t_den^2)
+  Ec = BigFloat(E.c//E.d)
+
+  while enum_ctx_next(E)
+    M = E.x*E.t
+    q = elem_from_mat_row(K, M, 1, E.t_den)
+    bb = block(q, R, Zx, Ft, ap)
+    if length(bb) < n
+      continue
+    end
+#    lq = length(q)
+#    lqq = (BigFloat(E.c//E.d) - E.l[1])/BigInt(E.t_den^2)
+    lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
+
+    if lq < la
+      a = q
+      la = lq
+      @show Float64(la)
+    end
+  end
+
+  return a
+end
+
+
+   
