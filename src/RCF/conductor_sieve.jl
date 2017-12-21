@@ -205,12 +205,11 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
  
   K=nf(O)
   d=degree(O)
-  p=2
   b1=Int(root(bound,d))
   ram_primes=collect(keys(factor(O.disc).fac))
   sort!(ram_primes)
-  filter!(x -> x!=p ,ram_primes)
-  cond_list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,p))
+  filter!(x -> x!=2 ,ram_primes)
+  list=squarefree_up_to(b1, coprime_to=vcat(ram_primes,2))
 
   extra_list=Tuple{Int, fmpz}[(1,fmpz(1))]
   for q in ram_primes
@@ -229,19 +228,18 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
       push!(extra_list, (extra_list[i][1]*q, n))
     end
   end
-
-  cond_listnew=Set(cond_list)
-  l=length(cond_list)
+  
+  final_list=Tuple{Int,fmpz}[]
+  l=length(list)
   for (el,norm) in extra_list
     for i=1:l
-      if fmpz(cond_list[i])^d*norm>bound
+      if fmpz(list[i])^d*norm>bound
         continue
       end
-      push!(cond_listnew, cond_list[i]*el)
+      push!(final_list, (list[i]*el, fmpz(list[i])^d*norm))
     end
   end
-
-  return cond_listnew
+  return final_list
   
 end
 
@@ -365,12 +363,12 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
   
   list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
-  println(list)
+
   extra_list=Tuple{Int, Int}[(1,1)]
   for q in ram_primes
     tr=prime_decomposition_type(O,Int(q))
     f=tr[1][1]
-    nq=Int(q)^f    
+    nq=Int(q)^f 
     if gcd(nq-1,n)==1
       continue
     end
@@ -379,11 +377,11 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
     end
     l=length(extra_list)
     for i=1:l
-      n=extra_list[i][2]*nq
-      if n> bound
+      no=extra_list[i][2]*nq
+      if no> bound
         continue
       end
-      push!(extra_list, (extra_list[i][1]*q, n))
+      push!(extra_list, (extra_list[i][1]*q, no))
     end
   end
 
@@ -424,7 +422,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
-  wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, Int}[(1, Dict{NfOrdIdl, Int}(),1)]
+  wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(),1)]
   for q in wild_ram
     lp=prime_decomposition(O,q)
     l=length(wild_list)
@@ -504,7 +502,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   
   bo = ceil(Rational{BigInt}(absolute_discriminant_bound//discriminant(O)^n))
   bound = FlintZZ(fmpq(bo))
-  println(bound)
+
 
   if mod(n,2)==0
     inf_plc=real_places(K)
@@ -514,7 +512,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   C,mC=class_group(O)
   cgrp= gcd(n,order(C))!=1
   if cgrp
-    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2))
+    S = prime_ideals_up_to(O, max(100,12*clog(discriminant(O),10)^2))
   end
   allow_cache!(mC)
   
@@ -598,7 +596,7 @@ end
 function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false)
 
   @assert !(real && complex)
-  Qx,x=PolynomialRing(FlintZZ, "x")
+  Qx,x=PolynomialRing(FlintQQ, "x")
   sqf=squarefree_up_to(bound);
   if real
     deleteat!(sqf,1)
@@ -609,7 +607,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   end
   if tame
     filter!( x -> mod(x,4)==1, sqf)
-    return ( NumberField(x^2-x+divexact(1-i,4))[1] for i in sqf)
+    return ( number_field(x^2-x+divexact(1-i,4))[1] for i in sqf)
   end
   final_list=Int[]
   for i=1:length(sqf)
@@ -621,7 +619,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
       push!(final_list,sqf[i])
     end
   end
-  return ( mod(i,4)!=1 ? NumberField(x^2-i)[1] : NumberField(x^2-x+divexact(1-i,4))[1] for i in final_list)
+  return ( mod(i,4)!=1 ? number_field(x^2-i)[1] : number_field(x^2-x+divexact(1-i,4))[1] for i in final_list)
 end
 
 ###############################################################################
@@ -1117,7 +1115,6 @@ function conductorsDn(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   
 end
 
-
 function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, complex::Bool=false, tame::Bool=false)
 
   if mod(n,2)==0
@@ -1126,10 +1123,16 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, c
   @assert !(totally_real && complex)
   
   bound_quadratic= Int(root(absolute_bound, n))
-  list_quad=quadratic_extensions(bound_quadratic, tame=tame, real=totally_real, complex=complex)
+  list_quad=collect(quadratic_extensions(bound_quadratic, tame=tame, real=totally_real, complex=complex))
+  return Dn_extensions(n,absolute_bound, list_quad, totally_real=totally_real, complex=complex, tame=tame)
+  
+end
+
+function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumberField,1} ; totally_real::Bool=false, complex::Bool=false, tame::Bool=false)
+  
   len=length(list_quad)
   fields=NfRel_ns[]
-  autos=Vector{NfRel_nsToNfRel_nsMor}[]
+  autos=[]
   cfields=[]
   
   fac=factor(n).fac
@@ -1186,18 +1189,20 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, c
         C=ray_class_field(mr*inv(s))
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
           println("\n New Field!")
-          #@time push!(fields,number_field(C))
-          push!(cfields,C)
-          #push!(autos,absolute_automorphism_group(C,gens))
+          @time push!(fields,number_field(C))
+          #push!(cfields,C)
+          push!(autos,absolute_automorphism_group(C,gens))
         end
       end
     end
     
   end
   
-  return cfields, fields, autos
-  
+  return fields, autos
+
 end
+
+
 
 function _trivial_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1}, fac::Dict{fmpz,Int}, n::Int)
 
@@ -1222,15 +1227,12 @@ end
 #
 ###############################################################################
 
-
 function C3xD5_extensions(absolute_bound::fmpz)
 
-  n=15
   bound_quadratic= Int(root(absolute_bound, 15))
   list_quad=quadratic_extensions(bound_quadratic)
   fields=NfRel_ns[]
   autos=[]
-  fac=factor(15).fac
   for K in list_quad
     
     println("Field: $K")
@@ -1239,15 +1241,15 @@ function C3xD5_extensions(absolute_bound::fmpz)
     if D^15>absolute_bound
       continue
     end
-    bo = ceil(Rational{BigInt}(absolute_bound//D^n))
+    bo = ceil(Rational{BigInt}(absolute_bound//D^15))
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
     allow_cache!(mC)
     cgrp=false
-    if gcd(C.snf[end],n)!=1
+    if gcd(C.snf[end],15)!=1
       cgrp=true
-      S = prime_ideals_up_to(O, max(1000,100*clog(D,10)^2))
+      S = prime_ideals_up_to(O, max(100,12*clog(D,10)^2))
     end
     gens=Hecke.automorphisms(K)
     a=gen(K)
@@ -1257,31 +1259,29 @@ function C3xD5_extensions(absolute_bound::fmpz)
       deleteat!(gens,2)
     end
     
-    inf_plc=real_places(K)
-      
     #Getting conductors
-    l_conductors=conductors(O,n,bound)
+    l_conductors=conductors(O,15,bound)
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
-      r,mr=ray_class_group(O,n,k[1], k[2], inf_plc)
-      if !_are_there_subs(r,[n])
+      r,mr=ray_class_group(O,15,k[1], k[2])
+      if !_are_there_subs(r,[15])
         continue
       end
       if cgrp
         mr.prime_ideal_cache = S
       end
       act=_act_on_ray_class(mr,gens)
-      ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
+      ls=stable_subgroups(r,[15],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
       totally_positive_generators(mr,a)
       for s in ls
-        if !_right_action(s,act)
+        if !_right_actionD5C3(s,act)
           continue
         end
         C=ray_class_field(mr*inv(s))
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
           println("\n New Field!")
           @vtime :QuadraticExt 1 push!(fields,number_field(C))
           push!(autos,absolute_automorphism_group(C,gens))
@@ -1295,7 +1295,7 @@ function C3xD5_extensions(absolute_bound::fmpz)
   
 end
 
-function _right_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+function _right_actionD5C3(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
 
   @assert length(act)==1
   S=codomain(s)
@@ -1303,13 +1303,133 @@ function _right_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
   @assert T.snf[1]==15
   @assert ngens(T)==1
   new_el=mT\(s(act[1](s\mT(T[1]))))
-  if mod(new_el[1],5)==1
+  if 3*new_el==12*T[1] && 5*new_el==5*T[1]
+    return true
+  else
     return false
   end
-  @assert 3*new_el!=3*T[1]
-  if mod(new_el[1],3)!=1
-    return false
-  end
-  @assert 5*new_el==5*T[1]
-  return true
 end
+
+###############################################################################
+#
+#  S3 x C5 extensions
+#
+###############################################################################
+
+function S3xC5_extensions(absolute_bound::fmpz)
+
+  bound_quadratic= Int(root(absolute_bound, 15))
+  list_quad=quadratic_extensions(bound_quadratic)
+  fields=NfRel_ns[]
+  autos=[]
+  for K in list_quad
+    
+    println("Field: $K")
+    O=maximal_order(K)
+    D=abs(discriminant(O))
+    if D^15>absolute_bound
+      continue
+    end
+    bo = ceil(Rational{BigInt}(absolute_bound//D^15))
+    bound = FlintZZ(fmpq(bo))
+   
+    C,mC=class_group(O)
+    allow_cache!(mC)
+    cgrp=false
+    if gcd(C.snf[end],15)!=1
+      cgrp=true
+      S = prime_ideals_up_to(O, max(100,12*clog(D,10)^2))
+    end
+    gens=Hecke.automorphisms(K)
+    a=gen(K)
+    if gens[1](a)==a
+      deleteat!(gens,1)
+    else
+      deleteat!(gens,2)
+    end
+    
+    #Getting conductors
+    l_conductors=conductors(O,15,bound)
+    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  
+    #Now, the big loop
+    for (i, k) in enumerate(l_conductors)
+      r,mr=ray_class_group(O,15,k[1], k[2])
+      if !_are_there_subs(r,[15])
+        continue
+      end
+      if cgrp
+        mr.prime_ideal_cache = S
+      end
+      act=_act_on_ray_class(mr,gens)
+      ls=stable_subgroups(r,[15],act, op=(x, y) -> quo(x, y, false)[2])
+      a=_min_wild(k[2])*k[1]
+      totally_positive_generators(mr,a)
+      for s in ls
+        if !_right_actionC5S3(s,act)
+          continue
+        end
+        C=ray_class_field(mr*inv(s))
+        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
+          println("\n New Field!")
+          @vtime :QuadraticExt 1 push!(fields,number_field(C))
+          push!(autos,absolute_automorphism_group(C,gens))
+        end
+      end
+    end
+  end
+  
+  return fields, autos
+  
+end
+
+function _right_actionC5S3(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+
+  @assert length(act)==1
+  S=codomain(s)
+  T,mT=snf(S)
+  @assert T.snf[1]==15
+  @assert ngens(T)==1
+  new_el=mT\(s(act[1](s\mT(T[1]))))
+  if 3*new_el==3*T[1] && 5*new_el==10*T[1]
+    return true
+  else
+    return false
+  end
+end
+###############################################################################
+#
+#  From normal extension to the non-normal one using the trace function
+#
+###############################################################################
+
+function _to_non_normal(autos::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
+
+  #first, find a generator of the simple extension
+  L=domain(autos[1])
+  S,mS=simple_extension(L)
+  x=mS(gen(S))
+  
+  #find an element of order 2 in the automorphisms
+  
+  Id=find_identity(autos,*)
+  i=1
+  while autos[i]==Id || autos[i]*autos[i]!=Id
+    i+=1
+  end
+  
+  #Find primitive element 
+  pr_el=x+autos[i](x)
+  
+  #Take minimal polynomial; I need to embed the element in the absolute extension
+  pol=absolute_minpoly(pr_el)
+  if degree(pol)==15
+    return number_field(pol)
+  else
+    pr_el=x*(autos[i](x))
+    return number_field(absolute_minpoly(pr_el))
+  end
+  
+end
+
+
