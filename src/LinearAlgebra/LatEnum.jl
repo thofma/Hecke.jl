@@ -181,6 +181,37 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
   E.cnt = 0
 end
 
+/(a::BigFloat, b::fmpz) = a/BigInt(b)
+
+function ceil(::Type{fmpz}, a::BigFloat)
+  return fmpz(ceil(BigInt, a))
+end
+
+function floor(::Type{fmpz}, a::BigFloat)
+  return fmpz(floor(BigInt, a))
+end
+
+function round(::Type{fmpz}, a::BigFloat)
+  return fmpz(round(BigInt, a))
+end
+
+function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1) where {A,B,C}
+  E.x = x
+  for i=E.limit-1:-1:1
+    E.tail[i] = sum(E.C[i, j]*C(E.x[1,j]) for j=i+1:E.limit)
+  end    
+  b = sum(E.C[i,i]*(C(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit) #curr. length
+  E.c = ceil(fmpz, b*C(E.d)*eps)
+  E.l[E.limit] = C(E.c//E.d)
+  for i=E.limit-1:-1:1
+    E.l[i] = E.l[i+1] - E.C[i+1,i+1]*(C(E.x[1,i+1]) + E.tail[i+1])^2
+  end
+  for i=1:E.limit
+    E.L[i], E.U[i] = enum_ctx_local_bound(-E.tail[i], E.l[i]/E.C[i,i])
+  end
+  E.last_non_zero = maximum(find(i->E.x[1, i] != 0, 1:E.limit))+1
+end
+
 #for pol-red-abs we need s.th. else I think
 #
 #
@@ -266,8 +297,10 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
         getindex!(t, E.x, 1, j)
         E.tail[i] += E.C[i, j] * A(t)
       end
+      #E.tail[i] = sum C[i,j]x[j]
       E.l[i]    = E.l[i+1] - E.C[i+1, i+1]*(t1 + E.tail[i+1])^2
-      
+      #l[i] = l[i+1] - C[i+1, i+1]^2*(x[i+1] + tail[i+1])
+
       if E.l[i] >= 0
         Z = C(B(E.l[i])/E.C[i,i])
 #        @hassert :LatEnum 1 E.l[i] >= 0
@@ -284,7 +317,7 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
           E.last_non_zero = i
 #          @hassert :LatEnum 1 x == 0 
         end
-        if x <= E.U[i] # coordinate is valid`
+        if x <= E.U[i] # coordinate is valid
           i -= 1       # go further up
           if i==0
             @v_do :ClassGroup_time 2 _next += time_ns()-rt

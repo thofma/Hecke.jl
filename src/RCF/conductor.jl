@@ -386,9 +386,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   
   return true
   
-
 end
-
 
 
 doc"""
@@ -705,7 +703,7 @@ end
 #  Discriminant function
 #
 ####################################################################################
-#=
+
 function discriminant(C::ClassField)
   
   if isdefined(C,:conductor)
@@ -808,7 +806,7 @@ function discriminant(C::ClassField)
   return true
   
 end
-=#
+
 
 #######################################################################################
 #

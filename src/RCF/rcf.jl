@@ -1147,6 +1147,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
         if typeof(e) != BadPrime
           rethrow(e)
         end
+        continue
       end
       z = vcat(z, f)
       tau_z = vcat(tau_z, tau_f)

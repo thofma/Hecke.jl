@@ -620,6 +620,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
     end
   end
   return ( mod(i,4)!=1 ? number_field(x^2-i)[1] : number_field(x^2-x+divexact(1-i,4))[1] for i in final_list)
+
 end
 
 ###############################################################################

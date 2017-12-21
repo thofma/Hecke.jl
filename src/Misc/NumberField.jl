@@ -2458,26 +2458,43 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
-function simplify(K::AnticNumberField)
-  ZK = lll(maximal_order(K))
-  I = index(ZK)^2
-  D = discriminant(ZK)
-  B = basis(ZK)
-  b = gen(K)
-  f = K.pol
-  for i=1:length(B)
-    ff = minpoly(B[i])
-    if degree(ff) < degree(K)
-      continue
+@doc"""
+    simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
+ > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.
+ > By default, "nice" is defined to be of smaller index, testing is done only using
+ > a LLL-basis of the maximal order.
+ > If \texttt{canonical} is set to {{{true}}}, then a canonical defining
+ > polynomial is found, where canonical is using the pari-definition of {{{polredabs}}}
+ > in http://beta.lmfdb.org/knowledge/show/nf.polredabs.
+ > Both version require a LLL reduced basis for the maximal order.
+"""
+function simplify(K::AnticNumberField; canonical::Bool = false)
+  if canonical
+    a, f = polredabs(K)
+  else
+    ZK = lll(maximal_order(K))
+    I = index(ZK)^2
+    D = discriminant(ZK)
+    B = basis(ZK)
+    b = ZK(gen(K))
+    f = K.pol
+    for i=1:length(B)
+      ff = minpoly(B[i])
+      if degree(ff) < degree(K)
+        continue
+      end
+      id = div(discriminant(ff), D)
+      if id<I
+        b = B[i]
+        I = id
+        f = ff
+      end
     end
-    i = div(discriminant(ff), D)
-    if i<I
-      b = B[i]
-      I = i
-      f = ff
-    end
+    a = b.elem_in_nf
   end
-  return b
+  L = number_field(f)[1]
+  m = NfToNfMor(L, K, a)
+  return L, m
 end
 
 function factor(f::fmpq_poly, R::NmodRing)
@@ -2492,11 +2509,24 @@ end
 
 function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
   Rt, t = R["t"]
-  fp = FlintZZ["t"][1](f)
+  fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
   lf = factor(fpp)
   return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
 end
+
+function roots(f::fmpq_poly, R::Nemo.NmodRing)
+  Rt, t = R["t"]
+  fp = FlintZZ["t"][1](f*denominator(f))
+  fpp = Rt(fp)
+  lf = factor(fpp)
+  return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+end
+
+function roots(f::PolyElem)
+  lf = factor(f)
+  return elem_type(base_ring(f))[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+end    
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
    ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Void,
@@ -2505,10 +2535,17 @@ function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
      return z
  end
 
-function block(a::nf_elem, R::Array{fq_nmod, 1}, Zx, Ft, ap)
-#  F = parent(R[1])
-#  Zx = FlintZZ["x"][1]
-#  Ft = F["t"][1]
+ #a block is a partition of 1:n
+ #given by the subfield of parent(a) defined by a
+ #the embeddings used are in R
+ #K = parent(a)
+ # then K has embeddings into the finite field (parent of R[1])
+ # given by the roots (in R) of the minpoly of K
+ #integers in 1:n are in the same block iff a(R[i]) == a(R[j])
+ #the length of such a block (system) is the degree of Q(a):Q, the length
+ # of a block is the degree K:Q(a)
+ # a is primitive iff the block system has length n
+function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap)
   c = FlintZZ()
   for i=0:a.elem_length
     Nemo.num_coeff!(c, a, i)
@@ -2534,7 +2571,9 @@ function block(a::nf_elem, R::Array{fq_nmod, 1}, Zx, Ft, ap)
   return b
 end
 
-function meet(b1, b2)
+#given 2 block systems b1, b2 for elements a1, a2, this computes the
+#system for Q(a1, a2), the compositum of Q(a1) and Q(a2) as subfields of K
+function _meet(b1, b2)
   b = []
   for i=b1
     for j = i
@@ -2551,7 +2590,11 @@ function meet(b1, b2)
   return b
 end
 
-function simplify2(K::AnticNumberField)
+function polredabs(K::AnticNumberField)
+  #intended to implement 
+  # http://beta.lmfdb.org/knowledge/show/nf.polredabs
+  #as in pari
+  #TODO: figure out the separation of T2-norms....
   ZK = lll(maximal_order(K))
   I = index(ZK)^2
   D = discriminant(ZK)
@@ -2581,49 +2624,54 @@ function simplify2(K::AnticNumberField)
   Zx = FlintZZ["x"][1]
   n = degree(K)
 
-  b = block(B[1].elem_in_nf, R, Zx, Ft, ap)
+  b = _block(B[1].elem_in_nf, R, ap)
   i = 2
   while length(b) < degree(K)
-    bb = block(B[i].elem_in_nf, R, Zx, Ft, ap)
-    b = meet(b, bb)
+    bb = _block(B[i].elem_in_nf, R, ap)
+    b = _meet(b, bb)
     i += 1
   end
   i -= 1
-  println("need to use at least the first $i basis elements...")
+#  println("need to use at least the first $i basis elements...")
   pr = 100
+  old = precision(BigFloat)
   E = 1
   while true
+    setprecision(BigFloat, pr)
     try
-      @show pr
       E = enum_ctx_from_ideal(ideal(ZK, 1), MatrixSpace(FlintZZ, 1, 1)(), prec = pr, TU = BigFloat, TC = BigFloat)
+      if E.C[end] + 0.0001 == E.C[end]  # very very crude...
+        pr *= 2
+        continue
+      end
       break
     catch e
-      @show e
       if isa(e, InexactError)
-        @show pr *= 2
+        pr *= 2
         continue
       end
       rethrow(e)
     end
   end
 
-  while enum_ctx_next(E)
-    if E.x[1,i] != 0
-      break
-    end
-  end
-  @show "starting"
+  l = zeros(FlintZZ, n)
+  l[i] = 1
+  enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = 1.01)
+
   if E.x[1, i] == 0
     error("enum too short")
   end
   a = gen(K)
+  all_a = [a]
   la = length(a)*BigFloat(E.t_den^2)
   Ec = BigFloat(E.c//E.d)
+  eps = BigFloat(E.d)^(1//2)
 
   while enum_ctx_next(E)
+#    @show E.x
     M = E.x*E.t
     q = elem_from_mat_row(K, M, 1, E.t_den)
-    bb = block(q, R, Zx, Ft, ap)
+    bb = _block(q, R, ap)
     if length(bb) < n
       continue
     end
@@ -2631,15 +2679,82 @@ function simplify2(K::AnticNumberField)
 #    lqq = (BigFloat(E.c//E.d) - E.l[1])/BigInt(E.t_den^2)
     lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
 
-    if lq < la
-      a = q
-      la = lq
-      @show Float64(la)
+    if lq < la + eps
+      if lq > la - eps
+        push!(all_a, q)
+#        @show "new one"
+      else
+        a = q
+        all_a = [a]
+        if lq/la < 0.8
+#          @show "re-init"
+          enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
+        end
+        la = lq
+#        @show Float64(la/E.t_den^2)
+      end  
+    end
+  end
+  setprecision(BigFloat, old)
+  all_f = [(x, minpoly(x)) for x=all_a]
+  all_d = [abs(discriminant(x[2])) for x= all_f]
+  m = minimum(all_d)
+
+  L1 = all_f[find(i->all_d[i] == m, 1:length(all_d))]
+
+  function Q1Q2(f::PolyElem)
+    q1 = parent(f)()
+    q2 = parent(f)()
+    g = gen(parent(f))
+    for i=0:degree(f)
+      if isodd(i)
+        q2 += coeff(f, i)*g^div(i, 2)
+      else
+        q1 += coeff(f, i)*g^div(i, 2)
+      end
+    end
+    return q1, q2
+  end
+  function minQ(A::Tuple)
+    a = A[1]
+    f = A[2]
+    q1, q2 = Q1Q2(f)
+    if lead(q1)>0 && lead(q2) > 0
+      return (-A[1], f(-gen(parent(f)))*(-1)^degree(f))
+    else
+      return (A[1], f)
     end
   end
 
-  return a
-end
+  L2 = [minQ(x) for x=L1]
 
+  function int_cmp(a, b)
+    if a==b
+      return 0
+    end
+    if abs(a) == abs(b)
+      if a>b
+        return 1
+      else
+        return -1
+      end
+    end
+    return cmp(abs(a), abs(b))
+  end
+
+  function il(F, G)
+    f = F[2]
+    g = G[2]
+    i = degree(f)
+    while i>0 && int_cmp(coeff(f, i), coeff(g, i))==0 
+      i -= 1
+    end
+    return int_cmp(coeff(f, i), coeff(g, i))<0
+  end
+
+  L3 = sort(L2, lt = il)
+
+  return L3[1]
+end
 
    
