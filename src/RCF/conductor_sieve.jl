@@ -598,7 +598,7 @@ end
 function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false)
 
   @assert !(real && complex)
-  Qx,x=PolynomialRing(FlintZZ, "x")
+  Qx,x=PolynomialRing(FlintQQ, "x")
   sqf=squarefree_up_to(bound);
   if real
     deleteat!(sqf,1)
@@ -609,7 +609,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   end
   if tame
     filter!( x -> mod(x,4)==1, sqf)
-    return ( NumberField(x^2-x+divexact(1-i,4))[1] for i in sqf)
+    return ( NumberField(x^2-x+divexact(1-i,4), "a")[1] for i in sqf)
   end
   final_list=Int[]
   for i=1:length(sqf)
@@ -621,7 +621,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
       push!(final_list,sqf[i])
     end
   end
-  return ( mod(i,4)!=1 ? NumberField(x^2-i)[1] : NumberField(x^2-x+divexact(1-i,4))[1] for i in final_list)
+  return ( mod(i,4)!=1 ? NumberField(x^2-i, "a")[1] : NumberField(x^2-x+divexact(1-i,4), "a")[1] for i in final_list)
 end
 
 ###############################################################################
