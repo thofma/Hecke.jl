@@ -67,6 +67,7 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     end
   end
+
   if length(g.values) > 0 && g.values[1] < 0
     if !new_g
       g = copy(g)
@@ -81,7 +82,8 @@ end
 function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
   @hassert :HNF 1  isupper_triangular(A)
   #assumes A is upper triangular, reduces g modulo A
-  new_g = false
+  g = copy(g)
+  mod_sym!(g, m)
   while length(g)>0
     s = g.pos[1]
     j = 1
@@ -89,9 +91,6 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
       j += 1
     end  
     if j > rows(A) || A.rows[j].pos[1] > s
-      if !new_g
-        g = copy(g)
-      end
       if mod_sym(g.values[1], m) < 0 
         for i=1:length(g.values)
           g.values[i] *= -1
@@ -106,7 +105,6 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
     p = g.values[1]
     if divides(p, A.rows[j].values[1])[1]
       g = add_scaled_row(A[j], g, - divexact(p, A.rows[j].values[1]))
-      new_g = true
       mod_sym!(g, m)
       @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
@@ -122,9 +120,6 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
 #      @hassert :HNF 2  length(g)==0 || g.pos[1] > A[j].pos[1]
 #      @hassert :HNF 2  A[j].values[1] > 0
     end
-  end
-  if !new_g
-    g = copy(g)
   end
   if length(g.values) > 0 && mod_sym(g.values[1], m) < 0
     for i=1:length(g.values)
