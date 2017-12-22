@@ -229,17 +229,16 @@ function conductor(C::Hecke.ClassField)
         end
         i+=1
       end
-      el=1+minimum(cond)*ex(S[j])
-      while !ispositive(el, pl)
-        el+=minimum(cond)*ex(S[j])
-      end
+      delta=minimum(cond)*ex(S[j])
+      el=1+delta
+      con=abs_upper_bound(1/real(conjugates_arb(delta))[j], fmpz)
+      el+=con*delta
       Q,mQ=quo(G,mp\ideal(O,el),false)
       if order(Q)!=e
         push!(cond_inf, pl)
       end
     end
   end
-  
 
   return cond, cond_inf
   

@@ -611,7 +611,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   end
   final_list=Int[]
   for i=1:length(sqf)
-    if sqf[i]*4< bound
+    if abs(sqf[i]*4)< bound
       push!(final_list,sqf[i])
       continue
     end
@@ -1231,7 +1231,7 @@ end
 function C3xD5_extensions(absolute_bound::fmpz)
 
   bound_quadratic= Int(root(absolute_bound, 15))
-  list_quad=quadratic_extensions(bound_quadratic)
+  list_quad=quadratic_extensions(bound_quadratic, complex=true)
   fields=NfRel_ns[]
   autos=[]
   for K in list_quad
@@ -1276,7 +1276,6 @@ function C3xD5_extensions(absolute_bound::fmpz)
       act=_act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[15],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
-      totally_positive_generators(mr,a)
       for s in ls
         if !_right_actionD5C3(s,act)
           continue
@@ -1320,7 +1319,7 @@ end
 function S3xC5_extensions(absolute_bound::fmpz)
 
   bound_quadratic= Int(root(absolute_bound, 15))
-  list_quad=quadratic_extensions(bound_quadratic)
+  list_quad=quadratic_extensions(bound_quadratic, complex=true)
   fields=NfRel_ns[]
   autos=[]
   for K in list_quad
@@ -1365,7 +1364,6 @@ function S3xC5_extensions(absolute_bound::fmpz)
       act=_act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[15],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
-      totally_positive_generators(mr,a)
       for s in ls
         if !_right_actionC5S3(s,act)
           continue
@@ -1432,5 +1430,6 @@ function _to_non_normal(autos::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
   end
   
 end
+
 
 
