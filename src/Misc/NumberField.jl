@@ -2492,7 +2492,8 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     end
     a = b.elem_in_nf
   end
-  L = number_field(f)[1]
+  Qx,x=PolynomialRing(FlintQQ)
+  L = number_field(Qx(f))[1]
   m = NfToNfMor(L, K, a)
   return L, m
 end
