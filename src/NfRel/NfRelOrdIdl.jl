@@ -279,11 +279,9 @@ doc"""
 > then it is checked whether these elements define an ideal.
 """
 function ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) where {T, S}
-  !Hecke.ismaximal(O) && error("Order must be maximal")
-
   d = degree(O)
-  pb = Hecke.pseudo_basis(O, Val{false})
-  M = MatrixSpace(base_ring(nf(O)), 2*d, d)()
+  pb = pseudo_basis(O, Val{false})
+  M = zero_matrix(base_ring(nf(O)), 2*d, d)
   C = Array{S}(2*d)
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
@@ -296,11 +294,76 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, 
   M = M*basis_mat_inv(O, Val{false})
   PM = PseudoMatrix(M, C)
   if check
-    !Hecke.defines_ideal(O, PM) && error("The elements do not define an ideal.")
+    !defines_ideal(O, PM) && error("The elements do not define an ideal.")
   end
   PM = sub(pseudo_hnf(PM, :lowerleft), (d + 1):2*d, 1:d)
   return NfRelOrdIdl{T, S}(O, PM)
 end
+
+doc"""
+***
+    ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
+    *(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
+    *(x::NfRelOrdElem{T}, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
+
+> Creates the ideal $x\cdot \mathcal O$ of $\mathcal O$.
+"""
+function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
+  parent(x) != O && error("Order of element does not coincide with order")
+  d = degree(O)
+  pb = pseudo_basis(O, Val{false})
+  M = zero_matrix(base_ring(nf(O)), d, d)
+  for i = 1:d
+    elem_to_mat_row!(M, i, pb[i][1]*nf(O)(x))
+  end
+  M = M*basis_mat_inv(O, Val{false})
+  PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
+  PM = pseudo_hnf(PM, :lowerleft)
+  return NfRelOrdIdl{T, S}(O, PM)
+end
+
+*(O::NfRelOrd, x::NfRelOrdElem) = ideal(O, x)
+
+*(x::NfRelOrdElem, O::NfRelOrd) = ideal(O, x)
+
+doc"""
+***
+    ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
+
+> Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$. If check is set,
+> then it is checked whether $a$ defines an (integral) ideal.
+"""
+function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
+  d = degree(O)
+  pb = pseudo_basis(O, Val{false})
+  M = identity_matrix(base_ring(nf(O)), d)
+  PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
+  if check
+    !defines_ideal(O, PM) && error("The coefficient ideal does not define an ideal.")
+  end
+  PM = pseudo_hnf(PM, :lowerleft)
+  return NfRelOrdIdl{T, S}(O, PM)
+end
+
+function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = true)
+  aa = frac_ideal(order(a), a, fmpz(1))
+  return ideal(O, aa, check)
+end
+
+doc"""
+***
+    *(O::NfRelOrd{T, S}, a::S) -> NfRelOrdIdl{T, S}
+    *(a::S, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
+
+> Creates the ideal $a \cdot \mathcal O$ of $\mathcal O$.
+"""
+*(O::NfRelOrd{T, S}, a::S) where {T, S} = ideal(O, a)
+
+*(a::S, O::NfRelOrd{T, S}) where {T, S} = ideal(O, a)
+
+*(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl) = ideal(O, a)
+
+*(a::NfOrdIdl, O::NfRelOrd{nf_elem, NfOrdFracIdl}) = ideal(O, a)
 
 ################################################################################
 #
