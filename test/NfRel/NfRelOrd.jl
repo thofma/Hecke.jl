@@ -77,6 +77,43 @@ end
 
 @testset "Relative maximal orders of non-simple extensions" begin
   Qx, x = FlintQQ["x"]
+
+  K, a = NumberField(x, "a")
+  OK = MaximalOrder(K)
+  Ky, y = K["y"]
+
+  L, b = number_field([y^3 - 51*y^2 + 30*y - 28, y^4 + 1], "b")
+  Ons = MaximalOrder(L)
+  Bns = Hecke.basis_pmat(Ons, Val{false})
+
+  Ms = identity_matrix(K, 12)
+  Cs = [ ideal(OK, K(1)) for i = 1:12 ]
+  for i in [3, 6, 9, 12]
+    Ms[i, i - 1] = K(1)
+    Cs[i] = ideal(OK, K(fmpq(1, 2)))
+  end
+  Bs = Hecke.PseudoMatrix(Ms, Cs)
+  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+
+  K, a = NumberField(x^2 - 2*x + 38, "a")
+  OK = MaximalOrder(K)
+  Ky, y = K["y"]
+
+  L, b = number_field([y^2 + 87*y + 74, y^2 + 91*y - 73, y^2 - 30*y - 51], "b")
+  Ons = MaximalOrder(L)
+  Bns = Hecke.basis_pmat(Ons, Val{false})
+
+  Ms = identity_matrix(K, 8)
+  Cs = [ ideal(OK, K(1)) for i = 1:8 ]
+  for i = 5:8
+    Ms[i, i - 4] = K(3)
+    Cs[i] = ideal(OK, K(fmpq(1, 4)))
+  end
+  Bs = Hecke.PseudoMatrix(Ms, Cs)
+  @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
+  @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
+
   for i = 1:5
     f = monic_randpoly(Qx, 2, 2, 100)
     while !isirreducible(f)
