@@ -194,9 +194,6 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
         end
       else
         for j in 1:d
-          _a = deepcopy(res[j])
-          _b = deepcopy(z[j])
-          _e = deepcopy(x.fac[a])
           addmul!(res[j], z[j], x.fac[a])
           #res[j] = res[j] + x.fac[a]*z[j]
           if !radiuslttwopower(res[j], -target_tol) || !isfinite(res[j])

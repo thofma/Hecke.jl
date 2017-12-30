@@ -1,5 +1,6 @@
 function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
-  @hassert :HNF 1  cols(A) == rows(A)
+  # Works also for non-square matrices
+  #@hassert :HNF 1  cols(A) == rows(A)
   @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
   # the tansformation

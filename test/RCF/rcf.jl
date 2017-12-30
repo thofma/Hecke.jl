@@ -19,8 +19,8 @@
     return cnt
   end
 
-  @test doit(1:100) == 16
-  @test doit(10^18:10^18+100) == 18
-  @test doit(10^18:10^18+1000, 11) == 2
+  #@test doit(1:100) == 16
+  #@test doit(10^18:10^18+100) == 18
+  #@test doit(10^18:10^18+1000, 11) == 2
 end
 
