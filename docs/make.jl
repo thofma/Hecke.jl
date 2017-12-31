@@ -17,7 +17,7 @@ cp("application-e2807e330f.css", "build/application-e2807e330f.css", remove_dest
 
 deploydocs(
     deps = Deps.pip("pygments",
-                    "mkdocs",
+                    "mkdocs==0.16.3",
                     "python-markdown-math",
                     "mkdocs-cinder"),
     repo = "github.com/thofma/Hecke.jl.git",
