@@ -596,6 +596,7 @@ include("EllCrv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("Grp.jl")
+include("AlgAss.jl")
 
 for T in subtypes(Map)
   (M::T)(a) = image(M, a)
