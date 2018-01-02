@@ -31,7 +31,7 @@ function find_one(A::AlgAss)
   Mc = hcat(M, c)
   rref!(Mc)
   @assert !iszero(Mc[n, n])
-  @assert iszero(Mc[n + 1, n + 1])
+  n != 1 && @assert iszero(Mc[n + 1, n + 1])
   cc = solve(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
   one = [ cc[i, 1] for i = 1:n ]
   return one
@@ -91,11 +91,11 @@ end
 #
 ################################################################################
 
-function deepcopy_internal(A::AlgAss{T}, dict::ObjectIdDict) where {T}
+function Base.deepcopy_internal(A::AlgAss{T}, dict::ObjectIdDict) where {T}
   B = AlgAss{T}(base_ring(A))
   for x in fieldnames(A)
     if x != :base_ring && isdefined(A, x)
-      setfield!(B, x, deepcopy_internal(getfield(A, x), dict))
+      setfield!(B, x, Base.deepcopy_internal(getfield(A, x), dict))
     end
   end
   B.base_ring = A.base_ring
@@ -110,7 +110,7 @@ end
 
 function ==(A::AlgAss{T}, B::AlgAss{T}) where {T}
   base_ring(A) != base_ring(B) && return false
-  return A.mult_table == B.mult_table
+  return A.one == B.one && A.mult_table == B.mult_table
 end
 
 ################################################################################
@@ -141,9 +141,89 @@ function kernel_of_frobenius(A::AlgAss)
   return [ A(V[i]) for i = 1:length(V) ]
 end
 
+function _remove_non_pivot_cols(M::MatElem, r::Int)
+  if r == rows(M)
+    return M
+  end
+  N = zero_matrix(base_ring(M), r, r)
+  i = 1
+  while i <= r
+    for j = i:cols(M)
+      if iszero(M[i, j])
+        continue
+      end
+      for k = 1:i
+        N[k, i] = deepcopy(M[k, j])
+      end
+      break
+    end
+    i += 1
+  end
+  return N
+end
+
+# This only works if base_ring(A) is a field
+# Constructs the algebra e*A
 function subalgebra(A::AlgAss, e::AlgAssElem)
   @assert parent(e) == A
-  error("Not implemented. (Coming soon.)")
+  R = base_ring(A)
+  n = dim(A)
+  B = representation_mat(e)
+  rref!(B)
+  # rref! does not always return the rank (?)
+  r = 0
+  for i = n:-1:1
+    for j = 1:n
+      if !iszero(B[i, j])
+        r = i
+        break
+      end
+    end
+    if r != 0
+      break
+    end
+  end
+  r == 0 && error("Cannot construct zero dimensional algebra.")
+  basis = Vector{AlgAssElem}(r)
+  for i = 1:r
+    basis[i] = elem_from_mat_row(A, B, i)
+  end
+  _, p, L, U = lufact(transpose(B))
+  U = _remove_non_pivot_cols(U, r)
+  mult_table = Array{elem_type(R), 3}(r, r, r)
+  c = A()
+  d = zero_matrix(R, n, 1)
+  dd = zero_matrix(R, r, 1)
+  for i = 1:r
+    for j = 1:r
+      c = basis[i]*basis[j]
+      for k = 1:n
+        d[k, 1] = c.coeffs[p[k]]
+      end
+      d = solve(L, d)
+      for k = 1:r
+        dd[k, 1] = d[k, 1]
+      end
+      @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
+      dd = solve(U, dd)
+      for k = 1:r
+        mult_table[i, j, k] = deepcopy(dd[k, 1])
+      end
+    end
+  end
+  #=
+  for k = 1:n
+    d[k, 1] = e.coeffs[k]
+  end
+  d = solve(L, d)
+  for k = 1:r
+    dd[k, 1] = d[k, 1]
+  end
+  @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
+  dd = solve(U, dd)
+  return AlgAss(R, mult_table, [ dd[i, 1] for i = 1:r ])
+  =#
+  return AlgAss(R, mult_table)
 end
 
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
@@ -159,7 +239,6 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   p = characteristic(F)
   @assert !iszero(p)
   V = kernel_of_frobenius(A)
-
   k = length(V)
 
   if compute_algebras == Val{false}
@@ -195,4 +274,16 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
     end
     return false, [ subalgebra(A, idem), subalgebra(A, one(A) - idem) ]
   end
+end
+
+function split(A::AlgAss)
+  b, algebras = issimple(A)
+  if b
+    return algebras
+  end
+  result = Vector{typeof(A)}()
+  for a in algebras
+    append!(result, split(a))
+  end
+  return result
 end

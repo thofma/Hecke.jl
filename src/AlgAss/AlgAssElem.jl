@@ -146,11 +146,11 @@ end
 #
 ################################################################################
 
-function deepcopy_internal(a::AlgAssElem{T}, dict::ObjectIdDict) where {T}
+function Base.deepcopy_internal(a::AlgAssElem{T}, dict::ObjectIdDict) where {T}
   b = parent(a)()
   for x in fieldnames(a)
     if x != :parent && isdefined(a, x)
-      setfield!(b, x, deepcopy_internal(getfield(a, x), dict))
+      setfield!(b, x, Base.deepcopy_internal(getfield(a, x), dict))
     end
   end
   return b
@@ -172,32 +172,6 @@ end
 #  Minpoly
 #
 ################################################################################
-
-#=
-function Generic.minpoly(a::AlgAssElem) # über rep_mat!
-  A = parent(a)
-  F = base_ring(A)
-  R = PolynomialRing(F, "x")[1]
-
-  B = zero_matrix(F, 0, dim(A))
-  BB = zero_matrix(F, 1, dim(A))
-
-  x = one(A)
-  for i in 0:dim(A)
-    for j = 1:dim(A)
-      BB[1, j] = deepcopy(x.coeffs[j])
-    end
-    B = vcat(B, BB)
-    K = kernel(B)
-    if length(K) > 0
-      @assert length(K) == 1
-      return R(K[1])
-    end
-    x = x*a
-  end
-  error("cannot find minpoly")
-end
-=#
 
 function Generic.minpoly(a::AlgAssElem)
   M = representation_mat(a)
