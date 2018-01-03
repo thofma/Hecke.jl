@@ -795,3 +795,20 @@ function factor(N::fmpz)
   return Nemo.Fac(c, r)
 end
 
+
+function ceil(::Type{fmpz}, a::BigFloat)
+  return fmpz(ceil(BigInt, a))
+end
+
+function floor(::Type{fmpz}, a::BigFloat)
+  return fmpz(floor(BigInt, a))
+end
+
+function round(::Type{fmpz}, a::BigFloat)
+  return fmpz(round(BigInt, a))
+end
+
+/(a::BigFloat, b::fmpz) = a/BigInt(b)
+
+
+

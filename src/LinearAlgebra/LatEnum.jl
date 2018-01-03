@@ -181,20 +181,6 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, c::fmpz) where {A,B,C}
   E.cnt = 0
 end
 
-/(a::BigFloat, b::fmpz) = a/BigInt(b)
-
-function ceil(::Type{fmpz}, a::BigFloat)
-  return fmpz(ceil(BigInt, a))
-end
-
-function floor(::Type{fmpz}, a::BigFloat)
-  return fmpz(floor(BigInt, a))
-end
-
-function round(::Type{fmpz}, a::BigFloat)
-  return fmpz(round(BigInt, a))
-end
-
 function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1) where {A,B,C}
   E.x = x
   for i=E.limit-1:-1:1
