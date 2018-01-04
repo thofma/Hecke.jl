@@ -1261,6 +1261,28 @@ function root(a::nf_elem, n::Int)
   error("$a has no $n-th root")
 end
 
+doc"""
+    roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
+> Compute all $n$-th roots of $a$, possibly none.
+"""
+function roots(a::nf_elem, n::Int)
+  #println("Compute $(n)th root of $a")
+
+  @assert n>0
+  if n==1
+    return [a]
+  end
+  if iszero(a)
+    return [a]
+  end
+
+  d = denominator(a)
+  rt = _roots_hensel(a*d^n, n)
+
+  return [x//d for x = rt]
+end
+
+
 function root(a::NfOrdElem, n::Int)
   fl, rt = ispower(a.elem_in_nf, n)
   if fl
@@ -2530,16 +2552,28 @@ function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
   Rt, t = R["t"]
   fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
-  lf = factor(fpp)
-  return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return roots(fpp)
 end
 
 function roots(f::fmpq_poly, R::Nemo.NmodRing)
   Rt, t = R["t"]
   fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
-  lf = factor(fpp)
-  return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return roots(fpp)
+end
+
+function roots(f::fq_nmod_poly) # should be in Nemo and made available for all finite
+                                # fields I guess.
+  q = size(base_ring(f))
+  x = gen(parent(f))
+  if degree(f) < q
+    x = powmod(x, q, f)-x
+  else
+    x = x^q-x
+  end
+  f = gcd(f, x)
+  l = factor(f).fac
+  return fq_nmod[-trail(x) for x = keys(l) if degree(x)==1]
 end
 
 function roots(f::PolyElem)
@@ -2552,7 +2586,7 @@ function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
          (Ptr{fq_nmod_poly}, Int, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
          &z, n, &x, &base_ring(parent(z)))
      return z
- end
+end
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a

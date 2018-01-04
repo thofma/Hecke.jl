@@ -874,21 +874,6 @@ end
 #  Hensel Lifting
 #
 ################################################################################
-#with multiplicity??? without full factor?
-
-function roots(f::fq_nmod_poly)
-  q = size(base_ring(f))
-  x = gen(parent(f))
-  if degree(f) < q
-    x = powmod(x, q, f)-x
-  else
-    x = x^q-x
-  end
-  f = gcd(f, x)
-  l = factor(f).fac
-  return fq_nmod[-trail(x) for x = keys(l) if degree(x)==1]
-end
-
 function lift(R::NmodPolyRing, a::fq_nmod)
   f = R()
   for i=0:degree(parent(a))-1
@@ -1596,7 +1581,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
   return vcat(rs, rts)
 end
 
-function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = degree(f))
+function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
   # f must be squarefree
   # I should check that
   K = parent(a)
