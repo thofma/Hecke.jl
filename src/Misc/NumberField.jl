@@ -1152,6 +1152,8 @@ function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
   return roots(evaluate(f, y), max_roots)
 end
 
+elem_in_nf(a::nf_elem) = a
+
 doc"""
 ***
     roots(f::Generic.Poly{nf_elem}) -> Array{nf_elem, 1}
@@ -1159,7 +1161,7 @@ doc"""
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
+function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false, do_max_ord::Bool = true)
   @assert issquarefree(f)
 
   #TODO: implement for equation order....
@@ -1169,24 +1171,33 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
     return [-trailing_coefficient(f)//lead(f)]
   end
 
-  O = maximal_order(base_ring(f))
-  if do_lll
-    O = lll(O)
+  get_d = x -> denominator(x)
+  if do_max_ord
+    O = maximal_order(base_ring(f))
+    if do_lll
+      O = lll(O)
+    end
+    get_d = x-> denominator(x, O)
   end
 
   d = degree(f)
-  deno = denominator(coeff(f, d), O)
+
+  deno = get_d(coeff(f, d))
   for i in (d-1):-1:0
     ai = coeff(f, i)
     if !iszero(ai)
-      deno = lcm(deno, denominator(ai, O))
+      deno = lcm(deno, get_d(ai))
     end
   end
 
   g = deno*f
 
-  Ox, x = PolynomialRing(O, "x")
-  goverO = Ox([ O(coeff(g, i)) for i in 0:d])
+  if do_max_ord
+    Ox, x = PolynomialRing(O, "x")
+    goverO = Ox([ O(coeff(g, i)) for i in 0:d])
+  else
+    goverO = g
+  end  
 
   if !isone(lead(goverO))
     deg = degree(f)
@@ -1216,14 +1227,20 @@ doc"""
 """
 function ispower(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
-  Kx, x = PolynomialRing(parent(a), "x")
 
-  f = x^n - a
+  @assert n>0
+  if n==1
+    return true, a
+  end
+  if iszero(a)
+    return true, a
+  end
 
-  rt = roots(f, 1)
+  d = denominator(a)
+  rt = _roots_hensel(a*d^n, n, 1)
 
   if length(rt)>0
-    return true, rt[1]
+    return true, rt[1]//d
   else
     return false, zero(a)
   end
@@ -1231,29 +1248,30 @@ end
 
 doc"""
 ***
-    root(a::nf_elem, n::Int) -> Bool, nf_elem
+    root(a::nf_elem, n::Int) -> nf_elem
 
 > Computes the $n$-th root of $a$. Throws an error if this is not possible.
 """
 function root(a::nf_elem, n::Int)
-  #println("Compute $(n)th root of $a")
-  Kx, x = PolynomialRing(parent(a), "x")
-
-  if n==1
-    return a
+  fl, rt = ispower(a, n)
+  if fl
+    return rt
   end
 
-  f = x^n - a
-
-  rt = roots(f, 1)
-
-  if length(rt)>0
-    return rt[1]
-  else
-    return error("$a has no $n-th root")
-  end
+  error("$a has no $n-th root")
 end
 
+function root(a::NfOrdElem, n::Int)
+  fl, rt = ispower(a.elem_in_nf, n)
+  if fl
+    O = parent(a)
+    if denominator(a, O) == 1
+      return O(rt)
+    end  
+  end
+
+  error("$a has no $n-th root")
+end
 
 function numerator(a::nf_elem)
    const _one = fmpz(1)

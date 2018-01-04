@@ -877,6 +877,14 @@ end
 #with multiplicity??? without full factor?
 
 function roots(f::fq_nmod_poly)
+  q = size(base_ring(f))
+  x = gen(parent(f))
+  if degree(f) < q
+    x = powmod(x, q, f)-x
+  else
+    x = x^q-x
+  end
+  f = gcd(f, x)
   l = factor(f).fac
   return fq_nmod[-trail(x) for x = keys(l) if degree(x)==1]
 end
@@ -889,7 +897,7 @@ function lift(R::NmodPolyRing, a::fq_nmod)
   return f
 end
 
-function (Zx::FmpzPolyRing)(a::nf_elem)
+function (Zx::FmpzPolyRing)(a::nf_elem) 
   b = Zx()
   @assert denominator(a) == 1
   for i=0:a.elem_length
@@ -908,11 +916,15 @@ end
 #  - lifting?
 #  use ResRing(Poly) instead of doing % pgg?
 #  an open variant where k is increased until we have a root?
-function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int)
+
+function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degree(f))
+  #assumes f squarefree
+  #assumes constant_coefficient(f) != 0
   ZX, X = FlintZZ["X"]
   Rp = ResidueRing(FlintZZ, p)
   Rpt, t = Rp["t"]
   K = base_ring(f)
+
   gp = Rpt(K.pol)
   #to avoid embarrasment...
   @assert !iszero(discriminant(gp))
@@ -954,6 +966,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int)
   #for the result, to check for stabilising
 
   res = nf_elem[K(0) for x = RT]
+  rs = nf_elem[]
 
   #we'll be working in (Z/p^k)[t]/gg
 
@@ -984,10 +997,10 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int)
     #the lattice for reco:
     n = degree(K)
     M = MatrixSpace(FlintZZ, n, n)()
-    pt = Qt(1)
     for j=1:degree(pgg)
       M[j,j] = pp
     end
+    pt = t^(degree(pgg)-1)
     for j=degree(pgg)+1:n
       pt = (pt*t) % pgg
       M[j,j] = 1
@@ -996,11 +1009,13 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int)
       end
     end
     #this is (or should be) the HNF basis for P^??
-
     M = lll(M)
     Mi, d = pseudo_inv(M)
 
     for j=1:length(RT)
+      if RT[j] == 0
+        continue
+      end
       #to eval fp and the derivative, we pre-compute the powers of the
       #evaluation point - to save on large products...
 
@@ -1031,20 +1046,194 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int)
         setcoeff!(z, k-1, ve[1, k])
       end
       zz = K(z)*iden
-      if res[j] == zz
-       @show f(zz)
+      if res[j] == zz || i == length(pr)
         if f(zz) == 0
-          return zz
+          push!(rs, zz)
+          if length(rs) >= max_roots
+            return rs
+          end
+          RT[j] = ZX(0)
         end
       else
         res[j] = zz
       end
     end
   end  
-  return res
+  return rs
 end
 
+function ispower(a::Nemo.fq_nmod, m::Int)
+  s = size(parent(a))
+  if gcd(s-1, m) == 1
+    return true, a^invmod(m, s-1)
+  end
+  St, t = parent(a)["t"]
+  f = t^m-a
+  rt = roots(f)
+  if length(rt) > 0
+    return true, rt[1]
+  else
+    return false, a
+  end
+end
 
+function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
+  @assert m>0
+  if m == 1
+    return K(1)
+  end
+  if size(K) % m != 1
+    return false, K(1)
+  end
+  if m == 2
+    return K(-1)
+  end
+  fm = factor(m)
+  while true
+    g = rand(K)
+    if iszero(g)
+      continue
+    end
+    if any(x -> isone(g^div(m, x)), keys(fm))
+      continue
+    end
+    return true, g^div(size(K)-1, m)
+  end  
+end
+
+#as above, but for f = x^m-a, so m-th root of a
+
+function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
+  #@assert denominator(a) == 1                           
+  #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
+  #hard to test...
+  ZX, X = FlintZZ["X"]
+  Rp = ResidueRing(FlintZZ, p)
+  Rpt, t = Rp["t"]
+  K = parent(a)
+
+  gp = Rpt(K.pol)
+  #to avoid embarrasment...
+  @assert !iszero(discriminant(gp))
+
+  #find the prime ideal - as I don't want to use orders, this is 
+  #fun (computing a max order just for this is wasteful)
+  #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
+  #so instead of powering, and simplify and such, lets write it down
+  lp = factor(gp).fac
+  if length(lp) > 1
+    g1 = lift(ZX, first(keys(lp)))
+    gg = hensel_lift(ZX(K.pol), g1, fmpz(p), k)
+  else
+    gg = ZX(K.pol)
+  end
+  
+  # now for all i<= k, <p^i, K(gg)+p^i> is a normal presentation for
+  #                                     the prime ideal power.
+  #later we'll get the HNF matrix for selected powers as well
+
+  #set up the mod p data:
+  #need FiniteField as I need to factor (roots)
+  S = FqNmodFiniteField(first(keys(lp)), :z)
+  ST, T = S["T"]
+  fp = T^m - S(Rpt(a))
+  rt = roots(fp)
+  #OK, we're doing s.th. different
+#  b = a^(m-1) #this dominates everything!!!, maybe it should be done in the 
+#              #residue ring as well.
+  rt = [inv(x^(m-1)) for x = rt]
+
+  # this is in the finite field, but now I need it in the res. ring.
+  # in ZX for ease of transport.
+  RT = [lift(ZX, lift(Rpt, x)) for x = rt]
+
+  #the den: ala Kronnecker:
+  den = ZX(derivative(K.pol)(gen(K)))
+  iden = inv(derivative(K.pol)(gen(K)))
+
+  #for the result, to check for stabilising
+
+  res = nf_elem[K(0) for x = RT]
+  rs = nf_elem[]
+
+  #we'll be working in (Z/p^k)[t]/gg
+
+  #an "optimal" lifting chain:
+  pr = [k]
+  while k>1
+    k = div(k+1, 2)
+    push!(pr, k)
+  end
+  pr = reverse(pr)
+
+  #lets start:
+
+  for i=2:length(pr)
+    pp = fmpz(p)^pr[i]
+    Q = ResidueRing(FlintZZ, pp)
+    Qt, t = Q["t"]
+
+    #possibly this should be done with max precision and then adjusted down
+    #the poly mod P^??
+
+    pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
+
+    #the lattice for reco:
+    n = degree(K)
+    M = MatrixSpace(FlintZZ, n, n)()
+    for j=1:degree(pgg)
+      M[j,j] = pp
+    end
+    pt = t^(degree(pgg)-1)
+    for j=degree(pgg)+1:n
+      pt = (pt*t) % pgg
+      M[j,j] = 1
+      for k=0:degree(pt)
+        M[j, k+1] = -lift(coeff(pt, k))
+      end
+    end
+    #this is (or should be) the HNF basis for P^??
+    M = lll(M)
+    Mi, d = pseudo_inv(M)
+
+    ap = Qt(ZX(a))
+    bp = powmod(ap, m-1, pgg)
+    minv = invmod(fmpz(m), pp)
+
+    for j=1:length(RT)
+      if RT[j] == 0
+        continue
+      end
+
+      RTjp = Qt(RT[j])
+      RT[j] = lift(ZX, (RTjp*(1+minv) - bp*minv* powmod(RTjp, m+1, pgg)) % pgg)
+
+      #before the reconstruction, we need to scale by den and by a
+      cf = lift(ZX, (Qt(RT[j]*den) % pgg)*ap % pgg)
+      ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k=0:n-1])
+      _ve = ve*Mi
+      mu = matrix(FlintZZ, 1, n,  [ round(_ve[1, k]//d) for k=1:n])
+      ve = ve - mu*M
+      z = ZX()
+      for k=1:n
+        setcoeff!(z, k-1, ve[1, k])
+      end
+      zz = K(z)*iden
+      if res[j] == zz || i == length(pr)
+        if zz^m == a
+          push!(rs, zz)
+          if length(rs) >= max_roots
+            return rs
+          end
+          RT[j] = ZX(0)
+        end
+      else
+        res[j] = zz
+      end
+    end
+  end  
+  return rs
+end
 
 ## Hensel lifting of roots
 ##todo: redo for equation order using the kronnecker basis (co-different)
@@ -1052,8 +1241,23 @@ end
 ##    : use double iteration to avoid division
 #     : use exponent chain to not overshoot (too much) in lifting
 #     : common case is f == K.pol. In this case we known a sharp T2-bound
-#     : for torsion polynomials, embedd torsion units faithully and 
+#     : for torsion polynomials, embed torsion units faithully and 
 #     : lift only one root of maximal order
+#mostly done for nf_elem, see next function
+#missing: different (better) handling for x^n-a
+# possibly based on https://scicomp.stackexchange.com/questions/18846/newton-iteration-for-cube-root-without-division
+#
+# g = x^-n -a^(n-1), and r = root(g), then r = a^(-(n-1)/n), hence
+#                                         ar = a^(-(n-1)/n + 1) = a^(1/n)
+# Here, the Newton-iteration is easy: (b = a^(n-1))
+# g = x^-n - b, => g' = -nx^(-n-1)
+#Newton: r -> r-g(r)/g'(r) = r - (r^(-n) -b)/(-n r^(-n-1))
+#                          = r - r/(-n) - b/n r^(n+1)
+#                          = r(1+1/n) - b/n r^(n+1)
+# no division! and no double iteration
+# however, for reconstruction: we don't want r (which is non-integral)
+# but ar which is...
+
 function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   # f must be squarefree
   # I should check that
@@ -1064,7 +1268,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   # First we find a prime ideal such that f is squarefree modulo P 
   # (The discriminant of f has only finitely many divisors).
 
-  p = 3
+  p = degree(f)+1
 
   fder = derivative(f)
 
@@ -1073,12 +1277,13 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   # Dummy variable
   Q = NfOrdIdl(O)
   pi_F = NfOrdToFqNmodMor()
-  lin_factor = Array{fq_nmod_poly, 1}()
+  rt = Array{fq_nmod, 1}()
+  di = discriminant(O)
 
   while !found_prime
     p = next_prime(p)
 
-    if isindex_divisor(O, p) || isramified(O, p)
+    if di % p == 0
       continue
     end
 
@@ -1093,14 +1298,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
         continue
       end
 
-      fac = factor(fmodP)
-
-      for (i, l) in fac
-        if degree(i) == 1
-          push!(lin_factor, i)
-        end
-      end
-      
+      rt = roots(fmodP)
       Q = P[1]
       found_prime = true
       break
@@ -1114,11 +1312,6 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   # compute the lifting exponent a la Friedrich-Fieker
 
   R = ArbField(64)
-  z = R(0)
-  (c1, c2) = norm_change_const(O)
-  #so   |x|_mink  <= c_1 |x|_coeff
-  #and  |x|_coeff <= c_2 |x|_mink
-  # hopefully
   (r1, r2) = signature(O) 
 
   bound_root = [ R(0) for i in 1:(r1 + r2) ]
@@ -1137,39 +1330,22 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
     bound_root[r1 + i] = roots_upper_bound(g)
   end
 
-  bd = R(0)
-
-  for i in 1:r1
-    bd += bound_root[i]^2
-  end
-
-  for i=1:r2
-    bd += 2*bound_root[i+r1]^2
-  end
-
-  boundt2 = max(bd, R(1))
-
-  boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//4 + 2)*log(R(2))))//(2*Q.splitting_type[2]*log(R(p)))
-
-  ss = abs_upper_bound(boundk, fmpz)
-
-  roots = NfOrdElem[]
-
+  ss = _lifting_expo(p, Q.splitting_type[2], order(Q), bound_root)
   s = Int(ss)
 
-  #here one could call the _hensel from above...
 
   #println(length(lin_factor))
   #println("lifting bound: ", s)
 
+  rts = NfOrdElem[]
   #println("aiming for $max_roots roots")
-  for j in 1:length(lin_factor)
+  for j in 1:length(rt)
   #  println("have $(length(roots)) found, want $max_roots")
-    if length(roots) == max_roots
+    if length(rts) >= max_roots
       break
     end
 
-    zero_mod_Q = - coeff(lin_factor[j], 0)
+    zero_mod_Q = rt[j]
 
     #println(zero_mod_Q)
 
@@ -1239,7 +1415,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
       if stabilized >= 2
         if subst(f, reconstructed_new) == 0
-          #push!(roots, reconstructed_new)
+          #push!(rts, reconstructed_new)
           break
         else
           stabilized = 0
@@ -1248,7 +1424,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
       if i == s
         if iszero(subst(f, reconstructed_new))
-          push!(roots, reconstructed_new)
+          push!(rts, reconstructed_new)
         end
         break
       end
@@ -1302,12 +1478,186 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
       i = i + 1
     end
     if f(reconstructed_new) == 0
-      push!(roots, reconstructed_new)
+      push!(rts, reconstructed_new)
     end
   end
-  return roots
+  return rts
 end
 
+function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
+  # compute the lifting exponent a la Friedrich-Fieker
+  #bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
+  #we're using a prime ideal above p of intertia degree deg_p
+
+  (c1, c2) = norm_change_const(O)
+  r1, r2 = signature(O)
+  R = parent(bnd[1])
+  bd = R(0)
+  n = degree(O)
+  #so   |x|_mink  <= c_1 |x|_coeff
+  #and  |x|_coeff <= c_2 |x|_mink
+
+  for i in 1:r1
+    bd += bnd[i]^2
+  end
+
+  for i=1:r2
+    bd += 2*bnd[i+r1]^2
+  end
+
+  boundt2 = max(bd, R(1))
+
+  boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//4 + 2)*log(R(2))))//(2*deg_p*log(R(p)))
+
+  ss = abs_upper_bound(boundk, fmpz)
+  return ss
+end
+
+function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
+  # f must be squarefree
+  # I should check that
+  K = base_ring(f)
+  if iszero(constant_coefficient(f))
+    rs = [K(0)]
+    f = div(f, gen(parent(f)))
+  else
+    rs = nf_elem[]
+  end
+  if length(rs) >= max_roots
+    return rs
+  end
+  n = degree(K)
+  deg = degree(f)
+
+  # First we find a prime ideal such that f is squarefree modulo P 
+  # (The discriminant of f has only finitely many divisors).
+
+  p = degree(f)+1
+  deg_p = 1
+
+  while true
+    p = next_prime(p)
+
+    Rp = ResidueRing(FlintZZ, p)
+    Rpt, t = Rp["t"]
+    gp = Rpt(K.pol)
+    if iszero(discriminant(gp))
+      continue
+    end
+
+    lp = factor(gp).fac
+    #set up the mod p data:
+    #need FiniteField as I need to factor (roots)
+    deg_p = degree(first(keys(lp)))
+    S = FqNmodFiniteField(first(keys(lp)), :z)
+    ST, T = S["T"]
+    fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
+    if !issquarefree(fp)
+      continue
+    end
+    rt = roots(fp)
+    if length(rt) == 0
+      return nf_elem[]
+    end
+    break
+  end
+
+  #println("prime $p ")
+
+  # compute the lifting exponent a la Friedrich-Fieker
+
+  R = ArbField(64)
+
+  (r1, r2) = signature(K) 
+
+  # for Kronnecker:
+  gsa = derivative(K.pol)(gen(K))
+  gsa_con = conjugates_arb(gsa, 32)
+
+  bound_root = [ R(0) for i in 1:(r1 + r2) ]
+
+  CC = AcbField(64)
+  CCt, t = PolynomialRing(CC, "t")
+  conjugates_of_coeffs = [ conjugates_arb(coeff(f, i), 32) for i in 0:degree(f) ]
+
+  for i in 1:r1
+    g = CCt([ conjugates_of_coeffs[j + 1][i] for j in 0:degree(f) ])
+    bound_root[i] = roots_upper_bound(g) * abs(gsa_con[i])
+  end
+
+  for i in 1:r2
+    g = CCt([ conjugates_of_coeffs[j + 1][r1 + i] for j in 0:degree(f) ])
+    bound_root[r1 + i] = roots_upper_bound(g) * abs(gsa_con[r1+i])
+  end
+
+  ss = _lifting_expo(p, deg_p, EquationOrder(K), bound_root)
+
+  rts = _hensel(f, p, Int(ss), max_roots = max_roots - length(rs))
+  return vcat(rs, rts)
+end
+
+function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = degree(f))
+  # f must be squarefree
+  # I should check that
+  K = parent(a)
+  n = degree(K)
+
+  # First we find a prime ideal such that f is squarefree modulo P 
+  # (The discriminant of f has only finitely many divisors).
+
+  p = m+1
+  deg_p = 1
+
+  while true
+    p = next_prime(p)
+
+    Rp = ResidueRing(FlintZZ, p)
+    Rpt, t = Rp["t"]
+    gp = Rpt(K.pol)
+    if iszero(discriminant(gp))
+      continue
+    end
+
+    lp = factor(gp).fac
+    #set up the mod p data:
+    #need FiniteField as I need to factor (roots)
+    deg_p = degree(first(keys(lp)))
+    S = FqNmodFiniteField(first(keys(lp)), :z)
+    ST, T = S["T"]
+    fp = T^m - S(Rpt(a))
+    if !issquarefree(fp)
+      continue
+    end
+    rt = roots(fp)
+    if length(rt) == 0
+      return nf_elem[]
+    end
+    break
+  end
+
+  #println("prime $p ")
+
+  # compute the lifting exponent a la Friedrich-Fieker
+
+  R = ArbField(64)
+  (r1, r2) = signature(K) 
+
+  # for Kronnecker:
+  gsa = derivative(K.pol)(gen(K))
+  gsa_con = conjugates_arb(gsa, 32)
+  a_con = conjugates_arb(a, 32)
+
+  bound_root = [ R(0) for i in 1:(r1 + r2) ]
+
+  for i in 1:r1+r2
+    bound_root[i] = root(abs(a_con[i]), m) * abs(gsa_con[i])
+  end
+
+  ss = _lifting_expo(p, deg_p, EquationOrder(K), bound_root)
+
+  rts = _hensel(a, m, p, Int(ss), max_roots = max_roots)
+  return rts
+end
 #identical to hasroot - which one do we want?
 function ispower(a::NfOrdElem, n::Int)
   Ox, x = parent(a)["x"]

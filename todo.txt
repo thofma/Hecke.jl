@@ -38,3 +38,8 @@ Lattices?
 ---------
 
  * think about it
+
+Polynomials
+-----------
+  
+  * trail vs trailing_coefficient ...
