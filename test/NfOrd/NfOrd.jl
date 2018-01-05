@@ -217,7 +217,7 @@
   @testset "Minkowski matrix" begin
     RR = ArbField(64)
 
-    b = RR[ RR(1) sqrt(RR(2)) RR(0); (exp(1//RR(3) * log(RR(2)))) (-exp(-1//RR(6) * log(RR(2)))) (sqrt(RR(3)) * exp(-1//RR(6) * log(RR(2)))); (exp(1//RR(3) * log(RR(4)))) (-exp(1//RR(6) * log(RR(2)))) (-exp(1//RR(6) * log(RR(54)))) ]
+    b = RR[ RR(1) Base.sqrt(RR(2)) RR(0); (exp(1//RR(3) * log(RR(2)))) (-exp(-1//RR(6) * log(RR(2)))) (Base.sqrt(RR(3)) * exp(-1//RR(6) * log(RR(2)))); (exp(1//RR(3) * log(RR(4)))) (-exp(1//RR(6) * log(RR(2)))) (-exp(1//RR(6) * log(RR(54)))) ]
     bb = @inferred minkowski_mat(O1, 256)
 
     @test overlaps(b, bb)
@@ -248,7 +248,7 @@
 
     @test contains(RR("19063561108769878656033240617946635072004849200892084525390959717509 +/- 1"), det(bb))
 
-    b = RR[ RR(1) RR(1); -2*sqrt(RR(5)) 2*sqrt(RR(5))]
+    b = RR[ RR(1) RR(1); -2*Base.sqrt(RR(5)) 2*Base.sqrt(RR(5))]
 
     bb = @inferred minkowski_mat(O4, 1024)
 
