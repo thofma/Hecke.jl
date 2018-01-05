@@ -2381,7 +2381,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   delete!(de, ideal(ZK, 1))
   B=0
   
-  @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
+  @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
+                                  abs(norm(a*be)) == norm(FacElem(de))
 
   while k>=1
     D = Dict((p, div(fmpz(v), n^k)) for (p, v) = de if v >= n^k)
@@ -2424,7 +2425,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @v_do :CompactPresentation 2 @show old_n / new_n 
 
     be  *= FacElem(b)^(n^k)
-    @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
+    @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
+                                    abs(norm(a*be)) == norm(FacElem(de))
     k -= 1
   end
   if length(de) == 0
