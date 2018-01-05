@@ -441,7 +441,7 @@ end
 doc"""
 ***
   _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
-  _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
+  _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
 
 > Sets the $n$-th coefficient in $a$ to $c$. No checks performed, use
 > only if you know what you're doing.
@@ -476,6 +476,10 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
     ccall((:fmpq_poly_set_coeff_ui, :libflint), Void, (Ptr{nf_elem}, Int, UInt), &a, n, c)
    # includes canonicalisation and treatment of den.
   end
+end
+
+function _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
+  _num_setcoeff!(a, n, fmpz(c))
 end
 
 mutable struct modular_env
