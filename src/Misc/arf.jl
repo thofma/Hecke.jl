@@ -507,7 +507,7 @@ function abs(x::arf)
   return z
 end
 
-function sqrt(x::arf)
+function Base.sqrt(x::arf)
   z = parent(x)()
   ccall((:arf_sqrt, :libarb), Void,
               (Ptr{arf}, Ptr{arf}, Int, Cint),
