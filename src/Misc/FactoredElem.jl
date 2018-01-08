@@ -339,6 +339,17 @@ function _ev(d::Dict{T, fmpz}, oe::T) where T
   return _ev(b, oe)^2*z
 end
 
+function one(A::NfOrdFracIdlSet)
+  return ideal(order(A), 1)//1
+end
+
+function copy(A::NfOrdFracIdl)
+  return deepcopy(A)
+end
+
+function ^(A::NfOrdFracIdl, d::fmpz)
+  return A^Int(d)
+end
 
 doc"""
 ***
