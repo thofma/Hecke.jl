@@ -2575,12 +2575,12 @@ function roots(f::fq_nmod_poly) # should be in Nemo and made available for all f
   end
   f = gcd(f, x)
   l = factor(f).fac
-  return fq_nmod[-trail(x) for x = keys(l) if degree(x)==1]
+  return fq_nmod[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
 end
 
 function roots(f::PolyElem)
   lf = factor(f)
-  return elem_type(base_ring(f))[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
 end    
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
