@@ -991,7 +991,7 @@ function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,5)
           println("\n New Field!")
           push!(class_fields, C)
-          #push!(fields,number_field(C))
+          push!(fields,number_field(C))
         end
       end
     end
@@ -1192,6 +1192,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumbe
           println("\n New Field!")
           @time push!(fields,number_field(C))
           #push!(cfields,C)
+          push!(BLA, fields[end])
           push!(autos,absolute_automorphism_group(C,gens))
         end
       end
