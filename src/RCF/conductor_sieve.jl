@@ -1192,7 +1192,6 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumbe
           println("\n New Field!")
           @time push!(fields,number_field(C))
           #push!(cfields,C)
-          push!(BLA, fields[end])
           push!(autos,absolute_automorphism_group(C,gens))
         end
       end
