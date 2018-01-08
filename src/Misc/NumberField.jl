@@ -2437,6 +2437,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 end
 
 function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
+  @assert !isone(p)
   P = p.gen_one
   for k=keys(de)
     if k.gen_one % P == 0
@@ -2448,7 +2449,9 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
         end
         #since it divides k it cannot divide any other (coprime!)
         p2 = simplify(k*inv(p)^v1).num
-        de[p2] = de[k]
+        if !isone(p2)
+          de[p2] = de[k]
+        end
         de[p] = de[k]*v1+e
         delete!(de, k)
         return
