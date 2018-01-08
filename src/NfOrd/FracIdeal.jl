@@ -132,6 +132,11 @@ export parent, order, basis_mat, basis_mat_inv, basis, norm,
 
 parent(a::NfOrdFracIdl) = a.parent
 
+function Base.hash(a::NfOrdFracIdl, h::UInt)
+  b = simplify(a)
+  return hash(b.num, hash(b.den, h))
+end
+
 ################################################################################
 #
 #  Order
