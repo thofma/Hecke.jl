@@ -701,7 +701,7 @@ function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
     for j=1:cols(a)
       im =modular_proj(a[i,j], me)
       for k=1:me.ce.n
-        setindex!(Mp[k], im[k], i, j)
+        setindex!(Mp[k], deepcopy(im[k]), i, j)
       end
     end
   end  
@@ -717,7 +717,7 @@ function modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env)
     for j=1:cols(a)
       im =modular_proj(me.K(a[i,j]), me)
       for k=1:me.ce.n
-        setindex!(Mp[k], im[k], i, j)
+        setindex!(Mp[k], deepcopy(im[k]), i, j)
       end
     end
   end  
