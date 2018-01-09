@@ -343,7 +343,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
               continue
             end
             O =spinning(w,G)
-            G2=[O*mat*inv(O) for mat in M.G] #M.G or N.G?
+            G2=[O*mat*inv(O) for mat in M.G]
             if G1 == G2
               b=kerA*O
               x=transpose(solve(transpose(kerA),transpose(b)))

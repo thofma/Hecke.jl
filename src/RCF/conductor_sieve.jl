@@ -1396,7 +1396,8 @@ end
 #
 ###############################################################################
 
-global BLA = []
+
+
 
 function C9semiC4(absolute_bound::fmpz)
   
@@ -1405,11 +1406,16 @@ function C9semiC4(absolute_bound::fmpz)
   Qx,x=PolynomialRing(FlintQQ, "x")
   K,a=NumberField(x-1,"a")
   O=maximal_order(K)
-  
-  C4bound=root(absolute_bound, 9)
+
   l=Hecke.abelian_normal_extensions(O,[4], root(absolute_bound, 9))
+  return C9semiC4(absolute_bound, l)
   
+end
+ 
+
+function C9semiC4(absolute_bound::fmpz, l)  
   
+  field=1
   for L in l
     S=Hecke.simple_extension(L)[1]
     K=Hecke.absolute_field(S)[1]
@@ -1448,9 +1454,7 @@ function C9semiC4(absolute_bound::fmpz)
       end
       println("Computing the action")
       act=_act_on_ray_class(mr,gens)
-      println(r)
       println("Computing subgroups")
-      push!(BLA, (r, act))
       ls=stable_subgroups(r,[9],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
       for s in ls
@@ -1458,20 +1462,16 @@ function C9semiC4(absolute_bound::fmpz)
           continue
         end
         C=ray_class_field(mr*inv(s))
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && C.absolute_discriminant < absolute_bound
-          absolute_bound=C.absolute_discriminant
-          println("\n New Field!")
+        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) < absolute_bound
+          absolute_bound=evaluate(FacElem(C.absolute_discriminant))
+          println("\n New Field with discriminant ", absolute_bound)
           field=number_field(C)
         end
       end
     end
   end
   
-  if typeof(field)==NfRel_ns
-    return field
-  else
-    error("No fields with low discriminant!")
-  end
+  return field
   
 end
 

@@ -64,8 +64,25 @@
     @test Hecke.isisomorphic(lf[1][1],x)
     x,_=Hecke.actquo(cs[1],M.G)
     @test Hecke.isisomorphic(lf[1][1],x)
-  end
+
+    M=FqGModule([matrix(F,2,2,[0,1,2,0])])
+    N=FqGModule([matrix(F,2,2,[0,2,1,0])])
+    M.isirreducible=true
+    @test Hecke.isisomorphic(M,N)
+    
+    
+    M1=matrix(F,2,2,[1,0,1,1])
+    M2=matrix(F,2,2,[1,1,0,1])
+    M=FqGModule([M1,M2])
+    M.isirreducible=true
+    
+    N1=matrix(F,2,2,[2,2,1,0])
+    N2=matrix(F,2,2,[1,1,0,1])
+    N=FqGModule([N1,N2])
   
+    @test Hecke.isisomorphic(M,N)
+    
+  end
   
   @testset "Submodules" begin
   
