@@ -60,10 +60,6 @@ function *(a::fmpz, b::BigFloat)
   return BigInt(a)*b
 end
 
-function Float64(a::fmpz)
-  return ccall((:fmpz_get_d, :libflint), Float64, (Ptr{fmpz},), &a)
-end
-
 function BigFloat(a::fmpq)
   r = BigFloat(0)
   ccall((:fmpq_get_mpfr, :libflint), Void, (Ptr{BigFloat}, Ptr{fmpq}, Int32), &r, &a, __get_rounding_mode())
@@ -794,4 +790,21 @@ function factor(N::fmpz)
 #  @assert prod(a^b for (a,b) = r) * c == N_in
   return Nemo.Fac(c, r)
 end
+
+
+function ceil(::Type{fmpz}, a::BigFloat)
+  return fmpz(ceil(BigInt, a))
+end
+
+function floor(::Type{fmpz}, a::BigFloat)
+  return fmpz(floor(BigInt, a))
+end
+
+function round(::Type{fmpz}, a::BigFloat)
+  return fmpz(round(BigInt, a))
+end
+
+/(a::BigFloat, b::fmpz) = a/BigInt(b)
+
+
 

@@ -739,6 +739,10 @@ end
 ################################################################################
 # TODO compare with implementations in UnitsModM.jl
 
+function root(a::T, n::Int) where T <: Integer
+  return T(root(fmpz(a), n))
+end  
+
 doc"""
 ***
     baby_step_giant_step(g, n, h) -> fmpz
@@ -755,7 +759,7 @@ doc"""
 function baby_step_giant_step(g, n, h, cache::Dict)
   @assert typeof(g) == typeof(h)
   n = BigInt(n)
-  m = ceil(BigInt, sqrt(n))
+  m = root(n, 2)+1
   if isempty(cache)
     it = g^0
     for j in 0:m

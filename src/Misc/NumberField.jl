@@ -1152,6 +1152,8 @@ function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
   return roots(evaluate(f, y), max_roots)
 end
 
+elem_in_nf(a::nf_elem) = a
+
 doc"""
 ***
     roots(f::Generic.Poly{nf_elem}) -> Array{nf_elem, 1}
@@ -1159,7 +1161,7 @@ doc"""
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
+function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false, do_max_ord::Bool = true)
   @assert issquarefree(f)
 
   #TODO: implement for equation order....
@@ -1169,24 +1171,33 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
     return [-trailing_coefficient(f)//lead(f)]
   end
 
-  O = maximal_order(base_ring(f))
-  if do_lll
-    O = lll(O)
+  get_d = x -> denominator(x)
+  if do_max_ord
+    O = maximal_order(base_ring(f))
+    if do_lll
+      O = lll(O)
+    end
+    get_d = x-> denominator(x, O)
   end
 
   d = degree(f)
-  deno = denominator(coeff(f, d), O)
+
+  deno = get_d(coeff(f, d))
   for i in (d-1):-1:0
     ai = coeff(f, i)
     if !iszero(ai)
-      deno = lcm(deno, denominator(ai, O))
+      deno = lcm(deno, get_d(ai))
     end
   end
 
   g = deno*f
 
-  Ox, x = PolynomialRing(O, "x")
-  goverO = Ox([ O(coeff(g, i)) for i in 0:d])
+  if do_max_ord
+    Ox, x = PolynomialRing(O, "x")
+    goverO = Ox([ O(coeff(g, i)) for i in 0:d])
+  else
+    goverO = g
+  end  
 
   if !isone(lead(goverO))
     deg = degree(f)
@@ -1216,14 +1227,20 @@ doc"""
 """
 function ispower(a::nf_elem, n::Int)
   #println("Compute $(n)th root of $a")
-  Kx, x = PolynomialRing(parent(a), "x")
 
-  f = x^n - a
+  @assert n>0
+  if n==1
+    return true, a
+  end
+  if iszero(a)
+    return true, a
+  end
 
-  rt = roots(f, 1)
+  d = denominator(a)
+  rt = _roots_hensel(a*d^n, n, 1)
 
   if length(rt)>0
-    return true, rt[1]
+    return true, rt[1]//d
   else
     return false, zero(a)
   end
@@ -1231,29 +1248,52 @@ end
 
 doc"""
 ***
-    root(a::nf_elem, n::Int) -> Bool, nf_elem
+    root(a::nf_elem, n::Int) -> nf_elem
 
 > Computes the $n$-th root of $a$. Throws an error if this is not possible.
 """
 function root(a::nf_elem, n::Int)
-  #println("Compute $(n)th root of $a")
-  Kx, x = PolynomialRing(parent(a), "x")
-
-  if n==1
-    return a
+  fl, rt = ispower(a, n)
+  if fl
+    return rt
   end
 
-  f = x^n - a
-
-  rt = roots(f, 1)
-
-  if length(rt)>0
-    return rt[1]
-  else
-    return error("$a has no $n-th root")
-  end
+  error("$a has no $n-th root")
 end
 
+doc"""
+    roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
+> Compute all $n$-th roots of $a$, possibly none.
+"""
+function roots(a::nf_elem, n::Int)
+  #println("Compute $(n)th root of $a")
+
+  @assert n>0
+  if n==1
+    return [a]
+  end
+  if iszero(a)
+    return [a]
+  end
+
+  d = denominator(a)
+  rt = _roots_hensel(a*d^n, n)
+
+  return [x//d for x = rt]
+end
+
+
+function root(a::NfOrdElem, n::Int)
+  fl, rt = ispower(a.elem_in_nf, n)
+  if fl
+    O = parent(a)
+    if denominator(a, O) == 1
+      return O(rt)
+    end  
+  end
+
+  error("$a has no $n-th root")
+end
 
 function numerator(a::nf_elem)
    const _one = fmpz(1)
@@ -2341,7 +2381,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   delete!(de, ideal(ZK, 1))
   B=0
   
-  @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
+  @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
+                                  abs(norm(a*be)) == norm(FacElem(de))
 
   while k>=1
     D = Dict((p, div(fmpz(v), n^k)) for (p, v) = de if v >= n^k)
@@ -2384,7 +2425,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @v_do :CompactPresentation 2 @show old_n / new_n 
 
     be  *= FacElem(b)^(n^k)
-    @hassert :CompactPresentation 1 abs(norm(a*be)) == norm(FacElem(de))
+    @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
+                                    abs(norm(a*be)) == norm(FacElem(de))
     k -= 1
   end
   if length(de) == 0
@@ -2395,6 +2437,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 end
 
 function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
+  @assert !isone(p)
   P = p.gen_one
   for k=keys(de)
     if k.gen_one % P == 0
@@ -2406,7 +2449,9 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
         end
         #since it divides k it cannot divide any other (coprime!)
         p2 = simplify(k*inv(p)^v1).num
-        de[p2] = de[k]
+        if !isone(p2)
+          de[p2] = de[k]
+        end
         de[p] = de[k]*v1+e
         delete!(de, k)
         return
@@ -2512,21 +2557,33 @@ function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
   Rt, t = R["t"]
   fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
-  lf = factor(fpp)
-  return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return roots(fpp)
 end
 
 function roots(f::fmpq_poly, R::Nemo.NmodRing)
   Rt, t = R["t"]
   fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
-  lf = factor(fpp)
-  return elem_type(R)[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return roots(fpp)
+end
+
+function roots(f::fq_nmod_poly) # should be in Nemo and made available for all finite
+                                # fields I guess.
+  q = size(base_ring(f))
+  x = gen(parent(f))
+  if degree(f) < q
+    x = powmod(x, q, f)-x
+  else
+    x = x^q-x
+  end
+  f = gcd(f, x)
+  l = factor(f).fac
+  return fq_nmod[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
 end
 
 function roots(f::PolyElem)
   lf = factor(f)
-  return elem_type(base_ring(f))[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
 end    
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
@@ -2534,7 +2591,7 @@ function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
          (Ptr{fq_nmod_poly}, Int, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
          &z, n, &x, &base_ring(parent(z)))
      return z
- end
+end
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a

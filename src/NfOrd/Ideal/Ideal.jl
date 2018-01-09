@@ -847,6 +847,7 @@ function simplify(A::NfOrdIdl)
     A.gen_two = mod(A.gen_two, A.gen_one^2)
     return A
   end
+  return A
 end
 
 ################################################################################

@@ -18,7 +18,7 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
     end
   end
   i=2
-  b=sqrt(n)
+  b=Base.sqrt(n)
   while i<=b
     if list[i]
       j=i^2
@@ -285,7 +285,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
     end
   end
   i=3
-  b=sqrt(n)
+  b=Base.sqrt(n)
   while i<=b
     if primes[i]
       dt=prime_decomposition_type(O,i)
@@ -634,7 +634,7 @@ function C22_extensions(bound::Int)
   K,_=NumberField(x-1)
   Kx,x=PolynomialRing(K,"x")
 
-  b1=ceil(Int,sqrt(bound))
+  b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
   pairs=trues(n,n)
   poszero=b1+1
@@ -649,7 +649,7 @@ function C22_extensions(bound::Int)
   #sieve for squarefree  
   list= trues(b1)
   i=2
-  b=sqrt(b1)
+  b=Base.sqrt(b1)
   while i<=b
     if list[i]
       j=i^2
@@ -798,7 +798,7 @@ function C22_extensions_tame_real(bound::Int)
   K,_=NumberField(x-1)
   Kx,x=PolynomialRing(K,"x")
 
-  b1=floor(Int,sqrt(bound))
+  b1=floor(Int,Base.sqrt(bound))
   n=b1
   pairs=trues(b1,b1)
   
@@ -814,7 +814,7 @@ function C22_extensions_tame_real(bound::Int)
     k+=4
   end
   i=3
-  b=sqrt(b1)
+  b=Base.sqrt(b1)
   while i<=b
     if pairs[1,i]
       j=i^2

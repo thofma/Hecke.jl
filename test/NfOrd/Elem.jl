@@ -261,9 +261,9 @@
     c = @inferred minkowski_map(b, 1024)
     @test overlaps(c[1], root(RR(2), 3))
     @test Hecke.radiuslttwopower(c[1], -1024)
-    @test overlaps(c[2],  (-1//sqrt(RR(2))*root(RR(2), 3)))
+    @test overlaps(c[2],  (-1//Base.sqrt(RR(2))*root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[2], -1024)
-    @test overlaps(c[3], (sqrt(RR(3)//RR(2))*root(RR(2), 3)))
+    @test overlaps(c[3], (Base.sqrt(RR(3)//RR(2))*root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[3], -1024)
   end
 
@@ -275,9 +275,9 @@
     @test isa(c, Array{acb, 1})
     @test overlaps(c[1], CC(root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[1], -1024)
-    @test overlaps(c[2], (-CC(1)//2 + onei(CC)*sqrt(RR(3))//2)*CC(root(RR(2), 3)))
+    @test overlaps(c[2], (-CC(1)//2 + onei(CC)*Base.sqrt(RR(3))//2)*CC(root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[1], -1024)
-    @test overlaps(c[3], (-CC(1)//2 - onei(CC)*sqrt(RR(3))//2)*CC(root(RR(2), 3)))
+    @test overlaps(c[3], (-CC(1)//2 - onei(CC)*Base.sqrt(RR(3))//2)*CC(root(RR(2), 3)))
     @test Hecke.radiuslttwopower(c[1], -1024)
 
     c = @inferred conjugates_arb_log(b, 1024)

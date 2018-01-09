@@ -365,10 +365,6 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
   return true, v
 end
 
-function Base.round(::Type{fmpz}, x::BigFloat)
-  return fmpz(BigInt(round(x)))
-end
-
 function Base.round(::Type{fmpz}, x::arb)
   return round(fmpz, BigFloat(x))
 end

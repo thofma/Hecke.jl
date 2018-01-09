@@ -431,17 +431,6 @@ function fmpz_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpz_poly)
 end
 
 
-#= this is handled bu subst (or by f(a))
-function evaluate{S <: RingElem, T <: RingElem}(f::PolyElem{S}, a::T)
-  v = lead(f)
-  for i=degree(f)-1:-1:0
-    v = v*a+coeff(f, i)
-  end
-  return v
-end
-
-=#
-
 doc"""
     deflate(f::PolyElem, n::Int64) -> PolyElem
 > Given a polynomial $f$ in $x^n$, write it as a polynomial in $x$, ie. divide
@@ -485,7 +474,6 @@ function deflate(x::PolyElem)
   end
   return deflate(x, g), g
 end
-
 
 function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T}, t::PolyElem{T}) where T <: RingElem #from von zur Gathen: h needs to be monic
   @assert ismonic(h)
