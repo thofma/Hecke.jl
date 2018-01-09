@@ -2328,16 +2328,13 @@ end
 
 function ==(A::NfOrdIdl, B::FacElem{NfOrdIdl, NfOrdIdlSet})
   C = inv(B)*A
-  simplify!(C)
-  c = evaluate(C)
-  return isone(c.num) && isone(c.den)
+  return isone(C)
 end
 ==(B::FacElem{NfOrdIdl, NfOrdIdlSet}, A::NfOrdIdl) = A == B
 
 function ==(A::NfOrdFracIdl, B::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  C = FacElem(inv(B)*A, NfOrdIdlSet(order(A)))
-  c = factor_coprime(C)
-  return all(iszero, values(c))
+  C = A*inv(B)
+  return isone(C)
 end
 ==(B::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, A::NfOrdIdl) = A == B
 
@@ -2481,7 +2478,9 @@ end
 function ==(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
   return isone(A*inv(B))
 end
+
 ==(A::FacElem{NfOrdFracIdl,NfOrdFracIdlSet}, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = B==A
+
 ==(A::NfOrdFracIdl, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = isone(A*inv(B))
 
 function *(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
@@ -2544,10 +2543,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   dB = denominator(B)*index(ZK)
 
   @hassert :CompactPresentation 1 norm(B) == abs(norm(a))
-#  @show typeof(B)
-#  @show typeof(ideal(order(B), a))
-#  @show isone(B*inv(ideal(order(B), a)))
-  @hassert :CompactPresentation 2 isone(B*inv(ideal(order(B), a)))
+  @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
   @assert order(B) == ZK
   pp = fmpz(1)
