@@ -903,6 +903,7 @@ end
 #  an open variant where k is increased until we have a root?
 
 function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degree(f))
+  k = max(k, 2)
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
   ZX, X = FlintZZ["X"]
@@ -1089,6 +1090,7 @@ end
 #as above, but for f = x^m-a, so m-th root of a
 
 function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
+  k = max(k, 2)
   #@assert denominator(a) == 1                           
   #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
   #hard to test...
