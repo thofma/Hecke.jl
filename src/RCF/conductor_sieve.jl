@@ -526,14 +526,14 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   
   #Getting conductors
   l_conductors=conductors(O,n,bound, tame)
-  println("Number of conductors: $(length(l_conductors)) \n")
+  @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
   fields=NfRel_ns[]
   autos=Vector{NfRel_nsToNfRel_nsMor}[]
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
-    println("Conductor: $k ")
-    println("Left: $(length(l_conductors) - i)")
+    @vprint :QuadraticExt 1 "Conductor: $k \n"
+    @vprint :QuadraticExt 1 "Left: $(length(l_conductors) - i)\n"
     r,mr=ray_class_group(O,expo,k[1], k[2],inf_plc)
     if !_are_there_subs(r,gtype)
       continue
@@ -552,19 +552,19 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     for s in ls
       C=ray_class_field(mr*inv(s))
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
-        println("New Field")
+        @vprint :QuadraticExt 1 "New Field \n"
         L = number_field(C)
         if absolute_galois_group != :all
           autabs = absolute_automorphism_group(C, gens)
           G = generic_group(autabs, *)
           if absolute_galois_group == :_16T7
             if isisomorphic_to_16T7(G)
-              @vprint :QuadraticExt 1 "I found a field with Galois group 16T7 (C_2 x Q_8)"
+              @vprint :QuadraticExt 1 "I found a field with Galois group 16T7 (C_2 x Q_8)\n"
               @vtime :QuadraticExt 1 push!(fields, L)
             end
           elseif absolute_galois_group == :_8T5
             if isisomorphic_to_8T5(G)
-              @vprint :QuadraticExt 1 "I found a field with Galois group 8T5 (Q_8)"
+              @vprint :QuadraticExt 1 "I found a field with Galois group 8T5 (Q_8)\n"
               @vtime :QuadraticExt 1 push!(fields, L)
             end
           else
@@ -578,7 +578,6 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
         push!(autos,absolute_automorphism_group(C,gens))
       end
     end
-    println("\n")
   end
 
   return fields
@@ -1119,7 +1118,6 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumbe
   len=length(list_quad)
   fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor,1},fmpz, Array{fmpz,1}}[]
   
-  fac=factor(n).fac
   for K in list_quad
     len-=1
     
@@ -1167,7 +1165,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumbe
       ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
       for s in ls
-        if _trivial_action(s,act,fac,n)
+        if _trivial_action(s,act,n)
           continue
         end
         C=ray_class_field(mr*inv(s))
