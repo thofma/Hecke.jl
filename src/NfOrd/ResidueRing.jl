@@ -1283,6 +1283,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
         continue
       end
 
+
       rt = roots(fmodP)
       Q = P[1]
       found_prime = true
@@ -1344,7 +1345,6 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
     # This is the first step
 
     I = Q^2
-
     R, pi_R = quo(O, I)
 
     t1 = divexact(pi_R(subst(f, pi_F\zero_mod_Q)), pi_R(Q_pi))
