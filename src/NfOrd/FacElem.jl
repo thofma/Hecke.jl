@@ -253,7 +253,16 @@ doc"""
 > The factored fractional ideal $a*O$.
 """
 function ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField})
-  return FacElem(Dict((ideal(O, x), v) for (x, v) = a.fac))
+  de = Dict{NfOrdFracIdl, fmpz}()
+  for (e, k) = a.fac
+    I = ideal(O, e)
+    if haskey(de, I)
+      de[I] += k
+    else
+      de[I] = k
+    end
+  end
+  return FacElem(de)
 end
 
 #the normalise bit ensures that the "log" vector lies in the same vector space
