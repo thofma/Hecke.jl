@@ -241,13 +241,24 @@ end
 #  Function that determine if two G-modules are isomorphic, provided that the first is irreducible
 #
 
+global Bla1=[]
 function isisomorphic(M::FqGModule,N::FqGModule)
   
+  push!(Bla1, (M,N))
   @assert M.isirreducible
   @assert M.K==N.K
   @assert length(M.G)==length(N.G)
   if M.dim!=N.dim
     return false
+  end
+  if length(M.G)==1
+    f=charpoly(M.G[1])
+    g=charpoly(N.G[1])
+    if f==g
+      return true
+    else
+      return false
+    end
   end
   n=M.dim
   posfac=n
@@ -317,12 +328,12 @@ function isisomorphic(M::FqGModule,N::FqGModule)
           break
         end
         kerA=transpose(kerA)
-        posfac=gcd(posfac,a)
+        posfac=gcd(posfac,a) 
         if divisible(fmpz(posfac),a)
           v=submatrix(kerA, 1:1, 1:n)
           U=v
           T =spinning(v,G)
-          G1=[T*A*inv(T) for A in M.G]
+          G1=[T*mat*inv(T) for mat in M.G]
           i=2
           E=Generic.Mat{fq_nmod}[eye(T,a)]
           while rows(U)!= a
@@ -332,7 +343,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
               continue
             end
             O =spinning(w,G)
-            G2=[O*A*inv(O) for A in N.G]
+            G2=[O*mat*inv(O) for mat in N.G]
             if G1 == G2
               b=kerA*O
               x=transpose(solve(transpose(kerA),transpose(b)))
