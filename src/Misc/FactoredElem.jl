@@ -509,6 +509,20 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x.fac = ev
 end  
 
+function simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  z = deepcopy(x)
+  simplify!(z)
+  return z
+end
+
+function simplify!(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  de = factor_coprime(x)
+  if length(de)==0
+    de = Dict(ideal(order(base_ring(parent(x))), 1) => fmpz(1))
+  end
+  x.fac = Dict((i//1, k) for (i,k) = de)
+end
+
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = deepcopy(x)
   simplify!(x)
