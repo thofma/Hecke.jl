@@ -48,6 +48,8 @@ Nemo.parent_type(::Type{NfOrdElem}) = NfOrd
 
 Nemo.elem_type(::Type{NfOrd}) = NfOrdElem
 
+Nemo.show_minus_one(::Type{NfOrdElem}) = true
+
 ################################################################################
 #
 #  Basic field access
