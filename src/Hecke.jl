@@ -421,6 +421,28 @@ end
 
 ################################################################################
 #
+#  Custom test function
+#
+################################################################################
+
+function test_module(x, new::Bool = true)
+   julia_exe = Base.julia_cmd()
+   test_file = joinpath(pkgdir, "test/$x/")
+   test_file = test_file * "$y.jl";
+
+   if new
+     cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
+     info("spawning ", `$julia_exe -e \"$cmd\"`)
+     run(`$julia_exe -e $cmd`)
+   else
+     info("Running tests for $x in same session")
+     using Base.Test
+     include(test_file)
+   end
+end
+
+################################################################################
+#
 #   Do @infert and @test simultanously
 #
 ################################################################################
@@ -733,19 +755,6 @@ whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 #  Testing only "submodules"
 #
 ################################################################################
-
-function test_module(x, y = :all)
-   julia_exe = Base.julia_cmd()
-   if y == :all
-     test_file = joinpath(pkgdir, "test/$x.jl")
-   else
-     test_file = joinpath(pkgdir, "test/$x/$y.jl")
-   end
-
-   cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
-   info("spawning ", `$julia_exe -e \"$cmd\"`)
-   run(`$julia_exe --color=yes -e $cmd`)
-end
 
 #
 # stuff for 0.5
