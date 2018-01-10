@@ -435,7 +435,15 @@ function test_module(x, new::Bool = true)
      run(`$julia_exe -e $cmd`)
    else
      info("Running tests for $x in same session")
-     include(test_file)
+     try
+       include(test_file)
+     catch e
+       if isa(e, LoadError)
+         println("You need to do \"using Base.Test\"")
+       else
+         rethrow(e)
+       end
+     end
    end
 end
 
