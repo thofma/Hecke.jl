@@ -681,10 +681,12 @@ function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
         push!(prods, u * v)
       end
     end
-    #prods = nf_elem[ u * v for u in elt for v in elt ]
+    
     B = basis_mat(prods)
-    H = sub(hnf(B), (rows(B) - 1):rows(B), 1:degree(K))
+    H = sub(hnf(B), (rows(B) - degree(K) + 1):rows(B), 1:degree(K))
 
+    # TODO: Just take the product of the diagonal
+    #d=prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
     d = det(H)
 
     if iszero(d)
