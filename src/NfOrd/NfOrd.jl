@@ -508,8 +508,8 @@ function norm_change_const(O::NfOrd)
     r = sort(eigvals(N))
     if !(r[1] > 0)
       # more complicated methods are called for...
-      m = ceiling(Int, log(d)/log(2))
-      m += m%1
+      m = ceil(Int, log(d)/log(2))
+      m += m%2
       @assert iseven(m)
       l_max = root(trace(M^m), m) #an upper bound within a factor of 2
                                     #according to a paper by Victor Pan
