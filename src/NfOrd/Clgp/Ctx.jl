@@ -48,8 +48,12 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   # it probably should be a sep. function
   # however, there is nullspace - which is strange...
   l,t = hnf_with_transform(l)
-  t = sub(t, (1+clg.c.r2+1):rows(l), 1:rows(l))
-  l = lll(t)
+  if 1 + clg.c.r2 + 1 > rows(l)
+    t = zero_matrix(FlintZZ, 0, 0)
+  else
+    t = sub(t, (1+clg.c.r2+1):rows(l), 1:rows(l))
+  end
+    l = lll(t)
   clg.val_base = l
   return clg
 end
