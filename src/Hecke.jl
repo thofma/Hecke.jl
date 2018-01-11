@@ -74,7 +74,7 @@ import Nemo: nf_elem, AnticNumberField, degree, one!,
              roots, nbits, ispositive, sign, isprime, isunit,
              NumberField, CyclotomicField, MaximalRealSubfield,
              addmul!, deflate, gens, inflate, isconstant, issquare, 
-             swap_rows!, nmod, NmodRing
+             swap_rows!, nmod, NmodRing, inv!
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,

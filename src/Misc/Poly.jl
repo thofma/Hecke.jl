@@ -3,8 +3,8 @@ export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
        factor_mod_pk_init, hensel_lift, resultant_sircana
 
-function PolynomialRing(R::Ring)
-  return PolynomialRing(R, "_x")
+function PolynomialRing(R::Ring; cached::Bool = false)
+  return PolynomialRing(R, "_x", cached = cached)
 end
 
 function PolynomialRing(R::FlintRationalField, a::Symbol; cached::Bool = true)

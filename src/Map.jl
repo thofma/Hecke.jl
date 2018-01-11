@@ -1,6 +1,7 @@
 include("Map/Map.jl")
 include("Map/Composition.jl")
 include("Map/ResidueRingPoly.jl")
+include("Map/NfOrd.jl")
 include("Map/NumberField.jl")
 include("Map/AbGrp.jl")
 include("Map/NfRel.jl")

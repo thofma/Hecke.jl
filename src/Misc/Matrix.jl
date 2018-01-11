@@ -556,7 +556,12 @@ end
 
 function _rref(a::nmod_mat)
   b = rref(a)
-  return rank(b), b
+  # TODO: Clean up one we use new Nemo version.
+  if length(b) == 1
+    return rank(b), b
+  else
+    return b
+  end
 end
 
 function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})

@@ -313,6 +313,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   _, p, L, U = lufact(transpose(B))
+  inv!(p)
   U = _remove_non_pivot_cols(U, r)
   mult_table = Array{elem_type(R), 3}(r, r, r)
   c = A()

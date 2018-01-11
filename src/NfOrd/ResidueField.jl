@@ -25,7 +25,7 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
   return F, h
 end
 
-function _residue_field_nonindex_divisor(O, P)
+function _residue_field_nonindex_divisor(O, P, small::Type{Val{T}} = Val{false}) where {T}
   # This code assumes that P comes from prime_decomposition
   @assert has_2_elem(P) && isprime_known(P) && isprime(P)
 
@@ -34,14 +34,15 @@ function _residue_field_nonindex_divisor(O, P)
   f = nf(O).pol
   g = parent(f)(elem_in_nf(gtwo))
 
-  if nbits(P.gen_one) < 64
+  if small == Val{true}
+    @assert nbits(P.gen_one) < 64
     F, h = _residue_field_nonindex_divisor_helper(f, g, Int(minimum(P)))
 
     #return F, Mor(O, F, gen(F))
     mF = Mor(O, F, h)
     mF.P = P
     return F, mF
-  else
+  elseif small == Val{false}
     F, h = _residue_field_nonindex_divisor_helper(f, g, minimum(P))
 
     #return F, Mor(O, F, gen(F))
@@ -51,11 +52,12 @@ function _residue_field_nonindex_divisor(O, P)
   end
 end
 
-function _residue_field_index_divisor(O, P)
-  if nbits(minimum(P)) < 64
+function _residue_field_index_divisor(O, P, small::Type{Val{T}} = Val{false}) where {T}
+  if small == Val{true}
+    @assert nbits(minimum(P)) < 64
     f = NfOrdToFqNmodMor(O, P)
     return codomain(f), f
-  else
+  elseif small == Val{false}
     f = NfOrdToFqMor(O, P)
     return codomain(f), f
   end
@@ -67,6 +69,17 @@ function ResidueField(O::NfOrd, P::NfOrdIdl)
   else
     return _residue_field_index_divisor(O, P)
   end
+end
+
+function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
+  p = minimum(P)
+  nbits(p) > 64 && error("Minimum of prime ideal must be small (< 64 bits)")
+  if !isindex_divisor(O, minimum(P))
+    return _residue_field_nonindex_divisor(O, P, Val{true})
+  else
+    return _residue_field_index_divisor(O, P, Val{true})
+  end
+
 end
 
 function disc_log(x::fq_nmod, g::fq_nmod)

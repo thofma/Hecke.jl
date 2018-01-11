@@ -800,6 +800,7 @@ mutable struct quoringalg{T} <: Ring
   basis::Array{NfOrdElem, 1}
 
   function quoringalg(O::NfOrd, I::NfOrdIdl, p::T) where {T}
+
     z = new{T}()
     z.base_order = O
     z.ideal = I
@@ -812,7 +813,7 @@ mutable struct quoringalg{T} <: Ring
     Amodp[1,1] = 1
     Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
 
-    r, B = rref(Amodp)
+    r, B = _rref(Amodp)
     C = zero_matrix(Rp, degree(O)-r, degree(O))
     BB = Array{NfOrdElem}(degree(O) - r)
     pivots = Array{Int}(0)

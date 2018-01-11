@@ -15,11 +15,19 @@ function codomain(M::Map)
 end
 
 function image_function(f::Map)
-  return f.header.image
+  if isdefined(f.header, :image)
+    return f.header.image
+  else
+    return x -> image(f, x)
+  end
 end
 
 function preimage_function(f::Map)
-  return f.header.preimage
+  if isdefined(f.header, :preimage)
+    return f.header.preimage
+  else
+    return x -> preimage(f, x)
+  end
 end
 
 export Map, CoerceMap, ResidueRingPolyMap

@@ -221,14 +221,14 @@ end
 #
 ################################################################################
 
-function number_field(f::Generic.Poly{T}, s::String) where T
+function number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where T
   S = Symbol(s)
-  K = NfRel{T}(f, S)
+  K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
-function number_field(f::Generic.Poly{T}) where T
-  return number_field(f, "_\$")
+function number_field(f::Generic.Poly{T}, cached::Bool = false) where T
+  return number_field(f, "_\$", cached)
 end
  
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
@@ -387,19 +387,19 @@ end
 #
 ################################################################################
 
-function absolute_field(K::NfRel{nf_elem})
-  Ka, a, b, c = _absolute_field(K)
+function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
+  Ka, a, b, c = _absolute_field(K, cached)
   return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
-function absolute_field(K::NfRel{NfRelElem{T}}) where T
+function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
   return Ka, NfRelRelToNfRel(K, Ka, a, b, c), NfRelToNfRelMor(base_ring(K), Ka, a)
 end
 
 
 #Trager: p4, Algebraic Factoring and Rational Function Integration
-function _absolute_field(K::NfRel)
+function _absolute_field(K::NfRel, cached::Bool = false)
   f = K.pol
   kx = parent(f)
   k = base_ring(kx)
@@ -422,9 +422,9 @@ function _absolute_field(K::NfRel)
     g = compose(f, gen(kx) - l*gen(k))
   end
 
-  Ka = NumberField(N, "_\$")[1]
+  Ka = NumberField(N, "_\$", cached = cached)[1]
 
-  KaT, T = PolynomialRing(Ka, "T")
+  KaT, T = PolynomialRing(Ka, "T", cached = false)
 
   # map Ka -> K: gen(Ka) -> gen(K)+ k gen(k)
 
@@ -523,7 +523,7 @@ end
 
 function pure_extension(n::Int, gen::nf_elem)
   k = parent(gen)
-  kx, x = PolynomialRing(k)
+  kx, x = PolynomialRing(k, cached = false)
   return number_field(x^n-gen)
 end
 
@@ -633,13 +633,13 @@ end
 
 function charpoly(a::NfRelElem)
   M = representation_mat(a)
-  R = PolynomialRing(base_ring(parent(a)))[1]
+  R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
   return minpoly(R, M, true)
 end
 
 function minpoly(a::NfRelElem)
   M = representation_mat(a)
-  R = PolynomialRing(base_ring(parent(a)))[1]
+  R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
   return minpoly(R, M, false)
 end
 
@@ -714,12 +714,12 @@ function factor(f::Generic.Poly{NfRelElem{T}}) where T
 end
 
 function factor(f::PolyElem, K::Nemo.Field)
-  Kt, t = PolynomialRing(K)
+  Kt, t = PolynomialRing(K, cached = false)
   return factor(Kt([K(coeff(f, i)) for i=0:degree(f)]))
 end
 
 function roots(f::PolyElem, K::Nemo.Field)
-  Kt, t = PolynomialRing(K)
+  Kt, t = PolynomialRing(K, cached = false)
   return roots(Kt([K(coeff(f, i)) for i=0:degree(f)]))
 end
 
