@@ -508,8 +508,13 @@ function norm_change_const(O::NfOrd)
     r = sort(eigvals(N))
     if !(r[1] > 0)
       # more complicated methods are called for...
-      l_max = root(trace(M^d), d) #an upper bound within a factor of 2
+      m = ceiling(Int, log(d)/log(2))
+      m += m%1
+      @assert iseven(m)
+      l_max = root(trace(M^m), m) #an upper bound within a factor of 2
                                     #according to a paper by Victor Pan
+                                    #https://doi.org/10.1016/0898-1221(90)90236-D
+                                    #formula (1) and discussion
       pr = 128
       l_min = l_max
       if isodd(d) d+=1; end
