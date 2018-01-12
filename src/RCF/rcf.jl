@@ -1136,7 +1136,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 
     lp = collect(keys(Cp[im].bigK.frob_cache))
     pp = maximum(minimum(x) for x = lp)
-    S = JoinIter(lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1))
+    S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
 
     @assert C.Ka == base_ring(Cp[im].K)
 
@@ -1311,33 +1311,6 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     end
   end
   return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
-end
-
-struct JoinIter
-  i1::Any
-  i2::Any
-  function JoinIter(i1, i2)
-    r = new(i1, i2)
-    return r
-  end
-end
-
-function start(J::JoinIter)
-  return (start(J.i1), start(J.i2))
-end
-
-function next(J::JoinIter, state::Tuple) 
-  if done(J.i1, state[1])
-    i, s = next(J.i2, state[2])
-    return i, (state[1], s)
-  else
-    i, s = next(J.i1, state[1])
-    return i, (s, state[2])
-  end
-end  
-
-function done(J::JoinIter, state::Tuple)
-  return done(J.i1, state[1]) && done(J.i2, state[2])
 end
 
 #M is over K, mp: K -> K/k, expand M into a matrix over k
