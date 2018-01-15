@@ -131,7 +131,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   one = zeros(Rp, n - r)
   one[1] = Rp(1)
   A = AlgAss(Rp, mult_table, one)
-  f = (v -> sum([ v.coeffs[i]*BO[basis[i]] ]))
+  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
   return A, f
 end
 
@@ -203,7 +203,7 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
   one = zeros(F, n - r)
   one[1] = F(1)
   A = AlgAss(F, mult_table, one)
-  f = (v -> sum([ v.coeffs[i]*BO[basis[i]] ]))
+  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
   return A, f
 end
 
@@ -322,7 +322,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     for j = 1:r
       c = basis[i]*basis[j]
       for k = 1:n
-        d[k, 1] = c.coeffs[p[k]]
+        d[p[k], 1] = c.coeffs[k]
       end
       #TODO: Use that L and U are already triangular
       d = solve(L, d)
@@ -338,7 +338,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   end
   if idempotent
     for k = 1:n
-      d[k, 1] = e.coeffs[p[k]]
+      d[p[k], 1] = e.coeffs[k]
     end
     d = solve(L, d)
     for k = 1:r
@@ -351,7 +351,6 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     eA = AlgAss(R, mult_table)
   end
   eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
-
   return eA, eAtoA
 end
 
@@ -411,8 +410,18 @@ function split(A::AlgAss)
     return algebras
   end
   result = Vector{Tuple{AlgAss, AlgAssMor}}()
-  for a in algebras
-    append!(result, split(a[1]))
+  while length(algebras) != 0
+    B, BtoA = algebras[1]
+    deleteat!(algebras, 1)
+    b, algebras2 = issimple(B)
+    if b
+      push!(result, (B, BtoA))
+    else
+      for (C, CtoB) in algebras2
+        CtoA = compose_and_squash(BtoA, CtoB)
+        push!(algebras, (C, CtoA))
+      end
+    end
   end
   return result
 end
