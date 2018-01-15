@@ -127,6 +127,17 @@ function (A::AlgAss{T})(c::Array{T, 1}) where {T}
   return AlgAssElem{T}(A, c)
 end
 
+function Base.getindex(A::AlgAss{T}, i::Int) where {T}
+  (i < 1 || i > dim(A)) && error("Index must be in range $(1:dim(A))")
+  n = dim(A)
+  v = Vector{T}(n)
+  for j in 1:n
+    v[j] = zero(base_ring(A))
+  end
+  v[i] = one(base_ring(A))
+  return A(v)
+end
+
 ################################################################################
 #
 #  String I/O

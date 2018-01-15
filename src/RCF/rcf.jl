@@ -28,7 +28,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
 
   a = -coeff(K.pol, 0)
   a = a^r//h(a) # this assumes K/k to be abelian
-#  global last_rt = (a, degree(K))
+  #global last_rt = (a, degree(K))
   fl, b = hasroot(a, degree(K))
   @assert fl
 
@@ -1069,6 +1069,7 @@ end
 
 function extend_aut(A::ClassField, tau::T) where T <: Map
   # tau: k       -> k
+  #global last_extend = (A, tau)
   k = domain(tau)
   @assert k == codomain(tau)
   @assert k == base_field(A)
@@ -1127,36 +1128,16 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     z_i = i
 
     z_i_inv = invmod(z_i, om)
-#println("z_i: $z_i")
+
     Tau = NfRelToNfRelMor(C.Kr, C.Kr, tau, z)
     tau_Ka = NfToNfMor(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))))
     #TODO: need the inverse of this or similar...
     # currently, this is not used as it did not work.
 
     lp = collect(keys(Cp[im].bigK.frob_cache))
-    use_p = []
-    z = matrix(FlintZZ, 0, length(Cp[im].bigK.gen), fmpz[])
-    tau_z = matrix(FlintZZ, 0, length(Cp[im].bigK.gen), fmpz[])
-    for p = lp
-      local f
-      local tau_f
-      try
-        f = can_frobenius(p, Cp[im].bigK).coeff
-        tau_f = can_frobenius(induce_image(p, tau_Ka), Cp[im].bigK).coeff
-      catch e
-        if typeof(e) != BadPrime
-          rethrow(e)
-        end
-        continue
-      end
-      z = vcat(z, f)
-      tau_z = vcat(tau_z, tau_f)
-      push!(use_p, p)
-    end
-#    println("z: $z")
-#    println("tau(z): $tau_z")
-    z = hcat(z, om*identity_matrix(FlintZZ, rows(z)))
-    tau_z = hcat(tau_z, om*identity_matrix(FlintZZ, rows(z)))
+    pp = maximum(minimum(x) for x = lp)
+    S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
+
     @assert C.Ka == base_ring(Cp[im].K)
 
     all_s = []
@@ -1170,23 +1151,52 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb))
-      y = matrix(FlintZZ, length(use_p), 1, [div(om, degree(c))*can_frobenius(p, Cp[im].bigK, a) for p = use_p])
-      y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, a) for p = use_p])
-#      println("raw y: ", y')
-      fl, s = cansolve(z, y)
+    
+      z = matrix(FlintZZ, 0, length(Cp[im].bigK.gen), fmpz[])
+      za = Int[]
+      zta = Int[]
+      G = DiagonalGroup([om for i=1:length(Cp[im].bigK.gen)])
+      el_z = elem_type(G)[]
+      q, mq = quo(G, el_z)
+
+      for p = S
+        local f
+        local fa
+        local tfa
+        try
+          f = can_frobenius(p, Cp[im].bigK).coeff
+          fa = can_frobenius(p, Cp[im].bigK, a)
+          tfa = can_frobenius(p, Cp[im].bigK, tau_a)
+        catch e
+          if typeof(e) != BadPrime
+            rethrow(e)
+          end
+          continue
+        end
+        el = G(f)
+        if iszero(mq(el))
+          continue
+        end
+        push!(el_z, el)
+        q, mq = quo(G, el_z)
+        z = vcat(z, f)
+        push!(za, fa)
+        push!(zta, tfa)
+        if order(q) == 1
+          break
+        end
+      end
+
+      z = hcat(z, om*identity_matrix(FlintZZ, rows(z)))
+      fl, s = cansolve(z, matrix(FlintZZ, rows(z), 1, za))
       @assert fl
       s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
       #println("s: $s")
 
-      y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = use_p])
-#      println("raw y: ", y')
-      fl, tau_s = cansolve(z, y)
-#      println((tau_z*tau_s)')
+      fl, tau_s = cansolve(z, matrix(FlintZZ, rows(z), 1, zta))
       @assert fl
       tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
 #      println("tau(s): $tau_s")
-      y = matrix(FlintZZ, length(use_p), 1, [can_frobenius(p, Cp[im].bigK, tau_a) for p = use_p])
-
       # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
       push!(all_s, s)
       push!(all_tau_s, tau_s)
@@ -1196,7 +1206,10 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     # if the above is correct, then tau_s in <s>
     for j = 1:length(Cp)
       sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], false)
-      sG, msG = sub(Cp[im].bigK.AutG, vcat([(degree(Cp[j]) > om ? div(om, degree(Cp[i])):1)*Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], [degree(Cp[j])*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
+      sG, msG = sub(Cp[im].bigK.AutG, 
+          vcat([(degree(Cp[j]) > om ? div(om, degree(Cp[i])):1) * Cp[im].bigK.AutG(all_s[x]) 
+                       for x=1:length(all_s)],
+               [degree(Cp[j])*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
       ts = all_tau_s[j]
       x = Cp[im].bigK.AutG(ts)
       fl, y = haspreimage(msG, x)
@@ -1207,7 +1220,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #      println(div(om, degree(Cp[j])))
       mu = prod(all_emb[i][1]^Int(y[i]) for i=1:length(Cp)) * inv(all_emb[j][2])
       mmu = evaluate(mu)
-#      global last_rt = (mmu, degree(Cp[j]))
+      #global last_rt = (mmu, degree(Cp[j]))
       rt = root(mmu, degree(Cp[j]))
       push!(all_b, (rt, y))
     end

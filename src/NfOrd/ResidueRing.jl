@@ -903,6 +903,7 @@ end
 #  an open variant where k is increased until we have a root?
 
 function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degree(f))
+  k = max(k, 2)
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
   ZX, X = FlintZZ["X"]
@@ -1089,6 +1090,7 @@ end
 #as above, but for f = x^m-a, so m-th root of a
 
 function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
+  k = max(k, 2)
   #@assert denominator(a) == 1                           
   #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
   #hard to test...
@@ -1283,6 +1285,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
         continue
       end
 
+
       rt = roots(fmodP)
       Q = P[1]
       found_prime = true
@@ -1344,7 +1347,6 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
     # This is the first step
 
     I = Q^2
-
     R, pi_R = quo(O, I)
 
     t1 = divexact(pi_R(subst(f, pi_F\zero_mod_Q)), pi_R(Q_pi))
@@ -1492,7 +1494,8 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
 
   boundt2 = max(bd, R(1))
 
-  boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//4 + 2)*log(R(2))))//(2*deg_p*log(R(p)))
+  #CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
+  boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n)//(2*deg_p*log(R(p)))
 
   ss = abs_upper_bound(boundk, fmpz)
   return ss

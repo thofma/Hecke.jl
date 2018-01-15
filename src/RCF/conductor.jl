@@ -817,13 +817,13 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
   
  
   lp=mr.fact_mod
+  abs_disc=factor(discriminant(O)^n).fac
   if isempty(lp)
+    C.absolute_discriminant=abs_disc
     return true
   end
-
   K=nf(O)
-  #relative_disc=Dict{NfOrdIdl,Int}()
-  #abs_disc=Dict{fmpz,fmpz}()
+  
   discr=fmpz(1)
   mp=C.mq
   R=domain(mp)
@@ -850,13 +850,17 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
     discr*=fmpz(minimum(p))^qw
     if discr>bound
       return false
-    #else
-    #  abs_disc[minimum(p)]=qw
-    #  for q in keys(tmg)
-    #    if minimum(q)==minimum(p) 
-    #      relative_disc[q]=ap
-    #    end
-    #  end
+    else
+      if haskey(abs_disc, minimum(p))
+        abs_disc[minimum(p)]+=qw
+      else 
+        abs_disc[minimum(p)]=qw
+      end
+      #for q in keys(tmg)
+      #  if minimum(q)==minimum(p) 
+      #    relative_disc[q]=ap
+      #  end
+      #end
     end
   end
   
@@ -905,13 +909,17 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
         ap-=order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
       end
-      td=prime_decomposition_type(O,Int(minimum(p)))
-      np=fmpz(minimum(p))^(td[1][1]*length(td)*ap)
+      td=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
+      np=fmpz(minimum(p))^td
       discr*=np
       if discr>bound
         return false
-      #else
-      #  abs_disc[minimum(p)]=td[1][1]*length(td)*ap
+      else
+        if haskey(abs_disc, minimum(p))
+          abs_disc[minimum(p)]+=td
+        else 
+          abs_disc[minimum(p)]=td
+        end
       #  for q in keys(tmg)
       #    if minimum(q)==minimum(p) 
       #      relative_disc[q]=ap
@@ -921,7 +929,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
     end
   end
   #C.relative_discriminant=relative_disc
-  #C.absolute_discriminant=abs_disc
+  C.absolute_discriminant=abs_disc
   return true
 
 end

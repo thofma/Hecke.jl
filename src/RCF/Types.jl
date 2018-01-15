@@ -85,7 +85,7 @@ mutable struct ClassField
 
   conductor::Tuple{NfOrdIdl, Array{InfPlc,1}}
   relative_discriminant::Dict{NfOrdIdl, Int}
-  absolute_discriminant::Dict{fmpz,fmpz}
+  absolute_discriminant::Dict{fmpz,Int}
   cyc::Array{ClassField_pp, 1}
   A::NfRel_ns{nf_elem}
   function ClassField()

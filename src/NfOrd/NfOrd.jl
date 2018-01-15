@@ -48,6 +48,8 @@ Nemo.parent_type(::Type{NfOrdElem}) = NfOrd
 
 Nemo.elem_type(::Type{NfOrd}) = NfOrdElem
 
+Nemo.show_minus_one(::Type{NfOrdElem}) = true
+
 ################################################################################
 #
 #  Basic field access
@@ -506,8 +508,13 @@ function norm_change_const(O::NfOrd)
     r = sort(eigvals(N))
     if !(r[1] > 0)
       # more complicated methods are called for...
-      l_max = root(trace(M^d), d) #an upper bound within a factor of 2
+      m = ceil(Int, log(d)/log(2))
+      m += m%2
+      @assert iseven(m)
+      l_max = root(trace(M^m), m) #an upper bound within a factor of 2
                                     #according to a paper by Victor Pan
+                                    #https://doi.org/10.1016/0898-1221(90)90236-D
+                                    #formula (1) and discussion
       pr = 128
       l_min = l_max
       if isodd(d) d+=1; end
@@ -679,10 +686,12 @@ function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
         push!(prods, u * v)
       end
     end
-    #prods = nf_elem[ u * v for u in elt for v in elt ]
+    
     B = basis_mat(prods)
-    H = sub(hnf(B), (rows(B) - 1):rows(B), 1:degree(K))
+    H = sub(hnf(B), (rows(B) - degree(K) + 1):rows(B), 1:degree(K))
 
+    # TODO: Just take the product of the diagonal
+    #d=prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
     d = det(H)
 
     if iszero(d)

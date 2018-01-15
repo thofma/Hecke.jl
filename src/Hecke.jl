@@ -58,7 +58,7 @@ import Nemo: nf_elem, AnticNumberField, degree, one!,
              norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
              trace, mod, zero, 
              hash, PolynomialRing, coeff,
-             var, abs, min, iszero, one, sqrt, isone, deepcopy, rank, in,
+             var, abs, min, iszero, one, isone, rank, in,
              discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
              elem_from_mat_row, elem_to_mat_row!, order, signature,
              base_ring, compose, root, arf_struct, fmpq, valuation, remove,
@@ -421,6 +421,34 @@ end
 
 ################################################################################
 #
+#  Custom test function
+#
+################################################################################
+
+function test_module(x, new::Bool = true)
+   julia_exe = Base.julia_cmd()
+   test_file = joinpath(pkgdir, "test/$x.jl")
+
+   if new
+     cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
+     info("spawning ", `$julia_exe -e \"$cmd\"`)
+     run(`$julia_exe -e $cmd`)
+   else
+     info("Running tests for $x in same session")
+     try
+       include(test_file)
+     catch e
+       if isa(e, LoadError)
+         println("You need to do \"using Base.Test\"")
+       else
+         rethrow(e)
+       end
+     end
+   end
+end
+
+################################################################################
+#
 #   Do @infert and @test simultanously
 #
 ################################################################################
@@ -733,19 +761,6 @@ whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 #  Testing only "submodules"
 #
 ################################################################################
-
-function test_module(x, y = :all)
-   julia_exe = Base.julia_cmd()
-   if y == :all
-     test_file = joinpath(pkgdir, "test/$x.jl")
-   else
-     test_file = joinpath(pkgdir, "test/$x/$y.jl")
-   end
-
-   cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
-   info("spawning ", `$julia_exe -e \"$cmd\"`)
-   run(`$julia_exe --color=yes -e $cmd`)
-end
 
 #
 # stuff for 0.5

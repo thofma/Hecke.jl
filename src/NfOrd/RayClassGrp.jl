@@ -141,8 +141,7 @@ function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, 
     if !isempty(x)
       push!(newelems, FacElem(x))
     else 
-      K=parent(first(keys(elems.fac)))
-      push!(newelems,FacElem(Dict(K(1)=> 1)))
+      push!(newelems,FacElem(Dict(O(1)=> 1)))
     end
   end
   return newelems

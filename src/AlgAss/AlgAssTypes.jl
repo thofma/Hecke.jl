@@ -39,6 +39,7 @@ mutable struct AlgAssElem{T} <: RingElem
     return z
   end
 
+  # This does not make a copy of coeffs
   function AlgAssElem{T}(A::AlgAss{T}, coeffs::Array{T, 1}) where{T}
     z = new{T}()
     z.parent = A

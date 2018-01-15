@@ -2289,9 +2289,8 @@ function normal_basis(K::Nemo.AnticNumberField)
 end
 
 function norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
-  B = simplify(A)
   b = Dict{fmpz, fmpz}()
-  for (p, k) = B.fac
+  for (p, k) = A.fac
     n = norm(p)
     if haskey(b, n)
       b[n] += k
@@ -2304,18 +2303,38 @@ function norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
   return evaluate(bb)
 end
 
+function norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  b = Dict{fmpz, fmpz}()
+  for (p, k) = A.fac
+    n = norm(p)
+    v = numerator(n)
+    if haskey(b, v)
+      b[v] += k
+    else
+      b[v] = k
+    end
+    v = denominator(n)
+    if haskey(b, v)
+      b[v] -= k
+    else
+      b[v] = -k
+    end
+  end
+  bb = FacElem(b)
+  simplify!(bb)
+  return evaluate(bb)
+end
+
+
 function ==(A::NfOrdIdl, B::FacElem{NfOrdIdl, NfOrdIdlSet})
   C = inv(B)*A
-  simplify!(C)
-  c = evaluate(C)
-  return isone(c.num) && isone(c.den)
+  return isone(C)
 end
 ==(B::FacElem{NfOrdIdl, NfOrdIdlSet}, A::NfOrdIdl) = A == B
 
 function ==(A::NfOrdFracIdl, B::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
-  C = FacElem(inv(B)*A, NfOrdIdlSet(order(A)))
-  c = factor_coprime(C)
-  return all(iszero, values(c))
+  C = A*inv(B)
+  return isone(C)
 end
 ==(B::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, A::NfOrdIdl) = A == B
 
@@ -2384,6 +2403,9 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                   abs(norm(a*be)) == norm(FacElem(de))
 
+  @hassert :CompactPresentation 2 length(de) != 0 || isone(evaluate(ideal(ZK, a*be))) 
+  @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
+
   while k>=1
     D = Dict((p, div(fmpz(v), n^k)) for (p, v) = de if v >= n^k)
     if length(D) == 0
@@ -2427,16 +2449,61 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     be  *= FacElem(b)^(n^k)
     @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                     abs(norm(a*be)) == norm(FacElem(de))
+    @hassert :CompactPresentation 2 length(de) != 0 || isone(evaluate(ideal(ZK, a*be))) 
+    @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
     k -= 1
   end
   if length(de) == 0
     de[ideal(ZK, 1)] = 1
   end
+  @hassert :CompactPresentation 2 length(de) != 0 || isone(evaluate(ideal(ZK, a*be))) 
+  @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
+  @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
+                                    norm(ideal(ZK, a*be)) == abs(norm(FacElem(de)))
   b = evaluate_mod(a*be, evaluate(FacElem(de)))
   return inv(be)*b
 end
 
+function isone(A::NfOrdFracIdl)
+  B = simplify(A)
+  return B.den == 1 && isone(B.num)
+end
+
+function ==(A::FacElem{NfOrdFracIdl,NfOrdFracIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
+  return isone(A*inv(B))
+end
+function ==(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdIdl,NfOrdIdlSet})
+  return isone(A*inv(B))
+end
+function ==(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
+  return isone(A*inv(B))
+end
+
+==(A::FacElem{NfOrdFracIdl,NfOrdFracIdlSet}, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = B==A
+
+==(A::NfOrdFracIdl, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = isone(A*inv(B))
+
+function *(A::FacElem{NfOrdIdl,NfOrdIdlSet}, B::FacElem{NfOrdFracIdl,NfOrdFracIdlSet})
+  C = deepcopy(B)
+  for (i,k) = A.fac
+    C *= FacElem(Dict(i//1 => k))
+  end
+  return C
+end
+*(A::FacElem{NfOrdFracIdl,NfOrdFracIdlSet}, B::FacElem{NfOrdIdl,NfOrdIdlSet}) = B*A
+
+function isone(A::FacElem{NfOrdIdl, NfOrdIdlSet})
+  A = simplify(A)
+  return length(A.fac) == 1 && isone(first(keys(A.fac)))
+end
+
+function isone(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  A = simplify(A)
+  return length(A.fac) == 1 && isone(first(keys(A.fac)))
+end
+
 function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmpz)
+  @assert !isone(p)
   P = p.gen_one
   for k=keys(de)
     if k.gen_one % P == 0
@@ -2448,7 +2515,9 @@ function insert_prime_into_coprime(de::Dict{NfOrdIdl, fmpz}, p::NfOrdIdl, e::fmp
         end
         #since it divides k it cannot divide any other (coprime!)
         p2 = simplify(k*inv(p)^v1).num
-        de[p2] = de[k]
+        if !isone(p2)
+          de[p2] = de[k]
+        end
         de[p] = de[k]*v1+e
         delete!(de, k)
         return
@@ -2575,12 +2644,12 @@ function roots(f::fq_nmod_poly) # should be in Nemo and made available for all f
   end
   f = gcd(f, x)
   l = factor(f).fac
-  return fq_nmod[-trail(x) for x = keys(l) if degree(x)==1]
+  return fq_nmod[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
 end
 
 function roots(f::PolyElem)
   lf = factor(f)
-  return elem_type(base_ring(f))[-trail(x) for x= keys(lf.fac) if degree(x)==1]
+  return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
 end    
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)

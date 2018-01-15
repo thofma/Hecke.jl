@@ -8,6 +8,10 @@ base_ring(A::AlgAss) = A.base_ring
 
 dim(A::AlgAss) = size(A.mult_table, 1)
 
+elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T}
+
+parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
+
 ################################################################################
 #
 #  Construction
@@ -310,6 +314,10 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   for i = 1:r
     basis[i] = elem_from_mat_row(A, B, i)
   end
+
+  # The basis matrix of e*A with respect to A is
+  basis_mat_of_eA = sub(B, 1:r, 1:n)
+
   _, p, L, U = lufact(transpose(B))
   U = _remove_non_pivot_cols(U, r)
   mult_table = Array{elem_type(R), 3}(r, r, r)
@@ -344,9 +352,13 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     end
     @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
     dd = solve(U, dd)
-    return AlgAss(R, mult_table, [ dd[i, 1] for i = 1:r ])
+    eA = AlgAss(R, mult_table, [ dd[i, 1] for i = 1:r ])
+  else
+    eA = AlgAss(R, mult_table)
   end
-  return AlgAss(R, mult_table)
+  eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
+
+  return eA, eAtoA
 end
 
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
