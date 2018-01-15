@@ -494,7 +494,7 @@ end
 #
 ###############################################################################
 
-function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; tame::Bool=false, with_autos::Bool=false, absolute_galois_group::Symbol = :all)
+function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, with_autos::Bool=false, absolute_galois_group::Symbol = :all)
    
   K=nf(O) 
   n=prod(gtype)
@@ -504,7 +504,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   bound = FlintZZ(fmpq(bo))
 
 
-  if mod(n,2)==0
+  if mod(n,2)==0 && ramified_at_infplc
     inf_plc=real_places(K)
   end
   d=degree(O)
@@ -875,79 +875,80 @@ end
 
 ###############################################################################
 #
-#  Dihedral group D5
+#  Dihedral group D5 with equation of degree 5
 #
 ###############################################################################
 
 
-function conductorsD5(O::NfOrd, bound::fmpz)
+function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 
-  K=nf(O)
+  D=discriminant(O)
   ram_primes=collect(keys(factor(O.disc).fac))
   coprime_to=cat(1,ram_primes, fmpz(5))
   sort!(ram_primes)
-  b1=Int(root(fmpz(bound),8)) 
-
+  b=sqrt(BigFloat(bound_non_normal))
+  b1=floor(fmpz,sqrt(b/D))
   #
   # First, conductors for tamely ramified extensions
   #
   
-  sqf_list= squarefree_for_conductors(O, b1, 5, coprime_to=coprime_to)
-
+  sqf_list= squarefree_for_conductors(O, Int(b1), 5, coprime_to=coprime_to)
+  l=length(sqf_list)
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
-
-  wild_list=Tuple{Dict{NfOrdIdl, Int}, Int}[(Dict{NfOrdIdl, Int}(),1)]
   lp=prime_decomposition(O,5)
-  sq=fmpz(5)^(divexact(2,lp[1][2]))
-  bound_max_ap=clog(bound,sq) #bound on ap
-  bound_max_exp=div(bound_max_ap, 4) #bound on the exponent in the conductor
-  for i=2:bound_max_exp
-    if 5 in ram_primes && i % 2 == 1
-      continue
-    end
-    d1=Dict{NfOrdIdl, Int}()
-    for j=1:length(lp)
-      d1[lp[j][1]]=i
-    end
-    nq= sq^i
-    push!(wild_list, (d1, nq))
-  end
-
-  #the final list
-  final_list=Set(Tuple{Int, Dict{NfOrdIdl, Int}}[])
-  for el in sqf_list
-    nm=el^2
-    for (dic,nm2) in wild_list
-      if nm*nm2 > bound
-        continue
+  final_list=Tuple{Int, Dict{NfOrdIdl, Int}}[]
+  if 5 in ram_primes
+    bound_max_exp=flog(b1,5)
+    final_list=[(x, Dict{NfOrdIdl, Int}()) for x in sqf_list]
+    for i=2:bound_max_exp
+      isodd(i) && continue
+      d1=Dict{NfOrdIdl, Int}()
+      for j=1:length(lp)
+        d1[lp[j][1]]=i
       end
-      push!(final_list, (el,dic))
+      min_id=div(i,2)
+      for s=1:l 
+        if sqf_list[s]*5^min_id<b1
+          push!(final_list,(sqf_list[s],d1))
+        end
+      end
+    end
+  else
+    bound_max_exp=flog(b1,5)
+    final_list=[(x, Dict{NfOrdIdl, Int}()) for x in sqf_list]
+    for i=2:bound_max_exp
+      d1=Dict{NfOrdIdl, Int}()
+      for j=1:length(lp)
+        d1[lp[j][1]]=i
+      end
+      for s=1:l 
+        if sqf_list[s]*5^i<b1
+          push!(final_list,(sqf_list[s],d1))
+        end
+      end
     end
   end
-
   return final_list
 
 end
 
+#The input are the absolute bound for the non-normal extension of degree 5 and the list of the quadratic fields
 function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField,1})
   
-  fieldslist=Tuple{NfRel_ns, NfRel_nsToNfRel_nsMor,fmpz}[]
+  fieldslist=Tuple{AnticNumberField, fmpz}[]
   len=length(quad_fields)
   for K in quad_fields
     len-=1
     
     println("Field: $K")
     println("Fields left:", len)
+    
+    
     O=maximal_order(K)
     D=abs(discriminant(O))
-    if D^5>absolute_bound
-      continue
-    end
-    bo = ceil(Rational{BigInt}(absolute_bound//D^5))
-    bound = FlintZZ(fmpq(bo))
-   
+  
     C,mC=class_group(O)
     allow_cache!(mC)
     cgrp=false
@@ -966,8 +967,7 @@ function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField
     
              
     #Getting conductors
-    l_conductors=conductorsD5(O,bound)
-
+    l_conductors=conductorsD5(O,absolute_bound)
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
@@ -984,14 +984,13 @@ function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField
           continue
         end
         C=ray_class_field(mr*inv(s))
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,5)
+        if Hecke._is_conductor_min_normal(C,a)
+        println("New Field")
           L=number_field(C)
-          ram_primes=Set(collect(keys(factor(a).fac)))
-          for p in keys(factor(O.disc).fac)
-            push!(ram_primes, p)
-          end
-          aut=absolute_automorphism_group(C,gens)
-          push!(fieldslist,(L,aut, evaluate(FacElem(C.absolute_discriminant)), collect(ram_primes)))
+          auto=Hecke.extend_aut(C, gens[1])
+          F=_quintic_ext(auto)
+          println(F)
+          push!(fieldslist, (F,D^4*minimum(mr.modulus_fin)))
         end
       end
     end
@@ -1000,6 +999,28 @@ function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField
   return fieldslist
   
 end
+
+function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
+
+  #first, find a generator of the simple extension
+  L=domain(auto)
+  S,mS=simple_extension(L)
+  x=mS(gen(S))
+  
+  #Find primitive element 
+  pr_el=x+auto(x)
+  
+  #Take minimal polynomial; I need to embed the element in the absolute extension
+  pol=absolute_minpoly(pr_el)
+  if degree(pol)==15
+    return number_field(pol)
+  else
+    pr_el=x*(auto(x))
+    return number_field(absolute_minpoly(pr_el))[1]
+  end
+  
+end
+
 
 ###############################################################################
 #
@@ -1116,7 +1137,7 @@ end
 function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumberField,1} ; totally_real::Bool=false, complex::Bool=false, tame::Bool=false)
   
   len=length(list_quad)
-  fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor,1},fmpz, Array{fmpz,1}}[]
+  fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
   
   for K in list_quad
     len-=1
@@ -1305,11 +1326,17 @@ end
 #  S3 x C5 extensions
 #
 ###############################################################################
-
 function S3xC5_extensions(absolute_bound::fmpz)
 
   bound_quadratic= Int(root(absolute_bound, 15))
   list_quad=quadratic_extensions(bound_quadratic, complex=true)
+  return S3xC5_extensions(absolute_bound, list_quad)
+end
+
+
+function S3xC5_extensions(absolute_bound::fmpz, list_quad::Array{AnticNumberField, 1}; other::fmpz=fmpz(1))
+
+
   fieldslist=Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1},fmpz, Array{fmpz,1}}[]
 
   for K in list_quad
@@ -1320,7 +1347,8 @@ function S3xC5_extensions(absolute_bound::fmpz)
     if D^15>absolute_bound
       continue
     end
-    bo = ceil(Rational{BigInt}(absolute_bound//D^15))
+    nabsolute_bound=min(absolute_bound, D^15*other^2)
+    bo = ceil(Rational{BigInt}(nabsolute_bound//D^15))
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
@@ -1398,22 +1426,16 @@ end
 #
 ###############################################################################
 
+function C9semiC4(absolute_bound::fmpz; real::Bool=false)
 
-
-
-function C9semiC4(absolute_bound::fmpz)
-  
-  field=1
-  
   Qx,x=PolynomialRing(FlintQQ, "x")
   K,a=NumberField(x-1,"a")
   O=maximal_order(K)
 
-  l=Hecke.abelian_normal_extensions(O,[4], root(absolute_bound, 9))
+  l=Hecke.abelian_normal_extensions(O,[4], root(absolute_bound, 9), ramified_at_infplc=!real)
   return C9semiC4(absolute_bound, l)
   
 end
- 
 
 function C9semiC4(absolute_bound::fmpz, l)  
   
@@ -1421,6 +1443,7 @@ function C9semiC4(absolute_bound::fmpz, l)
   for L in l
     S=Hecke.simple_extension(L)[1]
     K=Hecke.absolute_field(S)[1]
+    K=simplify(K, canonical=true)[1]
     println(K)
     O=maximal_order(K)
     D=abs(discriminant(O))
@@ -1467,10 +1490,13 @@ function C9semiC4(absolute_bound::fmpz, l)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) < absolute_bound
           absolute_bound=evaluate(FacElem(C.absolute_discriminant))
           println("\n New Field with discriminant ", absolute_bound)
-          field=number_field(C)
+          field=C
         end
       end
     end
+  end
+  if typeof(field)==ClassField
+    field=number_field(C)
   end
   
   return field
@@ -1484,10 +1510,10 @@ end
 #
 ###############################################################################
 
-function _discriminant_bound(autos::Vector{NfRel_nsToNfRel_nsMor{nf_elem}}, ram_primes::Array{fmpz,1}, bound::fmpz)
+function _discriminant_bound(autos::Vector{NfRel_nsToNfRel_nsMor}, ram_primes::Array{fmpz,1}, bound::fmpz)
 
   K=_to_non_normal(autos)
-  
+  println("Doing $(K)")
   #now, compute the discriminant of K. Since we know the ramified primes, 
   #we know the primes dividing the discriminant and this is easier than computing the maximal order.
   disc=fmpz(1)
@@ -1509,7 +1535,7 @@ end
 #
 ###############################################################################
 
-function _to_non_normal(autos::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
+function _to_non_normal(autos)#::Vector{NfRel_nsToNfRel_nsMor})
 
   #first, find a generator of the simple extension
   L=domain(autos[1])
@@ -1517,7 +1543,6 @@ function _to_non_normal(autos::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
   x=mS(gen(S))
   
   #find an element of order 2 in the automorphisms
-  
   Id=find_identity(autos,*)
   i=1
   while autos[i]==Id || autos[i]*autos[i]!=Id
@@ -1533,7 +1558,7 @@ function _to_non_normal(autos::Vector{NfRel_nsToNfRel_nsMor{nf_elem}})
     return number_field(pol)
   else
     pr_el=x*(autos[i](x))
-    return number_field(absolute_minpoly(pr_el))
+    return number_field(absolute_minpoly(pr_el))[1]
   end
   
 end

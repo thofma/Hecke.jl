@@ -521,7 +521,13 @@ function minpoly_sparse(a::NfRel_nsElem)
       if fl
         so = mul(so, sub(M, 1:i, n+1:cols(M)))
         kt, t = k["t"]
-        f = t^i - sum(c*t^(k-1) for (k,c) = so)
+        # TH: If so is the zero vector, we cannot use the iteration,
+        # so we do it by hand.
+        if length(so.pos) == 0
+          f = t^i
+        else
+          f = t^i - sum(c*t^(k-1) for (k,c) = so)
+        end
         return f
       end
     end  
