@@ -95,7 +95,11 @@ function _non_pivot_cols(M::MatElem)
   return result
 end
 
-function AlgAss(O::NfOrd, I::NfOrdIdl, p::fmpz)
+function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
+  if typeof(p) == fmpz && nbits(p) < 64
+    p = Int(p)
+  end
+
   n = degree(O)
   BO = Hecke.basis(O)
   Rp = ResidueRing(FlintZZ, p)
@@ -103,10 +107,9 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::fmpz)
   # Compute a basis of O/I (over F_p)
   M = MatrixSpace(Rp, n, n)(basis_mat(I, Val{false}))
   M = vcat(M, zero_matrix(Rp, 1, n))
-  M[n + 1, n] = Rp(1)
-  rref!(M)
-  #TODO: Can rref! return the rank?
-  r = rank(M) - 1
+  M[n + 1, 1] = Rp(1)
+  r = rref!(M)
+  r = r - 1
   n == r && error("Cannot construct zero dimensional algebra.")
   # We save the indices of the columns of M without a pivot
   basis = [1]
@@ -127,7 +130,9 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::fmpz)
 
   one = zeros(Rp, n - r)
   one[1] = Rp(1)
-  return AlgAss(Rp, mult_table, one)
+  A = AlgAss(Rp, mult_table, one)
+  f = (v -> sum([ v.coeffs[i]*BO[basis[i]] ]))
+  return A, f
 end
 
 # Cohen "Advanced Topics in Computational Number Theory" Algorithm 1.5.2
@@ -164,14 +169,14 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
   end
   BI = _modular_basis(PBI, p)
   M = zero_matrix(F, n + 1, n)
-  M[n + 1, n] = F(1)
+  M[n + 1, 1] = F(1)
   for i = 1:n
     for j = 1:n
       M[i, j] = mmF(coeff(BI[i], j - 1))
     end
   end
-  rref!(M)
-  r = rank(M) - 1
+  r = rref!(M)
+  r = r - 1
   n == r && error("Cannot construct zero dimensional algebra.")
   basis = [1]
   append!(basis, _non_pivot_cols(M))
@@ -197,7 +202,9 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
 
   one = zeros(F, n - r)
   one[1] = F(1)
-  return AlgAss(F, mult_table, one)
+  A = AlgAss(F, mult_table, one)
+  f = (v -> sum([ v.coeffs[i]*BO[basis[i]] ]))
+  return A, f
 end
 
 ################################################################################
@@ -295,20 +302,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   R = base_ring(A)
   n = dim(A)
   B = representation_mat(e)
-  rref!(B)
-  # rref! does not always return the rank (?)
-  r = 0
-  for i = n:-1:1
-    for j = 1:n
-      if !iszero(B[i, j])
-        r = i
-        break
-      end
-    end
-    if r != 0
-      break
-    end
-  end
+  r = rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   basis = Vector{AlgAssElem}(r)
   for i = 1:r
@@ -364,7 +358,7 @@ end
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
     if compute_algebras == Val{true}
-      return true, [ A ]
+      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)))) ]
     else
       return true
     end
@@ -381,7 +375,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 
   if k == 1
-    return true, [ A ]
+    return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)))) ]
   end
 
   while true
@@ -407,7 +401,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
       idem += coeff(f1, i)*x
       x *= a
     end
-    return false, [ subalgebra(A, idem, true), subalgebra(A, one(A) - idem, true) ]
+    return false, [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
   end
 end
 
@@ -416,9 +410,9 @@ function split(A::AlgAss)
   if b
     return algebras
   end
-  result = Vector{typeof(A)}()
+  result = Vector{Tuple{AlgAss, AlgAssMor}}()
   for a in algebras
-    append!(result, split(a))
+    append!(result, split(a[1]))
   end
   return result
 end
