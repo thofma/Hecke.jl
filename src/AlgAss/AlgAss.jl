@@ -411,8 +411,7 @@ function split(A::AlgAss)
   end
   result = Vector{Tuple{AlgAss, AlgAssMor}}()
   while length(algebras) != 0
-    B, BtoA = algebras[1]
-    deleteat!(algebras, 1)
+    B, BtoA = pop!(algebras)
     b, algebras2 = issimple(B)
     if b
       push!(result, (B, BtoA))
