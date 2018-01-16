@@ -945,10 +945,10 @@ function norm(f::PolyElem{nf_elem})
 
   Qy = parent(K.pol)
   y = gen(Qy)
-  Qyx, x = PolynomialRing(Qy, "x")
+  Qyx, x = PolynomialRing(Qy, "x", cached = false)
 
   Qx = PolynomialRing(FlintQQ, "x")[1]
-  Qxy = PolynomialRing(Qx, "y")[1]
+  Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
   T = evaluate(K.pol, gen(Qxy))
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))

@@ -1242,7 +1242,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       push!(all_b, (rt, y))
     end
     Ka = C.Ka
-    KaT, X = Ka["T"]
+    KaT, X = PolynomialRing(Ka, "T", cached = false)
     KK, gKK = number_field([X^degree(Cp[j]) - evaluate(all_emb[j][1]) for j=1:length(Cp)])
     h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, degree(Cp[j])))) for j=1:length(Cp)) for i=1:length(Cp)])
 
