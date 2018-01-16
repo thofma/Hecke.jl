@@ -408,6 +408,122 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
   return result
 end
 
+function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+  if degree_limit == 0
+    degree_limit = degree(O)
+  end
+
+  if haskey(O.index_div, fmpz(p))
+    lp = O.index_div[fmpz(p)]
+    z = Tuple{NfOrdIdl, Int}[]
+    for (Q, e) in lp
+      if degree(Q) <= degree_limit
+        push!(z, (Q, e))
+      end
+    end
+    return z
+  end
+
+  # Firstly compute the p-radical of O
+  Ip = pradical(O, p)
+  A, AtoO = AlgAss(O, Ip, p)
+  AA = split(A)
+
+  ideals = Vector{NfOrdIdl}()
+  M = p*identity_matrix(FlintZZ, degree(O))
+  m = zero_matrix(FlintZZ, 1, degree(O))
+  for (B, BtoA) in AA
+    N = M
+    f = dim(B)
+    for i = 1:f
+      a = AtoO(BtoA(B[i]))
+      b = elem_in_basis(a)
+      for j = 1:degree(O)
+        m[1, j] = deepcopy(b[j])
+      end
+      N = vcat(N, m)
+    end
+    N = sub(_hnf(N, :lowerleft), f + 1:degree(O) + f, 1:degree(O))
+    P = ideal(O, N)
+    P.norm = fmpz(p)^f
+    P.splitting_type = (0, f)
+    push!(ideals, P)
+  end
+
+  result = Vector{NfOrdIdl}()
+
+  for j in 1:length(ideals)
+    P = ideals[j]
+    f = P.splitting_type[2]
+
+    if f > degree_limit || f < lower_limit
+      continue
+    end
+
+    # The following does not work if there is only one prime ideal
+    if length(ideals) > 1 && (1-1/BigInt(p))^degree(O) < 0.1
+      # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
+      # number theory".
+
+      # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
+      if j == 1
+        Vp = ideals[2]
+        k = 3
+      else
+        Vp = ideals[1]
+        k = 2;
+      end
+
+      for i in k:length(ideals)
+        if i == j
+          continue
+        else
+          Vp = intersection(Vp, ideals[i])
+        end
+      end
+
+      u, v = idempotents(P, Vp)
+
+      x = zero(parent(u))
+
+      if !iszero(mod(norm(u), norm(P)*p))
+        x = u
+      elseif !iszero(mod(norm(u + p), norm(P)*p))
+        x = u + p
+      elseif !iszero(mod(norm(u - p), norm(P)*p))
+        x = u - p
+      else
+        for i in 1:degree(O)
+          if !iszero(mod(norm(v*basis(P)[i] + u), norm(P)*p))
+            x = v*basis(P)[i] + u
+          end
+        end
+      end
+
+      @hassert :NfOrd 1 !iszero(x)
+      @hassert :NfOrd 2 O*O(p) + O*x == P
+
+      P.gen_one = p
+      P.gen_two = x
+      P.gens_normal = p
+      P.gens_weakly_normal = 1
+    else
+      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/p))\n"
+      _assure_weakly_normal_presentation(P)
+      assure_2_normal(P)
+    end
+
+    e = Int(valuation(nf(O)(p), P))
+    P.splitting_type = e, f
+    P.is_prime = 1
+    push!(result, (P, e))
+  end
+  if degree_limit >= degree(O)
+    O.index_div[fmpz(p)] = result
+  end
+  return result
+end
+
 function uniformizer(P::NfOrdIdl)
   p = minimum(P)
   if P.gens_normal == p
@@ -696,8 +812,7 @@ mutable struct quoringalg{T} <: Ring
     Amodp[1,1] = 1
     Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
 
-    # I think rref can/should also return the rank
-    r, B = _rref(Amodp)
+    r, B = rref(Amodp)
     C = zero_matrix(Rp, degree(O)-r, degree(O))
     BB = Array{NfOrdElem}(degree(O) - r)
     pivots = Array{Int}(0)
