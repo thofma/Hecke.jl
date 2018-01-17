@@ -6,7 +6,7 @@
 
 base_ring(A::AlgAss) = A.base_ring
 
-dim(A::AlgAss) = size(A.mult_table, 1)
+Generic.dim(A::AlgAss) = size(A.mult_table, 1)
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T}
 
