@@ -2780,45 +2780,54 @@ function polredabs(K::AnticNumberField)
 
   l = zeros(FlintZZ, n)
   l[i] = 1
+
+  scale = 1.0
   enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = 1.01)
 
-  if E.x[1, i] == 0
-    error("enum too short")
-  end
   a = gen(K)
   all_a = [a]
   la = length(a)*BigFloat(E.t_den^2)
   Ec = BigFloat(E.c//E.d)
   eps = BigFloat(E.d)^(1//2)
 
-  while enum_ctx_next(E)
-#    @show E.x
-    M = E.x*E.t
-    q = elem_from_mat_row(K, M, 1, E.t_den)
-    bb = _block(q, R, ap)
-    if length(bb) < n
-      continue
-    end
-#    lq = length(q)
-#    lqq = (BigFloat(E.c//E.d) - E.l[1])/BigInt(E.t_den^2)
-    lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
+  found_pe = false
+  while !found_pe
+    while enum_ctx_next(E)
+#      @show E.x
+      M = E.x*E.t
+      q = elem_from_mat_row(K, M, 1, E.t_den)
+      bb = _block(q, R, ap)
+      if length(bb) < n
+        continue
+      end
+      found_pe = true
+#  @show    llq = length(q)
+#  @show sum(E.C[i,i]*(BigFloat(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit)/BigInt(E.t_den^2)
+      lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2) #wrong, but where?
+#      @show lq/E.t_den^2
 
-    if lq < la + eps
-      if lq > la - eps
-        push!(all_a, q)
-#        @show "new one"
-      else
-        a = q
-        all_a = [a]
-        if lq/la < 0.8
-#          @show "re-init"
-          enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
-        end
-        la = lq
-#        @show Float64(la/E.t_den^2)
-      end  
+      if lq < la + eps
+        if lq > la - eps
+          push!(all_a, q)
+  #        @show "new one"
+        else
+          a = q
+          all_a = [a]
+          if lq/la < 0.8
+  #          @show "re-init"
+            enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
+            Ec = BigFloat(E.c//E.d)
+          end
+          la = lq
+  #        @show Float64(la/E.t_den^2)
+        end  
+      end
     end
+    scale *= 2
+    enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = scale)
+    Ec = BigFloat(E.c//E.d)
   end
+
   setprecision(BigFloat, old)
   all_f = [(x, minpoly(x)) for x=all_a]
   all_d = [abs(discriminant(x[2])) for x= all_f]
