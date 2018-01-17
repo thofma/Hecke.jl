@@ -96,10 +96,6 @@ function _non_pivot_cols(M::MatElem)
 end
 
 function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
-  if typeof(p) == fmpz && nbits(p) < 64
-    p = Int(p)
-  end
-
   n = degree(O)
   BO = Hecke.basis(O)
   Rp = ResidueRing(FlintZZ, p)
