@@ -57,7 +57,15 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     throw(BadPrime(p))
   end
 
-  F, mF = ResidueField(Zk, p)
+  if nbits(minimum(p)) > 64
+    error("Oops")
+  end
+
+  try
+    F, mF = ResidueFieldSmall(Zk, p)
+  catch e
+    @show e
+  end
   mF = extend_easy(mF, number_field(Zk))
 
   #K = sqrt[n](gen), an automorphism will be
@@ -94,7 +102,16 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
     throw(BadPrime(p))
   end
 
-  F, mF = ResidueField(Zk, p)
+  if nbits(minimum(p)) > 64
+    error("Oops")
+  end
+
+
+  try
+    F, mF = ResidueFieldSmall(Zk, p)
+  catch e
+    @show e
+  end
   mF = extend_easy(mF, number_field(Zk))
 
   #K = sqrt[n](gen), an automorphism will be
@@ -633,7 +650,7 @@ function _rcf_descent(CF::ClassField_pp)
       lP = Hecke.prime_decomposition_nonindex(C.mp[2], p)
       P = lP[1][1]
       Q = lP[end][1]
-      F,  mF = ResidueField(order(P), P)
+      F, mF = ResidueFieldSmall(order(P), P)
       Ft, t = PolynomialRing(F)
       mFp = extend_easy(mF, C.Ka)
       ap = mFp(CF.a)
@@ -691,7 +708,7 @@ function _rcf_descent(CF::ClassField_pp)
     @assert degree(f) == length(o)
     @assert length(o) == e
     @vtime :ClassField 2 g = [coerce_down(coeff(f, i)) for i=0:Int(e)]
-    return PolynomialRing(parent(g[1]))[1](g)
+    return PolynomialRing(parent(g[1]), cached = false)[1](g)
   end
 
 #  n = prod(os) # maybe primitive??  
@@ -701,7 +718,7 @@ function _rcf_descent(CF::ClassField_pp)
   #now the minpoly of t - via Galois as this is easiest to implement...
   q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
   @assert order(q) == order(domain(CF.mq))
-  AT, T = PolynomialRing(A, "T")
+  AT, T = PolynomialRing(A, "T", cached = false)
   @vprint :ClassField 2 "char poly...\n"
   f = minpoly(t)
   @vprint :ClassField 2 "... done\n"
@@ -715,7 +732,7 @@ function _rcf_descent(CF::ClassField_pp)
     #now the minpoly of t - via Galois as this is easiest to implement...
     q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
     @assert order(q) == order(domain(CF.mq))
-    AT, T = PolynomialRing(A, "T")
+    AT, T = PolynomialRing(A, "T", cached = false)
     @vprint :ClassField 2 "char poly...\n"
     f = minpoly(t)
     @vprint :ClassField 2 "... done\n"
@@ -1225,7 +1242,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       push!(all_b, (rt, y))
     end
     Ka = C.Ka
-    KaT, X = Ka["T"]
+    KaT, X = PolynomialRing(Ka, "T", cached = false)
     KK, gKK = number_field([X^degree(Cp[j]) - evaluate(all_emb[j][1]) for j=1:length(Cp)])
     h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, degree(Cp[j])))) for j=1:length(Cp)) for i=1:length(Cp)])
 

@@ -44,7 +44,7 @@ mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
     # L -> K, gen(L) -> c
 
     k = K.base_ring
-    Ly, y = PolynomialRing(L)
+    Ly, y = PolynomialRing(L, cached = false)
     R = parent(k.pol)
     S = parent(L.pol)
 
@@ -83,7 +83,7 @@ mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}}
     # L -> K, gen(L) -> c
 
     k = K.base_ring
-    Ly, y = PolynomialRing(L)
+    Ly, y = PolynomialRing(L, cached = false)
     R = parent(k.pol)
     S = parent(L.pol)
 

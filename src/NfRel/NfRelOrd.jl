@@ -575,6 +575,17 @@ end
 #
 ################################################################################
 
+function nf_elem_poly_to_fq_poly(R::FqPolyRing, m::NfToFqMor, f::Generic.Poly{nf_elem})
+  @assert codomain(m) == base_ring(R)
+  @assert domain(m) == base_ring(parent(f))
+
+  g = zero(R)
+  for i = 0:degree(f)
+    setcoeff!(g, i, m(coeff(f, i)))
+  end
+  return g
+end
+
 function nf_elem_poly_to_fq_nmod_poly(R::FqNmodPolyRing, m::NfToFqNmodMor, f::Generic.Poly{nf_elem})
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
@@ -587,6 +598,17 @@ function nf_elem_poly_to_fq_nmod_poly(R::FqNmodPolyRing, m::NfToFqNmodMor, f::Ge
 end
 
 function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fq_nmod_poly)
+  @assert codomain(m) == base_ring(R)
+  @assert domain(m) == base_ring(parent(f))
+
+  g = zero(R)
+  for i = 0:degree(f)
+    setcoeff!(g, i, m(coeff(f, i)))
+  end
+  return g
+end
+
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fq_poly)
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
 
@@ -613,18 +635,18 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
   immF = inv(mmF)
   Fy, y = F["y"]
 
-  Tmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, T)
+  Tmodp = nf_elem_poly_to_fq_poly(Fy, mmF, T)
   fac = factor(Tmodp)
   g = Kx(1)
   for (t, e) in fac
-    mul!(g, g, fq_nmod_poly_to_nf_elem_poly(Kx, immF, t))
+    mul!(g, g, fq_poly_to_nf_elem_poly(Kx, immF, t))
   end
-  gmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, g)
+  gmodp = nf_elem_poly_to_fq_poly(Fy, mmF, g)
   hmodp = divexact(Tmodp, gmodp)
-  h = fq_nmod_poly_to_nf_elem_poly(Kx, immF, hmodp)
+  h = fq_poly_to_nf_elem_poly(Kx, immF, hmodp)
   a = anti_uniformizer(p)
   f = a*(g*h - T)
-  fmodp = nf_elem_poly_to_fq_nmod_poly(Fy, mmF, f)
+  fmodp = nf_elem_poly_to_fq_poly(Fy, mmF, f)
 
   d = gcd(fmodp, gcd(gmodp, hmodp))
 
@@ -636,7 +658,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
     end
 
     Umodp = divexact(Tmodp, d)
-    U = fq_nmod_poly_to_nf_elem_poly(Kx, immF, Umodp)
+    U = fq_poly_to_nf_elem_poly(Kx, immF, Umodp)
     PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
     PN = sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))

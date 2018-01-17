@@ -908,7 +908,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   while d>=0 && iszero(Nemo.polcoeff(r, d))
     d -= 1
   end
-  return PolynomialRing(R)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
+  return PolynomialRing(R, cached = false)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T
@@ -926,7 +926,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T
   for i=1:div(d, 2)
     E[i], E[d-i+1] = (-1)^(d-i)*E[d-i+1], (-1)^(i-1)*E[i]
   end
-  return PolynomialRing(R)[1](E)
+  return PolynomialRing(R, cached = false)[1](E)
 end
 
 doc"""
@@ -945,10 +945,10 @@ function norm(f::PolyElem{nf_elem})
 
   Qy = parent(K.pol)
   y = gen(Qy)
-  Qyx, x = PolynomialRing(Qy, "x")
+  Qyx, x = PolynomialRing(Qy, "x", cached = false)
 
   Qx = PolynomialRing(FlintQQ, "x")[1]
-  Qxy = PolynomialRing(Qx, "y")[1]
+  Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
   T = evaluate(K.pol, gen(Qxy))
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
@@ -972,12 +972,12 @@ doc"""
 > The factorisation of f over K (using Trager's method).
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   return factor(evaluate(f, y))
 end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   Qz, z = PolynomialRing(FlintQQ)
   return factor(evaluate(Qz(f), y))
 end
@@ -1143,12 +1143,12 @@ doc"""
 > squarefree and monic.
 """
 function roots(f::fmpz_poly, K::AnticNumberField, max_roots::Int = degree(f))
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   return roots(evaluate(f, y), max_roots)
 end
 
 function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   return roots(evaluate(f, y), max_roots)
 end
 
@@ -1193,7 +1193,7 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
   g = deno*f
 
   if do_max_ord
-    Ox, x = PolynomialRing(O, "x")
+    Ox, x = PolynomialRing(O, "x", cached = false)
     goverO = Ox([ O(coeff(g, i)) for i in 0:d])
   else
     goverO = g

@@ -767,7 +767,7 @@ function baby_step_giant_step(g, n, h, cache::Dict)
       it *= g
     end
   end
-  if typeof(g) == fq_nmod
+  if typeof(g) == fq_nmod || typeof(g) == fq
     b = g^(-fmpz(m))
   else
     b = g^(-m)

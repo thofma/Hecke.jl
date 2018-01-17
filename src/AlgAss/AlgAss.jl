@@ -78,22 +78,133 @@ function AlgAss(f::PolyElem)
   return AlgAss(R, mult_table, one)
 end
 
-function AlgAss(O::NfOrd, p::Int)
-  R = ResidueRing(FlintZZ, p)
+function _non_pivot_cols(M::MatElem)
+  # M must be upper triangular
+  result = Vector{Int}()
+  j = 1
+  for i = 1:rows(M)
+    while j <= cols(M) && iszero(M[i, j])
+      push!(result, j)
+      j += 1
+    end
+    j += 1
+    if j > cols(M)
+      return result
+    end
+  end
+  return result
+end
+
+function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
+  if typeof(p) == fmpz && nbits(p) < 64
+    p = Int(p)
+  end
+
   n = degree(O)
-  B = basis(O)
-  mult_table = Array{elem_type(R), 3}(n, n, n)
-  for i in 1:n
-    for j in 1:n
-      v = elem_in_basis(B[i] * B[j], Val{false})
-      for k in 1:n
-        mult_table[i, j, k] = R(v[k])
+  BO = Hecke.basis(O)
+  Rp = ResidueRing(FlintZZ, p)
+
+  # Compute a basis of O/I (over F_p)
+  M = MatrixSpace(Rp, n, n)(basis_mat(I, Val{false}))
+  M = vcat(M, zero_matrix(Rp, 1, n))
+  M[n + 1, 1] = Rp(1)
+  r = rref!(M)
+  r = r - 1
+  n == r && error("Cannot construct zero dimensional algebra.")
+  # We save the indices of the columns of M without a pivot
+  basis = [1]
+  append!(basis, _non_pivot_cols(M))
+  @assert length(basis) == n - r
+
+  # Construct the multiplication table
+  mult_table = Array{elem_type(Rp), 3}(n - r, n - r, n - r)
+  for i = 1:n - r
+    for j = 1:n - r
+      c = BO[basis[i]]*BO[basis[j]]
+      d = elem_in_basis(c)
+      for k = 1:n - r
+        mult_table[i, j, k] = Rp(d[basis[k]])
       end
     end
   end
-  one = map(R, zeros(Int, n))
-  one[1] = R(1)
-  return AlgAss(R, mult_table, one), v -> O(map(fmpz, v.coeffs))
+
+  one = zeros(Rp, n - r)
+  one[1] = Rp(1)
+  A = AlgAss(Rp, mult_table, one)
+  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
+  return A, f
+end
+
+# Cohen "Advanced Topics in Computational Number Theory" Algorithm 1.5.2
+function _modular_basis(pb::Vector{Tuple{RelativeElement{nf_elem}, NfOrdFracIdl}}, p::NfOrdIdl)
+  L = parent(pb[1][1])
+  K = base_ring(L)
+  basis = Array{elem_type(L), 1}()
+  for i = 1:degree(L)
+    a = K(numerator(pb[i][2]).gen_one)*inv(K(denominator(pb[i][2])))
+    if has_2_elem(numerator(pb[i][2]))
+      b = K(numerator(pb[i][2]).gen_two)*inv(K(denominator(pb[i][2])))
+      if valuation(a, p) > valuation(b, p)
+        a = b
+      end
+    end
+    push!(basis, a*pb[i][1])
+  end
+  return basis
+end
+
+function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  n = degree(O)
+  L = nf(O)
+  K = base_ring(L)
+  F, mF = ResidueField(order(p), p)
+  mmF = extend(mF, K)
+
+  # We need the pseudo basis of I in the basis of O
+  PMI = basis_pmat(I, Val{false})
+  PBI = Vector{Tuple{RelativeElement{nf_elem}, NfOrdFracIdl}}()
+  for i = 1:n
+    x = elem_from_mat_row(L, PMI.matrix, i)
+    push!(PBI, (x, PMI.coeffs[i]))
+  end
+  BI = _modular_basis(PBI, p)
+  M = zero_matrix(F, n + 1, n)
+  M[n + 1, 1] = F(1)
+  for i = 1:n
+    for j = 1:n
+      M[i, j] = mmF(coeff(BI[i], j - 1))
+    end
+  end
+  r = rref!(M)
+  r = r - 1
+  n == r && error("Cannot construct zero dimensional algebra.")
+  basis = [1]
+  append!(basis, _non_pivot_cols(M))
+  @assert length(basis) == n - r
+
+  BO = _modular_basis(pseudo_basis(O, Val{false}), p)
+  N = zero_matrix(K, n, n)
+  for i = 1:n
+    elem_to_mat_row!(N, i, BO[i])
+  end
+  NN = inv(N)
+  c = zero_matrix(K, 1, n)
+  mult_table = Array{elem_type(F), 3}(n - r, n - r, n - r)
+  for i = 1:n - r
+    for j = 1:n - r
+      elem_to_mat_row!(c, 1, BO[basis[i]]*BO[basis[j]])
+      d = c*NN
+      for k = 1:n - r
+        mult_table[i, j, k] = mmF(d[1, basis[k]])
+      end
+    end
+  end
+
+  one = zeros(F, n - r)
+  one[1] = F(1)
+  A = AlgAss(F, mult_table, one)
+  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
+  return A, f
 end
 
 ################################################################################
@@ -186,25 +297,12 @@ end
 
 # This only works if base_ring(A) is a field
 # Constructs the algebra e*A
-function subalgebra(A::AlgAss, e::AlgAssElem)
+function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   @assert parent(e) == A
   R = base_ring(A)
   n = dim(A)
   B = representation_mat(e)
-  rref!(B)
-  # rref! does not always return the rank (?)
-  r = 0
-  for i = n:-1:1
-    for j = 1:n
-      if !iszero(B[i, j])
-        r = i
-        break
-      end
-    end
-    if r != 0
-      break
-    end
-  end
+  r = rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   basis = Vector{AlgAssElem}(r)
   for i = 1:r
@@ -215,6 +313,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem)
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   _, p, L, U = lufact(transpose(B))
+  inv!(p)
   U = _remove_non_pivot_cols(U, r)
   mult_table = Array{elem_type(R), 3}(r, r, r)
   c = A()
@@ -224,8 +323,9 @@ function subalgebra(A::AlgAss, e::AlgAssElem)
     for j = 1:r
       c = basis[i]*basis[j]
       for k = 1:n
-        d[k, 1] = c.coeffs[p[k]]
+        d[p[k], 1] = c.coeffs[k]
       end
+      #TODO: Use that L and U are already triangular
       d = solve(L, d)
       for k = 1:r
         dd[k, 1] = d[k, 1]
@@ -237,28 +337,28 @@ function subalgebra(A::AlgAss, e::AlgAssElem)
       end
     end
   end
-  #=
-  for k = 1:n
-    d[k, 1] = e.coeffs[k]
+  if idempotent
+    for k = 1:n
+      d[p[k], 1] = e.coeffs[k]
+    end
+    d = solve(L, d)
+    for k = 1:r
+      dd[k, 1] = d[k, 1]
+    end
+    @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
+    dd = solve(U, dd)
+    eA = AlgAss(R, mult_table, [ dd[i, 1] for i = 1:r ])
+  else
+    eA = AlgAss(R, mult_table)
   end
-  d = solve(L, d)
-  for k = 1:r
-    dd[k, 1] = d[k, 1]
-  end
-  @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
-  dd = solve(U, dd)
-  return AlgAss(R, mult_table, [ dd[i, 1] for i = 1:r ])
-  =#
-  eA = AlgAss(R, mult_table)
   eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
-
   return eA, eAtoA
 end
 
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
     if compute_algebras == Val{true}
-      return true, [ A ]
+      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)))) ]
     else
       return true
     end
@@ -275,7 +375,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 
   if k == 1
-    return true, [ A ]
+    return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)))) ]
   end
 
   while true
@@ -301,7 +401,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
       idem += coeff(f1, i)*x
       x *= a
     end
-    return false, [ subalgebra(A, idem), subalgebra(A, one(A) - idem) ]
+    return false, [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
   end
 end
 
@@ -310,9 +410,18 @@ function split(A::AlgAss)
   if b
     return algebras
   end
-  result = Vector{typeof(A)}()
-  for a in algebras
-    append!(result, split(a))
+  result = Vector{Tuple{AlgAss, AlgAssMor}}()
+  while length(algebras) != 0
+    B, BtoA = pop!(algebras)
+    b, algebras2 = issimple(B)
+    if b
+      push!(result, (B, BtoA))
+    else
+      for (C, CtoB) in algebras2
+        CtoA = compose_and_squash(BtoA, CtoB)
+        push!(algebras, (C, CtoA))
+      end
+    end
   end
   return result
 end
