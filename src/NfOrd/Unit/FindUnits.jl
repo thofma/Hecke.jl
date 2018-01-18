@@ -290,7 +290,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
 
-#  @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
+  @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
   return 1
 end
 
