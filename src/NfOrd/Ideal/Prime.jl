@@ -450,7 +450,7 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
     push!(ideals, P)
   end
 
-  result = Vector{NfOrdIdl}()
+  result = Vector{Tuple{NfOrdIdl, Int}}()
 
   for j in 1:length(ideals)
     P = ideals[j]
