@@ -517,7 +517,7 @@ end
 macro vtime_add(flag, level, var, key, value)
   quote
     if get_verbose_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, $value)
+      _vtime_add($(esc(var)).time, $key, $(esc(value)))
     end
   end
 end
