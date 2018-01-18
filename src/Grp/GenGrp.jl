@@ -91,7 +91,7 @@ end
 # is finite.
 function closure(S, op)
   i = find_identity(S, op)
-  return closure(S, op, id)
+  return closure(S, op, i)
 end
 
 function closure(S, op, id)
@@ -133,6 +133,7 @@ function _closing_under_one_generator(x, op, id)
 end
 
 function _closing_under_generators_dimino(S, op, id)
+
   t = length(S)
   order = 1
   elements = [id]

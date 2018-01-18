@@ -1231,24 +1231,24 @@ end
 #
 ###############################################################################
 
-
-#global BLA=[]
  
-function C3xD5_extensions(absolute_bound::fmpz)
+function C3xD5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz)
 
-  bound_quadratic= Int(root(absolute_bound, 15))
+  
+  bound_quadratic= min(Int(root(absolute_bound, 15)), Int(root(non_normal_bound, 6)))
   list_quad=quadratic_extensions(bound_quadratic, complex=true)
-  fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor,1},fmpz, Array{fmpz,1}}[]
+  fieldslist=Tuple{AnticNumberField, Array{fmpz,1}}[]
   
   for K in list_quad
     
     println("Field: $K")
     O=maximal_order(K)
     D=abs(discriminant(O))
-    if D^15>absolute_bound
+    new_absolute_bound=min(D^15*non_normal_bound^2, absolute_bound)
+    if D^15>new_absolute_bound
       continue
     end
-    bo = ceil(Rational{BigInt}(absolute_bound//D^15))
+    bo = ceil(Rational{BigInt}(new_absolute_bound//D^15))
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
@@ -1288,14 +1288,22 @@ function C3xD5_extensions(absolute_bound::fmpz)
         end
         C=ray_class_field(mr*inv(s))
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
-          #push!(BLA, (K,k))
           L=number_field(C)
           ram_primes=Set(collect(keys(factor(a).fac)))
           for p in keys(factor(O.disc).fac)
             push!(ram_primes, p)
           end
-          aut=absolute_automorphism_group(C,gens)
-          push!(fieldslist, (L,aut,evaluate(FacElem(C.absolute_discriminant)), collect(ram_primes)))
+          auto=extend_aut(C,gens[1])
+          S,mS=simple_extension(L)
+          x=mS(gen(S))
+          if auto^2(x)!=x
+            auto=auto^3
+          end
+          pol=absolute_minpoly(x+auto(x))
+          if degree(pol)!=15
+            pol=absolute_minpoly(x*(auto(x)))
+          end
+          push!(fieldslist, (number_field(pol)[1], collect(ram_primes)))
         end
       end
     end
@@ -1326,18 +1334,18 @@ end
 #  S3 x C5 extensions
 #
 ###############################################################################
-function S3xC5_extensions(absolute_bound::fmpz)
+function S3xC5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz)
 
-  bound_quadratic= Int(root(absolute_bound, 15))
+  bound_quadratic= min(Int(root(absolute_bound, 15)), Int(root(non_normal_bound,5)))
   list_quad=quadratic_extensions(bound_quadratic, complex=true)
-  return S3xC5_extensions(absolute_bound, list_quad)
+  return S3xC5_extensions(absolute_bound, non_normal_bound,list_quad)
 end
 
 
-function S3xC5_extensions(absolute_bound::fmpz, list_quad::Array{AnticNumberField, 1}; other::fmpz=fmpz(1))
+function S3xC5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz, list_quad::Array{AnticNumberField, 1})
 
 
-  fieldslist=Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1},fmpz, Array{fmpz,1}}[]
+  fieldslist=Tuple{AnticNumberField, Array{fmpz,1}}[]
 
   for K in list_quad
     
@@ -1347,8 +1355,8 @@ function S3xC5_extensions(absolute_bound::fmpz, list_quad::Array{AnticNumberFiel
     if D^15>absolute_bound
       continue
     end
-    nabsolute_bound=min(absolute_bound, D^15*other^2)
-    bo = ceil(Rational{BigInt}(nabsolute_bound//D^15))
+    new_absolute_bound=min(absolute_bound, D^15*non_normal_bound^2)
+    bo = ceil(Rational{BigInt}(new_absolute_bound//D^15))
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
@@ -1390,12 +1398,21 @@ function S3xC5_extensions(absolute_bound::fmpz, list_quad::Array{AnticNumberFiel
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
           println("\n New Field!")
           L=number_field(C)
-          aut=absolute_automorphism_group(C,gens)
           ram_primes=Set(collect(keys(factor(a).fac)))
           for p in keys(factor(O.disc).fac)
             push!(ram_primes, p)
           end
-          push!(fieldslist, (L,aut,evaluate(FacElem(C.absolute_discriminant)), collect(ram_primes)))
+          auto=extend_aut(C,gens[1])
+          S,mS=simple_extension(L)
+          x=mS(gen(S))
+          if auto^2(x)!=x
+            auto=auto^5
+          end
+          pol=absolute_minpoly(x+auto(x))
+          if degree(pol)!=15
+            pol=absolute_minpoly(x*(auto(x)))
+          end
+          push!(fieldslist, (number_field(pol)[1], collect(ram_primes)))
         end
       end
     end
@@ -1555,7 +1572,7 @@ function _to_non_normal(autos)#::Vector{NfRel_nsToNfRel_nsMor})
   #Take minimal polynomial; I need to embed the element in the absolute extension
   pol=absolute_minpoly(pr_el)
   if degree(pol)==15
-    return number_field(pol)
+    return number_field(pol)[1]
   else
     pr_el=x*(autos[i](x))
     return number_field(absolute_minpoly(pr_el))[1]
@@ -1595,4 +1612,47 @@ function _maximal_absolute_order_from_relative(L::NfRel_ns)
   return MaximalOrder(Ord)
 
 end
+
+###############################################################################
+#
+#
+#
+###############################################################################
+
+
+function _from_autos_to_cycles(autos)
+
+  K=domain(autos[1])
+  G=closure(autos, *)
+  elements=[x.prim_img for x in G]
+  permutations=Array{Array{Int, 1},1}(length(autos))
+  for s=1:length(autos)
+    perm=Array{Int,1}(length(elements))
+    for i=1:length(elements)
+      a=autos[s](elements[i])
+      j=1
+      while a!=elements[j]
+        j+=1
+      end
+      perm[i]=j
+    end
+    permutations[s]=perm
+  end
+  return permutations
+end
+
+function _from_matrix_to_listlist(M::MatElem)
+
+  mat=Array{Array{Int,1},1}(rows(M))
+  for i=1:rows(M)
+    rowi=Array{Int,1}(cols(M))
+    for j=1:cols(M)
+      rowi[j]=M[i,j]
+    end
+    mat[i]= rowi
+  end
+  return mat
+  
+end
+
 

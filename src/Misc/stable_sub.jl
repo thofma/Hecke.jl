@@ -500,7 +500,9 @@ function submodules_all(M::ZpnGModule)
   #
   #  Writing the submodules in terms of the given generators and returning an iterator
   #
-  return (_reconstruction(x,mS) for x in list)
+  W=MatrixSpace(R,rows(mS.map), cols(mS.map))
+  MatSnf=W(mS.map)
+  return (x*MatSnf for x in list)
   
 end
 
@@ -530,9 +532,10 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
       list1[i][1,k]*=v[k]
     end
   end  
-  W=MatrixSpace(R,1, ngens(M.V))
+  W=MatrixSpace(R,rows(mS.map), cols(ms.map))
+  MatSnf=W(mS.map*ms.map)  
   for j=1:length(list1)
-    list1[j]=W(ms(mS( S.V(lift(list1[j])))).coeff)
+    list1[j]=list1[j]*MatSnf
   end
   if ord==1
     return list1
@@ -551,8 +554,8 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
     end
     append!(list, newlist)
   end
-  return (x for x in list)
-  
+  return list
+
 end
 
 function submodule_with_struct_exp_p(M::ZpnGModule, l::Int)
@@ -573,8 +576,9 @@ function submodule_with_struct_exp_p(M::ZpnGModule, l::Int)
         end
       end
     end
- 
-    return (_reconstruction(x,mS) for x in list1)
+    W=MatrixSpace(R,rows(mS.map), cols(mS.map))
+    MatSnf=W(mS.map)
+    return ( x *MatSnf for x in list1)
     
 end
 
@@ -618,10 +622,12 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
     end 
   end 
   
+  
   auxmat=mS.imap*ms.map
+  W=MatrixSpace(R,rows(auxmat), cols(auxmat))
+  auxmat=W(auxmat)
   for j=1:length(list1)
-    W=MatrixSpace(R,rows(list1[j]), ngens(S1.V))
-    list1[j]=W(lift(list1[j])*auxmat)
+    list1[j]=list1[j]*auxmat
   end
   #
   #  I create the group to check if the candidates are isomorphic to it
@@ -672,16 +678,13 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
 
   #
   #  Write the submodules in terms of the set of given generators
+  #  and return an iterator over the list
   #
-  
+
   W=MatrixSpace(R,ngens(S1.V), ngens(M.V))
-  for j=1:length(list)   
-    list[j]=W(lift(list[j])*mS1.map)
-  end
-  #
-  #  return an iterator over the list
-  #
-  return (el for el in list)
+  MatSnf=W(mS1.map)
+  
+  return (el*MatSnf for el in list)
   
 end
 
@@ -772,9 +775,10 @@ function submodules_order(M::ZpnGModule, ord::Int)
   #  Write the submodules in terms of the set of given generators
   #
   
-  W=MatrixSpace(R,1, ngens(M.V))
+  W=MatrixSpace(R,rows(mS.map), cols(mS.map))
+  MatSnf=W(mS.map)
   for j=1:length(list)
-    list[j]=vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:rows(list[j])])
+    list[j]=list[j]*MatSnf #vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:rows(list[j])])
   end
   
   #
@@ -826,13 +830,8 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Write the submodules in terms of the given generators
   #
-  return (_reconstruction(x,mS) for x in list)
+  W=MatrixSpace(R,rows(mS.map), cols(mS.map))
+  MatSnf=W(mS.map)
+  return (x*MatSnf for x in list)
   
-end
-
-function _reconstruction(A::nmod_mat, mS::GrpAbFinGenMap)
-
-  W = MatrixSpace(parent(A[1,1]),rows(A), ngens(mS.header.codomain))
-  return W(lift(A)*mS.map)
-
 end
