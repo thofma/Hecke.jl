@@ -908,7 +908,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   while d>=0 && iszero(Nemo.polcoeff(r, d))
     d -= 1
   end
-  return PolynomialRing(R)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
+  return PolynomialRing(R, cached = false)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T
@@ -926,7 +926,7 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T
   for i=1:div(d, 2)
     E[i], E[d-i+1] = (-1)^(d-i)*E[d-i+1], (-1)^(i-1)*E[i]
   end
-  return PolynomialRing(R)[1](E)
+  return PolynomialRing(R, cached = false)[1](E)
 end
 
 doc"""
@@ -945,10 +945,10 @@ function norm(f::PolyElem{nf_elem})
 
   Qy = parent(K.pol)
   y = gen(Qy)
-  Qyx, x = PolynomialRing(Qy, "x")
+  Qyx, x = PolynomialRing(Qy, "x", cached = false)
 
   Qx = PolynomialRing(FlintQQ, "x")[1]
-  Qxy = PolynomialRing(Qx, "y")[1]
+  Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
   T = evaluate(K.pol, gen(Qxy))
   h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
@@ -972,12 +972,12 @@ doc"""
 > The factorisation of f over K (using Trager's method).
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   return factor(evaluate(f, y))
 end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   Qz, z = PolynomialRing(FlintQQ)
   return factor(evaluate(Qz(f), y))
 end
@@ -1143,12 +1143,12 @@ doc"""
 > squarefree and monic.
 """
 function roots(f::fmpz_poly, K::AnticNumberField, max_roots::Int = degree(f))
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   return roots(evaluate(f, y), max_roots)
 end
 
 function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
-  Ky, y = PolynomialRing(K)
+  Ky, y = PolynomialRing(K, cached = false)
   return roots(evaluate(f, y), max_roots)
 end
 
@@ -1193,7 +1193,7 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
   g = deno*f
 
   if do_max_ord
-    Ox, x = PolynomialRing(O, "x")
+    Ox, x = PolynomialRing(O, "x", cached = false)
     goverO = Ox([ O(coeff(g, i)) for i in 0:d])
   else
     goverO = g
@@ -2780,45 +2780,54 @@ function polredabs(K::AnticNumberField)
 
   l = zeros(FlintZZ, n)
   l[i] = 1
+
+  scale = 1.0
   enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = 1.01)
 
-  if E.x[1, i] == 0
-    error("enum too short")
-  end
   a = gen(K)
   all_a = [a]
   la = length(a)*BigFloat(E.t_den^2)
   Ec = BigFloat(E.c//E.d)
   eps = BigFloat(E.d)^(1//2)
 
-  while enum_ctx_next(E)
-#    @show E.x
-    M = E.x*E.t
-    q = elem_from_mat_row(K, M, 1, E.t_den)
-    bb = _block(q, R, ap)
-    if length(bb) < n
-      continue
-    end
-#    lq = length(q)
-#    lqq = (BigFloat(E.c//E.d) - E.l[1])/BigInt(E.t_den^2)
-    lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
+  found_pe = false
+  while !found_pe
+    while enum_ctx_next(E)
+#      @show E.x
+      M = E.x*E.t
+      q = elem_from_mat_row(K, M, 1, E.t_den)
+      bb = _block(q, R, ap)
+      if length(bb) < n
+        continue
+      end
+      found_pe = true
+#  @show    llq = length(q)
+#  @show sum(E.C[i,i]*(BigFloat(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit)/BigInt(E.t_den^2)
+      lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2) #wrong, but where?
+#      @show lq/E.t_den^2
 
-    if lq < la + eps
-      if lq > la - eps
-        push!(all_a, q)
-#        @show "new one"
-      else
-        a = q
-        all_a = [a]
-        if lq/la < 0.8
-#          @show "re-init"
-          enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
-        end
-        la = lq
-#        @show Float64(la/E.t_den^2)
-      end  
+      if lq < la + eps
+        if lq > la - eps
+          push!(all_a, q)
+  #        @show "new one"
+        else
+          a = q
+          all_a = [a]
+          if lq/la < 0.8
+  #          @show "re-init"
+            enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
+            Ec = BigFloat(E.c//E.d)
+          end
+          la = lq
+  #        @show Float64(la/E.t_den^2)
+        end  
+      end
     end
+    scale *= 2
+    enum_ctx_start(E, matrix(FlintZZ, 1, n, l), eps = scale)
+    Ec = BigFloat(E.c//E.d)
   end
+
   setprecision(BigFloat, old)
   all_f = [(x, minpoly(x)) for x=all_a]
   all_d = [abs(discriminant(x[2])) for x= all_f]

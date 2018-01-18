@@ -2045,7 +2045,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     if x==1
     
       F, _ = Nemo.FiniteField(Int(p), 1, "_")
-      act_mat=Array{Generic.Mat{fq_nmod},1}(length(act))
+      act_mat=Array{fq_nmod_mat, 1}(length(act))
       for w=1:length(act)
         act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
       end
@@ -2126,7 +2126,7 @@ function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap
 
 end
 
-function _lift_and_construct(A::Generic.Mat{fq_nmod}, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c ::Int)
+function _lift_and_construct(A::fq_nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c ::Int)
   
   R=mQ.header.domain
   newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]

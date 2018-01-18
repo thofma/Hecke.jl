@@ -520,7 +520,7 @@ function minpoly_sparse(a::NfRel_nsElem)
       fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
       if fl
         so = mul(so, sub(M, 1:i, n+1:cols(M)))
-        kt, t = k["t"]
+        kt, t = PolynomialRing(k, "t", cached = false)
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0

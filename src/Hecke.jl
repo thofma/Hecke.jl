@@ -74,7 +74,7 @@ import Nemo: nf_elem, AnticNumberField, degree, one!,
              roots, nbits, ispositive, sign, isprime, isunit,
              NumberField, CyclotomicField, MaximalRealSubfield,
              addmul!, deflate, gens, inflate, isconstant, issquare, 
-             swap_rows!, nmod, NmodRing
+             swap_rows!, nmod, NmodRing, inv!
 
 
 export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
@@ -517,7 +517,7 @@ end
 macro vtime_add(flag, level, var, key, value)
   quote
     if get_verbose_level($flag) >= $level
-      _vtime_add($(esc(var)).time, $key, $value)
+      _vtime_add($(esc(var)).time, $key, $(esc(value)))
     end
   end
 end

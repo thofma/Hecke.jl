@@ -11,7 +11,7 @@ add_verbose_scope(:StabSub)
 #  Lifts a matrix from F_p to Z/p^nZ
 #
 
-function lift(M::Generic.Mat{fq_nmod}, R::Nemo.NmodRing)
+function lift(M::MatElem{fq_nmod}, R::Nemo.NmodRing)
 
   
   x=factor(fmpz(R.n))
@@ -273,7 +273,7 @@ function _exponent_p_sub(M::ZpnGModule)
   p=M.p
   F, a = Nemo.FiniteField(p, 1, "a")
   v=fmpz[divexact(V.snf[i],p) for i=1:ngens(V)]
-  G1=Array{Generic.Mat{fq_nmod},1}(length(G))
+  G1=Array{fq_nmod_mat,1}(length(G))
   MS=MatrixSpace(F,ngens(V),ngens(V))
   for s=1:length(G1)
     G1[s]=MS(0)
@@ -373,7 +373,7 @@ end
 
 function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
   
-  G1=Array{Generic.Mat{fq_nmod},1}(length(G))
+  G1=Array{fq_nmod_mat,1}(length(G))
   n=rows(G[1])
   for i=1:length(G)
     M=zero_matrix(F,n-s+1,n-s+1)
@@ -517,7 +517,7 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   s,ms=sub(M, M.p^(ord-1))
   S,mS=snf(s)
   N=_exponent_p_sub(S)
-  submod=Generic.Mat{fq_nmod}[]
+  submod=fq_nmod_mat[]
   if N.dim==1
     push!(submod, identity_matrix(N.K, 1))
   else

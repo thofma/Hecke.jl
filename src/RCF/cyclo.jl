@@ -32,15 +32,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
 
   ZX, X = PolynomialRing(FlintZZ)
   Qx = parent(k.pol)
-  kt, t = PolynomialRing(k, "t")
+  kt, t = PolynomialRing(k, "t", cached = false)
   f = cyclotomic(n, X)
   fq = Qx(f)
   fk = evaluate(fq, t)
   lf = factor(fk)
   fk = first(keys(lf.fac))
 
-  Kr, Kr_gen = number_field(fk, "z_$n")
-  Ka, rel2abs, small2abs = Hecke.absolute_field(Kr)
+  Kr, Kr_gen = number_field(fk, "z_$n", false)
+  Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
 
   c = CyclotomicExt()
   c.k = k

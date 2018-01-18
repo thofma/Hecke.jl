@@ -300,7 +300,7 @@ function _torsion_units_lifting(O::NfOrd)
   end
 
   m = _torsion_group_order_divisor(O)
-  Oy, y = O["y"]
+  Oy, y = PolynomialRing(O, "y", cached = false)
   f = y^Int(m) - 1
   R = _roots_hensel(f)
 

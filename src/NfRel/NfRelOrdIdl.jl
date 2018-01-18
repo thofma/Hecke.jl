@@ -817,11 +817,11 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   mmF = extend(mF, K)
   immF = inv(mmF)
   Fy, y = Fp["y"]
-  fmodp = Hecke.nf_elem_poly_to_fq_nmod_poly(Fy, mmF, f)
+  fmodp = Hecke.nf_elem_poly_to_fq_poly(Fy, mmF, f)
   fac = factor(fmodp)
   result = Array{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}, 1}()
   for (q, e) in fac
-    g = Hecke.fq_nmod_poly_to_nf_elem_poly(Kx, immF, q)
+    g = Hecke.fq_poly_to_nf_elem_poly(Kx, immF, q)
     P = ideal(O, L(1), g(a), frac_ideal(OK, p), ideal(OK, K(1)))
     P.is_prime = 1
     P.splitting_type = (e, degree(q))
