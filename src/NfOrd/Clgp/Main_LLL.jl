@@ -49,7 +49,7 @@ function class_group_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2)
   rt = time_ns()
   I = class_group_small_lll_elements_relation_start(c, O)
   single_env(c, I, nb, rat/10, -1)
-  @vprint :ClassGroup 1 "search in order:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\n"
+  @vprint :ClassGroup 1 "search in order:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\nin $(c.M)"
 
   @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
   if h == 1 return c; end
@@ -64,9 +64,9 @@ function class_group_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2)
 #  @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
 #  if h == 1 return c; end
 
-  @vprint :ClassGroup 1 "Now with random...\n"
-  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
-  @vprint :ClassGroup 1 "$(piv)\n"
+#  @vprint :ClassGroup 1 "Now with random...\n"
+#  @vprint :ClassGroup 1 "length(piv) = $(length(piv)) and h = $h\n"
+#  @vprint :ClassGroup 1 "$(piv)\n"
 
   class_group_new_relations_via_lll(c, rat, extra = -1)
 
@@ -97,16 +97,26 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
 
   start = max(1, length(c.FB.ideals)-10*(1+div(rand_exp, 3)))
   stop = length(c.FB.ideals)
-  rand_env = random_init(c.FB.ideals[start:stop], lb = root(abs(discriminant(O)), 2), ub = abs(discriminant(O)), reduce = false)
+  if isdefined(c, :randomClsEnv)
+    rand_env = c.randomClsEnv
+#    println("re-using random")
+  else
+    rand_env = random_init(c.FB.ideals[start:stop], lb = root(abs(discriminant(O)), 2), ub = abs(discriminant(O)), reduce = false)
+    c.randomClsEnv = rand_env
+  end
+
   while true
     for p = piv
       @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
       @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
       @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
       @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
-      @vtime :ClassGroup 3 single_env(c, I, nb, rat, 1+rand_exp)
+      @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
       if extra > 0 && st + extra <= c.rel_cnt
         return
+      end
+      if h>0
+        break
       end
     end
 
@@ -118,6 +128,10 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
     if piv_new == piv
       if h > 0
         extra = 5
+        J = [rand(c.FB.ideals) for x=1:10]
+#        println("extending rand")
+        random_extend(rand_env, J)
+        random_extend(rand_env, 2.0)
       end
       rand_exp += 1
       if rand_exp % 3 == 0

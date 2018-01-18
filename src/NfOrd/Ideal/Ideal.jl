@@ -1529,19 +1529,6 @@ function assure_2_normal(A::NfOrdIdl)
   error("not implemented yet...")
 end
 
-mutable struct RandIdlCtx
-  base::Array{NfOrdIdl, 1}
-  ibase::Array{NfOrdFracIdl, 1}
-  rand::NfOrdIdl
-  exp::Array{Int, 1}
-  ub::fmpz
-  lb::fmpz
-  last::Set{Array{Int, 1}}
-  function RandIdlCtx()
-    return new()
-  end
-end
-
 function random_init(I::AbstractArray{NfOrdIdl, 1}; reduce::Bool = true, ub::fmpz=fmpz(0), lb::fmpz=fmpz(1))
 
   R = RandIdlCtx()

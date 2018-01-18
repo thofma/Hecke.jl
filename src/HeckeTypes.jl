@@ -1353,6 +1353,19 @@ end
 #
 ################################################################################
 
+mutable struct RandIdlCtx
+  base::Array{NfOrdIdl, 1}
+  ibase::Array{NfOrdFracIdl, 1}
+  rand::NfOrdIdl
+  exp::Array{Int, 1}
+  ub::fmpz
+  lb::fmpz
+  last::Set{Array{Int, 1}}
+  function RandIdlCtx()
+    return new()
+  end
+end
+
 mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   FB::NfFactorBase
 
@@ -1387,7 +1400,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   normStat::Dict{Int, Int}
   expect::Int
 
-  randomClsEnv::Array{NfOrdIdl, 1}
+  randomClsEnv::RandIdlCtx
 
   val_base::fmpz_mat      # a basis for the possible infinite randomization
                           # vectors: conditions are

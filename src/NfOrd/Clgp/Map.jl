@@ -134,7 +134,12 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
   #println("have to work")
   E = class_group_small_lll_elements_relation_start(c, I)
   iI = inv(I)
-  J = NfOrdIdl[]
+  if isdefined(c, :randomClsEnv)
+    J = c.randomClsEnv
+  else
+    J = random_init(c.FB.ideals[max(1, length(c.FB.ideals)-10):length(c.FB.ideals)], lb = root(abs(discriminant(O)), 2), ub = abs(discriminant(O)))
+    c.randomClsEnv = J
+  end
   use_rand = false
   last_j = I
   cnt = 0
@@ -143,7 +148,6 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     if E.cnt > max(2*c.expect, 0)
 #      println("more random")
       use_rand = true
-      push!(J, rand(c.FB.ideals))
       last_j = random_get(J, reduce = false)
       E = class_group_small_lll_elements_relation_start(c, I*last_j) 
       iI = inv(E.A)
