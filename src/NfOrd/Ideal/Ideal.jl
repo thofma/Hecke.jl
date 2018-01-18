@@ -1529,36 +1529,90 @@ function assure_2_normal(A::NfOrdIdl)
   error("not implemented yet...")
 end
 
-function random_init(I::AbstractArray{NfOrdIdl, 1}; reduce::Bool = true)
-  J = collect(I)
-  for i=1:length(J)
-    a = rand(1:length(J))
-    b = rand(1:length(J))
-    if reduce && isodd(rand(1:2))
-      J[a] = reduce_ideal(J[a]*inv(J[b]))
-    else
-      J[a] *= J[b]
-      if reduce
-        J[a] = reduce_ideal(J[a])
-      end
-    end
+mutable struct RandIdlCtx
+  base::Array{NfOrdIdl, 1}
+  ibase::Array{NfOrdFracIdl, 1}
+  rand::NfOrdIdl
+  exp::Array{Int, 1}
+  ub::fmpz
+  lb::fmpz
+  last::Set{Array{Int, 1}}
+  function RandIdlCtx()
+    return new()
   end
-  return J
 end
 
-function random_get(J::Array{NfOrdIdl, 1}; reduce::Bool = true)
-  a = rand(1:length(J))
-  I = J[a]
-  b = rand(1:length(J))
-  if reduce && isodd(rand(1:2))
-    J[a] = reduce_ideal(J[a]*inv(J[b]))
-  else
-    J[a] *= J[b]
-    if reduce
-      J[a] = reduce_ideal(J[a])
-    end
+function random_init(I::AbstractArray{NfOrdIdl, 1}; reduce::Bool = true, ub::fmpz=fmpz(0), lb::fmpz=fmpz(1))
+
+  R = RandIdlCtx()
+  R.base = collect(I)
+  O = order(R.base[1])
+  R.ibase = map(inv, R.base)
+  R.exp = zeros(Int, length(R.base))
+  R.rand = ideal(O, 1)
+  R.lb = lb
+  R.ub = ub
+  R.last = Set{Array{Int, 1}}()
+  while norm(R.rand) <= lb
+    i = rand(1:length(R.base))
+    R.rand = simplify(R.rand * R.base[i])
+    R.exp[i] += 1
   end
-  return I
+  push!(R.last, copy(R.exp))
+  return R
+end
+
+function random_extend(R::RandIdlCtx, I::AbstractArray{NfOrdIdl, 1})
+  for i = I
+    push!(R.base, i)
+    push!(R.ibase, inv(i))
+  end
+  z = zeros(Int, length(I))
+  append!(R.exp, z)
+  for i = R.last
+    append!(i, z)
+  end
+  nothing
+end
+
+function random_extend(R::RandIdlCtx, f::Float64)
+  R.lb = ceil(fmpz, R.lb*f)
+  R.ub = ceil(fmpz, R.lb*f)
+  while norm(R.rand) < R.lb
+    i = rand(1:length(R.base))
+    R.rand = simplify(R.rand * R.base[i])
+    R.exp[i] += 1
+  end
+  nothing
+end
+
+function random_get(R::RandIdlCtx; reduce::Bool = true)
+  if norm(R.rand) <= R.ub
+    delta = 1
+  else
+    delta = -1
+  end
+  i = 1
+  while true
+    if delta > 0
+      i = rand(1:length(R.base))
+    else
+      i = rand(find(R.exp))
+    end
+    R.exp[i] += delta
+    if true || !(R.exp in R.last)
+      break
+    end
+    R.exp[i] -= delta
+  end  
+  if delta > 0
+    R.rand = simplify(R.rand * R.base[i])
+  else
+    R.rand = simplify(R.rand * R.ibase[i]).num
+  end
+#  @show R.exp, R.exp in R.last
+  push!(R.last, copy(R.exp))
+  return R.rand
 end
 
 
