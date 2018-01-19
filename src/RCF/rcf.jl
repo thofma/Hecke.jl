@@ -963,6 +963,7 @@ end
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, decom::Dict{NfOrdIdl, Int})
   b = compact_presentation(a, n, decom = decom)
   b = prod([k^(v % n) for (k,v) = b.fac if !iszero(v % n)])
+  b *= denominator(b, maximal_order(parent(b)))^n  #non-optimal, but integral...
   return FacElem(b)  
 end
 
