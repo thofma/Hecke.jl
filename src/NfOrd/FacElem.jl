@@ -151,15 +151,15 @@ function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
 
   i = 1
 
-  for a in base(x)
+  for (a, e) in x.fac
     z = conjugates_arb(a, abs_tol)
     if i == 1
       for j in 1:d
-        res[j] = z[j]^x.fac[a]
+        res[j] = z[j]^e
       end
     else
       for j in 1:d
-        res[j] = res[j] * z[j]^x.fac[a]
+        res[j] = res[j] * z[j]^e
       end
     end
     i = i + 1
@@ -180,12 +180,12 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
 
   while true
     prec_too_low = false
-    for (i, a) in enumerate(base(x))
+    for (i, (a, e)) in enumerate(x.fac)
       z = _conjugates_arb_log(parent(x), a, abs_tol)
       if i == 1
         for j in 1:d
           res[j] = parent(z[j])()
-          muleq!(res[j], z[j], x.fac[a])
+          muleq!(res[j], z[j], e)
           if !radiuslttwopower(res[j], -target_tol) || !isfinite(res[j])
             prec_too_low = true
             break
@@ -194,7 +194,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
         end
       else
         for j in 1:d
-          addmul!(res[j], z[j], x.fac[a])
+          addmul!(res[j], z[j], e)
           #res[j] = res[j] + x.fac[a]*z[j]
           if !radiuslttwopower(res[j], -target_tol) || !isfinite(res[j])
             prec_too_low = true
