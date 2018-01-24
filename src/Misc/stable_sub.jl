@@ -11,7 +11,7 @@ add_verbose_scope(:StabSub)
 #  Lifts a matrix from F_p to Z/p^nZ
 #
 
-function lift(M::MatElem{fq_nmod}, R::Nemo.NmodRing)
+function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
 
   
   x=factor(fmpz(R.n))

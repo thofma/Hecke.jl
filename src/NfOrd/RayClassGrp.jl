@@ -77,7 +77,7 @@ end
 #
 
 
-function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem, AnticNumberField},1}, lp::Dict{NfOrdIdl, Int}, exponent::Int)
+function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem, AnticNumberField},1}, lp::Dict{NfOrdIdl, Int}, exponent::fmpz)
 
   newelems=_preproc(O,elems,exponent)
   quots=[]
@@ -103,7 +103,7 @@ end
 #  Reduces the elements modulo the exponents and computes a representation as a product of elements in O
 #
 
-function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::Int)
+function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::fmpz)
   
   assure_has_basis_mat_inv(O)
   M = O.tcontain
@@ -149,7 +149,7 @@ function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, 
 end
 
 
-function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, mult::Int, exp::Int)
+function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, mult::Int, exp::fmpz)
   
   if mult==1
     @vtime :RayFacElem 2 Q,mQ=ResidueField(O,p)
@@ -196,7 +196,7 @@ end
 #
 
 
-function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::Array, J::FacElem{nf_elem,AnticNumberField}, primes::Dict{NfOrdIdl, Int}, exponent::Int)
+function _fac_elem_evaluation(O::NfOrd, Q::NfOrdQuoRing, quots::Array, idemps::Array, J::FacElem{nf_elem,AnticNumberField}, primes::Dict{NfOrdIdl, Int}, exponent::fmpz)
   
   assure_has_basis_mat_inv(O)
   M=O.tcontain
@@ -732,7 +732,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   @vprint :RayFacElem 1 "The class group is $C \n"
   @vprint :RayFacElem 1 "The units are $U \n"
     
-  expon=Int(exponent(G))
+  expon=exponent(G)
 
 #
 # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m
@@ -942,7 +942,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 # We start to construct the relation matrix
 #
 
-  expo=Int(exponent(G))
+  expo=exponent(G)
   inverse_d=gcdx(nonppartclass,expo)[2]
   
   R=zero_matrix(FlintZZ, ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
@@ -1268,7 +1268,7 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
 # We start to construct the relation matrix
 #
 
-  expo=Int(exponent(G))
+  expo=exponent(G)
   
   R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
   for i=1:ngens(C)
@@ -1668,7 +1668,7 @@ function ray_class_group(O::NfOrd, n::Int, mR::MapRayClassGrp, lp::Dict{NfOrdIdl
 # We start to construct the relation matrix
 #
 
-  expo=Int(exponent(G))
+  expo=exponent(G)
   inverse_d=gcdx(fmpz(nonnclass),fmpz(expo))[2]
   
   R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))

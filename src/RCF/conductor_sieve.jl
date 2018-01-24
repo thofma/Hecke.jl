@@ -985,12 +985,12 @@ function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField
         end
         C=ray_class_field(mr*inv(s))
         if Hecke._is_conductor_min_normal(C,a)
-        println("New Field")
+          println("New Field")
           L=number_field(C)
           auto=Hecke.extend_aut(C, gens[1])
           F=_quintic_ext(auto)
           println(F)
-          push!(fieldslist, (F,D^4*minimum(mr.modulus_fin)))
+          push!(fieldslist, (F,D^2*minimum(mr.modulus_fin)^4))
         end
       end
     end
@@ -1232,10 +1232,10 @@ end
 ###############################################################################
 
  
-function C3xD5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz)
+function C3xD5_extensions(non_normal_bound::fmpz)
 
   
-  bound_quadratic= min(Int(root(absolute_bound, 15)), Int(root(non_normal_bound, 6)))
+  bound_quadratic= Int(root(non_normal_bound, 6))
   list_quad=quadratic_extensions(bound_quadratic, complex=true)
   fieldslist=Tuple{AnticNumberField, Array{fmpz,1}}[]
   
@@ -1244,11 +1244,8 @@ function C3xD5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz)
     println("Field: $K")
     O=maximal_order(K)
     D=abs(discriminant(O))
-    new_absolute_bound=min(D^15*non_normal_bound^2, absolute_bound)
-    if D^15>new_absolute_bound
-      continue
-    end
-    bo = ceil(Rational{BigInt}(new_absolute_bound//D^15))
+    absolute_bound=D^15*non_normal_bound^2
+    bo = ceil(Rational{BigInt}(absolute_bound//D^15))
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
@@ -1294,9 +1291,9 @@ function C3xD5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz)
             push!(ram_primes, p)
           end
           auto=extend_aut(C,gens[1])
-          S,mS=simple_extension(L)
-          x=mS(gen(S))
-          if auto^2(x)!=x
+          T,mT=simple_extension(L)
+          x=mT(gen(T))
+          if (auto*auto)(x)!=x
             auto=auto^3
           end
           pol=absolute_minpoly(x+auto(x))
@@ -1334,15 +1331,15 @@ end
 #  S3 x C5 extensions
 #
 ###############################################################################
-function S3xC5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz)
+function S3xC5_extensions(non_normal_bound::fmpz)
 
-  bound_quadratic= min(Int(root(absolute_bound, 15)), Int(root(non_normal_bound,5)))
+  bound_quadratic= Int(root(non_normal_bound,5))
   list_quad=quadratic_extensions(bound_quadratic, complex=true)
-  return S3xC5_extensions(absolute_bound, non_normal_bound,list_quad)
+  return S3xC5_extensions(non_normal_bound,collect(list_quad))
 end
 
 
-function S3xC5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz, list_quad::Array{AnticNumberField, 1})
+function S3xC5_extensions(non_normal_bound::fmpz, list_quad::Array{AnticNumberField, 1})
 
 
   fieldslist=Tuple{AnticNumberField, Array{fmpz,1}}[]
@@ -1352,10 +1349,7 @@ function S3xC5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz, list_qua
     println("Field: $K")
     O=maximal_order(K)
     D=abs(discriminant(O))
-    if D^15>absolute_bound
-      continue
-    end
-    new_absolute_bound=min(absolute_bound, D^15*non_normal_bound^2)
+    new_absolute_bound=D^15*non_normal_bound^2
     bo = ceil(Rational{BigInt}(new_absolute_bound//D^15))
     bound = FlintZZ(fmpq(bo))
    
@@ -1403,10 +1397,10 @@ function S3xC5_extensions(absolute_bound::fmpz, non_normal_bound::fmpz, list_qua
             push!(ram_primes, p)
           end
           auto=extend_aut(C,gens[1])
-          S,mS=simple_extension(L)
-          x=mS(gen(S))
-          if auto^2(x)!=x
-            auto=auto^5
+          T,mT=simple_extension(L)
+          x=mT(gen(T))
+          if (auto*auto)(x)!=x
+            auto=auto*auto*auto*auto*auto
           end
           pol=absolute_minpoly(x+auto(x))
           if degree(pol)!=15
@@ -1533,6 +1527,12 @@ function _discriminant_bound(autos::Vector{NfRel_nsToNfRel_nsMor}, ram_primes::A
   println("Doing $(K)")
   #now, compute the discriminant of K. Since we know the ramified primes, 
   #we know the primes dividing the discriminant and this is easier than computing the maximal order.
+  return _is_discriminant_lower(K,ram_primes,bound)
+  
+end
+
+function _is_discriminant_lower(K::AnticNumberField, ram_primes::Array{fmpz,1}, bound::fmpz)
+
   disc=fmpz(1)
   O=EquationOrder(K)
   for p in ram_primes
@@ -1543,7 +1543,7 @@ function _discriminant_bound(autos::Vector{NfRel_nsToNfRel_nsMor}, ram_primes::A
     end
   end
   return true
-  
+
 end
 
 ###############################################################################
