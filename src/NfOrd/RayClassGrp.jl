@@ -919,7 +919,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   end
   
   valclassp=Int(p^(valuation(order(C[ngens(C)]),p)))
-  nonppartclass=Int(div(order(C[ngens(C)]),valclassp))
+  nonppartclass=div(order(C[ngens(C)]),valclassp)
   
   if valclassp==1 && order(G)==1
     return empty_ray_class(m)

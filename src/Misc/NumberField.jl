@@ -2547,7 +2547,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   re = K(0)
   while (true)
     me = modular_init(K, p)
-    @time mp = dB .* modular_proj(a, me)
+    mp = dB .* modular_proj(a, me)
     m = modular_lift(mp, me)
     if pp == 1
       re = m
