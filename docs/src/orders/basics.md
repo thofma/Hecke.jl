@@ -2,7 +2,7 @@
 CurrentModule = Hecke
 ```
 
-## Creation
+## Creation and basic properties
 
 ```@docs
 Order(::AnticNumberField, ::Array{nf_elem, 1})
@@ -21,8 +21,6 @@ Qx, x = PolynomialRing(FlintQQ, "x");
 K, a = NumberField(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
-
-## Basic properties
 
 ```@docs
 parent(::NfOrd)
@@ -51,10 +49,6 @@ pmaximal_overorder(::NfOrd, ::fmpz)
 ## Elements
 
 ### Creation
-
-```@docs
-(O::NfOrd)(::nf_elem)
-```
 
 ### Basic properties
 
