@@ -529,6 +529,31 @@ function kernel(a)
   return ar
 end
 
+function right_kernel(a::MatElem)
+  R = base_ring(a)
+  zz, nn = nullspace(a)
+  #TODO: There is some inconsistency between returning the nullity or the kernel first...
+  if typeof(nn) <: Integer
+    n = nn
+    z = zz
+  else
+    n = zz
+    z = nn
+  end
+  T = elem_type(base_ring(a))
+  ar = typeof(Array{T}(rows(z)))[]
+  for i in 1:n
+    t = Array{T}(rows(z))
+    for j in 1:rows(z)
+      t[j] = R(z[j, i])
+    end
+    push!(ar,t)
+  end
+  return ar
+end
+
+left_kernel(a::MatElem) = right_kernel(transpose(a))
+
 function lift(a::Generic.Mat{Generic.Res{fmpz}})
   z = zero_matrix(FlintZZ, rows(a), cols(a))
   for i in 1:rows(a)
