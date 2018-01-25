@@ -18,7 +18,7 @@ parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
 #
 ################################################################################
 
-# This only works if base_ring(A) is a field (probably) and needs sub
+# This only works if base_ring(A) is a field (probably)
 function find_one(A::AlgAss)
   n = dim(A)
   M = zero_matrix(base_ring(A), n^2, n)
@@ -96,38 +96,77 @@ function _non_pivot_cols(M::MatElem)
 end
 
 function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
+  @assert order(I) == O
+
   n = degree(O)
   BO = Hecke.basis(O)
-  Rp = ResidueRing(FlintZZ, p)
 
-  # Compute a basis of O/I (over F_p)
-  M = MatrixSpace(Rp, n, n)(basis_mat(I, Val{false}))
-  M = vcat(M, zero_matrix(Rp, 1, n))
-  M[n + 1, 1] = Rp(1)
-  r = rref!(M)
-  r = r - 1
-  n == r && error("Cannot construct zero dimensional algebra.")
-  # We save the indices of the columns of M without a pivot
-  basis = [1]
-  append!(basis, _non_pivot_cols(M))
-  @assert length(basis) == n - r
+  pisfmpz = typeof(p) == fmpz
+  if pisfmpz
+    # Can't use ResidueRing for fmpz since there is no lufact for Generic.Res
+    Fp = FiniteField(p, 1, "")[1]
+  else
+    Fp = ResidueRing(FlintZZ, p)
+  end
+  BOmod = [ mod(v, I) for v in BO ]
+  B = zero_matrix(Fp, n, n)
+  for i = 1:n
+    b = elem_in_basis(BOmod[i])
+    for j = 1:n
+      B[i, j] = Fp(b[j])
+    end
+  end
+  r = rref!(B)
+  r == 0 && error("Cannot construct zero dimensional algebra.")
+  b = Vector{fmpz}(n)
+  basis = Vector{NfOrdElem}(r)
+  for i = 1:r
+    for j = 1:n
+      if pisfmpz
+        b[j] = coeff(B[i, j], 0)
+      else
+        b[j] = fmpz(B[i, j])
+      end
+    end
+    basis[i] = O(b)
+  end
 
-  # Construct the multiplication table
-  mult_table = Array{elem_type(Rp), 3}(n - r, n - r, n - r)
-  for i = 1:n - r
-    for j = 1:n - r
-      c = BO[basis[i]]*BO[basis[j]]
-      d = elem_in_basis(c)
-      for k = 1:n - r
-        mult_table[i, j, k] = Rp(d[basis[k]])
+  _, p, L, U = lufact(transpose(B))
+  U = _remove_non_pivot_cols(U, r)
+  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+  d = zero_matrix(Fp, n, 1)
+  dd = zero_matrix(Fp, r, 1)
+
+  for i = 1:r
+    for j = 1:r
+      c = elem_in_basis(mod(basis[i]*basis[j], I))
+      @assert dot(c, BOmod) == mod(basis[i]*basis[j], I)
+      for k = 1:n
+        d[p[k], 1] = c[k]
+      end
+      d = solve(L, d)
+      for k = 1:r
+        dd[k, 1] = d[k, 1]
+      end
+      dd = solve(U, dd)
+      for k = 1:r
+        mult_table[i, j, k] = deepcopy(dd[k, 1])
       end
     end
   end
 
-  one = zeros(Rp, n - r)
-  one[1] = Rp(1)
-  A = AlgAss(Rp, mult_table, one)
-  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
+  if isone(basis[1])
+    one = zeros(Fp, r)
+    one[1] = Fp(1)
+    A = AlgAss(Fp, mult_table, one)
+  else
+    A = AlgAss(Fp, mult_table)
+  end
+  if pisfmpz
+    f = (v -> sum([ coeff(v.coeffs[i], 0)*basis[i] for i = 1:r ]))
+  else
+    f = (v -> sum([ fmpz(v.coeffs[i])*basis[i] for i = 1:r ]))
+  end
   return A, f
 end
 
@@ -262,12 +301,12 @@ function kernel_of_frobenius(A::AlgAss)
     end
     c = b^p - b
     for j = 1:dim(A)
-      B[i, j] = deepcopy(c.coeffs[j])
+      B[j, i] = deepcopy(c.coeffs[j])
     end
   end
 
-  V = kernel(B)
-  return [ A(V[i]) for i = 1:length(V) ]
+  V = right_kernel(B)
+  return [ A(v) for v in V ]
 end
 
 function _remove_non_pivot_cols(M::MatElem, r::Int)
@@ -309,7 +348,6 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   _, p, L, U = lufact(transpose(B))
-  inv!(p)
   U = _remove_non_pivot_cols(U, r)
   mult_table = Array{elem_type(R), 3}(r, r, r)
   c = A()
@@ -379,6 +417,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
     a = dot(c, V)
 
     f = minpoly(a)
+
     if degree(f) < 2
       continue
     end
@@ -397,6 +436,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
       idem += coeff(f1, i)*x
       x *= a
     end
+
     return false, [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
   end
 end
