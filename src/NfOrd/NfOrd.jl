@@ -977,11 +977,14 @@ doc"""
     MaximalOrder(K::AnticNumberField) -> NfOrd
 
 Returns the maximal order of $K$.
-**Example**
 
-    julia> Qx, x = FlintQQ["x"]
-    julia> K, a = NumberField(x^3 + 2, "a")
-    julia> O = MaximalOrder(K)
+# Example
+
+```julia-repl
+julia> Qx, xx = FlintQQ["x"];
+julia> K, a = NumberField(x^3 + 2, "a");
+julia> O = MaximalOrder(K);
+```
 """
 function MaximalOrder(K::AnticNumberField, cache::Bool = true)
   O = EquationOrder(K)
