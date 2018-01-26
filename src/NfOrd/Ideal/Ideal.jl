@@ -296,6 +296,9 @@ function *(O::NfOrd, x::NfOrdElem)
 end
 
 *(x::NfOrdElem, O::NfOrd) = O*x
+*(x::Int, O::NfOrd) = ideal(O, x)
+*(x::BigInt, O::NfOrd) = ideal(O, fmpz(x))
+*(x::fmpz, O::NfOrd) = ideal(O, x)
 
 ###########################################################################################
 #
