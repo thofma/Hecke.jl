@@ -1,3 +1,5 @@
+# Orders of number fields
+
 ## Introduction
 
 This chapter deals with absolute number fields and orders there of. 
@@ -57,4 +59,5 @@ is called the *Minkowski matrix* of $\mathcal O$.
 #### Ideals
 
 #### Fractional ideals
-## Types
+
+### Types

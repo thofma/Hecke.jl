@@ -2,7 +2,7 @@
 CurrentModule = Hecke
 ```
 
-## Creation
+## Creation and basic properties
 
 ```@docs
 Order(::AnticNumberField, ::Array{nf_elem, 1})
@@ -40,8 +40,6 @@ K, a = NumberField(x^2 - 2, "a");
 O = EquationOrder(K)
 ```
 
-## Basic properties
-
 ```@docs
 parent(::NfOrd)
 isequation_order(::NfOrd)
@@ -71,10 +69,6 @@ deepcopy(::NfOrd)
 ## Elements
 
 ### Creation
-
-```@docs
-(::NfOrd)(::nf_elem)
-```
 
 ### Basic properties
 

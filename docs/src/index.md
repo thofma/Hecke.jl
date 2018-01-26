@@ -1,11 +1,5 @@
 # Hecke
 
-**Builds**
-
-[![Build Status](https://travis-ci.org/thofma/Hecke.jl.svg?branch=master)](https://travis-ci.org/thofma/Hecke.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/3qb0ce2h5melsjeb?svg=true)](https://ci.appveyor.com/project/thofma/hecke-jl)
-
-
 ## About
 
 Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann.
@@ -70,9 +64,16 @@ Maximal order of Number field over Rational Field with defining polynomial x^3 +
 with basis [1,a,a^2]
 ```
 
-## Documentation
+## Manual table of contents
 
-The online documentation can be found here: [http://thofma.github.io/Hecke.jl/latest/](http://thofma.github.io/Hecke.jl/latest/)
+```@contents
+Pages = [
+  "orders/introduction.md",
+  "orders/basics.md",
+  "orders/ideals.md",
+  ]
+  Depth = 2
+```
 
 The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
 
