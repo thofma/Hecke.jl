@@ -11,6 +11,24 @@ Order(::NfOrdFracIdl)
 EquationOrder(::AnticNumberField)
 MaximalOrder(::AnticNumberField)
 MaximalOrder(::NfOrd)
+maximal_order(::AnticNumberField)
+lll(::NfOrd)
+```
+
+By Chistov's fundamental theorem, the computation of the maximal order
+is basically as hard as the factorisation of the discriminant. In order to
+help the computer, Hecke also provides the following signatures:
+
+```@docs
+maximal_order(::AnticNumberField, ::Array{fmpz, 1})
+ring_of_integers(::AnticNumberField, ::Array{fmpz, 1})
+```
+
+It is also possible the execute the steps individually:
+
+```@docs
+pradical(::NfOrd, ::fmpz)
+ring_of_multipliers(::NfOrdIdl)
 ```
 
 ### Example
@@ -35,8 +53,8 @@ basis(::NfOrd, ::AnticNumberField)
 basis_mat(::NfOrd)
 basis_mat_inv(::NfOrd)
 discriminant(::NfOrd)
-gen_index(O::NfOrd)
-index(O::NfOrd)
+gen_index(::NfOrd)
+index(::NfOrd)
 isindex_divisor(::NfOrd, ::fmpz)
 minkowski_mat(::NfOrd, ::Int)
 in(::nf_elem, ::NfOrd)
@@ -46,6 +64,8 @@ trace_matrix(::NfOrd)
 +(::NfOrd, ::NfOrd)
 poverorder(::NfOrd, ::fmpz)
 pmaximal_overorder(::NfOrd, ::fmpz)
+parent(::NfOrd)
+deepcopy(::NfOrd)
 ```
 
 ## Elements
@@ -53,7 +73,7 @@ pmaximal_overorder(::NfOrd, ::fmpz)
 ### Creation
 
 ```@docs
-(O::NfOrd)(::nf_elem)
+(::NfOrd)(::nf_elem)
 ```
 
 ### Basic properties
@@ -94,6 +114,8 @@ minkowski_map(::NfOrdElem, ::Int)
 conjugates_arb(::NfOrdElem, ::Int)
 conjugates_arb_log(::NfOrdElem, ::Int)
 t2(::NfOrdElem, ::Int)
+minpoly(::NfOrdElem)
+charpoly(::NfOrdElem)
 ```
 
 ## Ideals
@@ -102,11 +124,15 @@ t2(::NfOrdElem, ::Int)
 
 ```@docs
 ideal(::NfOrd, ::Int)
+ideal(::NfOrd, ::Integer)
 ideal(::NfOrd, ::fmpz)
 ideal(::NfOrd, ::fmpz_mat)
 ideal(::NfOrd, ::NfOrdElem)
-ring_of_multipliers(::NfOrdIdl)
+ideal(::NfOrd, ::Integer, ::NfOrdElem)
+ideal(::NfOrd, ::fmpz, ::NfOrdElem)
 *(::NfOrd, ::NfOrdElem)
+prime_decomposition(::NfOrd, ::Integer)
+prime_decomposition(::NfOrd, ::fmpz)
 ```
 
 ### Arithmetic
@@ -131,6 +157,13 @@ in(::NfOrdElem, ::NfOrdIdl)
 idempotents(::NfOrdIdl, ::NfOrdIdl)
 mod(::NfOrdElem, ::NfOrdIdl)
 pradical(::NfOrd, p::fmpz)
+isprime(::NfOrdIdl)
+valuation(::nf_elem, ::NfOrdIdl)
+valuation(::NfOrdElem, ::NfOrdIdl)
+valuation(::NfOrdIdl, ::NfOrdIdl)
+valuation(::Integer, ::NfOrdIdl)
+valuation(::fmpz, ::NfOrdIdl)
+valuation(::NfOrdFracIdl, ::NfOrdIdl)
 ```
 
 ## Fractional ideals
@@ -150,6 +183,8 @@ frac_ideal(::NfOrd, ::NfOrdElem)
 ### Arithmetic
 ```@docs
 ==(::NfOrdFracIdl, ::NfOrdFracIdl)
+inv(::NfOrdFracIdl)
+integral_split(::NfOrdFracIdl)
 ```
 
 ### Miscaellenous
