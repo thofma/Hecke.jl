@@ -36,9 +36,9 @@
     M=ZpnGModule(V,[A])
     N= Hecke.dual_module(M)
     ls=submodules(N)
-    v=[3,3,1,1]
+    v=fmpz[3,3,1,1]
     for x in ls
-      @test Hecke.issubmodule(M,_dualize(x,V,v))
+      @test Hecke.issubmodule(M,Hecke._dualize(x,V,v))
     end
     
   end
@@ -83,6 +83,20 @@
     end
     @test i==length(ls)
   
+  end
+  
+  @testset "submodules" begin
+  
+    R=ResidueRing(FlintZZ,4)
+    V=DiagonalGroup([2,2,4])
+    V.issnf=true
+    V.snf=[2,2,4]
+    A=MatrixSpace(R,3,3)(1)
+    M=ZpnGModule(V,[A])
+    ls=submodules(M)
+    lsub=subgroups(V)
+    @test length(collect(ls))==length(collect(lsub))
+    
   end
 
 
