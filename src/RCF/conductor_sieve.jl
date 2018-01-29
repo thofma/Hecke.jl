@@ -439,7 +439,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
     =#
     sq=fmpz(q)^(divexact(degree(O),lp[1][2]))
     fq=divexact(degree(O),length(lp)*lp[1][2])
-    bound_max_ap=clog(bound,sq) #bound on ap
+    bound_max_ap=flog(bound,sq) #bound on ap
     bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
     nisc= gcd(q^fq-1,n)!=1
     if nisc
@@ -604,7 +604,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   end
   if tame
     filter!( x -> mod(x,4)==1, sqf)
-    return ( number_field(x^2-x+divexact(1-i,4), false)[1] for i in sqf)
+    return ( number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in sqf)
   end
   final_list=Int[]
   for i=1:length(sqf)
@@ -616,7 +616,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
       push!(final_list,sqf[i])
     end
   end
-  return ( mod(i,4)!=1 ? number_field(x^2-i, false)[1] : number_field(x^2-x+divexact(1-i,4), false)[1] for i in final_list)
+  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in final_list)
 
 end
 
