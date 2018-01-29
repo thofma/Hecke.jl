@@ -108,6 +108,8 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large = 100
   end
 
   c = class_group_init(O, bound, complete = false)
+  _set_ClassGrpCtx_of_order(O, c)
+
   c.B2 = bound * large
 
   if false # method==1
@@ -119,8 +121,6 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large = 100
     c.expect = class_group_expected(c, 100)
     class_group_via_lll(c)
   end
-
-  _set_ClassGrpCtx_of_order(O, c)
 
   return c
 end

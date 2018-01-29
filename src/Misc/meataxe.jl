@@ -1,5 +1,5 @@
 
-export meataxe, charpoly, composition_factors, composition_series, submodules, maximal_submodules, minimal_submodules
+export meataxe, composition_factors, composition_series, submodules, maximal_submodules, minimal_submodules
 
 
 ####################################################################
@@ -250,9 +250,12 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     return false
   end
 
+  K=M.K
+  Kx,x=K["x"]
+  
   if length(M.G)==1
-    f=charpoly(M.G[1])
-    g=charpoly(N.G[1])
+    f=charpoly(Kx,M.G[1])
+    g=charpoly(Kx,N.G[1])
     if f==g
       return true
     else
@@ -263,9 +266,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   n=M.dim
   posfac=n
     
-  K=M.K
-  
-  Kx,x=K["x"]
+
   f=Kx(1)
   G=deepcopy(M.G)
   H=deepcopy(N.G)
@@ -307,8 +308,8 @@ function isisomorphic(M::FqGModule,N::FqGModule)
       B+=s*H[i]
     end
   
-    cp=charpoly(A)
-    cpB=charpoly(B)
+    cp=charpoly(Kx,A)
+    cpB=charpoly(Kx,B)
     if cp!=cpB
       return false
     end
@@ -464,104 +465,6 @@ function dual_space(M::FqGModule)
 
 end
 
-
-###############################################################
-#
-#  Characteristic Polynomial
-#
-#################################################################
-
-
-function ordpoly(M::MatElem,S::MatElem,v::MatElem)
-
-  K=parent(M[1,1])
-  D=cleanvect(S,v)
-  C=MatrixSpace(K, 1, cols(M)+1)()
-  C[1,1]=K(1)
-  if iszero(D)
-    return C
-  end
-  ind=2
-  vec=v
-  while true
-    vec=vec*M
-    D=vcat(D, cleanvect(S,vec))
-    E=MatrixSpace(K, 1, cols(M)+1)()
-    E[1,ind]=K(1)
-    C=vcat(C,E)
-    for i=1:ind-1
-      nonzero=1
-      while iszero(D[i, nonzero])
-        nonzero+=1
-      end
-      mult=D[ind,nonzero]//D[i,nonzero]
-      for j=1:cols(M)+1
-        C[ind,j]-=mult*C[i,j]
-      end
-      for j=1:cols(M)
-        D[ind,j]-=mult*D[i,j]
-      end
-    end
-    if iszero(submatrix(D, ind:ind, 1:cols(D)))
-      break
-    end
-    ind+=1
-  end
-  return submatrix(C, ind:ind, 1:cols(D)+1), submatrix(D, 1:ind-1, 1:cols(D))
-  
-end
-
-function charpoly_fact(M::MatElem)
-  
-  @assert cols(M)>0 && cols(M)==rows(M) 
-  
-  K=parent(M[1,1])
-  polys=[]
-  v=MatrixSpace(K, 1, cols(M))()
-  v[1,1]=K(1)
-  pol,B=ordpoly(M,MatrixSpace(K, 0, 0)(),v)
-  push!(polys,pol)
-  if !iszero(pol[1,cols(B)+1])
-    return polys
-  end
-  v[1,1]=K(0)
-  for i=2:cols(M)
-    v[1,i]=K(1)
-    red=cleanvect(B,v)
-    if !iszero(red)
-      x=ordpoly(M,B,red)
-      push!(polys,x[1])
-      B=vcat(B,x[2])
-    end
-    v[1,i]=K(0)
-  end
-  return polys
-end
-
-
-doc"""
-***
-    charpoly(M::MatElem) -> PolyElem
-
-> Returns the characteristic polynomial of the square matrix M
-
-"""
-
-function charpoly(M::MatElem)
-  
-  @assert rows(M)>0 && rows(M)==cols(M)
-  K=parent(M[1,1])
-  Kx,x=K["x"]
-  polys=charpoly_fact(M)
-  f=Kx(1)
-  for pol in polys
-    coeff=[pol[1,i] for i=1:cols(pol)]
-    f*=Kx(coeff)
-  end
-  return f
-end
-
-
 #################################################################
 #
 #  MeatAxe, Composition Factors and Composition Series
@@ -591,10 +494,9 @@ function meataxe(M::FqGModule)
   
   if length(H)==1
     A=H[1]
-    poly=charpoly_fact(A)
-    c=[poly[1][1,i] for i=1:cols(poly[1])]
-    sq=factor_squarefree(Kx(c))
-    lf=factor(collect(keys(sq.fac))[1])
+    poly=charpoly(Kx,A)
+    sq=factor_squarefree(poly)
+    lf=factor(first(keys(sq.fac)))
     t=first(keys(lf.fac))
     if degree(t)==n
       M.isirreducible=true
@@ -640,10 +542,10 @@ function meataxe(M::FqGModule)
   #
   # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
   # 
-    poly=charpoly_fact(A)
-    for fact in poly
-      c=[fact[1,i] for i=1:cols(fact)]
-      sq=first(keys(factor_squarefree(Kx(c)).fac))
+    poly=charpoly(Kx,A)
+    sqfpart=keys(factor_squarefree(poly).fac)
+    for el in sqfpart
+      sq=el
       i=1
       while !isone(sq)
         f=gcd(x^(Int(order(K)^i))-x,sq)
@@ -821,8 +723,11 @@ function _relations(M::FqGModule, N::FqGModule)
         A=A-(matrices[i]*H[j])
         sys=vcat(sys,transpose(A))
         rref!(sys)
-        sys=submatrix(sys, 1:N.dim, 1:N.dim)
+        sys=view(sys, 1:N.dim, 1:N.dim)
       end
+    end
+    if rows(sys)==N.dim && sys[N.dim,N.dim]!=0
+      break
     end
     i=i+1
   end

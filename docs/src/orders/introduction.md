@@ -1,3 +1,5 @@
+# Orders of number fields
+
 ## Introduction
 
 This chapter deals with absolute number fields and orders there of. 
@@ -5,7 +7,7 @@ This chapter deals with absolute number fields and orders there of.
 ### Definitions and vocabulary
 
 We begin by collecting the necessary definitions and vocabulary. 
-This is in particular important for everything related to embeddings of number fields into archimdean fields, since they are at least two (slighlty) different normalizations. 
+This is in particular important for everything related to embeddings of number fields into archimedean fields, since they are at least two (slighlty) different normalizations. 
 
 #### Number fields
 
@@ -57,4 +59,5 @@ is called the *Minkowski matrix* of $\mathcal O$.
 #### Ideals
 
 #### Fractional ideals
-## Types
+
+### Types

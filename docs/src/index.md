@@ -1,11 +1,5 @@
 # Hecke
 
-**Builds**
-
-[![Build Status](https://travis-ci.org/thofma/Hecke.jl.svg?branch=master)](https://travis-ci.org/thofma/Hecke.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/3qb0ce2h5melsjeb?svg=true)](https://ci.appveyor.com/project/thofma/hecke-jl)
-
-
 ## About
 
 Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann.
@@ -19,9 +13,16 @@ So far, Hecke provides the following features:
   - Orders (including element and ideal arithmetic) in number fields
   - Computation of maximal orders
   - Verified residue computations of Dedekind zeta functions
-  - Factor base creation and relations search in number fields
+  - Class and Unit group computation, S-units, PID testing
   - Lattice enumeration
   - Sparse linear algebra
+  - Normal forms for modules over maximal orders
+  - Extensions of number fields, non-simple extensions of number fields
+  - Orders and ideals in extensions of fields
+  - Abelian groups
+  - Ray class groups, quotients of ray class groups
+  - Invariant subgroups
+  - Defining equations for class fields
 
 ## Installation
 
@@ -50,9 +51,9 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.3.0 ... 
- ... which comes with absolutely no warrant whatsoever
-(c) 2015 by Claus Fieker and Tommy Hofmann
+Version 0.4.0 ... 
+ ... which comes with absolutely no warranty whatsoever
+(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann
 
 julia> Qx, x = PolynomialRing(FlintQQ, "x");
 julia> f = x^3 + 2;
@@ -63,9 +64,16 @@ Maximal order of Number field over Rational Field with defining polynomial x^3 +
 with basis [1,a,a^2]
 ```
 
-## Documentation
+## Manual table of contents
 
-The online documentation can be found here: [http://thofma.github.io/Hecke.jl/latest/](http://thofma.github.io/Hecke.jl/latest/)
+```@contents
+Pages = [
+  "orders/introduction.md",
+  "orders/basics.md",
+  "orders/ideals.md",
+  ]
+  Depth = 2
+```
 
 The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
 
@@ -79,3 +87,9 @@ search: signature
 
   |  Returns the signature of the ambient number field of \mathcal O.
 ```
+
+## Contents
+```@contents
+Pages = ["toc.md"]
+```
+

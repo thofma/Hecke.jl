@@ -910,6 +910,7 @@ function MaximalOrder(O::NfOrd)
 end
 
 # don't know what this is doing
+#for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
 
 function _lll_gram(M::NfOrd)
   K = nf(M)
@@ -922,11 +923,19 @@ function _lll_gram(M::NfOrd)
   return On
 end
 
+doc"""
+    lll_basis(M::NfOrd) -> Array{nf_elem, 1}
+> A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
+"""
 function lll_basis(M::NfOrd)
   I = hecke.ideal(M, parent(basis_mat(M).num)(1))
   return lll_basis(I)
 end
 
+doc"""
+    lll(M::NfOrd) -> NfOrd
+> The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
+"""
 function lll(M::NfOrd)
   K = nf(M)
 
@@ -968,11 +977,14 @@ doc"""
     MaximalOrder(K::AnticNumberField) -> NfOrd
 
 Returns the maximal order of $K$.
-**Example**
 
-    julia> Qx, x = FlintQQ["x"]
-    julia> K, a = NumberField(x^3 + 2, "a")
-    julia> O = MaximalOrder(K)
+# Example
+
+```julia-repl
+julia> Qx, xx = FlintQQ["x"];
+julia> K, a = NumberField(x^3 + 2, "a");
+julia> O = MaximalOrder(K);
+```
 """
 function MaximalOrder(K::AnticNumberField, cache::Bool = true)
   O = EquationOrder(K)
@@ -1025,8 +1037,6 @@ doc"""
 ***
     maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
-    ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-    ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
 
 Assuming that ``primes`` contains all the prime numbers at which the equation
 order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal
@@ -1043,8 +1053,6 @@ maximal_order(K::AnticNumberField, primes::Array{T, 1}) where {T} =
 
 doc"""
 ***
-    maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-    maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
 

@@ -1,5 +1,13 @@
 @testset "RCF" begin
 
+
+  @testset "quadratic extensions" begin
+  
+    l=collect(Hecke.quadratic_extensions(100))
+    @test length(l)==61
+  
+  end
+  
   @testset "abelian extensions" begin
     
     Qx,x=PolynomialRing(FlintQQ, "x")
