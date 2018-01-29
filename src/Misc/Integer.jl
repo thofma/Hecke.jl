@@ -113,10 +113,13 @@ end
 log(a::fmpz) = log(BigInt(a))
 log(a::fmpq) = log(numerator(a)) - log(denominator(a))
 
-function round(a::fmpq)
+function round(::Type{fmpz}, a::fmpq)
   s = sign(numerator(a))
   n = abs(numerator(a))
   d = denominator(a)
+  if isone(d)
+    return numerator(a)
+  end
   q = div(n, d)
   r = mod(n, d)
   if r >= div(d, 2)
@@ -124,6 +127,10 @@ function round(a::fmpq)
   else
     return s*q
   end
+end
+
+function round(a::fmpq)
+  return round(fmpz, a)
 end
 
 function zero(::Type{Nemo.fmpz})
