@@ -531,7 +531,11 @@ end
 
 function right_kernel(a::MatElem)
   R = base_ring(a)
-  zz, nn = nullspace(a)
+  if typeof(R) <: Generic.ResRing{fmpz}
+    nn, zz = _right_kernel(a)
+  else
+    zz, nn = nullspace(a)
+  end
   #TODO: There is some inconsistency between returning the nullity or the kernel first...
   if typeof(nn) <: Integer
     n = nn
@@ -1034,4 +1038,68 @@ function isdiag(A::fmpz_mat)
     end
   end
   return true
+end
+
+################################################################################
+#
+#  Triangular solving
+#
+################################################################################
+
+# Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
+function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
+  m = rows(A)
+  n = cols(A)
+  @assert m == rows(b)
+  @assert m <= n
+  x = similar(A, n, 1)
+  pivot_cols = Vector{Int}()
+  r = 0
+  last_pivot = n + 1
+  for i = m:-1:1
+    for j = 1:last_pivot - 1
+      if iszero(A[i, j])
+        continue
+      end
+      x[j, 1] = b[i, 1]
+      for k = 1:r
+        x[j, 1] -= A[i, pivot_cols[k]]*x[pivot_cols[k], 1]
+      end
+      x[j, 1] *= inv(A[i, j])
+      last_pivot = j
+      r += 1
+      push!(pivot_cols, j)
+      break
+    end
+  end
+  return x
+end
+
+# Solves A x = b for A lower triangular m\times n matrix and b m\times 1.
+function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
+  m = rows(A)
+  n = cols(A)
+  @assert m == rows(b)
+  @assert m <= n
+  x = similar(A, n, 1)
+  pivot_cols = Vector{Int}()
+  r = 0
+  last_pivot = 0
+  for i = 1:m
+    for j = n:-1:last_pivot + 1
+      if iszero(A[i, j])
+        continue
+      end
+      x[j, 1] = b[i, 1]
+      for k = 1:r
+        x[j, 1] -= A[i, pivot_cols[k]]*x[pivot_cols[k], 1]
+      end
+      x[j, 1] *= inv(A[i, j])
+      last_pivot = j
+      r += 1
+      push!(pivot_cols, j)
+      break
+    end
+  end
+  return x
 end
