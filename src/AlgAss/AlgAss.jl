@@ -18,7 +18,7 @@ parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
 #
 ################################################################################
 
-# This only works if base_ring(A) is a field (probably) and needs sub
+# This only works if base_ring(A) is a field (probably)
 function find_one(A::AlgAss)
   n = dim(A)
   M = zero_matrix(base_ring(A), n^2, n)
@@ -36,7 +36,7 @@ function find_one(A::AlgAss)
   rref!(Mc)
   @assert !iszero(Mc[n, n])
   n != 1 && @assert iszero(Mc[n + 1, n + 1])
-  cc = solve(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
+  cc = solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
   one = [ cc[i, 1] for i = 1:n ]
   return one
 end
@@ -96,38 +96,65 @@ function _non_pivot_cols(M::MatElem)
 end
 
 function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
+  @assert order(I) == O
+
   n = degree(O)
   BO = Hecke.basis(O)
-  Rp = ResidueRing(FlintZZ, p)
 
-  # Compute a basis of O/I (over F_p)
-  M = MatrixSpace(Rp, n, n)(basis_mat(I, Val{false}))
-  M = vcat(M, zero_matrix(Rp, 1, n))
-  M[n + 1, 1] = Rp(1)
-  r = rref!(M)
-  r = r - 1
-  n == r && error("Cannot construct zero dimensional algebra.")
-  # We save the indices of the columns of M without a pivot
-  basis = [1]
-  append!(basis, _non_pivot_cols(M))
-  @assert length(basis) == n - r
+  pisfmpz = (typeof(p) == fmpz)
+  Fp = ResidueRing(FlintZZ, p)
+  BOmod = [ mod(v, I) for v in BO ]
+  B = zero_matrix(Fp, n, n)
+  for i = 1:n
+    b = elem_in_basis(BOmod[i])
+    for j = 1:n
+      B[i, j] = Fp(b[j])
+    end
+  end
+  if pisfmpz
+    r, B = _rref(B)
+  else
+    r = rref!(B)
+  end
+  r == 0 && error("Cannot construct zero dimensional algebra.")
+  b = Vector{fmpz}(n)
+  basis = Vector{NfOrdElem}(r)
+  for i = 1:r
+    for j = 1:n
+      b[j] = fmpz(B[i, j])
+    end
+    basis[i] = O(b)
+  end
 
-  # Construct the multiplication table
-  mult_table = Array{elem_type(Rp), 3}(n - r, n - r, n - r)
-  for i = 1:n - r
-    for j = 1:n - r
-      c = BO[basis[i]]*BO[basis[j]]
-      d = elem_in_basis(c)
-      for k = 1:n - r
-        mult_table[i, j, k] = Rp(d[basis[k]])
+  if pisfmpz
+    _, p, L, U = _lufact(transpose(B))
+  else
+    _, p, L, U = lufact(transpose(B))
+  end
+  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+  d = zero_matrix(Fp, n, 1)
+  for i = 1:r
+    for j = 1:r
+      c = elem_in_basis(mod(basis[i]*basis[j], I))
+      for k = 1:n
+        d[p[k], 1] = c[k]
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      for k = 1:r
+        mult_table[i, j, k] = deepcopy(d[k, 1])
       end
     end
   end
 
-  one = zeros(Rp, n - r)
-  one[1] = Rp(1)
-  A = AlgAss(Rp, mult_table, one)
-  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
+  if isone(basis[1])
+    one = zeros(Fp, r)
+    one[1] = Fp(1)
+    A = AlgAss(Fp, mult_table, one)
+  else
+    A = AlgAss(Fp, mult_table)
+  end
+  f = (v -> sum([ fmpz(v.coeffs[i])*basis[i] for i = 1:r ]))
   return A, f
 end
 
@@ -262,33 +289,12 @@ function kernel_of_frobenius(A::AlgAss)
     end
     c = b^p - b
     for j = 1:dim(A)
-      B[i, j] = deepcopy(c.coeffs[j])
+      B[j, i] = deepcopy(c.coeffs[j])
     end
   end
 
-  V = kernel(B)
-  return [ A(V[i]) for i = 1:length(V) ]
-end
-
-function _remove_non_pivot_cols(M::MatElem, r::Int)
-  if r == rows(M)
-    return M
-  end
-  N = zero_matrix(base_ring(M), r, r)
-  i = 1
-  while i <= r
-    for j = i:cols(M)
-      if iszero(M[i, j])
-        continue
-      end
-      for k = 1:i
-        N[k, i] = deepcopy(M[k, j])
-      end
-      break
-    end
-    i += 1
-  end
-  return N
+  V = right_kernel(B)
+  return [ A(v) for v in V ]
 end
 
 # This only works if base_ring(A) is a field
@@ -296,9 +302,14 @@ end
 function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   @assert parent(e) == A
   R = base_ring(A)
+  isgenres = (typeof(R) <: Generic.ResRing)
   n = dim(A)
   B = representation_mat(e)
-  r = rref!(B)
+  if isgenres
+    r, B = _rref(B)
+  else
+    r = rref!(B)
+  end
   r == 0 && error("Cannot construct zero dimensional algebra.")
   basis = Vector{AlgAssElem}(r)
   for i = 1:r
@@ -308,28 +319,24 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
   # The basis matrix of e*A with respect to A is
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
-  _, p, L, U = lufact(transpose(B))
-  inv!(p)
-  U = _remove_non_pivot_cols(U, r)
+  if isgenres
+    _, p, L, U = _lufact(transpose(B))
+  else
+    _, p, L, U = lufact(transpose(B))
+  end
   mult_table = Array{elem_type(R), 3}(r, r, r)
   c = A()
   d = zero_matrix(R, n, 1)
-  dd = zero_matrix(R, r, 1)
   for i = 1:r
     for j = 1:r
       c = basis[i]*basis[j]
       for k = 1:n
         d[p[k], 1] = c.coeffs[k]
       end
-      #TODO: Use that L and U are already triangular
-      d = solve(L, d)
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
       for k = 1:r
-        dd[k, 1] = d[k, 1]
-      end
-      @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
-      dd = solve(U, dd)
-      for k = 1:r
-        mult_table[i, j, k] = deepcopy(dd[k, 1])
+        mult_table[i, j, k] = deepcopy(d[k, 1])
       end
     end
   end
@@ -337,13 +344,9 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     for k = 1:n
       d[p[k], 1] = e.coeffs[k]
     end
-    d = solve(L, d)
-    for k = 1:r
-      dd[k, 1] = d[k, 1]
-    end
-    @assert all([ iszero(d[k, 1]) for k = r + 1:n ])
-    dd = solve(U, dd)
-    eA = AlgAss(R, mult_table, [ dd[i, 1] for i = 1:r ])
+    d = solve_lt(L, d)
+    d = solve_ut(U, d)
+    eA = AlgAss(R, mult_table, [ d[i, 1] for i = 1:r ])
   else
     eA = AlgAss(R, mult_table)
   end
@@ -379,14 +382,13 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
     a = dot(c, V)
 
     f = minpoly(a)
+
     if degree(f) < 2
       continue
     end
-    @assert issquarefree(f)
 
     fac = factor(f)
     f1 = first(keys(fac.fac))
-    @assert length(fac) == degree(f)
     f2 = divexact(f, f1)
     g, u, v = gcdx(f1, f2)
     @assert g == 1
@@ -397,6 +399,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
       idem += coeff(f1, i)*x
       x *= a
     end
+
     return false, [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
   end
 end
