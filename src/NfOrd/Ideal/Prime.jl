@@ -434,7 +434,7 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
   m = zero_matrix(FlintZZ, 1, degree(O))
   for (B, BtoA) in AA
     f = dim(B)
-    idem = BtoA(B[1])
+    idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_mat(idem)
     ker = left_kernel(M)
     N = basis_mat(Ip)
@@ -468,21 +468,11 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
       # number theory".
 
       # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
-      if j == 1
-        Vp = ideals[2]
-        k = 3
-      else
-        Vp = ideals[1]
-        k = 2;
-      end
 
-      for i in k:length(ideals)
-        if i == j
-          continue
-        else
-          Vp = intersection(Vp, ideals[i])
-        end
-      end
+      B, BtoA = AA[j]
+      J = ideal(O, AtoO(BtoA(B[1])))
+      N = sub(_hnf(vcat(basis_mat(Ip), basis_mat(J)), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+      Vp = ideal(O, N)
 
       u, v = idempotents(P, Vp)
 
