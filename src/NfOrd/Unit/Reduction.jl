@@ -83,6 +83,7 @@ function row_norms(A::fmpz_mat)
 end
 
 function reduce(u::Array{T, 1}, prec::Int = 32) where T
+  @vprint :UnitGroup 2 "prec in reduce, now: $prec\n"
   r = length(u)
   if r == 0
     return u
