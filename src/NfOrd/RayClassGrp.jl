@@ -2107,8 +2107,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     return ([])
   end
 
-  final_it = ( op(R,vcat(c...)) for c in Iterators.product(list...))
-  return final_it
+  return ( op(R,vcat(c...)) for c in Iterators.product(list...))
 
 end
 
