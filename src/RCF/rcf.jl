@@ -850,7 +850,8 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
       ccall((:fq_nmod_pow, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{fmpz}, Ptr{FqNmodFiniteField}), &s, &s, &vr, &Fq)
       mul!(r, r, s)
     end
-    @hassert :ClassField 3 r == f(O(evaluate(x)))
+#too expensive - and automatically used in test
+#    @hassert :ClassField 3 r == f(O(evaluate(x)))
     return r
   end
 
