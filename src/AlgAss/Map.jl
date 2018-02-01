@@ -16,7 +16,8 @@ mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}}
         z.c_t[1, i] = a.coeffs[i]
       end
       s = Vector{S}(dim(B))
-      mul!(z.d_t, z.c_t, M)
+      #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
+      z.d_t = z.c_t*M
       for i in 1:dim(B)
         s[i] = z.d_t[1, i]
       end

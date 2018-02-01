@@ -1,5 +1,5 @@
 
-export meataxe, charpoly, composition_factors, composition_series, submodules, maximal_submodules, minimal_submodules
+export meataxe, composition_factors, composition_series, submodules, maximal_submodules, minimal_submodules
 
 
 ####################################################################
@@ -37,21 +37,6 @@ function cleanvect(M::fq_nmod_mat, v::fq_nmod_mat)
 
 end
 
-function submatrix(M::fq_nmod_mat, x::UnitRange{Int}, y::UnitRange{Int})
-  
-  numrows=x.stop-x.start+1
-  numcols=y.stop-y.start+1
-  A=MatrixSpace(parent(M[1,1]), numrows, numcols)()
-  for i=1:numrows
-    for j=1:numcols
-      A[i,j]=M[x.start+i-1, y.start+j-1]
-    end
-  end
-  return A
-  
-end
-
-
 #
 #  Given a matrix C containing the coordinates of vectors v_1,dots, v_k 
 #  in echelon form, the function computes a basis for the submodule they generate
@@ -62,7 +47,7 @@ function closure(C::fq_nmod_mat, G::Array{fq_nmod_mat,1})
   rref!(C)
   i=1
   while i <= rows(C)
-    w=submatrix(C, i:i, 1:cols(C))
+    w=sub(C, i:i, 1:cols(C))
     for j=1:length(G)
       res=cleanvect(C,w*G[j])
       if !iszero(res)
@@ -92,7 +77,7 @@ function spinning(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
   i=1
   while i != rows(B)+1
     for j=1:length(G)
-      el=submatrix(B, i:i, 1:cols(B))*G[j]
+      el= sub(B, i:i, 1:cols(B)) * G[j]
       res= cleanvect(X,el)
       if !iszero(res)
         X=vcat(X,res)
@@ -114,8 +99,7 @@ end
 #
 
 function clean_and_quotient(M::fq_nmod_mat,N::fq_nmod_mat, pivotindex::Set{Int})
-  
-  
+
   coeff=MatrixSpace(parent(M[1,1]),rows(N),rows(M))()
   for i=1:rows(N)
     for j=1:rows(M)
@@ -166,7 +150,7 @@ function _split(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
     pos=0
     for i=1:rows(G[1])
       if !(i in pivotindex)
-        m,vec=clean_and_quotient(C,submatrix(G[a],i:i,1:rows(G[1])),pivotindex)
+        m,vec=clean_and_quotient(C,sub(G[a],i:i,1:rows(G[1])),pivotindex)
         for j=1:cols(vec)
           s[i-pos,j]=vec[1,j]
         end
@@ -222,7 +206,7 @@ function actquo(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
     pos=0
     for i=1:rows(G[1])
       if !(i in pivotindex)
-        m,vec=clean_and_quotient(C,submatrix(G[a],i:i,1:rows(G[1])),pivotindex)
+        m,vec=clean_and_quotient(C,sub(G[a],i:i,1:rows(G[1])),pivotindex)
         for j=1:cols(vec)
           s[i-pos,j]=vec[1,j]
         end
@@ -250,9 +234,12 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     return false
   end
 
+  K=M.K
+  Kx,x=K["x"]
+  
   if length(M.G)==1
-    f=charpoly(M.G[1])
-    g=charpoly(N.G[1])
+    f=charpoly(Kx,M.G[1])
+    g=charpoly(Kx,N.G[1])
     if f==g
       return true
     else
@@ -263,9 +250,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   n=M.dim
   posfac=n
     
-  K=M.K
-  
-  Kx,x=K["x"]
+
   f=Kx(1)
   G=deepcopy(M.G)
   H=deepcopy(N.G)
@@ -284,9 +269,9 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     push!(H, H[l1]*H[l2])
   end
 
-    #
-    #  Now, get the right element
-    #
+  #
+  #  Now, we get peakwords
+  #
   
   A=MatrixSpace(K,n,n)()
   B=MatrixSpace(K,n,n)()
@@ -307,8 +292,8 @@ function isisomorphic(M::FqGModule,N::FqGModule)
       B+=s*H[i]
     end
   
-    cp=charpoly(A)
-    cpB=charpoly(B)
+    cp=charpoly(Kx,A)
+    cpB=charpoly(Kx,B)
     if cp!=cpB
       return false
     end
@@ -330,14 +315,14 @@ function isisomorphic(M::FqGModule,N::FqGModule)
         kerA=transpose(kerA)
         posfac=gcd(posfac,a) 
         if divisible(fmpz(posfac),a)
-          v=submatrix(kerA, 1:1, 1:n)
+          v=sub(kerA, 1:1, 1:n)
           U=v
           T =spinning(v,G)
           G1=[T*mat*inv(T) for mat in M.G]
           i=2
           E=fq_nmod_mat[eye(T,a)]
           while rows(U)!= a
-            w= submatrix(kerA, i:i, 1:n)
+            w= sub(kerA, i:i, 1:n)
             z= cleanvect(U,w)
             if iszero(z)
               continue
@@ -385,8 +370,8 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     return false
   end
   
-  Q= spinning(transpose(submatrix(kerA, 1:n, 1:1)), M.G)
-  W= spinning(transpose(submatrix(kerB, 1:n, 1:1)), N.G)
+  Q= spinning(transpose(sub(kerA, 1:n, 1:1)), M.G)
+  W= spinning(transpose(sub(kerB, 1:n, 1:1)), N.G)
   
   #
   #  Check if the actions are conjugated
@@ -428,8 +413,8 @@ function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
 
   #println("solving \n $Y \n = $U * X")
 
-  YY = submatrix(Y, 1:r, 1:cols(Y))
-  UU = submatrix(U, 1:r, 1:r)
+  YY = sub(Y, 1:r, 1:cols(Y))
+  UU = sub(U, 1:r, 1:r)
   X = inv(UU)*YY
 
   @assert Y == U * X
@@ -464,104 +449,6 @@ function dual_space(M::FqGModule)
 
 end
 
-
-###############################################################
-#
-#  Characteristic Polynomial
-#
-#################################################################
-
-
-function ordpoly(M::MatElem,S::MatElem,v::MatElem)
-
-  K=parent(M[1,1])
-  D=cleanvect(S,v)
-  C=MatrixSpace(K, 1, cols(M)+1)()
-  C[1,1]=K(1)
-  if iszero(D)
-    return C
-  end
-  ind=2
-  vec=v
-  while true
-    vec=vec*M
-    D=vcat(D, cleanvect(S,vec))
-    E=MatrixSpace(K, 1, cols(M)+1)()
-    E[1,ind]=K(1)
-    C=vcat(C,E)
-    for i=1:ind-1
-      nonzero=1
-      while iszero(D[i, nonzero])
-        nonzero+=1
-      end
-      mult=D[ind,nonzero]//D[i,nonzero]
-      for j=1:cols(M)+1
-        C[ind,j]-=mult*C[i,j]
-      end
-      for j=1:cols(M)
-        D[ind,j]-=mult*D[i,j]
-      end
-    end
-    if iszero(submatrix(D, ind:ind, 1:cols(D)))
-      break
-    end
-    ind+=1
-  end
-  return submatrix(C, ind:ind, 1:cols(D)+1), submatrix(D, 1:ind-1, 1:cols(D))
-  
-end
-
-function charpoly_fact(M::MatElem)
-  
-  @assert cols(M)>0 && cols(M)==rows(M) 
-  
-  K=parent(M[1,1])
-  polys=[]
-  v=MatrixSpace(K, 1, cols(M))()
-  v[1,1]=K(1)
-  pol,B=ordpoly(M,MatrixSpace(K, 0, 0)(),v)
-  push!(polys,pol)
-  if !iszero(pol[1,cols(B)+1])
-    return polys
-  end
-  v[1,1]=K(0)
-  for i=2:cols(M)
-    v[1,i]=K(1)
-    red=cleanvect(B,v)
-    if !iszero(red)
-      x=ordpoly(M,B,red)
-      push!(polys,x[1])
-      B=vcat(B,x[2])
-    end
-    v[1,i]=K(0)
-  end
-  return polys
-end
-
-
-doc"""
-***
-    charpoly(M::MatElem) -> PolyElem
-
-> Returns the characteristic polynomial of the square matrix M
-
-"""
-
-function charpoly(M::MatElem)
-  
-  @assert rows(M)>0 && rows(M)==cols(M)
-  K=parent(M[1,1])
-  Kx,x=K["x"]
-  polys=charpoly_fact(M)
-  f=Kx(1)
-  for pol in polys
-    coeff=[pol[1,i] for i=1:cols(pol)]
-    f*=Kx(coeff)
-  end
-  return f
-end
-
-
 #################################################################
 #
 #  MeatAxe, Composition Factors and Composition Series
@@ -591,10 +478,9 @@ function meataxe(M::FqGModule)
   
   if length(H)==1
     A=H[1]
-    poly=charpoly_fact(A)
-    c=[poly[1][1,i] for i=1:cols(poly[1])]
-    sq=factor_squarefree(Kx(c))
-    lf=factor(collect(keys(sq.fac))[1])
+    poly=charpoly(Kx,A)
+    sq=factor_squarefree(poly)
+    lf=factor(first(keys(sq.fac)))
     t=first(keys(lf.fac))
     if degree(t)==n
       M.isirreducible=true
@@ -602,7 +488,7 @@ function meataxe(M::FqGModule)
     else 
       N=t(A)
       kern=transpose(nullspace(transpose(N))[2])
-      B=closure(submatrix(kern,1:1, 1:n),H)
+      B=closure(sub(kern,1:1, 1:n),H)
       return false, B
     end
   end
@@ -640,10 +526,10 @@ function meataxe(M::FqGModule)
   #
   # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
   # 
-    poly=charpoly_fact(A)
-    for fact in poly
-      c=[fact[1,i] for i=1:cols(fact)]
-      sq=first(keys(factor_squarefree(Kx(c)).fac))
+    poly=charpoly(Kx,A)
+    sqfpart=keys(factor_squarefree(poly).fac)
+    for el in sqfpart
+      sq=el
       i=1
       while !isone(sq)
         f=gcd(x^(Int(order(K)^i))-x,sq)
@@ -655,13 +541,13 @@ function meataxe(M::FqGModule)
           #
           #  Norton test
           #   
-          B=closure(transpose(submatrix(kern,1:n, 1:1)),M.G)
+          B=closure(transpose(sub(kern,1:n, 1:1)),M.G)
           if rows(B)!=n
             M.isirreducible=false
             return false, B
           end
           kernt=nullspace(N)[2]
-          Bt=closure(transpose(submatrix(kernt,1:n,1:1)),Gt)
+          Bt=closure(transpose(sub(kernt,1:n,1:1)),Gt)
           if rows(Bt)!=n
             subst=transpose(nullspace(Bt)[2])
             @assert rows(subst)==rows(closure(subst,G))
@@ -807,7 +693,7 @@ function _relations(M::FqGModule, N::FqGModule)
   push!(matrices, eye(B,N.dim))
   i=1
   while i<=rows(B)
-    w=submatrix(B, i:i, 1:n)
+    w=sub(B, i:i, 1:n)
     for j=1:length(G)
       v=w*G[j]
       res=cleanvect(X,v)
@@ -821,8 +707,11 @@ function _relations(M::FqGModule, N::FqGModule)
         A=A-(matrices[i]*H[j])
         sys=vcat(sys,transpose(A))
         rref!(sys)
-        sys=submatrix(sys, 1:N.dim, 1:N.dim)
+        sys=sub(sys, 1:N.dim, 1:N.dim)
       end
+    end
+    if rows(sys)==N.dim && sys[N.dim,N.dim]!=0
+      break
     end
     i=i+1
   end
@@ -846,7 +735,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   #
   #  Reduce the number of homomorphism to try by considering the action of G on the homomorphisms
   #
-  vects=[submatrix(kern, i:i, 1:N.dim) for i=1:a]
+  vects=[sub(kern, i:i, 1:N.dim) for i=1:a]
   i=1
   while i<length(vects)
     X=closure(vects[i],N.G)

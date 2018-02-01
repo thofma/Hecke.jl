@@ -11,9 +11,8 @@ add_verbose_scope(:StabSub)
 #  Lifts a matrix from F_p to Z/p^nZ
 #
 
-function lift(M::MatElem{fq_nmod}, R::Nemo.NmodRing)
+function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
 
-  
   x=factor(fmpz(R.n))
   @assert length(x.fac)==1
   @assert order(parent(M[1,1]))==first(keys(x.fac))
@@ -61,9 +60,10 @@ function Nemo.snf(M::ZpnGModule)
   end
   S,mS=snf(A)
   W=[mS(s) for s in gens(S)]
+  R=M.R
   H=Array{nmod_mat,1}(length(G))
   for i=1:length(G)
-    N=zero_matrix(M.R, ngens(S),ngens(S))
+    N=zero_matrix(R, ngens(S),ngens(S))
     for j=1:length(W)
       y=mS\(W[j]*G[i])
       for k=1:ngens(S)
@@ -179,8 +179,7 @@ function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})
   end 
   mH=Hecke.GrpAbFinGenMap(V,K,A)
   newel=kernel_as_submodule(mH)
-  W=MatrixSpace(parent(M[1,1]),rows(newel), cols(newel))
-  return W(newel)
+  return MatrixSpace(parent(M[1,1]),rows(newel), cols(newel))(newel)
   
 end
 
@@ -462,7 +461,7 @@ function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
     return submodules_with_quo_struct(M,typequo)
   elseif typesub!=[-1]
     return submodules_with_struct(M,typesub)
-  elseif ord!=[-1]
+  elseif ord!=-1
     return submodules_order(M,ord)
   else 
     return submodules_all(M)
@@ -476,7 +475,7 @@ function submodules_all(M::ZpnGModule)
   R=M.R
   S,mS=snf(M)  
   minlist=minimal_submodules(S)
-  list=nmod_mat[]
+  list=nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf))(1), MatrixSpace(R,1,length(S.V.snf))(0)]
   
   #
   #  Find minimal submodules, factor out and recursion on the quotients
@@ -484,7 +483,7 @@ function submodules_all(M::ZpnGModule)
   
   for x in minlist
     N,_=quo(S,x)
-    newlist=submodules(N)
+    newlist=submodules_all(N)
     for y in newlist
       push!(list,vcat(y,x))
     end

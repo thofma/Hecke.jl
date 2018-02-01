@@ -1730,6 +1730,12 @@ mutable struct FqGModule <: GModule
   end
 end
 
+###############################################################################
+#
+#  Graphs and Subgroup Lattice
+#
+###############################################################################
+
 mutable struct Graph{T, M}
   edges::Dict{T, Dict{T, M}}
   degrees::Dict{T, Int}

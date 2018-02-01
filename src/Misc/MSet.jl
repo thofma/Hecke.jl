@@ -1,10 +1,9 @@
 export MSet
 
-#Think: do we want/ need fmpz? Int wou;d be easier...
 mutable struct MSet{T} <: AbstractSet{T}
-  dict::Dict{T, fmpz}
-  MSet{T}() where {T} = new(Dict{T,fmpz}())
-  MSet{T}(itr) where {T} = union!(new(Dict{T,fmpz}()), itr)
+  dict::Dict{T, Int}
+  MSet{T}() where {T} = new(Dict{T,Int}())
+  MSet{T}(itr) where {T} = union!(new(Dict{T,Int}()), itr)
 end
 
 MSet() = MSet{Any}()
@@ -40,7 +39,7 @@ function Base.push!(s::MSet, x)
   if haskey(s.dict, x)
     s.dict[x] += 1
   else
-    s.dict[x] = fmpz(1)
+    s.dict[x] = 1
   end
 end
 

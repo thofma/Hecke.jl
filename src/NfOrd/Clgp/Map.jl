@@ -383,12 +383,26 @@ function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
   end
   return v
 end
+
+function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
+  v = zero_matrix(FlintZZ, rows(C), cols(C))
+
+  for i=1:rows(C)
+    for j=1:cols(C)
+      a = upper_bound(C[i,j], fmpz)
+      b = lower_bound(C[i,j], fmpz)
+      v[i,j] = div(a+b, 2)
+    end
+  end
+  return v
+end
   
 #a is an array of FacElem's
 #the elements are reduced modulo the units in U
 function reduce_mod_units(a::Array{T, 1}, U) where T
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
+
   r = length(U.units)
   if r == 0
     return a
@@ -403,9 +417,10 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
     while true
       prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
       B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
+      nB = (B*B')[1,1]
       C = B*A
       try
-        V  = round(fmpz_mat, C)
+        V  = round_approx(fmpz_mat, C)
       catch e
         if !isa(e, InexactError)
           throw(e)
@@ -419,17 +434,25 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
 
       if iszero(V)
         return b
+      end
+
+      c = similar(b)
+      for i=1:length(c)
+        c[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
+      end
+      C = Hecke._conj_arb_log_matrix_normalise_cutoff(c, prec)
+      nC = (C*C')[1,1]
+
+      if nC < nB
+        b = c
+        continue
       else
         #println("trafo by $V")
         prec *= 2
         if prec > 10000
           error("too much prec")
         end
-      end
-
-      for i=1:length(a)
-        b[i] *= prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
-      end
+      end  
     end
     #println("loop...")
     cnt -= 1

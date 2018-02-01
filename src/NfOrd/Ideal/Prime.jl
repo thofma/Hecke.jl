@@ -413,6 +413,7 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
     degree_limit = degree(O)
   end
 
+  #=
   if haskey(O.index_div, fmpz(p))
     lp = O.index_div[fmpz(p)]
     z = Tuple{NfOrdIdl, Int}[]
@@ -423,27 +424,28 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
     end
     return z
   end
+  =#
 
-  # Firstly compute the p-radical of O
   Ip = pradical(O, p)
   A, AtoO = AlgAss(O, Ip, p)
   AA = split(A)
 
   ideals = Vector{NfOrdIdl}()
-  M = p*identity_matrix(FlintZZ, degree(O))
   m = zero_matrix(FlintZZ, 1, degree(O))
   for (B, BtoA) in AA
-    N = M
     f = dim(B)
-    for i = 1:f
-      a = AtoO(BtoA(B[i]))
-      b = elem_in_basis(a)
+    idem = BtoA(B[1]) # Assumes that B == idem*A
+    M = representation_mat(idem)
+    ker = left_kernel(M)
+    N = basis_mat(Ip)
+    for i = 1:length(ker)
+      b = elem_in_basis(AtoO(A(ker[i])))
       for j = 1:degree(O)
-        m[1, j] = deepcopy(b[j])
+        m[1, j] = b[j]
       end
       N = vcat(N, m)
     end
-    N = sub(_hnf(N, :lowerleft), f + 1:degree(O) + f, 1:degree(O))
+    N = sub(_hnf(N, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
     P = ideal(O, N)
     P.norm = fmpz(p)^f
     P.splitting_type = (0, f)
@@ -466,21 +468,11 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
       # number theory".
 
       # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
-      if j == 1
-        Vp = ideals[2]
-        k = 3
-      else
-        Vp = ideals[1]
-        k = 2;
-      end
 
-      for i in k:length(ideals)
-        if i == j
-          continue
-        else
-          Vp = intersection(Vp, ideals[i])
-        end
-      end
+      B, BtoA = AA[j]
+      J = ideal(O, AtoO(BtoA(B[1])))
+      N = sub(_hnf(vcat(basis_mat(Ip), basis_mat(J)), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+      Vp = ideal(O, N)
 
       u, v = idempotents(P, Vp)
 
@@ -518,9 +510,11 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
     P.is_prime = 1
     push!(result, (P, e))
   end
+  #=
   if degree_limit >= degree(O)
     O.index_div[fmpz(p)] = result
   end
+  =#
   return result
 end
 

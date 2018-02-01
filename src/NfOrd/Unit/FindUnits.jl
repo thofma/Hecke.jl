@@ -140,6 +140,8 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
       not_larger = 0
     end
   end
+  #final reduction ...
+  u.units = reduce(u.units, u.tors_prec)
 
   u.tentative_regulator = regulator(u.units, 64)
 
@@ -279,6 +281,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       end
     end
   end
+
+  #final reduction ...
+  u.units = reduce(u.units, u.tors_prec)
 
   u.tentative_regulator = regulator(u.units, 64)
 
