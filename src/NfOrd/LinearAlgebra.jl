@@ -424,7 +424,9 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = fals
     # find_pseudo_hnf_modulus (called by pseudo_hnf_full_rank)
     # starts an infinite loop.
     Q = try pseudo_hnf_full_rank(P, shape)
-    catch pseudo_hnf_kb(P, shape)
+    catch e
+      rethrow(e)
+      pseudo_hnf_kb(P, shape)
     end
     return Q
   end
@@ -1094,6 +1096,8 @@ function kb_sort_rows!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, w
    return nothing
 end
 
+const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(true)
+
 function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
    m = rows(H)
    n = cols(H)
@@ -1114,6 +1118,10 @@ function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = fal
    t1 = K()
    t2 = K()
    for i=row1:m-1
+     @show Hecke.PRINT_PSEUDOHNF_SIZE[]
+     if Hecke.PRINT_PSEUDOHNF_SIZE[]
+        Hecke.size(H)
+      end
       new_pivot = false
       for j = start_element:pivot_max
          if iszero(A[i+1,j])
@@ -1519,4 +1527,37 @@ function mod(M::ModDed, p::NfOrdIdl)
       end
    end
    return N
+end
+
+################################################################################
+#
+#  Print the size of a pseudo matrix
+#
+################################################################################
+
+# Just for debugging
+# Prints the size of the ideals/entries of a pseudo matrix
+# The first column is nbits(norm(numerator)) + nbits(denominator) of the ideal
+# The rest of entries are nbits(max(numerator)) + nbits(denominator)
+# (The size of the entries is with respect the equation order
+function size(A::PMat)
+  K = parent(A.matrix[1, 1])
+
+  println("Size is:")
+  size = Array{String}(rows(A), cols(A) + 1)
+  for i in 1:rows(A)
+    size[i, 1] = "$(nbits(norm(numerator(A.coeffs[i])))) $(nbits(denominator(A.coeffs[i])))"
+  end
+  for i in 1:rows(A)
+    for j in 1:cols(A)
+      if iszero(A.matrix[i, j])
+        size[i, j + 1] = "0"
+      else
+        a = numerator(A.matrix[i, j])
+        b = denominator(A.matrix[i, j])
+        size[i, j + 1] = "$(nbits(maximum([ZZ(coeff(a, i)) for i in 0:degree(K) - 1]))) $(nbits(b))"
+      end
+    end
+  end
+  display(size)
 end

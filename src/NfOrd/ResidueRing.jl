@@ -758,28 +758,32 @@ function strong_echelon_form!(A::Generic.Mat{NfOrdQuoRingElem})
       end
     end
 
-
     for i in j+1:m 
       
       if iszero(T[1, i])
         continue
       end
 
-      b, q = isdivisible(T[1, i], A[i, i])
-
-      if b
+      if iszero(A[i, i])
         for k in i:m
-          T[1, k] = T[1, k] - q*A[i, k]
+          T[1, k], A[i, k] = A[i, k], T[1, k]
         end
-        @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
       else
-        g,s,t,u,v = xxgcd(A[i, i], T[1, i])
+        b, q = isdivisible(T[1, i], A[i, i])
+        if b
+          for k in i:m
+            T[1, k] = T[1, k] - q*A[i, k]
+          end
+          @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
+        else
+          g,s,t,u,v = xxgcd(A[i, i], T[1, i])
 
-        for k in i:m
-          t1 = s*A[i, k] + t*T[1, k]
-          t2 = u*A[i, k] + v*T[1, k]
-          A[i, k] = t1
-          T[1, k] = t2
+          for k in i:m
+            t1 = s*A[i, k] + t*T[1, k]
+            t2 = u*A[i, k] + v*T[1, k]
+            A[i, k] = t1
+            T[1, k] = t2
+          end
         end
       end
     end
