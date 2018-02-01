@@ -298,6 +298,8 @@ end
 function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
 
+  iszero(y) && error("Dividing by zero")
+
   if iszero(x)
     return true, zero(parent(x))
   end

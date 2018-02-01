@@ -41,7 +41,7 @@
         for g in gens
           for exp in -5:10
             el = g^exp
-            @assert M(M\el) == el
+            @test M(M\el) == el
           end
         end
       end
@@ -61,7 +61,7 @@
         for g in gens
           for exp in -5:10
             el = g^exp
-            @assert M(M\el) == el
+            @test M(M\el) == el
           end
         end
       end
