@@ -544,7 +544,7 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   t_sum = 0.0
   t_div = 0.0
   t_idem = 0.0
-  
+
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
   t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
 
@@ -643,10 +643,14 @@ function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
       # (This happens if m is the whole ring).
       # But if m is the whole ring, we actually don't have to do
       # anything.
-      #@assert euclid(OtoOm(O(norm(c[i])))) == 1
-      q = OtoOm(O(norm(c[i])*mat[i,j]))
-      qq = inv(OtoOm(O(norm(c[i]))))
-      z[i, j] = q*qq
+      if isone(norm(m))
+        z[i, j] = zero(Om)
+      else
+        @assert euclid(OtoOm(O(norm(c[i])))) == 1
+        q = OtoOm(O(norm(c[i])*mat[i,j]))
+        qq = inv(OtoOm(O(norm(c[i]))))
+        z[i, j] = q*qq
+      end
     end
   end
   return z
