@@ -1554,11 +1554,15 @@ end
 
 function random_extend(R::RandIdlCtx, I::AbstractArray{NfOrdIdl, 1})
   for i = I
+    if i in R.base
+      continue
+    end
     push!(R.base, i)
     push!(R.ibase, inv(i))
   end
-  z = zeros(Int, length(I))
+  z = zeros(Int, length(R.base) - length(R.exp))
   append!(R.exp, z)
+  @assert length(R.exp) == length(R.base)
   for i = R.last
     append!(i, z)
   end
@@ -1577,10 +1581,12 @@ function random_extend(R::RandIdlCtx, f::Float64)
 end
 
 function random_get(R::RandIdlCtx; reduce::Bool = true)
-  if norm(R.rand) <= R.ub
-    delta = 1
-  else
+  if norm(R.rand) >= R.ub
     delta = -1
+  elseif norm(R.rand) <= R.lb
+    delta = +1
+  else
+    delta = rand([-1,1])
   end
   i = 1
   while true

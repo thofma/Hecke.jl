@@ -40,6 +40,11 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
   zz = Array{fmpz}(r + 1)
 
   @vprint :UnitGroup 1 "Adding dependent unit ... \n"
+
+# should be done by the independence test?
+#  @vprint :UnitGroup 1 "reduction on input....\n"
+#  @vtime :UnitGroup 1 y = reduce_mod_units([y], U)[1]
+
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
   @v_do :UnitGroup 1 popindent()
@@ -161,9 +166,8 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
   U.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
-  if abs(rel[r+1]) > 100 # we enlarged
-    U.units = reduce(U.units, p)
-  end
+  @vprint :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))\n"
+  @vtime :UnitGroup 1 U.units = reduce(U.units, p)
   return true
 end
 
@@ -221,6 +225,9 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
   r1, r2 = signature(K)
   rr = r1 + r2
   r = rr - 1 # unit rank
+
+  z = reduce_mod_units([y], u)[1]
+  y.fac = z.fac
 
   # This can be made more memory friendly
   while true

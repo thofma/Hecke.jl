@@ -34,7 +34,7 @@ function single_env(c::ClassGrpCtx, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat:
         break
       end
     end
-    if fl && good > 0 && (rank(c.M)- rk+1)/good < rat
+    if false && fl && good > 0 && (rank(c.M)- rk+1)/good < rat
       @vprint :ClassGroup 2 "rank too slow $(I.cnt) $good $(rank(c.M)) $rk\n"
       break
     end
@@ -95,7 +95,7 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
   end  
 
 
-  start = max(1, length(c.FB.ideals)-10*(1+div(rand_exp, 3)))
+  start = max(1, max(div(length(c.FB.ideals), 2)+1, length(c.FB.ideals)-10*(1+div(rand_exp, 3))))
   stop = length(c.FB.ideals)
   if isdefined(c, :randomClsEnv)
     rand_env = c.randomClsEnv
@@ -105,15 +105,27 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
     c.randomClsEnv = rand_env
   end
 
+  if h > 0
+    rand_exp += 11
+    while gcd(h, rand_exp) > 1
+      rand_exp += 1
+    end
+  end
+
   while true
     for p = piv
       @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
       @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
+#      @show rand_env.exp, rand_exp
       @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
       @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
       @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
       if extra > 0 && st + extra <= c.rel_cnt
         return
+      else
+        if c.rel_cnt - st > length(piv)
+          break
+        end
       end
       if h>0
         break
@@ -128,12 +140,18 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
     if piv_new == piv
       if h > 0
         extra = 5
-        J = [rand(c.FB.ideals) for x=1:10]
+#        J = [rand(c.FB.ideals) for x=1:10]
 #        println("extending rand")
-        random_extend(rand_env, J)
-        random_extend(rand_env, 2.0)
+#        random_extend(rand_env, J)
+#        random_extend(rand_env, 2.0)
       end
       rand_exp += 1
+      if h>0
+        while gcd(rand_exp, h) > 1
+          rand_exp += 1
+        end
+      end  
+
       if rand_exp % 3 == 0
         start = max(start -10, 1)
       end
