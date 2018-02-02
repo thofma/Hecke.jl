@@ -246,7 +246,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       else
         old_len = length(u.units)
         time_add_dep_unit += @elapsed _add_unit(u, y)
-        m = old_len == length(u.units)
+        m = old_len != length(u.units)
         if m
           u.units = reduce(u.units)
         end
@@ -271,10 +271,16 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   #final reduction ...
   u.units = reduce(u.units, u.tors_prec)
 
-  u.tentative_regulator = regulator(u.units, 64)
+  if u.full_rank
+    u.tentative_regulator = regulator(u.units, 64)
+  end
 
   @vprint :UnitGroup 1 "Finished processing\n"
-  @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
+  if u.full_rank
+    @vprint :UnitGroup 1 "Regulator of current unit group is $(u.tentative_regulator)\n"
+  else
+    @vprint :UnitGroup 1 "current rank is $(length(u.units)) need $r\n"
+  end  
   @vprint :UnitGroup 1 "-"^80 * "\n"
   @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
   @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
@@ -282,7 +288,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
 
   @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
-  return 1
+  return u.full_rank
 end
 
 
