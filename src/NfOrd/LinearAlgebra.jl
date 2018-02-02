@@ -1096,7 +1096,7 @@ function kb_sort_rows!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, w
    return nothing
 end
 
-const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(true)
+const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(false)
 
 function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
    m = rows(H)
