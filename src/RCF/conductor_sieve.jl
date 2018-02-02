@@ -1352,9 +1352,9 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
     println("Field: $K")
     O=maximal_order(K)
     D=abs(discriminant(O))
-    new_absolute_bound=D^15*non_normal_bound^2
     bound = non_normal_bound^2
    
+    bound3=root(non_normal_bound, 5)
     C,mC=class_group(O)
     allow_cache!(mC)
     cgrp=false
@@ -1393,6 +1393,16 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
         C=ray_class_field(mr*inv(s))
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
           println("\n New Field!")
+          #Before computing the field, I check if the discriminant of the $S_3$ extension is compatible
+          s1=codomain(s)
+          q1,mq1=quo(s1,3, false)
+          C1=ray_class_field(mr*inv(s)*inv(mq1))
+          cond=conductor(C1)[1]
+          condint=minimum(cond)
+          if condint^2*D>bound3
+            @vprint :QuadraticExt "Too large :( \n"
+            continue
+          end
           L=number_field(C)
           ram_primes=Set(collect(keys(factor(a).fac)))
           for p in keys(factor(O.disc).fac)
