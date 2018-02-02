@@ -41,10 +41,6 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
   @vprint :UnitGroup 1 "Adding dependent unit ... \n"
 
-# should be done by the independence test?
-#  @vprint :UnitGroup 1 "reduction on input....\n"
-#  @vtime :UnitGroup 1 y = reduce_mod_units([y], U)[1]
-
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
   @v_do :UnitGroup 1 popindent()
@@ -225,9 +221,6 @@ function _isindependent(u::UnitGrpCtx{T}, y::FacElem{T}) where T
   r1, r2 = signature(K)
   rr = r1 + r2
   r = rr - 1 # unit rank
-
-  z = reduce_mod_units([y], u)[1]
-  y.fac = z.fac
 
   # This can be made more memory friendly
   while true

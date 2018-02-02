@@ -96,12 +96,10 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
 
   u.units = reduce(u.units, u.tors_prec)
 
-  j = 0
-
   not_larger = 0
 
   @vprint :UnitGroup 1 "Enlarging unit group by adding more kernel basis elements ...\n"
-  while not_larger < 5 
+  while not_larger < 3 
 
     for i in 1:length(kelem)
       kelem[i] = 0
@@ -118,6 +116,8 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
     y = FacElem(vcat(x.R_gen, x.R_rel), kelem)
 
     @hassert :UnitGroup 2 _isunit(y)
+    @vprint :UnitGroup 2 "Reduce 1st...\n"
+    y = reduce_mod_units([y], u)[1]
 
     @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
     @v_do :UnitGroup 2 pushindent()
@@ -188,52 +188,12 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   time_kernel = 0.0
   time_torsion = 0.0
 
-  while(length(A) < r)
-
-    if j > MAX_RND_RD_1
-      return 0
-    end
-
-    @vprint :UnitGroup 1 "Found $(length(A)) independent units so far ($(r - length(A)) left to find)\n"
-    j = j + 1
-
-    xj = rand(1:rows(x.M.rel_gens))
-    time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, x.M.rel_gens[xj])
-    @hassert :UnitGroup 1 length(k.values) == 0 || gcd(foldr(gcd, fmpz(0), k.values), d) == 1
-
-    y = FacElem(vcat(x.R_gen[k.pos], x.R_rel[xj]), vcat(k.values, -d))
-    @hassert :UnitGroup 2 _isunit(y)
-
-    @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
-
-    time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
-    u.tors_prec = max(p, u.tors_prec)
-    if is_tors
-      continue
-    end
-
-    @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
-
-    time_indep += @elapsed _add_unit(u, y)
-
-  end
-
-  @vprint :UnitGroup 1 "Found $r linear independent units \n"
-
-  @vprint :UnitGroup 1 "Independent unit time: $time_indep\n"
-  @vprint :UnitGroup 1 "Adding dependent unit time: $time_add_dep_unit\n"
-  @vprint :UnitGroup 1 "Torsion test time: $time_torsion\n"
-  @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
-
-  u.full_rank = true
-
-  u.units = reduce(u.units, u.tors_prec)
 
   j = 0
 
   not_larger = 0
 
-  @vprint :UnitGroup 1 "Enlarging unit group by adding remaining kernel basis elements ...\n"
+  @vprint :UnitGroup 1 "Enlarging unit group by adding kernel elements ...\n"
   while not_larger < 5 
 
     add_units = []
@@ -255,27 +215,53 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       y = FacElem(ge[s[i].pos], s[i].values)
       @hassert :UnitGroup 2 _isunit(y)
 
+      if u.full_rank
+        y = reduce_mod_units([y], u)[1]
+      end
+
       @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"
 
-      @vprint :UnitGroup 2 "Test if kernel element yields torsion unit ... \n"
+      @vprint :UnitGroup 1 "Test if kernel element yields torsion unit ... \n"
       @v_do :UnitGroup 2 pushindent()
       time_torsion += @elapsed is_tors, p = istorsion_unit(y, false, u.tors_prec)
       u.tors_prec = max(p, u.tors_prec)
       if is_tors
         @v_do :UnitGroup 2 popindent()
-        #println("torsion unit: $y")
-        @vprint :UnitGroup 2 "Element is torsion unit\n"
+        @vprint :UnitGroup 1 "Element is torsion unit\n"
+        not_larger += 1
+        if u.full_rank && not_larger > 5
+          break
+        end
         continue
       end
-      @vprint :UnitGroup 2 "Element is non-torsion unit\n"
+      @vprint :UnitGroup 1 "Element is non-torsion unit\n"
       @v_do :UnitGroup 2 popindent()
 
       @v_do :UnitGroup 2 pushindent()
-      time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
+      if u.full_rank
+        time_add_dep_unit += @elapsed m = _add_dependent_unit(u, y)
+        if m
+          @vprint :UnitGroup 1 "improved reg, reg is $(regulator(u.units, 16))\n"
+        end
+      else
+        old_len = length(u.units)
+        time_add_dep_unit += @elapsed _add_unit(u, y)
+        m = old_len == length(u.units)
+        if m
+          u.units = reduce(u.units)
+        end
+        u.full_rank = length(u.units) == r
+        if u.full_rank
+          @vprint :UnitGroup 1 "reached full rank, reg is $(regulator(u.units, 16))\n"
+        end
+      end
       @v_do :UnitGroup 2 popindent()
 
       if !m
         not_larger = not_larger + 1
+        if u.full_rank && not_larger > 5
+          break
+        end
       else
         not_larger = 0
       end
