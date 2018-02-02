@@ -391,6 +391,10 @@ function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
     for j=1:cols(C)
       a = upper_bound(C[i,j], fmpz)
       b = lower_bound(C[i,j], fmpz)
+      if (b-a) > sqrt(abs(C[i,j]))
+        @show "cannot round:", C[i,j]
+        throw(InexactError())
+      end
       v[i,j] = div(a+b, 2)
     end
   end
@@ -415,53 +419,47 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
   b = deepcopy(a)
   cnt = 10
   V = zero_matrix(FlintZZ, 1, 1)
+
   while true
-    while true
-      prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
-      B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
-      nB = (B*B')[1,1]
-      C = B*A
-      try
-        V  = round_approx(fmpz_mat, C)
+    prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
+    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
+    nB = (B*B')[1,1]
+    C = B*A
+    exact = true
+    try
+      V  = round(fmpz_mat, C)
+      exact = true
+    catch e
+      if !isa(e, InexactError)
+        rethrow(e)
+      end
+      try 
+        V = round_approx(fmpz_mat, C)
+        exact = false
       catch e
         if !isa(e, InexactError)
-          throw(e)
+          rethrow(e)
         end
-        prec *= 2
-        if prec > 10000
-          error("too much prec")
-        end
-        continue
       end
-
-      if iszero(V)
-        return b
+      prec *= 2
+      if prec > 10000
+        error("1: too much prec")
       end
-
-      c = similar(b)
-      for i=1:length(c)
-        c[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
-      end
-      C = Hecke._conj_arb_log_matrix_normalise_cutoff(c, prec)
-      nC = (C*C')[1,1]
-
-      if nC < nB
-        b = c
-        continue
-      else
-        #println("trafo by $V")
-        prec *= 2
-        if prec > 10000
-          error("too much prec")
-        end
-      end  
+      continue
     end
-    #println("loop...")
-    cnt -= 1
-    if cnt <= 0
-      error("too much")
+
+    if iszero(V)
+      return b
     end
-  end  
+
+    for i=1:length(b)
+      b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
+    end
+
+    if exact
+      return b
+    end
+  end
 end
 
 
