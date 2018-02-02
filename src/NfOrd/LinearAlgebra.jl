@@ -1118,9 +1118,9 @@ function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = fal
    t1 = K()
    t2 = K()
    for i=row1:m-1
-     @show Hecke.PRINT_PSEUDOHNF_SIZE[]
-     if Hecke.PRINT_PSEUDOHNF_SIZE[]
-        Hecke.size(H)
+      if Hecke.PRINT_PSEUDOHNF_SIZE[]
+        println(" Extending to $(i + 1) x $(i + 1)")
+         Hecke.size(H)
       end
       new_pivot = false
       for j = start_element:pivot_max
@@ -1544,18 +1544,19 @@ function size(A::PMat)
   K = parent(A.matrix[1, 1])
 
   println("Size is:")
-  size = Array{String}(rows(A), cols(A) + 1)
+  size = Array{String}(rows(A), cols(A) + 2)
   for i in 1:rows(A)
-    size[i, 1] = "$(nbits(norm(numerator(A.coeffs[i])))) $(nbits(denominator(A.coeffs[i])))"
+    size[i, 1] = "$i"
+    size[i, 2] = "$(nbits(norm(numerator(A.coeffs[i])))) $(nbits(denominator(A.coeffs[i])))"
   end
   for i in 1:rows(A)
     for j in 1:cols(A)
       if iszero(A.matrix[i, j])
-        size[i, j + 1] = "0"
+        size[i, j + 2] = "0"
       else
         a = numerator(A.matrix[i, j])
         b = denominator(A.matrix[i, j])
-        size[i, j + 1] = "$(nbits(maximum([ZZ(coeff(a, i)) for i in 0:degree(K) - 1]))) $(nbits(b))"
+        size[i, j + 2] = "$(nbits(maximum([ZZ(coeff(a, i)) for i in 0:degree(K) - 1]))) $(nbits(b))"
       end
     end
   end
