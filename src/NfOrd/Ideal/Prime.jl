@@ -528,14 +528,15 @@ function uniformizer(P::NfOrdIdl)
     else
       r = Int(div(p, 2))
     end
-    while true
-      z = rand(P, r)
+    z = rand(P, r)
+    while true     
       if valuation(z, P) == 1
         break
       end
+      z = rand(P, r)
     end
+    return z
   end
-  return z
 end
 
 # Belabas p. 40

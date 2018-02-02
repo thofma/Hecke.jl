@@ -393,8 +393,7 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use
     h, N, disc_log = next_method(p,k,l;pu=pk,pv=pl)
     
     g,M = _expand(g,M,h,N,disc_log,pl)
-    
-    
+   
     push!(dlogs,disc_log)
   end
 
@@ -427,7 +426,6 @@ end
 function _expand(g::Array{NfOrdElem,1}, M::fmpz_mat, h::Array{NfOrdElem,1}, N::fmpz_mat, disc_log::Function, pl::NfOrdIdl)
   isempty(g) && return h,N
   isempty(h) && return g,M
-  
   # I am assuming that N is a diagonal matrix
   @assert issnf(N)
   O = order(pl)
@@ -441,7 +439,6 @@ function _expand(g::Array{NfOrdElem,1}, M::fmpz_mat, h::Array{NfOrdElem,1}, N::f
   for i=1:rows(N)
     Z[i+rows(M),i+rows(M)]=N[i,i]
   end
-
   for i in 1:rows(M)
     el = prod([Q(g[j])^M[i,j] for j=1:cols(M) ]).elem
     alpha = disc_log(el)
@@ -465,7 +462,7 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   O=order(pu)
   b=basis(pu)
   N = basis_mat(pv)*basis_mat_inv(pu)
-  @hassert :NfOrdQuoRing 1 denominator(N) == 1
+  @assert denominator(N) == 1
   G=AbelianGroup(numerator(N))
   S,mS=snf(G)
   
@@ -475,7 +472,7 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
     x=mS(S[i])
     gens[i]=O(0)
     for j=1:ngens(G)
-      gens[i]+=mod(x[j], S.snf[end])*b[j]
+      gens[i]+= mod(x[j], S.snf[end])*b[j]
     end
   end
   
@@ -552,12 +549,15 @@ function _artin_hasse_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p
 end
 
 function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
-  Q = parent(x)
+  Q=parent(x)
   s = Q(1)
-  fac_i = 1
+  fac_i = Q(1)
   t=Q(1)
-  for i in 1:pnum-1
+  for i=1:pnum-1
     t*=x
+    if iszero(t)
+      break
+    end
     fac_i *= Q(i)
     s += divexact(t,fac_i)
   end
@@ -571,7 +571,10 @@ function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
   t= Q(1)
   for i in 1:pnum-1
     t *=x
-    if i % 2 == 0
+    if iszero(t)
+      break
+    end
+    if iseven(i)
       s -= divexact(t,Q(i))
     else 
       s += divexact(t,Q(i))
@@ -606,7 +609,6 @@ function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   g,M, dlog = _pu_mod_pv(pu,pv)
   Q = NfOrdQuoRing(order(p),pv)
   map!(x->p_adic_exp(Q,p,v,x,e;pv=pv), g, g)
- 
   function discrete_logarithm(b::NfOrdElem) 
     return dlog(p_adic_log(Q,p,v,b,e;pv=pv))
   end
@@ -614,12 +616,13 @@ function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   return g, M, discrete_logarithm
 end
 
+
 function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(x)
   x == 0 && return O(1)
   pnum = minimum(p)
   val_p_x = valuation(x,p)
-  max_i = ceil(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) 
+  max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x) + 1
   Q_ = NfOrdQuoRing(O,p^val_p_maximum)
   x = Q_(x)
@@ -634,8 +637,14 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::N
     val_p_fac_i += val_p_i
     val_p_xi += val_p_x
     val_p_xi - val_p_fac_i >= v && continue
+    @hassert :NfOrdQuoRing 1 val_p_xi - val_p_fac_i>=0
+    @hassert :NfOrdQuoRing 1 val_p_xi< val_p_maximum
+    @hassert :NfOrdQuoRing 1 val_p_fac_i< val_p_maximum
     i_prod = prod((i_old+1):i)
-    inc = divexact(inc*x^(i-i_old),i_prod)
+    deltax = inc*x^(i-i_old)
+    @hassert :NfOrdQuoRing 1 !iszero(deltax)
+    @hassert :NfOrdQuoRing 1 !iszero(Q_(i_prod))
+    inc = divexact(deltax,Q_(i_prod))
     s += Q(inc.elem)
     i_old = i
   end
@@ -652,19 +661,96 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
   xi = one(O)
   i_old = 0
   val_p_xi = 0
-  for i in [ 1:v ; (v+pnum-(v%pnum)):pnum:pnum*v ]
+  anti_uni=anti_uniformizer(p)
+  #we have to find a bound for this.
+  # it is enough to find the minimum l such that
+  # pnum^l v_p(x)>= v+el
+  l=1
+  left=pnum*val_p_x
+  right=v+e
+  while left < right
+    left*=pnum
+    right+=e
+    l+=1
+  end
+  bound2=pnum^l-pnum
+  bound1=div(v, val_p_x)
+  for i in [ 1:bound1 ; (bound1+pnum-(bound1%pnum)):pnum:bound2 ]
     val_pnum_i = valuation(i, pnum)
     val_p_i = val_pnum_i * e
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
     xi *= x^(i-i_old)
-    fraction = divexact(xi.elem_in_nf,i)
-    inc = divexact(Q(O(numerator(fraction))),Q(O(denominator(fraction))))
+    numer= O(xi.elem_in_nf*(anti_uni^val_p_i))
+    denom= O(i*(anti_uni^val_p_i))
+    inc = divexact(Q(numer),Q(denom))
     isodd(i) ? s+=inc : s-=inc
     i_old = i
   end
   return s.elem
 end
+
+#=
+function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
+  O = parent(y)  
+  y == 1 && return O(0)
+  pnum = Int(minimum(p))
+  anti_uni=anti_uniformizer(p)
+  x = y - 1
+  val_p_x = valuation(x, p)
+  @hassert :NfOrdQuoRing 1 val_p_x> div(e,pnum-1)
+  s = Q(0)
+  xi = O(1)
+  #First, some iterations until the valuation of x is lower than v
+  bound1=div(v,val_p_x)
+  for i=1:bound1
+    xi *= x
+    inc=divexact(Q(xi),Q(i))
+    isodd(i) ? s+=inc : s-=inc
+  end
+  #now, we can consider only indices divisible by pnum
+  #we have to find a bound for this.
+  # it is enough to find the minimum l such that
+  # pnum^l v_p(x)>= v+el
+  l=1
+  left=pnum*val_p_x
+  right=v+e
+  while left < right
+    left*=pnum
+    right+=e
+    l+=1
+  end
+  bound2=pnum^l-pnum
+  if bound2<= bound1
+    return s.elem
+  end
+  while !divisible(fmpz(bound1+1),pnum)
+    bound1+=1
+    xi*=x
+  end
+  @hassert :NfOrdQuoRing 1 x^bound1==xi
+  i_old = bound1
+  val_p_xi = val_p_x*bound1
+
+  for i in bound1+1:pnum:bound2
+    @hassert :NfOrdQuoRing 1 divisible(fmpz(i),pnum)
+    val_p_i = valuation(i, pnum) * e
+    val_p_xi += val_p_x
+    val_p_xi - val_p_i >= v && continue
+    @hassert :NfOrdQuoRing 1 ((i-i_old) % pnum==1 || (i-i_old) % pnum==0)
+    xi *= x^(i-i_old)
+    numer= O(xi.elem_in_nf*(anti_uni^val_p_i))
+    denom= O(i*(anti_uni^val_p_i))
+    @hassert :NfOrdQuoRing 1 valuation(denom,p)==0
+    @hassert :NfOrdQuoRing 1 valuation(numer,p)<v
+    @hassert :NfOrdQuoRing 1 valuation(numer,p)==val_p_xi - val_p_i
+    inc = divexact(Q(numer), Q(denom))
+    isodd(i) ? s+=inc : s-=inc
+    i_old = i
+  end
+  return s.elem
+end
+=#
 
 
 
