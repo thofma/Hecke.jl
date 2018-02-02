@@ -402,6 +402,8 @@ end
 function reduce_mod_units(a::Array{T, 1}, U) where T
   #for T of type FacElem, U cannot be found from the order as the order
   #is not known
+  #TODO:
+  # need to make this work (a bit) for non-maximal units!!!
 
   r = length(U.units)
   if r == 0
