@@ -197,6 +197,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
   if c.finished
     U = _get_UnitGrpCtx_of_order(O)
     @assert U.finished
+    @vprint :UnitGroup 1 "... done (retrieved).\n"
     return c, U, 1
   end
 
