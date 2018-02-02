@@ -103,9 +103,10 @@ function reduce(u::Array{T, 1}, prec::Int = 32) where T
     pL = prod(row_norms(L))
     @vprint :UnitGroup 1 "reducing norms of logs from 2^$(nbits(pA)) -> 2^$(nbits(pL)), rat is $(Float64(1.0*pA//pL))\n"
     u = transform(u, transpose(U))
-    if pL >= pA
+    if nbits(pL) >= nbits(pA)
       return u
     end
+    @vprint :UnitGroup 1 "trying to reduce further...\n"
   end  
 end
 
