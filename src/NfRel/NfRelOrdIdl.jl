@@ -829,3 +829,22 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   end
   return result
 end
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod(a::NfRelOrdElem{nf_elem}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
+  O = order(I)
+  b = elem_in_basis(a)
+  PM = basis_pmat(I, Val{false}) # PM is assumed to be in pseudo hnf
+  for i = degree(O):-1:1
+    t = b[i] - mod(b[i], PM.coeffs[i])
+    for j = 1:i
+      b[j] = b[j] - t*PM.matrix[i, j]
+    end
+  end
+  return O(b)
+end

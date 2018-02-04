@@ -96,6 +96,8 @@ ismaximal(O::NfRelOrd) = O.ismaximal == 1
 
 issimple(O::NfRelOrd) = issimple(nf(O))
 
+elem_type(::Type{NfRelOrd{T, S}}) where {T, S} = NfRelOrdElem{T}
+
 ################################################################################
 #
 #  "Assure" functions for fields

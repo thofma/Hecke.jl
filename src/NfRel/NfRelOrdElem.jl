@@ -86,6 +86,19 @@ function (O::NfRelOrd)(a::NfRelOrdElem{T}, check::Bool = true) where T
   return O(b, check)
 end
 
+function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
+  t = nf(O)()
+  basis = basis_nf(O, Val{false})
+  for i = 1:degree(O)
+    t += a[i]*basis[i]
+  end
+  s = O(t, check)
+  s.elem_in_basis = a
+  s.has_coord = true
+  return s
+end
+
+
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 
 doc"""
