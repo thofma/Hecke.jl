@@ -424,7 +424,9 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = fals
     # find_pseudo_hnf_modulus (called by pseudo_hnf_full_rank)
     # starts an infinite loop.
     Q = try pseudo_hnf_full_rank(P, shape)
-    catch pseudo_hnf_kb(P, shape)
+    catch e
+      rethrow(e)
+      pseudo_hnf_kb(P, shape)
     end
     return Q
   end
@@ -544,7 +546,7 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   t_sum = 0.0
   t_div = 0.0
   t_idem = 0.0
-  
+
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
   t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
 
@@ -643,10 +645,14 @@ function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
       # (This happens if m is the whole ring).
       # But if m is the whole ring, we actually don't have to do
       # anything.
-      #@assert euclid(OtoOm(O(norm(c[i])))) == 1
-      q = OtoOm(O(norm(c[i])*mat[i,j]))
-      qq = inv(OtoOm(O(norm(c[i]))))
-      z[i, j] = q*qq
+      if isone(norm(m))
+        z[i, j] = zero(Om)
+      else
+        @assert euclid(OtoOm(O(norm(c[i])))) == 1
+        q = OtoOm(O(norm(c[i])*mat[i,j]))
+        qq = inv(OtoOm(O(norm(c[i]))))
+        z[i, j] = q*qq
+      end
     end
   end
   return z
@@ -1090,6 +1096,8 @@ function kb_sort_rows!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, w
    return nothing
 end
 
+const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(false)
+
 function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
    m = rows(H)
    n = cols(H)
@@ -1110,6 +1118,10 @@ function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = fal
    t1 = K()
    t2 = K()
    for i=row1:m-1
+      if Hecke.PRINT_PSEUDOHNF_SIZE[]
+        println(" Extending to $(i + 1) x $(i + 1)")
+         Hecke.size(H)
+      end
       new_pivot = false
       for j = start_element:pivot_max
          if iszero(A[i+1,j])
@@ -1515,4 +1527,38 @@ function mod(M::ModDed, p::NfOrdIdl)
       end
    end
    return N
+end
+
+################################################################################
+#
+#  Print the size of a pseudo matrix
+#
+################################################################################
+
+# Just for debugging
+# Prints the size of the ideals/entries of a pseudo matrix
+# The first column is nbits(norm(numerator)) + nbits(denominator) of the ideal
+# The rest of entries are nbits(max(numerator)) + nbits(denominator)
+# (The size of the entries is with respect the equation order
+function size(A::PMat)
+  K = parent(A.matrix[1, 1])
+
+  println("Size is:")
+  size = Array{String}(rows(A), cols(A) + 2)
+  for i in 1:rows(A)
+    size[i, 1] = "$i"
+    size[i, 2] = "$(nbits(norm(numerator(A.coeffs[i])))) $(nbits(denominator(A.coeffs[i])))"
+  end
+  for i in 1:rows(A)
+    for j in 1:cols(A)
+      if iszero(A.matrix[i, j])
+        size[i, j + 2] = "0"
+      else
+        a = numerator(A.matrix[i, j])
+        b = denominator(A.matrix[i, j])
+        size[i, j + 2] = "$(nbits(maximum([ZZ(coeff(a, i)) for i in 0:degree(K) - 1]))) $(nbits(b))"
+      end
+    end
+  end
+  display(size)
 end

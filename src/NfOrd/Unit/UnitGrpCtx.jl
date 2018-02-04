@@ -40,6 +40,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
   zz = Array{fmpz}(r + 1)
 
   @vprint :UnitGroup 1 "Adding dependent unit ... \n"
+
   @v_do :UnitGroup 1 pushindent()
   p, B = _conj_log_mat_cutoff_inv(U, p)
   @v_do :UnitGroup 1 popindent()
@@ -161,9 +162,8 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
   U.conj_log_mat_cutoff_inv = Dict{Int, arb_mat}()
   U.tentative_regulator = regulator(U.units, 64)
   U.rel_add_prec = p
-  if abs(rel[r+1]) > 100 # we enlarged
-    U.units = reduce(U.units, p)
-  end
+  @vprint :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))\n"
+  @vtime :UnitGroup 1 U.units = reduce(U.units, p)
   return true
 end
 
