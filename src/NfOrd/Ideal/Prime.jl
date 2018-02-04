@@ -445,7 +445,7 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
       end
       N = vcat(N, m)
     end
-    N = sub(_hnf(N, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    N = sub(_hnf_modular_eldiv(N, fmpz(p), :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
     P = ideal(O, N)
     P.norm = fmpz(p)^f
     P.splitting_type = (0, f)
@@ -471,7 +471,7 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
 
       B, BtoA = AA[j]
       J = ideal(O, AtoO(BtoA(B[1])))
-      N = sub(_hnf(vcat(basis_mat(Ip), basis_mat(J)), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+      N = sub(_hnf_modular_eldiv(vcat(basis_mat(Ip), basis_mat(J)), fmpz(p), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
       Vp = ideal(O, N)
 
       u, v = idempotents(P, Vp)
