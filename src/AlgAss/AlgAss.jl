@@ -101,7 +101,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   n = degree(O)
   BO = Hecke.basis(O)
 
-  pisfmpz = (typeof(p) == fmpz)
+  pisfmpz = (p isa fmpz)
   Fp = ResidueRing(FlintZZ, p)
   BOmod = [ mod(v, I) for v in BO ]
   B = zero_matrix(Fp, n, n)
@@ -158,75 +158,96 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   return A, f
 end
 
-# Cohen "Advanced Topics in Computational Number Theory" Algorithm 1.5.2
-function _modular_basis(pb::Vector{Tuple{RelativeElement{nf_elem}, NfOrdFracIdl}}, p::NfOrdIdl)
+function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T <: RelativeElement{nf_elem}
   L = parent(pb[1][1])
   K = base_ring(L)
   basis = Array{elem_type(L), 1}()
+  u = L(K(uniformizer(p)))
   for i = 1:degree(L)
-    a = K(numerator(pb[i][2]).gen_one)*inv(K(denominator(pb[i][2])))
-    if has_2_elem(numerator(pb[i][2]))
-      b = K(numerator(pb[i][2]).gen_two)*inv(K(denominator(pb[i][2])))
-      if valuation(a, p) > valuation(b, p)
-        a = b
-      end
-    end
-    push!(basis, a*pb[i][1])
+    v = valuation(pb[i][2], p)
+    push!(basis, (u^v)*pb[i][1])
   end
   return basis
 end
 
 function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  @assert order(I) == O
+
   n = degree(O)
   L = nf(O)
   K = base_ring(L)
-  F, mF = ResidueField(order(p), p)
+  Fp, mF = ResidueField(order(p), p)
   mmF = extend(mF, K)
+  invmmF = inv(mmF)
 
-  # We need the pseudo basis of I in the basis of O
-  PMI = basis_pmat(I, Val{false})
-  PBI = Vector{Tuple{RelativeElement{nf_elem}, NfOrdFracIdl}}()
+  # Compute a pseudo basis of O with integral coefficient ideals
+  pb = pseudo_basis(O, Val{false})
+  bmat_Oint = zero_matrix(K, n, n)
+  bpmat_Iint = basis_pmat(I)
+  pbint = Vector{Tuple{elem_type(L), NfOrdFracIdl}}()
   for i = 1:n
-    x = elem_from_mat_row(L, PMI.matrix, i)
-    push!(PBI, (x, PMI.coeffs[i]))
+    t = divexact(pb[i][1], denominator(pb[i][2]))
+    tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
+    push!(pbint, (t, tt))
+    elem_to_mat_row!(bmat_Oint, i, t)
+    bpmat_Iint.coeffs[i] = simplify(bpmat_Iint.coeffs[i]*K(denominator(pb[i][2])))
   end
-  BI = _modular_basis(PBI, p)
-  M = zero_matrix(F, n + 1, n)
-  M[n + 1, 1] = F(1)
+  Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
+  Iint = ideal(Oint, bpmat_Iint)
+
+  # Reduce the pseudo basis of O modulo I
+  pbintModI = Vector{Tuple{elem_type(L), NfOrdFracIdl}}()
   for i = 1:n
+    b = Oint(pbint[i][1])
+    push!(pbintModI, (L(mod(b, Iint)), pbint[i][2]))
+  end
+
+  basisModP = _modular_basis(pbintModI, p)
+
+  B = zero_matrix(Fp, n, n)
+  for i = 1:n
+    b = elem_in_basis(Oint(basisModP[i]))
     for j = 1:n
-      M[i, j] = mmF(coeff(BI[i], j - 1))
+      B[i, j] = mmF(b[j])
     end
   end
-  r = rref!(M)
-  r = r - 1
-  n == r && error("Cannot construct zero dimensional algebra.")
-  basis = [1]
-  append!(basis, _non_pivot_cols(M))
-  @assert length(basis) == n - r
-
-  BO = _modular_basis(pseudo_basis(O, Val{false}), p)
-  N = zero_matrix(K, n, n)
-  for i = 1:n
-    elem_to_mat_row!(N, i, BO[i])
+  r = rref!(B)
+  r == 0 && error("Cannot construct zero dimensional algebra.")
+  b = Vector{nf_elem}(n)
+  basis = Vector{elem_type(Oint)}(r)
+  for i = 1:r
+    for j = 1:n
+      b[j] = invmmF(B[i, j])
+    end
+    basis[i] = Oint(b)
   end
-  NN = inv(N)
-  c = zero_matrix(K, 1, n)
-  mult_table = Array{elem_type(F), 3}(n - r, n - r, n - r)
-  for i = 1:n - r
-    for j = 1:n - r
-      elem_to_mat_row!(c, 1, BO[basis[i]]*BO[basis[j]])
-      d = c*NN
-      for k = 1:n - r
-        mult_table[i, j, k] = mmF(d[1, basis[k]])
+
+  _, p, L, U = lufact(transpose(B))
+  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+  d = zero_matrix(Fp, n, 1)
+  for i = 1:r
+    for j = i:r
+      c = elem_in_basis(mod(basis[i]*basis[j], Iint))
+      for k = 1:n
+        d[p[k], 1] = mmF(c[k])
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      for k = 1:r
+        mult_table[i, j, k] = deepcopy(d[k, 1])
+        mult_table[j, i, k] = deepcopy(d[k, 1])
       end
     end
   end
 
-  one = zeros(F, n - r)
-  one[1] = F(1)
-  A = AlgAss(F, mult_table, one)
-  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
+  if isone(basis[1])
+    one = zeros(Fp, r)
+    one[1] = Fp(1)
+    A = AlgAss(Fp, mult_table, one)
+  else
+    A = AlgAss(Fp, mult_table)
+  end
+  f = (v -> sum([ invmmF(v.coeffs[i])*basis[i] for i = 1:n - r]))
   return A, f
 end
 
