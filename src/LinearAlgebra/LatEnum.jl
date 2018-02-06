@@ -332,10 +332,12 @@ function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   return true
 end
 
-function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::fmpz, limit=-1) where {A,B,C}
-  enum_ctx_start(E, c)
+function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,C} where T <: Union{Integer, fmpz}
+  enum_ctx_start(E, fmpz(c))
   if enum_ctx_next(E)
     l = E.x
+  else
+    l= matrix(FlintZZ, 0, E.n, fmpz[])
   end
   while enum_ctx_next(E) && (limit == -1 || limit >= Base.size(l, 1))
     l = vcat(l, E.x)

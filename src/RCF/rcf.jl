@@ -409,6 +409,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
 
   lf = factor(minimum(f)*e)
   lP = Hecke.NfOrdIdl[]
+
   for p = keys(lf.fac)
     lp = prime_decomposition(ZK, p)  #TODO: make it work for fmpz
     lP = vcat(lP, [x[1] for x = lp])
@@ -435,7 +436,6 @@ if false
   println("finally:", length(lP))
 end
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
-
   @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
   @vprint :ClassField 2 "... done\n"
   @vtime :ClassField 2 KK = kummer_extension(Int(e), [mS(S[i]) for i=1:ngens(S)])

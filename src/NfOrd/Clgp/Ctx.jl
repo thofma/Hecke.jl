@@ -65,7 +65,7 @@ function class_group_init(O::NfOrd, B::Int;
   FB = NfFactorBase()
   while true
     FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
-    if length(FB.ideals) > 10
+    if length(FB.ideals) > 20
       break
     end
     B *= 2

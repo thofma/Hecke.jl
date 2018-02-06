@@ -882,12 +882,12 @@ end
 
 function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 
-  D=discriminant(O)
+  D=abs(discriminant(O))
   ram_primes=collect(keys(factor(O.disc).fac))
   coprime_to=cat(1,ram_primes, fmpz(5))
   sort!(ram_primes)
-  b=sqrt(BigFloat(bound_non_normal))
-  b1=floor(fmpz,sqrt(b/D))
+  b=root(bound_non_normal,2)
+  b1=root(div(b,D),2)
   #
   # First, conductors for tamely ramified extensions
   #
@@ -935,17 +935,14 @@ function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 end
 
 #The input are the absolute bound for the non-normal extension of degree 5 and the list of the quadratic fields
-function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField,1})
+function D5_extensions(absolute_bound::fmpz, quad_fields)
   
   fieldslist=Tuple{AnticNumberField, fmpz}[]
   len=length(quad_fields)
   for K in quad_fields
     len-=1
     
-    println("Field: $K")
-    println("Fields left:", len)
-    
-    
+    println("Field: $K")    
     O=maximal_order(K)
     D=abs(discriminant(O))
   
@@ -954,7 +951,7 @@ function D5_extensions(absolute_bound::fmpz, quad_fields::Array{AnticNumberField
     cgrp=false
     if gcd(C.snf[end],5)!=1
       cgrp=true
-      S = prime_ideals_up_to(O, max(1000,100*clog(D,10)^2))
+      S = prime_ideals_up_to(O, max(100,100*clog(D,10)^2))
     end
 
     gens=Hecke.automorphisms(K)
@@ -1013,10 +1010,10 @@ function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
   #Take minimal polynomial; I need to embed the element in the absolute extension
   pol=absolute_minpoly(pr_el)
   if degree(pol)==15
-    return number_field(pol)
+    return number_field(pol, cached=false)[1]
   else
     pr_el=x*(auto(x))
-    return number_field(absolute_minpoly(pr_el))[1]
+    return number_field(absolute_minpoly(pr_el), cached=false)[1]
   end
   
 end
@@ -1134,7 +1131,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, c
   
 end
 
-function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad::Array{AnticNumberField,1} ; totally_real::Bool=false, complex::Bool=false, tame::Bool=false)
+function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=false)
   
   len=length(list_quad)
   fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
@@ -1217,7 +1214,7 @@ function _trivial_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1}, n::Int
   @assert T.snf[1]==n
   @assert ngens(T)==1
   new_el=mT\(s(act[1](s\mT(T[1]))))
-  if new_el[1]==n-1
+  if new_el==(n-1)*T[1]
     return false
   else
     return true
@@ -1231,7 +1228,6 @@ end
 #
 ###############################################################################
 
- 
 function C3xD5_extensions(non_normal_bound::fmpz)
 
   
@@ -1244,9 +1240,9 @@ function C3xD5_extensions(non_normal_bound::fmpz)
     println("Field: $K")
     O=maximal_order(K)
     D=abs(discriminant(O))
-    absolute_bound=D^15*non_normal_bound^2
-    bo = ceil(Rational{BigInt}(absolute_bound//D^15))
-    bound = FlintZZ(fmpq(bo))
+
+    bound5=root(non_normal_bound,3)
+    bound = non_normal_bound^2
    
     C,mC=class_group(O)
     allow_cache!(mC)
@@ -1286,6 +1282,16 @@ function C3xD5_extensions(non_normal_bound::fmpz)
         C=ray_class_field(mr*inv(s))
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
           @vprint :QuadraticExt "New Field \n"
+          #Before computing the field, I check if the discriminant of the $D_5$ extension is compatible
+          s1=codomain(s)
+          q1,mq1=quo(s1,5, false)
+          C1=ray_class_field(mr*inv(s)*inv(mq1))
+          cond=conductor(C1)[1]
+          condint=minimum(cond)
+          if condint^4*D^2>bound5
+            @vprint :QuadraticExt "Too large (without computing it) :( \n"
+            continue
+          end
           L=number_field(C)
           ram_primes=Set(collect(keys(factor(a).fac)))
           for p in keys(factor(O.disc).fac)
@@ -1525,9 +1531,9 @@ function C9semiC4(absolute_bound::fmpz, l)
       end
     end
   end
-  if typeof(field)==ClassField
-    field=number_field(C)
-  end
+  #if typeof(field)==ClassField
+  #  field=number_field(C)
+  #end
   
   return field
   
@@ -1540,7 +1546,7 @@ end
 #
 ###############################################################################
 
-function _discriminant_bound(autos::Vector{NfRel_nsToNfRel_nsMor}, ram_primes::Array{fmpz,1}, bound::fmpz)
+function _discriminant_bound(autos, ram_primes::Array{fmpz,1}, bound::fmpz)
 
   K=_to_non_normal(autos)
   println("Doing $(K)")
