@@ -735,7 +735,7 @@ end
 function _spans_subset_of_pseudohnf(M::PMat, P::PMat, shape::Symbol = :upperright)
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
-  for i in rows(M)
+  for i in 1:rows(M)
     A = M.coeffs[i]
     v = sub(M.matrix, i:i, 1:cols(P))
     for b in basis(A.num)
