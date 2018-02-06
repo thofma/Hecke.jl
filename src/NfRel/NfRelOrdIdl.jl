@@ -644,7 +644,7 @@ doc"""
 """
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, return_integral::Bool = false)
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
@@ -706,6 +706,10 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   # PM2 is the basis pseudo matrix of p*Oint
   PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
+
+  if return_integral
+    return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
+  end
 
   # Write PM in the basis of O (and not Oint)
   for j = 1:d
@@ -798,7 +802,7 @@ end
 function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   f = nf(O).pol
   if valuation(discriminant(f), p) != valuation(discriminant(O), p)
-    error("Not implemented (yet)")
+    prime_dec_index(O, p)
   end
 
   return prime_dec_nonindex(O, p)
@@ -827,6 +831,53 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     P.splitting_type = (e, degree(q))
     push!(result, (P, e))
   end
+  return result
+end
+
+function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  L = nf(O)
+  K = base_ring(L)
+  pbO = pseudo_basis(O, Val{false})
+
+  Ipint = pradical(O, p, true)
+  Oint = order(Ipint) # same as O but with integral coefficient ideals
+  A, AtoOint = AlgAss(Oint, Ipint, p, true)
+  AA = split(A)
+
+  ideals = Vector{NfRelOrdIdl{nf_elem, NfOrdFracIdl}}()
+  m = PseudoMatrix(zero_matrix(K, 1, degree(O)))
+  for (B, BtoA) in AA
+    f = dim(B)
+    idem = BtoA(B[1]) # Assumes that B == idem*A
+    M = representation_mat(idem)
+    ker = left_kernel(M)
+    N = basis_pmat(Ipint)
+    for i = 1:length(ker)
+      b = elem_in_basis(AtoOint(A(ker[i])))
+      for j = 1:degree(O)
+        m.matrix[1, j] = b[j]
+      end
+      N = vcat(N, deepcopy(m))
+    end
+    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    for i = 1:degree(O)
+      t = K(denominator(pbO[i][2]))
+      for j = i:degree(O)
+        N.matrix[j, i] = divexact(N.matrix[j, i], t)
+      end
+    end
+    N = pseudo_hnf(N, :lowerleft, true)
+    P = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, N)
+    P.splitting_type = (-1, f)
+    push!(ideals, P)
+  end
+
+  result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
+
+  for j = 1:length(ideals)
+    push!(result, (ideals[j], -1))
+  end
+
   return result
 end
 
