@@ -31,9 +31,28 @@
   D.num = K(2)*numerator(D)
   @test D == A1
 
-  p = prime_decomposition(OK, fmpz(11))[1][1]
+  p = prime_decomposition(OK, 11)[1][1]
   (p1, e1), (p2, e2) = prime_decomposition(OL, p)
   @test e1 == 1 && e2 == 1
-  @test p1*p2 == ideal(OL, L(1), L(1), frac_ideal(OK, p, 1), frac_ideal(OK, p, 1))
-end
+  @test p1*p2 == p*OL
 
+  Q, q = number_field(x, "q")
+  Z = maximal_order(Q)
+  Qy, y = Q["y"]
+  g =  y^3 + 34*y^2 + 45*y + 98
+  p = prime_decomposition(Z, 11)[1][1]
+  L, b = number_field(g, "b")
+  OL = maximal_order(L)
+  (p1, e1), (p2, e2) = prime_decomposition(OL, p)
+  @test e1 == 1 && e2 == 1
+  @test p1*p2 == p*OL
+  @test p1.splitting_type[2] == 2 || p2.splitting_type[2] == 2
+
+  g = y^4 + 56*y^3 + 27*y^2 + -10*y + 56
+  p = prime_decomposition(Z, 2)[1][1]
+  L, b = number_field(g, "b")
+  OL = maximal_order(L)
+  (p1, e1), (p2, e2), (p3, e3) = prime_decomposition(OL, p)
+  @test p1^e1*p2^e2*p3^e3 == p*OL
+  @test p1.splitting_type[2] == 1 && p2.splitting_type[2] == 1 && p3.splitting_type[2] == 1
+end
