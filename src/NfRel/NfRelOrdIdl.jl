@@ -385,6 +385,16 @@ end
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function copy(a::NfRelOrdIdl)
+  return a
+end
+
+################################################################################
+#
 #  Equality
 #
 ################################################################################
@@ -802,7 +812,7 @@ end
 function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   f = nf(O).pol
   if valuation(discriminant(f), p) != valuation(discriminant(O), p)
-    prime_dec_index(O, p)
+    return prime_dec_index(O, p)
   end
 
   return prime_dec_nonindex(O, p)
@@ -837,14 +847,15 @@ end
 function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   L = nf(O)
   K = base_ring(L)
-  pbO = pseudo_basis(O, Val{false})
+  pbasisO = pseudo_basis(O, Val{false})
+  pO = p*O
 
   Ipint = pradical(O, p, true)
   Oint = order(Ipint) # same as O but with integral coefficient ideals
   A, AtoOint = AlgAss(Oint, Ipint, p, true)
   AA = split(A)
 
-  ideals = Vector{NfRelOrdIdl{nf_elem, NfOrdFracIdl}}()
+  result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
   m = PseudoMatrix(zero_matrix(K, 1, degree(O)))
   for (B, BtoA) in AA
     f = dim(B)
@@ -861,21 +872,17 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     end
     N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
     for i = 1:degree(O)
-      t = K(denominator(pbO[i][2]))
+      t = K(denominator(pbasisO[i][2]))
       for j = i:degree(O)
         N.matrix[j, i] = divexact(N.matrix[j, i], t)
       end
     end
     N = pseudo_hnf(N, :lowerleft, true)
     P = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, N)
-    P.splitting_type = (-1, f)
-    push!(ideals, P)
-  end
-
-  result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
-
-  for j = 1:length(ideals)
-    push!(result, (ideals[j], -1))
+    P.is_prime = 1
+    e = valuation(pO, P)
+    P.splitting_type = (e, f)
+    push!(result, (P, e))
   end
 
   return result
@@ -899,3 +906,26 @@ function mod(a::NfRelOrdElem{nf_elem}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   end
   return O(b)
 end
+
+################################################################################
+#
+#  Valuation
+#
+################################################################################
+
+function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
+  O = order(A)
+  OO = order(basis_pmat(A, Val{false}).coeffs[1])
+  Afrac = NfRelOrdFracIdl{T, S}(order(A), A, OO(1))
+  Bi = inv(B)
+  i = 0
+  C = Afrac*Bi
+  @assert C != Afrac
+  while defines_ideal(O, basis_pmat(numerator(C), Val{false})) && isone(denominator(C))
+    C = C*Bi
+    i += 1
+  end
+  return i
+end
+
+valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)
