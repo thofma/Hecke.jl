@@ -78,23 +78,6 @@ function AlgAss(f::PolyElem)
   return AlgAss(R, mult_table, one)
 end
 
-function _non_pivot_cols(M::MatElem)
-  # M must be upper triangular
-  result = Vector{Int}()
-  j = 1
-  for i = 1:rows(M)
-    while j <= cols(M) && iszero(M[i, j])
-      push!(result, j)
-      j += 1
-    end
-    j += 1
-    if j > cols(M)
-      return result
-    end
-  end
-  return result
-end
-
 function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   @assert order(I) == O
 
@@ -134,7 +117,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   mult_table = Array{elem_type(Fp), 3}(r, r, r)
   d = zero_matrix(Fp, n, 1)
   for i = 1:r
-    for j = 1:r
+    for j = i:r
       c = elem_in_basis(mod(basis[i]*basis[j], I))
       for k = 1:n
         d[p[k], 1] = c[k]
@@ -143,6 +126,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
       d = solve_ut(U, d)
       for k = 1:r
         mult_table[i, j, k] = deepcopy(d[k, 1])
+        mult_table[j, i, k] = deepcopy(d[k, 1])
       end
     end
   end
@@ -170,36 +154,45 @@ function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T
   return basis
 end
 
-function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, already_integral::Bool = false)
   @assert order(I) == O
 
   n = degree(O)
-  L = nf(O)
-  K = base_ring(L)
+  K = nf(O)
+  KK = base_ring(K)
   Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, K)
+  mmF = extend(mF, KK)
   invmmF = inv(mmF)
 
-  # Compute a pseudo basis of O with integral coefficient ideals
-  pb = pseudo_basis(O, Val{false})
-  bmat_Oint = zero_matrix(K, n, n)
-  bpmat_Iint = basis_pmat(I)
-  pbint = Vector{Tuple{elem_type(L), NfOrdFracIdl}}()
-  for i = 1:n
-    t = divexact(pb[i][1], denominator(pb[i][2]))
-    tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
-    push!(pbint, (t, tt))
-    elem_to_mat_row!(bmat_Oint, i, t)
-    bpmat_Iint.coeffs[i] = simplify(bpmat_Iint.coeffs[i]*K(denominator(pb[i][2])))
+  if already_integral
+    Oint = O
+    Iint = I
+    pbint = pseudo_basis(Oint, Val{false})
+  else
+    # Compute a pseudo basis of O with integral coefficient ideals
+    pb = pseudo_basis(O, Val{false})
+    bmat_Oint = zero_matrix(KK, n, n)
+    bpmat_Iint = basis_pmat(I)
+    pbint = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
+    for i = 1:n
+      t = divexact(pb[i][1], denominator(pb[i][2]))
+      tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
+      push!(pbint, (t, tt))
+      elem_to_mat_row!(bmat_Oint, i, t)
+      denK = KK(denominator(pb[i][2]))
+      for j = i:n
+        bpmat_Iint.matrix[j, i] *= denK
+      end
+    end
+    Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(K, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
+    Iint = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, pseudo_hnf(bpmat_Iint, :lowerleft, true))
   end
-  Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
-  Iint = ideal(Oint, bpmat_Iint)
 
   # Reduce the pseudo basis of O modulo I
-  pbintModI = Vector{Tuple{elem_type(L), NfOrdFracIdl}}()
+  pbintModI = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
   for i = 1:n
     b = Oint(pbint[i][1])
-    push!(pbintModI, (L(mod(b, Iint)), pbint[i][2]))
+    push!(pbintModI, (K(mod(b, Iint)), pbint[i][2]))
   end
 
   basisModP = _modular_basis(pbintModI, p)
@@ -247,7 +240,19 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
   else
     A = AlgAss(Fp, mult_table)
   end
-  f = (v -> sum([ invmmF(v.coeffs[i])*basis[i] for i = 1:n - r]))
+  if already_integral
+    f = (v -> sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r ]))
+  else
+    function f(v::AlgAssElem)
+      s = sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r])
+      scoeffs = elem_in_basis(s)
+      t = O()
+      for i = 1:degree(O)
+        t += O(K(scoeffs[i])*basis_nf(O, Val{false})[i])
+      end
+      return t
+    end
+  end
   return A, f
 end
 

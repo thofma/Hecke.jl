@@ -3,7 +3,7 @@ mutable struct AlgAss{T} <: Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Array{T, 1}
 
- function AlgAss{T}(R::Ring) where {T}
+  function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
     return A

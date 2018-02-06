@@ -59,8 +59,14 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   c = A()
   t = base_ring(A)()
   for i = 1:n
+    if iszero(a.coeffs[i])
+      continue
+    end
     for j = 1:n
       t = a.coeffs[i]*b.coeffs[j]
+      if iszero(t)
+        continue
+      end
       for k = 1:n
         c.coeffs[k] += A.mult_table[i, j, k]*t
       end
@@ -215,9 +221,12 @@ function representation_mat(a::AlgAssElem)
   A = parent(a)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   for i = 1:dim(A)
+    if iszero(a.coeffs[i])
+      continue
+    end
     for j = 1:dim(A)
       for k = 1:dim(A)
-        M[i, j] += a.coeffs[k]*A.mult_table[k, i, j]
+        M[j, k] += a.coeffs[i]*A.mult_table[i, j, k]
       end
     end
   end
