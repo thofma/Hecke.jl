@@ -75,6 +75,36 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   return c
 end
 
+function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+  A = parent(a)
+  n = dim(A)
+  t = base_ring(A)()
+  s = base_ring(A)()
+
+  if c === a || c === b
+    z = parent(a)()
+    mul!(z, a, b)
+    return z
+  end
+
+  for k in 1:n
+    c.coeffs[k] = zero!(c.coeffs[k])
+  end
+
+  for i = 1:n
+    for j = 1:n
+      t = a.coeffs[i]*b.coeffs[j]
+      for k = 1:n
+        s = mul!(s, A.mult_table[i, j, k], t)
+        c.coeffs[k] = add!(c.coeffs[k], c.coeffs[k], s)
+        #c.coeffs[k] += A.mult_table[i, j, k]*t
+      end
+    end
+  end
+  #@assert c == a * b
+  return c
+end
+
 ################################################################################
 #
 #  Ad hoc operations
@@ -105,7 +135,37 @@ dot(b::Union{Integer, fmpz}, a::AlgAssElem{T}) where {T} = b*a
 #
 ################################################################################
 
+function ^(a::AlgAssElem, b::Int)
+  if b == 0
+    return one(parent(a))
+  elseif b == 1
+    return deepcopy(a)
+  else
+    if b < 0
+      a = inv(a)
+      b = -b
+    end
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = deepcopy(a)
+    bit >>= 1
+    while bit != 0
+      z = mul!(z, z, z)
+      if (UInt(bit) & b) != 0
+        z = mul!(z, z, a)
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
+
 function ^(a::AlgAssElem, b::fmpz)
+  if nbits(b) < 64
+    return a^Int(b)
+  end
   if b < 0
     error("Element is not invertible")
   elseif b == 0

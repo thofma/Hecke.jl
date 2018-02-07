@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-base_ring(A::AlgAss) = A.base_ring
+base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
 
 Generic.dim(A::AlgAss) = size(A.mult_table, 1)
 
@@ -325,7 +325,7 @@ end
 
 # This only works if base_ring(A) is a field
 # Constructs the algebra e*A
-function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
+function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   isgenres = (typeof(R) <: Generic.ResRing)
@@ -337,7 +337,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     r = rref!(B)
   end
   r == 0 && error("Cannot construct zero dimensional algebra.")
-  basis = Vector{AlgAssElem}(r)
+  basis = Vector{AlgAssElem{T}}(r)
   for i = 1:r
     basis[i] = elem_from_mat_row(A, B, i)
   end
@@ -372,7 +372,11 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     end
     d = solve_lt(L, d)
     d = solve_ut(U, d)
-    eA = AlgAss(R, mult_table, [ d[i, 1] for i = 1:r ])
+    v = Vector{elem_type(R)}(r)
+    for i in 1:r
+      v[i] = d[i, 1]
+    end
+    eA = AlgAss(R, mult_table, v)
   else
     eA = AlgAss(R, mult_table)
   end
@@ -426,7 +430,8 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
       x *= a
     end
 
-    return false, [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
+    S = [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
+    return false, S
   end
 end
 
