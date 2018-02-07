@@ -937,7 +937,7 @@ end
 #The input are the absolute bound for the non-normal extension of degree 5 and the list of the quadratic fields
 function D5_extensions(absolute_bound::fmpz, quad_fields)
   
-  fieldslist=Tuple{AnticNumberField, fmpz}[]
+  fieldslist=Tuple{fmpq_poly, fmpz}[]
   len=length(quad_fields)
   for K in quad_fields
     len-=1
@@ -985,9 +985,9 @@ function D5_extensions(absolute_bound::fmpz, quad_fields)
           println("New Field")
           L=number_field(C)
           auto=Hecke.extend_aut(C, gens[1])
-          F=_quintic_ext(auto)
-          println(F)
-          push!(fieldslist, (F,D^2*minimum(mr.modulus_fin)^4))
+          pol=_quintic_ext(auto)
+          println(pol)
+          push!(fieldslist, (pol,D^2*minimum(mr.modulus_fin)^4))
         end
       end
     end
@@ -1010,10 +1010,10 @@ function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
   #Take minimal polynomial; I need to embed the element in the absolute extension
   pol=absolute_minpoly(pr_el)
   if degree(pol)==15
-    return number_field(pol, cached=false)[1]
+    return pol
   else
     pr_el=x*(auto(x))
-    return number_field(absolute_minpoly(pr_el), cached=false)[1]
+    return absolute_minpoly(pr_el)
   end
   
 end
@@ -1523,7 +1523,7 @@ function C9semiC4(absolute_bound::fmpz, l)
           continue
         end
         C=ray_class_field(mr*inv(s))
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) < absolute_bound
+        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) <= absolute_bound
           absolute_bound=evaluate(FacElem(C.absolute_discriminant))
           println("\n New Field with discriminant ", absolute_bound)
           field=C
