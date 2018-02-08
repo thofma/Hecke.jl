@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-base_ring(A::AlgAss) = A.base_ring
+base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
 
 Generic.dim(A::AlgAss) = size(A.mult_table, 1)
 
@@ -78,30 +78,13 @@ function AlgAss(f::PolyElem)
   return AlgAss(R, mult_table, one)
 end
 
-function _non_pivot_cols(M::MatElem)
-  # M must be upper triangular
-  result = Vector{Int}()
-  j = 1
-  for i = 1:rows(M)
-    while j <= cols(M) && iszero(M[i, j])
-      push!(result, j)
-      j += 1
-    end
-    j += 1
-    if j > cols(M)
-      return result
-    end
-  end
-  return result
-end
-
 function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   @assert order(I) == O
 
   n = degree(O)
   BO = Hecke.basis(O)
 
-  pisfmpz = (typeof(p) == fmpz)
+  pisfmpz = (p isa fmpz)
   Fp = ResidueRing(FlintZZ, p)
   BOmod = [ mod(v, I) for v in BO ]
   B = zero_matrix(Fp, n, n)
@@ -134,7 +117,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   mult_table = Array{elem_type(Fp), 3}(r, r, r)
   d = zero_matrix(Fp, n, 1)
   for i = 1:r
-    for j = 1:r
+    for j = i:r
       c = elem_in_basis(mod(basis[i]*basis[j], I))
       for k = 1:n
         d[p[k], 1] = c[k]
@@ -143,6 +126,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
       d = solve_ut(U, d)
       for k = 1:r
         mult_table[i, j, k] = deepcopy(d[k, 1])
+        mult_table[j, i, k] = deepcopy(d[k, 1])
       end
     end
   end
@@ -158,75 +142,117 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   return A, f
 end
 
-# Cohen "Advanced Topics in Computational Number Theory" Algorithm 1.5.2
-function _modular_basis(pb::Vector{Tuple{RelativeElement{nf_elem}, NfOrdFracIdl}}, p::NfOrdIdl)
+function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T <: RelativeElement{nf_elem}
   L = parent(pb[1][1])
   K = base_ring(L)
   basis = Array{elem_type(L), 1}()
+  u = L(K(uniformizer(p)))
   for i = 1:degree(L)
-    a = K(numerator(pb[i][2]).gen_one)*inv(K(denominator(pb[i][2])))
-    if has_2_elem(numerator(pb[i][2]))
-      b = K(numerator(pb[i][2]).gen_two)*inv(K(denominator(pb[i][2])))
-      if valuation(a, p) > valuation(b, p)
-        a = b
-      end
-    end
-    push!(basis, a*pb[i][1])
+    v = valuation(pb[i][2], p)
+    push!(basis, (u^v)*pb[i][1])
   end
   return basis
 end
 
-function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
-  n = degree(O)
-  L = nf(O)
-  K = base_ring(L)
-  F, mF = ResidueField(order(p), p)
-  mmF = extend(mF, K)
+function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, already_integral::Bool = false)
+  @assert order(I) == O
 
-  # We need the pseudo basis of I in the basis of O
-  PMI = basis_pmat(I, Val{false})
-  PBI = Vector{Tuple{RelativeElement{nf_elem}, NfOrdFracIdl}}()
-  for i = 1:n
-    x = elem_from_mat_row(L, PMI.matrix, i)
-    push!(PBI, (x, PMI.coeffs[i]))
+  n = degree(O)
+  K = nf(O)
+  KK = base_ring(K)
+  Fp, mF = ResidueField(order(p), p)
+  mmF = extend(mF, KK)
+  invmmF = inv(mmF)
+
+  if already_integral
+    Oint = O
+    Iint = I
+    pbint = pseudo_basis(Oint, Val{false})
+  else
+    # Compute a pseudo basis of O with integral coefficient ideals
+    pb = pseudo_basis(O, Val{false})
+    bmat_Oint = zero_matrix(KK, n, n)
+    bpmat_Iint = basis_pmat(I)
+    pbint = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
+    for i = 1:n
+      t = divexact(pb[i][1], denominator(pb[i][2]))
+      tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
+      push!(pbint, (t, tt))
+      elem_to_mat_row!(bmat_Oint, i, t)
+      denK = KK(denominator(pb[i][2]))
+      for j = i:n
+        bpmat_Iint.matrix[j, i] *= denK
+      end
+    end
+    Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(K, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
+    Iint = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, pseudo_hnf(bpmat_Iint, :lowerleft, true))
   end
-  BI = _modular_basis(PBI, p)
-  M = zero_matrix(F, n + 1, n)
-  M[n + 1, 1] = F(1)
+
+  # Reduce the pseudo basis of O modulo I
+  pbintModI = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
   for i = 1:n
+    b = Oint(pbint[i][1])
+    push!(pbintModI, (K(mod(b, Iint)), pbint[i][2]))
+  end
+
+  basisModP = _modular_basis(pbintModI, p)
+
+  B = zero_matrix(Fp, n, n)
+  for i = 1:n
+    b = elem_in_basis(Oint(basisModP[i]))
     for j = 1:n
-      M[i, j] = mmF(coeff(BI[i], j - 1))
+      B[i, j] = mmF(b[j])
     end
   end
-  r = rref!(M)
-  r = r - 1
-  n == r && error("Cannot construct zero dimensional algebra.")
-  basis = [1]
-  append!(basis, _non_pivot_cols(M))
-  @assert length(basis) == n - r
-
-  BO = _modular_basis(pseudo_basis(O, Val{false}), p)
-  N = zero_matrix(K, n, n)
-  for i = 1:n
-    elem_to_mat_row!(N, i, BO[i])
+  r = rref!(B)
+  r == 0 && error("Cannot construct zero dimensional algebra.")
+  b = Vector{nf_elem}(n)
+  basis = Vector{elem_type(Oint)}(r)
+  for i = 1:r
+    for j = 1:n
+      b[j] = invmmF(B[i, j])
+    end
+    basis[i] = Oint(b)
   end
-  NN = inv(N)
-  c = zero_matrix(K, 1, n)
-  mult_table = Array{elem_type(F), 3}(n - r, n - r, n - r)
-  for i = 1:n - r
-    for j = 1:n - r
-      elem_to_mat_row!(c, 1, BO[basis[i]]*BO[basis[j]])
-      d = c*NN
-      for k = 1:n - r
-        mult_table[i, j, k] = mmF(d[1, basis[k]])
+
+  _, p, L, U = lufact(transpose(B))
+  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+  d = zero_matrix(Fp, n, 1)
+  for i = 1:r
+    for j = i:r
+      c = elem_in_basis(mod(basis[i]*basis[j], Iint))
+      for k = 1:n
+        d[p[k], 1] = mmF(c[k])
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      for k = 1:r
+        mult_table[i, j, k] = deepcopy(d[k, 1])
+        mult_table[j, i, k] = deepcopy(d[k, 1])
       end
     end
   end
 
-  one = zeros(F, n - r)
-  one[1] = F(1)
-  A = AlgAss(F, mult_table, one)
-  f = (v -> sum([ fmpz(v.coeffs[i])*BO[basis[i]] for i = 1:n - r]))
+  if isone(basis[1])
+    one = zeros(Fp, r)
+    one[1] = Fp(1)
+    A = AlgAss(Fp, mult_table, one)
+  else
+    A = AlgAss(Fp, mult_table)
+  end
+  if already_integral
+    f = (v -> sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r ]))
+  else
+    function f(v::AlgAssElem)
+      s = sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r])
+      scoeffs = elem_in_basis(s)
+      t = O()
+      for i = 1:degree(O)
+        t += O(K(scoeffs[i])*basis_nf(O, Val{false})[i])
+      end
+      return t
+    end
+  end
   return A, f
 end
 
@@ -299,7 +325,7 @@ end
 
 # This only works if base_ring(A) is a field
 # Constructs the algebra e*A
-function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
+function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   isgenres = (typeof(R) <: Generic.ResRing)
@@ -311,7 +337,7 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     r = rref!(B)
   end
   r == 0 && error("Cannot construct zero dimensional algebra.")
-  basis = Vector{AlgAssElem}(r)
+  basis = Vector{AlgAssElem{T}}(r)
   for i = 1:r
     basis[i] = elem_from_mat_row(A, B, i)
   end
@@ -346,7 +372,11 @@ function subalgebra(A::AlgAss, e::AlgAssElem, idempotent::Bool = false)
     end
     d = solve_lt(L, d)
     d = solve_ut(U, d)
-    eA = AlgAss(R, mult_table, [ d[i, 1] for i = 1:r ])
+    v = Vector{elem_type(R)}(r)
+    for i in 1:r
+      v[i] = d[i, 1]
+    end
+    eA = AlgAss(R, mult_table, v)
   else
     eA = AlgAss(R, mult_table)
   end
@@ -400,7 +430,8 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
       x *= a
     end
 
-    return false, [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
+    S = [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
+    return false, S
   end
 end
 

@@ -202,7 +202,7 @@ function kernel_as_submodule(h::GrpAbFinGenMap)
   hn, t = hnf_with_transform(vcat(h.map, rels(H))) 
   for i=1:rows(hn)
     if iszero_row(hn, i)
-      return view(t, i:rows(t), 1:ngens(G))
+      return sub(t, i:rows(t), 1:ngens(G))
     end
   end
   error("JH")
@@ -696,7 +696,7 @@ function _no_redundancy(list::Array{nmod_mat,1},w::Array{fmpz,1})
   #
   for i=1:length(list)
     if cols(list[i])>=rows(list[i])
-      list[i]=vcat(list[i],MatrixSpace(parent(list[i][1,1]),cols(list[i])-rows(list[i]), cols(list[i]))())
+      list[i]=vcat(list[i],zero_matrix(parent(list[i][1,1]),cols(list[i])-rows(list[i]), cols(list[i])))
     end
     for j=1:cols(list[i])
       for k=1:rows(list[i])
@@ -704,7 +704,7 @@ function _no_redundancy(list::Array{nmod_mat,1},w::Array{fmpz,1})
       end
     end
     howell_form!(list[i])
-    list[i]=view(list[i],1:cols(list[i]),1:cols(list[i]))
+    list[i]=sub(list[i],1:cols(list[i]),1:cols(list[i]))
   end
   #
   #  Now, check if they are equal

@@ -385,6 +385,16 @@ end
 
 ################################################################################
 #
+#  Copy
+#
+################################################################################
+
+function copy(a::NfRelOrdIdl)
+  return a
+end
+
+################################################################################
+#
 #  Equality
 #
 ################################################################################
@@ -644,7 +654,7 @@ doc"""
 """
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, return_integral::Bool = false)
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
@@ -706,6 +716,10 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   # PM2 is the basis pseudo matrix of p*Oint
   PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
+
+  if return_integral
+    return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
+  end
 
   # Write PM in the basis of O (and not Oint)
   for j = 1:d
@@ -798,7 +812,7 @@ end
 function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   f = nf(O).pol
   if valuation(discriminant(f), p) != valuation(discriminant(O), p)
-    error("Not implemented (yet)")
+    return prime_dec_index(O, p)
   end
 
   return prime_dec_nonindex(O, p)
@@ -829,3 +843,89 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   end
   return result
 end
+
+function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  L = nf(O)
+  K = base_ring(L)
+  pbasisO = pseudo_basis(O, Val{false})
+  pO = p*O
+
+  Ipint = pradical(O, p, true)
+  Oint = order(Ipint) # same as O but with integral coefficient ideals
+  A, AtoOint = AlgAss(Oint, Ipint, p, true)
+  AA = split(A)
+
+  result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
+  m = PseudoMatrix(zero_matrix(K, 1, degree(O)))
+  for (B, BtoA) in AA
+    f = dim(B)
+    idem = BtoA(B[1]) # Assumes that B == idem*A
+    M = representation_mat(idem)
+    ker = left_kernel(M)
+    N = basis_pmat(Ipint)
+    for i = 1:length(ker)
+      b = elem_in_basis(AtoOint(A(ker[i])))
+      for j = 1:degree(O)
+        m.matrix[1, j] = b[j]
+      end
+      N = vcat(N, deepcopy(m))
+    end
+    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    for i = 1:degree(O)
+      t = K(denominator(pbasisO[i][2]))
+      for j = i:degree(O)
+        N.matrix[j, i] = divexact(N.matrix[j, i], t)
+      end
+    end
+    N = pseudo_hnf(N, :lowerleft, true)
+    P = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, N)
+    P.is_prime = 1
+    e = valuation(pO, P)
+    P.splitting_type = (e, f)
+    push!(result, (P, e))
+  end
+
+  return result
+end
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod(a::NfRelOrdElem{nf_elem}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
+  O = order(I)
+  b = elem_in_basis(a)
+  PM = basis_pmat(I, Val{false}) # PM is assumed to be in pseudo hnf
+  for i = degree(O):-1:1
+    t = b[i] - mod(b[i], PM.coeffs[i])
+    for j = 1:i
+      b[j] = b[j] - t*PM.matrix[i, j]
+    end
+  end
+  return O(b)
+end
+
+################################################################################
+#
+#  Valuation
+#
+################################################################################
+
+function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
+  O = order(A)
+  OO = order(basis_pmat(A, Val{false}).coeffs[1])
+  Afrac = NfRelOrdFracIdl{T, S}(order(A), A, OO(1))
+  Bi = inv(B)
+  i = 0
+  C = Afrac*Bi
+  @assert C != Afrac
+  while defines_ideal(O, basis_pmat(numerator(C), Val{false})) && isone(denominator(C))
+    C = C*Bi
+    i += 1
+  end
+  return i
+end
+
+valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)

@@ -100,7 +100,7 @@ end
 
 function clean_and_quotient(M::fq_nmod_mat,N::fq_nmod_mat, pivotindex::Set{Int})
 
-  coeff=MatrixSpace(parent(M[1,1]),rows(N),rows(M))()
+  coeff=zero_matrix(parent(M[1,1]),rows(N),rows(M))
   for i=1:rows(N)
     for j=1:rows(M)
       ind=1
@@ -113,7 +113,7 @@ function clean_and_quotient(M::fq_nmod_mat,N::fq_nmod_mat, pivotindex::Set{Int})
       end
     end
   end 
-  vec= MatrixSpace(parent(M[1,1]),rows(N),cols(M)-length(pivotindex))()
+  vec= zero_matrix(parent(M[1,1]),rows(N),cols(M)-length(pivotindex))
   for i=1:rows(N)  
     pos=0
     for s=1:cols(M)
@@ -146,7 +146,7 @@ function _split(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
   for a=1:length(G)
     subm,vec=clean_and_quotient(C, C*G[a],pivotindex)
     esub[a]=subm
-    s=MatrixSpace(parent(C[1,1]),cols(G[1])-length(pivotindex),cols(G[1])-length(pivotindex))()
+    s=zero_matrix(parent(C[1,1]),cols(G[1])-length(pivotindex),cols(G[1])-length(pivotindex))
     pos=0
     for i=1:rows(G[1])
       if !(i in pivotindex)
@@ -202,7 +202,7 @@ function actquo(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
     push!(pivotindex,ind)   
   end
   for a=1:length(G)
-    s=MatrixSpace(parent(C[1,1]),cols(G[1])-length(pivotindex),cols(G[1])-length(pivotindex))()
+    s=zero_matrix(parent(C[1,1]),cols(G[1])-length(pivotindex),cols(G[1])-length(pivotindex))
     pos=0
     for i=1:rows(G[1])
       if !(i in pivotindex)
@@ -273,14 +273,14 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   #  Now, we get peakwords
   #
   
-  A=MatrixSpace(K,n,n)()
-  B=MatrixSpace(K,n,n)()
+  A=zero_matrix(K,n,n)
+  B=zero_matrix(K,n,n)
   found=false
   
   while !found
   
-    A=MatrixSpace(K,n,n)()
-    B=MatrixSpace(K,n,n)()
+    A=zero_matrix(K,n,n)
+    B=zero_matrix(K,n,n)
     l1=rand(1:length(G))
     l2=rand(1:length(G))
     push!(G, G[l1]*G[l2])
@@ -388,7 +388,7 @@ end
 
 
 function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
-  X = MatrixSpace(base_ring(A), cols(B), rows(A))()
+  X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
   r, per, L, U = lufact(B) # P*M1 = L*U
@@ -518,7 +518,7 @@ function meataxe(M::FqGModule)
   #
   # Choose a random combination of the actual generators of G
   #
-    A=MatrixSpace(K,n,n)()
+    A=zero_matrix(K,n,n)
     for i=1:length(G)
       A+=rand(K)*G[i]
     end
@@ -608,7 +608,7 @@ function composition_series(M::FqGModule)
     list[i]=sub_list[i]*C
   end
   for z=1:length(quot_list)
-    s=MatrixSpace(K,rows(quot_list[z]), cols(C))()
+    s=zero_matrix(K,rows(quot_list[z]), cols(C))
     for i=1:rows(quot_list[z])
       pos=0
       for j=1:cols(C)
@@ -684,10 +684,10 @@ function _relations(M::FqGModule, N::FqGModule)
   K=M.K
   n=M.dim
   
-  sys=MatrixSpace(K,0,N.dim)()
+  sys=zero_matrix(K,0,N.dim)
   matrices=fq_nmod_mat[]
   
-  B=MatrixSpace(K,1,M.dim)()
+  B=zero_matrix(K,1,M.dim)
   B[1,1]=K(1)
   X=B
   push!(matrices, eye(B,N.dim))
@@ -765,7 +765,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   end
   list[1]=closure(list[1], N.G)
   i=2
-  w=MatrixSpace(K,0,0)()
+  w=zero_matrix(K,0,0)
   while i<length(list)
     for j=1:i-1
       w=cleanvect(list[j],list[i])
@@ -862,7 +862,7 @@ function submodules(M::FqGModule)
     N, pivotindex =actquo(x,M.G)
     ls=submodules(N)
     for a in ls
-      s=MatrixSpace(K,rows(a), M.dim)()
+      s=zero_matrix(K,rows(a), M.dim)
       for t=1:rows(a)
         pos=0
         for j=1:M.dim
@@ -909,7 +909,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
   
   K=M.K
   if index==M.dim
-    return fq_nmod_mat[MatrixSpace(K,1,M.dim)()]
+    return fq_nmod_mat[zero_matrix(K,1,M.dim)]
   end
   list=fq_nmod_mat[]
   if index>= M.dim/2
@@ -942,7 +942,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
         #
         ls=submodules(N,index, comp_factors=lf1)
         for a in ls
-          s=MatrixSpace(K,rows(a)+rows(x), M.dim)()
+          s=zero_matrix(K,rows(a)+rows(x), M.dim)
           for t=1:rows(a)
             pos=0
             for j=1:M.dim
