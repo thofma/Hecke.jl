@@ -386,7 +386,8 @@ function assure_has_basis_mat(A::NfOrdIdl)
     return nothing
   end
 
-  if isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum
+  if isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum &&
+     !isindex_divisor(order(A), A.minimum)
     # A is a prime ideal of degree 1
     A.basis_mat = basis_mat_prime_deg_1(A)
     return nothing
@@ -1539,10 +1540,10 @@ function random_init(I::AbstractArray{NfOrdIdl, 1}; reduce::Bool = true, ub::fmp
   O = order(R.base[1])
   R.ibase = map(inv, R.base)
   R.exp = zeros(Int, length(R.base))
-  R.rand = ideal(O, 1)
   R.lb = lb
   R.ub = ub
   R.last = Set{Array{Int, 1}}()
+  R.rand = ideal(O, 1)
   while norm(R.rand) <= lb
     i = rand(1:length(R.base))
     R.rand = simplify(R.rand * R.base[i])
@@ -1580,33 +1581,48 @@ function random_extend(R::RandIdlCtx, f::Float64)
   nothing
 end
 
-function random_get(R::RandIdlCtx; reduce::Bool = true)
-  if norm(R.rand) >= R.ub
-    delta = -1
-  elseif norm(R.rand) <= R.lb
-    delta = +1
-  else
-    delta = rand([-1,1])
-  end
-  i = 1
-  while true
-    if delta > 0
-      i = rand(1:length(R.base))
-    else
-      i = rand(find(R.exp))
-    end
-    R.exp[i] += delta
-    if true || !(R.exp in R.last)
-      break
-    end
-    R.exp[i] -= delta
-  end  
-  if delta > 0
+function random_extend(R::RandIdlCtx, f::fmpz)
+  R.lb = R.lb*f
+  R.ub = R.lb*f
+  while norm(R.rand) < R.lb
+    i = rand(1:length(R.base))
     R.rand = simplify(R.rand * R.base[i])
-  else
-    R.rand = simplify(R.rand * R.ibase[i]).num
+    R.exp[i] += 1
   end
-#  @show R.exp, R.exp in R.last
+  nothing
+end
+
+
+function random_get(R::RandIdlCtx; reduce::Bool = true, repeat::Int = 1)
+  while repeat > 0
+    repeat -= 1
+    if norm(R.rand) >= R.ub
+      delta = -1
+    elseif norm(R.rand) <= R.lb
+      delta = +1
+    else
+      delta = rand([-1,1])
+    end
+    i = 1
+    while true
+      if delta > 0
+        i = rand(1:length(R.base))
+      else
+        i = rand(find(R.exp))
+      end
+      R.exp[i] += delta
+      if true || !(R.exp in R.last)
+        break
+      end
+      R.exp[i] -= delta
+    end  
+    if delta > 0
+      R.rand = simplify(R.rand * R.base[i])
+    else
+      R.rand = simplify(R.rand * R.ibase[i]).num
+    end
+  #  @show R.exp, R.exp in R.last
+  end
   push!(R.last, copy(R.exp))
   return R.rand
 end
