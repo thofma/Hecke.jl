@@ -55,6 +55,17 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   end
     l = lll(t)
   clg.val_base = l
+
+  if !true
+    au = automorphisms(nf(O))
+    class_group_add_auto(clg, au[1])
+    i = 2
+    while length(clg.aut_grp) < length(au)
+      class_group_add_auto(clg, au[i])
+      i += 1
+    end
+  end
+
   return clg
 end
 
