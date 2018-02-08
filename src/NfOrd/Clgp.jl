@@ -112,9 +112,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large = 100
 
   c.B2 = bound * large
 
-  if false # method==1
-    class_group_find_relations(c)
-  elseif method == 2
+  if method == 2
     class_group_find_relations2(c)
   else
     d = root(abs(discriminant(O)), 2)
@@ -148,17 +146,22 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     end
   end
 
-  @vprint :UnitGroup 1 "Computing torsion structure ... \n"
-  U.torsion_units = torsion_units(O)
-  U.torsion_units_order = length(U.torsion_units)
-  U.torsion_units_gen = torsion_units_gen(O)
+  if !isdefined(U, :torsion_units)
+    @vprint :UnitGroup 1 "Computing torsion structure ... \n"
+    U.torsion_units = torsion_units(O)
+    U.torsion_units_order = length(U.torsion_units)
+    U.torsion_units_gen = torsion_units_gen(O)
+  end  
 
   w = U.torsion_units_order
 
   r1, r2 = signature(O)
 
-  @vprint :UnitGroup 1 "Computing residue of Dedekind zeta function ... \n"
-  residue = zeta_log_residue(O, 0.6931/2)  #log(2)/2
+  if !isdefined(U, :residue)
+    @vprint :UnitGroup 1 "Computing residue of Dedekind zeta function ... \n"
+    U.residue = zeta_log_residue(O, 0.6931/2)  #log(2)/2
+  end
+  residue = U.residue
 
   pre = prec(parent(residue))
 

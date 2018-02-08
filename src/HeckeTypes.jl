@@ -1002,6 +1002,8 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   tors_prec::Int
   indep_prec::Int
 
+  residue::arb
+
   unit_map::Map
   finished::Bool
 
