@@ -1201,7 +1201,11 @@ doc"""
 """
 function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
   g, e, f = gcdx(a, b)
-  return g, e, f, divexact(a, g), divexact(b, g)
+  if iszero(g)
+    return g, e, f, f, e
+  else
+    return g, e, f, divexact(a, g), divexact(b, g)
+  end
 end
 
 doc"""
