@@ -100,9 +100,9 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
   if isdefined(c, :randomClsEnv)
     rand_env = c.randomClsEnv
     random_extend(rand_env, 2.0)
-    println("re-using and extending random:", nbits(norm(rand_env.rand)), rand_env.exp)
+    @vprint :ClassGroup 1 "re-using and extending random: $(nbits(norm(rand_env.rand))) and $(rand_env.exp)\n"
   else
-    println("want $(stop-start) primes for random. Try distinct rational primes...")
+    @vprint :ClassGroup 1 "want $(stop-start) primes for random. Try distinct rational primes...\n"
     JJ = [c.FB.ideals[stop]]
     start += length(c.FB.ideals) - stop
     stop  += length(c.FB.ideals) - stop
@@ -145,15 +145,12 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
         @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
         @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
-        if extra > 0 && st + extra <= c.rel_cnt
+        if h > 0 && c.rel_cnt - st > 2
           return
         else
-          if c.rel_cnt - st > length(piv)
+          if h == 0 && c.rel_cnt - st > length(piv) + 2
             break
           end
-        end
-        if h>0 && c.rel_cnt - st > 2
-          break
         end
       end
     end  
