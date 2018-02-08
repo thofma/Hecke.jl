@@ -99,38 +99,64 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
   stop = length(c.FB.ideals)
   if isdefined(c, :randomClsEnv)
     rand_env = c.randomClsEnv
-#    println("re-using random")
+    random_extend(rand_env, 2.0)
+    println("re-using and extending random:", nbits(norm(rand_env.rand)), rand_env.exp)
   else
-    rand_env = random_init(c.FB.ideals[start:stop], lb = root(abs(discriminant(O)), 2), ub = abs(discriminant(O)), reduce = false)
+    println("want $(stop-start) primes for random. Try distinct rational primes...")
+    JJ = [c.FB.ideals[stop]]
+    start += length(c.FB.ideals) - stop
+    stop  += length(c.FB.ideals) - stop
+    i = stop
+    while i>1 && length(JJ) < stop - start
+      i -= 1
+      if degree(c.FB.ideals[i]) > 1
+        continue
+      end
+      if minimum(c.FB.ideals[i]) in [minimum(x) for x = JJ]
+        continue
+      else
+        push!(JJ, c.FB.ideals[i])
+      end
+    end
+    while length(JJ) < stop - start
+      AA = rand(c.FB.ideals)
+      if !(AA in JJ)
+        push!(JJ, AA)
+      end
+    end
+    rand_env = random_init(JJ, lb = root(abs(discriminant(O)), 2)^1, ub = abs(discriminant(O))^1, reduce = false)
     c.randomClsEnv = rand_env
   end
 
   if h > 0
-    rand_exp += 11
+    rand_exp += 1
     while gcd(h, rand_exp) > 1
       rand_exp += 1
     end
   end
 
   while true
-    for p = piv
-      @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
-      @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
-#      @show rand_env.exp, rand_exp
-      @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
-      @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
-      @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
-      if extra > 0 && st + extra <= c.rel_cnt
-        return
-      else
-        if c.rel_cnt - st > length(piv)
+    st = c.rel_cnt
+    while (c.rel_cnt - st < 2)
+      for p = piv
+        @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
+        @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
+  #      @show nbits(norm(J)), rand_env.exp, rand_exp
+        @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
+        @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
+        @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
+        if extra > 0 && st + extra <= c.rel_cnt
+          return
+        else
+          if c.rel_cnt - st > length(piv)
+            break
+          end
+        end
+        if h>0 && c.rel_cnt - st > 2
           break
         end
       end
-      if h>0
-        break
-      end
-    end
+    end  
 
     @vprint :ClassGroup 1 "eval info\n"
     @vtime :ClassGroup 1 h, piv_new = class_group_get_pivot_info(c)
@@ -143,9 +169,10 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx, rat::Float64 = 0.2; e
 #        J = [rand(c.FB.ideals) for x=1:10]
 #        println("extending rand")
 #        random_extend(rand_env, J)
-#        random_extend(rand_env, 2.0)
+        random_extend(rand_env, root(abs(discriminant(O)), 2))
       end
       rand_exp += 1
+      rand_exp = min(rand_exp, 13)
       if h>0
         while gcd(rand_exp, h) > 1
           rand_exp += 1
