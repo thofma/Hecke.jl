@@ -79,6 +79,9 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   end
   fl, res = _factor!(clg.FB, a, false, n*nI, integral)
   if fl
+    if res in clg.M.rel_gens || res in clg.M.bas_gens
+      return false
+    end
     if add_gen!(clg.M, res)
       push!(clg.R_gen, a)
     else
@@ -99,6 +102,9 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
         nn = op_smat(n, m)
         if nn != n
           ba = b(a)
+          if nn in clg.M.bas_gens || nn in clg.M.rel_gens
+            break
+          end
           if add_gen!(clg.M, nn)
             push!(clg.R_gen, ba)
           else
