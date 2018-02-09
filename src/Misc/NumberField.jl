@@ -2431,7 +2431,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       push!(vvv, r)
     end
     @assert abs(sum(vvv)) <= degree(K)
-    b = short_elem(inv(simplify(evaluate(A))), matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
+    @vtime :CompactPresentation 1 b = short_elem(inv(simplify(evaluate(A))), matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
     B = simplify(ideal(ZK, b))
     for p = keys(de)
       local _v = valuation(b, p)
@@ -2443,7 +2443,10 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     end
     @assert !haskey(de, ideal(ZK, 1))
     for (p, _v) = factor(B)
-      @assert !haskey(de, p)
+      if haskey(de, p)
+        de[p] += _v*n^k
+        continue
+      end
       @assert !isone(p)
       insert_prime_into_coprime(de, p, _v*n^k)
     end
@@ -2467,7 +2470,9 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
   @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                     norm(ideal(ZK, a*be)) == abs(norm(FacElem(de)))
-  b = evaluate_mod(a*be, evaluate(FacElem(de)))
+  @vprint :CompactPresentation 1 "Final eval...\n"
+  @vtime :CompactPresentation 1 A = evaluate(FacElem(de))
+  @vtime :CompactPresentation 1 b = evaluate_mod(a*be, A)
   return inv(be)*b
 end
 
