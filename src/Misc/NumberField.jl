@@ -2400,7 +2400,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                   abs(norm(a*be)) == norm(FacElem(de))
 
-  @hassert :CompactPresentation 2 length(de) != 0 || isone(evaluate(ideal(ZK, a*be))) 
+  @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
 
   while k>=1
@@ -2459,14 +2459,14 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     be  *= FacElem(b)^(n^k)
     @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                     abs(norm(a*be)) == norm(FacElem(de))
-    @hassert :CompactPresentation 2 length(de) != 0 || isone(evaluate(ideal(ZK, a*be))) 
+    @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
     @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
     k -= 1
   end
   if length(de) == 0
     de[ideal(ZK, 1)] = 1
   end
-  @hassert :CompactPresentation 2 length(de) != 0 || isone(evaluate(ideal(ZK, a*be))) 
+  @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
   @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                     norm(ideal(ZK, a*be)) == abs(norm(FacElem(de)))
