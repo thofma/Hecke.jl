@@ -418,19 +418,39 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
     end
 
     fac = factor(f)
-    f1 = first(keys(fac.fac))
-    f2 = divexact(f, f1)
-    g, u, v = gcdx(f1, f2)
-    @assert g == 1
-    f1 *= u
-    idem = A()
+    R = parent(f)
+    factors = Vector{elem_type(R)}()
+    for ff in keys(fac.fac)
+      push!(factors, ff)
+    end
+    sols = Vector{elem_type(R)}()
+    right_side = [ R() for i = 1:length(factors) ]
+    max_deg = 0
+    for i = 1:length(factors)
+      right_side[i] = R(1)
+      if i != 1
+        right_side[i - 1] = R(0)
+      end
+      s = crt(right_side, factors)
+      push!(sols, s)
+      max_deg = max(max_deg, degree(s))
+    end
     x = one(A)
-    for i = 0:degree(f1)
-      idem += coeff(f1, i)*x
+    powers = Vector{elem_type(A)}()
+    for i = 1:max_deg + 1
+      push!(powers, x)
       x *= a
     end
+    idems = Vector{elem_type(A)}()
+    for s in sols
+      idem = A()
+      for i = 0:degree(s)
+        idem += coeff(s, i)*powers[i + 1]
+      end
+      push!(idems, idem)
+    end
 
-    S = [ (subalgebra(A, idem, true)...), (subalgebra(A, one(A) - idem, true)...) ]
+    S = [ (subalgebra(A, idem, true)...) for idem in idems ]
     return false, S
   end
 end
