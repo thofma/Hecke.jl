@@ -1129,13 +1129,13 @@ function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = fal
          end
          if pivot[j] == 0
             pivot[j] = i+1
-            kb_reduce_row!(H, U, pivot, j, with_trafo)
             pivot_max = max(pivot_max, j)
             new_pivot = true
             H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, j]
             simplify(H.coeffs[i+1])
             with_trafo ? divide_row!(U, i+1, A[i+1, j]) : nothing
             divide_row!(A, i+1, A[i+1, j])
+            kb_reduce_row!(H, U, pivot, j, with_trafo)
          else
             p = pivot[j]
             Aij = deepcopy(A[i+1, j])
@@ -1194,12 +1194,12 @@ function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = fal
          for c = pivot_max+1:n
             if !iszero(A[i+1,c])
                pivot[c] = i+1
-               kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
                pivot_max = max(pivot_max, c)
                H.coeffs[i+1] = H.coeffs[i+1]*A[i+1, c]
                simplify(H.coeffs[i+1])
                with_trafo ? divide_row!(U, i+1, A[i+1, c]) : nothing
                divide_row!(A, i+1, A[i+1, c])
+               kb_reduce_column!(H, U, pivot, c, with_trafo, start_element)
                break
             end
          end
