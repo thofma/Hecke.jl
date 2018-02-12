@@ -654,6 +654,8 @@ doc"""
 """
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
+# If return_integral is true then the returned ideal is ideal of a
+# order with integral coefficient ideals.
 function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, return_integral::Bool = false)
   d = degree(O)
   L = nf(O)
