@@ -14,6 +14,30 @@ parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
 
 ################################################################################
 #
+#  Test of Commutativity
+#
+################################################################################
+
+iscommutative_known(A::AlgAss{T}) where {T} = A.iscommutative != 0
+
+function iscommutative(A::AlgAss{T}) where {T}
+  if iscommutative_known(A)
+    return A.iscommutative == 1
+  end
+  for i = 1:dim(A)
+    for j = i + 1:dim(A)
+      if A.mult_table[i, j, :] != A.mult_table[j, i, :]
+        A.iscommutative = 2
+        return false
+      end
+    end
+  end
+  A.iscommutative = 1
+  return true
+end
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -67,15 +91,18 @@ function AlgAss(f::PolyElem)
   end
   mult_table = Array{elem_type(R), 3}(n, n, n)
   for i = 1:n
-    for j = 1:n
+    for j = i:n
       for k = 1:n
         mult_table[i, j, k] = coeff(B[i + j - 1], k - 1)
+        mult_table[j, i, k] = coeff(B[i + j - 1], k - 1)
       end
     end
   end
   one = map(R, zeros(Int, n))
   one[1] = R(1)
-  return AlgAss(R, mult_table, one)
+  A = AlgAss(R, mult_table, one)
+  A.iscommutative = 1
+  return A
 end
 
 function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
@@ -138,6 +165,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   else
     A = AlgAss(Fp, mult_table)
   end
+  A.iscommutative = 1
   f = (v -> sum([ fmpz(v.coeffs[i])*basis[i] for i = 1:r ]))
   return A, f
 end
@@ -154,6 +182,8 @@ function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T
   return basis
 end
 
+# If already_integral is true it is assumed that the coefficient
+# ideals of the pseudo basis of O are integral.
 function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, already_integral::Bool = false)
   @assert order(I) == O
 
@@ -240,6 +270,7 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
   else
     A = AlgAss(Fp, mult_table)
   end
+  A.iscommutative = 1
   if already_integral
     f = (v -> sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r ]))
   else
@@ -355,7 +386,10 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   d = zero_matrix(R, n, 1)
   for i = 1:r
     for j = 1:r
-      c = basis[i]*basis[j]
+      if iscommutative(A) && j < i
+        continue
+      end
+      c = mul!(c, basis[i], basis[j])
       for k = 1:n
         d[p[k], 1] = c.coeffs[k]
       end
@@ -363,6 +397,9 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
       d = solve_ut(U, d)
       for k = 1:r
         mult_table[i, j, k] = deepcopy(d[k, 1])
+        if iscommutative(A) && i != j
+          mult_table[j, i, k] = deepcopy(d[k, 1])
+        end
       end
     end
   end
@@ -380,6 +417,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   else
     eA = AlgAss(R, mult_table)
   end
+  eA.iscommutative = A.iscommutative
   eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
   return eA, eAtoA
 end
@@ -410,12 +448,13 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   while true
     c = map(F, rand(0:(p-1), k))
     a = dot(c, V)
-
     f = minpoly(a)
 
     if degree(f) < 2
       continue
     end
+
+    @assert issquarefree(f)
 
     fac = factor(f)
     R = parent(f)

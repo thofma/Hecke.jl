@@ -92,8 +92,14 @@ function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   end
 
   for i = 1:n
+    if iszero(a.coeffs[i])
+      continue
+    end
     for j = 1:n
       t = a.coeffs[i]*b.coeffs[j]
+      if iszero(t)
+        continue
+      end
       for k = 1:n
         s = mul!(s, A.mult_table[i, j, k], t)
         c.coeffs[k] = add!(c.coeffs[k], c.coeffs[k], s)

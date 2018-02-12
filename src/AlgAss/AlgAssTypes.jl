@@ -2,10 +2,14 @@ mutable struct AlgAss{T} <: Ring
   base_ring::Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Array{T, 1}
+  iscommutative::Int       # 0: don't know
+                           # 1 known to be commutative
+                           # 2 known to be not commutative
 
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
+    A.iscommutative = 0
     return A
   end
 
@@ -14,6 +18,7 @@ mutable struct AlgAss{T} <: Ring
     A.base_ring = R
     A.mult_table = mult_table
     A.one = one
+    A.iscommutative = 0
     return A
   end
 
@@ -21,6 +26,7 @@ mutable struct AlgAss{T} <: Ring
     A = new{T}()
     A.base_ring = R
     A.mult_table = mult_table
+    A.iscommutative = 0
     return A
   end
 end
