@@ -225,10 +225,16 @@ function show(io::IO, s::NfRelOrdIdlSet)
 end
 
 function show(io::IO, a::NfRelOrdIdl)
-  print(io, "Ideal of\n")
-  print(io, order(a), "\n\n")
-  print(io, "with basis pseudo-matrix\n")
-  showcompact(io, basis_pmat(a, Val{false}))
+  compact = get(io, :compact, false)
+  if compact
+    print(io, "Ideal with basis pseudo-matrix\n")
+    showcompact(io, basis_pmat(a, Val{false}))
+  else
+    print(io, "Ideal of\n")
+    showcompact(order(a))
+    print(io, "\nwith basis pseudo-matrix\n")
+    showcompact(io, basis_pmat(a, Val{false}))
+  end
 end
 
 ################################################################################
@@ -931,3 +937,31 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
 end
 
 valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)
+
+################################################################################
+#
+#  Factorization into prime ideals
+#
+################################################################################
+
+function factor(A::NfRelOrdIdl{T, S}) where {T, S}
+  n = norm(A)
+  normFactors = factor(n)
+  result = Dict{NfRelOrdIdl{T, S}, Int}()
+  O = order(A)
+  for p in keys(normFactors)
+    prime_dec = prime_decomposition(O, p)
+    for (P, e) in prime_dec
+      v = valuation(A, P)
+      if v != 0
+        result[P] = v
+        n = n//norm(P)^v
+        simplify(n)
+      end
+      if isone(n)
+        return result
+      end
+    end
+  end
+  return result
+end

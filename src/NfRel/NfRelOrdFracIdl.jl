@@ -78,9 +78,9 @@ parent(a::NfRelOrdFracIdl) = a.parent
 
 numerator(a::NfRelOrdFracIdl) = a.num
 
-denominator(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = a.den_abs
+denominator(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = deepcopy(a.den_abs)
 
-denominator(a::NfRelOrdFracIdl{T, S}) where {S, T} = a.den_rel
+denominator(a::NfRelOrdFracIdl{T, S}) where {S, T} = deepcopy(a.den_rel)
 
 ################################################################################
 #
@@ -94,11 +94,18 @@ function show(io::IO, s::NfRelOrdFracIdlSet)
 end
 
 function show(io::IO, a::NfRelOrdFracIdl)
-  print(io, "Fractional ideal of\n")
-  print(io, order(a), "\n\n")
-  print(io, "with basis pseudo-matrix\n")
-  showcompact(io, basis_pmat(numerator(a), Val{false}))
-  print(io, "\nand denominator ", denominator(a))
+  compact = get(io, :compact, false)
+  if compact
+    print(io, "Fractional ideal with basis pseudo-matrix\n")
+    showcompact(io, basis_pmat(numerator(a), Val{false}))
+    print(io, "\nand denominator ", denominator(a))
+  else
+    print(io, "Fractional ideal of\n")
+    showcompact(order(a))
+    print(io, "\nwith basis pseudo-matrix\n")
+    showcompact(io, basis_pmat(numerator(a), Val{false}))
+    print(io, "\nand denominator ", denominator(a))
+  end
 end
 
 ################################################################################
@@ -121,6 +128,25 @@ end
 function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem{T}) where {T, S}
   return NfRelOrdFracIdl{T, S}(O, a, d)
 end
+
+function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
+  d = degree(O)
+  pb = pseudo_basis(O, Val{false})
+  M = zero_matrix(base_ring(nf(O)), d, d)
+  for i = 1:d
+    elem_to_mat_row!(M, i, pb[i][1]*x)
+  end
+  M = M*basis_mat_inv(O, Val{false})
+  PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
+  PM = pseudo_hnf(PM, :lowerleft)
+  OO = order(pb[1][2])
+  den = OO(1)
+  return NfRelOrdFracIdl{T, S}(O, NfRelOrdIdl{T, S}(O, PM), den)
+end
+
+*(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S} = frac_ideal(O, x)
+
+*(x::RelativeElement{T}, O::NfRelOrd{T, S}) where {T, S} = frac_ideal(O, x)
 
 ################################################################################
 #
@@ -227,6 +253,19 @@ doc"""
 function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   return NfRelOrdFracIdl{T, S}(order(a), numerator(a)*numerator(b), denominator(a)*denominator(b))
 end
+
+################################################################################
+#
+#  Ad hoc multiplication
+#
+################################################################################
+
+function *(a::NfRelOrdFracIdl{T, S}, b::RelativeElement{T}) where {T, S}
+  c = b*order(a)
+  return c*a
+end
+
+*(b::RelativeElement{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
 
 ################################################################################
 #

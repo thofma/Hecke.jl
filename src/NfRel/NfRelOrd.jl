@@ -60,6 +60,8 @@ mutable struct NfRelOrd{T, S} <: Ring
   end
 end
 
+export pseudo_basis, basis_pmat
+
 ################################################################################
 #
 #  Basic field access
@@ -297,20 +299,37 @@ function show(io::IO, S::NfRelOrdSet)
 end
 
 function show(io::IO, O::NfRelOrd)
-  if ismaximal_known(O) && ismaximal(O)
-    print(io, "Relative maximal order of ")
+  compact = get(io, :compact, false)
+  if compact
+    if ismaximal_known(O) && ismaximal(O)
+      print(io, "Relative maximal order with pseudo-basis ")
+    else
+      print(io, "Relative order with pseudo-basis ")
+    end
+    pb = pseudo_basis(O, Val{false})
+    for i = 1:degree(O)
+      print(io, "($(pb[i][1])) * ")
+      showcompact(io, pb[i][2])
+      if i != degree(O)
+        print(io, ", ")
+      end
+    end
   else
-    print(io, "Relative order of ")
-  end
-  println(io, nf(O))
-  print(io, "with pseudo-basis ")
-  pb = pseudo_basis(O, Val{false})
-  for i = 1:degree(O)
-    print(io, "\n(")
-    print(io, pb[i][1])
-    print(io, ", ")
-    showcompact(io, pb[i][2])
-    print(io, ")")
+    if ismaximal_known(O) && ismaximal(O)
+      print(io, "Relative maximal order of ")
+    else
+      print(io, "Relative order of ")
+    end
+    println(io, nf(O))
+    print(io, "with pseudo-basis ")
+    pb = pseudo_basis(O, Val{false})
+    for i = 1:degree(O)
+      print(io, "\n(")
+      print(io, pb[i][1])
+      print(io, ", ")
+      showcompact(io, pb[i][2])
+      print(io, ")")
+    end
   end
 end
 
@@ -341,7 +360,7 @@ function discriminant(O::NfRelOrd{nf_elem, S}) where S
   return deepcopy(O.disc_abs)
 end
 
-function assure_has_discriminant(O::NfRelOrd{RelativeElement{T}, S}) where {T, S}
+function assure_has_discriminant(O::NfRelOrd{T, S}) where {T <: RelativeElement{U} where U, S}
   if isdefined(O, :disc_rel)
     return nothing
   end
@@ -352,12 +371,12 @@ function assure_has_discriminant(O::NfRelOrd{RelativeElement{T}, S}) where {T, S
     a *= pb[i][2]^2
   end
   disc = d*a
-  simplify(disc)
+#  simplify(disc)
   O.disc_rel = numerator(disc)
   return nothing
 end
 
-function discriminant(O::NfRelOrd{RelativeElement{T}, S}) where {T, S}
+function discriminant(O::NfRelOrd{T, S}) where {T <: RelativeElement{U} where U, S}
   assure_has_discriminant(O)
   return deepcopy(O.disc_rel)
 end
@@ -485,7 +504,8 @@ doc"""
 """
 function EquationOrder(L::RelativeExtension)
   M = identity_matrix(base_ring(L), degree(L))
-  O = Order(L, M)
+  PM = PseudoMatrix(M)
+  O = Order(L, PM)
   O.basis_mat_inv = M
   O.isequation_order = true
   return O
