@@ -202,11 +202,17 @@ function conductor(C::Hecke.ClassField)
           L[p]=k2
           break
         end
+        k1-=1
+        k2-=1
       end
       if order(Q)==E
-        push!(gens, mp\ideal(O,tmg[p][1]))
-        Q,mQ=quo(G,gens,false)
-        if order(Q)==E
+        if haskey(tmg, p)
+          push!(gens, mp\ideal(O,tmg[p][1]))
+          Q,mQ=quo(G,gens,false)
+          if order(Q)==E
+            delete!(L,p)
+          end
+        else
           delete!(L,p)
         end
       end
