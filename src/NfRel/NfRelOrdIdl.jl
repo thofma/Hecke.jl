@@ -838,7 +838,7 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   Fp, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
   immF = inv(mmF)
-  Fy, y = Fp["y"]
+  Fy, y = PolynomialRing(Fp,"y", cached=false)
   fmodp = Hecke.nf_elem_poly_to_fq_poly(Fy, mmF, f)
   fac = factor(fmodp)
   result = Array{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}, 1}()

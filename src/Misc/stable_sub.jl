@@ -115,7 +115,7 @@ function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpA
 
   expon=Int(exponent(V))
   @assert length(factor(order(V)).fac)==1
-  RR=ResidueRing(FlintZZ, expon)
+  RR=ResidueRing(FlintZZ, expon, cached=false)
   act_mat=Array{nmod_mat,1}(length(act))
   for z=1:length(act)
     A=zero_matrix(RR,ngens(V), ngens(V))
@@ -270,7 +270,7 @@ function _exponent_p_sub(M::ZpnGModule)
   G=M.G
   V=M.V
   p=M.p
-  F, a = Nemo.FiniteField(p, 1, "a")
+  F, a = Nemo.FiniteField(p, 1, "a", cached=false)
   v=fmpz[divexact(V.snf[i],p) for i=1:ngens(V)]
   G1=Array{fq_nmod_mat,1}(length(G))
   MS=MatrixSpace(F,ngens(V),ngens(V))
@@ -400,7 +400,7 @@ function _mult_by_p(M::ZpnGModule)
   #
   #  First, the quotient M/pM
   #
-  F,a=Nemo.FiniteField(p,1,"a")
+  F,a=Nemo.FiniteField(p,1,"a", cached=false)
   n=ngens(V)
   Gq=_change_ring(G,F,1)
   spaces=FqGModule[FqGModule(Gq)]

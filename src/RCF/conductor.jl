@@ -759,7 +759,7 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
   M=rels(S)
   
   p=1
-  Ox,x=O["y"]
+  Ox,x=PolynomialRing(O,"y", cached=false)
   f1=Ox([O(coeff(f,i)) for i=0:n])
   
   determinant=order(S)
@@ -782,7 +782,7 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
       L=prime_decomposition(O,p)
       for i=1:length(L)
         F,mF=ResidueField(O,L[i][1])
-        Fz,z= F["z"]
+        Fz,z= PolynomialRing(F,"z", cached=false)
         g=mF(f1)
         D=factor_shape(g)
         if length(D)>1
@@ -835,7 +835,7 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
   M=rels(S)
   
   p=1
-  Ox,x=O["y"]
+  Ox,x=PolynomialRing(O,"y", cached=false)
   f=Ox([O(coeff(f,i)) for i=0:n])
   
   determinant=abs(det(M))
@@ -852,7 +852,7 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
       L=prime_decomposition(O,p)
       for i=1:length(L)
         F,mF=ResidueField(O,L[i][1])
-        Fz,z= F["z"]
+        Fz,z= PolynomialRing(F, "z", cached=false)
         g=mF(f)
         D=factor_shape(g)
         E=collect(keys(D))[1]

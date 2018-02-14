@@ -1,10 +1,10 @@
 export ResidueField
 
 function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
-  R = ResidueRing(FlintZZ, p)
+  R = ResidueRing(FlintZZ, p, cached = false)
 
-  Zy, y = PolynomialRing(FlintZZ, "y")
-  Rx, x = PolynomialRing(R, "x")#::Tuple{NmodPolyRing, nmod_poly}
+  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)#::Tuple{NmodPolyRing, nmod_poly}
 
   gmodp = Rx(g)#::nmod_poly
   fmodp = Rx(f)#::nmod_poly
@@ -12,9 +12,9 @@ function _residue_field_nonindex_divisor_helper(f::fmpq_poly, g::fmpq_poly, p)
   h = gcd(gmodp,fmodp)
 
   if typeof(p) == Int
-    F = FqNmodFiniteField(h, :$)
+    F = FqNmodFiniteField(h, :$, false)
   elseif typeof(p) == fmpz
-    F = FqFiniteField(h, :$)
+    F = FqFiniteField(h, :$, false)
   end
 
   #F = FqNmodFiniteField(h, :$)

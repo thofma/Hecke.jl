@@ -706,7 +706,7 @@ function factor(f::Generic.Poly{NfRelElem{T}}) where T
     return P([mp(coeff(f, i)) for i=0:degree(f)])
   end
 
-  fa = map_poly(Ka["T"][1], rel_abs, f)
+  fa = map_poly(PolynomialRing(Ka, "T", cached=false)[1], rel_abs, f)
   lf = factor(fa)
   res = Fac(map_poly(parent(f), inv(rel_abs), lf.unit), Dict(map_poly(parent(f), inv(rel_abs), k)=>v for (k,v) = lf.fac))
 

@@ -1226,7 +1226,7 @@ mutable struct FactorBaseSingleP
       int_doit = naive_doit
     else
       Zx = PolynomialRing(FlintZZ, "x")[1]
-      Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p)), "x")[1]
+      Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
       Qx = parent(K.pol)
       fp = Fpx(Zx(K.pol))
       lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]
@@ -1312,7 +1312,7 @@ mutable struct ModuleCtxNmod
 
   function ModuleCtxNmod(p::Int, dim::Int)
     M = new()
-    M.R = ResidueRing(FlintZZ, p)
+    M.R = ResidueRing(FlintZZ, p, cached=false)
     M.basis = SMat(M.R)
     M.basis.c = dim
     M.gens = SMat(M.R)
@@ -1341,7 +1341,7 @@ mutable struct ModuleCtx_fmpz
     M.bas_gens.c = dim
     M.rel_gens = SMat(FlintZZ)
     M.rel_gens.c = dim
-    R = ResidueRing(FlintZZ, p)
+    R = ResidueRing(FlintZZ, p, cached=false)
     M.rel_reps_p = SMat(R)
     M.new = false
     M.Mp = ModuleCtxNmod(R, dim)
@@ -1705,6 +1705,7 @@ mutable struct ZpnGModule <: GModule
   end
   
 end
+
 
 mutable struct FqGModule <: GModule
   K::Nemo.FqNmodFiniteField

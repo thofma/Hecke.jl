@@ -536,7 +536,7 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
     pols = pols[1:min(length(pols), max_split)]
   end
   me.ce = crt_env(pols)
-  me.fld = [FqNmodFiniteField(x, :$) for x = pols]  #think about F_p!!!
+  me.fld = [FqNmodFiniteField(x, :$, false) for x = pols]  #think about F_p!!!
                                    # and chacheing
   me.rp = Array{nmod_poly}(length(pols))
   me.res = Array{fq_nmod}(me.ce.n)

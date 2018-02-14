@@ -481,7 +481,7 @@ function minpoly_dense(a::NfRel_nsElem)
     if n % (i-1) == 0 && rank(M) < i
       N = nullspace(sub(M, 1:i, 1:cols(M))')
       @assert N[1] == 1
-      f = k["t"][1]([N[2][j, 1] for j=1:i])
+      f = PolynomialRing(k,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
       return f*inv(lead(f))
     end
     z *= a

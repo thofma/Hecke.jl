@@ -2622,24 +2622,24 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
 end
 
 function factor(f::fmpq_poly, R::NmodRing)
-  Rt, t = R["t"]
+  Rt, t = PolynomialRing(R, "t", cached=false)
   return factor(Rt(f))
 end
 
 function factor(f::fmpz_poly, R::NmodRing)
-  Rt, t = R["t"]
+  Rt, t = PolynomialRing(R, "t", cached=false)
   return factor(Rt(f))
 end
 
 function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
-  Rt, t = R["t"]
+  Rt, t = PolynomialRing(R, "t", cached=false)
   fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
   return roots(fpp)
 end
 
 function roots(f::fmpq_poly, R::Nemo.NmodRing)
-  Rt, t = R["t"]
+  Rt, t = PolynomialRing(R, "t", cached=false)
   fp = FlintZZ["t"][1](f*denominator(f))
   fpp = Rt(fp)
   return roots(fpp)
@@ -2753,8 +2753,8 @@ function polredabs(K::AnticNumberField)
     end
   end
 
-  F, w = FiniteField(p, d, "w")
-  Ft, t = F["t"]
+  F, w = FiniteField(p, d, "w", cached=false)
+  Ft, t = PolynomialRing(F, "t", cached=false)
   ap = Ft()
   R = roots(K.pol, F)
   Zx = FlintZZ["x"][1]

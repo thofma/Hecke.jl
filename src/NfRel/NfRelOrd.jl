@@ -655,7 +655,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
   F, mF = ResidueField(OK, p)
   mmF = extend(mF, K)
   immF = inv(mmF)
-  Fy, y = F["y"]
+  Fy, y = PolynomialRing(F,"y", cached=false)
 
   Tmodp = nf_elem_poly_to_fq_poly(Fy, mmF, T)
   fac = factor(Tmodp)

@@ -59,7 +59,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part=
     @assert isprime(fmpz(p_part))
     return ray_class_group_p_part(p_part, m, inf_plc)
   elseif n_quo!=0
-    return ray_class_group(n_quo,m,inf_plc)
+    return ray_class_group_quo(n_quo,m,inf_plc)
   else 
     return ray_class_group_fac_elem(m,inf_plc)
   end
@@ -1160,7 +1160,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
 end 
 
 
-function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_quo(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
   K=nf(O)
@@ -1182,11 +1182,11 @@ function ray_class_group(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPl
       y2[q]=Int(e)
     end
   end
-  return ray_class_group(n, m, y1, y2, inf_plc)
+  return ray_class_group_quo(n, m, y1, y2, inf_plc)
   
 end
 
-function ray_class_group(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1}=InfPlc[])
   
   K=nf(O)
   d1=Dict{NfOrdIdl, Int}()
@@ -1197,13 +1197,14 @@ function ray_class_group(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,In
       d1[P]=1
     end   
   end
-  return ray_class_group(n_quo, ideal(O,1), d1, wprimes, inf_plc)
+  return ray_class_group_quo(n_quo, ideal(O,1), d1, wprimes, inf_plc, check_expo=true)
   
 end
-#global _DEBUG=[]
 
-function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=InfPlc[])
-
+function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=InfPlc[]; check_expo=false)
+  # check_expo checks, before the computation of the units, if the exponent of the group can be n.
+  # if it is lower for sure, it returns the trivial group.
+  # I HAVE TO FIND A BETTER METHOD. 
   O=parent(m).order
   K=nf(O)
   
@@ -1223,8 +1224,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   _assure_princ_gen(mC)
   @vtime :RayFacElem 1 G, mG, tame, wild= _mult_grp_mod_n(Q,y1,y2,n)
 
-  
-  
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
@@ -1252,6 +1251,11 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   nonnclass=divexact(C.snf[end], valclass)
 
   C, mC, vect = _class_group_mod_n(C,mC,Int(valclass))
+  
+  if check_expo && exponent(C)*exponent(G)<n
+    return empty_ray_class(m)
+  end
+  
   U, mU = unit_group_fac_elem(O)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
   for i=1:ngens(C)
@@ -1261,8 +1265,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   if order(G)==1
     return class_as_ray_class(C,mC,exp_class,m,n)    
   end
-
-
   
 #
 # We start to construct the relation matrix
@@ -1376,8 +1378,6 @@ function ray_class_group(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     return X(hcat(a.coeff,y))
   end
   
-
-
   function disclog(J::NfOrdIdl)
     
     @hassert :RayFacElem 1 iscoprime(J,I)
@@ -1623,30 +1623,12 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
   end
   
   lgens,subs=find_gens(mR)
-
-  
   if isempty(lgens)
     return GrpAbFinGenMap[]
   end
   
   
   G=Array{GrpAbFinGenMap,1}(length(Aut))
-  #=
-  for i=1:length(G)
-    M=zero_matrix(FlintZZ, ngens(R), ngens(R))
-    list_images=Array{GrpAbFinGenElem,1}(length(lgens))
-    for j=1:length(lgens) 
-      J=_aut_on_id(O,Aut[i],lgens[j])
-      list_images[j]=mR\J
-    end
-    G[i]=hom(subs,list_images, check=true)
-    @hassert :RayFacElem 1 isbijective(G[i])
-  end
-  
-  return G
-  =#
-  
-
   #
   #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
@@ -1740,7 +1722,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     
     if x==1
     
-      F, _ = Nemo.FiniteField(Int(p), 1, "_")
+      F, _ = Nemo.FiniteField(Int(p), 1, "_", cached=false)
       act_mat=Array{fq_nmod_mat, 1}(length(act))
       for w=1:length(act)
         act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
@@ -1771,7 +1753,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
 
     else    
     
-      RR=ResidueRing(FlintZZ, Int(p^x))
+      RR=ResidueRing(FlintZZ, Int(p^x), cached=false)
       act_mat=Array{nmod_mat,1}(length(act))
       auxmat1=hcat(mG.map', rels(Q)')
       auxmat2=mS.map*mG.map

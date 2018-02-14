@@ -69,7 +69,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
       end
     end
 
-    F = FqNmodFiniteField(f, Symbol("_\$"))
+    F = FqNmodFiniteField(f, Symbol("_\$"), false)
 
     M2 = zero_matrix(R, degree(O), d)
 

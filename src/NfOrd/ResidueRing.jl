@@ -913,8 +913,8 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
   ZX, X = FlintZZ["X"]
-  Rp = ResidueRing(FlintZZ, p)
-  Rpt, t = Rp["t"]
+  Rp = ResidueRing(FlintZZ, p, cached=false)
+  Rpt, t = PolynomialRing(Rp, "t", cached=false)
   K = base_ring(f)
 
   gp = Rpt(K.pol)
@@ -938,8 +938,8 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
 
   #set up the mod p data:
   #need FiniteField as I need to factor (roots)
-  S = FqNmodFiniteField(first(keys(lp)), :z)
-  ST, T = S["T"]
+  S = FqNmodFiniteField(first(keys(lp)), :z, false)
+  ST, T = PolynomialRing(S,"T", cached=false)
   fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
   rt = roots(fp)
   #we're going to lift the roots - and for efficiency 1/f'(rt) as well:
@@ -974,8 +974,8 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
 
   for i=2:length(pr)
     pp = fmpz(p)^pr[i]
-    Q = ResidueRing(FlintZZ, pp)
-    Qt, t = Q["t"]
+    Q = ResidueRing(FlintZZ, pp, cached=false)
+    Qt, t = PolynomialRing(Q,"t", cached=false)
 
     #possibly this should be done with max precision and then adjusted down
     #the poly mod P^??
@@ -1059,7 +1059,7 @@ function ispower(a::Nemo.fq_nmod, m::Int)
   if gcd(s-1, m) == 1
     return true, a^invmod(m, s-1)
   end
-  St, t = parent(a)["t"]
+  St, t = PolynomialRing(parent(a), "t", cached=false)
   f = t^m-a
   rt = roots(f)
   if length(rt) > 0
@@ -1101,8 +1101,8 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
   #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
   #hard to test...
   ZX, X = FlintZZ["X"]
-  Rp = ResidueRing(FlintZZ, p)
-  Rpt, t = Rp["t"]
+  Rp = ResidueRing(FlintZZ, p, cached = false)
+  Rpt, t = PolynomialRing(Rp, "t", cached = false)
   K = parent(a)
 
   gp = Rpt(K.pol)
@@ -1127,8 +1127,8 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
 
   #set up the mod p data:
   #need FiniteField as I need to factor (roots)
-  S = FqNmodFiniteField(first(keys(lp)), :z)
-  ST, T = S["T"]
+  S = FqNmodFiniteField(first(keys(lp)), :z, false)
+  ST, T = PolynomialRing(S, "T", cached=false)
   fp = T^m - S(Rpt(a))
   rt = roots(fp)
   #OK, we're doing s.th. different
@@ -1163,8 +1163,8 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
 
   for i=2:length(pr)
     pp = fmpz(p)^pr[i]
-    Q = ResidueRing(FlintZZ, pp)
-    Qt, t = Q["t"]
+    Q = ResidueRing(FlintZZ, pp, cached=false)
+    Qt, t = PolynomialRing(Q, "t", cached = false)
 
     #possibly this should be done with max precision and then adjusted down
     #the poly mod P^??
@@ -1173,7 +1173,7 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
 
     #the lattice for reco:
     n = degree(K)
-    M = MatrixSpace(FlintZZ, n, n)()
+    M = zero_matrix(FlintZZ, n, n)
     for j=1:degree(pgg)
       M[j,j] = pp
     end
@@ -1532,8 +1532,8 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
   while true
     p = next_prime(p)
 
-    Rp = ResidueRing(FlintZZ, p)
-    Rpt, t = Rp["t"]
+    Rp = ResidueRing(FlintZZ, p, cached=false)
+    Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
     if iszero(discriminant(gp))
       continue
@@ -1543,8 +1543,8 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
     #set up the mod p data:
     #need FiniteField as I need to factor (roots)
     deg_p = degree(first(keys(lp)))
-    S = FqNmodFiniteField(first(keys(lp)), :z)
-    ST, T = S["T"]
+    S = FqNmodFiniteField(first(keys(lp)), :z, false)
+    ST, T = PolynomialRing(S, "T", cached=false)
     fp = ST([S(Rpt(coeff(f, i))) for i=0:degree(f)])
     if !issquarefree(fp)
       continue
@@ -1605,8 +1605,8 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
   while true
     p = next_prime(p)
 
-    Rp = ResidueRing(FlintZZ, p)
-    Rpt, t = Rp["t"]
+    Rp = ResidueRing(FlintZZ, p, cached=false)
+    Rpt, t = PolynomialRing(Rp, "t", cached = false)
     gp = Rpt(K.pol)
     if iszero(discriminant(gp))
       continue
@@ -1616,8 +1616,8 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
     #set up the mod p data:
     #need FiniteField as I need to factor (roots)
     deg_p = degree(first(keys(lp)))
-    S = FqNmodFiniteField(first(keys(lp)), :z)
-    ST, T = S["T"]
+    S = FqNmodFiniteField(first(keys(lp)), :z, false)
+    ST, T = PolynomialRing(S, "T", cached=false)
     fp = T^m - S(Rpt(a))
     if !issquarefree(fp)
       continue
@@ -1654,7 +1654,7 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
 end
 #identical to hasroot - which one do we want?
 function ispower(a::NfOrdElem, n::Int)
-  Ox, x = parent(a)["x"]
+  Ox, x = PolynomialRing(parent(a), "x", cached=false)
   f = x^n - a
   r = _roots_hensel(f, 1)
   

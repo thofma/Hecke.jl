@@ -446,6 +446,7 @@ exponent(A::GrpAbFinGen) = issnf(A) ? exponent_snf(A) : exponent_gen(A)
 
 function exponent_snf(A::GrpAbFinGen)
   isinfinite(A) && error("Group must be finite")
+  ngens(A)==0 && return 1
   return A.snf[end]
 end
 

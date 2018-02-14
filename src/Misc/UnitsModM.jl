@@ -57,8 +57,8 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   gc = gcd(p-1, mod)
   mi = divexact(p-1, gc)
   fp = factor(gc)
-  Rp = ResidueRing(FlintZZ, p)
-  Rpp = ResidueRing(FlintZZ, p*p)
+  Rp = ResidueRing(FlintZZ, p, cached=false)
+  Rpp = ResidueRing(FlintZZ, p*p, cached=false)
 
   g = fmpz(2)
   if isprimitive_root(Rp(g)^mi, gc, fp)
@@ -303,7 +303,7 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
      
   @assert isodd(p)
 
-  Fp = ResidueRing(FlintZZ, p)
+  Fp = ResidueRing(FlintZZ, p, cached=false)
   g = disc_log_bs_gs(Fp(a), Fp(b), p-1)
 #  println("1st level ", g)
   

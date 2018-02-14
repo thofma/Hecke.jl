@@ -19,12 +19,12 @@ end
 
 function FlintFiniteField(p::Integer)
   @assert isprime(p)
-  return ResidueRing(FlintZZ, p)
+  return ResidueRing(FlintZZ, p, cached=false)
 end
 
 function FlintFiniteField(p::fmpz)
   @assert isprime(p)
-  return ResidueRing(FlintZZ, p)
+  return ResidueRing(FlintZZ, p, cached=false)
 end
 
 function fmpz(a::Generic.Res{Nemo.fmpz})
@@ -202,8 +202,8 @@ mutable struct HenselCtx
     a = new()
     a.f = f
     a.p = UInt(p)
-    Zx,x = PolynomialRing(FlintZZ, "x")
-    Rx,x = PolynomialRing(ResidueRing(FlintZZ, p), "x")
+    Zx,x = PolynomialRing(FlintZZ, "x", cached=false)
+    Rx,x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, :libflint), UInt,
           (Ptr{Nemo.nmod_poly_factor}, Ptr{nmod_poly}), &(a.lf), &Rx(f))
@@ -315,7 +315,7 @@ doc"""
 >  G = g mod p, H = h mod p.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(ResidueRing(FlintZZ, p))
+  Rx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), cached=false)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
@@ -367,7 +367,7 @@ doc"""
 >  Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(ResidueRing(FlintZZ, p))
+  Rx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), cached=false)
   h = lift(parent(f), div(Rx(f), Rx(g)))
   return hensel_lift(f, g, h, p, k)[1]
 end  
@@ -655,7 +655,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
     push!(pg, lg)
 
     if lg != m
-      R1 = ResidueRing(FlintZZ, S(lg))
+      R1 = ResidueRing(FlintZZ, S(lg), cached=false)
       R1t = PolynomialRing(R1)[1]
       #g is bad in R1, so factor it
       gR1 = R1t(lift(Zx, g))
@@ -804,7 +804,7 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
         push!(pg, lg)
 
         if lg != m
-          R1 = ResidueRing(FlintZZ, S(lg))
+          R1 = ResidueRing(FlintZZ, S(lg), cached=false)
           R1t = PolynomialRing(R1)[1]
           #g is bad in R1, so factor it
           gR1 = R1t(lift(Zx, g))
@@ -949,7 +949,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         #c::T
         #g1::PolyElem{T}, g2::PolyElem{T}
         if lg != m
-          R1 = ResidueRing(FlintZZ, S(lg))
+          R1 = ResidueRing(FlintZZ, S(lg), cached=false)
           R1t = PolynomialRing(R1)[1]
           #g is bad in R1, so factor it
           gR1 = R1t(lift(Zx, g))

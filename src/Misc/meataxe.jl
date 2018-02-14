@@ -235,7 +235,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   end
 
   K=M.K
-  Kx,x=K["x"]
+  Kx,x=PolynomialRing(K, "x", cached=false)
   
   if length(M.G)==1
     f=charpoly(Kx,M.G[1])
@@ -468,7 +468,7 @@ doc"""
 function meataxe(M::FqGModule)
 
   K=M.K
-  Kx,x=K["x"]
+  Kx,x=PolynomialRing( K,"x", cached=false)
   n=M.dim
   H=M.G
   if M.dim==1

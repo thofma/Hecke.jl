@@ -546,7 +546,7 @@ function anti_uniformizer(P::NfOrdIdl)
   else
     p = minimum(P)
     M = representation_mat(uniformizer(P))
-    Mp = MatrixSpace(ResidueRing(FlintZZ, p), rows(M), cols(M))(M)
+    Mp = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
     K = kernel(Mp)
     @assert length(K) > 0
     P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
@@ -561,7 +561,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     K = nf(O)
     f = K.pol
     R = parent(f)
-    Zx, x = PolynomialRing(FlintZZ,"x")
+    Zx, x = PolynomialRing(FlintZZ,"x", cached=false)
     Zf = Zx(f)
     fmodp = PolynomialRing(ResidueRing(FlintZZ,p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)

@@ -258,7 +258,7 @@ end
 
 function Generic.minpoly(a::AlgAssElem)
   M = representation_mat(a)
-  R = base_ring(parent(a))["x"][1]
+  R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
 end
 
