@@ -141,16 +141,20 @@ function conductor(C::Hecke.ClassField)
     mS = mR.g*mS
     mR = mR.f
   end
-  
+
   R=domain(mR)
   cond=mR.modulus_fin
   inf_plc=mR.modulus_inf
   O=parent(cond).order
+  if minimum(cond)==1 && isempty(inf_plc)
+    return ideal(O,1), InfPlc[]
+  end
+
   E=order(domain(mp))
   expo=Int(exponent(domain(mp)))
   K=O.nf
-  tmg=mR.tame_mult_grp
-  wild=mR.wild_mult_grp
+  
+  
   
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
@@ -181,6 +185,10 @@ function conductor(C::Hecke.ClassField)
   end
 
   #Finite part of the modulus
+  if !isempty(L)
+    tmg=mR.tame_mult_grp
+    wild=mR.wild_mult_grp
+  end
   for (p,v) in L
     if v==1
       Q,mQ=quo(G,[mp\ideal(O,tmg[p][1])],false)
