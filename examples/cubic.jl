@@ -146,7 +146,7 @@ function s3_with_discriminant(I::NfOrdIdl)
       sigma_R = induce_action(sigma, mR)
 #      println(sigma_R)
       
-      for S = Hecke.stable_index_p_subgroups(R, 1, [sigma_R], quo)
+      for S = Hecke.stable_subgroups(R, [3], [sigma_R], op=quo)
         @assert order(S[1]) == 3
         s, ms = snf(S[1])
         if ms\(S[2](sigma_R(S[2]\(ms(s[1]))))) == s[1]
