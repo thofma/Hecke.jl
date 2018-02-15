@@ -177,12 +177,12 @@ function _torsion_units_lattice_enum(O::NfOrd)
 
   could_enumerate = false
 
-  A = ArbField(p)
-  M = ArbMatSpace(A, n, n)()
+  A = ArbField(p, false)
+  M = ArbMatSpace(A, n, n,false)()
   
   while true
-    A = ArbField(p)
-    M = ArbMatSpace(A, n, n)()
+    A = ArbField(p, false)
+    M = ArbMatSpace(A, n, n, false)()
 
     gram_found = true
 

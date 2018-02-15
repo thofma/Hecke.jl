@@ -49,11 +49,7 @@ function FacElem(x::nf_elem)
   return z
 end
 
-global _ISTOR = []
-
 function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
-  global _ISTOR
-  push!(_ISTOR, (x, checkisunit, p))
   @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
 
   if checkisunit
@@ -79,7 +75,7 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
     cx = conjugates_arb_log(x, p)
     @v_do :UnitGroup 2 popindent()
     @vprint :UnitGroup 2 "Conjugates log are $cx\n"
-    A = ArbField(p)
+    A = ArbField(p, false)
     B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
     for i in 1:r
       k = abs(cx[i])
@@ -309,7 +305,7 @@ end
  
 function _conj_arb_log_matrix_normalise_cutoff(u::Array{T, 1}, prec::Int = 32) where T
   z = conjugates_arb_log_normalise(u[1], prec)
-  A = ArbMatSpace(parent(z[1]), length(u), length(z)-1)()
+  A = ArbMatSpace(parent(z[1]), length(u), length(z)-1, false)()
   for i=1:length(z)-1
     A[1,i] = z[i]
   end

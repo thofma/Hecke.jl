@@ -130,7 +130,7 @@ farey_lift = rational_reconstruction
 #
 
 function berlekamp_massey_recon(a::Array{T, 1}) where T
-  Rx,x = PolynomialRing(parent(a[1]))
+  Rx,x = PolynomialRing(parent(a[1]), cached=false)
   f = Rx(a)
   xn= x^length(a)
 
@@ -246,7 +246,7 @@ function _modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz, M::Int, n::Int)
    l1 = nmod_poly[]; l2 = nmod_poly[];l3 = fmpz[]
    L = listprimes([f,g], p, M)
    for j in 1:length(L)
-     Rp, t = PolynomialRing(ResidueRing(FlintZZ, L[j]))
+     Rp, t = PolynomialRing(ResidueRing(FlintZZ, L[j], cached=false), cached=false)
      gp = Rp(g)
      fp = Rp(f)
      fl, nu_p, de_p = rational_reconstruction_subres(gp, fp, n)
@@ -266,7 +266,7 @@ end
 function _inner_modp_results(g::fmpq_poly,f::fmpq_poly, p::fmpz)
    while true
      if testPrime_jl(f,p) == true && testPrime_jl(g,p) == true
-         Rp, t = PolynomialRing(ResidueRing(FlintZZ, p))
+         Rp, t = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), cached=false)
          gp = Rp(g)
          fp = Rp(f)
          fl, nu_p, de_p = rational_reconstruction_subres(gp, fp)
@@ -294,7 +294,7 @@ function berlekamp_massey_naive(L::Array{T, 1}) where T
      R_s = parent(L[1])
      lg = length(L)
      L = [R_s(L[lg-i]) for i in 0:lg-1]
-     Ry, Y = PolynomialRing(R_s, "Y")
+     Ry, Y = PolynomialRing(R_s, "Y", cached=false)
      g = Ry(L)
      f = Y^lg
      N = R_s(inv(lead(g))); g1 = g*N
@@ -319,7 +319,7 @@ end
 function berlekamp_massey_mod(L::Array{fmpq, 1})
   Rf = parent(L[1])
 #  L = [Rf(L[i]) for i in 1:length(L)]
-  Rc, Y = PolynomialRing(Rf, "Y")
+  Rc, Y = PolynomialRing(Rf, "Y", cached=false)
   f = Rc(L)
   p = next_prime(fmpz(p_start))
   kp = 10  
@@ -351,11 +351,11 @@ function _modpResults(f, p::fmpz, M::Int)
    Rc = f.parent
    l1 = nmod_poly[]; l3 = fmpz[]
    Np = listprimes([f], p, M)
-   Zx, Y = PolynomialRing(FlintZZ, "Y")
+   Zx, Y = PolynomialRing(FlintZZ, "Y", cached=false)
    L2 = []
    for j in 1:length(Np)
-     RNp = ResidueRing(FlintZZ, Np[j])
-     Rp, t = PolynomialRing(RNp, "t")
+     RNp = ResidueRing(FlintZZ, Np[j], cached=false)
+     Rp, t = PolynomialRing(RNp, "t", cached=false)
      fp = Rp(f)
      L1 = []
      for i in 0:degree(fp)

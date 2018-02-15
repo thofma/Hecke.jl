@@ -630,7 +630,7 @@ function C22_extensions(bound::Int)
   
   Qx,x=PolynomialRing(FlintZZ, "x")
   K,_=NumberField(x-1)
-  Kx,x=PolynomialRing(K,"x")
+  Kx,x=PolynomialRing(K,"x", cached=false)
 
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
@@ -794,7 +794,7 @@ function C22_extensions_tame_real(bound::Int)
   
   Qx,x=PolynomialRing(FlintZZ, "x")
   K,_=NumberField(x-1)
-  Kx,x=PolynomialRing(K,"x")
+  Kx,x=PolynomialRing(K,"x", cached=false)
 
   b1=floor(Int,Base.sqrt(bound))
   n=b1

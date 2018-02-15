@@ -53,7 +53,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
 
     p = Int(abs(minimum(P)))
 
-    R = ResidueRing(FlintZZ, p)
+    R = ResidueRing(FlintZZ, p, cached=false)
 
     OP = quoringalg(O, P, p)
     x = quoelem(OP, zero(O))
@@ -488,7 +488,7 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
 
     p = abs(minimum(P))
 
-    R = ResidueRing(FlintZZ, p)
+    R = ResidueRing(FlintZZ, p, cached=false)
 
     OP = quoringalg(O, P, p)
     x = quoelem(OP, zero(O))

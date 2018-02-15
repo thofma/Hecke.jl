@@ -656,7 +656,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
 
     if lg != m
       R1 = ResidueRing(FlintZZ, S(lg), cached=false)
-      R1t = PolynomialRing(R1)[1]
+      R1t = PolynomialRing(R1, cached=false)[1]
       #g is bad in R1, so factor it
       gR1 = R1t(lift(Zx, g))
       fR1 = R1t(lift(Zx, f))
@@ -805,7 +805,7 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
 
         if lg != m
           R1 = ResidueRing(FlintZZ, S(lg), cached=false)
-          R1t = PolynomialRing(R1)[1]
+          R1t = PolynomialRing(R1, cached=false)[1]
           #g is bad in R1, so factor it
           gR1 = R1t(lift(Zx, g))
           fR1 = R1t(lift(Zx, f))
@@ -950,7 +950,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
         #g1::PolyElem{T}, g2::PolyElem{T}
         if lg != m
           R1 = ResidueRing(FlintZZ, S(lg), cached=false)
-          R1t = PolynomialRing(R1)[1]
+          R1t = PolynomialRing(R1, cached=false)[1]
           #g is bad in R1, so factor it
           gR1 = R1t(lift(Zx, g))
           fR1 = R1t(lift(Zx, f))

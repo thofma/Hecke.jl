@@ -305,7 +305,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
       lf=factor(g)
       for t in keys(lf.fac)
         f=t
-        S=t(A)
+        S=_subst(t,A)
         a,kerA=nullspace(transpose(S))
         if a==1
           M.dim_spl_fld=1
@@ -359,10 +359,10 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   #
 
   
-  L=f(A)
+  L=_subst(f,A)
   a,kerA=nullspace(transpose(L))
   
-  I=f(B)
+  I=_subst(f,B)
   b,kerB=nullspace(transpose(I))
 
 
@@ -395,7 +395,7 @@ function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
 
   @assert B == per*L*U
   Ap = inv(per)*A
-  Y = parent(A)()
+  Y = similar(A)
 
   #println("first solve\n $Ap = $L * Y")
 
@@ -449,6 +449,39 @@ function dual_space(M::FqGModule)
 
 end
 
+function _subst(f::Nemo.PolyElem{T}, a::fq_nmod_mat) where {T <: Nemo.RingElement}
+   #S = parent(a)
+   n = degree(f)
+   if n < 0
+      return similar(a)#S()
+   elseif n == 0
+      return coeff(f, 0)*eye(a)
+   elseif n == 1
+      return coeff(f, 0)*eye(a) + coeff(f, 1)*a
+   end
+   d1 = isqrt(n)
+   d = div(n, d1)
+   A = powers(a, d)
+   s = coeff(f, d1*d)*A[1]
+   for j = 1:min(n - d1*d, d - 1)
+      c = coeff(f, d1*d + j)
+      if !iszero(c)
+         s += c*A[j + 1]
+      end
+   end
+   for i = 1:d1
+      s *= A[d + 1]
+      s += coeff(f, (d1 - i)*d)*A[1]
+      for j = 1:min(n - (d1 - i)*d, d - 1)
+         c = coeff(f, (d1 - i)*d + j)
+         if !iszero(c)
+            s += c*A[j + 1]
+         end
+      end
+   end
+   return s
+end
+
 #################################################################
 #
 #  MeatAxe, Composition Factors and Composition Series
@@ -486,7 +519,7 @@ function meataxe(M::FqGModule)
       M.isirreducible=true
       return true, eye(H[1],n)
     else 
-      N=t(A)
+      N= _subst(t, A)
       kern=transpose(nullspace(transpose(N))[2])
       B=closure(sub(kern,1:1, 1:n),H)
       return false, B
@@ -536,7 +569,7 @@ function meataxe(M::FqGModule)
         sq=divexact(sq,f)
         lf=factor(f)
         for t in keys(lf.fac)
-          N=t(A)
+          N = _subst(t, A)
           a,kern=nullspace(transpose(N))
           #
           #  Norton test
@@ -964,7 +997,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
     end
    
   #
-  #  Eliminating repetitions
+  #  Eliminating repeatitions
   #
 
     for x in list

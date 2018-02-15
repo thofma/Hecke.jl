@@ -139,9 +139,9 @@ function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
 
   # We have to add the generator of the torsion group
   if gcd(p, U.torsion_units_order) != 1
-    res = zero_matrix(ResidueRing(FlintZZ, p), 1, unit_rank(O) + 1)
+    res = zero_matrix(ResidueRing(FlintZZ, p, cached=false), 1, unit_rank(O) + 1)
   else
-    res = zero_matrix(ResidueRing(FlintZZ, p), 1, unit_rank(O))
+    res = zero_matrix(ResidueRing(FlintZZ, p, cached=false), 1, unit_rank(O))
   end
 
   t = K()

@@ -580,7 +580,7 @@ function _rref(a::Generic.Mat{Generic.Res{fmpz}})
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
-  return r, parent(a)(b)
+  return r, parent(a,false)(b)
 end
 
 function _rref(a::nmod_mat)

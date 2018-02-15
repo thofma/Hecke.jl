@@ -296,7 +296,7 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   N = hcat(M', identity_matrix(R, cols(M)))
   N = howell_form(N)
   if gcd(prod([N[i,i] for i=1:rows(N)]).data,modulus(R))==1
-    return 0, MatrixSpace(R,cols(M),1)
+    return 0, MatrixSpace(R,cols(M),1, false)
   end
   nr = 1
   while nr <= rows(N) && !iszero_row(N, nr)

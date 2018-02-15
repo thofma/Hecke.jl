@@ -988,7 +988,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
 
     #the lattice for reco:
     n = degree(K)
-    M = MatrixSpace(FlintZZ, n, n)()
+    M = zero_matrix(FlintZZ, n, n)
     for j=1:degree(pgg)
       M[j,j] = pp
     end
@@ -1305,13 +1305,13 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
 
   # compute the lifting exponent a la Friedrich-Fieker
 
-  R = ArbField(64)
+  R = ArbField(64, false)
   (r1, r2) = signature(O) 
 
   bound_root = [ R(0) for i in 1:(r1 + r2) ]
 
-  CC = AcbField(64)
-  CCt, t = PolynomialRing(CC, "t")
+  CC = AcbField(64, false)
+  CCt, t = PolynomialRing(CC, "t", cached=false)
   conjugates_of_coeffs = [ conjugates_arb(coeff(f, i), 32) for i in 0:degree(f) ]
 
   for i in 1:r1
@@ -1370,7 +1370,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
     B = basis_mat(I)
     L = lll(B)
 
-    rhs = MatrixSpace(FlintZZ, degree(O), 1)(elem_in_basis(new_a)'')
+    rhs = MatrixSpace(FlintZZ, degree(O), 1, false)(elem_in_basis(new_a)'')
     lhs = transpose(L)
 
     X, d = solve_rational(lhs, rhs)
@@ -1443,7 +1443,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
       B = basis_mat(I)
       L = lll(B)
 
-      rhs = MatrixSpace(FlintZZ, degree(O), 1)(elem_in_basis(new_a)'')
+      rhs = MatrixSpace(FlintZZ, degree(O), 1, false)(elem_in_basis(new_a)'')
       lhs = transpose(L)
 
       X, d = solve_rational(lhs, rhs)
@@ -1560,7 +1560,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
 
   # compute the lifting exponent a la Friedrich-Fieker
 
-  R = ArbField(64)
+  R = ArbField(64, false)
 
   (r1, r2) = signature(K) 
 
@@ -1570,8 +1570,8 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
 
   bound_root = [ R(0) for i in 1:(r1 + r2) ]
 
-  CC = AcbField(64)
-  CCt, t = PolynomialRing(CC, "t")
+  CC = AcbField(64, false)
+  CCt, t = PolynomialRing(CC, "t", cached=false)
   conjugates_of_coeffs = [ conjugates_arb(coeff(f, i), 32) for i in 0:degree(f) ]
 
   for i in 1:r1
@@ -1633,7 +1633,7 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
 
   # compute the lifting exponent a la Friedrich-Fieker
 
-  R = ArbField(64)
+  R = ArbField(64, false)
   (r1, r2) = signature(K) 
 
   # for Kronnecker:

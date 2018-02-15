@@ -61,7 +61,7 @@ function _factorbase_bound_bdf_right_side(O::NfOrd, x0::Float64, D::Dict{Int, Ar
 
   curval = Int(ceil(x0))
 
-  R = ArbField(64)
+  R = ArbField(64, false)
 
   summ = R(0)
 
@@ -116,7 +116,7 @@ function _factor_base_bound_bdf(O::NfOrd, x0::Float64 = 50.0, ste::Float64 = 20.
   d = degree(K)
   r, s = signature(K)
 
-  R = ArbField(64)
+  R = ArbField(64, false)
 
   summ = R(0)
 
@@ -183,7 +183,7 @@ doc"""
 """
 function factor_base_bound_bach(O::NfOrd)
   p = 64
-  R = ArbField(p)
+  R = ArbField(p, false)
   if degree(O)==2
     r = ceil(6*log(R(abs(discriminant(O))))^2)
   else

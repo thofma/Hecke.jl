@@ -228,8 +228,9 @@ end
 function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   #for square matrices (s) of full rank (f) only.
   p = next_prime(2^20)
+  R = ResidueRing(FlintZZ, p, cached = false)
 
-  Ap = SMat(A, p)
+  Ap = SMat(A, R)
 
   #want AT = upper_triag.
   #Let J = anti-identity, so JA inverts the rows of A and AJ the columns
@@ -264,7 +265,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
     pp = fmpz(1)
     b_orig = b
 
-    bp = SRow(b, p)
+    bp = SRow(b, R)
 
     sol = SRow{fmpz}()
     last = (sol, 1)
@@ -316,7 +317,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   #      @hassert :HNF 1  b.values[i] % p == 0
         b.values[i] = div(b.values[i], p)
       end  
-      bp = SRow(b, p)
+      bp = SRow(b, R)
     end
   end
   return sol_all, den_all

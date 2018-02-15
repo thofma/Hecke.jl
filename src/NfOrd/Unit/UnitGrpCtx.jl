@@ -48,7 +48,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
   Ar = base_ring(B)
 
-  b = ArbMatSpace(Ar, 1, r)()
+  b = ArbMatSpace(Ar, 1, r, false)()
 
   conlog = conjugates_arb_log(y, p)
 
@@ -98,7 +98,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
     # This is not totally fool proof.
     # It could still be the case that conlog has higher precision then the
     # elements in B.
-    b = ArbMatSpace(base_ring(B), 1, r)()
+    b = ArbMatSpace(base_ring(B), 1, r, false)()
 
     for i in 1:r
       b[1, i] = conlog[i]
@@ -124,7 +124,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
     conlog = conjugates_arb_log(y, p)
 
-    b = ArbMatSpace(parent(conlog[1]), 1, r)()
+    b = ArbMatSpace(parent(conlog[1]), 1, r, false)()
 
     for i in 1:r
       b[1, i] = conlog[i]
@@ -281,7 +281,7 @@ function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
     end
   end
 
-  A = zero_matrix(ArbField(q), r, r)
+  A = zero_matrix(ArbField(q, false), r, r)
 
   for i in 1:r
     for j in 1:r

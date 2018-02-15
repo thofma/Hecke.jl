@@ -284,7 +284,7 @@ doc"""
 > Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
 """
 function SMat(A::SMat{fmpz}, n::Int)
-  R = ResidueRing(FlintZZ, n)
+  R = ResidueRing(FlintZZ, n, cached=false)
   return SMat(A, R)
 end
 
@@ -309,7 +309,7 @@ function SMat(A::SMat{fmpz}, R::T) where T <: Ring
 end
 
 function SMat(A::SMat{fmpz}, n::fmpz)
-  R = ResidueRing(FlintZZ, n)
+  R = ResidueRing(FlintZZ, n, cached=false)
   return SMat(A, R)
 end
 

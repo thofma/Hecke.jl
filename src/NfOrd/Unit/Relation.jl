@@ -103,7 +103,7 @@ function _find_relation(x::Array{S, 1}, y::T, p::Int = 64) where {S, T}
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  R = ArbField(p)
+  R = ArbField(p, false)
 
   zz = Array{fmpz}(r + 1)
 

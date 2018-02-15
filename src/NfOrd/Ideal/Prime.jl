@@ -101,7 +101,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   g = k.pol(gen(Qx))
   h = Qx(f(gen(k)))
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(P))))
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(P)), cached=false), cached=false)
   gp = factor(Fp(g))
   hp = Fp(h)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
@@ -129,7 +129,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
   G = K.pol
   Qx = parent(G)
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p))))
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p), cached=false)), cached=false)
   Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
   res = []
   Zk = maximal_order(k)
@@ -802,8 +802,8 @@ mutable struct quoringalg{T} <: Ring
     z.prime = p
 
     # compute a basis
-    Rp = ResidueRing(FlintZZ, p)
-    Amodp = MatrixSpace(Rp, degree(O), degree(O))(basis_mat(I))
+    Rp = ResidueRing(FlintZZ, p, cached=false)
+    Amodp = MatrixSpace(Rp, degree(O), degree(O), false)(basis_mat(I))
     Amodp = vcat(Amodp, zero_matrix(Rp, 1, degree(O)))
     Amodp[1,1] = 1
     Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
@@ -858,7 +858,7 @@ function _kernel_of_frobenius(R::quoringalg)
   O = R.base_order
   BB = R.basis
   p = R.prime
-  Rp = ResidueRing(FlintZZ, R.prime)
+  Rp = ResidueRing(FlintZZ, R.prime, cached=false)
   C = zero_matrix(Rp, length(BB)+1, degree(O))
   D = zero_matrix(Rp, length(BB), degree(O))
 
@@ -914,7 +914,7 @@ function minpoly(x::quoelem)
   O = x.parent.base_order
   p = x.parent.prime
 
-  Rp = ResidueRing(FlintZZ, p)
+  Rp = ResidueRing(FlintZZ, p, cached=false)
   A = zero_matrix(Rp, 0, degree(O))
   B = zero_matrix(Rp, 1, degree(O))
 
@@ -927,7 +927,7 @@ function minpoly(x::quoelem)
     K = kernel(A)
     if length(K) > 0
       @assert length(K) == 1
-      f = PolynomialRing(Rp, "x")[1](K[1])
+      f = PolynomialRing(Rp, "x", cached=false)[1](K[1])
       return f
     end
   end
@@ -1106,7 +1106,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
-  Rx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)))[1]
+  Rx = PolynomialRing(ResidueRing(FlintZZ, UInt(P), cached=false), cached=false)[1]
   Zx = PolynomialRing(FlintZZ)[1]
   g = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
@@ -1114,7 +1114,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = lift(Zx, g)
   k = flog(fmpz(typemax(UInt)), P)
   g = hensel_lift(Zx(K.pol), g, P, k)
-  Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k))[1]
+  Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
   g = Sx(g)
   h = Sx()
   return function(x::nf_elem)

@@ -48,7 +48,7 @@ doc"""
 > compute a global pre-image using some efficient CRT.
 """
 function modular_lift(ap::Array{Generic.Mat{fq_nmod}, 1}, me::modular_env)
-  A = MatrixSpace(me.K, rows(ap[1]), cols(ap[1]))()
+  A = zero_matrix(me.K, rows(ap[1]), cols(ap[1]))
   for i=1:rows(A)
     for j=1:cols(A)
       A[i,j] = modular_lift([ap[k][i,j] for k=1:length(ap)], me)

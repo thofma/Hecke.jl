@@ -635,7 +635,7 @@ doc"""
 function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 
   if !isdefined(me, :fldx)
-    me.fldx = [PolynomialRing(x, "_x")[1] for x = me.fld]
+    me.fldx = [PolynomialRing(x, "_x", cached=false)[1] for x = me.fld]
     me.Rp = Array{fq_nmod_poly}(me.ce.n)
     for i =1:me.ce.n
       me.Rp[i] = me.fldx[i](0)

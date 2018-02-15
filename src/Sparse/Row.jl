@@ -156,7 +156,7 @@ end
 ################################################################################
 
 function SRow(A::SRow{fmpz}, n::Int)
-  R = ResidueRing(FlintZZ, n)
+  R = ResidueRing(FlintZZ, n, cached=false)
   return SRow(A, R)
 end
 
@@ -181,7 +181,7 @@ doc"""
 > Converts $A$ to ba a sparse matrix (row) over $Z/nZ$ 
 """
 function SRow(A::SRow{fmpz}, n::fmpz)
-  R = ResidueRing(FlintZZ, n)
+  R = ResidueRing(FlintZZ, n, cached=false)
   return SRow(A, R)
 end
 

@@ -1322,10 +1322,10 @@ function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   A = Array{arb}(degree(K))
   r, s = signature(K)
   c = conjugate_data_arb(K)
-  R = PolynomialRing(AcbField(c.prec), "x")[1]
+  R = PolynomialRing(AcbField(c.prec, false), "x", cached=false)[1]
   f = R(parent(K.pol)(a))
-  CC = AcbField(c.prec)
-  T = PolynomialRing(CC, "x")[1]
+  CC = AcbField(c.prec, false)
+  T = PolynomialRing(CC, "x", cached=false)[1]
   g = T(f)
 
   for i in 1:r
@@ -1397,11 +1397,11 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
       error("Something wrong in conjugates_arb_log")
     end
 
-    CC = AcbField(abs_tol)
-    RR = ArbField(abs_tol)
+    CC = AcbField(abs_tol, false)
+    RR = ArbField(abs_tol, false)
 
     xpoly = arb_poly(parent(K.pol)(x), abs_tol)
-    RR = ArbField(abs_tol)
+    RR = ArbField(abs_tol, false)
     for i in 1:r1
       #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
       o = RR()
@@ -1511,7 +1511,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
       error("Something wrong in conjugates_arb_log")
     end
     xpoly = arb_poly(parent(K.pol)(x), abs_tol)
-    RR = ArbField(abs_tol)
+    RR = ArbField(abs_tol, false)
     for i in 1:r1
       #z[i] = log(abs(evaluate(parent(K.pol)(x), c.real_roots[i])))
       o = RR()
@@ -1533,7 +1533,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
       continue
     end
 
-    CC = AcbField(abs_tol)
+    CC = AcbField(abs_tol, false)
 
     tacb = CC()
     for i in 1:r2
@@ -1603,7 +1603,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
     l = 0
     @vprint :UnitGroup 2 "Computing conjugates ... \n"
     cx = conjugates_arb(x, c.prec)
-    A = ArbField(c.prec)
+    A = ArbField(c.prec, false)
     for i in 1:r
       k = abs(cx[i])
       if k > A(1)
@@ -2742,7 +2742,7 @@ function polredabs(K::AnticNumberField)
   d = 1
   while true
     p = next_prime(p)
-    R = ResidueRing(FlintZZ, p)
+    R = ResidueRing(FlintZZ, p, cached=false)
     lp = factor(K.pol, R)
     if any(t->t>1, values(lp.fac))
       continue
@@ -2775,7 +2775,7 @@ function polredabs(K::AnticNumberField)
   while true
     setprecision(BigFloat, pr)
     try
-      E = enum_ctx_from_ideal(ideal(ZK, 1), MatrixSpace(FlintZZ, 1, 1)(), prec = pr, TU = BigFloat, TC = BigFloat)
+      E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(FlintZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
       if E.C[end] + 0.0001 == E.C[end]  # very very crude...
         pr *= 2
         continue

@@ -1494,10 +1494,23 @@ end
 function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl) 
   
   K=nf(O)
-  y=K(I.gen_two)
-  y=O(phi(y))
-  return ideal(O,I.gen_one,y)
-  
+  if I.is_principal==1
+    if isdefined(I, :princ_gen)
+      y=K(I.princ_gen)
+      y=O(phi(y))
+      return ideal(O,y)
+    else
+      y=K(I.gen_two)
+      y=O(phi(y))
+      J=ideal(O,I.gen_one,y)
+      J.is_principal=1
+      return J
+    end
+  else
+    y=K(I.gen_two)
+    y=O(phi(y))
+    return ideal(O,I.gen_one,y)
+  end
 end
 
 #
@@ -1759,8 +1772,8 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       auxmat2=mS.map*mG.map
       for z=1:length(act)
         y=transpose(solve(auxmat1, (auxmat2*act[z].map)'))
-        y=view(y,1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat[z]=MatrixSpace(RR,ngens(S), ngens(S))(y)
+        y=sub(y,1:ngens(S), 1:ngens(G))*mS.imap
+        act_mat[z]=MatrixSpace(RR,ngens(S), ngens(S), false)(y)
       end
       
       #

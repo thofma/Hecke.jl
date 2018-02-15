@@ -165,7 +165,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   pre = prec(parent(residue))
 
-  Ar = ArbField(pre)
+  Ar = ArbField(pre, false)
 
   loghRtrue = Ar(residue) + log(Ar(w)*sqrt(abs(Ar(discriminant(O))))//(Ar(2)^(r1+r2) * const_pi(Ar)^r2))
 

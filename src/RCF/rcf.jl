@@ -454,7 +454,7 @@ end
   #                            = z^(sum a[i] n[i]) x
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
-  R = ResidueRing(FlintZZ, C.n)
+  R = ResidueRing(FlintZZ, C.n, cached=false)
   M = zero_matrix(R, ngens(k), ngens(G))
   for i=1:ngens(k)
     ki = mk(k[i])
@@ -534,7 +534,7 @@ function _rcf_descent(CF::ClassField_pp)
     2 for n=2^k, k>2
 =#
 
-  g, mg = unit_group(ResidueRing(FlintZZ, e))
+  g, mg = unit_group(ResidueRing(FlintZZ, e, cached=false))
   mg = Hecke.make_snf(mg)
   @assert (e%8 == 0 && ngens(domain(mg))==2) ||
            ngens(domain(mg)) <= 1
@@ -651,7 +651,7 @@ function _rcf_descent(CF::ClassField_pp)
       P = lP[1][1]
       Q = lP[end][1]
       F, mF = ResidueFieldSmall(order(P), P)
-      Ft, t = PolynomialRing(F)
+      Ft, t = PolynomialRing(F, cached=false)
       mFp = extend_easy(mF, C.Ka)
       ap = mFp(CF.a)
       Ap = ResidueRing(Ft, t^n-ap)
@@ -806,7 +806,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
 
   p = characteristic(z.header.codomain)
   y = f(NfOrdElem(domain(f), gen(K)))
-  Ft, t = PolynomialRing(ResidueRing(FlintZZ, UInt(p)))
+  Ft, t = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), cached=false)
   K = number_field(domain(f))
 #  g = gcd(Ft(K.pol), Ft(K(f.P.gen_two)))
 #it would be cool to assert that g is the poly defining the codomain

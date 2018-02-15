@@ -756,8 +756,8 @@ function _minmod(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
-  S = ResidueRing(FlintZZ, a*d*index(Zk))
-  St = PolynomialRing(S)[1]
+  S = ResidueRing(FlintZZ, a*d*index(Zk), cached=false)
+  St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
@@ -787,8 +787,8 @@ function _invmod(a::fmpz, b::NfOrdElem)
     return one(k)
   end
   d = denominator(b.elem_in_nf)
-  S = ResidueRing(FlintZZ, a^2*d*index(Zk))
-  St = PolynomialRing(S)[1]
+  S = ResidueRing(FlintZZ, a^2*d*index(Zk), cached=false)
+  St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
@@ -807,8 +807,8 @@ function _normmod(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
-  S = ResidueRing(FlintZZ, a*d^degree(parent(b)))
-  St = PolynomialRing(S)[1]
+  S = ResidueRing(FlintZZ, a*d^degree(parent(b)), cached=false)
+  St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m = resultant_sircana(B, F)  # u*B + v*F = m mod modulus(S)
@@ -1240,7 +1240,7 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
   @assert p^(j-1) < degree(O)
   @assert degree(O) <= p^j
 
-  R = ResidueRing(FlintZZ, p)
+  R = ResidueRing(FlintZZ, p, cached=false)
   A = zero_matrix(R, degree(O), degree(O))
   for i in 1:degree(O)
     t = powermod(basis(O)[i], p^j, p)
@@ -1250,8 +1250,8 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
     end
   end
   X = kernel(A)
-  Mat = MatrixSpace(FlintZZ, 1, degree(O))
-  MMat = MatrixSpace(R, 1, degree(O))
+  Mat = MatrixSpace(FlintZZ, 1, degree(O), false)
+  MMat = MatrixSpace(R, 1, degree(O), false)
   if length(X) != 0
     m = lift(MMat(X[1]))
     for x in 2:length(X)
@@ -1414,7 +1414,7 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
     return nothing
   end
 
-  M = MatrixSpace(FlintZZ, 1, degree(O))
+  M = MatrixSpace(FlintZZ, 1, degree(O), false)
 
   Amin2 = minimum(A)^2
   Amind = minimum(A)^degree(O)

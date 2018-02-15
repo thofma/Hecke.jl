@@ -112,7 +112,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   BO = Hecke.basis(O)
 
   pisfmpz = (p isa fmpz)
-  Fp = ResidueRing(FlintZZ, p)
+  Fp = ResidueRing(FlintZZ, p, cached=false)
   BOmod = [ mod(v, I) for v in BO ]
   B = zero_matrix(Fp, n, n)
   for i = 1:n
