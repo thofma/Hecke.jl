@@ -669,17 +669,17 @@ doc"""
 function composition_factors(M::FqGModule)
   
   if isdefined(M, :isirreducible) && M.isirreducible
-    return [[M,1]]
+    return Tuple{FqGModule, Int}[(M,1)]
   end 
  
-  K=M.K
+  K=M.K::FqNmodFiniteField
   
   bool, C = meataxe(M)
   #
   #  If the module is irreducible, we just return a basis of the space
   #
   if bool
-    return [[M,1]]
+    return Tuple{FqGModule, Int}[(M,1)]
   end
   G=M.G
   #
@@ -694,19 +694,18 @@ function composition_factors(M::FqGModule)
   #
   #  Now, we check if the factors are isomorphic
   #
-   #= final_list=Tuple{FqGModule, Int}[]
+
   for i=1:length(sub_list)
     for j=1:length(quot_list)
       if isisomorphic(sub_list[i][1], quot_list[j][1])
-        push!(final_list, (sub_list[i][1], sub_list[i][2]+quot_list[j][2]))
+        sub_list[i]=(sub_list[i][1], sub_list[i][2]+quot_list[j][2])
         deleteat!(quot_list,j)
         break
       end    
     end
-    push!(final_list, sub_list[i])
   end
-  return append!(final_list,quot_list) 
-  =#
+  return append!(sub_list, quot_list) 
+  #=
   for i=1:length(sub_list)
     for j=1:length(quot_list)
       if isisomorphic(sub_list[i][1], quot_list[j][1])
@@ -717,7 +716,7 @@ function composition_factors(M::FqGModule)
     end
   end
   return append!(sub_list,quot_list)
-
+  =#
 end
 
 
@@ -951,7 +950,7 @@ doc"""
 
 """
 
-function submodules(M::FqGModule, index::Int; comp_factors=[])
+function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}[])
   
   K=M.K
   if index==M.dim
@@ -959,7 +958,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
   end
   list=fq_nmod_mat[]
   if index>= M.dim/2
-    if comp_factors==[]
+    if isempty(comp_factors)
       lf=composition_factors(M)
     else 
       lf=comp_factors
@@ -969,16 +968,16 @@ function submodules(M::FqGModule, index::Int; comp_factors=[])
       for x in minlist
         N, pivotindex= actquo(x, M.G)
         #
-        #  Rescue the composition factors of the quotient
+        #  Recover the composition factors of the quotient
         #
         Sub=actsub(x, M.G)
-        lf1=[[x[1], x[2]] for x in lf]
+        lf1=[(x[1], x[2]) for x in lf]
         for j=1:length(lf1)
           if isisomorphic(lf1[j][1], Sub)
             if lf1[j][2]==1
               deleteat!(lf1,j)
             else
-              lf1[j][2]=lf1[j][2]-1
+              lf1[j]=(lf1[j][1], lf1[j][2]-1)
             end
             break
           end

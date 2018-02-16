@@ -13,7 +13,7 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
   for x in coprime_to
     t=x
     while t<= n
-      list[Int(t)]=false
+      @inbounds list[Int(t)]=false
       t+=x
     end
   end
@@ -26,10 +26,10 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
         i+=1
         continue
       else 
-        list[j]=false
+        @inbounds list[j]=false
         t=2*j
         while t<= n
-          list[t]=false
+          @inbounds list[t]=false
           t+=j
         end
       end
@@ -589,7 +589,7 @@ end
 #
 ###############################################################################
 
-function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false)
+function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, u::UnitRange{Int}=-1:0)
 
   @assert !(real && complex)
   Qx,x=PolynomialRing(FlintQQ, "x")
@@ -599,7 +599,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   elseif complex
     sqf=Int[-i for i in sqf]
   else
-    sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+    @views sqf= vcat(sqf[2:end], Int[-i for i in sqf])
   end
   if tame
     filter!( x -> mod(x,4)==1, sqf)
@@ -608,14 +608,18 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   final_list=Int[]
   for i=1:length(sqf)
     if abs(sqf[i]*4)< bound
-      push!(final_list,sqf[i])
+      @views push!(final_list,sqf[i])
       continue
     end
     if mod(sqf[i],4)==1
-      push!(final_list,sqf[i])
+      @views push!(final_list,sqf[i])
     end
   end
-  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in final_list)
+  if u==-1:0
+    return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in final_list)
+  else
+    return ( mod(final_list[i],4)!=1 ? number_field(x^2-final_list[i], cached=false)[1] : number_field(x^2-x+divexact(1-final_list[i],4), cached=false)[1] for i in u)
+  end
 
 end
 

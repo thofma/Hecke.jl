@@ -525,16 +525,16 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   list1=Array{nmod_mat,1}(length(submod))
   v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   for i=1:length(submod)
-    list1[i]=lift(submod[i],R)
+    @views list1[i]=lift(submod[i],R)
     @assert rows(list1[i])==1
     for k=1:cols(list1[i])
-      list1[i][1,k]*=v[k]
+      @inbounds list1[i][1,k]*=v[k]
     end
   end  
   W=MatrixSpace(R,rows(mS.map), cols(ms.map), false)
   MatSnf=W(mS.map*ms.map)  
   for j=1:length(list1)
-    list1[j]=list1[j]*MatSnf
+    @inbounds @views list1[j]=list1[j]*MatSnf
   end
   if ord==1
     return list1
@@ -542,10 +542,10 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   list=nmod_mat[]
   for x in list1  
     L,_=quo(M,x)
-    newlist=collect(submodules_with_struct_cyclic(L,ord-1))
+    newlist=submodules_with_struct_cyclic(L,ord-1)
     i=1
     while i<=length(newlist)
-      if iszero(M.p^(ord-1)*M.V(lift(newlist[i])))
+      @views if iszero(M.V(lift(M.p^(ord-1)*newlist[i])))
         deleteat!(newlist,i)
       else 
         i+=1
@@ -564,14 +564,14 @@ function submodule_with_struct_exp_p(M::ZpnGModule, l::Int)
     N=Hecke._exponent_p_sub(S)
     lf=composition_factors(N)
     list=nmod_mat[]
-    v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
+    v=fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
     submod=submodules(N,ngens(S.V)-l,comp_factors=lf)
     list1=Array{nmod_mat,1}(length(submod))
     for i=1:length(submod) 
       list1[i]=lift(submod[i],R) 
       for s=1:rows(list1[i])
         for t=1:cols(list1[i])
-          list1[i][s,t]*=v[t]
+          @inbounds list1[i][s,t]*=v[t]
         end
       end
     end
@@ -613,10 +613,10 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   list1=Array{nmod_mat,1}(length(submod))
   v=[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   for i=1:length(submod)
-    list1[i]=lift(submod[i],R)
+    @inbounds list1[i]=lift(submod[i],R)
     for j=1:rows(list1[i])
       for k=1:cols(list1[i])
-        list1[i][j,k]*=v[k]
+        @inbounds list1[i][j,k]*=v[k]
       end
     end 
   end 
@@ -626,7 +626,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   W=MatrixSpace(R,rows(auxmat), cols(auxmat), false)
   auxmat=W(auxmat)
   for j=1:length(list1)
-    list1[j]=list1[j]*auxmat
+    @inbounds list1[j]=list1[j]*auxmat
   end
   #
   #  I create the group to check if the candidates are isomorphic to it
@@ -642,7 +642,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #
   new_subtype=deepcopy(typesub)
   for j=length(typesub)-a+1:length(typesub)
-    new_subtype[j]-=1
+    @inbounds new_subtype[j]-=1
   end
   
   #
@@ -654,7 +654,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
     L, _=quo(S1,x)
     newlist=collect(submodules_with_struct(L,new_subtype))
     for j=1:length(newlist)
-      newlist[j]=vcat(newlist[j],x)
+      @inbounds newlist[j]=vcat(newlist[j],x)
     end
     i=1
     while i<=length(newlist)
@@ -673,7 +673,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #  Check for redundancy
   #
   w=fmpz[divexact(fmpz(R.n), S1.V.snf[j]) for j=1:ngens(S1.V)]
-  list=_no_redundancy(list,w)
+  @time list=_no_redundancy(list,w)
 
   #
   #  Write the submodules in terms of the set of given generators
@@ -696,11 +696,11 @@ function _no_redundancy(list::Array{nmod_mat,1},w::Array{fmpz,1})
   #
   for i=1:length(list)
     if cols(list[i])>=rows(list[i])
-      list[i]=vcat(list[i],zero_matrix(parent(list[i][1,1]),cols(list[i])-rows(list[i]), cols(list[i])))
+      @inbounds list[i]=vcat(list[i],zero_matrix(parent(list[i][1,1]),cols(list[i])-rows(list[i]), cols(list[i])))
     end
     for j=1:cols(list[i])
       for k=1:rows(list[i])
-        list[i][k,j]*=w[j]
+        @inbounds list[i][k,j]*=w[j]
       end
     end
     howell_form!(list[i])
@@ -727,7 +727,7 @@ function _no_redundancy(list::Array{nmod_mat,1},w::Array{fmpz,1})
   #
   for i=1:length(list)
     for j=1:cols(list[i])
-      for k=1:rows(list[i])
+      for k=1:j
         list[i][k,j]=divexact(list[i][k,j].data,w[j])
       end
     end
@@ -746,7 +746,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   N=Hecke._exponent_p_sub(S)
   lf=composition_factors(N)
   list=nmod_mat[]
-  v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
+  v=fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
   for i=1:ord-1
     minlist=minimal_submodules(N,i,lf)
     for x in minlist  

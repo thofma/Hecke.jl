@@ -530,7 +530,7 @@ function uniformizer(P::NfOrdIdl)
     end
     z = rand(P, r)
     while true     
-      if valuation(z, P) == 1
+      if !iszero(r) && valuation(z, P) == 1
         break
       end
       z = rand(P, r)
@@ -1176,7 +1176,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
 
   # for generic ideals
   if p.splitting_type[2] == 0
-    global bad_ideal = p
+    #global bad_ideal = p
     p.valuation = function(a::nf_elem)
       d = denominator(a, O)
       x = O(d*a)
