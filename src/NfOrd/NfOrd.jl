@@ -607,7 +607,7 @@ Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true,
-               cache::Bool = true)
+               cache::Bool = false)
   if check
     b, ainv, d = defines_order(K, a)
     if !b
@@ -656,7 +656,7 @@ doc"""
 
 Returns the equation order of the number field $K$.
 """
-function EquationOrder(K::AnticNumberField, cache::Bool = true)
+function EquationOrder(K::AnticNumberField, cache::Bool = false)
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   z = NfOrd(K, M, Minv, [gen(K)^i for i in 0:(degree(K) - 1)], cache)
@@ -780,7 +780,7 @@ containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
 equation order and have coprime index.
 """
 function +(a::NfOrd, b::NfOrd)
-  parent(a) != parent(b) && error("Orders must have same ambient number field")
+  nf(a) != nf(b) && error("Orders must have same ambient number field")
   if isone(gcd(index(a), index(b)))
     assure_has_basis_mat(a)
     assure_has_basis_mat(b)
@@ -986,7 +986,7 @@ julia> K, a = NumberField(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
 """
-function MaximalOrder(K::AnticNumberField, cache::Bool = true)
+function MaximalOrder(K::AnticNumberField, cache::Bool = false)
   O = EquationOrder(K)
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
   O = MaximalOrder(O)

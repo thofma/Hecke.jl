@@ -1661,7 +1661,7 @@ doc"""
 
 function iscoprime(I::NfOrdIdl, J::NfOrdIdl)
   
-  @assert parent(I)==parent(J)
+  @assert order(I)==order(J)
   
   if gcd(minimum(I), minimum(J))==1
     return true

@@ -1176,7 +1176,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       zta = Int[]
       G = DiagonalGroup([om for i=1:length(Cp[im].bigK.gen)])
       el_z = elem_type(G)[]
-      q, mq = quo(G, el_z)
+      q, mq = quo(G, el_z, false)
 
       for p = S
         local f
@@ -1197,7 +1197,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
           continue
         end
         push!(el_z, el)
-        q, mq = quo(G, el_z)
+        q, mq = quo(G, el_z, false)
         z = vcat(z, f)
         push!(za, fa)
         push!(zta, tfa)

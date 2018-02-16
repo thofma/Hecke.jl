@@ -694,6 +694,19 @@ function composition_factors(M::FqGModule)
   #
   #  Now, we check if the factors are isomorphic
   #
+   #= final_list=Tuple{FqGModule, Int}[]
+  for i=1:length(sub_list)
+    for j=1:length(quot_list)
+      if isisomorphic(sub_list[i][1], quot_list[j][1])
+        push!(final_list, (sub_list[i][1], sub_list[i][2]+quot_list[j][2]))
+        deleteat!(quot_list,j)
+        break
+      end    
+    end
+    push!(final_list, sub_list[i])
+  end
+  return append!(final_list,quot_list) 
+  =#
   for i=1:length(sub_list)
     for j=1:length(quot_list)
       if isisomorphic(sub_list[i][1], quot_list[j][1])

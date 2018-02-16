@@ -43,7 +43,7 @@ mS(gen(S))
 mS\gens(K)[2]
 =#
 
-function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x"; cached::Bool = true, ordering::Symbol = :lex)
+function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x"; cached::Bool = false, ordering::Symbol = :lex)
   return Nemo.PolynomialRing(R, ["$s$i" for i=1:n], cached = cached, ordering = ordering)
 end                                      
 

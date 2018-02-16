@@ -8,7 +8,6 @@ export conductor, isconductor
 
 
 function _modulus_with_inf(mR::Map)
-  global bad = mR
   while issubtype(typeof(mR), Hecke.CompositeMap)
     mR = mR.f
   end

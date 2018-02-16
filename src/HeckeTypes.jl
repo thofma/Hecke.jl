@@ -225,7 +225,7 @@ const SRowSpaceDict = ObjectIdDict()
 mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
 
-  function SrowSpace(R::Ring, cached::Bool = true)
+  function SrowSpace(R::Ring, cached::Bool = false)
     if haskey(SRowSpaceDict, R)
       return SRowSpace[R]::SRowSpace{T}
     else
@@ -297,7 +297,7 @@ mutable struct SMatSpace{T} <: Ring
   cols::Int
   base_ring::Ring
 
-  function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = true) where {T}
+  function SMatSpace{T}(R::Ring, r::Int, c::Int, cached = false) where {T}
     if haskey(SMatSpaceDict, (R, r, c))
       return SMatSpaceDict[R, r, c,]::SMatSpace{T}
     else
@@ -403,12 +403,14 @@ mutable struct FakeFmpqMatSpace
   rows::Int
   cols::Int
 
-  function FakeFmpqMatSpace(r::Int, c::Int)
+  function FakeFmpqMatSpace(r::Int, c::Int, cached::Bool=false)
     try
       return FakeFmpqMatSpaceID[r,c]::FakeFmpqMatSpace
     catch
       z = new(r,c)
-      FakeFmpqMatSpaceID[r,c] = z
+      if cached
+        FakeFmpqMatSpaceID[r,c] = z
+      end
       return z
     end
   end
@@ -497,7 +499,7 @@ mutable struct FacElemMon{S} <: Ring
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
-  function FacElemMon{S}(R::S) where {S}
+  function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{S}
     else
@@ -506,7 +508,9 @@ mutable struct FacElemMon{S} <: Ring
       z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
       z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
       z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
-      FacElemMonDict[R] = z
+      if cached
+        FacElemMonDict[R] = z
+      end
       return z
     end
   end
@@ -536,12 +540,17 @@ export NfOrdSet
 mutable struct NfOrdSet
   nf::AnticNumberField
 
-  function NfOrdSet(a::AnticNumberField)
+  function NfOrdSet(a::AnticNumberField, cached::Bool=false)
     if haskey(NfOrdSetID, a)
       return NfOrdSetID[a]
     else
-      NfOrdSetID[a] = new(a)
-      return NfOrdSetID[a]
+      if cached
+        
+        NfOrdSetID[a] = new(a)
+        return NfOrdSetID[a]
+      else 
+        return new(a)
+      end
     end
   end
 end
@@ -613,7 +622,7 @@ mutable struct NfOrd <: Ring
     return r
   end
 
-  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{nf_elem}, cached::Bool = true)
+  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{nf_elem}, cached::Bool = false)
     if haskey(NfOrdID, (K, x))
       return NfOrdID[(K, x)]
     else
@@ -629,7 +638,7 @@ mutable struct NfOrd <: Ring
     end
   end
 
-  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, cached::Bool = true)
+  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, cached::Bool = false)
     if haskey(NfOrdID, (K, x))
       return NfOrdID[(K, x)]
     else
@@ -649,10 +658,9 @@ mutable struct NfOrd <: Ring
     end
   end
 
-  function NfOrd(b::Array{nf_elem, 1}, cached::Bool = true)
+  function NfOrd(b::Array{nf_elem, 1}, cached::Bool = false)
     K = parent(b[1])
     A = FakeFmpqMat(basis_mat(b))
-
     if haskey(NfOrdID, (K,A))
       return NfOrdID[(K,A)]
     else
@@ -739,12 +747,14 @@ export NfOrdIdl
 mutable struct NfOrdIdlSet
   order::NfOrd
 
-  function NfOrdIdlSet(O::NfOrd)
+  function NfOrdIdlSet(O::NfOrd, cached::Bool=false)
     if haskey(NfOrdIdlSetID, O)
       return NfOrdIdlSetID[O]::NfOrdIdlSet
     else
       r = new(O)
-      NfOrdIdlSetID[O] = r
+      if cached
+        NfOrdIdlSetID[O] = r
+      end
       return r::NfOrdIdlSet
     end
   end
@@ -912,13 +922,15 @@ end
 mutable struct NfOrdFracIdlSet
    order::NfOrd
 
-   function NfOrdFracIdlSet(O::NfOrd)
+   function NfOrdFracIdlSet(O::NfOrd, cached::Bool=false)
      try
        return NfOrdFracIdlSetID[O]::NfOrdFracIdlSet
      catch
        r = new()
        r.order = O
-       NfOrdFracIdlSetID[O] = r
+       if cached
+         NfOrdFracIdlSetID[O] = r
+       end
        return r::NfOrdFracIdlSet
      end
    end
@@ -1648,7 +1660,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
   pol::Generic.Poly{T}
   S::Symbol
 
-  function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = true) where {T}
+  function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     if haskey(NfRelID, (parent(f), f, s))
       return NfRelID[parent(f), f, s]
     else
