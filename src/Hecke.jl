@@ -756,6 +756,48 @@ end
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
+function print_cache()
+  sym = [];
+  for a in collect(names(Nemo, true));
+    d = parse("Nemo." * string(a));
+      try z = eval(d); push!(sym, (d, z));
+    catch e;
+    end;
+  end
+  for f in sym;
+    if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+      print(f[1], " ", length(f[2]), "\n");
+    end;
+  end
+  
+  sym = [];
+  for a in collect(names(Nemo.Generic, true));
+    d = parse("Nemo.Generic." * string(a));
+      try z = eval(d); push!(sym, (d, z));
+    catch e;
+    end;
+  end
+  for f in sym;
+    if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+      print(f[1], " ", length(f[2]), "\n");
+    end;
+  end
+
+  sym = [];
+  for a in collect(names(Hecke, true));
+    d = parse("Hecke." * string(a));
+      try z = eval(d); push!(sym, (d, z));
+    catch e;
+    end;
+  end
+  for f in sym;
+    if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+      print(f[1], " ", length(f[2]), "\n");
+    end;
+  end
+
+end
+
 ################################################################################
 #
 #  Testing only "submodules"
