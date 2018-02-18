@@ -2,7 +2,9 @@ using Hecke
 
 boundexp = ARGS[1]
 startfield = ARGS[2]
-endfield = ARGS[3]
+number = ARGS[3]
+
+sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
 if length(ARGS) == 4
   basename = ARGS[4]
@@ -12,16 +14,20 @@ end
 
 boundexp = parse(Int, boundexp)
 startfield = parse(Int, startfield)
-endfield = parse(Int, endfield)
+number = parse(Int, number)
 
 @assert iseven(boundexp)
 
 boundquad = div(boundexp, 2)
 
-l = Hecke.quadratic_extensions(10^boundquad, u = startfield:endfield)
+lall = Hecke.quadratic_extensions(10^boundquad)
+
+l = Hecke.quadratic_extensions(10^boundquad, u = startfield:(startfield + number - 1))
+
+width = length(string(length(lall)))
 
 for (i, K) in enumerate(l)
-  fname = basename * @sprintf("%012d", startfield + i - 1)
+  fname = basename * sprint_formatted("%0$(width)d", startfield + i - 1)
   @show fname
   file = open(fname, "a")
   write(file, "# $(K.pol)\n")
