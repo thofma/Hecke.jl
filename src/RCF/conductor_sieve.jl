@@ -993,7 +993,6 @@ function D5_extensions(absolute_bound::fmpz, quad_fields, file::IOStream)
         end
       end
     end
-    gc()
   end
  
 end
