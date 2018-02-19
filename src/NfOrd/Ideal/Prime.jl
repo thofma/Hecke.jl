@@ -129,7 +129,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
   G = K.pol
   Qx = parent(G)
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p), cached=false)), cached=false)
+  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p)), cached=false), cached=false)
   Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
   res = []
   Zk = maximal_order(k)
@@ -530,7 +530,7 @@ function uniformizer(P::NfOrdIdl)
     end
     z = rand(P, r)
     while true     
-      if !iszero(r) && valuation(z, P) == 1
+      if !iszero(z) && valuation(z, P) == 1
         break
       end
       z = rand(P, r)

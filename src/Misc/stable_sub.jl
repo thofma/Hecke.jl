@@ -673,7 +673,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #  Check for redundancy
   #
   w=fmpz[divexact(fmpz(R.n), S1.V.snf[j]) for j=1:ngens(S1.V)]
-  @time list=_no_redundancy(list,w)
+  list=_no_redundancy(list,w)
 
   #
   #  Write the submodules in terms of the set of given generators

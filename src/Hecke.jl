@@ -765,7 +765,8 @@ function print_cache()
     end;
   end
   for f in sym;
-    if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    try
       print(f[1], " ", length(f[2]), "\n");
     end;
   end
@@ -778,8 +779,10 @@ function print_cache()
     end;
   end
   for f in sym;
-    if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    try
       print(f[1], " ", length(f[2]), "\n");
+    catch e
     end;
   end
 
@@ -791,7 +794,8 @@ function print_cache()
     end;
   end
   for f in sym;
-    if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    try
       print(f[1], " ", length(f[2]), "\n");
     end;
   end

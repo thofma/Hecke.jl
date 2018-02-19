@@ -599,7 +599,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
   elseif complex
     sqf=Int[-i for i in sqf]
   else
-    @views sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+    sqf= vcat(sqf[2:end], Int[-i for i in sqf])
   end
   if tame
     filter!( x -> mod(x,4)==1, sqf)
@@ -876,6 +876,62 @@ function C22_extensions_tame_real(bound::Int)
   
 end
 
+
+###############################################################################
+#
+#  Dycyclic Dic3
+#
+###############################################################################
+
+#K is a C4 field
+function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
+
+  O=maximal_order(K)
+  D=abs(discriminant(O))
+  
+  C,mC=class_group(O)
+  allow_cache!(mC)
+  cgrp=false
+  if gcd(C.snf[end],3)!=1
+    cgrp=true
+    S = prime_ideals_up_to(O, max(100,100*clog(D,10)^2))
+  end
+  gens=Hecke.automorphisms(K)
+  gens=small_generating_set(gens)
+  
+  #Getting conductors
+  bo = ceil(Rational{BigInt}(absolute_bound//discriminant(O)^3))
+  bound = FlintZZ(fmpq(bo))
+  l_conductors=conductors(O,3, bound)
+  @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  
+  #Now, the big loop
+  for k in l_conductors
+    r,mr=ray_class_group_quo(O,3,k[1], k[2])
+    if cgrp
+      mr.prime_ideal_cache = S
+    end
+    act=_act_on_ray_class(mr,gens)
+    ls=stable_subgroups(r,[3],act, op=(x, y) -> quo(x, y, false)[2])
+    a=_min_wild(k[2])*k[1]
+    totally_positive_generators(mr,a)
+    for s in ls
+      if _trivial_action(s,act,3)
+        continue
+      end
+      C=ray_class_field(mr*inv(s))
+      if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
+        println("New Field")
+        L=number_field(C)
+        println(L.pol)
+        Base.write(f, "($L.pol,$(C.absolute_discriminant)\n")
+      end
+    end
+  end
+  return 1
+end
+
+
 ###############################################################################
 #
 #  Dihedral group D5 with equation of degree 5
@@ -944,58 +1000,64 @@ function D5_extensions(absolute_bound::fmpz, quad_fields, file::IOStream)
   for K in quad_fields
     len-=1
     
-    println("Field: $K")    
-    O=maximal_order(K)
-    D=abs(discriminant(O))
-  
-    C,mC=class_group(O)
-    allow_cache!(mC)
-    cgrp=false
-    if gcd(C.snf[end],5)!=1
-      cgrp=true
-      S = prime_ideals_up_to(O, max(100,100*clog(D,10)^2))
-    end
-
-    gens=Hecke.automorphisms(K)
-    a=gen(K)
-    if gens[1](a)==a
-      deleteat!(gens,1)
-    else
-      deleteat!(gens,2)
-    end
-    
-             
-    #Getting conductors
-    l_conductors=conductorsD5(O,absolute_bound)
-    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
-  
-    #Now, the big loop
-    for k in l_conductors
-      r,mr=ray_class_group_quo(O,5,k[1], k[2])
-      if cgrp
-        mr.prime_ideal_cache = S
-      end
-      act=_act_on_ray_class(mr,gens)
-      ls=stable_subgroups(r,[5],act, op=(x, y) -> quo(x, y, false)[2])
-      a=_min_wild(k[2])*k[1]
-      for s in ls
-        if _trivial_action(s,act,5)
-          continue
-        end
-        C=ray_class_field(mr*inv(s))
-        if Hecke._is_conductor_min_normal(C,a)
-          println("New Field")
-          L=number_field(C)
-          auto=Hecke.extend_aut(C, gens[1])
-          pol=_quintic_ext(auto)
-          println(pol)
-          Base.write(file, "($pol,$(D^2*minimum(mr.modulus_fin)^4))\n")
-        end
-      end
-    end
-    gc()
+    println("Field: $K")   
+    println("Remaining Fields: $(len)")
+    single_D5_extensions(absolute_bound, K, file) 
   end
- 
+  return 1
+
+end
+
+
+function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
+
+  O=maximal_order(K)
+  D=abs(discriminant(O))
+  
+  C,mC=class_group(O)
+  allow_cache!(mC)
+  cgrp=false
+  if gcd(C.snf[end],5)!=1
+    cgrp=true
+    S = prime_ideals_up_to(O, max(100,100*clog(D,10)^2))
+  end
+  gens=Hecke.automorphisms(K)
+  a=gen(K)
+  if gens[1](a)==a
+    deleteat!(gens,1)
+  else
+    deleteat!(gens,2)
+  end
+  
+  #Getting conductors
+  l_conductors=conductorsD5(O,absolute_bound)
+  @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  
+  #Now, the big loop
+  for k in l_conductors
+    r,mr=ray_class_group_quo(O,5,k[1], k[2])
+    if cgrp
+      mr.prime_ideal_cache = S
+    end
+    act=_act_on_ray_class(mr,gens)
+    ls=stable_subgroups(r,[5],act, op=(x, y) -> quo(x, y, false)[2])
+    a=_min_wild(k[2])*k[1]
+    for s in ls
+      if _trivial_action(s,act,5)
+        continue
+      end
+      C=ray_class_field(mr*inv(s))
+      if Hecke._is_conductor_min_normal(C,a)
+        println("New Field")
+        L=number_field(C)
+        auto=Hecke.extend_aut(C, gens[1])
+        pol=_quintic_ext(auto)
+        println(pol)
+        Base.write(f, "($pol,$(D^2*minimum(mr.modulus_fin)^4))\n")
+      end
+    end
+  end
+  return 1
 end
 
 function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
@@ -1617,7 +1679,7 @@ function _maximal_absolute_order_from_relative(L::NfRel_ns)
 
   #We compute the absolute extension and the maps
   S,mS=simple_extension(L)
-  K,mK=absolute_field(S)
+  K,mK=absolute_field(S, false)
 
   #we compute the relative maximal order of L and of the base field
   #OL=maximal_order(L)  still useless
