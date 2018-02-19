@@ -994,22 +994,22 @@ function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 end
 
 #The input are the absolute bound for the non-normal extension of degree 5 and the list of the quadratic fields
-function D5_extensions(absolute_bound::fmpz, quad_fields, file::IOStream)
+function D5_extensions(absolute_bound::fmpz, quad_fields)
   
   len=length(quad_fields)
+  z = []
   for K in quad_fields
     len-=1
     
     println("Field: $K")   
     println("Remaining Fields: $(len)")
-    single_D5_extensions(absolute_bound, K, file) 
+    append!(z, single_D5_extensions(absolute_bound, K))
   end
-  return 1
-
+  return z
 end
 
 
-function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
+function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
 
   O=maximal_order(K)
   D=abs(discriminant(O))
@@ -1028,6 +1028,8 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOSt
   else
     deleteat!(gens,2)
   end
+
+  z = []
   
   #Getting conductors
   l_conductors=conductorsD5(O,absolute_bound)
@@ -1052,12 +1054,11 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOSt
         L=number_field(C)
         auto=Hecke.extend_aut(C, gens[1])
         pol=_quintic_ext(auto)
-        println(pol)
-        Base.write(f, "($pol,$(D^2*minimum(mr.modulus_fin)^4))\n")
+        push!(z, (pol,D^2*minimum(mr.modulus_fin)^4))
       end
     end
   end
-  return 1
+  return z
 end
 
 function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
