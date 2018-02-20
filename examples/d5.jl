@@ -27,10 +27,15 @@ l = Hecke.quadratic_extensions(10^boundquad, u = startfield:(startfield + number
 width = length(string(length(lall)))
 
 for (i, K) in enumerate(l)
-  fname = basename * sprint_formatted("%0$(width)d", startfield + i - 1)
-  @show fname
-  file = open(fname, "a")
-  write(file, "# $(K.pol)\n")
-  Hecke.D5_extensions(fmpz(10)^boundexp, [K], file)
-  close(file)
+  z = Hecke.D5_extensions(fmpz(10)^boundexp, [K])
+  if length(z) != 0
+    fname = basename * sprint_formatted("%0$(width)d", startfield + i - 1)
+    @show fname
+    file = open(fname, "a")
+    write(file, "# $(K.pol)\n")
+    for (p, D) in z
+      write(file, "($p, $D)\n")
+    end
+    close(file)
+  end
 end
