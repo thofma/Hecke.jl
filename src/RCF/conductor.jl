@@ -621,6 +621,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
     qw=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
     discr*=fmpz(minimum(p))^qw
     if discr>bound
+      @vprint :QuadraticExt 1 "too large\n"
       return false
     else
       if haskey(abs_disc, minimum(p))
@@ -685,6 +686,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
       np=fmpz(minimum(p))^td
       discr*=np
       if discr>bound
+        @vprint :QuadraticExt 1 "too large\n"
         return false
       else
         if haskey(abs_disc, minimum(p))

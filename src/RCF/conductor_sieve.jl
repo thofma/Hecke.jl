@@ -20,9 +20,9 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
   i=2
   b=Base.sqrt(n)
   while i<=b
-    if list[i]
+    @inbounds if list[i]
       j=i^2
-      if !list[j]
+      @inbounds if !list[j]
         i+=1
         continue
       else 
@@ -36,7 +36,7 @@ function squarefree_up_to(n::Int; coprime_to::Array{fmpz,1}=fmpz[])
     end
     i+=1
   end
-  return Int[i for i=1:n if list[i]]
+  @inbounds return Int[i for i=1:n if list[i]]
 
 end
 
@@ -902,6 +902,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
   #Getting conductors
   bo = ceil(Rational{BigInt}(absolute_bound//discriminant(O)^3))
   bound = FlintZZ(fmpq(bo))
+  println(bound)
   l_conductors=conductors(O,3, bound)
   @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
@@ -923,6 +924,9 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
         println("New Field")
         L=number_field(C)
+        S=Hecke.simple_extension(L)[1]
+        F=absolute_field(S)[1]
+        println(F.pol)
         println(L.pol)
         Base.write(f, "($L.pol,$(C.absolute_discriminant)\n")
       end

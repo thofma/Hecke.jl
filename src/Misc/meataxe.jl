@@ -666,10 +666,18 @@ doc"""
 
 """
 
-function composition_factors(M::FqGModule)
+function composition_factors(M::FqGModule; dimension::Int=-1)
   
   if isdefined(M, :isirreducible) && M.isirreducible
-    return Tuple{FqGModule, Int}[(M,1)]
+    if dimension!= -1 
+      if M.dim==dimension
+        return Tuple{FqGModule, Int}[(M,1)]
+      else
+        return Tuple{FqGModule, Int}[]
+      end
+    else
+      return Tuple{FqGModule, Int}[(M,1)]
+    end
   end 
  
   K=M.K::FqNmodFiniteField
@@ -679,7 +687,15 @@ function composition_factors(M::FqGModule)
   #  If the module is irreducible, we just return a basis of the space
   #
   if bool
-    return Tuple{FqGModule, Int}[(M,1)]
+    if dimension!= -1 
+      if M.dim==dimension
+        return Tuple{FqGModule, Int}[(M,1)]
+      else
+        return Tuple{FqGModule, Int}[]
+      end
+    else
+      return Tuple{FqGModule, Int}[(M,1)]
+    end
   end
   G=M.G
   #
@@ -958,6 +974,15 @@ function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}
   end
   list=fq_nmod_mat[]
   if index>= M.dim/2
+    if index== M.dim -1
+      if isempty(comp_factors)
+        lf=composition_factors(M, dimension=1)
+      else
+        lf=comp_factors
+      end
+      list=minimal_submodules(M,1,lf)
+      return list
+    end
     if isempty(comp_factors)
       lf=composition_factors(M)
     else 

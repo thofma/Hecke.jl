@@ -605,13 +605,12 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   s,ms=sub(S1, M.p^(typesub[end]-1))
   S,mS=snf(s)
   N=_exponent_p_sub(S)
-  lf=composition_factors(N)
-  @vtime :StabSub 1 submod=submodules(N,(N.dim)-a,comp_factors=lf)
+  @vtime :StabSub 1 submod=submodules(N,(N.dim)-a)
   #
   #  Write the modules as elements of S
   #
   list1=Array{nmod_mat,1}(length(submod))
-  v=[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
+  v=[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
   for i=1:length(submod)
     @inbounds list1[i]=lift(submod[i],R)
     for j=1:rows(list1[i])
