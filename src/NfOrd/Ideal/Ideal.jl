@@ -36,7 +36,7 @@ export show, ideal
 
 export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
        prime_ideals_up_to, factor, divexact, isramified, anti_uniformizer,
-       uniformizer, iscoprime
+       uniformizer, iscoprime, conductor, colon, equation_order
 
 export NfOrdIdl
 
@@ -209,8 +209,20 @@ doc"""
 > checked whether $x$ defines an ideal (expensive).
 """
 function ideal(O::NfOrd, x::fmpz_mat, check::Bool = false)
-  check && error("Not yet implemented")
-  return NfOrdIdl(O, deepcopy(x))
+  x = _hnf(x, :lowerleft) #sub-optimal, but == relies on the basis being thus
+
+  I = NfOrdIdl(O, x)
+  if check
+    J = ideal(O, 0)
+    for i=1:degree(O)
+      e = O([x[i,j] for j=1:degree(O)])
+      J += ideal(O, e)
+    end
+    
+    @assert J == I
+  end
+
+  return I
 end
 
 doc"""
@@ -1268,7 +1280,7 @@ end
 
 ################################################################################
 #
-#  Ring of multipliers
+#  Ring of multipliers, colon, conductor: it's the same(?) method
 #
 ################################################################################
 
@@ -1296,6 +1308,119 @@ function ring_of_multipliers(a::NfOrdIdl)
   b, d = pseudo_inv(n)
   #z = frac_ideal(O, FakeFmpqMat(b, d))
   return Order(nf(O), FakeFmpqMat(b, d)*basis_mat(O))
+end
+
+doc"""
+    colon(a::NfOrdIdl, b::NfOrdIdl) -> NfOrdFracIdl
+> The ideal $(a:b) = \{x \in K | xb \subseteq a\} = \hom(b, a)$
+> where $K$ is the number field.
+"""
+function colon(a::NfOrdIdl, b::NfOrdIdl)
+  B = basis(b)
+  O = order(a)
+  bmatinv = basis_mat_inv(a)
+  #print("First basis element is $(B[1]) \n with representation mat \n")
+  #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
+  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
+  n = FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
+  m = numerator(n)
+  d = denominator(n)
+  for i in 2:degree(O)
+    n = FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv
+    l = lcm(denominator(n), d)
+    if l==d
+      m = hcat(m, numerator(n))
+    else
+      m = hcat(m*div(l, d), numerator(n)*div(l, denominator(n)))
+      d = l
+    end
+  end
+  m = hnf(transpose(m))
+  # n is upper right HNF
+  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
+  b, l = pseudo_inv(m)
+  n = FakeFmpqMat(b*d, l)
+  return ideal(O, numerator(n))//denominator(n)
+end
+
+function elem_from_mat_row(O::NfOrd, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
+  return O([M[i,j] for j=1:degree(O)])
+end
+
+doc"""
+    conductor(R::NfOrd, S::NfOrd) -> NfOrdIdl
+> The conductor $\{x \in S | xS\subseteq R\}$
+> for orders $R\subseteq S$.
+"""
+function conductor(R::NfOrd, S::NfOrd)
+  #=
+     rS in R
+     S = sum s_i ZZ, so this means
+     r s_i in R for all i
+
+     so need rep mat of s_i as elements(?) of R
+
+     basis_mat: is from nf (equation order) -> ord
+       ie. it comtains the basis elements of ord as elements of the field
+     basis_mat_inv: the basis of the field as elements of the order
+
+     so to get basis of S relative to R we need
+       basis_mat(S)*basis_mat_inv(R)
+  =#   
+  bmS = basis_mat(S) * basis_mat_inv(R)
+
+  n = FakeFmpqMat(representation_mat(elem_from_mat_row(R, numerator(bmS), 1)), denominator(bmS))
+  m = numerator(n)
+  d = denominator(n)
+  for i in 2:degree(R)
+    n = FakeFmpqMat(representation_mat(elem_from_mat_row(R, numerator(bmS), i)), denominator(bmS))
+    l = lcm(denominator(n), d)
+    if l==d
+      m = hcat(m, numerator(n))
+    else
+      m = hcat(m*div(l, d), numerator(n)*div(l, denominator(n)))
+      d = l
+    end
+  end
+  m = hnf(transpose(m))
+  # n is upper right HNF
+  m = transpose(sub(m, 1:degree(R), 1:degree(R)))
+  b, l = pseudo_inv(m)
+  n = FakeFmpqMat(b*d, l)
+  @assert denominator(n) == 1
+  return ideal(R, numerator(n), true)
+end
+
+doc"""
+    conductor(R::NfOrd) -> NfOrdIdl
+> The conductor of $R$ in the maximal order.
+"""
+conductor(R::NfOrd) = conductor(R, maximal_order(R))
+
+#for consistency
+
+maximal_order(R::NfOrd) = MaximalOrder(R)
+equation_order(K::AnticNumberField) = EquationOrder(K)
+
+
+################################################################################
+#
+#  Conversion to differnt order
+#
+################################################################################
+
+doc"""
+    ideal(O::NfOrd, I::NfOrdIdl) -> NfOrdFracIdl
+> The fractional ideal of $O$ generatoed by a Z-basis of $I$.
+"""
+function ideal(O::NfOrd, I::NfOrdIdl)
+  k = nf(O)
+  bI = basis(I)
+  J = ideal(O, k(bI[1]))
+  for j=2:degree(O)
+    J += ideal(O, k(bI[j]))
+  end
+  return J
 end
 
 ################################################################################
