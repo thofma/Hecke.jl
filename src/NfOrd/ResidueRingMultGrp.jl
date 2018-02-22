@@ -1276,7 +1276,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
       return [pohlig_hellman(g^quot,k,t)*inv] 
     end
   end
-  
+
   return mQ\g , k, disclog
 end
 

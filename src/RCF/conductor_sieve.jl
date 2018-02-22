@@ -1750,3 +1750,34 @@ function _from_matrix_to_listlist(M::MatElem)
 end
 
 
+###############################################################################
+#
+#  Read-Write
+#
+###############################################################################
+
+function _write_fields(list::Array{Tuple{AnticNumberField, fmpz},1}, filename::String)
+
+  f=open(filename, "a")
+  for L in list
+    x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
+    Base.write(f, "$x\n")
+  end
+  close(f)
+  
+end
+
+
+function _read_fields(filename::String)
+
+  f=open(filename, "r")
+  Qx,x=PolynomialRing(FlintQQ,"x")
+  pols=Tuple{fmpq_poly, fmpz}[]
+  for s in eachline(f)
+    @show a=eval(parse(s))
+	  push!(pols,(Qx(a[1]), a[2]))
+	end
+	close(f)
+	return pols
+  
+end
