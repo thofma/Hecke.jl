@@ -82,6 +82,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     if res in clg.M.rel_gens || res in clg.M.bas_gens
       return false
     end
+    @vprint :ClassGroup 3 "adding $res\n"
     if add_gen!(clg.M, res)
       push!(clg.R_gen, a)
     else

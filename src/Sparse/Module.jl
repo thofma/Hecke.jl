@@ -123,7 +123,7 @@ function check_index(M::ModuleCtx_fmpz)
       end
       g = M.rel_gens[rand(r)]
       for j=1:min(5, div(length(r), 2))
-        g += M.rel_gens[rand(r)]
+        g += rand(-10:10)*M.rel_gens[rand(r)]
       end
       reduce(C, g)
       if C[i,i] == 1
