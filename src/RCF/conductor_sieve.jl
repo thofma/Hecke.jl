@@ -926,8 +926,8 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
         println("New Field")
         L=number_field(C)
-        S=Hecke.simple_extension(L)[1]
-        F=absolute_field(S)[1]
+        SS=Hecke.simple_extension(L)[1]
+        F=absolute_field(SS)[1]
         push!(res, (F.pol, prod([ fmpz(p)^e for (p, e) in C.absolute_discriminant])))
       end
     end
