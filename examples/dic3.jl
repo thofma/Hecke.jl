@@ -1,13 +1,14 @@
 using Hecke
 
 boundexp = ARGS[1]
-startfield = ARGS[2]
-number = ARGS[3]
+c4fields = ARGS[2]
+startfield = ARGS[3]
+number = ARGS[4]
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 
-if length(ARGS) == 4
-  basename = ARGS[4]
+if length(ARGS) == 5
+  basename = ARGS[5]
 else
   basename = ""
 end
@@ -16,19 +17,21 @@ boundexp = parse(Int, boundexp)
 startfield = parse(Int, startfield)
 number = parse(Int, number)
 
-@assert iseven(boundexp)
+@assert mod(boundexp, 3) == 0
 
-boundquad = div(boundexp, 2)
+boundquad = div(boundexp, 3)
 
-lall = Hecke.quadratic_extensions(10^boundquad)
+lall = Hecke._read_fields(c4fields)
 
-l = Hecke.quadratic_extensions(10^boundquad, u = startfield:(startfield + number - 1))
+l = lall[startfield:(startfield + number - 1)]
 
 width = length(string(length(lall)))
 
 for (i, f) in enumerate(l)
   K, _ = NumberField(f[1], "a")
-  z = Hecke.D5_extensions(fmpz(10)^boundexp, [K])
+  @show K
+  z = Hecke.Dic3_extensions(fmpz(10)^boundexp, K)
+  @show length(z)
   if length(z) != 0
     fname = basename * sprint_formatted("%0$(width)d", startfield + i - 1)
     @show fname
