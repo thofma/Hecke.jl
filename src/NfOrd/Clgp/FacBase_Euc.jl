@@ -114,39 +114,25 @@ function factor(c::FactorBase{T}, a::T) where T
   return f
 end
 
-function factor(c::FactorBase{T}, a::fmpq) where T  ## fractions over T
+function factor(c::FactorBase{fmpz}, a::fmpq) where T  ## fractions over T
   @assert a != 0
-  f = Dict{T, Int}()
+  a = deepcopy(a)
+  f = Dict{fmpz, Int}()
   n = abs(numerator(a))
   d = denominator(a)
   lp = _split(c.ptree, n*d)
   for i in lp
-    if mod(d, i)==0
-      v = remove(d, i)
-      if isdefined(f, :i)
-        f[i] -= v[1]
-      else
-        f[i] = -v[1]
-      end
-      d = v[2]
-      if d == 1 && n == 1
-        break
-      end
+    v = remove!(a, i)
+    if isdefined(f, :i)
+      f[i] += v
+    else
+      f[i] = v
     end
-    if mod(n, i)==0
-      v = remove(n, i)
-      if isdefined(f, :i)
-        f[i] += v[1]
-      else
-        f[i] = v[1]
-      end
-      n = v[2]
-      if d == 1 && n==1
-        break
-      end
+    if isone(a)
+      break
     end
   end
-  @hassert :ClassGroup 1 d == 1 && n == 1 
+  @hassert :ClassGroup 1 isone(a)
   return f
 end
 
