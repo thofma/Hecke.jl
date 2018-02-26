@@ -1169,7 +1169,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   @hassert :NfOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   if isdefined(p, :valuation)
-    return p.valuation(a)
+    return p.valuation(a)::Int
   end
   O = order(p)
   P = p.gen_one
@@ -1180,14 +1180,14 @@ function valuation(a::nf_elem, p::NfOrdIdl)
     p.valuation = function(a::nf_elem)
       d = denominator(a, O)
       x = O(d*a)
-      return valuation_naive(ideal(O, x), p) - valuation_naive(ideal(O, d), p)
+      return valuation_naive(ideal(O, x), p)::Int - valuation_naive(ideal(O, d), p)::Int
     end
-    return p.valuation(a)
+    return p.valuation(a)::Int
   end
 
   if p.splitting_type[1]*p.splitting_type[2] == degree(O)
     p.valuation = function(a::nf_elem)
-      return divexact(valuation(norm(a), P)[1], p.splitting_type[2])
+      return divexact(valuation(norm(a), P)[1], p.splitting_type[2])::Int
     end
   elseif mod(index(O),P) != 0 && p.splitting_type[1] == 1
     if p.gen_one^2 <= typemax(UInt) 
@@ -1197,9 +1197,9 @@ function valuation(a::nf_elem, p::NfOrdIdl)
         v = f1(x)
         if v > 100  # can happen ONLY if the precision in the .._small function
                     # was too small.
-          return f2(x)
+          return f2(x)::Int
         else
-          return v
+          return v::Int
         end
       end
     else
@@ -1209,7 +1209,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
     p.valuation = val_func_index(p)
   end
 
-  return p.valuation(a)
+  return p.valuation(a)::Int
 end
 
 doc"""
