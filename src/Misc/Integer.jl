@@ -56,13 +56,42 @@ function valuation(z::Rational{T}, p::T) where T <: Integer
   return w-v
 end 
 
+function remove!(a::fmpz, b::fmpz)
+  v = ccall((:fmpz_remove, :libflint), Int64, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
+  return v, a
+end
+
+function remove!(a::fmpq, b::fmpz)
+  nr = ccall((:fmpq_numerator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  #fmpq's are simplified: either num OR den will be non-trivial
+  if vn != 0
+    return vn, a
+  end
+  nr = ccall((:fmpq_denominator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  return -vn, a
+end
+
+function valuation!(a::fmpq, b::fmpz)
+  nr = ccall((:fmpq_numerator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  #fmpq's are simplified: either num OR den will be non-trivial
+  if vn != 0
+    return vn
+  end
+  nr = ccall((:fmpq_denominator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
+  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  return -vn
+end
+
 function *(a::fmpz, b::BigFloat)
   return BigInt(a)*b
 end
 
 function BigFloat(a::fmpq)
   r = BigFloat(0)
-  ccall((:fmpq_get_mpfr, :libflint), Void, (Ptr{BigFloat}, Ptr{fmpq}, Int32), &r, &a, __get_rounding_mode())
+  ccall((:fmpq_get_mpfr, :libflint), Void, (Ref{BigFloat}, Ref{fmpq}, Int32), r, a, __get_rounding_mode())
   return r
 end
 
@@ -171,15 +200,15 @@ end
 
 
 function isodd(a::fmpz)
-  ccall((:fmpz_is_odd, :libflint), Int, (Ptr{fmpz},), &a) == 1
+  ccall((:fmpz_is_odd, :libflint), Int, (Ref{fmpz},), a) == 1
 end
 
 function iseven(a::fmpz)
-  ccall((:fmpz_is_even, :libflint), Int, (Ptr{fmpz},), &a) == 1
+  ccall((:fmpz_is_even, :libflint), Int, (Ref{fmpz},), a) == 1
 end
 
 function neg!(a::fmpz)
-  ccall((:fmpz_neg, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &a, &a)
+  ccall((:fmpz_neg, :libflint), Void, (Ref{fmpz}, Ref{fmpz}), a, a)
   return a
 end
 
@@ -282,29 +311,29 @@ one(::Type{fmpq}) = fmpq(1)
 function divexact!(z::fmpz, x::fmpz, y::fmpz)
     y == 0 && throw(DivideError())
     ccall((:fmpz_divexact, :libflint), Void, 
-          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
     return z
 end
 
 function lcm!(z::fmpz, x::fmpz, y::fmpz)
    ccall((:fmpz_lcm, :libflint), Void, 
-         (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+         (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
    return z
 end
 
 function gcd!(z::fmpz, x::fmpz, y::fmpz)
    ccall((:fmpz_gcd, :libflint), Void, 
-         (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+         (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
    return z
 end
 
 function mul!(z::fmpz, x::fmpz, y::Int)
-  ccall((:fmpz_mul_si, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), &z, &x, y)
+  ccall((:fmpz_mul_si, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, Int), z, x, y)
   return z
 end
 
 function mul!(z::fmpz, x::fmpz, y::UInt)
-  ccall((:fmpz_mul_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, UInt), &z, &x, y)
+  ccall((:fmpz_mul_ui, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, UInt), z, x, y)
   return z
 end
 
@@ -314,7 +343,7 @@ function mul!(z::fmpz, x::fmpz, y::Integer)
 end
 
 function one!(a::fmpz)
-  ccall((:fmpz_one, :libflint), Void, (Ptr{fmpz}, ), &a)
+  ccall((:fmpz_one, :libflint), Void, (Ref{fmpz}, ), a)
   return a
 end
 
@@ -347,7 +376,7 @@ function ispower(a::fmpz)
   rt = fmpz()
   e = 1
   while true
-    ex = ccall((:fmpz_is_perfect_power, :libflint), Int, (Ptr{fmpz}, Ptr{fmpz}), &rt, &a)
+    ex = ccall((:fmpz_is_perfect_power, :libflint), Int, (Ref{fmpz}, Ref{fmpz}), rt, a)
     if ex == 1 || ex == 0
       return e, a
     end
@@ -647,6 +676,11 @@ Hecke.gcd(a::Integer, b::fmpz) = Hecke.gcd(fmpz(a), b)
 Hecke.lcm(a::fmpz, b::Integer) = Hecke.lcm(a, fmpz(b))
 Hecke.lcm(a::Integer, b::fmpz) = Hecke.lcm(fmpz(a), b)
 
+doc"""
+    isprime_power(n::fmpz) -> Bool
+    isprime_power(n::Integer) -> Bool
+> Tests is $n$ is the exact power of a prime number.
+"""
 function isprime_power(n::fmpz)
   e, p = ispower(n)
   return isprime(p)
