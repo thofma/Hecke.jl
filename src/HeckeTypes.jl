@@ -1213,6 +1213,7 @@ mutable struct FactorBaseSingleP
   P::fmpz
   pt::FactorBase{nmod_poly}
   lp::Array{Tuple{Int,NfOrdIdl}, 1}
+  lf::Array{nmod_poly, 1}
   doit::Function
 
   function FactorBaseSingleP(p::fmpz, lp::Array{Tuple{Int, NfOrdIdl}, 1})
@@ -1222,63 +1223,67 @@ mutable struct FactorBaseSingleP
     O = order(lp[1][2])
     K = O.nf
 
-    naive_doit = function(a::nf_elem, v::Int)
-      r = Array{Tuple{Int, Int},1}()
-      for x=1:length(lp)
-        vl = valuation(a, lp[x][2])
-        v -= vl*lp[x][2].splitting_type[2]
-        if vl !=0
-          push!(r, (lp[x][1], vl))
-        end
-      end
-      return r, v
-    end
-
-    if length(lp) < 3 || isindex_divisor(O, p) # ie. index divisor or so
-      int_doit = naive_doit
-    else
+    if length(lp) >= 3 && !isindex_divisor(O, p) # ie. index divisor or so
       Zx = PolynomialRing(FlintZZ, "x")[1]
       Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
       Qx = parent(K.pol)
       fp = Fpx(Zx(K.pol))
       lf = [ gcd(fp, Fpx(Zx(Qx(K(P[2].gen_two)))))::nmod_poly for P = lp]
-
+      FB.lf = lf
       FB.pt = FactorBase(Set(lf), check = false)
-      int_doit = function(a::nf_elem, v::Int)
-        g = Fpx(a)
-        g = gcd(g, fp)
-        fl = issmooth(FB.pt, g)[1]
-        if fl
-          d = factor(FB.pt, g)
-          r = Array{Tuple{Int, Int}, 1}()
-          vv=v
-          for x in keys(d)
-            id = findfirst(lf, x)
-            vv -= FB.lp[id][2].splitting_type[2]
-            push!(r, (FB.lp[id][1], 1))
-          end
-          if vv == 0
-            return r, vv
-          end
-          r = Array{Tuple{Int, Int}, 1}()
-          for x in keys(d)
-            id = findfirst(lf, x)
-            vl  = valuation(a, lp[id][2])
-            v -= FB.lp[id][2].splitting_type[2]*vl
-            push!(r, (FB.lp[id][1], vl))
-          end
-          return r, v
-        else
-          return Array{Tuple{Int, Int}, 1}(), -1
-        end
-      end
-    end
-    FB.doit = function(a::nf_elem, v::Int)
-      d = denominator(a)
-      if isone(gcd(d, p)) return int_doit(a, v); end
-      return naive_doit(a, v);
-    end
+    end  
     return FB
+  end
+end
+
+function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
+  if length(sP.lp) < 3 || isindex_divisor(order(sP.lp[1][2]), sP.P) # ie. index divisor or so
+    return fb_naive_doit(a, v, sP)
+  end
+  d = denominator(a)
+  if isone(gcd(d, sP.P)) return fb_int_doit(a, v, sP); end
+  return fb_naive_doit(a, v, sP);
+end
+
+function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
+  lp = sP.lp
+  r = Array{Tuple{Int, Int},1}()
+  for x=1:length(lp)
+    vl = valuation(a, lp[x][2])
+    v -= vl*lp[x][2].splitting_type[2]
+    if vl !=0
+      push!(r, (lp[x][1], vl))
+    end
+  end
+  return r, v
+end
+
+function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
+  g = parent(sP.lf[1])(a)
+  g = gcd(g, sP.pt.prod)
+  fl = issmooth(sP.pt, g)[1]
+  if fl
+    d = factor(sP.pt, g)
+    r = Array{Tuple{Int, Int}, 1}()
+    vv=v
+    for x in keys(d)
+      id = findfirst(sP.lf, x)
+      vv -= sP.lp[id][2].splitting_type[2]
+      push!(r, (sP.lp[id][1], 1))
+    end
+    if vv == 0
+      return r, vv
+    end
+    r = Array{Tuple{Int, Int}, 1}()
+    for x in keys(d)
+      id = findfirst(sP.lf, x)
+      vl  = valuation(a, sP.lp[id][2])
+      v -= sP.lp[id][2].splitting_type[2]*vl
+      push!(r, (sP.lp[id][1], vl))
+    end
+    return r, v
+  else
+    return Array{Tuple{Int, Int}, 1}(), -1
   end
 end
 
