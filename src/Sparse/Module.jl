@@ -160,7 +160,7 @@ end
 
 function missing_pivot(M::ModuleCtx_fmpz)
   C = M.Mp.basis
-  return setdiff(1:cols(C), [x.pos[1] for x=C])
+  return setdiff(IntSet(1:cols(C)), [x.pos[1] for x=C])
 end
 
 function non_trivial_pivot(M::ModuleCtx_fmpz)
@@ -170,7 +170,7 @@ function non_trivial_pivot(M::ModuleCtx_fmpz)
   end
   C = M.basis
   @hassert :HNF 2  C.r == C.c
-  return setdiff(1:cols(C), find(i->C[i].values[1] == 1, 1:C.c))
+  return setdiff(IntSet(1:cols(C)), find(i->C[i].values[1] == 1, 1:C.c))
 end
 
 function rank(M::ModuleCtx_fmpz)
