@@ -234,6 +234,10 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     return false
   end
 
+  if M.dim==1
+    return M.G==N.G
+  end
+
   K=M.K
   Kx,x=PolynomialRing(K, "x", cached=false)
   
@@ -246,11 +250,10 @@ function isisomorphic(M::FqGModule,N::FqGModule)
       return false
     end
   end
-
+  
   n=M.dim
   posfac=n
-    
-
+   
   f=Kx(1)
   G=deepcopy(M.G)
   H=deepcopy(N.G)
