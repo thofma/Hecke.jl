@@ -164,9 +164,26 @@ function length(a::nf_elem, p::Int = 50)
   return sum([x*x for x in m])
 end
 
+function setprecision!(x::BigFloat, p::Int)
+  ccall((:mpfr_prec_round, :libmpfr), Void, (Ref{BigFloat}, Clong, Int32), x, p, Base.MPFR.ROUNDING_MODE[])
+end
+
+function Base.setprecision(x::BigFloat, p::Int)
+  setprecision(BigFloat, p) do
+    y = BigFloat()
+    ccall((:mpfr_set, :libmpfr), Void, (Ref{BigFloat}, Ref{BigFloat}, Int32), y, x, Base.MPFR.ROUNDING_MODE[])
+    return y
+  end
+end
+
+
 function minkowski_mat(c::roots_ctx, p::Int)
-  if isdefined(c, :minkowski_mat) && c.minkowski_mat_p == p
-    return c.minkowski_mat
+  if isdefined(c, :minkowski_mat) 
+    if c.minkowski_mat_p == p
+      return c.minkowski_mat
+    elseif c.minkowski_mat_p > p
+      return map(x->setprecision(x, p), c.minkowski_mat)
+    end
   end
   old = precision(BigFloat)
   setprecision(p)
