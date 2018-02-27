@@ -884,7 +884,7 @@ end
 ###############################################################################
 
 #K is a C4 field
-function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
+function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
 
   O=maximal_order(K)
   D=abs(discriminant(O))
@@ -905,6 +905,8 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
   println(bound)
   l_conductors=conductors(O,3, bound)
   @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+
+  res = []
   
   #Now, the big loop
   for k in l_conductors
@@ -924,17 +926,14 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField, f::IOStream)
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
         println("New Field")
         L=number_field(C)
-        S=Hecke.simple_extension(L)[1]
-        F=absolute_field(S)[1]
-        println(F.pol)
-        println(L.pol)
-        Base.write(f, "($L.pol,$(C.absolute_discriminant)\n")
+        SS=Hecke.simple_extension(L)[1]
+        F=absolute_field(SS)[1]
+        push!(res, (F.pol, prod([ fmpz(p)^e for (p, e) in C.absolute_discriminant])))
       end
     end
   end
-  return 1
+  return res
 end
-
 
 ###############################################################################
 #
@@ -1750,3 +1749,29 @@ function _from_matrix_to_listlist(M::MatElem)
 end
 
 
+###############################################################################
+#
+#  Read-Write
+#
+###############################################################################
+
+function _write_fields(list::Array{Tuple{AnticNumberField, fmpz},1}, filename::String)
+  f=open(filename, "a")
+  for L in list
+    x=([coeff(L[1].pol, i) for i=0:degree(L[1].pol)], L[2])
+    Base.write(f, "$x\n")
+  end
+  close(f)
+end
+
+function _read_fields(filename::String)
+  f=open(filename, "r")
+  Qx,x=PolynomialRing(FlintQQ,"x")
+  pols=Tuple{fmpq_poly, fmpz}[]
+  for s in eachline(f)
+    a=eval(parse(s))
+	  push!(pols,(Qx(a[1]), a[2]))
+	end
+	close(f)
+	return pols
+end
