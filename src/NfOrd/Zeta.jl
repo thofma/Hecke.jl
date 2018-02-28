@@ -154,6 +154,34 @@ function _find_threshold(f, C, ste, decreasing::Bool, Tc = BigFloat)
   return x0::Tc
 end
 
+  function _comp_summand(R, p::fmpz, m::Int, aa::arb)
+    logp = log(R(p))
+
+    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
+
+    pm2inv = inv(pm2)
+
+    pro = logp * pm2inv
+
+    # now p^(m/2) m log(p)
+
+    pro2 = logp*pm2
+    pro2 = pro2*m
+    
+    # Now the inverse
+    inv2 = inv(pro2)
+
+    # Now sqrt(x)log(X)/p^(m/2)*m*p 
+    pro3 = aa*inv2
+    pro3 = pro3 - 1
+
+    return pro*pro3
+  end
+
+  function _comp_summand(R, p::Int, m::Int, aa::arb)
+    return _comp_summand(R, fmpz(p), m, aa)
+  end
+ 
 # Computing the g_K(X) term of Belabas-Friedmann
 function _term_bf(O::NfOrd, B::Int, R::ArbField)
 
@@ -183,34 +211,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
   prodx9 = logxx09 * sqrtxx09
 
   # small helper function (is this fast?)
-  function comp_summand(p::fmpz, m::Int, aa::arb)
-    logp = log(R(p))
-
-    pm2 = R(p)^(R(FlintZZ(m)//FlintZZ(2)))
-
-    pm2inv = inv(pm2)
-
-    pro = logp * pm2inv
-
-    # now p^(m/2) m log(p)
-
-    pro2 = logp*pm2
-    pro2 = pro2*m
-    
-    # Now the inverse
-    inv2 = inv(pro2)
-
-    # Now sqrt(x)log(X)/p^(m/2)*m*p 
-    pro3 = aa*inv2
-    pro3 = pro3 - 1
-
-    return pro*pro3
-  end
-
-  function comp_summand(p::Int, m::Int, aa::arb)
-    return comp_summand(fmpz(p), m, aa)
-  end
-   
+  
   while p < xx0
 
     max_exp = _max_power_in(p, xx0)
@@ -218,7 +219,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
     #println("maximal power is $max_exp")
 
     for m in 1:max_exp
-      summand = comp_summand(p, m, prodx)
+      summand = _comp_summand(R, p, m, prodx)
       summ = summ - summand
     end
 
@@ -232,7 +233,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
         max_exp = _max_power_in(Pnorm, xx0)
       
         for m in 1:max_exp
-          summand = comp_summand(Pnorm, m, prodx)
+          summand = _comp_summand(R, Pnorm, m, prodx)
           summ = summ + summand
         end
       end
@@ -243,7 +244,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
       max_exp = _max_power_in(p, xx09)
 
       for m in 1:max_exp
-        summand  = comp_summand(p, m, prodx9)
+        summand  = _comp_summand(R, p, m, prodx9)
         summ = summ + summand
       end
 
@@ -253,7 +254,7 @@ function _term_bf(O::NfOrd, B::Int, R::ArbField)
           max_exp = _max_power_in(Pnorm, xx09)
           
           for m in 1:max_exp
-            summand = comp_summand(Pnorm, m, prodx9)
+            summand = _comp_summand(R, Pnorm, m, prodx9)
             summ = summ - summand
           end
         end
