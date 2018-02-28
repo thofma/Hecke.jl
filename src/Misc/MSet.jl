@@ -80,4 +80,12 @@ const ∪ = union
 union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
 union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
 
+function multiplicities(s::MSet)
+  return values(s.dict)
+end
+
+function Base.unique(s::MSet)
+  return collect(keys(s.dict))
+end
+
 #... to be completed from base/Set.jl ...
