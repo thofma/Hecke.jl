@@ -1102,6 +1102,16 @@ end
 # at small precision and can thus compute (small) valuation at the effective
 # cost of an mod(nmod_poly, nmod_poly) operation.
 # Isn't it nice?
+function valuation(a::UInt, b::UInt)
+  return ccall((:n_remove, :libflint), Int, (Ref{UInt}, UInt), a, b)
+end
+
+#=
+function valuation(a::UInt, b::UInt, bi::Cdouble)
+  return ccall((:n_remove2_precomp, :libflint), Int, (Ref{UInt}, UInt, Cdouble), a, b, bi)
+end
+=#
+
 function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
@@ -1117,15 +1127,16 @@ function val_func_no_index_small(p::NfOrdIdl)
   Sx = PolynomialRing(ResidueRing(FlintZZ, UInt(P)^k, cached=false), cached=false)[1]
   g = Sx(g)
   h = Sx()
+  uP = UInt(P)
   return function(x::nf_elem)
     d = denominator(x)
     nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
     h = rem!(h, h, g)
-    c = lift(FlintZZ, coeff(h, 0))
-    v = c==0 ? typemax(Int) : valuation(c, P)
+    c = Nemo.coeff_raw(h, 0)
+    v = c==0 ? typemax(Int) : valuation(c, uP)
     for i=1:degree(h)
-      c = lift(FlintZZ, coeff(h, i))
-      v = min(v, c==0 ? typemax(Int) : valuation(c, P))
+      c = Nemo.coeff_raw(h, i)
+      v = min(v, c==0 ? typemax(Int) : valuation(c, uP))
     end
     return v-valuation(d, P)
   end
@@ -1143,9 +1154,7 @@ function val_func_index(p::NfOrdIdl)
   P = p.gen_one
   return function(x::nf_elem)
     v = 0
-    d = denominator(x, O)
-    x *= d
-    x_mat = matrix(FlintZZ, 1, degree(O), elem_in_basis(O(x)))
+    d, x_mat = integral_split(x, O)
     Nemo.mul!(x_mat, x_mat, M)
     while gcd(content(x_mat), P) == P  # should divide and test in place
       divexact!(x_mat, x_mat, P)
