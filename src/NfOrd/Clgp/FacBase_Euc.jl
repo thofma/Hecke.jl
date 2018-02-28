@@ -114,7 +114,7 @@ function factor(c::FactorBase{T}, a::T) where T
   return f
 end
 
-function factor(c::FactorBase{fmpz}, a::fmpq) where T  ## fractions over T
+function factor(c::FactorBase{fmpz}, a::fmpq) 
   @assert a != 0
   a = deepcopy(a)
   f = Dict{fmpz, Int}()
