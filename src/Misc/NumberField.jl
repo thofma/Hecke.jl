@@ -1497,9 +1497,9 @@ doc"""
 """
 function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   K = parent(x)
-  cc = _get_nf_conjugate_data_arb(K)
-  r1 = length(cc.real_roots)
-  r2 = length(cc.complex_roots)
+  c = conjugate_data_arb_2(K, abs_tol)
+  r1 = length(c.real_roots)
+  r2 = length(c.complex_roots)
   d = r1 + 2*r2
   target_tol = abs_tol
   #abs_tol = Int(ceil(abs_tol * 1.3))
