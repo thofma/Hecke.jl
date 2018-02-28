@@ -27,8 +27,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
                                         ## c is NOT a copy, so don't change.
-  l, t1 = lll_with_transform(basis_mat(A))
-  b = FakeFmpqMat(l)*basis_mat(order(A))
+  l, t1 = lll_with_transform(basis_mat(A, Val{false}))
+  b = FakeFmpqMat(l)*basis_mat(order(A), Val{false})
 
   n = degree(order(A))
 
