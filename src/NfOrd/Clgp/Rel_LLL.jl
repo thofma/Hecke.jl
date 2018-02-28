@@ -12,28 +12,31 @@ mutable struct SmallLLLRelationsCtx
   end
 end
 
-function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
+function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
                 O::NfOrd; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   return class_group_small_lll_elements_relation_start(clg, hecke.ideal(O, parent(basis_mat(O).num)(1)), prec = prec)
 end
 
-function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
+function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
                 A::NfOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0)
   global _start
   K = nf(order(A))
   @v_do :ClassGroup_time 2 rt = time_ns()
+
+  local I, S, bd, nL
+
   while true
     try
-      L, T = lll(A, prec = prec)
+      L, Tr = lll(A, prec = prec)
       @v_do :ClassGroup_time 2 _start += time_ns()-rt
       I = SmallLLLRelationsCtx()
-      S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
-      bd = abs(discriminant(order(A)))*norm(A)^2
-      bd = root(bd, degree(K))
-      bd *= denominator(L)
-      nL = numerator(L)
+      S::FakeFmpqMat = FakeFmpqMat(Tr)*basis_mat(A)*basis_mat(order(A))
+      bd::fmpz = abs(discriminant(order(A)))*norm(A)^2
+      bd = root(bd, degree(K))::fmpz
+      bd *= denominator(L)::fmpz
+      nL::fmpz_mat = numerator(L)
       f = find(i-> nL[i,i] < bd, 1:degree(K))
       m = div(degree(K), 4)
       if m < 2
@@ -54,7 +57,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx,
       if isa(e, LowPrecisionLLL)
         print_with_color(:red, "prec too low in LLL,")
         prec = Int(ceil(1.2*prec))
-        println(" increasing to ", prec)
+#        println(" increasing to ", prec)
         if prec > 1000
           error("2:too much prec")
         end

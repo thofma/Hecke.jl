@@ -127,17 +127,17 @@ _base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_tol::Int)
   if haskey(A.conj_log_cache, abs_tol)
     if haskey(A.conj_log_cache[abs_tol], a)
-      return A.conj_log_cache[abs_tol][a]
+      return A.conj_log_cache[abs_tol][a]::Array{arb, 1}
     else
       z = conjugates_arb_log(a, abs_tol)
       A.conj_log_cache[abs_tol][a] = z
-      return z
+      return z::Array{arb, 1}
     end
   else
     A.conj_log_cache[abs_tol] = Dict{nf_elem, arb}()
     z = conjugates_arb_log(a, abs_tol)
     A.conj_log_cache[abs_tol][a] = z
-    return z
+    return z::Array{arb, 1}
   end
 end
 
@@ -181,7 +181,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
       z = _conjugates_arb_log(parent(x), a, abs_tol)
       if first
         for j in 1:d
-          res[j] = parent(z[j])()
+          res[j] = parent(z[j])()::arb
           muleq!(res[j], z[j], e)
           if !radiuslttwopower(res[j], -target_tol) || !isfinite(res[j])
             prec_too_low = true

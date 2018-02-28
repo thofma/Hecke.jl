@@ -93,11 +93,11 @@ include("Clgp/Rel_Schmettow.jl")
 #
 ################################################################################
 
-function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large = 1000, redo::Bool = false)
+function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false)
 
   if !redo
     try
-      c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx
+      c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx{SMat{fmpz}}
       return c
     end
   end
@@ -107,7 +107,8 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large = 100
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false)
+  c = class_group_init(O, bound, complete = false)::ClassGrpCtx{SMat{fmpz}}
+
   _set_ClassGrpCtx_of_order(O, c)
 
   c.B2 = bound * large
@@ -302,7 +303,7 @@ end
 
 doc"""
 ***
-    class_group(O::NfOrd; bound = -1, method = 3, redo = false) -> GrpAbFinGen, Map
+    class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
 > Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
 > The inverse of the map is the projection onto the group of ideals modulo the 
@@ -310,8 +311,8 @@ doc"""
 > \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
 > \texttt{bound}, when given, is the bound for the factor base.
 """
-function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1)
-  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method)
+function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1, large::Int = 1000)
+  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large)
   @assert b==1
   return class_group(c)
 end

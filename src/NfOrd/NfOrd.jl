@@ -459,6 +459,15 @@ function denominator(a::nf_elem, O::NfOrd)
   return deepcopy(M.den)
 end
 
+function integral_split(a::nf_elem, O::NfOrd)
+  assure_has_basis_mat_inv(O)
+  M = O.tcontain
+  elem_to_mat_row!(M.num, 1, M.den, a)
+  M = mul!(M, M, O.basis_mat_inv)
+  return M.den, M.num
+end
+
+
 ##################################3#############################################
 #
 #  Norm change constant

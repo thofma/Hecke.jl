@@ -50,7 +50,7 @@ function scaled_log_matrix(u::Array{T, 1}, prec::Int = 32) where T
 
   r,s = signature(_base_ring(u[1]))
   A = zero_matrix(FlintZZ, length(u), r + s)
-  pr = max(prec, maximum([nbits(maxabs_exp(U))+nbits(length(U.fac)) for U = u]))
+  pr = max(prec, maximum(nbits(maxabs_exp(U))+nbits(length(U.fac)) for U = u))
   @vprint :UnitGroup 1 "starting prec in scaled_log_matrix: $prec\n"
 
   for i in 1:length(u)
