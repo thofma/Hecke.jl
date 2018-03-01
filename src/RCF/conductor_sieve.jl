@@ -251,11 +251,12 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   #remove primes that can be wildly ramified or
   #that are ramified in the base field
   for x in coprime_to
-    t=Int(x)
+    el=Int(x)
+    t=el
     while t<= n
-      sqf[t]=false
-      primes[t]=false
-      t+=Int(x)
+      @inbounds sqf[t]=false
+      @inbounds primes[t]=false
+      t+=el
     end
   end
   
@@ -266,20 +267,20 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
     if gcd(2^dt[1][1]-1, deg)==1
       j=2
       while j<=n
-        sqf[j]=false
-        primes[j]=false
+        @inbounds sqf[j]=false
+        @inbounds primes[j]=false
         j+=2
       end
     else 
       i=2
       s=4
       while s<=n
-        primes[s]=false
+        @inbounds primes[s]=false
         s+=2
       end
       s=4
       while s<=n
-        sqf[s]=false
+        @inbounds sqf[s]=false
         s+=4
       end
     end
@@ -290,24 +291,24 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
     if primes[i]
       dt=prime_decomposition_type(O,i)
       if gcd(deg,i^dt[1][1]-1)==1
-        primes[i]=false
-        sqf[i]=false
+        @inbounds primes[i]=false
+        @inbounds sqf[i]=false
         j=i
         while j<= n
-         primes[j]=false
-         sqf[j]=false
+         @inbounds primes[j]=false
+         @inbounds sqf[j]=false
          j+=i
         end
       else 
         j=i
         while j<= n
-          primes[j]=false
+          @inbounds primes[j]=false
           j+=i
         end
         j=i^2
         t=2*j
         while j<= n
-          sqf[j]=false
+          @inbounds sqf[j]=false
           j+=t
         end
       end
@@ -318,10 +319,10 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
     if primes[i]
       dt=prime_decomposition_type(O,i)
       if gcd(deg,i^dt[1][1]-1)==1
-        sqf[i]=false
+        @inbounds sqf[i]=false
         j=i
         while j<= n
-         sqf[j]=false
+         @inbounds sqf[j]=false
          j+=i
         end
       end
@@ -332,7 +333,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Arra
   if degree(O)==1
     i=2
     while i<=length(sqf)
-      sqf[i]=false
+      @inbounds sqf[i]=false
       i+=4
     end
     
@@ -389,10 +390,10 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   l=length(list)
   for (el,norm) in extra_list
     for i=1:l
-      if list[i]^d*norm>bound
+      if (list[i]^d)*norm>bound
         continue
       end
-      push!(final_list, (list[i]*el, list[i]^d*norm))
+      push!(final_list, (list[i]*el, (list[i]^d)*norm))
     end
   end
   
@@ -423,8 +424,13 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   #
   wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(),1)]
   for q in wild_ram
-    lp=prime_decomposition(O,q)
+    lp=prime_decomposition(O,Int(q))
+    fq=divexact(d,lp[1][2]*length(lp))
     l=length(wild_list)
+    sq=fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
+    if isprime(n)
+      bound_max_exp=div(fmpz(flog(bound, sq)), divexact(n,q)*fmpz(q-1))
+    else
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
@@ -436,14 +442,13 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
       To find ap, it is enough to compute a logarithm.
     =#
-    sq=fmpz(q)^(divexact(degree(O),lp[1][2]))
-    fq=divexact(degree(O),length(lp)*lp[1][2])
-    bound_max_ap=flog(bound,sq) #bound on ap
-    bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
-    nisc= gcd(q^fq-1,n)!=1
+      bound_max_ap=flog(bound,sq) #bound on ap
+      bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
+    end
+    nisc= gcd(q^(fq)-1,n)!=1
     if nisc
       for s=1:l
-        nn=sq*wild_list[s][3]
+        nn=sq^((min(wild_ram)-1)*(divexact(n, min(wild_ram))))*wild_list[s][3]
         if nn>bound
           continue
         end
@@ -455,7 +460,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
       for j=1:length(lp)
         d1[lp[j][1]]=i
       end
-      nq= sq^i
+      nq= sq^(i*n)
       for s=1:l
         nn=nq*wild_list[s][3]
         if nn>bound
@@ -472,7 +477,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   end
   
   #the final list
-  final_list=Set(Tuple{Int, Dict{NfOrdIdl, Int}}[])
+  final_list=Tuple{Int, Dict{NfOrdIdl, Int}}[]
   for (el, nm) in list
     for (q,d,nm2) in wild_list
       if nm*nm2 > bound
