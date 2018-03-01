@@ -265,7 +265,7 @@ function parents{T <:Any}(g::Graph{T}, c::T)
   return [a for (a,b) = keys(g.e) if b==c]
 end
 
-function parent_with_counts{T <:Any}(g::Graph{T}, c::T) 
+function parents_with_counts{T <:Any}(g::Graph{T}, c::T) 
   return [(a, d) for ((a,b), d) = g.e if b==c]
 end    
 
