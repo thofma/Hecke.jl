@@ -244,6 +244,13 @@ function (K::NfRel{T})(a::T) where T
   return z
 end
 
+function (K::NfRel{T})(a::Vector{T}) where T
+  @assert length(a) <= degree(K)
+  z = NfRelElem{T}(parent(K.pol)(a))
+  z.parent = K
+  return z
+end
+
 (K::NfRel)(a::Integer) = K(parent(K.pol)(a))
 
 (K::NfRel)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol)(a))

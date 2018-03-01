@@ -2647,8 +2647,8 @@ function roots(f::fmpq_poly, R::Nemo.NmodRing)
   return roots(fpp)
 end
 
-function roots(f::fq_nmod_poly) # should be in Nemo and made available for all finite
-                                # fields I guess.
+function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo and
+                                    # made available for all finite fields I guess.
   q = size(base_ring(f))
   x = gen(parent(f))
   if degree(f) < q
@@ -2658,7 +2658,7 @@ function roots(f::fq_nmod_poly) # should be in Nemo and made available for all f
   end
   f = gcd(f, x)
   l = factor(f).fac
-  return fq_nmod[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
+  return elem_type(base_ring(f))[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
 end
 
 function roots(f::PolyElem)

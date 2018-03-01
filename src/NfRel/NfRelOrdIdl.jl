@@ -22,6 +22,9 @@ mutable struct NfRelOrdIdl{T, S}
                            # 2 known to be not prime
   splitting_type::Tuple{Int, Int}
 
+  minimum
+  non_index_div_poly::fq_poly # only used if the ideal is a prime ideal not dividing the index
+
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
     z.order = O
@@ -813,13 +816,23 @@ end
 
 ################################################################################
 #
+#  Index divisors
+#
+################################################################################
+
+function isindex_divisor(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  f = nf(O).pol
+  return valuation(discriminant(f), p) != valuation(discriminant(O), p)
+end
+
+################################################################################
+#
 #  Prime decomposition
 #
 ################################################################################
 
 function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
-  f = nf(O).pol
-  if valuation(discriminant(f), p) != valuation(discriminant(O), p)
+  if isindex_divisor(O, p)
     return prime_dec_index(O, p)
   end
 
@@ -847,6 +860,8 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     P = ideal(O, L(1), g(a), frac_ideal(OK, p), ideal(OK, K(1)))
     P.is_prime = 1
     P.splitting_type = (e, degree(q))
+    P.minimum = deepcopy(p)
+    P.non_index_div_poly = q
     push!(result, (P, e))
   end
   return result
@@ -890,6 +905,7 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     P.is_prime = 1
     e = valuation(pO, P)
     P.splitting_type = (e, f)
+    P.minimum = deepcopy(p)
     push!(result, (P, e))
   end
 
@@ -964,4 +980,34 @@ function factor(A::NfRelOrdIdl{T, S}) where {T, S}
     end
   end
   return result
+end
+
+################################################################################
+#
+#  Minimum
+#
+################################################################################
+
+function minimum(A::NfRelOrdIdl{T, S}, copy::Type{Val{V}} = Val{true}) where {T, S, V}
+  if A.is_prime != 1
+    error("Not implemented yet.")
+  end
+  if copy == Val{true}
+    return deepcopy(A.minimum)
+  else
+    return A.minimum
+  end
+end
+
+################################################################################
+#
+#  Order modulo prime ideal
+#
+################################################################################
+
+function ResidueField(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
+  @assert order(P) == O
+  @assert P.is_prime == 1
+  mF = NfRelOrdToFqMor(O, P)
+  return codomain(mF), mF
 end
