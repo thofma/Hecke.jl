@@ -5,7 +5,7 @@ function _lll_gram(A::NfOrdIdl)
   @assert det(g) != 0
   @assert isposdef(g)
   l, t = lll_gram_with_transform(g)
-  return FakeFmpqMat(l, fmpz(1)), t
+  return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
 
 function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
@@ -14,6 +14,20 @@ function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::
   K = nf(order(A))
   q = nf_elem[elem_from_mat_row(K, numerator(S), i, denominator(S)) for i=1:degree(K)]
   return q
+end
+
+function cmpindex(A::fmpz_mat, i::Int, j::Int, b::fmpz)
+  a = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i-1, j-1)
+  return ccall((:fmpz_cmp, :libflint), Int32, (Ptr{fmpz}, Ref{fmpz}), a, b)
+end
+
+function prod_diag(A::fmpz_mat)
+  a = fmpz()
+  for i=1:rows(A)
+    b = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i-1, i-1)
+    ccall((:fmpz_mul, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
+  end
+  return a
 end
 
 function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
@@ -38,8 +52,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
   end
 
-  d = rt_c.cache_z1
-  g = rt_c.cache_z2
+  d::fmpz_mat = rt_c.cache_z1
+  g::fmpz_mat = rt_c.cache_z2
 
   sv = fmpz(0)
   if !iszero(v)
@@ -51,10 +65,10 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
 
   round_scale!(d, c, prec)
-  ccall((:fmpz_mat_mul, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat},  Ptr{fmpz_mat}), &g, &(b.num), &d)
+  ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
   den = b.den
 
-  ccall((:fmpz_mat_gram, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}), &d, &g)
+  ccall((:fmpz_mat_gram, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
   shift!(d, -prec)
   prec = div(prec, 2)
   shift!(d, -prec)  #TODO: remove?
@@ -65,8 +79,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
 
-  ccall((:fmpz_mat_one, :libflint), Void, (Ptr{fmpz_mat}, ), &g)
-  ccall((:fmpz_lll, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{Nemo.lll_ctx}), &d, &g, &ctx)
+  ccall((:fmpz_mat_one, :libflint), Void, (Ref{fmpz_mat}, ), g)
+  ccall((:fmpz_lll, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
@@ -86,17 +100,15 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
   n = rows(l)
   disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * fmpz(2)^(2*sv)
-  d = root(disc, n)+1
-  d *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
+  di = root(disc, n)+1
+  di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
   pr = fmpz(1)
-  if l[1,1] > d 
+  if cmpindex(l, 1, 1, di) > 0 
     @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
-    @v_do :ClassGroup 3 println("bound is ", d, " value at ", 1, " is ", l[1,1]); 
+    @v_do :ClassGroup 3 println("bound is ", di, " value at ", 1, " is ", l[1,1]); 
     throw(LowPrecisionLLL())
   end
-  for i=1:n
-    pr = pr*l[i,i]
-  end  
+  pr = prod_diag(l)
   if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
     @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
     @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));
