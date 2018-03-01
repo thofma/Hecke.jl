@@ -437,7 +437,7 @@ mutable struct FakeFmpqMat
     if !simplified
       simplify_content!(z)
     end
-    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
+#    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
 
@@ -448,7 +448,7 @@ mutable struct FakeFmpqMat
     z.rows = rows(x[1])
     z.cols = cols(x[1])
     simplify_content!(z)
-    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
+#    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
 
@@ -458,7 +458,7 @@ mutable struct FakeFmpqMat
     z.den = fmpz(1)
     z.rows = rows(x)
     z.cols = cols(x)
-    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
+#    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
 
@@ -478,7 +478,7 @@ mutable struct FakeFmpqMat
         n[i, j] = FlintZZ(d*x[i, j])
       end
     end
-    z.parent = FakeFmpqMatSpace(rows(x), cols(x))
+#    z.parent = FakeFmpqMatSpace(rows(x), cols(x))
     z.rows = rows(x)
     z.cols = cols(x)
     z.num = n

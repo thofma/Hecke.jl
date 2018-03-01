@@ -58,13 +58,12 @@ end
 ################################################################################
 
 function -(x::FakeFmpqMat)
-  z = parent(x)()
-  z.num = -x.num
-  return z
+  return FakeFmpqMat(-x.num, x.den, true)
 end
 
 function inv(x::FakeFmpqMat)
-  i, d_i = pseudo_inv(x.num)
+  i, d_i = pseudo_inv(x.num) 
+  #TODO gcd d_i and x.den 1st!!!
   i *= x.den
   z = FakeFmpqMat(i,d_i)
   simplify_content!(z)
@@ -81,7 +80,6 @@ function +(x::FakeFmpqMat, y::FakeFmpqMat)
   t = y.den*x.num + x.den*y.num
   d = x.den*y.den
   z = FakeFmpqMat(t,d)
-  simplify_content!(z)
   return z
 end
 
@@ -89,7 +87,6 @@ function *(x::FakeFmpqMat, y::FakeFmpqMat)
   t = x.num*y.num
   d = x.den * y.den
   z = FakeFmpqMat(t, d)
-  simplify_content!(z)
   return z
 end
 
@@ -173,7 +170,9 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::ObjectIdDict)
   z.den = Base.deepcopy_internal(x.den, dict)
   z.rows = rows(x)
   z.cols = cols(x)
-  z.parent = FakeFmpqMatSpace(z.rows, z.cols)
+  if isdefined(x, :parent)
+    z.parent = x.parent
+  end
   return z
 end
 
