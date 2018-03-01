@@ -1729,8 +1729,6 @@ mutable struct FqGModule <: GModule
   G::Array{fq_nmod_mat,1}
   dim::Int
   isirreducible::Bool
-  peakword_elem::Array{Int,1}
-  peakword_poly::PolyElem
   dim_spl_fld::Int
   
   function FqGModule(G::Array{fq_nmod_mat,1})

@@ -445,10 +445,12 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
       bound_max_ap=flog(bound,sq) #bound on ap
       bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
     end
-    nisc= gcd(q^(fq)-1,n)!=1
-    if nisc
+    nisc= gcd(q^(fq)-1,n)
+    if nisc != 1
+      fnisc=min(keys(factor(nisc).fac))
+      nq=sq^((fnisc-1)*(divexact(n, fnisc)))
       for s=1:l
-        nn=sq^((min(wild_ram)-1)*(divexact(n, min(wild_ram))))*wild_list[s][3]
+        nn=nq*wild_list[s][3]
         if nn>bound
           continue
         end
@@ -460,14 +462,14 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
       for j=1:length(lp)
         d1[lp[j][1]]=i
       end
-      nq= sq^(i*n)
+      nq= sq^(i*(q-1)*divexact(n,q))
       for s=1:l
         nn=nq*wild_list[s][3]
         if nn>bound
           continue
         end
         d2=merge(max, d1, wild_list[s][2]) 
-        if nisc
+        if nisc!=1
           push!(wild_list, (q*wild_list[s][1], d2, nn))
         else
           push!(wild_list, (wild_list[s][1], d2, nn))

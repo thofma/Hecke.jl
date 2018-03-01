@@ -15,6 +15,11 @@
     O=maximal_order(K)
     l=Hecke.abelian_normal_extensions(O,[2,2], fmpz(10)^4)
     @test length(l)==47
+    l1=collect(Hecke.C22_extensions(10^4))
+    @test length(l1)==47
+    
+    l=Hecke.abelian_normal_extensions(O,[4], fmpz(10)^3)
+    @test length(l)==1
   end
 
 end
