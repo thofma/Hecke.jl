@@ -44,7 +44,7 @@ end
 function iszero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
   for j in 1:cols(M)
-    t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &M, i - 1, j - 1)
+    t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), M, i - 1, j - 1)
     if t != zero
       return false
     end
@@ -91,12 +91,12 @@ end
 
 function divexact!(a::fmpz_mat, b::fmpz_mat, d::fmpz)
   ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Void,
-               (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &a, &a, &d)
+               (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, a, d)
 end
 
 function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
   ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Void, 
-                  (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &a, &b, &c)
+                  (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
 end                  
 
 #computes (hopefully) the hnf for vcat(a*I, m) and returns ONLY the
@@ -108,7 +108,7 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   c = vcat(parent(a)(m), a)
   n = cols(a)
   w = view(c, n+1, 1, 2*n, n)
-  ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Void, (Ptr{fmpz_mat}, Ptr{fmpz_mat}, Ptr{fmpz}), &w, &w, &m)
+  ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), w, w, m)
   if shape == :lowerleft
     c = _hnf(c, shape)
     return sub(c, n+1:2*n, 1:n)
@@ -156,7 +156,7 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
    (rows(x) < cols(x)) &&
                 error("Matrix must have at least as many rows as columns")
    ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Void,
-                (Ptr{fmpz_mat}, Ptr{fmpz}), &x, &d)
+                (Ref{fmpz_mat}, Ref{fmpz}), x, d)
    return x
 end
 
@@ -219,8 +219,8 @@ function _swaprows!(x::fmpz_mat)
     for i in 1:div(r,2)
       for j = 1:c
         # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, i - 1, j - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, i - 1, j - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
         ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
@@ -228,8 +228,8 @@ function _swaprows!(x::fmpz_mat)
     for i in 1:div(r-1,2)
       for j = 1:c
         # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, i - 1, j - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, i - 1, j - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
         ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
@@ -238,12 +238,12 @@ function _swaprows!(x::fmpz_mat)
 end
 
 function _swaprows!(x::fmpz_mat, i::Int, j::Int)
-  ccall((:_fmpz_mat_swap_rows, :libflint), Void, (Ptr{fmpz_mat}, Int, Int), &x, i-1, j-1)
+  ccall((:_fmpz_mat_swap_rows, :libflint), Void, (Ref{fmpz_mat}, Int, Int), x, i-1, j-1)
   nothing
 end
 
 function _swaprows!(x::nmod_mat, i::Int, j::Int)
-  ccall((:_nmod_mat_swap_rows, :libflint), Void, (Ptr{nmod_mat}, Int, Int), &x, i-1, j-1)
+  ccall((:_nmod_mat_swap_rows, :libflint), Void, (Ref{nmod_mat}, Int, Int), x, i-1, j-1)
   nothing
 end
   
@@ -260,8 +260,8 @@ function _swaprows!(x::nmod_mat)
     for i in 1:div(r,2)
       for j = 1:c
         # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, j - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, i - 1, j - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
         set_entry!(x, r - i + 1, j, s)
         set_entry!(x, i, j, t)
       end
@@ -270,8 +270,8 @@ function _swaprows!(x::nmod_mat)
     for i in 1:div(r-1,2)
       for j = 1:c
         # we swap x[i,j] <-> x[r-i+1,j]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, i - 1, j - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, (r - i + 1) - 1, j - 1)
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, i - 1, j - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
         set_entry!(x, i, j, t)
         set_entry!(x, r - i + 1, j, s)
       end
@@ -292,8 +292,8 @@ function _swapcols!(x::nmod_mat)
     for i in 1:div(c,2)
       for j = 1:r
         # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, i - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, i - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
         set_entry!(x, j, i, t)
         set_entry!(x, j, c - i + 1, s)
       end
@@ -302,8 +302,8 @@ function _swapcols!(x::nmod_mat)
     for i in 1:div(c-1,2)
       for j = 1:r
         # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, i - 1)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        s = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, i - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
         set_entry!(x, j, i, t)
         set_entry!(x, j, c - i + 1, s)
       end
@@ -324,8 +324,8 @@ function _swapcols!(x::fmpz_mat)
     for i in 1:div(c,2)
       for j = 1:r
         # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, i - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, i - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
         ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
@@ -333,8 +333,8 @@ function _swapcols!(x::fmpz_mat)
     for i in 1:div(c-1,2)
       for j = 1:r
         # swap x[j,i] <-> x[j,c-i+1]
-        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, i - 1)
-        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &x, j - 1, (c - i + 1 ) - 1)
+        s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, i - 1)
+        t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
         ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
@@ -411,54 +411,54 @@ end
 ################################################################################
 
 function maxabs(a::fmpz_mat)
-  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
+  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, i-1, j-1)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
       if ccall((:fmpz_cmpabs, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
         m = z
       end
     end
   end
   r = fmpz()
-  ccall((:fmpz_abs, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
+  ccall((:fmpz_abs, :libflint), Void, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
 function max(a::fmpz_mat)  #TODO should be maximum in julia
-  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
+  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, i-1, j-1)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
       if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
         m = z
       end
     end
   end
   r = fmpz()
-  ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
+  ccall((:fmpz_set, :libflint), Void, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
 function min(a::fmpz_mat)  #TODO: should be minimum in julia
-  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, 0,0)
+  m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &a, i-1, j-1)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
       if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) > 0
         m = z
       end
     end
   end
   r = fmpz()
-  ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &r, m)
+  ccall((:fmpz_set, :libflint), Void, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
 function lift_unsigned(a::nmod_mat)
   z = zero_matrix(FlintZZ, rows(a), cols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Void,
-          (Ptr{fmpz_mat}, Ptr{nmod_mat}), &z, &a)
+          (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
   return z
 end
 
@@ -505,7 +505,7 @@ end
 
 function _right_kernel(x::nmod_mat)
   z = zero_matrix(base_ring(x), cols(x), max(rows(x),cols(x)))
-  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &z, &x)
+  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), z, x)
   return z,n
 end
 
@@ -579,7 +579,7 @@ function _rref(a::Generic.Mat{Generic.Res{fmpz}})
   end
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
+  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
   return r, parent(a,false)(b)
 end
 
@@ -639,7 +639,7 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   end
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ptr{fmpz_mat}, Ptr{fmpz}), C_NULL, &b, &m)
+  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
   pivots = Array{Int}(r)
   nonpivots = Array{Int}(cols(b) - r)
   X = zero_matrixSpace(FlintZZ,cols(b),cols(b))
@@ -698,9 +698,9 @@ function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
   for k in 0:rows(B) - 1
     for l in 0:cols(B) - 1
       d = ccall((:fmpz_mat_entry, :libflint),
-                Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &B, k, l)
+                Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), B, k, l)
       t = ccall((:fmpz_mat_entry, :libflint),
-                Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &A, i - 1 + k, j - 1 + l)
+                Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1 + k, j - 1 + l)
       ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, d)
     end
   end
@@ -724,12 +724,12 @@ end
 #scales the i-th column of a by 2^d[1,i]
 function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
   s = size(a)
-  R = RealRing()
-  tmp_mpz = R.z1
+  R = RealRing()::_RealRing
+  tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
     for j = 1:s[2]
-      e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}), &tmp_mpz, &a[i,j])
-      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ptr{BigFloat}, Ptr{BigInt}, Clong, Int32), &a[i,j], &tmp_mpz, e+Clong(Int(d[1,j])), __get_rounding_mode())
+      e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i,j])
+      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i,j], tmp_mpz, e+Clong(Int(d[1,j])), __get_rounding_mode())
     end
   end
 end
@@ -743,26 +743,28 @@ end
  
 function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
   s = size(a)
-  R = RealRing()
+  R = RealRing()::_RealRing
+
+  local tmp_mpz::BigInt, tmp_fmpz::fmpz
   tmp_mpz = R.z1
   tmp_fmpz = R.zz1
   tmp_mpfr = deepcopy(a[1,1])  #cannot use the R.?? tmp variable as it may/will
                                #have the wrong precision
 
+  rd = __get_rounding_mode()                             
   for i = 1:s[1]
     for j = 1:s[2]
       e = a[i,j].exp
       a[i,j].exp += l
-      ccall((:mpfr_round, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &tmp_mpfr, &a[i,j], __get_rounding_mode())
+      ccall((:mpfr_round, :libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i,j], rd)
       a[i,j].exp = e
-      f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ptr{BigInt}, Ptr{BigFloat}),
-        &tmp_mpz, &tmp_mpfr)
-      ccall((:fmpz_set_mpz, :libflint), Void, (Ptr{fmpz}, Ptr{BigInt}),
-        &tmp_fmpz, &tmp_mpz)
+      f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
+        tmp_mpz, tmp_mpfr)
+      ccall((:fmpz_set_mpz, :libflint), Void, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
       if f > 0  
-        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, UInt), &tmp_fmpz, &tmp_fmpz, f)
+        ccall((:fmpz_mul_2exp, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, UInt), &tmp_fmpz, &tmp_fmpz, -f);
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
       end
       setindex!(b, tmp_fmpz, i, j)
     end
@@ -773,7 +775,7 @@ end
 function shift!(g::fmpz_mat, l::Int)
   for i=1:rows(g)
     for j=1:cols(g)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &g, i-1, j-1)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), g, i-1, j-1)
       if l > 0
         ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
       else
@@ -793,8 +795,8 @@ doc"""
 function mod!(M::fmpz_mat, p::fmpz)
   for i=1:rows(M)
     for j=1:cols(M)
-      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &M, i - 1, j - 1)
-      ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), z, z, &p)
+      z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
+      ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
     end
   end
   nothing
@@ -981,7 +983,7 @@ function Base.nullspace(M::nmod_mat)
   R = base_ring(M)
   if isprime(fmpz(modulus(R)))
     k = zero_matrix(R, cols(M), cols(M))
-    n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ptr{nmod_mat}, Ptr{nmod_mat}), &k, &M)
+    n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
     return (k, n)
   end
 

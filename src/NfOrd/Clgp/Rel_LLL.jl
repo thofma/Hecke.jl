@@ -23,30 +23,33 @@ function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
                 limit::Int = 0)
   global _start
   K = nf(order(A))
+  local rt::UInt
   @v_do :ClassGroup_time 2 rt = time_ns()
 
-  local I, S, bd, nL
+  local I, S, bd
 
   while true
     try
-      L, Tr = lll(A, prec = prec)
+      L::FakeFmpqMat, Tr::fmpz_mat = lll(A, prec = prec)
       @v_do :ClassGroup_time 2 _start += time_ns()-rt
       I = SmallLLLRelationsCtx()
-      S::FakeFmpqMat = FakeFmpqMat(Tr)*basis_mat(A)*basis_mat(order(A))
+      S::FakeFmpqMat = FakeFmpqMat(Tr)*basis_mat(A, Val{false})*basis_mat(order(A), Val{false})
       bd::fmpz = abs(discriminant(order(A)))*norm(A)^2
       bd = root(bd, degree(K))::fmpz
-      bd *= denominator(L)::fmpz
-      nL::fmpz_mat = numerator(L)
-      f = find(i-> nL[i,i] < bd, 1:degree(K))
+      bd *= L.den
+      f = find(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
       m = div(degree(K), 4)
       if m < 2
         m = degree(K)
       end
       while length(f) < m 
-        f = find(i-> nL[i,i] < bd, 1:degree(K))
+        f = find(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
         bd *= 2
       end
-      I.b = nf_elem[elem_from_mat_row(K, numerator(S), i, denominator(S)) for i=f]
+      I.b = nf_elem[]
+      for i=f
+        push!(I.b, elem_from_mat_row(K, S.num, i, S.den))
+      end
       #println([Float64(numerator(L)[i,i]//denominator(L)*1.0) for i=1:degree(K)])
       #now select a subset that can yield "small" relations, where
       #small means of effective norm <= sqrt(disc)
