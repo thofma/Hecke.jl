@@ -165,7 +165,7 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
         end
         val=valuation(act_el,p)
         act_el=O(act_el*(anti_uni^val),false)
-        el[i]*= mQ(O(act_el))^k
+        el[i]*= mQ(act_el)^k
       end
     end
     return [mQ\el[i] for i=1:length(el)], (Q,mQ)
@@ -345,7 +345,7 @@ function carlos_units(O::NfOrd)
         t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
         if !Hecke.haspreimage(mu, t)[1]
           push!(s, t)
-          push!(g, O(a))
+          push!(g, O(a,false))
           u, mu = sub(S, s, false)
           if order(u) == order(S)
             break
@@ -453,7 +453,7 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
             t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
             if !Hecke.haspreimage(mu, t)[1]
               push!(s, t)
-              push!(g, O(a))
+              push!(g, O(a, false))
               u, mu = sub(S, s, false)
               if order(u) == order(S)
                 break
@@ -1497,18 +1497,18 @@ function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl)
   if I.is_principal==1
     if isdefined(I, :princ_gen)
       y=K(I.princ_gen)
-      y=O(phi(y))
+      y=O(phi(y), false)
       return ideal(O,y)
     else
       y=K(I.gen_two)
-      y=O(phi(y))
+      y=O(phi(y), false)
       J=ideal(O,I.gen_one,y)
       J.is_principal=1
       return J
     end
   else
     y=K(I.gen_two)
-    y=O(phi(y))
+    y=O(phi(y), false)
     return ideal(O,I.gen_one,y)
   end
 end
