@@ -1755,6 +1755,40 @@ function _from_matrix_to_listlist(M::MatElem)
   
 end
 
+################################################################################
+#
+#  Valuation bounds for discriminants
+#
+################################################################################
+
+function valuation_bound_discriminant(n::Int, p::Union{Integer, fmpz})
+  # First compute the p-adic expansion of n
+  S = Vector{typeof(p)}()
+	q = typeof(p)(n)
+  q, r = divrem(q, p)
+  push!(S, r)
+  while q >= p
+    q, r = divrem(q, p)
+    push!(S, r)
+  end
+
+	if !iszero(q)
+		push!(S, q)
+	end
+
+	@assert sum(S[i + 1] * p^i for i in 0:length(S)-1) == n
+
+	b = zero(typeof(p))
+
+	for i in 0:length(S) - 1
+		b = b + S[i + 1] * (i + 1) * p^i
+		if !iszero(S[i + 1])
+			b = b - 1
+		end
+	end
+
+  return b
+end
 
 ###############################################################################
 #
