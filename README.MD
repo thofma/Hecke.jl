@@ -16,12 +16,14 @@ It is written in [julia](http://www.julialang.org) and is based on the computer 
 
 So far, Hecke provides the following features:
 
-  - Orders (including element and ideal arithmetic) in number fields
+  - Orders (including element and ideal arithmetic) in relative and absolute number fields
   - Computation of maximal orders
   - Verified residue computations of Dedekind zeta functions
   - Factor base creation and relations search in number fields
   - Lattice enumeration
   - Sparse linear algebra
+  - Ray class groups and construction of class fields
+  - Class field theory
 
 ## Installation
 
@@ -50,7 +52,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.4.0 ... 
+Version 0.4.2 ... 
  ... which comes with absolutely no warrant whatsoever
 (c) 2015 by Claus Fieker and Tommy Hofmann
 
