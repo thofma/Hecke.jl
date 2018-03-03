@@ -1,4 +1,4 @@
-export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod
+export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_mod
 
 import Nemo.matrix
 
@@ -116,17 +116,6 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
     c = hnf(c)
     c = sub(c, 1:n, 1:n)
   end
-end
-
-#TODO: rename/ replace by sub
-function submat(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T}) where T <: Integer
-  z = deepcopy(view(x, r, c))
-  return z
-end
-
-function submat(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T}) where T <: Integer
-  z = deepcopy(view(x, r, c))
-  return z
 end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
@@ -467,31 +456,8 @@ end
 # the nr x nc matrix starting in (a,b)
 ################################################################################
 
-function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
-  @assert nr >= 0 && nc >= 0
-  @assert a+nr-1 <= rows(A) && b+nc-1 <= cols(A)
-  M = zero_matrix(FlintZZ, nr, nc)::fmpz_mat
-  t = FlintZZ()
-  for i = 1:nr
-    for j = 1:nc
-      getindex!(t, A, a+i-1, b+j-1)
-      M[i,j] = t
-    end
-  end
-  return M
-end
-
-function submat(A::fmpz_mat, r::UnitRange{T}, c::UnitRange) where T <: Integer
-  @assert !isdefined(r, :step) || r.step==1
-  @assert !isdefined(c, :step) || c.step==1
-  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
-end
-
-
 function sub(A::fmpz_mat, r::UnitRange, c::UnitRange)
-  @assert !isdefined(r, :step) || r.step==1
-  @assert !isdefined(c, :step) || c.step==1
-  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
+  return deepcopy(view(A, r, c))
 end
 
 ################################################################################
@@ -684,7 +650,7 @@ function _kernel(x::fmpz_mat)
       break
     end
   end
-  return submat(U, i:rows(U), 1:cols(U))
+  return sub(U, i:rows(U), 1:cols(U))
 end
 
 ################################################################################
@@ -714,7 +680,7 @@ doc"""
 """
 function isposdef(a::fmpz_mat)
   for i=1:rows(a)
-    if det(submat(a, 1, 1, i, i)) <= 0
+    if det(sub(a, 1:i, 1:i)) <= 0
       return false
     end
   end

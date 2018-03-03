@@ -792,7 +792,7 @@ function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
         candidate=mR(((L[i][1])^first(keys(D))))
         new_mat=vcat(new_mat,(mS(candidate)).coeff)
         new_mat=hnf(new_mat)
-        new_mat=submat(new_mat,1,1,ngens(S), ngens(S))  
+        new_mat=sub(new_mat,1:ngens(S), 1:ngens(S))  
         determinant=abs(det(new_mat))
       end
     end
@@ -860,7 +860,7 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
         candidate=mR\(((L[i][1]))^E)
         new_mat=vcat(new_mat,((mS*mQ)(candidate)).coeff)
         new_mat=hnf(new_mat)
-        new_mat=submat(new_mat,1,1,ngens(S), ngens(S))  
+        new_mat=sub(new_mat,1:ngens(S), 1:ngens(S))  
         new_det=abs(det(new_mat))
         if determinant!=new_det
           push!(listprimes, candidate)
