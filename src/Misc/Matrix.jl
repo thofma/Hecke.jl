@@ -1071,3 +1071,59 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   end
   return x
 end
+
+# =======================================
+# Array interface for MatElem
+# =======================================
+
+length(A::Nemo.MatElem) = rows(A) * cols(A)
+Base.ndims(A::Nemo.MatElem) = 2
+
+function Base.size(A::Nemo.MatElem, n::Int)
+  if n == 1
+    return rows(A)
+  elseif n == 2
+    return cols(A)
+  elseif n < 1
+    error("arraysize: dimension out of range")
+  else
+    return 1
+  end
+end
+
+function Base.indices(A::Nemo.MatElem)
+  return (Base.OneTo(rows(A)), Base.InTo(cols(A)))
+end
+
+function Base.indices(A::Nemo.MatElem, n::Int)
+  return Base.OneTo(size(A, n))
+end
+
+function Base.eachindex(A::Nemo.MatElem)
+  return Base.OneTo(length(A))
+end
+
+function Base.stride(A::Nemo.MatElem, n::Int)
+  if n <= 1
+    return 1
+  elseif n == 2
+    return rows(A)
+  else
+    return length(A)
+  end
+end
+
+Base.eltype(A::Nemo.MatElem{T}) where T <: Nemo.RingElem = T
+
+getindex(A::Nemo.MatElem, n::Int) = A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))]
+
+function setindex!(A::Nemo.MatElem{T}, n::Int, s::T) where T <: RingElem
+  A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))] = s
+end
+
+Base.start(A::Nemo.MatElem) = 1
+Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
+Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
+
+
+# cat, vcat, hcat???
