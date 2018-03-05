@@ -995,11 +995,11 @@ end
 
 doc"""
 ***
-    min(A::SMat{fmpz}) -> fmpz
+    minimum(A::SMat{fmpz}) -> fmpz
 
 > Finds the smallest entry of $A$.
 """
-function min(A::SMat{fmpz})
+function minimum(A::SMat{fmpz})
   m = fmpz(0)
   for i in A.rows
     for j in i.values

@@ -310,11 +310,11 @@ end
 
 doc"""
 ***
-    min(A::SRow{Int}) -> Int
+    minimum(A::SRow{fmpz}) -> fmpz
 
 > Finds the smallest entry of $A$.
 """
-function min(A::SRow{fmpz})
+function minimum(A::SRow{fmpz})
   return minimum(A.values)
 end
 
