@@ -20,10 +20,10 @@
 
 import Base.push!, Base.max, Nemo.nbits, Base.sparse, Base.Array, 
        Base.endof, Base.start, Base.done, Base.next, Base.hcat,
-       Base.vcat, Base.maxabs, Base.max, Base.min
+       Base.vcat, Base.max, Base.min
 
 export upper_triangular, vcat!, show, sub, SMat, SRow, random_SMatSLP,
-       fmpz_mat, rows, cols, copy, push!, mul, mul!, maxabs, toNemo, sparse,
+       fmpz_mat, rows, cols, copy, push!, mul, mul!, toNemo, sparse,
        valence_mc, swap_rows!, endof, start, done, next, elementary_divisors,
        randrow, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 
