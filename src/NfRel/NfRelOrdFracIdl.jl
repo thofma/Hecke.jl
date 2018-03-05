@@ -1,44 +1,4 @@
-mutable struct NfRelOrdFracIdlSet{T, S}
-  order::NfRelOrd{T, S}
-
-  function NfRelOrdFracIdlSet{T, S}(O::NfRelOrd{T, S}) where {T, S}
-    a = new(O)
-    return a
-  end
-end
-
-mutable struct NfRelOrdFracIdl{T, S}
-  order::NfRelOrd{T, S}
-  parent::NfRelOrdFracIdlSet{T, S}
-  num::NfRelOrdIdl{T, S}
-  den_abs::NfOrdElem # used if T == nf_elem
-  den_rel::NfRelOrdElem # used otherwise
-
-  norm
-  has_norm::Bool
-
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
-    z = new{T, S}()
-    z.order = O
-    z.parent = NfRelOrdFracIdlSet{T, S}(O)
-    z.has_norm = false
-    return z
-  end
-
-  function NfRelOrdFracIdl{nf_elem, S}(O::NfRelOrd{nf_elem, S}, a::NfRelOrdIdl{nf_elem, S}, d::NfOrdElem) where S
-    z = NfRelOrdFracIdl{nf_elem, S}(O)
-    z.num = a
-    z.den_abs = d
-    return z
-  end
-
-  function NfRelOrdFracIdl{T, S}(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem) where {T, S}
-    z = NfRelOrdFracIdl{T, S}(O)
-    z.num = a
-    z.den_rel = d
-    return z
-  end
-end
+# for pseudo_basis, basis_pmat, etc. see NfRel/NfRelOrdIdl.jl
 
 ################################################################################
 #
@@ -72,15 +32,40 @@ parent(a::NfRelOrdFracIdl) = a.parent
 
 ################################################################################
 #
-#  Numerator and denominator
+#  Denominator
 #
 ################################################################################
 
-numerator(a::NfRelOrdFracIdl) = a.num
+function assure_has_denominator(a::NfRelOrdFracIdl)
+  if isdefined(a, :den)
+    return nothing
+  end
+  O = order(a)
+  n = degree(O)
+  PM = basis_pmat(a, Val{false})
+  pb = pseudo_basis(O, Val{false})
+  inv_coeff_ideals = Hecke.inv_coeff_ideals(O, Val{false})
+  d = fmpz(1)
+  for i = 1:n
+    for j = 1:i
+      d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeff_ideals[i])))
+    end
+  end
+  a.den = d
+  return nothing
+end
 
-denominator(a::NfRelOrdFracIdl{nf_elem, S}) where {S} = deepcopy(a.den_abs)
+doc"""
+***
+    denominator(a::NfRelOrdFracIdl) -> fmpz
 
-denominator(a::NfRelOrdFracIdl{T, S}) where {S, T} = deepcopy(a.den_rel)
+> Returns the smallest positive integer $d$ such that $da$ is contained in
+> the order of $a$.
+"""
+function denominator(a::NfRelOrdFracIdl)
+  assure_has_denominator(a)
+  return a.den
+end
 
 ################################################################################
 #
@@ -97,14 +82,12 @@ function show(io::IO, a::NfRelOrdFracIdl)
   compact = get(io, :compact, false)
   if compact
     print(io, "Fractional ideal with basis pseudo-matrix\n")
-    showcompact(io, basis_pmat(numerator(a), Val{false}))
-    print(io, "\nand denominator ", denominator(a))
+    showcompact(io, basis_pmat(a, Val{false}))
   else
     print(io, "Fractional ideal of\n")
     showcompact(order(a))
     print(io, "\nwith basis pseudo-matrix\n")
-    showcompact(io, basis_pmat(numerator(a), Val{false}))
-    print(io, "\nand denominator ", denominator(a))
+    showcompact(io, basis_pmat(a, Val{false}))
   end
 end
 
@@ -116,17 +99,13 @@ end
 
 doc"""
 ***
-    frac_ideal(O::NfRelOrd, a::NfRelOrdIdl, d::NfOrdElem) -> NfRelOrdFracIdl
-    frac_ideal(O::NfRelOrd, a::NfRelOrdIdl, d::NfRelOrdElem) -> NfRelOrdFracIdl
+    frac_ideal(O::NfRelOrd, M::PMat) -> NfRelOrdFracIdl
 
-> Creates the fractional ideal $a/d$ of $\mathcal O$.
+> Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$.
 """
-function frac_ideal(O::NfRelOrd{nf_elem, S}, a::NfRelOrdIdl{nf_elem, S}, d::NfOrdElem) where S
-  return NfRelOrdFracIdl{nf_elem, S}(O, a, d)
-end
-
-function frac_ideal(O::NfRelOrd{T, S}, a::NfRelOrdIdl{T, S}, d::NfRelOrdElem{T}) where {T, S}
-  return NfRelOrdFracIdl{T, S}(O, a, d)
+function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
+  H = pseudo_hnf(M, :lowerleft, true)
+  return NfRelOrdFracIdl{T, S}(O, H)
 end
 
 function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
@@ -139,9 +118,7 @@ function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   M = M*basis_mat_inv(O, Val{false})
   PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
-  OO = order(pb[1][2])
-  den = OO(1)
-  return NfRelOrdFracIdl{T, S}(O, NfRelOrdIdl{T, S}(O, PM), den)
+  return NfRelOrdFracIdl{T, S}(O, PM)
 end
 
 *(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S} = frac_ideal(O, x)
@@ -180,7 +157,7 @@ doc"""
 """
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   order(a) != order(b) && return false
-  return denominator(a) == denominator(b) && numerator(a) == numerator(b)
+  return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
 end
 
 ################################################################################
@@ -189,13 +166,19 @@ end
 #
 ################################################################################
 
+# Assumes, that det(basis_mat(a)) == 1
 function assure_has_norm(a::NfRelOrdFracIdl)
   if a.has_norm
     return nothing
   end
-  n = norm(numerator(a))
-  d = denominator(a)^degree(order(a))
-  a.norm = n*inv(nf(parent(denominator(a)))(d))
+  c = basis_pmat(a, Val{false}).coeffs
+  d = inv_coeff_ideals(order(a), Val{false})
+  n = c[1]*d[1]
+  for i = 2:degree(order(a))
+    n *= c[i]*d[i]
+  end
+  simplify(n)
+  a.norm = n
   a.has_norm = true
   return nothing
 end
@@ -217,45 +200,6 @@ end
 
 ################################################################################
 #
-#  Ideal addition
-#
-################################################################################
-
-doc"""
-***
-    +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-
-> Returns $a + b$.
-"""
-function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
-  K = nf(parent(denominator(a)))
-  da = K(denominator(a))
-  db = K(denominator(b))
-  d = divexact(da*db, gcd(da, db))
-  ma = divexact(d, da)
-  mb = divexact(d, db)
-  c = ma*numerator(a) + mb*numerator(b)
-  return NfRelOrdFracIdl{T, S}(order(a), c, parent(denominator(a))(d))
-end
-
-################################################################################
-#
-#  Ideal multiplication
-#
-################################################################################
-
-doc"""
-***
-      *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
-
-> Returns $a \cdot b$.
-"""
-function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
-  return NfRelOrdFracIdl{T, S}(order(a), numerator(a)*numerator(b), denominator(a)*denominator(b))
-end
-
-################################################################################
-#
 #  Ad hoc multiplication
 #
 ################################################################################
@@ -267,20 +211,22 @@ end
 
 *(b::RelativeElement{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
 
-################################################################################
-#
-#  Inverse
-#
-################################################################################
-
-doc"""
-***
-      inv(a::NfRelOrdFracIdl) -> NfRelOrdFracIdl
-
-> Returns the fractional ideal $b$ such that $ab = O$ where $O$ is the ambient 
-> order of $a$.
-"""
-function inv(a::NfRelOrdFracIdl{T, S}) where {T, S}
-  b = inv(a.num)
-  return NfRelOrdFracIdl{T, S}(order(a), b*denominator(a), order(a)(1))
+function *(a::NfRelOrdFracIdl, b::fmpz)
+  PM = basis_pmat(a)
+  for i = 1:degree(order(a))
+    PM.coeffs[i].num = numerator(PM.coeffs[i])*b
+    PM.coeffs[i] = simplify(PM.coeffs[i])
+  end
+  PM = pseudo_hnf(PM, :lowerleft)
+  return typeof(a)(order(a), PM)
 end
+
+*(b::fmpz, a::NfRelOrdFracIdl) = a*b
+
+################################################################################
+#
+#  Integral ideal testing
+#
+################################################################################
+
+isintegral(a::NfRelOrdFracIdl) = defines_ideal(order(a), basis_pmat(a, Val{false}))
