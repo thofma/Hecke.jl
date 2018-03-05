@@ -337,7 +337,7 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   hnf_modular_eldiv!(V, minimum(parent(x).ideal))
 
-  if !iszero(submat(V, 1:1, 2:(d + 1)))
+  if !iszero(sub(V, 1:1, 2:(d + 1)))
     ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
     return false, zero(parent(x))
   end
@@ -516,7 +516,7 @@ function annihilator(x::NfOrdQuoRingElem)
    _copy_matrix_into_matrix(U, d + 1, 1, I.basis_mat)
 
   m = _kernel(U)
-  I = ideal(O, _hnf_modular_eldiv(submat(m, 1:degree(O), 1:degree(O)),
+  I = ideal(O, _hnf_modular_eldiv(sub(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
   z = f(I)
   @assert iszero(z*x)

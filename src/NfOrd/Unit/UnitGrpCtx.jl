@@ -154,7 +154,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
   u = inv(u)
 
-  m = submat(u, 1:r+1, 2:r+1)
+  m = sub(u, 1:r+1, 2:r+1)
 
   U.units =  _transform(vcat(U.units, y), m)
 

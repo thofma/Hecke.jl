@@ -417,7 +417,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   list=conductors_tame(O,n,bound)
 
   if tame
-    return [(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
+    return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
   end
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
@@ -428,9 +428,6 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
     fq=divexact(d,lp[1][2]*length(lp))
     l=length(wild_list)
     sq=fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
-    if isprime(n)
-      bound_max_exp=div(fmpz(flog(bound, sq)), divexact(n,q)*fmpz(q-1))
-    else
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
@@ -442,12 +439,29 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
       To find ap, it is enough to compute a logarithm.
     =#
-      bound_max_ap=flog(bound,sq) #bound on ap
-      bound_max_exp=divexact(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
-    end
     nisc= gcd(q^(fq)-1,n)
+    if d==1
+      if nisc!=1
+        nbound=n+n*valuation(n,q)-1
+      else
+        nbound=n+n*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+      end
+      obound=flog(bound,sq)
+      nnbound=valuation_bound_discriminant(n,q)
+      bound_max_ap= min(nbound, obound, nnbound)  #bound on ap
+    else
+      if nisc!=1
+        nbound=n+n*lp[1][2]*valuation(n,q)-1
+      else
+        nbound=n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+      end
+      obound=flog(bound,sq)
+      bound_max_ap= min(nbound, obound)  #bound on ap
+    end
+    bound_max_exp=div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
+    
     if nisc != 1
-      fnisc=min(keys(factor(nisc).fac))
+      fnisc=minimum(keys(factor(nisc).fac))
       nq=sq^((fnisc-1)*(divexact(n, fnisc)))
       for s=1:l
         nn=nq*wild_list[s][3]
@@ -1755,6 +1769,40 @@ function _from_matrix_to_listlist(M::MatElem)
   
 end
 
+################################################################################
+#
+#  Valuation bounds for discriminants
+#
+################################################################################
+
+function valuation_bound_discriminant(n::Int, p::Union{Integer, fmpz})
+  # First compute the p-adic expansion of n
+  S = Vector{typeof(p)}()
+	q = typeof(p)(n)
+  q, r = divrem(q, p)
+  push!(S, r)
+  while q >= p
+    q, r = divrem(q, p)
+    push!(S, r)
+  end
+
+	if !iszero(q)
+		push!(S, q)
+	end
+
+	@assert sum(S[i + 1] * p^i for i in 0:length(S)-1) == n
+
+	b = zero(typeof(p))
+
+	for i in 0:length(S) - 1
+		b = b + S[i + 1] * (i + 1) * p^i
+		if !iszero(S[i + 1])
+			b = b - 1
+		end
+	end
+
+  return b
+end
 
 ###############################################################################
 #

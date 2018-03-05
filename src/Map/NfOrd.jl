@@ -336,8 +336,8 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
 
   #println("solving \n $Y \n = $U * X")
 
-  YY = submat(Y, 1:r, 1:cols(Y))
-  UU = submat(U, 1:r, 1:r)
+  YY = sub(Y, 1:r, 1:cols(Y))
+  UU = sub(U, 1:r, 1:r)
   X = _inv(UU)*YY
 
   @assert Y == U * X
@@ -373,8 +373,8 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
 
   #println("solving \n $Y \n = $U * X")
 
-  YY = submat(Y, 1:r, 1:cols(Y))
-  UU = submat(U, 1:r, 1:r)
+  YY = sub(Y, 1:r, 1:cols(Y))
+  UU = sub(U, 1:r, 1:r)
   X = _inv(UU)*YY
 
   @assert Y == U * X
@@ -607,7 +607,7 @@ function Mor(O::NfOrd, F::FqFiniteField, h::fmpz_mod_poly)
   return NfOrdToFqMor(O, F, h)
 end
 
-function submat(M::Nemo.MatElem{T}, r::UnitRange{<:Integer}, c::UnitRange{<:Integer}) where {T}
+function sub(M::Nemo.MatElem{T}, r::UnitRange{<:Integer}, c::UnitRange{<:Integer}) where {T}
   z = similar(M, length(r), length(c))
   for i in 1:length(r)
     for j in 1:length(c)

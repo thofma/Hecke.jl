@@ -1769,17 +1769,19 @@ mutable struct Graph{T, M}
 end
 
 
-mutable struct GrpAbLattice
-  weak_vertices::WeakKeyDict{GrpAbFinGen, Void}
-  graph::Graph{UInt, fmpz_mat}
-  block_gc::Dict{GrpAbFinGen, Void}
+mutable struct RelLattice{T <: Any, D <: Any}
+  weak_vertices::WeakKeyDict{T, Void}
+  graph::Graph{UInt, D}
+  block_gc::Dict{T, Void}
   weak_vertices_rev::Dict{UInt, WeakRef}
   to_delete::Array{UInt, 1}
+  zero::D # a generic object that will never actually be used.
+  mult::Base.Callable
 
-  function GrpAbLattice()
+  function RelLattice{T, D}() where {T, D}
     z = new()
-    z.weak_vertices = WeakKeyDict{GrpAbFinGen, Void}()
-    z.graph = Graph{UInt, fmpz_mat}()
+    z.weak_vertices = WeakKeyDict{T, Void}()
+    z.graph = Graph{UInt, D}()
     z.weak_vertices_rev = Dict{UInt, WeakRef}()
     z.to_delete = Array{UInt, 1}()
     z.block_gc = Dict{GrpAbFinGen, Void}()
@@ -1787,4 +1789,9 @@ mutable struct GrpAbLattice
   end
 end
 
+
+const GrpAbLattice = RelLattice{GrpAbFinGen, fmpz_mat}
 const GroupLattice = GrpAbLattice()
+GroupLattice.zero = fmpz_mat(0,0)
+GroupLattice.mult = *
+

@@ -300,21 +300,21 @@ end
 
 doc"""
 ***
-    max(A::SRow{fmpz}) -> fmpz
+    maximum(A::SRow{fmpz}) -> fmpz
 
 > Finds the largest entry of $A$.
 """
-function max(A::SRow{fmpz})
+function maximum(A::SRow{fmpz})
   return maximum(A.values)
 end
 
 doc"""
 ***
-    min(A::SRow{Int}) -> Int
+    minimum(A::SRow{fmpz}) -> fmpz
 
 > Finds the smallest entry of $A$.
 """
-function min(A::SRow{fmpz})
+function minimum(A::SRow{fmpz})
   return minimum(A.values)
 end
 

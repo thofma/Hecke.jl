@@ -653,7 +653,7 @@ end
 
 function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(y)
-  y == 1 && return O(0)
+  y == 1 && return zero(O)
   pnum = Int(minimum(p))
   x = y - 1
   val_p_x = valuation(x, p)
@@ -681,78 +681,14 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
     xi *= x^(i-i_old)
-    numer= O(xi.elem_in_nf*(anti_uni^val_p_i))
-    denom= O(i*(anti_uni^val_p_i))
+    numer= O(xi.elem_in_nf*(anti_uni^val_p_i), false)
+    denom= O(i*(anti_uni^val_p_i), false)
     inc = divexact(Q(numer),Q(denom))
     isodd(i) ? s+=inc : s-=inc
     i_old = i
   end
   return s.elem
 end
-
-#=
-function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
-  O = parent(y)  
-  y == 1 && return O(0)
-  pnum = Int(minimum(p))
-  anti_uni=anti_uniformizer(p)
-  x = y - 1
-  val_p_x = valuation(x, p)
-  @hassert :NfOrdQuoRing 1 val_p_x> div(e,pnum-1)
-  s = Q(0)
-  xi = O(1)
-  #First, some iterations until the valuation of x is lower than v
-  bound1=div(v,val_p_x)
-  for i=1:bound1
-    xi *= x
-    inc=divexact(Q(xi),Q(i))
-    isodd(i) ? s+=inc : s-=inc
-  end
-  #now, we can consider only indices divisible by pnum
-  #we have to find a bound for this.
-  # it is enough to find the minimum l such that
-  # pnum^l v_p(x)>= v+el
-  l=1
-  left=pnum*val_p_x
-  right=v+e
-  while left < right
-    left*=pnum
-    right+=e
-    l+=1
-  end
-  bound2=pnum^l-pnum
-  if bound2<= bound1
-    return s.elem
-  end
-  while !divisible(fmpz(bound1+1),pnum)
-    bound1+=1
-    xi*=x
-  end
-  @hassert :NfOrdQuoRing 1 x^bound1==xi
-  i_old = bound1
-  val_p_xi = val_p_x*bound1
-
-  for i in bound1+1:pnum:bound2
-    @hassert :NfOrdQuoRing 1 divisible(fmpz(i),pnum)
-    val_p_i = valuation(i, pnum) * e
-    val_p_xi += val_p_x
-    val_p_xi - val_p_i >= v && continue
-    @hassert :NfOrdQuoRing 1 ((i-i_old) % pnum==1 || (i-i_old) % pnum==0)
-    xi *= x^(i-i_old)
-    numer= O(xi.elem_in_nf*(anti_uni^val_p_i))
-    denom= O(i*(anti_uni^val_p_i))
-    @hassert :NfOrdQuoRing 1 valuation(denom,p)==0
-    @hassert :NfOrdQuoRing 1 valuation(numer,p)<v
-    @hassert :NfOrdQuoRing 1 valuation(numer,p)==val_p_xi - val_p_i
-    inc = divexact(Q(numer), Q(denom))
-    isodd(i) ? s+=inc : s-=inc
-    i_old = i
-  end
-  return s.elem
-end
-=#
-
-
 
 ################################################################################
 #

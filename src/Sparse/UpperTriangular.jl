@@ -78,7 +78,7 @@ function one_step(A::SMat{T}, sr = 1) where T
 
 #    @assert length(A.rows[all_r[j]].entry) == 0 ||
 #             A.rows[all_r[j]].entry[1].col > min
-#  println("in one step: ilog2(max) now ", nbits(max(A)), " j:", j, " length: ", length(all_r))
+#  println("in one step: ilog2(max) now ", nbits(maximum(abs, A)), " j:", j, " length: ", length(all_r))
   end
   sort!(all_r)
   for j=length(all_r):-1:2
@@ -99,12 +99,12 @@ doc"""
 function upper_triangular(A::SMat{T}; mod = 0) where T
   for i = 1:min(rows(A), cols(A))
     x = one_step(A, i)
-#    println("after one step: ilog2(max) now ", nbits(max(A)))
+#    println("after one step: ilog2(max) now ", nbits(maximum(abs, A)))
     if x>A.r
       return
     end
-    if A.nnz > (A.r-i) * (A.c-i) /2 || nbits(maxabs(A)) > 200
-      #println("calling  at level ", i, " bits: ", nbits(maxabs(A)), "nnz: ", A.nnz)
+    if A.nnz > (A.r-i) * (A.c-i) /2 || nbits(maximum(abs, A)) > 200
+      #println("calling  at level ", i, " bits: ", nbits(maximum(abs, A)), "nnz: ", A.nnz)
       h = sub(A, i:A.r, i:A.c)
       deleteat!(A.rows, i:A.r)
       A.r -= length(i:A.r)
@@ -302,7 +302,7 @@ end
 function upper_triangular_with_trafo!(M::SMat{fmpz},
                                       density_limit::Float64 = 0.5,
                                       size_limit::Int = 200)
-  f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(maxabs(A)) > size_limit)
+  f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(maximum(abs, A)) > size_limit)
   return _upper_triangular_with_trafo!(M, f)
 end
 
@@ -382,7 +382,7 @@ function upper_triangular!(M::SMat, density_limit::Float64 = 0.5)
 end
 
 function upper_triangular!(M::SMat{fmpz}, density_limit::Float64 = 0.5, size_limit::Int = 200)
-  f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(maxabs(A)) > size_limit)
+  f =  (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit || nbits(maximum(abs, A)) > size_limit)
   return _upper_triangular!(M, f)
 end
 

@@ -361,8 +361,13 @@ end
 # Thus, it is important that we update the lattice before we add a new group.
 # This way the correspondence G -> object_id(G) is always faithful.
 
-function Base.show(io::IO, L::GrpAbLattice)
-  print("Group lattice with underlying graph \n$(L.graph)\n")
+# T is the type of the objetcs i the lattice
+# D is the type of the data attached to the edges, usually some matrix
+#  objects of type D need to support products
+#  if would be useful if hom(::T, ::T, ::D) would exist
+
+function Base.show(io::IO, L::RelLattice{T, D}) where {T, D}
+  print("Relation lattice for $T with underlying graph \n$(L.graph)\n")
   print("In weak dict: $(length(L.weak_vertices))\n")
   print("In dict: $(length(L.block_gc))\n")
 end
@@ -370,7 +375,7 @@ end
 # The finalizer, which must be attached to a every group in the lattice.
 # Note that it may happen to a lot of groups are gc'ed so that the
 # L.to_delete queue get's too big. We cut it off at 100.
-function finalizer_lattice(L::GrpAbLattice, A::GrpAbFinGen)
+function finalizer_lattice(L::RelLattice{T, D}, A::T) where {T, D}
   # TODO: Find out why the following does not work
   #if length(L.to_delete) > 1000
   #  Hecke.update!(L)
@@ -378,8 +383,8 @@ function finalizer_lattice(L::GrpAbLattice, A::GrpAbFinGen)
   push!(L.to_delete, object_id(A))
 end
 
-# Add a group to a lattice of groups.
-function Base.append!(L::GrpAbLattice, A::GrpAbFinGen)
+# Add an object to a lattice of groups.
+function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
   update!(L)
   L.weak_vertices[A] = nothing
   obid = object_id(A)
@@ -397,10 +402,13 @@ function Base.append!(L::GrpAbLattice, A::GrpAbFinGen)
 end
 
 # Add a map to a lattice of gorups
-function Base.append!(L::GrpAbLattice, f::GrpAbFinGenMap)
+# .. sugar for ablian groups ...
+function Base.append!(L::GrpAbLattice, f::Map)
+  return Base.append!(L, domain(f), codomain(f), f.map)
+end
+
+function Base.append!(L::RelLattice{T, D}, dom::T, co::T, f::D) where {T, D}
   update!(L)
-  dom = domain(f)
-  co = codomain(f)
 
   if !haskey(L.weak_vertices, dom)
     append!(L, dom)
@@ -410,7 +418,7 @@ function Base.append!(L::GrpAbLattice, f::GrpAbFinGenMap)
     append!(L, co)
   end
 
-  append!(L.graph, (object_id(dom), object_id(co)), f.map)
+  append!(L.graph, (object_id(dom), object_id(co)), f)
 
   if L.graph.degrees[object_id(dom)] > 1
     L.block_gc[dom] = nothing
@@ -422,12 +430,12 @@ function Base.append!(L::GrpAbLattice, f::GrpAbFinGenMap)
 end
 
 # Delete the group with object_id u from a lattice of groups.
-function delete_from_lattice!(L::GrpAbLattice, u::UInt)
+function delete_from_lattice!(L::RelLattice, u::UInt)
   Base.delete!(L.graph, u)
   Base.delete!(L.weak_vertices_rev, u)
 end
 
-function delete_from_lattice!(L::GrpAbLattice, us::Array{UInt, 1})
+function delete_from_lattice!(L::RelLattice, us::Array{UInt, 1})
   Base.delete!(L.graph, us)
   for u in us
     Base.delete!(L.weak_vertices_rev, u)
@@ -435,7 +443,7 @@ function delete_from_lattice!(L::GrpAbLattice, us::Array{UInt, 1})
 end
 
 # Update a lattice of groups.
-function update!(L::GrpAbLattice)
+function update!(L::RelLattice)
   #while length(L.to_delete) > 0
   #  u = pop!(L.to_delete)
   #  delete_from_lattice!(L, u)
@@ -467,7 +475,7 @@ end
 # case it exists).
 
 # Todo: Reduce the entries of the final matrix.
-function can_map_into(L::GrpAbLattice, G::GrpAbFinGen, H::GrpAbFinGen)
+function can_map_into(L::RelLattice{T, D}, G::T, H::T) where {T, D}
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
     return false, fmpz_mat(0, 0)
   end
@@ -477,40 +485,40 @@ function can_map_into(L::GrpAbLattice, G::GrpAbFinGen, H::GrpAbFinGen)
     l = length(p)
     m = L.graph.edges[p[l]][p[l-1]]
     for i in l-1:-1:2
-      m = m*(L.graph.edges[p[i]][p[i-1]])
+      m = L.mult(m, (L.graph.edges[p[i]][p[i-1]]))
     end
     return true, m
   else
-    return false, fmpz_mat(0, 0)
+    return false, L.zero
   end
 end
 
 # For a given lattice L and groups G and H, check whether there exists a common
 # "overgroup" M. If so, the second return value is M and the third and fourth
 # return values describe the map from G to M and H to M respectively.
-function can_map_into_overstructure(L::GrpAbLattice, G::GrpAbFinGen, H::GrpAbFinGen)
+function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D}
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
-    return false, G, fmpz_mat(0, 0), fmpz_mat(0, 0)
+    return false, G, L.zero, L.zero
   end
   b, pG, pH = find_common(L.graph, object_id(G), object_id(H))
   if b
     @assert pG[1] == pH[1]
-    M = L.weak_vertices_rev[pG[1]].value::GrpAbFinGen
+    M = L.weak_vertices_rev[pG[1]].value::T
     @assert M != nothing
 
     lG = length(pG)
     mG = L.graph.edges[pG[lG]][pG[lG - 1]]
     for i in lG-1:-1:2
-      mG = mG*(L.graph.edges[pG[i]][pG[i - 1]])
+      mG = L.mult(mG, (L.graph.edges[pG[i]][pG[i - 1]]))
     end
     lH = length(pH)
     mH = L.graph.edges[pH[lH]][pH[lH - 1]]
     for i in lH-1:-1:2
-      mH = mH*(L.graph.edges[pH[i]][pH[i-1]])
+      mH = L.mult(mH, (L.graph.edges[pH[i]][pH[i-1]]))
     end
     return true, M, mG, mH
   else
-    return false, G, fmpz_mat(0, 0), fmpz_mat(0, 0)
+    return false, G, L.zero, L.zero
   end
 end
 

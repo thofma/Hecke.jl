@@ -90,7 +90,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     print(div(l[i,i], fmpz(2)^prec), " : ")
   end
   @v_do :ClassGroup 3 println("")
-  if nbits(max(t)) >  div(prec, 2)
+  if nbits(maximum(t)) >  div(prec, 2)
     @v_do :ClassGroup 2 print_with_color(:red, "lll trafo too large\n");
     throw(LowPrecisionLLL())
   end

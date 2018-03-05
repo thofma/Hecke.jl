@@ -59,7 +59,7 @@ end
 
 # this makes only sense for SMat{fmpz}
 function sparsity(A::SMat{T}) where T
-  return A.nnz/(A.r * A.c), nbits(maxabs(A))
+  return A.nnz/(A.r * A.c), nbits(maximum(abs, A))
 end
 
 ################################################################################
@@ -657,7 +657,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
   else
     At = transpose(A)
   end
-  if maxabs(A) > 2^20
+  if maximum(abs, A) > 2^20
     mm = mul_mod_big!
     println("mul big case")
   else
@@ -749,7 +749,7 @@ function valence_mc(A::SMat{T}, p::Int) where T
   else
     At = transpose(A)
   end
-  if maxabs(A) > 2^20
+  if maximum(abs, A) > 2^20
     mm = mul_mod_big!
     println("mul big case")
   else
@@ -954,50 +954,14 @@ function hadamard_bound2(A::SMat{fmpz})
   return prod([norm2(x) for x=A])
 end
 
-#function maxabs(A::SMat{Int})
-#  m = abs(A.rows[1].values[1])
-#  for i in A.rows
-#    for j in i.values
-#      m = max(m, abs(j))
-#    end
-#  end
-#  return m
-#end
-#
-#function maxabs(A::SMat{BigInt})
-#  m = abs(A.rows[1].values[1])
-#  for i in A.rows
-#    for j in i.values
-#      if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
-#        &m, &j) < 0
-#        m = j
-#      end
-#    end
-#  end
-#  return abs(m)
-#end
-
-#function maxabs{T <: Integer}(A::SRow{T})
-#  return maxabs(A.values)
-#end
-#
-#function maxabs{BigInt}(A::SRow{BigInt})
-#  m = abs(A.values[1])
-#  for v in A.values
-#    if ccall((:__gmpz_cmpabs, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}), &v, &m) > 0
-#      m = v
-#    end
-#  end
-#  return abs(v)
-#end
 
 doc"""
 ***
-    maxabs(A::SMat{fmpz}) -> fmpz
+    maximum(abs, A::SMat{fmpz}) -> fmpz
 
   Finds the largest, in absolute value, entry of $A$.
 """
-function maxabs(A::SMat{fmpz})
+function maximum(::typeof(abs), A::SMat{fmpz})
   m = abs(A.rows[1].values[1])
   for i in A.rows
     for j in i.values
@@ -1009,40 +973,13 @@ function maxabs(A::SMat{fmpz})
   return abs(m)
 end
 
-#function max(A::SMat{Int})
-#  m = A.rows[1].values[1]
-#  for i in A.rows
-#    for j in i.values
-#      m = max(m, j)
-#    end
-#  end
-#  return m
-#end
-#
-#function max(A::SMat{BigInt})
-#  m = A.rows[1].values[1]
-#  for i in A.rows
-#    for j in i.values
-#      if ccall((:__gmpz_cmp, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
-#        &m, &j) < 0
-#        m = j
-#      end
-#    end
-#  end
-#  return m
-#end
-
-#function max{T <: Integer}(A::SRow{T})
-#  return maximum(A.values)
-#end
-
 doc"""
 ***
-    max(A::SMat{fmpz}) -> fmpz
+    maximum(A::SMat{fmpz}) -> fmpz
 
 > Finds the largest entry of $A$.
 """
-function max(A::SMat{fmpz})
+function maximum(A::SMat{fmpz})
   m = A.rows[1].values[1]
   for i in A.rows
     for j in i.values
@@ -1054,41 +991,15 @@ function max(A::SMat{fmpz})
   return m
 end
 
-#function min(A::SMat{Int})
-#  m = 0
-#  for i in A.rows
-#    for j in i.values
-#      m = min(m, j)
-#    end
-#  end
-#  return m
-#end
-#
-#function min(A::SMat{BigInt})
-#  m = BigInt(0)
-#  for i in A.rows
-#    for j in i.values
-#      if ccall((:__gmpz_cmp, :libgmp), Int, (Ptr{BigInt}, Ptr{BigInt}),
-#        &m, &j) > 0
-#        m = j
-#      end
-#    end
-#  end
-#  return m
-#end
-#
-#function min{T <: Integer}(A::SRow{T})
-#  return minimum(A.values)
-#end
 
 
 doc"""
 ***
-    min(A::SMat{fmpz}) -> fmpz
+    minimum(A::SMat{fmpz}) -> fmpz
 
 > Finds the smallest entry of $A$.
 """
-function min(A::SMat{fmpz})
+function minimum(A::SMat{fmpz})
   m = fmpz(0)
   for i in A.rows
     for j in i.values

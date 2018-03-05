@@ -1,4 +1,4 @@
-export iszero_row, modular_hnf, submat, howell_form, _hnf_modular, kernel_mod
+export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_mod
 
 import Nemo.matrix
 
@@ -116,17 +116,6 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
     c = hnf(c)
     c = sub(c, 1:n, 1:n)
   end
-end
-
-#TODO: rename/ replace by sub
-function submat(x::nmod_mat, r::UnitRange{T}, c::UnitRange{T}) where T <: Integer
-  z = deepcopy(view(x, r, c))
-  return z
-end
-
-function submat(x::fmpz_mat, r::UnitRange{T}, c::UnitRange{T}) where T <: Integer
-  z = deepcopy(view(x, r, c))
-  return z
 end
 
 function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
@@ -410,7 +399,7 @@ end
 # 
 ################################################################################
 
-function maxabs(a::fmpz_mat)
+function maximum(f::typeof(abs), a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -425,7 +414,7 @@ function maxabs(a::fmpz_mat)
   return r
 end
 
-function max(a::fmpz_mat)  #TODO should be maximum in julia
+function maximum(a::fmpz_mat)  
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -440,7 +429,7 @@ function max(a::fmpz_mat)  #TODO should be maximum in julia
   return r
 end
 
-function min(a::fmpz_mat)  #TODO: should be minimum in julia
+function minimum(a::fmpz_mat) 
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)
@@ -467,31 +456,8 @@ end
 # the nr x nc matrix starting in (a,b)
 ################################################################################
 
-function submat(A::fmpz_mat, a::Int, b::Int, nr::Int, nc::Int)
-  @assert nr >= 0 && nc >= 0
-  @assert a+nr-1 <= rows(A) && b+nc-1 <= cols(A)
-  M = zero_matrix(FlintZZ, nr, nc)::fmpz_mat
-  t = FlintZZ()
-  for i = 1:nr
-    for j = 1:nc
-      getindex!(t, A, a+i-1, b+j-1)
-      M[i,j] = t
-    end
-  end
-  return M
-end
-
-function submat(A::fmpz_mat, r::UnitRange{T}, c::UnitRange) where T <: Integer
-  @assert !isdefined(r, :step) || r.step==1
-  @assert !isdefined(c, :step) || c.step==1
-  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
-end
-
-
 function sub(A::fmpz_mat, r::UnitRange, c::UnitRange)
-  @assert !isdefined(r, :step) || r.step==1
-  @assert !isdefined(c, :step) || c.step==1
-  return submat(A, r.start, c.start, r.stop-r.start+1, c.stop-c.start+1)::fmpz_mat
+  return deepcopy(view(A, r, c))
 end
 
 ################################################################################
@@ -684,7 +650,7 @@ function _kernel(x::fmpz_mat)
       break
     end
   end
-  return submat(U, i:rows(U), 1:cols(U))
+  return sub(U, i:rows(U), 1:cols(U))
 end
 
 ################################################################################
@@ -714,7 +680,7 @@ doc"""
 """
 function isposdef(a::fmpz_mat)
   for i=1:rows(a)
-    if det(submat(a, 1, 1, i, i)) <= 0
+    if det(sub(a, 1:i, 1:i)) <= 0
       return false
     end
   end
@@ -1105,3 +1071,59 @@ function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   end
   return x
 end
+
+# =======================================
+# Array interface for MatElem
+# =======================================
+
+length(A::Nemo.MatElem) = rows(A) * cols(A)
+Base.ndims(A::Nemo.MatElem) = 2
+
+function Base.size(A::Nemo.MatElem, n::Int)
+  if n == 1
+    return rows(A)
+  elseif n == 2
+    return cols(A)
+  elseif n < 1
+    error("arraysize: dimension out of range")
+  else
+    return 1
+  end
+end
+
+function Base.indices(A::Nemo.MatElem)
+  return (Base.OneTo(rows(A)), Base.InTo(cols(A)))
+end
+
+function Base.indices(A::Nemo.MatElem, n::Int)
+  return Base.OneTo(size(A, n))
+end
+
+function Base.eachindex(A::Nemo.MatElem)
+  return Base.OneTo(length(A))
+end
+
+function Base.stride(A::Nemo.MatElem, n::Int)
+  if n <= 1
+    return 1
+  elseif n == 2
+    return rows(A)
+  else
+    return length(A)
+  end
+end
+
+Base.eltype(A::Nemo.MatElem{T}) where T <: Nemo.RingElem = T
+
+getindex(A::Nemo.MatElem, n::Int) = A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))]
+
+function setindex!(A::Nemo.MatElem{T}, n::Int, s::T) where T <: RingElem
+  A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))] = s
+end
+
+Base.start(A::Nemo.MatElem) = 1
+Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
+Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
+
+
+# cat, vcat, hcat???
