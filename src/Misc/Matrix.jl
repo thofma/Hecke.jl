@@ -414,7 +414,7 @@ function maximum(f::typeof(abs), a::fmpz_mat)
   return r
 end
 
-function max(a::fmpz_mat)  #TODO should be maximum in julia
+function maximum(a::fmpz_mat)  
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
   for i=1:rows(a)
     for j=1:cols(a)

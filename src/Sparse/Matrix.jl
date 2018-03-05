@@ -975,11 +975,11 @@ end
 
 doc"""
 ***
-    max(A::SMat{fmpz}) -> fmpz
+    maximum(A::SMat{fmpz}) -> fmpz
 
 > Finds the largest entry of $A$.
 """
-function max(A::SMat{fmpz})
+function maximum(A::SMat{fmpz})
   m = A.rows[1].values[1]
   for i in A.rows
     for j in i.values

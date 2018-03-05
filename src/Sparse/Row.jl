@@ -300,11 +300,11 @@ end
 
 doc"""
 ***
-    max(A::SRow{fmpz}) -> fmpz
+    maximum(A::SRow{fmpz}) -> fmpz
 
 > Finds the largest entry of $A$.
 """
-function max(A::SRow{fmpz})
+function maximum(A::SRow{fmpz})
   return maximum(A.values)
 end
 

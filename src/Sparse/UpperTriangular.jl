@@ -78,7 +78,7 @@ function one_step(A::SMat{T}, sr = 1) where T
 
 #    @assert length(A.rows[all_r[j]].entry) == 0 ||
 #             A.rows[all_r[j]].entry[1].col > min
-#  println("in one step: ilog2(max) now ", nbits(max(A)), " j:", j, " length: ", length(all_r))
+#  println("in one step: ilog2(max) now ", nbits(maximum(abs, A)), " j:", j, " length: ", length(all_r))
   end
   sort!(all_r)
   for j=length(all_r):-1:2
@@ -99,7 +99,7 @@ doc"""
 function upper_triangular(A::SMat{T}; mod = 0) where T
   for i = 1:min(rows(A), cols(A))
     x = one_step(A, i)
-#    println("after one step: ilog2(max) now ", nbits(max(A)))
+#    println("after one step: ilog2(max) now ", nbits(maximum(abs, A)))
     if x>A.r
       return
     end
