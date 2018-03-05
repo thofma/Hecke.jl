@@ -278,7 +278,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       new_g = true
 
       if A.r == A.c
-        @hassert :HNF 1  length(g) == 0 || min(g) >= 0
+        @hassert :HNF 1  length(g) == 0 || minimum(g) >= 0
       end
 
       with_trafo ? (return g, piv, trafos) : (return g, piv)
@@ -318,7 +318,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       end
 
       if A.r == A.c
-        @hassert :HNF 1  min(A[j]) >= 0
+        @hassert :HNF 1  minimum(A[j]) >= 0
       end
     end
   end
@@ -338,7 +338,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
     g = reduce_right(A, g)
   end
   if A.r == A.c
-    @hassert :HNF 1  length(g) == 0 || min(g) >= 0
+    @hassert :HNF 1  length(g) == 0 || minimum(g) >= 0
   end
   with_trafo ? (return g, piv, trafos) : (return g, piv)
 end
