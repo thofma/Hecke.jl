@@ -1128,15 +1128,15 @@ Base.start(A::Nemo.MatElem) = 1
 Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
 Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
 
-function setindex!(A::Nemo.MatElem, b::Nemo.MatElem, ::Colon, i::Int)
-  @assert cols(b) == 1 && rows(b) == rows(A)
+function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) where T
+  @assert cols(b) == 1 && rows(b) == rows(A) 
   for j=1:rows(A)
     A[j,i] = b[j]
   end
   b
 end
 
-function setindex!(A::Nemo.MatElem, b::Nemo.MatElem, i::Int, ::Colon)
+function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, i::Int, ::Colon) where T
   @assert rows(b) == 1 && cols(b) == cols(A)
   for j=1:cols(A)
     A[i,j] = b[j]
@@ -1144,7 +1144,7 @@ function setindex!(A::Nemo.MatElem, b::Nemo.MatElem, i::Int, ::Colon)
   b
 end
 
-function setindex!(A::Nemo.MatElem{T}, b::Array{T, 1}, ::Colon, i::Int) where T
+function setindex!(A::Nemo.MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
   @assert length(b) == rows(A)
   for j=1:rows(A)
     A[j,i] = b[j]
@@ -1152,7 +1152,7 @@ function setindex!(A::Nemo.MatElem{T}, b::Array{T, 1}, ::Colon, i::Int) where T
   b
 end
 
-function setindex!(A::Nemo.MatElem{T}, b::Array{T, 1}, i::Int, ::Colon) where T
+function setindex!(A::Nemo.MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
   @assert length(b) == cols(A)
   for j=1:cols(A)
     A[i,j] = b[j]
@@ -1160,14 +1160,14 @@ function setindex!(A::Nemo.MatElem{T}, b::Array{T, 1}, i::Int, ::Colon) where T
   b
 end
 
-function setindex!(A::Nemo.MatElem{T}, b::T, ::Colon, i::Int) where T
+function setindex!(A::Nemo.MatElem, b, ::Colon, i::Int) 
   for j=1:rows(A)
     A[j,i] = b
   end
   b
 end
 
-function setindex!(A::Nemo.MatElem{T}, b::T, i::Int, ::Colon) where T
+function setindex!(A::Nemo.MatElem, b, i::Int, ::Colon)
   for j=1:cols(A)
     A[i,j] = b
   end
@@ -1177,5 +1177,74 @@ end
 
 getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:cols(A)]
 getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:rows(A), i:i]
+
+
+function Base.hcat(A::Nemo.MatElem...)
+  r = rows(A[1])
+  c = cols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert rows(A[i]) == r
+    @assert base_ring(A[i]) == R
+    c += cols(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:cols(A[i])
+      X[:, o] = A[i][:, j]
+      o += 1
+    end
+  end
+  return X
+end
+
+function Base.vcat(A::Nemo.MatElem...)
+  r = rows(A[1])
+  c = cols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert cols(A[i]) == c
+    @assert base_ring(A[i]) == R
+    r += rows(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:rows(A[i])
+      X[o, :] = A[i][j, :]
+      o += 1
+    end
+  end
+  return X
+end
+
+function Base.cat(n::Int, A::Nemo.MatElem...) 
+  if n==1
+    return vcat(A...)
+  elseif n==2
+    return hcat(A...)
+  else
+    error("does not make sense here")
+  end
+end
+
+function Base.cat(dims::Tuple{Int, Int}, A::Nemo.MatElem...) 
+  @assert dims == (1,2)
+
+  z = [similar(x) for x = A]
+  X = z[1]
+  for i=1:length(A)
+    if i==1
+      X = hcat(A[1], z[2:end]...)
+    else
+      X = vcat(X, hcat(z[1:i-1]..., A[i], z[i+1:end]...))
+    end
+  end
+  return X
+end
+
+Base.cat(dims, A::Nemo.MatElem...) = cat(Tuple(dims), A...)
+
 
 
