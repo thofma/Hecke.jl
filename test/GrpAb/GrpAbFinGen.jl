@@ -5,7 +5,7 @@
   end
 
   @testset "Constructor" begin
-    M1 = Matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
+    M1 = matrix(FlintZZ, 2, 3, [1, 2, 3, 4, 5, 6])
     G = @inferred AbelianGroup(M1)
     @test isa(G, GrpAbFinGen)
     @test G.rels == M1
@@ -28,12 +28,12 @@
     M = fmpz[1, 2, 3, 4, 5, 6]
     G = @inferred AbelianGroup(M)
     @test isa(G, GrpAbFinGen)
-    @test G.rels == Matrix(FlintZZ, 1, 6, M)
+    @test G.rels == matrix(FlintZZ, 1, 6, M)
 
     M = [1, 2, 3, 4, 5, 6]
     G = @inferred AbelianGroup(M)
     @test isa(G, GrpAbFinGen)
-    @test G.rels == Matrix(FlintZZ, 1, 6, M)
+    @test G.rels == matrix(FlintZZ, 1, 6, M)
 
     M = [3, 0]
     G = @inferred DiagonalGroup(M)
@@ -43,24 +43,24 @@
     G = @inferred DiagonalGroup(M)
     @test isa(G, GrpAbFinGen)
 
-    M = Matrix(FlintZZ, 1, 2, [3, 0])
+    M = matrix(FlintZZ, 1, 2, [3, 0])
     G = @inferred DiagonalGroup(M)
     @test isa(G, GrpAbFinGen)
 
     N = [3, 5]
     G = @inferred DiagonalGroup(N)
     @test isa(G, GrpAbFinGen)
-    @test G.rels == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     N = fmpz[3, 5]
     G = @inferred DiagonalGroup(N)
     @test isa(G, GrpAbFinGen)
-    @test G.rels == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
-    N = Matrix(FlintZZ, 1, 2, [3, 5])
+    N = matrix(FlintZZ, 1, 2, [3, 5])
     G = @inferred DiagonalGroup(N)
     @test isa(G, GrpAbFinGen)
-    @test G.rels == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+    @test G.rels == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
 
     @test_throws ErrorException DiagonalGroup(FlintZZ[1 2; 3 4])
 
@@ -75,13 +75,13 @@
       @test @inferred issnf(S)
       @test @inferred ngens(S) == 2
       @test @inferred nrels(S) == 2
-      @test @inferred rels(S) == Matrix(FlintZZ, 2, 2, [3, 0, 0, 0])
+      @test @inferred rels(S) == matrix(FlintZZ, 2, 2, [3, 0, 0, 0])
 
       G = DiagonalGroup([3, 5])
       @test @inferred !issnf(G)
       @test @inferred ngens(G) == 2
       @test @inferred nrels(G) == 2
-      @test @inferred rels(G) == Matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
+      @test @inferred rels(G) == matrix(FlintZZ, 2, 2, [3, 0, 0, 5])
     end
 
     @testset "Hermite normal form" begin
