@@ -474,6 +474,17 @@ end
 # from G to H. The second return value is a fmpz_mat describing the map (in
 # case it exists).
 
+function eval_path(L::RelLattice{T, D}, M::T, pG::Array{UInt, 1}) where {T, D}
+  lG = length(pG)
+  if lG == 1
+    return L.make_id(M)
+  end
+  mG = L.graph.edges[pG[lG]][pG[lG - 1]]
+  for i in lG-1:-1:2
+    mG = L.mult(mG, (L.graph.edges[pG[i]][pG[i - 1]]))::D
+  end
+  return mG
+end
 # Todo: Reduce the entries of the final matrix.
 function can_map_into(L::RelLattice{T, D}, G::T, H::T) where {T, D}
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
@@ -482,11 +493,7 @@ function can_map_into(L::RelLattice{T, D}, G::T, H::T) where {T, D}
 
   b, p = find_shortest(L.graph, object_id(G), object_id(H))
   if b
-    l = length(p)
-    m = L.graph.edges[p[l]][p[l-1]]
-    for i in l-1:-1:2
-      m = L.mult(m, (L.graph.edges[p[i]][p[i-1]]))::D
-    end
+    m = eval_path(L, G, p)
     return true, m
   else
     return false, L.zero
@@ -505,17 +512,10 @@ function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D
     @assert pG[1] == pH[1]
     M = L.weak_vertices_rev[pG[1]].value::T
     @assert M != nothing
+    
+    mG = eval_path(L, M, pG)
+    mH = eval_path(L, M, pH)
 
-    lG = length(pG)
-    mG = L.graph.edges[pG[lG]][pG[lG - 1]]
-    for i in lG-1:-1:2
-      mG = L.mult(mG, (L.graph.edges[pG[i]][pG[i - 1]]))::D
-    end
-    lH = length(pH)
-    mH = L.graph.edges[pH[lH]][pH[lH - 1]]
-    for i in lH-1:-1:2
-      mH = L.mult(mH, (L.graph.edges[pH[i]][pH[i-1]]))::D
-    end
     return true, M, mG, mH
   else
     return false, G, L.zero, L.zero
