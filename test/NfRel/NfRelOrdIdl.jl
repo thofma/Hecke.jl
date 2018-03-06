@@ -14,12 +14,12 @@
   PM2 = pseudo_hnf(Hecke.PseudoMatrix(matrix(K, [6 0; 0 6]), coeff_ideals), :lowerleft, true)
   PM3 = pseudo_hnf(Hecke.PseudoMatrix(matrix(K, [9 0; 0 9]), coeff_ideals), :lowerleft, true)
   I = ideal(OL, PM)
-  I1 = frac_ideal(OL, I, OK(1))
+  I1 = frac_ideal(OL, PM)
   A = ideal(OL, PM1)
-  A1 = frac_ideal(OL, A, OK(1))
+  A1 = frac_ideal(OL, PM1)
   B = ideal(OL, PM2)
   C = ideal(OL, PM3)
-  C1 = frac_ideal(OL, C, OK(1))
+  C1 = frac_ideal(OL, PM3)
 
   @test A == B + C
   @test B == intersection(A, B)
@@ -28,7 +28,7 @@
   @test norm(A) == OK(9)*OK
   @test norm(I) == OK(1)*OK
   D = divexact(C, B)
-  D.num = K(2)*numerator(D)
+  D = fmpz(2)*D
   @test D == A1
 
   p = prime_decomposition(OK, 11)[1][1]
