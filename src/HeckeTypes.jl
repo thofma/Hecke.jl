@@ -1789,9 +1789,12 @@ mutable struct RelLattice{T <: Any, D <: Any}
   end
 end
 
+function GrpAbLatticeCreate()
+  r = GrpAbLattice()
+  r.zero = fmpz_mat(0,0)
+  r.mult = *
+  return r
+end
 
 const GrpAbLattice = RelLattice{GrpAbFinGen, fmpz_mat}
-const GroupLattice = GrpAbLattice()
-GroupLattice.zero = fmpz_mat(0,0)
-GroupLattice.mult = *
-
+const GroupLattice = GrpAbLatticeCreate()
