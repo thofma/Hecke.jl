@@ -1075,6 +1075,9 @@ end
 # =======================================
 # Array interface for MatElem
 # =======================================
+#
+# TODO: re-write for special types (fmpz_mat e.g.) to gain efficiency
+#
 
 length(A::Nemo.MatElem) = rows(A) * cols(A)
 Base.ndims(A::Nemo.MatElem) = 2
@@ -1125,5 +1128,54 @@ Base.start(A::Nemo.MatElem) = 1
 Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
 Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
 
+function setindex!(A::Nemo.MatElem, b::Nemo.MatElem, ::Colon, i::Int)
+  @assert cols(b) == 1 && rows(b) == rows(A)
+  for j=1:rows(A)
+    A[j,i] = b[j]
+  end
+  b
+end
 
-# cat, vcat, hcat???
+function setindex!(A::Nemo.MatElem, b::Nemo.MatElem, i::Int, ::Colon)
+  @assert rows(b) == 1 && cols(b) == cols(A)
+  for j=1:cols(A)
+    A[i,j] = b[j]
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem{T}, b::Array{T, 1}, ::Colon, i::Int) where T
+  @assert length(b) == rows(A)
+  for j=1:rows(A)
+    A[j,i] = b[j]
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem{T}, b::Array{T, 1}, i::Int, ::Colon) where T
+  @assert length(b) == cols(A)
+  for j=1:cols(A)
+    A[i,j] = b[j]
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem{T}, b::T, ::Colon, i::Int) where T
+  for j=1:rows(A)
+    A[j,i] = b
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem{T}, b::T, i::Int, ::Colon) where T
+  for j=1:cols(A)
+    A[i,j] = b
+  end
+  b
+end
+
+
+getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:cols(A)]
+getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:rows(A), i:i]
+
+
