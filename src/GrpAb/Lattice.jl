@@ -333,7 +333,7 @@ end
 # L.weak_vertices, which hold references to all groups, which are currently
 # in the lattice. The second part is an actual graph, whose vertices are the
 # object_id's of the groups and whose edges represented maps (the additional
-# data at an edge is the fmpz_mat describing the map).
+#fmpz_mat(0, 0) data at an edge is the fmpz_mat describing the map).
 #
 # Now things get complicated (interesting) due to the presence of the gc.
 # Here is the most important rule:
@@ -477,7 +477,7 @@ end
 # Todo: Reduce the entries of the final matrix.
 function can_map_into(L::RelLattice{T, D}, G::T, H::T) where {T, D}
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
-    return false, fmpz_mat(0, 0)
+    return false, L.zero
   end
 
   b, p = find_shortest(L.graph, object_id(G), object_id(H))
@@ -485,7 +485,7 @@ function can_map_into(L::RelLattice{T, D}, G::T, H::T) where {T, D}
     l = length(p)
     m = L.graph.edges[p[l]][p[l-1]]
     for i in l-1:-1:2
-      m = L.mult(m, (L.graph.edges[p[i]][p[i-1]]))
+      m = L.mult(m, (L.graph.edges[p[i]][p[i-1]]))::D
     end
     return true, m
   else
@@ -509,12 +509,12 @@ function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D
     lG = length(pG)
     mG = L.graph.edges[pG[lG]][pG[lG - 1]]
     for i in lG-1:-1:2
-      mG = L.mult(mG, (L.graph.edges[pG[i]][pG[i - 1]]))
+      mG = L.mult(mG, (L.graph.edges[pG[i]][pG[i - 1]]))::D
     end
     lH = length(pH)
     mH = L.graph.edges[pH[lH]][pH[lH - 1]]
     for i in lH-1:-1:2
-      mH = L.mult(mH, (L.graph.edges[pH[i]][pH[i-1]]))
+      mH = L.mult(mH, (L.graph.edges[pH[i]][pH[i-1]]))::D
     end
     return true, M, mG, mH
   else
