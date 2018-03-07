@@ -1297,3 +1297,20 @@ function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
   return p
 end
 
+doc"""
+    cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem
+> Tries to solve $Ax = B$
+"""
+function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  R = base_ring(A)
+  @assert R == base_ring(B)
+  @assert rows(A) == rows(B)
+  mu = [A B]
+  rk = rref!(mu)
+  if rk > cols(A)
+    return false, B
+  end
+  sol = [mu[1:rk, cols(A)+1:cols(A)+cols(B)]; zero_matrix(R, max(0, cols(A) - rows(A)), cols(B))]
+  return true, sol
+end
+
