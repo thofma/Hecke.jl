@@ -1246,5 +1246,54 @@ end
 
 Base.cat(dims, A::Nemo.MatElem...) = cat(Tuple(dims), A...)
 
+doc"""
+    reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
 
+> For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+> columns will be zero afterwards.
+"""
+function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  @assert isrref(B)
+  for h=1:rows(A)
+    j = 1
+    for i=1:rows(B)
+      while iszero(B[i, j])
+        j += 1
+      end
+      A[h, :] -= A[h, j] * B[i, :]
+    end
+  end
+  return A
+end
+
+doc"""
+    reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> MatElem
+
+> For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+> columns will be zero afterwards.
+"""
+function reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  C = deepcopy(A)
+  reduce_mod!(C, B)
+  return C
+end
+
+doc"""
+    find_pivot(A::Nemo.MatElem{<:Nemo.RingElem}) -> Array{Int, 1}
+
+> Find the pivot-columns of the reduced row echelon matrix $A$
+"""
+function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
+  @assert isrref(A)
+  p = Int[]
+  j = 0
+  for i=1:rows(A)
+    j += 1
+    while iszero(A[i,j])
+      j += 1
+    end
+    push!(p, j)
+  end
+  return p
+end
 
