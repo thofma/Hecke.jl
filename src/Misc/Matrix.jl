@@ -1289,8 +1289,14 @@ function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
   j = 0
   for i=1:rows(A)
     j += 1
+    if j > cols(A)
+      return p
+    end
     while iszero(A[i,j])
       j += 1
+      if j > cols(A)
+        return p
+      end
     end
     push!(p, j)
   end
@@ -1307,10 +1313,16 @@ function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.F
   @assert rows(A) == rows(B)
   mu = [A B]
   rk = rref!(mu)
-  if rk > cols(A)
+  p = find_pivot(mu)
+  if any(i->i>cols(A), p)
     return false, B
   end
-  sol = [mu[1:rk, cols(A)+1:cols(A)+cols(B)]; zero_matrix(R, max(0, cols(A) - rows(A)), cols(B))]
+  sol = zero_matrix(R, cols(A), cols(B))
+  for i = 1:length(p)
+    for j = 1:cols(B)
+      sol[p[i], j] = mu[i, cols(A) + j]
+    end
+  end
   return true, sol
 end
 
