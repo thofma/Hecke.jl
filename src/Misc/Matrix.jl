@@ -1326,3 +1326,134 @@ function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.F
   return true, sol
 end
 
+doc"""
+    cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem, MatElem
+> Tries to solve $Ax = B$, returns a solution and the nullspace.
+"""
+function Nemo.cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  R = base_ring(A)
+  @assert R == base_ring(B)
+  @assert rows(A) == rows(B)
+  mu = [A B]
+  rk = rref!(mu)
+  p = find_pivot(mu)
+  if any(i->i>cols(A), p)
+    return false, B, B
+  end
+  sol = zero_matrix(R, cols(A), cols(B))
+  for i = 1:length(p)
+    for j = 1:cols(B)
+      sol[p[i], j] = mu[i, cols(A) + j]
+    end
+  end
+  n = zero_matrix(R, cols(A), cols(A) - length(p))
+  np = sort(setdiff(1:cols(A), p))
+  i = 0
+  push!(p, cols(A)+1)
+  for j = 1:length(np)
+    if np[j] >= p[i+1]
+      i += 1
+    end
+    if i > 0
+      n[p[i], j] = -mu[i, np[j]]
+    end
+    n[np[j], j] = 1
+  end
+  return true, sol, n
+end
+
+#TODO: different to cansolve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
+#maybe (definitely!) agree on one name and combine?
+
+doc"""
+    cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem
+> Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring.
+"""
+function Nemo.cansolve(a::Nemo.MatElem{T}, b::Nemo.MatElem{T}) where T <: Nemo.RingElem
+  R = base_ring(a)
+  @assert R == base_ring(b)
+  @assert rows(a) == rows(b)
+
+  H, T = hnf_with_trafo(transpose(a))
+  b = deepcopy(b)
+  z = similar(a, cols(b), cols(a))
+  l = min(rows(a), cols(a))
+  for i = 1:cols(b)
+    for j = 1:l
+      k = 1
+      while k <= cols(H) && iszero(H[j, k])
+        k += 1
+      end
+      if k > cols(H)
+        continue
+      end
+      q, r = divrem(b[k, i], H[j, k])
+      if !iszero(r)
+        return false, b
+      end
+      for h = k:cols(H)
+        b[h, i] -= q*H[j, h]
+      end
+      z[i, j] = q
+    end
+  end
+  if !iszero(b)
+    return false, b
+  end
+  return true, transpose(z*T)
+end
+
+doc"""
+    cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem, MatElem
+> Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring. If successful,
+> a basis for the nullspace is computed as well.
+"""
+function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{T}, b::Nemo.MatElem{T}) where T <: Nemo.RingElem
+  R = base_ring(a)
+  @assert R == base_ring(b)
+  @assert rows(a) == rows(b)
+
+  H, T = hnf_with_trafo(transpose(a))
+  z = similar(a, cols(b), cols(a))
+  l = min(rows(a), cols(a))
+  for i=1:cols(b)
+    for j=1:l
+      k = 1
+      while k <= cols(H) && iszero(H[j, k])
+        k += 1
+      end
+      if k > cols(H)
+        continue
+      end
+      q, r = divrem(b[k, i], H[j, k])
+      if !iszero(r)
+        return false, b, b
+      end
+      for h=k:cols(H)
+        b[h, i] -= q*H[j, h]
+      end
+      z[i, k] = q
+    end
+  end
+  if !iszero(b)
+    return false, b, b
+  end
+
+  for i = rows(H):-1:1
+    for j = 1:cols(H)
+      if !iszero(H[i,j])
+        N = similar(a, cols(a), rows(H) - i)
+        for k = 1:rows(N)
+          for l = 1:cols(N)
+            N[k,l] = T[rows(T) - l + 1, k]
+          end
+        end
+        return true, transpose(z*T), N
+      end
+    end
+  end
+  N =  similar(a, cols(a), 0)
+
+  return true, (z*T), N
+end
+
