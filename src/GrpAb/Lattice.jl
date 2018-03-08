@@ -477,7 +477,7 @@ end
 function eval_path(L::RelLattice{T, D}, M::T, pG::Array{UInt, 1}) where {T, D}
   lG = length(pG)
   if lG == 1
-    return L.make_id(M)
+    return L.make_id(M)::D
   end
   mG = L.graph.edges[pG[lG]][pG[lG - 1]]
   for i in lG-1:-1:2
