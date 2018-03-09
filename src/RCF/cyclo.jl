@@ -25,7 +25,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       end
     end
   catch e
-    if e != Nemo.AccessorNotSetError()
+    if e != AbstractAlgebra.AccessorNotSetError()
       rethrow(e)
     end
   end

@@ -35,6 +35,7 @@ __precompile__()
 
 module Hecke
 
+using AbstractAlgebra
 using Nemo
 
 ################################################################################
