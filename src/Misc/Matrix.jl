@@ -1369,7 +1369,7 @@ doc"""
     cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem
 > Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring.
 """
-function Nemo.cansolve(a::Nemo.MatElem{T}, b::Nemo.MatElem{T}) where T <: Nemo.RingElem
+function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
   R = base_ring(a)
   @assert R == base_ring(b)
   @assert rows(a) == rows(b)
@@ -1408,7 +1408,7 @@ doc"""
 > Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring. If successful,
 > a basis for the nullspace is computed as well.
 """
-function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{T}, b::Nemo.MatElem{T}) where T <: Nemo.RingElem
+function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
   R = base_ring(a)
   @assert R == base_ring(b)
   @assert rows(a) == rows(b)
