@@ -1272,7 +1272,7 @@ doc"""
 > For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
 > columns will be zero afterwards.
 """
-function reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+function Nemo.reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
   C = deepcopy(A)
   reduce_mod!(C, B)
   return C
