@@ -1,13 +1,13 @@
-mutable struct NfRelOrdToFqMor <: Map{NfRelOrd, FqFiniteField}
+mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField}
   header::MapHeader
   poly_of_the_field::fq_poly
-  P::NfRelOrdIdl
+  P::NfRelOrdIdl{T, S}
 
-  function NfRelOrdToFqMor(O::NfRelOrd, P::NfRelOrdIdl)
+  function NfRelOrdToFqMor{T, S}(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
     if isindex_divisor(O, minimum(P, Val{false}))
       error("Not implemented yet.")
     end
-    z = new()
+    z = new{T, S}()
     z.P = P
     p = minimum(P)
     F, mF = ResidueField(order(p), p)
