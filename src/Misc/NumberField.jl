@@ -13,6 +13,12 @@ else
   global const p_start = 2^60
 end
 
+if :libantic in names(Nemo, true)
+  global const _libantic = :libantic
+else
+  global const _libantic = :libflint
+end
+
 ################################################################################
 #
 # convenience ...
@@ -273,7 +279,7 @@ function basis_mat(A::Array{nf_elem, 1})
 end
 
 function set_den!(a::nf_elem, d::fmpz)
-  ccall((:nf_elem_set_den, :libflint),
+  ccall((:nf_elem_set_den, _libantic),
         Void,
        (Ptr{Nemo.nf_elem}, Ptr{Nemo.fmpz}, Ptr{Nemo.AnticNumberField}),
        &a, &d, &parent(a))
@@ -1066,14 +1072,14 @@ end
 
 function gen!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_gen, :libflint), Void,
+   ccall((:nf_elem_gen, _libantic), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
 
 function one!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_one, :libflint), Void,
+   ccall((:nf_elem_one, _libantic), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
@@ -1103,14 +1109,14 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    #   adressed in c
    de = denominator(a)
    n = degree(parent(a))
-   ccall((:nf_elem_norm_div, :libflint), Void,
+   ccall((:nf_elem_norm_div, _libantic), Void,
          (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
          &z, &(a*de), &a.parent, &(d*de^n), UInt(nb))
    return z
 end
 
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, :libflint), Void,
+   ccall((:nf_elem_sub, _libantic), Void,
          (Ptr{nf_elem}, Ptr{nf_elem}, Ptr{nf_elem}, Ptr{AnticNumberField}),
 
          &a, &b, &c, &a.parent)
@@ -1295,7 +1301,7 @@ end
 function numerator(a::nf_elem)
    const _one = fmpz(1)
    z = copy(a)
-   ccall((:nf_elem_set_den, :libflint), Void,
+   ccall((:nf_elem_set_den, _libantic), Void,
          (Ptr{nf_elem}, Ptr{fmpz}, Ptr{AnticNumberField}),
          &z, &_one, &a.parent)
    return z
