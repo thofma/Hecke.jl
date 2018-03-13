@@ -35,9 +35,6 @@ __precompile__()
 
 module Hecke
 
-using AbstractAlgebra
-using Nemo
-
 ################################################################################
 #
 #  Load FPlll if available
@@ -54,33 +51,6 @@ end
 #
 ################################################################################
 
-import Nemo: nf_elem, AnticNumberField, degree, one!,
-             den, num, parent, length,
-             norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
-             trace, mod, zero, 
-             hash, PolynomialRing, coeff,
-             var, abs, min, iszero, one, isone, rank, in,
-             discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
-             elem_from_mat_row, elem_to_mat_row!, order, signature,
-             base_ring, compose, root, arf_struct, fmpq, valuation, remove,
-             Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
-             resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
-             ceil, //, setindex!, transpose, colon, nf_elem, isreal,
-             MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
-             minpoly, charpoly, det, howell_form, needs_parentheses, ishnf,
-             isnegative, parent_type, intersect, lcm, strong_echelon_form,
-             strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
-             FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
-             acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
-             roots, nbits, ispositive, sign, isprime, isunit,
-             NumberField, CyclotomicField, MaximalRealSubfield,
-             addmul!, deflate, gens, inflate, isconstant, issquare, 
-             swap_rows!, nmod, NmodRing, inv!
-
-
-export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
-       ispower, hasroot, NumberField, CyclotomicField, MaximalRealSubfield
-
 import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
              getindex, setindex!, transpose, getindex, //, colon, div,
@@ -91,15 +61,30 @@ import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round,
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
+# dong it the "import" route, we can pick & choose...
+
+import AbstractAlgebra
+
+import Nemo
+
+exclude = [:Nemo, :AbstractAlgebra,
+           :factor,
+           :call, :factors, :parseint, :strongequal, :window, :xgcd]
 
 for i in names(Nemo)
+  i in exclude && continue
+  eval(Expr(:import, :Nemo, i))
   eval(Expr(:export, i))
 end
+
+import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct, Set,
+       elem_to_mat_row!, elem_from_mat_row,
+       acb_vec, array, acb_vec_clear
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, @timeit, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, @test_and_infer
+       modord, resultant, @test_and_infer, next_prime, ispower
 
 ###############################################################################
 #
