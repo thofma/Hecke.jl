@@ -132,8 +132,8 @@ function __init__()
   global _set_nf_conjugate_data_arb = t[2]
 
   t = create_accessors(AnticNumberField, Dict{Int, acb_roots}, get_handle())
-  global _get_nf_conjugate_data_arb_2 = t[1]
-  global _set_nf_conjugate_data_arb_2 = t[2]
+  global _get_nf_conjugate_data_arb_roots = t[1]
+  global _set_nf_conjugate_data_arb_roots = t[2]
 
 
   t = create_accessors(AnticNumberField,
@@ -183,14 +183,6 @@ function __init__()
   global const _y = gen(_Zxy)
 
   global const flint_rand_ctx = flint_rand_state()
-
-#  let
-#    Qx, x = FlintQQ["x"]
-#    K, a = NumberField(x^2 - 2, "a")
-#    O = maximal_order(K)
-#    class_group(O);
-#    nothing
-#  end
 end
 
 function conjugate_data_arb(K::AnticNumberField)
@@ -204,11 +196,11 @@ function conjugate_data_arb(K::AnticNumberField)
   end
 end
 
-function conjugate_data_arb_2(K::AnticNumberField, p::Int)
+function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   already_set = false
   local c
   try
-    c = _get_nf_conjugate_data_arb_2(K)::Dict{Int, acb_roots}
+    c = _get_nf_conjugate_data_arb_roots(K)::Dict{Int, acb_roots}
     already_set = true
   catch
     c = Dict{Int, acb_roots}()
@@ -242,7 +234,7 @@ function conjugate_data_arb_2(K::AnticNumberField, p::Int)
   end
   c[p] = acb_roots(p, rall, rreal, rcomplex)
   if !already_set
-    _set_nf_conjugate_data_arb_2(K, c)
+    _set_nf_conjugate_data_arb_roots(K, c)
   end
   return c[p]::acb_roots
 end
@@ -599,6 +591,7 @@ include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")
 include("LinearAlgebra.jl")
+include("NfAbs.jl")
 include("NfOrd.jl")
 include("Sparse.jl")
 include("BigComplex.jl")
