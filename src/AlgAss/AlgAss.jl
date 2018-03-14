@@ -78,6 +78,19 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
   return A
 end
 
+function AlgAss(R::Ring, d::Int, arr::Array{T, 1}) where {T}
+  mult_table = Array{T, 3}(d, d, d)
+  n = d^2
+  for i in 1:d
+    for j in 1:d
+      for k in 1:d
+        mult_table[i, j, k] = arr[(i - 1) * n + (j - 1) * d + k]
+      end
+    end
+  end
+  return AlgAss(R, mult_table)
+end
+
 # Constructs the algebra R[X]/f
 function AlgAss(f::PolyElem)
   R = base_ring(parent(f))
@@ -180,6 +193,112 @@ function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T
     push!(basis, (u^v)*pb[i][1])
   end
   return basis
+end
+
+#=
+Qx, x = QQ["x"];
+f = x^2 + 12*x - 92;
+K, a = number_field(f, "a");
+OK = maximal_order(K);
+Ky, y = K["y"];
+g = y^2 - 54*y - 73;
+L, b = number_field(g, "b");
+OL = maximal_order(L);
+p = prime_decomposition(OK, 2)[1][1]
+=#
+
+function tommy(O, I, p)
+  new_basis_mat = deepcopy(basis_mat(O))
+  new_basis_mat_I = deepcopy(basis_mat(I))
+  pi = anti_uniformizer(p)
+  new_basis_coeffs = []
+  for i in 1:degree(O)
+    a = pi^valuation(basis_pmat(O).coeffs[i], p)
+    push!(new_basis_coeffs, a * basis_pmat(O).coeffs[i])
+    mul_row!(new_basis_mat, i, inv(a))
+    @show i
+    @show a
+    for j in 1:degree(O)
+      new_basis_mat_I[j, i] = new_basis_mat_I[j, i] * a
+    end
+  end
+
+  Fp, mF = ResidueField(order(p), p)
+  mmF = extend(mF, base_ring(nf(O)))
+  invmmF = inv(mmF)
+
+  basis_elts = Int[]
+  reducers = Int[]
+  for i in 1:degree(O)
+    if valuation(basis_pmat(I).coeffs[i] * new_basis_mat_I[i, i], p) == 0
+      push!(reducers, i)
+    else
+      push!(basis_elts, i)
+    end
+  end
+
+  reverse!(reducers)
+
+  OLL = Order(nf(O), PseudoMatrix(new_basis_mat, new_basis_coeffs))
+  newI = ideal(O, PseudoMatrix(new_basis_mat_I, basis_pmat(I).coeffs))
+
+  _coeff(c) = matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
+
+  mult_table = Array{elem_type(Fp), 3}(length(basis_elts), length(basis_elts), length(basis_elts))
+
+  for i in basis_elts
+    for j in basis_elts
+      @show "==========================="
+      @show i, j
+      c = pseudo_basis(OLL)[i][1] * pseudo_basis(OLL)[j][1]
+      coeffs = matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
+      @show _coeff(c)
+
+
+      for k in reducers
+        d = -coeffs[k]//basis_mat(newI)[k, k]
+        @show d in basis_pmat(newI).coeffs[k]
+        c = c + d * pseudo_basis(newI)[k][1]
+        @show c
+        coeffs = matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
+      end
+      for k in 1:degree(O)
+        if k in basis_elts
+          mult_table[i, j, k] = mmF(coeffs[k])
+        else
+          @assert iszero(coeffs[k])
+        end
+      end
+      @show _coeff(c)
+    end
+  end
+
+  #if isone([1])
+  #  one = zeros(Fp, length(basis_elts))
+  #  one[1] = Fp(1)
+  #  A = AlgAss(Fp, mult_table, one)
+  #else
+    A = AlgAss(Fp, mult_table)
+  #end
+  A.iscommutative = 1
+  return A
+
+
+  @show basis_elts
+  @show reducers
+
+  @show new_basis_mat
+  @show new_basis_coeffs
+  @show [ valuation(j, p) for j in new_basis_coeffs]
+  @show new_basis_mat_I
+  @show [ valuation(basis_pmat(I).coeffs[i] * new_basis_mat_I[i, i], p) for i in 1:degree(O)]
+
+  @show OLL
+  @show c = pseudo_basis(OLL)[2][1] * pseudo_basis(OLL)[3][1]
+  @show matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
+
+
+  return true
 end
 
 # If already_integral is true it is assumed that the coefficient

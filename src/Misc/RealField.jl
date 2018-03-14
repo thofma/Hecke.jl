@@ -7,6 +7,7 @@
 mutable struct RealField <: Nemo.Field
   K::AnticNumberField
   P::InfPlc
+
   function RealField(K::AnticNumberField, P::InfPlc)
     if !isreal(P)
       error("place is not real")
