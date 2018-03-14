@@ -113,24 +113,28 @@ const libdir = joinpath(pkgdir, "local", "lib")
 
 function __init__()
 
-  println("")
-  print("Welcome to \n")
-  print_with_color(:red, "
-  _    _           _        
- | |  | |         | |       
- | |__| | ___  ___| | _____ 
- |  __  |/ _ \\/ __| |/ / _ \\
- | |  | |  __/ (__|   <  __/
- |_|  |_|\\___|\\___|_|\\_\\___|
-  ")
+  if myid() == 1
+    println("")
+    print("Welcome to \n")
+    print_with_color(:red, "
+    _    _           _        
+   | |  | |         | |       
+   | |__| | ___  ___| | _____ 
+   |  __  |/ _ \\/ __| |/ / _ \\
+   | |  | |  __/ (__|   <  __/
+   |_|  |_|\\___|\\___|_|\\_\\___|
+    ")
 
-  println()
-  print("Version")
-  print_with_color(:green, " $VERSION_NUMBER ")
-  print("... \n ... which comes with absolutely no warranty whatsoever")
-  println()
-  println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
-  println()
+    println()
+    print("Version")
+    print_with_color(:green, " $VERSION_NUMBER ")
+    print("... \n ... which comes with absolutely no warranty whatsoever")
+    println()
+    println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
+    println()
+  else
+    println("Hecke $VERSION_NUMBER ...")
+  end
   
   if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
     push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
