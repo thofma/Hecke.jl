@@ -361,7 +361,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)
-  b1=Int(root(fmpz(bound),Int(degree(O)*(minimum(wild_ram)-1)*k))) 
+  b1=Int(root(fmpz(bound),Int(degree(O)*(m-1)*k))) 
   
   list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
@@ -393,7 +393,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
       if (list[i]^d)*norm>bound
         continue
       end
-      push!(final_list, (list[i]*el, (list[i]^d)*norm))
+      push!(final_list, (list[i]*el, (list[i]^(Int((m-1)*k)*d))*norm))
     end
   end
   
@@ -405,10 +405,6 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   K=nf(O)
   d=degree(O)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
-  ram_primes=collect(keys(factor(O.disc).fac))
-  filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to=cat(1,ram_primes, wild_ram)
-  sort!(ram_primes)
 
   #
   # First, conductors for tamely ramified extensions
@@ -508,14 +504,162 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
 end
 
 
+function conductors_tameQQ(O::NfOrd, n::Int, bound::fmpz)
+
+  #
+  #  First, conductors coprime to the ramified primes and to the 
+  #  degree of the extension we are searching for.
+  # 
+  
+  wild_ram=collect(keys(factor(fmpz(n)).fac))
+  m=minimum(wild_ram)
+  k=divexact(n,m)
+  b1=Int(root(fmpz(bound),Int((m-1)*k))) 
+  
+  return squarefree_for_conductors(O, b1, n, coprime_to=wild_ram)
+
+end
+
+function conductorsQQ(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
+  
+  K=nf(O)
+  d=degree(O)
+  wild_ram=collect(keys(factor(fmpz(n)).fac))
+
+  #
+  # First, conductors for tamely ramified extensions
+  #
+
+  list=conductors_tameQQ(O,n,bound)
+
+  if tame
+    return list  
+  end
+  #
+  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
+  #
+  wild_list=Tuple{Int, Int, fmpz}[(1, 1,1)]
+  for q in wild_ram
+    l=length(wild_list)
+    #=
+      we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
+      Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
+      quotient of ray class group by its subgroup C.
+      Then 
+          ap= v_p(m)h_(m,C)- sum_{i=1:v_p(m)} h_(m/p^i, C)
+      Since m is the conductor, h_(m/p^i, C)<= h_(m,C)/q.
+      Consequently, we get
+        v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
+      To find ap, it is enough to compute a logarithm.
+    =#
+    nisc= gcd(q-1,n)
+    if nisc!=1
+      nbound=n+n*valuation(n,q)-1
+    else
+      nbound=n+n*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+    end
+    obound=flog(bound,q)
+    nnbound=valuation_bound_discriminant(n,q)
+    bound_max_ap= min(nbound, obound, nnbound)  #bound on ap
+   
+    bound_max_exp=div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
+    
+    if nisc != 1
+      fnisc=minimum(keys(factor(nisc).fac))
+      nq=q^((fnisc-1)*(divexact(n, fnisc)))
+      for s=1:l
+        nn=nq*wild_list[s][3]
+        if nn>bound
+          continue
+        end
+        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
+      end
+    end
+    t=(q-1)*divexact(n,q)
+    for i=2:bound_max_exp
+      nq= q^(i*t)
+      for s=1:l
+        nn=nq*wild_list[s][3]
+        if nn>bound
+          continue
+        end
+        push!(wild_list, (wild_list[s][1], wild_list[s][2]*q^i, nn))
+      end
+    end
+  end
+  
+  #the final list
+  final_list=Int[]
+  exps=Int((minimum(wild_ram)-1)*divexact(n,minimum(wild_ram)))
+  for el in list
+    for (q,d,nm2) in wild_list
+      if el^exps*nm2 > bound
+        continue
+      end
+      push!(final_list, (el*q*d))
+    end
+  end
+
+  return final_list
+  
+end
+
+
 ###############################################################################
 #
 #  Abelian extensions
 #
 ###############################################################################
 
+
+function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false, with_autos::Bool=false)
+  
+  K=nf(O) 
+  @assert degree(K)==1
+  n=prod(gtype)
+    
+  expo=lcm(gtype)
+    
+  #Getting conductors
+  l_conductors=conductorsQQ(O,n,absolute_discriminant_bound, tame)
+  @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  fields=NfRel_ns[]
+  autos=Vector{NfRel_nsToNfRel_nsMor}[]
+
+  #Now, the big loop
+  for (i, k) in enumerate(l_conductors)
+    @vprint :QuadraticExt 1 "Conductor: $k \n"
+    @vprint :QuadraticExt 1 "Left: $(length(l_conductors) - i)\n"
+    r,mr=ray_class_groupQQ(O,k,!real,expo)
+    if !_are_there_subs(r,gtype)
+      continue
+    end
+    ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
+    for s in ls
+      C=ray_class_field(mr*inv(s))
+      if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound,n)
+        @vprint :QuadraticExt 1 "New Field \n"
+        L=number_field(C)
+        push!(fields, L)
+      end
+      if with_autos
+        push!(autos,absolute_automorphism_group(C,gens))
+      end
+    end
+  end
+
+  return fields
+
+end
+
+
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, with_autos::Bool=false, absolute_galois_group::Symbol = :all)
-   
+
+
+  if degree(O)==1
+    return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame, with_autos=with_autos) 
+  end
+
   K=nf(O) 
   n=prod(gtype)
   inf_plc=InfPlc[]
@@ -558,15 +702,11 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     if !_are_there_subs(r,gtype)
       continue
     end
-    if d>1
-      if cgrp
+    if cgrp
         mr.prime_ideal_cache = S
-      end
-      act=_act_on_ray_class(mr,gens)
-      ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false)[2])
-    else
-      ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
     end
+    act=_act_on_ray_class(mr,gens)
+    ls=stable_subgroups(r,gtype,act, op=(x, y) -> quo(x, y, false)[2])
     a=_min_wild(k[2])*k[1]
     totally_positive_generators(mr,a)
     for s in ls
@@ -1030,6 +1170,21 @@ function D5_extensions(absolute_bound::fmpz, quad_fields)
     append!(z, single_D5_extensions(absolute_bound, K))
   end
   return z
+end
+
+function D5_extensions(absolute_bound::fmpz, quad_fields, f::IOStream)
+  
+  len=length(quad_fields)
+  for K in quad_fields
+    len-=1
+    
+    println("Field: $K")   
+    println("Remaining Fields: $(len)")
+    for g in single_D5_extensions(absolute_bound, K)
+      Base.write(f, "($g)\n" )
+    end
+  end
+  return len
 end
 
 
@@ -1722,7 +1877,7 @@ function _maximal_absolute_order_from_relative(L::NfRel_ns)
   cbasis=[x*y for x in nbasisL for y in nbasisO]
   
   Ord=Order(K, cbasis)
-  println("The elements give an order")
+  #println("The elements give an order")
   return MaximalOrder(Ord)
 
 end
