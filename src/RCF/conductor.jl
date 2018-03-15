@@ -469,6 +469,69 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
 
 end 
 
+#
+#  Same function as above, but in the assumption that the map comes from a ray class group over QQ
+#
+
+function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
+
+  mp=C.mq
+  R=domain(mp)
+  mr=mp.f
+  while issubtype(typeof(mr), Hecke.CompositeMap)
+    mr = mr.f
+  end
+  m=mr.modulus_fin
+  mm=Int(minimum(m))
+  lp=factor(m.minimum)
+  
+  O=order(m)
+  K=nf(O)
+  
+  R=ResidueRing(FlintZZ, mm, cached=false)
+  for (p,v) in lp.fac
+    if isodd(p)
+      if v==1
+        x=_unit_grp_residue_field_mod_n(Int(p), n)[1]
+        s=divexact(mm,Int(p))
+        d,a,b=gcdx(s,Int(p))
+        l=a*s*R(x)+p*b  
+        if iszero(mp\(ideal(O,Int(l.data))))
+          return false
+        end
+      else      
+        s=divexact(minimum(m),p^v)
+        d,a,b=gcdx(s,p^v)
+        x=a*s*R(1+p)^((p-1)*p^(v-2))+p^v*b
+        if iszero(mp\(ideal(O,Int(x.data))))
+          return false
+        end
+      end
+    else
+      if v==1
+        return false
+      end
+      if v==2
+        s=divexact(mm,4)
+        d,a,b=gcdx(s,4)
+        l=a*s*R(-1)+4*b
+        if iszero(mp\(ideal(O,Int(l.data))))
+          return false
+        end
+      else
+        s=divexact(mm,2^v)
+        d,a,b=gcdx(s, 2^v)
+        l=a*s*R(5)^(2^(v-3))+2^v*b
+        if iszero(mp\(ideal(O,Int(l.data))))
+          return false
+        end
+      end
+    end
+  end
+  return true
+
+end 
+
 ####################################################################################
 #
 #  Discriminant function
@@ -705,6 +768,98 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
   #C.relative_discriminant=relative_disc
   C.absolute_discriminant=abs_disc
   return true
+
+end
+
+#same function but for ray class groups over QQ
+
+function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, n::Int)
+  
+  discr=fmpz(1)
+  mp=C.mq
+  G=domain(mp)
+  
+  cyc_prime= isprime(n)==true
+  
+  lp=factor(m).fac
+  abs_disc=Dict{fmpz,Int}()
+
+  R=ResidueRing(FlintZZ, m, cached=false)
+
+  for (p,v) in lp 
+    if v==1
+      ap=n
+      if cyc_prime
+        ap-=1
+      else
+        x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
+        s=divexact(m,Int(p))
+        d,a,b=gcdx(s, Int(p))
+        l=Int((R(x)*a*s+b*Int(p)).data)
+        el=mp\ideal(O,l)
+        q,mq=quo(G,[el])
+        ap-= order(q)
+      end
+      discr*=p^ap
+      if discr>bound
+        @vprint :QuadraticExt 2 "too large\n"
+        return false
+      else
+        abs_disc[p]=ap
+      end
+    else
+      ap=n*v
+      pow=Int(p)^Int(v)
+      el=R(1)
+      if cyc_prime
+        ap-=v
+      else
+        if isodd(p)
+          s=divexact(m,pow)
+          d,a,b=gcdx(pow,s)  
+          s1=R(1+p)^(p-1)
+          el=G[1]
+          if v==2
+            el=mp\ideal(O,Int((b*s*R(s1)+a*pow).data))
+            ap-=order(quo(G,[el])[1])
+          else
+            for k=0:v-2      
+              el=mp\ideal(O,Int((b*s*R(s1)^(p^k)+a*pow).data))
+              ap-=order(quo(G,[el])[1])
+              @hassert :QuadraticExt 1 ap>0
+            end
+          end
+          if gcd(n,p-1)==1
+            ap-=order(quo(G,[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))])[1])
+          else
+            x=_unit_grp_residue_field_mod_n(p,n)
+            el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
+            ap-=order(quo(G,[mp\(ideal(O,b*s*R(s1)+a*pow)), el1])[1])
+          end
+        else
+          s=divexact(m,2^v)
+          d,a,b=gcdx(2^v,s)  
+          el=0*G[1]
+          for k=v-3:-1:0
+            el=mp\ideal(O,Int((R(5)^(2^k)*b*s+a*2^v).data))
+            ap-=order(quo(G,[el])[1])
+          end
+          el1=mp\ideal(O,Int((R(-1)*b*s+a*p^v).data))
+          ap-=2*order(quo(G,[el, el1])[1])
+        end
+      end
+      discr*=p^ap
+      if discr>bound
+        @vprint :QuadraticExt 2 "too large\n"
+        return false
+      else
+        abs_disc[p]=ap
+      end
+    end
+  end
+  C.absolute_discriminant=abs_disc
+  return true
+  
 
 end
 

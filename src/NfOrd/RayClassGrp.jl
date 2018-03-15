@@ -1484,6 +1484,81 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
 end
 
+##################################################################################
+#
+#  Ray Class Group over QQ
+#
+##################################################################################
+
+function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
+
+  R=ResidueRing(FlintZZ, modulus, cached=false)
+  U,mU=unit_group_mod(R, n_quo)
+  if inf_plc 
+    function disc_log1(I::NfOrdIdl)
+      @assert gcd(minimum(I),modulus)==1
+      i=Int(minimum(I))
+      return mU\(R(i))
+    end
+    
+    function expon1(a::GrpAbFinGenElem)
+      x=mU(a)
+      return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,lift(x)) => 1))
+    end
+    
+    mp=Hecke.MapRayClassGrp{typeof(U)}()
+    mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
+    mp.modulus_fin=ideal(O,modulus)
+    mp.modulus_inf=real_places(nf(O))
+
+    return U,mp
+    
+    
+  elseif isodd(n_quo)
+    
+    function disc_log1(I::NfOrdIdl)
+      @assert gcd(minimum(I),modulus)==1
+      i=Int(minimum(I))
+      return mU\(R(i))
+    end
+    
+    function expon1(a::GrpAbFinGenElem)
+      x=mU(a)
+      return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,lift(x)) => 1))
+    end
+    
+    mp=Hecke.MapRayClassGrp{typeof(U)}()
+    mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
+    mp.modulus_fin=ideal(O,modulus)
+    mp.modulus_inf=[]
+
+    return U,mp
+  
+  else
+      
+    Q,mQ=quo(U, [mU\(R(-1))])
+    
+    function disc_log(I::NfOrdIdl)
+      i=Int(minimum(I))
+      return mQ(mU\(R(i)))
+    end
+    
+    function expon(a::GrpAbFinGenElem)
+      x=mU(mQ\a)
+      return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,x) => 1))
+    end
+    
+    mp=Hecke.MapRayClassGrp{typeof(Q)}()
+    mp.header = Hecke.MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
+    mp.modulus_fin=ideal(O,modulus)
+    mp.modulus_inf=[]
+    
+    return Q,mp
+    
+
+  end
+
+end
 
 ##################################################################################
 #

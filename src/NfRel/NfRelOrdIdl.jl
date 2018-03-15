@@ -960,6 +960,6 @@ end
 function ResidueField(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
   @assert order(P) == O
   @assert P.is_prime == 1
-  mF = NfRelOrdToFqMor(O, P)
+  mF = NfRelOrdToFqMor{T, S}(O, P)
   return codomain(mF), mF
 end
