@@ -453,7 +453,7 @@ end
 
 function kernel_of_frobenius(A::AlgAss)
   F = base_ring(A)
-  p = characteristic(F)
+  q = order(F)
 
   b = A()
   c = A()
@@ -463,7 +463,7 @@ function kernel_of_frobenius(A::AlgAss)
     if i > 1
       b.coeffs[i - 1] = F()
     end
-    c = b^p - b
+    c = b^q - b
     for j = 1:dim(A)
       B[j, i] = deepcopy(c.coeffs[j])
     end
@@ -551,8 +551,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 
   F = base_ring(A)
-  p = characteristic(F)
-  @assert !iszero(p)
+  @assert !iszero(characteristic(F))
   V = kernel_of_frobenius(A)
   k = length(V)
 
@@ -565,7 +564,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 
   while true
-    c = map(F, rand(0:(p-1), k))
+    c = [ rand(F) for i = 1:k ]
     a = dot(c, V)
     f = minpoly(a)
 
