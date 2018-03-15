@@ -43,11 +43,11 @@ function rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray)
 end
 
 doc"""
-    modular_lift(ap::Array{Generic.Mat{fq_nmod}, 1}, me::modular_env) -> Array
+    modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env) -> Array
 > Given an array of matrices as computed by \code{modular_proj},
 > compute a global pre-image using some efficient CRT.
 """
-function modular_lift(ap::Array{Generic.Mat{fq_nmod}, 1}, me::modular_env)
+function modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env)
   A = zero_matrix(me.K, rows(ap[1]), cols(ap[1]))
   for i=1:rows(A)
     for j=1:cols(A)
