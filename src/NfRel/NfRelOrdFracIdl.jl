@@ -108,6 +108,17 @@ function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   return NfRelOrdFracIdl{T, S}(O, H)
 end
 
+doc"""
+***
+    frac_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
+
+> Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
+"""
+function frac_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
+  coeffs = deepcopy(basis_pmat(O, Val{false})).coeffs
+  return frac_ideal(O, PseudoMatrix(M, coeffs))
+end
+
 function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, Val{false})

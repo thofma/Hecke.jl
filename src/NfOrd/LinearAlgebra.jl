@@ -321,7 +321,7 @@ function PseudoMatrix(m::Generic.Mat{S}) where S <: RelativeElement
   OL = maximal_order(L)
   K = base_ring(L)
   OK = maximal_order(K)
-  return PseudoMatrix(m, [ frac_ideal(OL, ideal(OL, identity_matrix(K, degree(L)), false), OK(1)) for i = 1:rows(m) ])
+  return PseudoMatrix(m, [ frac_ideal(OL, identity_matrix(K, degree(L))) for i = 1:rows(m) ])
 end
 
 PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
