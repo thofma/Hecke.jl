@@ -35,8 +35,6 @@ __precompile__()
 
 module Hecke
 
-using Nemo
-
 ################################################################################
 #
 #  Load FPlll if available
@@ -53,33 +51,6 @@ end
 #
 ################################################################################
 
-import Nemo: nf_elem, AnticNumberField, degree, one!,
-             den, num, parent, length,
-             norm, real, imag, inv, rows, getindex!, lll, hnf, cols, 
-             trace, mod, zero, 
-             hash, PolynomialRing, coeff,
-             var, abs, min, iszero, one, isone, rank, in,
-             discriminant, log, sub, lift, FlintQQ, FlintZZ, elem_type,
-             elem_from_mat_row, elem_to_mat_row!, order, signature,
-             base_ring, compose, root, arf_struct, fmpq, valuation, remove,
-             Ring, prec, conj, mul!, gen, divexact, derivative, zero!, divrem,
-             resultant, evaluate, setcoeff!, div, isodd, iseven, max, floor,
-             ceil, //, setindex!, transpose, colon, nf_elem, isreal,
-             MatrixSpace, contains, overlaps, solve, unique_integer, gcd,
-             minpoly, charpoly, det, howell_form, needs_parentheses, ishnf,
-             isnegative, parent_type, intersect, lcm, strong_echelon_form,
-             strong_echelon_form!, howell_form!, add!, mul!, fmpq_poly,
-             FmpzPolyRing, FlintFiniteField, addeq!, acb_vec, array,
-             acb_struct, acb_vec_clear, lufact!, agm, height, characteristic,
-             roots, nbits, ispositive, sign, isprime, isunit,
-             NumberField, CyclotomicField, MaximalRealSubfield,
-             addmul!, deflate, gens, inflate, isconstant, issquare, 
-             swap_rows!, nmod, NmodRing, inv!
-
-
-export AnticNumberField, hash, update, nf, next_prime, dot, maximal_order,
-       ispower, hasroot, NumberField, CyclotomicField, MaximalRealSubfield
-
 import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round, 
              size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
              getindex, setindex!, transpose, getindex, //, colon, div,
@@ -90,15 +61,30 @@ import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round,
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
+# dong it the "import" route, we can pick & choose...
+
+import AbstractAlgebra
+
+import Nemo
+
+exclude = [:Nemo, :AbstractAlgebra,
+           :factor,
+           :call, :factors, :parseint, :strongequal, :window, :xgcd]
 
 for i in names(Nemo)
+  i in exclude && continue
+  eval(Expr(:import, :Nemo, i))
   eval(Expr(:export, i))
 end
+
+import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct, Set,
+       elem_to_mat_row!, elem_from_mat_row,
+       acb_vec, array, acb_vec_clear
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, @timeit, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, @test_and_infer
+       modord, resultant, @test_and_infer, next_prime, ispower
 
 ###############################################################################
 #
@@ -112,24 +98,28 @@ const libdir = joinpath(pkgdir, "local", "lib")
 
 function __init__()
 
-  println("")
-  print("Welcome to \n")
-  print_with_color(:red, "
-  _    _           _        
- | |  | |         | |       
- | |__| | ___  ___| | _____ 
- |  __  |/ _ \\/ __| |/ / _ \\
- | |  | |  __/ (__|   <  __/
- |_|  |_|\\___|\\___|_|\\_\\___|
-  ")
+  if myid() == 1
+    println("")
+    print("Welcome to \n")
+    print_with_color(:red, "
+    _    _           _        
+   | |  | |         | |       
+   | |__| | ___  ___| | _____ 
+   |  __  |/ _ \\/ __| |/ / _ \\
+   | |  | |  __/ (__|   <  __/
+   |_|  |_|\\___|\\___|_|\\_\\___|
+    ")
 
-  println()
-  print("Version")
-  print_with_color(:green, " $VERSION_NUMBER ")
-  print("... \n ... which comes with absolutely no warranty whatsoever")
-  println()
-  println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
-  println()
+    println()
+    print("Version")
+    print_with_color(:green, " $VERSION_NUMBER ")
+    print("... \n ... which comes with absolutely no warranty whatsoever")
+    println()
+    println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
+    println()
+  else
+    println("Hecke $VERSION_NUMBER ...")
+  end
   
   if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
     push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
@@ -146,8 +136,8 @@ function __init__()
   global _set_nf_conjugate_data_arb = t[2]
 
   t = create_accessors(AnticNumberField, Dict{Int, acb_roots}, get_handle())
-  global _get_nf_conjugate_data_arb_2 = t[1]
-  global _set_nf_conjugate_data_arb_2 = t[2]
+  global _get_nf_conjugate_data_arb_roots = t[1]
+  global _set_nf_conjugate_data_arb_roots = t[2]
 
 
   t = create_accessors(AnticNumberField,
@@ -197,14 +187,6 @@ function __init__()
   global const _y = gen(_Zxy)
 
   global const flint_rand_ctx = flint_rand_state()
-
-#  let
-#    Qx, x = FlintQQ["x"]
-#    K, a = NumberField(x^2 - 2, "a")
-#    O = maximal_order(K)
-#    class_group(O);
-#    nothing
-#  end
 end
 
 function conjugate_data_arb(K::AnticNumberField)
@@ -218,11 +200,11 @@ function conjugate_data_arb(K::AnticNumberField)
   end
 end
 
-function conjugate_data_arb_2(K::AnticNumberField, p::Int)
+function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   already_set = false
   local c
   try
-    c = _get_nf_conjugate_data_arb_2(K)::Dict{Int, acb_roots}
+    c = _get_nf_conjugate_data_arb_roots(K)::Dict{Int, acb_roots}
     already_set = true
   catch
     c = Dict{Int, acb_roots}()
@@ -256,7 +238,7 @@ function conjugate_data_arb_2(K::AnticNumberField, p::Int)
   end
   c[p] = acb_roots(p, rall, rreal, rcomplex)
   if !already_set
-    _set_nf_conjugate_data_arb_2(K, c)
+    _set_nf_conjugate_data_arb_roots(K, c)
   end
   return c[p]::acb_roots
 end
@@ -613,6 +595,7 @@ include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")
 include("LinearAlgebra.jl")
+include("NfAbs.jl")
 include("NfOrd.jl")
 include("Sparse.jl")
 include("BigComplex.jl")

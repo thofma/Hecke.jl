@@ -1776,7 +1776,8 @@ mutable struct RelLattice{T <: Any, D <: Any}
   weak_vertices_rev::Dict{UInt, WeakRef}
   to_delete::Array{UInt, 1}
   zero::D # a generic object that will never actually be used.
-  mult::Base.Callable
+  mult::Base.Callable #(D, D) -> D
+  make_id::Base.Callable   # T -> D
 
   function RelLattice{T, D}() where {T, D}
     z = new()
@@ -1789,9 +1790,13 @@ mutable struct RelLattice{T <: Any, D <: Any}
   end
 end
 
+function GrpAbLatticeCreate()
+  r = GrpAbLattice()
+  r.zero = fmpz_mat(0,0)
+  r.mult = *
+  r.make_id = G::GrpAbFinGen -> identity_matrix(FlintZZ, ngens(G))
+  return r
+end
 
 const GrpAbLattice = RelLattice{GrpAbFinGen, fmpz_mat}
-const GroupLattice = GrpAbLattice()
-GroupLattice.zero = fmpz_mat(0,0)
-GroupLattice.mult = *
-
+const GroupLattice = GrpAbLatticeCreate()

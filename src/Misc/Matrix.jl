@@ -1075,6 +1075,9 @@ end
 # =======================================
 # Array interface for MatElem
 # =======================================
+#
+# TODO: re-write for special types (fmpz_mat e.g.) to gain efficiency
+#
 
 length(A::Nemo.MatElem) = rows(A) * cols(A)
 Base.ndims(A::Nemo.MatElem) = 2
@@ -1125,5 +1128,332 @@ Base.start(A::Nemo.MatElem) = 1
 Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
 Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
 
+function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) where T
+  @assert cols(b) == 1 && rows(b) == rows(A) 
+  for j=1:rows(A)
+    A[j,i] = b[j]
+  end
+  b
+end
 
-# cat, vcat, hcat???
+function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, i::Int, ::Colon) where T
+  @assert rows(b) == 1 && cols(b) == cols(A)
+  for j=1:cols(A)
+    A[i,j] = b[j]
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
+  @assert length(b) == rows(A)
+  for j=1:rows(A)
+    A[j,i] = b[j]
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
+  @assert length(b) == cols(A)
+  for j=1:cols(A)
+    A[i,j] = b[j]
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem, b, ::Colon, i::Int) 
+  for j=1:rows(A)
+    A[j,i] = b
+  end
+  b
+end
+
+function setindex!(A::Nemo.MatElem, b, i::Int, ::Colon)
+  for j=1:cols(A)
+    A[i,j] = b
+  end
+  b
+end
+
+
+getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:cols(A)]
+getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:rows(A), i:i]
+
+
+function Base.hcat(A::Nemo.MatElem...)
+  r = rows(A[1])
+  c = cols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert rows(A[i]) == r
+    @assert base_ring(A[i]) == R
+    c += cols(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:cols(A[i])
+      X[:, o] = A[i][:, j]
+      o += 1
+    end
+  end
+  return X
+end
+
+function Base.vcat(A::Nemo.MatElem...)
+  r = rows(A[1])
+  c = cols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert cols(A[i]) == c
+    @assert base_ring(A[i]) == R
+    r += rows(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:rows(A[i])
+      X[o, :] = A[i][j, :]
+      o += 1
+    end
+  end
+  return X
+end
+
+function Base.cat(n::Int, A::Nemo.MatElem...) 
+  if n==1
+    return vcat(A...)
+  elseif n==2
+    return hcat(A...)
+  else
+    error("does not make sense here")
+  end
+end
+
+function Base.cat(dims::Tuple{Int, Int}, A::Nemo.MatElem...) 
+  @assert dims == (1,2)
+
+  z = [similar(x) for x = A]
+  X = z[1]
+  for i=1:length(A)
+    if i==1
+      X = hcat(A[1], z[2:end]...)
+    else
+      X = vcat(X, hcat(z[1:i-1]..., A[i], z[i+1:end]...))
+    end
+  end
+  return X
+end
+
+Base.cat(dims, A::Nemo.MatElem...) = cat(Tuple(dims), A...)
+
+doc"""
+    reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+
+> For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+> columns will be zero afterwards.
+"""
+function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  @assert isrref(B)
+  for h=1:rows(A)
+    j = 1
+    for i=1:rows(B)
+      while iszero(B[i, j])
+        j += 1
+      end
+      A[h, :] -= A[h, j] * B[i, :]
+    end
+  end
+  return A
+end
+
+doc"""
+    reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> MatElem
+
+> For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+> columns will be zero afterwards.
+"""
+function Nemo.reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  C = deepcopy(A)
+  reduce_mod!(C, B)
+  return C
+end
+
+doc"""
+    find_pivot(A::Nemo.MatElem{<:Nemo.RingElem}) -> Array{Int, 1}
+
+> Find the pivot-columns of the reduced row echelon matrix $A$
+"""
+function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
+  @assert isrref(A)
+  p = Int[]
+  j = 0
+  for i=1:rows(A)
+    j += 1
+    if j > cols(A)
+      return p
+    end
+    while iszero(A[i,j])
+      j += 1
+      if j > cols(A)
+        return p
+      end
+    end
+    push!(p, j)
+  end
+  return p
+end
+
+doc"""
+    cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem
+> Tries to solve $Ax = B$
+"""
+function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  R = base_ring(A)
+  @assert R == base_ring(B)
+  @assert rows(A) == rows(B)
+  mu = [A B]
+  rk = rref!(mu)
+  p = find_pivot(mu)
+  if any(i->i>cols(A), p)
+    return false, B
+  end
+  sol = zero_matrix(R, cols(A), cols(B))
+  for i = 1:length(p)
+    for j = 1:cols(B)
+      sol[p[i], j] = mu[i, cols(A) + j]
+    end
+  end
+  return true, sol
+end
+
+doc"""
+    cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem, MatElem
+> Tries to solve $Ax = B$, returns a solution and the nullspace.
+"""
+function Nemo.cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+  R = base_ring(A)
+  @assert R == base_ring(B)
+  @assert rows(A) == rows(B)
+  mu = [A B]
+  rk = rref!(mu)
+  p = find_pivot(mu)
+  if any(i->i>cols(A), p)
+    return false, B, B
+  end
+  sol = zero_matrix(R, cols(A), cols(B))
+  for i = 1:length(p)
+    for j = 1:cols(B)
+      sol[p[i], j] = mu[i, cols(A) + j]
+    end
+  end
+  n = zero_matrix(R, cols(A), cols(A) - length(p))
+  np = sort(setdiff(1:cols(A), p))
+  i = 0
+  push!(p, cols(A)+1)
+  for j = 1:length(np)
+    if np[j] >= p[i+1]
+      i += 1
+    end
+    if i > 0
+      n[p[i], j] = -mu[i, np[j]]
+    end
+    n[np[j], j] = 1
+  end
+  return true, sol, n
+end
+
+#TODO: different to cansolve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
+#maybe (definitely!) agree on one name and combine?
+
+doc"""
+    cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem
+> Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring.
+"""
+function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
+  R = base_ring(a)
+  @assert R == base_ring(b)
+  @assert rows(a) == rows(b)
+
+  H, T = hnf_with_trafo(transpose(a))
+  b = deepcopy(b)
+  z = similar(a, cols(b), cols(a))
+  l = min(rows(a), cols(a))
+  for i = 1:cols(b)
+    for j = 1:l
+      k = 1
+      while k <= cols(H) && iszero(H[j, k])
+        k += 1
+      end
+      if k > cols(H)
+        continue
+      end
+      q, r = divrem(b[k, i], H[j, k])
+      if !iszero(r)
+        return false, b
+      end
+      for h = k:cols(H)
+        b[h, i] -= q*H[j, h]
+      end
+      z[i, j] = q
+    end
+  end
+  if !iszero(b)
+    return false, b
+  end
+  return true, transpose(z*T)
+end
+
+doc"""
+    cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem, MatElem
+> Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring. If successful,
+> a basis for the nullspace is computed as well.
+"""
+function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
+  R = base_ring(a)
+  @assert R == base_ring(b)
+  @assert rows(a) == rows(b)
+
+  H, T = hnf_with_trafo(transpose(a))
+  z = similar(a, cols(b), cols(a))
+  l = min(rows(a), cols(a))
+  for i=1:cols(b)
+    for j=1:l
+      k = 1
+      while k <= cols(H) && iszero(H[j, k])
+        k += 1
+      end
+      if k > cols(H)
+        continue
+      end
+      q, r = divrem(b[k, i], H[j, k])
+      if !iszero(r)
+        return false, b, b
+      end
+      for h=k:cols(H)
+        b[h, i] -= q*H[j, h]
+      end
+      z[i, k] = q
+    end
+  end
+  if !iszero(b)
+    return false, b, b
+  end
+
+  for i = rows(H):-1:1
+    for j = 1:cols(H)
+      if !iszero(H[i,j])
+        N = similar(a, cols(a), rows(H) - i)
+        for k = 1:rows(N)
+          for l = 1:cols(N)
+            N[k,l] = T[rows(T) - l + 1, k]
+          end
+        end
+        return true, transpose(z*T), N
+      end
+    end
+  end
+  N =  similar(a, cols(a), 0)
+
+  return true, (z*T), N
+end
+

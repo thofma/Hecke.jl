@@ -296,6 +296,9 @@ function berlekamp_massey_naive(L::Array{T, 1}) where T
      L = [R_s(L[lg-i]) for i in 0:lg-1]
      Ry, Y = PolynomialRing(R_s, "Y", cached=false)
      g = Ry(L)
+     if iszero(g)
+       return g
+     end
      f = Y^lg
      N = R_s(inv(lead(g))); g1 = g*N
      v0 = Ry(); v1 = Ry(1)
@@ -321,6 +324,9 @@ function berlekamp_massey_mod(L::Array{fmpq, 1})
 #  L = [Rf(L[i]) for i in 1:length(L)]
   Rc, Y = PolynomialRing(Rf, "Y", cached=false)
   f = Rc(L)
+  if iszero(f)
+    return f
+  end
   p = next_prime(fmpz(p_start))
   kp = 10  
   pp = FlintZZ(1)
