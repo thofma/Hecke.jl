@@ -693,7 +693,7 @@ doc"""
 > Computes an array of matrices over the respective residue class fields.
 """
 function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
-  Mp = []
+  Mp = fq_nmod_mat[]
   for i=1:me.ce.n
     push!(Mp, zero_matrix(me.fld[i], rows(a), cols(a)))
   end

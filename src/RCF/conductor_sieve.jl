@@ -436,24 +436,13 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
       To find ap, it is enough to compute a logarithm.
     =#
     nisc= gcd(q^(fq)-1,n)
-    if d==1
-      if nisc!=1
-        nbound=n+n*valuation(n,q)-1
-      else
-        nbound=n+n*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
-      end
-      obound=flog(bound,sq)
-      nnbound=valuation_bound_discriminant(n,q)
-      bound_max_ap= min(nbound, obound, nnbound)  #bound on ap
+    if nisc!=1
+      nbound=n+n*lp[1][2]*valuation(n,q)-1
     else
-      if nisc!=1
-        nbound=n+n*lp[1][2]*valuation(n,q)-1
-      else
-        nbound=n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
-      end
-      obound=flog(bound,sq)
-      bound_max_ap= min(nbound, obound)  #bound on ap
+      nbound=n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
     end
+    obound=flog(bound,sq)
+    bound_max_ap= min(nbound, obound)  #bound on ap
     bound_max_exp=div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
     
     if nisc != 1
@@ -655,8 +644,8 @@ end
 
 function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, with_autos::Bool=false, absolute_galois_group::Symbol = :all)
 
-
-  if degree(O)==1
+  d=degree(O)
+  if d==1
     return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame, with_autos=with_autos) 
   end
 
@@ -671,7 +660,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   if mod(n,2)==0 && ramified_at_infplc
     inf_plc=real_places(K)
   end
-  d=degree(O)
+
   expo=lcm(gtype)
   C,mC=class_group(O)
   cgrp= gcd(n,order(C))!=1

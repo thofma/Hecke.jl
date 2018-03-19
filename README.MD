@@ -52,7 +52,7 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.4.2 ... 
+Version 0.4.3 ... 
  ... which comes with absolutely no warrant whatsoever
 (c) 2015 by Claus Fieker and Tommy Hofmann
 
