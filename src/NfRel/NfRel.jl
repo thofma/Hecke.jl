@@ -739,22 +739,22 @@ end
 
 ################################################################################
 #
-#  isisomorphic
+#  issubfield and isisomorphic
 #
 ################################################################################
 
 doc"""
 ***
-      isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
+      issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
-> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 > Otherwise the function returns "false" and a morphism mapping everything to 0.
 """
-function isisomorphic(K::NfRel, L::NfRel)
+function issubfield(K::NfRel, L::NfRel)
   @assert base_ring(K) == base_ring(L)
   f = K.pol
   g = L.pol
-  if degree(f) != degree(g)
+  if mod(degree(g), degree(f)) != 0
     return false, NfRelToNfRelMor(K, L, L())
   end
   Lx, x = L["x"]
@@ -772,4 +772,21 @@ function isisomorphic(K::NfRel, L::NfRel)
     end
   end
   return false, NfRelToNfRelMor(K, L, L())
+end
+
+doc"""
+***
+      isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
+
+> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function isisomorphic(K::NfRel, L::NfRel)
+  @assert base_ring(K) == base_ring(L)
+  f = K.pol
+  g = L.pol
+  if degree(f) != degree(g)
+    return false, NfRelToNfRelMor(K, L, L())
+  end
+  return issubfield(K, L)
 end

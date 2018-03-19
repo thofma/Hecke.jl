@@ -1,4 +1,14 @@
 @testset "Misc/NumberField" begin
+  @testset "issubfield" begin
+    Qx, x = QQ["x"]
+    K, a = NumberField(x^2 + 1, "a")
+    L, b = NumberField(x^4 + 1, "b")
+
+    c, KtoL = Hecke.issubfield(K, L)
+    @test c == true
+    @test parent(KtoL(a)) == L
+  end
+
   @testset "isisomorphic" begin
     Qx, x = QQ["x"]
     f = x^5 + 12x - 92

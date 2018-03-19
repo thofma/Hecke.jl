@@ -2571,21 +2571,21 @@ end
 
 ################################################################################
 #
-#  isisomorphic
+#  issubfield and isisomorphic
 #
 ################################################################################
 
 doc"""
 ***
-      isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+      issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
-> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 > Otherwise the function returns "false" and a morphism mapping everything to 0.
 """
-function isisomorphic(K::AnticNumberField, L::AnticNumberField)
+function issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
-  if degree(f) != degree(g)
+  if mod(degree(g), degree(f)) != 0
     return false, NfToNfMor(K, L, L())
   end
   Lx, x = L["x"]
@@ -2603,4 +2603,20 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
     end
   end
   return false, NfToNfMor(K, L, L())
+end
+
+doc"""
+***
+      isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+
+> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function isisomorphic(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  g = L.pol
+  if degree(f) != degree(g)
+    return false, NfToNfMor(K, L, L())
+  end
+  return issubfield(K, L)
 end

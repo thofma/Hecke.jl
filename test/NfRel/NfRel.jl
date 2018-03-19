@@ -1,4 +1,19 @@
 @testset "NfRel" begin
+  @testset "issubfield" begin
+    Qx, x = QQ["x"]
+    f = x^2 + 12x - 92
+    K, a = NumberField(f, "a")
+    Ky, y = K["y"]
+
+    L, b = NumberField(y^2 + y + 1, "b")
+    M, c = NumberField(y^6 + y^3 + 1, "c")
+
+    d, LtoM = Hecke.issubfield(L, M)
+
+    @test d == true
+    @test parent(LtoM(b)) == M
+  end
+
   @testset "isisomorphic" begin
     Qx, x = QQ["x"]
     f = x^2 + 12x - 92
