@@ -66,3 +66,28 @@ end
   @test overlaps(mink[6], sqrt2 * imag(co[4]))
 end
 
+@testset "T2" begin
+  t = @inferred t2(a1, 64)
+  @test contains(t, 6)
+  @test Hecke.radiuslttwopower(t, -64)
+
+  t = @inferred t2(a3^2, 128)
+  @test overlaps(t, parent(t)("[26.8413130281669208224194865303660830716653210471312375675880809411649241305119684287180747356640152133866595977425833731119286780918091464992340699076157 +/- 6.82e-152]"))
+end
+
+@testset "signs" begin
+  s = @inferred Hecke._signs(a3)
+  @test s == Int[-1, 1]
+
+  s = @inferred Hecke._signs(a3^2)
+  @test s == Int[1, 1]
+
+  s = @inferred Hecke._signs(a1)
+  @test s == Int[]
+
+  s = @inferred Hecke._signs(a2)
+  @test s == Int[-1, -1, -1, 1, 1, 1]
+
+  @test_throws ErrorException Hecke._signs(0*a1)
+end
+
