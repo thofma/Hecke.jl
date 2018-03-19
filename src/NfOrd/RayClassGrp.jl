@@ -1516,19 +1516,19 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     
   elseif isodd(n_quo)
     
-    function disc_log1(I::NfOrdIdl)
+    function disc_log2(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
       i=Int(minimum(I))
       return mU\(R(i))
     end
     
-    function expon1(a::GrpAbFinGenElem)
+    function expon2(a::GrpAbFinGenElem)
       x=mU(a)
       return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,lift(x)) => 1))
     end
     
     mp=Hecke.MapRayClassGrp{typeof(U)}()
-    mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
+    mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
     mp.modulus_fin=ideal(O,modulus)
     mp.modulus_inf=[]
 
