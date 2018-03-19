@@ -2568,3 +2568,39 @@ function polredabs(K::AnticNumberField)
 
   return L3[1]
 end
+
+################################################################################
+#
+#  isisomorphic
+#
+################################################################################
+
+doc"""
+***
+      isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+
+> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function isisomorphic(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  g = L.pol
+  if degree(f) != degree(g)
+    return false, NfToNfMor(K, L, L())
+  end
+  Lx, x = L["x"]
+  fL = Lx()
+  for i = 0:degree(f)
+    setcoeff!(fL, i, L(coeff(f, i)))
+  end
+  fac = factor(fL)
+  for (a, b) in fac
+    if degree(a) == 1
+      c1 = coeff(a, 0)
+      c2 = coeff(a, 1)
+      h = parent(K.pol)(-c1*inv(c2))
+      return true, NfToNfMor(K, L, h(gen(L)))
+    end
+  end
+  return false, NfToNfMor(K, L, L())
+end
