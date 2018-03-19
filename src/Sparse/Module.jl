@@ -102,9 +102,11 @@ function check_index(M::ModuleCtx_fmpz)
   end
 
   for i=length(M.rel_reps_p)+1:length(M.rel_gens)
+    reduce(C, M.rel_gens[i])
     push!(M.rel_reps_p, solve_ut(M.Mp.basis, SRow(M.rel_gens[i], M.Mp.R)))
   end
 
+#=
   for l=1:5
     mis = find(i->C[i,i] != 1, 1:rows(C))
     if length(mis) == 0
@@ -131,7 +133,7 @@ function check_index(M::ModuleCtx_fmpz)
       end
     end
   end
-
+=#
   M.basis = C
   M.basis_idx = prod([C[i,i] for i=1:rows(C)])
 
