@@ -696,15 +696,15 @@ function mul_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   end
 end
 
-function _contained_in_span_of_pseudohnf(v::Generic.Mat{nf_elem}, P::PMat)
+function _contained_in_span_of_pseudohnf_upperright(v::Generic.Mat{nf_elem}, P::PMat)
   # assumes that P is upper right pseudo-HNF
   w = deepcopy(v)
   for i in 1:rows(P)
-    if !(w[1, i] in P.coeffs[i])
+    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i])
       return false
     end
-    e = w[1, i]
-    for j in 1:cols(P)
+    e = w[1, i]//P.matrix[i, i]
+    for j in i:cols(P)
       w[1, j] = w[1, j] - e*P.matrix[i, j]
     end
   end
@@ -718,11 +718,11 @@ function _contained_in_span_of_pseudohnf_lowerleft(v::Generic.Mat{nf_elem}, P::P
   # assumes that P is lowerleft pseudo-HNF
   w = deepcopy(v)
   for i in rows(P):-1:1
-    if !(w[1, i] in P.coeffs[i])
+    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i])
       return false
     end
-    e = w[1, i]
-    for j in 1:cols(P)
+    e = w[1, i]//P.matrix[i, i]
+    for j in 1:i
       w[1, j] = w[1, j] - e*P.matrix[i, j]
     end
   end
@@ -741,7 +741,7 @@ function _spans_subset_of_pseudohnf(M::PMat, P::PMat, shape::Symbol = :upperrigh
     for b in basis(A.num)
       bb = divexact(elem_in_nf(b), A.den)
       if shape == :upperright
-        if !Hecke._contained_in_span_of_pseudohnf(bb*v, P)
+        if !Hecke._contained_in_span_of_pseudohnf_upperright(bb*v, P)
           return false
         end
       elseif shape == :lowerleft
