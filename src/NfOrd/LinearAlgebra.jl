@@ -306,6 +306,12 @@ function PseudoMatrix(m::Generic.Mat{S}) where S <: RelativeElement
   return PseudoMatrix(m, [ frac_ideal(OL, identity_matrix(K, degree(L))) for i = 1:rows(m) ])
 end
 
+function PseudoMatrix(m::Generic.Mat{S}, c::Array{T, 1}) where {S <: RelativeElement, T <: NfRelOrdIdl}
+  @assert rows(m) == length(c)
+  cc = [ NfRelOrdFracIdl{typeof(c[1]).parameters...}(order(c[i]), basis_pmat(c[i])) for i = 1:length(c) ]
+  return PMat{S, typeof(cc[1])}(m, cc)
+end
+
 PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
 
 function PseudoMatrix(c::Array{S, 1}) where S
@@ -678,15 +684,23 @@ function mul_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   end
 end
 
-function _contained_in_span_of_pseudohnf(v::Generic.Mat{nf_elem}, P::PMat)
-  # assumes that P is upper right pseudo-HNF
+function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+  # accepts :upperright or :lowerleft for the shape of P
+  (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
+  start = 1
+  stop = rows(P)
+  step = 1
+  if shape == :lowerleft
+    start, stop = stop, start
+    step = -1
+  end
   w = deepcopy(v)
-  for i in 1:rows(P)
+  for i = start:step:stop
     if !(w[1, i] in P.coeffs[i])
       return false
     end
     e = w[1, i]
-    for j in 1:cols(P)
+    for j = 1:cols(P)
       w[1, j] = w[1, j] - e*P.matrix[i, j]
     end
   end
@@ -696,15 +710,23 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{nf_elem}, P::PMat)
   return true
 end
 
-function _contained_in_span_of_pseudohnf_lowerleft(v::Generic.Mat{nf_elem}, P::PMat)
-  # assumes that P is lowerleft pseudo-HNF
+function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+  # accepts :upperright or :lowerleft for the shape of P
+  (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
+  start = 1
+  stop = rows(P)
+  step = 1
+  if shape == :lowerleft
+    start, stop = stop, start
+    step = -1
+  end
   w = deepcopy(v)
-  for i in rows(P):-1:1
-    if !(w[1, i] in P.coeffs[i])
+  for i = start:step:stop
+    if !(w[1, i] in P.coeffs[i]*inv(a))
       return false
     end
     e = w[1, i]
-    for j in 1:cols(P)
+    for j = 1:cols(P)
       w[1, j] = w[1, j] - e*P.matrix[i, j]
     end
   end
@@ -714,7 +736,7 @@ function _contained_in_span_of_pseudohnf_lowerleft(v::Generic.Mat{nf_elem}, P::P
   return true
 end
 
-function _spans_subset_of_pseudohnf(M::PMat, P::PMat, shape::Symbol = :upperright)
+function _spans_subset_of_pseudohnf(M::PMat{nf_elem, NfOrdFracIdl}, P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright)
   # accepts :upperright or :lowerleft for the shape of P
   (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
   for i in 1:rows(M)
@@ -722,15 +744,21 @@ function _spans_subset_of_pseudohnf(M::PMat, P::PMat, shape::Symbol = :upperrigh
     v = sub(M.matrix, i:i, 1:cols(P))
     for b in basis(A.num)
       bb = divexact(elem_in_nf(b), A.den)
-      if shape == :upperright
-        if !Hecke._contained_in_span_of_pseudohnf(bb*v, P)
-          return false
-        end
-      elseif shape == :lowerleft
-        if !Hecke._contained_in_span_of_pseudohnf_lowerleft(bb*v, P)
-          return false
-        end
+      if !Hecke._contained_in_span_of_pseudohnf(bb*v, P, shape)
+        return false
       end
+    end
+  end
+  return true
+end
+
+function _spans_subset_of_pseudohnf(M::PMat{T, S}, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
+  # accepts :upperright or :lowerleft for the shape of P
+  (shape != :upperright && shape != :lowerleft) && error("Not yet implemented.")
+  for i in 1:rows(M)
+    v = sub(M.matrix, i:i, 1:cols(P))
+    if !Hecke._contained_in_span_of_pseudohnf(v, M.coeffs[i], P, shape)
+      return false
     end
   end
   return true
@@ -884,19 +912,6 @@ function pseudo_hnf_cohen!(H::PMat, U::Generic.Mat{T}, with_trafo::Bool = false)
    return nothing
 end
 
-# This probably shouldn't be in this file. Maybe in NfOrd/FracIdl.jl?
-function mod(x::nf_elem, y::NfOrdFracIdl)
-   K = parent(x)
-   O = order(y)
-   d = K(lcm(denominator(x), denominator(y)))
-   dx = d*x
-   dy = d*y
-   simplify_exact!(dy)
-   dz = mod(O(dx), dy.num)
-   z = divexact(K(dz), d)
-   return z
-end
-
 function swap_rows!(P::PMat, i::Int, j::Int)
    swap_rows!(P.matrix, i, j)
    P.coeffs[i], P.coeffs[j] = P.coeffs[j], P.coeffs[i]
@@ -990,7 +1005,7 @@ function kb_search_first_pivot(H::PMat, start_element::Int = 1)
    return 0, 0
 end
 
-function kb_reduce_row!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool)
+function kb_reduce_row!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool) where {T <: Union{nf_elem, RelativeElement}, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1016,7 +1031,7 @@ function kb_reduce_row!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, 
    return nothing
 end
 
-function kb_reduce_column!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool, start_element::Int = 1)
+function kb_reduce_column!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, c::Int, with_trafo::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    r = pivot[c]
    A = H.matrix
    t = base_ring(A)()
@@ -1042,7 +1057,7 @@ function kb_reduce_column!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1
    return nothing
 end
 
-function kb_sort_rows!(H::PMat, U::Generic.Mat{nf_elem}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1)
+function kb_sort_rows!(H::PMat{T, S}, U::Generic.Mat{T}, pivot::Array{Int, 1}, with_trafo::Bool, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    m = rows(H)
    n = cols(H)
    pivot2 = zeros(Int, m)
@@ -1080,7 +1095,7 @@ end
 
 const PRINT_PSEUDOHNF_SIZE = Ref{Bool}(false)
 
-function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = false, start_element::Int = 1)
+function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = false, start_element::Int = 1) where {T <: Union{nf_elem, RelativeElement}, S}
    m = rows(H)
    n = cols(H)
    A = H.matrix
@@ -1129,10 +1144,20 @@ function pseudo_hnf_kb!(H::PMat, U::Generic.Mat{nf_elem}, with_trafo::Bool = fal
             simplify(ad)
             bd = b//d
             simplify(bd)
-            if ad.den != 1 || bd.den != 1
-               error("Ideals are not integral.")
+            if typeof(ad) == NfOrdFracIdl
+              if ad.den != 1 || bd.den != 1
+                error("Ideals are not integral.")
+              end
+              u, v = map(K, idempotents(ad.num, bd.num))
+            else
+              if !isintegral(ad) || !isintegral(bd)
+                error("Ideals are not integral.")
+              end
+              # numerator(ad) would make a deepcopy...
+              adint = NfRelOrdIdl{typeof(ad).parameters...}(order(ad), basis_pmat(ad, Val{false}))
+              bdint = NfRelOrdIdl{typeof(bd).parameters...}(order(bd), basis_pmat(bd, Val{false}))
+              u, v = map(K, idempotents(adint, bdint))
             end
-            u, v = map(K, idempotents(ad.num, bd.num))
             u = divexact(u, Aij)
             for c = j:n
                t = deepcopy(A[i+1, c])

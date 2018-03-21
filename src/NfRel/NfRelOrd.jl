@@ -758,3 +758,29 @@ function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
   PM = pseudo_hnf(PseudoMatrix(M, Hecke.basis_pmat(O).coeffs), :lowerleft, true)
   return NfRelOrd{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(L_ns, PM)
 end
+
+################################################################################
+#
+#  Denominator in an order
+#
+################################################################################
+
+doc"""
+    denominator(a::RelativeElement, O::NfRelOrd) -> fmpz
+
+Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
+$\mathcal O$.
+"""
+function denominator(a::RelativeElement, O::NfRelOrd)
+  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  elem_to_mat_row!(t, 1, a)
+  t = t*basis_mat_inv(O, Val{false})
+  d = fmpz(1)
+  icv = inv_coeff_ideals(O, Val{false})
+  for i = 1:degree(O)
+    tt = icv[i]*t[1, i]
+    tt = simplify(tt)
+    d = lcm(d, denominator(tt))
+  end
+  return d
+end

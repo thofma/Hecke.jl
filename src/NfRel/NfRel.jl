@@ -388,6 +388,12 @@ function Nemo.addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
   return b
 end
 
+function Nemo.add!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+  add!(c.data, a.data, b.data)
+  c = reduce!(c)
+  return c
+end
+
 ################################################################################
 #
 #  Isomorphism to absolute field (AnticNumberField)

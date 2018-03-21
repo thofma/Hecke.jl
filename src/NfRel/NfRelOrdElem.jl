@@ -64,6 +64,7 @@ function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
   return s
 end
 
+(O::NfRelOrd)(a::NfOrdElem, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
 
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 

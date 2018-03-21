@@ -570,13 +570,16 @@ end
 doc"""
 ***
       divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
+      divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $ab^{-1}$.
 """
-function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+function divexact(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   O = order(a)
   return NfRelOrdFracIdl{T, S}(O, basis_pmat(a))*inv(b)
 end
+
+//(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S} = divexact(a, b)
 
 ################################################################################
 #
@@ -940,15 +943,34 @@ end
 #
 ################################################################################
 
-function minimum(A::NfRelOrdIdl{T, S}, copy::Type{Val{V}} = Val{true}) where {T, S, V}
-  if A.is_prime != 1
-    error("Not implemented yet.")
-  end
+doc"""
+***
+      minimum(A::NfRelOrdIdl) -> NfOrdIdl
+      minimum(A::NfRelOrdIdl) -> NfRelOrdIdl
+
+> Returns the ideal $A \cap O$ where $O$ is the maximal order of the coefficient
+> ideals of $A$.
+"""
+function minimum(A::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_minimum(A)
   if copy == Val{true}
     return deepcopy(A.minimum)
   else
     return A.minimum
   end
+end
+
+function assure_has_minimum(A::NfRelOrdIdl)
+  if isdefined(A, :minimum)
+    return nothing
+  end
+  @assert isone(basis_pmat(A, Val{false}).matrix[1, 1])
+  @assert isone(basis_pmat(order(A), Val{false}).matrix[1, 1])
+
+  M = deepcopy(basis_pmat(A, Val{false}).coeffs[1])
+  M = simplify(M)
+  A.minimum = numerator(M)
+  return nothing
 end
 
 ################################################################################
@@ -963,3 +985,114 @@ function ResidueField(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
   mF = NfRelOrdToFqMor{T, S}(O, P)
   return codomain(mF), mF
 end
+
+################################################################################
+#
+#  Idempotents
+#
+################################################################################
+
+doc"""
+    idempotents(x::NfRelOrdIdl, y::NfRelOrdIdl) -> NfRelOrdElem, NfRelOrdElem
+
+> Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
+> `1 = e + f`.
+>
+> If the ideals are not coprime, an error is raised.
+"""
+function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
+  !(order(x) == order(y)) && error("Parent mismatch")
+
+  O = order(x)
+  mx = minimum(x, Val{false})
+  my = minimum(y, Val{false})
+  g = mx + my
+  if isone(g)
+    u, v = idempotents(mx, my)
+    return O(u), O(v)
+  end
+
+  d = degree(O)
+  L = nf(O)
+  K = base_ring(L)
+  OK = maximal_order(K)
+  M = zero_matrix(K, 2*d + 1, 2*d + 1)
+
+  M[1, 1] = K(1)
+  z = elem_in_basis(one(O))
+  for i = 1:d
+    M[1, i + 1] = z[i]
+  end
+  for i = 1:d
+    for j = 1:d
+      M[i + 1, j + 1] = deepcopy(basis_mat(x, Val{false})[i, j])
+      M[i + 1 + d, j + 1] = deepcopy(basis_mat(y, Val{false})[i, j])
+    end
+    M[i + 1, i + d + 1] = K(1)
+  end
+
+  #=
+    M is now
+    ( 1 |  1  |  0  )
+    ( 0 | M_x | I_d )
+    ( 0 | M_y |  0  )
+  =#
+
+  coeffsx = deepcopy(basis_pmat(x, Val{false}).coeffs)
+  coeffsy = deepcopy(basis_pmat(y, Val{false}).coeffs)
+  C = [ K(1)*OK, coeffsx..., coeffsy... ]
+  PM = PseudoMatrix(M, C)
+  PM = pseudo_hnf(PM, :upperright)
+
+  for i = 2:(d + 1)
+    if !iszero(PM.matrix[1, i])
+      error("Ideals are not coprime")
+    end
+  end
+
+  pbx = pseudo_basis(x, Val{false})
+  u = pbx[1][1]*PM.matrix[1, d + 2]
+  for i = 2:d
+    u += pbx[i][1]*PM.matrix[1, d + 1 + i]
+  end
+
+  @assert -u in x
+  @assert u + 1 in y
+
+  return O(-u), O(u + 1)
+end
+
+################################################################################
+#
+#  Inclusion of elements in ideals
+#
+################################################################################
+
+doc"""
+***
+    in(x::NfRelOrdElem, y::NfRelOrdIdl)
+    in(x::RelativeElement, y::NfRelOrdIdl)
+    in(x::fmpz, y::NfRelOrdIdl)
+
+> Returns whether $x$ is contained in $y$.
+"""
+function in(x::NfRelOrdElem, y::NfRelOrdIdl)
+  parent(x) != order(y) && error("Order of element and ideal must be equal")
+  O = order(y)
+  b_pmat = basis_pmat(y, Val{false})
+  t = transpose(matrix(base_ring(nf(O)), degree(O), 1, elem_in_basis(x)))
+  t = t*basis_mat_inv(y, Val{false})
+  for i = 1:degree(O)
+    if !(t[1, i] in b_pmat.coeffs[i])
+      return false
+    end
+  end
+  return true
+end
+
+function in(x::RelativeElement, y::NfRelOrdIdl)
+  parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
+  return in(order(y)(x),y)
+end
+
+in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)

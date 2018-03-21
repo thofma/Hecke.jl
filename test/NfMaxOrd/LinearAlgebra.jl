@@ -71,7 +71,44 @@
         ppm = Hecke.pseudo_hnf(pm)
         @test Hecke._spans_subset_of_pseudohnf(pm ,ppm)
         @test d == det(ppm)
+        ppmkb, trafo = Hecke.pseudo_hnf_kb_with_trafo(pm)
+        @test Hecke._spans_subset_of_pseudohnf(pm, ppmkb)
+        @test ppmkb.matrix == trafo*pm.matrix
       end
+    end
+
+    @testset "Field towers" begin
+      f = x^2 + 36*x + 16
+      K, a = NumberField(f, "a")
+      Ky, y = K["y"]
+      g = y^3 - 51*y^2 + 30*y - 28
+      L, b = NumberField(g, "b")
+
+      t = rand(-1000:1000, 3, 3)
+      PM = Hecke.PseudoMatrix(matrix(K, t))
+      G, U = Hecke.pseudo_hnf_kb_with_trafo(PM)
+      @test Hecke._spans_subset_of_pseudohnf(PM, G)
+      @test !iszero(det(U))
+      @test G.matrix == U*PM.matrix
+
+      G2, U2 = Hecke.pseudo_hnf_kb_with_trafo(PM, :lowerleft)
+      @test Hecke._spans_subset_of_pseudohnf(PM, G2, :lowerleft)
+      @test !iszero(det(U2))
+      @test G2.matrix == U2*PM.matrix
+
+      Lz, z = L["z"]
+      h = z^2 + 4*z + 10
+      M, c = NumberField(h, "c")
+      PN = Hecke.PseudoMatrix(matrix(L, t))
+      H, V = Hecke.pseudo_hnf_kb_with_trafo(PN)
+      @test Hecke._spans_subset_of_pseudohnf(PN, H)
+      @test !iszero(det(V))
+      @test H.matrix == V*PN.matrix
+
+      H2, V2 = Hecke.pseudo_hnf_kb_with_trafo(PN, :lowerleft)
+      @test Hecke._spans_subset_of_pseudohnf(PN, H2, :lowerleft)
+      @test !iszero(det(V2))
+      @test H2.matrix == V2*PN.matrix
     end
 
     @testset "in span" begin
