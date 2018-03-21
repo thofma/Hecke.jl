@@ -700,8 +700,14 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape
       return false
     end
     e = w[1, i]//P.matrix[i, i]
-    for j = 1:cols(P)
-      w[1, j] = w[1, j] - e*P.matrix[i, j]
+    if shape == :upperright
+      for j = i:cols(P)
+        w[1, j] = w[1, j] - e*P.matrix[i, j]
+      end
+    elseif shape == :lowerleft
+      for j = 1:i
+        w[1, j] = w[1, j] - e*P.matrix[i, j]
+      end
     end
   end
   if !iszero(w)
@@ -726,8 +732,14 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
       return false
     end
     e = w[1, i]//P.matrix[i, i]
-    for j = 1:cols(P)
-      w[1, j] = w[1, j] - e*P.matrix[i, j]
+    if shape == :upperright
+      for j = i:cols(P)
+        w[1, j] = w[1, j] - e*P.matrix[i, j]
+      end
+    elseif shape == :lowerleft
+      for j = 1:i
+        w[1, j] = w[1, j] - e*P.matrix[i, j]
+      end
     end
   end
   if !iszero(w)
