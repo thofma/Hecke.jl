@@ -593,6 +593,9 @@ doc"""
 > The factorisation of $I$.
 """
 function factor(I::NfOrdFracIdl)
+  if iszero(norm(I))
+    error("Cannot factor zero ideal")
+  end
   n, d = integral_split(I)
   fn = factor(n)
   fd = factor(d)

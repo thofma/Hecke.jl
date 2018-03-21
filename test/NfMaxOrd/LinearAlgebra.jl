@@ -69,7 +69,7 @@
         pm = Hecke.PseudoMatrix(z, cc)
         d = det(pm)
         ppm = Hecke.pseudo_hnf(pm)
-        @test Hecke._spans_subset_of_pseudohnf(pm ,ppm)
+        @test Hecke._spans_subset_of_pseudohnf(pm, ppm)
         @test d == det(ppm)
         ppmkb, trafo = Hecke.pseudo_hnf_kb_with_trafo(pm)
         @test Hecke._spans_subset_of_pseudohnf(pm, ppmkb)

@@ -696,10 +696,10 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape
   end
   w = deepcopy(v)
   for i = start:step:stop
-    if !(w[1, i] in P.coeffs[i])
+    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i])
       return false
     end
-    e = w[1, i]
+    e = w[1, i]//P.matrix[i, i]
     for j = 1:cols(P)
       w[1, j] = w[1, j] - e*P.matrix[i, j]
     end
@@ -722,10 +722,10 @@ function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, a::S, P::PMat{T, S},
   end
   w = deepcopy(v)
   for i = start:step:stop
-    if !(w[1, i] in P.coeffs[i]*inv(a))
+    if !(w[1, i]//P.matrix[i, i] in P.coeffs[i]*inv(a))
       return false
     end
-    e = w[1, i]
+    e = w[1, i]//P.matrix[i, i]
     for j = 1:cols(P)
       w[1, j] = w[1, j] - e*P.matrix[i, j]
     end

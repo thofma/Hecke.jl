@@ -829,9 +829,8 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   pbasisO = pseudo_basis(O, Val{false})
   pO = p*O
 
-  Ipint = pradical(O, p, true)
-  Oint = order(Ipint) # same as O but with integral coefficient ideals
-  A, AtoOint = AlgAss(Oint, Ipint, p, true)
+  Ip = pradical(O, p)
+  A, AtoO = AlgAss(O, Ip, p)
   AA = split(A)
 
   result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
@@ -841,22 +840,15 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
     idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_mat(idem)
     ker = left_kernel(M)
-    N = basis_pmat(Ipint)
+    N = basis_pmat(Ip)
     for i = 1:length(ker)
-      b = elem_in_basis(AtoOint(A(ker[i])))
+      b = elem_in_basis(AtoO(A(ker[i])))
       for j = 1:degree(O)
         m.matrix[1, j] = b[j]
       end
       N = vcat(N, deepcopy(m))
     end
-    N = sub(pseudo_hnf_full_rank_with_modulus(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
-    for i = 1:degree(O)
-      t = K(denominator(pbasisO[i][2]))
-      for j = i:degree(O)
-        N.matrix[j, i] = divexact(N.matrix[j, i], t)
-      end
-    end
-    N = pseudo_hnf(N, :lowerleft, true)
+    N = sub(pseudo_hnf(N, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
     P = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, N)
     P.is_prime = 1
     e = valuation(pO, P)

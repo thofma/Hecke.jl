@@ -662,7 +662,6 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
 
   row = 1
   col = 1
-  tic()
   while row <= rows(A) && col <= cols(A)
     #println("doing row $row")
     t = _pivot(A, row, col)

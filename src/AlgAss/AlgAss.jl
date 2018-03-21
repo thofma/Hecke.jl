@@ -179,7 +179,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     A = AlgAss(Fp, mult_table)
   end
   A.iscommutative = 1
-  f = (v -> sum([ fmpz(v.coeffs[i])*basis[i] for i = 1:r ]))
+  f = (v -> sum(fmpz(v.coeffs[i])*basis[i] for i = 1:r))
   return A, f
 end
 
@@ -207,20 +207,38 @@ OL = maximal_order(L);
 p = prime_decomposition(OK, 2)[1][1]
 =#
 
-function tommy(O, I, p)
+# Assume that O is relative order over OK, I is an ideal of O and p is a prime
+# ideal of OK with pO \subseteq I. O/I is an OK/p-algebra.
+#
+# The idea is to compute pseudo-basis of O and I respectively, for which the
+# coefficient ideals have zero p-adic valuation. Then we can think in the
+# localization at p and do as in the case of principal ideal domains.
+function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+  basis_pmatI = basis_pmat(I, Val{false})
+  basis_pmatO = basis_pmat(O, Val{false})
+
   new_basis_mat = deepcopy(basis_mat(O))
   new_basis_mat_I = deepcopy(basis_mat(I))
+
   pi = anti_uniformizer(p)
-  new_basis_coeffs = []
+
+  new_basis_coeffs = NfOrdFracIdl[]
+
   for i in 1:degree(O)
     a = pi^valuation(basis_pmat(O).coeffs[i], p)
-    push!(new_basis_coeffs, a * basis_pmat(O).coeffs[i])
+    push!(new_basis_coeffs, a * basis_pmatO.coeffs[i])
     mul_row!(new_basis_mat, i, inv(a))
-    @show i
-    @show a
     for j in 1:degree(O)
       new_basis_mat_I[j, i] = new_basis_mat_I[j, i] * a
     end
+  end
+
+  new_coeff_I = NfOrdFracIdl[]
+
+  for i in 1:degree(O)
+    a = pi^valuation(basis_pmatI.coeffs[i], p)
+    push!(new_coeff_I, a * basis_pmatI.coeffs[i])
+    mul_row!(new_basis_mat_I, i, inv(a))
   end
 
   Fp, mF = ResidueField(order(p), p)
@@ -229,8 +247,14 @@ function tommy(O, I, p)
 
   basis_elts = Int[]
   reducers = Int[]
+
   for i in 1:degree(O)
-    if valuation(basis_pmat(I).coeffs[i] * new_basis_mat_I[i, i], p) == 0
+    v = valuation(new_basis_mat_I[i, i], p)
+    v2 = valuation(new_coeff_I[i], p)
+    #@show (v2, v)
+    @assert v >= 0
+    if v == 0
+    #if valuation(basis_pmatI.coeffs[i], p) + valuation(new_basis_mat_I[i, i], p) == 0
       push!(reducers, i)
     else
       push!(basis_elts, i)
@@ -240,171 +264,191 @@ function tommy(O, I, p)
   reverse!(reducers)
 
   OLL = Order(nf(O), PseudoMatrix(new_basis_mat, new_basis_coeffs))
-  newI = ideal(O, PseudoMatrix(new_basis_mat_I, basis_pmat(I).coeffs))
 
-  _coeff(c) = matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
+  newI = ideal(OLL, PseudoMatrix(new_basis_mat_I, new_coeff_I))
 
-  mult_table = Array{elem_type(Fp), 3}(length(basis_elts), length(basis_elts), length(basis_elts))
+  new_basis = pseudo_basis(OLL)
 
-  for i in basis_elts
-    for j in basis_elts
-      @show "==========================="
-      @show i, j
-      c = pseudo_basis(OLL)[i][1] * pseudo_basis(OLL)[j][1]
-      coeffs = matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
-      @show _coeff(c)
+  pseudo_basis_newI = pseudo_basis(newI)
 
+  tmp_matrix = zero_matrix(base_ring(nf(O)), 1, degree(O))
+
+  basis_mat_inv_OLL = basis_mat_inv(OLL)
+
+  function _coeff(c) 
+    for i in 0:degree(O) - 1
+      tmp_matrix[1, i + 1] = coeff(c, i)
+    end
+    return tmp_matrix * basis_mat_inv_OLL
+  end
+
+  r = length(basis_elts)
+
+  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+
+  for i in 1:r
+    for j in 1:r
+      c = new_basis[basis_elts[i]][1] * new_basis[basis_elts[j]][1]
+      coeffs = _coeff(c)
 
       for k in reducers
-        d = -coeffs[k]//basis_mat(newI)[k, k]
-        @show d in basis_pmat(newI).coeffs[k]
-        c = c + d * pseudo_basis(newI)[k][1]
-        @show c
-        coeffs = matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
+        d = -coeffs[k]//new_basis_mat_I[k, k]
+        c = c + d * pseudo_basis_newI[k][1]
       end
+      coeffs = _coeff(c)
       for k in 1:degree(O)
-        if k in basis_elts
-          mult_table[i, j, k] = mmF(coeffs[k])
-        else
+        if !(k in basis_elts)
           @assert iszero(coeffs[k])
         end
       end
-      @show _coeff(c)
-    end
-  end
-
-  #if isone([1])
-  #  one = zeros(Fp, length(basis_elts))
-  #  one[1] = Fp(1)
-  #  A = AlgAss(Fp, mult_table, one)
-  #else
-    A = AlgAss(Fp, mult_table)
-  #end
-  A.iscommutative = 1
-  return A
-
-
-  @show basis_elts
-  @show reducers
-
-  @show new_basis_mat
-  @show new_basis_coeffs
-  @show [ valuation(j, p) for j in new_basis_coeffs]
-  @show new_basis_mat_I
-  @show [ valuation(basis_pmat(I).coeffs[i] * new_basis_mat_I[i, i], p) for i in 1:degree(O)]
-
-  @show OLL
-  @show c = pseudo_basis(OLL)[2][1] * pseudo_basis(OLL)[3][1]
-  @show matrix(base_ring(nf(O)), 1, degree(O), [coeff(c, i) for i in 0:degree(O) - 1]) * basis_mat_inv(OLL)
-
-
-  return true
-end
-
-# If already_integral is true it is assumed that the coefficient
-# ideals of the pseudo basis of O are integral.
-function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, already_integral::Bool = false)
-  @assert order(I) == O
-
-  n = degree(O)
-  K = nf(O)
-  KK = base_ring(K)
-  Fp, mF = ResidueField(order(p), p)
-  mmF = extend(mF, KK)
-  invmmF = inv(mmF)
-
-  if already_integral
-    Oint = O
-    Iint = I
-    pbint = pseudo_basis(Oint, Val{false})
-  else
-    # Compute a pseudo basis of O with integral coefficient ideals
-    pb = pseudo_basis(O, Val{false})
-    bmat_Oint = zero_matrix(KK, n, n)
-    bpmat_Iint = basis_pmat(I)
-    pbint = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
-    for i = 1:n
-      t = divexact(pb[i][1], denominator(pb[i][2]))
-      tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
-      push!(pbint, (t, tt))
-      elem_to_mat_row!(bmat_Oint, i, t)
-      denK = KK(denominator(pb[i][2]))
-      for j = i:n
-        bpmat_Iint.matrix[j, i] *= denK
-      end
-    end
-    Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(K, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
-    Iint = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, pseudo_hnf(bpmat_Iint, :lowerleft, true))
-  end
-
-  # Reduce the pseudo basis of O modulo I
-  pbintModI = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
-  for i = 1:n
-    b = Oint(pbint[i][1])
-    push!(pbintModI, (K(mod(b, Iint)), pbint[i][2]))
-  end
-
-  basisModP = _modular_basis(pbintModI, p)
-
-  B = zero_matrix(Fp, n, n)
-  for i = 1:n
-    b = elem_in_basis(Oint(basisModP[i]))
-    for j = 1:n
-      B[i, j] = mmF(b[j])
-    end
-  end
-  r = rref!(B)
-  r == 0 && error("Cannot construct zero dimensional algebra.")
-  b = Vector{nf_elem}(n)
-  basis = Vector{elem_type(Oint)}(r)
-  for i = 1:r
-    for j = 1:n
-      b[j] = invmmF(B[i, j])
-    end
-    basis[i] = Oint(b)
-  end
-
-  _, p, L, U = lufact(transpose(B))
-  mult_table = Array{elem_type(Fp), 3}(r, r, r)
-  d = zero_matrix(Fp, n, 1)
-  for i = 1:r
-    for j = i:r
-      c = elem_in_basis(mod(basis[i]*basis[j], Iint))
-      for k = 1:n
-        d[p[k], 1] = mmF(c[k])
-      end
-      d = solve_lt(L, d)
-      d = solve_ut(U, d)
-      for k = 1:r
-        mult_table[i, j, k] = deepcopy(d[k, 1])
-        mult_table[j, i, k] = deepcopy(d[k, 1])
+      for k in 1:r
+        mult_table[i, j, k] = mmF(coeffs[basis_elts[k]])
       end
     end
   end
 
-  if isone(basis[1])
-    one = zeros(Fp, r)
+  if isone(new_basis[basis_elts[1]][1])
+    one = zeros(Fp, length(basis_elts))
     one[1] = Fp(1)
     A = AlgAss(Fp, mult_table, one)
   else
     A = AlgAss(Fp, mult_table)
   end
   A.iscommutative = 1
-  if already_integral
-    f = (v -> sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r ]))
-  else
-    function f(v::AlgAssElem)
-      s = sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r])
-      scoeffs = elem_in_basis(s)
-      t = O()
-      for i = 1:degree(O)
-        t += O(K(scoeffs[i])*basis_nf(O, Val{false})[i])
-      end
-      return t
-    end
+
+  lifted_basis_of_A = []
+
+  for i in basis_elts
+    c = coprime_to(new_basis[i][2], p)
+    b = invmmF(inv(mmF(c)))*c*new_basis[i][1]
+    @assert b in O
+    push!(lifted_basis_of_A, b)
   end
-  return A, f
+
+  function lift(v)
+    return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
+  end
+
+  return A, lift
 end
+
+function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
+  pi = anti_uniformizer(p)
+  a = basis(I)[1]
+  l = valuation(a, p)
+  @assert l >= 0
+  if l > 0
+    a = pi^l * a
+  end
+  @assert valuation(a, p) == 0
+  @assert denominator(I)*a in numerator(I)
+  return a
+end
+
+# If already_integral is true it is assumed that the coefficient
+# ideals of the pseudo basis of O are integral.
+#function AlgAsss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, already_integral::Bool = false)
+#  @assert order(I) == O
+#
+#  n = degree(O)
+#  K = nf(O)
+#  KK = base_ring(K)
+#  Fp, mF = ResidueField(order(p), p)
+#  mmF = extend(mF, KK)
+#  invmmF = inv(mmF)
+#
+#  if already_integral
+#    Oint = O
+#    Iint = I
+#    pbint = pseudo_basis(Oint, Val{false})
+#  else
+#    # Compute a pseudo basis of O with integral coefficient ideals
+#    pb = pseudo_basis(O, Val{false})
+#    bmat_Oint = zero_matrix(KK, n, n)
+#    bpmat_Iint = basis_pmat(I)
+#    pbint = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
+#    for i = 1:n
+#      t = divexact(pb[i][1], denominator(pb[i][2]))
+#      tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
+#      push!(pbint, (t, tt))
+#      elem_to_mat_row!(bmat_Oint, i, t)
+#      denK = KK(denominator(pb[i][2]))
+#      for j = i:n
+#        bpmat_Iint.matrix[j, i] *= denK
+#      end
+#    end
+#    Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(K, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
+#    Iint = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, pseudo_hnf(bpmat_Iint, :lowerleft, true))
+#  end
+#
+#  # Reduce the pseudo basis of O modulo I
+#  pbintModI = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
+#  for i = 1:n
+#    b = Oint(pbint[i][1])
+#    push!(pbintModI, (K(mod(b, Iint)), pbint[i][2]))
+#  end
+#
+#  basisModP = _modular_basis(pbintModI, p)
+#
+#  B = zero_matrix(Fp, n, n)
+#  for i = 1:n
+#    b = elem_in_basis(Oint(basisModP[i]))
+#    for j = 1:n
+#      B[i, j] = mmF(b[j])
+#    end
+#  end
+#  r = rref!(B)
+#  r == 0 && error("Cannot construct zero dimensional algebra.")
+#  b = Vector{nf_elem}(n)
+#  basis = Vector{elem_type(Oint)}(r)
+#  for i = 1:r
+#    for j = 1:n
+#      b[j] = invmmF(B[i, j])
+#    end
+#    basis[i] = Oint(b)
+#  end
+#
+#  _, p, L, U = lufact(transpose(B))
+#  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+#  d = zero_matrix(Fp, n, 1)
+#  for i = 1:r
+#    for j = i:r
+#      c = elem_in_basis(mod(basis[i]*basis[j], Iint))
+#      for k = 1:n
+#        d[p[k], 1] = mmF(c[k])
+#      end
+#      d = solve_lt(L, d)
+#      d = solve_ut(U, d)
+#      for k = 1:r
+#        mult_table[i, j, k] = deepcopy(d[k, 1])
+#        mult_table[j, i, k] = deepcopy(d[k, 1])
+#      end
+#    end
+#  end
+#
+#  if isone(basis[1])
+#    one = zeros(Fp, r)
+#    one[1] = Fp(1)
+#    A = AlgAss(Fp, mult_table, one)
+#  else
+#    A = AlgAss(Fp, mult_table)
+#  end
+#  A.iscommutative = 1
+#  if already_integral
+#    f = (v -> sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r ]))
+#  else
+#    function f(v::AlgAssElem)
+#      s = sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r])
+#      scoeffs = elem_in_basis(s)
+#      t = O()
+#      for i = 1:degree(O)
+#        t += O(K(scoeffs[i])*basis_nf(O, Val{false})[i])
+#      end
+#      return t
+#    end
+#  end
+#  return A, f
+#end
 
 ################################################################################
 #
@@ -413,7 +457,7 @@ end
 ################################################################################
 
 function show(io::IO, A::AlgAss)
-  print(io, "Associative algebra over ")
+  print(io, "Associative algebra of dimension $(dim(A)) over ")
   print(io, A.base_ring)
 end
 
