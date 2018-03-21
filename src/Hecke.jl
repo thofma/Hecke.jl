@@ -591,6 +591,7 @@ set_assert_level(:PID_Test, 0)
 ################################################################################
 
 include("HeckeTypes.jl")
+include("NfRel/NfRelTypes.jl")
 include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")
