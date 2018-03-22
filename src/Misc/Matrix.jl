@@ -130,7 +130,7 @@ end
 
 function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   if shape == :lowerleft
-    h = hnf_modular_eldiv(_swapcols(x), m)
+    h = hnf_modular_eldiv!(_swapcols(x), m)
     _swapcols!(h)
     _swaprows!(h)
     return h

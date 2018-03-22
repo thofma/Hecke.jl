@@ -602,13 +602,16 @@ function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
   end
   
   function exp(a::GrpAbFinGenElem)  
-    e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
+    e=Dict{NfOrdIdl,fmpz}()
     for i=1:ngens(C)
       if Int(a.coeff[1,i])!= 0
-        e*=FacElem(Dict(L[i] => a.coeff[1,i]))
+        e[L[i]]= a.coeff[1,i]
       end
     end
-    return e
+    if isempty(e)
+      e[ideal(O,1)]=1
+    end
+    return FacElem(e)
   end
   
   return exp, el
@@ -1390,6 +1393,14 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
           y=hcat(y, b.coeff)
         end
         return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
+      elseif isdefined(J,:princ_gen_special)
+        el=O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
+        y=(mG\(el)).coeff
+        if mod(n,2)==0 && !isempty(pr)
+          b=lH(K(el))
+          y=hcat(y, b.coeff)
+        end
+        return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
       else
         z=principal_gen_fac_elem(J)
         el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
@@ -1403,30 +1414,17 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     else      
       W=mC\J
       s=exp_class(W)
-      #s1=mC(W)*inv(s)
-      #@assert isprincipal(numerator(evaluate(s1)))[1]
-      Id=J* inv(s)
-      #Id1=evaluate(Id)
-      #for p in keys(lp)
-      #  @assert valuation(numerator(Id1),p)==valuation(denominator(Id1),p)
-      #end
-      Id=Id^Int(nonnclass)
-      #push!(_DEBUG, (J, exp_class, mC, Id1, nonnclass))
-      #@assert isprincipal(numerator(Id1)^Int(nonnclass))[1]
-      z=principal_gen_fac_elem(Id)
-      #z1=evaluate(z)
-      #@assert ideal(O,z1)==evaluate(Id)
-      #n1=O(numerator(z1))
-      #d1=O(denominator(z1))
-      #@assert iscoprime(m,ideal(O,n1)) && iscoprime(m,ideal(O,d1))
-      #y1=((mG\n1 - mG\d1)*inverse_d).coeff
+      for (el,v) in s.fac
+        s.fac[el]=-nonnclass*v
+      end
+      if haskey(s.fac, J)
+        s.fac[J]+=nonnclass
+      else
+        s.fac[J]=nonnclass
+      end
+      z=principal_gen_fac_elem(s)
       el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
       y=((mG\(el))*inverse_d).coeff
-      #=
-      if y1!=y
-        @assert iscoprime(m,ideal(O,n1)) && iscoprime(m,ideal(O,d1))
-      end
-      =#
       if mod(n,2)==0 && !isempty(pr)
         b=lH(z)
         y=hcat(y, b.coeff)
@@ -1497,7 +1495,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   if inf_plc 
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(minimum(I))
+      i=Int(I.minimum)
       return mU\(R(i))
     end
     
@@ -1518,7 +1516,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     
     function disc_log2(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(minimum(I))
+      i=Int(I.minimum)
       return mU\(R(i))
     end
     

@@ -355,7 +355,7 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
 
   @assert B == per*L*U
   Ap = inv(per)*A
-  Y = parent(A)()
+  Y = zero_matrix(base_ring(A), rows(A), cols(A))
 
   #println("first solve\n $Ap = $L * Y")
 
@@ -504,7 +504,7 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
       end
     end
 
-    F = FqFiniteField(f, Symbol("_\$"))
+    F = FqFiniteField(f, Symbol("_\$"), false)
 
     M2 = zero_matrix(R, degree(O), d)
 

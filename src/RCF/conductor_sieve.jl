@@ -79,6 +79,26 @@ end
 #
 ###########################################################################
 
+#This function gets a quotient of the ray class group and the action on
+# the ray class group
+# In output, we get the quotient group as a ZpnGModule
+
+function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+  
+  q=mq.header.codomain
+  S,mS=snf(q)
+  n=Int(S.snf[end])
+  R=ResidueField(FlintZZ, n, cached=false)
+  W=MatrixSpace(R, ngens(S), ngens(S), false)
+  quo_action=Array{nmod_mat,1}(length(act))
+  for s=1:length(act)
+    quo_action[s]=W(mS.map*act[i].map*mS.imap)
+  end
+  return ZpnGModule(S, quo_action)
+
+end
+
+
 
 function _min_wild(D::Dict{NfOrdIdl, Int})
 
@@ -601,7 +621,7 @@ end
 ###############################################################################
 
 
-function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false, with_autos::Bool=false)
+function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false)#, with_autos::Bool=false)
   
   K=nf(O) 
   @assert degree(K)==1
@@ -613,14 +633,14 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   l_conductors=conductorsQQ(O,n,absolute_discriminant_bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
   fields=NfRel_ns[]
-  autos=Vector{NfRel_nsToNfRel_nsMor}[]
+#  autos=Vector{NfRel_nsToNfRel_nsMor}[]
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
     @vprint :QuadraticExt 1 "Conductor: $k \n"
     @vprint :QuadraticExt 1 "Left: $(length(l_conductors) - i)\n"
-    r,mr=ray_class_groupQQ(O,k,!real,expo)
-    if !_are_there_subs(r,gtype)
+    r,mr=Hecke.ray_class_groupQQ(O,k,!real,expo)
+    if !Hecke._are_there_subs(r,gtype)
       continue
     end
     ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
@@ -631,9 +651,9 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
         L=number_field(C)
         push!(fields, L)
       end
-      if with_autos
-        push!(autos,absolute_automorphism_group(C,gens))
-      end
+#      if with_autos
+#        push!(autos,absolute_automorphism_group(C,gens))
+#      end
     end
   end
 
@@ -642,11 +662,11 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
 end
 
 
-function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, with_autos::Bool=false, absolute_galois_group::Symbol = :all)
+function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all)#, with_autos::Bool=false)
 
   d=degree(O)
   if d==1
-    return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame, with_autos=with_autos) 
+    return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame) #, with_autos=with_autos) 
   end
 
   K=nf(O) 
@@ -723,9 +743,9 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
           push!(fields, L)
         end
       end
-      if with_autos
-        push!(autos,absolute_automorphism_group(C,gens))
-      end
+#      if with_autos
+#        push!(autos,absolute_automorphism_group(C,gens))
+#      end
     end
   end
 
@@ -1154,8 +1174,8 @@ function D5_extensions(absolute_bound::fmpz, quad_fields)
   for K in quad_fields
     len-=1
     
-    println("Field: $K")   
-    println("Remaining Fields: $(len)")
+#    println("Field: $K")   
+#    println("Remaining Fields: $(len)")
     append!(z, single_D5_extensions(absolute_bound, K))
   end
   return z
@@ -1201,7 +1221,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
   
   #Getting conductors
   l_conductors=conductorsD5(O,absolute_bound)
-  @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+#  @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
   #Now, the big loop
   for k in l_conductors
@@ -1218,7 +1238,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
       end
       C=ray_class_field(mr*inv(s))
       if Hecke._is_conductor_min_normal(C,a)
-        println("New Field")
+#        println("New Field")
         L=number_field(C)
         auto=Hecke.extend_aut(C, gens[1])
         pol=_quintic_ext(auto)
