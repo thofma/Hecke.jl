@@ -271,6 +271,9 @@ function z_split(I::NfOrdIdl)
   n = degree(O)
   c = coprime_base([b[i, i] for i in 1:n])
   nI = norm(I)
+  if isone(nI)
+    return NfOrdIdl[I], NfOrdIdl[]
+  end
   val = Vector{Int}(length(c))
   for i in 1:length(c)
     val[i] = valuation(nI, c[i])
@@ -338,8 +341,8 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
   n = rows(M)
   m = cols(M)
 
-  M_cur = zero_matrix(Q, m, n)
-
+  M_cur = zero_matrix(Q, n, m)
+  
   if length(ideals) == 1
     return _strong_echelon_form_nonsplit(M)
   end
@@ -354,6 +357,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
     end
   end
   echelon_modI = _strong_echelon_form_nonsplit(MmodI)
+
   for i in 1:n
     for j in 1:m
       M_cur[i, j] = Q(lift(R, echelon_modI[i, j]))
@@ -372,7 +376,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
   for i in 2:length(ideals)
     I = ideals[i]
 
-    m_cur = zero_matrix(Q, m, n)
+    m_cur = zero_matrix(Q, n, m)
 
     RmodI, mRmodI = quo(R, I)
     MmodI = zero_matrix(RmodI, n, m)
@@ -448,7 +452,7 @@ function _strong_echelon_form_nonsplit(M)
 
   if can_map_into_integer_quotient(Q)
     RmodIZ, f, g = map_into_integer_quotient(Q)
-    M_cur = zero_matrix(Q, rows(M), cols(M))
+    M_cur = zero_matrix(Q, n, m)
     if can_make_small(RmodIZ)
       RmodIZsmall, ff, gg = make_small(RmodIZ)
       M_temp = zero_matrix(RmodIZsmall, n, m)
