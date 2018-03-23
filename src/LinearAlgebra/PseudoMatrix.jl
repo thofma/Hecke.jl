@@ -538,7 +538,7 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
   return z
 end
 
-function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright; strategy::Symbol = :split)
   O = order(m)
 
   t_comp_red = 0.0
@@ -549,7 +549,7 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
   #t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
-  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
+  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
 
   res_mat = zero_matrix(nf(O), rows(P), cols(P))
   for i in 1:rows(P)

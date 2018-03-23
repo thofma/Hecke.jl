@@ -27,30 +27,31 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, strategy)
   end
 
   if strategy == :split
-    q, w = z_split(ideal(Q))
-    R = order(ideal(Q))
+    q, w = z_split(ideal(base_ring(A)))
+    R = order(ideal(base_ring(A)))
     ideals = q
     if length(w) != 0
       push!(ideals, prod(w))
     end
-    C = _strong_echelon_form_split(M, ideals)
+    C = _strong_echelon_form_split(B, ideals)
     return C
-  elseif strategy == :non_split
+  elseif strategy == :no_split
     C = _strong_echelon_form_nonsplit(B)
     return C
+  else
+    error("dasds")
   end
 end
 
-function strong_echelon_form(A)
-
 function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
-    h = _strong_echelon_form_naive(_swapcols(A), strategy)
+    h = _strong_echelon_form(_swapcols(A), strategy)
     _swapcols!(h)
     _swaprows!(h)
     return h
   elseif shape == :upperright
-    return _strong_echelon_form_naive(A, strategy)
+    h = _strong_echelon_form(A, strategy)
+    return h
   else
     error("Not yet implemented")
   end
@@ -340,7 +341,7 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
   M_cur = zero_matrix(Q, m, n)
 
   if length(ideals) == 1
-    return strong_echelon_form(M)
+    return _strong_echelon_form_nonsplit(M)
   end
 
   I = ideals[1]
@@ -364,12 +365,8 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
 
   @assert ideal(R, lift(R, gI)) + modulus == I
 #    assert R*R!gi + Modulus(Rd) eq i;
-  @show gI
-  @show euclid(gI)
-  @show I
 
   r = M_cur
-  @show r
   l = gI
 
   for i in 2:length(ideals)
@@ -394,14 +391,11 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
       end
     end
 
-    @show m_cur
     
     _assure_weakly_normal_presentation(I)
     gI = gcd(Q(I.gen_one), Q(I.gen_two))
 
-    @show gI
     @assert ideal(R, lift(R, gI)) + modulus == I
-    @show euclid(gI)
 
     g, a, b, e, f = xxgcd(l, gI)
     gg = g
@@ -470,10 +464,73 @@ function _strong_echelon_form_nonsplit(M)
         end
       end
     else
-      error("dasds")
+      forflint = zero_matrix(FlintZZ, n, m)
+      for i in 1:n
+        for j in 1:m
+          forflint[i, j] = f(M[i, j]).data
+        end
+      end
+      ccall((:fmpz_mat_strong_echelon_form_mod, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz}), forflint, RmodIZ.modulus)
+      for i in 1:n
+        for j in 1:m
+          M_cur[i, j] = Q(forflint[i, j])
+        end
+      end
+      #error("dasds")
     end
     return M_cur
   else
-    return strong_echelon_form_naive(M)
+    N = deepcopy(M)
+    strong_echelon_form_naive!(N)
+    return N
   end
+end
+
+function test_pseudohnf()
+  Qx, x = FlintQQ["x"]
+  for i in 2:15
+    K, a = NumberField(x^i - 10, "a")
+    O = maximal_order(K)
+    lp = NfOrdFracIdl[]
+    for p in [2, 3, 5, 7, 11, 13]
+      pp = prime_decomposition(O, p)
+      for P in pp
+        push!(lp, frac_ideal(O, P[1]))
+      end
+    end
+
+    pm = PseudoMatrix(matrix(K, 5, 5, [ rand(-2^10:2^10) for i in 1:25]), rand(lp, 5))
+
+    @time d = numerator(det(pm))
+
+    if iszero(norm(d))
+      continue
+    end
+
+    q, w = z_split(d)
+    R = order(d)
+    ideals = q
+
+    if length(w) != 0
+      push!(ideals, prod(w))
+    end
+
+    @show length(ideals)
+    
+    gc()
+    @time pseudo_hnf_mod(pm, d, strategy = :split)
+    gc()
+    @time pseudo_hnf_mod(pm, d, strategy = :no_split)
+    gc()
+    @time pseudo_hnf_kb(pm)
+    gc()
+
+    hnf_new = pseudo_hnf_mod(pm, d)
+    hnf_old = pseudo_hnf_kb(pm)
+
+    @assert det(hnf_new) == det(hnf_old)
+
+    @assert Hecke._spans_subset_of_pseudohnf(hnf_new, hnf_old, :upperright)
+  end
+  println("PASS")
 end
