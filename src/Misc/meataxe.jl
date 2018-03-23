@@ -790,16 +790,16 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   rel=_relations(M,N)
   a,kern=nullspace(rel)
   if a==0
-    return []
+    return fq_nmod_mat[]
   end
   kern=transpose(kern)
   if a==1
-    return [closure(kern, N.G)]
+    return fq_nmod_mat[closure(kern, N.G)]
   end  
   #
   #  Reduce the number of homomorphism to try by considering the action of G on the homomorphisms
   #
-  vects=[sub(kern, i:i, 1:N.dim) for i=1:a]
+  vects=fq_nmod_mat[sub(kern, i:i, 1:N.dim) for i=1:a]
   i=1
   while i<length(vects)
     X=closure(vects[i],N.G)

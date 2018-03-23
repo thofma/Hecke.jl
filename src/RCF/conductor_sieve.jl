@@ -674,7 +674,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   inf_plc=InfPlc[]
   
   bo = ceil(Rational{BigInt}(absolute_discriminant_bound//discriminant(O)^n))
-  bound = FlintZZ(fmpq(bo))
+  bound = abs(FlintZZ(fmpq(bo)))
 
 
   if mod(n,2)==0 && ramified_at_infplc
@@ -719,6 +719,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     a=_min_wild(k[2])*k[1]
     totally_positive_generators(mr,a)
     for s in ls
+      @hassert :QuadraticExt 1 order(codomain(s))==n
       C=ray_class_field(mr*inv(s))
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
         @vprint :QuadraticExt 1 "New Field \n"

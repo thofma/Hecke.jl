@@ -402,7 +402,6 @@ function _rcf_find_kummer(CF::ClassField_pp)
   c, mc = class_group(ZK)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
-
   q, mq = quo(c, e, false)
   mc = mc*inv(mq)
   c = q

@@ -151,21 +151,37 @@ end
 
 function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrdIdl, q::NfOrdIdl, anti_uni::nf_elem, mult::Int, exp::fmpz)
   
-  if mult==1
-    @vtime :RayFacElem 2 Q,mQ=ResidueField(O,p)
-    el=[Q(1) for i=1:length(elems)]
-    for i=1:length(elems)
-      J=elems[i]
-      neg_el=Q(1)
-      for (f,k) in J.fac
-        act_el=f
-        if mQ(act_el)!=0
-          el[i]*=mQ(act_el)^k
-          continue
+  if mult==1 
+    if nbits(p.minimum)<64
+      @vtime :RayFacElem 2 Q,mQ=ResidueFieldSmall(O,p)
+      el=[Q(1) for i=1:length(elems)]
+      for i=1:length(elems)
+        J=elems[i]
+        for (f,k) in J.fac
+          act_el=f
+          if mQ(act_el)!=0
+            el[i]*=mQ(act_el)^k
+            continue
+          end
+          val=valuation(act_el,p)
+          act_el=O(act_el*(anti_uni^val),false)
+          el[i]*= mQ(act_el)^k
         end
-        val=valuation(act_el,p)
-        act_el=O(act_el*(anti_uni^val),false)
-        el[i]*= mQ(act_el)^k
+      end
+    else
+      @vtime :RayFacElem 2 Q,mQ=ResidueField(O,p)
+      el=[Q(1) for i=1:length(elems)]
+      for i=1:length(elems)
+        J=elems[i]
+        for (f,k) in J.fac
+          if mQ(f)!=0
+            el[i]*=mQ(f)^k
+            continue
+          end
+          val=valuation(f,p)
+          act_el=O(f*(anti_uni^val),false)
+          el[i]*= mQ(act_el)^k
+        end
       end
     end
     return [mQ\el[i] for i=1:length(el)], (Q,mQ)
@@ -185,7 +201,7 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
         el[i]*=Q(act_el)^k
       end
     end
-    return [mQ\el[i] for i=1:length(el)], Q
+    return [el[i].elem for i=1:length(el)], Q
   end
  
 end
@@ -1613,12 +1629,13 @@ function find_gens(mR::MapRayClassGrp)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
     for (p,v) in tmg
-      f=mR\ideal(O,v[1])
+      I=ideal(O,v[1])
+      f=mR\I
       if iszero(mq(f))
         continue
       end
       push!(sR, f)
-      push!(lp, ideal(O,v[1]))
+      push!(lp, I)
       q, mq = quo(R, sR, false)
       if order(q) == 1 
         return lp,sR
@@ -1627,12 +1644,13 @@ function find_gens(mR::MapRayClassGrp)
 
     for (p,v) in wld
       for i=1:length(v[1])
-        f=mR\ideal(O,v[1][i])
+        I=ideal(O,v[1][i])
+        f=mR\I
         if iszero(mq(f))
           continue
         end
         push!(sR, f)
-        push!(lp, ideal(O,v[1][i]))
+        push!(lp, I)
         q, mq = quo(R, sR, false)
         if order(q) == 1 
           return lp, sR
@@ -1650,12 +1668,13 @@ function find_gens(mR::MapRayClassGrp)
       el=1+delta
       con=abs_upper_bound(1/real(conjugates_arb(delta))[i], fmpz)
       el+=con*delta
-      f=mR\ideal(O,el)
+      I=ideal(O,el)
+      f=mR\I
       if iszero(mq(f))
         continue
       end
       push!(sR, f)
-      push!(lp, ideal(O,el))
+      push!(lp, I)
       q, mq = quo(R, sR, false)
       if order(q)==1
         return lp, sR
@@ -1671,7 +1690,7 @@ function find_gens(mR::MapRayClassGrp)
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)
-  for (i,P) in enumerate(S)
+  for P in S
     if !iscoprime(P,m)
       continue
     end
@@ -1789,9 +1808,6 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
   
   c=lcm(quotype)
   Q,mQ=quo(R,c, false)
-  if !_are_there_subs(Q,quotype)
-    return ([])
-  end
   lf=factor(order(Q)).fac
   list=[]
   for p in keys(lf)
@@ -1802,6 +1818,18 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     end
     G,mG=psylow_subgroup(Q, p, false)
     S,mS=snf(G)
+    quotype_p=Int[]
+    for i=1:length(quotype)
+      v=valuation(quotype[i],p)
+      if v>0
+        push!(quotype_p,v)
+      end
+    end
+    if Int(p)*quotype_p==S.snf
+      plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+      push!(list, ([plist1]))
+      continue
+    end
     #
     #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
     #
@@ -1828,12 +1856,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #  Searching for submodules
       #
       
-      ind=0
-      for i=1:length(quotype)
-        if divisible(fmpz(quotype[i]),p)
-          ind+=1
-        end
-      end
+      ind=length(quotype_p)
       plist=submodules(M,ind)
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
 
@@ -1854,14 +1877,6 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #
       
       M=Hecke.ZpnGModule(S,act_mat)
-    
-      quotype_p=Int[]
-      for i=1:length(quotype)
-        v=valuation(quotype[i],p)
-        if v>0
-          push!(quotype_p,v)
-        end
-      end
       plist=submodules(M,typequo=quotype_p)
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
       
@@ -1880,7 +1895,7 @@ function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap
   R=mQ.header.domain
   newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
   for i=1:rows(A)
-    y=view(A,i:i,1:cols(A))
+    y=sub(A,i:i,1:cols(A))
     if !iszero(y)
       push!(newsub,mQ\(mG(mS(mS.header.domain(lift(y))))))
     end       
