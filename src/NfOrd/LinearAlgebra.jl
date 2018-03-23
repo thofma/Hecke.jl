@@ -1,6 +1,4 @@
-using Hecke
-
-export pseudo_matrix, pseudo_hnf
+export pseudo_matrix, pseudo_hnf, PseudoMatrix
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = rows(M)
@@ -492,7 +490,7 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
   return z
 end
 
-function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright, strategy = :split)
   O = order(m)
 
   t_comp_red = 0.0
@@ -502,7 +500,7 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   t_idem = 0.0
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
-  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
+  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
 
   res_mat = zero_matrix(nf(O), rows(P), cols(P))
   for i in 1:rows(P)
@@ -1546,4 +1544,89 @@ function size(A::PMat)
     end
   end
   display(size)
+end
+
+function ispseudo_hnf(M, shape::Symbol = :lowerleft)
+  return istriangular(M.matrix, shape)
+end
+
+function test_triangular()
+  M = zero_matrix(FlintZZ, 3, 3)
+
+  M = FlintZZ[1 0 0;
+              0 1 0;
+              0 0 1]
+
+  @assert istriangular(M)
+
+  M = FlintZZ[0 0 0;
+              0 1 0;
+              0 0 1]
+
+  @assert istriangular(M)
+
+  M = FlintZZ[1 0 0;
+              0 0 0;
+              0 0 1]
+
+  @assert !istriangular(M)
+
+  M = FlintZZ[0 1 0;
+              0 0 1;
+              0 0 0]
+
+  @assert !istriangular(M)
+
+  M = FlintZZ[1 0 0;
+              0 1 0;
+              0 0 0]
+
+  @assert !istriangular(M)
+
+  M = FlintZZ[0 1 0;
+              1 0 0;
+              0 0 1]
+
+  @assert !istriangular(M)
+end
+
+function istriangular(M::MatElem, shape::Symbol = :lowerleft)
+  r = rows(M)
+  c = cols(M)
+
+  if shape == :lowerleft
+
+    piv = 0
+
+    k = 1
+    while iszero_row(M, k) && k <= r
+      k = k + 1
+    end
+    if k == r + 1
+      return true # Zero matrix
+    end
+
+    for i in k:r
+      for j in c:-1:1
+        if !iszero(M[i, j])
+          if j <= piv
+            return false
+          else
+            piv = j
+            break
+          end
+        end
+        if j == 1 && piv != 0
+          piv = 0
+        end
+      end
+      if piv > 0
+        continue
+      end
+      return false # There should not be a zero row
+    end
+    return true
+  elseif shape == :upperright
+    return ispseudo_hnf(transpose(M), :lowerleft)
+  end
 end
