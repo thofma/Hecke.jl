@@ -134,10 +134,10 @@ function det(M::Generic.Mat{NfOrdElem})
   tut.parent = parent(nf(O).pol)
   res = mod_sym(O(nf(O)(tut)), P)
   
-  println("Modular determinant time: $t_det");
-  println("Time for reducing: $t_reducing");
-  println("Time for splitting: $t_splitting");
-  println("Used $(length(used_primes)) primes")
+  #println("Modular determinant time: $t_det");
+  #println("Time for reducing: $t_reducing");
+  #println("Time for splitting: $t_splitting");
+  #println("Used $(length(used_primes)) primes")
 
   return res
 end

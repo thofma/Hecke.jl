@@ -318,7 +318,7 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   V = R.tmp_div
   A = representation_mat(y.elem)
-  B = basis_mat(parent(x))
+  B = parent(x).basis_mat
 
   V[1, 1] = 1
 
@@ -337,12 +337,15 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   hnf_modular_eldiv!(V, minimum(parent(x).ideal))
 
-  if !iszero(sub(V, 1:1, 2:(d + 1)))
-    ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
-    return false, zero(parent(x))
+  for i in 2:(d + 1)
+    if !iszero(V[1, i])
+  #if !iszero(sub(V, 1:1, 2:(d + 1)))
+      ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+      return false, zero(parent(x))
+    end
   end
   
-  z = R(-base_ring(R)(fmpz[ deepcopy(V[1, i]) for i in (d + 2):(2*d + 1)]))
+  z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
@@ -440,42 +443,50 @@ end
 ################################################################################
 
 function divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
-  q = rand(parent(x))
-  r = x - q*y
-  e = euclid(y)
+  #q = rand(parent(x))
+  #r = x - q*y
+  #e = euclid(y)
 
   # This should be only one case and don't do the try/catch crap
   # Write a proper _is_divisible function
 
-  if e == 1
-    q = x*inv(y)
-    r = x - q*y
-    @hassert :NfOrdQuoRing 1 iszero(x - q*y)
-    @hassert :NfOrdQuoRing 1 euclid(r) < e
-    return q, r
+  #if e == 1
+  #  q = x*inv(y)
+  #  r = x - q*y
+  #  @hassert :NfOrdQuoRing 1 iszero(x - q*y)
+  #  @hassert :NfOrdQuoRing 1 euclid(r) < e
+  #  return q, r
+  #end
+
+  #try q = divexact(x, y)
+  #  r = x - q*y
+  #  @hassert :NfOrdQuoRing 1 iszero(x - q*y)
+  #  @hassert :NfOrdQuoRing 1 euclid(r) < e
+  #  return q, r
+  #catch
+  #end
+
+  b, q = isdivisible(x, y)
+  if b
+    return q, zero(parent(x))
   end
 
-  try q = divexact(x, y)
-    r = x - q*y
-    @hassert :NfOrdQuoRing 1 iszero(x - q*y)
-    @hassert :NfOrdQuoRing 1 euclid(r) < e
-    return q, r
-  catch
-  end
+  e = euclid(y)
 
   cnt = 0
-  while euclid(r) >= e
+  while true 
     cnt += 1
     q = rand(parent(x))
     r = x - q*y
+    if euclid(r) < e
+      return q, r
+    end
     if cnt > 1000
       error("Something odd in divrem for $x $y $(parent(x))")
     end
   end
 
   @hassert :NfOrdQuoRing 1 euclid(r) < e
-
-  return q, r
 end
 
 ################################################################################
@@ -519,7 +530,7 @@ function annihilator(x::NfOrdQuoRingElem)
   I = ideal(O, _hnf_modular_eldiv(sub(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
   z = f(I)
-  @assert iszero(z*x)
+  #@assert iszero(z*x)
   return z
 end
 
@@ -578,7 +589,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   M_e = representation_mat(e.elem)
   M_f = representation_mat(f.elem)
 
-  M_I = basis_mat(Q)
+  M_I = Q.basis_mat
 
   # let us build
   # ( 1  Q(1) 0  0 )
@@ -604,12 +615,12 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
     V[1+i, 1 + d + i] = 1
   end
 
-  U = V
+  #U = V
 
-  U = hnf_modular_eldiv(U, minimum(Q.ideal))::fmpz_mat
+  hnf_modular_eldiv!(V, minimum(Q.ideal))::fmpz_mat
 
-  u = Q(-O([ U[1,i] for i in (d + 2):(2*d + 1)]))
-  v = Q(-O([ U[1,i] for i in (2*d + 2):(3*d + 1)]))
+  u = Q(-O([ V[1,i] for i in (d + 2):(2*d + 1)]))
+  v = Q(-O([ V[1,i] for i in (2*d + 2):(3*d + 1)]))
 
   @hassert :NfOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 

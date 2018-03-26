@@ -136,6 +136,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
 
   #print("triangularizing ... ")
   triangularize!(A)
+  #println("done")
 
   T = zero_matrix(base_ring(A), 1, cols(A))
 
