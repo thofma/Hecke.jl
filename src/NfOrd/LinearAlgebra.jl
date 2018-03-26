@@ -1,40 +1,4 @@
-################################################################################
-#
-#  NfOrd/LinearAlgebra.jl : Linear algebra over maximal orders
-#
-# This file is part of Hecke.
-#
-# Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-# (C) 2016 Tommy Hofmann
-#
-################################################################################
-
-using Hecke
-
-export pseudo_matrix, pseudo_hnf
+export pseudo_matrix, pseudo_hnf, PseudoMatrix
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = rows(M)
@@ -170,10 +134,10 @@ function det(M::Generic.Mat{NfOrdElem})
   tut.parent = parent(nf(O).pol)
   res = mod_sym(O(nf(O)(tut)), P)
   
-  println("Modular determinant time: $t_det");
-  println("Time for reducing: $t_reducing");
-  println("Time for splitting: $t_splitting");
-  println("Used $(length(used_primes)) primes")
+  #println("Modular determinant time: $t_det");
+  #println("Time for reducing: $t_reducing");
+  #println("Time for splitting: $t_splitting");
+  #println("Used $(length(used_primes)) primes")
 
   return res
 end
@@ -526,7 +490,7 @@ function _make_integral!(P::PMat{T, S}) where {T, S}
   return z
 end
 
-function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
+function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright, strategy = :split)
   O = order(m)
 
   t_comp_red = 0.0
@@ -536,7 +500,7 @@ function pseudo_hnf_mod(P::PMat, m::NfOrdIdl, shape::Symbol = :upperright)
   t_idem = 0.0
 
   t_comp_red += @elapsed z = _matrix_for_reduced_span(P, m)
-  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape)
+  t_mod_comp += @elapsed zz = strong_echelon_form(z, shape, strategy)
 
   res_mat = zero_matrix(nf(O), rows(P), cols(P))
   for i in 1:rows(P)
@@ -1580,4 +1544,89 @@ function size(A::PMat)
     end
   end
   display(size)
+end
+
+function ispseudo_hnf(M, shape::Symbol = :lowerleft)
+  return istriangular(M.matrix, shape)
+end
+
+function test_triangular()
+  M = zero_matrix(FlintZZ, 3, 3)
+
+  M = FlintZZ[1 0 0;
+              0 1 0;
+              0 0 1]
+
+  @assert istriangular(M)
+
+  M = FlintZZ[0 0 0;
+              0 1 0;
+              0 0 1]
+
+  @assert istriangular(M)
+
+  M = FlintZZ[1 0 0;
+              0 0 0;
+              0 0 1]
+
+  @assert !istriangular(M)
+
+  M = FlintZZ[0 1 0;
+              0 0 1;
+              0 0 0]
+
+  @assert !istriangular(M)
+
+  M = FlintZZ[1 0 0;
+              0 1 0;
+              0 0 0]
+
+  @assert !istriangular(M)
+
+  M = FlintZZ[0 1 0;
+              1 0 0;
+              0 0 1]
+
+  @assert !istriangular(M)
+end
+
+function istriangular(M::MatElem, shape::Symbol = :lowerleft)
+  r = rows(M)
+  c = cols(M)
+
+  if shape == :lowerleft
+
+    piv = 0
+
+    k = 1
+    while iszero_row(M, k) && k <= r
+      k = k + 1
+    end
+    if k == r + 1
+      return true # Zero matrix
+    end
+
+    for i in k:r
+      for j in c:-1:1
+        if !iszero(M[i, j])
+          if j <= piv
+            return false
+          else
+            piv = j
+            break
+          end
+        end
+        if j == 1 && piv != 0
+          piv = 0
+        end
+      end
+      if piv > 0
+        continue
+      end
+      return false # There should not be a zero row
+    end
+    return true
+  elseif shape == :upperright
+    return ispseudo_hnf(transpose(M), :lowerleft)
+  end
 end

@@ -354,7 +354,7 @@ end
 function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use_p_adic=true)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= u >= 1
-  pnum = minimum(p)
+  pnum = p.minimum
   if use_p_adic
     e = valuation(pnum,p)
     k0 = 1 + div(fmpz(e),(pnum-1))
@@ -536,7 +536,7 @@ end
 function _artin_hasse_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @hassert :NfOrdQuoRing 2 isprime(p)
   
-  pnum = minimum(p)
+  pnum = p.minimum
   @assert pnum*u >= v >= u >= 1
   Q, mQ=quo(order(p), pv)
   g,M, dlog = _pu_mod_pv(pu,pv)
@@ -602,7 +602,7 @@ end
 function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @assert v > u >= 1
   @hassert :NfOrdQuoRing 2 isprime(p)
-  pnum = minimum(p)
+  pnum = p.minimum
   e = valuation(pnum,p) #ramification index
   k0 = 1 + div(fmpz(e),(pnum-1))
   @assert u >= k0
@@ -620,7 +620,7 @@ end
 function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(x)
   x == 0 && return O(1)
-  pnum = minimum(p)
+  pnum = p.minimum
   val_p_x = valuation(x,p)
   max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x) + 1

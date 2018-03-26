@@ -268,18 +268,19 @@ function (f::NfOrdQuoMap)(I::NfOrdIdl)
   O = domain(f)
   Q = codomain(f)
   B = Q.ideal + I
-  b = basis(B)
+  nB = norm(B)
+  b = basis(B, Val{false})
 
   z = O()
 
+  nQ = norm(Q.ideal)
+  OnQ = ideal(O, nQ)
+  range1nQ2 = fmpz(1):nQ^2
+
   while true
-    z = rand(fmpz(1):norm(Q.ideal)^2) * b[1]
-
-    for i in 2:degree(O)
-      z = z + rand(fmpz(1):norm(Q.ideal)^2) * b[i]
-    end
-
-    if norm(ideal(O, z) + ideal(O, O(norm(Q.ideal)))) == norm(B)
+    z = rand!(z, b, range1nQ2)
+    #z = sum(rand(range1nQ2) * b[i] for i in 1:degree(O))
+    if norm(ideal(O, z) + OnQ) == nB
       break
     end
   end
@@ -355,7 +356,7 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
 
   @assert B == per*L*U
   Ap = inv(per)*A
-  Y = parent(A)()
+  Y = zero_matrix(base_ring(A), rows(A), cols(A))
 
   #println("first solve\n $Ap = $L * Y")
 
@@ -504,7 +505,7 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
       end
     end
 
-    F = FqFiniteField(f, Symbol("_\$"))
+    F = FqFiniteField(f, Symbol("_\$"), false)
 
     M2 = zero_matrix(R, degree(O), d)
 

@@ -20,6 +20,11 @@
     
     l=Hecke.abelian_normal_extensions(O,[4], fmpz(10)^3)
     @test length(l)==1
+  
+    K,a=NumberField(x^2+1, "a")
+    O=maximal_order(K)
+    l=Hecke.abelian_normal_extensions(O,[2], fmpz(10)^5)
+    @test length(l)==41
   end
 
 end
