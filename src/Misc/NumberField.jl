@@ -2206,19 +2206,9 @@ end
 #
 ################################################################################
 
-doc"""
-***
-      issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
-
-> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
-> Otherwise the function returns "false" and a morphism mapping everything to 0.
-"""
-function issubfield(K::AnticNumberField, L::AnticNumberField)
+function _issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
-  if mod(degree(g), degree(f)) != 0
-    return false, NfToNfMor(K, L, L())
-  end
   Lx, x = L["x"]
   fL = Lx()
   for i = 0:degree(f)
@@ -2238,6 +2228,51 @@ end
 
 doc"""
 ***
+      issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function issubfield(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  g = L.pol
+  if mod(degree(g), degree(f)) != 0
+    return false, NfToNfMor(K, L, L())
+  end
+  t = divexact(degree(g), degree(f))
+  try
+    OK = _get_maximal_order_of_nf(K)
+    OL = _get_maximal_order_of_nf(L)
+    if mod(discriminant(OL), discriminant(OK)^t) != 0
+      return false, NfToNfMor(K, L, L())
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    # We could factorize the discriminant of f, but we only test small primes.
+    p = 3
+    df = discriminant(f)
+    dg = discriminant(g)
+    while p < 10000
+      if p > df || p > dg
+        break
+      end
+      if mod(valuation(df, p), 2) == 0
+        p = next_prime(p)
+        continue
+      end
+      if mod(dg, p^t) != 0
+        return false, NfToNfMor(K, L, L())
+      end
+      p = next_prime(p)
+    end
+  end
+  return _issubfield(K, L)
+end
+
+doc"""
+***
       isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
 > Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
@@ -2249,5 +2284,23 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   if degree(f) != degree(g)
     return false, NfToNfMor(K, L, L())
   end
-  return issubfield(K, L)
+  if signature(K) != signature(L)
+    return false, NfToNfMor(K, L, L())
+  end
+  try
+    OK = _get_maximal_order_of_nf(K)
+    OL = _get_maximal_order_of_nf(L)
+    if discriminant(OK) != discriminant(OL)
+      return false, NfToNfMor(K, L, L())
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    t = discriminant(f)//discriminant(g)
+    if !issquare(numerator(t)) || !issquare(denominator(t))
+      return false, NfToNfMor(K, L, L())
+    end
+  end
+  return _issubfield(K, L)
 end

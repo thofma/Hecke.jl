@@ -7,6 +7,12 @@
     c, KtoL = Hecke.issubfield(K, L)
     @test c == true
     @test parent(KtoL(a)) == L
+
+    OK = MaximalOrder(K)
+    OL = MaximalOrder(L)
+    c, KtoL = Hecke.issubfield(K, L)
+    @test c == true
+    @test parent(KtoL(a)) == L
   end
 
   @testset "isisomorphic" begin
@@ -23,6 +29,12 @@
 
     K2, a2 = NumberField(g, "a2")
 
+    c, KtoK2 = Hecke.isisomorphic(K, K2)
+    @test c == true
+    @test parent(KtoK2(a)) == K2
+
+    OK = MaximalOrder(K)
+    OK2 = MaximalOrder(K2)
     c, KtoK2 = Hecke.isisomorphic(K, K2)
     @test c == true
     @test parent(KtoK2(a)) == K2
