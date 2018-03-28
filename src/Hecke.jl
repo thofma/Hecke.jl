@@ -77,7 +77,7 @@ for i in names(Nemo)
   eval(Expr(:export, i))
 end
 
-import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct, Set,
+import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
        elem_to_mat_row!, elem_from_mat_row,
        acb_vec, array, acb_vec_clear
 
