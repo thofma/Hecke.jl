@@ -784,3 +784,19 @@ function denominator(a::RelativeElement, O::NfRelOrd)
   end
   return d
 end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(O::NfRelOrd, B::Int)
+  pb = pseudo_basis(O, Val{false})
+  z = nf(O)()
+  for i = 1:degree(O)
+    t = rand(pb[i][2], B)
+    z += t*pb[i][1]
+  end
+  return O(z)
+end

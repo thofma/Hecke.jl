@@ -372,6 +372,8 @@ function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
 end
 
+isone(a::NfRelOrdIdl) = isone(minimum(a))
+
 ################################################################################
 #
 #  Norm
@@ -830,7 +832,8 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   pO = p*O
 
   Ip = pradical(O, p)
-  A, AtoO = AlgAss(O, Ip, p)
+  A, OtoA = AlgAss(O, Ip, p)
+  AtoO = inv(OtoA)
   AA = split(A)
 
   result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
@@ -900,6 +903,14 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
 end
 
 valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)
+
+function valuation_naive(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S}
+  return valuation(a*parent(a), B)
+end
+
+valuation(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(a, B)
+
+valuation(a::fmpz, B::NfRelOrdIdl) = valuation(order(B)(a), B)
 
 ################################################################################
 #
@@ -1088,3 +1099,65 @@ function in(x::RelativeElement, y::NfRelOrdIdl)
 end
 
 in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
+
+################################################################################
+#
+#  (Anti-)Uniformizer
+#
+################################################################################
+
+function uniformizer(P::NfRelOrdIdl)
+  @assert P.is_prime == 1
+
+  if P.splitting_type[1] == 1
+    return order(P)(uniformizer(minimum(P, Val{false})))
+  end
+
+  r = 500 # hopefully enough
+  z = rand(P, r)
+  while true
+    if !iszero(z) && valuation(z, P) == 1
+      break
+    end
+    z = rand(P, r)
+  end
+  return z
+end
+
+function anti_uniformizer(P::NfRelOrdIdl)
+  @assert P.is_prime == 1
+
+  p = minimum(P, Val{false})
+  F, mF = ResidueField(order(p), p)
+  mmF = extend(mF, nf(order(p)))
+  immF = inv(mmF)
+
+  u = uniformizer(P)
+  M = representation_mat(u)
+  Mp = zero_matrix(F, rows(M), cols(M))
+  for i = 1:rows(M)
+    for j = 1:cols(M)
+      Mp[i, j] = mmF(M[i, j])
+    end
+  end
+  K = left_kernel(Mp)
+  @assert length(K) > 0
+  a = order(P)([ immF(K[1][i]) for i = 1:length(K[1]) ])
+  return nf(order(P))(a)*anti_uniformizer(p)
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, B::Int)
+  pb = pseudo_basis(a, Val{false})
+  z = nf(order(a))()
+  for i = 1:degree(order(a))
+    t = rand(pb[i][2], B)
+    z += t*pb[i][1]
+  end
+  return order(a)(z)
+end
