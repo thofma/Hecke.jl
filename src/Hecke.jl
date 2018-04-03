@@ -67,17 +67,17 @@ import AbstractAlgebra
 
 import Nemo
 
-exclude = [:Nemo, :AbstractAlgebra,
+exclude = [:Nemo, :AbstractAlgebra, :RealField,
            :factor,
            :call, :factors, :parseint, :strongequal, :window, :xgcd]
 
 for i in names(Nemo)
   i in exclude && continue
-  eval(Expr(:import, :Nemo, i))
+  eval(parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
 
-import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct, Set,
+import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
        elem_to_mat_row!, elem_from_mat_row,
        acb_vec, array, acb_vec_clear
 
@@ -273,7 +273,7 @@ end
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.4.3"
+global VERSION_NUMBER = v"0.4.4"
 
 ################################################################################
 #
