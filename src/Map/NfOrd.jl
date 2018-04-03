@@ -713,4 +713,16 @@ function (f::NfOrdToFqMor)(p::PolyElem{NfOrdElem})
   return z
 end
 
+mutable struct NfOrdToAlgAssMor{T} <: Map{NfOrd, AlgAss{T}}
+  header::MapHeader
 
+  function NfOrdToAlgAssMor{T}(O::NfOrd, A::AlgAss{T}, _image::Function, _preimage::Function) where T
+    z = new{T}()
+    z.header = MapHeader(O, A, _image, _preimage)
+    return z
+  end
+end
+
+image(f::NfOrdToAlgAssMor{T}, x::NfOrdElem) where T = f.header.image(x)
+
+preimage(f::NfOrdToAlgAssMor{T}, x::AlgAssElem{T}) where T = f.header.preimage(x)
