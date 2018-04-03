@@ -192,7 +192,7 @@ end
 
 function number_field(f::Array{fmpq_poly, 1}, s::String="_\$")
   S = Symbol(s)
-  Qx, x = PolynomialRing(QQ, length(f), s)
+  Qx, x = PolynomialRing(FlintQQ, length(f), s)
   K = NfAbsNS([f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
   return K, gens(K)
 end
@@ -327,29 +327,28 @@ function basis(K::NfAbsNS)
   return b
 end
 
-#= function elem_to_mat_row!(M::Generic.Mat{fmpq}, i::Int, a::NfAbsNSElem) =#
-#=   K = parent(a) =#
-#=   C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol)) =#
-#=   C = [UInt[c[i] for i=1:length(K.pol)] for c = C] =#
-#=   for j=1:cols(M) =#
-#=     M[i, j] = QQ() =#
-#=   end =#
-#=   for j=1:length(a.data) =#
-#=     p = findnext(C, a.data.exps[:, j], 1) =#
-#=     @assert p!=0 =#
-#=     M[i, p] = a.data.coeffs[j] =#
-#=   end =#
-#= end =#
+function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
+  K = parent(a)
+  C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol))
+  C = [UInt[c[i] for i=1:length(K.pol)] for c = C]
+  for j=1:cols(M)
+    M[i, j] = FlintQQ()
+  end
+  for j=1:length(a.data)
+    p = findnext(C, a.data.exps[:, j], 1)
+    @assert p!=0
+    M[i, p] = a.data.coeffs[j]
+  end
+end
 
-#= function elem_from_mat_row(K::NfAbsNS, M::Generic.Mat{fmpq}, i::Int) =#
-#=   a = K() =#
-#=   t = K() =#
-#=   b = basis(K) =#
-#=   for c = 1:cols(M) =#
-#=     a += M[i, c]*b[c] =#
-#=   end =#
-#=   return a =#
-#= end =#
+function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
+  a = K()
+  b = basis(K)
+  for c = 1:cols(M)
+    a += M[i, c]*b[c]
+  end
+  return a
+end
 
 function monomial_to_index(i::Int, a::NfAbsNSElem)
   K = parent(a)
@@ -363,7 +362,7 @@ function monomial_to_index(i::Int, a::NfAbsNSElem)
 end
 
 function SRow(a::NfAbsNSElem)
-  sr = SRow(QQ)
+  sr = SRow(FlintQQ)
   for i=1:length(a.data)
     push!(sr.pos, monomial_to_index(i, a))
     push!(sr.values, a.data.coeffs[i])
@@ -377,7 +376,7 @@ end
 function minpoly_dense(a::NfAbsNSElem)
   K = parent(a)
   n = degree(K)
-  M = zero_matrix(QQ, degree(K)+1, degree(K))
+  M = zero_matrix(FlintQQ, degree(K)+1, degree(K))
   z = a^0
   elem_to_mat_row!(M, 1, z)
   z *= a
@@ -387,7 +386,7 @@ function minpoly_dense(a::NfAbsNSElem)
     if n % (i-1) == 0 && rank(M) < i
       N = nullspace(sub(M, 1:i, 1:cols(M))')
       @assert N[1] == 1
-      f = PolynomialRing(QQ,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
+      f = PolynomialRing(FlintQQ,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
       return f*inv(lead(f))
     end
     z *= a
@@ -399,11 +398,11 @@ end
 function minpoly_sparse(a::NfAbsNSElem)
   K = parent(a)
   n = degree(K)
-  M = SMat(QQ)
+  M = SMat(FlintQQ)
   z = a^0
   sz = SRow(z)
   i = 0
-  push!(sz.values, QQ(1))
+  push!(sz.values, FlintQQ(1))
   push!(sz.pos, n+i+1)
   push!(M, sz)
   z *= a
@@ -415,7 +414,7 @@ function minpoly_sparse(a::NfAbsNSElem)
       fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
       if fl
         so = mul(so, sub(M, 1:i, n+1:cols(M)))
-        Qt, t = PolynomialRing(QQ, "t", cached = false)
+        Qt, t = PolynomialRing(FlintQQ, "t", cached = false)
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0
@@ -426,7 +425,7 @@ function minpoly_sparse(a::NfAbsNSElem)
         return f
       end
     end  
-    push!(sz.values, QQ(1))
+    push!(sz.values, FlintQQ(1))
     push!(sz.pos, n+i+1)
     push!(M, sz)
     z *= a
@@ -469,23 +468,22 @@ function trace(a::NfAbsNSElem)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
-#TODO: also provide a sparse version
-#= function representation_mat(a::NfAbsNSElem) =#
-#=   K = parent(a) =#
-#=   b = basis(K) =#
-#=   M = zero_matrix(QQ, degree(K), degree(K)) =#
-#=   for i=1:degree(K) =#
-#=     elem_to_mat_row!(M, i, a*b[i]) =#
-#=   end =#
-#=   return M =#
-#= end =#
+function representation_mat(a::NfAbsNSElem)
+  K = parent(a)
+  b = basis(K)
+  M = zero_matrix(FlintQQ, degree(K), degree(K))
+  for i=1:degree(K)
+    elem_to_mat_row!(M, i, a*b[i])
+  end
+  return M
+end
 
 @inline ngens(K::NfAbsNS) = length(K.pol)
 
 function msubst(f::Generic.MPoly{fmpq}, v::Array{NfAbsNSElem, 1})
   n = length(v)
   @assert n == ngens(parent(f))
-  r = QQ()
+  r = FlintQQ()
   for i=1:length(f)
     r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
   end
