@@ -53,7 +53,7 @@ for (i, k) in enumerate(l_conductors)
     if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,bounddisc,n)
       L=number_field(C)
       LL = Hecke.absolute_field(Hecke.simple_extension(L)[1])[1]
-      push!(fields, (LL, discriminant(maximal_order(LL))))
+      push!(fields, (Hecke.simplify(LL)[1], discriminant(maximal_order(LL))))
     end
   end
 end
