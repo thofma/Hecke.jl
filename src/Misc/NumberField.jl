@@ -13,12 +13,6 @@ else
   global const p_start = 2^60
 end
 
-if :libantic in names(Nemo, true)
-  global const _libantic = :libantic
-else
-  global const _libantic = :libflint
-end
-
 ################################################################################
 #
 # convenience ...
@@ -912,14 +906,14 @@ end
 
 function gen!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_gen, _libantic), Void,
+   ccall((:nf_elem_gen, :libantic), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
 
 function one!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_one, _libantic), Void,
+   ccall((:nf_elem_one, :libantic), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
@@ -949,14 +943,14 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    #   adressed in c
    de = denominator(a)
    n = degree(parent(a))
-   ccall((:nf_elem_norm_div, _libantic), Void,
+   ccall((:nf_elem_norm_div, :libantic), Void,
          (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
          &z, &(a*de), &a.parent, &(d*de^n), UInt(nb))
    return z
 end
 
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, _libantic), Void,
+   ccall((:nf_elem_sub, :libantic), Void,
          (Ptr{nf_elem}, Ptr{nf_elem}, Ptr{nf_elem}, Ptr{AnticNumberField}),
 
          &a, &b, &c, &a.parent)
@@ -1141,7 +1135,7 @@ end
 function numerator(a::nf_elem)
    const _one = fmpz(1)
    z = copy(a)
-   ccall((:nf_elem_set_den, _libantic), Void,
+   ccall((:nf_elem_set_den, :libantic), Void,
          (Ptr{nf_elem}, Ptr{fmpz}, Ptr{AnticNumberField}),
          &z, &_one, &a.parent)
    return z
