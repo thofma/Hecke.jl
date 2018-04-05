@@ -34,7 +34,7 @@ end
 
 width = length(string(length(conductors)))
 
-l_conductors = conductors[startcond:startcond + number - 1]
+l_conductors = conductors[startcond:max(length(conductors), startcond + number - 1)]
 
 
 fields=Tuple{AnticNumberField, fmpz}[]
