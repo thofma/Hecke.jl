@@ -185,5 +185,22 @@
 
     u4 = anti_uniformizer(P)
     @test valuation(u4, P) == -1
+
+    Q, q = NumberField(x, "q")
+    Z = MaximalOrder(Q)
+    Qy, y = Q["y"]
+    f = y^2 + 12*y - 92
+    K, a = NumberField(f, "a")
+    OK = MaximalOrder(K)
+
+    p = prime_decomposition(Z, 2)[1][1]
+    P = prime_decomposition(OK, p)[1][1]
+
+    u5 = uniformizer(P)
+    @test u5 in P
+    @test valuation(u5, P) == 1
+
+    u6 = anti_uniformizer(P)
+    @test valuation(u6, P) == -1
   end
 end
