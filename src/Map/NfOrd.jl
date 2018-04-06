@@ -722,7 +722,3 @@ mutable struct NfOrdToAlgAssMor{T} <: Map{NfOrd, AlgAss{T}}
     return z
   end
 end
-
-image(f::NfOrdToAlgAssMor{T}, x::NfOrdElem) where T = f.header.image(x)
-
-preimage(f::NfOrdToAlgAssMor{T}, x::AlgAssElem{T}) where T = f.header.preimage(x)

@@ -104,7 +104,3 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField}
     return z
   end
 end
-
-image(f::FqPolyRingToFqMor, x::fq_poly) = f.header.image(x)
-
-preimage(f::FqPolyRingToFqMor, x::fq) = f.header.preimage(x)

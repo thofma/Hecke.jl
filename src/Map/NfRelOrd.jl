@@ -25,48 +25,24 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField}
       z.poly_of_the_field = hh
       FF, mFF = field_extension(hh)
 
-      #= M1 = zero_matrix(base_ring(nf(O)), degree(O), dim(A)) =#
-      #= for i = 1:dim(A) =#
-      #=   c = elem_in_basis(AtoO(A[i])) =#
-      #=   for j = 1:degree(O) =#
-      #=     M1[j, i] = c[j] =#
-      #=   end =#
-      #= end =#
-
-      M2 = zero_matrix(F, dim(A), dim(A))
+      M = zero_matrix(F, dim(A), dim(A))
       t = one(A)
       for i = 1:dim(A)
         for j = 1:dim(A)
-          M2[j, i] = t.coeffs[j]
+          M[j, i] = t.coeffs[j]
         end
         t = t*x
       end
-      M2inv = inv(M2)
+      Minv = inv(M)
 
       function _image_index_div(a::NfRelOrdElem)
-        #= amodP = mod(a, P) =#
-        #= c = elem_in_basis(amodP) =#
-        #= N = zero_matrix(base_ring(nf(O)), degree(O), 1) =#
-        #= for i = 1:degree(O) =#
-        #=   N[i, 1] = c[i] =#
-        #= end =#
-        #= MN = hcat(M1, N) =#
-        #= d, MN = rref(MN) =#
-        #= MN = inv(base_ring(nf(O))(d))*MN =#
-        #= MM = sub(MN, 1:dim(A), 1:dim(A)) =#
-        #= NN = sub(MN, 1:dim(A), dim(A) + 1:dim(A) + 1) =#
-        #= if dim(A) + 1 >= rows(MN) =#
-        #=   @assert all([ iszero(MN[dim(A) + 1, i]) for i = dim(A) + 1:degree(O) ]) =#
-        #= end =#
-        #= b = solve_ut(MM, NN) =#
         b = OtoA(a)
         bb = zero_matrix(F, dim(A), 1)
         for i = 1:dim(A)
-          #= bb[i, 1] = mmF(b[i, 1]) =#
           bb[i, 1] = b.coeffs[i]
         end
         @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-        bb = M2inv*bb
+        bb = Minv*bb
         g = Fx([ bb[i, 1] for i = 1:dim(A) ])
         return mFF(g)
       end
@@ -77,7 +53,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField}
         for i = 1:dim(A)
           c[i, 1] = coeff(g, i - 1)
         end
-        c = M2*c
+        c = M*c
         b = A([ c[i, 1] for i = 1:dim(A) ])
         return AtoO(b)
       end
@@ -112,9 +88,38 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField}
   end
 end
 
-image(f::NfRelOrdToFqMor, x::fq_poly) = f.header.image(x)
+function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
+  nf(domain(f)) != K && error("Number field is not the number field of the order")
 
-preimage(f::NfRelOrdToFqMor, x::fq) = f.header.preimage(x)
+  g = NfRelToFqMor{T}()
+  g.header.domain = K
+  g.header.codomain = f.header.codomain
+
+  O = domain(f)
+  P = f.P
+  u = anti_uniformizer(P)
+
+  function _image(x::NfRelElem{T})
+    m = denominator(x, O)
+    a = O(m*x)
+    b = O(m)
+    l = valuation(m, P)
+    if l != 0
+      a = O(elem_in_nf(a)*u^l)
+      b = O(elem_in_nf(b)*u^l)
+    end
+    return f(a)//f(b)
+  end
+
+  function _preimage(x::fq)
+    return elem_in_nf(preimage(f, x))
+  end
+
+  g.header.image = _image
+  g.header.preimage = _preimage
+
+  return g
+end
 
 mutable struct NfRelOrdToAlgAssMor{T1, T2, T3} <: Map{NfRelOrd{T1, T2}, AlgAss{T3}}
   header::MapHeader
@@ -125,7 +130,3 @@ mutable struct NfRelOrdToAlgAssMor{T1, T2, T3} <: Map{NfRelOrd{T1, T2}, AlgAss{T
     return z
   end
 end
-
-image(f::NfRelOrdToAlgAssMor{T1, T2, T3}, x::NfRelOrdElem{T1}) where {T1, T2, T3} = f.header.image(x)
-
-preimage(f::NfRelOrdToAlgAssMor{T1, T2, T3}, x::AlgAssElem{T3}) where {T1, T2, T3} = f.header.preimage(x)
