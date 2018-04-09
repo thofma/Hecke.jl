@@ -179,8 +179,28 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     A = AlgAss(Fp, mult_table)
   end
   A.iscommutative = 1
-  f = (v -> sum(fmpz(v.coeffs[i])*basis[i] for i = 1:r))
-  return A, f
+
+  function _image(a::NfOrdElem)
+    c = elem_in_basis(mod(a, I))
+    for k = 1:n
+      d[p[k], 1] = c[k]
+    end
+    d = solve_lt(L, d)
+    d = solve_ut(U, d)
+    e = A()
+    for k = 1:r
+      e.coeffs[k] = deepcopy(d[k, 1])
+    end
+    return e
+  end
+
+  function _preimage(a::AlgAssElem)
+    return sum(fmpz(a.coeffs[i])*basis[i] for i = 1:r)
+  end
+
+  OtoA = NfOrdToAlgAssMor{elem_type(Fp)}(O, A, _image, _preimage)
+
+  return A, OtoA
 end
 
 function _modular_basis(pb::Vector{Tuple{T, NfOrdFracIdl}}, p::NfOrdIdl) where T <: RelativeElement{nf_elem}
@@ -316,6 +336,26 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
   end
   A.iscommutative = 1
 
+  function _image(a::NfRelOrdElem)
+    c = a.elem_in_nf
+    coeffs = _coeff(c)
+    for k in reducers
+      d = -coeffs[k]//new_basis_mat_I[k, k]
+      c = c + d*pseudo_basis_newI[k][1]
+    end
+    coeffs = _coeff(c)
+    for k in 1:degree(O)
+      if !(k in basis_elts)
+        @assert iszero(coeffs[k])
+      end
+    end
+    b = A()
+    for k in 1:r
+      b.coeffs[k] = mmF(coeffs[basis_elts[k]])
+    end
+    return b
+  end
+
   lifted_basis_of_A = []
 
   for i in basis_elts
@@ -325,11 +365,13 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
     push!(lifted_basis_of_A, b)
   end
 
-  function lift(v)
+  function _preimage(v::AlgAssElem)
     return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
   end
 
-  return A, lift
+  OtoA = NfRelOrdToAlgAssMor{typeof(O).parameters..., elem_type(Fp)}(O, A, _image, _preimage)
+
+  return A, OtoA
 end
 
 function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
@@ -675,4 +717,15 @@ function split(A::AlgAss)
     end
   end
   return result
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(A::AlgAss{T}) where T
+  c = [ rand(base_ring(A)) for i = 1:dim(A) ]
+  return AlgAssElem{T}(A, c)
 end

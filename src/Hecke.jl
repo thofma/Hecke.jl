@@ -67,13 +67,13 @@ import AbstractAlgebra
 
 import Nemo
 
-exclude = [:Nemo, :AbstractAlgebra,
+exclude = [:Nemo, :AbstractAlgebra, :RealField,
            :factor,
            :call, :factors, :parseint, :strongequal, :window, :xgcd]
 
 for i in names(Nemo)
   i in exclude && continue
-  eval(Expr(:import, :Nemo, i))
+  eval(parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
 
@@ -546,6 +546,7 @@ set_assert_level(:PID_Test, 0)
 
 include("HeckeTypes.jl")
 include("NfRel/NfRelTypes.jl")
+include("AlgAss/AlgAssTypes.jl")
 include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")

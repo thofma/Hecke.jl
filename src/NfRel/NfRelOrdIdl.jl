@@ -372,6 +372,8 @@ function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
 end
 
+isone(a::NfRelOrdIdl) = isone(minimum(a))
+
 ################################################################################
 #
 #  Norm
@@ -588,8 +590,8 @@ end
 ################################################################################
 
 # Returns an element x with v_p(x) = v_p(a) for all p in primes.
-function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
-  products = Vector{NfOrdIdl}()
+function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrdIdl, NfRelOrdIdl}}
+  products = Vector{T}()
   for p in primes
     push!(products, a*p)
   end
@@ -600,8 +602,8 @@ function element_with_valuation(a::NfOrdIdl, primes::Vector{NfOrdIdl})
     foundOne = true
     for p in products
       if x in p
-          foundOne = false
-          break
+        foundOne = false
+        break
       end
     end
   end
@@ -610,47 +612,67 @@ end
 
 doc"""
 ***
-      pradical(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrdIdl
+      pradical(O::NfRelOrd, P::NfOrdIdl) -> NfRelOrdIdl
 
-> Given a prime ideal number $p$, this function returns the $p$-radical
-> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
+> Given a prime ideal $P$, this function returns the $P$-radical
+> $\sqrt{P\mathcal O}$ of $\mathcal O$, which is
 > just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
-> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+> \in P\mathcal O \}$. It is not checked that $P$ is prime.
 """
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
 # If return_integral is true then the returned ideal is ideal of a
 # order with integral coefficient ideals.
-function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, return_integral::Bool = false)
+function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl}, return_integral::Bool = false)
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
   OK = maximal_order(K)
   pb = pseudo_basis(O, Val{false})
 
+  is_absolute = (typeof(K) == AnticNumberField)
+
   # Compute a pseudo basis of O with integral ideals:
   basis_mat_int = zero_matrix(K, d, d)
-  pbint = Vector{Tuple{elem_type(L), NfOrdIdl}}()
+  pbint = Vector{Tuple{elem_type(L), typeof(P)}}()
   for i = 1:d
     t = divexact(pb[i][1], denominator(pb[i][2]))
-    push!(pbint, (t, deepcopy(numerator(pb[i][2]))))
+    if is_absolute
+      push!(pbint, (t, deepcopy(numerator(pb[i][2]))))
+    else
+      push!(pbint, (t, numerator(pb[i][2])))
+    end
     elem_to_mat_row!(basis_mat_int, i, t)
   end
-  Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+  if is_absolute
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
+  else
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, basis_pmat(pbint[i][2], Val{false})) for i = 1:d ]))
+  end
 
-  pOK = ideal(OK, OK(minimum(p)))
+  if is_absolute
+    pOK = ideal(OK, OK(minimum(P)))
+  else
+    pOK = minimum(P, Val{false})*OK
+  end
   prime_ideals = factor(pOK)
-  elts_with_val = Vector{NfOrdElem}(d)
+
+  elts_with_val = Vector{elem_type(OK)}(d)
   for i = 1:d
     elts_with_val[i] = element_with_valuation(pbint[i][2], [ p for (p, e) in prime_ideals ])
   end
-  F, mF = ResidueField(OK, p)
+  F, mF = ResidueField(OK, P)
   mmF = extend(mF, K)
   A = zero_matrix(F, d, d)
 
-  # If minimum(p) is too small one can't use the trace.
-  if minimum(p) <= d
-    q = norm(p)
+  # If the prime number in P is too small one can't use the trace.
+  if is_absolute
+    p = minimum(P)
+  else
+    p = prime_number(P)
+  end
+  if p <= d
+    q = order(F)
     k = clog(fmpz(degree(Oint)), q)
     for i = 1:d
       t = Oint((L(K(elts_with_val[i]))*pbint[i][1])^(q^k))
@@ -680,12 +702,12 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, return_integr
   end
   M2 = identity_matrix(K, d)
   PM1 = PseudoMatrix(M1)
-  # PM2 is the basis pseudo matrix of p*Oint
-  PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(p) for i = 1:d ])
+  # PM2 is the basis pseudo matrix of P*Oint
+  PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(P) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
 
   if return_integral
-    return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, PM)
+    return NfRelOrdIdl{typeof(O).parameters...}(Oint, PM)
   end
 
   # Write PM in the basis of O (and not Oint)
@@ -697,7 +719,7 @@ function pradical(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, return_integr
   end
   # TODO: Use that the matrix is already triangular
   PM = pseudo_hnf(PM, :lowerleft, true)
-  return NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, PM)
+  return NfRelOrdIdl{typeof(O).parameters...}(O, PM)
 end
 
 ################################################################################
@@ -716,7 +738,7 @@ doc"""
 """
 # Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
+function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   O = order(a)
   K = base_ring(nf(O))
   d = degree(O)
@@ -727,11 +749,11 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
     M = hcat(M, basis_mat(O, Val{false})*representation_mat(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
-  C = Array{NfOrdFracIdl}(d^2)
+  C = Array{T2}(d^2)
   for i = 1:d
     for j = 1:d
       if i == j
-        C[(i - 1)*d + j] = ideal(order(pb[i][2]), K(1))
+        C[(i - 1)*d + j] = K(1)*order(pb[i][2])
       else
         C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
       end
@@ -742,7 +764,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
   N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
-  return NfRelOrd{nf_elem, NfOrdFracIdl}(nf(O), PN)
+  return NfRelOrd{T1, T2}(nf(O), PN)
 end
 
 ################################################################################
@@ -830,7 +852,8 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   pO = p*O
 
   Ip = pradical(O, p)
-  A, AtoO = AlgAss(O, Ip, p)
+  A, OtoA = AlgAss(O, Ip, p)
+  AtoO = inv(OtoA)
   AA = split(A)
 
   result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
@@ -900,6 +923,14 @@ function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S
 end
 
 valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)
+
+function valuation_naive(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S}
+  return valuation(a*parent(a), B)
+end
+
+valuation(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(a, B)
+
+valuation(a::fmpz, B::NfRelOrdIdl) = valuation(order(B)(a), B)
 
 ################################################################################
 #
@@ -1088,3 +1119,107 @@ function in(x::RelativeElement, y::NfRelOrdIdl)
 end
 
 in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
+
+################################################################################
+#
+#  (Anti-)Uniformizer
+#
+################################################################################
+
+function uniformizer(P::NfRelOrdIdl)
+  @assert P.is_prime == 1
+
+  if P.splitting_type[1] == 1
+    return order(P)(uniformizer(minimum(P, Val{false})))
+  end
+
+  r = 500 # hopefully enough
+  z = rand(P, r)
+  while true
+    if !iszero(z) && valuation(z, P) == 1
+      break
+    end
+    z = rand(P, r)
+  end
+  return z
+end
+
+# This function does not always return an anti uniformizer: The returned element
+# will have valuation -1 at P, but it might also have negative valuation at
+# another prime ideal lying over minimum(P). The problem is that uniformizer(P)
+# is in general not a p-uniformizer.
+function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
+  @assert P.is_prime == 1
+
+  p = minimum(P, Val{false})
+  # We need a pseudo basis of O, where the coefficient ideals have valuation
+  # 0 at p.
+  O = order(P)
+  N = basis_mat(O)
+  NN = basis_mat_inv(O)
+  d = Vector{T}(degree(O))
+  a = elem_in_nf(uniformizer(p))
+  for i = 1:degree(O)
+    v = valuation(pseudo_basis(O, Val{false})[i][2], p)
+    if !iszero(v)
+      d[i] = a^v
+      mul_row!(N, i, d[i])
+      mul_col!(NN, i, inv(d[i]))
+    else
+      d[i] = base_ring(nf(O))(1)
+    end
+  end
+
+  u = elem_in_nf(uniformizer(P))
+  M = representation_mat(u)
+  M = N*M*NN
+
+  F, mF = ResidueField(order(p), p)
+  mmF = extend(mF, nf(order(p)))
+  immF = inv(mmF)
+  Mp = zero_matrix(F, rows(M), cols(M))
+  for i = 1:rows(M)
+    for j = 1:cols(M)
+      Mp[i, j] = mmF(M[i, j])
+    end
+  end
+  K = left_kernel(Mp)
+  @assert length(K) > 0
+  x = nf(O)()
+  for i = 1:degree(O)
+    x += immF(K[1][i])*pseudo_basis(O, Val{false})[i][1]*d[i]
+  end
+  return x*anti_uniformizer(p)
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, B::Int)
+  pb = pseudo_basis(a, Val{false})
+  z = nf(order(a))()
+  for i = 1:degree(order(a))
+    t = rand(pb[i][2], B)
+    z += t*pb[i][1]
+  end
+  return order(a)(z)
+end
+
+################################################################################
+#
+#  Prime number in a prime ideal
+#
+################################################################################
+
+function prime_number(p::NfRelOrdIdl)
+  @assert p.is_prime == 1
+  m = minimum(p, Val{false})
+  if typeof(m) == NfOrdIdl
+    return minimum(m)
+  else
+    return prime_number(m)
+  end
+end

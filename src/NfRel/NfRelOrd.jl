@@ -535,7 +535,7 @@ end
 #
 ################################################################################
 
-function nf_elem_poly_to_fq_poly(R::FqPolyRing, m::NfToFqMor, f::Generic.Poly{nf_elem})
+function nf_elem_poly_to_fq_poly(R::FqPolyRing, m::Union{NfToFqMor, NfRelToFqMor}, f::Generic.Poly{T}) where {T <: Union{nf_elem, NfRelElem}}
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
 
@@ -568,7 +568,7 @@ function fq_nmod_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMa
   return g
 end
 
-function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{nf_elem}, m::InverseMap, f::fq_poly)
+function fq_poly_to_nf_elem_poly(R::Generic.PolyRing{T}, m::InverseMap, f::fq_poly) where {T <: Union{nf_elem, NfRelElem}}
   @assert codomain(m) == base_ring(R)
   @assert domain(m) == base_ring(parent(f))
 
@@ -581,7 +581,7 @@ end
 
 # Algorithm IV.6. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = Val{true}) where S
+function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_order::Type{Val{S}} = Val{true}) where S
   !isequation_order(O) && error("Order must be an equation order")
   !issimple(O) && error("Not implemented for non-simple extensions")
 
@@ -619,7 +619,7 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
 
     Umodp = divexact(Tmodp, d)
     U = fq_poly_to_nf_elem_poly(Kx, immF, Umodp)
-    PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ frac_ideal(OK, OK(1)) for i = 1:degree(O) ])
+    PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ K(1)*OK for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
     PN = sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
     OO = Order(L, PN)
@@ -628,9 +628,9 @@ function dedekind_test(O::NfRelOrd, p::NfOrdIdl, compute_order::Type{Val{S}} = V
   end
 end
 
-dedekind_ispmaximal(O::NfRelOrd, p::NfOrdIdl) = dedekind_test(O, p, Val{false})
+dedekind_ispmaximal(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p, Val{false})
 
-dedekind_poverorder(O::NfRelOrd, p::NfOrdIdl) = dedekind_test(O, p)[2]
+dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_test(O, p)[2]
 
 ################################################################################
 #
@@ -640,12 +640,12 @@ dedekind_poverorder(O::NfRelOrd, p::NfOrdIdl) = dedekind_test(O, p)[2]
 
 doc"""
 ***
-      poverorder(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrd
+      poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 > This function tries to find an order that is locally larger than $\mathcal O$
 > at the prime $p$.
 """
-function poverorder(O::NfRelOrd, p::NfOrdIdl)
+function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   if isequation_order(O) && issimple(O)
     return dedekind_poverorder(O, p)
   else
@@ -661,11 +661,11 @@ end
 
 doc"""
 ***
-    pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl) -> NfRelOrd
+      pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
 > This function finds a $p$-maximal order $R$ containing $\mathcal O$.
 """
-function pmaximal_overorder(O::NfRelOrd, p::NfOrdIdl)
+function pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   d = discriminant(O)
   OO = poverorder(O, p)
   dd = discriminant(OO)
@@ -783,4 +783,20 @@ function denominator(a::RelativeElement, O::NfRelOrd)
     d = lcm(d, denominator(tt))
   end
   return d
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(O::NfRelOrd, B::Int)
+  pb = pseudo_basis(O, Val{false})
+  z = nf(O)()
+  for i = 1:degree(O)
+    t = rand(pb[i][2], B)
+    z += t*pb[i][1]
+  end
+  return O(z)
 end

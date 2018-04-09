@@ -322,3 +322,19 @@ function in(x::RelativeElement, y::NfRelOrdFracIdl)
   end
   return true
 end
+
+################################################################################
+#
+#  Valuation
+#
+################################################################################
+
+function valuation(A::NfRelOrdFracIdl, P::NfRelOrdIdl)
+  return valuation(numerator(A), P) - valuation(denominator(A), P)
+end
+
+function valuation_naive(a::RelativeElement, P::NfRelOrdIdl)
+  return valuation(a*order(P), P)
+end
+
+valuation(a::RelativeElement, P::NfRelOrdIdl) = valuation_naive(a, P)

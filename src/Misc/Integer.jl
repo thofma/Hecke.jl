@@ -278,7 +278,7 @@ function length(a::StepRange{fmpz, fmpz})
   return a.stop - a.start +1
 end
 
-struct RangeGeneratorfmpz <: Base.Random.RangeGenerator
+struct RangeGeneratorfmpz# <: Base.Random.RangeGenerator
   a::StepRange{fmpz, fmpz}
 end
 

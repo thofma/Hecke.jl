@@ -368,7 +368,7 @@ function rand(I::NfOrdFracIdl, B::Int)
   return divexact(elem_in_nf(z), denominator(I))
 end
 
-function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = false)
+function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false)
   if full_rank
     return pseudo_hnf_full_rank(P, shape)
   else
@@ -383,6 +383,8 @@ function pseudo_hnf(P::PMat, shape::Symbol = :upperright, full_rank::Bool = fals
     return Q
   end
 end
+
+pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb(P, shape)
 
 function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
@@ -640,12 +642,21 @@ function divide_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   for j in 1:cols(M)
     M[i, j] = divexact(M[i, j], r)
   end
+  return nothing
 end
 
 function mul_row!(M::Generic.Mat{T}, i::Int, r::T) where T
   for j in 1:cols(M)
     M[i, j] = M[i, j] * r
   end
+  return nothing
+end
+
+function mul_col!(M::Generic.Mat{T}, i::Int, r::T) where T
+  for j in 1:rows(M)
+    M[j, i] = M[j, i]*r
+  end
+  return nothing
 end
 
 function _contained_in_span_of_pseudohnf(v::Generic.Mat{T}, P::PMat{T, S}, shape::Symbol = :upperright) where {T, S}
