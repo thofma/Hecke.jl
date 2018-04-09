@@ -834,12 +834,10 @@ doc"""
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
-
   f == 0 && error("poly is zero")
   f_orig = deepcopy(f)
   @vprint :PolyFactor 1 "Factoring $f\n"
   @vtime :PolyFactor 2 g = gcd(f, derivative(f'))
-
   if degree(g) > 0
     f = div(f, g)
   end

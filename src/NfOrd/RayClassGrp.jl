@@ -1866,10 +1866,11 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       act_mat=Array{nmod_mat,1}(length(act))
       auxmat1=hcat(mG.map', rels(Q)')
       auxmat2=mS.map*mG.map
+      W=MatrixSpace(RR,ngens(S), ngens(S), false)
       for z=1:length(act)
         y=transpose(solve(auxmat1, (auxmat2*act[z].map)'))
         y=sub(y,1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat[z]=MatrixSpace(RR,ngens(S), ngens(S), false)(y)
+        act_mat[z]=W(y)
       end
       
       #

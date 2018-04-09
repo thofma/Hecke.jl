@@ -832,9 +832,9 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
           if gcd(n,p-1)==1
             ap-=order(quo(G,[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))])[1])
           else
-            x=_unit_grp_residue_field_mod_n(p,n)
+            x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
             el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
-            ap-=order(quo(G,[mp\(ideal(O,b*s*R(s1)+a*pow)), el1])[1])
+            ap-=order(quo(G,[mp\(ideal(O,Int((b*s*R(s1)+a*pow).data))), el1])[1])
           end
         else
           s=divexact(m,2^v)

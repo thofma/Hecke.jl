@@ -510,8 +510,8 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
         end
         return [Int(gen.data)], [ord1], disc_log
       else
-        g=Int((R(g)^v).data)
-        inv1=invmod(v, ord)
+        g=Int((R(g)^(p^v)).data)
+        inv1=invmod(p^v, ord)
         function disc_log1(x::Int)
           return [inv1*disclog(x), disc_log(x)]
         end
