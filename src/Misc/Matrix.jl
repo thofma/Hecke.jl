@@ -1095,7 +1095,7 @@ function Base.size(A::Nemo.MatElem, n::Int)
 end
 
 function Base.indices(A::Nemo.MatElem)
-  return (Base.OneTo(rows(A)), Base.InTo(cols(A)))
+  return (Base.OneTo(rows(A)), Base.OneTo(cols(A)))
 end
 
 function Base.indices(A::Nemo.MatElem, n::Int)
