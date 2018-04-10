@@ -751,7 +751,7 @@ end
 big_primes = fmpz[]
 
 function factor(N::fmpz)
-#  N_in = N
+  N_in = N
   global big_primes
   r, c = factor_trial_range(N)
   for (p, v) = r
@@ -777,6 +777,7 @@ function factor(N::fmpz)
     end
   end
 #  @assert prod(p^v for (p, v) = r)*N == N_in
+  fac, N = ispower(N)
 
   e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
   #TODO: use coprime basis to refine stuff...
@@ -785,17 +786,17 @@ function factor(N::fmpz)
     ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
     if isprime(f)
       if haskey(r, f)
-        r[f] += ee
+        r[f] += fac*ee
       else
-        r[f] = ee
+        r[f] = fac*ee
       end
     else
       s = factor(f)
       for (p, ex) = s.fac
         if haskey(r, p)
-          r[p] += ex*ee
+          r[p] += fac*ex*ee
         else
-          r[p] = ex*ee
+          r[p] = fac*ex*ee
         end
       end
     end
@@ -811,9 +812,9 @@ function factor(N::fmpz)
   s = Nemo.factor(N)
   for (p, ex) = s.fac
     if haskey(r, p)
-      r[p] += ex
+      r[p] += fac*ex
     else
-      r[p] = ex
+      r[p] = fac*ex
     end
   end
   for p = keys(r)
@@ -821,8 +822,8 @@ function factor(N::fmpz)
       push!(big_primes, p)
     end
   end
-#  @assert all(isprime, keys(r))
-#  @assert prod(a^b for (a,b) = r) * c == N_in
+  @assert all(isprime, keys(r))
+  @assert prod(a^b for (a,b) = r) * c == N_in
   return Nemo.Fac(c, r)
 end
 
