@@ -1300,7 +1300,7 @@ function ring_of_multipliers(a::NfOrdIdl)
   #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
   m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv)
   for i in 2:degree(O)
-    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*basis_mat_inv(a)),m)
+    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv),m)
   end
   n = hnf(transpose(m))
   # n is upper right HNF

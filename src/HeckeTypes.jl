@@ -1800,3 +1800,27 @@ end
 
 const GrpAbLattice = RelLattice{GrpAbFinGen, fmpz_mat}
 const GroupLattice = GrpAbLatticeCreate()
+
+###############################################################################
+#
+#  Pseudo matrix
+#
+###############################################################################
+
+mutable struct PMat{T, S}
+  parent
+  matrix::Generic.Mat{T}
+  coeffs::Array{S, 1}
+
+  function PMat{T, S}(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
+    z = new{T, S}()
+    z.matrix = m
+    z.coeffs = c
+    return z
+  end
+
+  function PMat{T, S}() where {T, S}
+    z = new{T, S}()
+    return z
+  end
+end

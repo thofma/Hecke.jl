@@ -13,12 +13,6 @@ else
   global const p_start = 2^60
 end
 
-if :libantic in names(Nemo, true)
-  global const _libantic = :libantic
-else
-  global const _libantic = :libflint
-end
-
 ################################################################################
 #
 # convenience ...
@@ -834,12 +828,10 @@ doc"""
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
-
   f == 0 && error("poly is zero")
   f_orig = deepcopy(f)
   @vprint :PolyFactor 1 "Factoring $f\n"
   @vtime :PolyFactor 2 g = gcd(f, derivative(f'))
-
   if degree(g) > 0
     f = div(f, g)
   end
@@ -912,14 +904,14 @@ end
 
 function gen!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_gen, _libantic), Void,
+   ccall((:nf_elem_gen, :libantic), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
 
 function one!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_one, _libantic), Void,
+   ccall((:nf_elem_one, :libantic), Void,
          (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
    return r
 end
@@ -949,14 +941,14 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    #   adressed in c
    de = denominator(a)
    n = degree(parent(a))
-   ccall((:nf_elem_norm_div, _libantic), Void,
+   ccall((:nf_elem_norm_div, :libantic), Void,
          (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
          &z, &(a*de), &a.parent, &(d*de^n), UInt(nb))
    return z
 end
 
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, _libantic), Void,
+   ccall((:nf_elem_sub, :libantic), Void,
          (Ptr{nf_elem}, Ptr{nf_elem}, Ptr{nf_elem}, Ptr{AnticNumberField}),
 
          &a, &b, &c, &a.parent)
@@ -1141,7 +1133,7 @@ end
 function numerator(a::nf_elem)
    const _one = fmpz(1)
    z = copy(a)
-   ccall((:nf_elem_set_den, _libantic), Void,
+   ccall((:nf_elem_set_den, :libantic), Void,
          (Ptr{nf_elem}, Ptr{fmpz}, Ptr{AnticNumberField}),
          &z, &_one, &a.parent)
    return z
@@ -2198,4 +2190,109 @@ function polredabs(K::AnticNumberField)
   L3 = sort(L2, lt = il)
 
   return L3[1]
+end
+
+################################################################################
+#
+#  issubfield and isisomorphic
+#
+################################################################################
+
+function _issubfield(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  g = L.pol
+  Lx, x = L["x"]
+  fL = Lx()
+  for i = 0:degree(f)
+    setcoeff!(fL, i, L(coeff(f, i)))
+  end
+  fac = factor(fL)
+  for (a, b) in fac
+    if degree(a) == 1
+      c1 = coeff(a, 0)
+      c2 = coeff(a, 1)
+      h = parent(K.pol)(-c1*inv(c2))
+      return true, NfToNfMor(K, L, h(gen(L)))
+    end
+  end
+  return false, NfToNfMor(K, L, L())
+end
+
+doc"""
+***
+      issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function issubfield(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  g = L.pol
+  if mod(degree(g), degree(f)) != 0
+    return false, NfToNfMor(K, L, L())
+  end
+  t = divexact(degree(g), degree(f))
+  try
+    OK = _get_maximal_order_of_nf(K)
+    OL = _get_maximal_order_of_nf(L)
+    if mod(discriminant(OL), discriminant(OK)^t) != 0
+      return false, NfToNfMor(K, L, L())
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    # We could factorize the discriminant of f, but we only test small primes.
+    p = 3
+    df = discriminant(f)
+    dg = discriminant(g)
+    while p < 10000
+      if p > df || p > dg
+        break
+      end
+      if mod(valuation(df, p), 2) == 0
+        p = next_prime(p)
+        continue
+      end
+      if mod(dg, p^t) != 0
+        return false, NfToNfMor(K, L, L())
+      end
+      p = next_prime(p)
+    end
+  end
+  return _issubfield(K, L)
+end
+
+doc"""
+***
+      isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+
+> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function isisomorphic(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  g = L.pol
+  if degree(f) != degree(g)
+    return false, NfToNfMor(K, L, L())
+  end
+  if signature(K) != signature(L)
+    return false, NfToNfMor(K, L, L())
+  end
+  try
+    OK = _get_maximal_order_of_nf(K)
+    OL = _get_maximal_order_of_nf(L)
+    if discriminant(OK) != discriminant(OL)
+      return false, NfToNfMor(K, L, L())
+    end
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    t = discriminant(f)//discriminant(g)
+    if !issquare(numerator(t)) || !issquare(denominator(t))
+      return false, NfToNfMor(K, L, L())
+    end
+  end
+  return _issubfield(K, L)
 end

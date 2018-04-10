@@ -190,3 +190,12 @@ function show(io::IO, h::NfRelToNfRelMor)
   end
 end
 
+mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField}
+  header::MapHeader{NfRel{T}, FqFiniteField}
+
+  function NfRelToFqMor{T}() where {T}
+    z = new{T}()
+    z.header = MapHeader{NfRel{T}, FqFiniteField}()
+    return z
+  end
+end

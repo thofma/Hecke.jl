@@ -314,8 +314,3 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   
 end
 
-
-
-
-
-

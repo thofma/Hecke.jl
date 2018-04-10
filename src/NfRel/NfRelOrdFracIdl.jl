@@ -32,7 +32,7 @@ parent(a::NfRelOrdFracIdl) = a.parent
 
 ################################################################################
 #
-#  Denominator
+#  Numerator and Denominator
 #
 ################################################################################
 
@@ -65,6 +65,26 @@ doc"""
 function denominator(a::NfRelOrdFracIdl)
   assure_has_denominator(a)
   return a.den
+end
+
+doc"""
+***
+    numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
+
+> Returns the ideal $d*a$ where $d$ is the denominator of $a$.
+"""
+function numerator(a::NfRelOrdFracIdl)
+  d = denominator(a)
+  PM = basis_pmat(a)
+  if isone(d)
+    return NfRelOrdIdl{typeof(a).parameters...}(order(a), PM)
+  end
+  for i = 1:degree(order(a))
+    PM.coeffs[i] = PM.coeffs[i]*d
+    PM.coeffs[i] = simplify(PM.coeffs[i])
+  end
+  PM = pseudo_hnf(PM, :lowerleft)
+  return NfRelOrdIdl{typeof(a).parameters...}(order(a), PM)
 end
 
 ################################################################################
@@ -241,3 +261,80 @@ end
 ################################################################################
 
 isintegral(a::NfRelOrdFracIdl) = defines_ideal(order(a), basis_pmat(a, Val{false}))
+
+################################################################################
+#
+#  "Simplification"
+#
+################################################################################
+
+# The basis_pmat of a NfRelOrdFracIdl should be in pseudo hnf, so it should already
+# be "simple". Maybe we could simplify the coefficient ideals?
+simplify(a::NfRelOrdFracIdl) = a
+
+################################################################################
+#
+#  Reduction of element modulo ideal
+#
+################################################################################
+
+function mod(x::S, y::T) where {S <: Union{nf_elem, RelativeElement}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
+  K = parent(x)
+  O = order(y)
+  d = K(lcm(denominator(x, O), denominator(y)))
+  dx = d*x
+  dy = d*y
+  if T == NfOrdFracIdl
+    dy = simplify(dy)
+    dynum = numerator(dy)
+  else
+    dynum = NfRelOrdIdl{T.parameters...}(O, basis_pmat(dy, Val{false}))
+  end
+  dz = mod(O(dx), dynum)
+  z = divexact(K(dz), d)
+  return z
+end
+
+################################################################################
+#
+#  Inclusion of elements in ideals
+#
+################################################################################
+
+doc"""
+***
+    in(x::RelativeElement, y::NfRelOrdFracIdl)
+
+> Returns whether $x$ is contained in $y$.
+"""
+function in(x::RelativeElement, y::NfRelOrdFracIdl)
+  parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
+  O = order(y)
+  b_pmat = basis_pmat(y, Val{false})
+  t = zero_matrix(base_ring(nf(O)), 1, degree(O))
+  elem_to_mat_row!(t, 1, x)
+  t = t*basis_mat_inv(O, Val{false})
+  t = t*basis_mat_inv(y, Val{false})
+  for i = 1:degree(O)
+    if !(t[1, i] in b_pmat.coeffs[i])
+      return false
+    end
+  end
+  return true
+end
+
+################################################################################
+#
+#  Valuation
+#
+################################################################################
+
+function valuation(A::NfRelOrdFracIdl, P::NfRelOrdIdl)
+  return valuation(numerator(A), P) - valuation(denominator(A), P)
+end
+
+function valuation_naive(a::RelativeElement, P::NfRelOrdIdl)
+  return valuation(a*order(P), P)
+end
+
+valuation(a::RelativeElement, P::NfRelOrdIdl) = valuation_naive(a, P)

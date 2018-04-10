@@ -388,6 +388,12 @@ function Nemo.addeq!(b::NfRelElem{T}, a::NfRelElem{T}) where {T}
   return b
 end
 
+function Nemo.add!(c::NfRelElem{T}, a::NfRelElem{T}, b::NfRelElem{T}) where {T}
+  add!(c.data, a.data, b.data)
+  c = reduce!(c)
+  return c
+end
+
 ################################################################################
 #
 #  Isomorphism to absolute field (AnticNumberField)
@@ -737,5 +743,56 @@ function roots(f::Generic.Poly{NfRelElem{T}}) where T
   return [-constant_coefficient(x)*scale for x = keys(lf.fac) if degree(x)==1]
 end
 
+################################################################################
+#
+#  issubfield and isisomorphic
+#
+################################################################################
 
+doc"""
+***
+      issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function issubfield(K::NfRel, L::NfRel)
+  @assert base_ring(K) == base_ring(L)
+  f = K.pol
+  g = L.pol
+  if mod(degree(g), degree(f)) != 0
+    return false, NfRelToNfRelMor(K, L, L())
+  end
+  Lx, x = L["x"]
+  fL = Lx()
+  for i = 0:degree(f)
+    setcoeff!(fL, i, L(coeff(f, i)))
+  end
+  fac = factor(fL)
+  for (a, b) in fac
+    if degree(a) == 1
+      c1 = coeff(a, 0)
+      c2 = coeff(a, 1)
+      h = parent(K.pol)(-c1*inv(c2))
+      return true, NfRelToNfRelMor(K, L, h(gen(L)))
+    end
+  end
+  return false, NfRelToNfRelMor(K, L, L())
+end
+
+doc"""
+***
+      isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
+
+> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function isisomorphic(K::NfRel, L::NfRel)
+  @assert base_ring(K) == base_ring(L)
+  f = K.pol
+  g = L.pol
+  if degree(f) != degree(g)
+    return false, NfRelToNfRelMor(K, L, L())
+  end
+  return issubfield(K, L)
+end

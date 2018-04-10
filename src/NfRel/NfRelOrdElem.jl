@@ -64,6 +64,7 @@ function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
   return s
 end
 
+(O::NfRelOrd)(a::NfOrdElem, check::Bool = true) = O(nf(O)(a.elem_in_nf), check)
 
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 
@@ -426,3 +427,15 @@ norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 
 (K::NfRel_ns)(a::NfRelOrdElem) = elem_in_nf(a)
 
+################################################################################
+#
+#  Representation matrix
+#
+################################################################################
+
+function representation_mat(a::NfRelOrdElem)
+  O = parent(a)
+  A = representation_mat(elem_in_nf(a))
+  A = basis_mat(O, Val{false})*A*basis_mat_inv(O, Val{false})
+  return A
+end

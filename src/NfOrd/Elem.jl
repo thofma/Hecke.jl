@@ -641,16 +641,14 @@ doc"""
 """
 function representation_mat(a::NfOrdElem, K::AnticNumberField)
   nf(parent(a)) != K && error("Element not in this field")
-  d = denominator(a.elem_in_nf)
-  b = d*a.elem_in_nf
-  A = representation_mat(b)
+  A, d = Nemo.representation_matrix_q(a.elem_in_nf)
+  A.base_ring = FlintZZ
+  #d = denominator(a.elem_in_nf)
+  #b = d*a.elem_in_nf
+  #A = representation_mat(b)
   z = FakeFmpqMat(A, d)
   return z
 end
-
-#  nf(parent(a)) != K && error("Element not in this field")
-#  return representation_mat(a.elem_in_nf)
-#end
 
 ################################################################################
 #
@@ -689,6 +687,19 @@ end
 #  Random element generation
 #
 ################################################################################
+
+# TODO: Make this faster, don't allocate the ar array ...
+function rand!(z::NfOrdElem, B::Vector{NfOrdElem}, R)
+  O = parent(z)
+  y = O()
+  ar = rand(R, degree(O))
+  mul!(z, ar[1], B[1])
+  for i in 2:degree(O)
+    mul!(y, ar[i], B[i])
+    add!(z, z, y)
+  end
+  return z
+end
 
 function rand!(z::NfOrdElem, O::NfOrd, R::UnitRange{T}) where T <: Integer
   y = O()

@@ -43,10 +43,6 @@ mS(gen(S))
 mS\gens(K)[2]
 =#
 
-function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x"; cached::Bool = false, ordering::Symbol = :lex)
-  return Nemo.PolynomialRing(R, ["$s$i" for i=1:n], cached = cached, ordering = ordering)
-end                                      
-
 #to make the MPoly module happy, divrem needs it...
 function Nemo.div(a::nf_elem, b::nf_elem)
   return a//b
@@ -368,10 +364,6 @@ end
 
 function Nemo.degree(K::NfRel_ns)
   return prod([total_degree(x) for x=K.pol])
-end
-
-function total_degree(f::Generic.MPoly)
-  return Int(maximum([sum(f.exps[:, i]) for i=1:length(f)]))
 end
 
 function (R::Generic.PolyRing{nf_elem})(f::Generic.MPoly)

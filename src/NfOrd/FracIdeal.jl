@@ -493,6 +493,9 @@ function prod_by_int(A::NfOrdFracIdl, a::fmpz)
   return NfOrdFracIdl(A.num * a, A.den)
 end
 
+*(A::NfOrdFracIdl, a::fmpz) = prod_by_int(A, a)
+*(a::fmpz, A::NfOrdFracIdl) = prod_by_int(A, a)
+
 function *(A::NfOrdIdl, B::NfOrdFracIdl)
   z = NfOrdFracIdl(A*B.num, B.den)
   return z
@@ -590,6 +593,9 @@ doc"""
 > The factorisation of $I$.
 """
 function factor(I::NfOrdFracIdl)
+  if iszero(norm(I))
+    error("Cannot factor zero ideal")
+  end
   n, d = integral_split(I)
   fn = factor(n)
   fd = factor(d)

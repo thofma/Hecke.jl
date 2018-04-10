@@ -40,7 +40,7 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   end
   q, mq = quo(T, sR, false)
   for (i,P) in enumerate(S)
-    if divisible(l,minimum(P))
+    if divisible(l,P.minimum)
       continue
     end
     if haskey(mR.prime_ideal_preimage_cache, P)
@@ -161,7 +161,7 @@ function conductor(C::Hecke.ClassField)
     
   L=deepcopy(mR.fact_mod)
   for (p,vp) in L
-    if !divisible(E,minimum(p))
+    if !divisible(E,p.minimum)
       if gcd(E, norm(p)-1)==1
         Base.delete!(L,p)
       else
@@ -425,10 +425,10 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
   #first, tame part
   primes_done=fmpz[]
   for p in keys(tmg)
-    if minimum(p) in primes_done 
+    if p.minimum in primes_done 
       continue
     end
-    push!(primes_done, minimum(p))
+    push!(primes_done, p.minimum)
     el=mp\ideal(O,tmg[p][1])
     if iszero(el)
       return false
@@ -444,10 +444,10 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
     wldg=mr.wild_mult_grp
     primes_done=fmpz[]
     for p in keys(wldg)
-      if minimum(p) in primes_done
+      if p.minimum in primes_done
         continue
       end
-      push!(primes_done, minimum(p))
+      push!(primes_done, p.minimum)
       @assert lp[p]>=2
       k=lp[p]-1
       pk=p^k
@@ -500,7 +500,7 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
           return false
         end
       else      
-        s=divexact(minimum(m),p^v)
+        s=divexact(mm,p^v)
         d,a,b=gcdx(s,p^v)
         x=a*s*R(1+p)^((p-1)*p^(v-2))+p^v*b
         if iszero(mp\(ideal(O,Int(x.data))))
@@ -593,8 +593,8 @@ function discriminant(C::ClassField)
         q,mq=quo(R,[el])
         ap-= order(q)
       end
-      qw=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
-      abs_disc[minimum(p)]=qw
+      qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+      abs_disc[p.minimum]=qw
       relative_disc[p]=ap
     else
       ap=n*s
@@ -628,10 +628,10 @@ function discriminant(C::ClassField)
         ap-=order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
       end
-      td=prime_decomposition_type(O,Int(minimum(p)))
-      np=fmpz(minimum(p))^(td[1][1]*length(td)*ap)
+      td=prime_decomposition_type(O,Int(p.minimum))
+      np=fmpz(p.minimum)^(td[1][1]*length(td)*ap)
       discr*=np
-      abs_disc[minimum(p)]=td[1][1]*length(td)*ap
+      abs_disc[p.minimum]=td[1][1]*length(td)*ap
       relative_disc[p]=ap
     end
   end
@@ -669,11 +669,11 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
   tmg=mr.tame_mult_grp
   primes_done=fmpz[]
   for p in keys(tmg) 
-    if minimum(p) in primes_done || haskey(mr.wild_mult_grp, p)
+    if p.minimum in primes_done || haskey(mr.wild_mult_grp, p)
       continue
     end
     ap=n
-    push!(primes_done, minimum(p))
+    push!(primes_done, p.minimum)
     if cyc_prime
       ap-=1
     else
@@ -681,16 +681,16 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
       q,mq=quo(R,[el])
       ap-= order(q)
     end
-    qw=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
-    discr*=fmpz(minimum(p))^qw
+    qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+    discr*=fmpz(p.minimum)^qw
     if discr>bound
       @vprint :QuadraticExt 2 "too large\n"
       return false
     else
-      if haskey(abs_disc, minimum(p))
-        abs_disc[minimum(p)]+=qw
+      if haskey(abs_disc, p.minimum)
+        abs_disc[p.minimum]+=qw
       else 
-        abs_disc[minimum(p)]=qw
+        abs_disc[p.minimum]=qw
       end
       #for q in keys(tmg)
       #  if minimum(q)==minimum(p) 
@@ -709,10 +709,10 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
     wldg=mr.wild_mult_grp
     primes_done=fmpz[]
     for p in keys(wldg)
-      if minimum(p) in primes_done
+      if p.minimum in primes_done
         continue
       end 
-      push!(primes_done, minimum(p)) 
+      push!(primes_done, p.minimum) 
       ap=n*lp[p]
       if cyc_prime
         ap-=lp[p]
@@ -745,17 +745,17 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
         ap-=order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
       end
-      td=divexact(degree(O),prime_decomposition_type(O,Int(minimum(p)))[1][2])*ap
-      np=fmpz(minimum(p))^td
+      td=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+      np=p.minimum^td
       discr*=np
       if discr>bound
         @vprint :QuadraticExt 2 "too large\n"
         return false
       else
-        if haskey(abs_disc, minimum(p))
-          abs_disc[minimum(p)]+=td
+        if haskey(abs_disc, p.minimum)
+          abs_disc[p.minimum]+=td
         else 
-          abs_disc[minimum(p)]=td
+          abs_disc[p.minimum]=td
         end
       #  for q in keys(tmg)
       #    if minimum(q)==minimum(p) 
@@ -832,9 +832,9 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
           if gcd(n,p-1)==1
             ap-=order(quo(G,[mp\(ideal(O,fmpz((b*s*R(s1)+a*pow).data)))])[1])
           else
-            x=_unit_grp_residue_field_mod_n(p,n)
+            x=_unit_grp_residue_field_mod_n(Int(p),n)[1]
             el1=mp\ideal(O,Int((R(x)*b*s+a*pow).data))
-            ap-=order(quo(G,[mp\(ideal(O,b*s*R(s1)+a*pow)), el1])[1])
+            ap-=order(quo(G,[mp\(ideal(O,Int((b*s*R(s1)+a*pow).data))), el1])[1])
           end
         else
           s=divexact(m,2^v)

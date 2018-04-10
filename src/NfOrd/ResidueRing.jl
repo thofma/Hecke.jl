@@ -318,7 +318,7 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   V = R.tmp_div
   A = representation_mat(y.elem)
-  B = basis_mat(parent(x))
+  B = parent(x).basis_mat
 
   V[1, 1] = 1
 
@@ -337,12 +337,15 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   hnf_modular_eldiv!(V, minimum(parent(x).ideal))
 
-  if !iszero(sub(V, 1:1, 2:(d + 1)))
-    ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
-    return false, zero(parent(x))
+  for i in 2:(d + 1)
+    if !iszero(V[1, i])
+  #if !iszero(sub(V, 1:1, 2:(d + 1)))
+      ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+      return false, zero(parent(x))
+    end
   end
   
-  z = R(-base_ring(R)(fmpz[ deepcopy(V[1, i]) for i in (d + 2):(2*d + 1)]))
+  z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
   ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
 
@@ -440,42 +443,50 @@ end
 ################################################################################
 
 function divrem(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
-  q = rand(parent(x))
-  r = x - q*y
-  e = euclid(y)
+  #q = rand(parent(x))
+  #r = x - q*y
+  #e = euclid(y)
 
   # This should be only one case and don't do the try/catch crap
   # Write a proper _is_divisible function
 
-  if e == 1
-    q = x*inv(y)
-    r = x - q*y
-    @hassert :NfOrdQuoRing 1 iszero(x - q*y)
-    @hassert :NfOrdQuoRing 1 euclid(r) < e
-    return q, r
+  #if e == 1
+  #  q = x*inv(y)
+  #  r = x - q*y
+  #  @hassert :NfOrdQuoRing 1 iszero(x - q*y)
+  #  @hassert :NfOrdQuoRing 1 euclid(r) < e
+  #  return q, r
+  #end
+
+  #try q = divexact(x, y)
+  #  r = x - q*y
+  #  @hassert :NfOrdQuoRing 1 iszero(x - q*y)
+  #  @hassert :NfOrdQuoRing 1 euclid(r) < e
+  #  return q, r
+  #catch
+  #end
+
+  b, q = isdivisible(x, y)
+  if b
+    return q, zero(parent(x))
   end
 
-  try q = divexact(x, y)
-    r = x - q*y
-    @hassert :NfOrdQuoRing 1 iszero(x - q*y)
-    @hassert :NfOrdQuoRing 1 euclid(r) < e
-    return q, r
-  catch
-  end
+  e = euclid(y)
 
   cnt = 0
-  while euclid(r) >= e
+  while true 
     cnt += 1
     q = rand(parent(x))
     r = x - q*y
+    if euclid(r) < e
+      return q, r
+    end
     if cnt > 1000
       error("Something odd in divrem for $x $y $(parent(x))")
     end
   end
 
   @hassert :NfOrdQuoRing 1 euclid(r) < e
-
-  return q, r
 end
 
 ################################################################################
@@ -519,7 +530,7 @@ function annihilator(x::NfOrdQuoRingElem)
   I = ideal(O, _hnf_modular_eldiv(sub(m, 1:degree(O), 1:degree(O)),
                                   minimum(I), :lowerleft))
   z = f(I)
-  @assert iszero(z*x)
+  #@assert iszero(z*x)
   return z
 end
 
@@ -532,6 +543,18 @@ end
 function gcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   Q = parent(x)
   O = base_ring(Q)
+
+  if iszero(x)
+    if iszero(y)
+      return zero(Q)
+    else
+      return y
+    end
+  else
+    if iszero(y)
+      return x
+    end
+  end
 
   I = ideal(O, x.elem) + ideal(O, y.elem)
 
@@ -566,7 +589,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   M_e = representation_mat(e.elem)
   M_f = representation_mat(f.elem)
 
-  M_I = basis_mat(Q)
+  M_I = Q.basis_mat
 
   # let us build
   # ( 1  Q(1) 0  0 )
@@ -592,12 +615,12 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
     V[1+i, 1 + d + i] = 1
   end
 
-  U = V
+  #U = V
 
-  U = hnf_modular_eldiv(U, minimum(Q.ideal))::fmpz_mat
+  hnf_modular_eldiv!(V, minimum(Q.ideal))::fmpz_mat
 
-  u = Q(-O([ U[1,i] for i in (d + 2):(2*d + 1)]))
-  v = Q(-O([ U[1,i] for i in (2*d + 2):(3*d + 1)]))
+  u = Q(-O([ V[1,i] for i in (d + 2):(2*d + 1)]))
+  v = Q(-O([ V[1,i] for i in (2*d + 2):(3*d + 1)]))
 
   @hassert :NfOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
@@ -605,271 +628,6 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   return g, u, v, -f, e
 end
-
-################################################################################
-#
-#  Triangularization
-#
-################################################################################
-
-function _pivot(A, start_row, col)
-  if !iszero(A[start_row, col])
-    return 1;
-  end
-
-  for j in start_row + 1:rows(A)
-    if !iszero(A[j, col])
-      swap_rows!(A, j, start_row)
-      return -1
-    end
-  end
-
-  return 0
-end
-
-function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem})
-  B = deepcopy(A)
-
-  if rows(B) < cols(B)
-    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
-  end
-
-  strong_echelon_form!(B)
-  return B
-end
-
-function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright)
-  if shape == :lowerleft
-    h = _strong_echelon_form(_swapcols(A))
-    _swapcols!(h)
-    _swaprows!(h)
-    return h
-  elseif shape == :upperright
-    return _strong_echelon_form(A)
-  else
-    error("Not yet implemented")
-  end
-end
-
-function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
-  n = rows(A)
-  m = cols(A)
-  d = one(base_ring(A))
-
-  t_isdiv = 0.0
-  t_xxgcd = 0.0
-  t_arith = 0.0
-
-  row = 1
-  col = 1
-  tic()
-  while row <= rows(A) && col <= cols(A)
-    #println("doing row $row")
-    t = _pivot(A, row, col)
-    if t == 0
-      col = col + 1
-      continue
-    end
-    d = d*t
-    for i in (row + 1):rows(A)
-      if iszero(A[i, col])
-        continue
-      end
-
-      t_isdiv += @elapsed b, q = isdivisible(A[i, col], A[row, col])
-
-      if b
-        for k in col:m
-          t_arith += @elapsed A[i, k] = A[i, k] - q*A[row, k]
-        end
-        @hassert :NfOrdQuoRing 1 A[i, col] == zero(base_ring(A))
-      else
-        t_xxgcd += @elapsed g,s,t,u,v = xxgcd(A[row, col], A[i, col])
-        @hassert :NfOrdQuoRing 1 isone(s*v - t*u)
-
-        for k in col:m
-          t_arith += @elapsed t1 = s*A[row, k] + t*A[i, k]
-          t_arith += @elapsed t2 = u*A[row, k] + v*A[i, k]
-          A[row, k] = t1
-          A[i, k] = t2
-        end
-      end
-    end
-    row = row + 1;
-    col = col + 1;
-  end
-  #println("  === Time triangularization")
-  #println("    isdivisbible: $t_isdiv")
-  #println("    xxgcd       : $t_xxgcd")
-  #println("    arith       : $t_arith")
-  #println("    total time  : $(toc())")
-  return d
-end
-
-function triangularize(A::Generic.Mat{NfOrdQuoRingElem})
-  #println("copying ...")
-  B = deepcopy(A)
-  #println("done")
-  triangularize!(B)
-  return B
-end
-
-################################################################################
-#
-#  Strong echelon form
-#
-################################################################################
-
-function strong_echelon_form!(A::Generic.Mat{NfOrdQuoRingElem})
-  #A = deepcopy(B)
-  n = rows(A)
-  m = cols(A)
-
-  @assert n >= m
-
-  #print("triangularizing ... ")
-  triangularize!(A)
-
-  T = zero_matrix(base_ring(A), 1, cols(A))
-
-  # We do not normalize!
-  for j in 1:m
-    if !iszero(A[j,j]) != 0
-      # This is the reduction
-      for i in 1:j-1
-        if iszero(A[i, j])
-          continue
-        else
-          q, r = divrem(A[i, j], A[j, j])
-          for l in i:m
-            A[i, l] = A[i, l] - q*A[j, l]
-          end
-        end
-      end
-
-      a = annihilator(A[j, j])
-
-      for k in 1:m
-        T[1, k] = a*A[j, k]
-      end
-    else
-      for k in 1:m
-        T[1, k] = A[j, k]
-      end
-    end
-
-    for i in j+1:m 
-      
-      if iszero(T[1, i])
-        continue
-      end
-
-      if iszero(A[i, i])
-        for k in i:m
-          T[1, k], A[i, k] = A[i, k], T[1, k]
-        end
-      else
-        b, q = isdivisible(T[1, i], A[i, i])
-        if b
-          for k in i:m
-            T[1, k] = T[1, k] - q*A[i, k]
-          end
-          @hassert :NfOrdQuoRing 1 T[1, i] == zero(base_ring(A))
-        else
-          g,s,t,u,v = xxgcd(A[i, i], T[1, i])
-
-          for k in i:m
-            t1 = s*A[i, k] + t*T[1, k]
-            t2 = u*A[i, k] + v*T[1, k]
-            A[i, k] = t1
-            T[1, k] = t2
-          end
-        end
-      end
-    end
-  end
-  return A
-end
-
-################################################################################
-#
-#  Howell form
-#
-################################################################################
-
-function howell_form!(A::Generic.Mat{NfOrdQuoRingElem})
-  @assert rows(A) >= cols(A)
-
-  k = rows(A)
-
-  strong_echelon_form!(A)
-
-  for i in 1:rows(A)
-    if iszero_row(A, i)
-      k = k - 1
-
-      for j in (i + 1):rows(A)
-        if !iszero_row(A, j)
-          swap_rows!(A, i, j)
-          j = rows(A)
-          k = k + 1
-        end
-      end
-    end
-  end
-  return k
-end
-
-function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
-  B = deepcopy(A)
-
-  if rows(B) < cols(B)
-    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
-  end
-
-  howell_form!(B)
-
-  return B
-end
-
-################################################################################
-#
-#  Determinant
-#
-################################################################################
-
-function det(M::Generic.Mat{NfOrdQuoRingElem})
-  rows(M) != cols(M) && error("Matrix must be square matrix")
-  N = deepcopy(M)
-  d = triangularize!(N)
-  z = one(base_ring(M))
-  for i in 1:rows(N)
-    z = z * N[i, i]
-  end
-  return z*d
-  q, r = divrem(z, d)
-  @hassert :NfOrdQuoRing 1 iszero(r)
-  return divexact(z, d)
-end
-
-################################################################################
-#
-#  Functions for matrix spaces
-#
-################################################################################
-
-#function call(M::Generic.MatSpace{NfOrdQuoRingElem}, x::Generic.Mat{NfOrdElem})
-#  base_ring(base_ring(M)) != base_ring(parent(x)) &&
-#      error("Base rings do not coincide")
-#  z = M()
-#  R = base_ring(M)
-#  for i in 1:rows(x)
-#    for j in 1:cols(x)
-#      z[i, j] = R(x[i, j])
-#    end
-#  end
-#  return z
-#end
 
 function (M::Generic.MatSpace{NfOrdQuoRingElem})(x::Generic.Mat{NfOrdElem})
   z = map(base_ring(M), x.entries)::Array{NfOrdQuoRingElem, 2}

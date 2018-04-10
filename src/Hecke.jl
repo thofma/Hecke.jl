@@ -67,23 +67,23 @@ import AbstractAlgebra
 
 import Nemo
 
-exclude = [:Nemo, :AbstractAlgebra,
+exclude = [:Nemo, :AbstractAlgebra, :RealField,
            :factor,
            :call, :factors, :parseint, :strongequal, :window, :xgcd]
 
 for i in names(Nemo)
   i in exclude && continue
-  eval(Expr(:import, :Nemo, i))
+  eval(parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
 
-import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct, Set,
+import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
        elem_to_mat_row!, elem_from_mat_row,
        acb_vec, array, acb_vec_clear
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
-       update, @timeit, show, StepRange, domain, codomain, image, preimage,
+       update, show, StepRange, domain, codomain, image, preimage,
        modord, resultant, @test_and_infer, next_prime, ispower
 
 ###############################################################################
@@ -115,7 +115,7 @@ function __init__()
     print_with_color(:green, " $VERSION_NUMBER ")
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann")
+    println("(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   else
     println("Hecke $VERSION_NUMBER ...")
@@ -128,7 +128,7 @@ function __init__()
     Libdl.dlopen(libhecke)
   else
     push!(Libdl.DL_LOAD_PATH, libdir)
-	ENV["PATH"] = ENV["PATH"] * ";" * joinpath(Pkg.dir("Nemo"), "local", "lib")
+    ENV["PATH"] = ENV["PATH"] * ";" * joinpath(Pkg.dir("Nemo"), "local", "lib")
   end
   
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
@@ -273,7 +273,7 @@ end
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.4.3"
+global VERSION_NUMBER = v"0.4.4"
 
 ################################################################################
 #
@@ -513,52 +513,6 @@ macro vtime_add_elapsed(flag, level, var, key, stmt)
   end  
 end
 
-
-################################################################################
-#
-#  Functions for timings
-#
-################################################################################
-
-macro timeit(args...)
-  loops = 50
-  if length(args) == 2
-    loops = esc(args[2])
-  end
-
-  quote
-    gc_enable(false)
-    # warm-up
-    local val = $(esc(args[1]))
-
-    local min = Inf
-    local max = 0
-    local sum = 0.0
-    local t0, diff
-    local i
-    for i in 1:$(loops)
-      t0 = time_ns()
-      local val = $(esc(args[1]))
-      diff = time_ns() - t0
-      if diff > max
-        max = diff
-      end
-      if diff < min
-        min = diff
-      end
-      sum += diff
-    end
-    sum = sum/$(loops)
-    print("max: $(max/1e9)\nmin: $(min/1e9)\nsum: $(sum/1e9)\n")
-    gc_enable(true)
-    nothing
-  end
-end
-
-function timeit(expr::Expr)
-  @timeit expr
-end
-
 ################################################################################
 #
 #  Exception types
@@ -591,6 +545,8 @@ set_assert_level(:PID_Test, 0)
 ################################################################################
 
 include("HeckeTypes.jl")
+include("NfRel/NfRelTypes.jl")
+include("AlgAss/AlgAssTypes.jl")
 include("Map.jl")
 include("Misc.jl")
 include("GrpAb.jl")

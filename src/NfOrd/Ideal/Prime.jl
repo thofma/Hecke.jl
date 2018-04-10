@@ -427,7 +427,8 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
   =#
 
   Ip = pradical(O, p)
-  A, AtoO = AlgAss(O, Ip, p)
+  A, OtoA = AlgAss(O, Ip, p)
+  AtoO = inv(OtoA)
   AA = split(A)
 
   ideals = Vector{NfOrdIdl}()
