@@ -8,8 +8,7 @@ function _get_simple_extension_and_maximal_order(K)
   k = length(pol)
   gensK = gens(K)
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  polys = []
-  basesofmaximalorders = []
+  basesofmaximalorders = Vector{elem_type(K)}[]
   discs = fmpz[]
   for i in 1:k
     f = pol[i]
@@ -22,14 +21,19 @@ function _get_simple_extension_and_maximal_order(K)
     push!(discs, discriminant(OL))
     BOL = map(z -> z.elem_in_nf, basis(OL))
     push!(basesofmaximalorders, [ sum(coeff(b, j) * gensK[i]^j for j in 0:degree(L)) for b in BOL ])
-    push!(polys, g)
   end
   bbb = vec([ prod(c) for c in Iterators.product(basesofmaximalorders...) ])
   Ksimple, f = Hecke.simple_extension(K)
   Ksimpleabs, g = Hecke.absolute_field(Ksimple)
-  discgcd = gcd(discs)
+  prime_divisors = Set{fmpz}()
+  for i in 1:length(discs)
+    for j in 1:(i - 1)
+      ff = factor(gcd(discs[i], discs[j]))
+      prime_divisors = union(prime_divisors, Set{fmpz}([ p for (p, e) in ff ]))
+    end
+  end
   OO = Order(Ksimpleabs, [ g(f\(b)) for b in bbb ])
-  for (p, e) in factor(discgcd)
+  for p in prime_divisors
     OO = pmaximal_overorder(OO, p)
   end
   OO.ismaximal = 1
@@ -111,7 +115,14 @@ for (i, k) in enumerate(l_conductors)
       L=number_field(C)
       LL = _get_simple_extension_and_maximal_order(L)
       LLdisc = discriminant(maximal_order(LL))
-      @assert LLdisc == prod( p^e for (p, e) in C.absolute_discriminant)
+      
+      if LLdisc != prod( p^e for (p, e) in C.absolute_discriminant)
+        println("Ups")
+        @show LLdisc
+        @show prod( p^e for (p, e) in C.absolute_discriminant)
+        println("==========================")
+      end
+
       push!(fields, (Hecke.simplify(LL)[1], LLdisc))
     end
   end
