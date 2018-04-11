@@ -92,7 +92,7 @@ end
 
 width = length(string(total_cond))
 
-@show l_conductors
+#@show l_conductors
 
 fields=Tuple{AnticNumberField, fmpz}[]
 #  autos=Vector{NfRel_nsToNfRel_nsMor}[]
