@@ -60,12 +60,14 @@ mutable struct NfRel_ns{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
   S::Array{Symbol, 1}
+  auxilliary_data::Array{Any, 1}
 
   function NfRel_ns(f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
     r.base_ring = base_ring(f[1])
     r.S = S
+    r.auxilliary_data = Array{Any}(5)
     return r
   end
 end

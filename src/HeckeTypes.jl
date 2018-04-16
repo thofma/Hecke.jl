@@ -1664,6 +1664,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
   pol::Generic.Poly{T}
   S::Symbol
+  auxilliary_data::Array{Any, 1}
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     if haskey(NfRelID, (parent(f), f, s))
@@ -1673,6 +1674,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
+      z.auxilliary_data = Array{Any}(5)
       if cached
         NfRelID[parent(f), f, s] = z
       end

@@ -456,8 +456,17 @@ doc"""
 > Returns the maximal order of $L$.
 """
 function MaximalOrder(L::RelativeExtension)
-  O = EquationOrder(L)
-  return MaximalOrder(O)
+  try
+    O = _get_maximal_order_of_nf_rel(L)
+    return O
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    O = MaximalOrder(EquationOrder(L))
+    _set_maximal_order_of_nf_rel(L, O)
+    return O
+  end
 end
 
 maximal_order(L::RelativeExtension) = MaximalOrder(L)
@@ -645,13 +654,16 @@ doc"""
 > This function tries to find an order that is locally larger than $\mathcal O$
 > at the prime $p$.
 """
-function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+#function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
+function poverorder(O::NfRelOrd, p::NfOrdIdl)
   if isequation_order(O) && issimple(O)
     return dedekind_poverorder(O, p)
   else
     return ring_of_multipliers(pradical(O, p))
   end
 end
+
+poverorder(O::NfRelOrd, p::NfRelOrdIdl) = ring_of_multipliers(pradical(O, p))
 
 ################################################################################
 #
