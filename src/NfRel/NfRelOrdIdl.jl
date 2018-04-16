@@ -1198,7 +1198,7 @@ end
 #
 ################################################################################
 
-function rand(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, B::Int)
+function rand(a::NfRelOrdIdl, B::Int)
   pb = pseudo_basis(a, Val{false})
   z = nf(order(a))()
   for i = 1:degree(order(a))
