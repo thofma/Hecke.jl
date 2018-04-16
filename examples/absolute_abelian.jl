@@ -1,15 +1,56 @@
 using Hecke
 
+Base.:*(x::Hecke.NfRel_nsElem{Nemo.nf_elem}) = x
+
+function _get_simple_extension_and_maximal_order(K) 
+  @assert degree(base_ring(K)) == 1
+  pol = K.pol
+  k = length(pol)
+  gensK = gens(K)
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  basesofmaximalorders = Vector{elem_type(K)}[]
+  discs = fmpz[]
+  for i in 1:k
+    f = pol[i]
+    g = zero(Qx)
+    for j in 1:f.length
+      g += coeff(f.coeffs[j], 1)* x^Int(f.exps[i, j])
+    end
+    L, _ = number_field(g)
+    OL = maximal_order(L)
+    push!(discs, discriminant(OL))
+    BOL = map(z -> z.elem_in_nf, basis(OL))
+    push!(basesofmaximalorders, [ sum(coeff(b, j) * gensK[i]^j for j in 0:degree(L)) for b in BOL ])
+  end
+  bbb = vec([ prod(c) for c in Iterators.product(basesofmaximalorders...) ])
+  Ksimple, f = Hecke.simple_extension(K)
+  Ksimpleabs, g = Hecke.absolute_field(Ksimple)
+  prime_divisors = Set{fmpz}()
+  for i in 1:length(discs)
+    for j in 1:(i - 1)
+      ff = factor(gcd(discs[i], discs[j]))
+      prime_divisors = union(prime_divisors, Set{fmpz}([ p for (p, e) in ff ]))
+    end
+  end
+  OO = Order(Ksimpleabs, [ g(f\(b)) for b in bbb ])
+  for p in prime_divisors
+    OO = pmaximal_overorder(OO, p)
+  end
+  OO.ismaximal = 1
+  Hecke._set_maximal_order_of_nf(Ksimpleabs, OO)
+  return Ksimpleabs
+end
+
 bounddisc = ARGS[1]
 real = ARGS[2]
 gtype = ARGS[3]
 startcond = ARGS[4]
-number = ARGS[5]
+endcond = ARGS[5]
 
 bounddisc = fmpz(eval(parse(bounddisc)))
 gtype = convert(Vector{Int}, eval(parse(gtype)))
 startcond = parse(Int, startcond)
-number = parse(Int, number)
+endcond = parse(Int, endcond)
 real = parse(Bool, real)
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
@@ -23,19 +64,39 @@ expo=lcm(gtype)
 
 
 if length(ARGS) == 6
-   print("Loading conductors ... ")
-   conductors = readdlm(ARGS[6], Int)
-   conductors = conductors[:, 1]
-   println("DONE")
-#  basename = ARGS[4]
+   total_cond = countlines(ARGS[6])
 else
    conductors = sort!(Hecke.conductorsQQ(O, n, bounddisc))
+   total_cond = length(conductors)
 end
 
-width = length(string(length(conductors)))
+upper_index = min(total_cond, endcond)
 
-l_conductors = conductors[startcond:min(length(conductors), startcond + number - 1)]
+l_conductors = Vector{Int}(upper_index - startcond + 1)
 
+if length(ARGS) == 6
+   print("Loading conductors ... ")
+   open(ARGS[6]) do f
+     k = 1
+     for (i, lline) in enumerate(eachline(f))
+       if i < startcond
+         continue
+       end
+       if i > upper_index
+         break
+       end
+       l_conductors[k] = parse(Int, lline)
+       k = k + 1
+     end
+   end
+   #conductors = readdlm(ARGS[6], Int)
+   #conductors = conductors[:, 1]
+   println("DONE")
+end
+
+width = length(string(total_cond))
+
+#@show l_conductors
 
 fields=Tuple{AnticNumberField, fmpz}[]
 #  autos=Vector{NfRel_nsToNfRel_nsMor}[]
@@ -52,16 +113,25 @@ for (i, k) in enumerate(l_conductors)
     C=Hecke.ray_class_field(mr*inv(s))
     if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,bounddisc,n)
       L=number_field(C)
-      LL = Hecke.absolute_field(Hecke.simple_extension(L)[1])[1]
-      push!(fields, (Hecke.simplify(LL)[1], discriminant(maximal_order(LL))))
+      LL = _get_simple_extension_and_maximal_order(L)
+      LLdisc = discriminant(maximal_order(LL))
+      
+      if LLdisc != prod( p^e for (p, e) in C.absolute_discriminant)
+        println("Ups")
+        @show LLdisc
+        @show prod( p^e for (p, e) in C.absolute_discriminant)
+        println("==========================")
+      end
+
+      push!(fields, (Hecke.simplify(LL)[1], LLdisc))
     end
   end
 end
 
 if length(ARGS) == 6
-  file = ARGS[6] * "_" * sprint_formatted("%0$(width)d", startcond) * "-" * sprint_formatted("%0$(width)d", startcond + number - 1)
+file = ARGS[6] * "_" * sprint_formatted("%0$(width)d", startcond) * "-" * sprint_formatted("%0$(width)d", upper_index)
 else
-  file = sprint_formatted("%0$(width)d", startcond) * "-" * sprint_formatted("%0$(width)d", startcond + number - 1)
+file = sprint_formatted("%0$(width)d", startcond) * "-" * sprint_formatted("%0$(width)d", upper_index)
 end
 
 @show length(fields)

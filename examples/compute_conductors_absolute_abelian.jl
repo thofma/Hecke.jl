@@ -38,3 +38,5 @@ open(file, "w") do f
   writedlm(f, conductors)
   println("DONE")
 end
+
+@assert countlines(file) == length(conductors)
