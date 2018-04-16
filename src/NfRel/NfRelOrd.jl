@@ -451,11 +451,11 @@ end
 
 doc"""
 ***
-      MaximalOrder(L::RelativeExtension) -> NfRelOrd
+      maximal_order(L::RelativeExtension) -> NfRelOrd
 
 > Returns the maximal order of $L$.
 """
-function MaximalOrder(L::RelativeExtension)
+function maximal_order(L::RelativeExtension)
   try
     O = _get_maximal_order_of_nf_rel(L)
     return O
@@ -463,33 +463,33 @@ function MaximalOrder(L::RelativeExtension)
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
-    O = MaximalOrder(EquationOrder(L))
+    O = MaximalOrder(L)
     _set_maximal_order_of_nf_rel(L, O)
     return O
   end
 end
 
-maximal_order(L::RelativeExtension) = MaximalOrder(L)
+MaximalOrder(L::RelativeExtension) = MaximalOrder(EquationOrder(L))
 
 function maximal_order_via_absolute(L::NfRel)
   Labs, lToLabs, kToLabs = absolute_field(L)
-  Oabs = MaximalOrder(Labs)
+  Oabs = maximal_order(Labs)
   return relative_order(Oabs, lToLabs)
 end
 
 function maximal_order_via_absolute(m::NfRelToNf)
-  Oabs = MaximalOrder(codomain(m))
+  Oabs = maximal_order(codomain(m))
   return relative_order(Oabs, m)
 end
 
 function maximal_order_via_simple(L::NfRel_ns)
   Ls, m = simple_extension(L)
-  Os = MaximalOrder(Ls)
+  Os = maximal_order(Ls)
   return non_simple_order(Os, m)
 end
 
 function maximal_order_via_simple(m::NfRelToNfRel_nsMor)
-  Os = MaximalOrder(domain(m))
+  Os = maximal_order(domain(m))
   return non_simple_order(Os, m)
 end
 
@@ -737,7 +737,7 @@ function relative_order(O::NfOrd, m::NfRelToNf)
   Labs = codomain(m)
   @assert nf(O) == Labs
   K = base_ring(L)
-  OK = MaximalOrder(K)
+  OK = maximal_order(K)
   mm = inv(m)
   B = basis(O, Val{false})
   d = degree(L)
