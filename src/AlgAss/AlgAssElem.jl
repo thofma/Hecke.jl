@@ -283,18 +283,33 @@ function elem_from_mat_row(A::AlgAss{T}, M::MatElem{T}, i::Int) where T
   return a
 end
 
-function representation_mat(a::AlgAssElem)
+function representation_mat(a::AlgAssElem, action::Symbol=:left)
   A = parent(a)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
-  for i = 1:dim(A)
-    if iszero(a.coeffs[i])
-      continue
-    end
-    for j = 1:dim(A)
-      for k = 1:dim(A)
-        M[j, k] += a.coeffs[i]*A.mult_table[i, j, k]
+  if action==:left
+    for i = 1:dim(A)
+      if iszero(a.coeffs[i])
+        continue
+      end
+      for j = 1:dim(A)
+        for k = 1:dim(A)
+          M[j, k] += a.coeffs[i]*A.mult_table[i, j, k]
+        end
       end
     end
+  elseif action==:right
+    for i = 1:dim(A)
+      if iszero(a.coeffs[i])
+        continue
+      end
+      for j = 1:dim(A)
+        for k = 1:dim(A)
+          M[j, k] += a.coeffs[i]*A.mult_table[j, i, k]
+        end
+      end
+    end
+  else
+    error("Not yet implemented")
   end
   return M
 end
