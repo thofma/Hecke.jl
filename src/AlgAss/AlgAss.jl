@@ -51,7 +51,7 @@ function check_associativity(A::AlgAss)
       end
     end
   end
-  return nothing
+  return true
 
 end
 
@@ -64,7 +64,7 @@ function check_distributivity(A::AlgAss)
       end
     end 
   end
-  return nothing
+  return true
 
 end
 

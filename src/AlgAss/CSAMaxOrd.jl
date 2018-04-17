@@ -141,7 +141,7 @@ function FakeFmpqMat(x::Array{fmpq,1})
   den=lcm(dens)
   M=zero_matrix(FlintZZ, 1, length(x))
   for i=1:length(x)
-    M[1,i]=numerator(x[i]*divexact(den, dens[i]))
+    M[1,i]=numerator(x[i])*divexact(den, dens[i])
   end
   return FakeFmpqMat(M,den)
 end
@@ -165,6 +165,19 @@ end
 function ideal(O::AlgAssOrd, mat::fmpz_mat)
   return AlgAssOrdIdl(O,mat)
 end
+
+function in(x::AlgAssOrdElem, I::AlgAssOrdIdl)
+
+  y=matrix(FlintZZ, 1, length(I.basis_alg), x.elem_in_basis)
+  M1, d =pseudo_inv(I.basis_mat)
+  if FakeFmpqMat(y*M1, d).den==1
+    return true
+  else
+    return false
+  end
+
+end
+
 
 ###############################################################################
 #
@@ -201,6 +214,7 @@ function in(x::AlgAssElem, O::AlgAssOrd)
     M1=O.basis_mat_inv
   else
     M1=inv(O.basis_mat)
+    O.basis_mat_inv=M1
   end
   if (y*M1).den==1
     return true
@@ -560,28 +574,25 @@ end
 
 function check_ideal(I::AlgAssOrdIdl)
   
-  bmatinv, deno=pseudo_inv(I.basis_mat)
-  for x in I.basis_alg
-    M=representation_mat(x)*bmatinv
-    for i=1:rows(bmatinv)
-      for j=1:rows(bmatinv)
-        @assert divisible(M[i,j], deno)
-      end
-    end
+  O=I.O
+  x=fmpz[0 for i=1:O.dim]
+  for i=1:O.dim
+    x[i]=1
+    y=O(x)
+    for j=1:O.dim
+      @assert y*I.basis_alg[j] in I
+      @assert I.basis_alg[j]*y in I
+    end 
+    x[i]=0    
   end
-  return nothing
+  return true
   
 end
 
 function check_order(O::AlgAssOrd)
   
-  M=O.basis_mat
-  if isdefined(O, :basis_mat_inv)
-    M1=O.basis_mat_inv
-  else
-    M1=inv(M)
-  end
   for x in O.basis_alg
+    @assert denominator(minpoly(x))==1
     for y in O.basis_alg
       if !(x*y in O)
         @show x,y
@@ -589,7 +600,7 @@ function check_order(O::AlgAssOrd)
       end
     end
   end
-  return nothing
+  return true
 
 end
 
@@ -612,7 +623,7 @@ function check_pradical(I::AlgAssOrdIdl, p::Int)
       end
     end
   end
-  return nothing
+  return true
 end
 
 
@@ -624,9 +635,12 @@ end
 
 
 function ring_of_multipliers(I::AlgAssOrdIdl)
- 
+
   O = I.O
+  @hassert :CSAMaxOrd 1 Hecke.check_associativity(O.A)
+  @hassert :CSAMaxOrd 1 Hecke.check_distributivity(O.A)
   B= I.basis_alg
+  @hassert :CSAMaxOrd 1 check_ideal(I)
   bmatinv, deno =pseudo_inv(I.basis_mat)
   aux=zero_matrix(FlintZZ, O.dim, O.dim)
   m=zero_matrix(FlintZZ, O.dim^2, O.dim)
@@ -907,7 +921,7 @@ end
 #
 ###############################################################################
 
-function _maximal_ideals(O::AlgAssOrdIdl, p::Int)
+function _maximal_ideals(O::AlgAssOrd, p::Int)
   
   I= pradical(O, p)
   A, AtoO =quo(O,I,p)

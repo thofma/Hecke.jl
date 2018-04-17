@@ -33,11 +33,6 @@
   @test Hecke.issplit(A)
   A=Hecke.quaternion_algebra(-1,-1)
   O=Hecke.AlgAssOrd(A, [A[i] for i=1:4])
-  @test Hecke.schur_index_at_inf_plc==2
-  A=Hecke.quaternion_algebra(2,1)
-  O=Hecke.AlgAssOrd(A, [A[i] for i=1:4])
-  @test Hecke.schur_index_at_p(O,fmpz(2))==2
-
-
+  @test Hecke.schur_index_at_real_plc(O)==2
 
 end
