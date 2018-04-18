@@ -48,7 +48,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   d = fmpz(1)
   for i = 1:n
     for j = 1:i
-      d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeff_ideals[i])))
+      d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeff_ideals[j])))
     end
   end
   a.den = d
@@ -338,3 +338,19 @@ function valuation_naive(a::RelativeElement, P::NfRelOrdIdl)
 end
 
 valuation(a::RelativeElement, P::NfRelOrdIdl) = valuation_naive(a, P)
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(a::NfRelOrdFracIdl, B::Int)
+  pb = pseudo_basis(a, Val{false})
+  z = nf(order(a))()
+  for i = 1:degree(order(a))
+    t = rand(pb[i][2], B)
+    z += t*pb[i][1]
+  end
+  return z
+end

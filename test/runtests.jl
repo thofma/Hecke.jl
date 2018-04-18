@@ -26,6 +26,7 @@ include("Misc.jl")
 include("RCF.jl")
 include("NfRel.jl")
 include("GrpAb.jl")
+include("AssAlg.jl")
 
 
 # x^5 + 514944*x^2 + 123904 test prime decomposition with this (2 is index divisor and only one prime ideal over 2)

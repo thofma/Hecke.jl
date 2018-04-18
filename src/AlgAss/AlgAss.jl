@@ -38,6 +38,39 @@ end
 
 ################################################################################
 #
+#  Associativity, Distributivity test
+#
+################################################################################
+
+function check_associativity(A::AlgAss)
+  
+  for i=1:dim(A)
+    for j=1:dim(A)
+      for k=1:dim(A)
+        @assert (A[i]*A[j])*A[k]==A[i]*(A[j]*A[k])
+      end
+    end
+  end
+  return true
+
+end
+
+function check_distributivity(A::AlgAss)
+
+  for i=1:dim(A)
+    for j=1:dim(A)
+      for k=1:dim(A)
+        @assert A[i]*(A[j]+A[k])==A[i]*A[j]+A[i]*A[k]
+      end
+    end 
+  end
+  return true
+
+end
+
+
+################################################################################
+#
 #  Construction
 #
 ################################################################################
@@ -237,8 +270,8 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
   basis_pmatI = basis_pmat(I, Val{false})
   basis_pmatO = basis_pmat(O, Val{false})
 
-  new_basis_mat = deepcopy(basis_mat(O))
-  new_basis_mat_I = deepcopy(basis_mat(I))
+  new_basis_mat = deepcopy(O.basis_mat)
+  new_basis_mat_I = deepcopy(I.basis_mat)
 
   pi = anti_uniformizer(p)
 
@@ -533,31 +566,9 @@ end
 
 ################################################################################
 #
-#  Splitting
+#  Subalgebras
 #
 ################################################################################
-
-function kernel_of_frobenius(A::AlgAss)
-  F = base_ring(A)
-  q = order(F)
-
-  b = A()
-  c = A()
-  B = zero_matrix(F, dim(A), dim(A))
-  for i = 1:dim(A)
-    b.coeffs[i] = F(1)
-    if i > 1
-      b.coeffs[i - 1] = F()
-    end
-    c = b^q - b
-    for j = 1:dim(A)
-      B[j, i] = deepcopy(c.coeffs[j])
-    end
-  end
-
-  V = right_kernel(B)
-  return [ A(v) for v in V ]
-end
 
 # This only works if base_ring(A) is a field
 # Constructs the algebra e*A
@@ -626,6 +637,58 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
   return eA, eAtoA
 end
+
+function subalgebra(A::AlgAss, basis::Array{AlgAssElem,1})
+  B=zero_matrix(A.base_ring, dim(A), length(basis))
+  for i=1:dim(A)
+    for j=1:length(basis)
+      B[i,j]=basis[j].coeffs[i]
+    end
+  end
+  M=Array{elem_type(A.base_ring),3}(length(basis), length(basis), length(basis))
+  for i=1:length(basis)
+    for j=1:length(basis)
+      x=basis[i]*basis[j]
+      N1=matrix(A.base_ring, dim(A), 1, x.coeffs)
+      N=_solve_unique(N1,B)
+      for k=1:length(basis)
+        M[i,j,k]=N[k,1]
+      end
+    end
+  end
+  A1=AlgAss(A.base_ring, M)
+  return A1, AlgAssMor(A1, A, B')
+end
+
+
+################################################################################
+#
+#  Splitting
+#
+################################################################################
+
+function kernel_of_frobenius(A::AlgAss)
+  F = base_ring(A)
+  q = order(F)
+
+  b = A()
+  c = A()
+  B = zero_matrix(F, dim(A), dim(A))
+  for i = 1:dim(A)
+    b.coeffs[i] = F(1)
+    if i > 1
+      b.coeffs[i - 1] = F()
+    end
+    c = b^q - b
+    for j = 1:dim(A)
+      B[j, i] = deepcopy(c.coeffs[j])
+    end
+  end
+
+  V = right_kernel(B)
+  return [ A(v) for v in V ]
+end
+
 
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
