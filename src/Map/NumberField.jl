@@ -1,6 +1,6 @@
 export extend
 
-mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField}
+mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, NfToNfMor}
   header::MapHeader{AnticNumberField, AnticNumberField}
   prim_img::nf_elem
 

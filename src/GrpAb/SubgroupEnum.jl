@@ -55,7 +55,7 @@ mutable struct IndexPSubgroups{S, T}
 
   function IndexPSubgroups{T}(A::GrpAbFinGen, p::fmpz, mthd::T = sub) where {T}
     if order(A) % p != 0
-      r = new{IdentityMap{GrpAbFinGen}, T}()
+      r = new{Generic.IdentityMap{GrpAbFinGen}, T}()
       r.n = 0
       return r
     end

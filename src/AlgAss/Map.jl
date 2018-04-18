@@ -1,4 +1,4 @@
-mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}}
+mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssMor}
   header::MapHeader{AlgAss{R}, AlgAss{S}}
 
   mat::T
