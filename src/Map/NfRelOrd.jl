@@ -1,4 +1,4 @@
-mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField}
+mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, HeckeMap, NfRelOrdToFqMor}
   header::MapHeader
   poly_of_the_field::fq_poly
   P::NfRelOrdIdl{T, S}
@@ -121,7 +121,7 @@ function extend(f::NfRelOrdToFqMor{T, S}, K::NfRel{T}) where {T, S}
   return g
 end
 
-mutable struct NfRelOrdToAlgAssMor{T1, T2, T3} <: Map{NfRelOrd{T1, T2}, AlgAss{T3}}
+mutable struct NfRelOrdToAlgAssMor{T1, T2, T3} <: Map{NfRelOrd{T1, T2}, AlgAss{T3}, HeckeMap, NfRelOrdToAlgAssMor}
   header::MapHeader
 
   function NfRelOrdToAlgAssMor{T1, T2, T3}(O::NfRelOrd{T1, T2}, A::AlgAss{T3}, _image::Function, _preimage::Function) where {T1, T2, T3}
