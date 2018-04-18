@@ -690,6 +690,7 @@ function in(x::nf_elem, y::NfOrdIdl)
 end
 
 in(x::fmpz, y::NfOrdIdl) = in(order(y)(x),y)
+in(x::Integer, y::NfOrdIdl) = in(order(y)(x),y)
 
 ###########################################################################################
 #
