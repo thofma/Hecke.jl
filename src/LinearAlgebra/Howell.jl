@@ -258,7 +258,6 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
 end
 
 function triangularize!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-
   R=base_ring(A)
   n=R.modulus
 
@@ -277,7 +276,6 @@ function triangularize!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
       end
     end
   end
-
 end
 
 function triangularize(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
@@ -285,9 +283,7 @@ function triangularize(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   return B
 end
 
-
 function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
-
   R = base_ring(M)
   #
   #  If the modulus is prime, the second part of the Howell form computation is useless and I can directly call the rref
@@ -296,7 +292,7 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   N = hcat(M', identity_matrix(R, cols(M)))
   N = howell_form(N)
   if gcd(prod([N[i,i] for i=1:rows(N)]).data,modulus(R))==1
-    return 0, MatrixSpace(R,cols(M),1, false)
+    return MatrixSpace(R,cols(M),1, false), 0
   end
   nr = 1
   while nr <= rows(N) && !iszero_row(N, nr)
@@ -310,7 +306,6 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
       return k', rows(k)
     end
   end
-  
-  
+  return MatrixSpace(R,cols(M),1, false), 0
 end
 
