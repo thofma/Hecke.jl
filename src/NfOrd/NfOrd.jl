@@ -915,6 +915,7 @@ function MaximalOrder(O::NfOrd)
     OO += pmaximal_overorder(O, p)
     @vprint :NfOrd 1 "done\n"
   end
+  OO.ismaximal = 1
   return OO
 end
 
