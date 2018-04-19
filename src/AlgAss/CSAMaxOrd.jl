@@ -468,8 +468,8 @@ function quo(O::AlgAssOrd, p::Int)
 
   F,a=FlintFiniteField(p,1,"a")
   M=Array{fq_nmod, 3}(O.dim, O.dim, O.dim)
+  x=fmpz[0 for i=1:O.dim]
   for i=1:O.dim
-    x=Array{fmpz,1}(O.dim)
     x[i]=1
     N=representation_mat(O(x))
     for j=1:O.dim
@@ -477,6 +477,7 @@ function quo(O::AlgAssOrd, p::Int)
         M[i,j,k]=F(N[j,k])
       end
     end
+    x[i]=0
   end
   return AlgAss(F,M)
   
@@ -542,6 +543,20 @@ end
 #
 ###############################################################################
 
+function _rep_for_center(M::MatElem, A::AlgAss)
+  
+  n=dim(A)
+  for i=1:n
+    for j = 1:n
+      for k = 1:n
+        M[k+(i-1)*n, j] = A.mult_table[i, j, k]-A.mult_table[j, i, k]
+      end
+    end
+  end
+  return nothing
+end
+
+
 function center(A::AlgAss)
 
   if iscommutative_known(A) && A.iscommutative==1
@@ -549,14 +564,8 @@ function center(A::AlgAss)
   end
   n=dim(A)
   M=zero_matrix(A.base_ring, n^2, n)
-  for i=1:n
-    M1=representation_mat(A[i])-representation_mat(A[i], :right)
-    for j=1:n
-      for k=1:n
-        M[k+(i-1)*n,j]=M1[j,k]
-      end
-    end
-  end
+  # I concatenate the difference between the right and left representation matrices.
+  _rep_for_center(M,A)
   k,B=nullspace(M)
   res=Array{AlgAssElem,1}(k)
   for i=1:k
@@ -633,7 +642,6 @@ end
 #
 ###############################################################################
 
-
 function ring_of_multipliers(I::AlgAssOrdIdl)
 
   O = I.O
@@ -642,21 +650,21 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
   B= I.basis_alg
   @hassert :CSAMaxOrd 1 check_ideal(I)
   bmatinv, deno =pseudo_inv(I.basis_mat)
-  aux=zero_matrix(FlintZZ, O.dim, O.dim)
   m=zero_matrix(FlintZZ, O.dim^2, O.dim)
   for i=1:O.dim
-    mul!(aux,representation_mat(B[i]),bmatinv)
+    M=representation_mat(B[i])
+    mul!(M, M, bmatinv)
     if deno==1
       for s=1:O.dim
         for t=1:O.dim
-          m[t+(i-1)*(O.dim),s]=aux[s,t]
+          m[t+(i-1)*(O.dim),s]=M[s,t]
         end
       end
     else
       for s=1:O.dim
         for t=1:O.dim
-          @hassert :CSAMaxOrd 1 divisible(aux[s,t], deno)
-          m[t+(i-1)*(O.dim),s]=divexact(aux[s,t], deno)
+          @hassert :CSAMaxOrd 1 divisible(M[s,t], deno)
+          m[t+(i-1)*(O.dim),s]=divexact(M[s,t], deno)
         end
       end
     end
@@ -668,10 +676,10 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
   end
   # n is upper right HNF
   n = transpose(sub(n, 1:O.dim, 1:O.dim))
-  b, d = pseudo_inv(n)
-  O1=AlgAssOrd(O.A, FakeFmpqMat(b, d)*O.basis_mat)
+  b= FakeFmpqMat(pseudo_inv(n))
+  O1=AlgAssOrd(O.A, mul!(b,b,O.basis_mat))
   O1.disc=divexact(O.disc, s^2)
-  @hassert :CSAMaxOrd check_order(O1)
+  @hassert :CSAMaxOrd 1 check_order(O1)
   return O1
 end
 
@@ -698,7 +706,7 @@ function pradical(O::AlgAssOrd, p::Int)
   k,B=nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
-    return AlgAssOrdIdl(O,p*identity_matrix(FlintZZ, O.dim))
+    return AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
   end
 
   if l==1
@@ -728,21 +736,20 @@ function pradical(O::AlgAssOrd, p::Int)
       elm=elem_from_mat_row(O,I,t)
       for s=1:O.dim
         a=elm.elem_in_algebra*O.basis_alg[s]
-        prd=a^(p^i)
-        trel=trace(prd)
+        trel=trace(a^(p^i))
         el=divexact(numerator(trel),p^i)
         M[s,t]=F(el)
       end
     end
     k,B=nullspace(M)
     if k==0
-      return AlgAssOrdIdl(O,p*identity_matrix(FlintZZ, O.dim))
+      return AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
     end
     I=lift(transpose(B))*I
   end
   #Now, I have to give a basis for the ideal.
-  I=vcat(I,p*identity_matrix(FlintZZ, O.dim))
-  I=sub(hnf(I), 1:O.dim, 1:O.dim)
+  I=vcat(I,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+  I=sub(hnf_modular_eldiv(I, fmpz(p)), 1:O.dim, 1:O.dim)
   res=AlgAssOrdIdl(O,I)
   @hassert :CSAMaxOrd 1 check_pradical(res,p)
   return res
@@ -962,11 +969,14 @@ function pmaximal_overorder(O::AlgAssOrd, p::Int)
   I= pradical(O, p)
   OO = ring_of_multipliers(I)
   dd = discriminant(OO)
-  while d != dd
+  while d != dd  
     d = dd
     I= pradical(OO, p)
     OO = ring_of_multipliers(I)
     dd = discriminant(OO)
+    if valuation(dd,p)==0
+      break
+    end
   end
   # Now I have to check that the criterion holds for every maximal ideal
   if valuation(dd,p)>1
@@ -979,7 +989,12 @@ function pmaximal_overorder(O::AlgAssOrd, p::Int)
         idem = mZA(BtoZA(one(B))) # Assumes that B == idem*A
         M = representation_mat(idem)
         ker = left_kernel(M)
-        N = vcat(I.basis_mat, zero_matrix(FlintZZ, length(ker), O.dim))
+        N=zero_matrix(FlintZZ, O.dim+length(ker), O.dim)
+        for i=1:O.dim
+          for j=1:O.dim
+            N[i,j]=I.basis_mat[i,j]
+          end
+        end
         for i = 1:length(ker)
           b = AtoO(A(ker[i]))
           for j = 1:O.dim
@@ -1027,8 +1042,15 @@ function issplit(A::AlgAss)
   i=schur_index_at_real_plc(O)
   if i==2
     return false
+  end  
+  fac = factor(root(abs(discriminant(O)),2))
+  for (p,j) in fac
+    O = pmaximal_overorder(O, Int(p))
+    if valuation(O.disc, Int(p))!=0
+      return false
+    end
   end
-  return abs(discriminant(MaximalOrder(O)))==1
+  return true
 
 end
 
