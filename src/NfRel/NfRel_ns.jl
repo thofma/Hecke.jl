@@ -595,7 +595,7 @@ end
 
 @inline ngens(K::NfRel_ns) = length(K.pol)
 
-mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}}
+mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}, HeckeMap, NfRelToNfRel_nsMor}
   header::MapHeader{NfRel{T}, NfRel_ns{T}}
   prim_img::NfRel_nsElem{T}
   emb::Array{NfRelElem{T}, 1}
@@ -659,7 +659,7 @@ mutable struct NfRelToNfRel_nsMor{T} <: Map{NfRel{T}, NfRel_ns{T}}
 
 end
 
-mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}}
+mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMap, NfRel_nsToNfRel_nsMor}
   header::MapHeader{NfRel_ns{T}, NfRel_ns{T}}
   emb::Array{NfRel_nsElem{T}, 1}
   coeff_aut::NfToNfMor

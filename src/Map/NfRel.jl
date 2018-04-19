@@ -34,7 +34,7 @@
 
 #why only simple relative?
 
-mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField}
+mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField, HeckeMap, NfRelToNf}
   header::MapHeader{NfRel{nf_elem}, AnticNumberField}
 
   function NfRelToNf(K::NfRel{nf_elem}, L::AnticNumberField, a::nf_elem, b::nf_elem, c::NfRelElem{nf_elem})
@@ -73,7 +73,7 @@ function show(io::IO, h::NfRelToNf)
   println(io, "Isomorphism between ", domain(h), "\nand ", codomain(h))
 end
 
-mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}} 
+mutable struct NfRelRelToNfRel{T} <: Map{NfRel{NfRelElem{T}}, NfRel{T}, HeckeMap, NfRelRelToNfRel} 
   header::MapHeader{NfRel{NfRelElem{T}}, NfRel{T}}
 
   function NfRelRelToNfRel(K::NfRel{NfRelElem{T}}, L::NfRel{T}, a::NfRelElem{T}, b::NfRelElem{T}, c::NfRelElem{NfRelElem{T}}) where T
@@ -113,7 +113,7 @@ function show(io::IO, h::NfRelRelToNfRel)
 end
 
 
-mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}}
+mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelToNfRelMor}
   header::MapHeader{NfRel{T}, NfRel{S}}
   prim_img ::NfRelElem{S}
   coeff_aut::NfToNfMor
@@ -190,7 +190,7 @@ function show(io::IO, h::NfRelToNfRelMor)
   end
 end
 
-mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField}
+mutable struct NfRelToFqMor{T} <: Map{NfRel{T}, FqFiniteField, HeckeMap, NfRelToFqMor}
   header::MapHeader{NfRel{T}, FqFiniteField}
 
   function NfRelToFqMor{T}() where {T}

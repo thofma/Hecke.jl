@@ -6,15 +6,15 @@
 ##
 ###########################################################
 
-function domain(M::Map)
+function domain(M::Map(HeckeMap))
   return M.header.domain
 end
 
-function codomain(M::Map)
+function codomain(M::Map(HeckeMap))
   return M.header.codomain
 end
 
-function image_function(f::Map)
+function image_function(f::Map(HeckeMap))
   if isdefined(f.header, :image)
     return f.header.image
   else
@@ -22,7 +22,7 @@ function image_function(f::Map)
   end
 end
 
-function preimage_function(f::Map)
+function preimage_function(f::Map(HeckeMap))
   if isdefined(f.header, :preimage)
     return f.header.preimage
   else
@@ -101,7 +101,7 @@ function MapHeader(domain::D, codomain::C, image::Function, preimage::Function) 
 end
 
 # this type represents a -> f(g(a))
-mutable struct CompositeMap{D, C, R} <: Map{D, C}
+mutable struct CompositeMap{D, C, R} <: Map{D, C, HeckeMap, CompositeMap}
   header::MapHeader{D, C}
   f::Map{R, C}
   g::Map{D, R}
@@ -109,7 +109,7 @@ mutable struct CompositeMap{D, C, R} <: Map{D, C}
   function CompositeMap{D, C, R}(f::Map, g::Map) where {D, C, R}
   ##CF should be function CompositeMap(f::Map{R, C}, g::Map{D, R})
   ## but that seems to not work:
-  # U, m = UnitGroup(ResidueRing(FlintZZ, 2^9));
+  # U, m = UnitGroup(ResidueRing(FlintZZ, 2^9));n
   # q, mq = Hecke.quo(U, [preimage(m, codomain(m)(fmpz(-1)))])
   # z = Hecke.compose(m, inv(mq))
   # btw: m*inv(mq) also fails.
@@ -142,15 +142,11 @@ function *(f::Map{R, C}, g::Map{D, R}) where {D, C, R}
   return CompositeMap{D, C, R}(f, g)
 end
 
-function compose(f::Map{R, C}, g::Map{D, R}) where {D, C, R}
+function compose(f::Map(HeckeMap){R, C}, g::Map(HeckeMap){D, R}) where {D, C, R}
   return CompositeMap{D, C, R}(f, g)
 end
 
-function compose(f::Map, g::Map)
-  return CompositeMap{typeof(domain(g)), typeof(codomain(f)), Any}(f, g)
-end
-
-mutable struct InverseMap{D, C} <: Map{D, C}
+mutable struct InverseMap{D, C} <: Map{D, C, HeckeMap, InverseMap}
   header::MapHeader{D, C}
   origin::Map{C, D}
 
@@ -166,7 +162,7 @@ function InverseMap(f::Map{C, D}) where {D, C}
   return InverseMap{D, C}(f)
 end
 
-mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C}
+mutable struct ResidueRingPolyMap{D, C, T} <: Map{D, C, HeckeMap, ResidueRingPolyMap}
   header::MapHeader{D, C}
   gen_image::Generic.Res{T}
   coeff_map::Map # can be missing if domain and codomain have the same
@@ -266,27 +262,7 @@ function ResidueRingPolyMap(domain::D, codomain::C, i::Generic.Res{T}, coeff_map
   return ResidueRingPolyMap{D, C, T}(domain, codomain, i, coeff_map)
 end
 
-mutable struct IdentityMap{D} <: Map{D, D}
-  header::MapHeader{D, D}
-
-  function IdentityMap{D}(domain::D) where {D}
-    z = new{D}()
-
-    image = function(x)# (x::elem_type(D))
-      return x::elem_type(D)
-    end
-    preimage = image
-
-    z.header = MapHeader(domain, domain, image, preimage)
-    return z
-  end
-end
-
-function IdentityMap(domain::D) where D
-  return IdentityMap{D}(domain)
-end
-
-mutable struct CoerceMap{D, C} <: Map{D, C}
+mutable struct CoerceMap{D, C} <: Map{D, C, HeckeMap, CoerceMap}
   header::MapHeader{D, C}
 
   function CoerceMap{D, C}(domain::D, codomain::C) where {D, C}
@@ -356,7 +332,7 @@ function CoerceMap(domain::D, codomain::C) where {D, C}
   return CoerceMap{D, C}(domain, codomain)
 end
 
-mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen}
+mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen, HeckeMap, GrpAbFinGenMap}
   header::MapHeader{GrpAbFinGen, GrpAbFinGen}
 
   map::fmpz_mat
@@ -417,7 +393,7 @@ end
 ###########################################################
 # To turn a Function (method) into a map.
 ###########################################################
-mutable struct MapFromFunc{R, T} <: Map{R, T}
+mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
   header::Hecke.MapHeader{R, T}
   f::Function
 

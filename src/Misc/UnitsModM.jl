@@ -82,7 +82,7 @@ function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   end
 end
 
-mutable struct MapUnitGroupModMGenRes{T} <: Map{T, Generic.ResRing{fmpz}}
+mutable struct MapUnitGroupModMGenRes{T} <: Map{T, Generic.ResRing{fmpz}, HeckeMap, MapUnitGroupModMGenRes}
   header::Hecke.MapHeader
 
   function MapUnitGroupModMGenRes{T}(G::T, R::Generic.ResRing{fmpz}, dexp::Function, dlog::Function) where {T}
@@ -92,7 +92,7 @@ mutable struct MapUnitGroupModMGenRes{T} <: Map{T, Generic.ResRing{fmpz}}
   end
 end
 
-mutable struct MapUnitGroupModM{T} <: Map{T, Nemo.NmodRing}
+mutable struct MapUnitGroupModM{T} <: Map{T, Nemo.NmodRing, HeckeMap, MapUnitGroupModM}
   header::Hecke.MapHeader
 
   function MapUnitGroupModM{T}(G::T, R::Nemo.NmodRing, dexp::Function, dlog::Function) where {T}
