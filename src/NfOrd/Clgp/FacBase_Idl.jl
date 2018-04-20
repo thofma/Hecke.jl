@@ -58,6 +58,12 @@ function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   return FB
 end
 
+function ring(F::NfFactorBase)
+  return order(F.ideals[1])
+end
+
+order(F::NfFactorBase) = ring(F)
+
 ################################################################################
 #
 #  Factor number field element over factor base. Put valuations into row i of
