@@ -1,4 +1,4 @@
-mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
+mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrdToFqNmodMor}
   header::MapHeader{NfOrd, FqNmodFiniteField}
   poly_of_the_field::nmod_poly
   P::NfOrdIdl
@@ -183,7 +183,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField}
   end
 end
 
-mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing}
+mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing, HeckeMap, NfOrdQuoMap}
   header::MapHeader{NfOrd, NfOrdQuoRing}
 
   function NfOrdQuoMap(O::NfOrd, Q::NfOrdQuoRing)
@@ -453,7 +453,7 @@ function _lufact(A::Nemo.MatElem{T}, P = PermGroup(rows(A))) where {T}
 end
 
 
-mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField}
+mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField, HeckeMap, NfOrdToFqMor}
   header::MapHeader{NfOrd, FqFiniteField}
   poly_of_the_field::fmpz_mod_poly
   P::NfOrdIdl
@@ -625,7 +625,7 @@ function _inv(a::MatElem{Generic.Res{fmpz}})
   return divexact(b, d)
 end
 
-mutable struct NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
+mutable struct NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqNmodMor}
   header::MapHeader{AnticNumberField, FqNmodFiniteField}
 
   function NfToFqNmodMor()
@@ -635,7 +635,7 @@ mutable struct NfToFqNmodMor <: Map{AnticNumberField, FqNmodFiniteField}
   end
 end
 
-mutable struct NfToFqMor <: Map{AnticNumberField, FqFiniteField}
+mutable struct NfToFqMor <: Map{AnticNumberField, FqFiniteField, HeckeMap, NfToFqMor}
   header::MapHeader{AnticNumberField, FqFiniteField}
 
   function NfToFqMor()
@@ -713,7 +713,7 @@ function (f::NfOrdToFqMor)(p::PolyElem{NfOrdElem})
   return z
 end
 
-mutable struct NfOrdToAlgAssMor{T} <: Map{NfOrd, AlgAss{T}}
+mutable struct NfOrdToAlgAssMor{T} <: Map{NfOrd, AlgAss{T}, HeckeMap, NfOrdToAlgAssMor}
   header::MapHeader
 
   function NfOrdToAlgAssMor{T}(O::NfOrd, A::AlgAss{T}, _image::Function, _preimage::Function) where T

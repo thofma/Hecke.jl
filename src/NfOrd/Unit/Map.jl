@@ -1,4 +1,4 @@
-mutable struct MapUnitGrp{T, S} <: Map{T, S}
+mutable struct MapUnitGrp{T, S} <: Map{T, S, HeckeMap, MapUnitGrp}
   header::Hecke.MapHeader
 
   function MapUnitGrp{T, S}() where {T, S}
@@ -10,7 +10,7 @@ function show(io::IO, mC::MapUnitGrp)
   println(io, "UnitGroup map of $(codomain(mC))")
 end
 
-mutable struct MapUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
+mutable struct MapUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapUnitGrpFacElem}
   header::Hecke.MapHeader
 
   function MapUnitGrpFacElem{T}() where {T}

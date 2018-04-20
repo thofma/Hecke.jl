@@ -660,7 +660,7 @@ doc"""
 > Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfOrdIdl, y::NfOrdIdl)
-  return basis_mat(x) == basis_mat(y)
+  return basis_mat(x, Val{false}) == basis_mat(y, Val{false})
 end
 
 ################################################################################
@@ -679,8 +679,8 @@ doc"""
 """
 function in(x::NfOrdElem, y::NfOrdIdl)
   parent(x) != order(y) && error("Order of element and ideal must be equal")
-  v = transpose(matrix(FlintZZ, degree(parent(x)), 1, elem_in_basis(x)))
-  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y)
+  v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
+  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, Val{false})
   return t.den == 1
 end
 
@@ -875,7 +875,7 @@ end
 
 function trace_matrix(A::NfOrdIdl)
   g = trace_matrix(order(A))
-  b = basis_mat(A)
+  b = basis_mat(A, Val{false})
 #  mul!(b, b, g)   #b*g*b' is what we want.
 #                  #g should not be changed? b is a copy.
 #  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
@@ -1103,7 +1103,7 @@ function mod(x::NfOrdElem, y::NfOrdIdl)
     return O(a)
   end
 
-  c = basis_mat(y)
+  c = basis_mat(y, Val{false})
   t = fmpz(0)
   for i in degree(O):-1:1
     t = fdiv(a[i], c[i,i])

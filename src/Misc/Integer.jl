@@ -565,7 +565,7 @@ end
 #
 ################################################################################
 
-mutable struct MapSUnitGrpZFacElem{T} <: Hecke.Map{T, FacElemMon{FlintRationalField}}
+mutable struct MapSUnitGrpZFacElem{T} <: Map{T, FacElemMon{FlintRationalField}, HeckeMap, MapSUnitGrpZFacElem}
   header::MapHeader
   idl::Array{fmpz, 1}
 
@@ -578,7 +578,7 @@ function show(io::IO, mC::MapSUnitGrpZFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-mutable struct MapSUnitGrpZ{T} <: Map{T, FlintRationalField}
+mutable struct MapSUnitGrpZ{T} <: Map{T, FlintRationalField, HeckeMap, MapSUnitGrpZ}
   header::MapHeader
   idl::Array{fmpz, 1}
 
