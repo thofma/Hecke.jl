@@ -144,14 +144,11 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
     # CRT: the 2nd gen of a needs to stay the same at a
     # and should be  1 at f
 
-    g, x, y = gcdx(f, e)
 
-    #a2 = a.gen_two*f*x + y*a1^2
+    #a2 = a.gen_two*f + a1^2
     mul!(e, a1, a1)
-    mul!(x, x, f)
-    a2 = x*a.gen_two
-    mul!(y, y, e)
-    add!(a2, a2, y)
+    a2 = f*a.gen_two
+    add!(a2, a2, e)
 
     # now (a1, a2) should be m-normal for a
   end
@@ -160,14 +157,11 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
   if f == 1
     b2 = b.gen_two
   else
-    g, x, y = gcdx(f, e)
 
-    #b2 = b.gen_two*f*x + y*b1^2
+    #b2 = b.gen_two*f + b1^2
     mul!(e, b1, b1)
-    mul!(x, x, f)
-    b2 = x*b.gen_two
-    mul!(y, y, e)
-    add!(b2, b2, y)
+    b2 = f*b.gen_two
+    add!(b2, b2, e)
   end
   C = ideal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
@@ -375,13 +369,11 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
   if f == 1
     a2 = A.gen_two
   else
-    g, x, y = gcdx(f, A.gen_one^2)
                            # we need to become normal at m, we are normal at a
                            # higher powers in a are fine
                            # CRT: the 2nd gen of a needs to stay the same at a
                            # and should be  1 at f
-    assert(g==1)
-    a2 = A.gen_two*f*x + y*A.gen_one^2 # now (a1, a2) should be m-normal for a
+    a2 = A.gen_two*f + A.gen_one^2 # now (a1, a2) should be m-normal for a
   end
 
   B = NfOrdIdl(A.gen_one*a, a2*a)

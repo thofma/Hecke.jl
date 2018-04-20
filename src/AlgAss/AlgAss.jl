@@ -761,6 +761,14 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 end
 
+doc"""
+***
+    split(A::AlgAss)
+            
+> Given a commutative algebra over a finite field of prime order, this function 
+> returns a decomposition of A as a direct sum of fields.
+"""
+
 function split(A::AlgAss)
   b, algebras = issimple(A)
   if b
@@ -806,6 +814,14 @@ function trace_matrix(A::AlgAss)
 
 end
 
+
+doc"""
+***
+    radical(A::AlgAss{fq_nmod})
+            
+> Given an algebra over a finite field of prime order, this function 
+> returns a set of elements generating the radical of A
+"""
 
 function radical(A::AlgAss{fq_nmod})
 
@@ -856,7 +872,15 @@ end
 ################################################################################
 
 #Given a semisimple algebra A over F_p, we give back the idempotents of a webberburn decomposition
-function wedderburn_decomposition(A::AlgAss)
+
+doc"""
+***
+    wedderburn_decomposition(A::AlgAss{fq_nmod})
+            
+> Given a semisimple algebra over a finite field of prime order, this function 
+> returns a decomposition of A as a direct sum of simple algebras.
+"""
+function wedderburn_decomposition(A::AlgAss{fq_nmod})
   
   ZA,mZA=center(A)
   Algs=split(ZA)

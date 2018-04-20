@@ -118,7 +118,7 @@ function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, 
         if M.den==1
           el=O(vec(Array(M.num)))
           if haskey(x,el)
-            x[el]+=l
+            x[el]+= l
           else
             x[el]=l
           end
