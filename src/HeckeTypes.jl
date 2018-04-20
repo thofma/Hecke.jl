@@ -520,14 +520,17 @@ FacElemMon(R::S) where {S} = FacElemMon{S}(R)
 
 mutable struct FacElem{B, S}
   fac::Dict{B, fmpz}
+  hash::UInt
   parent::FacElemMon{S}
 
   function FacElem{B, S}() where {B, S}
     z = new{B, S}()
     z.fac = Dict{B, fmpz}()
+    z.hash = UInt(0)
     return z
   end
 end
+
 
 ################################################################################
 #
@@ -1385,13 +1388,15 @@ mutable struct RandIdlCtx
   end
 end
 
+const nf_elem_or_fac_elem = Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+
 mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   FB::NfFactorBase
 
   M::ModuleCtx_fmpz
-  R_gen::Array{nf_elem, 1}# the relations
-  R_rel::Array{nf_elem, 1}
-  RS::Set{nf_elem}
+  R_gen::Array{nf_elem_or_fac_elem, 1}# the relations
+  R_rel::Array{nf_elem_or_fac_elem, 1}
+  RS::Set{UInt} #only the hash-values
 
   last_piv1::Array{Int, 1}
   mis::Set{Int}
@@ -1437,9 +1442,9 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
 
   function ClassGrpCtx{T}() where {T}
     r = new{T}()
-    r.R_gen = Array{nf_elem, 1}()
-    r.R_rel = Array{nf_elem, 1}()
-    r.RS = Set(r.R_gen)
+    r.R_gen = Array{nf_elem_or_fac_elem, 1}()
+    r.R_rel = Array{nf_elem_or_fac_elem, 1}()
+    r.RS = Set{UInt}()
     r.largePrimeCnt = 0
     r.largePrime = Dict{fmpz_poly, Tuple{nf_elem, fmpq}}()
     r.largePrime_success = 0

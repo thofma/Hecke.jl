@@ -629,6 +629,36 @@ function maxabs_exp(a::FacElem)
   return maximum(abs, values(a.fac))
 end
 
+function Base.hash(a::FacElem, u::UInt)
+  if a.hash == UInt(0)
+    h = hash(u, UInt(3127))
+    for (k,v) = a.fac
+      h = hash(k, hash(v, h))
+    end
+    a.hash = h
+  end
+  return a.hash
+end
+
+#used (hopefully) only inside the class group
+function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
+  if typeof(A[1]) == nf_elem
+    B = FacElem(A[1])
+  else
+    B = A[1]
+  end
+  B = B^v[1]
+  for i=2:length(A)
+    if typeof(A[i]) == nf_elem
+      C = FacElem(A[i])^v[i]
+    else
+      C = A[i]^v[i]
+    end
+    B *= C
+  end
+  return B
+end
+
 #################################################################################
 ##
 ##  Auxillary deep copy functions
