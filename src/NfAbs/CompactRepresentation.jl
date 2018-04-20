@@ -205,4 +205,29 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
+function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = false)
+  if typeof(decom) == Bool
+    ZK = maximal_order(base_ring(a))
+    de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
+  else
+    de = Dict((p, v) for (p, v) = decom)
+  end
+  c = Hecke.compact_presentation(a, n, decom = de)
+  b = base_ring(c)(1)
+  d = FacElem(b)
+  for (k,v) = c.fac
+    if v % n == 0
+      d *= FacElem(Dict(k => div(v, n)))
+    else
+      b *= k^v # hopefully small...
+    end
+  end
+  @hassert :CompactPresentation 2 evaluate(d^n*b *inv(a))== 1
+  fl, x = ispower(b, n)
+  if fl
+    return fl, d*x
+  else
+    return fl, d
+  end
+end
 
