@@ -80,7 +80,6 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
     end
     h = Hecke.NfToNfMor(k, K, b[i])
     @assert b[i]^2 == all_d[i]
-set_verbose_level(:ClassGroup, 3)
 
     for i=2:ngens(S) # don't need torsion here - it's the "same" everywhere
       u = mS(S[i])
