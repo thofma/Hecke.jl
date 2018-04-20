@@ -22,7 +22,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   be = FacElem(K(1))
 
-  @hassert :CompactPresentation 1 abs(norm(a)) == norm(FacElem(decom))
+  @hassert :CompactPresentation 1 length(decom) == 0 && abs(norm(a)) == 1 ||
+                                  abs(norm(a)) == norm(FacElem(decom))
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
