@@ -20,13 +20,7 @@
     f = x^5 + 12x - 92
     K, a = NumberField(f, "a")
 
-    b = rand(K, -10:10)
-    g = minpoly(b)
-    while degree(g) != 5
-      b = rand(K, -10:10)
-      g = minpoly(b)
-    end
-
+    g = x^5 - 172x^4 + 7024x^3 + 8656448x^2 + 55735552x + 45796197888
     K2, a2 = NumberField(g, "a2")
 
     c, KtoK2 = Hecke.isisomorphic(K, K2)
