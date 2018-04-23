@@ -334,6 +334,7 @@ function valuation(A::NfRelOrdFracIdl, P::NfRelOrdIdl)
 end
 
 function valuation_naive(a::RelativeElement, P::NfRelOrdIdl)
+  @assert !iszero(a)
   return valuation(a*order(P), P)
 end
 

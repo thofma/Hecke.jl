@@ -187,6 +187,8 @@ mutable struct NfRelOrdIdl{T, S}
 
   minimum
   non_index_div_poly::fq_poly # only used if the ideal is a prime ideal not dividing the index
+  p_uniformizer::NfRelOrdElem{T}
+  anti_uniformizer::RelativeElement{T}
 
   function NfRelOrdIdl{T, S}(O::NfRelOrd{T, S}) where {T, S}
     z = new{T, S}()
