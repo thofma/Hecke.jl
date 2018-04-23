@@ -1190,7 +1190,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
     p.valuation = function(a::nf_elem)
       d = denominator(a, O)
       x = O(d*a)
-      return valuation_naive(ideal(O, x), p)::Int - valuation_naive(ideal(O, d), p)::Int
+      return valuation_naive(O(x), p)::Int - valuation_naive(O(d), p)::Int
     end
     return p.valuation(a)::Int
   end
@@ -1244,11 +1244,12 @@ doc"""
 """
 function valuation(a::fmpz, p::NfOrdIdl)
   if p.splitting_type[1] == 0
-    return valuation_naive(ideal(order(p), a), p)
+    return valuation_naive(order(p)(a), p)
   end
   P = p.gen_one
   return valuation(a, P)* p.splitting_type[1]
 end
+valuation(a::Integer, p::NfOrdIdl) = valuation(fmpz(a), p)
 
 #TODO: some more intelligence here...
 function valuation_naive(A::NfOrdIdl, B::NfOrdIdl)
@@ -1262,6 +1263,21 @@ function valuation_naive(A::NfOrdIdl, B::NfOrdIdl)
   end
   return i
 end
+
+#TODO: some more intelligence here...
+#      in non-maximal orders, interesting ideals cannot be inverted
+#      maybe this needs to be checked...
+function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
+  @assert !isone(B)
+  i = 0
+  C = B
+  while x in C
+    i += 1
+    C *= B
+  end
+  return i
+end
+
 
 doc"""
 ***

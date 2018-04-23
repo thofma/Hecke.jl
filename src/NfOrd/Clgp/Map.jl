@@ -197,7 +197,7 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
   return class_group_disc_log(w, c)
 end
 
-mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet}
+mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet, HeckeMap, MapClassGrp}
   header::MapHeader
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   
@@ -463,7 +463,7 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
 end
 
 
-mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
+mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
@@ -586,7 +586,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   return C, r
 end
 
-mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}}
+mutable struct MapSUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitGrpFacElem}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 
@@ -638,7 +638,7 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
   return G, r
 end
 
-mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField}
+mutable struct MapSUnitGrp{T} <: Map{T, AnticNumberField, HeckeMap, MapSUnitGrp}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
 

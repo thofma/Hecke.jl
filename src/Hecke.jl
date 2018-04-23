@@ -92,7 +92,8 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
-const pkgdir = realpath(joinpath(dirname(@__FILE__), ".."))
+#const pkgdir = realpath(joinpath(dirname(@__FILE__), ".."))
+const pkgdir = const pkgdir = Pkg.dir("Hecke")
 const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
 const libdir = joinpath(pkgdir, "local", "lib")
 
@@ -570,7 +571,7 @@ include("RCF.jl")
 include("Grp.jl")
 include("AlgAss.jl")
 
-for T in subtypes(Map)
+for T in subtypes(Map(HeckeMap))
   (M::T)(a) = image(M, a)
 end
 

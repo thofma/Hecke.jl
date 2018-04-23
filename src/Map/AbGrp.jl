@@ -28,23 +28,74 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2015, 2016 Tommy Hofmann
+#  Copyright (C) 2015-2018 Tommy Hofmann
 #
 ################################################################################
 
 ################################################################################
 #
-#  Maps for multliplicative groups of residue rings of maximal orders
+#  Morphisms between finitely generated abelian groups
 #
 ################################################################################
 
-mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
+mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
+                                     HeckeMap, GrpAbFinGenMap}
+  header::MapHeader{GrpAbFinGen, GrpAbFinGen}
+
+  map::fmpz_mat
+  imap::fmpz_mat
+  im::GrpAbFinGen  # if set
+  ke::GrpAbFinGen  # if set
+
+  function GrpAbFinGenMap(G::GrpAbFinGen)
+    r = new()
+    r.header = MapHeader(G, G)
+    r.map = identity_matrix(FlintZZ, ngens(G))
+    r.imap = identity_matrix(FlintZZ, ngens(G))
+    return r
+  end
+
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat)
+    r = new()
+    r.header = MapHeader(From, To)
+    r.map = M
+    return r
+  end
+
+  function GrpAbFinGenMap(From::GrpAbFinGen, To::GrpAbFinGen, M::fmpz_mat, Mi::fmpz_mat)
+    r = new()
+    r.header = MapHeader(From, To)
+    r.map = M
+    r.imap = Mi
+    return r
+  end
+end
+
+function image(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+  return GrpAbFinGenElem(codomain(f), a.coeff * f.map)
+end
+
+function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
+  return GrpAbFinGenElem(domain(f), a.coeff * f.imap)
+end
+
+################################################################################
+#
+#  Isomorphisms from abelian groups onto multliplicative groups of residue
+#  rings of maximal orders
+#
+################################################################################
+
+mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing, HeckeMap, AbToResRingMultGrp}
   header::MapHeader{GrpAbFinGen, NfOrdQuoRing}
   generators::Vector{NfOrdQuoRingElem}
   discrete_logarithm::Function
-  
-  tame::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}} #The multiplicative group, tame part
-  wild::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}} #Multiplicative group, wild part
+
+  # The multiplicative group, tame part
+  tame::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}
+
+  # Multiplicative group, wild part
+  wild::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}
   
   function AbToResRingMultGrp(Q::NfOrdQuoRing, 
                               generators::Vector{NfOrdQuoRingElem},
@@ -73,7 +124,7 @@ mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
     end
 
     z = new()
-    z.header = MapHeader(G,Q,_image,_preimage)
+    z.header = MapHeader(G, Q, _image, _preimage)
     z.generators = generators
     z.discrete_logarithm = disc_log
     return z
@@ -81,26 +132,32 @@ mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing}
   
   function AbToResRingMultGrp(G::GrpAbFinGen, Q::NfOrdQuoRing, exp::Function, disc_log::Function)
     z = new()
-    z.header = MapHeader(G,Q,exp,disc_log)
-    
+    z.header = MapHeader(G, Q, exp, disc_log)
     return z
   end
-  
 end
 
-mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd}
-  header::MapHeader{GrpAbFinGen, NfOrd}
-  
+################################################################################
+#
+#  Morphisms from finite abelian groups onto units of orders
+#
+################################################################################
+
+mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMultGrp}
+  domain::GrpAbFinGen
+  codomain::NfOrd
+  generator::NfOrdElem
+
   function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
     G = DiagonalGroup([order])
-
-    function _image(a::GrpAbFinGenElem)
-      @assert parent(a) == G
-      return generator^a[1]
-    end
-
     z = new()
-    z.header = MapHeader(G, O, _image)
+    z.domain = G
+    z.codomain = O
+    z.generator = generator
     return z
   end
+end
+
+function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
+  return f.generator^a[1]
 end

@@ -5,7 +5,7 @@ function field_extension(h::fq_poly)
   return codomain(m), m
 end
 
-mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField}
+mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqPolyRingToFqMor}
   header::MapHeader{FqPolyRing, FqFiniteField}
   h::fq_poly
   mat::Generic.Mat{Generic.Res{fmpz}}
