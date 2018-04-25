@@ -2,7 +2,7 @@
 #
 #    NfOrd/NfOrd.jl : Orders in absolute number fields
 #
-# This file is part of hecke.
+# This file is part of Hecke.
 #
 # Copyright (c) 2015, 2016: Claus Fieker, Tommy Hofmann
 # All rights reserved.
@@ -36,7 +36,8 @@ export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
        gen_index, EquationOrder, index, isequation_order, isindex_divisor, lll,
        lll_basis, maximal_order, MaximalOrder, minkowski_mat, nf,
        norm_change_const, Order, parent, poverorder, pmaximal_overorder,
-       ring_of_integers, signature, trace_matrix, different, codifferent
+       ring_of_integers, signature, trace_matrix, different, codifferent,
+       reduced_discriminant
 
 ################################################################################
 #
@@ -262,6 +263,16 @@ Returns the discriminant of $\mathcal O$.
 function discriminant(O::NfOrd)
   assure_has_discriminant(O)
   return deepcopy(O.disc)
+end
+
+#TODO: compute differently in equation orders, this is the rres...
+doc"""
+   reduced_discriminant(O::NfOrd) -> fmpz
+> Returns the reduced discriminant, ie. the largest elementary divisor of the 
+> trace matrix of $\mathcal O$.
+"""
+function reduced_discriminant(O::NfOrd)
+  return maximal_elementary_divisor(trace_matrix(O))
 end
 
 ################################################################################
@@ -673,6 +684,12 @@ function EquationOrder(K::AnticNumberField, cache::Bool = false)
   return z
 end
 
+doc"""
+   equation_order(M::NfOrd) -> NfOrd
+> The equation order of then number field.
+"""
+equation_order(M::NfOrd) = equation_order(nf(M))
+
 function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
   o = one(K)
 
@@ -938,7 +955,7 @@ doc"""
 > A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
 """
 function lll_basis(M::NfOrd)
-  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
+  I = ideal(M, parent(basis_mat(M).num)(1))
   return lll_basis(I)
 end
 
@@ -953,7 +970,7 @@ function lll(M::NfOrd)
     return _lll_gram(M)
   end
 
-  I = hecke.ideal(M, parent(basis_mat(M).num)(1))
+  I = ideal(M, parent(basis_mat(M).num)(1))
 
   prec = 100
   while true
