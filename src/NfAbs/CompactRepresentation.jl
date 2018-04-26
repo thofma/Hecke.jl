@@ -97,7 +97,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @vtime :CompactPresentation 1 b = short_elem(inv(simplify(evaluate(A, coprime = true))), matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
     B = simplify(ideal(ZK, b))
     @assert B.num.is_principal == 1  
-    @assert isone(B) || B.num.gens_normal > 1
+    @assert isone(B.num) || B.num.gens_normal > 1
     assure_2_normal(B.num)
     for p = keys(de)
       assure_2_normal(p)
