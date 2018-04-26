@@ -529,8 +529,7 @@ function assure_has_minimum(A::NfOrdIdl)
     else
       if new && order(A).ismaximal == 1
         A.minimum = _minmod(A.gen_one, A.gen_two)
-        bi = inv(b)
-        @hassert :Rres 1 A.minimum == denominator(bi, order(A))
+        @hassert :Rres 1 A.minimum == denominator(inv(b), order(A))
       else
         bi = inv(b)
         A.minimum =  denominator(bi, order(A))
@@ -545,8 +544,13 @@ function assure_has_minimum(A::NfOrdIdl)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
     else
-      d = denominator(inv(K(A.gen_two)), order(A))
-      d = gcd(d, FlintZZ(A.gen_one))
+      if new && order(A).ismaximal == 1
+        d = _minmod(A.gen_one, A.gen_two)
+        @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
+      else
+        d = denominator(inv(K(A.gen_two)), order(A))
+        d = gcd(d, FlintZZ(A.gen_one))
+      end
     end
     A.minimum = d
     return nothing
@@ -769,7 +773,10 @@ function _minmod(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
-  S = ResidueRing(FlintZZ, a*d*index(Zk), cached=false)
+  d, _ = ppio(d, a)
+  e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
+
+  S = ResidueRing(FlintZZ, a*d*e, cached=false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
@@ -778,7 +785,7 @@ function _minmod(a::fmpz, b::NfOrdElem)
   # m can be zero...
   m = lift(m)
   if iszero(m)
-    m = a*d*index(Zk)
+    m = a*d*e
   end
   bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
   d = denominator(bi, Zk)
@@ -800,7 +807,9 @@ function _invmod(a::fmpz, b::NfOrdElem)
     return one(k)
   end
   d = denominator(b.elem_in_nf)
-  S = ResidueRing(FlintZZ, a^2*d*index(Zk), cached=false)
+  d, _ = ppio(d, a)
+  e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
+  S = ResidueRing(FlintZZ, a^2*d*e, cached=false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
@@ -1557,6 +1566,11 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
   while true
     cnt += 1
 
+    if cnt > 100 && is_2_normal_difficult(A)
+      assure_2_normal_difficult(A)
+      return
+    end
+
     if cnt > 1000
       println("Having a hard time find weak generators for $A")
     end
@@ -1589,6 +1603,46 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
   end
 end
 
+function is_2_normal_difficult(A::NfOrdIdl)
+  d = fmpz(2)
+  m = minimum(A)
+  ZK = order(A)
+
+  if gcd(d, m) == 1 || degree(ZK) < 7
+    return false
+  end
+  return true
+end
+
+function assure_2_normal_difficult(A::NfOrdIdl)
+  d = fmpz(2)
+  m = minimum(A)
+  ZK = order(A)
+
+  if gcd(d, m) == 1 || degree(ZK) < 7
+    assure_2_normal(A)
+    return
+  end
+
+  m1, m2 = ppio(m, d)
+  A1 = gcd(A, m1)
+  A2 = gcd(A, m2)
+  assure_2_normal(A2)
+
+  lp = prime_decomposition(ZK, 2)
+  v = [valuation(A1, p[1]) for p = lp]
+
+  B1 = prod(lp[i][1]^v[i] for i=1:length(v) if v[i] > 0)
+  C = B1 * A2
+  A.gen_one = C.gen_one
+  A.gen_two = C.gen_two
+  A.gens_normal = C.gens_normal
+  A.gens_weakly_normal = C.gens_weakly_normal
+  A.gens_short = C.gens_short
+
+  return
+end
+
 function assure_2_normal(A::NfOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
     return
@@ -1604,7 +1658,7 @@ function assure_2_normal(A::NfOrdIdl)
     return
   end
 
-  if has_2_elem(A)  && has_weakly_normal(A)
+  if has_2_elem(A)
     m = minimum(A)
     bas = basis(O)
     # Magic constants
@@ -1620,6 +1674,10 @@ function assure_2_normal(A::NfOrdIdl)
     cnt = 0
     while true
       cnt += 1
+      if cnt > 100 && is_2_normal_difficult(A)
+        assure_2_normal_difficult(A)
+        return  
+      end
       if cnt > 1000
         error("Having a hard time making generators normal for $A")
       end
@@ -1796,3 +1854,6 @@ function iscoprime(I::NfOrdIdl, J::NfOrdIdl)
   end
 
 end 
+
+one(I::NfOrdIdlSet) = ideal(order(I), 1)
+
