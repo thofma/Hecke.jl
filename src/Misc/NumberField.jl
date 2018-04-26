@@ -1461,6 +1461,14 @@ function nf_elem_to_fmpz_mod_poly_no_den!(r::fmpz_mod_poly, a::nf_elem)
     ra = pointer_from_objref(a)
     ccall((:fmpz_mod, :libflint), Void, (Ptr{Void}, Ptr{Void}, Ptr{Int}), r.coeffs, ra, &r.p)
     ccall((:fmpz_mod, :libflint), Void, (Ptr{Void}, Ptr{Void}, Ptr{Int}), r.coeffs+sizeof(Int), ra+sizeof(Int), &r.p)
+    r.length = 2
+    if coeff(r, 1) == 0
+      if coeff(r, 0) == 0
+        r.length == 0
+      else
+        r.length == 1
+      end
+    end
   else
     ccall((:fmpz_mod_poly_fit_length, :libflint), Void, (Ptr{fmpz_mod_poly}, Int), &r, a.elem_length)
     for i=0:a.elem_length-1
