@@ -814,9 +814,15 @@ function _invmod(a::fmpz, b::NfOrdElem)
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
-  c = inv(canonical_unit(m))
+  if iszero(m)
+    m = a^2*d*e
+    c = S(1)
+  else
+    c = inv(canonical_unit(m))
+    m = lift(m*c)
+  end
   U = lift(FlintZZ["x"][1], u*c)
-  bi = k(U)//lift(m*c)*d # at this point, bi*d*b = m mod a*d*idx
+  bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
   return bi
 end
 
