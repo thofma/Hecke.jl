@@ -1,7 +1,8 @@
 import Nemo.sub!, Base.gcd 
 export induce_rational_reconstruction, induce_crt, root, roots,
        number_field, ismonic, pure_extension, ispure_extension,
-       iskummer_extension, cyclotomic_field, wildanger_field
+       iskummer_extension, cyclotomic_field, wildanger_field, 
+       compositum
 
 add_verbose_scope(:PolyFactor)       
 add_verbose_scope(:CompactPresentation)       
@@ -2296,3 +2297,23 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
   end
   return _issubfield(K, L)
 end
+
+doc"""
+   compositum(K::AnticNumberField, L::AnticNumberField) -> AnticNumberField, Map, Map
+> Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
+> 2 fields together with the embedding of $K \to C$ and $L \to C$.
+"""
+function compositum(K::AnticNumberField, L::AnticNumberField)
+  lf = factor(K.pol, L)
+  d = degree(first(lf.fac)[1])
+  if any(x->degree(x) != d, keys(lf.fac))
+    error("2nd field cannot be normal")
+  end
+  KK = NumberField(first(lf.fac)[1])[1]
+  Ka, m1, m2 = absolute_field(KK)
+  return Ka, hom(K, Ka, m1(gen(KK))), m2
+end
+
+hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)
+
+
