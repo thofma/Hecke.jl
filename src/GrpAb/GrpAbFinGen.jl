@@ -797,7 +797,7 @@ function make_snf(m::Map{GrpAbFinGen, T}) where T
     return m
   end
   S, mS = snf(G)
-  return m*mS
+  return _compose(m, mS)
 end
 
 ################################################################################

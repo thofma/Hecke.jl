@@ -168,8 +168,8 @@ end
 
 # for a supported ideal map, the modulus that was used to define it.
 function _modulus(mR::Map)
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mR = mR.f
+  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
+    mR = mR.map2
   end
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1)
@@ -357,7 +357,7 @@ function number_field(CF::ClassField)
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
       S, mQ = quo(G, q, false)
-      push!(res, ray_class_field_cyclic_pp(m*inv(mQ)))
+      push!(res, ray_class_field_cyclic_pp(_compose(m, inv(mQ))))
     end
     q[i] = G[i]
   end
@@ -403,7 +403,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
   q, mq = quo(c, e, false)
-  mc = mc*inv(mq)
+  mc = _compose(mc, inv(mq))
   c = q
 
   lf = factor(minimum(f)*e)
@@ -416,7 +416,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   g = elem_type(c)[preimage(mc, x) for x = lP]
 
   q, mq = quo(c, g, false)
-  mc = mc * inv(mq)
+  mc = _compose(mc, inv(mq))
   c = q
 
   lP = vcat(lP, Hecke.find_gens(inv(mc), PrimesSet(100, -1))[1])
@@ -681,7 +681,7 @@ function _rcf_descent(CF::ClassField_pp)
                       PrimesSet(200, -1), minimum(_modulus(CF.mq)))
     h = hom(f, [preimage(CF.mq, p) for p = lp])
     @hassert :ClassField 1 issurjective(h)
-    h = h*mp
+    h = _compose(h, mp)
     h = hom(AutA_snf, [h(AutA_snf[i]) for i=1:ngens(AutA_snf)])
     s, ms = kernel(h)
     @vprint :ClassField 2 "... done, have subgroup!\n"

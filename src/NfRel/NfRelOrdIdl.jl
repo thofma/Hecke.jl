@@ -821,7 +821,7 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   L = nf(O)
   a = gen(L)
   K = base_ring(L)
-  OK = MaximalOrder(K)
+  OK = maximal_order(K)
   @assert order(p) == OK
   f = L.pol
 
@@ -835,11 +835,28 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   result = Array{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}, 1}()
   for (q, e) in fac
     g = Hecke.fq_poly_to_nf_elem_poly(Kx, immF, q)
-    P = ideal(O, L(1), g(a), frac_ideal(OK, p), ideal(OK, K(1)))
+    ga = g(a)
+    P = ideal(O, L(1), ga, frac_ideal(OK, p), ideal(OK, K(1)))
     P.is_prime = 1
     P.splitting_type = (e, degree(q))
     P.minimum = deepcopy(p)
     P.non_index_div_poly = q
+    Oga = O(ga)
+    # TODO: Warum funktioniert das? Muss uniformizer(p) ein p-uniformizer sein?
+    if iszero(Oga)
+      @assert e == 1
+      P.p_uniformizer = O(uniformizer(p))
+    else
+      if e != 1
+        P.p_uniformizer = Oga
+      else
+        if valuation(Oga, P) == 1
+          P.p_uniformizer = Oga
+        else
+          P.p_uniformizer = Oga + O(uniformizer(p))
+        end
+      end
+    end
     push!(result, (P, e))
   end
   return result
@@ -925,6 +942,7 @@ end
 valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_naive(A, B)
 
 function valuation_naive(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S}
+  @assert !iszero(a)
   return valuation(a*parent(a), B)
 end
 
@@ -1126,6 +1144,12 @@ in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
 #
 ################################################################################
 
+doc"""
+***
+    uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
+
+> Returns an element $u \in P$ with valuation(u, P) == 1.
+"""
 function uniformizer(P::NfRelOrdIdl)
   @assert P.is_prime == 1
 
@@ -1144,12 +1168,65 @@ function uniformizer(P::NfRelOrdIdl)
   return z
 end
 
-# This function does not always return an anti uniformizer: The returned element
-# will have valuation -1 at P, but it might also have negative valuation at
-# another prime ideal lying over minimum(P). The problem is that uniformizer(P)
-# is in general not a p-uniformizer.
+function _is_p_uniformizer(z::NfRelOrdElem, P::T, primes::Vector{T}) where {T <: NfRelOrdIdl}
+  if iszero(z)
+    return false
+  end
+  if valuation(z, P) != 1
+    return false
+  end
+  for PP in primes
+    if valuation(z, PP) != 0
+      return false
+    end
+  end
+  return true
+end
+
+doc"""
+***
+    p_uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
+
+> Returns an element $u \in P$ with valuation(u, P) == 1 and valuation 0 at all
+> other prime ideals lying over minimum(P).
+"""
+function p_uniformizer(P::NfRelOrdIdl)
+  @assert P.is_prime == 1
+
+  if isdefined(P, :p_uniformizer)
+    return P.p_uniformizer
+  end
+
+  p = minimum(P, Val{false})
+  prime_dec = prime_decomposition(order(P), p)
+  primes = Vector{typeof(P)}()
+  for (PP, e) in prime_dec
+    if PP != P
+      push!(primes, PP)
+    end
+  end
+  r = 500
+  z = rand(P, r)
+  while !_is_p_uniformizer(z, P, primes)
+    z = rand(P, r)
+  end
+  P.p_uniformizer = z
+  return z
+end
+
+doc"""
+***
+    anti_uniformizer(P::NfRelOrdIdl) -> RelativeElement
+
+> Returns an element $a$ in the number field containing $P$ with valuation(a, P) == -1
+> and non-negative valuation at all other prime ideals.
+"""
 function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   @assert P.is_prime == 1
+
+  if isdefined(P, :anti_uniformizer)
+    return P.anti_uniformizer
+  end
 
   p = minimum(P, Val{false})
   # We need a pseudo basis of O, where the coefficient ideals have valuation
@@ -1170,7 +1247,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
     end
   end
 
-  u = elem_in_nf(uniformizer(P))
+  u = elem_in_nf(p_uniformizer(P))
   M = representation_mat(u)
   M = N*M*NN
 
@@ -1189,7 +1266,8 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   for i = 1:degree(O)
     x += immF(K[1][i])*pseudo_basis(O, Val{false})[i][1]*d[i]
   end
-  return x*anti_uniformizer(p)
+  P.anti_uniformizer = x*anti_uniformizer(p)
+  return P.anti_uniformizer
 end
 
 ################################################################################

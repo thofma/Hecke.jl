@@ -8,8 +8,8 @@ export conductor, isconductor
 
 
 function _modulus_with_inf(mR::Map)
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mR = mR.f
+  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
+    mR = mR.map2
   end
   if issubtype(typeof(mR), Hecke.MapClassGrp)
     return ideal(order(codomain(mR)), 1),InfPlc[]
@@ -134,11 +134,11 @@ function conductor(C::Hecke.ClassField)
   #  First, we need to find the subgroup
   #
   
-  mR=mp.f
-  mS=mp.g
+  mR=mp.map2
+  mS=mp.map1
   while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = mR.g*mS
-    mR = mR.f
+    mS = mR.map1*mS
+    mR = mR.map2
   end
 
   R=domain(mR)
@@ -275,11 +275,11 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   #  First, we need to find the subgroup
   #
   
-  mR=mp.f
-  mS=mp.g
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = mR.g*mS
-    mR = mR.f
+  mR=mp.map2
+  mS=mp.map1
+  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
+    mS = _compose(mR.map1, mS)
+    mR = mR.map2
   end
   
   R=domain(mR)
@@ -411,9 +411,9 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
 
   mp=C.mq
   R=domain(mp)
-  mr=mp.f
-  while issubtype(typeof(mr), Hecke.CompositeMap)
-    mr = mr.f
+  mr=mp.map2
+  while issubtype(typeof(mr), AbstractAlgebra.Generic.CompositeMap)
+    mr = mr.map2
   end
   lp=mr.fact_mod
   if isempty(lp)
@@ -477,9 +477,9 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
   mp=C.mq
   R=domain(mp)
-  mr=mp.f
-  while issubtype(typeof(mr), Hecke.CompositeMap)
-    mr = mr.f
+  mr=mp.map2
+  while issubtype(typeof(mr), AbstractAlgebra.Generic.CompositeMap)
+    mr = mr.map2
   end
   m=mr.modulus_fin
   mm=Int(minimum(m))
@@ -554,11 +554,11 @@ function discriminant(C::ClassField)
   G=domain(mp)
   n=order(G)
   
-  mR=mp.f
-  mS=mp.g
+  mR=mp.map2
+  mS=mp.map1
   while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = mR.g*mS
-    mR = mR.f
+    mS = _compose(mR.map1, mS)
+    mR = mR.map2
   end
   
   R=domain(mR)
@@ -1040,11 +1040,11 @@ end
 function _norm_group_gens_small(C::ClassField)
 
   mp=C.mq
-  mR=mp.f
-  mS=mp.g
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = mR.g*mS
-    mR = mR.f
+  mR=mp.map2
+  mS=mp.map1
+  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
+    mS = mR.map1*mS
+    mR = mR.map2
   end
   
   R=domain(mR)
