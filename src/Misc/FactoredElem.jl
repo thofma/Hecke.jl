@@ -302,9 +302,11 @@ end
 #
 ################################################################################
 
-function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   O = order(base_ring(x))
-  x = simplify(x) # the other method won't work due to one()
+  if !coprime
+    x = simplify(x) # the other method won't work due to one()
+  end
   if length(x.fac)==0
     return frac_ideal(O, O(1))
   end
@@ -498,6 +500,7 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
     if isone(p)
       continue
     end
+    assure_2_normal(p)
     v = fmpz(0)
     for b = base(x)
       v += valuation(b, p)*x.fac[b]
