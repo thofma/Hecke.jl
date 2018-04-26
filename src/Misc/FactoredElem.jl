@@ -302,9 +302,11 @@ end
 #
 ################################################################################
 
-function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet})
+function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   O = order(base_ring(x))
-  x = simplify(x) # the other method won't work due to one()
+  if !coprime
+    x = simplify(x) # the other method won't work due to one()
+  end
   if length(x.fac)==0
     return frac_ideal(O, O(1))
   end
@@ -498,6 +500,7 @@ function simplify!(x::FacElem{NfOrdIdl, NfOrdIdlSet})
     if isone(p)
       continue
     end
+    assure_2_normal(p)
     v = fmpz(0)
     for b = base(x)
       v += valuation(b, p)*x.fac[b]
@@ -627,6 +630,36 @@ doc"""
 """
 function maxabs_exp(a::FacElem)
   return maximum(abs, values(a.fac))
+end
+
+function Base.hash(a::FacElem, u::UInt)
+  if a.hash == UInt(0)
+    h = hash(u, UInt(3127))
+    for (k,v) = a.fac
+      h = hash(k, hash(v, h))
+    end
+    a.hash = h
+  end
+  return a.hash
+end
+
+#used (hopefully) only inside the class group
+function FacElem(A::Array{nf_elem_or_fac_elem, 1}, v::Array{fmpz, 1})
+  if typeof(A[1]) == nf_elem
+    B = FacElem(A[1])
+  else
+    B = A[1]
+  end
+  B = B^v[1]
+  for i=2:length(A)
+    if typeof(A[i]) == nf_elem
+      C = FacElem(A[i])^v[i]
+    else
+      C = A[i]^v[i]
+    end
+    B *= C
+  end
+  return B
 end
 
 #################################################################################

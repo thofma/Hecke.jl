@@ -1028,7 +1028,7 @@ function factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   for (I, v) = cp
     lp = factor(I)
     for (p, e) = lp
-      f[p] = e*f
+      f[p] = e*v
     end
   end
   return f

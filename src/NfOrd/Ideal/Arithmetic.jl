@@ -241,6 +241,11 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
   cnt = 0
   while true
     cnt += 1
+    if cnt % 20 == 0
+      assure_2_normal(a)
+      assure_2_normal(b)
+      return a*b
+    end
     rand!(t, O, r) # Nemo.rand_into!(bas, r, t)
     r2 = rand(r)
     rand!(s, O, r) # Nemo.rand_into!(bas, r, s)
@@ -289,6 +294,11 @@ function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
     z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
     return z
+  end
+  if isone(x)
+    return y
+  elseif isone(y)
+    return x
   end
   if has_2_elem_normal(x) && has_2_elem_normal(y)
     return prod_via_2_elem_normal(x, y)
@@ -547,6 +557,36 @@ function idempotents(x::NfOrdIdl, y::NfOrdIdl)
   return -z, 1 + z
 end
 
+################################################################################
+#
+#  crt
+#
+################################################################################
+doc"""
+   crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
+> Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
+using (((idempotents)))
+"""
+function crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl)
+  u, v = idempotents(i1, i2)
+  return r1*v + r2*u
+end
+
+function crt(a::Array{NfOrdElem, 1}, I::Array{NfOrdIdl, 1})
+  if length(a) == 1
+    return a[1]
+  end
+  if length(a) == 2
+    return crt(a[1], I[1], a[2], I[2])
+  end
+  A = [crt(a[2*i-1], I[2*i-1], a[2*i], I[2*i]) for i=1:div(length(a), 2)]
+  B = [I[2*i-1]*I[2*i] for i=1:div(length(a), 2)]
+  if isodd(length(a))
+    push!(A, a[end])
+    push!(B, B[end])
+  end
+  return crt(A, B)
+end
 ################################################################################
 #
 #  Division

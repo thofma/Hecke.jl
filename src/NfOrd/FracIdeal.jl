@@ -343,13 +343,20 @@ end
 
 function simplify(A::NfOrdFracIdl)
   simplify(A.num)
-  b = basis_mat(A.num)
-  g = denominator(A)
-  for i in 1:rows(b)
-    for j in 1:cols(b)
-      g = gcd(g, b[i, j])
+
+  if has_2_elem(A.num)
+    ZK = order(A)
+    g = Base.reduce(gcd, elem_in_basis(ZK(A.num.gen_two)))
+    g = gcd(g, A.den)
+  else  
+    b = basis_mat(A.num, Val{false})
+    g = denominator(A)
+    for i in 1:rows(b)
+      for j in 1:cols(b)
+        g = gcd(g, b[i, j])
+      end
     end
-  end
+  end  
 
   if g != 1
     if has_2_elem(A.num)

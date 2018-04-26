@@ -21,10 +21,12 @@ end
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v
 #   also useful if p is not prime....
+#
+# TODO: what happens to z = 0???
 
 function remove(z::T, p::T) where T <: Integer
-  z == 0 && error("Not yet implemented")
-  const v = 0
+  z == 0 && return (0, z)
+  v = 0
   while mod(z, p) == 0
     z = div(z, p)
     v += 1
@@ -33,14 +35,14 @@ function remove(z::T, p::T) where T <: Integer
 end 
 
 function remove(z::Rational{T}, p::T) where T <: Integer
-  z == 0 && error("Not yet implemented")
+  z == 0 && return(0, z)
   v, d = remove(denominator(z), p)
   w, n = remove(numerator(z), p)
   return w-v, n//d
 end 
 
 function valuation(z::T, p::T) where T <: Integer
-  z == 0 && error("Not yet implemented")
+  z == 0 && return 0
   const v = 0
   while mod(z, p) == 0
     z = div(z, p)
@@ -734,6 +736,29 @@ function ecm(a::fmpz, B1::Int, B2::Int, ncrv::Int, rnd = flint_rand_ctx)
   return ecm(a, UInt(B1), UInt(B2), UInt(ncrv), rnd)
 end
 
+#data from http://www.mersennewiki.org/index.php/Elliptic_Curve_Method
+B1 = [2, 11, 50, 250, 1000, 3000, 11000, 43000, 110000, 260000, 850000, 2900000];
+nC = [25, 90, 300, 700, 1800, 5100, 10600, 19300, 49000, 124000, 210000, 340000];
+
+function ecm(a::fmpz, max_digits::Int = div(ndigits(a), 2)+1, rnd = flint_rand_ctx)
+  n = ndigits(a, 10)
+  B1s = 15
+
+  i = 1
+  s = div(max_digits-15, 5)+2
+  s = max(i, s)
+  while i <= s
+    e,f = ecm(a, B1[i]*1000, B1[i]*1000*100, nC[i], rnd)
+    if e != 0
+      return (e,f)
+    end
+    i += 1
+    if i > length(B1)
+      return (e, f)
+    end
+  end
+  return (Int32(0), a)
+end
 
 function factor_trial_range(N::fmpz, start::Int=0, np::Int=10^5)
    F = Nemo.fmpz_factor()
@@ -779,35 +804,49 @@ function factor(N::fmpz)
 #  @assert prod(p^v for (p, v) = r)*N == N_in
   fac, N = ispower(N)
 
-  e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
-  #TODO: use coprime basis to refine stuff...
-  while e != 0
-    ee, f = ispower(f)
-    ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
-    if isprime(f)
-      if haskey(r, f)
-        r[f] += fac*ee
-      else
-        r[f] = fac*ee
-      end
-    else
-      s = factor(f)
-      for (p, ex) = s.fac
-        if haskey(r, p)
-          r[p] += fac*ex*ee
+ #TODO: problem(s)
+ # Nemo.factor = mpqs is hopeless if > n digits, but asymptotically and practically
+ # faster than ecm.
+ # ecm is much better if there are "small" factors.
+ # p-1 and p+1 methods are missing
+ # so probably
+ # if n is small enough -> Nemo
+ # if n is too large: ecm
+ # otherwise
+ #  need ecm to find small factors
+ # then recurse...
+
+  if ndigits(N) > 60  # TODO: needs revision!
+    e, f = ecm(N, div(ndigits(N), 3))
+    #TODO: use coprime basis to refine stuff...
+    while e != 0
+      ee, f = ispower(f)
+      ee = valuation(N, f) #careful, f does not need to be prime, so N/f^ee is not coprime to f
+      if isprime(f)
+        if haskey(r, f)
+          r[f] += fac*ee
         else
-          r[p] = fac*ex*ee
+          r[f] = fac*ee
+        end
+      else
+        s = factor(f)
+        for (p, ex) = s.fac
+          if haskey(r, p)
+            r[p] += fac*ex*ee
+          else
+            r[p] = fac*ex*ee
+          end
         end
       end
+  #    @assert N % f^ee == 0
+  #    @assert N % f^(ee+1) != 0
+      N = divexact(N, f^ee)
+  #    @assert prod(p^v for (p, v) = r)*N == N_in
+      if isone(N)
+        break
+      end
+      e, f = ecm(N, div(ndigits(N), 3))
     end
-#    @assert N % f^ee == 0
-#    @assert N % f^(ee+1) != 0
-    N = divexact(N, f^ee)
-#    @assert prod(p^v for (p, v) = r)*N == N_in
-    if isone(N)
-      break
-    end
-    e, f = ecm(N, UInt(10^3), UInt(10^5), UInt(100))
   end
   s = Nemo.factor(N)
   for (p, ex) = s.fac

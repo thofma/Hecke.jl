@@ -1458,3 +1458,21 @@ function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) wh
   return true, (z*T), N
 end
 
+doc"""
+   elementary_divisors(A::fmpz_mat) -> Array{fmpz, 1}
+> The elementary divisors of $A$, ie. the diagonal entries of the Smith normal form of $A$.
+"""
+function elementary_divisors(A::fmpz_mat)
+  s = snf(A)
+  return [s[i,i] for i=1:min(cols(s), rows(s))]
+end
+
+doc"""
+   maximal_elementary_divisors(A::fmpz_mat) -> fmpz
+> The largest elementary divisor of $A$, ie. the last diagonal entry of the Smith normal form of $A$.
+"""
+function maximal_elementary_divisor(A::fmpz_mat)
+  return elementary_divisors(A)[end]
+end
+
+

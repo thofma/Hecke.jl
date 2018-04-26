@@ -9,7 +9,7 @@
 # works (at least) for fmpz and nmod_poly, so it can be used for the
 # smoothness test
 
-function compose(a::node{T}, b::node{T}, check = false) where T
+function _compose(a::node{T}, b::node{T}, check = false) where T
   if check && !isone(gcd(a.content, b.content))
     error("input not coprime")
   end
@@ -24,7 +24,7 @@ function FactorBase(x::Union{Set{T}, AbstractArray{T, 1}}; check::Bool = true) w
   end
   ax = [ node{T}(p) for p in x]
   while length(ax) > 1
-    bx = [ compose(ax[2*i-1], ax[2*i], check) for i=1:div(length(ax), 2)]
+    bx = [ _compose(ax[2*i-1], ax[2*i], check) for i=1:div(length(ax), 2)]
     if isodd(length(ax))
       push!(bx, ax[end])
     end
@@ -37,6 +37,10 @@ end
 
 function show(io::IO, B::FactorBase{T}) where T
   print(io, "Factor base with \n$(B.base) and type $T")
+end
+
+function ring(B::FactorBase)
+  return parent(B.prod)
 end
 
 function issmooth(c::FactorBase{T}, a::T) where T

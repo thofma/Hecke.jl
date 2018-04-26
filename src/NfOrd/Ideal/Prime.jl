@@ -710,7 +710,10 @@ end
 ################################################################################
 
 function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
-  Ap = [gcd(x, p) for x = A if minimum(x) % p == 0]
+  #consider A^2 B and A B: if we do gcd with the minimum, we get twice AB
+  #so the copriem base is AB
+  #however using the p-part of the norm, the coprime basis becomes A, B...
+  Ap = [gcd(x, p^valuation(norm(x), p)) for x = A if minimum(x) % p == 0]
   return coprime_base_steel(Ap)
 end
 
@@ -728,6 +731,9 @@ function coprime_base(A::Array{NfOrdIdl, 1})
   C = Array{NfOrdIdl, 1}()
 
   for p = a
+    if p == 1
+      continue
+    end
     cp = coprime_base(A, p)
     append!(C, cp)
   end

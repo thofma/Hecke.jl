@@ -10,7 +10,15 @@ function show(io::IO, c::ClassGrpCtx)
   println(io, "Relations module: ", c.M)
 end
 
-function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
+function order(c::ClassGrpCtx)
+  return ring(c.FB)
+end
+
+function nf(c::ClassGrpCtx)
+  return nf(order(c))
+end
+
+function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::Bool = true)
   O = order(FB.ideals[1])
 
   clg = ClassGrpCtx{T}()
@@ -26,7 +34,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   clg.R_rel = Array{nf_elem, 1}()
 
   clg.c = conjugates_init(nf(O).pol)
-  for I in clg.FB.ideals
+  add_rels && for I in clg.FB.ideals
     a = I.gen_one
     class_group_add_relation(clg, nf(O)(a), fmpq(abs(a)^degree(O)), fmpz(1), orbit = false)
     b = nf(O)(I.gen_two)
@@ -69,21 +77,21 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz})
   return clg
 end
 
-function class_group_init(O::NfOrd, B::Int;
+function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
 
   FB = NfFactorBase()
   while true
     FB = NfFactorBase(O, B, complete = complete, degree_limit = degree_limit)
-    if length(FB.ideals) > 20
+    if length(FB.ideals) > min_size
       break
     end
     B *= 2
     @vprint :ClassGroup 2 "Increasing bound to $B ...\n"
   end
   @vprint :ClassGroup 2 " done\n"
-  return class_group_init(FB, T)
+  return class_group_init(FB, T, add_rels = add_rels)
 end
 
 function class_group_add_auto(clg::ClassGrpCtx, f::Map)

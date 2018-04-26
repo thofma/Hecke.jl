@@ -19,10 +19,12 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   else
     de = Dict((p, v) for (p, v) = decom)
   end
+  de_inv =Dict{NfOrdIdl, NfOrdFracIdl}()
 
   be = FacElem(K(1))
 
-  @hassert :CompactPresentation 1 abs(norm(a)) == norm(FacElem(decom))
+  @hassert :CompactPresentation 1 length(decom) == 0 && abs(norm(a)) == 1 ||
+                                  abs(norm(a)) == norm(FacElem(decom))
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
@@ -92,13 +94,23 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       push!(vvv, r)
     end
     @assert abs(sum(vvv)) <= degree(K)
-    @vtime :CompactPresentation 1 b = short_elem(inv(simplify(evaluate(A))), matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
+    @vtime :CompactPresentation 1 b = short_elem(inv(simplify(evaluate(A, coprime = true))), matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
     B = simplify(ideal(ZK, b))
+    @assert B.num.is_principal == 1  
+    @assert isone(B.num) || B.num.gens_normal > 1
+    assure_2_normal(B.num)
     for p = keys(de)
+      assure_2_normal(p)
       local _v = valuation(b, p)
       @hassert :CompactPresentation 1 valuation(B, p) == _v
       de[p] += n^k*_v
-      B *= inv(p)^_v
+      if haskey(de_inv, p)
+        pi = de_inv[p]
+      else
+        pi = inv(p)
+        de_inv[p] = pi
+      end
+      B *= pi^_v
       B = simplify(B)
       @hassert :CompactPresentation 1 valuation(B, p) == 0
     end
@@ -132,7 +144,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
                                     norm(ideal(ZK, a*be)) == abs(norm(FacElem(de)))
   @vprint :CompactPresentation 1 "Final eval...\n"
-  @vtime :CompactPresentation 1 A = evaluate(FacElem(de))
+  @vtime :CompactPresentation 1 A = evaluate(FacElem(de), coprime = true)
   @vtime :CompactPresentation 1 b = evaluate_mod(a*be, A)
   return inv(be)*b
 end
@@ -204,4 +216,29 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
+function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = false)
+  if typeof(decom) == Bool
+    ZK = maximal_order(base_ring(a))
+    de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
+  else
+    de = Dict((p, v) for (p, v) = decom)
+  end
+  c = Hecke.compact_presentation(a, n, decom = de)
+  b = base_ring(c)(1)
+  d = FacElem(b)
+  for (k,v) = c.fac
+    if v % n == 0
+      d *= FacElem(Dict(k => div(v, n)))
+    else
+      b *= k^v # hopefully small...
+    end
+  end
+  @hassert :CompactPresentation 2 evaluate(d^n*b *inv(a))== 1
+  fl, x = ispower(b, n)
+  if fl
+    return fl, d*x
+  else
+    return fl, d
+  end
+end
 

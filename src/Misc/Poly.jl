@@ -1,7 +1,8 @@
 
 export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
        trailing_coefficient, constant_coefficient, factor_mod_pk,
-       factor_mod_pk_init, hensel_lift, resultant_sircana
+       factor_mod_pk_init, hensel_lift, resultant_sircana, rres, rresx,
+       coefficients
 
 function PolynomialRing(R::Ring; cached::Bool = false)
   return PolynomialRing(R, "_x", cached = cached)
@@ -1189,8 +1190,7 @@ function rresx(f::fmpz_poly, g::fmpz_poly)
   g, q, w = gcdx(Qx(f), Qx(g))
   l = lcm(denominator(q), denominator(w))
   Zx = parent(f)
-  return l, Zx(numerator(l*q)), Zx(numerator(l*w))
-  return lcm(denominator(q), denominator(w))
+  return l, Zx(l*q), Zx(l*w)
 end
 
 doc"""
@@ -1253,6 +1253,37 @@ function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, 
   return primsplit!(g)
 end
 
+immutable PolyCoeffs{T <: PolyElem} 
+  f::T
+end  
+
+function coefficients(f::PolyElem)
+  return PolyCoeffs(f)
+end
+
+function Base.start(a::PolyCoeffs)
+  return 0
+end
+
+function Base.next(a::PolyCoeffs, b::Int)
+  return coeff(a.f, b), b+1
+end
+
+function Base.done(a::PolyCoeffs, b::Int)
+  return b > degree(a.f)
+end
+
+function Base.length(a::PolyCoeffs)
+  return length(a.f)
+end
+
+function Base.endof(a::PolyCoeffs)
+  return degree(a.f)
+end
+
+function Base.getindex(a::PolyCoeffs, i::Int)
+  return coeff(a.f, i)
+end
 
 
 doc"""

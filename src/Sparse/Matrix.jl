@@ -30,6 +30,8 @@ function cols(A::SMat)
   return A.c
 end
 
+size(A::SMat) = (rows(A), cols(A))
+
 ################################################################################
 #
 #  Hashing

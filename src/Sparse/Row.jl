@@ -282,14 +282,60 @@ function *(b::T, A::SRow{T}) where T
     nv = v*b
     if !iszero(nv)  # there are zero divisors - potentially
       push!(B.pos, p)
-      push!(B.values, v*b)
+      push!(B.values, nv)
     end
   end
   return B
 end
 
 function *(b::Integer, A::SRow{T}) where T
+  if length(A.values) == 0
+    return deepcopy(A)
+  end
   return base_ring(A)(b)*A
+end
+
+function div(A::SRow{T}, b::T) where T
+  B = SRow{T}()
+  if iszero(b)
+    return error("Division by zero")
+  end
+  for (p,v) = A
+    nv = div(v, b)
+    if !iszero(nv)
+      push!(B.pos, p)
+      push!(B.values, nv)
+    end  
+  end
+  return B
+end
+
+function div(A::SRow{T}, b::Integer) where T
+  if length(A.values) == 0
+    return deepcopy(A)
+  end
+  return div(A, base_ring(A)(b))
+end
+
+function divexact(A::SRow{T}, b::T) where T
+  B = SRow{T}()
+  if iszero(b)
+    return error("Division by zero")
+  end
+  for (p,v) = A
+    nv = divexact(v, b)
+    @assert !iszero(nv)
+    push!(B.pos, p)
+    push!(B.values, nv)
+  end
+  return B
+end
+
+function divexact(A::SRow{T}, b::Integer) where T
+  if length(A.values) == 0
+    return deepcopy(A)
+  end
+  return divexact(A, base_ring(A)(b))
 end
 
 ################################################################################

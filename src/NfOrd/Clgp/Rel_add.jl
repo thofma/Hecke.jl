@@ -32,7 +32,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   if iszero(a)
     return false
   end
-  if a in clg.RS 
+  if hash(a) in clg.RS 
     return false
   end
 
@@ -88,7 +88,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     else
       push!(clg.R_rel, a)
     end
-    push!(clg.RS, a)
+    push!(clg.RS, hash(a))
     if orbit && isdefined(clg, :aut_grp)
       n = res
       o = clg.aut_grp
@@ -111,7 +111,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
           else
             push!(clg.R_rel, ba)
           end
-          push!(clg.RS, ba)
+          push!(clg.RS, hash(ba))
         end
       end
     end  
@@ -127,5 +127,43 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     clg.bad_rel += 1
     return false
   end
+end
+
+function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField})
+  R = SRow{fmpz}()
+  for i = 1:length(clg.FB.ideals)
+    p = clg.FB.ideals[i]
+    v = valuation(a, p)
+    if !iszero(v)
+      push!(R.values, v)
+      push!(R.pos, i)
+    end
+  end
+  return class_group_add_relation(clg, a, R)
+end
+
+function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_elem, AnticNumberField}, R::SRow{fmpz}) 
+  
+  if hash(a) in clg.RS 
+    return false
+  end
+
+  O = order(clg.FB.ideals[1]) 
+
+  @vprint :ClassGroup 3 "adding $R\n"
+
+  if add_gen!(clg.M, R)
+    push!(clg.R_gen, a)
+  else
+    push!(clg.R_rel, a)
+  end
+  push!(clg.RS, hash(a))
+
+  clg.rel_cnt += 1
+#    @assert clg.rel_cnt < 2*cols(clg.M)
+  @v_do :ClassGroup 1 println(" -> OK, rate currently ",
+         clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
+  clg.last = clg.bad_rel
+  return true
 end
 
