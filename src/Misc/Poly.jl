@@ -1254,3 +1254,120 @@ function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, 
 end
 
 
+
+doc"""
+    resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+> A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
+> One of the two polynomials must be monic.
+"""
+function resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
+  #step the same is true and we can discard the unti obtained from the fun_factor function
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Rt = parent(f)
+  R = base_ring(Rt)
+  m = fmpz(modulus(R))
+  e, p = ispower(m)
+  easy = isprime(p)
+
+  Zx = PolynomialRing(FlintZZ)[1]
+
+  res = R(1)
+
+  while true
+    if degree(f) < 1 && degree(g) < 1
+      if iszero(f) || iszero(g)
+        res *= R(0)
+      end
+      return res
+    end
+
+    if degree(f) < 1
+      res *= lead(f)^degree(g)
+      return res
+    end
+
+    if degree(g) < 1
+      res *= lead(g)^degree(f)
+      return res
+    end
+
+    c, f = primsplit(f)
+    if !isone(c)
+      res *= c^degree(g)
+    end
+
+    c, g = primsplit(g)
+    if !isone(c)
+      res *= c^degree(f)
+    end
+
+    if degree(f) < degree(g)
+      f, g = g, f
+    end
+
+    #want f % g which works iff lead(g) | lead(f)
+
+    if isunit(lead(g)) #accelerate a bit...possibly.
+      f = rem(f, g)
+      continue
+    end
+
+    break
+  end
+
+  #factoring case, need to split the ring as well.
+  #merde : we need a coprime factorisation: take
+  # 6t^2+2t+3 mod 36....
+  if easy
+    cp = [m]
+  else
+    cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+    push!(cp, m)
+    cp = [x for x = cp if !iszero(x)]
+    cp = coprime_base(cp)
+    cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+  end
+  resp = fmpz[]
+  pg = fmpz[]
+  for p = cp
+    lg = p^valuation(m, p)
+    push!(pg, lg)
+
+    if lg != m
+      R1 = ResidueRing(FlintZZ, S(lg), cached=false)
+      R1t = PolynomialRing(R1, cached=false)[1]
+      #g is bad in R1, so factor it
+      gR1 = R1t(lift(Zx, g))
+      fR1 = R1t(lift(Zx, f))
+    else
+      gR1 = g
+      fR1 = f
+      R1 = R
+      R1t = Rt
+    end
+
+    if degree(fR1) < degree(f) && degree(gR1) < degree(g)
+      res1 = R1(0)
+    elseif degree(fR1) < degree(f)
+      res1 = lead(gR1)^(degree(f) - degree(fR1))
+    else
+      res1 = R1(1)
+    end
+
+    if !isunit(lead(gR1))
+      g1, g2 = fun_factor(gR1)
+      res1 *= resultant_valuation(fR1, g2)
+      push!(resp, lift(res1))
+    else
+      #gR1 has a invertible leading coeff
+      res1 *= resultant_valuation(fR1, gR1)
+      push!(resp, lift(res1))
+    end
+  end
+  res *= length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
+  return res
+end
+
+

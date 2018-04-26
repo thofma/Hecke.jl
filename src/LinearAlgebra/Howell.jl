@@ -190,7 +190,14 @@ end
 #
 
 
-function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})  
+  
+  R=base_ring(A)
+  A1=lift(A)
+  ccall((:fmpz_mat_howell_form_mod, :libflint), Void,
+                (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
+  A=MatrixSpace(R, rows(A), cols(A))(A1)
+  return A
   
   R=base_ring(A)
   n=R.modulus
@@ -289,10 +296,20 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  If the modulus is prime, the second part of the Howell form computation is useless and I can directly call the rref
   #  but I have to test if the modulus is prime. What is better?
   #
-  N = hcat(M', identity_matrix(R, cols(M)))
-  N = howell_form(N)
-  if gcd(prod([N[i,i] for i=1:rows(N)]).data,modulus(R))==1
-    return MatrixSpace(R,cols(M),1, false), 0
+
+  N = zero_matrix(R, rows(M)+cols(M), rows(M)+cols(M))
+  for i=1:rows(M)
+    for j=1:cols(M)
+      N[j,i]=M[i,j]
+    end
+  end
+  for i=1:cols(M)
+    N[i, i+rows(M)]=1
+  end
+  N=howell_form!(N)
+
+  if gcd(prod([N[i,i] for i=1:rows(N)]).data,R.modulus)==1
+    return MatrixSpace(R,cols(M),0, false)(), 0
   end
   nr = 1
   while nr <= rows(N) && !iszero_row(N, nr)
@@ -306,6 +323,6 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
       return k', rows(k)
     end
   end
-  return MatrixSpace(R,cols(M),1, false), 0
+  return MatrixSpace(R,cols(M),0, false)(0), 0
 end
 
