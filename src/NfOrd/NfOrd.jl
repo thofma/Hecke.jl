@@ -272,6 +272,11 @@ doc"""
 > trace matrix of $\mathcal O$.
 """
 function reduced_discriminant(O::NfOrd)
+  if isequation_order(O)
+    Zx = PolynomialRing(FlintZZ, cached = false)[1]
+    f = Zx(nf(O).pol)
+    return rres(f, derivative(f))
+  end
   return maximal_elementary_divisor(trace_matrix(O))
 end
 
