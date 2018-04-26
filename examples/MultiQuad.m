@@ -22,38 +22,75 @@ function _combine(f::fmpq_poly, g::fmpq_poly, Qxy)
   return resultant(f1, f2)
 end
 
-function multi_quad(d::Array{fmpz, 1}, B::Int)
+function multi_quad_with_aut(d::Array{fmpz, 1})
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
   Qxy, y = PolynomialRing(Qx, "y", cached = false)
-  lp = [ x^2-a for a = d]
+  lp = [ NumberField(x^2-a)[1] for a = d]
+  aut = [ [gen(x), -gen(x)] for x = lp]
   while length(lp) > 1
-    ld = [ _combine(lp[2*i-1], lp[2*i], Qxy) for i=1:div(length(lp), 2)] 
+    ld = []
+    lau = []
+    for i=1:div(length(lp), 2)
+      K, m1, m2 = compositum(lp[2*i-1], lp[2*i])
+      @assert m1(gen(lp[2*i-1])) + m2(gen(lp[2*i])) == gen(K)
+      au = [m1(x) + m2(y) for x = aut[2*i-1] for y = aut[2*i]]
+      push!(ld, K)
+      push!(lau, au)
+    end
     if isodd(length(lp))
       push!(ld, lp[end])
+      push!(lau, aut[end])
     end
     lp = ld
+    aut = lau
   end
-  f = lp[1]
-  K, a = number_field(f)
-  rt = nf_elem[]
-  for i = d
-    fl, r = ispower(K(i), 2)
-    @assert fl
-    push!(rt, r)
+  return lp[1], aut[1]
+end
+
+function multi_quad_with_emb(d::Array{fmpz, 1})
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  Qxy, y = PolynomialRing(Qx, "y", cached = false)
+  lp = [ NumberField(x^2-a)[1] for a = d]
+  aut = [ [gen(x)] for x = lp]
+  while length(lp) > 1
+    ld = []
+    lau = []
+    for i=1:div(length(lp), 2)
+      K, m1, m2 = compositum(lp[2*i-1], lp[2*i])
+      push!(ld, K)
+      push!(lau, vcat([ m1(x) for x = aut[2*i-1]], [ m2(x) for x = aut[2*i]]))
+    end
+    if isodd(length(lp))
+      push!(ld, lp[end])
+      push!(lau, aut[end])
+    end
+    lp = ld
+    aut = lau
   end
+  return lp[1], aut[1]
+end
+
+function multi_quad(d::Array{fmpz, 1}, B::Int)
+  K, rt = multi_quad_with_emb(d)
 
   b = [K(1)]
-  all_d = fmpz[1]
-  for i = rt
-    append!(b, i .* b)
+  bb = [K(1)]
+  for i = 1:length(d)
+    if (d[i] < 0 && d[i] % 4 == -3) || (d[i] > 0 && d[i] % 4 == 1)
+      o = (1+rt[i])//2
+    else
+      o = rt[i]
+    end
+    append!(b, o .* b)
+    append!(bb, rt[i] .* bb)
   end
 
+  all_d = fmpz[1]
   for i = d
     append!(all_d, i .* all_d)
   end
 
   @show all_d
-  @assert all( b[i]^2 == all_d[i] for i=1:length(b))
 
   ZK = Order(K, b)
   ZK = pmaximal_overorder(ZK, fmpz(2))
@@ -64,6 +101,8 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
   cp = Set(minimum(x) for x = c.FB.ideals)
   t_ord = 0
   local t_u
+
+  Zx, x = FlintZZ["x"]
 
   for i = 2:length(all_d)
     k, a = number_field(x^2-all_d[i], cached = false)
@@ -78,8 +117,8 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
     else
       S, mS = Hecke.unit_group_fac_elem(zk)
     end
-    h = Hecke.NfToNfMor(k, K, b[i])
-    @assert b[i]^2 == all_d[i]
+    h = Hecke.NfToNfMor(k, K, bb[i])
+    @assert bb[i]^2 == all_d[i]
 
     for i=2:ngens(S) # don't need torsion here - it's the "same" everywhere
       u = mS(S[i])
@@ -399,11 +438,15 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.2)
       @assert length(c.R_gen) + length(c.R_rel) + 1 == rows(e)
       a *= fe(zeta)^e[rows(e), i]
     end
-
+    
     decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
-    fl, x = ispower(a, n, decom = decom)
+    println("compact rep...")  
+    @time fl, x = ispower(a, n, decom = decom)
+#    @time fl, _ = ispower(evaluate(a), n)
+    println("done")   
+    global last = (a, n, decom)  
     if fl
-      push!(n_gen, x)
+      push!(n_gen, FacElem(x))
       r = se.rows[i]
       push!(r.pos, rows(e) + length(n_gen))
       push!(r.values, n)
