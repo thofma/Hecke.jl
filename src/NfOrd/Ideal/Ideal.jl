@@ -225,6 +225,7 @@ function ideal(O::NfOrd, x::fmpz_mat, check::Bool = false)
   return I
 end
 
+
 doc"""
 ***
     ideal(O::NfOrd, x::fmpz, y::NfOrdElem) -> NfOrdIdl
@@ -1287,7 +1288,7 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
       end
     end
     M2=_hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
-    I=ideal(O, sub(M2, rows(M2)-degree(O)+1:rows(M2), 1:degree(O)))
+    I=NfOrdIdl(O, sub(M2, rows(M2)-degree(O)+1:rows(M2), 1:degree(O)))
     I.gens=gens
     return I
   end
@@ -1332,7 +1333,7 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
     m[i+length(X),i]=p
   end
   mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
-  I = ideal(O, sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O)))
+  I = NfOrdIdl(O, sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O)))
   I.gens = gens
   return I
 end
