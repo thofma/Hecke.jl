@@ -87,6 +87,17 @@ function Base.deepcopy_internal(x::FacElem{B, S}, dict::ObjectIdDict) where {B, 
   if isdefined(x, :parent)
     z.parent = x.parent
   end
+  z.hash = x.hash
+  return z
+end
+
+function Base.copy(x::FacElem{B, S}) where {B, S}
+  z = FacElem{B, S}()
+  z.fac = Base.copy(x.fac)
+  if isdefined(x, :parent)
+    z.parent = x.parent
+  end
+  z.hash = x.hash
   return z
 end
 
@@ -116,7 +127,7 @@ function inv!(x::FacElem)
 end
 
 function inv(x::FacElem)
-  y = deepcopy(x)
+  y = copy(x)
   inv!(y)
   return y
 end
@@ -128,9 +139,9 @@ end
 ################################################################################
 
 function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
-  z.fac = deepcopy(x.fac)
+  z.fac = copy(x.fac)
   for a in base(x)
-    # this should be inplace
+    # this should be inplace ... not sure anymore: using copy, inplace is bad
     z.fac[a] = y*x.fac[a]
   end
 end
@@ -144,9 +155,9 @@ for T in [:Integer, fmpz]
         return z
       end
       if y == 1
-        return deepcopy(x)
+        return copy(x)
       else
-        z.fac = deepcopy(x.fac)
+        z.fac = copy(x.fac)
         for a in base(x)
           # this should be inplac
           z.fac[a] = y*x.fac[a]
@@ -164,7 +175,7 @@ end
 ################################################################################
 
 function mul!(z::FacElem{B, S}, x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
-  z.fac = deepcopy(x.fac)
+  z.fac = copy(x.fac)
   for a in base(y)
     if haskey(x.fac, a)
       z.fac[a] = z.fac[a] + y.fac[a]
@@ -176,14 +187,14 @@ end
 
 function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
   if length(x.fac) == 0
-    return deepcopy(y)
+    return copy(y)
   end
 
   if length(y.fac) == 0
-    return deepcopy(x)
+    return copy(x)
   end
 
-  z = deepcopy(x)
+  z = copy(x)
   for a in base(y)
     if haskey(x.fac, a)
       z.fac[a] = z.fac[a] + y.fac[a]
@@ -195,7 +206,7 @@ function *(x::FacElem{B, S}, y::FacElem{B, S}) where {B, S}
 end
 
 function *(x::FacElem{B}, y::B) where B
-  z = deepcopy(x)
+  z = copy(x)
   if haskey(x.fac, y)
     z.fac[y] = z.fac[y] + 1
   else
@@ -205,7 +216,7 @@ function *(x::FacElem{B}, y::B) where B
 end
 
 function *(y::B, x::FacElem{B}) where B
-  z = deepcopy(x)
+  z = copy(x)
   if haskey(x.fac, y)
     z.fac[y] = z.fac[y] + 1
   else
@@ -215,7 +226,7 @@ function *(y::B, x::FacElem{B}) where B
 end
 
 function div(x::FacElem{B}, y::FacElem{B}) where B
-  z = deepcopy(x)
+  z = copy(x)
   for a in base(y)
     if haskey(x.fac, a)
       z.fac[a] = z.fac[a] - y.fac[a]
