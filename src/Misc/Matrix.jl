@@ -972,6 +972,7 @@ function Base.nullspace(M::nmod_mat)
       return k', rows(k)
     end
   end
+  return zero_matrix(R,rows(M),0),0
 end
 
 function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,Generic.Mat{Generic.Res{fmpz}}})

@@ -88,6 +88,7 @@ mutable struct AlgAssOrdIdl
   O::AlgAssOrd                     # Order containing it
   basis_alg::Vector{AlgAssOrdElem} # Basis of the ideal as array of elements of the order
   basis_mat::fmpz_mat              # Basis matrix of ideal wrt basis of the order
+  gens::Vector{AlgAssOrdElem}      # Generators of the ideal 
   
   function AlgAssOrdIdl(a::AlgAssOrd, basis::Array{AlgAssOrdElem,1})
     # "Default" constructor with default values.
@@ -182,7 +183,7 @@ end
 #
 ###############################################################################
 
-parent(x::AlgAssOrdElem)=x.parent
+@inline parent(x::AlgAssOrdElem)=x.parent
 
 (O::AlgAssOrd)(a::Array{fmpz,1}) = AlgAssOrdElem(O,a)
 
@@ -673,24 +674,46 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
   O = I.O
   @hassert :CSAMaxOrd 1 Hecke.check_associativity(O.A)
   @hassert :CSAMaxOrd 1 Hecke.check_distributivity(O.A)
-  B= I.basis_alg
   @hassert :CSAMaxOrd 1 check_ideal(I)
   bmatinv, deno =pseudo_inv(I.basis_mat)
-  m=zero_matrix(FlintZZ, O.dim^2, O.dim)
-  for i=1:O.dim
-    M=representation_mat(B[i])
-    mul!(M, M, bmatinv)
-    if deno==1
-      for s=1:O.dim
-        for t=1:O.dim
-          m[t+(i-1)*(O.dim),s]=M[s,t]
+  if isdefined(I, :gens) && length(I.gens)<O.dim
+    m=zero_matrix(FlintZZ, O.dim*length(I.gens), O.dim)
+    for i=1:length(I.gens)
+      M=representation_mat(I.gens[i])
+      mul!(M, M, bmatinv)
+      if deno==1
+        for s=1:O.dim
+          for t=1:O.dim
+            m[t+(i-1)*(O.dim),s]=M[s,t]
+          end
+        end
+      else
+        for s=1:O.dim
+          for t=1:O.dim
+            @hassert :CSAMaxOrd 1 divisible(M[s,t], deno)
+            m[t+(i-1)*(O.dim),s]=divexact(M[s,t], deno)
+          end
         end
       end
-    else
-      for s=1:O.dim
-        for t=1:O.dim
-          @hassert :CSAMaxOrd 1 divisible(M[s,t], deno)
-          m[t+(i-1)*(O.dim),s]=divexact(M[s,t], deno)
+    end
+  else
+    B= I.basis_alg
+    m=zero_matrix(FlintZZ, O.dim^2, O.dim)
+    for i=1:O.dim
+      M=representation_mat(B[i])
+      mul!(M, M, bmatinv)
+      if deno==1
+        for s=1:O.dim
+          for t=1:O.dim
+            m[t+(i-1)*(O.dim),s]=M[s,t]
+          end
+        end
+      else
+        for s=1:O.dim
+          for t=1:O.dim
+            @hassert :CSAMaxOrd 1 divisible(M[s,t], deno)
+            m[t+(i-1)*(O.dim),s]=divexact(M[s,t], deno)
+          end
         end
       end
     end
@@ -702,14 +725,6 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
   end
   # n is upper right HNF
   n=transpose(sub(n, 1:O.dim, 1:O.dim))
-  #=
-  n1=zero_matrix(FlintZZ, O.dim, O.dim)
-  for i=1:O.dim
-    for j=1:O.dim
-      n1[i,j]=n[j,i]
-    end
-  end
-  =#
   b= FakeFmpqMat(pseudo_inv(n))
   O1=AlgAssOrd(O.A, mul!(b,b,O.basis_mat))
   O1.disc=divexact(O.disc, s^2)
@@ -736,7 +751,7 @@ function pradical(O::AlgAssOrd, p::Int)
   
   #See the paper from Ronyai, Structure of finite algebra
   n=root(O.dim,2)
-  F,a=FlintFiniteField(p,1,"a", cached=false)
+  F=ResidueRing(FlintZZ, p, cached=false)
   l=clog(fmpz(O.dim),p)
   #First step: kernel of the trace matrix mod p 
   W=MatrixSpace(F,O.dim,O.dim)
@@ -744,10 +759,12 @@ function pradical(O::AlgAssOrd, p::Int)
     redtrace_mat(O)
   end
   I=W(n*O.trace_mat)
-  k,B=nullspace(I)
+  B,k=nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
-    return AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J.gens=AlgAssOrdElem[O(p*one(O.A))]
+    return J
   end
 
   if l==1
@@ -755,7 +772,7 @@ function pradical(O::AlgAssOrd, p::Int)
     M=zero_matrix(FlintZZ, cols(B)+O.dim, O.dim)
     for i=1:cols(B)
       for j=1:O.dim
-        M[i,j]=FlintZZ(coeff(B[j,i],0))
+        M[i,j]=B[j,i].data
       end
     end
     for i=cols(B)+1:cols(B)+O.dim
@@ -763,6 +780,12 @@ function pradical(O::AlgAssOrd, p::Int)
     end
     M1=hnf(M)
     res=AlgAssOrdIdl(O,sub(M1,1:O.dim,1:O.dim))
+    B=lift(B')
+    res.gens=Array{AlgAssOrdElem, 1}(k+1)
+    for i=1:k
+      res.gens[i]= elem_from_mat_row(O,B,i)
+    end
+    res.gens[k+1]= O(p*one(O.A))
     @hassert :CSAMaxOrd 1 check_pradical(res,p)
     return res
   end
@@ -773,25 +796,38 @@ function pradical(O::AlgAssOrd, p::Int)
   #Hard to believe, but this is linear on I!!!!
   for i=1:l
     M=zero_matrix(F, O.dim, rows(I))
+    a=O.A()
     for t=1:rows(I)
       elm=elem_from_mat_row(O,I,t)
       for s=1:O.dim
-        a=elm.elem_in_algebra*O.basis_alg[s]
+        mul!(a, elm.elem_in_algebra, O.basis_alg[s])
         trel=trace(a^(p^i))
         el=divexact(numerator(trel),p^i)
         M[s,t]=F(el)
       end
     end
-    k,B=nullspace(M)
+    B,k=nullspace(M)
     if k==0
-      return AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+      J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+      J.gens=AlgAssOrdElem[O(p*one(O.A))]
     end
     I=lift(transpose(B))*I
   end
+  gens=[elem_from_mat_row(O,I,i) for i=1:rows(I)]
+  push!(gens, O(p*one(O.A)))
   #Now, I have to give a basis for the ideal.
-  I=vcat(I,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
-  I=sub(hnf_modular_eldiv(I, fmpz(p)), 1:O.dim, 1:O.dim)
+  m=zero_matrix(FlintZZ, rows(I)+O.dim, O.dim)
+  for i=1:rows(I)
+    for j=1:cols(I)
+      m[i,j]=I[i,j]
+    end
+  end
+  for i=1:O.dim
+    m[i+rows(I), i]= p
+  end
+  I=sub(hnf(m), 1:O.dim, 1:O.dim)
   res=AlgAssOrdIdl(O,I)
+  res.gens=gens
   @hassert :CSAMaxOrd 1 check_pradical(res,p)
   return res
   

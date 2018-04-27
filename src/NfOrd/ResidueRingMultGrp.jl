@@ -461,9 +461,9 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
 
   O=order(pu)
   b=basis(pu)
-  N = basis_mat(pv)*basis_mat_inv(pu)
+  N = basis_mat(pv, Val{false})*basis_mat_inv(pu, Val{false})
   @assert denominator(N) == 1
-  G=AbelianGroup(numerator(N))
+  G=AbelianGroup(N.num)
   S,mS=snf(G)
   
   #Generators
@@ -477,7 +477,7 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   end
   
   #Disclog  
-  M=basis_mat_inv(pu)*mS.imap
+  M=basis_mat_inv(pu, Val{false})*mS.imap
   function disclog(x::NfOrdElem)
     x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x)), fmpz(1))
     res_fakemat = x_fakemat * M

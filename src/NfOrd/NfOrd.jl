@@ -134,7 +134,7 @@ function assure_has_basis_mat_inv(O::NfOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O))
+  O.basis_mat_inv = inv(basis_mat(O, Val{false}))
   return nothing
 end
 
@@ -722,7 +722,7 @@ function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
     H = sub(hnf(B), (rows(B) - degree(K) + 1):rows(B), 1:degree(K))
 
     # TODO: Just take the product of the diagonal
-    #d=prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
+    #d = prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
     d = det(H)
 
     if iszero(d)
@@ -741,7 +741,8 @@ function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
   end
 
   # Make an explicit check
-  return Order(K, elt, true)
+  @hassert :NfOrd 1 defines_order(K, elt)[1]
+  return Order(K, elt, false)
 end
 
 ################################################################################
@@ -813,12 +814,17 @@ equation order and have coprime index.
 function +(a::NfOrd, b::NfOrd)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if isone(gcd(index(a), index(b)))
-    assure_has_basis_mat(a)
-    assure_has_basis_mat(b)
-    aB = a.basis_mat
-    bB = b.basis_mat
+    aB = basis_mat(a, Val{false})
+    bB = basis_mat(b, Val{false})
     d = degree(a)
-    c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
+    m = zero_matrix(FlintZZ, 2*d, d)
+    for i=1:d
+      for j=1:d
+        m[i,j]=bB.den*aB.num[i,j]
+        m[i+d,j]=aB.den*bB.num[i,j]
+      end
+    end
+    c = sub(_hnf(m, :lowerleft), d + 1:2*d, 1:d)
     O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den))
     O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
     return O
@@ -914,7 +920,10 @@ function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
       continue
     end
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    OO += pmaximal_overorder(O, p)
+    O1 = pmaximal_overorder(O, p)
+    if valuation(discriminant(O1), p)< valuation(discriminant(OO,p))
+      OO += O1
+    end 
     @vprint :NfOrd 1 "done\n"
   end
   return OO
@@ -934,7 +943,10 @@ function MaximalOrder(O::NfOrd)
       continue
     end
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    OO += pmaximal_overorder(O, p)
+    O1 = pmaximal_overorder(O, p)
+    if valuation(discriminant(O1), p)< valuation(discriminant(OO),p)
+      OO += O1
+    end 
     @vprint :NfOrd 1 "done\n"
   end
   OO.ismaximal = 1
@@ -1196,3 +1208,169 @@ function codifferent(R::NfOrd)
   return ideal(R, ti, true)//d
 end
 
+###############################################################################
+#
+#  Buchmann-Lenstra for the computation of maximal orders
+#
+###############################################################################
+
+function _cycleBL(O::NfOrd, q::fmpz)
+  
+  R=ResidueRing(FlintZZ, q, cached=false)
+  #First, we compute the q-radical as the kernel of the trace matrix mod q.
+  #By theory, this is free if q is prime; if I get a non free module, I have found a factor of q.
+  @show "radical computation mod $q"
+  Mat=MatrixSpace(R, degree(O), degree(O), false)(trace_matrix(O))
+  M=transpose(nullspace(Mat)[1])  
+  if iszero(M)
+    return O,fmpz(1)
+  end
+  if rows(M)!=0
+    M=howell_form(M)     
+    for i=1:rows(M)
+      if iszero_row(M,i)
+        break
+      end
+      j=i
+      while iszero(M[i,j])
+        j+=1
+      end
+      if !isone(M[i,j])
+        return O, lift(M[i,j])
+      end
+    end
+  end
+  # Now, we have the radical.
+  # We want to compute the ring of multipliers.
+  # So we need to lift the matrix.
+  @show "Computing hnf of basis matrix"
+  MatIdeal=zero_matrix(FlintZZ, rows(M)+degree(O), cols(M))
+  for i=1:rows(M)
+    for j=1:degree(O)
+      MatIdeal[i,j]=FlintZZ(M[i,j].data)
+    end
+  end
+  for i=1:degree(O)
+    MatIdeal[i+rows(M), i]=q
+  end
+  gens=[O(q)]
+  for i=1:rows(M)
+    if !iszero_row(MatIdeal, i)
+      push!(gens, elem_from_mat_row(O,MatIdeal, i))
+    end       
+  end
+  M2=_hnf_modular_eldiv(MatIdeal, fmpz(q),  :lowerleft)
+  I=ideal(O,sub(M2, rows(M)+1:degree(O)+rows(M), 1:degree(O)))
+  I.gens=gens
+  @show "ring of multipliers"
+   
+  O1=ring_of_multipliers(I)
+  @show "ring of multipliers computed"
+  if discriminant(O1)!=discriminant(O)
+    return _cycleBL(O1,q)
+  end
+  @show "couldn't enlarge"
+  # (I:I)=OO. Now, we want to prove tameness (or get a factor of q)
+  # We have to test that (OO:a)/B is a free Z/qZ module.
+  inva=colon(ideal(O,1),I)
+  M1=basis_mat_inv(inva)
+  @assert M1.den==1
+  G1=snf(AbelianGroup(M1.num))[1]
+  for i=1:length(G1.snf)
+    q1=gcd(q,G1.snf[i])
+    if q1!=q
+      return O,fmpz(q1)
+    end
+  end
+  @show "...is free"
+  h=2
+  ideals=Array{NfOrdIdl,1}(3)
+  ideals[1]=I
+  ideals[2]=I^2
+  ideals[3]=I^3
+  while true
+    if h>degree(O)
+      error("Not found!")
+    end
+    I1=(ideals[1]+ideal(O,q))*(ideals[3]+ideal(O,q))
+    I2=(ideals[2]+ideal(O,q))^2
+    M2=basis_mat(I2, Val{false})*basis_mat_inv(I1, Val{false})
+    @assert M2.den==1
+    G2=snf(AbelianGroup(M2.num))[1]
+    if order(G2)==1
+      h+=1
+      ideals[1]=ideals[2]
+      ideals[2]=ideals[3]
+      ideals[3]=ideals[2]*I
+      continue
+    end
+    for i=1:length(G2.snf)
+      q1=gcd(q,G2.snf[i])
+      if q1!=q
+        return O, q1
+      end
+    end
+    break
+  end
+  f,r = ispower(q,h)
+  if f
+    return O, r
+  else
+    return O, q
+  end
+  
+end
+
+function TameOverorderBL(O::NfOrd)
+    
+  # First, we hope that we can get a factorization of the discriminant by computing 
+  # the structure of the group OO^*/OO
+  OO=O
+  G=snf(AbelianGroup(trace_matrix(OO)))[1]
+  list=append!(G.snf,primes_up_to(degree(O)))
+  l=coprime_base(list)
+  #Some trivial things, maybe useless
+  for i=1:length(l)
+    a,b=ispower(l[i])
+    if a>1
+      l[i]=b
+    end
+    if isprime(l[i])
+      @show "pmaximal order at $(l[i])"
+      OO1=pmaximal_overorder(O, l[i])
+      if valuation(discriminant(OO1), l[i])<valuation(discriminant(OO), l[i])
+        OO+=OO1
+      end
+      l[i]=0
+    end
+  end
+  push!(l, discriminant(OO))
+  filter!(x-> x!=0, l)
+  M=coprime_base(l)
+  Q=fmpz[]
+  while !isempty(M)
+    q=M[1]
+    if isprime(q)
+      OO1=pmaximal_overorder(O, q)
+      if valuation(discriminant(OO1), q)<valuation(discriminant(OO), q)
+        OO+=OO1
+      end
+      filter!(x-> x!=q, M)
+      continue
+    end
+    OO, q1= _cycleBL(OO,q)
+    if q1==1
+      filter!(x->x!=q, M)
+    elseif q1==q
+      push!(Q,q)
+      filter!(x-> x!=q, M)
+    else
+      push!(M, q1)
+      push!(M, divexact(q,q1))
+      M=coprime_base(M)
+      continue
+    end
+  end
+  return OO
+
+end

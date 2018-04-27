@@ -819,6 +819,8 @@ type NfOrdIdl
                            # mind that the ideal is not prime
 
   parent::NfOrdIdlSet
+  
+  gens::Vector{NfOrdElem}  # A set of generators of the ideal 
 
   function NfOrdIdl(O::NfOrd)
     # populate the bits types (Bool, Int) with default values

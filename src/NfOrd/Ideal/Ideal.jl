@@ -828,7 +828,7 @@ end
 
 
 function _normmod(a::fmpz, b::NfOrdElem)
-#  @show "NormMod"
+  #@show "NormMod"
   if isone(a)
     return a
   end
@@ -1261,37 +1261,80 @@ function pradical(O::NfOrd, p::Union{Integer, fmpz})
   if typeof(p) == fmpz && nbits(p) < 64
     return pradical(O, Int(p))
   end
-
+  
+  #Trace method if the prime is large enough
+  if p> degree(O)
+    M = trace_matrix(O)
+    W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), degree(O), degree(O))
+    M1 = W(M)
+    B,k = nullspace(M1)
+    if k==0
+      return ideal(O,p)
+    end
+    M2=zero_matrix(FlintZZ, cols(B)+degree(O), degree(O))
+    for i=1:cols(B)
+      for j=1:degree(O)
+        M2[i,j]=FlintZZ(B[j,i].data)
+      end
+    end
+    for i=1:degree(O)
+      M2[i+cols(B), i]=p
+    end
+    gens=[O(p)]
+    for i=1:cols(B)
+      if !iszero_row(M2,i)
+        push!(gens, elem_from_mat_row(O, M2, i))
+      end
+    end
+    M2=_hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
+    I=ideal(O, sub(M2, rows(M2)-degree(O)+1:rows(M2), 1:degree(O)))
+    I.gens=gens
+    return I
+  end
+  
   j = clog(fmpz(degree(O)), p)
-  local m::fmpz_mat
-
   @assert p^(j-1) < degree(O)
   @assert degree(O) <= p^j
 
   R = ResidueRing(FlintZZ, p, cached=false)
   A = zero_matrix(R, degree(O), degree(O))
+  B = basis(O)
   for i in 1:degree(O)
-    t = powermod(basis(O)[i], p^j, p)
+    t = powermod(B[i], p^j, p)
     ar = elem_in_basis(t)
     for k in 1:degree(O)
       A[i,k] = ar[k]
     end
   end
   X = kernel(A)
-  Mat = MatrixSpace(FlintZZ, 1, degree(O), false)
-  MMat = MatrixSpace(R, 1, degree(O), false)
-  if length(X) != 0
-    m = lift(MMat(X[1]))
-    for x in 2:length(X)
-      m = vcat(m,lift(MMat(X[x])))
-    end
-    m = vcat(m, p*identity_matrix(FlintZZ, degree(O)))
-  else
-    m = p*identity_matrix(FlintZZ, degree(O))
+  gens=NfOrdElem[O(p)]
+  if length(X)==0
+    I=ideal(O,p)
+    I.gens=gens
+    return I
   end
-  mm::fmpz_mat = _hnf(m, :lowerleft)
-  r = sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O))
-  return ideal(O, r)
+  #First, find the generators
+  for i=1:length(X)
+    coords=Array{fmpz,1}(degree(O))
+    for j=1:degree(O)
+      coords[j]=lift(X[i][j])
+    end
+    push!(gens, O(coords))
+  end
+  #Then, construct the basis matrix of the ideal
+  m = zero_matrix(FlintZZ, degree(O)+length(X), degree(O))
+  for i=1:length(X)
+    for j=1:degree(O)
+      m[i,j]=lift(X[i][j])
+    end
+  end
+  for i=1:degree(O)
+    m[i+length(X),i]=p
+  end
+  mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
+  I = ideal(O, sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O)))
+  I.gens = gens
+  return I
 end
 
 ################################################################################
@@ -1308,22 +1351,47 @@ doc"""
 > with $xI \subseteq I$.
 """
 function ring_of_multipliers(a::NfOrdIdl)
-  B = basis(a)
-  O = order(a)
-  bmatinv = basis_mat_inv(a)
-  #print("First basis element is $(B[1]) \n with representation mat \n")
-  #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
-  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
-  m = to_fmpz_mat(FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv)
-  for i in 2:degree(O)
-    m = hcat(to_fmpz_mat(FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv),m)
+  
+  O = order(a) 
+  n = degree(O)
+  if isdefined(a, :gens) && length(a.gens) < n
+    B = a.gens
+  else
+    B = basis(a)
   end
-  n = hnf(transpose(m))
+  bmatinv = basis_mat_inv(a, Val{false})
+  m = zero_matrix(FlintZZ, n*length(B), n)
+  for i=1:length(B)
+    M = representation_mat(B[i])
+    mul!(M, M, bmatinv.num)
+    if bmatinv.den == 1
+      for j=1:n
+        for k=1:n
+          m[j+(i-1)*n,k] = M[k,j]
+        end
+      end
+    else
+      for j=1:n
+        for k=1:n
+          m[j+(i-1)*n,k] = divexact(M[k,j], bmatinv.den)
+        end
+      end
+    end
+  end
+  n = hnf_modular_eldiv!(m, minimum(a))
+  s = prod(n[i,i] for i=1:degree(O))
+  if s==1
+    return deepcopy(O)
+  end
   # n is upper right HNF
   n = transpose(sub(n, 1:degree(O), 1:degree(O)))
-  b, d = pseudo_inv(n)
-  #z = frac_ideal(O, FakeFmpqMat(b, d))
-  return Order(nf(O), FakeFmpqMat(b, d)*basis_mat(O))
+  b = FakeFmpqMat(pseudo_inv(n))
+  mul!(b, b, basis_mat(O, Val{false}))
+  O1 = Order(nf(O), b, false)
+  if isdefined(O, :disc)
+    O1.disc = divexact(O.disc, s^2)
+  end
+  return O1
 end
 
 doc"""
@@ -1332,12 +1400,36 @@ doc"""
 > where $K$ is the number field.
 """
 function colon(a::NfOrdIdl, b::NfOrdIdl)
-  B = basis(b)
+  
   O = order(a)
-  bmatinv = basis_mat_inv(a)
-  #print("First basis element is $(B[1]) \n with representation mat \n")
-  #@vprint :NfOrd 1 "$(representation_mat(B[1]))\n"
-  #@vprint :NfOrd 1 FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
+  n = degree(O)
+  if isdefined(b, :gens)
+    B = b.gens
+  else
+    B = basis(b)
+  end
+  bmatinv = basis_mat_inv(a, Val{false})
+  m = zero_matrix(FlintZZ, n*length(B), n)
+  for i=1:length(B)
+    M=representation_mat(B[i])
+    mul!(M, M, bmatinv.num)
+    if bmatinv.den==1
+      for j=1:n
+        for k=1:n
+          m[j+(i-1)*n,k]=M[k,j]
+        end
+      end
+    else
+      for j=1:n
+        for k=1:n
+          m[j+(i-1)*n,k]=divexact(M[k,j], bmatinv.den)
+        end
+      end
+    end
+  end
+  
+  #=
+  
   n = FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
   m = numerator(n)
   d = denominator(n)
@@ -1345,18 +1437,19 @@ function colon(a::NfOrdIdl, b::NfOrdIdl)
     n = FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv
     l = lcm(denominator(n), d)
     if l==d
-      m = hcat(m, numerator(n))
+      m = hcat(m, n.num)
     else
-      m = hcat(m*div(l, d), numerator(n)*div(l, denominator(n)))
+      m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
       d = l
     end
   end
   m = hnf(transpose(m))
+  =#
+  m = hnf(m)
   # n is upper right HNF
   m = transpose(sub(m, 1:degree(O), 1:degree(O)))
   b, l = pseudo_inv(m)
-  n = FakeFmpqMat(b*d, l)
-  return ideal(O, numerator(n))//denominator(n)
+  return ideal(O, b)//l
 end
 
 function elem_from_mat_row(O::NfOrd, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
@@ -1421,13 +1514,13 @@ equation_order(K::AnticNumberField) = EquationOrder(K)
 
 ################################################################################
 #
-#  Conversion to differnt order
+#  Conversion to different order
 #
 ################################################################################
 
 doc"""
     ideal(O::NfOrd, I::NfOrdIdl) -> NfOrdFracIdl
-> The fractional ideal of $O$ generatoed by a Z-basis of $I$.
+> The fractional ideal of $O$ generated by a Z-basis of $I$.
 """
 function ideal(O::NfOrd, I::NfOrdIdl)
   k = nf(O)
