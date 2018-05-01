@@ -654,16 +654,13 @@ doc"""
 > This function tries to find an order that is locally larger than $\mathcal O$
 > at the prime $p$.
 """
-#function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
-function poverorder(O::NfRelOrd, p::NfOrdIdl)
+function poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   if isequation_order(O) && issimple(O)
     return dedekind_poverorder(O, p)
   else
     return ring_of_multipliers(pradical(O, p))
   end
 end
-
-poverorder(O::NfRelOrd, p::NfRelOrdIdl) = ring_of_multipliers(pradical(O, p))
 
 ################################################################################
 #

@@ -403,6 +403,7 @@ function pseudo_hnf_full_rank_with_modulus(P::PMat, m::NfOrdIdl, shape::Symbol =
   PP = deepcopy(P)
   K = parent(PP.matrix[1, 1])
   integralizer = _make_integral!(PP)
+  m = integralizer*m
   PPhnf = pseudo_hnf_mod(PP, m, shape)
   for i in 1:rows(PP)
     PPhnf.coeffs[i] = PPhnf.coeffs[i]*inv(K(integralizer))

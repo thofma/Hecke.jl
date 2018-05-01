@@ -422,16 +422,14 @@ end
 doc"""
 ***
     +(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
-    +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $a + b$.
 """
-function +(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
+function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmat(a), basis_pmat(b))
-  #m = norm(a) + norm(b)
-  #H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
-  H = sub(pseudo_hnf(H, :lowerleft, true), (d + 1):2*d, 1:d)
+  m = norm(a) + norm(b)
+  H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
   return typeof(a)(order(a), H)
 end
 
@@ -443,11 +441,10 @@ end
 
 doc"""
     *(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
-    *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $a \cdot b$.
 """
-function *(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
+function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   pba = pseudo_basis(a, Val{false})
   pbb = pseudo_basis(b, Val{false})
   ma = basis_mat(a, Val{false})
@@ -456,7 +453,7 @@ function *(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrd
   K = base_ring(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{S, 1}(d^2)
+  C = Array{typeof(a).parameters[2], 1}(d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -465,12 +462,10 @@ function *(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrd
       C[(i - 1)*d + j] = simplify(pba[i][2]*pbb[j][2])
     end
   end
-  #m = norm(a)*norm(b)
-  #H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-  H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true), (d*(d - 1) + 1):d^2, 1:d)
+  m = norm(a)*norm(b)
+  H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
-  #H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
-  H = pseudo_hnf(H, :lowerleft, true)
+  H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
   return typeof(a)(order(a), H)
 end
 
@@ -495,6 +490,17 @@ end
 
 *(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
 
+function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, b::fmpz)
+  PM = basis_pmat(a)
+  for i = 1:degree(order(a))
+    PM.coeffs[i].num = numerator(PM.coeffs[i])*b
+    PM.coeffs[i] = simplify(PM.coeffs[i])
+  end
+  return typeof(a)(order(a), PM)
+end
+
+*(b::fmpz, a::Union{NfRelOrdIdl, NfRelOrdFracIdl}) = a*b
+
 ################################################################################
 #
 #  Intersection / LCM
@@ -503,11 +509,10 @@ end
 
 doc"""
     intersection(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
-    intersection(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $a \cap b$.
 """
-function intersection(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
+function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   Ma = basis_pmat(a)
   Mb = basis_pmat(b)
@@ -515,9 +520,8 @@ function intersection(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Uni
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  #m = intersection(norm(a), norm(b))
-  #H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
-  H = sub(pseudo_hnf(M, :lowerleft, true), 1:d, 1:d)
+  m = intersection(norm(a), norm(b))
+  H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
   return typeof(a)(order(a), H)
 end
 
@@ -572,16 +576,15 @@ end
 doc"""
 ***
       divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
-      divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $ab^{-1}$.
 """
-function divexact(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
+function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
   return NfRelOrdFracIdl{T, S}(O, basis_pmat(a))*inv(b)
 end
 
-//(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}, b::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S} = divexact(a, b)
+//(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
 
 ################################################################################
 #
