@@ -728,8 +728,8 @@ function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
     H = sub(hnf(B), (rows(B) - degree(K) + 1):rows(B), 1:degree(K))
 
     # TODO: Just take the product of the diagonal
-    #d = prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
-    d = det(H)
+    d = prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
+    #d = det(H)
 
     if iszero(d)
       error("Elements do not define a module of full rank")
@@ -835,6 +835,9 @@ function +(a::NfOrd, b::NfOrd)
     O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), false)
     O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
     O.disc=gcd(discriminant(a), discriminant(b))
+    if a.disc<0
+      O.disc=-O.disc
+    end
     return O
   else
     return _order(nf(a), vcat(a.basis_nf, b.basis_nf))
@@ -1101,7 +1104,8 @@ function maximal_order(K::AnticNumberField)
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
-    O = MaximalOrder(K)::NfOrd
+    #O = MaximalOrder(K)::NfOrd
+    O = new_maximal_order(K)
     _set_maximal_order_of_nf(K, O)
     return O
   end
@@ -1246,6 +1250,10 @@ end
 
 function new_maximal_order(K::AnticNumberField)
   O=EquationOrder(K)
+  if degree(K)==1
+    O.ismaximal=1
+    return O  
+  end
   ds=discriminant(O)
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
@@ -1267,6 +1275,7 @@ function new_maximal_order(K::AnticNumberField)
     end
   end
   if isempty(l1)
+    OO.ismaximal=1
     return OO
   end
   for i=1:length(l1)
@@ -1291,7 +1300,7 @@ function new_maximal_order(K::AnticNumberField)
       O1+=MaximalOrder(O1, collect(keys(d)))
     end
   end
-  _set_maximal_order_of_nf(K,O1)
+  O1.ismaximal=1
   return O1
   
 end
