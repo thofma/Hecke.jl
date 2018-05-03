@@ -4,4 +4,8 @@
   include("NfOrd/Ideal.jl")
   include("NfOrd/FracIdl.jl")
   include("NfOrd/ResidueRing.jl")
+  include("NfOrd/Clgp.jl")
+  include("NfOrd/RayClassGroup.jl")
+  include("NfOrd/ResidueRingMultGrp.jl")
+  include("NfOrd/LinearAlgebra.jl")
 end
