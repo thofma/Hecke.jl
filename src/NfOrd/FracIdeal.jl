@@ -321,24 +321,8 @@ end
 function simplify_exact!(A::NfOrdFracIdl)
   g = A.den
 
-  A.den = divexact(A.den, g)
-
-  @assert A.den == 1
-
-  if has_2_elem(A.num)
-    A.num.gen_one = divexact(A.num.gen_one, g)
-    A.num.gen_two = divexact(A.num.gen_two, g)
-  end
-
-  if has_minimum(A.num)
-    A.num.minimum = divexact(A.num.minimum, g)
-  end
-  if has_norm(A.num)
-    A.num.norm = divexact(A.num.norm, g^degree(A.num.parent.order))
-  end
-  if has_basis_mat(A.num)
-    A.num.basis_mat = divexact(A.num.basis_mat, g)
-  end
+  A.den = fmpz(1)
+  A.num = divexact(A.num, g)
 end
 
 function simplify(A::NfOrdFracIdl)
@@ -348,55 +332,17 @@ function simplify(A::NfOrdFracIdl)
     ZK = order(A)
     g = Base.reduce(gcd, elem_in_basis(ZK(A.num.gen_two)))
     g = gcd(g, A.den)
+    g = gcd(g, A.num.gen_one)
   else  
     b = basis_mat(A.num, Val{false})
-    g = denominator(A)
-    for i in 1:rows(b)
-      for j in 1:cols(b)
-        g = gcd(g, b[i, j])
-      end
-    end
+    g = gcd(denominator(A), content(b))
   end  
 
   if g != 1
-    if has_2_elem(A.num)
-      A.num.gen_one = divexact(A.num.gen_one, g)
-      A.num.gen_two = divexact(A.num.gen_two, g)
-    end
+    A.num = divexact(A.num, g)
     A.den = divexact(A.den, g)
-    if has_minimum(A.num)
-      A.num.minimum = divexact(A.num.minimum, g)
-    end
-    if has_norm(A.num)
-      A.num.norm = divexact(A.num.norm, g^degree(A.num.parent.order))
-    end
-    if has_basis_mat(A.num)
-      A.num.basis_mat = divexact(A.num.basis_mat, g)
-    end
   end
 
-#  m = minimum(A.num)
-#  println("minimum is $m")
-#  g = gcd(m, A.den)
-#  println("gcd is $g")
-#  println("now do something with $(A.num)")
-#  if g != 1
-#    if has_2_elem(A.num)
-#      A.num.gen_one = divexact(A.num.gen_one, g)
-#      A.num.gen_two = divexact(A.num.gen_two, g)
-#    end
-#    A.den = divexact(A.den, g)
-#    if has_minimum(A.num)
-#      A.num.minimum = divexact(A.num.minimum, g)
-#    end
-#    if has_norm(A.num)
-#      A.num.norm = divexact(A.num.norm, g^degree(A.num.parent.order))
-#    end
-#    if has_basis_mat(A.num)
-#      A.num.basis_mat = divexact(A.num.basis_mat, g)
-#    end
-#    simplify(A.num)
-#  end
   return A
 end
 
