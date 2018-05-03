@@ -191,7 +191,7 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   U = divexact(fmodp, U)
   alpha = nf(O)(parent(f)(lift(Zy,U)))
 
-  n=_hnf_modular_eldiv(vcat(representation_mat(alpha), MatrixSpace(FlintZZ, degree(O), degree(O), false)(p)), p, :lowerleft)
+  n=_hnf_modular_eldiv(representation_mat(alpha), p, :lowerleft)
   b = FakeFmpqMat(sub(n, degree(O)+1:2*degree(O), 1:degree(O)),p)
 
   OO = Order(nf(O), b)

@@ -826,7 +826,7 @@ function pradical(O::AlgAssOrd, p::Int)
   for i=1:O.dim
     m[i+rows(I), i]= p
   end
-  hnf_modular_eldiv!(m)
+  hnf_modular_eldiv!(m,fmpz(p))
   I=sub(m, 1:O.dim, 1:O.dim)
   res=AlgAssOrdIdl(O,I)
   res.gens=gens
