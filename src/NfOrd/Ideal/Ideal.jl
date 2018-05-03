@@ -1388,6 +1388,7 @@ function ring_of_multipliers(a::NfOrdIdl)
   n = transpose(sub(n, 1:degree(O), 1:degree(O)))
   b = FakeFmpqMat(pseudo_inv(n))
   mul!(b, b, basis_mat(O, Val{false}))
+  @hassert :NfOrd 1 defines_order(nf(O), b)[1]
   O1 = Order(nf(O), b, false)
   if isdefined(O, :disc)
     O1.disc = divexact(O.disc, s^2)
@@ -1400,7 +1401,7 @@ doc"""
 > The ideal $(a:b) = \{x \in K | xb \subseteq a\} = \hom(b, a)$
 > where $K$ is the number field.
 """
-function colon(a::NfOrdIdl, b::NfOrdIdl)
+function colon(a::NfOrdIdl, b::NfOrdIdl, contains::Bool = false)
   
   O = order(a)
   n = degree(O)
@@ -1409,48 +1410,52 @@ function colon(a::NfOrdIdl, b::NfOrdIdl)
   else
     B = basis(b)
   end
+
   bmatinv = basis_mat_inv(a, Val{false})
-  m = zero_matrix(FlintZZ, n*length(B), n)
-  for i=1:length(B)
-    M=representation_mat(B[i])
-    mul!(M, M, bmatinv.num)
-    if bmatinv.den==1
-      for j=1:n
-        for k=1:n
-          m[j+(i-1)*n,k]=M[k,j]
+
+  if contains
+    m = zero_matrix(FlintZZ, n*length(B), n)
+    for i=1:length(B)
+      M=representation_mat(B[i])
+      mul!(M, M, bmatinv.num)
+      if bmatinv.den==1
+        for j=1:n
+          for k=1:n
+            m[j+(i-1)*n,k]=M[k,j]
+          end
         end
-      end
-    else
-      for j=1:n
-        for k=1:n
-          m[j+(i-1)*n,k]=divexact(M[k,j], bmatinv.den)
+      else
+        for j=1:n
+          for k=1:n
+            m[j+(i-1)*n,k]=divexact(M[k,j], bmatinv.den)
+          end
         end
       end
     end
-  end
-  
-  #=
-  
-  n = FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
-  m = numerator(n)
-  d = denominator(n)
-  for i in 2:degree(O)
-    n = FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv
-    l = lcm(denominator(n), d)
-    if l==d
-      m = hcat(m, n.num)
-    else
-      m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
-      d = l
+    m = hnf_modular_eldiv!(m, minimum(b))
+    m = transpose(sub(m, 1:degree(O), 1:degree(O)))
+    b, l = pseudo_inv(m)
+    return NfOrdIdl(O, b)//l
+  else 
+    n = FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
+    m = numerator(n)
+    d = denominator(n)
+    for i in 2:length(B)
+      n = FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv
+      l = lcm(denominator(n), d)
+      if l==d
+        m = hcat(m, n.num)
+      else
+        m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
+        d = l
+      end
     end
+    m = hnf(transpose(m))
+    # n is upper right HNF
+    m = transpose(sub(m, 1:degree(O), 1:degree(O)))
+    b, l = pseudo_inv(m)
+    return ideal(O, b)//l
   end
-  m = hnf(transpose(m))
-  =#
-  m = hnf(m)
-  # n is upper right HNF
-  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b, l = pseudo_inv(m)
-  return ideal(O, b)//l
 end
 
 function elem_from_mat_row(O::NfOrd, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))

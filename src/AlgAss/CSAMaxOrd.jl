@@ -718,6 +718,7 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
       end
     end
   end
+  #In the case of the p-radical, it is important to do this modulo p
   n = hnf(m)
   s = prod(n[i,i] for i=1:cols(n))
   if s==1
@@ -778,7 +779,7 @@ function pradical(O::AlgAssOrd, p::Int)
     for i=cols(B)+1:cols(B)+O.dim
       M[i,i-cols(B)]=p
     end
-    M1=hnf(M)
+    M1=hnf_modular_eldiv!(M, fmpz(p))
     res=AlgAssOrdIdl(O,sub(M1,1:O.dim,1:O.dim))
     B=lift(B')
     res.gens=Array{AlgAssOrdElem, 1}(k+1)
@@ -825,7 +826,8 @@ function pradical(O::AlgAssOrd, p::Int)
   for i=1:O.dim
     m[i+rows(I), i]= p
   end
-  I=sub(hnf(m), 1:O.dim, 1:O.dim)
+  hnf_modular_eldiv!(m)
+  I=sub(m, 1:O.dim, 1:O.dim)
   res=AlgAssOrdIdl(O,I)
   res.gens=gens
   @hassert :CSAMaxOrd 1 check_pradical(res,p)

@@ -35,7 +35,7 @@
 function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true}) where S
   !isequation_order(O) && error("Order must be an equation order")
 
-  if rem(discriminant(O), p) != 0
+  if rem(discriminant(O), p^2) != 0
     if compute_order == Val{true}
       return true, O
     else
@@ -87,21 +87,20 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
       return true, O
     end
 
-    @assert rem(fmodp, U) == zero(Kx)
+    @hassert :NfOrd 1 rem(fmodp, U) == zero(Kx)
     U = divexact(fmodp, U)
 
-    @assert rem(O.disc, p^2) == 0
+    @hassert :NfOrd 1 rem(O.disc, p^2) == 0
 
     alpha = nf(O)(parent(f)(lift(Zy,U)))
 
     # build the new basis matrix
     # we have to take the representation matrix of alpha!
     # concatenating the coefficient vector won't help
-    n = vcat((basis_mat(O, Val{false}).num)*p,representation_mat(alpha))
-    n = _hnf_modular_eldiv(n, p, :lowerleft)
+    n = _hnf_modular_eldiv(representation_mat(alpha), p, :lowerleft)
     b = FakeFmpqMat(n,p)
-
-    OO = Order(nf(O), sub(b,degree(O) + 1:2*degree(O), 1:degree(O)))
+    @hassert :NfOrd 1 defines_order(nf(O), b)[1]
+    OO = Order(nf(O), b, false)
 
     OO.isequation_order = false
 
@@ -192,10 +191,10 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   U = divexact(fmodp, U)
   alpha = nf(O)(parent(f)(lift(Zy,U)))
 
-  n = vcat((basis_mat(O, Val{false}).num)*p,representation_mat(alpha))
-  b = FakeFmpqMat(n,p)
+  n=_hnf_modular_eldiv(vcat(representation_mat(alpha), MatrixSpace(FlintZZ, degree(O), degree(O), false)(p)), p, :lowerleft)
+  b = FakeFmpqMat(sub(n, degree(O)+1:2*degree(O), 1:degree(O)),p)
 
-  OO = Order(nf(O), sub(_hnf_modular_eldiv(b, fmpz(q)),degree(O) + 1:2*degree(O), 1:degree(O)))
+  OO = Order(nf(O), b)
   OO.isequation_order = false
 
   OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
