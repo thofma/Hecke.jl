@@ -390,7 +390,8 @@
       O = maximal_order(K)
 
       @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if isprime(fmpz(x))], v in [1,2,4,17]]
-        p = ideal(O,O(pnum))
+        #p = ideal(O,O(pnum))
+        p = prime_decomposition(O, pnum)[1][1]
         #p = collect(keys(factor(p)))[1]
         g, d, disc_log = Hecke._multgrp_mod_pv(p,v)
         @test length(g) == length(d)

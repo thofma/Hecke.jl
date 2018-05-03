@@ -420,111 +420,6 @@ function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
   return a
 end
 
-# If already_integral is true it is assumed that the coefficient
-# ideals of the pseudo basis of O are integral.
-#function AlgAsss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl, already_integral::Bool = false)
-#  @assert order(I) == O
-#
-#  n = degree(O)
-#  K = nf(O)
-#  KK = base_ring(K)
-#  Fp, mF = ResidueField(order(p), p)
-#  mmF = extend(mF, KK)
-#  invmmF = inv(mmF)
-#
-#  if already_integral
-#    Oint = O
-#    Iint = I
-#    pbint = pseudo_basis(Oint, Val{false})
-#  else
-#    # Compute a pseudo basis of O with integral coefficient ideals
-#    pb = pseudo_basis(O, Val{false})
-#    bmat_Oint = zero_matrix(KK, n, n)
-#    bpmat_Iint = basis_pmat(I)
-#    pbint = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
-#    for i = 1:n
-#      t = divexact(pb[i][1], denominator(pb[i][2]))
-#      tt = frac_ideal(order(p), deepcopy(numerator(pb[i][2])), fmpz(1))
-#      push!(pbint, (t, tt))
-#      elem_to_mat_row!(bmat_Oint, i, t)
-#      denK = KK(denominator(pb[i][2]))
-#      for j = i:n
-#        bpmat_Iint.matrix[j, i] *= denK
-#      end
-#    end
-#    Oint = NfRelOrd{nf_elem, NfOrdFracIdl}(K, PseudoMatrix(bmat_Oint, [ pbint[i][2] for i = 1:n ]))
-#    Iint = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(Oint, pseudo_hnf(bpmat_Iint, :lowerleft, true))
-#  end
-#
-#  # Reduce the pseudo basis of O modulo I
-#  pbintModI = Vector{Tuple{elem_type(K), NfOrdFracIdl}}()
-#  for i = 1:n
-#    b = Oint(pbint[i][1])
-#    push!(pbintModI, (K(mod(b, Iint)), pbint[i][2]))
-#  end
-#
-#  basisModP = _modular_basis(pbintModI, p)
-#
-#  B = zero_matrix(Fp, n, n)
-#  for i = 1:n
-#    b = elem_in_basis(Oint(basisModP[i]))
-#    for j = 1:n
-#      B[i, j] = mmF(b[j])
-#    end
-#  end
-#  r = rref!(B)
-#  r == 0 && error("Cannot construct zero dimensional algebra.")
-#  b = Vector{nf_elem}(n)
-#  basis = Vector{elem_type(Oint)}(r)
-#  for i = 1:r
-#    for j = 1:n
-#      b[j] = invmmF(B[i, j])
-#    end
-#    basis[i] = Oint(b)
-#  end
-#
-#  _, p, L, U = lufact(transpose(B))
-#  mult_table = Array{elem_type(Fp), 3}(r, r, r)
-#  d = zero_matrix(Fp, n, 1)
-#  for i = 1:r
-#    for j = i:r
-#      c = elem_in_basis(mod(basis[i]*basis[j], Iint))
-#      for k = 1:n
-#        d[p[k], 1] = mmF(c[k])
-#      end
-#      d = solve_lt(L, d)
-#      d = solve_ut(U, d)
-#      for k = 1:r
-#        mult_table[i, j, k] = deepcopy(d[k, 1])
-#        mult_table[j, i, k] = deepcopy(d[k, 1])
-#      end
-#    end
-#  end
-#
-#  if isone(basis[1])
-#    one = zeros(Fp, r)
-#    one[1] = Fp(1)
-#    A = AlgAss(Fp, mult_table, one)
-#  else
-#    A = AlgAss(Fp, mult_table)
-#  end
-#  A.iscommutative = 1
-#  if already_integral
-#    f = (v -> sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r ]))
-#  else
-#    function f(v::AlgAssElem)
-#      s = sum([ Oint(K(invmmF(v.coeffs[i])))*basis[i] for i = 1:r])
-#      scoeffs = elem_in_basis(s)
-#      t = O()
-#      for i = 1:degree(O)
-#        t += O(K(scoeffs[i])*basis_nf(O, Val{false})[i])
-#      end
-#      return t
-#    end
-#  end
-#  return A, f
-#end
-
 ################################################################################
 #
 #  String I/O
@@ -633,8 +528,31 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   else
     eA = AlgAss(R, mult_table)
   end
+
+  # TODO: The following is wrong. The algebra eA may be commutative
+  # even if A is not commutative.
   eA.iscommutative = A.iscommutative
-  eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
+
+  if idempotent
+    # We have the map eA -> A, given by the multiplying with basis_mat_of_eA.
+    # But there is also the canonical projection A -> eA, a -> ea.
+    # We compute the corresponding matrix.
+    B = representation_mat(e)
+    C = zero_matrix(R, n, r)
+    for i in 1:n
+      for k = 1:n
+        d[p[k], 1] = B[i, k]
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      for k in 1:r
+        C[i, k] = d[k, 1]
+      end
+    end
+    eAtoA = AlgAssMor(eA, A, basis_mat_of_eA, C)
+  else
+    eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
+  end
   return eA, eAtoA
 end
 
@@ -659,7 +577,6 @@ function subalgebra(A::AlgAss, basis::Array{AlgAssElem,1})
   A1=AlgAss(A.base_ring, M)
   return A1, AlgAssMor(A1, A, B')
 end
-
 
 ################################################################################
 #
@@ -693,7 +610,7 @@ end
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
     if compute_algebras == Val{true}
-      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)))) ]
+      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
     else
       return true
     end
@@ -709,7 +626,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 
   if k == 1
-    return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)))) ]
+    return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
   end
 
   while true
@@ -895,8 +812,6 @@ function wedderburn_decomposition(A::AlgAss{fq_nmod})
   
 end
 
-
-
 ################################################################################
 #
 #  Random elements
@@ -906,4 +821,60 @@ end
 function rand(A::AlgAss{T}) where T
   c = [ rand(base_ring(A)) for i = 1:dim(A) ]
   return AlgAssElem{T}(A, c)
+end
+
+################################################################################
+#
+#  Primitive elements
+#
+################################################################################
+
+function primitive_element(A::AlgAss)
+  a, _ = _primitive_element(A::AlgAss)
+  return a
+end
+
+function _primitive_element(A::AlgAss)
+  error("Not implemented yet")
+  return nothing
+end
+
+function _primitive_element(A::AlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}}
+  d = dim(A)
+  a = rand(A)
+  f = minpoly(a)
+  while degree(f) < d
+    a = rand(A)
+    f = minpoly(a)
+  end
+  return a, f
+end
+
+function _as_field(A::AlgAss{T}) where T
+  d = dim(A)
+  a, mina = _primitive_element(A)
+  b = one(A)
+  M = zero_matrix(base_ring(A), d, d)
+  elem_to_mat_row!(M, 1, b)
+  for i in 1:(d - 1)
+    b = mul!(b, b, a)
+    elem_to_mat_row!(M, i + 1, b)
+  end
+  if T == Generic.Res{fmpz}
+    A, c = inv(M)
+    B = divexact(A, c)
+  elseif T == nmod
+    B = inv(M)
+  end
+  N = zero_matrix(base_ring(A), 1, d)
+  local f
+  let N = N, B = B
+    f = function(x)
+      for i in 1:d
+        N[1, i] = x.coeffs[i]
+      end
+      return N * B
+    end
+  end
+  return a, mina, f
 end
