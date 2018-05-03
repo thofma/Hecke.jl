@@ -415,7 +415,11 @@ end
 
 function test_module(x, new::Bool = true)
    julia_exe = Base.julia_cmd()
-   test_file = joinpath(pkgdir, "test/$x.jl")
+   if x == "all"
+     test_file = joinpath(pkgdir, "test/runtests.jl")
+   else
+     test_file = joinpath(pkgdir, "test/$x.jl")
+   end
 
    if new
      cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
