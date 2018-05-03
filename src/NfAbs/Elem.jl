@@ -77,6 +77,10 @@ end
 #
 ################################################################################
 
+#representation_mat(a::nf_elem) = representation_matrix(a)
+#
+#representation_mat_q(a::nf_elem) = representation_matrix_q(a)
+
 function representation_mat_fmpq_mat(a::nf_elem)
   d = degree(parent(a))
   t = gen(parent(a))
@@ -206,3 +210,15 @@ function minpoly(a::NfOrdElem)
   return minpoly(number_field(parent(a))(a))
 end
 
+################################################################################
+#
+#  Reduction
+#
+################################################################################
+
+function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
+  ccall((:nf_elem_scalar_div_fmpz, :libantic), Void,
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        z, x, y, parent(x))
+  return z
+end

@@ -1,6 +1,6 @@
 ################################################################################
 #
-#  Map/AbGrp.jl : Types for maps with domains of type AbGrp
+#  Map/AbGrp.jl : Types for maps with domains of type GrpAbFinGen
 #
 # This file is part of Hecke.
 #
@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2015-2018 Tommy Hofmann
+#  Copyright (C) 2015 - 2018 Tommy Hofmann, Carlo Sircana
 #
 ################################################################################
 
@@ -86,7 +86,7 @@ end
 #
 ################################################################################
 
-mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing, HeckeMap, AbToResRingMultGrp}
+mutable struct GrpAbFinGenToNfOrdQuoRingMultMap <: Map{GrpAbFinGen, NfOrdQuoRing, HeckeMap, GrpAbFinGenToNfOrdQuoRingMultMap}
   header::MapHeader{GrpAbFinGen, NfOrdQuoRing}
   generators::Vector{NfOrdQuoRingElem}
   discrete_logarithm::Function
@@ -96,8 +96,8 @@ mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing, HeckeMap, Ab
 
   # Multiplicative group, wild part
   wild::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}
-  
-  function AbToResRingMultGrp(Q::NfOrdQuoRing, 
+
+  function GrpAbFinGenToNfOrdQuoRingMultMap(Q::NfOrdQuoRing,
                               generators::Vector{NfOrdQuoRingElem},
                               snf_structure::Vector{fmpz},
                               disc_log::Function)
@@ -129,8 +129,8 @@ mutable struct AbToResRingMultGrp <: Map{GrpAbFinGen, NfOrdQuoRing, HeckeMap, Ab
     z.discrete_logarithm = disc_log
     return z
   end
-  
-  function AbToResRingMultGrp(G::GrpAbFinGen, Q::NfOrdQuoRing, exp::Function, disc_log::Function)
+
+  function GrpAbFinGenToNfOrdQuoRingMultMap(G::GrpAbFinGen, Q::NfOrdQuoRing, exp::Function, disc_log::Function)
     z = new()
     z.header = MapHeader(G, Q, exp, disc_log)
     return z

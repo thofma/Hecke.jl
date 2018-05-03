@@ -822,6 +822,11 @@ type NfOrdIdl
   
   gens::Vector{NfOrdElem}  # A set of generators of the ideal 
 
+  ## For residue fields of non-index divisors
+  prim_elem::NfOrdElem
+  min_poly_prim_elem::fmpz_poly  # minimal polynomial modulo P
+  basis_in_prim::Vector{fmpz_mat} #
+
   function NfOrdIdl(O::NfOrd)
     # populate the bits types (Bool, Int) with default values
     r = new()

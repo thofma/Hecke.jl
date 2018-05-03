@@ -51,6 +51,12 @@ Nemo.elem_type(::Type{NfOrd}) = NfOrdElem
 
 Nemo.show_minus_one(::Type{NfOrdElem}) = true
 
+Nemo.base_ring(::NfOrd) = Union{}
+
+Nemo.needs_parentheses(::NfOrdElem) = true
+
+Nemo.isnegative(::NfOrdElem) = false
+
 ################################################################################
 #
 #  Basic field access
