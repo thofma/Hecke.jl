@@ -709,11 +709,29 @@ end
 #
 ################################################################################
 
+#TODO: do sth. useful here!!!
+function divides(A::NfOrdIdl, B::NfOrdIdl)
+  minimum(A) % minimum(B) == 0 || return false
+  return valuation(A, B) > 0
+end
+
 function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   #consider A^2 B and A B: if we do gcd with the minimum, we get twice AB
-  #so the copriem base is AB
+  #so the coprime base is AB
   #however using the p-part of the norm, the coprime basis becomes A, B...
-  Ap = [gcd(x, p^valuation(norm(x), p)) for x = A if minimum(x) % p == 0]
+  if iseven(p)
+    lp = prime_decomposition(order(A[1]), 2)
+    Ap = [x[1] for x = lp if any(y->divides(y, x[1]) > 0, A)]
+    a = remove(p, 2)[2]
+    if !isone(a)
+      Bp = coprime_base(A, a)
+      return vcat(Ap, Bp)  
+    else
+      return Ap
+    end
+  else
+    Ap = [gcd(x, p^valuation(norm(x), p)) for x = A if minimum(x) % p == 0]
+  end
   return coprime_base_steel(Ap)
 end
 

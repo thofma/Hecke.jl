@@ -43,7 +43,6 @@ export NfOrdIdl
 export deepcopy, parent, order, basis, basis_mat, basis_mat_inv, minimum, norm,
        ==, in, +, *, intersection, lcm, idempotents, mod, pradical
 
-
 add_assert_scope(:Rres)
 new = !true
 
@@ -686,7 +685,7 @@ function in(x::NfOrdElem, y::NfOrdIdl)
   parent(x) != order(y) && error("Order of element and ideal must be equal")
   v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, Val{false})
-  return t.den == 1
+  return isone(t.den) 
 end
 
 function in(x::nf_elem, y::NfOrdIdl)
@@ -767,7 +766,6 @@ function (A::Nemo.AnticNumberField)(a::Nemo.fmpz_poly)
 end
 
 function _minmod(a::fmpz, b::NfOrdElem)
-#  @show "MinMod"
   if isone(a) 
     return a
   end
@@ -801,7 +799,6 @@ function _minmod(a::fmpz, b::NfOrdElem)
 end
 
 function _invmod(a::fmpz, b::NfOrdElem)
-#  @show "InvMod"
   Zk = parent(b)
   k = number_field(Zk)
   if isone(a)
@@ -829,7 +826,6 @@ end
 
 
 function _normmod(a::fmpz, b::NfOrdElem)
-  #@show "NormMod"
   if isone(a)
     return a
   end
