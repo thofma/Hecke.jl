@@ -44,11 +44,11 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   n = degree(O)
   PM = basis_pmat(a, Val{false})
   pb = pseudo_basis(O, Val{false})
-  inv_coeff_ideals = Hecke.inv_coeff_ideals(O, Val{false})
+  inv_coeffs = inv_coeff_ideals(O, Val{false})
   d = fmpz(1)
   for i = 1:n
     for j = 1:i
-      d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeff_ideals[j])))
+      d = lcm(d, denominator(simplify(PM.matrix[i, j]*PM.coeffs[i]*inv_coeffs[j])))
     end
   end
   a.den = d
@@ -83,7 +83,6 @@ function numerator(a::NfRelOrdFracIdl)
     PM.coeffs[i] = PM.coeffs[i]*d
     PM.coeffs[i] = simplify(PM.coeffs[i])
   end
-  PM = pseudo_hnf(PM, :lowerleft)
   return NfRelOrdIdl{typeof(a).parameters...}(order(a), PM)
 end
 
@@ -231,6 +230,98 @@ end
 
 ################################################################################
 #
+#  Ideal addition / GCD
+#
+################################################################################
+
+doc"""
+***
+    +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
+
+> Returns $a + b$.
+"""
+function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  d = degree(order(a))
+  den = lcm(denominator(a), denominator(b))
+  H = vcat(basis_pmat(a), basis_pmat(b))
+  for i = 1:d
+    # We assume that the basis_pmats are lower triangular
+    for j = 1:i
+      H.matrix[i, j] *= den
+      H.matrix[i + d, j] *= den
+    end
+  end
+  m = simplify(den^d*(norm(a) + norm(b)))
+  @assert isone(denominator(m))
+  H = sub(pseudo_hnf_full_rank_with_modulus(H, numerator(m), :lowerleft), (d + 1):2*d, 1:d)
+  for i = 1:d
+    H.coeffs[i].den = H.coeffs[i].den*den
+    H.coeffs[i] = simplify(H.coeffs[i])
+  end
+  return typeof(a)(order(a), H)
+end
+
+################################################################################
+#
+#  Ideal multiplication
+#
+################################################################################
+
+doc"""
+    *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
+
+> Returns $a \cdot b$.
+"""
+function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  pba = pseudo_basis(a, Val{false})
+  pbb = pseudo_basis(b, Val{false})
+  ma = basis_mat(a, Val{false})
+  mb = basis_mat(b, Val{false})
+  den = denominator(a)*denominator(b)
+  L = nf(order(a))
+  K = base_ring(L)
+  d = degree(order(a))
+  M = zero_matrix(K, d^2, d)
+  C = Array{typeof(a).parameters[2], 1}(d^2)
+  t = L()
+  for i = 1:d
+    for j = 1:d
+      mul!(t, pba[i][1], pbb[j][1])
+      t = t*den
+      elem_to_mat_row!(M, (i - 1)*d + j, t)
+      C[(i - 1)*d + j] = pba[i][2]*pbb[j][2]
+    end
+  end
+  m = simplify(den^(2*d)*norm(a)*norm(b))
+  @assert isone(denominator(m))
+  H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), numerator(m), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+  H = pseudo_hnf_full_rank_with_modulus(H, numerator(m), :lowerleft)
+  for i = 1:d
+    H.coeffs[i].den = H.coeffs[i].den*den
+    H.coeffs[i] = simplify(H.coeffs[i])
+  end
+  return typeof(a)(order(a), H)
+end
+
+################################################################################
+#
+#  Division
+#
+################################################################################
+
+doc"""
+***
+      divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
+
+> Returns $ab^{-1}$.
+"""
+divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = a*inv(b)
+
+//(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
+
+################################################################################
+#
 #  Ad hoc multiplication
 #
 ################################################################################
@@ -241,18 +332,6 @@ function *(a::NfRelOrdFracIdl{T, S}, b::RelativeElement{T}) where {T, S}
 end
 
 *(b::RelativeElement{T}, a::NfRelOrdFracIdl{T, S}) where {T, S} = a*b
-
-function *(a::NfRelOrdFracIdl, b::fmpz)
-  PM = basis_pmat(a)
-  for i = 1:degree(order(a))
-    PM.coeffs[i].num = numerator(PM.coeffs[i])*b
-    PM.coeffs[i] = simplify(PM.coeffs[i])
-  end
-  PM = pseudo_hnf(PM, :lowerleft)
-  return typeof(a)(order(a), PM)
-end
-
-*(b::fmpz, a::NfRelOrdFracIdl) = a*b
 
 ################################################################################
 #
