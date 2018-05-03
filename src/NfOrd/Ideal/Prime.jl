@@ -331,7 +331,7 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
   for (B, BtoA) in AA
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
-    M = representation_mat(idem)
+    M = representation_matrix(idem)
     ker = left_kernel(M)
     N = basis_mat(Ip)
     for i = 1:length(ker)
@@ -457,7 +457,7 @@ function anti_uniformizer(P::NfOrdIdl)
     return P.anti_uniformizer
   else
     p = minimum(P)
-    M = representation_mat(uniformizer(P))
+    M = representation_matrix(uniformizer(P))
     Mp = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
     K = kernel(Mp)
     @assert length(K) > 0
@@ -1085,7 +1085,7 @@ function val_func_index(p::NfOrdIdl)
   # and still be fast (faster even than in field).
 
   pi = inv(p)
-  M = representation_mat(pi.num.gen_two)
+  M = representation_matrix(pi.num.gen_two)
   O = order(p)
   P = p.gen_one
   return function(x::nf_elem)

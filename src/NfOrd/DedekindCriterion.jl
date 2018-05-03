@@ -97,8 +97,10 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
     # build the new basis matrix
     # we have to take the representation matrix of alpha!
     # concatenating the coefficient vector won't help
-    n = _hnf_modular_eldiv(representation_mat(alpha), p, :lowerleft)
-    b = FakeFmpqMat(n,p)
+    Malpha, d = representation_matrix_q(alpha)
+    @assert isone(d)
+    n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
+    b = FakeFmpqMat(n, p)
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
     OO = Order(nf(O), b, false)
 
@@ -191,7 +193,8 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   U = divexact(fmodp, U)
   alpha = nf(O)(parent(f)(lift(Zy,U)))
 
-  n=_hnf_modular_eldiv(representation_mat(alpha), p, :lowerleft)
+  Malpha, d = representation_matrix_q(alpha)
+  n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
   b = FakeFmpqMat(sub(n, degree(O)+1:2*degree(O), 1:degree(O)),p)
 
   OO = Order(nf(O), b)

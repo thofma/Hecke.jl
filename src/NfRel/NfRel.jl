@@ -567,7 +567,7 @@ function elem_from_mat_row(L::NfRel{T}, M::Generic.Mat{T}, i::Int) where T
   return a
 end
 
-function representation_mat(a::NfRelElem)
+function representation_matrix(a::NfRelElem)
   L = a.parent
   n = degree(L)
   M = zero_matrix(base_ring(L), n, n)
@@ -585,7 +585,7 @@ function norm(a::NfRelElem{nf_elem}, new::Bool = !true)
   if new && ismonic(parent(a).pol) #should be much faster - eventually
     return resultant_mod(a.data, parent(a).pol)
   end
-  M = representation_mat(a)
+  M = representation_matrix(a)
   return det(M)
 end
 
@@ -594,12 +594,12 @@ function norm(a::NfRelElem, new::Bool = true)
   if new && ismonic(parent(a).pol)
     return resultant(a.data, parent(a).pol)
   end
-  M = representation_mat(a)
+  M = representation_matrix(a)
   return det(M)
 end
 
 function trace(a::NfRelElem)
-  M = representation_mat(a)
+  M = representation_matrix(a)
   return trace(M)
 end
 
@@ -645,13 +645,13 @@ end
 #      the trace does not need the matrix
 
 function charpoly(a::NfRelElem)
-  M = representation_mat(a)
+  M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
   return minpoly(R, M, true)
 end
 
 function minpoly(a::NfRelElem)
-  M = representation_mat(a)
+  M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
   return minpoly(R, M, false)
 end

@@ -406,7 +406,7 @@ function assure_has_basis_mat(A::NfOrdIdl)
   end
 
   if has_princ_gen(A)
-    m = representation_mat(A.princ_gen)
+    m = representation_matrix(A.princ_gen)
     A.basis_mat = _hnf_modular_eldiv(m, minimum(A), :lowerleft)
     return nothing
   end
@@ -414,7 +414,7 @@ function assure_has_basis_mat(A::NfOrdIdl)
   @hassert :NfOrd 1 has_2_elem(A)
   K = nf(order(A))
   n = degree(K)
-  c = _hnf_modular_eldiv(representation_mat(A.gen_two), abs(A.gen_one), :lowerleft)
+  c = _hnf_modular_eldiv(representation_matrix(A.gen_two), abs(A.gen_one), :lowerleft)
   A.basis_mat = c
   return nothing
 end
@@ -1359,7 +1359,7 @@ function ring_of_multipliers(a::NfOrdIdl)
   bmatinv = basis_mat_inv(a, Val{false})
   m = zero_matrix(FlintZZ, n*length(B), n)
   for i=1:length(B)
-    M = representation_mat(B[i])
+    M = representation_matrix(B[i])
     mul!(M, M, bmatinv.num)
     if bmatinv.den == 1
       for j=1:n
@@ -1412,7 +1412,7 @@ function colon(a::NfOrdIdl, b::NfOrdIdl, contains::Bool = false)
   if contains
     m = zero_matrix(FlintZZ, n*length(B), n)
     for i=1:length(B)
-      M=representation_mat(B[i])
+      M=representation_matrix(B[i])
       mul!(M, M, bmatinv.num)
       if bmatinv.den==1
         for j=1:n
@@ -1433,11 +1433,11 @@ function colon(a::NfOrdIdl, b::NfOrdIdl, contains::Bool = false)
     b, l = pseudo_inv(m)
     return NfOrdIdl(O, b)//l
   else 
-    n = FakeFmpqMat(representation_mat(B[1]),FlintZZ(1))*bmatinv
+    n = FakeFmpqMat(representation_matrix(B[1]),FlintZZ(1))*bmatinv
     m = numerator(n)
     d = denominator(n)
     for i in 2:length(B)
-      n = FakeFmpqMat(representation_mat(B[i]),FlintZZ(1))*bmatinv
+      n = FakeFmpqMat(representation_matrix(B[i]),FlintZZ(1))*bmatinv
       l = lcm(denominator(n), d)
       if l==d
         m = hcat(m, n.num)
@@ -1480,11 +1480,11 @@ function conductor(R::NfOrd, S::NfOrd)
   =#   
   bmS = basis_mat(S) * basis_mat_inv(R)
 
-  n = FakeFmpqMat(representation_mat(elem_from_mat_row(R, numerator(bmS), 1)), denominator(bmS))
+  n = FakeFmpqMat(representation_matrix(elem_from_mat_row(R, numerator(bmS), 1)), denominator(bmS))
   m = numerator(n)
   d = denominator(n)
   for i in 2:degree(R)
-    n = FakeFmpqMat(representation_mat(elem_from_mat_row(R, numerator(bmS), i)), denominator(bmS))
+    n = FakeFmpqMat(representation_matrix(elem_from_mat_row(R, numerator(bmS), i)), denominator(bmS))
     l = lcm(denominator(n), d)
     if l==d
       m = hcat(m, numerator(n))

@@ -36,8 +36,8 @@
 
 ## Representation matrices
 
-@{representation_mat(::NfOrderElem)}
-@{representation_mat(::NfOrderElem, ::AnticNumberField)}
+@{representation_matrix(::NfOrderElem)}
+@{representation_matrix(::NfOrderElem, ::AnticNumberField)}
 
 ## Trace and norm
 

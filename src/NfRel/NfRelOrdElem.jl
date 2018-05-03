@@ -433,9 +433,9 @@ norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 #
 ################################################################################
 
-function representation_mat(a::NfRelOrdElem)
+function representation_matrix(a::NfRelOrdElem)
   O = parent(a)
-  A = representation_mat(elem_in_nf(a))
+  A = representation_matrix(elem_in_nf(a))
   A = basis_mat(O, Val{false})*A*basis_mat_inv(O, Val{false})
   return A
 end

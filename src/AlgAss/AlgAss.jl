@@ -472,7 +472,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   R = base_ring(A)
   isgenres = (typeof(R) <: Generic.ResRing)
   n = dim(A)
-  B = representation_mat(e)
+  B = representation_matrix(e)
   if isgenres
     r, B = _rref(B)
   else
@@ -537,7 +537,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
     # We have the map eA -> A, given by the multiplying with basis_mat_of_eA.
     # But there is also the canonical projection A -> eA, a -> ea.
     # We compute the corresponding matrix.
-    B = representation_mat(e)
+    B = representation_matrix(e)
     C = zero_matrix(R, n, r)
     for i in 1:n
       for k = 1:n
@@ -766,7 +766,7 @@ function radical(A::AlgAss{fq_nmod})
       elm=elem_from_mat_row(A,C,t)
       for s=1:dim(A)
         a=elm*A[s]
-        M1=representation_mat(a^(p^i))
+        M1=representation_matrix(a^(p^i))
         el=sum(FlintZZ(coeff(M1[k,k],0)) for k=1:dim(A))
         M[s,t]=F(divexact(el,p^i))
       end

@@ -991,7 +991,7 @@ mutable struct NfOrdFracIdl
     z.parent = NfOrdFracIdlSet(O)
     z.num = ideal(O, O(denominator(a, O)*a))
     z.den = denominator(a, O)
-    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(denominator(a, O)*a)), denominator(a, O)))
+    z.basis_mat = hnf(FakeFmpqMat(representation_matrix(O(denominator(a, O)*a)), denominator(a, O)))
     return z
   end
 

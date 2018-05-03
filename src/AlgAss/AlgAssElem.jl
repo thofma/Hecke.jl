@@ -257,7 +257,7 @@ end
 ################################################################################
 
 function Generic.minpoly(a::AlgAssElem)
-  M = representation_mat(a)
+  M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
 end
@@ -283,7 +283,7 @@ function elem_from_mat_row(A::AlgAss{T}, M::MatElem{T}, i::Int) where T
   return a
 end
 
-function representation_mat(a::AlgAssElem, action::Symbol=:left)
+function representation_matrix(a::AlgAssElem, action::Symbol=:left)
   A = parent(a)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   if action==:left

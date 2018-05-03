@@ -491,7 +491,7 @@ function quo(O::AlgAssOrd, p::Int)
   x=fmpz[0 for i=1:O.dim]
   for i=1:O.dim
     x[i]=1
-    N=representation_mat(O(x))
+    N=representation_matrix(O(x))
     for j=1:O.dim
       for k=1:O.dim
         M[i,j,k]=F(N[j,k])
@@ -533,7 +533,7 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
   for i=1:length(pivots)
     x[pivots[i]]=1
     y=O(x)
-    N=representation_mat(y)
+    N=representation_matrix(y)
     for j=1:length(pivots)
       _mod(N, I.basis_mat, pivots)
       #reduce the vector with respect to the ideal.
@@ -679,7 +679,7 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
   if isdefined(I, :gens) && length(I.gens)<O.dim
     m=zero_matrix(FlintZZ, O.dim*length(I.gens), O.dim)
     for i=1:length(I.gens)
-      M=representation_mat(I.gens[i])
+      M=representation_matrix(I.gens[i])
       mul!(M, M, bmatinv)
       if deno==1
         for s=1:O.dim
@@ -700,7 +700,7 @@ function ring_of_multipliers(I::AlgAssOrdIdl)
     B= I.basis_alg
     m=zero_matrix(FlintZZ, O.dim^2, O.dim)
     for i=1:O.dim
-      M=representation_mat(B[i])
+      M=representation_matrix(B[i])
       mul!(M, M, bmatinv)
       if deno==1
         for s=1:O.dim
@@ -845,7 +845,7 @@ end
 ###############################################################################
 
 
-function representation_mat(x::AlgAssOrdElem)
+function representation_matrix(x::AlgAssOrdElem)
 
   A = parent(x)
   M = A.basis_mat
@@ -855,7 +855,7 @@ function representation_mat(x::AlgAssOrdElem)
     M1 = inv(A.basis_mat)
     A.basis_mat_inv=M1
   end
-  B = FakeFmpqMat(representation_mat(x.elem_in_algebra))
+  B = FakeFmpqMat(representation_matrix(x.elem_in_algebra))
   mul!(B, M, B)
   mul!(B, B, M1)
   @assert B.den==1
@@ -865,7 +865,7 @@ end
 
 
 function trace(x::AlgAssElem)
-  M=representation_mat(x)
+  M=representation_matrix(x)
   return trace(M)
 end
 
@@ -1031,7 +1031,7 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
   if length(Algs)!=1
     for (B, BtoZA) in Algs
       idem = mZA(BtoZA(one(B))) # Assumes that B == idem*A
-      M = representation_mat(idem)
+      M = representation_matrix(idem)
       ker = left_kernel(M)
       N = I.basis_mat
       m=zero_matrix(FlintZZ, length(ker), O.dim)
@@ -1080,7 +1080,7 @@ function pmaximal_overorder(O::AlgAssOrd, p::Int)
     if length(Algs)!=1
       for (B, BtoZA) in Algs
         idem = mZA(BtoZA(one(B))) # Assumes that B == idem*A
-        M = representation_mat(idem)
+        M = representation_matrix(idem)
         ker = left_kernel(M)
         N=zero_matrix(FlintZZ, O.dim+length(ker), O.dim)
         for i=1:O.dim
