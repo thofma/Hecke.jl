@@ -645,7 +645,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
     end
     ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
     for s in ls
-      C=ray_class_field(_compose(mr, inv(s)))
+      C=ray_class_field(mr, s)
       if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound,n)
         @vprint :QuadraticExt 1 "New Field \n"
         L=number_field(C)
@@ -720,7 +720,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     totally_positive_generators(mr,a)
     for s in ls
       @hassert :QuadraticExt 1 order(codomain(s))==n
-      C=ray_class_field(_compose(mr, inv(s)))
+      C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
         @vprint :QuadraticExt 1 "New Field \n"
         L = number_field(C)
@@ -1071,7 +1071,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
   gens=small_generating_set(gens)
   
   #Getting conductors
-  bo = ceil(Rational{BigInt}(absolute_bound//discriminant(O)^3))
+  bo = ceil(Rational{BigInt}(absolute_bound//abs(discriminant(O))^3))
   bound = FlintZZ(fmpq(bo))
   println(bound)
   l_conductors=conductors(O,3, bound)
@@ -1093,7 +1093,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
       if _trivial_action(s,act,3)
         continue
       end
-      C=ray_class_field(_compose(mr, inv(s)))
+      C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
         println("New Field")
         L=number_field(C)
@@ -1237,7 +1237,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
       if _trivial_action(s,act,5)
         continue
       end
-      C=ray_class_field(_compose(mr, inv(s)))
+      C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C,a)
 #        println("New Field")
         L=number_field(C)
@@ -1439,7 +1439,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
         if _trivial_action(s,act,n)
           continue
         end
-        C=ray_class_field(_compose(mr, inv(s)))
+        C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
           println("\n New Field!")
           L=number_field(C)
@@ -1532,13 +1532,13 @@ function C3xD5_extensions(non_normal_bound::fmpz)
         if !_right_actionD5C3(s,act)
           continue
         end
-        C=ray_class_field(_compose(mr, inv(s)))
+        C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
           @vprint :QuadraticExt "New Field \n"
           #Before computing the field, I check if the discriminant of the $D_5$ extension is compatible
           s1=codomain(s)
           q1,mq1=quo(s1,5, false)
-          C1=ray_class_field(_compose(_compose(mr, inv(s)), inv(mq1)))
+          C1=ray_class_field(mr, Hecke._compose(s, mq1))
           cond=conductor(C1)[1]
           condint=minimum(cond)
           if condint^4*D^2>bound5
@@ -1649,13 +1649,13 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
         if !_right_actionC5S3(s,act)
           continue
         end
-        C=ray_class_field(_compose(mr, inv(s)))
+        C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
           println("\n New Field!")
           #Before computing the field, I check if the discriminant of the $S_3$ extension is compatible
           s1=codomain(s)
           q1,mq1=quo(s1,3, false)
-          C1=ray_class_field(_compose(_compose(mr, inv(s)), inv(mq1)))
+          C1=ray_class_field(mr, _compose(s, mq1))
           cond=conductor(C1)[1]
           condint=minimum(cond)
           if condint^2*D>bound3
@@ -1775,7 +1775,7 @@ function C9semiC4(absolute_bound::fmpz, l)
         if _trivial_action(s,act,9)
           continue
         end
-        C=ray_class_field(_compose(mr, inv(s)))
+        C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) <= absolute_bound
           absolute_bound=evaluate(FacElem(C.absolute_discriminant))
           println("\n New Field with discriminant ", absolute_bound)

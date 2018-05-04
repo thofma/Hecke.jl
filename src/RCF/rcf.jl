@@ -247,20 +247,21 @@ function order(A::FacElemMon{NfOrdIdlSet})
   return order(A.base_ring)
 end
 
-function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
+#function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
+function build_map(CF, K::KummerExt, c::CyclotomicExt)
   #mR should be GrpAbFinGen -> IdlSet
   #          probably be either "the rcg"
   #          or a compositum, where the last component is "the rcg"
   # we need this to get the defining modulus - for coprime testing
 
   ZK = maximal_order(base_ring(K.gen[1]))
-  cp = lcm(minimum(_modulus(mR)), discriminant(ZK))
+  cp = lcm(minimum(__modulus(CF.rayclassgroupmap)), discriminant(ZK))
   cf = Hecke.MapFromFunc(x->can_frobenius(x, K), IdealSet(ZK), K.AutG)
 
   mp = c.mp[2]
   ZK = maximal_order(c.Ka)
   @assert order(domain(cf)) == ZK
-  Zk = order(codomain(mR))
+  Zk = order(codomain(CF.rayclassgroupmap))
   Id_Zk = Hecke.NfOrdIdlSet(Zk)
   k = nf(Zk)
   @assert k == domain(mp)
@@ -270,13 +271,13 @@ function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
 
   lp, sG = find_gens(cf, Sp, cp)
 
-  R = domain(mR) 
+  R = codomain(CF.quotientmap) 
   G = codomain(cf)
   sR = elem_type(R)[]
 
   for P = lp
     p = Id_Zk(intersect_nonindex(mp, P))
-    push!(sR, valuation(norm(P), norm(p))*preimage(mR, p))
+    push!(sR, valuation(norm(P), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p)))
   end
   @assert order(quo(G, sG, false)[1]) == 1
        # if think if the quo(G, ..) == 1, then the other is automatic
@@ -317,23 +318,24 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   return b
 end
 
-doc"""
-    ray_class_field(m::Map, p::Int=0) -> ClassField
-> Creates the (formal) abelian extension defined by the map $m: A \to I$
-> where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
-> is a quotient of the ray class group (or class group).
-> If $p$ is given and non-zero, only the quotient modulo $p$-th powers is
-> created.
-"""
-function ray_class_field(m::Map, p::Int=0)
-  CF = ClassField()
-  if p != 0
-    q, mq = quo(domain(m), p, false)
-    m = m*inv(mq)
-  end
-  m = Hecke.make_snf(m)
+#doc"""
+#    ray_class_field(m::Map, p::Int=0) -> ClassField
+#> Creates the (formal) abelian extension defined by the map $m: A \to I$
+#> where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
+#> is a quotient of the ray class group (or class group).
+#> If $p$ is given and non-zero, only the quotient modulo $p$-th powers is
+#> created.
+#"""
+function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
+  return ray_class_field(m, GrpAbFinGenMap(domain(m)))
+end
 
-  CF.mq = m
+function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap)
+  CF = ClassField()
+  CF.rayclassgroupmap = m
+  S, mS = snf(codomain(quomap))
+  CF.quotientmap = Hecke._compose(inv(mS), quomap)
+  #CF.mq = Hecke.make_snf(Hecke._compose(m, inv(quomap)))
   return CF
 end
 
@@ -346,10 +348,10 @@ function number_field(CF::ClassField)
   if isdefined(CF, :A)
     return CF.A
   end
-  m = CF.mq
   
   res = []
-  G = domain(m)
+  G = codomain(CF.quotientmap)
+  @assert issnf(G)
   q = [G[i] for i=1:ngens(G)]
   for i=1:ngens(G)
     o = order(G[i])
@@ -357,7 +359,7 @@ function number_field(CF::ClassField)
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
       S, mQ = quo(G, q, false)
-      push!(res, ray_class_field_cyclic_pp(_compose(m, inv(mQ))))
+      push!(res, ray_class_field_cyclic_pp(CF, mQ))
     end
     q[i] = G[i]
   end
@@ -366,29 +368,55 @@ function number_field(CF::ClassField)
   return CF.A
 end
 
-function ray_class_field_cyclic_pp(mq::Map)
-  @assert iscyclic(domain(mq))
-  @vprint :ClassField 1 "cyclic prime power class field of degree $(order(domain(mq)))\n"
-  CF = ClassField_pp()
-  CF.mq = mq
+function ray_class_field_cyclic_pp(CF::ClassField, mQ)
+  @vprint :ClassField 1 "cyclic prime power class field of degree $(order(codomain(mQ)))\n"
+  CFpp = ClassField_pp()
+  #CFpp.mq = _compose(CF.mq, inv(mQ))
+  CFpp.quotientmap = _compose(mQ, CF.quotientmap)
+  CFpp.rayclassgroupmap = CF.rayclassgroupmap
+  @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
-  _rcf_find_kummer(CF)
+  _rcf_find_kummer(CFpp)
   @vprint :ClassField 1 "reducing the generator...\n"
-  _rcf_reduce(CF)
+  _rcf_reduce(CFpp)
   @vprint :ClassField 1 "descending ...\n"
-  _rcf_descent(CF)
-  return CF
+  _rcf_descent(CFpp)
+  return CFpp
+end
+
+#function ray_class_field_cyclic_pp(mq::Map)
+#  @assert iscyclic(domain(mq))
+#  @vprint :ClassField 1 "cyclic prime power class field of degree $(order(domain(mq)))\n"
+#  CF = ClassField_pp()
+#  CF.mq = mq
+#  @vprint :ClassField 1 "finding the Kummer extension...\n"
+#  _rcf_find_kummer(CF)
+#  @vprint :ClassField 1 "reducing the generator...\n"
+#  _rcf_reduce(CF)
+#  @vprint :ClassField 1 "descending ...\n"
+#  _rcf_descent(CF)
+#  return CF
+#end
+
+function __modulus(mq::MapRayClassGrp)
+  return mq.modulus_fin
+end
+
+function __modulus(mq::MapClassGrp)
+  return ideal(order(codomain(mq)), 1)
 end
 
 function _rcf_find_kummer(CF::ClassField_pp)
-  mq = CF.mq
+  #mq = CF.mq
   if isdefined(CF, :K)
     return CF.K
   end
-  f = _modulus(mq)
+  #f = _modulus(mq)
+  f = __modulus(CF.rayclassgroupmap)
   @vprint :ClassField 2 "Kummer extension ... with conductor(?) $f\n"
   k = nf(order(f))
-  e = order(domain(mq))  
+  #e = order(domain(mq))  
+  e = order(codomain(CF.quotientmap))  
   @assert Hecke.isprime_power(e)
 
   @vprint :ClassField 2 "Adjoining the root of unity\n"
@@ -421,19 +449,19 @@ function _rcf_find_kummer(CF::ClassField_pp)
 
   lP = vcat(lP, Hecke.find_gens(inv(mc), PrimesSet(100, -1))[1])
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
-if false
-  println("enlarging to be Galois closed - just in case...", length(lP))
-  lP = Set(lP)
-  _lp = Set(minimum(x) for x = lP)
-  for p = _lp
-    fp = prime_decomposition(ZK, Int(p))
-    for I = fp
-      push!(lP, I[1])
-    end
-  end
-  lP = collect(lP)
-  println("finally:", length(lP))
-end
+#if false
+#  println("enlarging to be Galois closed - just in case...", length(lP))
+#  lP = Set(lP)
+#  _lp = Set(minimum(x) for x = lP)
+#  for p = _lp
+#    fp = prime_decomposition(ZK, Int(p))
+#    for I = fp
+#      push!(lP, I[1])
+#    end
+#  end
+#  lP = collect(lP)
+#  println("finally:", length(lP))
+#end
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
   @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
   @vprint :ClassField 2 "... done\n"
@@ -441,7 +469,7 @@ end
   CF.bigK = KK
 
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
-  @vtime :ClassField 2 h = build_map(CF.mq, KK, C)
+  @vtime :ClassField 2 h = build_map(CF, KK, C)
   @vprint :ClassField 2 "... done\n"
 
   k, mk = kernel(h) 
@@ -487,7 +515,7 @@ end
 end
 
 function _rcf_reduce(CF::ClassField_pp)
-  e = order(domain(CF.mq))
+  e = order(codomain(CF.quotientmap))
   if CF.sup_known
     CF.a = reduce_mod_powers(CF.a, CF.o, CF.sup)
     CF.sup_known = false
@@ -504,11 +532,11 @@ function _rcf_descent(CF::ClassField_pp)
 
   @vprint :ClassField 2 "Descending ...\n"
                
-  const mq = CF.mq
-  const e = Int(order(domain(mq)))
-  const k = nf(order(codomain(mq)))
-  const C = cyclotomic_extension(k, e)
-  const A = CF.K
+  #mq = CF.mq
+  e = Int(order(codomain(CF.quotientmap)))
+  k = nf(order(codomain(CF.rayclassgroupmap)))
+  C = cyclotomic_extension(k, e)
+  A = CF.K
 #= 
     now the automorphism group of A OVER k
     A = k(zeta, a^(1/n))
@@ -545,7 +573,8 @@ function _rcf_descent(CF::ClassField_pp)
     s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))], false)
     ss, mss = snf(s)
     g = ss
-    mg = mg*ms*mss
+    #mg = mg*ms*mss
+    mg = mss * ms * mg
   end
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
@@ -644,7 +673,7 @@ function _rcf_descent(CF::ClassField_pp)
     # idea: take primes p in k and compare
     #  Frob(p, A/k) and preimage(mq, p)
     @assert n == degree(CF.K)
-    Zk = order(_modulus(CF.mq))
+    Zk = order(__modulus(CF.rayclassgroupmap))
     function canFrob(p)
       lP = Hecke.prime_decomposition_nonindex(C.mp[2], p)
       P = lP[1][1]
@@ -678,8 +707,8 @@ function _rcf_descent(CF::ClassField_pp)
     @vprint :ClassField 2 "finding Artin map...\n"
 #TODO can only use non-indx primes, easy primes...
     @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
-                      PrimesSet(200, -1), minimum(_modulus(CF.mq)))
-    h = hom(f, [preimage(CF.mq, p) for p = lp])
+                      PrimesSet(200, -1), minimum(__modulus(CF.rayclassgroupmap)))
+    h = hom(f, [image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp])
     @hassert :ClassField 1 issurjective(h)
     h = _compose(h, mp)
     h = hom(AutA_snf, [h(AutA_snf[i]) for i=1:ngens(AutA_snf)])
@@ -716,7 +745,7 @@ function _rcf_descent(CF::ClassField_pp)
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
   q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
-  @assert order(q) == order(domain(CF.mq))
+  @assert order(q) == order(codomain(CF.quotientmap))
   AT, T = PolynomialRing(A, "T", cached = false)
   @vprint :ClassField 2 "char poly...\n"
   f = minpoly(t)
@@ -1165,7 +1194,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
 #      println("om: $om -> ", degree(c))
       Cs = cyclotomic_extension(k, Int(degree(c)))
       Emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)))
-      emb = C.mp[1] * Emb * inv(Cs.mp[1])
+      emb = inv(Cs.mp[1]) * Emb * C.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb))
@@ -1383,7 +1412,7 @@ doc"""
 > The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
-  return order(_modulus(A.mq))
+  return order(__modulus(A.rayclassgroupmap))
 end
 
 doc"""
@@ -1395,7 +1424,7 @@ function base_field(A::ClassField)
 end
 
 function base_ring(A::ClassField_pp)
-  return order(_modulus(A.mq))
+  return order(__modulus(A.rayclassgroupmap))
 end
 
 function base_field(A::ClassField_pp)
@@ -1407,10 +1436,10 @@ doc"""
 > The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
 function degree(A::ClassField)
-  return Int(order(domain(A.mq)))
+  return Int(order(codomain(A.quotientmap)))
 end
 
 function degree(A::ClassField_pp)
-  return Int(order(domain(A.mq)))
+  return Int(order(codomain(A.quotientmap)))
 end
 

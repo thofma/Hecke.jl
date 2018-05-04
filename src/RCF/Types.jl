@@ -48,6 +48,8 @@ end
 
 mutable struct ClassField_pp
   mq::Map
+  rayclassgroupmap::Map#MapRayClassGrp
+  quotientmap::Map#GrpAbFinGenMap
   a::FacElem
 
   sup::Array{NfOrdIdl, 1} # the support of a - if known
@@ -55,19 +57,22 @@ mutable struct ClassField_pp
 
   K::NfRel{nf_elem} # the target with the roots of unity
   A::NfRel{nf_elem} # the target
-  o # the degree of K - note, in general this is a divisor of the degree of A
+  o::Int # the degree of K - note, in general this is a divisor of the degree of A
   pe::NfRelElem{nf_elem}
   AutG::Array
   AutR::fmpz_mat
   bigK::KummerExt
+  degree::Int
 
   function ClassField_pp()
-    return new()
+    z = new()
+    z.degree = -1
+    return z
   end
 end
 
 function Base.show(io::IO, C::ClassField_pp)
-  println(io, "Cyclic class field of degree $(order(domain(C.mq))) defined modulo $(_modulus(C.mq))")
+  println(io, "Cyclic class field of degree $(order(codomain(C.quotientmap))) defined modulo $(__modulus(C.rayclassgroupmap))")
   if isdefined(C, :a)
     println(io, "Kummer generator ", C.a)
   end
@@ -82,19 +87,23 @@ end
 
 mutable struct ClassField
   mq::Map
+  rayclassgroupmap::Map
+  quotientmap::Map#GrpAbFinGenMap
 
-  conductor::Tuple{NfOrdIdl, Array{InfPlc,1}}
+  conductor::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}
   cyc::Array{ClassField_pp, 1}
   A::NfRel_ns{nf_elem}
+  degree::Int
+
   function ClassField()
-    return new()
+    z = new()
+    z.degree = -1
+    return z
   end
 end
 
 function Base.show(io::IO, CF::ClassField)
-  println("Class field defined mod $(_modulus(CF.mq)) of structure $(snf(domain(CF.mq)))")
+  println("Class field defined mod $(__modulus(CF.rayclassgroupmap)) of structure $(codomain(CF.quotientmap)))")
 end
-
-

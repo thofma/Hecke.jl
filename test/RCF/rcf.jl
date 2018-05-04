@@ -9,7 +9,7 @@
       I = ideal(Z, i)
       r, mr = ray_class_group(I, n_quo=p)
       for s in index_p_subgroups(r, fmpz(p), (A,x) -> quo(A, x)[2])
-        a = ray_class_field(Hecke._compose(mr, inv(s)))
+        a = ray_class_field(mr, s)
         if isconductor(a, I, check=false)
           K = number_field(a)
           cnt += 1

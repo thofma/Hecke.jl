@@ -6,18 +6,6 @@ export conductor, isconductor
 #
 ########################################################################################
 
-
-function _modulus_with_inf(mR::Map)
-  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
-    mR = mR.map2
-  end
-  if issubtype(typeof(mR), Hecke.MapClassGrp)
-    return ideal(order(codomain(mR)), 1),InfPlc[]
-  end
-  @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
-  return mR.modulus_fin, mR.modulus_inf
-end
-
 #
 #  Find small primes generating a subgroup of the ray class group
 #
@@ -134,12 +122,8 @@ function conductor(C::Hecke.ClassField)
   #  First, we need to find the subgroup
   #
   
-  mR=mp.map2
-  mS=mp.map1
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = mR.map1*mS
-    mR = mR.map2
-  end
+  mR = C.rayclassgroupmap
+  mS = C.quotientmap
 
   R=domain(mR)
   cond=mR.modulus_fin
@@ -268,19 +252,14 @@ doc"""
 ***
 """
 function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; check::Bool=true)
-
-  mp=C.mq
-  G=domain(mp)
   #
   #  First, we need to find the subgroup
   #
   
-  mR=mp.map2
-  mS=mp.map1
-  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
-    mS = _compose(mR.map1, mS)
-    mR = mR.map2
-  end
+  mR = C.rayclassgroupmap
+  mS = C.quotientmap
+  G = codomain(mS)
+  mp = inv(mS) * mR
   
   R=domain(mR)
   cond=mR.modulus_fin
@@ -357,7 +336,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   #Finite part of the modulus
   for (p,v) in L
     if v==1
-      Q,mQ=quo(G,[mp\ideal(O,tmg[p][1])])
+      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p][1]))])
       if order(Q)==E
         return false
       end  
@@ -365,7 +344,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
       gens=Array{GrpAbFinGenElem,1}(length(multg))
       for i=1:length(multg)
-        gens[i]= mp\ideal(O,multg[i])
+        gens[i]= preimage(mp, ideal(O,multg[i]))
       end
       Q,mQ=quo(G,gens, false)
       if order(Q)==E
@@ -389,7 +368,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
       while !ispositive(el, pl)
         el+=minimum(cond)*ex(S[i])
       end
-      Q,mQ=quo(G,mp\ideal(O,el), false)
+      Q,mQ=quo(G,preimage(mp, ideal(O,el)), false)
       if order(Q)==e
         return false
       end
@@ -403,18 +382,17 @@ end
 
 #
 #  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
-#  The input must be a multiple of the minimum of the conductor, we don't check for consistancy. 
+#  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
 #
 
 function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
 # a is a positive integer in the modulus
 
-  mp=C.mq
-  R=domain(mp)
-  mr=mp.map2
-  while issubtype(typeof(mr), AbstractAlgebra.Generic.CompositeMap)
-    mr = mr.map2
-  end
+  mr = C.rayclassgroupmap
+
+  mp = inv(C.quotientmap) * mr 
+  R = domain(mp)
+
   lp=mr.fact_mod
   if isempty(lp)
     return true
@@ -475,12 +453,9 @@ end
 
 function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
-  mp=C.mq
+  mr = C.rayclassgroupmap
+  mp = inv(C.quotientmap) * mr
   R=domain(mp)
-  mr=mp.map2
-  while issubtype(typeof(mr), AbstractAlgebra.Generic.CompositeMap)
-    mr = mr.map2
-  end
   m=mr.modulus_fin
   mm=Int(minimum(m))
   lp=factor(m.minimum)
@@ -554,12 +529,8 @@ function discriminant(C::ClassField)
   G=domain(mp)
   n=order(G)
   
-  mR=mp.map2
-  mS=mp.map1
-  while issubtype(typeof(mR), Hecke.CompositeMap)
-    mS = _compose(mR.map1, mS)
-    mR = mR.map2
-  end
+  mR = C.rayclassgroupmap
+  mS = C.quomap
   
   R=domain(mR)
   cond=mR.modulus_fin
@@ -576,14 +547,14 @@ function discriminant(C::ClassField)
     C.relative_discriminant=relative_disc
   end
   tmg=mR.tame_mult_grp
-  wldg=mr.wild_mult_grp
+  wldg=mR.wild_mult_grp
   prime_power=Dict{NfOrdIdl, NfOrdIdl}()
   for (p,v) in lp
     prime_power[p]=p^v
   end
   fact=factor(m)
 
-  for (p,v) in fac
+  for (p,v) in fact
     if v==1
       ap=n
       if isprime(n)
@@ -660,7 +631,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
   K=nf(O)
   
   discr=fmpz(1)
-  mp=C.mq
+  mp=inv(C.quotientmap) * C.rayclassgroupmap 
   R=domain(mp)
   
   cyc_prime= isprime(n)==true
@@ -776,7 +747,7 @@ end
 function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, n::Int)
   
   discr=fmpz(1)
-  mp=C.mq
+  mp = inv(C.quotientmap) * C.rayclassgroupmap
   G=domain(mp)
   
   cyc_prime= isprime(n)==true
@@ -1040,12 +1011,9 @@ end
 function _norm_group_gens_small(C::ClassField)
 
   mp=C.mq
-  mR=mp.map2
-  mS=mp.map1
-  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
-    mS = mR.map1*mS
-    mR = mR.map2
-  end
+
+  mR = C.rayclassgroupmap
+  mS = C.quotientmap
   
   R=domain(mR)
   cond=mR.modulus_fin
