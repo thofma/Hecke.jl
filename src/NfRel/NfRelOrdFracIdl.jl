@@ -32,12 +32,24 @@ parent(a::NfRelOrdFracIdl) = a.parent
 
 ################################################################################
 #
+#  iszero
+#
+################################################################################
+
+iszero(a::NfRelOrdFracIdl) = iszero(basis_mat(a, Val{false})[1, 1])
+
+################################################################################
+#
 #  Numerator and Denominator
 #
 ################################################################################
 
 function assure_has_denominator(a::NfRelOrdFracIdl)
   if isdefined(a, :den)
+    return nothing
+  end
+  if iszero(a)
+    a.den = fmpz(1)
     return nothing
   end
   O = order(a)
@@ -142,6 +154,9 @@ function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, Val{false})
   M = zero_matrix(base_ring(nf(O)), d, d)
+  if iszero(x)
+    return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+  end
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
   end
@@ -201,6 +216,12 @@ function assure_has_norm(a::NfRelOrdFracIdl)
   if a.has_norm
     return nothing
   end
+  if iszero(a)
+    O = order(basis_pmat(a, Val{false}).coeffs[1])
+    a.norm = nf(O)()*O
+    a.has_norm = true
+    return nothing
+  end
   c = basis_pmat(a, Val{false}).coeffs
   d = inv_coeff_ideals(order(a), Val{false})
   n = c[1]*d[1]
@@ -242,8 +263,12 @@ doc"""
 """
 function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   d = degree(order(a))
-  den = lcm(denominator(a), denominator(b))
   H = vcat(basis_pmat(a), basis_pmat(b))
+  if T != nf_elem
+    H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
+    return typeof(a)(order(a), H)
+  end
+  den = lcm(denominator(a), denominator(b))
   for i = 1:d
     # We assume that the basis_pmats are lower triangular
     for j = 1:i
@@ -273,6 +298,9 @@ doc"""
 > Returns $a \cdot b$.
 """
 function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  if iszero(a) || iszero(b)
+    return nf(order(a))()*order(a)
+  end
   pba = pseudo_basis(a, Val{false})
   pbb = pseudo_basis(b, Val{false})
   ma = basis_mat(a, Val{false})
@@ -287,10 +315,16 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   for i = 1:d
     for j = 1:d
       mul!(t, pba[i][1], pbb[j][1])
-      t = t*den
+      T == nf_elem ? t = t*den : nothing
       elem_to_mat_row!(M, (i - 1)*d + j, t)
       C[(i - 1)*d + j] = pba[i][2]*pbb[j][2]
     end
+  end
+  if T != nf_elem
+    H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+    H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+    H = pseudo_hnf(H, :lowerleft)
+    return typeof(a)(order(a), H)
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
@@ -327,6 +361,9 @@ divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = a*in
 ################################################################################
 
 function *(a::NfRelOrdFracIdl{T, S}, b::RelativeElement{T}) where {T, S}
+  if iszero(b)
+    return b*order(a)
+  end
   c = b*order(a)
   return c*a
 end

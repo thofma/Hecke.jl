@@ -240,7 +240,7 @@ doc"""
 > Creates the ideal $x\cdot a + y\cdot b$ of $\mathcal O$. If check is set,
 > then it is checked whether these elements define an ideal.
 """
-function ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::S, b::S, check::Bool = true) where {T, S}
   d = degree(O)
   pb = pseudo_basis(O, Val{false})
   M = zero_matrix(base_ring(nf(O)), 2*d, d)
@@ -262,6 +262,18 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, 
   return NfRelOrdIdl{T, S}(O, PM)
 end
 
+function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::NfOrdIdl, b::NfOrdIdl, check::Bool = true) where {T, S}
+  aa = frac_ideal(order(a), a, fmpz(1))
+  bb = frac_ideal(order(b), b, fmpz(1))
+  return ideal(O, x, y, aa, bb, check)
+end
+
+function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S}
+  aa = NfRelOrdFracIdl{typeof(a).parameters...}(order(a), basis_pmat(a))
+  bb = NfRelOrdFracIdl{typeof(b).parameters...}(order(b), basis_pmat(b))
+  return ideal(O, x, y, aa, bb, check)
+end
+
 doc"""
 ***
     ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
@@ -272,9 +284,13 @@ doc"""
 """
 function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
   parent(x) != O && error("Order of element does not coincide with order")
+
   d = degree(O)
   pb = pseudo_basis(O, Val{false})
   M = zero_matrix(base_ring(nf(O)), d, d)
+  if iszero(x)
+    return NfRelOrdIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
+  end
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*nf(O)(x))
   end
@@ -312,6 +328,13 @@ function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = tr
   return ideal(O, aa, check)
 end
 
+function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
+  @assert order(a) == order(pseudo_basis(O, Val{false})[1][2])
+
+  aa = NfRelOrdFracIdl{typeof(a).parameters...}(order(a), basis_pmat(a))
+  return ideal(O, aa, check)
+end
+
 doc"""
 ***
     *(O::NfRelOrd{T, S}, a::S) -> NfRelOrdIdl{T, S}
@@ -323,9 +346,9 @@ doc"""
 
 *(a::S, O::NfRelOrd{T, S}) where {T, S} = ideal(O, a)
 
-*(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl) = ideal(O, a)
+*(O::NfRelOrd, a::Union{NfOrdIdl, NfRelOrdIdl}) = ideal(O, a)
 
-*(a::NfOrdIdl, O::NfRelOrd{nf_elem, NfOrdFracIdl}) = ideal(O, a)
+*(a::Union{NfOrdIdl, NfRelOrdIdl}, O::NfRelOrd) = ideal(O, a)
 
 ################################################################################
 #
@@ -372,6 +395,14 @@ function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
 end
 
+################################################################################
+#
+#  iszero/isone
+#
+################################################################################
+
+iszero(a::NfRelOrdIdl) = iszero(basis_mat(a, Val{false})[1, 1])
+
 isone(a::NfRelOrdIdl) = isone(minimum(a))
 
 ################################################################################
@@ -383,6 +414,12 @@ isone(a::NfRelOrdIdl) = isone(minimum(a))
 # Assumes, that det(basis_mat(a)) == 1
 function assure_has_norm(a::NfRelOrdIdl)
   if a.has_norm
+    return nothing
+  end
+  if iszero(a)
+    O = order(basis_pmat(a, Val{false}).coeffs[1])
+    a.norm = O()*O
+    a.has_norm = true
     return nothing
   end
   c = basis_pmat(a, Val{false}).coeffs
@@ -428,8 +465,12 @@ doc"""
 function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   H = vcat(basis_pmat(a), basis_pmat(b))
-  m = norm(a) + norm(b)
-  H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  if T == nf_elem
+    m = norm(a) + norm(b)
+    H = sub(pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft), (d + 1):2*d, 1:d)
+  else
+    H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
+  end
   return typeof(a)(order(a), H)
 end
 
@@ -445,6 +486,9 @@ doc"""
 > Returns $a \cdot b$.
 """
 function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+  if iszero(a) || iszero(b)
+    return order(a)()*order(a)
+  end
   pba = pseudo_basis(a, Val{false})
   pbb = pseudo_basis(b, Val{false})
   ma = basis_mat(a, Val{false})
@@ -462,10 +506,18 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
       C[(i - 1)*d + j] = simplify(pba[i][2]*pbb[j][2])
     end
   end
-  m = norm(a)*norm(b)
-  H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  if T == nf_elem
+    m = norm(a)*norm(b)
+    H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), m, :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  else
+    H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
+  end
   H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
-  H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
+  if T == nf_elem
+    H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
+  else
+    H = pseudo_hnf(H, :lowerleft)
+  end
   return typeof(a)(order(a), H)
 end
 
@@ -482,6 +534,9 @@ doc"""
 > Returns the ideal $x\cdot a$.
 """
 function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
+  if iszero(x)
+    return order(a)()*order(a)
+  end
   bp = basis_pmat(a)
   P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
   !defines_ideal(order(a), P) && error("The pseudo-matrix does not define an ideal.")
@@ -491,9 +546,12 @@ end
 *(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
 
 function *(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, b::fmpz)
+  if iszero(b)
+    return order(a)()*order(a)
+  end
   PM = basis_pmat(a)
   for i = 1:degree(order(a))
-    PM.coeffs[i].num = numerator(PM.coeffs[i])*b
+    PM.coeffs[i] = PM.coeffs[i]*b
     PM.coeffs[i] = simplify(PM.coeffs[i])
   end
   return typeof(a)(order(a), PM)
@@ -520,8 +578,12 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   z = zero_matrix(base_ring(Ma.matrix), d, d)
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
-  m = intersection(norm(a), norm(b))
-  H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
+  if T == nf_elem
+    m = intersection(norm(a), norm(b))
+    H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
+  else
+    H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
+  end
   return typeof(a)(order(a), H)
 end
 
@@ -543,6 +605,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   if !ismaximal(order(a))
     error("Not implemented (yet).")
   end
+  @assert !iszero(a)
   O = order(a)
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
@@ -801,7 +864,7 @@ end
 #
 ################################################################################
 
-function isindex_divisor(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function isindex_divisor(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   f = nf(O).pol
   return valuation(discriminant(f), p) != valuation(discriminant(O), p)
 end
@@ -812,7 +875,7 @@ end
 #
 ################################################################################
 
-function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function prime_decomposition(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   if isindex_divisor(O, p)
     return prime_dec_index(O, p)
   end
@@ -820,7 +883,7 @@ function prime_decomposition(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   return prime_dec_nonindex(O, p)
 end
 
-function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   L = nf(O)
   a = gen(L)
   K = base_ring(L)
@@ -835,11 +898,11 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   Fy, y = PolynomialRing(Fp,"y", cached=false)
   fmodp = Hecke.nf_elem_poly_to_fq_poly(Fy, mmF, f)
   fac = factor(fmodp)
-  result = Array{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}, 1}()
+  result = Array{Tuple{NfRelOrdIdl{typeof(O).parameters...}, Int}, 1}()
   for (q, e) in fac
     g = Hecke.fq_poly_to_nf_elem_poly(Kx, immF, q)
     ga = g(a)
-    P = ideal(O, L(1), ga, frac_ideal(OK, p), ideal(OK, K(1)))
+    P = ideal(O, L(1), ga, p, OK(1)*OK)
     P.is_prime = 1
     P.splitting_type = (e, degree(q))
     P.minimum = deepcopy(p)
@@ -865,7 +928,7 @@ function prime_dec_nonindex(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   return result
 end
 
-function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   L = nf(O)
   K = base_ring(L)
   pbasisO = pseudo_basis(O, Val{false})
@@ -876,7 +939,7 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
   AtoO = inv(OtoA)
   AA = split(A)
 
-  result = Vector{Tuple{NfRelOrdIdl{nf_elem, NfOrdFracIdl}, Int}}()
+  result = Vector{Tuple{NfRelOrdIdl{typeof(O).parameters...}, Int}}()
   m = PseudoMatrix(zero_matrix(K, 1, degree(O)))
   for (B, BtoA) in AA
     f = dim(B)
@@ -892,7 +955,7 @@ function prime_dec_index(O::NfRelOrd{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
       N = vcat(N, deepcopy(m))
     end
     N = sub(pseudo_hnf(N, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
-    P = NfRelOrdIdl{nf_elem, NfOrdFracIdl}(O, N)
+    P = NfRelOrdIdl{typeof(O).parameters...}(O, N)
     P.is_prime = 1
     e = valuation(pO, P)
     P.splitting_type = (e, f)
@@ -909,7 +972,7 @@ end
 #
 ################################################################################
 
-function mod(a::NfRelOrdElem{nf_elem}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl})
+function mod(a::NfRelOrdElem, I::NfRelOrdIdl)
   O = order(I)
   b = elem_in_basis(a)
   PM = basis_pmat(I, Val{false}) # PM is assumed to be in pseudo hnf
@@ -929,6 +992,7 @@ end
 ################################################################################
 
 function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
+  @assert !iszero(A) && !iszero(B)
   O = order(A)
   Afrac = NfRelOrdFracIdl{T, S}(O, basis_pmat(A))
   Bi = inv(B)

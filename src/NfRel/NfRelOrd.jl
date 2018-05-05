@@ -277,8 +277,8 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
-  if isdefined(O, :disc_abs)
+function assure_has_discriminant(O::NfRelOrd{T, S}) where {T, S}
+  if isdefined(O, :disc_abs) || isdefined(O, :disc_rel)
     return nothing
   end
   d = det(trace_matrix(O))
@@ -289,29 +289,17 @@ function assure_has_discriminant(O::NfRelOrd{nf_elem, S}) where S
   end
   disc = d*a
   simplify(disc)
-  O.disc_abs = numerator(disc)
+  if T == nf_elem
+    O.disc_abs = numerator(disc)
+  else
+    O.disc_rel = numerator(disc)
+  end
   return nothing
 end
 
 function discriminant(O::NfRelOrd{nf_elem, S}) where S
   assure_has_discriminant(O)
   return deepcopy(O.disc_abs)
-end
-
-function assure_has_discriminant(O::NfRelOrd{T, S}) where {T <: RelativeElement{U} where U, S}
-  if isdefined(O, :disc_rel)
-    return nothing
-  end
-  d = det(trace_matrix(O))
-  pb = pseudo_basis(O, Val{false})
-  a = pb[1][2]^2
-  for i = 2:degree(O)
-    a *= pb[i][2]^2
-  end
-  disc = d*a
-#  simplify(disc)
-  O.disc_rel = numerator(disc)
-  return nothing
 end
 
 function discriminant(O::NfRelOrd{T, S}) where {T <: RelativeElement{U} where U, S}

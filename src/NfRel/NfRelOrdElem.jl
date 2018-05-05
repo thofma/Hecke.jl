@@ -88,9 +88,9 @@ doc"""
 
 > Returns the order of which $a$ is an element.
 """
-parent(x::NfRelOrdElem{RelativeElement{T}}) where {T} = x.parent::NfRelOrd{RelativeElement{T}, NfRelOrdFracIdl{T}}
+parent(x::NfRelOrdElem{T}) where {T <: RelativeElement{S} where {S}} = x.parent
 
-parent(x::NfRelOrdElem{nf_elem}) = x.parent::NfRelOrd{nf_elem, NfOrdFracIdl}
+parent(x::NfRelOrdElem{nf_elem}) = x.parent
 
 ################################################################################
 #

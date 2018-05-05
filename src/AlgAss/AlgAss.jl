@@ -266,7 +266,7 @@ p = prime_decomposition(OK, 2)[1][1]
 # The idea is to compute pseudo-basis of O and I respectively, for which the
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
-function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOrdFracIdl}, p::NfOrdIdl)
+function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
   basis_pmatI = basis_pmat(I, Val{false})
   basis_pmatO = basis_pmat(O, Val{false})
 
@@ -275,7 +275,7 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
 
   pi = anti_uniformizer(p)
 
-  new_basis_coeffs = NfOrdFracIdl[]
+  new_basis_coeffs = S[]
 
   for i in 1:degree(O)
     a = pi^valuation(basis_pmat(O).coeffs[i], p)
@@ -286,7 +286,7 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
     end
   end
 
-  new_coeff_I = NfOrdFracIdl[]
+  new_coeff_I = S[]
 
   for i in 1:degree(O)
     a = pi^valuation(basis_pmatI.coeffs[i], p)
@@ -402,7 +402,7 @@ function AlgAss(O::NfRelOrd{nf_elem, NfOrdFracIdl}, I::NfRelOrdIdl{nf_elem, NfOr
     return O(sum((invmmF(v.coeffs[i])) * lifted_basis_of_A[i] for i in 1:r))
   end
 
-  OtoA = NfRelOrdToAlgAssMor{typeof(O).parameters..., elem_type(Fp)}(O, A, _image, _preimage)
+  OtoA = NfRelOrdToAlgAssMor{T, S, elem_type(Fp)}(O, A, _image, _preimage)
 
   return A, OtoA
 end
@@ -418,6 +418,11 @@ function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
   @assert valuation(a, p) == 0
   @assert denominator(I)*a in numerator(I)
   return a
+end
+
+function coprime_to(I::NfRelOrdFracIdl, p::NfRelOrdIdl)
+  a = coprime_to(pseudo_basis(I, Val{false})[1][2], minimum(p, Val{false}))
+  return nf(order(I))(a)
 end
 
 # If already_integral is true it is assumed that the coefficient
