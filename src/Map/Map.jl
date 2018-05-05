@@ -27,10 +27,14 @@ function preimage(M::Map{D, C}, a) where {D, C}
 end
 
 function image(M::Map{D, C}, a) where {D, C}
-  if isdefined(M.header, :image)
-    return M.header.image(a)::elem_type(C)
+  if isdefined(M, :header)
+    if isdefined(M.header, :image)
+      return M.header.image(a)::elem_type(C)
+    else
+      error("No image function known")
+    end
   else
-    error("No image function known")
+    return M(a)
   end
 end
 

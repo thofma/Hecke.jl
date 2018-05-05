@@ -99,8 +99,8 @@ powermod(::NfOrdElem, ::fmpz, ::Int)
 ### Miscallenous
 
 ```@docs
-representation_mat(::NfOrdElem)
-representation_mat(::NfOrdElem, ::AnticNumberField)
+representation_matrix(::NfOrdElem)
+representation_matrix(::NfOrdElem, ::AnticNumberField)
 trace(::NfOrdElem)
 norm(::NfOrdElem)
 rand(::NfOrd, ::Int)

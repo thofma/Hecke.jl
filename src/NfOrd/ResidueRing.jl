@@ -317,7 +317,7 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # u will be the coefficient vector of the quotient
 
   V = R.tmp_div
-  A = representation_mat(y.elem)
+  A = representation_matrix(y.elem)
   B = parent(x).basis_mat
 
   V[1, 1] = 1
@@ -420,7 +420,7 @@ function euclid(x::NfOrdQuoRingElem)
 
   d = degree(base_ring(parent(x)))
 
-  _copy_matrix_into_matrix(U, 1, 1, representation_mat(x.elem))
+  _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
   _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_mat)
 
   hnf_modular_eldiv!(U, parent(x).ideal.minimum)
@@ -523,7 +523,7 @@ function annihilator(x::NfOrdQuoRingElem)
   # The basis is the kernel of the following matrix
   # ( M_I )
   # ( M_x )
-   _copy_matrix_into_matrix(U, 1, 1, representation_mat(x.elem))
+   _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
    _copy_matrix_into_matrix(U, d + 1, 1, I.basis_mat)
 
   m = _kernel(U)
@@ -586,8 +586,8 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   e = _divexact_strong(x, g)
   f = _divexact_strong(y, g)
 
-  M_e = representation_mat(e.elem)
-  M_f = representation_mat(f.elem)
+  M_e = representation_matrix(e.elem)
+  M_f = representation_matrix(f.elem)
 
   M_I = Q.basis_mat
 

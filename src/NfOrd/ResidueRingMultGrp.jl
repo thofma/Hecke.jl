@@ -23,7 +23,7 @@ doc"""
 function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
     gens , structure , disc_log = _multgrp(Q)
-    Q.multiplicative_group = AbToResRingMultGrp(Q,gens,structure,disc_log)
+    Q.multiplicative_group = GrpAbFinGenToNfOrdQuoRingMultMap(Q,gens,structure,disc_log)
   end
   mQ = Q.multiplicative_group
   return domain(mQ), mQ
@@ -233,53 +233,25 @@ function _multgrp_mod_p(p::NfOrdIdl)
   n = norm(p) - 1
   gen = _primitive_element_mod_p(p)
   factor_n = factor(n)
-  # TODO:
-  # Compute the discrete logarithm in a finite field F with O/p \cong F.
-  # Although P is always a prime, but not all of them work at the moment.
-  # Make this work for all of them!
-  if has_2_elem(p) && isprime_known(p)
-    Q, mQ = ResidueField(O, p)
-    gen_quo = mQ(gen)
-    discrete_logarithm = function (x::NfOrdElem)
-      y=mQ(x)
-      if y==Q(1)
-        return 0
-      elseif y==Q(-1) && mod(n,2)==0
-        return divexact(n,2)
-      end
-      if n<11
-        res=1
-        el=gen_quo
-        while el!=y
-          el*=gen_quo
-          res+=1
-        end
-        return res
-      else 
-        return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
-      end
+  Q, mQ = ResidueField(O, p)
+  gen_quo = mQ(gen)
+  discrete_logarithm = function (x::NfOrdElem)
+    y=mQ(x)
+    if y==Q(1)
+      return 0
+    elseif y==Q(-1) && mod(n,2)==0
+      return divexact(n,2)
     end
-  else
-    Q = NfOrdQuoRing(O,p)
-    gen_quo = Q(gen)
-    discrete_logarithm= function (x::NfOrdElem)
-      y=mQ(x)
-      if y==Q(1)
-        return 0
-      elseif y==Q(-1) && mod(n,2)==0
-        return divexact(n,2)
+    if n<11
+      res=1
+      el=gen_quo
+      while el!=y
+        el*=gen_quo
+        res+=1
       end
-      if n<11
-        res=1
-        el=gen_quo
-        while el!=y
-          el*=gen_quo
-          res+=1
-        end
-        return res
-      else 
-        return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
-      end
+      return res
+    else 
+      return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
     end
   end
   return gen, n, discrete_logarithm
@@ -354,7 +326,7 @@ end
 function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use_p_adic=true)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= u >= 1
-  pnum = p.minimum
+  pnum = minimum(p)
   if use_p_adic
     e = valuation(pnum,p)
     k0 = 1 + div(fmpz(e),(pnum-1))
@@ -970,7 +942,7 @@ function _multgrp_ray(Q::NfOrdQuoRing; method=nothing)
   rels = matrix(diagm(structt))
   gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
 
-  mG=AbToResRingMultGrp(Q,gens_trans, rels_trans, dlog_trans)
+  mG=GrpAbFinGenToNfOrdQuoRingMultMap(Q,gens_trans, rels_trans, dlog_trans)
   G=domain(mG)
   mG.tame=tame_part
   mG.wild=wild_part
@@ -1138,7 +1110,7 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
     return G(result)
   end
   
-  mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
+  mG=Hecke.GrpAbFinGenToNfOrdQuoRingMultMap(G,Q,exp,dlog)
   mG.tame=tame
   mG.wild=wild
   return G, mG, merge(y1, y2)
@@ -1309,7 +1281,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     return G(result)
   end
   
-  mG=Hecke.AbToResRingMultGrp(G,Q,exp,dlog)
+  mG=Hecke.GrpAbFinGenToNfOrdQuoRingMultMap(G,Q,exp,dlog)
   
   return G, mG , tame_mult_grp, wild_mult_grp
 end

@@ -1556,10 +1556,27 @@ end
 
 function mod!(a::nf_elem, b::fmpz)
   z = fmpz()
-  for i=0:a.elem_length-1
-    Nemo.num_coeff!(z, a, i)
+  d = degree(parent(a))
+  if d == 1
+    Nemo.num_coeff!(z, a, 0)
     mod!(z, z, b)
-    _num_setcoeff!(a, i, z)
+    _num_setcoeff!(a, 0, z)
+  elseif d == 2
+    Nemo.num_coeff!(z, a, 0)
+    mod!(z, z, b)
+    _num_setcoeff!(a, 0, z)
+    Nemo.num_coeff!(z, a, 1)
+    mod!(z, z, b)
+    _num_setcoeff!(a, 1, z)
+    #Nemo.num_coeff!(z, a, 2)
+    #mod!(z, z, b)
+    #_num_setcoeff!(a, 2, z)
+  else
+    for i=0:a.elem_length-1
+      Nemo.num_coeff!(z, a, i)
+      mod!(z, z, b)
+      _num_setcoeff!(a, i, z)
+    end
   end
 end
 

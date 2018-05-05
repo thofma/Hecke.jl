@@ -468,7 +468,7 @@ function trace(a::NfAbsNSElem)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
-function representation_mat(a::NfAbsNSElem)
+function representation_matrix(a::NfAbsNSElem)
   K = parent(a)
   b = basis(K)
   M = zero_matrix(FlintQQ, degree(K), degree(K))

@@ -206,12 +206,12 @@
 
   @testset "Representation matrix" begin
     b = O1(1)
-    c = @inferred representation_mat(b)
+    c = @inferred representation_matrix(b)
     @test c == one(MatrixSpace(FlintZZ, 3, 3))
     b = O1(a1)
-    c = @inferred representation_mat(b)
+    c = @inferred representation_matrix(b)
     @test c == FlintZZ[0 1 0; 0 0 1; 2 0 0]
-    c = @inferred representation_mat(b, K1)
+    c = @inferred representation_matrix(b, K1)
     @test c == Hecke.FakeFmpqMat(FlintZZ[0 1 0; 0 0 1; 2 0 0], one(FlintZZ))
   end
 

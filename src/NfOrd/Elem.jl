@@ -271,6 +271,20 @@ doc"""
 
 ################################################################################
 #
+#  Characteristic and minimal polynomial
+#
+################################################################################
+
+function charpoly(a::NfOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
+  return Zx(charpoly(elem_in_nf(a)))
+end
+
+function minpoly(a::NfOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
+  return Zx(minpoly(elem_in_nf(a)))
+end
+
+################################################################################
+#
 #  Special elements
 #
 ################################################################################
@@ -615,37 +629,33 @@ powermod(a::NfOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 
 doc"""
 ***
-    representation_mat(a::NfOrdElem) -> fmpz_mat
+    representation_matrix(a::NfOrdElem) -> fmpz_mat
 
 > Returns the representation matrix of the element $a$.
 """
-function representation_mat(a::NfOrdElem)
+function representation_matrix(a::NfOrdElem)
   O = parent(a)
   assure_has_basis_mat(O)
   assure_has_basis_mat_inv(O)
-  A = representation_mat(a, nf(O))
+  A = representation_matrix(a, nf(O))
   mul!(A, O.basis_mat, A)
   mul!(A, A, O.basis_mat_inv)
-  #A = O.basis_mat*A*O.basis_mat_inv
   !(A.den == 1) && error("Element not in order")
   return A.num
 end
 
 doc"""
 ***
-    representation_mat(a::NfOrdElem, K::AnticNumberField) -> FakeFmpqMat
+    representation_matrix(a::NfOrdElem, K::AnticNumberField) -> FakeFmpqMat
 
 > Returns the representation matrix of the element $a$ considered as an element
 > of the ambient number field $K$. It is assumed that $K$ is the ambient number
 > field of the order of $a$.
 """
-function representation_mat(a::NfOrdElem, K::AnticNumberField)
+function representation_matrix(a::NfOrdElem, K::AnticNumberField)
   nf(parent(a)) != K && error("Element not in this field")
   A, d = Nemo.representation_matrix_q(a.elem_in_nf)
   A.base_ring = FlintZZ
-  #d = denominator(a.elem_in_nf)
-  #b = d*a.elem_in_nf
-  #A = representation_mat(b)
   z = FakeFmpqMat(A, d)
   return z
 end

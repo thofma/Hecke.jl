@@ -611,9 +611,9 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   pb = pseudo_basis(a, Val{false})
   bmO = basis_mat(O, Val{false})
   bmOinv = basis_mat_inv(O, Val{false})
-  M = bmO*representation_mat(pb[1][1])*bmOinv
+  M = bmO*representation_matrix(pb[1][1])*bmOinv
   for i = 2:d
-    M = hcat(M, bmO*representation_mat(pb[i][1])*bmOinv)
+    M = hcat(M, bmO*representation_matrix(pb[i][1])*bmOinv)
   end
   invcoeffs = inv_coeff_ideals(O, Val{false})
   C = Array{S}(d^2)
@@ -810,9 +810,9 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   d = degree(O)
   pb = pseudo_basis(a, Val{false})
   S = basis_mat_inv(O, Val{false})*basis_mat_inv(a, Val{false})
-  M = basis_mat(O, Val{false})*representation_mat(pb[1][1])*S
+  M = basis_mat(O, Val{false})*representation_matrix(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, basis_mat(O, Val{false})*representation_mat(pb[i][1])*S)
+    M = hcat(M, basis_mat(O, Val{false})*representation_matrix(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{T2}(d^2)
@@ -944,7 +944,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   for (B, BtoA) in AA
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
-    M = representation_mat(idem)
+    M = representation_matrix(idem)
     ker = left_kernel(M)
     N = basis_pmat(Ip)
     for i = 1:length(ker)
@@ -1315,7 +1315,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   end
 
   u = elem_in_nf(p_uniformizer(P))
-  M = representation_mat(u)
+  M = representation_matrix(u)
   M = N*M*NN
 
   F, mF = ResidueField(order(p), p)

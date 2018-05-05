@@ -616,7 +616,7 @@ function dedekind_test(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}, compute_ord
 
     Umodp = divexact(Tmodp, d)
     U = fq_poly_to_nf_elem_poly(Kx, immF, Umodp)
-    PM = PseudoMatrix(representation_mat(a*U(gen(L))), [ K(1)*OK for i = 1:degree(O) ])
+    PM = PseudoMatrix(representation_matrix(a*U(gen(L))), [ K(1)*OK for i = 1:degree(O) ])
     PN = vcat(basis_pmat(O), PM)
     PN = sub(pseudo_hnf(PN, :lowerleft, true), degree(O) + 1:2*degree(O), 1:degree(O))
     OO = Order(L, PN)

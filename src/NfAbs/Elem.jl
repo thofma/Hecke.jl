@@ -73,55 +73,6 @@ end
 
 ################################################################################
 #
-#  Representation matrix
-#
-################################################################################
-
-function representation_mat_fmpq_mat(a::nf_elem)
-  d = degree(parent(a))
-  t = gen(parent(a))
-  b = deepcopy(a)
-  N = zero_matrix(FlintQQ, d, d)
-  M = zero_matrix(FlintZZ, 1, d)
-  dummy = zero(FlintZZ)
-  for i in 1:(d - 1)
-    elem_to_mat_row!(M, 1, dummy, b)
-    for j in 1:d
-      N[i, j] = fmpq(M[1, j], dummy)
-    end
-    mul!(b, t, b)
-  end
-  elem_to_mat_row!(M, 1, dummy, b)
-  for j in 1:d
-    N[d, j] = fmpq(M[1, j], dummy)
-  end
-  return N
-end
-
-doc"""
-  representation_mat(a::nf_elem) -> fmpz_mat
-
-The right regular representation of a, i.e. the matrix representing
-the multiplication map $x \mapsto ax$ on the number field.
-denominator(a) must be one
-"""
-function representation_mat(a::nf_elem)
-  @assert denominator(a) == 1
-  dummy = fmpz(0)
-  n = degree(a.parent)
-  M = zero_matrix(FlintZZ, n, n)
-  t = gen(a.parent)
-  b = deepcopy(a)
-  for i = 1:n-1
-    elem_to_mat_row!(M, i, dummy, b)
-    mul!(b, b, t) ## TODO: CF: should write and use mul_gen which is faster
-  end
-  elem_to_mat_row!(M, n, dummy, b)
-  return M
-end
-
-################################################################################
-#
 #  Basis matrix
 #
 ################################################################################
@@ -150,12 +101,6 @@ function basis_mat(A::Array{nf_elem, 1})
   return FakeFmpqMat(M, deno)
 end
 
-function set_den!(a::nf_elem, d::fmpz)
-  ccall((:nf_elem_set_den, :libflint), Void,
-        (Ptr{nf_elem}, Ptr{fmpz}, Ptr{AnticNumberField}),
-        &a, &d, &parent(a))
-end
-
 ################################################################################
 #
 #  Characteristic polynomial
@@ -164,21 +109,13 @@ end
 
 doc"""
 ***
-  charpoly(a::nf_elem) -> fmpz_poly
-  charpoly(a::NfOrdElem) -> fmpz_poly
+    charpoly(a::nf_elem) -> fmpq_poly
 
-> The characteristic polynomial of a.
+The characteristic polynomial of a.
 """
-function charpoly(a::nf_elem)
-  d = denominator(a)
-  Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
-  f = charpoly(Zx, representation_mat(d*a))
-  f =  f(gen(parent(f))*d)
-  return divexact(f, content(f))
-end
-
-function charpoly(a::NfOrdElem)
-  return charpoly(number_field(parent(a))(a))
+function charpoly(a::nf_elem, Qx::FmpqPolyRing = parent(parent(a).pol))
+  f = charpoly(Qx, representation_matrix(a))
+  return f
 end
 
 ################################################################################
@@ -189,20 +126,30 @@ end
 
 doc"""
 ***
-  minpoly(a::nf_elem) -> fmpz_poly
-  minpoly(a::NfOrdElem) -> fmpz_poly
+  minpoly(a::nf_elem) -> fmpq_poly
 
 > The minimal polynomial of a.
 """
-function minpoly(a::nf_elem)
-  d = denominator(a)
-  Zx = PolynomialRing(FlintZZ, string(parent(parent(a).pol).S))[1]
-  f = minpoly(Zx, representation_mat(d*a))
-  f = f(gen(parent(f))*d)
-  return divexact(f, content(f))
+function minpoly(a::nf_elem, Qx::FmpqPolyRing = parent(parent(a).pol))
+  f = minpoly(Qx, representation_matrix(a))
+  return f
 end
 
-function minpoly(a::NfOrdElem)
-  return minpoly(number_field(parent(a))(a))
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+function set_den!(a::nf_elem, d::fmpz)
+  ccall((:nf_elem_set_den, :libflint), Void,
+        (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        a, d, parent(a))
 end
 
+function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
+  ccall((:nf_elem_scalar_div_fmpz, :libantic), Void,
+        (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
+        z, x, y, parent(x))
+  return z
+end

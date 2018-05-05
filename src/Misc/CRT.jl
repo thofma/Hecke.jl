@@ -447,7 +447,7 @@ doc"""
 > only if you know what you're doing.
 """
 function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
-  K = a.parent
+  K = parent(a)
   @assert n < degree(K) && n >=0
   ra = pointer_from_objref(a)
   if degree(K) == 1

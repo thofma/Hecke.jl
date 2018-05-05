@@ -822,6 +822,11 @@ type NfOrdIdl
   
   gens::Vector{NfOrdElem}  # A set of generators of the ideal 
 
+  ## For residue fields of non-index divisors
+  prim_elem::NfOrdElem
+  min_poly_prim_elem::fmpz_poly  # minimal polynomial modulo P
+  basis_in_prim::Vector{fmpz_mat} #
+
   function NfOrdIdl(O::NfOrd)
     # populate the bits types (Bool, Int) with default values
     r = new()
@@ -986,7 +991,7 @@ mutable struct NfOrdFracIdl
     z.parent = NfOrdFracIdlSet(O)
     z.num = ideal(O, O(denominator(a, O)*a))
     z.den = denominator(a, O)
-    z.basis_mat = hnf(FakeFmpqMat(representation_mat(O(denominator(a, O)*a)), denominator(a, O)))
+    z.basis_mat = hnf(FakeFmpqMat(representation_matrix(O(denominator(a, O)*a)), denominator(a, O)))
     return z
   end
 

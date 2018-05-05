@@ -146,10 +146,19 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
 
 
     #a2 = a.gen_two*f + a1^2
-    mul!(e, a1, a1)
-    a2 = f*a.gen_two
-    add!(a2, a2, e)
+    if !false
+      mul!(e, a1, a1)
+      a2 = f*a.gen_two
+      add!(a2, a2, e)
+    else
+      g, x, y = gcdx(f, e)
 
+      mul!(e, a1, a1)
+      mul!(x, x, f)
+      a2 = x*a.gen_two
+      mul!(y, y, e)
+      add!(a2, a2, y)
+     end
     # now (a1, a2) should be m-normal for a
   end
 
@@ -159,9 +168,20 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
   else
 
     #b2 = b.gen_two*f + b1^2
-    mul!(e, b1, b1)
-    b2 = f*b.gen_two
-    add!(b2, b2, e)
+    if !false #Carlo's new method
+      mul!(e, b1, b1)
+      b2 = f*b.gen_two
+      add!(b2, b2, e)
+     else
+      g, x, y = gcdx(f, e)
+
+      #b2 = b.gen_two*f*x + y*b1^2
+      mul!(e, b1, b1)
+      mul!(x, x, f)
+      b2 = x*b.gen_two
+      mul!(y, y, e)
+      add!(b2, b2, y)
+    end
   end
   C = ideal(O, a1*b1, a2*b2)
   C.norm = norm(a) * norm(b)
@@ -333,7 +353,7 @@ function gcd_into!(A::NfOrdIdl, B::NfOrdIdl, C::NfOrdIdl)
   return C+B
 end
 
-#TODO: write a ppio versino that allows for p-powers as well
+#TODO: write a ppio version that allows for p-powers as well
 doc"""
 ***
   gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
@@ -593,29 +613,49 @@ end
 #
 ################################################################################
 
-# We need to fix the two normal presentation of the trivial ideal
+divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 doc"""
 ***
     divexact(A::NfOrdIdl, y::fmpz) -> NfOrdIdl
+    divexact(A::NfOrdIdl, y::Integer) -> NfOrdIdl
 
 > Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
-function divexact(A::NfOrdIdl, y::fmpz)
-#  if has_2_elem(A)
-#    z = ideal(order(A), divexact(A.gen_one, y), divexact(A.gen_two, y))
-#    if has_basis_mat(A)
-#      z.basis_mat = divexact(A.basis_mat, y)
-#    end
-#  elseif has_basis_mat(A)
-  if norm(order(A)(y)) == norm(A)
-    return ideal(order(A), one(FlintZZ), order(A)(1))
+#TODO: write a divexact! to change the ideal?
+#  difficult due to Julia's inability to unset entries...
+function divexact(A::NfOrdIdl, b::fmpz)
+  zk = order(A)
+  if has_2_elem(A)
+    B = ideal(zk, divexact(A.gen_one, b), divexact(A.gen_two, b))
+    if isdefined(A, :gens_normal)
+      B.gens_normal = A.gens_normal
+    end
+    B.gens_weakly_normal = A.gens_weakly_normal
+    if has_basis_mat(A)
+      B.basis_mat = divexact(A.basis_mat, b)
+    end
+    if false && has_basis_mat_inv(A)
+      error("not defined at all")
+      B.basis_mat_inv = b*A.basis_mat_inv
+    end
   else
-    m = basis_mat(A)
-    z = ideal(order(A), divexact(m, y))
-    _assure_weakly_normal_presentation(z)
-    assure_2_normal(z)
-    return z
+    B = ideal(zk, divexact(A.basis_mat, b))
+    if false && has_basis_mat_inv(A)
+      error("not defined at all")
+      B.basis_mat_inv = b*A.basis_mat_inv
+    end
   end
+  if has_minimum(A)
+    B.minimum = divexact(A.minimum, b)
+  end
+  if has_norm(A)
+    B.norm = divexact(A.norm, b^degree(zk))
+  end
+  if has_princ_gen(A)
+    B.princ_gen = divexact(A.princ_gen, b)
+  end
+  #TODO princ_gen_special missing
+  return B
 end
 
 doc"""

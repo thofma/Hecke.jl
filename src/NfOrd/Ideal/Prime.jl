@@ -214,12 +214,24 @@ doc"""
 > Note that in this case it may happen that $p\mathcal O$ is not the product of the
 > $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0, cached::Bool = true)
   if typeof(p) == fmpz && nbits(p) < 64
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
 
   if mod(index(O),fmpz(p)) == 0
+    if cached
+      if haskey(O.index_div, fmpz(p))
+        lp = O.index_div[fmpz(p)]
+        z = Tuple{NfOrdIdl, Int}[]
+        for (Q, e) in lp
+          if degree(Q) <= degree_limit
+            push!(z, (Q, e))
+          end
+        end
+        return z
+      end
+    end
     return prime_dec_index(O, p, degree_limit, lower_limit)
   end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
@@ -307,136 +319,19 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
     degree_limit = degree(O)
   end
 
-  if haskey(O.index_div, fmpz(p))
-    lp = O.index_div[fmpz(p)]
-    z = Tuple{NfOrdIdl, Int}[]
-    for (Q, e) in lp
-      if degree(Q) <= degree_limit
-        push!(z, (Q, e))
-      end
-    end
-    return z
-  end
-
-  # Firstly compute the p-radical of O
-  Ip = pradical(O, p)
-  R = quoringalg(O, Ip, p)
-  AA = split(R)
-
-  I = IdealSet(O)
-  result = Array{Tuple{typeof(I()),Int}, 1}()
-  # We now have all prime ideals, but only their basis matrices
-  # We need the ramification indices and a 2-element presentation
-
-  for j in 1:length(AA)
-    P = AA[j].ideal
-    f = 0
-
-    # First compute the residue degree
-    for i in 1:degree(O)
-      f = f + valuation(basis_mat(P)[i,i], fmpz(p))
-    end
-
-    P.norm = fmpz(p)^f
-    P.splitting_type = (0, f)
-
-    if f > degree_limit || f < lower_limit
-      continue
-    end
-
-    # The following does not work if there is only one prime ideal
-    if length(AA) > 1 && (1-1/BigInt(p))^degree(O) < 0.1
-      # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
-      # number theory".
-
-      # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
-      if j == 1
-        Vp = AA[2].ideal
-        k = 3
-      else
-        Vp = AA[1].ideal;
-        k = 2;
-      end
-
-      for i in k:length(AA)
-        if i == j
-          continue
-        else
-          Vp = intersection(Vp, AA[i].ideal)
-        end
-      end
-
-      u, v = idempotents(P, Vp)
-
-      x = zero(parent(u))
-
-      if !iszero(mod(norm(u), norm(P)*p))
-        x = u
-      elseif !iszero(mod(norm(u + p), norm(P)*p))
-        x = u + p
-      elseif !iszero(mod(norm(u - p), norm(P)*p))
-        x = u - p
-      else
-        for i in 1:degree(O)
-          if !iszero(mod(norm(v*basis(P)[i] + u), norm(P)*p))
-            x = v*basis(P)[i] + u
-          end
-        end
-      end
-
-      @hassert :NfOrd 1 !iszero(x)
-      @hassert :NfOrd 2 O*O(p) + O*x == P
-
-      P.gen_one = p
-      P.gen_two = x
-      P.gens_normal = p
-      P.gens_weakly_normal = 1
-    else
-      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/p))\n"
-      _assure_weakly_normal_presentation(P)
-      assure_2_normal(P)
-    end
-
-    e = Int(valuation(nf(O)(p), P))
-    P.splitting_type = e, f
-    P.is_prime = 1
-    push!(result, (P, e))
-  end
-  if degree_limit >= degree(O)
-    O.index_div[fmpz(p)] = result
-  end
-  return result
-end
-
-function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
-  if degree_limit == 0
-    degree_limit = degree(O)
-  end
-
-  #=
-  if haskey(O.index_div, fmpz(p))
-    lp = O.index_div[fmpz(p)]
-    z = Tuple{NfOrdIdl, Int}[]
-    for (Q, e) in lp
-      if degree(Q) <= degree_limit
-        push!(z, (Q, e))
-      end
-    end
-    return z
-  end
-  =#
-
   Ip = pradical(O, p)
   A, OtoA = AlgAss(O, Ip, p)
   AtoO = inv(OtoA)
   AA = split(A)
+
+  basisO = basis(O)
 
   ideals = Vector{NfOrdIdl}()
   m = zero_matrix(FlintZZ, 1, degree(O))
   for (B, BtoA) in AA
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
-    M = representation_mat(idem)
+    M = representation_matrix(idem)
     ker = left_kernel(M)
     N = basis_mat(Ip)
     for i = 1:length(ker)
@@ -450,6 +345,22 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
     P = ideal(O, N)
     P.norm = fmpz(p)^f
     P.splitting_type = (0, f)
+    #
+    fromOtosimplealgebra = Hecke._compose(inv(BtoA), OtoA)
+    compute_residue_field_data!(P, fromOtosimplealgebra)
+    #primB, minprimB, getcoordpowerbasis = _as_field(B)
+    #@assert degree(minprimB) == f
+    #P.prim_elem = AtoO(BtoA(primB))
+    #P.min_poly_prim_elem = fmpz_poly(fmpz[FlintZZ(coeff(minprimB, i)) for i in 0:degree(minprimB)])
+    #P.min_poly_prim_elem.parent = FmpzPolyRing(:$, false)
+    #P.basis_in_prim = Vector{fmpz_mat}(degree(O))
+    #for i in 1:degree(O)
+    #  P.basis_in_prim[i] = zero_matrix(FlintZZ, 1, f)
+    #  t = getcoordpowerbasis(BtoA\(OtoA(basisO[i])))
+    #  for j in 1:f
+    #    P.basis_in_prim[i][1, j] = FlintZZ(t[1, j])
+    #  end
+    #end
     push!(ideals, P)
   end
 
@@ -465,7 +376,7 @@ function prime_dec_index_via_algass(O::NfOrd, p::Union{Integer, fmpz}, degree_li
 
     # The following does not work if there is only one prime ideal
     if length(ideals) > 1 && (1-1/BigInt(p))^degree(O) < 0.1
-      # This is rougly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
+      # This is roughly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
       # number theory".
 
       # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
@@ -546,7 +457,7 @@ function anti_uniformizer(P::NfOrdIdl)
     return P.anti_uniformizer
   else
     p = minimum(P)
-    M = representation_mat(uniformizer(P))
+    M = representation_matrix(uniformizer(P))
     Mp = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
     K = kernel(Mp)
     @assert length(K) > 0
@@ -709,11 +620,29 @@ end
 #
 ################################################################################
 
+#TODO: do sth. useful here!!!
+function divides(A::NfOrdIdl, B::NfOrdIdl)
+  minimum(A) % minimum(B) == 0 || return false
+  return valuation(A, B) > 0
+end
+
 function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   #consider A^2 B and A B: if we do gcd with the minimum, we get twice AB
-  #so the copriem base is AB
+  #so the coprime base is AB
   #however using the p-part of the norm, the coprime basis becomes A, B...
-  Ap = [gcd(x, p^valuation(norm(x), p)) for x = A if minimum(x) % p == 0]
+  if iseven(p)
+    lp = prime_decomposition(order(A[1]), 2)
+    Ap = [x[1] for x = lp if any(y->divides(y, x[1]) > 0, A)]
+    a = remove(p, 2)[2]
+    if !isone(a)
+      Bp = coprime_base(A, a)
+      return vcat(Ap, Bp)  
+    else
+      return Ap
+    end
+  else
+    Ap = [gcd(x, p^valuation(norm(x), p)) for x = A if minimum(x) % p == 0]
+  end
   return coprime_base_steel(Ap)
 end
 
@@ -1156,7 +1085,7 @@ function val_func_index(p::NfOrdIdl)
   # and still be fast (faster even than in field).
 
   pi = inv(p)
-  M = representation_mat(pi.num.gen_two)
+  M = representation_matrix(pi.num.gen_two)
   O = order(p)
   P = p.gen_one
   return function(x::nf_elem)

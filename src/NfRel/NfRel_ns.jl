@@ -582,7 +582,7 @@ function trace(a::NfRel_nsElem)
 end
 
 #TODO: also provide a sparse version
-function representation_mat(a::NfRel_nsElem)
+function representation_matrix(a::NfRel_nsElem)
   K = parent(a)
   b = basis(K)
   k = base_ring(K)

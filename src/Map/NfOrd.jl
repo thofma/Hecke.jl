@@ -1,3 +1,10 @@
+################################################################################
+#
+#  Ringmorphisms of orders onto finite fields
+#
+################################################################################
+
+# NfOrd -> FqNmod
 mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrdToFqNmodMor}
   header::MapHeader{NfOrd, FqNmodFiniteField}
   poly_of_the_field::nmod_poly
@@ -13,174 +20,117 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     # assume that F = F_p[X]/(g) and g is a factor of f mod p
 
     z = new()
+    d = degree(nf(O))
     p = characteristic(F)
     a = gen(nf(O))
     tmp_nmod_poly = parent(g)()
-
     z.poly_of_the_field = g
+
+    powers = Vector{nf_elem}(d)
+
+    powers[1] = a
+    for i in 2:d
+      powers[i] = powers[i - 1] * a
+    end
 
     function _image(x::NfOrdElem)
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
       fmpq_poly_to_nmod_poly_raw!(tmp_nmod_poly, gg)
-      ccall((:nmod_poly_rem, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{Void}), &tmp_nmod_poly, &tmp_nmod_poly, &g, pointer_from_objref(F)+sizeof(fmpz))
-      ccall((:fq_nmod_set, :libflint), Void, (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}), &u, &tmp_nmod_poly, &F)
-
-      ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &F)
+      ccall((:nmod_poly_rem, :libflint), Void,
+            (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{Void}),
+            &tmp_nmod_poly, &tmp_nmod_poly, &g, pointer_from_objref(F)+sizeof(fmpz))
+      ccall((:fq_nmod_set, :libflint), Void,
+            (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
+            &u, &tmp_nmod_poly, &F)
+      ccall((:fq_nmod_reduce, :libflint), Void,
+            (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &F)
       return u
     end
 
-    function _preimage(x::fq_nmod)
-      zz = nf(O)()
-
-      # TODO: Make this better
-      for i in 0:degree(F)-1
-        zz = zz + _get_coeff_raw(x, i)*a^i
+    # The lift is even simpler!
+    function _preimage(y::fq_nmod)
+      zz = O()
+      zz.elem_in_nf = nf(O)(coeff(y, 0))
+      for i in 2:d
+        add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
       end
-
-      return O(zz, false)
+      _mod!(zz.elem_in_nf, p)
+      return zz
     end
 
     z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
-
     return z
   end
-
+  
   function NfOrdToFqNmodMor(O::NfOrd, P::NfOrdIdl)
-    z = new()
-
-    @assert abs(minimum(P)) <= typemax(Int)
-
-    p = Int(abs(minimum(P)))
-
-    R = ResidueRing(FlintZZ, p, cached=false)
-
-    OP = quoringalg(O, P, p)
-    x = quoelem(OP, zero(O))
-    f = PolynomialRing(R, "x", cached = false)[1]()
-    d = length(OP.basis)
-
-    while true
-      r = rand(0:p-1, d)
-      x = quoelem(OP, dot([ x for x in OP.basis], r))
-      f = minpoly(x)
-      if degree(f) == d
-        break
+    z = NfOrdToFqNmodMor()
+    z.P = P
+    p = minimum(P)
+    a, g, b = get_residue_field_data(P)
+    psmall = Int(p)
+    R = ResidueRing(FlintZZ, psmall, cached = false)
+    Rx, x = PolynomialRing(R, "_\$", cached = false)
+    F = FqNmodFiniteField(Rx(g), Symbol("_\$"), false)
+    d = degree(g)
+    n = degree(O)
+    imageofbasis = Vector{fq_nmod}(n)
+    powers = Vector{nf_elem}(d)
+    c = Rx()
+    for i in 1:n
+      ib = F() 
+      @assert d == cols(b[i])
+      for j in 1:d
+        setcoeff!(c, j - 1, b[i][1, j])
       end
+      ccall((:fq_nmod_set, :libflint), Void, (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}), ib, c, F)
+      imageofbasis[i] = ib
     end
 
-    F = FqNmodFiniteField(f, Symbol("_\$"), false)
-
-    M2 = zero_matrix(R, degree(O), d)
-
-    for i in 1:d
-      coords = elem_in_basis((x^(i-1)).elem)
-      for j in 1:degree(O)
-        M2[j, i] = coords[j]
-      end
+    powers[1] = a.elem_in_nf
+    for i in 2:d
+      powers[i] = powers[i - 1] * a.elem_in_nf
     end
 
-    M3 = zero_matrix(R, degree(O), degree(O))
+    tempF = F()
 
-    for i in 1:degree(O)
-      coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
-      for j in 1:degree(O)
-        M3[j, i] = coords[j]
+    function _image(x::NfOrdElem)
+      v = elem_in_basis(x, Val{false})
+      zz = zero(F)
+      for i in 1:n
+        ccall((:fq_nmod_mul_fmpz, :libflint), Void,
+              (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}),
+              tempF, imageofbasis[i], v[i], F)
+        add!(zz, zz, tempF)
       end
-    end
-
-    X = _solve_unique(M3, M2)
-
-    #for i in 1:degree(O)
-    #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
-    #end
-
-    function _image(y::NfOrdElem)
-      co = zero_matrix(R, degree(O), 1)
-      coeff = elem_in_basis(mod(y, P))
-
-      for i in 1:degree(O)
-        co[i, 1] = coeff[i]
-      end
-
-      co = X*co
-
-      zz = F(lift(co[1, 1])) # totally inefficient
-
-      for i in 2:rows(co)
-        zz = zz  + F(lift(co[i, 1]))*gen(F)^(i-1)
-      end
-
       return zz
     end
 
     function _preimage(y::fq_nmod)
-      zz = nf(O)()
-
-      for i in 0:degree(F)-1
-        zz = zz + _get_coeff_raw(y, i)*(x.elem.elem_in_nf)^i
+      zz = O()
+      zz.elem_in_nf = nf(O)(coeff(y, 0))
+      for i in 2:d
+        add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
       end
-
-      return mod(O(zz, false), P)
+      _mod!(zz.elem_in_nf, p)
+      return zz
     end
 
     z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
-    z.P = P
-
     return z
   end
+end
 
-  function NfOrdToFqNmodMor(O::NfOrd, F::FqNmodFiniteField, y::fq_nmod)
-    z = new()
+_mod!(x::nf_elem, y::Integer) = _mod!(x, fmpz(y))
 
-    p = characteristic(F)
-    Zx = PolynomialRing(FlintIntegerRing(), "x", cached = false)[1]
-    a = gen(nf(O))
-    h = Zx()
-    t_fq_nmod = F()
-    tt_fq_nmod = F()
-    t_fmpz = fmpz()
-
-    function _image(x::NfOrdElem)
-      g = parent(nf(O).pol)(elem_in_nf(x))
-
-      #pseudocode:
-      #u = inv(F(denominator(g)))
-      #return u*evaluate(numerator(g), y)
-
-      ccall((:fmpq_poly_get_denominator, :libflint), Void,
-            (Ptr{fmpz}, Ptr{fmpq_poly}), &t_fmpz, &g)
-
-      ccall((:fq_nmod_set_fmpz, :libflint), Void,
-            (Ptr{fq_nmod}, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
-            &tt_fq_nmod, &t_fmpz, &F)
-
-      ccall((:fq_nmod_inv, :libflint), Void,
-            (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}),
-            &tt_fq_nmod, &tt_fq_nmod, &F)
-
-      ccall((:fmpq_poly_get_numerator, :libflint), Void,
-                  (Ptr{fmpz_poly}, Ptr{fmpq_poly}), &h, &g)
-
-      evaluate!(t_fq_nmod, h, y)
-      #@assert t_fq_nmod == evaluate(h, y)
-      return tt_fq_nmod * t_fq_nmod
-    end
-
-    function _preimage(x::fq_nmod)
-      z = nf(O)()
-
-      for i in 0:degree(F)-1
-        z = z + _get_coeff_raw(x, i)*a^i
-      end
-
-      return O(z, false)
-    end
-
-    z.header = MapHeader{NfOrd, FqNmodFiniteField}(O, F, _image, _preimage)
-
-    return z
-  end
+function _mod!(x::nf_elem, y::fmpz)
+  zden = denominator(x)
+  zden2 = denominator(x)
+  mul!(x, x, zden)
+  mul!(zden, zden, y)
+  mod!(x, zden)
+  divexact!(x, x, zden2)
+  return x
 end
 
 mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing, HeckeMap, NfOrdQuoMap}
@@ -299,12 +249,6 @@ function (f::NfOrdQuoMap)(p::PolyElem{NfOrdElem})
 
   return z
 end
-
-base_ring(::NfOrd) = Union{}
-
-Nemo.needs_parentheses(::NfOrdElem) = true
-
-Nemo.isnegative(::NfOrdElem) = false
 
 # Assume A is mxd, B is mxl and there is a unique X of size lxd
 # with A = B * X
@@ -464,6 +408,11 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField, HeckeMap, NfOrdToFqMor}
   t_fmpz::fmpz
   a::nf_elem
 
+  function NfOrdToFqMor()
+    z = new()
+    return z
+  end
+
   function NfOrdToFqMor(O::NfOrd, F::FqFiniteField, g::fmpz_mod_poly)
     # assume that F = F_p[X]/(g) and g is a factor of f mod p
 
@@ -482,90 +431,148 @@ mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField, HeckeMap, NfOrdToFqMor}
     return z
   end
   
-  function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)
-    z = new()
+#  function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)
+#    z = new()
+#
+#    z.fastpath = false
+#
+#    p = abs(minimum(P))
+#
+#    R = ResidueRing(FlintZZ, p, cached=false)
+#
+#    OP = quoringalg(O, P, p)
+#    x = quoelem(OP, zero(O))
+#    f = PolynomialRing(R, "x", cached = false)[1]()
+#    d = length(OP.basis)
+#
+#    while true
+#      r = rand(0:p-1, d)
+#      x = quoelem(OP, dot([ x for x in OP.basis], r))
+#      f = minpoly(x)
+#      if degree(f) == d
+#        break
+#      end
+#    end
+#
+#    F = FqFiniteField(f, Symbol("_\$"), false)
+#
+#    M2 = zero_matrix(R, degree(O), d)
+#
+#    for i in 1:d
+#      coords = elem_in_basis((x^(i-1)).elem)
+#      for j in 1:degree(O)
+#        M2[j, i] = coords[j]
+#      end
+#    end
+#
+#    M3 = zero_matrix(R, degree(O), degree(O))
+#
+#    for i in 1:degree(O)
+#      coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
+#      for j in 1:degree(O)
+#        M3[j, i] = coords[j]
+#      end
+#    end
+#
+#    X = _solve_unique(M3, M2)
+#
+#    #for i in 1:degree(O)
+#    #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
+#    #end
+#
+#    function _image(y::NfOrdElem)
+#      co = zero_matrix(R, degree(O), 1)
+#      coeff = elem_in_basis(mod(y, P))
+#
+#      for i in 1:degree(O)
+#        co[i, 1] = coeff[i]
+#      end
+#
+#      co = X*co
+#
+#      z = F(lift(co[1, 1])) # totally inefficient
+#
+#      for i in 2:rows(co)
+#        z = z  + F(lift(co[i, 1]))*gen(F)^(i-1)
+#      end
+#
+#      return z
+#    end
+#
+#    function _preimage(y::fq)
+#      zz = nf(O)()
+#
+#      for i in 0:degree(F)-1
+#        zz = zz + coeff(y, i)*(x.elem.elem_in_nf)^i
+#      end
+#
+#      return mod(O(zz, false), P)
+#    end
+#
+#    z.header = MapHeader{NfOrd, FqFiniteField}(O, F, _image, _preimage)
+#    z.P = P
+#
+#    return z
+#  end
+#
+end
 
-    z.fastpath = false
+function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Vector{fmpz_mat})
+  z = NfOrdToFqMor()
+  z.fastpath = false
+  z.P = P
+  a, g, b = get_residue_field_data(P)
+  p = minimum(P)
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rx, x = PolynomialRing(R, "_\$", cached = false)
+  F = FqFiniteField(Rx(g), Symbol("_\$"), false)
+  d = degree(g)
+  n = degree(O)
+  imageofbasis = Vector{fq}(n)
+  powers = Vector{nf_elem}(d)
+  c = Rx()
 
-    p = abs(minimum(P))
-
-    R = ResidueRing(FlintZZ, p, cached=false)
-
-    OP = quoringalg(O, P, p)
-    x = quoelem(OP, zero(O))
-    f = PolynomialRing(R, "x", cached = false)[1]()
-    d = length(OP.basis)
-
-    while true
-      r = rand(0:p-1, d)
-      x = quoelem(OP, dot([ x for x in OP.basis], r))
-      f = minpoly(x)
-      if degree(f) == d
-        break
-      end
+  for i in 1:n
+    ib = F() 
+    @assert d == cols(b[i])
+    for j in 1:d
+      setcoeff!(c, j - 1, b[i][1, j])
     end
-
-    F = FqFiniteField(f, Symbol("_\$"), false)
-
-    M2 = zero_matrix(R, degree(O), d)
-
-    for i in 1:d
-      coords = elem_in_basis((x^(i-1)).elem)
-      for j in 1:degree(O)
-        M2[j, i] = coords[j]
-      end
-    end
-
-    M3 = zero_matrix(R, degree(O), degree(O))
-
-    for i in 1:degree(O)
-      coords = elem_in_basis(mod(basis(O)[i], OP.ideal))
-      for j in 1:degree(O)
-        M3[j, i] = coords[j]
-      end
-    end
-
-    X = _solve_unique(M3, M2)
-
-    #for i in 1:degree(O)
-    #  @assert quoelem(OP, basis(O)[i]) == quoelem(OP, dot([(x^j).elem for j in 0:d-1], _lift([ X[j, i] for j in 1:d ])))
-    #end
-
-    function _image(y::NfOrdElem)
-      co = zero_matrix(R, degree(O), 1)
-      coeff = elem_in_basis(mod(y, P))
-
-      for i in 1:degree(O)
-        co[i, 1] = coeff[i]
-      end
-
-      co = X*co
-
-      z = F(lift(co[1, 1])) # totally inefficient
-
-      for i in 2:rows(co)
-        z = z  + F(lift(co[i, 1]))*gen(F)^(i-1)
-      end
-
-      return z
-    end
-
-    function _preimage(y::fq)
-      z = nf(O)()
-
-      for i in 0:degree(F)-1
-        z = z + coeff(y, i)*(x.elem.elem_in_nf)^i
-      end
-
-      return mod(O(z, false), P)
-    end
-
-    z.header = MapHeader{NfOrd, FqFiniteField}(O, F, _image, _preimage)
-    z.P = P
-
-    return z
+    ccall((:fq_set, :libflint), Void, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), ib, c, F)
+    imageofbasis[i] = ib
   end
 
+  powers[1] = a.elem_in_nf
+  for i in 2:d
+    powers[i] = powers[i - 1] * a.elem_in_nf
+  end
+
+  tempF = F()
+
+  function _image(x::NfOrdElem)
+    v = elem_in_basis(x, Val{false})
+    zz = zero(F)
+    for i in 1:n
+      ccall((:fq_mul_fmpz, :libflint), Void,
+            (Ref{fq}, Ref{fq}, Ref{fmpz}, Ref{FqFiniteField}),
+            tempF, imageofbasis[i], v[i], F)
+      add!(zz, zz, tempF)
+    end
+    return zz
+  end
+
+  function _preimage(y::fq)
+    zz = O()
+    zz.elem_in_nf = nf(O)(coeff(y, 0))
+    for i in 2:d
+      add!(zz.elem_in_nf, zz.elem_in_nf, powers[i - 1] * coeff(y, i - 1))
+    end
+    _mod!(zz.elem_in_nf, p)
+    return zz
+  end
+
+  z.header = MapHeader{NfOrd, FqFiniteField}(O, F, _image, _preimage)
+  return z
 end
 
 function image(f::NfOrdToFqMor, x::NfOrdElem)
