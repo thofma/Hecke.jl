@@ -452,9 +452,9 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   M=basis_mat_inv(pu, Val{false})*mS.imap
   function disclog(x::NfOrdElem)
     x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x)), fmpz(1))
-    res_fakemat = x_fakemat * M
-    denominator(res_fakemat) != 1 && error("Element is in the ideal")
-    return vec(Array(numerator(res_fakemat)))
+    mul!(x_fakemat, x_fakemat, M)
+    denominator(x_fakemat) != 1 && error("Element is in the ideal")
+    return vec(Array(numerator(x_fakemat)))
   end
   
   return gens, rels(S), disclog
@@ -965,9 +965,9 @@ function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   n = norm(p) - 1
   s=valuation(n,prime)
   powerp=prime^s
-  m=div(n,powerp)
+  m=divexact(n,powerp)
   
-  powm=div(powerp,prime)
+  powm=divexact(powerp,prime)
   found=false
   g=Q(1)
   while found==false
@@ -1135,7 +1135,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
     val[i]=valuation(np,f[i])
   end
   npart=prod([f[i]^(val[i]) for i=1:length(f) if val[i]!=0])
-  m=div(np,npart)
+  m=divexact(np,npart)
   powm=[divexact(npart,f[i]) for i=1:length(f) if val[i]!=0]
   
   #

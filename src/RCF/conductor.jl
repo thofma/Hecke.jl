@@ -6,6 +6,40 @@ export conductor, isconductor
 #
 ########################################################################################
 
+function _norm_group_gens_small(C::ClassField)
+
+  mp=C.mq
+
+  mR = C.rayclassgroupmap
+  mS = C.quotientmap
+  
+  R=domain(mR)
+  cond=mR.modulus_fin
+  inf_plc1=mR.modulus_inf
+  O=parent(cond).order
+  E=order(domain(mp))
+  expo=Int(exponent(domain(mp)))
+  K=O.nf
+  
+  mS=inv(mS)
+  dom=domain(mS)
+  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
+  for i=1:ngens(dom)
+    elem=mS(dom[i]).coeff
+    for j=1:ngens(codomain(mS))
+      M[i,j]=elem[1,j]
+    end
+  end
+  S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
+  T,mT=Hecke.kernel(S1)
+
+  Sgens=find_gens_sub(mR,mT)
+  
+  return Sgens
+  
+end
+
+
 #
 #  Find small primes generating a subgroup of the ray class group
 #
@@ -58,20 +92,23 @@ function find_gens_sub(mR::MapRayClassGrp, mT::GrpAbFinGenMap)
   end
 end
 
+#
+#  This functions constructs generators for 1+p^u/1+p^u+1
+#
+
 function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Int, n::Int)
   
   O=maximal_order(K)
   b=basis(pk)
-  N = basis_mat(pv)*basis_mat_inv(pk)
-  G=AbelianGroup(numerator(N))
+  N = basis_mat(pv, Val{false})*basis_mat_inv(pk, Val{false})
+  G=AbelianGroup(N.num)
   S,mS=snf(G)
   #Generators
   gens=Array{NfOrdElem,1}(ngens(S))
   for i=1:ngens(S)
-    x=mS(S[i])
     gens[i]=O(0)
     for j=1:ngens(G)
-      gens[i]+=mod(x[j], S.snf[end])*b[j]
+      gens[i]+=mod(mS.map[i,j], S.snf[end])*b[j]
     end
   end
   for i=1:ngens(S)
@@ -116,33 +153,28 @@ function conductor(C::Hecke.ClassField)
   if isdefined(C,:conductor)
     return C.conductor
   end
-  mp=C.mq
-  G=domain(mp)
+  mR = C.rayclassgroupmap
+  mS = C.quotientmap
+  mp = inv(mS)* mR
+  G = domain(mp)
   #
   #  First, we need to find the subgroup
   #
   
-  mR = C.rayclassgroupmap
-  mS = C.quotientmap
-
-  R=domain(mR)
-  cond=mR.modulus_fin
-  inf_plc=mR.modulus_inf
-  O=parent(cond).order
-  if minimum(cond)==1 && isempty(inf_plc)
+  R = domain(mR)
+  cond = mR.modulus_fin
+  inf_plc = mR.modulus_inf
+  O = parent(cond).order
+  if isone(cond) && isempty(inf_plc)
     return ideal(O,1), InfPlc[]
   end
-
-  E=order(domain(mp))
-  expo=Int(exponent(domain(mp)))
+  E=order(G)
+  expo=Int(exponent(G))
   K=O.nf
-  
-  
-  
+ 
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
-  #
-    
+  #   
   L=deepcopy(mR.fact_mod)
   for (p,vp) in L
     if !divisible(E,p.minimum)
@@ -174,7 +206,7 @@ function conductor(C::Hecke.ClassField)
   end
   for (p,v) in L
     if v==1
-      Q,mQ=quo(G,[mp\ideal(O,tmg[p][1])],false)
+      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p][1]))],false)
       if order(Q)==E
         Base.delete!(L,p)
       end  
@@ -186,7 +218,7 @@ function conductor(C::Hecke.ClassField)
       while k1>=1
         multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
         for i=1:length(multg)
-          push!(gens, mp\ideal(O,multg[i]))
+          push!(gens, preimage(mp, ideal(O,multg[i])))
         end
         Q,mQ=quo(G,gens,false)
         if order(Q)!=E
@@ -241,6 +273,11 @@ function conductor(C::Hecke.ClassField)
   
 end 
 
+###############################################################################
+#
+#  isconductor function
+#
+###############################################################################
 
 doc"""
 ***
@@ -261,12 +298,12 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   G = codomain(mS)
   mp = inv(mS) * mR
   
-  R=domain(mR)
-  cond=mR.modulus_fin
-  inf_plc2=mR.modulus_inf
+  R = domain(mR)
+  cond = mR.modulus_fin
+  inf_plc2 = mR.modulus_inf
   O=parent(cond).order
-  E=order(domain(mp))
-  expo=Int(exponent(domain(mp)))
+  E=order(G)
+  expo=Int(exponent(G))
   K=O.nf
   tmg=mR.tame_mult_grp
   wild=mR.wild_mult_grp
@@ -288,7 +325,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
     
     r,mr=ray_class_group(m,inf_plc, n_quo= expo)
     quot=GrpAbFinGenElem[mr\s for s in Sgens]
-    s,ms=quo(r,quot, false)
+    s,ms=quo(r, quot, false)
     if order(s)!=E
       return false
     end
@@ -297,7 +334,6 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   #
   #  Some of the factors of the modulus are unnecessary for order reasons:
   #
-  
   
   L=factor(m)
   for (p,vp) in L
@@ -380,6 +416,115 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
 end
 
 
+
+####################################################################################
+#
+#  Discriminant function
+#
+####################################################################################
+
+function discriminant(C::ClassField)
+  
+  if isdefined(C,:conductor)
+    m=C.conductor[1]
+    inf_plc=C.conductor[2]
+  else
+    C.conductor=conductor(C)
+    m=C.conductor[1]
+    inf_plc=C.conductor[2]  
+  end
+  @assert typeof(m)==NfOrdIdl
+  
+  mp = inv(C.quotientmap) * C.rayclassgroupmap
+  R = domain(mp)
+  n = order(R)
+  
+  mR = C.rayclassgroupmap
+
+  cond=mR.modulus_fin
+  inf_plc=mR.modulus_inf
+  O=parent(cond).order
+  E=order(R)
+  expo=Int(exponent(R))
+  K=O.nf
+  a=Int(minimum(m))
+  relative_disc=Dict{NfOrdIdl,Int}()
+  abs_disc=Dict{fmpz,fmpz}()
+  lp=mR.fact_mod
+  if isempty(lp)
+    C.relative_discriminant=relative_disc
+  end
+  tmg=mR.tame_mult_grp
+  wldg=mR.wild_mult_grp
+  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+  for (p,v) in lp
+    prime_power[p]=p^v
+  end
+  fact=factor(m)
+
+  for (p,v) in fact
+    if v==1
+      ap=n
+      if isprime(n)
+        ap-=1
+      else
+        el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
+        q,mq=quo(R,[el])
+        ap-= order(q)
+      end
+      qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+      abs_disc[p.minimum] = qw
+      relative_disc[p] = ap
+    else
+      ap=n*v
+      if isprime(n)
+        ap-=v
+      else
+        if length(lp) > 1
+          i_without_p = ideal(O,1)
+          for (p2,vp2) in lp
+            (p != p2) && (i_without_p *= prime_power[p2])
+          end
+          alpha, beta = idempotents(prime_power[p],i_without_p)
+        end
+        s=v
+        @hassert :QuadraticExt 1 s>=2
+        els=GrpAbFinGenElem[]
+        for k=2:v      
+          s=s-1
+          pk=p^s
+          pv=pk*p
+          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a,Int(n))
+          for i=1:length(gens)
+            push!(els,mp\ideal(O,gens[i]))
+          end
+          ap-=order(quo(R,els)[1])
+          @hassert :QuadraticExt 1 ap>0
+        end
+        if haskey(tmg, p)
+          push!(els, mp\ideal(O,tmg[p][1]))
+        end
+        ap-=order(quo(R,els)[1])
+        @hassert :QuadraticExt 1 ap>0
+      end
+      td=prime_decomposition_type(O,Int(p.minimum))
+      np=fmpz(p.minimum)^(td[1][1]*length(td)*ap)
+      abs_disc[p.minimum]=td[1][1]*length(td)*ap
+      relative_disc[p]=ap
+    end
+  end
+  C.relative_discriminant=relative_disc
+  C.absolute_discriminant=abs_disc
+  return C.relative_discriminant
+  
+end
+
+
+###############################################################################
+#
+#  conductor function for abelian extension function
+#
+###############################################################################
 #
 #  For this function, we assume the base field to be normal over Q and the conductor of the extension we are considering to be invariant
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
@@ -455,10 +600,9 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
   mr = C.rayclassgroupmap
   mp = inv(C.quotientmap) * mr
-  R=domain(mp)
-  m=mr.modulus_fin
-  mm=Int(minimum(m))
-  lp=factor(m.minimum)
+  m = mr.modulus_fin
+  mm = Int(minimum(m))
+  lp = factor(m.minimum)
   
   O=order(m)
   K=nf(O)
@@ -507,115 +651,10 @@ function _is_conductor_minQQ(C::Hecke.ClassField, n::Int)
 
 end 
 
-####################################################################################
-#
-#  Discriminant function
-#
-####################################################################################
-
-function discriminant(C::ClassField)
-  
-  if isdefined(C,:conductor)
-    m=C.conductor[1]
-    inf_plc=C.conductor[2]
-  else
-    C.conductor=conductor(C)
-    m=C.conductor[1]
-    inf_plc=C.conductor[2]  
-  end
-  @assert typeof(m)==NfOrdIdl
-  
-  mp=C.mq
-  G=domain(mp)
-  n=order(G)
-  
-  mR = C.rayclassgroupmap
-  mS = C.quomap
-  
-  R=domain(mR)
-  cond=mR.modulus_fin
-  inf_plc=mR.modulus_inf
-  O=parent(cond).order
-  E=order(domain(mp))
-  expo=Int(exponent(domain(mp)))
-  K=O.nf
-  
-  relative_disc=Dict{NfOrdIdl,Int}()
-  abs_disc=Dict{fmpz,fmpz}()
-  lp=mR.fact_mod
-  if isempty(lp)
-    C.relative_discriminant=relative_disc
-  end
-  tmg=mR.tame_mult_grp
-  wldg=mR.wild_mult_grp
-  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-  for (p,v) in lp
-    prime_power[p]=p^v
-  end
-  fact=factor(m)
-
-  for (p,v) in fact
-    if v==1
-      ap=n
-      if isprime(n)
-        ap-=1
-      else
-        el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
-        q,mq=quo(R,[el])
-        ap-= order(q)
-      end
-      qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
-      abs_disc[p.minimum]=qw
-      relative_disc[p]=ap
-    else
-      ap=n*s
-      if isprime(n)
-        ap-=lp[p]
-      else
-        if length(lp) > 1
-          i_without_p = ideal(O,1)
-          for (p2,vp2) in lp
-            (p != p2) && (i_without_p *= prime_power[p2])
-          end
-          alpha, beta = idempotents(prime_power[p],i_without_p)
-        end
-        s=lp[p]
-        @hassert :QuadraticExt 1 s>=2
-        els=GrpAbFinGenElem[]
-        for k=2:lp[p]      
-          s=s-1
-          pk=p^s
-          pv=pk*p
-          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a,n)
-          for i=1:length(gens)
-            push!(els,mp\ideal(O,gens[i]))
-          end
-          ap-=order(quo(R,els)[1])
-          @hassert :QuadraticExt 1 ap>0
-        end
-        if haskey(tmg, p)
-          push!(els, mp\ideal(O,tmg[p][1]))
-        end
-        ap-=order(quo(R,els)[1])
-        @hassert :QuadraticExt 1 ap>0
-      end
-      td=prime_decomposition_type(O,Int(p.minimum))
-      np=fmpz(p.minimum)^(td[1][1]*length(td)*ap)
-      discr*=np
-      abs_disc[p.minimum]=td[1][1]*length(td)*ap
-      relative_disc[p]=ap
-    end
-  end
-  C.relative_discriminant=relative_disc
-  C.absolute_discriminant=abs_disc
-  return true
-  
-end
-
 
 #######################################################################################
 #
-#  Functions to compute the relative discriminant of a class field
+#  relative discriminant for abelian extension function
 #
 #######################################################################################
 
@@ -1008,36 +1047,5 @@ function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp)
 end
 
 
-function _norm_group_gens_small(C::ClassField)
 
-  mp=C.mq
-
-  mR = C.rayclassgroupmap
-  mS = C.quotientmap
-  
-  R=domain(mR)
-  cond=mR.modulus_fin
-  inf_plc1=mR.modulus_inf
-  O=parent(cond).order
-  E=order(domain(mp))
-  expo=Int(exponent(domain(mp)))
-  K=O.nf
-  
-  mS=inv(mS)
-  dom=domain(mS)
-  M=zero_matrix(FlintZZ,ngens(dom), ngens(codomain(mS)))
-  for i=1:ngens(dom)
-    elem=mS(dom[i]).coeff
-    for j=1:ngens(codomain(mS))
-      M[i,j]=elem[1,j]
-    end
-  end
-  S1=Hecke.GrpAbFinGenMap(domain(mS),codomain(mS),M)
-  T,mT=Hecke.kernel(S1)
-
-  Sgens=find_gens_sub(mR,mT)
-  
-  return Sgens
-  
-end
 
