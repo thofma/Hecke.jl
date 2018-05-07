@@ -32,11 +32,21 @@ parent(a::NfRelOrdFracIdl) = a.parent
 
 ################################################################################
 #
-#  iszero
+#  iszero/isone
 #
 ################################################################################
 
 iszero(a::NfRelOrdFracIdl) = iszero(basis_mat(a, Val{false})[1, 1])
+
+function isone(a::NfRelOrdFracIdl)
+  if denominator(a) != 1
+    return false
+  end
+  @assert isone(basis_pmat(a, Val{false}).matrix[1, 1])
+  @assert isone(basis_pmat(order(a), Val{false}).matrix[1, 1])
+
+  return isone(basis_pmat(a, Val{false}).coeffs[1])
+end
 
 ################################################################################
 #
@@ -347,12 +357,25 @@ end
 doc"""
 ***
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
+      divexact(a::NfRelOrdFracIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
+      divexact(a::NfRelOrdIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $ab^{-1}$.
 """
 divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = a*inv(b)
 
+divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)
+
+function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
+  O = order(a)
+  return NfRelOrdFracIdl{T, S}(O, basis_pmat(a, Val{false}))*inv(b)
+end
+
 //(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
+
+//(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
+
+//(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
 
 ################################################################################
 #

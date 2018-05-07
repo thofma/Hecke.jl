@@ -47,10 +47,7 @@ doc"""
 > If `check` is `true` it will be checked that $a$ is contained in
 > $\mathcal O$.
 """
-function (O::NfRelOrd)(a::NfRelOrdElem{T}, check::Bool = true) where T
-  b = nf(parent(a))(a)
-  return O(b, check)
-end
+(O::NfRelOrd)(a::NfRelOrdElem{T}, check::Bool = true) where {T} = O(nf(O)(a.elem_in_nf), check)
 
 function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
   t = nf(O)()

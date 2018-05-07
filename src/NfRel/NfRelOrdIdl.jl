@@ -412,7 +412,7 @@ isone(a::NfRelOrdIdl) = isone(minimum(a))
 ################################################################################
 
 # Assumes, that det(basis_mat(a)) == 1
-function assure_has_norm(a::NfRelOrdIdl)
+function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
   if a.has_norm
     return nothing
   end
@@ -428,9 +428,14 @@ function assure_has_norm(a::NfRelOrdIdl)
   for i = 2:degree(order(a))
     n *= c[i]*d[i]
   end
-  simplify(n)
-  @assert n.den == 1
-  a.norm = n.num
+  if T == nf_elem
+    simplify(n)
+    @assert n.den == 1
+    a.norm = n.num
+  else
+    @assert denominator(n) == 1
+    a.norm = NfRelOrdIdl{typeof(n).parameters...}(order(n), basis_pmat(n, Val{false}))
+  end
   a.has_norm = true
   return nothing
 end
@@ -644,7 +649,7 @@ doc"""
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
-  return NfRelOrdFracIdl{T, S}(O, basis_pmat(a))*inv(b)
+  return NfRelOrdFracIdl{T, S}(O, basis_pmat(a, Val{false}))*inv(b)
 end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
