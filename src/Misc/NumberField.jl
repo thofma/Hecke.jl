@@ -14,39 +14,6 @@ else
   global const p_start = 2^60
 end
 
-################################################################################
-#
-#  fmpq_poly with denominator 1 to fmpz_poly
-#
-################################################################################
-
-
-function (a::FmpzPolyRing)(b::fmpq_poly)
-  (denominator(b) != 1) && error("denominator has to be 1")
-  z = a()
-  ccall((:fmpq_poly_get_numerator, :libflint), Void,
-              (Ptr{fmpz_poly}, Ptr{fmpq_poly}), &z, &b)
-  return z
-end
-
-doc"""
-  basis(K::AnticNumberField)
-
-> A Q-basis for K, ie. 1, x, x^2, ... as elements of K
-"""
-function basis(K::AnticNumberField)
-  n = degree(K)
-  g = gen(K);
-  d = Array{typeof(g)}(n)
-  b = K(1)
-  for i = 1:n-1
-    d[i] = b
-    b *= g
-  end
-  d[n] = b
-  return d
-end
-
 ###########################################################################
 # modular poly gcd and helpers
 ###########################################################################
@@ -334,11 +301,6 @@ function gcdx_modular(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   end
 end
 
-
-function ismonic(a::PolyElem)
-  return isone(lead(a))
-end
-
 function eq_mod(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, d::fmpz)
   e = degree(a) == degree(b)
   K= base_ring(parent(a))
@@ -523,7 +485,6 @@ function exp(a::RelSeriesElem{<:Nemo.FieldElem})
   return x
 end
 
-
 doc"""
     derivative(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the derivative of the power series $f$.
@@ -693,7 +654,6 @@ function norm(f::PolyElem{T}) where T <: NfRelElem
   return power_sums_to_polynomial(PQ)
 end
 
-
 doc"""
   factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
   factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
@@ -710,7 +670,6 @@ function factor(f::fmpz_poly, K::AnticNumberField)
   Qz, z = PolynomialRing(FlintQQ)
   return factor(evaluate(Qz(f), y))
 end
-
 
 doc"""
   factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
@@ -788,79 +747,6 @@ function factor(f::PolyElem{nf_elem})
   return r
 end
 
-################################################################################
-#
-# Operations for nf_elem
-#
-################################################################################
-
-function gen!(r::nf_elem)
-   a = parent(r)
-   ccall((:nf_elem_gen, :libantic), Void,
-         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
-   return r
-end
-
-function one!(r::nf_elem)
-   a = parent(r)
-   ccall((:nf_elem_one, :libantic), Void,
-         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
-   return r
-end
-
-function one(r::nf_elem)
-   a = parent(r)
-   return one(a)
-end
-
-function zero(r::nf_elem)
-   return zero(parent(r))
-end
-
-*(a::nf_elem, b::Integer) = a * fmpz(b)
-
-doc"""
-***
-   norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpz
-
-> Computes divexact(norm(a), d) provided the result has at most nb bits.
-> Typically, a is in some ideal and d is the norm of the ideal.
-"""
-function norm_div(a::nf_elem, d::fmpz, nb::Int)
-   z = fmpq()
-   #CF the resultant code has trouble with denominators,
-   #   this "solves" the problem, but it should probably be
-   #   adressed in c
-   de = denominator(a)
-   n = degree(parent(a))
-   ccall((:nf_elem_norm_div, :libantic), Void,
-         (Ptr{fmpq}, Ptr{nf_elem}, Ptr{AnticNumberField}, Ptr{fmpz}, UInt),
-         &z, &(a*de), &a.parent, &(d*de^n), UInt(nb))
-   return z
-end
-
-function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, :libantic), Void,
-         (Ptr{nf_elem}, Ptr{nf_elem}, Ptr{nf_elem}, Ptr{AnticNumberField}),
-
-         &a, &b, &c, &a.parent)
-end
-
-function ^(x::nf_elem, y::fmpz)
-  if y < 0
-    return inv(x)^(-y)
-  elseif y == 0
-    return parent(x)(1)
-  elseif y == 1
-    return deepcopy(x)
-  elseif mod(y, 2) == 0
-    z = x^(div(y, 2))
-    return z*z
-  elseif mod(y, 2) == 1
-    return x^(y-1) * x
-  end
-end
-
 doc"""
 ***
     roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
@@ -879,7 +765,10 @@ function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
   return roots(evaluate(f, y), max_roots)
 end
 
-elem_in_nf(a::nf_elem) = a
+function elem_in_nf(a::nf_elem)
+  Base.show_backtrace(STDOUT, Base.backtrace())
+  return a
+end
 
 doc"""
 ***

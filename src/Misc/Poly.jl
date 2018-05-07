@@ -57,6 +57,10 @@ function div(f::PolyElem, g::PolyElem)
   return q
 end
 
+function ismonic(a::PolyElem)
+  return isone(lead(a))
+end
+
 doc"""
 ***
   valence(f::PolyElem) -> RingElem
@@ -1401,4 +1405,17 @@ function resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{
   return res
 end
 
+################################################################################
+#
+#  fmpq_poly with denominator 1 to fmpz_poly
+#
+################################################################################
+
+function (a::FmpzPolyRing)(b::fmpq_poly)
+  (!isone(denominator(b))) && error("Denominator has to be 1")
+  z = a()
+  ccall((:fmpq_poly_get_numerator, :libflint), Void,
+              (Ref{fmpz_poly}, Ref{fmpq_poly}), z, b)
+  return z
+end
 

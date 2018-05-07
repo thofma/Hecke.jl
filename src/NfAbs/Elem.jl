@@ -137,9 +137,39 @@ end
 
 ################################################################################
 #
+#  Powering with fmpz
+#
+################################################################################
+
+function ^(x::nf_elem, y::fmpz)
+  # TODO: try to coerce y to UInt
+  if y < 0
+    return inv(x)^(-y)
+  elseif y == 0
+    return parent(x)(1)
+  elseif y == 1
+    return deepcopy(x)
+  elseif mod(y, 2) == 0
+    z = x^(div(y, 2))
+    return z*z
+  elseif mod(y, 2) == 1
+    return x^(y-1) * x
+  end
+end
+
+
+
+################################################################################
+#
 #  Unsafe operations
 #
 ################################################################################
+
+function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
+   ccall((:nf_elem_sub, :libantic), Void,
+         (Ref{nf_elem}, Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}),
+         a, b, c, a.parent)
+end
 
 function set_den!(a::nf_elem, d::fmpz)
   ccall((:nf_elem_set_den, :libflint), Void,
@@ -153,3 +183,64 @@ function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
         z, x, y, parent(x))
   return z
 end
+
+function gen!(r::nf_elem)
+   a = parent(r)
+   ccall((:nf_elem_gen, :libantic), Void,
+         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
+   return r
+end
+
+function one!(r::nf_elem)
+   a = parent(r)
+   ccall((:nf_elem_one, :libantic), Void,
+         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
+   return r
+end
+
+function one(r::nf_elem)
+   a = parent(r)
+   return one(a)
+end
+
+function zero(r::nf_elem)
+   return zero(parent(r))
+end
+
+################################################################################
+#
+#  Ad hoc operations
+#
+################################################################################
+
+# TODO: Remove this once we use Nemo >0.8.6
+*(a::nf_elem, b::Integer) = a * fmpz(b)
+
+################################################################################
+#
+#  Norm div
+#
+################################################################################
+
+doc"""
+***
+   norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpz
+
+Computes divexact(norm(a), d) provided the result has at most `nb` bits.
+Typically, $a$ is in some ideal and $d$ is the norm of the ideal.
+"""
+function norm_div(a::nf_elem, d::fmpz, nb::Int)
+   z = fmpq()
+   # TODO:
+   #CF the resultant code has trouble with denominators,
+   #   this "solves" the problem, but it should probably be
+   #   adressed in c
+   @assert nb > 0
+   de = denominator(a)
+   n = degree(parent(a))
+   ccall((:nf_elem_norm_div, :libantic), Void,
+         (Ref{fmpq}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{fmpz}, UInt),
+         z, (a*de), a.parent, (d*de^n), UInt(nb))
+   return z
+end
+
