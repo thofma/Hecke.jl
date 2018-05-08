@@ -805,7 +805,7 @@ function (A::FqNmodFiniteField)(x::nmod_poly)
 end
 
 function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_poly)
-  nf_elem_to_nmod_poly_den!(a_tmp, b)
+  nf_elem_to_nmod_poly!(a_tmp, b)
   ccall((:fq_nmod_set, :libflint), Void,
                      (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
                                      &a, &a_tmp, &K)

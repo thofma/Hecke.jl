@@ -17,6 +17,11 @@ function isless(a::BigFloat, b::Nemo.fmpz)
   return c < 0
 end
 
+function mulmod(a::UInt, b::UInt, n::UInt, ni::UInt)
+  ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), a, b, n, ni)
+end
+
+
 # TODO (CF):
 # should be Bernstein'ed: this is slow for large valuations
 # returns the maximal v s.th. z mod p^v == 0 and z div p^v

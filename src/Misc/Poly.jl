@@ -1419,3 +1419,153 @@ function (a::FmpzPolyRing)(b::fmpq_poly)
   return z
 end
 
+################################################################################
+#
+#  Power sums
+#
+################################################################################
+
+doc"""
+    polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) -> Array{T, 1}
+> Uses Newton (or Newton-Girard) formulas to compute the first $n$
+> power sums from the coefficients of $f$.
+"""
+function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: FieldElem
+  d = degree(f)
+  R = base_ring(f)
+  S = PowerSeriesRing(R, n+1, "gen(S)")[1]
+  #careful: converting to power series and derivative do not commute
+  #I also don't quite get this: I thought this was just the log,
+  #but it isn't
+  A = S([coeff(reverse(derivative(f)), i) for i=0:d-1], d, n+1, 0)
+  B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
+  L = A*inv(B)
+  s = [coeff(L, i) for i=1:n]
+  return s
+end
+
+#plain vanilla recursion
+function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T 
+  d = degree(f)
+  R = base_ring(f)
+  E = T[(-1)^i*coeff(f, d-i) for i=0:min(d, n)] #should be the elementary symm.
+  while length(E) <= n
+    push!(E, R(0))
+  end
+  P = T[]
+
+  push!(P, E[1+1])
+  for k=2:n
+    push!(P, (-1)^(k-1)*k*E[k+1] + sum((-1)^(k-1+i)*E[k-i+1]*P[i] for i=1:k-1))
+  end
+  return P
+end
+
+doc"""
+    power_sums_to_polynomial(P::Array{T, 1}) -> PolyElem{T}
+> Uses the Newton (or Newton-Girard) identities to obtain the polynomial
+> coefficients (the elementary symmetric functions) from the power sums.
+"""
+function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
+  d = length(P)
+  R = parent(P[1])
+  S = PowerSeriesRing(R, d, "gen(S)")[1]
+  s = S(P, length(P), d, 0)
+  if !false
+    r = - integral(s)
+    r = exp(r)
+  end
+
+  if false
+    r = S(T[R(1), -P[1]], 2, 2, 0) 
+    la = [d+1]
+    while la[end]>1
+      push!(la, div(la[end]+1, 2))
+    end
+    n = length(la)-1
+    while n > 0
+      set_prec!(r, la[n])
+      rr = derivative(r)*inv(r)
+      md = -(rr+s)
+      m = S([R(1)], 1, la[n], 0)+integral(md)
+      r *= m
+      n -= 1
+    end
+    println("new exp $r")
+  end
+  d = Nemo.pol_length(r)
+  v = valuation(r)
+  @assert v==0
+  while d>=0 && iszero(Nemo.polcoeff(r, d))
+    d -= 1
+  end
+  return PolynomialRing(R, cached = false)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
+end
+
+function power_sums_to_polynomial(P::Array{T, 1}) where T
+  E = T[1]
+  R = parent(P[1])
+  last_non_zero = 0
+  for k=1:length(P)
+    push!(E, divexact(sum((-1)^(i-1)*E[k-i+1]*P[i] for i=1:k), R(k)))
+    if E[end] != 0
+      last_non_zero = k
+    end
+  end
+  E = E[1:last_non_zero+1]
+  d = length(E) #the length of the resulting poly...
+  for i=1:div(d, 2)
+    E[i], E[d-i+1] = (-1)^(d-i)*E[d-i+1], (-1)^(i-1)*E[i]
+  end
+  return PolynomialRing(R, cached = false)[1](E)
+end
+
+function factor(f::fmpq_poly, R::NmodRing)
+  Rt, t = PolynomialRing(R, "t", cached=false)
+  return factor(Rt(f))
+end
+
+function factor(f::fmpz_poly, R::NmodRing)
+  Rt, t = PolynomialRing(R, "t", cached=false)
+  return factor(Rt(f))
+end
+
+function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
+  Rt, t = PolynomialRing(R, "t", cached=false)
+  fp = FlintZZ["t"][1](f*denominator(f))
+  fpp = Rt(fp)
+  return roots(fpp)
+end
+
+function roots(f::fmpq_poly, R::Nemo.NmodRing)
+  Rt, t = PolynomialRing(R, "t", cached=false)
+  fp = FlintZZ["t"][1](f*denominator(f))
+  fpp = Rt(fp)
+  return roots(fpp)
+end
+
+function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo and
+                                    # made available for all finite fields I guess.
+  q = size(base_ring(f))
+  x = gen(parent(f))
+  if degree(f) < q
+    x = powmod(x, q, f)-x
+  else
+    x = x^q-x
+  end
+  f = gcd(f, x)
+  l = factor(f).fac
+  return elem_type(base_ring(f))[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
+end
+
+function roots(f::PolyElem)
+  lf = factor(f)
+  return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
+end    
+
+function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
+   ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Void,
+         (Ptr{fq_nmod_poly}, Int, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
+         &z, n, &x, &base_ring(parent(z)))
+     return z
+end
