@@ -211,8 +211,7 @@ function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field)
   aut_L_rel = rel_auto(C)
   rel_extend = [ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
   rel_gens = vcat(aut_L_rel, rel_extend)
-  id = find_identity(rel_gens, *)
-  return closure(rel_gens, *, id)
+  return rel_gens
 end
 
 ##########################################################################################################
@@ -621,7 +620,7 @@ end
 ###############################################################################
 
 
-function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false)#, with_autos::Bool=false)
+function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false, with_autos::Type{Val{T}} = Val{false}) where T 
   
   K=nf(O) 
   @assert degree(K)==1
@@ -632,8 +631,11 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   #Getting conductors
   l_conductors=conductorsQQ(O,n,absolute_discriminant_bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
-  fields=NfRel_ns[]
-#  autos=Vector{NfRel_nsToNfRel_nsMor}[]
+  if with_autos==Val{true}
+    fields = Tuple{NfRel_ns, NfRel_nsToNfRel_nsMor}[]
+  else
+    fields = NfRel_ns[]
+  end
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
@@ -649,11 +651,12 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
       if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound,n)
         @vprint :QuadraticExt 1 "New Field \n"
         L=number_field(C)
-        push!(fields, L)
+        if with_autos==Val{true}
+          push!(fields,(L, absolute_automorphism_group(C)))
+        else
+          push!(fields, L)
+        end
       end
-#      if with_autos
-#        push!(autos,absolute_automorphism_group(C,gens))
-#      end
     end
   end
 
@@ -662,20 +665,27 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
 end
 
 
-function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all)#, with_autos::Bool=false)
+function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all,  with_autos::Type{Val{T}} = Val{false}) where T 
 
   d=degree(O)
   if d==1
-    return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame) #, with_autos=with_autos) 
+    return abelian_extensions(O, gtype, absolute_discriminant_bound, real=!ramified_at_infplc, tame=tame, with_autos=with_autos) 
   end
 
   K=nf(O) 
   n=prod(gtype)
   inf_plc=InfPlc[]
   
-  bo = ceil(Rational{BigInt}(absolute_discriminant_bound//discriminant(O)^n))
-  bound = abs(FlintZZ(fmpq(bo)))
-
+  if with_autos==Val{true}
+    fields=Tuple{NfRel_ns,Vector{NfRel_nsToNfRel_nsMor}}[]
+  else
+    fields=NfRel_ns[]
+  end
+  
+  bound = abs(div(absolute_discriminant_bound,discriminant(O)^n))
+  if bound==0
+    return fields
+  end
 
   if mod(n,2)==0 && ramified_at_infplc
     inf_plc=real_places(K)
@@ -685,7 +695,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   C,mC=class_group(O)
   cgrp= gcd(n,order(C))!=1
   if cgrp
-    S = prime_ideals_up_to(O, max(100,12*clog(discriminant(O),10)^2))
+    S = prime_ideals_up_to(O, max(100,12*clog(abs(discriminant(O)),10)^2))
   end
   allow_cache!(mC)
   
@@ -696,12 +706,11 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   Aut=Hecke.automorphisms(K)
   @assert length(Aut)==degree(O) #The field is normal over Q
   gens = Hecke.small_generating_set(Aut)
-  
+
   #Getting conductors
   l_conductors=conductors(O,n,bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
-  fields=NfRel_ns[]
-  autos=Vector{NfRel_nsToNfRel_nsMor}[]
+  
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
@@ -741,12 +750,13 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
             error("Group not supported (yet)")
           end
         else
-          push!(fields, L)
+          if with_autos==Val{true}
+            push!(fields, (L,absolute_automorphism_group(C,gens))) 
+          else
+            push!(fields, L)
+          end
         end
       end
-#      if with_autos
-#        push!(autos,absolute_automorphism_group(C,gens))
-#      end
     end
   end
 
@@ -1071,9 +1081,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
   gens=small_generating_set(gens)
   
   #Getting conductors
-  bo = ceil(Rational{BigInt}(absolute_bound//abs(discriminant(O))^3))
-  bound = FlintZZ(fmpq(bo))
-  println(bound)
+  bound = div(absolute_bound, D^3)
   l_conductors=conductors(O,3, bound)
   @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
 
@@ -1095,7 +1103,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
       end
       C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
-        println("New Field")
+        @vprint :QuadraticExt 1 "New Field"
         L=number_field(C)
         SS=Hecke.simple_extension(L)[1]
         F=absolute_field(SS)[1]
@@ -1175,8 +1183,8 @@ function D5_extensions(absolute_bound::fmpz, quad_fields)
   for K in quad_fields
     len-=1
     
-#    println("Field: $K")   
-#    println("Remaining Fields: $(len)")
+     @vprint :QuadraticExt 1 "Field: $K\n"   
+     @vprint :QuadraticExt 1 "Remaining Fields: $(len)\n"
     append!(z, single_D5_extensions(absolute_bound, K))
   end
   return z
@@ -1188,8 +1196,8 @@ function D5_extensions(absolute_bound::fmpz, quad_fields, f::IOStream)
   for K in quad_fields
     len-=1
     
-    println("Field: $K")   
-    println("Remaining Fields: $(len)")
+    @vprint :QuadraticExt 1  "Field: $K\n"
+    @vprint :QuadraticExt 1 "Remaining Fields: $(len)\n"
     for g in single_D5_extensions(absolute_bound, K)
       Base.write(f, "($g)\n" )
     end
@@ -1239,7 +1247,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
       end
       C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C,a)
-#        println("New Field")
+        @vprint :QuadraticExt 1 "New Field"
         L=number_field(C)
         auto=Hecke.extend_aut(C, gens[1])
         pol=_quintic_ext(auto)
@@ -1385,22 +1393,21 @@ function Dn_extensions(n::Int, absolute_bound::fmpz; totally_real::Bool=false, c
 end
 
 function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=false)
-  
+  @assert absolute_bound>0
   len=length(list_quad)
   fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
   
   for K in list_quad
     len-=1
     
-    println("Field: $K")
-    println("Fields left:", len)
+    @vprint :QuadraticExt 1 "Field: $K\n"
+    @vprint :QuadraticExt 1 "Fields left: $len\n"
     O=maximal_order(K)
     D=abs(discriminant(O))
     if D^n>absolute_bound
       continue
     end
-    bo = ceil(Rational{BigInt}(absolute_bound//D^n))
-    bound = FlintZZ(fmpq(bo))
+    bound = div(absolute_bound, abs(D)^n)
    
     C,mC=class_group(O)
     allow_cache!(mC)
@@ -1441,7 +1448,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
         end
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
-          println("\n New Field!")
+          @vprint :QuadraticExt 1 "\n New Field!\n"
           L=number_field(C)
           ram_primes=Set(collect(keys(factor(a).fac)))
           for p in keys(factor(O.disc).fac)
@@ -1490,7 +1497,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
   
   for K in list_quad
     
-    println("Field: $K")
+    @vprint :QuadraticExt 1 "Field: $K\n"
     O=maximal_order(K)
     D=abs(discriminant(O))
 
@@ -1560,8 +1567,11 @@ function C3xD5_extensions(non_normal_bound::fmpz)
           if degree(pol)!=15
             pol=absolute_minpoly(x*(auto(x)))
           end
-          @vprint :QuadraticExt "The field is: $pol \n"
-          push!(fieldslist, (number_field(pol)[1], collect(ram_primes)))
+          K,a=NumberField(pol, cached= false)
+          if _is_discriminant_lower(K, collect(ram_primes), non_normal_bound)
+            @vprint :QuadraticExt "The field is: $pol \n"
+            push!(fieldslist, (number_field(pol)[1], collect(ram_primes)))
+          end
         end
       end
     end
@@ -1608,7 +1618,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
 
   for K in list_quad
     
-    println("Field: $K")
+    @vprint :QuadraticExt 1 "Field: $K\n"
     O=maximal_order(K)
     D=abs(discriminant(O))
     bound = non_normal_bound^2
@@ -1651,7 +1661,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
         end
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
-          println("\n New Field!")
+          @vprint :QuadraticExt 1  "\n New Field!\n"
           #Before computing the field, I check if the discriminant of the $S_3$ extension is compatible
           s1=codomain(s)
           q1,mq1=quo(s1,3, false)
@@ -1733,7 +1743,6 @@ function C9semiC4(absolute_bound::fmpz, l)
     S=Hecke.simple_extension(L)[1]
     K=Hecke.absolute_field(S)[1]
     K=simplify(K, canonical=true)[1]
-    println(K)
     O=maximal_order(K)
     D=abs(discriminant(O))
     if D^9>absolute_bound
@@ -1755,10 +1764,10 @@ function C9semiC4(absolute_bound::fmpz, l)
   
     #Getting conductors
     l_conductors=conductors(O,9,bound, false)
-    println("Conductors:", length(l_conductors))
+    @vprint :QuadraticExt 1 "Conductors: $(length(l_conductors))\n"
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
-      println("Doing", i)
+      @vprint :QuadraticExt 1 "Doing $i\n"
       r,mr=ray_class_group_quo(O,9,k[1], k[2])
       if !_are_there_subs(r,[9])
         continue
@@ -1766,9 +1775,9 @@ function C9semiC4(absolute_bound::fmpz, l)
       if cgrp
         mr.prime_ideal_cache = S
       end
-      println("Computing the action")
+      @vprint :QuadraticExt 1 "Computing the action\n"
       act=_act_on_ray_class(mr,gens)
-      println("Computing subgroups")
+      @vprint :QuadraticExt 1 "Computing subgroups\n"
       ls=stable_subgroups(r,[9],act, op=(x, y) -> quo(x, y, false)[2])
       a=_min_wild(k[2])*k[1]
       for s in ls
@@ -1778,7 +1787,7 @@ function C9semiC4(absolute_bound::fmpz, l)
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) <= absolute_bound
           absolute_bound=evaluate(FacElem(C.absolute_discriminant))
-          println("\n New Field with discriminant ", absolute_bound)
+          @vprint :QuadraticExt 1 "New Field with discriminant $absolute_bound"
           field=C
         end
       end
@@ -1802,7 +1811,7 @@ end
 function _discriminant_bound(autos, ram_primes::Array{fmpz,1}, bound::fmpz)
 
   K=_to_non_normal(autos)
-  println("Doing $(K)")
+  @vprint :QuadraticExt 1 "Doing $(K)"
   #now, compute the discriminant of K. Since we know the ramified primes, 
   #we know the primes dividing the discriminant and this is easier than computing the maximal order.
   return _is_discriminant_lower(K,ram_primes,bound)
@@ -1858,81 +1867,7 @@ function _to_non_normal(autos)#::Vector{NfRel_nsToNfRel_nsMor})
   
 end
 
-###############################################################################
-#
-#  From the order of a relative extension 
-#  to the absolute maximal order
-#
-###############################################################################
 
-function _maximal_absolute_order_from_relative(L::NfRel_ns)
-
-  #We compute the absolute extension and the maps
-  S,mS=simple_extension(L)
-  K,mK=absolute_field(S, false)
-
-  #we compute the relative maximal order of L and of the base field
-  #OL=maximal_order(L)  still useless
-  O=maximal_order(L.base_ring)
-  
-  #take the basis
-  basisL=basis(S)#[OL.pseudo_basis[i][1]*denominator(OL.pseudo_basis[i][2]) for i=1:degree(L.pol)]
-  basisO=[L(O.basis_nf[i]) for i=1:degree(O)]
-  
-  #and bring them to K
-  nbasisL=[mK(el) for el in basisL]
-  nbasisO=[mK(mS\(el)) for el in basisO]
-  
-  #construct the order generated by the products
-  cbasis=[x*y for x in nbasisL for y in nbasisO]
-  
-  Ord=Order(K, cbasis)
-  #println("The elements give an order")
-  return MaximalOrder(Ord)
-
-end
-
-###############################################################################
-#
-#
-#
-###############################################################################
-
-
-function _from_autos_to_cycles(autos)
-
-  K=domain(autos[1])
-  G=closure(autos, *)
-  elements=[x.prim_img for x in G]
-  permutations=Array{Array{Int, 1},1}(length(autos))
-  for s=1:length(autos)
-    perm=Array{Int,1}(length(elements))
-    for i=1:length(elements)
-      a=autos[s](elements[i])
-      j=1
-      while a!=elements[j]
-        j+=1
-      end
-      perm[i]=j
-    end
-    permutations[s]=perm
-  end
-  return permutations
-end
-
-function _from_matrix_to_listlist(M::MatElem)
-
-  mat=Array{Array{Int,1},1}(rows(M))
-  for i=1:rows(M)
-    rowi=Array{Int,1}(cols(M))
-    for j=1:cols(M)
-      rowi[j]=M[i,j]
-    end
-    mat[i]= rowi
-  end
-  return mat
-  
-end
 
 ################################################################################
 #
@@ -1968,6 +1903,79 @@ function valuation_bound_discriminant(n::Int, p::Union{Integer, fmpz})
 
   return b
 end
+
+###############################################################################
+#
+#  From relative to absolute
+#
+###############################################################################
+
+function _from_relative_to_abs(L::Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}})
+  
+  S,mS=simple_extension(L[1])
+  K,mK=absolute_field(S, false)
+  
+  #First, we compute the maximal order of the absolute field.
+  #We start from the maximal orders of the relative extension and of the base field.
+  #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
+  # generating the equation order.
+  O=maximal_order(L[1].base_ring)
+  OL=EquationOrder(L[1])
+  B=pseudo_basis(OL)
+  
+  @vprint :QuadraticExt 1 "Maximal Orders computed\n"
+  #Then we consider the product basis
+  basisL=Array{NfRel_nsElem, 1}(2*degree(L[1]))
+  for i=1:degree(L[1])
+    _assure_weakly_normal_presentation(B[i][2].num)
+    basisL[2*i-1]=divexact(B[i][2].num.gen_one* B[i][1], B[i][2].den)
+    basisL[2*i]=divexact(L[1].base_ring(B[i][2].num.gen_two)* B[i][1], B[i][2].den)
+  end
+  basisO=[L[1](O.basis_nf[i]) for i=1:degree(O)]
+  
+  nbasisL=[mK(mS\(el)) for el in basisL]
+  nbasisO=[mK(mS\(el)) for el in basisO]
+
+  cbasis=[x*y for x in nbasisL for y in nbasisO]
+  append!(cbasis, [gen(K)^i for i=0:degree(K)-1])
+  @vprint :QuadraticExt 1 "Product basis computed\n"
+  #Now, we compute the maximal order. Then we simplify.
+  O1=MaximalOrder(_order(K, cbasis))
+  _set_maximal_order_of_nf(K,O1)
+  Ks, mKs= simplify(K)
+  
+  #Now, we have to construct the maximal order of this field.
+  #I am computing the preimages of mKs by hand, by inverting the matrix.
+  M = zero_matrix(FlintZZ, degree(Ks), degree(Ks))
+  prim_img=mKs(gen(Ks))
+  M1=inv(basis_mat([prim_img^i for i=0:degree(Ks)-1]))
+  basisO2=Array{nf_elem, 1}(degree(Ks))
+  M=zero_matrix(FlintZZ, 1, degree(Ks))
+  for i=1:length(basisO2)
+    elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
+    mul!(M, M, M1.num)
+    basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
+  end
+  O2=Order(Ks, basisO2, false)
+  _set_maximal_order_of_nf(Ks,O2)
+  @vprint :QuadraticExt 1 "MaximalOrder Computed. Now Automorphisms\n"
+
+  #Now, the automorphisms.
+  autos=Array{NfToNfMor, 1}(length(L[2]))
+  el=mS(mK\(mKs(gen(Ks))))
+  for i=1:length(L[2])
+    x=mK(mS\(L[2][i](el)))
+    elem_to_mat_row!(M, 1, denominator(x), x)
+    mul!(M, M, M1.num)
+    y=elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
+    @assert Ks.pol(y)==0
+    autos[i]=NfToNfMor(Ks,Ks,y)
+  end
+  
+  @vprint :QuadraticExt 1 "Finished\n"
+  return Ks, autos
+
+end 
 
 ###############################################################################
 #

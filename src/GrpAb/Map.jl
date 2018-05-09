@@ -178,7 +178,7 @@ end
 
 ################################################################################
 #
-#  Kernel
+#  Kernel, image, cokernel
 #
 ################################################################################
 
@@ -230,27 +230,35 @@ function image(h::GrpAbFinGenMap)
   return sub(H, im, false)  # too much, this is sub in hnf....
 end
 
+doc"""
+    cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
+
+Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
+a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with 
+respect to the image of $h$.
+"""
+function cokernel(h::GrpAbFinGenMap)
+  S,mS=image(h)
+  return quo(codomain(h), GrpAbFinGenElem[mS(g) for g in gens(S)], false)
+end
+
 ################################################################################
 #
 #  Surjectivity
 #
 ################################################################################
 
-# TODO: Make this work for infinite groups
-# Is this the right way of doing it? (Carlo)
 doc"""
     issurjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is surjective.
 """
-function issurjective(A::GrpAbFinGenMap)
-  H, mH = image(A)
-  if isfinite(codomain(A)) && isfinite(H)
-    return order(codomain(A)) == order(H)
+function issurjective(A::GrpAbFinGenMap)  
+  if isfinite(codomain(A))
+    H, mH = image(A)
+    return (order(codomain(A)) == order(H))::Bool
   else
-    Q, mQ = quo(codomain(A), GrpAbFinGenElem[mH(g) for g in gens(H)], false)
-    S,mS=snf(Q)
-    return prod(S.snf)==1
+    return (order(cokernel(A)) == 1)::Bool
   end
 end
 
@@ -284,3 +292,18 @@ Returns whether $h$ is bijective.
 function isbijective(A::GrpAbFinGenMap)
   return isinjective(A) && issurjective(A)
 end
+
+###############################################################################
+#
+#  Compose and Squash for abelian group maps
+#
+###############################################################################
+
+function _compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+  @assert domain(g)==codomain(f)
+  
+  M=f.map*g.map
+  return GrpAbFinGenMap(domain(f), codomain(g), M)
+
+end
+

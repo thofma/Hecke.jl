@@ -1688,10 +1688,9 @@ function _assure_weakly_normal_presentation(A::NfOrdIdl)
       continue
     end
 
-    mul!(m, m, basis_mat(A))
-    Q = numerator(basis_mat(O))
-    d = denominator(basis_mat(O))
-    mul!(m, m, Q)
+    mul!(m, m, basis_mat(A, Val{false}))
+    d = denominator(basis_mat(O, Val{false}))
+    mul!(m, m, basis_mat(O, Val{false}).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
     # the following should be done inplace
     #gen = dot(reshape(Array(mm), degree(O)), basis(O))
