@@ -407,6 +407,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   return A, OtoA
 end
 
+#Given I with v_p(I) = 0, returns element a \in I such that v_p(a) = 0
 function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
   pi = anti_uniformizer(p)
   a = basis(I)[1]
@@ -421,8 +422,15 @@ function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
 end
 
 function coprime_to(I::NfRelOrdFracIdl, p::NfRelOrdIdl)
-  a = coprime_to(pseudo_basis(I, Val{false})[1][2], minimum(p, Val{false}))
-  return nf(order(I))(a)
+  pi = anti_uniformizer(p)
+  a = rand(I, 500)
+  l = valuation(a, p)
+  @assert l >= 0
+  if l > 0
+    a = pi^l*a
+  end
+  @assert valuation(a, p) == 0
+  return a
 end
 
 ################################################################################
