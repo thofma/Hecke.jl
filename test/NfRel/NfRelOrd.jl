@@ -27,7 +27,7 @@ end
   Ky, y = K["y"]
   g = y^3 - 51*y^2 + 30*y - 28
   L, b = number_field(g, "b")
-  Orel = MaximalOrder(L)
+  Orel = maximal_order(L)
   Oabs = Hecke.maximal_order_via_absolute(L)
   Brel = Hecke.basis_pmat(Orel, Val{false})
   Babs = Hecke.basis_pmat(Oabs, Val{false})
@@ -48,7 +48,7 @@ end
     end
     L, b = number_field(g, "b")
 
-    Orel = MaximalOrder(L)
+    Orel = maximal_order(L)
     Oabs = Hecke.maximal_order_via_absolute(L)
     Brel = Hecke.basis_pmat(Orel, Val{false})
     Babs = Hecke.basis_pmat(Oabs, Val{false})
@@ -65,7 +65,7 @@ end
     end
     L, b = number_field(f, "b")
 
-    Orel = MaximalOrder(L)
+    Orel = maximal_order(L)
     Oabs = Hecke.maximal_order_via_absolute(L)
     Brel = Hecke.basis_pmat(Orel, Val{false})
     Babs = Hecke.basis_pmat(Oabs, Val{false})
@@ -79,11 +79,11 @@ end
   Qx, x = FlintQQ["x"]
 
   K, a = NumberField(x, "a")
-  OK = MaximalOrder(K)
+  OK = maximal_order(K)
   Ky, y = K["y"]
 
   L, b = number_field([y^3 - 51*y^2 + 30*y - 28, y^4 + 1], "b")
-  Ons = MaximalOrder(L)
+  Ons = maximal_order(L)
   Bns = Hecke.basis_pmat(Ons, Val{false})
 
   Ms = identity_matrix(K, 12)
@@ -97,11 +97,11 @@ end
   @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
 
   K, a = NumberField(x^2 - 2*x + 38, "a")
-  OK = MaximalOrder(K)
+  OK = maximal_order(K)
   Ky, y = K["y"]
 
   L, b = number_field([y^2 + 87*y + 74, y^2 + 91*y - 73, y^2 - 30*y - 51], "b")
-  Ons = MaximalOrder(L)
+  Ons = maximal_order(L)
   Bns = Hecke.basis_pmat(Ons, Val{false})
 
   Ms = identity_matrix(K, 8)
@@ -135,11 +135,42 @@ end
     push!(g, gg)
     L, b = number_field(g, "b")
 
-    Ons = MaximalOrder(L)
+    Ons = maximal_order(L)
     Os = Hecke.maximal_order_via_simple(L)
     Bns = Hecke.basis_pmat(Ons, Val{false})
     Bs = Hecke.basis_pmat(Os, Val{false})
     @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
     @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
   end
+end
+
+@testset "Field towers" begin
+  Qx, x = FlintQQ["x"]
+
+  Q1, q1 = number_field(x, "q1")
+  Z1 = maximal_order(Q1)
+  Qx1, x1 = Q1["x1"]
+  f1 = x1^2 + 28x1 + 36
+  K1, a1 = number_field(f1, "a1")
+  OK1 = maximal_order(K1)
+  PM1 = PseudoMatrix(matrix(Q1, [1 0; 2 1]), [ Q1(1)*Z1, Q1(fmpq(1, 4))*Z1 ])
+  @test basis_pmat(OK1, Val{false}) == PM1
+
+  Q2, q2 = number_field(x1, "q2")
+  Z2 = maximal_order(Q2)
+  Qx2, x2 = Q2["x2"]
+  f2 = x2^2 + 28x2 + 36
+  K2, a2 = number_field(f2, "a2")
+  OK2 = maximal_order(K2)
+  PM2 = PseudoMatrix(matrix(Q2, [1 0; 2 1]), [ Q2(1)*Z2, Q2(fmpq(1, 4))*Z2 ])
+  @test basis_pmat(OK2, Val{false}) == PM2
+
+  Q3, q3 = number_field(x2, "q3")
+  Z3 = maximal_order(Q3)
+  Qx3, x3 = Q3["x3"]
+  f3 = x3^2 + 28x3 + 36
+  K3, a3 = number_field(f3, "a3")
+  OK3 = maximal_order(K3)
+  PM3 = PseudoMatrix(matrix(Q3, [1 0; 2 1]), [ Q3(1)*Z3, Q3(fmpq(1, 4))*Z3 ])
+  @test basis_pmat(OK3, Val{false}) == PM3
 end

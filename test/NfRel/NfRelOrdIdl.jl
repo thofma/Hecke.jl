@@ -3,11 +3,11 @@
     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
     K, a = NumberField(f, "a")
-    OK = MaximalOrder(K)
+    OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
     L, b = number_field(g, "b")
-    OL = MaximalOrder(L)
+    OL = maximal_order(L)
 
     coeff_ideals = [ deepcopy(Hecke.pseudo_basis(OL, Val{false})[i][2]) for i = 1:2 ]
     PM = Hecke.PseudoMatrix(matrix(K, [1 0; 0 1]), coeff_ideals)
@@ -39,11 +39,11 @@
     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
     K, a = NumberField(f, "a")
-    OK = MaximalOrder(K)
+    OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
     L, b = number_field(g, "b")
-    OL = MaximalOrder(L)
+    OL = maximal_order(L)
 
     p = prime_decomposition(OK, 11)[1][1]
     (p1, e1), (p2, e2) = prime_decomposition(OL, p)
@@ -80,11 +80,11 @@
     Qx, x = FlintQQ["x"]
     f = x^4 - 95x^3 - 91x^2 + 90x - 31
     K, a = NumberField(f, "a")
-    OK = MaximalOrder(K)
+    OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^3 - 70y^2 + 27y + 97
     L, b = NumberField(g, "b")
-    OL = MaximalOrder(L)
+    OL = maximal_order(L)
 
     # p is not a index divisor
     p = prime_decomposition(OK, 13)[1][1]
@@ -146,11 +146,11 @@
     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
     K, a = NumberField(f, "a")
-    OK = MaximalOrder(K)
+    OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
     L, b = number_field(g, "b")
-    OL = MaximalOrder(L)
+    OL = maximal_order(L)
 
     I = OL(2)*OL
     J = OL(3)*OL
@@ -187,11 +187,11 @@
     @test valuation(u4, P) == -1
 
     Q, q = NumberField(x, "q")
-    Z = MaximalOrder(Q)
+    Z = maximal_order(Q)
     Qy, y = Q["y"]
     f = y^2 + 12*y - 92
     K, a = NumberField(f, "a")
-    OK = MaximalOrder(K)
+    OK = maximal_order(K)
 
     p = prime_decomposition(Z, 2)[1][1]
     P = prime_decomposition(OK, p)[1][1]
