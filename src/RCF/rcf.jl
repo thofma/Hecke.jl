@@ -710,7 +710,7 @@ function _rcf_descent(CF::ClassField_pp)
                       PrimesSet(200, -1), minimum(__modulus(CF.rayclassgroupmap)))
     h = hom(f, [image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp])
     @hassert :ClassField 1 issurjective(h)
-    h = _compose(h, mp)
+    h = _compose(mp, h)
     h = hom(AutA_snf, [h(AutA_snf[i]) for i=1:ngens(AutA_snf)])
     s, ms = kernel(h)
     @vprint :ClassField 2 "... done, have subgroup!\n"
@@ -805,7 +805,7 @@ function (A::FqNmodFiniteField)(x::nmod_poly)
 end
 
 function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_poly)
-  nf_elem_to_nmod_poly_den!(a_tmp, b)
+  nf_elem_to_nmod_poly!(a_tmp, b)
   ccall((:fq_nmod_set, :libflint), Void,
                      (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
                                      &a, &a_tmp, &K)
@@ -1323,7 +1323,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     @assert d == length(B)
     b_AA = basis(AA)
     Mk = _expand(M, C.mp[1])
-    @hassert :ClassField 2 nullspace(Mk')[1] == 0
+    #@hassert :ClassField 2 nullspace(Mk')[1] == 0
     all_im = NfRel_nsElem{nf_elem}[]
     for j=1:length(Cp)
       N = SRow(all_pe[j][2])

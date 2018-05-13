@@ -1066,7 +1066,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   uP = UInt(P)
   return function(x::nf_elem)
     d = denominator(x)
-    nf_elem_to_nmod_poly_no_den!(h, x) # ignores the denominator
+    nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
     h = rem!(h, h, g)
     c = Nemo.coeff_raw(h, 0)
     v = c==0 ? typemax(Int) : valuation(c, uP)

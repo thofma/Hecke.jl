@@ -61,4 +61,4 @@ function automorphisms(K::AnticNumberField)
   return Aut
 end
 
-
+hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)

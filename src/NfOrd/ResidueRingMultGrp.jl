@@ -451,10 +451,10 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   #Disclog  
   M=basis_mat_inv(pu, Val{false})*mS.imap
   function disclog(x::NfOrdElem)
-    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x)), fmpz(1))
+    x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(x)), fmpz(1))
     mul!(x_fakemat, x_fakemat, M)
     denominator(x_fakemat) != 1 && error("Element is in the ideal")
-    return vec(Array(numerator(x_fakemat)))
+    return vec(Array(x_fakemat.num))
   end
   
   return gens, rels(S), disclog
@@ -591,7 +591,7 @@ end
 
 function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(x)
-  x == 0 && return O(1)
+  iszero(x) && return O(1)
   pnum = p.minimum
   val_p_x = valuation(x,p)
   max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
@@ -625,7 +625,7 @@ end
 
 function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
   O = parent(y)
-  y == 1 && return zero(O)
+  isone(y) && return zero(O)
   pnum = Int(minimum(p))
   x = y - 1
   val_p_x = valuation(x, p)
