@@ -1313,7 +1313,7 @@ function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.F
   @assert R == base_ring(B)
   @assert rows(A) == rows(B)
   mu = [A B]
-  rk = rref!(mu)
+  rk, mu = rref(mu)
   p = find_pivot(mu)
   if any(i->i>cols(A), p)
     return false, B
@@ -1336,7 +1336,7 @@ function Nemo.cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) wh
   @assert R == base_ring(B)
   @assert rows(A) == rows(B)
   mu = [A B]
-  rk = rref!(mu)
+  rk, mu = rref(mu)
   p = find_pivot(mu)
   if any(i->i>cols(A), p)
     return false, B, B
