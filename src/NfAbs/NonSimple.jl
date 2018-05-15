@@ -1,10 +1,10 @@
 ################################################################################
 #
-#  NfAbs/NonSimple.jl : non-simple absolute fields
+#  NfAbs/NonSimple.jl : non-simple absolute number fields
 #
 # This file is part of Hecke.
 #
-# Copyright (c) 2015, 2016, 2017: Claus Fieker, Tommy Hofmann
+# Copyright (c) 2015, 2016, 2017, 2018: Claus Fieker, Tommy Hofmann
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,32 +28,21 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-#  Copyright (C) 2017 Tommy Hofmann, Claus Fieker
+#  Copyright (C) 2018 Tommy Hofmann, Claus Fieker
 #
 ################################################################################
 
-function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x"; cached::Bool = false, ordering::Symbol = :lex)
-  return Nemo.PolynomialRing(R, ["$s$i" for i=1:n], cached = cached, ordering = ordering)
-end
+export NfAbsNS, NfAbsNSElem
 
-mutable struct NfAbsNS <: Nemo.Field
-  pol::Array{Nemo.Generic.MPoly{fmpq}, 1}
-  S::Array{Symbol, 1}
+export issimple, simple_extension
 
-  function NfAbsNS(f::Array{Nemo.Generic.MPoly{fmpq}, 1}, S::Array{Symbol, 1}; cached::Bool = false)
-    r = new()
-    r.pol = f
-    r.S = S
-    return r
-  end
-end
+@inline base_ring(K::NfAbsNS) = FlintQQ
 
-mutable struct NfAbsNSElem <: Nemo.FieldElem
-  data::Nemo.Generic.MPoly{fmpq}
-  parent::NfAbsNS
+@inline degree(K::NfAbsNS) = K.degree
 
-  NfAbsNSElem(g::Generic.MPoly{fmpq}) = new(g)
-end
+@inline degrees(K::NfAbsNS) = K.degrees
+
+@inline ngens(K::NfAbsNS) = length(K.pol)
 
 ################################################################################
 #
@@ -62,7 +51,9 @@ end
 ################################################################################
 
 function Base.deepcopy_internal(a::NfAbsNSElem, dict::ObjectIdDict)
-  z = NfAbsNSElem(Base.deepcopy_internal(data(a), dict))
+  # TODO: Fix this once deepcopy is fixed for fmpq_mpoly
+  # z = NfAbsNSElem(Base.deepcopy_internal(data(a), dict))
+  z = NfAbsNSElem(Base.deepcopy(data(a)))
   z.parent = parent(a)
   return z
 end
@@ -78,24 +69,24 @@ end
 #
 ################################################################################
 
-Nemo.elem_type(::Type{NfAbsNS}) = NfAbsNSElem
+elem_type(::Type{NfAbsNS}) = NfAbsNSElem
 
-Nemo.elem_type(::NfAbsNS) = NfAbsNSElem
+elem_type(::NfAbsNS) = NfAbsNSElem
 
-Nemo.parent_type(::Type{NfAbsNSElem}) = NfAbsNS
+parent_type(::Type{NfAbsNSElem}) = NfAbsNS
 
-Nemo.needs_parentheses(::NfAbsNSElem) = true
+needs_parentheses(::NfAbsNSElem) = true
 
-Nemo.isnegative(x::NfAbsNSElem) = Nemo.isnegative(data(x))
+isnegative(x::NfAbsNSElem) = Nemo.isnegative(data(x))
 
-Nemo.show_minus_one(::Type{NfAbsNSElem}) = true
+show_minus_one(::Type{NfAbsNSElem}) = true
 
-function Nemo.iszero(a::NfAbsNSElem)
+function iszero(a::NfAbsNSElem)
   reduce!(a)
   return iszero(data(a))
 end
 
-function Nemo.isone(a::NfAbsNSElem)
+function isone(a::NfAbsNSElem)
   reduce!(a)
   return isone(data(a))
 end
@@ -103,7 +94,24 @@ end
 Nemo.zero(K::NfAbsNS) = K(Nemo.zero(parent(K.pol[1])))
 
 Nemo.one(K::NfAbsNS) = K(Nemo.one(parent(K.pol[1])))
+
 Nemo.one(a::NfAbsNSElem) = one(a.parent)
+
+################################################################################
+#
+#  Random
+#
+################################################################################
+
+function rand(K::NfAbsNS, r::UnitRange)
+  # TODO: This is super slow
+  b = basis(K)
+  z = K()
+  for i in 1:degree(K)
+    z += rand(r) * b[i]
+  end
+  return z
+end
 
 ################################################################################
 #
@@ -145,6 +153,34 @@ end
 
 issimple(a::NfAbsNS) = false
 
+issimple(::Type{NfAbsNS}) = false
+
+function basis(K::NfAbsNS)
+  if isdefined(K, :basis)
+    return copy(K.basis)::Vector{NfAbsNSElem}
+  else
+    g = gens(K)
+    b = NfAbsNSElem[]
+    for i in CartesianRange(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
+      push!(b, prod(g[j]^(i[j] - 1) for j=1:length(i)))
+    end
+    K.basis = b
+    return copy(b)::Vector{NfAbsNSElem}
+  end
+end
+
+# Given an exponent vector b, the following function returns the index of
+# the basis element corresponding to b.
+function monomial_to_index(K::NfAbsNS, b::Vector{T}) where {T}
+  n = ngens(K)
+  idx = b[n]
+  for j in n-1:-1:1
+    idx *= degrees(K)[j]
+    idx += b[j]
+  end
+  return Int(idx + 1)
+end
+
 ################################################################################
 #
 #  Reduction
@@ -169,52 +205,8 @@ end
 #TODO: this is a terrible show func.
 function Base.show(io::IO, a::NfAbsNSElem)
   f = data(a)
-  show(io, f, [string(s) for s = a.parent.S])
-  return nothing
-
-  for i=1:length(f)
-    if i>1
-      print(io, " + ")
-    end
-    print(io, "(", f.coeffs[i], ")*")
-    print(io, "$(a.parent.S[1])^$(Int(f.exps[1, i]))")
-    for j=2:length(a.parent.pol)
-      print(io, " * $(a.parent.S[j])^$(Int(f.exps[j, i]))")
-    end
-  end
+  show(io, f)
 end
-
-################################################################################
-#
-#  Constructors and parent object overloading
-#
-################################################################################
-
-function number_field(f::Array{fmpq_poly, 1}, s::String="_\$")
-  S = Symbol(s)
-  Qx, x = PolynomialRing(FlintQQ, length(f), s)
-  K = NfAbsNS([f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
-  return K, gens(K)
-end
-
-Nemo.gens(K::NfAbsNS) = [K(x) for x = gens(parent(K.pol[1]))]
-
-function (K::NfAbsNS)(a::Generic.MPoly{fmpq})
-  q, w = divrem(a, K.pol)
-  z = NfAbsNSElem(w)
-  z.parent = K
-  return z
-end
-
-(K::NfAbsNS)(a::Integer) = K(parent(K.pol[1])(a))
-
-(K::NfAbsNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
-
-(K::NfAbsNS)(a::fmpz) = K(parent(K.pol[1])(a))
-
-(K::NfAbsNS)(a::fmpq) = K(parent(K.pol[1])(a))
-
-(K::NfAbsNS)() = zero(K)
 
 ################################################################################
 #
@@ -249,7 +241,7 @@ function Base.:(//)(a::NfAbsNSElem, b::NfAbsNSElem)
 end
 
 function Nemo.div(a::NfAbsNSElem, b::NfAbsNSElem)
-  return a*inv(b)
+  return a * inv(b)
 end
 
 Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem) = div(a, b)
@@ -260,17 +252,32 @@ Nemo.divexact(a::NfAbsNSElem, b::NfAbsNSElem) = div(a, b)
 #
 ################################################################################
 
-function Base.:(^)(a::NfAbsNSElem, b::fmpz)
+function Base.:(^)(a::NfAbsNSElem, b::Integer)
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
-    return parent(a)(1)
+    return one(parent(a))
   elseif b == 1
     return deepcopy(a)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  elseif mod(b, 2) == 1
+  else#if mod(b, 2) == 1
+    return a^(b - 1)*a
+  end
+end
+
+function Base.:(^)(a::NfAbsNSElem, b::fmpz)
+  if b < 0
+    return inv(a)^(-b)
+  elseif b == 0
+    return one(parent(a))
+  elseif b == 1
+    return deepcopy(a)
+  elseif mod(b, 2) == 0
+    c = a^(div(b, 2))
+    return c*c
+  else# mod(b, 2) == 1
     return a^(b - 1)*a
   end
 end
@@ -305,40 +312,24 @@ function Nemo.addeq!(b::NfAbsNSElem, a::NfAbsNSElem)
   return b
 end
 
-###############################################################################
-# other stuff, trivia and non-trivia
-###############################################################################
-
-function Nemo.degree(K::NfAbsNS)
-  return prod([total_degree(x) for x=K.pol])
-end
-
-function total_degree(f::Generic.MPoly)
-  return Int(maximum([sum(f.exps[:, i]) for i=1:length(f)]))
-end
-
-#non-optimal...
-function basis(K::NfAbsNS)
-  b = NfAbsNSElem[]
-  g = gens(K)
-  for i=CartesianRange(Tuple(1:total_degree(f) for f = K.pol))
-    push!(b, prod(g[j]^(i[j]-1) for j=1:length(i)))
-  end
-  return b
-end
+################################################################################
+#
+#  Conversion to matrix
+#
+################################################################################
 
 function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
   K = parent(a)
-  C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol))
-  C = [UInt[c[i] for i=1:length(K.pol)] for c = C]
-  for j=1:cols(M)
-    M[i, j] = FlintQQ()
+  for j in 1:cols(M)
+    M[i, j] = zero(FlintQQ)
   end
-  for j=1:length(a.data)
-    p = findnext(C, a.data.exps[:, j], 1)
-    @assert p!=0
-    M[i, p] = a.data.coeffs[j]
+  adata = data(a)
+  for j in 1:length(adata)
+    exps = Nemo._get_termexp_ui(adata, j)
+    k = monomial_to_index(parent(a), exps)
+    M[i, k] = coeff(adata, j)
   end
+  return M
 end
 
 function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
@@ -350,28 +341,26 @@ function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
   return a
 end
 
-function monomial_to_index(i::Int, a::NfAbsNSElem)
-  K = parent(a)
-  n = ngens(K)
-  idx = a.data.exps[n, i]
-  for j=n-1:-1:1
-    idx *= total_degree(K.pol[j])
-    idx += a.data.exps[j, i]
-  end
-  return idx+1
-end
-
 function SRow(a::NfAbsNSElem)
   sr = SRow(FlintQQ)
-  for i=1:length(a.data)
-    push!(sr.pos, monomial_to_index(i, a))
-    push!(sr.values, a.data.coeffs[i])
+  adata = data(a)
+  for i=1:length(adata)
+    # TODO: Do this inplace with preallocated exps array
+    exps = Nemo._get_termexp_ui(adata, i)
+    push!(sr.pos, monomial_to_index(parent(a), exps))
+    push!(sr.values, coeff(adata, i))
   end
   p = sortperm(sr.pos)
   sr.pos = sr.pos[p]
   sr.values = sr.values[p]
   return sr
 end
+
+################################################################################
+#
+#  Minimal polynomial
+#
+################################################################################
 
 function minpoly_dense(a::NfAbsNSElem)
   K = parent(a)
@@ -382,11 +371,17 @@ function minpoly_dense(a::NfAbsNSElem)
   z *= a
   elem_to_mat_row!(M, 2, z)
   i = 2
+  Qt, _ = PolynomialRing(FlintQQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
       N = nullspace(sub(M, 1:i, 1:cols(M))')
       @assert N[1] == 1
-      f = PolynomialRing(FlintQQ,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
+      v = Vector{fmpq}(i)
+      for j in 1:i
+        v[j] = N[2][j, 1]
+      end
+      #f = Qt([N[2][j, 1] for j=1:i])
+      f = Qt(v)
       return f*inv(lead(f))
     end
     z *= a
@@ -408,13 +403,13 @@ function minpoly_sparse(a::NfAbsNSElem)
   z *= a
   sz = SRow(z)
   i = 1
+  Qt, t = PolynomialRing(FlintQQ, "t", cached = false)
   while true
     if n % i == 0
       echelon!(M)
       fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
       if fl
         so = mul(so, sub(M, 1:i, n+1:cols(M)))
-        Qt, t = PolynomialRing(FlintQQ, "t", cached = false)
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0
@@ -441,32 +436,62 @@ function minpoly(a::NfAbsNSElem)
   return minpoly_sparse(a)
 end
 
-function inv(a::NfAbsNSElem)
-  if iszero(a)
-    error("division by zero")
-  end
-  f = minpoly(a)
-  z = coeff(f, degree(f))
-  for i=degree(f)-1:-1:1
-    z = z*a + coeff(f, i)
-  end
-  return -z*inv(coeff(f, 0))
-end
+################################################################################
+#
+#  Characteristic polynomial
+#
+################################################################################
 
 function charpoly(a::NfAbsNSElem)
   f = minpoly(a)
   return f^div(degree(parent(a)), degree(f))
 end
 
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+function inv(a::NfAbsNSElem)
+  if iszero(a)
+    error("division by zero")
+  end
+  f = minpoly(a)
+  z = parent(a)(coeff(f, degree(f)))
+  for i=degree(f)-1:-1:1
+    z = z*a + coeff(f, i)
+  end
+  return -z*inv(coeff(f, 0))
+end
+
+################################################################################
+#
+#  Norm
+#
+################################################################################
+
 function norm(a::NfAbsNSElem)
   f = minpoly(a)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
+################################################################################
+#
+#  Trace
+#
+################################################################################
+
 function trace(a::NfAbsNSElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
+
+################################################################################
+#
+#  Representation matrix
+#
+################################################################################
 
 function representation_matrix(a::NfAbsNSElem)
   K = parent(a)
@@ -478,14 +503,188 @@ function representation_matrix(a::NfAbsNSElem)
   return M
 end
 
-@inline ngens(K::NfAbsNS) = length(K.pol)
+################################################################################
+#
+#  Substitution
+#
+################################################################################
 
-function msubst(f::Generic.MPoly{fmpq}, v::Array{NfAbsNSElem, 1})
+# TODO: Preallocate the exps array
+function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   n = length(v)
-  @assert n == ngens(parent(f))
+  @assert n == nvars(parent(f))
   r = FlintQQ()
   for i=1:length(f)
-    r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
+    exps = Nemo._get_termexp_ui(f, i)
+    r += coeff(f, i) * prod(v[j]^exps[j] for j=1:n)
   end
   return r
 end
+
+################################################################################
+#
+#  Morphisms
+#
+################################################################################
+
+mutable struct NfAbsToNfAbsNS <: Map{AnticNumberField, NfAbsNS, HeckeMap, NfAbsToNfAbsNS}
+  header::MapHeader{AnticNumberField, NfAbsNS}
+  prim_img::NfAbsNSElem
+  emb::Array{nf_elem, 1}
+
+  function NfAbsToNfAbsNS(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem, emb::Array{nf_elem, 1})
+    function image(x::nf_elem)
+      # x is an element of K
+      f = x.parent.pol.parent(x)
+      return f(a)
+    end
+
+    function preimage(x::NfAbsNSElem)
+      return msubst(data(x), emb)
+    end
+
+    z = new()
+    z.prim_img = a
+    z.emb = emb
+    z.header = MapHeader(K, L, image, preimage)
+    return z
+  end  
+
+  function NfAbsToNfAbsNS(K::AnticNumberField, L::NfAbsNS, a::NfAbsNSElem)
+    function image(x::nf_elem)
+      # x is an element of K
+      f = x.parent.pol.parent(x)
+      return f(a)
+    end
+
+    z = new()
+    z.prim_img = a
+    z.header = MapHeader(K, L, image)
+    return z
+  end  
+end
+
+mutable struct NfAbsNSToNfAbsNS <: Map{NfAbsNS, NfAbsNS, HeckeMap, NfAbsNSToNfAbsNS}
+  header::MapHeader{NfAbsNS, NfAbsNS}
+  emb::Array{NfAbsNSElem, 1}
+
+  function NfAbsNSToNfAbsNS(K::NfAbsNS, L::NfAbsNS, emb::Array{NfAbsNSElem, 1})
+    function image(x::NfAbsNSElem)
+      # x is an element of K
+      return msubst(data(x), emb)
+    end
+
+    z = new()
+    z.emb = emb
+    z.header = MapHeader(K, L, image)
+    return z
+  end  
+end
+
+# TODO: The following is opposite to our new convention
+function Base.:(*)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
+  domain(f) == codomain(g) || throw("Maps not compatible")
+  a = gens(domain(g))
+  return NfAbsNSToNfAbsNS(domain(g), codomain(f), [ f(g(x)) for x in a])
+end
+
+function Base.:(==)(f::NfAbsNSToNfAbsNS, g::NfAbsNSToNfAbsNS)
+  if domain(f) != domain(g) || codomain(f) != codomain(g)
+    return false
+  end
+
+  L = domain(f)
+
+  for a in gens(L)
+    if f(a) != g(a)
+      return false
+    end
+  end
+
+  return true
+end
+
+################################################################################
+#
+#  Simple extensions
+#
+################################################################################
+
+function simple_extension(K::NfAbsNS)
+  n = ngens(K)
+  g = gens(K)
+
+  pe = g[1]
+  i = 1
+  ind = Int[1]
+  f = minpoly(pe)
+  #TODO: use resultants rather than minpoly??
+  while i < n
+    i += 1
+    j = 1
+    f = minpoly(pe + j * g[i])
+    while degree(f) < prod(total_degree(K.pol[k]) for k in 1:i)
+      j += 1
+      f = minpoly(pe + j * g[i])
+    end
+    push!(ind, j)
+    pe += j * g[i]
+  end
+  Ka, a = number_field(f)
+  k = base_ring(K)
+  M = zero_matrix(k, degree(K), degree(K))
+  z = one(K)
+  elem_to_mat_row!(M, 1, z)
+  elem_to_mat_row!(M, 2, pe)
+  z *= pe
+  for i=3:degree(K)
+    z *= pe
+    elem_to_mat_row!(M, i, z)
+  end
+  N = zero_matrix(k, 1, degree(K))
+  b = basis(Ka)
+  emb = typeof(b)()
+  for i=1:n
+    elem_to_mat_row!(N, 1, g[i])
+    s = solve(M', N')
+    push!(emb, sum(b[j] * s[j,1] for j in 1:degree(Ka)))
+  end
+
+  return Ka, NfAbsToNfAbsNS(Ka, K, pe, emb)
+end
+
+################################################################################
+#
+#  Constructors and parent object overloading
+#
+################################################################################
+
+function number_field(f::Array{fmpq_poly, 1}, s::String="_\$")
+  S = Symbol(s)
+  n = length(f)
+  Qx, x = PolynomialRing(FlintQQ, n, s)
+  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
+              Symbol[Symbol("$s$i") for i=1:n])
+  K.degrees = [degree(f[i]) for i in 1:n]
+  K.degree = prod(K.degrees)
+  return K, gens(K)
+end
+
+gens(K::NfAbsNS) = [K(x) for x = gens(parent(K.pol[1]))]
+
+function (K::NfAbsNS)(a::fmpq_mpoly)
+  q, w = divrem(a, K.pol)
+  z = NfAbsNSElem(w)
+  z.parent = K
+  return z
+end
+
+(K::NfAbsNS)(a::Integer) = K(parent(K.pol[1])(a))
+
+(K::NfAbsNS)(a::Rational{T}) where {T <: Integer} = K(parent(K.pol[1])(a))
+
+(K::NfAbsNS)(a::fmpz) = K(parent(K.pol[1])(a))
+
+(K::NfAbsNS)(a::fmpq) = K(parent(K.pol[1])(a))
+
+(K::NfAbsNS)() = zero(K)

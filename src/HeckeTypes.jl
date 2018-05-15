@@ -1838,3 +1838,31 @@ mutable struct PMat{T, S}
     return z
   end
 end
+
+################################################################################
+#
+#  Absolute non-simple number fields
+#
+################################################################################
+
+mutable struct NfAbsNS <: Nemo.Field
+  pol::Array{fmpq_mpoly, 1}
+  S::Array{Symbol, 1}
+  basis#::Vector{NfAbsNSElem}
+  degree::Int
+  degrees::Vector{Int}
+
+  function NfAbsNS(f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
+    r = new()
+    r.pol = f
+    r.S = S
+    return r
+  end
+end
+
+mutable struct NfAbsNSElem <: Nemo.FieldElem
+  data::fmpq_mpoly
+  parent::NfAbsNS
+
+  NfAbsNSElem(g::fmpq_mpoly) = new(g)
+end
