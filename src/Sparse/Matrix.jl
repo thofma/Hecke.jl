@@ -382,7 +382,7 @@ end
 #
 ################################################################################
 
-# (dense Array{T, 1}) * Smat{T} as (dense Array{T, 1}) 
+# (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
 # inplace
 function mul!(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1}) where T
   assert(length(b) == cols(A))
@@ -398,7 +398,7 @@ function mul!(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1}) where T
   return c
 end
 
-# (dense Array{T, 1}) * Smat{T} as (dense Array{T, 1}) 
+# (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
 function mul(A::SMat{T}, b::Array{T, 1}) where T
   assert(length(b) == cols(A))
   c = Array{T}(rows(A))
@@ -406,7 +406,7 @@ function mul(A::SMat{T}, b::Array{T, 1}) where T
   return c
 end
 
-# - (dense Array{S, 1}) * Smat{T} as (dense Array{S, 1}) modulo mod::S
+# - (dense Array{S, 1}) * SMat{T} as (dense Array{S, 1}) modulo mod::S
 # - Inplace
 # - Reduction as the last step, no intermediate reductions.
 function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
@@ -423,7 +423,7 @@ function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, 
   return c
 end
 
-# - (dense Array{S, 1}) * Smat{T} as (dense Array{S, 1}) modulo mod::S
+# - (dense Array{S, 1}) * SMat{T} as (dense Array{S, 1}) modulo mod::S
 # - Inplace
 # - Intermediate reductions.
 function mul_mod_big!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
@@ -440,7 +440,7 @@ function mul_mod_big!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where 
   return c
 end
 
-# - Smat{T} * Array{T, 2} as Array{T, 2}
+# - SMat{T} * Array{T, 2} as Array{T, 2}
 # - Inplace
 function mul!(c::Array{T, 2}, A::SMat{T}, b::Array{T, 2}) where T
   sz = size(b)
@@ -460,7 +460,7 @@ function mul!(c::Array{T, 2}, A::SMat{T}, b::Array{T, 2}) where T
   return c
 end
 
-# - Smat{T} * Array{T, 2} as Array{T, 2}
+# - SMat{T} * Array{T, 2} as Array{T, 2}
 function mul(A::SMat{T}, b::Array{T, 2}) where T
   sz = size(b)
   assert(sz[1] == cols(A))
@@ -468,7 +468,7 @@ function mul(A::SMat{T}, b::Array{T, 2}) where T
   return mul!(c, A, b)
 end
 
-# - Smat{T} * fmpz_mat as fmpz_mat
+# - SMat{T} * fmpz_mat as fmpz_mat
 # - Inplace
 function mul!(c::fmpz_mat, A::SMat{T}, b::fmpz_mat) where T
   assert(rows(b) == cols(A))
@@ -486,14 +486,14 @@ function mul!(c::fmpz_mat, A::SMat{T}, b::fmpz_mat) where T
   return c
 end
 
-# - Smat{T} * fmpz_mat as fmpz_mat
+# - SMat{T} * fmpz_mat as fmpz_mat
 function mul(A::SMat{T}, b::fmpz_mat) where T
   assert(rows(b) == cols(A))
   c = zero_matrix(FlintZZ, rows(A), cols(b))
   return mul!(c, A, b)
 end
 
-# - Smat{T} * Smat{T} as MatElem{T}
+# - SMat{T} * SMat{T} as MatElem{T}
 function mul(A::SMat{T}, B::SMat{T}) where T
   @assert A.c == B.r
   C = zero_matrix(base_ring(A), A.r, B.c)
@@ -505,7 +505,7 @@ function mul(A::SMat{T}, B::SMat{T}) where T
   return C
 end
 
-# - Smat{nmod} * Smat{nmod} as nmod_mat
+# - SMat{nmod} * SMat{nmod} as nmod_mat
 function mul(A::SMat{nmod}, B::SMat{nmod})
   @assert A.c == B.r
   C = zero_matrix(base_ring(A), A.r, B.c)
@@ -517,7 +517,7 @@ function mul(A::SMat{nmod}, B::SMat{nmod})
   return C
 end
 
-# - SRow{T} * Smat{T} as SRow{T}
+# - SRow{T} * SMat{T} as SRow{T}
 function mul(A::SRow{T}, B::SMat{T}) where T
   C = SRow{T}()
   for (p, v) = A
@@ -1085,6 +1085,100 @@ function id(::Type{SMat}, R::Ring, n::Int)
 end
 
 doc"""
+   identity_matrix(::Type{SMat}, R::Ring, n::Int)
+   identity_matrix(::Type{MatElem}, R::Ring, n::Int)
+> Create a sparse (resp. dense) $n$ times $n$ identity matrix over $R$.   
+"""
+function identity_matrix(::Type{SMat}, R::Ring, n::Int)
+  return id(SMat, R, n)
+end
+
+function identity_matrix(::Type{MatElem}, R::Ring, n::Int)
+  return identity_matrix(R, n)
+end
+
+doc"""
+   zero_matrix(::Type{SMat}, R::Ring, n::Int)
+   zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
+   zero_matrix(::Type{MatElem}, R::Ring, n::Int)
+   zero_matrix(::Type{MatElem}, R::Ring, n::Int, m::Int)
+> Create a sparse (resp. dense) $n$ times $n$ (resp. $n$ times $m$) zero matrix over $R$.   
+"""
+function zero_matrix(::Type{SMat}, R::Ring, n::Int)
+  S = SMat(R)
+  S.rows = [SRow(R)() for i=1:n]
+  S.c = S.r = n
+  return S
+end
+
+function zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
+  S = SMat(R)
+  S.rows = [SRow(R)() for i=1:n]
+  S.r = n
+  S.c = m
+  return S
+end
+
+
+function zero_matrix(::Type{MatElem}, R::Ring, n::Int)
+  return zero_matrix(R, n)
+end
+
+function zero_matrix(::Type{MatElem}, R::Ring, n::Int, m::Int)
+  return zero_matrix(R, n, m)
+end
+
+function Base.cat(n::Int, A::SMat...)
+  if n==1
+    return vcat(A...)
+  elseif n==2
+    return hcat(A...)
+  else
+    error("dims must be 1 or 2")
+  end
+end
+
+
+function Base.vcat(A::SMat...)
+  B = copy(A[1])
+  for i=2:length(A)
+    for r = A[i].rows
+      push!(B, copy(r))
+    end
+  end
+  return A
+end
+
+#base case
+function Base.hcat(A::SMat)
+  return A
+end
+
+function Base.hcat(A::SMat, B::SMat, C::SMat...)
+  return hcat(hcat(A, B), C...)
+end
+
+function Base.cat(dims::Tuple{Int, Int}, A::SMat...)
+  if dims != (1,2)
+    error("dims must be (1, 2)")
+  end
+  B = copy(A[1])
+  c = B.c
+  for i=2:length(A)
+    for j=1:rows(A[i])
+      R = SRow(base_ring(B))
+      for (k,v) = A[i].rows[j]
+        push!(R.pos, k+c)
+        push!(R.values, v)
+      end
+      push!(B, R)
+    end
+    c += A[i].c
+  end
+  return B
+end
+
+doc"""
     isid{T}(A::SMat{T})
 
 > Tests if $A$ is the $n \times n$ identity.
@@ -1178,8 +1272,9 @@ doc"""
 > The same matrix, but as a two-dimensional julia array.
 """
 function Array(A::SMat{T}) where T
-  R = zero(Array{T}(A.r, A.c)) # otherwise, most entries will be #undef
-                               # at least if T is a flint-type
+  R = zero_matrix(base_ring(A), A.r, A.c) 
+           # otherwise, most entries will be #undef
+           # at least if T is a flint-type
   for i=1:rows(A)
     for j=1:length(A.rows[i].pos)
       R[i,A.rows[i].pos[j]] = A.rows[i].values[j]
