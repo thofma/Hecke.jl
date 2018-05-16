@@ -375,3 +375,5 @@ function Nemo.cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   end  
 end
 
+#TODO: cansolve using Dixon for Q, NF
+#      for SMat rather than SRow only
