@@ -45,17 +45,23 @@ export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
 #
 ################################################################################
 
-Nemo.parent_type(::Type{NfOrdElem}) = NfOrd
+Nemo.parent_type(::Type{NfAbsOrdElem{S, T}}) where {S, T} = NfAbsOrd{S, T}
 
-Nemo.elem_type(::Type{NfOrd}) = NfOrdElem
+Nemo.elem_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfAbsOrdElem{S, T}
 
-Nemo.show_minus_one(::Type{NfOrdElem}) = true
+Nemo.elem_type(::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdElem{S, T}
 
-Nemo.base_ring(::NfOrd) = Union{}
+ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}
 
-Nemo.needs_parentheses(::NfOrdElem) = true
+ideal_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfAbsOrdIdl{S, T}
 
-Nemo.isnegative(::NfOrdElem) = false
+Nemo.show_minus_one(::Type{NfAbsOrdElem{S, T}}) where {S, T} = true
+
+Nemo.base_ring(::NfAbsOrd) = Union{}
+
+Nemo.needs_parentheses(::NfAbsOrdElem) = true
+
+Nemo.isnegative(::NfAbsOrdElem) = false
 
 ################################################################################
 #
@@ -68,7 +74,7 @@ doc"""
 
 Returns the ambient number field of $\mathcal O$.
 """
-@inline nf(O::NfOrd) = O.nf
+@inline nf(O::NfAbsOrd) = O.nf
 
 doc"""
     parent(O::NfOrd) -> NfOrdSet
@@ -84,12 +90,12 @@ doc"""
 Returns whether $\mathcal O$ is the equation order of the ambient number
 field.
 """
-@inline isequation_order(O::NfOrd) = O.isequation_order
+@inline isequation_order(O::NfAbsOrd) = O.isequation_order
 
-@inline ismaximal_known(O::NfOrd) = O.ismaximal != 0
+@inline ismaximal_known(O::NfAbsOrd) = O.ismaximal != 0
 
 # The following function should actually do more!
-@inline ismaximal(O::NfOrd) = O.ismaximal == 1
+@inline ismaximal(O::NfAbsOrd) = O.ismaximal == 1
 
 ################################################################################
 #
@@ -102,8 +108,7 @@ doc"""
 
 Returns the degree of $\mathcal O$.
 """
-degree(O::NfOrd) = degree(O.nf)
-
+degree(O::NfAbsOrd) = degree(O.nf)
 
 ################################################################################
 #
@@ -111,23 +116,23 @@ degree(O::NfOrd) = degree(O.nf)
 #
 ################################################################################
 
-function assure_has_basis(O::NfOrd)
+function assure_has_basis(O::NfAbsOrd)
   if isdefined(O, :basis_ord)
     return nothing
   end
   b = O.basis_nf
   d = degree(O)
-  B = Vector{NfOrdElem}(d)
+  B = Vector{elem_type(O)}(d)
   for i in 1:length(b)
     v = [fmpz(0) for j in 1:d]
     one!(v[i])
-    B[i] = NfOrdElem(O, b[i], v)
+    B[i] = NfAbsOrdElem(O, b[i], v)
   end
   O.basis_ord = B
   return nothing
 end
 
-function assure_has_basis_mat(O::NfOrd)
+function assure_has_basis_mat(O::NfAbsOrd)
   if isdefined(O, :basis_mat)
     return nothing
   end
@@ -136,7 +141,7 @@ function assure_has_basis_mat(O::NfOrd)
   return nothing
 end
 
-function assure_has_basis_mat_inv(O::NfOrd)
+function assure_has_basis_mat_inv(O::NfAbsOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
@@ -150,12 +155,12 @@ end
 #
 ################################################################################
 
-function basis_ord(O::NfOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_ord(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis(O)
   if copy == Val{true}
-    return deepcopy(O.basis_ord)::Vector{NfOrdElem}
+    return deepcopy(O.basis_ord)::Vector{elem_type(O)}
   else
-    return O.basis_ord::Vector{NfOrdElem}
+    return O.basis_ord::Vector{elem_type(O)}
   end
 end
 
@@ -164,7 +169,7 @@ doc"""
 
 Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
-@inline basis{T}(O::NfOrd, copy::Type{Val{T}} = Val{true}) = basis_ord(O, copy)
+@inline basis{T}(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) = basis_ord(O, copy)
 
 doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Array{nf_elem, 1}
@@ -172,7 +177,7 @@ doc"""
 Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
 ambient number field.
 """
-function basis(O::NfOrd, K::AnticNumberField)
+function basis(O::NfAbsOrd, K::AnticNumberField)
   nf(O) != K && error()
   return deepcopy(O.basis_nf)
 end
@@ -189,7 +194,7 @@ doc"""
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_mat(O::NfOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat(O)
   if copy == Val{true}
     return deepcopy(O.basis_mat)
@@ -203,7 +208,7 @@ doc"""
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv(O::NfOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat_inv(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis_mat_inv(O)
   if copy == Val{true}
     return deepcopy(O.basis_mat_inv)
@@ -223,7 +228,7 @@ function show(io::IO, S::NfOrdSet)
   print(io, S.nf)
 end
 
-function show(io::IO, O::NfOrd)
+function show(io::IO, O::NfAbsOrd)
   if ismaximal_known(O) && ismaximal(O)
     show_maximal(io, O)
   else
@@ -231,14 +236,14 @@ function show(io::IO, O::NfOrd)
   end
 end
 
-function show_gen(io::IO, O::NfOrd)
+function show_gen(io::IO, O::NfAbsOrd)
   print(io, "Order of ")
   println(io, nf(O))
   print(io, "with Z-basis ")
   print(io, basis(O))
 end
 
-function show_maximal(io::IO, O::NfOrd)
+function show_maximal(io::IO, O::NfAbsOrd)
   print(io, "Maximal order of $(nf(O)) \nwith basis $(O.basis_nf)")
 end
 
@@ -248,11 +253,11 @@ end
 #
 ################################################################################
 
-function assure_has_discriminant(O::NfOrd)
+function assure_has_discriminant(O::NfAbsOrd)
   if isdefined(O, :disc)
     return nothing
   else
-    if isequation_order(O)
+    if isequation_order(O) && issimple(nf(O))
       O.disc = numerator(discriminant(nf(O).pol))
     else
       O.disc = discriminant(basis(O))
@@ -266,9 +271,9 @@ doc"""
 
 Returns the discriminant of $\mathcal O$.
 """
-function discriminant(O::NfOrd)
+function discriminant(O::NfAbsOrd)
   assure_has_discriminant(O)
-  return deepcopy(O.disc)
+  return O.disc
 end
 
 #TODO: compute differently in equation orders, this is the rres...
@@ -298,7 +303,7 @@ doc"""
 Returns the generalized index of $\mathcal O$ with respect to the equation
 order of the ambient number field.
 """
-function gen_index(O::NfOrd)
+function gen_index(O::NfAbsOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
@@ -314,7 +319,7 @@ Assuming that the order $\mathcal O$ contains the equation order
 $\mathbf Z[\alpha]$ of the ambient number field, this function returns the
 index $[ \mathcal O : \mathbf Z]$.
 """
-function index(O::NfOrd)
+function index(O::NfAbsOrd)
   if isdefined(O, :index)
     return deepcopy(O.index)
   else
@@ -354,8 +359,8 @@ doc"""
 
 Makes a copy of $\mathcal O$.
 """
-function Base.deepcopy_internal(O::NfOrd, dict::ObjectIdDict)
-  z = NfOrd(O.nf)
+function Base.deepcopy_internal(O::NfAbsOrd{S, T}, dict::ObjectIdDict) where {S, T}
+  z = NfAbsOrd{S, T}(O.nf)
   for x in fieldnames(O)
     if x != :nf && x != :parent && isdefined(O, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
@@ -431,8 +436,8 @@ end
 # Check if a number field element is contained in O
 # In this case, the second return value is the coefficient vector with respect
 # to the basis of O
-function _check_elem_in_order(a::nf_elem, O::NfOrd,
-                              short::Type{Val{T}} = Val{false}) where T
+function _check_elem_in_order(a::T, O::NfAbsOrd{S, T},
+                              short::Type{Val{U}} = Val{false}) where {S, T, U}
   assure_has_basis_mat_inv(O)
   t = O.tcontain
   elem_to_mat_row!(t.num, 1, t.den, a)
@@ -605,22 +610,22 @@ doc"""
 Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
 whether $B$ defines an order.
 """
-function Order(::AnticNumberField, a::Array{nf_elem, 1}, check::Bool = true,
-               cache::Bool = true)
+function Order(::S, a::Array{T, 1}, check::Bool = true,
+               cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T}
   K = parent(a[1])
   if check
     b, bmat, bmat_inv, _ = defines_order(K, a)
     if !b
       error("The elements do not define an order")
     else
-      return NfOrd(K, bmat, bmat_inv, deepcopy(a), cache)
+      return NfAbsOrd(K, bmat, bmat_inv, deepcopy(a), cache)
     end
   else
-    return NfOrd(deepcopy(a), cache)
+    return NfAbsOrd(deepcopy(a), cache)
   end
 end
 
-function Order(K::AnticNumberField, a::Vector, check::Bool = true,
+function Order(K, a::Vector, check::Bool = true,
                cache::Bool = true)
   local b
   try
@@ -637,17 +642,17 @@ doc"""
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
-function Order(K::AnticNumberField, a::FakeFmpqMat, check::Bool = true,
-               cache::Bool = false)
+function Order(K::S, a::FakeFmpqMat, check::Bool = true,
+               cache::Bool = false) where {S}
   if check
     b, ainv, d = defines_order(K, a)
     if !b
       error("The basis matrix does not define an order")
     else
-      return NfOrd(K, deepcopy(a), ainv, d, cache)
+      return NfAbsOrd(K, deepcopy(a), ainv, d, cache)
     end
   else
-    return NfOrd(K, deepcopy(a), cache)
+    return NfAbsOrd(K, deepcopy(a), cache)
   end
 end
 
@@ -657,8 +662,8 @@ doc"""
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
-function Order(K::AnticNumberField, a::fmpq_mat, check::Bool = true,
-               cache::Bool = true)
+function Order(K::S, a::fmpq_mat, check::Bool = true,
+               cache::Bool = true) where {S}
   return Order(K, FakeFmpqMat(a), cache)
 end
 
@@ -668,8 +673,8 @@ doc"""
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
-function Order(K::AnticNumberField, a::fmpz_mat, check::Bool = true,
-               cache::Bool = true)
+function Order(K::S, a::fmpz_mat, check::Bool = true,
+               cache::Bool = true) where {S}
   return Order(K, FakeFmpqMat(a), check, cache)
 end
 
@@ -687,10 +692,10 @@ doc"""
 
 Returns the equation order of the number field $K$.
 """
-function EquationOrder(K::AnticNumberField, cache::Bool = false)
+function EquationOrder(K::T, cache::Bool = false) where {T}
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  z = NfOrd(K, M, Minv, [gen(K)^i for i in 0:(degree(K) - 1)], cache)
+  z = NfAbsOrd{T, elem_type(T)}(K, M, Minv, basis(K), cache)
   z.isequation_order = true
   return z
 end
@@ -699,7 +704,7 @@ doc"""
    equation_order(M::NfOrd) -> NfOrd
 > The equation order of then number field.
 """
-equation_order(M::NfOrd) = equation_order(nf(M))
+equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
   o = one(K)
@@ -728,7 +733,13 @@ function _order(K::AnticNumberField, elt::Array{nf_elem, 1})
     H = sub(hnf(B), (rows(B) - degree(K) + 1):rows(B), 1:degree(K))
 
     # TODO: Just take the product of the diagonal
-    d = prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
+    dd = H.num[1, 1]
+    for i in 2:degree(K)
+      dd *= H.num[i, i]
+    end
+    d = dd//H.den^degree(K)
+    
+    #d = prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
     #d = det(H)
 
     if iszero(d)
@@ -762,7 +773,7 @@ function Base.isequal(R::NfOrd, S::NfOrd)
   return R === S
 end
 
-function ==(R::NfOrd, S::NfOrd)
+function ==(R::NfAbsOrd, S::NfAbsOrd)
   nf(R) != nf(S) && return false
   assure_has_basis_mat(R)
   assure_has_basis_mat(S)
@@ -781,7 +792,7 @@ doc"""
 Returns the trace matrix of `\mathcal O`, that is, the matrix
 $(\operatorname{tr}_{K/\mathbf Q}(b_i \cdot b_j))_{1 \leq i, j \leq d}$.
 """
-function trace_matrix(O::NfOrd)
+function trace_matrix(O::NfAbsOrd)
   if isdefined(O, :trace_mat)
     return deepcopy(O.trace_mat)
   end
@@ -817,7 +828,7 @@ Given two orders $R$, $S$ of $K$, this function returns the smallest order
 containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
 equation order and have coprime index.
 """
-function +(a::NfOrd, b::NfOrd)
+function +(a::NfAbsOrd, b::NfAbsOrd)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if isone(gcd(index(a), index(b)))
     aB = basis_mat(a, Val{false})
@@ -850,7 +861,7 @@ end
 #
 ################################################################################
 
-function _poverorder(O::NfOrd, p::fmpz)
+function _poverorder(O::NfAbsOrd, p::fmpz)
   I= pradical(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen==p
     return deepcopy(O)
@@ -859,7 +870,7 @@ function _poverorder(O::NfOrd, p::fmpz)
   return R
 end
 
-function _poverorder(O::NfOrd, p::Integer)
+function _poverorder(O::NfAbsOrd, p::Integer)
   return _poverorder(O, fmpz(p))
 end
 
@@ -873,16 +884,16 @@ this function will return an order $R$ such that
 $v_p([ \mathcal O_K : R]) < v_p([ \mathcal O_K : \mathcal O])$. Otherwise
 $\mathcal O$ is returned.
 """
-function poverorder(O::NfOrd, p::fmpz)
-  if isequation_order(O)
+function poverorder(O::NfAbsOrd, p::fmpz)
+  if isequation_order(O) && issimple(nf(O))
     return dedekind_poverorder(O, p)
   else
     return _poverorder(O, p)
   end
 end
 
-function poverorder(O::NfOrd, p::Integer)
-  return poverorder(O::NfOrd, fmpz(p))
+function poverorder(O::NfAbsOrd, p::Integer)
+  return poverorder(O, fmpz(p))
 end
 
 ################################################################################
@@ -898,7 +909,7 @@ doc"""
 This function finds a $p$-maximal order $R$ containing $\mathcal O$. That is,
 the index $[ \mathcal O_K : R]$ is not dividible by $p$.
 """
-function pmaximal_overorder(O::NfOrd, p::fmpz)
+function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
   @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
   if rem(discriminant(O), p^2) != 0
     push!(O.primesofmaximality, p)
@@ -930,7 +941,7 @@ function pmaximal_overorder(O::NfOrd, p::fmpz)
   return OO
 end
 
-function pmaximal_overorder(O::NfOrd, p::Integer)
+function pmaximal_overorder(O::NfAbsOrd, p::Integer)
   return pmaximal_overorder(O, fmpz(p))
 end
 
@@ -962,7 +973,7 @@ doc"""
 
 Returns the maximal order of $K$.
 """
-function MaximalOrder(O::NfOrd)
+function MaximalOrder(O::NfAbsOrd)
   OO = deepcopy(O)
   @vtime :NfOrd fac = factor(Nemo.abs(discriminant(O)))
   for (p,j) in fac

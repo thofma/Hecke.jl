@@ -16,4 +16,9 @@ function total_degree(f::Generic.MPoly)
   return Int(maximum([sum(f.exps[:, i]) for i=1:length(f)]))
 end
 
-
+function add!(c::fmpq_mpoly, a::fmpq_mpoly, b::fmpq_mpoly)
+  ccall((:fmpq_mpoly_add, :libflint), Void,
+        (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}),
+        c, a, b, c.parent)
+  return c
+end

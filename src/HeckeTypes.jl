@@ -538,34 +538,37 @@ end
 #
 ################################################################################
 
-export NfOrdSet
+export NfAbsOrdSet
 
-mutable struct NfOrdSet
-  nf::AnticNumberField
+mutable struct NfAbsOrdSet{T}
+  nf::T
 
-  function NfOrdSet(a::AnticNumberField, cached::Bool=false)
-    if haskey(NfOrdSetID, a)
-      return NfOrdSetID[a]
+  function NfAbsOrdSet{T}(a::T, cached::Bool = false) where {T}
+    if haskey(NfAbsOrdSetID, a)
+      return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
     else
       if cached
-        
-        NfOrdSetID[a] = new(a)
-        return NfOrdSetID[a]
+        NfAbsOrdSetID[a] = new(a)
+        return NfAbsOrdSetID[a]::NfAbsOrdSet{T}
       else 
-        return new(a)
+        return new{T}(a)::NfAbsOrdSet{T}
       end
     end
   end
 end
 
-const NfOrdSetID = Dict{AnticNumberField, NfOrdSet}()
+NfAbsOrdSet(a::T) where {T} = NfAbsOrdSet{T}(a)
 
-export NfOrd
+const NfAbsOrdSetID = ObjectIdDict()
 
-mutable struct NfOrd <: Ring
-  nf::AnticNumberField
-  basis_nf::Vector{nf_elem}        # Basis as array of number field elements
-  basis_ord#::Vector{NfOrdElem}    # Basis as array of order elements
+const NfOrdSet = NfAbsOrdSet
+
+export NfOrd, NfAbsOrd
+
+mutable struct NfAbsOrd{S, T} <: Ring
+  nf::S
+  basis_nf::Vector{T}        # Basis as array of number field elements
+  basis_ord#::Vector{NfAbsOrdElem}    # Basis as array of order elements
   basis_mat::FakeFmpqMat           # Basis matrix of order wrt basis of K
   basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
   gen_index::fmpq                  # The det of basis_mat_inv as fmpq
@@ -573,13 +576,13 @@ mutable struct NfOrd <: Ring
                                    # (this is the index of the equation order
                                    #  in the given order)
   disc::fmpz                       # Discriminant
-  parent::NfOrdSet                 # Parent object
-  isequation_order::Bool            # Equation order of ambient number field?
+  parent::NfAbsOrdSet{S}           # Parent object
+  isequation_order::Bool           # Equation order of ambient number field?
   signature::Tuple{Int, Int}       # Signature of the ambient number field
                                    # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
-  torsion_units#::Tuple{Vector{NfOrd}, NfOrd}
+  torsion_units#::Tuple{Vector{NfAbsOrd}, NfAbsOrd}
   unit_group::Map                  # Abstract types in the field is usually bad,
                                    # but here it can be neglected.
                                    # We annotate the getter function
@@ -606,13 +609,14 @@ mutable struct NfOrd <: Ring
   tidempotents::fmpz_mat           # Temporary variable for idempotents()
 
   index_div::Dict{fmpz, Any}       # the index divisor splitting
-                                   # Any = Array{NfOrdIdl, Int}
+                                   # Any = Array{NfAbsOrdIdl, Int}
                                    # but forward references are illegal
 
-  function NfOrd(a::AnticNumberField)
+   function NfAbsOrd{S, T}(a::S) where {S, T}
     # "Default" constructor with default values.
-    r = new(a)
-    r.parent = NfOrdSet(a)
+    r = new{S, elem_type(S)}()
+    r.nf = a
+    r.parent = NfAbsOrdSet(a)
     r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
@@ -625,60 +629,68 @@ mutable struct NfOrd <: Ring
     return r
   end
 
-  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{nf_elem}, cached::Bool = false)
-    if haskey(NfOrdID, (K, x))
-      return NfOrdID[(K, x)]
+  function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
+    if haskey(NfAbsOrdID, (K, x))
+      return NfAbsOrdID[(K, x)]
     else
-      z = NfOrd(K)
+      z = NfAbsOrd{S, T}(K)
       n = degree(K)
       z.basis_nf = B
       z.basis_mat = x
       z.basis_mat_inv = xinv
       if cached
-        NfOrdID[(K, x)] = z
+        NfAbsOrdID[(K, x)] = z
       end
       return z
     end
   end
 
-  function NfOrd(K::AnticNumberField, x::FakeFmpqMat, cached::Bool = false)
-    if haskey(NfOrdID, (K, x))
-      return NfOrdID[(K, x)]
+  function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
+    if haskey(NfAbsOrdID, (K, x))
+      return NfAbsOrdID[(K, x)]
     else
-      z = NfOrd(K)
+      z = NfAbsOrd{S, T}(K)
       n = degree(K)
       B_K = basis(K)
-      d = Vector{nf_elem}(n)
+      d = Vector{T}(n)
       for i in 1:n
         d[i] = elem_from_mat_row(K, x.num, i, x.den)
       end
       z.basis_nf = d
       z.basis_mat = x
       if cached
-        NfOrdID[(K, x)] = z
+        NfAbsOrdID[(K, x)] = z
       end
       return z
     end
   end
 
-  function NfOrd(b::Array{nf_elem, 1}, cached::Bool = false)
+  function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = FakeFmpqMat(basis_mat(b))
-    if haskey(NfOrdID, (K,A))
-      return NfOrdID[(K,A)]
+    if haskey(NfAbsOrdID, (K,A))
+      return NfAbsOrdID[(K,A)]
     else
-      z = NfOrd(K)
+      z = NfAbsOrd{parent_type(T), T}(K)
       z.basis_nf = b
       z.basis_mat = A
       if cached
-        NfOrdID[(K,A)] = z
+        NfAbsOrdID[(K, A)] = z
       end
       return z
     end
   end
 end
 
-const NfOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
+NfAbsOrd(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T} = NfAbsOrd{S, T}(K, x, xinv, B, cached)
+
+NfAbsOrd(K::S, x::FakeFmpqMat, cached::Bool = false) where {S} = NfAbsOrd{S, elem_type(S)}(K, x, cached)
+
+NfAbsOrd(b::Array{T, 1}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(T), T}(b, cached)
+
+const NfOrd = NfAbsOrd{AnticNumberField, nf_elem}
+
+const NfAbsOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
 
 ################################################################################
 #
@@ -688,14 +700,16 @@ const NfOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
 
 export NfOrdElem
 
-mutable struct NfOrdElem <: RingElem
-  elem_in_nf::nf_elem
+export NfAbsOrdElem
+
+mutable struct NfAbsOrdElem{S, T} <: RingElem
+  elem_in_nf::T
   elem_in_basis::Vector{fmpz}
   has_coord::Bool
-  parent::NfOrd
+  parent::NfAbsOrd{S, T}
 
-  function NfOrdElem(O::NfOrd)
-    z = new()
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}) where {S, T}
+    z = new{S, T}()
     z.parent = O
     z.elem_in_nf = nf(O)()
     z.elem_in_basis = Vector{fmpz}(degree(O))
@@ -703,8 +717,8 @@ mutable struct NfOrdElem <: RingElem
     return z
   end
 
-  function NfOrdElem(O::NfOrd, a::nf_elem)
-    z = new()
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
+    z = new{S, T}()
     z.elem_in_nf = a
     z.elem_in_basis = Vector{fmpz}(degree(O))
     z.parent = O
@@ -712,8 +726,8 @@ mutable struct NfOrdElem <: RingElem
     return z
   end
 
-  function NfOrdElem(O::NfOrd, a::nf_elem, arr::Array{fmpz, 1})
-    z = new()
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
+    z = new{S, T}()
     z.parent = O
     z.elem_in_nf = a
     z.has_coord = true
@@ -721,8 +735,8 @@ mutable struct NfOrdElem <: RingElem
     return z
   end
 
-  function NfOrdElem(O::NfOrd, arr::Array{fmpz, 1})
-    z = new()
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
+    z = new{S, T}()
     z.elem_in_nf = dot(O.basis_nf, arr)
     z.has_coord = true
     z.elem_in_basis = arr
@@ -730,14 +744,30 @@ mutable struct NfOrdElem <: RingElem
     return z
   end
 
-  function NfOrdElem(O::NfOrd, arr::Array{S, 1}) where S <: Integer
-    return NfOrdElem(O, map(FlintZZ, arr))
+  function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer}
+    return NfAbsOrdElem{S, T}(O, map(FlintZZ, arr))
   end
 
-  function NfOrdElem(x::NfOrdElem)
+  function NfAbsOrdElem{S, T}(x::NfAbsOrdElem{S, T}) where {S, T}
     return deepcopy(x)  ### Check parent?
   end
 end
+
+NfAbsOrdElem(O::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdElem{S, T}(O)
+
+NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T) where {S, T} = NfAbsOrdElem{S, T}(O, a)
+
+NfAbsOrdElem(O::NfAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T} = NfAbsOrdElem{S, T}(O, a, arr)
+
+NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T} = NfAbsOrdElem{S, T}(O, arr)
+
+NfAbsOrdElem(O::NfAbsOrd{S, T}, arr::Vector{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}(O, arr)
+
+#NfAbsOrdElem(O::NfAbsOrd{S, T}, p::Integer) where {S, T} = NfAbsOrdElem{S, T}(O, p)
+
+#NfAbsOrdElem(O::NfAbsOrd{S, T}, p::fmpz) where {S, T} = NfAbsOrdElem{S, T}(O, p)
+
+const NfOrdElem = NfAbsOrdElem{AnticNumberField, nf_elem}
 
 ################################################################################
 #
@@ -747,23 +777,29 @@ end
 
 export NfOrdIdl
 
-mutable struct NfOrdIdlSet
-  order::NfOrd
+export NfAbsOrdIdl
 
-  function NfOrdIdlSet(O::NfOrd, cached::Bool=false)
-    if haskey(NfOrdIdlSetID, O)
-      return NfOrdIdlSetID[O]::NfOrdIdlSet
+mutable struct NfAbsOrdIdlSet{S, T}
+  order::NfAbsOrd{S, T}
+
+  function NfAbsOrdIdlSet{S, T}(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
+    if haskey(NfAbsOrdIdlSetID, O)
+      return NfAbsOrdIdlSetID[O]::NfAbsOrdIdlSet{S, T}
     else
-      r = new(O)
+      r = new{S, T}(O)
       if cached
-        NfOrdIdlSetID[O] = r
+        NfAbsOrdIdlSetID[O] = r
       end
-      return r::NfOrdIdlSet
+      return r::NfAbsOrdIdlSet{S, T}
     end
   end
 end
 
-const NfOrdIdlSetID = Dict{NfOrd, NfOrdIdlSet}()
+NfAbsOrdIdlSet(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T} = NfAbsOrdIdlSet{S, T}(O, cached)
+
+const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
+
+const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
 @doc """
   NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
@@ -787,12 +823,12 @@ const NfOrdIdlSetID = Dict{NfOrd, NfOrdIdlSet}()
     No sanity checks. No data is copied, x should not be used anymore.
 
 """ ->
-type NfOrdIdl
-  basis::Array{NfOrdElem, 1}
+type NfAbsOrdIdl{S, T}
+  basis::Array{NfAbsOrdElem{S, T}, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
   gen_one::fmpz
-  gen_two::NfOrdElem
+  gen_two::NfAbsOrdElem{S, T}
   gens_short::Bool
   gens_normal::fmpz
   gens_weakly_normal::Bool # true if Norm(A) = gcd(Norm, Norm)
@@ -804,7 +840,7 @@ type NfOrdIdl
                            # 2 known to be not prime
   iszero::Int             # as above
   is_principal::Int        # as above
-  princ_gen::NfOrdElem
+  princ_gen::NfAbsOrdElem{S, T}
   princ_gen_special::Tuple{Int, Int, fmpz}
                            # Check if the ideal is generated by an integer
                            # First entry encodes the following:
@@ -818,19 +854,19 @@ type NfOrdIdl
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime
 
-  parent::NfOrdIdlSet
+  parent::NfAbsOrdIdlSet{S, T}
   
-  gens::Vector{NfOrdElem}  # A set of generators of the ideal 
+  gens::Vector{NfAbsOrdElem{S, T}}  # A set of generators of the ideal 
 
   ## For residue fields of non-index divisors
-  prim_elem::NfOrdElem
+  prim_elem::NfAbsOrdElem{S, T}
   min_poly_prim_elem::fmpz_poly  # minimal polynomial modulo P
   basis_in_prim::Vector{fmpz_mat} #
 
-  function NfOrdIdl(O::NfOrd)
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}) where {S, T}
     # populate the bits types (Bool, Int) with default values
-    r = new()
-    r.parent = NfOrdIdlSet(O)
+    r = new{S, T}()
+    r.parent = NfAbsOrdIdlSet(O)
     r.gens_short = false
     r.gens_weakly_normal = false
     r.iszero = 0
@@ -840,37 +876,37 @@ type NfOrdIdl
     return r
   end
 
-  function NfOrdIdl(O::NfOrd, a::fmpz_mat)
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::fmpz_mat) where {S, T}
     # create ideal of O with basis_matrix a
     # Note that the constructor 'destroys' a, a should not be used anymore
-    r = NfOrdIdl(O)
+    r = NfAbsOrdIdl(O)
     r.basis_mat = a
     return r
   end
 
-  function NfOrdIdl(a::fmpz, b::NfOrdElem)
+  function NfAbsOrdIdl{S, T}(a::fmpz, b::NfAbsOrdElem{S, T}) where {S, T}
     # create ideal (a,b) of order(b)
-    r = NfOrdIdl(parent(b))
+    r = NfAbsOrdIdl(parent(b))
     r.gen_one = a
     r.gen_two = b
     return r
   end
 
-  function NfOrdIdl(O::NfOrd, a::fmpz, b::nf_elem)
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::fmpz, b::nf_elem) where {S, T}
     # create ideal (a,b) of O
-    r = NfOrdIdl(a, O(b, false))
+    r = NfAbsOrdIdl(a, O(b, false))
     return r
   end
 
-  function NfOrdIdl(O::NfOrd, a::NfOrdElem)
-    return NfOrdIdl(a)
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, a::NfAbsOrdElem{S, T}) where {S, T}
+    return NfAbsOrdIdl(a)
   end
 
-  function NfOrdIdl(x::NfOrdElem)
+  function NfAbsOrdIdl{S, T}(x::NfAbsOrdElem{S, T}) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
     O = parent(x)
-    C = NfOrdIdl(O)
+    C = NfAbsOrdIdl{S, T}(O)
     C.princ_gen = x
     C.is_principal = 1
 
@@ -887,10 +923,10 @@ type NfOrdIdl
     return C
   end
 
-  function NfOrdIdl(O::NfOrd, x::Int)
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, x::Int) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
-    C = NfOrdIdl(O)
+    C = NfAbsOrdIdl(O)
     C.princ_gen = O(x)
     C.is_principal = 1
     C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
@@ -904,10 +940,10 @@ type NfOrdIdl
     return C
   end
 
-  function NfOrdIdl(O::NfOrd, x::fmpz)
+  function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}, x::fmpz) where {S, T}
     # create ideal (x) of parent(x)
     # Note that the constructor 'destroys' x, x should not be used anymore
-    C = NfOrdIdl(O)
+    C = NfAbsOrdIdl(O)
     C.princ_gen = O(x)
     C.is_principal = 1
     C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
@@ -920,8 +956,21 @@ type NfOrdIdl
     C.gens_weakly_normal = true
     return C
   end
-
 end
+
+NfAbsOrdIdl(a::fmpz, b::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a, b)
+
+NfAbsOrdIdl(O::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(O)
+
+NfAbsOrdIdl(a::NfAbsOrdElem{S, T}) where {S, T} = NfAbsOrdIdl{S, T}(a)
+
+NfAbsOrdIdl(O::NfAbsOrd{S, T}, a::fmpz_mat) where {S, T} = NfAbsOrdIdl{S, T}(O, a)
+
+NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::Int) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
+
+NfAbsOrdIdl(O::NfAbsOrd{S, T}, x::fmpz) where {S, T} = NfAbsOrdIdl{S, T}(O, x)
+
+const NfOrdIdl = NfAbsOrdIdl{AnticNumberField, nf_elem}
 
 ################################################################################
 #
