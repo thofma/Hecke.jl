@@ -82,7 +82,7 @@ doc"""
 Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
 number field.
 """
-@inline parent(O::NfOrd) = O.parent
+parent(O::NfOrd) = NfAbsOrdSet(nf(O), false)
 
 doc"""
     isequation_order(O::NfOrd) -> Bool
@@ -362,12 +362,10 @@ Makes a copy of $\mathcal O$.
 function Base.deepcopy_internal(O::NfAbsOrd{S, T}, dict::ObjectIdDict) where {S, T}
   z = NfAbsOrd{S, T}(O.nf)
   for x in fieldnames(O)
-    if x != :nf && x != :parent && isdefined(O, x)
+    if x != :nf && isdefined(O, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
     end
   end
-  z.nf = O.nf
-  z.parent = O.parent
   return z
 end
 
@@ -778,6 +776,10 @@ function ==(R::NfAbsOrd, S::NfAbsOrd)
   assure_has_basis_mat(R)
   assure_has_basis_mat(S)
   return R.basis_mat == S.basis_mat
+end
+
+function ==(R::NfAbsOrdSet, S::NfAbsOrdSet)
+  return R.nf === S.nf
 end
 
 ################################################################################

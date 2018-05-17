@@ -60,9 +60,8 @@ end
 ################################################################################
 
 function elem_from_mat_row(O::NfAbsOrd, M::fmpz_mat, i::Int, d::fmpz = fmpz(1))
-  return O([M[i,j] for j=1:degree(O)])
+  return O(fmpz[M[i, j] for j=1:degree(O)])
 end
-
 
 ################################################################################
 #
@@ -171,6 +170,16 @@ doc"""
 Returns the order of which $a$ is an element.
 """
 parent(a::NfAbsOrdElem) = a.parent
+
+################################################################################
+#
+#  Parent check
+#
+################################################################################
+
+function check_parent(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
+  return parent(x) === parent(y)
+end
 
 ################################################################################
 #
@@ -399,7 +408,7 @@ doc"""
 > Returns $x \cdot y$.
 """
 function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
-  parent(x) != parent(y) && error("Wrong parents")
+  !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf*y.elem_in_nf
   return z
@@ -412,6 +421,7 @@ doc"""
 > Returns $x + y$.
 """
 function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
+  !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf + y.elem_in_nf
   if x.has_coord && y.has_coord
@@ -429,6 +439,7 @@ doc"""
 > Returns $x - y$.
 """
 function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
+  !check_parent(x, y) && error("Wrong parents")
   z = parent(x)()
   z.elem_in_nf = x.elem_in_nf - y.elem_in_nf
   if x.has_coord && y.has_coord
@@ -447,6 +458,7 @@ doc"""
 > as $x$.
 """
 function divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool = true)
+  !check_parent(x, y) && error("Wrong parents")
   a = divexact(x.elem_in_nf, y.elem_in_nf)
   if check
     if !in(a, parent(x))
@@ -713,10 +725,8 @@ end
 function rand!(z::NfAbsOrdElem{S, T}, B::Vector{NfAbsOrdElem{S, T}}, R) where {S, T}
   O = parent(z)
   y = O()
-  ar = rand(R, degree(O))
-  mul!(z, ar[1], B[1])
-  for i in 2:degree(O)
-    mul!(y, ar[i], B[i])
+  for i in 1:degree(O)
+    mul!(y, rand(R), B[i])
     add!(z, z, y)
   end
   return z
@@ -725,10 +735,9 @@ end
 function rand!(z::NfAbsOrdElem, O::NfOrd, R::UnitRange{T}) where T <: Integer
   y = O()
   ar = rand(R, degree(O))
-  B = basis(O)
-  mul!(z, ar[1], B[1])
-  for i in 2:degree(O)
-    mul!(y, ar[i], B[i])
+  B = basis(O, Val{false})
+  for i in 1:degree(O)
+    mul!(y, rand(R), B[i])
     add!(z, z, y)
   end
   return z
@@ -781,20 +790,6 @@ end
 
 @inline function add!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
   add!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
-#  if x.has_coord && y.has_coord
-#    if isdefined(z.elem_in_basis, 1)
-#      for i in 1:degree(parent(x))
-#        add!(z.elem_in_basis[i], x.elem_in_basis[i], y.elem_in_basis[i])
-#      end
-#    else
-#      for i in 1:degree(parent(x))
-#        z.elem_in_basis[i] = x.elem_in_basis[i] + y.elem_in_basis[i]
-#      end
-#    end
-#    z.has_coord = true
-#  else
-#    z.has_coord = false
-#  end
   z.has_coord = false
   return z
 end
@@ -815,31 +810,22 @@ function addeq!(z::NfAbsOrdElem, x::NfAbsOrdElem)
   return z
 end
 
+################################################################################
+#
+#  Unsafe ad hoc operations
+#
+################################################################################
+
 # ad hoc
 for T in [Integer, fmpz]
   @eval begin
     @inline function mul!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
       mul!(z.elem_in_nf, x.elem_in_nf, y)
-#      if x.has_coord
-#        if isdefined(z.elem_in_basis, 1)
-#          for i in 1:degree(parent(z))
-#            mul!(z.elem_in_basis[i], x.elem_in_basis[i], y)
-#          end
-#        else
-#          for i in 1:degree(parent(z))
-#            z.elem_in_basis[i] = x.elem_in_basis[i] * y
-#          end
-#        end
-#        z.has_coord = true
-#      else
-#        z.has_coord = false
-#      end
       z.has_coord = false
       return z
     end
 
     mul!(z::NfAbsOrdElem, x::$T, y::NfAbsOrdElem) = mul!(z, y, x)
-
   end
 end
 
@@ -960,6 +946,6 @@ end
 #
 ################################################################################
 
-Nemo.promote_rule{T <: Integer}(::Type{NfAbsOrdElem}, ::Type{T}) = NfAbsOrdElem
+Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}
 
-Nemo.promote_rule(::Type{NfAbsOrdElem}, ::Type{fmpz}) = NfAbsOrdElem
+Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{fmpz}) where {S, T} = NfAbsOrdElem{S, T}

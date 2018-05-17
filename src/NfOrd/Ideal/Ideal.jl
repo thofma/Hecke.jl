@@ -65,11 +65,8 @@ end
 function Base.deepcopy_internal(A::NfAbsOrdIdl, dict::ObjectIdDict)
   B = typeof(A)(order(A))
   for i in fieldnames(A)
-    if i == :parent
-      continue
-    end
     if isdefined(A, i)
-      if i == :valuation
+      if i == :valuation || i == :order
         setfield!(B, i, getfield(A, i))
       else
         setfield!(B, i, Base.deepcopy_internal(getfield(A, i), dict))
@@ -85,7 +82,7 @@ end
 #
 ################################################################################
 
-parent(a::NfAbsOrdIdl) = a.parent
+parent(A::NfAbsOrdIdl) = NfAbsOrdIdlSet(order(A), false)
 
 #################################################################################
 #
@@ -284,11 +281,11 @@ nf(x::NfAbsOrdIdl) = nf(order(x))
 
 doc"""
 ***
-    parent(I::NfAbsOrdIdl) -> NfOrd
+    order(I::NfAbsOrdIdl) -> NfOrd
 
 > Returns the order of $I$.
 """
-order(a::NfAbsOrdIdl) = order(parent(a))
+@inline order(a::NfAbsOrdIdl) = a.order
 
 ################################################################################
 #
@@ -303,7 +300,7 @@ doc"""
 > Returns the principal ideal $(x)$ of $\mathcal O$.
 """
 function *(O::NfOrd, x::NfOrdElem)
-  parent(x) != O && error("Order of element does not coincide with order")
+  parent(x) !== O && error("Order of element does not coincide with order")
   return ideal(O, x)
 end
 
@@ -539,7 +536,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
   end
 
   if has_weakly_normal(A)
-    K = A.parent.order.nf
+    K = nf(order(A))
     if iszero(A.gen_two)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
@@ -682,18 +679,19 @@ doc"""
 > Returns whether $x$ is contained in $y$.
 """
 function in(x::NfOrdElem, y::NfAbsOrdIdl)
-  parent(x) != order(y) && error("Order of element and ideal must be equal")
+  parent(x) !== order(y) && error("Order of element and ideal must be equal")
   v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, Val{false})
   return isone(t.den) 
 end
 
 function in(x::nf_elem, y::NfAbsOrdIdl)
-  parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
+  parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
   return in(order(y)(x),y)
 end
 
 in(x::fmpz, y::NfAbsOrdIdl) = in(order(y)(x),y)
+
 in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
 
 ###########################################################################################
@@ -733,11 +731,12 @@ function inv_maximal(A::NfAbsOrdIdl)
       m = A.gen_one
       _, d = ppio(d, m)
     end  
-    Ai = parent(A)()
+    Ai = NfAbsOrdIdl(order(A))
+    #Ai = parent(A)()
     dn = denominator(d*alpha, O)
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
-    temp = dn^degree(A.parent.order)//norm(A)
+    temp = dn^degree(order(A))//norm(A)
     @hassert :NfOrd 1 denominator(temp) == 1
     Ai.norm = numerator(temp)
     Ai.gens_normal = A.gens_normal
@@ -855,19 +854,19 @@ function simplify(A::NfAbsOrdIdl)
     end
     if new
       A.minimum = _minmod(A.gen_one, A.gen_two)
-      @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), A.parent.order))
+      @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     else  
-      A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), A.parent.order))
+      A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end  
     A.gen_one = A.minimum
     if false && new
       #norm seems to be cheap, while inv is expensive
       #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
       #      order basis. For this it would better be small in the field basis....
-      n = _normmod(A.gen_one^degree(A.parent.order), A.gen_two)
-      @hassert :Rres 1 n == gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
+      n = _normmod(A.gen_one^degree(order(A)), A.gen_two)
+      @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
     else  
-      n = gcd(A.gen_one^degree(A.parent.order), FlintZZ(norm(A.gen_two)))
+      n = gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
     end  
     if isdefined(A, :norm)
       @assert n == A.norm
@@ -1100,7 +1099,7 @@ doc"""
 > then $0 \leq b_i < a_i$ for $1 \leq i \leq d$.
 """
 function mod(x::NfOrdElem, y::NfAbsOrdIdl)
-  parent(x) != order(y) && error("Orders of element and ideal must be equal")
+  parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1128,7 +1127,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl)
 end
 
 function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1})
-  parent(x) != order(y) && error("Orders of element and ideal must be equal")
+  parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1348,7 +1347,6 @@ doc"""
 > with $xI \subseteq I$.
 """
 function ring_of_multipliers(a::NfAbsOrdIdl)
-  
   O = order(a) 
   n = degree(O)
   if isdefined(a, :gens) && length(a.gens) < n
@@ -1507,6 +1505,7 @@ conductor(R::NfOrd) = conductor(R, maximal_order(R))
 #for consistency
 
 maximal_order(R::NfOrd) = MaximalOrder(R)
+
 equation_order(K::AnticNumberField) = EquationOrder(K)
 
 
@@ -1743,7 +1742,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
     return
   end
-  O = A.parent.order
+  O = order(A)
   K = nf(O)
   n = degree(K)
 

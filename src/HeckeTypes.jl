@@ -557,7 +557,7 @@ mutable struct NfAbsOrdSet{T}
   end
 end
 
-NfAbsOrdSet(a::T) where {T} = NfAbsOrdSet{T}(a)
+NfAbsOrdSet(a::T, cached::Bool = false) where {T} = NfAbsOrdSet{T}(a, cached)
 
 const NfAbsOrdSetID = ObjectIdDict()
 
@@ -576,7 +576,6 @@ mutable struct NfAbsOrd{S, T} <: Ring
                                    # (this is the index of the equation order
                                    #  in the given order)
   disc::fmpz                       # Discriminant
-  parent::NfAbsOrdSet{S}           # Parent object
   isequation_order::Bool           # Equation order of ambient number field?
   signature::Tuple{Int, Int}       # Signature of the ambient number field
                                    # (-1, 0) means "not set"
@@ -616,7 +615,6 @@ mutable struct NfAbsOrd{S, T} <: Ring
     # "Default" constructor with default values.
     r = new{S, elem_type(S)}()
     r.nf = a
-    r.parent = NfAbsOrdSet(a)
     r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
@@ -795,7 +793,9 @@ mutable struct NfAbsOrdIdlSet{S, T}
   end
 end
 
-NfAbsOrdIdlSet(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T} = NfAbsOrdIdlSet{S, T}(O, cached)
+function NfAbsOrdIdlSet(O::NfAbsOrd{S, T}, cached::Bool = false) where {S, T}
+  return NfAbsOrdIdlSet{S, T}(O, cached)
+end
 
 const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 
@@ -824,6 +824,7 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
 """ ->
 type NfAbsOrdIdl{S, T}
+  order::NfAbsOrd{S, T}
   basis::Array{NfAbsOrdElem{S, T}, 1}
   basis_mat::fmpz_mat
   basis_mat_inv::FakeFmpqMat
@@ -854,8 +855,6 @@ type NfAbsOrdIdl{S, T}
   valuation::Function      # a function returning "the" valuation -
                            # mind that the ideal is not prime
 
-  parent::NfAbsOrdIdlSet{S, T}
-  
   gens::Vector{NfAbsOrdElem{S, T}}  # A set of generators of the ideal 
 
   ## For residue fields of non-index divisors
@@ -866,7 +865,7 @@ type NfAbsOrdIdl{S, T}
   function NfAbsOrdIdl{S, T}(O::NfAbsOrd{S, T}) where {S, T}
     # populate the bits types (Bool, Int) with default values
     r = new{S, T}()
-    r.parent = NfAbsOrdIdlSet(O)
+    r.order = O
     r.gens_short = false
     r.gens_weakly_normal = false
     r.iszero = 0
@@ -998,22 +997,22 @@ end
 const NfOrdFracIdlSetID = Dict{NfOrd, NfOrdFracIdlSet}()
 
 mutable struct NfOrdFracIdl
+  order::NfOrd
   num::NfOrdIdl
   den::fmpz
   norm::fmpq
   basis_mat::FakeFmpqMat
   basis_mat_inv::FakeFmpqMat
-  parent::NfOrdFracIdlSet
 
   function NfOrdFracIdl(O::NfOrd)
     z = new()
-    z.parent = NfOrdFracIdlSet(O)
+    z.order = O
     return z
   end
 
   function NfOrdFracIdl(O::NfOrd, a::NfOrdIdl, b::fmpz)
     z = new()
-    z.parent = NfOrdFracIdlSet(O)
+    z.order = O
     z.basis_mat = FakeFmpqMat(basis_mat(a), b)
     z.num = a
     z.den = b
@@ -1022,14 +1021,14 @@ mutable struct NfOrdFracIdl
 
   function NfOrdFracIdl(O::NfOrd, a::FakeFmpqMat)
     z = new()
-    z.parent = NfOrdFracIdlSet(O)
+    z.order = O
     z.basis_mat = a
     return z
   end
 
   function NfOrdFracIdl(x::NfOrdIdl, y::fmpz)
     z = new()
-    z.parent = NfOrdFracIdlSet(order(x))
+    z.order = order(x)
     z.num = x
     z.den = y
     return z
@@ -1037,13 +1036,12 @@ mutable struct NfOrdFracIdl
   
   function NfOrdFracIdl(O::NfOrd, a::nf_elem)
     z = new()
-    z.parent = NfOrdFracIdlSet(O)
+    z.order = O
     z.num = ideal(O, O(denominator(a, O)*a))
     z.den = denominator(a, O)
     z.basis_mat = hnf(FakeFmpqMat(representation_matrix(O(denominator(a, O)*a)), denominator(a, O)))
     return z
   end
-
 end
 
 ################################################################################
