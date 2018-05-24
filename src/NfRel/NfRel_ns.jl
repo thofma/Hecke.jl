@@ -59,12 +59,14 @@ end
 mutable struct NfRel_ns{T} <: RelativeExtension{T}
   base_ring::Nemo.Field
   pol::Array{Nemo.Generic.MPoly{T}, 1}
+  abs_pol::Array{Generic.Poly{T}, 1}
   S::Array{Symbol, 1}
   auxilliary_data::Array{Any, 1}
 
-  function NfRel_ns(f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
+  function NfRel_ns(abs_pol::Array{Generic.Poly{T}}, f::Array{Nemo.Generic.MPoly{T}, 1}, S::Array{Symbol, 1}; cached::Bool = false) where T
     r = new{T}()
     r.pol = f
+    r.abs_pol = abs_pol
     r.base_ring = base_ring(f[1])
     r.S = S
     r.auxilliary_data = Array{Any}(5)
@@ -234,7 +236,7 @@ function number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
-  K = NfRel_ns([f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
+  K = NfRel_ns(f, [f[i](x[i]) for i=1:length(f)], [Symbol("$s$i") for i=1:length(f)])
   return K, gens(K)
 end
 
