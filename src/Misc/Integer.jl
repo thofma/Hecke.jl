@@ -64,31 +64,31 @@ function valuation(z::Rational{T}, p::T) where T <: Integer
 end 
 
 function remove!(a::fmpz, b::fmpz)
-  v = ccall((:fmpz_remove, :libflint), Int64, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
+  v = ccall((:fmpz_remove, :libflint), Clong, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
   return v, a
 end
 
 function remove!(a::fmpq, b::fmpz)
   nr = ccall((:fmpq_numerator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   #fmpq's are simplified: either num OR den will be non-trivial
   if vn != 0
     return vn, a
   end
   nr = ccall((:fmpq_denominator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   return -vn, a
 end
 
 function valuation!(a::fmpq, b::fmpz)
   nr = ccall((:fmpq_numerator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   #fmpq's are simplified: either num OR den will be non-trivial
   if vn != 0
     return vn
   end
   nr = ccall((:fmpq_denominator_ptr, :libflint), Ptr{fmpz}, (Ref{fmpq}, ), a)
-  vn = ccall((:fmpz_remove, :libflint), Int64, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
+  vn = ccall((:fmpz_remove, :libflint), Clong, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), nr, nr, b)
   return -vn
 end
 

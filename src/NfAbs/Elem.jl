@@ -110,10 +110,18 @@ end
 #
 ################################################################################
 
-function basis_mat(A::Array{nf_elem, 1})
+function basis_mat(A::Array{T, 1}) where {T <: Union{nf_elem, NfAbsNSElem}}
   @assert length(A) > 0
   n = length(A)
   d = degree(parent(A[1]))
+
+  if T === NfAbsNSElem
+    MM = zero_matrix(FlintQQ, n, d)
+    for i in 1:n
+      elem_to_mat_row!(MM, i, A[i])
+    end
+    return FakeFmpqMat(MM)
+  end
 
   M = zero_matrix(FlintZZ, n, d)
 

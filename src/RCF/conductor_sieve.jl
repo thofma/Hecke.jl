@@ -623,6 +623,25 @@ end
 #
 ###############################################################################
 
+function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
+                            gtype::Vector{Int}, discriminant_bound::fmpz;
+                            real::Bool = false,
+                            tame::Bool = false)
+
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  K, _ = NumberField(x - 1, "a")
+  OK = maximal_order(K)
+  l = abelian_extensions(OK, gtype, discriminant_bound,
+                         real = real,
+                         tame = tame)
+
+
+  newlist = Vector{NfAbsNS}(length(l))
+  for j in 1:length(l)
+    newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol])
+  end
+  return newlist
+end
 
 function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; real::Bool=false, tame::Bool=false, with_autos::Type{Val{T}} = Val{false}) where T 
   

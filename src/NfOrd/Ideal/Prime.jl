@@ -214,16 +214,16 @@ doc"""
 > Note that in this case it may happen that $p\mathcal O$ is not the product of the
 > $\mathfrak p_i^{e_i}$.
 """
-function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0, cached::Bool = true)
+function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0, cached::Bool = true) where {S, T}
   if typeof(p) == fmpz && nbits(p) < 64
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
 
-  if mod(index(O),fmpz(p)) == 0
+  if mod(index(O),fmpz(p)) == 0 || !issimple(nf(O))
     if cached
       if haskey(O.index_div, fmpz(p))
         lp = O.index_div[fmpz(p)]
-        z = Tuple{NfOrdIdl, Int}[]
+        z = Tuple{NfAbsOrdIdl{S, T}, Int}[]
         for (Q, e) in lp
           if degree(Q) <= degree_limit
             push!(z, (Q, e))
@@ -254,7 +254,6 @@ end
 function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
   K = nf(O)
   f = K.pol
-  I = IdealSet(O)
   R = parent(f)
   Zx, x = PolynomialRing(FlintIntegerRing(),"x")
   Zf = Zx(f)
@@ -265,7 +264,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
 
   fac = _fac_and_lift(Zf, p, degree_limit, lower_limit)
 
-  result = Array{Tuple{typeof(I()),Int}}(length(fac))
+  result = Array{Tuple{ideal_type(O),Int}}(length(fac))
 
   for k in 1:length(fac)
     fi = fac[k][1]
@@ -273,11 +272,10 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
     #ideal = ideal_from_poly(O, p, fi, ei)
     t = parent(f)(fi)
     b = K(t)
-    ideal = I()
+    ideal = NfAbsOrdIdl(O)
     ideal.gen_one = p
     ideal.gen_two = O(b, false)
     ideal.is_prime = 1
-    ideal.parent = I
     ideal.splitting_type = ei, degree(fi)
     ideal.norm = FlintZZ(p)^degree(fi)
     ideal.minimum = FlintZZ(p)

@@ -97,6 +97,10 @@ Nemo.one(K::NfAbsNS) = K(Nemo.one(parent(K.pol[1])))
 
 Nemo.one(a::NfAbsNSElem) = one(a.parent)
 
+dot(a::NfAbsNSElem, b::Union{Integer, fmpz}) = a * b
+
+dot(a::Union{Integer, fmpz}, b::NfAbsNSElem) = b * a
+
 ################################################################################
 #
 #  Random
@@ -306,10 +310,24 @@ function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
   return c
 end
 
+function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
+  add!(c.data, a.data, b.data)
+  c = reduce!(c)
+  return c
+end
+
 function Nemo.addeq!(b::NfAbsNSElem, a::NfAbsNSElem)
   addeq!(b.data, a.data)
   b = reduce!(b)
   return b
+end
+
+#
+
+function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
+  mul!(c.data, a.data, parent(c.data)(b))
+  c = reduce!(c)
+  return c
 end
 
 ################################################################################
@@ -317,6 +335,35 @@ end
 #  Conversion to matrix
 #
 ################################################################################
+
+function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
+  K = parent(a)
+  # TODO: This is super bad
+  # Proper implementation needs access to the content of the underlying
+  # fmpq_mpoly
+
+  for j in 1:cols(M)
+    M[i, j] = zero(FlintZZ)
+  end
+
+  one!(d)
+
+  if length(data(a)) == 0
+    return nothing
+  end
+
+  z = zero_matrix(FlintQQ, 1, cols(M))
+  elem_to_mat_row!(z, 1, a)
+  z_q = FakeFmpqMat(z)
+
+  for j in 1:cols(M)
+    M[i, j] = z_q.num[1, j]
+  end
+
+  ccall((:fmpz_set, :libflint), Void, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
+
+  return nothing
+end
 
 function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
   K = parent(a)
@@ -326,7 +373,7 @@ function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
   adata = data(a)
   for j in 1:length(adata)
     exps = Nemo._get_termexp_ui(adata, j)
-    k = monomial_to_index(parent(a), exps)
+    k = monomial_to_index(K, exps)
     M[i, k] = coeff(adata, j)
   end
   return M
@@ -339,6 +386,15 @@ function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
     a += M[i, c]*b[c]
   end
   return a
+end
+
+function elem_from_mat_row(K::NfAbsNS, M::fmpz_mat, i::Int, d::fmpz)
+  a = K()
+  b = basis(K)
+  for c = 1:cols(M)
+    a += M[i, c]*b[c]
+  end
+  return divexact(a, d)
 end
 
 function SRow(a::NfAbsNSElem)
@@ -501,6 +557,13 @@ function representation_matrix(a::NfAbsNSElem)
     elem_to_mat_row!(M, i, a*b[i])
   end
   return M
+end
+
+function representation_matrix_q(a::NfAbsNSElem)
+  M = representation_matrix(a)
+  # TODO: This is suboptimal.
+  Mf = FakeFmpqMat(M)
+  return Mf.num, Mf.den
 end
 
 ################################################################################

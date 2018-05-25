@@ -130,7 +130,7 @@ export parent, order, basis_mat, basis_mat_inv, basis, norm,
 #
 ################################################################################
 
-parent(a::NfOrdFracIdl) = a.parent
+parent(a::NfOrdFracIdl) = NfOrdFracIdlSet(order(a), false)
 
 function Base.hash(a::NfOrdFracIdl, h::UInt)
   b = simplify(a)
@@ -145,7 +145,7 @@ end
 
 order(a::NfOrdFracIdlSet) = a.order
 
-order(a::NfOrdFracIdl) = order(parent(a))
+order(a::NfOrdFracIdl) = a.order
 
 ################################################################################
 #
@@ -257,8 +257,13 @@ function show(io::IO, s::NfOrdFracIdlSet)
 end
 
 function show(io::IO, id::NfOrdFracIdl)
-  print(io, "1//", id.den, " * ")
-  show(io, id.num)
+  if isdefined(id, :num) && isdefined(id, :den)
+    print(io, "1//", id.den, " * ")
+    print(io, id.num)
+  else
+    print(io, "Fractional ideal with basis matrix\n")
+    print(io, id.basis_mat)
+  end
 end
 
 ################################################################################
@@ -277,7 +282,7 @@ function norm(A::NfOrdFracIdl)
   if isdefined(A, :norm)
     return deepcopy(A.norm)
   else
-    A.norm = norm(A.num)//A.den^degree(A.num.parent.order)
+    A.norm = norm(A.num)//A.den^degree(order(A))
     return deepcopy(A.norm)
   end
 end

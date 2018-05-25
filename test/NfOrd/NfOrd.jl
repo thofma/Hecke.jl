@@ -32,8 +32,8 @@
 
     @test nf(O4) == K4
 
-    @test O4 == O44
-    @test O44 == O444
+    #@test O4 == O44
+    #@test O44 == O444
 #    @test O4 === O44
 #    @test O44 === O444
 
@@ -45,7 +45,7 @@
     O7 = Order(K6, Hecke.FakeFmpqMat(FlintZZ[6 0; 0 1], FlintZZ(6)), true, false)
     O77 = Order(K6, FlintQQ[6//6 0; 0 1//6])
 
-    @test O7 == O77
+    #@test O7 == O77
     #@test !(O7 === O77)
 
     @test_throws ErrorException Order(K1, [a1, a1, a1])

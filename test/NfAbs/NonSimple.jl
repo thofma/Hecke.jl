@@ -141,4 +141,11 @@
       @test m(m\z) == z
     end
   end
+
+  @testset "Maximal order" begin
+    K2, _ = @inferred number_field([x^2 - 50, x^3 - 3])
+    O = EquationOrder(K2)
+    Omax = @inferred MaximalOrder(O)
+    @test discriminant(Omax) == FlintZZ(30233088)
+  end
 end

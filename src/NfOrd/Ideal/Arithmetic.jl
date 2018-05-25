@@ -414,7 +414,7 @@ function prod_by_int_2_elem_normal(A::NfOrdIdl, a::fmpz)
   end
 
   if has_norm(A)
-    B.norm = A.norm * a^degree(A.parent.order)
+    B.norm = A.norm * a^degree(order(A))
   end
 
   @assert has_2_elem(B) && has_2_elem_normal(B)
@@ -432,7 +432,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
   end
 
   if has_norm(A)
-    B.norm = A.norm * a^degree(A.parent.order)
+    B.norm = A.norm * a^degree(order(A))
   end
 
   @assert has_2_elem(B)
