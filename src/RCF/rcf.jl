@@ -35,13 +35,11 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   return NfRelToNfRelMor(K, K, h, 1//b*gen(K)^r)
 end
 
-doc"""
-  number_field(I::NfOrd)
-> Return the number fields containing $I$.
-"""
-@inline function number_field(O::NfOrd)
-  return O.nf
-end
+###############################################################################
+#
+#  Computation of Frobenius automorphisms
+#
+###############################################################################
 
 # the Frobenius at p in K:
 #K is an extension of k, p a prime in k,
@@ -61,6 +59,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     error("Oops")
   end
 
+  #Carlo: If nbits(minimum)<=64, I should be able to remove this try/catch
   try
     F, mF = ResidueFieldSmall(Zk, p)
   catch e
@@ -68,7 +67,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   end
   mF = extend_easy(mF, number_field(Zk))
 
-  #K = sqrt[n](gen), an automorphism will be
+  # K = sqrt[n](gen), an automorphism will be
   # K[i] -> zeta^? K[i]
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
@@ -82,8 +81,6 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     i = 0
     while !isone(mu)
       i += 1
-      if i > K.n
-      end
       @assert i <= K.n
       mu *= z_p
     end
@@ -106,7 +103,6 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
     error("Oops")
   end
 
-
   try
     F, mF = ResidueFieldSmall(Zk, p)
   catch e
@@ -128,8 +124,6 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   i = 0
   while !isone(mu)
     i += 1
-    if i > K.n
-    end
     @assert i <= K.n
     mu *= z_p
   end
@@ -137,56 +131,18 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
 end
 
 
-#=
-  next, to piece things together:
-    have a quo of some ray class group in k,
-    taking primes in k over primes in Z that are 1 mod n
-    then the prime is totally split in Kr, hence I do not need to
-      do relative splitting and relative ideal norms. I am lazy
-        darn: I still need to match the ideals
-    find enough such primes to generate the rcg quotient (via norm)
-                       and the full automorphism group of the big Kummer
-
-          Kr(U^(1/n))  the "big" Kummer ext
-         /
-        X(z) = Kr(x^(1/n)) the "target"
-      / /
-    X  Kr = k(z)  = Ka
-    | /             |
-    k               |
-    |               |
-    Q               Q
-
-    this way we have the map (projection) from "big Kummer" to 
-    Aut(X/k) = quo(rcg)
-    The generator "x" is fixed by the kernel of this map
-
-    Alternatively, "x" could be obtained via Hecke's theorem, ala Cohen
-
-    Finally, X is derived via descent
-=#
-
-# for a supported ideal map, the modulus that was used to define it.
-function _modulus(mR::Map)
-  while issubtype(typeof(mR), AbstractAlgebra.Generic.CompositeMap)
-    mR = mR.map2
-  end
-  if issubtype(typeof(mR), Hecke.MapClassGrp)
-    return ideal(order(codomain(mR)), 1)
-  end
-  @assert issubtype(typeof(mR), Hecke.MapRayClassGrp)
-  return mR.modulus_fin
-end
-
-######################################################################
-#mR: SetIdl -> GrpAb (inv of ray_class_group or Frobenius or so)
+###############################################################################
 #
-function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
-  ZK = order(domain(mR))
+#  Find small generator of class group
+#
+###############################################################################
 
+function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
+# mR: SetIdl -> GrpAb (inv of ray_class_group or Frobenius or so)
+  ZK = order(domain(mR))
   R = codomain(mR) 
 
-  sR = elem_type(R)[]
+  sR = GrpAbFinGenElem[]
   lp = elem_type(domain(mR))[]
 
   st = start(S)
@@ -228,95 +184,16 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
       break
     end
   end
-
   return lp, sR
+  
 end
 
 
-# mR: GrpAb A -> Ideal in k, only preimage used
-# cf: Ideal in K -> GrpAb B, only image
-# mp:: k -> K inclusion
-# builds a (projection) from B -> A identifying (pre)images of
-# prime ideals, the ideals are coprime to cp and ==1 mod n
-
-function order(A::FacElemMon{IdealSet})
-  return order(A.base_ring)
-end
-
-function order(A::FacElemMon{NfOrdIdlSet})
-  return order(A.base_ring)
-end
-
-#function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
-function build_map(CF, K::KummerExt, c::CyclotomicExt)
-  #mR should be GrpAbFinGen -> IdlSet
-  #          probably be either "the rcg"
-  #          or a compositum, where the last component is "the rcg"
-  # we need this to get the defining modulus - for coprime testing
-
-  ZK = maximal_order(base_ring(K.gen[1]))
-  cp = lcm(minimum(__modulus(CF.rayclassgroupmap)), discriminant(ZK))
-  cf = Hecke.MapFromFunc(x->can_frobenius(x, K), IdealSet(ZK), K.AutG)
-
-  mp = c.mp[2]
-  ZK = maximal_order(c.Ka)
-  @assert order(domain(cf)) == ZK
-  Zk = order(codomain(CF.rayclassgroupmap))
-  Id_Zk = Hecke.NfOrdIdlSet(Zk)
-  k = nf(Zk)
-  @assert k == domain(mp)
-  Qx = parent(k.pol)
-
-  Sp = Hecke.PrimesSet(200, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
-
-  lp, sG = find_gens(cf, Sp, cp)
-
-  R = codomain(CF.quotientmap) 
-  G = codomain(cf)
-  sR = elem_type(R)[]
-
-  for P = lp
-    p = Id_Zk(intersect_nonindex(mp, P))
-    push!(sR, valuation(norm(P), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p)))
-  end
-  @assert order(quo(G, sG, false)[1]) == 1
-       # if think if the quo(G, ..) == 1, then the other is automatic
-       # it is not, in general it will never be.
-       #example: Q[sqrt(10)], rcf of 16*Zk
-  # now the map G -> R sG[i] -> sR[i] 
-  h = hom(sG, sR)
-  return h
-end
-
-function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
-  if parent(a) == I_Zk
-    return a
-  end
-  Zk = order(I_Zk)
-  Zl = order(a)
-  @assert has_2_elem(a)
-  b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
-  for i in [:gens_normal, :gens_weakly_normal, :iszero, :minimum]
-    if isdefined(a, i)
-      setfield!(b, i, getfield(a, i))
-    end
-  end
-  n = divexact(degree(Zk.nf), degree(Zl.nf))
-  if isdefined(a, :norm)
-    b.norm = a.norm^n
-  end
-  if isdefined(a, :princ_gen)
-    b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
-  end
-  if isdefined(a, :isprime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
-    Zl.ismaximal == 1
-    b.isprime = a.isprime
-    if isdefined(a, :splitting_type)
-      b.splitting_type = a.splitting_type
-    end
-  end
-  return b
-end
+###############################################################################
+#
+#  Ray Class Field, number_field interface and reduction to prime power case
+#
+###############################################################################
 
 #doc"""
 #    ray_class_field(m::Map, p::Int=0) -> ClassField
@@ -368,8 +245,8 @@ function number_field(CF::ClassField)
   return CF.A
 end
 
-function ray_class_field_cyclic_pp(CF::ClassField, mQ)
-  @vprint :ClassField 1 "cyclic prime power class field of degree $(order(codomain(mQ)))\n"
+function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
+  @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
   CFpp = ClassField_pp()
   #CFpp.mq = _compose(CF.mq, inv(mQ))
   CFpp.quotientmap = _compose(mQ, CF.quotientmap)
@@ -384,27 +261,88 @@ function ray_class_field_cyclic_pp(CF::ClassField, mQ)
   return CFpp
 end
 
-#function ray_class_field_cyclic_pp(mq::Map)
-#  @assert iscyclic(domain(mq))
-#  @vprint :ClassField 1 "cyclic prime power class field of degree $(order(domain(mq)))\n"
-#  CF = ClassField_pp()
-#  CF.mq = mq
-#  @vprint :ClassField 1 "finding the Kummer extension...\n"
-#  _rcf_find_kummer(CF)
-#  @vprint :ClassField 1 "reducing the generator...\n"
-#  _rcf_reduce(CF)
-#  @vprint :ClassField 1 "descending ...\n"
-#  _rcf_descent(CF)
-#  return CF
-#end
 
-function __modulus(mq::MapRayClassGrp)
-  return mq.modulus_fin
+###############################################################################
+#
+#  First step: Find the Kummer extension over the cyclotomic field
+#
+###############################################################################
+#=
+  next, to piece things together:
+    have a quo of some ray class group in k,
+    taking primes in k over primes in Z that are 1 mod n
+    then the prime is totally split in Kr, hence I do not need to
+      do relative splitting and relative ideal norms. I am lazy
+        darn: I still need to match the ideals
+    find enough such primes to generate the rcg quotient (via norm)
+                       and the full automorphism group of the big Kummer
+
+          Kr(U^(1/n))  the "big" Kummer ext
+         /
+        X(z) = Kr(x^(1/n)) the "target"
+      / /
+    X  Kr = k(z)  = Ka
+    | /             |
+    k               |
+    |               |
+    Q               Q
+
+    this way we have the map (projection) from "big Kummer" to 
+    Aut(X/k) = quo(rcg)
+    The generator "x" is fixed by the kernel of this map
+
+    Alternatively, "x" could be obtained via Hecke's theorem, ala Cohen
+
+    Finally, X is derived via descent
+=#
+
+
+
+# mR: GrpAb A -> Ideal in k, only preimage used
+# cf: Ideal in K -> GrpAb B, only image
+# mp:: k -> K inclusion
+# builds a (projection) from B -> A identifying (pre)images of
+# prime ideals, the ideals are coprime to cp and ==1 mod n
+
+#function build_map(mR::Map, K::KummerExt, c::CyclotomicExt)
+function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
+  #mR should be GrpAbFinGen -> IdlSet
+  #          probably be either "the rcg"
+  #          or a compositum, where the last component is "the rcg"
+  # we need this to get the defining modulus - for coprime testing
+  m = defining_modulus(CF)
+  ZK = maximal_order(base_ring(K.gen[1]))
+  cp = lcm(minimum(m), discriminant(ZK))
+  cf = Hecke.MapFromFunc(x->can_frobenius(x, K), IdealSet(ZK), K.AutG)
+
+  mp = c.mp[2]
+  ZK = maximal_order(c.Ka)
+  @hassert :ClassField 1 order(domain(cf)) == ZK
+  Zk = order(m)
+  Id_Zk = Hecke.NfOrdIdlSet(Zk)
+  k = nf(Zk)
+  @hassert :ClassField 1 k == domain(mp)
+
+  Sp = Hecke.PrimesSet(200, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
+
+  lp, sG = find_gens(cf, Sp, cp)
+
+  G = codomain(cf)
+  sR = GrpAbFinGenElem[]
+
+  for P = lp
+    p = Id_Zk(intersect_nonindex(mp, P))
+    push!(sR, valuation(norm(P), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p)))
+  end
+  @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
+       # if think if the quo(G, ..) == 1, then the other is automatic
+       # it is not, in general it will never be.
+       #example: Q[sqrt(10)], rcf of 16*Zk
+  # now the map G -> R sG[i] -> sR[i] 
+  h = hom(sG, sR)
+  return h
 end
 
-function __modulus(mq::MapClassGrp)
-  return ideal(order(codomain(mq)), 1)
-end
 
 function _rcf_find_kummer(CF::ClassField_pp)
   #mq = CF.mq
@@ -412,15 +350,14 @@ function _rcf_find_kummer(CF::ClassField_pp)
     return CF.K
   end
   #f = _modulus(mq)
-  f = __modulus(CF.rayclassgroupmap)
+  f = defining_modulus(CF)
   @vprint :ClassField 2 "Kummer extension ... with conductor(?) $f\n"
   k = nf(order(f))
-  #e = order(domain(mq))  
-  e = order(codomain(CF.quotientmap))  
+  e = degree(CF)  
   @assert Hecke.isprime_power(e)
 
   @vprint :ClassField 2 "Adjoining the root of unity\n"
-  C = cyclotomic_extension(k, Int(e))
+  C = cyclotomic_extension(k, e)
   K = C.Ka
 
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
@@ -430,25 +367,27 @@ function _rcf_find_kummer(CF::ClassField_pp)
   c, mc = class_group(ZK)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
-  q, mq = quo(c, e, false)
+  c, mq = quo(c, e, false)
   mc = _compose(mc, inv(mq))
-  c = q
 
   lf = factor(minimum(f)*e)
   lP = Hecke.NfOrdIdl[]
-
+  #We can find the factorization of the modulus directly in the ray class group map
+  #Why am I considering e? It does not appear in the theory.
+  #Furthermore, some of the factors of the modulus can be ignored, since 
+  #I am only considering the prime power part.
   for p = keys(lf.fac)
     lp = prime_decomposition(ZK, p)  #TODO: make it work for fmpz
     lP = vcat(lP, [x[1] for x = lp])
   end
-  g = elem_type(c)[preimage(mc, x) for x = lP]
+  g = GrpAbFinGenElem[preimage(mc, x) for x = lP]
 
   q, mq = quo(c, g, false)
-  mc = _compose(mc, inv(mq))
+  mc = compose(inv(mq), mc)
   c = q
 
   lP = vcat(lP, Hecke.find_gens(inv(mc), PrimesSet(100, -1))[1])
-  @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
+  @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
 #if false
 #  println("enlarging to be Galois closed - just in case...", length(lP))
 #  lP = Set(lP)
@@ -465,7 +404,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
   @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
   @vprint :ClassField 2 "... done\n"
-  @vtime :ClassField 2 KK = kummer_extension(Int(e), [mS(S[i]) for i=1:ngens(S)])
+  @vtime :ClassField 2 KK = kummer_extension(e, [mS(S[i]) for i=1:ngens(S)])
   CF.bigK = KK
 
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
@@ -490,32 +429,33 @@ function _rcf_find_kummer(CF::ClassField_pp)
     end
   end
 
-  n, i = nullspace(M)
+  l, i = nullspace(M)
   @assert i>0
-  n = lift(n)
+  n = lift(l)
   N = GrpAbFinGen([e for j=1:rows(n)])
   s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i], false)
   ms = Hecke.make_snf(ms)
-  @assert iscyclic(domain(ms))
-  o = order(domain(ms)[1])
-  c = fmpz(1)
+  @hassert :ClassField 1 iscyclic(domain(ms))
+  o = Int(order(domain(ms)[1]))
+  c = 1
   if o < e
     c = div(e, o)
   end
-  n = ms(domain(ms)[1])
+  g = ms(domain(ms)[1])
   @vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = prod([KK.gen[i]^div(mod(n[i], e), c) for i=1:ngens(parent(n))])
+  a = prod([KK.gen[i]^div(mod(n[i], e), c) for i=1:ngens(N)])
   @vprint :ClassField 2 "generator $a\n"
   CF.a = a
   CF.sup = lP
   CF.sup_known = true
-  CF.bigK = KK
-  CF.o = Int(o)
+  CF.o = o
 #  CF.K = pure_extension(Int(o), a)[1] #needs to evaluate a - too expensive!
 end
 
+
 function _rcf_reduce(CF::ClassField_pp)
-  e = order(codomain(CF.quotientmap))
+  #e = order(codomain(CF.quotientmap))
+  e = degree(CF)
   if CF.sup_known
     CF.a = reduce_mod_powers(CF.a, CF.o, CF.sup)
     CF.sup_known = false
@@ -525,18 +465,41 @@ function _rcf_reduce(CF::ClassField_pp)
   CF.K = pure_extension(CF.o, CF.a)[1]
 end
 
-function _rcf_descent(CF::ClassField_pp)
-  if isdefined(CF, :A)
-    return CF.A
-  end
 
-  @vprint :ClassField 2 "Descending ...\n"
-               
-  #mq = CF.mq
-  e = Int(order(codomain(CF.quotientmap)))
-  k = nf(order(codomain(CF.rayclassgroupmap)))
-  C = cyclotomic_extension(k, e)
-  A = CF.K
+
+function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem},1}, AutA::GrpAbFinGen, oA::fmpz, C::CyclotomicExt)
+  pe = gen(A)# + 0*gen(C.Ka)
+  Auto=Dict{Hecke.GrpAbFinGenElem, Any}()
+  cnt = 0
+  while true
+    @vprint :ClassField 3 "candidate: $pe\n"
+    Im = Set{Hecke.NfRelElem{nf_elem}}()
+    for j = AutA
+      im = grp_elem_to_map(AutA_gen, j, pe)
+      if im in Im
+        pe += gen(C.Ka)
+        cnt += 1
+        if cnt > 100
+          error("Too many attempts to find primitive elements")
+        end
+        break
+      else
+        push!(Im, im)
+      end
+      Auto[j]=im
+    end
+    if length(Im) == oA
+      break
+    end
+  end
+  @vprint :ClassField 2 "have primitive element!!!  "
+  @vprint :ClassField 3 " $pe"
+  
+  return pe, Auto
+end
+
+function _aut_A_over_k(A::NfRel, C::CyclotomicExt, CF::ClassField_pp)
+
 #= 
     now the automorphism group of A OVER k
     A = k(zeta, a^(1/n))
@@ -560,9 +523,10 @@ function _rcf_descent(CF::ClassField_pp)
     the full group. If n=p^k then this is one (for p>2) and n=2, 4 and
     2 for n=2^k, k>2
 =#
-
+  e = degree(CF)
   g, mg = unit_group(ResidueRing(FlintZZ, e, cached=false))
-  mg = Hecke.make_snf(mg)
+  @assert issnf(g)
+  #mg = Hecke.make_snf(mg)
   @assert (e%8 == 0 && ngens(domain(mg))==2) ||
            ngens(domain(mg)) <= 1
 
@@ -579,10 +543,10 @@ function _rcf_descent(CF::ClassField_pp)
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
 
-  AutA_gen = []
+  AutA_gen = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}[]
   AutA_rel = zero_matrix(FlintZZ, ngens(g)+1, ngens(g)+1)
-  const zeta = C.mp[1](gen(C.Kr))
-  const n = degree(A)
+  zeta = C.mp[1](gen(C.Kr))
+  n = degree(A)
   @assert e % n == 0
 
   @vprint :ClassField 2 "... the trivial one (Kummer)\n"
@@ -596,8 +560,7 @@ function _rcf_descent(CF::ClassField_pp)
   for i=1:ngens(g)
     si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mg(g[i]))))
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
-    sigma = _extend_auto(A, Hecke.NfToNfMor(K, K, 
-                                      C.mp[1](si(preimage(C.mp[1], gen(K))))))
+    sigma = _extend_auto(A, Hecke.NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
     push!(AutA_gen, sigma)
 
 #    pe = 17*gen(K) + gen(A)
@@ -627,41 +590,32 @@ function _rcf_descent(CF::ClassField_pp)
   end
   CF.AutG = AutA_gen
   CF.AutR = AutA_rel
+  return nothing
   
-  AutA = GrpAbFinGen(AutA_rel)
-  AutA_snf, mp = snf(AutA)
-  @vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
+end
 
- 
+function _rcf_descent(CF::ClassField_pp)
+  if isdefined(CF, :A)
+    return CF.A
+  end
+
+  @vprint :ClassField 2 "Descending ...\n"
+               
+  e = degree(CF)
+  k = nf(order(codomain(CF.rayclassgroupmap)))
+  C = cyclotomic_extension(k, e)
+  A = CF.K
+  n = degree(A)
+  @vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
+  _aut_A_over_k(A, C, CF)
+  
+  AutA_gen = CF.AutG
+  AutA = GrpAbFinGen(CF.AutR)
+  AutA_snf, mp = snf(AutA)
   # now we need a primitive element for A/k
   # mostly, gen(A) will do
   @vprint :ClassField 2 "Searching for primitive element...\n"
-  pe = gen(A) + 0*gen(C.Ka)
-  Auto=Dict{Hecke.GrpAbFinGenElem, Any}()
-  cnt = 0
-  while true
-    @vprint :ClassField 3 "candidate: $pe\n"
-    Im = Set{Hecke.NfRelElem{nf_elem}}()
-    for j = AutA
-      im = grp_elem_to_map(AutA_gen, j, pe)
-      if im in Im
-        pe += gen(C.Ka)
-        cnt += 1
-        if cnt > 100
-          error("", Im, CF)
-        end
-        break
-      else
-        push!(Im, im)
-      end
-      Auto[j]=im
-    end
-    if length(Im) == order(AutA)
-      break
-    end
-  end
-  @vprint :ClassField 2 "have primitive element!!!  "
-  @vprint :ClassField 3 " $pe"
+  pe, Auto = _find_prim_elem(A::NfRel, AutA_gen, AutA, order(AutA_snf), C)
   @vprint :ClassField 2 "\nnow the fix group...\n"
 
   if iscyclic(AutA_snf)  # the subgroup is trivial to find!
@@ -673,8 +627,8 @@ function _rcf_descent(CF::ClassField_pp)
     # idea: take primes p in k and compare
     #  Frob(p, A/k) and preimage(mq, p)
     @assert n == degree(CF.K)
-    Zk = order(__modulus(CF.rayclassgroupmap))
-    function canFrob(p)
+    Zk = order(defining_modulus(CF))
+    function canFrob(p::NfOrdIdl)
       lP = Hecke.prime_decomposition_nonindex(C.mp[2], p)
       P = lP[1][1]
       Q = lP[end][1]
@@ -707,7 +661,7 @@ function _rcf_descent(CF::ClassField_pp)
     @vprint :ClassField 2 "finding Artin map...\n"
 #TODO can only use non-indx primes, easy primes...
     @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
-                      PrimesSet(200, -1), minimum(__modulus(CF.rayclassgroupmap)))
+                      PrimesSet(200, -1), minimum(defining_modulus(CF)))
     h = hom(f, [image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp])
     @hassert :ClassField 1 issurjective(h)
     h = _compose(mp, h)
@@ -745,7 +699,7 @@ function _rcf_descent(CF::ClassField_pp)
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
   q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
-  @assert order(q) == order(codomain(CF.quotientmap))
+  @assert order(q) == degree(CF)
   AT, T = PolynomialRing(A, "T", cached = false)
   @vprint :ClassField 2 "char poly...\n"
   f = minpoly(t)
@@ -759,16 +713,16 @@ function _rcf_descent(CF::ClassField_pp)
     CF.pe = t
     #now the minpoly of t - via Galois as this is easiest to implement...
     q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
-    @assert order(q) == order(domain(CF.mq))
+    @assert order(q) == degree(CF)
     AT, T = PolynomialRing(A, "T", cached = false)
     @vprint :ClassField 2 "char poly...\n"
     f = minpoly(t)
     @vprint :ClassField 2 "... done\n"
-    @assert issquarefree(f)
+    @hassert :ClassField 1 issquarefree(f)
   end  
 
   CF.A = number_field(f)[1]
-  nothing
+  return nothing
 end
 
 function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe)
@@ -1008,73 +962,7 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   return reduce_mod_powers(a, n, Dict((p, Int(v)) for (p, v) = lp))
 end
 
-doc"""
-   factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
-> Factors the rincipal ideal generated by $a$ into coprimes by computing a coprime
-> basis from the principal ideals in the factorisation of $a$.
-"""
-function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
-  Zk = order(I)
-  A = Dict{NfOrdIdl, fmpz}()
-  for (e,v) = a.fac
-    N, D = integral_split(ideal(Zk, e))
-    if !isone(N)
-      if haskey(A, N)
-        A[N] += v
-      else
-        A[N] = v
-      end
-    end
-    if !isone(D)
-      if haskey(A, D)
-        A[D] -= v
-      else
-        A[D] = -v
-      end
-    end
-  end
-  if length(A) == 0
-    A[ideal(Zk, 1)] = 1
-  end
-  return factor_coprime(FacElem(A))
-end
 
-doc"""
-  factor(a::nf_elem, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
-> Factors the principal ideal generated by $a$.
-"""
-function factor(a::nf_elem, I::NfOrdIdlSet)
-  return factor(ideal(order(I),  a))
-end
-
-doc"""
-  factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
-> Factors the principal ideal generated by $a$ by refinind a coprime factorisation.
-"""
-function factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
-  cp = factor_coprime(a, I)
-  f = Dict{NfOrdIdl, fmpz}()
-  for (I, v) = cp
-    lp = factor(I)
-    for (p, e) = lp
-      f[p] = e*v
-    end
-  end
-  return f
-end
-
-doc"""
-   factor(a::fmpq, ::FlintIntegerRing) -> Fac{fmpz}
-> Factor the rational number $a$ into prime numbers
-"""
-function factor(a::fmpq, ::FlintIntegerRing)
-  fn = factor(numerator(a))
-  fd = factor(denominator(a))
-  for (p,e) = fd.fac
-    fn.fac[p] = -e
-  end
-  return fn
-end
 
 function rel_auto(A::ClassField_pp)
   # sqrt[n](a) -> zeta sqrt[n](a) on A.A
@@ -1107,7 +995,7 @@ function rel_auto(A::ClassField)
   aut = [rel_auto(x) for x = A.cyc]
   K = number_field(A)
   g = gens(K)
-  Aut = []
+  Aut = NfRel_nsToNfRel_nsMor[]
   for i=1:length(aut)
     push!(Aut, NfRel_nsToNfRel_nsMor(K, K, [j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)]))
   end
@@ -1135,7 +1023,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       end
       i += 1
     end
-    #now Cp[im] is of maximal exponent - hence, it should have the maximal
+    # now Cp[im] is of maximal exponent - hence, it should have the maximal
     # big Kummer extension. By construction (above), the set of s-units
     # SHOULD guarantee this....
     # Now I want all generators in terms of this large Kummer field.
@@ -1407,12 +1295,73 @@ function _expand(M::SMat{nf_elem}, mp::Map)
   return N
 end
 
+###############################################################################
+#
+#  Modulus function
+#
+###############################################################################
+
+function defining_modulus(CF::ClassField)
+  return _modulus(CF.rayclassgroupmap)
+end 
+
+function defining_modulus(CF::ClassField_pp)
+  return _modulus(CF.rayclassgroupmap)
+end 
+
+function _modulus(mq::MapRayClassGrp)
+  return mq.modulus_fin
+end
+
+function _modulus(mq::MapClassGrp)
+  return ideal(order(codomain(mq)), 1)
+end
+
+
+###############################################################################
+#
+#  Auxiliary functions (to be moved)
+#
+###############################################################################
+#=
+function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
+  if parent(a) == I_Zk
+    return a
+  end
+  Zk = order(I_Zk)
+  Zl = order(a)
+  @assert has_2_elem(a)
+  b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
+  for i in [:gens_normal, :gens_weakly_normal, :iszero, :minimum]
+    if isdefined(a, i)
+      setfield!(b, i, getfield(a, i))
+    end
+  end
+  n = divexact(degree(Zk.nf), degree(Zl.nf))
+  if isdefined(a, :norm)
+    b.norm = a.norm^n
+  end
+  if isdefined(a, :princ_gen)
+    b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
+  end
+  if isdefined(a, :isprime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
+    Zl.ismaximal == 1
+    b.isprime = a.isprime
+    if isdefined(a, :splitting_type)
+      b.splitting_type = a.splitting_type
+    end
+  end
+  return b
+end
+=#
+
+
 doc"""
   base_ring(A::ClassField)
 > The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
-  return order(__modulus(A.rayclassgroupmap))
+  return order(defining_modulus(A))
 end
 
 doc"""
@@ -1424,7 +1373,7 @@ function base_field(A::ClassField)
 end
 
 function base_ring(A::ClassField_pp)
-  return order(__modulus(A.rayclassgroupmap))
+  return order(defining_modulus(A))
 end
 
 function base_field(A::ClassField_pp)
@@ -1436,10 +1385,100 @@ doc"""
 > The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
 function degree(A::ClassField)
-  return Int(order(codomain(A.quotientmap)))
+  if A.degree==-1
+    A.degree=Int(order(codomain(A.quotientmap)))
+  end
+  return A.degree
 end
 
 function degree(A::ClassField_pp)
-  return Int(order(codomain(A.quotientmap)))
+  if A.degree==-1
+    A.degree=Int(order(codomain(A.quotientmap)))
+  end
+  return A.degree
+end
+
+doc"""
+   factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
+> Factors the rincipal ideal generated by $a$ into coprimes by computing a coprime
+> basis from the principal ideals in the factorisation of $a$.
+"""
+function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
+  Zk = order(I)
+  A = Dict{NfOrdIdl, fmpz}()
+  for (e,v) = a.fac
+    N, D = integral_split(ideal(Zk, e))
+    if !isone(N)
+      if haskey(A, N)
+        A[N] += v
+      else
+        A[N] = v
+      end
+    end
+    if !isone(D)
+      if haskey(A, D)
+        A[D] -= v
+      else
+        A[D] = -v
+      end
+    end
+  end
+  if length(A) == 0
+    A[ideal(Zk, 1)] = 1
+  end
+  return factor_coprime(FacElem(A))
+end
+
+doc"""
+  factor(a::nf_elem, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
+> Factors the principal ideal generated by $a$.
+"""
+function factor(a::nf_elem, I::NfOrdIdlSet)
+  return factor(ideal(order(I),  a))
+end
+
+doc"""
+  factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
+> Factors the principal ideal generated by $a$ by refinind a coprime factorisation.
+"""
+function factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
+  cp = factor_coprime(a, I)
+  f = Dict{NfOrdIdl, fmpz}()
+  for (I, v) = cp
+    lp = factor(I)
+    for (p, e) = lp
+      f[p] = e*v
+    end
+  end
+  return f
+end
+
+doc"""
+   factor(a::fmpq, ::FlintIntegerRing) -> Fac{fmpz}
+> Factor the rational number $a$ into prime numbers
+"""
+function factor(a::fmpq, ::FlintIntegerRing)
+  fn = factor(numerator(a))
+  fd = factor(denominator(a))
+  for (p,e) = fd.fac
+    fn.fac[p] = -e
+  end
+  return fn
+end
+
+doc"""
+  number_field(I::NfOrd)
+> Return the number fields containing $I$.
+"""
+@inline function number_field(O::NfOrd)
+  return O.nf
+end
+
+function order(A::FacElemMon{IdealSet})
+  return order(A.base_ring)
+end
+
+function order(A::FacElemMon{NfOrdIdlSet})
+  return order(A.base_ring)
 end
 

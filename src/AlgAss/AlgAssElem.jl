@@ -148,8 +148,9 @@ function ^(a::AlgAssElem, b::Int)
     return deepcopy(a)
   else
     if b < 0
-      a = inv(a)
-      b = -b
+      error("Not implemented yet")
+      #a = inv(a)
+      #b = -b
     end
     bit = ~((~UInt(0)) >> 1)
     while (UInt(bit) & b) == 0
@@ -173,7 +174,7 @@ function ^(a::AlgAssElem, b::fmpz)
     return a^Int(b)
   end
   if b < 0
-    error("Element is not invertible")
+    error("Not implemented yet")
   elseif b == 0
     return one(parent(a))
   elseif b == 1

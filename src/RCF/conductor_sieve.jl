@@ -206,12 +206,16 @@ function absolute_automorphism_group(C::ClassField)
   return absolute_automorphism_group(C, autK_gen)
 end
 
-function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field)
+function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Array{NfToNfMor, 1})
   L = number_field(C)
-  aut_L_rel = rel_auto(C)
-  rel_extend = [ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
+  aut_L_rel = rel_auto(C)::Vector{NfRel_nsToNfRel_nsMor}
+  rel_extend = NfRel_nsToNfRel_nsMor[ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
   rel_gens = vcat(aut_L_rel, rel_extend)
-  return rel_gens
+  return rel_gens::Array{NfRel_nsToNfRel_nsMor, 1}
+end
+
+function automorphism_groupQQ(C::ClassField)
+  return rel_auto(C)
 end
 
 ##########################################################################################################
@@ -632,7 +636,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   l_conductors=conductorsQQ(O,n,absolute_discriminant_bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
   if with_autos==Val{true}
-    fields = Tuple{NfRel_ns, NfRel_nsToNfRel_nsMor}[]
+    fields = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}}[]
   else
     fields = NfRel_ns[]
   end
@@ -652,7 +656,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
         @vprint :QuadraticExt 1 "New Field \n"
         L=number_field(C)
         if with_autos==Val{true}
-          push!(fields,(L, absolute_automorphism_group(C)))
+          push!(fields,(L, automorphism_groupQQ(C)))
         else
           push!(fields, L)
         end
@@ -665,7 +669,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
 end
 
 
-function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all,  with_autos::Type{Val{T}} = Val{false}) where T 
+function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant_bound::fmpz; ramified_at_infplc::Bool=true, tame::Bool=false, absolute_galois_group::Symbol = :all,  with_autos::Type{Val{T}} = Val{false}, autos::Array{NfToNfMor,1}=NfToNfMor[]) where T 
 
   d=degree(O)
   if d==1
@@ -677,7 +681,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   inf_plc=InfPlc[]
   
   if with_autos==Val{true}
-    fields=Tuple{NfRel_ns,Vector{NfRel_nsToNfRel_nsMor}}[]
+    fields=Tuple{NfRel_ns,Vector{NfRel_nsToNfRel_nsMor{nf_elem}}}[]
   else
     fields=NfRel_ns[]
   end
@@ -703,9 +707,13 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   # Getting a small set of generators
   # for the automorphisms group
   #
-  Aut=Hecke.automorphisms(K)
-  @assert length(Aut)==degree(O) #The field is normal over Q
-  gens = Hecke.small_generating_set(Aut)
+  if isempty(autos)
+    Aut=Hecke.automorphisms(K)
+    @assert length(Aut)==degree(O) #The field is normal over Q
+    gens = Hecke.small_generating_set(Aut)
+  else
+    gens = autos
+  end
 
   #Getting conductors
   l_conductors=conductors(O,n,bound, tame)
@@ -804,6 +812,72 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
 
 end
 
+function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, complex::Bool=false, with_autos::Type{Val{T}}=Val{false}) where T
+
+  @assert !(real && complex)
+  Qx,x=PolynomialRing(FlintQQ, "x")
+  sqf=squarefree_up_to(bound)
+  if real
+    deleteat!(sqf,1)
+  elseif complex
+    sqf=Int[-i for i in sqf]
+  else
+    sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  end
+  if tame
+    filter!( x -> mod(x,4)==1, sqf)
+    return ( number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in sqf)
+  end
+  final_list=Int[]
+  for i=1:length(sqf)
+    if abs(sqf[i]*4)< bound
+      @views push!(final_list,sqf[i])
+      continue
+    end
+    if mod(sqf[i],4)==1
+      @views push!(final_list,sqf[i])
+    end
+  end
+  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in final_list)
+
+end
+
+function _quad_exts_as_ab_exts(bound::Int)
+
+  Qy,y=PolynomialRing(FlintQQ, "y")
+  K,a=NumberField(y-1)
+  Kx,x=PolynomialRing(K,"x")
+  sqf=squarefree_up_to(bound)
+  sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  final_list=Int[]
+  for i=1:length(sqf)
+    if abs(sqf[i]*4)< bound
+      @views push!(final_list,sqf[i])
+      continue
+    end
+    if mod(sqf[i],4)==1
+      @views push!(final_list,sqf[i])
+    end
+  end
+  return ( _quad_ext_with_auto(Kx,i) for i in final_list)
+
+end
+
+function _quad_ext_with_auto(Kx,a::Int)
+  x=gen(Kx)
+  if a % 4 == 1
+    L, lg = number_field([x^2-x+divexact(1-a,4)])
+    b=lg[1]
+    mL=NfRel_nsToNfRel_nsMor(L,L, [1-b])
+  else
+    L, lg = number_field([x^2-a])
+    b = lg[1]
+    mL=NfRel_nsToNfRel_nsMor(L,L, [-b])
+  end
+  return (L, NfRel_nsToNfRel_nsMor[mL])
+
+end
+
 ###############################################################################
 #
 #  C2 x C2 extensions of Q
@@ -816,7 +890,61 @@ function C22_extensions(bound::Int)
   Qx,x=PolynomialRing(FlintZZ, "x")
   K,_=NumberField(x-1)
   Kx,x=PolynomialRing(K,"x", cached=false)
+  b1=ceil(Int,Base.sqrt(bound))
+  n=2*b1+1
+  pairs=_find_pairs(bound)
+  poszero=b1+1
+  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+  
+end
 
+function _C22_exts_abexts(bound::Int)
+  Qx,x=PolynomialRing(FlintZZ, "x")
+  K,_=NumberField(x-1)
+  Kx,x=PolynomialRing(K,"x", cached=false)
+  pairs=_find_pairs(bound)
+  b1=ceil(Int,Base.sqrt(bound))
+  n=2*b1+1
+  poszero=b1+1
+  return (_ext_with_autos(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+
+end
+
+function _ext_with_autos(Ox,x,i,j)
+ 
+  y1=mod(i,4)
+  pol1=Ox(1)
+  if y1!=1
+    pol1=x^2-i
+  else
+    pol1=x^2-x+divexact(1-i,4)
+  end
+  y2=mod(j,4)
+  pol2=Ox(1)
+  if y2!=1
+    pol2=x^2-j
+  else
+    pol2=x^2-x+divexact(1-j,4)
+  end
+  L, lg= number_field([pol1,pol2])
+  if y1!=1
+    a1=-lg[1]
+  else
+    a1=1-lg[1]
+  end
+  if y2!=1
+    a2=-lg[2]
+  else
+    a2=1-lg[2]
+  end
+  mL1=NfRel_nsToNfRel_nsMor(L,L, [a1,lg[2]])
+  mL2=NfRel_nsToNfRel_nsMor(L,L, [lg[1],a2])
+  return (L, [mL1,mL2])
+
+end
+
+function _find_pairs(bound::Int)
+  
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
   pairs=trues(n,n)
@@ -919,8 +1047,7 @@ function C22_extensions(bound::Int)
       end
     end
   end
-  
-  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+  return pairs
   
 end
 
@@ -1910,7 +2037,7 @@ end
 #
 ###############################################################################
 
-function _from_relative_to_abs(L::Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}})
+function _from_relative_to_abs(L::Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{T},1}}) where T
   
   S,mS=simple_extension(L[1])
   K,mK=absolute_field(S, false)
@@ -1941,6 +2068,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}
   @vprint :QuadraticExt 1 "Product basis computed\n"
   #Now, we compute the maximal order. Then we simplify.
   O1=MaximalOrder(_order(K, cbasis))
+  O1.ismaximal=1
   _set_maximal_order_of_nf(K,O1)
   Ks, mKs= simplify(K)
   
@@ -1957,6 +2085,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}
     basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
   O2=Order(Ks, basisO2, false)
+  O2.ismaximal=1
   _set_maximal_order_of_nf(Ks,O2)
   @vprint :QuadraticExt 1 "MaximalOrder Computed. Now Automorphisms\n"
 
