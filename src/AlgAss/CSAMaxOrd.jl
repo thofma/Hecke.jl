@@ -1132,9 +1132,7 @@ function pmaximal_overorder(O::AlgAssOrd, p::Int)
   while true
     dd = fmpz(1)
     max_id =_maximal_ideals(O, p)
-    @show length(max_id)
     for i = 1:length(max_id)
-      @show i
       OO = ring_of_multipliers(max_id[i], fmpz(p))
       dd = discriminant(OO)
       if d != dd

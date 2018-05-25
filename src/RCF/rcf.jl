@@ -372,7 +372,6 @@ function _rcf_find_kummer(CF::ClassField_pp)
 
   lf = factor(minimum(f)*e)
   lP = Hecke.NfOrdIdl[]
-  #We can find the factorization of the modulus directly in the ray class group map
   #Why am I considering e? It does not appear in the theory.
   #Furthermore, some of the factors of the modulus can be ignored, since 
   #I am only considering the prime power part.
