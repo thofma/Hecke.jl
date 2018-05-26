@@ -427,8 +427,9 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
           ind=find_elem(G,G[j]*G[h]) 
           x=B[i]*O(G[j](K(B[k])))*O(cocval[j,h])
+          y=elem_in_basis(x)
           for s=0:n-1
-            M[j+(i-1)*n, h+(k-1)*n, ind+s*n]=elem_in_basis(x)[s+1]
+            M[j+(i-1)*n, h+(k-1)*n, ind+s*n]=y[s+1]
           end
         end
       end
@@ -527,7 +528,7 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
       push!(pivots, i)
     end
   end
-  @assert check_ideal(I)
+  @hassert :CSAMaxOrd 1 check_ideal(I)
   F,a=FlintFiniteField(p,1,"a")
   M=Array{fq_nmod, 3}(length(pivots), length(pivots), length(pivots))
   x=fmpz[0 for s=1:O.dim]
@@ -912,17 +913,18 @@ end
 
 function representation_matrix(x::AlgAssOrdElem)
 
-  A = parent(x)
-  M = A.basis_mat
-  if isdefined(A, :basis_mat_inv)
-    M1 = A.basis_mat_inv
+  O = parent(x)
+  M = O.basis_mat
+  if isdefined(O, :basis_mat_inv)
+    M1 = O.basis_mat_inv
   else
-    M1 = inv(A.basis_mat)
-    A.basis_mat_inv=M1
+    M1 = inv(O.basis_mat)
+    O.basis_mat_inv=M1
   end
   B = FakeFmpqMat(representation_matrix(x.elem_in_algebra))
   mul!(B, M, B)
   mul!(B, B, M1)
+
   @assert B.den==1
   return B.num
 end
@@ -1096,11 +1098,42 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
   
   A1 = quo(O, p)
   lM = fq_nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
+  append!(lM, fq_nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
   M = FqGModule(lM)
   ls = maximal_submodules(M)
   ideals=AlgAssOrdIdl[]
   poneO=O(p*one(O.A))
   for x in ls
+    @hassert :CSAMaxOrd 1 closure(x, M.G)==rref(x)[2]
+    m = zero_matrix(FlintZZ, O.dim, O.dim)
+    gens=Vector{AlgAssOrdElem}(rows(x)+1)
+    for i=1:rows(x)
+      for j=1:cols(x)
+        m[i,j]=FlintZZ(coeff(x[i,j],0))
+      end
+      gens[i]= elem_from_mat_row(O,m,i)
+    end
+    hnf_modular_eldiv!(m, fmpz(p))
+    gens[rows(x)+1]=poneO
+    J=AlgAssOrdIdl(O,m)
+    J.gens=gens
+    push!(ideals, J)
+  end
+  return ideals
+
+end
+
+function _maximal_ideals(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
+  
+  A1 , A1toO= quo(O, I, p)
+  lM = fq_nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
+  append!(lM, fq_nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
+  M = FqGModule(lM)
+  ls = maximal_submodules(M)
+  ideals=AlgAssOrdIdl[]
+  poneO=O(p*one(O.A))
+  for x in ls
+    @hassert :CSAMaxOrd 1 closure(x, M.G)==rref(x)[2]
     m = zero_matrix(FlintZZ, O.dim, O.dim)
     gens=Vector{AlgAssOrdElem}(rows(x)+1)
     for i=1:rows(x)
@@ -1123,12 +1156,65 @@ end
 function pmaximal_overorder(O::AlgAssOrd, p::Int)
 
   d=discriminant(O)
-  if rem(d, p^2) != 0
-    
+  if rem(d, p^2) != 0  
     return O
   end
+
+  if p>O.dim
+    return pmaximal_overorder_trace(O,p)
+  else
+    return pmaximal_overorder_meataxe(O,p)
+  end
+end
+
+function pmaximal_overorder_meataxe(O::AlgAssOrd, p::Int)
+
   extend = false
-  
+  d=discriminant(O)
+  while true
+    dd = fmpz(1)
+    max_id =_maximal_ideals(O, p)
+    for i = 1:length(max_id)
+      OO = ring_of_multipliers(max_id[i], fmpz(p))
+      dd = discriminant(OO)
+      if d != dd
+        extend = true
+        O = OO
+        d = dd
+        break
+      end
+    end
+
+    if extend
+      v = valuation(dd, p)
+      if v == 0 || v == 1
+        break
+      end
+      extend = false
+      continue
+    else
+      break
+    end
+    
+  end
+  return O
+end
+
+function pmaximal_overorder_trace(O::AlgAssOrd, p::Int)
+
+  #First, the head order by computing the pradical and its ring of multipliers
+  d=discriminant(O)
+  I=pradical(O,p)
+  OO=ring_of_multipliers(I, fmpz(p))
+  dd=discriminant(OO)
+  while dd!= d
+    O=OO
+    I=pradical(O,p)
+    OO=ring_of_multipliers(I, fmpz(p))
+    dd=discriminant(OO)
+  end
+  #Now, we have to check the maximal ideals.
+  extend = false
   while true
     dd = fmpz(1)
     max_id =_maximal_ideals(O, p)

@@ -257,6 +257,11 @@ function isisomorphic(M::FqGModule,N::FqGModule)
   f=Kx(1)
   G=deepcopy(M.G)
   H=deepcopy(N.G)
+
+  rel=_relations(M,N)
+  return iszero(rel[N.dim, N.dim])
+
+  #=
   
   #
   #  Adding generators to obtain randomness
@@ -387,6 +392,8 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     end
   end
   return true
+
+  =#
 end
 
 
@@ -569,7 +576,7 @@ function meataxe(M::FqGModule)
       sq=el
       i=1
       while !isone(sq)
-        f=gcd(x^(Int(order(K)^i))-x,sq)
+        f=gcd(powmod(x, Int(order(K)^i), sq)-x,sq)
         sq=divexact(sq,f)
         lf=factor(f)
         for t in keys(lf.fac)
@@ -749,9 +756,9 @@ function _relations(M::FqGModule, N::FqGModule)
   K=M.K
   n=M.dim
   
-  sys=zero_matrix(K,0,N.dim)
+  sys=zero_matrix(K,2*N.dim,N.dim)
   matrices=fq_nmod_mat[]
-  
+  first=true
   B=zero_matrix(K,1,M.dim)
   B[1,1]=K(1)
   X=B
@@ -770,12 +777,24 @@ function _relations(M::FqGModule, N::FqGModule)
         x=_solve_unique(transpose(v),transpose(B))
         A=sum([x[q,1]*matrices[q] for q=1:rows(x)])
         A=A-(matrices[i]*H[j])
-        sys=vcat(sys,transpose(A))
+        if first
+          for s=1:N.dim
+            for t=1:N.dim
+              sys[s,t]=A[t,s]
+            end
+          end
+          first=false
+        else
+          for s=1:N.dim
+            for t=1:N.dim
+              sys[N.dim+s,t]=A[t,s]
+            end
+          end
+        end
         rref!(sys)
-        sys=sub(sys, 1:N.dim, 1:N.dim)
       end
     end
-    if rows(sys)==N.dim && sys[N.dim,N.dim]!=0
+    if sys[N.dim,N.dim]!=0
       break
     end
     i=i+1
@@ -789,10 +808,10 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   
   K=M.K
   rel=_relations(M,N)
-  a,kern=nullspace(rel)
-  if a==0
+  if rel[N.dim, N.dim]!=0
     return fq_nmod_mat[]
   end
+  a,kern=nullspace(rel)
   kern=transpose(kern)
   if a==1
     return fq_nmod_mat[closure(kern, N.G)]
@@ -828,24 +847,22 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   for j=1:length(candidate_comb)
     list[j] = sum([candidate_comb[j][i]*vects[i] for i=1:length(vects)])
   end
-  list[1]=closure(list[1], N.G)
-  i=2
-  w=zero_matrix(K,0,0)
-  while i<length(list)
-    for j=1:i-1
-      w=cleanvect(list[j],list[i])
+  final_list=fq_nmod_mat[]
+  push!(final_list, closure(list[1], N.G))
+  for i = 2:length(list)
+    reduce=true
+    for j=1:length(final_list)
+      w=cleanvect(final_list[j],list[i])
       if iszero(w)
+        reduced=false
         break
       end
     end  
-    if iszero(w)
-      deleteat!(list,i)
-    else
-      list[i]=closure(list[i],N.G)
-      i=i+1
+    if reduce
+      push!(final_list, closure(list[i],N.G))
     end
   end
-  return list
+  return final_list
 
 end
 
