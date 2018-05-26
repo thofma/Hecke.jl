@@ -43,6 +43,7 @@
     @test length(l)==41
     for x in l[1:5]
       K, autos=Hecke._from_relative_to_abs(x)
+      @test length(autos)==2
       y=small_generating_set(closure(autos, *))
       @test length(y)==1 || length(y)==2
       if length(y)==2

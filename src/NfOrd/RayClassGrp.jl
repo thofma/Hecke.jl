@@ -1610,8 +1610,8 @@ function find_gens(mR::MapRayClassGrp)
 
   O = order(codomain(mR))
   R = domain(mR) 
-  m=Hecke._modulus(mR)
-  mm=minimum(m)
+  m = mR.modulus_fin
+  mm = minimum(m)
 
   
   

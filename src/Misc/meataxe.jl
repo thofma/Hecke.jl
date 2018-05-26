@@ -395,8 +395,9 @@ function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
 
   #println("solving\n $A \n = $B * X")
   r, per, L, U = lufact(B) # P*M1 = L*U
-
+  inv!(per)  
   @assert B == per*L*U
+
   Ap = inv(per)*A
   Y = similar(A)
 
@@ -898,7 +899,7 @@ doc"""
 function maximal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
 
   M_dual=dual_space(M)
-  minlist=minimal_submodules(M_dual, index, lf)
+  minlist=minimal_submodules(M_dual, index+1, lf)
   maxlist=Array{fq_nmod_mat,1}(length(minlist))
   for j=1:length(minlist)
     maxlist[j]=transpose(nullspace(minlist[j])[2])
