@@ -643,6 +643,7 @@ function check_pradical(I::AlgAssOrdIdl, p::Int)
       @assert divisible(numerator(trace(x.elem_in_algebra*O.basis_alg[j])), p)
     end
   end
+  #=
   if p==2
     for i=1:O.dim
       x=elem_from_mat_row(O,I.basis_mat, i)
@@ -653,6 +654,7 @@ function check_pradical(I::AlgAssOrdIdl, p::Int)
       end
     end
   end
+  =#
   return true
 end
 
@@ -814,15 +816,16 @@ function pradical(O::AlgAssOrd, p::Int)
     
   F=ResidueRing(FlintZZ, p, cached=false)
 
-  TrA=trace_matrix(O.A)
+  #TrA=trace_matrix(O.A)
   #First step: kernel of the trace matrix mod p 
   W=MatrixSpace(F,O.dim,O.dim, false)
-  if isdefined(O, :trace_mat)
-    I=W(n*O.trace_mat)
-  else
-    assure_basis_mat_inv(O)
-    I=W((O.basis_mat*FakeFmpqMat(TrA)*O.basis_mat_inv).num)
-  end
+  #if isdefined(O, :trace_mat)
+  #  I=W(n*O.trace_mat)
+  #else
+  #  assure_basis_mat_inv(O)
+  #  I=W((O.basis_mat*FakeFmpqMat(TrA)*O.basis_mat_inv).num)
+  #end
+  I=W(n*redtrace_mat(O))
   B,k=nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
@@ -1016,49 +1019,55 @@ function trace_signature(O::AlgAssOrd)
   # This can be improved using Sturm sequences
   Zx,x=PolynomialRing(FlintZZ, "x")
   f=charpoly(Zx,M)
-  ff=factor(f)
-  sgtpos=0
-  sgtneg=0
-  for (h,v) in ff.fac
-    if degree(h)==1
-      if coeff(h,0)>0
-        sgtneg+=v
-      else
-        sgtpos+=v
-      end
-      continue
-    end
-    p=64
-    while p<1024
-      sgtposf=0
-      sgtnegf=0
-      R=AcbField(p, false)
-      Rx=AcbPolyRing(R, Symbol("x"), false)
-      g=Rx(h)
-      l=roots(g)
-      for i=1:length(l)
-        y=real(l[i])
-        if ispositive(y)
-          sgtposf+=1
+  #if issquarefree(f)
+  #  a=number_positive_roots(f)
+  #  b=degree(f)-a
+  #  return (a,b)
+  #else
+    ff=factor(f)
+    sgtpos=0
+    sgtneg=0
+    for (h,v) in ff.fac
+      if degree(h)==1
+        if coeff(h,0)>0
+          sgtneg+=v
+        else
+          sgtpos+=v
         end
-        if isnegative(y)
-          sgtnegf+=1
+        continue
+      end
+      p=64
+      while p<1024
+        sgtposf=0
+        sgtnegf=0
+        R=AcbField(p, false)
+        Rx=AcbPolyRing(R, Symbol("x"), false)
+        g=Rx(h)
+        l=roots(g)
+        for i=1:length(l)
+          y=real(l[i])
+          if ispositive(y)
+            sgtposf+=1
+          end
+          if isnegative(y)
+            sgtnegf+=1
+          end
+        end
+        if sgtposf+sgtnegf==degree(h)
+          sgtpos+=sgtposf*v
+          sgtneg+=sgtnegf*v
+          break
+        else
+          p*=2
         end
       end
-      if sgtposf+sgtnegf==degree(h)
-        sgtpos+=sgtposf*v
-        sgtneg+=sgtnegf*v
-        break
-      else
-        p*=2
+      if p>1024
+        error("Precision issue")
       end
     end
-    if p>1024
-      error("Precision issue")
-    end
-  end
-  return (sgtpos, sgtneg)
-
+    return (sgtpos, sgtneg)
+  #end
+  
 end
 
 
@@ -1298,5 +1307,50 @@ function issplit(A::AlgAss)
 
 end
 
+
+###############################################################################
+#
+#  Sturm sequence
+#
+#########à#####################################################################
+
+function sturm_sequence(f::fmpq_poly)
+
+  g=deepcopy(f)
+  h=derivative(g)
+  seq=fmpz_poly[g,h]
+  while true
+    q, r=divrem(g,h)
+    if r!=0
+      push!(seq, r)
+      h=g
+      g=r
+    else 
+      break
+    end
+  end
+  return seq
+
+end
+
+function _number_changes(a::Array{fmpz,1})
+  nc=0
+  filter!(x -> x!=0, a)
+  for i=2:length(a)
+    if sign(a[i])!=sign(a[i-1])
+      nc+=1
+    end
+  end  
+  return nc
+end
+
+function number_positive_roots(f::fmpz_poly)
+
+  s = sturm_sequence(f)
+  b = maximum([coeff(f,i) for i=0:degree(f)-1])
+  evb=fmpz[x(b) for x in s]
+  ev0=fmpz[x(0) for x in s]
+  return _number_changes(ev0)-evb
+end
 
 

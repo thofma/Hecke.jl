@@ -576,7 +576,7 @@ function meataxe(M::FqGModule)
       sq=el
       i=1
       while !isone(sq)
-        f=gcd(powmod(x, Int(order(K)^i), sq)-x,sq)
+        f=gcd(powmod(x, order(K)^i, sq)-x,sq)
         sq=divexact(sq,f)
         lf=factor(f)
         for t in keys(lf.fac)
@@ -851,10 +851,10 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   push!(final_list, closure(list[1], N.G))
   for i = 2:length(list)
     reduce=true
-    for j=1:length(final_list)
+    for j=1:length(final_list)      
       w=cleanvect(final_list[j],list[i])
       if iszero(w)
-        reduced=false
+        reduce=false
         break
       end
     end  

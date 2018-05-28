@@ -59,12 +59,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     error("Oops")
   end
 
-  #Carlo: If nbits(minimum)<=64, I should be able to remove this try/catch
-  try
-    F, mF = ResidueFieldSmall(Zk, p)
-  catch e
-    @show e
-  end
+  F, mF = ResidueFieldSmall(Zk, p)
   mF = extend_easy(mF, number_field(Zk))
 
   # K = sqrt[n](gen), an automorphism will be
@@ -75,16 +70,16 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   z_p = inv(mF(Zk(K.zeta)))
   @assert norm(p) % K.n == 1
   ex = div(norm(p)-1, K.n)
-  aut = fmpz[]
-  for g in K.gen
-    mu = mF(g)^ex  # can throw bad prime!
+  aut = Array{fmpz,1}(length(K.gen))
+  for j=1:length(K.gen)
+    mu = mF(K.gen[j])^ex  # can throw bad prime!
     i = 0
     while !isone(mu)
       i += 1
       @assert i <= K.n
-      mu *= z_p
+      mul!(mu, mu, z_p)
     end
-    push!(aut, fmpz(i))
+    aut[j]= fmpz(i)
   end
   z = K.AutG(aut)
   K.frob_cache[p] = z
@@ -103,11 +98,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
     error("Oops")
   end
 
-  try
-    F, mF = ResidueFieldSmall(Zk, p)
-  catch e
-    @show e
-  end
+  F, mF = ResidueFieldSmall(Zk, p)
   mF = extend_easy(mF, number_field(Zk))
 
   #K = sqrt[n](gen), an automorphism will be
@@ -125,7 +116,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   while !isone(mu)
     i += 1
     @assert i <= K.n
-    mu *= z_p
+    mul!(mu, mu, z_p)
   end
   return i
 end
@@ -328,11 +319,11 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   lp, sG = find_gens(cf, Sp, cp)
 
   G = codomain(cf)
-  sR = GrpAbFinGenElem[]
+  sR = Array{GrpAbFinGenElem, 1}(length(lp))
 
-  for P = lp
-    p = Id_Zk(intersect_nonindex(mp, P))
-    push!(sR, valuation(norm(P), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p)))
+  for i=1:length(lp)
+    p = Id_Zk(intersect_nonindex(mp, lp[i]))
+    sR[i]= valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
   end
   @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
        # if think if the quo(G, ..) == 1, then the other is automatic
@@ -343,7 +334,6 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   return h
 end
 
-
 function _rcf_find_kummer(CF::ClassField_pp)
   #mq = CF.mq
   if isdefined(CF, :K)
@@ -352,12 +342,12 @@ function _rcf_find_kummer(CF::ClassField_pp)
   #f = _modulus(mq)
   f = defining_modulus(CF)
   @vprint :ClassField 2 "Kummer extension ... with conductor(?) $f\n"
-  k = nf(order(f))
+  k1 = nf(order(f))
   e = degree(CF)  
   @assert Hecke.isprime_power(e)
 
   @vprint :ClassField 2 "Adjoining the root of unity\n"
-  C = cyclotomic_extension(k, e)
+  C = cyclotomic_extension(k1, e)
   K = C.Ka
 
   @vprint :ClassField 2 "Maximal order of cyclotomic extension\n"
@@ -369,7 +359,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   @vprint :ClassField 2 "... $c\n"
   c, mq = quo(c, e, false)
   mc = _compose(mc, inv(mq))
-
+  
   lf = factor(minimum(f)*e)
   lP = Hecke.NfOrdIdl[]
   #Why am I considering e? It does not appear in the theory.
@@ -419,7 +409,11 @@ function _rcf_find_kummer(CF::ClassField_pp)
   #                            = z^(sum a[i] n[i]) x
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
+  # Carlo: The ray class group should already have the rigth exponent. 
+  #        Why do I need to repeat the kernel mod n?
   R = ResidueRing(FlintZZ, C.n, cached=false)
+  M = MatrixSpace(R, ngens(k), ngens(G), false)(mk.map)
+  #=
   M = zero_matrix(R, ngens(k), ngens(G))
   for i=1:ngens(k)
     ki = mk(k[i])
@@ -427,7 +421,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
       M[i, j] = ki[j]
     end
   end
-
+  =#
   l, i = nullspace(M)
   @assert i>0
   n = lift(l)
@@ -449,6 +443,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   CF.sup_known = true
   CF.o = o
 #  CF.K = pure_extension(Int(o), a)[1] #needs to evaluate a - too expensive!
+  return nothing
 end
 
 
@@ -462,6 +457,7 @@ function _rcf_reduce(CF::ClassField_pp)
     CF.a = reduce_mod_powers(CF.a, CF.o)
   end
   CF.K = pure_extension(CF.o, CF.a)[1]
+  return nothing
 end
 
 
