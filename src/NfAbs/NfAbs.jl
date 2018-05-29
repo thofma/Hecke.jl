@@ -72,7 +72,7 @@ doc"""
     wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
     wildanger_field(n::Int, B::Integer) -> AnticNumberField, nf_elem
 
-Returns the field with defining polynomial $x^n + \sum_{i=0}^n (-1)^iBx^i$.
+Returns the field with defining polynomial $x^n + \sum_{i=0}^{n-1} (-1)^{n-i}Bx^i$.
 These fields tend to have non-trivial class groups.
 """
 function wildanger_field(n::Int, B::fmpz; cached::Bool = true)
