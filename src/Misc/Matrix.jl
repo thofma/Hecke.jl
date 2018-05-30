@@ -546,18 +546,20 @@ function _rref(a::Generic.Mat{Generic.Res{fmpz}})
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  return r, parent(a,false)(b)
+  return r, parent(a, false)(b)
 end
 
-function _rref(a::nmod_mat)
-  b = rref(a)
-  # TODO: Clean up one we use new Nemo version.
-  if length(b) == 1
-    return rank(b), b
-  else
-    return b
-  end
-end
+_rref(a) = rref(a)
+
+#function _rref(a::nmod_mat)
+#  b = rref(a)
+#  # TODO: Clean up one we use new Nemo version.
+#  if length(b) == 1
+#    return rank(b), b
+#  else
+#    return b
+#  end
+#end
 
 function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   r, b = _rref(a)

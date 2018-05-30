@@ -1,5 +1,6 @@
 @testset "Meataxe" begin
-  @testset "Bla" for F in []#[ResidueRing(ZZ, 3), FiniteField(3, 1, "a")[1], FiniteField(fmpz(3), 1, "a")[1]]
+  @testset "$(typeof(f(3)))" for f in [n -> ResidueRing(ZZ, n), n -> FiniteField(n, 1, "a")[1], n -> FiniteField(fmpz(n), 1, "a")[1]]
+    F = f(3)
     @testset "cleanvect" begin
       M=MatrixSpace(F,2,3)([1,1,0,0,1,0])
       v=MatrixSpace(F,1,3)([2,2,0])
@@ -33,7 +34,7 @@
       @test rows(B)==2
       @test rows(Hecke.closure(B, M.action))==2
       
-      N=Hecke.actsub(B,G)
+      N=Hecke._actsub(B,G)
       bool,B=meataxe(N)
       @test bool
       
@@ -52,21 +53,21 @@
       cs=composition_series(M)
       @test length(lf)==1
       @test length(cs)==2
-      x=Hecke.actsub(cs[1],M.action)
+      x=Hecke._actsub(cs[1],M.action)
       @test Hecke.isisomorphic(lf[1][1],x)
-      x,_=Hecke.actquo(cs[1],M.action)
+      x,_=Hecke._actquo(cs[1],M.action)
       @test Hecke.isisomorphic(lf[1][1],x)
 
       M=Hecke.ModAlgAss([matrix(F,2,2,[0,1,2,0])])
       N=Hecke.ModAlgAss([matrix(F,2,2,[0,2,1,0])])
-      M.isirreducible=true
+      M.isirreducible= 1
       @test Hecke.isisomorphic(M,N)
       
       
       M1=matrix(F,2,2,[1,0,1,1])
       M2=matrix(F,2,2,[1,1,0,1])
       M=Hecke.ModAlgAss([M1,M2])
-      M.isirreducible=true
+      M.isirreducible= 1
       
       N1=matrix(F,2,2,[2,2,1,0])
       N2=matrix(F,2,2,[1,1,0,1])
@@ -82,7 +83,7 @@
       ls=minimal_submodules(M)
       @test length(ls)==13
       
-      F, a = Nemo.FiniteField(2, 1, "a")
+      F = f(2) #Nemo.FiniteField(2, 1, "a")
       A=MatrixSpace(F,6,6)(1)
       A[5,6]=1
       M=Hecke.ModAlgAss([A])
@@ -90,7 +91,6 @@
       @test length(ls)==31
       ls=submodules(M,4)
       @test length(ls)==171
-    
     end
   end
   
