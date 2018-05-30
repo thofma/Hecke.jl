@@ -107,3 +107,5 @@ function Base.done(F::FqFiniteField, i::Array{fmpz, 1})
 end
 
 Base.eltype(::FqFiniteField) = fq
+
+sub!(z::T, x::T, y::T) where {T} = x - y

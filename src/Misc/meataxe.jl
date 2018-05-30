@@ -397,61 +397,42 @@ function isisomorphic(M::FqGModule,N::FqGModule)
 end
 
 
-function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
-  X = zero_matrix(base_ring(A), cols(B), rows(A))
-
-  #println("solving\n $A \n = $B * X")
-  r, per, L, U = lufact(B) # P*M1 = L*U
-  inv!(per)  
-  @assert B == per*L*U
-
-  Ap = inv(per)*A
-  Y = similar(A)
-
-  #println("first solve\n $Ap = $L * Y")
-
-  for i in 1:cols(Y)
-    for j in 1:rows(Y)
-      s = Ap[j, i]
-      for k in 1:j-1
-        s = s - Y[k, i]*L[j, k]
-      end
-      Y[j, i] = s
-    end
-  end
-
-  @assert Ap == L*Y
-
-  #println("solving \n $Y \n = $U * X")
-
-  YY = sub(Y, 1:r, 1:cols(Y))
-  UU = sub(U, 1:r, 1:r)
-  X = inv(UU)*YY
-
-  @assert Y == U * X
-
-  @assert B*X == A
-  return X
-end
-
-function _enum_el(K,v,dim)
-  
-  if dim == 0
-    return [v]
-  else 
-    list=[]
-    push!(v,K(0))
-    for x in K 
-      v[length(v)]=x
-      push!(list,deepcopy(v))
-    end
-    list1=[]
-    for x in list
-      append!(list1,_enum_el(K,x, dim-1))
-    end
-    return list1
-  end
-end
+#function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
+#  X = zero_matrix(base_ring(A), cols(B), rows(A))
+#
+#  #println("solving\n $A \n = $B * X")
+#  r, per, L, U = lufact(B) # P*M1 = L*U
+#  inv!(per)  
+#  @assert B == per*L*U
+#
+#  Ap = inv(per)*A
+#  Y = similar(A)
+#
+#  #println("first solve\n $Ap = $L * Y")
+#
+#  for i in 1:cols(Y)
+#    for j in 1:rows(Y)
+#      s = Ap[j, i]
+#      for k in 1:j-1
+#        s = s - Y[k, i]*L[j, k]
+#      end
+#      Y[j, i] = s
+#    end
+#  end
+#
+#  @assert Ap == L*Y
+#
+#  #println("solving \n $Y \n = $U * X")
+#
+#  YY = sub(Y, 1:r, 1:cols(Y))
+#  UU = sub(U, 1:r, 1:r)
+#  X = inv(UU)*YY
+#
+#  @assert Y == U * X
+#
+#  @assert B*X == A
+#  return X
+#end
 
 function dual_space(M::FqGModule)
   
@@ -460,38 +441,38 @@ function dual_space(M::FqGModule)
 
 end
 
-function _subst(f::Nemo.PolyElem{T}, a::fq_nmod_mat) where {T <: Nemo.RingElement}
-   #S = parent(a)
-   n = degree(f)
-   if n < 0
-      return similar(a)#S()
-   elseif n == 0
-      return coeff(f, 0)*eye(a)
-   elseif n == 1
-      return coeff(f, 0)*eye(a) + coeff(f, 1)*a
-   end
-   d1 = isqrt(n)
-   d = div(n, d1)
-   A = powers(a, d)
-   s = coeff(f, d1*d)*A[1]
-   for j = 1:min(n - d1*d, d - 1)
-      c = coeff(f, d1*d + j)
-      if !iszero(c)
-         s += c*A[j + 1]
-      end
-   end
-   for i = 1:d1
-      s *= A[d + 1]
-      s += coeff(f, (d1 - i)*d)*A[1]
-      for j = 1:min(n - (d1 - i)*d, d - 1)
-         c = coeff(f, (d1 - i)*d + j)
-         if !iszero(c)
-            s += c*A[j + 1]
-         end
-      end
-   end
-   return s
-end
+#function _subst(f::Nemo.PolyElem{T}, a::fq_nmod_mat) where {T <: Nemo.RingElement}
+#   #S = parent(a)
+#   n = degree(f)
+#   if n < 0
+#      return similar(a)#S()
+#   elseif n == 0
+#      return coeff(f, 0)*eye(a)
+#   elseif n == 1
+#      return coeff(f, 0)*eye(a) + coeff(f, 1)*a
+#   end
+#   d1 = isqrt(n)
+#   d = div(n, d1)
+#   A = powers(a, d)
+#   s = coeff(f, d1*d)*A[1]
+#   for j = 1:min(n - d1*d, d - 1)
+#      c = coeff(f, d1*d + j)
+#      if !iszero(c)
+#         s += c*A[j + 1]
+#      end
+#   end
+#   for i = 1:d1
+#      s *= A[d + 1]
+#      s += coeff(f, (d1 - i)*d)*A[1]
+#      for j = 1:min(n - (d1 - i)*d, d - 1)
+#         c = coeff(f, (d1 - i)*d + j)
+#         if !iszero(c)
+#            s += c*A[j + 1]
+#         end
+#      end
+#   end
+#   return s
+#end
 
 #################################################################
 #

@@ -826,7 +826,7 @@ function pradical(O::AlgAssOrd, p::Int)
   #  I=W((O.basis_mat*FakeFmpqMat(TrA)*O.basis_mat_inv).num)
   #end
   I=W(n*redtrace_mat(O))
-  B,k=nullspace(I)
+  k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
     J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))

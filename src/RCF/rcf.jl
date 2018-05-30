@@ -422,8 +422,8 @@ function _rcf_find_kummer(CF::ClassField_pp)
     end
   end
   =#
-  l, i = nullspace(M)
-  @assert i>0
+  i, l = nullspace(M)
+  @assert i > 0
   n = lift(l)
   N = GrpAbFinGen([e for j=1:rows(n)])
   s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i], false)
