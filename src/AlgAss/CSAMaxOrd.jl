@@ -357,7 +357,7 @@ end
 function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
 
   n=degree(K)
-  
+  m=length(G)
   #=
   Multiplication table
   I order the basis in this way:
@@ -365,20 +365,20 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
   element of basis of the order and so on...
   =#
   
-  M=Array{fmpq,3}(n^2, n^2, n^2)
-  for i=1:n^2
-    for j=1:n^2
-      for s=1:n^2
+  M=Array{fmpq,3}(n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
         M[i,j,s]=fmpq(0)
       end
     end
   end
   B=basis(K)
   for i=1:n
-    for j=1:n
+    for j=1:m
       #I have the element B[i]*G[j]
       for k=1:n
-        for h=1:n
+        for h=1:m
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
@@ -400,6 +400,7 @@ end
 function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
 
   n=degree(O)
+  m=length(G)
   K=nf(O)
   #=
   Multiplication table
@@ -408,20 +409,20 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
   element of basis of the order and so on...
   =#
   
-  M=Array{fmpq,3}(n^2, n^2, n^2)
-  for i=1:n^2
-    for j=1:n^2
-      for s=1:n^2
+  M=Array{fmpq,3}(n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
         M[i,j,s]=fmpq(0)
       end
     end
   end
   B=basis(O)
   for i=1:n
-    for j=1:n
+    for j=1:m
       #I have the element B[i]*G[j]
       for k=1:n
-        for h=1:n
+        for h=1:m
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
@@ -1019,11 +1020,38 @@ function trace_signature(O::AlgAssOrd)
   # This can be improved using Sturm sequences
   Zx,x=PolynomialRing(FlintZZ, "x")
   f=charpoly(Zx,M)
-  #if issquarefree(f)
-  #  a=number_positive_roots(f)
-  #  b=degree(f)-a
-  #  return (a,b)
-  #else
+  if issquarefree(f)
+    p=64
+    while p<1024
+      sgtposf=0
+      sgtnegf=0
+      R=AcbField(p, false)
+      Rx=AcbPolyRing(R, Symbol("x"), false)
+      g=Rx(f)
+      l=roots(g)
+      for i=1:length(l)
+        y=real(l[i])
+        if ispositive(y)
+          sgtposf+=1
+        end
+        if isnegative(y)
+          sgtnegf+=1
+        end
+      end
+      if sgtposf+sgtnegf==degree(g)
+        return sgtposf, sgtnegf
+      else
+        p*=2
+      end
+    end
+    if p>1024
+      error("Precision issue")
+    end    
+#  if issquarefree(f)
+#    a=number_positive_roots(f)
+#   b=degree(f)-a
+#    return (a,b)
+  else
     ff=factor(f)
     sgtpos=0
     sgtneg=0
@@ -1066,7 +1094,7 @@ function trace_signature(O::AlgAssOrd)
       end
     end
     return (sgtpos, sgtneg)
-  #end
+  end
   
 end
 
@@ -1316,15 +1344,15 @@ end
 
 function sturm_sequence(f::fmpq_poly)
 
-  g=deepcopy(f)
+  g=f
   h=derivative(g)
-  seq=fmpz_poly[g,h]
+  seq=fmpq_poly[g,h]
   while true
     q, r=divrem(g,h)
     if r!=0
       push!(seq, r)
-      h=g
-      g=r
+      g=h
+      h=r
     else 
       break
     end
@@ -1346,11 +1374,12 @@ end
 
 function number_positive_roots(f::fmpz_poly)
 
-  s = sturm_sequence(f)
-  b = maximum([coeff(f,i) for i=0:degree(f)-1])
-  evb=fmpz[x(b) for x in s]
-  ev0=fmpz[x(0) for x in s]
-  return _number_changes(ev0)-evb
+  Qx, x=PolynomialRing(FlintQQ, "z")
+  f1 = Qx(f)
+  s = sturm_sequence(f1)
+  evinf=fmpz[numerator(coeff(x, degree(x))) for x in s]
+  ev0=fmpz[numerator(coeff(x,0)) for x in s]
+  return _number_changes(ev0)-_number_changes(evinf)
 end
 
 
