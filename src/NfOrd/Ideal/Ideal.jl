@@ -1263,7 +1263,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
     M = trace_matrix(O)
     W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), degree(O), degree(O))
     M1 = W(M)
-    B,k = nullspace(M1)
+    k, B = nullspace(M1)
     if k ==0
       return ideal(O, p)
     end

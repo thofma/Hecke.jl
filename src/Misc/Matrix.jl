@@ -546,18 +546,20 @@ function _rref(a::Generic.Mat{Generic.Res{fmpz}})
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  return r, parent(a,false)(b)
+  return r, parent(a, false)(b)
 end
 
-function _rref(a::nmod_mat)
-  b = rref(a)
-  # TODO: Clean up one we use new Nemo version.
-  if length(b) == 1
-    return rank(b), b
-  else
-    return b
-  end
-end
+_rref(a) = rref(a)
+
+#function _rref(a::nmod_mat)
+#  b = rref(a)
+#  # TODO: Clean up one we use new Nemo version.
+#  if length(b) == 1
+#    return rank(b), b
+#  else
+#    return b
+#  end
+#end
 
 function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   r, b = _rref(a)
@@ -950,7 +952,7 @@ function Base.nullspace(M::nmod_mat)
   if isprime(fmpz(modulus(R)))
     k = zero_matrix(R, cols(M), cols(M))
     n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
-    return (k, n)
+    return (n, k)
   end
 
   N = hcat(M', identity_matrix(R, cols(M)))
@@ -969,10 +971,10 @@ function Base.nullspace(M::nmod_mat)
   for i=1:rows(h)
     if iszero_row(h, i)
       k = sub(H, i:rows(h), rows(M)+1:cols(H))
-      return k', rows(k)
+      return rows(k), k'
     end
   end
-  return zero_matrix(R,rows(M),0),0
+  return 0, zero_matrix(R,rows(M),0)
 end
 
 function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,Generic.Mat{Generic.Res{fmpz}}})
@@ -1475,4 +1477,40 @@ function maximal_elementary_divisor(A::fmpz_mat)
   return elementary_divisors(A)[end]
 end
 
+################################################################################
+#
+#  Solve with unique solution
+#
+################################################################################
 
+function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
+  X = zero_matrix(base_ring(A), cols(B), rows(A))
+
+  r, per, L, U = lufact(B) # P*M1 = L*U
+
+  inv!(per)
+  #@assert B == per*L*U
+  Ap = inv(per)*A
+  Y = similar(A)
+
+  for i in 1:cols(Y)
+    for j in 1:rows(Y)
+      s = Ap[j, i]
+      for k in 1:j-1
+        s = s - Y[k, i]*L[j, k]
+      end
+      Y[j, i] = s
+    end
+  end
+
+  #@assert Ap == L*Y
+
+  YY = sub(Y, 1:r, 1:cols(Y))
+  UU = sub(U, 1:r, 1:r)
+  X = inv(UU)*YY
+
+  #@assert Y == U * X
+
+  @assert B*X == A
+  return X
+end

@@ -309,7 +309,7 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   N=howell_form!(N)
 
   if gcd(prod([N[i,i] for i=1:rows(N)]).data,R.modulus)==1
-    return MatrixSpace(R,cols(M),0, false)(), 0
+    return 0, MatrixSpace(R,cols(M),0, false)()
   end
   nr = 1
   while nr <= rows(N) && !iszero_row(N, nr)
@@ -320,9 +320,8 @@ function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   for i=1:rows(h)
     if iszero_row(h, i)
       k = sub(N, i:rows(h), rows(M)+1:cols(N))
-      return k', rows(k)
+      return rows(k), k'
     end
   end
-  return MatrixSpace(R,cols(M),0, false)(0), 0
+  return 0, MatrixSpace(R,cols(M),0, false)(0)
 end
-
