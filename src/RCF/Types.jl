@@ -62,7 +62,8 @@ mutable struct ClassField_pp
   AutG::Array
   AutR::fmpz_mat
   bigK::KummerExt
-  degree::Int
+  degree::Int # The degree of the relative extension we are searching for.
+              # In other words, the order of the codomain of quotientmap
 
   function ClassField_pp()
     z = new()
@@ -95,7 +96,8 @@ mutable struct ClassField
   absolute_discriminant::Dict{fmpz,Int}
   cyc::Array{ClassField_pp, 1}
   A::NfRel_ns{nf_elem}
-  degree::Int
+  degree::Int # The degree of the relative extension we are searching for.
+              # In other words, the order of the codomain of quotientmap
 
   function ClassField()
     z = new()

@@ -1263,7 +1263,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
     M = trace_matrix(O)
     W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), degree(O), degree(O))
     M1 = W(M)
-    B,k = nullspace(M1)
+    k, B = nullspace(M1)
     if k ==0
       return ideal(O, p)
     end
@@ -1951,4 +1951,41 @@ function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
 end 
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
+
+###############################################################################
+#
+#  Extending an ideal
+#
+###############################################################################
+
+function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
+  if parent(a) == I_Zk
+    return a
+  end
+  Zk = order(I_Zk)
+  Zl = order(a)
+  @assert has_2_elem(a)
+  b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
+  for i in [:gens_normal, :gens_weakly_normal, :iszero, :minimum]
+    if isdefined(a, i)
+      setfield!(b, i, getfield(a, i))
+    end
+  end
+  n = divexact(degree(Zk.nf), degree(Zl.nf))
+  if isdefined(a, :norm)
+    b.norm = a.norm^n
+  end
+  if isdefined(a, :princ_gen)
+    b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
+  end
+  if isdefined(a, :isprime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
+    Zl.ismaximal == 1
+    b.isprime = a.isprime
+    if isdefined(a, :splitting_type)
+      b.splitting_type = a.splitting_type
+    end
+  end
+  return b
+end
+
 

@@ -195,14 +195,27 @@ of $h$.
 function kernel(h::GrpAbFinGenMap)
   G = domain(h)
   H = codomain(h)
-  hn, t = hnf_with_transform(vcat(h.map, rels(H)))
+  m=zero_matrix(FlintZZ, rows(h.map)+rows(rels(H)), cols(h.map))
+  for i=1:rows(h.map)
+    for j=1:cols(h.map)
+      m[i,j]=h.map[i,j]
+    end
+  end
+  if !issnf(H)
+    for i=1:nrels(H)
+      for j=1:ngens(H)
+        m[rows(h.map)+i,j]=H.rels[i,j]
+      end
+    end
+  else
+    for i=1:length(H.snf)
+      m[rows(h.map)+i,i]=H.snf[i]
+    end
+  end
+  hn, t = hnf_with_transform(m)
   for i = 1:rows(hn)
     if iszero_row(hn, i)
-      k = elem_type(G)[]
-      for j = i:rows(t)
-        push!(k, G(sub(t, j:j, 1:ngens(G))))
-      end
-      return sub(G, k, false)
+      return sub(G, sub(t, i:rows(t), 1:ngens(G)), false)
     end
   end
   error("Something went terribly wrong in kernel computation")

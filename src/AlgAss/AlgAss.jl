@@ -569,25 +569,25 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   return eA, eAtoA
 end
 
-function subalgebra(A::AlgAss, basis::Array{AlgAssElem,1})
-  B=zero_matrix(A.base_ring, dim(A), length(basis))
+function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T},1}) where {T}
+  B=zero_matrix(base_ring(A), dim(A), length(basis))
   for i=1:dim(A)
     for j=1:length(basis)
       B[i,j]=basis[j].coeffs[i]
     end
   end
-  M=Array{elem_type(A.base_ring),3}(length(basis), length(basis), length(basis))
+  M=Array{elem_type(base_ring(A)),3}(length(basis), length(basis), length(basis))
   for i=1:length(basis)
     for j=1:length(basis)
       x=basis[i]*basis[j]
-      N1=matrix(A.base_ring, dim(A), 1, x.coeffs)
+      N1=matrix(base_ring(A), dim(A), 1, x.coeffs)
       N=_solve_unique(N1,B)
       for k=1:length(basis)
         M[i,j,k]=N[k,1]
       end
     end
   end
-  A1=AlgAss(A.base_ring, M)
+  A1=AlgAss(base_ring(A), M)
   return A1, AlgAssMor(A1, A, B')
 end
 
@@ -643,7 +643,7 @@ function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   end
 
   while true
-    c = [ rand(F) for i = 1:k ]
+    c = elem_type(F)[ rand(F) for i = 1:k ]
     a = dot(c, V)
     f = minpoly(a)
 
@@ -704,7 +704,7 @@ function split(A::AlgAss)
   if b
     return algebras
   end
-  result = Vector{Tuple{AlgAss, AlgAssMor}}()
+  result = typeof(algebras)()
   while length(algebras) != 0
     B, BtoA = pop!(algebras)
     b, algebras2 = issimple(B)
@@ -727,17 +727,17 @@ end
 ################################################################################
 
 function trace_matrix(A::AlgAss)
-  F=A.base_ring
-  n=dim(A)
-  M=zero_matrix(F, n, n)
-  for i=1:n
-    M[i,i]=trace(A[i]^2)  
+  F = base_ring(A)
+  n = dim(A)
+  M = zero_matrix(F, n, n)
+  for i = 1:n
+    M[i,i] = trace(A[i]^2)  
   end
-  for i=1:n
-    for j=i+1:n
-      x=trace(A[i]*A[j])
-      M[i,j]=x
-      M[j,i]=x
+  for i = 1:n
+    for j = i+1:n
+      x = trace(A[i]*A[j])
+      M[i,j] = x
+      M[j,i] = x
     end
   end
   return M

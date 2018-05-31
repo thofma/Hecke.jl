@@ -603,7 +603,7 @@ function crt(a::Array{NfOrdElem, 1}, I::Array{NfOrdIdl, 1})
   B = [I[2*i-1]*I[2*i] for i=1:div(length(a), 2)]
   if isodd(length(a))
     push!(A, a[end])
-    push!(B, B[end])
+    push!(B, I[end])
   end
   return crt(A, B)
 end
