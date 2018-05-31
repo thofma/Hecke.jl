@@ -490,6 +490,83 @@ function factor(f::PolyElem{nf_elem})
   return r
 end
 
+function isirreducible(f::PolyElem{nf_elem})
+  if !issquarefree(f)
+    return false
+  end
+
+  s = MSet(Int[])
+  i = 1
+  for p = PrimesSet(degree(f)+1, -1)
+    try
+      d = _degset(f, p)
+      if length(s) == 0
+        s = d
+      else
+        s = intersect(s, d)
+      end
+      if length(s) == 1
+        return true
+      end
+      i += 1
+      if i > 2*degree(f)
+        break
+      end
+    catch e
+      if !isa(e, BadPrime)
+        rethrow(e)
+      end
+    end
+  end
+  fac = factor(f)
+  return length(fac.fac) == 1 && first(values(fac.fac)) == 1
+end
+
+function _ds(fa)
+  M = MSet(degree(x) for x = keys(fa.fac))
+  return Set(sum(s) for s = subsets(M) if length(s) > 0)
+end
+
+function _degset(f::fmpz_poly, p::Int)
+  F = ResidueRing(FlintZZ, p)
+  Ft, t = PolynomialRing(F, cached = false)
+  @assert issquarefree(Ft(f))
+  fa = factor(Ft(f))
+  return _ds(fa)
+end
+
+function (R::NmodPolyRing)(f::fq_nmod_poly)
+  g = R()
+  for i=0:degree(f)
+    setcoeff!(g, i, coeff(coeff(f, i), 0))
+  end
+  return g
+end
+function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
+  K = base_ring(f)
+ 
+  me = modular_init(K, p, deg_limit = 1)
+  #to be competitive, we need to have Fp, not Fq of degree 1
+  if isempty(me)
+    return Set(1:degree(f))
+  end
+  fp = modular_proj(f, me)
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rt = PolynomialRing(R, cached = false)[1]
+  
+  s = _ds(factor(Rt(fp[1])))
+  if normal 
+    return s
+  end
+  for i=2:length(fp)
+    s = intersect(s, _ds(factor(Rt(fp[i]))))
+    if length(s) == 1
+      return s
+    end
+  end
+  return s
+end
+
 ################################################################################
 #
 #  Roots
