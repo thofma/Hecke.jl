@@ -25,7 +25,7 @@ function compute_residue_field_data(m)
   basis_in_prim = Vector{fmpz_mat}(degree(O))
   for i in 1:degree(O)
     basis_in_prim[i] = zero_matrix(FlintZZ, 1, f)
-    t = getcoordpowerbasis(m(basisO[i]))
+    t = getcoordpowerbasis(m(O(basisO[i])))
     for j in 1:f
       basis_in_prim[i][1, j] = FlintZZ(t[1, j])
     end
