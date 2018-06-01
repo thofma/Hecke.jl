@@ -316,9 +316,9 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             z = mod_p(R, Q[1], Int(pp))
             z = z*Ap
             z = _nullspace(z)
-            B = hcat(AA, sub(z[1], 1:rows(z[1]), 1:z[2]))
+            B = hcat(AA, sub(z[2], 1:rows(z[2]), 1:z[1]))
             B = _nullspace(B)
-            AA = AA*sub(B[1], 1:cols(AA), 1:B[2])
+            AA = AA*sub(B[2], 1:cols(AA), 1:B[1])
             if !isprime(p)
               AA = AA'
               if rows(AA) < cols(AA)
@@ -412,7 +412,7 @@ function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   return res
 end
 
-function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.2)
+function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
   e = matrix(FlintZZ, saturate_exp(c, n%8 == 0 ? 2*n : n, stable))
 
   se = SMat(e)'
@@ -529,7 +529,8 @@ function simplify(c::Hecke.ClassGrpCtx)
       Hecke.apply_right!(x, trafos[j])
     end
     y = FacElem(vcat(c.R_gen, c.R_rel), x)
-    Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
+    fl = Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
+    @assert fl
   end
   for i=1:rows(c.M.rel_gens)
     if iszero(c.M.rel_gens.rows[i])
