@@ -225,14 +225,18 @@ function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_
         lp = O.index_div[fmpz(p)]
         z = Tuple{NfAbsOrdIdl{S, T}, Int}[]
         for (Q, e) in lp
-          if degree(Q) <= degree_limit
+          if degree_limit == 0 || degree(Q) <= degree_limit
             push!(z, (Q, e))
           end
         end
         return z
       end
     end
-    return prime_dec_index(O, p, degree_limit, lower_limit)
+    lp = prime_dec_index(O, p, degree_limit, lower_limit)
+    if degree_limit == 0 && lower_limit == 0
+      O.index_div[fmpz(p)] = lp
+    end
+    return lp
   end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
