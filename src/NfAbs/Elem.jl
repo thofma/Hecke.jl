@@ -906,9 +906,9 @@ function (R::Nemo.NmodPolyRing)(a::nf_elem)
   return r
 end
 
-function nf_elem_to_fmpz_mod_poly(r::fmpz_mod_poly, a::nf_elem, useden::Bool = true)
+function nf_elem_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::nf_elem, useden::Bool = true)
   ccall((:nf_elem_get_fmpz_mod_poly_den, :libantic), Void,
-        (Ref{nmod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
+        (Ref{fmpz_mod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
 end
