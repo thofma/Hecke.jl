@@ -568,6 +568,38 @@ function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Uni
 end
 
 doc"""
+    gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+> The 'gcd' of $f$ anf $g$ using a quadratic-time algorithm.
+"""
+function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+  Rt = parent(f)
+  R = base_ring(Rt)
+  m = fmpz(modulus(R))
+  e, p = ispower(m)
+  easy = isprime(p)
+  @assert easy #for now...
+
+  while !iszero(g)
+    @show cg = content(g)
+    if !isunit(cg)
+      for i=0:degree(g)
+        setcoeff!(g, i, divexact(coeff(g, i), cg))
+      end
+    end
+    if !isunit(lead(g))
+      u, g = fun_factor(g)
+    end
+    @show f, g = g, (f%g)
+  end
+  c = canonical_unit(lead(f))
+  f = divexact(f, c)
+  return f
+end
+
+
+doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The resultant of $f$ anf $g$ using a quadratic-time algorithm.
 """
@@ -1520,6 +1552,15 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T
   return PolynomialRing(R, cached = false)[1](E)
 end
 
+##############################################################
+# all of this should be in Nemo/AbstractAlgebra
+#
+#TODO:
+# expand systematically for all finite fields
+# and for fmpz/fmpq poly
+# for fun: ispower(a::nf_elem)
+#
+
 function factor(f::fmpq_poly, R::NmodRing)
   Rt, t = PolynomialRing(R, "t", cached=false)
   return factor(Rt(f))
@@ -1544,6 +1585,21 @@ function roots(f::fmpq_poly, R::Nemo.NmodRing)
   return roots(fpp)
 end
 
+function ispower(a::Nemo.fq_nmod, m::Int)
+  s = size(parent(a))
+  if gcd(s-1, m) == 1
+    return true, a^invmod(m, s-1)
+  end
+  St, t = PolynomialRing(parent(a), "t", cached=false)
+  f = t^m-a
+  rt = roots(f)
+  if length(rt) > 0
+    return true, rt[1]
+  else
+    return false, a
+  end
+end
+
 function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo and
                                     # made available for all finite fields I guess.
   q = size(base_ring(f))
@@ -1558,10 +1614,35 @@ function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo
   return elem_type(base_ring(f))[-trailing_coefficient(x) for x = keys(l) if degree(x)==1]
 end
 
+# generic fall back
+# ...
 function roots(f::PolyElem)
   lf = factor(f)
   return elem_type(base_ring(f))[-trailing_coefficient(x) for x= keys(lf.fac) if degree(x)==1]
 end    
+
+function ispower(a::RingElem, n::Int)
+  if isone(a) || iszero(a)
+    return true, a
+  end
+  if isone(-a) && isodd(n)
+    return true, a
+  end
+  R = parent(a)
+  Rt, t = PolynomialRing(R, "t", cached = false)
+  r = roots(t^n-a)
+  if length(r) == 0
+    return false, a
+  else
+    return true, r[1]
+  end
+end
+
+function root(a::RingElem, n::Int)
+  fl, b = ispower(a, n)
+  fl || error("element does not have a $n-th root")
+  return b
+end
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
    ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Void,
