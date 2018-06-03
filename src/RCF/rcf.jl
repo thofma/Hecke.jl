@@ -1477,3 +1477,39 @@ function order(A::FacElemMon{NfOrdIdlSet})
   return order(A.base_ring)
 end
 
+doc"""
+    islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
+> Tests if $a$ is a local norm at $p$ in the extension implictly given by $r$.
+> Currently the conductor cannot have infinite places.
+"""
+function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
+  m0, minf = conductor(r)
+  if length(minf) > 0
+    error("not implemented yet")
+  end
+  @assert isprime(p)
+  v1 = valuation(a, p)
+  v2 = valuation(m0, p)
+  n0 = divexact(m0, p^v2)
+  o0 = p^(v1 + v2)
+  y = crt(order(p)(1), n0, a, o0)
+  y = y*order(p)
+  y = divexact(y, p^v1)
+
+  @show preimage(r.rayclassgroupmap, y)
+  return isone(r.quotientmap(preimage(r.rayclassgroupmap, y)))
+end
+
+doc"""
+    islocal_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
+> Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
+> Currently the conductor cannot have infinite places.
+"""
+function islocal_norm(r::ClassField, a::NfAbsOrdElem)
+  m0, minf = conductor(r)
+  if length(minf) > 0
+    error("not implemented yet")
+  end
+  fl = factor(m0*a)
+  return all(x -> islocal_norm(r, a, x), keys(fl))
+end
