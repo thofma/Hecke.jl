@@ -1487,6 +1487,7 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
   if length(minf) > 0
     error("not implemented yet")
   end
+  m0 = defining_modulus(r) #need the maps...
   @assert isprime(p)
   v1 = valuation(a, p)
   v2 = valuation(m0, p)
@@ -1513,3 +1514,13 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem)
   fl = factor(m0*a)
   return all(x -> islocal_norm(r, a, x), keys(fl))
 end
+
+#=
+function prime_decomposition_type(r::ClassField, p::NfAbsOrdIdl)
+  @assert isprime(p)
+  m0 = r.rayclassgroupmap.modulus_fin
+  v = valuation(m0, p)
+  #
+end
+
+=#
