@@ -121,7 +121,8 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
     @assert bb[i]^2 == all_d[i]
 
     for i=2:ngens(S) # don't need torsion here - it's the "same" everywhere
-      u = mS(S[i])
+      u = mS(S[i])  #do compact rep here???
+      u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
       Hecke.class_group_add_relation(c, FacElem(Dict((h(x), v) for (x,v) = u.fac)))
     end
     if t_ord < order(S[1])
@@ -232,7 +233,7 @@ function _nullspace(A::nmod_mat)
     end
     @assert c[1] == b[1]
   end
-  return A, cols(A)
+  return cols(A), A
 end
 
 function mod_p(R, Q::NfOrdIdl, p::Int)
@@ -316,8 +317,10 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             z = mod_p(R, Q[1], Int(pp))
             z = z*Ap
             z = _nullspace(z)
+            @show typeof(z)  
             B = hcat(AA, sub(z[2], 1:rows(z[2]), 1:z[1]))
             B = _nullspace(B)
+            @show typeof(B)  
             AA = AA*sub(B[2], 1:cols(AA), 1:B[1])
             if !isprime(p)
               AA = AA'
@@ -450,6 +453,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
       r = se.rows[i]
       push!(r.pos, rows(e) + length(n_gen))
       push!(r.values, n)
+        @show r
       push!(A, r)
     else
       error("not a power")
@@ -494,6 +498,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
     for j=1:cols(Ti)
       a *= R[j]^Ti[i, j]
     end
+      #TODO remove zeta from relations!!
     Hecke.class_group_add_relation(d, a)
   end
     
@@ -518,6 +523,7 @@ end
 
 function simplify(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
@@ -534,8 +540,11 @@ function simplify(c::Hecke.ClassGrpCtx)
   end
   for i=1:rows(c.M.rel_gens)
     if iszero(c.M.rel_gens.rows[i])
-      Hecke.class_group_add_relation(d, c.R_rel[i], c.M.rel_gens.rows[i])
+      Hecke._add_unit(U, c.R_rel[i])
     end
+  end
+  for i=1:length(U.units)  
+    Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
   end
   return d
 end
