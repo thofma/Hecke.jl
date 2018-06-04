@@ -502,8 +502,14 @@ mutable struct modular_env
   end
 end
 
+Base.isempty(me::modular_env) = !isdefined(me, :ce)
+
 function show(io::IO, me::modular_env)
-  println("modular environment for p=$(me.p), using $(me.ce.n) ideals")
+  if isempty(me)
+    println("modular environment for p=$(me.p), using $(0) ideals")
+  else
+    println("modular environment for p=$(me.p), using $(me.ce.n) ideals")
+  end
 end
 
 doc"""
@@ -534,6 +540,9 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
 
   if max_split > 0
     pols = pols[1:min(length(pols), max_split)]
+  end
+  if length(pols) == 0
+    return me
   end
   me.ce = crt_env(pols)
   me.fld = [FqNmodFiniteField(x, :$, false) for x = pols]  #think about F_p!!!

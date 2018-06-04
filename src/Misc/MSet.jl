@@ -88,4 +88,61 @@ function Base.unique(s::MSet)
   return collect(keys(s.dict))
 end
 
+############################################
+# subsets iterator
+############################################
+
+struct MSubSetItr{T}
+  b::Array{T, 1}
+  m::Array{Int, 1}
+  length::Int
+end
+
+function subsets(s::MSet{T}) where T
+  # subsets are represented by integers in a weird base
+  # the distinct elements are b0...bn with mult mi
+  # subset (bi, ni) -> sum ni gi where gi = prod (mj+1)
+  b = collect(unique(s))
+  m = [s.dict[x] for x = b]
+  #= not needed for the iterator
+  g = [1]
+  for i=2:length(b)
+    push!(g, g[end]*(m[i]+1))
+  end
+  =#
+  return MSubSetItr{T}(b, m, prod(x+1 for x=m))
+end
+
+function int_to_elt(M::MSubSetItr{T}, i::Int) where T
+  s = MSet{T}()
+  for j=1:length(M.b)
+    k = i % (M.m[j]+1)
+    for l=1:k
+      push!(s, M.b[j])
+    end
+    i = div(i-k, M.m[j]+1)
+  end
+  return s
+end
+
+function Base.start(M::MSubSetItr)
+  return 0
+end
+
+function Base.next(M::MSubSetItr, st::Int)
+  return int_to_elt(M, st), st+1
+end
+
+function Base.done(M::MSubSetItr, st::Int)
+  return st >= M.length
+end
+
+function Base.length(M::MSubSetItr)
+  return M.length
+end
+
+function Base.show(io::IO, M::MSubSetItr)
+  println(io, "subset iterator of length $(M.length) for $(M.b) with multiplicities $(M.m)")
+end
+
 #... to be completed from base/Set.jl ...

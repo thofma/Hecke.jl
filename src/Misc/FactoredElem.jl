@@ -87,7 +87,7 @@ function Base.deepcopy_internal(x::FacElem{B, S}, dict::ObjectIdDict) where {B, 
   if isdefined(x, :parent)
     z.parent = x.parent
   end
-  z.hash = x.hash
+#  z.hash = x.hash # this needs to be deleted in ! operations
   return z
 end
 
@@ -97,7 +97,7 @@ function Base.copy(x::FacElem{B, S}) where {B, S}
   if isdefined(x, :parent)
     z.parent = x.parent
   end
-  z.hash = x.hash
+#  z.hash = x.hash
   return z
 end
 
