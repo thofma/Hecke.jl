@@ -812,21 +812,6 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   return rs
 end
 
-function ispower(a::Nemo.fq_nmod, m::Int)
-  s = size(parent(a))
-  if gcd(s-1, m) == 1
-    return true, a^invmod(m, s-1)
-  end
-  St, t = PolynomialRing(parent(a), "t", cached=false)
-  f = t^m-a
-  rt = roots(f)
-  if length(rt) > 0
-    return true, rt[1]
-  else
-    return false, a
-  end
-end
-
 function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
   @assert m>0
   if m == 1

@@ -107,5 +107,5 @@ mutable struct ClassField
 end
 
 function Base.show(io::IO, CF::ClassField)
-  println("Class field defined mod $(__modulus(CF.rayclassgroupmap)) of structure $(codomain(CF.quotientmap)))")
+  println("Class field defined mod $(defining_modulus(CF)) of structure $(codomain(CF.quotientmap)))")
 end
