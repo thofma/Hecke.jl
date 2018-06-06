@@ -818,7 +818,7 @@ end
 #
 ###############################################################################
 
-function _rep_for_center(M::T, A::AlgAss) where T< MatElem
+function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
   
   n=dim(A)
   for i=1:n
