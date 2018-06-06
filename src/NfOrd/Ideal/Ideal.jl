@@ -737,6 +737,7 @@ function inv_maximal(A::NfAbsOrdIdl)
     Ai = NfAbsOrdIdl(order(A))
     #Ai = parent(A)()
     dn = denominator(d*alpha, O)
+    @assert ppio(dn, m)[1] == dn
     Ai.gen_one = dn
     Ai.gen_two = O(d*alpha*dn, false)
     temp = dn^degree(order(A))//norm(A)
@@ -876,6 +877,7 @@ function simplify(A::NfAbsOrdIdl)
     end
     A.norm = n
     A.gen_two = mod(A.gen_two, A.gen_one^2)
+    A.gens_normal = A.gen_one
     return A
   end
   return A
@@ -1796,7 +1798,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
         continue
       end
 
-      mg = _minmod(m, gen)
+      mg = _minmod(m^2, gen)
       g = gcd(m, mg)
       if gcd(m, div(mg, g)) == 1
         if gcd(m^n, norm(gen)) != norm(A)
@@ -1839,9 +1841,9 @@ function assure_2_normal(A::NfAbsOrdIdl)
       continue
     end
 
-    mg = _minmod(m, gen)
+    mg = _minmod(m^2, gen)
 #    @assert mg == gcd(m, denominator(inv(gen.elem_in_nf), O))
-    if gcd(m, div(m, mg)) == 1
+    if gcd(m, div(mg, gcd(mg, m))) == 1
       if gcd(m^n, norm(gen)) != norm(A)
         @vprint :NfOrd 1 "\n\noffending ideal $A \ngen is $gen\nWrong ideal\n"
         cnt += 10
