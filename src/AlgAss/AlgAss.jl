@@ -720,13 +720,24 @@ function split(A::AlgAss)
   return result
 end
 
-################################################################################
+###############################################################################
 #
-#  Radical
+#  Trace Matrix
 #
-################################################################################
+###############################################################################
+
+function _assure_trace_basis(A::AlgAss{T}) where T
+  if !isdefined(A, :trace_basis_elem)
+    A.trace_basis_elem=Array{T, 1}(dim(A))
+    for i=1:length(A.trace_basis_elem)
+      A.trace_basis_elem[i]=sum(A.mult_table[i,j,j] for j= 1:dim(A))
+    end
+  end
+  return nothing
+end
 
 function trace_matrix(A::AlgAss)
+  _assure_trace_basis(A)
   F = base_ring(A)
   n = dim(A)
   M = zero_matrix(F, n, n)
@@ -744,6 +755,12 @@ function trace_matrix(A::AlgAss)
 
 end
 
+
+################################################################################
+#
+#  Radical
+#
+################################################################################
 
 doc"""
 ***
@@ -794,6 +811,43 @@ function radical(A::AlgAss{fq_nmod})
    
 end
 
+
+###############################################################################
+#
+#  Center
+#
+###############################################################################
+
+function _rep_for_center(M::T, A::AlgAss) where T< MatElem
+  
+  n=dim(A)
+  for i=1:n
+    for j = 1:n
+      for k = 1:n
+        M[k+(i-1)*n, j] = A.mult_table[i, j, k]-A.mult_table[j, i, k]
+      end
+    end
+  end
+  return nothing
+end
+
+
+function center(A::AlgAss{T}) where {T}
+
+  if iscommutative_known(A) && A.iscommutative==1
+    return A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A))) 
+  end
+  n=dim(A)
+  M=zero_matrix(base_ring(A), n^2, n)
+  # I concatenate the difference between the right and left representation matrices.
+  _rep_for_center(M,A)
+  k,B=nullspace(M)
+  res=Array{AlgAssElem{T},1}(k)
+  for i=1:k
+    res[i]= A(T[B[j,i] for j=1:n])
+  end
+  return subalgebra(A, res)
+end
 
 ################################################################################
 #
