@@ -1,6 +1,6 @@
 @testset "MultiQuad" begin
 
-  include(Pkg.dir("Hecke") * "/examples/MultiQuad.m")
+  include(Pkg.dir("Hecke") * "/examples/MultiQuad.jl")
 
   c = MultiQuad.multi_quad(fmpz[3,5,7], 10)
   d = MultiQuad.simplify(c)
