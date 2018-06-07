@@ -357,7 +357,7 @@ end
 function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
 
   n=degree(K)
-  
+  m=length(G)
   #=
   Multiplication table
   I order the basis in this way:
@@ -365,20 +365,20 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
   element of basis of the order and so on...
   =#
   
-  M=Array{fmpq,3}(n^2, n^2, n^2)
-  for i=1:n^2
-    for j=1:n^2
-      for s=1:n^2
+  M=Array{fmpq,3}(n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
         M[i,j,s]=fmpq(0)
       end
     end
   end
   B=basis(K)
   for i=1:n
-    for j=1:n
+    for j=1:m
       #I have the element B[i]*G[j]
       for k=1:n
-        for h=1:n
+        for h=1:m
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
@@ -400,6 +400,7 @@ end
 function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
 
   n=degree(O)
+  m=length(G)
   K=nf(O)
   #=
   Multiplication table
@@ -408,20 +409,20 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
   element of basis of the order and so on...
   =#
   
-  M=Array{fmpq,3}(n^2, n^2, n^2)
-  for i=1:n^2
-    for j=1:n^2
-      for s=1:n^2
+  M=Array{fmpq,3}(n*m, n*m, n*m)
+  for i=1:n*m
+    for j=1:n*m
+      for s=1:n*m
         M[i,j,s]=fmpq(0)
       end
     end
   end
   B=basis(O)
   for i=1:n
-    for j=1:n
+    for j=1:m
       #I have the element B[i]*G[j]
       for k=1:n
-        for h=1:n
+        for h=1:m
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
@@ -559,42 +560,7 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
 
 end
 
-###############################################################################
-#
-#  Center
-#
-###############################################################################
 
-function _rep_for_center(M::MatElem, A::AlgAss)
-  
-  n=dim(A)
-  for i=1:n
-    for j = 1:n
-      for k = 1:n
-        M[k+(i-1)*n, j] = A.mult_table[i, j, k]-A.mult_table[j, i, k]
-      end
-    end
-  end
-  return nothing
-end
-
-
-function center(A::AlgAss{T}) where {T}
-
-  if iscommutative_known(A) && A.iscommutative==1
-    return A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A))) 
-  end
-  n=dim(A)
-  M=zero_matrix(base_ring(A), n^2, n)
-  # I concatenate the difference between the right and left representation matrices.
-  _rep_for_center(M,A)
-  k,B=nullspace(M)
-  res=Array{AlgAssElem{T},1}(k)
-  for i=1:k
-    res[i]= A(T[B[j,i] for j=1:n])
-  end
-  return subalgebra(A, res)
-end
 
 ###############################################################################
 #
@@ -816,17 +782,11 @@ function pradical(O::AlgAssOrd, p::Int)
     
   F=ResidueRing(FlintZZ, p, cached=false)
 
-  #TrA=trace_matrix(O.A)
+
   #First step: kernel of the trace matrix mod p 
   W=MatrixSpace(F,O.dim,O.dim, false)
-  #if isdefined(O, :trace_mat)
-  #  I=W(n*O.trace_mat)
-  #else
-  #  assure_basis_mat_inv(O)
-  #  I=W((O.basis_mat*FakeFmpqMat(TrA)*O.basis_mat_inv).num)
-  #end
   I=W(n*redtrace_mat(O))
-  k, B = nullspace(I)
+  k,B=nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
     J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
@@ -866,12 +826,12 @@ function pradical(O::AlgAssOrd, p::Int)
       for s=1:O.dim
         mul!(a, elm.elem_in_algebra, O.basis_alg[s])
         bbb = (a^(p^i))
-        trel=trace(bbb, TrA)
+        trel=trace(bbb)
         el=divexact(numerator(trel),p^i)
         N[s,t]=F(el)
       end
     end
-    B2,k=nullspace(N)
+    k, B2=nullspace(N)
     if k==0
       J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
       J.gens=AlgAssOrdElem[O(p*one(O.A))]
@@ -899,14 +859,6 @@ function pradical(O::AlgAssOrd, p::Int)
   
 end
 
-function trace(x::AlgAssElem, M::fmpq_mat)
-  M1=matrix(FlintQQ, 1, rows(M), x.coeffs)
-  M2=matrix(FlintQQ, rows(M), 1, x.coeffs)
-  return (M1*M*M2)[1,1]  
-end
-
-
-
 ###############################################################################
 #
 #  Trace, Discriminant and Reduced Trace Matrix 
@@ -932,24 +884,13 @@ function representation_matrix(x::AlgAssOrdElem)
   return B.num
 end
 
-
-function trace(x::AlgAssElem)
-  M=representation_matrix(x)
-  return trace(M)
-end
-
 function trace(x::AlgAssOrdElem)
-  if isdefined(parent(x), :trace_mat)
-    O=parent(x)
-    n=root(O.dim,2)
-    return n*(matrix(FlintZZ, 1, O.dim, elem_in_basis(x))*O.trace_mat*matrix(FlintZZ, O.dim, 1, elem_in_basis(x)))[1,1]
-  else
-    return trace(x.elem_in_algebra)
-  end
+  return trace(x.elem_in_algebra)
 end
 
 function redtrace_mat(O::AlgAssOrd)
-  
+
+  A=O.A
   if isdefined(O, :trace_mat)
     return O.trace_mat
   end
@@ -957,21 +898,23 @@ function redtrace_mat(O::AlgAssOrd)
   m=length(x)
   n=root(O.dim,2)
   M=zero_matrix(FlintZZ, m, m)
+  a=A()
   for i=1:m
-    M[i,i]=divexact(numerator(trace(x[i]^2)),n)
+    mul!(a, x[i], x[i])
+    M[i,i]=divexact(numerator(trace(a)),n)
   end
   for i=1:m
     for j=i+1:m
-      a=divexact(numerator(trace(x[i]*x[j])),n)
-      M[i,j]=a
-      M[j,i]=a
+      mul!(a, x[i], x[j])
+      b=divexact(numerator(trace(a)),n)
+      M[i,j]=b
+      M[j,i]=b
     end
   end
   O.trace_mat=M
   return M
   
 end
-
 
 function discriminant(O::AlgAssOrd) 
   
@@ -1019,11 +962,40 @@ function trace_signature(O::AlgAssOrd)
   # This can be improved using Sturm sequences
   Zx,x=PolynomialRing(FlintZZ, "x")
   f=charpoly(Zx,M)
-  #if issquarefree(f)
-  #  a=number_positive_roots(f)
-  #  b=degree(f)-a
-  #  return (a,b)
-  #else
+  if issquarefree(f)
+    p=64
+    while p<1024
+      sgtposf=0
+      sgtnegf=0
+      R=AcbField(p, false)
+      Rx=AcbPolyRing(R, Symbol("x"), false)
+      g=Rx(f)
+      l=roots(g)
+      for i=1:length(l)
+        y=real(l[i])
+        if ispositive(y)
+          sgtposf+=1
+        end
+        if isnegative(y)
+          sgtnegf+=1
+        end
+      end
+      if sgtposf+sgtnegf==degree(g)
+        return sgtposf, sgtnegf
+      else
+        p*=2
+      end
+    end
+    if p>1024
+      error("Precision issue")
+    end
+#=    
+  if issquarefree(f)
+    a=number_positive_roots(f)
+   b=degree(f)-a
+    return (a,b)
+=#
+  else
     ff=factor(f)
     sgtpos=0
     sgtneg=0
@@ -1066,7 +1038,7 @@ function trace_signature(O::AlgAssOrd)
       end
     end
     return (sgtpos, sgtneg)
-  #end
+  end
   
 end
 
@@ -1131,36 +1103,6 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
   return ideals
 
 end
-
-function _maximal_ideals(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
-  
-  A1 , A1toO= quo(O, I, p)
-  lM = fq_nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
-  append!(lM, fq_nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
-  M = FqGModule(lM)
-  ls = maximal_submodules(M)
-  ideals=AlgAssOrdIdl[]
-  poneO=O(p*one(O.A))
-  for x in ls
-    @hassert :CSAMaxOrd 1 closure(x, M.G)==rref(x)[2]
-    m = zero_matrix(FlintZZ, O.dim, O.dim)
-    gens=Vector{AlgAssOrdElem}(rows(x)+1)
-    for i=1:rows(x)
-      for j=1:cols(x)
-        m[i,j]=FlintZZ(coeff(x[i,j],0))
-      end
-      gens[i]= elem_from_mat_row(O,m,i)
-    end
-    hnf_modular_eldiv!(m, fmpz(p))
-    gens[rows(x)+1]=poneO
-    J=AlgAssOrdIdl(O,m)
-    J.gens=gens
-    push!(ideals, J)
-  end
-  return ideals
-
-end
-
 
 function pmaximal_overorder(O::AlgAssOrd, p::Int)
 
@@ -1298,8 +1240,8 @@ function issplit(A::AlgAss)
   end  
   fac = factor(root(abs(discriminant(O)),2))
   for (p,j) in fac
-    O = pmaximal_overorder(O, Int(p))
-    if valuation(O.disc, Int(p))!=0
+    O1 = pmaximal_overorder(O, Int(p))
+    if valuation(O1.disc, Int(p))!=0
       return false
     end
   end
@@ -1316,15 +1258,15 @@ end
 
 function sturm_sequence(f::fmpq_poly)
 
-  g=deepcopy(f)
+  g=f
   h=derivative(g)
-  seq=fmpz_poly[g,h]
+  seq=fmpq_poly[g,h]
   while true
     q, r=divrem(g,h)
     if r!=0
-      push!(seq, r)
-      h=g
-      g=r
+      push!(seq, -r)
+      g=h
+      h=r
     else 
       break
     end
@@ -1346,11 +1288,12 @@ end
 
 function number_positive_roots(f::fmpz_poly)
 
-  s = sturm_sequence(f)
-  b = maximum([coeff(f,i) for i=0:degree(f)-1])
-  evb=fmpz[x(b) for x in s]
-  ev0=fmpz[x(0) for x in s]
-  return _number_changes(ev0)-evb
+  Qx, x=PolynomialRing(FlintQQ, "z")
+  f1 = Qx(f)
+  s = sturm_sequence(f1)
+  evinf=fmpz[numerator(coeff(x, degree(x))) for x in s]
+  ev0=fmpz[numerator(coeff(x,0)) for x in s]
+  return _number_changes(ev0)-_number_changes(evinf)
 end
 
 

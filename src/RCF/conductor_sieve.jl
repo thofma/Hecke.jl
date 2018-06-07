@@ -1713,7 +1713,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
           if degree(pol)!=15
             pol=absolute_minpoly(x*(auto(x)))
           end
-          K,a=NumberField(pol, cached= false)
+          K,_=NumberField(pol, cached= false)
           if _is_discriminant_lower(K, collect(ram_primes), non_normal_bound)
             @vprint :QuadraticExt "The field is: $pol \n"
             push!(fieldslist, (number_field(pol)[1], collect(ram_primes)))

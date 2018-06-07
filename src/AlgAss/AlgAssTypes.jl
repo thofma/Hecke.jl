@@ -5,6 +5,7 @@ mutable struct AlgAss{T} <: Ring
   iscommutative::Int       # 0: don't know
                            # 1 known to be commutative
                            # 2 known to be not commutative
+  trace_basis_elem::Array{T, 1}
 
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
