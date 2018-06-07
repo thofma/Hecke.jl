@@ -35,7 +35,7 @@
 export AbelianGroup, DiagonalGroup, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
-       psylow_subgroup
+       psylow_subgroup, issubgroup
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -784,6 +784,80 @@ function quo_gen(G::GrpAbFinGen, n::Union{fmpz, Integer},
   return Q, m
 end
 
+################################################################################
+#
+#  use lattice...
+#
+################################################################################
+
+function +(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+  fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
+  if !fl
+    error("no common overgroup known")
+  end
+  return sub(GH, vcat([GH(mG[i, :]) for i=1:rows(mG)], [GH(mH[i, :]) for i=1:rows(mH)]))[1]
+end
+
+function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+  fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
+  if !fl
+    error("no common overgroup known")
+  end
+  M = [ mG identity_matrix(FlintZZ, rows(mG)); mH zero_matrix(FlintZZ, rows(mH), rows(mG)) ;
+        rels(GH) zero_matrix(FlintZZ, nrels(GH), rows(mG))]
+  h = hnf(M)
+  i = rows(h)
+  while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
+    i -= 1
+  end
+  return sub(G, [G(sub(h, j:j, ngens(GH)+1:cols(h))) for j=i+1:rows(h)])[1]
+end
+
+function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+  fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
+  if !fl
+    error("no common overgroup known")
+  end
+  hH = hom(H, GH, mH)
+  return all(x -> haspreimage(hH, GH(mG[x, :]))[1], 1:rows(mG))
+end
+
+function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+  fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
+  if !fl
+    error("no common overgroup known")
+  end
+  hH = hom(H, GH, mH)
+  n = matrix(FlintZZ, 0, ngens(H), fmpz[])
+  for j=1:rows(mG)
+    fl, x = haspreimage(hH, GH(mG[j, :]))
+    if !fl
+      return false, hH
+    end
+    n = vcat(n, x.coeff)
+  end
+  return true, hom(G, H, n)
+end
+
+#cannot define == as this produces problems elsewhere... need some thought
+function iseq(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
+  order(G) == order(H) || return false
+  fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
+  if !fl
+    return false
+  end
+  return order(G+H) == order(G)
+end
+
+function Base.isequal(G::GrpAbFinGen, H::GrpAbFinGen)
+  return G === H
+end
+
+function quo(G::GrpAbFinGen, U::GrpAbFinGen)
+  fl, m = issubgroup(U, G)
+  fl || error("not a subgroup")
+  return quo(G, m.map)
+end
 ################################################################################
 #
 #  Make Smith normal form
