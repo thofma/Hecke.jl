@@ -69,6 +69,14 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     r.imap = Mi
     return r
   end
+
+  function GrpAbFinGenMap(M::T) where T <: Map{GrpAbFinGen, GrpAbFinGen}
+    r = new()
+    D = domain(M)
+    r.header = MapHeader(D, codomain(M))
+    r.map = vcat([M(D[i]).coeff for i=1:ngens(D)])
+    return r
+  end
 end
 
 function image(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
