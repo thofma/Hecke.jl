@@ -136,6 +136,49 @@ example:
 
 ################################################################################
 #
+#  The original permutation iterator from Nemo
+#
+################################################################################
+
+struct _AllPerms{T}
+   n::T
+   all::Int
+
+   function _AllPerms(n::T) where {T<:Integer}
+      return new{T}(n, factorial(n))
+   end
+end
+
+Base.start(A::_AllPerms{T}) where T<:Integer = (collect(T, 1:A.n), one(T), one(T), ones(T, A.n))
+Base.next(A::_AllPerms, state) = all_perms(state...)
+Base.done(A::_AllPerms, state) = state[2] > A.all
+Base.eltype(::Type{_AllPerms{T}}) where T<:Integer = Vector{T}
+length(A::_AllPerms) = A.all
+
+function all_perms(elts, counter, i, c)
+   if counter == 1
+      return (copy(elts), (elts, counter+1, i, c))
+   end
+   n = length(elts)
+   @inbounds while i <= n
+      if c[i] < i
+         if isodd(i)
+            elts[1], elts[i] = elts[i], elts[1]
+         else
+            elts[c[i]], elts[i] = elts[i], elts[c[i]]
+         end
+         c[i] += 1
+         i = 1
+         return (copy(elts), (elts, counter+1, i, c))
+      else
+         c[i] = 1
+         i += 1
+      end
+   end
+end
+
+################################################################################
+#
 #  Subgroup iterators for p-groups
 #
 ################################################################################
@@ -237,7 +280,7 @@ end
 function SigmaIteratorGivenY(s, x, y)
   t = findlast(!iszero, y)
   SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma),
-                                       Nemo.AllPerms(s)))
+                                       _AllPerms(s)))
 end
 
 Base.start(S::SigmaIteratorGivenY) = Base.start(S.gen)
@@ -934,3 +977,5 @@ function subgroups(G::GrpAbFinGen; subtype = :all,
   return SubgroupIterator(G; subtype = _subtype, quotype = _quotype, order = order, index = index,
                                  fun = fun)
 end
+
+
