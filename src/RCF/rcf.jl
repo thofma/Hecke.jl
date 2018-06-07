@@ -1,4 +1,4 @@
-export kummer_extension, ray_class_field
+export kummer_extension, ray_class_field, hilbert_class_field, prime_decomposition_type
 
 add_verbose_scope(:ClassField)
 add_assert_scope(:ClassField)
@@ -375,7 +375,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   mc = compose(inv(mq), mc)
   c = q
 
-  lP = vcat(lP, Hecke.find_gens(inv(mc), PrimesSet(100, -1))[1])
+  lP = vcat(lP, find_gens(inv(mc), PrimesSet(100, -1))[1])
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
 #if false
 #  println("enlarging to be Galois closed - just in case...", length(lP))
@@ -1497,7 +1497,6 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
   y = y*order(p)
   y = divexact(y, p^v1)
 
-  @show preimage(r.rayclassgroupmap, y)
   return isone(r.quotientmap(preimage(r.rayclassgroupmap, y)))
 end
 
@@ -1515,12 +1514,131 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem)
   return all(x -> islocal_norm(r, a, x), keys(fl))
 end
 
-#=
-function prime_decomposition_type(r::ClassField, p::NfAbsOrdIdl)
-  @assert isprime(p)
-  m0 = r.rayclassgroupmap.modulus_fin
-  v = valuation(m0, p)
-  #
+function norm_group_map(R::ClassField, r::Array{ClassField, 1})
+  @assert all(x -> base_ring(R) == base_ring(x), r)
+
+  mR = defining_modulus(R)
+  @assert all(x->mR+defining_modulus(x) == defining_modulus(x), r)
+
+  fR = _compose(R.rayclassgroupmap, inv(R.quotientmap))
+  lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
+                             PrimesSet(100, -1), minimum(mR))
+  h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), p) for p = lp]) for x = r]
+  return h
 end
 
-=#
+function norm_group_map(R::ClassField, r::ClassField)
+  return norm_group_map(R, [r])[1]
+end
+
+doc"""
+    compositum(a::ClassField, b::ClassField) -> ClassField
+             *(a::ClassField, b::ClassField) -> ClassField
+> The compositum of $a$ and $b$ as a (formal) class field.
+"""
+function compositum(a::ClassField, b::ClassField)
+  @assert base_ring(a) == base_ring(b)
+  c = lcm(defining_modulus(a), defining_modulus(b))
+  d = lcm(degree(a), degree(b))
+  r, mr = ray_class_group(c, n_quo = Int(d))
+  C = ray_class_field(mr)
+  @assert domain(C.rayclassgroupmap) == r
+  h = norm_group_map(C, [a,b])
+  U = intersect(kernel(h[1])[1], kernel(h[2])[1])
+  q, mq = quo(codomain(C.quotientmap), U)
+  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
+end
+
+*(a::ClassField, b::ClassField) = compositum(a, b)
+
+doc"""
+    intersect(a::ClassField, b::ClassField) -> ClassField
+> The intersection of $a$ and $b$ as a class field.
+"""
+function Base.intersect(a::ClassField, b::ClassField)
+  @assert base_ring(a) == base_ring(b)
+  c = lcm(defining_modulus(a), defining_modulus(b))
+  d = lcm(degree(a), degree(b))
+
+  r, mr = ray_class_group(c, n_quo = Int(d))
+  C = ray_class_field(mr)
+  h = norm_group_map(C, [a,b])
+  U = kernel(h[1])[1] + kernel(h[2])[1]
+  q, mq = quo(codomain(C.quotientmap), U)
+  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
+end
+
+doc"""
+    issubfield(a::ClassField, b::ClassField) -> Bool
+> Determines of $a$ is a subfield of $b$.
+"""
+function issubfield(a::ClassField, b::ClassField)
+  @assert base_ring(a) == base_ring(b)
+  c = lcm(defining_modulus(a), defining_modulus(b))
+  d = lcm(degree(a), degree(b))
+
+  r, mr = ray_class_group(c, n_quo = Int(d))
+  C = ray_class_field(mr)
+  h = norm_group_map(C, [a,b])
+  return issubset(kernel(h[2])[1], kernel(h[1])[1])
+end
+
+doc"""
+    ==(a::ClassField, b::ClassField)
+> Tests if $a$ and $b$ are equal.
+"""
+function ==(a::ClassField, b::ClassField)
+  @assert base_ring(a) == base_ring(b)
+  c = lcm(defining_modulus(a), defining_modulus(b))
+  d = lcm(degree(a), degree(b))
+
+  r, mr = ray_class_group(c, n_quo = Int(d))
+  C = ray_class_field(mr)
+  h = norm_group_map(C, [a,b])
+  return iseq(kernel(h[2])[1], kernel(h[1])[1])
+end
+
+doc"""
+    hilbert_class_field(k::AnticNumberField) 0> ClassField
+> The Hilbert class field of $k$ as a formal (ray-) class field.
+"""
+function hilbert_class_field(k::AnticNumberField)
+  return ray_class_field(class_group(k)[2])
+end
+
+doc"""
+    ray_class_field(I::NfAbsOrdIdl; n_quo = 0, p_part = 0) -> ClassField
+> The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
+> subfield of exponent $n$ is computed, if {{{p_part}}} is specified, then 
+> the largest subfield of $p$-power degree is determined.
+"""
+function ray_class_field(I::NfAbsOrdIdl; n_quo = 0, p_part = 0)
+  return ray_class_field(ray_class_group(I, n_quo = n_quo, p_part = p_part)[2])
+end
+
+doc"""
+    prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
+> For a prime $p$ in the base ring of $r$, determine the splitting type of $p$ 
+> in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
+> and the number of primes above $p$.
+"""
+function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
+  @assert isprime(p)
+  m0 = defining_modulus(C)
+
+  mR = C.rayclassgroupmap
+  R = domain(mR)
+
+  v = valuation(m0, p)
+  r, mr = ray_class_group(divexact(m0, p^v), n_quo = Int(exponent(R)))
+
+  lp, sR = find_gens(MapFromFunc(x->preimage(mR, x), IdealSet(base_ring(C)), domain(mR)),
+                             PrimesSet(100, -1), minimum(m0))
+  h = hom(sR, [preimage(mr, p) for p = lp])
+  k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
+  q, mq = quo(r, [h(mk(k[i])) for i=1:ngens(k)])
+  f = order(mq(h(preimage(mR, p))))
+  e = div(degree(C), Int(order(q)))
+  return (e, f, order(q)//f)
+end
+
