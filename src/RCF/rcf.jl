@@ -1637,7 +1637,7 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   h = hom(sR, [preimage(mr, p) for p = lp])
   k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
   q, mq = quo(r, [h(mk(k[i])) for i=1:ngens(k)])
-  f = order(mq(h(preimage(mR, p))))
+  f = order(mq(preimage(mr, p)))
   e = div(degree(C), Int(order(q)))
   return (e, f, order(q)//f)
 end
