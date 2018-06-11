@@ -110,7 +110,7 @@ for (i, k) in enumerate(l_conductors)
   end
   ls=subgroups(r,quotype=gtype, fun= (x, y) -> quo(x, y, false)[2])
   for s in ls
-    C=Hecke.ray_class_field(mr*inv(s))
+    C=Hecke.ray_class_field(mr, s)
     if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,bounddisc,n)
       L=number_field(C)
       LL = _get_simple_extension_and_maximal_order(L)

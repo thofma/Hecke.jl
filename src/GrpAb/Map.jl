@@ -118,6 +118,9 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   RA = rels(GA)
   M = vcat(M, hcat(RA, zero_matrix(FlintZZ, rows(RA), cols(B[1].coeff))))
   H = hnf(M)
+  if ngens(GB) == 0
+    return GrpAbFinGenMap(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]))
+  end
   H = sub(H, 1:ngens(GA), ngens(GA)+1:ngens(GA)+ngens(GB))
   h = GrpAbFinGenMap(GA, GB, H)
   return h
@@ -192,7 +195,7 @@ injective morphism $f \colon A \to G$, such that the image of $f$ is the kernel
 of $h$.
 """
 
-function kernel(h::GrpAbFinGenMap)
+function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
   m=zero_matrix(FlintZZ, rows(h.map)+rows(rels(H)), cols(h.map))
@@ -215,7 +218,7 @@ function kernel(h::GrpAbFinGenMap)
   hn, t = hnf_with_transform(m)
   for i = 1:rows(hn)
     if iszero_row(hn, i)
-      return sub(G, sub(t, i:rows(t), 1:ngens(G)), false)
+      return sub(G, sub(t, i:rows(t), 1:ngens(G)), add_to_lattice)
     end
   end
   error("Something went terribly wrong in kernel computation")
@@ -228,7 +231,7 @@ Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
 an injective morphism $f \colon A \to G$, such that the image of $f$ is the
 image of $h$.
 """
-function image(h::GrpAbFinGenMap)
+function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
   hn = hnf(vcat(h.map, rels(H)))
@@ -240,7 +243,7 @@ function image(h::GrpAbFinGenMap)
       break
     end
   end
-  return sub(H, im, false)  # too much, this is sub in hnf....
+  return sub(H, im, add_to_lattice)  # too much, this is sub in hnf....
 end
 
 doc"""
@@ -250,9 +253,9 @@ Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
 a morphism $f \colon G \to A$, such that $A$ is the quotient of $G$ with 
 respect to the image of $h$.
 """
-function cokernel(h::GrpAbFinGenMap)
+function cokernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   S,mS=image(h)
-  return quo(codomain(h), GrpAbFinGenElem[mS(g) for g in gens(S)], false)
+  return quo(codomain(h), GrpAbFinGenElem[mS(g) for g in gens(S)], add_to_lattice)
 end
 
 ################################################################################

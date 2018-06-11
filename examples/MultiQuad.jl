@@ -90,7 +90,7 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
     append!(all_d, i .* all_d)
   end
 
-  @show all_d
+  # @show all_d
 
   ZK = Order(K, b)
   ZK = pmaximal_overorder(ZK, fmpz(2))
@@ -278,10 +278,10 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   K = nf(ZK)
   _, zeta = Hecke._get_nf_torsion_units(K)
   if !(hash(zeta) in c.RS)
-    println("adding zeta = ", zeta)
+    #println("adding zeta = ", zeta)
     push!(R, zeta)
   else
-    println("NOT doint zeta")
+    #println("NOT doint zeta")
   end
   T = ResidueRing(FlintZZ, p)
   A = identity_matrix(T, length(R))
@@ -292,10 +292,10 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
     else
       all_p = [up^k]
     end
-    @show all_p
+    #@show all_p
     AA = identity_matrix(FlintZZ, cols(A))
     for pp = all_p
-      println("doin' $pp")
+      #println("doin' $pp")
       AA = matrix(ResidueRing(FlintZZ, Int(pp)), lift(AA))
       Ap = matrix(base_ring(AA), A)
       i = 1
@@ -317,10 +317,8 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             z = mod_p(R, Q[1], Int(pp))
             z = z*Ap
             z = _nullspace(z)
-            @show typeof(z)  
             B = hcat(AA, sub(z[2], 1:rows(z[2]), 1:z[1]))
             B = _nullspace(B)
-            @show typeof(B)  
             AA = AA*sub(B[2], 1:cols(AA), 1:B[1])
             if !isprime(p)
               AA = AA'
@@ -352,10 +350,10 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
           continue
         end
         if cAA == cols(AA) 
-          println("good $i")
+          #println("good $i")
           i += 1
         else
-          println("bad")
+          #println("bad")
           i = 0
         end
         cAA = cols(AA)
@@ -365,7 +363,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       end
     end
     pp = Int(modulus(base_ring(AA)))
-    @show "done $pp"
+    #@show "done $pp"
     # A is given mod p, AA mod pp
     #we need AA mod p where the lift is any lift, modulo powers of pp
     #                                   identity modulo coprime (CRT)
@@ -387,7 +385,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       i -= 1
     end
     A = sub(A, 1:i, 1:cols(A))'
-    @show size(A)
+    #@show size(A)
   end
   return A
 end
@@ -424,7 +422,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
   K = nf(c)
   _, zeta = Hecke._get_nf_torsion_units(K)
 
-  println("Enlarging by $(cols(e)) elements")
+  #println("Enlarging by $(cols(e)) elements")
   n_gen = []
   for i=1:cols(e)
     a = fe(c.R_gen[1])^e[1, i]
@@ -443,17 +441,17 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
     end
     
     decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
-    println("compact rep...")  
-    @time fl, x = ispower(a, n, decom = decom)
+    #println("compact rep...")  
+    fl, x = ispower(a, n, decom = decom)
 #    @time fl, _ = ispower(evaluate(a), n)
-    println("done")   
+    #println("done")   
     global last = (a, n, decom)  
     if fl
       push!(n_gen, FacElem(x))
       r = se.rows[i]
       push!(r.pos, rows(e) + length(n_gen))
       push!(r.values, n)
-        @show r
+        #@show r
       push!(A, r)
     else
       error("not a power")
