@@ -272,7 +272,7 @@ end
 
 function PseudoMatrix(m::Generic.Mat{S}, c::Array{T, 1}) where {S <: RelativeElement, T <: NfRelOrdIdl}
   @assert rows(m) == length(c)
-  cc = [ NfRelOrdFracIdl{typeof(c[1]).parameters...}(order(c[i]), basis_pmat(c[i])) for i = 1:length(c) ]
+  cc = [ frac_ideal(order(c[i]), basis_pmat(c[i]), true) for i = 1:length(c) ]
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 

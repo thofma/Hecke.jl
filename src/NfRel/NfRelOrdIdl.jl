@@ -208,17 +208,18 @@ end
 
 doc"""
 ***
-    ideal(O::NfRelOrd, M::PMat, check::Bool = true) -> NfRelOrdIdl
+    ideal(O::NfRelOrd, M::PMat, check::Bool = true, M_in_hnf::Bool = false) -> NfRelOrdIdl
 
 > Creates the ideal of $\mathcal O$ with basis pseudo-matrix $M$. If check is set,
-> then it is checked whether $M$ defines an ideal.
+> then it is checked whether $M$ defines an ideal. If M_in_hnf is set, then it is
+> assumed that $M$ is already in lower left pseudo HNF.
 """
-function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true) where {T, S}
+function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true, M_in_hnf::Bool = false) where {T, S}
   if check
     !defines_ideal(O, M) && error("The pseudo-matrix does not define an ideal.")
   end
-  H = pseudo_hnf(M, :lowerleft, true)
-  return NfRelOrdIdl{T, S}(O, H)
+  !M_in_hnf ? M = pseudo_hnf(M, :lowerleft, true) : nothing
+  return NfRelOrdIdl{T, S}(O, M)
 end
 
 doc"""
@@ -269,8 +270,8 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
 end
 
 function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::NfRelOrdIdl, b::NfRelOrdIdl, check::Bool = true) where {T, S}
-  aa = NfRelOrdFracIdl{typeof(a).parameters...}(order(a), basis_pmat(a))
-  bb = NfRelOrdFracIdl{typeof(b).parameters...}(order(b), basis_pmat(b))
+  aa = frac_ideal(order(a), basis_pmat(a), true)
+  bb = frac_ideal(order(b), basis_pmat(b), true)
   return ideal(O, x, y, aa, bb, check)
 end
 
@@ -331,7 +332,7 @@ end
 function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
   @assert order(a) == order(pseudo_basis(O, Val{false})[1][2])
 
-  aa = NfRelOrdFracIdl{typeof(a).parameters...}(order(a), basis_pmat(a))
+  aa = frac_ideal(order(a), basis_pmat(a), true)
   return ideal(O, aa, check)
 end
 
@@ -476,7 +477,7 @@ function +(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
   end
-  return typeof(a)(order(a), H)
+  return ideal(order(a), H, false, true)
 end
 
 ################################################################################
@@ -523,7 +524,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = pseudo_hnf(H, :lowerleft)
   end
-  return typeof(a)(order(a), H)
+  return ideal(order(a), H, false, true)
 end
 
 ################################################################################
@@ -544,8 +545,7 @@ function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
   end
   bp = basis_pmat(a)
   P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
-  !defines_ideal(order(a), P) && error("The pseudo-matrix does not define an ideal.")
-  return NfRelOrdIdl{T, S}(order(a), P)
+  return ideal(order(a), P, true, true)
 end
 
 *(x::T, a::NfRelOrdIdl{T, S}) where {T, S} = a*x
@@ -589,7 +589,7 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)
   end
-  return typeof(a)(order(a), H)
+  return ideal(order(a), H, false, true)
 end
 
 ################################################################################
@@ -632,7 +632,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   N = inv(transpose(PM.matrix))
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
-  return NfRelOrdFracIdl{T, S}(O, PN)
+  return frac_ideal(O, PN, true)
 end
 
 ################################################################################
@@ -649,7 +649,7 @@ doc"""
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
-  return NfRelOrdFracIdl{T, S}(O, basis_pmat(a, Val{false}))*inv(b)
+  return frac_ideal(O, basis_pmat(a, Val{false}), true)*inv(b)
 end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
@@ -692,9 +692,7 @@ doc"""
 """
 # Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
 # Round-2-Algorithmus" by C. Friedrichs.
-# If return_integral is true then the returned ideal is ideal of a
-# order with integral coefficient ideals.
-function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl}, return_integral::Bool = false)
+function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   d = degree(O)
   L = nf(O)
   K = base_ring(L)
@@ -777,10 +775,6 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl}, return_integral:
   PM2 = PseudoMatrix(M2, [ pbint[i][2]*deepcopy(P) for i = 1:d ])
   PM = sub(pseudo_hnf(vcat(PM1, PM2), :lowerleft, true), (d + 1):2*d, 1:d)
 
-  if return_integral
-    return NfRelOrdIdl{typeof(O).parameters...}(Oint, PM)
-  end
-
   # Write PM in the basis of O (and not Oint)
   for j = 1:d
     t = K(denominator(pb[j][2]))
@@ -790,7 +784,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl}, return_integral:
   end
   # TODO: Use that the matrix is already triangular
   PM = pseudo_hnf(PM, :lowerleft, true)
-  return NfRelOrdIdl{typeof(O).parameters...}(O, PM)
+  return ideal(O, PM, false, true)
 end
 
 ################################################################################
@@ -860,7 +854,7 @@ function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
   end
   M = M*basis_mat_inv(O, Val{false})
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
-  return NfRelOrdIdl{typeof(PM.matrix[1, 1]), typeof(PM.coeffs[1])}(O, PM)
+  return ideal(O, PM, false, true)
 end
 
 ################################################################################
@@ -960,7 +954,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
       N = vcat(N, deepcopy(m))
     end
     N = sub(pseudo_hnf(N, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
-    P = NfRelOrdIdl{typeof(O).parameters...}(O, N)
+    P = ideal(O, N, false, true)
     P.is_prime = 1
     e = valuation(pO, P)
     P.splitting_type = (e, f)
@@ -999,7 +993,7 @@ end
 function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
   @assert !iszero(A) && !iszero(B)
   O = order(A)
-  Afrac = NfRelOrdFracIdl{T, S}(O, basis_pmat(A))
+  Afrac = frac_ideal(O, basis_pmat(A), true)
   Bi = inv(B)
   i = 0
   C = Afrac*Bi

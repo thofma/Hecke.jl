@@ -199,13 +199,14 @@ end
 
 doc"""
 ***
-    ideal(O::NfOrd, x::fmpz_mat, check::Bool = false) -> NfAbsOrdIdl
+    ideal(O::NfOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = false) -> NfAbsOrdIdl
 
 > Creates the ideal of $\mathcal O$ with basis matrix $x$. If check is set, then it is
-> checked whether $x$ defines an ideal (expensive).
+> checked whether $x$ defines an ideal (expensive). If x_in_hnf is set, then it is assumed
+> that $x$ is already in lower left HNF.
 """
-function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false)
-  x = _hnf(x, :lowerleft) #sub-optimal, but == relies on the basis being thus
+function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = false)
+  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
 
   I = NfAbsOrdIdl(O, x)
   if check

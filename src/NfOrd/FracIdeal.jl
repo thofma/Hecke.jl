@@ -43,23 +43,27 @@ export frac_ideal
 
 doc"""
 ***
-    frac_ideal(O::NfOrd, A::FakeFmpqMat) -> NfOrdFracIdl
+    frac_ideal(O::NfOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis matrix $A$.
+> Creates the fractional ideal of $\mathcal O$ with basis matrix $A$. If A_in_hnf
+> is set, then it is assumed that the numerator of $A$ is already in lower left
+> HNF.
 """
-function frac_ideal(O::NfOrd, x::FakeFmpqMat)
-  y = hnf(x)
-  z = NfOrdFracIdl(O, y)
+function frac_ideal(O::NfOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
+  !x_in_hnf ? x = hnf(x) : nothing
+  z = NfOrdFracIdl(O, x)
   return z
 end
 
 doc"""
 ***
-    frac_ideal(O::NfOrd, A::fmpz_mat, b::fmpz) -> NfOrdFracIdl
+    frac_ideal(O::NfOrd, A::fmpz_mat, b::fmpz, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$.
+> Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
+> A_in_hnf is set, then it is assumed that $A$ is already in lower left HNF.
 """
-function frac_ideal(O::NfOrd, x::fmpz_mat, y::fmpz)
+function frac_ideal(O::NfOrd, x::fmpz_mat, y::fmpz, x_in_hnf::Bool = false)
+  !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing
   y = FakeFmpqMat(x, y)
   z = NfOrdFracIdl(O, y)
   return z

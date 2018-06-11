@@ -140,13 +140,15 @@ end
 
 doc"""
 ***
-    frac_ideal(O::NfRelOrd, M::PMat) -> NfRelOrdFracIdl
+    frac_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
-> Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$.
+> Creates the fractional ideal of $\mathcal O$ with basis pseudo-matrix $M$. If
+> M_in_hnf is set, then it is assumed that $M$ is already in lower left pseudo
+> HNF.
 """
-function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
-  H = pseudo_hnf(M, :lowerleft, true)
-  return NfRelOrdFracIdl{T, S}(O, H)
+function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) where {T, S}
+  !M_in_hnf ? M = pseudo_hnf(M, :lowerleft, true) : nothing
+  return NfRelOrdFracIdl{T, S}(O, M)
 end
 
 doc"""
@@ -276,7 +278,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   H = vcat(basis_pmat(a), basis_pmat(b))
   if T != nf_elem
     H = sub(pseudo_hnf(H, :lowerleft), (d + 1):2*d, 1:d)
-    return typeof(a)(order(a), H)
+    return frac_ideal(order(a), H, true)
   end
   den = lcm(denominator(a), denominator(b))
   for i = 1:d
@@ -293,7 +295,7 @@ function +(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
   end
-  return typeof(a)(order(a), H)
+  return frac_ideal(order(a), H, true)
 end
 
 ################################################################################
@@ -334,7 +336,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
     H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
     H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
     H = pseudo_hnf(H, :lowerleft)
-    return typeof(a)(order(a), H)
+    return frac_ideal(order(a), H, true)
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
@@ -345,7 +347,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
     H.coeffs[i].den = H.coeffs[i].den*den
     H.coeffs[i] = simplify(H.coeffs[i])
   end
-  return typeof(a)(order(a), H)
+  return frac_ideal(order(a), H, true)
 end
 
 ################################################################################
@@ -368,7 +370,7 @@ divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)
 
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   O = order(a)
-  return NfRelOrdFracIdl{T, S}(O, basis_pmat(a, Val{false}))*inv(b)
+  return frac_ideal(O, basis_pmat(a, Val{false}), true)*inv(b)
 end
 
 //(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
