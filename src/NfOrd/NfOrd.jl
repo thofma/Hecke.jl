@@ -366,6 +366,12 @@ function Base.deepcopy_internal(O::NfAbsOrd{S, T}, dict::ObjectIdDict) where {S,
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
     end
   end
+  if isdefined(z, :basis_ord)
+    # Until now we have parent(basis(x)) !== z
+    for b in z.basis_ord
+      b.parent = z
+    end
+  end
   return z
 end
 
