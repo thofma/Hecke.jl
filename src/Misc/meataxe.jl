@@ -19,6 +19,9 @@ function cleanvect(M::T, v::T) where {T}
     return w  
   end
   for i=1:rows(M)
+    if iszero_row(M,i)
+      continue
+    end
     ind=1
     while M[i,ind]==0
       ind+=1
@@ -101,6 +104,9 @@ function clean_and_quotient(M::T,N::T, pivotindex::Set{Int}) where {T}
   coeff=zero_matrix(parent(M[1,1]),rows(N),rows(M))
   for i=1:rows(N)
     for j=1:rows(M)
+      if iszero_row(M,j)
+        continue
+      end
       ind=1
       while iszero(M[j,ind])
         ind+=1

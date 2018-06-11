@@ -488,22 +488,22 @@ end
 
 function quo(O::AlgAssOrd, p::Int)
 
-  F,a=FiniteField(p,1,"a")
-  M=Array{fq_nmod, 3}(O.dim, O.dim, O.dim)
+  R=ResidueRing(FlintZZ, p, cached=false)
+  M=Array{nmod, 3}(O.dim, O.dim, O.dim)
   x=fmpz[0 for i=1:O.dim]
   for i=1:O.dim
     x[i]=1
     N=representation_matrix(O(x))
     for j=1:O.dim
       for k=1:O.dim
-        M[i,j,k]=F(N[j,k])
+        M[i,j,k]=R(N[j,k])
       end
     end
     x[i]=0
   end
   oneO=elem_in_basis(O(one(O.A)))
-  oneQ=fq_nmod[F(s) for s in oneO]
-  return AlgAss(F,M, oneQ)
+  oneQ=nmod[R(s) for s in oneO]
+  return AlgAss(R, M, oneQ)
   
 end
 
@@ -724,8 +724,8 @@ end
 function pradical_meataxe(O::AlgAssOrd, p::Int)
   
   A1 = quo(O, p)
-  lM = fq_nmod_mat[transpose(representation_matrix(A1[i])) for i=1:O.dim]
-  M = FqGModule(lM)
+  lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:O.dim]
+  M = ModAlgAss(lM)
   ls = minimal_submodules(M)
   l = sum(rows(x) for x in ls)
   M1 = zero_matrix(base_ring(A1), l, O.dim)
@@ -1078,9 +1078,9 @@ end
 function _maximal_ideals(O::AlgAssOrd, p::Int)
   
   A1 = quo(O, p)
-  lM = fq_nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
-  append!(lM, fq_nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
-  M = FqGModule(lM)
+  lM = nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
+  append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
+  M = ModAlgAss(lM)
   ls = maximal_submodules(M)
   ideals=AlgAssOrdIdl[]
   poneO=O(p*one(O.A))
@@ -1090,7 +1090,7 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
     gens=Vector{AlgAssOrdElem}(rows(x)+1)
     for i=1:rows(x)
       for j=1:cols(x)
-        m[i,j]=FlintZZ(coeff(x[i,j],0))
+        m[i,j]=x[i,j].data
       end
       gens[i]= elem_from_mat_row(O,m,i)
     end

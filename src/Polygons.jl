@@ -20,7 +20,6 @@ end
 
 mutable struct Polygon
   lines :: Array{Line,1}
-  slopes :: Array{fmpq ,1}
 
   function Polygon(lines::Array{Line,1}; sorted = false)
     polygon = new()
@@ -40,12 +39,7 @@ mutable struct Polygon
       end
       polygon.lines = lines
     end
-          
-    polygon.slopes = Array{fmpq}(length(lines))
-
-    for i in 1:length(lines)
-      polygon.slopes[i] = lines[i].slope
-    end
+     
     return polygon
   end
 end 
@@ -84,7 +78,7 @@ function lowerconvexhull(points::Array{Tuple{fmpz, fmpz},1})
   if length(points) == 1
     error("Lower convex hull of 1 point is not defined")
   elseif length(points) == 2
-    return Line(points)
+    return Polygon([Line((points[1], points[2]))])
   end
 
   pointsonconvexhull = [ points[length(points)-1], points[length(points)] ]
@@ -136,8 +130,10 @@ end
 
 function newton_polygon(dev::Array{fmpz_poly, 1}, p::fmpz)
   a = Tuple{fmpz, fmpz}[]
-  for i = 1:length(dev)
-    push!(a, (i,valuation(dev[i],p)))
+  for i = 0:length(dev)-1
+    if !iszero(dev[i+1])
+      push!(a, (i,valuation(dev[i+1],p)))
+    end
   end 
   return lowerconvexhull(a)
 end
@@ -155,6 +151,7 @@ function newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
     end
     push!(a, (i,valuation(dev[i+1],p)))
   end 
+  @show a
   return lowerconvexhull(a)
 end
 
@@ -197,26 +194,55 @@ function PartialPolygon(P::Polygon,t::Rational{BigInt})
   return true
 end
 
+function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly)
+  dev=Array{fmpz_poly, 1}()
+  quos=Array{fmpz_poly, 1}()
+  g=f
+  while degree(g)>=degree(phi)
+    g, r = divrem(g, phi)
+    push!(dev, r)
+    push!(quos, g)
+  end
+  push!(dev, g)
+  return dev, quos
+end
+
+function _fl_np(N::Polygon, i::Int)
+  
+  j = 1
+  while N.lines[j].points[2][1]< i
+    j += 1
+  end
+  l = N.lines[j].points[1][2] - (N.lines[j].points[1][1]-i)*slope(N.lines[j])
+  return floor(Int, BigFloat(numerator(l)//denominator(l)))
+
+end
+
 function gens_overorder_polygons(O::NfOrd, p::fmpz)
 
-  K=nf(O)
-  f=K.pol
-  els=nf_elem[]
-  R=ResidueRing(FlintZZ, p, cached=false)
-  Rx, y= PolynomialRing(R, "y", cached=false)
-  f1=Rx(K.pol)
-  fac=factor(f)
-  for g in keys(fac)
-    phi=lift(g)
-    dev=phi_development(f,phi)
-    N=newton_polygon(dev, p)
-    F,a=FiniteField(phi, "a", cached=false)
-    for L in N.lines
-      h=residue_polynomial(F, L, dev, p)
-      fac1=factor(h)
-      #Now, we have to lift the factorization. Resultants?
+  K = nf(O)
+  f = K.pol
+  els = nf_elem[]
+  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rx, y = PolynomialRing(R, "y", cached = false)
+  f1 = Rx(K.pol)
+  fac = factor(f1)
+  l = nf_elem[]
+  v1 = valuation(discriminant(O), p)
+  for (g, m) in fac
+    phi = lift(Zx, g)
+    dev, quos = phi_development_with_quos(Zx(f),phi)
+    N = newton_polygon(dev, p)
+    for i = 1:m
+      v = _fl_np(N, i)
+      for j=1:degree(phi)
+        push!(l, divexact(K(x^(j-1)*quos[i]), p^v))
+      end
     end
   end
+  
+  return _order(K, l)#, false)
   
 end
   

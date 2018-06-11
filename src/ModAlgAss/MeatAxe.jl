@@ -149,6 +149,9 @@ function __split(C::T, G::Vector{T}) where {T <: MatElem}
   esub=Vector{T}(length(G))
   pivotindex=Set{Int}()
   for i = 1:rows(C)
+    if iszero_row(C,i)
+      continue
+    end
     ind = 1
     while iszero(C[i, ind])
       ind += 1
