@@ -1085,7 +1085,7 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
   ideals=AlgAssOrdIdl[]
   poneO=O(p*one(O.A))
   for x in ls
-    @hassert :CSAMaxOrd 1 closure(x, M.G)==rref(x)[2]
+    @hassert :CSAMaxOrd 1 closure(x, M.action)==rref(x)[2]
     m = zero_matrix(FlintZZ, O.dim, O.dim)
     gens=Vector{AlgAssOrdElem}(rows(x)+1)
     for i=1:rows(x)
