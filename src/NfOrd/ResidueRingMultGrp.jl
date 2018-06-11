@@ -22,7 +22,11 @@ doc"""
 """
 function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
-    gens , structure , disc_log = _multgrp(Q)
+    if ismaximal_known(base_ring(Q)) && ismaximal(base_ring(Q))
+      gens, structure, disc_log = _multgrp(Q)
+    else
+      gens, structure, disc_log = _multgrp_non_maximal(Q)
+    end
     Q.multiplicative_group = GrpAbFinGenToNfOrdQuoRingMultMap(Q,gens,structure,disc_log)
   end
   mQ = Q.multiplicative_group
@@ -205,7 +209,7 @@ function _multgrp_mod_pv(p::NfOrdIdl, v; method=nothing)
   else
     gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,v;method=method)
     obcs = prod(Set(struct_pv)) # order of biggest cyclic subgroup
-    g_p_obcs = powermod(gen_p,obcs,p.gen_one^v)
+    g_p_obcs = powermod(gen_p,obcs,minimum(p, Val{false})^v)
     gens = [[g_p_obcs] ; gens_pv]
 
     structt = [[n_p] ; struct_pv]
@@ -1286,3 +1290,110 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
   return G, mG , tame_mult_grp, wild_mult_grp
 end
 
+################################################################################
+#
+#  Functions for the non-maximal case
+#
+################################################################################
+
+# Computes generators and relations for (O_P/AO_P)^\times, where Pm = P^m, Q = O/A.
+function _multgrp_Op_aOp(Q::NfOrdQuoRing, P::NfOrdIdl, m::Int, Pm::NfOrdIdl)
+  A = ideal(Q)
+  O = order(A)
+
+  # Compute generators for (1 + (A + P^m))/(1 + P^m)
+  I = A + Pm
+  I2 = I^2
+  S = Set{NfOrdElem}()
+  j = 0
+  k = floor(Int, log(2, m))
+  while j <= k
+    if j > 0
+      I = I2
+      I2 = I2^2
+    end
+    for b in basis(I)
+      push!(S, mod(b, I2))
+    end
+    j += 1
+  end
+  O1 = order(A)(1)
+  G = [ g + O1 for g in S ]
+
+  # Compute (O/P^m)^\times
+  genp, structp, disclogp = _multgrp_mod_pv(P, m; method = :quadratic)
+
+    M = zero_matrix(FlintZZ, length(structp) + length(G), length(structp))
+  for i = 1:length(structp)
+    M[i, i] = structp[i]
+  end
+  for i = 1:length(G)
+    t = disclogp(G[i])
+    for j = 1:length(structp)
+      M[i + length(structp), j] = t[j]
+    end
+  end
+  gens_snf, rels_snf, disc_log_snf = snf_gens_rels_log(map(Q, genp), M, disclogp)
+  return gens_snf, rels_snf, disc_log_snf
+end
+
+function _multgrp_non_maximal(Q::NfOrdQuoRing)
+  A = ideal(Q)
+  O = order(A)
+
+  # Determine the prime ideals containing A
+  OO = maximal_order(nf(O))
+  aOO = extend(A, OO)
+  fac = factor(aOO)
+  S = Set{NfOrdIdl}()
+  for (p, e) in fac
+    q = contract(p, O)
+    q.is_prime = p.is_prime
+    push!(S, q)
+  end
+  prime_ideals = [ p for p in S ]
+
+  # Compute (upper bounds for) exponents m such that A*O_P \supseteq P^m*O_P
+  m = Vector{Int}(length(prime_ideals))
+  for i = 1:length(m)
+    P = prime_ideals[i]
+    p = minimum(P)
+    x = valuation(det(basis_mat(A, Val{false})), p)
+    y = valuation(det(basis_mat(P, Val{false})), p)
+    m[i] = Int(ceil(x/y))
+  end
+
+  # Compute the groups (O_P/AO_P)^\times
+  Pm = [ prime_ideals[i]^m[i] for i in 1:length(prime_ideals)]
+  generators = Vector{Vector{NfOrdQuoRingElem}}(length(prime_ideals))
+  rels = Vector{fmpz}()
+  disc_logs = Vector{Function}(length(prime_ideals))
+  for i = 1:length(prime_ideals)
+    generators[i], relsp, disc_logs[i] = _multgrp_Op_aOp(Q, prime_ideals[i], m[i], Pm[i])
+    append!(rels, relsp)
+  end
+
+  # Put them together
+  h = Vector{NfOrdQuoRingElem}()
+  O1 = order(A)(1)
+  t = [ O1 for i = 1:length(Pm) ]
+  for i = 1:length(Pm)
+    for j = 1:length(generators[i])
+      t[i] = generators[i][j].elem
+      push!(h, Q(crt(t, Pm)))
+      t[i] = O1
+    end
+  end
+
+  function disc_log(a::NfOrdQuoRingElem)
+    result = Vector{fmpz}()
+    for f in disc_logs
+      append!(result, f(a.elem))
+    end
+    return result
+  end
+
+  rel_mat = matrix(FlintZZ, diagm(rels))
+  gens2, rels2, disc_log2 = snf_gens_rels_log(h, rel_mat, disc_log)
+  return gens2, rels2, disc_log2
+end

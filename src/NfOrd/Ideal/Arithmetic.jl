@@ -694,4 +694,47 @@ function divexact(A::NfOrdIdl, B::NfOrdIdl)
   end
 end
 
+################################################################################
+#
+#  Extend/contract
+#
+################################################################################
 
+function extend(A::NfOrdIdl, O::NfOrd)
+  # Assumes order(A) \subseteq O
+  d = degree(O)
+  M = zero_matrix(FlintZZ, d^2, d)
+  X = basis(O, Val{false})
+  Y = map(O, basis(A, Val{false}))
+  t = O()
+  for i = 1:d
+    for j = 1:d
+      mul!(t, X[i], Y[j])
+      for k = 1:d
+        M[(i - 1)*d + j, k] = elem_in_basis(t, Val{false})[k]
+      end
+    end
+  end
+  M = sub(_hnf_modular_eldiv(M, minimum(A), :lowerleft), d*(d - 1) + 1:d^2, 1:d)
+  return ideal(O, M, false, true)
+end
+
+*(A::NfOrdIdl, O::NfOrd) = extend(A, O)
+*(O::NfOrd, A::NfOrdIdl) = extend(A, O)
+
+function contract(A::NfOrdIdl, O::NfOrd)
+  # Assumes O \subseteq order(A)
+  d = degree(O)
+  M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
+  @assert M.den == 1
+  H = vcat(basis_mat(A), M.num)
+  K = _kernel(H)
+  M = sub(K, 1:d, 1:d)*basis_mat(A, Val{false})
+  M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
+  @assert M.den == 1
+  M = _hnf_modular_eldiv(M.num, minimum(A), :lowerleft)
+  return ideal(O, M, false, true)
+end
+
+intersection(O::NfOrd, A::NfOrdIdl) = contract(A, O)
+intersection(A::NfOrdIdl, O::NfOrd) = contract(A, O)
