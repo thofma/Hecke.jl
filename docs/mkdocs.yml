@@ -21,6 +21,8 @@ pages:
     - Ideals:           orders/ideals.md
   - Abelian groups:
     - Introduction:     abelian/introduction.md
+  - Class fields:
+    - Introduction:     class_fields/intro.md
 extra_css:
     - assets/Documenter.css
 # This are tricks to get syntax highlighting working
