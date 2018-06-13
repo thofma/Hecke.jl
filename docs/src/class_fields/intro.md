@@ -81,13 +81,13 @@ number_field(C::ClassField)
 
 ```@repl
 using Hecke; # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
-k, a = NumberField(x^2 - 10, "a");
-c, mc = class_group(k);
-A = ray_class_field(mc)
-K = number_field(A)
-ZK = maximal_order(K)
-isone(discriminant(ZK))
+#Qx, x = PolynomialRing(FlintQQ, "x");
+#k, a = NumberField(x^2 - 10, "a");
+#c, mc = class_group(k);
+#A = ray_class_field(mc)
+#K = number_field(A)
+#ZK = maximal_order(K)
+#isone(discriminant(ZK))
 ```
 
 Missing:
