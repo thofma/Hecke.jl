@@ -208,9 +208,11 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFin
 end
 
 doc"""
-    number_field(CF::ClassField) -> Array{GenPol{nf_elem}, 1}
-> Given a (formal) abelian extension, compute defining polynomials
+    number_field(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
+> Given a (formal) abelian extension, compute the class field by
+> finding defining polynomials
 > for all prime power cyclic subfields.
+> Note, by type this is always a non-simple extension.
 """
 function number_field(CF::ClassField)
   if isdefined(CF, :A)
@@ -1599,7 +1601,7 @@ function ==(a::ClassField, b::ClassField)
 end
 
 doc"""
-    hilbert_class_field(k::AnticNumberField) 0> ClassField
+    hilbert_class_field(k::AnticNumberField) -> ClassField
 > The Hilbert class field of $k$ as a formal (ray-) class field.
 """
 function hilbert_class_field(k::AnticNumberField)
