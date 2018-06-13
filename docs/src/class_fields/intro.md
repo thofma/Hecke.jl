@@ -65,7 +65,6 @@ c, mc = class_group(K);
 A = ray_class_field(mc)
 ```
 
-
 ## Conversions
 
 Given a ray class field, it is possible to actually compute defining equation(s) for this field.
