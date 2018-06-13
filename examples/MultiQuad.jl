@@ -308,10 +308,13 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
         if discriminant(ZK) % q == 0
           continue
         end
-        if gcd(div(q-1, Int(pp)), pp) > 1
+        #if gcd(div(q-1, Int(pp)), pp) > 1 # not possible if cond(k) is involved
+        #  continue
+        #end
+        lq = prime_decomposition(ZK, q, 1)
+        if length(lq) == 0
           continue
         end
-        lq = prime_decomposition(ZK, q, 1)
         for Q in lq
           try
             z = mod_p(R, Q[1], Int(pp))
@@ -345,9 +348,6 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
               rethrow(e)
             end
           end
-        end
-        if length(lq) == 0
-          continue
         end
         if cAA == cols(AA) 
           #println("good $i")
@@ -413,8 +413,9 @@ function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   return res
 end
 
-function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
+function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   e = matrix(FlintZZ, saturate_exp(c, n%8 == 0 ? 2*n : n, stable))
+  @show e  
 
   se = SMat(e)'
 
@@ -425,19 +426,24 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
   #println("Enlarging by $(cols(e)) elements")
   n_gen = []
   for i=1:cols(e)
-    a = fe(c.R_gen[1])^e[1, i]
-    fac_a = e[1, i] * c.M.bas_gens[1]
+    r = e[:, i]
+    g = content(r)
+    g = gcd(g, n)
+    divexact!(r, r, g)
+#    g == 1 || println("non triv. content $g in ", e[:, i])  
+    a = fe(c.R_gen[1])^r[1, 1]
+    fac_a = r[1, 1] * c.M.bas_gens[1]
     for j = 2:length(c.R_gen)
-      a *= fe(c.R_gen[j])^e[j, i]
-      fac_a += e[j, i] * c.M.bas_gens[j]
+      a *= fe(c.R_gen[j])^r[j, 1]
+      fac_a += r[j, 1] * c.M.bas_gens[j]
     end
     for j=1:length(c.R_rel)
-      a *= fe(c.R_rel[j])^e[j + length(c.R_gen), i]
-      fac_a += e[j + length(c.R_gen), i] * c.M.rel_gens[j]
+      a *= fe(c.R_rel[j])^r[j + length(c.R_gen), 1]
+      fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
     end
     if rows(e) > length(c.R_gen) + length(c.R_rel)
       @assert length(c.R_gen) + length(c.R_rel) + 1 == rows(e)
-      a *= fe(zeta)^e[rows(e), i]
+      a *= fe(zeta)^r[rows(e), 1]
     end
     
     decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
@@ -445,15 +451,23 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
     fl, x = ispower(a, n, decom = decom)
 #    @time fl, _ = ispower(evaluate(a), n)
     #println("done")   
-    global last = (a, n, decom)  
+    if n == g
+      fl = true
+      x = a
+    else
+      @time fl, x = ispower(a, div(n, Int(g)), decom = decom)
+      if !fl
+        @time fl, x = ispower(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
+      end
+    end
     if fl
       push!(n_gen, FacElem(x))
-      r = se.rows[i]
+      r = divexact(se.rows[i], g)
       push!(r.pos, rows(e) + length(n_gen))
-      push!(r.values, n)
-        #@show r
+      push!(r.values, -div(n, Int(g)))
       push!(A, r)
     else
+      global bad = (a, div(n, Int(g)))
       error("not a power")
     end
   end
@@ -477,7 +491,9 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 1.5)
   now: since Hecke is row based, we have to transpose..
   =#
   A = A'
+#    @show fmpz_mat(A)
   H, T = hnf_with_trafo(fmpz_mat(A))
+    @show H
   @assert isone(sub(H, 1:cols(A), 1:cols(A))) #otherwise, relations sucked.
   Ti = inv(T')
   Ti = sub(Ti, length(n_gen)+1:rows(Ti), 1:cols(Ti))
@@ -546,6 +562,26 @@ function simplify(c::Hecke.ClassGrpCtx)
   end
   return d
 end
+
+function units(c::Hecke.ClassGrpCtx)
+  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+
+  Hecke.module_trafo_assure(c.M)
+  trafos = c.M.trafo
+
+  for i=1:rows(c.M.rel_gens)
+    if iszero(c.M.rel_gens.rows[i])
+      Hecke._add_unit(U, c.R_rel[i])
+    end
+  end
+
+  U.units = Hecke.reduce(U.units, U.tors_prec)
+  U.tentative_regulator = Hecke.regulator(U.units, 64)
+
+  return U
+end
+
 
 #TODO:
 #  use the essential part only for the saturation (pointless for MultiQuad:
