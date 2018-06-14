@@ -744,6 +744,14 @@ function _reduce(a::fq_nmod)
   end
 end
 
+function (R::Nemo.FqFiniteField)(x::Nemo.fmpz_mod_poly)
+  z = R()
+  ccall((:fq_set, :libflint), Void, (Ref{Nemo.fq}, Ref{Nemo.fmpz_mod_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
+  ccall((:fq_reduce, :libflint), Void, (Ref{Nemo.fq}, Ref{Nemo.FqFiniteField}), z, R)
+  return z
+end
+
+
 #TODO: move elsewhere - and use. There are more calls to nmod_set/reduce
 function (A::FqNmodFiniteField)(x::nmod_poly)
   u = A()
