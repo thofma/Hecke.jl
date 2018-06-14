@@ -217,7 +217,7 @@ function number_field(CF::ClassField)
     return CF.A
   end
   
-  res = []
+  res = ClassField_pp[]
   G = codomain(CF.quotientmap)
   @assert issnf(G)
   q = [G[i] for i=1:ngens(G)]
@@ -362,7 +362,6 @@ function _rcf_find_kummer(CF::ClassField_pp)
   
   lf = factor(minimum(f)*e)
   lP = Hecke.NfOrdIdl[]
-  #Why am I considering e? It does not appear in the theory.
   #Furthermore, some of the factors of the modulus can be ignored, since 
   #I am only considering the prime power part.
   for p = keys(lf.fac)
@@ -409,8 +408,6 @@ function _rcf_find_kummer(CF::ClassField_pp)
   #                            = z^(sum a[i] n[i]) x
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
-  # Carlo: The ray class group should already have the rigth exponent. 
-  #        Why do I need to repeat the kernel mod n?
   R = ResidueRing(FlintZZ, C.n, cached=false)
   M = MatrixSpace(R, ngens(k), ngens(G), false)(mk.map)
   #=
@@ -529,7 +526,8 @@ function _aut_A_over_k(A::NfRel, C::CyclotomicExt, CF::ClassField_pp)
                               # have to pass to a subgroup
     @assert order(g) % degree(C.Kr) == 0
     f = C.Kr.pol
-    s, ms = sub(g, [x for x = g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))], false)
+    # Can do better. If the group is cyclic (e.g. if p!=2), we already know the subgroup!
+    s, ms = sub(g, [x for x in g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))], false)
     ss, mss = snf(s)
     g = ss
     #mg = mg*ms*mss
