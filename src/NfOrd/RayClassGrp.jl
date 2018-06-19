@@ -13,6 +13,7 @@ add_assert_scope(:RayFacElem)
 
 mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
   header::Hecke.MapHeader
+  definining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   modulus_fin::NfOrdIdl #The finite part of the modulus
   modulus_inf::Array{InfPlc,1} #The infinite part of the modulus
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the modulus
@@ -900,13 +901,14 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
     end
   end 
 
-  mp=MapRayClassGrp{typeof(X)}()
+  mp = MapRayClassGrp{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), expo, disclog)
-  mp.modulus_fin=m
-  mp.modulus_inf=p
-  mp.fact_mod=Q.factor
-  mp.tame_mult_grp=mG.tame
-  mp.wild_mult_grp=mG.wild
+  mp.modulus_fin = m
+  mp.modulus_inf = p
+  mp.fact_mod = Q.factor
+  mp.tame_mult_grp = mG.tame
+  mp.wild_mult_grp = mG.wild
+  mp.defining_modulus = (m, inf_plc)
   return X, mp
   
 end
@@ -1109,6 +1111,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   mp.fact_mod=lp
   mp.tame_mult_grp=mG.tame
   mp.wild_mult_grp=mG.wild
+  mp.defining_modulus = (m, inf_plc)
 
   return X,mp
 end 
@@ -1165,7 +1168,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
       x=mC\I
       y=G([0 for j=1:ngens(G)])
       for i=ind:ngens(C)
-          y.coeff[1,i-ind+1]=x.coeff[1,i]
+        y.coeff[1,i-ind+1]=x.coeff[1,i]
       end 
       return y
     end
@@ -1478,16 +1481,17 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     end
   end 
 
-  mp=Hecke.MapRayClassGrp{typeof(X)}()
+  mp = Hecke.MapRayClassGrp{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
-  mp.modulus_fin=I
-  mp.evals=evals
-  mp.quots=quots
-  mp.idemps=idemps
-  mp.coprime_elems=Kel
-  mp.fact_mod=lp
-  mp.tame_mult_grp=tame
-  mp.wild_mult_grp=wild
+  mp.modulus_fin = I
+  mp.evals = evals
+  mp.quots = quots
+  mp.idemps = idemps
+  mp.coprime_elems = Kel
+  mp.fact_mod = lp
+  mp.tame_mult_grp = tame
+  mp.wild_mult_grp = wild
+  mp.defining_modulus = (m, inf_plc)
 
   if mod(n,2)==0
     mp.modulus_inf=pr
@@ -1524,7 +1528,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
     mp.modulus_fin=ideal(O,modulus)
     mp.modulus_inf=real_places(nf(O))
-
+    mp.defining_modulus = (ideal(O, modulus), real_places(nf(O)))
     return U,mp
     
     
@@ -1541,10 +1545,11 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
       return FacElem(Dict{NfOrdIdl, fmpz}(ideal(O,lift(x)) => 1))
     end
     
-    mp=Hecke.MapRayClassGrp{typeof(U)}()
+    mp = Hecke.MapRayClassGrp{typeof(U)}()
     mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
-    mp.modulus_fin=ideal(O,modulus)
-    mp.modulus_inf=[]
+    mp.modulus_fin = ideal(O,modulus)
+    mp.modulus_inf = InfPlc[]
+    mp.defining_modulus = (ideal(O, modulus), InfPlc[])
 
     return U,mp
   
@@ -1566,9 +1571,8 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     mp.header = Hecke.MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
     mp.modulus_fin=ideal(O,modulus)
     mp.modulus_inf=[]
-    
+    mp.defining_modulus = (ideal(O, modulus), InfPlc[])
     return Q,mp
-    
 
   end
 
