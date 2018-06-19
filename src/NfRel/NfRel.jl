@@ -304,9 +304,6 @@ Base.:(//)(a::NfRelElem{T}, b::NfRelElem{T}) where {T} = divexact(a, b)
 #
 ################################################################################
 
-# gcdx of Generic.Poly{nf_elem} needs this:
-Nemo.canonical_unit(a::nf_elem) = a
-
 function Base.inv(a::NfRelElem)
   a == 0 && error("Element not invertible")
   g, s, _ = gcdx(data(a), parent(a).pol)
@@ -795,4 +792,51 @@ function isisomorphic(K::NfRel, L::NfRel)
     return false, NfRelToNfRelMor(K, L, L())
   end
   return issubfield(K, L)
+end
+
+doc"""
+    discriminant(K::AnticNumberField) -> fmpq
+    discriminant(K::NfRel) -> 
+> The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
+> of the maximal order.
+"""
+function Nemo.discriminant(K::AnticNumberField)
+  return discriminant(K.pol)
+end
+
+function Nemo.discriminant(K::NfRel)
+  d = discriminant(K.pol)
+  return d
+end
+
+doc"""
+    discriminant(K::AnticNumberField, FlintQQ) -> fmpq
+    discriminant(K::NfRel, FlintQQ) -> 
+> The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
+> of the maximal order. Ie the norm of the discriminant time the power of the discriminant
+> of the base field.
+"""
+function Nemo.discriminant(K::AnticNumberField, ::FlintRationalField)
+  return discriminant(K)
+end
+
+function Nemo.discriminant(K::NfRel, ::FlintRationalField)
+  d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
+  return d
+end
+
+function Nemo.discriminant(K::NfRel_ns)
+  p = K.pol
+  d = discriminant(p[1])
+  n = degree(p[1])
+  for i=2:length(p)
+    p = p^degree(p[i]) * discriminant(is_univariate(p[i])[1])^n
+    n *= degree(p[i])
+  end
+  return d
+end
+
+function Nemo.discriminant(K::NfRel_ns, ::FlintRationalField)
+  d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
+  return d
 end
