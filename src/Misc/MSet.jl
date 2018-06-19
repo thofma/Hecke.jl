@@ -67,8 +67,8 @@ function Base.next(s::MSet, state)
   end
 end
 
-union(s::MSet) = copy(s)
-function union(s::MSet, sets::Set...)
+Base.union(s::MSet) = copy(s)
+function Base.union(s::MSet, sets::Set...)
     u = MSet{join_eltype(s, sets...)}()
     union!(u,s)
     for t in sets
@@ -76,9 +76,8 @@ function union(s::MSet, sets::Set...)
     end
     return u
 end
-const ∪ = union
-union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
-union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
+Base.union!(s::MSet, xs) = (for x=xs; push!(s,x); end; s)
+Base.union!(s::MSet, xs::AbstractArray) = (for x=xs; push!(s,x); end; s)
 
 function multiplicities(s::MSet)
   return values(s.dict)
