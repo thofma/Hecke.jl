@@ -1302,6 +1302,10 @@ function defining_modulus(CF::ClassField)
   return _modulus(CF.rayclassgroupmap)
 end 
 
+function defining_modulus_inf(CF::ClassField)
+  return _modulus_inf(CF.rayclassgroupmap)
+end 
+
 function defining_modulus(CF::ClassField_pp)
   return _modulus(CF.rayclassgroupmap)
 end 
@@ -1314,6 +1318,13 @@ function _modulus(mq::MapClassGrp)
   return ideal(order(codomain(mq)), 1)
 end
 
+function _modulus_inf(mq::MapRayClassGrp)
+  return mq.modulus_inf
+end
+
+function _modulus(mq::MapClassGrp)
+  return InfPlc[]
+end
 
 ###############################################################################
 #
@@ -1542,7 +1553,8 @@ function compositum(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   c = lcm(defining_modulus(a), defining_modulus(b))
   d = lcm(degree(a), degree(b))
-  r, mr = ray_class_group(c, n_quo = Int(d))
+  c_inf = union(defining_modulus_inf(a), defining_modulus_inf(b))
+  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
   C = ray_class_field(mr)
   @assert domain(C.rayclassgroupmap) == r
   h = norm_group_map(C, [a,b])
@@ -1560,9 +1572,10 @@ doc"""
 function Base.intersect(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   c = lcm(defining_modulus(a), defining_modulus(b))
+  c_inf = union(defining_modulus_inf(a), defining_modulus_inf(b))
   d = lcm(degree(a), degree(b))
 
-  r, mr = ray_class_group(c, n_quo = Int(d))
+  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
   C = ray_class_field(mr)
   h = norm_group_map(C, [a,b])
   U = kernel(h[1])[1] + kernel(h[2])[1]
@@ -1577,9 +1590,10 @@ doc"""
 function issubfield(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   c = lcm(defining_modulus(a), defining_modulus(b))
+  c_inf = union(defining_modulus_inf(a), defining_modulus_inf(b))
   d = lcm(degree(a), degree(b))
 
-  r, mr = ray_class_group(c, n_quo = Int(d))
+  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
   C = ray_class_field(mr)
   h = norm_group_map(C, [a,b])
   return issubset(kernel(h[2])[1], kernel(h[1])[1])
@@ -1592,10 +1606,12 @@ doc"""
 function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
   c = lcm(defining_modulus(a), defining_modulus(b))
+  c_inf = union(defining_modulus_inf(a), defining_modulus_inf(b))
   d = lcm(degree(a), degree(b))
 
-  r, mr = ray_class_group(c, n_quo = Int(d))
+  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
   C = ray_class_field(mr)
+  @assert defining_modulus(C) == c
   h = norm_group_map(C, [a,b])
   return iseq(kernel(h[2])[1], kernel(h[1])[1])
 end
@@ -1632,7 +1648,7 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   R = domain(mR)
 
   v = valuation(m0, p)
-  r, mr = ray_class_group(divexact(m0, p^v), n_quo = Int(exponent(R)))
+  r, mr = ray_class_group(divexact(m0, p^v), defining_modulus_inf(C), n_quo = Int(exponent(R)))
 
   lp, sR = find_gens(MapFromFunc(x->preimage(mR, x), IdealSet(base_ring(C)), domain(mR)),
                              PrimesSet(100, -1), minimum(m0))
