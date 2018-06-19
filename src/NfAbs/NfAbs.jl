@@ -1,3 +1,4 @@
+export splitting_field
 ################################################################################
 #
 #  Predicates
@@ -5,7 +6,6 @@
 ################################################################################
 
 issimple(::Type{AnticNumberField}) = true
-
 issimple(::AnticNumberField) = true
 
 ################################################################################
@@ -558,4 +558,48 @@ function read(file::String, K::AnticNumberField, ::Type{Hecke.nf_elem})
   close(f)
   return A
 end
+
+#TODO: get a more intelligent implementation!!!
+doc"""
+    splitting_field(f::fmpz_poly) -> AnticNumberField
+    splitting_field(f::fmpq_poly) -> AnticNumberField
+> Computes the splitting field of $f$ as an absolute field.
+"""
+function splitting_field(f::fmpz_poly)
+  return splitting_field(fmpq_poly(f))
+end
+
+function splitting_field(f::fmpq_poly)
+  lf = factor(f).fac
+  if all(x->degree(x) == 1, keys(lf))
+    return FlintQQ
+  end
+  g = prod([k for k = keys(lf) if degree(k) > 1])
+  k, a = number_field(first([k for k = keys(lf) if degree(k) > 1]))# , check = false)
+  kt, t = PolynomialRing(k)
+  return splitting_field(kt([coeff(g, i) for i=0:degree(g)]))
+end
+
+doc"""
+    splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
+> Computes the splitting field of $f$ as an absolute field.
+"""
+function splitting_field(f::PolyElem{nf_elem})
+  lf = factor(f).fac
+  lg = [k for k = keys(lf) if degree(k) > 1]
+  if length(lg) == 0
+    return base_ring(f)
+  end
+
+  K, a = number_field(lg[1])#, check = false)
+  Ks, _, mk = absolute_field(K)
+  Ksx, x = PolynomialRing(Ks)
+  if length(lg) == 0
+    return Ks
+  end
+  f = prod(lg)
+  h = Ksx([mk(coeff(f, i)) for i=0:degree(f)])
+  return splitting_field(h)
+end
+
 
