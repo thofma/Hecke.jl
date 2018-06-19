@@ -303,7 +303,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   #          probably be either "the rcg"
   #          or a compositum, where the last component is "the rcg"
   # we need this to get the defining modulus - for coprime testing
-  m = defining_modulus(CF)
+  m = defining_modulus(CF)[1]
   ZK = maximal_order(base_ring(K.gen[1]))
   cp = lcm(minimum(m), discriminant(ZK))
   cf = Hecke.MapFromFunc(x->can_frobenius(x, K), IdealSet(ZK), K.AutG)
@@ -342,7 +342,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
     return CF.K
   end
   #f = _modulus(mq)
-  f = defining_modulus(CF)
+  f = defining_modulus(CF)[1]
   @vprint :ClassField 2 "Kummer extension ... with conductor(?) $f\n"
   k1 = nf(order(f))
   e = degree(CF)  
@@ -622,7 +622,7 @@ function _rcf_descent(CF::ClassField_pp)
     # idea: take primes p in k and compare
     #  Frob(p, A/k) and preimage(mq, p)
     @assert n == degree(CF.K)
-    Zk = order(defining_modulus(CF))
+    Zk = order(defining_modulus(CF)[1])
     function canFrob(p::NfOrdIdl)
       lP = Hecke.prime_decomposition_nonindex(C.mp[2], p)
       P = lP[1][1]
@@ -656,7 +656,7 @@ function _rcf_descent(CF::ClassField_pp)
     @vprint :ClassField 2 "finding Artin map...\n"
 #TODO can only use non-indx primes, easy primes...
     @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
-                      PrimesSet(200, -1), minimum(defining_modulus(CF)))
+                      PrimesSet(200, -1), minimum(defining_modulus(CF)[1]))
     h = hom(f, [image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp])
     @hassert :ClassField 1 issurjective(h)
     h = _compose(mp, h)
@@ -1313,11 +1313,11 @@ function defining_modulus(CF::ClassField_pp)
 end 
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.modulus_fin
+  return mq.defining_modulus
 end
 
 function _modulus(mq::MapClassGrp)
-  return ideal(order(codomain(mq)), 1)
+  return (ideal(order(codomain(mq)), 1), InfPlc[])
 end
 
 
@@ -1364,7 +1364,7 @@ doc"""
 > The maximal order of the field that $A$ is defined over.
 """
 function base_ring(A::ClassField)
-  return order(defining_modulus(A))
+  return order(defining_modulus(A)[1])
 end
 
 doc"""
@@ -1376,7 +1376,7 @@ function base_field(A::ClassField)
 end
 
 function base_ring(A::ClassField_pp)
-  return order(defining_modulus(A))
+  return order(defining_modulus(A)[1])
 end
 
 function base_field(A::ClassField_pp)
@@ -1495,7 +1495,7 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
   if length(minf) > 0
     error("not implemented yet")
   end
-  m0 = defining_modulus(r) #need the maps...
+  m0 = defining_modulus(r)[1] #need the maps...
   @assert isprime(p)
   v1 = valuation(a, p)
   v2 = valuation(m0, p)
@@ -1525,8 +1525,8 @@ end
 function norm_group_map(R::ClassField, r::Array{ClassField, 1})
   @assert all(x -> base_ring(R) == base_ring(x), r)
 
-  mR = defining_modulus(R)
-  @assert all(x->mR+defining_modulus(x) == defining_modulus(x), r)
+  mR = defining_modulus(R)[1]
+  @assert all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
   fR = _compose(R.rayclassgroupmap, inv(R.quotientmap))
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
@@ -1546,7 +1546,7 @@ doc"""
 """
 function compositum(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a), defining_modulus(b))
+  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   d = lcm(degree(a), degree(b))
   r, mr = ray_class_group(c, n_quo = Int(d))
   C = ray_class_field(mr)
@@ -1565,7 +1565,7 @@ doc"""
 """
 function Base.intersect(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a), defining_modulus(b))
+  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   d = lcm(degree(a), degree(b))
 
   r, mr = ray_class_group(c, n_quo = Int(d))
@@ -1582,7 +1582,7 @@ doc"""
 """
 function issubfield(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a), defining_modulus(b))
+  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   d = lcm(degree(a), degree(b))
 
   r, mr = ray_class_group(c, n_quo = Int(d))
@@ -1597,7 +1597,7 @@ doc"""
 """
 function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a), defining_modulus(b))
+  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   d = lcm(degree(a), degree(b))
 
   r, mr = ray_class_group(c, n_quo = Int(d))
@@ -1632,7 +1632,7 @@ doc"""
 """
 function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   @assert isprime(p)
-  m0 = defining_modulus(C)
+  m0 = defining_modulus(C)[1]
 
   mR = C.rayclassgroupmap
   R = domain(mR)
