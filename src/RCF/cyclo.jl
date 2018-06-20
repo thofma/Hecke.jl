@@ -15,6 +15,12 @@ function Base.show(io::IO, c::CyclotomicExt)
   print(io, "Cyclotomic extension by zeta_$(c.n) of degree $(degree(c.Ka))")
 end
 
+doc"""
+    cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
+> Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
+> both as an absolute extension, as a relative extension (of $k$) and the maps
+> between them.
+"""
 function cyclotomic_extension(k::AnticNumberField, n::Int)
   Ac = CyclotomicExt[]
   try 
