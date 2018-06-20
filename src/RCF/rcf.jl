@@ -1308,10 +1308,6 @@ function defining_modulus(CF::ClassField)
   return _modulus(CF.rayclassgroupmap)
 end 
 
-function defining_modulus_inf(CF::ClassField)
-  return _modulus_inf(CF.rayclassgroupmap)
-end 
-
 function defining_modulus(CF::ClassField_pp)
   return _modulus(CF.rayclassgroupmap)
 end 
@@ -1322,14 +1318,6 @@ end
 
 function _modulus(mq::MapClassGrp)
   return (ideal(order(codomain(mq)), 1), InfPlc[])
-end
-
-function _modulus_inf(mq::MapRayClassGrp)
-  return mq.modulus_inf
-end
-
-function _modulus(mq::MapClassGrp)
-  return InfPlc[]
 end
 
 ###############################################################################
