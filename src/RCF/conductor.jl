@@ -245,6 +245,7 @@ function conductor(C::Hecke.ClassField)
   for (p,vp) in L
     cond*=p^vp
   end
+  
   #Infinite part of the modulus
   cond_inf=InfPlc[]
   if !isempty(inf_plc)
@@ -262,8 +263,8 @@ function conductor(C::Hecke.ClassField)
       el=1+delta
       con=abs_upper_bound(1/real(conjugates_arb(delta))[j], fmpz)
       el+=con*delta
-      Q,mQ=quo(G,[mp\ideal(O,el)],false)
-      if order(Q)!=e
+      Q,mQ=quo(G, [mp\ideal(O,el)], false)
+      if order(Q)!=E
         push!(cond_inf, pl)
       end
     end
