@@ -256,13 +256,13 @@ function conductor(C::Hecke.ClassField)
         if !ispositive(ex(S[j]),pl)
           break
         end
-        i+=1
+        j+=1
       end
       delta=minimum(cond)*ex(S[j])
       el=1+delta
       con=abs_upper_bound(1/real(conjugates_arb(delta))[j], fmpz)
       el+=con*delta
-      Q,mQ=quo(G,mp\ideal(O,el),false)
+      Q,mQ=quo(G,[mp\ideal(O,el)],false)
       if order(Q)!=e
         push!(cond_inf, pl)
       end
@@ -1151,7 +1151,7 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   # I think for now, I cheat
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
 
-  M0 = defining_modulus(A)
+  M0 = defining_modulus(A)[1]
   f_M0 = factor(M0)
   # want m0 meet zk:
   f_m0 = typeof(f_M0)()
