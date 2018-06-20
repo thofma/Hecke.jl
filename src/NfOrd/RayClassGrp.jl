@@ -13,7 +13,7 @@ add_assert_scope(:RayFacElem)
 
 mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeMap, MapRayClassGrp}
   header::Hecke.MapHeader
-  definining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
+  defining_modulus::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   modulus_fin::NfOrdIdl #The finite part of the modulus
   modulus_inf::Array{InfPlc,1} #The infinite part of the modulus
   fact_mod::Dict{NfOrdIdl, Int} #The factorization of the finite part of the modulus
