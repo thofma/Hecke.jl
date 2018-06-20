@@ -1186,7 +1186,6 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   max_stable = degree(A) * degree(K) * 2
   stable = max_stable
   while true
-    @show Q
     p = next_prime(p)
     if minimum(m0) % p == 0
       continue
