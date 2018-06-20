@@ -1,4 +1,4 @@
-export conductor, isconductor
+export conductor, isconductor, norm_group, maximal_abelian_subfield
 
 ########################################################################################
 #
@@ -1020,7 +1020,6 @@ doc"""
    
 ***
 """
-
 function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool = true)
   return norm_group([f], mR, isabelian)
 end
@@ -1123,7 +1122,13 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   return sub(R, subgrp, true)
 end
 
-function maximal_abelian_subfield(K::NfRel{nf_elem})
+doc"""
+    maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false) -> ClassField
+> Using a probabilistic algorithm for the norm group computation, determine tha maximal
+> abelian subfield in $K$ over its base field. If {{{of_closure}}} is set to true, then
+> the algorithm is applied to the normal closure if $K$ (without computing it).
+"""
+function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
   zk = maximal_order(base_ring(K))
   d = ideal(zk, discriminant(K))
   try
@@ -1137,10 +1142,15 @@ function maximal_abelian_subfield(K::NfRel{nf_elem})
 
   r1, r2 = signature(base_ring(K))
   C, mC = ray_class_group(d.num, infinite_places(base_ring(K))[1:r1], n_quo = degree(K))
-  N, iN = norm_group(K, mC)
+  N, iN = norm_group(K, mC, of_closure = of_closure)
   return ray_class_field(mC, quo(C, N)[2])
 end
 
+doc"""
+    maximal_abelian_subfield(A::ClassField, k::AnticNumberField) -> ClassField
+> The maximal abelian extension of $k$ contained in $A$. $k$ must be a subfield of
+> the base field of $A$.
+"""
 function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   K = base_field(A)
   fl, mp = issubfield(k, K)
@@ -1205,6 +1215,10 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   return ray_class_field(mr, GrpAbFinGenMap(mQ))
 end
 
+doc"""
+    is_univariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
+> Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
+"""
 function is_univariate(f::Generic.MPoly{nf_elem})
   kx, x = PolynomialRing(base_ring(f))
   if ngens(parent(f)) == 1
@@ -1228,7 +1242,8 @@ function is_univariate(f::Generic.MPoly{nf_elem})
   end
   return true, sum(f.coeffs[j]*x^f.exps[i, j] for j=1:f.length)
 end
-
+#TODO: should be done in Nemo/AbstractAlgebra s.w.
+#      needed by ^ (the generic power in Base using square and multiply)
 Base.copy(f::Generic.MPoly) = deepcopy(f)
 Base.copy(f::Generic.Poly) = deepcopy(f)
 
