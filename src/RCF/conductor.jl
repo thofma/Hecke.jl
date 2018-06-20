@@ -1188,14 +1188,14 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   Q, mQ = quo(r, elem_type(r)[])
 
   p = 100
-  max_stable = degree(A) * degree(K) * 2
+  max_stable = ngens(domain(A.rayclassgroupmap)) * degree(K) * 2
   stable = max_stable
   while true
     p = next_prime(p)
     if minimum(m0) % p == 0
       continue
     end
-    lp = prime_decomposition(zk, p)
+    lp = prime_decomposition(zk, p, 1)
     for (P, e) = lp
       @assert e == 1
       c = mr\P

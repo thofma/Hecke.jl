@@ -1642,6 +1642,10 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   R = domain(mR)
 
   v = valuation(m0, p)
+  if v == 0
+    f = order(C.quotientmap(mR\p))
+    return (1, f, divexact(degree(C), f))
+  end
   r, mr = ray_class_group(divexact(m0, p^v), defining_modulus(C)[2], n_quo = Int(exponent(R)))
 
   lp, sR = find_gens(MapFromFunc(x->preimage(mR, x), IdealSet(base_ring(C)), domain(mR)),
@@ -1650,7 +1654,7 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   k, mk = kernel(GrpAbFinGenMap(C.quotientmap))
   q, mq = quo(r, [h(mk(k[i])) for i=1:ngens(k)])
   f = order(mq(preimage(mr, p)))
-  e = div(degree(C), Int(order(q)))
-  return (e, f, order(q)//f)
+  e = divexact(degree(C), order(q))
+  return (e, f, divexact(order(q), f))
 end
 
