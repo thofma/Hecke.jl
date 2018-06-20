@@ -821,3 +821,18 @@ function Base.copy(a::NfRelElem)
   return parent(a)(a.data)
 end
 
+function Nemo.discriminant(K::NfRel_ns)
+  p = K.pol
+  d = discriminant(p[1])
+  n = degree(p[1])
+  for i=2:length(p)
+    p = p^degree(p[i]) * discriminant(is_univariate(p[i])[1])^n
+    n *= degree(p[i])
+  end
+  return d
+end
+
+function Nemo.discriminant(K::NfRel_ns, ::FlintRationalField)
+  d = norm(discriminant(K)) * discriminant(base_field(K))^degree(K)
+  return d
+end
