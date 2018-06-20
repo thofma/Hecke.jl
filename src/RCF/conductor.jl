@@ -424,6 +424,11 @@ end
 #
 ####################################################################################
 
+doc"""
+    discriminant(C::ClassField) -> NfOrdIdl
+> Using the conductor-discriminant formula, compute the (relative) discriminant of $C$.
+> This does not use the defining equations.
+"""
 function discriminant(C::ClassField)
   
   if isdefined(C,:conductor)
@@ -1246,3 +1251,60 @@ end
 Base.copy(f::Generic.MPoly) = deepcopy(f)
 Base.copy(f::Generic.Poly) = deepcopy(f)
 
+
+doc"""
+    lorenz_module(k::AnticNumberField, n::Int) -> NfOrdIdl
+> Finds an ideal $A$ s.th. for all positive units $e = 1 \bmod A$ we have that 
+> $e$ is an $n$-th power. Uses Lorenz, number theory, 9.3.1.
+"""
+function lorenz_module(k::AnticNumberField, n::Int)
+  lf = factor(n)
+  return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l) for (p,l) = lf.fac])
+end
+
+#TODO: check the math
+# - I think in the p==2 l is too large in general
+# - I probably only the p-part of c is needed
+# - possibly even only the p-th cyclo field, although I really don't know
+function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int)
+  if p == 2
+    l = max(l, lorenz_eta_level(k))
+    l += 1
+  end
+  n = p^l
+  C = cyclotomic_extension(k, n)
+  Ka = C.Ka
+  ZK = maximal_order(Ka)
+  c, mc = class_group(Ka)
+  lp = prime_decomposition(ZK, p)
+  S = [P[1] for P = lp]
+  s = [P[1] for P = prime_decomposition(maximal_order(k), p)]
+  Q, mQ = quo(c, [mc\P for P = S])
+
+  a, _ = find_gens(inv(mc)*mQ, PrimesSet(degree(k), -1), p*numerator(discriminant(Ka)))
+  S = Set(intersect_nonindex(C.mp[2], P) for P = a)
+  union!(S, s)
+
+  d = Dict{typeof(first(S)), Int}()
+  for P = S
+    # need x = 1 mod P^l -> x = y^n in k_P
+    # Newton: x^n-1 has derivative nx^(n-1) and need l > 2*val(n, P)
+    d[P] = 2*l*valuation(p, P) +1
+  end
+  return numerator(evaluate(FacElem(d), coprime = true))  
+end
+
+function lorenz_eta_level(k::AnticNumberField)
+  # find max r s.th. eta_r in k, eta_(r+1) not in k
+  # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
+  r = 3
+  x = PolynomialRing(FlintZZ, cached = false)[2]
+  while true
+    f = cos_minpoly(2^r, x)
+    rt = roots(f, k)
+    if length(rt) == 0
+      return r-1
+    end
+    r += 1
+  end
+end
