@@ -656,6 +656,34 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
   return [ elem_in_nf(y) for y in A ]
 end
 
+doc"""
+    hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
+> Tests if $f$ has a root and return it.    
+"""
+function hasroot(f::PolyElem{nf_elem})
+  rt = roots(f, 1)
+  if length(rt) == 0
+    return false, gen(base_ring(f))
+  else
+    return true, rt[1]
+  end
+end
+
+doc"""
+    hasroot(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
+    hasroot(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
+> Tests if $f$ has a root in $K$, and return it.
+"""
+function hasroot(f::fmpz_poly, K::AnticNumberField)
+  Ky, y = PolynomialRing(K, cached = false)
+  return hasroot(evaluate(f, y))
+end
+
+function hasroot(f::fmpq_poly, K::AnticNumberField)
+  Ky, y = PolynomialRing(K, cached = false)
+  return hasroot(evaluate(f, y))
+end
+
 ################################################################################
 #
 #  Roots
@@ -689,6 +717,18 @@ function ispower(a::nf_elem, n::Int)
     return false, zero(a)
   end
 end
+
+doc"""
+    issquare(a::nf_elem) -> Bool, nf_elem
+> Tests if $a$ is a square and return the root if possible.
+"""
+Nemo.issquare(a::nf_elem) = ispower(a, 2)
+
+doc"""
+    sqrt(a::nf_elem) -> nf_elem
+> The square-root of $a$ or an error if this is not possible.
+ """
+Nemo.sqrt(a::nf_elem) = root(a, 2)
 
 doc"""
 ***
