@@ -178,6 +178,7 @@ end
 ################################################################################
 
 @inline Nemo.base_ring{T}(a::NfRel_ns{T}) = a.base_ring::parent_type(T)
+@inline base_field{T}(a::NfRel_ns{T}) = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRel_nsElem) = a.data
 
@@ -802,6 +803,20 @@ function simple_extension(K::NfRel_ns)
   return Ka, NfRelToNfRel_nsMor(Ka, K, pe, emb)
 end
 
+doc"""
+    simple_extension(K::NfRel_ns{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
+    absolute_field(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
+> Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
+> (1st map) and the embedding of the base field (2nd map).
+"""
+function simple_extension(K::NfRel_ns{nf_elem}, FlintQQ)
+  Ks, mp = simple_extension(K)
+  Ka, m1, m2 = absolute_field(Ks)
+  return Ka, inv(m1)*mp, m2
+end
+
+absolute_field(K::NfRel_ns{nf_elem}) = simple_extension(K, FlintQQ)
+
 #trivia, missing in NfRel
 function basis(K::NfRel)
   a = gen(K)
@@ -822,11 +837,11 @@ function Base.copy(a::NfRelElem)
 end
 
 function Nemo.discriminant(K::NfRel_ns)
-  p = K.pol
+  p = [is_univariate(x)[2] for x = K.pol]
   d = discriminant(p[1])
   n = degree(p[1])
   for i=2:length(p)
-    p = p^degree(p[i]) * discriminant(is_univariate(p[i])[1])^n
+    d = d^degree(p[i]) * discriminant(p[i])^n
     n *= degree(p[i])
   end
   return d
