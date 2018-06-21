@@ -1188,7 +1188,7 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   Q, mQ = quo(r, elem_type(r)[])
 
   p = 100
-  max_stable = ngens(domain(A.rayclassgroupmap)) * degree(K) * 2
+  @show max_stable = ngens(domain(A.rayclassgroupmap)) * degree(K) * 4 #need s.th. better here!!
   stable = max_stable
   while true
     p = next_prime(p)
