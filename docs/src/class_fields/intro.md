@@ -58,11 +58,11 @@ hilbert_class_field(k::AnticNumberField)
 ### Example
 
 ```@repl
-using Hecke; # hide
-Qx, x = PolynomialRing(FlintQQ, "x");
-K, a = NumberField(x^2 - 10, "a");
-c, mc = class_group(K);
-A = ray_class_field(mc)
+#using Hecke; # hide
+#Qx, x = PolynomialRing(FlintQQ, "x");
+#K, a = NumberField(x^2 - 10, "a");
+#c, mc = class_group(K);
+#A = ray_class_field(mc)
 ```
 
 ## Conversions
