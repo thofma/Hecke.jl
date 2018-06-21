@@ -33,6 +33,7 @@
   @test conductor(r1 * r2)[1] == 20*zk
   @test Hecke.issubfield(r1, r1*r2)
   @test !Hecke.issubfield(r0, r1*r2)
+
   K = simple_extension(number_field(r1))[1]
   ZK = maximal_order(K)
   lp = factor(2*3*5*zk)
@@ -49,5 +50,12 @@
   for (p, b) = ln
     @test Hecke.islocal_norm(r1, zk(p)) == b
   end
+
+  Qx, x = PolynomialRing(FlintQQ, "x");
+  k, a = NumberField(x^2 - 10, "a");
+  A = ray_class_field(35*maximal_order(k))
+  B = Hecke.maximal_abelian_subfield(A, k)
+  @test A == B
+  @test conductor(A) == conductor(B)
 end
 

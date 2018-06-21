@@ -1,4 +1,4 @@
-export conductor, isconductor
+export conductor, isconductor, norm_group, maximal_abelian_subfield
 
 ########################################################################################
 #
@@ -424,6 +424,11 @@ end
 #
 ####################################################################################
 
+doc"""
+    discriminant(C::ClassField) -> NfOrdIdl
+> Using the conductor-discriminant formula, compute the (relative) discriminant of $C$.
+> This does not use the defining equations.
+"""
 function discriminant(C::ClassField)
   
   if isdefined(C,:conductor)
@@ -1020,7 +1025,6 @@ doc"""
    
 ***
 """
-
 function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool = true)
   return norm_group([f], mR, isabelian)
 end
@@ -1123,7 +1127,13 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   return sub(R, subgrp, true)
 end
 
-function maximal_abelian_subfield(K::NfRel{nf_elem})
+doc"""
+    maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false) -> ClassField
+> Using a probabilistic algorithm for the norm group computation, determine tha maximal
+> abelian subfield in $K$ over its base field. If {{{of_closure}}} is set to true, then
+> the algorithm is applied to the normal closure if $K$ (without computing it).
+"""
+function maximal_abelian_subfield(K::NfRel{nf_elem}; of_closure::Bool = false)
   zk = maximal_order(base_ring(K))
   d = ideal(zk, discriminant(K))
   try
@@ -1137,10 +1147,15 @@ function maximal_abelian_subfield(K::NfRel{nf_elem})
 
   r1, r2 = signature(base_ring(K))
   C, mC = ray_class_group(d.num, infinite_places(base_ring(K))[1:r1], n_quo = degree(K))
-  N, iN = norm_group(K, mC)
+  N, iN = norm_group(K, mC, of_closure = of_closure)
   return ray_class_field(mC, quo(C, N)[2])
 end
 
+doc"""
+    maximal_abelian_subfield(A::ClassField, k::AnticNumberField) -> ClassField
+> The maximal abelian extension of $k$ contained in $A$. $k$ must be a subfield of
+> the base field of $A$.
+"""
 function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   K = base_field(A)
   fl, mp = issubfield(k, K)
@@ -1173,15 +1188,14 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   Q, mQ = quo(r, elem_type(r)[])
 
   p = 100
-  max_stable = degree(A) * degree(K) * 2
+  max_stable = ngens(domain(A.rayclassgroupmap)) * degree(K) * 4 #need s.th. better here!!
   stable = max_stable
   while true
-    @show Q
     p = next_prime(p)
     if minimum(m0) % p == 0
       continue
     end
-    lp = prime_decomposition(zk, p)
+    lp = prime_decomposition(zk, p, 1)
     for (P, e) = lp
       @assert e == 1
       c = mr\P
@@ -1205,6 +1219,10 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   return ray_class_field(mr, GrpAbFinGenMap(mQ))
 end
 
+doc"""
+    is_univariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
+> Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
+"""
 function is_univariate(f::Generic.MPoly{nf_elem})
   kx, x = PolynomialRing(base_ring(f))
   if ngens(parent(f)) == 1
@@ -1228,7 +1246,65 @@ function is_univariate(f::Generic.MPoly{nf_elem})
   end
   return true, sum(f.coeffs[j]*x^f.exps[i, j] for j=1:f.length)
 end
-
+#TODO: should be done in Nemo/AbstractAlgebra s.w.
+#      needed by ^ (the generic power in Base using square and multiply)
 Base.copy(f::Generic.MPoly) = deepcopy(f)
 Base.copy(f::Generic.Poly) = deepcopy(f)
 
+
+doc"""
+    lorenz_module(k::AnticNumberField, n::Int) -> NfOrdIdl
+> Finds an ideal $A$ s.th. for all positive units $e = 1 \bmod A$ we have that 
+> $e$ is an $n$-th power. Uses Lorenz, number theory, 9.3.1.
+"""
+function lorenz_module(k::AnticNumberField, n::Int)
+  lf = factor(n)
+  return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l) for (p,l) = lf.fac])
+end
+
+#TODO: check the math
+# - I think in the p==2 l is too large in general
+# - I probably only the p-part of c is needed
+# - possibly even only the p-th cyclo field, although I really don't know
+function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int)
+  if p == 2
+    l = max(l, lorenz_eta_level(k))
+    l += 1
+  end
+  n = p^l
+  C = cyclotomic_extension(k, n)
+  Ka = C.Ka
+  ZK = maximal_order(Ka)
+  c, mc = class_group(Ka)
+  lp = prime_decomposition(ZK, p)
+  S = [P[1] for P = lp]
+  s = [P[1] for P = prime_decomposition(maximal_order(k), p)]
+  Q, mQ = quo(c, [mc\P for P = S])
+
+  a, _ = find_gens(inv(mc)*mQ, PrimesSet(degree(k), -1), p*numerator(discriminant(Ka)))
+  S = Set(intersect_nonindex(C.mp[2], P) for P = a)
+  union!(S, s)
+
+  d = Dict{typeof(first(S)), Int}()
+  for P = S
+    # need x = 1 mod P^l -> x = y^n in k_P
+    # Newton: x^n-1 has derivative nx^(n-1) and need l > 2*val(n, P)
+    d[P] = 2*l*valuation(p, P) +1
+  end
+  return numerator(evaluate(FacElem(d), coprime = true))  
+end
+
+function lorenz_eta_level(k::AnticNumberField)
+  # find max r s.th. eta_r in k, eta_(r+1) not in k
+  # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
+  r = 3
+  x = PolynomialRing(FlintZZ, cached = false)[2]
+  while true
+    f = cos_minpoly(2^r, x)
+    rt = roots(f, k)
+    if length(rt) == 0
+      return r-1
+    end
+    r += 1
+  end
+end

@@ -131,6 +131,7 @@ end
 ################################################################################
 
 @inline Nemo.base_ring{T}(a::NfRel{T}) = a.base_ring::parent_type(T)
+@inline base_field{T}(a::NfRel{T}) = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRelElem) = a.data
 

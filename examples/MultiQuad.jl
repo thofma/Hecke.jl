@@ -415,8 +415,6 @@ end
 
 function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   e = matrix(FlintZZ, saturate_exp(c, n%8 == 0 ? 2*n : n, stable))
-  @show e  
-
   se = SMat(e)'
 
   A = SMat(FlintZZ)
@@ -447,17 +445,13 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
     end
     
     decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
-    #println("compact rep...")  
-    fl, x = ispower(a, n, decom = decom)
-#    @time fl, _ = ispower(evaluate(a), n)
-    #println("done")   
     if n == g
       fl = true
       x = a
     else
-      @time fl, x = ispower(a, div(n, Int(g)), decom = decom)
+      fl, x = ispower(a, div(n, Int(g)), decom = decom)
       if !fl
-        @time fl, x = ispower(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
+        fl, x = ispower(nf(c)(-1)*a, div(n, Int(g)), decom = decom)
       end
     end
     if fl
@@ -493,7 +487,6 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   A = A'
 #    @show fmpz_mat(A)
   H, T = hnf_with_trafo(fmpz_mat(A))
-    @show H
   @assert isone(sub(H, 1:cols(A), 1:cols(A))) #otherwise, relations sucked.
   Ti = inv(T')
   Ti = sub(Ti, length(n_gen)+1:rows(Ti), 1:cols(Ti))

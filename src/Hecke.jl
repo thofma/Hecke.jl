@@ -620,7 +620,8 @@ elem_type{T}(::Type{Generic.ResRing{T}}) = Generic.Res{T}
 #
 ################################################################################
 
-hasroot = ispower
+hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
+                               #hasroot(poly) != ispower(poly)....
 
 ################################################################################
 #

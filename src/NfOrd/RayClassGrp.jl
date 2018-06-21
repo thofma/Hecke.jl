@@ -649,6 +649,7 @@ function empty_ray_class(m::NfOrdIdl)
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.modulus_fin=ideal(O,1)
   mp.modulus_inf=InfPlc[]
+  mp.defining_modulus = (m, mp.modulus_inf)
   
   return X,mp
 
@@ -679,6 +680,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   mp.modulus_fin=ideal(O,1)
   mp.modulus_inf=InfPlc[]
   mp.fact_mod=Dict{NfOrdIdl, Int}()
+  mp.defining_modulus = (mp.modulus_fin, mp.modulus_inf)
     
   return X,mp
 end
@@ -708,6 +710,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
     mp.modulus_fin=ideal(O,1)
     mp.modulus_inf=InfPlc[]
     mp.fact_mod=Dict{NfOrdIdl, Int}()
+    mp.defining_modulus = (mp.modulus_fin, mp.modulus_inf)
     return X,mp
 
 end
@@ -1219,7 +1222,7 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
       d1[P]=1
     end   
   end
-  return ray_class_group_quo(n_quo, ideal(O,1), d1, wprimes, inf_plc, check_expo=true)
+  return ray_class_group_quo(n_quo, length(wprimes) == 0 ? ideal(O, m) : m*numerator(evaluate(FacElem(wprimes), coprime = true)), d1, wprimes, inf_plc, check_expo=true)
   
 end
 
@@ -1229,6 +1232,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   # I HAVE TO FIND A BETTER METHOD. 
   O=parent(m).order
   K=nf(O)
+  @assert length(y1) + length(y2) == 0 || !isone(m)
   
   # Compute the modulus of the quotient
   I=ideal(O,1)
