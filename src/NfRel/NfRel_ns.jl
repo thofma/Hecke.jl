@@ -809,7 +809,7 @@ doc"""
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).
 """
-function simple_extension(K::NfRel_ns{nf_elem}, FlintQQ)
+function simple_extension(K::NfRel_ns{nf_elem}, ::FlintRationalField)
   Ks, mp = simple_extension(K)
   Ka, m1, m2 = absolute_field(Ks)
   return Ka, inv(m1)*mp, m2
