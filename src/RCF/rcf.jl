@@ -1521,21 +1521,26 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem)
   return all(x -> islocal_norm(r, a, x), keys(fl))
 end
 
-function norm_group_map(R::ClassField, r::Array{ClassField, 1})
-  @assert all(x -> base_ring(R) == base_ring(x), r)
+function norm_group_map(R::ClassField, r::Array{ClassField, 1}, map = false)
+  @assert map != false || all(x -> base_ring(R) == base_ring(x), r)
+#  @assert map == false && all(x -> base_ring(R) == base_ring(x), r)
 
   mR = defining_modulus(R)[1]
-  @assert all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
+  @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
   fR = _compose(R.rayclassgroupmap, inv(R.quotientmap))
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
                              PrimesSet(100, -1), minimum(mR))
-  h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), p) for p = lp]) for x = r]
+  if map == false                           
+    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), p) for p = lp]) for x = r]
+  else
+    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), map(p)) for p = lp]) for x = r]
+  end
   return h
 end
 
-function norm_group_map(R::ClassField, r::ClassField)
-  return norm_group_map(R, [r])[1]
+function norm_group_map(R::ClassField, r::ClassField, map = false)
+  return norm_group_map(R, [r], map)[1]
 end
 
 doc"""
