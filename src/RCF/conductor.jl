@@ -1321,6 +1321,26 @@ function norm(m::T, a::nf_elem) where T <: Map{AnticNumberField, AnticNumberFiel
   return resultant(h, mod(evaluate(Qt(a), t), h))
 end
 
+function norm(m::T, a::FacElem{nf_elem, AnticNumberField}) where T <: Map{AnticNumberField, AnticNumberField}
+  K = codomain(m)
+  @assert K == base_ring(a)
+  k = domain(m)
+  kt, t = PolynomialRing(k, cached = false)
+  Qt = parent(K.pol)
+  h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
+  d = Dict{nf_elem, fmpz}()
+  for (e,v) = a.fac
+    n = resultant(h, mod(evaluate(Qt(e), t), h))
+    if haskey(d, n)
+      d[n] += v
+    else
+      d[n] = v
+    end
+  end
+  return FacElem(d)
+end
+
+
 doc"""
     norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
 > Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
@@ -1333,6 +1353,10 @@ function norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberFie
   assure_2_normal(I)
   zk = maximal_order(k)
   return ideal(zk, I.gen_one^div(degree(K), degree(k)), zk(norm(m, I.gen_two.elem_in_nf)))
+end
+
+function norm(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
+  return norm(m, numerator(I))//denominator(I)^div(degree(codomain(m)), degree(domain(m)))
 end
 
 #TODO: intersect_nonindex uses a worse algo in a more special case. Combine.
@@ -1360,6 +1384,10 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
   c = content_ideal(ai, zk)
   n,d = integral_split(c)
   return ideal(zk, I.gen_one) + d
+end
+
+function minimum(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
+  return minimum(m, numerator(I))//denominator(I)
 end
 
 function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
