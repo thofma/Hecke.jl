@@ -51,7 +51,10 @@ mutable struct AlgAssOrd
     r.ismaximal = 0
     return r
   end
-  
+end
+
+function Order(A::AlgAss{fmpq}, B)
+  return AlgAssOrd(A, B)
 end
 
 mutable struct AlgAssOrdElem

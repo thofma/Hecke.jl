@@ -6,6 +6,7 @@ mutable struct AlgAss{T} <: Ring
                            # 1 known to be commutative
                            # 2 known to be not commutative
   trace_basis_elem::Array{T, 1}
+  gens # Vector{AlgAssElem{T}}
 
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()

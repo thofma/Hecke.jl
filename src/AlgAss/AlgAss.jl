@@ -619,8 +619,85 @@ function kernel_of_frobenius(A::AlgAss)
   return [ A(v) for v in V ]
 end
 
+function primitive_element(A::AlgAss)
+  a, _ = _primitive_element(A)
+  return a
+end
+
+function _primitive_element(A::AlgAss{T}) where {T}
+  d = dim(A)
+
+  F = base_ring(A)
+
+  bas = [A[i] for i in 1:dim(A)]
+
+  while true
+    c = elem_type(F)[ F(rand(-10:10)) for i = 1:dim(A) ]
+    a = dot(c, bas)
+    f = minpoly(a)
+
+    if degree(f) == dim(A)
+      return a, f
+    end
+  end
+end
 
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
+  if iszero(characteristic(base_ring(A)))
+    return _issimple_separable(A, compute_algebras)
+  else
+    return _issimple_finite_base(A, compute_algebras)
+  end
+  error("Not implemented yet")
+end
+
+function _issimple_separable(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where {T}
+  a, f = _primitive_element(A)
+  
+  fac = factor(f)
+
+  if length(fac) == 1
+    if compute_algebras == Val{true}
+      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
+    else
+      return true
+    end
+  end
+
+  if compute_algebras == Val{false}
+    return false
+  end
+
+  R = parent(f)
+  factors = Vector{elem_type(R)}()
+  for ff in keys(fac.fac)
+    push!(factors, ff)
+  end
+  sols = Vector{elem_type(R)}()
+  right_side = [ zero(R) for i = 1:length(factors) ]
+  max_deg = 0
+  for i = 1:length(factors)
+    right_side[i] = R(1)
+    if i != 1
+      right_side[i - 1] = R(0)
+    end
+    s = crt(right_side, factors)
+    push!(sols, s)
+    max_deg = max(max_deg, degree(s))
+  end
+  
+  idems = Vector{elem_type(A)}(length(sols))
+  for i in 1:length(sols)
+    idems[i] = subst(sols[i], a)
+  end
+
+  if compute_algebras == Val{true}
+    S = [ (subalgebra(A, idem, true)...) for idem in idems ]
+    return false, S
+  end
+end
+
+function _issimple_finite_base(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
     if compute_algebras == Val{true}
       return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
@@ -752,9 +829,7 @@ function trace_matrix(A::AlgAss)
     end
   end
   return M
-
 end
-
 
 ################################################################################
 #
@@ -864,8 +939,7 @@ doc"""
 > Given a semisimple algebra over a finite field of prime order, this function 
 > returns a decomposition of A as a direct sum of simple algebras.
 """
-function wedderburn_decomposition(A::AlgAss{fq_nmod})
-  
+function wedderburn_decomposition(A::AlgAss{T}) where {T}
   ZA,mZA=center(A)
   Algs=split(ZA)
   res=Array{Tuple{AlgAss, AlgAssMor},1}(length(Algs))
