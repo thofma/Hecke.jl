@@ -133,7 +133,7 @@ function elements_with_all_signs(L::NfOrd)
   
   S = DiagonalGroup([2 for i=1:r1])
 
-  inf_places = infinite_places(K)
+  inf_places = real_places(K)
 
   function logS(x)
     return S([x[P] > 0 ? 0 : 1 for P in inf_places])
@@ -191,7 +191,8 @@ function narrow_class_group(L::NfOrd)
 
   K = nf(L)
 
-  inf_places = infinite_places(K)
+  inf_places = real_places(K)
+  @assert length(inf_places) == r1
 
   # 1 -> K^*/K^+U -> Cl^+ -> Cl -> 1
   # K^*/K^+ = C_2^{r_1}
@@ -205,7 +206,7 @@ function narrow_class_group(L::NfOrd)
   end
   s, ms = quo(S, [logS(signs(mU(U[i]))) for i=1:ngens(U)])
   s, mms = snf(s)
-  ms = mms*inv(ms)
+  ms = ms*inv(mms)
 
   # we want the extension 1-> s -> X -> C -> 1
   # generators are gensC supplemented by gens(s)
