@@ -33,7 +33,11 @@ end
 
 function unit_group_disc_log(x::FacElem{nf_elem, AnticNumberField} , U::UnitGrpCtx, G::GrpAbFinGen) #snf
 
-  r = _add_dependent_unit(U, x, rel_only = true)
+  if length(U.units) == 0
+    r = [-1]
+  else
+    r = _add_dependent_unit(U, x, rel_only = true)
+  end
   @assert r[end] == -1
 
   y = deepcopy(x)
