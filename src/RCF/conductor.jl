@@ -1,4 +1,4 @@
-export conductor, isconductor, norm_group, maximal_abelian_subfield
+export conductor, isconductor, norm_group, maximal_abelian_subfield, genus_field, content_ideal
 
 ########################################################################################
 #
@@ -38,7 +38,6 @@ function _norm_group_gens_small(C::ClassField)
   return Sgens
   
 end
-
 
 #
 #  Find small primes generating a subgroup of the ray class group
@@ -1180,9 +1179,14 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
       f_m0[p] = e
     end
   end
-  m0 = evaluate(FacElem(f_m0), coprime = true)
-  @assert denominator(m0) == 1
-  m0 = lcm(numerator(m0), ideal(zk, d))
+  if length(f_m0) == 0
+    m0 = ideal(zk, 1)
+    m0 = lcm(m0, ideal(zk, d))
+  else
+    m0 = evaluate(FacElem(f_m0), coprime = true)
+    @assert denominator(m0) == 1
+    m0 = lcm(numerator(m0), ideal(zk, d))
+  end
 
   r, mr = ray_class_group(m0, real_places(k), n_quo = degree(A) * div(degree(K), degree(k)))
   Q, mQ = quo(r, elem_type(r)[])
@@ -1190,6 +1194,10 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   p = 100
   max_stable = ngens(domain(A.rayclassgroupmap)) * degree(K) * 4 #need s.th. better here!!
   stable = max_stable
+  #= Think: 
+   should be enough to generate r
+   and the Bach-bound from above for K/k
+  =#
   while true
     p = next_prime(p)
     if minimum(m0) % p == 0
@@ -1219,6 +1227,20 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   return ray_class_field(mr, GrpAbFinGenMap(mQ))
 end
 
+doc"""
+    genus_field(A::ClassField, k::AnticNumberField) -> ClassField
+> The maximal extension contained in $A$ that is the compositum of $K$
+> with an abelian extension of $k$.
+"""
+function genus_field(A::ClassField, k::AnticNumberField)
+  B = maximal_abelian_subfield(A, k)
+  K = base_field(A)
+  fl, mp = issubfield(k, K)
+  @assert fl
+  h = norm_group_map(A, B, x->norm(mp, x))
+  return ray_class_field(A.rayclassgroupmap, GrpAbFinGenMap(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
+end
+ 
 doc"""
     is_univariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
 > Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
@@ -1256,17 +1278,131 @@ doc"""
     lorenz_module(k::AnticNumberField, n::Int) -> NfOrdIdl
 > Finds an ideal $A$ s.th. for all positive units $e = 1 \bmod A$ we have that 
 > $e$ is an $n$-th power. Uses Lorenz, number theory, 9.3.1.
+> If {{{containing}}} is set, it has to be an integral ideal. The resulting ideal will be
+> a multiple of this.
 """
-function lorenz_module(k::AnticNumberField, n::Int)
+function lorenz_module(k::AnticNumberField, n::Int; containing=false)
   lf = factor(n)
-  return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l) for (p,l) = lf.fac])
+  return Base.reduce(lcm, [lorenz_module_pp(k, Int(p), l, containing = containing) for (p,l) = lf.fac])
+end
+
+#TODO: is this the right interface???
+doc"""
+    (::NfAbsOrdIdlSet)(m::Map, I::NfOrdIdl) -> NfOrdIdl
+> Given an embedding $m:k\to K$ of number fields and an ideal $I$ in $k$,
+> find the ideal above $I$ in $K$.
+"""
+function (I::NfAbsOrdIdlSet{Nemo.AnticNumberField,Nemo.nf_elem})(mp::Map, i::NfOrdIdl)
+  assure_2_normal(i)
+  return ideal(order(I), i.gen_one, order(I)(mp(i.gen_two.elem_in_nf)))
+end
+
+#TODO: write code (map?) to change polynomial rings other than evaluate
+
+doc"""
+    norm(m::T, a::nf_elem) where T <: Map{AnticNumberField, AnticNumberField} -> nf_elem
+> Given an embedding $m:k\to K$ of number fields and an element in $K$, find the norm
+> $N_{K/k}(a)$.
+"""
+function norm(m::T, a::nf_elem) where T <: Map{AnticNumberField, AnticNumberField}
+  K = codomain(m)
+  #= shamelessly from Trager:
+           K  Then: K = Q(c) = k(c) = Q(b)(c)
+           |        f(c) = 0 in Q[t]
+      k    |        h(c) = 0 in k[t]. Trager: N(h) = f. eta in Q[t] s.th. m(b) = eta(c) 
+      |    |        h = gcd(b - eta, f)
+      Q    Q  so N_K/k(a) = res(h, a)
+  =#    
+  @assert K == parent(a)
+  k = domain(m)
+  kt, t = PolynomialRing(k, cached = false)
+  Qt = parent(K.pol)
+  h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
+  return resultant(h, mod(evaluate(Qt(a), t), h))
+end
+
+doc"""
+    norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
+> Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the norm
+> $N_{K/k}(I)$.
+"""
+function norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
+  K = codomain(m)
+  @assert K == nf(order(I))
+  k = domain(m)
+  assure_2_normal(I)
+  zk = maximal_order(k)
+  return ideal(zk, I.gen_one^div(degree(K), degree(k)), zk(norm(m, I.gen_two.elem_in_nf)))
+end
+
+#TODO: intersect_nonindex uses a worse algo in a more special case. Combine.
+#  for prime ideals, the gcd's can be done in F_p/ F_q hence might be faster
+doc"""
+    minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
+> Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the 
+> intersection $I \cap \Z_k$.
+"""
+function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
+  K = codomain(m)
+  @assert K == nf(order(I))
+  k = domain(m)
+  assure_2_normal(I)
+  zk = maximal_order(k)
+
+  @assert K == nf(order(I))
+  k = domain(m)
+  kt, t = PolynomialRing(k, cached = false)
+  Qt = parent(K.pol)
+  h = gcd(gen(k) - evaluate(Qt(m(gen(k))), t), evaluate(K.pol, t))
+  g, ai, _ = gcdx(evaluate(Qt(I.gen_two.elem_in_nf), t), h)
+  @assert g == 1
+  #so ai * a = 1 in K/k
+  c = content_ideal(ai, zk)
+  n,d = integral_split(c)
+  return ideal(zk, I.gen_one) + d
+end
+
+function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
+  if number_field(R) == number_field(order(I))
+    return I
+  end
+  fl, m = issubfield(number_field(R), number_field(order(I)))
+  @assert fl
+  return minimum(m, I)
+end
+Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
+
+function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)
+  n, d = integral_split(I)
+  return intersect(n, R)
+end
+
+Base.intersect(R::NfAbsOrd, I::NfOrdFracIdl) = intersect(I, R)
+
+doc"""
+    content_ideal(f::PolyElem{nf_elem}, R::NfAbsOrd) -> NfAbsOrdIdl
+> The fractional $R$-ideal generated by the coefficients of $f$.    
+"""
+function content_ideal(f::PolyElem{nf_elem}, R::NfAbsOrd)
+  @assert number_field(R) == base_ring(f)
+  i = sum(coeff(f, i)*R for i=0:degree(f) if !iszero(coeff(f, i)))
+  return i    
+end
+
+doc"""
+    content_ideal(f::PolyElem{NfAbsOrdElem}) -> NfAbsOrdIdl
+> The ideal generated by the coefficients of $f$.    
+"""
+function content_ideal(f::PolyElem{NfAbsOrdElem})
+  R = base_ring(f)
+  return sum(coeff(f, i)*R for i=0:degree(f) if !iszero(coeff(f, i)))
 end
 
 #TODO: check the math
 # - I think in the p==2 l is too large in general
 # - I probably only the p-part of c is needed
 # - possibly even only the p-th cyclo field, although I really don't know
-function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int)
+function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int; containing=false)
   if p == 2
     l = max(l, lorenz_eta_level(k))
     l += 1
@@ -1279,6 +1415,15 @@ function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int)
   lp = prime_decomposition(ZK, p)
   S = [P[1] for P = lp]
   s = [P[1] for P = prime_decomposition(maximal_order(k), p)]
+
+  fc = false
+  if containing != false
+    @assert typeof(containing) == NfOrdIdl
+    fc = factor(containing)
+    s = union(s, collect(keys(fc)))
+    fc = factor(parent(S[1])(C.mp[2], containing))
+    S = union(S, collect(keys(fc)))
+  end
   Q, mQ = quo(c, [mc\P for P = S])
 
   a, _ = find_gens(inv(mc)*mQ, PrimesSet(degree(k), -1), p*numerator(discriminant(Ka)))
@@ -1289,7 +1434,11 @@ function lorenz_module_pp(k::AnticNumberField, p::Int, l::Int)
   for P = S
     # need x = 1 mod P^l -> x = y^n in k_P
     # Newton: x^n-1 has derivative nx^(n-1) and need l > 2*val(n, P)
-    d[P] = 2*l*valuation(p, P) +1
+    v = 2*valuation(p, P) + 1
+    if containing != false
+      v = max(v, valuation(containing, P))
+    end
+    d[P] = v
   end
   return numerator(evaluate(FacElem(d), coprime = true))  
 end
@@ -1301,8 +1450,7 @@ function lorenz_eta_level(k::AnticNumberField)
   x = PolynomialRing(FlintZZ, cached = false)[2]
   while true
     f = cos_minpoly(2^r, x)
-    rt = roots(f, k)
-    if length(rt) == 0
+    if hasroot(f, k)[1]
       return r-1
     end
     r += 1
