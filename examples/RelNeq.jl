@@ -22,7 +22,7 @@ function norm_1_subgroup(A::RelNeq)
 
   d = lcm([numerator(discriminant(k)), numerator(discriminant(K)), numerator(norm(discriminant(Kk)))])
 
-  @show I = Hecke.lorenz_module(k, degree(Kk))
+  @show I = Hecke.lorenz_module(k, degree(Kk), containing = discriminant(maximal_order(Kk)))
   Hecke.assure_2_normal(I)
 
   I_K = ideal(maximal_order(K), I.gen_one, maximal_order(K)(A.m_k_K(I.gen_two.elem_in_nf)))
