@@ -405,7 +405,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
         el+=minimum(cond)*ex(S[i])
       end
       Q,mQ=quo(G,preimage(mp, ideal(O,el)), false)
-      if order(Q)==e
+      if order(Q)==E
         return false
       end
     end

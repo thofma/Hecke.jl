@@ -48,7 +48,7 @@ function closure(C::T, G::Array{T,1}) where {T}
   rref!(C)
   i=1
   while i <= rows(C)
-    w=sub(C, i:i, 1:cols(C))
+    w=view(C, i:i, 1:cols(C))
     for j=1:length(G)
       res=cleanvect(C,w*G[j])
       if !iszero(res)
@@ -78,7 +78,7 @@ function spinning(C::T,G::Array{T,1}) where {T}
   i=1
   while i != rows(B)+1
     for j=1:length(G)
-      el= sub(B, i:i, 1:cols(B)) * G[j]
+      el= view(B, i:i, 1:cols(B)) * G[j]
       res= cleanvect(X,el)
       if !iszero(res)
         X=vcat(X,res)
@@ -255,12 +255,12 @@ function isisomorphic(M::FqGModule,N::FqGModule)
     end
   end
   
-  n=M.dim
-  posfac=n
+  #n=M.dim
+  #posfac=n
    
-  f=Kx(1)
-  G=deepcopy(M.G)
-  H=deepcopy(N.G)
+  #f=Kx(1)
+  #G=deepcopy(M.G)
+  #H=deepcopy(N.G)
 
   rel=_relations(M,N)
   return iszero(rel[N.dim, N.dim])
@@ -549,7 +549,7 @@ function meataxe(M::FqGModule)
   #
     A=zero_matrix(K,n,n)
     for i=1:length(G)
-      A+=rand(K)*G[i]
+      add!(A, A, rand(K)*G[i])
     end
  
   #
@@ -570,13 +570,13 @@ function meataxe(M::FqGModule)
           #
           #  Norton test
           #   
-          B=closure(transpose(sub(kern,1:n, 1:1)),M.G)
+          B=closure(transpose(view(kern,1:n, 1:1)),M.G)
           if rows(B)!=n
             M.isirreducible=false
             return false, B
           end
           kernt=nullspace(N)[2]
-          Bt=closure(transpose(sub(kernt,1:n,1:1)),Gt)
+          Bt=closure(transpose(view(kernt,1:n,1:1)),Gt)
           if rows(Bt)!=n
             subst=transpose(nullspace(Bt)[2])
             @assert rows(subst)==rows(closure(subst,G))
@@ -608,15 +608,15 @@ doc"""
 function composition_series(M::FqGModule)
 
   if isdefined(M, :isirreducible) && M.isirreducible==true
-    return [eye(M.G[1],M.dim)]
+    return [eye(M.G[1], M.dim)]
   end
 
   bool, C = meataxe(M)
   #
   #  If the module is irreducible, we return a basis of the space
   #
-  if bool ==true
-    return [eye(M.G[1],M.dim)]
+  if bool == true
+    return [eye(M.G[1], M.dim)]
   end
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
@@ -750,7 +750,7 @@ function _relations(M::FqGModule, N::FqGModule)
   push!(matrices, eye(B,N.dim))
   i=1
   while i<=rows(B)
-    w=sub(B, i:i, 1:n)
+    w=view(B, i:i, 1:n)
     for j=1:length(G)
       v=w*G[j]
       res=cleanvect(X,v)
@@ -760,7 +760,7 @@ function _relations(M::FqGModule, N::FqGModule)
         push!(matrices, matrices[i]*H[j])
       else
         x=_solve_unique(transpose(v),transpose(B))
-        A=sum([x[q,1]*matrices[q] for q=1:rows(x)])
+        A= sum([x[q,1]*matrices[q] for q=1:rows(x)])
         A=A-(matrices[i]*H[j])
         if first
           for s=1:N.dim
@@ -804,7 +804,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   #
   #  Reduce the number of homomorphism to try by considering the action of G on the homomorphisms
   #
-  vects=fq_nmod_mat[sub(kern, i:i, 1:N.dim) for i=1:a]
+  vects=fq_nmod_mat[view(kern, i:i, 1:N.dim) for i=1:a]
   i=1
   while i<length(vects)
     X=closure(vects[i],N.G)
