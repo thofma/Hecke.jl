@@ -418,19 +418,22 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
     end
   end
   B=basis(O)
-  for i=1:n
-    for j=1:m
-      #I have the element B[i]*G[j]
-      for k=1:n
-        for h=1:m
+  
+  for j=1:m
+    for k=1:n
+      l =O(G[j](K(B[k])))
+      for h=1:m
+        ind = find_elem(G, G[j]*G[h]) 
+        t = O(cocval[j,h])
+        for i=1:n
+          #I have the element B[i]*G[j]
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
-          ind=find_elem(G,G[j]*G[h]) 
-          x=B[i]*O(G[j](K(B[k])))*O(cocval[j,h])
-          y=elem_in_basis(x)
+          x = B[i]*l*t
+          y = elem_in_basis(x)
           for s=0:n-1
-            M[j+(i-1)*n, h+(k-1)*n, ind+s*n]=y[s+1]
+            M[j+(i-1)*m, h+(k-1)*m, ind+s*m] = y[s+1]
           end
         end
       end
@@ -1082,22 +1085,22 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
   append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
-  ideals=AlgAssOrdIdl[]
-  poneO=O(p*one(O.A))
+  ideals = AlgAssOrdIdl[]
+  poneO = O(p*one(O.A))
   for x in ls
-    @hassert :CSAMaxOrd 1 closure(x, M.action)==rref(x)[2]
+    @hassert :CSAMaxOrd 1 closure(x, M.action) == rref(x)[2]
     m = zero_matrix(FlintZZ, O.dim, O.dim)
-    gens=Vector{AlgAssOrdElem}(rows(x)+1)
-    for i=1:rows(x)
-      for j=1:cols(x)
-        m[i,j]=x[i,j].data
+    gens = Vector{AlgAssOrdElem}(rows(x)+1)
+    for i = 1:rows(x)
+      for j = 1:cols(x)
+        m[i,j] = x[i,j].data
       end
-      gens[i]= elem_from_mat_row(O,m,i)
+      gens[i] = elem_from_mat_row(O,m,i)
     end
     hnf_modular_eldiv!(m, fmpz(p))
-    gens[rows(x)+1]=poneO
-    J=AlgAssOrdIdl(O,m)
-    J.gens=gens
+    gens[rows(x)+1] = poneO
+    J = AlgAssOrdIdl(O,m)
+    J.gens = gens
     push!(ideals, J)
   end
   return ideals

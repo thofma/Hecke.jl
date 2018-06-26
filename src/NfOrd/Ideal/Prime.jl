@@ -256,6 +256,7 @@ function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
 end
 
 function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+
   K = nf(O)
   f = K.pol
   R = parent(f)
@@ -317,10 +318,11 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
 end
 
 function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+
+  return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
   if degree_limit == 0
     degree_limit = degree(O)
   end
-
   Ip = pradical(O, p)
   A, OtoA = AlgAss(O, Ip, p)
   AtoO = inv(OtoA)
@@ -347,7 +349,6 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
     P = ideal(O, N)
     P.norm = fmpz(p)^f
     P.splitting_type = (0, f)
-    #
     fromOtosimplealgebra = Hecke._compose(inv(BtoA), OtoA)
     compute_residue_field_data!(P, fromOtosimplealgebra)
     #primB, minprimB, getcoordpowerbasis = _as_field(B)
@@ -468,8 +469,8 @@ function anti_uniformizer(P::NfOrdIdl)
   end
 end
 
-# Don't use the following function. It does not work for index divisors
-# TH: Or does it?
+#This function should work for every order O, even for non-maximal ones, if the 
+#
 function prime_decomposition_type(O::NfOrd, p::Integer)
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
     K = nf(O)
@@ -489,11 +490,12 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
       end
     end
   else
-    lp = prime_decomposition(O, p)
-    res = Array{Tuple{Int, Int}}(length(lp))
-    for i in 1:length(lp)
-      res[i] = (lp[i][1].splitting_type[2], lp[i][1].splitting_type[1])
-    end
+    return decomposition_type_polygon(O, fmpz(p))
+    #lp = prime_decomposition(O, p)
+    #res = Array{Tuple{Int, Int}}(length(lp))
+    #for i in 1:length(lp)
+    #  res[i] = (lp[i][1].splitting_type[2], lp[i][1].splitting_type[1])
+    #end
   end
   return res
 end

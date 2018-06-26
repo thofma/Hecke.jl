@@ -70,17 +70,16 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
   end
   
   g1modp = Kx(g1)
-
+  U = gcd(gcd(g, h), g1modp)
+  
   if compute_order == Val{false}
-    if isone(gcd(g,h, g1modp))
+    if isone(U)
       return true
     else
       return false
     end
   else
-    pmaximal = true
 
-    U = gcd(gcd(g, h), g1modp)
     pmaximal = (isone(U)) 
 
     if pmaximal

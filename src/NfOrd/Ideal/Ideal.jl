@@ -1113,6 +1113,8 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl)
   O = order(y)
   a = elem_in_basis(x)
   #a = deepcopy(b)
+  
+  #dump(y, maxdepth = 1)
 
   if isdefined(y, :princ_gen_special) && y.princ_gen_special[1] != 0
     for i in 1:length(a)
@@ -1290,7 +1292,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
       end
     end
     M2=_hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
-    I=NfAbsOrdIdl(O, sub(M2, rows(M2)-degree(O)+1:rows(M2), 1:degree(O)))
+    I=NfAbsOrdIdl(O, view(M2, rows(M2)-degree(O)+1:rows(M2), 1:degree(O)))
     I.gens=gens
     return I
   end
@@ -1335,7 +1337,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
     m[i+length(X),i]=p
   end
   mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
-  I = NfAbsOrdIdl(O, sub(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O)))
+  I = NfAbsOrdIdl(O, view(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O)))
   I.gens = gens
   return I
 end
@@ -1386,7 +1388,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     return deepcopy(O)
   end
   # n is upper right HNF
-  mhnftrans = transpose(sub(mhnf, 1:degree(O), 1:degree(O)))
+  mhnftrans = transpose(view(mhnf, 1:degree(O), 1:degree(O)))
   b = FakeFmpqMat(pseudo_inv(mhnftrans))
   mul!(b, b, basis_mat(O, Val{false}))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]

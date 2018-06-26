@@ -887,13 +887,13 @@ function _quad_ext_with_auto(Kx,a::Int)
   if a % 4 == 1
     L, lg = number_field([x^2-x+divexact(1-a,4)])
     b=lg[1]
-    mL=NfRel_nsToNfRel_nsMor(L,L, [1-b])
+    mL=NfRel_nsToNfRel_nsMor(L,L, [1-b])::NfRel_nsToNfRel_nsMor{nf_elem}
   else
     L, lg = number_field([x^2-a])
     b = lg[1]
-    mL=NfRel_nsToNfRel_nsMor(L,L, [-b])
+    mL=NfRel_nsToNfRel_nsMor(L,L, [-b])::NfRel_nsToNfRel_nsMor{nf_elem}
   end
-  return (L, NfRel_nsToNfRel_nsMor[mL])
+  return (L, NfRel_nsToNfRel_nsMor[mL])::Tuple{NfRel_ns{nf_elem}, Array{NfRel_nsToNfRel_nsMor{nf_elem},1}}
 
 end
 
@@ -2056,7 +2056,7 @@ end
 #
 ###############################################################################
 
-function _from_relative_to_abs(L::Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{T},1}}) where T
+function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor{T},1}}) where T
   
   S,mS=simple_extension(L[1])
   K,mK=absolute_field(S, false)
