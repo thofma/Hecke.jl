@@ -458,14 +458,16 @@ end
 #
 ###############################################################################
 
-function _decomposition(O::NfOrd, I::NfOrdIdl, p::fmpz)
-  
-  Ip = pradical(O, p)+I
-  A, OtoA = AlgAss(O, Ip, p)
+function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmpz)
+  #I is an ideal lying over p
+  #J is the product of all the prime ideals lying over p that do not appear in the factorization of I
+  #Ip is the p-radical
+  Ip1 = Ip + I
+  A, OtoA = AlgAss(O, Ip1, p)
   AtoO = inv(OtoA)
   AA = split(A)
 
-  basisO = basis(O)
+  basisO = basis(O, Val{false})
 
   ideals = Vector{NfOrdIdl}()
   m = zero_matrix(FlintZZ, 1, degree(O))
@@ -474,7 +476,7 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, p::fmpz)
     idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_matrix(idem)
     ker = left_kernel(M)
-    N = basis_mat(Ip, Val{false})
+    N = basis_mat(Ip1, Val{false})
     for i = 1:length(ker)
       b = elem_in_basis(AtoO(A(ker[i])))
       for j = 1:degree(O)
@@ -483,9 +485,10 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, p::fmpz)
       N = vcat(N, m)
     end
     N = view(_hnf_modular_eldiv(N, fmpz(p), :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
-    P = ideal(O, N)
+    P = NfOrdIdl(O, N)
     P.norm = p^f
     P.splitting_type = (0, f)
+    P.is_prime = 1
     fromOtosimplealgebra = Hecke._compose(inv(BtoA), OtoA)
     compute_residue_field_data!(P, fromOtosimplealgebra)
 
@@ -493,25 +496,28 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, p::fmpz)
   end
 
   result = Vector{Tuple{NfOrdIdl, Int}}()
+  
+  k = (1-1/BigInt(p))^degree(O) < 0.1
 
   for j in 1:length(ideals)
     P = ideals[j]
     f = P.splitting_type[2]
-
+    
     # The following does not work if there is only one prime ideal
-    if length(ideals) > 1 && (1-1/BigInt(p))^degree(O) < 0.1
+    if length(ideals) > 1 && k
       # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
       # number theory".
-
       # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
+      
+      # Carlo: In the case I split O/I_p, I think that I get for free the element u
+      # just by working with the idempotents of the algebra.
 
       B, BtoA = AA[j]
       J = ideal(O, AtoO(BtoA(B[1])))
-      N = view(_hnf_modular_eldiv(vcat(basis_mat(Ip), basis_mat(J)), fmpz(p), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
-      Vp = ideal(O, N)
+      N = view(_hnf_modular_eldiv(vcat(basis_mat(Ip1, Val{false}), basis_mat(J, Val{false})), fmpz(p), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+      Vp = NfOrdIdl(O, N)*T
 
       u, v = idempotents(P, Vp)
-
       x = zero(parent(u))
 
       if !iszero(mod(norm(u), norm(P)*p))
@@ -521,16 +527,17 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, p::fmpz)
       elseif !iszero(mod(norm(u - p), norm(P)*p))
         x = u - p
       else
+        Ba = basis(P, Val{false})
         for i in 1:degree(O)
-          if !iszero(mod(norm(v*basis(P)[i] + u), norm(P)*p))
-            x = v*basis(P)[i] + u
+          if !iszero(mod(norm(v*Ba[i] + u), norm(P)*p))
+            x = v*Ba[i] + u
+            break
           end
         end
       end
 
       @hassert :NfOrd 1 !iszero(x)
       @hassert :NfOrd 2 O*O(p) + O*x == P
-
       P.gen_one = p
       P.gen_two = x
       P.gens_normal = p
@@ -540,10 +547,9 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, p::fmpz)
       _assure_weakly_normal_presentation(P)
       assure_2_normal(P)
     end
-
+    
     e = Int(valuation(nf(O)(p), P))
     P.splitting_type = e, f
-    P.is_prime = 1
     push!(result, (P, e))
   end
   return result
@@ -559,6 +565,7 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
   f1 = Rx(Zx(K.pol))
   fac = factor(f1)
   res = Tuple{Int, Int}[]
+  l = Tuple{NfOrdIdl, NfOrdIdl}[]
   for (g,m) in fac
     if m==1
       push!(res, (degree(g), 1))
@@ -574,8 +581,8 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
     filter(x -> slope(x)<0, N.lines)
     F, a = FiniteField(g, "a", cached = false)
     pols = fq_poly[]
-    for l in N.lines
-      rp = residual_polynomial(F, l, dev, p)
+    for ll in N.lines
+      rp = residual_polynomial(F, ll, dev, p)
       if issquarefree(rp)
         push!(pols, rp)
       else
@@ -583,11 +590,7 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
       end
     end  
     if length(N.lines) != length(pols)
-      I = ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m)))))
-      lp = _decomposition(O, I, p)
-      for (P, e) in lp
-        push!(res, (P.splitting_type[2], e))
-      end
+      push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))))))) 
     else
       for i=1:length(pols)
         fact = factor(pols[i])
@@ -595,6 +598,15 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
         for psi in keys(fact.fac)
           push!(res, (degree(phi)*degree(psi), s))
         end      
+      end
+    end
+  end
+  if !isempty(l)
+    Ip = pradical(O, p)
+    for (I, J) in l
+      lp = _decomposition(O, I, Ip, J, p)
+      for (P, e) in lp
+        push!(res, (P.splitting_type[2], e))
       end
     end
   end
@@ -608,7 +620,7 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::Int = 0, lower_limit::Int = 0, cached::Bool = true) where {S, T}
+function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -620,6 +632,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
   f1 = Rx(K.pol)
   fac = factor(f1)
   res = Tuple{NfOrdIdl, Int}[]
+  l = Tuple{NfOrdIdl, NfOrdIdl}[]
   for (g, m) in fac
     if degree(g) > degree_limit || lower_limit > degree(g)
       continue
@@ -678,21 +691,25 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
       J.norm = FlintZZ(p)^degree(phi)
       J.minimum = FlintZZ(p)
       J.gens_normal = p
-      J.gens_weakly_normal = 1
+      J.gens_weakly_normal = true
       push!(res, (J, Int(denominator(s))))
       continue
     end
     #TODO: p-adic factorization of the polynomial.
-    I = ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m)))))
-    lp = _decomposition(O, I, p)
-    for (P, e) in lp
-      if degree(P) > degree_limit || degree(P) < lower_limit
-        continue
+    push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m))))))))
+  end
+  if !isempty(l)
+    Ip = pradical(O, p)
+    for (I, Q) in l
+      lp = _decomposition(O, I, Ip, Q, p)
+      for (P, e) in lp
+        if degree(P) > degree_limit || degree(P) < lower_limit
+          continue
+        end
+        push!(res, (P, e))
       end
-      push!(res, (P, e))
     end
   end
   return res
 
 end
-

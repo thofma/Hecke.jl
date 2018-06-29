@@ -893,7 +893,7 @@ function _quad_ext_with_auto(Kx,a::Int)
     b = lg[1]
     mL=NfRel_nsToNfRel_nsMor(L,L, [-b])::NfRel_nsToNfRel_nsMor{nf_elem}
   end
-  return (L, NfRel_nsToNfRel_nsMor[mL])::Tuple{NfRel_ns{nf_elem}, Array{NfRel_nsToNfRel_nsMor{nf_elem},1}}
+  return (L, NfRel_nsToNfRel_nsMor{nf_elem}[mL])::Tuple{NfRel_ns{nf_elem}, Array{NfRel_nsToNfRel_nsMor{nf_elem},1}}
 
 end
 
@@ -2069,7 +2069,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   OL=EquationOrder(L[1])
   B=pseudo_basis(OL)
   
-  @vprint :QuadraticExt 1 "Maximal Orders computed\n"
+  @vprint :QuadraticExt 2 "Maximal Orders computed\n"
   #Then we consider the product basis
   basisL=Array{NfRel_nsElem, 1}(2*degree(L[1]))
   for i=1:degree(L[1])
@@ -2084,7 +2084,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
 
   cbasis=[x*y for x in nbasisL for y in nbasisO]
   append!(cbasis, [gen(K)^i for i=0:degree(K)-1])
-  @vprint :QuadraticExt 1 "Product basis computed\n"
+  @vprint :QuadraticExt 2 "Product basis computed\n"
   #Now, we compute the maximal order. Then we simplify.
   O1=MaximalOrder(_order(K, cbasis))
   O1.ismaximal=1
@@ -2106,7 +2106,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   O2=Order(Ks, basisO2, false)
   O2.ismaximal=1
   _set_maximal_order_of_nf(Ks,O2)
-  @vprint :QuadraticExt 1 "MaximalOrder Computed. Now Automorphisms\n"
+  @vprint :QuadraticExt 2 "MaximalOrder Computed. Now Automorphisms\n"
 
   #Now, the automorphisms.
   autos=Array{NfToNfMor, 1}(length(L[2]))
@@ -2120,7 +2120,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
     autos[i]=NfToNfMor(Ks,Ks,y)
   end
   
-  @vprint :QuadraticExt 1 "Finished\n"
+  @vprint :QuadraticExt 2 "Finished\n"
   return Ks, autos
 
 end 

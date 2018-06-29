@@ -1607,7 +1607,7 @@ function roots(f::T) where T <: Union{fq_nmod_poly, fq_poly} # should be in Nemo
   if degree(f) < q
     x = powmod(x, q, f)-x
   else
-    x = x^q-x
+    x = x^Int(q)-x
   end
   f = gcd(f, x)
   l = factor(f).fac

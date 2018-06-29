@@ -1071,16 +1071,16 @@ function lll(M::NfOrd)
   prec = 100
   while true
     try
-      q,w = lll(I, parent(basis_mat(M).num)(0), prec = prec)
+      q,w = lll(I, parent(basis_mat(M, Val{false}).num)(0), prec = prec)
       On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
       On.ismaximal = M.ismaximal
       return On
     catch e
       if isa(e, LowPrecisionLLL)
         prec = Int(round(prec*1.2))
-        if prec>1000
-          error("precision too large in LLL");
-        end
+        #if prec>1000
+        #  error("precision too large in LLL");
+        #end
         continue;
       else
         rethrow(e)

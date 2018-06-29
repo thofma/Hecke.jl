@@ -318,8 +318,9 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
 end
 
 function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
-
+  
   return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
+  #=
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -425,12 +426,25 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
     P.is_prime = 1
     push!(result, (P, e))
   end
-  #=
+
   if degree_limit >= degree(O)
     O.index_div[fmpz(p)] = result
   end
-  =#
+
+  lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
+  @assert length(lp)==length(result)
+  for (Q, e) in lp
+    for (P, ee) in result
+      if valuation(Q, P) > 0
+        @show O
+        @show P
+        @show Q
+        @assert valuation(Q.gen_two, P) == 1
+      end
+    end
+  end
   return result
+  =#
 end
 
 function uniformizer(P::NfOrdIdl)
@@ -476,9 +490,9 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     K = nf(O)
     f = K.pol
     R = parent(f)
-    Zx, x = PolynomialRing(FlintZZ,"x", cached=false)
+    Zx, x = PolynomialRing(FlintZZ,"x", cached = false)
     Zf = Zx(f)
-    fmodp = PolynomialRing(ResidueRing(FlintZZ,p, cached = false), "y", cached = false)[1](Zf)
+    fmodp = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
     res = Array{Tuple{Int, Int}}(g)

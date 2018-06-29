@@ -1886,7 +1886,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #
       
       M=Hecke.ZpnGModule(S,act_mat)
-      plist=submodules(M,typequo=quotype_p)
+      plist=submodules(M, typequo = quotype_p)
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
       
     end
