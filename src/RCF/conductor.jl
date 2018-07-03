@@ -160,7 +160,6 @@ function conductor(C::Hecke.ClassField)
   #  First, we need to find the subgroup
   #
   
-  R = domain(mR)
   cond = mR.modulus_fin
   inf_plc = mR.modulus_inf
   O = parent(cond).order
@@ -205,8 +204,8 @@ function conductor(C::Hecke.ClassField)
   end
   for (p,v) in L
     if v==1
-      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p][1]))],false)
-      if order(Q)==E
+      Q,mQ = quo(G,[preimage(mp, ideal(O,tmg[p][1]))],false)
+      if order(Q) == E
         Base.delete!(L,p)
       end  
     else
@@ -248,7 +247,7 @@ function conductor(C::Hecke.ClassField)
   #Infinite part of the modulus
   cond_inf=InfPlc[]
   if !isempty(inf_plc)
-    S, ex, lo=carlos_units(O)
+    S, ex, lo = carlos_units(O)
     for i=1:length(inf_plc)
       pl=inf_plc[i]
       j=1
@@ -258,7 +257,7 @@ function conductor(C::Hecke.ClassField)
         end
         j+=1
       end
-      delta=minimum(cond)*ex(S[j])
+      delta=minimum(mR.modulus_fin)*ex(S[j])
       el=1+delta
       con=abs_upper_bound(1/real(conjugates_arb(delta))[j], fmpz)
       el+=con*delta

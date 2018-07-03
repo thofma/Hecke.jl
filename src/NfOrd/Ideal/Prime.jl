@@ -319,8 +319,8 @@ end
 
 function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
   
-  return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-  #=
+  #return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
+
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -430,7 +430,7 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
   if degree_limit >= degree(O)
     O.index_div[fmpz(p)] = result
   end
-
+  #=
   lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
   @assert length(lp)==length(result)
   for (Q, e) in lp
@@ -443,8 +443,9 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
       end
     end
   end
-  return result
   =#
+  return result
+
 end
 
 function uniformizer(P::NfOrdIdl)

@@ -104,7 +104,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   if (check)
     m = vcat([x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
-    T, i = nullspace(m')
+    i, T = nullspace(m')
     T = T'
     T = sub(T, 1:rows(T), 1:length(A))
     n = vcat([x.coeff for x in B])

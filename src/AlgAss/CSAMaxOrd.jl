@@ -439,7 +439,8 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
       end
     end
   end
-  j = find_identity(G, *)
+  j1 = find_identity(G, *)
+  j = find_elem(G, j1)
   O1 = fmpq[0 for i=1:n*m]
   O1[j] = fmpq(1)
   return AlgAss(FlintQQ, M, O1)
@@ -984,7 +985,7 @@ function trace_signature(O::AlgAssOrd)
       R=AcbField(p, false)
       Rx=AcbPolyRing(R, Symbol("x"), false)
       g=Rx(f)
-      l=roots(g)
+      l = roots(g, max_prec = 1024)
       for i=1:length(l)
         y=real(l[i])
         if ispositive(y)
