@@ -274,8 +274,27 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
    #   this "solves" the problem, but it should probably be
    #   adressed in c
    @assert nb > 0
-   de = denominator(a)
    n = degree(parent(a))
+   if n > 20
+     p = p_start
+     pp = fmpz(1)
+     no = 1
+     while nbits(pp) < nb
+       p = next_prime(p)
+       R = ResidueRing(FlintZZ, Int(p))
+       Rt, t = PolynomialRing(R)
+       np = divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d))
+       if isone(pp)
+         no = lift(np)
+         pp = fmpz(p)
+       else
+         no = crt(no, pp, lift(np), fmpz(p))
+         pp *= fmpz(p)
+       end
+     end
+     return mod_sym(no, pp)//1
+   end
+   de = denominator(a)
    ccall((:nf_elem_norm_div, :libantic), Void,
          (Ref{fmpq}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{fmpz}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
@@ -589,7 +608,6 @@ function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
 end
 
 function elem_in_nf(a::nf_elem)
-  Base.show_backtrace(STDOUT, Base.backtrace())
   return a
 end
 
@@ -853,7 +871,6 @@ function mod_sym!(a::nf_elem, b::fmpz)
 end
 
 function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
-  Base.show_backtrace(STDOUT, Base.backtrace()[1:2])
   z = fmpz()
   for i=0:a.elem_length-1
     Nemo.num_coeff!(z, a, i)
