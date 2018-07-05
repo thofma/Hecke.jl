@@ -553,7 +553,7 @@ function idempotents(x::NfOrdIdl, y::NfOrdIdl)
     V[1 + i, d + 1 + i] = 1
   end
 
-  H = hnf(V) # upper right
+  H = hnf_modular(V, g) # upper right
 
   for i in 2:(1 + d)
     if H[1, i] != 0
