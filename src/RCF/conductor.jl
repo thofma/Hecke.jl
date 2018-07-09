@@ -1352,7 +1352,9 @@ function norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberFie
   k = domain(m)
   assure_2_normal(I)
   zk = maximal_order(k)
-  return ideal(zk, I.gen_one^div(degree(K), degree(k)), zk(norm(m, I.gen_two.elem_in_nf)))
+  J = ideal(zk, I.gen_one^div(degree(K), degree(k)), zk(norm(m, I.gen_two.elem_in_nf)))
+  J.gens_normal = I.gens_normal
+  return J
 end
 
 function norm(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
@@ -1383,7 +1385,9 @@ function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumber
   #so ai * a = 1 in K/k
   c = content_ideal(ai, zk)
   n,d = integral_split(c)
-  return ideal(zk, I.gen_one) + d
+  J = ideal(zk, I.gen_one) + d
+  J.gens_normal = I.gens_normal
+  return J
 end
 
 function minimum(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNumberField}
@@ -1474,13 +1478,13 @@ end
 function lorenz_eta_level(k::AnticNumberField)
   # find max r s.th. eta_r in k, eta_(r+1) not in k
   # where eta_r = (zeta_(2^r) + 1/zeta_(2^r))
-  r = 3
+  r = 2
   x = PolynomialRing(FlintZZ, cached = false)[2]
   while true
-    f = cos_minpoly(2^r, x)
+    @show f = cos_minpoly(2^r, x)
     if hasroot(f, k)[1]
       return r-1
     end
-    r += 1
+    @show r += 1
   end
 end
