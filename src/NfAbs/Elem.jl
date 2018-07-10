@@ -262,7 +262,7 @@ end
 
 doc"""
 ***
-   norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpz
+   norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
 Computes divexact(norm(a), d) provided the result has at most `nb` bits.
 Typically, $a$ is in some ideal and $d$ is the norm of the ideal.
@@ -292,7 +292,8 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
          pp *= fmpz(p)
        end
      end
-     return mod_sym(no, pp)//1
+     no = mod_sym(no, pp)
+     return no//1
    end
    de = denominator(a)
    ccall((:nf_elem_norm_div, :libantic), Void,
