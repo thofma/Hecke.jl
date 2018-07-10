@@ -581,6 +581,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
                                    # (-1, 0) means "not set"
   #conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
+  minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
   torsion_units#::Tuple{Vector{NfAbsOrd}, NfAbsOrd}
   unit_group::Map                  # Abstract types in the field is usually bad,
                                    # but here it can be neglected.
