@@ -1,26 +1,33 @@
-import Base: length, GMP
+export newton_polygon, Line, Polygon
 
-export SortPoints, lowerconvexhull, newtonpolygon, Line, Polygon, PartialPolygon
+###############################################################################
+#
+#  Types
+#
+###############################################################################
 
 mutable struct Line
-  points :: Tuple{Tuple{fmpz, fmpz},Tuple{fmpz, fmpz}}
+  points :: Tuple{Tuple{Int, Int}, Tuple{Int, Int}}
   slope :: fmpq
   
-  function Line(points::Tuple{Tuple{fmpz, fmpz}, Tuple{fmpz, fmpz}})
+  function Line(points::Tuple{Tuple{Int, Int}, Tuple{Int, Int}})
     line = new()
     line.points = points
     line.slope = slope(points[1],points[2])
     return line
   end
   
-  function Line(a::Tuple{fmpz,fmpz},b::Tuple{fmpz,fmpz})
-    return Line([a,b])
+  function Line(a::Tuple{Int, Int}, b::Tuple{Int, Int})
+    return Line((a,b))
   end
 end
 
 mutable struct Polygon
   lines :: Array{Line,1}
-
+  f :: fmpz_poly
+  phi :: fmpz_poly
+  p :: fmpz
+  
   function Polygon(lines::Array{Line,1}; sorted = false)
     polygon = new()
     if sorted
@@ -44,6 +51,11 @@ mutable struct Polygon
   end
 end 
 
+###############################################################################
+#
+#  Invariants of lines an polygons
+#
+###############################################################################
 
 function length(L::Line)
   return L.points[2][1]-L.points[1][1]
@@ -53,8 +65,25 @@ function heigth(L::Line)
   return L.points[2][1]-L.points[1][1]
 end
 
+function slope(L::Line)
+  return slope(L.points[1], L.points[2])
+end
 
-function sortpoints(x::Array{Tuple{fmpz,fmpz},1})
+function slope(a::Tuple{Int, Int}, b::Tuple{Int, Int})
+  return fmpq((b[2]-a[2])//(b[1]-a[1]))
+end
+
+function degree(L::Line)
+  return divexact(L.points[2][1]-L.points[1][1], denominator(L.slope))
+end
+
+###############################################################################
+#
+#  Lower convex hull of a set of points
+#
+###############################################################################
+
+function sortpoints(x::Array{Tuple{Int, Int},1})
   for j = 1:length(x)-1
     iMin = j
     for i = j+1:length(x)
@@ -69,7 +98,7 @@ function sortpoints(x::Array{Tuple{fmpz,fmpz},1})
   return x
 end
 
-function lowerconvexhull(points::Array{Tuple{fmpz, fmpz},1})
+function lowerconvexhull(points::Array{Tuple{Int, Int},1})
 
   points = sortpoints(points)
 
@@ -80,10 +109,45 @@ function lowerconvexhull(points::Array{Tuple{fmpz, fmpz},1})
   elseif length(points) == 2
     return Polygon([Line((points[1], points[2]))])
   end
-
-  pointsonconvexhull = [ points[length(points)-1], points[length(points)] ]
+  
+  i = 1
+  while points[i][2] !=0
+    i += 1
+  end
+  
+  pointsconvexhull = Tuple{Int, Int}[points[i]]
+  while pointsconvexhull[end][1] != 0
+    best_slope = slope(pointsconvexhull[end], points[1])
+    i = 2
+    new_point = points[1]
+    while points[i][1] < pointsconvexhull[end][1]
+      candidate = slope(pointsconvexhull[end], points[i])
+      if candidate > best_slope
+        new_point = points[i]
+        best_slope = candidate
+      end
+      i += 1
+    end 
+    push!(pointsconvexhull, new_point)
+  end
+  
+  n=length(pointsconvexhull)
+  l= Line[]
+  for i=0:n-2
+    push!(l, Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1]))
+  end
+  return Polygon(l, sorted = true)
+  #=
+  #This thing clearly cannot work, I don't know how to fix it
+  i = 1
+  while points[i][2] !=0
+    i += 1
+  end
+  
+  pointsonconvexhull = [ points[i-1], points[i] ]
 
   n = length(points)-2
+  
 
   oldslope = slope(pointsonconvexhull[1],pointsonconvexhull[2])
 
@@ -92,11 +156,11 @@ function lowerconvexhull(points::Array{Tuple{fmpz, fmpz},1})
     if newslope >= oldslope
       pointsonconvexhull[1] = points[n-i+1]
     else
-      unshift!(pointsonconvexhull,points[n-i+1])
+      unshift!(pointsonconvexhull, points[n-i+1])
     end
     oldslope = newslope
   end
-
+  =#
   t = Line[]
   for i=1:length(pointsonconvexhull)-1
     push!(t,Line((pointsonconvexhull[i], pointsonconvexhull[i+1])))
@@ -104,17 +168,15 @@ function lowerconvexhull(points::Array{Tuple{fmpz, fmpz},1})
   return Polygon(t)
 end
 
-function slope(L::Line)
-  return slope(L.points[1], L.points[2])
-end
-
-function slope(a::Tuple{fmpz,fmpz},b::Tuple{fmpz,fmpz})
-  return (b[2]-a[2])//(b[1]-a[1])
-end
+###############################################################################
+#
+#  Newton polygon
+#
+###############################################################################
 
 function phi_development(f::fmpz_poly, phi::fmpz_poly)
-  dev=Array{fmpz_poly, 1}()
-  g=f
+  dev = Array{fmpz_poly, 1}()
+  g = f
   while degree(g)>=degree(phi)
     g, r = divrem(g, phi)
     push!(dev, r)
@@ -124,12 +186,13 @@ function phi_development(f::fmpz_poly, phi::fmpz_poly)
 end
 
 function valuation(f::fmpz_poly, p::fmpz)
-  return minimum([valuation(coeff(f,i), p) for i= 0:degree(f)])
+  l = [Int(valuation(coeff(f,i), p)) for i= 0:degree(f) if coeff(f,i)!=0]
+  return minimum(l)
 end
 
 
 function newton_polygon(dev::Array{fmpz_poly, 1}, p::fmpz)
-  a = Tuple{fmpz, fmpz}[]
+  a = Tuple{Int, Int}[]
   for i = 0:length(dev)-1
     if !iszero(dev[i+1])
       push!(a, (i,valuation(dev[i+1],p)))
@@ -139,59 +202,39 @@ function newton_polygon(dev::Array{fmpz_poly, 1}, p::fmpz)
 end
 
 function newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
-  a = Tuple{fmpz, fmpz}[]
+  a = Tuple{Int, Int}[]
   if !(isprime(p))
     error("Not a prime")
   end
   #Compute the development
   dev=phi_development(f,phi)
-  for i = 0:degree(f)
-    if iszero(coeff(f,i))
-      continue
+  for i = 0:length(dev)-1
+    if !iszero(dev[i+1])
+      push!(a, (i,valuation(dev[i+1],p)))
     end
-    push!(a, (i,valuation(dev[i+1],p)))
   end 
-  @show a
   return lowerconvexhull(a)
 end
 
-function degree(L::Line)
-  return divexact(L.points[2][1]-L.points[1][1], denominator(L.slope))
-end
 
-function residual_polynomial(F::FqNmodFiniteField, L::Line, dev::Array{fmpz_poly, 1}, p::fmpz)
+function residual_polynomial(F::FqFiniteField, L::Line, dev::Array{fmpz_poly, 1}, p::fmpz)
 
-  cof=Array{fq_nmod,1}()
+  cof=Array{fq,1}()
   R=ResidueRing(FlintZZ, p, cached=false)
   Rx,x=PolynomialRing(R,"y", cached=false)
   s=L.points[1][1]
   e=denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
-      el=Rx(divexact(dev[Int(s+e*i+1)], p^(Int(L.points[1][2]-i))))
+      el=Rx(divexact(dev[Int(s+e*i+1)], p^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
       push!(cof, F(el))
+    else
+      push!(cof, F(0))
     end 
   end
   Fx, x=PolynomialRing(F,"x", cached=false)
   return Fx(cof)
 
-end
-
-
-# Remove all lines where the slop is <= t
-
-function PartialPolygon(P::Polygon,t::Rational{BigInt})
-  
-  function tem(s::Line)
-    if s.slope > t 
-      return true
-    end
-    return false
-  end
-
-  m = findfirst(tem,P.lines)
-  println(m)
-  return true
 end
 
 function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly)
@@ -207,7 +250,22 @@ function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly)
   return dev, quos
 end
 
-function _fl_np(N::Polygon, i::Int)
+function phi_development_with_quos(f::fmpz_poly, phi::fmpz_poly, Rx::FmpzModPolyRing)
+  dev=Array{fmpz_poly, 1}()
+  quos=Array{fmpz_poly, 1}()
+  Zx = parent(f)
+  g = Rx(f)
+  h = Rx(phi)
+  while degree(g)>=degree(h)
+    g, r = divrem(g, h)
+    push!(dev, lift(Zx,r))
+    push!(quos, lift(Zx,g))
+  end
+  push!(dev, lift(Zx,g))
+  return dev, quos
+end
+
+function _floor_newton_polygon(N::Polygon, i::Int)
   
   j = 1
   while N.lines[j].points[2][1]< i
@@ -218,31 +276,440 @@ function _fl_np(N::Polygon, i::Int)
 
 end
 
+###############################################################################
+#
+#  p-overorder using Polygons
+#
+###############################################################################
+
 function gens_overorder_polygons(O::NfOrd, p::fmpz)
 
   K = nf(O)
   f = K.pol
+  
   els = nf_elem[]
   Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  modu = valuation(rres(Zx(f), derivative(Zx(f))), p) 
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rx, y = PolynomialRing(R, "y", cached = false)
+  #R1 = ResidueRing(FlintZZ, p^(modu+2), cached = false)
+  #R1x, z = PolynomialRing(R1, "z", cached = false)
+  f1 = Rx(K.pol)
+  fac = factor(f1)
+  l = nf_elem[gen(K)^i for i=0:degree(K)-1]
+  regular = true
+  vdisc = 0
+  for (g, m) in fac
+    if m==1
+      continue
+    end
+    F, a = FiniteField(g, "a", cached = false)
+    phi = lift(Zx, g)
+    dev, quos = phi_development_with_quos(Zx(f), phi)#, R1x)
+    N = newton_polygon(dev, p)
+    if regular
+      for lin in N.lines
+        if slope(lin) < 0 && degree(lin) != 1
+          rp = residual_polynomial(F, lin, dev, p)
+          if !issquarefree(rp)
+            regular = false
+            break
+          end
+        end
+      end
+    end
+    for i = 1:m
+      v = _floor_newton_polygon(N, i)
+      if v > 0
+        vdisc += v*degree(phi)
+        for j = 1:degree(phi)
+          push!(l, divexact(K(x^(j-1)*quos[i]), p^v))
+        end
+      end
+    end
+  end
+  B = basis_mat(l)
+  B = sub(hnf(B), rows(B)-degree(K)+1:rows(B), 1:degree(K))
+  if !regular
+    elt = nf_elem[]
+    for i in 1:rows(B) 
+      push!(elt, elem_from_mat_row(K, B.num, i, B.den))
+    end
+    O1 = _order_for_polygon_overorder(K, elt)
+  else
+    #N1 = B.den * B.num
+    #N1 = _hnf_modular_eldiv(N1, p^(modu+1), :lowerleft)
+    #O1 = Order(K, FakeFmpqMat(N1, B.den))
+    O1 = Order(K, B)
+    O1.disc = divexact(O.disc, p^(2*vdisc))
+    push!(O1.primesofmaximality, p)
+  end
+  return O1
+  
+end
+
+
+function polygons_overorder(O::NfOrd, p::fmpz)
+  #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
+  # or it can produce an order which is p-maximal, we are done.
+  Zy, y = PolynomialRing(FlintZZ, "y")
+  Kx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
+
+  f = nf(O).pol
+
+  Zyf = Zy(f)
+
+  fmodp = Kx(Zyf) 
+ 
+  fac = factor_squarefree(fmodp)
+
+  g = prod(x for x in keys(fac.fac))
+  h = divexact(fmodp,g)
+
+  # first build 1/p ( f - g*h)
+  gZ = lift(Zy,g)
+  hZ = lift(Zy, h)
+
+  g1 = Zyf - gZ*hZ
+
+  for i in 0:degree(g1)
+    q, r = divrem(coeff(g1,i),p)
+    @assert r == 0
+    setcoeff!(g1,i,q)
+  end
+  
+  g1modp = Kx(g1)
+  U = gcd(gcd(g,h), g1modp)
+  if isone(U)
+    return O
+  elseif 2*degree(U) == valuation(discriminant(O), p)
+    #@show "Dedekind"
+    U = divexact(fmodp, U)
+
+    @hassert :NfOrd 1 rem(O.disc, p^2) == 0
+    alpha = nf(O)(parent(f)(lift(Zy,U)))
+
+    # build the new basis matrix
+    # we have to take the representation matrix of alpha!
+    # concatenating the coefficient vector won't help
+    Malpha, d = representation_matrix_q(alpha)
+    @assert isone(d)
+    n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
+    b = FakeFmpqMat(n, p)
+    @hassert :NfOrd 1 defines_order(nf(O), b)[1]
+    OO = Order(nf(O), b, false)
+    OO.isequation_order = false
+    OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
+    push!(OO.primesofmaximality, p)
+    return OO
+  end
+  return gens_overorder_polygons(O, p)
+
+end
+
+function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
+
+  n = degree(K)
+  closed = false
+  dold = fmpq(0)
+
+  # Since 1 is in elt, prods will contain all elements
+  while !closed
+    prods = T[elt[i] for i=1:length(elt)]
+    for i = 2:length(elt)
+      for j = i:length(elt)
+        el = elt[i]*elt[j]
+        if denominator(el)!=1
+          push!(prods, elt[i]*elt[j])
+        end
+      end
+    end
+    
+    B = hnf(basis_mat(prods))
+    
+    dd = B.num[rows(B) - degree(K) + 1, 1]
+    for i in 2:degree(K)
+      dd *= B.num[rows(B) - degree(K) + i, i]
+    end
+    if iszero(dd)
+      error("Elements do not define a module of full rank")
+    end
+    d = dd//(B.den)^n
+
+    if dold == d
+      closed = true
+    else
+      dold = d
+      elt = T[]
+      for i in 1:n
+        push!(elt, elem_from_mat_row(K, B.num, rows(B) - degree(K) + i, B.den))
+      end
+    end
+  end
+
+  # Make an explicit check
+  @hassert :NfOrd 1 defines_order(K, elt)[1]
+  return Order(K, elt, false)
+end
+
+###############################################################################
+#
+#  Decomposition type using polygons
+#
+###############################################################################
+
+function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmpz)
+  #I is an ideal lying over p
+  #J is the product of all the prime ideals lying over p that do not appear in the factorization of I
+  #Ip is the p-radical
+  Ip1 = Ip + I
+  A, OtoA = AlgAss(O, Ip1, p)
+  AtoO = inv(OtoA)
+  AA = split(A)
+
+  basisO = basis(O, Val{false})
+
+  ideals = Vector{NfOrdIdl}()
+  m = zero_matrix(FlintZZ, 1, degree(O))
+  for (B, BtoA) in AA
+    f = dim(B)
+    idem = BtoA(B[1]) # Assumes that B == idem*A
+    M = representation_matrix(idem)
+    ker = left_kernel(M)
+    N = basis_mat(Ip1, Val{false})
+    for i = 1:length(ker)
+      b = elem_in_basis(AtoO(A(ker[i])))
+      for j = 1:degree(O)
+        m[1, j] = b[j]
+      end
+      N = vcat(N, m)
+    end
+    N = view(_hnf_modular_eldiv(N, fmpz(p), :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    P = NfOrdIdl(O, N)
+    P.norm = p^f
+    P.splitting_type = (0, f)
+    P.is_prime = 1
+    fromOtosimplealgebra = Hecke._compose(inv(BtoA), OtoA)
+    compute_residue_field_data!(P, fromOtosimplealgebra)
+
+    push!(ideals, P)
+  end
+
+  result = Vector{Tuple{NfOrdIdl, Int}}()
+  
+  k = (1-1/BigInt(p))^degree(O) < 0.1
+
+  for j in 1:length(ideals)
+    P = ideals[j]
+    f = P.splitting_type[2]
+    
+    # The following does not work if there is only one prime ideal
+    if length(ideals) > 1 && k
+      # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
+      # number theory".
+      # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
+      
+      # Carlo: In the case I split O/I_p, I think that I get for free the element u
+      # just by working with the idempotents of the algebra.
+
+      B, BtoA = AA[j]
+      J = ideal(O, AtoO(BtoA(B[1])))
+      N = view(_hnf_modular_eldiv(vcat(basis_mat(Ip1, Val{false}), basis_mat(J, Val{false})), fmpz(p), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
+      Vp = NfOrdIdl(O, N)*T
+
+      u, v = idempotents(P, Vp)
+      x = zero(parent(u))
+
+      if !iszero(mod(norm(u), norm(P)*p))
+        x = u
+      elseif !iszero(mod(norm(u + p), norm(P)*p))
+        x = u + p
+      elseif !iszero(mod(norm(u - p), norm(P)*p))
+        x = u - p
+      else
+        Ba = basis(P, Val{false})
+        for i in 1:degree(O)
+          if !iszero(mod(norm(v*Ba[i] + u), norm(P)*p))
+            x = v*Ba[i] + u
+            break
+          end
+        end
+      end
+
+      @hassert :NfOrd 1 !iszero(x)
+      @hassert :NfOrd 2 O*O(p) + O*x == P
+      P.gen_one = p
+      P.gen_two = x
+      P.gens_normal = p
+      P.gens_weakly_normal = 1
+    else
+      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/p))\n"
+      _assure_weakly_normal_presentation(P)
+      assure_2_normal(P)
+    end
+    
+    e = Int(valuation(nf(O)(p), P))
+    P.splitting_type = e, f
+    push!(result, (P, e))
+  end
+  return result
+
+end
+
+function decomposition_type_polygon(O::NfOrd, p::fmpz)
+  K = nf(O)
+  f = K.pol
+  Zx ,x = PolynomialRing(FlintZZ, "x")
+  R = ResidueRing(FlintZZ, p, cached = false)
+  Rx, y = PolynomialRing(R, "y", cached = false)
+  f1 = Rx(Zx(K.pol))
+  fac = factor(f1)
+  res = Tuple{Int, Int}[]
+  l = Tuple{NfOrdIdl, NfOrdIdl}[]
+  for (g,m) in fac
+    if m==1
+      push!(res, (degree(g), 1))
+      continue
+    end
+    phi = lift(Zx, g)
+    dev = phi_development(Zx(f),phi)
+    N = newton_polygon(dev, p)
+    if denominator(slope(N.lines[1])) == m
+      push!(res, (degree(g), m))
+      continue
+    end
+    filter(x -> slope(x)<0, N.lines)
+    F, a = FiniteField(g, "a", cached = false)
+    pols = fq_poly[]
+    for ll in N.lines
+      rp = residual_polynomial(F, ll, dev, p)
+      if issquarefree(rp)
+        push!(pols, rp)
+      else
+        break
+      end
+    end  
+    if length(N.lines) != length(pols)
+      push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))))))) 
+    else
+      for i=1:length(pols)
+        fact = factor(pols[i])
+        s = denominator(slope(N.lines[i]))
+        for psi in keys(fact.fac)
+          push!(res, (degree(phi)*degree(psi), s))
+        end      
+      end
+    end
+  end
+  if !isempty(l)
+    Ip = pradical(O, p)
+    for (I, J) in l
+      lp = _decomposition(O, I, Ip, J, p)
+      for (P, e) in lp
+        push!(res, (P.splitting_type[2], e))
+      end
+    end
+  end
+  return res
+  
+end
+
+###############################################################################
+#
+#  Prime decomposition
+#
+###############################################################################
+
+function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+  if degree_limit == 0
+    degree_limit = degree(O)
+  end
+  K = nf(O)
+  f = K.pol
+  Zx = PolynomialRing(FlintZZ, "x")[1]
   R = ResidueRing(FlintZZ, p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
   fac = factor(f1)
-  l = nf_elem[]
-  v1 = valuation(discriminant(O), p)
+  res = Tuple{NfOrdIdl, Int}[]
+  l = Tuple{NfOrdIdl, NfOrdIdl}[]
   for (g, m) in fac
+    if degree(g) > degree_limit || lower_limit > degree(g)
+      continue
+    end
+    if m==1
+      fi = lift(Zx, g)
+      ei = m
+      t = parent(f)(fi)
+      b = K(t)
+      J = NfAbsOrdIdl(O)
+      J.gen_one = p
+      J.gen_two = O(b, false)
+      J.is_prime = 1
+      J.splitting_type = ei, degree(fi)
+      J.norm = FlintZZ(p)^degree(fi)
+      J.minimum = FlintZZ(p)
+
+    # We have to do something to get 2-normal presentation:
+    # if ramified or valuation val(b,P) == 1, (p,b)
+    # is a P(p)-normal presentation
+    # otherwise we need to take p+b
+    # I SHOULD CHECK THAT THIS WORKS
+
+      if !((mod(norm(b),(J.norm)^2) != 0) || (ei > 1))
+        J.gen_two = J.gen_two + O(p)
+      end
+
+      J.gens_normal = p
+      J.gens_weakly_normal = true
+      push!(res, (J, ei))
+      continue
+    end
     phi = lift(Zx, g)
-    dev, quos = phi_development_with_quos(Zx(f),phi)
+    dev = phi_development(Zx(f),phi)
     N = newton_polygon(dev, p)
-    for i = 1:m
-      v = _fl_np(N, i)
-      for j=1:degree(phi)
-        push!(l, divexact(K(x^(j-1)*quos[i]), p^v))
+    filter(x -> slope(x)<0, N.lines)
+    if length(N.lines) == 1 && degree(N.lines[1]) == 1
+      s = slope(N.lines[1])
+      x=K(1)
+      if abs(numerator(s))> denominator(s)
+        d, r = divrem(numerator(s), denominator(s))
+        x = divexact(K(phi), p^(-d))
+        d, u, v = gcdx(r, denominator(s))
+        @assert d == 1
+        x = divexact(x^-u, p^(-v))
+      else
+        d, u, v = gcdx(numerator(s), denominator(s))
+        @assert d==1
+        x=divexact(K(phi)^(-u), p^(-v))
+      end
+      J = NfAbsOrdIdl(O)
+      J.gen_one = p
+      J.gen_two = O(x)
+      J.is_prime = 1
+      J.splitting_type = Int(denominator(s)), degree(phi)
+      J.norm = FlintZZ(p)^degree(phi)
+      J.minimum = FlintZZ(p)
+      J.gens_normal = p
+      J.gens_weakly_normal = true
+      push!(res, (J, Int(denominator(s))))
+      continue
+    end
+    #TODO: p-adic factorization of the polynomial.
+    push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m))))))))
+  end
+  if !isempty(l)
+    Ip = pradical(O, p)
+    for (I, Q) in l
+      lp = _decomposition(O, I, Ip, Q, p)
+      for (P, e) in lp
+        if degree(P) > degree_limit || degree(P) < lower_limit
+          continue
+        end
+        push!(res, (P, e))
       end
     end
   end
-  
-  return _order(K, l)#, false)
-  
+  return res
+
 end
-  

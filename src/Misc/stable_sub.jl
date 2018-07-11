@@ -202,7 +202,7 @@ function kernel_as_submodule(h::GrpAbFinGenMap)
   hn, t = hnf_with_transform(vcat(h.map, rels(H))) 
   for i=1:rows(hn)
     if iszero_row(hn, i)
-      return sub(t, i:rows(t), 1:ngens(G))
+      return view(t, i:rows(t), 1:ngens(G))
     end
   end
   error("JH")
@@ -818,18 +818,27 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #  Dual Module and candidate submodules
   #
   M_dual=dual_module(S)
-  candidates=submodules_with_struct(M_dual,typequo)
+  candidates=submodules_with_struct(M_dual, typequo)
 
   #
   #  Dualize the modules
   #
   v=[divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
-  list=(_dualize(x, S.V, v) for x in candidates)  
+  list=(_dualize(x, S.V, v) for x in candidates) 
+   
   #
   #  Write the submodules in terms of the given generators
   #
-  W=MatrixSpace(R,rows(mS.map), cols(mS.map), false)
+  W=MatrixSpace(R, rows(mS.map), cols(mS.map), false)
   MatSnf=W(mS.map)
-  return (x*MatSnf for x in list)
+  return (final_check_and_ans(x, MatSnf, M) for x in list)
   
+end
+
+function final_check_and_ans(x::nmod_mat, MatSnf::nmod_mat, M::ZpnGModule)
+  
+  y=x*MatSnf
+  @hassert :RayFacElem 1 issubmodule(M, y)
+  return y 
+
 end

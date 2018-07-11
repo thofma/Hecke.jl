@@ -1,7 +1,6 @@
-
 export meataxe, composition_factors, composition_series, submodules, maximal_submodules, minimal_submodules
 
-
+add_assert_scope(:MeatAxe)
 ####################################################################
 #
 #  Tools for MeatAxe
@@ -964,6 +963,7 @@ function submodules(M::FqGModule)
   
 end
 
+
 doc"""
 ***
     submodules(M::FqGModule, index::Int)
@@ -1058,7 +1058,7 @@ function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}
       end
       i+=1
     end
-    append!(list,minimal_submodules(M,M.dim-index, lf))
+    append!(list, minimal_submodules(M,M.dim-index, lf))
   else 
   #
   #  Duality
@@ -1067,6 +1067,10 @@ function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}
     dlist=submodules(M_dual, M.dim-index)
     list=fq_nmod_mat[transpose(nullspace(x)[2]) for x in dlist]
   end 
+  for x in list
+    rref!(x)
+    @hassert :MeatAxe 1 closure(deepcopy(x), M.G)==x
+  end
   return list
     
 end

@@ -313,9 +313,9 @@ function carlos_units(O::NfOrd)
     c = _get_carlos_units_of_order(O)
     return c
   catch
-    K=O.nf
-    p=real_places(K)
-    S=DiagonalGroup([2 for i=1:length(p)])
+    K= O.nf
+    p = real_places(K)
+    S = DiagonalGroup([2 for i=1:length(p)])
 
     function logS(x::Array{Int, 1})
       return S([x[i] > 0 ? 0 : 1 for i=1:length(x)])
@@ -1340,7 +1340,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp,gcd(expo,n))
+  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp, gcd(expo,n))
   append!(evals, ev)
   @vprint :RayFacElem 1 "\n"
   
@@ -1360,17 +1360,17 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     end
   end 
 
-#
-# We compute the relation between generators of Cl and (O/m)^* in Cl^m
-#
+  # 
+  # We compute the relation between generators of Cl and (O/m)^* in Cl^m
+  #
 
   for i=1:ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn=invmod(vect[i],fmpz(expo))
-    investigated=evaluate(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
+    #investigated=evaluate(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
     a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
     if mod(n,2)==0 && !isempty(pr)
-      b=lH(mC.princ_gens[i][2]*Kel[i])
+      b=lH(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
       a=hcat(a, b.coeff)
     end
     for j=1: ngens(G)
@@ -1380,9 +1380,9 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   X=AbelianGroup(R)
    
-#
-# Discrete logarithm
-#
+  #
+  # Discrete logarithm
+  #
   inverse_d=invmod(fmpz(nonnclass),fmpz(expo))
   @assert gcd(fmpz(nonnclass),fmpz(expo))==1
 
@@ -1457,9 +1457,9 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     
   end 
 
-#
-# Exp map
-#
+  #
+  # Exponential map
+  #
 
   function expon(a::GrpAbFinGenElem)
     b=C([a.coeff[1,i] for i=1:ngens(C)])
@@ -1621,8 +1621,6 @@ function find_gens(mR::MapRayClassGrp)
   m = mR.modulus_fin
   mm = minimum(m)
 
-  
-  
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
   q, mq = quo(R, sR,false)
@@ -1723,13 +1721,14 @@ function find_gens(mR::MapRayClassGrp)
 end
 
 
-function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Array{Hecke.NfToNfMor,1}())
+function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
   if isempty(Aut)
-    Aut=automorphisms(K)
+    Aut = automorphisms(K)
+    Aut = small_generating_set(Aut, *)
   end
   if ngens(R)==0
     return GrpAbFinGenMap[]
@@ -1740,21 +1739,20 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
     return GrpAbFinGenMap[]
   end
   
-  
-  G=Array{GrpAbFinGenMap,1}(length(Aut))
+  G = Array{GrpAbFinGenMap,1}(length(Aut))
   #
   #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
   #  class group map
   #
 
-  lgens,subs=find_gens(mR)
+  lgens, subs=find_gens(mR) 
   
   if isempty(lgens)
     push!(G, GrpAbFinGenMap(R))
     return G
   end
-  
+  #=
   #
   #  Write the matrices for the change of basis
   #
@@ -1776,24 +1774,34 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor,1}=Arr
     end
   end
 
-  Ml=solve(auxmat,eye(auxmat,ngens(R)))'
+  @show Ml=transpose(solve(auxmat,eye(auxmat,ngens(R))))
   #
   #  Now, we compute the action on the group
   #
   
   for k=1:length(Aut)
-    M=zero_matrix(FlintZZ,length(lgens), ngens(R))
+    M=zero_matrix(FlintZZ, length(lgens), ngens(R))
     for i=1:length(lgens) 
-      @vtime :RayFacElem 3 J=_aut_on_id(O,Aut[k],lgens[i])
-      @vtime :RayFacElem 3 elem=mR\J
+      @vtime :RayFacElem 3 J = _aut_on_id(O,Aut[k],lgens[i])
+      @vtime :RayFacElem 3 elem = mR\J
       for j=1:ngens(R)
         M[i,j]=elem[j]
       end
     end
-    G[k]= hom(R, R, sub(Ml,1:rows(Ml), 1:length(lgens))*M)
+    G[k] = hom(R, R, view(Ml,1:rows(Ml), 1:length(lgens))*M)
     @hassert :RayFacElem 1 isbijective(G[k])
   end
-
+  =#
+  
+  for k=1:length(Aut)
+    imaggens=Array{GrpAbFinGenElem,1}(length(lgens))
+    for i=1:length(lgens) 
+      @vtime :RayFacElem 3 J = _aut_on_id(O, Aut[k], lgens[i])
+      @vtime :RayFacElem 3 imaggens[i] = mR\J
+    end
+    G[k] = hom(subs, imaggens, check = true)
+    @hassert :RayFacElem 1 isbijective(G[k])
+  end
   return G
   
 end
@@ -1844,8 +1852,8 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     
     if x==1
     
-      F, _ = Nemo.FiniteField(Int(p), 1, "_", cached=false)
-      act_mat=Array{fq_nmod_mat, 1}(length(act))
+      F = ResidueRing(FlintZZ, Int(p), cached=false)
+      act_mat=Array{nmod_mat, 1}(length(act))
       for w=1:length(act)
         act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
       end
@@ -1858,14 +1866,14 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
           end
         end
       end
-      M=FqGModule(act_mat)
+      M=ModAlgAss(act_mat)
       
       #
       #  Searching for submodules
       #
       
-      ind=length(quotype_p)
-      plist=submodules(M,ind)
+      ind = length(quotype_p)
+      plist = submodules(M, ind)
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
 
     else    
@@ -1886,7 +1894,7 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #
       
       M=Hecke.ZpnGModule(S,act_mat)
-      plist=submodules(M,typequo=quotype_p)
+      plist=submodules(M, typequo = quotype_p)
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
       
     end
@@ -1904,7 +1912,7 @@ function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap
   R=mQ.header.domain
   newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
   for i=1:rows(A)
-    y=sub(A,i:i,1:cols(A))
+    y=view(A, i:i, 1:cols(A))
     if !iszero(y)
       push!(newsub,mQ\(mG(mS(mS.header.domain(lift(y))))))
     end       
@@ -1912,7 +1920,7 @@ function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap
   return newsub
 
 end
-
+#=
 function _lift_and_construct(A::fq_nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c ::Int)
   
   R=mQ.header.domain
@@ -1927,3 +1935,4 @@ function _lift_and_construct(A::fq_nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGen
   return newsub
 
 end
+=#

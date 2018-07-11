@@ -736,43 +736,69 @@ equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 function _order(K::S, elt::Array{T, 1}) where {S, T}
   o = one(K)
-
+  
+  n = degree(K)
   if !(o in elt)
     push!(elt, o)
   end
-
-  n = degree(K)
-
+  B = basis_mat(elt)
+  B = hnf(B)
+  
+  elt = T[]
+  if rows(B) >= n
+    for i in (rows(B) - degree(K) + 1):rows(B) 
+      push!(elt, elem_from_mat_row(K, B.num, i, B.den))
+    end
+  else
+    for i in 1:rows(B) 
+      push!(elt, elem_from_mat_row(K, B.num, i, B.den))
+    end
+    for i=1:n-1
+      l=length(elt)
+      for s = 1:l
+        for t = i:l
+          push!(elt, elt[s] * elt[t])
+        end
+      end
+      B = hnf(basis_mat(elt))
+      empty!(elt)
+      if rows(B) >= n
+        for i in (rows(B) - degree(K) + 1):rows(B) 
+          push!(elt, elem_from_mat_row(K, B.num, i, B.den))
+        end
+      else
+        for i in 1:rows(B) 
+          push!(elt, elem_from_mat_row(K, B.num, i, B.den))
+        end
+      end
+    end
+  end
+  
   closed = false
 
   dold = fmpq(0)
 
   # Since 1 is in elt, prods will contain all elements
-  
   while !closed
-    prods = T[]
-    for u in elt
-      for v in elt
-        push!(prods, u * v)
+    prods = T[elt[i] for i=1:length(elt)]
+    for i = 2:length(elt)
+      for j = i:length(elt)
+        push!(prods, elt[i]*elt[j])
       end
     end
     
-    B = basis_mat(prods)
-    H = sub(hnf(B), (rows(B) - degree(K) + 1):rows(B), 1:degree(K))
-
-    # TODO: Just take the product of the diagonal
-    dd = H.num[1, 1]
-    for i in 2:degree(K)
-      dd *= H.num[i, i]
-    end
-    d = dd//H.den^degree(K)
+    B = hnf(basis_mat(prods))
     
-    #d = prod(H.num[i,i] for i=1:degree(K))//(H.den^degree(K))
-    #d = det(H)
-
-    if iszero(d)
+    dd = B.num[rows(B) - degree(K) + 1, 1]
+    for i in 2:degree(K)
+      dd *= B.num[rows(B) - degree(K) + i, i]
+    end
+    if iszero(dd)
       error("Elements do not define a module of full rank")
     end
+    d = dd//(B.den)^n
+
+    
 
     if dold == d
       closed = true
@@ -780,7 +806,7 @@ function _order(K::S, elt::Array{T, 1}) where {S, T}
       dold = d
       elt = T[]
       for i in 1:n
-        push!(elt, elem_from_mat_row(K, H.num, i, H.den))
+        push!(elt, elem_from_mat_row(K, B.num, rows(B) - degree(K) + i, B.den))
       end
     end
   end
@@ -874,11 +900,11 @@ function +(a::NfAbsOrd, b::NfAbsOrd)
       end
     end
     mat=_hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
-    c = sub(mat, d + 1:2*d, 1:d)
+    c = view(mat, d + 1:2*d, 1:d)
     O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), false)
     O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
-    O.disc=gcd(discriminant(a), discriminant(b))
-    if a.disc<0
+    O.disc= gcd(discriminant(a), discriminant(b))
+    if a.disc<0 || b.disc<0
       O.disc=-O.disc
     end
     return O
@@ -918,7 +944,8 @@ $\mathcal O$ is returned.
 """
 function poverorder(O::NfAbsOrd, p::fmpz)
   if isequation_order(O) && issimple(nf(O))
-    return dedekind_poverorder(O, p)
+    #return dedekind_poverorder(O, p)
+    return polygons_overorder(O, p)
   else
     return _poverorder(O, p)
   end
@@ -1068,16 +1095,16 @@ function lll(M::NfOrd)
   prec = 100
   while true
     try
-      q,w = lll(I, parent(basis_mat(M).num)(0), prec = prec)
+      q,w = lll(I, parent(basis_mat(M, Val{false}).num)(0), prec = prec)
       On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
       On.ismaximal = M.ismaximal
       return On
     catch e
       if isa(e, LowPrecisionLLL)
         prec = Int(round(prec*1.2))
-        if prec>1000
-          error("precision too large in LLL");
-        end
+        #if prec>1000
+        #  error("precision too large in LLL");
+        #end
         continue;
       else
         rethrow(e)
@@ -1213,8 +1240,8 @@ function defines_order(K::S, x::FakeFmpqMat) where {S}
 
   # Check if Z-module spanned by x is closed under multiplcation
   l = Vector{elem_type(K)}(n)
-  for i in 1:degree(K)
-    for j in 1:degree(K)
+  for i in 1:n
+    for j in i:n
       l[j] = d[i]*d[j]
     end
     Ml = basis_mat(l)
@@ -1320,7 +1347,9 @@ function new_maximal_order(K::AnticNumberField)
     O.ismaximal=1
     return O  
   end
-  ds=discriminant(O)
+  Zx, x =PolynomialRing(FlintZZ, "x")
+  f1 = Zx(K.pol)
+  ds = rres(f1, derivative(f1))
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
   l = coprime_base(_el_divs(M,ds))
@@ -1446,11 +1475,12 @@ end
 
 function _qradical(O::NfOrd, q::fmpz)
   
-  R=ResidueRing(FlintZZ, q, cached=false)
+  d = degree(O)
+  R = ResidueRing(FlintZZ, q, cached=false)
   #First, we compute the q-radical as the kernel of the trace matrix mod q.
   #By theory, this is free if q is prime; if I get a non free module, I have found a factor of q.
   @vprint :NfOrd 1 "radical computation\n "
-  Mat=MatrixSpace(R, degree(O), degree(O), false)(trace_matrix(O))
+  Mat=MatrixSpace(R, d, d, false)(trace_matrix(O))
   M=nullspace(Mat)[2]
   if iszero(M)
     @vprint "The radical is equal to the ideal generated by q"
@@ -1476,14 +1506,11 @@ function _qradical(O::NfOrd, q::fmpz)
   # We want to compute the ring of multipliers.
   # So we need to lift the matrix.
   @vprint :NfOrd 1 "Computing hnf of basis matrix \n "
-  MatIdeal=zero_matrix(FlintZZ, rows(M)+degree(O), cols(M))
+  MatIdeal=zero_matrix(FlintZZ, d, d)
   for i=1:rows(M)
     for j=1:degree(O)
       MatIdeal[i,j]=FlintZZ(M[i,j].data)
     end
-  end
-  for i=1:degree(O)
-    MatIdeal[i+rows(M), i]=q
   end
   gens=[O(q)]
   for i=1:rows(M)
@@ -1491,7 +1518,7 @@ function _qradical(O::NfOrd, q::fmpz)
       push!(gens, elem_from_mat_row(O, MatIdeal, i))
     end       
   end
-  M2=sub(Hecke._hnf_modular_eldiv(MatIdeal, fmpz(q),  :lowerleft), rows(M)+1:degree(O)+rows(M), 1:degree(O))
+  M2=view(Hecke._hnf_modular_eldiv(MatIdeal, fmpz(q),  :lowerleft), 1:degree(O), 1:degree(O))
   I=NfOrdIdl(O, M2)
   I.gens=gens
   return fmpz(1), I
@@ -1571,7 +1598,15 @@ end
 function _el_divs(M::fmpz_mat, d::fmpz)
   M1=_hnf_modular_eldiv(M, d)
   while !isdiag(M1)
-    M1= M1'
+    #=
+    for i = 1:rows(M1)
+      for j = i+1:cols(M1)
+        M1[j,i] = copy(M1[i,j])
+        M1[i,j] = 0
+      end
+    end
+    =#
+    M1=M1'
     hnf_modular_eldiv!(M1, d)
   end
   l=fmpz[]
