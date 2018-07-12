@@ -93,7 +93,7 @@ include("Clgp/Rel_Schmettow.jl")
 #
 ################################################################################
 
-function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false)
+function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, use_aut::Bool = false)
 
   if !redo
     try
@@ -107,7 +107,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     (bound == 0) && (bound = 1)
   end
 
-  c = class_group_init(O, bound, complete = false)::ClassGrpCtx{SMat{fmpz}}
+  c = class_group_init(O, bound, complete = false, use_aut = use_aut)::ClassGrpCtx{SMat{fmpz}}
 
   _set_ClassGrpCtx_of_order(O, c)
 
@@ -190,12 +190,12 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
-function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1)
+function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
   @v_do :UnitGroup 1 pushindent()
-  c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo)
+  c = class_group_ctx(O, bound = bound, method = method, large = large, redo = redo, use_aut = use_aut)
   @v_do :UnitGroup 1 popindent()
 
   if c.finished
@@ -311,8 +311,8 @@ doc"""
 > \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
 > \texttt{bound}, when given, is the bound for the factor base.
 """
-function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1, large::Int = 1000)
-  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large)
+function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1, large::Int = 1000, use_aut::Bool = false)
+  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut)
   @assert b==1
   return class_group(c)
 end
@@ -327,8 +327,8 @@ doc"""
 > obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
 > `f(U[1])` will give a generator for the torsion subgroup.
 """
-function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
+function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut)
   @assert b==1
   return unit_group(c, U)
 end
@@ -343,8 +343,8 @@ doc"""
 > `f(U[1])` will give a generator for the torsion subgroup.
 > All elements will be returned in factored form.
 """
-function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method)
+function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut)
   @assert b==1
   return unit_group_fac_elem(c, U)
 end

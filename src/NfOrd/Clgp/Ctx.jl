@@ -18,7 +18,7 @@ function nf(c::ClassGrpCtx)
   return nf(order(c))
 end
 
-function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::Bool = true)
+function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::Bool = true, use_aut::Bool = false)
   O = order(FB.ideals[1])
 
   clg = ClassGrpCtx{T}()
@@ -64,7 +64,7 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
     l = lll(t)
   clg.val_base = l
 
-  if !true
+  if use_aut
     au = automorphisms(nf(O))
     class_group_add_auto(clg, au[1])
     i = 2
@@ -77,7 +77,8 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
   return clg
 end
 
-function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true,
+function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool = true, 
+                          use_aut::Bool = false,
                           complete::Bool = true, degree_limit::Int = 0, T::DataType = SMat{fmpz})
   @vprint :ClassGroup 2 "Computing factor base ...\n"
 
@@ -91,7 +92,7 @@ function class_group_init(O::NfOrd, B::Int; min_size::Int = 20, add_rels::Bool =
     @vprint :ClassGroup 2 "Increasing bound to $B ...\n"
   end
   @vprint :ClassGroup 2 " done\n"
-  return class_group_init(FB, T, add_rels = add_rels)
+  return class_group_init(FB, T, add_rels = add_rels, use_aut = use_aut)
 end
 
 function class_group_add_auto(clg::ClassGrpCtx, f::Map)
