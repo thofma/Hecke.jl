@@ -32,6 +32,7 @@ end
 
 function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
 
+
   K = nf(order(A))
   if iszero(v) && istotally_real(K)
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
@@ -39,37 +40,52 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     return _lll_gram(A)
   end
 
-  c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
-                                        ## c is NOT a copy, so don't change.
-  l, t1 = lll_with_transform(basis_mat(A, Val{false}))
-  b = FakeFmpqMat(l)*basis_mat(order(A), Val{false})
-
   n = degree(order(A))
+  prec = max(prec, 4*n)
 
-  rt_c = roots_ctx(K)
-  if !isdefined(rt_c, :cache_z1)
-    rt_c.cache_z1 = zero_matrix(FlintZZ, n, n)
-    rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
+  l, t1 = lll_with_transform(basis_mat(A, Val{false}))
+
+  if !false && iszero(v)
+    d = minkowski_gram_mat_scaled(order(A), prec)
+    @time ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
+    @time ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
+    g = zero_matrix(FlintZZ, n, n)
+    den = fmpz(1)
+    sv = fmpz(0)
+  else
+    c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
+                                          ## c is NOT a copy, so don't change.
+    b = FakeFmpqMat(l)*basis_mat(order(A), Val{false})
+
+
+    rt_c = roots_ctx(K)
+    if !isdefined(rt_c, :cache_z1)
+      rt_c.cache_z1 = zero_matrix(FlintZZ, n, n)
+      rt_c.cache_z2 = zero_matrix(FlintZZ, n, n)
+    end
+
+    d::fmpz_mat = rt_c.cache_z1
+    g::fmpz_mat = rt_c.cache_z2
+
+    round_scale!(g, c, prec)
+
+    sv = fmpz(0)
+    if !iszero(v)
+      @v_do :ClassGroup 2 println("using inf val", v)
+      c = deepcopy(c)
+      mult_by_2pow_diag!(c, v)
+      sv = max(fmpz(0), sum(v[1,i] for i=1:cols(l)))
+    end
+
+
+    round_scale!(d, c, prec)
+    ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
+    den = b.den
+
+    @time ccall((:fmpz_mat_gram, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
+    shift!(d, -prec)
   end
 
-  d::fmpz_mat = rt_c.cache_z1
-  g::fmpz_mat = rt_c.cache_z2
-
-  sv = fmpz(0)
-  if !iszero(v)
-    @v_do :ClassGroup 2 println("using inf val", v)
-    c = deepcopy(c)
-    mult_by_2pow_diag!(c, v)
-    sv = max(fmpz(0), sum(v[1,i] for i=1:cols(l)))
-  end
-
-
-  round_scale!(d, c, prec)
-  ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
-  den = b.den
-
-  ccall((:fmpz_mat_gram, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
-  shift!(d, -prec)
   prec = div(prec, 2)
   shift!(d, -prec)  #TODO: remove?
 
@@ -80,17 +96,17 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
 
   ccall((:fmpz_mat_one, :libflint), Void, (Ref{fmpz_mat}, ), g)
-  ccall((:fmpz_lll, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  @time ccall((:fmpz_lll, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
-  @v_do :ClassGroup 3 print_with_color(:green, "lll basis length profile\n");
-  @v_do :ClassGroup 3 for i=1:rows(l)
-    print(div(l[i,i], fmpz(2)^prec), " : ")
+  @v_do :ClassGroup 2 print_with_color(:green, "lll basis length profile\n");
+  @v_do :ClassGroup 2 for i=1:rows(l)
+    print(Float64(div(l[i,i], fmpz(2)^prec*den*den)*1.0), " : ")
   end
-  @v_do :ClassGroup 3 println("")
-  if nbits(maximum(t)) >  div(prec, 2)
+  @v_do :ClassGroup 2 println("")
+  if nbits(maximum(abs, t)) >  div(prec, 2)
     @v_do :ClassGroup 2 print_with_color(:red, "lll trafo too large\n");
     throw(LowPrecisionLLL())
   end
@@ -102,7 +118,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * fmpz(2)^(2*sv)
   di = root(disc, n)+1
   di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
-  pr = fmpz(1)
+
   if cmpindex(l, 1, 1, di) > 0 
     @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
     @v_do :ClassGroup 3 println("bound is ", di, " value at ", 1, " is ", l[1,1]); 
