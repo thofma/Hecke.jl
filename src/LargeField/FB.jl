@@ -151,10 +151,10 @@ end
 
 function generated_subgroup(op::Array) #pairs: permutations and Map
   elt = Array{Any, 1}()
-  push!(elt, (x->x, Nemo.eye(parent(op[1][2]))))
+  push!(elt, (x->x, parent(op[1][2])()))
   ord = 1
   g = op[1]
-  while g[2] != Nemo.eye(parent(op[1][2]))
+  while g[2] != parent(op[1][2])()
     let c_g = g
       push!(elt, c_g)
       g = (x->op[1][1](c_g[1](x)), op[1][2]*c_g[2])
