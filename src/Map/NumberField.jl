@@ -52,12 +52,21 @@ end
 
 
 function automorphisms(K::AnticNumberField)
+  try
+    Aut = _get_automorphisms_nf(K)
+    return Aut
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+  end
   f = K.pol
   lr = roots(f, K)
   Aut = Hecke.NfToNfMor[]
   for r in lr
     push!(Aut, Hecke.NfToNfMor(K, K, r))
   end
+  _set_automorphisms_nf(K, Aut)
   return Aut
 end
 

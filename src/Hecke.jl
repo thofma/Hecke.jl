@@ -177,6 +177,11 @@ function __init__()
   global _get_cyclotomic_ext_nf = t[1]
   global _set_cyclotomic_ext_nf = t[2]
 
+  t = create_accessors(AnticNumberField, Array, get_handle())
+
+  global _get_automorphisms_nf = t[1]
+  global _set_automorphisms_nf = t[2]
+
   t = create_accessors(RelativeExtension, NfRelOrd, get_handle())
 
   global _get_maximal_order_of_nf_rel = t[1]
