@@ -47,8 +47,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   if !false && iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
-    @time ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
-    @time ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
+    ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
+    ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
     g = zero_matrix(FlintZZ, n, n)
     den = fmpz(1)
     sv = fmpz(0)
@@ -82,7 +82,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
     den = b.den
 
-    @time ccall((:fmpz_mat_gram, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
+    ccall((:fmpz_mat_gram, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
     shift!(d, -prec)
   end
 
@@ -96,7 +96,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
 
   ccall((:fmpz_mat_one, :libflint), Void, (Ref{fmpz_mat}, ), g)
-  @time ccall((:fmpz_lll, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  ccall((:fmpz_lll, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
