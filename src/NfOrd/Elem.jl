@@ -613,6 +613,7 @@ function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   function _mod(b, p::fmpz)
     de = denominator(b)
     f, e = ppio(de, p)
+    @assert e == 1
     b = mod(de*b, p*f)//f
     return b
   end
@@ -625,12 +626,12 @@ function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   e = powmod(e, i, p)
 
   y = parent(b)(1)
-  while i > 0
+  while i > 1
     if iseven(i)
       b = _mod(b*b, p)
     else
-      b = _mod(b*y, p)
-      y = _mod(y*y, p)
+      y = _mod(b*y, p)
+      b = _mod(b*b, p)
     end
     i = div(i, 2)
   end
