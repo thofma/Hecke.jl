@@ -594,30 +594,29 @@ end
 #
 ################################################################################
 
+function _mod(b, p::fmpz)
+  de = denominator(b)
+  f, e = ppio(de, p)
+  @assert e == 1
+  b = mod(de*b, p*f)//f
+  return b
+end
+
 doc"""
 ***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
 > Returns an element $a^i$ modulo $m$.
 """
-
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   if i == 0 then
     return one(parent(a))
   end
   if i == 1
-    b = mod(a,p)
-    return b
+    bb = mod(a, p)
+    return bb
   end
-  
-  function _mod(b, p::fmpz)
-    de = denominator(b)
-    f, e = ppio(de, p)
-    @assert e == 1
-    b = mod(de*b, p*f)//f
-    return b
-  end
- 
+
   b = a.elem_in_nf
   d = denominator(b)
   f, e = ppio(d, p) # f = p^k, and e is a unit mod p
@@ -625,7 +624,7 @@ function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   e = invmod(e, p)
   e = powmod(e, i, p)
 
-  y = parent(b)(1)
+  y = one(parent(b))
   while i > 1
     if iseven(i)
       b = _mod(b*b, p)
