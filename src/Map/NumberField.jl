@@ -54,7 +54,7 @@ end
 function automorphisms(K::AnticNumberField)
   try
     Aut = _get_automorphisms_nf(K)
-    return Aut
+    return copy(Aut)
   catch e
     if !isa(e, AccessorNotSetError)
       rethrow(e)
@@ -67,7 +67,7 @@ function automorphisms(K::AnticNumberField)
     push!(Aut, Hecke.NfToNfMor(K, K, r))
   end
   _set_automorphisms_nf(K, Aut)
-  return Aut
+  return copy(Aut)
 end
 
 hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)
