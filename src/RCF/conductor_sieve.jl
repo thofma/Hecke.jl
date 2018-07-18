@@ -573,12 +573,11 @@ function conductorsQQ(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
     obound=flog(bound,q)
     nnbound=valuation_bound_discriminant(n,q)
     bound_max_ap= min(nbound, obound, nnbound)  #bound on ap
-   
     bound_max_exp=div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
     
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
-      nq=q^((fnisc-1)*(divexact(n, fnisc)))
+      nq=fmpz(q)^((fnisc-1)*(divexact(n, fnisc)))
       for s=1:l
         nn=nq*wild_list[s][3]
         if nn>bound
@@ -605,7 +604,7 @@ function conductorsQQ(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   exps=Int((minimum(wild_ram)-1)*divexact(n,minimum(wild_ram)))
   for el in list
     for (q,d,nm2) in wild_list
-      if el^exps*nm2 > bound
+      if (fmpz(el)^exps)*nm2 > bound
         continue
       end
       push!(final_list, (el*q*d))
