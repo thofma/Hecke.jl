@@ -99,7 +99,7 @@ function _split(c::node{T}, a::T) where T
   return vcat(ls, rs)
 end
 
-function factor(c::FactorBase{T}, a::T) where T
+function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
   @assert a != 0
   f = Dict{T, Int}()
   lp = _split(c.ptree, a)
@@ -114,7 +114,7 @@ function factor(c::FactorBase{T}, a::T) where T
       end
     end
   end
-  assert(a==1 || a==-1)
+  assert(!do_error || a==1 || a==-1)
   return f
 end
 

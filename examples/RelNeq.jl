@@ -43,7 +43,7 @@ function norm_1_subgroup(A::RelNeq)
 
   q, mq = quo(r, elem_type(r)[])
 
-  S = PrimesSet(degree(K), -1)
+  S = PrimesSet(1, -1)
   gens = Set{NfOrdIdl}()
   gg = []
 
@@ -51,17 +51,19 @@ function norm_1_subgroup(A::RelNeq)
   stable = max_stable
 
   for p = S
-    @show p
-    if d % p == 0
-      continue
-    end
+    @show d, p, d%p
     if minimum(I) % p == 0
       continue
     end
 
     lp = prime_decomposition(maximal_order(k), p)
     for P = lp
-      lP = Hecke.prime_decomposition_nonindex(A.m_k_K, P[1])
+      if d % p == 0 
+        @show "expensive", p
+        lP = collect(factor(IdealSet(ZK)(A.m_k_K, P[1])))
+      else
+        lP = Hecke.prime_decomposition_nonindex(A.m_k_K, P[1])
+      end
       f = [fmpz(div(degree(Q[1]), degree(P[1]))) for Q = lP]
       m = matrix(FlintZZ, 1, length(f), f)
       r, n = nullspace(m)
@@ -151,7 +153,7 @@ mutable struct Norm1Group
     r.U = q, inv(mq)*mu
     r.sU = sub(u, elem_type(u)[])
     r.gC = [(ideal(maximal_order(A.K), 1)//1, 0*c[1])]
-    r.gU = [(FacElem(A.k(1)), 0*u[1])] 
+    r.gU = [(FacElem(A.k(1)), 0*q[1])] 
     r.gens = []
     return r
   end
@@ -204,14 +206,13 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
   r = mc\numerator(I)
   fl, s = haspreimage(N.sC[2], r)
   if fl # found new relation
-    @assert fl
     J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
     J = I*inv(J)
     fl, g = Hecke.isprincipal_fac_elem(J)
     @assert fl
     ng = norm(A.m_k_K, g)
     @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
-    r = mu\ng
+    r = mu\ng 
     fl, _ = haspreimage(N.sU[2], r)
     if fl
       return false # nothing new
@@ -228,6 +229,68 @@ function Base.push!(N::Norm1Group, I::Hecke.NfOrdFracIdl)
   end
 end
 
+function Hecke.order(N::Norm1Group)
+  return order(N.sU[1]) * order(N.sC[1])
+end
+
+function order_bound(N::Norm1Group)
+  return order(N.U[1]) * order(N.C[1])
+end
+
+Hecke.elem_type(::Type{Hecke.NfOrdFracIdlSet}) = Hecke.NfOrdFracIdl
+
+function Hecke.evaluate(N::Norm1Group)
+  # want the group extension (and the disc log and such)
+  s1, ms1 = snf(N.sC[1])
+  s2, ms2 = snf(N.sU[1])
+  R = [rels(s2) zero_matrix(FlintZZ, ngens(s2), ngens(s1));
+       zero_matrix(FlintZZ, ngens(s1), ngens(s2)) rels(s1)]
+  
+  for i = 1:ngens(s1)
+    x = ms1(s1[i])
+    I = FacElem(Dict((N.gC[j][1], x[j]) for j=1:ngens(N.sC[1])))
+    I = I^order(x)
+    fl, g = Hecke.isprincipal_fac_elem(I)
+    @assert fl
+    ng = norm(N.A.m_k_K, g)
+    @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
+    r = N.U[2]\ng 
+    fl, x = haspreimage(N.sU[2], r)
+    for j=1:ngens(s2)
+      R[ngens(s2) + i, j] = -x[j]
+    end
+  end
+  A = AbelianGroup(R)
+  ZK = maximal_order(N.A.K)
+  function exp(a::GrpAbFinGenElem)
+    a1 = sub(a.coeff, 1:1, 1:ngens(s2))
+    a2 = sub(a.coeff, 1:1, ngens(s2)+(1:ngens(s1)))
+    b1 = ms2(s2(a1))
+    b2 = ms1(s1(a2))
+    I1 = FacElem(Dict((N.gC[i][1], b2[i]) for i=1:ngens(N.sC[1])))
+    I2 = prod(ideal(ZK, N.gU[i][1]) ^ b1[i] for i=1:ngens(N.sU[1]))
+    return I1*I2
+  end
+
+  function log(I::Hecke.NfOrdFracIdl)
+    @assert isone(norm(N.A.m_k_K, I))
+    r = N.C[2]\numerator(I)
+    fl, s = haspreimage(N.sC[2], r)
+    @assert fl
+    J = FacElem(Dict((N.gC[i][1], s.coeff[1, i]) for i=1:ngens(N.sC[1])))
+    J = I*inv(J)
+    fl, g = Hecke.isprincipal_fac_elem(J)
+    @assert fl
+    ng = norm(N.A.m_k_K, g)
+    @assert isunit(maximal_order(N.A.k)(evaluate(ng)))
+    r = N.U[2]\ng 
+    fl, r = haspreimage(N.sU[2], r)
+    @assert fl
+    return A(hcat((ms2\r).coeff, (ms1\s).coeff))
+  end
+  return A, exp, log
+end
+
 function n1group(A::RelNeq, B::Int)
   K = A.K
   k = A.k
@@ -240,25 +303,52 @@ function n1group(A::RelNeq, B::Int)
   ZK = maximal_order(K)
   N = Norm1Group(A)
 
-#TODO: missing: we NEED the ramified primes...
-  for p = S
+  function single_prime(P::NfAbsOrdIdl)
+    p = minimum(P)
     if numerator(discriminant(K)) % p == 0 ||  
        numerator(discriminant(k)) % p == 0
+       @show "expensive", p
+      lq = collect(factor(IdealSet(ZK)(A.m_k_K, P)))
+    else
+      lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P)
+    end
+    f = matrix(FlintZZ, 1, length(lq), fmpz[div(degree(Q[1]), degree(P)) for Q = lq])
+    r, n = nullspace(f)
+    res = false
+    for i = 1:r
+      I = evaluate(FacElem(Dict((lq[j][1], n[j,i]) for j = 1:length(lq))), coprime = true)
+      res = push!(N, I) || res
+    end
+    return res
+  end
+
+#TODO: missing: we NEED the ramified primes...
+  for p = keys(factor(numerator(discriminant(ZK))).fac) #TODO: rel disc
+    lp = prime_decomposition(zk, p)
+    for P = lp
+      if single_prime(P[1])
+        stable = max_stable
+      else
+        stable -= 1
+      end
+    end
+    if stable <= 0
+      break
+    end
+  end
+
+  d = lcm(numerator(discriminant(k)), numerator(discriminant(K)))
+
+  for p = S
+    if d % p == 0
       continue
     end
     lp = prime_decomposition(zk, p)
     for P = lp
-      lq = Hecke.prime_decomposition_nonindex(A.m_k_K, P[1])
-      f = matrix(FlintZZ, 1, length(lq), fmpz[div(degree(Q[1]), degree(P[1])) for Q = lq])
-      r, n = nullspace(f)
-      for i = 1:r
-        I = evaluate(FacElem(Dict((lq[j][1], n[j,i]) for j = 1:length(lq))), coprime = true)
-        if push!(N, I)
-          stable = max_stable
-          @show N
-        else
-          stable -= 1
-        end
+      if single_prime(P[1])
+        stable = max_stable
+      else
+        stable -= 1
       end
     end
     if stable <= 0
@@ -267,6 +357,37 @@ function n1group(A::RelNeq, B::Int)
   end
   return N
 end
+
+function doit(f::fmpz_poly)
+  K, a = number_field(f, cached = false)
+  x = gen(parent(K.pol))
+  k, b = number_field(x-1, cached = false)
+  R = RelNeq(k, K)
+  N = n1group(R, 10)
+  C, _ = evaluate(N)
+  return C
+end
+
+Zx, x = FlintZZ["x"]
+function doit(n::String)
+  f = open(n, "r")
+  fo = open("$n.out", "w")
+  i = 1
+  while true
+    @show l = readline(f)
+    g = eval(parse(l))
+    C = doit(g)
+    C = snf(C)[1]
+    println(fo, "$l -> $(C.snf)")
+    println("$l -> $(C.snf)")
+    i += 1
+    if i % 10 == 0
+      flush(fo)
+    end
+  end  
+end
+
+
 
 end
 

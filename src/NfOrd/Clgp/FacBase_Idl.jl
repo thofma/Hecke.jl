@@ -93,7 +93,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     df = numerator(n)*denominator(a, O)
   end
 
-  d = factor(FB.fb_int, df)  #careful: if df is non-int-smooth, then error is ignored
+  d = factor(FB.fb_int, df, error)  #careful: if df is non-int-smooth, then error is ignored
 
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()

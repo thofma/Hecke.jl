@@ -740,6 +740,22 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
   return b
 end
 
+function round_scale!(b::fmpz_mat, a::arb_mat, l::Int)
+  s = size(a)
+
+  R = base_ring(a)
+  r = R()
+  for i = 1:s[1]
+    for j = 1:s[2]
+      v = ccall((:arb_mat_entry_ptr, :libarb), Ptr{arb},
+                    (Ref{arb_mat}, Int, Int), a, i - 1, j - 1)
+      ccall((:arb_mul_2exp_si, :libarb), Void, (Ref{arb}, Ptr{arb}, Int), r, v, l)
+      b[i,j] = round(fmpz, r)
+    end
+  end
+  return b
+end
+
 function shift!(g::fmpz_mat, l::Int)
   for i=1:rows(g)
     for j=1:cols(g)

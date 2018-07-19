@@ -594,29 +594,65 @@ end
 #
 ################################################################################
 
+function _mod(b, p::fmpz)
+  de = denominator(b)
+  f, e = ppio(de, p)
+  @assert e == 1
+  b = mod(de*b, p*f)//f
+  return b
+end
+
 doc"""
 ***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
-> Returns the element $a^i$ modulo $m$.
+> Returns an element $a^i$ modulo $m$.
 """
-
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   if i == 0 then
     return one(parent(a))
   end
   if i == 1
-    b = mod(a,p)
-    return b
+    bb = mod(a, p)
+    return bb
   end
-  if mod(i,2) == 0
-    j = div(i, 2)
-    b = powermod(a, j, p)
-    b = b^2
-    b = mod(b,p)
-    return b
+
+  b = a.elem_in_nf
+  d = denominator(b)
+  f, e = ppio(d, p) # f = p^k, and e is a unit mod p
+  b *= e
+  e = invmod(e, p)
+  e = powmod(e, i, p)
+
+  y = one(parent(b))
+  while i > 1
+    if iseven(i)
+      b = _mod(b*b, p)
+    else
+      y = _mod(b*y, p)
+      b = _mod(b*b, p)
+    end
+    i = div(i, 2)
   end
-  b = mod(a * powermod(a, i - 1, p), p)
+  b = _mod(b*y, p)
+
+  return mod(parent(a)(b)*e, p)
+end
+
+denominator(a::NfAbsNSElem) = denominator(a.data)
+#TODO: replace by Daniel's official version
+function content(a::fmpq_mpoly)
+  c = fmpq()
+  ccall((:fmpq_set, :libflint), Void, (Ref{fmpq}, Ref{fmpq_mpoly}), c, a)
+  return c
+end
+denominator(a::fmpq_mpoly) = denominator(content(a))
+function mod(a::NfAbsNSElem, p::fmpz)
+  b = copy(a)
+  @assert denominator(b) == 1
+  for i=1:length(b.data)
+    setcoeff!(b.data, i, mod(numerator(coeff(b.data, i)), p))
+  end
   return b
 end
 
