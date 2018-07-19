@@ -464,8 +464,10 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
   #Ip is the p-radical
   Ip1 = Ip + I
   A, OtoA = AlgAss(O, Ip1, p)
+  @vprint :NfOrd 1 "Splitting the algebra\n"
   AtoO = inv(OtoA)
   AA = split(A)
+  @vprint :NfOrd 1 "Done \n"
 
   basisO = basis(O, Val{false})
 
@@ -502,6 +504,8 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
   for j in 1:length(ideals)
     P = ideals[j]
     f = P.splitting_type[2]
+    
+    @vprint :NfOrd 1 "Searching for 2-element presentation \n"
     
     # The following does not work if there is only one prime ideal
     if length(ideals) > 1 && k
@@ -543,7 +547,7 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
       P.gens_normal = p
       P.gens_weakly_normal = 1
     else
-      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/p))\n"
+      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
       _assure_weakly_normal_presentation(P)
       assure_2_normal(P)
     end
@@ -563,10 +567,12 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
   R = ResidueRing(FlintZZ, p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(Zx(K.pol))
+  @vprint :NfOrd 1 "Factoring the polynomial \n"
   fac = factor(f1)
   res = Tuple{Int, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
   for (g,m) in fac
+    @vprint :NfOrd 1 "Doing $((g,m)) \n"
     if m==1
       push!(res, (degree(g), 1))
       continue
@@ -630,6 +636,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
   R = ResidueRing(FlintZZ, p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
+  @vprint :NfOrd 1 "Factoring the polynomial \n"
   fac = factor(f1)
   res = Tuple{NfOrdIdl, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
@@ -637,6 +644,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
     if degree(g) > degree_limit || lower_limit > degree(g)
       continue
     end
+    @vprint :NfOrd 1 "Doing $((g, m)) \n"
     if m==1
       fi = lift(Zx, g)
       ei = m

@@ -1,5 +1,6 @@
 
 add_assert_scope(:CSAMaxOrd)
+add_verbose_scope(:CSAMaxOrd)
 
 ###############################################################################
 #
@@ -76,7 +77,7 @@ mutable struct AlgAssOrdElem
 
   function AlgAssOrdElem(O::AlgAssOrd, arr::Array{fmpz, 1})
     z = new()
-    z.elem_in_algebra = dot(O.basis_alg, arr)
+    #z.elem_in_algebra = dot(O.basis_alg, arr)
     z.elem_in_basis = arr
     z.parent = O
     return z
@@ -212,6 +213,8 @@ end
 function *(x::AlgAssOrdElem, y::AlgAssOrdElem)
   @assert parent(x)==parent(y)
   O=parent(x)
+  assure_elem_in_algebra(x)
+  assure_elem_in_algebra(y)
   return O(x.elem_in_algebra*y.elem_in_algebra)
 end
 
@@ -254,7 +257,7 @@ end
 end
 
 function elem_from_mat_row(O::AlgAssOrd, M::fmpz_mat, i::Int)
-  return AlgAssOrdElem(O, [M[i,j] for j=1:O.dim])
+  return AlgAssOrdElem(O, fmpz[M[i,j] for j=1:O.dim])
 end
 
 ###############################################################################
@@ -283,7 +286,7 @@ function basis_mat(A::Array{AlgAssElem{fmpq}, 1})
 end
 
 function elem_from_mat_row(A::AlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
-  return A([M[i,j]//d for j=1:cols(M)])
+  return A(fmpq[fmpq(M[i,j]//d) for j=1:cols(M)])
 end
 
 function order_gen(O::AlgAssOrd)
@@ -417,21 +420,22 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
       end
     end
   end
-  B=basis(O)
-  
+  B = basis(O, Val{false})
+  el = O(0)
   for j=1:m
     for k=1:n
-      l =O(G[j](K(B[k])))
+      l =O(G[j](K(B[k])), false)
       for h=1:m
         ind = find_elem(G, G[j]*G[h]) 
-        t = O(cocval[j,h])
+        t = O(cocval[j,h], false)
         for i=1:n
           #I have the element B[i]*G[j]
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
-          x = B[i]*l*t
-          y = elem_in_basis(x)
+          mul!(el, B[i], l)
+          mul!(el, el, t)
+          y = elem_in_basis(el)
           for s=0:n-1
             M[j+(i-1)*m, h+(k-1)*m, ind+s*m] = y[s+1]
           end
@@ -539,8 +543,8 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
     end
   end
   @hassert :CSAMaxOrd 1 check_ideal(I)
-  F, a = FlintFiniteField(p, 1, "a")
-  M=Array{fq_nmod, 3}(length(pivots), length(pivots), length(pivots))
+  F= ResidueRing(FlintZZ, p, cached = false)
+  M=Array{nmod, 3}(length(pivots), length(pivots), length(pivots))
   x=fmpz[0 for s=1:O.dim]
   for i=1:length(pivots)
     x[pivots[i]]=1
@@ -556,9 +560,17 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
     end
     x[pivots[i]]=0
   end
-  oneO = fmpz_mat(1, O.dim, elem_in_basis(one(O.A)))
-  _mod(oneO, I.basis_mat, pivots)
-  oneA = Array{fq_nmod, 1}(length(pivots))
+  oneO = elem_in_basis(O(one(O.A)))
+  #I reduce the entry of the element
+  for i=1:dim(O.A)
+    z=div(x[i], I.basis_mat[i,i])
+    if z!=0
+      for j=i:length(x)
+        x[j]-=z*I.basis_mat[i,j]
+      end
+    end
+  end
+  oneA = Array{nmod, 1}(length(pivots))
   for i=1:length(pivots)
     oneA[i] = F(oneO[pivots[i]])
   end
@@ -566,7 +578,7 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
   function AtoO(a::AlgAssElem)
     x=fmpz[0 for i=1:O.dim]
     for i=1:length(pivots)
-      x[pivots[i]]=FlintZZ(coeff(a.coeffs[i],0))
+      x[pivots[i]] = lift(a.coeffs[i])
     end
     return O(x)
   end 
@@ -590,7 +602,9 @@ function check_ideal(I::AlgAssOrdIdl)
   for i=1:O.dim
     x[i]=1
     y=O(x)
+    assure_elem_in_algebra(y)
     for j=1:O.dim
+      assure_elem_in_algebra(I.basis_alg[j])
       @assert y*I.basis_alg[j] in I
       @assert I.basis_alg[j]*y in I
     end 
@@ -620,6 +634,7 @@ function check_pradical(I::AlgAssOrdIdl, p::Int)
   O=I.O
   for i=1:O.dim
     x=elem_from_mat_row(O,I.basis_mat, i)
+    assure_elem_in_algebra(x)
     for j=1:O.dim
       @assert divisible(numerator(trace(x.elem_in_algebra*O.basis_alg[j])), p)
     end
@@ -696,7 +711,7 @@ function ring_of_multipliers(I::AlgAssOrdIdl, p::fmpz=fmpz(1))
         for s=1:O.dim
           for t=1:O.dim
             @hassert :CSAMaxOrd 1 divisible(M[s,t], deno)
-            m[t+(i-1)*(O.dim),s]=divexact(M[s,t], deno)
+            m[t+(i-1)*(O.dim),s] = divexact(M[s,t], deno)
           end
         end
       end
@@ -765,7 +780,7 @@ function pradical_meataxe(O::AlgAssOrd, p::Int)
   m = zero_matrix(FlintZZ, O.dim, O.dim)
   for i=1:rows(dM)
     for j=1:cols(dM)
-      m[i,j]=FlintZZ(coeff(dM[i,j],0))
+      m[i,j] = lift(dM[i,j])
     end
     gens[i]= elem_from_mat_row(O,m,i)
   end
@@ -794,21 +809,19 @@ function pradical(O::AlgAssOrd, p::Int)
     return pradical_meataxe(O,p)
   end
   n=root(O.dim,2)
-    
   F=ResidueRing(FlintZZ, p, cached=false)
 
-
   #First step: kernel of the trace matrix mod p 
-  W = MatrixSpace(F,O.dim,O.dim, false)
+  W = MatrixSpace(F,O.dim, O.dim, false)
+
   I = W(n*redtrace_mat(O))
-  k,B = nullspace(I)
+  k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
-    J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J= AlgAssOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
     J.gens=AlgAssOrdElem[O(p*one(O.A))]
     return J
   end
-
   if l==1
     #In this case, we can output I: it is the standard p-trace method.
     M=zero_matrix(FlintZZ, O.dim, O.dim)
@@ -818,7 +831,7 @@ function pradical(O::AlgAssOrd, p::Int)
       end
     end
     M1=hnf_modular_eldiv!(M, fmpz(p))
-    res=AlgAssOrdIdl(O,sub(M1,1:O.dim,1:O.dim))
+    res=AlgAssOrdIdl(O, view(M1,1:O.dim,1:O.dim))
     B1=lift(B')
     res.gens=Array{AlgAssOrdElem, 1}(k+1)
     for i=1:k
@@ -848,7 +861,7 @@ function pradical(O::AlgAssOrd, p::Int)
     end
     k, B2=nullspace(N)
     if k==0
-      J= AlgAssOrdIdl(O,MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+      J= AlgAssOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
       J.gens=AlgAssOrdElem[O(p*one(O.A))]
       return J
     end
@@ -867,7 +880,7 @@ function pradical(O::AlgAssOrd, p::Int)
     end
   end
   hnf_modular_eldiv!(m, fmpz(p))
-  res=AlgAssOrdIdl(O,m)
+  res=AlgAssOrdIdl(O, m)
   res.gens=gens
   @hassert :CSAMaxOrd 1 check_pradical(res,p)
   return res
@@ -880,6 +893,13 @@ end
 #
 ###############################################################################
 
+function assure_elem_in_algebra(x::AlgAssOrdElem)
+  if !isdefined(x, :elem_in_algebra)
+    O = parent(x)
+    x.elem_in_algebra = dot(O.basis_alg, x.elem_in_basis) 
+  end
+  return nothing
+end
 
 function representation_matrix(x::AlgAssOrdElem)
 
@@ -891,6 +911,7 @@ function representation_matrix(x::AlgAssOrdElem)
     M1 = inv(O.basis_mat)
     O.basis_mat_inv = M1
   end
+  assure_elem_in_algebra(x)
   B = FakeFmpqMat(representation_matrix(x.elem_in_algebra))
   mul!(B, M, B)
   mul!(B, B, M1)
@@ -1097,25 +1118,65 @@ function _maximal_ideals(O::AlgAssOrd, p::Int)
   append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
-  ideals = AlgAssOrdIdl[]
   poneO = O(p*one(O.A))
-  for x in ls
-    @hassert :CSAMaxOrd 1 closure(x, M.action) == rref(x)[2]
-    m = zero_matrix(FlintZZ, O.dim, O.dim)
-    gens = Vector{AlgAssOrdElem}(rows(x)+1)
-    for i = 1:rows(x)
-      for j = 1:cols(x)
-        m[i,j] = x[i,j].data
-      end
-      gens[i] = elem_from_mat_row(O,m,i)
+  return ( _from_submodules_to_ideals(M, O, x, fmpz(p), poneO) for x in ls )
+
+end
+
+function _maximal_ideals(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
+  
+  A1, A1toO = quo(O, I, p)
+  lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
+  append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
+  M = ModAlgAss(lM)
+  ls = maximal_submodules(M)
+  poneO = O(p*one(O.A))
+  return ( _from_submodules_to_ideals(M, O, I, x, fmpz(p), poneO, A1, A1toO) for x in ls )
+
+end
+
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, I::AlgAssOrdIdl, x::nmod_mat, p::fmpz, poneO::AlgAssOrdElem, A1::AlgAss, A1toO::Function)
+
+  @hassert :CSAMaxOrd 1 closure(x, M.action) == rref(x)[2]
+  m = zero_matrix(FlintZZ, rows(x)+O.dim , O.dim)
+  gens = Vector{AlgAssOrdElem}(rows(x)+1)
+  for i = 1:rows(x)
+    el = A1toO(elem_from_mat_row(A1, x, i))
+    for j = 1:O.dim
+      m[i,j] = elem_in_basis(el, Val{false})[j]
     end
-    hnf_modular_eldiv!(m, fmpz(p))
-    gens[rows(x)+1] = poneO
-    J = AlgAssOrdIdl(O,m)
-    J.gens = gens
-    push!(ideals, J)
+    gens[i] = elem_from_mat_row(O, m, i)
   end
-  return ideals
+  for i=rows(x)+1:rows(m)
+    for j=1:O.dim
+      m[i,j] = I.basis_mat[i-rows(x), j]
+    end
+  end
+  hnf_modular_eldiv!(m, fmpz(p))
+  gens[rows(x)+1] = poneO
+  append!(gens, I.gens)
+  J = AlgAssOrdIdl(O, view(m, 1:O.dim, 1:O.dim))
+  J.gens = gens
+  return J
+
+end
+
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, x::nmod_mat, p::fmpz, poneO::AlgAssOrdElem)
+
+  @hassert :CSAMaxOrd 1 closure(x, M.action) == rref(x)[2]
+  m = zero_matrix(FlintZZ, O.dim, O.dim)
+  gens = Vector{AlgAssOrdElem}(rows(x)+1)
+  for i = 1:rows(x)
+    for j = 1:cols(x)
+      m[i,j] = x[i,j].data
+    end
+    gens[i] = elem_from_mat_row(O, m, i)
+  end
+  hnf_modular_eldiv!(m, fmpz(p))
+  gens[rows(x)+1] = poneO
+  J = AlgAssOrdIdl(O, m)
+  J.gens = gens
+  return J
 
 end
 
@@ -1127,22 +1188,24 @@ function pmaximal_overorder(O::AlgAssOrd, p::Int)
     return O
   end
 
-  if p>O.dim
-    return pmaximal_overorder_trace(O,p)
+  if p > O.dim
+    @vtime :CSAMaxOrd 1 O1 = pmaximal_overorder_trace(O,p)
+    return O1
   else
-    return pmaximal_overorder_meataxe(O,p)
+    @vtime :CSAMaxOrd 1 O1 = pmaximal_overorder_meataxe(O,p)
+    return O1
   end
 end
 
 function pmaximal_overorder_meataxe(O::AlgAssOrd, p::Int)
 
   extend = false
-  d=discriminant(O)
+  d = discriminant(O)
   while true
     dd = fmpz(1)
-    max_id =_maximal_ideals(O, p)
-    for i = 1:length(max_id)
-      OO = ring_of_multipliers(max_id[i], fmpz(p))
+    @vtime :CSAMaxOrd 1 max_id =_maximal_ideals(O, p)
+    for m in max_id
+      @vtime :CSAMaxOrd 1 OO = ring_of_multipliers(m, fmpz(p))
       dd = discriminant(OO)
       if d != dd
         extend = true
@@ -1153,8 +1216,7 @@ function pmaximal_overorder_meataxe(O::AlgAssOrd, p::Int)
     end
 
     if extend
-      v = valuation(dd, p)
-      if v == 0 || v == 1
+      if rem(d, p^2) != 0
         break
       end
       extend = false
@@ -1170,23 +1232,50 @@ end
 function pmaximal_overorder_trace(O::AlgAssOrd, p::Int)
 
   #First, the head order by computing the pradical and its ring of multipliers
-  d=discriminant(O)
-  I=pradical(O,p)
-  OO=ring_of_multipliers(I, fmpz(p))
-  dd=discriminant(OO)
+  d = discriminant(O)
+  @vtime :CSAMaxOrd 1 I = pradical(O, p)
+  @vtime :CSAMaxOrd 1 OO = ring_of_multipliers(I, fmpz(p))
+  dd = discriminant(OO)
+  if rem(dd, p^2) != 0
+    return OO
+  end
   while dd!= d
-    O=OO
-    I=pradical(O,p)
-    OO=ring_of_multipliers(I, fmpz(p))
-    dd=discriminant(OO)
+    d = dd
+    O = OO
+    @vtime :CSAMaxOrd 1 I = pradical(O,p)
+    @vtime :CSAMaxOrd 1 OO = ring_of_multipliers(I, fmpz(p))
+    dd = discriminant(OO)
+    if rem(dd, p^2) != 0
+      return OO
+    end
   end
   #Now, we have to check the maximal ideals.
+  
   extend = false
+  @vtime :CSAMaxOrd 1 max_id = _maximal_ideals(O, I, p)
+  for m in max_id
+    @vtime :CSAMaxOrd 1 OO = ring_of_multipliers(m, fmpz(p))
+    dd = discriminant(OO)
+    if d != dd
+      extend = true
+      O = OO
+      d = dd
+      break
+    end
+  end
+  if extend
+    if rem(dd, p^2) != 0
+      return OO
+    end
+    extend = false
+  else
+    return OO
+  end
   while true
     dd = fmpz(1)
-    max_id =_maximal_ideals(O, p)
-    for i = 1:length(max_id)
-      OO = ring_of_multipliers(max_id[i], fmpz(p))
+    @vtime :CSAMaxOrd 1 max_id = _maximal_ideals(O, p)
+    for m in max_id
+      OO = ring_of_multipliers(m, fmpz(p))
       dd = discriminant(OO)
       if d != dd
         extend = true
@@ -1197,8 +1286,7 @@ function pmaximal_overorder_trace(O::AlgAssOrd, p::Int)
     end
 
     if extend
-      v = valuation(dd, p)
-      if v == 0 || v == 1
+      if rem(dd, p^2) != 0
         break
       end
       extend = false
@@ -1270,7 +1358,7 @@ end
 #
 #  Sturm sequence
 #
-#########à#####################################################################
+###############################################################################
 
 function sturm_sequence(f::fmpq_poly)
 

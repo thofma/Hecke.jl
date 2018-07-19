@@ -476,7 +476,7 @@ function discriminant(C::ClassField)
         q,mq=quo(R,[el])
         ap-= order(q)
       end
-      qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+      qw=divexact(degree(O), prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
       abs_disc[p.minimum] = qw
       relative_disc[p] = ap
     else
@@ -1236,7 +1236,7 @@ function genus_field(A::ClassField, k::AnticNumberField)
   K = base_field(A)
   fl, mp = issubfield(k, K)
   @assert fl
-  h = norm_group_map(A, B, x->norm(mp, x))
+  h = norm_group_map(A, B, x -> norm(mp, x))
   return ray_class_field(A.rayclassgroupmap, GrpAbFinGenMap(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
 end
  
@@ -1349,8 +1349,16 @@ function norm(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberFie
   K = codomain(m)
   @assert K == nf(order(I))
   k = domain(m)
-  assure_2_normal(I)
   zk = maximal_order(k)
+  if I.is_principal == 1
+    if isdefined(I, :princ_gen)
+      return ideal(zk, zk(norm(m, (I.princ_gen).elem_in_nf)))
+    elseif isdefined(J,:princ_gen_special)
+      el = J.princ_gen_special[2] + J.princ_gen_special[3]
+      return ideal(zk, zk(norm(m, el)))
+    end
+  end
+  assure_2_normal(I)
   return ideal(zk, I.gen_one^div(degree(K), degree(k)), zk(norm(m, I.gen_two.elem_in_nf)))
 end
 

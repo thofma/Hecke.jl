@@ -573,8 +573,9 @@ include("EllCrv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("Grp.jl")
-include("AlgAss.jl")
 include("ModAlgAss.jl")
+include("AlgAss.jl")
+
 
 for T in subtypes(Map(HeckeMap))
   (M::T)(a) = image(M, a)

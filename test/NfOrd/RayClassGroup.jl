@@ -8,7 +8,7 @@
     @test order(domain(mr)) == 2
   end
 
-  @testset "quadratic field" begin
+  @testset "quadratic fields" begin
     
     Qx,x=PolynomialRing(FlintQQ,"x")
     K,a=NumberField(x^2+199,"a")
@@ -53,6 +53,18 @@
       @test Hecke.isisomorphic(q1,R2)
     end
 
+  end
+  
+  @testset "infinite places" begin
+  
+    Qx, x = PolynomialRing(FlintQQ, "x");
+    K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20)
+    O = maximal_order(K)
+    r, mr = ray_class_group(ideal(O,4), real_places(K), n_quo=2)
+    @test order(r) == 2^5
+    for el in r
+      @test el == mr\(mr(el))
+    end
   end
   
   @testset "stable subgroups" begin

@@ -1510,12 +1510,12 @@ end
 doc"""
     islocal_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
 > Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
-> Currently the conductor cannot have infinite places.
 """
 function islocal_norm(r::ClassField, a::NfAbsOrdElem)
+  K = base_field(r)
   m0, minf = conductor(r)
-  if length(minf) > 0
-    error("not implemented yet")
+  if !ispositive(a, minf)
+    return false
   end
   fl = factor(m0*a)
   return all(x -> islocal_norm(r, a, x), keys(fl))
@@ -1640,10 +1640,9 @@ doc"""
 > and the number of primes above $p$.
 """
 function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
-  @assert isprime(p)
-  m0 = defining_modulus(C)[1]
-
+  @hassert :ClassField 1 isprime(p)
   mR = C.rayclassgroupmap
+  m0 = mR.modulus_fin
   R = domain(mR)
 
   v = valuation(m0, p)
@@ -1663,3 +1662,7 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   return (e, f, divexact(order(q), f))
 end
 
+function iscyclic(C::ClassField)
+  mp = C.quotientmap
+  return iscyclic(codomain(mp))
+end

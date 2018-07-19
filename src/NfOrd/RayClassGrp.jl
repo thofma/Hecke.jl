@@ -1187,13 +1187,9 @@ end
 
 function ray_class_group_quo(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
-  O=parent(m).order
-  K=nf(O)
-  
   #
   #  Take the relevant part of the modulus
   #
-  
   fac=factor(m)
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
@@ -1226,6 +1222,31 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
   
 end
 
+function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1} = InfPlc[])
+  
+  y1=Dict{NfOrdIdl,Int}()
+  y2=Dict{NfOrdIdl,Int}()
+  for (q,e) in y
+    if gcd(norm(q)-1,n)!=1
+      y1[q]=Int(1)
+      if gcd(norm(q),n)!=1 && e>=2
+        y2[q]=Int(e)
+      end
+    elseif gcd(norm(q),n)!=1 && e>=2
+      y2[q]=Int(e)
+    end
+  end
+  I=ideal(O,1)
+  for (q,vq) in y1
+    I*=q
+  end
+  for (q,vq) in y2
+    I*=q^vq
+  end
+  return ray_class_group_quo(n, I, y1, y2, inf_plc)
+
+end
+
 function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=InfPlc[]; check_expo=false)
   # check_expo checks, before the computation of the units, if the exponent of the group can be n.
   # if it is lower for sure, it returns the trivial group.
@@ -1237,7 +1258,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   # Compute the modulus of the quotient
   I=ideal(O,1)
   for (q,vq) in y1
-    I*=q^vq
+    I*=q
   end
   for (q,vq) in y2
     I*=q^vq

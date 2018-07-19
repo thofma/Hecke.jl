@@ -131,7 +131,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
 
   Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p)), cached=false), cached=false)
   Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
-  res = []
+  res = Tuple{NfOrdIdl, Int}[]
   Zk = maximal_order(k)
   for (f, e) = Gp.fac
     P = ideal_from_poly(ZK, Int(minimum(p)), f, 1)
@@ -319,8 +319,8 @@ end
 
 function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
   
-  #return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-
+  return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
+  #=
   if degree_limit == 0
     degree_limit = degree(O)
   end
@@ -430,7 +430,7 @@ function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 
   if degree_limit >= degree(O)
     O.index_div[fmpz(p)] = result
   end
-  #=
+  
   lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
   @assert length(lp)==length(result)
   for (Q, e) in lp
