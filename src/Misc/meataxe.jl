@@ -60,9 +60,11 @@ function closure(C::T, G::Array{T,1}) where {T}
     end  
     i+=1
   end
-  rref!(C)
+  r = rref!(C)
+  if r != rows(C)
+    C = sub(C, 1:r, 1:cols(C))
+  end
   return C
-
 end
 
 #
