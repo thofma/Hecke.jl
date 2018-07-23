@@ -1000,13 +1000,13 @@ function trace_signature(O::AlgAssOrd)
   f=charpoly(Zx,M)
   if issquarefree(f)
     p=64
-    while p<1024
+    while p<4096
       sgtposf=0
       sgtnegf=0
       R=AcbField(p, false)
       Rx=AcbPolyRing(R, Symbol("x"), false)
       g=Rx(f)
-      l = roots(g, max_prec = 1024)
+      l = roots(g)#, max_prec = 1024)
       for i=1:length(l)
         y=real(l[i])
         if ispositive(y)
@@ -1022,7 +1022,7 @@ function trace_signature(O::AlgAssOrd)
         p*=2
       end
     end
-    if p>1024
+    if p>4096
       error("Precision issue")
     end
 #=    
@@ -1045,7 +1045,7 @@ function trace_signature(O::AlgAssOrd)
         continue
       end
       p=64
-      while p<1024
+      while p<4096
         sgtposf=0
         sgtnegf=0
         R=AcbField(p, false)
@@ -1069,7 +1069,7 @@ function trace_signature(O::AlgAssOrd)
           p*=2
         end
       end
-      if p>1024
+      if p > 4096
         error("Precision issue")
       end
     end
