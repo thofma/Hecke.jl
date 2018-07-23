@@ -1136,8 +1136,7 @@ function _maximal_ideals(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
 end
 
 function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, I::AlgAssOrdIdl, x::nmod_mat, p::fmpz, poneO::AlgAssOrdElem, A1::AlgAss, A1toO::Function)
-
-  @hassert :CSAMaxOrd 1 closure(x, M.action) == rref(x)[2]
+  @hassert :CSAMaxOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, rows(x)+O.dim , O.dim)
   gens = Vector{AlgAssOrdElem}(rows(x)+1)
   for i = 1:rows(x)
@@ -1163,7 +1162,7 @@ end
 
 function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, x::nmod_mat, p::fmpz, poneO::AlgAssOrdElem)
 
-  @hassert :CSAMaxOrd 1 closure(x, M.action) == rref(x)[2]
+  @hassert :CSAMaxOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, O.dim, O.dim)
   gens = Vector{AlgAssOrdElem}(rows(x)+1)
   for i = 1:rows(x)

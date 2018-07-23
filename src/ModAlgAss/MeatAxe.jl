@@ -576,7 +576,7 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
               Btnu, aa = aa, Btnu
             end
             subst=transpose(Btnu)
-            @assert rows(subst)==rows(closure(subst,G))
+            #@assert rows(subst)==rows(closure(subst,G))
             M.isirreducible = 2
             return false, subst
           end
