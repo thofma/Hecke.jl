@@ -492,8 +492,9 @@ function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_
   return pe, Auto
 end
 
-function _aut_A_over_k(A::NfRel, C::CyclotomicExt, CF::ClassField_pp)
-
+function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
+  
+  A = CF.K
 #= 
     now the automorphism group of A OVER k
     A = k(zeta, a^(1/n))
@@ -602,7 +603,7 @@ function _rcf_descent(CF::ClassField_pp)
   A = CF.K
   n = degree(A)
   @vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
-  _aut_A_over_k(A, C, CF)
+  _aut_A_over_k(C, CF)
   
   AutA_gen = CF.AutG
   AutA = GrpAbFinGen(CF.AutR)
@@ -965,11 +966,15 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   return reduce_mod_powers(a, n, Dict((p, Int(v)) for (p, v) = lp))
 end
 
+###############################################################################
+#
+#  Automorphisms
+#
+###############################################################################
 
-
-function rel_auto(A::ClassField_pp)
+function rel_auto_easy(A::ClassField_pp)
+  
   # sqrt[n](a) -> zeta sqrt[n](a) on A.A
-  @assert isdefined(A, :A)
   #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
   #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
   M = SMat(base_ring(A.K))
@@ -990,12 +995,69 @@ function rel_auto(A::ClassField_pp)
   for (i, c) = s
     setcoeff!(im, i-1, c)
   end
-
   return NfRelToNfRelMor(A.A, A.A, im)
+  
+end
+
+function rel_auto_intersection(A::ClassField_pp)
+  
+  # In the computation of the class field, I saved the 
+  # automorphisms of A.K over k.
+  # Now, I have to search for the one that generates the Galois
+  # group of the target field over k
+  C = cyclotomic_extension(base_field(A), degree(A))
+  a = ispower(degree(A))[2]
+  @assert isprime(a)
+  exp_to_test = divexact(degree(A), a)
+  r = degree(C.Kr)
+  if !isdefined(A, :AutG)
+    _aut_A_over_k(C, A)
+  end
+  #Now, I restrict them to A.A
+  M = SMat(base_ring(A.K))
+  b = A.K(1)
+  push!(M, SRow(b))
+  for i=2:degree(A)
+    b *= A.pe
+    push!(M, SRow(b))
+  end
+  Mk = _expand(M, C.mp[1])
+  i = 0
+  # One of the automorphisms must generate the group, so I check the order.
+  while true 
+    i += 1
+    tau = A.AutG[i]
+    N = SRow(tau(A.pe))
+    Nk = _expand(N, C.mp[1])
+    s = solve(Mk, Nk) # will not work, matrix non-square...
+    im = A.A()
+    for (i, c) = s
+      setcoeff!(im, i-1, c)
+    end
+    aut = NfRelToNfRelMor(A.A, A.A, im)
+    pow_aut = aut^exp_to_test
+    if pow_aut(gen(A.A)) == gen(A.A)
+      return aut
+    end
+  end
+ 
+end
+
+function rel_auto(A::ClassField_pp)
+  
+  @assert isdefined(A, :A)
+  
+  if degree(A) == degree(A.K)
+    #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
+    return rel_auto_easy(A)
+  else
+    #Tricky case
+    return rel_auto_intersection(A)
+  end
 end
 
 function rel_auto(A::ClassField)
-  aut = [rel_auto(x) for x = A.cyc]
+  aut = NfRelToNfRelMor[rel_auto(x) for x = A.cyc]
   K = number_field(A)
   g = gens(K)
   Aut = NfRel_nsToNfRel_nsMor[]
@@ -1006,6 +1068,7 @@ function rel_auto(A::ClassField)
 end
 
 function extend_aut(A::ClassField, tau::T) where T <: Map
+  
   # tau: k       -> k
   #global last_extend = (A, tau)
   k = domain(tau)
@@ -1261,8 +1324,8 @@ function _expand(M::Generic.Mat{nf_elem}, mp::Map)
   for i=1:rows(M)
     for j = 1:cols(M)
       a = mp\M[i,j]
-      for k=0:d-1
-        N[i, (j-1)*d+k+1] = coeff(a, k)
+      for l=0:d-1
+        N[i, (j-1)*d+l+1] = coeff(a, l)
       end
     end
   end
@@ -1279,7 +1342,7 @@ function _expand(M::SRow{nf_elem}, mp::Map)
     for l=0:d-1
       c = coeff(a, l)
       if !iszero(c)
-        push!(sr.pos, (j-1)*d+1+l+1)
+        push!(sr.pos, (j-1)*d+1+l)
         push!(sr.values, c)
       end
     end
