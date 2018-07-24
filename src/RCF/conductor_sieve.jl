@@ -121,19 +121,19 @@ function totally_positive_generators(mr::MapRayClassGrp, a::Int, wild::Bool=fals
   if isdefined(mr, :tame_mult_grp)
     tmg=mr.tame_mult_grp
     for (p,v) in tmg
-      mr.tame_mult_grp[p]=(make_positive(v[1],a),v[2],v[3])
-      @hassert :RayFacElem 1 istotally_positive(mr.tame_mult_grp[p][1])
+      mr.tame_mult_grp[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ make_positive(v.generators[1], a) ], v.discrete_logarithm)
+      @hassert :RayFacElem 1 istotally_positive(mr.tame_mult_grp[p].generators[1])
     end
   end
   if wild && isdefined(mr, :wild_mult_grp)
     wld=mr.wild_mult_grp
     for (p,v) in wld
-      x=v[1]
+      x=v.generators
       for i=1:length(x)
         x[i]=make_positive(x[i],a)
         @hassert :RayFacElem 1 iscoprime(ideal(parent(x[i]), x[i]), ideal(parent(x[i]), a))
       end
-      mr.wild_mult_grp[p]=(x,v[2],v[3])
+      mr.wild_mult_grp[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), x, v.discrete_logarithm)
     end 
   end
 

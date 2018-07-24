@@ -89,8 +89,88 @@ end
 
 ################################################################################
 #
+#  Morphisms from finite abelian groups onto units of orders
+#
+################################################################################
+
+mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMultGrp}
+  domain::GrpAbFinGen
+  codomain::NfOrd
+  generator::NfOrdElem
+
+  function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
+    G = DiagonalGroup([order])
+    z = new()
+    z.domain = G
+    z.codomain = O
+    z.generator = generator
+    return z
+  end
+end
+
+function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
+  return f.generator^a[1]
+end
+
+mutable struct GrpAbFinGenToNfAbsOrdMap <: Map{GrpAbFinGen, NfOrd, HeckeMap, GrpAbFinGenToNfAbsOrdMap}
+  header::MapHeader
+  generators::Vector{NfAbsOrdElem}
+  discrete_logarithm::Function
+  modulus::fmpz # if defined (and not zero), then the discrete exponentiation is done modulo this
+
+  function GrpAbFinGenToNfAbsOrdMap(G::GrpAbFinGen, O::NfAbsOrd, generators::Vector{T}, disc_log::Function, modulus::fmpz = fmpz(0)) where T <: NfAbsOrdElem
+    @assert ngens(G) == length(generators)
+
+    function _image(a::GrpAbFinGenElem)
+      @assert parent(a) == G
+      y = one(O)
+      for i in 1:length(generators)
+        a[i] == 0 && continue
+        if iszero(modulus)
+          y *= generators[i]^a[i]
+        else
+          y *= powermod(generators[i], a[i], modulus)
+        end
+      end
+      return y
+    end
+
+    function _preimage(a::NfAbsOrdElem)
+      @assert parent(a) == O
+      return G(disc_log(a))
+    end
+
+    z = new()
+    z.header = MapHeader(G, O, _image, _preimage)
+    z.generators = generators
+    z.discrete_logarithm = disc_log
+    if !iszero(modulus)
+      z.modulus = modulus
+    end
+    return z
+  end
+
+  function GrpAbFinGenToNfAbsOrdMap(O::NfAbsOrd, generators::Vector{T}, snf_structure::Vector{fmpz}, disc_log::Function, modulus::fmpz = fmpz(0)) where T <: NfAbsOrdElem
+    @assert length(generators) == length(snf_structure)
+
+    G = DiagonalGroup(snf_structure)
+
+    return GrpAbFinGenToNfAbsOrdMap(G, O, generators, disc_log, modulus)
+  end
+
+  function GrpAbFinGenToNfAbsOrdMap(O::NfAbsOrd, generators::Vector{T}, relation_matrix::fmpz_mat, disc_log::Function, modulus::fmpz = fmpz(0)) where T <: NfAbsOrdElem
+    @assert length(generators) == rows(relation_matrix)
+
+    G = GrpAbFinGen(relation_matrix)
+
+    return GrpAbFinGenToNfAbsOrdMap(G, O, generators, disc_log, modulus)
+  end
+end
+
+################################################################################
+#
 #  Isomorphisms from abelian groups onto multliplicative groups of residue
-#  rings of maximal orders
+#  rings of orders
 #
 ################################################################################
 
@@ -99,22 +179,14 @@ mutable struct GrpAbFinGenToNfOrdQuoRingMultMap <: Map{GrpAbFinGen, NfOrdQuoRing
   generators::Vector{NfOrdQuoRingElem}
   discrete_logarithm::Function
 
-  # The multiplicative group, tame part
-  tame::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}
+  # Multiplicative group, tame part
+  tame::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}
 
   # Multiplicative group, wild part
-  wild::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}
+  wild::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}
 
-  function GrpAbFinGenToNfOrdQuoRingMultMap(Q::NfOrdQuoRing,
-                              generators::Vector{NfOrdQuoRingElem},
-                              snf_structure::Vector{fmpz},
-                              disc_log::Function)
-    @assert length(generators) == length(snf_structure)
-    @hassert :NfOrdQuoRing 1 all(g->parent(g)==Q,generators)
-
-    G = DiagonalGroup(snf_structure)
-    @assert isa(G,GrpAbFinGen)
-    @assert issnf(G)
+  function GrpAbFinGenToNfOrdQuoRingMultMap(G::GrpAbFinGen, Q::NfOrdQuoRing, generators::Vector{NfOrdQuoRingElem}, disc_log::Function)
+    @assert ngens(G) == length(generators)
 
     function _image(a::GrpAbFinGenElem)
       @assert parent(a) == G
@@ -138,34 +210,25 @@ mutable struct GrpAbFinGenToNfOrdQuoRingMultMap <: Map{GrpAbFinGen, NfOrdQuoRing
     return z
   end
 
+  function GrpAbFinGenToNfOrdQuoRingMultMap(Q::NfOrdQuoRing, generators::Vector{NfOrdQuoRingElem}, snf_structure::Vector{fmpz}, disc_log::Function)
+    @assert length(generators) == length(snf_structure)
+
+    G = DiagonalGroup(snf_structure)
+
+    return GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, generators, disc_log)
+  end
+
+  function GrpAbFinGenToNfOrdQuoRingMultMap(Q::NfOrdQuoRing, generators::Vector{NfOrdQuoRingElem}, relation_matrix::fmpz_mat, disc_log::Function)
+    @assert length(generators) == rows(relation_matrix)
+
+    G = GrpAbFinGen(relation_matrix)
+
+    return GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, generators, disc_log)
+  end
+
   function GrpAbFinGenToNfOrdQuoRingMultMap(G::GrpAbFinGen, Q::NfOrdQuoRing, exp::Function, disc_log::Function)
     z = new()
     z.header = MapHeader(G, Q, exp, disc_log)
     return z
   end
-end
-
-################################################################################
-#
-#  Morphisms from finite abelian groups onto units of orders
-#
-################################################################################
-
-mutable struct AbToNfOrdMultGrp <: Map{GrpAbFinGen, NfOrd, SetMap, AbToNfOrdMultGrp}
-  domain::GrpAbFinGen
-  codomain::NfOrd
-  generator::NfOrdElem
-
-  function AbToNfOrdMultGrp(O::NfOrd, order::Int, generator::NfOrdElem)
-    G = DiagonalGroup([order])
-    z = new()
-    z.domain = G
-    z.codomain = O
-    z.generator = generator
-    return z
-  end
-end
-
-function (f::AbToNfOrdMultGrp)(a::GrpAbFinGenElem)
-  return f.generator^a[1]
 end

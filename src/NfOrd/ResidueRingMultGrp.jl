@@ -23,11 +23,11 @@ doc"""
 function multiplicative_group(Q::NfOrdQuoRing)
   if !isdefined(Q, :multiplicative_group)
     if ismaximal_known(base_ring(Q)) && ismaximal(base_ring(Q))
-      gens, structure, disc_log = _multgrp(Q)
+      G, GtoQ = _multgrp(Q)
     else
-      gens, structure, disc_log = _multgrp_non_maximal(Q)
+      G, GtoQ = _multgrp_non_maximal(Q)
     end
-    Q.multiplicative_group = GrpAbFinGenToNfOrdQuoRingMultMap(Q,gens,structure,disc_log)
+    Q.multiplicative_group = GtoQ
   end
   mQ = Q.multiplicative_group
   return domain(mQ), mQ
@@ -116,6 +116,14 @@ function factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   return fac
 end
 
+# Factors Q.ideal, the result is saved in Q.factor
+function factor(Q::NfOrdQuoRing)
+  if !isdefined(Q, :factor)
+    Q.factor = factor(Q.ideal)
+  end
+  return Q.factor
+end
+
 
 ################################################################################
 #
@@ -125,65 +133,40 @@ end
 
 doc"""
 ***
-    _multgrp(Q::NfOrdQuoRing) -> (Vector{NfOrdQuoRingElem}, Vector{fmpz}, Function)
+    _multgrp(Q::NfOrdQuoRing) -> (GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap)
 
-> Return generators, the snf structure and a discrete logarithm function for $Q^\times$.
+> Returns the group $Q^\times$ and a map from this group to $Q$.
 """
-function _multgrp(Q::NfOrdQuoRing; method=nothing)
+function _multgrp(Q::NfOrdQuoRing, save_tame_wild::Bool = false; method = nothing)
 
-  gens = Vector{NfOrdQuoRingElem}()
-  structt = Vector{fmpz}()
-  disc_logs = Vector{Function}()
-  i = ideal(Q)
-  O=order(i)
-  fac = factor(i)
-  Q.factor = fac
-  
-  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-  for (p,vp) in fac
-    prime_power[p]= p^vp
-  end
-  
-  
-  for (p,vp) in fac
-    gens_p , struct_p , dlog_p = _multgrp_mod_pv(p,vp;method=method)
+  fac = factor(Q)
 
-    # Make generators coprime to other primes
-    if length(fac) > 1
-      i_without_p = ideal(O,1)
-      for (p2,vp2) in fac
-        (p != p2) && (i_without_p *= prime_power[p2])
-      end
-
-      alpha, beta = idempotents(prime_power[p],i_without_p)
-      for i in 1:length(gens_p)
-        g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in prime_power[p])
-        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
-        gens_p[i] = g_pi_new
-      end
+  if isempty(fac)
+    disc_log = function(x::NfOrdQuoRingElem)
+      return fmpz[]
     end
-
-    gens_p = map(Q,gens_p)
-    append!(gens,gens_p)
-    append!(structt,struct_p)
-    push!(disc_logs,dlog_p)
+    GtoQ = GrpAbFinGenToNfOrdQuoRingMultMap(Q, elem_type(Q)[], fmpz[], disc_log)
+    return domain(GtoQ), GtoQ
   end
 
-
-  discrete_logarithm = function(x::NfOrdQuoRingElem)
-    result = Vector{fmpz}()
-    for dlog in disc_logs
-      append!(result,dlog(x.elem))
-    end
-    return result
+  prime_powers = Vector{NfOrdIdl}()
+  groups = Vector{GrpAbFinGen}()
+  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}()
+  for (p, vp) in fac
+    pvp = p^vp
+    G, mG = _multgrp_mod_pv(p, vp, pvp; method = method)
+    push!(prime_powers, pvp)
+    push!(groups, G)
+    push!(maps, mG)
   end
 
-  # Transform to SNF
-  rels = matrix(diagm(structt))
-  gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
-  return gens_trans, rels_trans, dlog_trans
+  G, GtoQ = _direct_product(groups, maps, prime_powers, Q, save_tame_wild)
+  S, StoG, StoQ = snf(G, GtoQ)
+
+  return S, StoQ
 end
+
+_multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = method)
 
 ################################################################################
 #
@@ -193,35 +176,55 @@ end
 
 doc"""
 ***
-    _multgrp_mod_pv(p::NfOrdIdl, v) -> (Vector{NfOrdElem}, Vector{fmpz}, Function)
+    _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl) -> (GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap)
 
-> Given a prime ideal $p$ in a maximal order $\mathcal O$ and an integer $v > 0$, return generators,
-> the group structure and a discrete logarithm function for $(\mathcal O/p^v)^\times$.
+> Given a prime ideal $p$ in a maximal order $\mathcal O$, an integer $v > 0$ and
+> $pv = p^v$, the function returns the group $(\mathcal O/p^v)^\times$ and a map
+> from this group to $O/p^v$.
 """
-function _multgrp_mod_pv(p::NfOrdIdl, v; method=nothing)
+function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
-  gen_p, n_p, dlog_p = _multgrp_mod_p(p)
+  pnumv = minimum(p, Val{false})^v # to speed up the exponentiation in the GrpAbFinGenToNfAbsOrdMaps
+  G1, G1toO = _multgrp_mod_p(p, pnumv)
+  Q, OtoQ = quo(order(p), pv)
+  tame_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+  wild_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
   if v == 1
-    gens = [gen_p]
-    structt = [n_p]
-    discrete_logarithm = function(x::NfOrdElem) return [dlog_p(x)] end
-  else
-    gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,v;method=method)
-    obcs = prod(Set(struct_pv)) # order of biggest cyclic subgroup
-    g_p_obcs = powermod(gen_p,obcs,minimum(p, Val{false})^v)
-    gens = [[g_p_obcs] ; gens_pv]
-
-    structt = [[n_p] ; struct_pv]
-
-    obcs_inv = gcdx(obcs,n_p)[2]
-    discrete_logarithm = function(x::NfOrdElem)
-      r = mod(dlog_p(x)*obcs_inv,n_p)
-      x *= g_p_obcs^mod(-r,n_p)
-      return [[r] ; dlog_pv(x)]
+    tame_part[p] = G1toO
+    function disc_log(x::NfOrdQuoRingElem)
+      return G1toO.discrete_logarithm((OtoQ\x))
     end
+    GtoQ = GrpAbFinGenToNfOrdQuoRingMultMap(G1, Q, map(OtoQ, G1toO.generators), disc_log)
+  else
+    G2, G2toO = _1_plus_p_mod_1_plus_pv(p, v, pv, pnumv; method = method)
+    wild_part[p] = G2toO
+
+    gen1 = G1toO(G1[1])
+    @assert issnf(G1) && issnf(G2)
+    rel1 = G1.snf[1]
+    # G2.snf[end] is the order of the biggest cyclic subgroup of G2
+    gen1_obcs = powermod(gen1, G2.snf[end], pnumv)
+    gens = map(OtoQ, append!([gen1_obcs], G2toO.generators))
+
+    G1toO.generators[1] = gen1_obcs
+    tame_part[p] = G1toO
+
+    G = direct_product(G1, G2)
+
+    obcs_inv = gcdx(G2.snf[end], rel1)[2]
+    function disc_log2(x::NfOrdQuoRingElem)
+      y = OtoQ\x
+      r = mod((G1toO.discrete_logarithm(y))[1]*obcs_inv, rel1)
+      y *= gen1_obcs^mod(-r, rel1)
+      return append!([r], G2toO.discrete_logarithm(y))
+    end
+
+    GtoQ = GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, gens, disc_log2)
   end
-  return gens, structt, discrete_logarithm
+  GtoQ.tame = tame_part
+  GtoQ.wild = wild_part
+  return domain(GtoQ), GtoQ
 end
 
 ################################################################################
@@ -231,7 +234,7 @@ end
 ################################################################################
 
 # Compute (O_K/p)*
-function _multgrp_mod_p(p::NfOrdIdl)
+function _multgrp_mod_p(p::NfOrdIdl, pnumv::fmpz = fmpz(0))
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
   n = norm(p) - 1
@@ -258,13 +261,17 @@ function _multgrp_mod_p(p::NfOrdIdl)
       return pohlig_hellman(gen_quo,n,y;factor_n=factor_n)
     end
   end
-  return gen, n, discrete_logarithm
+  disc_log = function(x::NfOrdElem)
+    return fmpz[ discrete_logarithm(x) ]
+  end
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ gen ], [ n ], disc_log, pnumv)
+  return domain(map), map
 end
 
 function _primitive_element_mod_p(p::NfOrdIdl)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
-  Q , Q_map = quo(O,p)
+  Q, Q_map = quo(O,p)
   n = norm(p) - 1
   primefactors_n = collect(keys(factor(n).fac))
   while true
@@ -288,7 +295,7 @@ end
 ################################################################################
 
 # Compute (1+p)/(1+p^v)
-function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int; method=nothing)
+function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::fmpz = fmpz(0); method=nothing)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
   if method == :one_unit
@@ -313,8 +320,10 @@ function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int; method=nothing)
   end
 
   @assert size(rels) == (length(gens),length(gens))
-  gens_snf , struct_snf , disc_log_snf = snf_gens_rels_log(gens, rels, disc_log, p^v)
-  return gens_snf, struct_snf, disc_log_snf
+  toO = GrpAbFinGenToNfAbsOrdMap(order(p), gens, rels, disc_log, pnumv)
+  Q, OtoQ = quo(order(p), pv)
+  S, mS, StoO = snf(toO, OtoQ)
+  return S, StoO
 end
 
 ################################################################################
@@ -668,70 +677,6 @@ end
 
 ################################################################################
 #
-#  SNF For Multiplicative Groups
-#
-################################################################################
-
-doc"""
-***
-    snf_gens_rels_log(gens::Vector,
-                      rels::fmpz_mat,
-                      dlog::Function) -> (Vector, fmpz_mat, Function)
-    snf_gens_rels_log(gens::Vector{NfOrdElem},
-                      rels::fmpz_mat,
-                      dlog::Function,
-                      i::NfOrdIdl) -> (Vector{NfOrdElem}, fmpz_mat, Function)
-
-> Return the smith normal form of a mulitplicative group.
-
-> The group is represented by generators, a relation matrix
-> and a function to compute the discrete logarithm with respect to the generators.
-> All trivial components of the group will be removed.
-> If the generators are of type `NfOrdElem` and an ideal `i` is supplied,
-> all transformations of the generators will be computed modulo `i`.
-"""
-function snf_gens_rels_log(gens::Vector, rels::fmpz_mat, dlog::Function)
-  n, m = size(rels)
-  @assert length(gens) == m
-  (n==0 || m==0) && return gens, fmpz[], dlog
-  @assert typeof(gens[1])==NfOrdQuoRingElem
-  
-  G=GrpAbFinGen(rels)
-  S,mS=snf(G)
-  
-  function disclog(x)
-    y=dlog(x)
-    z=fmpz[s for s in y]
-    a=(mS\(G(z)))
-    return fmpz[a[j] for j=1:ngens(S)]
-  end
-  
-  gens_snf=typeof(gens)(ngens(S))
-  for i=1:ngens(S)
-    x=(mS(S[i])).coeff
-    for j=1:ngens(G)
-      x[1,j]=mod(x[1,j],S.snf[end])
-    end
-    y=parent(gens[1])(1)
-    for j=1:ngens(G)
-      y*=gens[j]^(x[1,j])
-    end
-    gens_snf[i]= y
-  end
-  return gens_snf, S.snf, disclog
-  
-end
-
-function snf_gens_rels_log(gens::Vector{NfOrdElem}, rels::fmpz_mat, dlog::Function, i::NfOrdIdl)
-  Q , Qmap = quo(order(i),i)
-  gens_quo = map(Q,gens)
-  gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens_quo,rels,dlog)
-  @assert typeof(rels_trans)==Array{fmpz,1}
-  return map(x->Qmap\x,gens_trans), rels_trans, dlog_trans
-end
-
-################################################################################
-#
 #  Discrete Logarithm In Cyclic Groups
 #
 ################################################################################
@@ -750,7 +695,7 @@ doc"""
 
 > $g$ is a generator of order less than or equal to $n$
 > and $h$ has to be generated by $g$.
-> If a dictionary `cache` is supplied, it will be used to story the result
+> If a dictionary `cache` is supplied, it will be used to store the result
 > of the first step. This allows to speed up subsequent calls with
 > the same $g$ and $n$.
 """
@@ -799,14 +744,19 @@ doc"""
 function pohlig_hellman(g, n, h; factor_n=factor(n))
   @assert typeof(g) == typeof(h)
   n == 1 && return fmpz(0)
-  results = Vector{Tuple{fmpz,fmpz}}()
+  results = Vector{fmpz}()
+  prime_powers = Vector{fmpz}()
   for (p,v) in factor_n
     pv = p^v
     r = div(n,pv)
     c = _pohlig_hellman_prime_power(g^r,p,v,h^r)
-    push!(results,(fmpz(c),fmpz(pv)))
+    push!(results, fmpz(c))
+    push!(prime_powers, fmpz(pv))
   end
-  return crt(results)[1]
+  if length(results) == 1
+    return results[1]
+  end
+  return crt(results, prime_powers)
 end
 
 function _pohlig_hellman_prime_power(g,p,v,h)
@@ -827,133 +777,6 @@ function _pohlig_hellman_prime_power(g,p,v,h)
   return a
 end
 
-################################################################################
-#
-#  Other Things
-#
-################################################################################
-
-import Nemo.crt
-
-doc"""
-***
-    crt(l::Vector{(Int,Int})) -> (fmpz, fmpz)
-    crt(l::Vector{(fmpz,fmpz})) -> (fmpz, fmpz)
-
-> Find $r$ and $m$ such that $r \equiv r_i (\mod m_i)$ for all $(r_i,m_i) \in l$
-> and $m$ is the product of al $m_i$.
-"""
-function crt(l::Vector{Tuple{T,T}}) where T<:Union{fmpz,Int}
-  isempty(l) && error("Input vector mustn't be empty")
-  X = fmpz(l[1][1])
-  M = fmpz(l[1][2])
-  for (x,m) in l[2:end]
-    X = crt(X,M,x,m)
-    M *= m
-  end
-  return X, M
-end
-
-################################################################################
-#
-#   Multiplicative group for ray class group
-#
-################################################################################
-
-function _multgrp_ray(Q::NfOrdQuoRing; method=nothing)
-
-  gens = Vector{NfOrdQuoRingElem}()
-  structt = Vector{fmpz}()
-  disc_logs = Vector{Function}()
-  i = ideal(Q)
-  O = order(i)
-  fac = factor(i)
-  Q.factor = fac
-  
-  tame_part=Dict{NfOrdIdl, Tuple{NfOrdElem, fmpz, Function}}()
-  wild_part=Dict{NfOrdIdl, Tuple{Array{NfOrdElem,1}, Array{fmpz,1}, Function}}()
-  
-  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-  for (p,vp) in fac
-    prime_power[p]= p^vp
-  end
-  
-  
-  for (p,vp) in fac
-    gen_p, n_p, disclog_p = _multgrp_mod_p(p)
-    tame_part[p]=(gen_p,n_p,disclog_p)
-    dlog_p=1
-    if vp == 1
-      gens_p = [gen_p]
-      struct_p = [n_p]
-      dlog_p = function(x::NfOrdElem) return [disclog_p(x)] end
-      
-    else
-      gens_pv, struct_pv , dlog_pv = _1_plus_p_mod_1_plus_pv(p,vp;method=method)
-      obcs = lcm(struct_pv) # order of biggest cyclic subgroup
-      g_p_obcs = powermod(gen_p,obcs,p.gen_one^vp)
-      gens_p = [[g_p_obcs] ; gens_pv]
-
-      struct_p = [[n_p] ; struct_pv]
-
-      
-      obcs_inv = gcdx(obcs,n_p)[2]
-      function dlog_p(x::NfOrdElem)
-        r = mod(disclog_p(x)*obcs_inv,n_p)
-        x *= g_p_obcs^mod(-r,n_p)
-        return [[r] ; dlog_pv(x)]
-      end
-    end
-    
-    # Make generators coprime to other primes
-    if length(fac) > 1
-      i_without_p = ideal(O,1)
-      for (p2,vp2) in fac
-        (p != p2) && (i_without_p *= prime_power[p2])
-      end
-
-      alpha, beta = idempotents(prime_power[p],i_without_p)
-      for i in 1:length(gens_p)
-        g_pi_new = beta*gens_p[i] + alpha
-        @hassert :NfOrdQuoRing 2 (g_pi_new - gens_p[i] in prime_power[p])
-        @hassert :NfOrdQuoRing 2 (g_pi_new - 1 in i_without_p)
-        gens_p[i] = g_pi_new
-      end
-    end
-
-    gens_new = map(Q,gens_p)
-    append!(gens,gens_new)
-    append!(structt,struct_p)
-    push!(disc_logs,dlog_p)
-    
-    tame_part[p]=(gens_p[1],struct_p[1], disclog_p)
-    if length(gens_p)>1
-      wild_part[p]=(gens_p[2:end], struct_p[2:end], dlog_pv)
-    end
-  end
-
-
-
-  function discrete_logarithm(x::NfOrdQuoRingElem)
-    result = Vector{fmpz}()
-    for dlog in disc_logs
-      append!(result,dlog(x.elem))
-    end
-    return result
-  end
-
-  # Transform to SNF
-  rels = matrix(diagm(structt))
-  gens_trans, rels_trans, dlog_trans = snf_gens_rels_log(gens,rels,discrete_logarithm)
-
-  mG=GrpAbFinGenToNfOrdQuoRingMultMap(Q,gens_trans, rels_trans, dlog_trans)
-  G=domain(mG)
-  mG.tame=tame_part
-  mG.wild=wild_part
-  return G,mG
-  
-end
-
 #################################################################################
 #
 #  p-part of the multiplicative group
@@ -961,10 +784,10 @@ end
 #################################################################################
 
 
-function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
+function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
-  Q , mQ = ResidueField(O,p)
+  Q, mQ = ResidueField(O,p)
   
   n = norm(p) - 1
   s=valuation(n,prime)
@@ -994,130 +817,91 @@ function prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
         w+=1
         el*=g
       end
-      return [w*inv]
+      return fmpz[w*inv]
     else
-      return [Hecke._pohlig_hellman_prime_power(g,prime,s,t)*inv]
+      return fmpz[_pohlig_hellman_prime_power(g,prime,s,t)*inv]
     end
   end
-  
-  return mQ\g , [powerp], disclog
+
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ fmpz(powerp) ], disclog)
+  return domain(map), map
 end
 
 
 function _mult_grp(Q::NfOrdQuoRing, p::Integer)
+  O = Q.base_ring
+  OtoQ = NfOrdQuoMap(O, Q)
 
-  O=Q.base_ring
-  K=nf(O)
+  tame_part = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+  wild_part = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
 
-  
-  gens = Vector{}()
-  structt = Vector{fmpz}()
-  disc_logs = Vector{Function}()
-  
-  tame=Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}() 
-  wild=Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}()
-  
-  fac=factor(Q.ideal)
-  Q.factor=fac
-  y1=Dict{NfOrdIdl,Int}()
-  y2=Dict{NfOrdIdl,Int}()
-  for (q,e) in fac
-    if divisible(norm(q)-1,p)
-      y1[q]=Int(1)
-    else 
-      if divisible(norm(q),p) && e>=2
-        y2[q]=Int(e)
+  fac = factor(Q)
+  y1 = Dict{NfOrdIdl, Int}()
+  y2 = Dict{NfOrdIdl, Int}()
+  for (q, e) in fac
+    if divisible(norm(q) - 1, p)
+      y1[q] = Int(1)
+    else
+      if divisible(norm(q), p) && e >= 2
+        y2[q] = Int(e)
       end
     end
   end
-  
-  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-  for (q,vq) in fac
-    prime_power[q]=q^vq
-  end
-  
-  
-  for (q,vq) in y1
-    gens_q , struct_q , dlog_q = prime_part_multgrp_mod_p(q,p)
-  
-    # Make generators coprime to other primes
-    if length(fac) > 1
-      i_without_q = ideal(O,1)
-      for (q2,vq2) in fac
-        (q != q2) && (i_without_q *= prime_power[q2])
-      end
-      alpha, beta = idempotents(prime_power[q] ,i_without_q)
-      gens_q = beta*gens_q + alpha
-    end
- 
-    append!(gens,[Q(gens_q)])
-    append!(structt,struct_q)
-    push!(disc_logs,dlog_q)
-    tame[q]=(gens_q, struct_q[1], dlog_q)
-  end
-  for (q,vq) in y2
-    gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
 
-    # Make generators coprime to other primes
-    nq=norm(q)-1
-    
-    if length(fac) > 1
-      i_without_q = ideal(O,1)
-      for (p2,vp2) in fac
-        (q != p2) && (i_without_q *= prime_power[p2])
+  if isempty(y1) && isempty(y2)
+    G = DiagonalGroup(fmpz[])
+    disc_log = function(x::NfOrdQuoRingElem)
+      return fmpz[]
+    end
+    return G, GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), y1
+  end
+
+  groups = Vector{GrpAbFinGen}()
+  ideals_and_maps = Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}()
+  for (q, e) in fac
+    qe = q^e
+    maps = GrpAbFinGenToNfAbsOrdMap[]
+
+    if haskey(y1, q)
+      G1, G1toO = _prime_part_multgrp_mod_p(q, p)
+      push!(groups, G1)
+      push!(maps, G1toO)
+      tame_part[q] = G1toO
+    end
+
+    if haskey(y2, q)
+      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q])
+
+      nq = norm(q) - 1
+
+      @assert issnf(G2)
+      obcs = G2.snf[end] # order of the biggest cyclic subgroup
+      obcs_inv = gcdx(nq, obcs)[2]
+
+      disc_log2 = function(x::NfOrdElem)
+        y = Q(x)^Int(nq)
+        z = G2toO.discrete_logarithm(y.elem)
+        for i = 1:length(z)
+          z[i] *= obcs_inv
+        end
+        return z
       end
 
-      alpha, beta = idempotents(prime_power[q],i_without_q)
-      for i in 1:length(gens_q)
-        gens_q[i] = beta*gens_q[i] + alpha
-      end
+      push!(groups, G2)
+      G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)
+      push!(maps, G2toO2)
+      wild_part[q] = G2toO2
     end
-    
-    ciclmax=prod(Set(snf_q))
-    inv=gcdx(nq,ciclmax)[2]
-    
-    function dlog_q_norm(x::NfOrdElem)
-      y=Q(x)^Int(nq)
-      y=disclog_q(y.elem)
-      for i=1:length(y)
-        y[i]*=inv
-      end
-      return y
-    end
-        
-    gensn = map(Q,gens_q)
-    append!(gens,gensn)
-    append!(structt,snf_q)
-    push!(disc_logs,dlog_q_norm)
-    wild[q]=(gens_q,snf_q,dlog_q_norm)
-  end 
-  
-  G=DiagonalGroup(structt)
-  
-  function exp(a::GrpAbFinGenElem)
-    
-    x=Q(1)
-    for i=1:ngens(G)
-      if Int(a.coeff[1,i])!= 0
-        x=x*(gens[i]^(Int(a.coeff[1,i])))
-      end
-    end
-    return x
-  
+    ideals_and_maps[qe] = maps
   end
-  
-  function dlog(x::NfOrdElem)
-    result = Vector{fmpz}()
-    for disclog in disc_logs
-      append!(result,disclog(x))
-    end
-    return G(result)
-  end
-  
-  mG=Hecke.GrpAbFinGenToNfOrdQuoRingMultMap(G,Q,exp,dlog)
-  mG.tame=tame
-  mG.wild=wild
-  return G, mG, merge(y1, y2)
+
+  G, GtoQ = _direct_product!(groups, ideals_and_maps, Q) # This also changes tame_part and wild_part!
+  GtoQ.tame = tame_part
+  GtoQ.wild = wild_part
+
+  S, StoG, StoQ = snf(G, GtoQ)
+
+  return S, StoQ, merge(y1, y2)
 end
 
 ####################################################################################
@@ -1129,8 +913,8 @@ end
 function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
-  Q , mQ = ResidueField(O,p)
-  
+  Q, mQ = ResidueField(O,p)
+
   f=collect(keys(factor(fmpz(n)).fac))
   np = norm(p) - 1
   @assert gcd(n,np)!=1
@@ -1189,105 +973,71 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
     end
   end
 
-  return mQ\g , k, disclog
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ k ], disclog)
+  return domain(map), map
 end
 
 function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int},n::Integer)
+  O = Q.base_ring
+  OtoQ = NfOrdQuoMap(O, Q)
+  fac = factor(Q)
 
-  O=Q.base_ring
-  K=nf(O)
- 
-  gens = Vector{NfOrdQuoRingElem}()
-  structt = Vector{fmpz}()
-  disc_logs = Vector{Function}()
-  
-  prime_power=Dict{NfOrdIdl, NfOrdIdl}()
-  for (q,vq) in Q.factor
-    prime_power[q]=q^vq
-  end
- 
-  tame_mult_grp=Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}}()
-  wild_mult_grp=Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}}()
-  
-  for (q,vq) in y1
-    gens_q , struct_q , dlog_q = _n_part_multgrp_mod_p(q,n)
-  
-    # Make generators coprime to other primes
-    if length(Q.factor) > 1
-      i_without_q = ideal(O,1)
-      for (q2,vq2) in Q.factor
-        (q != q2) && (i_without_q *= prime_power[q2])
-      end
-      alpha, beta = idempotents(prime_power[q], i_without_q)
-      gens_q = beta*gens_q + alpha
+  tame_part = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+  wild_part = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+
+  if isempty(y1) && isempty(y2)
+    G = DiagonalGroup(fmpz[])
+    disc_log = function(x::NfOrdQuoRingElem)
+      return fmpz[]
     end
- 
-    push!(gens,Q(gens_q))
-    push!(structt,struct_q)
-    push!(disc_logs,dlog_q)
-    tame_mult_grp[q]=(gens_q, struct_q, dlog_q)
-  
+    return G, GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), tame_part, wild_part
   end
-  for (q,vq) in y2
-    @assert vq>=2
-    gens_q, snf_q, disclog_q = Hecke._1_plus_p_mod_1_plus_pv(q,vq)
-    
-    
-    # Make generators coprime to other primes
-    nq=norm(q)-1  
-    if length(Q.factor) > 1
-      i_without_q = ideal(O,1)
-      for (p2,vp2) in Q.factor
-        (q != p2) && (i_without_q *= prime_power[p2])
+
+  groups = Vector{GrpAbFinGen}()
+  ideals_and_maps = Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}()
+  for (q, e) in fac
+    qe = q^e
+    maps = GrpAbFinGenToNfAbsOrdMap[]
+
+    if haskey(y1, q)
+      G1, G1toO = _n_part_multgrp_mod_p(q, n)
+      push!(groups, G1)
+      push!(maps, G1toO)
+      tame_part[q] = G1toO
+    end
+
+    if haskey(y2, q)
+      @assert y2[q] >= 2
+      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q])
+
+      nq = norm(q) - 1
+
+      @assert issnf(G2)
+      obcs = G2.snf[end] # order of the biggest cyclic subgroup
+      obcs_inv = gcdx(nq, obcs)[2]
+
+      disc_log2 = function(x::NfOrdElem)
+        y = Q(x)^Int(nq)
+        z = G2toO.discrete_logarithm(y.elem)
+        for i = 1:length(z)
+          z[i] *= obcs_inv
+        end
+        return z
       end
 
-      alpha, beta = idempotents(prime_power[q],i_without_q)
-      for i in 1:length(gens_q)
-        gens_q[i] = beta*gens_q[i] + alpha
-      end
+      push!(groups, G2)
+      G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)
+      push!(maps, G2toO2)
+      wild_part[q] = G2toO2
     end
-    
-    inv=gcdx(nq,snf_q[end])[2]
-       
-    function dlog_q_norm(x::NfOrdElem)
-      y=Q(x)^Int(nq)
-      Y=disclog_q(y.elem)
-      for i=1:length(Y)
-        Y[i]*=inv
-      end
-      return Y
-    end
-        
-    gens_new = map(Q,gens_q)
-    append!(gens,gens_new)
-    append!(structt,snf_q)
-    push!(disc_logs,dlog_q_norm)
-    wild_mult_grp[q]=(gens_q, snf_q,dlog_q_norm)
-  end 
-  
-  G=DiagonalGroup(structt)
-  
-  function exp(a::GrpAbFinGenElem)   
-    x=Q(1)
-    for i=1:ngens(G)
-      if Int(a.coeff[1,i])!= 0
-        x=x*(gens[i]^(Int(a.coeff[1,i])))
-      end
-    end
-    return x
+    ideals_and_maps[qe] = maps
   end
-  
-  function dlog(x::NfOrdElem)
-    result = Vector{fmpz}()
-    for disclog in disc_logs
-      append!(result,disclog(x))
-    end
-    return G(result)
-  end
-  
-  mG=Hecke.GrpAbFinGenToNfOrdQuoRingMultMap(G,Q,exp,dlog)
-  
-  return G, mG , tame_mult_grp, wild_mult_grp
+
+  G, GtoQ = _direct_product!(groups, ideals_and_maps, Q) # This also changes tame_part and wild_part!
+
+  S, StoG, StoQ = snf(G, GtoQ)
+
+  return S, StoQ, tame_part, wild_part
 end
 
 ################################################################################
@@ -1318,23 +1068,18 @@ function _multgrp_Op_aOp(Q::NfOrdQuoRing, P::NfOrdIdl, m::Int, Pm::NfOrdIdl)
     j += 1
   end
   O1 = order(A)(1)
-  G = [ g + O1 for g in S ]
+  gens = [ g + O1 for g in S ]
 
   # Compute (O/P^m)^\times
-  genp, structp, disclogp = _multgrp_mod_pv(P, m; method = :quadratic)
+  G, GtoQQ = _multgrp_mod_pv(P, m, Pm, method = :quadratic)
+  QQ = codomain(GtoQQ)
+  OtoQQ = NfOrdQuoMap(O, QQ)
 
-    M = zero_matrix(FlintZZ, length(structp) + length(G), length(structp))
-  for i = 1:length(structp)
-    M[i, i] = structp[i]
-  end
-  for i = 1:length(G)
-    t = disclogp(G[i])
-    for j = 1:length(structp)
-      M[i + length(structp), j] = t[j]
-    end
-  end
-  gens_snf, rels_snf, disc_log_snf = snf_gens_rels_log(map(Q, genp), M, disclogp)
-  return gens_snf, rels_snf, disc_log_snf
+  H, GtoH = quo(G, [ GtoQQ\OtoQQ(g) for g in gens])
+  @assert GtoH.map == identity_matrix(FlintZZ, ngens(G))
+  HtoQQ = GrpAbFinGenToNfOrdQuoRingMultMap(H, QQ, GtoQQ.generators, GtoQQ.discrete_logarithm)
+
+  return H, HtoQQ
 end
 
 function _multgrp_non_maximal(Q::NfOrdQuoRing)
@@ -1365,35 +1110,260 @@ function _multgrp_non_maximal(Q::NfOrdQuoRing)
 
   # Compute the groups (O_P/AO_P)^\times
   Pm = [ prime_ideals[i]^m[i] for i in 1:length(prime_ideals)]
-  generators = Vector{Vector{NfOrdQuoRingElem}}(length(prime_ideals))
-  rels = Vector{fmpz}()
-  disc_logs = Vector{Function}(length(prime_ideals))
-  for i = 1:length(prime_ideals)
-    generators[i], relsp, disc_logs[i] = _multgrp_Op_aOp(Q, prime_ideals[i], m[i], Pm[i])
-    append!(rels, relsp)
+  groups = Vector{GrpAbFinGen}(length(prime_ideals))
+  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(length(prime_ideals))
+  for i= 1:length(prime_ideals)
+    H, HtoQQ = _multgrp_Op_aOp(Q, prime_ideals[i], m[i], Pm[i])
+    groups[i] = H
+    maps[i] = HtoQQ
   end
 
-  # Put them together
-  h = Vector{NfOrdQuoRingElem}()
-  O1 = order(A)(1)
-  t = [ O1 for i = 1:length(Pm) ]
-  for i = 1:length(Pm)
-    for j = 1:length(generators[i])
-      t[i] = generators[i][j].elem
-      push!(h, Q(crt(t, Pm)))
-      t[i] = O1
+  G, GtoQ = _direct_product(groups, maps, Pm, Q)
+
+  S, StoG, StoQ = snf(G, GtoQ)
+  return S, StoQ
+end
+
+################################################################################
+#
+#  SNF and direct product (which transform the map too)
+#
+################################################################################
+
+# Returns the SNF S of G and a map from S to G and one from S to codomain(GtoR).
+# If RtoQ is given, then the generators of S are computed modulo codomain(RtoQ).
+# It is assumed, that codomain(GtoR) == domain(RtoQ) in this case.
+function snf(G::GrpAbFinGen, GtoR::Union{GrpAbFinGenToNfOrdQuoRingMultMap, GrpAbFinGenToNfAbsOrdMap}, RtoQ::NfOrdQuoMap = NfOrdQuoMap())
+  S, StoG = snf(G)
+
+  R = codomain(GtoR)
+
+  if ngens(G) == 0
+    StoR = typeof(GtoR)(S, R, GtoR.generators, GtoR.discrete_logarithm)
+    return S, StoG, StoR
+  end
+
+  function disclog(x)
+    @assert parent(x) == R
+    y = GtoR.discrete_logarithm(x)
+    a = StoG\(G(y))
+    return fmpz[ a[j] for j = 1:ngens(S) ]
+  end
+
+  modulo = isdefined(RtoQ, :header)
+  if modulo
+    @assert domain(RtoQ) == codomain(GtoR)
+  end
+
+  gens_snf = Vector{elem_type(R)}(ngens(S))
+  for i = 1:ngens(S)
+    x = StoG(S[i]).coeff
+    for j = 1:ngens(G)
+      x[1, j] = mod(x[1, j], S.snf[end])
+    end
+    modulo ? y = one(codomain(RtoQ)) : y = one(R)
+    for j = 1:ngens(G)
+      if modulo
+        y *= RtoQ(GtoR.generators[j])^(x[1, j])
+      else
+        y *= GtoR.generators[j]^(x[1, j])
+      end
+    end
+    modulo ? gens_snf[i] = RtoQ\y : gens_snf[i] = y
+  end
+
+  if isdefined(GtoR, :modulus)
+    StoR = typeof(GtoR)(S, R, gens_snf, disclog, GtoR.modulus)
+  else
+    StoR = typeof(GtoR)(S, R, gens_snf, disclog)
+  end
+
+  if isdefined(GtoR, :tame)
+    StoR.tame = GtoR.tame
+  end
+  if isdefined(GtoR, :wild)
+    StoR.wild = GtoR.wild
+  end
+
+  return S, StoG, StoR
+end
+
+snf(GtoR::Union{GrpAbFinGenToNfOrdQuoRingMultMap, GrpAbFinGenToNfAbsOrdMap}, RtoQ::NfOrdQuoMap = NfOrdQuoMap()) = snf(domain(GtoR), GtoR, RtoQ)
+
+# Let QG = codomain(GtoQ) and QH = codomain(HtoQ) with QG = O/I and QH = O/J.
+# This function returns the direct product of G and H and a map from the
+# product to O/(IJ).
+# It is assumed that I and J are coprime.
+function direct_product(G::GrpAbFinGen, GtoQ::GrpAbFinGenToNfOrdQuoRingMultMap, H::GrpAbFinGen, HtoQ::GrpAbFinGenToNfOrdQuoRingMultMap)
+  return direct_product([G, H], [GtoQ, GtoH])
+end
+
+# Let G_i be the groups and Q_i be the codomains of the maps such that
+# Q_i = O/I_i for ideals I_i.
+# This function returns the direct product of the G_i, a map from the
+# product to O/(\prod_i I_i) and a map from O to this quotient.
+# It is assumed that the ideals I_i are coprime.
+function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToNfOrdQuoRingMultMap})
+  @assert length(groups) == length(maps)
+  @assert length(groups) != 0
+
+  if length(groups) == 1
+    Q = codomain(maps[1])
+    return groups[1], maps[1], NfOrdQuoMap(base_ring(Q), Q)
+  end
+
+  ideals = Vector{NfOrdIdl}(length(maps))
+  for i = 1:length(maps)
+    ideals[i] = ideal(codomain(maps[i]))
+  end
+
+  O = order(ideals[1])
+  @assert all([ order(ideals[i]) == O for i = 1:length(ideals) ])
+  Q, OtoQ = quo(O, prod(ideals))
+  return _direct_product(groups, maps, ideals, Q)..., OtoQ
+end
+
+# This function returns the direct product of the G_i and a map from the
+# product to Q.
+function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToNfOrdQuoRingMultMap}, Q::NfOrdQuoRing)
+  @assert length(groups) == length(maps)
+  @assert length(groups) != 0
+
+  ideals = Vector{NfOrdIdl}(length(maps))
+  for i = 1:length(maps)
+    ideals[i] = ideal(codomain(maps[i]))
+  end
+  return _direct_product(groups, maps, ideals, Q)
+end
+
+# This function does NOT require length(group) == length(ideals), but only
+# length(groups) <= length(ideals). The generators of groups[i] will be made
+# coprime to ALL ideals ideals[i] in any case.
+# If tame_wild is true, it is assumed, that for each map in maps the field tame
+# is defined and contains exactly one key. The returned map will then contain
+# a dictionary of all given tame respectively wild parts with changed generators.
+function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToNfOrdQuoRingMultMap}, ideals::Vector{NfOrdIdl}, Q::NfOrdQuoRing, tame_wild::Bool = false)
+  @assert length(groups) == length(maps)
+  @assert length(groups) != 0
+  @assert length(ideals) >= length(groups)
+
+  if length(groups) == 1 && length(ideals) == 1
+    if codomain(maps[1]) == Q
+      return groups[1], maps[1]
+    end
+
+    gens = map(Q, [ g.elem for g in maps[1].generators ])
+    m = GrpAbFinGenToNfOrdQuoRingMultMap(groups[1], Q, gens, maps[1].discrete_logarithm)
+    if tame_wild
+      m.tame = maps[1].tame
+      m.wild = maps[1].wild
+    end
+    return groups[1], m
+  end
+
+  G = groups[1]
+  for i = 2:length(groups)
+    G = direct_product(G, groups[i])
+  end
+
+  if tame_wild
+    tame = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+    wild = Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
+  end
+
+  O = base_ring(Q)
+  oneO = O(1)
+  generators = Vector{NfOrdQuoRingElem}()
+  t = [ oneO for i = 1:length(ideals) ]
+  for i = 1:length(groups)
+    if tame_wild
+      @assert length(keys(maps[i].tame)) == 1
+      p = first(keys(maps[i].tame))
+      wild_generators = Vector{NfOrdElem}()
+    end
+    for j = 1:ngens(groups[i])
+      t[i] = maps[i].generators[j].elem
+      g = crt(t, ideals)
+      push!(generators, Q(g))
+      if tame_wild
+        if j == 1
+          tame[p] = GrpAbFinGenToNfAbsOrdMap(domain(maps[i].tame[p]), O, [ g ], maps[i].tame[p].discrete_logarithm)
+        else
+          push!(wild_generators, g)
+        end
+      end
+      t[i] = oneO
+    end
+    if tame_wild && haskey(maps[i].wild, p)
+      wild[p] = GrpAbFinGenToNfAbsOrdMap(domain(maps[i].wild[p]), O, wild_generators, maps[i].wild[p].discrete_logarithm)
+    end
+  end
+
+  if length(groups) == 1
+    m = GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, generators, maps[1].discrete_logarithm)
+    if tame_wild
+      m.tame = tame
+      m.wild = wild
+    end
+    return G, m
+  end
+
+  function disc_log(a::NfOrdQuoRingElem)
+    result = Vector{fmpz}()
+    for map in maps
+      append!(result, map.discrete_logarithm(a))
+    end
+    return result
+  end
+
+  m = GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, generators, disc_log)
+  if tame_wild
+    m.tame = tame
+    m.wild = wild
+  end
+  return G, m
+end
+
+# This function returns the same as _direct_product called with the values of
+# ideals_and_maps as maps and the keys as ideals.
+# However, there can be more than one map (or group) for one ideal and the
+# generators of the maps are changed IN PLACE.
+function _direct_product!(groups::Vector{GrpAbFinGen}, ideals_and_maps::Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}, Q::NfOrdQuoRing)
+  @assert !isempty(ideals_and_maps)
+  @assert !isempty(groups)
+
+  ideals = collect(keys(ideals_and_maps))
+
+  G = groups[1]
+  for i = 2:length(groups)
+    G = direct_product(G, groups[i])
+  end
+
+  O = base_ring(Q)
+  oneO = O(1)
+  generators = Vector{NfOrdQuoRingElem}()
+  t = [ oneO for i = 1:length(ideals) ]
+  for i = 1:length(ideals)
+    for map in ideals_and_maps[ideals[i]]
+      for j = 1:length(map.generators)
+        t[i] = map.generators[j]
+        g = crt(t, ideals)
+        push!(generators, Q(g))
+        map.generators[j] = g
+        t[i] = oneO
+      end
     end
   end
 
   function disc_log(a::NfOrdQuoRingElem)
     result = Vector{fmpz}()
-    for f in disc_logs
-      append!(result, f(a.elem))
+    for (I, maps) in ideals_and_maps
+      for map in maps
+        append!(result, map.discrete_logarithm(a.elem))
+      end
     end
     return result
   end
 
-  rel_mat = matrix(FlintZZ, diagm(rels))
-  gens2, rels2, disc_log2 = snf_gens_rels_log(h, rel_mat, disc_log)
-  return gens2, rels2, disc_log2
+  return G, GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, generators, disc_log)
 end

@@ -204,7 +204,7 @@ function conductor(C::Hecke.ClassField)
   end
   for (p,v) in L
     if v==1
-      Q,mQ = quo(G,[preimage(mp, ideal(O,tmg[p][1]))],false)
+      Q,mQ = quo(G,[preimage(mp, ideal(O,tmg[p].generators[1]))],false)
       if order(Q) == E
         Base.delete!(L,p)
       end  
@@ -228,7 +228,7 @@ function conductor(C::Hecke.ClassField)
       end
       if order(Q)==E
         if haskey(tmg, p)
-          push!(gens, mp\ideal(O,tmg[p][1]))
+          push!(gens, mp\ideal(O,tmg[p].generators[1]))
           Q,mQ=quo(G,gens,false)
           if order(Q)==E
             delete!(L,p)
@@ -371,7 +371,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   #Finite part of the modulus
   for (p,v) in L
     if v==1
-      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p][1]))])
+      Q,mQ=quo(G,[preimage(mp, ideal(O,tmg[p].generators[1]))])
       if order(Q)==E
         return false
       end  
@@ -472,7 +472,7 @@ function discriminant(C::ClassField)
       if isprime(n)
         ap-=1
       else
-        el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
+        el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
         q,mq=quo(R,[el])
         ap-= order(q)
       end
@@ -506,7 +506,7 @@ function discriminant(C::ClassField)
           @hassert :QuadraticExt 1 ap>0
         end
         if haskey(tmg, p)
-          push!(els, mp\ideal(O,tmg[p][1]))
+          push!(els, mp\ideal(O,tmg[p].generators[1]))
         end
         ap-=order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
@@ -556,7 +556,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
       continue
     end
     push!(primes_done, p.minimum)
-    el=mp\ideal(O,tmg[p][1])
+    el=mp\ideal(O,tmg[p].generators[1])
     if iszero(el)
       return false
     end
@@ -691,7 +691,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
     if cyc_prime
       ap-=1
     else
-      el=mp\ideal(O,tmg[p][1]) #The generator is totally positive, we modified it before
+      el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
       q,mq=quo(R,[el])
       ap-= order(q)
     end
@@ -754,7 +754,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClass
           @hassert :QuadraticExt 1 ap>0
         end
         if haskey(tmg, p)
-          push!(els, mp\ideal(O,tmg[p][1]))
+          push!(els, mp\ideal(O,tmg[p].generators[1]))
         end
         ap-=order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
