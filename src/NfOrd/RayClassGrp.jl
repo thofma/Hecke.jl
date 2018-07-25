@@ -28,8 +28,8 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeM
   idemps::Array{Tuple{NfOrdElem, NfOrdElem},1} #Idempotents for discrete logarithm
   coprime_elems::Array{nf_elem,1}
   
-  tame_mult_grp::Dict{NfOrdIdl,Tuple{NfOrdElem,fmpz,Function}} #The multiplicative group, tame part
-  wild_mult_grp::Dict{NfOrdIdl,Tuple{Array{NfOrdElem,1},Array{fmpz,1},Function}} #Multiplicative group, wild part
+  tame_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #The multiplicative group, tame part
+  wild_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #Multiplicative group, wild part
   
   function MapRayClassGrp{T}() where {T}
     z = new{T}()
@@ -1160,7 +1160,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
-    a=(mG\(evals[i].elem)).coeff
+    a=(mG\(evals[i])).coeff
     if mod(n,2)==0 && !isempty(pr)
       if i==1
         a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
@@ -1182,7 +1182,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn=invmod(vect[i],fmpz(expo))
     #investigated=evaluate(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
-    a=((mG\(evals[i+ngens(U)].elem))*invn).coeff
+    a=((mG\(evals[i+ngens(U)]))*invn).coeff
     if mod(n,2)==0 && !isempty(pr)
       b=lH(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
       a=hcat(a, b.coeff)
@@ -1210,7 +1210,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     Id=Id^Int(nonnclass)
     z=principal_gen_fac_elem(Id)
     el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
-    y=((mG\(el))*inverse_d).coeff
+    y=((mG\(pi(el)))*inverse_d).coeff
     if mod(n,2)==0 && !isempty(pr)
       b=lH(z)
       y=hcat(y, b.coeff)
@@ -1224,7 +1224,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     if J.is_principal==1
       if isdefined(J,:princ_gen)
         el=J.princ_gen
-        y=(mG\(el)).coeff
+        y=(mG\(pi(el))).coeff
         if mod(n,2)==0 && !isempty(pr)
           b=lH(K(el))
           y=hcat(y, b.coeff)
@@ -1232,7 +1232,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
         return X(hcat(C([0 for i=1:ngens(C)]).coeff,y))
       elseif isdefined(J,:princ_gen_special)
         el=O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
-        y=(mG\(el)).coeff
+        y=(mG\(pi(el))).coeff
         if mod(n,2)==0 && !isempty(pr)
           b=lH(K(el))
           y=hcat(y, b.coeff)
@@ -1241,7 +1241,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       else
         z=principal_gen_fac_elem(J)
         el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
-        y=(mG\(el)).coeff
+        y=(mG\(pi(el))).coeff
         if mod(n,2)==0 && !isempty(pr)
           b=lH(z)
           y=hcat(y, b.coeff)
@@ -1261,7 +1261,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       end
       z=principal_gen_fac_elem(s)
       el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
-      y=((mG\(el))*inverse_d).coeff
+      y=((mG\(pi(el)))*inverse_d).coeff
       if mod(n,2)==0 && !isempty(pr)
         b=lH(z)
         y=hcat(y, b.coeff)
@@ -1449,7 +1449,7 @@ function find_gens(mR::MapRayClassGrp)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
     for (p,v) in tmg
-      I=ideal(O,v[1])
+      I=ideal(O,v.generators[1])
       f=mR\I
       if iszero(mq(f))
         continue
@@ -1463,8 +1463,8 @@ function find_gens(mR::MapRayClassGrp)
     end
 
     for (p,v) in wld
-      for i=1:length(v[1])
-        I=ideal(O,v[1][i])
+      for i=1:length(v.generators)
+        I=ideal(O,v.generators[i])
         f=mR\I
         if iszero(mq(f))
           continue

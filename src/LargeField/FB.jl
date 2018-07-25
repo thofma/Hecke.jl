@@ -13,7 +13,7 @@ function induce_image(A::NfOrdIdl, S::Map)
     end
   end
   if isdefined(A, :princ_gen)
-    B.princ_gen = S(A.princ_gen)
+    B.princ_gen = O(S(K(A.princ_gen)))
   end
   # whatever is known, transfer it...possibly using S as well...
   return B

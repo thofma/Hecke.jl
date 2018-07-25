@@ -32,7 +32,7 @@
       bool,B=meataxe(M)
       @test !bool
       @test rows(B)==2
-      @test rows(Hecke.closure(B, M.action))==2
+      #@test rows(Hecke.closure(B, M.action))==2
       
       N=Hecke._actsub(B,G)
       bool,B=meataxe(N)
@@ -42,7 +42,7 @@
       M=Hecke.ModAlgAss(G)
       bool,B=meataxe(M)
       @test !bool
-      @test rows(Hecke.closure(B, M.action))==rows(B)
+      #@test rows(Hecke.closure(B, M.action))==rows(B)
       
     end
     

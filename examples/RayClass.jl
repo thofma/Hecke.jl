@@ -1,10 +1,7 @@
-
-export ray_class_group
-
-mutable struct MapRayClassGrp{T} <: Map{T, Hecke.NfOrdIdlSet}
+mutable struct MapRayClassGrp{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
-  modulus_fin::NfOrdIdl
-  modulus_inf::Array{InfPlc,1}
+  modulus_fin::Hecke.NfOrdIdl
+  modulus_inf::Array{Hecke.InfPlc,1}
   
   function MapRayClassGrp{T}() where {T}
     return new{T}()
@@ -68,7 +65,7 @@ doc"""
 > from the group to the ideals of $L$
 
 """
-function ray_class_group(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
@@ -201,3 +198,206 @@ function ray_class_group(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
   return X, mp
   
 end
+
+
+########################################################
+#
+#  Ray Class Group - p-part
+#
+########################################################
+
+
+function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+
+  O=parent(m).order
+  K=nf(O)
+  Q,pi=quo(O,m)
+  G, mG, lp = Hecke._mult_grp(Q,p)
+  C, mC = class_group(O)
+  Hecke._assure_princ_gen(mC)
+  
+  if p==2 
+    pr = [ x for x in inf_plc if isreal(x) ]
+    if !isempty(pr)
+      H,eH,lH = Hecke._infinite_primes(O,pr,m)
+      T = G
+      G = Hecke.direct_product(G,H)
+    end
+  end
+  
+  valclassp=Int(p^(valuation(order(C[ngens(C)]),p)))
+  nonppartclass=div(order(C[ngens(C)]),valclassp)
+  
+  if valclassp==1 && order(G)==1
+    return Hecke.empty_ray_class(m)
+  end
+  
+  C, mC, vect = Hecke._class_group_mod_n(C,mC,valclassp)
+  U, mU = unit_group_fac_elem(O)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
+    
+  if order(G)==1
+    return Hecke.class_as_ray_class(C,mC,exp_class,m)    
+  end
+
+  n=ideal(O,1)
+  for (q,vq) in lp
+    n*=q^vq
+  end
+  
+#
+# We start to construct the relation matrix
+#
+
+  expo=exponent(G)
+  inverse_d=gcdx(nonppartclass,expo)[2]
+  
+  R=zero_matrix(FlintZZ, ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
+  for i=1:ngens(C)
+    R[i,i]=C.snf[i]
+  end
+  if issnf(G)
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.snf[i]
+    end
+  else
+    for i=1:ngens(G)
+      R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
+    end
+  end
+  
+#
+# We compute the relation matrix given by the image of the map U -> (O/m)^*
+#
+
+  @assert issnf(U)
+  @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
+  evals = Hecke.NfOrdQuoRingElem[]
+  tobeeval = FacElem{nf_elem, AnticNumberField}[]
+  if gcd(U.snf[1],p)!=1
+    if U.snf[1]==2
+      push!(evals, Q(-1))
+    else
+      push!(tobeeval, mU(U[1]))
+    end
+  else 
+    push!(evals, Q(1))
+  end
+  append!(tobeeval,[mU(U[i]) for i=2:ngens(U)])
+  
+  @vprint :RayFacElem 1 "then principal ideal generators \n"
+  for i=1:ngens(C)
+    @vtime :RayFacElem 1 push!(tobeeval, mC.princ_gens[i][2]*Kel[i])
+  end
+  
+  @vprint :RayFacElem 1 "Time for elements evaluation: "
+  ev,quots,idemps = Hecke.fac_elems_eval(O,Q,tobeeval,lp,expo)
+  @vtime :RayFacElem 1 append!(evals, ev)
+  @vprint :RayFacElem 1 "\n"
+  
+  for i=1:ngens(U)
+    @vprint :RayFacElem 1 "Disclog of unit $i \n"
+    a=(mG\(evals[i])).coeff
+    if p==2 && !isempty(pr)
+      if i==1
+        a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
+      else
+        b=lH(tobeeval[length(tobeeval)-ngens(C)-ngens(U)+i])
+        a=hcat(a, b.coeff)
+      end
+    end
+    for j=1:ngens(G)
+      R[i+ngens(G)+ngens(C),ngens(C)+j]=a[1,j]
+    end
+  end 
+
+#
+# We compute the relation between generators of Cl and (O/m)^* in Cl^m
+#
+
+  for i=1: ngens(C)
+    @vprint :RayFacElem 1 "Disclog of class group element $i \n"
+    invn = gcdx(vect[i], C.snf[i])[2]
+    a = ((mG\(evals[i+ngens(U)]))*invn).coeff
+    if p==2 && !isempty(pr)
+      b=lH(tobeeval[length(tobeeval)-ngens(C)+i])
+      a=hcat(a, b.coeff)
+    end
+    for j=1: ngens(G)
+      R[i,ngens(C)+j]=-a[1,j]
+    end 
+  end
+  
+  X=AbelianGroup(R)
+  
+  
+#
+# Discrete logarithm
+#
+
+  function disclog(J::FacElem)
+    a= X([0 for i=1:ngens(X)])
+    for (f,k) in J.fac
+      a+=k*disclog(f)
+    end
+    return a
+  end
+ 
+  function disclog(J::NfOrdIdl)
+    if isone(J)
+      return X([0 for i=1:ngens(X)])
+    else
+      L=mC\J
+      s=exp_class(L)
+      I=J* inv(s)
+      I=I^Int(nonppartclass)
+      z=Hecke.principal_gen_fac_elem(I)
+      el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, expo)
+      y=((mG\pi(el))*inverse_d).coeff
+      if p==2 && !isempty(pr)
+        b=lH(z)
+        y=hcat(y, b.coeff)
+      end
+      return X(hcat(L.coeff,y))
+    end
+  end 
+
+#
+# Exp map
+#
+
+  function expon(a::GrpAbFinGenElem)
+    b=C([a.coeff[1,i] for i=1:ngens(C)])
+    if p!=2 || isempty(pr)
+      c=G([a.coeff[1,i] for i=ngens(C)+1:ngens(X)])
+      return exp_class(b)*ideal(O,pi\(mG(c)))
+    else 
+      c=T([a.coeff[1,i] for i=ngens(C)+1:ngens(T)+ngens(C)])
+      d=H([a.coeff[1,i] for i=ngens(T)+ngens(C)+1: ngens(X)])
+      el=pi\(mG(c))
+      # I need to modify $el$ so that it has the correct sign at the embeddings contained in primes
+      vect=(lH(K(el))).coeff
+      if vect==d.coeff
+        return exp_class(b)*ideal(O,el)
+      else 
+        correction=eH(d)
+        while vect!=d.coeff
+          el=el+correction
+          vect=(lH(K(el))).coeff
+        end
+        return exp_class(b)*ideal(O,el)
+      end 
+    end
+  end 
+
+  mp=Hecke.MapRayClassGrp{typeof(X)}()
+  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
+  mp.modulus_fin=n
+  mp.modulus_inf=inf_plc
+  mp.fact_mod=lp
+  mp.tame_mult_grp=mG.tame
+  mp.wild_mult_grp=mG.wild
+  mp.defining_modulus = (m, inf_plc)
+
+  return X,mp
+end 

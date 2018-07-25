@@ -1,5 +1,7 @@
 @testset "RayClassGroup" begin
-
+  
+  include(Pkg.dir("Hecke") * "/examples/RayClass.jl")
+  
   @testset "Big prime" begin
     k, _ = wildanger_field(2, 13)
     Zk = maximal_order(k)
@@ -16,7 +18,7 @@
     C,mC=class_group(O)
     
     for i=9:13
-      R,mR=ray_class_group(ideal(O,i), p_part=3)
+      R,mR=ray_class_group_p_part(3, ideal(O,i))
       for r in R
         @test r== mR\(mR(r))
       end
@@ -35,7 +37,7 @@
     inf_plc=real_places(K)
     
     for i=9:13
-      R,mR=ray_class_group(ideal(O,i),inf_plc,p_part=2)
+      R,mR=ray_class_group_p_part(2, ideal(O,i),inf_plc)
       for r in R
         @test r== mR\(mR(r))
       end
@@ -108,7 +110,7 @@
     end
     @test length(x)==i
     
-    x=Hecke.stable_subgroups(r,[3,9],act,op = quo);
+    x=Hecke.stable_subgroups(r, [3,9], act, op = quo);
     y=subgroups(r, quotype=[3,9])
     i=0
     for el in y

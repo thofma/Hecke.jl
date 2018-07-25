@@ -136,6 +136,12 @@ end
 mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing, HeckeMap, NfOrdQuoMap}
   header::MapHeader{NfOrd, NfOrdQuoRing}
 
+  # Only to make default variables in functions possible
+  function NfOrdQuoMap()
+    z = new()
+    return z
+  end
+
   function NfOrdQuoMap(O::NfOrd, Q::NfOrdQuoRing)
     z = new()
 

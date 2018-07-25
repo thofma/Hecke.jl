@@ -609,7 +609,7 @@ doc"""
 > Returns an element $a^i$ modulo $m$.
 """
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
-  if i == 0 then
+  if i == 0
     return one(parent(a))
   end
   if i == 1

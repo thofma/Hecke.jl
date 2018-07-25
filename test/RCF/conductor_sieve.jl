@@ -1,5 +1,5 @@
 @testset "RCF" begin
-
+  include(Pkg.dir("Hecke") * "/examples/fields.jl")
 
   @testset "Various examples" begin
   

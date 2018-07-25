@@ -73,7 +73,7 @@ mutable struct ClassField_pp
 end
 
 function Base.show(io::IO, C::ClassField_pp)
-  println(io, "Cyclic class field of degree $(order(codomain(C.quotientmap))) defined modulo $(__modulus(C.rayclassgroupmap))")
+  println(io, "Cyclic class field of degree $(order(codomain(C.quotientmap))) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)
     println(io, "Kummer generator ", C.a)
   end

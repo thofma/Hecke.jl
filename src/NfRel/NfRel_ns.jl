@@ -32,6 +32,8 @@
 #
 ################################################################################
 
+export simple_extension
+
 #= trivial example
 Qx, x = PolynomialRing(FlintQQ)
 QQ = number_field(x-1)[1]
