@@ -546,15 +546,16 @@ function idempotents(x::NfOrdIdl, y::NfOrdIdl)
     V[1, i + 1] = u[i]
   end
 
-  _copy_matrix_into_matrix(V, 2, 2, basis_mat(x))
-  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y))
+  _copy_matrix_into_matrix(V, 2, 2, basis_mat(x, Val{false}))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y, Val{false}))
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
   end
-
-  H = hnf(V) # upper right
-#  H = hnf_modular(V, g) # upper right
+  
+  # H = hnf(V)
+   H = _hnf_modular_eldiv(V, lcm(mx, my)) # upper right
+  # H = hnf_modular(V, g) # upper right
 
   for i in 2:(1 + d)
     if H[1, i] != 0

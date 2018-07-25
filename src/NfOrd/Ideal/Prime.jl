@@ -232,7 +232,7 @@ function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_
         return z
       end
     end
-    lp = prime_dec_index(O, p, degree_limit, lower_limit)
+    lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
     if degree_limit == 0 && lower_limit == 0
       O.index_div[fmpz(p)] = lp
     end
@@ -317,137 +317,6 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
   return result
 end
 
-function prime_dec_index(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
-  
-  return prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-  #=
-  if degree_limit == 0
-    degree_limit = degree(O)
-  end
-  Ip = pradical(O, p)
-  A, OtoA = AlgAss(O, Ip, p)
-  AtoO = inv(OtoA)
-  AA = split(A)
-
-  basisO = basis(O)
-
-  ideals = Vector{NfOrdIdl}()
-  m = zero_matrix(FlintZZ, 1, degree(O))
-  for (B, BtoA) in AA
-    f = dim(B)
-    idem = BtoA(B[1]) # Assumes that B == idem*A
-    M = representation_matrix(idem)
-    ker = left_kernel(M)
-    N = basis_mat(Ip)
-    for i = 1:length(ker)
-      b = elem_in_basis(AtoO(A(ker[i])))
-      for j = 1:degree(O)
-        m[1, j] = b[j]
-      end
-      N = vcat(N, m)
-    end
-    N = sub(_hnf_modular_eldiv(N, fmpz(p), :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
-    P = ideal(O, N)
-    P.norm = fmpz(p)^f
-    P.splitting_type = (0, f)
-    fromOtosimplealgebra = Hecke._compose(inv(BtoA), OtoA)
-    compute_residue_field_data!(P, fromOtosimplealgebra)
-    #primB, minprimB, getcoordpowerbasis = _as_field(B)
-    #@assert degree(minprimB) == f
-    #P.prim_elem = AtoO(BtoA(primB))
-    #P.min_poly_prim_elem = fmpz_poly(fmpz[FlintZZ(coeff(minprimB, i)) for i in 0:degree(minprimB)])
-    #P.min_poly_prim_elem.parent = FmpzPolyRing(:$, false)
-    #P.basis_in_prim = Vector{fmpz_mat}(degree(O))
-    #for i in 1:degree(O)
-    #  P.basis_in_prim[i] = zero_matrix(FlintZZ, 1, f)
-    #  t = getcoordpowerbasis(BtoA\(OtoA(basisO[i])))
-    #  for j in 1:f
-    #    P.basis_in_prim[i][1, j] = FlintZZ(t[1, j])
-    #  end
-    #end
-    push!(ideals, P)
-  end
-
-  result = Vector{Tuple{NfOrdIdl, Int}}()
-
-  for j in 1:length(ideals)
-    P = ideals[j]
-    f = P.splitting_type[2]
-
-    if f > degree_limit || f < lower_limit
-      continue
-    end
-
-    # The following does not work if there is only one prime ideal
-    if length(ideals) > 1 && (1-1/BigInt(p))^degree(O) < 0.1
-      # This is roughly Algorithm 6.4 of Belabas' "Topics in comptutational algebraic
-      # number theory".
-
-      # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
-
-      B, BtoA = AA[j]
-      J = ideal(O, AtoO(BtoA(B[1])))
-      N = sub(_hnf_modular_eldiv(vcat(basis_mat(Ip), basis_mat(J)), fmpz(p), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
-      Vp = ideal(O, N)
-
-      u, v = idempotents(P, Vp)
-
-      x = zero(parent(u))
-
-      if !iszero(mod(norm(u), norm(P)*p))
-        x = u
-      elseif !iszero(mod(norm(u + p), norm(P)*p))
-        x = u + p
-      elseif !iszero(mod(norm(u - p), norm(P)*p))
-        x = u - p
-      else
-        for i in 1:degree(O)
-          if !iszero(mod(norm(v*basis(P)[i] + u), norm(P)*p))
-            x = v*basis(P)[i] + u
-          end
-        end
-      end
-
-      @hassert :NfOrd 1 !iszero(x)
-      @hassert :NfOrd 2 O*O(p) + O*x == P
-
-      P.gen_one = p
-      P.gen_two = x
-      P.gens_normal = p
-      P.gens_weakly_normal = 1
-    else
-      @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/p))\n"
-      _assure_weakly_normal_presentation(P)
-      assure_2_normal(P)
-    end
-
-    e = Int(valuation(nf(O)(p), P))
-    P.splitting_type = e, f
-    P.is_prime = 1
-    push!(result, (P, e))
-  end
-
-  if degree_limit >= degree(O)
-    O.index_div[fmpz(p)] = result
-  end
-  
-  lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-  @assert length(lp)==length(result)
-  for (Q, e) in lp
-    for (P, ee) in result
-      if valuation(Q, P) > 0
-        @show O
-        @show P
-        @show Q
-        @assert valuation(Q.gen_two, P) == 1
-      end
-    end
-  end
-  =#
-  return result
-
-end
-
 function uniformizer(P::NfOrdIdl)
   p = minimum(P)
   if P.gens_normal == p
@@ -467,6 +336,14 @@ function uniformizer(P::NfOrdIdl)
     end
     return z
   end
+end
+
+function _lift(T::Array{Generic.Res{fmpz}, 1})
+  return [ z.data for z in T ]
+end
+
+function _lift(T::Array{Nemo.nmod, 1})
+  return [ fmpz(z.data) for z in T ]
 end
 
 # Belabas p. 40
@@ -506,11 +383,6 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     end
   else
     return decomposition_type_polygon(O, fmpz(p))
-    #lp = prime_decomposition(O, p)
-    #res = Array{Tuple{Int, Int}}(length(lp))
-    #for i in 1:length(lp)
-    #  res[i] = (lp[i][1].splitting_type[2], lp[i][1].splitting_type[1])
-    #end
   end
   return res
 end
@@ -735,218 +607,6 @@ function factor_dict(A::NfOrdIdl)
     end
   end
   return lF
-end
-
-################################################################################
-#
-#  Functions for index divisor splitting
-#
-################################################################################
-
-mutable struct quoringalg{T} <: Ring
-  base_order::NfOrd
-  ideal::NfOrdIdl
-  prime::T
-  basis::Array{NfOrdElem, 1}
-
-  function quoringalg(O::NfOrd, I::NfOrdIdl, p::T) where {T}
-
-    z = new{T}()
-    z.base_order = O
-    z.ideal = I
-    z.prime = p
-
-    # compute a basis
-    Rp = ResidueRing(FlintZZ, p, cached=false)
-    Amodp = MatrixSpace(Rp, degree(O), degree(O), false)(basis_mat(I))
-    Amodp = vcat(Amodp, zero_matrix(Rp, 1, degree(O)))
-    Amodp[1,1] = 1
-    Amodp = sub(Amodp, 1:degree(O), 1:degree(O))
-
-    r, B = _rref(Amodp)
-    C = zero_matrix(Rp, degree(O)-r, degree(O))
-    BB = Array{NfOrdElem}(degree(O) - r)
-    pivots = Array{Int}(0)
-#    # get he pivots of B
-    for i in 1:r
-      for j in 1:degree(O)
-        if !iszero(B[i,j])
-          push!(pivots, j)
-          break
-        end
-      end
-    end
-    i = 1
-    k = 1
-    while i <= degree(O)-r
-      for j in k:degree(O)
-        if !in(j, pivots)
-          BB[i] = basis(O)[j]
-          C[i,j] = 1
-          k = j + 1
-          i = i + 1
-          break
-        end
-      end
-    end
-    insert!(BB, 1, basis(O)[1])
-    z.basis = BB
-    return z
-  end
-end
-
-mutable struct quoelem
-  parent::quoringalg
-  elem::NfOrdElem
-  coord::Array{fmpz, 1}
-
-  function quoelem(R::quoringalg, x::NfOrdElem)
-    z = new()
-    z.parent = R
-    z.elem = x
-
-    return z
-  end
-end
-
-function _kernel_of_frobenius(R::quoringalg)
-  O = R.base_order
-  BB = R.basis
-  p = R.prime
-  Rp = ResidueRing(FlintZZ, R.prime, cached=false)
-  C = zero_matrix(Rp, length(BB)+1, degree(O))
-  D = zero_matrix(Rp, length(BB), degree(O))
-
-  Q, mQ = quo(O, R.ideal)
-
-  function g(x)
-    return mQ\(mQ(x)^p)
-  end
-
-  for i in 1:length(BB)
-    A = elem_in_basis(mod(g(BB[i]) - BB[i], R.ideal))
-    for j in 1:degree(O)
-      D[i,j] = A[j]
-    end
-  end
-
-  DD = NfOrdElem[ dot(BB, _lift(r)) for r in kernel(D) ]
-
-  return [ quoelem(R, r) for r in DD ]
-end
-
-function _lift(T::Array{Generic.Res{fmpz}, 1})
-  return [ z.data for z in T ]
-end
-
-function _lift(T::Array{Nemo.nmod, 1})
-  return [ fmpz(z.data) for z in T ]
-end
-
-
-function *(x::quoelem, y::quoelem)
-  z = mod(x.elem * y.elem, x.parent.ideal)
-  return quoelem(x.parent, z)
-end
-
-function ^(x::quoelem, y::Int)
-  z = mod(x.elem^y, x.parent.ideal)
-  return quoelem(x.parent, z)
-end
-
-function ^(x::quoelem, y::Union{Integer, fmpz})
-  # Do something stupid
-  R, m = quo(x.parent.base_order, x.parent.ideal)
-  return quoelem(x.parent, (m\(m(x.elem)^y)))
-end
-
-function ==(x::quoelem, y::quoelem)
-  z = mod(x.elem - y.elem, x.parent.ideal)
-  return zero(parent(z)) == z
-end
-
-function minpoly(x::quoelem)
-  O = x.parent.base_order
-  p = x.parent.prime
-
-  Rp = ResidueRing(FlintZZ, p, cached=false)
-  A = zero_matrix(Rp, 0, degree(O))
-  B = zero_matrix(Rp, 1, degree(O))
-
-  for i in 0:degree(O)
-    ar = elem_in_basis((x^i).elem)
-    for j in 1:degree(O)
-      B[1, j] = ar[j]
-    end
-    A = vcat(A, B)
-    K = kernel(A)
-    if length(K) > 0
-      @assert length(K) == 1
-      f = PolynomialRing(Rp, "x", cached=false)[1](K[1])
-      return f
-    end
-  end
-  error("cannot find minpoly")
-end
-
-function split(R::quoringalg)
-  if length(R.basis) == 1
-    return [ R ]
-  end
-  K = _kernel_of_frobenius(R)
-  O = R.base_order
-  p = R.prime
-
-  k = length(K)
-
-  if k == 1
-    # the algebra is a field over F_p
-    # the ideal Ip is a prime ideal!
-    return [ R ]
-  end
-
-  maxit = 1
-
-  while true
-    maxit = maxit + 1
-    r = rand(0:p-1, length(K))
-
-    x = quoelem(R, dot([ x.elem for x in K], r))
-
-    if mod((x^p).elem, R.ideal) != mod(x.elem, R.ideal)
-      #println("element^p: $(mod((x^p).elem, R.ideal))")
-      #println("element: $(mod(x.elem, R.ideal))")
-      #println(R.ideal.basis_mat)
-      #println(K)
-      error("Strange")
-    end
-
-    f = minpoly(x)
-
-    if degree(f) < 2
-      continue
-    end
-    @assert  issquarefree(f)
-
-#    # By theory, all factors should have degree 1 # exploit this if p is small!
-    fac = factor(f)
-    F = first(keys(fac.fac))
-    @assert length(fac) == degree(f)
-    H = divexact(f,F)
-    E, U, V = gcdx(F, H)
-    @assert E == 1
-    H = U*F;
-    idem = O(coeff(H,0).data)
-    for i in 1:degree(H)
-      idem = idem + coeff(H,i).data*x.elem^i
-    end
-
-    I1 = R.ideal + ideal(O, idem)
-    I2 = R.ideal + ideal(O, O(1)-idem)
-
-    return vcat(split(quoringalg(O, I1, p)), split(quoringalg(O, I2, p)))
-    break
-  end
 end
 
 ################################################################################
