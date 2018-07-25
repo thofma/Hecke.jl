@@ -205,8 +205,6 @@ end
 #  Ray Class Group - p-part
 #
 ########################################################
-
-
 function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
 
   O=parent(m).order
@@ -219,9 +217,9 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   if p==2 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      H,eH,lH = Hecke._infinite_primes(O,pr,m)
-      T = G
-      G = Hecke.direct_product(G,H)
+      H,eH,lH=Hecke._infinite_primes(O,pr,m)
+      T=G
+      G =Hecke.direct_product(G,H)
     end
   end
   
@@ -276,7 +274,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   tobeeval = FacElem{nf_elem, AnticNumberField}[]
   if gcd(U.snf[1],p)!=1
     if U.snf[1]==2
-      push!(evals, Q(-1))
+      push!(evals,Q(-1))
     else
       push!(tobeeval, mU(U[1]))
     end
@@ -291,7 +289,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  ev,quots,idemps = Hecke.fac_elems_eval(O,Q,tobeeval,lp,expo)
+  ev,quots,idemps= Hecke.fac_elems_eval(O,Q,tobeeval,lp,expo)
   @vtime :RayFacElem 1 append!(evals, ev)
   @vprint :RayFacElem 1 "\n"
   
@@ -317,8 +315,8 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   for i=1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
-    invn = gcdx(vect[i], C.snf[i])[2]
-    a = ((mG\(evals[i+ngens(U)]))*invn).coeff
+    invn=gcdx(vect[i], C.snf[i])[2]
+    a=((mG\(evals[i+ngens(U)]))*invn).coeff
     if p==2 && !isempty(pr)
       b=lH(tobeeval[length(tobeeval)-ngens(C)+i])
       a=hcat(a, b.coeff)
@@ -401,3 +399,4 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
 
   return X,mp
 end 
+
