@@ -458,35 +458,57 @@ end
 #
 ###############################################################################
 
-function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmpz)
-  #I is an ideal lying over p
-  #J is the product of all the prime ideals lying over p that do not appear in the factorization of I
-  #Ip is the p-radical
-  Ip1 = Ip + I
-  A, OtoA = AlgAss(O, Ip1, p)
-  @vprint :NfOrd 1 "Splitting the algebra\n"
-  AtoO = inv(OtoA)
+function is_norm_divisible(a::nf_elem, n::fmpz)
+  K = parent(a)
+  s = gcd(n, denominator(a))
+  if s == 1
+    if nbits(n) < 64
+      R = ResidueRing(FlintZZ, Int(n), cached = false)
+      Rx, x = PolynomialRing(R, "x", cached = false)
+      return iszero(resultant_valuation(Rx(numerator(a)), Rx(K.pol)))
+    else
+      R = ResidueRing(FlintZZ, n, cached = false)
+      Rx, x = PolynomialRing(R, "x", cached = false)
+      return iszero(resultant_valuation(Rx(numerator(a)), Rx(K.pol)))
+    end
+  else
+    m = n*s^degree(K)
+    if nbits(m) < 64
+      R = ResidueRing(FlintZZ, Int(m), cached = false)
+      Rx, x = PolynomialRing(R, "x", cached = false)
+      return iszero(resultant_valuation(Rx(numerator(a)), Rx(K.pol)))
+    else
+      R = ResidueRing(FlintZZ, m, cached = false)
+      Rx, x = PolynomialRing(R, "x", cached = false)
+      return iszero(resultant_valuation(Rx(numerator(a)), Rx(K.pol)))
+    end
+  end  
+end
+
+function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p::fmpz)
+  
+  O = order(Ip1)
+  @vprint :NfOrd 1 "Splitting the algebra\n" 
   AA = split(A)
   @vprint :NfOrd 1 "Done \n"
-
-  basisO = basis(O, Val{false})
-
-  ideals = Vector{NfOrdIdl}()
+  ideals = Array{Tuple{NfOrdIdl, Int}, 1}(length(AA))
   m = zero_matrix(FlintZZ, 1, degree(O))
-  for (B, BtoA) in AA
+  for i = 1:length(AA)
+    B = AA[i][1]
+    BtoA = AA[i][2]
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_matrix(idem)
     ker = left_kernel(M)
     N = basis_mat(Ip1, Val{false})
-    for i = 1:length(ker)
-      b = elem_in_basis(AtoO(A(ker[i])))
+    for s = 1:length(ker)
+      b = elem_in_basis(AtoO(A(ker[s])))
       for j = 1:degree(O)
         m[1, j] = b[j]
       end
       N = vcat(N, m)
     end
-    N = view(_hnf_modular_eldiv(N, fmpz(p), :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    @vtime :NfOrd 1 N = view(_hnf_modular_eldiv(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
     P = NfOrdIdl(O, N)
     P.norm = p^f
     P.splitting_type = (0, f)
@@ -494,46 +516,62 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
     fromOtosimplealgebra = Hecke._compose(inv(BtoA), OtoA)
     compute_residue_field_data!(P, fromOtosimplealgebra)
 
-    push!(ideals, P)
+    ideals[i] = (P, 0)
   end
+  return ideals, AA
+end
 
-  result = Vector{Tuple{NfOrdIdl, Int}}()
+function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmpz)
+  #I is an ideal lying over p
+  #T is the product of all the prime ideals lying over p that do not appear in the factorization of I
+  #Ip is the p-radical
+  Ip1 = Ip + I
+  A, OtoA = AlgAss(O, Ip1, p)
   
+  if dim(A) == 1
+    Ip1.norm = p
+    Ip1.splitting_type = (0, 1)
+    Ip1.is_prime = 1
+    ideals = Array{Tuple{NfOrdIdl, Int}, 1}(1)
+    ideals[1] = (Ip1, Int(0))
+  else
+    AtoO = inv(OtoA)
+    ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+  end
   k = (1-1/BigInt(p))^degree(O) < 0.1
-
   for j in 1:length(ideals)
-    P = ideals[j]
+    P = ideals[j][1]
     f = P.splitting_type[2]
     
     @vprint :NfOrd 1 "Searching for 2-element presentation \n"
     
-    # The following does not work if there is only one prime ideal
     if length(ideals) > 1 && k
+      # The following does not work if there is only one prime ideal
       # This is roughly Algorithm 6.4 of Belabas' "Topics in computational algebraic
       # number theory".
       # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
-      
-      # Carlo: In the case I split O/I_p, I think that I get for free the element u
-      # just by working with the idempotents of the algebra.
 
       B, BtoA = AA[j]
-      J = ideal(O, AtoO(BtoA(B[1])))
-      N = view(_hnf_modular_eldiv(vcat(basis_mat(Ip1, Val{false}), basis_mat(J, Val{false})), fmpz(p), :lowerleft), degree(O) + 1:2*degree(O), 1:degree(O))
-      Vp = NfOrdIdl(O, N)*T
+      v1 = AtoO(BtoA(B[1]))
+      u1 = sum(AtoO(AA[i][2](AA[i][1][1])) for i=1:length(ideals) if i != j)
+      @hassert :NfOrd 1 u1 in P
+      u2, v2 = idempotents(P, T)
 
-      u, v = idempotents(P, Vp)
+      u = u1*(u2+v2) + u2*v1
+      v = v1*v2
       x = zero(parent(u))
-
-      if !iszero(mod(norm(u), norm(P)*p))
+      modulo = norm(P)*p
+      
+      if !iszero(mod(norm(u), modulo))
         x = u
-      elseif !iszero(mod(norm(u + p), norm(P)*p))
+      elseif !iszero(mod(norm(u+p), modulo))
         x = u + p
-      elseif !iszero(mod(norm(u - p), norm(P)*p))
+      elseif !iszero(mod(norm(u-p), modulo))
         x = u - p
       else
         Ba = basis(P, Val{false})
         for i in 1:degree(O)
-          if !iszero(mod(norm(v*Ba[i] + u), norm(P)*p))
+          if !iszero(mod(norm(v*Ba[i] + u), modulo))
             x = v*Ba[i] + u
             break
           end
@@ -546,17 +584,19 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
       P.gen_two = x
       P.gens_normal = p
       P.gens_weakly_normal = 1
+      e = Int(valuation(nf(O)(p), P)) #I can probably do something just looking at the Newton polygon.
+      P.splitting_type = e, f
+      ideals[j] = (P, e)
     else
       @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
       _assure_weakly_normal_presentation(P)
       assure_2_normal(P)
+      e = Int(valuation(nf(O)(p), P)) #I can probably do something just looking at the Newton polygon.
+      P.splitting_type = e, f
+      ideals[j] = (P, e)
     end
-    
-    e = Int(valuation(nf(O)(p), P))
-    P.splitting_type = e, f
-    push!(result, (P, e))
   end
-  return result
+  return ideals
 
 end
 
@@ -645,17 +685,17 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
       continue
     end
     @vprint :NfOrd 1 "Doing $((g, m)) \n"
+    phi = lift(Zx, g)
     if m==1
-      fi = lift(Zx, g)
       ei = m
-      t = parent(f)(fi)
+      t = parent(f)(phi)
       b = K(t)
       J = NfAbsOrdIdl(O)
       J.gen_one = p
       J.gen_two = O(b, false)
       J.is_prime = 1
-      J.splitting_type = ei, degree(fi)
-      J.norm = FlintZZ(p)^degree(fi)
+      J.splitting_type = ei, degree(phi)
+      J.norm = FlintZZ(p)^degree(phi)
       J.minimum = FlintZZ(p)
 
     # We have to do something to get 2-normal presentation:
@@ -673,11 +713,11 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
       push!(res, (J, ei))
       continue
     end
-    phi = lift(Zx, g)
+    #=
     dev = phi_development(Zx(f),phi)
     N = newton_polygon(dev, p)
     filter(x -> slope(x)<0, N.lines)
-    if length(N.lines) == 1 && degree(N.lines[1]) == 1
+    if length(N.lines) == 1 && degree(N.lines[1]) == 1 && length(fac)==1
       s = slope(N.lines[1])
       x=K(1)
       if abs(numerator(s))> denominator(s)
@@ -685,11 +725,11 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
         x = divexact(K(phi), p^(-d))
         d, u, v = gcdx(r, denominator(s))
         @assert d == 1
-        x = divexact(x^-u, p^(-v))
+        x = divexact(x^-u, p^(-v))#*K(parent(f)(lift(Zx, divexact(f1, g^m)))) Can this be correct?
       else
         d, u, v = gcdx(numerator(s), denominator(s))
         @assert d==1
-        x=divexact(K(phi)^(-u), p^(-v))
+        x=divexact(K(phi)^(-u), p^(-v))#*K(parent(f)(lift(Zx, divexact(f1, g^m)))) Can this be correct?
       end
       J = NfAbsOrdIdl(O)
       J.gen_one = p
@@ -703,6 +743,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
       push!(res, (J, Int(denominator(s))))
       continue
     end
+    =#
     #TODO: p-adic factorization of the polynomial.
     push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m))))))))
   end
