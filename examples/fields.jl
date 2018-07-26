@@ -8,7 +8,7 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
 
   @assert !(real && complex)
   Qx,x=PolynomialRing(FlintQQ, "x")
-  sqf=squarefree_up_to(bound);
+  sqf = Hecke.squarefree_up_to(bound);
   if real
     deleteat!(sqf,1)
   elseif complex
@@ -40,10 +40,10 @@ end
 
 function _quad_exts_as_ab_exts(bound::Int)
 
-  Qy,y=PolynomialRing(FlintQQ, "y")
-  K,a=NumberField(y-1)
+  Qy,y = PolynomialRing(FlintQQ, "y")
+  K,a = NumberField(y-1)
   Kx,x=PolynomialRing(K,"x")
-  sqf=squarefree_up_to(bound)
+  sqf=Hecke.squarefree_up_to(bound)
   sqf= vcat(sqf[2:end], Int[-i for i in sqf])
   final_list=Int[]
   for i=1:length(sqf)
@@ -64,13 +64,13 @@ function _quad_ext_with_auto(Kx,a::Int)
   if a % 4 == 1
     L, lg = number_field([x^2-x+divexact(1-a,4)])
     b=lg[1]
-    mL=NfRel_nsToNfRel_nsMor(L,L, [1-b])::NfRel_nsToNfRel_nsMor{nf_elem}
+    mL=Hecke.NfRel_nsToNfRel_nsMor(L,L, [1-b])::Hecke.NfRel_nsToNfRel_nsMor{nf_elem}
   else
     L, lg = number_field([x^2-a])
     b = lg[1]
-    mL=NfRel_nsToNfRel_nsMor(L,L, [-b])::NfRel_nsToNfRel_nsMor{nf_elem}
+    mL=Hecke.NfRel_nsToNfRel_nsMor(L,L, [-b])::Hecke.NfRel_nsToNfRel_nsMor{nf_elem}
   end
-  return (L, NfRel_nsToNfRel_nsMor{nf_elem}[mL])::Tuple{NfRel_ns{nf_elem}, Array{NfRel_nsToNfRel_nsMor{nf_elem},1}}
+  return (L, Hecke.NfRel_nsToNfRel_nsMor{nf_elem}[mL])::Tuple{NfRel_ns{nf_elem}, Array{Hecke.NfRel_nsToNfRel_nsMor{nf_elem},1}}
 
 end
 
@@ -87,7 +87,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
   D=abs(discriminant(O))
   
   C,mC=class_group(O)
-  allow_cache!(mC)
+  Hecke.allow_cache!(mC)
   cgrp=false
   if gcd(C.snf[end],3)!=1
     cgrp=true
@@ -98,21 +98,21 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
   
   #Getting conductors
   bound = div(absolute_bound, D^3)
-  l_conductors=conductors(O,3, bound)
+  l_conductors=Hecke.conductors(O,3, bound)
   @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
 
   res = []
   
   #Now, the big loop
   for k in l_conductors
-    r,mr=ray_class_group_quo(O,3,k[1], k[2])
+    r,mr=Hecke.ray_class_group_quo(O,3,k[1], k[2])
     if cgrp
       mr.prime_ideal_cache = S
     end
-    act=_act_on_ray_class(mr,gens)
+    act=Hecke._act_on_ray_class(mr,gens)
     ls=stable_subgroups(r,[3],act, op=(x, y) -> quo(x, y, false)[2])
-    a=_min_wild(k[2])*k[1]
-    totally_positive_generators(mr,a)
+    a=Hecke._min_wild(k[2])*k[1]
+    Hecke.totally_positive_generators(mr,a)
     for s in ls
       if _trivial_action(s,act,3)
         continue
@@ -149,7 +149,7 @@ function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
   # First, conductors for tamely ramified extensions
   #
   
-  sqf_list= squarefree_for_conductors(O, Int(b1), 5, coprime_to=coprime_to)
+  sqf_list= Hecke.squarefree_for_conductors(O, Int(b1), 5, coprime_to=coprime_to)
   l=length(sqf_list)
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
@@ -228,7 +228,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
   D=abs(discriminant(O))
   
   C,mC=class_group(O)
-  allow_cache!(mC)
+  Hecke.allow_cache!(mC)
   cgrp=false
   if gcd(C.snf[end],5)!=1
     cgrp=true
@@ -250,13 +250,13 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
   
   #Now, the big loop
   for k in l_conductors
-    r,mr=ray_class_group_quo(O,5,k[1], k[2])
+    r,mr=Hecke.ray_class_group_quo(O,5,k[1], k[2])
     if cgrp
       mr.prime_ideal_cache = S
     end
-    act=_act_on_ray_class(mr,gens)
+    act=Hecke._act_on_ray_class(mr,gens)
     ls=stable_subgroups(r,[5],act, op=(x, y) -> quo(x, y, false)[2])
-    a=_min_wild(k[2])*k[1]
+    a=Hecke._min_wild(k[2])*k[1]
     for s in ls
       if _trivial_action(s,act,5)
         continue
@@ -285,12 +285,12 @@ function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
   pr_el=x+auto(x)
   
   #Take minimal polynomial; I need to embed the element in the absolute extension
-  pol=absolute_minpoly(pr_el)
+  pol=Hecke.absolute_minpoly(pr_el)
   if degree(pol)==15
     return pol
   else
     pr_el=x*(auto(x))
-    return absolute_minpoly(pr_el)
+    return Hecke.absolute_minpoly(pr_el)
   end
   
 end
@@ -318,7 +318,7 @@ function conductorsDn(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   # First, conductors for tamely ramified extensions
   #
 
-  list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
+  list= Hecke.squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
   
   if tame
     error("Not yet implemented") 
@@ -411,7 +411,7 @@ end
 function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=false)
   @assert absolute_bound>0
   len=length(list_quad)
-  fieldslist=Tuple{NfRel_ns,  Array{NfRel_nsToNfRel_nsMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
+  fieldslist=Tuple{NfRel_ns,  Array{Hecke.NfRel_nsToNfRel_nsMor{nf_elem},1},fmpz, Array{fmpz,1}}[]
   
   for K in list_quad
     len-=1
@@ -426,7 +426,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
     bound = div(absolute_bound, abs(D)^n)
    
     C,mC=class_group(O)
-    allow_cache!(mC)
+    Hecke.allow_cache!(mC)
     cgrp=false
     if gcd(C.snf[end],n)!=1
       cgrp=true
@@ -448,16 +448,16 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
   
     #Now, the big loop
     for k in l_conductors
-      r,mr=ray_class_group_quo(O,n,k[1], k[2])
-      if !_are_there_subs(r,[n])
+      r,mr=Hecke.ray_class_group_quo(O,n,k[1], k[2])
+      if !Hecke._are_there_subs(r,[n])
         continue
       end
       if cgrp
         mr.prime_ideal_cache = S
       end
-      act=_act_on_ray_class(mr,gens)
+      act=Hecke._act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[n],act, op=(x, y) -> quo(x, y, false)[2])
-      a=_min_wild(k[2])*k[1]
+      a=Hecke._min_wild(k[2])*k[1]
       for s in ls
         if _trivial_action(s,act,n)
           continue
@@ -470,7 +470,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
           for p in keys(factor(O.disc).fac)
             push!(ram_primes, p)
           end
-          aut=absolute_automorphism_group(C,gens)
+          aut=Hecke.absolute_automorphism_group(C,gens)
           push!(fieldslist,(L,aut, evaluate(FacElem(C.absolute_discriminant)), collect(ram_primes)))
         end
       end
@@ -482,7 +482,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
 
 end
 
-function _trivial_action(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1}, n::Int)
+function _trivial_action(s::Hecke.GrpAbFinGenMap, act::Array{Hecke.GrpAbFinGenMap,1}, n::Int)
 
   @assert length(act)==1
   S=codomain(s)
@@ -521,7 +521,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
     bound = non_normal_bound^2
    
     C,mC=class_group(O)
-    allow_cache!(mC)
+    Hecke.allow_cache!(mC)
     cgrp=false
     if gcd(C.snf[end],15)!=1
       cgrp=true
@@ -536,21 +536,21 @@ function C3xD5_extensions(non_normal_bound::fmpz)
     end
     
     #Getting conductors
-    l_conductors=conductors(O,15,bound)
+    l_conductors=Hecke.conductors(O,15,bound)
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
-      r,mr=ray_class_group_quo(O,15,k[1], k[2])
-      if !_are_there_subs(r,[15])
+      r,mr=Hecke.ray_class_group_quo(O,15,k[1], k[2])
+      if !Hecke._are_there_subs(r,[15])
         continue
       end
       if cgrp
         mr.prime_ideal_cache = S
       end
-      act=_act_on_ray_class(mr,gens)
+      act=Hecke._act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[15],act, op=(x, y) -> quo(x, y, false)[2])
-      a=_min_wild(k[2])*k[1]
+      a=Hecke._min_wild(k[2])*k[1]
       for s in ls
         if !_right_actionD5C3(s,act)
           continue
@@ -573,15 +573,15 @@ function C3xD5_extensions(non_normal_bound::fmpz)
           for p in keys(factor(O.disc).fac)
             push!(ram_primes, p)
           end
-          auto=extend_aut(C,gens[1])
+          auto=Hecke.extend_aut(C,gens[1])
           T,mT=simple_extension(L)
           x=mT(gen(T))
           if (auto*auto)(x)!=x
             auto=auto^3
           end
-          pol=absolute_minpoly(x+auto(x))
+          pol=Hecke.absolute_minpoly(x+auto(x))
           if degree(pol)!=15
-            pol=absolute_minpoly(x*(auto(x)))
+            pol=Hecke.absolute_minpoly(x*(auto(x)))
           end
           K,_=NumberField(pol, cached= false)
           if _is_discriminant_lower(K, collect(ram_primes), non_normal_bound)
@@ -599,7 +599,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
 end
 
 
-function _right_actionD5C3(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+function _right_actionD5C3(s::Hecke.GrpAbFinGenMap, act::Array{Hecke.GrpAbFinGenMap,1})
 
   @assert length(act)==1
   S=codomain(s)
@@ -641,7 +641,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
    
     bound3=root(non_normal_bound, 5)
     C,mC=class_group(O)
-    allow_cache!(mC)
+    Hecke.allow_cache!(mC)
     cgrp=false
     if gcd(C.snf[end],15)!=1
       cgrp=true
@@ -656,21 +656,21 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
     end
     
     #Getting conductors
-    l_conductors=conductors(O,15,bound)
+    l_conductors=Hecke.conductors(O,15,bound)
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
-      r,mr=ray_class_group_quo(O,15,k[1], k[2])
-      if !_are_there_subs(r,[15])
+      r,mr=Hecke.ray_class_group_quo(O,15,k[1], k[2])
+      if !Hecke._are_there_subs(r,[15])
         continue
       end
       if cgrp
         mr.prime_ideal_cache = S
       end
-      act=_act_on_ray_class(mr,gens)
+      act=Hecke._act_on_ray_class(mr,gens)
       ls=stable_subgroups(r,[15],act, op=(x, y) -> quo(x, y, false)[2])
-      a=_min_wild(k[2])*k[1]
+      a=Hecke._min_wild(k[2])*k[1]
       for s in ls
         if !_right_actionC5S3(s,act)
           continue
@@ -699,9 +699,9 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
           if (auto*auto)(x)!=x
             auto=auto*auto*auto*auto*auto
           end
-          pol=absolute_minpoly(x+auto(x))
+          pol=Hecke.absolute_minpoly(x+auto(x))
           if degree(pol)!=15
-            pol=absolute_minpoly(x*(auto(x)))
+            pol=Hecke.absolute_minpoly(x*(auto(x)))
           end
           K=number_field(pol, cached=false)[1]
           if _is_discriminant_lower(K, collect(ram_primes), non_normal_bound)
@@ -720,7 +720,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
   
 end
 
-function _right_actionC5S3(s::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
+function _right_actionC5S3(s::Hecke.GrpAbFinGenMap, act::Array{Hecke.GrpAbFinGenMap,1})
 
   @assert length(act)==1
   S=codomain(s)
@@ -768,7 +768,7 @@ function C9semiC4(absolute_bound::fmpz, l)
     bound = FlintZZ(fmpq(bo))
    
     C,mC=class_group(O)
-    allow_cache!(mC)
+    Hecke.allow_cache!(mC)
     cgrp=false
     if gcd(C.snf[end],3)!=1
       cgrp=true
@@ -779,23 +779,23 @@ function C9semiC4(absolute_bound::fmpz, l)
     gens = Hecke.small_generating_set(Aut)
   
     #Getting conductors
-    l_conductors=conductors(O,9,bound, false)
+    l_conductors=Hecke.conductors(O,9,bound, false)
     @vprint :QuadraticExt 1 "Conductors: $(length(l_conductors))\n"
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
       @vprint :QuadraticExt 1 "Doing $i\n"
-      r,mr=ray_class_group_quo(O,9,k[1], k[2])
-      if !_are_there_subs(r,[9])
+      r,mr=Hecke.ray_class_group_quo(O,9,k[1], k[2])
+      if !Hecke._are_there_subs(r,[9])
         continue
       end
       if cgrp
         mr.prime_ideal_cache = S
       end
       @vprint :QuadraticExt 1 "Computing the action\n"
-      act=_act_on_ray_class(mr,gens)
+      act=Hecke._act_on_ray_class(mr,gens)
       @vprint :QuadraticExt 1 "Computing subgroups\n"
       ls=stable_subgroups(r,[9],act, op=(x, y) -> quo(x, y, false)[2])
-      a=_min_wild(k[2])*k[1]
+      a=Hecke._min_wild(k[2])*k[1]
       for s in ls
         if _trivial_action(s,act,9)
           continue
@@ -873,12 +873,12 @@ function _to_non_normal(autos)#::Vector{NfRel_nsToNfRel_nsMor})
   pr_el=x+autos[i](x)
   
   #Take minimal polynomial; I need to embed the element in the absolute extension
-  pol=absolute_minpoly(pr_el)
+  pol=Hecke.absolute_minpoly(pr_el)
   if degree(pol)==15
     return number_field(pol)[1]
   else
     pr_el=x*(autos[i](x))
-    return number_field(absolute_minpoly(pr_el))[1]
+    return number_field(Hecke.absolute_minpoly(pr_el))[1]
   end
   
 end
