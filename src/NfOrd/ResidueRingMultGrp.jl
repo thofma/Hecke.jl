@@ -856,7 +856,6 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
     return G, GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), y1
   end
 
-  groups = Vector{GrpAbFinGen}()
   ideals_and_maps = Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}()
   for (q, e) in fac
     qe = q^e
@@ -864,7 +863,6 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
 
     if haskey(y1, q)
       G1, G1toO = _prime_part_multgrp_mod_p(q, p)
-      push!(groups, G1)
       push!(maps, G1toO)
       tame_part[q] = G1toO
     end
@@ -887,15 +885,13 @@ function _mult_grp(Q::NfOrdQuoRing, p::Integer)
         return z
       end
 
-      push!(groups, G2)
       G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)
       push!(maps, G2toO2)
       wild_part[q] = G2toO2
     end
     ideals_and_maps[qe] = maps
   end
-
-  G, GtoQ = _direct_product!(groups, ideals_and_maps, Q) # This also changes tame_part and wild_part!
+  G, GtoQ = _direct_product!(ideals_and_maps, Q) # This also changes tame_part and wild_part!
   GtoQ.tame = tame_part
   GtoQ.wild = wild_part
 
@@ -993,7 +989,6 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
     return G, GrpAbFinGenToNfOrdQuoRingMultMap(G, Q, elem_type(Q)[], disc_log), tame_part, wild_part
   end
 
-  groups = Vector{GrpAbFinGen}()
   ideals_and_maps = Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}()
   for (q, e) in fac
     qe = q^e
@@ -1001,7 +996,6 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
 
     if haskey(y1, q)
       G1, G1toO = _n_part_multgrp_mod_p(q, n)
-      push!(groups, G1)
       push!(maps, G1toO)
       tame_part[q] = G1toO
     end
@@ -1025,15 +1019,13 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrd
         return z
       end
 
-      push!(groups, G2)
       G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)
       push!(maps, G2toO2)
       wild_part[q] = G2toO2
     end
     ideals_and_maps[qe] = maps
   end
-
-  G, GtoQ = _direct_product!(groups, ideals_and_maps, Q) # This also changes tame_part and wild_part!
+  G, GtoQ = _direct_product!(ideals_and_maps, Q) # This also changes tame_part and wild_part!
 
   S, StoG, StoQ = snf(G, GtoQ)
 
@@ -1328,23 +1320,21 @@ end
 # ideals_and_maps as maps and the keys as ideals.
 # However, there can be more than one map (or group) for one ideal and the
 # generators of the maps are changed IN PLACE.
-function _direct_product!(groups::Vector{GrpAbFinGen}, ideals_and_maps::Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}, Q::NfOrdQuoRing)
+function _direct_product!(ideals_and_maps::Dict{NfOrdIdl, Vector{GrpAbFinGenToNfAbsOrdMap}}, Q::NfOrdQuoRing)
   @assert !isempty(ideals_and_maps)
-  @assert !isempty(groups)
 
   ideals = collect(keys(ideals_and_maps))
 
-  G = groups[1]
-  for i = 2:length(groups)
-    G = direct_product(G, groups[i])
-  end
-
+  groups = Vector{GrpAbFinGen}()
   O = base_ring(Q)
   oneO = O(1)
   generators = Vector{NfOrdQuoRingElem}()
   t = [ oneO for i = 1:length(ideals) ]
   for i = 1:length(ideals)
     for map in ideals_and_maps[ideals[i]]
+
+      push!(groups, domain(map))
+
       for j = 1:length(map.generators)
         t[i] = map.generators[j]
         g = crt(t, ideals)
@@ -1355,10 +1345,16 @@ function _direct_product!(groups::Vector{GrpAbFinGen}, ideals_and_maps::Dict{NfO
     end
   end
 
+  @assert !isempty(groups)
+  G = groups[1]
+  for i = 2:length(groups)
+    G = direct_product(G, groups[i])
+  end
+
   function disc_log(a::NfOrdQuoRingElem)
     result = Vector{fmpz}()
-    for (I, maps) in ideals_and_maps
-      for map in maps
+    for ideal in ideals
+      for map in ideals_and_maps[ideal]
         append!(result, map.discrete_logarithm(a.elem))
       end
     end
