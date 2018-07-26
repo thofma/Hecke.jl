@@ -1444,56 +1444,72 @@ function resultant_valuation_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResEl
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  p = fmpz(R.n)
+  
+  
+  #Some initial checks
+  if degree(f) < 1 && degree(g) < 1
+    if iszero(f) || iszero(g)
+      return R(0)
+    else
+      return R(1)
+    end
+  end
+
   res = R(1)
+  
+  if degree(f) < 1
+    res *= lead(f)^degree(g)
+    return res
+  end
 
+  if degree(g) < 1
+    res *= lead(g)^degree(f)
+    return res
+  end
+
+  c, f = primsplit(f)
+  if !isone(c)
+    res *= R(c)^degree(g)
+  end
+
+  c, g = primsplit(g)
+  if !isone(c)
+    res *= R(c)^degree(f)
+  end
+  
+  if degree(f) < degree(g)
+    f, g = g, f
+  end
+  
+  if iszero(res)
+    return res
+  end
+  
   while true
-    if degree(f) < 1 && degree(g) < 1
-      if iszero(f) || iszero(g)
-        res = R(0)
-      end
-      return res
-    end
-
-    if degree(f) < 1
-      res *= lead(f)^degree(g)
-      return res
-    end
-
-    if degree(g) < 1
-      res *= lead(g)^degree(f)
-      return res
-    end
-
-    c, f = primsplit(f)
-    if !isone(c)
-      res *= R(c)^degree(g)
-    end
-
-    c, g = primsplit(g)
-    if !isone(c)
-      res *= R(c)^degree(f)
-    end
-
-    if degree(f) < degree(g)
-      f, g = g, f
-    end
-
     #want f % g which works iff lead(g) | lead(f)
 
     if isunit(lead(g)) #accelerate a bit...possibly.
       f = rem(f, g)
-      continue
-    end
+      if degree(f) < 1
+        res *= lead(f)^degree(g)
+        return res
+      end
+      c, f = primsplit(f)
+      if !isone(c)
+        res *= R(c)^degree(g)
+      end
+      f, g = g, f
+    else
 
-    break
+      g1, g = fun_factor(g)  
+      if degree(g) < 1
+        res *= lead(g)^degree(f)
+        return res
+      end
+    end
   end
-  
-  if !isunit(lead(g))
-    g1, g2 = fun_factor(g)
-    nnew = 
-    res *= resultant_valuation(f, g2)
-  end
-  return res
+
 end
 
 

@@ -497,7 +497,7 @@ function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p:
     B = AA[i][1]
     BtoA = AA[i][2]
     f = dim(B)
-    idem = BtoA(B[1]) # Assumes that B == idem*A
+    idem = BtoA(one(B)) # Assumes that B == idem*A
     M = representation_matrix(idem)
     ker = left_kernel(M)
     N = basis_mat(Ip1, Val{false})
@@ -552,13 +552,17 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
       # Compute Vp = P_1 * ... * P_j-1 * P_j+1 * ... P_g
 
       B, BtoA = AA[j]
-      v1 = AtoO(BtoA(B[1]))
-      u1 = sum(AtoO(AA[i][2](AA[i][1][1])) for i=1:length(ideals) if i != j)
+      v1 = AtoO(BtoA(one(B)))
+      #u1 = AtoO(sum([AA[i][2](AA[i][1][1]) for i=1:length(ideals) if i != j]))
+      u1 = 1 - v1
+      @hassert :NfOrd 1 isone(u1+v1)
       @hassert :NfOrd 1 u1 in P
       u2, v2 = idempotents(P, T)
-
       u = u1*(u2+v2) + u2*v1
       v = v1*v2
+      @hassert :NfOrd 1 isone(u + v)
+      
+      @hassert :NfOrd 1 u in P
       x = zero(parent(u))
       modulo = norm(P)*p
       
@@ -569,6 +573,7 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
       elseif !iszero(mod(norm(u-p), modulo))
         x = u - p
       else
+
         Ba = basis(P, Val{false})
         for i in 1:degree(O)
           if !iszero(mod(norm(v*Ba[i] + u), modulo))
