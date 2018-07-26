@@ -1063,7 +1063,6 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   C, mC = class_group(O)
   _assure_princ_gen(mC)
   @vtime :RayFacElem 1 G, mG, tame, wild= _mult_grp_mod_n(Q,y1,y2,n)
-
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
@@ -1540,6 +1539,14 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
+  
+  #=
+  f = K.pol
+  a = gen(K)
+  for i=1:length(Aut)
+    @assert iszero(f(Aut[i].prim_img))
+  end
+  =#
   if isempty(Aut)
     Aut = automorphisms(K)
     Aut = small_generating_set(Aut, *)
@@ -1560,8 +1567,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   #  class group map
   #
 
-  lgens, subs=find_gens(mR) 
-  
+  lgens, subs = find_gens(mR) 
   if isempty(lgens)
     push!(G, GrpAbFinGenMap(R))
     return G

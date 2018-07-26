@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export simple_extension
+export NfRel_ns, simple_extension
 
 #= trivial example
 Qx, x = PolynomialRing(FlintQQ)

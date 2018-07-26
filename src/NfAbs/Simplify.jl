@@ -1,3 +1,5 @@
+export simplify
+
 doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
  > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.

@@ -1,4 +1,4 @@
-export extend, NfToNfMor
+export extend, NfToNfMor, automorphisms
 
 mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, NfToNfMor}
   header::MapHeader{AnticNumberField, AnticNumberField}

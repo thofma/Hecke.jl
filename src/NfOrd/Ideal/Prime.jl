@@ -232,6 +232,7 @@ function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_
         return z
       end
     end
+    @assert O.ismaximal ==1 || p in O.primesofmaximality
     lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
     if degree_limit == 0 && lower_limit == 0
       O.index_div[fmpz(p)] = lp
@@ -361,8 +362,6 @@ function anti_uniformizer(P::NfOrdIdl)
   end
 end
 
-#This function should work for every order O, even for non-maximal ones, if the 
-#
 function prime_decomposition_type(O::NfOrd, p::Integer)
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
     K = nf(O)
@@ -382,6 +381,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
       end
     end
   else
+    @assert O.ismaximal ==1 || p in O.primesofmaximality
     return decomposition_type_polygon(O, fmpz(p))
   end
   return res

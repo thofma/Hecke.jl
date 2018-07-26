@@ -1687,13 +1687,12 @@ function hilbert_class_field(k::AnticNumberField)
 end
 
 doc"""
-    ray_class_field(I::NfAbsOrdIdl; n_quo = 0, p_part = 0) -> ClassField
+    ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
 > The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
-> subfield of exponent $n$ is computed, if {{{p_part}}} is specified, then 
-> the largest subfield of $p$-power degree is determined.
+> subfield of exponent $n$ is computed.
 """
-function ray_class_field(I::NfAbsOrdIdl; n_quo = 0, p_part = 0)
-  return ray_class_field(ray_class_group(I, n_quo = n_quo, p_part = p_part)[2])
+function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
+  return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
 doc"""
