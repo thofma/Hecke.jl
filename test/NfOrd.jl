@@ -7,5 +7,6 @@
   include("NfOrd/Clgp.jl")
   include("NfOrd/RayClassGroup.jl")
   include("NfOrd/ResidueRingMultGrp.jl")
+  include("NfOrd/Overorders.jl")
   include("NfOrd/LinearAlgebra.jl")
 end
