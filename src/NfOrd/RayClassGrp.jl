@@ -1640,9 +1640,13 @@ doc"""
 > subgroups of R such that the corresponding quotient has the required type.
 """
 
-function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Array{Int,1}=Int[-1]) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
   
-  c=lcm(quotype)
+  if quotype[1]!= -1
+    c=lcm(quotype)
+  else
+    c= Int(order(R))
+  end
   Q,mQ=quo(R,c, false)
   lf=factor(order(Q)).fac
   list=[]
@@ -1654,24 +1658,13 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
     end
     G,mG=psylow_subgroup(Q, p, false)
     S,mS=snf(G)
-    quotype_p=Int[]
-    for i=1:length(quotype)
-      v=valuation(quotype[i],p)
-      if v>0
-        push!(quotype_p,v)
-      end
-    end
-    if Int(p)*quotype_p==S.snf
-      plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-      push!(list, ([plist1]))
-      continue
-    end
+    
     #
     #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
     #
     
     if x==1
-    
+      
       F = ResidueRing(FlintZZ, Int(p), cached=false)
       act_mat=Array{nmod_mat, 1}(length(act))
       for w=1:length(act)
@@ -1691,9 +1684,24 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #
       #  Searching for submodules
       #
-      
-      ind = length(quotype_p)
-      plist = submodules(M, ind)
+      if quotype[1]!= -1
+        quotype_p=Int[]
+        for i=1:length(quotype)
+          v=valuation(quotype[i],p)
+          if v>0
+            push!(quotype_p,v)
+          end
+        end
+        if Int(p)*quotype_p==S.snf
+          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+          push!(list, ([plist1]))
+          continue
+        end
+        ind = length(quotype_p)
+        plist = submodules(M, ind)
+      else
+        plist = submodules(M)
+      end
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
 
     else    
@@ -1714,7 +1722,24 @@ function stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1
       #
       
       M=Hecke.ZpnGModule(S,act_mat)
-      plist=submodules(M, typequo = quotype_p)
+      if quotype[1]!= -1
+        quotype_p=Int[]
+        for i=1:length(quotype)
+          v=valuation(quotype[i],p)
+          if v>0
+            push!(quotype_p,v)
+          end
+        end
+        if Int(p)*quotype_p==S.snf
+          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+          push!(list, ([plist1]))
+          continue
+        end
+        plist=submodules(M, typequo = quotype_p)
+      else
+        plist = submodules(M)
+      end
+      
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
       
     end
@@ -1740,19 +1765,3 @@ function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap
   return newsub
 
 end
-#=
-function _lift_and_construct(A::fq_nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c ::Int)
-  
-  R=mQ.header.domain
-  newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-  for i=1:rows(A)
-    z=zero_matrix(FlintZZ,1,cols(A))
-    for j=1:cols(z)
-      z[1,j]=FlintZZ(coeff(A[i,j],0))
-    end
-    push!(newsub,mQ\(mG(mS(mS.header.domain(z)))))
-  end
-  return newsub
-
-end
-=#

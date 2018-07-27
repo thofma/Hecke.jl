@@ -78,7 +78,7 @@
     C,mC=class_group(O);
     r,mr=ray_class_group(ideal(O,3*5*7), n_quo=8);
     act=Hecke._act_on_ray_class(mr);
-    x=Hecke.stable_subgroups(r,[8],act,op = quo);
+    x=Hecke.stable_subgroups(r,act,op = quo, quotype = [8]);
     y=subgroups(r, quotype=[8])
     i=0
     for el in y
@@ -88,7 +88,7 @@
     end
     @test length(x)==i
     
-    x=Hecke.stable_subgroups(r,[2,4],act,op = quo);
+    x=Hecke.stable_subgroups(r, act, op = quo, quotype = [2,4]);
     y=subgroups(r, quotype=[2,4])
     i=0
     for el in y
@@ -100,7 +100,7 @@
     
     r,mr=ray_class_group(ideal(O,9*19*29), n_quo=9);
     act=Hecke._act_on_ray_class(mr);
-    x=Hecke.stable_subgroups(r,[9],act,op = quo);
+    x=Hecke.stable_subgroups(r, act, op = quo, quotype = [9]);
     y=subgroups(r, quotype=[9])
     i=0
     for el in y
@@ -110,7 +110,7 @@
     end
     @test length(x)==i
     
-    x=Hecke.stable_subgroups(r, [3,9], act, op = quo);
+    x=Hecke.stable_subgroups(r, act, op = quo, quotype = [3,9]);
     y=subgroups(r, quotype=[3,9])
     i=0
     for el in y

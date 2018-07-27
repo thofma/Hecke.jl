@@ -96,6 +96,7 @@ function overorders_meataxe(O::NfOrd)
     l = _subpartitions(ptype)
     new_orders = typeof(O)[]
     potential_basis = Vector{nf_elem}(d)
+    #=
     for par in l
       if sum(par) == 0
         push!(new_orders, M)
@@ -121,7 +122,28 @@ function overorders_meataxe(O::NfOrd)
     end
     push!(oorders, (p, new_orders))
   end
-
+  =#
+  
+    subs = stable_subgroups(A, autos)
+    @show length(subs)
+    for s in subs
+      T = image(s[2])
+      G = domain(T[2])
+      for i in 1:d
+        v = T[2](G[i]).coeff
+        if iszero(v)
+          potential_basis[i] = new_basis_O[i]
+        else
+          potential_basis[i] = sum(v[1, j] * new_basis_M[j] for j in 1:d)
+        end
+      end
+      b, bmat = defines_order(K, deepcopy(potential_basis))
+      if b 
+        push!(new_orders, Order(K, bmat))
+      end
+    end
+    push!(oorders, (p, new_orders))
+  end
   only_orders = Vector{typeof(O)}[oorders[i][2] for i in 1:length(oorders)]
 
   res = Vector{typeof(O)}()

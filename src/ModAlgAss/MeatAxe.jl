@@ -958,7 +958,10 @@ function submodules(M::ModAlgAss{S, T}) where {S, T}
     end
     i+=1
   end
-  return append!(list,minlist)
+  append!(list,minlist)
+  push!(list, zero_matrix(K, 0, M.dimension))
+  push!(list, identity_matrix(K, M.dimension))
+  return list
   
 end
 

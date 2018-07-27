@@ -922,12 +922,12 @@ doc"""
 function submodules(M::FqGModule)
 
   K=M.K
-  list=fq_nmod_mat[]
-  lf=composition_factors(M)
-  minlist=minimal_submodules(M, M.dim+1, lf)
+  list = fq_nmod_mat[]
+  lf = composition_factors(M)
+  minlist = minimal_submodules(M, M.dim+1, lf)
   for x in minlist
     rref!(x)
-    N, pivotindex =actquo(x,M.G)
+    N, pivotindex = actquo(x,M.G)
     ls=submodules(N)
     for a in ls
       s=zero_matrix(K,rows(a), M.dim)
@@ -961,8 +961,10 @@ function submodules(M::FqGModule)
     end
     i+=1
   end
-  return append!(list,minlist)
-  
+  append!(list,minlist)
+  push!(list, zero_matrix(K, 0, M.dim))
+  push!(list, identity_matrix(K, M.dim))
+  return list
 end
 
 
