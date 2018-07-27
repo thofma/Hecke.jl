@@ -1444,7 +1444,7 @@ function find_gens(mR::MapRayClassGrp)
   #
   
   if !isempty(mR.fact_mod) 
-    totally_positive_generators(mR, Int(mm), true)
+    totally_positive_generators(mR, mm, true)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
     for (p,v) in tmg
@@ -1477,6 +1477,7 @@ function find_gens(mR::MapRayClassGrp)
       end
     end
   end
+  
   
   if !isempty(mR.modulus_inf)
     S, ex, lo=carlos_units(O)

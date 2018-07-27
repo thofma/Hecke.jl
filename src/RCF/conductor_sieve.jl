@@ -99,10 +99,10 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
 end
 
 
-
+# Function that finds an integer in the ideal 
 function _min_wild(D::Dict{NfOrdIdl, Int})
 
-  res=1
+  res = fmpz(1)
   primes_done=fmpz[]
   for (p,v) in D
     s=minimum(p)
@@ -110,13 +110,13 @@ function _min_wild(D::Dict{NfOrdIdl, Int})
       continue
     end
     push!(primes_done, s)
-    res*=Int(s)^v
+    res*=s^v
   end  
   return res  
 
 end
 
-function totally_positive_generators(mr::MapRayClassGrp, a::Int, wild::Bool=false)
+function totally_positive_generators(mr::MapRayClassGrp, a::fmpz, wild::Bool=false)
 
   if isdefined(mr, :tame_mult_grp)
     tmg=mr.tame_mult_grp
@@ -139,7 +139,7 @@ function totally_positive_generators(mr::MapRayClassGrp, a::Int, wild::Bool=fals
 
 end
 
-function make_positive(x::NfOrdElem, a::Int)
+function make_positive(x::NfOrdElem, a::fmpz)
  
   els=conjugates_arb(x)
   m=1
@@ -153,9 +153,10 @@ function make_positive(x::NfOrdElem, a::Int)
       end
     end
   end
-  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+m*a), ideal(parent(x), a))
+  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
+  @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
   @hassert :RayFacElem 1 istotally_positive(x+m*a)
-  return x+m*a
+  return x+fmpz(m)*a
   
 end
 
