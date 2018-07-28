@@ -300,6 +300,12 @@ function (A::GrpAbFinGen)(x::fmpz_mat)
   return z
 end
 
+function (A::GrpAbFinGen)()
+  y = zero_matrix(FlintZZ, 1, ngens(A))
+  z = GrpAbFinGenElem(A, y)
+  return z
+end
+
 doc"""
 ***
     getindex(A::GrpAbFinGen, i::Int) -> GrpAbFinGenElem

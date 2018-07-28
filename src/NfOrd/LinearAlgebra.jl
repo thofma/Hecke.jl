@@ -309,9 +309,9 @@ function det(m::PMat)
 end
 
 # this is slow
-function _coprime_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
+function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOrdIdl)
   O = order(y)
-  c = conjugates_init(nf(O).pol)
+  #c = conjugates_init(nf(O).pol)
   #num_x_inv = inv(numerator(x))
   x_inv = inv(x)
   check = true
@@ -321,11 +321,26 @@ function _coprime_integral_ideal_class(x::NfOrdFracIdl, y::NfOrdIdl)
   while check
     i += 1
     a = rand(x_inv, 10)
+    if iszero(a)
+      continue
+    end
     b = x*a
     z = divexact(numerator(b), denominator(b))
     norm(z + y) == 1 ? (check = false) : (check = true)
   end
-  return z, a 
+  return z, a
+end
+
+function _coprime_integral_ideal_class(x::FacElem{NfOrdIdl, NfOrdIdlSet}, y::NfOrdIdl)
+  D = typeof(x.fac)()
+  D2 = Dict{nf_elem, fmpz}()
+  O = order(y)
+  for (I, e) in x
+    II, a = _coprime_integral_ideal_class(I, y)
+    D[II] = e
+    D2[a] = e
+  end
+  return FacElem(D), FacElem(D2)
 end
 
 # this is slow

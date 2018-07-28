@@ -101,6 +101,14 @@ function Base.copy(x::FacElem{B, S}) where {B, S}
   return z
 end
 
+Base.start(a::FacElem) = Base.start((a.fac))
+
+Base.done(a::FacElem, state) = Base.done((a.fac), state)
+
+Base.next(a::FacElem, state) = Base.next((a.fac), state)
+
+Base.length(a::FacElem) = Base.length(a.fac)
+
 ################################################################################
 #
 #  String I/O

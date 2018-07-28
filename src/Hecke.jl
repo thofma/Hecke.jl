@@ -187,8 +187,18 @@ function __init__()
   global _get_maximal_order_of_nf_rel = t[1]
   global _set_maximal_order_of_nf_rel = t[2]
 
+  t = create_accessors(NfOrd, MapClassGrp, get_handle())
+
+  global _get_picard_group = t[1]
+  global _set_picard_group = t[2]
+
+  t = create_accessors(NfOrd, MapUnitGrp, get_handle())
+
+  global _get_unit_group_non_maximal = t[1]
+  global _set_unit_group_non_maximal = t[2]
+
   global R = _RealRing()
-  
+
   # Stuff for elliptic curves
   # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
   # will be removed eventually

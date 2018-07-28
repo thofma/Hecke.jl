@@ -695,11 +695,11 @@ in(x::fmpz, y::NfAbsOrdIdl) = in(order(y)(x),y)
 
 in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
 
-###########################################################################################
+################################################################################
 #
 #  Inverse
 #
-###########################################################################################
+################################################################################
 
 doc"""
 ***
@@ -712,8 +712,15 @@ function inv(A::NfAbsOrdIdl)
   if ismaximal_known(order(A)) && ismaximal(order(A))
     return inv_maximal(A)
   else
-    error("Not implemented (yet)!")
+    return inv_generic(A)
   end
+end
+
+# If I is not coprime to the conductor of O in the maximal order, then this might
+# not be an inverse.
+function inv_generic(A::NfAbsOrdIdl)
+  O = order(A)
+  return colon(O(1)*O, A)
 end
 
 function inv_maximal(A::NfAbsOrdIdl)
@@ -756,11 +763,32 @@ function inv_maximal(A::NfAbsOrdIdl)
   error("Not implemented yet")
 end
 
-###########################################################################################
+doc"""
+***
+    isinvertible(A::NfAbsOrdIdl) -> Bool, NfOrdFracIdl
+
+> Returns true and an inverse of $A$ or false and an ideal $B$ such that
+> $A*B \subsetneq order(A)$, if $A$ is not invertible.
+"""
+function isinvertible(A::NfAbsOrdIdl)
+  if ismaximal_known(order(A)) && ismaximal(order(A))
+    return true, inv(A)
+  else
+    F = conductor(order(A), maximal_order(nf(order(A))))
+    if isone(A + F)
+      return true, inv(A)
+    end
+    B = inv(A)
+    C = simplify(A*B)
+    return isone(C), B
+  end
+end
+
+################################################################################
 #
 #  Simplification
 #
-###########################################################################################
+################################################################################
 #CF: missing a function to compute the gcd(...) for the minimum
 #    without 1st computing the complete inv
 # .../ enter rresx and rres!
