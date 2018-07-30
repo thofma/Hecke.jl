@@ -126,7 +126,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   end
   if mod(n,2)==0
     for i=1:length(gens)
-      gens[i]=make_positive(gens[i],a)
+      gens[i]=make_positive(gens[i],fmpz(a))
     end
   end
   return gens
