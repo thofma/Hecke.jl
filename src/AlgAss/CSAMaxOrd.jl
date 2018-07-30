@@ -996,56 +996,16 @@ function trace_signature(O::AlgAssOrd)
   
   M=redtrace_mat(O)
   # This can be improved using Sturm sequences
-  Zx,x=PolynomialRing(FlintZZ, "x")
-  f=charpoly(Zx,M)
-  if issquarefree(f)
-    a = number_positive_roots(f)
-    b = degree(f)-a
-    return (a,b)
-  else
-    ff=factor(f)
-    sgtpos=0
-    sgtneg=0
-    for (h,v) in ff.fac
-      if degree(h)==1
-        if coeff(h,0)>0
-          sgtneg+=v
-        else
-          sgtpos+=v
-        end
-        continue
-      end
-      p=64
-      while p<4096
-        sgtposf=0
-        sgtnegf=0
-        R=AcbField(p, false)
-        Rx=AcbPolyRing(R, Symbol("x"), false)
-        g=Rx(h)
-        l=roots(g)
-        for i=1:length(l)
-          y=real(l[i])
-          if ispositive(y)
-            sgtposf+=1
-          end
-          if isnegative(y)
-            sgtnegf+=1
-          end
-        end
-        if sgtposf+sgtnegf==degree(h)
-          sgtpos+=sgtposf*v
-          sgtneg+=sgtnegf*v
-          break
-        else
-          p*=2
-        end
-      end
-      if p > 4096
-        error("Precision issue")
-      end
-    end
-    return (sgtpos, sgtneg)
+  Zx, x = PolynomialRing(FlintZZ, "x")
+  Qy, y = PolynomialRing(FlintQQ, "y")
+  f = charpoly(Zx, M)
+  fac = factor_squarefree(Qy(f))
+  npos = 0
+  for (t,e) in fac
+    a = number_positive_roots(Zx(t))
+    npos += a*e 
   end
+  return (npos, degree(f) - npos)
   
 end
 
@@ -1308,7 +1268,7 @@ doc"""
 
 function issplit(A::AlgAss)
   O=Hecke.AlgAssOrd(A, [A[i] for i=1:dim(A)])
-  i=schur_index_at_real_plc(O)
+  i = schur_index_at_real_plc(O)
   if i==2
     return false
   end  
