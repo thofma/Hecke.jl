@@ -52,7 +52,7 @@ function +(x::NfOrdIdl, y::NfOrdIdl)
   if isone(g)
     return ideal(order(x), g)
   end
-  H = sub(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
+  H = view(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
   return ideal(order(x), H, false, true)
 end
 
@@ -73,7 +73,7 @@ function intersection(x::NfOrdIdl, y::NfOrdIdl)
   H = vcat(basis_mat(x), basis_mat(y))
   K = _kernel(H)
   g = lcm(minimum(x),minimum(y))
-  return ideal(order(x), _hnf_modular_eldiv(sub(K, 1:d, 1:d)*basis_mat(x), g, :lowerleft), false, true)
+  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, Val{false}), g, :lowerleft), false, true)
 end
 
 doc"""
@@ -123,7 +123,7 @@ function mul_gen(x::NfOrdIdl, y::NfOrdIdl)
     end
   end
   # This is a d^2 x d matrix
-  return ideal(O, sub(_hnf_modular_eldiv(z, l, :lowerleft),
+  return ideal(O, view(_hnf_modular_eldiv(z, l, :lowerleft),
                       (d*(d - 1) + 1):d^2, 1:d), false, true)
 end
 

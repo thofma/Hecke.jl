@@ -5,5 +5,6 @@
   include("Misc/meataxe.jl")
   include("Misc/stable_subgroups.jl")
   include("Misc/NumberField.jl")
+  include("Misc/Poly.jl")
 end
   

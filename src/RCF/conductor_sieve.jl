@@ -142,14 +142,14 @@ end
 function make_positive(x::NfOrdElem, a::fmpz)
  
   els=conjugates_arb(x)
-  m=1
+  m=fmpz(0)
   for i=1:length(els)
     if isreal(els[i])
       y=BigFloat(midpoint(real(els[i]/a)))
       if y>0
         continue
       else
-        m=max(m,1-ceil(Int,y))
+        m = max(m,1-ceil(fmpz,y))
       end
     end
   end
@@ -157,7 +157,7 @@ function make_positive(x::NfOrdElem, a::fmpz)
   @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x+fmpz(m)*a), ideal(parent(x), a))
   @hassert :RayFacElem 1 istotally_positive(x+m*a)
   return x+fmpz(m)*a
-  
+    
 end
 
 
@@ -423,6 +423,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   
   return final_list
 end
+
 
 function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   

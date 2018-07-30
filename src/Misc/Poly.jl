@@ -1755,7 +1755,6 @@ function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
      return z
 end
 
-
 ###############################################################################
 #
 #  Sturm sequence
@@ -1801,5 +1800,41 @@ function number_positive_roots(f::fmpz_poly)
   evinf = fmpz[numerator(coeff(x, degree(x))) for x in s]
   ev0 = fmpz[numerator(coeff(x,0)) for x in s]
   return _number_changes(ev0)-_number_changes(evinf)
+
+end
+################################################################################
+#
+#  Squarefree factorization for fmpz_poly
+#
+################################################################################
+
+doc"""
+    factor_squarefree(x::fmpq_poly)
+> Returns the squarefree factorization of $x$.
+"""
+function factor_squarefree(x::fmpq_poly)
+   res, z = _factor_squarefree(x)
+   return Fac(parent(x)(z), res)
+end
+
+function _factor_squarefree(x::fmpq_poly)
+   res = Dict{fmpq_poly, Int}()
+   y = fmpz_poly()
+   ccall((:fmpq_poly_get_numerator, :libflint), Void,
+         (Ref{fmpz_poly}, Ref{fmpq_poly}), y, x)
+   fac = Nemo.fmpz_poly_factor()
+   ccall((:fmpz_poly_factor_squarefree, :libflint), Void,
+              (Ref{Nemo.fmpz_poly_factor}, Ref{fmpz_poly}), fac, y)
+   z = fmpz()
+   ccall((:fmpz_poly_factor_get_fmpz, :libflint), Void,
+            (Ref{fmpz}, Ref{Nemo.fmpz_poly_factor}), z, fac)
+   f = fmpz_poly()
+   for i in 1:fac.num
+      ccall((:fmpz_poly_factor_get_fmpz_poly, :libflint), Void,
+            (Ref{fmpz_poly}, Ref{Nemo.fmpz_poly_factor}, Int), f, fac, i - 1)
+      e = unsafe_load(fac.exp, i)
+      res[parent(x)(f)] = e
+   end
+   return res, fmpq(z, denominator(x))
 
 end

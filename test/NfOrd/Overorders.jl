@@ -7,7 +7,7 @@
 
   E = EquationOrder(K)
 
-  @test length(overorders(E)) == 16
+  #@test length(overorders(E)) == 16
 
   f = f = x^3 + 31 * x^2 + 43* x + 77
 
@@ -15,7 +15,7 @@
 
   E = EquationOrder(K)
 
-  println("Here")
-  @test length(overorders(E)) == 15
-  @test length(Hecke.overorders_naive(E)) == 15
+
+  #@test length(overorders(E)) == 15
+  #@test length(Hecke.overorders_naive(E)) == 15
 end

@@ -999,38 +999,9 @@ function trace_signature(O::AlgAssOrd)
   Zx,x=PolynomialRing(FlintZZ, "x")
   f=charpoly(Zx,M)
   if issquarefree(f)
-    p=64
-    while p<4096
-      sgtposf=0
-      sgtnegf=0
-      R=AcbField(p, false)
-      Rx=AcbPolyRing(R, Symbol("x"), false)
-      g=Rx(f)
-      l = roots(g)#, max_prec = 1024)
-      for i=1:length(l)
-        y=real(l[i])
-        if ispositive(y)
-          sgtposf+=1
-        end
-        if isnegative(y)
-          sgtnegf+=1
-        end
-      end
-      if sgtposf+sgtnegf==degree(g)
-        return sgtposf, sgtnegf
-      else
-        p*=2
-      end
-    end
-    if p>4096
-      error("Precision issue")
-    end
-#=    
-  if issquarefree(f)
-    a=number_positive_roots(f)
-   b=degree(f)-a
+    a = number_positive_roots(f)
+    b = degree(f)-a
     return (a,b)
-=#
   else
     ff=factor(f)
     sgtpos=0
@@ -1351,52 +1322,3 @@ function issplit(A::AlgAss)
   return true
 
 end
-
-
-###############################################################################
-#
-#  Sturm sequence
-#
-###############################################################################
-
-function sturm_sequence(f::fmpq_poly)
-
-  g=f
-  h=derivative(g)
-  seq=fmpq_poly[g,h]
-  while true
-    q, r=divrem(g,h)
-    if r!=0
-      push!(seq, -r)
-      g=h
-      h=r
-    else 
-      break
-    end
-  end
-  return seq
-
-end
-
-function _number_changes(a::Array{fmpz,1})
-  nc=0
-  filter!(x -> x!=0, a)
-  for i=2:length(a)
-    if sign(a[i])!=sign(a[i-1])
-      nc+=1
-    end
-  end  
-  return nc
-end
-
-function number_positive_roots(f::fmpz_poly)
-
-  Qx, x=PolynomialRing(FlintQQ, "z")
-  f1 = Qx(f)
-  s = sturm_sequence(f1)
-  evinf=fmpz[numerator(coeff(x, degree(x))) for x in s]
-  ev0=fmpz[numerator(coeff(x,0)) for x in s]
-  return _number_changes(ev0)-_number_changes(evinf)
-end
-
-

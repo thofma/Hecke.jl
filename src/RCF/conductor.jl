@@ -95,7 +95,7 @@ end
 #  This functions constructs generators for 1+p^u/1+p^u+1
 #
 
-function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Int, n::Int)
+function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Union{Int, fmpz}, n::Int)
   
   O=maximal_order(K)
   b=basis(pk)
@@ -194,7 +194,7 @@ function conductor(C::Hecke.ClassField)
   end
   
   if !isempty(inf_plc)
-    totally_positive_generators(mR,Int(cond.gen_one))
+    totally_positive_generators(mR, cond.gen_one)
   end
 
   #Finite part of the modulus
@@ -365,7 +365,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
   end
   
   if !isempty(inf_plc2)
-    totally_positive_generators(mR,Int(cond.gen_one))
+    totally_positive_generators(mR, cond.gen_one)
   end
   
   #Finite part of the modulus
@@ -376,7 +376,7 @@ function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=
         return false
       end  
     else     
-      multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
+      multg=_1pluspk_1pluspk1(K, p, p^(v-1), p^v, mR.fact_mod, prime_power, cond.gen_one, Int(E))
       gens=Array{GrpAbFinGenElem,1}(length(multg))
       for i=1:length(multg)
         gens[i]= preimage(mp, ideal(O,multg[i]))
@@ -534,7 +534,7 @@ end
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
 #
 
-function _is_conductor_min_normal(C::Hecke.ClassField, a::Int)
+function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz)
 # a is a positive integer in the modulus
 
   mr = C.rayclassgroupmap
@@ -662,7 +662,7 @@ end
 #
 #######################################################################################
 
-function discriminant_conductor(O::NfOrd, C::ClassField, a::Int, mr::MapRayClassGrp, bound::fmpz, n::Int)
+function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClassGrp, bound::fmpz, n::Int)
   
  
   lp=mr.fact_mod
