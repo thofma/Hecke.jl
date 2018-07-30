@@ -1325,7 +1325,7 @@ doc"""
 > A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
 > One of the two polynomials must be monic.
 """
-function resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unti obtained from the fun_factor function
   Nemo.check_parent(f, g)
@@ -1335,61 +1335,80 @@ function resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{
   m = fmpz(modulus(R))
   e, p::fmpz = ispower(m)
   easy = isprime(p)
-  Zx = PolynomialRing(FlintZZ)[1]
-
+  
+  if easy
+    return resultant_ideal_pp(f,g)
+  end
+  
+  #Some initial checks
   res = R(1)
+  if degree(f) < 1 && degree(g) < 1
+    if iszero(f) || iszero(g)
+      return R(0)
+    end
+    return res
+  end
+  
+  if degree(f) < 1
+    res *= lead(f)^degree(g)
+    return res
+  end
 
+  c, f = primsplit(f)
+  if !isone(c)
+    res *= R(c)^degree(g)
+  end
+
+  c, g = primsplit(g)
+  if !isone(c)
+    res *= R(c)^degree(f)
+  end
+  
+  if degree(f) < degree(g)
+    f, g = g, f
+  end
+  
+  if iszero(res)
+    return res
+  end
+
+  
+  #Now, I can safely assume that the degree of f is always greater than the degree of g
   while true
-    if degree(f) < 1 && degree(g) < 1
-      if iszero(f) || iszero(g)
-        return res = R(0)
-      end
-      return res
-    end
-
-    if degree(f) < 1
-      res *= lead(f)^degree(g)
-      return res
-    end
-
+    
     if degree(g) < 1
       res *= lead(g)^degree(f)
       return res
     end
-
-    c, f = primsplit(f)
-    if !isone(c)
-      res *= R(c)^degree(g)
-    end
-
+  
     c, g = primsplit(g)
     if !isone(c)
-      res *= R(c)^degree(f)::AbstractAlgebra.Generic.Res{Nemo.fmpz}
+      res *= R(c)^degree(f)
     end
-    
+
     if iszero(res)
       return res
     end
-    
-    if degree(f) < degree(g)
-      f, g = g, f
-    end
-
     #want f % g which works iff lead(g) | lead(f)
 
     if isunit(lead(g)) #accelerate a bit...possibly.
       f = rem(f, g)
+      f, g = g, f
       continue
     end
     break
   end
 
-  #factoring case, need to split the ring as well.
-  #merde : we need a coprime factorisation: take
-  # 6t^2+2t+3 mod 36....
+  # factoring case, need to split the ring as well.
+  # we need a coprime factorisation and then we go recursively
   if easy
     return resultant_valuation_pp(f, g)
   else
+    #If res is not coprime to the modulus, I can continue the computations modulo a smaller one.
+    s = gcd(m, lift(res))
+    if !isone(s)
+      m = divexact(m, s)
+    end
     cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
     push!(cp, m)
     cp = [x for x = cp if !iszero(x)]
@@ -1402,8 +1421,8 @@ function resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{
       push!(pg, lg)
 
       if lg != m
-        R1 = ResidueRing(FlintZZ, S(lg), cached=false)
-        R1t = PolynomialRing(R1, cached=false)[1]
+        R1 = ResidueRing(FlintZZ, S(lg), cached = false)
+        R1t = PolynomialRing(R1, cached = false)[1]
         #g is bad in R1, so factor it
         gR1 = R1t(lift(Zx, g))
         fR1 = R1t(lift(Zx, f))
@@ -1424,27 +1443,27 @@ function resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{
   
       if !isunit(lead(gR1))
         g1, g2 = fun_factor(gR1)
-        res1 *= resultant_valuation(fR1, g2)
+        res1 *= resultant_ideal(fR1, g2)
         push!(resp, lift(res1))
       else
         #gR1 has a invertible leading coeff
-        res1 *= resultant_valuation(fR1, gR1)
+        res1 *= resultant_ideal(fR1, gR1)
         push!(resp, lift(res1))
       end
     end
-    res *=  R(crt(resp, pg))
+    res *=  lift(R(crt(resp, pg)))
     return res
   end
 end
 
-function resultant_valuation_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unti obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
-  p = fmpz(R.n)
+  pn = fmpz(R.modulus)
   
   
   #Some initial checks
@@ -1501,11 +1520,20 @@ function resultant_valuation_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResEl
       end
       f, g = g, f
     else
-
+      s = gcd(lift(res), pn)
+      if !isone(s)
+        new_pn = divexact(pn, s)
+        Zx = PolynomialRing(FlintZZ, "x")[1]
+        R1 = ResidueRing(FlintZZ, new_pn, cached = false)
+        R1t = PolynomialRing(R1, "y", cached = false)[1]
+        f1 = R1t(lift(Zx,f))
+        g2 = R1t(lift(Zx,g))
+        g3, g2 = fun_factor(g2)
+        return res*R(lift(resultant_ideal_pp(f1, g2)))
+      end
       g1, g = fun_factor(g)  
       if degree(g) < 1
-        res *= lead(g)^degree(f)
-        return res
+        return res*lead(g)^degree(f)
       end
     end
   end
@@ -1725,4 +1753,53 @@ function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
          (Ptr{fq_nmod_poly}, Int, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
          &z, n, &x, &base_ring(parent(z)))
      return z
+end
+
+
+###############################################################################
+#
+#  Sturm sequence
+#
+###############################################################################
+#See Wikipedia as a reference
+function sturm_sequence(f::fmpq_poly)
+
+  g = f
+  h = derivative(g)
+  seq = fmpq_poly[g,h]
+  while true
+    r = rem(g,h)
+    if r != 0
+      push!(seq, -r)
+      g, h = h, -r
+    else 
+      break
+    end
+  end
+  return seq
+
+end
+
+function _number_changes(a::Array{fmpz,1})
+
+  nc = 0
+  filter!(x -> x != 0, a)
+  for i = 2:length(a)
+    if sign(a[i]) != sign(a[i-1])
+      nc += 1
+    end
+  end  
+  return nc
+
+end
+
+function number_positive_roots(f::fmpz_poly)
+
+  Qx, x = PolynomialRing(FlintQQ, "z")
+  f1 = Qx(f)
+  s = sturm_sequence(f1)
+  evinf = fmpz[numerator(coeff(x, degree(x))) for x in s]
+  ev0 = fmpz[numerator(coeff(x,0)) for x in s]
+  return _number_changes(ev0)-_number_changes(evinf)
+
 end
