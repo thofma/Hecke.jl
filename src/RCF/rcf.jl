@@ -132,7 +132,6 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
 # mR: SetIdl -> GrpAb (inv of ray_class_group or Frobenius or so)
   ZK = order(domain(mR))
   R = codomain(mR) 
-
   sR = GrpAbFinGenElem[]
   lp = elem_type(domain(mR))[]
 
@@ -144,6 +143,9 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   while true
     p, st = next(S, st)
     if cp % p == 0
+      continue
+    end
+    if index(ZK) % p ==0
       continue
     end
     @vprint :ClassField 2 "doin` $p\n"
@@ -306,9 +308,11 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   m = defining_modulus(CF)[1]
   ZK = maximal_order(base_ring(K.gen[1]))
   cp = lcm(minimum(m), discriminant(ZK))
+  
   cf = Hecke.MapFromFunc(x->can_frobenius(x, K), IdealSet(ZK), K.AutG)
 
   mp = c.mp[2]
+  cp = lcm(cp, index(maximal_order(domain(mp))))
   ZK = maximal_order(c.Ka)
   @hassert :ClassField 1 order(domain(cf)) == ZK
   Zk = order(m)
@@ -319,7 +323,6 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   Sp = Hecke.PrimesSet(200, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
 
   lp, sG = find_gens(cf, Sp, cp)
-
   G = codomain(cf)
   sR = Array{GrpAbFinGenElem, 1}(length(lp))
 
@@ -459,6 +462,12 @@ function _rcf_reduce(CF::ClassField_pp)
   return nothing
 end
 
+
+###############################################################################
+#
+#  Reduce the generators and descent
+#
+###############################################################################
 
 
 function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem},1}, AutA::GrpAbFinGen, oA::fmpz, C::CyclotomicExt)
@@ -1153,7 +1162,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
       push!(all_emb, (a, tau_a, emb))
     
-      z = matrix(FlintZZ, 0, length(Cp[im].bigK.gen), fmpz[])
+      z = zero_matrix(FlintZZ, 0, length(Cp[im].bigK.gen))
       za = Int[]
       zta = Int[]
       G = DiagonalGroup([om for i=1:length(Cp[im].bigK.gen)])
