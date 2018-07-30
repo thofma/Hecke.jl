@@ -1024,9 +1024,8 @@ function rel_auto_intersection(A::ClassField_pp)
   Mk = _expand(M, C.mp[1])
   i = 0
   # One of the automorphisms must generate the group, so I check the order.
-  while true 
-    i += 1
-    tau = A.AutG[i]
+  for j=1:length(A.AutG)
+    tau = A.AutG[j]
     N = SRow(tau(A.pe))
     Nk = _expand(N, C.mp[1])
     s = solve(Mk, Nk) # will not work, matrix non-square...
@@ -1036,10 +1035,11 @@ function rel_auto_intersection(A::ClassField_pp)
     end
     aut = NfRelToNfRelMor(A.A, A.A, im)
     pow_aut = aut^exp_to_test
-    if pow_aut(gen(A.A)) == gen(A.A)
+    if pow_aut(gen(A.A)) != gen(A.A)
       return aut
     end
   end
+  error("I can't find the automorphism!")
  
 end
 
@@ -1388,38 +1388,6 @@ end
 #  Auxiliary functions (to be moved)
 #
 ###############################################################################
-#=
-function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
-  if parent(a) == I_Zk
-    return a
-  end
-  Zk = order(I_Zk)
-  Zl = order(a)
-  @assert has_2_elem(a)
-  b = ideal(Zk, a.gen_one, Zk(Zk.nf(Zl.nf(a.gen_two))))
-  for i in [:gens_normal, :gens_weakly_normal, :iszero, :minimum]
-    if isdefined(a, i)
-      setfield!(b, i, getfield(a, i))
-    end
-  end
-  n = divexact(degree(Zk.nf), degree(Zl.nf))
-  if isdefined(a, :norm)
-    b.norm = a.norm^n
-  end
-  if isdefined(a, :princ_gen)
-    b.princ_gen = Zk(Zk.nf(Zl.nf(a.princ_gen)))
-  end
-  if isdefined(a, :isprime) && Zk.nf == Zl.nf && Zk.ismaximal == 1 &&
-    Zl.ismaximal == 1
-    b.isprime = a.isprime
-    if isdefined(a, :splitting_type)
-      b.splitting_type = a.splitting_type
-    end
-  end
-  return b
-end
-=#
-
 
 doc"""
   base_ring(A::ClassField)

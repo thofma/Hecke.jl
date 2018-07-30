@@ -173,10 +173,39 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_e
 
   z = NfRelToNfRelMor{nf_elem, nf_elem}()
   z.prim_img = a
+#  z.coeff_aut = _identity(base_ring(K))
   z.header = MapHeader(K, L, image)
   return z
 end
 
+function _identity(K::AnticNumberField)
+  return NfToNfMor(K, K, gen(K))
+end
+
+function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
+  return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 
+end
+
+function *(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
+  @assert codomain(y) == domain(x)
+  new_prim_img = x(y.prim_img)
+  
+  if isdefined(x, :coeff_aut)
+    if !isdefined(y, :coeff_aut)
+      new_coeff_aut = x.coeff_aut
+    else
+      new_coeff_aut = x.coeff_aut * y.coeff_aut
+    end
+    return NfRelToNfRelMor(domain(y), codomain(x), new_coeff_aut, new_prim_img)
+  else
+    if isdefined(y, :coeff_aut)
+      new_coeff_aut = y.coeff_aut
+      return NfRelToNfRelMor(domain(y), codomain(x), new_coeff_aut, new_prim_img)
+    else
+      return NfRelToNfRelMor(domain(y), codomain(x), new_prim_img)
+    end
+  end
+end
 
 function show(io::IO, h::NfRelToNfRelMor)
   if domain(h) == codomain(h)
