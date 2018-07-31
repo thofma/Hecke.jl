@@ -458,10 +458,10 @@ end
 #
 ###############################################################################
 
-function norm_modulo(a::nf_elem, n::fmpz)
+function _norm_modulo(a::nf_elem, n::fmpz)
   
   K = parent(a)
-  s = gcd(n, denominator(a))
+  s, t = ppio(denominator(a), n)
   if s == 1
     R = ResidueRing(FlintZZ, n, cached = false)
     Rx, x = PolynomialRing(R, "x", cached = false)
@@ -476,7 +476,7 @@ end
 
 
 function is_norm_divisible(a::nf_elem, n::fmpz)
-  return iszero(norm_modulo(a, n))  
+  return iszero(_norm_modulo(a, n))  
 end
 
 function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p::fmpz)
@@ -563,16 +563,26 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
       #@vtime :NfOrd 1 is_norm_divisible(u.elem_in_nf, modulo)
       #@vtime :NfOrd 1 iszero(mod(norm(u), modulo))
       
-      if !is_norm_divisible(u.elem_in_nf, modulo)#iszero(mod(norm(u), modulo))
+      #if !iszero(mod(norm(u), modulo))
+      if !is_norm_divisible(u.elem_in_nf, modulo)
+      #    @show O, u.elem_in_nf, modulo
+      #  end
         x = u
-      elseif !is_norm_divisible(u.elem_in_nf+p, modulo)#iszero(mod(norm(u+p), modulo))
+      elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
+      # if !iszero(mod(norm(u+p), modulo))
+      #          @show O, u.elem_in_nf+p, modulo
+      #  end
         x = u + p
-      elseif !is_norm_divisible(u.elem_in_nf-p, modulo)#iszero(mod(norm(u-p), modulo))
+      elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
+      # if !iszero(mod(norm(u-p), modulo))
+      #          @show O, u.elem_in_nf-p, modulo
+      # end
         x = u - p
       else
         Ba = basis(P, Val{false})
         for i in 1:degree(O)
-          if !iszero(mod(norm(v*Ba[i] + u), modulo))
+          if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+          #if !iszero(mod(norm(v*Ba[i] + u), modulo))
             x = v*Ba[i] + u
             break
           end

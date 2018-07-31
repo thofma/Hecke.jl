@@ -84,10 +84,31 @@ end
 #
 ################################################################################
 doc"""
-    intersect_nonindex(f::Map, P::NfOrdIdl) -> NfOrdIdl
+    intersect(f::Map, P::NfOrdIdl) -> NfOrdIdl
 > Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
 > of number fields, find the unique prime $p$ in $k$ below.
 """
+
+function intersect(f::Map, P::NfOrdIdl)
+  
+  p = minimum(P)
+  k = domain(f)
+  Ok = maximal_order(k)
+  if index(Ok) % p != 0
+    return intersect_nonindex(f, P)
+  end
+  d = degree(P)
+  lp = prime_decomposition(Ok, p, d, 1)
+  for (Q, v) in lp
+    el = Q.gen_two
+    if f(K(el)) in P
+      return Q
+    end
+  end
+  error("Restriction not found!")
+
+end
+
 function intersect_nonindex(f::Map, P::NfOrdIdl)
   @assert P.is_prime == 1
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive

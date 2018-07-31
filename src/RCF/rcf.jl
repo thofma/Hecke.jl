@@ -10,30 +10,7 @@ function kummer_extension(n::Int, gen::Array{nf_elem, 1})
   return kummer_extension(n, g)
 end
 
-function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
-  @assert iskummer_extension(K)
-  k = base_ring(K)
-  Zk = maximal_order(k)
-  zeta, ord = Hecke.torsion_units_gen_order(Zk)
-  @assert ord % degree(K) == 0
-  zeta = k(zeta)^div(ord, degree(K))
 
-  im_zeta = h(zeta)
-  r = 1
-  z = zeta
-  while im_zeta != z
-    r += 1
-    z *= zeta
-  end
-
-  a = -coeff(K.pol, 0)
-  a = a^r//h(a) # this assumes K/k to be abelian
-  #global last_rt = (a, degree(K))
-  fl, b = hasroot(a, degree(K))
-  @assert fl
-
-  return NfRelToNfRelMor(K, K, h, 1//b*gen(K)^r)
-end
 
 ###############################################################################
 #
@@ -327,7 +304,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   sR = Array{GrpAbFinGenElem, 1}(length(lp))
 
   for i=1:length(lp)
-    p = Id_Zk(intersect_nonindex(mp, lp[i]))
+    p = Id_Zk(intersect(mp, lp[i]))
     sR[i]= valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
   end
   @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
@@ -597,6 +574,31 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   CF.AutR = AutA_rel
   return nothing
   
+end
+
+function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
+  @assert iskummer_extension(K)
+  k = base_ring(K)
+  Zk = maximal_order(k)
+  zeta, ord = Hecke.torsion_units_gen_order(Zk)
+  @assert ord % degree(K) == 0
+  zeta = k(zeta)^div(ord, degree(K))
+
+  im_zeta = h(zeta)
+  r = 1
+  z = zeta
+  while im_zeta != z
+    r += 1
+    z *= zeta
+  end
+
+  a = -coeff(K.pol, 0)
+  a = a^r//h(a) # this assumes K/k to be abelian
+  #global last_rt = (a, degree(K))
+  fl, b = hasroot(a, degree(K))
+  @assert fl
+
+  return NfRelToNfRelMor(K, K, h, 1//b*gen(K)^r)
 end
 
 function _rcf_descent(CF::ClassField_pp)
@@ -1074,6 +1076,23 @@ function rel_auto(A::ClassField)
     push!(Aut, NfRel_nsToNfRel_nsMor(K, K, [j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)]))
   end
   return Aut
+end
+
+
+function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)
+  
+  K = domain(tau)
+  @assert K == base_ring(C.Kr)
+  g = C.Kr.pol
+  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])
+  i = 1
+  z = gen(C.Kr)
+  while gcd(i, C.n) != 1 || !iszero(tau_g(z))
+    i *= 1
+    z *= gen(C.Kr) 
+  end
+  return NfRelToNfRelMor(C.Kr, C.Kr, tau, z)
+  
 end
 
 function extend_aut(A::ClassField, tau::T) where T <: Map
