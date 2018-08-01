@@ -84,22 +84,22 @@ function poverorders_from_multipliers(O::NfOrd, p::fmpz)
   return orders
 end
 
-function poverorders(O::NfOrd, p::fmpz)
-  to_enlarge = typeof(O)[O]
-  current = Dict{fmpz, Vector{typeof(O)}}
-  while length(to_enlarge) > 0
-    N = pop!(to_enlarge)
-    new = poverorders_from_multipliers(N, p)
-    for S in N
-      H = hnf(basis_mat(S, Val{false}))
-      ind = index(S)
-      if haskey(current, ind)
-        if
-        end
-      end
-    end
-  end
-end
+#function poverorders(O::NfOrd, p::fmpz)
+#  to_enlarge = typeof(O)[O]
+#  current = Dict{fmpz, Vector{typeof(O)}}
+#  while length(to_enlarge) > 0
+#    N = pop!(to_enlarge)
+#    new = poverorders_from_multipliers(N, p)
+#    for S in N
+#      H = hnf(basis_mat(S, Val{false}))
+#      ind = index(S)
+#      if haskey(current, ind)
+#        if
+#        end
+#      end
+#    end
+#  end
+#end
 
 function _overorders_meataxe(O::NfOrd, M::NfOrd)
   K = nf(O)
