@@ -639,7 +639,7 @@ Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
 whether $B$ defines an order.
 """
 function Order(::S, a::Array{T, 1}, check::Bool = true,
-               cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T}
+               cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
   K = parent(a[1])
   if check
     b, bmat, bmat_inv, _ = defines_order(K, a)
@@ -1678,3 +1678,44 @@ function TameOverorderBL(O::NfOrd, lp::Array{fmpz,1}=fmpz[])
   return OO, Q
 
 end
+
+################################################################################
+#
+#  Conductor
+#
+################################################################################
+
+# TODO: This can be improved by building the matrix N more clever and using
+#       a modular HNF algorithm.
+doc"""
+    conductor(R::NfOrd, S::NfOrd) -> NfAbsOrdIdl
+> The conductor $\{x \in S | xS\subseteq R\}$
+> for orders $R\subseteq S$.
+"""
+function conductor(R::NfOrd, S::NfOrd)
+  n = degree(R)
+  t = basis_mat(R, Val{false}) * basis_mat_inv(S, Val{false})
+  @assert isone(t.den)
+  basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
+  M = zero_matrix(FlintZZ, n^2, n)
+  B = basis(S, Val{false})
+  for k in 1:n
+    a = B[k]
+    N = representation_matrix(S(a.elem_in_nf, false)) * basis_mat_R_in_S_inv_num
+    for i in 1:n
+      for j in 1:n
+        M[(k - 1)*n + i, j] = N[j, i]
+      end
+    end
+  end
+  H = sub(hnf(M), 1:n, 1:n)
+  Hinv, new_den = pseudo_inv(transpose(H))
+  Hinv = Hinv * basis_mat_R_in_S_inv_num
+  return ideal(R, divexact(Hinv, new_den))
+end
+
+doc"""
+    conductor(R::NfOrd) -> NfAbsOrdIdl
+> The conductor of $R$ in the maximal order.
+"""
+conductor(R::NfOrd) = conductor(R, maximal_order(R))
