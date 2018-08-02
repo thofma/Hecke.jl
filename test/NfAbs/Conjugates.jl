@@ -91,3 +91,17 @@ end
   @test_throws ErrorException Hecke._signs(0*a1)
 end
 
+@testset "complex_conjugation" begin
+  K, a = cyclotomic_field(5)
+  aut = @inferred complex_conjugation(K)
+  @test aut(a) == a^-1
+
+  K, a = cyclotomic_field(29)
+  aut = @inferred complex_conjugation(K)
+  @test aut(a) == a^-1
+
+  K, a = cyclotomic_field(13)
+  aut = @inferred complex_conjugation(K)
+  @test aut(a) == a^-1
+end
+

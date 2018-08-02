@@ -1,4 +1,5 @@
-export istotally_real, istotally_complex, conjugates, conjugates_real, conjugates_complex, conjugates_log
+export istotally_real, istotally_complex, conjugates, conjugates_real,
+       conjugates_complex, conjugates_log, complex_conjugation
 
 ################################################################################
 #
@@ -413,4 +414,56 @@ function _signs(a::FacElem{nf_elem, AnticNumberField})
     s .*= _signs(k)
   end
   return s
+end
+
+doc"""
+    complex_conjugation(K::AnticNumberField)
+
+Given a totally complex normal number field, this function returns the
+automorphism which is the restrition of complex conjugation.
+"""
+function complex_conjugation(K::AnticNumberField)
+  A = automorphisms(K)
+  if length(A) < degree(K)
+    error("Number field must be normal")
+  end
+  a = gen(K)
+  d = degree(K)
+  !istotally_complex(K) && error("Number field must be totally complex")
+  imgs = Vector{nf_elem}(d)
+
+  for i in 1:d
+    imgs[i] = A[i](a)
+  end
+
+  p = 32 
+
+  while true
+    c = conjugates(a, p)
+    cc = Vector{acb}[ conj.(conjugates(imgs[i], p)) for i in 1:d ]
+    for i in 1:d
+      if !overlaps(c[d], cc[i][d])
+        continue
+      end
+      found = true
+      for j in 1:d
+        if j == i
+          continue
+        end
+        if overlaps(c[d], cc[j][d])
+          found = false
+          break
+        end
+      end
+      if !found
+        continue
+      else
+        return A[i]
+      end
+    end
+    p = 2 * p
+    if p > 2^18
+      error("Precision too high in complex_conjugation")
+    end
+  end
 end
