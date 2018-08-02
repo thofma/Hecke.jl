@@ -329,4 +329,15 @@
     O_KK = maximal_order(KK)
     @test discriminant(O_KK) == -82506874955368517242637353371059355648
   end
+
+  @testset "Conductor" begin
+    f = x^7 - 1000*x^2 + 1000*x - 1000
+    K, a = NumberField(f,"a");
+    E = Order(K, [1, a, a^2, a^3, a^4, 1//5*a^5, 1//5*a^6])
+    lP = prime_ideals_over(E, 5)
+    @test length(lP) == 1
+    P = lP[1]
+    Emult = ring_of_multipliers(P)
+    @test conductor(E, Emult) == P
+  end
 end

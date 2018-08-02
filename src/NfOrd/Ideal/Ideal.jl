@@ -1489,62 +1489,11 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
   end
 end
 
-doc"""
-    conductor(R::NfOrd, S::NfOrd) -> NfAbsOrdIdl
-> The conductor $\{x \in S | xS\subseteq R\}$
-> for orders $R\subseteq S$.
-"""
-function conductor(R::NfOrd, S::NfOrd)
-  #=
-     rS in R
-     S = sum s_i ZZ, so this means
-     r s_i in R for all i
-
-     so need rep mat of s_i as elements(?) of R
-
-     basis_mat: is from nf (equation order) -> ord
-       ie. it comtains the basis elements of ord as elements of the field
-     basis_mat_inv: the basis of the field as elements of the order
-
-     so to get basis of S relative to R we need
-       basis_mat(S)*basis_mat_inv(R)
-  =#   
-  bmS = basis_mat(S) * basis_mat_inv(R)
-
-  n = FakeFmpqMat(representation_matrix(elem_from_mat_row(R, numerator(bmS), 1)), denominator(bmS))
-  m = numerator(n)
-  d = denominator(n)
-  for i in 2:degree(R)
-    n = FakeFmpqMat(representation_matrix(elem_from_mat_row(R, numerator(bmS), i)), denominator(bmS))
-    l = lcm(denominator(n), d)
-    if l==d
-      m = hcat(m, numerator(n))
-    else
-      m = hcat(m*div(l, d), numerator(n)*div(l, denominator(n)))
-      d = l
-    end
-  end
-  m = hnf(transpose(m))
-  # n is upper right HNF
-  m = transpose(sub(m, 1:degree(R), 1:degree(R)))
-  b, l = pseudo_inv(m)
-  n = FakeFmpqMat(b*d, l)
-  @assert denominator(n) == 1
-  return ideal(R, numerator(n), true)
-end
-
-doc"""
-    conductor(R::NfOrd) -> NfAbsOrdIdl
-> The conductor of $R$ in the maximal order.
-"""
-conductor(R::NfOrd) = conductor(R, maximal_order(R))
-
 #for consistency
 
 maximal_order(R::NfOrd) = MaximalOrder(R)
 
 equation_order(K::AnticNumberField) = EquationOrder(K)
-
 
 ################################################################################
 #

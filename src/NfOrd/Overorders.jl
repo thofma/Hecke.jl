@@ -57,7 +57,7 @@ function poverorders_meataxe(O::NfOrd, p::Integer)
   return poverorders_meataxe(O, fmpz(p))
 end
 
-function minimal_poverorders(O::NfOrd, p::fmpz)
+function minimal_poverorders_naive(O::NfOrd, p::fmpz)
   orders = poverorders_meataxe(O, p)
   res = Vector{typeof(O)}()
   for S in orders
@@ -67,6 +67,109 @@ function minimal_poverorders(O::NfOrd, p::fmpz)
   end
   return res
 end
+
+function poverorders_from_multipliers(O::NfOrd, p::fmpz)
+  M = maximal_order(nf(O))
+  lP = prime_ideals_over(O, p)
+  orders = typeof(O)[]
+  for P in lP
+    E = ring_of_multipliers(P)
+    if index(E) != index(O)
+      append!(orders, _overorders_meataxe(O, E))
+    end
+  end
+  if length(orders) == 0
+    push!(orders, O)
+  end
+  return orders
+end
+
+#function poverorders(O::NfOrd, p::fmpz)
+#  to_enlarge = typeof(O)[O]
+#  current = Dict{fmpz, Vector{typeof(O)}}
+#  while length(to_enlarge) > 0
+#    N = pop!(to_enlarge)
+#    new = poverorders_from_multipliers(N, p)
+#    for S in N
+#      H = hnf(basis_mat(S, Val{false}))
+#      ind = index(S)
+#      if haskey(current, ind)
+#        if
+#        end
+#      end
+#    end
+#  end
+#end
+
+function _overorders_meataxe(O::NfOrd, M::NfOrd)
+  K = nf(O)
+  d = degree(O)
+  B = zero_matrix(FlintZZ, d, d)
+  orders = Vector{typeof(O)}()
+  for i in 1:d
+    v = elem_in_basis(M(elem_in_nf(basis(O)[i])))
+    for j in 1:d
+      B[i, j] = v[j]
+    end
+  end
+  S::fmpz_mat, U::fmpz_mat, V::fmpz_mat = snf_with_transform(B, true, true)
+  Vinv = inv(V)
+  basis_O = basis(O)
+  basis_M = basis(M)
+  new_basis_O = Vector{nf_elem}(d)
+  new_basis_M = Vector{nf_elem}(d)
+  for i in 1:d
+    new_basis_O[i] = elem_in_nf(sum(U[i, j] * basis_O[j] for j in 1:d))
+  end
+
+  for i in 1:d
+    new_basis_M[i] = elem_in_nf(sum(Vinv[i, j] * basis_M[j] for j in 1:d))
+  end
+
+  new_basis_mat_M_inv = inv(basis_mat(new_basis_M))
+
+  autos = GrpAbFinGenMap[]
+
+  A = DiagonalGroup(fmpz[ S[i, i] for i in 1:d])
+
+  for i in 1:d
+    b = new_basis_O[i]
+    m = zero_matrix(FlintZZ, d, d)
+    for j in 1:d
+      v = elem_in_nf(M(b* new_basis_M[j]))
+      t = O.tcontain
+      elem_to_mat_row!(t.num, 1, t.den, v)
+      t = mul!(t, t, new_basis_mat_M_inv)
+      # I need the representation with respect to new_basis_M
+      for k in 1:d
+        m[j, k] = t.num[1, k]
+      end
+    end
+    push!(autos, hom(A, A, m))
+  end
+    
+  potential_basis = Vector{nf_elem}(d)
+
+  subs = stable_subgroups(A, autos)
+  for s in subs
+    T = image(s[2])
+    G = domain(T[2])
+    for i in 1:d
+      v = T[2](G[i]).coeff
+      if iszero(v)
+        potential_basis[i] = new_basis_O[i]
+      else
+        potential_basis[i] = sum(v[1, j] * new_basis_M[j] for j in 1:d)
+      end
+    end
+    b, bmat = defines_order(K, deepcopy(potential_basis))
+    if b 
+      push!(orders, Order(K, bmat))
+    end
+  end
+  return orders
+end
+
 
 function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O, p))
   K = nf(O)
@@ -172,6 +275,8 @@ Returns all overorders of $\mathcal O$.
 function overorders(O::NfOrd)
   return overorders_meataxe(O)
 end
+
+prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
 
 function prime_ideals_over(O::NfOrd, p::fmpz)
   M = maximal_order(O)
