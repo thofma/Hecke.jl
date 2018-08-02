@@ -628,7 +628,7 @@ end
 
 ################################################################################
 #
-#  Construction
+#  Construction of orders
 #
 ################################################################################
 
@@ -1004,6 +1004,12 @@ function pmaximal_overorder(O::NfAbsOrd, p::Integer)
   return pmaximal_overorder(O, fmpz(p))
 end
 
+###############################################################################
+#
+#  Maximal Order interface
+#
+###############################################################################
+
 function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   OO = deepcopy(O)
   disc = abs(discriminant(O))
@@ -1049,75 +1055,6 @@ function MaximalOrder(O::NfAbsOrd)
   OO.ismaximal = 1
   return OO
 end
-
-###############################################################################
-#
-#  Some LLL-related functions
-#
-###############################################################################
-
-# don't know what this is doing
-#for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
-
-function _lll_gram(M::NfOrd)
-  K = nf(M)
-  @assert istotally_real(K)
-  g = trace_matrix(M)
-
-  q,w = lll_gram_with_transform(g)
-  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
-  On.ismaximal = M.ismaximal
-  return On
-end
-
-doc"""
-    lll_basis(M::NfOrd) -> Array{nf_elem, 1}
-> A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
-"""
-function lll_basis(M::NfOrd)
-  I = ideal(M, parent(basis_mat(M, Val{false}).num)(1))
-  return lll_basis(I)
-end
-
-doc"""
-    lll(M::NfOrd) -> NfOrd
-> The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
-"""
-function lll(M::NfOrd)
-  K = nf(M)
-
-  if istotally_real(K)
-    return _lll_gram(M)
-  end
-
-  I = ideal(M, 1)
-
-  prec = 100
-  while true
-    try
-      q,w = lll(I, parent(basis_mat(M, Val{false}).num)(0), prec = prec)
-      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
-      On.ismaximal = M.ismaximal
-      return On
-    catch e
-      if isa(e, LowPrecisionLLL)
-        prec = Int(round(prec*1.2))
-        #if prec>1000
-        #  error("precision too large in LLL");
-        #end
-        continue;
-      else
-        rethrow(e)
-      end
-    end
-  end
-end
-
-################################################################################
-#
-#  Constructors for users
-#
-################################################################################
 
 doc"""
 ***
@@ -1210,6 +1147,69 @@ order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
 this function returns the maximal order of $K$.
 """
 ring_of_integers(x...) = maximal_order(x...)
+
+###############################################################################
+#
+#  Some LLL-related functions
+#
+###############################################################################
+
+# don't know what this is doing
+#for totally real field, the T_2-Gram matrix is the trace matrix, hence exact.
+
+function _lll_gram(M::NfOrd)
+  K = nf(M)
+  @assert istotally_real(K)
+  g = trace_matrix(M)
+
+  q,w = lll_gram_with_transform(g)
+  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
+  On.ismaximal = M.ismaximal
+  return On
+end
+
+doc"""
+    lll_basis(M::NfOrd) -> Array{nf_elem, 1}
+> A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
+"""
+function lll_basis(M::NfOrd)
+  I = ideal(M, parent(basis_mat(M, Val{false}).num)(1))
+  return lll_basis(I)
+end
+
+doc"""
+    lll(M::NfOrd) -> NfOrd
+> The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
+"""
+function lll(M::NfOrd)
+  K = nf(M)
+
+  if istotally_real(K)
+    return _lll_gram(M)
+  end
+
+  I = ideal(M, 1)
+
+  prec = 100
+  while true
+    try
+      q,w = lll(I, parent(basis_mat(M, Val{false}).num)(0), prec = prec)
+      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
+      On.ismaximal = M.ismaximal
+      return On
+    catch e
+      if isa(e, LowPrecisionLLL)
+        prec = Int(round(prec*1.2))
+        #if prec>1000
+        #  error("precision too large in LLL");
+        #end
+        continue;
+      else
+        rethrow(e)
+      end
+    end
+  end
+end
 
 ################################################################################
 #
@@ -1398,7 +1398,7 @@ function new_maximal_order(K::AnticNumberField)
     end
   end
   O1.ismaximal=1
-  return O1
+  return O1::NfOrd
   
 end
 

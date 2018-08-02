@@ -520,7 +520,7 @@ function isirreducible(f::PolyElem{nf_elem})
       if length(s) == 0
         s = d
       else
-        s = intersect(s, d)
+        s = Base.intersect(s, d)
       end
       if length(s) == 1
         return true
@@ -576,7 +576,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
     return s
   end
   for i=2:length(fp)
-    s = intersect(s, _ds(factor(Rt(fp[i]))))
+    s = Base.intersect(s, _ds(factor(Rt(fp[i]))))
     if length(s) == 1
       return s
     end

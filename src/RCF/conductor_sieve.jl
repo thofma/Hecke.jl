@@ -267,7 +267,7 @@ function tame_conductors_degree_2(O::NfOrd, bound::fmpz)
   
 end
 
-function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int ; coprime_to::Array{fmpz,1}=fmpz[])
+function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array{fmpz,1}=fmpz[])
   
   sqf= trues(n)
   primes= trues(n)

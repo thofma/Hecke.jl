@@ -1760,14 +1760,25 @@ end
 #  Sturm sequence
 #
 ###############################################################################
+
 #See Wikipedia as a reference
-function sturm_sequence(f::fmpq_poly)
+function _divide_by_content(f::fmpz_poly)
+  
+  p = primpart(f)
+  if sign(lead(f))== sign(lead(p))
+    return p
+  else
+    return -p
+  end
+end
+
+function sturm_sequence(f::fmpz_poly)
 
   g = f
-  h = derivative(g)
-  seq = fmpq_poly[g,h]
+  h = _divide_by_content(derivative(g))
+  seq = fmpz_poly[g,h]
   while true
-    r = rem(g,h)
+    r = _divide_by_content(pseudorem(g,h))
     if r != 0
       push!(seq, -r)
       g, h = h, -r
@@ -1779,7 +1790,7 @@ function sturm_sequence(f::fmpq_poly)
 
 end
 
-function _number_changes(a::Array{fmpz,1})
+function _number_changes(a::Array{Int,1})
 
   nc = 0
   filter!(x -> x != 0, a)
@@ -1794,14 +1805,13 @@ end
 
 function number_positive_roots(f::fmpz_poly)
 
-  Qx, x = PolynomialRing(FlintQQ, "z")
-  f1 = Qx(f)
-  s = sturm_sequence(f1)
-  evinf = fmpz[numerator(coeff(x, degree(x))) for x in s]
-  ev0 = fmpz[numerator(coeff(x,0)) for x in s]
+  s = sturm_sequence(f)
+  evinf = Int[sign(coeff(x, degree(x))) for x in s]
+  ev0 = Int[sign(coeff(x,0)) for x in s]
   return _number_changes(ev0)-_number_changes(evinf)
 
 end
+
 ################################################################################
 #
 #  Squarefree factorization for fmpz_poly

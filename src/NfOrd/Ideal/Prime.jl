@@ -89,7 +89,7 @@ doc"""
 > of number fields, find the unique prime $p$ in $k$ below.
 """
 
-function intersect(f::Map, P::NfOrdIdl)
+function intersect_prime(f::Map, P::NfOrdIdl)
   
   p = minimum(P)
   k = domain(f)

@@ -983,7 +983,7 @@ function schur_index_at_real_plc(O::AlgAssOrd)
   
   x=trace_signature(O)
   n=root(O.dim,2)
-  if x[1]==divexact(n*(n+1),2)
+  if x[1] == divexact(n*(n+1),2)
     return 1
   else
     return 2
@@ -994,15 +994,14 @@ end
 
 function trace_signature(O::AlgAssOrd)
   
-  M=redtrace_mat(O)
-  # This can be improved using Sturm sequences
+  @vtime :CSAMaxOrd 1 M = redtrace_mat(O)
   Zx, x = PolynomialRing(FlintZZ, "x")
   Qy, y = PolynomialRing(FlintQQ, "y")
-  f = charpoly(Zx, M)
-  fac = factor_squarefree(Qy(f))
+  @vtime :CSAMaxOrd 1 f = charpoly(Zx, M)
+  @vtime :CSAMaxOrd 1 fac = factor_squarefree(Qy(f))
   npos = 0
   for (t,e) in fac
-    a = number_positive_roots(Zx(t))
+    @vtime :CSAMaxOrd a = number_positive_roots(Zx(t))
     npos += a*e 
   end
   return (npos, degree(f) - npos)
@@ -1275,7 +1274,7 @@ function issplit(A::AlgAss)
   fac = factor(root(abs(discriminant(O)),2))
   for (p,j) in fac
     O1 = pmaximal_overorder(O, Int(p))
-    if valuation(O1.disc, Int(p))!=0
+    if valuation(O1.disc, Int(p)) != 0
       return false
     end
   end

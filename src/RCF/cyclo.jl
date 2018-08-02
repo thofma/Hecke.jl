@@ -27,7 +27,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Ac = Hecke._get_cyclotomic_ext_nf(k)
     for i = Ac
       if i.n == n
-        return i
+        return i::CyclotomicExt
       end
     end
   catch e

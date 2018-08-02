@@ -10,7 +10,79 @@ function kummer_extension(n::Int, gen::Array{nf_elem, 1})
   return kummer_extension(n, g)
 end
 
+###############################################################################
+#
+#  Ray Class Field, number_field interface and reduction to prime power case
+#
+###############################################################################
 
+#doc"""
+#    ray_class_field(m::Map) -> ClassField
+#> Creates the (formal) abelian extension defined by the map $m: A \to I$
+#> where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
+#> is a quotient of the ray class group (or class group).
+#> If $p$ is given and non-zero, only the quotient modulo $p$-th powers is
+#> created.
+#"""
+function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
+  return ray_class_field(m, GrpAbFinGenMap(domain(m)))
+end
+
+function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap)
+  CF = ClassField()
+  CF.rayclassgroupmap = m
+  S, mS = snf(codomain(quomap))
+  CF.quotientmap = Hecke._compose(inv(mS), quomap)
+  #CF.mq = Hecke.make_snf(Hecke._compose(m, inv(quomap)))
+  return CF
+end
+
+doc"""
+    number_field(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
+> Given a (formal) abelian extension, compute the class field by
+> finding defining polynomials
+> for all prime power cyclic subfields.
+> Note, by type this is always a non-simple extension.
+"""
+function number_field(CF::ClassField)
+  if isdefined(CF, :A)
+    return CF.A
+  end
+  
+  res = ClassField_pp[]
+  G = codomain(CF.quotientmap)
+  @assert issnf(G)
+  q = [G[i] for i=1:ngens(G)]
+  for i=1:ngens(G)
+    o = order(G[i])
+    lo = factor(o)
+    for (p, e) = lo.fac
+      q[i] = p^e*G[i]
+      S, mQ = quo(G, q, false)
+      push!(res, ray_class_field_cyclic_pp(CF, mQ))
+    end
+    q[i] = G[i]
+  end
+  CF.cyc = res
+  CF.A = number_field([x.A.pol for x = CF.cyc])[1]
+  return CF.A
+end
+
+function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
+  @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
+  CFpp = ClassField_pp()
+  #CFpp.mq = _compose(CF.mq, inv(mQ))
+  CFpp.quotientmap = _compose(mQ, CF.quotientmap)
+  CFpp.rayclassgroupmap = CF.rayclassgroupmap
+  @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
+  @vprint :ClassField 1 "finding the Kummer extension...\n"
+  _rcf_find_kummer(CFpp)
+  @vprint :ClassField 1 "reducing the generator...\n"
+  _rcf_reduce(CFpp)
+  @vprint :ClassField 1 "descending ...\n"
+  _rcf_descent(CFpp)
+  return CFpp
+end
 
 ###############################################################################
 #
@@ -22,6 +94,7 @@ end
 #K is an extension of k, p a prime in k,
 #returns a vector in (Z/nZ)^r representing the Frob
 function can_frobenius(p::NfOrdIdl, K::KummerExt)
+  @assert norm(p) % K.n == 1
   if haskey(K.frob_cache, p)
     return K.frob_cache[p]
   end
@@ -45,7 +118,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
   z_p = inv(mF(Zk(K.zeta)))
-  @assert norm(p) % K.n == 1
+
   ex = div(norm(p)-1, K.n)
   aut = Array{fmpz,1}(length(K.gen))
   for j=1:length(K.gen)
@@ -119,10 +192,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   q, mq = quo(R, sR, false)
   while true
     p, st = next(S, st)
-    if cp % p == 0
-      continue
-    end
-    if index(ZK) % p ==0
+    if cp % p == 0 || index(ZK) % p ==0
       continue
     end
     @vprint :ClassField 2 "doin` $p\n"
@@ -158,80 +228,6 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   
 end
 
-
-###############################################################################
-#
-#  Ray Class Field, number_field interface and reduction to prime power case
-#
-###############################################################################
-
-#doc"""
-#    ray_class_field(m::Map, p::Int=0) -> ClassField
-#> Creates the (formal) abelian extension defined by the map $m: A \to I$
-#> where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
-#> is a quotient of the ray class group (or class group).
-#> If $p$ is given and non-zero, only the quotient modulo $p$-th powers is
-#> created.
-#"""
-function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
-  return ray_class_field(m, GrpAbFinGenMap(domain(m)))
-end
-
-function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap)
-  CF = ClassField()
-  CF.rayclassgroupmap = m
-  S, mS = snf(codomain(quomap))
-  CF.quotientmap = Hecke._compose(inv(mS), quomap)
-  #CF.mq = Hecke.make_snf(Hecke._compose(m, inv(quomap)))
-  return CF
-end
-
-doc"""
-    number_field(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
-> Given a (formal) abelian extension, compute the class field by
-> finding defining polynomials
-> for all prime power cyclic subfields.
-> Note, by type this is always a non-simple extension.
-"""
-function number_field(CF::ClassField)
-  if isdefined(CF, :A)
-    return CF.A
-  end
-  
-  res = ClassField_pp[]
-  G = codomain(CF.quotientmap)
-  @assert issnf(G)
-  q = [G[i] for i=1:ngens(G)]
-  for i=1:ngens(G)
-    o = order(G[i])
-    lo = factor(o)
-    for (p, e) = lo.fac
-      q[i] = p^e*G[i]
-      S, mQ = quo(G, q, false)
-      push!(res, ray_class_field_cyclic_pp(CF, mQ))
-    end
-    q[i] = G[i]
-  end
-  CF.cyc = res
-  CF.A = number_field([x.A.pol for x = CF.cyc])[1]
-  return CF.A
-end
-
-function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
-  @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
-  CFpp = ClassField_pp()
-  #CFpp.mq = _compose(CF.mq, inv(mQ))
-  CFpp.quotientmap = _compose(mQ, CF.quotientmap)
-  CFpp.rayclassgroupmap = CF.rayclassgroupmap
-  @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
-  @vprint :ClassField 1 "finding the Kummer extension...\n"
-  _rcf_find_kummer(CFpp)
-  @vprint :ClassField 1 "reducing the generator...\n"
-  _rcf_reduce(CFpp)
-  @vprint :ClassField 1 "descending ...\n"
-  _rcf_descent(CFpp)
-  return CFpp
-end
 
 
 ###############################################################################
@@ -304,7 +300,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   sR = Array{GrpAbFinGenElem, 1}(length(lp))
 
   for i=1:length(lp)
-    p = Id_Zk(intersect(mp, lp[i]))
+    p = Id_Zk(intersect_nonindex(mp, lp[i]))
     sR[i]= valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
   end
   @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
@@ -316,16 +312,61 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   return h
 end
 
+function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
+  #This function finds a set S of primes such that we can find a Kummer generator in it.
+  lP = Hecke.NfOrdIdl[]
+  if f!=1
+    lf = factor(f)  
+    for p = keys(lf.fac)
+       #I have to remove the primes that can't be in the conductor
+       lp = prime_decomposition(ZK, p)  #TODO: make it work for fmpz
+       for (P, s) in lp
+         if gcd(norm(P), e) != 1 || gcd(norm(P)-1, e) != 1
+           push!(lP, P)
+         end 
+       end
+    end
+  end
+  g = GrpAbFinGenElem[preimage(mc, x) for x = lP]
+
+  q, mq = quo(domain(mc), g, false)
+  mc = compose(inv(mq), mc)
+  
+  lP = vcat(lP, find_gens(inv(mc), PrimesSet(100, -1))[1])
+  @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
+#if false
+#  println("enlarging to be Galois closed - just in case...", length(lP))
+#  lP = Set(lP)
+#  _lp = Set(minimum(x) for x = lP)
+#  for p = _lp
+#    fp = prime_decomposition(ZK, Int(p))
+#    for I = fp
+#      push!(lP, I[1])
+#    end
+#  end
+#  lP = collect(lP)
+#  println("finally:", length(lP))
+#end
+  if isempty(lP)
+    U, mU = unit_group_fac_elem(ZK)
+    @vtime :ClassField 2 KK = kummer_extension(e, [mU(U[i]) for i=1:ngens(U)])
+  else
+    @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
+    @vtime :ClassField 2 KK = kummer_extension(e, [mS(S[i]) for i=1:ngens(S)])
+  end
+  
+  return lP::Array{NfOrdIdl, 1}, KK
+end
+
 function _rcf_find_kummer(CF::ClassField_pp)
-  #mq = CF.mq
+
   if isdefined(CF, :K)
     return CF.K
   end
-  #f = _modulus(mq)
-  f = defining_modulus(CF)[1]
+  f = defining_modulus(CF)[1]::NfOrdIdl
   @vprint :ClassField 2 "Kummer extension ... with conductor(?) $f\n"
   k1 = nf(order(f))
-  e = degree(CF)  
+  e = degree(CF)::Int 
   @assert Hecke.isprime_power(e)
 
   @vprint :ClassField 2 "Adjoining the root of unity\n"
@@ -342,41 +383,9 @@ function _rcf_find_kummer(CF::ClassField_pp)
   c, mq = quo(c, e, false)
   mc = _compose(mc, inv(mq))
   
-  lf = factor(minimum(f)*e)
-  lP = Hecke.NfOrdIdl[]
-  #Furthermore, some of the factors of the modulus can be ignored, since 
-  #I am only considering the prime power part.
-  for p = keys(lf.fac)
-    lp = prime_decomposition(ZK, p)  #TODO: make it work for fmpz
-    lP = vcat(lP, [x[1] for x = lp])
-  end
-  g = GrpAbFinGenElem[preimage(mc, x) for x = lP]
-
-  q, mq = quo(c, g, false)
-  mc = compose(inv(mq), mc)
-  c = q
-
-  lP = vcat(lP, find_gens(inv(mc), PrimesSet(100, -1))[1])
-  @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
-#if false
-#  println("enlarging to be Galois closed - just in case...", length(lP))
-#  lP = Set(lP)
-#  _lp = Set(minimum(x) for x = lP)
-#  for p = _lp
-#    fp = prime_decomposition(ZK, Int(p))
-#    for I = fp
-#      push!(lP, I[1])
-#    end
-#  end
-#  lP = collect(lP)
-#  println("finally:", length(lP))
-#end
-  @vprint :ClassField 2 "using $lP of length $(length(lP)) for s-units\n"
-  @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
-  @vprint :ClassField 2 "... done\n"
-  @vtime :ClassField 2 KK = kummer_extension(e, [mS(S[i]) for i=1:ngens(S)])
+  lP, KK = _s_unit_for_kummer(mc, ZK, e, minimum(f))
   CF.bigK = KK
-
+  CF.sup = lP
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
   @vtime :ClassField 2 h = build_map(CF, KK, C)
   @vprint :ClassField 2 "... done\n"
@@ -384,6 +393,8 @@ function _rcf_find_kummer(CF::ClassField_pp)
   k, mk = kernel(h) 
   G = domain(h)
   
+  # Now, we find the kummer generator by considering the action 
+  # of the automorphisms on the s-units
   # x needs to be fixed by k
   # that means x needs to be in the kernel:
   # x = prod gen[1]^n[i] -> prod (z^a[i] gen[i])^n[i]
@@ -392,33 +403,25 @@ function _rcf_find_kummer(CF::ClassField_pp)
   # for all a in the kernel
   R = ResidueRing(FlintZZ, C.n, cached=false)
   M = MatrixSpace(R, ngens(k), ngens(G), false)(mk.map)
-  #=
-  M = zero_matrix(R, ngens(k), ngens(G))
-  for i=1:ngens(k)
-    ki = mk(k[i])
-    for j=1:ngens(G)
-      M[i, j] = ki[j]
-    end
-  end
-  =#
   i, l = nullspace(M)
   @assert i > 0
-  n = lift(l)
+  n::fmpz_mat = lift(l)
   N = GrpAbFinGen([e for j=1:rows(n)])
   s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i], false)
   ms = Hecke.make_snf(ms)
-  @hassert :ClassField 1 iscyclic(domain(ms))
-  o = Int(order(domain(ms)[1]))
+  H = domain(ms)
+  @hassert :ClassField 1 iscyclic(H)
+  o = Int(order(H))
   c = 1
   if o < e
     c = div(e, o)
   end
-  g = ms(domain(ms)[1])
+  g = ms(H[1])
   @vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = prod([KK.gen[i]^div(mod(n[i], e), c) for i=1:ngens(N)])
+  a = prod([KK.gen[i]^div(mod(g[i], e), c) for i=1:ngens(N)])
   @vprint :ClassField 2 "generator $a\n"
   CF.a = a
-  CF.sup = lP
+  
   CF.sup_known = true
   CF.o = o
 #  CF.K = pure_extension(Int(o), a)[1] #needs to evaluate a - too expensive!
@@ -426,23 +429,10 @@ function _rcf_find_kummer(CF::ClassField_pp)
 end
 
 
-function _rcf_reduce(CF::ClassField_pp)
-  #e = order(codomain(CF.quotientmap))
-  e = degree(CF)
-  if CF.sup_known
-    CF.a = reduce_mod_powers(CF.a, CF.o, CF.sup)
-    CF.sup_known = false
-  else
-    CF.a = reduce_mod_powers(CF.a, CF.o)
-  end
-  CF.K = pure_extension(CF.o, CF.a)[1]
-  return nothing
-end
-
 
 ###############################################################################
 #
-#  Reduce the generators and descent
+#  Descent to K
 #
 ###############################################################################
 
@@ -860,6 +850,25 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   z.header.preimage = _preimage
 
   return z
+end
+
+###############################################################################
+#
+#  Reduction of generators
+#
+###############################################################################
+
+function _rcf_reduce(CF::ClassField_pp)
+  #e = order(codomain(CF.quotientmap))
+  e = degree(CF)
+  if CF.sup_known
+    CF.a = reduce_mod_powers(CF.a, CF.o, CF.sup)
+    CF.sup_known = false
+  else
+    CF.a = reduce_mod_powers(CF.a, CF.o)
+  end
+  CF.K = pure_extension(CF.o, CF.a)[1]
+  return nothing
 end
 
 doc"""
