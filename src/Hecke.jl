@@ -217,7 +217,7 @@ function conjugate_data_arb(K::AnticNumberField)
   catch
     c = acb_root_ctx(K.pol)
     _set_nf_conjugate_data_arb(K, c)
-    return c
+    return c::acb_root_ctx
   end
 end
 

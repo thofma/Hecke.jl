@@ -84,22 +84,38 @@ function poverorders_from_multipliers(O::NfOrd, p::fmpz)
   return orders
 end
 
-#function poverorders(O::NfOrd, p::fmpz)
-#  to_enlarge = typeof(O)[O]
-#  current = Dict{fmpz, Vector{typeof(O)}}
-#  while length(to_enlarge) > 0
-#    N = pop!(to_enlarge)
-#    new = poverorders_from_multipliers(N, p)
-#    for S in N
-#      H = hnf(basis_mat(S, Val{false}))
-#      ind = index(S)
-#      if haskey(current, ind)
-#        if
-#        end
-#      end
-#    end
-#  end
-#end
+function poverorders(O::NfOrd, p::fmpz)
+  to_enlarge = typeof(O)[O]
+  current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
+  while length(to_enlarge) > 0
+    N = pop!(to_enlarge)
+    new = poverorders_from_multipliers(N, p)
+    for S in new
+      H = hnf(basis_mat(S, Val{false}))
+      ind = prod(H.num[i, i] for i in 1:degree(O))//H.den
+      if haskey(current, ind)
+        c = current[ind]
+        if haskey(c, H)
+          continue
+        else
+          c[H] = S
+          push!(to_enlarge, S)
+        end
+      else
+        c = Dict{FakeFmpqMat, typeof(O)}()
+        current[ind] = c
+        c[H] = S
+        push!(to_enlarge, S)
+      end
+    end
+  end
+  for d in values(current)
+    for e in values(d)
+      push!(to_enlarge, e)
+    end
+  end
+  return to_enlarge
+end
 
 function _overorders_meataxe(O::NfOrd, M::NfOrd)
   K = nf(O)
@@ -343,3 +359,21 @@ function intersection(x::NfOrd, y::NfOrd)
   return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_mat(x).num, basis_mat(x).den), :lowerleft), g))
 end
 
+# Overorders in case O is Bass
+# This is currently broken
+function poverorders_bass(O::NfOrd, p::fmpz)
+  lP = prime_decomposition(maximal_order(nf(O)), p)
+  M = basis_mat(O)
+  n = degree(O)
+  for (P, e) in lP
+    pi = uniformizer(P)
+    a = pi
+    for k in 1:2 
+      N, d = representation_matrix_q(a.elem_in_nf)
+      NN = FakeFmpqMat(vcat(M.num * d, N * M.den), d * M.den)
+      EE = Order(nf(O), sub(hnf(NN, :lowerleft), n + 1:2*n, 1:n))
+      @show EE
+      a = a * pi
+    end
+  end
+end

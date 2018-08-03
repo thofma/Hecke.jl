@@ -1641,7 +1641,13 @@ doc"""
 > subgroups of R such that the corresponding quotient has the required type.
 """
 
-function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Array{Int,1}=Int[-1]) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+
+  if quotype[1] != -1
+    if minimal
+      error("Cannot compute minimal submodules with prescribed quotient type")
+    end
+  end
   
   if quotype[1]!= -1
     c=lcm(quotype)
@@ -1701,7 +1707,11 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
         ind = length(quotype_p)
         plist = submodules(M, ind)
       else
-        plist = submodules(M)
+        if minimal
+          plist = minimal_submodules(M)
+        else
+          plist = submodules(M)
+        end
       end
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
 
@@ -1738,7 +1748,11 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
         end
         plist=submodules(M, typequo = quotype_p)
       else
-        plist = submodules(M)
+        if minimal
+          plist = minimal_submodules(M)
+        else
+          plist = submodules(M)
+        end
       end
       
       push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
