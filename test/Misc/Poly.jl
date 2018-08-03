@@ -5,7 +5,7 @@
     Zx, x = FlintZZ["x"]
     M = random_symmetric_matrix(s)
     f = charpoly(Zx, M)
-    while !issquarefree(f) && iszero(coeff(f, 0))
+    while !issquarefree(f) || iszero(coeff(f, 0))
       M = random_symmetric_matrix(s)
       f = charpoly(Zx, M)
     end
@@ -52,7 +52,6 @@
       end
     end
     return sgtpos == npos
-     
   end
 
   function random_symmetric_matrix(x::Int)
@@ -66,6 +65,7 @@
     end
     return M
   end
+
   for i = 1:20
     @test _test_sturm()
   end
