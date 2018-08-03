@@ -314,7 +314,7 @@
 
     @test discriminant(b) == 20
 
-    @test_throws ErrorException O4 + O4
+    @test O4 + O4 == O4
     @test (@inferred O6_2 + O6_2) isa NfOrd
   end
 

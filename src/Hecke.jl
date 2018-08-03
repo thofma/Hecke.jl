@@ -210,6 +210,14 @@ function __init__()
   global const flint_rand_ctx = flint_rand_state()
 end
 
+function _get_maximal_order(K::AnticNumberField)
+  return _get_maximal_order_of_nf(K)
+end
+
+function _set_maximal_order(K::AnticNumberField, O)
+  _set_maximal_order_of_nf(K, O)
+end
+
 function conjugate_data_arb(K::AnticNumberField)
   try
     c = _get_nf_conjugate_data_arb(K)::acb_root_ctx

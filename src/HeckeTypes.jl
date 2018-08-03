@@ -1899,6 +1899,7 @@ mutable struct NfAbsNS <: Nemo.Field
   basis#::Vector{NfAbsNSElem}
   degree::Int
   degrees::Vector{Int}
+  O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
 
   function NfAbsNS(f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
     r = new()

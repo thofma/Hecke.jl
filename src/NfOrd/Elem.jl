@@ -594,6 +594,39 @@ end
 #
 ################################################################################
 
+doc"""
+***
+    powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
+
+Returns an element $a^i$ modulo $m$.
+"""
+function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
+  if contains_equation_order(parent(a))
+    return powermod_fast(a, i, p)
+  else
+    return powermod_gen(a, i, p)
+  end
+end
+
+function powermod_gen(a::NfAbsOrdElem, i::fmpz, p::fmpz)
+  if i == 0 then
+    return one(parent(a))
+  end
+  if i == 1
+    b = mod(a,p)
+    return b
+  end
+  if mod(i,2) == 0
+    j = div(i, 2)
+    b = powermod(a, j, p)
+    b = b^2
+    b = mod(b,p)
+    return b
+  end
+  b = mod(a * powermod(a, i - 1, p), p)
+  return b
+end
+
 function _mod(b, p::fmpz)
   de = denominator(b)
   f, e = ppio(de, p)
@@ -602,13 +635,7 @@ function _mod(b, p::fmpz)
   return b
 end
 
-doc"""
-***
-    powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
-
-> Returns an element $a^i$ modulo $m$.
-"""
-function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
+function powermod_fast(a::NfAbsOrdElem, i::fmpz, p::fmpz)
   if i == 0
     return one(parent(a))
   end

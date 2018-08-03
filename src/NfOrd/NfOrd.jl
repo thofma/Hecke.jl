@@ -32,12 +32,12 @@
 #
 ################################################################################
 
-export ==, +, basis, basis_mat, basis_mat_inv, discriminant, degree, den,
-       gen_index, EquationOrder, index, isequation_order, isindex_divisor, lll,
-       lll_basis, maximal_order, MaximalOrder, minkowski_mat, nf,
-       norm_change_const, Order, parent, poverorder, pmaximal_overorder,
-       ring_of_integers, signature, trace_matrix, different, codifferent,
-       reduced_discriminant
+export ==, +, basis, basis_mat, basis_mat_inv, contains_eqaution_order,
+       discriminant, degree, den, gen_index, EquationOrder, index,
+       isequation_order, isindex_divisor, lll, lll_basis, maximal_order,
+       MaximalOrder, minkowski_mat, nf, norm_change_const, Order, parent,
+       poverorder, pmaximal_overorder, ring_of_integers, signature,
+       trace_matrix, different, codifferent, reduced_discriminant
 
 ################################################################################
 #
@@ -96,6 +96,8 @@ field.
 
 # The following function should actually do more!
 @inline ismaximal(O::NfAbsOrd) = O.ismaximal == 1
+
+contains_equation_order(O::NfAbsOrd) = isinteger(gen_index(O))
 
 ################################################################################
 #
@@ -888,7 +890,8 @@ equation order and have coprime index.
 """
 function +(a::NfAbsOrd, b::NfAbsOrd)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
-  if isone(gcd(index(a), index(b)))
+  if contains_equation_order(a) && contains_equation_order(b) &&
+          isone(gcd(index(a), index(b)))
     aB = basis_mat(a, Val{false})
     bB = basis_mat(b, Val{false})
     d = degree(a)
@@ -1010,7 +1013,15 @@ end
 #
 ###############################################################################
 
-function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
+#for consistency
+
+MaximalOrder(R::NfAbsOrd) = maximal_order(R)
+
+MaximalOrder(R::NfAbsOrd, A::Array) = maximal_order(R, A)
+
+equation_order(K::AnticNumberField) = EquationOrder(K)
+
+function maximal_order(O::NfOrd, primes::Array{fmpz, 1})
   OO = deepcopy(O)
   disc = abs(discriminant(O))
   for i in 1:length(primes)
@@ -1034,11 +1045,28 @@ end
 
 doc"""
 ***
-    MaximalOrder(K::NfOrd) -> NfOrd
+    MaximalOrder(O::NfOrd) -> NfOrd
 
-Returns the maximal order of $K$.
+Returns the maximal overorder of $O$.
 """
-function MaximalOrder(O::NfAbsOrd)
+function maximal_order(O::NfAbsOrd)
+  K = nf(O)
+  try
+    # First check if the number field knows its maximal order
+    M = _get_maximal_order(K)::typeof(O)
+    return M
+  catch e
+    if !isa(e, AccessorNotSetError) 
+      rethrow(e)
+    end
+    M = new_maximal_order(K)::typeof(O)
+    M.ismaximal = 1
+    _set_maximal_order(K, M)
+    return M
+  end
+end
+
+function maximal_order_round_four(O::NfAbsOrd)
   OO = deepcopy(O)
   @vtime :NfOrd fac = factor(Nemo.abs(discriminant(O)))
   for (p,j) in fac
@@ -1134,7 +1162,7 @@ function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
   return O
 end
 
-maximal_order(K::AnticNumberField, primes::Array{T, 1}) where {T} =
+maximal_order(K::AnticNumberField, primes::Array{T, 1}) where {T <: Integer} =
   maximal_order(K, map(FlintZZ, primes))
 
 doc"""
@@ -1340,6 +1368,10 @@ end
 #  Buchmann-Lenstra for the computation of maximal orders
 #
 ###############################################################################
+
+function new_maximal_order(K::NfAbsNS)
+  return maximal_order_round_four(EquationOrder(K))
+end
 
 function new_maximal_order(K::AnticNumberField)
   O=EquationOrder(K)

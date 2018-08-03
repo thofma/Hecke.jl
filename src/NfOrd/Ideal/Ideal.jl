@@ -1489,12 +1489,6 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
   end
 end
 
-#for consistency
-
-maximal_order(R::NfOrd) = MaximalOrder(R)
-
-equation_order(K::AnticNumberField) = EquationOrder(K)
-
 ################################################################################
 #
 #  Conversion to different order
