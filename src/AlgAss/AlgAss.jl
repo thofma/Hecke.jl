@@ -1,5 +1,7 @@
 import Base.split
 
+export wedderburn_decomposition
+
 ################################################################################
 #
 #  Basic field access
@@ -621,8 +623,89 @@ function kernel_of_frobenius(A::AlgAss)
   return [ A(v) for v in V ]
 end
 
-
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
+  F = base_ring(A)
+  if characteristic(F) > 0
+    return issimple_char_p(A, compute_algebras)
+  else
+    return issimple_gen(A, compute_algebras)
+  end
+end
+
+function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
+  if dim(A) == 1
+    if compute_algebras == Val{true}
+      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
+    else
+      return true
+    end
+  end
+
+  F = base_ring(A)
+
+  k = dim(A)
+
+  V = elem_type(A)[A[i] for i in 1:k]
+
+  while true
+    c = elem_type(F)[ rand(F, -10:10) for i = 1:k ]
+    a = dot(c, V)
+    f = minpoly(a)
+
+    if degree(f) < 2
+      continue
+    end
+
+    if isirreducible(f)
+      if compute_algebras == Val{true}
+        return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
+      else
+        return true
+      end
+    end
+
+    @assert issquarefree(f)
+
+    fac = factor(f)
+    R = parent(f)
+    factors = Vector{elem_type(R)}()
+    for ff in keys(fac.fac)
+      push!(factors, ff)
+    end
+    sols = Vector{elem_type(R)}()
+    right_side = [ R() for i = 1:length(factors) ]
+    max_deg = 0
+    for i = 1:length(factors)
+      right_side[i] = R(1)
+      if i != 1
+        right_side[i - 1] = R(0)
+      end
+      s = crt(right_side, factors)
+      push!(sols, s)
+      max_deg = max(max_deg, degree(s))
+    end
+    x = one(A)
+    powers = Vector{elem_type(A)}()
+    for i = 1:max_deg + 1
+      push!(powers, x)
+      x *= a
+    end
+    idems = Vector{elem_type(A)}()
+    for s in sols
+      idem = A()
+      for i = 0:degree(s)
+        idem += coeff(s, i)*powers[i + 1]
+      end
+      push!(idems, idem)
+    end
+
+    S = [ (subalgebra(A, idem, true)...) for idem in idems ]
+    return false, S
+  end
+end
+
+
+function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
     if compute_algebras == Val{true}
       return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
@@ -861,16 +944,16 @@ end
 
 doc"""
 ***
-    wedderburn_decomposition(A::AlgAss{fq_nmod})
+    wedderburn_decomposition(A::AlgAss)
             
-> Given a semisimple algebra over a finite field of prime order, this function 
+> Given a semisimple algebra over a field, this function 
 > returns a decomposition of A as a direct sum of simple algebras.
 """
-function wedderburn_decomposition(A::AlgAss{fq_nmod})
+function wedderburn_decomposition(A::AlgAss{T}) where {T}
   
   ZA,mZA=center(A)
   Algs=split(ZA)
-  res=Array{Tuple{AlgAss, AlgAssMor},1}(length(Algs))
+  res=Array{Tuple{typeof(A), AlgAssMor{T, T}},1}(length(Algs))
   i=1
   for (B, BtoZA) in Algs
     x=mZA(BtoZA(one(B)))
@@ -892,6 +975,10 @@ function rand(A::AlgAss{T}) where T
   return AlgAssElem{T}(A, c)
 end
 
+function rand(A::AlgAss{fmpq}, rng::UnitRange{Int} = -10:10) 
+  c = [ rand(base_ring(A), rng) for i = 1:dim(A) ]
+  return AlgAssElem{fmpq}(A, c)
+end
 ################################################################################
 #
 #  Primitive elements
@@ -908,7 +995,7 @@ function _primitive_element(A::AlgAss)
   return nothing
 end
 
-function _primitive_element(A::AlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}}
+function _primitive_element(A::AlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
