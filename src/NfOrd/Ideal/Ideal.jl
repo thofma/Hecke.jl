@@ -773,15 +773,18 @@ doc"""
 function isinvertible(A::NfAbsOrdIdl)
   if ismaximal_known(order(A)) && ismaximal(order(A))
     return true, inv(A)
-  else
-    F = conductor(order(A), maximal_order(nf(order(A))))
-    if isone(A + F)
-      return true, inv(A)
-    end
-    B = inv(A)
-    C = simplify(A*B)
-    return isone(C), B
   end
+
+  i1 = gen_index(maximal_order(nf(order(A))))
+  i2 = gen_index(order(A))
+  i = i1*inv(i2)
+  @assert isone(denominator(i))
+  if isone(gcd(numerator(i), minimum(A, Val{false})))
+    return true, inv(A)
+  end
+  B = inv(A)
+  C = simplify(A*B)
+  return isone(C), B
 end
 
 ################################################################################
