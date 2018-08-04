@@ -321,9 +321,6 @@ function _coprime_integral_ideal_class(x::Union{NfOrdFracIdl, NfOrdIdl}, y::NfOr
   while check
     i += 1
     a = rand(x_inv, 10)
-    if iszero(a)
-      continue
-    end
     b = x*a
     z = divexact(numerator(b), denominator(b))
     norm(z + y) == 1 ? (check = false) : (check = true)

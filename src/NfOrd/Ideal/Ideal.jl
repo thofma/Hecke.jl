@@ -396,6 +396,11 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
     return nothing
   end
 
+  if iszero(A)
+    A.basis_mat = zero_matrix(FlintZZ, degree(order(A)), degree(order(A)))
+    return nothing
+  end
+
   if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum &&
      !isindex_divisor(order(A), A.minimum)
     # A is a prime ideal of degree 1
@@ -1119,6 +1124,8 @@ function isone(I::NfAbsOrdIdl)
 end
 
 isunit(I::NfAbsOrdIdl) = isone(I)
+
+iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 
 ################################################################################
 #

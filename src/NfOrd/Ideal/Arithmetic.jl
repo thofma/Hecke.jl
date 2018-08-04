@@ -105,6 +105,11 @@ end
 
 function mul_gen(x::NfOrdIdl, y::NfOrdIdl)
   order(x) != order(y) && error("Not compatible")
+  if iszero(x) || iszero(y)
+    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
+    z.iszero = 1
+    return z
+  end
   O = order(x)
   d = degree(O)
   l = minimum(x, Val{false})*minimum(y, Val{false})
@@ -310,7 +315,7 @@ doc"""
 > Returns the ideal x*y.
 """
 function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
-  if x.iszero == 1 || y.iszero == 1
+  if iszero(x) || iszero(y)
     z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
     return z
@@ -454,6 +459,12 @@ function *(x::NfOrdIdl, y::fmpz)
 end
 
 function mul_maximal(x::NfOrdIdl, y::fmpz)
+  if y == 0
+    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
+    z.iszero = 1
+    return z
+  end
+
   if y == 1 || y == -1
     return x
   end
@@ -490,6 +501,12 @@ end
 *(x::NfOrdIdl, y::NfOrdElem) = y * x
 
 function mul_gen(x::NfOrdIdl, y::fmpz)
+  if y == 0
+    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
+    z.iszero = 1
+    return z
+  end
+
   z = ideal(order(x), basis_mat(x)*y)
   if isdefined(x, :princ_gen)
     z.princ_gen = x.princ_gen * y
@@ -704,6 +721,13 @@ end
 
 function extend(A::NfOrdIdl, O::NfOrd)
   # Assumes order(A) \subseteq O
+
+  if iszero(A)
+    B = ideal(O, zero_matrix(FlintZZ, degree(O), degree(O)))
+    B.iszero = 1
+    return B
+  end
+
   d = degree(O)
   M = zero_matrix(FlintZZ, d^2, d)
   X = basis(O, Val{false})
@@ -726,6 +750,13 @@ end
 
 function contract(A::NfOrdIdl, O::NfOrd)
   # Assumes O \subseteq order(A)
+
+  if iszero(A)
+    B = ideal(O, zero_matrix(FlintZZ, degree(O), degree(O)))
+    B.iszero = 1
+    return B
+  end
+
   d = degree(O)
   M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
   @assert M.den == 1
