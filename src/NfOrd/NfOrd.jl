@@ -673,7 +673,7 @@ Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::S, a::FakeFmpqMat, check::Bool = true,
-               cache::Bool = false) where {S}
+               cache::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}}
   if check
     b, ainv, d = defines_order(K, a)
     if !b
@@ -693,7 +693,7 @@ Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::S, a::fmpq_mat, check::Bool = true,
-               cache::Bool = true) where {S}
+               cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}}
   return Order(K, FakeFmpqMat(a), cache)
 end
 

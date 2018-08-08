@@ -55,10 +55,11 @@ mutable struct AlgAssElem{T} <: RingElem
   end
 end
 
-mutable struct AlgAssOrd 
-  A::AlgAss{fmpq}                  # CSA containing it
+mutable struct AlgAssAbsOrd{S, T} <: Ring
+  algebra::S                       # Algebra containing the order
   dim::Int
-  basis_alg::Vector{AlgAssElem{fmpq}}    # Basis as array of elements of the algebra
+  basis#::Vector{AlgAssAbsOrdElem{S, T}}
+  basis_alg::Vector{T}             # Basis as array of elements of the algebra
   basis_mat::FakeFmpqMat           # Basis matrix of order wrt basis of the algebra
   basis_mat_inv::FakeFmpqMat       # Inverse of basis matrix
   gen_index::fmpq                  # The det of basis_mat_inv as fmpq
@@ -73,93 +74,95 @@ mutable struct AlgAssOrd
                                    
   trace_mat::fmpz_mat              # The reduced trace matrix (if known)
 
+  function AlgAssAbsOrd{S}(A::S) where {S}
+    O = new{S, elem_type(S)}()
+    O.algebra = A
+    O.dim = dim(A)
+    O.ismaximal = 0
+    return O
+  end
 
-  function AlgAssOrd(a::AlgAss{fmpq}, basis::Array{AlgAssElem{fmpq},1})
+  function AlgAssAbsOrd{S, T}(A::S, basis::Vector{T}) where {S, T}
     # "Default" constructor with default values.
-    r = new()
-    r.A=a
-    r.dim=size(a.mult_table,1)
-    @assert length(basis)==r.dim
-    r.basis_alg=basis
-    r.basis_mat=basis_mat(basis)
-    r.basis_mat_inv=inv(r.basis_mat)
-    r.ismaximal = 0
+    r = AlgAssAbsOrd{S}(A)
+    @assert length(basis) == r.dim
+    r.basis_alg = basis
+    r.basis_mat = basis_mat(basis)
+    r.basis_mat_inv = inv(r.basis_mat)
     return r
   end
   
-  function AlgAssOrd(a::AlgAss{fmpq}, mat::FakeFmpqMat)
-    r = new()
-    r.A=a
-    r.dim=size(a.mult_table,1)
-    r.basis_alg=Array{AlgAssElem{fmpq},1}(rows(mat))
-    for i=1:length(r.basis_alg)
-      r.basis_alg[i]=elem_from_mat_row(a,mat.num, i, mat.den)
+  function AlgAssAbsOrd{S}(A::S, basis_mat::FakeFmpqMat) where {S}
+    r = AlgAssAbsOrd{S}(A)
+    d = dim(A)
+    r.basis_mat = basis_mat
+    r.basis_alg = Vector{elem_type(S)}(rows(basis_mat))
+    for i in 1:d
+      r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end
-    r.basis_mat=mat
-    r.ismaximal = 0
+    r.basis_mat_inv = inv(basis_mat)
     return r
   end
-  
 end
 
-mutable struct AlgAssOrdElem
-  elem_in_algebra::AlgAssElem{fmpq}
+mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
+  elem_in_algebra::T
   elem_in_basis::Vector{fmpz}
-  parent::AlgAssOrd
+  parent::AlgAssAbsOrd{S, T}
 
-  function AlgAssOrdElem(O::AlgAssOrd, a::AlgAssElem)
-    z = new()
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
+    z = new{S, T}()
     z.elem_in_algebra = a
     z.parent = O
     return z
   end
 
-  function AlgAssOrdElem(O::AlgAssOrd, a::AlgAssElem, arr::Array{fmpz, 1})
-    z = new()
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T, arr::Vector{fmpz}) where {S, T}
+    z = new{S, T}()
     z.parent = O
     z.elem_in_algebra = a
     z.elem_in_basis = arr
     return z
   end
 
-  function AlgAssOrdElem(O::AlgAssOrd, arr::Array{fmpz, 1})
-    z = new()
-    #z.elem_in_algebra = dot(O.basis_alg, arr)
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, arr::Vector{fmpz}) where {S, T}
+    z = new{S, T}()
+    z.elem_in_algebra = dot(O.basis_alg, arr)
     z.elem_in_basis = arr
     z.parent = O
     return z
   end
-
 end
 
-mutable struct AlgAssOrdIdl
-  O::AlgAssOrd                     # Order containing it
-  basis_alg::Vector{AlgAssOrdElem} # Basis of the ideal as array of elements of the order
+mutable struct AlgAssAbsOrdIdl{S, T}
+  order::AlgAssAbsOrd                     # Order containing it
+  basis_alg::Vector{AlgAssAbsOrdElem{S, T}} # Basis of the ideal as array of elements of the order
   basis_mat::fmpz_mat              # Basis matrix of ideal wrt basis of the order
-  gens::Vector{AlgAssOrdElem}      # Generators of the ideal 
+  gens::Vector{AlgAssAbsOrdElem{S, T}}# Generators of the ideal 
   
-  function AlgAssOrdIdl(a::AlgAssOrd, basis::Array{AlgAssOrdElem,1})
-    # "Default" constructor with default values.
-    r = new()
-    r.O=a
-    r.basis_alg=basis
-    r.basis_mat=zero_matrix(FlintZZ, a.dim, a.dim)
-    for i=1:a.dim
-      for j=1:a.dim
-        r.basis_mat[i,j]=basis[i].elem_in_basis[j]
+  function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, basis::Vector{AlgAssAbsOrdElem{S, T}}) where {S, T}
+    r = new{S, T}()
+    d = O.dim
+    r.order = a
+    r.basis_alg = basis
+    r.basis_mat = zero_matrix(FlintZZ, d, d)
+    for i = 1:d
+      for j = 1:d
+        r.basis_mat[i,j] = elem_in_basis(basis[i])
       end
     end
     return r
   end
 
-  function AlgAssOrdIdl(a::AlgAssOrd, M::fmpz_mat)
-    r = new()
-    r.O=a
-    r.basis_alg=Array{AlgAssOrdElem,1}(a.dim)
-    for i=1:a.dim
-      r.basis_alg[i]=elem_from_mat_row(a,M,i)
+  function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
+    r = new{S, T}()
+    r.order = O
+    d = O.dim
+    r.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(d)
+    for i = 1:d
+      r.basis_alg[i] = elem_from_mat_row(O, M, i)
     end
-    r.basis_mat=M
+    r.basis_mat = M
     return r
   end
 end

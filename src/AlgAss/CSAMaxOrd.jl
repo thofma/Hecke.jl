@@ -2,23 +2,67 @@
 add_assert_scope(:CSAMaxOrd)
 add_verbose_scope(:CSAMaxOrd)
 
+elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
+
+elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
+
+parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
+
+parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
+
+function Order(A::AlgAss{S}, B::Vector{AlgAssElem{T}}) where {S, T}
+  return AlgAssAbsOrd{AlgAss{S}, AlgAssElem{T}}(A, B)
+end
+
+function Order(A::AlgAss{S}, basis_mat::FakeFmpqMat) where {S}
+  return AlgAssAbsOrd{AlgAss{S}}(A, basis_mat)
+end
+
+(O::AlgAssAbsOrd{S, T})(a::T) where {S, T} = begin
+  return AlgAssAbsOrdElem{S, T}(O, a)
+end
+
+(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{fmpz}) where {S, T} = begin
+  return AlgAssAbsOrdElem{S, T}(O, a, arr)
+end
+
+(O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
+  return AlgAssAbsOrdElem{S, T}(O, arr)
+end
+
+function ideal(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
+  return AlgAssAbsOrdIdl{S, T}(O, M)
+end
+
+@inline order(I::AlgAssAbsOrdIdl) = I.order
+
+# Turn the following into a check:
+#
+#(O::AlgAssAbsOrd)(a::AlgAssElem) = begin
+#  if !isdefined(O, :basis_mat_inv)
+#    O.basis_mat_inv=inv(O.basis_mat)
+#  end
+#  x=FakeFmpqMat(a.coeffs)*O.basis_mat_inv
+#  @assert denominator(x)==1
+#  return AlgAssAbsOrdElem(O,a, vec(Array(x.num)))
+#end
+
 ###############################################################################
 #
 #  Types
 #
 ###############################################################################
 
-
-function index(O::AlgAssOrd)
+function index(O::AlgAssAbsOrd)
   B = inv(O.basis_mat)
   n = det(B)
   @assert isinteger(n)
   return FlintZZ(n)
 end
 
-function basis(O::AlgAssOrd)
-  B = basis(O.A)
-  v = Vector{AlgAssOrdElem}(degree(O))
+function basis(O::AlgAssAbsOrd)
+  B = basis(O.algebra)
+  v = Vector{AlgAssAbsOrdElem}(degree(O))
   for i in 1:degree(O)
     w = sum(O.basis_mat.num[i, j]//O.basis_mat.den * B[j] for j in 1:degree(O))
     v[i] = O(w)
@@ -26,11 +70,11 @@ function basis(O::AlgAssOrd)
   return v
 end
 
-function degree(O::AlgAssOrd)
-  return dim(O.A)
+function degree(O::AlgAssAbsOrd)
+  return dim(O.algebra)
 end
 
-function elem_in_algebra(x::AlgAssOrdElem)
+function elem_in_algebra(x::AlgAssAbsOrdElem)
   return x.elem_in_algebra
 end
 
@@ -77,11 +121,7 @@ end
 #
 ###############################################################################
 
-function ideal(O::AlgAssOrd, mat::fmpz_mat)
-  return AlgAssOrdIdl(O,mat)
-end
-
-function in(x::AlgAssOrdElem, I::AlgAssOrdIdl)
+function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
 
   y=matrix(FlintZZ, 1, length(I.basis_alg), elem_in_basis(x))
   M1, d =pseudo_inv(I.basis_mat)
@@ -100,20 +140,17 @@ end
 #
 ###############################################################################
 
-function basis_mat(x::AlgAssOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat(x::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
    if copy == Val{true}
     return deepcopy(x.basis_mat)
   else
     return x.basis_mat
   end
 end
- 
 
-@inline parent(x::AlgAssOrdElem)=x.parent
+@inline parent(x::AlgAssAbsOrdElem) = x.parent
 
-(O::AlgAssOrd)(a::Array{fmpz,1}) = AlgAssOrdElem(O,a)
-
-function elem_in_basis(x::AlgAssOrdElem, copy::Type{Val{T}} = Val{true}) where T
+function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
   if isdefined(x, :elem_in_basis)
     if copy==Val{true}
       return deepcopy(x.elem_in_basis)
@@ -121,9 +158,10 @@ function elem_in_basis(x::AlgAssOrdElem, copy::Type{Val{T}} = Val{true}) where T
       return x.elem_in_basis
     end
   else
+    d = degree(parent(x))
     M=FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
-    x.elem_in_basis=Array{fmpz,1}(M.c)
-    for i=1:M.c
+    x.elem_in_basis=Array{fmpz,1}(d)
+    for i = 1:d
       x.elem_in_basis[i]=M.num[1,i]
     end
   end
@@ -135,7 +173,7 @@ function elem_in_basis(x::AlgAssOrdElem, copy::Type{Val{T}} = Val{true}) where T
 end
 
 
-function *(x::AlgAssOrdElem, y::AlgAssOrdElem)
+function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   @assert parent(x)==parent(y)
   O=parent(x)
   assure_elem_in_algebra(x)
@@ -143,24 +181,23 @@ function *(x::AlgAssOrdElem, y::AlgAssOrdElem)
   return O(x.elem_in_algebra*y.elem_in_algebra)
 end
 
-function +(x::AlgAssOrdElem, y::AlgAssOrdElem)
+function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   assure_elem_in_algebra(x)
   assure_elem_in_algebra(y)
   return parent(x)(elem_in_algebra(x) + elem_in_algebra(y))
 end
 
-function *(n::Union{Integer, fmpz}, x::AlgAssOrdElem)
+function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   O=x.parent
   y=Array{fmpz,1}(O.dim)
   z=elem_in_basis(x, Val{false})
   for i=1:O.dim
     y[i] = z[i] * n
   end
-  return AlgAssOrdElem(O,y)
-  
+  return O(y)
 end
 
-function in(x::AlgAssElem, O::AlgAssOrd)
+function in(x::AlgAssElem, O::AlgAssAbsOrd)
   
   y=FakeFmpqMat(x.coeffs)
   if isdefined(O, :basis_mat_inv)
@@ -177,17 +214,8 @@ function in(x::AlgAssElem, O::AlgAssOrd)
 
 end
 
-(O::AlgAssOrd)(a::AlgAssElem) = begin
-  if !isdefined(O, :basis_mat_inv)
-    O.basis_mat_inv=inv(O.basis_mat)
-  end
-  x=FakeFmpqMat(a.coeffs)*O.basis_mat_inv
-  @assert denominator(x)==1
-  return AlgAssOrdElem(O,a, vec(Array(x.num)))
-end
-
-function elem_from_mat_row(O::AlgAssOrd, M::fmpz_mat, i::Int)
-  return AlgAssOrdElem(O, fmpz[M[i,j] for j=1:O.dim])
+function elem_from_mat_row(O::AlgAssAbsOrd, M::fmpz_mat, i::Int)
+  return O(fmpz[M[i,j] for j = 1:degree(O)])
 end
 
 ###############################################################################
@@ -219,7 +247,7 @@ function elem_from_mat_row(A::AlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
   return A(fmpq[fmpq(M[i,j]//d) for j=1:cols(M)])
 end
 
-function order_gen(O::AlgAssOrd)
+function order_gen(O::AlgAssAbsOrd)
   
   M=O.basis_mat
   if isdefined(O, :basis_mat_inv)
@@ -232,14 +260,12 @@ function order_gen(O::AlgAssOrd)
       if !(x*y in O)
         a=FakeFmpqMat((x*y).coeffs)
         N=vcat(M,a)
-        return AlgAssOrd(O.A, hnf(N))
+        return AlgAssAbsOrd(O.algebra, hnf(N))
       end
     end
   end
 
 end
-
-
 
 ###############################################################################
 #
@@ -249,12 +275,12 @@ end
 
 # Be careful!
 # To be used only in the case of the construction of a maximal order!
-function +(a::AlgAssOrd, b::AlgAssOrd)
+function +(a::AlgAssAbsOrd, b::AlgAssAbsOrd)
   aB = a.basis_mat
   bB = b.basis_mat
   d = a.dim
   c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
-  return AlgAssOrd(a.A, FakeFmpqMat(c, aB.den*bB.den))
+  return AlgAssAbsOrd(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
 end
 
 
@@ -264,18 +290,18 @@ end
 #
 ###############################################################################
 
-function show(io::IO, O::AlgAssOrd)
+function show(io::IO, O::AlgAssAbsOrd)
   print(io, "Order of ")
-  println(io, O.A)
+  println(io, O.algebra)
 end
 
-function show(io::IO, a::AlgAssOrdElem)
-  print(io, a.elem_in_algebra.coeffs)
+function show(io::IO, a::AlgAssAbsOrdElem)
+  print(io, a.elem_in_algebra)
 end
 
-function show(io::IO, a::AlgAssOrdIdl)
+function show(io::IO, a::AlgAssAbsOrdIdl)
   print(io, "Ideal of ")
-  print(io, a.O)
+  print(io, order(a))
   println(io, "with basis matrix")
   print(io, a.basis_mat)
 end
@@ -428,7 +454,7 @@ end
 #
 ###############################################################################
 
-function quo(O::AlgAssOrd, p::Int)
+function quo(O::AlgAssAbsOrd, p::Int)
 
   R=ResidueRing(FlintZZ, p, cached=false)
   M=Array{nmod, 3}(O.dim, O.dim, O.dim)
@@ -443,7 +469,7 @@ function quo(O::AlgAssOrd, p::Int)
     end
     x[i]=0
   end
-  oneO=elem_in_basis(O(one(O.A)))
+  oneO=elem_in_basis(O(one(O.algebra)))
   oneQ=nmod[R(s) for s in oneO]
   return AlgAss(R, M, oneQ)
   
@@ -464,7 +490,7 @@ function _mod(x::fmpz_mat, y::fmpz_mat, pivots::Array{Int,1})
 end
 
 
-function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
+function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
   
   pivots=Int[]
   for i=1:O.dim
@@ -490,9 +516,9 @@ function quo(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
     end
     x[pivots[i]]=0
   end
-  oneO = elem_in_basis(O(one(O.A)))
+  oneO = elem_in_basis(O(one(O.algebra)))
   #I reduce the entry of the element
-  for i=1:dim(O.A)
+  for i=1:dim(O.algebra)
     z=div(x[i], I.basis_mat[i,i])
     if z!=0
       for j=i:length(x)
@@ -525,9 +551,9 @@ end
 #
 ###############################################################################
 
-function check_ideal(I::AlgAssOrdIdl)
+function check_ideal(I::AlgAssAbsOrdIdl)
   
-  O=I.O
+  O= order(I)
   x=fmpz[0 for i=1:O.dim]
   for i=1:O.dim
     x[i]=1
@@ -543,7 +569,7 @@ function check_ideal(I::AlgAssOrdIdl)
   return true
 end
 
-function ==(S::AlgAssOrd, T::AlgAssOrd)
+function ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd)
   return basis_mat(S, Val{false}) == basis_mat(T, Val{false})
 end
 
@@ -556,12 +582,12 @@ function defines_order(A::AlgAss{fmpq}, v::Array{AlgAssElem{fmpq}, 1})
       M[i, j] = c[j]
     end
   end
-  O = AlgAssOrd(A, FakeFmpqMat(M))
+  O = Order(A, FakeFmpqMat(M))
   b = _check_order(O)
   return b, FakeFmpqMat(M)
 end
 
-function _check_order(O::AlgAssOrd)
+function _check_order(O::AlgAssAbsOrd)
   for x in O.basis_alg
     @assert denominator(minpoly(x))==1
     for y in O.basis_alg
@@ -573,7 +599,7 @@ function _check_order(O::AlgAssOrd)
   return true
 end
 
-function check_order(O::AlgAssOrd)
+function check_order(O::AlgAssAbsOrd)
   b = _check_order(O)
   if !b 
     error("Not an order")
@@ -582,9 +608,9 @@ function check_order(O::AlgAssOrd)
   end
 end
 
-function check_pradical(I::AlgAssOrdIdl, p::Int)
+function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   
-  O=I.O
+  O= order(I)
   for i=1:O.dim
     x=elem_from_mat_row(O,I.basis_mat, i)
     assure_elem_in_algebra(x)
@@ -616,16 +642,16 @@ end
 
 doc"""
 ***
-    ring_of_multipliers(I::AlgAssOrdIdl)
+    ring_of_multipliers(I::AlgAssAbsOrdIdl)
         
 > Given an ideal I, it returns the ring (I : I)
 """
 
-function ring_of_multipliers(I::AlgAssOrdIdl, p::fmpz=fmpz(1))
+function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
 
-  O = I.O
-  @hassert :CSAMaxOrd 1 Hecke.check_associativity(O.A)
-  @hassert :CSAMaxOrd 1 Hecke.check_distributivity(O.A)
+  O = order(I)
+  @hassert :CSAMaxOrd 1 Hecke.check_associativity(O.algebra)
+  @hassert :CSAMaxOrd 1 Hecke.check_distributivity(O.algebra)
   @hassert :CSAMaxOrd 1 check_ideal(I)
   bmatinv, deno = pseudo_inv(I.basis_mat)
   if isdefined(I, :gens) && length(I.gens)<O.dim
@@ -683,7 +709,7 @@ function ring_of_multipliers(I::AlgAssOrdIdl, p::fmpz=fmpz(1))
   # n is upper right HNF
   n = transpose(view(m, 1:O.dim, 1:O.dim))
   b= FakeFmpqMat(pseudo_inv(n))
-  O1=AlgAssOrd(O.A, mul!(b,b,O.basis_mat))
+  O1= Order(O.algebra, mul!(b,b,O.basis_mat))
   O1.disc = divexact(O.disc, s^2)
   @hassert :CSAMaxOrd 1 check_order(O1)
   return O1
@@ -697,14 +723,14 @@ end
 #
 ###############################################################################
 
-function assure_basis_mat_inv(O::AlgAssOrd)
+function assure_basis_mat_inv(O::AlgAssAbsOrd)
   if !isdefined(O, :basis_mat_inv)
     O.basis_mat_inv=inv(O.basis_mat)
   end
   return nothing
 end
 
-function pradical_meataxe(O::AlgAssOrd, p::Int)
+function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   
   A1 = quo(O, p)
   lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:O.dim]
@@ -723,13 +749,13 @@ function pradical_meataxe(O::AlgAssOrd, p::Int)
   end
   r = rref!(M1)
   if r == O.dim
-    J= AlgAssOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
-    J.gens=AlgAssOrdElem[O(p*one(O.A))]
+    J= AlgAssAbsOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J.gens=AlgAssAbsOrdElem[O(p*one(O.algebra))]
     return J
   end
   M1 = view(M1, 1:r, 1:O.dim)
   dM = transpose(nullspace(M1)[2])
-  gens=Vector{AlgAssOrdElem}(rows(dM)+1)
+  gens=Vector{elem_type(O)}(rows(dM)+1)
   m = zero_matrix(FlintZZ, O.dim, O.dim)
   for i=1:rows(dM)
     for j=1:cols(dM)
@@ -738,8 +764,8 @@ function pradical_meataxe(O::AlgAssOrd, p::Int)
     gens[i]= elem_from_mat_row(O,m,i)
   end
   hnf_modular_eldiv!(m, fmpz(p))
-  gens[rows(dM)+1]=O(p*one(O.A))
-  J=AlgAssOrdIdl(O,m)
+  gens[rows(dM)+1]=O(p*one(O.algebra))
+  J=ideal(O,m)
   J.gens=gens
   return J
 
@@ -749,12 +775,12 @@ end
 
 doc"""
 ***
-    pradical(O::AlgAssOrd, p::Int)
+    pradical(O::AlgAssAbsOrd, p::Int)
             
 > Given an order O and a prime p, it returns the radical of the ideal generated by p
 """
 
-function pradical(O::AlgAssOrd, p::Int)
+function pradical(O::AlgAssAbsOrd, p::Int)
   
   #See the paper from Ronyai, Structure of finite algebra
   l=clog(fmpz(O.dim),p)
@@ -771,8 +797,8 @@ function pradical(O::AlgAssOrd, p::Int)
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
-    J= AlgAssOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
-    J.gens=AlgAssOrdElem[O(p*one(O.A))]
+    J= AlgAssAbsOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J.gens=AlgAssAbsOrdElem[O(p*one(O.algebra))]
     return J
   end
   if l==1
@@ -784,13 +810,13 @@ function pradical(O::AlgAssOrd, p::Int)
       end
     end
     M1=hnf_modular_eldiv!(M, fmpz(p))
-    res=AlgAssOrdIdl(O, view(M1,1:O.dim,1:O.dim))
+    res= ideal(O, sub(M1,1:O.dim,1:O.dim))
     B1=lift(B')
-    res.gens=Array{AlgAssOrdElem, 1}(k+1)
+    res.gens = Vector{elem_type(O)}(k+1)
     for i=1:k
       res.gens[i]= elem_from_mat_row(O,B1,i)
     end
-    res.gens[k+1]= O(p*one(O.A))
+    res.gens[k+1]= O(p*one(O.algebra))
     @hassert :CSAMaxOrd 1 check_pradical(res,p)
     return res
   end
@@ -801,7 +827,7 @@ function pradical(O::AlgAssOrd, p::Int)
   #Hard to believe, but this is linear on I!!!!
   for i=1:l
     N=zero_matrix(F, O.dim, rows(Ide))
-    a=O.A()
+    a=O.algebra()
     for t=1:rows(Ide)
       elm=elem_from_mat_row(O,Ide,t)
       for s=1:O.dim
@@ -814,17 +840,17 @@ function pradical(O::AlgAssOrd, p::Int)
     end
     k, B2=nullspace(N)
     if k==0
-      J= AlgAssOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
-      J.gens=AlgAssOrdElem[O(p*one(O.A))]
+      J= AlgAssAbsOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+      J.gens=AlgAssAbsOrdElem[O(p*one(O.algebra))]
       return J
     end
     Ide=lift(transpose(B2))*Ide
   end
-  gens = Vector{AlgAssOrdElem}(rows(Ide)+1)
+  gens = Vector{AlgAssAbsOrdElem}(rows(Ide)+1)
   for i in 1:rows(Ide)
     gens[i] = elem_from_mat_row(O, Ide, i)
   end
-  gens[rows(Ide)+1]= O(p*one(O.A))
+  gens[rows(Ide)+1]= O(p*one(O.algebra))
   #Now, I have to give a basis for the ideal.
   m=zero_matrix(FlintZZ, O.dim, O.dim)
   for i=1:rows(Ide)
@@ -833,7 +859,7 @@ function pradical(O::AlgAssOrd, p::Int)
     end
   end
   hnf_modular_eldiv!(m, fmpz(p))
-  res=AlgAssOrdIdl(O, m)
+  res=AlgAssAbsOrdIdl(O, m)
   res.gens=gens
   @hassert :CSAMaxOrd 1 check_pradical(res,p)
   return res
@@ -846,7 +872,7 @@ end
 #
 ###############################################################################
 
-function assure_elem_in_algebra(x::AlgAssOrdElem)
+function assure_elem_in_algebra(x::AlgAssAbsOrdElem)
   if !isdefined(x, :elem_in_algebra)
     O = parent(x)
     x.elem_in_algebra = dot(O.basis_alg, x.elem_in_basis) 
@@ -854,7 +880,7 @@ function assure_elem_in_algebra(x::AlgAssOrdElem)
   return nothing
 end
 
-function representation_matrix(x::AlgAssOrdElem)
+function representation_matrix(x::AlgAssAbsOrdElem)
 
   O = parent(x)
   M = O.basis_mat
@@ -873,13 +899,13 @@ function representation_matrix(x::AlgAssOrdElem)
   return B.num
 end
 
-function trace(x::AlgAssOrdElem)
+function trace(x::AlgAssAbsOrdElem)
   return trace(x.elem_in_algebra)
 end
 
-function redtrace_mat(O::AlgAssOrd)
+function redtrace_mat(O::AlgAssAbsOrd)
 
-  A=O.A
+  A=O.algebra
   if isdefined(O, :trace_mat)
     return O.trace_mat
   end
@@ -905,7 +931,7 @@ function redtrace_mat(O::AlgAssOrd)
   
 end
 
-function discriminant(O::AlgAssOrd) 
+function discriminant(O::AlgAssAbsOrd) 
   
   if isdefined(O, :disc)
     return O.disc
@@ -927,12 +953,12 @@ end
 #Steel Nebe paper
 doc"""
 ***
-    schur_index_at_real_plc(O::AlgAssOrd)
+    schur_index_at_real_plc(O::AlgAssAbsOrd)
         
 > Given an order O, this function returns the schur index 
 > of the algebra over the field of real numbers
 """
-function schur_index_at_real_plc(O::AlgAssOrd)
+function schur_index_at_real_plc(O::AlgAssAbsOrd)
   
   x=trace_signature(O)
   n=root(O.dim,2)
@@ -945,7 +971,7 @@ function schur_index_at_real_plc(O::AlgAssOrd)
 end
 
 
-function trace_signature(O::AlgAssOrd)
+function trace_signature(O::AlgAssAbsOrd)
   
   @vtime :CSAMaxOrd 1 M = redtrace_mat(O)
   Zx, x = PolynomialRing(FlintZZ, "x")
@@ -970,12 +996,12 @@ end
 
 doc"""
 ***
-    schur_index_at_p(O::AlgAssOrd, p::fmpz)
+    schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
         
 > Given a maximal order O and a prime p, this function returns the schur index 
 > of the completion of the algebra at p 
 """
-function schur_index_at_p(O::AlgAssOrd, p::fmpz)
+function schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
   @assert O.ismaximal==1
   d = discriminant(O)
   v = valuation(d,p)
@@ -994,34 +1020,34 @@ end
 #
 ###############################################################################
 
-function _maximal_ideals(O::AlgAssOrd, p::Int)
+function _maximal_ideals(O::AlgAssAbsOrd, p::Int)
   
   A1 = quo(O, p)
   lM = nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
   append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
-  poneO = O(p*one(O.A))
+  poneO = O(p*one(O.algebra))
   return ( _from_submodules_to_ideals(M, O, x, fmpz(p), poneO) for x in ls )
 
 end
 
-function _maximal_ideals(O::AlgAssOrd, I::AlgAssOrdIdl, p::Int)
+function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
   
   A1, A1toO = quo(O, I, p)
   lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
   append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
-  poneO = O(p*one(O.A))
+  poneO = O(p*one(O.algebra))
   return ( _from_submodules_to_ideals(M, O, I, x, fmpz(p), poneO, A1, A1toO) for x in ls )
 
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, I::AlgAssOrdIdl, x::nmod_mat, p::fmpz, poneO::AlgAssOrdElem, A1::AlgAss, A1toO::Function)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::nmod_mat, p::fmpz, poneO::AlgAssAbsOrdElem, A1::AlgAss, A1toO::Function)
   @hassert :CSAMaxOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, rows(x)+O.dim , O.dim)
-  gens = Vector{AlgAssOrdElem}(rows(x)+1)
+  gens = Vector{AlgAssAbsOrdElem}(rows(x)+1)
   for i = 1:rows(x)
     el = A1toO(elem_from_mat_row(A1, x, i))
     for j = 1:O.dim
@@ -1037,17 +1063,17 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, I::AlgAssOrdIdl,
   hnf_modular_eldiv!(m, fmpz(p))
   gens[rows(x)+1] = poneO
   append!(gens, I.gens)
-  J = AlgAssOrdIdl(O, view(m, 1:O.dim, 1:O.dim))
+  J = ideal(O, sub(m, 1:O.dim, 1:O.dim))
   J.gens = gens
   return J
 
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, x::nmod_mat, p::fmpz, poneO::AlgAssOrdElem)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, x::nmod_mat, p::fmpz, poneO::AlgAssAbsOrdElem)
 
   @hassert :CSAMaxOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, O.dim, O.dim)
-  gens = Vector{AlgAssOrdElem}(rows(x)+1)
+  gens = Vector{AlgAssAbsOrdElem}(rows(x)+1)
   for i = 1:rows(x)
     for j = 1:cols(x)
       m[i,j] = x[i,j].data
@@ -1056,14 +1082,14 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssOrd, x::nmod_mat, p::
   end
   hnf_modular_eldiv!(m, fmpz(p))
   gens[rows(x)+1] = poneO
-  J = AlgAssOrdIdl(O, m)
+  J = ideal(O, m)
   J.gens = gens
   return J
 
 end
 
 
-function pmaximal_overorder(O::AlgAssOrd, p::Int)
+function pmaximal_overorder(O::AlgAssAbsOrd, p::Int)
 
   d=discriminant(O)
   if rem(d, p^2) != 0  
@@ -1079,7 +1105,7 @@ function pmaximal_overorder(O::AlgAssOrd, p::Int)
   end
 end
 
-function pmaximal_overorder_meataxe(O::AlgAssOrd, p::Int)
+function pmaximal_overorder_meataxe(O::AlgAssAbsOrd, p::Int)
 
   extend = false
   d = discriminant(O)
@@ -1111,14 +1137,14 @@ function pmaximal_overorder_meataxe(O::AlgAssOrd, p::Int)
   return O
 end
 
-function prime_ideals_over(O::AlgAssOrd, p::fmpz)
+function prime_ideals_over(O::AlgAssAbsOrd, p::fmpz)
   pp = Int(p)
   @vtime :CSAMaxOrd 1 I = pradical(O, pp)
   @vtime :CSAMaxOrd 1 max_id = collect(_maximal_ideals(O, pp))
   return max_id
 end
 
-function pmaximal_overorder_trace(O::AlgAssOrd, p::Int)
+function pmaximal_overorder_trace(O::AlgAssAbsOrd, p::Int)
   #First, the head order by computing the pradical and its ring of multipliers
   d = discriminant(O)
   @vtime :CSAMaxOrd 1 I = pradical(O, p)
@@ -1195,12 +1221,12 @@ end
 
 doc"""
 ***
-    MaximalOrder(O::AlgAssOrd)
+    MaximalOrder(O::AlgAssAbsOrd)
         
 > Given an order O, this function returns a maximal order containing O
 """
 
-function MaximalOrder(O::AlgAssOrd)
+function MaximalOrder(O::AlgAssAbsOrd)
   @vtime :NfOrd fac = factor(root(abs(discriminant(O)),2))
   OO=O
   for (p,j) in fac
@@ -1225,7 +1251,7 @@ doc"""
 """
 
 function issplit(A::AlgAss)
-  O=Hecke.AlgAssOrd(A, [A[i] for i=1:dim(A)])
+  O= Order(A, basis(A))
   i = schur_index_at_real_plc(O)
   if i==2
     return false

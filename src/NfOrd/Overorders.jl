@@ -117,8 +117,8 @@ function poverorders(O, p::fmpz)
   return to_enlarge
 end
 
-function _overorders_meataxe(O::AlgAssOrd, M::AlgAssOrd)
-  K = O.A
+function _overorders_meataxe(O::AlgAssAbsOrd, M::AlgAssAbsOrd)
+  K = O.algebra
   d = degree(O)
   B = zero_matrix(FlintZZ, d, d)
   orders = Vector{typeof(O)}()
@@ -178,7 +178,7 @@ function _overorders_meataxe(O::AlgAssOrd, M::AlgAssOrd)
     end
     b, bmat = defines_order(K, deepcopy(potential_basis))
     if b 
-      push!(orders, AlgAssOrd(K, bmat))
+      push!(orders, Order(K, bmat))
     end
   end
   return orders
