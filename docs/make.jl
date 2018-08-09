@@ -21,7 +21,7 @@ deploydocs(
                     "python-markdown-math",
                     "mkdocs-cinder"),
     repo = "github.com/thofma/Hecke.jl.git",
-    osname = "linux",
+    osname = "osx",
     julia = "0.6",
 )
 
