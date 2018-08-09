@@ -444,3 +444,178 @@ function poverorders_bass(O::NfOrd, p::fmpz)
     end
   end
 end
+
+################################################################################
+#
+#  Goursat
+#
+################################################################################
+
+function ideals_with_norm(O::NfOrd, p::fmpz, n::Int)
+  pn = p^n
+  pInt = Int(p)
+  K = nf(O)
+  d = degree(O)
+  ideals = []
+  B = basis(O)
+
+  autos = GrpAbFinGenMap[]
+
+  A = DiagonalGroup(fmpz[pn for i in 1:d])
+
+  for i in 1:d
+    m = representation_matrix(B[i])
+    push!(autos, hom(A, A, m))
+  end
+
+  potential_basis = Vector{elem_type(O)}(d)
+  ideals = Vector{Tuple{Vector{Int}, ideal_type(O)}}()
+
+  for par in AllParts(n)
+    ppar = Vector(par)
+
+    subs = stable_subgroups(A, autos, quotype=[pInt^y for y in ppar])
+
+    for s in subs
+      new_basis_mat = zero_matrix(FlintZZ, d, d)
+      T = image(s[2])
+      G = domain(T[2])
+      for i in 1:d
+        v = T[2](G[i]).coeff
+        if iszero(v)
+          new_basis_mat[i, i] = pn
+        else
+          for j in 1:d
+            new_basis_mat[i, j] = v[1, j]
+          end
+        end
+      end
+      push!(ideals, ([pInt^y for y in ppar], ideal(O, new_basis_mat)))
+    end
+  end
+  return ideals
+end
+
+function index(R::NfOrd, S::NfOrd)
+  r = gen_index(R)
+  s = gen_index(S)
+  i = r^-1 * s
+  @assert isinteger(i)
+  return FlintZZ(i)
+end
+
+function poverorders_goursat(O1::NfOrd, O2::NfOrd, p::fmpz)
+  l1 = poverorders(O1, p)
+  l2 = poverorders(O2, p)
+  data_from_l2 = Dict{Vector{Int}, Vector{Tuple{typeof(O1), ideal_type(O1)}}}()
+  d = degree(O2)
+  for O in l2
+    i = index(O2, O)
+    e, _ = ispower(i)
+    for k in 1:e
+      ideals = ideals_with_norm(O, p, k)
+      for (typ, I) in ideals
+        if haskey(data_from_l2, typ)
+          push!(data_from_l2[typ], (O, I))
+        else
+          data_from_l2[typ] = [(O, I)]
+        end
+      end
+    end
+  end
+
+  return data_from_l2
+end
+
+function abelian_group(Q::NfOrdQuoRing)
+  A = AbelianGroup(Q.basis_mat)
+  S, mS = snf(A)
+  B = basis(Q.base_ring, Val{false})
+  f = a -> begin aa = mS(a); Q(sum(aa.coeff[i] * B[i] for i in 1:degree(Q.base_ring))) end
+  g = b -> mS\A(elem_in_basis(b.elem))
+  return S, f, g
+end
+
+function isisomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
+  Q1_A, Q1_mA, Q1_mA_inv = abelian_group(Q1)
+  Q2_A, Q2_mA, Q2_mA_inv = abelian_group(Q2)
+
+  if Q1_A.snf != Q2_A.snf
+    return false
+  end
+
+  Q1_U, Q1_mU = multiplicative_group(Q1)
+  Q2_U, Q2_mU = multiplicative_group(Q2)
+
+  if Q1_U.snf != Q2_U.snf
+    return false
+  end
+
+  Q1_gens = [ Q1_mA(g) for g in gens(Q1_A) ]
+
+  orders = [ order(g) for g in gens(Q1_A) ]
+
+  l = length(Q1_A.snf)
+
+  elements_with_correct_order = Dict{fmpz, Vector{GrpAbFinGenElem}}()
+
+  @show orders
+
+  for g in Q2_A
+    o = order(g)
+    if o in orders
+      #elem_g = Q2_mA(g)
+      if !haskey(elements_with_correct_order, o)
+        elements_with_correct_order[o] = GrpAbFinGenElem[g]
+      else
+        push!(elements_with_correct_order[o], g)
+      end
+    end
+  end
+
+  isos = []
+ 
+  genQ1A = gens(Q1_A)
+
+  O1 = base_ring(Q1)
+  O2 = base_ring(Q2)
+
+  basis_O1 = basis(O1)
+
+  for poss in Iterators.product([ elements_with_correct_order[o] for o in orders]...)
+    #@show poss
+    h = hom(Q1_A, collect(poss))
+    if !isbijective(h)
+      continue
+    end
+    if h(Q1_mA_inv(one(Q1))) != Q2_mA_inv(one(Q2))
+      continue
+    end
+    multiplicative = true
+    for i in 1:l
+      for j in i:l
+        @assert h(genQ1A[i]) == poss[i]
+        @assert h(genQ1A[j]) == poss[j]
+        if h(Q1_mA_inv(Q1_mA(genQ1A[i]) * Q1_mA(genQ1A[j]))) != Q2_mA_inv(Q2_mA(poss[i]) * Q2_mA(poss[j]))
+          multiplicative = false
+          break
+        end
+      end
+      if !multiplicative
+        break
+      end
+    end
+    if multiplicative
+      M = Array{fmpz}(degree(O1), degree(O2))
+      for i in 1:degree(O1)
+        v = elem_in_basis(Q2_mA(h(Q1_mA_inv(Q1(basis_O1[i])))).elem)
+        for j in 1:degree(O2)
+          M[i, j] = v[j]
+        end
+      end
+      push!(isos, M)
+    end
+  end
+  return isos
+end
+
