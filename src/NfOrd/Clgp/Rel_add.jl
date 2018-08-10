@@ -60,8 +60,10 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
       #TODO: check Galois orbit of special ideal
       if haskey(clg.largePrime, i)
         lp = clg.largePrime[i]
-        b = a//lp[1]
-        fl = class_group_add_relation(clg, b, n*nI//lp[2], fmpz(1), integral = false)
+        fl, r1 = _factor!(clg.FB, a, false, n*nI)
+        fl, r2 = _factor!(clg.FB, lp[1], false, n*nI)
+        b = FacElem(Dict([(a,1), (lp[1],-1)]))
+        fl = class_group_add_relation(clg, b, r1 - r2)
         if fl 
           clg.largePrime_success += 1
         else
