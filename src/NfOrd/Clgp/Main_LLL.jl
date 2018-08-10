@@ -103,6 +103,7 @@ function class_group_new_relations_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 
     @vprint :ClassGroup 1 "re-using and extending random: $(nbits(norm(rand_env.rand))) and $(rand_env.exp)\n"
   else
     @vprint :ClassGroup 1 "want $(stop-start) primes for random. Try distinct rational primes...\n"
+#    @show start, stop
     JJ = [c.FB.ideals[stop]]
     start += length(c.FB.ideals) - stop
     stop  += length(c.FB.ideals) - stop
@@ -124,6 +125,7 @@ function class_group_new_relations_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 
         push!(JJ, AA)
       end
     end
+#    @show [ (norm(x), minimum(x)) for x = JJ]
     rand_env = random_init(JJ, lb = root(abs(discriminant(O)), 2)^1, ub = abs(discriminant(O))^1, reduce = false)
     c.randomClsEnv = rand_env
   end
@@ -138,7 +140,7 @@ function class_group_new_relations_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 
   while true
     st = c.rel_cnt
     while (c.rel_cnt - st < 2)
-      for p = piv
+      for p = sort(collect(piv), rev = true)
         @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
         @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
   #      @show nbits(norm(J)), rand_env.exp, rand_exp
