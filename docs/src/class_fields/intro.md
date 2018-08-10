@@ -10,9 +10,9 @@ This chapter deals with abelian extensions of number fields and the rational num
 
 Class Field Theory, here specifically, class field theory of global number fields, deals
 with abelian extension, ie. fields where the group of automorphisms is abelian.
-For extensions of {{{Q}}}, the famous Kronnecker-Weber theorem classifies all such fields:
+For extensions of {\Q}, the famous Kronnecker-Weber theorem classifies all such fields:
 a field is abelian if and only if it is contained in some cyclotomic field. For general
-number fields this is more involved and even for extensions of {{{Q}}} is is not practical.
+number fields this is more involved and even for extensions of {\Q} is is not practical.
 
 In Hecke, abelian extensions are parametrized by quotients of so called ray class groups.
 The language of ray class groups while dated is more applicable to algorithms than the
@@ -33,7 +33,8 @@ ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_pl
 ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem})
 class_group(O::Hecke.NfAbsOrd{Nemo.AnticNumberField,Nemo.nf_elem}; bound, method, redo, unit_method, large)
 class_group(K::Nemo.AnticNumberField)
-class_group(c::Hecke.ClassGrpCtx; redo)
+norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool)
+norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool
 ```
 
 
@@ -58,11 +59,11 @@ hilbert_class_field(k::AnticNumberField)
 ### Example
 
 ```@repl
-#using Hecke; # hide
-#Qx, x = PolynomialRing(FlintQQ, "x");
-#K, a = NumberField(x^2 - 10, "a");
-#c, mc = class_group(K);
-#A = ray_class_field(mc)
+using Hecke # hide
+Qx, x = PolynomialRing(FlintQQ, "x");
+K, a = NumberField(x^2 - 10, "a");
+c, mc = class_group(K)
+A = ray_class_field(mc)
 ```
 
 ## Conversions
@@ -81,19 +82,20 @@ number_field(C::ClassField)
 
 ```@repl
 using Hecke; # hide
-#Qx, x = PolynomialRing(FlintQQ, "x");
-#k, a = NumberField(x^2 - 10, "a");
-#c, mc = class_group(k);
-#A = ray_class_field(mc)
-#K = number_field(A)
-#ZK = maximal_order(K)
-#isone(discriminant(ZK))
+Qx, x = PolynomialRing(FlintQQ, "x");
+k, a = NumberField(x^2 - 10, "a");
+c, mc = class_group(k);
+A = ray_class_field(mc)
+K = number_field(A)
+ZK = maximal_order(K)
+isone(discriminant(ZK))
 ```
 
-Missing:
-
 ```@docs
-ray_class_field(K::NfRel)
+ray_class_field(K::NfRel{nf_elem})
+genus_field(A::ClassField, k::AnticNumberField)
+maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
+maximal_abelian_subfield(K::NfRel{nf_elem})
 ```
 
 ## Invariants
@@ -103,7 +105,9 @@ base_ring(A::Hecke.ClassField)
 base_field(A::Hecke.ClassField) 
 discriminant(C::Hecke.ClassField)
 conductor(C::Hecke.ClassField) 
-Hecke.defining_modulus(C::ClassField)
+defining_modulus(C::ClassField)
+iscyclic(C::ClassField)
+isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1})
 ```
 
 ## Operations

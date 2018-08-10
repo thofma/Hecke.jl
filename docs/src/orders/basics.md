@@ -62,7 +62,6 @@ trace_matrix(::NfOrd)
 +(::NfOrd, ::NfOrd)
 poverorder(::NfOrd, ::fmpz)
 pmaximal_overorder(::NfOrd, ::fmpz)
-parent(::NfOrd)
 deepcopy(::NfOrd)
 ```
 

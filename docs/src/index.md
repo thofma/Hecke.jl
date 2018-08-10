@@ -68,9 +68,11 @@ with basis [1,a,a^2]
 
 ```@contents
 Pages = [
+  "number_fields/intro.md",
   "orders/introduction.md",
   "orders/basics.md",
   "orders/ideals.md",
+  "class_fields/intro.md",
   ]
   Depth = 2
 ```
