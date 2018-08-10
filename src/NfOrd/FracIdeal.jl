@@ -62,7 +62,7 @@ doc"""
 > Creates the fractional ideal of $\mathcal O$ with basis matrix $A/b$. If
 > A_in_hnf is set, then it is assumed that $A$ is already in lower left HNF.
 """
-function frac_ideal(O::NfOrd, x::fmpz_mat, y::fmpz, x_in_hnf::Bool = false)
+function frac_ideal(O::NfOrd, x::fmpz_mat, y::fmpz=fmpz(1), x_in_hnf::Bool = false)
   !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing
   y = FakeFmpqMat(x, y)
   z = NfOrdFracIdl(O, y)
@@ -149,6 +149,10 @@ end
 
 order(a::NfOrdFracIdlSet) = a.order
 
+doc"""
+    order(a::NfOrdFracIdl) -> NfOrd
+> The order that was used to define the ideal $a$.
+"""
 order(a::NfOrdFracIdl) = a.order
 
 ################################################################################
