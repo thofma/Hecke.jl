@@ -45,7 +45,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   l, t1 = lll_with_transform(basis_mat(A, Val{false}))
 
-  if !false && iszero(v)
+  if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
     ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
     ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
