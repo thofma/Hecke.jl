@@ -284,7 +284,7 @@ doc"""
 
 > Checks if m, inf_plc is the conductor of the abelian extension corresponding to C. If check is false, it assumes that the 
 > given modulus is a multiple of the conductor.
-
+> This is generically faster than computing the conductor.
 ***
 """
 function isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; check::Bool=true)
@@ -1224,6 +1224,20 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
     end
   end
   return ray_class_field(mr, GrpAbFinGenMap(mQ))
+end
+
+doc"""
+    ray_class_field(K::NfRel{nf_elem}) -> ClassField
+> For a (relative) abelian extension, compute an abstract representation
+> as a class field. 
+"""
+function ray_class_field(K::NfRel{nf_elem})
+  C = maximal_abelian_subfield(K)
+  @assert degree(C) <= degree(K)
+  if degree(C) != degree(K)
+    error("field is not abelian")
+  end
+  return C
 end
 
 doc"""

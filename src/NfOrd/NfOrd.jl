@@ -1045,6 +1045,7 @@ end
 
 doc"""
 ***
+    maximal_order(O::NfOrd) -> NfOrd
     MaximalOrder(O::NfOrd) -> NfOrd
 
 Returns the maximal overorder of $O$.
@@ -1087,6 +1088,7 @@ end
 doc"""
 ***
     MaximalOrder(K::AnticNumberField) -> NfOrd
+    maximal_order(K::AnticNumberField) -> NfOrd
 
 Returns the maximal order of $K$.
 

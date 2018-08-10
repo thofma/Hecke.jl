@@ -222,12 +222,24 @@ end
 #
 ################################################################################
 
+doc"""
+    number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where T
+> Given an irreducible polynomial $f$ over some number field $K$,
+> create the field $K[t]/f$.
+> $f$ must be irreducible - although this is not tested.
+"""
 function number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where T
   S = Symbol(s)
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
+doc"""
+    number_field(f::Generic.Poly{T}, cached::Bool = false) where T
+> Given an irreducible polynomial $f$ over some number field $K$,
+> create the field $K[t]/f$.
+> $f$ must be irreducible - although this is not tested.
+"""
 function number_field(f::Generic.Poly{T}, cached::Bool = false) where T
   return number_field(f, "_\$", cached)
 end
@@ -398,11 +410,20 @@ end
 #
 ################################################################################
 
+doc"""
+    absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
+> Given an extension $K/k/Q$, find an isomorphic extensino of $Q$.
+"""
 function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   Ka, a, b, c = _absolute_field(K, cached)
   return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
+doc"""
+    absolute_field(K::NfRel{NfRelElem}, cached::Bool = false) -> NfRel, Map, Map
+> Given an extension $E/K/k$, find an isomorphic extension of $k$.
+> In a tower, only the top-most steps are collapsed.
+"""
 function absolute_field(K::NfRel{NfRelElem{T}}, cached::Bool = false) where T
   Ka, a, b, c = _absolute_field(K)
   return Ka, NfRelRelToNfRel(K, Ka, a, b, c), NfRelToNfRelMor(base_ring(K), Ka, a)

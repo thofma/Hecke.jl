@@ -1,4 +1,4 @@
-export kummer_extension, ray_class_field, hilbert_class_field, prime_decomposition_type
+export kummer_extension, ray_class_field, hilbert_class_field, prime_decomposition_type, defining_modulus
 
 add_verbose_scope(:ClassField)
 add_assert_scope(:ClassField)
@@ -16,18 +16,26 @@ end
 #
 ###############################################################################
 
-#doc"""
-#    ray_class_field(m::Map) -> ClassField
-#> Creates the (formal) abelian extension defined by the map $m: A \to I$
-#> where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
-#> is a quotient of the ray class group (or class group).
-#> If $p$ is given and non-zero, only the quotient modulo $p$-th powers is
-#> created.
-#"""
+doc"""
+    ray_class_field(m::MapClassGrp) -> ClassField
+    ray_class_field(m::MapRayClassGrp) -> ClassField
+> Creates the (formal) abelian extension defined by the map $m: A \to I$
+> where $I$ is the set of ideals coprime to the modulus defining $m$ and $A$ 
+> is a quotient of the ray class group (or class group). The map $m$
+> must be the map returned from a call to {class_group} or {ray_class_group}.
+"""
 function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
   return ray_class_field(m, GrpAbFinGenMap(domain(m)))
 end
 
+doc"""
+    ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
+> For $m$ a map computed by either {ray_class_group} or {class_group} and
+> $q$ a canonical projection (quotient map) as returned by {quo} for q 
+> quotient of the domain of $m$ and a subgroup of $m$, create the
+> (formal) abelian extension where the (relative) automorphism group
+> is canonically isomorphic to the codomain of $q$.
+"""
 function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap)
   CF = ClassField()
   CF.rayclassgroupmap = m
@@ -1404,6 +1412,11 @@ end
 #
 ###############################################################################
 
+doc"""
+    defining_modulus(CF::ClassField)
+> The modulus, ie. an ideal the the set of real places, used to create the
+> class field.
+"""
 function defining_modulus(CF::ClassField)
   return _modulus(CF.rayclassgroupmap)
 end 
@@ -1630,6 +1643,10 @@ function compositum(a::ClassField, b::ClassField)
   return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
 end
 
+doc"""
+  *(A::ClassField, B::ClassField) -> ClassField
+> The compositum of $a$ and $b$ as a (formal) class field.
+"""
 *(a::ClassField, b::ClassField) = compositum(a, b)
 
 doc"""
@@ -1729,7 +1746,13 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   return (e, f, divexact(order(q), f))
 end
 
+doc"""
+    iscyclic(C::ClassField)
+> Tests if the (relative) automorphism group of $C$ is cyclic (by checking
+> the defining ideal group).
+"""
 function iscyclic(C::ClassField)
   mp = C.quotientmap
   return iscyclic(codomain(mp))
 end
+

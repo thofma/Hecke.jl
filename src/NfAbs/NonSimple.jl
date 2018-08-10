@@ -684,7 +684,11 @@ end
 #  Simple extensions
 #
 ################################################################################
-
+doc"""
+    simple_extension(K::NfAbsNS) -> AnticNumberField, Map
+> For a non-simple extension $K$ of $Q$, find a primitive element and thus
+> an isomorphic simple extension of $Q$. The map realises this isomorphism.
+"""
 function simple_extension(K::NfAbsNS)
   n = ngens(K)
   g = gens(K)
@@ -734,6 +738,13 @@ end
 #
 ################################################################################
 
+doc"""
+    number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
+> Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
+> we construct 
+ $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
+> The ideal bust be maximal, however, this is not tested.
+"""
 function number_field(f::Array{fmpq_poly, 1}, s::String="_\$")
   S = Symbol(s)
   n = length(f)
