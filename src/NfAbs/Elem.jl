@@ -540,6 +540,7 @@ function isirreducible(f::PolyElem{nf_elem})
 end
 
 function _ds(fa)
+  @assert all(x->x == 1, values(fa.fac))
   M = MSet(degree(x) for x = keys(fa.fac))
   return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
@@ -548,7 +549,11 @@ function _degset(f::fmpz_poly, p::Int)
   F = ResidueRing(FlintZZ, p)
   Ft, t = PolynomialRing(F, cached = false)
   @assert issquarefree(Ft(f))
-  fa = factor(Ft(f))
+  g = Ft(f)
+  if !issquarefree(g)
+    throw(BadPrime(p))
+  end
+  fa = factor(g)
   return _ds(fa)
 end
 
@@ -570,6 +575,9 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   fp = modular_proj(f, me)
   R = ResidueRing(FlintZZ, p, cached = false)
   Rt = PolynomialRing(R, cached = false)[1]
+  if !issquarefree(fp[1])
+    throw(BadPrime(p))
+  end
   
   s = _ds(factor(Rt(fp[1])))
   if normal 
