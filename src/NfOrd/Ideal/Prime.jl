@@ -884,6 +884,11 @@ function valuation(a::fmpz, p::NfOrdIdl)
   P = p.gen_one
   return valuation(a, P)* p.splitting_type[1]
 end
+doc"""
+    valuation(a::Integer, p::NfOrdIdl) -> fmpz
+> Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
+> such that $a$ is contained in $\mathfrak p^i$.
+"""
 valuation(a::Integer, p::NfOrdIdl) = valuation(fmpz(a), p)
 
 #TODO: some more intelligence here...
