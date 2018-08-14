@@ -97,15 +97,16 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
 
   rw = FB.rw
   r = Array{Tuple{Int, Int}, 1}()
+  ret = true
   for p in keys(d)
     vp = valuation!(n, p)
 #    s::Array{Tuple{Int, Int}, 1}, vp::Int = FB.fb[p].doit(a, vp)
     s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p])
     if vp != 0
+      ret = false
       if error
         @assert vp == 0
       end
-      return false, SRow{T}()
     end
     r = vcat(r, s)
   end
@@ -116,7 +117,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
     end
     sort!(r, lt=function(a,b) return a[1] < b[1]; end)
     @hassert :ClassGroup 1 length(r) > 0
-    return true, SRow{T}(r)
+    return ret, SRow{T}(r)
   else 
     # factor failed or I have a unit.
     # sparse rel mat must not have zero-rows.

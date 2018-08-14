@@ -58,10 +58,10 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
       @vprint :ClassGroup 3 "gives potential large prime\n"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal
-      if haskey(clg.largePrime, i)
-        lp = clg.largePrime[i]
+      if haskey(clg.largePrime, (r, i))
+        lp = clg.largePrime[(r, i)]
         fl, r1 = _factor!(clg.FB, a, false, n*nI)
-        fl, r2 = _factor!(clg.FB, lp[1], false, n*nI)
+        fl, r2 = _factor!(clg.FB, lp[1], false, norm(lp[1]))
         b = FacElem(Dict([(a,1), (lp[1],-1)]))
         fl = class_group_add_relation(clg, b, r1 - r2)
         if fl 
