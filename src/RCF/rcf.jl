@@ -1190,7 +1190,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     all_tau_s = []
     all_emb = []
     for c in Cp
-#      println("om: $om -> ", degree(c))
+#      println("om: $om -> ", degree(c), " vs ", c.o)
       Cs = cyclotomic_extension(k, Int(degree(c)))
       Emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)))
       emb = inv(Cs.mp[1]) * Emb * C.mp[1]
@@ -1253,9 +1253,9 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     for j = 1:length(Cp)
       sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], false)
       sG, msG = sub(Cp[im].bigK.AutG, 
-          vcat([(degree(Cp[j]) > om ? div(om, degree(Cp[i])):1) * Cp[im].bigK.AutG(all_s[x]) 
+          vcat([(Cp[j].o > om ? div(om, Cp[i].o):1) * Cp[im].bigK.AutG(all_s[x]) 
                        for x=1:length(all_s)],
-               [degree(Cp[j])*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
+               [Cp[j].o*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
       ts = all_tau_s[j]
       x = Cp[im].bigK.AutG(ts)
       fl, y = haspreimage(msG, x)
@@ -1267,13 +1267,13 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       mu = prod(all_emb[i][1]^Int(y[i]) for i=1:length(Cp)) * inv(all_emb[j][2])
       mmu = evaluate(mu)
       #global last_rt = (mmu, degree(Cp[j]))
-      rt = root(mmu, degree(Cp[j]))
+      rt = root(mmu, Cp[j].o)
       push!(all_b, (rt, y))
     end
     Ka = C.Ka
     KaT, X = PolynomialRing(Ka, "T", cached = false)
-    KK, gKK = number_field([X^degree(Cp[j]) - evaluate(all_emb[j][1]) for j=1:length(Cp)])
-    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, degree(Cp[j])))) for j=1:length(Cp)) for i=1:length(Cp)])
+    KK, gKK = number_field([X^Cp[j].o - evaluate(all_emb[j][1]) for j=1:length(Cp)])
+    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o))) for j=1:length(Cp)) for i=1:length(Cp)])
 
     # now "all" that remains is to restrict h to the subfield, using lin. alg..
     # .. and of course move away form the Cp stuff.
@@ -1327,7 +1327,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     for j=1:length(Cp)
       N = SRow(all_pe[j][2])
       Nk = _expand(N, C.mp[1])
-       n = solve(Mk, Nk)
+      n = solve(Mk, Nk)
       im = sum(v*b_AA[i] for (i, v) = n)
       push!(all_im, im)
     end
