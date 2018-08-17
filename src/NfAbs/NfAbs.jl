@@ -565,41 +565,114 @@ doc"""
     splitting_field(f::fmpq_poly) -> AnticNumberField
 > Computes the splitting field of $f$ as an absolute field.
 """
-function splitting_field(f::fmpz_poly)
-  return splitting_field(fmpq_poly(f))
+function splitting_field(f::fmpz_poly; do_roots::Bool = false)
+  return splitting_field(fmpq_poly(f), do_roots = roots)
 end
 
-function splitting_field(f::fmpq_poly)
-  lf = factor(f).fac
-  if all(x->degree(x) == 1, keys(lf))
-    return FlintQQ
-  end
-  g = prod([k for k = keys(lf) if degree(k) > 1])
-  k, a = number_field(first([k for k = keys(lf) if degree(k) > 1]))# , check = false)
-  kt, t = PolynomialRing(k)
-  return splitting_field(kt([coeff(g, i) for i=0:degree(g)]))
+function splitting_field(f::fmpq_poly; do_roots::Bool = false)
+  return splitting_field([f], do_roots = do_roots)
 end
+
+function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_roots::Bool = false)
+  if !coprime
+    fl = coprime_base(fl)
+  end
+  ffl = fmpq_poly[]
+  for x = fl
+    append!(ffl, collect(keys(factor(x).fac)))
+  end
+  fl = ffl
+  r = []
+  if do_roots
+    r = [roots(x)[1] for x = fl if degree(x) == 1]
+  end
+  fl = fl[find(x->degree(x) > 1, fl)]
+  if length(fl) == 0
+    if do_roots
+      return FlintQQ, r
+    else
+      return FlintQQ
+    end
+  end
+  K, a = number_field(fl[1])#, check = false, cached = false)
+
+  @assert fl[1](a) == 0
+  gl = [change_base_ring(fl[1], K)]
+  gl[1] = divexact(gl[1], gen(parent(gl[1])) - a)
+  for i=2:length(fl)
+    push!(gl, change_base_ring(fl[i], K))
+  end
+
+  if do_roots
+    K, R = splitting_field(gl, coprime = true, do_roots = true)
+    return K, vcat(r, [a], R)
+  else
+    return splitting_field(gl, coprime = true, do_roots = false)
+  end
+end
+
+function change_base_ring(f::PolyElem, g::T) where T <: Union{Function, Map, Ring}
+  h0 = g(coeff(f, 0))
+  R = parent(h0)
+  Rt, t = PolynomialRing(R, cached = false)
+  h = Rt()
+  setcoeff!(h, 0, h0)
+  for i=1:degree(f)
+    setcoeff!(h, i, g(coeff(f, i)))
+  end
+  return h
+end  
+
+#sub(f::fmpq_poly, i::Int) = f + (-i)
+#sub(i::Int, f::fmpq_poly) = f + (-i)
+copy(f::fmpq_poly) = parent(f)(f)
+gcd_into!(a::fmpq_poly, b::fmpq_poly, c::fmpq_poly) = gcd(b, c)
 
 doc"""
     splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
 > Computes the splitting field of $f$ as an absolute field.
 """
-function splitting_field(f::PolyElem{nf_elem})
-  lf = factor(f).fac
-  lg = [k for k = keys(lf) if degree(k) > 1]
+splitting_field(f::PolyElem{nf_elem}; do_roots::Bool = false) = splitting_field([f], do_roots = do_roots)
+
+
+function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = false, coprime::Bool = false)
+  if !coprime
+    fl = coprime_base(fl)
+  end
+  ffl = []
+  for x = fl
+    append!(ffl, collect(keys(factor(x).fac)))
+  end
+  r = []
+  if do_roots
+    r = [roots(x)[1] for x = fl if degree(x) == 1]
+  end
+  lg = [k for k = fl if degree(k) > 1]
   if length(lg) == 0
-    return base_ring(f)
+    if do_roots
+      return base_ring(fl[1]), r
+    else
+      return base_ring(fl[1])
+    end
   end
 
   K, a = number_field(lg[1])#, check = false)
-  Ks, _, mk = absolute_field(K)
-  Ksx, x = PolynomialRing(Ks)
-  if length(lg) == 0
-    return Ks
+  Ks, nk, mk = absolute_field(K)
+  
+  ggl = [change_base_ring(lg[1], mk)]
+  ggl[1] = divexact(ggl[1], gen(parent(ggl[1])) - nk(a))
+
+  for i = 2:length(lg)
+    push!(ggl, change_base_ring(lg[i], mk))
   end
-  f = prod(lg)
-  h = Ksx([mk(coeff(f, i)) for i=0:degree(f)])
-  return splitting_field(h)
+  if do_roots
+    R = [mk(x) for x = r] 
+    push!(R, nk(a))
+    Kst, t = PolynomialRing(Ks, cached = false)
+    return splitting_field(vcat(ggl, [t-y for y in R]), coprime = true, do_roots = true)
+  else
+    return splitting_field(ggl, coprime = true, do_roots = false)
+  end
 end
 
 
