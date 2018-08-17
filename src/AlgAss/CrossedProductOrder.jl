@@ -27,7 +27,7 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
   element of basis of the order and so on...
   =#
   
-  M=Array{fmpq,3}(n*m, n*m, n*m)
+  M=Array{fmpq,3}(undef, n*m, n*m, n*m)
   for i=1:n*m
     for j=1:n*m
       for s=1:n*m
@@ -71,7 +71,7 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
   element of basis of the order and so on...
   =#
   
-  M=Array{fmpq,3}(n*m, n*m, n*m)
+  M=Array{fmpq,3}(undef, n*m, n*m, n*m)
   for i=1:n*m
     for j=1:n*m
       for s=1:n*m
@@ -140,7 +140,7 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   end
   M1 = view(M1, 1:r, 1:dim(A1))
   dM = transpose(nullspace(M1)[2])
-  gens = Vector{elem_type(O)}(rows(dM))
+  gens = Vector{elem_type(O)}(undef, rows(dM))
   m = zero_matrix(FlintZZ, rows(dM)+O.dim, O.dim)
   for i=1:rows(dM)
     el = elem_in_basis(mA1(elem_from_mat_row(A1, dM, i)))
@@ -188,7 +188,7 @@ function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p
   phi = NfToNfMor(K, K, gen(K))
   j = find_elem(G, phi)
   #I need to save the generators of the ideal!
-  gens = Array{AlgAssElem, 1}(2)
+  gens = Array{AlgAssElem, 1}(undef, 2)
   el1 = elem_in_basis(OL(p))
   a = fmpq[0 for i=1:O.dim]
   for k = 1:degree(OL)
@@ -228,7 +228,7 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
     #Construct the ideal of O corresponding to the pradical in OL
     if nsteps == 1
       I1 = ideal(O, M)
-      gensI1 = Array{AlgAssAbsOrdElem, 1}(2)
+      gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
       gensI1[1] = O(gens[1])
       gensI1[2] = O(gens[2])
       I1.gens = gensI1
@@ -240,7 +240,7 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
       N = basis_mat(B1)
       hnf_modular_eldiv!(N, fmpz(p))
       I1 = ideal(O, view(N, 1:cols(N), 1:cols(N)))
-      gensI1 = Array{AlgAssAbsOrdElem, 1}(2)
+      gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
       gensI1[1] = O(gens[1])
       gensI1[2] = O(gens[2])
       I1.gens = gensI1

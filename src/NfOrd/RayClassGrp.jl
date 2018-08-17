@@ -46,7 +46,7 @@ end
 ###############################################################################
 
 
-doc"""
+Markdown.doc"""
 ***
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
     
@@ -528,7 +528,7 @@ function _assure_princ_gen(mC::MapClassGrp)
     return true
   end
   C=domain(mC)
-  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(ngens(C))
+  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(undef, ngens(C))
   for i=1:ngens(C)
     I=FacElem(Dict(mC(C[i])=> fmpz(1)))
     pr=principal_gen_fac_elem(I^C.snf[i])
@@ -587,8 +587,8 @@ function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
  
   O=parent(m).order
   K=nf(O)
-  L=Array{NfOrdIdl,1}(ngens(C))
-  el=Array{nf_elem,1}(ngens(C))
+  L=Array{NfOrdIdl,1}(undef, ngens(C))
+  el=Array{nf_elem,1}(undef, ngens(C))
 
   for i=1:ngens(C)
     a=first(keys(mC.princ_gens[i][1].fac))
@@ -1077,7 +1077,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   f=collect(keys(factor(fmpz(n)).fac))
-  val=Array{Int,1}(length(f))
+  val=Array{Int,1}(undef, length(f))
   for i=1:length(f)
     val[i]=valuation(C.snf[end],f[i])
   end
@@ -1202,8 +1202,8 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
   
     a= C([0 for i=1:ngens(C)])
-    for (f,k) in J.fac
-      a+=k*(mC\f)
+    for (ff,k) in J.fac
+      a+=k*(mC\ff)
     end
     Id=J* inv(exp_class(a))
     Id=Id^Int(nonnclass)
@@ -1561,7 +1561,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
     return GrpAbFinGenMap[]
   end
   
-  G = Array{GrpAbFinGenMap,1}(length(Aut))
+  G = Array{GrpAbFinGenMap,1}(undef, length(Aut))
   #
   #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
@@ -1615,7 +1615,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   =#
   
   for k=1:length(Aut)
-    imaggens=Array{GrpAbFinGenElem,1}(length(lgens))
+    imaggens=Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 
       @vtime :RayFacElem 3 J = _aut_on_id(O, Aut[k], lgens[i])
       @vtime :RayFacElem 3 imaggens[i] = mR\J
@@ -1633,7 +1633,7 @@ end
 #
 ##################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
     
@@ -1673,7 +1673,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
     if x==1
       
       F = ResidueRing(FlintZZ, Int(p), cached=false)
-      act_mat=Array{nmod_mat, 1}(length(act))
+      act_mat=Array{nmod_mat, 1}(undef, length(act))
       for w=1:length(act)
         act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
       end
@@ -1718,7 +1718,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
     else    
     
       RR=ResidueRing(FlintZZ, Int(p^x), cached=false)
-      act_mat=Array{nmod_mat,1}(length(act))
+      act_mat=Array{nmod_mat,1}(undef, length(act))
       auxmat1=hcat(mG.map', rels(Q)')
       auxmat2=mS.map*mG.map
       W=MatrixSpace(RR,ngens(S), ngens(S), false)

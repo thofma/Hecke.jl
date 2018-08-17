@@ -53,9 +53,9 @@
       cs=composition_series(M)
       @test length(lf)==1
       @test length(cs)==2
-      x=Hecke._actsub(cs[1],M.action)
+      global x=Hecke._actsub(cs[1],M.action)
       @test Hecke.isisomorphic(lf[1][1],x)
-      x,_=Hecke._actquo(cs[1],M.action)
+      global x,_=Hecke._actquo(cs[1],M.action)
       @test Hecke.isisomorphic(lf[1][1],x)
 
       M=Hecke.ModAlgAss([matrix(F,2,2,[0,1,2,0])])
@@ -83,7 +83,7 @@
       ls=minimal_submodules(M)
       @test length(ls)==13
       
-      F = f(2) #Nemo.FiniteField(2, 1, "a")
+      F = f(2) #FiniteField(2, 1, "a")
       A=MatrixSpace(F,6,6)(1)
       A[5,6]=1
       M=Hecke.ModAlgAss([A])
@@ -95,7 +95,7 @@
   end
   
   @testset "cleanvect" begin
-    F, a = Nemo.FiniteField(3, 1, "a")
+    F, a = FiniteField(3, 1, "a")
     M=MatrixSpace(F,2,3)([1,1,0,0,1,0])
     v=MatrixSpace(F,1,3)([2,2,0])
     @test iszero(Hecke.cleanvect(M,v))
@@ -106,7 +106,7 @@
   
   @testset "closure and spinning" begin
   
-   F, a = Nemo.FiniteField(3, 1, "a")
+   F, a = FiniteField(3, 1, "a")
    G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
    M=FqGModule(G)
    v=MatrixSpace(F,1,4)([1,0,0,0])
@@ -124,7 +124,7 @@
   
   @testset "meataxe" begin
   
-    F, a = Nemo.FiniteField(3, 1, "a")
+    F, a = FiniteField(3, 1, "a")
     G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
     M=FqGModule(G)
     bool,B=meataxe(M)
@@ -146,16 +146,16 @@
   
   @testset "composition factors and series" begin
   
-    F, a = Nemo.FiniteField(3, 1, "a")
+    F, a = FiniteField(3, 1, "a")
     G=[MatrixSpace(F,4,4)([1,2,0,0,1,1,0,0,0,0,1,2,0,0,1,1])]
     M=FqGModule(G)
     lf=composition_factors(M)
     cs=composition_series(M)
     @test length(lf)==1
     @test length(cs)==2
-    x=Hecke.actsub(cs[1],M.G)
+    global x=Hecke.actsub(cs[1],M.G)
     @test Hecke.isisomorphic(lf[1][1],x)
-    x,_=Hecke.actquo(cs[1],M.G)
+    global x,_=Hecke.actquo(cs[1],M.G)
     @test Hecke.isisomorphic(lf[1][1],x)
 
     M=FqGModule([matrix(F,2,2,[0,1,2,0])])
@@ -179,13 +179,13 @@
   
   @testset "Submodules" begin
   
-    F, a = Nemo.FiniteField(3, 1, "a")
+    F, a = FiniteField(3, 1, "a")
     A=MatrixSpace(F,3,3)(1)
     M=FqGModule([A])
     ls=minimal_submodules(M)
     @test length(ls)==13
     
-    F, a = Nemo.FiniteField(2, 1, "a")
+    F, a = FiniteField(2, 1, "a")
     A=MatrixSpace(F,6,6)(1)
     A[5,6]=1
     M=FqGModule([A])

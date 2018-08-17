@@ -55,7 +55,7 @@ function exp(a::RelSeriesElem{<:Nemo.FieldElem})
   return x
 end
 
-doc"""
+Markdown.doc"""
     derivative(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the derivative of the power series $f$.
 """
@@ -78,7 +78,7 @@ function derivative(f::RelSeriesElem{T}) where T
   return g
 end
 
-doc"""
+Markdown.doc"""
     integral(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the integral of the power series $f$.
 """

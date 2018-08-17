@@ -19,7 +19,7 @@ function _find_rational_relation!(rel::Array{fmpz, 1}, v::arb_mat, bound::fmpz)
   @vprint :UnitGroup 2 "Finding rational approximation in $v\n"
   r = length(rel) - 1
 
-  z = Array{fmpq}(r)
+  z = Array{fmpq}(undef, r)
 
   # Compute an upper bound in the denominator of an entry in the relation
   # using Cramer's rule and lower regulator bounds
@@ -105,7 +105,7 @@ function _find_relation(x::Array{S, 1}, y::T, p::Int = 64) where {S, T}
 
   R = ArbField(p, false)
 
-  zz = Array{fmpz}(r + 1)
+  zz = Array{fmpz}(undef, r + 1)
 
   @vprint :UnitGroup 1 "Computing conjugates log matrix ... \n"
   A = _conj_log_mat_cutoff(x, p)
@@ -140,7 +140,7 @@ function _find_relation(x::Array{S, 1}, y::T, p::Int = 64) where {S, T}
 
   v = b*B
 
-  z = Array{fmpq}(r)
+  z = Array{fmpq}(undef, r)
 
   rreg = det(A)
 
@@ -150,7 +150,7 @@ function _find_relation(x::Array{S, 1}, y::T, p::Int = 64) where {S, T}
   # using Cramer's rule and lower regulator bounds
 
 
-  rel = Array{fmpz}(r + 1)
+  rel = Array{fmpz}(undef, r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end

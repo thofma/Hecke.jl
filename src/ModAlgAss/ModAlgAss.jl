@@ -1,4 +1,4 @@
-type ModAlgAss{S, T}
+mutable struct ModAlgAss{S, T}
   base_ring::S
   action::Vector{T}
   dimension::Int

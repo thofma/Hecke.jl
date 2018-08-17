@@ -12,7 +12,7 @@ export multiplicative_group, multiplicative_group_generators
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
     unit_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
@@ -35,7 +35,7 @@ end
 
 unit_group(Q::NfOrdQuoRing) = multiplicative_group(Q)
 
-doc"""
+Markdown.doc"""
 ***
     multiplicative_group_generators(Q::NfOrdQuoRing) -> Vector{NfOrdQuoRingElem}
 
@@ -88,7 +88,7 @@ function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
 end
 
 
-doc"""
+Markdown.doc"""
      factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 > A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
 > a coprime basis is computed.
@@ -100,7 +100,7 @@ function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   return S
 end
 
-doc"""
+Markdown.doc"""
      factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 > The factorisation of $Q$, by refining a coprime factorisation.
 """
@@ -131,7 +131,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     _multgrp(Q::NfOrdQuoRing) -> (GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap)
 
@@ -174,7 +174,7 @@ _multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = met
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl) -> (GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap)
 
@@ -452,7 +452,7 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
   S,mS=snf(G)
   
   #Generators
-  gens=Array{NfOrdElem,1}(ngens(S))
+  gens=Array{NfOrdElem,1}(undef, ngens(S))
   for i=1:ngens(S)
     x=mS(S[i])
     gens[i]=O(0)
@@ -686,7 +686,7 @@ function root(a::T, n::Int) where T <: Integer
   return T(root(fmpz(a), n))
 end  
 
-doc"""
+Markdown.doc"""
 ***
     baby_step_giant_step(g, n, h) -> fmpz
     baby_step_giant_step(g, n, h, cache::Dict) -> fmpz
@@ -731,7 +731,7 @@ function baby_step_giant_step(gen, n, a)
   return baby_step_giant_step(gen, n, a, cache)
 end
 
-doc"""
+Markdown.doc"""
 ***
     pohlig_hellman(g, n, h; factor_n=factor(n)) -> fmpz
 
@@ -914,7 +914,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   f=collect(keys(factor(fmpz(n)).fac))
   np = norm(p) - 1
   @assert gcd(n,np)!=1
-  val=Array{Int,1}(length(f))
+  val=Array{Int,1}(undef, length(f))
   for i=1:length(f)
     val[i]=valuation(np,f[i])
   end
@@ -1091,7 +1091,7 @@ function _multgrp_non_maximal(Q::NfOrdQuoRing)
   prime_ideals = [ p for p in S ]
 
   # Compute (upper bounds for) exponents m such that A*O_P \supseteq P^m*O_P
-  m = Vector{Int}(length(prime_ideals))
+  m = Vector{Int}(undef, length(prime_ideals))
   for i = 1:length(m)
     P = prime_ideals[i]
     p = minimum(P)
@@ -1102,8 +1102,8 @@ function _multgrp_non_maximal(Q::NfOrdQuoRing)
 
   # Compute the groups (O_P/AO_P)^\times
   Pm = [ prime_ideals[i]^m[i] for i in 1:length(prime_ideals)]
-  groups = Vector{GrpAbFinGen}(length(prime_ideals))
-  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(length(prime_ideals))
+  groups = Vector{GrpAbFinGen}(undef, length(prime_ideals))
+  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals))
   for i= 1:length(prime_ideals)
     H, HtoQQ = _multgrp_Op_aOp(Q, prime_ideals[i], m[i], Pm[i])
     groups[i] = H
@@ -1147,7 +1147,7 @@ function snf(G::GrpAbFinGen, GtoR::Union{GrpAbFinGenToNfOrdQuoRingMultMap, GrpAb
     @assert domain(RtoQ) == codomain(GtoR)
   end
 
-  gens_snf = Vector{elem_type(R)}(ngens(S))
+  gens_snf = Vector{elem_type(R)}(undef, ngens(S))
   for i = 1:ngens(S)
     x = StoG(S[i]).coeff
     for j = 1:ngens(G)
@@ -1204,7 +1204,7 @@ function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToN
     return groups[1], maps[1], NfOrdQuoMap(base_ring(Q), Q)
   end
 
-  ideals = Vector{NfOrdIdl}(length(maps))
+  ideals = Vector{NfOrdIdl}(undef, length(maps))
   for i = 1:length(maps)
     ideals[i] = ideal(codomain(maps[i]))
   end
@@ -1221,7 +1221,7 @@ function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToN
   @assert length(groups) == length(maps)
   @assert length(groups) != 0
 
-  ideals = Vector{NfOrdIdl}(length(maps))
+  ideals = Vector{NfOrdIdl}(undef, length(maps))
   for i = 1:length(maps)
     ideals[i] = ideal(codomain(maps[i]))
   end

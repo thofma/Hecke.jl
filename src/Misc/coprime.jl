@@ -2,14 +2,14 @@ import Nemo.isone, Nemo.divexact, Base.copy
 export divexact!, gcd_into!, coprime_base, coprime_base_insert
 
 function divexact!(a::fmpz, b::fmpz)
-  ccall((:fmpz_divexact, :libflint), Void, 
-          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &a, &b)
+  ccall((:fmpz_divexact, :libflint), Nothing, 
+          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, a, b)
   return a
 end
 
 function gcd_into!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_gcd, :libflint), Void, 
-          (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &b, &c)
+  ccall((:fmpz_gcd, :libflint), Nothing, 
+          (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
   return a
 end
 
@@ -35,7 +35,7 @@ function copy_into!(a, b)
 end
 
 function copy_into!(a::fmpz, b::fmpz)
-  ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), &a, &b)
+  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), a, b)
   return a
 end
 
@@ -50,8 +50,8 @@ mutable struct ProdEnv{T}
   function ProdEnv{T}(n::Int) where {T}
     r = new{T}()
     m = nbits(n)
-    r.level = Array{Int}(m)
-    r.val   = Array{T}(m)
+    r.level = Array{Int}(undef, m)
+    r.val   = Array{T}(undef, m)
     r.last = 0
     for i=1:m
       r.val[i] = T()
@@ -112,7 +112,7 @@ end
 function pair_bach(a::E, b::E) where E
   if isunit(a)
     if isunit(b)
-      return Array{E}(0)
+      return Vector{E}()
     else
       return [b]
     end
@@ -144,7 +144,7 @@ function pair_bach(a::E, b::E) where E
 end
 
 function augment_bach(S::Array{E, 1}, m::E) where E
-  T = Array{E}(0)
+  T = Vector{E}()
   i = 1
   while i <= length(S) && !isunit(m)
     if !isunit(S[i])
@@ -200,7 +200,7 @@ function ppgle(a::E, b::E) where E
 end
 
 function pair_bernstein(a::E, b::E) where E
-  T = Array{E}(0)
+  T = Vector{E}()
   if isunit(b)
     if isunit(a)
       return T
@@ -266,7 +266,7 @@ function split_bernstein(a::T, P::Array{T, 1}) where T
 end
 
 function augment_bernstein(P::Array{E, 1}, b::E) where E
-  T = Array{E}(0)
+  T = Vector{E}()
   if length(P) == 0
     if isunit(b)
       return T
@@ -352,7 +352,7 @@ function augment_steel(S::Array{E, 1}, a::E, start::Int = 1) where E
 end
 
 function coprime_base_steel(S::Array{E, 1}) where E
-  T = Array{E}(1)
+  T = Array{E}(undef, 1)
   T[1] = S[1]
   for i=2:length(S)
     augment_steel(T, S[i])
@@ -381,7 +381,7 @@ end
 # isone, gcd_into!, divexact!, copy
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
-doc"""
+Markdown.doc"""
 ***
     coprime_base{E}(S::Array{E, 1}) -> Array{E, 1}
 
@@ -389,7 +389,7 @@ doc"""
 """
 coprime_base(x) = coprime_base_steel(x)
 
-doc"""
+Markdown.doc"""
 ***
     coprime_base_insert{E}(S::Array{E, 1}, a::E) -> Array{E, 1}
 

@@ -6,7 +6,7 @@ function scale_row!(A::SMat{T}, i::Int, c::T) where T
   end
 end
 
-doc"""
+Markdown.doc"""
   swap_rows!{T}(A::SMat{T}, i::Int, j::Int)
 
   swaps, inplace, the i-th row and the j-th
@@ -15,7 +15,7 @@ function swap_rows!(A::SMat{T}, i::Int, j::Int) where T
   A[i], A[j] = A[j], A[i]
 end
 
-doc"""
+Markdown.doc"""
     invert_rows!{T}(A::SMat{T})
 
 > Inplace, inverts the rows, ie. swaps the last and the 1st, the 2nd last and the
@@ -28,7 +28,7 @@ function invert_rows!(A::SMat{T}) where T
 end
 
 
-doc"""
+Markdown.doc"""
     swap_cols!{T}(A::SMat{T}, i::Int, j::Int)
 
 > Swap the i-th and j-th column inplace.
@@ -75,7 +75,7 @@ function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
 end
 
 # rows j -> row i*c + row j
-doc"""
+Markdown.doc"""
   add_scaled_row!{T}(A::SMat{T}, i::Int, j::Int, c::T)
 
   adds, inplace, the c*i-th row to the j-th
@@ -124,7 +124,7 @@ function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
 end
 
 # col j -> col i*c + col j
-doc"""
+Markdown.doc"""
     add_scaled_col!{T}(A::SMat{T}, i::Int, j::Int, c::T)
 
 > Adds, inplace, the c*i-th column to the j-th column.
@@ -155,7 +155,7 @@ end
 
 # row i -> a*row i + b * row j
 # row j -> c*row i + d * row j
-doc"""
+Markdown.doc"""
   transform_row!{T}(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
 
   Inplace, replaces the i-th row and the j-th row by

@@ -90,7 +90,7 @@ function one_step(A::SMat{T}, sr = 1) where T
   return sr+1
 end
 
-doc"""
+Markdown.doc"""
   upper_triangular{T}(A::SMat{T}; mod = 0)
 
   Inplace: transform A into an upper triangular matrix. If mod
@@ -468,7 +468,7 @@ function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
   return snfofess, trafos_left, trafos_right
 end
 
-doc"""
+Markdown.doc"""
     elementary_divisors(A::SMat{fmpz}) -> Array{fmpz, 1}
 
 > The elementary divisors of $A$, ie. the diagonal elements of the Smith normal

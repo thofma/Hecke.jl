@@ -41,7 +41,7 @@ export frac_ideal
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfOrd, A::FakeFmpqMat, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
@@ -55,7 +55,7 @@ function frac_ideal(O::NfOrd, x::FakeFmpqMat, x_in_hnf::Bool = false)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfOrd, A::fmpz_mat, b::fmpz, A_in_hnf::Bool = false) -> NfOrdFracIdl
 
@@ -71,7 +71,7 @@ end
 
 frac_ideal(O::NfOrd, x::fmpz_mat, y::Integer) = frac_ideal(O, x, fmpz(y))
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfOrd, I::NfOrdIdl) -> NfOrdFracIdl
 
@@ -82,7 +82,7 @@ function frac_ideal(O::NfOrd, x::NfOrdIdl)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfOrd, I::NfOrdIdl, b::fmpz) -> NfOrdFracIdl
 
@@ -95,7 +95,7 @@ end
 
 frac_ideal(O::NfOrd, x::NfOrdIdl, y::Integer) = frac_ideal(O, x, fmpz(y))
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfOrd, a::nf_elem) -> NfOrdFracIdl
 
@@ -106,7 +106,7 @@ function frac_ideal(O::NfOrd, x::nf_elem)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfOrd, a::NfOrdElem) -> NfOrdFracIdl
 
@@ -149,7 +149,7 @@ end
 
 order(a::NfOrdFracIdlSet) = a.order
 
-doc"""
+Markdown.doc"""
     order(a::NfOrdFracIdl) -> NfOrd
 > The order that was used to define the ideal $a$.
 """
@@ -161,7 +161,7 @@ order(a::NfOrdFracIdl) = a.order
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     basis_mat_inv(I::NfOrdFracIdl) -> FakeFmpqMat
 
@@ -182,7 +182,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     basis(I::NfOrdFracIdl) -> Array{nf_elem, 1}
 
@@ -194,7 +194,7 @@ function basis(a::NfOrdFracIdl)
   O = order(a)
   K = nf(O)
   Oba = O.basis_nf
-  res = Array{nf_elem}(d)
+  res = Array{nf_elem}(undef, d)
 
   for i in 1:d
     z = K()
@@ -214,7 +214,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(x::NfOrdFracIdl, dict::ObjectIdDict)
+function Base.deepcopy_internal(x::NfOrdFracIdl, dict::IdDict)
   z = NfOrdFracIdl(deepcopy(x.num), deepcopy(x.den))
   if isdefined(x, :basis_mat)
     z.basis_mat = deepcopy(x.basis_mat)
@@ -228,7 +228,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     basis_mat(I::NfOrdFracIdl) -> FakeFmpqMat
 
@@ -280,7 +280,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     norm(I::NfOrdFracIdl) -> fmpq
 
@@ -311,7 +311,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     inv(A::NfOrdFracIdl) -> NfOrdFracIdl
 
@@ -373,7 +373,7 @@ isprime_known(A::NfOrdFracIdl) = isprime_known(A.num)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ==(x::NfOrdFracIdl, y::NfOrdFracIdl) -> Bool
 
@@ -405,7 +405,7 @@ function prod(a::NfOrdFracIdl, b::NfOrdFracIdl)
   return NfOrdFracIdl(A, a.den*b.den)
 end
 
-doc"""
+Markdown.doc"""
 ***
     *(I::NfOrdFracIdl, J::NfOrdFracIdl) -> NfOrdFracIdl
 
@@ -541,7 +541,7 @@ function ideal(O::NfOrd, a::nf_elem)
   return a*O
 end
 
-doc"""
+Markdown.doc"""
 ***
     integral_split(A::NfOrdFracIdl) -> NfOrdIdl, NfOrdIdl
 > Computes the unique coprime integral ideals $N$ and $D$ s.th. $A = ND^{-1}$
@@ -554,7 +554,7 @@ function integral_split(A::NfOrdFracIdl)
   return numerator(n), numerator(d)
 end
 
-doc"""
+Markdown.doc"""
     factor(I::NfOrdFracIdl) -> Dict{NfOrdIdl, Int}
 > The factorisation of $I$.
 """
@@ -579,7 +579,7 @@ function one(A::NfOrdFracIdl)
   return NfOrdFracIdl(ideal(order(A), 1), fmpz(1))
 end
 
-doc"""
+Markdown.doc"""
     valuation(A::NfOrdFracIdl, p::NfOrdIdl)
 > The valuation of $A$ at $p$.
 """

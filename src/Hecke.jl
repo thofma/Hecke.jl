@@ -31,19 +31,7 @@
 #
 ################################################################################
 
-__precompile__()
-
 module Hecke
-
-################################################################################
-#
-#  Load FPlll if available
-#
-################################################################################
-
-if isdir(joinpath(Pkg.dir(),"FPlll"))
-  using FPlll
-end
 
 ################################################################################
 #
@@ -51,19 +39,28 @@ end
 #
 ################################################################################
 
-import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round, 
-             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
-             getindex, setindex!, transpose, getindex, //, colon, div,
-             floor, max, BigFloat, precision, dot,
+import Base: show, minimum, rand, prod, copy, rand, ceil, round, 
+             size, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
+             getindex, setindex!, transpose, getindex, //, div,
+             floor, max, BigFloat, precision, 
              first, StepRange, show, one, zero, inv, iseven, isodd, convert,
-             angle, abs2, isless, exponent, base, isfinite, zeros, rem,
+             angle, abs2, isless, exponent, isfinite, zeros, rem,
              min, numerator, denominator, exp, maximum
+
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
+using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random
+
 import AbstractAlgebra
+
+import LinearAlgebra: dot, istriu, nullspace
+
+import Serialization: serialize, deserialize
+
+import Random: rand!
 
 import Nemo
 
@@ -73,7 +70,7 @@ exclude = [:Nemo, :AbstractAlgebra, :RealField,
 
 for i in names(Nemo)
   i in exclude && continue
-  eval(parse("import Nemo." * string(i)))
+  eval(Meta.parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
 
@@ -84,7 +81,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, @test_and_infer, next_prime, ispower
+       modord, resultant, @test_and_infer, next_prime, ispower, number_field
 
 ###############################################################################
 #
@@ -92,28 +89,35 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
-#const pkgdir = realpath(joinpath(dirname(@__FILE__), ".."))
-const pkgdir = const pkgdir = Pkg.dir("Hecke")
+if VERSION >= v"0.7.0-"
+  const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
+else
+  const pkgdir = Pkg.dir("Hecke")
+end
+
 const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
+
 const libdir = joinpath(pkgdir, "local", "lib")
+
+global const number_field = NumberField
 
 function __init__()
 
   if myid() == 1
     println("")
     print("Welcome to \n")
-    print_with_color(:red, "
+    printstyled("
     _    _           _        
    | |  | |         | |       
    | |__| | ___  ___| | _____ 
    |  __  |/ _ \\/ __| |/ / _ \\
    | |  | |  __/ (__|   <  __/
    |_|  |_|\\___|\\___|_|\\_\\___|
-    ")
+    ", color = :red)
 
     println()
     print("Version")
-    print_with_color(:green, " $VERSION_NUMBER ")
+    printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
     println("(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
@@ -124,7 +128,7 @@ function __init__()
   
   if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
     push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  elseif is_linux()
+  elseif Sys.islinux()
     push!(Libdl.DL_LOAD_PATH, libdir)
     Libdl.dlopen(libhecke)
   else
@@ -202,12 +206,12 @@ function __init__()
   # Stuff for elliptic curves
   # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
   # will be removed eventually
-  global const _Zx = PolynomialRing(FlintZZ, "_x")[1]
-  global const _Zxy = PolynomialRing(_Zx, "_y")[1]
-  global const _x = gen(_Zx)
-  global const _y = gen(_Zxy)
+  global _Zx = PolynomialRing(FlintZZ, "_x")[1]
+  global _Zxy = PolynomialRing(_Zx, "_y")[1]
+  global _x = gen(_Zx)
+  global _y = gen(_Zxy)
 
-  global const flint_rand_ctx = flint_rand_state()
+  global flint_rand_ctx = flint_rand_state()
 end
 
 function _get_maximal_order(K::AnticNumberField)
@@ -296,6 +300,32 @@ function torsion_units_gen(K::AnticNumberField)
   return g
 end
 
+trace(x...) = tr(x...)
+
+
+using LinearAlgebra
+
+if VERSION < v"1.0.0"
+  LinearAlgebra.eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
+
+  LinearAlgebra.eye(x) = identity_matrix(base_ring(x), rows(x))
+
+  LinearAlgebra.eye(x, n) = identity_matrix(base_ring(x), n)
+else
+  eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
+
+  eye(x) = identity_matrix(base_ring(x), rows(x))
+
+  eye(x, n) = identity_matrix(base_ring(x), n)
+end
+
+
+lufact(x...) = lu(x...)
+
+lufact!(x...) = lu!(x...)
+
+Base.adjoint(x) = transpose(x)
+
 ################################################################################
 #
 #  Version number
@@ -366,13 +396,13 @@ end
 macro v_do(args...)
   if length(args) == 2
     quote
-      if get_verbose_level($(args[1])) >= 1
+      if get_verbose_level($(esc(args[1]))) >= 1
        $(esc(args[2]))
       end
     end
   elseif length(args) == 3
     quote
-      if get_verbose_level($(args[1])) >= $(args[2])
+      if get_verbose_level($(esc(args[1]))) >= $(esc(args[2]))
         $(esc(args[3]))
       end
     end
@@ -610,9 +640,9 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
-    vshow(A) -> Void
+    vshow(A) -> Nothing
 
 > Prints all fields of $A$.
 """
@@ -634,9 +664,9 @@ end
 
 # Nemo only provides element_types for parent objects
 
-elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
+elem_type(::Type{FacElemMon{T}}) where {T} = FacElem{elem_type(T), T}
 
-elem_type{T}(::Type{Generic.ResRing{T}}) = Generic.Res{T}
+elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 
 ################################################################################
 #
@@ -740,10 +770,11 @@ function print_cache()
     end;
   end
   for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
-    end;
+    catch e
+    end
   end
   
   sym = [];
@@ -754,7 +785,7 @@ function print_cache()
     end;
   end
   for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
     catch e
@@ -769,10 +800,11 @@ function print_cache()
     end;
   end
   for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
-    end;
+    catch e
+    end
   end
 
 end

@@ -16,7 +16,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
     ray_class_field(m::MapClassGrp) -> ClassField
     ray_class_field(m::MapRayClassGrp) -> ClassField
 > Creates the (formal) abelian extension defined by the map $m: A \to I$
@@ -28,7 +28,7 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
   return ray_class_field(m, GrpAbFinGenMap(domain(m)))
 end
 
-doc"""
+Markdown.doc"""
     ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap) -> ClassField
 > For $m$ a map computed by either {ray_class_group} or {class_group} and
 > $q$ a canonical projection (quotient map) as returned by {quo} for q 
@@ -45,7 +45,7 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFin
   return CF
 end
 
-doc"""
+Markdown.doc"""
     number_field(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
 > Given a (formal) abelian extension, compute the class field by
 > finding defining polynomials
@@ -128,7 +128,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   z_p = inv(mF(Zk(K.zeta)))
 
   ex = div(norm(p)-1, K.n)
-  aut = Array{fmpz,1}(length(K.gen))
+  aut = Array{fmpz,1}(undef, length(K.gen))
   for j=1:length(K.gen)
     mu = mF(K.gen[j])^ex  # can throw bad prime!
     i = 0
@@ -193,13 +193,16 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   sR = GrpAbFinGenElem[]
   lp = elem_type(domain(mR))[]
 
-  st = start(S)
+  #st = start(S)
+  local q, mq, np, extra
   np = 0
   extra = 1
 
-  q, mq = quo(R, sR, false)
-  while true
-    p, st = next(S, st)
+  #q, mq = quo(R, sR, false)
+  for p in S
+    q, mq = quo(R, sR, false)
+  #while true
+    #p, st = next(S, st)
     if cp % p == 0 || index(ZK) % p ==0
       continue
     end
@@ -305,7 +308,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
 
   lp, sG = find_gens(cf, Sp, cp)
   G = codomain(cf)
-  sR = Array{GrpAbFinGenElem, 1}(length(lp))
+  sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
 
   for i=1:length(lp)
     p = Id_Zk(intersect_nonindex(mp, lp[i]))
@@ -611,7 +614,7 @@ function _rcf_descent(CF::ClassField_pp)
   C = cyclotomic_extension(k, e)
   A = CF.K
   n = degree(A)
-  @vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
+  #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
   _aut_A_over_k(C, CF)
   
   AutA_gen = CF.AutG
@@ -700,7 +703,13 @@ function _rcf_descent(CF::ClassField_pp)
 
 #  n = prod(os) # maybe primitive??  
   @vprint :ClassField 2 "trying relative trace\n"
-  t = sum(os)
+  @assert length(os) > 0
+  t = zero(parent(os[1]))
+  for o in os
+    t = t + o
+  end
+
+  #t = sum(os)
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
   q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
@@ -743,45 +752,7 @@ function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe)
   return res
 end
 
-function _reduce(a::fq_nmod)
-  A = parent(a)
-  if a.length < 2*degree(A)
-    ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &a, &A)
-  else
-    ccall((:nmod_poly_rem, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{Void}, Ptr{Void}), &a, &a, pointer_from_objref(A)+6*sizeof(Int) + 2*sizeof(Ptr{Void}), pointer_from_objref(A)+sizeof(fmpz))
-  end
-end
-
-function (R::Nemo.FqFiniteField)(x::Nemo.fmpz_mod_poly)
-  z = R()
-  ccall((:fq_set, :libflint), Void, (Ref{Nemo.fq}, Ref{Nemo.fmpz_mod_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
-  ccall((:fq_reduce, :libflint), Void, (Ref{Nemo.fq}, Ref{Nemo.FqFiniteField}), z, R)
-  return z
-end
-
-
-#TODO: move elsewhere - and use. There are more calls to nmod_set/reduce
-function (A::FqNmodFiniteField)(x::nmod_poly)
-  u = A()
-  ccall((:fq_nmod_set, :libflint), Void,
-                     (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                                     &u, &x, &A)
-  _reduce(u)
-#  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &A)                                   
-  return u
-end
-
-function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_poly)
-  nf_elem_to_nmod_poly!(a_tmp, b)
-  ccall((:fq_nmod_set, :libflint), Void,
-                     (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                                     &a, &a_tmp, &K)
-  _reduce(a)
-#  ccall((:fq_nmod_reduce, :libflint), Void, (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &a, &K)                                   
-end
-  
-
-doc"""
+Markdown.doc"""
    extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
 > For a residue field map from a prime ideal, extend the domain of the map
 > to the entire field.
@@ -840,9 +811,9 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
       vr = v % qm1
       if vr < 0
         vr = (-vr) %qm1
-        ccall((:fq_nmod_inv, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &s, &s, &Fq)
+        ccall((:fq_nmod_inv, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
       end
-      ccall((:fq_nmod_pow, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{fmpz}, Ptr{FqNmodFiniteField}), &s, &s, &vr, &Fq)
+      ccall((:fq_nmod_pow, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), s, s, vr, Fq)
       mul!(r, r, s)
     end
 #too expensive - and automatically used in test
@@ -879,7 +850,7 @@ function _rcf_reduce(CF::ClassField_pp)
   return nothing
 end
 
-doc"""
+Markdown.doc"""
     reduce_mod_powers(a::nf_elem, n::Int) -> nf_elem
     reduce_mod_powers(a::nf_elem, n::Int, primes::Array{NfOrdIdl, 1}) -> nf_elem
 > Given some non-zero algebraic integeri $\alpha$, try to find  $\beta$ s.th.
@@ -1262,7 +1233,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     for j = 1:length(Cp)
       sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], false)
       sG, msG = sub(Cp[im].bigK.AutG, 
-          vcat([(Cp[j].o > om ? div(om, Cp[i].o):1) * Cp[im].bigK.AutG(all_s[x]) 
+          vcat([(Cp[j].o > om ? div(om, Cp[i].o) : 1) * Cp[im].bigK.AutG(all_s[x]) 
                        for x=1:length(all_s)],
                [Cp[j].o*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
       ts = all_tau_s[j]
@@ -1282,7 +1253,22 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     Ka = C.Ka
     KaT, X = PolynomialRing(Ka, "T", cached = false)
     KK, gKK = number_field([X^Cp[j].o - evaluate(all_emb[j][1]) for j=1:length(Cp)])
-    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1])*prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o))) for j=1:length(Cp)) for i=1:length(Cp)])
+    s = []
+    for i in 1:length(Cp)
+      gKK[1].parent = KK
+      _s = gKK[1]
+      _s.parent = KK
+      _s = _s^Int(divexact(all_b[i][2][1], div(om, Cp[1].o)))
+      gKK[1].parent = KK
+      for j in 2:length(Cp)
+        _s = _s * gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o)))
+        gKK[j].parent
+      end
+      _s.parent
+      push!(s, _s)
+    end
+    #prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o))) for j=1:length(Cp))
+    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1]) * s[i] for i=1:length(Cp)])
 
     # now "all" that remains is to restrict h to the subfield, using lin. alg..
     # .. and of course move away form the Cp stuff.
@@ -1291,12 +1277,12 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     # we're using only one generator
     #Similar: NfRel_ns -> NfRel_ns small gens set -> large gens set
     all_pe =[]
-    for j=1:length(Cp)
-      emb = NfRelToNfRel_nsMor(Cp[j].K, KK, all_emb[j][3], gens(KK)[j])
+    for jj=1:length(Cp)
+      emb = NfRelToNfRel_nsMor(Cp[jj].K, KK, all_emb[jj][3], gens(KK)[jj])
 #      println("start:")
 #      println(gen(Cp[j].K), " -> ", emb(gen(Cp[j].K)))
 #      println(Cp[j].K.pol, " -> ", minpoly(emb(gen(Cp[j].K))))
-      pe = emb(Cp[j].pe)
+      pe = emb(Cp[jj].pe)
       tau_pe = h(pe)
 #      println("$(Cp[j].pe) pe: $pe -> $tau_pe")
 #      println(norm(minpoly(Cp[j].pe)))
@@ -1314,11 +1300,11 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     end
   
 
-    for j=2:length(Cp)
-      d *= degree(Cp[j])
+    for jj=2:length(Cp)
+      d *= degree(Cp[jj])
       D = copy(B)
       while length(B) < d
-        D = [x*all_pe[j][1] for x = D]
+        D = [x*all_pe[jj][1] for x = D]
         append!(B, D)
       end
     end
@@ -1333,11 +1319,11 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     Mk = _expand(M, C.mp[1])
     #@hassert :ClassField 2 nullspace(Mk')[1] == 0
     all_im = NfRel_nsElem{nf_elem}[]
-    for j=1:length(Cp)
-      N = SRow(all_pe[j][2])
+    for jj=1:length(Cp)
+      N = SRow(all_pe[jj][2])
       Nk = _expand(N, C.mp[1])
       n = solve(Mk, Nk)
-      im = sum(v*b_AA[i] for (i, v) = n)
+      im = sum(v*b_AA[l] for (l, v) = n)
       push!(all_im, im)
     end
     im = NfRel_nsElem{nf_elem}[]
@@ -1421,7 +1407,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
     defining_modulus(CF::ClassField)
 > The modulus, ie. an ideal the the set of real places, used to create the
 > class field.
@@ -1448,7 +1434,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
   base_ring(A::ClassField)
 > The maximal order of the field that $A$ is defined over.
 """
@@ -1456,7 +1442,7 @@ function base_ring(A::ClassField)
   return order(defining_modulus(A)[1])
 end
 
-doc"""
+Markdown.doc"""
   base_field(A::ClassField)
 > The number field that $A$ is defined over.
 """
@@ -1472,7 +1458,7 @@ function base_field(A::ClassField_pp)
   return number_field(base_ring(A))
 end
 
-doc"""
+Markdown.doc"""
   degree(A::ClassField)
 > The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
@@ -1490,7 +1476,7 @@ function degree(A::ClassField_pp)
   return A.degree
 end
 
-doc"""
+Markdown.doc"""
    factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
 > Factors the rincipal ideal generated by $a$ into coprimes by computing a coprime
 > basis from the principal ideals in the factorisation of $a$.
@@ -1521,7 +1507,7 @@ function factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   return factor_coprime(FacElem(A))
 end
 
-doc"""
+Markdown.doc"""
   factor(a::nf_elem, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
 > Factors the principal ideal generated by $a$.
 """
@@ -1529,7 +1515,7 @@ function factor(a::nf_elem, I::NfOrdIdlSet)
   return factor(ideal(order(I),  a))
 end
 
-doc"""
+Markdown.doc"""
   factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
 > Factors the principal ideal generated by $a$ by refinind a coprime factorisation.
 """
@@ -1545,7 +1531,7 @@ function factor(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet)
   return f
 end
 
-doc"""
+Markdown.doc"""
    factor(a::fmpq, ::FlintIntegerRing) -> Fac{fmpz}
 > Factor the rational number $a$ into prime numbers
 """
@@ -1558,7 +1544,7 @@ function factor(a::fmpq, ::FlintIntegerRing)
   return fn
 end
 
-doc"""
+Markdown.doc"""
   number_field(I::NfOrd)
 > Return the number fields containing $I$.
 """
@@ -1566,15 +1552,7 @@ doc"""
   return O.nf
 end
 
-function order(A::FacElemMon{IdealSet})
-  return order(A.base_ring)
-end
-
-function order(A::FacElemMon{NfOrdIdlSet})
-  return order(A.base_ring)
-end
-
-doc"""
+Markdown.doc"""
     islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl) -> Bool
 > Tests if $a$ is a local norm at $p$ in the extension implictly given by $r$.
 > Currently the conductor cannot have infinite places.
@@ -1597,7 +1575,7 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem, p::NfAbsOrdIdl)
   return isone(r.quotientmap(preimage(r.rayclassgroupmap, y)))
 end
 
-doc"""
+Markdown.doc"""
     islocal_norm(r::ClassField, a::NfAbsOrdElem) -> Bool
 > Tests if $a$ is a local norm at all finite places in the extension implictly given by $r$.
 """
@@ -1633,7 +1611,7 @@ function norm_group_map(R::ClassField, r::ClassField, map = false)
   return norm_group_map(R, [r], map)[1]
 end
 
-doc"""
+Markdown.doc"""
     compositum(a::ClassField, b::ClassField) -> ClassField
              *(a::ClassField, b::ClassField) -> ClassField
 > The compositum of $a$ and $b$ as a (formal) class field.
@@ -1652,13 +1630,13 @@ function compositum(a::ClassField, b::ClassField)
   return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
 end
 
-doc"""
+Markdown.doc"""
   *(A::ClassField, B::ClassField) -> ClassField
 > The compositum of $a$ and $b$ as a (formal) class field.
 """
 *(a::ClassField, b::ClassField) = compositum(a, b)
 
-doc"""
+Markdown.doc"""
     intersect(a::ClassField, b::ClassField) -> ClassField
 > The intersection of $a$ and $b$ as a class field.
 """
@@ -1676,7 +1654,7 @@ function Base.intersect(a::ClassField, b::ClassField)
   return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
 end
 
-doc"""
+Markdown.doc"""
     issubfield(a::ClassField, b::ClassField) -> Bool
 > Determines of $a$ is a subfield of $b$.
 """
@@ -1692,7 +1670,7 @@ function issubfield(a::ClassField, b::ClassField)
   return issubset(kernel(h[2])[1], kernel(h[1])[1])
 end
 
-doc"""
+Markdown.doc"""
     ==(a::ClassField, b::ClassField)
 > Tests if $a$ and $b$ are equal.
 """
@@ -1709,7 +1687,7 @@ function ==(a::ClassField, b::ClassField)
   return iseq(kernel(h[2])[1], kernel(h[1])[1])
 end
 
-doc"""
+Markdown.doc"""
     hilbert_class_field(k::AnticNumberField) -> ClassField
 > The Hilbert class field of $k$ as a formal (ray-) class field.
 """
@@ -1717,7 +1695,7 @@ function hilbert_class_field(k::AnticNumberField)
   return ray_class_field(class_group(k)[2])
 end
 
-doc"""
+Markdown.doc"""
     ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
 > The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
 > subfield of exponent $n$ is computed.
@@ -1726,7 +1704,7 @@ function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
 end
 
-doc"""
+Markdown.doc"""
     prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
 > For a prime $p$ in the base ring of $r$, determine the splitting type of $p$ 
 > in $r$. ie. the tuple $(e, f, g)$ giving the ramification degree, the inertia
@@ -1755,7 +1733,7 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   return (e, f, divexact(order(q), f))
 end
 
-doc"""
+Markdown.doc"""
     iscyclic(C::ClassField)
 > Tests if the (relative) automorphism group of $C$ is cyclic (by checking
 > the defining ideal group).

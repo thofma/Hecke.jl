@@ -62,7 +62,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfAbsNSElem, dict::ObjectIdDict)
+function Base.deepcopy_internal(a::NfAbsNSElem, dict::IdDict)
   # TODO: Fix this once deepcopy is fixed for fmpq_mpoly
   # z = NfAbsNSElem(Base.deepcopy_internal(data(a), dict))
   z = NfAbsNSElem(Base.deepcopy(data(a)))
@@ -135,27 +135,16 @@ end
 #
 ################################################################################
 
-if isdefined(Nemo, :promote_rule1)
-  Nemo.promote_rule{T <: Integer}(::Type{NfAbsNSElem}, ::Type{T}) = NfAbsNSElem
+Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{T}) where {T <: Integer} = NfAbsNSElem
 
-  Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpz}) = NfAbsNSElem
+Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpz}) = NfAbsNSElem
 
-  Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpq}) = NfAbsNSElem
+Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpq}) = NfAbsNSElem
 
-  function Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{U}) where {U}
-    Nemo.promote_rule(fmpq, U) == fmpq ? NfAbsNSElem : Nemo.promote_rule1(U, NfAbsNSElem)
-  end
-else
-  Nemo.promote_rule{T <: Integer}(::Type{NfAbsNSElem}, ::Type{T}) = NfAbsNSElem
-
-  Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpz}) = NfAbsNSElem
-
-  Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpq}) = NfAbsNSElem
-
-  function Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{U}) where {U <: Nemo.RingElement}
-    Nemo.promote_rule(fmpq, U) == fmpq ? NfAbsNSElem : Union{}
-  end
+function Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{U}) where {U <: Nemo.RingElement}
+  Nemo.promote_rule(fmpq, U) == fmpq ? NfAbsNSElem : Union{}
 end
+
 
 ################################################################################
 #
@@ -177,7 +166,7 @@ function basis(K::NfAbsNS)
   else
     g = gens(K)
     b = NfAbsNSElem[]
-    for i in CartesianRange(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
+    for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
       push!(b, prod(g[j]^(i[j] - 1) for j=1:length(i)))
     end
     K.basis = b
@@ -372,7 +361,7 @@ function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
     M[i, j] = z_q.num[1, j]
   end
 
-  ccall((:fmpz_set, :libflint), Void, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
+  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}), d, z_q.den)
 
   return nothing
 end
@@ -444,7 +433,7 @@ function minpoly_dense(a::NfAbsNSElem)
     if n % (i-1) == 0 && rank(M) < i
       N = nullspace(sub(M, 1:i, 1:cols(M))')
       @assert N[1] == 1
-      v = Vector{fmpq}(i)
+      v = Vector{fmpq}(undef, i)
       for j in 1:i
         v[j] = N[2][j, 1]
       end
@@ -684,7 +673,7 @@ end
 #  Simple extensions
 #
 ################################################################################
-doc"""
+Markdown.doc"""
     simple_extension(K::NfAbsNS) -> AnticNumberField, Map
 > For a non-simple extension $K$ of $Q$, find a primitive element and thus
 > an isomorphic simple extension of $Q$. The map realises this isomorphism.
@@ -738,7 +727,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
 > Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 > we construct 

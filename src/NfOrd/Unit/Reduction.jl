@@ -71,8 +71,8 @@ function scaled_log_matrix(u::Array{T, 1}, prec::Int = 32) where T
     end
     for j in 1:length(c)
       tt = fmpz()
-      t = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &c[j])
-      l = ccall((:arf_get_fmpz_fixed_si, :libarb), Int, (Ptr{fmpz}, Ptr{arf_struct}, Int), &tt, t, -prec)
+      t = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ref{arb}, ), c[j])
+      l = ccall((:arf_get_fmpz_fixed_si, :libarb), Int, (Ref{fmpz}, Ptr{arf_struct}, Int), tt, t, -prec)
       A[i, j] = tt
     end
   end

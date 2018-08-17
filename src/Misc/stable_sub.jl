@@ -61,7 +61,7 @@ function Nemo.snf(M::ZpnGModule)
   S,mS=snf(A)
   W=[mS(s) for s in gens(S)]
   R=M.R
-  H=Array{nmod_mat,1}(length(G))
+  H=Array{nmod_mat,1}(undef, length(G))
   for i=1:length(G)
     N=zero_matrix(R, ngens(S),ngens(S))
     for j=1:length(W)
@@ -116,7 +116,7 @@ function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpA
   expon=Int(exponent(V))
   @assert length(factor(order(V)).fac)==1
   RR=ResidueRing(FlintZZ, expon, cached=false)
-  act_mat=Array{nmod_mat,1}(length(act))
+  act_mat=Array{nmod_mat,1}(undef, length(act))
   for z=1:length(act)
     A=zero_matrix(RR,ngens(V), ngens(V))
     for i=1:ngens(V)
@@ -227,7 +227,7 @@ end
 function sub(M::ZpnGModule, S::nmod_mat)
 
   sg,msg=sub(M.V,lift(S))
-  G=Array{nmod_mat,1}(length(M.G))
+  G=Array{nmod_mat,1}(undef, length(M.G))
   for k=1:length(M.G)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))
     for i=1:ngens(sg)
@@ -247,7 +247,7 @@ end
 function sub(M::ZpnGModule, n::Int)
   
   sg,msg=sub(M.V,n)
-  G=Array{nmod_mat,1}(length(M.G))
+  G=Array{nmod_mat,1}(undef, length(M.G))
   for k=1:length(M.G)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))
     for i=1:ngens(sg)
@@ -272,7 +272,7 @@ function _exponent_p_sub(M::ZpnGModule)
   p=M.p
   F, a = Nemo.FiniteField(p, 1, "a", cached=false)
   v=fmpz[divexact(V.snf[i],p) for i=1:ngens(V)]
-  G1=Array{fq_nmod_mat,1}(length(G))
+  G1=Array{fq_nmod_mat,1}(undef, length(G))
   MS=MatrixSpace(F,ngens(V),ngens(V), false)
   for s=1:length(G1)
     G1[s]=MS(0)
@@ -312,7 +312,7 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   else
     list_sub=minimal_submodules(N, ngens(S.V)-ord)
   end
-  list=Array{nmod_mat,1}(length(list_sub))
+  list=Array{nmod_mat,1}(undef, length(list_sub))
   v=[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   W=MatrixSpace(R,1, ngens(M.V), false)
   for z=1:length(list)
@@ -339,7 +339,7 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   else 
     minlist=minimal_submodules(N,ind)
   end
-  list=Array{nmod_mat,1}(length(minlist))
+  list=Array{nmod_mat,1}(undef, length(minlist))
   W=MatrixSpace(R,1,ngens(S.V), false)
   v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
@@ -372,7 +372,7 @@ end
 
 function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
   
-  G1=Array{fq_nmod_mat,1}(length(G))
+  G1=Array{fq_nmod_mat,1}(undef, length(G))
   n=rows(G[1])
   for i=1:length(G)
     M=zero_matrix(F,n-s+1,n-s+1)
@@ -449,7 +449,7 @@ end
 #
 #######################################################################################
 
-doc"""
+Markdown.doc"""
     submodules(M::ZpnGModule; typequo, typesub, order)
 > Given a ZpnGModule M, the function returns all the submodules of M. 
 > 
@@ -522,7 +522,7 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   else
     @vtime :StabSub 1 submod=minimal_submodules(N,1,composition_factors(N))
   end
-  list1=Array{nmod_mat,1}(length(submod))
+  list1=Array{nmod_mat,1}(undef, length(submod))
   v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   for i=1:length(submod)
     @views list1[i]=lift(submod[i],R)
@@ -566,7 +566,7 @@ function submodule_with_struct_exp_p(M::ZpnGModule, l::Int)
     list=nmod_mat[]
     v=fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
     submod=submodules(N,ngens(S.V)-l,comp_factors=lf)
-    list1=Array{nmod_mat,1}(length(submod))
+    list1=Array{nmod_mat,1}(undef, length(submod))
     for i=1:length(submod) 
       list1[i]=lift(submod[i],R) 
       for s=1:rows(list1[i])
@@ -609,7 +609,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #
   #  Write the modules as elements of S
   #
-  list1=Array{nmod_mat,1}(length(submod))
+  list1=Array{nmod_mat,1}(undef, length(submod))
   v=[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
   for i=1:length(submod)
     @inbounds list1[i]=lift(submod[i],R)

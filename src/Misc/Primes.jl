@@ -124,7 +124,7 @@ struct PrimesSet{T}
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     PrimesSet(f::Integer, t::Integer) -> PrimesSet
     PrimesSet(f::fmpz, t::fmpz) -> PrimesSet
@@ -136,7 +136,7 @@ function PrimesSet(f::T, t::T) where T
   return PrimesSet{T}(f, t)
 end
 
-doc"""
+Markdown.doc"""
 ***
     PrimesSet(f::Integer, t::Integer, mod::Integer, val::Integer)  
     PrimesSet(f::fmpz, t::fmpz, mod::fmpz, val::fmpz) 
@@ -150,15 +150,23 @@ function PrimesSet(f::T, t::T, mod::T, val::T) where {T}
   return PrimesSet{T}(f, t, mod, val)
 end
 
-# Iteration interface
-function Base.start(A::PrimesSet{T}) where T <: Integer
+function Base.iterate(A::PrimesSet{T}) where {T <: Integer}
+  if A.to != -1 && A.from > A.to
+    return nothing
+  end
+
   if A.nocond
     if !isprime(fmpz(A.from))
       p = next_prime(A.from)
     else
       p = A.from
     end
-    return p
+
+    if A.to != -1 && p > A.to
+      return nothing
+    else
+      return p, p
+    end
   end
 
   curr = A.from 
@@ -174,17 +182,31 @@ function Base.start(A::PrimesSet{T}) where T <: Integer
     curr += A.mod
     i += UIntone
   end
-  return curr
+
+  if A.to != -1 && curr > A.to
+    return nothing
+  else
+    return curr, curr
+  end
 end
 
-function Base.start(A::PrimesSet{fmpz})
+function Base.iterate(A::PrimesSet{fmpz})
+  if A.to != -1 && A.from > A.to
+    return nothing
+  end
+
   if A.nocond
     if !isprime(A.from)
       p = next_prime(A.from)
     else
       p = A.from
     end
-    return p
+
+    if A.to != -1 && p > A.to
+      return nothing
+    else
+      return p, p
+    end
   end
 
   curr = A.from 
@@ -201,22 +223,30 @@ function Base.start(A::PrimesSet{fmpz})
     curr += A.mod
     i += UIntone
   end
-  return curr
+  
+  if A.to != -1 && curr > A.to
+    return nothing
+  else
+    return curr, curr
+  end
 end
 
-function Base.next(A::PrimesSet{T}, st::T) where T<: Union{Integer, fmpz}
-  p = st
+function Base.iterate(A::PrimesSet{T}, p) where T<: Union{Integer, fmpz}
   if A.nocond
     if p == 2
-      st = T(3)
-      return p, st
+      nextp = T(3)
     else
       if T == Int
-        st = next_prime(p, A.proof)
+        nextp = next_prime(p, A.proof)
       else
-        st = next_prime(p)
+        nextp = next_prime(p)
       end
-      return p, st
+    end
+
+    if A.to != -1 && nextp > A.to
+      return nothing
+    else
+      return nextp, nextp
     end
   end
 
@@ -224,28 +254,127 @@ function Base.next(A::PrimesSet{T}, st::T) where T<: Union{Integer, fmpz}
     m = A.mod
   else
     if p==2
-      st = T(3)
-      return p, st
+      nextp = T(3)
     end
     m = T(2)
   end
-  st = p+m
+  nextp = p+m
   i = zero(UInt)
   UIntone = one(UInt)
-  c_U = st % A.sv
+  c_U = nextp % A.sv
   c_M = m % A.sv
-  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(st))
-    st += m
+  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(nextp))
+    nextp += m
     i += UIntone
   end
 
-  return p, st
+  if A.to != -1 && nextp > A.to
+    return nothing
+  else
+    return nextp, nextp
+  end
 end
 
-function Base.done(A::PrimesSet{T}, st::T) where T <: Union{Integer, fmpz}
-  return A.to != -1 && st > A.to
-end
+# Iteration interface
+#function Base.start(A::PrimesSet{T}) where T <: Integer
+#  if A.nocond
+#    if !isprime(fmpz(A.from))
+#      p = next_prime(A.from)
+#    else
+#      p = A.from
+#    end
+#    return p
+#  end
+#
+#  curr = A.from 
+#  c = curr % A.mod
+#  if A.mod > 1 && c != A.a
+#    curr += (- c + A.a) % A.mod
+#  end
+#  c_U = curr % A.sv
+#  c_M = A.mod % A.sv
+#  UIntone = one(UInt)
+#  i = zero(UInt)
+#  while gcd(c_U + i * c_M, A.sv) != UInt(1) || !isprime(fmpz(curr))
+#    curr += A.mod
+#    i += UIntone
+#  end
+#  return curr
+#end
 
-Base.eltype{T <: Union{Integer, fmpz}}(::PrimesSet{T}) = T
+#function Base.start(A::PrimesSet{fmpz})
+#  if A.nocond
+#    if !isprime(A.from)
+#      p = next_prime(A.from)
+#    else
+#      p = A.from
+#    end
+#    return p
+#  end
+#
+#  curr = A.from 
+#  c = curr % A.mod
+#  if A.mod > 1 && c != A.a
+#    curr += (-c + A.a) % A.mod
+#  end
+#
+#  c_U = curr % A.sv
+#  c_M = A.mod % A.sv
+#  UIntone = one(UInt)
+#  i = zero(UInt)
+#  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(curr))
+#    curr += A.mod
+#    i += UIntone
+#  end
+#  return curr
+#end
+#
+#function Base.next(A::PrimesSet{T}, st::T) where T<: Union{Integer, fmpz}
+#  p = st
+#  if A.nocond
+#    if p == 2
+#      st = T(3)
+#      return p, st
+#    else
+#      if T == Int
+#        st = next_prime(p, A.proof)
+#      else
+#        st = next_prime(p)
+#      end
+#      return p, st
+#    end
+#  end
+#
+#  if A.mod > 1
+#    m = A.mod
+#  else
+#    if p==2
+#      st = T(3)
+#      return p, st
+#    end
+#    m = T(2)
+#  end
+#  st = p+m
+#  i = zero(UInt)
+#  UIntone = one(UInt)
+#  c_U = st % A.sv
+#  c_M = m % A.sv
+#  while !isone(gcd(c_U + i * c_M, A.sv)) || !isprime(fmpz(st))
+#    st += m
+#    i += UIntone
+#  end
+#
+#  return p, st
+#end
+#
+#function Base.done(A::PrimesSet{T}, st::T) where T <: Union{Integer, fmpz}
+#  return A.to != -1 && st > A.to
+#end
 
-Base.iteratorsize(::Type{PrimesSet{T}}) where {T} = Base.SizeUnknown()
+Base.eltype(::PrimesSet{T}) where {T <: Union{Integer, fmpz}} = T
+
+Base.length(A::PrimesSet) = length(collect(A))
+
+Base.IteratorSize(::Type{PrimesSet{T}}) where {T} = Base.SizeUnknown()
+
+#Base.iteratorsize(::Type{PrimesSet{T}}) where {T} = Base.SizeUnknown()

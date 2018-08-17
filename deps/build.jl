@@ -1,19 +1,22 @@
+using Pkg, Nemo, Libdl
+
 oldwdir = pwd()
 
-nemo_pkgdir = Pkg.dir("Nemo") 
-nemo_wdir = Pkg.dir("Nemo", "deps")
-nemo_vdir = Pkg.dir("Nemo", "local")
+nemo_pkgdir = joinpath(dirname(pathof(Nemo)), "..")
+#nemo_pkgdir = Pkg.dir("Nemo") 
+nemo_wdir = joinpath(nemo_pkgdir, "deps")
+nemo_vdir = joinpath(nemo_pkgdir, "local")
 
-pkgdir = Pkg.dir("Hecke") 
-wdir = Pkg.dir("Hecke", "deps")
-vdir = Pkg.dir("Hecke", "local")
+hecke_pkgdir = joinpath(@__DIR__, "..")
+wdir = joinpath(hecke_pkgdir, "deps")
+vdir = joinpath(hecke_pkgdir, "local")
 
 
-if !ispath(Pkg.dir("Hecke", "local"))
-    mkdir(Pkg.dir("Hecke", "local"))
+if !ispath(joinpath(hecke_pkgdir, "local"))
+    mkdir(joinpath(hecke_pkgdir, "local"))
 end
-if !ispath(Pkg.dir("Hecke", "local", "lib"))
-    mkdir(Pkg.dir("Hecke", "local", "lib"))
+if !ispath(joinpath(hecke_pkgdir, "local", "lib"))
+    mkdir(joinpath(hecke_pkgdir, "local", "lib"))
 end
 
 function download_dll(url_string, location_string)
@@ -29,7 +32,7 @@ DLCFLAGS = "-fPIC -fno-common"
 
 cd(wdir)
 
-if is_windows()
+if Sys.iswindows()
    if Int == Int64
       download_dll("http://www.mathematik.uni-kl.de/~thofmann/hecke/bin/libhecke.dll", joinpath(vdir, "lib", "libhecke.dll"))
    else
@@ -44,7 +47,7 @@ else
    end
 end
 
-push!(Libdl.DL_LOAD_PATH, Pkg.dir("Hecke", "local", "lib"))
+push!(Libdl.DL_LOAD_PATH, joinpath(hecke_pkgdir, "local", "lib"))
 
 cd(oldwdir)
 

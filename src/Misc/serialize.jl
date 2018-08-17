@@ -1,35 +1,35 @@
 
 #TODO: do binary...although this is exactly what BigInt does
-function Base.serialize(s::AbstractSerializer, t::fmpz)
-  Base.serialize_type(s, fmpz)
+function serialize(s::AbstractSerializer, t::fmpz)
+  serialize_type(s, fmpz)
   return serialize(s, base(t, 62))
 end
 
-function Base.deserialize(s::AbstractSerializer, ::Type{fmpz})
+function deserialize(s::AbstractSerializer, ::Type{fmpz})
   return parse(fmpz, deserialize(s), 62)
 end
 
-function Base.serialize(s::AbstractSerializer, t::fmpq)
-  Base.serialize_type(s, fmpq)
+function serialize(s::AbstractSerializer, t::fmpq)
+  serialize_type(s, fmpq)
   serialize(s, base(numerator(t), 62))
   return serialize(s, base(denominator(t), 62))
 end
 
-function Base.deserialize(s::AbstractSerializer, ::Type{fmpq})
+function deserialize(s::AbstractSerializer, ::Type{fmpq})
   n = parse(fmpz, deserialize(s), 62)
   d = parse(fmpz, deserialize(s), 62)
   return fmpq(n, d)
 end
 
-function Base.serialize(s::AbstractSerializer, t::PolyElem{T}) where T
-  Base.serialize_type(s, PolyElem{T})
-  Base.serialize(s, length(t))
+function serialize(s::AbstractSerializer, t::PolyElem{T}) where T
+  serialize_type(s, PolyElem{T})
+  serialize(s, length(t))
   for i=0:length(t)
     serialize(s, coeff(t, i))
   end
 end
 
-function Base.deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
+function deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
   L = T[]
   l = deserialize(s)
   for i=0:l
@@ -40,12 +40,12 @@ function Base.deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
   return Rx(L)
 end
 
-function Base.serialize(s::AbstractSerializer, t::AnticNumberField)
-  Base.serialize_type(s, AnticNumberField)
+function serialize(s::AbstractSerializer, t::AnticNumberField)
+  serialize_type(s, AnticNumberField)
   return serialize(s, t.pol)
 end
 
-function Base.deserialize(s::AbstractSerializer, ::Type{AnticNumberField})
+function deserialize(s::AbstractSerializer, ::Type{AnticNumberField})
   return number_field(deserialize(s), cached=false)[1]
 end
 

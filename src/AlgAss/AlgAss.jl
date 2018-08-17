@@ -23,7 +23,7 @@ parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
 ################################################################################
 
 function basis(A::AlgAss{T}) where {T}
-  B = Vector{AlgAssElem{T}}(dim(A))
+  B = Vector{AlgAssElem{T}}(undef, dim(A))
   for i in 1:dim(A)
     B[i] = A[i]
   end
@@ -132,7 +132,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
 end
 
 function AlgAss(R::Ring, d::Int, arr::Array{T, 1}) where {T}
-  mult_table = Array{T, 3}(d, d, d)
+  mult_table = Array{T, 3}(undef, d, d, d)
   n = d^2
   for i in 1:d
     for j in 1:d
@@ -150,12 +150,12 @@ function AlgAss(f::PolyElem)
   n = degree(f)
   Rx = parent(f)
   x = gen(Rx)
-  B = Array{elem_type(Rx), 1}(2*n - 1)
+  B = Array{elem_type(Rx), 1}(undef, 2*n - 1)
   B[1] = Rx(1)
   for i = 2:2*n - 1
     B[i] = mod(B[i - 1]*x, f)
   end
-  mult_table = Array{elem_type(R), 3}(n, n, n)
+  mult_table = Array{elem_type(R), 3}(undef, n, n, n)
   for i = 1:n
     for j = i:n
       for k = 1:n
@@ -193,8 +193,8 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     r = rref!(B)
   end
   r == 0 && error("Cannot construct zero dimensional algebra.")
-  b = Vector{fmpz}(n)
-  basis = Vector{NfOrdElem}(r)
+  b = Vector{fmpz}(undef, n)
+  basis = Vector{NfOrdElem}(undef, r)
   for i = 1:r
     for j = 1:n
       b[j] = fmpz(B[i, j])
@@ -207,7 +207,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   else
     _, p, L, U = lufact(transpose(B))
   end
-  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
   d = zero_matrix(Fp, n, 1)
   for i = 1:r
     for j = i:r
@@ -357,7 +357,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
 
   r = length(basis_elts)
 
-  mult_table = Array{elem_type(Fp), 3}(r, r, r)
+  mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
   for i in 1:r
     for j in 1:r
@@ -470,9 +470,9 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(A::AlgAss{T}, dict::ObjectIdDict) where {T}
+function Base.deepcopy_internal(A::AlgAss{T}, dict::IdDict) where {T}
   B = AlgAss{T}(base_ring(A))
-  for x in fieldnames(A)
+  for x in fieldnames(typeof(A))
     if x != :base_ring && isdefined(A, x)
       setfield!(B, x, Base.deepcopy_internal(getfield(A, x), dict))
     end
@@ -512,7 +512,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
     r = rref!(B)
   end
   r == 0 && error("Cannot construct zero dimensional algebra.")
-  basis = Vector{AlgAssElem{T}}(r)
+  basis = Vector{AlgAssElem{T}}(undef, r)
   for i = 1:r
     basis[i] = elem_from_mat_row(A, B, i)
   end
@@ -525,7 +525,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   else
     _, p, L, U = lufact(transpose(B))
   end
-  mult_table = Array{elem_type(R), 3}(r, r, r)
+  mult_table = Array{elem_type(R), 3}(undef, r, r, r)
   c = A()
   d = zero_matrix(R, n, 1)
   for i = 1:r
@@ -553,7 +553,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
     end
     d = solve_lt(L, d)
     d = solve_ut(U, d)
-    v = Vector{elem_type(R)}(r)
+    v = Vector{elem_type(R)}(undef, r)
     for i in 1:r
       v[i] = d[i, 1]
     end
@@ -596,7 +596,7 @@ function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T},1}) where {T}
       B[i,j]=basis[j].coeffs[i]
     end
   end
-  M=Array{elem_type(base_ring(A)),3}(length(basis), length(basis), length(basis))
+  M=Array{elem_type(base_ring(A)),3}(undef, length(basis), length(basis), length(basis))
   for i=1:length(basis)
     for j=1:length(basis)
       x=basis[i]*basis[j]
@@ -715,7 +715,7 @@ function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) whe
       push!(idems, idem)
     end
 
-    S = [ (subalgebra(A, idem, true)...) for idem in idems ]
+    S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
     return false, S
   end
 end
@@ -787,12 +787,12 @@ function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) 
       push!(idems, idem)
     end
 
-    S = [ (subalgebra(A, idem, true)...) for idem in idems ]
+    S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
     return false, S
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     split(A::AlgAss)
             
@@ -829,7 +829,7 @@ end
 
 function _assure_trace_basis(A::AlgAss{T}) where T
   if !isdefined(A, :trace_basis_elem)
-    A.trace_basis_elem=Array{T, 1}(dim(A))
+    A.trace_basis_elem = Array{T, 1}(undef, dim(A))
     for i=1:length(A.trace_basis_elem)
       A.trace_basis_elem[i]=sum(A.mult_table[i,j,j] for j= 1:dim(A))
     end
@@ -863,7 +863,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     radical(A::AlgAss{fq_nmod})
             
@@ -943,7 +943,7 @@ function center(A::AlgAss{T}) where {T}
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center(M,A)
   k,B=nullspace(M)
-  res=Array{AlgAssElem{T},1}(k)
+  res=Array{AlgAssElem{T},1}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end
@@ -958,7 +958,7 @@ end
 
 #Given a semisimple algebra A over F_p, we give back the idempotents of a webberburn decomposition
 
-doc"""
+Markdown.doc"""
 ***
     wedderburn_decomposition(A::AlgAss)
             
@@ -969,7 +969,7 @@ function wedderburn_decomposition(A::AlgAss{T}) where {T}
   
   ZA,mZA=center(A)
   Algs=split(ZA)
-  res=Array{Tuple{typeof(A), AlgAssMor{T, T}},1}(length(Algs))
+  res=Array{Tuple{typeof(A), AlgAssMor{T, T}},1}(undef, length(Algs))
   i=1
   for (B, BtoZA) in Algs
     x=mZA(BtoZA(one(B)))

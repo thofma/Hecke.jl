@@ -16,7 +16,7 @@ mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssM
       for i in 1:dim(A)
         z.c_t[1, i] = a.coeffs[i]
       end
-      s = Vector{S}(dim(B))
+      s = Vector{S}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
       z.d_t = z.c_t*M
       for i in 1:dim(B)
@@ -42,7 +42,7 @@ mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssM
       for i in 1:dim(A)
         z.c_t[1, i] = a.coeffs[i]
       end
-      s = Vector{S}(dim(B))
+      s = Vector{S}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
       z.d_t = z.c_t * M
       for i in 1:dim(B)
@@ -56,7 +56,7 @@ mutable struct AlgAssMor{R, S, T} <: Map{AlgAss{R}, AlgAss{S}, HeckeMap, AlgAssM
       for i in 1:dim(B)
         z.d_t[1, i] = a.coeffs[i]
       end
-      s = Vector{R}(dim(A))
+      s = Vector{R}(undef, dim(A))
       z.c_t = z.d_t * N
       for i in 1:dim(A)
         s[i] = z.c_t[1, i]

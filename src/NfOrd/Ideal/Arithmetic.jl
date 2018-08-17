@@ -39,7 +39,7 @@
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     +(x::NfOrdIdl, y::NfOrdIdl)
 
@@ -62,7 +62,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
@@ -76,7 +76,7 @@ function intersection(x::NfOrdIdl, y::NfOrdIdl)
   return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, Val{false}), g, :lowerleft), false, true)
 end
 
-doc"""
+Markdown.doc"""
     intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
@@ -90,7 +90,7 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersection(x, y)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     *(x::NfOrdIdl, y::NfOrdIdl)
 
 > Returns $x \cdot y$.
@@ -308,7 +308,7 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
 end
 
 # dispatching
-doc"""
+Markdown.doc"""
 ***
   *(x::NfMaxIdl, y::NfOrdIdl)
 
@@ -345,7 +345,7 @@ end
 # Falls back to generic case +(::NfOrd, ::NfOrd)
 #for ideals in the maximal order, the gcd is well defined...
 
-doc"""
+Markdown.doc"""
 ***
   gcd(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 > The gcd or sum (A+B).
@@ -359,7 +359,7 @@ function gcd_into!(A::NfOrdIdl, B::NfOrdIdl, C::NfOrdIdl)
 end
 
 #TODO: write a ppio version that allows for p-powers as well
-doc"""
+Markdown.doc"""
 ***
   gcd(A::NfOrdIdl, p::fmpz) -> NfOrdIdl
 > The gcd or sum (A+ pO).
@@ -384,6 +384,8 @@ function gcd(A::NfOrdIdl, p::fmpz)
     return A + ideal(order(A), p)
   end
 end
+
+Base.:(^)(A::NfAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 
 ################################################################################
 #
@@ -444,7 +446,7 @@ function prod_by_int_2_elem(A::NfOrdIdl, a::fmpz)
   return B
 end
 
-doc"""
+Markdown.doc"""
 ***
     *(x::NfOrdIdl, y::fmpz) -> NfOrdIdl
 
@@ -483,7 +485,7 @@ end
 
 *(x::fmpz, y::NfOrdIdl) = y * x
 
-doc"""
+Markdown.doc"""
 ***
     *(x::NfOrdIdl, y::Integer) -> NfOrdIdl
 
@@ -523,7 +525,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     idempotents(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdElem, NfOrdElem
 
 > Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
@@ -591,7 +593,7 @@ function idempotents(x::NfOrdIdl, y::NfOrdIdl)
   @hassert :NfOrd 2 -z in x
   @hassert :NfOrd 2 1 + z in y
 
-  ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+  ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
 
   return -z, 1 + z
 end
@@ -601,7 +603,7 @@ end
 #  crt
 #
 ################################################################################
-doc"""
+Markdown.doc"""
    crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 > Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
 using (((idempotents)))
@@ -633,7 +635,7 @@ end
 ################################################################################
 
 divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
-doc"""
+Markdown.doc"""
 ***
     divexact(A::NfOrdIdl, y::fmpz) -> NfOrdIdl
     divexact(A::NfOrdIdl, y::Integer) -> NfOrdIdl
@@ -677,7 +679,7 @@ function divexact(A::NfOrdIdl, b::fmpz)
   return B
 end
 
-doc"""
+Markdown.doc"""
 ***
     divexact(A::NfOrdIdl, B::NfOrdIdl) -> NfOrdIdl
 

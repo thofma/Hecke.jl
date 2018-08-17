@@ -5,11 +5,11 @@
 #    set_assert_level(:NfOrdQuoRing, 1)
 
     QQ = FlintRationalField()
-    Qx, x = PolynomialRing(QQ, "x")
+    global Qx,  x = PolynomialRing(QQ, "x")
 
     # Compute a pseudo-hnf of a matrix over Z and check result against the HNF
 
-    K, a = NumberField(x - 1, "a")
+    global K,  a = NumberField(x - 1, "a")
     O = maximal_order(K)
 
     A =
@@ -56,7 +56,7 @@
     # pseudo hermite normal form span the same module
     
     @testset "Q[x]/x^$i - 10)" for i in 2:5 
-      K, a = NumberField(x^i - 10, "a")
+      global K,  a = NumberField(x^i - 10, "a")
       O = maximal_order(K)
       #println("  Testing over field $(x^i - 10)")
 
@@ -79,7 +79,7 @@
 
     @testset "Field towers" begin
       f = x^2 + 36*x + 16
-      K, a = NumberField(f, "a")
+      global K,  a = NumberField(f, "a")
       Ky, y = K["y"]
       g = y^3 - 51*y^2 + 30*y - 28
       L, b = NumberField(g, "b")
@@ -112,7 +112,7 @@
     end
 
     @testset "in span" begin
-      K, a = NumberField(x^3 - 10, "a")
+      global K,  a = NumberField(x^3 - 10, "a")
       O = maximal_order(K)
       ideals = []
       p = 2
@@ -124,7 +124,7 @@
       v = [ K(rand(p, 100)) for (p, e) in ideals ]
       @test Hecke._in_span(v, A)[1]
 
-      K, a = NumberField(x, "a")
+      global K,  a = NumberField(x, "a")
       O = maximal_order(K)
       A = Hecke.PseudoMatrix(matrix(O, map(O, [ 1 2 3 4; 0 7 8 9; 0 0 11 12; 0 0 0 13 ])), [ O(1)*O for i = 1:4 ])
       @test Hecke._in_span(map(K, [1, 2, 3, 4]), A)[1]

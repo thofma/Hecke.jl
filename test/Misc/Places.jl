@@ -1,8 +1,8 @@
 @testset "Places" begin
-  Qx, x = FlintQQ["x"]
-  K1, a1 = NumberField(x^5 + 2, "a1")
-  K2, a2 = NumberField(x^9 + 1*x^4 + 14*x^3 - 14*x^2 + 14*x - 14, "a2")
-  K3, a3 = NumberField(x^6 - 2, "a3")
+  global Qx, x = FlintQQ["x"]
+  global K1, a1 = NumberField(x^5 + 2, "a1")
+  global K2, a2 = NumberField(x^9 + 1*x^4 + 14*x^3 - 14*x^2 + 14*x - 14, "a2")
+  global K3, a3 = NumberField(x^6 - 2, "a3")
 
   @testset "Construction" begin
 

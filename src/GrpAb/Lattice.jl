@@ -124,7 +124,7 @@ function Base.delete!(G::Graph{T, M}, a::T) where {T, M}
   end
 end
 
-function Base.deepcopy_internal(G::Graph{T, M}, dict::ObjectIdDict) where {T, M}
+function Base.deepcopy_internal(G::Graph{T, M}, dict::IdDict) where {T, M}
   GG = Graph{T, M}()
   for g in keys(G.edges)
     GG.edges[g] = Base.deepcopy_internal(G.edges[g], dict)
@@ -332,7 +332,7 @@ end
 # A lattice of groups L has basically two parts. The first is a weak dictionary
 # L.weak_vertices, which hold references to all groups, which are currently
 # in the lattice. The second part is an actual graph, whose vertices are the
-# object_id's of the groups and whose edges represented maps (the additional
+# objectid's of the groups and whose edges represented maps (the additional
 #fmpz_mat(0, 0) data at an edge is the fmpz_mat describing the map).
 #
 # Now things get complicated (interesting) due to the presence of the gc.
@@ -346,20 +346,20 @@ end
 #
 # More details:
 # - L.weak_vertices_rev is the "inverse" of L.weak_vertices. For for each
-#   object_id it contains the corresponding group as a WeakRef.
+#   objectid it contains the corresponding group as a WeakRef.
 # - Whenever a group (or a map)) is added to a lattice, we check if the
 #   degree of a vertex is > 1. If so, we add to L.block_gc.
 # - Whenever a group is added to a lattice, a finalizer is added. If then
-#   the group is gc'ed, its object_id is added to L.to_delete.
+#   the group is gc'ed, its objectid is added to L.to_delete.
 # - Before a group (or a map) is added to a lattice, we update the lattice:
 #   - Remove all vertices from the graph whose vertices are in L.to_delete
 #   - If the degree of a vertex drops below 2, remove the group from L.block_gc
 #
 # Minor but important note: Over time, it may happen that two groups (created
-# at different times) have the same object_id. But this can happen only, if
-# one of them was already gc'ed (so its object_id is contained in L.to_delete).
+# at different times) have the same objectid. But this can happen only, if
+# one of them was already gc'ed (so its objectid is contained in L.to_delete).
 # Thus, it is important that we update the lattice before we add a new group.
-# This way the correspondence G -> object_id(G) is always faithful.
+# This way the correspondence G -> objectid(G) is always faithful.
 
 # T is the type of the objetcs i the lattice
 # D is the type of the data attached to the edges, usually some matrix
@@ -380,14 +380,14 @@ function finalizer_lattice(L::RelLattice{T, D}, A::T) where {T, D}
   #if length(L.to_delete) > 1000
   #  Hecke.update!(L)
   #end
-  push!(L.to_delete, object_id(A))
+  push!(L.to_delete, objectid(A))
 end
 
 # Add an object to a lattice of groups.
 function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
   update!(L)
   L.weak_vertices[A] = nothing
-  obid = object_id(A)
+  obid = objectid(A)
   L.weak_vertices_rev[obid] = WeakRef(A)
   append!(L.graph, obid)
 
@@ -396,7 +396,7 @@ function Base.append!(L::RelLattice{T, D}, A::T) where {T, D}
   end
 
   if !A.isfinalized
-    finalizer(A, x -> finalizer_lattice(L, x))
+    finalizer(x -> finalizer_lattice(L, x), A)
     A.isfinalized = true
   end
 end
@@ -418,18 +418,18 @@ function Base.append!(L::RelLattice{T, D}, dom::T, co::T, f::D) where {T, D}
     append!(L, co)
   end
 
-  append!(L.graph, (object_id(dom), object_id(co)), f)
+  append!(L.graph, (objectid(dom), objectid(co)), f)
 
-  if L.graph.degrees[object_id(dom)] > 1
+  if L.graph.degrees[objectid(dom)] > 1
     L.block_gc[dom] = nothing
   end
 
-  if L.graph.degrees[object_id(co)] > 1
+  if L.graph.degrees[objectid(co)] > 1
     L.block_gc[co] = nothing
   end
 end
 
-# Delete the group with object_id u from a lattice of groups.
+# Delete the group with objectid u from a lattice of groups.
 function delete_from_lattice!(L::RelLattice, u::UInt)
   Base.delete!(L.graph, u)
   Base.delete!(L.weak_vertices_rev, u)
@@ -460,7 +460,7 @@ function update!(L::RelLattice)
     end
     @assert L.weak_vertices_rev[k].value != nothing
     a = L.weak_vertices_rev[k].value
-    @assert k == object_id(a)
+    @assert k == objectid(a)
     @assert L.graph.degrees[k] < 2
     L.weak_vertices[a] = nothing
     Base.delete!(L.block_gc, a)
@@ -491,7 +491,7 @@ function can_map_into(L::RelLattice{T, D}, G::T, H::T) where {T, D}
     return false, L.zero
   end
 
-  b, p = find_shortest(L.graph, object_id(G), object_id(H))
+  b, p = find_shortest(L.graph, objectid(G), objectid(H))
   if b
     m = eval_path(L, G, p)
     return true, m
@@ -507,7 +507,7 @@ function can_map_into_overstructure(L::RelLattice{T, D}, G::T, H::T) where {T, D
   if !(G in keys(L.weak_vertices) && H in keys(L.weak_vertices))
     return false, G, L.zero, L.zero
   end
-  b, pG, pH = find_common(L.graph, object_id(G), object_id(H))
+  b, pG, pH = find_common(L.graph, objectid(G), objectid(H))
   if b
     @assert pG[1] == pH[1]
     M = L.weak_vertices_rev[pG[1]].value::T

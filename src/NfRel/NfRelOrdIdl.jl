@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     order(a::NfRelOrdIdl) -> NfRelOrd
 
@@ -12,7 +12,7 @@ doc"""
 """
 order(a::NfRelOrdIdl) = a.order
 
-doc"""
+Markdown.doc"""
 ***
     nf(a::NfRelOrdIdl) -> RelativeExtension
 
@@ -99,7 +99,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       pseudo_basis(a::NfRelOrdIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
       pseudo_basis(a::NfRelOrdFracIdl{T, S}) -> Vector{Tuple{RelativeElement{T}, S}}
@@ -115,7 +115,7 @@ function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, copy::Type{Val{T}}
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       basis_pmat(a::NfRelOrdIdl) -> PMat
       basis_pmat(a::NfRelOrdFracIdl) -> PMat
@@ -137,7 +137,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       basis_mat(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
@@ -153,7 +153,7 @@ function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, copy::Type{Val{T}} = 
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       basis_mat_inv(a::NfRelOrdIdl{T, S}) -> Generic.Mat{T}
       basis_mat_inv(a::NfRelOrdFracIdl{T, S}) -> Generic.Mat{T}
@@ -206,7 +206,7 @@ function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   return _spans_subset_of_pseudohnf(M, I, :lowerleft)
 end
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfRelOrd, M::PMat, check::Bool = true, M_in_hnf::Bool = false) -> NfRelOrdIdl
 
@@ -222,7 +222,7 @@ function ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, check::Bool = true, M_in_hnf::B
   return NfRelOrdIdl{T, S}(O, M)
 end
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfRelOrd, M::Generic.Mat, check::Bool = true) -> NfRelOrdIdl
 
@@ -234,7 +234,7 @@ function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {
   return ideal(O, PseudoMatrix(M, coeffs), check)
 end
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfRelOrd{T, S}, x::NfRelElem{T}, y::NfRelElem{T}, a::S, b::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
@@ -245,7 +245,7 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
   d = degree(O)
   pb = pseudo_basis(O, Val{false})
   M = zero_matrix(base_ring(nf(O)), 2*d, d)
-  C = Array{S}(2*d)
+  C = Array{S}(undef, 2*d)
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
     C[i] = pb[i][2]*a
@@ -275,7 +275,7 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
   return ideal(O, x, y, aa, bb, check)
 end
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
     *(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) -> NfRelOrdIdl{T, S}
@@ -305,7 +305,7 @@ end
 
 *(x::NfRelOrdElem, O::NfRelOrd) = ideal(O, x)
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) -> NfRelOrdIdl{T, S}
 
@@ -336,7 +336,7 @@ function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
   return ideal(O, aa, check)
 end
 
-doc"""
+Markdown.doc"""
 ***
     *(O::NfRelOrd{T, S}, a::S) -> NfRelOrdIdl{T, S}
     *(a::S, O::NfRelOrd{T, S}) -> NfRelOrdIdl{T, S}
@@ -357,9 +357,9 @@ doc"""
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::ObjectIdDict) where {T, S}
+function Base.deepcopy_internal(a::NfRelOrdIdl{T, S}, dict::IdDict) where {T, S}
   z = NfRelOrdIdl{T, S}(a.order)
-  for x in fieldnames(a)
+  for x in fieldnames(typeof(a))
     if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
     end
@@ -385,7 +385,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ==(a::NfRelOrdIdl, b::NfRelOrdIdl) -> Bool
 
@@ -441,7 +441,7 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
   return nothing
 end
 
-doc"""
+Markdown.doc"""
 ***
     norm(a::NfRelOrdIdl) -> NfOrdIdl
 
@@ -462,7 +462,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     +(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
@@ -486,7 +486,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     *(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
 > Returns $a \cdot b$.
@@ -503,7 +503,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   K = base_ring(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{typeof(a).parameters[2], 1}(d^2)
+  C = Array{typeof(a).parameters[2], 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -527,13 +527,15 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   return ideal(order(a), H, false, true)
 end
 
+Base.:(^)(A::NfRelOrdIdl, e::Int) = Base.power_by_squaring(A, e)
+
 ################################################################################
 #
 #  Ad hoc multiplication
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     *(a:NfRelOrdIdl{T, S}, x::T) -> NfRelOrdIdl{T, S}
 
@@ -544,7 +546,7 @@ function *(a::NfRelOrdIdl{T, S}, x::T) where {T, S}
     return order(a)()*order(a)
   end
   bp = basis_pmat(a)
-  P = PseudoMatrix(bp.matrix, x.*bp.coeffs)
+  P = PseudoMatrix(bp.matrix, Ref(x) .* bp.coeffs)
   return ideal(order(a), P, true, true)
 end
 
@@ -570,7 +572,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     intersection(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
 > Returns $a \cap b$.
@@ -598,7 +600,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       inv(a::NfRelOrdIdl) -> NfRelOrdFracIdl
       inv(a::NfRelOrdFracIdl) -> NfRelOrdFracIdl
@@ -621,7 +623,7 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
     M = hcat(M, bmO*representation_matrix(pb[i][1])*bmOinv)
   end
   invcoeffs = inv_coeff_ideals(O, Val{false})
-  C = Array{S}(d^2)
+  C = Array{S}(undef, d^2)
   for i = 1:d
     for j = 1:d
       C[(i - 1)*d + j] = simplify(pb[i][2]*invcoeffs[j])
@@ -641,7 +643,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       divexact(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
 
@@ -681,7 +683,7 @@ function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrd
   return x
 end
 
-doc"""
+Markdown.doc"""
 ***
       pradical(O::NfRelOrd, P::NfOrdIdl) -> NfRelOrdIdl
 
@@ -726,7 +728,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   end
   prime_ideals = factor(pOK)
 
-  elts_with_val = Vector{elem_type(OK)}(d)
+  elts_with_val = Vector{elem_type(OK)}(undef, d)
   for i = 1:d
     elts_with_val[i] = element_with_valuation(pbint[i][2], [ p for (p, e) in prime_ideals ])
   end
@@ -793,7 +795,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
 
@@ -814,7 +816,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
     M = hcat(M, basis_mat(O, Val{false})*representation_matrix(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
-  C = Array{T2}(d^2)
+  C = Array{T2}(undef, d^2)
   for i = 1:d
     for j = 1:d
       if i == j
@@ -1050,7 +1052,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       minimum(A::NfRelOrdIdl) -> NfOrdIdl
       minimum(A::NfRelOrdIdl) -> NfRelOrdIdl
@@ -1099,7 +1101,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     idempotents(x::NfRelOrdIdl, y::NfRelOrdIdl) -> NfRelOrdElem, NfRelOrdElem
 
 > Returns a tuple `(e, f)` consisting of elements `e in x`, `f in y` such that
@@ -1175,7 +1177,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     in(x::NfRelOrdElem, y::NfRelOrdIdl)
     in(x::RelativeElement, y::NfRelOrdIdl)
@@ -1210,7 +1212,7 @@ in(x::fmpz, y::NfRelOrdIdl) = in(order(y)(x),y)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
 
@@ -1249,7 +1251,7 @@ function _is_p_uniformizer(z::NfRelOrdElem, P::T, primes::Vector{T}) where {T <:
   return true
 end
 
-doc"""
+Markdown.doc"""
 ***
     p_uniformizer(P::NfRelOrdIdl) -> NfRelOrdElem
 
@@ -1280,7 +1282,7 @@ function p_uniformizer(P::NfRelOrdIdl)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     anti_uniformizer(P::NfRelOrdIdl) -> RelativeElement
 
@@ -1300,7 +1302,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   O = order(P)
   N = basis_mat(O)
   NN = basis_mat_inv(O)
-  d = Vector{T}(degree(O))
+  d = Vector{T}(undef, degree(O))
   a = elem_in_nf(uniformizer(p))
   for i = 1:degree(O)
     v = valuation(pseudo_basis(O, Val{false})[i][2], p)

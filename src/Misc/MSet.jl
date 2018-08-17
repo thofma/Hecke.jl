@@ -56,16 +56,18 @@ Base.delete!(s::MSet, x) = (delete!(s.dict, x); s)
 
 Base.copy(s::MSet) = union!(similar(s), s)
 
-Base.start(s::MSet)       = (start(s.dict), 1)
-Base.done(s::MSet, state) = done(s.dict, state[1])
-function Base.next(s::MSet, state)
-  if state[2] < s.dict.vals[state[1]]
-    return s.dict.keys[state[1]], (state[1], state[2]+1)
-  else
-    val, st = next(s.dict, state[1])
-    return (val[1], (st, 1))
-  end
-end
+# TODO: Fix this iterator
+
+#Base.start(s::MSet)       = (start(s.dict), 1)
+#Base.done(s::MSet, state) = done(s.dict, state[1])
+#function Base.next(s::MSet, state)
+#  if state[2] < s.dict.vals[state[1]]
+#    return s.dict.keys[state[1]], (state[1], state[2]+1)
+#  else
+#    val, st = next(s.dict, state[1])
+#    return (val[1], (st, 1))
+#  end
+#end
 
 Base.union(s::MSet) = copy(s)
 function Base.union(s::MSet, sets::Set...)
@@ -124,21 +126,21 @@ function int_to_elt(M::MSubSetItr{T}, i::Int) where T
   return s
 end
 
-function Base.start(M::MSubSetItr)
-  return 0
-end
-
-function Base.next(M::MSubSetItr, st::Int)
-  return int_to_elt(M, st), st+1
-end
-
-function Base.done(M::MSubSetItr, st::Int)
-  return st >= M.length
-end
-
-function Base.length(M::MSubSetItr)
-  return M.length
-end
+#function Base.start(M::MSubSetItr)
+#  return 0
+#end
+#
+#function Base.next(M::MSubSetItr, st::Int)
+#  return int_to_elt(M, st), st+1
+#end
+#
+#function Base.done(M::MSubSetItr, st::Int)
+#  return st >= M.length
+#end
+#
+#function Base.length(M::MSubSetItr)
+#  return M.length
+#end
 
 function Base.show(io::IO, M::MSubSetItr)
   println(io, "subset iterator of length $(M.length) for $(M.b) with multiplicities $(M.m)")

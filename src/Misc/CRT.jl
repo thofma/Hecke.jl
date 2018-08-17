@@ -1,4 +1,4 @@
-import Hecke.rem!, Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
+import Nemo.crt, Nemo.zero, Nemo.iszero, Nemo.isone, Nemo.sub!
 export crt_env, crt, crt_inv, modular_init, crt_signed
 
 isone(a::Int) = (a==1)
@@ -8,15 +8,15 @@ function zero(a::PolyElem)
 end
 
 @inline function rem!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &b, &c)
+  ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
 end
 
 @inline function sub!(a::fmpz, b::fmpz, c::fmpz)
-  ccall((:fmpz_sub, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &a, &b, &c)
+  ccall((:fmpz_sub, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), a, b, c)
 end
 
 function rem!(a::fmpz_mod_poly, b::fmpz_mod_poly, c::fmpz_mod_poly)
-  ccall((:fmpz_mod_poly_rem, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}), &a, &b, &c)
+  ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), a, b, c)
 end
 
 mutable struct crt_env{T}
@@ -66,7 +66,7 @@ mutable struct crt_env{T}
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
    crt_env(p::Array{T, 1}) -> crt_env{T}
 
@@ -82,7 +82,7 @@ function show(io::IO, c::crt_env{T}) where T
   print(io, "CRT data for moduli ", c.pr[1:c.n])
 end
 
-doc"""
+Markdown.doc"""
 ***
    crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
 
@@ -225,7 +225,7 @@ function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   return res
 end
 
-doc"""
+Markdown.doc"""
 ***
    crt_inv(a::T, crt_env{T}) -> Array{T, 1}
 
@@ -234,7 +234,7 @@ doc"""
 > This is essentially the inverse to the \code{crt} function.  
 """
 function crt_inv(a::T, c::crt_env{T}) where T
-  res = Array{T}(c.n)
+  res = Array{T}(undef, c.n)
   if c.n < 50
     return crt_inv_iterative!(res, a, c)
   else
@@ -290,7 +290,7 @@ function crt_test(a::crt_env{fmpz}, b::Int)
 end
 
 
-doc"""
+Markdown.doc"""
 ***
   crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
 
@@ -302,7 +302,7 @@ function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T})
   return (r1*v*m2 + r2*u*m1) % m
 end
 
-doc"""
+Markdown.doc"""
 ***
   crt_iterative(r::Array{T, 1}, m::Array{T,1}) -> T
 
@@ -319,7 +319,7 @@ function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
   return p
 end
 
-doc"""
+Markdown.doc"""
 ***
   crt_tree(r::Array{T, 1}, m::Array{T,1}) -> T
 
@@ -349,7 +349,7 @@ function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
   return V[end]
 end
 
-doc"""
+Markdown.doc"""
 ***
   crt(r::Array{T, 1}, m::Array{T,1}) -> T
 
@@ -399,7 +399,7 @@ function crt_test_time_all(np::Int, n::Int)
   end
 end  
 
-doc"""
+Markdown.doc"""
     induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false) -> fmpz_poly
 > Given integral polynomials $a$ and $b$ as well as coprime integer moduli
 > $p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
@@ -422,7 +422,7 @@ function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool =
   return c, pq
 end
 
-doc"""
+Markdown.doc"""
     induce_crt(L::Array, c::crt_env{fmpz}) -> fmpz_poly
 > Given fmpz_poly polynomials $L[i]$ and a {{{crt_env}}}, apply the
 > {{{crt}}} function to each coefficient retsulting in a polynomial $f = L[i] \bmod p[i]$.
@@ -438,7 +438,7 @@ function induce_crt(L::Array, c::crt_env{fmpz})
   return res
 end
 
-doc"""
+Markdown.doc"""
 ***
   _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
@@ -451,12 +451,12 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   @assert n < degree(K) && n >=0
   ra = pointer_from_objref(a)
   if degree(K) == 1
-    ccall((:fmpz_set, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra, &c)
-    ccall((:fmpq_canonicalise, :libflint), Void, (Ptr{nf_elem}, ), &a)
+    ccall((:fmpz_set, :libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra, c)
+    ccall((:fmpq_canonicalise, :libflint), Nothing, (Ref{nf_elem}, ), a)
   elseif degree(K) == 2
-     ccall((:fmpz_set, :libflint), Void, (Ptr{Void}, Ptr{fmpz}), ra+n*sizeof(Int), &c)
+     ccall((:fmpz_set, :libflint), Nothing, (Ref{Nothing}, Ref{fmpz}), ra+n*sizeof(Int), c)
   else
-    ccall((:fmpq_poly_set_coeff_fmpz, :libflint), Void, (Ptr{nf_elem}, Int, Ptr{fmpz}), &a, n, &c)
+    ccall((:fmpq_poly_set_coeff_fmpz, :libflint), Nothing, (Ref{nf_elem}, Int, Ref{fmpz}), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
@@ -468,12 +468,12 @@ function _num_setcoeff!(a::nf_elem, n::Int, c::UInt)
   ra = pointer_from_objref(a)
    
   if degree(K) == 1
-    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra, c)
-    ccall((:fmpq_canonicalise, :libflint), Void, (Ptr{nf_elem}, ), &a)
+    ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{Nothing}, UInt), ra, c)
+    ccall((:fmpq_canonicalise, :libflint), Nothing, (Ref{nf_elem}, ), a)
   elseif degree(K) == 2
-    ccall((:fmpz_set_ui, :libflint), Void, (Ptr{Void}, UInt), ra+n*sizeof(Int), c)
+    ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{Nothing}, UInt), ra+n*sizeof(Int), c)
   else
-    ccall((:fmpq_poly_set_coeff_ui, :libflint), Void, (Ptr{nf_elem}, Int, UInt), &a, n, c)
+    ccall((:fmpq_poly_set_coeff_ui, :libflint), Nothing, (Ref{nf_elem}, Int, UInt), a, n, c)
    # includes canonicalisation and treatment of den.
   end
 end
@@ -512,7 +512,7 @@ function show(io::IO, me::modular_env)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
   modular_init(K::AnticNumberField, p::fmpz) -> modular_env
   modular_init(K::AnticNumberField, p::Integer) -> modular_env
@@ -547,8 +547,8 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   me.ce = crt_env(pols)
   me.fld = [FqNmodFiniteField(x, :$, false) for x = pols]  #think about F_p!!!
                                    # and chacheing
-  me.rp = Array{nmod_poly}(length(pols))
-  me.res = Array{fq_nmod}(me.ce.n)
+  me.rp = Array{nmod_poly}(undef, length(pols))
+  me.res = Array{fq_nmod}(undef, me.ce.n)
 
   me.p = p
   me.K = K
@@ -561,7 +561,7 @@ function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_spl
   return modular_init(K, fmpz(p), deg_limit = deg_limit, max_split = max_split)
 end
 
-doc"""
+Markdown.doc"""
 ***
   modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
 
@@ -578,15 +578,15 @@ function modular_proj(a::nf_elem, me::modular_env)
     else
       u = F()
     end
-    ccall((:fq_nmod_set, :libflint), Void,
-                (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                &u, &me.rp[i], &F)
+    ccall((:fq_nmod_set, :libflint), Nothing,
+                (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                u, me.rp[i], F)
     me.res[i] = u
   end
   return me.res
 end
 
-doc"""
+Markdown.doc"""
 ***
   modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
 
@@ -603,9 +603,9 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
     for i=1:me.ce.n
       F = me.fld[i]
       u = F()
-      ccall((:fq_nmod_set, :libflint), Void,
-                  (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                  &u, &me.rp[i], &F)
+      ccall((:fq_nmod_set, :libflint), Nothing,
+                  (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                  u, me.rp[i], F)
       u = u^(v % (size(F)-1))            
       me.res[i] *= u
     end
@@ -614,7 +614,7 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
 end
 
 
-doc"""
+Markdown.doc"""
 ***
   modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
 
@@ -623,18 +623,18 @@ doc"""
 """
 function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
   for i=1:me.ce.n
-    ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &me.rp[i], &a[i])
+    ccall((:nmod_poly_set, :libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[i], a[i])
   end
   ap = crt(me.rp, me.ce)
   r = me.K()
   for i=0:ap.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, i)
+    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), ap, i)
     _num_setcoeff!(r, i, u)
   end
   return r
 end
 
-doc"""
+Markdown.doc"""
 ***
   modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
 
@@ -645,7 +645,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
 
   if !isdefined(me, :fldx)
     me.fldx = [PolynomialRing(x, "_x", cached=false)[1] for x = me.fld]
-    me.Rp = Array{fq_nmod_poly}(me.ce.n)
+    me.Rp = Array{fq_nmod_poly}(undef, me.ce.n)
     for i =1:me.ce.n
       me.Rp[i] = me.fldx[i](0)
     end
@@ -659,16 +659,16 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
     crt_inv!(me.rp, me.Fpx(coeff(a, i)), me.ce)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
-      ccall((:fq_nmod_set, :libflint), Void,
-                   (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-                   &u, &me.rp[j], &me.fld[j])
+      ccall((:fq_nmod_set, :libflint), Nothing,
+                   (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+                   u, me.rp[j], me.fld[j])
       setcoeff!(me.Rp[j], i, u)
     end
   end  
   return me.Rp
 end
 
-doc"""
+Markdown.doc"""
 ***
   modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> Generic.Poly{nf_elem}
 
@@ -680,12 +680,12 @@ function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   d = maximum([x.length for x = a])
   for i=0:d-1
     for j=1:me.ce.n
-      ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{fq_nmod}), &me.rp[j], &coeff(a[j], i))
+      ccall((:nmod_poly_set, :libflint), Nothing, (Ref{nmod_poly}, Ref{fq_nmod}), me.rp[j], coeff(a[j], i))
     end
     ap = crt(me.rp, me.ce)
     r = coeff(res, i)
     for j=0:ap.length-1
-      u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &ap, j)
+      u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), ap, j)
       _num_setcoeff!(r, j, u)
     end
     setcoeff!(res, i, r)
@@ -693,7 +693,7 @@ function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   return res
 end
 
-doc"""
+Markdown.doc"""
 ***
   modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
   modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}

@@ -1,6 +1,6 @@
 export narrow_class_group
 
-doc"""
+Markdown.doc"""
 ***
     power_reduce2(A::NfOrdIdl, e::fmpz) -> NfOrdIdl, FacElem{nf_elem}
 > Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A^e$
@@ -69,7 +69,7 @@ function ==(A::NfOrdIdl, B::NfOrdFracIdl)
 end
 ==(A::NfOrdFracIdl, B::NfOrdIdl) = B==A
 
-doc"""
+Markdown.doc"""
 ***
     reduce_ideal2(A::FacElem{NfOrdIdl}) -> NfOrdIdl, FacElem{nf_elem}
 > Computes $B$ and $\alpha$ in factored form, such that $\alpha B = A$.
@@ -88,11 +88,11 @@ function reduce_ideal2(I::FacElem{NfOrdIdl, NfOrdIdlSet})
     end
     if fst
       A, a = power_reduce2(k, v)
-      @hassert :PID_Test 1 (v>0? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
+      @hassert :PID_Test 1 (v>0 ? k^Int(v) : inv(k)^Int(-v)) == A*evaluate(a)
       fst = false
     else
       B, b = power_reduce2(k, v)
-      @hassert :PID_Test (v>0? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
+      @hassert :PID_Test (v>0 ? k^Int(v) : inv(k)^Int(-v)) == B*evaluate(b)
       A = A*B
       a = a*b
       if norm(A) > abs(discriminant(O))
@@ -120,7 +120,7 @@ end
 #TODO: make it for AnticNumberField and for NfOrd. I that
 #      case also return OrdElem
 
-doc"""
+Markdown.doc"""
 ***
     elements_with_all_signs(L::NfOrd) -> Array{nf_elem, 1}
 > Finds elements $x_i$ in the number field s.th the elements
@@ -172,7 +172,7 @@ function elements_with_all_signs(L::NfOrd)
   return r
 end
 
-doc"""
+Markdown.doc"""
 ***
     narrow_class_group(L::NfOrd) -> GrpAbFinGen, Map
 > Compute the narrow (or strict) class group of $L$, ie. the

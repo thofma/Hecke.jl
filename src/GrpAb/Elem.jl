@@ -82,7 +82,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     gens(G::GrpAbFinGen) -> Array{GrpAbFinGenElem, 1}
 
 > The sequence of generators of $G$.
@@ -95,7 +95,7 @@ gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i = 1:ngens(G)]
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     parent(x::GrpAbFinGenElem) -> GrpAbFinGen
 
@@ -131,7 +131,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     getindex(x::GrpAbFinGenElem, i::Int) -> fmpz
 
@@ -147,7 +147,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ==(a::GrpFinGenElem, b::GrpAbFinGenElem) -> Bool
 
@@ -164,7 +164,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     +(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -194,7 +194,7 @@ function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattic
   error("Cannot coerce elements into common structure")
 end
 
-doc"""
+Markdown.doc"""
 ***
     -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -206,7 +206,7 @@ function -(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
   return n
 end
 
-doc"""
+Markdown.doc"""
 ***
     -(x::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -217,7 +217,7 @@ function -(x::GrpAbFinGenElem)
   return n
 end
 
-doc"""
+Markdown.doc"""
 ***
     *(x::fmpz, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -228,7 +228,7 @@ function *(x::fmpz, y::GrpAbFinGenElem)
   return GrpAbFinGenElem(y.parent, n)
 end
 
-doc"""
+Markdown.doc"""
 ***
     *(x::Integer, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -259,7 +259,7 @@ isone(a::GrpAbFinGenElem) = iszero(a.coeff)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     (A::GrpAbFinGen)(x::Array{fmpz, 1}) -> GrpAbFinGenElem
 
@@ -273,7 +273,7 @@ function (A::GrpAbFinGen)(x::Array{fmpz, 1})
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     (A::GrpAbFinGen)(x::Array{Integer, 1}) -> GrpAbFinGenElem
 
@@ -286,7 +286,7 @@ function (A::GrpAbFinGen)(x::Array{T, 1}) where T <: Integer
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     (A::GrpAbFinGen)(x::fmpz_mat) -> GrpAbFinGenElem
 
@@ -306,7 +306,7 @@ function (A::GrpAbFinGen)()
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     getindex(A::GrpAbFinGen, i::Int) -> GrpAbFinGenElem
 
@@ -329,7 +329,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     order(A::GrpAbFinGenElem) -> fmpz
 
@@ -358,7 +358,7 @@ end
 #
 ##############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     rand(G::GrpAbFinGen) -> GrpAbFinGenElem
 
@@ -378,7 +378,7 @@ function rand_gen(G::GrpAbFinGen)
   return image(mS, rand(S))
 end
 
-doc"""
+Markdown.doc"""
 ***
     rand(G::GrpAbFinGen, B::fmpz) -> GrpAbFinGenElem
 
@@ -387,7 +387,7 @@ doc"""
 """
 rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
-doc"""
+Markdown.doc"""
 ***
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
 
@@ -420,21 +420,21 @@ end
 #
 ################################################################################
 
-function Base.start(G::GrpAbFinGen)
+function Base.iterate(G::GrpAbFinGen)
   if order(G) > typemax(UInt)
     error("Group too large for iterator")
   end
 
-  return UInt(0)
+  return _elem_from_enum(G, UInt(0)), UInt(1)
 end
 
-function Base.next(G::GrpAbFinGen, st::UInt)
+function Base.iterate(G::GrpAbFinGen, st::UInt)
+  if st >= order(G)
+    return nothing
+  end
+
   a = _elem_from_enum(G, st)
   return a, st + 1
-end
-
-function Base.done(G::GrpAbFinGen, st::UInt)
-  return st >= order(G)
 end
 
 function _elem_from_enum(G::GrpAbFinGen, st::UInt)
@@ -451,6 +451,8 @@ function _elem_from_enum(G::GrpAbFinGen, st::UInt)
   S, mS = snf(G)
   return image(mS, _elem_from_enum(S, st))
 end
+
+Base.IteratorSize(::Type{GrpAbFinGen}) = Base.HasLength()
 
 Base.length(G::GrpAbFinGen) = Int(order(G))
 

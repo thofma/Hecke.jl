@@ -62,7 +62,7 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   @hassert :LatEnum 1 rows(G) == n
   limit = min(limit, n)
   t = fmpz()
-  C = Array{TC}(limit, limit)
+  C = Array{TC}(undef, limit, limit)
   for i=1:limit
     for j=1:limit
       getindex!(t, G, i, j)
@@ -117,11 +117,11 @@ function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{Big
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
   E.x = zero_matrix(FlintZZ, 1, n)
     #coeffs limit+1:n are going to be zero, always
-  E.L = Array{TU}(limit) #lower and
-  E.U = Array{TU}(limit) #upper bounds for the coordinates
+  E.L = Array{TU}(undef, limit) #lower and
+  E.U = Array{TU}(undef, limit) #upper bounds for the coordinates
 
-  E.l = Array{TU}(limit) #current length
-  E.tail = Array{TU}(limit)
+  E.l = Array{TU}(undef, limit) #current length
+  E.tail = Array{TU}(undef, limit)
   return E
 end
 
@@ -195,7 +195,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1) where {
   for i=1:E.limit
     E.L[i], E.U[i] = enum_ctx_local_bound(-E.tail[i], E.l[i]/E.C[i,i])
   end
-  E.last_non_zero = maximum(find(i->E.x[1, i] != 0, 1:E.limit))+1
+  E.last_non_zero = maximum(findall(i->E.x[1, i] != 0, 1:E.limit))+1
 end
 
 #for pol-red-abs we need s.th. else I think
@@ -208,19 +208,19 @@ end
 
 function fmpz_mat_entry(a::fmpz_mat, r::Int, c::Int)
   return ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
-               (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
+               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
 end
 
 function fmpz_mat_entry_incref!(a::fmpz_mat, r::Int, c::Int)
   z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
-               (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
+               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
+  ccall((:fmpz_add_ui, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, 1)
 end
 
 function fmpz_mat_entry_add_ui!(a::fmpz_mat, r::Int, c::Int, v::UInt)
   z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz},
-               (Ptr{fmpz_mat}, Int, Int), &a, r - 1, c - 1)
-  ccall((:fmpz_add_ui, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
+               (Ref{fmpz_mat}, Int, Int), a, r - 1, c - 1)
+  ccall((:fmpz_add_ui, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, v)
 end
 
 function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}
@@ -418,12 +418,12 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
     # This should work, potentially we enumerate more elements
 
     tm = arf_struct(0, 0, 0, 0)
-    ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+    ccall((:arf_init, :libarb), Nothing, (Ref{arf_struct}, ), tm)
 
-    ccall((:arb_get_abs_ubound_arf, :libarb), Void, (Ptr{arf_struct}, Ptr{arb}), &tm, &C)
-    ccall((:arb_set_arf, :libarb), Void, (Ptr{arb}, Ptr{arf_struct}), &C, &tm)
+    ccall((:arb_get_abs_ubound_arf, :libarb), Nothing, (Ref{arf_struct}, Ref{arb}), tm, C)
+    ccall((:arb_set_arf, :libarb), Nothing, (Ref{arb}, Ref{arf_struct}), C, tm)
 
-    ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &tm)
+    ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), tm)
 
     @hassert :LatEnum !contains_zero(C)
   end
@@ -439,31 +439,26 @@ function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   lb = -CC - C
   ub = -CC + C
 
-  #tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &lb)
-  #tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &lb)
-
-  tr_ptr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &lb)
+  tr_ptr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), lb)
   
-  tm_ptr = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &lb)
+  tm_ptr = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ref{arb}, ), lb)
   u = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &u)
+  ccall((:arf_init, :libarb), Nothing, (Ref{arf_struct}, ), u)
 
-  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf_struct}, Ptr{Nemo.mag_struct}), &u, tr_ptr)
-  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Int, Cint), &u, tm_ptr, &u, p, 4) # 4 is round to -infty
+  ccall((:arf_set_mag, :libarb), Nothing, (Ref{arf_struct}, Ptr{Nemo.mag_struct}), u, tr_ptr)
+  ccall((:arf_sub, :libarb), Nothing, (Ref{arf_struct}, Ptr{arf_struct}, Ref{arf_struct}, Int, Cint), u, tm_ptr, u, p, 4) # 4 is round to -infty
   lbfmpz = fmpz()
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &lbfmpz, &u, 4)
+  ccall((:arf_get_fmpz, :libarb), Nothing, (Ref{fmpz}, Ref{arf_struct}, Cint), lbfmpz, u, 4)
 
-  #tr = ccall((:arb_get_rad, :libarb), Ptr{mag}, (Ptr{arb}, ), &ub)
-  #tm = ccall((:arb_get_mid, :libarb), Ptr{arf}, (Ptr{arb}, ), &ub)
-  tr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &ub)
-  tm = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ptr{arb}, ), &ub)
+  tr = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ref{arb}, ), ub)
+  tm = ccall((:arb_mid_ptr, :libarb), Ptr{arf_struct}, (Ref{arb}, ), ub)
 
-  ccall((:arf_set_mag, :libarb), Void, (Ptr{arf_struct}, Ptr{Nemo.mag_struct}), &u, tr)
-  ccall((:arf_sub, :libarb), Void, (Ptr{arf_struct}, Ptr{arf_struct}, Ptr{arf_struct}, Int, Cint), &u, tm, &u, p, 3) # 3 is round to +infty
+  ccall((:arf_set_mag, :libarb), Nothing, (Ref{arf_struct}, Ptr{Nemo.mag_struct}), u, tr)
+  ccall((:arf_sub, :libarb), Nothing, (Ref{arf_struct}, Ptr{arf_struct}, Ref{arf_struct}, Int, Cint), u, tm, u, p, 3) # 3 is round to +infty
   ubfmpz = fmpz()
-  ccall((:arf_get_fmpz, :libarb), Void, (Ptr{fmpz}, Ptr{arf_struct}, Cint), &ubfmpz, &u, 3)
+  ccall((:arf_get_fmpz, :libarb), Nothing, (Ref{fmpz}, Ref{arf_struct}, Cint), ubfmpz, u, 3)
 
-  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &u)
+  ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), u)
 
   @vprint :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz\n"
 

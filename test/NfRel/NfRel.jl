@@ -1,8 +1,8 @@
 @testset "NfRel" begin
   @testset "issubfield" begin
-    Qx, x = QQ["x"]
+    global Qx, x = QQ["x"]
     f = x^2 + 12x - 92
-    K, a = NumberField(f, "a")
+    global K, a = NumberField(f, "a")
     Ky, y = K["y"]
 
     L, b = NumberField(y^2 + y + 1, "b")
@@ -15,9 +15,9 @@
   end
 
   @testset "isisomorphic" begin
-    Qx, x = QQ["x"]
+    global Qx, x = QQ["x"]
     f = x^2 + 12x - 92
-    K, a = NumberField(f, "a")
+    global K, a = NumberField(f, "a")
     Ky, y = K["y"]
 
     g = y^5 - 5

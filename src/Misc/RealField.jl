@@ -19,7 +19,7 @@ mutable struct RealField <: Nemo.Field
   end
 end
 
-doc"""
+Markdown.doc"""
     real_field(K::AnticNumberField, i::Int)
 > The real field using the $i$-th conjugate for evaluation and comparison.
 > $i$ has to define a real embedding.
@@ -33,7 +33,7 @@ function real_field(K::AnticNumberField, i::Int)
   return RealField(K, P)
 end
 
-doc"""
+Markdown.doc"""
     real_field(K::AnticNumberField, P::InfPlc)
 > The real field using the real place $P$ to define the embedding for
 > evaluation and comparison.
@@ -61,7 +61,7 @@ function show(io::IO, e::RealFieldElem)
   println(io, "$(e.data) = ", evaluate(e.data, e.parent.P))
 end
 
-doc"""
+Markdown.doc"""
     evaluate(a::nf_elem, P::InfPlc, p::Int = 20)
 > The evaluation of $a$ at the place $P$, ie a real or complex value.
 > $p$ specifies the precision to be returned.
@@ -70,7 +70,7 @@ function evaluate(a::nf_elem, P::InfPlc, p::Int = 10)
   return conjugates_arb(a, p)[P.i]
 end
 
-doc"""
+Markdown.doc"""
     evaluate(a::RealFieldElem, p::Int = 10)
 > The value of $a$ as a real number under the chosen embedding.
 > $p$ specifies the prescision of the result.

@@ -41,7 +41,7 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
 
   @vtime_add_elapsed :ClassGroup 1 clg :hnf_time h = check_index(clg.M)
   clg.h = h
-  return (h, non_trivial_pivot(clg.M)::IntSet)
+  return (h, non_trivial_pivot(clg.M)::BitSet)
 end
 
 ################################################################################

@@ -35,7 +35,7 @@ end
 
 function +(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
-  coeffs = Array{T, 1}(dim(parent(a)))
+  coeffs = Array{T, 1}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
     coeffs[i] = a.coeffs[i] + b.coeffs[i]
   end
@@ -44,7 +44,7 @@ end
 
 function -(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
-  coeffs = Array{T, 1}(dim(parent(a)))
+  coeffs = Array{T, 1}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
     coeffs[i] = a.coeffs[i] - b.coeffs[i]
   end
@@ -118,7 +118,7 @@ end
 ################################################################################
 
 function *(a::AlgAssElem{T}, b::T) where { T <: RingElem }
-  return AlgAssElem{T}(parent(a), a.coeffs.*b)
+  return AlgAssElem{T}(parent(a), a.coeffs.* Ref(b))
 end
 
 *(b::T, a::AlgAssElem{T}) where { T <: RingElem } = a*b
@@ -203,7 +203,7 @@ end
 function Base.getindex(A::AlgAss{T}, i::Int) where {T}
   (i < 1 || i > dim(A)) && error("Index must be in range $(1:dim(A))")
   n = dim(A)
-  v = Vector{T}(n)
+  v = Vector{T}(undef, n)
   for j in 1:n
     v[j] = zero(base_ring(A))
   end
@@ -230,9 +230,9 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::AlgAssElem{T}, dict::ObjectIdDict) where {T}
+function Base.deepcopy_internal(a::AlgAssElem{T}, dict::IdDict) where {T}
   b = parent(a)()
-  for x in fieldnames(a)
+  for x in fieldnames(typeof(a))
     if x != :parent && isdefined(a, x)
       setfield!(b, x, Base.deepcopy_internal(getfield(a, x), dict))
     end

@@ -43,7 +43,7 @@ export absolute_field
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelElem{T}, dict::ObjectIdDict) where T
+function Base.deepcopy_internal(a::NfRelElem{T}, dict::IdDict) where T
   z = NfRelElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
@@ -55,17 +55,17 @@ end
 #
 ################################################################################
 
-Nemo.elem_type{T}(::Type{NfRel{T}}) = NfRelElem{T}
+Nemo.elem_type(::Type{NfRel{T}}) where {T} = NfRelElem{T}
 
-Nemo.elem_type{T}(::NfRel{T}) = NfRelElem{T}
+Nemo.elem_type(::NfRel{T}) where {T} = NfRelElem{T}
 
-Nemo.parent_type{T}(::Type{NfRelElem{T}}) = NfRel{T}
+Nemo.parent_type(::Type{NfRelElem{T}}) where {T} = NfRel{T}
 
 Nemo.needs_parentheses(::NfRelElem) = true
 
 Nemo.isnegative(x::NfRelElem) = Nemo.isnegative(data(x))
 
-Nemo.show_minus_one{T}(::Type{NfRelElem{T}}) = true
+Nemo.show_minus_one(::Type{NfRelElem{T}}) where {T} = true
 
 function Nemo.iszero(a::NfRelElem)
   reduce!(a)
@@ -92,36 +92,18 @@ end
 #
 ################################################################################
 
-if isdefined(Nemo, :promote_rule1)
-  Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
+Nemo.promote_rule(::Type{NfRelElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRelElem{S}
 
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T} = NfRelElem{T}
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelElem{T}
 
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T} = NfRelElem{T}
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelElem{T}
 
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
 
-  function Nemo.promote_rule1(::Type{NfRelElem{T}}, ::Type{NfRelElem{U}}) where {T, U}
-     Nemo.promote_rule(T, NfRelElem{U}) == T ? NfRelElem{T} : Union{}
-  end
+Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: Nemo.RingElement = NfRelElem{T}
 
-  function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T, U} 
-    Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Nemo.promote_rule1(U, NfRelElem{T})
-  end
-else
-  Nemo.promote_rule{T <: Integer, S}(::Type{NfRelElem{S}}, ::Type{T}) = NfRelElem{S}
-
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRelElem{T}
-
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRelElem{T}
-
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{T}) where {T} = NfRelElem{T}
-
-  Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{NfRelElem{T}}) where T <: Nemo.RingElement = NfRelElem{T}
-  
-  function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-    Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
-  end
+function Nemo.promote_rule(::Type{NfRelElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
+  Nemo.promote_rule(T, U) == T ? NfRelElem{T} : Union{}
 end
 
 ################################################################################
@@ -130,12 +112,12 @@ end
 #
 ################################################################################
 
-@inline Nemo.base_ring{T}(a::NfRel{T}) = a.base_ring::parent_type(T)
-@inline base_field{T}(a::NfRel{T}) = a.base_ring::parent_type(T)
+@inline Nemo.base_ring(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
+@inline base_field(a::NfRel{T}) where {T} = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRelElem) = a.data
 
-@inline Nemo.parent{T}(a::NfRelElem{T}) = a.parent::NfRel{T}
+@inline Nemo.parent(a::NfRelElem{T}) where {T} = a.parent::NfRel{T}
 
 issimple(a::NfRel) = true
 
@@ -222,7 +204,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
@@ -234,7 +216,7 @@ function number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where
   return K, K(gen(parent(f)))
 end
 
-doc"""
+Markdown.doc"""
     number_field(f::Generic.Poly{T}, cached::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
@@ -330,6 +312,8 @@ end
 #
 ################################################################################
 
+Base.:(^)(a::NfRelElem, n::UInt) = a^Int(n)
+
 function Base.:(^)(a::NfRelElem, n::Int)
   K = parent(a)
   if iszero(a)
@@ -410,7 +394,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
 > Given an extension $K/k/Q$, find an isomorphic extensino of $Q$.
 """
@@ -419,7 +403,7 @@ function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
-doc"""
+Markdown.doc"""
     absolute_field(K::NfRel{NfRelElem}, cached::Bool = false) -> NfRel, Map, Map
 > Given an extension $E/K/k$, find an isomorphic extension of $k$.
 > In a tower, only the top-most steps are collapsed.
@@ -506,15 +490,15 @@ Nemo.canonical_unit(a::NfRelElem) = a
 #
 #*(a::NfRelElem{T}, b::NfRelElem{NfRelElem{T}}) where T = b*a
 
-@inline coeff{T}(a::NfRelElem{T}, i::Int) = coeff(a.data, i)
-@inline setcoeff!{T}(a::NfRelElem{T}, i::Int, c::T) = setcoeff!(a.data, i, c)
+@inline coeff(a::NfRelElem{T}, i::Int) where {T} = coeff(a.data, i)
+@inline setcoeff!(a::NfRelElem{T}, i::Int, c::T) where {T} = setcoeff!(a.data, i, c)
 
 @inline degree(L::Hecke.NfRel) = degree(L.pol)
 
 #######################################################################
 # convenience constructions
 #######################################################################
-doc"""
+Markdown.doc"""
     ispure_extension(K::NfRel) -> Bool
 > Tests if $K$ is pure, ie. if the defining polynomial is $x^n-g$.
 """
@@ -525,7 +509,7 @@ function ispure_extension(K::NfRel)
   return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
 end
 
-doc"""
+Markdown.doc"""
     iskummer_extension(K::Hecke.NfRel{nf_elem}) -> Bool
 > Tests if $K$ is Kummer, ie. if the defining polynomial is $x^n-g$ and
 > if the coefficient field contains the $n$-th roots of unity.
@@ -544,7 +528,7 @@ function iskummer_extension(K::Hecke.NfRel{nf_elem})
   return true
 end
 
-doc"""
+Markdown.doc"""
     pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField}) -> NfRel{nf_elem}, NfRelElem
     pure_extension(n::Int, gen::nf_elem) -> NfRel{nf_elem}, NfRelElem
 > Create the field extension with the defining polynomial $x^n-gen$.
@@ -768,7 +752,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
@@ -799,7 +783,7 @@ function issubfield(K::NfRel, L::NfRel)
   return false, NfRelToNfRelMor(K, L, L())
 end
 
-doc"""
+Markdown.doc"""
 ***
       isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
@@ -816,7 +800,7 @@ function isisomorphic(K::NfRel, L::NfRel)
   return issubfield(K, L)
 end
 
-doc"""
+Markdown.doc"""
     discriminant(K::AnticNumberField) -> fmpq
     discriminant(K::NfRel) -> 
 > The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
@@ -831,7 +815,7 @@ function Nemo.discriminant(K::NfRel)
   return d
 end
 
-doc"""
+Markdown.doc"""
     discriminant(K::AnticNumberField, FlintQQ) -> fmpq
     discriminant(K::NfRel, FlintQQ) -> 
 > The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 

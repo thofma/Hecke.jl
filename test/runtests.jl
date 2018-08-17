@@ -1,14 +1,23 @@
 using Hecke
 
+using Test
 
-using Base.Test
+using LinearAlgebra
+
+#using Nemo
+
+import Test: @inferred
+
+macro iinfered(x)
+  quote $(esc(x)) end
+end
 
 for scope in Hecke.ASSERT_SCOPE
   set_assert_level(scope, 3)
 end
 
 include("AssAlg.jl")
-include("EllCrv.jl")
+#include("EllCrv.jl")
 include("GrpAb.jl")
 include("LinearAlgebra.jl")
 include("Map.jl")

@@ -58,7 +58,7 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
 ##############################################################################
 
 # We do we have AbelianGroup and DiagonalGroup?
-doc"""
+Markdown.doc"""
 ***
     AbelianGroup(M::fmpz_mat) -> GrpAbFinGen
 
@@ -69,7 +69,7 @@ function AbelianGroup(M::fmpz_mat)
   return GrpAbFinGen(M)
 end
 
-doc"""
+Markdown.doc"""
 ***
     AbelianGroup(M::Array{fmpz, 2}) -> GrpAbFinGen
 
@@ -80,7 +80,7 @@ function AbelianGroup(M::Array{fmpz, 2})
   return AbelianGroup(matrix(FlintZZ, M))
 end
 
-doc"""
+Markdown.doc"""
 ***
     AbelianGroup(M::Array{Integer, 2}) -> GrpAbFinGen
 
@@ -91,7 +91,7 @@ function AbelianGroup(M::Array{T, 2}) where T <: Integer
   return AbelianGroup(matrix(FlintZZ, M))
 end
 
-doc"""
+Markdown.doc"""
 ***
     AbelianGroup(M::Array{fmpz, 1}) -> GrpAbFinGen
 
@@ -102,7 +102,7 @@ function AbelianGroup(M::Array{fmpz, 1})
   return AbelianGroup(matrix(FlintZZ, 1, length(M), M))
 end
 
-doc"""
+Markdown.doc"""
 ***
     AbelianGroup(M::Array{Integer, 1}) -> GrpAbFinGen
 
@@ -113,7 +113,7 @@ function AbelianGroup(M::Array{T, 1}) where T <: Integer
   return AbelianGroup(matrix(FlintZZ, 1, length(M), M))
 end
 
-doc"""
+Markdown.doc"""
 ***
     DiagonalGroup(M::fmpz_mat) -> GrpAbFinGen
 
@@ -136,7 +136,7 @@ function DiagonalGroup(M::fmpz_mat)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     DiagonalGroup(M::Array{Union{fmpz, Integer}, 1}) -> GrpAbFinGen
 
@@ -223,7 +223,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     issnf(G::GrpAbFinGen) -> Bool
 
@@ -232,7 +232,7 @@ doc"""
 """
 issnf(A::GrpAbFinGen) = A.issnf
 
-doc"""
+Markdown.doc"""
 ***
     ngens(G::GrpAbFinGen) -> Int
 
@@ -246,7 +246,7 @@ function ngens(A::GrpAbFinGen)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     nrels(G::GrpAbFinGen) -> Int
 
@@ -260,7 +260,7 @@ function nrels(A::GrpAbFinGen)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     rels(A::GrpAbFinGen) -> fmpz_mat
 
@@ -303,7 +303,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     snf(A::GrpAbFinGen) -> GrpAbFinGen, Map
 
@@ -370,7 +370,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     isfinite(A::GrpAbFinGen) -> Bool
 
@@ -382,7 +382,7 @@ isfinite_snf(A::GrpAbFinGen) = length(A.snf) == 0 || !iszero(A.snf[end])
 
 isfinite_gen(A::GrpAbFinGen) = isfinite(snf(A)[1])
 
-doc"""
+Markdown.doc"""
 ***
     isinfinite(A::GrpAbFinGen) -> Bool
 
@@ -396,7 +396,7 @@ isinfinite(A::GrpAbFinGen) = !isfinite(A)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     rank(A::GrpAbFinGenGen) -> Int
 
@@ -405,7 +405,7 @@ doc"""
 """
 rank(A::GrpAbFinGen) = issnf(A) ? rank_snf(A) : rank_gen(A)
 
-rank_snf(A::GrpAbFinGen) = length(find(x -> x == 0, A.snf))
+rank_snf(A::GrpAbFinGen) = length(findall(x -> x == 0, A.snf))
 
 rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
 
@@ -415,7 +415,7 @@ rank_gen(A::GrpAbFinGen) = rank(snf(A)[1])
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     order(A::GrpAbFinGen) -> fmpz
 
@@ -436,7 +436,7 @@ order_gen(A::GrpAbFinGen) = order(snf(A)[1])
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     exponent(A::GrpAbFinGen) -> fmpz
 
@@ -458,7 +458,7 @@ exponent_gen(A::GrpAbFinGen) = exponent(snf(A)[1])
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     istrivial(A::GrpAbFinGen) -> Bool
 
@@ -472,7 +472,7 @@ istrivial(A::GrpAbFinGen) = isfinite(A) && order(A) == 1
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     isisomorphic(G::GrpAbFinGen, H::GrpAbFinGen) -> Bool
 
@@ -489,7 +489,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     direct_product(G::GrpAbFinGen, H::GrpAbFinGen) -> GrpAbFinGen
 
@@ -527,7 +527,7 @@ end
 #
 ##############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
@@ -586,7 +586,7 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   return S, mS
 end
 
-doc"""
+Markdown.doc"""
 ***
     sub(s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
@@ -600,7 +600,7 @@ function sub(s::Array{GrpAbFinGenElem, 1},
   return sub(parent(s[1]), s, add_to_lattice, L)
 end
 
-doc"""
+Markdown.doc"""
 ***
     sub(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
@@ -647,7 +647,7 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
   return S, mS
 end
 
-doc"""
+Markdown.doc"""
 ***
     sub(G::GrpAbFinGen, n::fmpz) -> GrpAbFinGen, Map
 
@@ -660,7 +660,7 @@ function sub(G::GrpAbFinGen, n::fmpz,
   return sub(G, sg, add_to_lattice, L)
 end
 
-doc"""
+Markdown.doc"""
 ***
     sub(G::GrpAbFinGen, n::Integer) -> GrpAbFinGen, Map
 
@@ -678,7 +678,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
   quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1}) -> GrpAbFinGen, Map
 
@@ -725,7 +725,7 @@ function quo(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   return Q, m
 end
 
-doc"""
+Markdown.doc"""
 ***
   quo(G::GrpAbFinGen, M::fmpz_mat) -> GrpAbFinGen, Map
 
@@ -744,7 +744,7 @@ function quo(G::GrpAbFinGen, M::fmpz_mat,
   return Q, m
 end
 
-doc"""
+Markdown.doc"""
 ***
     quo(G::GrpAbFinGen, n::Integer}) -> GrpAbFinGen, Map
     quo(G::GrpAbFinGen, n::fmpz}) -> GrpAbFinGen, Map
@@ -803,8 +803,9 @@ function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupL
   if !fl
     error("no common overgroup known")
   end
-  M = [ mG identity_matrix(FlintZZ, rows(mG)); mH zero_matrix(FlintZZ, rows(mH), rows(mG)) ;
-        rels(GH) zero_matrix(FlintZZ, nrels(GH), rows(mG))]
+  #M = [ mG identity_matrix(FlintZZ, rows(mG)); mH zero_matrix(FlintZZ, rows(mH), rows(mG)) ;
+        #rels(GH) zero_matrix(FlintZZ, nrels(GH), rows(mG))]
+  M = vcat(vcat(hcat(mG, identity_matrix(FlintZZ, rows(mG))), hcat(mH, zero_matrix(FlintZZ, rows(mH), rows(mG)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), rows(mG))))
   h = hnf(M)
   i = rows(h)
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
@@ -880,7 +881,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     iscyclic(G::GrpAbFinGen) -> Bool
 
 > Returns whether $G$ is cyclic.
@@ -928,7 +929,7 @@ end
 
 # TH: Isn't this the same as UnitsModM.jl?
 # TODO: remove this from here. It does not belong here
-doc"""
+Markdown.doc"""
 ***
     multgrp_of_cyclic_grp(n::fmpz) -> GrpAbFinGen
 

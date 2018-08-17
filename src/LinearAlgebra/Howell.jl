@@ -18,8 +18,8 @@ function howell_form2(A::nmod_mat)
         t2 = u*_raw_getindex(A,j,k) + v*_raw_getindex(A, i, k)
         t1 = ccall((:n_mod2_preinv, :libflint), Int, (Int, Int, UInt), t1, A._n, A._ninv)
         t2 = ccall((:n_mod2_preinv, :libflint), Int, (Int, Int, UInt), t2, A._n, A._ninv)
-        ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &A, j - 1, k - 1, t1)
-        ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &A, i - 1, k - 1, t2)
+        ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, j - 1, k - 1, t1)
+        ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, i - 1, k - 1, t2)
       end
     end
     #println(A)
@@ -33,7 +33,7 @@ function howell_form2(A::nmod_mat)
       u = _unit(_raw_getindex(A,j,j), A._n)
       for k in 1:m
         t1 = mod(u*_raw_getindex(A,j,k), A._n)
-        ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &A, j - 1, k - 1, t1)
+        ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, j - 1, k - 1, t1)
       end
       #println("Multiplied row $j with $u and obtained \n$A\n")
       for i in 1:j-1
@@ -77,8 +77,8 @@ function howell_form2(A::nmod_mat)
         t2 = u*_raw_getindex(A,i,k) + v*_raw_getindex(T, 1, k)
         t1 = ccall((:n_mod2_preinv, :libflint), Int, (Int, Int, UInt), t1, A._n, A._ninv)
         t2 = ccall((:n_mod2_preinv, :libflint), Int, (Int, Int, UInt), t2, A._n, A._ninv)
-        ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &A, i - 1, k - 1, t1)
-        ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &T, 0, k - 1, t2)
+        ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, i - 1, k - 1, t1)
+        ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), T, 0, k - 1, t2)
       end
     end
     #println("After reducing with T the augmented matrix looks like \n$A\n$T\n")
@@ -88,7 +88,7 @@ function howell_form2(A::nmod_mat)
 end
 
 function _raw_setindex(A::nmod_mat, i::Int, j::Int, x::UInt)
-  ccall((:nmod_mat_set_entry, :libflint), Void, (Ptr{nmod_mat}, Int, Int, UInt), &A, i - 1, j - 1, x)
+  ccall((:nmod_mat_set_entry, :libflint), Nothing, (Ref{nmod_mat}, Int, Int, UInt), A, i - 1, j - 1, x)
 end
 
 function _stab(a::UInt, b::UInt, N::UInt)
@@ -194,7 +194,7 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   
   R=base_ring(A)
   A1=lift(A)
-  ccall((:fmpz_mat_howell_form_mod, :libflint), Void,
+  ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
                 (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
   A=MatrixSpace(R, rows(A), cols(A))(A1)
   return A
@@ -290,7 +290,7 @@ function triangularize(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   return B
 end
 
-function Base.nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+function nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   R = base_ring(M)
   #
   #  If the modulus is prime, the second part of the Howell form computation is useless and I can directly call the rref

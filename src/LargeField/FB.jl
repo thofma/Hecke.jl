@@ -19,29 +19,29 @@ function induce_image(A::NfOrdIdl, S::Map)
   return B
 end
 
-@doc """
+Markdown.doc"""
   compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
 
   Compute x(y) mod z
-""" ->
+"""
 function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
   check_parent(x,y)
   check_parent(x,z)
   r = parent(x)()
-  ccall((:nmod_poly_compose_mod, :libflint), Void,
-          (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}), &r, &x, &y, &z)
+  ccall((:nmod_poly_compose_mod, :libflint), Nothing,
+          (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), r, x, y, z)
   return r
 end
 
-@doc """
+Markdown.doc"""
   taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
 
   Compute x(t-c)
-""" ->
+"""
 function taylor_shift(x::nmod_poly, c::UInt)
   r = parent(x)()
-  ccall((:nmod_poly_taylor_shift, :libflint), Void,
-          (Ptr{nmod_poly}, Ptr{nmod_poly}, UInt), &r, &x, c)
+  ccall((:nmod_poly_taylor_shift, :libflint), Nothing,
+          (Ref{nmod_poly}, Ref{nmod_poly}, UInt), r, x, c)
   return r
 end
 
@@ -125,8 +125,8 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
       continue
     end
     old = collect(Ss)
-    for (b, n) in old # one redundant - step
-      Ss[op[i][1](b)] = op_smat(n, op[i][2])
+    for (bb, n) in old # one redundant - step
+      Ss[op[i][1](bb)] = op_smat(n, op[i][2])
     end
     while true
       done = true
@@ -137,8 +137,9 @@ function orbit_in_FB(op::Array, a::nf_elem, s::SRow)
         end
         done = false
         b = bb
-        for (b, n) in old
-          Ss[op[j][1](b)] = op_smat(n, op[j][2])
+        for (bbb, n) in old
+          # TODO: What is going on with the b's?
+          Ss[op[j][1](bbb)] = op_smat(n, op[j][2])
         end
       end
       if done

@@ -1,7 +1,7 @@
 @testset "Elements" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  global Qx, x = PolynomialRing(FlintQQ, "x")
 
-  K1, a1 = NumberField(x^3 - 2, "a")
+  global K1, a1 = NumberField(x^3 - 2, "a")
   O1 = EquationOrder(K1)
 
   @testset "Construction" begin

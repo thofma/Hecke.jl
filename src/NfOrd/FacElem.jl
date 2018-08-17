@@ -143,7 +143,7 @@ end
 
 function conjugates_arb(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   d = degree(_base_ring(x))
-  res = Array{acb}(d)
+  res = Array{acb}(undef, d)
 
   first = true
 
@@ -169,7 +169,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
   K = _base_ring(x)
   r1, r2 = signature(K)
   d = r1 + r2
-  res = Array{arb}(d)
+  res = Array{arb}(undef, d)
 
 
   target_tol = abs_tol
@@ -221,7 +221,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
   return map(R, z)
 end
 
-doc"""
+Markdown.doc"""
     valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl) -> fmpz
 > The valuation of $a$ at $P$.
 """
@@ -233,7 +233,7 @@ function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
   return val
 end
 
-doc"""
+Markdown.doc"""
     valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
     valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
 > The valuation of $A$ at $P$.
@@ -246,7 +246,7 @@ function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
   return sum(valuation(I, p)*v for (I, v) = A.fac)
 end
 
-doc"""
+Markdown.doc"""
      ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
 > The factored fractional ideal $a*O$.
 """
@@ -265,7 +265,7 @@ end
 
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
-doc"""
+Markdown.doc"""
     conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
     conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
 > The "normalised" logarithms, ie. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,

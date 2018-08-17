@@ -48,7 +48,7 @@ function solve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
 end
 
 #TODO: write vector reconstruction and use it here.
-doc"""
+Markdown.doc"""
     rational_reconstruction(A::SRow{fmpz}, M::fmpz) -> Bool, SRow{fmpz}, fmpz
 
 > Apply rational reconstruction to the entries of $A$. Returns true iff 
@@ -129,7 +129,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     det_mc(A::SMat{fmpz}
 
 > Computes the determinant of $A$ using a LasVegas style algorithm,
@@ -167,7 +167,7 @@ function det_mc(A::SMat{fmpz})
   end
 end
 
-doc"""
+Markdown.doc"""
     det(A::SMat{fmpz})
 
 > The determinant of $A$ using a modular algorithm.
@@ -191,7 +191,7 @@ function det(A::SMat{fmpz})
   return crt_signed(ld, crt_env(lp))
 end
 
-doc"""
+Markdown.doc"""
     echelon_with_trafo(A::SMat{nmod}) -> SMat, SMat
 
 > Find a unimodular matrix $T$ and an upper-triangular $E$ s.th.
@@ -206,7 +206,7 @@ function echelon_with_trafo(A::SMat{nmod})
   return sub(M.basis, 1:A.r, 1:A.c), sub(M.basis, 1:A.r, A.c+1:z.c)
 end
 
-doc"""
+Markdown.doc"""
     solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false) -> SRow{fmpz}, fmpz
     solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false) -> SMat{fmpz}, fmpz
 
