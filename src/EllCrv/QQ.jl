@@ -44,7 +44,7 @@ export integral_model, istorsion_point, laska_kraus_connell, minimal_model,
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     order(P::EllCrvPt{fmpq}) -> fmpz
 
@@ -68,7 +68,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     istorsion_point(P::EllCrvPt{fmpq}) -> fmpz
 
 > Returns whether the point $P$ is a torsion point.
@@ -85,7 +85,7 @@ end
 ################################################################################
 
 # via theorem of Lutz-Nagell
-doc"""
+Markdown.doc"""
 ***
     torsion_points_lutz_nagell(E::EllCrv{fmpq}) -> Array{EllCrvPt, 1}
 
@@ -162,7 +162,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
 end
 
 # via division polynomials
-doc"""
+Markdown.doc"""
 ***
     torsion_points_division_poly(E::EllCrv{fmpq}) -> Array{EllCrvPt}
 
@@ -274,7 +274,7 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
 end
 
 # function for users
-doc"""
+Markdown.doc"""
 ***
     torsion_points(E::EllCrv{fmpq}) -> Array{EllCrvPt{fmpq}, 1}
 
@@ -296,7 +296,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     torsion_structure(E::EllCrv{fmpq}) -> (A::Array{fmpz, 1},
                                            B::Array{EllCrvPt{fmpq}, 1}
@@ -330,7 +330,7 @@ function torsion_structure(E::EllCrv{fmpq})
 
   # find generators
   if in(grouporder, orders) == true # is the group cyclic?
-    k = findfirst(orders, grouporder)
+    k = something(findfirst(isequal(grouporder), orders), 0)
     return (fmpz[grouporder], [T[k]])
   else # group not cyclic
     m = div(grouporder, 2)
@@ -347,7 +347,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
 integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
 
@@ -409,7 +409,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     laska_kraus_connell(E::EllCrv{fmpz}) -> Array{Nemo.fmpz}
 
@@ -541,7 +541,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     tates_algorithm_local(E::EllCrv{fmpz}, p::Int) -> EllipticCurve{fmpq}, String, fmpz, fmpz
 
@@ -869,7 +869,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     tates_algorithm_global(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
@@ -901,7 +901,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
@@ -911,7 +911,7 @@ function minimal_model(E::EllCrv{fmpq})
   return tates_algorithm_global(E)
 end
 
-doc"""
+Markdown.doc"""
 ***
     minimal_model(E::EllCrv{fmpq}) -> EllCrv{fmpq}
 
@@ -923,7 +923,7 @@ function minimal_model(E::EllCrv{fmpq}, p::Int)
   return Ep
 end
 
-doc"""
+Markdown.doc"""
 ***
     tidy_model(E::EllCrv{fmpz}) -> EllCrv{fmpz}
 > Given an elliptic curve with minimal model, this functions returns an
@@ -970,7 +970,7 @@ end
 ################################################################################
 
 # this needs to be rewritten
-doc"""
+Markdown.doc"""
     get_b_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
 > Computes the invariants b2, b4, b6, b8 of an elliptic curve E with integer coefficients.
 """
@@ -989,7 +989,7 @@ function get_b_integral(E)
   return b2,b4,b6,b8
 end
 
-doc"""
+Markdown.doc"""
     get_b_c_integral(E::EllCrv{fmpz}) -> Nemo.fmpz
 > Computes the invariants b2, b4, b6, b8, c4, c6 of an elliptic curve E with integer coefficients.
 """

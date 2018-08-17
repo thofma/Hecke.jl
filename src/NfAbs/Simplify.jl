@@ -1,6 +1,6 @@
 export simplify
 
-doc"""
+Markdown.doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
  > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.
  > By default, "nice" is defined to be of smaller index, testing is done only using
@@ -59,7 +59,7 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap)
 #  ap = Ft(Zx(a*denominator(a)))
   s = [ap(x) for x = R]
   b = []
-  a = IntSet()
+  a = BitSet()
   i = 0
   n = length(R)
   while i < n
@@ -68,7 +68,7 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap)
       continue
     end
     z = s[i]
-    push!(b, find(x->s[x] == z, 1:n))
+    push!(b, findall(x->s[x] == z, 1:n))
     for j in b[end]
       push!(a, j)
     end
@@ -116,7 +116,7 @@ function polredabs(K::AnticNumberField)
     if any(t->t>1, values(lp.fac))
       continue
     end
-    d = Base.reduce(lcm, 1, [degree(x) for x = keys(lp.fac)])
+    d = Base.reduce(lcm, [degree(x) for x = keys(lp.fac)], init = 1)
     if d < degree(f)^2
       break
     end
@@ -214,17 +214,17 @@ function polredabs(K::AnticNumberField)
   all_d = [abs(discriminant(x[2])) for x= all_f]
   m = minimum(all_d)
 
-  L1 = all_f[find(i->all_d[i] == m, 1:length(all_d))]
+  L1 = all_f[findall(i->all_d[i] == m, 1:length(all_d))]
 
   function Q1Q2(f::PolyElem)
     q1 = parent(f)()
     q2 = parent(f)()
     g = gen(parent(f))
-    for i=0:degree(f)
-      if isodd(i)
-        q2 += coeff(f, i)*g^div(i, 2)
+    for j=0:degree(f)
+      if isodd(j)
+        q2 += coeff(f, j)*g^div(j, 2)
       else
-        q1 += coeff(f, i)*g^div(i, 2)
+        q1 += coeff(f, j)*g^div(j, 2)
       end
     end
     return q1, q2

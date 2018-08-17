@@ -13,7 +13,7 @@ function total_degree(f::fmpq_mpoly)
 end
 
 function add!(c::fmpq_mpoly, a::fmpq_mpoly, b::fmpq_mpoly)
-  ccall((:fmpq_mpoly_add, :libflint), Void,
+  ccall((:fmpq_mpoly_add, :libflint), Nothing,
         (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}),
         c, a, b, c.parent)
   return c

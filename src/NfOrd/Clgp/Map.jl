@@ -2,7 +2,7 @@
 # maps and disc_log and such
 ################################################################################
 
-doc"""
+Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
 > Computes a (small) ideal in the same class as $A^e$
 """
@@ -35,7 +35,7 @@ function power_class(A::NfOrdIdl, e::fmpz)
   return B
 end
 
-doc"""
+Markdown.doc"""
     power_product_class(A::Array{NfOrdIdl, 1}, e::Array{fmpz, 1}) -> NfOrdIdl
 > Computes a (small) ideal in the same class as $\prod A_i^{e_i}$.
 """
@@ -100,7 +100,7 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
   return d
 end
 
-doc"""
+Markdown.doc"""
     class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx) -> nf_elem, SRow{fmpz}
 > Finds a number field element $\alpha$ such that $\alpha I$ factors over
 > the factor base in $c$.
@@ -251,16 +251,16 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   es_dense = fmpz_mat(es)
   S, _, T = snf_with_transform(es_dense, false, true)
 
-  p = find(x->S[x,x]>1, 1:cols(S))
+  p = findall(x->S[x,x]>1, 1:cols(S))
 
-  C = DiagonalGroup([S[x,x] for x= p])
+  C = DiagonalGroup([S[x, x] for x in p])
   c.dl_data = (s, T, C)
   return C
 end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
 
-doc"""
+Markdown.doc"""
     principal_gen_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
 > For a principal ideal $A$, find a generator in factored form.
 """
@@ -272,7 +272,7 @@ function principal_gen_fac_elem(A::NfOrdIdl)
   return e
 end
 
-doc"""
+Markdown.doc"""
     principal_gen_fac_elem(I::FacElem) -> FacElem{nf_elem, NumberField}
 > For a principal ideal $A$ in factored form, find a generator in factored form.
 """
@@ -287,7 +287,7 @@ function principal_gen_fac_elem(I::FacElem)
   
 end
 
-doc"""
+Markdown.doc"""
     principal_gen(A::NfOrdIdl) -> NfOrdElem
 > For a principal ideal $A$, find a generator.
 """
@@ -300,7 +300,7 @@ function principal_gen(A::NfOrdIdl)
   return O(evaluate(e))
 end
 
-doc"""
+Markdown.doc"""
     isprincipal_fac_elem(A::NfOrdIdl) -> Bool, FacElem{nf_elem, NumberField}
 > Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 > \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
@@ -339,7 +339,7 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   return true, e
 end
 
-doc"""
+Markdown.doc"""
     isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
 > Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 > \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
@@ -481,7 +481,7 @@ end
 #  find T sth. T R = (I[i]*x[i])^d
 #  saturate T|-d??
 
-doc"""
+Markdown.doc"""
     sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 > by $I$, ie. the group of non-zero field elements which are only divisible
@@ -599,7 +599,7 @@ function show(io::IO, mC::MapSUnitGrpFacElem)
   println(io, "SUnits (in factored form) map of $(codomain(mC)) for $(mC.idl)")
 end
 
-doc"""
+Markdown.doc"""
     sunit_group_fac_elem(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 > by $I$, ie. the group of non-zero field elements which are only divisible
@@ -651,7 +651,7 @@ function show(io::IO, mC::MapSUnitGrp)
   println(io, "SUnits  map of $(codomain(mC)) for $(mC.idl)")
 end
 
-doc"""
+Markdown.doc"""
     sunit_group(I::Array{NfOrdIdl, 1}) -> GrpAb, Map
 > For an array $I$ of (coprime prime) ideals, find the $S$-unit group defined
 > by $I$, ie. the group of non-zero field elements which are only divisible

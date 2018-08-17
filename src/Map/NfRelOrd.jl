@@ -21,7 +21,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, Hecke
       end
       # F and base_ring(h) are the same as in "==" but not as in "==="
       hh = Fx()
-      ccall((:fq_poly_set, :libflint), Void, (Ptr{fq_poly}, Ptr{fq_poly}, Ptr{FqFiniteField}), &hh, &h, &F)
+      ccall((:fq_poly_set, :libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, F)
       z.poly_of_the_field = hh
       FF, mFF = field_extension(hh)
 
@@ -62,7 +62,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, Hecke
       h = P.non_index_div_poly
       # F and base_ring(h) are the same as in "==" but not as in "==="
       hh = Fx()
-      ccall((:fq_poly_set, :libflint), Void, (Ptr{fq_poly}, Ptr{fq_poly}, Ptr{FqFiniteField}), &hh, &h, &F)
+      ccall((:fq_poly_set, :libflint), Nothing, (Ref{fq_poly}, Ref{fq_poly}, Ref{FqFiniteField}), hh, h, F)
       z.poly_of_the_field = hh
       FF, mFF = field_extension(hh)
 

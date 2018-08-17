@@ -72,6 +72,7 @@ mutable struct IndexPSubgroups{S, T}
     r.n = UInt(div(fmpz(p)^(length(s.snf)-i+1) - 1, fmpz(p)-1))
     r.c = zero_matrix(FlintZZ, length(s.snf), length(s.snf))
     r.mthd = mthd
+    r.c
     return r
   end
 end
@@ -79,11 +80,12 @@ end
 function index_p_subgroups(A::GrpAbFinGen, p::Union{fmpz, Integer}, mthd::T = sub) where {T}
   q = fmpz(p)
   @assert isprime(q)
-  return IndexPSubgroups{T}(A, q, mthd)
+  I = IndexPSubgroups{T}(A, q, mthd)
 
   #a subgroup of index p corresponds to a HNF with exactly one p on the
   #diagonal - and the other entries arbitrary reduced.
   #so it should be 1 + p + p^2 + + p^(n-1) = ((p^n)-1)/(p-1) many
+  return I
 end
 
 function index_to_group(s::IndexPSubgroups, i::UInt)
@@ -112,70 +114,37 @@ function index_to_group(s::IndexPSubgroups, i::UInt)
   return s.mthd(domain(s.mp), gen)
 end
 
-function Base.start(s::IndexPSubgroups)
-  return UInt(0)
+function Base.iterate(s::IndexPSubgroups, i::UInt = UInt(0))
+  if i + 1 > s.n 
+    return nothing
+  end
+
+  return index_to_group(s, i), (i + 1)
 end
 
-function Base.next(s::IndexPSubgroups, i::UInt)
-  return index_to_group(s, i), i+1
-end
+#function Base.iterate(s::IndexPSubgroups, i::UInt)
+#  if i > s.n - 1
+#    return nothing
+#  end
+#
+#  return index_to_group(s, i), i + 1
+#end
+
+Base.IteratorSize(::Type{IndexPSubgroups{S, T}}) where {S, T} = Base.HasLength()
 
 function Base.length(s::IndexPSubgroups)
   return s.n
 end
 
-function Base.done(s::IndexPSubgroups, i::UInt)
-  return i>=s.n
-end
+#function Base.done(s::IndexPSubgroups, i::UInt)
+#  return i>=s.n
+#end
 
 #=
 example:
  julia> sg = index_p_subgroups(GrpAbFinGen([3,3,3,3]), 3)
  julia> index_to_group(sg, UInt(6));
 =#
-
-################################################################################
-#
-#  The original permutation iterator from Nemo
-#
-################################################################################
-
-struct _AllPerms{T}
-   n::T
-   all::Int
-
-   function _AllPerms(n::T) where {T<:Integer}
-      return new{T}(n, factorial(n))
-   end
-end
-
-Base.start(A::_AllPerms{T}) where T<:Integer = (collect(T, 1:A.n), one(T), one(T), ones(T, A.n))
-Base.next(A::_AllPerms, state) = all_perms(state...)
-Base.done(A::_AllPerms, state) = state[2] > A.all
-Base.eltype(::Type{_AllPerms{T}}) where T<:Integer = Vector{T}
-length(A::_AllPerms) = A.all
-
-function all_perms(elts, counter, i, c)
-   if counter == 1
-      return (copy(elts), (elts, counter+1, i, c))
-   end
-   n = length(elts)
-   @inbounds while i <= n
-      if c[i] < i
-         if isodd(i)
-            elts[1], elts[i] = elts[i], elts[1]
-         else
-            elts[c[i]], elts[i] = elts[i], elts[c[i]]
-         end
-         c[i] += 1
-         i = 1
-         return (copy(elts), (elts, counter+1, i, c))
-      else
-         c[i] = 1
-         i += 1
-      end
-   end
-end
 
 ################################################################################
 #
@@ -208,12 +177,23 @@ struct yIterator
   end
 end
 
-Base.start(F::yIterator) = (z = ones(Int, F.t); F.t > 0 ? z[1] = 0 : nothing; return z)
-
-function Base.next(F::yIterator, i::Array{Int, 1})
+function Base.iterate(F::yIterator, i::Vector{Int})
   if length(i) == 0
-    return copy(F.res), copy(F.x) # this will make it abort
+    return nothing
   end
+
+   done = true
+
+  for j in 1:length(i)
+    if i[j] != F.x[j]
+      done = false 
+    end
+  end
+
+  if done
+    return nothing
+  end
+ 
   if i[1] < F.x[1]
     i[1] = i[1] + 1
   else # the first one is as large as possible
@@ -228,26 +208,50 @@ function Base.next(F::yIterator, i::Array{Int, 1})
       end
     end
   end
+
   for j in 1:F.t
     F.res[j] = i[j]
   end
+
   return copy(F.res), i
 end
 
-function Base.done(F::yIterator, i::Array{Int, 1})
-  # note that this is a hack to make the case t = 0 work
-  if length(i) == 0
-    return false
+function Base.iterate(F::yIterator) 
+  i = ones(Int, F.t)
+
+  if F.t == 0
+    return copy(F.res), i
   end
-  for j in 1:length(i)
-    if i[j] != F.x[j]
-      return false
+
+  if F.t > 0
+    i[1] = 0
+  end
+  
+  if i[1] < F.x[1]
+    i[1] = i[1] + 1
+  else # the first one is as large as possible
+    j = 0
+    for j in 2:length(i)
+      if i[j] < F.x[j]
+        i[j] = i[j] + 1
+        for k in j-1:-1:1
+          i[k] = i[j]
+        end
+        break
+      end
     end
   end
-  return true
+
+  for j in 1:F.t
+    F.res[j] = i[j]
+  end
+
+  return copy(F.res), i
 end
 
-Base.iteratorsize(::Type{yIterator}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{yIterator}) = Base.SizeUnkown()
+
+#Base.iteratorsize(::Type{yIterator}) = Base.SizeUnknown()
 
 Base.eltype(::Type{yIterator}) = Array{Int, 1}
 
@@ -277,21 +281,30 @@ end
   return true
 end
 
+#(::Colon)(x::Int, y::Nothing) = 1:0
+
+Base.:(:)(x::Int, y::Nothing) = 1:0
+
+Base.:(:)(x::Int, y::fmpz) = fmpz(x):y
+
 function SigmaIteratorGivenY(s, x, y)
   t = findlast(!iszero, y)
-  SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, t, x, y, sigma),
-                                       _AllPerms(s)))
+  if t === nothing
+    tt = 0
+  else
+    tt = t
+  end
+  SigmaIteratorGivenY(Iterators.filter(sigma -> _isvalid(s, tt, x, y, sigma),
+                                       (deepcopy(z.d) for z in AllPerms(s))))
 end
 
-Base.start(S::SigmaIteratorGivenY) = Base.start(S.gen)
+Base.iterate(S::SigmaIteratorGivenY) = Base.iterate(S.gen)
 
-Base.next(S::SigmaIteratorGivenY, s) = Base.next(S.gen, s)
-
-Base.done(S::SigmaIteratorGivenY, s) = Base.done(S.gen, s)
+Base.iterate(S::SigmaIteratorGivenY, s) = Base.iterate(S.gen, s)
 
 Base.length(S::SigmaIteratorGivenY) = Base.length(S.gen)
 
-Base.iteratorsize(::Type{SigmaIteratorGivenY{T}}) where {T} = Base.iteratorsize(T)
+#Base.iteratorsize(::Type{SigmaIteratorGivenY{T}}) where {T} = Base.iteratorsize(T)
 
 Base.eltype(::Type{SigmaIteratorGivenY{T}}) where {T} = Array{Int, 1}
 
@@ -369,11 +382,11 @@ function getintervals(t, s, x, y, p, sigma, tau)
   return indice, Base.product(ranges...)
 end
 
-Base.start(C::cIteratorGivenSigma) = Base.start(C.it)
+Base.iterate(C::cIteratorGivenSigma) = Base.iterate(C.it)
 
-Base.next(C::cIteratorGivenSigma, s) = Base.next(C.it, s)
+Base.iterate(C::cIteratorGivenSigma, s) = Base.iterate(C.it, s)
 
-Base.done(C::cIteratorGivenSigma, s) = Base.done(C.it, s)
+#Base.done(C::cIteratorGivenSigma, s) = Base.done(C.it, s)
 
 Base.length(C::cIteratorGivenSigma) = Base.length(C.it)
 
@@ -423,7 +436,12 @@ end
 function _subgroup_type_iterator(x, y, p)
   @assert length(x) == length(y)
   s = length(x)
-  t = findlast(!iszero, y)
+  tt = findlast(!iszero, y)
+  if tt === nothing
+    t = 0
+  else
+    t = tt
+  end
 
   # have to treat the empty y separately
 
@@ -460,7 +478,7 @@ function _matrix_to_elements(G::GrpAbFinGen, M::Array{Int, 2},
   numgenssub = size(M, 2)
   numgen = ngens(G)
   r = size(M, 1)
-  z = Array{GrpAbFinGenElem}(numgenssub)
+  z = Array{GrpAbFinGenElem}(undef, numgenssub)
   v = zeros(Int, numgen)
   for i in 1:numgenssub
     for j in 1:r
@@ -706,13 +724,19 @@ function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
     it = _psubgroups(G, p; subtype = subtype, quotype = quotype,
                            fun = fun, index = index, order = order)
   end
-  E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  
+  if VERSION >= v"0.7-"
+    E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  else
+    E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  end
+
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],
                                                     fmpz(index), fmpz(order), fun, it)
   return z
 end
 
-doc"""
+Markdown.doc"""
     psubgroups(g::GrpAbFinGen, p::Integer;
                subtype = :all,
                quotype = :all,
@@ -760,18 +784,24 @@ function psubgroups(G::GrpAbFinGen, p::Union{Integer, fmpz}; subtype = :all,
                                  fun = fun)
 end
 
-Base.start(S::pSubgroupIterator) = Base.start(S.it)
+#Base.start(S::pSubgroupIterator) = Base.start(S.it)
 
-Base.next(S::pSubgroupIterator, s) = Base.next(S.it, s)
+Base.iterate(S::pSubgroupIterator) = Base.iterate(S.it)
 
-Base.done(S::pSubgroupIterator, s) = Base.done(S.it, s)
+Base.iterate(S::pSubgroupIterator, st) = Base.iterate(S.it, st)
 
-Base.iteratorsize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} =
-      Base.SizeUnknown()
+#Base.next(S::pSubgroupIterator, s) = Base.next(S.it, s)
+#
+#Base.done(S::pSubgroupIterator, s) = Base.done(S.it, s)
+
+#Base.iteratorsize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} =
+#      Base.SizeUnknown()
 
 Base.eltype(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = E
 
-Base.length(S::pSubgroupIterator) = Base.length(S.it)
+Base.IteratorSize(::Type{pSubgroupIterator{F, T, E}}) where {F, T, E} = Base.SizeUnknown()
+
+#Base.length(S::pSubgroupIterator) = Base.length(S.it)
 
 ################################################################################
 #
@@ -821,16 +851,13 @@ function Base.show(io::IO, I::SubgroupIterator)
   end
 end
 
-Base.start(S::SubgroupIterator) = Base.start(S.it)
+Base.iterate(S::SubgroupIterator) = Base.iterate(S.it)
 
-Base.next(S::SubgroupIterator, s) = Base.next(S.it, s)
+Base.iterate(S::SubgroupIterator, s) = Base.iterate(S.it, s)
 
-Base.done(S::SubgroupIterator, s) = Base.done(S.it, s)
+#Base.length(S::SubgroupIterator) = Base.length(S.it)
 
-Base.length(S::SubgroupIterator) = Base.length(S.it)
-
-Base.iteratorsize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} =
-    Base.SizeUnknown()
+Base.IteratorSize(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = Base.SizeUnknown()
 
 Base.eltype(::Type{SubgroupIterator{F, T, E}}) where {F, T, E} = E
 
@@ -924,14 +951,19 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
                        fun = fun, index = index, order = order)
   end
 
-  E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  if VERSION >= v"0.7-"
+    E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  else
+    E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
+  end
+
   z = SubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, quotype,
                                                    fmpz(index), fmpz(order),
                                                    fun, it)
   return z
 end
 
-doc"""
+Markdown.doc"""
     subgroups(g::GrpAbFinGen;
               subtype = :all ,
               quotype = :all,
@@ -977,5 +1009,3 @@ function subgroups(G::GrpAbFinGen; subtype = :all,
   return SubgroupIterator(G; subtype = _subtype, quotype = _quotype, order = order, index = index,
                                  fun = fun)
 end
-
-

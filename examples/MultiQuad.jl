@@ -81,13 +81,13 @@ function multi_quad(d::Array{fmpz, 1}, B::Int)
     else
       o = rt[i]
     end
-    append!(b, o .* b)
-    append!(bb, rt[i] .* bb)
+    append!(b, Ref(o) .* b)
+    append!(bb, Ref(rt[i]) .* bb)
   end
 
   all_d = fmpz[1]
   for i = d
-    append!(all_d, i .* all_d)
+    append!(all_d, Ref(i) .* all_d)
   end
 
   # @show all_d

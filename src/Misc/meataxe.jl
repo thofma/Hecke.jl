@@ -138,8 +138,8 @@ end
 function _split(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
 # I am assuming that C is a Fp[G]-submodule
 
-  equot=Array{fq_nmod_mat,1}(length(G))
-  esub=Array{fq_nmod_mat,1}(length(G))
+  equot=Array{fq_nmod_mat,1}(undef, length(G))
+  esub=Array{fq_nmod_mat,1}(undef, length(G))
   pivotindex=Set{Int}()
   for i=1:rows(C)
     ind=1
@@ -175,7 +175,7 @@ end
 
 function actsub(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
 
-  esub=Array{fq_nmod_mat,1}(length(G))
+  esub=Array{fq_nmod_mat,1}(undef, length(G))
   pivotindex=Set{Int}()
   for i=1:rows(C)
     ind=1
@@ -197,7 +197,7 @@ end
 
 function actquo(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
 
-  equot=Array{fq_nmod_mat,1}(length(G))
+  equot=Array{fq_nmod_mat,1}(undef, length(G))
   pivotindex=Set{Int}()
   for i=1:rows(C)
     ind=1
@@ -487,7 +487,7 @@ end
 
 
 
-doc"""
+Markdown.doc"""
 ***
     meataxe(M::FqGModule) -> Bool, MatElem
 
@@ -598,7 +598,7 @@ function meataxe(M::FqGModule)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     composition_series(M::FqGModule) -> Array{MatElem,1}
 
@@ -633,7 +633,7 @@ function composition_series(M::FqGModule)
   #
   #  Now, we have to write the submodules of the quotient and of the submodule in terms of our basis
   #
-  list=Array{fq_nmod_mat,1}(length(sub_list)+length(quot_list))
+  list=Array{fq_nmod_mat,1}(undef, length(sub_list)+length(quot_list))
   for i=1:length(sub_list)
     list[i]=sub_list[i]*C
   end
@@ -654,7 +654,7 @@ function composition_series(M::FqGModule)
   return list
 end
 
-doc"""
+Markdown.doc"""
 ***
     composition_factors(M::FqGModule)
 
@@ -829,7 +829,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   #
   candidate_comb=append!(_enum_el(K,[K(0)], length(vects)-1),_enum_el(K,[K(1)],length(vects)-1))
   deleteat!(candidate_comb,1)
-  list=Array{fq_nmod_mat,1}(length(candidate_comb))
+  list=Array{fq_nmod_mat,1}(undef, length(candidate_comb))
   for j=1:length(candidate_comb)
     list[j] = sum([candidate_comb[j][i]*vects[i] for i=1:length(vects)])
   end
@@ -852,7 +852,7 @@ function _irrsubs(M::FqGModule, N::FqGModule)
 
 end
 
-doc"""
+Markdown.doc"""
 ***
     minimal_submodules(M::FqGModule)
 
@@ -891,7 +891,7 @@ function minimal_submodules(M::FqGModule, dim::Int=M.dim+1, lf=[])
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     maximal_submodules(M::FqGModule)
 
@@ -903,7 +903,7 @@ function maximal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
 
   M_dual=dual_space(M)
   minlist=minimal_submodules(M_dual, index+1, lf)
-  maxlist=Array{fq_nmod_mat,1}(length(minlist))
+  maxlist=Array{fq_nmod_mat,1}(undef, length(minlist))
   for j=1:length(minlist)
     maxlist[j]=transpose(nullspace(minlist[j])[2])
   end
@@ -911,7 +911,7 @@ function maximal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
 
 end
 
-doc"""
+Markdown.doc"""
 ***
     submodules(M::FqGModule)
 
@@ -968,7 +968,7 @@ function submodules(M::FqGModule)
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     submodules(M::FqGModule, index::Int)
 

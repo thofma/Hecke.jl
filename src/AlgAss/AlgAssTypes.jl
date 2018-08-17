@@ -39,7 +39,7 @@ mutable struct AlgAssElem{T} <: RingElem
   function AlgAssElem{T}(A::AlgAss{T}) where {T}
     z = new{T}()
     z.parent = A
-    z.coeffs = Array{T, 1}(size(A.mult_table, 1))
+    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
       z.coeffs[i] = A.base_ring()
     end
@@ -96,7 +96,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     r = AlgAssAbsOrd{S}(A)
     d = dim(A)
     r.basis_mat = basis_mat
-    r.basis_alg = Vector{elem_type(S)}(rows(basis_mat))
+    r.basis_alg = Vector{elem_type(S)}(undef, rows(basis_mat))
     for i in 1:d
       r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end
@@ -158,6 +158,11 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
     r = new{S, T}()
     r.order = O
+    d = O.dim
+    r.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(undef, d)
+    for i = 1:d
+      r.basis_alg[i] = elem_from_mat_row(O, M, i)
+    end
     r.basis_mat = M
     return r
   end

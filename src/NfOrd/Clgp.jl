@@ -101,6 +101,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     try
       c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx{SMat{fmpz}}
       return c
+    catch e
     end
   end
 
@@ -217,6 +218,8 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
 
   hnftime = 0.0
 
+  r = 0
+
   do_units = true
   while true
     @v_do :UnitGroup 1 pushindent()
@@ -224,10 +227,10 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       if unit_method == 1
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
       else
+        @show unit_method
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_trafo(U, c)
       end
-
       @v_do :UnitGroup 1 popindent()
     end
     if r == 1  # use saturation!!!!
@@ -281,6 +284,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
     try
       U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx
       return U
+    catch e
     end
   end
 
@@ -319,7 +323,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   return U, r
 end
 
-doc"""
+Markdown.doc"""
 ***
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
@@ -336,7 +340,7 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = fa
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     unit_group(O::NfOrd) -> GrpAbFinGen, Map
 
@@ -351,7 +355,7 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   return unit_group(c, U)
 end
 
-doc"""
+Markdown.doc"""
 ***
     unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
 

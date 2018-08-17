@@ -39,7 +39,7 @@
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     Divisors(n::fmpz) -> Array{fmpz, 1}
 
@@ -83,7 +83,7 @@ function divisors(n)
   return divi
 end
 
-doc"""
+Markdown.doc"""
 ***
     squaredivisors(n::fmpz) -> Array{fmpz, 1}
 
@@ -109,7 +109,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
   zeros(f::fmpz_poly) -> Array{fmpz, 1}
 
@@ -136,7 +136,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
   issquare(x::ResElem{fmpz}) -> (Bool, ResElem)
 
@@ -175,7 +175,7 @@ function issquare(x::Nemo.nmod)
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     issquare(x::FinFieldElem) -> (Bool, FinFieldElem)
 
@@ -204,7 +204,7 @@ function issquare(x::FinFieldElem)
     end
 end
 
-doc"""
+Markdown.doc"""
 ***
   quadroots(a::fmpz, b::fmpz, c::fmpz, p::fmpz) -> Bool
 
@@ -236,7 +236,7 @@ function quadroots(a, b, c, p)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     nrootscubic(b::fmpz, c::fmpz, d::fmpz, p::fmpz) -> fmpz
 
@@ -277,7 +277,7 @@ function smod(a::T, b::S) where {T, S}
 end
 
 
-doc"""
+Markdown.doc"""
 ***
 		order(R::ResRing{fmpz}) -> Nemo.fmpz
 > Returns the order of a finite field of a residue ring of $\mathbf Z$.
@@ -286,7 +286,7 @@ function order(R::ResRing{fmpz})
   return abs(modulus(R))
 end
 
-doc"""
+Markdown.doc"""
 characteristic(R::ResRing{fmpz}) -> Nemo.fmpz
 > Returns the characteristic of R
 """

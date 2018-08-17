@@ -42,7 +42,7 @@ export haspreimage, hasimage, hom, kernel, image, isinjective, issurjective,
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem) -> Bool, GrpAbFinGenElem
 
@@ -92,7 +92,7 @@ end
 ################################################################################
 
 #TODO: Should check consistency
-doc"""
+Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map
 > Creates the homomorphism $A[i] \mapsto B[i]$
 """
@@ -126,7 +126,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
   return h
 end
 
-doc"""
+Markdown.doc"""
     hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1}) -> Map
 
 > Creates the homomorphism which maps `G[i]` to `B[i]`.
@@ -187,7 +187,7 @@ end
 
 #TODO: store and reuse on map. Maybe need to change map
 
-doc"""
+Markdown.doc"""
     kernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the domain of $h$. This functions returns an abelian group $A$ and an
@@ -224,7 +224,7 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   error("Something went terribly wrong in kernel computation")
 end
 
-doc"""
+Markdown.doc"""
     image(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
@@ -246,7 +246,7 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   return sub(H, im, add_to_lattice)  # too much, this is sub in hnf....
 end
 
-doc"""
+Markdown.doc"""
     cokernel(h::GrpAbFinGenMap) -> GrpAbFinGen, Map
 
 Let $G$ be the codomain of $h$. This functions returns an abelian group $A$ and
@@ -264,7 +264,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     issurjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is surjective.
@@ -284,7 +284,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     isinjective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is injective.
@@ -300,7 +300,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     isbijective(h::GrpAbFinGenMap) -> Bool
 
 Returns whether $h$ is bijective.

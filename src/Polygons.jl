@@ -485,7 +485,7 @@ function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p:
   @vprint :NfOrd 1 "Splitting the algebra\n" 
   AA = split(A)
   @vprint :NfOrd 1 "Done \n"
-  ideals = Array{Tuple{NfOrdIdl, Int}, 1}(length(AA))
+  ideals = Array{Tuple{NfOrdIdl, Int}, 1}(undef, length(AA))
   m = zero_matrix(FlintZZ, 1, degree(O))
   for i = 1:length(AA)
     B = AA[i][1]
@@ -526,7 +526,7 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
     Ip1.norm = p
     Ip1.splitting_type = (0, 1)
     Ip1.is_prime = 1
-    ideals = Array{Tuple{NfOrdIdl, Int}, 1}(1)
+    ideals = Array{Tuple{NfOrdIdl, Int}, 1}(undef, 1)
     ideals[1] = (Ip1, Int(0))
   else
     AtoO = inv(OtoA)

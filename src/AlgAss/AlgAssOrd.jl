@@ -62,7 +62,7 @@ end
 
 function basis(O::AlgAssAbsOrd)
   B = basis(O.algebra)
-  v = Vector{AlgAssAbsOrdElem}(degree(O))
+  v = Vector{AlgAssAbsOrdElem}(undef, degree(O))
   for i in 1:degree(O)
     w = sum(O.basis_mat.num[i, j]//O.basis_mat.den * B[j] for j in 1:degree(O))
     v[i] = O(w)
@@ -169,7 +169,7 @@ function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) wher
   else
     d = degree(parent(x))
     M=FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
-    x.elem_in_basis=Array{fmpz,1}(d)
+    x.elem_in_basis=Array{fmpz,1}(undef, d)
     for i = 1:d
       x.elem_in_basis[i]=M.num[1,i]
     end
@@ -198,7 +198,7 @@ end
 
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   O=x.parent
-  y=Array{fmpz,1}(O.dim)
+  y=Array{fmpz,1}(undef, O.dim)
   z=elem_in_basis(x, Val{false})
   for i=1:O.dim
     y[i] = z[i] * n
@@ -330,8 +330,6 @@ function show(io::IO, a::AlgAssAbsOrdIdl)
   print(io, a.basis_mat)
 end
 
-
-
 ###############################################################################
 #
 #  Quaternion algebras
@@ -340,7 +338,7 @@ end
 
 function quaternion_algebra(a::Int, b::Int)
   
-  M = Array{fmpq,3}(4,4,4)
+  M = Array{fmpq,3}(undef, 4,4,4)
   for i = 1:4
     for j = 1:4
       for k = 1:4
@@ -381,7 +379,7 @@ end
 function quo(O::AlgAssAbsOrd, p::Int)
 
   R=ResidueRing(FlintZZ, p, cached=false)
-  M=Array{nmod, 3}(O.dim, O.dim, O.dim)
+  M=Array{nmod, 3}(undef, O.dim, O.dim, O.dim)
   x=fmpz[0 for i=1:O.dim]
   for i=1:O.dim
     x[i]=1
@@ -424,13 +422,13 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
     end
   end
   @hassert :AlgAssOrd 1 check_ideal(I)
-  F = ResidueRing(FlintZZ, p, cached = false)
-  M = Array{nmod, 3}(length(pivots), length(pivots), length(pivots))
-  x = fmpz[0 for s=1:O.dim]
-  for i = 1:length(pivots)
-    x[pivots[i]] = 1
-    y = O(x)
-    N = representation_matrix(y)
+  F= ResidueRing(FlintZZ, p, cached = false)
+  M=Array{nmod, 3}(undef, length(pivots), length(pivots), length(pivots))
+  x=fmpz[0 for s=1:O.dim]
+  for i=1:length(pivots)
+    x[pivots[i]]=1
+    y=O(x)
+    N=representation_matrix(y)
     _mod(N, I.basis_mat, pivots)
     for j = 1:length(pivots)
       #reduce the vector with respect to the ideal.
@@ -451,7 +449,7 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
       end
     end
   end
-  oneA = Array{nmod, 1}(length(pivots))
+  oneA = Array{nmod, 1}(undef, length(pivots))
   for i=1:length(pivots)
     oneA[i] = F(oneO[pivots[i]])
   end
@@ -567,7 +565,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ring_of_multipliers(I::AlgAssAbsOrdIdl)
         
@@ -683,7 +681,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   end
   M1 = view(M1, 1:r, 1:O.dim)
   dM = transpose(nullspace(M1)[2])
-  gens=Vector{elem_type(O)}(rows(dM)+1)
+  gens=Vector{elem_type(O)}(undef, rows(dM)+1)
   m = zero_matrix(FlintZZ, O.dim, O.dim)
   for i=1:rows(dM)
     for j=1:cols(dM)
@@ -701,7 +699,7 @@ end
 
 
 
-doc"""
+Markdown.doc"""
 ***
     pradical(O::AlgAssAbsOrd, p::Int)
             
@@ -740,7 +738,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
     M1=hnf_modular_eldiv!(M, fmpz(p))
     res= ideal(O, sub(M1,1:O.dim,1:O.dim))
     B1=lift(B')
-    res.gens = Vector{elem_type(O)}(k+1)
+    res.gens = Vector{elem_type(O)}(undef, k+1)
     for i=1:k
       res.gens[i]= elem_from_mat_row(O,B1,i)
     end
@@ -774,7 +772,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
     end
     Ide=lift(transpose(B2))*Ide
   end
-  gens = Vector{AlgAssAbsOrdElem}(rows(Ide)+1)
+  gens = Vector{AlgAssAbsOrdElem}(undef, rows(Ide)+1)
   for i in 1:rows(Ide)
     gens[i] = elem_from_mat_row(O, Ide, i)
   end
@@ -879,7 +877,7 @@ end
 
 
 #Steel Nebe paper
-doc"""
+Markdown.doc"""
 ***
     schur_index_at_real_plc(O::AlgAssAbsOrd)
         
@@ -922,7 +920,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
         
@@ -975,7 +973,7 @@ end
 function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::nmod_mat, p::fmpz, poneO::AlgAssAbsOrdElem, A1::AlgAss, A1toO::Function)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, rows(x)+O.dim , O.dim)
-  gens = Vector{AlgAssAbsOrdElem}(rows(x))
+  gens = Vector{AlgAssAbsOrdElem}(undef, rows(x))
   for i = 1:rows(x)
     el = A1toO(elem_from_mat_row(A1, x, i))
     for j = 1:O.dim
@@ -1004,7 +1002,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, x::nmod_mat, 
 
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, O.dim, O.dim)
-  gens = Vector{AlgAssAbsOrdElem}(rows(x)+1)
+  gens = Vector{AlgAssAbsOrdElem}(undef, rows(x)+1)
   for i = 1:rows(x)
     for j = 1:cols(x)
       m[i,j] = x[i,j].data
@@ -1150,7 +1148,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     MaximalOrder(O::AlgAssAbsOrd)
         
@@ -1174,7 +1172,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     issplit(A::AlgAss)
         

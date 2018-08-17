@@ -350,7 +350,7 @@ function overorders_meataxe(O::NfOrd, M::NfOrd = maximal_order(O))
   end
 end
 
-doc"""
+Markdown.doc"""
     overorders(O::NfOrd)
 
 Returns all overorders of $\mathcal O$.

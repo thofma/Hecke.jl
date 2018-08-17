@@ -2,7 +2,7 @@
 
   @testset "Minimal Submodules" begin
    
-    F,a=Nemo.FiniteField(3,1,"a")
+    F,a=FiniteField(3,1,"a")
     R=ResidueRing(FlintZZ,9)
     
     V=DiagonalGroup([3,3,9,9])
@@ -19,8 +19,8 @@
     ls1=minimal_submodules(M1)
     
     @test length(ls)==length(ls1)
-    for x in ls
-      @test Hecke.issubmodule(M,x)
+    for y in ls
+      @test Hecke.issubmodule(M,y)
     end
   end
 
@@ -37,8 +37,8 @@
     N= Hecke.dual_module(M)
     ls=submodules(N)
     v=fmpz[3,3,1,1]
-    for x in ls
-      @test Hecke.issubmodule(M,Hecke._dualize(x,V,v))
+    for y in ls
+      @test Hecke.issubmodule(M,Hecke._dualize(y,V,v))
     end
     
   end

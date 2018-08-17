@@ -65,9 +65,9 @@ function analytic_eval(a::analytic_func{T}, b::T) where T<:Number
   return s
 end
 
-doc"""
+Markdown.doc"""
 ***
-   dickman_rho(x::Number, prec::Int=55) -> Number
+   dickman_rho(x::Number, prec::Int=55) Number
 > Evaluates the Dickman-$\rho$ function at $x$.
 """
 function dickman_rho(x::Number, prec::Int=55)
@@ -87,9 +87,9 @@ function dickman_rho(x::Number, prec::Int=55)
   return analytic_eval(rho_coeff(x, prec), k-x)
 end
 
-doc"""
+Markdown.doc"""
 ***
-   dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) -> Number[]
+   dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
 > Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
 """
 function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
@@ -100,7 +100,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
   x = b*e.stop
   k = ceil(x)
   rc = rho_coeff(x, prec, all = true)
-  val = Array{typeof(b)}(length(e))
+  val = Array{typeof(b)}(undef, length(e))
 
   x = b*e.start
   if x <= 1
@@ -109,7 +109,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
     val[1] = 1-log(x)
   else
     k = ceil(x)
-    f = find(x->x.valid[2] == k, rc)
+    f = findall(x->x.valid[2] == k, rc)
     @assert length(f)==1
     val[1] = analytic_eval(rc[f[1]], k-x)
   end                                  
@@ -122,7 +122,7 @@ function dickman_rho(b::Number, e::UnitRange{Int}, prec::Int = 55)
       val[vi] = 1-log(x)
     else
       k = ceil(x)
-      f = find(x->x.valid[2] == k, rc)
+      f = findall(x->x.valid[2] == k, rc)
       @assert length(f)==1
       val[vi] = analytic_eval(rc[f[1]], k-x)
     end
@@ -174,16 +174,16 @@ end
 
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
-doc"""
+Markdown.doc"""
 ***
-  exponential_integral(x::AbstractFloat) -> AbstractFloat
-  ei(x::AbstractFloat) -> AbstractFloat
+  exponential_integral(x::AbstractFloat) AbstractFloat
+  ei(x::AbstractFloat) AbstractFloat
 
 >  Compute the exponential integral function
 """
 function exponential_integral(x::BigFloat)
   z = BigFloat()
-  ccall((:mpfr_eint, :libmpfr), Int32, (Ptr{BigFloat}, Ptr{BigFloat}, Int32), &z, &x, __get_rounding_mode())
+  ccall((:mpfr_eint, :libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), z, x, __get_rounding_mode())
   return z
 end
 
@@ -193,10 +193,10 @@ end
 
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
-doc"""
+Markdown.doc"""
 ***
-  logarithmic_integral(x::AbstractFloat) -> AbstractFloat
-  li(x::AbstractFloat) -> AbstractFloat
+  logarithmic_integral(x::AbstractFloat) AbstractFloat
+  li(x::AbstractFloat) AbstractFloat
 
 >  Compute the logarithmic integral function. Used as an approximation
 >  for the number of primes up to x
@@ -216,13 +216,13 @@ Chapter IX, Question 18
 The formula (for n=365) is in the solutions.
 =#
 
-@doc """
-  rels_from_partial(n::Int, k::Int) -> Int
+Markdown.doc"""
+  rels_from_partial(n::Int, k::Int) Int
 
   Estimates the number of collision in k samples among n possibilities. Used 
   to estimate the number of full relations to be expected from k partial
   relations involving n (large) primes
-""" ->
+"""
 function rels_from_partial(n::Int, k::Int) 
   N = fmpz(n)
   return Int(round(N*(1-(N-1)^k//N^k-k*(N-1)^(k-1)//N^k)))
@@ -241,8 +241,8 @@ Then
   P(W=x) = exp(-l)l^x/x!
 =#  
 
-doc"""
-  euler_phi(n::Int) -> Int
+Markdown.doc"""
+  euler_phi(n::Int) Int
 
 >  The Euler ϕ function of n
 >  ie. the number of integers 0<= i = n coprime to n
@@ -260,7 +260,7 @@ end
   vol(prod x_i <= b meet [0,1]^n)
 an easy excercise in induction...
   vol = b(sum_0^{n-1} (-1)^k/k! log(b)^k)
-     -> b exp(log(1/b)) = 1 very rapidly for n-> infty
+     b exp(log(1/b)) = 1 very rapidly for n-> infty
 =#
 function vol(n::Int, b::T) where T<:Number
   lb = log(b)
@@ -273,8 +273,8 @@ function vol(n::Int, b::T) where T<:Number
   return b*sum(s)
 end
 
-doc"""
-    psi_guess(x::Number, B::Int) -> Number
+Markdown.doc"""
+    psi_guess(x::Number, B::Int) Number
 > Uses the dickman_rho function to estimate $\psi(x, B)$ the number
 > of $B$-smooth integers bounded by $x$.
 """
@@ -282,8 +282,8 @@ function psi_guess(x::Number, B::Int)
   return x*dickman_rho(log(x)/log(B))
 end
 
-doc"""
-    psi_guess(x::Number, e::UnitRange, B::Int) -> Number
+Markdown.doc"""
+    psi_guess(x::Number, e::UnitRange, B::Int) Number
 > Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
 > of $B$-smooth integers bounded by $x^i$ for $i \in e$.
 """

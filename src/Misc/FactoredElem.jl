@@ -10,7 +10,7 @@ export transform
 
 # abstract nonsense
 
-const FacElemMonDict = ObjectIdDict()
+const FacElemMonDict = IdDict()
 
 function (x::FacElemMon{S})() where S
   z = FacElem{elem_type(S), S}()
@@ -18,7 +18,7 @@ function (x::FacElemMon{S})() where S
   z.parent = x
   return z
 end
-doc"""
+Markdown.doc"""
     FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
 > Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
@@ -45,7 +45,7 @@ function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
   return z
 end
 
-doc"""
+Markdown.doc"""
     FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
 > Returns the element $\prod b^{d[p]}$, un-expanded.
@@ -81,7 +81,7 @@ base_ring(x::FacElem) = base_ring(parent(x))
 
 base(x::FacElem) = keys(x.fac)
 
-function Base.deepcopy_internal(x::FacElem{B, S}, dict::ObjectIdDict) where {B, S}
+function Base.deepcopy_internal(x::FacElem{B, S}, dict::IdDict) where {B, S}
   z = FacElem{B, S}()
   z.fac = Base.deepcopy_internal(x.fac, dict)
   if isdefined(x, :parent)
@@ -101,11 +101,9 @@ function Base.copy(x::FacElem{B, S}) where {B, S}
   return z
 end
 
-Base.start(a::FacElem) = Base.start((a.fac))
+Base.iterate(a::FacElem) = Base.iterate(a.fac)
 
-Base.done(a::FacElem, state) = Base.done((a.fac), state)
-
-Base.next(a::FacElem, state) = Base.next((a.fac), state)
+Base.iterate(a::FacElem, state) = Base.iterate(a.fac, state)
 
 Base.length(a::FacElem) = Base.length(a.fac)
 
@@ -256,7 +254,7 @@ function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
   length(x) != rows(y) &&
               error("Length of array must be number of rows of matrix")
 
-  z = Array{FacElem{T, S}}(cols(y))
+  z = Array{FacElem{T, S}}(undef, cols(y))
 
   t = parent(x[1])()
 
@@ -342,12 +340,12 @@ function _ev(d::Dict{T, fmpz}, oe::T) where T
     x = first(d)
     return x[1]^x[2]
   end
-  b = similar(d)
+  b = empty(d)
   for (k,v) in d
     if v>-10 && v<10
       z *= k^Int(v)
     else
-      r = isodd(v) ? 1 :0
+      r = isodd(v) ? 1 : 0
       vv = div(v-r, 2)
       if vv!=0
         b[k] = vv
@@ -372,7 +370,7 @@ function ^(A::NfOrdFracIdl, d::fmpz)
   return A^Int(d)
 end
 
-doc"""
+Markdown.doc"""
 ***
   evaluate{T}(x::FacElem{T}) -> T
 
@@ -384,7 +382,7 @@ function evaluate(x::FacElem{T}) where T
   return _ev(x.fac, one(base_ring(x)))
 end
 
-doc"""
+Markdown.doc"""
 ***
     evaluate(x::FacElem{fmpq}) -> fmpq
     evaluate(x::FacElem{fmpz}) -> fmpz
@@ -401,7 +399,7 @@ end
 function evaluate(x::FacElem{fmpz})
   return evaluate_naive(simplify(x))
 end
-doc"""
+Markdown.doc"""
 ***
   simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
   simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
@@ -438,7 +436,8 @@ function simplify!(x::FacElem{fmpq})
       ev[fmpq(abs(p))] = v
     end
   end
-  s = prod(map(b -> b < 0 && isodd(x.fac[b]) ? -1 : 1, base(x)))
+  f = b -> b < 0 && isodd(x.fac[b]) ? -1 : 1
+  s = prod((f(v) for v in base(x)))
   if s == -1
     ev[fmpq(-1)] = 1
   else
@@ -471,7 +470,8 @@ function simplify!(x::FacElem{fmpz})
       ev[abs(p)] = v
     end
   end
-  s = prod(map(b -> b < 0 && isodd(x.fac[b]) ? -1 : 1, base(x)))
+  f = b -> b < 0 && isodd(x.fac[b]) ? -1 : 1
+  s = prod(f(v) for v in base(x))
   if s == -1
     ev[-1] = 1
   else
@@ -483,7 +483,7 @@ function simplify!(x::FacElem{fmpz})
   nothing
 end
 
-doc"""
+Markdown.doc"""
 ***
     isone(x::FacElem{fmpq}) -> Bool
     isone(x::FacElem{fmpz}) -> Bool
@@ -563,7 +563,7 @@ function factor_coprime(x::FacElem{fmpz})
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
   evaluate_naive{T}(x::FacElem{T}) -> T
 
@@ -627,7 +627,7 @@ end
 
 
 #################################################################################
-doc"""
+Markdown.doc"""
     max_exp(a::FacElem)
 > Finds the largest exponent in the factored element $a$
 """
@@ -635,7 +635,7 @@ function max_exp(a::FacElem)
   return maximum(values(a.fac))
 end
 
-doc"""
+Markdown.doc"""
     min_exp(a::FacElem)
 > Finds the smallest exponent in the factored element $a$
 """
@@ -643,7 +643,7 @@ function min_exp(a::FacElem)
   return minimum(values(a.fac))
 end
 
-doc"""
+Markdown.doc"""
     maxabs_exp(a::FacElem)
 > Finds the largest exponent by absolute value the factored element $a$
 """
@@ -706,3 +706,15 @@ function (F::FacElemMon{T})(a::T) where T
   z.fac[a] = fmpz(1)
   return z
 end
+
+#function order(A::FacElemMon{IdealSet})
+#  return order(A.base_ring)
+#end
+
+function order(A::FacElemMon) 
+  return order(A.base_ring)
+end
+
+(::Type{FacElem{T}})(a::FacElem{T}) where {T} = a
+
+(::Type{FacElem})(a::FacElem{T}) where {T} = a

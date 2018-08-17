@@ -35,7 +35,7 @@ function NfFactorBase(O::NfOrd, lp::Array{NfOrdIdl, 1})
   FB.ideals = lp
 
   # Magic constant 20?
-  FB.rw = Array{Int}(20)
+  FB.rw = Array{Int}(undef, 20)
   FB.mx = 20
 
   fb = Dict{fmpz, Array{Tuple{Int, NfOrdIdl}, 1}}()

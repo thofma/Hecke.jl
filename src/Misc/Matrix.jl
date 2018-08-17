@@ -23,7 +23,7 @@ function matrix(A::Array{T, 1}) where T <: RingElem
 end
 
 function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
-  A = Array{T}(rows(a), cols(a))
+  A = Array{T}(undef, rows(a), cols(a))
   for i = 1:rows(a)
     for j = 1:cols(a)
       A[i,j] = T(a[i,j])
@@ -90,12 +90,12 @@ function iszero_row(M::Array{T, 2}, i::Int) where T <: RingElem
 end
 
 function divexact!(a::fmpz_mat, b::fmpz_mat, d::fmpz)
-  ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Void,
+  ccall((:fmpz_mat_scalar_divexact_fmpz, :libflint), Nothing,
                (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, a, d)
 end
 
 function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
-  ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Void, 
+  ccall((:fmpz_mat_scalar_mul_fmpz, :libflint), Nothing, 
                   (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), a, b, c)
 end                  
 
@@ -108,7 +108,7 @@ function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   c = vcat(parent(a)(m), a)
   n = cols(a)
   w = view(c, n+1, 1, 2*n, n)
-  ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), w, w, m)
+  ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), w, w, m)
   if shape == :lowerleft
     c = _hnf(c, shape)
     return sub(c, n+1:2*n, 1:n)
@@ -144,7 +144,7 @@ end
 function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
    (rows(x) < cols(x)) &&
                 error("Matrix must have at least as many rows as columns")
-   ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Void,
+   ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
                 (Ref{fmpz_mat}, Ref{fmpz}), x, d)
    return x
 end
@@ -157,7 +157,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
     i = 0
     j_old = cols(x) + 1
 
-    for i in rows(x):-1:1
+    for outer i in rows(x):-1:1
 
       if iszero_row(x, i)
         break
@@ -177,8 +177,8 @@ function ishnf(x::fmpz_mat, shape::Symbol)
       i = i - 1
     end
 
-    for k in i:-1:1
-      !iszero_row(x, k) && return false
+    for l in i:-1:1
+      !iszero_row(x, l) && return false
     end
     return true
   end
@@ -210,7 +210,7 @@ function _swaprows!(x::fmpz_mat)
         # we swap x[i,j] <-> x[r-i+1,j]
         s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, i - 1, j - 1)
         t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
-        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
+        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   else
@@ -219,7 +219,7 @@ function _swaprows!(x::fmpz_mat)
         # we swap x[i,j] <-> x[r-i+1,j]
         s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, i - 1, j - 1)
         t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, (r - i + 1) - 1, j - 1)
-        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
+        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   end
@@ -227,12 +227,12 @@ function _swaprows!(x::fmpz_mat)
 end
 
 function _swaprows!(x::fmpz_mat, i::Int, j::Int)
-  ccall((:_fmpz_mat_swap_rows, :libflint), Void, (Ref{fmpz_mat}, Int, Int), x, i-1, j-1)
+  ccall((:_fmpz_mat_swap_rows, :libflint), Nothing, (Ref{fmpz_mat}, Int, Int), x, i-1, j-1)
   nothing
 end
 
 function _swaprows!(x::nmod_mat, i::Int, j::Int)
-  ccall((:_nmod_mat_swap_rows, :libflint), Void, (Ref{nmod_mat}, Int, Int), x, i-1, j-1)
+  ccall((:_nmod_mat_swap_rows, :libflint), Nothing, (Ref{nmod_mat}, Int, Int), x, i-1, j-1)
   nothing
 end
   
@@ -315,7 +315,7 @@ function _swapcols!(x::fmpz_mat)
         # swap x[j,i] <-> x[j,c-i+1]
         s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, i - 1)
         t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
-        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
+        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   else
@@ -324,7 +324,7 @@ function _swapcols!(x::fmpz_mat)
         # swap x[j,i] <-> x[j,c-i+1]
         s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, i - 1)
         t = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), x, j - 1, (c - i + 1 ) - 1)
-        ccall((:fmpz_swap, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, s)
+        ccall((:fmpz_swap, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, s)
       end
     end
   end
@@ -410,7 +410,7 @@ function maximum(f::typeof(abs), a::fmpz_mat)
     end
   end
   r = fmpz()
-  ccall((:fmpz_abs, :libflint), Void, (Ref{fmpz}, Ptr{fmpz}), r, m)
+  ccall((:fmpz_abs, :libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
@@ -425,7 +425,7 @@ function maximum(a::fmpz_mat)
     end
   end
   r = fmpz()
-  ccall((:fmpz_set, :libflint), Void, (Ref{fmpz}, Ptr{fmpz}), r, m)
+  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
@@ -440,13 +440,13 @@ function minimum(a::fmpz_mat)
     end
   end
   r = fmpz()
-  ccall((:fmpz_set, :libflint), Void, (Ref{fmpz}, Ptr{fmpz}), r, m)
+  ccall((:fmpz_set, :libflint), Nothing, (Ref{fmpz}, Ptr{fmpz}), r, m)
   return r
 end
 
 function lift_unsigned(a::nmod_mat)
   z = zero_matrix(FlintZZ, rows(a), cols(a))
-  ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Void,
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
           (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
   return z
 end
@@ -484,9 +484,9 @@ function kernel(a)
   z, n = _right_kernel(x)
   z = transpose(z)
   T = elem_type(base_ring(a))
-  ar = typeof(Array{T}(cols(z)))[]
+  ar = typeof(Array{T}(undef, cols(z)))[]
   for i in 1:n 
-    t = Array{T}(cols(z))
+    t = Array{T}(undef, cols(z))
     for j in 1:cols(z)
       t[j] = R(z[i, j])
     end
@@ -511,9 +511,9 @@ function right_kernel(a::MatElem)
     z = nn
   end
   T = elem_type(base_ring(a))
-  ar = typeof(Array{T}(rows(z)))[]
+  ar = typeof(Array{T}(undef, rows(z)))[]
   for i in 1:n
-    t = Array{T}(rows(z))
+    t = Array{T}(undef, rows(z))
     for j in 1:rows(z)
       t[j] = R(z[j, i])
     end
@@ -545,7 +545,7 @@ function _rref(a::Generic.Mat{Generic.Res{fmpz}})
   end
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
+  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
   return r, parent(a, false)(b)
 end
 
@@ -563,8 +563,8 @@ _rref(a) = rref(a)
 
 function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   r, b = _rref(a)
-  pivots = Array{Int}(r)
-  nonpivots = Array{Int}(cols(b) - r)
+  pivots = Array{Int}(undef, r)
+  nonpivots = Array{Int}(undef, cols(b) - r)
   X = zero_matrix(base_ring(a),cols(b),cols(b) - r)
 
   if r == 0
@@ -607,9 +607,9 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   end
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Void}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  pivots = Array{Int}(r)
-  nonpivots = Array{Int}(cols(b) - r)
+  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
+  pivots = Array{Int}(undef, r)
+  nonpivots = Array{Int}(undef, cols(b) - r)
   X = zero_matrixSpace(FlintZZ,cols(b),cols(b))
 
   if r == 0
@@ -647,7 +647,7 @@ end
 function _kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
   i = 1
-  for i in 1:rows(H)
+  for outer i in 1:rows(H)
     if iszero_row(H, i)
       break
     end
@@ -669,12 +669,12 @@ function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
                 Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), B, k, l)
       t = ccall((:fmpz_mat_entry, :libflint),
                 Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i - 1 + k, j - 1 + l)
-      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), t, d)
+      ccall((:fmpz_set, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}), t, d)
     end
   end
 end
 
-doc"""
+Markdown.doc"""
     isposdef(a::fmpz_mat) -> Bool
 
 > Tests if $a$ positive definite by testing if all principal minors
@@ -697,7 +697,7 @@ function mult_by_2pow_diag!(a::Array{BigFloat, 2}, d::fmpz_mat)
   for i = 1:s[1]
     for j = 1:s[2]
       e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i,j])
-      ccall((:mpfr_set_z_2exp, :libmpfr), Void, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i,j], tmp_mpz, e+Clong(Int(d[1,j])), __get_rounding_mode())
+      ccall((:mpfr_set_z_2exp, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i,j], tmp_mpz, e+Clong(Int(d[1,j])), __get_rounding_mode())
     end
   end
 end
@@ -728,11 +728,11 @@ function round_scale!(b::fmpz_mat, a::Array{BigFloat, 2}, l::Int)
       a[i,j].exp = e
       f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
         tmp_mpz, tmp_mpfr)
-      ccall((:fmpz_set_mpz, :libflint), Void, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
+      ccall((:fmpz_set_mpz, :libflint), Nothing, (Ref{fmpz}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
       if f > 0  
-        ccall((:fmpz_mul_2exp, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
+        ccall((:fmpz_mul_2exp, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, f)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, UInt), tmp_fmpz, tmp_fmpz, -f);
       end
       setindex!(b, tmp_fmpz, i, j)
     end
@@ -749,7 +749,7 @@ function round_scale!(b::fmpz_mat, a::arb_mat, l::Int)
     for j = 1:s[2]
       v = ccall((:arb_mat_entry_ptr, :libarb), Ptr{arb},
                     (Ref{arb_mat}, Int, Int), a, i - 1, j - 1)
-      ccall((:arb_mul_2exp_si, :libarb), Void, (Ref{arb}, Ptr{arb}, Int), r, v, l)
+      ccall((:arb_mul_2exp_si, :libarb), Nothing, (Ref{arb}, Ptr{arb}, Int), r, v, l)
       b[i,j] = round(fmpz, r)
     end
   end
@@ -761,9 +761,9 @@ function shift!(g::fmpz_mat, l::Int)
     for j=1:cols(g)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), g, i-1, j-1)
       if l > 0
-        ccall((:fmpz_mul_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
+        ccall((:fmpz_mul_2exp, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
       else
-        ccall((:fmpz_tdiv_q_2exp, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
+        ccall((:fmpz_tdiv_q_2exp, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, -l)
       end
     end
   end
@@ -771,7 +771,7 @@ function shift!(g::fmpz_mat, l::Int)
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     mod!(M::fmpz_mat, p::fmpz) 
 > Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
@@ -780,13 +780,13 @@ function mod!(M::fmpz_mat, p::fmpz)
   for i=1:rows(M)
     for j=1:cols(M)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
-      ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
+      ccall((:fmpz_mod, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
     end
   end
   nothing
 end
 
-doc"""
+Markdown.doc"""
 ***
     mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
 > Reduces every entry modulo $p$, ie. applies the mod function to every entry.
@@ -797,7 +797,7 @@ function mod(M::fmpz_mat, p::fmpz)
   return N
 end
 
-doc"""
+Markdown.doc"""
 ***
     vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
@@ -868,7 +868,7 @@ V = [e -divexact(b, g) ; f divexact(a, g)];
 
 then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
-doc"""
+Markdown.doc"""
 ***
   snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
@@ -963,7 +963,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   end
 end
 
-function Base.nullspace(M::nmod_mat)
+function nullspace(M::nmod_mat)
   R = base_ring(M)
   if isprime(fmpz(modulus(R)))
     k = zero_matrix(R, cols(M), cols(M))
@@ -1010,7 +1010,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
   isdiag(A::fmpz_mat)
 
@@ -1113,11 +1113,11 @@ function Base.size(A::Nemo.MatElem, n::Int)
   end
 end
 
-function Base.indices(A::Nemo.MatElem)
+function Base.axes(A::Nemo.MatElem)
   return (Base.OneTo(rows(A)), Base.OneTo(cols(A)))
 end
 
-function Base.indices(A::Nemo.MatElem, n::Int)
+function Base.axes(A::Nemo.MatElem, n::Int)
   return Base.OneTo(size(A, n))
 end
 
@@ -1143,9 +1143,10 @@ function setindex!(A::Nemo.MatElem{T}, n::Int, s::T) where T <: RingElem
   A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))] = s
 end
 
-Base.start(A::Nemo.MatElem) = 1
-Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
-Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
+# TODO: Fix this iterator
+#Base.start(A::Nemo.MatElem) = 1
+#Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
+#Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
 
 function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) where T
   @assert cols(b) == 1 && rows(b) == rows(A) 
@@ -1265,7 +1266,7 @@ end
 
 Base.cat(dims, A::Nemo.MatElem...) = cat(Tuple(dims), A...)
 
-doc"""
+Markdown.doc"""
     reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
 
 > For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
@@ -1285,7 +1286,7 @@ function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.Fie
   return A
 end
 
-doc"""
+Markdown.doc"""
     reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> MatElem
 
 > For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
@@ -1297,7 +1298,7 @@ function Nemo.reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo
   return C
 end
 
-doc"""
+Markdown.doc"""
     find_pivot(A::Nemo.MatElem{<:Nemo.RingElem}) -> Array{Int, 1}
 
 > Find the pivot-columns of the reduced row echelon matrix $A$
@@ -1322,7 +1323,7 @@ function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
   return p
 end
 
-doc"""
+Markdown.doc"""
     cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem
 > Tries to solve $Ax = B$
 """
@@ -1345,7 +1346,7 @@ function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.F
   return true, sol
 end
 
-doc"""
+Markdown.doc"""
     cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem, MatElem
 > Tries to solve $Ax = B$, returns a solution and the nullspace.
 """
@@ -1384,7 +1385,7 @@ end
 #TODO: different to cansolve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
 #maybe (definitely!) agree on one name and combine?
 
-doc"""
+Markdown.doc"""
     cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem
 > Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring.
 """
@@ -1422,7 +1423,7 @@ function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.R
   return true, transpose(z*T)
 end
 
-doc"""
+Markdown.doc"""
     cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem, MatElem
 > Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring. If successful,
 > a basis for the nullspace is computed as well.
@@ -1476,7 +1477,7 @@ function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) wh
   return true, (z*T), N
 end
 
-doc"""
+Markdown.doc"""
    elementary_divisors(A::fmpz_mat) -> Array{fmpz, 1}
 > The elementary divisors of $A$, ie. the diagonal entries of the Smith normal form of $A$.
 """
@@ -1485,7 +1486,7 @@ function elementary_divisors(A::fmpz_mat)
   return [s[i,i] for i=1:min(cols(s), rows(s))]
 end
 
-doc"""
+Markdown.doc"""
    maximal_elementary_divisors(A::fmpz_mat) -> fmpz
 > The largest elementary divisor of $A$, ie. the last diagonal entry of the Smith normal form of $A$.
 """

@@ -47,7 +47,8 @@ function abs2(a::BigComplex)
 end
 
 function angle(a::BigComplex)
-  return atan2(imag(a), real(a))
+  # atan2
+  return atan(imag(a), real(a))
 end
 
 function /(a::BigComplex, b::BigFloat)

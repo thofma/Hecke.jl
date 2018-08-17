@@ -14,7 +14,7 @@ issimple(::AnticNumberField) = true
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
   NumberField(f::fmpq_poly)
 
@@ -39,9 +39,7 @@ function NumberField(f::fmpz_poly; cached::Bool = true)
   return NumberField(Qx(f), cached = cached)
 end
 
-global const number_field = NumberField
-
-doc"""
+Markdown.doc"""
     pure_extension(n::Int, gen::Integer) -> AnticNumberField, nf_elem
     pure_extension(n::Int, gen::fmpz) -> AnticNumberField, nf_elem
 
@@ -56,7 +54,7 @@ function pure_extension(n::Int, gen::fmpz; cached::Bool = true)
   return number_field(x^n - gen, cached = cached)
 end
 
-doc"""
+Markdown.doc"""
     cyclotomic_field(n::Int) -> AnticNumberField, nf_elem
 
 The $n$-th cyclotomic field defined by the $n$-the cyclotomic polynomial.
@@ -68,7 +66,7 @@ end
 
 #fields with usually large class groups...
 # TODO: Some sort of reference?
-doc"""
+Markdown.doc"""
     wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
     wildanger_field(n::Int, B::Integer) -> AnticNumberField, nf_elem
 
@@ -102,7 +100,7 @@ characteristic(::AnticNumberField) = 0
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     ispure_extension(K::AnticNumberField) -> Bool
     
 Tests if $K$ is pure, that is, if the defining polynomial is $x^n - g$ for some
@@ -115,7 +113,7 @@ function ispure_extension(K::AnticNumberField)
   return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
 end
 
-doc"""
+Markdown.doc"""
     iskummer_extension(K::AnticNumberField) -> Bool
 
 Tests if $K$ is a Kummer extension of $\mathbb Q$, that is, if the defining
@@ -134,7 +132,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     class_group(K::AnticNumberField) -> GrpAbFinGen, Map
 
 Shortcut for {{{class_group(maximal_order(K))}}}: returns the class
@@ -151,7 +149,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     basis(K::AnticNumberField) -> Vector{nf_elem}
 
 Returns the power basis of $K$, that is, the elements $1,a,\dotsc,a^{d - 1}$,
@@ -160,7 +158,7 @@ where $d$ is the degree of $K$.
 function basis(K::AnticNumberField)
   n = degree(K)
   g = gen(K);
-  d = Array{typeof(g)}(n)
+  d = Array{typeof(g)}(undef, n)
   b = K(1)
   for i = 1:n-1
     d[i] = b
@@ -176,7 +174,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
 
@@ -226,7 +224,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_unit_order(x::nf_elem, n::Int)
 
@@ -256,7 +254,7 @@ end
 #
 #################################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     normal_basis(K::Nemo.AnticNumberField) -> nf_elem
 
@@ -315,7 +313,7 @@ function _issubfield(K::AnticNumberField, L::AnticNumberField)
   return false, NfToNfMor(K, L, L())
 end
 
-doc"""
+Markdown.doc"""
 ***
       issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
@@ -366,7 +364,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
@@ -406,7 +404,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
    compositum(K::AnticNumberField, L::AnticNumberField) -> AnticNumberField, Map, Map
 > Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 > 2 fields together with the embedding of $K \to C$ and $L \to C$.
@@ -430,9 +428,9 @@ end
 
 # This function can be improved by directly accessing the numerator
 # of the fmpq_poly representing the nf_elem
-doc"""
+Markdown.doc"""
 ***
-    write(io::IO, A::Array{nf_elem, 1}) -> Void
+    write(io::IO, A::Array{nf_elem, 1}) -> Nothing
 
 > Writes the elements of `A` to `io`. The first line are the coefficients of
 > the defining polynomial of the ambient number field. The following lines
@@ -477,9 +475,9 @@ function write(io::IO, A::Array{nf_elem, 1})
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
-    write(file::String, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Void
+    write(file::String, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Nothing
 
 > Writes the elements of `A` to the file `file`. The first line are the coefficients of
 > the defining polynomial of the ambient number field. The following lines
@@ -496,7 +494,7 @@ function write(file::String, A::Array{nf_elem, 1}, flag::String = "w")
 end
 
 # This function has a bad memory footprint
-doc"""
+Markdown.doc"""
 ***
     read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
 
@@ -537,7 +535,7 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
   return A
 end
 
-doc"""
+Markdown.doc"""
 ***
     read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
 
@@ -560,7 +558,7 @@ function read(file::String, K::AnticNumberField, ::Type{Hecke.nf_elem})
 end
 
 #TODO: get a more intelligent implementation!!!
-doc"""
+Markdown.doc"""
     splitting_field(f::fmpz_poly) -> AnticNumberField
     splitting_field(f::fmpq_poly) -> AnticNumberField
 > Computes the splitting field of $f$ as an absolute field.
@@ -628,7 +626,7 @@ end
 copy(f::fmpq_poly) = parent(f)(f)
 gcd_into!(a::fmpq_poly, b::fmpq_poly, c::fmpq_poly) = gcd(b, c)
 
-doc"""
+Markdown.doc"""
     splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
 > Computes the splitting field of $f$ as an absolute field.
 """
@@ -673,6 +671,14 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   else
     return splitting_field(ggl, coprime = true, do_roots = false)
   end
+end
+
+function Base.:(^)(a::nf_elem, e::UInt)
+  b = parent(a)()
+  ccall((:nf_elem_pow, :libantic), Nothing,
+        (Ref{nf_elem}, Ref{nf_elem}, UInt, Ref{AnticNumberField}),
+        b, a, e, parent(a))
+  return b
 end
 
 

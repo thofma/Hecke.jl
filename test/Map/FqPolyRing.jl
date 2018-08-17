@@ -3,7 +3,7 @@ function randpoly(R::FqPolyRing, dmax::Int)
   F = base_ring(R)
   d = rand(0:dmax)
   for i = 0:d
-    Nemo.setcoeff!(r, i, rand(F))
+    setcoeff!(r, i, rand(F))
   end
   return r
 end

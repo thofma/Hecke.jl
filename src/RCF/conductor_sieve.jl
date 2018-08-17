@@ -90,7 +90,7 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
   n=Int(S.snf[end])
   R=ResidueField(FlintZZ, n, cached=false)
   W=MatrixSpace(R, ngens(S), ngens(S), false)
-  quo_action=Array{nmod_mat,1}(length(act))
+  quo_action=Array{nmod_mat,1}(undef, length(act))
   for s=1:length(act)
     quo_action[s]=W(mS.map*act[i].map*mS.imap)
   end
@@ -381,7 +381,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
   ram_primes=collect(keys(factor(O.disc).fac))
   filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to=cat(1,ram_primes, wild_ram)
+  coprime_to=cat(1,ram_primes, wild_ram, dims = 1)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)
@@ -734,7 +734,7 @@ function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
                          tame = tame)
 
 
-  newlist = Vector{NfAbsNS}(length(l))
+  newlist = Vector{NfAbsNS}(undef, length(l))
   for j in 1:length(l)
     newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol])
   end
@@ -1029,10 +1029,10 @@ function _find_pairs(bound::Int)
   #now translate it into the matrix
   for i=1:b1
     if !list[i]
-      pairs[poszero+i,1:n]=false
-      pairs[1:n,poszero+i]=false
-      pairs[poszero-i,1:n]=false
-      pairs[1:n,poszero-i]=false
+      pairs[poszero+i,1:n] .=false
+      pairs[1:n,poszero+i] .=false
+      pairs[poszero-i,1:n] .=false
+      pairs[1:n,poszero-i] .=false
     end
   end
   #check
@@ -1290,7 +1290,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   
   @vprint :QuadraticExt 2 "Maximal Orders computed\n"
   #Then we consider the product basis
-  basisL=Array{NfRel_nsElem, 1}(2*degree(L[1]))
+  basisL=Array{NfRel_nsElem, 1}(undef, 2*degree(L[1]))
   for i=1:degree(L[1])
     _assure_weakly_normal_presentation(B[i][2].num)
     basisL[2*i-1]=divexact(B[i][2].num.gen_one* B[i][1], B[i][2].den)
@@ -1315,7 +1315,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   M = zero_matrix(FlintZZ, degree(Ks), degree(Ks))
   prim_img=mKs(gen(Ks))
   M1=inv(basis_mat([prim_img^i for i=0:degree(Ks)-1]))
-  basisO2=Array{nf_elem, 1}(degree(Ks))
+  basisO2=Array{nf_elem, 1}(undef, degree(Ks))
   M=zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
     elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
@@ -1328,7 +1328,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   @vprint :QuadraticExt 2 "MaximalOrder Computed. Now Automorphisms\n"
 
   #Now, the automorphisms.
-  autos=Array{NfToNfMor, 1}(length(L[2]))
+  autos=Array{NfToNfMor, 1}(undef, length(L[2]))
   el=mS(mK\(mKs(gen(Ks))))
   for i=1:length(L[2])
     x=mK(mS\(L[2][i](el)))

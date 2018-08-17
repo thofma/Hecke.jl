@@ -1,4 +1,4 @@
-doc"""
+Markdown.doc"""
     rand!(a::nf_elem, U::AbstractArray) -> nf_elem
 > Inplace, set the coefficients of $a$ to random elements in $U$.
 > $a$ is returned.
@@ -10,7 +10,7 @@ function rand!(a::nf_elem, U::AbstractArray)
   return a
 end    
 
-doc"""
+Markdown.doc"""
     rand(K::AnticNumberField, U::AbstractArray) -> nf_elem
 > Find an element in $K$ where the coefficients are selceted at random in $U$.
 """
@@ -19,7 +19,7 @@ function rand(K::AnticNumberField, U::AbstractArray)
   return rand!(a, U)
 end
 
-doc"""
+Markdown.doc"""
     rand!(A::Generic.Mat{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 > Inplace, replace each element in $A$ by an element where the coefficients are
 > sected at random in $U$.
@@ -34,7 +34,7 @@ function rand!(A::Generic.Mat{nf_elem}, U::AbstractArray)
   return A
 end    
 
-doc"""
+Markdown.doc"""
     rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 > Create a random matrix in $A$ where the coefficients are selected from $U$.
 """
@@ -42,7 +42,7 @@ function rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray)
   return rand!(A(), U)
 end
 
-doc"""
+Markdown.doc"""
     modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env) -> Array
 > Given an array of matrices as computed by \code{modular_proj},
 > compute a global pre-image using some efficient CRT.
@@ -57,7 +57,7 @@ function modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env)
   return A
 end
 
-doc"""
+Markdown.doc"""
     mod!(A::Generic.Mat{nf_elem}, m::fmpz)
 > Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
 """
@@ -69,7 +69,7 @@ function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
   end
 end
 
-doc"""
+Markdown.doc"""
     mod_sym!!(A::Generic.Mat{nf_elem}, m::fmpz)
 > Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
 """
@@ -81,7 +81,7 @@ function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
   end
 end
 
-doc"""
+Markdown.doc"""
     rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz) -> Bool, Generic.Mat{nf_elem}
 > Apply \code{rational_reconstruction} to each entry of $M$.
 """
@@ -98,7 +98,7 @@ function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   return true, B
 end
 
-doc"""
+Markdown.doc"""
     divexact!(A::Generic.Mat{nf_elem}, p::fmpz) 
 > Inplace: divide each entry by $p$.
 """

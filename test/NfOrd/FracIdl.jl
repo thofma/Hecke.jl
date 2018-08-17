@@ -1,8 +1,8 @@
 @testset "Fractional ideals" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+  global Qx, x = PolynomialRing(FlintQQ, "x")
 
-  K1, a1 = NumberField(x^3 - 2, "a")
-  O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
+  global K1, a1 = NumberField(x^3 - 2, "a")
+  global O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
 
   i = ideal(O1, O1(2*a1))
 

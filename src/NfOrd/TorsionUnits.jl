@@ -40,7 +40,7 @@ export torsion_unit_group
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     istorsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
@@ -60,7 +60,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     torsion_unit_order(x::NfOrdElem, n::Int)
 
@@ -80,7 +80,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
 
@@ -91,7 +91,7 @@ function torsion_units(O::NfOrd)
   return ar
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_units_gen(O::NfOrd) -> NfOrdElem
 
@@ -102,7 +102,7 @@ function torsion_units_gen(O::NfOrd)
   return g
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_units_gen_order(O::NfOrd) -> NfOrdElem
 
@@ -113,7 +113,7 @@ function torsion_units_gen_order(O::NfOrd)
   return g, length(ar)
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_unit_group(O::NfOrd) -> GrpAb, Map
 
@@ -220,7 +220,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
 
   i = 0
 
-  for i in 1:length(R)
+  for outer i in 1:length(R)
     if torsion_unit_order(R[i], length(R)) == length(R)
       break
     end
@@ -305,7 +305,7 @@ function _torsion_units_lifting(O::NfOrd)
   R = _roots_hensel(f)
 
   i = 1
-  for i in 1:length(R)
+  for outer i in 1:length(R)
     if torsion_unit_order(R[i], length(R)) == length(R)
       break
     end

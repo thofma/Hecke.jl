@@ -34,7 +34,7 @@
 
 export PrimeIdealsSet
 
-doc"""
+Markdown.doc"""
 ***
     isramified(O::NfOrd, p::Int) -> Bool
 
@@ -47,7 +47,7 @@ function isramified(O::NfOrd, p::Union{Int, fmpz})
   return mod(discriminant(O), p) == 0
 end
 
-doc"""
+Markdown.doc"""
 ***
     degree(P::NfOrdIdl) -> Int
 > The inertia degree of the prime-ideal $P$.
@@ -57,7 +57,7 @@ function degree(A::NfOrdIdl)
   return A.splitting_type[2]
 end
 
-doc"""
+Markdown.doc"""
 ***
     ramification_index(P::NfOrdIdl) -> Int
 > The ramification index of the prime-ideal $P$.
@@ -67,7 +67,7 @@ function ramification_index(A::NfOrdIdl)
   return A.splitting_type[1]
 end
 
-doc"""
+Markdown.doc"""
 ***
     splitting_type(P::NfOrdIdl) -> Int, Int
 > The ramification index and inertia degree of the prime ideal $P$.
@@ -83,7 +83,7 @@ end
 #  Prime decomposition
 #
 ################################################################################
-doc"""
+Markdown.doc"""
     intersect(f::Map, P::NfOrdIdl) -> NfOrdIdl
 > Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
 > of number fields, find the unique prime $p$ in $k$ below.
@@ -136,7 +136,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
 end
 
 
-doc"""
+Markdown.doc"""
     prime_decomposition_nonindex(f::Map, p::NfOrdIdl) -> Array{Tuple{NfOrdIdl, Int}, 1}
 > Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
 > a prime ideal in the maximal order of $k$, find all prime ideals in
@@ -161,7 +161,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
   return res
 end
 
-doc"""
+Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
 > Given a polynomial $f$ over a finite field, lift it to an element of the
 > number field $K$. The lift if given by the eleemnt represented by the
@@ -173,7 +173,7 @@ function lift(K::AnticNumberField, f::nmod_poly)
   end
   r = K()
   for i=0:f.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &f, i)
+    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), f, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -218,7 +218,7 @@ function ideal_from_poly(O::NfOrd, p::Int, fi::nmod_poly, ei::Int)
   return idl
 end
 
-doc"""
+Markdown.doc"""
 ***
     prime_decomposition(O::NfOrd,
                         p::Integer,
@@ -291,7 +291,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
 
   fac = _fac_and_lift(Zf, p, degree_limit, lower_limit)
 
-  result = Array{Tuple{ideal_type(O),Int}}(length(fac))
+  result = Array{Tuple{ideal_type(O),Int}}(undef, length(fac))
 
   for k in 1:length(fac)
     fi = fac[k][1]
@@ -393,7 +393,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     fmodp = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
-    res = Array{Tuple{Int, Int}}(g)
+    res = Array{Tuple{Int, Int}}(undef, g)
     k = 1
     for (fi, ei) in fac
       for j in 1:ei
@@ -408,7 +408,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
   return res
 end
 
-doc"""
+Markdown.doc"""
 ***
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
@@ -446,7 +446,7 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
   return r
 end
 
-doc"""
+Markdown.doc"""
 ***
     prime_ideals_over(O::NfOrd,
                        lp::AbstractArray{Int, 1};
@@ -473,7 +473,7 @@ function prime_ideals_over(O::NfOrd,
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
@@ -558,7 +558,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   return coprime_base_steel(Ap)
 end
 
-doc"""
+Markdown.doc"""
 ***
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
@@ -597,7 +597,7 @@ end
 ################################################################################
 
 #TODO: factoring type??? (with unit)
-doc"""
+Markdown.doc"""
 ***
     factor(A::NfOrdIdl) -> Dict{NfOrdIdl, Int}
 
@@ -636,7 +636,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     isprime_known(A::NfOrdIdl) -> Bool
 
@@ -646,7 +646,7 @@ function isprime_known(A::NfOrdIdl)
   return A.is_prime != 0
 end
 
-doc"""
+Markdown.doc"""
 ***
     isprime(A::NfOrdIdl) -> Bool
 
@@ -801,7 +801,7 @@ function val_func_index(p::NfOrdIdl)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -857,7 +857,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   return p.valuation(a)::Int
 end
 
-doc"""
+Markdown.doc"""
 ***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -868,7 +868,7 @@ doc"""
 """
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
-doc"""
+Markdown.doc"""
 ***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -884,7 +884,7 @@ function valuation(a::fmpz, p::NfOrdIdl)
   P = p.gen_one
   return valuation(a, P)* p.splitting_type[1]
 end
-doc"""
+Markdown.doc"""
     valuation(a::Integer, p::NfOrdIdl) -> fmpz
 > Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 > such that $a$ is contained in $\mathfrak p^i$.
@@ -919,7 +919,7 @@ function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     valuation(A::NfOrdIdl, p::NfOrdIdl) -> fmpz
 
@@ -969,7 +969,7 @@ mutable struct PrimeIdealsSet
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     PrimeIdealsSet(O::NfOrd, f, t; proof = false,
                                    indexdivisors = true,
@@ -1023,12 +1023,17 @@ function PrimeIdealsSet(O::NfOrd, from::T, to::S;
   return z
 end
 
-function Base.start(S::PrimeIdealsSet)
+function Base.iterate(S::PrimeIdealsSet)
   O = S.order
-  pstate = start(S.primes)
   found_prime = false
+  start = true
+  p, pstate = iterate(S.primes)
   while !found_prime
-    (p, pstate) = next(S.primes, pstate)
+    if !start
+      p, pstate = iterate(S.primes, pstate)
+    else
+      start = false
+    end
     if !S.indexdivisors && isindex_divisor(O, p)
       continue
     end
@@ -1053,21 +1058,21 @@ function Base.start(S::PrimeIdealsSet)
       S.decomposition = lP
       S.currentprime = p
       S.currentindex = j
-      return (p, j)
+      Q = S.decomposition[j][1]
+      return Q, (pstate, j + 1)
     end
-  end
+      end
 end
 
-function Base.next(S::PrimeIdealsSet, x)
-  pstate = x[1]
+function Base.iterate(S::PrimeIdealsSet, x)
   j = x[2]
-  Q = S.decomposition[j][1] # This we want to return
+  pstate = x[1]
   newindex = -1
   lP = S.decomposition
   O = S.order
 
   # Find the next prime ideal in the current decomposition
-  for i in (j + 1):length(S.decomposition)
+  for i in j:length(S.decomposition)
     e = lP[i][2]
     if !S.ramified && e > 1
       continue
@@ -1081,12 +1086,17 @@ function Base.next(S::PrimeIdealsSet, x)
   end
 
   if newindex != -1
-    return Q, (pstate, newindex)
+    return lP[newindex][1], (pstate, newindex + 1)
   else
     # We have to change the prime
     found_prime = false
     while !found_prime
-      (p, pstate) = next(S.primes, pstate)
+      it =  iterate(S.primes, pstate)
+      if it === nothing
+        return nothing
+      else
+        (p, pstate) = it
+      end
       if !S.indexdivisors && isindex_divisor(O, pstate)
         continue
       end
@@ -1111,18 +1121,18 @@ function Base.next(S::PrimeIdealsSet, x)
         S.decomposition = lP
         S.currentprime = p
         S.currentindex = j
-        return Q, (pstate, j)
+        return lP[j][1], (pstate, j + 1)
       end
     end
   end
 end
 
-function Base.done(S::PrimeIdealsSet, x)
-  pstate = x[1]
-  index = x[2]
-  return !S.unbound && pstate > S.to
-end
+#function Base.done(S::PrimeIdealsSet, x)
+#  pstate = x[1]
+#  index = x[2]
+#  return !S.unbound && pstate > S.to
+#end
 
 Base.eltype(::PrimeIdealsSet) = NfOrdIdl
 
-Base.iteratorsize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()

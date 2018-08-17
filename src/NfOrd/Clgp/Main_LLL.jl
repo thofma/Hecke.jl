@@ -2,7 +2,7 @@
 # same with LLL
 ################################################################################
 
-function single_env{T}(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat::Float64, max_good::Int = 2)
+function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat::Float64, max_good::Int = 2) where {T}
   bad_norm = 0
   rk = rank(c.M)
   good = 0
@@ -44,7 +44,7 @@ function single_env{T}(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, nb::Int
   return (rank(c.M) - rk), good
 end
 
-function class_group_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 0.2)
+function class_group_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2) where {T}
   O = order(c.FB.ideals[1])
   nb = nbits(abs(discriminant(O)))
   nb = div(nb, 2) + 30
@@ -76,7 +76,7 @@ function class_group_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 0.2)
   return c
 end
 
-function class_group_new_relations_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 0.2; extra::Int = 5, rand_exp::Int = 1)
+function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2; extra::Int = 5, rand_exp::Int = 1) where {T}
 
   O = order(c.FB.ideals[1])
   nb = nbits(abs(discriminant(O)))

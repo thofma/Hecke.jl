@@ -43,7 +43,7 @@ export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
 #
 ################################################################################
 
-function Base.deepcopy_internal(x::NfAbsOrdElem, dict::ObjectIdDict)
+function Base.deepcopy_internal(x::NfAbsOrdElem, dict::IdDict)
   z = parent(x)()
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
@@ -69,7 +69,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfOrd)(a::nf_elem, check::Bool = true) -> NfAbsOrdElem
 
@@ -87,7 +87,7 @@ doc"""
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfOrd)(a::NfAbsOrdElem, check::Bool = true) -> NfAbsOrdElem
 
@@ -117,7 +117,7 @@ end
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfOrd)(a::Union{fmpz, Integer}) -> NfAbsOrdElem
 
@@ -129,7 +129,7 @@ doc"""
   return NfAbsOrdElem(O, nf(O)(a))
 end
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfOrd)(arr::Array{fmpz, 1})
 
@@ -139,7 +139,7 @@ doc"""
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfOrd)(arr::Array{Integer, 1})
 
@@ -149,7 +149,7 @@ doc"""
   return NfAbsOrdElem(O, deepcopy(arr))
 end
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfOrd)() -> NfAbsOrdElem
 
@@ -163,7 +163,7 @@ doc"""
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     parent(a::NfAbsOrdElem) -> NfOrd
 
@@ -187,7 +187,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     elem_in_nf(a::NfAbsOrdElem) -> nf_elem
 
@@ -224,7 +224,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     elem_in_basis(a::NfAbsOrdElem) -> Array{fmpz, 1}
 
@@ -246,7 +246,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     discriminant(B::Array{NfAbsOrdElem, 1}) -> fmpz
 
@@ -280,7 +280,7 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ==(x::NfAbsOrdElem, y::NfAbsOrdElem) -> Bool
 
@@ -309,7 +309,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     zero(O::NfOrd) -> NfAbsOrdElem
 
@@ -317,7 +317,7 @@ doc"""
 """
 zero(O::NfAbsOrd) = O(fmpz(0))
 
-doc"""
+Markdown.doc"""
 ***
     one(O::NfOrd) -> NfAbsOrdElem
 
@@ -325,7 +325,7 @@ doc"""
 """
 one(O::NfAbsOrd) = O(fmpz(1))
 
-doc"""
+Markdown.doc"""
 ***
     zero(a::NfAbsOrdElem) -> NfAbsOrdElem
 
@@ -333,7 +333,7 @@ doc"""
 """
 zero(a::NfAbsOrdElem) = parent(a)(0)
 
-doc"""
+Markdown.doc"""
 ***
     one(O::NfOrd) -> NfAbsOrdElem
 
@@ -347,7 +347,7 @@ one(a::NfAbsOrdElem) = one(parent(a))
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     isone(a::NfOrd) -> Bool
 
@@ -355,7 +355,7 @@ doc"""
 """
 isone(a::NfAbsOrdElem) = isone(a.elem_in_nf)
 
-doc"""
+Markdown.doc"""
 ***
     iszero(a::NfOrd) -> Bool
 
@@ -379,7 +379,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     -(x::NfAbsOrdElem) -> NfAbsOrdElem
 
@@ -401,7 +401,7 @@ end
 #
 ###############################################################################
 
-doc"""
+Markdown.doc"""
 ***
     *(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
@@ -414,7 +414,7 @@ function *(x::NfAbsOrdElem{S, T}, y::NfAbsOrdElem{S, T}) where {S, T}
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     +(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
@@ -432,7 +432,7 @@ function +(x::NfAbsOrdElem, y::NfAbsOrdElem)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     -(x::NfAbsOrdElem, y::NfAbsOrdElem) -> NfAbsOrdElem
 
@@ -450,7 +450,7 @@ function -(x::NfAbsOrdElem, y::NfAbsOrdElem)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     divexact(x::NfAbsOrdElem, y::NfAbsOrdElem, check::Bool) -> NfAbsOrdElem
 
@@ -552,7 +552,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ^(x::NfAbsOrdElem, y::Union{fmpz, Int})
 
@@ -570,7 +570,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     mod(a::NfAbsOrdElem, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
@@ -581,7 +581,7 @@ doc"""
 function mod(a::NfAbsOrdElem, m::Union{fmpz, Int})
   assure_has_coord(a)
   d = degree(parent(a))
-  ar = Vector{fmpz}(d)
+  ar = Vector{fmpz}(undef, d)
   for i in 1:d
     ar[i] = mod(a.elem_in_basis[i], m)
   end
@@ -594,7 +594,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Union{fmpz, Int}) -> NfAbsOrdElem
 
@@ -670,7 +670,7 @@ denominator(a::NfAbsNSElem) = denominator(a.data)
 #TODO: replace by Daniel's official version
 function content(a::fmpq_mpoly)
   c = fmpq()
-  ccall((:fmpq_set, :libflint), Void, (Ref{fmpq}, Ref{fmpq_mpoly}), c, a)
+  ccall((:fmpq_set, :libflint), Nothing, (Ref{fmpq}, Ref{fmpq_mpoly}), c, a)
   return c
 end
 denominator(a::fmpq_mpoly) = denominator(content(a))
@@ -683,7 +683,7 @@ function mod(a::NfAbsNSElem, p::fmpz)
   return b
 end
 
-doc"""
+Markdown.doc"""
 ***
     powermod(a::NfAbsOrdElem, i::Integer, m::Integer) -> NfAbsOrdElem
 
@@ -691,7 +691,7 @@ doc"""
 """
 powermod(a::NfAbsOrdElem, i::Integer, m::Integer) = powermod(a, fmpz(i), fmpz(m))
 
-doc"""
+Markdown.doc"""
 ***
     powermod(a::NfAbsOrdElem, i::fmpz, m::Integer) -> NfAbsOrdElem
 
@@ -699,7 +699,7 @@ doc"""
 """
 powermod(a::NfAbsOrdElem, i::fmpz, m::Integer)  = powermod(a, i, fmpz(m))
 
-doc"""
+Markdown.doc"""
 ***
     powermod(a::NfAbsOrdElem, i::Integer, m::fmpz) -> NfAbsOrdElem
 
@@ -713,7 +713,7 @@ powermod(a::NfAbsOrdElem, i::Integer, m::fmpz)  = powermod(a, fmpz(i), m)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     representation_matrix(a::NfAbsOrdElem) -> fmpz_mat
 
@@ -730,7 +730,7 @@ function representation_matrix(a::NfAbsOrdElem)
   return A.num
 end
 
-doc"""
+Markdown.doc"""
 ***
     representation_matrix(a::NfAbsOrdElem, K::AnticNumberField) -> FakeFmpqMat
 
@@ -752,7 +752,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     trace(a::NfAbsOrdElem) -> fmpz
 
@@ -768,7 +768,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     norm(a::NfAbsOrdElem) -> fmpz
 
@@ -806,7 +806,7 @@ function rand!(z::NfAbsOrdElem, O::NfOrd, R::UnitRange{T}) where T <: Integer
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     rand(O::NfOrd, R::UnitRange{Integer}) -> NfAbsOrdElem
 
@@ -823,7 +823,7 @@ function rand!(z::NfAbsOrdElem, O::NfOrd, n::Union{Integer, fmpz})
   return rand!(z, O, -n:n)
 end
 
-doc"""
+Markdown.doc"""
 ***
     rand(O::NfOrd, n::Union{Integer, fmpz}) -> NfAbsOrdElem
 
@@ -934,7 +934,7 @@ dot(x::fmpz, y::NfAbsOrdElem) = y * x
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     minkowski_map(a::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
 
@@ -954,7 +954,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     conjugates_arb(x::NfAbsOrdElem, abs_tol::Int) -> Array{acb, 1}
 
@@ -972,7 +972,7 @@ function conjugates_arb(x::NfAbsOrdElem, abs_tol::Int = 32)
   return conjugates_arb(x.elem_in_nf, abs_tol)
 end
 
-doc"""
+Markdown.doc"""
 ***
     conjugates_arb_log(x::NfAbsOrdElem, abs_tol::Int) -> Array{arb, 1}
 
@@ -992,7 +992,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     t2(x::NfAbsOrdElem, abs_tol::Int = 32) -> arb
 

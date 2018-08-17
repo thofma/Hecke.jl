@@ -6,12 +6,12 @@ function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
 end
 
 
-@doc """
-  isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) -> Bool
+Markdown.doc"""
+  isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) Bool
 
 >  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
 >  Intrinsically, only makes sense if the units of Z/MZ are cyclic.
-""" ->
+"""
 function isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Fac{fmpz})
   for (p, l) in fM
     if x^divexact(M, p) == 1
@@ -46,11 +46,11 @@ end
   gcd(|G_(k+l)|, a) = 1 for all l, thus a is a generator
 =#
   
-@doc """
-  gen_mod_pk(p::fmpz, mod::fmpz=0) -> fmpz
+Markdown.doc"""
+  gen_mod_pk(p::fmpz, mod::fmpz=0) fmpz
 
 >  Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p. If mod is non zero, it finds a generator for Z/p^kZ modulo mod powers only.
-""" ->
+"""
 function gen_mod_pk(p::fmpz, mod::fmpz=fmpz(0))
   @assert isodd(p)
   @assert isprime(p)
@@ -102,20 +102,20 @@ mutable struct MapUnitGroupModM{T} <: Map{T, Nemo.NmodRing, HeckeMap, MapUnitGro
   end
 end
 
-@doc """
-  UnitGroup(R::Generic.ResRing{fmpz}) -> GrpAbFinGen, Map
+Markdown.doc"""
+  UnitGroup(R::Generic.ResRing{fmpz}) GrpAbFinGen, Map
 
 >  The unit group of R = Z/nZ together with the apropriate map.
-""" ->
+"""
 #TO BE FIXED. If mod is non-zero, it is wrong.
 function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
 
   m = R.modulus
   fm = factor(m).fac
   
-  r = Array{fmpz}(0)
-  g = Array{fmpz}(0)
-  mi = Array{fmpz}(0)
+  r = Array{fmpz}(undef, 0)
+  g = Array{fmpz}(undef, 0)
+  mi = Array{fmpz}(undef, 0)
   for p=keys(fm)
     k = fm[p]
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
@@ -181,9 +181,9 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
   m = Int(R.n)
   fm = factor(fmpz(m)).fac
   
-  r = Array{fmpz}(0)
-  g = Array{fmpz}(0)
-  mi = Array{fmpz}(0)
+  r = Array{fmpz}(undef, 0)
+  g = Array{fmpz}(undef, 0)
+  mi = Array{fmpz}(undef, 0)
   for p=keys(fm)
     k = fm[p]
     if gcd(mod, (p-1)*p^(max(0, k-1))) == 1
@@ -244,11 +244,11 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
   return G, MapUnitGroupModM{typeof(G)}(G, R, dexp, dlog)
 end
 
-@doc """
+Markdown.doc"""
   solvemod(a::fmpz, b::fmpz, M::fmpz)
 
 >  Finds x s.th. ax == b mod M.
-""" ->
+"""
 function solvemod(a::fmpz, b::fmpz, M::fmpz)
   #solve ax = b (mod M)
   g = gcd(a, M)
@@ -262,12 +262,12 @@ function solvemod(a::fmpz, b::fmpz, M::fmpz)
 end
 
 
-@doc """
+Markdown.doc"""
   disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 
 >  Computes g s.th. a^g == b mod M. M has to be a power of an odd prime
 >  and a a generator for the multiplicative group mod M
-""" ->
+"""
 #solves a^x = b (mod M) for M a prime power
 function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   fM = factor(M).fac
@@ -361,13 +361,13 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   return g
 end
 
-@doc """
+Markdown.doc"""
   disc_log_bs_gs{T}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
 
 >  Tries to find g s.th. a^g == b under the assumption that g <= o.
 >  Uses Baby-Step-Giant-Step
-""" ->
-function disc_log_bs_gs{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
+"""
+function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
   b==1 && return fmpz(0)  
   b==a && return fmpz(1)
   if o < 100 
@@ -380,7 +380,7 @@ function disc_log_bs_gs{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_p
   else
     r = root(o, 2)
     r = Int(r)
-    baby = Array{typeof(a), 1}(r)
+    baby = Array{typeof(a), 1}(undef, r)
     baby[1] = parent(a)(1)
     baby[2] = a
     for i=3:r
@@ -403,7 +403,7 @@ function disc_log_bs_gs{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_p
 end
 
 
-@doc """
+Markdown.doc"""
   disc_log_ph{T <:PolyElem}(a::Residue{T}, b::Residue{T}, o::fmpz, r::Int)
   disc_log_ph(a::Residue{fmpz}, b::Residue{fmpz}, o::fmpz, r::Int)
   disc_log_ph(a::Residue{fq_nmod_poly}, b::Residue{fq_nmod_poly}, o::fmpz, r::Int)
@@ -412,8 +412,8 @@ end
 
 >  Tries to find g s.th. a^g == b under the assumption that ord(a) | o^r
 >  Uses Pohlig-Hellmann and Baby-Step-Giant-Step for the size(o) steps.
-  """ ->
-function disc_log_ph{T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz, r::Int)
+  """
+function disc_log_ph(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz, r::Int) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
   #searches for g sth. a^g = b
   # a is of order o^r
   # Pohlig-Hellmann a^g = b => (a^o)^g = b^g
@@ -431,7 +431,7 @@ end
 function unit_group_mod(R::Nemo.NmodRing, n::Int)
 
   fm = factor(fmpz(R.n)).fac
-  gens = Array{Int,1}(0)
+  gens = Array{Int,1}(undef, 0)
   structt = Int[]
   disclogs = Function[]
 

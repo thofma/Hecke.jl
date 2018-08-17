@@ -82,7 +82,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     z = new{T}()
     z.parent = O
     z.elem_in_nf = zero(nf(O))
-    z.elem_in_basis = Vector{T}(degree(O))
+    z.elem_in_basis = Vector{T}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -91,7 +91,7 @@ mutable struct NfRelOrdElem{T} <: RingElem
     z = new{T}()
     z.parent = O
     z.elem_in_nf = a
-    z.elem_in_basis = Vector{T}(degree(O))
+    z.elem_in_basis = Vector{T}(undef, degree(O))
     z.has_coord = false
     return z
   end

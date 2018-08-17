@@ -25,7 +25,7 @@ function prod_diag(A::fmpz_mat)
   a = fmpz()
   for i=1:rows(A)
     b = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i-1, i-1)
-    ccall((:fmpz_mul, :libflint), Void, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
+    ccall((:fmpz_mul, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
   end
   return a
 end
@@ -47,8 +47,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
-    ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
-    ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
+    ccall((:fmpz_mat_mul, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, d, l')
+    ccall((:fmpz_mat_mul, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz_mat}), d, l, d)
     g = zero_matrix(FlintZZ, n, n)
     den = fmpz(1)
     sv = fmpz(0)
@@ -79,10 +79,10 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
 
     round_scale!(d, c, prec)
-    ccall((:fmpz_mat_mul, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
+    ccall((:fmpz_mat_mul, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat},  Ref{fmpz_mat}), g, (b.num), d)
     den = b.den
 
-    ccall((:fmpz_mat_gram, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
+    ccall((:fmpz_mat_gram, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
     shift!(d, -prec)
   end
 
@@ -95,8 +95,8 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
 
-  ccall((:fmpz_mat_one, :libflint), Void, (Ref{fmpz_mat}, ), g)
-  ccall((:fmpz_lll, :libflint), Void, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
+  ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision

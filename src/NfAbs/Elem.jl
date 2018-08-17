@@ -47,7 +47,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     rand(b::Array{nf_elem,1}, r::UnitRange)
 
@@ -60,7 +60,7 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
   return s
 end
 
-doc"""
+Markdown.doc"""
 ***
     rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int) -> nf_elem
 
@@ -148,7 +148,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     charpoly(a::nf_elem) -> fmpq_poly
 
@@ -165,7 +165,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
   minpoly(a::nf_elem) -> fmpq_poly
 
@@ -207,19 +207,19 @@ end
 ################################################################################
 
 function sub!(a::nf_elem, b::nf_elem, c::nf_elem)
-   ccall((:nf_elem_sub, :libantic), Void,
+   ccall((:nf_elem_sub, :libantic), Nothing,
          (Ref{nf_elem}, Ref{nf_elem}, Ref{nf_elem}, Ref{AnticNumberField}),
          a, b, c, a.parent)
 end
 
 function set_den!(a::nf_elem, d::fmpz)
-  ccall((:nf_elem_set_den, :libflint), Void,
+  ccall((:nf_elem_set_den, :libflint), Nothing,
         (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         a, d, parent(a))
 end
 
 function divexact!(z::nf_elem, x::nf_elem, y::fmpz)
-  ccall((:nf_elem_scalar_div_fmpz, :libantic), Void,
+  ccall((:nf_elem_scalar_div_fmpz, :libantic), Nothing,
         (Ref{nf_elem}, Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
         z, x, y, parent(x))
   return z
@@ -227,15 +227,15 @@ end
 
 function gen!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_gen, :libantic), Void,
-         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
+   ccall((:nf_elem_gen, :libantic), Nothing,
+         (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
    return r
 end
 
 function one!(r::nf_elem)
    a = parent(r)
-   ccall((:nf_elem_one, :libantic), Void,
-         (Ptr{nf_elem}, Ptr{AnticNumberField}), &r, &a)
+   ccall((:nf_elem_one, :libantic), Nothing,
+         (Ref{nf_elem}, Ref{AnticNumberField}), r, a)
    return r
 end
 
@@ -260,7 +260,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
    norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
@@ -296,7 +296,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
      return no//1
    end
    de = denominator(a)
-   ccall((:nf_elem_norm_div, :libantic), Void,
+   ccall((:nf_elem_norm_div, :libantic), Nothing,
          (Ref{fmpq}, Ref{nf_elem}, Ref{AnticNumberField}, Ref{fmpz}, UInt),
          z, (a*de), a.parent, (d*de^n), UInt(nb))
    return z
@@ -309,9 +309,9 @@ end
 ################################################################################
 
 function numerator(a::nf_elem)
-   const _one = one(FlintZZ)
+   _one = one(FlintZZ)
    z = deepcopy(a)
-   ccall((:nf_elem_set_den, :libantic), Void,
+   ccall((:nf_elem_set_den, :libantic), Nothing,
          (Ref{nf_elem}, Ref{fmpz}, Ref{AnticNumberField}),
          z, _one, a.parent)
    return z
@@ -372,7 +372,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     norm(f::PolyElem{nf_elem}) -> fmpq_poly
 
 The norm of $f$, that is, the product of all conjugates of $f$ taken
@@ -414,7 +414,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
   factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
   factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
 
@@ -431,7 +431,7 @@ function factor(f::fmpz_poly, K::AnticNumberField)
   return factor(evaluate(Qz(f), y))
 end
 
-doc"""
+Markdown.doc"""
   factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
 > The factorisation of f (using Trager's method).
@@ -598,7 +598,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
     roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
@@ -620,7 +620,7 @@ function elem_in_nf(a::nf_elem)
   return a
 end
 
-doc"""
+Markdown.doc"""
 ***
     roots(f::Generic.Poly{nf_elem}) -> Array{nf_elem, 1}
 
@@ -683,7 +683,7 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
   return [ elem_in_nf(y) for y in A ]
 end
 
-doc"""
+Markdown.doc"""
     hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
 > Tests if $f$ has a root and return it.    
 """
@@ -696,7 +696,7 @@ function hasroot(f::PolyElem{nf_elem})
   end
 end
 
-doc"""
+Markdown.doc"""
     hasroot(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
     hasroot(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
 > Tests if $f$ has a root in $K$, and return it.
@@ -717,7 +717,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ispower(a::nf_elem, n::Int) -> Bool, nf_elem
 
@@ -745,19 +745,19 @@ function ispower(a::nf_elem, n::Int)
   end
 end
 
-doc"""
+Markdown.doc"""
     issquare(a::nf_elem) -> Bool, nf_elem
 > Tests if $a$ is a square and return the root if possible.
 """
 Nemo.issquare(a::nf_elem) = ispower(a, 2)
 
-doc"""
+Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem
 > The square-root of $a$ or an error if this is not possible.
  """
 Nemo.sqrt(a::nf_elem) = root(a, 2)
 
-doc"""
+Markdown.doc"""
 ***
     root(a::nf_elem, n::Int) -> nf_elem
 
@@ -772,7 +772,7 @@ function root(a::nf_elem, n::Int)
   error("$a has no $n-th root")
 end
 
-doc"""
+Markdown.doc"""
     roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
 > Compute all $n$-th roots of $a$, possibly none.
 """
@@ -892,7 +892,7 @@ function mod_sym!(a::nf_elem, b::fmpz, b2::fmpz)
 end
 
 function mod!(z::fmpz, x::fmpz, y::fmpz)
-  ccall((:fmpz_mod, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &z, &x, &y)
+  ccall((:fmpz_mod, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), z, x, y)
   return z
 end
 
@@ -957,7 +957,7 @@ end
 ################################################################################
 
 function nf_elem_to_nmod_poly!(r::nmod_poly, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_nmod_poly_den, :libantic), Void,
+  ccall((:nf_elem_get_nmod_poly_den, :libantic), Nothing,
         (Ref{nmod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing
@@ -970,7 +970,7 @@ function (R::Nemo.NmodPolyRing)(a::nf_elem)
 end
 
 function nf_elem_to_fmpz_mod_poly!(r::fmpz_mod_poly, a::nf_elem, useden::Bool = true)
-  ccall((:nf_elem_get_fmpz_mod_poly_den, :libantic), Void,
+  ccall((:nf_elem_get_fmpz_mod_poly_den, :libantic), Nothing,
         (Ref{fmpz_mod_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
         r, a, a.parent, Cint(useden))
   return nothing

@@ -1,7 +1,7 @@
 @testset "Clgp" begin
 
   @testset "class_group" begin
-    Qx, x = PolynomialRing(FlintQQ, "x");
+    global Qx, x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin # TODO Fix class_group for K = Q
       #= K, a = NumberField(x, "a"); =#
@@ -26,7 +26,7 @@
           ,(43,1),(44,1),(45,1),(46,1),(47,1),(48,1),(50,1)]
 
         @testset "K = Q[√$d]" for (d,h) in classnumbersofquadraticfields
-          K, a = NumberField(x^2-d, "a")
+          global K, a = NumberField(x^2-d, "a")
           O = maximal_order(K)
           Cl, mCl = Hecke.class_group(O, redo = true)
           U, mU = Hecke.unit_group(O)
@@ -36,7 +36,7 @@
 
       @testset "x^3-3*x-1" begin
         f = x^3 - 3*x - 1
-        K, a = NumberField(f, "a");
+        global K, a = NumberField(f, "a");
         O = maximal_order(K)
         Cl, mCl = Hecke.class_group(O, redo = true);
         U, mU = Hecke.unit_group(O)
@@ -73,7 +73,7 @@
   end
 
   @testset "_class_unit_group" begin
-    Qx, x = PolynomialRing(FlintQQ, "x");
+    global Qx, x = PolynomialRing(FlintQQ, "x");
     AF = ArbField(20)
 
     @testset "K = Q" begin # TODO Fix _class_unit_group for K = Q
@@ -89,7 +89,7 @@
     end
 
     @testset "K = Q[√2]" begin
-      K, a = NumberField(x^2-2, "a");
+      global K, a = NumberField(x^2-2, "a");
       O = maximal_order(K)
 
       Cl, mCl = Hecke.class_group(O, redo = true);
@@ -109,7 +109,7 @@
     end
 
     @testset "K = Q[x]/(f), f = x^3 - 2" begin
-      K, a = NumberField(x^2 - 3, "a");
+      global K, a = NumberField(x^2 - 3, "a");
       O = maximal_order(K);
       Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
@@ -118,7 +118,7 @@
     end
 
     @testset "f = Q[x]/(f), f = x^5 - 11^2 * 7" begin
-      K, a = NumberField(x^5 - 11^2 * 7, "a");
+      global K, a = NumberField(x^5 - 11^2 * 7, "a");
       O = maximal_order(K)
       Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
@@ -137,7 +137,7 @@
     end
 
     @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
-      K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
+      global K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
 
       Cl, mCl = Hecke.class_group(O, redo = true);

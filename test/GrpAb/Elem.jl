@@ -1,23 +1,23 @@
 @testset "Elements" begin
   @testset "Constructors" begin
     M = FlintZZ[1 2 3; 4 5 6]
-    G = @inferred AbelianGroup(M)
+    G = @iinfered AbelianGroup(M)
     N = FlintZZ[1 2 3]
-    a = @inferred GrpAbFinGenElem(G, N)
+    a = @iinfered GrpAbFinGenElem(G, N)
     @test parent(a) == G
     @test a.coeff == N
 
-    G = @inferred DiagonalGroup([3, 0])
+    G = @iinfered DiagonalGroup([3, 0])
     N = FlintZZ[1 1]
-    a = @inferred GrpAbFinGenElem(G, N)
-    @test @inferred parent(a) == G
+    a = @iinfered GrpAbFinGenElem(G, N)
+    @test @iinfered parent(a) == G
     @test a.coeff == N
   end
 
   @testset "Generators" begin
     M = FlintZZ[1 2 3; 4 5 6]
     G = AbelianGroup(M)
-    ge = @inferred gens(G)
+    ge = @iinfered gens(G)
     @test length(ge) == 3
     @test ge[1] == G[1]
     @test ge[2] == G[2]
@@ -25,10 +25,10 @@
   end
 
   @testset "Parent" begin
-    G = @inferred DiagonalGroup([3, 0])
+    G = @iinfered DiagonalGroup([3, 0])
     N = FlintZZ[1 1]
-    a = @inferred GrpAbFinGenElem(G, N)
-    @test @inferred parent(a) == G
+    a = @iinfered GrpAbFinGenElem(G, N)
+    @test @iinfered parent(a) == G
   end
 
   @testset "String I/O" begin
@@ -49,8 +49,8 @@
     G = DiagonalGroup([3, 0])
     N = FlintZZ[1 2]
     a = GrpAbFinGenElem(G, N)
-    @test @inferred a[1] == 1
-    @test @inferred a[2] == 2
+    @test @iinfered a[1] == 1
+    @test @iinfered a[2] == 2
   end
 
   @testset "Comparison" begin
@@ -58,7 +58,7 @@
     N = FlintZZ[1 2]
     a = GrpAbFinGenElem(G, N)
     b = GrpAbFinGenElem(G, deepcopy(N))
-    @test @inferred a == b
+    @test @iinfered a == b
 
     H = DiagonalGroup([3, 0])
     c = GrpAbFinGenElem(H, N)
@@ -73,14 +73,14 @@
     @test a + b == c
     @test -a == G([2, 0, 0])
 
-    aa = @inferred(2 * a)
+    aa = @iinfered(2 * a)
     @test aa == G([2, 0, 0])
     
-    aa = @inferred(a * 2)
+    aa = @iinfered(a * 2)
     @test aa == G([2, 0, 0])
 
     
-    aa = @inferred(fmpz(2) * a)
+    aa = @iinfered(fmpz(2) * a)
     @test aa == G([2, 0, 0])
   end
 
@@ -88,7 +88,7 @@
     G = DiagonalGroup([3, 3, 3])
     a = G[1]
    
-    aa = @inferred(a * fmpz(2))
+    aa = @iinfered(a * fmpz(2))
     @test aa == G([2, 0, 0])
 
     @test !iszero(a)
@@ -99,21 +99,21 @@
 
   @testset "Parent object overloading" begin
     G = DiagonalGroup([3, 3, 3])
-    a = @inferred G(fmpz[1, 1, 1])
+    a = @iinfered G(fmpz[1, 1, 1])
     @test parent(a) == G
     @test a.coeff == FlintZZ[1 1 1]
 
-    a = @inferred G([1, 1, 1])
+    a = @iinfered G([1, 1, 1])
     @test parent(a) == G
     @test a.coeff == FlintZZ[1 1 1]
 
     M = FlintZZ[1 1 1]
-    a = @inferred G(M)
+    a = @iinfered G(M)
     M[1, 1] = 3
     @test parent(a) == G
     @test a.coeff == FlintZZ[1 1 1]
 
-    a = @inferred G[1]
+    a = @iinfered G[1]
     @test parent(a) == G
     @test a.coeff == FlintZZ[1 0 0]
   end
@@ -121,11 +121,11 @@
   @testset "Order" begin
     G = DiagonalGroup([3, 3, 0])
     a = G[1]
-    @test @inferred order(a) == 3
+    @test @iinfered order(a) == 3
 
     G = DiagonalGroup([3, 5, 0])
     a = G[1]
-    @test @inferred order(a) == 3
+    @test @iinfered order(a) == 3
 
     a = G[3]
     @test_throws ErrorException order(a)
@@ -133,33 +133,33 @@
 
   @testset "Random elements" begin
     G = DiagonalGroup([3, 5])
-    a = @inferred rand(G)
+    a = @iinfered rand(G)
     @test parent(a) == G
 
     G = DiagonalGroup([3, 15])
-    a = @inferred rand(G)
+    a = @iinfered rand(G)
     @test parent(a) == G
 
     G = DiagonalGroup([3, 0])
     @test_throws ErrorException rand(G)
 
-    a = @inferred rand(G, 10)
+    a = @iinfered rand(G, 10)
     @test parent(a) == G
     @test -10 <= a[2] <= 10
 
-    a = @inferred rand(G, fmpz(10))
+    a = @iinfered rand(G, fmpz(10))
     @test parent(a) == G
     @test -10 <= a[2] <= 10
 
     G = DiagonalGroup([3, 0, 5, 0])
     @test_throws ErrorException rand(G)
 
-    a = @inferred rand(G, 10)
+    a = @iinfered rand(G, 10)
     @test parent(a) == G
     @test -10 <= a[2] <= 10
     @test -10 <= a[4] <= 10
 
-    a = @inferred rand(G, fmpz(10))
+    a = @iinfered rand(G, fmpz(10))
     @test parent(a) == G
     @test -10 <= a[2] <= 10
     @test -10 <= a[4] <= 10

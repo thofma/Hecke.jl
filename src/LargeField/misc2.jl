@@ -128,10 +128,10 @@ function local_norm!(n::fmpz, ap::Array{fq_nmod, 1}, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
   for j=1:length(ap)
-    ccall((:fq_nmod_norm, :libflint), Void, (Ptr{fmpz}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &n, &ap[j], &ap[j].parent)
+    ccall((:fq_nmod_norm, :libflint), Nothing, (Ref{fmpz}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), n, ap[j], ap[j].parent)
     nn = ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), &n, nn)
+  ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{fmpz}, UInt), n, nn)
   return n
 end
 
@@ -218,7 +218,7 @@ function basis_rels_4(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
 #    println("lc: $lc")
     for j=1:length(lpx)
       for k=1:n
-        @inbounds ccall((:fq_nmod_set, :libflint), Void, (Ptr{fq_nmod}, Ptr{fq_nmod}), &tmp[j, k], &bp[j, lc[1], k])
+        @inbounds ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}), tmp[j, k], bp[j, lc[1], k])
         for l = 2:no_coeff
 #          tmp[j][k] +=  bp[j][lc[l]][k]
           @inbounds add!(tmp[j, k], tmp[j, k], bp[j, lc[l], k])
@@ -259,7 +259,7 @@ function local_norm!(n::fmpz, ap::nmod_mat, me::Hecke.modular_env)
     np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
-  ccall((:fmpz_set_ui, :libflint), Void, (Ptr{fmpz}, UInt), &n, nn)
+  ccall((:fmpz_set_ui, :libflint), Nothing, (Ref{fmpz}, UInt), n, nn)
   return n
 end
 

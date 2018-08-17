@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     unit_rank(O::NfOrd) -> Int
 
@@ -22,7 +22,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     isindependent{T}(x::Array{T, 1})
 
@@ -41,7 +41,7 @@ function _isindependent(x::Array{T, 1}, p::Int = 32) where T
   rr = r1 + r2
   r = rr - 1 # unit rank
 
-  conlog = Vector{Vector{arb}}(length(x))
+  conlog = Vector{Vector{arb}}(undef, length(x))
 
   # This can be made more memory friendly
   while true

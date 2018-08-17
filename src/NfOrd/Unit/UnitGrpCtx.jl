@@ -37,7 +37,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
   #p = 64
 
-  zz = Array{fmpz}(r + 1)
+  zz = Array{fmpz}(undef, r + 1)
 
   @vprint :UnitGroup 1 "Adding dependent unit ... \n"
 
@@ -66,7 +66,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
   v = b*B
   @vprint :UnitGroup 3 "For $p the vector v: $v\n"
 
-  z = Array{fmpq}(r)
+  z = Array{fmpq}(undef, r)
 
   rreg = arb()
 
@@ -80,7 +80,7 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
 
   bound = _denominator_bound_in_relation(rreg, K)
 
-  rel = Array{fmpz}(r + 1)
+  rel = Array{fmpz}(undef, r + 1)
   for i in 1:r+1
     rel[i] = zero(FlintZZ)
   end
@@ -272,7 +272,7 @@ end
 function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
   r = length(x)
 
-  conlog = Vector{Vector{arb}}(length(x))
+  conlog = Vector{Vector{arb}}(undef, length(x))
   q = 2
   for i in 1:length(x)
     conlog[i] = conjugates_arb_log(x[i], p)
@@ -298,7 +298,7 @@ function _pow(x::Array{T, 1}, y::Array{fmpz, 1}) where T
 
   zz = deepcopy(y)
 
-  z = Array{fmpz}(length(x))
+  z = Array{fmpz}(undef, length(x))
 
   for i in 1:length(x)
     z[i] = mod(zz[i], 2)
