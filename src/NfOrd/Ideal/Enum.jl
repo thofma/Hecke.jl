@@ -42,7 +42,7 @@ mutable struct IdealEnum
     r.cur[1].idl = ideal(order(FB[1]), 1)
     r.lim = ones(Int, length(FB))
     r.mi = minimum(norm(x) for x = FB)
-    r.mi_idx = find(x -> r.mi == norm(x), FB)
+    r.mi_idx = findall(x -> r.mi == norm(x), FB)
     return r
   end
 end
@@ -62,7 +62,7 @@ function Base.iterate(IE::IdealEnum, s::Int = 1)
       expand!(IE, j)
     end
     mi = minimum(norm(IE.FB[i])^IE.lim[i] for i=1:length(IE.FB))
-    idx = find(i -> norm(IE.FB[i])^IE.lim[i] == mi, 1:length(IE.FB))
+    idx = findall(i -> norm(IE.FB[i])^IE.lim[i] == mi, 1:length(IE.FB))
     IE.mi = mi
     IE.mi_idx = idx
   end

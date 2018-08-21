@@ -347,7 +347,7 @@ function expand!(x::Union{arb, acb}, max_radius_2exp::Int)
   if q < 2
     return x
   end
-  y = round(x, q)
+  y = round(x, digits=q)
   while radiuslttwopower(y, max_radius_2exp) && q > 4
     q = div(q, 2)
     set!(x, y)

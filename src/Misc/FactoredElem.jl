@@ -715,6 +715,6 @@ function order(A::FacElemMon)
   return order(A.base_ring)
 end
 
-(::Type{FacElem{T}})(a::FacElem{T}) where {T} = a
+FacElem{T}(a::FacElem{T}) where {T} = a
 
-(::Type{FacElem})(a::FacElem{T}) where {T} = a
+FacElem(a::FacElem{T}) where {T} = a

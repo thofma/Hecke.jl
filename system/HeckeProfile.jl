@@ -261,19 +261,19 @@ end
 
 graph(skipC::Bool = true, skipMacro::Bool=true) = graph(Profile.retrieve()..., skipC, skipMacro)
 
-function parents{T <:Any}(g::Graph{T}, c::T) 
+function parents(g::Graph{T}, c::T) where T <:Any 
   return [a for (a,b) = keys(g.e) if b==c]
 end
 
-function parents_with_counts{T <:Any}(g::Graph{T}, c::T) 
+function parents_with_counts(g::Graph{T}, c::T) where T <:Any 
   return [(a, d) for ((a,b), d) = g.e if b==c]
 end    
 
-function children{T <: Any}(g::Graph{T}, c::T)
+function children(g::Graph{T}, c::T) where T <: Any
   return [b for (a,b) = keys(g.e) if a==c]
 end
 
-function children_with_count{T <: Any}(g::Graph{T}, c::T)
+function children_with_count(g::Graph{T}, c::T) where T <: Any
   return [(b, d) for ((a,b), d) = g.e if a==c]
 end
 

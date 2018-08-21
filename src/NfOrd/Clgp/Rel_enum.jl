@@ -56,7 +56,7 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
       return I
     catch e
       if isa(e, LowPrecisionCholesky)
-        print_with_color(:red, "prec too low in cholesky,")
+        printstyled("prec too low in cholesky,", color=:red)
         prec = Int(ceil(1.2*prec))
         println(" increasing to ", prec)
         if prec > 1000
@@ -64,7 +64,7 @@ function class_group_small_real_elements_relation_start(clg::ClassGrpCtx,
           error("1:too much prec")
         end
       elseif isa(e, LowPrecisionLLL)
-        print_with_color(:red, "prec too low in LLL,")
+        printstyled("prec too low in LLL,", color=:red)
         prec = Int(ceil(1.2*prec))
         println(" increasing to ", prec)
         if prec > 1000

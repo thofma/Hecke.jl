@@ -144,7 +144,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
       println("adding col, now at $curr_col, $(rows(m))")
       bd = _log(fmpz(p), cld_bound(n-1-c))+1 # bound for THIS coeff only
       if bd > k_max
-        print_with_color(:red, "prec change for next iteration was $k_max is $bd for $c\n")
+        printstyled("prec change for next iteration was $k_max is $bd for $c\n", color=:red)
       end  
       k_max = max(k_max, bd)
       rm = rows(m)
@@ -167,7 +167,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
           m[rows(m), cols(m)] = fmpz(p)^(k+d-bd)
         end
       else
-        print_with_color(:yellow, "\n\n zero diag added \n\n")
+        printstyled("\n\n zero diag added \n\n", color=:yellow)
         d *= 2
         break;
       end
@@ -193,7 +193,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
       end
 
       if rk <1
-        print_with_color(:red, "\n\nshit - loosing everything\n\n")
+        printstyled("\n\nshit - loosing everything\n\n", color=:red)
         return m
         break
       end

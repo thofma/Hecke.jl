@@ -375,7 +375,7 @@ function doit(n::String)
   i = 1
   while true
     @show l = readline(f)
-    g = eval(parse(l))
+    g = eval(Meta.parse(l))
     C = doit(g)
     C = snf(C)[1]
     println(fo, "$l -> $(C.snf)")

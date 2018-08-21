@@ -47,8 +47,8 @@ gtype = ARGS[3]
 startcond = ARGS[4]
 endcond = ARGS[5]
 
-bounddisc = fmpz(eval(parse(bounddisc)))
-gtype = convert(Vector{Int}, eval(parse(gtype)))
+bounddisc = fmpz(eval(Meta.parse(bounddisc)))
+gtype = convert(Vector{Int}, eval(Meta.parse(gtype)))
 startcond = parse(Int, startcond)
 endcond = parse(Int, endcond)
 real = parse(Bool, real)

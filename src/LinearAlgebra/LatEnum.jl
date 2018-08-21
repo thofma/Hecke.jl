@@ -187,7 +187,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, x::fmpz_mat; eps::Float64=1) where {
     E.tail[i] = sum(E.C[i, j]*C(E.x[1,j]) for j=i+1:E.limit)
   end    
   b = sum(E.C[i,i]*(C(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit) #curr. length
-  E.c = ceil(fmpz, b*C(E.d)*eps)
+  E.c = ceil(fmpz, digits=b*C(E.d)*eps)
   E.l[E.limit] = C(E.c//E.d)
   for i=E.limit-1:-1:1
     E.l[i] = E.l[i+1] - E.C[i+1,i+1]*(C(E.x[1,i+1]) + E.tail[i+1])^2

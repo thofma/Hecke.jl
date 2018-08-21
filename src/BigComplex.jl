@@ -1,5 +1,5 @@
 import Base: abs2, angle, convert, exponent
-export BigComplex, abs2, precision, conj, atan2, angle
+export BigComplex, abs2, precision, conj, atan, angle
 
 
 function show(io::IO, a::BigComplex)

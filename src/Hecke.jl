@@ -89,11 +89,7 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
-if VERSION >= v"0.7.0-"
-  const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-else
-  const pkgdir = Pkg.dir("Hecke")
-end
+const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
 const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
 
@@ -305,19 +301,9 @@ trace(x...) = tr(x...)
 
 using LinearAlgebra
 
-if VERSION < v"1.0.0"
-  LinearAlgebra.eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
-
-  LinearAlgebra.eye(x) = identity_matrix(base_ring(x), rows(x))
-
-  LinearAlgebra.eye(x, n) = identity_matrix(base_ring(x), n)
-else
-  eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
-
-  eye(x) = identity_matrix(base_ring(x), rows(x))
-
-  eye(x, n) = identity_matrix(base_ring(x), n)
-end
+eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
+eye(x) = identity_matrix(base_ring(x), rows(x))
+eye(x, n) = identity_matrix(base_ring(x), n)
 
 
 lufact(x...) = lu(x...)
@@ -716,13 +702,13 @@ function update()
   cd(olddir)
 end
 
-function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
+function whos(io::IO=stdout, m::Module=current_module(), pattern::Regex=r"")
     maxline = Base.tty_size()[2]
     line = zeros(UInt8, maxline)
     head = PipeBuffer(maxline + 1)
-    for v in sort!(names(m, true)) # show also NON exported stuff!
+    for v in sort!(names(m, all=true)) # show also NON exported stuff!
         s = string(v)
-        if isdefined(m, v) && ismatch(pattern, s)
+        if isdefined(m, v) && occursin(pattern, s)
             value = getfield(m, v)
             @printf head "%30s " s
             try
@@ -740,7 +726,7 @@ function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
 
             newline = search(head, UInt8('\n')) - 1
             if newline < 0
-                newline = nb_available(head)
+                newline = bytesavailable(head)
             end
             if newline > maxline
                 newline = maxline - 1 # make space for ...
@@ -749,7 +735,7 @@ function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
             line = read!(head, line)
 
             Base.write(io, line)
-            if nb_available(head) > 0 # more to read? replace with ...
+            if bytesavailable(head) > 0 # more to read? replace with ...
                 print(io, '\u2026') # hdots
             end
             println(io)
@@ -758,13 +744,13 @@ function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
     end
 end
 
-whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
-whos(pat::Regex) = whos(STDOUT, current_module(), pat)
+whos(m::Module, pat::Regex=r"") = whos(stdout, m, pat)
+whos(pat::Regex) = whos(stdout, current_module(), pat)
 
 function print_cache()
   sym = [];
-  for a in collect(names(Nemo, true));
-    d = parse("Nemo." * string(a));
+  for a in collect(names(Nemo, all=true));
+    d = Meta.parse("Nemo." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
@@ -778,8 +764,8 @@ function print_cache()
   end
   
   sym = [];
-  for a in collect(names(Nemo.Generic, true));
-    d = parse("Nemo.Generic." * string(a));
+  for a in collect(names(Nemo.Generic, all=true));
+    d = Meta.parse("Nemo.Generic." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
@@ -793,8 +779,8 @@ function print_cache()
   end
 
   sym = [];
-  for a in collect(names(Hecke, true));
-    d = parse("Hecke." * string(a));
+  for a in collect(names(Hecke, all=true));
+    d = Meta.parse("Hecke." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;

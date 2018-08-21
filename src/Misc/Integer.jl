@@ -166,7 +166,7 @@ function round(::Type{fmpz}, a::fmpq)
 end
 
 function round(a::fmpq)
-  return round(fmpz, a)
+  return round(fmpz, digits=a)
 end
 
 function zero(::Type{Nemo.fmpz})
@@ -903,6 +903,6 @@ end
 
 Base.isless(a::Int, b::fmpz) = a < b
 
-function (::Type{Base.Rational{BigInt}})(x::fmpq)
+function Base.Rational(x::fmpq) where BigInt
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end

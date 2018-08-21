@@ -904,7 +904,7 @@ function _read_fields(filename::String)
   Qx,x=PolynomialRing(FlintQQ,"x")
   pols=Tuple{fmpq_poly, fmpz}[]
   for s in eachline(f)
-    a=eval(parse(s))
+    a=eval(Meta.parse(s))
 	  push!(pols,(Qx(a[1]), a[2]))
 	end
 	close(f)

@@ -292,9 +292,9 @@ function merge_bernstein(P::Array{E, 1}, Q::Array{E, 1}) where E
   S = P
   i = 0
   while i<=b
-    R = prod(view(Q, find(x -> x & (2^i) ==0, 1:length(Q))))
+    R = prod(view(Q, findall(x -> x & (2^i) ==0, 1:length(Q))))
     T = augment_bernstein(S, R)
-    R = prod(view(Q, find(x -> x & (2^i) !=0, 1:length(Q))))
+    R = prod(view(Q, findall(x -> x & (2^i) !=0, 1:length(Q))))
     S = augment_bernstein(T, R)
     i += 1
   end

@@ -506,7 +506,7 @@ function mod_red(E, B)
         end
     end
     
-    P = deleteat!(P, findin(P, 0)) # delete all zeros from P
+    P = deleteat!(P, findall(in(0), P)) # delete all zeros from P
     
     return P, N  
 end

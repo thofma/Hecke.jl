@@ -83,11 +83,11 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     den = b.den
 
     ccall((:fmpz_mat_gram, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), d, g)
-    shift!(d, -prec)
+    popfirst!(d, -prec)
   end
 
   prec = div(prec, 2)
-  shift!(d, -prec)  #TODO: remove?
+  popfirst!(d, -prec)  #TODO: remove?
 
   for i=1:n
     fmpz_mat_entry_add_ui!(d, i, i, UInt(rows(d)))

@@ -32,7 +32,7 @@ function start(I::FmpzBits)
 end
 
 function next(I::FmpzBits, st::Int)
-  r = ccall((:fmpz_tstbit, :libflint), Int, (Ptr{fmpz}, Int), &I.A, st)
+  r = ccall((:fmpz_tstbit, :libflint), Int, (Ref{fmpz}, Int), I.A, st)
   return (r, st-1)
 end
 function done(I::FmpzBits, st::Int)

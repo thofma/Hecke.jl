@@ -535,7 +535,7 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   end
   pols = collect(keys(lp.fac))
   if deg_limit > 0
-    pols = pols[find(x -> degree(x) <= deg_limit, pols)]
+    pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
   end
 
   if max_split > 0
