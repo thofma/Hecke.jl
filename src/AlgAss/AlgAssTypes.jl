@@ -147,8 +147,9 @@ mutable struct AlgAssAbsOrdIdl{S, T}
     r.basis_alg = basis
     r.basis_mat = zero_matrix(FlintZZ, d, d)
     for i = 1:d
+      el = elem_in_basis(basis[i])
       for j = 1:d
-        r.basis_mat[i,j] = elem_in_basis(basis[i])
+        r.basis_mat[i,j] = el[j]
       end
     end
     return r
@@ -157,11 +158,6 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
     r = new{S, T}()
     r.order = O
-    d = O.dim
-    r.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(d)
-    for i = 1:d
-      r.basis_alg[i] = elem_from_mat_row(O, M, i)
-    end
     r.basis_mat = M
     return r
   end

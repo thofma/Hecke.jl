@@ -517,34 +517,131 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   
 end
 
+###############################################################################
+#
+#  Conductors over QQ
+#
+###############################################################################
 
-function conductors_tameQQ(O::NfOrd, n::Int, bound::fmpz)
+
+function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
+  
+  G = snf(DiagonalGroup(a))[1].snf
+  sqf= trues(n)
+  primes= trues(n)
+  deg = prod(a)
+  #remove primes that can be wildly ramified
+  for x in coprime_to
+    el=Int(x)
+    t=el
+    while t<= n
+      @inbounds sqf[t]=false
+      @inbounds primes[t]=false
+      t+=el
+    end
+  end
+  
+  #sieving procedure
+  #First, I can remove all the multiples of 2
+  if !(2 in coprime_to)
+    i=2
+    while i<=length(sqf)
+      @inbounds sqf[i]=false
+      i+=2
+    end
+  end  
+
+  i=3
+  b=Base.sqrt(n)
+  while i<=b
+    if primes[i]
+      if gcd(deg,i-1)==1
+        @inbounds primes[i]=false
+        @inbounds sqf[i]=false
+        j=i
+        while j<= n
+         @inbounds primes[j]=false
+         @inbounds sqf[j]=false
+         j+=i
+        end
+      else 
+        j=i
+        while j<= n
+          @inbounds primes[j]=false
+          j+=i
+        end
+        j=i^2
+        t=2*j
+        while j<= n
+          @inbounds sqf[j]=false
+          j+=t
+        end
+        #if length(G)>1
+        #  @inbounds sqf[i] = false
+        #elseif !divisible(fmpz(i-1), G[1])
+        #  @inbounds sqf[i] = false
+        #end
+      end
+      
+    end
+    i+=2
+  end
+  while i<=n
+    if primes[i]
+      if gcd(deg,i-1) == 1
+        @inbounds sqf[i]=false
+        j = i
+        while j <= n
+         @inbounds sqf[j]=false
+         j += i
+        end
+      #=
+      else
+        if length(G) > 1
+          @inbounds sqf[i] = false
+        elseif !divisible(fmpz(i-1), G[1])
+          @inbounds sqf[i] = false
+        end
+      =#
+      end
+    end
+    i+=2
+  end
+   
+  return Int[i for i=1:length(sqf) if sqf[i]]
+  
+end
+
+
+
+function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz)
 
   #
   #  First, conductors coprime to the ramified primes and to the 
   #  degree of the extension we are searching for.
   # 
+  n = prod(a)
+  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  m = minimum(wild_ram)
+  k = divexact(n,m)
+  b1 = Int(root(fmpz(bound),Int((m-1)*k))) 
   
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
-  m=minimum(wild_ram)
-  k=divexact(n,m)
-  b1=Int(root(fmpz(bound),Int((m-1)*k))) 
-  
-  return squarefree_for_conductors(O, b1, n, coprime_to=wild_ram)
+  return squarefree_for_conductorsQQ(O, b1, a, coprime_to=wild_ram)
 
 end
 
-function conductorsQQ(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
+function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   
-  K=nf(O)
-  d=degree(O)
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
+  K = nf(O)
+  d = degree(O)
+  n = prod(a)
+  wild_ram = collect(keys(factor(fmpz(n)).fac))
 
   #
   # First, conductors for tamely ramified extensions
   #
 
-  list=conductors_tameQQ(O,n,bound)
+  list=conductors_tameQQ(O,a,bound)
 
   if tame
     return list  
@@ -648,12 +745,13 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   
   K=nf(O) 
   @assert degree(K)==1
-  n=prod(gtype)
+  gtype = map(Int, snf(DiagonalGroup(gtype))[1].snf)
+  n = prod(gtype)
     
-  expo=lcm(gtype)
+  expo = lcm(gtype)
     
   #Getting conductors
-  l_conductors=conductorsQQ(O,n,absolute_discriminant_bound, tame)
+  l_conductors=conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
   if with_autos==Val{true}
     fields = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}}[]
