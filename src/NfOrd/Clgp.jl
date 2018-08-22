@@ -86,6 +86,8 @@ include("Clgp/Rel_enum.jl")
 include("Clgp/Rel_LLL.jl")
 include("Clgp/Main_LLL.jl")
 include("Clgp/Rel_Schmettow.jl")
+include("Clgp/Saturate.jl")
+using .RelSaturate
 
 ################################################################################
 #
@@ -183,7 +185,9 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
       return fmpz(1)
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
-      return abs_upper_bound(e, fmpz)
+      e_fmpz = abs_upper_bound(e, fmpz)
+      @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
+      return e_fmpz
     end
 
     error("Not yet implemented")
@@ -227,7 +231,21 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       @v_do :UnitGroup 1 popindent()
     end
     if r == 1  # use saturation!!!!
-      if _validate_class_unit_group(c, U) == 1
+      idx = _validate_class_unit_group(c, U) 
+      while idx < 20 && idx > 1
+        @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
+        for p = PrimesSet(1, Int(idx))
+          if saturate!(c, U, p)
+            break
+          end
+        end
+        class_group_get_pivot_info(c)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+        n_idx = _validate_class_unit_group(c, U) 
+        @assert idx != n_idx
+        idx = n_idx
+      end  
+      if idx == 1
         break
       end
     end
