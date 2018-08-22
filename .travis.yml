@@ -1,30 +1,24 @@
 language: julia
+sudo: false
 os:
   - linux
   - osx
 julia:
-  - 0.6
-    #  - nightly
-
+  - 1.0
+  - nightly
 matrix:
   allow_failures:
-    #- julia: 0.6
-    #- julia: nightly
+    - julia: nightly
 
 notifications:
   - email: false
-
 script:
-  #- julia -e 'Pkg.clone("https://github.com/Nemocas/Nemo.jl.git")'
-  - julia -e 'Pkg.clone(pwd())'
-    #- julia -e 'Pkg.checkout("Nemo")'
-  - julia -e 'Pkg.build("Hecke")'
-  - julia --check-bounds=yes -e 'Pkg.test("Hecke")'
-
-after_failure:
-  - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
-  - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
-
+  - julia -e 'using Pkg; Pkg.clone(pwd());'
+  - while sleep 30; do echo "still alive"; done &
+  - julia -e 'using Pkg; Pkg.build("Hecke");'
+  - julia -e 'using Pkg; Pkg.test("Hecke");'
+  # - travis_wait julia -e 'using Pkg; Pkg.build("Nemo")'
+  # - if [ -f test/runtests.jl ]; then julia --check-bounds=yes -e 'using Pkg; Pkg.test("Nemo", coverage=true)'; fi
 after_success:
-  - julia -e 'Pkg.clone("https://github.com/thofma/Documenter.jl.git"); Pkg.checkout("Documenter", "master")'
-  - DOCUMENTER_DEBUG=true julia -e 'cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; Pkg.add("Documenter")'
+  - DOCUMENTER_DEBUG=true julia -e 'using Hecke; cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
