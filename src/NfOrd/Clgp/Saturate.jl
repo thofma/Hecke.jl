@@ -189,7 +189,9 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   zeta = K(mt(t[1]))
 
   @vprint :ClassGroup 2 "Enlarging by $(cols(e)) elements\n"
-  n_gen = []
+
+  n_new = 0
+
   for i=1:cols(e)
     r = e[:, i]
     @assert content(r) == 1
@@ -215,17 +217,17 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       @assert isa(x, FacElem)
       fac_a = divexact(fac_a, n)
       Hecke.class_group_add_relation(d, x, fac_a)
+      n_new += 1
       if iszero(fac_a) #to make sure the new unit is used!
         #find units can be randomised...
         #maybe that should also be addressed elsewhere
         Hecke._add_dependent_unit(U, x)
       end
     else
-      global bad = (a, div(n, Int(g)))
-      error("not a power")
+      continue
     end
   end
-  return true
+  return n_new > 0 
 end
 
 function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
