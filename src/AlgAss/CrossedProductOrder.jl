@@ -106,7 +106,8 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
   j = find_elem(G, j1)
   O1 = fmpq[0 for i=1:n*m]
   O1[j] = fmpq(1)
-  return AlgAss(FlintQQ, M, O1)
+  A = AlgAss(FlintQQ, M, O1)
+  return A
 
 end
 
@@ -165,23 +166,12 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
 
 end
 
-
-function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p::Int)
-
-  d=discriminant(O)
-  if rem(d, p^2) != 0  
-    return O
-  end
+function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p::Int)
   
   A = O.algebra
-  extend = false
-  d = discriminant(O)
-  #The p-radical of OL generates an ideal which is contained in the p-radical of the algebra. 
-  #Therefore, to compute the maximal ideals, I can factor out the algebra by it.
   I = pradical(OL, p)
   I.minimum = fmpz(p)
   _assure_weakly_normal_presentation(I)
-  @show I
   B = basis(I, Val{false})
   M = zero_matrix(FlintZZ, O.dim, O.dim)
   l = 0
@@ -194,10 +184,10 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
       end
     end
   end
-  #I need to save the generators of the ideal!
   K = nf(OL)
   phi = NfToNfMor(K, K, gen(K))
   j = find_elem(G, phi)
+  #I need to save the generators of the ideal!
   gens = Array{AlgAssElem, 1}(2)
   el1 = elem_in_basis(OL(p))
   a = fmpq[0 for i=1:O.dim]
@@ -211,28 +201,45 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
     a2[j+(k-1)*length(G)] = fmpq(el2[k])
   end
   gens[2] = A(a2)
+  return M, gens
+
+end
+
+
+function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p::Int)
+
+  d=discriminant(O)
+  if rem(d, p^2) != 0  
+    return O
+  end
+  
+  A = O.algebra
+  extend = false
+  d = discriminant(O)
+  #The p-radical of OL generates an ideal which is contained in the p-radical of the algebra. 
+  #Therefore, to compute the maximal ideals, I can factor out the algebra by it.
+  M, gens = _ideal_in_radical(OL, G, O, p)
   hereditary = false
   nsteps = 0
   while true
+    _check_order(O)
     nsteps += 1 
     dd = fmpz(1)
     #Construct the ideal of O corresponding to the pradical in OL
     if nsteps == 1
-      M1 = M*O.basis_mat_inv
-      @assert denominator(M1)==1
-      I1 = ideal(O, M1.num)
+      I1 = ideal(O, M)
       gensI1 = Array{AlgAssAbsOrdElem, 1}(2)
       gensI1[1] = O(gens[1])
       gensI1[2] = O(gens[2])
       I1.gens = gensI1
-      @assert check_ideal(I1)
+      @hassert :AlgAssOrd 1 check_ideal(I1)
     else
-      B1 = basis(O)
-      B2 = [O(gens[s])*B1[i] for s = 1:2 for i = 1:length(B1)]
-      #B2 = append!(B2, [O(B1[i]*gens[s]) for s = 1:2 for i = 1:length(B1)])
-      N = hnf_modular_eldiv(basis_mat(B2), fmpz(p))
-      M2 = view(N, 1:O.dim, 1:O.dim)
-      I1 = ideal(O, M2)
+      B = basis(O)
+      el = O(gens[2])
+      B1 = [b*el*c for b in B for c in B]
+      N = basis_mat(B1)
+      hnf_modular_eldiv!(N, fmpz(p))
+      I1 = ideal(O, view(N, 1:cols(N), 1:cols(N)))
       gensI1 = Array{AlgAssAbsOrdElem, 1}(2)
       gensI1[1] = O(gens[1])
       gensI1[2] = O(gens[2])
