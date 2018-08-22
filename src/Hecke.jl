@@ -783,4 +783,6 @@ function print_cache()
   end
 end
 
+@inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
+
 end # module
