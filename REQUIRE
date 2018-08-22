@@ -1,2 +1,2 @@
-julia 0.6
-Nemo 0.8.5
+julia 0.6 0.7
+Nemo 0.8.5 0.8.6
