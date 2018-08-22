@@ -3,7 +3,7 @@
 function one_step(A::SMat{T}, sr = 1) where T
   i = sr
   assert(i>0)
-  all_r = Array{Int}(0)
+  all_r = Array{Int}(undef, 0)
   min = A.c
   while i <= length(A.rows)
     @assert length(A.rows[i].pos)>0
@@ -153,7 +153,7 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
   trafos = Trafo[]
   i = sr
   assert(i>0)
-  all_r = Array{Int}(0)
+  all_r = Array{Int}(undef, 0)
   min = A.c
 
   while i <= length(A.rows)

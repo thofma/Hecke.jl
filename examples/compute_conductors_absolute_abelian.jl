@@ -5,8 +5,8 @@ gtype = ARGS[2]
 
 file = "conductors_" * bounddisc * "_" * gtype;
 
-bounddisc = fmpz(eval(parse(bounddisc)))
-gtype = convert(Vector{Int}, eval(parse(gtype)))
+bounddisc = fmpz(eval(Meta.parse(bounddisc)))
+gtype = convert(Vector{Int}, eval(Meta.parse(gtype)))
 
 sprint_formatted(fmt, args...) = @eval @sprintf($fmt, $(args...))
 

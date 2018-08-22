@@ -1915,8 +1915,8 @@ function random_extend(R::RandIdlCtx, I::AbstractArray{NfAbsOrdIdl, 1})
 end
 
 function random_extend(R::RandIdlCtx, f::Float64)
-  R.lb = ceil(fmpz, R.lb*f)
-  R.ub = ceil(fmpz, R.lb*f)
+  R.lb = ceil(fmpz, digits=R.lb*f)
+  R.ub = ceil(fmpz, digits=R.lb*f)
   while norm(R.rand) < R.lb
     i = rand(1:length(R.base))
     R.rand = simplify(R.rand * R.base[i])

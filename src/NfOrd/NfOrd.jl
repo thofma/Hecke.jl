@@ -451,14 +451,14 @@ Markdown.doc"""
 function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
   if isdefined(O, :minkowski_gram_mat_scaled) && O.minkowski_gram_mat_scaled[2] > prec
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
-    shift!(A, prec - O.minkowski_gram_mat_scaled[2])
+    popfirst!(A, prec - O.minkowski_gram_mat_scaled[2])
   else
     c = minkowski_mat(O, prec)
     d = zero_matrix(FlintZZ, degree(O), degree(O))
     A = zero_matrix(FlintZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
     ccall((:fmpz_mat_gram, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), A, d)
-    shift!(A, -prec)
+    popfirst!(A, -prec)
     O.minkowski_gram_mat_scaled = (A, prec)
     A = deepcopy(A)
   end

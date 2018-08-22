@@ -105,7 +105,7 @@ function random_ideal_with_norm_up_to(a::Hecke.NfFactorBase, B::Integer)
   K = Hecke.nf(O)
   I = Hecke.ideal(O, K(1))
   while B >= norm(a.ideals[end])
-    J = a.ideals[rand(find(x -> (norm(x) <= B), a.ideals))]
+    J = a.ideals[rand(findall(x -> (norm(x) <= B), a.ideals))]
     B = div(B, norm(J))
     I = I*J
   end

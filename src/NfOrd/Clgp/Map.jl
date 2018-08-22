@@ -370,7 +370,7 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
 end
 
 function Base.round(::Type{fmpz}, x::arb)
-  return round(fmpz, BigFloat(x))
+  return round(fmpz, digits=BigFloat(x))
 end
 
 function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
@@ -378,7 +378,7 @@ function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
 
   for i=1:rows(C)
     for j=1:cols(C)
-      v[i,j] = round(fmpz, C[i,j])
+      v[i,j] = round(fmpz, digits=C[i,j])
     end
   end
   return v
@@ -427,7 +427,7 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
     C = B*A
     exact = true
     try
-      V  = round(fmpz_mat, C)
+      V  = round(fmpz_mat, digits=C)
       exact = true
     catch e
       if !isa(e, InexactError)

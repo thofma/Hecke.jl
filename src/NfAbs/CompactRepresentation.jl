@@ -81,7 +81,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         v = conjugates_arb_log_normalise(a*be, arb_prec)
         vv = [x//n^k for x = v]
       end
-      push!(vvv, round(fmpz, vv[i]//log(2)))
+      push!(vvv, round(fmpz, digits=vv[i]//log(2)))
     end
     for i=r1+1:r1+r2
       while !radiuslttwopower(vv[i], -5)
@@ -89,7 +89,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         v = conjugates_arb_log_normalise(a*be, arb_prec)
         vv = [x//n^k for x = v]
       end
-      local r = round(fmpz, vv[i]//log(2)//2)
+      local r = round(fmpz, digits=vv[i]//log(2)//2)
       push!(vvv, r)
       push!(vvv, r)
     end

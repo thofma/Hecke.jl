@@ -148,7 +148,7 @@ function elementary_divisors(M::ModuleCtx_fmpz)
     end
   end
   C = M.basis
-  f = find(i -> C[i,i] != 1, 1:rows(C))
+  f = findall(i -> C[i,i] != 1, 1:rows(C))
   if length(f) == 0
     M.essential_elementary_divisors = fmpz[]
     return M.essential_elementary_divisors

@@ -58,7 +58,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
       return I
     catch e
       if isa(e, LowPrecisionLLL)
-        print_with_color(:red, "prec too low in LLL,")
+        printstyled("prec too low in LLL,", color=:red)
         prec = Int(ceil(1.2*prec))
 #        println(" increasing to ", prec)
         if prec > 1000

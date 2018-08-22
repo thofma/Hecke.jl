@@ -149,7 +149,7 @@ function make_positive(x::NfOrdElem, a::fmpz)
       if y>0
         continue
       else
-        m = max(m,1-ceil(fmpz,y))
+        m = max(m,1-ceil(fmpz, digits=y))
       end
     end
   end

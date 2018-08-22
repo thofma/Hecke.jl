@@ -725,11 +725,7 @@ function pSubgroupIterator(G::GrpAbFinGen, p::Union{fmpz, Integer};
                            fun = fun, index = index, order = order)
   end
   
-  if VERSION >= v"0.7-"
-    E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
-  else
-    E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
-  end
+  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
 
   z = pSubgroupIterator{typeof(fun), typeof(it), E}(G, fmpz(p), subtype, [-1],
                                                     fmpz(index), fmpz(order), fun, it)
@@ -951,11 +947,7 @@ function SubgroupIterator(G::GrpAbFinGen; subtype::Array{Int, 1} = [-1],
                        fun = fun, index = index, order = order)
   end
 
-  if VERSION >= v"0.7-"
-    E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
-  else
-    E = Core.Inference.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
-  end
+  E = Core.Compiler.return_type(fun, (GrpAbFinGen, Array{GrpAbFinGenElem, 1}))
 
   z = SubgroupIterator{typeof(fun), typeof(it), E}(G, subtype, quotype,
                                                    fmpz(index), fmpz(order),

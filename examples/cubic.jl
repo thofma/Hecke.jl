@@ -180,7 +180,7 @@ function s3_with_discriminant(I::NfOrdIdl)
 end
 
 
-function Gunter_Qi(r::Range, pref="Qi.new")
+function Gunter_Qi(r::AbstractRange, pref="Qi.new")
   Qt, t = FlintQQ["t"]
   k, a = number_field(t^2+1, "k.1")
   s = Hecke.NfToNfMor(k, k, -a)

@@ -18,11 +18,11 @@ function check_return_type(f::Function, M::Module, print_only_bad::Bool = false)
     if (print_only_bad && return_type_bad) || !print_only_bad
       print("name:\n$(m.func.code.name)\n")
       print("signature:\n")
-      print_with_color(color(m.sig), "$(m.sig)\n")
+      printstyled("$(m.sig)\n", color=color(m.sig))
       a = Base.return_types(f, m.sig)
       print("return values:\n")
       for ret in a
-        print_with_color(color(ret), "$ret ")
+        printstyled("$ret ", color=color(ret))
       end
       print("\n")
       print("location:\n")
@@ -58,11 +58,11 @@ function check_return_type(f::DataType, M::Module, print_only_bad::Bool = false)
     if (print_only_bad && return_type_bad) || !print_only_bad
       print("name:\n$(m.func.code.name)\n")
       print("signature:\n")
-      print_with_color(color(m.sig), "$(m.sig)\n")
+      printstyled("$(m.sig)\n", color=color(m.sig))
       a = Base.return_types(f, m.sig)
       print("return values:\n")
       for ret in a
-        print_with_color(color(ret), "$ret ")
+        printstyled("$ret ", color=color(ret))
       end
       print("\n")
       print("location:\n")
@@ -90,7 +90,7 @@ function contains_any(T)
     return false
   elseif typeof(T) == Union
     return false
-  elseif isleaftype(T)
+  elseif isconcretetype(T)
     return false
   elseif length(T.parameters) == 0
     return T == Any
