@@ -50,14 +50,14 @@ function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
   return false 
 end
 
-function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz})
+function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
   gp = SRow(g, M.Mp.R)
   M.new = true
   if add_gen!(M.Mp, gp)
     push!(M.bas_gens, g)
     return true
   else
-    push!(M.rel_gens, g)
+    always && push!(M.rel_gens, g)
   end
   return false 
 end
