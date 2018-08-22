@@ -53,7 +53,6 @@ function mod_p(R, Q::NfOrdIdl, p::Int)
   mF = Hecke.extend_easy(mF, nf(order(Q)))
   @assert size(F) % p == 1
   pp,e = Hecke.ppio(Int(size(F)-1), p)
-#  @show pp, e, p
   dl = Dict{elem_type(F), Int}()
   dl[F(1)] = 0
 #  #=
@@ -95,10 +94,10 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   K = nf(ZK)
   zeta = mT(T[1])
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
-    println("adding zeta = ", zeta)
+#    println("adding zeta = ", zeta)
     push!(R, K(zeta))
   else
-    println("NOT doint zeta")
+#    println("NOT doint zeta")
   end
   T = ResidueRing(FlintZZ, p)
   A = identity_matrix(T, length(R))
@@ -189,7 +188,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   t, mt = torsion_unit_group(maximal_order(K))
   zeta = K(mt(t[1]))
 
-  println("Enlarging by $(cols(e)) elements")
+  @vprint :ClassGroup 2 "Enlarging by $(cols(e)) elements\n"
   n_gen = []
   for i=1:cols(e)
     r = e[:, i]
@@ -216,6 +215,11 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       @assert isa(x, FacElem)
       fac_a = divexact(fac_a, n)
       Hecke.class_group_add_relation(d, x, fac_a)
+      if iszero(fac_a) #to make sure the new unit is used!
+        #find units can be randomised...
+        #maybe that should also be addressed elsewhere
+        Hecke._add_dependent_unit(U, x)
+      end
     else
       global bad = (a, div(n, Int(g)))
       error("not a power")
@@ -230,10 +234,8 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
 
-  skip = true
   for i=1:length(c.FB.ideals)
-    skip && c.M.basis.rows[i].values[1] == 1 && continue
-    skip = false
+    c.M.basis.rows[i].values[1] == 1 && continue
     x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
     for j in length(trafos):-1:1
