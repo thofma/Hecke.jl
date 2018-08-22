@@ -323,7 +323,7 @@ end
 function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
   #This function finds a set S of primes such that we can find a Kummer generator in it.
   lP = Hecke.NfOrdIdl[]
-  if f!=1
+  if f != 1
     lf = factor(f)  
     for p = keys(lf.fac)
        #I have to remove the primes that can't be in the conductor
@@ -996,7 +996,7 @@ end
 
 ###############################################################################
 #
-#  Automorphisms
+#  Automorphisms of abelian extension
 #
 ###############################################################################
 
@@ -1096,6 +1096,15 @@ function rel_auto(A::ClassField)
 end
 
 
+###############################################################################
+#
+#  Extension of automorphisms from the base field to the class field
+#
+###############################################################################
+
+#Special case in which I want to extend the automorphisms of a field to
+# a cyclotomic extension
+
 function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)
   
   K = domain(tau)
@@ -1120,7 +1129,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
   @assert k == codomain(tau)
   @assert k == base_field(A)
   lp = factor(fmpz(degree(A)))
-  all_h = [A.A() for x=A.cyc]
+  all_h = [A.A() for x in A.cyc]
   for (p, v) = lp.fac
 #    println("doin' $p^$v")
     Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]

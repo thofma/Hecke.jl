@@ -64,8 +64,9 @@ function check_associativity(A::AlgAss)
   
   for i=1:dim(A)
     for j=1:dim(A)
+      el = A[i]*A[j]
       for k=1:dim(A)
-        @assert (A[i]*A[j])*A[k]==A[i]*(A[j]*A[k])
+        @assert el*A[k]==A[i]*(A[j]*A[k])
       end
     end
   end
@@ -77,8 +78,9 @@ function check_distributivity(A::AlgAss)
 
   for i=1:dim(A)
     for j=1:dim(A)
+      el = A[i]*A[j]
       for k=1:dim(A)
-        @assert A[i]*(A[j]+A[k])==A[i]*A[j]+A[i]*A[k]
+        @assert A[i]*(A[j]+A[k]) == el+A[i]*A[k]
       end
     end 
   end
