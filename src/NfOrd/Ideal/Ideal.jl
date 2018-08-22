@@ -530,7 +530,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       A.minimum = fmpz(0)
       A.iszero = 1
     else
-      if new && issimple(nf(order(A))) && order(A).ismaximal == 1
+      if issimple(nf(order(A))) && order(A).ismaximal == 1
         A.minimum = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 A.minimum == denominator(inv(b), order(A))
       else
@@ -547,7 +547,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
     else
-      if new && issimple(nf(order(A))) && order(A).ismaximal == 1
+      if issimple(nf(order(A))) && order(A).ismaximal == 1
         d = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
       else
@@ -738,15 +738,21 @@ function inv_maximal(A::NfAbsOrdIdl)
     if iszero(A.gen_two)
       return ideal(O, 1)//A.gen_one
     end
-    if new
-      alpha = _invmod(A.gen_one, A.gen_two)
-      _, d = ppio(denominator(alpha, O), A.gen_one)
+    m = A.gen_one
+    if isone(m)
+      return A//1
+    end
+    if true
+      alpha = _invmod(m, A.gen_two)
     else  
-      alpha = inv(elem_in_nf(A.gen_two))
-      d = denominator(alpha, O)
-      m = A.gen_one
-      _, d = ppio(d, m)
+      be = elem_in_nf(A.gen_two)
+      d = denominator(be)
+      f, e = ppio(d, m)
+      be *= e
+      be = mod(be*f, m^2*f)//f
+      alpha = inv(elem_in_nf(be))
     end  
+    _, d = ppio(denominator(alpha, O), m)
     Ai = NfAbsOrdIdl(order(A))
     #Ai = parent(A)()
     dn = denominator(d*alpha, O)
@@ -893,14 +899,14 @@ function simplify(A::NfAbsOrdIdl)
       A.norm = fmpz(1)
       return A
     end
-    if new
+    if true
       A.minimum = _minmod(A.gen_one, A.gen_two)
       @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     else  
       A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end  
     A.gen_one = A.minimum
-    if false && new
+    if false 
       #norm seems to be cheap, while inv is expensive
       #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
       #      order basis. For this it would better be small in the field basis....
@@ -913,7 +919,16 @@ function simplify(A::NfAbsOrdIdl)
       @assert n == A.norm
     end
     A.norm = n
-    A.gen_two = mod(A.gen_two, A.gen_one^2)
+    if true
+      be = A.gen_two.elem_in_nf
+      d = denominator(be)
+      f, e = ppio(d, A.gen_one)
+      be *= e
+      be = mod(be*f, f*A.gen_one^2)//f
+      A.gen_two = order(A)(be)
+    else
+      A.gen_two = mod(A.gen_two, A.gen_one^2)
+    end
     A.gens_normal = A.gen_one
     return A
   end
@@ -1603,7 +1618,9 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     A.gen_one = denominator(bi, order(A))
     A.minimum = A.gen_one
     A.gen_two = x
-    A.norm = abs(numerator(norm(b)))
+    if !isdefined(A, :norm)
+      A.norm = abs(numerator(norm(b)))
+    end
     @hassert :NfOrd 1 gcd(A.gen_one^degree(order(A)),
                     FlintZZ(norm(A.gen_two))) == A.norm
 
@@ -1634,6 +1651,15 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     A.gens_weakly_normal = 1
     return nothing
   end
+
+  if minimum(A) == 1
+    A.gen_one = minimum(A)
+    A.gen_two = one(O)
+    A.gens_weakly_normal = 1
+    A.gens_normal = fmpz(2)
+    return nothing
+  end
+
 
   M = MatrixSpace(FlintZZ, 1, degree(O), false)
 
@@ -1677,6 +1703,14 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     d = denominator(basis_mat(O, Val{false}))
     mul!(m, m, basis_mat(O, Val{false}).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
+    d = denominator(gen)
+    f, e = ppio(d, minimum(A))
+    gen *= e
+    gen = mod(gen*f, f*minimum(A)^2)//f
+    if iszero(gen)
+      continue
+    end
+
     # the following should be done inplace
     #gen = dot(reshape(Array(mm), degree(O)), basis(O))
     if norm(A) == gcd(Amind, numerator(norm(gen)))
@@ -1918,6 +1952,10 @@ function random_get(R::RandIdlCtx; reduce::Bool = true, repeat::Int = 1)
       if delta > 0
         i = rand(1:length(R.base))
       else
+        j = find(R.exp)
+        if length(j) == 0
+          return R.rand
+        end
         i = rand(find(R.exp))
       end
       R.exp[i] += delta
