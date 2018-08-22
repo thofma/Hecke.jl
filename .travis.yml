@@ -13,8 +13,8 @@ matrix:
 notifications:
   - email: false
 script:
-  - julia -e 'using Pkg; Pkg.clone(pwd());'
   - while sleep 30; do echo "still alive"; done &
+  - julia -e 'using Pkg; Pkg.clone(pwd());'
   - julia -e 'using Pkg; Pkg.build("Hecke");'
   - julia -e 'using Pkg; Pkg.test("Hecke");'
   # - travis_wait julia -e 'using Pkg; Pkg.build("Nemo")'
