@@ -27,7 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# (C) 2015, 2016 Claus Fieker, Tommy Hofmann
+# (C) 2015-2018 Claus Fieker, Tommy Hofmann
 #
 ################################################################################
 
@@ -39,20 +39,18 @@ module Hecke
 #
 ################################################################################
 
-import Base: show, minimum, rand, prod, copy, rand, ceil, round, 
-             size, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
-             getindex, setindex!, transpose, getindex, //, div,
-             floor, max, BigFloat, precision, 
-             first, StepRange, show, one, zero, inv, iseven, isodd, convert,
-             angle, abs2, isless, exponent, isfinite, zeros, rem,
-             min, numerator, denominator, exp, maximum
-
+import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
+             powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=, getindex,
+             setindex!, transpose, getindex, //, div, floor, max, BigFloat,
+             precision, first, StepRange, show, one, zero, inv, iseven, isodd,
+             convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
+             numerator, denominator, exp, maximum
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
-using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg
+using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
 
 import AbstractAlgebra
 
@@ -81,7 +79,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, @test_and_infer, next_prime, ispower, number_field
+       modord, resultant, next_prime, ispower, number_field
 
 ###############################################################################
 #
@@ -89,11 +87,7 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
-if VERSION >= v"0.7.0-"
-  const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-else
-  const pkgdir = Pkg.dir("Hecke")
-end
+const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
 
 const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
 
@@ -300,25 +294,19 @@ function torsion_units_gen(K::AnticNumberField)
   return g
 end
 
+################################################################################
+#
+#  Intermediate backwards compatibility
+#
+################################################################################
+
 trace(x...) = tr(x...)
 
+eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
 
-using LinearAlgebra
+eye(x) = identity_matrix(base_ring(x), rows(x))
 
-if VERSION < v"1.0.0"
-  LinearAlgebra.eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
-
-  LinearAlgebra.eye(x) = identity_matrix(base_ring(x), rows(x))
-
-  LinearAlgebra.eye(x, n) = identity_matrix(base_ring(x), n)
-else
-  eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
-
-  eye(x) = identity_matrix(base_ring(x), rows(x))
-
-  eye(x, n) = identity_matrix(base_ring(x), n)
-end
-
+eye(x, n) = identity_matrix(base_ring(x), n)
 
 lufact(x...) = lu(x...)
 
@@ -475,11 +463,11 @@ function test_module(x, new::Bool = true)
    end
 
    if new
-     cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
-     info("spawning ", `$julia_exe -e \"$cmd\"`)
+     cmd = "using Test; using Hecke; include(\"$test_file\");"
+     @info("spawning ", `$julia_exe -e \"$cmd\"`)
      run(`$julia_exe -e $cmd`)
    else
-     info("Running tests for $x in same session")
+     @info("Running tests for $x in same session")
      try
        include(test_file)
      catch e
@@ -490,25 +478,6 @@ function test_module(x, new::Bool = true)
        end
      end
    end
-end
-
-################################################################################
-#
-#   Do @infert and @test simultanously
-#
-################################################################################
-
-macro test_and_infer(f,args,res)
-  quote
-    if isa($(esc(args)), Tuple)
-      Base.Test.@inferred $(esc(f))($(esc(args))...)
-      Base.Test.@test $(esc(f))($(esc(args))...) == $(esc(res))
-    else
-      Base.Test.@inferred $(esc(f))($(esc(args)))
-      local t = $(esc(res))
-      Base.Test.@test $(esc(f))($(esc(args))) == t
-    end
-  end
 end
 
 ################################################################################
@@ -629,6 +598,11 @@ include("Grp.jl")
 include("ModAlgAss.jl")
 include("AlgAss.jl")
 
+################################################################################
+#
+#  Object overloading for map types
+#
+################################################################################
 
 for T in subtypes(Map(HeckeMap))
   (M::T)(a) = image(M, a)
@@ -656,6 +630,7 @@ function vshow(A)
     end
   end
 end
+
 ################################################################################
 #
 #  Element types for parent types
@@ -720,7 +695,7 @@ function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
     maxline = Base.tty_size()[2]
     line = zeros(UInt8, maxline)
     head = PipeBuffer(maxline + 1)
-    for v in sort!(names(m, true)) # show also NON exported stuff!
+    for v in sort!(names(m, all = true)) # show also NON exported stuff!
         s = string(v)
         if isdefined(m, v) && ismatch(pattern, s)
             value = getfield(m, v)
@@ -763,8 +738,8 @@ whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
 function print_cache()
   sym = [];
-  for a in collect(names(Nemo, true));
-    d = parse("Nemo." * string(a));
+  for a in collect(names(Nemo, all = true));
+    d = Meta.parse("Nemo." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
@@ -778,8 +753,8 @@ function print_cache()
   end
   
   sym = [];
-  for a in collect(names(Nemo.Generic, true));
-    d = parse("Nemo.Generic." * string(a));
+  for a in collect(names(Nemo.Generic, all = true));
+    d = Meta.parse("Nemo.Generic." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
@@ -793,8 +768,8 @@ function print_cache()
   end
 
   sym = [];
-  for a in collect(names(Hecke, true));
-    d = parse("Hecke." * string(a));
+  for a in collect(names(Hecke, all = true));
+    d = Meta.parse("Hecke." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
@@ -806,22 +781,6 @@ function print_cache()
     catch e
     end
   end
-
 end
 
-################################################################################
-#
-#  Testing only "submodules"
-#
-################################################################################
-
-#
-# stuff for 0.5
-# 
-
-@inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
-
-#precompile(maximal_order, (AnticNumberField, ))
-#precompile(class_group, (NfOrd, ))
-
-end
+end # module

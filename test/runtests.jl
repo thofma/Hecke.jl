@@ -6,8 +6,6 @@ using LinearAlgebra
 
 #using Nemo
 
-import Test: @inferred
-
 macro iinfered(x)
   quote $(esc(x)) end
 end
