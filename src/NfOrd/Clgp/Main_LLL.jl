@@ -20,13 +20,14 @@ function single_env{T}(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, nb::Int
       end
       continue
     end
+    bef = length(c.M.bas_gens) + length(c.M.rel_gens)
     fl = class_group_add_relation(c, e, n, norm(I.A), integral = true)
     if !fl  && I.cnt/(good+1) > 2*c.expect
       @vprint :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good\n"
       break
     end
     if fl 
-      good += 1
+      good += length(c.M.bas_gens) + length(c.M.rel_gens) - bef
     end
     if fl && max_good > -1
       if max_good < good
@@ -39,6 +40,8 @@ function single_env{T}(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, nb::Int
       break
     end
   end
+  @vprint :ClassGroup 2 "delta rank: $(rank(c.M) - rk) found $good rels\n"
+  return (rank(c.M) - rk), good
 end
 
 function class_group_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 0.2)
@@ -140,13 +143,21 @@ function class_group_new_relations_via_lll{T}(c::ClassGrpCtx{T}, rat::Float64 = 
   while true
     st = c.rel_cnt
     while (c.rel_cnt - st < 2)
-      for p = sort(collect(piv), rev = true)
+      sort_rev = rank(c.M) < length(c.FB.ideals) *0.9
+      for p = sort(collect(piv), rev = sort_rev)
         @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
         @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
   #      @show nbits(norm(J)), rand_env.exp, rand_exp
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
         @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
         @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
+        if h == 0 && rank(c.M) == length(c.FB.ideals)
+          #reached full rank for the 1st time!!
+          h, p = class_group_get_pivot_info(c)
+          if h > 0
+            break
+          end
+        end
         if h > 0 && c.rel_cnt - st > 2
           return
         else
