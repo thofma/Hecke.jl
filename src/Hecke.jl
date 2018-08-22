@@ -52,7 +52,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round,
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
-using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random
+using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg
 
 import AbstractAlgebra
 
