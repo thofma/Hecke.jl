@@ -34,7 +34,7 @@ ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem})
 class_group(O::Hecke.NfAbsOrd{Nemo.AnticNumberField,Nemo.nf_elem}; bound, method, redo, unit_method, large)
 class_group(K::Nemo.AnticNumberField)
 norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool)
-norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool
+norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool)
 ```
 
 
