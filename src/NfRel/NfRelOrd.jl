@@ -247,7 +247,7 @@ function show(io::IO, O::NfRelOrd)
     pb = pseudo_basis(O, Val{false})
     for i = 1:degree(O)
       print(io, "($(pb[i][1])) * ")
-      showcompact(io, pb[i][2])
+      show(IOContext(io, :compact => true), pb[i][2])
       if i != degree(O)
         print(io, ", ")
       end
@@ -265,7 +265,7 @@ function show(io::IO, O::NfRelOrd)
       print(io, "\n(")
       print(io, pb[i][1])
       print(io, ", ")
-      showcompact(io, pb[i][2])
+      show(IOContext(io, :compact => true), pb[i][2])
       print(io, ")")
     end
   end

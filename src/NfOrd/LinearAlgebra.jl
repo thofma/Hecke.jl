@@ -223,7 +223,7 @@ function show(io::IO, P::PMat)
     for i in 1:rows(P.matrix)
       i == 1 || print(io, "\n")
       print(io, "(")
-      showcompact(io, P.coeffs[i])
+      show(IOContext(io, :compact => true), P.coeffs[i])
       print(io, ") * ")
       print(io, sub(P.matrix, i:i, 1:cols(P.matrix)))
     end
@@ -231,7 +231,7 @@ function show(io::IO, P::PMat)
     print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
     for i in 1:rows(P.matrix)
       print(io, "\n")
-      showcompact(io, P.coeffs[i])
+      show(IOContext(io, :compact => true), P.coeffs[i])
       print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
     end
   end
@@ -1236,13 +1236,13 @@ function show(io::IO, P::PMat2)
    print(io, "$(P.matrix)\n")
    print(io, "\nwith row ideals\n")
    for I in P.row_coeffs
-      showcompact(io, I)
+      show(IOContext(io, :compact => true), I)
       print(io, "\n")
    end
    print(io, "\nand column ideals")
    for I in P.col_coeffs
       print(io, "\n")
-      showcompact(io, I)
+      show(IOContext(io, :compact => true), I)
    end
 end
 
@@ -1418,7 +1418,7 @@ function show(io::IO, M::ModDed)
    print(io, "Module over $(M.base_ring) with defining pseudo-matrix")
    for i in 1:rows(M.pmatrix.matrix)
       print(io, "\n")
-      showcompact(io, M.pmatrix.coeffs[i])
+      show(IOContext(io, :compact => true), M.pmatrix.coeffs[i])
       print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))")
    end
 end

@@ -184,12 +184,12 @@ function show(io::IO, a::NfRelOrdIdl)
   compact = get(io, :compact, false)
   if compact
     print(io, "Ideal with basis pseudo-matrix\n")
-    showcompact(io, basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
   else
     print(io, "Ideal of\n")
-    showcompact(order(a))
+    show(IOContext(io, :compact => true), order(a))
     print(io, "\nwith basis pseudo-matrix\n")
-    showcompact(io, basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
   end
 end
 
