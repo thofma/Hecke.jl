@@ -1,5 +1,7 @@
 module IE
 
+using Hecke
+
 import Base.==
 
 mutable struct FactoredIdeal
