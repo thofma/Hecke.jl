@@ -394,11 +394,11 @@ end
 
 Markdown.doc"""
 ***
-      trace(a::NfRelOrdElem{T}) -> T
+      tr(a::NfRelOrdElem{T}) -> T
 
 > Returns the trace of $a$.
 """
-trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
+tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
 
 ################################################################################
 #

@@ -235,7 +235,7 @@ end
 # to find generators for the degree r extension of F_p, not F_p^k
 # needs minpoly in some variant...
 
-function f_trace(a::ResElem, f::fmpz, o::Int)
+function f_tr(a::ResElem, f::fmpz, o::Int)
   s = a
   for i=1:o-1
     a = a^f
@@ -295,7 +295,7 @@ function plesken_kummer(p::fmpz, r::Int, s::Int)
     I = CoerceMap(R, S)
     a = S(x)
     if descent
-      b = f_trace(a, f, ord)
+      b = f_tr(a, f, ord)
       #println("$i: trace of $a is $b")
 #      pol = minpoly_aut(b, x->x^(p^(r^(i-1)))) 
       pol = minpoly_pow(b, r)  ## does not work: expo too large

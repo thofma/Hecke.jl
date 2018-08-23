@@ -585,7 +585,7 @@ _rref!(a) = rref!(a)
 #
 ################################################################################
 
-function _lufact!(P::Generic.perm, A::S) where {S <: MatElem{Generic.Res{fmpz}}}
+function _lu!(P::Generic.perm, A::S) where {S <: MatElem{Generic.Res{fmpz}}}
    m = rows(A)
    n = cols(A)
    rank = 0
@@ -629,9 +629,9 @@ function _lufact!(P::Generic.perm, A::S) where {S <: MatElem{Generic.Res{fmpz}}}
    return rank
 end
 
-_lufact!(P::Generic.perm, A) = lufact!(P, A)
+_lu!(P::Generic.perm, A) = lu!(P, A)
 
-function _lufact(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{fmpz}}}
+function _lu(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{fmpz}}}
    m = rows(A)
    n = cols(A)
    P.n != m && error("Permutation does not match matrix")
@@ -639,7 +639,7 @@ function _lufact(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{f
    R = base_ring(A)
    U = deepcopy(A)
    L = similar(A, m, m)
-   rank = _lufact!(p, U)
+   rank = _lu!(p, U)
    for i = 1:m
       for j = 1:n
          if i > j
@@ -655,7 +655,7 @@ function _lufact(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{f
    return rank, p, L, U
 end
 
-_lufact(A, P = PermGroup(rows(A))) = lufact(A, P)
+_lu(A, P = PermGroup(rows(A))) = lu(A, P)
 
 function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   r, b = _rref(a)
@@ -1599,7 +1599,7 @@ end
 function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
   X = zero_matrix(base_ring(A), cols(B), rows(A))
 
-  r, per, L, U = lufact(B) # P*M1 = L*U
+  r, per, L, U = lu(B) # P*M1 = L*U
 
   inv!(per)
   #@assert B == per*L*U

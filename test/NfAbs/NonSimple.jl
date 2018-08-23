@@ -104,8 +104,8 @@
 
       n = @inferred norm(z)
       @test n == det(M)
-      t = @inferred trace(z)
-      @test t == trace(M)
+      t = @inferred tr(z)
+      @test t == tr(M)
     end
   end
 

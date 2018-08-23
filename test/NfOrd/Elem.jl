@@ -217,7 +217,7 @@
 
   @testset "Trace" begin
     b = O1(a1)
-    c = @inferred trace(b)
+    c = @inferred tr(b)
     @test c == 0
   end 
 

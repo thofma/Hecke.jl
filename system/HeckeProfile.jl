@@ -47,7 +47,7 @@ Profile.callers(func::Function, bt::Vector, lidict::Profile.LineInfoDict; kwargs
 Profile.callers(func::Function; kwargs...) = Profile.callers(Symbol(func), Profile.retrieve()...; kwargs...)
 
 
-function Base.process_backtrace(process_func::Function, t::Vector, limit::Int=typemax(Int); skipC = !true)
+function Base.process_backtr(process_func::Function, t::Vector, limit::Int=typemax(Int); skipC = !true)
     n = 0
     last_frame = StackTraces.UNKNOWN
     count = 0

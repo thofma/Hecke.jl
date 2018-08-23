@@ -269,7 +269,7 @@ end
 #
 ################################################################################
 
-function trace(x::AlgAssElem{T}) where T
+function tr(x::AlgAssElem{T}) where T
   A=parent(x)
   _assure_trace_basis(A)
   tr=zero(base_ring(A))

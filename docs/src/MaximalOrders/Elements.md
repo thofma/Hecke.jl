@@ -41,7 +41,7 @@
 
 ## Trace and norm
 
-@{trace(::NfOrderElem)}
+@{tr(::NfOrderElem)}
 @{norm(::NfOrderElem)}
 
 ## Random elements

@@ -428,9 +428,9 @@ function _subst(f::Nemo.PolyElem{T}, a::S) where {T <: Nemo.RingElement, S}
    if n < 0
       return similar(a)#S()
    elseif n == 0
-      return coeff(f, 0)*eye(a)
+      return coeff(f, 0) * identity_matrix(base_ring(a), rows(a))
    elseif n == 1
-      return coeff(f, 0)*eye(a) + coeff(f, 1)*a
+      return coeff(f, 0) * identity_matrix(base_ring(a), rows(a)) + coeff(f, 1)*a
    end
    d1 = isqrt(n)
    d = div(n, d1)
@@ -478,7 +478,7 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
   H=M.action
   if n == 1
     M.isirreducible=1
-    return true, eye(H[1], n)
+    return true, identity_matrix(base_ring(H[1]), n)
   end
   
   if length(H)==1
@@ -489,7 +489,7 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
     t=first(keys(lf.fac))
     if degree(t)==n
       M.isirreducible= 1
-      return true, eye(H[1],n)
+      return true, identity_matrix(base_ring(H[1]), n)
     else 
       N= _subst(t, A)
       Ntrnull = nullspace(transpose(N))
@@ -585,7 +585,7 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
             # f is a good factor, irreducibility!
             #
             M.isirreducible= 1
-            return true, eye(G[1],n)
+            return true, identity_matrix(base_ring(G[1]), n)
           end
         end
         i+=1
@@ -605,7 +605,7 @@ Markdown.doc"""
 function composition_series(M::ModAlgAss{S, T}) where {S, T}
 
   if M.isirreducible == 1
-    return [eye(M.action[1],M.dimension)]
+    return [identity_matrix(base_ring(M.action[1]), M.dimension)]
   end
 
   bool, C = meataxe(M)
@@ -613,7 +613,7 @@ function composition_series(M::ModAlgAss{S, T}) where {S, T}
   #  If the module is irreducible, we return a basis of the space
   #
   if bool == true
-    return [eye(M.action[1],M.dimension)]
+    return [identity_matrix(base_ring(M.action[1]), M.dimension)]
   end
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
@@ -741,7 +741,7 @@ function _relations(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
   B=zero_matrix(K,1,dimension(M))
   B[1,1]=K(1)
   X=B
-  push!(matrices, eye(B,dimension(N)))
+  push!(matrices, identity_matrix(base_ring(B), dimension(N)))
   i=1
   while i<=rows(B)
     w=sub(B, i:i, 1:n)

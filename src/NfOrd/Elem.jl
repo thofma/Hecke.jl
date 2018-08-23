@@ -260,7 +260,7 @@ function discriminant(B::Array{NfAbsOrdElem{S, T}, 1}) where {S, T}
   A = zero_matrix(FlintZZ, degree(O), degree(O))
   for i in 1:degree(O)
     for j in 1:degree(O)
-      A[i,j] = FlintZZ(trace(B[i] * B[j]))
+      A[i,j] = FlintZZ(tr(B[i] * B[j]))
     end
   end
   return det(A)
@@ -754,12 +754,12 @@ end
 
 Markdown.doc"""
 ***
-    trace(a::NfAbsOrdElem) -> fmpz
+    tr(a::NfAbsOrdElem) -> fmpz
 
 > Returns the trace of $a$.
 """
-function trace(a::NfAbsOrdElem)
-  return FlintZZ(trace(a.elem_in_nf))
+function tr(a::NfAbsOrdElem)
+  return FlintZZ(tr(a.elem_in_nf))
 end
 
 ################################################################################

@@ -406,7 +406,7 @@ end
 #  X = zero_matrix(base_ring(A), cols(B), rows(A))
 #
 #  #println("solving\n $A \n = $B * X")
-#  r, per, L, U = lufact(B) # P*M1 = L*U
+#  r, per, L, U = lu(B) # P*M1 = L*U
 #  inv!(per)  
 #  @assert B == per*L*U
 #
@@ -503,7 +503,7 @@ function meataxe(M::FqGModule)
   H=M.G
   if M.dim==1
     M.isirreducible=true
-    return true, eye(H[1],n)
+    return true, identity_matrix(base_ring(H[1]), n)
   end
   
   if length(H)==1
@@ -514,7 +514,7 @@ function meataxe(M::FqGModule)
     t=first(keys(lf.fac))
     if degree(t)==n
       M.isirreducible=true
-      return true, eye(H[1],n)
+      return true, identity_matrix(base_ring(H[1]), n)
     else 
       N= _subst(t, A)
       kern=transpose(nullspace(transpose(N))[2])
@@ -589,7 +589,7 @@ function meataxe(M::FqGModule)
             # f is a good factor, irreducibility!
             #
             M.isirreducible=true
-            return true, eye(G[1],n)
+            return true, identity_matrix(base_ring(G[1]), n)
           end
         end
         i+=1
@@ -609,7 +609,7 @@ Markdown.doc"""
 function composition_series(M::FqGModule)
 
   if isdefined(M, :isirreducible) && M.isirreducible==true
-    return [eye(M.G[1], M.dim)]
+    return [identity_matrix(base_ring(M.G[1]), M.dim)]
   end
 
   bool, C = meataxe(M)
@@ -617,7 +617,7 @@ function composition_series(M::FqGModule)
   #  If the module is irreducible, we return a basis of the space
   #
   if bool == true
-    return [eye(M.G[1], M.dim)]
+    return [identity_matrix(base_ring(M.G[1]), M.dim)]
   end
   #
   #  The module is reducible, so we call the algorithm on the quotient and on the subgroup
@@ -748,7 +748,7 @@ function _relations(M::FqGModule, N::FqGModule)
   B=zero_matrix(K,1,M.dim)
   B[1,1]=K(1)
   X=B
-  push!(matrices, eye(B,N.dim))
+  push!(matrices, identity_matrix(base_ring(B), N.dim))
   i=1
   while i<=rows(B)
     w=view(B, i:i, 1:n)
