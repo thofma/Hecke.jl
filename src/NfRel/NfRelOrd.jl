@@ -514,10 +514,10 @@ function trace_matrix(O::NfRelOrd)
   d = degree(L)
   g = zero_matrix(K, d, d)
   for i = 1:d
-    t = trace(b[i]*b[i])
+    t = tr(b[i]*b[i])
     g[i, i] = t
     for j = (i + 1):d
-      t = trace(b[i]*b[j])
+      t = tr(b[i]*b[j])
       g[i, j] = t
       g[j, i] = t
     end

@@ -539,7 +539,7 @@ end
 #
 ################################################################################
 
-function trace(a::NfAbsNSElem)
+function tr(a::NfAbsNSElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
@@ -734,12 +734,12 @@ Markdown.doc"""
  $$K = Q[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
 > The ideal bust be maximal, however, this is not tested.
 """
-function number_field(f::Array{fmpq_poly, 1}, s::String="_\$")
+function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false)
   S = Symbol(s)
   n = length(f)
   Qx, x = PolynomialRing(FlintQQ, n, s)
   K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
-              Symbol[Symbol("$s$i") for i=1:n])
+              Symbol[Symbol("$s$i") for i=1:n], cached)
   K.degrees = [degree(f[i]) for i in 1:n]
   K.degree = prod(K.degrees)
   return K, gens(K)

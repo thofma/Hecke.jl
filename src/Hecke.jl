@@ -242,7 +242,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   end
 
   #if p > 2^18
-  #  Base.show_backtrace(STDOUT, backtrace())
+  #  Base.show_backtr(STDOUT, backtr())
   #end
   rootc = conjugate_data_arb(K)
   q = rootc.prec
@@ -302,15 +302,9 @@ end
 
 trace(x...) = tr(x...)
 
-eye(::Type{T}, n::Int) where {T} = Matrix{T}(I, (n, n))
-
-eye(x) = identity_matrix(base_ring(x), rows(x))
-
-eye(x, n) = identity_matrix(base_ring(x), n)
-
-lufact(x...) = lu(x...)
-
-lufact!(x...) = lu!(x...)
+#lufact(x...) = lu(x...)
+#
+#lufact!(x...) = lu!(x...)
 
 Base.adjoint(x) = transpose(x)
 
@@ -472,7 +466,7 @@ function test_module(x, new::Bool = true)
        include(test_file)
      catch e
        if isa(e, LoadError)
-         println("You need to do \"using Base.Test\"")
+         println("You need to do \"using Test\"")
        else
          rethrow(e)
        end
@@ -595,7 +589,7 @@ include("EllCrv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("Grp.jl")
-include("ModAlgAss.jl")
+#include("ModAlgAss.jl")
 include("AlgAss.jl")
 
 ################################################################################

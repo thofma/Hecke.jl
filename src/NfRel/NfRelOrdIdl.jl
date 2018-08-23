@@ -756,7 +756,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
     for i = 1:d
       for j = i:d
         t = L(K(elts_with_val[i]))*pbint[i][1]*L(K(elts_with_val[j]))*pbint[j][1]
-        A[i, j] = mF(OK(trace(t)))
+        A[i, j] = mF(OK(tr(t)))
         A[j, i] = deepcopy(A[i, j])
       end
     end

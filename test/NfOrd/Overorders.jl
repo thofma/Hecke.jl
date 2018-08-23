@@ -1,9 +1,9 @@
 @testset "Overorders" begin
-  global Qx,  x = FlintQQ["x"]
+   Qx,  x = FlintQQ["x"]
 
   f = x^3 - 1000*x^2 + 1000*x - 1000
 
-  global K,  a = NumberField(f, "a");
+   K,  a = NumberField(f, "a");
 
   E = EquationOrder(K)
 
@@ -11,7 +11,7 @@
 
   f = x^3 + 31 * x^2 + 43* x + 77
 
-  global K,  a = NumberField(f, "a");
+   K,  a = NumberField(f, "a");
 
   E = EquationOrder(K)
 

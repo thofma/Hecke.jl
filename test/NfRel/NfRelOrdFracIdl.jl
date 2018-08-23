@@ -1,7 +1,7 @@
 @testset "Relative fractional ideals" begin
-  global Qx, x = FlintQQ["x"]
+  Qx, x = FlintQQ["x"]
   f = x^2 + 12*x - 92
-  global O, a = number_field(f, "a")
+  K, a = number_field(f, "a")
   OK = maximal_order(K)
   Ky, y = K["y"]
   g = y^2 - 54*y - 73

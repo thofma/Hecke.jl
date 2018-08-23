@@ -452,7 +452,7 @@ function _subgroup_type_iterator(x, y, p)
   if t == 0
     return ( x for x in [zeros(Int, s, 0)])
   elseif x == y
-    return ( x for x in [eye(Int, s)])
+    return ( x for x in [Matrix{Int}(I, s, s)])
   end
 
   return (get_matrix(s, t, f[1], c, sigma, f[2], p, x, y)

@@ -540,7 +540,7 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
     x=elem_from_mat_row(O,I.basis_mat, i)
     assure_elem_in_algebra(x)
     for j=1:O.dim
-      @assert divisible(numerator(trace(x.elem_in_algebra*O.basis_alg[j])), p)
+      @assert divisible(numerator(tr(x.elem_in_algebra*O.basis_alg[j])), p)
     end
   end
   #=
@@ -549,7 +549,7 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
       x=elem_from_mat_row(O,I.basis_mat, i)
       for j=1:O.dim
         for k=1:clog(fmpz(O.dim), p)
-          @assert divisible(numerator(trace((x.elem_in_algebra*O.basis_alg[j])^(p^k))), p^(k+1))
+          @assert divisible(numerator(tr((x.elem_in_algebra*O.basis_alg[j])^(p^k))), p^(k+1))
         end
       end
     end
@@ -759,7 +759,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
       for s=1:O.dim
         mul!(a, elm.elem_in_algebra, O.basis_alg[s])
         bbb = (a^(p^i))
-        trel=trace(bbb)
+        trel=tr(bbb)
         el=divexact(numerator(trel),p^i)
         N[s,t]=F(el)
       end
@@ -825,8 +825,8 @@ function representation_matrix(x::AlgAssAbsOrdElem)
   return B.num
 end
 
-function trace(x::AlgAssAbsOrdElem)
-  return trace(x.elem_in_algebra)
+function tr(x::AlgAssAbsOrdElem)
+  return tr(x.elem_in_algebra)
 end
 
 function redtrace_mat(O::AlgAssAbsOrd)
@@ -842,12 +842,12 @@ function redtrace_mat(O::AlgAssAbsOrd)
   a=A()
   for i=1:m
     mul!(a, x[i], x[i])
-    M[i,i] = divexact(numerator(trace(a)),n)
+    M[i,i] = divexact(numerator(tr(a)),n)
   end
   for i = 1:m
     for j = i+1:m
       mul!(a, x[i], x[j])
-      b = divexact(numerator(trace(a)),n)
+      b = divexact(numerator(tr(a)),n)
       M[i,j] = b
       M[j,i] = b
     end
@@ -1026,7 +1026,7 @@ function pmaximal_overorder(O::AlgAssAbsOrd, p::Int)
   end
 
   if p > O.dim
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_trace(O,p)
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)
     return O1
   else
     @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)
@@ -1073,7 +1073,7 @@ function prime_ideals_over(O::AlgAssAbsOrd, p::fmpz)
   return max_id
 end
 
-function pmaximal_overorder_trace(O::AlgAssAbsOrd, p::Int)
+function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
   #First, the head order by computing the pradical and its ring of multipliers
   d = discriminant(O)
   @vtime :AlgAssOrd 1 I = pradical(O, p)

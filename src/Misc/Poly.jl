@@ -1634,10 +1634,15 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   d = Nemo.pol_length(r)
   v = valuation(r)
   @assert v==0
+  one = S(1)
+  one.prec += 1
+  v = valuation(r-one)
+  @assert v > 0
   while d>=0 && iszero(Nemo.polcoeff(r, d))
     d -= 1
   end
-  return PolynomialRing(R, cached = false)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
+  Rx, x = PolynomialRing(R, cached = false)
+  return Rx([Nemo.polcoeff(r, d-i) for i=0:d])*x^(v-1)
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T

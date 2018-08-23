@@ -6,28 +6,28 @@ mutable struct AlgAss{T} <: Ring
                            # 1 known to be commutative
                            # 2 known to be not commutative
   trace_basis_elem::Array{T, 1}
+  issimple::Int
+  dimension_over_center::Int
 
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
     A.iscommutative = 0
+    A.issimple = 0
+    A.dimension_over_center = 0
     return A
   end
 
   function AlgAss{T}(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
-    A = new{T}()
-    A.base_ring = R
+    A = AlgAss{T}(R)
     A.mult_table = mult_table
     A.one = one
-    A.iscommutative = 0
     return A
   end
 
   function AlgAss{T}(R::Ring, mult_table::Array{T, 3}) where {T}
-    A = new{T}()
-    A.base_ring = R
+    A = AlgAss{T}(R)
     A.mult_table = mult_table
-    A.iscommutative = 0
     return A
   end
 end
@@ -51,6 +51,7 @@ mutable struct AlgAssElem{T} <: RingElem
     z = new{T}()
     z.parent = A
     z.coeffs = coeffs
+    z.coeffs
     return z
   end
 end

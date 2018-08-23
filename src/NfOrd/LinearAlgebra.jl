@@ -457,7 +457,7 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
           continue
         end
         rowPerm = permGroup()
-        rank = lufact!(rowPerm, Pt)
+        rank = lu!(rowPerm, Pt)
       end
       p = next_prime(p)
     end
@@ -806,7 +806,7 @@ function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
-      U = eye(H.matrix, m)
+      U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
    else
@@ -984,7 +984,7 @@ function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
-      U = eye(H.matrix, m)
+      U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_kb!(H, U, true)
       return H, U
    else
@@ -1280,8 +1280,8 @@ function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
    m = rows(S)
    n = cols(S)
    if trafo == Val{true}
-      U = eye(S.matrix, m)
-      K = eye(S.matrix, n)
+      U = identity_matrix(base_ring(S.matrix), m)
+      K = identity_matrix(base_ring(S.matrix), m)
       pseudo_snf_kb!(S, U, K, true)
       return S, U, K
    else

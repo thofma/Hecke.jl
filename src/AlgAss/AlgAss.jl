@@ -196,7 +196,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     bbasis[i] = O(b)
   end
 
-  _, p, L, U = _lufact(transpose(B))
+  _, p, L, U = _lu(transpose(B))
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
@@ -510,9 +510,9 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   if isgenres
-    _, p, L, U = _lufact(transpose(B))
+    _, p, L, U = _lu(transpose(B))
   else
-    _, p, L, U = lufact(transpose(B))
+    _, p, L, U = lu(transpose(B))
   end
   mult_table = Array{elem_type(R), 3}(undef, r, r, r)
   c = A()
@@ -832,11 +832,11 @@ function trace_matrix(A::AlgAss)
   n = dim(A)
   M = zero_matrix(F, n, n)
   for i = 1:n
-    M[i,i] = trace(A[i]^2)  
+    M[i,i] = tr(A[i]^2)  
   end
   for i = 1:n
     for j = i+1:n
-      x = trace(A[i]*A[j])
+      x = tr(A[i]*A[j])
       M[i,j] = x
       M[j,i] = x
     end
@@ -1038,4 +1038,94 @@ function _as_field(A::AlgAss{T}) where T
     end
   end
   return a, mina, f
+end
+
+################################################################################
+#
+#  Compute generators
+#
+################################################################################
+
+function _reduce(M, v)
+  cur_ind = 0
+  for outer cur_ind in 1:cols(M)
+    if !iszero(v[cur_ind])
+      break
+    end
+  end
+end
+
+function gens(A::AlgAss)
+  d = dim(A)
+  K = base_ring(A)
+
+  b = rand(A)
+  while iszero(b)
+    b = rand(A)
+  end
+
+  cur_gen = elem_type(A)[b]
+
+  current_dim = -1
+
+  B = zero_matrix(K, d, d)
+
+  for k in 1:d
+    B[1, k] = b.coeffs[k]
+  end
+
+  cur_dim = 1
+
+  new_dim = 0
+
+  if d == 1
+    return cur_gen
+  end
+
+  l = 0
+
+  t_gens = copy(cur_gen)
+
+  while true
+    l = l + 1
+    while true
+      t_gens = copy(cur_gen)
+      t = length(t_gens)
+      for i in 1:t
+        for j in 1:t
+          c = t_gens[i] * t_gens[j]
+          for k in 1:d
+            B[d, k] = c.coeffs[k]
+          end
+          new_dim = rref!(B)
+          if new_dim == d
+            return cur_gen
+          elseif new_dim > cur_dim
+            cur_dim = new_dim
+            push!(t_gens, c)
+          end
+        end
+      end
+
+      if cur_dim == new_dim
+        break
+      else
+        cur_dim = new_dim
+        B = new_B
+      end
+    end
+
+    if cur_dim == d
+      break
+    else
+      b = rand(A)
+      while iszero(b)
+        b = rand(A)
+      end
+      push!(cur_gen, b)
+    end
+    #@show length(cur_gen)
+  end
+
+  return cur_gen
 end

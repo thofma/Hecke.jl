@@ -144,7 +144,7 @@ end
 
 #function *(f::Map{R, C}, g::Map{D, R}) where {D, C, R}
 #  println("======")
-#  println(stacktrace()[1:2])
+#  println(stacktr()[1:2])
 #  return CompositeMap{D, C, R}(f, g)
 #end
 
