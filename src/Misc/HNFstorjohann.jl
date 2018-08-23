@@ -208,9 +208,9 @@ function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
   T = 0 A 0
       0 0 1
   =#
-  Q = eye(T, n)
-  C = eye(T, n)
-  QC = eye(T, n)
+  Q = identity_matrix(R, n)
+  C = identity_matrix(T, n)
+  QC = identity_matrix(T, n)
   #=
   We use QC at the same time for Q_k and the product Q_k * CC.
     Q_k shoud be

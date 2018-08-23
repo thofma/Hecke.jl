@@ -539,7 +539,7 @@ end
 #
 ################################################################################
 
-function trace(a::NfAbsNSElem)
+function tr(a::NfAbsNSElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end

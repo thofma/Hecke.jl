@@ -1,3 +1,4 @@
+@testset "NfAbs/Conjugates" begin
 Qx, x = FlintQQ["x"]
 K1, a1 = NumberField(x^6 - x^5 + x^4 - x^3 + x^2 - x + 1, "a") # totally complex
 K2, a2 = NumberField(x^6 - x^5 - 7*x^4 + 2*x^3 + 7*x^2 - 2*x - 1, "a") # totally real
@@ -105,3 +106,4 @@ end
   @test aut(a) == a^-1
 end
 
+end

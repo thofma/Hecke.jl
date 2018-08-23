@@ -53,9 +53,9 @@
       cs=composition_series(M)
       @test length(lf)==1
       @test length(cs)==2
-      global x=Hecke._actsub(cs[1],M.action)
+       x=Hecke._actsub(cs[1],M.action)
       @test Hecke.isisomorphic(lf[1][1],x)
-      global x,_=Hecke._actquo(cs[1],M.action)
+       x,_=Hecke._actquo(cs[1],M.action)
       @test Hecke.isisomorphic(lf[1][1],x)
 
       M=Hecke.ModAlgAss([matrix(F,2,2,[0,1,2,0])])
@@ -153,9 +153,9 @@
     cs=composition_series(M)
     @test length(lf)==1
     @test length(cs)==2
-    global x=Hecke.actsub(cs[1],M.G)
+     x=Hecke.actsub(cs[1],M.G)
     @test Hecke.isisomorphic(lf[1][1],x)
-    global x,_=Hecke.actquo(cs[1],M.G)
+     x,_=Hecke.actquo(cs[1],M.G)
     @test Hecke.isisomorphic(lf[1][1],x)
 
     M=FqGModule([matrix(F,2,2,[0,1,2,0])])

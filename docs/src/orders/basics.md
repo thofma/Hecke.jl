@@ -100,7 +100,7 @@ powermod(::NfOrdElem, ::fmpz, ::Int)
 ```@docs
 representation_matrix(::NfOrdElem)
 representation_matrix(::NfOrdElem, ::AnticNumberField)
-trace(::NfOrdElem)
+tr(::NfOrdElem)
 norm(::NfOrdElem)
 rand(::NfOrd, ::Int)
 minkowski_map(::NfOrdElem, ::Int)

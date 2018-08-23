@@ -586,7 +586,7 @@ function norm_change_const(O::NfOrd)
       m = ceil(Int, log(d)/log(2))
       m += m%2
       @assert iseven(m)
-      l_max = root(trace(M^m), m) #an upper bound within a factor of 2
+      l_max = root(tr(M^m), m) #an upper bound within a factor of 2
                                     #according to a paper by Victor Pan
                                     #https://doi.org/10.1016/0898-1221(90)90236-D
                                     #formula (1) and discussion
@@ -596,7 +596,7 @@ function norm_change_const(O::NfOrd)
       while true
         try
           M = inv(M)
-          l_min = root(trace(M^d), d) #as above...
+          l_min = root(tr(M^d), d) #as above...
           if isfinite(l_min)
             z = (Float64(l_max), Float64(l_min))
             O.norm_change_const = z
@@ -870,11 +870,11 @@ function trace_matrix(O::NfAbsOrd)
   n = degree(K)
   g = zero_matrix(FlintZZ, n, n)
   for i=1:n
-    t = trace(b[i]^2)
+    t = tr(b[i]^2)
     @assert isinteger(t)
     g[i, i] = numerator(t)
     for j in (i + 1):n
-      t = trace(b[i]*b[j])
+      t = tr(b[i]*b[j])
       @assert isinteger(t)
       g[i, j] = numerator(t)
       g[j, i] = numerator(t)

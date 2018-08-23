@@ -383,7 +383,7 @@ function norm(f::PolyElem{nf_elem})
   K = base_ring(f)
   if degree(f) > 10 # TODO: find a good cross-over
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
-    PQ = [trace(x) for x=P]
+    PQ = [tr(x) for x=P]
     return power_sums_to_polynomial(PQ)
   end
 
@@ -404,7 +404,7 @@ function norm(f::PolyElem{T}) where T <: NfRelElem
   K = base_ring(f)
 
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
-  PQ = [trace(x) for x=P]
+  PQ = [tr(x) for x=P]
   return power_sums_to_polynomial(PQ)
 end
 

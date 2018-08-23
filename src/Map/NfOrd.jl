@@ -263,7 +263,7 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
   X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
-  r, per, L, U = lufact(B) # P*M1 = L*U
+  r, per, L, U = lu(B) # P*M1 = L*U
 
   inv!(per)
 
@@ -301,7 +301,7 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
   X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
-  r, per, L, U = _lufact(B) # P*M1 = L*U
+  r, per, L, U = _lu(B) # P*M1 = L*U
   inv!(per)
 
   @assert B == per*L*U

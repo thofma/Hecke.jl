@@ -602,9 +602,9 @@ function norm(a::NfRelElem, new::Bool = true)
   return det(M)
 end
 
-function trace(a::NfRelElem)
+function tr(a::NfRelElem)
   M = representation_matrix(a)
-  return trace(M)
+  return tr(M)
 end
 
 ######################################################################
@@ -619,10 +619,10 @@ function absolute_degree(A::NfRel)
   return absolute_degree(base_ring(A))*degree(A)
 end
 
-function trace(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
-  b = trace(a)
+function tr(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+  b = tr(a)
   while parent(b) != k
-    b = trace(b)
+    b = tr(b)
   end
   return b
 end
@@ -635,15 +635,15 @@ function norm(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField
   return b
 end
 
-function absolute_trace(a::NfRelElem)
-  return trace(a, FlintQQ)
+function absolute_tr(a::NfRelElem)
+  return tr(a, FlintQQ)
 end
 
 function absolute_norm(a::NfRelElem)
   return norm(a, FlintQQ)
 end
 
-#TODO: investigate charpoly/ minpoly from power_sums, aka trace(a^i) and
+#TODO: investigate charpoly/ minpoly from power_sums, aka tr(a^i) and
 #      Newton identities
 #TODO: cache traces of powers of the generator on the field, then
 #      the trace does not need the matrix

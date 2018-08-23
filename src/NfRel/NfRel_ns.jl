@@ -591,7 +591,7 @@ function norm(a::NfRel_nsElem)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
-function trace(a::NfRel_nsElem)
+function tr(a::NfRel_nsElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end

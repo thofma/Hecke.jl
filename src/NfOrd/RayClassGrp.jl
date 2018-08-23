@@ -1595,7 +1595,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
     end
   end
 
-  @show Ml=transpose(solve(auxmat,eye(auxmat,ngens(R))))
+  @show Ml=transpose(solve(auxmat,identity_matrix(base_ring(auxmat),ngens(R))))
   #
   #  Now, we compute the action on the group
   #

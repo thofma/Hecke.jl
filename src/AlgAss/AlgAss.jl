@@ -196,7 +196,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     bbasis[i] = O(b)
   end
 
-  _, p, L, U = _lufact(transpose(B))
+  _, p, L, U = _lu(transpose(B))
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
@@ -510,9 +510,9 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   if isgenres
-    _, p, L, U = _lufact(transpose(B))
+    _, p, L, U = _lu(transpose(B))
   else
-    _, p, L, U = lufact(transpose(B))
+    _, p, L, U = lu(transpose(B))
   end
   mult_table = Array{elem_type(R), 3}(undef, r, r, r)
   c = A()
@@ -832,11 +832,11 @@ function trace_matrix(A::AlgAss)
   n = dim(A)
   M = zero_matrix(F, n, n)
   for i = 1:n
-    M[i,i] = trace(A[i]^2)  
+    M[i,i] = tr(A[i]^2)  
   end
   for i = 1:n
     for j = i+1:n
-      x = trace(A[i]*A[j])
+      x = tr(A[i]*A[j])
       M[i,j] = x
       M[j,i] = x
     end

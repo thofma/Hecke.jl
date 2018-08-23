@@ -1,7 +1,7 @@
 @testset "Elements" begin
-  global Qx, x = PolynomialRing(FlintQQ, "x")
+   Qx, x = PolynomialRing(FlintQQ, "x")
 
-  global K1, a1 = NumberField(x^3 - 2, "a")
+   K1, a1 = NumberField(x^3 - 2, "a")
   O1 = EquationOrder(K1)
 
   @testset "Construction" begin
@@ -217,7 +217,7 @@
 
   @testset "Trace" begin
     b = O1(a1)
-    c = @inferred trace(b)
+    c = @inferred tr(b)
     @test c == 0
   end 
 
