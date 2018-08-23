@@ -46,13 +46,13 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFin
 end
 
 Markdown.doc"""
-    number_field(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
+    NumberField(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
 > Given a (formal) abelian extension, compute the class field by
 > finding defining polynomials
 > for all prime power cyclic subfields.
 > Note, by type this is always a non-simple extension.
 """
-function number_field(CF::ClassField)
+function NumberField(CF::ClassField)
   if isdefined(CF, :A)
     return CF.A
   end
@@ -1542,14 +1542,6 @@ function factor(a::fmpq, ::FlintIntegerRing)
     fn.fac[p] = -e
   end
   return fn
-end
-
-Markdown.doc"""
-  number_field(I::NfOrd)
-> Return the number fields containing $I$.
-"""
-@inline function number_field(O::NfOrd)
-  return O.nf
 end
 
 Markdown.doc"""

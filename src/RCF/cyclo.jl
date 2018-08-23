@@ -45,7 +45,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   lf = factor(fk)
   fk = first(keys(lf.fac))
 
-  Kr, Kr_gen = number_field(fk, "z_$n", false)
+  Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
 
   c = CyclotomicExt()

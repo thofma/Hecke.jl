@@ -205,25 +205,26 @@ end
 ################################################################################
 
 Markdown.doc"""
-    number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where T
+    NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
 > $f$ must be irreducible - although this is not tested.
 """
-function number_field(f::Generic.Poly{T}, s::String, cached::Bool = false) where T
+function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
+  !check && !isirreducible(f) && error("Polynomial must be irreducible")
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end
 
 Markdown.doc"""
-    number_field(f::Generic.Poly{T}, cached::Bool = false) where T
+    NumberField(f::Generic.Poly{T}, cached::Bool = false; check::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
 > $f$ must be irreducible - although this is not tested.
 """
-function number_field(f::Generic.Poly{T}, cached::Bool = false) where T
-  return number_field(f, "_\$", cached)
+function NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
+  return NumberField(f, "_\$", cached = cached, check = check)
 end
  
 function (K::NfRel{T})(a::Generic.Poly{T}) where T
@@ -727,6 +728,11 @@ function factor(f::Generic.Poly{NfRelElem{T}}) where T
   res = Fac(map_poly(parent(f), inv(rel_abs), lf.unit), Dict(map_poly(parent(f), inv(rel_abs), k)=>v for (k,v) = lf.fac))
 
   return res
+end
+
+function isirreducible(f::Generic.Poly{NfRelElem{T}}) where T
+  lf = factor(f)
+  return sum(values(lf.fac)) == 1
 end
 
 function factor(f::PolyElem, K::Nemo.Field)

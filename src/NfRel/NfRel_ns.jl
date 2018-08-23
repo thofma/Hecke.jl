@@ -223,7 +223,7 @@ Markdown.doc"""
 > $$$K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
 > The ideal in the quotient must be maximal - although this is not tested.
 """
-function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T
+function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
