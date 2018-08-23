@@ -584,6 +584,9 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
     return s
   end
   for i=2:length(fp)
+    if !issquarefree(fp[i])
+      throw(BadPrime(p))
+    end
     s = Base.intersect(s, _ds(factor(Rt(fp[i]))))
     if length(s) == 1
       return s
