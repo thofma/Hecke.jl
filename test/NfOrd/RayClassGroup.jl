@@ -12,8 +12,8 @@
 
   @testset "quadratic fields" begin
     
-    global Qx,x=PolynomialRing(FlintQQ,"x")
-    global K,a=NumberField(x^2+199,"a")
+     Qx,x=PolynomialRing(FlintQQ,"x")
+     K,a=NumberField(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
     
@@ -30,8 +30,8 @@
       @test Hecke.isisomorphic(R1,q)
     end
     
-    global Qx,x=PolynomialRing(FlintQQ,"x")
-    global K,a=NumberField(x^2-5,"a")
+     Qx,x=PolynomialRing(FlintQQ,"x")
+     K,a=NumberField(x^2-5,"a")
     O=maximal_order(K)
     C,mC=class_group(O, redo = true)
     inf_plc=real_places(K)
@@ -59,8 +59,8 @@
   
   @testset "infinite places" begin
   
-    global Qx, x = PolynomialRing(FlintQQ, "x");
-    global K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20)
+     Qx, x = PolynomialRing(FlintQQ, "x");
+     K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20)
     O = maximal_order(K)
     r, mr = ray_class_group(ideal(O,4), real_places(K), n_quo=2)
     @test order(r) == 2^5
@@ -71,9 +71,9 @@
   
   @testset "stable subgroups" begin
   
-    global Qx,x=PolynomialRing(FlintQQ,"x");
+     Qx,x=PolynomialRing(FlintQQ,"x");
     f=x^2+1;
-    global K,a=NumberField(f,"a");
+     K,a=NumberField(f,"a");
     O=maximal_order(K);
     C,mC=class_group(O);
     r,mr=ray_class_group(ideal(O,3*5*7), n_quo=8);

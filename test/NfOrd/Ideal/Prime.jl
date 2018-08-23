@@ -1,5 +1,5 @@
 @testset "PrimeIdealsSet" begin
-  global Qx, x = FlintQQ["x"]
+  Qx, x = FlintQQ["x"]
   K, a = NumberField(x - 1, "a")
   O = maximal_order(K)
 

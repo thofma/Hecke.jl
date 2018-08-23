@@ -20,10 +20,10 @@
 
 
   @testset "multiplicative_group" begin
-    global Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
-      global K,  a = NumberField(x,"a");
+       K,  a = NumberField(x,"a");
       O = maximal_order(K)
 
       @testset "m0 = <$n>" for n in 1:50
@@ -71,7 +71,7 @@
     end
 
     @testset "K = Q[√2]" begin
-      global K,  a = NumberField(x^2 - 2,"a")
+       K,  a = NumberField(x^2 - 2,"a")
       O = maximal_order(K)
 
       @testset "m0 = <$n>" for n in 1:100
@@ -97,7 +97,7 @@
 
     @testset "f = x^2-x+15" begin
       f = x^2-x+15
-      global K,  a = NumberField(f,"a");
+       K,  a = NumberField(f,"a");
       O = maximal_order(K)
 
       @testset "m0 = <2>" begin
@@ -197,7 +197,7 @@
 
     @testset "x^12+..." begin
       #= f = x^12+7*x^11-97*x^10-859*x^9+2558*x^8+38839*x^7+30012*x^6-710649*x^5-2189082*x^4+2534629*x^3+25314673*x^2+43623088*x+28168151 =#
-      #= global K,  a = NumberField(f,"a"); =#
+      #=  K,  a = NumberField(f,"a"); =#
       #= O = maximal_order(K) =#
 
       #= @testset "m0 = <3>" begin =#
@@ -279,10 +279,10 @@
   end
 
   @testset "_multgrp_mod_pv" begin
-    global Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
-      global K,  a = NumberField(x,"a");
+       K,  a = NumberField(x,"a");
       O = maximal_order(K)
 
       @testset "i = <$pnum>^$v" for (pnum,v) in [(pnum,v) for pnum in [ x for x in 1:50 if isprime(fmpz(x))], v in [1,2,4,17]]
@@ -313,7 +313,7 @@
 
     @testset "f = x^2-x+15" begin
       f = x^2-x+15
-      global K,  a = NumberField(f,"a");
+       K,  a = NumberField(f,"a");
       O = maximal_order(K)
       I = O(20)*O
 
@@ -340,7 +340,7 @@
 
     @testset "f = x^3+8*x^2+6*x-17" begin
       f = x^3+8*x^2+6*x-17
-      global K,  a = NumberField(f,"a");
+       K,  a = NumberField(f,"a");
       O = maximal_order(K)
       p = O(3)*O
       #p = collect(keys(factor(p)))[1]
@@ -371,7 +371,7 @@
 
     @testset "f = x^4+11*x^3-19*x^2-8*x+7" begin
       f = x^4+11*x^3-19*x^2-8*x+7
-      global K,  a = NumberField(f,"a");
+       K,  a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O, fmpz(3), O(2+a+a^2))
       p = collect(keys(factor(p)))[1]
@@ -402,7 +402,7 @@
 
     @testset "f = x^6+6x^5-12*x^4-x^3-6*x^2+9*x+20" begin
       f = x^6+6x^5-12*x^4-x^3-6*x^2+9*x+20
-      global K,  a = NumberField(f,"a");
+       K,  a = NumberField(f,"a");
       O = maximal_order(K)
       p = ideal(O, fmpz(3), O(2+2*a+a^2))
       p = collect(keys(factor(p)))[1]
@@ -433,10 +433,10 @@
   end
 
   @testset "_multgrp_mod_p" begin
-    global Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = PolynomialRing(FlintQQ, "x");
 
     @testset "K = Q" begin
-      global K,  a = NumberField(x, "a");
+       K,  a = NumberField(x, "a");
       O = maximal_order(K)
 
       @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if isprime(fmpz(x))]
@@ -455,7 +455,7 @@
     end
 
     @testset "K = Q[√2]" begin
-      global K,  a = NumberField(x^2-2,"a");
+       K,  a = NumberField(x^2-2,"a");
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
@@ -479,7 +479,7 @@
     end
 
     @testset "K = Q[x]/<x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20>" begin
-      global K,  a = NumberField(x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20,"a");
+       K,  a = NumberField(x^6+6*x^5-12*x^4-x^3-6*x^2+9*x+20,"a");
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
@@ -503,7 +503,7 @@
     end
 
     @testset "K = Q[x]/<x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1>" begin
-      global K,  a = NumberField(x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1,"a");
+       K,  a = NumberField(x^10-x^9+x^8-x^7+x^6-x^5+x^4-x^3+x^2-x+1,"a");
       O = maximal_order(K)
 
       primeideals = Vector{Hecke.NfOrdIdl}()
@@ -528,12 +528,12 @@
   end
 
   @testset "_1_plus_p_mod_1_plus_pv" begin
-    global Qx,  x = PolynomialRing(FlintQQ, "x");
+     Qx,  x = PolynomialRing(FlintQQ, "x");
 
     @testset "Method: $method" for method in [:quadratic,:artin_hasse,:p_adic]
 
       @testset "K = Q" begin
-        global K,  a = NumberField(x,"a");
+         K,  a = NumberField(x,"a");
         O = maximal_order(K)
 
         @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if isprime(fmpz(x))], v in [1,2,3,4,11,30]
@@ -571,7 +571,7 @@
       end
 
       @testset "K = Q[√2]" begin
-        global K,  a = NumberField(x^2 - 2,"a")
+         K,  a = NumberField(x^2 - 2,"a")
         O = maximal_order(K)
 
         primeideals = Vector{Hecke.NfOrdIdl}()
@@ -613,7 +613,7 @@
 
       @testset "K = Q[x]/<f = x^6+...>" begin
         f = x^6 + 6*x^5 - 12*x^4 - x^3 - 6*x^2 + 9*x + 20
-        global K,  a = NumberField(f,"a")
+         K,  a = NumberField(f,"a")
         O = maximal_order(K)
 
         primeideals = Vector{Hecke.NfOrdIdl}()
@@ -656,11 +656,11 @@
   end
 
   @testset "Non-maximal orders" begin
-    global Qx,  x = FlintQQ["x"]
+     Qx,  x = FlintQQ["x"]
 
-    global K1,  a1 = number_field(x^3 - 2, "a1")
+     K1,  a1 = number_field(x^3 - 2, "a1")
     OK1 = maximal_order(K1)
-    global O1 = Order(K1, [K1(1), 10*a1, 100*a1^2])
+     O1 = Order(K1, [K1(1), 10*a1, 100*a1^2])
     F1 = conductor(O1, OK1)
     Q1, mQ1 = quo(O1, F1)
     G1, mG1 = multiplicative_group(Q1)
@@ -671,8 +671,8 @@
       @test mG1(g)*mG1(h) == mG1(g + h)
     end
 
-    global K2, a2 = number_field(x^3 - 12*x^2 - 6324*x + 459510, "a2")
-    global O2 = EquationOrder(K2)
+     K2, a2 = number_field(x^3 - 12*x^2 - 6324*x + 459510, "a2")
+     O2 = EquationOrder(K2)
     OK2 = maximal_order(O2)
     F2 = conductor(O2, OK2)
     Q2, mQ2 = quo(O2, F2)
@@ -684,7 +684,7 @@
       @test mG2(g)*mG2(h) == mG2(g + h)
     end
 
-    global K3, a3 = number_field(x^5 - 1389*x^4 + 512066*x^3 - 11859166*x^2 + 83453925*x - 211865821, "a3")
+     K3, a3 = number_field(x^5 - 1389*x^4 + 512066*x^3 - 11859166*x^2 + 83453925*x - 211865821, "a3")
     OK3 = maximal_order(K3)
     O3 = EquationOrder(K3)
     F3 = conductor(O3, OK3)

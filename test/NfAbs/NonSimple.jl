@@ -1,6 +1,6 @@
 @testset "NfAbsNS" begin
   
-  global Qx, x = FlintQQ["x"]
+  Qx, x = FlintQQ["x"]
   K, (a, b) = @inferred number_field([x^2 - 2, x^3 - 3])
 
   @test K isa NfAbsNS
@@ -143,7 +143,7 @@
   end
 
   @testset "Maximal order" begin
-    global K2,  = @inferred number_field([x^2 - 50, x^3 - 3])
+    K2,  = @inferred number_field([x^2 - 50, x^3 - 3])
     O = EquationOrder(K2)
     Omax = @inferred MaximalOrder(O)
     @test discriminant(Omax) == FlintZZ(30233088)
