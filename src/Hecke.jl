@@ -589,7 +589,7 @@ include("EllCrv.jl")
 include("LargeField.jl")
 include("RCF.jl")
 include("Grp.jl")
-#include("ModAlgAss.jl")
+include("ModAlgAss.jl")
 include("AlgAss.jl")
 
 ################################################################################
