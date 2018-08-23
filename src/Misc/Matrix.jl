@@ -534,10 +534,15 @@ function lift(a::Generic.Mat{Generic.Res{fmpz}})
   return z
 end
 
+################################################################################
+#
+#  Row reduced echelon form over Z/nZ for prime n (nmod and Res{fmpz})
+#
+################################################################################
+
 function _rref(a::Generic.Mat{Generic.Res{fmpz}})
   m = modulus(base_ring(a))
   b = zero_matrix(FlintZZ, rows(a), cols(a))
-  # I actually don't know if this is necessary
   for i in 1:rows(b)
     for j in 1:cols(b)
       b[i,j] = lift(a[i,j]) % m
@@ -551,15 +556,106 @@ end
 
 _rref(a) = rref(a)
 
-#function _rref(a::nmod_mat)
-#  b = rref(a)
-#  # TODO: Clean up one we use new Nemo version.
-#  if length(b) == 1
-#    return rank(b), b
-#  else
-#    return b
-#  end
-#end
+# now inplace
+function _rref!(a::Generic.Mat{Generic.Res{fmpz}})
+  m = modulus(base_ring(a))
+  b = zero_matrix(FlintZZ, rows(a), cols(a))
+  for i in 1:rows(b)
+    for j in 1:cols(b)
+      b[i,j] = lift(a[i,j]) % m
+    end
+  end
+
+  # fmpz_mat_rref_mod assumes that input is reduced modulo m
+  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
+  for i in 1:rows(b)
+    for j in 1:cols(b)
+      a[i, j] = b[i, j]
+    end
+  end
+
+  return r
+end
+
+_rref!(a) = rref!(a)
+
+################################################################################
+#
+#  LU factorization over Z/nZ for n prime (nmod and Res{fmpz})
+#
+################################################################################
+
+function _lufact!(P::Generic.perm, A::S) where {S <: MatElem{Generic.Res{fmpz}}}
+   m = rows(A)
+   n = cols(A)
+   rank = 0
+   r = 1
+   c = 1
+   R = base_ring(A)
+   t = R()
+   while r <= m && c <= n
+      if A[r, c] == 0
+         i = r + 1
+         while i <= m
+            if !iszero(A[i, c])
+               for j = 1:n
+                  A[i, j], A[r, j] = A[r, j], A[i, j]
+               end
+               P[r], P[i] = P[i], P[r]
+               break
+            end
+            i += 1
+         end
+         if i > m
+            c += 1
+            continue
+         end
+      end
+      rank += 1
+      d = -inv(A[r, c])
+      for i = r + 1:m
+         q = A[i, c]*d
+         for j = c + 1:n
+            t = mul!(t, A[r, j], q)
+            A[i, j] = addeq!(A[i, j], t)
+         end
+         A[i, c] = R()
+         A[i, rank] = -q
+      end
+      r += 1
+      c += 1
+   end
+   inv!(P)
+   return rank
+end
+
+_lufact!(P::Generic.perm, A) = lufact!(P, A)
+
+function _lufact(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{fmpz}}}
+   m = rows(A)
+   n = cols(A)
+   P.n != m && error("Permutation does not match matrix")
+   p = P()
+   R = base_ring(A)
+   U = deepcopy(A)
+   L = similar(A, m, m)
+   rank = _lufact!(p, U)
+   for i = 1:m
+      for j = 1:n
+         if i > j
+            L[i, j] = U[i, j]
+            U[i, j] = R()
+         elseif i == j
+            L[i, j] = R(1)
+         elseif j <= m
+            L[i, j] = R()
+         end
+      end
+   end
+   return rank, p, L, U
+end
+
+_lufact(A, P = PermGroup(rows(A))) = lufact(A, P)
 
 function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
   r, b = _rref(a)
