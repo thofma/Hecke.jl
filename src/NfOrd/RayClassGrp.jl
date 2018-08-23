@@ -1423,27 +1423,55 @@ function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl)
   end
 end
 
+function change_into_coprime(mR::MapRayClassGrp, a::fmpz)
+
+  m = minimum(mR.modulus_fin)
+  com, uncom = ppio(a, m)
+  if uncom == 1
+    return nothing
+  end
+  _, s, t = gcdx(uncom, m)
+  tmg = mR.tame_mult_grp
+  wld = mR.wild_mult_grp
+  for (p, v) in tmg
+    tmg[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ m*t*v.generators[1] + s*uncom ], v.discrete_logarithm)
+  end
+  for (p, v) in wld
+    wld[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ m*t*v.generators[i] + s*uncom for i=1:length(v.generators)], v.discrete_logarithm)
+  end
+  return nothing
+  
+end
+
+
 #
 #  Find small primes that generate the ray class group (or a quotient)
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
 #
-function find_gens(mR::MapRayClassGrp)
+function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
 
   O = order(codomain(mR))
   R = domain(mR) 
-  m = mR.modulus_fin
+  m = mR.defining_modulus[1]
   mm = minimum(m)
+  if coprime_to != -1
+    mm = lcm(mm, coprime_to)
+  end
 
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
-  q, mq = quo(R, sR,false)
+  q, mq = quo(R, sR, false)
   
   #
   #  First, generators of the multiplicative group. 
   #  If the class group is trivial, they are enough 
   #
-  
+
   if !isempty(mR.fact_mod) 
+    if coprime_to != -1
+      # First, I change them in order to be coprime to coprime_to
+      change_into_coprime(mR, coprime_to)
+    end
     @vtime :NfOrd 1 totally_positive_generators(mR, mm, true)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
@@ -1511,7 +1539,10 @@ function find_gens(mR::MapRayClassGrp)
   end
   q, mq = quo(R, sR, false)
   for P in S
-    if !iscoprime(P,m)
+    if gcd(minimum(P), mm) != 1
+      continue
+    end
+    if coprime_to != -1 &&  gcd(minimum(P), coprime_to) != 1
       continue
     end
     if haskey(mR.prime_ideal_preimage_cache, P)
@@ -1541,13 +1572,14 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   O=mR.header.codomain.base_ring.order
   K=nf(O)
   
-  #=
+  #= 
   f = K.pol
   a = gen(K)
   for i=1:length(Aut)
     @assert iszero(f(Aut[i].prim_img))
   end
-  =#
+  =# 
+  
   if isempty(Aut)
     Aut = automorphisms(K)
     Aut = small_generating_set(Aut, *)

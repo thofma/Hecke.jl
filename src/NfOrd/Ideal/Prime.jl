@@ -533,6 +533,13 @@ end
 ################################################################################
 
 #TODO: do sth. useful here!!!
+
+Markdown.doc"""
+***
+    divides(A::NfOrdIdl, B::NfOrdIdl)
+    
+> Checks if B divides A
+"""
 function divides(A::NfOrdIdl, B::NfOrdIdl)
   minimum(A) % minimum(B) == 0 || return false
   return valuation(A, B) > 0

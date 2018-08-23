@@ -381,29 +381,28 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
   ram_primes=collect(keys(factor(O.disc).fac))
   filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to=cat(1,ram_primes, wild_ram, dims = 1)
+  coprime_to=cat(ram_primes, wild_ram, dims = 1)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)
   b1=Int(root(fmpz(bound),Int(degree(O)*(m-1)*k))) 
-  
-  list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
+  list = squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
-  extra_list=Tuple{Int, Int}[(1,1)]
+  extra_list = Tuple{Int, Int}[(1,1)]
   for q in ram_primes
-    tr=prime_decomposition_type(O,Int(q))
-    f=tr[1][1]
-    nq=Int(q)^f 
-    if gcd(nq-1,n)==1
+    tr = prime_decomposition_type(O,Int(q))
+    f = tr[1][1]
+    nq = Int(q)^f 
+    if gcd(nq-1,n) == 1
       continue
     end
-    if nq> bound
-      break
+    if nq > bound
+      continue
     end
     l=length(extra_list)
     for i=1:l
-      no=extra_list[i][2]*nq
-      if no> bound
+      no = extra_list[i][2]*nq
+      if no > bound
         continue
       end
       push!(extra_list, (extra_list[i][1]*q, no))
@@ -412,12 +411,13 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   
   final_list=Tuple{Int,fmpz}[]
   l=length(list)
+  e = Int((m-1)*k)
   for (el,norm) in extra_list
     for i=1:l
-      if (list[i]^d)*norm>bound
+      if (list[i]^d) * norm > bound
         continue
       end
-      push!(final_list, (list[i]*el, (list[i]^(Int((m-1)*k)*d))*norm))
+      push!(final_list, (list[i]*el, (list[i]^(e*d))*norm))
     end
   end
   
@@ -576,13 +576,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
           @inbounds sqf[j]=false
           j+=t
         end
-        #if length(G)>1
-        #  @inbounds sqf[i] = false
-        #elseif !divisible(fmpz(i-1), G[1])
-        #  @inbounds sqf[i] = false
-        #end
       end
-      
     end
     i+=2
   end
@@ -595,14 +589,6 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
          @inbounds sqf[j]=false
          j += i
         end
-      #=
-      else
-        if length(G) > 1
-          @inbounds sqf[i] = false
-        elseif !divisible(fmpz(i-1), G[1])
-          @inbounds sqf[i] = false
-        end
-      =#
       end
     end
     i+=2

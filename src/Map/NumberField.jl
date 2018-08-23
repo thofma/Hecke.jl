@@ -41,6 +41,10 @@ function *(f::NfToNfMor, g::NfToNfMor)
   return NfToNfMor(domain(g), codomain(f), y)
 end
 
+Base.:(^)(f::NfToNfMor, e::Int) = Base.power_by_squaring(f, e)
+
+Base.copy(f::NfToNfMor) = f
+
 function show(io::IO, h::NfToNfMor)
   if domain(h) == codomain(h)
     println(io, "Automorphism of ", domain(h))
