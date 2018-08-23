@@ -714,6 +714,7 @@ Markdown.doc"""
 > $AB = \mathcal O_K$.
 """
 function inv(A::NfAbsOrdIdl)
+  @assert !iszero(A)
   if ismaximal_known(order(A)) && ismaximal(order(A))
     return inv_maximal(A)
   else

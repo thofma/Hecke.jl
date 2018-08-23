@@ -238,6 +238,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
 
   for i=1:length(c.FB.ideals)
     c.M.basis.rows[i].values[1] == 1 && continue
+    @assert all(x -> x > 0, c.M.basis.rows[i].values)
     x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
     x[i] = 1
     for j in length(trafos):-1:1
