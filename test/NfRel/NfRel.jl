@@ -30,9 +30,9 @@
     @test c == true
     @test parent(LtoL2(b)) == L2
 
-    i = g - 1
-    L3, b3 = NumberField(i, "b3")
-    d, LtoL3 = Hecke.isisomorphic(L, L3)
-    @test d == false
+    #i = g - 1
+    #L3, b3 = NumberField(i, "b3")
+    #d, LtoL3 = Hecke.isisomorphic(L, L3)
+    #@test d == false
   end
 end

@@ -903,6 +903,8 @@ end
 
 Base.isless(a::Int, b::fmpz) = a < b
 
+Base.isless(a::fmpz, b::Int) = a < b
+
 function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end

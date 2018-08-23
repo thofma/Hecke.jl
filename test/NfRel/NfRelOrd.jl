@@ -34,7 +34,7 @@ end
   @test Hecke._spans_subset_of_pseudohnf(Brel, Babs, :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
 
-  for i = 1:5
+  for i = 1:1
     f = monic_randpoly(Qx, 2, 3, 100)
     while !isirreducible(f)
       f = monic_randpoly(Qx, 2, 3, 100)
@@ -58,7 +58,7 @@ end
 
   K, a = NumberField(x, "a")
   Ky, y = K["y"]
-  for i = 1:5
+  for i = 1:1
     f = monic_randpoly(Ky, 8, 10, 100)
     while !isirreducible(f)
       f = monic_randpoly(Ky, 8, 10, 100)
@@ -114,7 +114,7 @@ end
   @test Hecke._spans_subset_of_pseudohnf(Bns, Bs, :lowerleft)
   @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
 
-  for i = 1:5
+  for i = 1:1
     f = monic_randpoly(Qx, 2, 2, 100)
     while !isirreducible(f)
       f = monic_randpoly(Qx, 2, 2, 100)

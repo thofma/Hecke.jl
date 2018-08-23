@@ -98,7 +98,7 @@
       @test iszero(mF(b))
     end
 
-    for i = 1:5
+    for i = 1:1
       c = rand(OL, 100)
       d = rand(OL, 100)
       @test mod(inv(mF)(mF(c)), P) == mod(c, P)
@@ -127,7 +127,7 @@
       @test iszero(mF(b))
     end
 
-    for i = 1:5
+    for i = 1:1
       c = rand(OL, 100)
       d = rand(OL, 100)
       @test mod(inv(mF)(mF(c)), P) == mod(c, P)

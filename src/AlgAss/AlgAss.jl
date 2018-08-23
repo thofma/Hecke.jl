@@ -32,7 +32,7 @@ end
 
 ################################################################################
 #
-#  Test of Commutativity
+#  Commutativity
 #
 ################################################################################
 
@@ -61,33 +61,32 @@ end
 ################################################################################
 
 function check_associativity(A::AlgAss)
-  
-  for i=1:dim(A)
-    for j=1:dim(A)
-      el = A[i]*A[j]
-      for k=1:dim(A)
-        @assert el*A[k]==A[i]*(A[j]*A[k])
+  for i = 1:dim(A)
+    for j = 1:dim(A)
+      el = A[i] * A[j]
+      for k = 1:dim(A)
+        if el * A[k] != A[i] * (A[j] * A[k])
+          return false
+        end
       end
     end
   end
   return true
-
 end
 
 function check_distributivity(A::AlgAss)
-
-  for i=1:dim(A)
-    for j=1:dim(A)
+  for i = 1:dim(A)
+    for j = 1:dim(A)
       el = A[i]*A[j]
-      for k=1:dim(A)
-        @assert A[i]*(A[j]+A[k]) == el+A[i]*A[k]
+      for k = 1:dim(A)
+        if A[i] * (A[j] + A[k]) != el + A[i] * A[k]
+          return false
+        end
       end
     end 
   end
   return true
-
 end
-
 
 ################################################################################
 #
@@ -175,9 +174,8 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   @assert order(I) == O
 
   n = degree(O)
-  BO = Hecke.basis(O)
+  BO = basis(O)
 
-  pisfmpz = (p isa fmpz)
   Fp = ResidueRing(FlintZZ, p, cached=false)
   BOmod = [ mod(O(v), I) for v in BO ]
   B = zero_matrix(Fp, n, n)
@@ -187,31 +185,26 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
       B[i, j] = Fp(b[j])
     end
   end
-  if pisfmpz
-    r, B = _rref(B)
-  else
-    r = rref!(B)
-  end
+  r = _rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   b = Vector{fmpz}(undef, n)
-  basis = Vector{NfOrdElem}(undef, r)
+  bbasis = Vector{NfOrdElem}(undef, r)
   for i = 1:r
     for j = 1:n
       b[j] = fmpz(B[i, j])
     end
-    basis[i] = O(b)
+    bbasis[i] = O(b)
   end
 
-  if pisfmpz
-    _, p, L, U = _lufact(transpose(B))
-  else
-    _, p, L, U = lufact(transpose(B))
-  end
+  _, p, L, U = _lufact(transpose(B))
+
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
+
   d = zero_matrix(Fp, n, 1)
+
   for i = 1:r
     for j = i:r
-      c = elem_in_basis(mod(basis[i]*basis[j], I))
+      c = elem_in_basis(mod(bbasis[i]*bbasis[j], I))
       for k = 1:n
         d[p[k], 1] = c[k]
       end
@@ -224,7 +217,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     end
   end
 
-  if isone(basis[1])
+  if isone(bbasis[1])
     one = zeros(Fp, r)
     one[1] = Fp(1)
     A = AlgAss(Fp, mult_table, one)
@@ -248,7 +241,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   end
 
   function _preimage(a::AlgAssElem)
-    return sum(fmpz(a.coeffs[i])*basis[i] for i = 1:r)
+    return sum(fmpz(a.coeffs[i])*bbasis[i] for i = 1:r)
   end
 
   OtoA = NfOrdToAlgAssMor{elem_type(Fp)}(O, A, _image, _preimage)
@@ -506,11 +499,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   isgenres = (typeof(R) <: Generic.ResRing)
   n = dim(A)
   B = representation_matrix(e)
-  if isgenres
-    r, B = _rref(B)
-  else
-    r = rref!(B)
-  end
+  r = _rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   basis = Vector{AlgAssElem{T}}(undef, r)
   for i = 1:r
