@@ -58,7 +58,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
       lp = [x[2] for x = FP.lp]
       for (i, P) in FP.lp 
         Q = induce_image(P, A)
-        id = findfirst(lp, Q)
+        id = findfirst(isequal(Q), lp)
         push!(prm, (i, FP.lp[id][1]))
       end
     else
@@ -84,7 +84,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
         end  
         im = Hecke.gcd!(im, gpx, im)
         # canonical
-        push!(prm, (i, FP.lp[findfirst(lp, im)][1]))
+        push!(prm, (i, FP.lp[findfirst(isequal(im), lp)][1]))
         # and find it!
       end
     end
