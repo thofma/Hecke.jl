@@ -34,6 +34,9 @@ end
 
 Base.isempty(s::MSet) = isempty(s.dict)
 Base.length(s::MSet)  = BigInt(sum(values(s.dict)))
+Base.IteratorSize(s::MSet) = Base.HasLength()
+Base.IteratorEltype(s::MSet) = Base.HasEltype()
+Base.eltype(s::MSet{T}) where {T} = T
 Base.in(x, s::MSet) = haskey(s.dict, x)
 function Base.push!(s::MSet, x)
   if haskey(s.dict, x)
@@ -143,6 +146,10 @@ end
 function Base.length(M::MSubSetItr)
   return M.length
 end
+
+Base.IteratorSize(M::MSubSetItr) = Base.HasLength()
+Base.IteratorEltype(M::MSubSetItr) = Base.HasEltype()
+Base.eltype(M::MSubSetItr{T}) where {T} = MSet{T}
 
 function Base.show(io::IO, M::MSubSetItr)
   println(io, "subset iterator of length $(M.length) for $(M.b) with multiplicities $(M.m)")
