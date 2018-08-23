@@ -472,7 +472,7 @@ function test_module(x, new::Bool = true)
        include(test_file)
      catch e
        if isa(e, LoadError)
-         println("You need to do \"using Base.Test\"")
+         println("You need to do \"using Test\"")
        else
          rethrow(e)
        end
