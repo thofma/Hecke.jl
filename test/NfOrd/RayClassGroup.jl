@@ -1,6 +1,6 @@
 @testset "RayClassGroup" begin
 
-  include(joinpath(Hecke.pkgdir, "examples", "RayClass.jl"))
+  #include(joinpath(Hecke.pkgdir, "examples", "RayClass.jl"))
 
   @testset "Big prime" begin
     k,  = wildanger_field(2, 13)
@@ -16,16 +16,13 @@
     global K,a=NumberField(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
-    
+  
     for i=9:13
-      R,mR=ray_class_group_p_part(3, ideal(O,i))
-      for r in R
-        @test r== mR\(mR(r))
-      end
       R1,mR1=ray_class_group(ideal(O,i), n_quo=3)
       for r in R1
         @test r== mR1\(mR1(r))
       end
+      R,mR=ray_class_group(ideal(O,i))
       q,mq=quo(R,3)
       @test Hecke.isisomorphic(R1,q)
     end
@@ -37,10 +34,6 @@
     inf_plc=real_places(K)
     
     for i=9:13
-      R,mR=ray_class_group_p_part(2, ideal(O,i),inf_plc)
-      for r in R
-        @test r== mR\(mR(r))
-      end
       R1,mR1=ray_class_group(ideal(O,i),inf_plc)
       for r in R1
         @test r== mR1\(mR1(r))
@@ -49,12 +42,9 @@
       for r in R2
         @test r== mR2\(mR2(r))
       end
-      q,mq=quo(R,2)
-      @test Hecke.isisomorphic(q,R2)
       q1,mq1=quo(R1,2)
       @test Hecke.isisomorphic(q1,R2)
     end
-
   end
   
   @testset "infinite places" begin
