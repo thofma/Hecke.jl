@@ -15,7 +15,8 @@ notifications:
 script:
   - while sleep 30; do echo "still alive"; done &
   - julia -e 'using Pkg; Pkg.clone(pwd());'
-  - julia -e 'using Pkg; Pkg.build("Hecke");'
+  - julia -e 'include(joinpath(Pkg.dir("Hecke"), "deps", "build.jl"))'
+    #- julia -e 'using Pkg; Pkg.build("Hecke");'
   - julia -e 'using Pkg; Pkg.test("Hecke");'
   # - travis_wait julia -e 'using Pkg; Pkg.build("Nemo")'
   # - if [ -f test/runtests.jl ]; then julia --check-bounds=yes -e 'using Pkg; Pkg.test("Nemo", coverage=true)'; fi
