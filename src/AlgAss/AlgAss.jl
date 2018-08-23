@@ -1039,3 +1039,93 @@ function _as_field(A::AlgAss{T}) where T
   end
   return a, mina, f
 end
+
+################################################################################
+#
+#  Compute generators
+#
+################################################################################
+
+function _reduce(M, v)
+  cur_ind = 0
+  for outer cur_ind in 1:cols(M)
+    if !iszero(v[cur_ind])
+      break
+    end
+  end
+end
+
+function gens(A::AlgAss)
+  d = dim(A)
+  K = base_ring(A)
+
+  b = rand(A)
+  while iszero(b)
+    b = rand(A)
+  end
+
+  cur_gen = elem_type(A)[b]
+
+  current_dim = -1
+
+  B = zero_matrix(K, d, d)
+
+  for k in 1:d
+    B[1, k] = b.coeffs[k]
+  end
+
+  cur_dim = 1
+
+  new_dim = 0
+
+  if d == 1
+    return cur_gen
+  end
+
+  l = 0
+
+  t_gens = copy(cur_gen)
+
+  while true
+    l = l + 1
+    while true
+      t_gens = copy(cur_gen)
+      t = length(t_gens)
+      for i in 1:t
+        for j in 1:t
+          c = t_gens[i] * t_gens[j]
+          for k in 1:d
+            B[d, k] = c.coeffs[k]
+          end
+          new_dim = rref!(B)
+          if new_dim == d
+            return cur_gen
+          elseif new_dim > cur_dim
+            cur_dim = new_dim
+            push!(t_gens, c)
+          end
+        end
+      end
+
+      if cur_dim == new_dim
+        break
+      else
+        cur_dim = new_dim
+        B = new_B
+      end
+    end
+
+    if cur_dim == d
+      break
+    else
+      b = rand(A)
+      while iszero(b)
+        b = rand(A)
+      end
+      push!(cur_gen, b)
+    end
+    #@show length(cur_gen)
+  end
+
+  return cur_gen
+end

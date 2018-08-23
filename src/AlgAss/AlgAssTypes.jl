@@ -51,6 +51,7 @@ mutable struct AlgAssElem{T} <: RingElem
     z = new{T}()
     z.parent = A
     z.coeffs = coeffs
+    z.coeffs
     return z
   end
 end
