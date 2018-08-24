@@ -659,7 +659,11 @@ end
 function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   
   A1 = quo(O, p)
-  lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:O.dim]
+  #@show dim(A1)
+  @vtime :AlgAssOrd 1 lg = gens(A1)
+  #@show length(lg)
+  lM = nmod_mat[transpose(representation_matrix(lg[i])) for i=1:length(lg)]
+  #lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:dim(A1)]
   M = ModAlgAss(lM)
   ls = minimal_submodules(M)
   l = sum(rows(x) for x in ls)
@@ -949,8 +953,13 @@ end
 function _maximal_ideals(O::AlgAssAbsOrd, p::Int)
   
   A1 = quo(O, p)
-  lM = nmod_mat[representation_matrix(A1[i]) for i=1:O.dim]
-  append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:O.dim])
+  #@show dim(A1)
+  lg = gens(A1)
+  #@show length(lg)
+  lM = nmod_mat[representation_matrix(lg[i]) for i=1:length(lg)]
+  append!(lM, nmod_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])  
+  #lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
+  #append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
   poneO = O(p*one(O.algebra))
@@ -960,9 +969,14 @@ end
 
 function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
   
-  A1, A1toO = quo(O, I, p)
-  lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
-  append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
+  A1, A1toO = quo(O, I, p)  
+  #@show dim(A1)
+  lg = gens(A1)
+  #@show length(lg)
+  lM = nmod_mat[representation_matrix(lg[i]) for i=1:length(lg)]
+  append!(lM, nmod_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])
+  #lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
+  #append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
   poneO = O(p*one(O.algebra))

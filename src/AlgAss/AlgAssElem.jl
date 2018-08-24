@@ -339,4 +339,6 @@ end
 
 isone(a::AlgAssElem) = a == one(parent(a))
 
-iszero(a::AlgAssElem) = all(i -> i == 0, a.coeffs)
+function iszero(a::AlgAssElem)
+  return all(i -> i == 0, a.coeffs)
+end

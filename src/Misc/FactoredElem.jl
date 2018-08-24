@@ -475,7 +475,7 @@ function simplify!(x::FacElem{fmpz})
       v += valuation(b, abs(p))*x.fac[b]
     end
     if v < 0 
-      throw(DomainError())
+      throw(DomainError(v, "Negative valuation in simplify!"))
     end
     if v != 0
       ev[abs(p)] = v

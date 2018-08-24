@@ -455,18 +455,14 @@ function factor(f::PolyElem{nf_elem})
 
   while true
     @vtime :PolyFactor 2 N = norm(g)
-
     if !isconstant(N) && issquarefree(N)
       break
     end
-
     k = k + 1
-
     g = compose(f, gen(Kx) - k*gen(K))
   end
 
   @vtime :PolyFactor 2 fac = factor(N)
-
   res = Dict{PolyElem{nf_elem}, Int64}()
 
   for i in keys(fac.fac)
@@ -584,6 +580,9 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
     return s
   end
   for i=2:length(fp)
+    if !issquarefree(fp[i])
+      throw(BadPrime(p))
+    end
     s = Base.intersect(s, _ds(factor(Rt(fp[i]))))
     if length(s) == 1
       return s
