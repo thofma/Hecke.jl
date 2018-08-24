@@ -1,7 +1,7 @@
 function test_disc_log_picard(P, mP, O)
   # principal ideals should always be invertible
   i = 1
-  while i <= 100
+  while i <= 10
     I = O(i)*O
     if !iszero(mP\I)
       return false
@@ -19,7 +19,7 @@ function test_disc_log_picard(P, mP, O)
     return true
   end
 
-  for i = 1:10
+  for i = 1:3
     c = rand(1:10, ngens(P))
     p = P(c)
     I1 = mP(p)
@@ -39,7 +39,7 @@ function test_disc_log_units(U, mU, O)
     return false
   end
 
-  for i = 1:10
+  for i = 1:3
     c = rand(-1:1, ngens(U))
     u = U(c)
     a1 = mU(u)
