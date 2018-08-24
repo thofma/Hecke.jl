@@ -157,6 +157,8 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     U.torsion_units_gen = torsion_units_gen(O)
   end  
 
+  @vprint :UnitGroup 1 "Torsion structure done!\n"
+
   w = U.torsion_units_order
 
   r1, r2 = signature(O)
@@ -227,7 +229,6 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       if unit_method == 1
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
       else
-        @show unit_method
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_trafo(U, c)
       end

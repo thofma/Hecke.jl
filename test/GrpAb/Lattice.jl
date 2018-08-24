@@ -63,37 +63,37 @@
     #     2       6
 
     # Find shortest path
-    b, P = @iinfered Hecke.find_shortest(G, 2, 4)
+    b, P = @inferred Hecke.find_shortest(G, 2, 4)
     @test b
     @test P == [4, 2]
-    b, P = @iinfered Hecke.find_shortest(G, 6, 4)
+    b, P = @inferred Hecke.find_shortest(G, 6, 4)
     @test b
     @test P == [4, 5, 6]
-    b, P = @iinfered Hecke.find_shortest(G, 1, 1)
+    b, P = @inferred Hecke.find_shortest(G, 1, 1)
     @test b
     @test P == [1]
 
-    b, P = @iinfered Hecke.find_shortest(G, 1, 2)
+    b, P = @inferred Hecke.find_shortest(G, 1, 2)
     @test !b
 
-    b, P = @iinfered Hecke.find_shortest(G, 3, 5)
+    b, P = @inferred Hecke.find_shortest(G, 3, 5)
     @test !b
 
     # Find something in the intersection
-    b, P1, P2 = @iinfered Hecke.find_common(G, 3, 5)
+    b, P1, P2 = @inferred Hecke.find_common(G, 3, 5)
     @test b
     @test P1 == [4, 3]
     @test P2 == [4, 5]
 
-    b, P1, P2 = @iinfered Hecke.find_common(G, 2, 3)
+    b, P1, P2 = @inferred Hecke.find_common(G, 2, 3)
     @test b
     @test P1 == [3, 2]
     @test P2 == [3]
 
-    b, P1, P2 = @iinfered Hecke.find_common(G, 1, 2)
+    b, P1, P2 = @inferred Hecke.find_common(G, 1, 2)
     @test !b
 
-    b, P1, P2 = @iinfered Hecke.find_common(G, 2, 7)
+    b, P1, P2 = @inferred Hecke.find_common(G, 2, 7)
     @test !b
   end
 
@@ -104,23 +104,23 @@
     H, mH = sub(G, [G[1]], true, L)
     Q, mQ = quo(G, [G[2]], true, L)
 
-    b, M = @iinfered Hecke.can_map_into(L, H, G)
+    b, M = @inferred Hecke.can_map_into(L, H, G)
     @test b
     @test M == mH.map
     @test_throws ErrorException H[1] + G[1] == 2*G[1]
     @test +(H[1], G[1], L) == 2*G[1]
 
-    b, M = @iinfered Hecke.can_map_into(L, H, Q)
+    b, M = @inferred Hecke.can_map_into(L, H, Q)
     @test b
     @test M == mH.map * mQ.map
     @test_throws ErrorException H[1] + Q[1]
     @test +(H[1], Q[1], L) == 2*Q[1]
 
-    b, M = @iinfered Hecke.can_map_into(L, Q, H)
+    b, M = @inferred Hecke.can_map_into(L, Q, H)
     @test !b
     
     HH, mHH = sub(G, [G[2]], true, L)
-    b, GG, MH, MHH = @iinfered Hecke.can_map_into_overstructure(L, H, HH)
+    b, GG, MH, MHH = @inferred Hecke.can_map_into_overstructure(L, H, HH)
     @test b
     @test GG == G
     @test MH == mH.map
@@ -129,14 +129,14 @@
     @test +(H[1], HH[1], L) == G[1] + G[2]
 
     HHH, mHHH = sub(H, [H[1]], true, L)
-    b, GG, MHHH, MHH = @iinfered Hecke.can_map_into_overstructure(L, HHH, HH)
+    b, GG, MHHH, MHH = @inferred Hecke.can_map_into_overstructure(L, HHH, HH)
     @test b
     @test GG == G
     @test_throws ErrorException HHH[1] + HH[1]
     @test +(HHH[1], HH[1], L) == G[1] + G[2]
 
     Q2, mQ2 = quo(G, [G[1]], true, L)
-    b, GG, MHHH, MHH = @iinfered Hecke.can_map_into_overstructure(L, Q, Q2)
+    b, GG, MHHH, MHH = @inferred Hecke.can_map_into_overstructure(L, Q, Q2)
     @test !b
   end
 end

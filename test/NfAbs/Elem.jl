@@ -20,3 +20,11 @@
   @inferred rand!(b, basis(K), 1:100)
   @test_throws ErrorException rand!(b, nf_elem[], 1:100)
 end
+
+@testset "Polynomial" begin
+  Qx, x = QQ["x"]
+  K, _a = NumberField(x^3 - 3*x - 1, "a")
+  Kt, t = K["t"]
+  f = t^4+(-28*_a^2 + 26*_a + 124)*t^2+(81*_a^2 + 504*_a + 936)
+  @test @inferred isirreducible(f)
+end
