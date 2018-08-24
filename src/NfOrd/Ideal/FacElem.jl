@@ -1,4 +1,4 @@
-function norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
+function factored_norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
   b = Dict{fmpz, fmpz}()
   for (p, k) = A.fac
     n = norm(p)
@@ -10,10 +10,19 @@ function norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
   end
   bb = FacElem(b)
   simplify!(bb)
-  return evaluate(bb)
+  return bb
 end
 
-function norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+function norm(A::FacElem{NfOrdIdl, NfOrdIdlSet})
+  return evaluate(factored_norm(A))
+end
+
+function factored_norm(A::NfOrdFracIdl)
+  n = norm(A)
+  return FacElem(Dict(numerator(n) => 1, denominator(n) => -1))
+end
+
+function factored_norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   b = Dict{fmpz, fmpz}()
   for (p, k) = A.fac
     n = norm(p)
@@ -32,9 +41,38 @@ function norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   end
   bb = FacElem(b)
   simplify!(bb)
-  return evaluate(bb)
+  return bb
 end
 
+function norm(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
+  return evaluate(factored_norm(A))
+end
+
+const FacElemQ = Union{FacElem{fmpq, FlintRationalField}, FacElem{fmpz, FlintIntegerRing}}
+
+function abs(A::FacElemQ)
+  B = empty(A.fac)
+  for (k,v) = A.fac
+    ak = abs(k)
+    if haskey(B, ak)
+      B[ak] += v
+    else
+      B[ak] = v
+    end
+  end
+  return FacElem(B)
+end
+
+function ==(A::T, B::T) where {T <: FacElemQ}
+  C = A*B^-1
+  simplify!(C)
+  return all(iszero, values(C.fac))
+end
+
+function isone(A::FacElemQ)
+  C = simplify(A)
+  return all(iszero, values(C.fac))
+end
 
 function ==(A::NfOrdIdl, B::FacElem{NfOrdIdl, NfOrdIdlSet})
   C = inv(B)*A

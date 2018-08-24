@@ -106,14 +106,29 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
   end
 end
 
-function norm(x::FacElem{nf_elem})
-  b = fmpq[]
+function factored_norm(x::FacElem{nf_elem})
+  b = fmpz[]
   c = fmpz[] 
   for (a, e) in x.fac
-    push!(b, norm(a))
-    push!(c, e)
+    n = norm(a)
+    d = numerator(n)
+    if !isone(d)
+      push!(b, d)
+      push!(c, e)
+    end
+    d = denominator(n)
+    if !isone(d)
+      push!(b, d)
+      push!(c, -e)
+    end
   end
-  return evaluate(FacElem(b, c))
+  f = FacElem(b, c)
+  simplify!(f)
+  return f
+end
+
+function norm(x::FacElem{nf_elem})
+  return evaluate(factored_norm(x))
 end
 
 _base_ring(x::nf_elem) = parent(x)::AnticNumberField
