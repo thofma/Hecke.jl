@@ -85,6 +85,14 @@ Hecke.lift(A::fmpz_mat) = A
         change a_i
 =#
 
+function lift_nonsymmetric(a::nmod_mat)
+  z = fmpz_mat(rows(a), cols(a))
+  z.base_ring = FlintIntegerRing()
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
+          (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
+  return z
+end
+
 function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   ZK = order(c.FB.ideals[1])
   T, mT = torsion_unit_group(ZK)
@@ -148,7 +156,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       break
     end
   end
-  return lift(A)
+  return lift_nonsymmetric(A)
 end
 
 fe(a::FacElem) = a
