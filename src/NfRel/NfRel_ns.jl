@@ -744,6 +744,13 @@ end
 
 @inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
 
+function _prod(A, b)
+  for a in A
+    b = b * a
+  end
+  return b
+end
+
 #aparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
 function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
@@ -751,8 +758,11 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   n = length(v)
   @assert n == ngens(parent(f))
   r = zero(parent(v[1]))
+  L = parent(v[1])
   for i=1:length(f)
-    r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
+    #@show prod(v[j]^f.exps[j, i] for j=1:n)
+    s = _prod((v[j]^f.exps[j, i] for j=1:n), one(L))
+    r += f.coeffs[i]* s
   end
   return r
 end
