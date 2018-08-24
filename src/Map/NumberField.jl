@@ -41,7 +41,32 @@ function *(f::NfToNfMor, g::NfToNfMor)
   return NfToNfMor(domain(g), codomain(f), y)
 end
 
-Base.:(^)(f::NfToNfMor, e::Int) = Base.power_by_squaring(f, e)
+function ^(f::NfToNfMor, b::Int)
+  K = domain(f)
+  @assert K == codomain(f)
+  d = degree(K)
+  b = mod(b, d)
+  if b == 0
+    return NfToNfMor(K, K, gen(K))
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = z * z
+      if (UInt(bit) & b) != 0
+        z = z * f
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
 
 Base.copy(f::NfToNfMor) = f
 

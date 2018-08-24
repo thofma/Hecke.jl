@@ -455,18 +455,14 @@ function factor(f::PolyElem{nf_elem})
 
   while true
     @vtime :PolyFactor 2 N = norm(g)
-
     if !isconstant(N) && issquarefree(N)
       break
     end
-
     k = k + 1
-
     g = compose(f, gen(Kx) - k*gen(K))
   end
 
   @vtime :PolyFactor 2 fac = factor(N)
-
   res = Dict{PolyElem{nf_elem}, Int64}()
 
   for i in keys(fac.fac)

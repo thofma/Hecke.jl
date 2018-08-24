@@ -799,7 +799,7 @@ function simple_extension(K::NfRel_ns)
     # To work around julia bug
     pe.parent
   end
-  Ka, a = number_field(f)
+  Ka, a = number_field(f, check = false)
   k = base_ring(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)
