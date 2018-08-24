@@ -742,9 +742,6 @@ function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) wh
   return true
 end
 
-
-
-
 @inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
 
 #aparently, should be called evaluate, talk to Bill...
@@ -753,7 +750,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
-  r = zero(k)
+  r = zero(parent(v[1]))
   for i=1:length(f)
     r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
   end
