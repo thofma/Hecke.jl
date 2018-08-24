@@ -122,6 +122,9 @@ function factored_norm(x::FacElem{nf_elem})
       push!(c, -e)
     end
   end
+  if length(b) == 0
+    return FacElem(FlintZZ)
+  end
   f = FacElem(b, c)
   simplify!(f)
   return f

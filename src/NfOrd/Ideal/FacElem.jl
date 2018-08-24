@@ -60,6 +60,9 @@ function abs(A::FacElemQ)
       B[ak] = v
     end
   end
+  if length(B) == 0
+    return FacElem(FlintZZ)
+  end
   return FacElem(B)
 end
 

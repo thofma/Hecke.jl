@@ -61,6 +61,13 @@ function FacElem(d::Dict{B, fmpz}) where B
   return z
 end
 
+function FacElem(R::Ring)
+  z = FacElem{elem_type(R), typeof(R)}()
+  z.fac = Dict{elem_type(R), fmpz}()
+  z.parent = FacElemMon(R)
+  return z
+end
+
 function FacElem(d::Dict{B, T}) where {B, T <: Integer}
 
   length(d) == 0 && error("Dictionary must not be empty")
@@ -450,6 +457,9 @@ function simplify!(x::FacElem{fmpq})
 end
 
 function simplify!(x::FacElem{fmpz})
+  if length(x.fac) < 1
+    return x
+  end
   if length(x.fac) <= 1
     k,v = first(x.fac)
     if isone(k)
