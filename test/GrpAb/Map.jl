@@ -4,10 +4,10 @@
     H, mH = sub(G, [G[1]])
     a = G[1]
     b = G[3]
-    bb, c = @iinfered haspreimage(mH, a)
+    bb, c = @inferred haspreimage(mH, a)
     @test bb
     @test mH(c) == a
-    bb, c = @iinfered haspreimage(mH, b)
+    bb, c = @inferred haspreimage(mH, b)
     @test !bb
     # TODO: Test for hasimage missing
   end
@@ -15,12 +15,12 @@
   @testset "Homomorphisms" begin
     G = DiagonalGroup([4, 4, 4])
     H = DiagonalGroup([4, 4, 4])
-    h = @iinfered hom(gens(G), gens(H))
+    h = @inferred hom(gens(G), gens(H))
     @test h(G[1]) == H[1]
     @test h(G[2]) == H[2]
     @test h(G[3]) == H[3]
 
-    h = @iinfered hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
@@ -29,12 +29,12 @@
   @testset "Kernel" begin
     G = DiagonalGroup([4, 4, 4])
     H = DiagonalGroup([4, 4, 4])
-    h = @iinfered hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
 
-    K, mK = @iinfered kernel(h)
+    K, mK = @inferred kernel(h)
     @test all(iszero(h(mK(k))) for k in K)
     @test order(K) == 8
   end
@@ -42,12 +42,12 @@
   @testset "Image" begin
     G = DiagonalGroup([4, 4, 4])
     H = DiagonalGroup([4, 4, 4])
-    h = @iinfered hom(G, [2*h for h in gens(H)])
+    h = @inferred hom(G, [2*h for h in gens(H)])
     @test h(G[1]) == 2*H[1]
     @test h(G[2]) == 2*H[2]
     @test h(G[3]) == 2*H[3]
 
-    I, mI = @iinfered image(h)
+    I, mI = @inferred image(h)
     @test all(haspreimage(h, mI(i))[1] for i in I)
     @test order(I) == 8
   end
@@ -56,12 +56,12 @@
     G = DiagonalGroup([4, 4, 4])
     H = DiagonalGroup([4, 4, 4])
 
-    h = @iinfered hom(G, [2*h for h in gens(H)])
-    b = @iinfered isinjective(h)
+    h = @inferred hom(G, [2*h for h in gens(H)])
+    b = @inferred isinjective(h)
     @test !b
 
-    h = @iinfered hom(G, [3*h for h in gens(H)])
-    b = @iinfered isinjective(h)
+    h = @inferred hom(G, [3*h for h in gens(H)])
+    b = @inferred isinjective(h)
     @test b
   end
 
@@ -69,12 +69,12 @@
     G = DiagonalGroup([4, 4, 4])
     H = DiagonalGroup([4, 4, 4])
 
-    h = @iinfered hom(G, [2*h for h in gens(H)])
-    b = @iinfered issurjective(h)
+    h = @inferred hom(G, [2*h for h in gens(H)])
+    b = @inferred issurjective(h)
     @test !b
 
-    h = @iinfered hom(G, [3*h for h in gens(H)])
-    b = @iinfered issurjective(h)
+    h = @inferred hom(G, [3*h for h in gens(H)])
+    b = @inferred issurjective(h)
     @test b
   end
   
@@ -82,12 +82,12 @@
     G = DiagonalGroup([4, 4, 4])
     H = DiagonalGroup([4, 4, 4])
 
-    h = @iinfered hom(G, [2*h for h in gens(H)])
-    b = @iinfered isbijective(h)
+    h = @inferred hom(G, [2*h for h in gens(H)])
+    b = @inferred isbijective(h)
     @test !b
 
-    h = @iinfered hom(G, [3*h for h in gens(H)])
-    b = @iinfered isbijective(h)
+    h = @inferred hom(G, [3*h for h in gens(H)])
+    b = @inferred isbijective(h)
     @test b
   end
 end

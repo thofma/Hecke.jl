@@ -259,14 +259,18 @@ const _euler_phi_inverse_maximum =
 function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
 
   if degree(O) <= 250
-    p = _euler_phi_inverse_maximum[degree(O)] + 1
+    upper_bound = _euler_phi_inverse_maximum[degree(O)]
   else
-    p = 2^30
+    error("Not implemented yet")
   end
+
+  p = upper_bound + 1
 
   m = fmpz(0)
   m_old = fmpz(0)
   stable = 0
+
+  first = true
 
   while true
     p = next_prime(p)
@@ -275,15 +279,26 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
     end
     lp = prime_decomposition(O, p)
     m_new = m_old
+
     for (P, e) in lp
       m_new = gcd(m_new, norm(P) - 1)
     end
 
-    if m_new == m_old
-      stable += 1
+    if first
+      m_new, _ = ppio(m_new, discriminant(O))
+      if isodd(m_new)
+        m_new = 2 * m_new
+      end
+      first = false
     end
 
-    if stable == 5
+    if m_new == m_old
+      stable += 1
+    else
+      stable = 0
+    end
+
+    if stable == 5 && m_new <= upper_bound
       return m_new
     end
 

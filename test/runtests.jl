@@ -6,10 +6,6 @@ using LinearAlgebra
 
 #using Nemo
 
-macro iinfered(x)
-  quote $(esc(x)) end
-end
-
 for scope in Hecke.ASSERT_SCOPE
   set_assert_level(scope, 3)
 end
