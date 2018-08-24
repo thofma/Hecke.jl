@@ -1,4 +1,3 @@
-global last_red=[]
 Markdown.doc"""
     compact_presentation(a::FacElem{nf_elem, AnticNumberField}, n::Int = 2; decom, arb_prec = 100, short_prec = 1000) -> FacElem
 > Computes a presentation $a = \prod a_i^{n_i}$ where all the exponents $n_i$ are powers of $n$
@@ -8,9 +7,8 @@ Markdown.doc"""
 > be passed in in \code{decom}.
 """
 function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2; decom=false, arb_prec = 100, short_prec = 1000)
-  n = fmpz(nn)
 
-  @v_do :CompactPresentation 1 push!(last_red, (a, n, decom))
+  n = fmpz(nn)
 
   K = base_ring(a)
   ZK = maximal_order(K)
@@ -23,8 +21,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   be = FacElem(K(1))
 
-  @hassert :CompactPresentation 1 length(decom) == 0 && abs(norm(a)) == 1 ||
-                                  abs(norm(a)) == norm(FacElem(decom))
+  @hassert :CompactPresentation 1 length(decom) == 0 && isone(abs(factored_norm(a))) == 1 ||
+                                  abs(factored_norm(a)) == factored_norm(FacElem(decom))
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
@@ -60,8 +58,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   delete!(de, ideal(ZK, 1))
   B=0
   
-  @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
-                                  abs(norm(a*be)) == norm(FacElem(de))
+  @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
+                                  abs(factored_norm(a*be)) == factored_norm(FacElem(de))
 
   @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
@@ -130,8 +128,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @v_do :CompactPresentation 2 @show old_n / new_n 
 
     be  *= FacElem(b)^(n^k)
-    @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
-                                    abs(norm(a*be)) == norm(FacElem(de))
+    @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
+                                    abs(factored_norm(a*be)) == factored_norm(FacElem(de))
     @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
     @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
     k -= 1
@@ -141,8 +139,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   end
   @hassert :CompactPresentation 2 length(de) != 0 || isone(ideal(ZK, a*be)) 
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
-  @hassert :CompactPresentation 1 length(de) == 0 && abs(norm(a*be)) == 1 ||
-                                    norm(ideal(ZK, a*be)) == abs(norm(FacElem(de)))
+  @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a*be))) == 1 ||
+                                    factored_norm(ideal(ZK, a*be)) == abs(factored_norm(FacElem(de)))
   @vprint :CompactPresentation 1 "Final eval...\n"
   @vtime :CompactPresentation 1 A = evaluate(FacElem(de), coprime = true)
   @vtime :CompactPresentation 1 b = evaluate_mod(a*be, A)
@@ -189,7 +187,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   ZK = maximal_order(K)
   dB = denominator(B)*index(ZK)
 
-  @hassert :CompactPresentation 1 norm(B) == abs(norm(a))
+  @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
   @hassert :CompactPresentation 2 B == ideal(order(B), a)
 
   @assert order(B) == ZK
