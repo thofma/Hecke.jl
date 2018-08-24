@@ -451,6 +451,17 @@ end
 
 function simplify!(x::FacElem{fmpz})
   if length(x.fac) <= 1
+    k,v = first(x.fac)
+    if isone(k)
+      x.fac[k] = 0
+    elseif k == -1
+      if isodd(v)
+        x.fac[k] = 1
+      else
+        delete!(x.fac, k)
+        x.fac[fmpz(1)] = 0
+      end
+    end
     return
   end
   cp = coprime_base(collect(base(x)))
