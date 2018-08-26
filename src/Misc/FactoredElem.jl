@@ -457,8 +457,9 @@ function simplify!(x::FacElem{fmpq})
 end
 
 function simplify!(x::FacElem{fmpz})
-  if length(x.fac) < 1
-    return x
+  if length(x.fac) == 0
+    x.fac[fmpz(1)] = 0
+    return
   end
   if length(x.fac) <= 1
     k,v = first(x.fac)
