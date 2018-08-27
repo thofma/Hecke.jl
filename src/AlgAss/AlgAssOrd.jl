@@ -297,7 +297,7 @@ function +(a::AlgAssAbsOrd, b::AlgAssAbsOrd)
   bB = b.basis_mat
   d = a.dim
   c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
-  return AlgAssAbsOrd(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
+  return Order(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
 end
 
 
@@ -1164,7 +1164,7 @@ Markdown.doc"""
 """
 
 function MaximalOrder(O::AlgAssAbsOrd)
-  @vtime :NfOrd fac = factor(root(abs(discriminant(O)),2))
+  @vtime :NfOrd fac = factor(abs(discriminant(O)))
   OO=O
   for (p,j) in fac
     OO += pmaximal_overorder(O, Int(p))
