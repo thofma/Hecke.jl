@@ -279,6 +279,10 @@ function tr(x::AlgAssElem{T}) where T
   return tr 
 end
 
+#function _tr(x::AlgAssElem{T}) where {T}
+#  return trace(representation_matrix(x))
+#end
+
 ################################################################################
 #
 #  Representation matrix
@@ -342,3 +346,35 @@ isone(a::AlgAssElem) = a == one(parent(a))
 function iszero(a::AlgAssElem)
   return all(i -> i == 0, a.coeffs)
 end
+
+################################################################################
+#
+#  (Reduced) trace
+#
+################################################################################
+
+function trred(a::AlgAssElem)
+  A = parent(a)
+  if _issimple(A)
+    d = dimension_of_center(A)
+    n = divexact(dim(A), d)
+    m = isqrt(n)
+    @assert m^2 == n
+    return divexact(tr(a), m)
+  else
+    W = wedderburn_decomposition(A)
+    t = zero(base_ring(A))
+    for (B, BtoA) in W
+      t = t + trred(BtoA\(a))
+    end
+    return t
+  end
+end
+
+################################################################################
+#
+#  Characteristic polynomial
+#
+################################################################################
+
+
