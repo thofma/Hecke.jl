@@ -9,6 +9,9 @@ mutable struct AlgAss{T} <: Ring
   issimple::Int
   dimension_over_center::Int
 
+  polynomial::PolyElem # If the algebra is defined by R[X]/f
+  maps_to_numberfields
+
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
@@ -144,14 +147,15 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, basis::Vector{AlgAssAbsOrdElem{S, T}}) where {S, T}
     r = new{S, T}()
     d = O.dim
-    r.order = a
+    r.order = O
     r.basis_alg = basis
     r.basis_mat = zero_matrix(FlintZZ, d, d)
     for i = 1:d
-      el = elem_in_basis(basis[i])
+      el = elem_in_basis(basis[i])[j]
       for j = 1:d
         r.basis_mat[i,j] = el[j]
       end
+      r.basis_mat = _hnf(r.basis_mat, :lowerleft)
     end
     return r
   end
@@ -169,3 +173,15 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   end
 end
 
+mutable struct AlgAssAbsOrdIdlSet{S, T}
+  order::AlgAssAbsOrd{S, T}
+
+  function AlgAssAbsOrdIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    z = new{S, T}(O)
+    return z
+  end
+end
+
+function AlgAssAbsOrdIdlSet(O::AlgAssAbsOrd{S, T}) where {S, T}
+  return AlgAssAbsOrdIdlSet{S, T}(O)
+end

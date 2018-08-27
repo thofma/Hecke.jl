@@ -30,12 +30,6 @@ end
   return AlgAssAbsOrdElem{S, T}(O, arr)
 end
 
-function ideal(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
-  return AlgAssAbsOrdIdl{S, T}(O, M)
-end
-
-@inline order(I::AlgAssAbsOrdIdl) = I.order
-
 # Turn the following into a check:
 #
 #(O::AlgAssAbsOrd)(a::AlgAssElem) = begin
@@ -60,22 +54,38 @@ function index(O::AlgAssAbsOrd)
   return FlintZZ(n)
 end
 
-function basis(O::AlgAssAbsOrd)
-  B = basis(O.algebra)
-  v = Vector{AlgAssAbsOrdElem}(undef, degree(O))
-  for i in 1:degree(O)
-    w = sum(O.basis_mat.num[i, j]//O.basis_mat.den * B[j] for j in 1:degree(O))
-    v[i] = O(w)
+function _assure_has_basis(O::AlgAssAbsOrd)
+  if !isdefined(O, :basis)
+    B = basis(O.algebra)
+    v = Vector{AlgAssAbsOrdElem}(degree(O))
+    for i in 1:degree(O)
+      w = sum(O.basis_mat.num[i, j]//O.basis_mat.den * B[j] for j in 1:degree(O))
+      v[i] = O(w)
+    end
+    O.basis = v
   end
-  return v
+  return nothing
+end
+
+function basis(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+  _assure_has_basis(O)
+  if copy == Val{true}
+    return deepcopy(O.basis)
+  else
+    return O.basis
+  end
 end
 
 function degree(O::AlgAssAbsOrd)
   return dim(O.algebra)
 end
 
-function elem_in_algebra(x::AlgAssAbsOrdElem)
-  return x.elem_in_algebra
+function elem_in_algebra(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
+  if copy == Val{true}
+    return deepcopy(x.elem_in_algebra)
+  else
+    return x.elem_in_algebra
+  end
 end
 
 ###############################################################################
@@ -107,44 +117,6 @@ end
 
 ###############################################################################
 #
-#  Functions for ideals
-#
-###############################################################################
-
-function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
-  el = elem_in_basis(x)
-  y = matrix(FlintZZ, 1, length(el), el)
-  M1, d =pseudo_inv(I.basis_mat)
-  if FakeFmpqMat(y*M1, d).den==1
-    return true
-  else
-    return false
-  end
-
-end
-
-function basis(I::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
-  
-  if !isdefined(I, :basis_alg)
-    O = order(I)
-    M = I.basis_mat
-    basis_alg = Vector{AlgAssAbsOrdElem}(rows(M))
-    for i = 1:rows(M)
-      basis_alg[i] = elem_from_mat_row(O, M, i)
-    end
-    I.basis_alg = basis_alg
-  end
-  if copy == Val{true}
-    return deepcopy(I.basis_alg)
-  else
-    return I.basis_alg
-  end
-  
-end
-
-
-###############################################################################
-#
 #  Functions for elements of order
 #
 ###############################################################################
@@ -159,28 +131,49 @@ end
 
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
-function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
+function assure_has_coord(x::AlgAssAbsOrdElem)
   if isdefined(x, :elem_in_basis)
-    if copy==Val{true}
-      return deepcopy(x.elem_in_basis)
-    else
-      return x.elem_in_basis
-    end
-  else
-    d = degree(parent(x))
-    M=FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
-    x.elem_in_basis=Array{fmpz,1}(undef, d)
-    for i = 1:d
-      x.elem_in_basis[i]=M.num[1,i]
-    end
+    return nothing
   end
-  if copy==Val{true}
+  d = degree(parent(x))
+  M = FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
+  x.elem_in_basis = Array{fmpz, 1}(d)
+  for i = 1:d
+    x.elem_in_basis[i] = M.num[1, i]
+  end
+  return nothing
+end
+
+function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_coord(x)
+  if copy == Val{true}
     return deepcopy(x.elem_in_basis)
   else
     return x.elem_in_basis
   end
 end
 
+#= function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T =#
+#=   if isdefined(x, :elem_in_basis) =#
+#=     if copy==Val{true} =#
+#=       return deepcopy(x.elem_in_basis) =#
+#=     else =#
+#=       return x.elem_in_basis =#
+#=     end =#
+#=   else =#
+#=     d = degree(parent(x)) =#
+#=     M=FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv =#
+#=     x.elem_in_basis=Array{fmpz,1}(undef, d) =#
+#=     for i = 1:d =#
+#=       x.elem_in_basis[i]=M.num[1,i] =#
+#=     end =#
+#=   end =#
+#=   if copy==Val{true} =#
+#=     return deepcopy(x.elem_in_basis) =#
+#=   else =#
+#=     return x.elem_in_basis =#
+#=   end =#
+#= end =#
 
 function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   @assert parent(x)==parent(y)
@@ -315,19 +308,20 @@ end
 ###############################################################################
 
 function show(io::IO, O::AlgAssAbsOrd)
-  print(io, "Order of ")
-  println(io, O.algebra)
+  compact = get(io, :compact, false)
+  if compact
+    print(io, "Order of ")
+    showcompact(io, O.algebra)
+  else
+    print(io, "Order of ")
+    print(io, O.algebra)
+    println(io, " with basis matrix ")
+    print(io, basis_mat(O))
+  end
 end
 
 function show(io::IO, a::AlgAssAbsOrdElem)
   print(io, a.elem_in_algebra)
-end
-
-function show(io::IO, a::AlgAssAbsOrdIdl)
-  print(io, "Ideal of ")
-  print(io, order(a))
-  println(io, "with basis matrix")
-  print(io, a.basis_mat)
 end
 
 ###############################################################################
