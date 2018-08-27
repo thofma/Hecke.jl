@@ -1,0 +1,214 @@
+@inline order(I::AlgAssAbsOrdIdl) = I.order
+
+###############################################################################
+#
+#  String I/O
+#
+###############################################################################
+
+function show(io::IO, a::AlgAssAbsOrdIdl)
+  print(io, "Ideal of ")
+  showcompact(io, order(a))
+  println(io, "with basis matrix")
+  print(io, a.basis_mat)
+end
+
+################################################################################
+#
+#  Ideal Set
+#
+################################################################################
+
+function show(io::IO, a::AlgAssAbsOrdIdlSet)
+  print(io, "Set of ideals of $(order(a))\n")
+end
+
+order(a::AlgAssAbsOrdIdlSet) = a.order
+
+parent(I::AlgAssAbsOrdIdl) = AlgAssAbsOrdIdlSet(order(I))
+
+function IdealSet(O::AlgAssAbsOrd)
+   return AlgAssAbsOrdIdlSet(O)
+end
+
+elem_type(::Type{AlgAssAbsOrdIdlSet{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
+
+elem_type(::AlgAssAbsOrdIdlSet{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
+
+parent_type(::Type{AlgAssAbsOrdIdl{S, T}}) where {S, T} = AlgAssAbsOrdIdlSet{S, T}
+
+################################################################################
+#
+#  Basis (matrices)
+#
+################################################################################
+
+function assure_has_basis_alg(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  if isdefined(a, :basis_alg)
+    return nothing
+  end
+
+  O = order(a)
+  a.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(undef, degree(O))
+  for i = 1:degree(O)
+    a.basis_alg[i] = elem_from_mat_row(O, basis_mat(a, Val{false}), i)
+  end
+  return nothing
+end
+
+function assure_has_basis_mat(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  if isdefined(a, :basis_mat)
+    return nothing
+  end
+
+  O = order(a)
+  d = degree(O)
+  a.basis_mat = zero_matrix(FlintZZ, d, d)
+  for i = 1:d
+    for j = 1:d
+      a.basis_mat[i, j] = elem_in_basis(basis[i])[j]
+    end
+  end
+  a.basis_mat = _hnf(a.basis_mat, :lowerleft)
+  return nothing
+end
+
+function basis(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_basis_alg(a)
+  if copy == Val{true}
+    return deepcopy(a.basis_alg)
+  else
+    return a.basis_alg
+  end
+end
+
+function basis_mat(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_basis_mat(a)
+  if copy == Val{true}
+    return deepcopy(a.basis_mat)
+  else
+    return a.basis_mat
+  end
+end
+
+################################################################################
+#
+#  Arithmetic
+#
+################################################################################
+
+function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  d = degree(order(a))
+  M = vcat(basis_mat(a), basis_mat(b))
+  M = view(_hnf(M, :lowerleft), (d + 1):2*d, 1:d)
+  return ideal(order(a), M, true)
+end
+
+function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  d = degree(order(a))
+  ba = basis_alg(a, Val{false})
+  bb = basis_alg(b, Val{false})
+  M = zero_matrix(FlintZZ, d^2, d)
+  for i = 1:d
+    for j = 1:d
+      t = ba[i]*bb[j]
+      for k = 1:d
+        M[(i - 1)*d + j, k] = elem_in_basis(t)[k]
+      end
+    end
+  end
+  M = view(_hnf(M, :lowerleft), (d^2 - d + 1):d^2, 1:d)
+  return ideal(order(a), M, true)
+end
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
+
+function ideal(O::AlgAssAbsOrd{S, T}, M::fmpz_mat, M_in_hnf::Bool = false) where {S, T}
+  !M_in_hnf ? M = _hnf(M, :lowerleft) : nothing
+  return AlgAssAbsOrdIdl{S, T}(O, M)
+end
+
+function ideal(O::AlgAssAbsOrd, b::Vector{AlgAssAbsOrdElem})
+  d = degree(O)
+  @assert length(b) >= d
+
+  M = zero_matrix(FlintZZ, length(b), d)
+  for i = 1:length(b)
+    for j = 1:d
+      M[i, j] = elem_in_basis(b[i])[j]
+    end
+  end
+  M = _hnf(M, :lowerleft)
+  if d < length(b)
+    M = sub(M, (length(b) - d + 1):length(b), 1:d)
+  end
+  return ideal(O, M, true)
+end
+
+################################################################################
+#
+#  Extend/contract
+#
+################################################################################
+
+function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
+  # Assumes order(A) \subseteq O
+
+  d = degree(O)
+  M = zero_matrix(FlintZZ, d^2, d)
+  X = basis(O, Val{false})
+  Y = map(O, basis_alg(A, Val{false}))
+  t = O()
+  for i = 1:d
+    for j = 1:d
+      t = X[i]*Y[j]
+      for k = 1:d
+        M[(i - 1)*d + j, k] = elem_in_basis(t, Val{false})[k]
+      end
+    end
+  end
+  M = sub(_hnf(M, :lowerleft), d*(d - 1) + 1:d^2, 1:d)
+  return ideal(O, M, true)
+end
+
+*(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = extend(A, O)
+*(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = extend(A, O)
+
+function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
+  # Assumes O \subseteq order(A)
+
+  d = degree(O)
+  M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
+  @assert M.den == 1
+  H = vcat(basis_mat(A), M.num)
+  K = _kernel(H)
+  M = sub(K, 1:d, 1:d)*basis_mat(A, Val{false})
+  M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
+  @assert M.den == 1
+  M = _hnf(M.num, :lowerleft)
+  return ideal(O, M, true)
+end
+
+intersection(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = contract(A, O)
+intersection(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = contract(A, O)
+
+################################################################################
+#
+#  Inclusion of elements in ideals
+#
+################################################################################
+
+function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
+  el = elem_in_basis(x)
+  y = matrix(FlintZZ, 1, length(el), el)
+  M1, d =pseudo_inv(I.basis_mat)
+  if FakeFmpqMat(y*M1, d).den==1
+    return true
+  else
+    return false
+  end
+end

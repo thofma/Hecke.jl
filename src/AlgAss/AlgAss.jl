@@ -167,6 +167,7 @@ function AlgAss(f::PolyElem)
   one[1] = R(1)
   A = AlgAss(R, mult_table, one)
   A.iscommutative = 1
+  A.polynomial = f
   return A
 end
 
@@ -453,8 +454,14 @@ end
 ################################################################################
 
 function show(io::IO, A::AlgAss)
-  print(io, "Associative algebra of dimension $(dim(A)) over ")
-  print(io, A.base_ring)
+  compact = get(io, :compact, false)
+  if compact
+    print(io, "Associative algebra over ")
+    print(io, A.base_ring)
+  else
+    print(io, "Associative algebra of dimension $(dim(A)) over ")
+    print(io, A.base_ring)
+  end
 end
 
 ################################################################################
