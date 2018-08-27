@@ -1041,11 +1041,11 @@ function maximal_order(O::NfOrd, primes::Array{fmpz, 1})
     end
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
     O1 = pmaximal_overorder(O, p)
-    if valuation(discriminant(O1), p)< valuation(discriminant(OO),p)
+    if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
       OO += O1
     end 
     if !(p in OO.primesofmaximality)
-      push!(OO.primesofmaximality,p)
+      push!(OO.primesofmaximality, p)
     end
     @vprint :NfOrd 1 "done\n"
   end
@@ -1069,7 +1069,7 @@ function maximal_order(O::NfAbsOrd)
     if !isa(e, AccessorNotSetError) 
       rethrow(e)
     end
-    M = new_maximal_order(K)::typeof(O)
+    M = new_maximal_order(O)::typeof(O)
     M.ismaximal = 1
     _set_maximal_order(K, M)
     return M
@@ -1078,7 +1078,7 @@ end
 
 function maximal_order_round_four(O::NfAbsOrd)
   OO = deepcopy(O)
-  @vtime :NfOrd fac = factor(Nemo.abs(discriminant(O)))
+  @vtime :NfOrd fac = factor(abs(discriminant(O)))
   for (p,j) in fac
     if j == 1
       continue
@@ -1151,7 +1151,7 @@ function maximal_order(K::AnticNumberField)
       rethrow(e)
     end
     #O = MaximalOrder(K)::NfOrd
-    O = new_maximal_order(K)::NfOrd
+    O = new_maximal_order(EquationOrder(K))::NfOrd
     O.ismaximal=1
     _set_maximal_order_of_nf(K, O)
     return O
@@ -1380,35 +1380,35 @@ end
 #
 ###############################################################################
 
-function new_maximal_order(K::NfAbsNS)
-  return maximal_order_round_four(EquationOrder(K))
+function new_maximal_order(O::NfAbsOrd)
+  return maximal_order_round_four(O)
 end
 
-function new_maximal_order(K::AnticNumberField)
-  O=EquationOrder(K)
-  if degree(K)==1
-    O.ismaximal=1
+function new_maximal_order(O::NfOrd)
+  K = nf(O)
+  if degree(K) == 1
+    O.ismaximal = 1
     return O  
   end
-  Zx, x =PolynomialRing(FlintZZ, "x")
+  Zx, x = PolynomialRing(FlintZZ, "x")
   f1 = Zx(K.pol)
   ds = rres(f1, derivative(f1))
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
   l = coprime_base(_el_divs(M,ds))
   @vprint :NfOrd 1 "Factors of the discriminant: $l\n "
-  l1=fmpz[]
-  OO=O
+  l1 = fmpz[]
+  OO = O
   @vprint :NfOrd 1 "Trial division of the discriminant\n "
   for d in l
     fac = factor_trial_range(d)[1]
-    rem= d
+    rem = d
     for (p,v) in fac
-      rem=divexact(rem, p^v)
+      rem = divexact(rem, p^v)
     end
     @vprint :NfOrd 1 "Computing the maximal order at $(collect(keys(fac)))\n "
-    O1=MaximalOrder(O, collect(keys(fac)))
-    OO+=O1
+    O1 = MaximalOrder(O, collect(keys(fac)))
+    OO += O1
     if abs(rem)!=1
       push!(l1,abs(rem))
     end
@@ -1432,7 +1432,7 @@ function new_maximal_order(K::AnticNumberField)
   append!(l1,l)
   l1=coprime_base(l1)
   =#
-  O1, Q=_TameOverorderBL(OO, l1)
+  O1, Q = _TameOverorderBL(OO, l1)
   if !isempty(Q)
     @vprint :NfOrd 1 "I have to factor $Q\n "
     for el in Q
