@@ -1288,28 +1288,38 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   nbasisO=[mK(mS\(el)) for el in basisO]
 
   cbasis=[x*y for x in nbasisL for y in nbasisO]
-  append!(cbasis, [gen(K)^i for i=0:degree(K)-1])
+  powgen = Array{nf_elem, 1}(undef, degree(K))
+  powgen[1] = K(1)
+  for i = 2:degree(K)
+    powgen[i] = powgen[i-1]*gen(K)
+  end
+  append!(cbasis, powgen)
   @vprint :QuadraticExt 2 "Product basis computed\n"
   #Now, we compute the maximal order. Then we simplify.
-  O1=MaximalOrder(_order(K, cbasis))
-  O1.ismaximal=1
-  _set_maximal_order_of_nf(K,O1)
-  Ks, mKs= simplify(K)
+  O1 = MaximalOrder(_order(K, cbasis))
+  O1.ismaximal = 1
+  _set_maximal_order_of_nf(K, O1)
+  Ks, mKs = simplify(K)
   
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   M = zero_matrix(FlintZZ, degree(Ks), degree(Ks))
+  arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
+  arr_prim_img[1] = K(1)
   prim_img=mKs(gen(Ks))
-  M1=inv(basis_mat([prim_img^i for i=0:degree(Ks)-1]))
-  basisO2=Array{nf_elem, 1}(undef, degree(Ks))
-  M=zero_matrix(FlintZZ, 1, degree(Ks))
+  for i = 2:degree(Ks)
+    arr_prim_img[i] = arr_prim_img[i-1]*prim_img
+  end
+  M1=inv(basis_mat(arr_prim_img))
+  basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
+  M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
     elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
     mul!(M, M, M1.num)
     basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2=Order(Ks, basisO2, false)
-  O2.ismaximal=1
+  O2 = Order(Ks, basisO2, false)
+  O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks,O2)
   @vprint :QuadraticExt 2 "MaximalOrder Computed. Now Automorphisms\n"
 
@@ -1324,6 +1334,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
     @assert Ks.pol(y)==0
     autos[i]=NfToNfMor(Ks,Ks,y)
   end
+  _set_automorphisms_nf(Ks, closure(autos, *))
   
   @vprint :QuadraticExt 2 "Finished\n"
   return Ks, autos
