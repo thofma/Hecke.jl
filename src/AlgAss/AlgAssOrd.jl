@@ -1167,7 +1167,7 @@ function MaximalOrder(O::AlgAssAbsOrd)
   @vtime :NfOrd fac = factor(root(abs(discriminant(O)),2))
   OO=O
   for (p,j) in fac
-    OO = pmaximal_overorder(OO, Int(p))
+    OO += pmaximal_overorder(O, Int(p))
   end
   OO.ismaximal=1
   return OO
