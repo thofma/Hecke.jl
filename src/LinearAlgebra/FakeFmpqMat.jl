@@ -144,8 +144,9 @@ end
 #
 ################################################################################
 
-function hnf!(x::FakeFmpqMat)
-  x.num = hnf(x.num)
+function hnf!(x::FakeFmpqMat, shape = :lowerleft)
+  x.num = _hnf(x.num, shape)
+  return x
 end
 
 function hnf(x::FakeFmpqMat, shape = :lowerleft)
