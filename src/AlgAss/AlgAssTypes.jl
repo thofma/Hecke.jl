@@ -7,7 +7,10 @@ mutable struct AlgAss{T} <: Ring
                            # 2 known to be not commutative
   trace_basis_elem::Array{T, 1}
   issimple::Int
-  dimension_over_center::Int
+  knows_wedderburn::Int
+  wedderburn
+  knows_center::Int
+  center
 
   polynomial::PolyElem # If the algebra is defined by R[X]/f
   maps_to_numberfields
@@ -17,7 +20,8 @@ mutable struct AlgAss{T} <: Ring
     A.base_ring = R
     A.iscommutative = 0
     A.issimple = 0
-    A.dimension_over_center = 0
+    A.knows_wedderburn = 0
+    A.knows_center = 0
     return A
   end
 
@@ -76,7 +80,8 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
                                    
-  trace_mat::fmpz_mat              # The reduced trace matrix (if known)
+  #trace_mat::fmpz_mat              # The reduced trace matrix (if known)
+  trred_matrix::fmpz_mat
 
   function AlgAssAbsOrd{S}(A::S) where {S}
     O = new{S, elem_type(S)}()

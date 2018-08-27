@@ -717,7 +717,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   #First step: kernel of the trace matrix mod p 
   W = MatrixSpace(F,O.dim, O.dim, false)
 
-  I = W(n*redtrace_mat(O))
+  I = W(n*trred_matrix(O))
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
@@ -824,46 +824,46 @@ function representation_matrix(x::AlgAssAbsOrdElem)
 end
 
 function tr(x::AlgAssAbsOrdElem)
-  return tr(x.elem_in_algebra)
+  return FlintZZ(tr(x.elem_in_algebra))
 end
 
-function redtrace_mat(O::AlgAssAbsOrd)
+function trred(x::AlgAssAbsOrdElem)
+  return FlintZZ(trred(x.elem_in_algebra))
+end
+
+function trred_matrix(O::AlgAssAbsOrd)
 
   A=O.algebra
-  if isdefined(O, :trace_mat)
-    return O.trace_mat
-  end
+#  if isdefined(O, :trred_matrix)
+#    return O.trred_matrix
+#  end
   x=O.basis_alg
   m=length(x)
-  n=root(O.dim,2)
   M=zero_matrix(FlintZZ, m, m)
   a=A()
   for i=1:m
-    mul!(a, x[i], x[i])
-    M[i,i] = divexact(numerator(tr(a)),n)
+    a = mul!(a, x[i], x[i])
+    M[i,i] = FlintZZ(trred(a))
   end
   for i = 1:m
     for j = i+1:m
       mul!(a, x[i], x[j])
-      b = divexact(numerator(tr(a)),n)
+      b = FlintZZ(trred(a))
       M[i,j] = b
       M[j,i] = b
     end
   end
-  O.trace_mat = M
+  O.trred_matrix = M
   return M
-  
 end
 
 function discriminant(O::AlgAssAbsOrd) 
-  
   if isdefined(O, :disc)
     return O.disc
   end
-  M = redtrace_mat(O)
+  M = trred_matrix(O)
   O.disc = det(M)
   return O.disc
-
 end
 
 
@@ -897,7 +897,7 @@ end
 
 function trace_signature(O::AlgAssAbsOrd)
   
-  @vtime :AlgAssOrd 1 M = redtrace_mat(O)
+  @vtime :AlgAssOrd 1 M = trred_matrix(O)
   Zx, x = PolynomialRing(FlintZZ, "x")
   Qy, y = PolynomialRing(FlintQQ, "y")
   @vtime :AlgAssOrd 1 f = charpoly(Zx, M)
