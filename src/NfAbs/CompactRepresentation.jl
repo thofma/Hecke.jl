@@ -225,11 +225,15 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = fa
   b = base_ring(c)(1)
   d = FacElem(b)
   for (k,v) = c.fac
-    if v % n == 0
-      d *= FacElem(Dict(k => div(v, n)))
-    else
-      b *= k^v # hopefully small...
+    q, r = divrem(v, n)
+    if r < 0
+      r += n
+      q -= 1
+      @assert r > 0
+      @assert n*q+r == v
     end
+    d *= FacElem(Dict(k => q))
+    b *= k^r
   end
   @hassert :CompactPresentation 2 evaluate(d^n*b *inv(a))== 1
   fl, x = ispower(b, n)

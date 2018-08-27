@@ -8,8 +8,8 @@
     @test c == true
     @test parent(KtoL(a)) == L
 
-    OK = MaximalOrder(K)
-    OL = MaximalOrder(L)
+    OK = maximal_order(K)
+    OL = maximal_order(L)
     c, KtoL = Hecke.issubfield(K, L)
     @test c == true
     @test parent(KtoL(a)) == L
@@ -27,8 +27,8 @@
     @test c == true
     @test parent(KtoK2(a)) == K2
 
-    OK = MaximalOrder(K)
-    OK2 = MaximalOrder(K2)
+    OK = maximal_order(K)
+    OK2 = maximal_order(K2)
     c, KtoK2 = Hecke.isisomorphic(K, K2)
     @test c == true
     @test parent(KtoK2(a)) == K2
