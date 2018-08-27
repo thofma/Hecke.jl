@@ -1251,12 +1251,12 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       W=mC\J
       s=exp_class(W)
       for (el,v) in s.fac
-        s.fac[el]=-nonnclass*v
+        s.fac[el] = -nonnclass*v
       end
       if haskey(s.fac, J)
-        s.fac[J]+=nonnclass
+        s.fac[J] += nonnclass
       else
-        s.fac[J]=nonnclass
+        s.fac[J] = nonnclass
       end
       z=principal_gen_fac_elem(s)
       el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
@@ -1571,25 +1571,12 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
-  
-  #= 
-  f = K.pol
-  a = gen(K)
-  for i=1:length(Aut)
-    @assert iszero(f(Aut[i].prim_img))
-  end
-  =# 
-  
+   
   if isempty(Aut)
     Aut = automorphisms(K)
     Aut = small_generating_set(Aut, *)
   end
   if ngens(R)==0
-    return GrpAbFinGenMap[]
-  end
-  
-  lgens,subs=find_gens(mR)
-  if isempty(lgens)
     return GrpAbFinGenMap[]
   end
   
@@ -1605,47 +1592,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
     push!(G, GrpAbFinGenMap(R))
     return G
   end
-  #=
-  #
-  #  Write the matrices for the change of basis
-  #
-  auxmat=zero_matrix(FlintZZ, ngens(R), length(lgens)+nrels(R))
-  for i=1:length(lgens)
-    for j=1:ngens(R)
-      auxmat[j,i]=subs[i][j]
-    end
-  end
-  if issnf(R)
-    for i=1:ngens(R)
-      auxmat[i,length(lgens)+i]=R.snf[i]
-    end
-  else
-    for i=1:ngens(R)
-      for j=1:nrels(R)
-        auxmat[i,length(lgens)+j]=R.rels[j,i]
-      end
-    end
-  end
 
-  @show Ml=transpose(solve(auxmat,identity_matrix(base_ring(auxmat),ngens(R))))
-  #
-  #  Now, we compute the action on the group
-  #
-  
-  for k=1:length(Aut)
-    M=zero_matrix(FlintZZ, length(lgens), ngens(R))
-    for i=1:length(lgens) 
-      @vtime :RayFacElem 3 J = _aut_on_id(O,Aut[k],lgens[i])
-      @vtime :RayFacElem 3 elem = mR\J
-      for j=1:ngens(R)
-        M[i,j]=elem[j]
-      end
-    end
-    G[k] = hom(R, R, view(Ml,1:rows(Ml), 1:length(lgens))*M)
-    @hassert :RayFacElem 1 isbijective(G[k])
-  end
-  =#
-  
   for k=1:length(Aut)
     imaggens=Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 

@@ -439,7 +439,7 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     g = compose(f, gen(kx) - l*gen(k))
   end
 
-  Ka = NumberField(N, "_\$", cached = cached)[1]
+  Ka = NumberField(N, "_\$", cached = cached, check = false)[1]
 
   KaT, T = PolynomialRing(Ka, "T", cached = false)
 

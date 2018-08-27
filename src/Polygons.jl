@@ -715,7 +715,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
     # otherwise we need to take p+b
     # I SHOULD CHECK THAT THIS WORKS
 
-      if !((mod(norm(b),(J.norm)^2) != 0) || (ei > 1))
+      if !(!is_norm_divisible(b, (J.norm)^2) || (ei > 1))
         J.gen_two = J.gen_two + O(p)
       end
 

@@ -1270,11 +1270,12 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   #We start from the maximal orders of the relative extension and of the base field.
   #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
   # generating the equation order.
+  @vprint :QuadraticExt 2 "Computing the maximal order\n"
   O=maximal_order(L[1].base_ring)
   OL=EquationOrder(L[1])
   B=pseudo_basis(OL)
   
-  @vprint :QuadraticExt 2 "Maximal Orders computed\n"
+  
   #Then we consider the product basis
   basisL=Array{NfRel_nsElem, 1}(undef, 2*degree(L[1]))
   for i=1:degree(L[1])
@@ -1294,11 +1295,11 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
     powgen[i] = powgen[i-1]*gen(K)
   end
   append!(cbasis, powgen)
-  @vprint :QuadraticExt 2 "Product basis computed\n"
   #Now, we compute the maximal order. Then we simplify.
   O1 = MaximalOrder(_order(K, cbasis))
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
+  @vprint :QuadraticExt 2 "Done. Now simplify and translate information\n"
   Ks, mKs = simplify(K)
   
   #Now, we have to construct the maximal order of this field.
@@ -1321,7 +1322,6 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   O2 = Order(Ks, basisO2, false)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks,O2)
-  @vprint :QuadraticExt 2 "MaximalOrder Computed. Now Automorphisms\n"
 
   #Now, the automorphisms.
   autos=Array{NfToNfMor, 1}(undef, length(L[2]))
