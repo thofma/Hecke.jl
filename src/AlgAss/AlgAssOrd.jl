@@ -57,7 +57,7 @@ end
 function _assure_has_basis(O::AlgAssAbsOrd)
   if !isdefined(O, :basis)
     B = basis(O.algebra)
-    v = Vector{AlgAssAbsOrdElem}(degree(O))
+    v = Vector{AlgAssAbsOrdElem}(undef, degree(O))
     for i in 1:degree(O)
       w = sum(O.basis_mat.num[i, j]//O.basis_mat.den * B[j] for j in 1:degree(O))
       v[i] = O(w)
@@ -137,7 +137,7 @@ function assure_has_coord(x::AlgAssAbsOrdElem)
   end
   d = degree(parent(x))
   M = FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
-  x.elem_in_basis = Array{fmpz, 1}(d)
+  x.elem_in_basis = Array{fmpz, 1}(undef, d)
   for i = 1:d
     x.elem_in_basis[i] = M.num[1, i]
   end
