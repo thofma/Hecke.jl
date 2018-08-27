@@ -308,9 +308,9 @@ function _issubfield(K::AnticNumberField, L::AnticNumberField)
   #    h = parent(L.pol)(-c1*inv(c2))
   #    return true, NfToNfMor(K, L, h(gen(L)))
     h = parent(L.pol)(r)
-    return true, NfToNfMor(K, L, h(gen(L)))
+    return true, h(gen(L))
   end
-  return false, NfToNfMor(K, L, L())
+  return false, L()
 end
 
 Markdown.doc"""
@@ -355,7 +355,8 @@ function issubfield(K::AnticNumberField, L::AnticNumberField)
       p = next_prime(p)
     end
   end
-  return _issubfield(K, L)
+  b, prim_img = _issubfield(K, L)
+  return b, NfToNfMor(K, L, prim_img)
 end
 
 ################################################################################
@@ -395,7 +396,12 @@ function isisomorphic(K::AnticNumberField, L::AnticNumberField)
       return false, NfToNfMor(K, L, L())
     end
   end
-  return _issubfield(K, L)
+  b, prim_img = _issubfield(K, L)
+  if !b
+    return b, NfToNfMor(K, L, L())
+  else
+    return b, NfToNfMor(K, L, prim_img, true)
+  end
 end
 
 ################################################################################

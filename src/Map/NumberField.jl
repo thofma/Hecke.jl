@@ -3,6 +3,7 @@ export extend, NfToNfMor, automorphisms
 mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, NfToNfMor}
   header::MapHeader{AnticNumberField, AnticNumberField}
   prim_img::nf_elem
+  prim_preimg::nf_elem
 
   function NfToNfMor()
     z = new()
@@ -10,16 +11,42 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     return r
   end
 
-  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
+  function NfToNfMor(K::AnticNumberField, L::AnticNumberField, y::nf_elem, isomorphism::Bool = false)
     z = new()
     z.prim_img = y
 
-    function image(x::nf_elem)
+    function _image(x::nf_elem)
       g = parent(K.pol)(x)
       return evaluate(g, y)
     end
 
-    z.header = MapHeader(K, L, image)
+    if !isomorphism
+      z.header = MapHeader(K, L, _image)
+      return z
+    end
+
+    # build the matrix for the basis change
+    M = zero_matrix(FlintQQ, degree(L), degree(L))
+    b = basis(K)
+    for i = 1:degree(L)
+      c = _image(b[i])
+
+      for j = 1:degree(L)
+        M[j, i] = coeff(c, j - 1)
+      end
+    end
+    t = zero_matrix(FlintQQ, degree(L), 1)
+    t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+
+    s = solve(M, t)
+    z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+
+    function _preimage(x::nf_elem)
+      g = parent(L.pol)(x)
+      return evaluate(g, z.prim_preimg)
+    end
+
+    z.header = MapHeader(K, L, _image, _preimage)
     return z
   end
 end
