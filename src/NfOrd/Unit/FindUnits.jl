@@ -288,7 +288,9 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Kernel time: $time_kernel\n"
 
   @vtime_add :UnitGroup 1 x :unit_hnf_time time_kernel
-  return u.full_rank
+  if u.full_rank
+    return 1
+  else
+    return 0
+  end
 end
-
-

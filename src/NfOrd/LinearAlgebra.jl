@@ -58,7 +58,7 @@ end
 #end
 
 function _get_coeff_raw(x::nmod_poly, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{nmod_poly}, Int), &x, i)
+  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), x, i)
   return u
 end
 
@@ -145,11 +145,11 @@ end
 # s, t are auxillary variables, r1, r2 are the residues, m1, m2 are the moduli
 # aliasing is not allowed (?)
 function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nmod_poly, m2::nmod_poly, s::nmod_poly, t::nmod_poly)
-  ccall((:nmod_poly_xgcd, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}), &z, &s, &t, &m1, &m2)
-  @assert Bool(ccall((:nmod_poly_is_one, :libflint), Cint, (Ptr{nmod_poly}, ), &z))
+  ccall((:nmod_poly_xgcd, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}), z, s, t, m1, m2)
+  @assert Bool(ccall((:nmod_poly_is_one, :libflint), Cint, (Ref{nmod_poly}, ), z))
   # z = s*m1*r2 + t*m2*r1
   mul!(z, s, m1)
-  ccall((:nmod_poly_mul, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{fq_nmod}), &z, &z, &r2)
+  ccall((:nmod_poly_mul, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Ref{fq_nmod}), z, z, r2)
   mul!(t, t, m2)
   mul!(t, t, r1)
   add!(z, z, t)
@@ -158,7 +158,7 @@ function crt!(z::nmod_poly, r1::nmod_poly, r2::Union{nmod_poly, fq_nmod}, m1::nm
 end
 
 function set!(z::nmod_poly, x::nmod_poly)
-  ccall((:nmod_poly_set, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}), &z, &x)
+  ccall((:nmod_poly_set, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}), z, x)
 end
 
 function __helper!(z, mF, entries)
@@ -204,9 +204,9 @@ end
 
 ==(P::PMat, Q::PMat) = P.matrix == Q.matrix && P.coeffs == Q.coeffs
 
-function Base.deepcopy_internal(P::PMat{T, S}, dict::ObjectIdDict) where {T, S}
+function Base.deepcopy_internal(P::PMat{T, S}, dict::IdDict) where {T, S}
   z = PMat{T, S}()
-  for x in fieldnames(P)
+  for x in fieldnames(typeof(P))
     if x != :parent && isdefined(P, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(P, x), dict))
     end
@@ -223,7 +223,7 @@ function show(io::IO, P::PMat)
     for i in 1:rows(P.matrix)
       i == 1 || print(io, "\n")
       print(io, "(")
-      showcompact(io, P.coeffs[i])
+      show(IOContext(io, :compact => true), P.coeffs[i])
       print(io, ") * ")
       print(io, sub(P.matrix, i:i, 1:cols(P.matrix)))
     end
@@ -231,7 +231,7 @@ function show(io::IO, P::PMat)
     print(io, "Pseudo-matrix over $(parent(P.matrix[1, 1]))")
     for i in 1:rows(P.matrix)
       print(io, "\n")
-      showcompact(io, P.coeffs[i])
+      show(IOContext(io, :compact => true), P.coeffs[i])
       print(io, " with row $(sub(P.matrix, i:i, 1:cols(P.matrix)))")
     end
   end
@@ -457,12 +457,12 @@ function find_pseudo_hnf_modulus(P::PMat{T, S}) where {T, S}
           continue
         end
         rowPerm = permGroup()
-        rank = lufact!(rowPerm, Pt)
+        rank = lu!(rowPerm, Pt)
       end
       p = next_prime(p)
     end
     Minor = zero_matrix(K, cols(P), cols(P))
-    C = Array{S, 1}(rank)
+    C = Array{S, 1}(undef, rank)
     for i = 1:rows(P)
       if rowPerm[i] > rank
         continue
@@ -595,7 +595,7 @@ end
 # we assume that span(P) \subseteq O^r
 function _matrix_for_reduced_span(P::PMat, m::NfOrdIdl)
   O = order(m)
-  c = Array{NfOrdIdl}(rows(P))
+  c = Array{NfOrdIdl}(undef, rows(P))
   mat = deepcopy(P.matrix)
   for i in 1:rows(P)
     I, a = _coprime_norm_integral_ideal_class(P.coeffs[i], m)
@@ -769,7 +769,7 @@ function sub(M::Generic.Mat, rows::UnitRange{Int}, cols::UnitRange{Int})
   z = zero_matrix(base_ring(M), length(rows), length(cols))
   for i in rows
     for j in cols
-      z[i - start(rows) + 1, j - start(cols) + 1] = M[i, j]
+      z[i - first(rows) + 1, j - first(cols) + 1] = M[i, j]
     end
   end
   return z
@@ -806,7 +806,7 @@ function _pseudo_hnf_cohen(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
-      U = eye(H.matrix, m)
+      U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_cohen!(H, U, true)
       return H, U
    else
@@ -984,7 +984,7 @@ function _pseudo_hnf_kb(P::PMat, trafo::Type{Val{T}} = Val{false}) where T
    H = deepcopy(P)
    m = rows(H)
    if trafo == Val{true}
-      U = eye(H.matrix, m)
+      U = identity_matrix(base_ring(H.matrix), m)
       pseudo_hnf_kb!(H, U, true)
       return H, U
    else
@@ -1236,13 +1236,13 @@ function show(io::IO, P::PMat2)
    print(io, "$(P.matrix)\n")
    print(io, "\nwith row ideals\n")
    for I in P.row_coeffs
-      showcompact(io, I)
+      show(IOContext(io, :compact => true), I)
       print(io, "\n")
    end
    print(io, "\nand column ideals")
    for I in P.col_coeffs
       print(io, "\n")
-      showcompact(io, I)
+      show(IOContext(io, :compact => true), I)
    end
 end
 
@@ -1280,8 +1280,8 @@ function _pseudo_snf_kb(P::PMat2, trafo::Type{Val{T}} = Val{false}) where T
    m = rows(S)
    n = cols(S)
    if trafo == Val{true}
-      U = eye(S.matrix, m)
-      K = eye(S.matrix, n)
+      U = identity_matrix(base_ring(S.matrix), m)
+      K = identity_matrix(base_ring(S.matrix), m)
       pseudo_snf_kb!(S, U, K, true)
       return S, U, K
    else
@@ -1396,7 +1396,7 @@ end
 
 base_ring(M::ModDed) = M.base_ring
 
-function Base.istriu(A::Generic.Mat)
+function istriu(A::Generic.Mat)
    m = rows(A)
    n = cols(A)
    d = 0
@@ -1418,7 +1418,7 @@ function show(io::IO, M::ModDed)
    print(io, "Module over $(M.base_ring) with defining pseudo-matrix")
    for i in 1:rows(M.pmatrix.matrix)
       print(io, "\n")
-      showcompact(io, M.pmatrix.coeffs[i])
+      show(IOContext(io, :compact => true), M.pmatrix.coeffs[i])
       print(io, " with row $(sub(M.pmatrix.matrix, i:i, 1:cols(M.pmatrix.matrix)))")
    end
 end

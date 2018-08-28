@@ -62,9 +62,9 @@ end
 # We hack around it by don't deepcopying A.valuation.
 # Note that B therefore contains a reference to A (A cannot be freed unless
 # B is freed).
-function Base.deepcopy_internal(A::NfAbsOrdIdl, dict::ObjectIdDict)
+function Base.deepcopy_internal(A::NfAbsOrdIdl, dict::IdDict)
   B = typeof(A)(order(A))
-  for i in fieldnames(A)
+  for i in fieldnames(typeof(A))
     if isdefined(A, i)
       if i == :valuation || i == :order
         setfield!(B, i, getfield(A, i))
@@ -187,7 +187,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
 
@@ -197,7 +197,7 @@ function ideal(O::NfAbsOrd, x::NfAbsOrdElem)
   return NfAbsOrdIdl(deepcopy(x))
 end
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = false) -> NfAbsOrdIdl
 
@@ -223,7 +223,7 @@ function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = f
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfOrd, x::fmpz, y::NfOrdElem) -> NfAbsOrdIdl
 
@@ -241,7 +241,7 @@ function (S::NfAbsOrdIdlSet)()
    return NfAbsOrdIdl(order(S))
 end
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfOrd, a::fmpz) -> NfAbsOrdIdl
 
@@ -249,7 +249,7 @@ doc"""
 """
 ideal(O::NfAbsOrd, a::fmpz)  = NfAbsOrdIdl(O, deepcopy(a))
 
-doc"""
+Markdown.doc"""
 ***
     ideal(O::NfOrd, a::Int) -> NfAbsOrdIdl
 
@@ -263,7 +263,7 @@ ideal(O::NfAbsOrd, a::Int) = NfAbsOrdIdl(O, a)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     order(x::NfAbsOrdIdl) -> NfOrd
 
@@ -271,7 +271,7 @@ doc"""
 """
 order(a::NfAbsOrdIdlSet) = a.order
 
-doc"""
+Markdown.doc"""
 ***
     nf(x::NfAbsOrdIdl) -> AnticNumberField
 
@@ -280,7 +280,7 @@ doc"""
 nf(x::NfAbsOrdIdl) = nf(order(x))
 
 
-doc"""
+Markdown.doc"""
 ***
     order(I::NfAbsOrdIdl) -> NfOrd
 
@@ -294,7 +294,7 @@ doc"""
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     *(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
     *(x::NfOrdElem, O::NfOrd) -> NfAbsOrdIdl
 
@@ -316,7 +316,7 @@ end
 #
 ###########################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_basis(A::NfAbsOrdIdl) -> Bool
 
@@ -332,7 +332,7 @@ function assure_has_basis(A::NfAbsOrdIdl)
     O = order(A)
     M = A.basis_mat
     Ob = basis(O, Val{false})
-    B = Vector{elem_type(O)}(degree(O))
+    B = Vector{elem_type(O)}(undef, degree(O))
     y = O()
     for i in 1:degree(O)
       z = O()
@@ -347,13 +347,13 @@ function assure_has_basis(A::NfAbsOrdIdl)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     basis(A::NfAbsOrdIdl) -> Array{NfOrdElem, 1}
 
 > Returns the basis of A.
 """
-@inline function basis{T}(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true})
+@inline function basis(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where {T}
   assure_has_basis(A)
   if copy == Val{true}
     return deepcopy(A.basis)
@@ -368,7 +368,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_basis_mat(A::NfAbsOrdIdl) -> Bool
 
@@ -376,7 +376,7 @@ doc"""
 """
 @inline has_basis_mat(A::NfAbsOrdIdl) = isdefined(A, :basis_mat)
 
-doc"""
+Markdown.doc"""
 ***
   basis_mat(A::NfAbsOrdIdl) -> fmpz_mat
 
@@ -450,7 +450,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_basis_mat_inv(A::NfAbsOrdIdl) -> Bool
 
@@ -458,7 +458,7 @@ doc"""
 """
 @inline has_basis_mat_inv(A::NfAbsOrdIdl) = isdefined(A, :basis_mat_inv)
 
-doc"""
+Markdown.doc"""
 ***
   basis_mat_inv(A::NfAbsOrdIdl) -> fmpz_mat
 
@@ -473,7 +473,7 @@ function basis_mat_inv(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     basis_mat_inv(A::NfAbsOrdIdl) -> FakeFmpqMat
 
@@ -494,7 +494,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_minimum(A::NfAbsOrdIdl) -> Bool
 
@@ -504,7 +504,7 @@ function has_minimum(A::NfAbsOrdIdl)
   return isdefined(A, :minimum)
 end
 
-doc"""
+Markdown.doc"""
 ***
     minimum(A::NfAbsOrdIdl) -> fmpz
 
@@ -530,7 +530,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       A.minimum = fmpz(0)
       A.iszero = 1
     else
-      if new && issimple(nf(order(A))) && order(A).ismaximal == 1
+      if issimple(nf(order(A))) && order(A).ismaximal == 1
         A.minimum = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 A.minimum == denominator(inv(b), order(A))
       else
@@ -547,7 +547,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
     else
-      if new && issimple(nf(order(A))) && order(A).ismaximal == 1
+      if issimple(nf(order(A))) && order(A).ismaximal == 1
         d = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
       else
@@ -570,7 +570,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_norm(A::NfAbsOrdIdl) -> Bool
 
@@ -610,7 +610,7 @@ function assure_has_norm(A::NfAbsOrdIdl)
   return nothing
 end
 
-doc"""
+Markdown.doc"""
 ***
     norm(A::NfAbsOrdIdl) -> fmpz
 
@@ -632,7 +632,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_basis_princ_gen(A::NfAbsOrdIdl) -> Bool
 
@@ -642,7 +642,7 @@ function has_princ_gen(A::NfAbsOrdIdl)
   return isdefined(A, :princ_gen)
 end
 
-doc"""
+Markdown.doc"""
 ***
     has_basis_princ_gen_special(A::NfAbsOrdIdl) -> Bool
 
@@ -660,7 +660,7 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 
@@ -676,7 +676,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     in(x::NfOrdElem, y::NfAbsOrdIdl)
     in(x::nf_elem, y::NfAbsOrdIdl)
@@ -706,7 +706,7 @@ in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     inv(A::NfAbsOrdIdl) -> NfOrdFracIdl
 
@@ -714,6 +714,7 @@ doc"""
 > $AB = \mathcal O_K$.
 """
 function inv(A::NfAbsOrdIdl)
+  @assert !iszero(A)
   if ismaximal_known(order(A)) && ismaximal(order(A))
     return inv_maximal(A)
   else
@@ -738,15 +739,21 @@ function inv_maximal(A::NfAbsOrdIdl)
     if iszero(A.gen_two)
       return ideal(O, 1)//A.gen_one
     end
-    if new
-      alpha = _invmod(A.gen_one, A.gen_two)
-      _, d = ppio(denominator(alpha, O), A.gen_one)
+    m = A.gen_one
+    if isone(m)
+      return A//1
+    end
+    if true
+      alpha = _invmod(m, A.gen_two)
     else  
-      alpha = inv(elem_in_nf(A.gen_two))
-      d = denominator(alpha, O)
-      m = A.gen_one
-      _, d = ppio(d, m)
+      be = elem_in_nf(A.gen_two)
+      d = denominator(be)
+      f, e = ppio(d, m)
+      be *= e
+      be = mod(be*f, m^2*f)//f
+      alpha = inv(elem_in_nf(be))
     end  
+    _, d = ppio(denominator(alpha, O), m)
     Ai = NfAbsOrdIdl(order(A))
     #Ai = parent(A)()
     dn = denominator(d*alpha, O)
@@ -768,7 +775,7 @@ function inv_maximal(A::NfAbsOrdIdl)
   error("Not implemented yet")
 end
 
-doc"""
+Markdown.doc"""
 ***
     isinvertible(A::NfAbsOrdIdl) -> Bool, NfOrdFracIdl
 
@@ -893,14 +900,14 @@ function simplify(A::NfAbsOrdIdl)
       A.norm = fmpz(1)
       return A
     end
-    if new
+    if true
       A.minimum = _minmod(A.gen_one, A.gen_two)
       @hassert :Rres 1 A.minimum == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     else  
       A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end  
     A.gen_one = A.minimum
-    if false && new
+    if false 
       #norm seems to be cheap, while inv is expensive
       #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
       #      order basis. For this it would better be small in the field basis....
@@ -913,7 +920,16 @@ function simplify(A::NfAbsOrdIdl)
       @assert n == A.norm
     end
     A.norm = n
-    A.gen_two = mod(A.gen_two, A.gen_one^2)
+    if true
+      be = A.gen_two.elem_in_nf
+      d = denominator(be)
+      f, e = ppio(d, A.gen_one)
+      be *= e
+      be = mod(be*f, f*A.gen_one^2)//f
+      A.gen_two = order(A)(be)
+    else
+      A.gen_two = mod(A.gen_two, A.gen_one^2)
+    end
     A.gens_normal = A.gen_one
     return A
   end
@@ -941,7 +957,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     ispower(I::NfAbsOrdIdl) -> Int, NfAbsOrdIdl
     ispower(a::NfOrdFracIdl) -> Int, NfOrdFracIdl
 > Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
@@ -1024,7 +1040,7 @@ function ispower(I::NfOrdFracIdl)
   return g, r^div(e, g)//s^div(f, g)
 end
 
-doc"""
+Markdown.doc"""
     ispower(A::NfAbsOrdIdl, n::Int) -> Bool, NfAbsOrdIdl
     ispower(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl
 > Computes, if possible, an ideal $B$ s.th. $B^n==A$ holds. In this
@@ -1109,7 +1125,7 @@ function one(A::NfAbsOrdIdl)
   return ideal(order(A), 1)
 end
 
-doc"""
+Markdown.doc"""
 ***
     isone(A::NfAbsOrdIdl) -> Bool
     isunit(A::NfAbsOrdIdl) -> Bool
@@ -1133,7 +1149,7 @@ iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     mod(x::NfOrdElem, I::NfAbsOrdIdl)
 
@@ -1291,7 +1307,7 @@ end
 # TH:
 # There is some annoying type instability since we pass to nmod_mat or
 # something else. Should use the trick with the function barrier.
-doc"""
+Markdown.doc"""
 ***
     pradical(O::NfOrd, p::fmpz) -> NfAbsOrdIdl
 
@@ -1358,7 +1374,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   #First, find the generators
   for i=1:length(X)
-    coords=Array{fmpz,1}(degree(O))
+    coords=Array{fmpz,1}(undef, degree(O))
     for j=1:degree(O)
       coords[j]=lift(X[i][j])
     end
@@ -1386,7 +1402,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfOrd
 
@@ -1437,7 +1453,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   return O1
 end
 
-doc"""
+Markdown.doc"""
     colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl) -> NfOrdFracIdl
 > The ideal $(a:b) = \{x \in K | xb \subseteq a\} = \hom(b, a)$
 > where $K$ is the number field.
@@ -1505,7 +1521,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     ideal(O::NfOrd, I::NfAbsOrdIdl) -> NfOrdFracIdl
 > The fractional ideal of $O$ generated by a Z-basis of $I$.
 """
@@ -1525,7 +1541,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     has_2_elem(A::NfAbsOrdIdl) -> Bool
 
@@ -1535,7 +1551,7 @@ function has_2_elem(A::NfAbsOrdIdl)
   return isdefined(A, :gen_two)
 end
 
-doc"""
+Markdown.doc"""
 ***
     has_weakly_normal(A::NfAbsOrdIdl) -> Bool
 
@@ -1546,7 +1562,7 @@ function has_weakly_normal(A::NfAbsOrdIdl)
         A.gens_weakly_normal == true) || has_2_elem_normal(A)
 end
 
-doc"""
+Markdown.doc"""
 ***
     has_2_elem_normal(A::NfAbsOrdIdl) -> Bool
 
@@ -1603,7 +1619,9 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     A.gen_one = denominator(bi, order(A))
     A.minimum = A.gen_one
     A.gen_two = x
-    A.norm = abs(numerator(norm(b)))
+    if !isdefined(A, :norm)
+      A.norm = abs(numerator(norm(b)))
+    end
     @hassert :NfOrd 1 gcd(A.gen_one^degree(order(A)),
                     FlintZZ(norm(A.gen_two))) == A.norm
 
@@ -1635,12 +1653,21 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     return nothing
   end
 
+  if minimum(A) == 1
+    A.gen_one = minimum(A)
+    A.gen_two = one(O)
+    A.gens_weakly_normal = 1
+    A.gens_normal = fmpz(2)
+    return nothing
+  end
+
+
   M = MatrixSpace(FlintZZ, 1, degree(O), false)
 
   Amin2 = minimum(A)^2
   Amind = minimum(A)^degree(O)
 
-  B = Array{fmpz}(degree(O))
+  B = Array{fmpz}(undef, degree(O))
 
   gen = O()
 
@@ -1665,8 +1692,8 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
 
     # Put the entries of B into the (1 x d)-Matrix m
     for i in 1:degree(O)
-      s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ptr{fmpz_mat}, Int, Int), &m, 0, i - 1)
-      ccall((:fmpz_set, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz}), s, &B[i])
+      s = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), m, 0, i - 1)
+      ccall((:fmpz_set, :libflint), Nothing, (Ptr{fmpz}, Ref{fmpz}), s, B[i])
     end
 
     if iszero(m)
@@ -1677,6 +1704,14 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     d = denominator(basis_mat(O, Val{false}))
     mul!(m, m, basis_mat(O, Val{false}).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
+    d = denominator(gen)
+    f, e = ppio(d, minimum(A))
+    gen *= e
+    gen = mod(gen*f, f*minimum(A)^2)//f
+    if iszero(gen)
+      continue
+    end
+
     # the following should be done inplace
     #gen = dot(reshape(Array(mm), degree(O)), basis(O))
     if norm(A) == gcd(Amind, numerator(norm(gen)))
@@ -1918,7 +1953,11 @@ function random_get(R::RandIdlCtx; reduce::Bool = true, repeat::Int = 1)
       if delta > 0
         i = rand(1:length(R.base))
       else
-        i = rand(find(R.exp))
+        j = findall(x -> x != 0, R.exp)
+        if length(j) == 0
+          return R.rand
+        end
+        i = rand(findall(x -> x != 0, R.exp))
       end
       R.exp[i] += delta
       if true || !(R.exp in R.last)
@@ -1962,7 +2001,7 @@ end
 #
 ###################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
 > Test if ideals $I,J$ are coprime

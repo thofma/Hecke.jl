@@ -6,7 +6,7 @@ export picard_group
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
       picard_group(O::NfOrd) -> GrpAbFinGen, MapClassGrp
 
 > Returns the Picard group of O and a map from the group in the set of
@@ -63,7 +63,7 @@ function _direct_sum_of_localizations(O::NfOrd)
   fac = factor(QF)
   D = Dict{NfOrdIdl, Vector{Int}}() # keys are ideals p of O, values the indices of the ideals q in OK such that contract(q, O) == p.
   i = 1
-  factors_of_FOK = Vector{NfOrdIdl}(length(fac)) # ideals of OK
+  factors_of_FOK = Vector{NfOrdIdl}(undef, length(fac)) # ideals of OK
   for (q, e) in fac
     p = contract(q, O)
     p.is_prime = q.is_prime
@@ -90,8 +90,8 @@ function _direct_sum_of_localizations(O::NfOrd)
     end
 
     # Compute (OK_p/F*OK_p)^\times
-    groups2 = Vector{GrpAbFinGen}(length(prime_ideals_over_p))
-    maps2 = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(length(prime_ideals_over_p))
+    groups2 = Vector{GrpAbFinGen}(undef, length(prime_ideals_over_p))
+    maps2 = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals_over_p))
     for i = 1:length(prime_ideals_over_p)
       q, eq = prime_ideals_over_p[i]
       groups2[i], maps2[i] = _multgrp_mod_pv(q, eq, q^eq)
@@ -239,7 +239,7 @@ function _picard_group(O::NfOrd)
 
   S, StoP = snf(P)
 
-  gens_snf = typeof(generators)(ngens(S))
+  gens_snf = typeof(generators)(undef, ngens(S))
   for i = 1:ngens(S)
     x = (StoP(S[i])).coeff
     for j = 1:ngens(P)
@@ -295,7 +295,7 @@ function _picard_group(O::NfOrd)
   end
 
   StoIdl = MapClassGrp{typeof(S)}() # Technically, it is a MapPicardGrp...
-  StoIdl.header = MapHeader(S, NfOrdIdlSet, disc_exp_picard_group, disc_log_picard_group)
+  StoIdl.header = MapHeader(S, IdealSet(O), disc_exp_picard_group, disc_log_picard_group)
 
   return S, StoIdl
 end

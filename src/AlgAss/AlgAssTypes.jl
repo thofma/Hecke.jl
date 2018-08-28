@@ -6,28 +6,35 @@ mutable struct AlgAss{T} <: Ring
                            # 1 known to be commutative
                            # 2 known to be not commutative
   trace_basis_elem::Array{T, 1}
+  issimple::Int
+  knows_wedderburn::Int
+  wedderburn
+  knows_center::Int
+  center
+
+  polynomial::PolyElem # If the algebra is defined by R[X]/f
+  maps_to_numberfields
 
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
     A.iscommutative = 0
+    A.issimple = 0
+    A.knows_wedderburn = 0
+    A.knows_center = 0
     return A
   end
 
   function AlgAss{T}(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
-    A = new{T}()
-    A.base_ring = R
+    A = AlgAss{T}(R)
     A.mult_table = mult_table
     A.one = one
-    A.iscommutative = 0
     return A
   end
 
   function AlgAss{T}(R::Ring, mult_table::Array{T, 3}) where {T}
-    A = new{T}()
-    A.base_ring = R
+    A = AlgAss{T}(R)
     A.mult_table = mult_table
-    A.iscommutative = 0
     return A
   end
 end
@@ -39,7 +46,7 @@ mutable struct AlgAssElem{T} <: RingElem
   function AlgAssElem{T}(A::AlgAss{T}) where {T}
     z = new{T}()
     z.parent = A
-    z.coeffs = Array{T, 1}(size(A.mult_table, 1))
+    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
       z.coeffs[i] = A.base_ring()
     end
@@ -51,6 +58,7 @@ mutable struct AlgAssElem{T} <: RingElem
     z = new{T}()
     z.parent = A
     z.coeffs = coeffs
+    z.coeffs
     return z
   end
 end
@@ -72,7 +80,8 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
                                    
-  trace_mat::fmpz_mat              # The reduced trace matrix (if known)
+  #trace_mat::fmpz_mat              # The reduced trace matrix (if known)
+  trred_matrix::fmpz_mat
 
   function AlgAssAbsOrd{S}(A::S) where {S}
     O = new{S, elem_type(S)}()
@@ -96,7 +105,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     r = AlgAssAbsOrd{S}(A)
     d = dim(A)
     r.basis_mat = basis_mat
-    r.basis_alg = Vector{elem_type(S)}(rows(basis_mat))
+    r.basis_alg = Vector{elem_type(S)}(undef, rows(basis_mat))
     for i in 1:d
       r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end
@@ -143,13 +152,15 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, basis::Vector{AlgAssAbsOrdElem{S, T}}) where {S, T}
     r = new{S, T}()
     d = O.dim
-    r.order = a
+    r.order = O
     r.basis_alg = basis
     r.basis_mat = zero_matrix(FlintZZ, d, d)
     for i = 1:d
+      el = elem_in_basis(basis[i])[j]
       for j = 1:d
-        r.basis_mat[i,j] = elem_in_basis(basis[i])
+        r.basis_mat[i,j] = el[j]
       end
+      r.basis_mat = _hnf(r.basis_mat, :lowerleft)
     end
     return r
   end
@@ -158,7 +169,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
     r = new{S, T}()
     r.order = O
     d = O.dim
-    r.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(d)
+    r.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(undef, d)
     for i = 1:d
       r.basis_alg[i] = elem_from_mat_row(O, M, i)
     end
@@ -167,3 +178,15 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   end
 end
 
+mutable struct AlgAssAbsOrdIdlSet{S, T}
+  order::AlgAssAbsOrd{S, T}
+
+  function AlgAssAbsOrdIdlSet{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    z = new{S, T}(O)
+    return z
+  end
+end
+
+function AlgAssAbsOrdIdlSet(O::AlgAssAbsOrd{S, T}) where {S, T}
+  return AlgAssAbsOrdIdlSet{S, T}(O)
+end

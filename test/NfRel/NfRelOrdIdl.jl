@@ -1,8 +1,8 @@
 @testset "Relative ideals" begin
   @testset "Arithmetic" begin
-    Qx, x = FlintQQ["x"]
+     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-    K, a = NumberField(f, "a")
+     K, a = NumberField(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -36,9 +36,9 @@
   end
 
   @testset "Prime decomposition" begin
-    Qx, x = FlintQQ["x"]
+     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-    K, a = NumberField(f, "a")
+     K, a = NumberField(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -77,9 +77,9 @@
   end
 
   @testset "Residue fields" begin
-    Qx, x = FlintQQ["x"]
+     Qx, x = FlintQQ["x"]
     f = x^4 - 95x^3 - 91x^2 + 90x - 31
-    K, a = NumberField(f, "a")
+     K, a = NumberField(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^3 - 70y^2 + 27y + 97
@@ -98,7 +98,7 @@
       @test iszero(mF(b))
     end
 
-    for i = 1:5
+    for i = 1:1
       c = rand(OL, 100)
       d = rand(OL, 100)
       @test mod(inv(mF)(mF(c)), P) == mod(c, P)
@@ -127,7 +127,7 @@
       @test iszero(mF(b))
     end
 
-    for i = 1:5
+    for i = 1:1
       c = rand(OL, 100)
       d = rand(OL, 100)
       @test mod(inv(mF)(mF(c)), P) == mod(c, P)
@@ -143,9 +143,9 @@
   end
 
   @testset "Idempotents and uniformizers" begin
-    Qx, x = FlintQQ["x"]
+     Qx, x = FlintQQ["x"]
     f = x^2 + 12*x - 92
-    K, a = NumberField(f, "a")
+     K, a = NumberField(f, "a")
     OK = maximal_order(K)
     Ky, y = K["y"]
     g = y^2 - 54*y - 73
@@ -190,7 +190,7 @@
     Z = maximal_order(Q)
     Qy, y = Q["y"]
     f = y^2 + 12*y - 92
-    K, a = NumberField(f, "a")
+     K, a = NumberField(f, "a")
     OK = maximal_order(K)
 
     p = prime_decomposition(Z, 2)[1][1]

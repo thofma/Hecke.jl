@@ -144,8 +144,9 @@ end
 #
 ################################################################################
 
-function hnf!(x::FakeFmpqMat)
-  x.num = hnf(x.num)
+function hnf!(x::FakeFmpqMat, shape = :lowerleft)
+  x.num = _hnf(x.num, shape)
+  return x
 end
 
 function hnf(x::FakeFmpqMat, shape = :lowerleft)
@@ -164,7 +165,7 @@ function sub(x::FakeFmpqMat, r::UnitRange{Int}, c::UnitRange{Int})
   return z
 end
 
-function Base.deepcopy_internal(x::FakeFmpqMat, dict::ObjectIdDict)
+function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
   z = FakeFmpqMat()
   z.num = Base.deepcopy_internal(x.num, dict)
   z.den = Base.deepcopy_internal(x.den, dict)

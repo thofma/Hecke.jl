@@ -104,14 +104,14 @@
 
       n = @inferred norm(z)
       @test n == det(M)
-      t = @inferred trace(z)
-      @test t == trace(M)
+      t = @inferred tr(z)
+      @test t == tr(M)
     end
   end
 
   @testset "Morphisms" begin
     L, m = @inferred simple_extension(K)
-    LL, _ = number_field(x^6-6*x^4-6*x^3+12*x^2-36*x+1)
+    LL,  = number_field(x^6-6*x^4-6*x^3+12*x^2-36*x+1)
     @test isisomorphic(L, LL)[1]
     for i in 1:100
       z = rand(L, -10:10)
@@ -143,7 +143,7 @@
   end
 
   @testset "Maximal order" begin
-    K2, _ = @inferred number_field([x^2 - 50, x^3 - 3])
+    K2,  = @inferred number_field([x^2 - 50, x^3 - 3])
     O = EquationOrder(K2)
     Omax = @inferred MaximalOrder(O)
     @test discriminant(Omax) == FlintZZ(30233088)

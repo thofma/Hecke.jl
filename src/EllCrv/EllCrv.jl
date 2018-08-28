@@ -189,7 +189,7 @@ function base_field(E::EllCrv{T}) where T
   return E.base_field::parent_type(T)
 end
 
-function Base.deepcopy_internal(E::EllCrv, dict::ObjectIdDict)
+function Base.deepcopy_internal(E::EllCrv, dict::IdDict)
     return EllipticCurve(E.coeff)
 end
 
@@ -246,7 +246,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     short_weierstrass_model(E::EllCrv{fmpq}) -> (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
 
@@ -287,9 +287,9 @@ function _short_weierstrass_model(E::EllCrv{T}) where T
 
   # we are hitting https://github.com/JuliaLang/julia/issues/15276
 
-  const _b2 = deepcopy(b2)
-  const _a1 = deepcopy(a1)
-  const _a3 = deepcopy(a3)
+  _b2 = deepcopy(b2)
+  _a1 = deepcopy(a1)
+  _a3 = deepcopy(a3)
 
   # transformes a point on E (long form) to a point on EE (short form)
   trafo = function(P::EllCrvPt)
@@ -372,7 +372,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     infinity(E::EllCrv) -> EllCrvPt
 
@@ -389,7 +389,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ison_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
 
@@ -424,7 +424,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     disc(E::EllCrv{T}) -> T
 
@@ -464,7 +464,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     j(E::EllCrv{T}) -> T
 > Computes the j-invariant of $E$.
@@ -509,7 +509,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
 > Adds two points on an elliptic curve.
@@ -587,7 +587,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     -(P::EllCrvPt) -> EllCrvPt
 
@@ -609,7 +609,7 @@ function -(P::EllCrvPt)
   return Q
 end
 
-doc"""
+Markdown.doc"""
 ***
     ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
 
@@ -641,7 +641,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     *(n::Int, P::EllCrvPt) -> EllCrvPt
 

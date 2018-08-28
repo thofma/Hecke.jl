@@ -86,6 +86,8 @@ include("Clgp/Rel_enum.jl")
 include("Clgp/Rel_LLL.jl")
 include("Clgp/Main_LLL.jl")
 include("Clgp/Rel_Schmettow.jl")
+include("Clgp/Saturate.jl")
+using .RelSaturate
 
 ################################################################################
 #
@@ -99,6 +101,7 @@ function class_group_ctx(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int 
     try
       c = _get_ClassGrpCtx_of_order(O)::ClassGrpCtx{SMat{fmpz}}
       return c
+    catch e
     end
   end
 
@@ -154,6 +157,8 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
     U.torsion_units_gen = torsion_units_gen(O)
   end  
 
+  @vprint :UnitGroup 1 "Torsion structure done!\n"
+
   w = U.torsion_units_order
 
   r1, r2 = signature(O)
@@ -183,7 +188,9 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
       return fmpz(1)
     elseif !overlaps(loghRtrue, loghRapprox)
       e = exp(loghRapprox - loghRtrue)
-      return abs_upper_bound(e, fmpz)
+      e_fmpz = abs_upper_bound(e, fmpz)
+      @vprint :ClassGroup 1 "validate called, index bound is $e_fmpz\n"
+      return e_fmpz
     end
 
     error("Not yet implemented")
@@ -204,6 +211,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     @vprint :UnitGroup 1 "... done (retrieved).\n"
     return c, U, 1
   end
+  class_group_get_pivot_info(c) #hopefully sets c.h 
 
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
@@ -212,6 +220,8 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
   need_more = true
 
   hnftime = 0.0
+
+  r = 0
 
   do_units = true
   while true
@@ -223,11 +233,22 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
         @vtime_add_elapsed :UnitGroup 1 c :unit_hnf_time module_trafo_assure(c.M)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units_with_trafo(U, c)
       end
-
       @v_do :UnitGroup 1 popindent()
     end
     if r == 1  # use saturation!!!!
-      if _validate_class_unit_group(c, U) == 1
+      idx = _validate_class_unit_group(c, U) 
+      stable = 3.5
+      while idx < 20 && idx > 1
+        @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
+        @assert any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
+        class_group_get_pivot_info(c)
+        @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+        n_idx = _validate_class_unit_group(c, U) 
+        @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
+        @assert idx != n_idx
+        idx = n_idx
+      end  
+      if idx == 1
         break
       end
     end
@@ -263,6 +284,7 @@ function unit_group_ctx(c::ClassGrpCtx; redo::Bool = false)
     try
       U = _get_UnitGrpCtx_of_order(O)::UnitGrpCtx
       return U
+    catch e
     end
   end
 
@@ -301,7 +323,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   return U, r
 end
 
-doc"""
+Markdown.doc"""
 ***
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
@@ -318,7 +340,7 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = fa
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     unit_group(O::NfOrd) -> GrpAbFinGen, Map
 
@@ -333,7 +355,7 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   return unit_group(c, U)
 end
 
-doc"""
+Markdown.doc"""
 ***
     unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
 

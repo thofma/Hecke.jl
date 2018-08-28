@@ -26,8 +26,8 @@ function ^(a::ResElem, f::fmpz)
 end
 
 function set!(z::fq_nmod, x::fq_nmod)
-  ccall((:fq_nmod_set, :libflint), Void,
-          (Ptr{fq_nmod}, Ptr{fq_nmod}, Ptr{FqNmodFiniteField}),
-          &z, &x, &parent(z))
+  ccall((:fq_nmod_set, :libflint), Nothing,
+          (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}),
+          z, x, parent(z))
 end
 

@@ -15,7 +15,7 @@ function Base.show(io::IO, c::CyclotomicExt)
   print(io, "Cyclotomic extension by zeta_$(c.n) of degree $(degree(c.Ka))")
 end
 
-doc"""
+Markdown.doc"""
     cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
 > Computes $k(\zeta_n)$, in particular, a structure containing $k(\zeta_n)$
 > both as an absolute extension, as a relative extension (of $k$) and the maps
@@ -31,7 +31,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       end
     end
   catch e
-    if e != AbstractAlgebra.AccessorNotSetError()
+    if !(e isa AbstractAlgebra.AccessorNotSetError)
       rethrow(e)
     end
   end
@@ -45,7 +45,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   lf = factor(fk)
   fk = first(keys(lf.fac))
 
-  Kr, Kr_gen = number_field(fk, "z_$n", false)
+  Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
   Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
 
   c = CyclotomicExt()

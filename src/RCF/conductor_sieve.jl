@@ -90,7 +90,7 @@ function _action_on_quo(mq::GrpAbFinGenMap, act::Array{GrpAbFinGenMap,1})
   n=Int(S.snf[end])
   R=ResidueField(FlintZZ, n, cached=false)
   W=MatrixSpace(R, ngens(S), ngens(S), false)
-  quo_action=Array{nmod_mat,1}(length(act))
+  quo_action=Array{nmod_mat,1}(undef, length(act))
   for s=1:length(act)
     quo_action[s]=W(mS.map*act[i].map*mS.imap)
   end
@@ -381,29 +381,28 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
   ram_primes=collect(keys(factor(O.disc).fac))
   filter!(x -> !divisible(fmpz(n),x), ram_primes)
-  coprime_to=cat(1,ram_primes, wild_ram)
+  coprime_to=cat(ram_primes, wild_ram, dims = 1)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)
   b1=Int(root(fmpz(bound),Int(degree(O)*(m-1)*k))) 
-  
-  list= squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
+  list = squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
-  extra_list=Tuple{Int, Int}[(1,1)]
+  extra_list = Tuple{Int, Int}[(1,1)]
   for q in ram_primes
-    tr=prime_decomposition_type(O,Int(q))
-    f=tr[1][1]
-    nq=Int(q)^f 
-    if gcd(nq-1,n)==1
+    tr = prime_decomposition_type(O,Int(q))
+    f = tr[1][1]
+    nq = Int(q)^f 
+    if gcd(nq-1,n) == 1
       continue
     end
-    if nq> bound
-      break
+    if nq > bound
+      continue
     end
     l=length(extra_list)
     for i=1:l
-      no=extra_list[i][2]*nq
-      if no> bound
+      no = extra_list[i][2]*nq
+      if no > bound
         continue
       end
       push!(extra_list, (extra_list[i][1]*q, no))
@@ -412,12 +411,13 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   
   final_list=Tuple{Int,fmpz}[]
   l=length(list)
+  e = Int((m-1)*k)
   for (el,norm) in extra_list
     for i=1:l
-      if (list[i]^d)*norm>bound
+      if (list[i]^d) * norm > bound
         continue
       end
-      push!(final_list, (list[i]*el, (list[i]^(Int((m-1)*k)*d))*norm))
+      push!(final_list, (list[i]*el, (list[i]^(e*d))*norm))
     end
   end
   
@@ -517,34 +517,117 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   
 end
 
+###############################################################################
+#
+#  Conductors over QQ
+#
+###############################################################################
 
-function conductors_tameQQ(O::NfOrd, n::Int, bound::fmpz)
+
+function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
+  
+  G = snf(DiagonalGroup(a))[1].snf
+  sqf= trues(n)
+  primes= trues(n)
+  deg = prod(a)
+  #remove primes that can be wildly ramified
+  for x in coprime_to
+    el=Int(x)
+    t=el
+    while t<= n
+      @inbounds sqf[t]=false
+      @inbounds primes[t]=false
+      t+=el
+    end
+  end
+  
+  #sieving procedure
+  #First, I can remove all the multiples of 2
+  if !(2 in coprime_to)
+    i=2
+    while i<=length(sqf)
+      @inbounds sqf[i]=false
+      i+=2
+    end
+  end  
+
+  i=3
+  b=Base.sqrt(n)
+  while i<=b
+    if primes[i]
+      if gcd(deg,i-1)==1
+        @inbounds primes[i]=false
+        @inbounds sqf[i]=false
+        j=i
+        while j<= n
+         @inbounds primes[j]=false
+         @inbounds sqf[j]=false
+         j+=i
+        end
+      else 
+        j=i
+        while j<= n
+          @inbounds primes[j]=false
+          j+=i
+        end
+        j=i^2
+        t=2*j
+        while j<= n
+          @inbounds sqf[j]=false
+          j+=t
+        end
+      end
+    end
+    i+=2
+  end
+  while i<=n
+    if primes[i]
+      if gcd(deg,i-1) == 1
+        @inbounds sqf[i]=false
+        j = i
+        while j <= n
+         @inbounds sqf[j]=false
+         j += i
+        end
+      end
+    end
+    i+=2
+  end
+   
+  return Int[i for i=1:length(sqf) if sqf[i]]
+  
+end
+
+
+
+function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz)
 
   #
   #  First, conductors coprime to the ramified primes and to the 
   #  degree of the extension we are searching for.
   # 
+  n = prod(a)
+  wild_ram = collect(keys(factor(fmpz(n)).fac))
+  m = minimum(wild_ram)
+  k = divexact(n,m)
+  b1 = Int(root(fmpz(bound),Int((m-1)*k))) 
   
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
-  m=minimum(wild_ram)
-  k=divexact(n,m)
-  b1=Int(root(fmpz(bound),Int((m-1)*k))) 
-  
-  return squarefree_for_conductors(O, b1, n, coprime_to=wild_ram)
+  return squarefree_for_conductorsQQ(O, b1, a, coprime_to=wild_ram)
 
 end
 
-function conductorsQQ(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
+function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   
-  K=nf(O)
-  d=degree(O)
-  wild_ram=collect(keys(factor(fmpz(n)).fac))
+  K = nf(O)
+  d = degree(O)
+  n = prod(a)
+  wild_ram = collect(keys(factor(fmpz(n)).fac))
 
   #
   # First, conductors for tamely ramified extensions
   #
 
-  list=conductors_tameQQ(O,n,bound)
+  list=conductors_tameQQ(O,a,bound)
 
   if tame
     return list  
@@ -637,7 +720,7 @@ function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
                          tame = tame)
 
 
-  newlist = Vector{NfAbsNS}(length(l))
+  newlist = Vector{NfAbsNS}(undef, length(l))
   for j in 1:length(l)
     newlist[j], _ = number_field([Qx([coeff(coeff(f, i), 0) for i in 0:length(f)]) for f in l[j].abs_pol])
   end
@@ -648,12 +731,13 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
   
   K=nf(O) 
   @assert degree(K)==1
-  n=prod(gtype)
+  gtype = map(Int, snf(DiagonalGroup(gtype))[1].snf)
+  n = prod(gtype)
     
-  expo=lcm(gtype)
+  expo = lcm(gtype)
     
   #Getting conductors
-  l_conductors=conductorsQQ(O,n,absolute_discriminant_bound, tame)
+  l_conductors=conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
   if with_autos==Val{true}
     fields = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}}[]
@@ -931,10 +1015,10 @@ function _find_pairs(bound::Int)
   #now translate it into the matrix
   for i=1:b1
     if !list[i]
-      pairs[poszero+i,1:n]=false
-      pairs[1:n,poszero+i]=false
-      pairs[poszero-i,1:n]=false
-      pairs[1:n,poszero-i]=false
+      pairs[poszero+i,1:n] .=false
+      pairs[1:n,poszero+i] .=false
+      pairs[poszero-i,1:n] .=false
+      pairs[1:n,poszero-i] .=false
     end
   end
   #check
@@ -1186,13 +1270,14 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   #We start from the maximal orders of the relative extension and of the base field.
   #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
   # generating the equation order.
+  @vprint :QuadraticExt 2 "Computing the maximal order\n"
   O=maximal_order(L[1].base_ring)
   OL=EquationOrder(L[1])
   B=pseudo_basis(OL)
   
-  @vprint :QuadraticExt 2 "Maximal Orders computed\n"
+  
   #Then we consider the product basis
-  basisL=Array{NfRel_nsElem, 1}(2*degree(L[1]))
+  basisL=Array{NfRel_nsElem, 1}(undef, 2*degree(L[1]))
   for i=1:degree(L[1])
     _assure_weakly_normal_presentation(B[i][2].num)
     basisL[2*i-1]=divexact(B[i][2].num.gen_one* B[i][1], B[i][2].den)
@@ -1204,33 +1289,42 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   nbasisO=[mK(mS\(el)) for el in basisO]
 
   cbasis=[x*y for x in nbasisL for y in nbasisO]
-  append!(cbasis, [gen(K)^i for i=0:degree(K)-1])
-  @vprint :QuadraticExt 2 "Product basis computed\n"
+  powgen = Array{nf_elem, 1}(undef, degree(K))
+  powgen[1] = K(1)
+  for i = 2:degree(K)
+    powgen[i] = powgen[i-1]*gen(K)
+  end
+  append!(cbasis, powgen)
   #Now, we compute the maximal order. Then we simplify.
-  O1=MaximalOrder(_order(K, cbasis))
-  O1.ismaximal=1
-  _set_maximal_order_of_nf(K,O1)
-  Ks, mKs= simplify(K)
+  O1 = MaximalOrder(_order(K, cbasis))
+  O1.ismaximal = 1
+  _set_maximal_order_of_nf(K, O1)
+  @vprint :QuadraticExt 2 "Done. Now simplify and translate information\n"
+  Ks, mKs = simplify(K)
   
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   M = zero_matrix(FlintZZ, degree(Ks), degree(Ks))
+  arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
+  arr_prim_img[1] = K(1)
   prim_img=mKs(gen(Ks))
-  M1=inv(basis_mat([prim_img^i for i=0:degree(Ks)-1]))
-  basisO2=Array{nf_elem, 1}(degree(Ks))
-  M=zero_matrix(FlintZZ, 1, degree(Ks))
+  for i = 2:degree(Ks)
+    arr_prim_img[i] = arr_prim_img[i-1]*prim_img
+  end
+  M1=inv(basis_mat(arr_prim_img))
+  basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
+  M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
     elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
     mul!(M, M, M1.num)
     basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2=Order(Ks, basisO2, false)
-  O2.ismaximal=1
+  O2 = Order(Ks, basisO2, false)
+  O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks,O2)
-  @vprint :QuadraticExt 2 "MaximalOrder Computed. Now Automorphisms\n"
 
   #Now, the automorphisms.
-  autos=Array{NfToNfMor, 1}(length(L[2]))
+  autos=Array{NfToNfMor, 1}(undef, length(L[2]))
   el=mS(mK\(mKs(gen(Ks))))
   for i=1:length(L[2])
     x=mK(mS\(L[2][i](el)))
@@ -1240,6 +1334,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
     @assert Ks.pol(y)==0
     autos[i]=NfToNfMor(Ks,Ks,y)
   end
+  _set_automorphisms_nf(Ks, closure(autos, *))
   
   @vprint :QuadraticExt 2 "Finished\n"
   return Ks, autos

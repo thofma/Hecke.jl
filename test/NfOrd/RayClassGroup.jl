@@ -1,9 +1,9 @@
 @testset "RayClassGroup" begin
-  
-  include(Pkg.dir("Hecke") * "/examples/RayClass.jl")
-  
+
+  #include(joinpath(Hecke.pkgdir, "examples", "RayClass.jl"))
+
   @testset "Big prime" begin
-    k, _ = wildanger_field(2, 13)
+    k,  = wildanger_field(2, 13)
     Zk = maximal_order(k)
     p = next_prime(fmpz(2)^100)
     r, mr = ray_class_group(ideal(Zk, p), n_quo = 2)
@@ -12,35 +12,28 @@
 
   @testset "quadratic fields" begin
     
-    Qx,x=PolynomialRing(FlintQQ,"x")
-    K,a=NumberField(x^2+199,"a")
+     Qx,x=PolynomialRing(FlintQQ,"x")
+     K,a=NumberField(x^2+199,"a")
     O=maximal_order(K)
     C,mC=class_group(O)
-    
+  
     for i=9:13
-      R,mR=ray_class_group_p_part(3, ideal(O,i))
-      for r in R
-        @test r== mR\(mR(r))
-      end
       R1,mR1=ray_class_group(ideal(O,i), n_quo=3)
       for r in R1
         @test r== mR1\(mR1(r))
       end
+      R,mR=ray_class_group(ideal(O,i))
       q,mq=quo(R,3)
       @test Hecke.isisomorphic(R1,q)
     end
     
-    Qx,x=PolynomialRing(FlintQQ,"x")
-    K,a=NumberField(x^2-5,"a")
+     Qx,x=PolynomialRing(FlintQQ,"x")
+     K,a=NumberField(x^2-5,"a")
     O=maximal_order(K)
     C,mC=class_group(O, redo = true)
     inf_plc=real_places(K)
     
     for i=9:13
-      R,mR=ray_class_group_p_part(2, ideal(O,i),inf_plc)
-      for r in R
-        @test r== mR\(mR(r))
-      end
       R1,mR1=ray_class_group(ideal(O,i),inf_plc)
       for r in R1
         @test r== mR1\(mR1(r))
@@ -49,18 +42,15 @@
       for r in R2
         @test r== mR2\(mR2(r))
       end
-      q,mq=quo(R,2)
-      @test Hecke.isisomorphic(q,R2)
       q1,mq1=quo(R1,2)
       @test Hecke.isisomorphic(q1,R2)
     end
-
   end
   
   @testset "infinite places" begin
   
-    Qx, x = PolynomialRing(FlintQQ, "x");
-    K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20)
+     Qx, x = PolynomialRing(FlintQQ, "x");
+     K, a = NumberField(x^4-4*x^3-11*x^2+30*x+20)
     O = maximal_order(K)
     r, mr = ray_class_group(ideal(O,4), real_places(K), n_quo=2)
     @test order(r) == 2^5
@@ -71,9 +61,9 @@
   
   @testset "stable subgroups" begin
   
-    Qx,x=PolynomialRing(FlintQQ,"x");
+     Qx,x=PolynomialRing(FlintQQ,"x");
     f=x^2+1;
-    K,a=NumberField(f,"a");
+     K,a=NumberField(f,"a");
     O=maximal_order(K);
     C,mC=class_group(O);
     r,mr=ray_class_group(ideal(O,3*5*7), n_quo=8);

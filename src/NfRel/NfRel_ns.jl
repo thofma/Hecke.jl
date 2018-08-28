@@ -71,7 +71,7 @@ mutable struct NfRel_ns{T} <: RelativeExtension{T}
     r.abs_pol = abs_pol
     r.base_ring = base_ring(f[1])
     r.S = S
-    r.auxilliary_data = Array{Any}(5)
+    r.auxilliary_data = Array{Any}(undef, 5)
     return r
   end
 end
@@ -91,7 +91,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRel_nsElem{T}, dict::ObjectIdDict) where T
+function Base.deepcopy_internal(a::NfRel_nsElem{T}, dict::IdDict) where T
   z = NfRel_nsElem{T}(Base.deepcopy_internal(data(a), dict))
   z.parent = parent(a)
   return z
@@ -108,17 +108,17 @@ end
 #
 ################################################################################
 
-Nemo.elem_type{T}(::Type{NfRel_ns{T}}) = NfRel_nsElem{T}
+Nemo.elem_type(::Type{NfRel_ns{T}}) where {T} = NfRel_nsElem{T}
 
-Nemo.elem_type{T}(::NfRel_ns{T}) = NfRel_nsElem{T}
+Nemo.elem_type(::NfRel_ns{T}) where {T} = NfRel_nsElem{T}
 
-Nemo.parent_type{T}(::Type{NfRel_nsElem{T}}) = NfRel_ns{T}
+Nemo.parent_type(::Type{NfRel_nsElem{T}}) where {T} = NfRel_ns{T}
 
 Nemo.needs_parentheses(::NfRel_nsElem) = true
 
 Nemo.isnegative(x::NfRel_nsElem) = Nemo.isnegative(data(x))
 
-Nemo.show_minus_one{T}(::Type{NfRel_nsElem{T}}) = true
+Nemo.show_minus_one(::Type{NfRel_nsElem{T}}) where {T} = true
 
 function Nemo.iszero(a::NfRel_nsElem)
   reduce!(a)
@@ -141,36 +141,18 @@ Nemo.one(a::NfRel_nsElem) = one(a.parent)
 #
 ################################################################################
 
-if isdefined(Nemo, :promote_rule1)
-  Nemo.promote_rule{T <: Integer, S}(::Type{NfRel_nsElem{S}}, ::Type{T}) = NfRel_nsElem{S}
+Nemo.promote_rule(::Type{NfRel_nsElem{S}}, ::Type{T}) where {T <: Integer, S} = NfRel_nsElem{S}
 
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T} = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
 
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T} = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
 
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
+Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
 
-  function Nemo.promote_rule1(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{U}}) where {T, U}
-     Nemo.promote_rule(T, NfRel_nsElem{U}) == T ? NfRel_nsElem{T} : Union{}
-  end
+Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{T}}) where T <: Nemo.RingElement = NfRel_nsElem{T}
 
-  function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T, U} 
-    Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Nemo.promote_rule1(U, NfRel_nsElem{T})
-  end
-else
-  Nemo.promote_rule{T <: Integer, S}(::Type{NfRel_nsElem{S}}, ::Type{T}) = NfRel_nsElem{S}
-
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpz}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
-
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{fmpq}) where {T <: Nemo.RingElement} = NfRel_nsElem{T}
-
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{T}) where {T} = NfRel_nsElem{T}
-
-  Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{NfRel_nsElem{T}}) where T <: Nemo.RingElement = NfRel_nsElem{T}
-  
-  function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
-    Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Union{}
-  end
+function Nemo.promote_rule(::Type{NfRel_nsElem{T}}, ::Type{U}) where {T <: Nemo.RingElement, U <: Nemo.RingElement}
+  Nemo.promote_rule(T, U) == T ? NfRel_nsElem{T} : Union{}
 end
 
 ################################################################################
@@ -179,12 +161,13 @@ end
 #
 ################################################################################
 
-@inline Nemo.base_ring{T}(a::NfRel_ns{T}) = a.base_ring::parent_type(T)
-@inline base_field{T}(a::NfRel_ns{T}) = a.base_ring::parent_type(T)
+@inline Nemo.base_ring(a::NfRel_ns{T}) where {T} = a.base_ring::parent_type(T)
+
+@inline base_field(a::NfRel_ns{T}) where {T} = a.base_ring::parent_type(T)
 
 @inline Nemo.data(a::NfRel_nsElem) = a.data
 
-@inline Nemo.parent{T}(a::NfRel_nsElem{T}) = a.parent::NfRel_ns{T}
+@inline Nemo.parent(a::NfRel_nsElem{T}) where {T} = a.parent::NfRel_ns{T}
 
 issimple(a::NfRel_ns) = false
 
@@ -234,13 +217,13 @@ end
 #  Constructors and parent object overloading
 #
 ################################################################################
-doc"""
+Markdown.doc"""
     number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T -> NfRel_ns
 > Given polynomials $f = (f_1, \ldots, f_n)$ over soem number field $k$, construct
 > $$$K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
 > The ideal in the quotient must be maximal - although this is not tested.
 """
-function number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T
+function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
   R = base_ring(f[1])
   Rx, x = PolynomialRing(R, length(f), s)
@@ -319,6 +302,23 @@ Nemo.divexact(a::NfRel_nsElem, b::NfRel_nsElem) = div(a, b)
 #
 ################################################################################
 #via julia
+
+function Base.:(^)(a::NfRel_nsElem, b::Integer)# = Base.power_by_squaring(a, b)
+  if b < 0
+    return inv(a)^(-b)
+  elseif b == 0
+    return parent(a)(1)
+  elseif b == 1
+    return deepcopy(a)
+  elseif mod(b, 2) == 0
+    c = a^(div(b, 2))
+    return c*c
+  elseif mod(b, 2) == 1
+    return a^(b - 1)*a
+  end
+end
+
+#Base.:(^)(a::NfRel_nsElem, b::UInt) = Base.power_by_squaring(a, b)
 
 function Base.:(^)(a::NfRel_nsElem, b::fmpz)
   if b < 0
@@ -405,24 +405,25 @@ end
 function basis(K::NfRel_ns)
   b = NfRel_nsElem[]
   g = gens(K)
-  for i=CartesianRange(Tuple(1:total_degree(f) for f = K.pol))
+  for i=CartesianIndices(Tuple(1:total_degree(f) for f = K.pol))
     push!(b, prod(g[j]^(i[j]-1) for j=1:length(i)))
   end
   return b
 end
 
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
+  a.parent
   K = parent(a)
-  C = CartesianRange(Tuple(0:total_degree(f)-1 for f = K.pol))
-  C = [UInt[c[i] for i=1:length(K.pol)] for c = C]
-  zero = base_ring(K)(0)
+  C = CartesianIndices(Tuple(0:total_degree(f)-1 for f = K.pol))
+  L = LinearIndices(C)
+  CC = [UInt[c[i] for i=1:length(K.pol)] for c = C]
   for j=1:cols(M)
-    M[i, j] = zero
+    M[i, j] = zero(base_ring(K))
   end
   for j=1:length(a.data)
-    p = findnext(C, a.data.exps[:, j], 1)
-    @assert p!=0
-    M[i, p] = a.data.coeffs[j]
+    p = findfirst(isequal(a.data.exps[:, j]), CC)
+    @assert p !== nothing
+    M[i, L[p]] = a.data.coeffs[j]
   end
 end
 
@@ -431,8 +432,12 @@ function elem_from_mat_row(K::NfRel_ns{T}, M::Generic.Mat{T}, i::Int) where T
   t = K()
   b = basis(K)
   for c = 1:cols(M)
-    a += M[i, c]*b[c]
+    a.parent = K
+    b[c].parent = K
+    a = a + M[i, c]*b[c]
+    b[c].parent
   end
+  a.parent
   return a
 end
 
@@ -586,7 +591,7 @@ function norm(a::NfRel_nsElem)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
 end
 
-function trace(a::NfRel_nsElem)
+function tr(a::NfRel_nsElem)
   f = minpoly(a)
   return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
@@ -737,10 +742,14 @@ function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) wh
   return true
 end
 
-
-
-
 @inline ngens(R::Nemo.Generic.MPolyRing) = R.num_vars
+
+function _prod(A, b)
+  for a in A
+    b = b * a
+  end
+  return b
+end
 
 #aparently, should be called evaluate, talk to Bill...
 #definitely non-optimal, in particular for automorphisms
@@ -748,9 +757,12 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   k = base_ring(parent(f))
   n = length(v)
   @assert n == ngens(parent(f))
-  r = zero(k)
+  r = zero(parent(v[1]))
+  L = parent(v[1])
   for i=1:length(f)
-    r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
+    #@show prod(v[j]^f.exps[j, i] for j=1:n)
+    s = _prod((v[j]^f.exps[j, i] for j=1:n), one(L))
+    r += f.coeffs[i]* s
   end
   return r
 end
@@ -765,7 +777,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   return r
 end
 
-doc"""
+Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).
@@ -791,8 +803,10 @@ function simple_extension(K::NfRel_ns)
     end
     push!(ind, j)
     pe += j*g[i]
+    # To work around julia bug
+    pe.parent
   end
-  Ka, a = number_field(f)
+  Ka, a = number_field(f, check = false)
   k = base_ring(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)
@@ -815,7 +829,7 @@ function simple_extension(K::NfRel_ns)
   return Ka, NfRelToNfRel_nsMor(Ka, K, pe, emb)
 end
 
-doc"""
+Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
     absolute_field(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 

@@ -7,7 +7,7 @@ export istotally_real, istotally_complex, conjugates, conjugates_real,
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     istotally_real(K::AnticNumberField) -> Bool
 
@@ -18,7 +18,7 @@ function istotally_real(K::AnticNumberField)
   return signature(K)[1] == degree(K)
 end
 
-doc"""
+Markdown.doc"""
 ***
     istotally_complex(K::AnticNumberField) -> Bool
 
@@ -35,7 +35,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     conjugates(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
@@ -59,7 +59,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   K = parent(x)
   d = degree(K)
   r1, r2 = signature(K)
-  conjugates = Array{acb}(r1 + 2*r2)
+  conjugates = Array{acb}(undef, r1 + 2*r2)
   target_tol = abs_tol
 
   while true
@@ -77,7 +77,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 
     for i in 1:r1
       o = RR()
-      ccall((:arb_poly_evaluate, :libarb), Void,
+      ccall((:arb_poly_evaluate, :libarb), Nothing,
             (Ref{arb}, Ref{arb_poly}, Ref{arb}, Int),
              o, xpoly, c.real_roots[i], abs_tol)
 
@@ -95,7 +95,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
 
     for i in 1:r2
       tacb = CC()
-      ccall((:arb_poly_evaluate_acb, :libarb), Void,
+      ccall((:arb_poly_evaluate_acb, :libarb), Nothing,
             (Ref{acb}, Ref{arb_poly}, Ref{acb}, Int),
              tacb, xpoly, c.complex_roots[i], abs_tol)
 
@@ -120,7 +120,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
@@ -140,7 +140,7 @@ end
 function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   r1, r2 = signature(parent(x))
   c = conjugates_arb(x, abs_tol)
-  z = Array{arb}(r1)
+  z = Array{arb}(undef, r1)
 
   for i in 1:r1
     z[i] = real(c[i])
@@ -149,7 +149,7 @@ function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   return z
 end
 
-doc"""
+Markdown.doc"""
 ***
     conjugates_complex(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
@@ -172,7 +172,7 @@ end
 function conjugates_arb_complex(x::nf_elem, abs_tol::Int)
   r1, r2 = signature(parent(x))
   c = conjugates_arb(x, abs_tol)
-  z = Vector{acb}(r2)
+  z = Vector{acb}(undef, r2)
 
   for i in (r1 + 1):(r1 + r2)
     z[i - r1] = c[i]
@@ -187,7 +187,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
@@ -214,7 +214,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
   target_tol = abs_tol
 
   # TODO: Replace this using multipoint evaluation of libarb
-  z = Array{arb}(r1 + r2)
+  z = Array{arb}(undef, r1 + r2)
   while true
     prec_too_low = false
     c = conjugate_data_arb_roots(K, abs_tol)
@@ -225,7 +225,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
     RR = ArbField(abs_tol, false)
     for i in 1:r1
       o = RR()
-      ccall((:arb_poly_evaluate, :libarb), Void,
+      ccall((:arb_poly_evaluate, :libarb), Nothing,
             (Ref{arb}, Ref{arb_poly}, Ref{arb}, Int),
             o, xpoly, c.real_roots[i], abs_tol)
       abs!(o, o)
@@ -248,7 +248,7 @@ function conjugates_arb_log(x::nf_elem, abs_tol::Int)
     tacb = CC()
     for i in 1:r2
       oo = RR()
-      ccall((:arb_poly_evaluate_acb, :libarb), Void,
+      ccall((:arb_poly_evaluate_acb, :libarb), Nothing,
             (Ref{acb}, Ref{arb_poly}, Ref{acb}, Int),
             tacb, xpoly, c.complex_roots[i], abs_tol)
       abs!(oo, tacb)
@@ -286,7 +286,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     minkowski_map(a::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
@@ -297,7 +297,7 @@ doc"""
 function minkowski_map(a::nf_elem, abs_tol::Int = 32)
   # TODO: Rewrite this using conjugates_arb
   K = parent(a)
-  A = Array{arb}(degree(K))
+  A = Array{arb}(undef, degree(K))
   r, s = signature(K)
   c = conjugate_data_arb(K)
   R = PolynomialRing(AcbField(c.prec, false), "x", cached=false)[1]
@@ -358,7 +358,7 @@ end
 #
 ############################################################################
 
-#doc"""
+#Markdown.doc"""
 #***
 #    _signs(a::nf_elem) -> Array{Int, 1}
 #> For a non-zero elements $a$ return the signs of all real embeddings.
@@ -375,7 +375,7 @@ function _signs(a::nf_elem)
     return Int[]
   end
 
-  s = Array{Int}(r1)
+  s = Array{Int}(undef, r1)
   while true
     c = conjugates(a, p)
     done = true
@@ -393,7 +393,7 @@ function _signs(a::nf_elem)
   end
 end
 
-#doc"""
+#Markdown.doc"""
 #***
 #    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
 #> For a non-zero elements $a$ in factored form,
@@ -416,7 +416,7 @@ function _signs(a::FacElem{nf_elem, AnticNumberField})
   return s
 end
 
-doc"""
+Markdown.doc"""
     complex_conjugation(K::AnticNumberField)
 
 Given a totally complex normal number field, this function returns the
@@ -430,7 +430,7 @@ function complex_conjugation(K::AnticNumberField)
   a = gen(K)
   d = degree(K)
   !istotally_complex(K) && error("Number field must be totally complex")
-  imgs = Vector{nf_elem}(d)
+  imgs = Vector{nf_elem}(undef, d)
 
   for i in 1:d
     imgs[i] = A[i](a)

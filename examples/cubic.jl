@@ -4,7 +4,7 @@ function ideals_with_pp_norm(lp::Array{NfOrdIdl, 1}, k::Int)
   l = [degree(x) for x= lp]
 #  println("pp with $l and $k")
   #need sum([e[i]*l[i] == k, e[i] >= 0])
-  C = CartesianRange(Tuple((0:div(k, l[j])) for j = 1:length(l)))
+  C = CartesianIndices(Tuple((0:div(k, l[j])) for j = 1:length(l)))
   r = [prod(lp[i]^c[i] for i=1:length(l)) for c = C if sum(c[i]*l[i] for i=1:length(l)) == k]
 #  println("r: $r")
   return r
@@ -18,7 +18,7 @@ function ideals_with_norm(i::fmpz, M::NfOrd)
   lf = factor(i)
   lp = [ideals_with_pp_norm([x[1] for x = prime_decomposition(M, k)], v) for (k, v) = lf.fac]
 #  println(lp)
-  return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = CartesianRange(Tuple(1:length(lp[i]) for i=1:length(lp)))]
+  return [prod(lp[i][x[i]] for i=1:length(lf.fac)) for x = CartesianIndices(Tuple(1:length(lp[i]) for i=1:length(lp)))]
 end
 
 function orbit_reps(I::Array{NfOrdIdl, 1}, s::Hecke.NfToNfMor)
@@ -103,7 +103,7 @@ function s3_with_discriminant(I::NfOrdIdl)
 
   res = []
   println("23: $l23")
-  C = CartesianRange(Tuple(length(i) for i=l23))
+  C = CartesianIndices(Tuple(length(i) for i=l23))
   #Tommy: use Base.product(l23,...) or similar....
   for c = C
     if length(c) == 0

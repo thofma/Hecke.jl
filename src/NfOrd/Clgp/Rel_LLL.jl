@@ -12,15 +12,15 @@ mutable struct SmallLLLRelationsCtx
   end
 end
 
-function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
+function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
                 O::NfOrd; prec::Int = 200, val::Int = 0,
-                limit::Int = 0)
+                limit::Int = 0) where {T}
   return class_group_small_lll_elements_relation_start(clg, hecke.ideal(O, parent(basis_mat(O).num)(1)), prec = prec)
 end
 
-function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
+function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
                 A::NfOrdIdl; prec::Int = 200, val::Int = 0,
-                limit::Int = 0)
+                limit::Int = 0) where {T}
   global _start
   K = nf(order(A))
   local rt::UInt
@@ -37,13 +37,13 @@ function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
       bd::fmpz = abs(discriminant(order(A)))*norm(A)^2
       bd = root(bd, degree(K))::fmpz
       bd *= L.den
-      f = find(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
+      f = findall(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
       m = div(degree(K), 4)
       if m < 2
         m = degree(K)
       end
       while length(f) < m 
-        f = find(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
+        f = findall(i-> cmpindex(L.num, i, i, bd) < 0, 1:degree(K))
         bd *= 2
       end
       I.b = nf_elem[]
@@ -58,7 +58,7 @@ function class_group_small_lll_elements_relation_start{T}(clg::ClassGrpCtx{T},
       return I
     catch e
       if isa(e, LowPrecisionLLL)
-        print_with_color(:red, "prec too low in LLL,")
+        printstyled("prec too low in LLL\n", color = :red)
         prec = Int(ceil(1.2*prec))
 #        println(" increasing to ", prec)
         if prec > 1000

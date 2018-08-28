@@ -1,11 +1,11 @@
 @testset "Ideals" begin
-  Qx, x = PolynomialRing(FlintQQ, "x")
+   Qx, x = PolynomialRing(FlintQQ, "x")
 
-  K1, a1 = NumberField(x^3 - 2, "a")
-  O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
+   K1, a1 = NumberField(x^3 - 2, "a")
+   O1 = Order(K1, Hecke.FakeFmpqMat(FlintZZ[1 0 0; 0 2 0; 0 0 4], one(FlintZZ)))
 
-  K2, a2 = NumberField(x^2 - 4^2*7^2*5, "a")
-  O2 = Order(K2, [K2(1), a2])
+   K2, a2 = NumberField(x^2 - 4^2*7^2*5, "a")
+   O2 = Order(K2, [K2(1), a2])
 
   @testset "Construction" begin
     I = @inferred ideal(O1, -17)

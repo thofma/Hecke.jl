@@ -55,7 +55,7 @@ function exp(a::RelSeriesElem{<:Nemo.FieldElem})
   return x
 end
 
-doc"""
+Markdown.doc"""
     derivative(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the derivative of the power series $f$.
 """
@@ -78,18 +78,21 @@ function derivative(f::RelSeriesElem{T}) where T
   return g
 end
 
-doc"""
+Nemo.fit!(::fmpq_rel_series, Int) = nothing
+
+Markdown.doc"""
     integral(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the integral of the power series $f$.
 """
 function Nemo.integral(f::RelSeriesElem{T}) where T
   g = parent(f)()
+  fit!(g, precision(f)+1)
   set_prec!(g, precision(f)+1)
   v = valuation(f)
+  Nemo.set_val!(g, v+1)
   for i=0:Nemo.pol_length(f)
     setcoeff!(g, i, divexact(Nemo.polcoeff(f, i), i+v+1))
   end
-  Nemo.set_val!(g, v+1)
   Nemo.renormalize!(g) 
   return g
 end

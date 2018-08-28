@@ -1,4 +1,4 @@
-import Nemo.setcoeff!, Base.start, Base.next, Base.done, Nemo.lift, Hecke.lift, Nemo.rem
+import Nemo.setcoeff!, Nemo.lift, Hecke.lift, Nemo.rem
 export psi_lower, psi_upper, show_psi
 
 #function setcoeff!(g::fmpz_mod_rel_series, i::Int64, a::Nemo.Generic.Res{Nemo.fmpz})
@@ -17,8 +17,11 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
   # ideals
   # the sums of the coefficients of exp(g) are bounds for psi
 
-  st = start(it) 
-  p, st = next(it, st)
+  res = iterate(it)
+  p, st = res
+
+  #st = start(it) 
+  #p, st = next(it, st)
   g = R(0)
   tp = R(0)
   lpp = Int(cl(Float64(log(p))/log(2)*a))
@@ -35,25 +38,39 @@ function bernstein(h::Int, it::Any, Q = FlintQQ, cl = ceil, a::Int = 776)
     end
   end
 
+  done = false
+
   while true
     pp = lpp
     np = 0
-    while pp == lpp && !done(it, st)
+    while pp == lpp && res !== nothing #!done(it, st)
       np += 1
-      p, st = next(it, st)
+      res = iterate(it, st)
+      if res === nothing
+        break
+      else
+        p, st = res
+      end
       lpp = Int(cl(Float64(log(p))/log(2)*a))
-      if done(it, st)
+      
+      if iterate(it, st) === nothing
+        done = true
+      else
+        done = false
+      end
+
+      if done
         break
       end
     end
 
-    if done(it, st) && pp == lpp
+    if done && pp == lpp
       np += 1
     end
     
     do_single!(g, pp, np)
 
-    if done(it, st)
+    if done
       if pp != lpp
         do_single!(g, lpp, 1)
       end
@@ -71,7 +88,7 @@ function _exp(a::fmpz_mod_abs_series)
     setcoeff!(A, i, lift(coeff(a, i)))
   end
   E = Rx()
-  ccall((:nmod_poly_exp_series, :libflint), Void, (Ptr{nmod_poly}, Ptr{nmod_poly}, Int64), &E, &A, length(a))
+  ccall((:nmod_poly_exp_series, :libflint), Nothing, (Ref{nmod_poly}, Ref{nmod_poly}, Int64), E, A, length(a))
   r = parent(a)()
   for i=0:Nemo.length(E)-1
     setcoeff!(r, i, lift(coeff(E, i)))
@@ -119,7 +136,7 @@ function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
   return res, f  # res[i] <= psi(2^(i-1), B)
 end
 
-doc"""
+Markdown.doc"""
 ***
     psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
@@ -141,7 +158,7 @@ function psi_lower(N::Integer, B::Int, a::Int = 776)
   return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
-doc"""
+Markdown.doc"""
 ***
     psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
@@ -163,7 +180,7 @@ function psi_upper(N::Integer, B::Int, a::Int=771)
   return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, floor)
 end
 
-doc"""
+Markdown.doc"""
 ***
    show_psi(N::Integer, B::Int)
    show_psi(N::fmpz, B::Int)
@@ -193,7 +210,7 @@ function show_psi(N::fmpz, B::Int)
   show_psi(BigInt(N), B)
 end
 
-doc"""
+Markdown.doc"""
 ***
     psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series

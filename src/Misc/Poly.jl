@@ -61,7 +61,7 @@ function ismonic(a::PolyElem)
   return isone(lead(a))
 end
 
-doc"""
+Markdown.doc"""
 ***
   valence(f::PolyElem) -> RingElem
 
@@ -77,7 +77,7 @@ function valence(f::PolyElem)
   return c
 end
 
-doc"""
+Markdown.doc"""
 ***
   leading_coefficient(f::PolyElem) -> RingElem
 
@@ -85,7 +85,7 @@ doc"""
 """
 leading_coefficient(f::PolyElem) = lead(f)
 
-doc"""
+Markdown.doc"""
 ***
   trailing_coefficient(f::PolyElem) -> RingElem
   constant_coefficient(f::PolyElem) -> RingElem
@@ -99,7 +99,7 @@ function trailing_coefficient(f::PolyElem)
   return coeff(f, 0)
 end
 
-doc"""
+Markdown.doc"""
     induce_rational_reconstruction(a::fmpz_poly, M::fmpz) -> fmpq_poly
 > Apply {{{rational_reconstruction}}} to each coefficient of $a$, resulting
 > in either a fail (return (false, s.th.)) or (true, g) for some rational
@@ -123,9 +123,9 @@ constant_coefficient = trailing_coefficient
 
 function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   z = fmpz()
-  ccall((:fmpz_poly_resultant_modular_div, :libflint), Void, 
-     (Ptr{fmpz}, Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz}, Int), 
-     &z, &f, &g, &d, nb)
+  ccall((:fmpz_poly_resultant_modular_div, :libflint), Nothing, 
+     (Ref{fmpz}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Int), 
+     z, f, g, d, nb)
   return z
 end
 
@@ -136,43 +136,43 @@ end
 ##############################################################
 
 mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
-  coeffs::Ptr{Void}
+  coeffs::Ref{Nothing}
   alloc::Int
   length::Int
 
   function fmpz_poly_raw()
     error("should not get called")
     z = new()
-    ccall((:fmpz_poly_init, :libflint), Void, (Ptr{fmpz_poly},), &z)
+    ccall((:fmpz_poly_init, :libflint), Nothing, (Ref{fmpz_poly},), z)
     finalizer(z, _fmpz_poly_raw_clear_fn)
     return z
   end
 end
 
 function _fmpz_poly_raw_clear_fn(a::fmpz_poly)
-  ccall((:fmpz_poly_clear, :libflint), Void, (Ptr{fmpz_poly},), &a)
+  ccall((:fmpz_poly_clear, :libflint), Nothing, (Ref{fmpz_poly},), a)
 end
 
 
 mutable struct fmpz_poly_factor
   c::Int   # really an fmpz  - but there is no fmpz_raw to be flint compatible
-  poly::Ptr{fmpz_poly_raw}
-  exp::Ptr{Int} 
+  poly::Ref{fmpz_poly_raw}
+  exp::Ref{Int} 
   _num::Int
   _alloc::Int
     
   function fmpz_poly_factor()
     z = new()
-    ccall((:fmpz_poly_factor_init, :libflint), Void,
-            (Ptr{fmpz_poly_factor}, ), &z)
+    ccall((:fmpz_poly_factor_init, :libflint), Nothing,
+            (Ref{fmpz_poly_factor}, ), z)
     finalizer(z, _fmpz_poly_factor_clear_fn)
     return z
   end
 end
 
 function _fmpz_poly_factor_clear_fn(a::fmpz_poly_factor)
-  ccall((:fmpz_poly_factor_clear, :libflint), Void,
-          (Ptr{fmpz_poly_factor}, ), &a)
+  ccall((:fmpz_poly_factor_clear, :libflint), Nothing,
+          (Ref{fmpz_poly_factor}, ), a)
 end
  
 function factor_to_dict(a::fmpz_poly_factor)
@@ -180,14 +180,14 @@ function factor_to_dict(a::fmpz_poly_factor)
   Zx,x = PolynomialRing(FlintZZ, "x")
   for i in 1:a._num
     f = Zx()
-    ccall((:fmpz_poly_set, :libflint), Void, (Ptr{fmpz_poly}, Ptr{fmpz_poly_raw}), &f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
+    ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
     res[f] = unsafe_load(a.exp, i)
   end  
   return res
 end
 
 function show(io::IO, a::fmpz_poly_factor)
-  ccall((:fmpz_poly_factor_print, :libflint), Void, (Ptr{fmpz_poly_factor}, ), &a)
+  ccall((:fmpz_poly_factor_print, :libflint), Nothing, (Ref{fmpz_poly_factor}, ), a)
 end
 
 mutable struct HenselCtx
@@ -195,9 +195,9 @@ mutable struct HenselCtx
   p::UInt
 
   LF :: fmpz_poly_factor
-  link::Ptr{Int}
-  v::Ptr{fmpz_poly_raw}
-  w::Ptr{fmpz_poly_raw}
+  link::Ref{Int}
+  v::Ref{fmpz_poly_raw}
+  w::Ref{fmpz_poly_raw}
   N::UInt
   prev::UInt
   r::Int  #for the cleanup
@@ -211,7 +211,7 @@ mutable struct HenselCtx
     Rx,x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, :libflint), UInt,
-          (Ptr{Nemo.nmod_poly_factor}, Ptr{nmod_poly}), &(a.lf), &Rx(f))
+          (Ref{Nemo.nmod_poly_factor}, Ref{nmod_poly}), (a.lf), Rx(f))
     r = a.lf.num
     a.r = r  
     a.LF = fmpz_poly_factor()
@@ -219,8 +219,8 @@ mutable struct HenselCtx
     a.v = ccall((:flint_malloc, :libflint), Ptr{fmpz_poly_raw}, (Int, ), (2*r-2)*sizeof(fmpz_poly_raw))
     a.w = ccall((:flint_malloc, :libflint), Ptr{fmpz_poly_raw}, (Int, ), (2*r-2)*sizeof(fmpz_poly_raw))
     for i=1:(2*r-2)
-      ccall((:fmpz_poly_init, :libflint), Void, (Ptr{fmpz_poly_raw}, ), a.v+(i-1)*sizeof(fmpz_poly_raw))
-      ccall((:fmpz_poly_init, :libflint), Void, (Ptr{fmpz_poly_raw}, ), a.w+(i-1)*sizeof(fmpz_poly_raw))
+      ccall((:fmpz_poly_init, :libflint), Nothing, (Ptr{fmpz_poly_raw}, ), a.v+(i-1)*sizeof(fmpz_poly_raw))
+      ccall((:fmpz_poly_init, :libflint), Nothing, (Ptr{fmpz_poly_raw}, ), a.w+(i-1)*sizeof(fmpz_poly_raw))
     end
     a.link = ccall((:flint_calloc, :libflint), Ptr{Int}, (Int, Int), 2*r-2, sizeof(Int))
     a.N = 0
@@ -229,14 +229,14 @@ mutable struct HenselCtx
     return a
   end
 
-  function free_fmpz_poly_array(p::Ptr{fmpz_poly_raw}, r::Int)
+  function free_fmpz_poly_array(p::Ref{fmpz_poly_raw}, r::Int)
     for i=1:(2*r-2)
-      ccall((:fmpz_poly_clear, :libflint), Void, (Ptr{fmpz_poly_raw}, ), p+(i-1)*sizeof(fmpz_poly_raw))
+      ccall((:fmpz_poly_clear, :libflint), Nothing, (Ref{fmpz_poly_raw}, ), p+(i-1)*sizeof(fmpz_poly_raw))
     end
-    ccall((:flint_free, :libflint), Void, (Ptr{fmpz_poly_raw}, ), p)
+    ccall((:flint_free, :libflint), Nothing, (Ref{fmpz_poly_raw}, ), p)
   end
-  function free_int_array(a::Ptr{Int})
-    ccall((:flint_free, :libflint), Void, (Ptr{Int}, ), a)
+  function free_int_array(a::Ref{Int})
+    ccall((:flint_free, :libflint), Nothing, (Ref{Int}, ), a)
   end
   function HenselCtx_free(a::HenselCtx)
     free_fmpz_poly_array(a.v, a.r)
@@ -255,19 +255,19 @@ end
 
 function start_lift(a::HenselCtx, N::Int)
   a.prev = ccall((:_fmpz_poly_hensel_start_lift, :libflint), UInt, 
-       (Ptr{fmpz_poly_factor}, Ptr{Int}, Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ptr{fmpz_poly}, Ptr{Nemo.nmod_poly_factor}, Int),
-       &a.LF, a.link, a.v, a.w, &a.f, &a.lf, N)
+       (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, Ref{Nemo.nmod_poly_factor}, Int),
+       a.LF, a.link, a.v, a.w, a.f, a.lf, N)
   a.N = N
 end
 
 function continue_lift(a::HenselCtx, N::Int)
   a.prev = ccall((:_fmpz_poly_hensel_continue_lift, :libflint), Int, 
-       (Ptr{fmpz_poly_factor}, Ptr{Int}, Ptr{fmpz_poly_raw}, Ptr{fmpz_poly_raw}, Ptr{fmpz_poly}, UInt, UInt, Int, Ptr{fmpz}),
-       &a.LF, a.link, a.v, a.w, &a.f, a.prev, a.N, N, &fmpz(a.p))
+       (Ref{fmpz_poly_factor}, Ref{Int}, Ref{fmpz_poly_raw}, Ref{fmpz_poly_raw}, Ref{fmpz_poly}, UInt, UInt, Int, Ref{fmpz}),
+       a.LF, a.link, a.v, a.w, a.f, a.prev, a.N, N, fmpz(a.p))
   a.N = N
 end
 
-doc"""
+Markdown.doc"""
 ***
   factor_mod_pk(f::fmpz_poly, p::Int, k::Int) -> Dict{fmpz_poly, Int}
 
@@ -279,7 +279,7 @@ function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   return factor_to_dict(H.LF)
 end
 
-doc"""
+Markdown.doc"""
 ***
   factor_mod_pk_init(f::fmpz_poly, p::Int) -> HenselCtx
 
@@ -291,7 +291,7 @@ function factor_mod_pk_init(f::fmpz_poly, p::Int)
   return H
 end
 
-doc"""
+Markdown.doc"""
 ***
   factor_mod_pk(H::HenselCtx, k::Int) -> RingElem
 
@@ -309,10 +309,10 @@ end
 
 #I think, experimentally, that p = Q^i, p1 = Q^j and j<= i is the condition to make it tick.
 function hensel_lift!(G::fmpz_poly, H::fmpz_poly, A::fmpz_poly, B::fmpz_poly, f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, a::fmpz_poly, b::fmpz_poly, p::fmpz, p1::fmpz)
-  ccall((:fmpz_poly_hensel_lift, :libflint), Void, (Ptr{fmpz_poly}, Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly},  Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz_poly}, Ptr{fmpz}, Ptr{fmpz}), &G, &H, &A, &B, &f, &g, &h, &a, &b, &p, &p1)
+  ccall((:fmpz_poly_hensel_lift, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Ref{fmpz}), G, H, A, B, f, g, h, a, b, p, p1)
 end
 
-doc"""
+Markdown.doc"""
 ***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
@@ -365,7 +365,7 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   return g, h
 end  
 
-doc"""
+Markdown.doc"""
 ***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
@@ -379,9 +379,9 @@ end
   
 
 function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
-  ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Void, (Ptr{nmod_poly}, Ptr{Int}, Int), &r, a.coeffs, a.length)
+  ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Nothing, (Ref{nmod_poly}, Ref{Int}, Int), r, a.coeffs, a.length)
   p = r.mod_n
-  den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ptr{Int}, UInt), &a.den, p)
+  den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{Int}, UInt), a.den, p)
   if den != UInt(1)
     den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
     mul!(r, r, den)
@@ -389,13 +389,13 @@ function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
 end
 
 function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
-  ccall((:fmpq_poly_get_numerator, :libflint), Void, (Ptr{fmpz_poly}, Ptr{fmpq_poly}), &t1, &a)
-  ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_poly}), &r, &t1)
-  ccall((:fmpq_poly_get_denominator, :libflint), Void, (Ptr{fmpz}, Ptr{fmpq_poly}), &t2, &a)
+  ccall((:fmpq_poly_get_numerator, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, t1)
+  ccall((:fmpq_poly_get_denominator, :libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
   if !isone(t2)
-    res = ccall((:fmpz_invmod, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}, Ptr{fmpz}), &t2, &t2, &base_ring(r).modulus)
+    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, base_ring(r).modulus)
     @assert res != 0
-    ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz}), &r, &r, &t2)
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz}), r, r, t2)
   end
 end
 
@@ -406,8 +406,8 @@ function fmpq_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpq_poly)
 end
 
 function fmpz_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpz_poly)
-  ccall((:fmpz_poly_get_nmod_poly, :libflint), Void,
-                  (Ptr{nmod_poly}, Ptr{fmpz_poly}), &r, &a)
+  ccall((:fmpz_poly_get_nmod_poly, :libflint), Nothing,
+                  (Ref{nmod_poly}, Ref{fmpz_poly}), r, a)
 
 end
 
@@ -424,8 +424,8 @@ function fmpq_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpq_poly)
 end
 
 function fmpz_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpz_poly)
-  ccall((:fmpz_poly_get_fmpz_mod_poly, :libflint), Void,
-                  (Ptr{fmpz_mod_poly}, Ptr{fmpz_poly}), &r, &a)
+  ccall((:fmpz_poly_get_fmpz_mod_poly, :libflint), Nothing,
+                  (Ref{fmpz_mod_poly}, Ref{fmpz_poly}), r, a)
 
 end
 
@@ -436,7 +436,7 @@ function fmpz_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpz_poly)
 end
 
 
-doc"""
+Markdown.doc"""
     deflate(f::PolyElem, n::Int64) -> PolyElem
 > Given a polynomial $f$ in $x^n$, write it as a polynomial in $x$, ie. divide
 > all exponents by $n$.
@@ -449,7 +449,7 @@ function deflate(x::PolyElem, n::Int64)
   return y
 end
 
-doc"""
+Markdown.doc"""
     inflate(f::PolyElem, n::Int64) -> PolyElem
 > Given a polynomial $f$ in $x$, return $f(x^n)$, ie. multiply 
 > all exponents by $n$.
@@ -462,7 +462,7 @@ function inflate(x::PolyElem, n::Int64)
   return y
 end
 
-doc"""
+Markdown.doc"""
     deflate(x::PolyElem) -> PolyElem
 > Deflate the polynomial $f$ maximally, ie. find the largest $n$ s.th.
 > $f$ can be deflated by $n$, ie. $f$ is actually a polynomial in $x^n$.
@@ -553,7 +553,7 @@ function fun_factor(f::PolyElem{<:RingElem})
   return g0, h0
 end
 
-doc"""
+Markdown.doc"""
     Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}
 > Find a random polynomial of degree(n)
 """
@@ -566,7 +566,7 @@ function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Uni
   return f
 end
 
-doc"""
+Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The 'gcd' of $f$ anf $g$ using a quadratic-time algorithm.
 """
@@ -598,7 +598,7 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
 end
 
 
-doc"""
+Markdown.doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The resultant of $f$ anf $g$ using a quadratic-time algorithm.
 """
@@ -757,7 +757,7 @@ end
 #key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit 
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
-doc"""
+Markdown.doc"""
     rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
 > That is a generator for the $(f, g) \cap Z$
@@ -767,7 +767,7 @@ function rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: U
   return rres_sircana(f, g)
 end
 
-doc"""
+Markdown.doc"""
     rres(f::fmpz_poly, g::fmpz_poly) -> fmpz
 > The reduced resultant of $f$ and $g$,
 > that is a generator for the ideal $(f, g) \cap Z$
@@ -866,7 +866,7 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
   end
 end
 
-doc"""
+Markdown.doc"""
     rresx(f::PolyElem{ResElem{fmpz}}, g::PolyElem{ResElem{fmpz}}) -> r, u, v
 > The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
 > $r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
@@ -1085,7 +1085,7 @@ function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
   return R(G), R(U)*R(u), R(U)*R(v)
 end
 
-doc"""
+Markdown.doc"""
     annihilator(a::ResElem{fmpz}) -> r
     annihilator(a::ResElem{Integer}) -> r
 > The annihilator of $a$, ie. a generator for the annihilator ideal
@@ -1097,7 +1097,7 @@ function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
   return R(divexact(m, gcd(m, a.data)))
 end
 
-doc"""
+Markdown.doc"""
     isunit(f::Union{fmpz_mod_poly,nmod_poly}) -> Bool
 > Tests if $f$ is a unit in the polynomial ring, ie. if 
 > $f = u + n$ where $u$ is a unit in the coeff. ring
@@ -1115,7 +1115,7 @@ function Nemo.isunit(f::Union{fmpz_mod_poly,nmod_poly})
   return true
 end
 
-doc"""
+Markdown.doc"""
     isnilpotent(a::ResElem{fmpz}) -> Bool
     isnilpotent(a::ResElem{Integer}) -> Bool
 > Tests iff $a$ is nilpotent.
@@ -1210,7 +1210,7 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
   return lcm(denominator(q), denominator(w))
 end
 
-doc"""
+Markdown.doc"""
     rresx(f::fmpz_poly, g::fmpz_poly) -> r, u, v
 > The reduced resultant, ie. a generator for the intersection
 > of the ideal generated by $f$ and $g$ with the integers.
@@ -1227,7 +1227,7 @@ function rresx(f::fmpz_poly, g::fmpz_poly)
   return l, Zx(l*q), Zx(l*w)
 end
 
-doc"""
+Markdown.doc"""
     xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
 > Coputes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
@@ -1242,7 +1242,7 @@ function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
   end
 end
 
-doc"""
+Markdown.doc"""
     primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
 > Computes the contents $c$ and the primitive part of $f$ destructively.   
@@ -1277,7 +1277,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz,
   return g, f
 end
 
-doc"""
+Markdown.doc"""
     primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
     primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
 > Computes the contents $c$ and the primitive part of $f$.
@@ -1287,7 +1287,7 @@ function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, 
   return primsplit!(g)
 end
 
-immutable PolyCoeffs{T <: PolyElem} 
+struct PolyCoeffs{T <: PolyElem} 
   f::T
 end  
 
@@ -1295,23 +1295,25 @@ function coefficients(f::PolyElem)
   return PolyCoeffs(f)
 end
 
-function Base.start(a::PolyCoeffs)
-  return 0
-end
+# TODO: Fix this iterator
 
-function Base.next(a::PolyCoeffs, b::Int)
-  return coeff(a.f, b), b+1
-end
+#function Base.start(a::PolyCoeffs)
+#  return 0
+#end
+#
+#function Base.next(a::PolyCoeffs, b::Int)
+#  return coeff(a.f, b), b+1
+#end
+#
+#function Base.done(a::PolyCoeffs, b::Int)
+#  return b > degree(a.f)
+#end
+#
+#function Base.length(a::PolyCoeffs)
+#  return length(a.f)
+#end
 
-function Base.done(a::PolyCoeffs, b::Int)
-  return b > degree(a.f)
-end
-
-function Base.length(a::PolyCoeffs)
-  return length(a.f)
-end
-
-function Base.endof(a::PolyCoeffs)
+function Base.lastindex(a::PolyCoeffs)
   return degree(a.f)
 end
 
@@ -1320,7 +1322,7 @@ function Base.getindex(a::PolyCoeffs, i::Int)
 end
 
 
-doc"""
+Markdown.doc"""
     resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
 > One of the two polynomials must be monic.
@@ -1550,7 +1552,7 @@ end
 function (a::FmpzPolyRing)(b::fmpq_poly)
   (!isone(denominator(b))) && error("Denominator has to be 1")
   z = a()
-  ccall((:fmpq_poly_get_numerator, :libflint), Void,
+  ccall((:fmpq_poly_get_numerator, :libflint), Nothing,
               (Ref{fmpz_poly}, Ref{fmpq_poly}), z, b)
   return z
 end
@@ -1561,7 +1563,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) -> Array{T, 1}
 > Uses Newton (or Newton-Girard) formulas to compute the first $n$
 > power sums from the coefficients of $f$.
@@ -1597,7 +1599,7 @@ function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T
   return P
 end
 
-doc"""
+Markdown.doc"""
     power_sums_to_polynomial(P::Array{T, 1}) -> PolyElem{T}
 > Uses the Newton (or Newton-Girard) identities to obtain the polynomial
 > coefficients (the elementary symmetric functions) from the power sums.
@@ -1629,13 +1631,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
     end
     println("new exp $r")
   end
-  d = Nemo.pol_length(r)
   v = valuation(r)
   @assert v==0
-  while d>=0 && iszero(Nemo.polcoeff(r, d))
-    d -= 1
-  end
-  return PolynomialRing(R, cached = false)[1]([Nemo.polcoeff(r, d-i) for i=0:d])
+  Rx, x = PolynomialRing(R, cached = false)
+  return Rx([Nemo.polcoeff(r, d-i) for i=0:d])
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T
@@ -1749,9 +1748,9 @@ function root(a::RingElem, n::Int)
 end
 
 function setcoeff!(z::fq_nmod_poly, n::Int, x::fmpz)
-   ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Void,
-         (Ptr{fq_nmod_poly}, Int, Ptr{fmpz}, Ptr{FqNmodFiniteField}),
-         &z, n, &x, &base_ring(parent(z)))
+   ccall((:fq_nmod_poly_set_coeff_fmpz, :libflint), Nothing,
+         (Ref{fq_nmod_poly}, Int, Ref{fmpz}, Ref{FqNmodFiniteField}),
+         z, n, x, base_ring(parent(z)))
      return z
 end
 
@@ -1818,7 +1817,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     factor_squarefree(x::fmpq_poly)
 > Returns the squarefree factorization of $x$.
 """
@@ -1830,17 +1829,17 @@ end
 function _factor_squarefree(x::fmpq_poly)
    res = Dict{fmpq_poly, Int}()
    y = fmpz_poly()
-   ccall((:fmpq_poly_get_numerator, :libflint), Void,
+   ccall((:fmpq_poly_get_numerator, :libflint), Nothing,
          (Ref{fmpz_poly}, Ref{fmpq_poly}), y, x)
    fac = Nemo.fmpz_poly_factor()
-   ccall((:fmpz_poly_factor_squarefree, :libflint), Void,
+   ccall((:fmpz_poly_factor_squarefree, :libflint), Nothing,
               (Ref{Nemo.fmpz_poly_factor}, Ref{fmpz_poly}), fac, y)
    z = fmpz()
-   ccall((:fmpz_poly_factor_get_fmpz, :libflint), Void,
+   ccall((:fmpz_poly_factor_get_fmpz, :libflint), Nothing,
             (Ref{fmpz}, Ref{Nemo.fmpz_poly_factor}), z, fac)
    f = fmpz_poly()
    for i in 1:fac.num
-      ccall((:fmpz_poly_factor_get_fmpz_poly, :libflint), Void,
+      ccall((:fmpz_poly_factor_get_fmpz_poly, :libflint), Nothing,
             (Ref{fmpz_poly}, Ref{Nemo.fmpz_poly_factor}, Int), f, fac, i - 1)
       e = unsafe_load(fac.exp, i)
       res[parent(x)(f)] = e

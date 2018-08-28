@@ -2,4 +2,6 @@
 include("AlgAss/AlgAss.jl")
 include("AlgAss/AlgAssElem.jl")
 include("AlgAss/Map.jl")
-include("AlgAss/CSAMaxOrd.jl")
+include("AlgAss/AlgAssOrd.jl")
+include("AlgAss/CrossedProductOrder.jl")
+include("AlgAss/Ideal.jl")

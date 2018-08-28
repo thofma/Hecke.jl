@@ -27,23 +27,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# (C) 2015, 2016 Claus Fieker, Tommy Hofmann
+# (C) 2015-2018 Claus Fieker, Tommy Hofmann
 #
 ################################################################################
-
-__precompile__()
 
 module Hecke
-
-################################################################################
-#
-#  Load FPlll if available
-#
-################################################################################
-
-if isdir(joinpath(Pkg.dir(),"FPlll"))
-  using FPlll
-end
 
 ################################################################################
 #
@@ -51,19 +39,26 @@ end
 #
 ################################################################################
 
-import Base: show, minimum, rand, prod, copy, rand!, rand, ceil, round, 
-             size, dot, in, powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=,
-             getindex, setindex!, transpose, getindex, //, colon, div,
-             floor, max, BigFloat, precision, dot,
-             first, StepRange, show, one, zero, inv, iseven, isodd, convert,
-             angle, abs2, isless, exponent, base, isfinite, zeros, rem,
-             min, numerator, denominator, exp, maximum
+import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
+             powermod, ^, getindex, ==, <, >, +, *, /, \, -, !=, getindex,
+             setindex!, transpose, getindex, //, div, floor, max, BigFloat,
+             precision, first, StepRange, show, one, zero, inv, iseven, isodd,
+             convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
+             numerator, denominator, exp, maximum
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
 # dong it the "import" route, we can pick & choose...
 
+using LinearAlgebra, Markdown, InteractiveUtils, Libdl, Distributed, Printf, SparseArrays, Serialization, Random, Pkg, Test
+
 import AbstractAlgebra
+
+import LinearAlgebra: dot, istriu, nullspace
+
+import Serialization: serialize, deserialize
+
+import Random: rand!
 
 import Nemo
 
@@ -73,7 +68,7 @@ exclude = [:Nemo, :AbstractAlgebra, :RealField,
 
 for i in names(Nemo)
   i in exclude && continue
-  eval(parse("import Nemo." * string(i)))
+  eval(Meta.parse("import Nemo." * string(i)))
   eval(Expr(:export, i))
 end
 
@@ -84,7 +79,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, @test_and_infer, next_prime, ispower
+       modord, resultant, next_prime, ispower, number_field
 
 ###############################################################################
 #
@@ -92,28 +87,31 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
-#const pkgdir = realpath(joinpath(dirname(@__FILE__), ".."))
-const pkgdir = const pkgdir = Pkg.dir("Hecke")
+const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
+
 const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
+
 const libdir = joinpath(pkgdir, "local", "lib")
+
+global const number_field = NumberField
 
 function __init__()
 
   if myid() == 1
     println("")
     print("Welcome to \n")
-    print_with_color(:red, "
+    printstyled("
     _    _           _        
    | |  | |         | |       
    | |__| | ___  ___| | _____ 
    |  __  |/ _ \\/ __| |/ / _ \\
    | |  | |  __/ (__|   <  __/
    |_|  |_|\\___|\\___|_|\\_\\___|
-    ")
+    ", color = :red)
 
     println()
     print("Version")
-    print_with_color(:green, " $VERSION_NUMBER ")
+    printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
     println("(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
@@ -124,7 +122,7 @@ function __init__()
   
   if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
     push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  elseif is_linux()
+  elseif Sys.islinux()
     push!(Libdl.DL_LOAD_PATH, libdir)
     Libdl.dlopen(libhecke)
   else
@@ -202,12 +200,12 @@ function __init__()
   # Stuff for elliptic curves
   # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
   # will be removed eventually
-  global const _Zx = PolynomialRing(FlintZZ, "_x")[1]
-  global const _Zxy = PolynomialRing(_Zx, "_y")[1]
-  global const _x = gen(_Zx)
-  global const _y = gen(_Zxy)
+  global _Zx = PolynomialRing(FlintZZ, "_x")[1]
+  global _Zxy = PolynomialRing(_Zx, "_y")[1]
+  global _x = gen(_Zx)
+  global _y = gen(_Zxy)
 
-  global const flint_rand_ctx = flint_rand_state()
+  global flint_rand_ctx = flint_rand_state()
 end
 
 function _get_maximal_order(K::AnticNumberField)
@@ -244,7 +242,7 @@ function conjugate_data_arb_roots(K::AnticNumberField, p::Int)
   end
 
   #if p > 2^18
-  #  Base.show_backtrace(STDOUT, backtrace())
+  #  Base.show_backtr(STDOUT, backtr())
   #end
   rootc = conjugate_data_arb(K)
   q = rootc.prec
@@ -298,11 +296,25 @@ end
 
 ################################################################################
 #
+#  Intermediate backwards compatibility
+#
+################################################################################
+
+trace(x...) = tr(x...)
+
+#lufact(x...) = lu(x...)
+#
+#lufact!(x...) = lu!(x...)
+
+Base.adjoint(x) = transpose(x)
+
+################################################################################
+#
 #  Version number
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.4.6"
+global VERSION_NUMBER = v"0.5.0"
 
 ################################################################################
 #
@@ -366,13 +378,13 @@ end
 macro v_do(args...)
   if length(args) == 2
     quote
-      if get_verbose_level($(args[1])) >= 1
+      if get_verbose_level($(esc(args[1]))) >= 1
        $(esc(args[2]))
       end
     end
   elseif length(args) == 3
     quote
-      if get_verbose_level($(args[1])) >= $(args[2])
+      if get_verbose_level($(esc(args[1]))) >= $(esc(args[2]))
         $(esc(args[3]))
       end
     end
@@ -445,40 +457,21 @@ function test_module(x, new::Bool = true)
    end
 
    if new
-     cmd = "using Base.Test; using Hecke; include(\"$test_file\");"
-     info("spawning ", `$julia_exe -e \"$cmd\"`)
+     cmd = "using Test; using Hecke; include(\"$test_file\");"
+     @info("spawning ", `$julia_exe -e \"$cmd\"`)
      run(`$julia_exe -e $cmd`)
    else
-     info("Running tests for $x in same session")
+     @info("Running tests for $x in same session")
      try
        include(test_file)
      catch e
        if isa(e, LoadError)
-         println("You need to do \"using Base.Test\"")
+         println("You need to do \"using Test\"")
        else
          rethrow(e)
        end
      end
    end
-end
-
-################################################################################
-#
-#   Do @infert and @test simultanously
-#
-################################################################################
-
-macro test_and_infer(f,args,res)
-  quote
-    if isa($(esc(args)), Tuple)
-      Base.Test.@inferred $(esc(f))($(esc(args))...)
-      Base.Test.@test $(esc(f))($(esc(args))...) == $(esc(res))
-    else
-      Base.Test.@inferred $(esc(f))($(esc(args)))
-      local t = $(esc(res))
-      Base.Test.@test $(esc(f))($(esc(args))) == t
-    end
-  end
 end
 
 ################################################################################
@@ -599,6 +592,11 @@ include("Grp.jl")
 include("ModAlgAss.jl")
 include("AlgAss.jl")
 
+################################################################################
+#
+#  Object overloading for map types
+#
+################################################################################
 
 for T in subtypes(Map(HeckeMap))
   (M::T)(a) = image(M, a)
@@ -610,9 +608,9 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
-    vshow(A) -> Void
+    vshow(A) -> Nothing
 
 > Prints all fields of $A$.
 """
@@ -626,6 +624,7 @@ function vshow(A)
     end
   end
 end
+
 ################################################################################
 #
 #  Element types for parent types
@@ -634,9 +633,9 @@ end
 
 # Nemo only provides element_types for parent objects
 
-elem_type{T}(::Type{FacElemMon{T}}) = FacElem{elem_type(T), T}
+elem_type(::Type{FacElemMon{T}}) where {T} = FacElem{elem_type(T), T}
 
-elem_type{T}(::Type{Generic.ResRing{T}}) = Generic.Res{T}
+elem_type(::Type{Generic.ResRing{T}}) where {T} = Generic.Res{T}
 
 ################################################################################
 #
@@ -690,7 +689,7 @@ function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
     maxline = Base.tty_size()[2]
     line = zeros(UInt8, maxline)
     head = PipeBuffer(maxline + 1)
-    for v in sort!(names(m, true)) # show also NON exported stuff!
+    for v in sort!(names(m, all = true)) # show also NON exported stuff!
         s = string(v)
         if isdefined(m, v) && ismatch(pattern, s)
             value = getfield(m, v)
@@ -733,28 +732,29 @@ whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
 function print_cache()
   sym = [];
-  for a in collect(names(Nemo, true));
-    d = parse("Nemo." * string(a));
+  for a in collect(names(Nemo, all = true));
+    d = Meta.parse("Nemo." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
   end
   for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
-    end;
+    catch e
+    end
   end
   
   sym = [];
-  for a in collect(names(Nemo.Generic, true));
-    d = parse("Nemo.Generic." * string(a));
+  for a in collect(names(Nemo.Generic, all = true));
+    d = Meta.parse("Nemo.Generic." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
   end
   for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
     catch e
@@ -762,34 +762,21 @@ function print_cache()
   end
 
   sym = [];
-  for a in collect(names(Hecke, true));
-    d = parse("Hecke." * string(a));
+  for a in collect(names(Hecke, all = true));
+    d = Meta.parse("Hecke." * string(a));
       try z = eval(d); push!(sym, (d, z));
     catch e;
     end;
   end
   for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa ObjectIdDict;
+    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
       print(f[1], " ", length(f[2]), "\n");
-    end;
+    catch e
+    end
   end
-
 end
-
-################################################################################
-#
-#  Testing only "submodules"
-#
-################################################################################
-
-#
-# stuff for 0.5
-# 
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
-#precompile(maximal_order, (AnticNumberField, ))
-#precompile(class_group, (NfOrd, ))
-
-end
+end # module

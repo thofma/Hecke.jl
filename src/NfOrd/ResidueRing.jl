@@ -84,8 +84,8 @@ needs_parentheses(::NfOrdQuoRingElem) = true
 
 isnegative(::NfOrdQuoRingElem) = false
 
-Nemo.promote_rule{S <: Integer}(::Type{NfOrdQuoRingElem},
-                                ::Type{S}) = NfOrdQuoRingElem
+Nemo.promote_rule(::Type{NfOrdQuoRingElem},
+                                ::Type{S}) where {S <: Integer} = NfOrdQuoRingElem
 
 Nemo.promote_rule(::Type{NfOrdQuoRingElem}, ::Type{fmpz}) = NfOrdQuoRingElem
 
@@ -95,7 +95,7 @@ Nemo.promote_rule(::Type{NfOrdQuoRingElem}, ::Type{fmpz}) = NfOrdQuoRingElem
 #
 ################################################################################
 
-Base.deepcopy_internal(x::NfOrdQuoRingElem, dict::ObjectIdDict) =
+Base.deepcopy_internal(x::NfOrdQuoRingElem, dict::IdDict) =
         NfOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
 
 #copy(x::NfOrdQuoRingElem) = deepcopy(x)
@@ -140,7 +140,7 @@ end
 # (and standart helpers)
 #
 ################################################################################
-doc"""
+Markdown.doc"""
     quo(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing, Map
 > The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 > The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
@@ -152,13 +152,13 @@ function quo(O::NfOrd, I::NfOrdIdl)
   return Q, f
 end
 
-doc"""
+Markdown.doc"""
     ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
 > The quotient ring $O$ modulo $I$ as a new ring.
 """
 Nemo.ResidueRing(O::NfOrd, I::NfOrdIdl) = NfOrdQuoRing(O, I)
 
-doc"""
+Markdown.doc"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
 > Returns a lift of $a$ back to $O$.
 """
@@ -340,14 +340,14 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   for i in 2:(d + 1)
     if !iszero(V[1, i])
   #if !iszero(sub(V, 1:1, 2:(d + 1)))
-      ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+      ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
       return false, zero(parent(x))
     end
   end
   
   z = R(-base_ring(R)(fmpz[ V[1, i] for i in (d + 2):(2*d + 1)])) # V[1, i] is always a copy
 
-  ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+  ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
 
   @hassert :NfOrdQuoRing 1 z*y == x
   return true, z
@@ -624,7 +624,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
 
   @hassert :NfOrdQuoRing 1 Q(O(1)) == u*e - (v*(-f))
 
-  ccall((:fmpz_mat_zero, :libflint), Void, (Ptr{fmpz_mat}, ), &V)
+  ccall((:fmpz_mat_zero, :libflint), Nothing, (Ref{fmpz_mat}, ), V)
 
   return g, u, v, -f, e
 end
@@ -792,8 +792,8 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
       mu = matrix(FlintZZ, 1, n,  [ round(_ve[1, k]//d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
-      for k=1:n
-        setcoeff!(z, k-1, ve[1, k])
+      for kk=1:n
+        setcoeff!(z, kk-1, ve[1, kk])
       end
       zz = K(z)*iden
       if res[j] == zz || i == length(pr)
@@ -951,8 +951,8 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
       mu = matrix(FlintZZ, 1, n,  [ round(_ve[1, k]//d) for k=1:n])
       ve = ve - mu*M
       z = ZX()
-      for k=1:n
-        setcoeff!(z, k-1, ve[1, k])
+      for kk=1:n
+        setcoeff!(z, kk-1, ve[1, kk])
       end
       zz = K(z)*iden
       if res[j] == zz || i == length(pr)
@@ -1220,6 +1220,8 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
   return rts
 end
 
+Base.isless(x::arb, y::arb) = x < y
+
 function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
   # compute the lifting exponent a la Friedrich-Fieker
   #bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
@@ -1426,7 +1428,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     group_structure(Q::NfOrdQuoRing) -> GrpAbFinGenSnf
 

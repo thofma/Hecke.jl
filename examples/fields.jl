@@ -141,7 +141,7 @@ function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 
   D=abs(discriminant(O))
   ram_primes=collect(keys(factor(O.disc).fac))
-  coprime_to=cat(1,ram_primes, fmpz(5))
+  coprime_to=cat(ram_primes, fmpz(5), dims = 1)
   sort!(ram_primes)
   b=root(bound_non_normal,2)
   b1=root(div(b,D),2)
@@ -246,7 +246,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
   
   #Getting conductors
   l_conductors=conductorsD5(O,absolute_bound)
-#  @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  #@vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
   #Now, the big loop
   for k in l_conductors
@@ -308,7 +308,7 @@ function conductorsDn(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   d=degree(O)
   wild_ram=collect(keys(factor(fmpz(n)).fac))
   ram_primes=collect(keys(factor(O.disc).fac))
-  coprime_to=cat(1,ram_primes, wild_ram)
+  coprime_to=cat(ram_primes, wild_ram, dims = 1)
   sort!(ram_primes)
   m=minimum(wild_ram)
   k=divexact(n,m)

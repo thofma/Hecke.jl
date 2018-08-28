@@ -114,7 +114,7 @@ function factor(c::FactorBase{T}, a::T, do_error::Bool = true) where T
       end
     end
   end
-  assert(!do_error || a==1 || a==-1)
+  @assert (!do_error || a==1 || a==-1)
   return f
 end
 

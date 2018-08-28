@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     order(a::NfRelOrdFracIdl) -> NfRelOrd
 
@@ -14,7 +14,7 @@ doc"""
 """
 order(a::NfRelOrdFracIdl) = a.order
 
-doc"""
+Markdown.doc"""
 ***
     nf(a::NfRelOrdFracIdl) -> RelativeExtension
 
@@ -77,7 +77,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   return nothing
 end
 
-doc"""
+Markdown.doc"""
 ***
     denominator(a::NfRelOrdFracIdl) -> fmpz
 
@@ -89,7 +89,7 @@ function denominator(a::NfRelOrdFracIdl)
   return a.den
 end
 
-doc"""
+Markdown.doc"""
 ***
     numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
 
@@ -123,12 +123,12 @@ function show(io::IO, a::NfRelOrdFracIdl)
   compact = get(io, :compact, false)
   if compact
     print(io, "Fractional ideal with basis pseudo-matrix\n")
-    showcompact(io, basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
   else
     print(io, "Fractional ideal of\n")
-    showcompact(order(a))
+    show(IOContext(io, :compact => true), order(a))
     print(io, "\nwith basis pseudo-matrix\n")
-    showcompact(io, basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
   end
 end
 
@@ -138,7 +138,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
@@ -151,7 +151,7 @@ function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) wh
   return NfRelOrdFracIdl{T, S}(O, M)
 end
 
-doc"""
+Markdown.doc"""
 ***
     frac_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
 
@@ -188,9 +188,9 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S}, dict::ObjectIdDict) where {T, S}
+function Base.deepcopy_internal(a::NfRelOrdFracIdl{T, S}, dict::IdDict) where {T, S}
   z = NfRelOrdFracIdl{T, S}(a.order)
-  for x in fieldnames(a)
+  for x in fieldnames(typeof(a))
     if x != :order && x != :parent && isdefined(a, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(a, x), dict))
     end
@@ -206,7 +206,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ==(a::NfOrdRelFracIdl, b::NfRelOrdFracIdl) -> Bool
 
@@ -246,7 +246,7 @@ function assure_has_norm(a::NfRelOrdFracIdl)
   return nothing
 end
 
-doc"""
+Markdown.doc"""
 ***
     norm(a::NfRelOrdFracIdl{T, S}) -> S
 
@@ -267,7 +267,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
@@ -304,7 +304,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $a \cdot b$.
@@ -322,7 +322,7 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   K = base_ring(L)
   d = degree(order(a))
   M = zero_matrix(K, d^2, d)
-  C = Array{typeof(a).parameters[2], 1}(d^2)
+  C = Array{typeof(a).parameters[2], 1}(undef, d^2)
   t = L()
   for i = 1:d
     for j = 1:d
@@ -350,13 +350,15 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   return frac_ideal(order(a), H, true)
 end
 
+Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, p)
+
 ################################################################################
 #
 #  Division
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
@@ -442,7 +444,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     in(x::RelativeElement, y::NfRelOrdFracIdl)
 

@@ -275,7 +275,7 @@ end
 
 # Approximate the residue
 function _residue_approx_bf(O::NfOrd, error::Float64)
-  F = _approx_error_bf(O, Float64)
+  F = _approx_error_bf(O, BigFloat)
 
   # magic constant
   # should be adapted to the input
@@ -284,15 +284,17 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
 
   @assert error > 0.5^der 
 
-  error_prime = @with_round_down(error - 0.5^der, Float64)
+  error_prime = @with_round_down(error - 0.5^der, BigFloat)
+
+  error_prime = Float64(error_prime) # Do some correct rounding
 
   error_prime_arf = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &error_prime_arf)
-  ccall((:arf_set_d, :libarb), Void, (Ptr{arf_struct}, Float64), &error_prime_arf, error_prime)
+  ccall((:arf_init, :libarb), Nothing, (Ref{arf_struct}, ), error_prime_arf)
+  ccall((:arf_set_d, :libarb), Nothing, (Ref{arf_struct}, Float64), error_prime_arf, error_prime)
 
   error_arf = arf_struct(0, 0, 0, 0)
-  ccall((:arf_init, :libarb), Void, (Ptr{arf_struct}, ), &error_arf)
-  ccall((:arf_set_d, :libarb), Void, (Ptr{arf_struct}, Float64), &error_arf, error)
+  ccall((:arf_init, :libarb), Nothing, (Ref{arf_struct}, ), error_arf)
+  ccall((:arf_set_d, :libarb), Nothing, (Ref{arf_struct}, Float64), error_arf, error)
 
   x0 = Int(ceil(_find_threshold(F, error_prime, Float64(10), true, Float64)))
   x0 = x0 + 1
@@ -302,8 +304,8 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
   val = _term_bf(O, x0, ArbField(prec, false))
 
   valaddederror = deepcopy(val)
-  ccall((:arb_add_error_arf, :libarb), Void,
-              (Ptr{arb}, Ptr{arf_struct}), &valaddederror, &error_prime_arf)
+  ccall((:arb_add_error_arf, :libarb), Nothing,
+              (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)
 
   while (!radiuslttwopower(val, -der)) ||
                 !((radius(valaddederror)) < error)
@@ -318,12 +320,12 @@ function _residue_approx_bf(O::NfOrd, error::Float64)
     #println("increasing precision to $prec")
     val = _term_bf(O, x0, ArbField(prec, false))
     valaddederror = deepcopy(val)
-    ccall((:arb_add_error_arf, :libarb), Void,
-                (Ptr{arb}, Ptr{arf_struct}), &valaddederror, &error_prime_arf)
+    ccall((:arb_add_error_arf, :libarb), Nothing,
+                (Ref{arb}, Ref{arf_struct}), valaddederror, error_prime_arf)
   end
 
-  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &error_prime_arf)
-  ccall((:arf_clear, :libarb), Void, (Ptr{arf_struct}, ), &error_arf)
+  ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), error_prime_arf)
+  ccall((:arf_clear, :libarb), Nothing, (Ref{arf_struct}, ), error_arf)
 
   return valaddederror
 end
@@ -334,7 +336,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     zeta_log_residue(O::NfOrd, error::Float64) -> arb
 
@@ -346,14 +348,3 @@ function zeta_log_residue(O::NfOrd, abs_error::Float64)
   degree(O) == 1 && error("Number field must be of degree 1")
   return _residue_approx_bf(O, abs_error)
 end
-
-# This should go somewhere else
-#function radiuslttwopower(x::arb, n::Int)
-#  z = ccall((:arb_rad_ptr, :libarb), Ptr{Nemo.mag_struct}, (Ptr{arb}, ), &x)
-#  r = ccall((:mag_cmp_2exp_si, :libarb), Cint, (Ptr{Nemo.mag_struct}, Int), z, n)
-#  return r < 0
-#end
-#
-#function radiuslttwopower(x::acb, n::Int)
-#  return radiuslttwopower(real(x), n) && radiuslttwopower(imag(x), n)
-#end

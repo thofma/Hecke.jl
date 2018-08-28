@@ -40,7 +40,7 @@ export torsion_unit_group
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     istorsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
@@ -60,7 +60,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     torsion_unit_order(x::NfOrdElem, n::Int)
 
@@ -80,7 +80,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
 
@@ -91,7 +91,7 @@ function torsion_units(O::NfOrd)
   return ar
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_units_gen(O::NfOrd) -> NfOrdElem
 
@@ -102,7 +102,7 @@ function torsion_units_gen(O::NfOrd)
   return g
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_units_gen_order(O::NfOrd) -> NfOrdElem
 
@@ -113,7 +113,7 @@ function torsion_units_gen_order(O::NfOrd)
   return g, length(ar)
 end
 
-doc"""
+Markdown.doc"""
 ***
     torsion_unit_group(O::NfOrd) -> GrpAb, Map
 
@@ -220,7 +220,7 @@ function _torsion_units_lattice_enum(O::NfOrd)
 
   i = 0
 
-  for i in 1:length(R)
+  for outer i in 1:length(R)
     if torsion_unit_order(R[i], length(R)) == length(R)
       break
     end
@@ -259,14 +259,18 @@ const _euler_phi_inverse_maximum =
 function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
 
   if degree(O) <= 250
-    p = _euler_phi_inverse_maximum[degree(O)] + 1
+    upper_bound = _euler_phi_inverse_maximum[degree(O)]
   else
-    p = 2^30
+    error("Not implemented yet")
   end
+
+  p = upper_bound + 1
 
   m = fmpz(0)
   m_old = fmpz(0)
   stable = 0
+
+  first = true
 
   while true
     p = next_prime(p)
@@ -275,15 +279,26 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
     end
     lp = prime_decomposition(O, p)
     m_new = m_old
+
     for (P, e) in lp
       m_new = gcd(m_new, norm(P) - 1)
     end
 
-    if m_new == m_old
-      stable += 1
+    if first
+      m_new, _ = ppio(m_new, discriminant(O))
+      if isodd(m_new)
+        m_new = 2 * m_new
+      end
+      first = false
     end
 
-    if stable == 5
+    if m_new == m_old
+      stable += 1
+    else
+      stable = 0
+    end
+
+    if stable == 5 && m_new <= upper_bound
       return m_new
     end
 
@@ -305,7 +320,7 @@ function _torsion_units_lifting(O::NfOrd)
   R = _roots_hensel(f)
 
   i = 1
-  for i in 1:length(R)
+  for outer i in 1:length(R)
     if torsion_unit_order(R[i], length(R)) == length(R)
       break
     end

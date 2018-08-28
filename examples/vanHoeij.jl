@@ -1,9 +1,9 @@
 import Nemo.lift
 
 function fmpz_poly_read!(a::fmpz_poly, b::String)
-  f = ccall((:fopen, :libc), Ptr{Void}, (Cstring, Cstring), b, "r")
-  ccall((:fmpz_poly_fread, :libflint), Void, (Ptr{Void}, Ptr{fmpz_poly}), f, &a)
-  ccall((:fclose), Void, (Ptr{Void}, ), f)
+  f = ccall((:fopen, :libc), Ptr{Nothing}, (Cstring, Cstring), b, "r")
+  ccall((:fmpz_poly_fread, :libflint), Nothing, (Ptr{Nothing}, Ref{fmpz}), f, a)
+  ccall((:fclose), Nothing, (Ptr{Nothing}, ), f)
   return a
 end
 
@@ -40,18 +40,18 @@ mutable struct fmpz_poly_factor_t
   alloc::Int64
   function fmpz_poly_factor_t()
     n = new()
-    ccall((:fmpz_poly_factor_init, :libflint), Void, (Ptr{fmpz_poly_factor_t}, ), &n)
+    ccall((:fmpz_poly_factor_init, :libflint), Nothing, (Ref{fmpz_poly_factor_t}, ), n)
     finalizer(n, fmpz_poly_factor_clear)
     return n
   end
   function fmpz_poly_factor_clear(n::fmpz_poly_factor_t)
-    ccall((:fmpz_poly_factor_clear, :libflint), Void, (Ptr{fmpz_poly_factor_t}, ), &n)
+    ccall((:fmpz_poly_factor_clear, :libflint), Nothing, (Ref{fmpz_poly_factor_t}, ), n)
   end
 end
 
 function flint_factor(f::fmpz_poly)
   n = fmpz_poly_factor_t()
-  ccall((:fmpz_poly_factor, :libflint), Void, (Ptr{fmpz_poly_factor_t}, Ptr{fmpz_poly}), &n, &f)
+  ccall((:fmpz_poly_factor, :libflint), Nothing, (Ref{fmpz_poly_factor_t}, Ref{fmpz_poly}), n, f)
   return n
 end
 
@@ -83,7 +83,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
   cld_bound = function(i)
     a = mmb*binom(n-1, i)
     b = fmpz()
-    ccall((:fmpz_poly_CLD_bound, :libflint), Void, (Ptr{fmpz}, Ptr{fmpz_poly}, Int64), &b, &f, i)
+    ccall((:fmpz_poly_CLD_bound, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz_poly}, Int64), b, f, i)
     println("Compare: $(nbits(a)) vs $(nbits(b)) as a bound for $i")
     return min(a,b)
   end

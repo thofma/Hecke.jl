@@ -15,7 +15,7 @@
   for b in Hecke.squarefree_up_to(100)[2:end]
     K,a=NumberField(x^2-b)
     O=maximal_order(K);
-    cocval=Array{nf_elem,2}(2, 2)
+    cocval=Array{nf_elem, 2}(undef, 2, 2)
     G=[Hecke.NfToNfMor(K,K,a),Hecke.NfToNfMor(K,K,-a)]
     cocval[1,1]=K(1)
     cocval[1,2]=K(1)

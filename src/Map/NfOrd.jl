@@ -26,7 +26,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     tmp_nmod_poly = parent(g)()
     z.poly_of_the_field = g
 
-    powers = Vector{nf_elem}(d)
+    powers = Vector{nf_elem}(undef, d)
 
     powers[1] = a
     for i in 2:d
@@ -37,14 +37,14 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
       fmpq_poly_to_nmod_poly_raw!(tmp_nmod_poly, gg)
-      ccall((:nmod_poly_rem, :libflint), Void,
-            (Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{nmod_poly}, Ptr{Void}),
-            &tmp_nmod_poly, &tmp_nmod_poly, &g, pointer_from_objref(F)+sizeof(fmpz))
-      ccall((:fq_nmod_set, :libflint), Void,
-            (Ptr{fq_nmod}, Ptr{nmod_poly}, Ptr{FqNmodFiniteField}),
-            &u, &tmp_nmod_poly, &F)
-      ccall((:fq_nmod_reduce, :libflint), Void,
-            (Ptr{fq_nmod}, Ptr{FqNmodFiniteField}), &u, &F)
+      ccall((:nmod_poly_rem, :libflint), Nothing,
+            (Ref{nmod_poly}, Ref{nmod_poly}, Ref{nmod_poly}, Ptr{Nothing}),
+            tmp_nmod_poly, tmp_nmod_poly, g, pointer_from_objref(F)+sizeof(fmpz))
+      ccall((:fq_nmod_set, :libflint), Nothing,
+            (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
+            u, tmp_nmod_poly, F)
+      ccall((:fq_nmod_reduce, :libflint), Nothing,
+            (Ref{fq_nmod}, Ref{FqNmodFiniteField}), u, F)
       return u
     end
 
@@ -74,8 +74,8 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     F = FqNmodFiniteField(Rx(g), Symbol("_\$"), false)
     d = degree(g)
     n = degree(O)
-    imageofbasis = Vector{fq_nmod}(n)
-    powers = Vector{nf_elem}(d)
+    imageofbasis = Vector{fq_nmod}(undef, n)
+    powers = Vector{nf_elem}(undef, d)
     c = Rx()
     for i in 1:n
       ib = F() 
@@ -83,7 +83,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       for j in 1:d
         setcoeff!(c, j - 1, b[i][1, j])
       end
-      ccall((:fq_nmod_set, :libflint), Void, (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}), ib, c, F)
+      ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}), ib, c, F)
       imageofbasis[i] = ib
     end
 
@@ -98,7 +98,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
       v = elem_in_basis(x, Val{false})
       zz = zero(F)
       for i in 1:n
-        ccall((:fq_nmod_mul_fmpz, :libflint), Void,
+        ccall((:fq_nmod_mul_fmpz, :libflint), Nothing,
               (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}),
               tempF, imageofbasis[i], v[i], F)
         add!(zz, zz, tempF)
@@ -208,13 +208,13 @@ function Mor(K::AnticNumberField, L::AnticNumberField, y::nf_elem)
 end
 
 function _get_coeff_raw(x::fq_nmod, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ptr{fq_nmod}, Int), &x, i)
+  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{fq_nmod}, Int), x, i)
   return u
 end
 
 function _get_coeff_raw(x::fq, i::Int)
   t = FlintIntegerRing()
-  ccall((:fmpz_poly_get_coeff_fmpz, :libflint), Void, (Ptr{fmpz}, Ptr{fq}, Int), &t, &x, i)
+  ccall((:fmpz_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), t, x, i)
   return t
 end
 
@@ -263,7 +263,7 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
   X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
-  r, per, L, U = lufact(B) # P*M1 = L*U
+  r, per, L, U = lu(B) # P*M1 = L*U
 
   inv!(per)
 
@@ -301,7 +301,7 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
   X = zero_matrix(base_ring(A), cols(B), rows(A))
 
   #println("solving\n $A \n = $B * X")
-  r, per, L, U = _lufact(B) # P*M1 = L*U
+  r, per, L, U = _lu(B) # P*M1 = L*U
   inv!(per)
 
   @assert B == per*L*U
@@ -333,75 +333,6 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
   @assert B*X == A
   return X
 end
-
-function _lufact!(P::Generic.perm, A::Nemo.MatElem{T}) where {T}
-   m = rows(A)
-   n = cols(A)
-   rank = 0
-   r = 1
-   c = 1
-   R = base_ring(A)
-   t = R()
-   while r <= m && c <= n
-      if A[r, c] == 0
-         i = r + 1
-         while i <= m
-            if !iszero(A[i, c])
-               for j = 1:n
-                  A[i, j], A[r, j] = A[r, j], A[i, j]
-               end
-               P[r], P[i] = P[i], P[r]
-               break
-            end
-            i += 1
-         end
-         if i > m
-            c += 1
-            continue
-         end
-      end
-      rank += 1
-      d = -inv(A[r, c])
-      for i = r + 1:m
-         q = A[i, c]*d
-         for j = c + 1:n
-            t = mul!(t, A[r, j], q)
-            A[i, j] = addeq!(A[i, j], t)
-         end
-         A[i, c] = R()
-         A[i, rank] = -q
-      end
-      r += 1
-      c += 1
-   end
-   inv!(P)
-   return rank
-end
-
-function _lufact(A::Nemo.MatElem{T}, P = PermGroup(rows(A))) where {T}
-   m = rows(A)
-   n = cols(A)
-   P.n != m && error("Permutation does not match matrix")
-   p = P()
-   R = base_ring(A)
-   U = deepcopy(A)
-   L = similar(A, m, m)
-   rank = _lufact!(p, U)
-   for i = 1:m
-      for j = 1:n
-         if i > j
-            L[i, j] = U[i, j]
-            U[i, j] = R()
-         elseif i == j
-            L[i, j] = R(1)
-         elseif j <= m
-            L[i, j] = R()
-         end
-      end
-   end
-   return rank, p, L, U
-end
-
 
 mutable struct NfOrdToFqMor <: Map{NfOrd, FqFiniteField, HeckeMap, NfOrdToFqMor}
   header::MapHeader{NfOrd, FqFiniteField}
@@ -534,8 +465,8 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
   F = FqFiniteField(Rx(g), Symbol("_\$"), false)
   d = degree(g)
   n = degree(O)
-  imageofbasis = Vector{fq}(n)
-  powers = Vector{nf_elem}(d)
+  imageofbasis = Vector{fq}(undef, n)
+  powers = Vector{nf_elem}(undef, d)
   c = Rx()
 
   for i in 1:n
@@ -544,7 +475,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
     for j in 1:d
       setcoeff!(c, j - 1, b[i][1, j])
     end
-    ccall((:fq_set, :libflint), Void, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), ib, c, F)
+    ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), ib, c, F)
     imageofbasis[i] = ib
   end
 
@@ -559,7 +490,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
     v = elem_in_basis(x, Val{false})
     zz = zero(F)
     for i in 1:n
-      ccall((:fq_mul_fmpz, :libflint), Void,
+      ccall((:fq_mul_fmpz, :libflint), Nothing,
             (Ref{fq}, Ref{fq}, Ref{fmpz}, Ref{FqFiniteField}),
             tempF, imageofbasis[i], v[i], F)
       add!(zz, zz, tempF)
@@ -588,9 +519,9 @@ function image(f::NfOrdToFqMor, x::NfOrdElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x))::fmpq_poly
     fmpq_poly_to_fmpz_mod_poly_raw!(f.tmp_fmpz_mod_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fmpz_mod_poly_rem, :libflint), Void, (Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}, Ptr{fmpz_mod_poly}), &f.tmp_fmpz_mod_poly, &f.tmp_fmpz_mod_poly, &f.poly_of_the_field)
-    ccall((:fq_set, :libflint), Void, (Ptr{fq}, Ptr{fmpz_mod_poly}, Ptr{FqFiniteField}), &u, &f.tmp_fmpz_mod_poly, &F)
-    ccall((:fq_reduce, :libflint), Void, (Ptr{fq}, Ptr{FqFiniteField}), &u, &F)
+    ccall((:fmpz_mod_poly_rem, :libflint), Nothing, (Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}, Ref{fmpz_mod_poly}), f.tmp_fmpz_mod_poly, f.tmp_fmpz_mod_poly, f.poly_of_the_field)
+    ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), u, f.tmp_fmpz_mod_poly, F)
+    ccall((:fq_reduce, :libflint), Nothing, (Ref{fq}, Ref{FqFiniteField}), u, F)
     return u
   else
     return f.header.image(x)

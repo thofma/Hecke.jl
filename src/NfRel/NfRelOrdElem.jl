@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-function Base.deepcopy_internal(x::NfRelOrdElem, dict::ObjectIdDict)
+function Base.deepcopy_internal(x::NfRelOrdElem, dict::IdDict)
   z = parent(x)()
   z.elem_in_nf = Base.deepcopy_internal(x.elem_in_nf, dict)
   if x.has_coord
@@ -20,7 +20,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfRelOrd)(a::RelativeElement, check::Bool = true) -> NfRelOrdElem
 
@@ -38,7 +38,7 @@ function (O::NfRelOrd)(a::RelativeElement{T}, check::Bool = true) where T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfRelOrd)(a::NfRelOrdElem, check::Bool = true) -> NfRelOrdElem
 
@@ -65,7 +65,7 @@ end
 
 (O::NfRelOrd)(a::Union{fmpz, Integer}) = O(nf(O)(a))
 
-doc"""
+Markdown.doc"""
 ***
       (O::NfRelOrd)() -> NfRelOrdElem
 
@@ -79,7 +79,7 @@ doc"""
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       parent(a::NfRelOrdElem) -> NfRelOrd
 
@@ -95,7 +95,7 @@ parent(x::NfRelOrdElem{nf_elem}) = x.parent
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       elem_in_nf(a::NfRelOrdElem) -> RelativeElement
 
@@ -133,7 +133,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       elem_in_basis(a::NfRelOrdElem{T}) -> Vector{T}
 
@@ -162,7 +162,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       zero(O::NfRelOrd) -> NfRelOrdElem
 
@@ -170,7 +170,7 @@ doc"""
 """
 zero(O::NfRelOrd) = O(0)
 
-doc"""
+Markdown.doc"""
 ***
       one(O::NfRelOrd) -> NfRelOrdElem
 
@@ -178,7 +178,7 @@ doc"""
 """
 one(O::NfRelOrd) = O(1)
 
-doc"""
+Markdown.doc"""
 ***
       zero(a::NfRelOrdElem) -> NfRelOrdElem
 
@@ -186,7 +186,7 @@ doc"""
 """
 zero(a::NfRelOrdElem) = parent(a)(0)
 
-doc"""
+Markdown.doc"""
 ***
       one(a::NfRelOrdElem) -> NfRelOrdElem
 
@@ -201,7 +201,7 @@ one(a::NfRelOrdElem) = parent(a)(1)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       isone(a::NfRelOrd) -> Bool
 
@@ -210,7 +210,7 @@ doc"""
 
 isone(a::NfRelOrdElem) = isone(a.elem_in_nf)
 
-doc"""
+Markdown.doc"""
 ***
       iszero(a::NfRelOrd) -> Bool
 
@@ -235,7 +235,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       -(a::NfRelOrdElem) -> NfRelOrdElem
 
@@ -257,7 +257,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       *(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
@@ -270,7 +270,7 @@ function *(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
-doc"""
+Markdown.doc"""
 ***
       +(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
@@ -287,7 +287,7 @@ function +(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
-doc"""
+Markdown.doc"""
 ***
       -(a::NfRelOrdElem, b::NfRelOrdElem) -> NfRelOrdElem
 
@@ -304,7 +304,7 @@ function -(a::NfRelOrdElem, b::NfRelOrdElem)
   return c
 end
 
-doc"""
+Markdown.doc"""
 ***
       divexact(a::NfRelOrdElem, b::NfRelOrdElem, check::Bool) -> NfRelOrdElem
 
@@ -330,7 +330,7 @@ end
 
 for T in [Integer, fmpz]
   @eval begin
-    doc"""
+    Markdown.doc"""
     ***
           *(a::NfRelOrdElem, b::Union{Integer, fmpz}) -> NfRelOrdElem
 
@@ -348,7 +348,7 @@ for T in [Integer, fmpz]
 
     *(a::$T, b::NfRelOrdElem) = b*a
 
-    doc"""
+    Markdown.doc"""
     ***
           divexact(a::NfRelOrdElem, b::Union{Integer, fmpz}, check::Bool) -> NfRelOrdElem
 
@@ -374,7 +374,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     ^(a::NfRelOrdElem, b::Union{fmpz, Int}) -> NfRelOrdElem
 
@@ -392,13 +392,13 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
-      trace(a::NfRelOrdElem{T}) -> T
+      tr(a::NfRelOrdElem{T}) -> T
 
 > Returns the trace of $a$.
 """
-trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
+tr(a::NfRelOrdElem) = tr(a.elem_in_nf)
 
 ################################################################################
 #
@@ -406,7 +406,7 @@ trace(a::NfRelOrdElem) = trace(a.elem_in_nf)
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       norm(a::NfRelOrdElem{T}) -> T
 

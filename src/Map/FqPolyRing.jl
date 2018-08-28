@@ -21,7 +21,7 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
     Fpx = Fp["x"][1]
     g = Fpx()
     pt = ccall((:fq_ctx_modulus, :libflint), Ptr{Nemo.fmpz_mod_poly}, (Ref{Nemo.FqFiniteField}, ), Fq)
-    ccall((:fmpz_mod_poly_set, :libflint), Void, (Ptr{Nemo.fmpz_mod_poly}, Ptr{Nemo.fmpz_mod_poly}), &g, pt)
+    ccall((:fmpz_mod_poly_set, :libflint), Nothing, (Ref{Nemo.fmpz_mod_poly}, Ptr{Nemo.fmpz_mod_poly}), g, pt)
     n = degree(Fq)
     @assert n == degree(g)
     m = degree(h)
@@ -81,7 +81,7 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
       x_mat = M*x_mat
       t = parent(g)([ x_mat[k, 1] for k = 1:n*m ])
       x = Fqm()
-      ccall((:fq_set, :libflint), Void, (Ptr{fq}, Ptr{fmpz_mod_poly}, Ptr{FqFiniteField}), &x, &t, &Fqm)
+      ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), x, t, Fqm)
       return x
     end
 
@@ -95,7 +95,7 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
       t = Fqm()
       for j = 0:m - 1
         tt = parent(g)([ x_mat[i + n*j + 1, 1] for i = 0:n - 1 ])
-        ccall((:fq_set, :libflint), Void, (Ptr{fq}, Ptr{fmpz_mod_poly}, Ptr{FqFiniteField}), &t, &tt, &Fq)
+        ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), t, tt, Fq)
         setcoeff!(f, j, t)
       end
       return f

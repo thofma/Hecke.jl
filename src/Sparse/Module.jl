@@ -50,14 +50,14 @@ function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
   return false 
 end
 
-function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz})
+function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
   gp = SRow(g, M.Mp.R)
   M.new = true
   if add_gen!(M.Mp, gp)
     push!(M.bas_gens, g)
     return true
   else
-    push!(M.rel_gens, g)
+    always && push!(M.rel_gens, g)
   end
   return false 
 end
@@ -162,7 +162,7 @@ end
 
 function missing_pivot(M::ModuleCtx_fmpz)
   C = M.Mp.basis
-  return setdiff(IntSet(1:cols(C)), [x.pos[1] for x=C])
+  return setdiff(BitSet(1:cols(C)), [x.pos[1] for x=C])
 end
 
 function non_trivial_pivot(M::ModuleCtx_fmpz)
@@ -172,7 +172,7 @@ function non_trivial_pivot(M::ModuleCtx_fmpz)
   end
   C = M.basis
   @hassert :HNF 2  C.r == C.c
-  return setdiff(IntSet(1:cols(C)), find(i->C[i].values[1] == 1, 1:C.c))
+  return setdiff(BitSet(1:cols(C)), findall(i->C[i].values[1] == 1, 1:C.c))
 end
 
 function rank(M::ModuleCtx_fmpz)

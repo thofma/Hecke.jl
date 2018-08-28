@@ -108,12 +108,13 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
           if nn in clg.M.bas_gens || nn in clg.M.rel_gens
             break
           end
-          if add_gen!(clg.M, nn)
+          if add_gen!(clg.M, nn, false)
             push!(clg.R_gen, ba)
+            clg.rel_cnt += 1
+            push!(clg.RS, hash(ba))
           else
-            push!(clg.R_rel, ba)
+            #push!(clg.R_rel, ba)
           end
-          push!(clg.RS, hash(ba))
         end
       end
     end  
@@ -121,7 +122,8 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     clg.rel_cnt += 1
 #    @assert clg.rel_cnt < 2*cols(clg.M)
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
-           clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
+           clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last,
+           " rank now ", rank(clg.M), " of ", length(clg.FB.ideals))
     clg.last = clg.bad_rel
     return true
   else

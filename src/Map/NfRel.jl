@@ -139,6 +139,34 @@ mutable struct NfRelToNfRelMor{T, S} <: Map{NfRel{T}, NfRel{S}, HeckeMap, NfRelT
   end  
 end
 
+function ^(f::NfRelToNfRelMor, b::Int)
+  K = domain(f)
+  @assert K == codomain(f)
+  d = absolute_degree(K)
+  b = mod(b, d)
+  if b == 0
+    return NfRelToNfRelMor(K, K, gen(K))
+  elseif b == 1
+    return f
+  else
+    bit = ~((~UInt(0)) >> 1)
+    while (UInt(bit) & b) == 0
+      bit >>= 1
+    end
+    z = f
+    bit >>= 1
+    while bit != 0
+      z = z * z
+      if (UInt(bit) & b) != 0
+        z = z * f
+      end
+      bit >>= 1
+    end
+    return z
+  end
+end
+
+
   #so far, only for single relative.
 function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::NfRelElem{nf_elem})
   function image(x::NfRelElem{nf_elem})

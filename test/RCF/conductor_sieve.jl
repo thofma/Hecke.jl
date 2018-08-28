@@ -1,5 +1,6 @@
 @testset "RCF" begin
-  include(Pkg.dir("Hecke") * "/examples/fields.jl")
+
+  include(joinpath(Hecke.pkgdir, "examples", "fields.jl"))
 
   @testset "Various examples" begin
   

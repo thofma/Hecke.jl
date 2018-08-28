@@ -131,7 +131,7 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
   return g
 end
 
-doc"""
+Markdown.doc"""
     saturate(A::fmpz_mat) -> fmpz_mat
     saturate(A::SMat{fmpz}) -> SMat{fmpz}
 
@@ -166,7 +166,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     find_row_starting_with(A::SMat, p::Int)
  
 > Tries to find the index $i$ s.th. $A[i,p] != 0$ and $A[i, p-j] = 0$
@@ -222,7 +222,7 @@ end
 
 # If trafo is set to Val{true}, then additionaly an Array of transformations
 # is returned.
-doc"""
+Markdown.doc"""
     reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{Bool}} = Val{false})
 
 > Reduces $g$ modulo $A$, that is, all entries in $g$ in columns where $A$ has
@@ -387,7 +387,7 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz}, start::Int = 1, trafo::Type{
   with_trafo ? (return b, trafos) : return b
 end
 
-doc"""
+Markdown.doc"""
     hnf_kannan_bachem(A::SMat{fmpz})
 
 > Hermite Normal Form of $A$ using the Kannan-Bachem algorithm to avoid
@@ -458,7 +458,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) wher
   with_trafo ? (return B, trafos) : (return B)
 end
 
-doc"""
+Markdown.doc"""
     hnf(A::SMat{fmpz}) -> SMat{fmpz}
 
 > The Hermite Normal Form of $A$, ie. an upper triangular matrix with non-negative
@@ -469,7 +469,7 @@ function hnf(A::SMat{fmpz})
   return hnf_kannan_bachem(A)
 end
 
-doc"""
+Markdown.doc"""
     hnf!(A::SMat{fmpz})
 
 > In-place reduction of $A$ into Hermite Normal Form.

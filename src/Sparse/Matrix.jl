@@ -176,7 +176,7 @@ function SMat(A::T; R::S = base_ring(A),
   return m
 end
 
-doc"""
+Markdown.doc"""
     SMat{T}(A::Array{T, 2}) -> SMat{T}
 
 > Constructs the SMat (Hecke-sparse matrix) with coefficients of
@@ -216,7 +216,7 @@ end
 
 # a faster version for nmod_mat -> SMat{T}
 # it avoids the creation of elements in ResidueRing(FlintZZ, n)
-doc"""
+Markdown.doc"""
     SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
   
 > "Lifts" the entries in $A$ to a sparse matrix over $R$.
@@ -241,7 +241,7 @@ function SMat(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false) where S
     else
       r = SRow(R)
       for j =1:cols(A)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ptr{nmod_mat}, Int, Int), &A, i - 1, j - 1)
+        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), A, i - 1, j - 1)
         if t != 0
           m.nnz += 1
           push!(r.values, R(t))
@@ -261,7 +261,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     mod_sym!(A::SMat{fmpz}, n::fmpz)
 
@@ -280,7 +280,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     SMat(A::SMat{fmpz}, n::Int) -> SMat{nmod}
 
 > Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
@@ -290,7 +290,7 @@ function SMat(A::SMat{fmpz}, n::Int)
   return SMat(A, R)
 end
 
-doc"""
+Markdown.doc"""
     SMat(A::SMat{fmpz}, R::Ring) -> SMat{elem_type(R)}
     SRow(A::SMat{fmpz}, R::Ring) -> SRow{elem_type(R)}
 
@@ -321,7 +321,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     transpose(A::SMat) -> SMat
 
@@ -332,7 +332,7 @@ function transpose(A::SMat)
   B = SMat(base_ring(A))
   n = rows(A)
   m = cols(A)
-  B.rows = Array{SRow{elem_type(R)}}(m)
+  B.rows = Array{SRow{elem_type(R)}}(undef, m)
   for i=1:m
     B.rows[i] = SRow(R)
   end
@@ -360,17 +360,27 @@ function endof(A::SMat)
   return length(A.rows)
 end
 
-function start(A::SMat)
-  return 1
-end
+function Base.iterate(A::SMat, st::Int = 1)
+  if st > rows(A)
+    return nothing
+  end
 
-function next(A::SMat, st::Int)
   return A.rows[st], st + 1
 end
 
-function done(A::SMat, st::Int)
-  return st > rows(A)
-end
+#function start(A::SMat)
+#  return 1
+#end
+#
+#function next(A::SMat, st::Int)
+#  return A.rows[st], st + 1
+#end
+#
+#function done(A::SMat, st::Int)
+#  return st > rows(A)
+#end
+
+Base.IteratorSize(::Type{SMat{T}}) where {T} = Base.HasLength()
 
 function length(A::SMat)
   return rows(A)
@@ -401,7 +411,7 @@ end
 # (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
 function mul(A::SMat{T}, b::Array{T, 1}) where T
   assert(length(b) == cols(A))
-  c = Array{T}(rows(A))
+  c = Array{T}(undef, rows(A))
   mul!(c, A, b)
   return c
 end
@@ -464,7 +474,7 @@ end
 function mul(A::SMat{T}, b::Array{T, 2}) where T
   sz = size(b)
   assert(sz[1] == cols(A))
-  c = Array{T}(sz[1], sz[2])
+  c = Array{T}(undef, sz[1], sz[2])
   return mul!(c, A, b)
 end
 
@@ -638,7 +648,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
   valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
 
   Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the valence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
@@ -666,8 +676,8 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
     mm = mul_mod!
     println("mul small case")
   end
-  c1 = Array{Int}(cols(A))
-  c2 = Array{Int}(rows(A))
+  c1 = Array{Int}(undef, cols(A))
+  c2 = Array{Int}(undef, rows(A))
 
   for i=1:cols(A)
     c1[i] = Int(rand(-10:10))
@@ -702,7 +712,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
     V = fmpz(leading_coefficient(f))
     pp = fmpz(p)
 
-    v = Array{typeof(k(1))}(2*degree(f)+1)
+    v = Array{typeof(k(1))}(undef, 2*degree(f)+1)
     while true
       p = next_prime(p)
       println(p)
@@ -758,8 +768,8 @@ function valence_mc(A::SMat{T}, p::Int) where T
     mm = mul_mod!
     println("mul small case")
   end
-  c1 = Array{Int}(cols(A))
-  c2 = Array{Int}(rows(A))
+  c1 = Array{Int}(undef, cols(A))
+  c2 = Array{Int}(undef, rows(A))
 
   for i=1:cols(A)
     c1[i] = Int(rand(-10:10))
@@ -796,7 +806,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     vcat!{T}(A::SMat{T}, B::SMat{T})
 
@@ -814,7 +824,7 @@ function vcat!(A::SMat{T}, B::SMat{T}) where T
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     vcat{T}(A::SMat{T}, B::SMat{T})
 
@@ -834,7 +844,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     hcat!{T}(A::SMat{T}, B::SMat{T})
 
@@ -861,7 +871,7 @@ function hcat!(A::SMat{T}, B::SMat{T}) where T
   A.nnz = nnz + B.nnz #A.nnz may have changed - if B is longer
 end
 
-doc"""
+Markdown.doc"""
 ***
     hcat{T}(A::SMat{T}, B::SMat{T})
 
@@ -895,7 +905,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     fmpz_mat{T <: Integer}(A::SMat{T})
 
@@ -913,7 +923,7 @@ function fmpz_mat(A::SMat{T}) where T <: Integer
   return B
 end
 
-doc"""
+Markdown.doc"""
 ***
     fmpz_mat(A::SMat{fmpz})
 
@@ -936,7 +946,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     norm2(A::SRow{fmpz})
 
@@ -946,7 +956,7 @@ function norm2(A::SRow{fmpz})
   return sum([x*x for x= A.values])
 end
 
-doc"""
+Markdown.doc"""
 ***
     hadamard_bound2(A::SMat{fmpz})
 
@@ -957,7 +967,7 @@ function hadamard_bound2(A::SMat{fmpz})
 end
 
 
-doc"""
+Markdown.doc"""
 ***
     maximum(abs, A::SMat{fmpz}) -> fmpz
 
@@ -975,7 +985,7 @@ function maximum(::typeof(abs), A::SMat{fmpz})
   return abs(m)
 end
 
-doc"""
+Markdown.doc"""
 ***
     maximum(A::SMat{fmpz}) -> fmpz
 
@@ -995,7 +1005,7 @@ end
 
 
 
-doc"""
+Markdown.doc"""
 ***
     minimum(A::SMat{fmpz}) -> fmpz
 
@@ -1019,7 +1029,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     isupper_triangular(A::SMat)
  
 > Returns true iff $A$ is upper triangular.
@@ -1056,12 +1066,12 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     id{T}(::Type{SMat{T}}, n::Int) -> SMat{T}
 
 > The $n\times n$ identity matrix as a SMat of type T.
 """
-function id{T}(::Type{SMat{T}}, n::Int)
+function id(::Type{SMat{T}}, n::Int) where {T}
   A = SMat{T}()
   for i=1:n
     push!(A, SRow{T}([(i, T(1))]))
@@ -1069,7 +1079,7 @@ function id{T}(::Type{SMat{T}}, n::Int)
   return A
 end
 
-doc"""
+Markdown.doc"""
     id{S}(::Type{SMat}, R::S, n::Int) -> SMat{elem_type(R)}
     
 > The $n \times n$ identity over $R$ as a SMat.
@@ -1084,7 +1094,7 @@ function id(::Type{SMat}, R::Ring, n::Int)
   return A
 end
 
-doc"""
+Markdown.doc"""
    identity_matrix(::Type{SMat}, R::Ring, n::Int)
    identity_matrix(::Type{MatElem}, R::Ring, n::Int)
 > Create a sparse (resp. dense) $n$ times $n$ identity matrix over $R$.   
@@ -1097,7 +1107,7 @@ function identity_matrix(::Type{MatElem}, R::Ring, n::Int)
   return identity_matrix(R, n)
 end
 
-doc"""
+Markdown.doc"""
    zero_matrix(::Type{SMat}, R::Ring, n::Int)
    zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
    zero_matrix(::Type{MatElem}, R::Ring, n::Int)
@@ -1178,7 +1188,7 @@ function Base.cat(dims::Tuple{Int, Int}, A::SMat...)
   return B
 end
 
-doc"""
+Markdown.doc"""
     isid{T}(A::SMat{T})
 
 > Tests if $A$ is the $n \times n$ identity.
@@ -1205,7 +1215,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
   toNemo(io::IOStream, A::SMat; name = "A")
 
   Prints the SMat as a julia-program into the file corresponding to io.
@@ -1224,7 +1234,7 @@ function toNemo(io::IOStream, A::SMat; name = "A")
   end
 end
 
-doc"""
+Markdown.doc"""
   toNemo(io::String, A::SMat; name = "A")
 
   Prints the SMat as a julia-program into the file named io.
@@ -1243,16 +1253,16 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     sparse{T}(A::SMat{T}) -> sparse{T}
 
 > The same matrix, but as a sparse matrix of julia type.
 """
 function sparse(A::SMat{T}) where T
-  I = Array{Int}(A.nnz)
-  J = Array{Int}(A.nnz)
-  V = Array{T}(A.nnz)
+  I = Array{Int}(undef, A.nnz)
+  J = Array{Int}(undef, A.nnz)
+  V = Array{T}(undef, A.nnz)
   i = 1
   for r = 1:rows(A)
     for j=1:length(A.rows[r].pos)
@@ -1265,7 +1275,7 @@ function sparse(A::SMat{T}) where T
   return sparse(I, J, V)
 end
 
-doc"""
+Markdown.doc"""
 ***
     Array{T}(A::SMat{T}) -> Array{T, 2}
 

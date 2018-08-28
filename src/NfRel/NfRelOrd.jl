@@ -6,7 +6,7 @@ export pseudo_basis, basis_pmat
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       nf(O::NfRelOrd) -> RelativeExtension
 
@@ -14,7 +14,7 @@ doc"""
 """
 nf(O::NfRelOrd) = O.nf
 
-doc"""
+Markdown.doc"""
     parent(O::NfRelOrd) -> NfRelOrdSet
 
 Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
@@ -22,7 +22,7 @@ number field.
 """
 parent(O::NfRelOrd) = O.parent
 
-doc"""
+Markdown.doc"""
     isequation_order(O::NfRelOrd) -> Bool
 
 > Returns whether $\mathcal O$ is the equation order of the ambient number
@@ -126,7 +126,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{RelativeElement{T}{T}, S}}
 
@@ -141,7 +141,7 @@ function pseudo_basis(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       basis_pmat(O::NfRelOrd) -> PMat
 
@@ -157,7 +157,7 @@ function basis_pmat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
 
@@ -178,7 +178,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       basis_nf(O::NfRelOrd) -> Array{RelativeElement, 1}
 
@@ -194,7 +194,7 @@ function basis_nf(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       basis_mat(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
@@ -210,7 +210,7 @@ function basis_mat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       basis_mat_inv(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
@@ -247,7 +247,7 @@ function show(io::IO, O::NfRelOrd)
     pb = pseudo_basis(O, Val{false})
     for i = 1:degree(O)
       print(io, "($(pb[i][1])) * ")
-      showcompact(io, pb[i][2])
+      show(IOContext(io, :compact => true), pb[i][2])
       if i != degree(O)
         print(io, ", ")
       end
@@ -265,7 +265,7 @@ function show(io::IO, O::NfRelOrd)
       print(io, "\n(")
       print(io, pb[i][1])
       print(io, ", ")
-      showcompact(io, pb[i][2])
+      show(IOContext(io, :compact => true), pb[i][2])
       print(io, ")")
     end
   end
@@ -313,7 +313,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       degree(O::NfRelOrd) -> Int
 
@@ -327,15 +327,15 @@ degree(O::NfRelOrd) = degree(nf(O))
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       deepcopy(O::NfRelOrd) -> NfRelOrd
 
 > Makes a copy of $\mathcal O$.
 """
-function Base.deepcopy_internal(O::NfRelOrd{T, S}, dict::ObjectIdDict) where {T, S}
+function Base.deepcopy_internal(O::NfRelOrd{T, S}, dict::IdDict) where {T, S}
   z = NfRelOrd{T, S}(O.nf)
-  for x in fieldnames(O)
+  for x in fieldnames(typeof(O))
     if x != :nf && x != :parent && isdefined(O, x)
       setfield!(z, x, Base.deepcopy_internal(getfield(O, x), dict))
     end
@@ -369,7 +369,7 @@ function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::T
         return false, Vector{T}()
       end
     end
-    v = Vector{T}(degree(O))
+    v = Vector{T}(undef, degree(O))
     for i in 1:degree(O)
       v[i] = deepcopy(t[1, i])
     end
@@ -377,7 +377,7 @@ function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::T
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
       in(a::RelativeElement, O::NfRelOrd) -> Bool
 
@@ -393,7 +393,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       Order(K::RelativeExtension{T}, M::Generic.Mat{T}) -> NfRelOrd
 
@@ -410,7 +410,7 @@ function Order(L::RelativeExtension{S}, M::Generic.Mat{S}) where S <: RelativeEl
   return NfRelOrd{elem_type(base_ring(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
-doc"""
+Markdown.doc"""
 ***
       Order(K::RelativeExtension, M::PMat) -> NfRelOrd
 
@@ -422,7 +422,7 @@ function Order(L::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
   return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
-doc"""
+Markdown.doc"""
 ***
       EquationOrder(L::RelativeExtension) -> NfRelOrd
 
@@ -437,7 +437,7 @@ function EquationOrder(L::RelativeExtension)
   return O
 end
 
-doc"""
+Markdown.doc"""
 ***
       maximal_order(L::RelativeExtension) -> NfRelOrd
 
@@ -498,7 +498,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
@@ -514,10 +514,10 @@ function trace_matrix(O::NfRelOrd)
   d = degree(L)
   g = zero_matrix(K, d, d)
   for i = 1:d
-    t = trace(b[i]*b[i])
+    t = tr(b[i]*b[i])
     g[i, i] = t
     for j = (i + 1):d
-      t = trace(b[i]*b[j])
+      t = tr(b[i]*b[j])
       g[i, j] = t
       g[j, i] = t
     end
@@ -635,7 +635,7 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_tes
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
@@ -656,7 +656,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
@@ -694,7 +694,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
       +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
 
@@ -762,7 +762,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     denominator(a::RelativeElement, O::NfRelOrd) -> fmpz
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in

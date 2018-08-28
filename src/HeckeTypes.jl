@@ -113,9 +113,9 @@ mutable struct fmpz_preinvn_struct
 
   function fmpz_preinvn_struct(f::fmpz)
     z = new()
-    ccall((:fmpz_preinvn_init, :libflint), Void,
-          (Ptr{fmpz_preinvn_struct}, Ptr{fmpz}), &z, &f)
-    finalizer(z, _fmpz_preinvn_struct_clear_fn)
+    ccall((:fmpz_preinvn_init, :libflint), Nothing,
+          (Ref{fmpz_preinvn_struct}, Ref{fmpz}), z, f)
+    finalizer(_fmpz_preinvn_struct_clear_fn, z)
     return z
   end
 end
@@ -152,13 +152,13 @@ mutable struct acb_root_ctx
     z.signature = (r, s)
 
     for i = 1:degree(x)
-      ccall((:acb_set, :libarb), Void, (Ptr{acb_struct}, Ptr{acb}),
-            z._roots + (i - 1) * sizeof(acb_struct), &z.roots[i])
+      ccall((:acb_set, :libarb), Nothing, (Ptr{acb_struct}, Ref{acb}),
+            z._roots + (i - 1) * sizeof(acb_struct), z.roots[i])
     end
 
     z.prec = p
-    A = Array{arb}(z.signature[1])
-    B = Array{acb}(z.signature[2])
+    A = Array{arb}(undef, z.signature[1])
+    B = Array{acb}(undef, z.signature[2])
 
     for i in 1:r
       @assert isreal(z.roots[i])
@@ -178,14 +178,14 @@ mutable struct acb_root_ctx
     z.real_roots = A
     z.complex_roots = B
 
-    finalizer(z, _acb_root_ctx_clear_fn)
+    finalizer(_acb_root_ctx_clear_fn, z)
 
     return z
   end
 end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
-  ccall((:_acb_vec_clear, :libarb), Void,
+  ccall((:_acb_vec_clear, :libarb), Nothing,
               (Ptr{acb_struct}, Int), x._roots, degree(x.poly))
 end
 
@@ -220,7 +220,7 @@ abstract type HeckeMap <: SetMap end
 #
 ################################################################################
 
-const SRowSpaceDict = ObjectIdDict()
+const SRowSpaceDict = IdDict()
 
 mutable struct SRowSpace{T} <: Ring
   base_ring::Ring
@@ -267,7 +267,7 @@ mutable struct SRow{T}
 
   function SRow{T}(A::SRow{S}) where {T, S}
     r = new{T}()
-    r.values = Array{T}(length(A.pos))
+    r.values = Array{T}(undef, length(A.pos))
     r.pos = copy(A.pos)
     for i=1:length(r.values)
       r.values[i] = T(A.values[i])
@@ -290,7 +290,7 @@ end
 #
 ################################################################################
 
-const SMatSpaceDict = ObjectIdDict()
+const SMatSpaceDict = IdDict()
 
 mutable struct SMatSpace{T} <: Ring
   rows::Int
@@ -319,7 +319,7 @@ mutable struct SMat{T}
 
   function SMat{T}() where {T}
     r = new{T}()
-    r.rows = Array{SRow{T}}(0)
+    r.rows = Vector{SRow{T}}()
     r.nnz = 0
     r.r = 0
     r.c = 0
@@ -328,7 +328,7 @@ mutable struct SMat{T}
 
   function SMat{T}(a::SMat{S}) where {S, T}
     r = new{T}()
-    r.rows = Array{SRow{T}}(length(a.rows))
+    r.rows = Array{SRow{T}}(undef, length(a.rows))
     for i=1:rows(a)
       r.rows[i] = SRow{T}(a.rows[i])
     end
@@ -397,7 +397,7 @@ end
 
 export FakeFmpqMat, FakeFmpqMatSpace
 
-const FakeFmpqMatSpaceID = ObjectIdDict()
+const FakeFmpqMatSpaceID = IdDict()
 
 mutable struct FakeFmpqMatSpace
   rows::Int
@@ -559,7 +559,7 @@ end
 
 NfAbsOrdSet(a::T, cached::Bool = false) where {T} = NfAbsOrdSet{T}(a, cached)
 
-const NfAbsOrdSetID = ObjectIdDict()
+const NfAbsOrdSetID = IdDict()
 
 const NfOrdSet = NfAbsOrdSet
 
@@ -619,7 +619,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
     r.signature = (-1,0)
     r.primesofmaximality = Vector{fmpz}()
     r.norm_change_const = (-1.0, -1.0)
-    r.auxilliary_data = Array{Any}(10)
+    r.auxilliary_data = Array{Any}(undef, 10)
     r.isequation_order = false
     r.ismaximal = 0
     r.tcontain = FakeFmpqMat(zero_matrix(FlintZZ, 1, degree(a)))
@@ -651,7 +651,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
       z = NfAbsOrd{S, T}(K)
       n = degree(K)
       B_K = basis(K)
-      d = Vector{T}(n)
+      d = Vector{T}(undef, n)
       for i in 1:n
         d[i] = elem_from_mat_row(K, x.num, i, x.den)
       end
@@ -666,7 +666,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
 
   function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
-    A = FakeFmpqMat(basis_mat(b))
+    A = basis_mat(b)
     if haskey(NfAbsOrdID, (K,A))
       return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
     else
@@ -711,7 +711,7 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
     z = new{S, T}()
     z.parent = O
     z.elem_in_nf = nf(O)()
-    z.elem_in_basis = Vector{fmpz}(degree(O))
+    z.elem_in_basis = Vector{fmpz}(undef, degree(O))
     z.has_coord = false
     return z
   end
@@ -719,7 +719,7 @@ mutable struct NfAbsOrdElem{S, T} <: RingElem
   function NfAbsOrdElem{S, T}(O::NfAbsOrd{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.elem_in_nf = a
-    z.elem_in_basis = Vector{fmpz}(degree(O))
+    z.elem_in_basis = Vector{fmpz}(undef, degree(O))
     z.parent = O
     z.has_coord = false
     return z
@@ -802,7 +802,7 @@ const NfOrdIdlSet = NfAbsOrdIdlSet{AnticNumberField, nf_elem}
 
 const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
 
-@doc """
+Markdown.doc"""
   NfOrdIdl(O::NfOrd, a::fmpz_mat) -> NfOrdIdl
 
     Creates the ideal of O with basis matrix a.
@@ -823,8 +823,8 @@ const NfAbsOrdIdlSetID = Dict{NfAbsOrd, NfAbsOrdIdlSet}()
     Creates the principal ideal (x) of the order of O.
     No sanity checks. No data is copied, x should not be used anymore.
 
-""" ->
-type NfAbsOrdIdl{S, T}
+"""
+mutable struct NfAbsOrdIdl{S, T}
   order::NfAbsOrd{S, T}
   basis::Array{NfAbsOrdElem{S, T}, 1}
   basis_mat::fmpz_mat
@@ -1325,7 +1325,7 @@ function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
     r = Array{Tuple{Int, Int}, 1}()
     vv=v
     for x in keys(d)
-      id = findfirst(sP.lf, x)
+      id = something(findfirst(isequal(x), sP.lf), 0)
       vv -= sP.lp[id][2].splitting_type[2]
       push!(r, (sP.lp[id][1], 1))
     end
@@ -1334,7 +1334,7 @@ function fb_int_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
     end
     r = Array{Tuple{Int, Int}, 1}()
     for x in keys(d)
-      id = findfirst(sP.lf, x)
+      id = something(findfirst(isequal(x), sP.lf), 0)
       vl  = valuation(a, sP.lp[id][2])
       v -= sP.lp[id][2].splitting_type[2]*vl
       push!(r, (sP.lp[id][1], vl))
@@ -1529,7 +1529,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
   restart::Int
   M::fmpz_mat
   vl::Int
-  rr::Range{Int}
+  rr::UnitRange{Int}
 
   function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::NfOrdIdl;
                  prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
@@ -1734,7 +1734,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
       z.base_ring = base_ring(parent(f))
       z.pol = f
       z.S = s
-      z.auxilliary_data = Array{Any}(5)
+      z.auxilliary_data = Array{Any}(undef, 5)
       if cached
         NfRelID[parent(f), f, s] = z
       end
@@ -1819,22 +1819,22 @@ end
 mutable struct Graph{T, M}
   edges::Dict{T, Dict{T, M}}
   degrees::Dict{T, Int}
-  new_low_degrees::Dict{T, Void}
+  new_low_degrees::Dict{T, Nothing}
 
   function Graph{T, M}() where {T, M}
     z = new{T, M}()
     z.edges = Dict{T, Dict{T, M}}()
     z.degrees = Dict{T, Int}()
-    z.new_low_degrees = Dict{T, Void}()
+    z.new_low_degrees = Dict{T, Nothing}()
     return z
   end
 end
 
 
 mutable struct RelLattice{T <: Any, D <: Any}
-  weak_vertices::WeakKeyDict{T, Void}
+  weak_vertices::WeakKeyDict{T, Nothing}
   graph::Graph{UInt, D}
-  block_gc::Dict{T, Void}
+  block_gc::Dict{T, Nothing}
   weak_vertices_rev::Dict{UInt, WeakRef}
   to_delete::Array{UInt, 1}
   zero::D # a generic object that will never actually be used.
@@ -1843,11 +1843,11 @@ mutable struct RelLattice{T <: Any, D <: Any}
 
   function RelLattice{T, D}() where {T, D}
     z = new()
-    z.weak_vertices = WeakKeyDict{T, Void}()
+    z.weak_vertices = WeakKeyDict{T, Nothing}()
     z.graph = Graph{UInt, D}()
     z.weak_vertices_rev = Dict{UInt, WeakRef}()
     z.to_delete = Array{UInt, 1}()
-    z.block_gc = Dict{GrpAbFinGen, Void}()
+    z.block_gc = Dict{GrpAbFinGen, Nothing}()
     return z
   end
 end

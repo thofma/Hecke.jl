@@ -46,7 +46,7 @@ end
 ###############################################################################
 
 
-doc"""
+Markdown.doc"""
 ***
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
     
@@ -528,7 +528,7 @@ function _assure_princ_gen(mC::MapClassGrp)
     return true
   end
   C=domain(mC)
-  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(ngens(C))
+  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(undef, ngens(C))
   for i=1:ngens(C)
     I=FacElem(Dict(mC(C[i])=> fmpz(1)))
     pr=principal_gen_fac_elem(I^C.snf[i])
@@ -587,8 +587,8 @@ function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
  
   O=parent(m).order
   K=nf(O)
-  L=Array{NfOrdIdl,1}(ngens(C))
-  el=Array{nf_elem,1}(ngens(C))
+  L=Array{NfOrdIdl,1}(undef, ngens(C))
+  el=Array{nf_elem,1}(undef, ngens(C))
 
   for i=1:ngens(C)
     a=first(keys(mC.princ_gens[i][1].fac))
@@ -1077,7 +1077,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   f=collect(keys(factor(fmpz(n)).fac))
-  val=Array{Int,1}(length(f))
+  val=Array{Int,1}(undef, length(f))
   for i=1:length(f)
     val[i]=valuation(C.snf[end],f[i])
   end
@@ -1202,8 +1202,8 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
   
     a= C([0 for i=1:ngens(C)])
-    for (f,k) in J.fac
-      a+=k*(mC\f)
+    for (ff,k) in J.fac
+      a+=k*(mC\ff)
     end
     Id=J* inv(exp_class(a))
     Id=Id^Int(nonnclass)
@@ -1251,12 +1251,12 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       W=mC\J
       s=exp_class(W)
       for (el,v) in s.fac
-        s.fac[el]=-nonnclass*v
+        s.fac[el] = -nonnclass*v
       end
       if haskey(s.fac, J)
-        s.fac[J]+=nonnclass
+        s.fac[J] += nonnclass
       else
-        s.fac[J]=nonnclass
+        s.fac[J] = nonnclass
       end
       z=principal_gen_fac_elem(s)
       el=Hecke._fac_elem_evaluation(O, Q, quots, idemps, z, lp, gcd(expo,n))
@@ -1423,27 +1423,55 @@ function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl)
   end
 end
 
+function change_into_coprime(mR::MapRayClassGrp, a::fmpz)
+
+  m = minimum(mR.modulus_fin)
+  com, uncom = ppio(a, m)
+  if uncom == 1
+    return nothing
+  end
+  _, s, t = gcdx(uncom, m)
+  tmg = mR.tame_mult_grp
+  wld = mR.wild_mult_grp
+  for (p, v) in tmg
+    tmg[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ m*t*v.generators[1] + s*uncom ], v.discrete_logarithm)
+  end
+  for (p, v) in wld
+    wld[p] = GrpAbFinGenToNfAbsOrdMap(domain(v), codomain(v), [ m*t*v.generators[i] + s*uncom for i=1:length(v.generators)], v.discrete_logarithm)
+  end
+  return nothing
+  
+end
+
+
 #
 #  Find small primes that generate the ray class group (or a quotient)
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
 #
-function find_gens(mR::MapRayClassGrp)
+function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
 
   O = order(codomain(mR))
   R = domain(mR) 
-  m = mR.modulus_fin
+  m = mR.defining_modulus[1]
   mm = minimum(m)
+  if coprime_to != -1
+    mm = lcm(mm, coprime_to)
+  end
 
   sR = GrpAbFinGenElem[]
   lp = NfOrdIdl[]
-  q, mq = quo(R, sR,false)
+  q, mq = quo(R, sR, false)
   
   #
   #  First, generators of the multiplicative group. 
   #  If the class group is trivial, they are enough 
   #
-  
+
   if !isempty(mR.fact_mod) 
+    if coprime_to != -1
+      # First, I change them in order to be coprime to coprime_to
+      change_into_coprime(mR, coprime_to)
+    end
     @vtime :NfOrd 1 totally_positive_generators(mR, mm, true)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
@@ -1511,7 +1539,10 @@ function find_gens(mR::MapRayClassGrp)
   end
   q, mq = quo(R, sR, false)
   for P in S
-    if !iscoprime(P,m)
+    if gcd(minimum(P), mm) != 1
+      continue
+    end
+    if coprime_to != -1 &&  gcd(minimum(P), coprime_to) != 1
       continue
     end
     if haskey(mR.prime_ideal_preimage_cache, P)
@@ -1540,14 +1571,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
   K=nf(O)
-  
-  #=
-  f = K.pol
-  a = gen(K)
-  for i=1:length(Aut)
-    @assert iszero(f(Aut[i].prim_img))
-  end
-  =#
+   
   if isempty(Aut)
     Aut = automorphisms(K)
     Aut = small_generating_set(Aut, *)
@@ -1556,12 +1580,7 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
     return GrpAbFinGenMap[]
   end
   
-  lgens,subs=find_gens(mR)
-  if isempty(lgens)
-    return GrpAbFinGenMap[]
-  end
-  
-  G = Array{GrpAbFinGenMap,1}(length(Aut))
+  G = Array{GrpAbFinGenMap,1}(undef, length(Aut))
   #
   #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
@@ -1573,49 +1592,9 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
     push!(G, GrpAbFinGenMap(R))
     return G
   end
-  #=
-  #
-  #  Write the matrices for the change of basis
-  #
-  auxmat=zero_matrix(FlintZZ, ngens(R), length(lgens)+nrels(R))
-  for i=1:length(lgens)
-    for j=1:ngens(R)
-      auxmat[j,i]=subs[i][j]
-    end
-  end
-  if issnf(R)
-    for i=1:ngens(R)
-      auxmat[i,length(lgens)+i]=R.snf[i]
-    end
-  else
-    for i=1:ngens(R)
-      for j=1:nrels(R)
-        auxmat[i,length(lgens)+j]=R.rels[j,i]
-      end
-    end
-  end
 
-  @show Ml=transpose(solve(auxmat,eye(auxmat,ngens(R))))
-  #
-  #  Now, we compute the action on the group
-  #
-  
   for k=1:length(Aut)
-    M=zero_matrix(FlintZZ, length(lgens), ngens(R))
-    for i=1:length(lgens) 
-      @vtime :RayFacElem 3 J = _aut_on_id(O,Aut[k],lgens[i])
-      @vtime :RayFacElem 3 elem = mR\J
-      for j=1:ngens(R)
-        M[i,j]=elem[j]
-      end
-    end
-    G[k] = hom(R, R, view(Ml,1:rows(Ml), 1:length(lgens))*M)
-    @hassert :RayFacElem 1 isbijective(G[k])
-  end
-  =#
-  
-  for k=1:length(Aut)
-    imaggens=Array{GrpAbFinGenElem,1}(length(lgens))
+    imaggens=Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 
       @vtime :RayFacElem 3 J = _aut_on_id(O, Aut[k], lgens[i])
       @vtime :RayFacElem 3 imaggens[i] = mR\J
@@ -1633,7 +1612,7 @@ end
 #
 ##################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
     
@@ -1673,7 +1652,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
     if x==1
       
       F = ResidueRing(FlintZZ, Int(p), cached=false)
-      act_mat=Array{nmod_mat, 1}(length(act))
+      act_mat=Array{nmod_mat, 1}(undef, length(act))
       for w=1:length(act)
         act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
       end
@@ -1718,7 +1697,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
     else    
     
       RR=ResidueRing(FlintZZ, Int(p^x), cached=false)
-      act_mat=Array{nmod_mat,1}(length(act))
+      act_mat=Array{nmod_mat,1}(undef, length(act))
       auxmat1=hcat(mG.map', rels(Q)')
       auxmat2=mS.map*mG.map
       W=MatrixSpace(RR,ngens(S), ngens(S), false)

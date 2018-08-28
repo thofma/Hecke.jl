@@ -13,7 +13,7 @@ end
 function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
   if typeof(f) == fmpq_poly
     f = f*denominator(f)
-    g = Array{fmpz}(length(f))
+    g = Array{fmpz}(undef, length(f))
     for i = 1:f.length
       g[i] = FlintZZ(numerator(coeff(f, i-1)))
     end
@@ -25,8 +25,8 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
   c.f = f
   r = _roots(f, 100)
 
-  r_d = Array{BigComplex}(0)
-  c_d = Array{BigComplex}(0)
+  r_d = Array{BigComplex}(undef, 0)
+  c_d = Array{BigComplex}(undef, 0)
   for i = 1:length(r)
     rr = BigComplex(r[i])
     if Base.abs2(imag(rr)) < 1e-20
@@ -38,14 +38,14 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
       continue
     end
   end
-  assert(length(r_d) + 2*length(c_d) == length(r))
+  @assert (length(r_d) + 2*length(c_d) == length(r))
   c.r1 = length(r_d)
   c.r2 = length(c_d)
   sort!(r_d, lt = function(a,b) return real(a) < real(b); end)
   sort!(c_d, lt = function(a,b) return angle(a) < angle(b); end)
   c.r_d = vcat(r_d, c_d)
 
-  c.r = Array{BigComplex}(0)
+  c.r = Array{BigComplex}(undef, 0)
 
   old = precision(BigFloat)
   setprecision(53)
@@ -117,7 +117,7 @@ function Base.setprecision(a::BigComplex, p::Int)
 end
 
 function Base.setprecision(a::Array{BigComplex, 1}, p::Int)
-  b = Array{BigComplex}(0);
+  b = Array{BigComplex}(undef, 0);
   for i = 1:length(a)
     push!(b, setprecision(a[i], p))
   end
@@ -127,7 +127,7 @@ end
 function minkowski(a::nf_elem, p::Int)
   c = roots_ctx(parent(a))
   x = conjugates_arb(a, p)
-  m = Array{BigFloat}(0)
+  m = Array{BigFloat}(undef, 0)
   for i=1:c.r1
     push!(m, BigFloat(real(x[i])))
   end
@@ -146,13 +146,13 @@ function length(a::nf_elem, p::Int = 50)
 end
 
 function setprecision!(x::BigFloat, p::Int)
-  ccall((:mpfr_prec_round, :libmpfr), Void, (Ref{BigFloat}, Clong, Int32), x, p, Base.MPFR.ROUNDING_MODE[])
+  ccall((:mpfr_prec_round, :libmpfr), Nothing, (Ref{BigFloat}, Clong, Int32), x, p, Base.MPFR.ROUNDING_MODE[])
 end
 
 function Base.setprecision(x::BigFloat, p::Int)
   setprecision(BigFloat, p) do
     y = BigFloat()
-    ccall((:mpfr_set, :libmpfr), Void, (Ref{BigFloat}, Ref{BigFloat}, Int32), y, x, Base.MPFR.ROUNDING_MODE[])
+    ccall((:mpfr_set, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigFloat}, Int32), y, x, Base.MPFR.ROUNDING_MODE[])
     return y
   end
 end
@@ -174,7 +174,7 @@ function minkowski_mat(K::AnticNumberField, p::Int = 50)
   g = gen(K)
   n = degree(K)
   mm = vcat([minkowski(g^i, p) for i=0:n-1])
-  m = Array{BigFloat}(n,n)
+  m = Array{BigFloat}(undef, n, n)
   for i=1:n
     for j=1:n
       m[i,j] = mm[i][j]
@@ -191,7 +191,7 @@ function *(a::fmpz_mat, b::Array{BigFloat, 2})
   s = Base.size(b)
   cols(a) == s[1] || error("dimensions do not match")
 
-  c = Array{BigFloat}(rows(a), s[2])
+  c = Array{BigFloat}(undef, rows(a), s[2])
   return mult!(c, a, b)
 end
 

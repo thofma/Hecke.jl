@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     regulator(x::Array{T, 1}, abs_tol::Int) -> arb
 
@@ -20,7 +20,7 @@ function regulator(x::Array{T, 1}, abs_tol::Int) where T
 
   p = 32
 
-  conlog = Vector{Vector{arb}}(r)
+  conlog = Vector{Vector{arb}}(undef, r)
 
   while true
     q = 2

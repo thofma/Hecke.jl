@@ -74,7 +74,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     mod!(A::SRow{fmpz}, n::Integer)
 
@@ -95,7 +95,7 @@ function mod!(A::SRow{fmpz}, n::Integer)
   end
 end
 
-doc"""
+Markdown.doc"""
 ***
     mod!(A::SRow{fmpz}, n::fmpz)
 
@@ -117,7 +117,7 @@ function mod!(A::SRow{fmpz}, n::fmpz)
 end
 
 # Todo: Do not convert to fmpz
-doc"""
+Markdown.doc"""
 ***
     mod_sym!(A::SRow{fmpz}, n::Integer)
 
@@ -128,7 +128,7 @@ function mod_sym!(A::SRow{fmpz}, n::Integer)
   mod_sym!(A, fmpz(n))
 end
 
-doc"""
+Markdown.doc"""
 ***
     mod_sym!(A::SRow{fmpz}, n::fmpz)
 
@@ -174,7 +174,7 @@ function SRow(A::SRow{fmpz}, R::T) where T <: Ring
   return z
 end
 
-doc"""
+Markdown.doc"""
     SMat(A::SMat{fmpz}, n::Int) -> SMat{Generic.Res{fmpz}}
     SRow(A::SMat{fmpz}, n::Int) -> SRow{Generic.Res{fmpz}}
 
@@ -199,17 +199,25 @@ function endof(A::SRow)
   return length(A.pos)
 end
 
-function start(A::SRow)
-  return 1
-end
+function Base.iterate(A::SRow, st::Int = 1)
+  if st > length(A.pos)
+    return nothing
+  end
 
-function next(A::SRow, st::Int)
   return (A.pos[st], A.values[st]), st + 1
 end
 
-function done(A::SRow, st::Int)
-  return st > length(A.pos)
-end
+#function start(A::SRow)
+#  return 1
+#end
+#
+#function next(A::SRow, st::Int)
+#  return (A.pos[st], A.values[st]), st + 1
+#end
+#
+#function done(A::SRow, st::Int)
+#  return st > length(A.pos)
+#end
 
 ################################################################################
 #
@@ -344,7 +352,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
 ***
     maximum(A::SRow{fmpz}) -> fmpz
 
@@ -354,7 +362,7 @@ function maximum(A::SRow{fmpz})
   return maximum(A.values)
 end
 
-doc"""
+Markdown.doc"""
 ***
     minimum(A::SRow{fmpz}) -> fmpz
 
@@ -370,7 +378,7 @@ end
 #
 ################################################################################
 
-doc"""
+Markdown.doc"""
     lift(a::SRow{nmod}) -> SRow{fmpz}
 
 > Lifts all entries in $a$.

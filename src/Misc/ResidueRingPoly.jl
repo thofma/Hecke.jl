@@ -169,12 +169,12 @@ function gens(R::Generic.ResRing{nmod_poly})
 end
 
 function rem!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
-  ccall((:nmod_poly_rem, :libflint), Void, (Ptr{Nemo.nmod_poly}, Ptr{Nemo.nmod_poly}, Ptr{Nemo.nmod_poly}), &f, &g, &h)
+  ccall((:nmod_poly_rem, :libflint), Nothing, (Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}), f, g, h)
   return f
 end
 
 function gcd!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
-  ccall((:nmod_poly_gcd, :libflint), Void, (Ptr{Nemo.nmod_poly}, Ptr{Nemo.nmod_poly}, Ptr{Nemo.nmod_poly}), &f, &g, &h)
+  ccall((:nmod_poly_gcd, :libflint), Nothing, (Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}, Ref{Nemo.nmod_poly}), f, g, h)
   return f
 end
 

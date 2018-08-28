@@ -1,9 +1,11 @@
-mutable struct MapRayClassGrp{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
+using Markdown
+
+mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.NfOrdIdlSet}
   header::Hecke.MapHeader
   modulus_fin::Hecke.NfOrdIdl
   modulus_inf::Array{Hecke.InfPlc,1}
   
-  function MapRayClassGrp{T}() where {T}
+  function MapRayClassGrpNew{T}() where {T}
     return new{T}()
   end
 end
@@ -56,7 +58,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
 end 
 
 
-doc"""
+Markdown.doc"""
 ***
     ray_class_group(m::NfOrdIdl, A::Array{InfPlc,1}=[]) -> FinGenGrpAb, Map
 
@@ -190,7 +192,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
     end
   end 
 
-  mp=MapRayClassGrp{typeof(X)}()
+  mp=MapRayClassGrpNew{typeof(X)}()
   mp.header = Hecke.MapHeader(X, Hecke.NfOrdIdlSet(O), expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
@@ -388,7 +390,7 @@ function ray_class_group_p_part(p::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1
     end
   end 
 
-  mp=Hecke.MapRayClassGrp{typeof(X)}()
+  mp=Hecke.MapRayClassGrpNew{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin=n
   mp.modulus_inf=inf_plc
