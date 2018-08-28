@@ -837,11 +837,12 @@ end
 function _rcf_reduce(CF::ClassField_pp)
   #e = order(codomain(CF.quotientmap))
   e = degree(CF)
+#  e = CF.o
   if CF.sup_known
-    CF.a = reduce_mod_powers(CF.a, CF.o, CF.sup)
+    CF.a = reduce_mod_powers(CF.a, e, CF.sup)
     CF.sup_known = false
   else
-    CF.a = reduce_mod_powers(CF.a, CF.o)
+    CF.a = reduce_mod_powers(CF.a, e)
   end
   CF.K = pure_extension(CF.o, CF.a)[1]
   return nothing
