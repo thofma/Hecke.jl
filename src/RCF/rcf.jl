@@ -435,6 +435,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   
   CF.sup_known = true
   CF.o = o
+  CF.defect = c
 #  CF.K = pure_extension(Int(o), a)[1] #needs to evaluate a - too expensive!
   return nothing
 end
@@ -546,10 +547,6 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     sigma = _extend_auto(A, Hecke.NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
     push!(AutA_gen, sigma)
 
-#    pe = 17*gen(K) + gen(A)
-#    @assert sigma(tau(pe)) - tau(sigma(pe)) == 0
-#    @assert sigma(tau(pe)) == tau(sigma(pe))
- 
     @vprint :ClassField 2 "... finding relation ...\n"
     m = gen(A)
     for j=1:Int(order(g[i]))
@@ -1117,6 +1114,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     # now Cp[im] is of maximal exponent - hence, it should have the maximal
     # big Kummer extension. By construction (above), the set of s-units
     # SHOULD guarantee this....
+    # om defintely has the maximal base field, ie. the most roots of 1.
     # Now I want all generators in terms of this large Kummer field.
     #
     # Idea: similar to pSelmer in Magma:
@@ -1255,16 +1253,11 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     KK, gKK = number_field([X^Cp[j].o - evaluate(all_emb[j][1]) for j=1:length(Cp)])
     s = []
     for i in 1:length(Cp)
-      gKK[1].parent = KK
       _s = gKK[1]
-      _s.parent = KK
-      _s = _s^Int(divexact(all_b[i][2][1], div(om, Cp[1].o)))
-      gKK[1].parent = KK
+      _s = _s^Int(all_b[i][2][1])
       for j in 2:length(Cp)
-        _s = _s * gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o)))
-        gKK[j].parent
+        _s = _s * gKK[j]^Int(all_b[i][2][j])
       end
-      _s.parent
       push!(s, _s)
     end
     #prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o))) for j=1:length(Cp))
