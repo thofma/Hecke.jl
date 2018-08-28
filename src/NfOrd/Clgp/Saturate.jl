@@ -102,7 +102,6 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   K = nf(ZK)
   zeta = mT(T[1])
   if gcd(sT, p) != 1 && !(hash(zeta) in c.RS) # && order is promising...
-#    println("adding zeta = ", zeta)
     push!(R, K(zeta))
   else
 #    println("NOT doint zeta")
@@ -185,57 +184,68 @@ end
 function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3.5)
   @assert isprime(n)
   c = simplify(d, U) 
-  e = saturate_exp(c, n, stable)
-  if rows(e) == 0
-    return false
-  end
-  se = SMat(e)'
-
-  A = SMat(FlintZZ)
-  K = nf(c)
-  t, mt = torsion_unit_group(maximal_order(K))
-  zeta = K(mt(t[1]))
-
-  @vprint :ClassGroup 2 "Enlarging by $(cols(e)) elements\n"
-
-  n_new = 0
-
-  for i=1:cols(e)
-    r = e[:, i]
-    @assert content(r) == 1
-    a = FacElem(K(1))
-    fac_a = SRow(FlintZZ)
-    for j = 1:length(c.R_gen)
-      a *= fe(c.R_gen[j])^r[j, 1]
-      fac_a += r[j, 1] * c.M.bas_gens[j]
+  success = false
+  while true
+    e = saturate_exp(c, n, stable)
+    if rows(e) == 0
+      @vprint :ClassGroup 2  "sat yielded nothing new at ", stable, success
+      return success
     end
-    for j=1:length(c.R_rel)
-      a *= fe(c.R_rel[j])^r[j + length(c.R_gen), 1]
-      fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
-    end
-    if rows(e) > length(c.R_gen) + length(c.R_rel)
-      @assert length(c.R_gen) + length(c.R_rel) + 1 == rows(e)
-      a *= fe(zeta)^r[rows(e), 1]
-    end
-    
-    decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
-    fl, x = ispower(a, n, decom = decom)
+    se = SMat(e)'
 
-    if fl
-      @assert isa(x, FacElem)
-      fac_a = divexact(fac_a, n)
-      Hecke.class_group_add_relation(d, x, fac_a)
-      n_new += 1
-      if iszero(fac_a) #to make sure the new unit is used!
-        #find units can be randomised...
-        #maybe that should also be addressed elsewhere
-        Hecke._add_dependent_unit(U, x)
+    A = SMat(FlintZZ)
+    K = nf(c)
+    t, mt = torsion_unit_group(maximal_order(K))
+    zeta = K(mt(t[1]))
+
+    @vprint :ClassGroup 1 "sat: (Hopefully) enlarging by $(cols(e)) elements\n"
+
+    wasted = false
+    for i=1:cols(e)
+      r = e[:, i]
+      @assert content(r) == 1
+      a = FacElem(K(1))
+      fac_a = SRow(FlintZZ)
+      for j = 1:length(c.R_gen)
+        a *= fe(c.R_gen[j])^r[j, 1]
+        fac_a += r[j, 1] * c.M.bas_gens[j]
       end
+      for j=1:length(c.R_rel)
+        a *= fe(c.R_rel[j])^r[j + length(c.R_gen), 1]
+        fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
+      end
+      if rows(e) > length(c.R_gen) + length(c.R_rel)
+        @assert length(c.R_gen) + length(c.R_rel) + 1 == rows(e)
+        a *= fe(zeta)^r[rows(e), 1]
+      end
+      
+      decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
+      fl, x = ispower(a, n, decom = decom)
+
+      if fl
+        @assert isa(x, FacElem)
+        success = true
+        fac_a = divexact(fac_a, n)
+        Hecke.class_group_add_relation(d, x, fac_a)
+        @vprint :ClassGroup 2  "sat added new relation\n"
+        if iszero(fac_a) #to make sure the new unit is used!
+          #find units can be randomised...
+          #maybe that should also be addressed elsewhere
+          @vprint :ClassGroup 2  "sat added new unit\n"
+          Hecke._add_dependent_unit(U, x)
+        end
+      else
+        @vprint :ClassGroup 2  "sat wasted time, local power wasn't global\n"
+        wasted = true
+      end
+    end
+    if wasted 
+      stable *= 2
     else
-      continue
+      @vprint :ClassGroup "sat success at ", stable, "\n"
+      return true
     end
   end
-  return n_new > 0 
 end
 
 function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
@@ -243,7 +253,7 @@ function simplify(c::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx)
 
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
-
+ 
   for i=1:length(c.FB.ideals)
     c.M.basis.rows[i].values[1] == 1 && continue
     @assert all(x -> x > 0, c.M.basis.rows[i].values)

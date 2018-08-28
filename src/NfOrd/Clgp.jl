@@ -211,6 +211,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     @vprint :UnitGroup 1 "... done (retrieved).\n"
     return c, U, 1
   end
+  class_group_get_pivot_info(c) #hopefully sets c.h 
 
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
@@ -236,16 +237,14 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     end
     if r == 1  # use saturation!!!!
       idx = _validate_class_unit_group(c, U) 
+      stable = 3.5
       while idx < 20 && idx > 1
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
-        for p = PrimesSet(1, Int(idx))
-          if saturate!(c, U, p)
-            break
-          end
-        end
+        @assert any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
         class_group_get_pivot_info(c)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         n_idx = _validate_class_unit_group(c, U) 
+        @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
         @assert idx != n_idx
         idx = n_idx
       end  
