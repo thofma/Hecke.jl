@@ -7,9 +7,7 @@ mutable struct AlgAss{T} <: Ring
                            # 2 known to be not commutative
   trace_basis_elem::Array{T, 1}
   issimple::Int
-  knows_wedderburn::Int
-  wedderburn
-  knows_center::Int
+  decomposition 
   center
 
   polynomial::PolyElem # If the algebra is defined by R[X]/f
@@ -20,8 +18,6 @@ mutable struct AlgAss{T} <: Ring
     A.base_ring = R
     A.iscommutative = 0
     A.issimple = 0
-    A.knows_wedderburn = 0
-    A.knows_center = 0
     return A
   end
 

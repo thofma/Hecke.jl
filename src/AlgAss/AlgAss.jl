@@ -20,6 +20,10 @@ morphism_type(::AlgAss{T}) where {T} = AlgAssMor{T, T, Generic.Mat{T}}
 
 morphism_type(::AlgAss{fmpq}) = AlgAssMor{fmpq, fmpq, fmpq_mat}
 
+morphism_type(::AlgAss{fq}) = AlgAssMor{fq, fq, fq_mat}
+
+morphism_type(::AlgAss{fq_nmod}) = AlgAssMor{fq_mod, fq_nmod, fq_nmod_mat}
+
 ################################################################################
 #
 #  Basis
@@ -655,23 +659,55 @@ function _issimple(A::AlgAss)
   end
 end
 
-function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
-  F = base_ring(A)
-  if characteristic(F) > 0
-    return issimple_char_p(A, compute_algebras)
+Markdown.doc"""
+***
+    decompose(A::AlgAss)
+            
+> Given a semisimple algebra over a field, this function 
+> returns a decomposition of A as a direct sum of simple algebras.
+"""
+function decompose(A::AlgAss{T}) where {T}
+  if isdefined(A, :decomposition)
+    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(A)}}
+  end
+
+  if issimple_known(A) && A.issimple == 1
+    res = [( A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A))))] # and the morphism
+  end
+
+  if iscommutative(A)
+    res = _dec_com(A)
   else
-    return issimple_gen(A, compute_algebras)
+    res = _dec_via_center(A)
+  end
+
+  A.decomposition = res
+  return res
+end
+
+function _dec_via_center(A::AlgAss{T}) where {T}
+  ZA, mZA = center(A)
+  Algs = _dec_com(ZA)
+  res = [ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
+  for i in 1:length(res)
+    res[i][1].issimple = 1
+  end
+  A.decomposition = res
+  return res
+end
+
+function _dec_com(A::AlgAss)
+  if characteristic(base_ring(A)) > 0
+    return _dec_com_finite(A)
+  else
+    return _dec_com_gen(A)
   end
 end
 
-function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
+function _dec_com_gen(A::AlgAss) 
   if dim(A) == 1
     A.issimple = 1
-    if compute_algebras == Val{true}
-      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
-    else
-      return true
-    end
+    return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
   end
 
   F = base_ring(A)
@@ -691,11 +727,7 @@ function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) whe
 
     if isirreducible(f)
       A.issimple = 1
-      if compute_algebras == Val{true}
-        return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
-      else
-        return true
-      end
+      return [(A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A))))]
     end
 
     @assert issquarefree(f)
@@ -735,24 +767,24 @@ function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) whe
 
     A.issimple = 2
 
-    if compute_algebras == Val{true}
-      S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
-      return false, S
-    else
-      return false
+    res = Vector{Tuple{AlgAss{T}, morphism_type(A)}}()
+    for idem in idems
+      S, StoA = subalgebra(A, idem, true)
+      decS = _dec_com_finite(S)
+      for (B, BtoS) in decS
+        BtoA = compose_and_squash(StoA, BtoS)
+        push!(res, (B, BtoA))
+      end
     end
+    return res
   end
 end
 
 
-function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
+function _dec_com_finite(A::AlgAss{T}) where T
   if dim(A) == 1
     A.issimple = 1
-    if compute_algebras == Val{true}
-      return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
-    else
-      return true
-    end
+    return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
   end
 
   F = base_ring(A)
@@ -760,15 +792,12 @@ function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) 
   V = kernel_of_frobenius(A)
   k = length(V)
 
-  if compute_algebras == Val{false}
-    A.issimple = 2
-    return k == 1
-  end
-
   if k == 1
     A.issimple = 1
-    return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
+    return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
   end
+  
+  A.issimple = 2
 
   while true
     c = elem_type(F)[ rand(F) for i = 1:k ]
@@ -814,40 +843,55 @@ function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) 
       push!(idems, idem)
     end
 
-    S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
-    A.issimple = true
-    return false, S
-  end
-end
-
-Markdown.doc"""
-***
-    split(A::AlgAss)
-            
-> Given a commutative algebra over a finite field of prime order, this function 
-> returns a decomposition of A as a direct sum of fields.
-"""
-
-function split(A::AlgAss)
-  b, algebras = issimple(A)
-  if b
-    return algebras
-  end
-  result = typeof(algebras)()
-  while length(algebras) != 0
-    B, BtoA = pop!(algebras)
-    b, algebras2 = issimple(B)
-    if b
-      push!(result, (B, BtoA))
-    else
-      for (C, CtoB) in algebras2
-        CtoA = compose_and_squash(BtoA, CtoB)
-        push!(algebras, (C, CtoA))
+    res = Vector{Tuple{AlgAss{T}, morphism_type(A)}}()
+    for idem in idems
+      S, StoA = subalgebra(A, idem, true)
+      decS = _dec_com_finite(S)
+      for (B, BtoS) in decS
+        BtoA = compose_and_squash(StoA, BtoS)
+        push!(res, (B, BtoA))
       end
     end
+    return res
   end
-  return result
 end
+
+#Markdown.doc"""
+#***
+#    decomposition(A::AlgAss)
+#            
+#> Given a semisimple algebra over a field, this function 
+#> returns a decomposition of A as a direct sum of simple algebras.
+#"""
+#function decomposition(A::AlgAss)
+#  R = base_ring(A)
+#  if characteristic(R) > 0
+#    return _dec_char_p
+#  else
+#    return _dec_via_center
+#  end
+#end
+#
+#function _decomposition_char_p(A::AlgAss)
+#  b, algebras = issimple(A)
+#  if b
+#    return algebras
+#  end
+#  result = typeof(algebras)()
+#  while length(algebras) != 0
+#    B, BtoA = pop!(algebras)
+#    b, algebras2 = issimple(B)
+#    if b
+#      push!(result, (B, BtoA))
+#    else
+#      for (C, CtoB) in algebras2
+#        CtoA = compose_and_squash(BtoA, CtoB)
+#        push!(algebras, (C, CtoA))
+#      end
+#    end
+#  end
+#  return result
+#end
 
 ###############################################################################
 #
@@ -962,7 +1006,7 @@ function center(A::AlgAss{T}) where {T}
   if iscommutative_known(A) && A.iscommutative==1
     return A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A))) 
   end
-  if A.knows_center == 1
+  if isdefined(A, :center)
     return A.center
   end
   n=dim(A)
@@ -974,7 +1018,6 @@ function center(A::AlgAss{T}) where {T}
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end
-  A.knows_center = 1
   A.center = subalgebra(A, res)
   return A.center
 end
@@ -986,34 +1029,9 @@ end
 
 ################################################################################
 #
-#  Wedderburn decomposition
+#  Decomposition
 #
 ################################################################################
-
-#Given a semisimple algebra A over F_p, we give back the idempotents of a webberburn decomposition
-
-Markdown.doc"""
-***
-    wedderburn_decomposition(A::AlgAss)
-            
-> Given a semisimple algebra over a field, this function 
-> returns a decomposition of A as a direct sum of simple algebras.
-"""
-function wedderburn_decomposition(A::AlgAss{T}) where {T}
-  if A.knows_wedderburn == 1
-    return A.wedderburn::Vector{Tuple{AlgAss{T}, morphism_type(A)}}
-  else 
-    ZA, mZA=center(A)
-    Algs=split(ZA)
-    res = [ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
-    for i in 1:length(res)
-      res[i][1].issimple = 1
-    end
-    A.knows_wedderburn = 1
-    A.wedderburn = res
-    return res
-  end
-end
 
 ################################################################################
 #

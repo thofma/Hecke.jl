@@ -938,7 +938,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   Ip = pradical(O, p)
   A, OtoA = AlgAss(O, Ip, p)
   AtoO = inv(OtoA)
-  AA = split(A)
+  AA = decompose(A)
 
   result = Vector{Tuple{NfRelOrdIdl{typeof(O).parameters...}, Int}}()
   m = PseudoMatrix(zero_matrix(K, 1, degree(O)))

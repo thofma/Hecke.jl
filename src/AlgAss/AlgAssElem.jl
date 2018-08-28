@@ -355,14 +355,14 @@ end
 
 function trred(a::AlgAssElem)
   A = parent(a)
-  if _issimple(A)
+  if issimple_known(A) && A.issimple == 1
     d = dimension_of_center(A)
     n = divexact(dim(A), d)
     m = isqrt(n)
     @assert m^2 == n
     return divexact(tr(a), m)
   else
-    W = wedderburn_decomposition(A)
+    W = decompose(A)
     t = zero(base_ring(A))
     for (B, BtoA) in W
       t = t + trred(BtoA\(a))

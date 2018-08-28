@@ -483,7 +483,7 @@ function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p:
   
   O = order(Ip1)
   @vprint :NfOrd 1 "Splitting the algebra\n" 
-  AA = split(A)
+  AA = decompose(A)
   @vprint :NfOrd 1 "Done \n"
   ideals = Array{Tuple{NfOrdIdl, Int}, 1}(undef, length(AA))
   m = zero_matrix(FlintZZ, 1, degree(O))
