@@ -81,21 +81,67 @@ function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
   end
 end
 
+function small_coeff(a::nf_elem, B::fmpz, i::Int)
+  z = fmpz()
+  Nemo.num_coeff!(z, a, i)
+  return cmpabs(z, B) <= 0
+end
+
 doc"""
     rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz) -> Bool, Generic.Mat{nf_elem}
 > Apply \code{rational_reconstruction} to each entry of $M$.
 """
+function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
+  B = similar(A)
+  sM = root(M, 2)
+  d = one(A[1,1])
+  di = inv(d)
+  for i=1:rows(A)
+    for j=1:cols(A)
+      a = A[i,j]*d
+      mod_sym!(a, M)
+      if all(i->small_coeff(a, sM, i), 1:a.elem_length)
+        B[i,j] = a*di
+      else
+        n, dn = rational_reconstruction2(a, M)
+        d*=dn
+        if any(i->!small_coeff(d, sM, i), 1:a.elem_length)
+          println("early $i $j abort")
+          return false, B
+        end
+        di*=inv(dn)
+        B[i,j] = n*di
+      end
+    end
+  end
+  println("final den: $d")
+  return true, B
+end
+
 function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   B = similar(A)
   for i=1:rows(A)
     for j=1:cols(A)
       fl, B[i,j] = rational_reconstruction(A[i,j], M)
-      if !fl
-        return fl, B
+      if !fl 
+        return false, B
       end
     end
   end
   return true, B
+end
+
+
+function rational_reconstruction2(a::nf_elem, M::fmpz)
+  K = parent(a)
+  n = degree(K)
+  m = hcat(MatrixSpace(FlintZZ, n, n)(1), representation_mat(a))
+  m = vcat(m, hcat(MatrixSpace(FlintZZ, n, n)(0), MatrixSpace(FlintZZ, n, n)(M)))
+  L = lll(m)
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  return n,d
+  return true, n//d
 end
 
 doc"""
@@ -130,17 +176,20 @@ function Nemo.solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
   D = B
   pp = fmpz(1)
   last_SOL = false
+  nd = 0
   while true
+    nd += 1
     y = Aip*D
     mod!(y, fmpz(p))
     sol += y*pp
     pp *= p
-    fl, SOL = rational_reconstruction(sol, pp)
+    fl, SOL = rational_reconstruction2(sol, pp)
 #    t = A*sol-B
 #    mod!(t, pp)
 #    @assert iszero(t)
     if fl 
       if last_SOL == SOL && A*SOL == B
+        println("used $nd $p-adic digits")
         return SOL
       else
         last_SOL = SOL
