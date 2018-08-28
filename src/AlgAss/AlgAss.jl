@@ -16,6 +16,10 @@ elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T}
 
 parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
 
+morphism_type(::AlgAss{T}) where {T} = AlgAssMor{T, T, Generic.Mat{T}}
+
+morphism_type(::AlgAss{fmpq}) = AlgAssMor{fmpq, fmpq, fmpq_mat}
+
 ################################################################################
 #
 #  Basis
@@ -613,6 +617,8 @@ end
 #
 ################################################################################
 
+issimple_known(A) = A.issimple != 0
+
 function kernel_of_frobenius(A::AlgAss)
   F = base_ring(A)
   q = order(F)
@@ -635,6 +641,20 @@ function kernel_of_frobenius(A::AlgAss)
   return [ A(v) for v in V ]
 end
 
+function _issimple(A::AlgAss)
+  if issimple_known(A)
+    return A.issimple == 1
+  else
+    b = issimple(A, Val{false})
+    if b
+      A.issimple = 1
+    else
+      A.issimple = 0
+    end
+    return b
+  end
+end
+
 function issimple(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   F = base_ring(A)
   if characteristic(F) > 0
@@ -646,6 +666,7 @@ end
 
 function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
+    A.issimple = 1
     if compute_algebras == Val{true}
       return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
     else
@@ -669,6 +690,7 @@ function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) whe
     end
 
     if isirreducible(f)
+      A.issimple = 1
       if compute_algebras == Val{true}
         return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
       else
@@ -711,14 +733,21 @@ function issimple_gen(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) whe
       push!(idems, idem)
     end
 
-    S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
-    return false, S
+    A.issimple = 2
+
+    if compute_algebras == Val{true}
+      S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
+      return false, S
+    else
+      return false
+    end
   end
 end
 
 
 function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) where T
   if dim(A) == 1
+    A.issimple = 1
     if compute_algebras == Val{true}
       return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
     else
@@ -732,10 +761,12 @@ function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) 
   k = length(V)
 
   if compute_algebras == Val{false}
+    A.issimple = 2
     return k == 1
   end
 
   if k == 1
+    A.issimple = 1
     return true, [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
   end
 
@@ -784,6 +815,7 @@ function issimple_char_p(A::AlgAss, compute_algebras::Type{Val{T}} = Val{true}) 
     end
 
     S = [ (subalgebra(A, idem, true)...,) for idem in idems ]
+    A.issimple = true
     return false, S
   end
 end
@@ -849,9 +881,7 @@ function trace_matrix(A::AlgAss)
     end
   end
   return M
-
 end
-
 
 ################################################################################
 #
@@ -928,11 +958,12 @@ function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
   return nothing
 end
 
-
 function center(A::AlgAss{T}) where {T}
-
   if iscommutative_known(A) && A.iscommutative==1
     return A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A))) 
+  end
+  if A.knows_center == 1
+    return A.center
   end
   n=dim(A)
   M=zero_matrix(base_ring(A), n^2, n)
@@ -943,7 +974,14 @@ function center(A::AlgAss{T}) where {T}
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end
-  return subalgebra(A, res)
+  A.knows_center = 1
+  A.center = subalgebra(A, res)
+  return A.center
+end
+
+function dimension_of_center(A::AlgAss)
+  C, _ = center(A)
+  return dim(C)
 end
 
 ################################################################################
@@ -962,18 +1000,19 @@ Markdown.doc"""
 > returns a decomposition of A as a direct sum of simple algebras.
 """
 function wedderburn_decomposition(A::AlgAss{T}) where {T}
-  
-  ZA,mZA=center(A)
-  Algs=split(ZA)
-  res=Array{Tuple{typeof(A), AlgAssMor{T, T}},1}(undef, length(Algs))
-  i=1
-  for (B, BtoZA) in Algs
-    x=mZA(BtoZA(one(B)))
-    res[i]= subalgebra(A,x)
-    i+=1
+  if A.knows_wedderburn == 1
+    return A.wedderburn::Vector{Tuple{AlgAss{T}, morphism_type(A)}}
+  else 
+    ZA, mZA=center(A)
+    Algs=split(ZA)
+    res = [ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
+    for i in 1:length(res)
+      res[i][1].issimple = 1
+    end
+    A.knows_wedderburn = 1
+    A.wedderburn = res
+    return res
   end
-  return res
-  
 end
 
 ################################################################################

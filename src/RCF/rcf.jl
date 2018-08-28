@@ -2,7 +2,7 @@ export kummer_extension, ray_class_field, hilbert_class_field, prime_decompositi
 
 add_verbose_scope(:ClassField)
 add_assert_scope(:ClassField)
-set_assert_level(:ClassField, 1)
+#set_assert_level(:ClassField, 1)
 
 
 function kummer_extension(n::Int, gen::Array{nf_elem, 1})
@@ -84,11 +84,11 @@ function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
-  _rcf_find_kummer(CFpp)
+  @vtime :ClassField 1 _rcf_find_kummer(CFpp)
   @vprint :ClassField 1 "reducing the generator...\n"
-  _rcf_reduce(CFpp)
+  @vtime :ClassField 1 _rcf_reduce(CFpp)
   @vprint :ClassField 1 "descending ...\n"
-  _rcf_descent(CFpp)
+  @vtime :ClassField 1 _rcf_descent(CFpp)
   return CFpp
 end
 
@@ -388,7 +388,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   ZK = maximal_order(K)
   
   @vprint :ClassField 2 "Class group of cyclotomic extension\n"
-  c, mc = class_group(ZK)
+  @vtime :ClassField 2 c, mc = class_group(ZK)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
   c, mq = quo(c, e, false)
@@ -416,7 +416,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   M = MatrixSpace(R, ngens(k), ngens(G), false)(mk.map)
   i, l = nullspace(M)
   @assert i > 0
-  n::fmpz_mat = lift(l)
+  n = lift(l)::fmpz_mat
   N = GrpAbFinGen([e for j=1:rows(n)])
   s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i], false)
   ms = Hecke.make_snf(ms)

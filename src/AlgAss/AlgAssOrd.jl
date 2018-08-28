@@ -297,7 +297,7 @@ function +(a::AlgAssAbsOrd, b::AlgAssAbsOrd)
   bB = b.basis_mat
   d = a.dim
   c = sub(_hnf(vcat(bB.den*aB.num, aB.den*bB.num), :lowerleft), d + 1:2*d, 1:d)
-  return AlgAssAbsOrd(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
+  return Order(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
 end
 
 
@@ -717,7 +717,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   #First step: kernel of the trace matrix mod p 
   W = MatrixSpace(F,O.dim, O.dim, false)
 
-  I = W(n*redtrace_mat(O))
+  I = W(n*trred_matrix(O))
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
@@ -824,46 +824,46 @@ function representation_matrix(x::AlgAssAbsOrdElem)
 end
 
 function tr(x::AlgAssAbsOrdElem)
-  return tr(x.elem_in_algebra)
+  return FlintZZ(tr(x.elem_in_algebra))
 end
 
-function redtrace_mat(O::AlgAssAbsOrd)
+function trred(x::AlgAssAbsOrdElem)
+  return FlintZZ(trred(x.elem_in_algebra))
+end
+
+function trred_matrix(O::AlgAssAbsOrd)
 
   A=O.algebra
-  if isdefined(O, :trace_mat)
-    return O.trace_mat
-  end
+#  if isdefined(O, :trred_matrix)
+#    return O.trred_matrix
+#  end
   x=O.basis_alg
   m=length(x)
-  n=root(O.dim,2)
   M=zero_matrix(FlintZZ, m, m)
   a=A()
   for i=1:m
-    mul!(a, x[i], x[i])
-    M[i,i] = divexact(numerator(tr(a)),n)
+    a = mul!(a, x[i], x[i])
+    M[i,i] = FlintZZ(trred(a))
   end
   for i = 1:m
     for j = i+1:m
       mul!(a, x[i], x[j])
-      b = divexact(numerator(tr(a)),n)
+      b = FlintZZ(trred(a))
       M[i,j] = b
       M[j,i] = b
     end
   end
-  O.trace_mat = M
+  O.trred_matrix = M
   return M
-  
 end
 
 function discriminant(O::AlgAssAbsOrd) 
-  
   if isdefined(O, :disc)
     return O.disc
   end
-  M = redtrace_mat(O)
+  M = trred_matrix(O)
   O.disc = det(M)
   return O.disc
-
 end
 
 
@@ -897,7 +897,7 @@ end
 
 function trace_signature(O::AlgAssAbsOrd)
   
-  @vtime :AlgAssOrd 1 M = redtrace_mat(O)
+  @vtime :AlgAssOrd 1 M = trred_matrix(O)
   Zx, x = PolynomialRing(FlintZZ, "x")
   Qy, y = PolynomialRing(FlintQQ, "y")
   @vtime :AlgAssOrd 1 f = charpoly(Zx, M)
@@ -948,7 +948,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, p::Int)
   
   A1 = quo(O, p)
   #@show dim(A1)
-  lg = gens(A1)
+  @vtime :AlgAssOrd 1 lg = gens(A1)
   #@show length(lg)
   lM = nmod_mat[representation_matrix(lg[i]) for i=1:length(lg)]
   append!(lM, nmod_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])  
@@ -965,7 +965,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
   
   A1, A1toO = quo(O, I, p)  
   #@show dim(A1)
-  lg = gens(A1)
+  @vtime :AlgAssOrd 1 lg = gens(A1)
   #@show length(lg)
   lM = nmod_mat[representation_matrix(lg[i]) for i=1:length(lg)]
   append!(lM, nmod_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])
@@ -1164,10 +1164,10 @@ Markdown.doc"""
 """
 
 function MaximalOrder(O::AlgAssAbsOrd)
-  @vtime :NfOrd fac = factor(root(abs(discriminant(O)),2))
+  @vtime :NfOrd fac = factor(abs(discriminant(O)))
   OO=O
   for (p,j) in fac
-    OO = pmaximal_overorder(OO, Int(p))
+    OO += pmaximal_overorder(O, Int(p))
   end
   OO.ismaximal=1
   return OO
