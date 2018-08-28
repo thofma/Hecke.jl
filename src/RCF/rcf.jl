@@ -669,7 +669,7 @@ function _rcf_descent(CF::ClassField_pp)
     @vprint :ClassField 2 "finding Artin map...\n"
 #TODO can only use non-indx primes, easy primes...
     @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
-                      PrimesSet(200, -1), minimum(defining_modulus(CF)[1]))
+                      PrimesSet(200, -1), lcm(minimum(defining_modulus(CF)[1]), index(maximal_order(codomain(C.mp[2])))))
     h = hom(f, [image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp])
     @hassert :ClassField 1 issurjective(h)
     h = _compose(mp, h)
