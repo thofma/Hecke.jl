@@ -652,7 +652,7 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
     function disclog1(x::Int)
       return 0
     end
-    return (0, 0, disclog1)::Tuple{Int,Int,Function}
+    return (1, 1, disclog1)::Tuple{Int,Int,Function}
   
   end
   

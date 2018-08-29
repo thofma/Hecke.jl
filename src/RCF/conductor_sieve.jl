@@ -587,6 +587,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   while i<=n
     if primes[i]
       if gcd(deg,i-1) == 1
+        @inbounds primes[i] = false
         @inbounds sqf[i]=false
         j = i
         while j <= n
