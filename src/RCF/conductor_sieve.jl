@@ -526,10 +526,10 @@ end
 
 function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime_to::Array{fmpz,1}=fmpz[])
   
-  G = snf(DiagonalGroup(a))[1].snf
+  G = map(Int, snf(DiagonalGroup(a))[1].snf)
   sqf= trues(n)
   primes= trues(n)
-  deg = prod(a)
+  deg = G[end]
   #remove primes that can be wildly ramified
   for x in coprime_to
     el=Int(x)
@@ -540,6 +540,10 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
       t+=el
     end
   end
+  
+  single = Array{Int, 1}()
+  push!(single, 1)
+  multiple = Array{Int, 1}()
   
   #sieving procedure
   #First, I can remove all the multiples of 2
@@ -593,8 +597,36 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
     end
     i+=2
   end
+  if length(G) > 1
+    i = 3
+    while i < n
+      if primes[i]
+        push!(single, i)
+      elseif sqf[i]
+        push!(multiple, i)
+      end
+      i += 2
+    end
+  elseif !isprime(deg)
+    i = 3
+    while i < n
+      if primes[i] 
+        if i-1 % deg == 0
+          push!(multiple, i)
+        else
+          push!(single, i)
+        end
+      elseif sqf[i]
+        push!(multiple, i)
+      end
+      i += 2
+    end
+  else
+    multiple = Int[i for i = 1:length(sqf) if sqf[i]]
+  end
+  #@assert length(single) + length(multiple) == length(Int[i for i = 1:length(sqf) if sqf[i]])
    
-  return Int[i for i=1:length(sqf) if sqf[i]]
+  return single, multiple 
   
 end
 
@@ -609,7 +641,7 @@ function conductors_tameQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz)
   n = prod(a)
   wild_ram = collect(keys(factor(fmpz(n)).fac))
   m = minimum(wild_ram)
-  k = divexact(n,m)
+  k = divexact(n, m)
   b1 = Int(root(fmpz(bound),Int((m-1)*k))) 
   
   return squarefree_for_conductorsQQ(O, b1, a, coprime_to=wild_ram)
@@ -627,15 +659,15 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   # First, conductors for tamely ramified extensions
   #
 
-  list=conductors_tameQQ(O,a,bound)
+  single, multiple = conductors_tameQQ(O,a,bound)
 
   if tame
-    return list  
+    return multiple  
   end
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
-  wild_list=Tuple{Int, Int, fmpz}[(1, 1,1)]
+  wild_list=Tuple{Int, Int, fmpz}[(1, 1, 1)]
   for q in wild_ram
     l=length(wild_list)
     #=
@@ -685,15 +717,33 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   end
   
   #the final list
-  final_list=Int[]
-  exps=Int((minimum(wild_ram)-1)*divexact(n,minimum(wild_ram)))
-  for el in list
+  final_list = Int[]
+  exps = Int((minimum(wild_ram)-1)*divexact(n, minimum(wild_ram)))
+  for el in multiple
     for (q,d,nm2) in wild_list
       if (fmpz(el)^exps)*nm2 > bound
         continue
       end
       push!(final_list, (el*q*d))
     end
+  end
+  
+  for el in single
+    for (q,d,nm2) in wild_list
+      if (fmpz(el)^exps)*nm2 > bound
+        continue
+      end
+      push!(final_list, (el*q*d))
+    end
+    #=
+    for j = 2:length(wild_list)
+      q,d,nm2 = wild_list[j]
+      if (fmpz(el)^exps)*nm2 > bound
+        continue
+      end
+      push!(final_list, (el*q*d))
+    end
+    =#
   end
 
   return final_list

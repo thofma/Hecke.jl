@@ -470,12 +470,12 @@ Markdown.doc"""
 > Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
 
 """
-
 function meataxe(M::ModAlgAss{S, T}) where {S, T}
+
   K=base_ring(M)
   Kx,x=PolynomialRing( K,"x", cached=false)
   n=dimension(M)
-  H=M.action
+  H = M.action
   if n == 1
     M.isirreducible=1
     return true, identity_matrix(base_ring(H[1]), n)
@@ -510,36 +510,42 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
   #
   #  Adding generators to obtain randomness
   #
-  G=deepcopy(H)
-  Gt=T[transpose(x) for x in M.action]
-  
-  for i=1:max(length(M.action),9)
-    l1=rand(1:length(G))
-    l2=rand(1:length(G))
-    while l1 !=l2
-      l2=rand(1:length(G))
-    end
-    push!(G, G[l1]*G[l2])
+  G = deepcopy(H)
+  filter!(x -> !iszero(x), G)
+  if length(G) == 0
+    return false, matrix(base_ring(H[1]), 1, n, [one(base_ring(H[1])) for i = 1:n])
   end
+  Gt = T[transpose(x) for x in M.action]
   
+  #for i=1:max(length(M.action),9)
+  #  l1=rand(1:length(G))
+  #  l2=rand(1:length(G))
+  #  while l1 !=l2
+  #    l2=rand(1:length(G))
+  #  end
+  #  push!(G, G[l1]*G[l2])
+  #end
   
   while true
-  
-  # At every step, we add a generator to the group.
-  
-    push!(G, G[rand(1:length(G))]*G[rand(1:length(G))])
+
+    # At every step, we add a generator to the group.
+    new_gen = G[rand(1:length(G))]*G[rand(1:length(G))]
+    while iszero(new_gen)
+      new_gen = G[rand(1:length(G))]*G[rand(1:length(G))]
+    end
+    push!(G, new_gen)
     
-  #
-  # Choose a random combination of the actual generators of G
-  #
-    A=zero_matrix(K,n,n)
+    #
+    # Choose a random combination of the generators of G
+    #
+    A = zero_matrix(K, n, n)
     for i=1:length(G)
-      A+=rand(K)*G[i]
+      A += rand(K)*G[i]
     end
  
-  #
-  # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
-  # 
+    #
+    # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
+    # 
     poly=charpoly(Kx,A)
     sqfpart=keys(factor_squarefree(poly).fac)
     for el in sqfpart
@@ -551,40 +557,41 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
         lf=factor(f)
         for t in keys(lf.fac)
           N = _subst(t, A)
-          # TODO: Remove this once fixed.
-          a,kern=nullspace(transpose(N))
-          if kern isa Int
+          a, kern = nullspace(transpose(N))
+          if !isa(a, Int)
             a, kern = kern, a
           end
+          @assert a > 0
           #
           #  Norton test
           #   
-          B=closure(transpose(sub(kern,1:n, 1:1)),M.action)
-          if rows(B)!=n
+          B = closure(transpose(sub(kern,1:n, 1:1)), M.action)
+          if rows(B) != n
             M.isirreducible= 2
             return false, B
           end
           # TODO: Remove this
-          aa, kernt=nullspace(N)
-          if kernt isa Int
+          aa, kernt = nullspace(N)
+          if !isa(aa, Int)
             aa, kernt = kernt, aa
           end
-          Bt=closure(transpose(sub(kernt,1:n,1:1)),Gt)
-          if rows(Bt)!=n
+          @assert aa == a
+          Bt = closure(transpose(sub(kernt,1:n,1:1)), Gt)
+          if rows(Bt) != n
             Btnu, aa = nullspace(Bt)
-            if Btnu isa Int
-              Btnu, aa = aa, Btnu
+            if !isa(aa, Int)
+              aa, Btnu = Btnu, aa
             end
             subst=transpose(Btnu)
             #@assert rows(subst)==rows(closure(subst,G))
             M.isirreducible = 2
             return false, subst
           end
-          if degree(t)==a
+          if degree(t) == a
             #
             # f is a good factor, irreducibility!
             #
-            M.isirreducible= 1
+            M.isirreducible = 1
             return true, identity_matrix(base_ring(G[1]), n)
           end
         end
@@ -658,7 +665,6 @@ Markdown.doc"""
 > i.e. the isomorphism classes of modules appearing in a composition series of M
 
 """
-
 function composition_factors(M::ModAlgAss{S, T}; dimension::Int=-1) where {S, T}
   
   if M.isirreducible == 1
@@ -674,7 +680,6 @@ function composition_factors(M::ModAlgAss{S, T}; dimension::Int=-1) where {S, T}
   end 
  
   K=M.base_ring
-  
   bool, C = meataxe(M)
   #
   #  If the module is irreducible, we just return a basis of the space
@@ -703,7 +708,6 @@ function composition_factors(M::ModAlgAss{S, T}; dimension::Int=-1) where {S, T}
   #
   #  Now, we check if the factors are isomorphic
   #
-
   for i=1:length(sub_list)
     for j=1:length(quot_list)
       if isisomorphic(sub_list[i][1], quot_list[j][1])
@@ -714,18 +718,7 @@ function composition_factors(M::ModAlgAss{S, T}; dimension::Int=-1) where {S, T}
     end
   end
   return append!(sub_list, quot_list) 
-  #=
-  for i=1:length(sub_list)
-    for j=1:length(quot_list)
-      if isisomorphic(sub_list[i][1], quot_list[j][1])
-        sub_list[i][2]+=quot_list[j][2]
-        deleteat!(quot_list,j)
-        break
-      end    
-    end
-  end
-  return append!(sub_list,quot_list)
-  =#
+
 end
 
 function _relations(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}

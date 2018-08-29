@@ -107,6 +107,7 @@ function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{
   O1 = fmpq[0 for i=1:n*m]
   O1[j] = fmpq(1)
   A = AlgAss(FlintQQ, M, O1)
+  A.issimple = 1
   return A
 
 end
