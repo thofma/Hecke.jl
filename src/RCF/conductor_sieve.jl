@@ -623,9 +623,9 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
       i += 2
     end
   else
-    multiple = Int[i for i = 1:length(sqf) if sqf[i]]
+    multiple = Int[i for i = 2:length(sqf) if sqf[i]]
   end
-  #@assert length(single) + length(multiple) == length(Int[i for i = 1:length(sqf) if sqf[i]])
+  @assert length(single) + length(multiple) == length(Int[i for i = 1:length(sqf) if sqf[i]])
    
   return single, multiple 
   

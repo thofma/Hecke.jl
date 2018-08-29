@@ -961,8 +961,11 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     end 
     
     function disclog2(I::NfOrdIdl)
-      x=mC\I
       y=G([0 for j=1:ngens(G)])
+      if I.is_principal == 1
+        return y
+      end
+      x=mC\I
       for i=ind:ngens(C)
         y.coeff[1,i-ind+1]=x.coeff[1,i]
       end 
