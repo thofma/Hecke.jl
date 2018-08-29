@@ -592,7 +592,6 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
 
   a = -coeff(K.pol, 0)
   a = a^r//h(a) # this assumes K/k to be abelian
-  #global last_rt = (a, degree(K))
   fl, b = hasroot(a, degree(K))
   @assert fl
 

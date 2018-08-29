@@ -1244,10 +1244,13 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
   end
 
   boundt2 = max(bd, R(1))
-
+  
+  # Tommy: log(...) could contain a ball, which contains zero
+  tmp = R(abs_upper_bound(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
+  
   #CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
-  boundk = R(n)*log(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n)//(2*deg_p*log(R(p)))
-
+  boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
+  
   ss = abs_upper_bound(boundk, fmpz)
   return ss
 end
