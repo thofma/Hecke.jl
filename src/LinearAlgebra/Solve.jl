@@ -103,7 +103,7 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
       if all(i->small_coeff(a, sM, i), 1:a.elem_length)
         B[i,j] = a*di
       else
-        n, dn = rational_reconstruction2(a, M)
+        n, dn = algebraic_reconstruction(a, M)
         d*=dn
         if any(i->!small_coeff(d, sM, i), 1:a.elem_length)
           println("early $i $j abort")
@@ -115,7 +115,7 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
     end
   end
   println("final den: $d")
-  return true, B
+  return true, B//d
 end
 
 function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
@@ -131,17 +131,30 @@ function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   return true, B
 end
 
-function rational_reconstruction2(a::nf_elem, M::fmpz)
+function algebraic_reconstruction(a::nf_elem, M::fmpz)
   K = parent(a)
   n = degree(K)
-  m = hcat(MatrixSpace(FlintZZ, n, n)(1), representation_mat(a))
-  m = vcat(m, hcat(MatrixSpace(FlintZZ, n, n)(0), MatrixSpace(FlintZZ, n, n)(M)))
-  L = lll(m)
+  Znn = MatrixSpace(FlintZZ, n, n)
+  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) Znn(M)]
+  lll!(L)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
   n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
   return n,d
   return true, n//d
 end
+
+function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
+  K = parent(a)
+  n = degree(K)
+  Znn = MatrixSpace(FlintZZ, n, n)
+  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) basis_matrix(M, Val{false})]
+  lll!(L)
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  return n,d
+  return true, n//d
+end
+
 
 Markdown.doc"""
     divexact!(A::Generic.Mat{nf_elem}, p::fmpz) 
@@ -182,7 +195,7 @@ function Nemo.solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
     mod!(y, fmpz(p))
     sol += y*pp
     pp *= p
-    fl, SOL = rational_reconstruction2(sol, pp)
+    fl, SOL = rational_reconstruction(sol, pp)
 #    t = A*sol-B
 #    mod!(t, pp)
 #    @assert iszero(t)
