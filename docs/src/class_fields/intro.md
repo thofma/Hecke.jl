@@ -107,6 +107,8 @@ conductor(C::Hecke.ClassField)
 defining_modulus(C::ClassField)
 iscyclic(C::ClassField)
 isconductor(C::Hecke.ClassField, m::NfOrdIdl, inf_plc::Array{InfPlc,1})
+isnormal(C::ClassField)
+iscentral(C::ClassField)
 ```
 
 ## Operations
@@ -119,5 +121,8 @@ prime_decomposition_type(C::Hecke.ClassField, p::Hecke.NfAbsOrdIdl)
 Hecke.issubfield(a::ClassField, b::ClassField)
 Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
 Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
+Hecke.normal_closure(r::Hecke.ClassField) 
+subfields(r::ClassField)
+subfields(r::ClassField, d::Int)
 ```
 

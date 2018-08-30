@@ -21,7 +21,6 @@ help the computer, Hecke also provides the following signatures:
 
 ```@docs
 maximal_order(::AnticNumberField, ::Array{fmpz, 1})
-ring_of_integers(::AnticNumberField, ::Array{fmpz, 1})
 ```
 
 It is also possible the execute the steps individually:
@@ -62,7 +61,6 @@ trace_matrix(::NfOrd)
 +(::NfOrd, ::NfOrd)
 poverorder(::NfOrd, ::fmpz)
 pmaximal_overorder(::NfOrd, ::fmpz)
-deepcopy(::NfOrd)
 ```
 
 ## Elements
@@ -116,12 +114,9 @@ charpoly(::NfOrdElem)
 ### Creation
 
 ```@docs
-ideal(::NfOrd, ::Int)
-ideal(::NfOrd, ::Integer)
 ideal(::NfOrd, ::fmpz)
 ideal(::NfOrd, ::fmpz_mat)
 ideal(::NfOrd, ::NfOrdElem)
-ideal(::NfOrd, ::Integer, ::NfOrdElem)
 ideal(::NfOrd, ::fmpz, ::NfOrdElem)
 *(::NfOrd, ::NfOrdElem)
 prime_decomposition(::NfOrd, ::Integer)
