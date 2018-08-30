@@ -218,7 +218,7 @@ function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check:
 end
 
 @doc Markdown.doc"""
-    NumberField(f::Generic.Poly{T}, cached::Bool = false; check::Bool = false) where T
+    NumberField(f::Generic.Poly{T}; cached::Bool = false, check::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
 > $f$ must be irreducible - although this is not tested.
