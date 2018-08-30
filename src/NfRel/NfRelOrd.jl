@@ -443,7 +443,7 @@ end
 
 > Returns the maximal order of $L$.
 """
-function maximal_order(L::RelativeExtension)
+function MaximalOrder(L::RelativeExtension)
   try
     O = _get_maximal_order_of_nf_rel(L)
     return O

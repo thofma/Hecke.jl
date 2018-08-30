@@ -480,6 +480,10 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
     O.minkowski_gram_mat_scaled = (A, prec)
     A = deepcopy(A)
   end
+  # to ensure pos. definitenes, we add n to the diag.
+  for i=1:degree(O)
+    fmpz_mat_entry_add_ui!(A, i, i, UInt(rows(A)))
+  end
   return A
 end
 
@@ -1048,7 +1052,7 @@ MaximalOrder(R::NfAbsOrd, A::Array) = maximal_order(R, A)
 
 equation_order(K::AnticNumberField) = EquationOrder(K)
 
-function maximal_order(O::NfOrd, primes::Array{fmpz, 1})
+function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   OO = deepcopy(O)
   disc = abs(discriminant(O))
   for i in 1:length(primes)
@@ -1077,7 +1081,7 @@ end
 
 Returns the maximal overorder of $O$.
 """
-function maximal_order(O::NfAbsOrd)
+function MaximalOrder(O::NfAbsOrd)
   K = nf(O)
   try
     # First check if the number field knows its maximal order
@@ -1140,6 +1144,8 @@ end
 @doc Markdown.doc"""
 ***
     MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
+    maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
+    ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
 
 Assuming that ``primes`` contains all the prime numbers at which the equation
 order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
@@ -1160,7 +1166,7 @@ end
 
 Returns the maximal order of $K$.
 """
-function maximal_order(K::AnticNumberField)
+function MaximalOrder(K::AnticNumberField)
   try
     c = _get_maximal_order_of_nf(K)::NfOrd
     return c
@@ -1178,24 +1184,6 @@ end
 
 @doc Markdown.doc"""
 ***
-    maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-    maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
-
-Assuming that ``primes`` contains all the prime numbers at which the equation
-order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal
-(e.g. ``primes`` may contain all prime divisors of the discriminant of
-$\mathbf Z[\alpha]$), this function returns the maximal order of $K$.
-"""
-function maximal_order(K::AnticNumberField, primes::Array{fmpz, 1})
-  O = MaximalOrder(K, primes)
-  return O
-end
-
-maximal_order(K::AnticNumberField, primes::Array{T, 1}) where {T <: Integer} =
-  maximal_order(K, map(FlintZZ, primes))
-
-@doc Markdown.doc"""
-***
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
 
@@ -1203,7 +1191,8 @@ Assuming that ``primes`` contains all the prime numbers at which the equation
 order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
 this function returns the maximal order of $K$.
 """
-ring_of_integers(x...) = maximal_order(x...)
+ring_of_integers(x::AnticNumberField, primes::Array{fmpz, 1}) = maximal_order(x, primes)
+ring_of_integers(x::AnticNumberField, primes::Array{Integer, 1}) = maximal_order(x, primes)
 
 ###############################################################################
 #
