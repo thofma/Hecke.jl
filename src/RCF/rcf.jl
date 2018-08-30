@@ -1212,14 +1212,17 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
         end
       end
 
+#      z = hcat(z, Cp[im].o*identity_matrix(FlintZZ, rows(z)))
       z = hcat(z, om*identity_matrix(FlintZZ, rows(z)))
       fl, s = cansolve(z, matrix(FlintZZ, rows(z), 1, za))
       @assert fl
+#      s = [mod(s[x, 1], Cp[im].o) for x=1:length(Cp[im].bigK.gen)]
       s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
       #println("s: $s")
 
       fl, tau_s = cansolve(z, matrix(FlintZZ, rows(z), 1, zta))
       @assert fl
+#      tau_s = [(z_i_inv*tau_s[x, 1]) % Cp[im].o for x=1:length(Cp[im].bigK.gen)]
       tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
 #      println("tau(s): $tau_s")
       # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
@@ -1688,6 +1691,15 @@ Markdown.doc"""
 """
 function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
   return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
+end
+
+Markdown.doc"""
+    ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0) -> ClassField
+> The ray class field modulo $I$ and the infinite places given. If {{{n_quo}}} is given, then the largest
+> subfield of exponent $n$ is computed.
+"""
+function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0)
+  return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
 end
 
 Markdown.doc"""
