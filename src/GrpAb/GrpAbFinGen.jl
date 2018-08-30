@@ -549,6 +549,7 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
 
   p = s[1].parent
   @assert G == p
+  @assert all(x->x.parent == G, s)
   m = zero_matrix(FlintZZ, length(s) + nrels(p), ngens(p) + length(s))
   for i = 1:length(s)
     for j = 1:ngens(p)

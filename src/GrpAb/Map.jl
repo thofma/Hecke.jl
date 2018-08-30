@@ -144,7 +144,7 @@ function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
     if A == B
       G = A
       images = [ G([M[i, j] for j in 1:ngens(G)]) for i in 1:ngens(G) ]
-      a = 0 * G[1]
+      a = G[0]
       for i in 1:nrels(G)
         for j in 1:ngens(G)
           a = a + rels(G)[i, j] * images[j]
@@ -220,6 +220,9 @@ function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
     if iszero_row(hn, i)
       return sub(G, sub(t, i:rows(t), 1:ngens(G)), add_to_lattice)
     end
+  end
+  if rows(hn) == 0
+    return sub(G, elem_type(G)[], add_to_lattice)
   end
   error("Something went terribly wrong in kernel computation")
 end

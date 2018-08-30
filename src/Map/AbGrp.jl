@@ -74,7 +74,11 @@ mutable struct GrpAbFinGenMap <: Map{GrpAbFinGen, GrpAbFinGen,
     r = new()
     D = domain(M)
     r.header = MapHeader(D, codomain(M))
-    r.map = vcat([M(D[i]).coeff for i=1:ngens(D)])
+    if ngens(D) == 0
+      r.map = matrix(FlintZZ, 0, ngens(codomain(M)), fmpz[])
+    else
+      r.map = vcat([M(D[i]).coeff for i=1:ngens(D)])
+    end
     return r
   end
 end
