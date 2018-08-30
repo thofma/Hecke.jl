@@ -167,7 +167,7 @@ end
 
 @doc Markdown.doc"""
 ***
-  minpoly(a::nf_elem) -> fmpq_poly
+    minpoly(a::nf_elem) -> fmpq_poly
 
 > The minimal polynomial of a.
 """

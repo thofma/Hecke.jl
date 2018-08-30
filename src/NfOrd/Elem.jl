@@ -294,11 +294,22 @@ Base.hash(x::NfAbsOrdElem, h::UInt) = Base.hash(x.elem_in_nf, h)
 #  Characteristic and minimal polynomial
 #
 ################################################################################
+@doc Markdown.doc"""
+    charpoly(a::NfAbsOrdElem) -> fmpz_poly
 
+    charpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
+> The characteristic polynomial of $a$.    
+"""
 function charpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
   return Zx(charpoly(elem_in_nf(a)))
 end
 
+@doc Markdown.doc"""
+    minpoly(a::NfAbsOrdElem) -> fmpz_poly
+
+    minpoly(a::NfAbsOrdElem, FlintZZ) -> fmpz_poly
+> The minimal polynomial of $a$.    
+"""
 function minpoly(a::NfAbsOrdElem, Zx::FmpzPolyRing = FmpzPolyRing(:x, false))
   return Zx(minpoly(elem_in_nf(a)))
 end
