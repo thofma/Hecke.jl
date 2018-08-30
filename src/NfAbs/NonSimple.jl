@@ -673,7 +673,7 @@ end
 #  Simple extensions
 #
 ################################################################################
-Markdown.doc"""
+@doc Markdown.doc"""
     simple_extension(K::NfAbsNS) -> AnticNumberField, Map
 > For a non-simple extension $K$ of $Q$, find a primitive element and thus
 > an isomorphic simple extension of $Q$. The map realises this isomorphism.
@@ -727,7 +727,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     number_field(f::Array{fmpq_poly, 1}, s::String="_\$") -> NfAbsNS
 > Let $f = (f_1, \ldots, f_n)$ be univariate rational polynomials, then
 > we construct 

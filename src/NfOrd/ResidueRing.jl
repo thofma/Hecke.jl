@@ -140,7 +140,7 @@ end
 # (and standart helpers)
 #
 ################################################################################
-Markdown.doc"""
+@doc Markdown.doc"""
     quo(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing, Map
 > The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 > The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
@@ -152,13 +152,13 @@ function quo(O::NfOrd, I::NfOrdIdl)
   return Q, f
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
 > The quotient ring $O$ modulo $I$ as a new ring.
 """
 Nemo.ResidueRing(O::NfOrd, I::NfOrdIdl) = NfOrdQuoRing(O, I)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
 > Returns a lift of $a$ back to $O$.
 """
@@ -1428,7 +1428,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     group_structure(Q::NfOrdQuoRing) -> GrpAbFinGenSnf
 

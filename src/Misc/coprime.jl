@@ -381,7 +381,7 @@ end
 # isone, gcd_into!, divexact!, copy
 # (some more for Bernstein: FactorBase, gcd, divexact)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     coprime_base{E}(S::Array{E, 1}) -> Array{E, 1}
 
@@ -389,7 +389,7 @@ Markdown.doc"""
 """
 coprime_base(x) = coprime_base_steel(x)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     coprime_base_insert{E}(S::Array{E, 1}, a::E) -> Array{E, 1}
 

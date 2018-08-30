@@ -177,7 +177,7 @@ function one(::Type{Nemo.fmpz})
   return fmpz(1)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   modord(a::fmpz, m::fmpz) -> Int
   modord(a::Integer, m::Integer)
 
@@ -365,7 +365,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ispower(a::fmpz) -> Int, fmpz
     ispower(a::Integer) -> Int, Integer
 > Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
@@ -402,7 +402,7 @@ function ispower(a::Integer)
   return e, typeof(a)(r)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ispower(a::fmpq) -> Int, fmpq
     ispower(a::Rational) -> Int, Rational
 > Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
@@ -423,7 +423,7 @@ function ispower(a::Rational)
   return e, T(numerator(r))//T(denominator(r))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ispower(a::fmpz, n::Int) -> Bool, fmpz
     ispower(a::fmpq, n::Int) -> Bool, fmpq
     ispower(a::Integer, n::Int) -> Bool, Integer
@@ -525,7 +525,7 @@ function nbits(a::BigInt)
   return ndigits(a, 2)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   nbits(a::Int) -> Int
   nbits(a::UInt) -> Int
   nbits(a::BigInt) -> Int
@@ -560,7 +560,7 @@ function mod_sym(a::fmpz, b::fmpz)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isinteger(a::fmpq) -> Bool
 
 > Returns true iff the denominator of $a$ is one.
@@ -601,7 +601,7 @@ function show(io::IO, mC::MapSUnitGrpZ)
   println(io, "SUnits map of $(codomain(mC)) for $(mC.idl)")
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     sunit_group_fac_elem(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group_fac_elem(S::Array{Integer, 1}) -> GrpAbFinGen, Map
@@ -655,7 +655,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
   return G, mp
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     sunit_group(S::Array{fmpz, 1}) -> GrpAbFinGen, Map
     sunit_group(S::Array{Integer, 1}) -> GrpAbFinGen, Map
@@ -688,7 +688,7 @@ Hecke.gcd(a::Integer, b::fmpz) = Hecke.gcd(fmpz(a), b)
 Hecke.lcm(a::fmpz, b::Integer) = Hecke.lcm(a, fmpz(b))
 Hecke.lcm(a::Integer, b::fmpz) = Hecke.lcm(fmpz(a), b)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isprime_power(n::fmpz) -> Bool
     isprime_power(n::Integer) -> Bool
 > Tests is $n$ is the exact power of a prime number.

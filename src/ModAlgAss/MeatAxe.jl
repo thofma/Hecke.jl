@@ -463,7 +463,7 @@ end
 
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     meataxe(M::FqGModule) -> Bool, MatElem
 
@@ -594,7 +594,7 @@ function meataxe(M::ModAlgAss{S, T}) where {S, T}
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     composition_series(M::FqGModule) -> Array{MatElem,1}
 
@@ -650,7 +650,7 @@ function composition_series(M::ModAlgAss{S, T}) where {S, T}
   return list
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     composition_factors(M::FqGModule)
 
@@ -849,7 +849,7 @@ function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
 
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     minimal_submodules(M::FqGModule)
 
@@ -888,7 +888,7 @@ function minimal_submodules(M::ModAlgAss{S, T}, dim::Int=M.dimension+1, lf=[]) w
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximal_submodules(M::FqGModule)
 
@@ -908,7 +908,7 @@ function maximal_submodules(M::ModAlgAss{S, T}, index::Int=M.dimension, lf=[]) w
 
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     submodules(M::FqGModule)
 
@@ -965,7 +965,7 @@ function submodules(M::ModAlgAss{S, T}) where {S, T}
   
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     submodules(M::FqGModule, index::Int)
 

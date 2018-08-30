@@ -46,7 +46,7 @@ end
 ###############################################################################
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
     
@@ -1597,7 +1597,7 @@ end
 #
 ##################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
     

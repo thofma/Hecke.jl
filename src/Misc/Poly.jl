@@ -61,7 +61,7 @@ function ismonic(a::PolyElem)
   return isone(lead(a))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   valence(f::PolyElem) -> RingElem
 
@@ -77,7 +77,7 @@ function valence(f::PolyElem)
   return c
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   leading_coefficient(f::PolyElem) -> RingElem
 
@@ -85,7 +85,7 @@ Markdown.doc"""
 """
 leading_coefficient(f::PolyElem) = lead(f)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   trailing_coefficient(f::PolyElem) -> RingElem
   constant_coefficient(f::PolyElem) -> RingElem
@@ -99,7 +99,7 @@ function trailing_coefficient(f::PolyElem)
   return coeff(f, 0)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     induce_rational_reconstruction(a::fmpz_poly, M::fmpz) -> fmpq_poly
 > Apply {{{rational_reconstruction}}} to each coefficient of $a$, resulting
 > in either a fail (return (false, s.th.)) or (true, g) for some rational
@@ -267,7 +267,7 @@ function continue_lift(a::HenselCtx, N::Int)
   a.N = N
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   factor_mod_pk(f::fmpz_poly, p::Int, k::Int) -> Dict{fmpz_poly, Int}
 
@@ -279,7 +279,7 @@ function factor_mod_pk(f::fmpz_poly, p::Int, k::Int)
   return factor_to_dict(H.LF)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   factor_mod_pk_init(f::fmpz_poly, p::Int) -> HenselCtx
 
@@ -291,7 +291,7 @@ function factor_mod_pk_init(f::fmpz_poly, p::Int)
   return H
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   factor_mod_pk(H::HenselCtx, k::Int) -> RingElem
 
@@ -312,7 +312,7 @@ function hensel_lift!(G::fmpz_poly, H::fmpz_poly, A::fmpz_poly, B::fmpz_poly, f:
   ccall((:fmpz_poly_hensel_lift, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly},  Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz_poly}, Ref{fmpz}, Ref{fmpz}), G, H, A, B, f, g, h, a, b, p, p1)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
@@ -365,7 +365,7 @@ function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
   return g, h
 end  
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int) -> (fmpz_poly, fmpz_poly)
 
@@ -436,7 +436,7 @@ function fmpz_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpz_poly)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
     deflate(f::PolyElem, n::Int64) -> PolyElem
 > Given a polynomial $f$ in $x^n$, write it as a polynomial in $x$, ie. divide
 > all exponents by $n$.
@@ -449,7 +449,7 @@ function deflate(x::PolyElem, n::Int64)
   return y
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     inflate(f::PolyElem, n::Int64) -> PolyElem
 > Given a polynomial $f$ in $x$, return $f(x^n)$, ie. multiply 
 > all exponents by $n$.
@@ -462,7 +462,7 @@ function inflate(x::PolyElem, n::Int64)
   return y
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     deflate(x::PolyElem) -> PolyElem
 > Deflate the polynomial $f$ maximally, ie. find the largest $n$ s.th.
 > $f$ can be deflated by $n$, ie. $f$ is actually a polynomial in $x^n$.
@@ -553,7 +553,7 @@ function fun_factor(f::PolyElem{<:RingElem})
   return g0, h0
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}
 > Find a random polynomial of degree(n)
 """
@@ -566,7 +566,7 @@ function Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Uni
   return f
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The 'gcd' of $f$ anf $g$ using a quadratic-time algorithm.
 """
@@ -598,7 +598,7 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The resultant of $f$ anf $g$ using a quadratic-time algorithm.
 """
@@ -757,7 +757,7 @@ end
 #key idea (Carlo): if g = ab and a is a unit mod p, then it is actually a unit 
 # in Z/p^kZ, hence the ideal (f, g) = (f, b) where b is now monic.
 #Thus rres(f,g ) = rres(f, b).... and the division can continue
-Markdown.doc"""
+@doc Markdown.doc"""
     rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > The reduced resultant of $f$ and $g$ using a quadratic-time algorithm.
 > That is a generator for the $(f, g) \cap Z$
@@ -767,7 +767,7 @@ function rres(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: U
   return rres_sircana(f, g)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rres(f::fmpz_poly, g::fmpz_poly) -> fmpz
 > The reduced resultant of $f$ and $g$,
 > that is a generator for the ideal $(f, g) \cap Z$
@@ -866,7 +866,7 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rresx(f::PolyElem{ResElem{fmpz}}, g::PolyElem{ResElem{fmpz}}) -> r, u, v
 > The reduced resultant $r$ and polynomials $u$ and $v$ s.th.
 > $r = uf+vg$ and $\langle r\rangle = \langle f, g\rangle\cap \mathbb Z$.
@@ -1085,7 +1085,7 @@ function Nemo.gcdx(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
   return R(G), R(U)*R(u), R(U)*R(v)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     annihilator(a::ResElem{fmpz}) -> r
     annihilator(a::ResElem{Integer}) -> r
 > The annihilator of $a$, ie. a generator for the annihilator ideal
@@ -1097,7 +1097,7 @@ function annihilator(a::ResElem{T}) where T <: Union{Integer, fmpz}
   return R(divexact(m, gcd(m, a.data)))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isunit(f::Union{fmpz_mod_poly,nmod_poly}) -> Bool
 > Tests if $f$ is a unit in the polynomial ring, ie. if 
 > $f = u + n$ where $u$ is a unit in the coeff. ring
@@ -1115,7 +1115,7 @@ function Nemo.isunit(f::Union{fmpz_mod_poly,nmod_poly})
   return true
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isnilpotent(a::ResElem{fmpz}) -> Bool
     isnilpotent(a::ResElem{Integer}) -> Bool
 > Tests iff $a$ is nilpotent.
@@ -1210,7 +1210,7 @@ function rres_bez(f::fmpz_poly, g::fmpz_poly)
   return lcm(denominator(q), denominator(w))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rresx(f::fmpz_poly, g::fmpz_poly) -> r, u, v
 > The reduced resultant, ie. a generator for the intersection
 > of the ideal generated by $f$ and $g$ with the integers.
@@ -1227,7 +1227,7 @@ function rresx(f::fmpz_poly, g::fmpz_poly)
   return l, Zx(l*q), Zx(l*w)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
     xxgcd(a::ResElem{Integer}, b::ResElem{Integer}) -> g, e, f, u, v
 > Coputes $g = \gcd(a, b)$, the Bezout coefficients, $e$, $f$ s.th.
@@ -1242,7 +1242,7 @@ function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
     primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
 > Computes the contents $c$ and the primitive part of $f$ destructively.   
@@ -1277,7 +1277,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz,
   return g, f
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
     primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
 > Computes the contents $c$ and the primitive part of $f$.
@@ -1322,7 +1322,7 @@ function Base.getindex(a::PolyCoeffs, i::Int)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
     resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
 > One of the two polynomials must be monic.
@@ -1563,7 +1563,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) -> Array{T, 1}
 > Uses Newton (or Newton-Girard) formulas to compute the first $n$
 > power sums from the coefficients of $f$.
@@ -1599,7 +1599,7 @@ function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T
   return P
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     power_sums_to_polynomial(P::Array{T, 1}) -> PolyElem{T}
 > Uses the Newton (or Newton-Girard) identities to obtain the polynomial
 > coefficients (the elementary symmetric functions) from the power sums.
@@ -1817,7 +1817,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     factor_squarefree(x::fmpq_poly)
 > Returns the squarefree factorization of $x$.
 """

@@ -42,7 +42,7 @@ export hasse_interval, order, order_via_bsgs, order_via_legendre,
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     rand(E::EllCrv) -> EllCrvPt
 > Returns a random point on the elliptic curve $E$ defined over a finite field.
@@ -77,7 +77,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
 
@@ -122,7 +122,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     hasse_interval(E::EllCrv) -> Array{fmpz, 1}
 
@@ -142,7 +142,7 @@ function hasse_interval(E::EllCrv)
   return [l, b]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     elem_order_bsgs(P::EllCrvPt) -> fmpz
 
@@ -235,7 +235,7 @@ function elem_order_bsgs(P::EllCrvPt)
   return M
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order(P::EllCrvPt) -> fmpz
 
@@ -250,7 +250,7 @@ order(P::EllCrvPt) = elem_order_bsgs(P)
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order_via_bsgs(E::EllCrv) -> Array{fmpz, 1}
 
@@ -368,7 +368,7 @@ function fn_from_schoof(E::EllCrv, n::Int, x)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order_via_schoof(E::EllCrv) -> fmpz
 
@@ -668,7 +668,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order(E::EllCrv{NemoResidue}) -> Nemo.fmpz
 

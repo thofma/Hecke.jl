@@ -55,7 +55,7 @@ function exp(a::RelSeriesElem{<:Nemo.FieldElem})
   return x
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     derivative(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the derivative of the power series $f$.
 """
@@ -80,7 +80,7 @@ end
 
 Nemo.fit!(::fmpq_rel_series, Int) = nothing
 
-Markdown.doc"""
+@doc Markdown.doc"""
     integral(f::RelSeriesElem{T}) -> RelSeriesElem
 > Return the integral of the power series $f$.
 """

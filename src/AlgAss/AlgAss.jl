@@ -659,7 +659,7 @@ function _issimple(A::AlgAss)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     decompose(A::AlgAss)
             
@@ -856,7 +856,7 @@ function _dec_com_finite(A::AlgAss{T}) where T
   end
 end
 
-#Markdown.doc"""
+#@doc Markdown.doc"""
 #***
 #    decomposition(A::AlgAss)
 #            
@@ -933,7 +933,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     radical(A::AlgAss{fq_nmod})
             

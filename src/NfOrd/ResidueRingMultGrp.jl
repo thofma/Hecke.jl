@@ -12,7 +12,7 @@ export multiplicative_group, multiplicative_group_generators
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     multiplicative_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
     unit_group(Q::NfOrdQuoRing) -> GrpAbFinGen, Map{GrpAbFinGen, NfOrdQuoRing}
@@ -35,7 +35,7 @@ end
 
 unit_group(Q::NfOrdQuoRing) = multiplicative_group(Q)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     multiplicative_group_generators(Q::NfOrdQuoRing) -> Vector{NfOrdQuoRingElem}
 
@@ -88,7 +88,7 @@ function FacElem(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, O::NfOrdIdlSet)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
      factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 > A coprime factorisation of $Q$: each ideal in $Q$ is split using \code{integral_split} and then
 > a coprime basis is computed.
@@ -100,7 +100,7 @@ function factor_coprime(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   return S
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
      factor(Q::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> Dict{NfOrdIdl, Int}
 > The factorisation of $Q$, by refining a coprime factorisation.
 """
@@ -131,7 +131,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     _multgrp(Q::NfOrdQuoRing) -> (GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap)
 
@@ -174,7 +174,7 @@ _multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = met
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl) -> (GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap)
 
@@ -686,7 +686,7 @@ function root(a::T, n::Int) where T <: Integer
   return T(root(fmpz(a), n))
 end  
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     baby_step_giant_step(g, n, h) -> fmpz
     baby_step_giant_step(g, n, h, cache::Dict) -> fmpz
@@ -731,7 +731,7 @@ function baby_step_giant_step(gen, n, a)
   return baby_step_giant_step(gen, n, a, cache)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     pohlig_hellman(g, n, h; factor_n=factor(n)) -> fmpz
 

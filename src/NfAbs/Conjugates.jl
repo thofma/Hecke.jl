@@ -7,7 +7,7 @@ export istotally_real, istotally_complex, conjugates, conjugates_real,
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     istotally_real(K::AnticNumberField) -> Bool
 
@@ -18,7 +18,7 @@ function istotally_real(K::AnticNumberField)
   return signature(K)[1] == degree(K)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     istotally_complex(K::AnticNumberField) -> Bool
 
@@ -35,7 +35,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     conjugates(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
@@ -120,7 +120,7 @@ function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     conjugates_arb_real(x::nf_elem, abs_tol::Int) -> Vector{arb}
 
@@ -149,7 +149,7 @@ function conjugates_arb_real(x::nf_elem, abs_tol::Int = 32)
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     conjugates_complex(x::nf_elem, abs_tol::Int) -> Vector{acb}
 
@@ -187,7 +187,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     conjugates_arb_log(x::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
@@ -286,7 +286,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     minkowski_map(a::nf_elem, abs_tol::Int) -> Array{arb, 1}
 
@@ -358,7 +358,7 @@ end
 #
 ############################################################################
 
-#Markdown.doc"""
+#@doc Markdown.doc"""
 #***
 #    _signs(a::nf_elem) -> Array{Int, 1}
 #> For a non-zero elements $a$ return the signs of all real embeddings.
@@ -393,7 +393,7 @@ function _signs(a::nf_elem)
   end
 end
 
-#Markdown.doc"""
+#@doc Markdown.doc"""
 #***
 #    signs(a::FacElem{nf_elem, AnticNumberField}) -> Array{Int, 1}
 #> For a non-zero elements $a$ in factored form,
@@ -416,7 +416,7 @@ function _signs(a::FacElem{nf_elem, AnticNumberField})
   return s
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     complex_conjugation(K::AnticNumberField)
 
 Given a totally complex normal number field, this function returns the

@@ -18,7 +18,7 @@ function (x::FacElemMon{S})() where S
   z.parent = x
   return z
 end
-Markdown.doc"""
+@doc Markdown.doc"""
     FacElem{B}(base::Array{B, 1}, exp::Array{fmpz, 1}) -> FacElem{B}
 > Returns the element $\prod b_i^{e_i}$, un-expanded.
 """
@@ -45,7 +45,7 @@ function FacElem(base::Array{B, 1}, exp::Array{fmpz, 1}) where B
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     FacElem{B}(d::Dict{B, fmpz}) -> FacElem{B}
     FacElem{B}(d::Dict{B, Integer}) -> FacElem{B}
 > Returns the element $\prod b^{d[p]}$, un-expanded.
@@ -377,7 +377,7 @@ function ^(A::NfOrdFracIdl, d::fmpz)
   return A^Int(d)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   evaluate{T}(x::FacElem{T}) -> T
 
@@ -389,7 +389,7 @@ function evaluate(x::FacElem{T}) where T
   return _ev(x.fac, one(base_ring(x)))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     evaluate(x::FacElem{fmpq}) -> fmpq
     evaluate(x::FacElem{fmpz}) -> fmpz
@@ -406,7 +406,7 @@ end
 function evaluate(x::FacElem{fmpz})
   return evaluate_naive(simplify(x))
 end
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
   simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
@@ -505,7 +505,7 @@ function simplify!(x::FacElem{fmpz})
   nothing
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isone(x::FacElem{fmpq}) -> Bool
     isone(x::FacElem{fmpz}) -> Bool
@@ -585,7 +585,7 @@ function factor_coprime(x::FacElem{fmpz})
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   evaluate_naive{T}(x::FacElem{T}) -> T
 
@@ -649,7 +649,7 @@ end
 
 
 #################################################################################
-Markdown.doc"""
+@doc Markdown.doc"""
     max_exp(a::FacElem)
 > Finds the largest exponent in the factored element $a$
 """
@@ -657,7 +657,7 @@ function max_exp(a::FacElem)
   return maximum(values(a.fac))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     min_exp(a::FacElem)
 > Finds the smallest exponent in the factored element $a$
 """
@@ -665,7 +665,7 @@ function min_exp(a::FacElem)
   return minimum(values(a.fac))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     maxabs_exp(a::FacElem)
 > Finds the largest exponent by absolute value the factored element $a$
 """

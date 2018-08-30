@@ -69,14 +69,14 @@ Nemo.isnegative(::NfAbsOrdElem) = false
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     nf(O::NfOrd) -> AnticNumberField
 
 Returns the ambient number field of $\mathcal O$.
 """
 @inline nf(O::NfAbsOrd) = O.nf
 
-Markdown.doc"""
+@doc Markdown.doc"""
   number_field(O::NfOrd)
 
 Return the ambient number field of $\mathcal O$.
@@ -85,7 +85,7 @@ Return the ambient number field of $\mathcal O$.
   return O.nf
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     parent(O::NfOrd) -> NfOrdSet
 
 Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
@@ -93,7 +93,7 @@ number field.
 """
 parent(O::NfOrd) = NfAbsOrdSet(nf(O), false)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isequation_order(O::NfOrd) -> Bool
 
 Returns whether $\mathcal O$ is the equation order of the ambient number
@@ -103,7 +103,7 @@ field.
 
 @inline ismaximal_known(O::NfAbsOrd) = O.ismaximal != 0
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ismaximal(R::NfAbsOrd) -> Bool
 > Tests if the order $R$ is maximal. This might trigger the 
 > the computation if the maximal order.
@@ -132,7 +132,7 @@ contains_equation_order(O::NfAbsOrd) = isinteger(gen_index(O))
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     degree(O::NfOrd) -> Int
 
 Returns the degree of $\mathcal O$.
@@ -193,14 +193,14 @@ function basis_ord(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     basis(O::NfOrd) -> Array{NfOrdElem, 1}
 
 Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
 @inline basis(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where {T} = basis_ord(O, copy)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Array{nf_elem, 1}
 
 Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
@@ -217,7 +217,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     basis_mat(O::NfOrd) -> FakeFmpqMat
 
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
@@ -232,7 +232,7 @@ function basis_mat(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     basis_mat_inv(O::NfOrd) -> FakeFmpqMat
 
 Returns the inverse of the basis matrix of $\mathcal O$.
@@ -295,7 +295,7 @@ function assure_has_discriminant(O::NfAbsOrd)
   return nothing
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     discriminant(O::NfOrd) -> fmpz
 
 Returns the discriminant of $\mathcal O$.
@@ -306,7 +306,7 @@ function discriminant(O::NfAbsOrd)
 end
 
 #TODO: compute differently in equation orders, this is the rres...
-Markdown.doc"""
+@doc Markdown.doc"""
    reduced_discriminant(O::NfOrd) -> fmpz
 > Returns the reduced discriminant, ie. the largest elementary divisor of the 
 > trace matrix of $\mathcal O$.
@@ -326,7 +326,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     gen_index(O::NfOrd) -> fmpq
 
 Returns the generalized index of $\mathcal O$ with respect to the equation
@@ -341,7 +341,7 @@ function gen_index(O::NfAbsOrd)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     index(O::NfOrd) -> fmpz
 
 Assuming that the order $\mathcal O$ contains the equation order
@@ -365,7 +365,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isindex_divisor(O::NfOrd, d::fmpz) -> Bool
     isindex_divisor(O::NfOrd, d::Int) -> Bool
 
@@ -383,7 +383,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     deepcopy(O::NfOrd) -> NfOrd
 
 Makes a copy of $\mathcal O$.
@@ -410,7 +410,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     signature(O::NfOrd) -> Tuple{Int, Int}
 
 Returns the signature of the ambient number field of $\mathcal O$.
@@ -430,7 +430,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     minkowski_mat(O::NfOrd, abs_tol::Int = 64) -> arb_mat
 
 Returns the Minkowski matrix of $\mathcal O$.  Thus if $\mathcal O$ has degree
@@ -460,7 +460,7 @@ function minkowski_mat(O::NfOrd, abs_tol::Int = 64)
   return A
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64) -> fmpz_mat
 
 > Let $c$ be the Minkowski matrix as computed by {{{minkowski_mat}}} with precision $p$.
@@ -514,7 +514,7 @@ function _check_elem_in_order(a::T, O::NfAbsOrd{S, T},
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     in(a::nf_elem, O::NfOrd) -> Bool
 
 Checks whether $a$ lies in $\mathcal O$.
@@ -529,7 +529,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     denominator(a::nf_elem, O::NfOrd) -> fmpz
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
@@ -571,7 +571,7 @@ end
 #
 # TODO: Make this rigorous using interval arithmetic. The only problem is that
 #       the characteristic polynomial might not be squarefree.
-Markdown.doc"""
+@doc Markdown.doc"""
     norm_change_const(O::NfOrd) -> (Float64, Float64)
 
 Returns $(c_1, c_2) \in \mathbf R_{>0}^2$ such that for all
@@ -661,7 +661,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     Order(B::Array{nf_elem, 1}, check::Bool = true) -> NfOrd
 
 Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
@@ -693,7 +693,7 @@ function Order(K, a::Vector, check::Bool = true,
   return Order(K, b, check, cache)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     Order(K::AnticNumberField, A::FakeFmpqMat, check::Bool = true) -> NfOrd
 
 Returns the order which has basis matrix $A$ with respect to the power basis
@@ -713,7 +713,7 @@ function Order(K::S, a::FakeFmpqMat, check::Bool = true,
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     Order(K::AnticNumberField, A::fmpq_mat, check::Bool = true) -> NfOrd
 
 Returns the order which has basis matrix $A$ with respect to the power basis
@@ -724,7 +724,7 @@ function Order(K::S, a::fmpq_mat, check::Bool = true,
   return Order(K, FakeFmpqMat(a), cache)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     Order(K::AnticNumberField, A::fmpz_mat, check::Bool = true) -> NfOrd
 
 Returns the order which has basis matrix $A$ with respect to the power basis
@@ -735,7 +735,7 @@ function Order(K::S, a::fmpz_mat, check::Bool = true,
   return Order(K, FakeFmpqMat(a), check, cache)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     Order(A::NfOrdFracIdl) -> NfOrd
 
 Returns the fractional ideal $A$ as an order of the ambient number field.
@@ -744,7 +744,7 @@ function Order(a::NfOrdFracIdl, check::Bool = true, cache::Bool = true)
   return Order(nf(order(a)), basis_mat(a)*basis_mat(order(a)), check, cache)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
 Returns the equation order of the number field $K$.
@@ -757,7 +757,7 @@ function EquationOrder(K::T, cache::Bool = false) where {T}
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
    equation_order(M::NfOrd) -> NfOrd
 > The equation order of then number field.
 """
@@ -873,7 +873,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     trace_matrix(O::NfOrd) -> fmpz_mat
 
 Returns the trace matrix of `\mathcal O`, that is, the matrix
@@ -908,7 +908,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     +(R::NfOrd, S::NfOrd) -> NfOrd
 
 Given two orders $R$, $S$ of $K$, this function returns the smallest order
@@ -962,7 +962,7 @@ function _poverorder(O::NfAbsOrd, p::Integer)
   return _poverorder(O, fmpz(p))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     poverorder(O::NfOrd, p::fmpz) -> NfOrd
     poverorder(O::NfOrd, p::Integer) -> NfOrd
 
@@ -991,7 +991,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     pmaximal_overorder(O::NfOrd, p::fmpz) -> NfOrd
     pmaximal_overorder(O::NfOrd, p::Integer) -> NfOrd
 
@@ -1070,7 +1070,7 @@ function maximal_order(O::NfOrd, primes::Array{fmpz, 1})
   return OO
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximal_order(O::NfOrd) -> NfOrd
     MaximalOrder(O::NfOrd) -> NfOrd
@@ -1112,7 +1112,7 @@ function maximal_order_round_four(O::NfAbsOrd)
   return OO
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     MaximalOrder(K::AnticNumberField) -> NfOrd
     maximal_order(K::AnticNumberField) -> NfOrd
@@ -1137,7 +1137,7 @@ function MaximalOrder(K::AnticNumberField, cache::Bool = false)
   return M
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
 
@@ -1153,7 +1153,7 @@ function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   return NfOrd(K, basis_mat(O))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximal_order(K::AnticNumberField) -> NfOrd
     ring_of_integers(K::AnticNumberField) -> NfOrd
@@ -1176,7 +1176,7 @@ function maximal_order(K::AnticNumberField)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
@@ -1194,7 +1194,7 @@ end
 maximal_order(K::AnticNumberField, primes::Array{T, 1}) where {T <: Integer} =
   maximal_order(K, map(FlintZZ, primes))
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
@@ -1225,7 +1225,7 @@ function _lll_gram(M::NfOrd)
   return On
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     lll_basis(M::NfOrd) -> Array{nf_elem, 1}
 > A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
 """
@@ -1234,7 +1234,7 @@ function lll_basis(M::NfOrd)
   return lll_basis(I)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     lll(M::NfOrd) -> NfOrd
 > The same order, but with the basis now being LLL reduced wrt. the Minkowski metric.
 """
@@ -1330,7 +1330,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     different(x::NfOrdElem) -> NfOrdElem
 
 > The different of $x$, ie. $0$ if x is not a primitive element, or
@@ -1347,7 +1347,7 @@ function different(x::NfOrdElem)
   return derivative(f)(x)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     different(R::NfOrd) -> NfOrdIdl
 
 > The differnt ideal of $R$, that is, the ideal generated by all differents
@@ -1368,7 +1368,7 @@ function different(R::NfOrd)
   return D
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     discriminant(m::Map, R::NfOrd) -> NfOrdIdl
 
 > The discriminant ideal of $R$ over the maximal order of the domain of the map $m$, 
@@ -1382,7 +1382,7 @@ function discriminant(m::T, R::NfOrd) where T <: Map
   return norm(m, D)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     codifferent(R::NfOrd) -> NfOrdIdeal
 > The codiffernt ideal of $R$, ie. the trace-dual of $R$.
 """
@@ -1748,7 +1748,7 @@ end
 
 # TODO: This can be improved by building the matrix N more clever and using
 #       a modular HNF algorithm.
-Markdown.doc"""
+@doc Markdown.doc"""
     conductor(R::NfOrd, S::NfOrd) -> NfAbsOrdIdl
 > The conductor $\{x \in S | xS\subseteq R\}$
 > for orders $R\subseteq S$.
@@ -1775,7 +1775,7 @@ function conductor(R::NfOrd, S::NfOrd)
   return ideal(R, divexact(Hinv, new_den))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     conductor(R::NfOrd) -> NfAbsOrdIdl
 > The conductor of $R$ in the maximal order.
 """

@@ -14,7 +14,7 @@ issimple(::AnticNumberField) = true
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   NumberField(f::fmpq_poly)
 
@@ -39,7 +39,7 @@ function NumberField(f::fmpz_poly; cached::Bool = true)
   return NumberField(Qx(f), cached = cached)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     pure_extension(n::Int, gen::Integer) -> AnticNumberField, nf_elem
     pure_extension(n::Int, gen::fmpz) -> AnticNumberField, nf_elem
 
@@ -54,7 +54,7 @@ function pure_extension(n::Int, gen::fmpz; cached::Bool = true)
   return number_field(x^n - gen, cached = cached)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     cyclotomic_field(n::Int) -> AnticNumberField, nf_elem
 
 The $n$-th cyclotomic field defined by the $n$-the cyclotomic polynomial.
@@ -66,7 +66,7 @@ end
 
 #fields with usually large class groups...
 # TODO: Some sort of reference?
-Markdown.doc"""
+@doc Markdown.doc"""
     wildanger_field(n::Int, B::fmpz) -> AnticNumberField, nf_elem
     wildanger_field(n::Int, B::Integer) -> AnticNumberField, nf_elem
 
@@ -100,7 +100,7 @@ characteristic(::AnticNumberField) = 0
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ispure_extension(K::AnticNumberField) -> Bool
     
 Tests if $K$ is pure, that is, if the defining polynomial is $x^n - g$ for some
@@ -113,7 +113,7 @@ function ispure_extension(K::AnticNumberField)
   return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     iskummer_extension(K::AnticNumberField) -> Bool
 
 Tests if $K$ is a Kummer extension of $\mathbb Q$, that is, if the defining
@@ -132,7 +132,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     class_group(K::AnticNumberField) -> GrpAbFinGen, Map
 
 Shortcut for {{{class_group(maximal_order(K))}}}: returns the class
@@ -149,7 +149,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     basis(K::AnticNumberField) -> Vector{nf_elem}
 
 Returns the power basis of $K$, that is, the elements $1,a,\dotsc,a^{d - 1}$,
@@ -174,7 +174,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     istorsion_unit(x::nf_elem, checkisunit::Bool = false) -> Bool
 
@@ -224,7 +224,7 @@ function istorsion_unit(x::nf_elem, checkisunit::Bool = false)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     torsion_unit_order(x::nf_elem, n::Int)
 
@@ -254,7 +254,7 @@ end
 #
 #################################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     normal_basis(K::Nemo.AnticNumberField) -> nf_elem
 
@@ -313,7 +313,7 @@ function _issubfield(K::AnticNumberField, L::AnticNumberField)
   return false, L()
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
@@ -365,7 +365,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isisomorphic(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
 
@@ -410,7 +410,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
    compositum(K::AnticNumberField, L::AnticNumberField) -> AnticNumberField, Map, Map
 > Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 > 2 fields together with the embedding of $K \to C$ and $L \to C$.
@@ -434,7 +434,7 @@ end
 
 # This function can be improved by directly accessing the numerator
 # of the fmpq_poly representing the nf_elem
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     write(io::IO, A::Array{nf_elem, 1}) -> Nothing
 
@@ -481,7 +481,7 @@ function write(io::IO, A::Array{nf_elem, 1})
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     write(file::String, A::Array{nf_elem, 1}, flag::ASCIString = "w") -> Nothing
 
@@ -500,7 +500,7 @@ function write(file::String, A::Array{nf_elem, 1}, flag::String = "w")
 end
 
 # This function has a bad memory footprint
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     read(io::IO, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
 
@@ -541,7 +541,7 @@ function read(io::IO, K::AnticNumberField, ::Type{Hecke.nf_elem})
   return A
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     read(file::String, K::AnticNumberField, ::Type{nf_elem}) -> Array{nf_elem, 1}
 
@@ -564,7 +564,7 @@ function read(file::String, K::AnticNumberField, ::Type{Hecke.nf_elem})
 end
 
 #TODO: get a more intelligent implementation!!!
-Markdown.doc"""
+@doc Markdown.doc"""
     splitting_field(f::fmpz_poly) -> AnticNumberField
     splitting_field(f::fmpq_poly) -> AnticNumberField
 > Computes the splitting field of $f$ as an absolute field.
@@ -632,7 +632,7 @@ end
 copy(f::fmpq_poly) = parent(f)(f)
 gcd_into!(a::fmpq_poly, b::fmpq_poly, c::fmpq_poly) = gcd(b, c)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     splitting_field(f::PolyElem{nf_elem}) -> AnticNumberField
 > Computes the splitting field of $f$ as an absolute field.
 """

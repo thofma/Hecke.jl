@@ -34,7 +34,7 @@
 
 export PrimeIdealsSet
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isramified(O::NfOrd, p::Int) -> Bool
 
@@ -47,7 +47,7 @@ function isramified(O::NfOrd, p::Union{Int, fmpz})
   return mod(discriminant(O), p) == 0
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     degree(P::NfOrdIdl) -> Int
 > The inertia degree of the prime-ideal $P$.
@@ -57,7 +57,7 @@ function degree(A::NfOrdIdl)
   return A.splitting_type[2]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ramification_index(P::NfOrdIdl) -> Int
 > The ramification index of the prime-ideal $P$.
@@ -67,7 +67,7 @@ function ramification_index(A::NfOrdIdl)
   return A.splitting_type[1]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     splitting_type(P::NfOrdIdl) -> Int, Int
 > The ramification index and inertia degree of the prime ideal $P$.
@@ -83,7 +83,7 @@ end
 #  Prime decomposition
 #
 ################################################################################
-Markdown.doc"""
+@doc Markdown.doc"""
     intersect(f::Map, P::NfOrdIdl) -> NfOrdIdl
 > Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
 > of number fields, find the unique prime $p$ in $k$ below.
@@ -136,7 +136,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
     prime_decomposition_nonindex(f::Map, p::NfOrdIdl) -> Array{Tuple{NfOrdIdl, Int}, 1}
 > Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
 > a prime ideal in the maximal order of $k$, find all prime ideals in
@@ -161,7 +161,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
   return res
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
 > Given a polynomial $f$ over a finite field, lift it to an element of the
 > number field $K$. The lift if given by the eleemnt represented by the
@@ -218,7 +218,7 @@ function ideal_from_poly(O::NfOrd, p::Int, fi::nmod_poly, ei::Int)
   return idl
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     prime_decomposition(O::NfOrd,
                         p::Integer,
@@ -408,7 +408,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
   return res
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
@@ -446,7 +446,7 @@ function prime_ideals_up_to(O::NfOrd, B::Int;
   return r
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     prime_ideals_over(O::NfOrd,
                        lp::AbstractArray{Int, 1};
@@ -473,7 +473,7 @@ function prime_ideals_over(O::NfOrd,
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     prime_ideals_up_to(O::NfOrd,
                        B::Int;
@@ -534,7 +534,7 @@ end
 
 #TODO: do sth. useful here!!!
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     divides(A::NfOrdIdl, B::NfOrdIdl)
     
@@ -565,7 +565,7 @@ function coprime_base(A::Array{NfOrdIdl, 1}, p::fmpz)
   return coprime_base_steel(Ap)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     coprime_base(A::Array{NfOrdIdl, 1}) -> Array{NfOrdIdl, 1}
     coprime_base(A::Array{NfOrdElem, 1}) -> Array{NfOrdIdl, 1}
@@ -604,7 +604,7 @@ end
 ################################################################################
 
 #TODO: factoring type??? (with unit)
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     factor(A::NfOrdIdl) -> Dict{NfOrdIdl, Int}
 
@@ -643,7 +643,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isprime_known(A::NfOrdIdl) -> Bool
 
@@ -653,7 +653,7 @@ function isprime_known(A::NfOrdIdl)
   return A.is_prime != 0
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isprime(A::NfOrdIdl) -> Bool
 
@@ -808,7 +808,7 @@ function val_func_index(p::NfOrdIdl)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -864,7 +864,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   return p.valuation(a)::Int
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -875,7 +875,7 @@ Markdown.doc"""
 """
 valuation(a::NfOrdElem, p::NfOrdIdl) = valuation(a.elem_in_nf, p)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     valuation(a::nf_elem, p::NfOrdIdl) -> fmpz
     valuation(a::NfOrdElem, p::NfOrdIdl) -> fmpz
@@ -891,7 +891,7 @@ function valuation(a::fmpz, p::NfOrdIdl)
   P = p.gen_one
   return valuation(a, P)* p.splitting_type[1]
 end
-Markdown.doc"""
+@doc Markdown.doc"""
     valuation(a::Integer, p::NfOrdIdl) -> fmpz
 > Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 > such that $a$ is contained in $\mathfrak p^i$.
@@ -926,7 +926,7 @@ function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     valuation(A::NfOrdIdl, p::NfOrdIdl) -> fmpz
 
@@ -976,7 +976,7 @@ mutable struct PrimeIdealsSet
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     PrimeIdealsSet(O::NfOrd, f, t; proof = false,
                                    indexdivisors = true,

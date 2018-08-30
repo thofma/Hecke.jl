@@ -42,7 +42,7 @@
 # The algorithm is described in
 # Belabas, Diaz y Diaz, Friedmann: "Small generators for the ideal class group"
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     factor_base_bound_bdf(O::NfOrd) -> Int
 
@@ -173,7 +173,7 @@ end
 # The theorem is described in
 # Bach: "Explicit bounds for primality testing and related problems"
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     factor_base_bound_bach(O::NfOrd) -> Int
 
@@ -201,7 +201,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     factor_base_bound_grh(O::NfOrd) -> Int
 
@@ -213,7 +213,7 @@ function factor_base_bound_grh(O::NfOrd)
   return min(factor_base_bound_bdf(O), factor_base_bound_bach(O))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     factor_base_bound_minkowski(O::NfOrd) -> Int
 

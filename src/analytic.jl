@@ -65,7 +65,7 @@ function analytic_eval(a::analytic_func{T}, b::T) where T<:Number
   return s
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    dickman_rho(x::Number, prec::Int=55) Number
 > Evaluates the Dickman-$\rho$ function at $x$.
@@ -87,7 +87,7 @@ function dickman_rho(x::Number, prec::Int=55)
   return analytic_eval(rho_coeff(x, prec), k-x)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    dickman_rho(x::Number, e::UnitRange{Int}, prec::Int=55) Number[]
 > Evaluates the Dickman-$\rho$ function at $i*x$ for all $i\in e$.
@@ -174,7 +174,7 @@ end
 
 #the function Ei = -integral(-x, infty, exp(-t)/t dt)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   exponential_integral(x::AbstractFloat) AbstractFloat
   ei(x::AbstractFloat) AbstractFloat
@@ -193,7 +193,7 @@ end
 
 #the function li = integral(0, x, dt/log(t))
 #             li(x) = Ei(log(x)) according to wiki and ?
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   logarithmic_integral(x::AbstractFloat) AbstractFloat
   li(x::AbstractFloat) AbstractFloat
@@ -216,7 +216,7 @@ Chapter IX, Question 18
 The formula (for n=365) is in the solutions.
 =#
 
-Markdown.doc"""
+@doc Markdown.doc"""
   rels_from_partial(n::Int, k::Int) Int
 
   Estimates the number of collision in k samples among n possibilities. Used 
@@ -241,7 +241,7 @@ Then
   P(W=x) = exp(-l)l^x/x!
 =#  
 
-Markdown.doc"""
+@doc Markdown.doc"""
   euler_phi(n::Int) Int
 
 >  The Euler ϕ function of n
@@ -273,7 +273,7 @@ function vol(n::Int, b::T) where T<:Number
   return b*sum(s)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     psi_guess(x::Number, B::Int) Number
 > Uses the dickman_rho function to estimate $\psi(x, B)$ the number
 > of $B$-smooth integers bounded by $x$.
@@ -282,7 +282,7 @@ function psi_guess(x::Number, B::Int)
   return x*dickman_rho(log(x)/log(B))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     psi_guess(x::Number, e::UnitRange, B::Int) Number
 > Uses the dickman_rho function to estimate $\psi(x^i, B)$ the number
 > of $B$-smooth integers bounded by $x^i$ for $i \in e$.

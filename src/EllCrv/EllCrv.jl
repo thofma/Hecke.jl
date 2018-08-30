@@ -246,7 +246,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     short_weierstrass_model(E::EllCrv{fmpq}) -> (EE::EllCrv, function(EllCrvPt), function(EllCrvPt))
 
@@ -372,7 +372,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     infinity(E::EllCrv) -> EllCrvPt
 
@@ -389,7 +389,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ison_curve(E::EllCrv{T}, coords::Array{T, 1}) -> Bool
 
@@ -424,7 +424,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     disc(E::EllCrv{T}) -> T
 
@@ -464,7 +464,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     j(E::EllCrv{T}) -> T
 > Computes the j-invariant of $E$.
@@ -509,7 +509,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
 > Adds two points on an elliptic curve.
@@ -587,7 +587,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     -(P::EllCrvPt) -> EllCrvPt
 
@@ -609,7 +609,7 @@ function -(P::EllCrvPt)
   return Q
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ==(P::EllCrvPt, Q::EllCrvPt) -> Bool
 
@@ -641,7 +641,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     *(n::Int, P::EllCrvPt) -> EllCrvPt
 

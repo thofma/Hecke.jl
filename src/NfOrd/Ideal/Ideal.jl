@@ -187,7 +187,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ideal(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
 
@@ -197,7 +197,7 @@ function ideal(O::NfAbsOrd, x::NfAbsOrdElem)
   return NfAbsOrdIdl(deepcopy(x))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ideal(O::NfOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = false) -> NfAbsOrdIdl
 
@@ -223,7 +223,7 @@ function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = f
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ideal(O::NfOrd, x::fmpz, y::NfOrdElem) -> NfAbsOrdIdl
 
@@ -241,7 +241,7 @@ function (S::NfAbsOrdIdlSet)()
    return NfAbsOrdIdl(order(S))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ideal(O::NfOrd, a::fmpz) -> NfAbsOrdIdl
 
@@ -249,7 +249,7 @@ Markdown.doc"""
 """
 ideal(O::NfAbsOrd, a::fmpz)  = NfAbsOrdIdl(O, deepcopy(a))
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ideal(O::NfOrd, a::Int) -> NfAbsOrdIdl
 
@@ -263,7 +263,7 @@ ideal(O::NfAbsOrd, a::Int) = NfAbsOrdIdl(O, a)
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order(x::NfAbsOrdIdl) -> NfOrd
 
@@ -271,7 +271,7 @@ Markdown.doc"""
 """
 order(a::NfAbsOrdIdlSet) = a.order
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     nf(x::NfAbsOrdIdl) -> AnticNumberField
 
@@ -280,7 +280,7 @@ Markdown.doc"""
 nf(x::NfAbsOrdIdl) = nf(order(x))
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order(I::NfAbsOrdIdl) -> NfOrd
 
@@ -294,7 +294,7 @@ Markdown.doc"""
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     *(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
     *(x::NfOrdElem, O::NfOrd) -> NfAbsOrdIdl
 
@@ -316,7 +316,7 @@ end
 #
 ###########################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_basis(A::NfAbsOrdIdl) -> Bool
 
@@ -347,7 +347,7 @@ function assure_has_basis(A::NfAbsOrdIdl)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     basis(A::NfAbsOrdIdl) -> Array{NfOrdElem, 1}
 
@@ -368,7 +368,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_basis_mat(A::NfAbsOrdIdl) -> Bool
 
@@ -376,7 +376,7 @@ Markdown.doc"""
 """
 @inline has_basis_mat(A::NfAbsOrdIdl) = isdefined(A, :basis_mat)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   basis_mat(A::NfAbsOrdIdl) -> fmpz_mat
 
@@ -450,7 +450,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_basis_mat_inv(A::NfAbsOrdIdl) -> Bool
 
@@ -458,7 +458,7 @@ Markdown.doc"""
 """
 @inline has_basis_mat_inv(A::NfAbsOrdIdl) = isdefined(A, :basis_mat_inv)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   basis_mat_inv(A::NfAbsOrdIdl) -> fmpz_mat
 
@@ -473,7 +473,7 @@ function basis_mat_inv(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     basis_mat_inv(A::NfAbsOrdIdl) -> FakeFmpqMat
 
@@ -494,7 +494,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_minimum(A::NfAbsOrdIdl) -> Bool
 
@@ -504,7 +504,7 @@ function has_minimum(A::NfAbsOrdIdl)
   return isdefined(A, :minimum)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     minimum(A::NfAbsOrdIdl) -> fmpz
 
@@ -570,7 +570,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_norm(A::NfAbsOrdIdl) -> Bool
 
@@ -610,7 +610,7 @@ function assure_has_norm(A::NfAbsOrdIdl)
   return nothing
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     norm(A::NfAbsOrdIdl) -> fmpz
 
@@ -632,7 +632,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_basis_princ_gen(A::NfAbsOrdIdl) -> Bool
 
@@ -642,7 +642,7 @@ function has_princ_gen(A::NfAbsOrdIdl)
   return isdefined(A, :princ_gen)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_basis_princ_gen_special(A::NfAbsOrdIdl) -> Bool
 
@@ -660,7 +660,7 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 
@@ -676,7 +676,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     in(x::NfOrdElem, y::NfAbsOrdIdl)
     in(x::nf_elem, y::NfAbsOrdIdl)
@@ -706,7 +706,7 @@ in(x::Integer, y::NfAbsOrdIdl) = in(order(y)(x),y)
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     inv(A::NfAbsOrdIdl) -> NfOrdFracIdl
 
@@ -775,7 +775,7 @@ function inv_maximal(A::NfAbsOrdIdl)
   error("Not implemented yet")
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isinvertible(A::NfAbsOrdIdl) -> Bool, NfOrdFracIdl
 
@@ -957,7 +957,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ispower(I::NfAbsOrdIdl) -> Int, NfAbsOrdIdl
     ispower(a::NfOrdFracIdl) -> Int, NfOrdFracIdl
 > Writes $a = r^e$ with $e$ maximal. Note: $1 = 1^0$.
@@ -1040,7 +1040,7 @@ function ispower(I::NfOrdFracIdl)
   return g, r^div(e, g)//s^div(f, g)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ispower(A::NfAbsOrdIdl, n::Int) -> Bool, NfAbsOrdIdl
     ispower(A::NfOrdFracIdl, n::Int) -> Bool, NfOrdFracIdl
 > Computes, if possible, an ideal $B$ s.th. $B^n==A$ holds. In this
@@ -1125,7 +1125,7 @@ function one(A::NfAbsOrdIdl)
   return ideal(order(A), 1)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isone(A::NfAbsOrdIdl) -> Bool
     isunit(A::NfAbsOrdIdl) -> Bool
@@ -1149,7 +1149,7 @@ iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod(x::NfOrdElem, I::NfAbsOrdIdl)
 
@@ -1307,7 +1307,7 @@ end
 # TH:
 # There is some annoying type instability since we pass to nmod_mat or
 # something else. Should use the trick with the function barrier.
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     pradical(O::NfOrd, p::fmpz) -> NfAbsOrdIdl
 
@@ -1402,7 +1402,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ring_of_multipliers(I::NfAbsOrdIdl) -> NfOrd
 
@@ -1453,7 +1453,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   return O1
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl) -> NfOrdFracIdl
 > The ideal $(a:b) = \{x \in K | xb \subseteq a\} = \hom(b, a)$
 > where $K$ is the number field.
@@ -1521,7 +1521,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     ideal(O::NfOrd, I::NfAbsOrdIdl) -> NfOrdFracIdl
 > The fractional ideal of $O$ generated by a Z-basis of $I$.
 """
@@ -1541,7 +1541,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_2_elem(A::NfAbsOrdIdl) -> Bool
 
@@ -1551,7 +1551,7 @@ function has_2_elem(A::NfAbsOrdIdl)
   return isdefined(A, :gen_two)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_weakly_normal(A::NfAbsOrdIdl) -> Bool
 
@@ -1562,7 +1562,7 @@ function has_weakly_normal(A::NfAbsOrdIdl)
         A.gens_weakly_normal == true) || has_2_elem_normal(A)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     has_2_elem_normal(A::NfAbsOrdIdl) -> Bool
 
@@ -2001,7 +2001,7 @@ end
 #
 ###################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
 > Test if ideals $I,J$ are coprime

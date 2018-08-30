@@ -6,7 +6,7 @@ function order(x::Generic.Res{fmpz}, fp::Dict{fmpz, Int64})
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
   isprimitive_root(x::Generic.Res{fmpz}, M::fmpz, fM::Dict{fmpz, Int64}) Bool
 
 >  Given x in Z/MZ, the factorisation of M (in fM), decide if x is primitive.
@@ -46,7 +46,7 @@ end
   gcd(|G_(k+l)|, a) = 1 for all l, thus a is a generator
 =#
   
-Markdown.doc"""
+@doc Markdown.doc"""
   gen_mod_pk(p::fmpz, mod::fmpz=0) fmpz
 
 >  Find an integer x s.th. x is a primtive root for all powers of the (odd) prime p. If mod is non zero, it finds a generator for Z/p^kZ modulo mod powers only.
@@ -102,7 +102,7 @@ mutable struct MapUnitGroupModM{T} <: Map{T, Nemo.NmodRing, HeckeMap, MapUnitGro
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   UnitGroup(R::Generic.ResRing{fmpz}) GrpAbFinGen, Map
 
 >  The unit group of R = Z/nZ together with the apropriate map.
@@ -244,7 +244,7 @@ function UnitGroup(R::Nemo.NmodRing, mod::fmpz=fmpz(0))
   return G, MapUnitGroupModM{typeof(G)}(G, R, dexp, dlog)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   solvemod(a::fmpz, b::fmpz, M::fmpz)
 
 >  Finds x s.th. ax == b mod M.
@@ -262,7 +262,7 @@ function solvemod(a::fmpz, b::fmpz, M::fmpz)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
   disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 
 >  Computes g s.th. a^g == b mod M. M has to be a power of an odd prime
@@ -361,7 +361,7 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   return g
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   disc_log_bs_gs{T}(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz)
 
 >  Tries to find g s.th. a^g == b under the assumption that g <= o.
@@ -403,7 +403,7 @@ function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T 
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
   disc_log_ph{T <:PolyElem}(a::Residue{T}, b::Residue{T}, o::fmpz, r::Int)
   disc_log_ph(a::Residue{fmpz}, b::Residue{fmpz}, o::fmpz, r::Int)
   disc_log_ph(a::Residue{fq_nmod_poly}, b::Residue{fq_nmod_poly}, o::fmpz, r::Int)
