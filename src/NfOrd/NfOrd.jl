@@ -103,9 +103,27 @@ field.
 
 @inline ismaximal_known(O::NfAbsOrd) = O.ismaximal != 0
 
-# The following function should actually do more!
-@inline ismaximal(O::NfAbsOrd) = O.ismaximal == 1
-
+Markdown.doc"""
+    ismaximal(R::NfAbsOrd) -> Bool
+> Tests if the order $R$ is maximal. This might trigger the 
+> the computation if the maximal order.
+"""
+function ismaximal(R::NfAbsOrd)
+  if R.ismaximal == 1
+    return true
+  end
+  if R.ismaximal == 2
+    return false
+  end
+  S = maximal_order(R)
+  if discriminant(S) == discriminant(R)
+    R.ismaximal = 1
+  else
+    R.ismaximal = 2
+  end
+  return R.ismaximal == 1
+end
+ 
 contains_equation_order(O::NfAbsOrd) = isinteger(gen_index(O))
 
 ################################################################################
