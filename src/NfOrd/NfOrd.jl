@@ -480,6 +480,10 @@ function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
     O.minkowski_gram_mat_scaled = (A, prec)
     A = deepcopy(A)
   end
+  # to ensure pos. definitenes, we add n to the diag.
+  for i=1:degree(O)
+    fmpz_mat_entry_add_ui!(A, i, i, UInt(rows(A)))
+  end
   return A
 end
 
