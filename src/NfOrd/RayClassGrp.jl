@@ -906,8 +906,12 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   mp.modulus_fin = m
   mp.modulus_inf = p
   mp.fact_mod = Q.factor
-  #mp.tame_mult_grp = mG.tame
-  #mp.wild_mult_grp = mG.wild
+  if isdefined(mG, :tame)
+    mp.tame_mult_grp = mG.tame
+  end
+  if isdefined(mG, :wild)
+    mp.wild_mult_grp = mG.wild
+  end
   mp.defining_modulus = (m, inf_plc)
   return X, mp
   
