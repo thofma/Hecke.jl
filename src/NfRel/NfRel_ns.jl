@@ -217,7 +217,7 @@ end
 #  Constructors and parent object overloading
 #
 ################################################################################
-Markdown.doc"""
+@doc Markdown.doc"""
     number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T -> NfRel_ns
 > Given polynomials $f = (f_1, \ldots, f_n)$ over soem number field $k$, construct
 > $$$K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
@@ -777,7 +777,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   return r
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).
@@ -829,7 +829,7 @@ function simple_extension(K::NfRel_ns)
   return Ka, NfRelToNfRel_nsMor(Ka, K, pe, emb)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
     absolute_field(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 

@@ -82,7 +82,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     gens(G::GrpAbFinGen) -> Array{GrpAbFinGenElem, 1}
 
 > The sequence of generators of $G$.
@@ -95,7 +95,7 @@ gens(G::GrpAbFinGen) = GrpAbFinGenElem[G[i] for i = 1:ngens(G)]
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     parent(x::GrpAbFinGenElem) -> GrpAbFinGen
 
@@ -131,7 +131,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     getindex(x::GrpAbFinGenElem, i::Int) -> fmpz
 
@@ -147,7 +147,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ==(a::GrpFinGenElem, b::GrpAbFinGenElem) -> Bool
 
@@ -164,7 +164,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     +(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -194,7 +194,7 @@ function +(x::GrpAbFinGenElem, y::GrpAbFinGenElem, L::GrpAbLattice = GroupLattic
   error("Cannot coerce elements into common structure")
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     -(x::GrpAbFinGenElem, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -206,7 +206,7 @@ function -(x::GrpAbFinGenElem, y::GrpAbFinGenElem)
   return n
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     -(x::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -217,7 +217,7 @@ function -(x::GrpAbFinGenElem)
   return n
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     *(x::fmpz, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -228,7 +228,7 @@ function *(x::fmpz, y::GrpAbFinGenElem)
   return GrpAbFinGenElem(y.parent, n)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     *(x::Integer, y::GrpAbFinGenElem) -> GrpAbFinGenElem
 
@@ -259,7 +259,7 @@ isone(a::GrpAbFinGenElem) = iszero(a.coeff)
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     (A::GrpAbFinGen)(x::Array{fmpz, 1}) -> GrpAbFinGenElem
 
@@ -273,7 +273,7 @@ function (A::GrpAbFinGen)(x::Array{fmpz, 1})
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     (A::GrpAbFinGen)(x::Array{Integer, 1}) -> GrpAbFinGenElem
 
@@ -286,7 +286,7 @@ function (A::GrpAbFinGen)(x::Array{T, 1}) where T <: Integer
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     (A::GrpAbFinGen)(x::fmpz_mat) -> GrpAbFinGenElem
 
@@ -306,7 +306,7 @@ function (A::GrpAbFinGen)()
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     getindex(A::GrpAbFinGen, i::Int) -> GrpAbFinGenElem
 
@@ -314,7 +314,10 @@ Markdown.doc"""
 > where the $1$ is at the $i$-th position.
 """
 function getindex(A::GrpAbFinGen, i::Int)
-  (i < 1 || i > ngens(A)) && error("Index out of range")
+  (i < 0 || i > ngens(A)) && error("Index ($i) out of range (1:$(ngens(A)))")
+  if i==0
+    return A(zero_matrix(FlintZZ, 1, ngens(A)))
+  end
   z = zero_matrix(FlintZZ, 1, ngens(A))
   for j in 1:ngens(A)
     z[1, j] = fmpz()
@@ -329,7 +332,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order(A::GrpAbFinGenElem) -> fmpz
 
@@ -358,7 +361,7 @@ end
 #
 ##############################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     rand(G::GrpAbFinGen) -> GrpAbFinGenElem
 
@@ -378,7 +381,7 @@ function rand_gen(G::GrpAbFinGen)
   return image(mS, rand(S))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     rand(G::GrpAbFinGen, B::fmpz) -> GrpAbFinGenElem
 
@@ -387,7 +390,7 @@ Markdown.doc"""
 """
 rand(G::GrpAbFinGen, B::fmpz) = issnf(G) ? rand_snf(G, B) : rand_gen(G, B)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     rand(G::GrpAbFinGen, B::Integer) -> GrpAbFinGenElem
 

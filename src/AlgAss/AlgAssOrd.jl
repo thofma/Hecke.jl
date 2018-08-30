@@ -559,7 +559,7 @@ end
 #
 ###############################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ring_of_multipliers(I::AlgAssAbsOrdIdl)
         
@@ -697,7 +697,7 @@ end
 
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     pradical(O::AlgAssAbsOrd, p::Int)
             
@@ -875,7 +875,7 @@ end
 
 
 #Steel Nebe paper
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     schur_index_at_real_plc(O::AlgAssAbsOrd)
         
@@ -918,7 +918,7 @@ end
 #
 ###############################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
         
@@ -1156,7 +1156,7 @@ end
 #
 ###############################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     MaximalOrder(O::AlgAssAbsOrd)
         
@@ -1180,7 +1180,7 @@ end
 #
 ###############################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     issplit(A::AlgAss)
         

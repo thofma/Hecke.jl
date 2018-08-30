@@ -136,7 +136,7 @@ function _psi_lower(N::fmpz, pr, a::Int=776, cl = ceil)
   return res, f  # res[i] <= psi(2^(i-1), B)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     psi_lower(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
@@ -158,7 +158,7 @@ function psi_lower(N::Integer, B::Int, a::Int = 776)
   return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, ceil)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     psi_upper(N::Integer, B::Int) -> Array{Int, 1}, fmpz_abs_series
     psi_upper(N::fmpz, B::Int) -> Array{Int, 1}, fmpz_abs_series
@@ -180,7 +180,7 @@ function psi_upper(N::Integer, B::Int, a::Int=771)
   return _psi_lower(fmpz(N), PrimesSet{Int}(2, B), a, floor)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    show_psi(N::Integer, B::Int)
    show_psi(N::fmpz, B::Int)
@@ -210,7 +210,7 @@ function show_psi(N::fmpz, B::Int)
   show_psi(BigInt(N), B)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     psi_lower(N::Integer, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series
     psi_lower(N::fmpz, B::NfFactorBase) -> Array{Int, 1}, fmpz_abs_series

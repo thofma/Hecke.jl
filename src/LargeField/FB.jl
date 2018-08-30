@@ -19,7 +19,7 @@ function induce_image(A::NfOrdIdl, S::Map)
   return B
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly) -> nmod_poly
 
   Compute x(y) mod z
@@ -33,7 +33,7 @@ function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
   return r
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
 
   Compute x(t-c)

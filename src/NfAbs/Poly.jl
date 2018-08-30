@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
   induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz) -> Generic.Poly{nf_elem}, fmpz
 
 > Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
@@ -28,7 +28,7 @@ function induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem},
   return c, pq
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   induce_rational_reconstruction(a::Generic.Poly{nf_elem}, M::fmpz) -> bool, Generic.Poly{nf_elem}
 
 > Apply rational reconstruction to the coefficients of $a$. Implicitly assumes
@@ -54,7 +54,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
   gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}) -> Generic.Poly{nf_elem}
 
 > A modular $\gcd$

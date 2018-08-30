@@ -176,7 +176,7 @@ function SMat(A::T; R::S = base_ring(A),
   return m
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     SMat{T}(A::Array{T, 2}) -> SMat{T}
 
 > Constructs the SMat (Hecke-sparse matrix) with coefficients of
@@ -216,7 +216,7 @@ end
 
 # a faster version for nmod_mat -> SMat{T}
 # it avoids the creation of elements in ResidueRing(FlintZZ, n)
-Markdown.doc"""
+@doc Markdown.doc"""
     SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
   
 > "Lifts" the entries in $A$ to a sparse matrix over $R$.
@@ -261,7 +261,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod_sym!(A::SMat{fmpz}, n::fmpz)
 
@@ -280,7 +280,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     SMat(A::SMat{fmpz}, n::Int) -> SMat{nmod}
 
 > Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
@@ -290,7 +290,7 @@ function SMat(A::SMat{fmpz}, n::Int)
   return SMat(A, R)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     SMat(A::SMat{fmpz}, R::Ring) -> SMat{elem_type(R)}
     SRow(A::SMat{fmpz}, R::Ring) -> SRow{elem_type(R)}
 
@@ -321,7 +321,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     transpose(A::SMat) -> SMat
 
@@ -648,7 +648,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
   valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
 
   Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the valence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
@@ -806,7 +806,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     vcat!{T}(A::SMat{T}, B::SMat{T})
 
@@ -824,7 +824,7 @@ function vcat!(A::SMat{T}, B::SMat{T}) where T
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     vcat{T}(A::SMat{T}, B::SMat{T})
 
@@ -844,7 +844,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     hcat!{T}(A::SMat{T}, B::SMat{T})
 
@@ -871,7 +871,7 @@ function hcat!(A::SMat{T}, B::SMat{T}) where T
   A.nnz = nnz + B.nnz #A.nnz may have changed - if B is longer
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     hcat{T}(A::SMat{T}, B::SMat{T})
 
@@ -905,7 +905,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     fmpz_mat{T <: Integer}(A::SMat{T})
 
@@ -923,7 +923,7 @@ function fmpz_mat(A::SMat{T}) where T <: Integer
   return B
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     fmpz_mat(A::SMat{fmpz})
 
@@ -946,7 +946,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     norm2(A::SRow{fmpz})
 
@@ -956,7 +956,7 @@ function norm2(A::SRow{fmpz})
   return sum([x*x for x= A.values])
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     hadamard_bound2(A::SMat{fmpz})
 
@@ -967,7 +967,7 @@ function hadamard_bound2(A::SMat{fmpz})
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximum(abs, A::SMat{fmpz}) -> fmpz
 
@@ -985,7 +985,7 @@ function maximum(::typeof(abs), A::SMat{fmpz})
   return abs(m)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximum(A::SMat{fmpz}) -> fmpz
 
@@ -1005,7 +1005,7 @@ end
 
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     minimum(A::SMat{fmpz}) -> fmpz
 
@@ -1029,7 +1029,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isupper_triangular(A::SMat)
  
 > Returns true iff $A$ is upper triangular.
@@ -1066,7 +1066,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     id{T}(::Type{SMat{T}}, n::Int) -> SMat{T}
 
 > The $n\times n$ identity matrix as a SMat of type T.
@@ -1079,7 +1079,7 @@ function id(::Type{SMat{T}}, n::Int) where {T}
   return A
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     id{S}(::Type{SMat}, R::S, n::Int) -> SMat{elem_type(R)}
     
 > The $n \times n$ identity over $R$ as a SMat.
@@ -1094,7 +1094,7 @@ function id(::Type{SMat}, R::Ring, n::Int)
   return A
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
    identity_matrix(::Type{SMat}, R::Ring, n::Int)
    identity_matrix(::Type{MatElem}, R::Ring, n::Int)
 > Create a sparse (resp. dense) $n$ times $n$ identity matrix over $R$.   
@@ -1107,7 +1107,7 @@ function identity_matrix(::Type{MatElem}, R::Ring, n::Int)
   return identity_matrix(R, n)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
    zero_matrix(::Type{SMat}, R::Ring, n::Int)
    zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
    zero_matrix(::Type{MatElem}, R::Ring, n::Int)
@@ -1188,7 +1188,7 @@ function Base.cat(dims::Tuple{Int, Int}, A::SMat...)
   return B
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isid{T}(A::SMat{T})
 
 > Tests if $A$ is the $n \times n$ identity.
@@ -1215,7 +1215,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
   toNemo(io::IOStream, A::SMat; name = "A")
 
   Prints the SMat as a julia-program into the file corresponding to io.
@@ -1234,7 +1234,7 @@ function toNemo(io::IOStream, A::SMat; name = "A")
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   toNemo(io::String, A::SMat; name = "A")
 
   Prints the SMat as a julia-program into the file named io.
@@ -1253,7 +1253,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     sparse{T}(A::SMat{T}) -> sparse{T}
 
@@ -1275,7 +1275,7 @@ function sparse(A::SMat{T}) where T
   return sparse(I, J, V)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     Array{T}(A::SMat{T}) -> Array{T, 2}
 

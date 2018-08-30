@@ -74,7 +74,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod!(A::SRow{fmpz}, n::Integer)
 
@@ -95,7 +95,7 @@ function mod!(A::SRow{fmpz}, n::Integer)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod!(A::SRow{fmpz}, n::fmpz)
 
@@ -117,7 +117,7 @@ function mod!(A::SRow{fmpz}, n::fmpz)
 end
 
 # Todo: Do not convert to fmpz
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod_sym!(A::SRow{fmpz}, n::Integer)
 
@@ -128,7 +128,7 @@ function mod_sym!(A::SRow{fmpz}, n::Integer)
   mod_sym!(A, fmpz(n))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod_sym!(A::SRow{fmpz}, n::fmpz)
 
@@ -174,7 +174,7 @@ function SRow(A::SRow{fmpz}, R::T) where T <: Ring
   return z
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     SMat(A::SMat{fmpz}, n::Int) -> SMat{Generic.Res{fmpz}}
     SRow(A::SMat{fmpz}, n::Int) -> SRow{Generic.Res{fmpz}}
 
@@ -352,7 +352,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     maximum(A::SRow{fmpz}) -> fmpz
 
@@ -362,7 +362,7 @@ function maximum(A::SRow{fmpz})
   return maximum(A.values)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     minimum(A::SRow{fmpz}) -> fmpz
 
@@ -378,7 +378,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     lift(a::SRow{nmod}) -> SRow{fmpz}
 
 > Lifts all entries in $a$.

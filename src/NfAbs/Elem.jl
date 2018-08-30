@@ -47,7 +47,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     rand(b::Array{nf_elem,1}, r::UnitRange)
 
@@ -60,7 +60,7 @@ function rand(b::Array{nf_elem,1}, r::UnitRange)
   return s
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     rand(b::Array{nf_elem,1}, r::UnitRange, terms::Int) -> nf_elem
 
@@ -148,7 +148,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     charpoly(a::nf_elem) -> fmpq_poly
 
@@ -165,7 +165,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   minpoly(a::nf_elem) -> fmpq_poly
 
@@ -260,7 +260,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    norm_div(a::nf_elem, d::fmpz, nb::Int) -> fmpq
 
@@ -372,7 +372,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     norm(f::PolyElem{nf_elem}) -> fmpq_poly
 
 The norm of $f$, that is, the product of all conjugates of $f$ taken
@@ -414,7 +414,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
   factor(f::fmpz_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
   factor(f::fmpq_poly, K::NumberField) -> Fac{Generic.Poly{nf_elem}}
 
@@ -431,7 +431,7 @@ function factor(f::fmpz_poly, K::AnticNumberField)
   return factor(evaluate(Qz(f), y))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
   factor(f::PolyElem{nf_elem}) -> Fac{Generic.Poly{nf_elem}}
 
 > The factorisation of f (using Trager's method).
@@ -597,7 +597,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
     roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
@@ -619,7 +619,7 @@ function elem_in_nf(a::nf_elem)
   return a
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     roots(f::Generic.Poly{nf_elem}) -> Array{nf_elem, 1}
 
@@ -682,7 +682,7 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
   return [ elem_in_nf(y) for y in A ]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     hasroot(f::PolyElem{nf_elem}) -> Bool, nf_elem
 > Tests if $f$ has a root and return it.    
 """
@@ -695,7 +695,7 @@ function hasroot(f::PolyElem{nf_elem})
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     hasroot(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
     hasroot(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
 > Tests if $f$ has a root in $K$, and return it.
@@ -716,7 +716,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ispower(a::nf_elem, n::Int) -> Bool, nf_elem
 
@@ -744,19 +744,19 @@ function ispower(a::nf_elem, n::Int)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     issquare(a::nf_elem) -> Bool, nf_elem
 > Tests if $a$ is a square and return the root if possible.
 """
 Nemo.issquare(a::nf_elem) = ispower(a, 2)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     sqrt(a::nf_elem) -> nf_elem
 > The square-root of $a$ or an error if this is not possible.
  """
 Nemo.sqrt(a::nf_elem) = root(a, 2)
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     root(a::nf_elem, n::Int) -> nf_elem
 
@@ -771,7 +771,7 @@ function root(a::nf_elem, n::Int)
   error("$a has no $n-th root")
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     roots(a::nf_elem, n::Int) -> Array{nf_elem, 1}
 > Compute all $n$-th roots of $a$, possibly none.
 """

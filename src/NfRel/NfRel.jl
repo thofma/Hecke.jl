@@ -204,7 +204,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
@@ -217,7 +217,7 @@ function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check:
   return K, K(gen(parent(f)))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     NumberField(f::Generic.Poly{T}, cached::Bool = false; check::Bool = false) where T
 > Given an irreducible polynomial $f$ over some number field $K$,
 > create the field $K[t]/f$.
@@ -395,7 +395,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     absolute_field(K::NfRel{nf_elem}, cached::Bool = false) -> AnticNumberField, Map, Map
 > Given an extension $K/k/Q$, find an isomorphic extensino of $Q$.
 """
@@ -404,7 +404,7 @@ function absolute_field(K::NfRel{nf_elem}, cached::Bool = false)
   return Ka, NfRelToNf(K, Ka, a, b, c), NfToNfMor(base_ring(K), Ka, a)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     absolute_field(K::NfRel{NfRelElem}, cached::Bool = false) -> NfRel, Map, Map
 > Given an extension $E/K/k$, find an isomorphic extension of $k$.
 > In a tower, only the top-most steps are collapsed.
@@ -499,7 +499,7 @@ Nemo.canonical_unit(a::NfRelElem) = a
 #######################################################################
 # convenience constructions
 #######################################################################
-Markdown.doc"""
+@doc Markdown.doc"""
     ispure_extension(K::NfRel) -> Bool
 > Tests if $K$ is pure, ie. if the defining polynomial is $x^n-g$.
 """
@@ -510,7 +510,7 @@ function ispure_extension(K::NfRel)
   return all(i->iszero(coeff(K.pol, i)), 1:degree(K)-1)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     iskummer_extension(K::Hecke.NfRel{nf_elem}) -> Bool
 > Tests if $K$ is Kummer, ie. if the defining polynomial is $x^n-g$ and
 > if the coefficient field contains the $n$-th roots of unity.
@@ -529,7 +529,7 @@ function iskummer_extension(K::Hecke.NfRel{nf_elem})
   return true
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     pure_extension(n::Int, gen::FacElem{nf_elem, AnticNumberField}) -> NfRel{nf_elem}, NfRelElem
     pure_extension(n::Int, gen::nf_elem) -> NfRel{nf_elem}, NfRelElem
 > Create the field extension with the defining polynomial $x^n-gen$.
@@ -758,7 +758,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
@@ -789,7 +789,7 @@ function issubfield(K::NfRel, L::NfRel)
   return false, NfRelToNfRelMor(K, L, L())
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
@@ -806,7 +806,7 @@ function isisomorphic(K::NfRel, L::NfRel)
   return issubfield(K, L)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     discriminant(K::AnticNumberField) -> fmpq
     discriminant(K::NfRel) -> 
 > The discriminant of the defining polynomial of $K$ {\bf not} the discriminant 
@@ -821,7 +821,7 @@ function Nemo.discriminant(K::NfRel)
   return d
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     discriminant(K::AnticNumberField, FlintQQ) -> fmpq
     discriminant(K::NfRel, FlintQQ) -> 
 > The absolute discriminant of the defining polynomial of $K$ {\bf not} the discriminant 

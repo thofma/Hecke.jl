@@ -1,6 +1,6 @@
 export simplify
 
-Markdown.doc"""
+@doc Markdown.doc"""
     simplify(K::AnticNumberField; canonical::Bool = false) -> AnticNumberField, NfToNfMor
  > Tries to find an isomorphic field $L$ given by a "nicer" defining polynomial.
  > By default, "nice" is defined to be of smaller index, testing is done only using

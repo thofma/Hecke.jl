@@ -48,7 +48,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isreal(P::InfPlc) -> Bool
 
@@ -58,7 +58,7 @@ function Base.isreal(P::InfPlc)
   return P.isreal
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     iscomplex(P::InfPlc) -> Bool
 
@@ -74,7 +74,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     infinite_place(K::AnticNumberField, i::Int) -> InfPlc
 
@@ -86,7 +86,7 @@ function infinite_place(K::AnticNumberField, i::Int)
   return InfPlc(K, i)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     infinite_places(K::AnticNumberField) -> Vector{InfPlc}
 
@@ -97,7 +97,7 @@ function infinite_places(K::AnticNumberField)
   return [ InfPlc(K, i) for i in 1:(r1 + r2)]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     real_places(K::AnticNumberField) -> Vector{InfPlc}
 
@@ -108,7 +108,7 @@ function real_places(K::AnticNumberField)
   return [ InfPlc(K, i) for i in 1:r1]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     complex_places(K::AnticNumberField) -> Vector{InfPlc}
 
@@ -125,7 +125,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     signs(a::nf_elem)          -> Dict{InfPlc, Int}
     signs(a::FacElem{nf_elem}) -> Dict{InfPlc, Int}
@@ -147,7 +147,7 @@ function signs(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}})
   return D
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     sign(a::nf_elem, P::InfPlc)          -> Int
     sign(a::FacElem{nf_elem}, P::InfPlc) -> Int
@@ -161,7 +161,7 @@ function sign(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::InfPlc)
   return signs(a, [P])[P]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     signs(a::nf_elem, l::Vector{InfPlc})          -> Dict{InfPlc, Int}
     signs(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Dict{InfPlc, Int}
@@ -201,7 +201,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ispositive(a::nf_elem, P::InfPlc)          -> Bool
     ispositive(a::FacElem{nf_elem}, P::InfPlc) -> Bool
@@ -214,7 +214,7 @@ function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, P::In
   return sign(a, P) > 0
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ispositive(a::nf_elem, l::Vector{InfPlc})          -> Bool
     ispositive(a::FacElem{nf_elem}, l::Vector{InfPlc}) -> Bool
@@ -226,7 +226,7 @@ function ispositive(a::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, l::Ar
   return all(x -> ispositive(a, x), (y for y in l if isreal(y)))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     istotally_positive(a::nf_elem)          -> Bool
     istotally_positive(a::FacElem{nf_elem}) -> Bool

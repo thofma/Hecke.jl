@@ -39,7 +39,7 @@
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     local_height_finite(P::EllCrvPt{fmpq}, p::Int) -> Float64
 
@@ -96,7 +96,7 @@ function local_height_finite(P, p)
   return Float64(numerator(L))/Float64(denominator(L)) * log(Float64(p))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     local_height_infinite(P::EllCrvPt{fmpq}, d = 20) -> Float64
 
@@ -168,7 +168,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     canonical_height(P::EllCrvPt) -> Float64
 
@@ -206,7 +206,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     isindependent(S::Array{EllCrvPt{fmpq}}) -> Bool
 
@@ -241,7 +241,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     agm(x::Float64, y::Float64, e::Int) -> Float64
 >   Returns the arithmetic-geometric mean of x and y.
 """
@@ -263,7 +263,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     real_period(E::EllCrv{fmpz}) -> Float64
 >   Returns the real period of an elliptic curve E with integer coefficients.
 """
@@ -304,7 +304,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     height(x::fmpq) -> Float64
 > Computes the height of a rational number x.
 """
@@ -316,7 +316,7 @@ end
 
 # every rational point is given by P = (a/c^2, b/c^3), gcd(a,c) = gcd(b,c) = 1. then h(P) = max(|a|, c^2)
 # but is it always in this form?
-Markdown.doc"""
+@doc Markdown.doc"""
     naive_height(P::EllCrvPt{fmpq}) -> Float64
 > Computes the naive height of a point $P$.
 """
@@ -329,7 +329,7 @@ function naive_height(P)
   return h
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     points_with_bounded_naive_height(E:EllCrv, B::Int) -> Array{EllCrvPt}
 > Computes all rational points on a curve E with integer coefficients which have naive height <= B.
 """
@@ -372,7 +372,7 @@ function points_with_bounded_naive_height(E, B)
   return points
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 torsion_points_via_height(E::EllCrv{fmpz}) ->  Array{EllCrvPt}
 > Returns the rational torsion points of a curve E with integer coefficients. 
 """
@@ -421,7 +421,7 @@ function torsion_points_via_height(E::EllCrv{fmpq})
   return torsion_points
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 independent_points_up_to(E::EllCrv{fmpq}, B::Int) -> Array{EllCrvPt}
 > Returns a maximal set of independent points with naive height <= B
 """
@@ -481,7 +481,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 mod_red(E::EllCrv, B::Int) -> (P::Array{Int}, N::Array{Nemo.fmpz})
 > input: E elliptic curve given in long form over ZZ
 > output: arrays P, N, where
@@ -511,7 +511,7 @@ function mod_red(E, B)
     return P, N  
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 check_weak_bsd(E::EllCrv, B::Int) -> (a::Float64, b::Float64)
 > checks weak bsd-conjecture for elliptic curve E given in long form over ZZ, positive integer B
 > returns linear regression values for log(log(B)) and sum of log(N_p/p) for p <= B

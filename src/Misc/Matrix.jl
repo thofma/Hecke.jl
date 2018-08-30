@@ -770,7 +770,7 @@ function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isposdef(a::fmpz_mat) -> Bool
 
 > Tests if $a$ positive definite by testing if all principal minors
@@ -867,7 +867,7 @@ function shift!(g::fmpz_mat, l::Int)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod!(M::fmpz_mat, p::fmpz) 
 > Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
@@ -882,7 +882,7 @@ function mod!(M::fmpz_mat, p::fmpz)
   nothing
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     mod(M::fmpz_mat, p::fmpz) -> fmpz_mat
 > Reduces every entry modulo $p$, ie. applies the mod function to every entry.
@@ -893,7 +893,7 @@ function mod(M::fmpz_mat, p::fmpz)
   return N
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     vcat(A::Array{Generic.Mat, 1}) -> Generic.Mat
     vcat(A::Array{fmpz_mat}, 1}) -> fmpz_mat
@@ -964,7 +964,7 @@ V = [e -divexact(b, g) ; f divexact(a, g)];
 
 then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 =#
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true) -> fmpz_mat, fmpz_mat, fmpz_mat
 
@@ -1106,7 +1106,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   isdiag(A::fmpz_mat)
 
@@ -1362,7 +1362,7 @@ end
 
 Base.cat(dims, A::Nemo.MatElem...) = cat(Tuple(dims), A...)
 
-Markdown.doc"""
+@doc Markdown.doc"""
     reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
 
 > For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
@@ -1382,7 +1382,7 @@ function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.Fie
   return A
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> MatElem
 
 > For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
@@ -1394,7 +1394,7 @@ function Nemo.reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo
   return C
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     find_pivot(A::Nemo.MatElem{<:Nemo.RingElem}) -> Array{Int, 1}
 
 > Find the pivot-columns of the reduced row echelon matrix $A$
@@ -1419,7 +1419,7 @@ function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
   return p
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem
 > Tries to solve $Ax = B$
 """
@@ -1442,7 +1442,7 @@ function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.F
   return true, sol
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem, MatElem
 > Tries to solve $Ax = B$, returns a solution and the nullspace.
 """
@@ -1481,7 +1481,7 @@ end
 #TODO: different to cansolve*(fmpz_mat) is hnf_with_tranformation -> hnf_with_trafo
 #maybe (definitely!) agree on one name and combine?
 
-Markdown.doc"""
+@doc Markdown.doc"""
     cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem
 > Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring.
 """
@@ -1519,7 +1519,7 @@ function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.R
   return true, transpose(z*T)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem, MatElem
 > Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring. If successful,
 > a basis for the nullspace is computed as well.
@@ -1573,7 +1573,7 @@ function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) wh
   return true, (z*T), N
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
    elementary_divisors(A::fmpz_mat) -> Array{fmpz, 1}
 > The elementary divisors of $A$, ie. the diagonal entries of the Smith normal form of $A$.
 """
@@ -1582,7 +1582,7 @@ function elementary_divisors(A::fmpz_mat)
   return [s[i,i] for i=1:min(cols(s), rows(s))]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
    maximal_elementary_divisors(A::fmpz_mat) -> fmpz
 > The largest elementary divisor of $A$, ie. the last diagonal entry of the Smith normal form of $A$.
 """

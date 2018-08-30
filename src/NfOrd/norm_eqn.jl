@@ -13,7 +13,7 @@ function norm_1_generators(A::Array{NfOrdIdl, 1})
   return id 
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     norm_equation(K::AnticNumerField, a) -> nf_elem
 > For $a$ an integer or rational, try to find $T \in K$ s.th. 
@@ -27,7 +27,7 @@ function norm_equation(K::AnticNumberField, a)
   error("no solution")
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    isnorm(K::AnticNumberField, a) -> Bool, nf_elem
 > For $a$ an integer or rational, try to find $T \in K$ s.th. $N(T) = a$
@@ -45,7 +45,7 @@ function isnorm(K::AnticNumberField, a::Rational)
   return isnorm(K, fmpq(a))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    isnorm(K::AnticNumberField, a::fmpz; extra::Array{fmpz, 1}) -> Bool, nf_elem
 > For a fmpz $a$, try to find $T \in K$ s.th. $N(T) = a$

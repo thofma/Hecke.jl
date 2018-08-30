@@ -1,4 +1,4 @@
-Markdown.doc"""
+@doc Markdown.doc"""
   lift(a::padic) -> fmpz
 
   Returns the positive canonical representative in Z. a needs

@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     regulator(x::Array{T, 1}, abs_tol::Int) -> arb
 

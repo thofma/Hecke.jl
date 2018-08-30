@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     order(a::NfRelOrdFracIdl) -> NfRelOrd
 
@@ -14,7 +14,7 @@ Markdown.doc"""
 """
 order(a::NfRelOrdFracIdl) = a.order
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     nf(a::NfRelOrdFracIdl) -> RelativeExtension
 
@@ -77,7 +77,7 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   return nothing
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     denominator(a::NfRelOrdFracIdl) -> fmpz
 
@@ -89,7 +89,7 @@ function denominator(a::NfRelOrdFracIdl)
   return a.den
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     numerator(a::NfRelOrdFracIdl) -> NfRelOrdIdl
 
@@ -138,7 +138,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     frac_ideal(O::NfRelOrd, M::PMat, M_in_hnf::Bool = false) -> NfRelOrdFracIdl
 
@@ -151,7 +151,7 @@ function frac_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}, M_in_hnf::Bool = false) wh
   return NfRelOrdFracIdl{T, S}(O, M)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     frac_ideal(O::NfRelOrd, M::Generic.Mat) -> NfRelOrdFracIdl
 
@@ -206,7 +206,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ==(a::NfOrdRelFracIdl, b::NfRelOrdFracIdl) -> Bool
 
@@ -246,7 +246,7 @@ function assure_has_norm(a::NfRelOrdFracIdl)
   return nothing
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     norm(a::NfRelOrdFracIdl{T, S}) -> S
 
@@ -267,7 +267,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     +(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
@@ -304,7 +304,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     *(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
 
 > Returns $a \cdot b$.
@@ -358,7 +358,7 @@ Base.:(^)(A::NfRelOrdFracIdl, b::Int) = Base.power_by_squaring(A, p)
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl) -> NfRelOrdFracIdl
       divexact(a::NfRelOrdFracIdl, b::NfRelOrdIdl) -> NfRelOrdFracIdl
@@ -444,7 +444,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     in(x::RelativeElement, y::NfRelOrdFracIdl)
 

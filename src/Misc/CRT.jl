@@ -66,7 +66,7 @@ mutable struct crt_env{T}
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    crt_env(p::Array{T, 1}) -> crt_env{T}
 
@@ -82,7 +82,7 @@ function show(io::IO, c::crt_env{T}) where T
   print(io, "CRT data for moduli ", c.pr[1:c.n])
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
 
@@ -225,7 +225,7 @@ function crt_inv_tree!(res::Array{T,1}, a::T, c::crt_env{T}) where T
   return res
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
    crt_inv(a::T, crt_env{T}) -> Array{T, 1}
 
@@ -290,7 +290,7 @@ function crt_test(a::crt_env{fmpz}, b::Int)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   crt(r1::PolyElem, m1::PolyElem, r2::PolyElem, m2::PolyElem) -> PolyElem
 
@@ -302,7 +302,7 @@ function crt(r1::PolyElem{T}, m1::PolyElem{T}, r2::PolyElem{T}, m2::PolyElem{T})
   return (r1*v*m2 + r2*u*m1) % m
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   crt_iterative(r::Array{T, 1}, m::Array{T,1}) -> T
 
@@ -319,7 +319,7 @@ function crt_iterative(r::Array{T, 1}, m::Array{T, 1}) where T
   return p
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   crt_tree(r::Array{T, 1}, m::Array{T,1}) -> T
 
@@ -349,7 +349,7 @@ function crt_tree(r::Array{T, 1}, m::Array{T, 1}) where T
   return V[end]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   crt(r::Array{T, 1}, m::Array{T,1}) -> T
 
@@ -399,7 +399,7 @@ function crt_test_time_all(np::Int, n::Int)
   end
 end  
 
-Markdown.doc"""
+@doc Markdown.doc"""
     induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool = false) -> fmpz_poly
 > Given integral polynomials $a$ and $b$ as well as coprime integer moduli
 > $p$ and $q$, find $f = a \bmod p$ and $f=b \bmod q$.
@@ -422,7 +422,7 @@ function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool =
   return c, pq
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     induce_crt(L::Array, c::crt_env{fmpz}) -> fmpz_poly
 > Given fmpz_poly polynomials $L[i]$ and a {{{crt_env}}}, apply the
 > {{{crt}}} function to each coefficient retsulting in a polynomial $f = L[i] \bmod p[i]$.
@@ -438,7 +438,7 @@ function induce_crt(L::Array, c::crt_env{fmpz})
   return res
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   _num_setcoeff!(a::nf_elem, n::Int, c::fmpz)
   _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
@@ -512,7 +512,7 @@ function show(io::IO, me::modular_env)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_init(K::AnticNumberField, p::fmpz) -> modular_env
   modular_init(K::AnticNumberField, p::Integer) -> modular_env
@@ -561,7 +561,7 @@ function modular_init(K::AnticNumberField, p::Integer; deg_limit::Int=0, max_spl
   return modular_init(K, fmpz(p), deg_limit = deg_limit, max_split = max_split)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_proj(a::nf_elem, me::modular_env) -> Array{fq_nmod, 1}
 
@@ -586,7 +586,7 @@ function modular_proj(a::nf_elem, me::modular_env)
   return me.res
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_proj(a::FacElem{nf_elem, AnticNumberField}, me::modular_env) -> Array{fq_nmod, 1}
 
@@ -614,7 +614,7 @@ function modular_proj(A::FacElem{nf_elem, AnticNumberField}, me::modular_env)
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_lift(a::Array{fq_nmod}, me::modular_env) -> nf_elem
 
@@ -634,7 +634,7 @@ function modular_lift(a::Array{fq_nmod, 1}, me::modular_env)
   return r
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_proj(a::Generic.Poly{nf_elem}, me::modular_env) -> Array
 
@@ -668,7 +668,7 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
   return me.Rp
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_lift(a::Array{fq_nmod_poly}, me::modular_env) -> Generic.Poly{nf_elem}
 
@@ -693,7 +693,7 @@ function modular_lift(a::Array{fq_nmod_poly, 1}, me::modular_env)
   return res
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   modular_proj(a::Generic.Mat{nf_elem}, me::modular_env) -> Array{Matrix}
   modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env) -> Array{Matrix}

@@ -9,7 +9,7 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 # Algorithm copies from the bad-primes paper
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 
@@ -41,7 +41,7 @@ function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
   return false, M[2,1], M[2,2]
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   rational_reconstruction{S}(a::PolyElem{S}, b::PolyElem{S})
 
@@ -60,7 +60,7 @@ end
 #      signature, not the best (fastest) interface, ....
 #However: for now it works.
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   rational_reconstruction(a::fmpz, b::fmpz)
   rational_reconstruction(a::Integer, b::Integer)
@@ -79,7 +79,7 @@ function rational_reconstruction(a::Integer, b::Integer)
   return rational_reconstruction(fmpz(a), fmpz(b))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rational_reconstruction(a::fmpz, b::fmpz, N::fmpz, D::fmpz) -> Bool, fmpz, fmpz
 > Given $a$ modulo $b$ and $N>0$, $D>0$ such that $2ND<b$, find $|x|\le N$, $0<y\le D$
 > satisfying $x/y \equiv a \bmod b$ or $a \equiv ya \bmod b$.
@@ -94,7 +94,7 @@ end
 #Note: the vector version might be useful - or the mult be previous den version
 #Note: missing reconstruction modulo a true ideal. W/o denominators
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
   rational_reconstruction(a::nf_elem, b::fmpz)
 

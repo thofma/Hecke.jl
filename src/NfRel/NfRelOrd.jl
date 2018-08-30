@@ -6,7 +6,7 @@ export pseudo_basis, basis_pmat
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       nf(O::NfRelOrd) -> RelativeExtension
 
@@ -14,7 +14,7 @@ Markdown.doc"""
 """
 nf(O::NfRelOrd) = O.nf
 
-Markdown.doc"""
+@doc Markdown.doc"""
     parent(O::NfRelOrd) -> NfRelOrdSet
 
 Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
@@ -22,7 +22,7 @@ number field.
 """
 parent(O::NfRelOrd) = O.parent
 
-Markdown.doc"""
+@doc Markdown.doc"""
     isequation_order(O::NfRelOrd) -> Bool
 
 > Returns whether $\mathcal O$ is the equation order of the ambient number
@@ -126,7 +126,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       pseudo_basis(O::NfRelOrd{T, S}) -> Vector{Tuple{RelativeElement{T}{T}, S}}
 
@@ -141,7 +141,7 @@ function pseudo_basis(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       basis_pmat(O::NfRelOrd) -> PMat
 
@@ -157,7 +157,7 @@ function basis_pmat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       inv_coeff_ideals(O::NfRelOrd{T, S}) -> Vector{S}
 
@@ -178,7 +178,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       basis_nf(O::NfRelOrd) -> Array{RelativeElement, 1}
 
@@ -194,7 +194,7 @@ function basis_nf(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       basis_mat(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
@@ -210,7 +210,7 @@ function basis_mat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       basis_mat_inv(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
@@ -313,7 +313,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       degree(O::NfRelOrd) -> Int
 
@@ -327,7 +327,7 @@ degree(O::NfRelOrd) = degree(nf(O))
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       deepcopy(O::NfRelOrd) -> NfRelOrd
 
@@ -377,7 +377,7 @@ function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::T
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       in(a::RelativeElement, O::NfRelOrd) -> Bool
 
@@ -393,7 +393,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       Order(K::RelativeExtension{T}, M::Generic.Mat{T}) -> NfRelOrd
 
@@ -410,7 +410,7 @@ function Order(L::RelativeExtension{S}, M::Generic.Mat{S}) where S <: RelativeEl
   return NfRelOrd{elem_type(base_ring(L)), NfRelOrdFracIdl{T}}(L, deepcopy(M))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       Order(K::RelativeExtension, M::PMat) -> NfRelOrd
 
@@ -422,7 +422,7 @@ function Order(L::RelativeExtension{T}, M::PMat{T, S}) where {T, S}
   return NfRelOrd{T, S}(L, deepcopy(M))
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       EquationOrder(L::RelativeExtension) -> NfRelOrd
 
@@ -437,7 +437,7 @@ function EquationOrder(L::RelativeExtension)
   return O
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       maximal_order(L::RelativeExtension) -> NfRelOrd
 
@@ -498,7 +498,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       trace_matrix(O::NfRelOrd{T, S}) -> Generic.Mat{T}
 
@@ -635,7 +635,7 @@ dedekind_poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) = dedekind_tes
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       poverorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
@@ -656,7 +656,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       pmaximal_overorder(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl}) -> NfRelOrd
 
@@ -694,7 +694,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
       +(R::NfRelOrd, S::NfRelOrd) -> NfRelOrd
 
@@ -762,7 +762,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
     denominator(a::RelativeElement, O::NfRelOrd) -> fmpz
 
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in

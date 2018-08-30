@@ -1,4 +1,4 @@
-Markdown.doc"""
+@doc Markdown.doc"""
     rand!(a::nf_elem, U::AbstractArray) -> nf_elem
 > Inplace, set the coefficients of $a$ to random elements in $U$.
 > $a$ is returned.
@@ -10,7 +10,7 @@ function rand!(a::nf_elem, U::AbstractArray)
   return a
 end    
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rand(K::AnticNumberField, U::AbstractArray) -> nf_elem
 > Find an element in $K$ where the coefficients are selceted at random in $U$.
 """
@@ -19,7 +19,7 @@ function rand(K::AnticNumberField, U::AbstractArray)
   return rand!(a, U)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rand!(A::Generic.Mat{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 > Inplace, replace each element in $A$ by an element where the coefficients are
 > sected at random in $U$.
@@ -34,7 +34,7 @@ function rand!(A::Generic.Mat{nf_elem}, U::AbstractArray)
   return A
 end    
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray) -> Generic.Mat{nf_elem}
 > Create a random matrix in $A$ where the coefficients are selected from $U$.
 """
@@ -42,7 +42,7 @@ function rand(A::Generic.MatSpace{nf_elem}, U::AbstractArray)
   return rand!(A(), U)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env) -> Array
 > Given an array of matrices as computed by \code{modular_proj},
 > compute a global pre-image using some efficient CRT.
@@ -57,7 +57,7 @@ function modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env)
   return A
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     mod!(A::Generic.Mat{nf_elem}, m::fmpz)
 > Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
 """
@@ -69,7 +69,7 @@ function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
   end
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     mod_sym!!(A::Generic.Mat{nf_elem}, m::fmpz)
 > Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
 """
@@ -87,7 +87,7 @@ function small_coeff(a::nf_elem, B::fmpz, i::Int)
   return cmpabs(z, B) <= 0
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz) -> Bool, Generic.Mat{nf_elem}
 > Apply \code{rational_reconstruction} to each entry of $M$.
 """
@@ -103,7 +103,7 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
       if all(i->small_coeff(a, sM, i), 1:a.elem_length)
         B[i,j] = a*di
       else
-        n, dn = rational_reconstruction2(a, M)
+        n, dn = algebraic_reconstruction(a, M)
         d*=dn
         if any(i->!small_coeff(d, sM, i), 1:a.elem_length)
           println("early $i $j abort")
@@ -115,7 +115,7 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
     end
   end
   println("final den: $d")
-  return true, B
+  return true, B//d
 end
 
 function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
@@ -131,19 +131,32 @@ function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   return true, B
 end
 
-function rational_reconstruction2(a::nf_elem, M::fmpz)
+function algebraic_reconstruction(a::nf_elem, M::fmpz)
   K = parent(a)
   n = degree(K)
-  m = hcat(MatrixSpace(FlintZZ, n, n)(1), representation_mat(a))
-  m = vcat(m, hcat(MatrixSpace(FlintZZ, n, n)(0), MatrixSpace(FlintZZ, n, n)(M)))
-  L = lll(m)
+  Znn = MatrixSpace(FlintZZ, n, n)
+  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) Znn(M)]
+  lll!(L)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
   n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
   return n,d
   return true, n//d
 end
 
-Markdown.doc"""
+function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
+  K = parent(a)
+  n = degree(K)
+  Znn = MatrixSpace(FlintZZ, n, n)
+  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) basis_matrix(M, Val{false})]
+  lll!(L)
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  return n,d
+  return true, n//d
+end
+
+
+@doc Markdown.doc"""
     divexact!(A::Generic.Mat{nf_elem}, p::fmpz) 
 > Inplace: divide each entry by $p$.
 """
@@ -182,7 +195,7 @@ function Nemo.solve_dixon(A::Generic.Mat{nf_elem}, B::Generic.Mat{nf_elem})
     mod!(y, fmpz(p))
     sol += y*pp
     pp *= p
-    fl, SOL = rational_reconstruction2(sol, pp)
+    fl, SOL = rational_reconstruction(sol, pp)
 #    t = A*sol-B
 #    mod!(t, pp)
 #    @assert iszero(t)

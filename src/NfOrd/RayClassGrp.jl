@@ -46,7 +46,7 @@ end
 ###############################################################################
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
     
@@ -792,7 +792,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   append!(tobeeval,princ_gens)
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp,expon)
+  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp,fmpz(expon))
   append!(evals,ev)
   @vprint :RayFacElem 1 "\n"
   
@@ -906,8 +906,12 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   mp.modulus_fin = m
   mp.modulus_inf = p
   mp.fact_mod = Q.factor
-  mp.tame_mult_grp = mG.tame
-  mp.wild_mult_grp = mG.wild
+  if isdefined(mG, :tame)
+    mp.tame_mult_grp = mG.tame
+  end
+  if isdefined(mG, :wild)
+    mp.wild_mult_grp = mG.wild
+  end
   mp.defining_modulus = (m, inf_plc)
   return X, mp
   
@@ -1156,7 +1160,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp, gcd(expo,n))
+  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp, fmpz(gcd(expo,n)))
   append!(evals, ev)
   @vprint :RayFacElem 1 "\n"
   
@@ -1404,28 +1408,6 @@ end
 #
 ##################################################################################
 
-function _aut_on_id(O::NfOrd, phi::Hecke.NfToNfMor, I::NfOrdIdl) 
-  
-  K=nf(O)
-  if I.is_principal==1
-    if isdefined(I, :princ_gen)
-      y=K(I.princ_gen)
-      y=O(phi(y), false)
-      return ideal(O,y)
-    else
-      y=K(I.gen_two)
-      y=O(phi(y), false)
-      J=ideal(O,I.gen_one,y)
-      J.is_principal=1
-      return J
-    end
-  else
-    y=K(I.gen_two)
-    y=O(phi(y), false)
-    return ideal(O,I.gen_one,y)
-  end
-end
-
 function change_into_coprime(mR::MapRayClassGrp, a::fmpz)
 
   m = minimum(mR.modulus_fin)
@@ -1568,8 +1550,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   return lp, sR
 end
 
-
-function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
+function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[], mp = false)
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
@@ -1599,10 +1580,14 @@ function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = 
   for k=1:length(Aut)
     imaggens=Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 
-      @vtime :RayFacElem 3 J = _aut_on_id(O, Aut[k], lgens[i])
+      @vtime :RayFacElem 3 J = induce_image(lgens[i], Aut[k])
       @vtime :RayFacElem 3 imaggens[i] = mR\J
     end
-    G[k] = hom(subs, imaggens, check = true)
+    if mp == false
+      G[k] = hom(subs, imaggens, check = true)
+    else
+      G[k] = hom([mp(x) for x = subs], [mp(x) for x = imaggens], check = true)
+    end
     @hassert :RayFacElem 1 isbijective(G[k])
   end
   return G
@@ -1615,7 +1600,7 @@ end
 #
 ##################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
     

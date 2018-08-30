@@ -57,7 +57,7 @@ end
 # 2 = ARF_RND_FLOOR = round towards -infinity
 # 3 = ARF_RND_CEIL = round towards +infinity
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     abs_upper_bound(x::arb, ::Type{fmpz}) -> fmpz
 
@@ -82,7 +82,7 @@ function abs_upper_bound(x::arb, ::Type{fmpz})
   return bound
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     abs_upper_bound(x::arb, ::Type{Float64}) -> Float64
 
@@ -106,7 +106,7 @@ function abs_upper_bound(x::arb, ::Type{Float64})
   return bound
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     upper_bound(x::arb, ::Type{fmpz}) -> fmpz
 
@@ -131,7 +131,7 @@ function upper_bound(x::arb, ::Type{fmpz})
   return bound
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     lower_bound(x::arb, ::Type{fmpz}) -> fmpz
 

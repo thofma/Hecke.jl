@@ -40,7 +40,7 @@ export torsion_unit_group
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     istorsion_unit(x::NfOrdElem, checkisunit::Bool = false) -> Bool
 
@@ -60,7 +60,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     torsion_unit_order(x::NfOrdElem, n::Int)
 
@@ -80,7 +80,7 @@ end
 #
 ################################################################################
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     torsion_units(O::NfOrd) -> Array{NfOrdElem, 1}
 
@@ -91,7 +91,7 @@ function torsion_units(O::NfOrd)
   return ar
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     torsion_units_gen(O::NfOrd) -> NfOrdElem
 
@@ -102,7 +102,7 @@ function torsion_units_gen(O::NfOrd)
   return g
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     torsion_units_gen_order(O::NfOrd) -> NfOrdElem
 
@@ -113,7 +113,7 @@ function torsion_units_gen_order(O::NfOrd)
   return g, length(ar)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     torsion_unit_group(O::NfOrd) -> GrpAb, Map
 

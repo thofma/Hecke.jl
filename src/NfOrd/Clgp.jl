@@ -323,7 +323,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   return U, r
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
@@ -340,7 +340,7 @@ function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = fa
 end
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     unit_group(O::NfOrd) -> GrpAbFinGen, Map
 
@@ -355,7 +355,7 @@ function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bo
   return unit_group(c, U)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
 

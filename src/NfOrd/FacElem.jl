@@ -240,7 +240,7 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, R::ArbField)
   return map(R, z)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl) -> fmpz
 > The valuation of $a$ at $P$.
 """
@@ -252,7 +252,7 @@ function valuation(a::FacElem{nf_elem, AnticNumberField}, P::NfOrdIdl)
   return val
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
     valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
     valuation(A::FacElem{NfOrdIdl, NfOrdIdlSet}, p::NfOrdIdl)
 > The valuation of $A$ at $P$.
@@ -265,7 +265,7 @@ function valuation(A::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}, p::NfOrdIdl)
   return sum(valuation(I, p)*v for (I, v) = A.fac)
 end
 
-Markdown.doc"""
+@doc Markdown.doc"""
      ideal(O::NfOrd, a::FacElem{nf_elem, AnticNumberField)
 > The factored fractional ideal $a*O$.
 """
@@ -284,7 +284,7 @@ end
 
 #the normalise bit ensures that the "log" vector lies in the same vector space
 #well, the same hyper-plane, as the units
-Markdown.doc"""
+@doc Markdown.doc"""
     conjugates_arb_log_normalise(x::nf_elem, p::Int = 10)
     conjugates_arb_log_normalise(x::FacElem{nf_elem, AnticNumberField}, p::Int = 10)
 > The "normalised" logarithms, ie. the array $c_i\log |x^{(i)}| - 1/n\log|N(x)|$,
