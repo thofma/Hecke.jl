@@ -87,6 +87,12 @@ function image(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
   return GrpAbFinGenElem(codomain(f), a.coeff * f.map)
 end
 
+function image(phi::GrpAbFinGenMap, U::GrpAbFinGen, add_to_lattice::Bool = !false)
+  G = domain(phi)
+  fl, inj = issubgroup(U, G)
+  return sub(codomain(phi), [phi(inj(U[i])) for i=1:ngens(U)], add_to_lattice)
+end
+
 function preimage(f::Map(GrpAbFinGenMap), a::GrpAbFinGenElem)
   return GrpAbFinGenElem(domain(f), a.coeff * f.imap)
 end
