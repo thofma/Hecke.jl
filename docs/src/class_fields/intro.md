@@ -30,7 +30,6 @@ the narrow class group, or strict class group.
 
 ```@docs
 ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Array{Hecke.InfPlc,1}; p_part, n_quo)
-ray_class_group(m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem})
 class_group(O::Hecke.NfAbsOrd{Nemo.AnticNumberField,Nemo.nf_elem}; bound, method, redo, unit_method, large)
 class_group(K::Nemo.AnticNumberField)
 norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool)
@@ -117,8 +116,6 @@ compositum(a::Hecke.ClassField, b::Hecke.ClassField)
 ==(a::Hecke.ClassField, b::Hecke.ClassField)
 intersect(a::Hecke.ClassField, b::Hecke.ClassField)
 prime_decomposition_type(C::Hecke.ClassField, p::Hecke.NfAbsOrdIdl)
-isconductor(C::Hecke.ClassField, m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem}, inf_plc::Array{Hecke.InfPlc,1}) 
-isconductor(C::Hecke.ClassField, m::Hecke.NfAbsOrdIdl{Nemo.AnticNumberField,Nemo.nf_elem})
 Hecke.issubfield(a::ClassField, b::ClassField)
 Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem)
 Hecke.islocal_norm(r::Hecke.ClassField, a::Hecke.NfAbsOrdElem, p::Hecke.NfAbsOrdIdl)
