@@ -815,6 +815,15 @@ function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupL
   return sub(G, [G(sub(h, j:j, ngens(GH)+1:cols(h))) for j=i+1:rows(h)])[1]
 end
 
+function Base.intersect(A::Array{GrpAbFinGen, 1})
+  a = first(A)
+  for b = A
+    a = intersect(a, b, true)
+  end
+  return a
+end
+
+
 function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   fl, GH, mG, mH = can_map_into_overstructure(L, G, H)
   if !fl
