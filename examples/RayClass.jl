@@ -58,7 +58,7 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
 end 
 
 
-Markdown.doc"""
+@doc Markdown.doc"""
 ***
     ray_class_group(m::NfOrdIdl, A::Array{InfPlc,1}=[]) -> FinGenGrpAb, Map
 
