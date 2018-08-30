@@ -1740,3 +1740,27 @@ function iscyclic(C::ClassField)
   return iscyclic(codomain(mp))
 end
 
+@doc Markdown.doc"""
+    ring_class_group(O::NfAbsOrd) 
+> The ring class group (Picard group) of $O$.    
+"""
+ring_class_group(O::NfAbsOrd) = picard_group(O)
+
+
+@doc Markdown.doc"""
+    ring_class_field(O::NfAbsOrd) -> ClassField
+> The ring class field of $O$, ie. the maximal abelian extension ramifed 
+> only at primes dividing the conductor with the automorphism group
+> isomorphic to the Picard group.
+"""
+function ring_class_field(O::NfAbsOrd)
+  M = maximal_order(O)
+  f = extend(conductor(O), M)
+  R, mR = ray_class_group(f)
+  P, mP = picard_group(O)
+  g, t = find_gens(mR)
+  h = hom(t, [mP \ contract(x, O) for x = g], check = true)
+  k = kernel(h, true)[1]
+  q, mq = quo(R, k)
+  return ray_class_field(mR, mq)
+end
