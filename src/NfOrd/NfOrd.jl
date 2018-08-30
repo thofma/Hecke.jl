@@ -1046,10 +1046,6 @@ end
 
 #for consistency
 
-MaximalOrder(R::NfAbsOrd) = maximal_order(R)
-
-MaximalOrder(R::NfAbsOrd, A::Array) = maximal_order(R, A)
-
 equation_order(K::AnticNumberField) = EquationOrder(K)
 
 function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
@@ -1118,31 +1114,6 @@ end
 
 @doc Markdown.doc"""
 ***
-    MaximalOrder(K::AnticNumberField) -> NfOrd
-    maximal_order(K::AnticNumberField) -> NfOrd
-
-Returns the maximal order of $K$.
-
-# Example
-
-```julia-repl
-julia> Qx, xx = FlintQQ["x"];
-julia> K, a = NumberField(x^3 + 2, "a");
-julia> O = MaximalOrder(K);
-```
-"""
-function MaximalOrder(K::AnticNumberField, cache::Bool = false)
-  O = EquationOrder(K)
-  @vprint :NfOrd 1 "Computing the maximal order ...\n"
-  O = MaximalOrder(O)
-  @vprint :NfOrd 1 "... done\n"
-  M = NfOrd(K, basis_mat(O), cache)
-  M.ismaximal = 1
-  return M
-end
-
-@doc Markdown.doc"""
-***
     MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
     ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
@@ -1160,11 +1131,18 @@ function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
 end
 
 @doc Markdown.doc"""
-***
     maximal_order(K::AnticNumberField) -> NfOrd
     ring_of_integers(K::AnticNumberField) -> NfOrd
 
-Returns the maximal order of $K$.
+> Returns the maximal order of $K$.
+
+# Example
+
+```julia-repl
+julia> Qx, xx = FlintQQ["x"];
+julia> K, a = NumberField(x^3 + 2, "a");
+julia> O = MaximalOrder(K);
+```
 """
 function MaximalOrder(K::AnticNumberField)
   try
