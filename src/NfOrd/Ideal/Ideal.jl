@@ -1308,8 +1308,7 @@ end
 # There is some annoying type instability since we pass to nmod_mat or
 # something else. Should use the trick with the function barrier.
 @doc Markdown.doc"""
-***
-    pradical(O::NfOrd, p::fmpz) -> NfAbsOrdIdl
+    pradical(O::NfOrd, p::{fmpz|Integer}) -> NfAbsOrdIdl
 
 > Given a prime number $p$, this function returns the $p$-radical
 > $\sqrt{p\mathcal O}$ of $\mathcal O$, which is

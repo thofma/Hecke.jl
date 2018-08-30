@@ -47,13 +47,14 @@ end
 
 
 @doc Markdown.doc"""
-***
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
     
-> Given a modulus with finite part $m$ and infinite part inf_plc, it returns the Ray Class Group Cl_m. If p_part is given, the function will return the largest quotient of the Ray Class Group of p-power order. If n_quo is given, it will return the quotient of the Ray Class Group by n
+> Given a modulus with finite part $m$ and infinite part $inf_plc$, it returns
+> the Ray Class Group $Cl_m$. If $p_part$ is given, the function will return the
+>  largest quotient of the Ray Class Group of p-power order. If $n_quo$ is given,
+>  it will return the quotient of the Ray Class Group by n
 
 """
-
 function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0)
 
   if n_quo!=0
