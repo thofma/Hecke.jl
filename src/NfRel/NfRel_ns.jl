@@ -777,13 +777,13 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   return r
 end
 
+
+#find isomorphic simple field AND the map
 @doc Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).
 """
-
-#find isomorphic simple field AND the map
 function simple_extension(K::NfRel_ns)
   n = ngens(K)
   g = gens(K)
