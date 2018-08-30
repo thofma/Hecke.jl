@@ -598,6 +598,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
     end
     i+=2
   end
+
   if length(G) > 1
     i = 3
     while i < n
@@ -612,7 +613,7 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
     i = 3
     while i < n
       if primes[i] 
-        if i-1 % deg == 0
+        if rem(i-1, deg) == 0
           push!(multiple, i)
         else
           push!(single, i)
@@ -625,7 +626,6 @@ function squarefree_for_conductorsQQ(O::NfOrd, n::Int, a::Array{Int, 1}; coprime
   else
     multiple = Int[i for i = 2:length(sqf) if sqf[i]]
   end
-  #@assert length(single) + length(multiple) == length(Int[i for i = 1:length(sqf) if sqf[i]])
    
   return single, multiple 
   
@@ -730,13 +730,6 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   end
   
   for el in single
-    for (q,d,nm2) in wild_list
-      if (fmpz(el)^exps)*nm2 > bound
-        continue
-      end
-      push!(final_list, (el*q*d))
-    end
-    #=
     for j = 2:length(wild_list)
       q,d,nm2 = wild_list[j]
       if (fmpz(el)^exps)*nm2 > bound
@@ -744,9 +737,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       end
       push!(final_list, (el*q*d))
     end
-    =#
   end
-
   return final_list
   
 end
