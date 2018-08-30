@@ -1,4 +1,4 @@
-export conductor, isconductor, norm_group, maximal_abelian_subfield, genus_field, content_ideal
+export conductor, isconductor, norm_group, maximal_abelian_subfield, genus_field, content_ideal, subfields, isnormal, iscentral, normal_closure
 
 ########################################################################################
 #
@@ -1000,13 +1000,13 @@ Markdown.doc"""
 > Computes the subgroup of the Ray Class Group $R$ given by the norm of the extension.
 ***
 """
-function norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true)
+function norm_group(K::NfRel{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
   base_ring(K) == nf(mR.modulus_fin.order) || error("field has to be over the same field as the ray class group")
-  return norm_group(K.pol, mR, isabelian)
+  return norm_group(K.pol, mR, isabelian, of_closure = of_closure)
 end
-function norm_group(K::NfRel_ns{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true)
+function norm_group(K::NfRel_ns{nf_elem}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
   base_ring(K) == nf(mR.modulus_fin.order) || error("field has to be over the same field as the ray class group")
-  return norm_group([is_univariate(x)[2] for x = K.pol], mR, isabelian)
+  return norm_group([is_univariate(x)[2] for x = K.pol], mR, isabelian, of_closure = of_closure)
 end
  
 Markdown.doc"""
@@ -1023,8 +1023,8 @@ Markdown.doc"""
    
 ***
 """
-function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool = true)
-  return norm_group([f], mR, isabelian)
+function norm_group(f::Nemo.PolyElem, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false)
+  return norm_group([f], mR, isabelian, of_closure = of_closure)
 end
 
 function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false) where T <: PolyElem{nf_elem}
@@ -1253,7 +1253,154 @@ function genus_field(A::ClassField, k::AnticNumberField)
   h = norm_group_map(A, B, x -> norm(mp, x))
   return ray_class_field(A.rayclassgroupmap, GrpAbFinGenMap(A.quotientmap * quo(domain(h), kernel(h)[1])[2]))
 end
- 
+
+Markdown.doc"""
+    subfields(C::ClassField, d::Int) -> Array{ClassField, 1}
+> Find all subfields of $C$ of degree $d$ as class fields.    
+> Note: this will not find all subfields over $Q$, but only the ones
+> sharing the same base field.
+"""
+function subfields(C::ClassField, d::Int) 
+  mR = C.rayclassgroupmap
+  mQ = C.quotientmap
+
+  return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), index = d, fun = (x,y) -> quo(x, y, false)[2])]
+end
+
+Markdown.doc"""
+    subfields(C::ClassField) -> Array{ClassField, 1}
+> Find all subfields of $C$ as class fields.    
+> Note: this will not find all subfields over $Q$, but only the ones
+> sharing the same base field.
+"""
+function subfields(C::ClassField)
+  mR = C.rayclassgroupmap
+  mQ = C.quotientmap
+
+  return ClassField[ray_class_field(mR, GrpAbFinGenMap(mQ*x)) for x = subgroups(codomain(mQ), fun = (x,y) -> quo(x, y, false)[2])]
+end
+
+Markdown.doc"""
+    normal_closure(C::ClassField) -> ClassField
+> For a ray class field $C$ extending a normal base field $k$, compute the
+> normal closure over $Q$.
+"""
+function normal_closure(C::ClassField)
+  c = defining_modulus(C)
+  k = base_field(C)
+  if length(c[2]) > 0
+    inf = real_places(k)
+  else
+    inf = InfPlc[]
+  end
+  aut = automorphisms(k)
+  fin = lcm([induce_image(c[1], x) for x = aut])
+
+  D = ray_class_field(fin, inf, n_quo = Int(exponent(codomain(C.quotientmap))))
+  h = norm_group_map(D, C)
+  act = Hecke._act_on_ray_class(D, aut)
+  k = kernel(h, true)[1]
+
+  k = intersect([x(k)[1] for x = act])
+
+  q, mq = quo(domain(h), k)
+  return ray_class_field(D.rayclassgroupmap, GrpAbFinGenMap(D.quotientmap * mq))
+end
+
+function rewrite_with_conductor(C::ClassField)
+  c, inf = conductor(C)
+  if defining_modulus(C) == (c, inf)
+    return C
+  end
+  E = ray_class_field(C.rayclassgroupmap)
+  D = ray_class_field(c, inf, n_quo = Int(exponent(codomain(C.quotientmap))))
+  h = norm_group_map(E, D)
+  q, mq = quo(codomain(h), h(GrpAbFinGenMap(E.quotientmap)(kernel(GrpAbFinGenMap(C.quotientmap), true)[1])[1])[1])
+  C = ray_class_field(D.rayclassgroupmap, GrpAbFinGenMap(D.quotientmap*mq))
+  return C
+end
+
+function _act_on_ray_class(C::ClassField, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
+  return _act_on_ray_class(C.rayclassgroupmap, Aut, C.quotientmap)
+end
+
+Markdown.doc"""
+    isnormal(C::ClassField) -> Bool
+> For a class field $C$ defined over a normal base field $k$, decide
+> if $C$ is normal over $Q$.
+"""
+function isnormal(C::ClassField)
+  aut = automorphisms(base_field(C))
+  c, inf = conductor(C)
+
+  if any(x-> c != induce_image(c, x), aut)
+    return false
+  end
+  s1 = Set(inf)
+  if any(x -> s1 != Set(induce_image(y, x) for y = s1), aut)
+    return false
+  end
+  C = rewrite_with_conductor(C)
+  mR = C.rayclassgroupmap
+  act = _act_on_ray_class(mR, aut)
+  k = kernel(GrpAbFinGenMap(C.quotientmap), true)[1]
+  #normal iff kernel is invariant as a set
+  return all(x -> iseq(x(k)[1], k), act)
+end
+
+Markdown.doc"""
+    iscentral(C::ClassField) -> Bool
+> For a class field $C$ defined over a normal base field $k$, decide
+> if $C$ is central over $Q$.
+"""
+function iscentral(C::ClassField)
+  aut = automorphisms(base_field(C))
+  c, inf = conductor(C)
+
+  if any(x-> c != induce_image(c, x), aut)
+    return false
+  end
+  s1 = Set(inf)
+  if any(x -> s1 != Set(induce_image(y, x) for y = s1), aut)
+    return false
+  end
+  C = rewrite_with_conductor(C)
+  mR = C.rayclassgroupmap
+  act = _act_on_ray_class(mR, aut)
+  k = kernel(GrpAbFinGenMap(C.quotientmap), true)
+  #central iff action is trivial on the kernel
+  g = [k[2](k[1][i]) for i = 1:ngens(k[1])]
+
+  return all(x -> all(y -> x(y) == y, g), act)
+end
+
+Markdown.doc"""
+    induce_image(P::InfPlc, m :: Map{AnticNumberField, AnticNumberField}) -> InfPlc
+> Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
+> this is unique.
+"""
+function induce_image(P::InfPlc, m :: Map{AnticNumberField, AnticNumberField})
+  k = number_field(P)
+  Qx = parent(k.pol)
+  h = Qx(m(gen(k)))
+  im = h(P.r)
+  lp = infinite_places(codomain(m))
+  return lp[findfirst(x -> overlaps(lp[x].r, im), 1:length(lp))]
+end
+
+function number_field(P::InfPlc)
+  return P.K
+end
+
+function lcm(A::AbstractArray{<:NfAbsOrdIdl})
+  a = first(A)
+  a = ideal(order(a), 1)
+  for b = A
+    a = lcm(a, b)
+  end
+  return a
+end
+
 Markdown.doc"""
     is_univariate(f::Generic.MPoly{nf_elem}) -> Bool, PolyElem{nf_elem}
 > Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
@@ -1415,7 +1562,9 @@ function minimum(m::T, I::NfOrdFracIdl) where T <: Map{AnticNumberField, AnticNu
   return minimum(m, numerator(I))//denominator(I)
 end
 
+#TODO: change order!!! this only works for maximal orders
 function Base.intersect(I::NfAbsOrdIdl, R::NfAbsOrd)
+  @assert ismaximal(R)
   if number_field(R) == number_field(order(I))
     return I
   end
@@ -1426,6 +1575,7 @@ end
 Base.intersect(R::NfAbsOrd, I::NfAbsOrdIdl) = intersect(I, R)
 
 function Base.intersect(I::NfOrdFracIdl, R::NfAbsOrd)
+  @assert ismaximal(R)
   n, d = integral_split(I)
   return intersect(n, R)
 end
