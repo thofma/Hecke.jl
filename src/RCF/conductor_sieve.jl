@@ -414,7 +414,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   e = Int((m-1)*k)
   for (el,norm) in extra_list
     for i=1:l
-      if (list[i]^d) * norm > bound
+      if (list[i]^(e*d)) * norm > bound
         continue
       end
       push!(final_list, (list[i]*el, (list[i]^(e*d))*norm))
@@ -492,7 +492,7 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
         if nn>bound
           continue
         end
-        d2=merge(max, d1, wild_list[s][2]) 
+        d2 = merge(max, d1, wild_list[s][2]) 
         if nisc!=1
           push!(wild_list, (q*wild_list[s][1], d2, nn))
         else

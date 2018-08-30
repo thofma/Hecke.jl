@@ -673,7 +673,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
   end
   K=nf(O)
   
-  discr=fmpz(1)
+  discr = fmpz(1)
   mp=inv(C.quotientmap) * C.rayclassgroupmap 
   R=domain(mp)
   
@@ -697,15 +697,15 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
     end
     qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
     discr*=fmpz(p.minimum)^qw
-    if discr>bound
+    if discr > bound
       @vprint :QuadraticExt 2 "too large\n"
       return false
-    else
-      if haskey(abs_disc, p.minimum)
-        abs_disc[p.minimum]+=qw
-      else 
-        abs_disc[p.minimum]=qw
-      end
+    #else
+    #  if haskey(abs_disc, p.minimum)
+    #    abs_disc[p.minimum] += qw
+    #  else 
+    #    abs_disc[p.minimum] = qw
+    #  end
       #for q in keys(tmg)
       #  if minimum(q)==minimum(p) 
       #    relative_disc[q]=ap
@@ -720,57 +720,62 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
     for (p,v) in lp
       prime_power[p]=p^v
     end
-    wldg=mr.wild_mult_grp
-    primes_done=fmpz[]
+    wldg = mr.wild_mult_grp
+    primes_done = fmpz[]
     for p in keys(wldg)
       if p.minimum in primes_done
         continue
       end 
+      np = p.minimum^divexact(degree(O), prime_decomposition_type(O,Int(p.minimum))[1][2])
       push!(primes_done, p.minimum) 
-      ap=n*lp[p]
+      ap = n*lp[p]
       if cyc_prime
-        ap-=lp[p]
+        ap -= lp[p]
       else
         if length(lp) > 1
-          i_without_p = ideal(O,1)
-          for (p2,vp2) in lp
+          i_without_p = ideal(O, 1)
+          for (p2, vp2) in lp
             (p != p2) && (i_without_p *= prime_power[p2])
           end
-
-          alpha, beta = idempotents(prime_power[p],i_without_p)
+          alpha, beta = idempotents(prime_power[p], i_without_p)
         end
-        s=lp[p]
+        s = lp[p]
         @hassert :QuadraticExt 1 s>=2
         els=GrpAbFinGenElem[]
         for k=2:lp[p]      
-          s=s-1
-          pk=p^s
-          pv=pk*p
-          gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a,n)
-          for i=1:length(gens)
-            push!(els,mp\ideal(O,gens[i]))
+          s = s-1
+          pk = p^s
+          pv = pk*p
+          gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
+          for i = 1:length(gens)
+            push!(els, mp\ideal(O, gens[i]))
           end
-          ap-=order(quo(R,els)[1])
+          o = order(quo(R,els)[1])
+          ap -= o
+          tentative_ap = ap - (lp[p] - k + 1)*o
+          tentative_discr = discr * (np^tentative_ap)
+          if tentative_discr > bound
+            return false
+          end
           @hassert :QuadraticExt 1 ap>0
         end
         if haskey(tmg, p)
           push!(els, mp\ideal(O,tmg[p].generators[1]))
         end
-        ap-=order(quo(R,els)[1])
+        ap -= order(quo(R,els)[1])
         @hassert :QuadraticExt 1 ap>0
       end
-      td=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
-      np=p.minimum^td
-      discr*=np
+      np1 = np^ap
+      discr *= np1
       if discr>bound
         @vprint :QuadraticExt 2 "too large\n"
         return false
-      else
-        if haskey(abs_disc, p.minimum)
-          abs_disc[p.minimum]+=td
-        else 
-          abs_disc[p.minimum]=td
-        end
+      #else
+      # if haskey(abs_disc, p.minimum)
+      #    abs_disc[p.minimum] += np1
+      #  else 
+      #    abs_disc[p.minimum] = np1
+      #  end
       #  for q in keys(tmg)
       #    if minimum(q)==minimum(p) 
       #      relative_disc[q]=ap
@@ -780,7 +785,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
     end
   end
   #C.relative_discriminant=relative_disc
-  C.absolute_discriminant=abs_disc
+  #C.absolute_discriminant=abs_disc
   return true
 
 end
@@ -824,7 +829,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
     else
       ap=n*v
       pow=Int(p)^Int(v)
-      el=R(1)
+      el = R(1)
       if cyc_prime
         ap-=v
       else
