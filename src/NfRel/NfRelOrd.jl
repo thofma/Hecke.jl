@@ -451,13 +451,11 @@ function MaximalOrder(L::RelativeExtension)
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
-    O = MaximalOrder(L)
+    O = MaximalOrder(EquationOrder(L))
     _set_maximal_order_of_nf_rel(L, O)
     return O
   end
 end
-
-MaximalOrder(L::RelativeExtension) = MaximalOrder(EquationOrder(L))
 
 function maximal_order_via_absolute(L::NfRel)
   Labs, lToLabs, kToLabs = absolute_field(L)
