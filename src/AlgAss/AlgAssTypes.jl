@@ -71,11 +71,11 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
                                    # (this is the index of the equation order
                                    #  in the given order)
   disc::fmpz                       # Discriminant
-  
+
   ismaximal::Int                   # 0 Not known
                                    # 1 Known to be maximal
                                    # 2 Known to not be maximal
-                                   
+
   #trace_mat::fmpz_mat              # The reduced trace matrix (if known)
   trred_matrix::fmpz_mat
 
@@ -96,7 +96,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     r.basis_mat_inv = inv(r.basis_mat)
     return r
   end
-  
+
   function AlgAssAbsOrd{S}(A::S, basis_mat::FakeFmpqMat) where {S}
     r = AlgAssAbsOrd{S}(A)
     d = dim(A)
@@ -141,33 +141,17 @@ end
 
 mutable struct AlgAssAbsOrdIdl{S, T}
   order::AlgAssAbsOrd                     # Order containing it
-  basis_alg::Vector{AlgAssAbsOrdElem{S, T}} # Basis of the ideal as array of elements of the order
+  basis::Vector{AlgAssAbsOrdElem{S, T}} # Basis of the ideal as array of elements of the order
   basis_mat::fmpz_mat              # Basis matrix of ideal wrt basis of the order
   gens::Vector{AlgAssAbsOrdElem{S, T}}# Generators of the ideal 
-  
-  function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, basis::Vector{AlgAssAbsOrdElem{S, T}}) where {S, T}
-    r = new{S, T}()
-    d = O.dim
-    r.order = O
-    r.basis_alg = basis
-    r.basis_mat = zero_matrix(FlintZZ, d, d)
-    for i = 1:d
-      el = elem_in_basis(basis[i])[j]
-      for j = 1:d
-        r.basis_mat[i,j] = el[j]
-      end
-      r.basis_mat = _hnf(r.basis_mat, :lowerleft)
-    end
-    return r
-  end
 
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
     r = new{S, T}()
     r.order = O
     d = O.dim
-    r.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(undef, d)
+    r.basis = Vector{AlgAssAbsOrdElem{S, T}}(undef, d)
     for i = 1:d
-      r.basis_alg[i] = elem_from_mat_row(O, M, i)
+      r.basis[i] = elem_from_mat_row(O, M, i)
     end
     r.basis_mat = M
     return r

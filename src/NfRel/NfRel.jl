@@ -212,7 +212,7 @@ end
 """
 function NumberField(f::Generic.Poly{T}, s::String; cached::Bool = false, check::Bool = false) where T
   S = Symbol(s)
-  !check && !isirreducible(f) && error("Polynomial must be irreducible")
+  check && !isirreducible(f) && error("Polynomial must be irreducible")
   K = NfRel{T}(f, S, cached)
   return K, K(gen(parent(f)))
 end

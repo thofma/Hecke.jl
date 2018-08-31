@@ -704,7 +704,7 @@ function _dec_com(A::AlgAss)
   end
 end
 
-function _dec_com_gen(A::AlgAss) 
+function _dec_com_gen(A::AlgAss{T}) where {T <: FieldElem}
   if dim(A) == 1
     A.issimple = 1
     return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
@@ -725,7 +725,7 @@ function _dec_com_gen(A::AlgAss)
       continue
     end
 
-    if isirreducible(f)
+    if degree(f) == dim(A) && isirreducible(f)
       A.issimple = 1
       return [(A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A))))]
     end
@@ -767,10 +767,10 @@ function _dec_com_gen(A::AlgAss)
 
     A.issimple = 2
 
-    res = Vector{Tuple{AlgAss{T}, morphism_type(A)}}()
+    res = Vector{Tuple{typeof(A), morphism_type(A)}}()
     for idem in idems
       S, StoA = subalgebra(A, idem, true)
-      decS = _dec_com_finite(S)
+      decS = _dec_com_gen(S)
       for (B, BtoS) in decS
         BtoA = compose_and_squash(StoA, BtoS)
         push!(res, (B, BtoA))
