@@ -39,9 +39,10 @@ function class_group_get_pivot_info(clg::ClassGrpCtx)
   # If we are in the full rank case, they come from the hnf itself,
   # Otherwise we look at the echelon form of the reduction.
 
+  @vtime_add_elapsed :ClassGroup 1 clg :hnf_time ntp = non_trivial_pivot(clg.M)::BitSet
   @vtime_add_elapsed :ClassGroup 1 clg :hnf_time h = check_index(clg.M)
   clg.h = h
-  return (h, non_trivial_pivot(clg.M)::BitSet)
+  return (h, ntp)
 end
 
 ################################################################################

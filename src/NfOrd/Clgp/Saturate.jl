@@ -188,7 +188,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   while true
     e = saturate_exp(c, n, stable)
     if rows(e) == 0
-      @vprint :ClassGroup 2  "sat yielded nothing new at ", stable, success
+      @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success
       return success
     end
     se = SMat(e)'
@@ -227,7 +227,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
         success = true
         fac_a = divexact(fac_a, n)
         Hecke.class_group_add_relation(d, x, fac_a)
-        @vprint :ClassGroup 2  "sat added new relation\n"
+        @vprint :ClassGroup 1  "sat added new relation\n"
         if iszero(fac_a) #to make sure the new unit is used!
           #find units can be randomised...
           #maybe that should also be addressed elsewhere
@@ -242,8 +242,8 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
     if wasted 
       stable *= 2
     else
-      @vprint :ClassGroup "sat success at ", stable, "\n"
-      return true
+      @vprint :ClassGroup  1 "sat success at ", stable, "\n"
+      return success
     end
   end
 end
