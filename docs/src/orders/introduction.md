@@ -14,7 +14,11 @@ This is in particular important for everything related to embeddings of number f
 By an absolute number field we mean finite extensions of $\mathbf Q$, which is
 of type `AnticNumberField` and whose elements are of type `nf_elem`. Such an
 absolute number field $K$ is always given in the form $K = \mathbf Q(\alpha) =
-\mathbf Q[X]/(f)$, where $f \in \mathbf Q[X]$ is an irreducible polynomial.  We
+\mathbf Q[X]/(f)$, where $f \in \mathbf Q[X]$ is an irreducible polynomial.
+See [here](@ref NumberFieldsLink) for more information on the different
+types of fields supported.
+
+We
 call $(1,\alpha,\alpha^2,\dotsc,\alpha^{d-1})$, where $d$ is the degree $[K :
 \mathbf Q]$ the *power basis* of $K$. If $\beta$ is any element of $K$, then
 the *representation matrix* of $\beta$ is the matrix representing $K \to K,

@@ -64,19 +64,6 @@ Maximal order of Number field over Rational Field with defining polynomial x^3 +
 with basis [1,a,a^2]
 ```
 
-## Manual table of contents
-
-```@contents
-Pages = [
-  "number_fields/intro.md",
-  "orders/introduction.md",
-  "orders/basics.md",
-  "orders/ideals.md",
-  "class_fields/intro.md",
-  ]
-  Depth = 2
-```
-
 The documentation of the single functions can also be accessed at the julia prompt. Here is an example:
 
 ```
@@ -88,10 +75,5 @@ search: signature
   signature(O::NfMaximalOrder) -> Tuple{Int, Int}
 
   |  Returns the signature of the ambient number field of \mathcal O.
-```
-
-## Contents
-```@contents
-Pages = ["toc.md"]
 ```
 

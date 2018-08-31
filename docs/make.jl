@@ -10,6 +10,21 @@ makedocs(
     format = :html,
     sitename = "Hecke",
     doctest = !false,
+    pages = [
+      "index.md",
+      "number_fields/intro.md",
+      "Orders" => [ "orders/introduction.md",
+                    "orders/basics.md",
+                    "orders/ideals.md"
+                  ],
+      "Maximal Orders" => [ "MaximalOrders/Introduction.md",
+                            "MaximalOrders/Creation.md",
+                            "MaximalOrders/Elements.md",
+                            "MaximalOrders/Ideals.md"
+                          ],
+      "abelian/introduction.md",
+      "class_fields/intro.md"
+      ]
 )
 
 # Hack around to get syntax highlighting working
