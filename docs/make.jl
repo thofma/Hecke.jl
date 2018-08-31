@@ -1,23 +1,48 @@
 using Documenter, Hecke, Markdown, Pkg
 
+function Markdown.plain(io::IO, ::Markdown.HorizontalRule)
+           println(io, "-"^3)
+end
+
 makedocs(
     modules = Hecke,
     clean   = true,
-    doctest = false,
+    format = :html,
+    sitename = "Hecke",
+    doctest = !false,
+    pages = [
+      "index.md",
+      "number_fields/intro.md",
+      "Orders" => [ "orders/introduction.md",
+                    "orders/basics.md",
+                    "orders/ideals.md"
+                  ],
+      "Maximal Orders" => [ "MaximalOrders/Introduction.md",
+                            "MaximalOrders/Creation.md",
+                            "MaximalOrders/Elements.md",
+                            "MaximalOrders/Ideals.md"
+                          ],
+      "abelian/introduction.md",
+      "class_fields/intro.md"
+      ]
 )
 
 # Hack around to get syntax highlighting working
-cd(Pkg.dir("Hecke", "docs"))
+cd(joinpath(dirname(pathof(Hecke)), "..", "docs"))
+
 cp("application-f78e5cb881.palette.css", "build/application-f78e5cb881.palette.css", force = true)
 cp("application-e2807e330f.css", "build/application-e2807e330f.css", force = true)
 
 deploydocs(
-    deps = Deps.pip("pygments",
-                    "mkdocs==0.16.3",
-                    "python-markdown-math",
-                    "mkdocs-cinder"),
+     deps = nothing,
+#    deps = Deps.pip()#="pygments",
+#                    "mkdocs==0.16.3",
+#                    "python-markdown-math",
+#                    "mkdocs-cinder")=#,
     repo = "github.com/thofma/Hecke.jl.git",
-    osname = "linux",
+    target = "build",
+    make = nothing,
+#    osname = "linux",
     julia = "1.0",
 )
 

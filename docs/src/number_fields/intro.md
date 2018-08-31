@@ -4,7 +4,7 @@
 CurrentModule = Hecke
 ```
 
-## Introduction
+## [Introduction](@id NumberFieldsLink)
 
 This chapter deals with number fields. Number fields, in Hecke, come in several
 different types:

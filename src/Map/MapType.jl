@@ -185,6 +185,7 @@ end
 mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
   header::Hecke.MapHeader{R, T}
   f::Function
+  g::Function
 
   function MapFromFunc{R, T}(f::Function, D::R, C::T) where {R, T}
     n = new{R, T}()
@@ -192,14 +193,29 @@ mutable struct MapFromFunc{R, T} <: Map{R, T, HeckeMap, MapFromFunc}
     n.f = f
     return n
   end
+
+  function MapFromFunc{R, T}(f::Function, g::Function, D::R, C::T) where {R, T}
+    n = new{R, T}()
+    n.header = Hecke.MapHeader(D, C, x-> f(x), y->g(y))
+    n.f = f
+    n.g = g
+    return n
+  end
 end
 
 function Base.show(io::IO, M::MapFromFunc)
   println(io, "Map from the $(M.f) julia-function")
+  if isdefined(M, :g)
+    println(io, "with inverse by $(M.g)")
+  end
 end
 
 function MapFromFunc(f::Function, D, C)
   return MapFromFunc{typeof(D), typeof(C)}(f, D, C)
+end
+
+function MapFromFunc(f::Function, g::Function, D, C)
+  return MapFromFunc{typeof(D), typeof(C)}(f, g, D, C)
 end
 
 export MapFromFunc

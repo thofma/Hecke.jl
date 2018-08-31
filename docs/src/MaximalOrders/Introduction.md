@@ -1,4 +1,6 @@
-# Introduction
+# Maximal Order
+
+## Introduction
 
 In Hecke, maximal orders (aka ring of integers), due to their special properties normal orders don't share, come with their own type `NfMaximalOrder`. 
 While the elements have type `NfOrderElem`, the ideals and fractional ideals have types `NfMaximalOrderIdeal` and `NfMaximalOrderFracIdeal` respectively.

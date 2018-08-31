@@ -1,4 +1,4 @@
-## Ideals
+# Ideals
 
 @module{Hecke}
 
