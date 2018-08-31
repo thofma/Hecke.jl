@@ -142,8 +142,9 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   # The residue of the zeta function cannot be computed for degree 1 (K = Q),
   # so we shortcircuit it.
 
+  h = class_group_current_h(c)
   if degree(O) == 1
-    if c.h == 1 && U.tentative_regulator == 1
+    if h == 1 && U.tentative_regulator == 1
       return fmpz(1)
     else
       error("Something odd for K = Q")
@@ -180,7 +181,7 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   @assert isfinite(loghRtrue)
 
   while true
-    loghRapprox = log(c.h* abs(U.tentative_regulator))
+    loghRapprox = log(h* abs(U.tentative_regulator))
 
     @assert isfinite(loghRapprox)
 
@@ -197,6 +198,12 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   end
 end
 
+function class_group_current_h(c::ClassGrpCtx)
+  module_trafo_assure(c.M)
+  c.h = check_index(c.M)
+  return c.h
+end
+
 function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
@@ -211,7 +218,6 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     @vprint :UnitGroup 1 "... done (retrieved).\n"
     return c, U, 1
   end
-  class_group_get_pivot_info(c) #hopefully sets c.h 
 
   @vprint :UnitGroup 1 "Tentative class number is now $(c.h)\n"
 
@@ -237,11 +243,11 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
     end
     if r == 1  # use saturation!!!!
       idx = _validate_class_unit_group(c, U) 
+      @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
       while idx < 20 && idx > 1
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
         @assert any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
-        class_group_get_pivot_info(c)
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         n_idx = _validate_class_unit_group(c, U) 
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"
@@ -258,10 +264,9 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       c.expect = class_group_expected(d, degree(O), Int(norm(c.FB.ideals[1])), 100)
       need_more = false
     end
+    h_old = class_group_current_h(c)
     class_group_new_relations_via_lll(c, extra = unit_rank(O) - length(U.units) +1)
-    h_old = c.h
-    class_group_get_pivot_info(c)
-    if h_old == c.h
+    if h_old == class_group_current_h(c)
       do_units = true
     else
       do_units = false
