@@ -21,4 +21,4 @@ script:
   # - if [ -f test/runtests.jl ]; then julia --check-bounds=yes -e 'using Pkg; Pkg.test("Nemo", coverage=true)'; fi
 after_success:
   - julia -e 'using Pkg; Pkg.add("Documenter")'
-  - DOCUMENTER_DEBUG=true julia -e 'using Hecke; cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
+  - DOCUMENTER_DEBUG=true julia -e 'using Pkg; using Hecke; cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
