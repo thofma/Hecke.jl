@@ -783,6 +783,10 @@ end
 > $A*B \subsetneq order(A)$, if $A$ is not invertible.
 """
 function isinvertible(A::NfAbsOrdIdl)
+  if iszero(A)
+    return false, A
+  end
+
   if ismaximal_known(order(A)) && ismaximal(order(A))
     return true, inv(A)
   end

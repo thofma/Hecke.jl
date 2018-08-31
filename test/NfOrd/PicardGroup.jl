@@ -9,7 +9,11 @@ function test_disc_log_picard(P, mP, O)
     i += 1
   end
   for i = 1:10
-    I = rand(O, 10)*O
+    a = rand(O, 10)
+    while iszero(a)
+      a = rand(O, 10)
+    end
+    I = a*O
     if !iszero(mP\I)
       return false
     end
@@ -55,11 +59,11 @@ function test_disc_log_units(U, mU, O)
 end
 
 @testset "Picard group and unit group of non maximal orders" begin
-   Qx,  x = FlintQQ["x"]
+  Qx, x = FlintQQ["x"]
   AF = ArbField(20)
 
   f = x^3 - 2
-   K,  a = number_field(f, "a")
+  K, a = number_field(f, "a")
   O = Order(K, [ K(1), 10*a, 100*a^2 ])
   P, mP = picard_group(O)
   @test issnf(P)
@@ -73,7 +77,7 @@ end
   @test test_disc_log_units(U, mU, O)
 
   f = x^3 - 12*x^2 - 6324*x + 459510
-   K,  a = number_field(f, "a")
+  K, a = number_field(f, "a")
   O = equation_order(K)
   P, mP = picard_group(O)
   @test issnf(P)
@@ -87,7 +91,7 @@ end
   @test test_disc_log_units(U, mU, O)
 
   f = x^3-9270*x^2-6226*x-2617
-   K,  a = number_field(f, "a")
+  K, a = number_field(f, "a")
   O = equation_order(K)
   P, mP = picard_group(O)
   @test issnf(P)
@@ -101,7 +105,7 @@ end
   @test test_disc_log_units(U, mU, O)
 
   f = x^4-3072*x^3+7926*x^2-3920*x-9063
-   K,  a = number_field(f, "a")
+  K, a = number_field(f, "a")
   O = equation_order(K)
   P, mP = picard_group(O)
   @test issnf(P)
@@ -115,7 +119,7 @@ end
   @test test_disc_log_units(U, mU, O)
 
   f = x^3+4064*x^2-1608*x-2816
-   K,  a = number_field(f, "a")
+  K, a = number_field(f, "a")
   O = equation_order(K)
   P, mP = picard_group(O)
   @test issnf(P)
