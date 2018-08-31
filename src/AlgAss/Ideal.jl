@@ -43,15 +43,15 @@ parent_type(::Type{AlgAssAbsOrdIdl{S, T}}) where {S, T} = AlgAssAbsOrdIdlSet{S, 
 #
 ################################################################################
 
-function assure_has_basis_alg(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  if isdefined(a, :basis_alg)
+function assure_has_basis(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  if isdefined(a, :basis)
     return nothing
   end
 
   O = order(a)
-  a.basis_alg = Vector{AlgAssAbsOrdElem{S, T}}(undef, degree(O))
+  a.basis = Vector{AlgAssAbsOrdElem{S, T}}(undef, degree(O))
   for i = 1:degree(O)
-    a.basis_alg[i] = elem_from_mat_row(O, basis_mat(a, Val{false}), i)
+    a.basis[i] = elem_from_mat_row(O, basis_mat(a, Val{false}), i)
   end
   return nothing
 end
@@ -74,11 +74,11 @@ function assure_has_basis_mat(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
 end
 
 function basis(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
-  assure_has_basis_alg(a)
+  assure_has_basis(a)
   if copy == Val{true}
-    return deepcopy(a.basis_alg)
+    return deepcopy(a.basis)
   else
-    return a.basis_alg
+    return a.basis
   end
 end
 
@@ -106,8 +106,8 @@ end
 
 function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
-  ba = basis_alg(a, Val{false})
-  bb = basis_alg(b, Val{false})
+  ba = basis(a, Val{false})
+  bb = basis(b, Val{false})
   M = zero_matrix(FlintZZ, d^2, d)
   for i = 1:d
     for j = 1:d
@@ -160,8 +160,8 @@ function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
 
   d = degree(O)
   M = zero_matrix(FlintZZ, d^2, d)
-  X = basis(O, Val{false})
-  Y = map(O, basis_alg(A, Val{false}))
+  X = map(O, basis(A, Val{false}))
+  Y = basis_alg(O, Val{false})
   t = O()
   for i = 1:d
     for j = 1:d
@@ -176,7 +176,6 @@ function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
 end
 
 *(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = extend(A, O)
-*(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = extend(A, O)
 
 function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   # Assumes O \subseteq order(A)
