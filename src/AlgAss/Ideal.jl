@@ -1,5 +1,15 @@
 @inline order(I::AlgAssAbsOrdIdl) = I.order
 
+function Base.one(S::AlgAssAbsOrdIdlSet)
+  O = order(S)
+  M = identity_matrix(FlintZZ, degree(O))
+  return ideal(O, M, true)
+end
+
+function Base.copy(I::AlgAssAbsOrdIdl)
+  return I
+end
+
 ###############################################################################
 #
 #  String I/O
@@ -8,8 +18,8 @@
 
 function show(io::IO, a::AlgAssAbsOrdIdl)
   print(io, "Ideal of ")
-  showcompact(io, order(a))
-  println(io, "with basis matrix")
+  show(IOContext(io, :compact => true), order(a))
+  println(io, " with basis matrix")
   print(io, a.basis_mat)
 end
 
@@ -121,6 +131,15 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   return ideal(order(a), M, true)
 end
 
+Base.:(^)(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
+
+function intersection(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  d = degree(order(a))
+  H = vcat(basis_mat(a), basis_mat(b))
+  K = _kernel(H)
+  return ideal(order(a), _hnf(view(K, 1:d, 1:d)*basis_mat(a, Val{false}), :lowerleft), true)
+end
+
 ################################################################################
 #
 #  Construction
@@ -132,7 +151,7 @@ function ideal(O::AlgAssAbsOrd{S, T}, M::fmpz_mat, M_in_hnf::Bool = false) where
   return AlgAssAbsOrdIdl{S, T}(O, M)
 end
 
-function ideal(O::AlgAssAbsOrd, b::Vector{AlgAssAbsOrdElem})
+function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}) where { T <: AlgAssAbsOrdElem }
   d = degree(O)
   @assert length(b) >= d
 
@@ -161,7 +180,7 @@ function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   d = degree(O)
   M = zero_matrix(FlintZZ, d^2, d)
   X = map(O, basis(A, Val{false}))
-  Y = basis_alg(O, Val{false})
+  Y = basis(O, Val{false})
   t = O()
   for i = 1:d
     for j = 1:d
@@ -210,4 +229,25 @@ function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
   else
     return false
   end
+end
+
+################################################################################
+#
+#  Equality
+#
+################################################################################
+
+function ==(A::AlgAssAbsOrdIdl, B::AlgAssAbsOrdIdl)
+  order(A) != order(B) && return false
+  return basis_mat(A, Val{false}) == basis_mat(B, Val{false})
+end
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(A::AlgAssAbsOrdIdl, h::UInt)
+  return Base.hash(basis_mat(A, Val{false}), h)
 end

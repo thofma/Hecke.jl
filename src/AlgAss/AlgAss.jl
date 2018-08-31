@@ -175,7 +175,6 @@ function AlgAss(f::PolyElem)
   one[1] = R(1)
   A = AlgAss(R, mult_table, one)
   A.iscommutative = 1
-  A.polynomial = f
   return A
 end
 

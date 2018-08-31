@@ -30,6 +30,12 @@ end
   return AlgAssAbsOrdElem{S, T}(O, arr)
 end
 
+algebra(O::AlgAssAbsOrd) = O.algebra
+
+(O::AlgAssAbsOrd)(a::AlgAssAbsOrdElem) = O(elem_in_algebra(a, Val{false}))
+
+(O::AlgAssAbsOrd)() = O(algebra(O)())
+
 # Turn the following into a check:
 #
 #(O::AlgAssAbsOrd)(a::AlgAssElem) = begin
@@ -129,6 +135,15 @@ function basis_mat(x::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+function basis_mat_inv(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+  assure_basis_mat_inv(O)
+  if copy == Val{true}
+    return deepcopy(O.basis_mat_inv)
+  else
+    return O.basis_mat_inv
+  end
+end
+
 @inline parent(x::AlgAssAbsOrdElem) = x.parent
 
 function assure_has_coord(x::AlgAssAbsOrdElem)
@@ -218,6 +233,12 @@ end
 
 function elem_from_mat_row(O::AlgAssAbsOrd, M::fmpz_mat, i::Int)
   return O(fmpz[M[i,j] for j = 1:degree(O)])
+end
+
+function ^(x::AlgAssAbsOrdElem, y::Union{fmpz, Int})
+  z = parent(x)()
+  z.elem_in_algebra = elem_in_algebra(x, Val{false})^y
+  return z
 end
 
 ###############################################################################
@@ -311,7 +332,7 @@ function show(io::IO, O::AlgAssAbsOrd)
   compact = get(io, :compact, false)
   if compact
     print(io, "Order of ")
-    showcompact(io, O.algebra)
+    show(IOContext(io, :compact => true), O.algebra)
   else
     print(io, "Order of ")
     print(io, O.algebra)
