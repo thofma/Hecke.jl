@@ -751,18 +751,42 @@ end
 @doc Markdown.doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
-Returns the equation order of the number field $K$.
+> Returns the equation order of the number field $K$.
 """
-function EquationOrder(K::T, cache::Bool = false) where {T}
+function EquationOrder(K::T, cached::Bool = false) where {T}
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  z = NfAbsOrd{T, elem_type(T)}(K, M, Minv, basis(K), cache)
+  z = NfAbsOrd{T, elem_type(T)}(K, M, Minv, basis(K), cached)
   z.isequation_order = true
   return z
 end
 
 @doc Markdown.doc"""
-   equation_order(M::NfOrd) -> NfOrd
+    EquationOrder(f::fmpz_poly; cached::Bool = true, check::Bool = true) -> NfOrd
+
+> Returns the equation order defined by the monic polynomial $f$.
+"""
+function EquationOrder(f::fmpz_poly; cached::Bool = true, check::Bool = true)
+  ismonic(f) || error("polynomial must be monic")
+  K = number_field(f, cached = cached, check = check)[1]
+  return EquationOrder(K)
+end
+
+@doc Markdown.doc"""
+    EquationOrder(f::fmpq_poly; cached::Bool = true, check::Bool = true) -> NfOrd
+
+> Returns the equation order defined by the monic integral polynomial $f$.
+"""
+function EquationOrder(f::fmpq_poly; cached::Bool = true, check::Bool = true)
+  ismonic(f) || error("polynomial must be integral and monic")
+  isone(denominator(f)) || error("polynomial must be integral and monic")
+
+  K = number_field(f, cached = cached, check = check)[1]
+  return EquationOrder(K)
+end
+
+@doc Markdown.doc"""
+    equation_order(M::NfOrd) -> NfOrd
 > The equation order of then number field.
 """
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
