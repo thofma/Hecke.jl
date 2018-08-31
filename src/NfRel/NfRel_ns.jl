@@ -219,8 +219,9 @@ end
 ################################################################################
 @doc Markdown.doc"""
     number_field(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T -> NfRel_ns
-> Given polynomials $f = (f_1, \ldots, f_n)$ over soem number field $k$, construct
-> $$$K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$$
+
+> Given polynomials $f = (f_1, \ldots, f_n)$ over some number field $k$, construct
+> $K = k[t_1, \ldots, t_n]/\langle f_1(t_1), \ldots, f_n(t_n)\rangle$
 > The ideal in the quotient must be maximal - although this is not tested.
 """
 function Nemo.NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false) where T
@@ -781,6 +782,7 @@ end
 #find isomorphic simple field AND the map
 @doc Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
+
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).
 """
@@ -831,7 +833,9 @@ end
 
 @doc Markdown.doc"""
     simple_extension(K::NfRel_ns{nf_elem}, FlintQQ) -> AnticNumberField, Map, Map
+
     absolute_field(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
+
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).
 """
