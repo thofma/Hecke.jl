@@ -67,7 +67,7 @@
     O=maximal_order(K);
     C,mC=class_group(O);
     r,mr=ray_class_group(ideal(O,3*5*7), n_quo=8);
-    act=Hecke._act_on_ray_class(mr);
+    act=Hecke.induce_action(mr);
     x=Hecke.stable_subgroups(r,act,op = quo, quotype = [8]);
     y=subgroups(r, quotype=[8])
     i=0
@@ -89,7 +89,7 @@
     @test length(x)==i
     
     r,mr=ray_class_group(ideal(O,9*19*29), n_quo=9);
-    act=Hecke._act_on_ray_class(mr);
+    act=Hecke.induce_action(mr);
     x=Hecke.stable_subgroups(r, act, op = quo, quotype = [9]);
     y=subgroups(r, quotype=[9])
     i=0

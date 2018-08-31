@@ -877,7 +877,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     if cgrp
         mr.prime_ideal_cache = S
     end
-    act=_act_on_ray_class(mr,gens)
+    act=induce_action(mr,gens)
     ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype=gtype)
     a=_min_wild(k[2])*k[1]
     totally_positive_generators(mr,a)

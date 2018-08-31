@@ -1300,7 +1300,7 @@ function normal_closure(C::ClassField)
 
   D = ray_class_field(fin, inf, n_quo = Int(exponent(codomain(C.quotientmap))))
   h = norm_group_map(D, C)
-  act = Hecke._act_on_ray_class(D, aut)
+  act = Hecke.induce_action(D, aut)
   k = kernel(h, true)[1]
 
   k = intersect([x(k)[1] for x = act])
@@ -1322,8 +1322,8 @@ function rewrite_with_conductor(C::ClassField)
   return C
 end
 
-function _act_on_ray_class(C::ClassField, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
-  return _act_on_ray_class(C.rayclassgroupmap, Aut, C.quotientmap)
+function induce_action(C::ClassField, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[])
+  return induce_action(C.rayclassgroupmap, Aut, C.quotientmap)
 end
 
 @doc Markdown.doc"""
@@ -1344,7 +1344,7 @@ function isnormal(C::ClassField)
   end
   C = rewrite_with_conductor(C)
   mR = C.rayclassgroupmap
-  act = _act_on_ray_class(mR, aut)
+  act = induce_action(mR, aut)
   k = kernel(GrpAbFinGenMap(C.quotientmap), true)[1]
   #normal iff kernel is invariant as a set
   return all(x -> iseq(x(k)[1], k), act)
@@ -1368,7 +1368,7 @@ function iscentral(C::ClassField)
   end
   C = rewrite_with_conductor(C)
   mR = C.rayclassgroupmap
-  act = _act_on_ray_class(mR, aut)
+  act = induce_action(mR, aut)
   k = kernel(GrpAbFinGenMap(C.quotientmap), true)
   #central iff action is trivial on the kernel
   g = [k[2](k[1][i]) for i = 1:ngens(k[1])]

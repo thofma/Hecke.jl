@@ -109,7 +109,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
     if cgrp
       mr.prime_ideal_cache = S
     end
-    act=Hecke._act_on_ray_class(mr,gens)
+    act=Hecke.induce_action(mr,gens)
     ls=stable_subgroups(r,act, op=(x, y) -> quo(x, y, false)[2], quotype = [3])
     a=Hecke._min_wild(k[2])*k[1]
     Hecke.totally_positive_generators(mr,a)
@@ -254,7 +254,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
     if cgrp
       mr.prime_ideal_cache = S
     end
-    act=Hecke._act_on_ray_class(mr,gens)
+    act=Hecke.induce_action(mr,gens)
     ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = [5])
     a=Hecke._min_wild(k[2])*k[1]
     for s in ls
@@ -455,7 +455,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
       if cgrp
         mr.prime_ideal_cache = S
       end
-      act=Hecke._act_on_ray_class(mr,gens)
+      act=Hecke.induce_action(mr,gens)
       ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = [n])
       a=Hecke._min_wild(k[2])*k[1]
       for s in ls
@@ -548,7 +548,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
       if cgrp
         mr.prime_ideal_cache = S
       end
-      act=Hecke._act_on_ray_class(mr,gens)
+      act=Hecke.induce_action(mr,gens)
       ls=stable_subgroups(r,act, quotype = [15], op=(x, y) -> quo(x, y, false)[2])
       a=Hecke._min_wild(k[2])*k[1]
       for s in ls
@@ -668,7 +668,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
       if cgrp
         mr.prime_ideal_cache = S
       end
-      act=Hecke._act_on_ray_class(mr,gens)
+      act=Hecke.induce_action(mr,gens)
       ls=stable_subgroups(r,act, op=(x, y) -> quo(x, y, false)[2],quotype = [15])
       a=Hecke._min_wild(k[2])*k[1]
       for s in ls
@@ -792,7 +792,7 @@ function C9semiC4(absolute_bound::fmpz, l)
         mr.prime_ideal_cache = S
       end
       @vprint :QuadraticExt 1 "Computing the action\n"
-      act=Hecke._act_on_ray_class(mr,gens)
+      act=Hecke.induce_action(mr,gens)
       @vprint :QuadraticExt 1 "Computing subgroups\n"
       ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = [9])
       a=Hecke._min_wild(k[2])*k[1]

@@ -1551,7 +1551,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   return lp, sR
 end
 
-function _act_on_ray_class(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[], mp = false)
+function induce_action(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Hecke.NfToNfMor[], mp = false)
 
   R=mR.header.domain
   O=mR.header.codomain.base_ring.order
