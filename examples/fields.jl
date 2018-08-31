@@ -98,7 +98,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
   
   #Getting conductors
   bound = div(absolute_bound, D^3)
-  l_conductors=Hecke.conductors(O,3, bound)
+  l_conductors=Hecke.conductors(O,[3], bound)
   @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
 
   res = []
@@ -536,7 +536,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
     end
     
     #Getting conductors
-    l_conductors=Hecke.conductors(O,15,bound)
+    l_conductors=Hecke.conductors(O, [15], bound)
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
@@ -656,7 +656,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
     end
     
     #Getting conductors
-    l_conductors=Hecke.conductors(O,15,bound)
+    l_conductors=Hecke.conductors(O,[15],bound)
     @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
@@ -779,7 +779,7 @@ function C9semiC4(absolute_bound::fmpz, l)
     gens = Hecke.small_generating_set(Aut)
   
     #Getting conductors
-    l_conductors=Hecke.conductors(O,9,bound, false)
+    l_conductors=Hecke.conductors(O,[9],bound, false)
     @vprint :QuadraticExt 1 "Conductors: $(length(l_conductors))\n"
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)

@@ -66,7 +66,7 @@ expo=lcm(gtype)
 if length(ARGS) == 6
    total_cond = countlines(ARGS[6])
 else
-   conductors = sort!(Hecke.conductorsQQ(O, n, bounddisc))
+   conductors = sort!(Hecke.conductorsQQ(O, gtype, bounddisc))
    total_cond = length(conductors)
 end
 
