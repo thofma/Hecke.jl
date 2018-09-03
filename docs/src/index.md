@@ -22,15 +22,17 @@ So far, Hecke provides the following features:
   - Abelian groups
   - Ray class groups, quotients of ray class groups
   - Invariant subgroups
-  - Defining equations for class fields
+  - Class Field Theory
+  - Associative Algebras
 
 ## Installation
 
-To use Hecke, a julia version of 0.6 or higher is necessary (the latest stable julia version will do).
+To use Hecke, a julia version of 1.0 is necessary (the latest stable julia version will do).
 Please see [http://julialang.org/downloads](http://julialang.org/downloads/) for instructions on how to obtain julia for your system.
 Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:
 
 ```julia
+julia> using Pkg
 julia> Pkg.add("Hecke")
 ```
 
@@ -51,9 +53,9 @@ Welcome to
  | |  | |  __/ (__|   <  __/
  |_|  |_|\___|\___|_|\_\___|
   
-Version 0.4.0 ... 
+Version 0.5.0 ... 
  ... which comes with absolutely no warranty whatsoever
-(c) 2015, 2016, 2017 by Claus Fieker and Tommy Hofmann
+(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana
 
 julia> Qx, x = PolynomialRing(FlintQQ, "x");
 julia> f = x^3 + 2;
