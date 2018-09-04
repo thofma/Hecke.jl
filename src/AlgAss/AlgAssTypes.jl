@@ -7,10 +7,9 @@ mutable struct AlgAss{T} <: Ring
                            # 2 known to be not commutative
   trace_basis_elem::Array{T, 1}
   issimple::Int
-  decomposition 
+  decomposition
   center
 
-  polynomial::PolyElem # If the algebra is defined by R[X]/f
   maps_to_numberfields
 
   function AlgAss{T}(R::Ring) where {T}

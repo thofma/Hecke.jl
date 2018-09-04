@@ -425,17 +425,19 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
 end
 
 
-function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
+function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   
   K=nf(O)
   d=degree(O)
+  n = prod(a)
+  expo = a[end]
   wild_ram=collect(keys(factor(fmpz(n)).fac))
 
   #
   # First, conductors for tamely ramified extensions
   #
 
-  list=conductors_tame(O,n,bound)
+  list = conductors_tame(O, n, bound)
 
   if tame
     return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
@@ -445,10 +447,10 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
   #
   wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(),1)]
   for q in wild_ram
-    lp=prime_decomposition(O,Int(q))
-    fq=divexact(d,lp[1][2]*length(lp))
-    l=length(wild_list)
-    sq=fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
+    lp = prime_decomposition(O,Int(q))
+    fq = divexact(d,lp[1][2]*length(lp))
+    l = length(wild_list)
+    sq = fmpz(q)^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
@@ -460,15 +462,29 @@ function conductors(O::NfOrd, n::Int, bound::fmpz, tame::Bool=false)
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
       To find ap, it is enough to compute a logarithm.
     =#
-    nisc= gcd(q^(fq)-1,n)
-    if nisc!=1
-      nbound=n+n*lp[1][2]*valuation(n,q)-1
-    else
-      nbound=n+n*lp[1][2]*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+    nisc = gcd(q^(fq)-1, expo)
+    v = valuation(expo, q)
+    #Bound coming from the analysis on the different in a local extension
+    nbound = q^v + lp[1][2] * v * q^v - 1
+    boundsubext = root(bound, Int(divexact(n, q^v)))
+    #Bound coming from the bound on the discriminant
+    obound = flog(boundsubext, sq)
+    #Bound coming from ramification groups
+    tbound = obound
+    if v == 1
+      k = div(lp[1][2]*q, q-1)
+      tbound = (k+1)*(q-1)
     end
-    obound=flog(bound,sq)
-    bound_max_ap= min(nbound, obound)  #bound on ap
-    bound_max_exp=div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
+    if v == 2
+      k = div(lp[1][2]*q^v, q-1)
+      tbound = q*(q-1) + (k-q+1)*(q^2-1)
+    end
+    if v == 3
+      k = div(lp[1][2]*q^v, q-1)
+      tbound = q*(q-1) + q*(q^2-1) + (k-q^2+1)*(q^3-1)
+    end
+    bound_max_ap = min(nbound, obound, tbound)  #bound on ap
+    bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
     
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
@@ -654,6 +670,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   K = nf(O)
   d = degree(O)
   n = prod(a)
+  expo = a[end]
   wild_ram = collect(keys(factor(fmpz(n)).fac))
 
   #
@@ -670,7 +687,7 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   wild_list=Tuple{Int, Int, fmpz}[(1, 1, 1)]
   for q in wild_ram
-    l=length(wild_list)
+    l = length(wild_list)
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the 
@@ -682,16 +699,25 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
         v_p(m)<= (q*ap)/(h_(m,C)*(q-1))
       To find ap, it is enough to compute a logarithm.
     =#
-    nisc= gcd(q-1,n)
-    if nisc!=1
-      nbound=n+n*valuation(n,q)-1
-    else
-      nbound=n+n*valuation(n,q)-div(fmpz(n), q^(valuation(n,q)))
+    v = valuation(expo, q)
+    
+    #I don't need to give a bound for a_p on the big extension but only on the maximum extension of q-power order
+    #This is the only thing that matters for the exponent of the conductor
+    nisc = gcd(q-1,n)
+    nbound = q^v + v * q^v - 1
+    boundsubext = root(bound, Int(divexact(n, q^v)))
+    obound = flog(boundsubext, q)
+    nnbound = valuation_bound_discriminant(n, q)
+    k = div(expo, Int(q)-1)
+    tbound = nbound
+    if v == 1
+      tbound = (k+1)*(q-1)
     end
-    obound=flog(bound,q)
-    nnbound=valuation_bound_discriminant(n,q)
-    bound_max_ap= min(nbound, obound, nnbound)  #bound on ap
-    bound_max_exp=div(q*bound_max_ap, n*(q-1)) #bound on the exponent in the conductor
+    if v == 2
+      tbound = (q*(q-1)+(k - q + 1)*(q^2-1))
+    end
+    bound_max_ap= min(nbound, obound, nnbound, tbound)  #bound on ap
+    bound_max_exp=div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
     
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
@@ -862,7 +888,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
   end
 
   #Getting conductors
-  l_conductors=conductors(O,n,bound, tame)
+  l_conductors=conductors(O, gtype, bound, tame)
   @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
 

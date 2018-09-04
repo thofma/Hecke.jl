@@ -24,6 +24,8 @@ morphism_type(::AlgAss{fq}) = AlgAssMor{fq, fq, fq_mat}
 
 morphism_type(::AlgAss{fq_nmod}) = AlgAssMor{fq_mod, fq_nmod, fq_nmod_mat}
 
+morphism_type(::AlgAss{nmod}) = AlgAssMor{nmod, nmod, nmod_mat}
+
 ################################################################################
 #
 #  Basis
@@ -175,7 +177,6 @@ function AlgAss(f::PolyElem)
   one[1] = R(1)
   A = AlgAss(R, mult_table, one)
   A.iscommutative = 1
-  A.polynomial = f
   return A
 end
 
@@ -812,20 +813,17 @@ function _dec_com_finite(A::AlgAss{T}) where T
 
     fac = factor(f)
     R = parent(f)
-    factors = Vector{elem_type(R)}()
-    for ff in keys(fac.fac)
-      push!(factors, ff)
-    end
-    sols = Vector{elem_type(R)}()
-    right_side = [ R() for i = 1:length(factors) ]
+    factorss = collect(keys(fac.fac))
+    sols = Vector{typeof(f)}(undef, length(factorss))
+    right_side = typeof(f)[ zero(R) for i = 1:length(factorss) ]
     max_deg = 0
-    for i = 1:length(factors)
-      right_side[i] = R(1)
-      if i != 1
-        right_side[i - 1] = R(0)
+    for i = 1:length(factorss)
+      right_side[i] = one(R)
+      if 1 != i
+        right_side[i - 1] = zero(R)
       end
-      s = crt(right_side, factors)
-      push!(sols, s)
+      s = crt(right_side, factorss)
+      sols[i] = s
       max_deg = max(max_deg, degree(s))
     end
     x = one(A)

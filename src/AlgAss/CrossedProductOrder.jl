@@ -220,73 +220,31 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
   #The p-radical of OL generates an ideal which is contained in the p-radical of the algebra. 
   #Therefore, to compute the maximal ideals, I can factor out the algebra by it.
   M, gens = _ideal_in_radical(OL, G, O, p)
-  hereditary = false
-  nsteps = 0
-  while true
-    _check_order(O)
-    nsteps += 1 
-    dd = fmpz(1)
-    #Construct the ideal of O corresponding to the pradical in OL
-    if nsteps == 1
-      I1 = ideal(O, M)
-      gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
-      gensI1[1] = O(gens[1])
-      gensI1[2] = O(gens[2])
-      I1.gens = gensI1
-      @hassert :AlgAssOrd 1 check_ideal(I1)
-    else
-      B = basis(O)
-      el = O(gens[2])
-      B1 = [b*el*c for b in B for c in B]
-      N = basis_mat(B1)
-      hnf_modular_eldiv!(N, fmpz(p))
-      I1 = ideal(O, view(N, 1:cols(N), 1:cols(N)))
-      gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
-      gensI1[1] = O(gens[1])
-      gensI1[2] = O(gens[2])
-      I1.gens = gensI1
-      @assert check_ideal(I1)
-    end
-    #=
-    if !hereditary
-      #if the order is not hereditary, I use the pradical because it enlarges the order at all primes
-      m = pradical_crossed_product(O, I1, p)
-      OO = ring_of_multipliers(m, fmpz(p))
-      dd = discriminant(OO)
-      if d != dd
-        O = OO
-        d = dd
-        continue
-      else
-        hereditary = true
-      end
-    end
-    =#
-    @vprint :AlgAssOrd 1 "Computing maximal ideals\n"
-    @vtime :AlgAssOrd 1 max_id =_maximal_ideals(O, I1, p)
-    for m in max_id
-      @vtime :AlgAssOrd 1 OO = ring_of_multipliers(m, fmpz(p))
-      dd = discriminant(OO)
-      if d != dd
-        extend = true
-        O = OO
-        d = dd
-        break
-      end
-    end
-
-    if extend
-      if rem(d, p^2) != 0
-        break
-      end
-      extend = false
-      continue
-    else
+  dd = fmpz(1)
+  #Construct the ideal of O corresponding to the pradical in OL
+  I1 = ideal(O, M)
+  gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
+  gensI1[1] = O(gens[1])
+  gensI1[2] = O(gens[2])
+  I1.gens = gensI1
+  @hassert :AlgAssOrd 1 check_ideal(I1)
+  @vprint :AlgAssOrd 1 "Computing maximal ideals\n"
+  @vtime :AlgAssOrd 1 max_id =_maximal_ideals(O, I1, p)
+  for m in max_id
+    @vtime :AlgAssOrd 1 OO = ring_of_multipliers(m, fmpz(p))
+    dd = discriminant(OO)
+    if d != dd
+      extend = true
+      O = OO
+      d = dd
       break
     end
-    
   end
-  return O
+  if extend
+    return pmaximal_overorder(O, p)
+  else
+    return O
+  end
 end
 
 
