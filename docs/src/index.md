@@ -2,7 +2,7 @@
 
 ## About
 
-Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann.
+Hecke is a software package for algebraic number theory maintained by Claus Fieker, Carlo Sircana and Tommy Hofmann.
 It is written in [julia](http://www.julialang.org) and is based on the computer algebra package [Nemo](http://www.nemocas.org).
 
 - [https://github.com/thofma/Hecke.jl](https://github.com/thofma/Hecke.jl) (Source code)

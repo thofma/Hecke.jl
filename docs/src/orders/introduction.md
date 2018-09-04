@@ -1,15 +1,17 @@
-# Orders of number fields
+# Introduction
+```@meta
+CurrentModule = Hecke
+```
 
-## Introduction
 
 This chapter deals with absolute number fields and orders there of. 
 
-### Definitions and vocabulary
+## Definitions and vocabulary
 
 We begin by collecting the necessary definitions and vocabulary. 
 This is in particular important for everything related to embeddings of number fields into archimedean fields, since they are at least two (slighlty) different normalizations. 
 
-#### Number fields
+### Number fields
 
 By an absolute number field we mean finite extensions of $\mathbf Q$, which is
 of type `AnticNumberField` and whose elements are of type `nf_elem`. Such an
@@ -32,7 +34,7 @@ The $\mathbf{Q}$-linear function
 \\[ K \longrightarrow \mathbf R^{d}, \ \alpha \longmapsto (\sigma_1(\alpha),\dotsc,\sigma_r(\alpha),\sqrt{2}\operatorname{Re}(\sigma_{r+1}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+1}(\alpha)),\dotsc,\sqrt{2}\operatorname{Re}(\sigma_{r+s}(\alpha)),\sqrt{2}\operatorname{Im}(\sigma_{r+s}(\alpha)) \\]
 is called the *Minkowski map* (or *Minkowski embedding*).
 
-#### Orders
+### Orders
 
 If $K = \mathbf Q(\alpha)$ is an absolute number field, then an *order* $\mathcal
 O$ of $K$ is a subring of the ring of integers $\mathcal O_K$, which is free
@@ -60,8 +62,36 @@ The matrix
 \\]
 is called the *Minkowski matrix* of $\mathcal O$.
 
-#### Ideals
 
-#### Fractional ideals
+## Examples
 
-### Types
+Usually, to create an order, one starts with a field (or a polynomial):
+
+```@repl 1
+using Hecke; # hide
+Qx, x = PolynomialRing(FlintQQ, "x");
+K, a = NumberField(x^2 - 10, "a");
+E = EquationOrder(K)
+Z_K = MaximalOrder(K)
+conductor(E)
+E == Z_K
+```
+
+Once orders are created, we can play with elements and ideals:
+
+```@repl 1
+lp = prime_decomposition(Z_K, 2)
+p = lp[1][1]
+isprincipal(p)
+fl, alpha = isprincipal(p^2)
+norm(alpha)
+```
+
+It is possible to work with residue fields as well:
+
+```@repl 1
+Fp, mFp = ResidueField(Z_K, p)
+[ mFp(x) for x = basis(Z_K)]
+```
+
+

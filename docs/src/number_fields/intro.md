@@ -49,7 +49,7 @@ This parameter controlls is the polynomial defining the number field is
 tested for irreducibility or not. Given that this can be potentially 
 very time consuiming if the degree if large, one can omit this test. Note
 however, that the behaviour of Hecke is undefined if a reducible polynomial
-is used to define a "field".
+is used to define a _field_.
 
 The named boolean parameter `cached` is inherited from the underlying Nemo
 system. Two number fields defined using the same polynomial from the
@@ -80,7 +80,7 @@ K, a = NumberField(x^2 - 10, "a");
 ## Absolute Non-Simple Fields
 ### Creation
 ```@docs
-NumberField(f::Array{fmpq_poly, 1}, s::String="_\$")
+NumberField(f::Array{fmpq_poly, 1}, s::String="a")
 ```
 
 ### Example
@@ -114,7 +114,7 @@ absolute_field(K::NfRel{NfRelElem})
 ## Non-Simple Relative Fields
 ### Creation
 ```@docs
-NumberField(f::Array{Generic.Poly{T}, 1}, s::String="_\$") where T
+NumberField(f::Array{Generic.Poly{T}, 1}, s::String="a") where T
 ```
 
 ### Conversion
@@ -138,7 +138,7 @@ discriminant(m::Map, R::NfOrd)
 ```
 
 ```@docs
-(I::NfAbsOrdIdlSet{Nemo.AnticNumberField,Nemo.nf_elem})(mp::Map, i::NfOrdIdl)
+NfAbsOrdIdlSet
 ```
 
 ## Invariants
@@ -154,27 +154,17 @@ discriminant(::AnticNumberField)
 ### Creation
 
 ```@docs
-(K::)(poly)
-(K::)(Integer)
+AnticNumberField
 ```
 
 ### Invariants
 
-```@doc
-norm(a)
-norm(a, k)
-norm(a, phi)
-trace
-minpoly
-charpoly
-repmat
-coeffs
-length
-t2
-conjugates
-logs
-denominator
-numerator
-isunit
+```@docs
+norm(::nf_elem)
+minpoly(::nf_elem)
+charpoly(::nf_elem)
+denominator(::nf_elem)
+numerator(::nf_elem)
+isunit(::nf_elem)
 ```
 

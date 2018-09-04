@@ -52,7 +52,9 @@ It should be noted that this is a {\em lazy} construction: nothing is computed a
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp})
 ray_class_field(m::Union{Hecke.MapClassGrp, Hecke.MapRayClassGrp}, quomap::Hecke.GrpAbFinGenMap)
 ray_class_field(I::Hecke.NfAbsOrdIdl; n_quo, p_part)
+ray_class_field(I::Hecke.NfAbsOrdIdl, ::Array{InfPlc, 1}; n_quo, p_part)
 hilbert_class_field(k::AnticNumberField)
+ring_class_field(::NfAbsOrd)
 ```
 
 ### Example
