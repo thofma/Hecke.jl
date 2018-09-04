@@ -108,7 +108,7 @@ parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 
 # a (bad) hash function
 # - slow (due to basis)
-# - unless basis is in HNF it si also non-unique
+# - unless basis is in HNF it is also non-unique
 function Base.hash(A::NfAbsOrdIdl, h::UInt)
   return Base.hash(basis_mat(A, Val{false}), h)
 end
@@ -378,7 +378,7 @@ end
 
 @doc Markdown.doc"""
 ***
-  basis_mat(A::NfAbsOrdIdl) -> fmpz_mat
+    basis_mat(A::NfAbsOrdIdl) -> fmpz_mat
 
 > Returns the basis matrix of $A$.
 """
@@ -460,7 +460,7 @@ end
 
 @doc Markdown.doc"""
 ***
-  basis_mat_inv(A::NfAbsOrdIdl) -> fmpz_mat
+    basis_mat_inv(A::NfAbsOrdIdl) -> fmpz_mat
 
 > Returns the inverse basis matrix of $A$.
 """

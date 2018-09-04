@@ -307,7 +307,12 @@ end
 #  Numerator
 #
 ################################################################################
-
+@doc Markdown.doc"""
+    numerator(a::nf_elem) -> nf_elem
+> For an element $a\in K = Q[t]/f$ write $a$ as $b/d$ with
+> $b\in Z[t]$, $\deg(a) = \deg(b)$ and $d>0$ minimal in $Z$.
+> This function returns $b$.
+"""
 function numerator(a::nf_elem)
    _one = one(FlintZZ)
    z = deepcopy(a)

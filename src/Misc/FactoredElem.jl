@@ -407,9 +407,8 @@ function evaluate(x::FacElem{fmpz})
   return evaluate_naive(simplify(x))
 end
 @doc Markdown.doc"""
-***
-  simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
-  simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
+    simplify(x::FacElem{fmpq}) -> FacElem{fmpq}
+    simplify(x::FacElem{fmpz}) -> FacElem{fmpz}
 
 > Simplfies the factored element, i.e. arranges for the base to be coprime.
 """
@@ -506,7 +505,6 @@ function simplify!(x::FacElem{fmpz})
 end
 
 @doc Markdown.doc"""
-***
     isone(x::FacElem{fmpq}) -> Bool
     isone(x::FacElem{fmpz}) -> Bool
 > Tests if $x$ represents $1$ without an evaluation.
@@ -523,6 +521,14 @@ end
 
 
 #TODO: expand the coprime stuff to automatically also get the exponents
+@doc Markdown.doc"""
+    simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> FacElem
+    simplify(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet}) -> FacElem
+
+> Uses ```coprime_base``` to obtain a simplified version of $x$, ie.
+> in the simplified version all base ideals will be pariwise coprime
+> but not neccessarily prime!.
+"""
 function simplify(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   z = deepcopy(x)
   simplify!(z)
@@ -567,12 +573,22 @@ function simplify!(x::FacElem{NfOrdFracIdl, NfOrdFracIdlSet})
   x.fac = Dict((i//1, k) for (i,k) = de)
 end
 
+@doc Markdown.doc"""
+    factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Dict{NfOrdIdl, Int}
+> Computed a partial factorisation of $x$, ie. writes $x$ as a product
+> of pariwise coprime integral ideals.
+"""
 function factor_coprime(x::FacElem{NfOrdIdl, NfOrdIdlSet})
   x = deepcopy(x)
   simplify!(x)
   return Dict(p=>Int(v) for (p,v) = x.fac)
 end
 
+@doc Markdown.doc"""
+    factor_coprime(x::FacElem{fmpz}) -> Fac{fmpz}
+> Computed a partial factorisation of $x$, ie. writes $x$ as a product
+> of pariwise coprime integers.
+"""
 function factor_coprime(x::FacElem{fmpz})
   x = deepcopy(x)
   simplify!(x)

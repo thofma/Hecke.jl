@@ -2,6 +2,8 @@
 # maps and disc_log and such
 ################################################################################
 
+export isprincipal
+
 @doc Markdown.doc"""
     power_class(A::NfOrdIdl, e::fmpz) -> NfOrdIdl
 > Computes a (small) ideal in the same class as $A^e$
@@ -308,6 +310,7 @@ end
 """
 function isprincipal_fac_elem(A::NfOrdIdl)
   O = order(A)
+  class_group(O)
   c = _get_ClassGrpCtx_of_order(O)
 
   module_trafo_assure(c.M)
