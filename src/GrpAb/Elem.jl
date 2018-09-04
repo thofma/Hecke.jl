@@ -112,7 +112,11 @@ end
 ################################################################################
 
 function show(io::IO, a::GrpAbFinGenElem)
-  print(io, "Element of\n$(a.parent)\n with components\n$(a.coeff)")
+  if get(io, :compact, false)
+    print(io, "Element of\n$(a.parent)\n with components\n$(a.coeff)")
+  else
+    print(io, "$(a.coeff)")
+  end
 end
 
 ################################################################################
