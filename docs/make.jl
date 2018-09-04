@@ -1,11 +1,11 @@
-using Documenter, Hecke, Markdown, Pkg
+using Documenter, Hecke, Nemo, Markdown, Pkg
 
 function Markdown.plain(io::IO, ::Markdown.HorizontalRule)
            println(io, "-"^3)
 end
 
 makedocs(
-    modules = Hecke,
+    modules = [Hecke, Nemo],
     clean   = true,
     format = :html,
     sitename = "Hecke",
@@ -14,16 +14,19 @@ makedocs(
       "index.md",
       "number_fields/intro.md",
       "Orders" => [ "orders/introduction.md",
-                    "orders/basics.md",
-                    "orders/ideals.md"
+                    "orders/orders.md",
+                    "orders/elements.md",
+                    "orders/ideals.md",
+                    "orders/frac_ideals.md"
                   ],
-      "Maximal Orders" => [ "MaximalOrders/Introduction.md",
-                            "MaximalOrders/Creation.md",
-                            "MaximalOrders/Elements.md",
-                            "MaximalOrders/Ideals.md"
-                          ],
+#      "Maximal Orders" => [ "MaximalOrders/Introduction.md",
+#                            "MaximalOrders/Creation.md",
+#                            "MaximalOrders/Elements.md",
+#                            "MaximalOrders/Ideals.md"
+#                          ],
       "abelian/introduction.md",
-      "class_fields/intro.md"
+      "class_fields/intro.md",
+      "FacElem.md"
       ]
 )
 

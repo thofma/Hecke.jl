@@ -13,16 +13,20 @@ theme:               cinder
 pages:
 - Home:                 index.md
 - Documentation:
-  - Table of contents:  toc.md
-  #- Introduction:       numberfields/introduction.md
+  #- Table of contents:  toc.md
+  - Introduction:       number_fields/intro.md
   - Orders and number fields:
     - Introduction:     orders/introduction.md
-    - Basics:           orders/basics.md
+    - Basics:           orders/orders.md
+    - Elements:         orders/elements.md
     - Ideals:           orders/ideals.md
+    - Fractional Ideals: orders/frac_ideals.md
   - Abelian groups:
     - Introduction:     abelian/introduction.md
   - Class fields:
     - Introduction:     class_fields/intro.md
+  - Factored Elements:
+    - Introduction:     FacElem.md
 extra_css:
     - assets/Documenter.css
 # This are tricks to get syntax highlighting working
