@@ -59,7 +59,7 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
 
 end
 
-function CrossedProductAlgebraWithMaxOrd(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
+function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2}) where T
 
   n=degree(O)
   m=length(G)
@@ -209,20 +209,21 @@ end
 
 function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p::Int)
 
-  d=discriminant(O)
+  d = discriminant(O)
   if rem(d, p^2) != 0  
     return O
   end
   
   A = O.algebra
   extend = false
-  d = discriminant(O)
   #The p-radical of OL generates an ideal which is contained in the p-radical of the algebra. 
   #Therefore, to compute the maximal ideals, I can factor out the algebra by it.
   M, gens = _ideal_in_radical(OL, G, O, p)
   dd = fmpz(1)
+  M = _hnf_modular_eldiv(M, fmpz(p))
   #Construct the ideal of O corresponding to the pradical in OL
-  I1 = ideal(O, M)
+  I1 = Hecke.AlgAssAbsOrdIdl{Hecke.AlgAss{fmpq},Hecke.AlgAssElem{fmpq}}(O, M)
+  
   gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
   gensI1[1] = O(gens[1])
   gensI1[2] = O(gens[2])
@@ -231,6 +232,7 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
   @vprint :AlgAssOrd 1 "Computing maximal ideals\n"
   @vtime :AlgAssOrd 1 max_id =_maximal_ideals(O, I1, p)
   for m in max_id
+    @hassert :AlgAssOrd 1 check_ideal(m)
     @vtime :AlgAssOrd 1 OO = ring_of_multipliers(m, fmpz(p))
     dd = discriminant(OO)
     if d != dd
@@ -240,6 +242,7 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
       break
     end
   end
+   
   if extend
     return pmaximal_overorder(O, p)
   else

@@ -313,14 +313,14 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
   b=Base.sqrt(n)
   while i<=b
     if primes[i]
-      dt=prime_decomposition_type(O,i)
-      if gcd(deg,i^dt[1][1]-1)==1
-        @inbounds primes[i]=false
-        @inbounds sqf[i]=false
-        j=i
-        while j<= n
-         @inbounds primes[j]=false
-         @inbounds sqf[j]=false
+      dt = prime_decomposition_type(O, i)
+      if gcd(deg,i^dt[1][1]-1) == 1
+        @inbounds primes[i] = false
+        @inbounds sqf[i] = false
+        j = i
+        while j <= n
+         @inbounds primes[j] = false
+         @inbounds sqf[j] = false
          j+=i
         end
       else 
@@ -485,7 +485,6 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     end
     bound_max_ap = min(nbound, obound, tbound)  #bound on ap
     bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
-    
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
       nq=sq^((fnisc-1)*(divexact(n, fnisc)))
@@ -714,11 +713,10 @@ function conductorsQQ(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       tbound = (k+1)*(q-1)
     end
     if v == 2
-      tbound = (q*(q-1)+(k - q + 1)*(q^2-1))
+      tbound = q*(q-1)+(k - q + 1)*(q^2-1)
     end
-    bound_max_ap= min(nbound, obound, nnbound, tbound)  #bound on ap
-    bound_max_exp=div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
-    
+    bound_max_ap = min(nbound, obound, nnbound, tbound)  #bound on ap
+    bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
       fnisc=minimum(keys(factor(nisc).fac))
       nq=fmpz(q)^((fnisc-1)*(divexact(n, fnisc)))
@@ -1368,7 +1366,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :QuadraticExt 2 "Done. Now simplify and translate information\n"
-  Ks, mKs = simplify(K)
+  Ks, mKs = simplify(K, canonical = true)
   
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
