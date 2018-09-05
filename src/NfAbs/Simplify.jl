@@ -52,11 +52,11 @@ end
  # a is primitive iff the block system has length n
 function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap)
   c = FlintZZ()
+  ap.length = a.elem_length
   for i=0:a.elem_length
     Nemo.num_coeff!(c, a, i)
     setcoeff!(ap, i, c)
   end
-  ap.length = a.elem_length
 #  ap = Ft(Zx(a*denominator(a)))
   s = [ap(x) for x = R]
   b = []
