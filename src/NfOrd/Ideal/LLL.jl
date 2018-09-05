@@ -101,13 +101,13 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
-  @v_do :ClassGroup 2 print_with_color(:green, "lll basis length profile\n");
+  @v_do :ClassGroup 2 printstyled("lll basis length profile\n", color=:green);
   @v_do :ClassGroup 2 for i=1:rows(l)
     print(Float64(div(l[i,i], fmpz(2)^prec*den*den)*1.0), " : ")
   end
   @v_do :ClassGroup 2 println("")
   if nbits(maximum(abs, t)) >  div(prec, 2)
-    @v_do :ClassGroup 2 print_with_color(:red, "lll trafo too large\n");
+    @v_do :ClassGroup 2 printstyled("lll trafo too large\n", color=:red);
     throw(LowPrecisionLLL())
   end
   ## lattice has lattice disc = order_disc * norm^2
@@ -120,13 +120,13 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
 
   if cmpindex(l, 1, 1, di) > 0 
-    @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
+    @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
     @v_do :ClassGroup 3 println("bound is ", di, " value at ", 1, " is ", l[1,1]); 
     throw(LowPrecisionLLL())
   end
   pr = prod_diag(l)
   if pr > fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec)
-    @v_do :ClassGroup 2 print_with_color(:red, "LLL basis too large\n");
+    @v_do :ClassGroup 2 printstyled("LLL basis too large\n", color = :red);
     @v_do :ClassGroup 2 println("prod too large: ", pr, " > 2^(n(n-1)/2) disc = ", fmpz(2)^(div(n*(n-1), 2)) * disc * fmpz(2)^(n*prec));
     throw(LowPrecisionLLL())
   end
