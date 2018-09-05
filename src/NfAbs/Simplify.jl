@@ -56,6 +56,7 @@ function _block(a::nf_elem, R::Array{fq_nmod, 1}, ap)
     Nemo.num_coeff!(c, a, i)
     setcoeff!(ap, i, c)
   end
+  ap.length = a.elem_length
 #  ap = Ft(Zx(a*denominator(a)))
   s = [ap(x) for x = R]
   b = []
@@ -190,12 +191,12 @@ function polredabs(K::AnticNumberField)
       if lq < la + eps
         if lq > la - eps
           push!(all_a, q)
-  #        @show "new one"
+#          @show "new one", q, minpoly(q), bb
         else
           a = q
           all_a = [a]
           if lq/la < 0.8
-  #          @show "re-init"
+#            @show "re-init"
             enum_ctx_start(E, E.x, eps = 1.01)  #update upperbound
             Ec = BigFloat(E.c//E.d)
           end
