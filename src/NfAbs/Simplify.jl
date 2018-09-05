@@ -152,7 +152,9 @@ function polredabs(K::AnticNumberField)
       end
       break
     catch e
-      if isa(e, InexactError)
+      if isa(e, InexactError) ||
+         isa(e, LowPrecisionLLL) ||
+         isa(e, LowPrecisionCholesky)
         pr *= 2
         continue
       end
