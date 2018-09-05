@@ -675,7 +675,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   
   A1 = quo(O, p)
   #@show dim(A1)
-  @vtime :AlgAssOrd 1 lg = gens(A1)
+  @vtime :AlgAssOrd 1 lg = Hecke.gens(A1)
   #@show length(lg)
   lM = nmod_mat[transpose(representation_matrix(lg[i])) for i=1:length(lg)]
   #lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:dim(A1)]
@@ -977,6 +977,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, p::Int)
   #append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
+  #@show length(ls)
   poneO = O(p*one(O.algebra))
   return ( _from_submodules_to_ideals(M, O, x, fmpz(p), poneO) for x in ls )
 
@@ -994,6 +995,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
   #append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
   ls = maximal_submodules(M)
+  #@show ls
   poneO = O(p*one(O.algebra))
   return ( _from_submodules_to_ideals(M, O, I, x, fmpz(p), poneO, A1, A1toO) for x in ls )
 

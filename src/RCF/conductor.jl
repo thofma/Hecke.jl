@@ -534,7 +534,7 @@ end
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
 #
 
-function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz)
+function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz; lwp::Dict{Int, Array{NfOrdElem, 1}} = Dict{Int, Array{NfOrdElem, 1}}())
 # a is a positive integer in the modulus
 
   mr = C.rayclassgroupmap
@@ -569,17 +569,22 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz)
       prime_power[p]=p^v
     end
     wldg=mr.wild_mult_grp
-    primes_done=fmpz[]
+    primes_done = fmpz[]
     for p in keys(wldg)
       if p.minimum in primes_done
         continue
       end
       push!(primes_done, p.minimum)
       @assert lp[p]>=2
-      k=lp[p]-1
-      pk=p^k
-      pv=prime_power[p]
-      gens=_1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, Int(order(R)))
+      k = lp[p]-1
+      pk = p^k
+      pv = prime_power[p]
+      if haskey(lwp, Int(p.minimum))
+        gens = lwp[Int(p.minimum)]
+      else
+        gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, Int(order(R)))
+        lwp[Int(p.minimum)] = gens
+      end
       iscond=false
       for i in 1:length(gens)
         if !iszero(mp\ideal(O,gens[i]))

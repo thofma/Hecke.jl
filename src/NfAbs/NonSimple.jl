@@ -723,6 +723,52 @@ end
 
 ################################################################################
 #
+#  Composite of linearly disjoint fields
+#
+################################################################################
+
+function islinearly_disjoint(K1::AnticNumberField, K2::AnticNumberField)
+  
+  if gcd(degree(K1), degree(K2)) == 1
+    return true
+  end
+  d1 = numerator(discriminant(K1.pol))
+  d2 = numerator(discriminant(K2.pol))
+  if gcd(d1, d2) == 1
+    return true
+  end
+  #= 
+  #TODO: if the maximal orders are known, this is a better condition 
+  O1 = maximal_order(K1)
+  O2 = maximal_order(K2)
+  if gcd(discriminant(O1), discriminant(O2)) == 1
+    return true
+  end
+  =#
+  
+  K2t, t = PolynomialRing(K2, "t", cached= false)
+  ft = K2t(K1.pol)
+  return isirreducible(ft)
+  
+end
+
+
+function NumberField(K1::AnticNumberField, K2::AnticNumberField; cached::Bool = false, check::Bool = false)
+
+  if check
+    #I have to check that the fields are linearly disjoint
+    @assert islinearly_disjoint(K1, K2)
+  end
+  
+  K , l= number_field([K1.pol, K2.pol], "_\$")
+  mp1 = NfAbsToNfAbsNS(K1, K, l[1])
+  mp2 = NfAbsToNfAbsNS(K2, K, l[2])
+  return K, mp1, mp2
+
+end
+
+################################################################################
+#
 #  Constructors and parent object overloading
 #
 ################################################################################
