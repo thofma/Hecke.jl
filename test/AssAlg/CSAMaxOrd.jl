@@ -73,9 +73,7 @@
     @test Set(collect(keys(fac1.fac))) == Set(collect(keys(fac2.fac)))
     for p in keys(fac1.fac)
       O2 = Hecke.pmaximal_overorder_crossed_product(O, Autos, O1, Int(p))
-      @show O2
       O3 = Hecke.pmaximal_overorder(O1, Int(p))
-      @show O3
       @test valuation(discriminant(O3), p) == 0
       @test valuation(discriminant(O2), p) == 0
     end
