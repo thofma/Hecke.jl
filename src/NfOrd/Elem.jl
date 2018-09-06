@@ -620,7 +620,7 @@ function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
 end
 
 function powermod_gen(a::NfAbsOrdElem, i::fmpz, p::fmpz)
-  if i == 0 then
+  if i == 0
     return one(parent(a))
   end
   if i == 1
