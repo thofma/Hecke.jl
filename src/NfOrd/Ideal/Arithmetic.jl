@@ -603,17 +603,18 @@ end
 #  crt
 #
 ################################################################################
+
 @doc Markdown.doc"""
    crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 > Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
 using (((idempotents)))
 """
-function crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl)
+function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)
   return r1*v + r2*u
 end
 
-function crt(a::Array{NfOrdElem, 1}, I::Array{NfOrdIdl, 1})
+function crt(a::Vector{S}, I::Vector{T}) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, AlgAssAbsOrdIdl} }
   if length(a) == 1
     return a[1]
   end
@@ -628,6 +629,7 @@ function crt(a::Array{NfOrdElem, 1}, I::Array{NfOrdIdl, 1})
   end
   return crt(A, B)
 end
+
 ################################################################################
 #
 #  Division
