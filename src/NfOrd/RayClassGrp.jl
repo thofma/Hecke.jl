@@ -1351,8 +1351,8 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     
     mp=Hecke.MapRayClassGrp{typeof(U)}()
     mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
-    mp.modulus_fin=ideal(O,modulus)
-    mp.modulus_inf=real_places(nf(O))
+    mp.modulus_fin = ideal(O,modulus)
+    mp.modulus_inf = real_places(nf(O))
     mp.defining_modulus = (ideal(O, modulus), real_places(nf(O)))
     return U,mp
     
@@ -1372,7 +1372,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     
     mp = Hecke.MapRayClassGrp{typeof(U)}()
     mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
-    mp.modulus_fin = ideal(O,modulus)
+    mp.modulus_fin = ideal(O, modulus)
     mp.modulus_inf = InfPlc[]
     mp.defining_modulus = (ideal(O, modulus), InfPlc[])
 

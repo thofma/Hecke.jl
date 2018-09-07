@@ -667,7 +667,7 @@ end
 #
 #######################################################################################
 
-function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClassGrp, bound::fmpz, n::Int)
+function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClassGrp, bound::fmpz, n::Int; lwp::Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}} = Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}}())
   
  
   lp=mr.fact_mod
@@ -751,7 +751,12 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
           s = s-1
           pk = p^s
           pv = pk*p
-          gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
+          if haskey(lwp, (Int(p.minimum), s+1))
+            gens = lwp[(Int(p.minimum), s+1)]
+          else
+            gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
+            lwp[(Int(p.minimum), s+1)] = gens
+          end
           for i = 1:length(gens)
             push!(els, mp\ideal(O, gens[i]))
           end

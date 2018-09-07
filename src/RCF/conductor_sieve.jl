@@ -1366,7 +1366,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :QuadraticExt 2 "Done. Now simplify and translate information\n"
-  Ks, mKs = simplify(K, canonical = true)
+  Ks, mKs = simplify(K)#, canonical = true)
   
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
