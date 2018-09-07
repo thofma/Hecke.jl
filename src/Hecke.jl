@@ -94,7 +94,8 @@ const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
 const libdir = joinpath(pkgdir, "local", "lib")
 
 global const number_field = NumberField
-MaximalOrder() = nothing
+function MaximalOrder
+end
 global const maximal_order = MaximalOrder
 
 function __init__()
