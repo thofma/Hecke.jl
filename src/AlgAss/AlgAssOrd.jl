@@ -36,6 +36,8 @@ algebra(O::AlgAssAbsOrd) = O.algebra
 
 (O::AlgAssAbsOrd)() = O(algebra(O)())
 
+one(O::AlgAssAbsOrd) = O(one(algebra(O)))
+
 # Turn the following into a check:
 #
 #(O::AlgAssAbsOrd)(a::AlgAssElem) = begin
@@ -204,6 +206,10 @@ function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   return parent(x)(elem_in_algebra(x) + elem_in_algebra(y))
 end
 
+function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
+  return parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
+end
+
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   O=x.parent
   y=Array{fmpz,1}(undef, O.dim)
@@ -239,6 +245,25 @@ function ^(x::AlgAssAbsOrdElem, y::Union{fmpz, Int})
   z = parent(x)()
   z.elem_in_algebra = elem_in_algebra(x, Val{false})^y
   return z
+end
+
+function ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem)
+  if parent(a) != parent(b)
+    return false
+  end
+  return elem_in_algebra(a, Val{false}) == elem_in_algebra(b, Val{false})
+end
+
+function rand(O::AlgAssAbsOrd, R::UnitRange{T}) where T <: Integer
+  return O(map(fmpz, rand(R, degree(O))))
+end
+
+function rand(O::AlgAssAbsOrd, n::Integer)
+  return rand(O, -n:n)
+end
+
+function rand(O::AlgAssAbsOrd, n::fmpz)
+  return rand(O, -BigInt(n):BigInt(n))
 end
 
 ###############################################################################

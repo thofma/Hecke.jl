@@ -83,6 +83,15 @@ function assure_has_basis_mat(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
   return nothing
 end
 
+function assure_has_basis_mat_inv(a::AlgAssAbsOrdIdl)
+  if isdefined(a, :basis_mat_inv)
+    return nothing
+  else
+    a.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(a, Val{false})))
+    return nothing
+  end
+end
+
 function basis(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis(a)
   if copy == Val{true}
@@ -98,6 +107,15 @@ function basis_mat(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
     return deepcopy(a.basis_mat)
   else
     return a.basis_mat
+  end
+end
+
+function basis_mat_inv(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+  assure_has_basis_mat_inv(a)
+  if copy == Val{true}
+    return deepcopy(a.basis_mat_inv)
+  else
+    return a.basis_mat_inv
   end
 end
 
@@ -251,4 +269,34 @@ end
 
 function Base.hash(A::AlgAssAbsOrdIdl, h::UInt)
   return Base.hash(basis_mat(A, Val{false}), h)
+end
+
+################################################################################
+#
+#  Idempotents
+#
+################################################################################
+
+# Algorithm 1.3.2 in Cohen "Advanced Topics in Computational Number Theory"
+function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
+  !(order(a) === order(b)) && error("Parent mismatch")
+  O = order(a)
+  d = degree(O)
+  A = basis_mat(a, Val{false})
+  B = basis_mat(b, Val{false})
+
+  C = vcat(A, B)
+  H, U = hnf_with_transform(C)
+
+  if H != vcat(identity_matrix(FlintZZ, d), zero_matrix(FlintZZ, d, d))
+    error("Ideals are not coprime")
+  end
+
+  X = sub(U, 1:1, 1:d)
+  XA = X*A
+  x = O([ XA[1, i] for i = 1:d ])
+  @assert x in a
+  y = one(O) - x
+  @assert y in b
+  return x, y
 end
