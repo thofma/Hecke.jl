@@ -836,7 +836,7 @@ end
 function _rcf_reduce(CF::ClassField_pp)
   #e = order(codomain(CF.quotientmap))
   e = degree(CF)
-#  e = CF.o
+  e = CF.o
   if CF.sup_known
     CF.a = reduce_mod_powers(CF.a, e, CF.sup)
     CF.sup_known = false
@@ -1073,24 +1073,7 @@ end
 #Special case in which I want to extend the automorphisms of a field to
 # a cyclotomic extension
 
-function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)
-  
-  K = domain(tau)
-  @assert K == base_ring(C.Kr)
-  g = C.Kr.pol
-  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])
-  i = 1
-  z = gen(C.Kr)
-  while gcd(i, C.n) != 1 || !iszero(tau_g(z))
-    i *= 1
-    z *= gen(C.Kr) 
-  end
-  return NfRelToNfRelMor(C.Kr, C.Kr, tau, z)
-  
-end
-
 function extend_aut(A::ClassField, tau::T) where T <: Map
-  
   # tau: k       -> k
   #global last_extend = (A, tau)
   k = domain(tau)
@@ -1174,96 +1157,75 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
       emb = inv(Cs.mp[1]) * Emb * C.mp[1]
       a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
       tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
-      push!(all_emb, (a, tau_a, emb))
-    
-      z = zero_matrix(FlintZZ, 0, length(Cp[im].bigK.gen))
-      za = Int[]
-      zta = Int[]
-      G = DiagonalGroup([om for i=1:length(Cp[im].bigK.gen)])
-      el_z = elem_type(G)[]
-      q, mq = quo(G, el_z, false)
+      push!(all_emb, (a, tau_a, emb, divexact(om, c.o)))
+    end
 
-      for p = S
-        local f
-        local fa
-        local tfa
-        try
-          f = can_frobenius(p, Cp[im].bigK).coeff
-          fa = can_frobenius(p, Cp[im].bigK, a)
-          tfa = can_frobenius(p, Cp[im].bigK, tau_a)
-        catch e
-          if typeof(e) != BadPrime
-            rethrow(e)
-          end
-          continue
+    G = DiagonalGroup([om for i=1:length(Cp[im].bigK.gen)])
+    Q, mQ = quo(G, elem_type(G)[])
+    U = DiagonalGroup([om for i = Cp])
+    s_gen = elem_type(U)[]
+    tau_gen = elem_type(U)[]
+
+    for p = S
+      local f
+      local fa
+      local tfa
+      try
+        f = can_frobenius(p, Cp[im].bigK).coeff
+        fa = [can_frobenius(p, Cp[im].bigK, a[1]) for a = all_emb]
+        tfa =[can_frobenius(p, Cp[im].bigK, a[2]) for a = all_emb]
+      catch e
+        if typeof(e) != BadPrime
+          rethrow(e)
         end
-        el = G(f)
-        if iszero(mq(el))
-          continue
-        end
-        push!(el_z, el)
-        q, mq = quo(G, el_z, false)
-        z = vcat(z, f)
-        push!(za, fa)
-        push!(zta, tfa)
-        if order(q) == 1
-          break
-        end
+        continue
       end
-
-#      z = hcat(z, Cp[im].o*identity_matrix(FlintZZ, rows(z)))
-      z = hcat(z, om*identity_matrix(FlintZZ, rows(z)))
-      fl, s = cansolve(z, matrix(FlintZZ, rows(z), 1, za))
-      @assert fl
-#      s = [mod(s[x, 1], Cp[im].o) for x=1:length(Cp[im].bigK.gen)]
-      s = [mod(s[x, 1], om) for x=1:length(Cp[im].bigK.gen)]
-      #println("s: $s")
-
-      fl, tau_s = cansolve(z, matrix(FlintZZ, rows(z), 1, zta))
-      @assert fl
-#      tau_s = [(z_i_inv*tau_s[x, 1]) % Cp[im].o for x=1:length(Cp[im].bigK.gen)]
-      tau_s = [(z_i_inv*tau_s[x, 1]) % om for x=1:length(Cp[im].bigK.gen)]
-#      println("tau(s): $tau_s")
-      # so a = s -> z_i^-1 * tau_s = tau(a) (mod n) :
-      push!(all_s, s)
-      push!(all_tau_s, tau_s)
+      el = mQ(G(f))
+      if iszero(el)
+        continue
+      end
+      Q, mmQ = quo(Q, [el])
+      mQ = mQ*mmQ
+      push!(s_gen, U(fa))
+      push!(tau_gen, U(tfa))
+      if order(Q) == 1
+        break
+      end
     end
-    sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(x) for x=all_s], false)
+
+    T_grp = DiagonalGroup([om for i= s_gen])
+    t_gen = [T_grp([x[i] for x = s_gen]) for i=1:length(Cp)]
+    t_tau_gen = [T_grp([x[i] for x = tau_gen]) for i=1:length(Cp)]
+    t_corr = [gcd(content(x.coeff), om) for x = t_gen]
+    #if any entry in t_corr is != 1, then the degree of the kummer
+    #extension has to be lower:
+    #support C2 x C8, the generator for the C2 is in the Cylo(8),
+    #thus over the larger base field, the extension is trivial
     all_b = []
-    # if the above is correct, then tau_s in <s>
-    for j = 1:length(Cp)
-      sG, msG = sub(Cp[im].bigK.AutG, [Cp[im].bigK.AutG(all_s[x]) for x=1:length(all_s)], false)
-      sG, msG = sub(Cp[im].bigK.AutG, 
-          vcat([(Cp[j].o > om ? div(om, Cp[i].o) : 1) * Cp[im].bigK.AutG(all_s[x]) 
-                       for x=1:length(all_s)],
-               [Cp[j].o*Cp[im].bigK.AutG[x] for x=1:ngens(Cp[im].bigK.AutG)]), false)
-      ts = all_tau_s[j]
-      x = Cp[im].bigK.AutG(ts)
-      fl, y = haspreimage(msG, x)
-#      println(fl, " -> $(x.coeff) -> $(y.coeff)")
+    for i=1:length(Cp)
+      q, mq = quo(T_grp, divexact(Cp[i].o, Int(t_corr[i])))
+      @assert domain(mq) == T_grp
+      _, ms = sub(q, [mq(x) for x = t_gen])
+      fl, lf = haspreimage(ms, mq(t_tau_gen[i]))
       @assert fl
-      #need to establish the embeddings (which are also needed below)
-#      println([Int(y[i]) for i=1:length(Cp)])
-#      println(div(om, degree(Cp[j])))
-      mu = prod(all_emb[i][1]^Int(y[i]) for i=1:length(Cp)) * inv(all_emb[j][2])
-      mmu = evaluate(mu)
-      #global last_rt = (mmu, degree(Cp[j]))
-      rt = root(mmu, Cp[j].o)
-      push!(all_b, (rt, y))
+      mu = prod(all_emb[j][1]^lf[j] for j=1:length(Cp)) * inv(all_emb[i][2])
+      fl, rt = ispower(mu, divexact(Cp[i].o, Int(t_corr[i])))
+      @assert fl
+      push!(all_b, (evaluate(rt), lf))
     end
+    
     Ka = C.Ka
     KaT, X = PolynomialRing(Ka, "T", cached = false)
-    KK, gKK = number_field([X^Cp[j].o - evaluate(all_emb[j][1]) for j=1:length(Cp)])
+    KK, gKK = number_field([X^Int(divexact(Cp[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(Cp)])
     s = []
     for i in 1:length(Cp)
       _s = gKK[1]
-      _s = _s^Int(all_b[i][2][1])
+      _s = _s^Int(divexact(om, divexact(Cp[i].o, t_corr[i]))*all_b[i][2][1])
       for j in 2:length(Cp)
-        _s = _s * gKK[j]^Int(all_b[i][2][j])
+        _s = _s * gKK[j]^Int(divexact(om, divexact(Cp[i].o, t_corr[i]))*all_b[i][2][j])
       end
       push!(s, _s)
     end
-    #prod(gKK[j]^Int(divexact(all_b[i][2][j], div(om, Cp[j].o))) for j=1:length(Cp))
     h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1]) * s[i] for i=1:length(Cp)])
 
     # now "all" that remains is to restrict h to the subfield, using lin. alg..
@@ -1276,18 +1238,17 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     for jj=1:length(Cp)
       emb = NfRelToNfRel_nsMor(Cp[jj].K, KK, all_emb[jj][3], gens(KK)[jj])
 #      println("start:")
-#      println(gen(Cp[j].K), " -> ", emb(gen(Cp[j].K)))
-#      println(Cp[j].K.pol, " -> ", minpoly(emb(gen(Cp[j].K))))
+#      println(gen(Cp[jj].K), " -> ", emb(gen(Cp[jj].K)))
+#      println(Cp[jj].K.pol, " -> ", minpoly(emb(gen(Cp[jj].K))))
       pe = emb(Cp[jj].pe)
       tau_pe = h(pe)
-#      println("$(Cp[j].pe) pe: $pe -> $tau_pe")
-#      println(norm(minpoly(Cp[j].pe)))
+#      println("$(Cp[jj].pe) pe: $pe -> $tau_pe")
+#      println(norm(minpoly(Cp[jj].pe)))
 #      println(norm(minpoly(pe)))
 #      println(norm(minpoly(tau_pe)))
 #      println("=======")
       push!(all_pe, (pe, tau_pe))
     end
-
 
     B = [KK(1), all_pe[1][1]]
     d = degree(Cp[1])
@@ -1318,6 +1279,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
     for jj=1:length(Cp)
       N = SRow(all_pe[jj][2])
       Nk = _expand(N, C.mp[1])
+      global last_solve = (Mk, Nk, M, N)
       n = solve(Mk, Nk)
       im = sum(v*b_AA[l] for (l, v) = n)
       push!(all_im, im)

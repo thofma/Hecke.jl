@@ -127,6 +127,7 @@ function polredabs(K::AnticNumberField)
   F, w = FiniteField(p, d, "w", cached=false)
   Ft, t = PolynomialRing(F, "t", cached=false)
   ap = Ft()
+  fit!(ap, degree(K)+1)
   R = roots(K.pol, F)
   Zx = FlintZZ["x"][1]
   n = degree(K)

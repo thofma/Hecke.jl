@@ -215,6 +215,10 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
 end
 
 function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = false)
+  if n == 1
+    return true, a
+  end
+  @assert n > 1
   if typeof(decom) == Bool
     ZK = maximal_order(base_ring(a))
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))

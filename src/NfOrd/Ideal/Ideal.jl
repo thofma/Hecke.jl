@@ -1163,7 +1163,7 @@ iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 > basis matrix of $I$ and $(b_1,\dotsc,b_d)$ is the coefficient vector of $y$,
 > then $0 \leq b_i < a_i$ for $1 \leq i \leq d$.
 """
-function mod(x::NfOrdElem, y::NfAbsOrdIdl)
+function mod(x::S, y::T) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfAbsOrdIdl, AlgAssAbsOrdIdl} }
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape

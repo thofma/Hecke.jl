@@ -142,7 +142,8 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   order::AlgAssAbsOrd                     # Order containing it
   basis::Vector{AlgAssAbsOrdElem{S, T}} # Basis of the ideal as array of elements of the order
   basis_mat::fmpz_mat              # Basis matrix of ideal wrt basis of the order
-  gens::Vector{AlgAssAbsOrdElem{S, T}}# Generators of the ideal 
+  basis_mat_inv::FakeFmpqMat
+  gens::Vector{AlgAssAbsOrdElem{S, T}}# Generators of the ideal
 
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
     r = new{S, T}()
