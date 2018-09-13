@@ -686,24 +686,32 @@ end
 
 
 # computes the n-th division polynomial psi_n in ZZ[x,y] for a given elliptic curve E over ZZ
-function division_polynomialE(E::EllCrv, n::Int)
+function division_polynomialE(E::EllCrv, n::Int, x = nothing, y = nothing)
 
   A = numerator(E.coeff[1])
   B = numerator(E.coeff[2])
 
+  if x === nothing
+    Zx, _x = PolynomialRing(FlintZZ, "x")
+    Zxy, y = PolynomialRing(Zx, "y")
+    x = Zxy(_x)
+  else
+    Zxy = parent(x)
+  end
+
   if n == 1
-    return one(_Zxy)
+    return one(Zxy)
   elseif n == 2
-    return 2*_Zxy(_y)
+    return 2*y
   elseif n == 3
-    return 3*_Zxy(_x)^4 + 6*(A)*_Zxy(_x)^2 + 12*(B)*_Zxy(_x) - (A)^2
+    return 3*x^4 + 6*(A)*x^2 + 12*(B)*x - (A)^2
   elseif n == 4
-    return 4*_Zxy(_y)*(_Zxy(_x)^6 + 5*(A)*_Zxy(_x)^4 + 20*(B)*_Zxy(_x)^3 - 5*(A)^2*_Zxy(_x)^2 - 4*(A)*(B)*_Zxy(_x) - 8*(B)^2 - (A)^3)
+    return 4*y*(x^6 + 5*(A)*x^4 + 20*(B)*x^3 - 5*(A)^2*x^2 - 4*(A)*(B)*x - 8*(B)^2 - (A)^3)
   elseif mod(n,2) == 0
     m = div(n,2)
-    return divexact( (division_polynomialE(E,m))*(division_polynomialE(E,m+2)*division_polynomialE(E,m-1)^2 - division_polynomialE(E,m-2)*division_polynomialE(E,m+1)^2), 2*_Zxy(_y))
+    return divexact( (division_polynomialE(E,m,x,y))*(division_polynomialE(E,m+2, x, y)*division_polynomialE(E,m-1,x, y)^2 - division_polynomialE(E,m-2,x, y)*division_polynomialE(E,m+1,x,y)^2), 2*y)
   else m = div(n-1,2)
-    return division_polynomialE(E,m+2)*division_polynomialE(E,m)^3 - division_polynomialE(E,m-1)*division_polynomialE(E,m+1)^3
+    return division_polynomialE(E,m+2,x,y)*division_polynomialE(E,m,x,y)^3 - division_polynomialE(E,m-1,x,y)*division_polynomialE(E,m+1,x,y)^3
   end
 end
 
@@ -739,15 +747,19 @@ function Psi_polynomial(E::EllCrv, n::Int)
         error("Psi-polynomial not defined")
     end
 
-    # g = y^2
-    g = _Zx(_x)^3 + (numerator(E.coeff[1]))*_Zx(_x) + numerator(E.coeff[2])
+    Zx, _x = PolynomialRing(FlintZZ, "x")
+    Zxy, y = PolynomialRing(Zx, "y")
+    x = Zxy(_x)
 
-    h = division_polynomialE(E, n)
+    # g = y^2
+    g = _x^3 + (numerator(E.coeff[1]))*_x + numerator(E.coeff[2])
+
+    h = division_polynomialE(E, n, x, y)
     # make h into an element of ZZ[x]
 
     # in the even case, first divide by 2y and then replace y^2
     if mod(n,2) == 0
-        f = divexact(h,2*_Zxy(_y))
+        f = divexact(h,2*y)
         f = replace_all_squares(f,g)
     else
         f = replace_all_squares(h,g)

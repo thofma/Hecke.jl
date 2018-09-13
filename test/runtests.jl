@@ -11,7 +11,7 @@ for scope in Hecke.ASSERT_SCOPE
 end
 
 @time include("AssAlg.jl")
-#include("EllCrv.jl")
+@time include("EllCrv.jl")
 @time include("GrpAb.jl")
 @time include("LinearAlgebra.jl")
 @time include("Map.jl")
