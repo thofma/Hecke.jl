@@ -1072,6 +1072,21 @@ end
 
 #Special case in which I want to extend the automorphisms of a field to
 # a cyclotomic extension
+function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
+   		
+  K = domain(tau)		
+  @assert K == base_ring(C.Kr)		
+  g = C.Kr.pol		
+  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])		
+  i = 1		
+  z = gen(C.Kr)		
+  while gcd(i, C.n) != 1 || !iszero(tau_g(z))		
+    i *= 1		
+    z *= gen(C.Kr) 		
+  end		
+  return NfRelToNfRelMor(C.Kr, C.Kr, tau, z)		
+  		
+end
 
 function extend_aut(A::ClassField, tau::T) where T <: Map
   # tau: k       -> k
@@ -1626,11 +1641,16 @@ end
 """
 function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
+  mq1 = a.quotientmap
+  mq2 = b.quotientmap
+  if !isisomorphic(codomain(mq1), codomain(mq2))
+    return false
+  end
+  expo = Int(exponent(codomain(mq1)))
   c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-  d = lcm(degree(a), degree(b))
 
-  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
+  r, mr = ray_class_group(c, c_inf, n_quo = expo)
   C = ray_class_field(mr)
   @assert defining_modulus(C) == (c, c_inf)
   h = norm_group_map(C, [a,b])
