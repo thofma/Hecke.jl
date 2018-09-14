@@ -32,11 +32,22 @@ end
 
 algebra(O::AlgAssAbsOrd) = O.algebra
 
-(O::AlgAssAbsOrd)(a::AlgAssAbsOrdElem) = O(elem_in_algebra(a, Val{false}))
+(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} =begin
+  b = elem_in_algebra(a)
+  if check
+    (x, y) = _check_elem_in_order(b, O)
+    !x && error("Algebra element not in the order")
+    return O(b, y)
+  else
+    return O(b)
+  end
+end
 
 (O::AlgAssAbsOrd)() = O(algebra(O)())
 
 one(O::AlgAssAbsOrd) = O(one(algebra(O)))
+
+zero(O::AlgAssAbsOrd) = O()
 
 # Turn the following into a check:
 #
@@ -192,6 +203,26 @@ end
 #=   end =#
 #= end =#
 
+function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+  t = zero_matrix(FlintQQ, 1, degree(O))
+  elem_to_mat_row!(t, 1, a)
+  t = FakeFmpqMat(t)
+  t = t*basis_mat_inv(O, Val{false})
+  if short == Val{true}
+    return isone(t.den)
+  elseif short == Val{false}
+    if !isone(t.den)
+      return false, Vector{fmpz}()
+    else
+      v = Vector{fmpz}(undef, degree(O))
+      for i = 1:degree(O)
+        v[i] = deepcopy(t.num[1, i])
+      end
+      return true, v
+    end
+  end
+end
+
 function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   @assert parent(x)==parent(y)
   O=parent(x)
@@ -208,6 +239,10 @@ end
 
 function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   return parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
+end
+
+function -(x::AlgAssAbsOrdElem)
+  return parent(x)(-elem_in_algebra(x, Val{false}))
 end
 
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)

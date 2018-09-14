@@ -169,6 +169,12 @@ function ideal(O::AlgAssAbsOrd{S, T}, M::fmpz_mat, M_in_hnf::Bool = false) where
   return AlgAssAbsOrdIdl{S, T}(O, M)
 end
 
+function ideal(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdElem{S, T}) where {S, T}
+  @assert parent(a) == O
+  M = representation_matrix(a)
+  return ideal(O, M)
+end
+
 function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}) where { T <: AlgAssAbsOrdElem }
   d = degree(O)
   @assert length(b) >= d
