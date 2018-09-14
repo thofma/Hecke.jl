@@ -116,8 +116,9 @@ function _min_wild(D::Dict{NfOrdIdl, Int})
 
 end
 
-function totally_positive_generators(mr::MapRayClassGrp, a::fmpz, wild::Bool=false)
-
+function totally_positive_generators(mr::MapRayClassGrp, wild::Bool=false)
+  
+  a = minimum(mr.modulus_fin)
   if isdefined(mr, :tame_mult_grp)
     tmg=mr.tame_mult_grp
     for (p,v) in tmg
@@ -471,6 +472,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
     obound = flog(boundsubext, sq)
     #Bound coming from ramification groups
     tbound = obound
+    #=
     if v == 1
       k = div(lp[1][2]*q, q-1)
       tbound = (k+1)*(q-1)
@@ -483,6 +485,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       k = div(lp[1][2]*q^v, q-1)
       tbound = q*(q-1) + q*(q^2-1) + (k-q^2+1)*(q^3-1)
     end
+    =#
     bound_max_ap = min(nbound, obound, tbound)  #bound on ap
     bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
@@ -904,11 +907,11 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     act=induce_action(mr,gens)
     ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype=gtype)
     a=_min_wild(k[2])*k[1]
-    totally_positive_generators(mr,a)
+    totally_positive_generators(mr)
     for s in ls
       @hassert :QuadraticExt 1 order(codomain(s))==n
       C=ray_class_field(mr, s)
-      if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+      if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
         @vprint :QuadraticExt 1 "New Field \n"
         L = number_field(C)
         if absolute_galois_group != :all
@@ -975,6 +978,40 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
     end
   end
   return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in final_list)
+
+end
+
+function _quad_ext(bound::Int)
+  
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  K = NumberField(x-1)[1]
+  Kt, t = PolynomialRing(K, "t")
+  sqf=squarefree_up_to(bound)
+  sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  final_list = Int[]
+  for i=1:length(sqf)
+    if abs(sqf[i]*4)< bound
+      @views push!(final_list, sqf[i])
+      continue
+    end
+    if mod(sqf[i], 4) == 1
+      @views push!(final_list, sqf[i])
+    end
+  end
+  fields_list = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{nf_elem}, 1}}[]
+  for i in final_list
+    if mod(i,4) != 1
+      L, gL = number_field([t^2-i], cached=false, check = false)
+      auts = [NfRel_nsToNfRel_nsMor(L, L, [-gL[1]])]
+      push!(fields_list, (L, auts))
+    else
+      L, gL = number_field([t^2-t+divexact(1-i,4)], cached=false, check = false)
+      auts = [NfRel_nsToNfRel_nsMor(L, L, [1-gL[1]])]
+      push!(fields_list, (L, auts))
+    end
+  end
+  return fields_list
+
 
 end
 

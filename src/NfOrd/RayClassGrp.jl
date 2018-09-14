@@ -329,8 +329,14 @@ function carlos_units(O::NfOrd)
       if a==0
         continue
       end
-      emb=signs(K(a),p)
-      t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      emb = signs(K(a), p)
+      ar = [0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      t = S(ar)
       if !Hecke.haspreimage(mu, t)[1]
         push!(s, t)
         push!(g, a)
@@ -357,7 +363,13 @@ function carlos_units(O::NfOrd)
           continue
         end
         emb=signs(a,p)
-        t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+        ar = [0 for i = 1:length(p)]
+        for i=1:length(p)
+          if emb[p[i]] == -1
+            ar[i] = 1
+          end
+        end
+        t = S(ar)
         if !Hecke.haspreimage(mu, t)[1]
           push!(s, t)
           push!(g, O(a,false))
@@ -396,13 +408,25 @@ function carlos_units(O::NfOrd)
     end 
 
     function log(B::nf_elem)
-      emb=Hecke.signs(B,p)
-      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      emb = Hecke.signs(B, p)
+      res = Int[0 for i=1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          res[i] = 1
+        end
+      end
+      return S(res)
     end 
     
     function log(B::FacElem{nf_elem})
-      emb=Hecke.signs(B,p)
-      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      emb = Hecke.signs(B, p)
+      res = Int[0 for i=1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          res[i] = 1
+        end
+      end
+      return S(res)
     end 
     
     _set_carlos_units_of_order(O, (S,exp,log))
@@ -413,9 +437,9 @@ end
 
 function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
     
-    K=O.nf
-    if p==real_places(K)
-      S,exp1,log1= carlos_units(O)
+    K = nf(O)
+    if p == real_places(K)
+      S, exp1, log1 = carlos_units(O)
       function exp2(a::GrpAbFinGenElem)
         return m.gen_one*exp1(a)
       end
@@ -439,8 +463,14 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
       if a==0
         continue
       end
-      emb=signs(K(a),p)
-      t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      emb=signs(K(a), p)
+      ar = [0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      t = S(ar)
       if !Hecke.haspreimage(mu, t)[1]
         push!(s, t)
         push!(g, a)
@@ -465,7 +495,13 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
               continue
             end
             emb=signs(a,p)
-            t=S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+            ar = [0 for i = 1:length(p)]
+            for i=1:length(p)
+              if emb[p[i]] == -1
+                ar[i] = 1
+              end
+            end
+            t = S(ar)
             if !Hecke.haspreimage(mu, t)[1]
               push!(s, t)
               push!(g, O(a, false))
@@ -507,12 +543,24 @@ function _infinite_primes(O::NfOrd, p::Array{InfPlc,1}, m::NfOrdIdl)
 
     function log(B::nf_elem)
       emb=Hecke.signs(B,p)
-      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      ar = [0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      return S(ar)
     end 
     
     function log(B::FacElem{nf_elem})
       emb=Hecke.signs(B,p)
-      return S([emb[x]==1 ? 0 : 1 for x in collect(keys(emb))])
+      ar = [0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      return S(ar)
     end 
   return S, exp, log
   
@@ -1074,7 +1122,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      @vtime :RayFacElem 1 H,eH,lH=Hecke._infinite_primes(O,pr,I)
+      @vtime :RayFacElem 1 H,eH,lH=Hecke._infinite_primes(O, pr, I)
       T=G
       G =Hecke.direct_product(G,H)
     end
@@ -1119,7 +1167,10 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
 
   expo=exponent(G)
   
-  R=zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
+  R = zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
+  for i=1:cols(R)
+    R[ngens(C)+ngens(U)+ngens(G)+i,i] = n
+  end
   for i=1:ngens(C)
     R[i,i]=C.snf[i]
   end
@@ -1132,9 +1183,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
     end
   end
-  for i=1:cols(R)
-    R[ngens(C)+ngens(U)+ngens(G)+i,i]=n
-  end
+  
   
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
@@ -1172,8 +1221,8 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       if i==1
         a=hcat(a, matrix(FlintZZ,1,length(pr), [1 for i in pr]))
       else
-        b=lH(mU(U[i]))
-        a=hcat(a, b.coeff)
+        b = lH(mU(U[i]))
+        a = hcat(a, b.coeff)
       end
     end
     for j=1:ngens(G)
@@ -1458,7 +1507,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       # First, I change them in order to be coprime to coprime_to
       change_into_coprime(mR, coprime_to)
     end
-    @vtime :NfOrd 1 totally_positive_generators(mR, mm, true)
+    @vtime :NfOrd 1 totally_positive_generators(mR, true)
     tmg=mR.tame_mult_grp
     wld=mR.wild_mult_grp
     for (p,v) in tmg
@@ -1654,8 +1703,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
           end
         end
       end
-      M=ModAlgAss(act_mat)
-      
+      M = ModAlgAss(act_mat)
       #
       #  Searching for submodules
       #
@@ -1667,7 +1715,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
             push!(quotype_p,v)
           end
         end
-        if Int(p)*quotype_p==S.snf
+        if Int(p)*quotype_p == S.snf
           plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
           push!(list, ([plist1]))
           continue
@@ -1714,7 +1762,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
           push!(list, ([plist1]))
           continue
         end
-        plist=submodules(M, typequo = quotype_p)
+        plist = submodules(M, typequo = quotype_p)
       else
         if minimal
           plist = minimal_submodules(M)

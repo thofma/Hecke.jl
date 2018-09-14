@@ -97,21 +97,18 @@ end
 
 function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Union{Int, fmpz}, n::Int)
   
-  O=maximal_order(K)
-  b=basis(pk)
+  O = maximal_order(K)
+  b = basis(pk)
   N = basis_mat(pv, Val{false})*basis_mat_inv(pk, Val{false})
-  G=AbelianGroup(N.num)
-  S,mS=snf(G)
+  G = AbelianGroup(N.num)
+  S,mS = snf(G)
   #Generators
-  gens=Array{NfOrdElem,1}(undef, ngens(S))
+  gens = Array{NfOrdElem,1}(undef, ngens(S))
   for i=1:ngens(S)
-    gens[i]=O(0)
+    gens[i]=O(1)
     for j=1:ngens(G)
       gens[i]+=mod(mS.map[i,j], S.snf[end])*b[j]
     end
-  end
-  for i=1:ngens(S)
-    gens[i]+=1
   end
   if length(lp) > 1
     i_without_p = ideal(O,1)
@@ -119,14 +116,14 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
       (p != p2) && (i_without_p *= prime_power[p2])
     end
 
-    alpha, beta = idempotents(prime_power[p],i_without_p)
+    alpha, beta = idempotents(prime_power[p], i_without_p)
     for i in 1:length(gens)
       gens[i] = beta*gens[i] + alpha
     end   
   end
   if mod(n,2)==0
     for i=1:length(gens)
-      gens[i]=make_positive(gens[i],fmpz(a))
+      gens[i] = make_positive(gens[i],fmpz(a))
     end
   end
   return gens
@@ -194,7 +191,7 @@ function conductor(C::Hecke.ClassField)
   end
   
   if !isempty(inf_plc)
-    totally_positive_generators(mR, cond.gen_one)
+    totally_positive_generators(mR)
   end
 
   #Finite part of the modulus
@@ -214,7 +211,7 @@ function conductor(C::Hecke.ClassField)
       gens=GrpAbFinGenElem[]
       Q=DiagonalGroup(Int[])
       while k1>=1
-        multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, Int(cond.gen_one),Int(E))
+        multg=_1pluspk_1pluspk1(K, p, p^k1, p^k2, mR.fact_mod, prime_power, minimum(cond), Int(E))
         for i=1:length(multg)
           push!(gens, preimage(mp, ideal(O,multg[i])))
         end
@@ -534,21 +531,20 @@ end
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
 #
 
-function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz; lwp::Dict{Int, Array{NfOrdElem, 1}} = Dict{Int, Array{NfOrdElem, 1}}())
-# a is a positive integer in the modulus
+function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOrdElem, 1}} = Dict{Int, Array{NfOrdElem, 1}}())
 
   mr = C.rayclassgroupmap
-
+  a = minimum(mr.modulus_fin)
   mp = inv(C.quotientmap) * mr 
   R = domain(mp)
 
-  lp=mr.fact_mod
+  lp = mr.fact_mod
   if isempty(lp)
     return true
   end
-  O=order(first(keys(lp)))
-  K=nf(O)
-  tmg=mr.tame_mult_grp
+  O = order(first(keys(lp)))
+  K = nf(O)
+  tmg = mr.tame_mult_grp
   #first, tame part
   primes_done=fmpz[]
   for p in keys(tmg)
@@ -556,7 +552,8 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz; lwp::Dict{Int, A
       continue
     end
     push!(primes_done, p.minimum)
-    el=mp\ideal(O,tmg[p].generators[1])
+    I = ideal(O, tmg[p].generators[1])
+    el = mp\I
     if iszero(el)
       return false
     end
@@ -564,11 +561,11 @@ function _is_conductor_min_normal(C::Hecke.ClassField, a::fmpz; lwp::Dict{Int, A
   
   #wild part
   if !isempty(mr.wild_mult_grp)
-    prime_power=Dict{NfOrdIdl, NfOrdIdl}()
+    prime_power = Dict{NfOrdIdl, NfOrdIdl}()
     for (p,v) in lp
-      prime_power[p]=p^v
+      prime_power[p] = p^v
     end
-    wldg=mr.wild_mult_grp
+    wldg = mr.wild_mult_grp
     primes_done = fmpz[]
     for p in keys(wldg)
       if p.minimum in primes_done
@@ -667,22 +664,24 @@ end
 #
 #######################################################################################
 
-function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClassGrp, bound::fmpz, n::Int; lwp::Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}} = Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}}())
+function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}} = Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}}())
   
- 
-  lp=mr.fact_mod
-  abs_disc=factor(discriminant(O)^n).fac
+  mr = C.rayclassgroupmap 
+  O = base_ring(C)
+  n = degree(C)
+  lp = mr.fact_mod
+  abs_disc = factor(discriminant(O)^n).fac
   if isempty(lp)
     C.absolute_discriminant=abs_disc
     return true
   end
-  K=nf(O)
-  
+  K = nf(O)
+  d = degree(K)
   discr = fmpz(1)
-  mp=inv(C.quotientmap) * C.rayclassgroupmap 
-  R=domain(mp)
-  
-  cyc_prime= isprime(n)==true
+  mp = inv(C.quotientmap) * mr
+  R = domain(mp)
+  a = minimum(mr.modulus_fin)
+  cyc_prime = isprime(n)
   
   #first, tamely ramified part
   tmg=mr.tame_mult_grp
@@ -700,7 +699,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
       q,mq=quo(R,[el])
       ap-= order(q)
     end
-    qw=divexact(degree(O),prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+    qw=divexact(d,prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
     discr*=fmpz(p.minimum)^qw
     if discr > bound
       @vprint :QuadraticExt 2 "too large\n"
@@ -731,7 +730,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
       if p.minimum in primes_done
         continue
       end 
-      np = p.minimum^divexact(degree(O), prime_decomposition_type(O,Int(p.minimum))[1][2])
+      np = p.minimum^divexact(d, prime_decomposition_type(O,Int(p.minimum))[1][2])
       push!(primes_done, p.minimum) 
       ap = n*lp[p]
       if cyc_prime
@@ -777,7 +776,7 @@ function discriminant_conductor(O::NfOrd, C::ClassField, a::fmpz, mr::MapRayClas
       end
       np1 = np^ap
       discr *= np1
-      if discr>bound
+      if discr > bound
         @vprint :QuadraticExt 2 "too large\n"
         return false
       #else
@@ -1041,11 +1040,11 @@ end
 
 function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = true; of_closure::Bool = false) where T <: PolyElem{nf_elem}
   
-  R=mR.header.domain
-  O=mR.modulus_fin.order
+  R = mR.header.domain
+  O = mR.modulus_fin.order
   K=O.nf
-  N=lcm([numerator(norm(K(discriminant(x)))) for x = f])
-  N1=fmpz(norm(mR.modulus_fin))
+  N = lcm([numerator(norm(K(discriminant(x)))) for x = f])
+  N1 = fmpz(norm(mR.modulus_fin))
 
   @assert all(x->base_ring(x) == K, f)
 
@@ -1068,7 +1067,7 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   
   max_stable = 2*n
   stable = max_stable
-
+  denom = lcm([denominator(coeff(x, i)) for x in f for i = 1:degree(x)])
   while true
     if isabelian && order(Q) == n
       break
@@ -1076,18 +1075,18 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
     if !isabelian && order(Q) <= n && stable <= 0
       break
     end
-    p=next_prime(p)
-    if !divisible(N,p) && !divisible(N1,p) 
-      L=prime_decomposition(O,p,1)
+    p = next_prime(p)
+    if !divisible(N,p) && !divisible(N1,p) && !divisible(denom, p)
+      L = prime_decomposition(O,p,1)
       for i=1:length(L)
         candidate = mR\L[i][1]
         if iszero(mQ(candidate))
           stable -= 1
           continue
         end
-        F,mF=ResidueFieldSmall(O,L[i][1])
+        F,mF = ResidueFieldSmall(O,L[i][1])
         mFp = extend_easy(mF, K)  
-        Fz,z= PolynomialRing(ResidueRing(FlintZZ, Int(p)), "z", cached=false)
+        Fz, z = PolynomialRing(ResidueRing(FlintZZ, Int(p)), "z", cached=false)
         all_deg = []
         #= the idea, taking 2 polys:
           f splits in d_i
@@ -1176,9 +1175,9 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   # we need the disc ZK/k, well a conductor.
   # I think for now, I cheat
   d = div(discriminant(ZK), discriminant(zk)^div(degree(K), degree(k)))
-
-  M0 = defining_modulus(A)[1]
-  f_M0 = factor(M0)
+  mR1 = A.rayclassgroupmap
+  mC = inv(A.quotientmap)*mR1
+  f_M0 = mR1.fact_mod
   # want m0 meet zk:
   f_m0 = typeof(f_M0)()
   for (P,e) = f_M0
@@ -1190,52 +1189,21 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
       f_m0[p] = e
     end
   end
-  if length(f_m0) == 0
-    m0 = ideal(zk, 1)
-    m0 = lcm(m0, ideal(zk, d))
-  else
-    m0 = evaluate(FacElem(f_m0), coprime = true)
-    @assert denominator(m0) == 1
-    m0 = lcm(numerator(m0), ideal(zk, d))
-  end
-
-  r, mr = ray_class_group(m0, real_places(k), n_quo = degree(A) * div(degree(K), degree(k)))
-  Q, mQ = quo(r, elem_type(r)[], false)
-
-  p = 100
-  max_stable = ngens(domain(A.rayclassgroupmap)) * degree(K) * 4 #need s.th. better here!!
-  stable = max_stable
-  #= Think: 
-   should be enough to generate r
-   and the Bach-bound from above for K/k
-  =#
-  while true
-    p = next_prime(p)
-    if minimum(m0) % p == 0
-      continue
-    end
-    lp = prime_decomposition(zk, p, 1)
-    for (P, e) = lp
-      @assert e == 1
-      c = mr\P
-      lP = prime_decomposition_nonindex(mp, P)
-      for (PP, ee) = lP
-        (e, f, g) = prime_decomposition_type(A, PP)
-        cq = mQ(div(degree(PP), degree(P))*f*c)
-        if iszero(cq)
-          stable -= 1
-          continue
-        end
-        Q, nQ = quo(Q, [cq], false)
-        mQ = mQ*nQ
-        stable = max_stable
-      end
-    end
-    if stable <= 0 || order(Q) == 1
-      break
-    end
-  end
-  return ray_class_field(mr, GrpAbFinGenMap(mQ))
+  
+  expo = Int(exponent(codomain(A.quotientmap)))
+  R, mR = Hecke.ray_class_group_quo(ZK, expo, f_M0, real_places(K))
+  r, mr = Hecke.ray_class_group_quo(zk, expo * div(degree(K), degree(k)), f_m0, real_places(k))
+  lP, gS = Hecke.find_gens(mR, coprime_to = minimum(mR1.modulus_fin))
+  listn = [norm(mp, x) for x in lP]
+  # Create the map between R and r by taking norms
+  proj = hom(gS, [mr\x for x in listn])
+  #compute the norm group of A in R
+  proj1 = hom(gS, [mC\x for x in lP])
+  S, mS = kernel(proj1)
+  mS1 = Hecke._compose(mS, proj)
+  G, mG = Hecke.cokernel(mS1)
+  return ray_class_field(mr, mG)
+  
 end
 
 @doc Markdown.doc"""

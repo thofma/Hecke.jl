@@ -771,7 +771,7 @@ function _relations(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
     end
     i=i+1
   end
-  return sys
+  return view(sys, 1:N.dimension, 1:N.dimension)
 end
 
 function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
@@ -783,36 +783,17 @@ function _irrsubs(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
   if rel[N.dimension, N.dimension]!=0
     return T[]
   end
-  a,kern=nullspace(rel)
+  a,kern = nullspace(rel)
   # TODO: Remove this once fixed.
   if !(kern isa T)
     a, kern = kern, a
   end
-  kern=transpose(kern)
-  if a==1
+  kern = transpose(kern)
+  if a == 1
     return T[closure(kern, N.action)]
   end  
-  #
-  #  Reduce the number of homomorphism to try by considering the action of G on the homomorphisms
-  #
   vects=T[sub(kern, i:i, 1:N.dimension) for i=1:a]
-  i=1
-  while i<length(vects)
-    X=closure(vects[i],N.action)
-    j=i+1
-    while j<= length(vects)
-      if iszero(cleanvect(X,vects[j]))
-        deleteat!(vects,j)
-      else
-        j+=1
-      end
-    end
-    i+=1
-  end
-  if length(vects)==1
-    return T[closure(vects[1], N.action)]
-  end
-  
+
   #
   #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
   #  Notice that we eliminate lots of candidates considering the action of the group on the homomorphisms space

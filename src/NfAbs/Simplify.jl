@@ -11,7 +11,7 @@ export simplify
  > Both version require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false)
-  Qx,x = PolynomialRing(FlintQQ)
+  Qx, x = PolynomialRing(FlintQQ)
   if canonical
     a, f1 = polredabs(K)
     f = Qx(f1)

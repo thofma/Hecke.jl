@@ -111,14 +111,13 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
     end
     act=Hecke.induce_action(mr,gens)
     ls=stable_subgroups(r,act, op=(x, y) -> quo(x, y, false)[2], quotype = [3])
-    a=Hecke._min_wild(k[2])*k[1]
-    Hecke.totally_positive_generators(mr,a)
+    Hecke.totally_positive_generators(mr)
     for s in ls
       if _trivial_action(s,act,3)
         continue
       end
       C=ray_class_field(mr, s)
-      if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,3)
+      if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
         @vprint :QuadraticExt 1 "New Field"
         L=number_field(C)
         SS=Hecke.simple_extension(L)[1]
@@ -256,13 +255,12 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
     end
     act=Hecke.induce_action(mr,gens)
     ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = [5])
-    a=Hecke._min_wild(k[2])*k[1]
     for s in ls
       if _trivial_action(s,act,5)
         continue
       end
-      C=ray_class_field(mr, s)
-      if Hecke._is_conductor_min_normal(C,a)
+      C = ray_class_field(mr, s)
+      if Hecke._is_conductor_min_normal(C)
         @vprint :QuadraticExt 1 "New Field"
         L=number_field(C)
         auto=Hecke.extend_aut(C, gens[1])
@@ -463,7 +461,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
           continue
         end
         C=ray_class_field(mr, s)
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,n)
+        if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
           @vprint :QuadraticExt 1 "\n New Field!\n"
           L=number_field(C)
           ram_primes=Set(collect(keys(factor(a).fac)))
@@ -550,13 +548,12 @@ function C3xD5_extensions(non_normal_bound::fmpz)
       end
       act=Hecke.induce_action(mr,gens)
       ls=stable_subgroups(r,act, quotype = [15], op=(x, y) -> quo(x, y, false)[2])
-      a=Hecke._min_wild(k[2])*k[1]
       for s in ls
         if !_right_actionD5C3(s,act)
           continue
         end
         C=ray_class_field(mr, s)
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
+        if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
           @vprint :QuadraticExt "New Field \n"
           #Before computing the field, I check if the discriminant of the $D_5$ extension is compatible
           s1=codomain(s)
@@ -676,7 +673,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
           continue
         end
         C=ray_class_field(mr, s)
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,15)
+        if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
           @vprint :QuadraticExt 1  "\n New Field!\n"
           #Before computing the field, I check if the discriminant of the $S_3$ extension is compatible
           s1=codomain(s)
@@ -795,13 +792,12 @@ function C9semiC4(absolute_bound::fmpz, l)
       act=Hecke.induce_action(mr,gens)
       @vprint :QuadraticExt 1 "Computing subgroups\n"
       ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = [9])
-      a=Hecke._min_wild(k[2])*k[1]
       for s in ls
         if _trivial_action(s,act,9)
           continue
         end
         C=ray_class_field(mr, s)
-        if Hecke._is_conductor_min_normal(C,a) && Hecke.discriminant_conductor(O,C,a,mr,bound,9) && evaluate(FacElem(C.absolute_discriminant)) <= absolute_bound
+        if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound) && evaluate(FacElem(C.absolute_discriminant)) <= absolute_bound
           absolute_bound=evaluate(FacElem(C.absolute_discriminant))
           @vprint :QuadraticExt 1 "New Field with discriminant $absolute_bound"
           field=C
