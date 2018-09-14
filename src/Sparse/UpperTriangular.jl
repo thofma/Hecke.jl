@@ -118,7 +118,7 @@ function upper_triangular(A::SMat{T}; mod = 0) where T
         rref!(h)
         h = Array(lift(h))
       end
-      h = SMat(h)
+      h = sparse_matrix(h)
       for j in h.rows
         rw = SRow{T}()
         for e in 1:length(j.pos)

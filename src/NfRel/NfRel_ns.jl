@@ -514,7 +514,7 @@ function minpoly_sparse(a::NfRel_nsElem)
   K = parent(a)
   n = degree(K)
   k = base_ring(K)
-  M = SMat(k)
+  M = sparse_matrix(k)
   z = a^0
   sz = SRow(z)
   i = 0

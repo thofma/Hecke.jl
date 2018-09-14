@@ -191,9 +191,9 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
       @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success
       return success
     end
-    se = SMat(e)'
+    se = sparse_matrix(e)'
 
-    A = SMat(FlintZZ)
+    A = sparse_matrix(FlintZZ)
     K = nf(c)
     t, mt = torsion_unit_group(maximal_order(K))
     zeta = K(mt(t[1]))
