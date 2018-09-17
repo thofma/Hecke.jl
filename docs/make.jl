@@ -1,9 +1,5 @@
 using Documenter, Hecke, Nemo, Markdown, Pkg
 
-function Markdown.plain(io::IO, ::Markdown.HorizontalRule)
-           println(io, "-"^3)
-end
-
 makedocs(
     modules = [Hecke, Nemo],
     clean   = true,
@@ -45,7 +41,7 @@ deploydocs(
     repo = "github.com/thofma/Hecke.jl.git",
     target = "build",
     make = nothing,
-#    osname = "linux",
+    osname = "linux",
     julia = "1.0",
 )
 

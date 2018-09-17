@@ -17,8 +17,16 @@ script:
   - julia -e 'using Pkg;Pkg.add("Nemo"); Pkg.clone(pwd()); include(joinpath(Pkg.dir("Hecke"), "deps", "build.jl"))'
     #- julia -e 'using Pkg; Pkg.build("Hecke");'
   - julia -e 'using Pkg; Pkg.test("Hecke");'
-  # - travis_wait julia -e 'using Pkg; Pkg.build("Nemo")'
-  # - if [ -f test/runtests.jl ]; then julia --check-bounds=yes -e 'using Pkg; Pkg.test("Nemo", coverage=true)'; fi
-after_success:
-  - julia -e 'using Pkg; Pkg.add("Documenter")'
-  - DOCUMENTER_DEBUG=true julia -e 'using Pkg; using Hecke; cd(Pkg.dir("Hecke")); include(joinpath("docs", "make.jl"))'
+
+env:
+   global:
+      - DOCUMENTER_DEBUG=true
+jobs:
+   include:
+     - stage: "Documentation"
+       julia: 1.0
+       os: linux
+       script:
+         - julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.add(PackageSpec(path=pwd()))'
+         - julia --project=docs/ docs/make.jl
+       after_success: skip

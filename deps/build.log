@@ -1,0 +1,36 @@
+
+Welcome to AbstractAlgebra version 0.1.2-dev
+
+AbstractAlgebra comes with absolutely no warranty whatsoever
+
+Configuring...x86_64-Linux
+Testing __builtin_popcountl...yes
+Testing native popcount...yes
+Testing __thread...yes
+HECKE was successfully configured.
+make[1]: Entering directory '/home/thofmann/.julia/dev/Hecke/deps/hecke'
+mkdir -p build/interfaces
+make[2]: Entering directory '/home/thofmann/.julia/dev/Hecke/deps/hecke/antic'
+    CC   ../build/antic/get_nmod_poly.lo
+    CC   ../build/antic/../antic.lo
+make[2]: Leaving directory '/home/thofmann/.julia/dev/Hecke/deps/hecke/antic'
+gcc  -shared -Wl,-soname,libhecke.so.0   build/antic.lo  -o libhecke.so.0.0.0 -Wl,-rpath,/home/thofmann/.julia/dev/Nemo/src/../local/lib -Wl,-rpath,$ORIGIN/../share/julia/site/v1.0/Nemo/local/lib -Wl,-rpath,/home/thofmann/.julia/dev/Hecke/deps/../local/lib -Wl,-rpath,$ORIGIN/../share/julia/site/v1.0/Hecke/local/lib -L/home/thofmann/.julia/dev/Hecke/deps/hecke -L/home/thofmann/.julia/dev/Nemo/src/../local/lib -L/home/thofmann/.julia/dev/Nemo/src/../local/lib -L/home/thofmann/.julia/dev/Nemo/src/../local/lib -lflint -lmpfr -lgmp -lm -lpthread ;
+ln -sf "libhecke.so.0.0.0" "libhecke.so"; \
+
+make[1]: Leaving directory '/home/thofmann/.julia/dev/Hecke/deps/hecke'
+make[1]: Entering directory '/home/thofmann/.julia/dev/Hecke/deps/hecke'
+make[1]: Nothing to be done for 'shared'.
+make[1]: Leaving directory '/home/thofmann/.julia/dev/Hecke/deps/hecke'
+mkdir -p /home/thofmann/.julia/dev/Hecke/deps/../local/lib
+mkdir -p /home/thofmann/.julia/dev/Hecke/deps/../local/include
+cp  antic.h /home/thofmann/.julia/dev/Hecke/deps/../local/include
+
+Welcome to AbstractAlgebra version 0.1.2-dev
+
+AbstractAlgebra comes with absolutely no warranty whatsoever
+
+
+Welcome to Nemo version 0.9.2-dev
+
+Nemo comes with absolutely no warranty whatsoever
+
