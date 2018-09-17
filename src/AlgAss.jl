@@ -1,5 +1,7 @@
 # include("AlgAss/AlgAssTypes.jl")
+include("AlgAss/AbsAlgAss.jl")
 include("AlgAss/AlgAss.jl")
+include("AlgAss/AlgGrp.jl")
 include("AlgAss/AlgAssElem.jl")
 include("AlgAss/Map.jl")
 include("AlgAss/AlgAssOrd.jl")

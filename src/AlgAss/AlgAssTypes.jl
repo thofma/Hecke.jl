@@ -1,17 +1,33 @@
-mutable struct AlgAss{T} <: Ring
+export AlgAss, AlgAssElem, AlgGrp, AlgGrpElem
+
+abstract type AbsAlgAss{T} <: Ring end
+
+abstract type AbsAlgAssElem{T} <: RingElem end
+
+################################################################################
+#
+#  AlgAss / AlgAssElem
+#
+################################################################################
+
+# Associative algebras defined by structure constants (multiplication table)
+mutable struct AlgAss{T} <: AbsAlgAss{T}
   base_ring::Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
-  one::Array{T, 1}
+  one::Vector{T}
   iscommutative::Int       # 0: don't know
-                           # 1 known to be commutative
-                           # 2 known to be not commutative
-  trace_basis_elem::Array{T, 1}
+                           # 1: known to be commutative
+                           # 2: known to be not commutative
+  basis#::Vector{AlgAssElem{T, AlgAss{T}}
+  gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
+  trace_basis_elem::Vector{T}
   issimple::Int
-  decomposition
-  center
 
+  decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
+  center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   maps_to_numberfields
 
+  # Constructor with default values
   function AlgAss{T}(R::Ring) where {T}
     A = new{T}()
     A.base_ring = R
@@ -20,7 +36,7 @@ mutable struct AlgAss{T} <: Ring
     return A
   end
 
-  function AlgAss{T}(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
+  function AlgAss{T}(R::Ring, mult_table::Array{T, 3}, one::Vector{T}) where {T}
     A = AlgAss{T}(R)
     A.mult_table = mult_table
     A.one = one
@@ -34,12 +50,22 @@ mutable struct AlgAss{T} <: Ring
   end
 end
 
-mutable struct AlgAssElem{T} <: RingElem
-  parent::AlgAss{T}
+mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
+  parent::S
   coeffs::Array{T, 1}
 
-  function AlgAssElem{T}(A::AlgAss{T}) where {T}
-    z = new{T}()
+  function AlgAssElem{T, S}(A::S) where {T, S}
+    z = new{T, S}()
+    z.parent = A
+    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
+    for i = 1:length(z.coeffs)
+      z.coeffs[i] = A.base_ring()
+    end
+    return z
+  end
+
+  function AlgAssElem{T, S}(A::AlgAss{T}) where {T, S}
+    z = new{T, AlgAss{T}}()
     z.parent = A
     z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
     for i = 1:length(z.coeffs)
@@ -49,8 +75,8 @@ mutable struct AlgAssElem{T} <: RingElem
   end
 
   # This does not make a copy of coeffs
-  function AlgAssElem{T}(A::AlgAss{T}, coeffs::Array{T, 1}) where{T}
-    z = new{T}()
+  function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where{T, S}
+    z = new{T, AlgAss{T}}()
     z.parent = A
     z.coeffs = coeffs
     z.coeffs
@@ -58,6 +84,101 @@ mutable struct AlgAssElem{T} <: RingElem
   end
 end
 
+################################################################################
+#
+#  AlgGrp / AlgGrpElem
+#
+################################################################################
+
+# Group rings
+mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
+  base_ring::Ring
+  group::S
+  group_to_base::Dict{R, Int}
+  one::Vector{T}
+  basis#::Vector{AlgAssElem{T, AlgAss{T}}
+  gens#::Vector{AlgAssElem{T, AlgAss{T}} # "Small" number of algebra generators
+  mult_table::Array{Int, 2} # b_i * b_j = b_(mult_table[i, j])
+  iscommutative::Int
+  trace_basis_elem::Array{T, 1}
+  issimple::Int
+
+  decomposition
+  center
+  maps_to_numberfields
+
+  function AlgGrp(K::Ring, G::GrpAbFinGen)
+    A = AlgGrp(K, G, op = +)
+    A.iscommutative = true
+    return A
+  end
+
+  function AlgGrp(K::Ring, G; op = *)
+    A = new{elem_type(K), typeof(G), elem_type(G)}()
+    A.iscommutative = 0
+    A.issimple = 0
+    A.base_ring = K
+    A.group = G
+    d = Int(order(G))
+    A.group_to_base = Dict{elem_type(G), Int}()
+    A.mult_table = zeros(Int, d, d)
+
+    for (i, g) in enumerate(G)
+      A.group_to_base[deepcopy(g)] = i
+    end
+
+    v = Vector{elem_type(K)}(undef, d)
+    for i in 1:d
+      v[i] = zero(K)
+    end
+    v[1] = one(K)
+
+    A.one = v
+
+    for (i, g) in enumerate(G)
+      for (j, h) in enumerate(G)
+        l = op(g, h)
+        A.mult_table[i, j] = A.group_to_base[l]
+      end
+    end
+
+    @assert all(A.mult_table[1, i] == i for i in 1:dim(A))
+
+    return A
+  end
+end
+
+mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
+  parent::S
+  coeffs::Array{T, 1}
+
+  function AlgGrpElem{T, S}(A::S) where {T, S}
+    z = new{T, S}()
+    z.parent = A
+    z.coeffs = Array{T, 1}(undef, size(A.mult_table, 1))
+    for i = 1:length(z.coeffs)
+      z.coeffs[i] = A.base_ring()
+    end
+    return z
+  end
+
+  # This does not make a copy of coeffs
+  function AlgGrpElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
+    z = new{T, S}()
+    z.parent = A
+    z.coeffs = coeffs
+    z.coeffs
+    return z
+  end
+end
+
+################################################################################
+#
+#  AlgAssAbsOrd / AlgAssAbsOrdElem / AlgAssAbsOrdIdl
+#
+################################################################################
+
+# Orders in algebras over the rationals
 mutable struct AlgAssAbsOrd{S, T} <: Ring
   algebra::S                       # Algebra containing the order
   dim::Int
@@ -140,10 +261,10 @@ end
 
 mutable struct AlgAssAbsOrdIdl{S, T}
   order::AlgAssAbsOrd                     # Order containing it
-  basis::Vector{AlgAssAbsOrdElem{S, T}} # Basis of the ideal as array of elements of the order
-  basis_mat::fmpz_mat              # Basis matrix of ideal wrt basis of the order
+  basis::Vector{AlgAssAbsOrdElem{S, T}}   # Basis of the ideal as array of elements of the order
+  basis_mat::fmpz_mat                     # Basis matrix of ideal wrt basis of the order
   basis_mat_inv::FakeFmpqMat
-  gens::Vector{AlgAssAbsOrdElem{S, T}}# Generators of the ideal
+  gens::Vector{AlgAssAbsOrdElem{S, T}}    # Generators of the ideal
 
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
     r = new{S, T}()

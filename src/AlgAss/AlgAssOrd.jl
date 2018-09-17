@@ -10,12 +10,12 @@ parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
 
 parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 
-function Order(A::AlgAss{S}, B::Vector{AlgAssElem{T}}) where {S, T}
-  return AlgAssAbsOrd{AlgAss{S}, AlgAssElem{T}}(A, B)
+function Order(A::S, B::Vector{T}) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
+  return AlgAssAbsOrd{S, T}(A, B)
 end
 
-function Order(A::AlgAss{S}, basis_mat::FakeFmpqMat) where {S}
-  return AlgAssAbsOrd{AlgAss{S}}(A, basis_mat)
+function Order(A::S, basis_mat::FakeFmpqMat) where {S <: AbsAlgAss}
+  return AlgAssAbsOrd{S}(A, basis_mat)
 end
 
 (O::AlgAssAbsOrd{S, T})(a::T) where {S, T} = begin
@@ -307,7 +307,7 @@ end
 #
 ###############################################################################
 
-function basis_mat(A::Array{AlgAssElem{fmpq}, 1})
+function basis_mat(A::Array{S, 1}) where {S <: AbsAlgAssElem}
   @assert length(A) > 0
   n = length(A)
   d = size(parent(A[1]).mult_table,1)
@@ -339,10 +339,6 @@ function basis_mat(A::Array{AlgAssAbsOrdElem{S, T}, 1}) where S where T
     end
   end
   return M
-end
-
-function elem_from_mat_row(A::AlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
-  return A(fmpq[fmpq(M[i,j]//d) for j=1:cols(M)])
 end
 
 function order_gen(O::AlgAssAbsOrd)
@@ -573,7 +569,7 @@ function ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd)
   return basis_mat(S, Val{false}) == basis_mat(T, Val{false})
 end
 
-function defines_order(A::AlgAss{fmpq}, v::Array{AlgAssElem{fmpq}, 1})
+function defines_order(A::AlgAss{fmpq}, v::Array{AlgAssElem{fmpq, AlgAss{fmpq}}, 1})
   d = dim(A)
   M = zero_matrix(FlintQQ, d, d)
   for i in 1:d

@@ -587,3 +587,22 @@ function valuation(A::NfOrdFracIdl, p::NfOrdIdl)
   return valuation(A.num, p) - valuation(A.den, p)
 end
 
+################################################################################
+#
+#  Coprime ideals
+#
+################################################################################
+
+#Given I with v_p(I) = 0, returns element a \in I such that v_p(a) = 0
+function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
+  pi = anti_uniformizer(p)
+  a = basis(I)[1]
+  l = valuation(a, p)
+  @assert l >= 0
+  if l > 0
+    a = pi^l * a
+  end
+  @assert valuation(a, p) == 0
+  @assert denominator(I)*a in numerator(I)
+  return a
+end

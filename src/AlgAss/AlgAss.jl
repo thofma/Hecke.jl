@@ -12,33 +12,7 @@ base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
 
 Generic.dim(A::AlgAss) = size(A.mult_table, 1)
 
-elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T}
-
-parent(::Type{AlgAssElem{T}}) where {T} = AlgAss{T}
-
-morphism_type(::AlgAss{T}) where {T} = AlgAssMor{T, T, Generic.Mat{T}}
-
-morphism_type(::AlgAss{fmpq}) = AlgAssMor{fmpq, fmpq, fmpq_mat}
-
-morphism_type(::AlgAss{fq}) = AlgAssMor{fq, fq, fq_mat}
-
-morphism_type(::AlgAss{fq_nmod}) = AlgAssMor{fq_mod, fq_nmod, fq_nmod_mat}
-
-morphism_type(::AlgAss{nmod}) = AlgAssMor{nmod, nmod, nmod_mat}
-
-################################################################################
-#
-#  Basis
-#
-################################################################################
-
-function basis(A::AlgAss{T}) where {T}
-  B = Vector{AlgAssElem{T}}(undef, dim(A))
-  for i in 1:dim(A)
-    B[i] = A[i]
-  end
-  return B
-end
+elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
 ################################################################################
 #
@@ -46,9 +20,9 @@ end
 #
 ################################################################################
 
-iscommutative_known(A::AlgAss{T}) where {T} = A.iscommutative != 0
+iscommutative_known(A::AlgAss) = (A.iscommutative != 0)
 
-function iscommutative(A::AlgAss{T}) where {T}
+function iscommutative(A::AlgAss)
   if iscommutative_known(A)
     return A.iscommutative == 1
   end
@@ -61,40 +35,6 @@ function iscommutative(A::AlgAss{T}) where {T}
     end
   end
   A.iscommutative = 1
-  return true
-end
-
-################################################################################
-#
-#  Associativity, Distributivity test
-#
-################################################################################
-
-function check_associativity(A::AlgAss)
-  for i = 1:dim(A)
-    for j = 1:dim(A)
-      el = A[i] * A[j]
-      for k = 1:dim(A)
-        if el * A[k] != A[i] * (A[j] * A[k])
-          return false
-        end
-      end
-    end
-  end
-  return true
-end
-
-function check_distributivity(A::AlgAss)
-  for i = 1:dim(A)
-    for j = 1:dim(A)
-      el = A[i]*A[j]
-      for k = 1:dim(A)
-        if A[i] * (A[j] + A[k]) != el + A[i] * A[k]
-          return false
-        end
-      end
-    end 
-  end
   return true
 end
 
@@ -430,32 +370,6 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   return A, OtoA
 end
 
-#Given I with v_p(I) = 0, returns element a \in I such that v_p(a) = 0
-function coprime_to(I::NfOrdFracIdl, p::NfOrdIdl)
-  pi = anti_uniformizer(p)
-  a = basis(I)[1]
-  l = valuation(a, p)
-  @assert l >= 0
-  if l > 0
-    a = pi^l * a
-  end
-  @assert valuation(a, p) == 0
-  @assert denominator(I)*a in numerator(I)
-  return a
-end
-
-function coprime_to(I::NfRelOrdFracIdl, p::NfRelOrdIdl)
-  pi = anti_uniformizer(p)
-  a = rand(I, 500)
-  l = valuation(a, p)
-  @assert l >= 0
-  if l > 0
-    a = pi^l*a
-  end
-  @assert valuation(a, p) == 0
-  return a
-end
-
 ################################################################################
 #
 #  String I/O
@@ -463,14 +377,7 @@ end
 ################################################################################
 
 function show(io::IO, A::AlgAss)
-  compact = get(io, :compact, false)
-  if compact
-    print(io, "Associative algebra over ")
-    print(io, A.base_ring)
-  else
-    print(io, "Associative algebra of dimension $(dim(A)) over ")
-    print(io, A.base_ring)
-  end
+  print(io, "Associative algebra of dimension ", dim(A), " over ", base_ring(A))
 end
 
 ################################################################################
@@ -496,20 +403,13 @@ end
 #
 ################################################################################
 
-function ==(A::AlgAss{T}, B::AlgAss{T}) where {T}
+function ==(A::AlgAss, B::AlgAss)
   base_ring(A) != base_ring(B) && return false
   return A.one == B.one && A.mult_table == B.mult_table
 end
 
-################################################################################
-#
-#  Subalgebras
-#
-################################################################################
 
-# This only works if base_ring(A) is a field
-# Constructs the algebra e*A
-function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) where {T}
+function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   isgenres = (typeof(R) <: Generic.ResRing)
@@ -517,7 +417,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   B = representation_matrix(e)
   r = _rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
-  basis = Vector{AlgAssElem{T}}(undef, r)
+  basis = Vector{elem_type(A)}(undef, r)
   for i = 1:r
     basis[i] = elem_from_mat_row(A, B, i)
   end
@@ -530,6 +430,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
   else
     _, p, L, U = lu(transpose(B))
   end
+
   mult_table = Array{elem_type(R), 3}(undef, r, r, r)
   c = A()
   d = zero_matrix(R, n, 1)
@@ -587,14 +488,14 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T}, idempotent::Bool = false) wh
         C[i, k] = d[k, 1]
       end
     end
-    eAtoA = AlgAssMor(eA, A, basis_mat_of_eA, C)
+    eAtoA = hom(eA, A, basis_mat_of_eA, C)
   else
-    eAtoA = AlgAssMor(eA, A, basis_mat_of_eA)
+    eAtoA = hom(eA, A, basis_mat_of_eA)
   end
   return eA, eAtoA
 end
 
-function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T},1}) where {T}
+function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T, AlgAss{T}},1}) where {T}
   B=zero_matrix(base_ring(A), dim(A), length(basis))
   for i=1:dim(A)
     for j=1:length(basis)
@@ -613,283 +514,8 @@ function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T},1}) where {T}
     end
   end
   A1=AlgAss(base_ring(A), M)
-  return A1, AlgAssMor(A1, A, B')
+  return A1, hom(A1, A, B')
 end
-
-################################################################################
-#
-#  Splitting
-#
-################################################################################
-
-issimple_known(A) = A.issimple != 0
-
-function kernel_of_frobenius(A::AlgAss)
-  F = base_ring(A)
-  q = order(F)
-
-  b = A()
-  c = A()
-  B = zero_matrix(F, dim(A), dim(A))
-  for i = 1:dim(A)
-    b.coeffs[i] = F(1)
-    if i > 1
-      b.coeffs[i - 1] = F()
-    end
-    c = b^q - b
-    for j = 1:dim(A)
-      B[j, i] = deepcopy(c.coeffs[j])
-    end
-  end
-
-  V = right_kernel(B)
-  return [ A(v) for v in V ]
-end
-
-function _issimple(A::AlgAss)
-  if issimple_known(A)
-    return A.issimple == 1
-  else
-    b = issimple(A, Val{false})
-    if b
-      A.issimple = 1
-    else
-      A.issimple = 0
-    end
-    return b
-  end
-end
-
-@doc Markdown.doc"""
-***
-    decompose(A::AlgAss)
-            
-> Given a semisimple algebra over a field, this function 
-> returns a decomposition of A as a direct sum of simple algebras.
-"""
-function decompose(A::AlgAss{T}) where {T}
-  if isdefined(A, :decomposition)
-    return A.decomposition::Vector{Tuple{AlgAss{T}, morphism_type(A)}}
-  end
-
-  if issimple_known(A) && A.issimple == 1
-    res = [( A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A))))] # and the morphism
-  end
-
-  if iscommutative(A)
-    res = _dec_com(A)
-  else
-    res = _dec_via_center(A)
-  end
-
-  A.decomposition = res
-  return res
-end
-
-function _dec_via_center(A::AlgAss{T}) where {T}
-  ZA, mZA = center(A)
-  Algs = _dec_com(ZA)
-  res = [ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
-  for i in 1:length(res)
-    res[i][1].issimple = 1
-  end
-  A.decomposition = res
-  return res
-end
-
-function _dec_com(A::AlgAss)
-  if characteristic(base_ring(A)) > 0
-    return _dec_com_finite(A)
-  else
-    return _dec_com_gen(A)
-  end
-end
-
-function _dec_com_gen(A::AlgAss{T}) where {T <: FieldElem}
-  if dim(A) == 1
-    A.issimple = 1
-    return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
-  end
-
-  F = base_ring(A)
-
-  k = dim(A)
-
-  V = elem_type(A)[A[i] for i in 1:k]
-
-  while true
-    c = elem_type(F)[ rand(F, -10:10) for i = 1:k ]
-    a = dot(c, V)
-    f = minpoly(a)
-
-    if degree(f) < 2
-      continue
-    end
-
-    if degree(f) == dim(A) && isirreducible(f)
-      A.issimple = 1
-      return [(A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A))))]
-    end
-
-    @assert issquarefree(f)
-
-    fac = factor(f)
-    R = parent(f)
-    factors = Vector{elem_type(R)}()
-    for ff in keys(fac.fac)
-      push!(factors, ff)
-    end
-    sols = Vector{elem_type(R)}()
-    right_side = [ R() for i = 1:length(factors) ]
-    max_deg = 0
-    for i = 1:length(factors)
-      right_side[i] = R(1)
-      if i != 1
-        right_side[i - 1] = R(0)
-      end
-      s = crt(right_side, factors)
-      push!(sols, s)
-      max_deg = max(max_deg, degree(s))
-    end
-    x = one(A)
-    powers = Vector{elem_type(A)}()
-    for i = 1:max_deg + 1
-      push!(powers, x)
-      x *= a
-    end
-    idems = Vector{elem_type(A)}()
-    for s in sols
-      idem = A()
-      for i = 0:degree(s)
-        idem += coeff(s, i)*powers[i + 1]
-      end
-      push!(idems, idem)
-    end
-
-    A.issimple = 2
-
-    res = Vector{Tuple{typeof(A), morphism_type(A)}}()
-    for idem in idems
-      S, StoA = subalgebra(A, idem, true)
-      decS = _dec_com_gen(S)
-      for (B, BtoS) in decS
-        BtoA = compose_and_squash(StoA, BtoS)
-        push!(res, (B, BtoA))
-      end
-    end
-    return res
-  end
-end
-
-
-function _dec_com_finite(A::AlgAss{T}) where T
-  if dim(A) == 1
-    A.issimple = 1
-    return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
-  end
-
-  F = base_ring(A)
-  @assert !iszero(characteristic(F))
-  V = kernel_of_frobenius(A)
-  k = length(V)
-
-  if k == 1
-    A.issimple = 1
-    return [ (A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A)), identity_matrix(base_ring(A), dim(A)))) ]
-  end
-  
-  A.issimple = 2
-
-  while true
-    c = elem_type(F)[ rand(F) for i = 1:k ]
-    a = dot(c, V)
-    f = minpoly(a)
-
-    if degree(f) < 2
-      continue
-    end
-
-    @assert issquarefree(f)
-
-    fac = factor(f)
-    R = parent(f)
-    factorss = collect(keys(fac.fac))
-    sols = Vector{typeof(f)}(undef, length(factorss))
-    right_side = typeof(f)[ zero(R) for i = 1:length(factorss) ]
-    max_deg = 0
-    for i = 1:length(factorss)
-      right_side[i] = one(R)
-      if 1 != i
-        right_side[i - 1] = zero(R)
-      end
-      s = crt(right_side, factorss)
-      sols[i] = s
-      max_deg = max(max_deg, degree(s))
-    end
-    x = one(A)
-    powers = Vector{elem_type(A)}()
-    for i = 1:max_deg + 1
-      push!(powers, x)
-      x *= a
-    end
-    idems = Vector{elem_type(A)}()
-    for s in sols
-      idem = A()
-      for i = 0:degree(s)
-        idem += coeff(s, i)*powers[i + 1]
-      end
-      push!(idems, idem)
-    end
-
-    res = Vector{Tuple{AlgAss{T}, morphism_type(A)}}()
-    for idem in idems
-      S, StoA = subalgebra(A, idem, true)
-      decS = _dec_com_finite(S)
-      for (B, BtoS) in decS
-        BtoA = compose_and_squash(StoA, BtoS)
-        push!(res, (B, BtoA))
-      end
-    end
-    return res
-  end
-end
-
-#@doc Markdown.doc"""
-#***
-#    decomposition(A::AlgAss)
-#            
-#> Given a semisimple algebra over a field, this function 
-#> returns a decomposition of A as a direct sum of simple algebras.
-#"""
-#function decomposition(A::AlgAss)
-#  R = base_ring(A)
-#  if characteristic(R) > 0
-#    return _dec_char_p
-#  else
-#    return _dec_via_center
-#  end
-#end
-#
-#function _decomposition_char_p(A::AlgAss)
-#  b, algebras = issimple(A)
-#  if b
-#    return algebras
-#  end
-#  result = typeof(algebras)()
-#  while length(algebras) != 0
-#    B, BtoA = pop!(algebras)
-#    b, algebras2 = issimple(B)
-#    if b
-#      push!(result, (B, BtoA))
-#    else
-#      for (C, CtoB) in algebras2
-#        CtoA = compose_and_squash(BtoA, CtoB)
-#        push!(algebras, (C, CtoA))
-#      end
-#    end
-#  end
-#  return result
-#end
 
 ###############################################################################
 #
@@ -907,24 +533,6 @@ function _assure_trace_basis(A::AlgAss{T}) where T
   return nothing
 end
 
-function trace_matrix(A::AlgAss)
-  _assure_trace_basis(A)
-  F = base_ring(A)
-  n = dim(A)
-  M = zero_matrix(F, n, n)
-  for i = 1:n
-    M[i,i] = tr(A[i]^2)  
-  end
-  for i = 1:n
-    for j = i+1:n
-      x = tr(A[i]*A[j])
-      M[i,j] = x
-      M[j,i] = x
-    end
-  end
-  return M
-end
-
 ################################################################################
 #
 #  Radical
@@ -938,7 +546,6 @@ end
 > Given an algebra over a finite field of prime order, this function 
 > returns a set of elements generating the radical of A
 """
-
 function radical(A::AlgAss{fq_nmod})
 
   F=A.base_ring
@@ -972,6 +579,7 @@ function radical(A::AlgAss{fq_nmod})
     end
     k,B=nullspace(M)
     if k==0
+      # This is clearly wrong
       return AlgAssOrdIdl(O,MatrixSpace(FlintZZ, dim(A), dim(A), false)(p))
     end
     C=transpose(B)*C
@@ -980,7 +588,6 @@ function radical(A::AlgAss{fq_nmod})
    
 end
 
-
 ###############################################################################
 #
 #  Center
@@ -988,7 +595,6 @@ end
 ###############################################################################
 
 function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
-  
   n=dim(A)
   for i=1:n
     for j = 1:n
@@ -1002,50 +608,26 @@ end
 
 function center(A::AlgAss{T}) where {T}
   if iscommutative_known(A) && A.iscommutative==1
-    return A, AlgAssMor(A, A, identity_matrix(base_ring(A), dim(A))) 
+    B, mB = AlgAss(A)
+    return B, mB
   end
   if isdefined(A, :center)
-    return A.center
+    return A.center::Tuple{AlgAss{T}, morphism_type(AlgAss{T}, AlgAss{T})}
   end
   n=dim(A)
   M=zero_matrix(base_ring(A), n^2, n)
   # I concatenate the difference between the right and left representation matrices.
   _rep_for_center(M,A)
   k,B=nullspace(M)
-  res=Array{AlgAssElem{T},1}(undef, k)
+  res=Array{elem_type(A),1}(undef, k)
   for i=1:k
     res[i]= A(T[B[j,i] for j=1:n])
   end
-  A.center = subalgebra(A, res)
-  return A.center
+  C, mC = subalgebra(A, res)
+  A.center = C, mC
+  return C, mC
 end
 
-function dimension_of_center(A::AlgAss)
-  C, _ = center(A)
-  return dim(C)
-end
-
-################################################################################
-#
-#  Decomposition
-#
-################################################################################
-
-################################################################################
-#
-#  Random elements
-#
-################################################################################
-
-function rand(A::AlgAss{T}) where T
-  c = [ rand(base_ring(A)) for i = 1:dim(A) ]
-  return AlgAssElem{T}(A, c)
-end
-
-function rand(A::AlgAss{fmpq}, rng::UnitRange{Int} = -10:10) 
-  c = [ rand(base_ring(A), rng) for i = 1:dim(A) ]
-  return AlgAssElem{fmpq}(A, c)
-end
 ################################################################################
 #
 #  Primitive elements
@@ -1104,90 +686,12 @@ end
 
 ################################################################################
 #
-#  Compute generators
+#  Trivial conversion to AlgAss
 #
 ################################################################################
 
-function _reduce(M, v)
-  cur_ind = 0
-  for outer cur_ind in 1:cols(M)
-    if !iszero(v[cur_ind])
-      break
-    end
-  end
-end
-
-function gens(A::AlgAss)
+function AlgAss(A::AlgAss)
+  R = base_ring(A)
   d = dim(A)
-  K = base_ring(A)
-
-  b = rand(A)
-  while iszero(b)
-    b = rand(A)
-  end
-
-  cur_gen = elem_type(A)[b]
-
-  current_dim = -1
-
-  B = zero_matrix(K, d, d)
-
-  for k in 1:d
-    B[1, k] = b.coeffs[k]
-  end
-
-  cur_dim = 1
-
-  new_dim = 0
-
-  if d == 1
-    return cur_gen
-  end
-
-  l = 0
-
-  t_gens = copy(cur_gen)
-
-  while true
-    l = l + 1
-    while true
-      t_gens = copy(cur_gen)
-      t = length(t_gens)
-      for i in 1:t
-        for j in 1:t
-          c = t_gens[i] * t_gens[j]
-          for k in 1:d
-            B[d, k] = c.coeffs[k]
-          end
-          new_dim = rref!(B)
-          if new_dim == d
-            return cur_gen
-          elseif new_dim > cur_dim
-            cur_dim = new_dim
-            push!(t_gens, c)
-          end
-        end
-      end
-
-      if cur_dim == new_dim
-        break
-      else
-        cur_dim = new_dim
-        B = new_B
-      end
-    end
-
-    if cur_dim == d
-      break
-    else
-      b = rand(A)
-      while iszero(b)
-        b = rand(A)
-      end
-      push!(cur_gen, b)
-    end
-    #@show length(cur_gen)
-  end
-
-  return cur_gen
+  return A, hom(A, A, identity_matrix(R, d), identity_matrix(R, d))
 end

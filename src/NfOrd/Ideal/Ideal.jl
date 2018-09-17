@@ -2062,5 +2062,3 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   end
   return b
 end
-
-

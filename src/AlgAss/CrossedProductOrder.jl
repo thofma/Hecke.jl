@@ -222,7 +222,7 @@ function pmaximal_overorder_crossed_product(OL::NfOrd, G::Array{NfToNfMor, 1}, O
   dd = fmpz(1)
   M = _hnf_modular_eldiv(M, fmpz(p))
   #Construct the ideal of O corresponding to the pradical in OL
-  I1 = Hecke.AlgAssAbsOrdIdl{Hecke.AlgAss{fmpq},Hecke.AlgAssElem{fmpq}}(O, M)
+  I1 = Hecke.AlgAssAbsOrdIdl{Hecke.AlgAss{fmpq},Hecke.AlgAssElem{fmpq, AlgAss{fmpq}}}(O, M)
   
   gensI1 = Array{AlgAssAbsOrdElem, 1}(undef, 2)
   gensI1[1] = O(gens[1])
