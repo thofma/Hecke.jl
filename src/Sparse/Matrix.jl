@@ -1,3 +1,5 @@
+export SMatSpace, sparse_matrix, nnz, sparsity, density
+
 ################################################################################
 #
 #  Parent constructor
@@ -11,7 +13,7 @@ end
 
 ################################################################################
 #
-#  Parent and base ring
+#  Basic functions
 #
 ################################################################################
 
@@ -28,6 +30,10 @@ end
 
 function cols(A::SMat)
   return A.c
+end
+
+function nnz(A::SMat)
+  return A.nnz
 end
 
 size(A::SMat) = (rows(A), cols(A))
@@ -55,14 +61,27 @@ end
 
 ################################################################################
 #
-#  Sparsity
+#  Sparsity and density
 #
 ################################################################################
 
-# this makes only sense for SMat{fmpz}
-function sparsity(A::SMat{T}) where T
-  return A.nnz/(A.r * A.c), nbits(maximum(abs, A))
+@doc Markdown.doc"""
+    sparsity(A::SMat) -> Float64
+
+Return the sparsity of `A`, that is, the number of zero-valued elements divided
+by the number of all elements.
+"""
+function sparsity(A::SMat)
+  return 1.0 - nnz(A)/(rows(A) * cols(A))
 end
+
+@doc Markdown.doc"""
+    density(A::SMat) -> Float64
+
+Return the density of `A`, that is, the number of nonzero-valued elements
+divided by the number of all elements.
+"""
+density(A::SMat) = 1.0 - sparsity(A)
 
 ################################################################################
 #
@@ -81,7 +100,7 @@ end
 #
 ################################################################################
 
-function SMat(R::T) where T <: Ring
+function sparse_matrix(R::T) where T <: Ring
   r = SMat{elem_type(R)}()
   r.base_ring = R
   return r
@@ -106,8 +125,8 @@ end
 function getindex(A::SMat{T}, i::Int, j::Int) where T
   if i in 1:A.r
     ra = A.rows[i]
-    p = findfirst(x->x==j, ra.pos)
-    if p != 0
+    p = findfirst(isequal(j), ra.pos)
+    if !(p === nothing)
       return ra.values[p]
     end
   end
@@ -137,17 +156,19 @@ end
 
 ################################################################################
 #
-#  Sparse matrix from dense matrix
+#  Sparse matrix constructors
 #
 ################################################################################
 
-# The entries of the sparse matrix will be coerced into the ring R.
-# It defaults to the base ring of the input matrix.
-# If keepzrows is set, then zero rows will not be remove
-function SMat(A::T; R::S = base_ring(A),
-                     keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
+@doc Markdown.doc"""
+    sparse_matrix(A::MatElem; keepzrows::Bool = true)
 
-  m = SMat(R)
+Constructs thesparse matrix corresponding to the dense matrix $A$. If
+`keepzrows` is false, then the constructor will drop any zero row of $A$.
+"""
+function sparse_matrix(A::MatElem; keepzrows::Bool = true)
+  R = base_ring(A)
+  m = sparse_matrix(R)
   m.c = cols(A)
   m.r = 0
 
@@ -157,7 +178,6 @@ function SMat(A::T; R::S = base_ring(A),
         continue
       else
         r = SRow{elem_type(R)}()
-        #push!(m.rows, SRow{elem_type(R)}())
       end
     else
       r = SRow{elem_type(R)}()
@@ -177,14 +197,13 @@ function SMat(A::T; R::S = base_ring(A),
 end
 
 @doc Markdown.doc"""
-    SMat{T}(A::Array{T, 2}) -> SMat{T}
+    sparse_matrix(A::Array{T, 2}) -> SMat{T}
 
-> Constructs the SMat (Hecke-sparse matrix) with coefficients of
-> type T corresponding to A.
+Constructs the sparse matrix corresponding to A.
 """
-function SMat(A::Array{T, 2}) where T <: RingElem
+function sparse_matrix(A::Array{T, 2}) where {T <: RingElem}
   length(A) == 0 && error("Cannot create sparse matrix from empty array")
-  m = SMat(parent(A[1, 1]))
+  m = sparse_matrix(parent(A[1, 1]))
   m.c = Base.size(A, 2)
   m.r = 0
   for i=1:size(A, 1)
@@ -207,53 +226,47 @@ end
 
 function (M::SMatSpace)(A::T; R::S = base_ring(A),
                                  keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
-  return SMat(A, R, keepzrows)
+  return sparse_matrix(A, R, keepzrows)
 end
 
 function (M::SMatSpace)(A::Array{T, 2}) where T <: MatElem
-  return SMat(A)
+  return sparse_matrix(A)
 end
 
-# a faster version for nmod_mat -> SMat{T}
-# it avoids the creation of elements in ResidueRing(FlintZZ, n)
-@doc Markdown.doc"""
-    SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
-  
-> "Lifts" the entries in $A$ to a sparse matrix over $R$.
-"""
-function SMat(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false) where S <: Ring
-  if false && R == base_ring(A)
-    return _SMat(A, R = R)
-  end
-
-  m = SMat{elem_type(R)}()
-  m.c = cols(A)
-  m.r = 0
-
-  for i=1:rows(A)
-    if iszero_row(A, i)
-      if !keepzrows
-        continue
-      else
-        #push!(m.rows, SRow{elem_type(R)}())
-        r = SRow(R)
-      end
-    else
-      r = SRow(R)
-      for j =1:cols(A)
-        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), A, i - 1, j - 1)
-        if t != 0
-          m.nnz += 1
-          push!(r.values, R(t))
-          push!(r.pos, j)
-        end
-      end
-    end
-    push!(m.rows, r)
-    m.r += 1
-  end
-  return m
-end
+#@doc Markdown.doc"""
+#    SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
+#  
+#> "Lifts" the entries in $A$ to a sparse matrix over $R$.
+#"""
+#function sparse_matrix(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false) where S <: Ring
+#  m = SMat{elem_type(R)}()
+#  m.c = cols(A)
+#  m.r = 0
+#
+#  for i=1:rows(A)
+#    if iszero_row(A, i)
+#      if !keepzrows
+#        continue
+#      else
+#        r = SRow(R)
+#      end
+#    else
+#      r = SRow(R)
+#      for j =1:cols(A)
+#        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb,
+#                  (Ref{nmod_mat}, Int, Int), A, i - 1, j - 1)
+#        if !iszero(t)
+#          m.nnz += 1
+#          push!(r.values, R(t))
+#          push!(r.pos, j)
+#        end
+#      end
+#    end
+#    push!(m.rows, r)
+#    m.r += 1
+#  end
+#  return m
+#end
 
 ################################################################################
 #
@@ -263,15 +276,16 @@ end
 
 @doc Markdown.doc"""
 ***
-    mod_sym!(A::SMat{fmpz}, n::fmpz)
+mod_sym!(A::SMat{fmpz}, n::fmpz) -> SMat{fmpz}
 
-> Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
-> system.
+Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
+system.
 """
 function mod_sym!(A::SMat{fmpz}, b::fmpz)
-  for i=A
-    mod_sym!(i, b)
+  for r in A
+    mod_sym!(r, b)
   end
+  return A
 end
 
 ################################################################################
@@ -281,27 +295,36 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    SMat(A::SMat{fmpz}, n::Int) -> SMat{nmod}
+    change_ring(A::SMat, f) -> SMat
 
-> Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
+Given a sparse matrix $A$ and a callable object $f$, this function will
+construct a new sparse matrix by applying $f$ to all elements of $A$.
 """
-function SMat(A::SMat{fmpz}, n::Int)
-  R = ResidueRing(FlintZZ, n, cached=false)
-  return SMat(A, R)
+function change_ring(A::SMat{T}, f) where {T}
 end
 
 @doc Markdown.doc"""
-    SMat(A::SMat{fmpz}, R::Ring) -> SMat{elem_type(R)}
+    sparse_matrix(A::SMat{fmpz}, n::Int) -> SMat{nmod}
+
+> Converts $A$ to be a sparse matrix (row) over $Z/nZ$ 
+"""
+function sparse_matrix(A::SMat{fmpz}, n::Int)
+  R = ResidueRing(FlintZZ, n, cached=false)
+  return sparse_matrix(A, R)
+end
+
+@doc Markdown.doc"""
+    sparse_matrix(A::SMat{fmpz}, R::Ring) -> SMat{elem_type(R)}
     SRow(A::SMat{fmpz}, R::Ring) -> SRow{elem_type(R)}
 
 > Convert the matrix (row) $A$ to be over $R$.
 """
-function SMat(A::SMat{fmpz}, R::T) where T <: Ring
-  z = SMat(R)
+function sparse_matrix(A::SMat{fmpz}, R::T) where T <: Ring
+  z = sparse_matrix(R)
   z.r = A.r
   z.c = A.c
   for r in A
-    rz = SRow(r, R)
+    rz = change_ring(r, R)
     if length(rz.pos) != 0
       push!(z.rows, rz)
       z.nnz += length(rz.pos)
@@ -310,9 +333,9 @@ function SMat(A::SMat{fmpz}, R::T) where T <: Ring
   return z
 end
 
-function SMat(A::SMat{fmpz}, n::fmpz)
+function sparse_matrix(A::SMat{fmpz}, n::fmpz)
   R = ResidueRing(FlintZZ, n, cached=false)
-  return SMat(A, R)
+  return sparse_matrix(A, R)
 end
 
 ################################################################################
@@ -329,7 +352,7 @@ end
 """
 function transpose(A::SMat)
   R = base_ring(A)
-  B = SMat(base_ring(A))
+  B = sparse_matrix(base_ring(A))
   n = rows(A)
   m = cols(A)
   B.rows = Array{SRow{elem_type(R)}}(undef, m)
@@ -543,7 +566,7 @@ end
 ################################################################################
 
 function +(A::SMat{T}, B::SMat{T}) where T
-  C = SMat(base_ring(A))
+  C = sparse_matrix(base_ring(A))
   m = min(rows(A), rows(B))
   for i=1:m
     push!(C, A[i]+B[i])
@@ -599,7 +622,7 @@ end
 #end
 
 function *(b::T, A::SMat{T}) where T
-  B = SMat(base_ring(A))
+  B = sparse_matrix(base_ring(A))
   if iszero(b)
     return B
   end
@@ -620,7 +643,7 @@ end
 ################################################################################
 
 function sub(A::SMat{T}, r::UnitRange, c::UnitRange) where T
-  B = SMat(base_ring(A))
+  B = sparse_matrix(base_ring(A))
   B.nnz = 0
   for i=r
     rw = SRow{T}()
@@ -1087,7 +1110,7 @@ end
 """
 function id(::Type{SMat}, R::Ring, n::Int)
   T = elem_type(R)
-  A = SMat(R)
+  A = sparse_matrix(R)
   for i=1:n
     push!(A, SRow{T}([(i, R(1))]))
   end
@@ -1115,20 +1138,19 @@ end
 > Create a sparse (resp. dense) $n$ times $n$ (resp. $n$ times $m$) zero matrix over $R$.   
 """
 function zero_matrix(::Type{SMat}, R::Ring, n::Int)
-  S = SMat(R)
+  S = sparse_matrix(R)
   S.rows = [SRow(R)() for i=1:n]
   S.c = S.r = n
   return S
 end
 
 function zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
-  S = SMat(R)
+  S = sparse_matrix(R)
   S.rows = [SRow(R)() for i=1:n]
   S.r = n
   S.c = m
   return S
 end
-
 
 function zero_matrix(::Type{MatElem}, R::Ring, n::Int)
   return zero_matrix(R, n)

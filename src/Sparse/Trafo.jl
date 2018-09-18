@@ -86,43 +86,6 @@ function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
   A.nnz = A.nnz + length(A[j])
 end
 
-function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
-  sr = SRow{T}()
-  pi = 1
-  pj = 1
-  @assert c != 0
-  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
-    if Ai.pos[pi] < Aj.pos[pj]
-      push!(sr.pos, Ai.pos[pi])
-      push!(sr.values, c*Ai.values[pi])
-      pi += 1
-    elseif Ai.pos[pi] > Aj.pos[pj]
-      push!(sr.pos, Aj.pos[pj])
-      push!(sr.values, Aj.values[pj])
-      pj += 1
-    else
-      n = c*Ai.values[pi] + Aj.values[pj]
-      if n != 0
-        push!(sr.pos, Ai.pos[pi])
-        push!(sr.values, n)
-      end
-      pi += 1
-      pj += 1
-    end
-  end
-  while pi <= length(Ai.pos)
-    push!(sr.pos, Ai.pos[pi])
-    push!(sr.values, c*Ai.values[pi])
-    pi += 1
-  end
-  while pj <= length(Aj.pos)
-    push!(sr.pos, Aj.pos[pj])
-    push!(sr.values, Aj.values[pj])
-    pj += 1
-  end
-  return sr
-end
-
 # col j -> col i*c + col j
 @doc Markdown.doc"""
     add_scaled_col!{T}(A::SMat{T}, i::Int, j::Int, c::T)

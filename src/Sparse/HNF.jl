@@ -157,7 +157,7 @@ function saturate(A::fmpz_mat)
 end
 
 function saturate(A::SMat{fmpz})
-  return SMat(saturate(fmpz_mat(A)))
+  return sparse_matrix(saturate(fmpz_mat(A)))
 end
 
 ################################################################################
@@ -401,7 +401,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) wher
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = [] : nothing
 
-  B = SMat(FlintZZ)
+  B = sparse_matrix(FlintZZ)
   B.c = A.c
   nc = 0
   for i=A

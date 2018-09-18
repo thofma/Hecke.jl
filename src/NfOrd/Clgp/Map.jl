@@ -506,7 +506,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
   X = Array{nf_elem, 1}()
 
-  rr = SMat(FlintZZ)
+  rr = sparse_matrix(FlintZZ)
   @vprint :ClassGroup 1 "finding relations ...\n"
   @vtime :ClassGroup 1 for A = I
     @vprint :ClassGroup 2 "doin' $A\n"

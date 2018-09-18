@@ -973,7 +973,7 @@ function rel_auto_easy(A::ClassField_pp)
   # sqrt[n](a) -> zeta sqrt[n](a) on A.A
   #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
   #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
-  M = SMat(base_ring(A.K))
+  M = sparse_matrix(base_ring(A.K))
   b = A.K(1)
   push!(M, SRow(b))
   for i=2:degree(A)
@@ -1010,7 +1010,7 @@ function rel_auto_intersection(A::ClassField_pp)
     _aut_A_over_k(C, A)
   end
   #Now, I restrict them to A.A
-  M = SMat(base_ring(A.K))
+  M = sparse_matrix(base_ring(A.K))
   b = A.K(1)
   push!(M, SRow(b))
   for i=2:degree(A)
@@ -1285,7 +1285,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
         append!(B, D)
       end
     end
-    M = SMat(Ka)
+    M = sparse_matrix(Ka)
     for i=1:d
       push!(M, SRow(B[i]))
     end
@@ -1498,7 +1498,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
         append!(B, _D)
       end
     end
-    M = SMat(Ka)
+    M = sparse_matrix(Ka)
     for i=1:d
       push!(M, SRow(B[i]))
     end
@@ -1585,7 +1585,7 @@ end
 function _expand(M::SMat{nf_elem}, mp::Map)
   Kr = domain(mp)
   k = base_ring(Kr)
-  N = SMat(k)
+  N = sparse_matrix(k)
   for i=1:rows(M)
     sr = _expand(M[i], mp)
     push!(N, sr)
