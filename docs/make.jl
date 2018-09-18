@@ -27,10 +27,10 @@ makedocs(
 )
 
 # Hack around to get syntax highlighting working
-cd(joinpath(dirname(pathof(Hecke)), "..", "docs"))
-
-cp("application-f78e5cb881.palette.css", "build/application-f78e5cb881.palette.css", force = true)
-cp("application-e2807e330f.css", "build/application-e2807e330f.css", force = true)
+#cd(joinpath(dirname(pathof(Hecke)), "..", "docs"))
+#
+#cp("application-f78e5cb881.palette.css", "build/application-f78e5cb881.palette.css", force = true)
+#cp("application-e2807e330f.css", "build/application-e2807e330f.css", force = true)
 
 deploydocs(
      deps = nothing,
