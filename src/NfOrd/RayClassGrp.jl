@@ -1689,8 +1689,8 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
     
     if x==1
       
-      F = ResidueRing(FlintZZ, Int(p), cached=false)
-      act_mat=Array{nmod_mat, 1}(undef, length(act))
+      F = GF(Int(p), cached=false)
+      act_mat=Array{gfp_mat, 1}(undef, length(act))
       for w=1:length(act)
         act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
       end
@@ -1783,7 +1783,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
 
 end
 
-function _lift_and_construct(A::nmod_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c::Int)
+function _lift_and_construct(A::Zmodn_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c::Int)
   
   R=mQ.header.domain
   newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]

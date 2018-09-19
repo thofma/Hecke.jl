@@ -1,5 +1,5 @@
 @testset "Meataxe" begin
-  @testset "$(typeof(f(3)))" for f in [n -> ResidueRing(ZZ, Int(n)), n -> ResidueRing(ZZ, n), n -> FiniteField(n, 1, "a")[1], n -> FiniteField(fmpz(n), 1, "a")[1]]
+  @testset "$(typeof(f(3)))" for f in [n -> GF(Int(n)), n -> GF(n), n -> FiniteField(n, 1, "a")[1], n -> FiniteField(fmpz(n), 1, "a")[1]]
     F = f(3)
     @testset "cleanvect" begin
       M=MatrixSpace(F,2,3)([1,1,0,0,1,0])

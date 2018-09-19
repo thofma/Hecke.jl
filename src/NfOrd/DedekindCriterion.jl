@@ -44,7 +44,7 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
   end
 
   Zy, y = PolynomialRing(FlintZZ, "y")
-  Kx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
+  Kx, x = PolynomialRing(GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -138,7 +138,7 @@ function dedekind_test_composite(O::NfOrd, p::fmpz)
   end
 
   Zy, y = PolynomialRing(FlintZZ, "y")
-  R = ResidueRing(FlintZZ, p, cached=false)
+  R = GF(p, cached=false)
   Kx, x = PolynomialRing(R, "x", cached=false)
 
   f = nf(O).pol

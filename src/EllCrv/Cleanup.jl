@@ -495,7 +495,7 @@ function mod_red(E, B)
     
     for i in 1:length(P)
         p = P[i]
-        R = ResidueRing(FlintZZ, p)
+        R = GF(p, cached = false)
         Ep = EllipticCurve([R(numerator(minmodel.coeff[1])), R(numerator(minmodel.coeff[2])), R(numerator(minmodel.coeff[3])), R(numerator(minmodel.coeff[4])), R(numerator(minmodel.coeff[5]))],  false) # reduction of E mod p 
         
         if  disc(Ep) != 0 # can only determine group order if curve is non-singular

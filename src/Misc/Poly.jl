@@ -20,12 +20,12 @@ end
 
 function FlintFiniteField(p::Integer)
   @assert isprime(p)
-  return ResidueRing(FlintZZ, p, cached=false)
+  return GF(p, cached=false)
 end
 
 function FlintFiniteField(p::fmpz)
   @assert isprime(p)
-  return ResidueRing(FlintZZ, p, cached=false)
+  return GF(p, cached=false)
 end
 
 function fmpz(a::Generic.Res{Nemo.fmpz})
@@ -208,10 +208,10 @@ mutable struct HenselCtx
     a.f = f
     a.p = UInt(p)
     Zx,x = PolynomialRing(FlintZZ, "x", cached=false)
-    Rx,x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
+    Rx,x = PolynomialRing(GF(p, cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, :libflint), UInt,
-          (Ref{Nemo.nmod_poly_factor}, Ref{nmod_poly}), (a.lf), Rx(f))
+          (Ref{Nemo.nmod_poly_factor}, Ref{gfp_poly}), (a.lf), Rx(f))
     r = a.lf.num
     a.r = r  
     a.LF = fmpz_poly_factor()
@@ -320,7 +320,7 @@ end
 >  G = g mod p, H = h mod p.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), cached=false)
+  Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
@@ -372,7 +372,7 @@ end
 >  Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), cached=false)
+  Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
   h = lift(parent(f), div(Rx(f), Rx(g)))
   return hensel_lift(f, g, h, p, k)[1]
 end  
@@ -380,6 +380,16 @@ end
 
 function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
   ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Nothing, (Ref{nmod_poly}, Ref{Int}, Int), r, a.coeffs, a.length)
+  p = r.mod_n
+  den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{Int}, UInt), a.den, p)
+  if den != UInt(1)
+    den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
+    mul!(r, r, den)
+  end
+end
+
+function fmpq_poly_to_gfp_poly_raw!(r::gfp_poly, a::fmpq_poly)
+  ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Nothing, (Ref{gfp_poly}, Ref{Int}, Int), r, a.coeffs, a.length)
   p = r.mod_n
   den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{Int}, UInt), a.den, p)
   if den != UInt(1)
@@ -399,15 +409,38 @@ function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmp
   end
 end
 
+function fmpq_poly_to_gfp_fmpz_poly_raw!(r::gfp_fmpz_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())
+  ccall((:fmpq_poly_get_numerator, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpq_poly}), t1, a)
+  ccall((:fmpz_mod_poly_set_fmpz_poly, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{fmpz_poly}), r, t1)
+  ccall((:fmpq_poly_get_denominator, :libflint), Nothing, (Ref{fmpz}, Ref{fmpq_poly}), t2, a)
+  if !isone(t2)
+    res = ccall((:fmpz_invmod, :libflint), Cint, (Ref{fmpz}, Ref{fmpz}, Ref{fmpz}), t2, t2, base_ring(r).modulus)
+    @assert res != 0
+    ccall((:fmpz_mod_poly_scalar_mul_fmpz, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ref{gfp_fmpz_poly}, Ref{fmpz}), r, r, t2)
+  end
+end
+
 function fmpq_poly_to_nmod_poly(Rx::Nemo.NmodPolyRing, f::fmpq_poly)
   g = Rx()
   fmpq_poly_to_nmod_poly_raw!(g, f)
   return g
 end
 
+function fmpq_poly_to_gfp_poly(Rx::Nemo.GFPPolyRing, f::fmpq_poly)
+  g = Rx()
+  fmpq_poly_to_gfp_poly_raw!(g, f)
+  return g
+end
+
 function fmpz_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpz_poly)
   ccall((:fmpz_poly_get_nmod_poly, :libflint), Nothing,
                   (Ref{nmod_poly}, Ref{fmpz_poly}), r, a)
+
+end
+
+function fmpz_poly_to_gfp_poly_raw!(r::gfp_poly, a::fmpz_poly)
+  ccall((:fmpz_poly_get_nmod_poly, :libflint), Nothing,
+                  (Ref{gfp_poly}, Ref{fmpz_poly}), r, a)
 
 end
 
@@ -420,6 +453,12 @@ end
 function fmpq_poly_to_fmpz_mod_poly(Rx::Nemo.FmpzModPolyRing, f::fmpq_poly)
   g = Rx()
   fmpq_poly_to_fmpz_mod_poly_raw!(g, f)
+  return g
+end
+
+function fmpq_poly_to_gfp_fmpz_poly(Rx::Nemo.GFPFmpzPolyRing, f::fmpq_poly)
+  g = Rx()
+  fmpq_poly_to_gfp_fmpz_poly_raw!(g, f)
   return g
 end
 
@@ -1149,7 +1188,7 @@ function Nemo.inv(f::Union{fmpz_mod_poly,nmod_poly})
   return g
 end
 
-function Nemo.invmod(f::T, M::T) where T <: Union{fmpz_mod_poly,nmod_poly}
+function Nemo.invmod(f::T, M::T) where T <: Union{fmpz_mod_poly}
   if !isunit(f)
     error("impossible inverse")
   end
@@ -1665,6 +1704,11 @@ end
 #
 
 function factor(f::fmpq_poly, R::NmodRing)
+  Rt, t = PolynomialRing(R, "t", cached=false)
+  return factor(Rt(f))
+end
+
+function factor(f::fmpq_poly, R::GaloisField)
   Rt, t = PolynomialRing(R, "t", cached=false)
   return factor(Rt(f))
 end

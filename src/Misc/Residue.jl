@@ -3,7 +3,15 @@ function lift(a::Generic.Res)
   return a.data
 end
 
+function lift(a::Generic.ResF)
+  return a.data
+end
+
 function lift(a::Nemo.nmod)
+  return fmpz(a.data)
+end
+
+function lift(a::Nemo.gfp_elem)
   return fmpz(a.data)
 end
 
@@ -31,3 +39,4 @@ function set!(z::fq_nmod, x::fq_nmod)
           z, x, parent(z))
 end
 
+characterstic(F::Generic.ResField{fmpz}) = abs(F.modulus)

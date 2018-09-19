@@ -134,6 +134,13 @@ function (R::FqFiniteField)(x::fmpz_mod_poly)
   return z
 end
 
+function (R::FqFiniteField)(x::gfp_fmpz_poly)
+  z = R()
+  ccall((:fq_set, :libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.gfp_fmpz_poly}, Ref{Nemo.FqFiniteField}), z, x, R)
+  ccall((:fq_reduce, :libflint), Nothing, (Ref{Nemo.fq}, Ref{Nemo.FqFiniteField}), z, R)
+  return z
+end
+
 #TODO: move elsewhere - and use. There are more calls to nmod_set/reduce
 function (A::FqNmodFiniteField)(x::nmod_poly)
   u = A()
@@ -141,7 +148,15 @@ function (A::FqNmodFiniteField)(x::nmod_poly)
                      (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                                      u, x, A)
   _reduce(u)
-#  ccall((:fq_nmod_reduce, :libflint), Nothing, (Ref{fq_nmod}, Ref{FqNmodFiniteField}), u, A)                                   
+  return u
+end
+
+function (A::FqNmodFiniteField)(x::gfp_poly)
+  u = A()
+  ccall((:fq_nmod_set, :libflint), Nothing,
+                     (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}),
+                                     u, x, A)
+  _reduce(u)
   return u
 end
 
@@ -151,7 +166,12 @@ function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::nmod_po
                      (Ref{fq_nmod}, Ref{nmod_poly}, Ref{FqNmodFiniteField}),
                                      a, a_tmp, K)
   _reduce(a)
-#  ccall((:fq_nmod_reduce, :libflint), Nothing, (Ref{fq_nmod}, Ref{FqNmodFiniteField}), a, K)                                   
 end
   
-
+function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::gfp_poly)
+  nf_elem_to_gfp_poly!(a_tmp, b)
+  ccall((:fq_nmod_set, :libflint), Nothing,
+                     (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}),
+                                     a, a_tmp, K)
+  _reduce(a)
+end

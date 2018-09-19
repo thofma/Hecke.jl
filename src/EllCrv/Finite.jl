@@ -408,7 +408,7 @@ function order_via_schoof(E::EllCrv)
   t = 0
   for i = 1:L
     n_i = div(product, S[i])
-    B = ResidueRing(FlintZZ, S[i])
+    B = ResidueRing(FlintZZ, S[i], cached = false)
     M_i = inv(B(n_i))
     M_i = M_i.data
     t = t + (M_i * n_i * t_mod_l[i])
@@ -454,7 +454,7 @@ function t_mod_prime(l, E)
 
   S, x = PolynomialRing(R, "x")
   T, y = PolynomialRing(S, "y")
-  Z = ResidueRing(FlintZZ, l)
+  Z = GF(l, cached = false)
 
   f = x^3 + E.coeff[1]*x + E.coeff[2]
   fl = fn_from_schoof(E, l, x)

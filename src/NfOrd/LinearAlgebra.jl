@@ -62,6 +62,11 @@ function _get_coeff_raw(x::nmod_poly, i::Int)
   return u
 end
 
+function _get_coeff_raw(x::gfp_poly, i::Int)
+  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{gfp_poly}, Int), x, i)
+  return u
+end
+
 function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
   K = nf(O)

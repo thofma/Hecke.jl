@@ -122,7 +122,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   g = k.pol(gen(Qx))
   h = Qx(f(gen(k)))
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(P)), cached=false), cached=false)
+  Fp, xp = PolynomialRing(GF(Int(minimum(P)), cached=false), cached=false)
   gp = factor(Fp(g))
   hp = Fp(h)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
@@ -150,7 +150,7 @@ function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
   G = K.pol
   Qx = parent(G)
 
-  Fp, xp = PolynomialRing(ResidueRing(FlintZZ, Int(minimum(p)), cached=false), cached=false)
+  Fp, xp = PolynomialRing(GF(Int(minimum(p)), cached=false), cached=false)
   Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
   res = Tuple{NfOrdIdl, Int}[]
   Zk = maximal_order(k)
@@ -167,13 +167,13 @@ end
 > number field $K$. The lift if given by the eleemnt represented by the
 > canonical lift of $f$ to a polynomial over the integers.
 """
-function lift(K::AnticNumberField, f::nmod_poly)
+function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
   if degree(f)>=degree(K)
     f = mod(f, parent(f)(K.pol))
   end
   r = K()
   for i=0:f.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{nmod_poly}, Int), f, i)
+    u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{T}, Int), f, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -181,7 +181,7 @@ end
 
 ##TODO: make fmpz-safe!!!!
 #return <p, lift(O, fi> in 2-element normal presentation given the data
-function ideal_from_poly(O::NfOrd, p::Int, fi::nmod_poly, ei::Int)
+function ideal_from_poly(O::NfOrd, p::Int, fi::Zmodn_poly, ei::Int)
   b = lift(nf(O), fi)
   idl = ideal(O, fmpz(p), O(b, false))
   idl.is_prime = 1
@@ -265,7 +265,7 @@ end
 
 function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
   Zx = parent(f)
-  Zmodpx = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "y", cached = false)[1]
+  Zmodpx = PolynomialRing(GF(p, cached = false), "y", cached = false)[1]
   fmodp = Zmodpx(f)
   fac = factor(fmodp)
   lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
@@ -364,7 +364,15 @@ function _lift(T::Array{Generic.Res{fmpz}, 1})
   return [ z.data for z in T ]
 end
 
+function _lift(T::Array{Generic.ResF{fmpz}, 1})
+  return [ z.data for z in T ]
+end
+
 function _lift(T::Array{Nemo.nmod, 1})
+  return [ fmpz(z.data) for z in T ]
+end
+
+function _lift(T::Array{Nemo.gfp_elem, 1})
   return [ fmpz(z.data) for z in T ]
 end
 
@@ -375,7 +383,7 @@ function anti_uniformizer(P::NfOrdIdl)
   else
     p = minimum(P)
     M = representation_matrix(uniformizer(P))
-    Mp = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
+    Mp = MatrixSpace(GF(p, cached=false), rows(M), cols(M), false)(M)
     K = kernel(Mp)
     @assert length(K) > 0
     P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
@@ -390,7 +398,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     R = parent(f)
     Zx, x = PolynomialRing(FlintZZ,"x", cached = false)
     Zf = Zx(f)
-    fmodp = PolynomialRing(ResidueRing(FlintZZ, p, cached = false), "y", cached = false)[1](Zf)
+    fmodp = PolynomialRing(GF(p, cached = false), "y", cached = false)[1](Zf)
     fac = factor_shape(fmodp)
     g = sum([ x for x in values(fac)])
     res = Array{Tuple{Int, Int}}(undef, g)
@@ -759,7 +767,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   P = p.gen_one
   @assert P <= typemax(UInt)
   K = nf(order(p))
-  Rx = PolynomialRing(ResidueRing(FlintZZ, UInt(P), cached=false), cached=false)[1]
+  Rx = PolynomialRing(GF(UInt(P), cached=false), cached=false)[1]
   Zx = PolynomialRing(FlintZZ)[1]
   g = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)

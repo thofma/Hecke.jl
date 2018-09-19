@@ -62,7 +62,7 @@ function induce(FB::Hecke.NfFactorBase, A::Map)
         push!(prm, (i, FP.lp[id][1]))
       end
     else
-      px = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached=false), "x", cached=false)[1]
+      px = PolynomialRing(GF(Int(p), cached=false), "x", cached=false)[1]
       fpx = px(f)
       gpx = px(K.pol)
       #idea/ reason

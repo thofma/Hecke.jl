@@ -1363,8 +1363,8 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   @assert p^(j-1) < d
   @assert d <= p^j
 
-  R = ResidueRing(FlintZZ, p, cached=false)
-  A = zero_matrix(R, d, d)
+  R = GF(p, cached=false)
+  A = zero_matrix(R, degree(O), degree(O))
   B = basis(O, Val{false})
   for i in 1:degree(O)
     t = powermod(B[i], p^j, p)

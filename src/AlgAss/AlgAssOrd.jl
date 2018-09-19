@@ -448,24 +448,24 @@ end
 ###############################################################################
 
 function quo(O::AlgAssAbsOrd, p::Int)
+  # p must be prime
 
-  R=ResidueRing(FlintZZ, p, cached=false)
-  M=Array{nmod, 3}(undef, O.dim, O.dim, O.dim)
-  x=fmpz[0 for i=1:O.dim]
-  for i=1:O.dim
-    x[i]=1
-    N=representation_matrix(O(x))
-    for j=1:O.dim
-      for k=1:O.dim
-        M[i,j,k]=R(N[j,k])
+  R = GF(p, cached = false)
+  M = Array{gfp_elem, 3}(undef, O.dim, O.dim, O.dim)
+  x = fmpz[0 for i=1:O.dim]
+  for i = 1:O.dim
+    x[i] = 1
+    N = representation_matrix(O(x))
+    for j = 1:O.dim
+      for k = 1:O.dim
+        M[i, j, k] = R(N[j, k])
       end
     end
-    x[i]=0
+    x[i] = 0
   end
-  oneO=elem_in_basis(O(one(O.algebra)))
-  oneQ=nmod[R(s) for s in oneO]
+  oneO = elem_in_basis(O(one(O.algebra)))
+  oneQ = gfp_elem[R(s) for s in oneO]
   return AlgAss(R, M, oneQ)
-  
 end
 
 function _mod(x::fmpz_mat, y::fmpz_mat, pivots::Array{Int,1})
@@ -493,8 +493,8 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
     end
   end
   @hassert :AlgAssOrd 1 check_ideal(I)
-  F= ResidueRing(FlintZZ, p, cached = false)
-  M=Array{nmod, 3}(undef, length(pivots), length(pivots), length(pivots))
+  F= GF(p, cached = false)
+  M=Array{gfp_elem, 3}(undef, length(pivots), length(pivots), length(pivots))
   x=fmpz[0 for s=1:O.dim]
   for i=1:length(pivots)
     x[pivots[i]]=1
@@ -520,7 +520,7 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
       end
     end
   end
-  oneA = Array{nmod, 1}(undef, length(pivots))
+  oneA = Array{gfp_elem, 1}(undef, length(pivots))
   for i=1:length(pivots)
     oneA[i] = F(oneO[pivots[i]])
   end
@@ -789,7 +789,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
     return pradical_meataxe(O,p)
   end
   n = root(O.dim,2)
-  F = ResidueRing(FlintZZ, p, cached=false)
+  F = GF(p, cached=false)
 
   #First step: kernel of the trace matrix mod p 
   W = MatrixSpace(F,O.dim, O.dim, false)
@@ -1027,8 +1027,8 @@ function _maximal_ideals(O::AlgAssAbsOrd, p::Int)
   #@show dim(A1)
   @vtime :AlgAssOrd 1 lg = gens(A1)
   #@show length(lg)
-  lM = nmod_mat[representation_matrix(lg[i]) for i=1:length(lg)]
-  append!(lM, nmod_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])  
+  lM = gfp_mat[representation_matrix(lg[i]) for i=1:length(lg)]
+  append!(lM, gfp_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])  
   #lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
   #append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
@@ -1045,8 +1045,8 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
   #@show dim(A1)
   @vtime :AlgAssOrd 1 lg = gens(A1)
   #@show length(lg)
-  lM = nmod_mat[representation_matrix(lg[i]) for i=1:length(lg)]
-  append!(lM, nmod_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])
+  lM = gfp_mat[representation_matrix(lg[i]) for i=1:length(lg)]
+  append!(lM, gfp_mat[representation_matrix(lg[i], :right) for i=1:length(lg)])
   #lM = nmod_mat[representation_matrix(A1[i]) for i=1:dim(A1)]
   #append!(lM, nmod_mat[representation_matrix(A1[i], :right) for i=1:dim(A1)])
   M = ModAlgAss(lM)
@@ -1057,7 +1057,7 @@ function _maximal_ideals(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
 
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::nmod_mat, p::fmpz, poneO::AlgAssAbsOrdElem, A1::AlgAss, A1toO::Function)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, x::Zmodn_mat, p::fmpz, poneO::AlgAssAbsOrdElem, A1::AlgAss, A1toO::Function)
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, rows(x)+O.dim , O.dim)
   gens = Vector{AlgAssAbsOrdElem}(undef, rows(x))
@@ -1085,7 +1085,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
 
 end
 
-function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, x::nmod_mat, p::fmpz, poneO::AlgAssAbsOrdElem)
+function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, x::Zmodn_mat, p::fmpz, poneO::AlgAssAbsOrdElem)
 
   @hassert :AlgAssOrd 1 begin r = rref(x)[1]; closure(x, M.action) == sub(rref(x)[2], 1:r, 1:cols(x)) end
   m = zero_matrix(FlintZZ, O.dim, O.dim)

@@ -96,6 +96,10 @@ function rand(R::Generic.ResRing{fmpz})
   return R(rand(fmpz(0):(size(R)-1)))
 end
 
+function rand(R::Generic.ResField{fmpz})
+  return R(rand(fmpz(0):(order(R)-1)))
+end
+
 function rand(R::Generic.ResRing{T}) where T<:PolyElem
   r = rand(base_ring(base_ring(R)))
   g = gen(R)
@@ -178,11 +182,23 @@ function gcd!(f::Nemo.nmod_poly, g::Nemo.nmod_poly, h::Nemo.nmod_poly)
   return f
 end
 
+function gcd!(f::Nemo.gfp_poly, g::Nemo.gfp_poly, h::Nemo.gfp_poly)
+  ccall((:nmod_poly_gcd, :libflint), Nothing, (Ref{Nemo.gfp_poly}, Ref{Nemo.gfp_poly}, Ref{Nemo.gfp_poly}), f, g, h)
+  return f
+end
+
 function (R::Nemo.NmodPolyRing)(g::fmpq_poly)
   return fmpq_poly_to_nmod_poly(R, g)
+end
+
+function (R::Nemo.GFPPolyRing)(g::fmpq_poly)
+  return fmpq_poly_to_gfp_poly(R, g)
 end
 
 function (R::Nemo.FmpzModPolyRing)(g::fmpq_poly)
   return fmpq_poly_to_fmpz_mod_poly(R, g)
 end
 
+function (R::Nemo.GFPFmpzPolyRing)(g::fmpq_poly)
+  return fmpq_poly_to_gfp_fmpz_poly(R, g)
+end

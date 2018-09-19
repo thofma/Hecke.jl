@@ -127,7 +127,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 end
 
 # The output will be of type
-# elem_type(MatrixSpace(ResidueRing(FlintZZ, p), 1, rank(U) ( + 1))), so
+# elem_type(MatrixSpace(GF(p), 1, rank(U) ( + 1))), so
 # nmod_mat or fmpz_mod_mat
 # THIS FUNCTION IS NOT TYPE STABLE
 function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
@@ -139,9 +139,9 @@ function _matrix_for_saturation(U::UnitGrpCtx, P::NfOrdIdl, p::Int)
 
   # We have to add the generator of the torsion group
   if gcd(p, U.torsion_units_order) != 1
-    res = zero_matrix(ResidueRing(FlintZZ, p, cached=false), 1, unit_rank(O) + 1)
+    res = zero_matrix(GF(p, cached=false), 1, unit_rank(O) + 1)
   else
-    res = zero_matrix(ResidueRing(FlintZZ, p, cached=false), 1, unit_rank(O))
+    res = zero_matrix(GF(p, cached=false), 1, unit_rank(O))
   end
 
   t = K()

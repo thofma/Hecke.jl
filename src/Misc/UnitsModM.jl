@@ -304,7 +304,7 @@ function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
      
   @assert isodd(p)
 
-  Fp = ResidueRing(FlintZZ, p, cached=false)
+  Fp = GF(p, cached=false)
   g = disc_log_bs_gs(Fp(a), Fp(b), p-1)
 #  println("1st level ", g)
   

@@ -289,7 +289,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
      no = 1
      while nbits(pp) < nb
        p = next_prime(p)
-       R = ResidueRing(FlintZZ, Int(p))
+       R = GF(Int(p), cached = false)
        Rt, t = PolynomialRing(R)
        np = divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d))
        if isone(pp)
@@ -555,7 +555,7 @@ function _ds(fa)
 end
 
 function _degset(f::fmpz_poly, p::Int)
-  F = ResidueRing(FlintZZ, p)
+  F = GF(p, cached = false)
   Ft, t = PolynomialRing(F, cached = false)
   @assert issquarefree(Ft(f))
   g = Ft(f)
@@ -582,7 +582,7 @@ function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
     return Set(1:degree(f))
   end
   fp = modular_proj(f, me)
-  R = ResidueRing(FlintZZ, p, cached = false)
+  R = GF(p, cached = false)
   Rt = PolynomialRing(R, cached = false)[1]
   if !issquarefree(fp[1])
     throw(BadPrime(p))
@@ -975,9 +975,22 @@ function nf_elem_to_nmod_poly!(r::nmod_poly, a::nf_elem, useden::Bool = true)
   return nothing
 end
 
+function nf_elem_to_gfp_poly!(r::gfp_poly, a::nf_elem, useden::Bool = true)
+  ccall((:nf_elem_get_nmod_poly_den, :libantic), Nothing,
+        (Ref{gfp_poly}, Ref{nf_elem}, Ref{AnticNumberField}, Cint),
+        r, a, a.parent, Cint(useden))
+  return nothing
+end
+
 function (R::Nemo.NmodPolyRing)(a::nf_elem)
   r = R()
   nf_elem_to_nmod_poly!(r, a)
+  return r
+end
+
+function (R::Nemo.GFPPolyRing)(a::nf_elem)
+  r = R()
+  nf_elem_to_gfp_poly!(r, a)
   return r
 end
 

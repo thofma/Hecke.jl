@@ -646,6 +646,14 @@ function lift(R::NmodPolyRing, a::fq_nmod)
   return f
 end
 
+function lift(R::GFPPolyRing, a::fq_nmod)
+  f = R()
+  for i=0:degree(parent(a))-1
+    setcoeff!(f, i, _get_coeff_raw(a, i))
+  end
+  return f
+end
+
 function (Zx::FmpzPolyRing)(a::nf_elem) 
   b = Zx()
   @assert denominator(a) == 1
@@ -671,7 +679,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
   ZX, X = FlintZZ["X"]
-  Rp = ResidueRing(FlintZZ, p, cached=false)
+  Rp = GF(p, cached=false)
   Rpt, t = PolynomialRing(Rp, "t", cached=false)
   K = base_ring(f)
 
@@ -844,7 +852,7 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
   #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
   #hard to test...
   ZX, X = FlintZZ["X"]
-  Rp = ResidueRing(FlintZZ, p, cached = false)
+  Rp = GF(p, cached = false)
   Rpt, t = PolynomialRing(Rp, "t", cached = false)
   K = parent(a)
 
@@ -1280,7 +1288,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
   while true
     p = next_prime(p)
 
-    Rp = ResidueRing(FlintZZ, p, cached=false)
+    Rp = GF(p, cached=false)
     Rpt, t = PolynomialRing(Rp, "t", cached=false)
     gp = Rpt(K.pol)
     if iszero(discriminant(gp))
@@ -1353,7 +1361,7 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
   while true
     p = next_prime(p)
 
-    Rp = ResidueRing(FlintZZ, p, cached=false)
+    Rp = GF(p, cached=false)
     Rpt, t = PolynomialRing(Rp, "t", cached = false)
     gp = Rpt(K.pol)
     if iszero(discriminant(gp))

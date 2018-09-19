@@ -477,10 +477,10 @@ end
 # compute basis for the right kernel space by calling flint
 # look at flint documentation of nmod_mat_nullspace
 
-function _right_kernel(x::nmod_mat)
+function _right_kernel(x::T) where {T <: Zmodn_mat}
   z = zero_matrix(base_ring(x), cols(x), max(rows(x),cols(x)))
-  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), z, x)
-  return z,n
+  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{T}, Ref{T}), z, x)
+  return z, n
 end
 
 # compute basis for the left kernel space
@@ -665,14 +665,14 @@ end
 
 _lu(A, P = PermGroup(rows(A))) = lu(A, P)
 
-function _right_kernel(a::Generic.Mat{Generic.Res{fmpz}})
+function _right_kernel(a::T) where {T <: Union{Generic.Mat{Generic.Res{fmpz}}, Generic.Mat{Generic.ResF{fmpz}}}}
   r, b = _rref(a)
   pivots = Array{Int}(undef, r)
   nonpivots = Array{Int}(undef, cols(b) - r)
   X = zero_matrix(base_ring(a),cols(b),cols(b) - r)
 
   if r == 0
-    return vcat(identity_matrix(FlintZZ, cols(b) - r), zero_matrix(FlintZZ, r, cols(b) - r)), cols(b)
+    return vcat(identity_matrix(base_ring(a), cols(b) - r), zero_matrix(base_ring(a), r, cols(b) - r)), cols(b)
   elseif !((cols(b) - r) == 0)
     i = 1
     j = 1

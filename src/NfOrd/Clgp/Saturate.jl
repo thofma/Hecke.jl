@@ -48,7 +48,7 @@ function Hecke.matrix(R::Hecke.Ring, M::MatElem)
   return matrix(R, rows(M), cols(M), elem_type(R)[R(M[i,j]) for i=1:rows(M) for j=1:cols(M)])
 end
 
-function mod_p(R, Q::NfOrdIdl, p::Int)
+function mod_p(R, Q::NfOrdIdl, p::Int, T)
   F, mF = Hecke.ResidueFieldSmall(order(Q), Q)
   mF = Hecke.extend_easy(mF, nf(order(Q)))
   @assert size(F) % p == 1
@@ -72,7 +72,7 @@ function mod_p(R, Q::NfOrdIdl, p::Int)
     end
   end
 #  =#
-  return matrix(ResidueRing(FlintZZ, p), 1, length(R), Int[dlog(dl, mF(x)^e, pp) % p for x = R])
+  return matrix(T, 1, length(R), Int[dlog(dl, mF(x)^e, pp) % p for x = R])
 end
 
 Hecke.lift(A::fmpz_mat) = A
@@ -93,6 +93,14 @@ function lift_nonsymmetric(a::nmod_mat)
   return z
 end
 
+function lift_nonsymmetric(a::gfp_mat)
+  z = fmpz_mat(rows(a), cols(a))
+  z.base_ring = FlintZZ
+  ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
+          (Ref{fmpz_mat}, Ref{gfp_mat}), z, a)
+  return z
+end
+
 function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   ZK = order(c.FB.ideals[1])
   T, mT = torsion_unit_group(ZK)
@@ -106,7 +114,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   else
 #    println("NOT doint zeta")
   end
-  T = ResidueRing(FlintZZ, p)
+  T = GF(p, cached = false)
   A = identity_matrix(T, length(R))
   cA = cols(A)
   i = 1
@@ -128,7 +136,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
     end
     for Q in lq
       try
-        z = mod_p(R, Q[1], Int(p))
+        z = mod_p(R, Q[1], Int(p), T)
         z = z*A
         z = nullspace(z)
         if z[1] == 0

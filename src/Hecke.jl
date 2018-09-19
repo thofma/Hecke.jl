@@ -75,7 +75,7 @@ for i in names(Nemo)
 end
 
 import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
-       elem_to_mat_row!, elem_from_mat_row,
+       elem_to_mat_row!, elem_from_mat_row, gfp_elem, gfp_mat, Zmodn_poly, Zmodn_mat, GaloisField,
        acb_vec, array, acb_vec_clear
 
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,

@@ -527,7 +527,7 @@ function modular_init(K::AnticNumberField, p::fmpz; deg_limit::Int=0, max_split:
   UInt(p) # to enforce p being small
 
   me = modular_env()
-  me.Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached = false), "_x", cached=false)[1]
+  me.Fpx = PolynomialRing(ResidueRing(FlintZZ, Int(p), cached = false), "_x", cached=false)[1]
   fp = me.Fpx(K.pol)
   lp = factor(fp)
   if Set(values(lp.fac)) != Set([1])

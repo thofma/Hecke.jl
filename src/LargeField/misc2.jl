@@ -296,9 +296,9 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
 
 
   lpx = [modular_init(K, p) for p=lp]
-  bp = Array{nmod_mat}(length(lpx))
+  bp = Array{gfp_mat}(length(lpx))
   for i=1:length(lpx)
-    bp[i] = zero_matrix(ResidueRing(FlintZZ, lpx[i].p, cached=false), n, n)
+    bp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, n)
     for k=1:n
       ap = modular_proj(b[k], lpx[i])
       for l=1:n
@@ -308,11 +308,11 @@ function basis_rels_5(b::Array{nf_elem, 1}, no_b::Int = 250, no_rel::Int = 10000
   end
 #  bp = [[deepcopy(modular_proj(x, me)) for x = b] for me = lpx]
 
-  tmp = Array{nmod_mat}(length(lpx))
-  lcp = Array{nmod_mat}(length(lpx))
+  tmp = Array{gfp_mat}(length(lpx))
+  lcp = Array{gfp_mat}(length(lpx))
   for i=1:length(lpx)
-    tmp[i] = zero_matrix(ResidueRing(FlintZZ, lpx[i].p, cached=false), n, 1)
-    lcp[i] = zero_matrix(ResidueRing(FlintZZ, lpx[i].p, cached=false), n, 1)
+    tmp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
+    lcp[i] = zero_matrix(GF(lpx[i].p, cached=false), n, 1)
   end
 
   lc = Array{Int, 1}()

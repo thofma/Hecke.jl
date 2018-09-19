@@ -158,7 +158,8 @@ function issquare(x::ResElem{fmpz})
         return false, zero(R)
     end
 end
-function issquare(x::Nemo.nmod)
+
+function issquare(x::Union{nmod, gfp_elem})
     R = parent(x)
     p = modulus(R)
     xnew = x.data
@@ -184,7 +185,7 @@ end
 """
 function issquare(x::FinFieldElem)
     R = parent(x)
-    S, t = PolynomialRing(R, "t")
+    S, t = PolynomialRing(R, "t", cached = false)
     
     # check if x is a square by considering the polynomial f = t^2 - x
     # x is a square in F_q iff f has a root in F_q
@@ -212,8 +213,8 @@ end
 > $ax^2 + bx + c = 0$ has a root modulo $p$.
 """
 function quadroots(a, b, c, p)
-  F_p = ResidueRing(FlintZZ, p)
-  R, x = PolynomialRing(F_p, "x")
+  F_p = GF(p, cached = false)
+  R, x = PolynomialRing(F_p, "x", cached = false)
   f = F_p(a)*x^2 + F_p(b)*x + F_p(c)
     
   if degree(f) == -1
@@ -244,7 +245,7 @@ end
 > modulo $p$.
 """
 function nrootscubic(b, c, d, p)
-  F_p = ResidueRing(FlintZZ, p)
+  F_p = GF(p, cached = false)
   R, x = PolynomialRing(F_p, "x")
   f = x^3 + F_p(b)*x^2 + F_p(c)*x + F_p(d)
   

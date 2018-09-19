@@ -1064,7 +1064,23 @@ Base.IteratorSize(::Type{NmodRing}) = Base.HasLength()
 
 Base.length(R::NmodRing) = R.n
 
-function powmod(f::nmod_poly, e::fmpz, g::nmod_poly)
+Base.iterate(R::GaloisField) = (zero(R), zero(UInt))
+
+function Base.iterate(R::GaloisField, st::UInt)
+  if st == R.n - 1
+    return nothing
+  end
+
+  return R(st + 1), st + 1
+end
+
+Base.eltype(::Type{GaloisField}) = gfp_elem
+
+Base.IteratorSize(::Type{GaloisField}) = Base.HasLength()
+
+Base.length(R::GaloisField) = R.n
+
+function powmod(f::Zmodn_poly, e::fmpz, g::Zmodn_poly)
   if nbits(e) <= 63
     return powmod(f, Int(e), g)
   else

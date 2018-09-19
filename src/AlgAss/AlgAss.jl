@@ -126,7 +126,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   n = degree(O)
   BO = basis(O)
 
-  Fp = ResidueRing(FlintZZ, p, cached=false)
+  Fp = GF(p, cached=false)
   BOmod = [ mod(O(v), I) for v in BO ]
   B = zero_matrix(Fp, n, n)
   for i = 1:n
@@ -141,7 +141,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   bbasis = Vector{NfOrdElem}(undef, r)
   for i = 1:r
     for j = 1:n
-      b[j] = fmpz(B[i, j])
+      b[j] = lift(B[i, j])
     end
     bbasis[i] = O(b)
   end
@@ -191,7 +191,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   end
 
   function _preimage(a::AlgAssElem)
-    return sum(fmpz(a.coeffs[i])*bbasis[i] for i = 1:r)
+    return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
   end
 
   OtoA = NfOrdToAlgAssMor{elem_type(Fp)}(O, A, _image, _preimage)
@@ -644,7 +644,7 @@ function _primitive_element(A::AlgAss)
   return nothing
 end
 
-function _primitive_element(A::AlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq}
+function _primitive_element(A::AlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
@@ -665,12 +665,7 @@ function _as_field(A::AlgAss{T}) where T
     b = mul!(b, b, a)
     elem_to_mat_row!(M, i + 1, b)
   end
-  if T == Generic.Res{fmpz}
-    A, c = inv(M)
-    B = divexact(A, c)
-  elseif T == nmod
-    B = inv(M)
-  end
+  B = inv(M)
   N = zero_matrix(base_ring(A), 1, d)
   local f
   let N = N, B = B

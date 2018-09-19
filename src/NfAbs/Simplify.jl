@@ -113,7 +113,7 @@ function polredabs(K::AnticNumberField)
   d = 1
   while true
     p = next_prime(p)
-    R = ResidueRing(FlintZZ, p, cached=false)
+    R = GF(p, cached=false)
     lp = factor(K.pol, R)
     if any(t->t>1, values(lp.fac))
       continue
