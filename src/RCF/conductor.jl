@@ -454,6 +454,7 @@ function discriminant(C::ClassField)
   lp=mR.fact_mod
   if isempty(lp)
     C.relative_discriminant=relative_disc
+    return relative_disc
   end
   tmg=mR.tame_mult_grp
   wldg=mR.wild_mult_grp
@@ -1042,24 +1043,24 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   
   R = mR.header.domain
   O = mR.modulus_fin.order
-  K=O.nf
+  K = O.nf
   N = lcm([numerator(norm(K(discriminant(x)))) for x = f])
-  N1 = fmpz(norm(mR.modulus_fin))
+  N1 = fmpz(minimum(mR.modulus_fin))
 
   @assert all(x->base_ring(x) == K, f)
 
-  n=prod(degree(x) for x = f)
+  n = lcm([degree(x) for x = f])
  
   if of_closure  
     #we cannot work in the quotient, it "could" be lcm(factorial(degree(x)) for x = f)
     Q,mQ=quo(R, elem_type(R)[])
   else
-    Q,mQ=quo(R,n, false)
+    Q,mQ=quo(R, n, false)
   end
   
-  p=maximum(degree(x)+1 for x = f)
+  p = maximum(degree(x)+1 for x = f)
   
-  listprimes=typeof(R[1])[]  
+  listprimes = typeof(R[1])[]  
   
   #
   # Adding small primes until it stabilizes
@@ -1067,7 +1068,7 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   
   max_stable = 2*n
   stable = max_stable
-  denom = lcm([denominator(coeff(x, i)) for x in f for i = 1:degree(x)])
+  denom = lcm([denominator(coeff(x, i)) for x in f for i = 1:degree(x) ])
   while true
     if isabelian && order(Q) == n
       break
@@ -1084,14 +1085,14 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
           stable -= 1
           continue
         end
-        F,mF = ResidueFieldSmall(O,L[i][1])
+        F,mF = ResidueFieldSmall(O, L[i][1])
         mFp = extend_easy(mF, K)  
         Fz, z = PolynomialRing(ResidueRing(FlintZZ, Int(p)), "z", cached=false)
         all_deg = []
         #= the idea, taking 2 polys:
           f splits in d_i
           g splits in e_i
-        Then, over an extensions of degree d_i an irresducible of degree e_i
+        Then, over an extensions of degree d_i an irreducible of degree e_i
         splits into factors of degree e_i/gcd(d_i, e_i) so there are gcd() many
         (but this is not used). The total degree over base field is then 
         d_i * e_i/gcd() = lcm(d_i, e_i)
@@ -1099,7 +1100,7 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
         =#
         for x = f
           g=Fz([coeff(mFp(coeff(x, i)), 0) for i = 0:degree(x)]) 
-          D=factor_shape(g)
+          D = factor_shape(g)
           push!(all_deg, [x[1] for x = D])
         end
         all_f = Set{Int}()
@@ -1274,11 +1275,13 @@ function normal_closure(C::ClassField)
     inf = InfPlc[]
   end
   aut = automorphisms(k)
+  @assert length(aut) == degree(k)
   fin = lcm([induce_image(c[1], x) for x = aut])
 
   D = ray_class_field(fin, inf, n_quo = Int(exponent(codomain(C.quotientmap))))
   h = norm_group_map(D, C)
-  act = Hecke.induce_action(D, aut)
+  aut1 = small_generating_set(aut)
+  act = Hecke.induce_action(D, aut1)
   k = kernel(h, true)[1]
 
   k = intersect([x(k)[1] for x = act])
@@ -1310,9 +1313,20 @@ end
 > if $C$ is normal over $Q$.
 """
 function isnormal(C::ClassField)
+
+  K = base_field(C)
+  aut = automorphisms(K)
+  if length(aut) == degree(K)
+    return isnormal_easy
+  else 
+    return isnormal_difficult(C)
+  end
+  
+end
+
+function isnormal_easy(C::ClassField)
   aut = automorphisms(base_field(C))
   c, inf = conductor(C)
-
   if any(x-> c != induce_image(c, x), aut)
     return false
   end
@@ -1322,11 +1336,67 @@ function isnormal(C::ClassField)
   end
   C = rewrite_with_conductor(C)
   mR = C.rayclassgroupmap
-  act = induce_action(mR, aut)
-  k = kernel(GrpAbFinGenMap(C.quotientmap), true)[1]
-  #normal iff kernel is invariant as a set
-  return all(x -> iseq(x(k)[1], k), act)
+  new_aut = small_generating_set(aut)
+  act = induce_action(mR, new_aut)
+  mk = kernel(GrpAbFinGenMap(C.quotientmap), true)[2]
+  #normal iff kernel is invariant
+  return is_stable(act, mk)
 end
+
+function isnormal_difficult(C::ClassField)
+  
+  #First, I check that the norm group of the splitting field 
+  #of the base field contains C
+  
+  K = base_field(C)
+  nK = degree(K)
+  O = maximal_order(K)
+  f = K.pol
+  I = ideal(O, discriminant(O))
+  r, mr = ray_class_group(I, real_places(K))
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  g = divexact(evaluate(f, t), t - gen(K))
+  G, mG = norm_group(g, mr, of_closure = true)
+  k, mk = cokernel(mG)
+  C1 = ray_class_field(mr, mk)
+  if rem(degree(C), degree(C1))!= 0 || !issubfield(C1, C)
+    return false
+  end
+  if degree(C1) == degree(C)
+    return true
+  end
+  
+  # Claus's Idea: I don't want to compute the extension, I want to test the stability of the modulus under the action of the 
+  # automorphisms, so only the totally split primes! 
+  # In other words, I need to check that given a totally split prime p, all the primes lying
+  # over p are either all zero or all non-zero in the ray class field 
+  
+  p = 1
+  d = (discriminant(O)^degree(C1))*numerator(norm(evaluate(FacElem(discriminant(C1)))))
+  ld = (ceil(fmpz, log(d)))
+  n = degree(C1)*nK
+  bound = (4*ld + 2*n +5)^2
+  mp = inv(C.quotientmap) * C.rayclassgroupmap
+  while p < bound 
+    p = next_prime(p)
+    if divisible(discriminant(O), p)
+      continue
+    end
+    lp = prime_decomposition(O, p)
+    if !all([q[1].splitting_type[2] == 1 for q in lp])
+      continue
+    end
+    q = lp[1][1]
+    fl = iszero(mp\q)
+    for i = 2:nK
+      if fl != iszero(mp\lp[i][1])
+        return false
+      end  
+    end
+  end
+  return true
+end
+
 
 @doc Markdown.doc"""
     iscentral(C::ClassField) -> Bool

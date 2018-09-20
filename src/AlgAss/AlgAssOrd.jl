@@ -697,7 +697,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
     end
   end
   #In the case of the p-radical, it is important to do this modulo p
-  if p==1
+  if p == 1
     m = hnf(m)
   else
     hnf_modular_eldiv!(m, p)
@@ -1117,10 +1117,10 @@ function pmaximal_overorder(O::AlgAssAbsOrd, p::Int)
   end
 
   if p > O.dim
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)::AlgAssAbsOrd
     return O1
   else
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)::AlgAssAbsOrd
     return O1
   end
 end

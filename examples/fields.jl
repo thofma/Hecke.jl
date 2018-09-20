@@ -38,41 +38,6 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
 
 end
 
-function _quad_exts_as_ab_exts(bound::Int)
-
-  Qy,y = PolynomialRing(FlintQQ, "y")
-  K,a = NumberField(y-1)
-  Kx,x=PolynomialRing(K,"x")
-  sqf=Hecke.squarefree_up_to(bound)
-  sqf= vcat(sqf[2:end], Int[-i for i in sqf])
-  final_list=Int[]
-  for i=1:length(sqf)
-    if abs(sqf[i]*4)< bound
-      @views push!(final_list,sqf[i])
-      continue
-    end
-    if mod(sqf[i],4)==1
-      @views push!(final_list,sqf[i])
-    end
-  end
-  return ( _quad_ext_with_auto(Kx,i) for i in final_list)
-
-end
-
-function _quad_ext_with_auto(Kx,a::Int)
-  x=gen(Kx)
-  if a % 4 == 1
-    L, lg = number_field([x^2-x+divexact(1-a,4)])
-    b=lg[1]
-    mL=Hecke.NfRel_nsToNfRel_nsMor(L,L, [1-b])::Hecke.NfRel_nsToNfRel_nsMor{nf_elem}
-  else
-    L, lg = number_field([x^2-a])
-    b = lg[1]
-    mL=Hecke.NfRel_nsToNfRel_nsMor(L,L, [-b])::Hecke.NfRel_nsToNfRel_nsMor{nf_elem}
-  end
-  return (L, Hecke.NfRel_nsToNfRel_nsMor{nf_elem}[mL])::Tuple{NfRel_ns{nf_elem}, Array{Hecke.NfRel_nsToNfRel_nsMor{nf_elem},1}}
-
-end
 
 ###############################################################################
 #
@@ -138,12 +103,12 @@ end
 
 function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 
-  D=abs(discriminant(O))
-  ram_primes=collect(keys(factor(O.disc).fac))
-  coprime_to=cat(ram_primes, fmpz(5), dims = 1)
+  D = abs(discriminant(O))
+  ram_primes = collect(keys(factor(O.disc).fac))
+  coprime_to = cat(ram_primes, fmpz(5), dims = 1)
   sort!(ram_primes)
-  b=root(bound_non_normal,2)
-  b1=root(div(b,D),2)
+  b=root(bound_non_normal, 2)
+  b1=root(div(b,D), 2)
   #
   # First, conductors for tamely ramified extensions
   #
@@ -153,7 +118,7 @@ function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
-  lp=prime_decomposition(O,5)
+  lp=prime_decomposition(O, 5)
   final_list=Tuple{Int, Dict{NfOrdIdl, Int}}[]
   if 5 in ram_primes
     bound_max_exp=flog(b1,5)
@@ -190,6 +155,15 @@ function conductorsD5(O::NfOrd, bound_non_normal::fmpz)
 
 end
 
+function D5_extensions(absolute_bound::fmpz, f::IOStream)
+  
+  l = Hecke.quadratic_extensions(Int(root(absolute_bound, 2)))
+  return D5_extensions(absolute_bound, l)
+
+end
+
+
+
 #The input are the absolute bound for the non-normal extension of degree 5 and the list of the quadratic fields
 function D5_extensions(absolute_bound::fmpz, quad_fields)
   
@@ -198,7 +172,7 @@ function D5_extensions(absolute_bound::fmpz, quad_fields)
   for K in quad_fields
     len-=1
     
-     @vprint :QuadraticExt 1 "Field: $K\n"   
+     @vprint :QuadraticExt 1 "\nDoing: $(K.pol)\n"   
      @vprint :QuadraticExt 1 "Remaining Fields: $(len)\n"
     append!(z, single_D5_extensions(absolute_bound, K))
   end
@@ -211,7 +185,7 @@ function D5_extensions(absolute_bound::fmpz, quad_fields, f::IOStream)
   for K in quad_fields
     len-=1
     
-    @vprint :QuadraticExt 1  "Field: $K\n"
+    @vprint :QuadraticExt 1 "Field: $K\n"
     @vprint :QuadraticExt 1 "Remaining Fields: $(len)\n"
     for g in single_D5_extensions(absolute_bound, K)
       Base.write(f, "($g)\n" )
@@ -261,7 +235,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
       end
       C = ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C)
-        @vprint :QuadraticExt 1 "New Field"
+        @vprint :QuadraticExt 1 "New Field\n"
         L=number_field(C)
         auto=Hecke.extend_aut(C, gens[1])
         pol=_quintic_ext(auto)
@@ -283,7 +257,7 @@ function _quintic_ext(auto)#::NfRel_nsToNfRel_nsMor)
   pr_el=x+auto(x)
   
   #Take minimal polynomial; I need to embed the element in the absolute extension
-  pol=Hecke.absolute_minpoly(pr_el)
+  pol = Hecke.absolute_minpoly(pr_el)
   if degree(pol)==15
     return pol
   else
