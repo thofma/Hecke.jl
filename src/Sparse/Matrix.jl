@@ -23,15 +23,30 @@ parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
 
 base_ring(A::SMat{T}) where {T} = A.base_ring::parent_type(T)
 
+@doc Markdown.doc"""
+    rows(A::SMat) -> Int
+
+Return the number of rows of $A$.
+"""
 function rows(A::SMat)
   @assert A.r == length(A.rows)
   return A.r
 end
 
+@doc Markdown.doc"""
+    cols(A::SMat) -> Int
+
+Return the number of columns of $A$.
+"""
 function cols(A::SMat)
   return A.c
 end
 
+@doc Markdown.doc"""
+    nnz(A::SMat) -> Int
+
+Return the number of non-zero entries of $A$.
+"""
 function nnz(A::SMat)
   return A.nnz
 end
@@ -54,6 +69,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    ==(A::SMat, B::SMat) -> Bool
+
+Return whether $A$ is equal to $B$.
+"""
 function ==(x::SMat{T}, y::SMat{T}) where T
   parent(x) != parent(y) && error("Parents incompatible")
   return x.rows == y.rows
@@ -134,13 +154,12 @@ function getindex(A::SMat{T}, i::Int, j::Int) where T
 end
 
 function getindex(A::SMat{T}, i::Int) where T
-  if i in 1:A.r
-    return A.rows[i]
-  end
-  return SRow{T}()
+  (i < 1 || i > rows(A)) && error("Index must be between 1 and $(rows(A))")
+  return A.rows[i]
 end
 
 function setindex!(A::SMat{T}, b::SRow{T}, i::Int) where T
+  (i < 1 || i > rows(A)) && error("Index must be between 1 and $(rows(A))")
   A.rows[i] = b
 end
 
@@ -206,15 +225,15 @@ function sparse_matrix(A::Array{T, 2}) where {T <: RingElem}
   m = sparse_matrix(parent(A[1, 1]))
   m.c = Base.size(A, 2)
   m.r = 0
-  for i=1:size(A, 1)
+  for i in 1:size(A, 1)
     if iszero_row(A, i)
       continue
     end
     r = SRow{T}()
-    for j =1:size(A, 2)
-      if A[i,j] != 0
+    for j in 1:size(A, 2)
+      if !iszero(A[i, j])
         m.nnz += 1
-        push!(r.values, T(A[i,j]))
+        push!(r.values, A[i, j])
         push!(r.pos, j)
       end
     end
@@ -232,41 +251,6 @@ end
 function (M::SMatSpace)(A::Array{T, 2}) where T <: MatElem
   return sparse_matrix(A)
 end
-
-#@doc Markdown.doc"""
-#    SMat{S <: Ring}(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false)
-#  
-#> "Lifts" the entries in $A$ to a sparse matrix over $R$.
-#"""
-#function sparse_matrix(A::nmod_mat; R::S = base_ring(A), keepzrows::Bool = false) where S <: Ring
-#  m = SMat{elem_type(R)}()
-#  m.c = cols(A)
-#  m.r = 0
-#
-#  for i=1:rows(A)
-#    if iszero_row(A, i)
-#      if !keepzrows
-#        continue
-#      else
-#        r = SRow(R)
-#      end
-#    else
-#      r = SRow(R)
-#      for j =1:cols(A)
-#        t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb,
-#                  (Ref{nmod_mat}, Int, Int), A, i - 1, j - 1)
-#        if !iszero(t)
-#          m.nnz += 1
-#          push!(r.values, R(t))
-#          push!(r.pos, j)
-#        end
-#      end
-#    end
-#    push!(m.rows, r)
-#    m.r += 1
-#  end
-#  return m
-#end
 
 ################################################################################
 #
@@ -319,7 +303,7 @@ end
 
 > Convert the matrix (row) $A$ to be over $R$.
 """
-function sparse_matrix(A::SMat{fmpz}, R::T) where T <: Ring
+function sparse_matrix(A::SMat, R::T) where {T <: Ring}
   z = sparse_matrix(R)
   z.r = A.r
   z.c = A.c
@@ -350,12 +334,12 @@ end
 
 > Returns the transpose of $A$.
 """
-function transpose(A::SMat)
+function transpose(A::SMat{T}) where {T}
   R = base_ring(A)
-  B = sparse_matrix(base_ring(A))
+  B = sparse_matrix(R)
   n = rows(A)
   m = cols(A)
-  B.rows = Array{SRow{elem_type(R)}}(undef, m)
+  B.rows = Vector{SRow{T}}(undef, m)
   for i=1:m
     B.rows[i] = SRow(R)
   end
@@ -369,7 +353,6 @@ function transpose(A::SMat)
   B.c = n
   B.r = m
   B.nnz = A.nnz
-
   return B
 end
 
@@ -391,23 +374,11 @@ function Base.iterate(A::SMat, st::Int = 1)
   return A.rows[st], st + 1
 end
 
-#function start(A::SMat)
-#  return 1
-#end
-#
-#function next(A::SMat, st::Int)
-#  return A.rows[st], st + 1
-#end
-#
-#function done(A::SMat, st::Int)
-#  return st > rows(A)
-#end
-
-Base.IteratorSize(::Type{SMat{T}}) where {T} = Base.HasLength()
-
 function length(A::SMat)
   return rows(A)
 end
+
+Base.eltype(A::SMat{T}) where {T} = SRow{T}
 
 ################################################################################
 #
@@ -418,13 +389,14 @@ end
 # (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
 # inplace
 function mul!(c::Array{T, 1}, A::SMat{T}, b::Array{T, 1}) where T
-  assert(length(b) == cols(A))
-  assert(length(c) == rows(A))
+  @assert length(b) == cols(A)
+  @assert length(c) == rows(A)
+  R = base_ring(A)
   for i = 1:length(A.rows)
-    s = 0
+    s = zero(R)
     I = A.rows[i]
     for j=1:length(I.pos)
-      s += I.values[j]*b[I.pos[j]]
+      s += I.values[j] * b[I.pos[j]]
     end
     c[i] = s
   end
@@ -433,8 +405,8 @@ end
 
 # (dense Array{T, 1}) * SMat{T} as (dense Array{T, 1}) 
 function mul(A::SMat{T}, b::Array{T, 1}) where T
-  assert(length(b) == cols(A))
-  c = Array{T}(undef, rows(A))
+  @assert length(b) == cols(A)
+  c = Vector{T}(undef, rows(A))
   mul!(c, A, b)
   return c
 end
@@ -443,10 +415,11 @@ end
 # - Inplace
 # - Reduction as the last step, no intermediate reductions.
 function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
-  assert( length(b) == cols(A))
-  assert( length(c) == rows(A))
+  @assert length(b) == cols(A)
+  @assert length(c) == rows(A)
+
   for i = 1:length(A.rows)
-    s = 0
+    s = S(0)
     I = A.rows[i]
     for j=1:length(I.pos)
       s += S(I.values[j]) * b[I.pos[j]]
@@ -674,14 +647,15 @@ end
 @doc Markdown.doc"""
   valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) -> T
 
-  Uses a Monte-Carlo alorithm to  compute the valence of A. The valence is the valence of the minimal polynomial f of A'*A, thus the last non-zero coefficient,
-  typically f(0).
+Uses a Monte-Carlo alorithm to compute the valence of A. The valence is the
+valence of the minimal polynomial f of A'*A, thus the last non-zero
+coefficient, typically f(0).
 
-  The valence is computed modulo various primes until the computation
-  stabilises for extra_prime many.
+The valence is computed modulo various primes until the computation stabilises
+for extra_prime many.
 
-  trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then
-  the valence of trans * A  is computed instead.
+trans, if given, is  a SLP (straight-line-program) in GL(n, Z). Then the
+valence of trans * A  is computed instead.
 """
 function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
@@ -822,7 +796,6 @@ function valence_mc(A::SMat{T}, p::Int) where T
   end  
 end
 
-
 ################################################################################
 #
 #  Vertical concatentation
@@ -845,7 +818,6 @@ function vcat!(A::SMat{T}, B::SMat{T}) where T
   A.rows = vcat(A.rows, B.rows)
   @assert length(A.rows) == A.r
 end
-
 
 @doc Markdown.doc"""
 ***
@@ -1139,14 +1111,14 @@ end
 """
 function zero_matrix(::Type{SMat}, R::Ring, n::Int)
   S = sparse_matrix(R)
-  S.rows = [SRow(R)() for i=1:n]
+  S.rows = [sparse_row(R) for i=1:n]
   S.c = S.r = n
   return S
 end
 
 function zero_matrix(::Type{SMat}, R::Ring, n::Int, m::Int)
   S = sparse_matrix(R)
-  S.rows = [SRow(R)() for i=1:n]
+  S.rows = [sparse_row(R) for i=1:n]
   S.r = n
   S.c = m
   return S
@@ -1314,4 +1286,3 @@ function Array(A::SMat{T}) where T
   end
   return R
 end
-

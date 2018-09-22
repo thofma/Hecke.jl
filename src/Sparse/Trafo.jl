@@ -264,7 +264,7 @@ function apply_left!(A::SMat{T}, t::TrafoPartialDense{S}) where {T, S}
 
   hdense = t.U * hdense
 
-  h = _SMat(hdense, R = R, zerorows = true)
+  h = _sparse_matrix(hdense, R = R, zerorows = true)
 
   for k in 1:length(h.rows)
     j = h.rows[k]
@@ -311,7 +311,7 @@ function apply_right!(A::SMat{T}, t::TrafoPartialDense{S}) where {T, S}
 
   hdense = hdense * t.U
 
-  h = _SMat(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
+  h = _sparse_matrix(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
 
   for k in 1:length(h.rows)
     j = h.rows[k]

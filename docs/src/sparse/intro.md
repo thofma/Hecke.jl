@@ -39,7 +39,7 @@ sparse_row(::FlintIntegerRing, ::Vector{Int}, ::Vector{fmpz})
 ```@docs
 ==(::SRow{fmpz}, ::SRow{fmpz})
 +(::SRow{fmpz}, ::SRow{fmpz})
-getindex(::SRow{fmpz}, Int)
+getindex(::SRow{fmpz}, ::Int)
 *(::fmpz, ::SRow{fmpz})
 div(::SRow{fmpz}, ::fmpz)
 divexact(::SRow{fmpz}, ::fmpz)
@@ -72,3 +72,8 @@ In constrast to sparse rows, sparse matrices have a fixed number of rows and col
 that is, they represent elements of the matrices space $\mathrm{Mat}_{n\times m}(R)$.
 Internally, sparse matrices are implemented as an array of sparse rows. 
 As a consequence, Unlike their dense counterparts, sparse matrices have a mutable number of rows and it is very performant to add additional rows.
+
+### Construction
+
+```@docs
+```

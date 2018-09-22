@@ -1378,9 +1378,9 @@ mutable struct ModuleCtxNmod
   function ModuleCtxNmod(R::NmodRing, dim::Int)
     M = new()
     M.R = R
-    M.basis = sparse_matrix(M.R)
+    M.basis = sparse_matrix(R)
     M.basis.c = dim
-    M.gens = sparse_matrix(M.R)
+    M.gens = sparse_matrix(R)
     return M
   end
 

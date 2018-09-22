@@ -43,7 +43,7 @@ end
 @doc Markdown.doc"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
 
-Constructs the sparse row $(a_i)_i$ with $a_{j_i} = x_i$, where $J = (j_i, x_i)_i$.
+Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
 The elements $x_i$ must belong to the ring $R$.
 """
 function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}) where T
@@ -53,8 +53,8 @@ end
 @doc Markdown.doc"""
     sparse_row(R::Ring, J::Vector{Tuple{Int, Int}}) -> SRow
 
-Constructs the sparse row $(a_i)_i$ over $R$ with $a_{j_i} = x_i$,
-where $J = (j_i, x_i)_i$.
+Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
+where $J = (i_j, x_j)_j$.
 """
 function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}})
   return SRow{elem_type(R)}(A)
@@ -63,8 +63,8 @@ end
 @doc Markdown.doc"""
     sparse_row(R::Ring, J::Vector{Int}, V::Vector{T}) -> SRow{T}
 
-Constructs the sparse row $(a_i)_i$ over $R$ with $a_{j_i} = x_i$, where
-$J = (j_i)_i$ and $V = (x_i)_i$.
+Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
+$J = (i_j)_j$ and $V = (x_j)_j$.
 """
 function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}) where T
   if T === elem_type(R)
@@ -225,6 +225,11 @@ function change_ring(A::SRow, f)
   return z
 end
 
+@doc Markdown.doc"""
+    change_ring(A::SRow, R::Ring) -> SRow
+
+Create a new sparse row by coercing all elements into the ring $R$.
+"""
 function change_ring(A::SRow{T}, R::S) where {T <: RingElem, S <: Ring}
   z = SRow{elem_type(R)}()
   for (i, v) in A
@@ -247,6 +252,11 @@ end
 
 # TODO:
 # The list of positions is ordered, so there should be a faster find function.
+@doc Markdown.doc"""
+    getindex(A::SRow, j::Int) -> RingElem
+
+Given a sparse row $(a_i)_{i}$ and an index $j$ return $a_j$.
+"""
 function Base.getindex(A::SRow{T}, i::Int) where {T <: RingElem}
   i < 1 && error("Index must be positive")
   p = findfirst(isequal(i), A.pos)
