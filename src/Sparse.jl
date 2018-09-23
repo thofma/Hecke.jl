@@ -24,7 +24,7 @@ import Base.push!, Base.max, Nemo.nbits, Base.Array,
 export upper_triangular, vcat!, show, sub, SMat, SRow, random_SMatSLP,
        fmpz_mat, rows, cols, copy, push!, mul, mul!, toNemo, sparse,
        valence_mc, swap_rows!, elementary_divisors,
-       randrow, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
+       rand_row, hcat, hcat!, vcat, vcat!, mod!, mod_sym!
 
 include("Sparse/Matrix.jl")
 include("Sparse/Row.jl")

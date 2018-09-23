@@ -149,7 +149,8 @@ function det_mc(A::SMat{fmpz})
   mm = fmpz(1)
   last = fmpz(0)
   while true
-    d = det(nmod_mat(sparse_matrix(A, q)))
+    R = ResidueRing(FlintZZ, q, cached = false)
+    d = det(nmod_mat(change_ring(A, R)))
     if first
       dd = fmpz(d)
       mm = fmpz(q)
@@ -176,8 +177,7 @@ end
 function det(A::SMat{fmpz})
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
-    return prod([A[i,i] for i=1:A.r])
-  end
+    return prod([A[i,i] for i=1:A.r]) end
 
   b = div(nbits(hadamard_bound2(A)), 2)
   lp = fmpz[p]
@@ -187,7 +187,12 @@ function det(A::SMat{fmpz})
   end
 
   #TODO: re-use the nmod_mat....
-  ld = [fmpz(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
+  ld = fmpz[]
+  for q in lp
+    R = ResidueRing(FlintZZ, Int(q), cached = false)
+    push!(ld, fmpz(det(matrix(change_ring(A, R)))))
+  end
+  #ld = [fmpz(det(matrix(sparse_matrix(A, Int(q))))) for q = lp]
   return crt_signed(ld, crt_env(lp))
 end
 
@@ -198,7 +203,7 @@ end
 > $TA = E$ holds.
 """
 function echelon_with_trafo(A::SMat{nmod})
-  z = hcat(A, id(SMat, base_ring(A), A.r))
+  z = hcat(A, identity_matrix(SMat, base_ring(A), A.r))
   M = Hecke.ModuleCtxNmod(base_ring(A), z.c)
   for i=z
     Hecke.add_gen!(M, i)
@@ -230,7 +235,7 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   p = next_prime(2^20)
   R = ResidueRing(FlintZZ, p, cached = false)
 
-  Ap = sparse_matrix(A, R)
+  Ap = change_ring(A, R)
 
   #want AT = upper_triag.
   #Let J = anti-identity, so JA inverts the rows of A and AJ the columns
@@ -365,7 +370,7 @@ function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
 end
 
 function Nemo.cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
-  c = hcat(a, id(SMat, base_ring(a), a.r))
+  c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
   echelon!(c)
   fl, sol = cansolve_ut(sub(c, 1:rows(c), 1:a.c), b)
   if fl

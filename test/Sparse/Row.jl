@@ -92,6 +92,12 @@
   B = sparse_row(FlintZZ, [2, 3, 4, 6], fmpz[-2, 4, 3, 1])
   @test sparse_row(FlintZZ, [1, 3, 4, 5, 6], fmpz[1, 7, 3, 5, 1]) == @inferred A + B
 
+  # Subtraction
+
+  A = sparse_row(FlintZZ, [1, 2, 3, 5], fmpz[1, 2, 3, 5])
+  B = sparse_row(FlintZZ, [2, 3, 4, 6], fmpz[2, -4, -3, -1])
+  @test sparse_row(FlintZZ, [1, 3, 4, 5, 6], fmpz[1, 7, 3, 5, 1]) == @inferred A - B
+
   # Scalar multiplication
   A = sparse_row(FlintZZ, [1, 2, 3, 5], fmpz[2, 4, 8, 6])
   for T in [Int, BigInt, fmpz]
@@ -130,4 +136,26 @@
   A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
   B = @inferred lift(A)
   @test sparse_row(R, [1, 2, 3, 5], [1, 1, 2, 3]) == B
+
+  # 2-norm
+
+  A = sparse_row(FlintZZ, [1, 2, 3, 5], fmpz[-5, 2, 4, 10])
+  b = @inferred norm2(A)
+  @test b == fmpz(25 + 4 + 16 + 100)
+
+  S = ResidueRing(FlintZZ, 5)
+  A = sparse_row(S, [1, 2, 3, 5], [1, 1, 2, 3])
+  b = @inferred norm2(A)
+  @test b == R(0)
+
+  # Maximum/minimum
+
+  A = sparse_row(FlintZZ, [1, 3, 4, 5], fmpz[-5, 2, -10, 1])
+  @test maximum(abs, A) == fmpz(10)
+  B = sparse_row(FlintQQ, [1, 2, 4, 5], map(fmpq, [1, 2, 9//4, 1]))
+  @test maximum(B) == fmpq(9, 4)
+  C = sparse_row(FlintZZ, [1, 2, 4, 5], fmpz[-10, 100, 1, 1])
+  @test minimum(C) == fmpz(-10)
+
+
 end

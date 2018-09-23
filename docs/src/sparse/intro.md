@@ -52,14 +52,21 @@ add_scaled_row(::SRow{fmpz}, ::SRow{fmpz}, ::fmpz)
 change_ring(::SRow{fmpz}, ::FlintIntegerRing)
 ```
 
-### Functionality for integral sparse rows
+### Maximum, minimum and 2-norm
 
 ```@docs
 maximum(::SRow{fmpz})
 minimum(::SRow{fmpz})
+norm2(::SRow{fmpz})
+```
+
+### Functionality for integral sparse rows
+
+```@docs
 lift(::SRow{nmod})
 mod!(::SRow{fmpz}, ::fmpz)
 mod_sym!(::SRow{fmpz}, ::fmpz)
+maximum(::typeof(abs), ::SRow{fmpz})
 ```
 
 ## Sparse matrices
@@ -75,5 +82,3 @@ As a consequence, Unlike their dense counterparts, sparse matrices have a mutabl
 
 ### Construction
 
-```@docs
-```

@@ -327,6 +327,51 @@ function dot(A::SRow{T}, B::SRow{T}) where T
   return v
 end
 
+function dot(A::SRow{T}, b::AbstractVector{T}) where {T}
+  if length(b) == 0 && length(A.pos) == 0
+    error("One of the vectors must have non-zero length")
+  end
+  if length(b) == 0
+    return zero(base_ring(A))
+  end
+  if length(A.pos) == 0
+    return zero(parent(b[1]))
+  end
+  s = zero(base_ring(A))
+  for j=1:length(A.pos)
+    s += A.values[j] * b[A.pos[j]]
+  end
+  return s
+end
+
+function dot(A::SRow{T}, b::AbstractVector{T}, zero::T) where {T}
+  s = zero
+  for j=1:length(A.pos)
+    s += A.values[j] * b[A.pos[j]]
+  end
+  return s
+end
+
+dot(b::AbstractVector{T}, A::SRow{T}) where {T} = dot(A, b)
+
+dot(b::AbstractVector{T}, A::SRow{T}, zero::T) where {T} = dot(A, b)
+
+function dot(A::SRow{T}, b::MatElem{T}, i::Int) where {T}
+  s = zero(base_ring(b))
+  for j=1:length(A.pos)
+    s += A.values[j] * b[A.pos[j], i]
+  end
+  return s
+end
+
+function dot(A::SRow{T}, i::Int, b::MatElem{T}) where {T}
+  s = zero(base_ring(b))
+  for j=1:length(A.pos)
+    s += A.values[j] * b[i, A.pos[j]]
+  end
+  return s
+end
+
 ################################################################################
 #
 #  Inplace scaling
@@ -361,6 +406,22 @@ function +(A::SRow{T}, B::SRow{T}) where T
     return A
   end
   return add_scaled_row(A, B, one(base_ring(A)))
+end
+
+@doc Markdown.doc"""
+    -(A::SRow, B::SRow) -> SRow
+
+Returns the difference of $A$ and $B$.
+"""
+function -(A::SRow{T}, B::SRow{T}) where T
+  if length(A) == 0
+    if length(B) == 0
+      return A
+    else
+      return add_scaled_row(B, A, base_ring(B)(-1))
+    end
+  end  
+  return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
 ################################################################################
@@ -518,30 +579,6 @@ end
 
 ################################################################################
 #
-#  Maximum and minimum
-#
-################################################################################
-
-@doc Markdown.doc"""
-    maximum(A::SRow{fmpz}) -> fmpz
-
-Finds the largest entry of $A$.
-"""
-function maximum(A::SRow{fmpz})
-  return maximum(A.values)
-end
-
-@doc Markdown.doc"""
-    minimum(A::SRow{fmpz}) -> fmpz
-
-Finds the smallest entry of $A$.
-"""
-function minimum(A::SRow{fmpz})
-  return minimum(A.values)
-end
-
-################################################################################
-#
 #  Lifting
 #
 ################################################################################
@@ -558,4 +595,61 @@ function lift(A::SRow{nmod})
     push!(b.values, lift(v))
   end
   return b
+end
+
+################################################################################
+#
+#  2-norm
+#
+################################################################################
+
+@doc Markdown.doc"""
+    norm2(A::SRow{T} -> T
+
+Returns $A \cdot A^t$.
+"""
+function norm2(A::SRow{T}) where {T}
+  return sum([x * x for x in A.values])
+end
+
+################################################################################
+#
+#  Maximum/minimum
+#
+################################################################################
+
+@doc Markdown.doc"""
+    maximum(abs, A::SRow{fmpz}) -> fmpz
+
+Returns the largest, in absolute value, entry of $A$.
+"""
+function maximum(::typeof(abs), A::SRow{fmpz})
+  if iszero(A)
+    return zero(FlintZZ)
+  end
+  m = abs(A.values[1])
+  for j in 2:length(A)
+    if cmpabs(m, A.values[j]) < 0
+      m = A.values[j]
+    end
+  end
+  return abs(m)
+end
+
+@doc Markdown.doc"""
+    maximum(A::SRow{T}) -> T
+
+Returns the largest entry of $A$.
+"""
+function maximum(A::SRow)
+  return maximum(A.values)
+end
+
+@doc Markdown.doc"""
+    minimum(A::SRow{T}) -> T
+
+Returns the smallest entry of $A$.
+"""
+function minimum(A::SRow)
+  return minimum(A.values)
 end

@@ -56,6 +56,8 @@ import AbstractAlgebra
 
 import LinearAlgebra: dot, istriu, nullspace
 
+import SparseArrays: nnz
+
 import Serialization: serialize, deserialize
 
 import Random: rand!
