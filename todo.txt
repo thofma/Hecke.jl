@@ -1,8 +1,8 @@
 General
 ------
 
- * Provide an assert macro with different levels
- * Provide a macro for verbose print 
+DONE * Provide an assert macro with different levels
+DONE * Provide a macro for verbose print 
  * Provide (prototype) documentation in the following formats:
    REPL using @doc, html, as well as pdf
  * Copyright information (BSD 2-clause) in each file
@@ -15,24 +15,19 @@ NfOrder
  * implement Montes--Nart algorithm
  * composite Dedekind criterion
  * composite Round Two algorithm
- * clever maximal order computation using the above
+(DONE) * clever maximal order computation using the above
  * implement information about containment (O_1 \sub O_2) 
  * save prime factors of discriminant
- * allow maximal order computation with information about prime divisors
+DONE * allow maximal order computation with information about prime divisors
  * write tests
  * write doc
 
 NfMaximalOrder
 --------------
 
- * implement it so that transition PariMaximalOrder -> NfMaximalOrder is smooth
+delete * implement it so that transition PariMaximalOrder -> NfMaximalOrder is smooth
  * write tests
  * write doc
-
-(Nf)ClassGroup
---------------
-
- * move to hecke
 
 Lattices?
 ---------
@@ -43,3 +38,10 @@ Polynomials
 -----------
   
   * trail vs trailing_coefficient ...
+
+General:
+--------
+ * divisors, square_divisors, prime_divisors of ideals, integers, polys
+   as iterators (replacing the terrible function in ElipticCurve)
+ * inverse_phi
+
