@@ -978,9 +978,9 @@ end
 ################################################################################
 
 function _poverorder(O::NfAbsOrd, p::fmpz)
-  I= pradical(O, p)
-  if isdefined(I, :princ_gen) && I.princ_gen==p
-    return deepcopy(O)
+  I = pradical(O, p)
+  if isdefined(I, :princ_gen) && I.princ_gen == p
+    return O
   end
   R = ring_of_multipliers(I)
   return R

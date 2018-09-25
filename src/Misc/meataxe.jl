@@ -801,28 +801,9 @@ function _irrsubs(M::FqGModule, N::FqGModule)
   kern=transpose(kern)
   if a==1
     return fq_nmod_mat[closure(kern, N.G)]
-  end  
-  #
-  #  Reduce the number of homomorphism to try by considering the action of G on the homomorphisms
-  #
+  end 
   vects=fq_nmod_mat[view(kern, i:i, 1:N.dim) for i=1:a]
-  i=1
-  while i<length(vects)
-    X=closure(vects[i],N.G)
-    j=i+1
-    while j<= length(vects)
-      if iszero(cleanvect(X,vects[j]))
-        deleteat!(vects,j)
-      else
-        j+=1
-      end
-    end
-    i+=1
-  end
-  if length(vects)==1
-    return fq_nmod_mat[closure(vects[1], N.G)]
-  end
-  
+ 
   #
   #  Try all the possibilities. (A recursive approach? I don't know if it is a smart idea...)
   #  Notice that we eliminate lots of candidates considering the action of the group on the homomorphisms space

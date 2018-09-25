@@ -10,12 +10,12 @@ parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
 
 parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 
-function Order(A::AlgAss{S}, B::Vector{AlgAssElem{T}}) where {S, T}
-  return AlgAssAbsOrd{AlgAss{S}, AlgAssElem{T}}(A, B)
+function Order(A::S, B::Vector{T}) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
+  return AlgAssAbsOrd{S, T}(A, B)
 end
 
-function Order(A::AlgAss{S}, basis_mat::FakeFmpqMat) where {S}
-  return AlgAssAbsOrd{AlgAss{S}}(A, basis_mat)
+function Order(A::S, basis_mat::FakeFmpqMat) where {S <: AbsAlgAss}
+  return AlgAssAbsOrd{S}(A, basis_mat)
 end
 
 (O::AlgAssAbsOrd{S, T})(a::T) where {S, T} = begin
@@ -32,11 +32,22 @@ end
 
 algebra(O::AlgAssAbsOrd) = O.algebra
 
-(O::AlgAssAbsOrd)(a::AlgAssAbsOrdElem) = O(elem_in_algebra(a, Val{false}))
+(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} =begin
+  b = elem_in_algebra(a)
+  if check
+    (x, y) = _check_elem_in_order(b, O)
+    !x && error("Algebra element not in the order")
+    return O(b, y)
+  else
+    return O(b)
+  end
+end
 
 (O::AlgAssAbsOrd)() = O(algebra(O)())
 
 one(O::AlgAssAbsOrd) = O(one(algebra(O)))
+
+zero(O::AlgAssAbsOrd) = O()
 
 # Turn the following into a check:
 #
@@ -192,6 +203,26 @@ end
 #=   end =#
 #= end =#
 
+function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+  t = zero_matrix(FlintQQ, 1, degree(O))
+  elem_to_mat_row!(t, 1, a)
+  t = FakeFmpqMat(t)
+  t = t*basis_mat_inv(O, Val{false})
+  if short == Val{true}
+    return isone(t.den)
+  elseif short == Val{false}
+    if !isone(t.den)
+      return false, Vector{fmpz}()
+    else
+      v = Vector{fmpz}(undef, degree(O))
+      for i = 1:degree(O)
+        v[i] = deepcopy(t.num[1, i])
+      end
+      return true, v
+    end
+  end
+end
+
 function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   @assert parent(x)==parent(y)
   O=parent(x)
@@ -208,6 +239,10 @@ end
 
 function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   return parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
+end
+
+function -(x::AlgAssAbsOrdElem)
+  return parent(x)(-elem_in_algebra(x, Val{false}))
 end
 
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
@@ -272,7 +307,7 @@ end
 #
 ###############################################################################
 
-function basis_mat(A::Array{AlgAssElem{fmpq}, 1})
+function basis_mat(A::Array{S, 1}) where {S <: AbsAlgAssElem}
   @assert length(A) > 0
   n = length(A)
   d = size(parent(A[1]).mult_table,1)
@@ -304,10 +339,6 @@ function basis_mat(A::Array{AlgAssAbsOrdElem{S, T}, 1}) where S where T
     end
   end
   return M
-end
-
-function elem_from_mat_row(A::AlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
-  return A(fmpq[fmpq(M[i,j]//d) for j=1:cols(M)])
 end
 
 function order_gen(O::AlgAssAbsOrd)
@@ -538,7 +569,7 @@ function ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd)
   return basis_mat(S, Val{false}) == basis_mat(T, Val{false})
 end
 
-function defines_order(A::AlgAss{fmpq}, v::Array{AlgAssElem{fmpq}, 1})
+function defines_order(A::AlgAss{fmpq}, v::Array{AlgAssElem{fmpq, AlgAss{fmpq}}, 1})
   d = dim(A)
   M = zero_matrix(FlintQQ, d, d)
   for i in 1:d
@@ -662,7 +693,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
     end
   end
   #In the case of the p-radical, it is important to do this modulo p
-  if p==1
+  if p == 1
     m = hnf(m)
   else
     hnf_modular_eldiv!(m, p)
@@ -1082,10 +1113,10 @@ function pmaximal_overorder(O::AlgAssAbsOrd, p::Int)
   end
 
   if p > O.dim
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_tr(O,p)::AlgAssAbsOrd
     return O1
   else
-    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)
+    @vtime :AlgAssOrd 1 O1 = pmaximal_overorder_meataxe(O,p)::AlgAssAbsOrd
     return O1
   end
 end

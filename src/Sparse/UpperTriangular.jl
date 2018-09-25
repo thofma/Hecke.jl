@@ -118,7 +118,7 @@ function upper_triangular(A::SMat{T}; mod = 0) where T
         rref!(h)
         h = Array(lift(h))
       end
-      h = SMat(h)
+      h = sparse_matrix(h)
       for j in h.rows
         rw = SRow{T}()
         for e in 1:length(j.pos)
@@ -235,7 +235,7 @@ function echelonize_via_dense(h::SMat{nmod})
   # I need to the following trick since we do not have the transformation
   rref!(hdense)
   # put back into sparse matrix over R (!= base_ring h)
-  return _SMat(hdense, R = R)
+  return sparse_matrix(hdense)
 end
 
 function echelonize_via_dense_with_trafo(h::SMat{fmpz})
@@ -243,7 +243,7 @@ function echelonize_via_dense_with_trafo(h::SMat{fmpz})
   # echelonize
   hdense, U = hnf_with_transform(hdense)
   # put back into sparse matrix
-  h = _SMat(hdense, zerorows = true)
+  h = sparse_matrix(hdense)
   return h, U
 end
 
@@ -252,7 +252,7 @@ function echelonize_via_dense(h::SMat{fmpz})
   # echelonize
   hdense = hnf(hdense)
   # put back into sparse matrix
-  h = _SMat(hdense)
+  h = sparse_matrix(hdense)
   return h
 end
 

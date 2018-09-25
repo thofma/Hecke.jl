@@ -11,8 +11,10 @@ export simplify
  > Both version require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AnticNumberField; canonical::Bool = false)
+  Qx, x = PolynomialRing(FlintQQ)
   if canonical
-    a, f = polredabs(K)
+    a, f1 = polredabs(K)
+    f = Qx(f1)
   else
     ZK = lll(maximal_order(K))
     I = index(ZK)^2
@@ -20,12 +22,12 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     B = basis(ZK)
     b = ZK(gen(K))
     f = K.pol
-    for i=1:length(B)
-      ff = minpoly(B[i])
+    for i = 1:length(B)
+      ff = minpoly(B[i].elem_in_nf, Qx)
       if degree(ff) < degree(K)
         continue
       end
-      id = div(discriminant(ff), D)
+      id = div(numerator(discriminant(ff)), D)
       if id<I
         b = B[i]
         I = id
@@ -34,8 +36,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     end
     a = b.elem_in_nf
   end
-  Qx,x=PolynomialRing(FlintQQ)
-  L = number_field(Qx(f), cached=false, check = false)[1]
+  L = number_field(f, cached=false, check = false)[1]
   m = NfToNfMor(L, K, a)
   return L, m
 end

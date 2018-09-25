@@ -450,7 +450,7 @@ end
 function minpoly_sparse(a::NfAbsNSElem)
   K = parent(a)
   n = degree(K)
-  M = SMat(FlintQQ)
+  M = sparse_matrix(FlintQQ)
   z = a^0
   sz = SRow(z)
   i = 0

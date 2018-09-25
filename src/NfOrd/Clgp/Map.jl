@@ -506,7 +506,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
   X = Array{nf_elem, 1}()
 
-  rr = SMat(FlintZZ)
+  rr = sparse_matrix(FlintZZ)
   @vprint :ClassGroup 1 "finding relations ...\n"
   @vtime :ClassGroup 1 for A = I
     @vprint :ClassGroup 2 "doin' $A\n"
@@ -520,7 +520,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
    
   @vprint :ClassGroup 1 "solving...\n"
   @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
-  Rd = hcat(d*id(SMat, FlintZZ, R.r), fmpz(-1)*R)
+  Rd = hcat(d*identity_matrix(SMat, FlintZZ, R.r), fmpz(-1)*R)
   @vprint :ClassGroup 1 ".. done, now saturating ...\n"
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
   S1 = sub(S, 1:S.r, 1:S.r)

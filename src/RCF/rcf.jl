@@ -973,7 +973,7 @@ function rel_auto_easy(A::ClassField_pp)
   # sqrt[n](a) -> zeta sqrt[n](a) on A.A
   #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
   #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
-  M = SMat(base_ring(A.K))
+  M = sparse_matrix(base_ring(A.K))
   b = A.K(1)
   push!(M, SRow(b))
   for i=2:degree(A)
@@ -1010,7 +1010,7 @@ function rel_auto_intersection(A::ClassField_pp)
     _aut_A_over_k(C, A)
   end
   #Now, I restrict them to A.A
-  M = SMat(base_ring(A.K))
+  M = sparse_matrix(base_ring(A.K))
   b = A.K(1)
   push!(M, SRow(b))
   for i=2:degree(A)
@@ -1072,6 +1072,21 @@ end
 
 #Special case in which I want to extend the automorphisms of a field to
 # a cyclotomic extension
+function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
+   		
+  K = domain(tau)		
+  @assert K == base_ring(C.Kr)		
+  g = C.Kr.pol		
+  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])		
+  i = 1		
+  z = gen(C.Kr)		
+  while gcd(i, C.n) != 1 || !iszero(tau_g(z))		
+    i *= 1		
+    z *= gen(C.Kr) 		
+  end		
+  return NfRelToNfRelMor(C.Kr, C.Kr, tau, z)		
+  		
+end
 
 function extend_aut(A::ClassField, tau::T) where T <: Map
   # tau: k       -> k
@@ -1270,7 +1285,7 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
         append!(B, D)
       end
     end
-    M = SMat(Ka)
+    M = sparse_matrix(Ka)
     for i=1:d
       push!(M, SRow(B[i]))
     end
@@ -1483,7 +1498,7 @@ function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
         append!(B, _D)
       end
     end
-    M = SMat(Ka)
+    M = sparse_matrix(Ka)
     for i=1:d
       push!(M, SRow(B[i]))
     end
@@ -1570,7 +1585,7 @@ end
 function _expand(M::SMat{nf_elem}, mp::Map)
   Kr = domain(mp)
   k = base_ring(Kr)
-  N = SMat(k)
+  N = sparse_matrix(k)
   for i=1:rows(M)
     sr = _expand(M[i], mp)
     push!(N, sr)
@@ -1845,11 +1860,16 @@ end
 """
 function ==(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)
+  mq1 = a.quotientmap
+  mq2 = b.quotientmap
+  if !isisomorphic(codomain(mq1), codomain(mq2))
+    return false
+  end
+  expo = Int(exponent(codomain(mq1)))
   c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-  d = lcm(degree(a), degree(b))
 
-  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
+  r, mr = ray_class_group(c, c_inf, n_quo = expo)
   C = ray_class_field(mr)
   @assert defining_modulus(C) == (c, c_inf)
   h = norm_group_map(C, [a,b])

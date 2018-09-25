@@ -242,7 +242,6 @@ mutable struct SRow{T}
   #in this row, in column pos[1] we have value values[1]
   values::Array{T, 1}
   pos::Array{Int, 1}
-  #parent::SRowSpace{T}
 
   function SRow{T}() where T
     r = new{T}()
@@ -1379,18 +1378,18 @@ mutable struct ModuleCtxNmod
   function ModuleCtxNmod(R::NmodRing, dim::Int)
     M = new()
     M.R = R
-    M.basis = SMat(M.R)
+    M.basis = sparse_matrix(R)
     M.basis.c = dim
-    M.gens = SMat(M.R)
+    M.gens = sparse_matrix(R)
     return M
   end
 
   function ModuleCtxNmod(p::Int, dim::Int)
     M = new()
     M.R = ResidueRing(FlintZZ, p, cached=false)
-    M.basis = SMat(M.R)
+    M.basis = sparse_matrix(M.R)
     M.basis.c = dim
-    M.gens = SMat(M.R)
+    M.gens = sparse_matrix(M.R)
     return M
   end
 end
@@ -1410,14 +1409,14 @@ mutable struct ModuleCtx_fmpz
 
   function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
     M = new()
-    M.max_indep = SMat(FlintZZ)
+    M.max_indep = sparse_matrix(FlintZZ)
     M.max_indep.c = dim
-    M.bas_gens = SMat(FlintZZ)
+    M.bas_gens = sparse_matrix(FlintZZ)
     M.bas_gens.c = dim
-    M.rel_gens = SMat(FlintZZ)
+    M.rel_gens = sparse_matrix(FlintZZ)
     M.rel_gens.c = dim
     R = ResidueRing(FlintZZ, p, cached=false)
-    M.rel_reps_p = SMat(R)
+    M.rel_reps_p = sparse_matrix(R)
     M.new = false
     M.Mp = ModuleCtxNmod(R, dim)
     return M

@@ -1330,24 +1330,22 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   if typeof(p) == fmpz && nbits(p) < 64
     return pradical(O, Int(p))
   end
+  d = degree(O)
   
   #Trace method if the prime is large enough
-  if p> degree(O)
+  if p > degree(O)
     M = trace_matrix(O)
-    W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), degree(O), degree(O))
+    W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d)
     M1 = W(M)
     k, B = nullspace(M1)
-    if k ==0
+    if k == 0
       return ideal(O, p)
     end
-    M2=zero_matrix(FlintZZ, cols(B)+degree(O), degree(O))
+    M2 = zero_matrix(FlintZZ, d, d)
     for i=1:cols(B)
-      for j=1:degree(O)
-        M2[i,j]=FlintZZ(B[j,i].data)
+      for j=1:d
+        M2[i,j] = FlintZZ(B[j,i].data)
       end
-    end
-    for i=1:degree(O)
-      M2[i+cols(B), i]=p
     end
     gens=[O(p)]
     for i=1:cols(B)
@@ -1355,53 +1353,50 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
         push!(gens, elem_from_mat_row(O, M2, i))
       end
     end
-    M2=_hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
-    I=NfAbsOrdIdl(O, view(M2, rows(M2)-degree(O)+1:rows(M2), 1:degree(O)))
-    I.gens=gens
+    M2 = _hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
+    I = NfAbsOrdIdl(O, M2)
+    I.gens = gens
     return I
   end
   
-  j = clog(fmpz(degree(O)), p)
-  @assert p^(j-1) < degree(O)
-  @assert degree(O) <= p^j
+  j = clog(fmpz(d), p)
+  @assert p^(j-1) < d
+  @assert d <= p^j
 
   R = ResidueRing(FlintZZ, p, cached=false)
-  A = zero_matrix(R, degree(O), degree(O))
-  B = basis(O)
+  A = zero_matrix(R, d, d)
+  B = basis(O, Val{false})
   for i in 1:degree(O)
     t = powermod(B[i], p^j, p)
     ar = elem_in_basis(t)
-    for k in 1:degree(O)
+    for k in 1:d
       A[i,k] = ar[k]
     end
   end
   X = kernel(A)
-  gens=NfAbsOrdElem[O(p)]
+  gens = NfAbsOrdElem[O(p)]
   if length(X)==0
-    I=ideal(O,p)
-    I.gens=gens
+    I = ideal(O, p)
+    I.gens = gens
     return I
   end
   #First, find the generators
-  for i=1:length(X)
-    coords=Array{fmpz,1}(undef, degree(O))
-    for j=1:degree(O)
-      coords[j]=lift(X[i][j])
+  for i = 1:length(X)
+    coords = Array{fmpz,1}(undef, d)
+    for j=1:d
+      coords[j] = lift(X[i][j])
     end
     push!(gens, O(coords))
   end
   #Then, construct the basis matrix of the ideal
-  m = zero_matrix(FlintZZ, degree(O)+length(X), degree(O))
+  m = zero_matrix(FlintZZ, d, d)
   for i=1:length(X)
-    for j=1:degree(O)
+    for j=1:d
       m[i,j]=lift(X[i][j])
     end
   end
-  for i=1:degree(O)
-    m[i+length(X),i]=p
-  end
   mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
-  I = NfAbsOrdIdl(O, view(mm, rows(m) - degree(O) + 1:rows(m), 1:degree(O)))
+  I = NfAbsOrdIdl(O, mm)
   I.gens = gens
   return I
 end
@@ -1425,7 +1420,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if isdefined(a, :gens) && length(a.gens) < n
     B = a.gens
   else
-    B = basis(a)
+    B = basis(a, Val{false})
   end
   bmatinv = basis_mat_inv(a, Val{false})
   m = zero_matrix(FlintZZ, n*length(B), n)
@@ -1447,12 +1442,19 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
     end
   end
   mhnf = hnf_modular_eldiv!(m, minimum(a))
-  s = prod(mhnf[i,i] for i=1:degree(O))
+  s = prod(mhnf[i,i] for i = 1:n)
   if s == 1
-    return deepcopy(O)
+    return O
   end
-  # n is upper right HNF
-  mhnftrans = transpose(view(mhnf, 1:degree(O), 1:degree(O)))
+  # mhnf is upper right HNF
+  # mhnftrans = transpose(view(mhnf, 1:n, 1:n))
+  for i = 1:n
+    for j = i+1:n
+      mhnf[j, i] = mhnf[i, j]
+      mhnf[i, j] = 0
+    end
+  end
+  mhnftrans = view(mhnf, 1:n, 1:n)
   b = FakeFmpqMat(pseudo_inv(mhnftrans))
   mul!(b, b, basis_mat(O, Val{false}))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
@@ -2067,5 +2069,3 @@ function (I_Zk::NfOrdIdlSet)(a::NfOrdIdl)
   end
   return b
 end
-
-

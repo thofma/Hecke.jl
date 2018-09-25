@@ -5,6 +5,14 @@ import Nemo.matrix
 import Base.vcat
 
 # 
+function zero_matrix(::Type{MatElem}, R::Ring, n::Int)
+  return zero_matrix(R, n)
+end
+
+function zero_matrix(::Type{MatElem}, R::Ring, n::Int, m::Int)
+  return zero_matrix(R, n, m)
+end
+
 
 function matrix(A::Array{fmpz, 2})
   m = matrix(FlintZZ, A)

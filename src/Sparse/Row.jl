@@ -1,3 +1,5 @@
+export sparse_row, change_ring, dot, scale_row!, add_scaled_row
+
 ################################################################################
 #
 #  Parent constructor
@@ -11,6 +13,12 @@ end
 
 base_ring(A::SRow) = parent(A.values[1])
 
+@doc Markdown.doc"""
+    ==(x::SRow, y::SRow)
+
+Checks whether $x$ and $y$ are the same sparse row, that is, whether $x$ and
+$y$ have the same non-zero entries.
+"""
 ==(x::SRow{T}, y::SRow{T}) where {T} = (x.pos == y.pos) && (x.values == y.values)
 
 ################################################################################
@@ -19,8 +27,52 @@ base_ring(A::SRow) = parent(A.values[1])
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    sparse_row(R::Ring) -> SRow
+
+Constructs an empty row with base ring $R$.
+"""
+function sparse_row(R::Ring)
+  return SRow{elem_type(R)}()
+end
+
 function SRow(R::Ring)
   return SRow{elem_type(R)}()
+end
+
+@doc Markdown.doc"""
+    sparse_row(R::Ring, J::Vector{Tuple{Int, T}}) -> SRow{T}
+
+Constructs the sparse row $(a_i)_i$ with $a_{i_j} = x_j$, where $J = (i_j, x_j)_j$.
+The elements $x_i$ must belong to the ring $R$.
+"""
+function sparse_row(R::Ring, A::Vector{Tuple{Int, T}}) where T
+  return SRow{T}(A)
+end
+
+@doc Markdown.doc"""
+    sparse_row(R::Ring, J::Vector{Tuple{Int, Int}}) -> SRow
+
+Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$,
+where $J = (i_j, x_j)_j$.
+"""
+function sparse_row(R::Ring, A::Vector{Tuple{Int, Int}})
+  return SRow{elem_type(R)}(A)
+end
+
+@doc Markdown.doc"""
+    sparse_row(R::Ring, J::Vector{Int}, V::Vector{T}) -> SRow{T}
+
+Constructs the sparse row $(a_i)_i$ over $R$ with $a_{i_j} = x_j$, where
+$J = (i_j)_j$ and $V = (x_j)_j$.
+"""
+function sparse_row(R::Ring, pos::Vector{Int}, val::Vector{T}) where T
+  if T === elem_type(R)
+    return SRow{T}(pos, val)
+  else
+    mapval = map(R, val)::Vector{elem_type(R)}
+    return SRow{elem_type(R)}(pos, mapval)
+  end
 end
 
 ################################################################################
@@ -40,7 +92,7 @@ end
 ################################################################################
 
 function show(io::IO, A::SRow{T}) where T
-  print(io, "sparse row with positions $(A.pos) and values $(A.values)\n")
+  print(io, "Sparse row with positions $(A.pos) and values $(A.values)\n")
 end
 
 ################################################################################
@@ -64,6 +116,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    iszero(A::SRow)
+
+Checks whether all entries of $A$ are zero.
+"""
 function iszero(A::SRow)
   return length(A.pos) == 0
 end
@@ -75,11 +132,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-    mod!(A::SRow{fmpz}, n::Integer)
+    mod!(A::SRow{fmpz}, n::Integer) -> SRow{fmpz}
 
-> Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
-> system.
+Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
+system.
 """
 function mod!(A::SRow{fmpz}, n::Integer)
   i=1
@@ -93,14 +149,14 @@ function mod!(A::SRow{fmpz}, n::Integer)
       i += 1
     end
   end
+  return A
 end
 
 @doc Markdown.doc"""
-***
-    mod!(A::SRow{fmpz}, n::fmpz)
+    mod!(A::SRow{fmpz}, n::fmpz) -> SRow{fmpz}
 
-> Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
-> system.
+Inplace reduction of all entries of $A$ modulo $n$ to the positive residue
+system.
 """
 function mod!(A::SRow{fmpz}, n::fmpz)
   i=1
@@ -118,22 +174,20 @@ end
 
 # Todo: Do not convert to fmpz
 @doc Markdown.doc"""
-***
-    mod_sym!(A::SRow{fmpz}, n::Integer)
+    mod_sym!(A::SRow{fmpz}, n::Integer) -> SRow{fmpz}
 
-> Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
-> system.
+Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
+system.
 """
 function mod_sym!(A::SRow{fmpz}, n::Integer)
   mod_sym!(A, fmpz(n))
 end
 
 @doc Markdown.doc"""
-***
-    mod_sym!(A::SRow{fmpz}, n::fmpz)
+    mod_sym!(A::SRow{fmpz}, n::fmpz) -> SRow{fmpz}
 
-> Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
-> system.
+Inplace reduction of all entries of $A$ modulo $n$ to the symmetric residue
+system.
 """
 function mod_sym!(A::SRow{fmpz}, n::fmpz)
   i=1
@@ -155,12 +209,28 @@ end
 #
 ################################################################################
 
-function SRow(A::SRow{fmpz}, n::Int)
-  R = ResidueRing(FlintZZ, n, cached=false)
-  return SRow(A, R)
+function change_ring(A::SRow, f)
+  iszero(A) && error("Can change ring only for non-zero rows")
+  T = typeof(f(A.values[1]))
+  z = SRow{T}()
+  for (i, v) in A
+    nv = f(v)
+    if iszero(nv)
+      continue
+    else
+      push!(z.pos, i)
+      push!(z.values, nv)
+    end
+  end
+  return z
 end
 
-function SRow(A::SRow{fmpz}, R::T) where T <: Ring
+@doc Markdown.doc"""
+    change_ring(A::SRow, R::Ring) -> SRow
+
+Create a new sparse row by coercing all elements into the ring $R$.
+"""
+function change_ring(A::SRow{T}, R::S) where {T <: RingElem, S <: Ring}
   z = SRow{elem_type(R)}()
   for (i, v) in A
     nv = R(v)
@@ -174,15 +244,27 @@ function SRow(A::SRow{fmpz}, R::T) where T <: Ring
   return z
 end
 
-@doc Markdown.doc"""
-    SMat(A::SMat{fmpz}, n::Int) -> SMat{Generic.Res{fmpz}}
-    SRow(A::SMat{fmpz}, n::Int) -> SRow{Generic.Res{fmpz}}
+################################################################################
+#
+#  Getting and setting values
+#
+################################################################################
 
-> Converts $A$ to ba a sparse matrix (row) over $Z/nZ$ 
+# TODO:
+# The list of positions is ordered, so there should be a faster find function.
+@doc Markdown.doc"""
+    getindex(A::SRow, j::Int) -> RingElem
+
+Given a sparse row $(a_i)_{i}$ and an index $j$ return $a_j$.
 """
-function SRow(A::SRow{fmpz}, n::fmpz)
-  R = ResidueRing(FlintZZ, n, cached=false)
-  return SRow(A, R)
+function Base.getindex(A::SRow{T}, i::Int) where {T <: RingElem}
+  i < 1 && error("Index must be positive")
+  p = findfirst(isequal(i), A.pos)
+  if p === nothing
+    return zero(base_ring(A))
+  else
+    return A.values[p]
+  end
 end
 
 ################################################################################
@@ -191,6 +273,11 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    length(A::SRow)
+
+Returns the number of nonzero entries of $A$.
+"""
 function length(A::SRow)
   return length(A.pos)
 end
@@ -207,25 +294,22 @@ function Base.iterate(A::SRow, st::Int = 1)
   return (A.pos[st], A.values[st]), st + 1
 end
 
-#function start(A::SRow)
-#  return 1
-#end
-#
-#function next(A::SRow, st::Int)
-#  return (A.pos[st], A.values[st]), st + 1
-#end
-#
-#function done(A::SRow, st::Int)
-#  return st > length(A.pos)
-#end
+Base.eltype(::Type{SRow{T}}) where T = Tuple{Int, T}
+
+Base.IteratorSize(::SRow{T}) where T = Base.HasLength()
 
 ################################################################################
 #
-#  Multiplication
+#  Dot product
 #
 ################################################################################
 
-function mul(A::SRow{T}, B::SRow{T}) where T
+@doc Markdown.doc"""
+    dot(A::SRow, B::SRow) -> RingElem
+
+Returns the dot product of $A$ and $B$.
+"""
+function dot(A::SRow{T}, B::SRow{T}) where T
   @assert length(A) != 0
   v = 0*A.values[1]
   b = 1
@@ -243,8 +327,58 @@ function mul(A::SRow{T}, B::SRow{T}) where T
   return v
 end
 
-#in-place scaling
-function scale_row!(a::SRow{fmpz}, b::fmpz)
+function dot(A::SRow{T}, b::AbstractVector{T}) where {T}
+  if length(b) == 0 && length(A.pos) == 0
+    error("One of the vectors must have non-zero length")
+  end
+  if length(b) == 0
+    return zero(base_ring(A))
+  end
+  if length(A.pos) == 0
+    return zero(parent(b[1]))
+  end
+  s = zero(base_ring(A))
+  for j=1:length(A.pos)
+    s += A.values[j] * b[A.pos[j]]
+  end
+  return s
+end
+
+function dot(A::SRow{T}, b::AbstractVector{T}, zero::T) where {T}
+  s = zero
+  for j=1:length(A.pos)
+    s += A.values[j] * b[A.pos[j]]
+  end
+  return s
+end
+
+dot(b::AbstractVector{T}, A::SRow{T}) where {T} = dot(A, b)
+
+dot(b::AbstractVector{T}, A::SRow{T}, zero::T) where {T} = dot(A, b)
+
+function dot(A::SRow{T}, b::MatElem{T}, i::Int) where {T}
+  s = zero(base_ring(b))
+  for j=1:length(A.pos)
+    s += A.values[j] * b[A.pos[j], i]
+  end
+  return s
+end
+
+function dot(A::SRow{T}, i::Int, b::MatElem{T}) where {T}
+  s = zero(base_ring(b))
+  for j=1:length(A.pos)
+    s += A.values[j] * b[i, A.pos[j]]
+  end
+  return s
+end
+
+################################################################################
+#
+#  Inplace scaling
+#
+################################################################################
+
+function scale_row!(a::SRow{T}, b::T) where T
   @assert !iszero(b)
   if isone(b)
     return
@@ -260,27 +394,47 @@ end
 #
 ################################################################################
 
+@doc Markdown.doc"""
+    +(A::SRow, B::SRow) -> SRow
+
+Returns the sum of $A$ and $B$.
+"""
 function +(A::SRow{T}, B::SRow{T}) where T
   if length(A.values) == 0
     return B 
   elseif length(B.values) == 0
     return A
   end
-  return add_scaled_row(A, B, base_ring(A)(1))
+  return add_scaled_row(A, B, one(base_ring(A)))
+end
+
+@doc Markdown.doc"""
+    -(A::SRow, B::SRow) -> SRow
+
+Returns the difference of $A$ and $B$.
+"""
+function -(A::SRow{T}, B::SRow{T}) where T
+  if length(A) == 0
+    if length(B) == 0
+      return A
+    else
+      return add_scaled_row(B, A, base_ring(B)(-1))
+    end
+  end  
+  return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
 ################################################################################
 #
-#  Scalar multiplication
+#  Scalar operations
 #
 ################################################################################
 
-# The following functions runs into an infinite recursion in case T = fmpz
-#function *{T}(b::fmpz, A::SRow{T})
-#  r = base_ring(A)(b)
-#  return r*A
-#end
+@doc Markdown.doc"""
+    *(b::T, A::SRow{T}) -> SRow
 
+Return the sparse row obtained by multiplying all elements of $A$ by $b$.
+"""
 function *(b::T, A::SRow{T}) where T
   B = SRow{T}()
   if iszero(b)
@@ -296,13 +450,24 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
+@doc Markdown.doc"""
+    *(b::Integer, A::SRow{T}) -> SRow
+
+Return the sparse row obtained by multiplying all elements of $A$ by $b$.
+"""
 function *(b::Integer, A::SRow{T}) where T
   if length(A.values) == 0
-    return deepcopy(A)
+    return SRow{T}()
   end
   return base_ring(A)(b)*A
 end
 
+@doc Markdown.doc"""
+    div(A::SRow{T}, b::T) -> SRow
+
+Return the sparse row obtained by dividing all elements of $A$ by $b$ using
+`div`.
+"""
 function div(A::SRow{T}, b::T) where T
   B = SRow{T}()
   if iszero(b)
@@ -318,13 +483,25 @@ function div(A::SRow{T}, b::T) where T
   return B
 end
 
+@doc Markdown.doc"""
+    div(A::SRow{T}, b::Integer) -> SRow
+
+Return the sparse row obtained by dividing all elements of $A$ by $b$ using
+`div`.
+"""
 function div(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
-    return deepcopy(A)
+    return SRow{T}()
   end
   return div(A, base_ring(A)(b))
 end
 
+@doc Markdown.doc"""
+    divexact(A::SRow{T}, b::T) -> SRow
+
+Return the sparse row obtained by dividing all elements of $A$ by $b$ using
+`divexact`.
+"""
 function divexact(A::SRow{T}, b::T) where T
   B = SRow{T}()
   if iszero(b)
@@ -339,6 +516,12 @@ function divexact(A::SRow{T}, b::T) where T
   return B
 end
 
+@doc Markdown.doc"""
+    divexact(A::SRow{T}, b::Integer) -> SRow
+
+Return the sparse row obtained by dividing all elements of $A$ by $b$ using
+`divexact`.
+"""
 function divexact(A::SRow{T}, b::Integer) where T
   if length(A.values) == 0
     return deepcopy(A)
@@ -348,28 +531,50 @@ end
 
 ################################################################################
 #
-#  Maximum and minimum
+#  Elementary row operation
 #
 ################################################################################
 
 @doc Markdown.doc"""
-***
-    maximum(A::SRow{fmpz}) -> fmpz
+    add_scaled_row(A::SRow{T}, B::SRow{T}, c::T) -> SRow{T}
 
-> Finds the largest entry of $A$.
+Returns the row $c A + B$.
 """
-function maximum(A::SRow{fmpz})
-  return maximum(A.values)
-end
-
-@doc Markdown.doc"""
-***
-    minimum(A::SRow{fmpz}) -> fmpz
-
-> Finds the smallest entry of $A$.
-"""
-function minimum(A::SRow{fmpz})
-  return minimum(A.values)
+function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
+  sr = SRow{T}()
+  pi = 1
+  pj = 1
+  @assert c != 0
+  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
+    if Ai.pos[pi] < Aj.pos[pj]
+      push!(sr.pos, Ai.pos[pi])
+      push!(sr.values, c*Ai.values[pi])
+      pi += 1
+    elseif Ai.pos[pi] > Aj.pos[pj]
+      push!(sr.pos, Aj.pos[pj])
+      push!(sr.values, Aj.values[pj])
+      pj += 1
+    else
+      n = c*Ai.values[pi] + Aj.values[pj]
+      if n != 0
+        push!(sr.pos, Ai.pos[pi])
+        push!(sr.values, n)
+      end
+      pi += 1
+      pj += 1
+    end
+  end
+  while pi <= length(Ai.pos)
+    push!(sr.pos, Ai.pos[pi])
+    push!(sr.values, c*Ai.values[pi])
+    pi += 1
+  end
+  while pj <= length(Aj.pos)
+    push!(sr.pos, Aj.pos[pj])
+    push!(sr.values, Aj.values[pj])
+    pj += 1
+  end
+  return sr
 end
 
 ################################################################################
@@ -379,15 +584,72 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    lift(a::SRow{nmod}) -> SRow{fmpz}
+    lift(A::SRow{nmod}) -> SRow{fmpz}
 
-> Lifts all entries in $a$.
+Return the sparse row obtained by lifting all entries in $A$.
 """
-function lift(a::SRow{nmod})
+function lift(A::SRow{nmod})
   b = SRow{fmpz}()
-  for (p,v) = a
+  for (p,v) = A
     push!(b.pos, p)
     push!(b.values, lift(v))
   end
   return b
+end
+
+################################################################################
+#
+#  2-norm
+#
+################################################################################
+
+@doc Markdown.doc"""
+    norm2(A::SRow{T} -> T
+
+Returns $A \cdot A^t$.
+"""
+function norm2(A::SRow{T}) where {T}
+  return sum([x * x for x in A.values])
+end
+
+################################################################################
+#
+#  Maximum/minimum
+#
+################################################################################
+
+@doc Markdown.doc"""
+    maximum(abs, A::SRow{fmpz}) -> fmpz
+
+Returns the largest, in absolute value, entry of $A$.
+"""
+function maximum(::typeof(abs), A::SRow{fmpz})
+  if iszero(A)
+    return zero(FlintZZ)
+  end
+  m = abs(A.values[1])
+  for j in 2:length(A)
+    if cmpabs(m, A.values[j]) < 0
+      m = A.values[j]
+    end
+  end
+  return abs(m)
+end
+
+@doc Markdown.doc"""
+    maximum(A::SRow{T}) -> T
+
+Returns the largest entry of $A$.
+"""
+function maximum(A::SRow)
+  return maximum(A.values)
+end
+
+@doc Markdown.doc"""
+    minimum(A::SRow{T}) -> T
+
+Returns the smallest entry of $A$.
+"""
+function minimum(A::SRow)
+  return minimum(A.values)
 end

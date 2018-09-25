@@ -1,37 +1,65 @@
 # Everything related to transformation on sparse matrices
 
-function scale_row!(A::SMat{T}, i::Int, c::T) where T
-  for j in 1:length(A.rows[i].values)
-    A.rows[i].values[j] *= c
-  end
-end
+################################################################################
+#
+#  Row scaling
+#
+################################################################################
 
 @doc Markdown.doc"""
-  swap_rows!{T}(A::SMat{T}, i::Int, j::Int)
+    scale_row!(A::SMat{T}, i::Int, c::T)
 
-  swaps, inplace, the i-th row and the j-th
+Multiply the $i$-th row of $A$ by $c$ inplace.
+"""
+function scale_row!(A::SMat{T}, i::Int, c::T) where T
+  scale_row!(A[i], c)
+  return A
+end
+
+################################################################################
+#
+#  Row swapping
+#
+################################################################################
+
+@doc Markdown.doc"""
+  swap_rows!(A::SMat{T}, i::Int, j::Int)
+
+Swap the $i$-th and $j$-th row of $A$ inplace.
 """
 function swap_rows!(A::SMat{T}, i::Int, j::Int) where T
   A[i], A[j] = A[j], A[i]
+  return A
 end
 
-@doc Markdown.doc"""
-    invert_rows!{T}(A::SMat{T})
+################################################################################
+#
+#  Row inversion
+#
+################################################################################
 
-> Inplace, inverts the rows, ie. swaps the last and the 1st, the 2nd last and the
-> 2nd, ...
+@doc Markdown.doc"""
+    invert_rows!(A::SMat)
+
+Inplace inversion of the rows of $A$.
 """
 function invert_rows!(A::SMat{T}) where T
-  for i=1:div(A.r, 2)
+  for i = 1:div(A.r, 2)
     A[i], A[A.r+1-i] = A[A.r+1-i], A[i]
   end
+  return A
 end
 
+################################################################################
+#
+#  Column swapping
+#
+################################################################################
 
 @doc Markdown.doc"""
-    swap_cols!{T}(A::SMat{T}, i::Int, j::Int)
+    swap_cols!(A::SMat, i::Int, j::Int)
 
-> Swap the i-th and j-th column inplace.
+Swap the $i$-th and $j$-th column of $A$ inplace.
 """
 function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
   @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
@@ -74,11 +102,16 @@ function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
   return nothing
 end
 
+################################################################################
+#
+#  Addition of scaled rows
+#
+################################################################################
 # rows j -> row i*c + row j
 @doc Markdown.doc"""
-  add_scaled_row!{T}(A::SMat{T}, i::Int, j::Int, c::T)
+    add_scaled_row!{T}(A::SMat{T}, i::Int, j::Int, c::T)
 
-  adds, inplace, the c*i-th row to the j-th
+Add $c$ times the $i$-th row to the $j$-th row of $A$ inplace.
 """
 function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
   A.nnz = A.nnz - length(A[j])
@@ -86,48 +119,17 @@ function add_scaled_row!(A::SMat{T}, i::Int, j::Int, c::T) where T
   A.nnz = A.nnz + length(A[j])
 end
 
-function add_scaled_row(Ai::SRow{T}, Aj::SRow{T}, c::T) where T
-  sr = SRow{T}()
-  pi = 1
-  pj = 1
-  @assert c != 0
-  while pi <= length(Ai.pos) && pj <= length(Aj.pos)
-    if Ai.pos[pi] < Aj.pos[pj]
-      push!(sr.pos, Ai.pos[pi])
-      push!(sr.values, c*Ai.values[pi])
-      pi += 1
-    elseif Ai.pos[pi] > Aj.pos[pj]
-      push!(sr.pos, Aj.pos[pj])
-      push!(sr.values, Aj.values[pj])
-      pj += 1
-    else
-      n = c*Ai.values[pi] + Aj.values[pj]
-      if n != 0
-        push!(sr.pos, Ai.pos[pi])
-        push!(sr.values, n)
-      end
-      pi += 1
-      pj += 1
-    end
-  end
-  while pi <= length(Ai.pos)
-    push!(sr.pos, Ai.pos[pi])
-    push!(sr.values, c*Ai.values[pi])
-    pi += 1
-  end
-  while pj <= length(Aj.pos)
-    push!(sr.pos, Aj.pos[pj])
-    push!(sr.values, Aj.values[pj])
-    pj += 1
-  end
-  return sr
-end
+################################################################################
+#
+#  Addition of scaled cols
+#
+################################################################################
 
-# col j -> col i*c + col j
 @doc Markdown.doc"""
     add_scaled_col!{T}(A::SMat{T}, i::Int, j::Int, c::T)
 
-> Adds, inplace, the c*i-th column to the j-th column.
+Add $c$ times the $i$-th column to the $j$-th column of $A$ inplace, that is,
+$A_j \rightarrow A_j + c \cdot A_i$.
 """
 function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
   @assert c != 0
@@ -153,19 +155,30 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
   return nothing
 end
 
-# row i -> a*row i + b * row j
-# row j -> c*row i + d * row j
-@doc Markdown.doc"""
-  transform_row!{T}(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+################################################################################
+#
+#  Elementary row transformation
+#
+################################################################################
 
-  Inplace, replaces the i-th row and the j-th row by
-  [a,b; c,d] * [i-th-row ; j-th row]
+@doc Markdown.doc"""
+    transform_row(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+
+Applies the transformation $(A_i, A_j) \rightarrow (aA_i + bA_j, cA_i + dA_j)$
+to $A$.
 """
 function transform_row!(A::SMat{T}, i::Int, j::Int, a::T, b::T, c::T, d::T) where T
   A.nnz = A.nnz - length(A[i]) - length(A[j])
   A.rows[i], A.rows[j] = transform_row(A[i], A[j], a, b, c, d)
   A.nnz = A.nnz + length(A[i]) + length(A[j])
+  return A
 end
+
+@doc Markdown.doc"""
+    transform_row(A::SRow{T}, B::SRow{T}, i::Int, j::Int, a::T, b::T, c::T, d::T)
+
+Returns the tuple $(aA + bB, cA + dB)$.
+"""
 function transform_row(Ai::SRow{T}, Aj::SRow{T}, a::T, b::T, c::T, d::T) where T
   sr = SRow{T}()
   tr = SRow{T}()
@@ -301,7 +314,7 @@ function apply_left!(A::SMat{T}, t::TrafoPartialDense{S}) where {T, S}
 
   hdense = t.U * hdense
 
-  h = _SMat(hdense, R = R, zerorows = true)
+  h = _sparse_matrix(hdense, R = R, zerorows = true)
 
   for k in 1:length(h.rows)
     j = h.rows[k]
@@ -348,7 +361,7 @@ function apply_right!(A::SMat{T}, t::TrafoPartialDense{S}) where {T, S}
 
   hdense = hdense * t.U
 
-  h = _SMat(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
+  h = _sparse_matrix(hdense, R = parent(A.rows[1].values[1]), zerorows = true)
 
   for k in 1:length(h.rows)
     j = h.rows[k]

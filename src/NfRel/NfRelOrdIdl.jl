@@ -1369,3 +1369,21 @@ function prime_number(p::NfRelOrdIdl)
     return prime_number(m)
   end
 end
+
+################################################################################
+#
+#  Something with coprime
+#
+################################################################################
+
+function coprime_to(I::NfRelOrdFracIdl, p::NfRelOrdIdl)
+  pi = anti_uniformizer(p)
+  a = rand(I, 500)
+  l = valuation(a, p)
+  @assert l >= 0
+  if l > 0
+    a = pi^l*a
+  end
+  @assert valuation(a, p) == 0
+  return a
+end

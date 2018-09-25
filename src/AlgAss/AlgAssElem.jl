@@ -4,7 +4,9 @@
 #
 ################################################################################
 
-parent(a::AlgAssElem) = a.parent
+parent_type(::Type{AlgAssElem{T, S}}) where {T, S} = S
+
+parent(a::AbsAlgAssElem) = a.parent
 
 ################################################################################
 #
@@ -12,9 +14,9 @@ parent(a::AlgAssElem) = a.parent
 #
 ################################################################################
 
-zero(A::AlgAss) = A()
+zero(A::AbsAlgAss) = A()
 
-one(A::AlgAss) = A(A.one)
+one(A::AbsAlgAss) = A(A.one)
 
 ################################################################################
 #
@@ -22,9 +24,9 @@ one(A::AlgAss) = A(A.one)
 #
 ################################################################################
 
-function -(a::AlgAssElem{T}) where {T}
-  coeffs = [ -a.coeffs[i] for i = 1:dim(parent(a)) ]
-  return AlgAssElem{T}(parent(a), coeffs)
+function -(a::AbsAlgAssElem{T}) where {T}
+  coeffs = T[ -a.coeffs[i] for i = 1:dim(parent(a)) ]
+  return parent(a)(coeffs)
 end
 
 ################################################################################
@@ -33,22 +35,22 @@ end
 #
 ################################################################################
 
-function +(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+function +(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   coeffs = Array{T, 1}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
     coeffs[i] = a.coeffs[i] + b.coeffs[i]
   end
-  return AlgAssElem{T}(parent(a), coeffs)
+  return parent(a)(coeffs)
 end
 
-function -(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+function -(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   coeffs = Array{T, 1}(undef, dim(parent(a)))
   for i = 1:dim(parent(a))
     coeffs[i] = a.coeffs[i] - b.coeffs[i]
   end
-  return AlgAssElem{T}(parent(a), coeffs)
+  return parent(a)(coeffs)
 end
 
 function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
@@ -72,6 +74,48 @@ function *(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
       end
     end
   end
+  return c
+end
+
+function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
+  parent(a) != parent(b) && error("Parents don't match.")
+  A = parent(a)
+  d = dim(A)
+  coeffs = Vector{T}(undef, d)
+  for i in 1:d
+    coeffs[i] = zero(base_ring(A))
+  end
+  for i in 1:d
+    for j in 1:d
+      coeffs[A.mult_table[i, j]] += a.coeffs[i] * b.coeffs[j]
+    end
+  end
+  return A(coeffs)
+end
+
+function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
+  parent(a) != parent(b) && error("Parents don't match.")
+  A = parent(a)
+  d = dim(A)
+  coeffs = Vector{T}(undef, d)
+  if c === a || c === b
+    z = parent(a)()
+    mul!(z, a, b)
+    return z
+  end
+
+  coeffs = c.coeffs
+
+  for i in 1:d
+    coeffs[i] = zero(base_ring(A))
+  end
+
+  for i in 1:d
+    for j in 1:d
+      coeffs[A.mult_table[i, j]] += a.coeffs[i] * b.coeffs[j]
+    end
+  end
+
   return c
 end
 
@@ -117,23 +161,27 @@ end
 #
 ################################################################################
 
-function *(a::AlgAssElem{T}, b::T) where { T <: RingElem }
-  return AlgAssElem{T}(parent(a), a.coeffs.* Ref(b))
+function *(a::AbsAlgAssElem{S}, b::T) where {T <: RingElem, S <: RingElem}
+  return typeof(a)(parent(a), a.coeffs.* Ref(b))
 end
 
-*(b::T, a::AlgAssElem{T}) where { T <: RingElem } = a*b
+*(b::T, a::AbsAlgAssElem{S}) where {T <: RingElem,  S <: RingElem } = a*b
 
-*(a::AlgAssElem{T}, b::Union{Integer, fmpz}) where {T} = a*base_ring(parent(a))(b)
+*(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*base_ring(parent(a))(b)
 
-*(b::Union{Integer, fmpz}, a::AlgAssElem{T}) where {T} = a*b
+*(b::Integer, a::AbsAlgAssElem{T}) where {T} = a*b
 
-dot(a::AlgAssElem{T}, b::T) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::T) where {T} = a*b
 
-dot(b::T, a::AlgAssElem{T}) where {T} = b*a
+dot(b::T, a::AbsAlgAssElem{T}) where {T} = b*a
 
-dot(a::AlgAssElem{T}, b::Union{Integer, fmpz}) where {T} = a*b
+dot(a::AbsAlgAssElem{T}, b::Integer) where {T} = a*b
 
-dot(b::Union{Integer, fmpz}, a::AlgAssElem{T}) where {T} = b*a
+dot(b::Integer, a::AbsAlgAssElem{T}) where {T} = b*a
+
+dot(a::AbsAlgAssElem{T}, b::fmpz) where {T} = a*b
+
+dot(b::fmpz, a::AbsAlgAssElem{T}) where {T} = b*a
 
 ################################################################################
 #
@@ -141,7 +189,7 @@ dot(b::Union{Integer, fmpz}, a::AlgAssElem{T}) where {T} = b*a
 #
 ################################################################################
 
-function ^(a::AlgAssElem, b::Int)
+function ^(a::AbsAlgAssElem, b::Int)
   if b == 0
     return one(parent(a))
   elseif b == 1
@@ -193,22 +241,23 @@ end
 #
 ################################################################################
 
-(A::AlgAss{T})() where {T} = AlgAssElem{T}(A)
+(A::AlgAss{T})() where {T} = AlgAssElem{T, AlgAss{T}}(A)
+
+(A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
 
 function (A::AlgAss{T})(c::Array{T, 1}) where {T}
   length(c) != dim(A) && error("Dimensions don't match.")
-  return AlgAssElem{T}(A, c)
+  return AlgAssElem{T, AlgAss{T}}(A, c)
 end
 
-function Base.getindex(A::AlgAss{T}, i::Int) where {T}
+function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
   (i < 1 || i > dim(A)) && error("Index must be in range $(1:dim(A))")
-  n = dim(A)
-  v = Vector{T}(undef, n)
-  for j in 1:n
-    v[j] = zero(base_ring(A))
-  end
-  v[i] = one(base_ring(A))
-  return A(v)
+  basis(A)[i]
+end
+
+function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
+  length(c) != dim(A) && error("Dimensions don't match.")
+  return AlgGrpElem{T, typeof(A)}(A, c)
 end
 
 ################################################################################
@@ -217,7 +266,7 @@ end
 #
 ################################################################################
 
-function show(io::IO, a::AlgAssElem)
+function show(io::IO, a::AbsAlgAssElem)
   print(io, "Element of ")
   print(io, parent(a))
   print(io, " with coefficients ")
@@ -257,7 +306,7 @@ end
 #
 ################################################################################
 
-function Generic.minpoly(a::AlgAssElem)
+function Generic.minpoly(a::AbsAlgAssElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
@@ -269,7 +318,11 @@ end
 #
 ################################################################################
 
-function tr(x::AlgAssElem{T}) where T
+#function tr(x::AbsAlgAssElem)
+#  return tr(representation_matrix(x))
+#end
+
+function tr(x::AbsAlgAssElem{T}) where T
   A=parent(x)
   _assure_trace_basis(A)
   tr=zero(base_ring(A))
@@ -296,12 +349,41 @@ function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AlgAssElem{T}) where T
   return nothing
 end
 
-function elem_from_mat_row(A::AlgAss{T}, M::MatElem{T}, i::Int) where T
+function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
   a = A()
   for c = 1:cols(M)
     a.coeffs[c] = deepcopy(M[i, c])
   end
   return a
+end
+
+function elem_from_mat_row(A::AbsAlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
+  a = A()
+  for j in 1:cols(M)
+    a.coeffs[j] = fmpq(M[i, j], d)
+  end
+  return a
+end
+
+function representation_matrix(a::AlgGrpElem, action::Symbol=:left)
+  A = parent(a)
+  M = zero_matrix(base_ring(A), dim(A), dim(A))
+  if action==:left
+    for i = 1:dim(A)
+      for j = 1:dim(A)
+        M[i, A.mult_table[j, i]] = a.coeffs[j]
+      end
+    end
+  elseif action==:right
+    for i = 1:dim(A)
+      for j = 1:dim(A)
+        M[i, A.mult_table[i, j]] = a.coeffs[j]
+      end
+    end
+  else
+    error("Not yet implemented")
+  end
+  return M
 end
 
 function representation_matrix(a::AlgAssElem, action::Symbol=:left)
@@ -341,10 +423,10 @@ end
 #
 ################################################################################
 
-isone(a::AlgAssElem) = a == one(parent(a))
+isone(a::AbsAlgAssElem) = a == one(parent(a))
 
-function iszero(a::AlgAssElem)
-  return all(i -> i == 0, a.coeffs)
+function iszero(a::AbsAlgAssElem)
+  return all(i -> iszero(i), a.coeffs)
 end
 
 ################################################################################
@@ -353,7 +435,7 @@ end
 #
 ################################################################################
 
-function trred(a::AlgAssElem)
+function trred(a::AbsAlgAssElem)
   A = parent(a)
   if issimple_known(A) && A.issimple == 1
     d = dimension_of_center(A)

@@ -208,7 +208,7 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
     end
 
     time_kernel += @elapsed k, d = solve_dixon_sf(x.M.bas_gens, rel)
-    @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*id(SMat, FlintZZ, k.r)))
+    @vtime_add_elapsed :UnitGroup 1 x :saturate_time s = saturate(hcat(k, (-d)*identity_matrix(SMat, FlintZZ, k.r)))
 
     ge = vcat(x.R_gen[1:k.c], x.R_rel[add_units])
     for i=1:s.r

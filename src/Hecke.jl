@@ -56,6 +56,8 @@ import AbstractAlgebra
 
 import LinearAlgebra: dot, istriu, nullspace
 
+import SparseArrays: nnz
+
 import Serialization: serialize, deserialize
 
 import Random: rand!
@@ -203,10 +205,10 @@ function __init__()
   # Stuff for elliptic curves
   # polynomial rings Zx = ZZ[x] and _Zxy = ZZ[x,y]
   # will be removed eventually
-  global _Zx = PolynomialRing(FlintZZ, "_x")[1]
-  global _Zxy = PolynomialRing(_Zx, "_y")[1]
-  global _x = gen(_Zx)
-  global _y = gen(_Zxy)
+  #global _Zx = PolynomialRing(FlintZZ, "_x")[1]
+  #global _Zxy = PolynomialRing(_Zx, "_y")[1]
+  #global _x = gen(_Zx)
+  #global _y = gen(_Zxy)
 
   global flint_rand_ctx = flint_rand_state()
 end
@@ -317,7 +319,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.5.0"
+global VERSION_NUMBER = v"0.5.1"
 
 ################################################################################
 #

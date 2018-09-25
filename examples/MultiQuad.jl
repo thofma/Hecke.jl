@@ -415,9 +415,9 @@ end
 
 function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   e = matrix(FlintZZ, saturate_exp(c, n%8 == 0 ? 2*n : n, stable))
-  se = SMat(e)'
+  se = sparse_matrix(e)'
 
-  A = SMat(FlintZZ)
+  A = sparse_matrix(FlintZZ)
   K = nf(c)
   _, zeta = Hecke._get_nf_torsion_units(K)
 

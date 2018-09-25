@@ -298,3 +298,4 @@ function characteristic(R::FlintRationalField)
   return fmpz(0)
 end
 
+jacobi(x::Integer, y::fmpz) = jacobi(fmpz(x), y)

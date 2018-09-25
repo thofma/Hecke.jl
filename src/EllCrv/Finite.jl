@@ -86,7 +86,7 @@ $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
 # Th. 4.14
-function order_via_legendre(E::EllCrv{Generic.Res{fmpz}})
+function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fmpz}}}
   R = base_field(E)
   p = characteristic(R)
   q = order(R)
@@ -539,9 +539,9 @@ function t_mod_prime(l, E)
         end
 
         if ggT2 == 1
-          return -2*(w.data)
+          return -2*fmpz(w.data)
         else
-          return 2*(w.data)
+          return 2*fmpz(w.data)
         end
       end
     end

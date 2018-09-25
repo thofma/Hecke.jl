@@ -103,11 +103,6 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
   # transform the curve to an equivalent one with integer coefficients, if necessary
   (E, trafo_int, trafo_rat) = integral_model(G)
 
-  #!E.short && error("Elliptic curve must be given by short form")
-  #if (denominator(E.coeff[1]) != 1) || (denominator(E.coeff[2]) != 1)
-  #  error("Need integer coefficients")
-  #end
-
   res = [infinity(E)]
   d = disc(E)
 
@@ -119,10 +114,12 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
 
   pcand = Tuple{fmpz, fmpz}[] # candidates for torsion points
 
+  Zx, x = PolynomialRing(FlintZZ, "x")
+
   # Lutz-Nagell: coordinates of torsion points need to be in ZZ
   for i = 1:length(ycand)
     # are there corresponding integer x-values?
-    xcand = zeros(_Zx(_x)^3 + (numerator(E.coeff[1]))*_Zx(_x) + (numerator(E.coeff[2])) - ycand[i]^2)
+    xcand = zeros(x^3 + (numerator(E.coeff[1]))*x + (numerator(E.coeff[2])) - ycand[i]^2)
     if length(xcand) != 0
       for j = 1: length(xcand)
         push!(pcand, (xcand[j], ycand[i])) # add to candidates
@@ -149,15 +146,15 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
 
   torsionpoints = res
 
-  if F.short == false
-    for i = 1:length(torsionpoints)
-      torsionpoints[i]= ruecktrafo(trafo_rat(torsionpoints[i]))
-    end
-  else
-    for i = 1:length(torsionpoints)
-      torsionpoints[i] = trafo_rat(torsionpoints[i])
-    end
-  end
+  #if F.short == false
+  #  for i = 1:length(torsionpoints)
+  #    torsionpoints[i]= ruecktrafo(trafo_rat(torsionpoints[i]))
+  #  end
+  #else
+  #  for i = 1:length(torsionpoints)
+  #    torsionpoints[i] = trafo_rat(torsionpoints[i])
+  #  end
+  #end
   return torsionpoints
 end
 
@@ -206,7 +203,9 @@ function torsion_points_division_poly(F::EllCrv{fmpq})
   # points of order 2 (point has order 2 iff y-coordinate is zero)
   # (note: these points are not detected by the division polynomials)
 
-  s = zeros(_Zx(_x)^3 + A*_Zx(_x) + B) # solutions of x^3 + Ax + B = 0
+  Zx, x = PolynomialRing(FlintZZ, "x")
+
+  s = zeros(x^3 + A*x + B) # solutions of x^3 + Ax + B = 0
   if length(s) != 0
     for i = 1:length(s)
       P = E([s[i], 0])
@@ -334,8 +333,8 @@ function torsion_structure(E::EllCrv{fmpq})
     return (fmpz[grouporder], [T[k]])
   else # group not cyclic
     m = div(grouporder, 2)
-    k1 = findfirst(orders, 2)
-    k2 = findlast(orders, m) # findlast to get different points if m = 2
+    k1 = something(findfirst(isequal(2), orders), 0)
+    k2 = something(findlast(isequal(m), orders), 0) # findlast to get different points if m = 2
     points = [T[k1], T[k2]]
   return (fmpz[2, m], points)
   end
@@ -358,20 +357,6 @@ integral_model(E::EllCrv{fmpq}) -> (F::EllCrv{fmpz}, function, function)
 function integral_model(E::EllCrv{fmpq})
   A = E.coeff[1]
   B = E.coeff[2]
-
-  if (denominator(A) == 1) && (denominator(B) == 1) # curve already has integer coefficients
-
-    trafo_int = function(P)
-     return P
-    end
-
-    trafo_rat = function(R)
-      return R
-    end
-
-    return E, trafo_int, trafo_rat # copy(E)?
-
-  end
 
   mue = lcm(denominator(A), denominator(B))
   Anew = mue^4 * A
@@ -620,7 +605,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
       cp = FlintZZ(2)
     else
       cp = FlintZZ(1)
-  end
+    end
 
     Kp = "I$(n)"
     fp = FlintZZ(1)
@@ -662,7 +647,7 @@ function tates_algorithm_local(E::EllCrv{fmpq}, p)
     t = -a3 * invmod(FlintZZ(2), p)
   end
 
-  trans = transform_rstu(E, [0, s, t, 1])
+  trans = transform_rstu(E, fmpz[0, s, t, 1])
   E = trans[1]
 
   a1 = numerator(E.coeff[1])
