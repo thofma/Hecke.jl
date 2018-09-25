@@ -74,7 +74,7 @@ mutable struct ClassField_pp
 end
 
 function Base.show(io::IO, C::ClassField_pp)
-  println(io, "Cyclic class field of degree $(order(codomain(C.quotientmap))) defined modulo $(defining_modulus(C))")
+  println(IOContext(io, :compact => true), "Cyclic class field of degree $(order(codomain(C.quotientmap))) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)
     println(io, "Kummer generator ", C.a)
   end
@@ -108,5 +108,8 @@ mutable struct ClassField
 end
 
 function Base.show(io::IO, CF::ClassField)
-  println("Class field defined mod $(defining_modulus(CF)) of structure $(codomain(CF.quotientmap)))")
+  print(IOContext(io, :compact => true), "Class field defined mod ", 
+                   defining_modulus(CF), " of structure ",
+                   codomain(CF.quotientmap))
 end
+
