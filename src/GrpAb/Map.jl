@@ -133,6 +133,7 @@ end
 """
 function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
   GB = parent(B[1])
+  @assert length(B) == ngens(G)
   M = vcat([B[i].coeff for i = 1:length(B)])
   h = GrpAbFinGenMap(G, GB, M)
   return h
