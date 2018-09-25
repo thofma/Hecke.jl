@@ -259,7 +259,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       if g.values[1] < 0
         # Multiply row g by -1
         if with_trafo
-          push!(trafos, TrafoScale{fmpz}(rows(A) + 1, fmpz(-1)))
+          push!(trafos, sparse_trafo_scale(rows(A) + 1, fmpz(-1)))
         end
         if !new_g
           g = copy(g)
@@ -289,7 +289,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       sca =  -divexact(p, A.rows[j].values[1])
       g = Hecke.add_scaled_row(A[j], g, sca)
       new_g = true
-      with_trafo ? push!(trafos, TrafoAddScaled(j, rows(A) + 1, sca)) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_add_scaled(j, rows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
@@ -299,7 +299,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
       new_g = true
       if with_trafo
-        push!(trafos, TrafoParaAddScaled(j, rows(A) + 1, a, b, c, d))
+        push!(trafos, sparse_trafo_para_add_scaled(j, rows(A) + 1, a, b, c, d))
       end
       @hassert :HNF 1  A[j].values[1] == x
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
@@ -329,7 +329,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
     for i=1:length(g.values)
       g.values[i] *= -1
     end
-    with_trafo ? push!(trafos, TrafoScale{fmpz}(rows(A) + 1, fmpz(-1))) : nothing
+    with_trafo ? push!(trafos, sparse_trafo_scale!{fmpz}(rows(A) + 1, fmpz(-1))) : nothing
   end
   if with_trafo
     g, new_trafos = reduce_right(A, g, 1, trafo)
@@ -374,7 +374,7 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz}, start::Int = 1, trafo::Type{
       end
       if q != 0
         b = Hecke.add_scaled_row(A[p], b, -q)
-        with_trafo ? push!(trafos, TrafoAddScaled(p, rows(A) + 1, -q)) : nothing
+        with_trafo ? push!(trafos, sparse_trafo_add_scaled(p, rows(A) + 1, -q)) : nothing
         if r == 0
           j -= 1
         else
@@ -399,7 +399,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) wher
   @vprint :HNF 1 "with density $(A.nnz/(A.c*A.r))"
 
   with_trafo = (trafo == Val{true})
-  with_trafo ? trafos = [] : nothing
+  with_trafo ? trafos = SparseTrafoElem[] : nothing
 
   B = sparse_matrix(FlintZZ)
   B.c = A.c
@@ -429,14 +429,14 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) wher
         # (k k-1)(k-1 k-2) ...(p+1 p) where k = rows(B)
         if with_trafo
           for j in rows(B):-1:(p+1)
-            push!(trafos, TrafoSwap{fmpz}(j, j - 1))
+            push!(trafos, sparse_trafo_swap(fmpz, j, j - 1))
           end
         end
       end
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_trafo ? push!(trafos, TrafoDeleteZero{fmpz}(rows(B) + 1)) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_delete_zero(fmpz, rows(B) + 1)) : nothing
     end
     if length(w) > 0
       if with_trafo

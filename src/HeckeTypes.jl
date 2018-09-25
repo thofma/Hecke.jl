@@ -22,6 +22,93 @@ end
 #
 ################################################################################
 
+# 1 = scale
+# 2 = swap
+# 3 = add scaled
+# 4 = parallel scaled addition
+# 5 = trafo partial dense
+# 6 = move row to end
+# 7 = trafo id
+mutable struct SparseTrafoElem{T, S}
+  type::Int
+  i::Int
+  j::Int
+  a::T
+  b::T
+  c::T
+  d::T
+  rows::UnitRange{Int}
+  cols::UnitRange{Int}
+  U::S
+
+  function SparseTrafoElem{T, S}() where {T, S}
+    z = new{T, S}()
+    return z
+  end
+end
+
+function sparse_trafo_scale(i::Int, c::T) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 1
+  z.i = i
+  z.a = c
+  return z
+end
+
+function sparse_trafo_swap(::Type{T}, i::Int, j::Int) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 2
+  z.i = i
+  z.j = j
+  return z
+end
+
+function sparse_trafo_add_scaled(i::Int, j::Int, s::T) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 3
+  z.i = i
+  z.j = j
+  z.a = s
+  return z
+end
+
+function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 4
+  z.i = i
+  z.j = j
+  z.a = a
+  z.b = b
+  z.c = c
+  z.d = d
+  return z
+end
+
+function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) where {S}
+  z = SparseTrafoElem{coefficient_type(S), S}()
+  z.type = 5
+  z.i = i
+  z.rows = rows
+  z.cols = cols
+  z.U = U
+  return z
+end
+
+# this is shorthand for the permutation matrix corresponding to
+# (i i+1)(i+1 i+2)...(rows-1 rows)
+function sparse_trafo_id(::Type{T}) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 7
+  return z
+end
+
+function sparse_trafo_delete_zero(::Type{T}, i::Int) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 6
+  z.i = i
+  return z
+end
+
 abstract type Trafo end
 
 mutable struct TrafoScale{T} <: Trafo

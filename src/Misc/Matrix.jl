@@ -4,6 +4,44 @@ import Nemo.matrix
 
 import Base.vcat
 
+################################################################################
+#
+#  Dense matrix types
+#
+################################################################################
+
+dense_matrix_type(::Type{fmpz}) = fmpz_mat
+
+dense_matrix_type(::Type{fmpq}) = fmpq_mat
+
+dense_matrix_type(::Type{nmod}) = nmod_mat
+
+dense_matrix_type(::Type{fq_nmod}) = fq_nmod_mat
+
+dense_matrix_type(::Type{fq}) = fq_mat
+
+dense_matrix_type(::Type{arb}) = arb_mat
+
+dense_matrix_type(::Type{acb}) = acb_mat
+
+dense_matrix_type(::Type{T}) where {T} = Generic.Mat{T}
+
+coefficient_type(::Type{fmpz_mat}) = fmpz
+
+coefficient_type(::Type{fmpq_mat}) = fmpq
+
+coefficient_type(::Type{nmod_mat}) = nmod
+
+coefficient_type(::Type{fq_nmod_mat}) = fq_nmod
+
+coefficient_type(::Type{fq_mat}) = fq
+
+coefficient_type(::Type{arb_mat}) = arb
+
+coefficient_type(::Type{acb_mat}) = acb
+
+coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
+
 # 
 function zero_matrix(::Type{MatElem}, R::Ring, n::Int)
   return zero_matrix(R, n)
