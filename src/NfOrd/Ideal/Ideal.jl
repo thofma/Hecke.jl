@@ -143,8 +143,15 @@ function show_maximal(io::IO, id::NfAbsOrdIdl)
   if compact
     if has_2_elem(id)
       print(io, "<", id.gen_one, ", ", id.gen_two, ">" )
-    else
-      print(io, "<no 2-elts present>");
+      return
+    elseif isdefined(id, :princ_gen)
+        print(io, "\nprincipal generator ", id.princ_gen)
+        return
+    elseif isdefined(id, :basis_mat)
+        print(io, "\nbasis_mat \n", id.basis_mat)
+        return
+    else    
+      error("ideal without data")
     end
   else
     if has_2_elem(id)
