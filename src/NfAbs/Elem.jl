@@ -159,6 +159,10 @@ function charpoly(a::nf_elem, Qx::FmpqPolyRing = parent(parent(a).pol))
   return f
 end
 
+function charpoly(a::nf_elem, ::FlintRationalField)
+  return charpoly(a)
+end
+
 ################################################################################
 #
 #  Minimal polynomial
@@ -174,6 +178,10 @@ end
 function minpoly(a::nf_elem, Qx::FmpqPolyRing = parent(parent(a).pol))
   f = minpoly(Qx, representation_matrix(a))
   return f
+end
+
+function minpoly(a::nf_elem, ::FlintRationalField)
+  return minpoly(a)
 end
 
 ################################################################################
