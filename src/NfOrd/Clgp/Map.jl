@@ -344,6 +344,7 @@ end
 
 @doc Markdown.doc"""
     isprincipal(A::NfOrdIdl) -> Bool, NfOrdElem
+    isprincipal(A::NfOrdFracIdl) -> Bool, NfOrdElem
 > Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
 > \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
 """
@@ -351,6 +352,12 @@ function isprincipal(A::NfOrdIdl)
   O = order(A)
   fl, a = isprincipal_fac_elem(A)
   return fl, O(evaluate(a))
+end
+
+function isprincipal(A::NfOrdFracIdl)
+  O = order(A)
+  fl, a = isprincipal_fac_elem(numerator(A))
+  return fl, evaluate(a)//denominator(A)
 end
  
 # does not work, cannot work. Problem

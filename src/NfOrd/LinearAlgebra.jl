@@ -1,4 +1,4 @@
-export pseudo_matrix, pseudo_hnf, PseudoMatrix
+export pseudo_matrix, pseudo_hnf, PseudoMatrix, pseudo_hnf_with_trafo
 
 function _det_bound(M::Generic.Mat{NfOrdElem})
   n = rows(M)
@@ -62,20 +62,15 @@ function _get_coeff_raw(x::nmod_poly, i::Int)
   return u
 end
 
-function _get_coeff_raw(x::gfp_poly, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, :libflint), UInt, (Ref{gfp_poly}, Int), x, i)
-  return u
-end
-
+@doc Markdown.doc"""
+    det(M::Generic.Mat{NfOrdElem}) -> NfOrdElem
+> Uses a modular algorithm to compute the determinant.    
+"""   
 function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
   K = nf(O)
   B = _det_bound(M)
-  if Int==Int64
-    p = next_prime(2^61) # magic numbers
-  else
-    p = next_prime(2^30)
-  end  
+  p = p_start #global  
   P = fmpz(1)
   i = 1
   res = O()
@@ -176,6 +171,10 @@ function __helper!(z, mF, entries)
   return z
 end
 
+@doc Markdown.doc"""
+    mod_sym(a::NfOrdElem, m)
+> Reduces the coefficients of $a$ modulo $m$, using the symmetric residue system.    
+"""
 function mod_sym(x::NfOrdElem, m)
   z = elem_in_basis(x)
   for i in 1:length(z)
@@ -248,12 +247,25 @@ function PseudoMatrix(m::Generic.Mat{T}, c::Array{S, 1}) where {T, S}
   return PMat{T, S}(m ,c)
 end
 
+@doc Markdown.doc"""
+    PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+
+> Returns the (row) pseudo matrix representing the Z\_k-module 
+>  $$\sum c_i m_i$$
+>  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+"""
 function PseudoMatrix(m::Generic.Mat{nf_elem}, c::Array{NfOrdIdl, 1})
   @assert rows(m) == length(c)
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(m, cc)
 end
 
+@doc Markdown.doc"""
+    PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+> Returns the (row) pseudo matrix representing the $Z_k$-module 
+>  $$\sum c_i m_i$$
+>  where $c_i$ are the ideals in $c$ and $m_i$ the rows of $M$. 
+"""
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert rows(m) == length(c)
   mm = change_ring(m, nf(base_ring(m)))
@@ -261,6 +273,12 @@ function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
 
+@doc Markdown.doc"""
+    PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1}) -> PMat{nf_elem, NfOrdFracIdl}
+> Returns the free (row) pseudo matrix representing the $Z_k$-module 
+>  $$\sum Z_k m_i$$
+>  where $m_i$ the rows of $M$. 
+"""
 function PseudoMatrix(m::Generic.Mat{nf_elem})
    K = base_ring(m)
    O = maximal_order(K)
@@ -401,7 +419,11 @@ function pseudo_hnf(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright,
   end
 end
 
+pseudo_hnf_with_trafo(P::PMat{nf_elem, NfOrdFracIdl}, shape::Symbol = :upperright, full_rank::Bool = false) = pseudo_hnf_kb_with_trafo(P, shape)
+
 pseudo_hnf(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb(P, shape)
+
+pseudo_hnf_with_trafo(P::PMat{T, S}, shape::Symbol = :upperright, full_rank::Bool = false) where {T <: RelativeElement, S} = pseudo_hnf_kb_with_trafo(P, shape)
 
 function pseudo_hnf_full_rank(P::PMat, shape::Symbol = :upperright)
   PP = deepcopy(P)
