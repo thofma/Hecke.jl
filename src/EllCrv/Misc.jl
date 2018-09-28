@@ -41,7 +41,7 @@
 
 @doc Markdown.doc"""
 ***
-    Divisors(n::fmpz) -> Array{fmpz, 1}
+    divisors(n::fmpz) -> Array{fmpz, 1}
 
 > Computes the divisors of a given number $n$. It is assumed that $n$ is not
 > zero.
