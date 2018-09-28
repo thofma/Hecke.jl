@@ -41,7 +41,7 @@ Polynomials
 
 General:
 --------
- * divisors, square_divisors, prime_divisors of ideals, integers, polys
+(DONE) * divisors, square_divisors, prime_divisors of ideals, integers, polys
    as iterators (replacing the terrible function in ElipticCurve)
- * inverse_phi
+DONE * inverse_phi
 
