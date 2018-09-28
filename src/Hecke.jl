@@ -659,7 +659,7 @@ hasroot(a...) = ispower(a...)  # catch all... needs revisiting:
 export example
 
 function example(s::String)
-  include(joinpath(dirname(pathof(Hecke)), "..", "examples", s))
+  Base.include(Main, joinpath(dirname(pathof(Hecke)), "..", "examples", s))
 end
 
 ################################################################################
