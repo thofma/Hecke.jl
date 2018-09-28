@@ -38,11 +38,11 @@ Base.IteratorSize(s::MSet) = Base.HasLength()
 Base.IteratorEltype(s::MSet) = Base.HasEltype()
 Base.eltype(s::MSet{T}) where {T} = T
 Base.in(x, s::MSet) = haskey(s.dict, x)
-function Base.push!(s::MSet, x)
+function Base.push!(s::MSet, x, mult::Int = 1)
   if haskey(s.dict, x)
-    s.dict[x] += 1
+    s.dict[x] += mult
   else
-    s.dict[x] = 1
+    s.dict[x] = mult
   end
 end
 
@@ -118,7 +118,7 @@ function subsets(s::MSet{T}) where T
     push!(g, g[end]*(m[i]+1))
   end
   =#
-  return MSubSetItr{T}(b, m, prod(x+1 for x=m))
+  return MSubSetItr{T}(b, m, length(m) == 0 ? 1 : prod(x+1 for x=m))
 end
 
 function int_to_elt(M::MSubSetItr{T}, i::Int) where T
