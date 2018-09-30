@@ -188,7 +188,7 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
     return
   end
   z = vcat(M.bas_gens, M.rel_gens)
-  h, t = hnf_kannan_bachem(z, Val{true})
+  h, t = hnf_kannan_bachem(z, Val{true}, truncate = true)
   M.trafo = t
   M.basis = h
   M.basis_idx = det(h) # h is upp_triangular, hence det is trivial

@@ -393,7 +393,7 @@ end
 > Hermite Normal Form of $A$ using the Kannan-Bachem algorithm to avoid
 > intermediate coefficient swell.
 """
-function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) where N
+function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false) where N
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
   @vprint :HNF 1 "with density $(A.nnz/(A.c*A.r))"
@@ -455,6 +455,11 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}) wher
     end
     nc += 1
   end
+  if !truncate
+    for i in 1:(rows(A) - rows(B))
+      push!(B, sparse_row(base_ring(A)))
+    end
+  end
   with_trafo ? (return B, trafos) : (return B)
 end
 
@@ -465,8 +470,8 @@ end
 > entries in echelon form that is row-equivalent to $A$.
 > Currently, Kannan-Bachem is used.
 """
-function hnf(A::SMat{fmpz})
-  return hnf_kannan_bachem(A)
+function hnf(A::SMat{fmpz}; truncate::Bool = false)
+  return hnf_kannan_bachem(A, truncate = truncate)
 end
 
 @doc Markdown.doc"""
