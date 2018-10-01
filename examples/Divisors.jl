@@ -3,7 +3,25 @@ module DivisorsMod
 using Hecke
 using Base.Iterators
 using AbstractAlgebra
+using Markdown
 
+export eulerphi_inv, eulerphi_inv_fac_elem
+
+@doc Markdown.doc"""
+    Divisors{T}
+
+An iterator for the divisors of a given object.
+Create using 
+    Divisors(A, power::Int = 1)
+where A is either a FacElem or a direct element. Power can be used
+to restrict to objects B s.th. B^power still divides A, e.g. 
+    Divisors(12, powers = 2)
+will produce square divisors.
+
+For rings where this makes sense, ie. where the unit group is finite,
+```units = true``` can be passed in to also take into accound
+the units.
+"""
 mutable struct Divisors{T} 
   n::T
   lf::MSet{T}
@@ -85,8 +103,8 @@ mutable struct Divisors{T}
     return Divisors(FacElem(a), units = units, power = power)
   end
 end
-Base.IteratorSize(::Divisors) = Base.SizeUnknown()  # a lie: subsets has a length, so if unit has one
-                                                    # we can use it.
+Base.IteratorSize(::Divisors) = Base.HasLength() 
+Base.length(D::Divisors) = length(D.s)                                                    
 
 function Base.iterate(D::Divisors)
   x = iterate(D.s)
@@ -112,6 +130,11 @@ function Base.show(io::IO, D::Divisors)
   print(io, "\n")
 end
 
+@doc Markdown.doc"""
+    unit_group(::FlintIntegerRing) -> GrpAbFinGen, Map
+
+> The unit group of Z, ie. C_2 and the map translating between the group and Z.    
+"""
 function Hecke.unit_group(::FlintIntegerRing)
   G = Hecke.DiagonalGroup([2])
   exp = function(z::GrpAbFinGenElem)
@@ -123,6 +146,11 @@ function Hecke.unit_group(::FlintIntegerRing)
   return G, Hecke.MapFromFunc(exp, log, G, FlintZZ)
 end
 
+@doc Markdown.doc"""
+    unit_group(::Integers{T}) -> GrpAbFinGen, Map
+
+> The unit group of , ie. C_2 and the map translating between the group and Z.    
+"""
 function Hecke.unit_group(R::AbstractAlgebra.Integers{T}) where {T}
   G = Hecke.DiagonalGroup([2])
   exp = function(z::GrpAbFinGenElem)
@@ -140,6 +168,11 @@ end
 #basically from
 #http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
 #Contini, Croot, Shparlinski: Complexity of inverting the Euler function
+@doc Markdown.doc"""
+    eulerphi_inv_fac_elem(n::fmpz)
+> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+> holde. The elements are returned in factored form.
+"""
 function eulerphi_inv_fac_elem(n::fmpz)
   lp = []
   for d = Divisors(n)
@@ -201,10 +234,20 @@ function eulerphi(n::T) where {T <: Integer}
   return T(eulerphi(fmpz(n)))
 end
 
+@doc Markdown.doc"""
+    eulerphi_inv(n::Integer) -> Array{fmpz, 1}
+> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+> holds.
+"""
 function eulerphi_inv(n::Integer)
   return eulerphi_inv(fmpz(n))
 end
 
+@doc Markdown.doc"""
+    eulerphi_inv(n::fmpz) -> Array{fmpz, 1}
+> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+> holds.
+"""
 function eulerphi_inv(n::fmpz)
   return [ evaluate(x) for x = eulerphi_inv_fac_elem(n)]
 end
@@ -234,12 +277,86 @@ function Hecke.FacElem(a::Fac{fmpz})
   return f
 end
 
+@doc Markdown.doc"""
+    eulerphi(A::NfOrdIdl) -> fmpz
+> The ideal verision of the totient functionm returns the size of the unit group
+> of the residue ring modulo the ideal.
+"""
 Hecke.eulerphi(A::NfOrdIdl) = Hecke.eulerphi(factor(A))
 Hecke.eulerphi(A::FacElem{NfOrdIdl}) = Hecke.eulerphi(factor(A))
 function Hecke.eulerphi(A::Dict{NfOrdIdl, Int})
-  return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A)
+  return prod((norm(p)-1)*norm(p)^(k-1) for (p,k) = A if k < 0 error("ideal not integral"))
 end
 
+#same algo as above...
+@doc Markdown.doc"""
+    eulerphi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
+> The inverse of the ideal totient funcction: all ideals $A$ s.th the unit group of the 
+> residue ring has the required size. Here, the ideals are returned in factorisaed form.
+"""
+function eulerphi_inv_fac_elem(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem})
+  lp = []
+  for d = Divisors(n)
+    k, p = ispower(d+1)
+    if isprime(p)
+      ll = prime_decomposition(zk, p)
+      for P = ll
+        if degree(P[1]) == k
+           push!(lp, P[1])
+         end
+       end
+    end
+  end
+#  println("possible primes: ", lp)
+
+  E = []
+  res = []
+  for p = lp
+    v = valuation(n, norm(p))
+    for i=0:v
+      push!(E, ((norm(p)-1)*norm(p)^i, [(p, i+1)]))
+      if E[end][1] == n
+        push!(res, FacElem(Dict(E[end][2])))
+      end
+    end
+  end
+  
+  while true
+    F = []
+    for e = E
+      nn = divexact(n, e[1])
+      x = e[2]
+      pm = x[end][1]
+      start = true
+      for p = lp
+        start && p != pm && continue
+        start = false
+        p == pm && continue
+        if nn % (norm(p)-1) == 0
+          v = valuation(nn, norm(p))
+          for i = 0:v
+            push!(F, (e[1]*(norm(p)-1)*norm(p)^i, vcat(e[2], [(p, i+1)])))
+            if F[end][1] == n
+              push!(res, FacElem(Dict(F[end][2])))
+            end
+          end
+        end
+      end
+    end
+    if length(F) == 0
+      return res
+    end
+    E = F
+  end
+end
+
+@doc Markdown.doc"""
+    eulerphi_inv(n::fmpz, zk::NfAbsOrd{AnticNumberField, nf_elem}) -> Array{NfOrdIdl, 1}
+> The inverse of the ideal totient funcction: all ideals $A$ s.th the unit group of the 
+> residue ring has the required size. 
+"""
+eulerphi_inv(n::fmpz, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = eulerphi_inv_fac_elem(n, zk)]
+eulerphi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = eulerphi_inv_fac_elem(fmpz(n), zk)]
 
 end
 
