@@ -1,5 +1,78 @@
 # Everything related to transformation on sparse matrices
 
+export sparse_trafo_scale, sparse_trafo_swap, sparse_trafo_add_scaled,
+       sparse_trafo_para_add_scaled, sparse_trafo_partial_dense,
+       sparse_trafo_delete_zero
+
+################################################################################
+#
+#  Constructors
+#
+################################################################################
+
+function sparse_trafo_scale(i::Int, c::T) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 1
+  z.i = i
+  z.a = c
+  return z
+end
+
+function sparse_trafo_swap(::Type{T}, i::Int, j::Int) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 2
+  z.i = i
+  z.j = j
+  return z
+end
+
+function sparse_trafo_add_scaled(i::Int, j::Int, s::T) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 3
+  z.i = i
+  z.j = j
+  z.a = s
+  return z
+end
+
+function sparse_trafo_para_add_scaled(i::Int, j::Int, a::T, b::T, c::T, d::T) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 4
+  z.i = i
+  z.j = j
+  z.a = a
+  z.b = b
+  z.c = c
+  z.d = d
+  return z
+end
+
+function sparse_trafo_partial_dense(i::Int, rows::UnitRange{Int}, cols::UnitRange{Int}, U::S) where {S}
+  z = SparseTrafoElem{coefficient_type(S), S}()
+  z.type = 5
+  z.i = i
+  z.rows = rows
+  z.cols = cols
+  z.U = U
+  return z
+end
+
+# this is shorthand for the permutation matrix corresponding to
+# (i i+1)(i+1 i+2)...(rows-1 rows)
+function sparse_trafo_id(::Type{T}) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 7
+  return z
+end
+
+function sparse_trafo_delete_zero(::Type{T}, i::Int) where {T}
+  z = SparseTrafoElem{T, dense_matrix_type(T)}()
+  z.type = 6
+  z.i = i
+  return z
+end
+
+
 ################################################################################
 #
 #  Row scaling
@@ -65,7 +138,7 @@ function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
   @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
 
   if i == j
-    return nothing
+    return A
   end
 
   for r in A.rows
@@ -99,7 +172,7 @@ function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
       end
     end
   end
-  return nothing
+  return A
 end
 
 ################################################################################
@@ -154,7 +227,7 @@ function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
       end
     end
   end
-  return nothing
+  return A
 end
 
 ################################################################################
@@ -270,6 +343,30 @@ end
 
 ################################################################################
 #
+#  String I/O
+#
+################################################################################
+
+function Base.show(io::IO, t::SparseTrafoElem)
+  print(io, "Sparse transformation: ")
+  i = t.type
+  if i == 1
+    print(io, "Scale ", t.i, " by ", t.a)
+  elseif i == 2
+    print(io, "Swap ", t.i, " and ", t.j)
+  elseif i == 3
+    print(io, "Scale ", t.i, " by ", t.a, " and add to ", t.j)
+  elseif i == 4
+    print(io, "Transform", t.i, ", ", t.j, " by [", t.a, " ", t.b, " ", t.c, " ", t.d, "]")
+  elseif i == 5
+    print(io, "Dense ", rows(t.U), "x", rows(t.U), " at ", t.i)
+  elseif i == 6
+    print(io, "Move ", t.i, " to end")
+  end
+end
+
+################################################################################
+#
 #  Application of a transformation on the left side of a sparse matrix
 #
 ################################################################################
@@ -308,8 +405,10 @@ function apply_left!(A::SMat{T}, t::SparseTrafoElem{T, S}) where {T, S}
   elseif i == 6
     deleteat!(A.rows, t.i)
     push!(A.rows, sparse_row(base_ring(A)))
+  else
+    error("Wrong type")
   end
-  return nothing
+  return A
 end
 
 ################################################################################
@@ -318,7 +417,7 @@ end
 #
 ################################################################################
 
-function apply_right!(x::Vector{T}, t::SparseTrafoElem{T}) where {T}
+function apply_right!(x::Vector{T}, t::SparseTrafoElem{T, S}) where {T, S}
   i = t.type
   if i == 1
     x[t.i] = x[t.i] * t.a
@@ -347,6 +446,7 @@ function apply_right!(x::Vector{T}, t::SparseTrafoElem{T}) where {T}
       x[j - 1] = r
     end
   end
+  return x
 end
 
 ################################################################################
@@ -355,23 +455,23 @@ end
 #
 ################################################################################
 
-function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoSwap)
-  x[y.i], x[y.j] = x[y.j], x[y.i]
-end
-
-function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoAddScaled)
-  x[y.j] = x[y.j] * x[y.i]^Int(y.s)
-end
-
-function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoPartialDense)
-  z = view(deepcopy(x), y.cols)
-  xx = view(x, y.cols)
-  for i in 1:rows(y.U)  ## use power product instead
-    xx[i] = z[1]^Int(y.U[i, 1])
-    for j in 2:cols(y.U)
-      xx[i] *= z[j]^Int(y.U[i, j])
-    end
-  end
-end
+#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoSwap)
+#  x[y.i], x[y.j] = x[y.j], x[y.i]
+#end
+#
+#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoAddScaled)
+#  x[y.j] = x[y.j] * x[y.i]^Int(y.s)
+#end
+#
+#function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoPartialDense)
+#  z = view(deepcopy(x), y.cols)
+#  xx = view(x, y.cols)
+#  for i in 1:rows(y.U)  ## use power product instead
+#    xx[i] = z[1]^Int(y.U[i, 1])
+#    for j in 2:cols(y.U)
+#      xx[i] *= z[j]^Int(y.U[i, j])
+#    end
+#  end
+#end
 
 
