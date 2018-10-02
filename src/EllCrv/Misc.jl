@@ -40,67 +40,25 @@
 ################################################################################
 
 @doc Markdown.doc"""
-***
-    divisors(n::fmpz) -> Array{fmpz, 1}
+    divisors(n::fmpz) -> Iterator
 
 > Computes the divisors of a given number $n$. It is assumed that $n$ is not
 > zero.
 """
 function divisors(n)
   n == 0 && error("The number must be nonzero")
-  # special cases
-  if (n == 1) || (n == -1)
-    return fmpz[1,-1]
-  end
-  if (n == 0)
-    return fmpz[]
-  end
-  
-  if n < 0
-    n = -n
-  end
-
-  d = isqrtrem(n) # d = (s,r) where s is sqrt(n) rounded down and r = n - s^2
-  divi = Nemo.fmpz[]
-
-  i = d[1]+1
-  while i <= n
-    if mod(n,i) == 0
-      # add i and n/i to list of divisors (and their negative)
-      push!(divi,i)
-      push!(divi,-i)
-      push!(divi, div(n,i))
-      push!(divi, -div(n,i))
-    end
-    i = i + 1
-  end
-  
-  # case where n is a square. then d[1] = sqrt(n) is a divisor
-  if d[2] == 0 
-    push!(divi,d[1])
-    push!(divi,-d[1])
-  end
-  return divi
+  return Divisors(n, units = true)
 end
 
 @doc Markdown.doc"""
-***
-    squaredivisors(n::fmpz) -> Array{fmpz, 1}
+    squaredivisors(n::fmpz) -> Iterator
 
 > Computes the numbers whose square divides a given number $n$. It is assumed
 > that $n$ is not zero.
 """
 function squaredivisors(n)
   n == 0 && error("The number must be nonzero")  
-  divi = Nemo.fmpz[]
-  divis = divisors(n)
-  for i in 1:length(divis)
-    if mod(n, divis[i]^2) == 0
-      push!(divi, divis[i])
-    end
-  end
-        
-  return divi
+  return Divisors(n, units = true, power = 2)
 end
 
 ################################################################################
