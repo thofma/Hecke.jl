@@ -1,5 +1,5 @@
-add_verbose_scope(:QuadraticExt)
-add_assert_scope(:QuadraticExt)
+add_verbose_scope(:AbExt)
+add_assert_scope(:AbExt)
 
 ##############################################################################
 #
@@ -807,7 +807,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
     
   #Getting conductors
   l_conductors=conductorsQQ(O, gtype, absolute_discriminant_bound, tame)
-  @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   if with_autos==Val{true}
     fields = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor,1}}[]
   else
@@ -816,8 +816,8 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
-    @vprint :QuadraticExt 1 "Conductor: $k \n"
-    @vprint :QuadraticExt 1 "Left: $(length(l_conductors) - i)\n"
+    @vprint :AbExt 1 "Conductor: $k \n"
+    @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
     r,mr=Hecke.ray_class_groupQQ(O,k,!real,expo)
     if !Hecke._are_there_subs(r,gtype)
       continue
@@ -826,7 +826,7 @@ function abelian_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discriminant
     for s in ls
       C=ray_class_field(mr, s)
       if Hecke._is_conductor_minQQ(C,n) && Hecke.discriminant_conductorQQ(O,C,k,absolute_discriminant_bound,n)
-        @vprint :QuadraticExt 1 "New Field \n"
+        @vprint :AbExt 1 "New Field \n"
         L=number_field(C)
         if with_autos==Val{true}
           push!(fields,(L, automorphism_groupQQ(C)))
@@ -890,13 +890,13 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
 
   #Getting conductors
   l_conductors=conductors(O, gtype, bound, tame)
-  @vprint :QuadraticExt 1 "Number of conductors: $(length(l_conductors)) \n"
+  @vprint :AbExt 1 "Number of conductors: $(length(l_conductors)) \n"
   
 
   #Now, the big loop
   for (i, k) in enumerate(l_conductors)
-    @vprint :QuadraticExt 1 "Conductor: $k \n"
-    @vprint :QuadraticExt 1 "Left: $(length(l_conductors) - i)\n"
+    @vprint :AbExt 1 "Conductor: $k \n"
+    @vprint :AbExt 1 "Left: $(length(l_conductors) - i)\n"
     r,mr=ray_class_group_quo(O,expo,k[1], k[2],inf_plc)
     if !_are_there_subs(r,gtype)
       continue
@@ -909,23 +909,23 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     a=_min_wild(k[2])*k[1]
     totally_positive_generators(mr)
     for s in ls
-      @hassert :QuadraticExt 1 order(codomain(s))==n
+      @hassert :AbExt 1 order(codomain(s))==n
       C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
-        @vprint :QuadraticExt 1 "New Field \n"
+        @vprint :AbExt 1 "New Field \n"
         L = number_field(C)
         if absolute_galois_group != :all
           autabs = absolute_automorphism_group(C, gens)
           G = generic_group(autabs, *)
           if absolute_galois_group == :_16T7
             if isisomorphic_to_16T7(G)
-              @vprint :QuadraticExt 1 "I found a field with Galois group 16T7 (C_2 x Q_8)\n"
-              @vtime :QuadraticExt 1 push!(fields, L)
+              @vprint :AbExt 1 "I found a field with Galois group 16T7 (C_2 x Q_8)\n"
+              @vtime :AbExt 1 push!(fields, L)
             end
           elseif absolute_galois_group == :_8T5
             if isisomorphic_to_8T5(G)
-              @vprint :QuadraticExt 1 "I found a field with Galois group 8T5 (Q_8)\n"
-              @vtime :QuadraticExt 1 push!(fields, L)
+              @vprint :AbExt 1 "I found a field with Galois group 8T5 (Q_8)\n"
+              @vtime :AbExt 1 push!(fields, L)
             end
           else
             error("Group not supported (yet)")
@@ -981,13 +981,17 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
 
 end
 
-function _quad_ext(bound::Int)
+function _quad_ext(bound::Int, real::Bool = false)
   
   Qx, x = PolynomialRing(FlintQQ, "x")
   K = NumberField(x-1)[1]
   Kt, t = PolynomialRing(K, "t")
-  sqf=squarefree_up_to(bound)
-  sqf= vcat(sqf[2:end], Int[-i for i in sqf])
+  sqf = squarefree_up_to(bound)
+  if !real
+    sqf = vcat(sqf[2:end], Int[-i for i in sqf])
+  else
+    sqf = sqf[2:end]
+  end
   final_list = Int[]
   for i=1:length(sqf)
     if abs(sqf[i]*4)< bound
@@ -1035,21 +1039,33 @@ function C22_extensions(bound::Int)
   
 end
 
-function _C22_exts_abexts(bound::Int)
+function _C22_exts_abexts(bound::Int, real::Bool = false)
   Qx,x=PolynomialRing(FlintZZ, "x")
   K,_=NumberField(x-1)
   Kx,x=PolynomialRing(K,"x", cached=false)
   pairs=_find_pairs(bound)
-  b1=ceil(Int,Base.sqrt(bound))
+  b1=ceil(Int, Base.sqrt(bound))
   n=2*b1+1
   poszero=b1+1
-  return (_ext_with_autos(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+  if real
+    for i = 1:poszero
+      for j = 1:size(pairs, 2)
+        pairs[i, j] = false
+      end
+    end
+    for j = 1:poszero
+      for i = 1:size(pairs, 2)
+        pairs[i, j] = false
+      end
+    end
+  end
+  return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
 
 end
 
 function _ext_with_autos(Ox,x,i,j)
  
-  y1=mod(i,4)
+  y1 = mod(i,4)
   pol1=Ox(1)
   if y1!=1
     pol1=x^2-i
@@ -1373,7 +1389,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   #We start from the maximal orders of the relative extension and of the base field.
   #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
   # generating the equation order.
-  @vprint :QuadraticExt 2 "Computing the maximal order\n"
+  @vprint :AbExt 2 "Computing the maximal order\n"
   O=maximal_order(L[1].base_ring)
   OL=EquationOrder(L[1])
   B=pseudo_basis(OL)
@@ -1402,7 +1418,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   O1 = MaximalOrder(_order(K, cbasis))
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
-  @vprint :QuadraticExt 2 "Done. Now simplify and translate information\n"
+  @vprint :AbExt 2 "Done. Now simplify and translate information\n"
   Ks, mKs = simplify(K)#, canonical = true)
   
   #Now, we have to construct the maximal order of this field.
@@ -1439,7 +1455,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
   end
   _set_automorphisms_nf(Ks, closure(autos, *))
   
-  @vprint :QuadraticExt 2 "Finished\n"
+  @vprint :AbExt 2 "Finished\n"
   return Ks, autos
 
 end 

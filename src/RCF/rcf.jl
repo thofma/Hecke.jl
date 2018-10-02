@@ -4,15 +4,9 @@ add_verbose_scope(:ClassField)
 add_assert_scope(:ClassField)
 #set_assert_level(:ClassField, 1)
 
-
-function kummer_extension(n::Int, gen::Array{nf_elem, 1})
-  g = [FacElem(x) for x=gen]
-  return kummer_extension(n, g)
-end
-
 ###############################################################################
 #
-#  Ray Class Field, number_field interface and reduction to prime power case
+#  Ray Class Field interface
 #
 ###############################################################################
 
@@ -44,6 +38,38 @@ function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFin
   #CF.mq = Hecke.make_snf(Hecke._compose(m, inv(quomap)))
   return CF
 end
+
+@doc Markdown.doc"""
+    hilbert_class_field(k::AnticNumberField) -> ClassField
+> The Hilbert class field of $k$ as a formal (ray-) class field.
+"""
+function hilbert_class_field(k::AnticNumberField)
+  return ray_class_field(class_group(k)[2])
+end
+
+@doc Markdown.doc"""
+    ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
+> The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
+> subfield of exponent $n$ is computed.
+"""
+function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
+  return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
+end
+
+@doc Markdown.doc"""
+    ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0) -> ClassField
+> The ray class field modulo $I$ and the infinite places given. If {{{n_quo}}} is given, then the largest
+> subfield of exponent $n$ is computed.
+"""
+function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0)
+  return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
+end
+
+###############################################################################
+#
+#  Number_field interface and reduction to prime power case
+#
+###############################################################################
 
 @doc Markdown.doc"""
     NumberField(CF::ClassField) -> Hecke.NfRel_ns{Nemo.nf_elem}
@@ -91,94 +117,6 @@ function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
   @vtime :ClassField 1 _rcf_descent(CFpp)
   return CFpp
 end
-
-###############################################################################
-#
-#  Computation of Frobenius automorphisms
-#
-###############################################################################
-
-# the Frobenius at p in K:
-#K is an extension of k, p a prime in k,
-#returns a vector in (Z/nZ)^r representing the Frob
-function can_frobenius(p::NfOrdIdl, K::KummerExt)
-  @assert norm(p) % K.n == 1
-  if haskey(K.frob_cache, p)
-    return K.frob_cache[p]
-  end
-  Zk = order(p)
-  if index(Zk) % minimum(p) == 0 
-    #index divisors and residue class fields don't agree
-    # ex: x^2-10, rcf of 29*Zk, 7. 239 is tricky...
-    throw(BadPrime(p))
-  end
-
-  if nbits(minimum(p)) > 64
-    error("Oops")
-  end
-
-  F, mF = ResidueFieldSmall(Zk, p)
-  mF = extend_easy(mF, number_field(Zk))
-
-  # K = sqrt[n](gen), an automorphism will be
-  # K[i] -> zeta^? K[i]
-  # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
-  # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-
-  z_p = inv(mF(Zk(K.zeta)))
-
-  ex = div(norm(p)-1, K.n)
-  aut = Array{fmpz,1}(undef, length(K.gen))
-  for j=1:length(K.gen)
-    mu = mF(K.gen[j])^ex  # can throw bad prime!
-    i = 0
-    while !isone(mu)
-      i += 1
-      @assert i <= K.n
-      mul!(mu, mu, z_p)
-    end
-    aut[j]= fmpz(i)
-  end
-  z = K.AutG(aut)
-  K.frob_cache[p] = z
-  return z
-end
-
-function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
-  Zk = order(p)
-  if index(Zk) % minimum(p) == 0 
-    #index divisors and residue class fields don't agree
-    # ex: x^2-10, rcf of 29*Zk, 7. 239 is tricky...
-    throw(BadPrime(p))
-  end
-
-  if nbits(minimum(p)) > 64
-    error("Oops")
-  end
-
-  F, mF = ResidueFieldSmall(Zk, p)
-  mF = extend_easy(mF, number_field(Zk))
-
-  #K = sqrt[n](gen), an automorphism will be
-  # K[i] -> zeta^? K[i]
-  # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
-  # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
-
-  z_p = inv(mF(Zk(K.zeta)))
-  @assert norm(p) % K.n == 1
-  ex = div(norm(p)-1, K.n)
-  aut = fmpz[]
-
-  mu = mF(g)^ex  # can throw bad prime!
-  i = 0
-  while !isone(mu)
-    i += 1
-    @assert i <= K.n
-    mul!(mu, mu, z_p)
-  end
-  return i
-end
-
 
 ###############################################################################
 #
@@ -238,7 +176,6 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   return lp, sR
   
 end
-
 
 
 ###############################################################################
@@ -440,14 +377,11 @@ function _rcf_find_kummer(CF::ClassField_pp)
   return nothing
 end
 
-
-
 ###############################################################################
 #
 #  Descent to K
 #
 ###############################################################################
-
 
 function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem},1}, AutA::GrpAbFinGen, oA::fmpz, C::CyclotomicExt)
   pe = gen(A)# + 0*gen(C.Ka)
@@ -1593,80 +1527,12 @@ function _expand(M::SMat{nf_elem}, mp::Map)
   return N
 end
 
-###############################################################################
-#
-#  Modulus function
-#
-###############################################################################
-
-@doc Markdown.doc"""
-    defining_modulus(CF::ClassField)
-> The modulus, ie. an ideal the the set of real places, used to create the
-> class field.
-"""
-function defining_modulus(CF::ClassField)
-  return _modulus(CF.rayclassgroupmap)
-end 
-
-function defining_modulus(CF::ClassField_pp)
-  return _modulus(CF.rayclassgroupmap)
-end 
-
-function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus
-end
-
-function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc[])
-end
 
 ###############################################################################
 #
 #  Auxiliary functions (to be moved)
 #
 ###############################################################################
-
-@doc Markdown.doc"""
-  base_ring(A::ClassField)
-> The maximal order of the field that $A$ is defined over.
-"""
-function base_ring(A::ClassField)
-  return order(defining_modulus(A)[1])
-end
-
-@doc Markdown.doc"""
-  base_field(A::ClassField)
-> The number field that $A$ is defined over.
-"""
-function base_field(A::ClassField)
-  return number_field(base_ring(A))
-end
-
-function base_ring(A::ClassField_pp)
-  return order(defining_modulus(A)[1])
-end
-
-function base_field(A::ClassField_pp)
-  return number_field(base_ring(A))
-end
-
-@doc Markdown.doc"""
-  degree(A::ClassField)
-> The degree of $A$ over its base field, ie. the size of the defining ideal group.
-"""
-function degree(A::ClassField)
-  if A.degree==-1
-    A.degree=Int(order(codomain(A.quotientmap)))
-  end
-  return A.degree
-end
-
-function degree(A::ClassField_pp)
-  if A.degree==-1
-    A.degree=Int(order(codomain(A.quotientmap)))
-  end
-  return A.degree
-end
 
 @doc Markdown.doc"""
    factor_coprime(a::FacElem{nf_elem, AnticNumberField}, I::NfOrdIdlSet) -> Dict{NfOrdIdl, fmpz}
@@ -1773,135 +1639,6 @@ function islocal_norm(r::ClassField, a::NfAbsOrdElem)
   return all(x -> islocal_norm(r, a, x), keys(fl))
 end
 
-function norm_group_map(R::ClassField, r::Array{ClassField, 1}, map = false)
-  @assert map != false || all(x -> base_ring(R) == base_ring(x), r)
-#  @assert map == false && all(x -> base_ring(R) == base_ring(x), r)
-
-  mR = defining_modulus(R)[1]
-  @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
-
-  fR = _compose(R.rayclassgroupmap, inv(R.quotientmap))
-  lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
-                             PrimesSet(100, -1), minimum(mR))
-  if map == false                           
-    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), p) for p = lp]) for x = r]
-  else
-    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), map(p)) for p = lp]) for x = r]
-  end
-  return h
-end
-
-function norm_group_map(R::ClassField, r::ClassField, map = false)
-  return norm_group_map(R, [r], map)[1]
-end
-
-@doc Markdown.doc"""
-    compositum(a::ClassField, b::ClassField) -> ClassField
-             *(a::ClassField, b::ClassField) -> ClassField
-> The compositum of $a$ and $b$ as a (formal) class field.
-"""
-function compositum(a::ClassField, b::ClassField)
-  @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
-  d = lcm(degree(a), degree(b))
-  c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
-  C = ray_class_field(mr)
-  @assert domain(C.rayclassgroupmap) == r
-  h = norm_group_map(C, [a,b])
-  U = intersect(kernel(h[1])[1], kernel(h[2])[1])
-  q, mq = quo(codomain(C.quotientmap), U)
-  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
-end
-
-@doc Markdown.doc"""
-  *(A::ClassField, B::ClassField) -> ClassField
-> The compositum of $a$ and $b$ as a (formal) class field.
-"""
-*(a::ClassField, b::ClassField) = compositum(a, b)
-
-@doc Markdown.doc"""
-    intersect(a::ClassField, b::ClassField) -> ClassField
-> The intersection of $a$ and $b$ as a class field.
-"""
-function Base.intersect(a::ClassField, b::ClassField)
-  @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
-  c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-  d = lcm(degree(a), degree(b))
-
-  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
-  C = ray_class_field(mr)
-  h = norm_group_map(C, [a,b])
-  U = kernel(h[1])[1] + kernel(h[2])[1]
-  q, mq = quo(codomain(C.quotientmap), U)
-  return ray_class_field(mr, GrpAbFinGenMap(C.quotientmap * mq))
-end
-
-@doc Markdown.doc"""
-    issubfield(a::ClassField, b::ClassField) -> Bool
-> Determines of $a$ is a subfield of $b$.
-"""
-function issubfield(a::ClassField, b::ClassField)
-  @assert base_ring(a) == base_ring(b)
-  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
-  c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-  d = lcm(degree(a), degree(b))
-
-  r, mr = ray_class_group(c, c_inf, n_quo = Int(d))
-  C = ray_class_field(mr)
-  h = norm_group_map(C, [a,b])
-  return issubset(kernel(h[2])[1], kernel(h[1])[1])
-end
-
-@doc Markdown.doc"""
-    ==(a::ClassField, b::ClassField)
-> Tests if $a$ and $b$ are equal.
-"""
-function ==(a::ClassField, b::ClassField)
-  @assert base_ring(a) == base_ring(b)
-  mq1 = a.quotientmap
-  mq2 = b.quotientmap
-  if !isisomorphic(codomain(mq1), codomain(mq2))
-    return false
-  end
-  expo = Int(exponent(codomain(mq1)))
-  c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
-  c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-
-  r, mr = ray_class_group(c, c_inf, n_quo = expo)
-  C = ray_class_field(mr)
-  @assert defining_modulus(C) == (c, c_inf)
-  h = norm_group_map(C, [a,b])
-  return iseq(kernel(h[2])[1], kernel(h[1])[1])
-end
-
-@doc Markdown.doc"""
-    hilbert_class_field(k::AnticNumberField) -> ClassField
-> The Hilbert class field of $k$ as a formal (ray-) class field.
-"""
-function hilbert_class_field(k::AnticNumberField)
-  return ray_class_field(class_group(k)[2])
-end
-
-@doc Markdown.doc"""
-    ray_class_field(I::NfAbsOrdIdl; n_quo = 0) -> ClassField
-> The ray class field modulo $I$. If {{{n_quo}}} is given, then the largest
-> subfield of exponent $n$ is computed.
-"""
-function ray_class_field(I::NfAbsOrdIdl; n_quo = 0)
-  return ray_class_field(ray_class_group(I, n_quo = n_quo)[2])
-end
-
-@doc Markdown.doc"""
-    ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0) -> ClassField
-> The ray class field modulo $I$ and the infinite places given. If {{{n_quo}}} is given, then the largest
-> subfield of exponent $n$ is computed.
-"""
-function ray_class_field(I::NfAbsOrdIdl, inf::Array{InfPlc, 1}; n_quo = 0)
-  return ray_class_field(ray_class_group(I, inf, n_quo = n_quo)[2])
-end
-
 @doc Markdown.doc"""
     prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl) -> (Int, Int, Int)
 > For a prime $p$ in the base ring of $r$, determine the splitting type of $p$ 
@@ -1929,16 +1666,6 @@ function prime_decomposition_type(C::ClassField, p::NfAbsOrdIdl)
   f = order(mq(preimage(mr, p)))
   e = divexact(degree(C), order(q))
   return (e, f, divexact(order(q), f))
-end
-
-@doc Markdown.doc"""
-    iscyclic(C::ClassField)
-> Tests if the (relative) automorphism group of $C$ is cyclic (by checking
-> the defining ideal group).
-"""
-function iscyclic(C::ClassField)
-  mp = C.quotientmap
-  return iscyclic(codomain(mp))
 end
 
 @doc Markdown.doc"""

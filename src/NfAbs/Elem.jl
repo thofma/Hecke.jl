@@ -459,6 +459,14 @@ function factor(f::PolyElem{nf_elem})
   if degree(g) > 0
     f = div(f, g)
   end
+  
+  if degree(f) == 1
+    multip = div(degree(f_orig), degree(f))
+    r = Fac{typeof(f)}()
+    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
+    r.unit = one(Kx) * lead(f_orig)
+    return r
+  end
 
   f = f*(1//lead(f))
 
