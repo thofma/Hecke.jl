@@ -64,7 +64,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
   #Getting conductors
   bound = div(absolute_bound, D^3)
   l_conductors=Hecke.conductors(O,[3], bound)
-  @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  @vprint :AbExt "Number of conductors: $(length(l_conductors)) \n"
 
   res = []
   
@@ -83,7 +83,7 @@ function Dic3_extensions(absolute_bound::fmpz, K::AnticNumberField)
       end
       C=ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
-        @vprint :QuadraticExt 1 "New Field"
+        @vprint :AbExt 1 "New Field"
         L=number_field(C)
         SS=Hecke.simple_extension(L)[1]
         F=absolute_field(SS)[1]
@@ -172,8 +172,8 @@ function D5_extensions(absolute_bound::fmpz, quad_fields)
   for K in quad_fields
     len-=1
     
-     @vprint :QuadraticExt 1 "\nDoing: $(K.pol)\n"   
-     @vprint :QuadraticExt 1 "Remaining Fields: $(len)\n"
+     @vprint :AbExt 1 "\nDoing: $(K.pol)\n"   
+     @vprint :AbExt 1 "Remaining Fields: $(len)\n"
     append!(z, single_D5_extensions(absolute_bound, K))
   end
   return z
@@ -185,8 +185,8 @@ function D5_extensions(absolute_bound::fmpz, quad_fields, f::IOStream)
   for K in quad_fields
     len-=1
     
-    @vprint :QuadraticExt 1 "Field: $K\n"
-    @vprint :QuadraticExt 1 "Remaining Fields: $(len)\n"
+    @vprint :AbExt 1 "Field: $K\n"
+    @vprint :AbExt 1 "Remaining Fields: $(len)\n"
     for g in single_D5_extensions(absolute_bound, K)
       Base.write(f, "($g)\n" )
     end
@@ -219,7 +219,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
   
   #Getting conductors
   l_conductors=conductorsD5(O,absolute_bound)
-  #@vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+  #@vprint :AbExt "Number of conductors: $(length(l_conductors)) \n"
   
   #Now, the big loop
   for k in l_conductors
@@ -235,7 +235,7 @@ function single_D5_extensions(absolute_bound::fmpz, K::AnticNumberField)
       end
       C = ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C)
-        @vprint :QuadraticExt 1 "New Field\n"
+        @vprint :AbExt 1 "New Field\n"
         L=number_field(C)
         auto=Hecke.extend_aut(C, gens[1])
         pol=_quintic_ext(auto)
@@ -388,8 +388,8 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
   for K in list_quad
     len-=1
     
-    @vprint :QuadraticExt 1 "Field: $K\n"
-    @vprint :QuadraticExt 1 "Fields left: $len\n"
+    @vprint :AbExt 1 "Field: $K\n"
+    @vprint :AbExt 1 "Fields left: $len\n"
     O=maximal_order(K)
     D=abs(discriminant(O))
     if D^n>absolute_bound
@@ -416,7 +416,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
     #Getting conductors
     l_conductors=conductorsDn(O,n,bound, tame)
 
-    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+    @vprint :AbExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for k in l_conductors
@@ -436,7 +436,7 @@ function Dn_extensions(n::Int, absolute_bound::fmpz, list_quad ; tame::Bool=fals
         end
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
-          @vprint :QuadraticExt 1 "\n New Field!\n"
+          @vprint :AbExt 1 "\n New Field!\n"
           L=number_field(C)
           ram_primes=Set(collect(keys(factor(a).fac)))
           for p in keys(factor(O.disc).fac)
@@ -485,7 +485,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
   
   for K in list_quad
     
-    @vprint :QuadraticExt 1 "Field: $K\n"
+    @vprint :AbExt 1 "Field: $K\n"
     O=maximal_order(K)
     D=abs(discriminant(O))
 
@@ -509,7 +509,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
     
     #Getting conductors
     l_conductors=Hecke.conductors(O, [15], bound)
-    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+    @vprint :AbExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
@@ -528,7 +528,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
         end
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
-          @vprint :QuadraticExt "New Field \n"
+          @vprint :AbExt "New Field \n"
           #Before computing the field, I check if the discriminant of the $D_5$ extension is compatible
           s1=codomain(s)
           q1,mq1=quo(s1,5, false)
@@ -536,7 +536,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
           cond=conductor(C1)[1]
           condint=minimum(cond)
           if condint^4*D^2>bound5
-            @vprint :QuadraticExt "Too large (without computing it) :( \n"
+            @vprint :AbExt "Too large (without computing it) :( \n"
             continue
           end
           L=number_field(C)
@@ -556,7 +556,7 @@ function C3xD5_extensions(non_normal_bound::fmpz)
           end
           K,_=NumberField(pol, cached= false)
           if _is_discriminant_lower(K, collect(ram_primes), non_normal_bound)
-            @vprint :QuadraticExt "The field is: $pol \n"
+            @vprint :AbExt "The field is: $pol \n"
             push!(fieldslist, (number_field(pol)[1], collect(ram_primes)))
           end
         end
@@ -605,7 +605,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
 
   for K in list_quad
     
-    @vprint :QuadraticExt 1 "Field: $K\n"
+    @vprint :AbExt 1 "Field: $K\n"
     O=maximal_order(K)
     D=abs(discriminant(O))
     bound = non_normal_bound^2
@@ -628,7 +628,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
     
     #Getting conductors
     l_conductors=Hecke.conductors(O,[15],bound)
-    @vprint :QuadraticExt "Number of conductors: $(length(l_conductors)) \n"
+    @vprint :AbExt "Number of conductors: $(length(l_conductors)) \n"
   
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
@@ -648,7 +648,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
         end
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
-          @vprint :QuadraticExt 1  "\n New Field!\n"
+          @vprint :AbExt 1  "\n New Field!\n"
           #Before computing the field, I check if the discriminant of the $S_3$ extension is compatible
           s1=codomain(s)
           q1,mq1=quo(s1,3, false)
@@ -656,7 +656,7 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
           cond=conductor(C1)[1]
           condint=minimum(cond)
           if condint^2*D>bound3
-            @vprint :QuadraticExt "Too large :( \n"
+            @vprint :AbExt "Too large :( \n"
             continue
           end
           L=number_field(C)
@@ -677,10 +677,10 @@ function S3xC5_extensions(non_normal_bound::fmpz, list_quad)
           K=number_field(pol, cached=false)[1]
           if _is_discriminant_lower(K, collect(ram_primes), non_normal_bound)
             push!(fieldslist, (K, collect(ram_primes)))
-            @vprint :QuadraticExt "New candidate! \n"
-            @vprint :QuadraticExt "$(pol) \n"
+            @vprint :AbExt "New candidate! \n"
+            @vprint :AbExt "$(pol) \n"
           else
-            @vprint :QuadraticExt "Too large :( \n"
+            @vprint :AbExt "Too large :( \n"
           end
         end
       end
@@ -751,10 +751,10 @@ function C9semiC4(absolute_bound::fmpz, l)
   
     #Getting conductors
     l_conductors=Hecke.conductors(O,[9],bound, false)
-    @vprint :QuadraticExt 1 "Conductors: $(length(l_conductors))\n"
+    @vprint :AbExt 1 "Conductors: $(length(l_conductors))\n"
     #Now, the big loop
     for (i, k) in enumerate(l_conductors)
-      @vprint :QuadraticExt 1 "Doing $i\n"
+      @vprint :AbExt 1 "Doing $i\n"
       r,mr=Hecke.ray_class_group_quo(O,9,k[1], k[2])
       if !Hecke._are_there_subs(r,[9])
         continue
@@ -762,9 +762,9 @@ function C9semiC4(absolute_bound::fmpz, l)
       if cgrp
         mr.prime_ideal_cache = S
       end
-      @vprint :QuadraticExt 1 "Computing the action\n"
+      @vprint :AbExt 1 "Computing the action\n"
       act=Hecke.induce_action(mr,gens)
-      @vprint :QuadraticExt 1 "Computing subgroups\n"
+      @vprint :AbExt 1 "Computing subgroups\n"
       ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = [9])
       for s in ls
         if _trivial_action(s,act,9)
@@ -773,7 +773,7 @@ function C9semiC4(absolute_bound::fmpz, l)
         C=ray_class_field(mr, s)
         if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound) && evaluate(FacElem(C.absolute_discriminant)) <= absolute_bound
           absolute_bound=evaluate(FacElem(C.absolute_discriminant))
-          @vprint :QuadraticExt 1 "New Field with discriminant $absolute_bound"
+          @vprint :AbExt 1 "New Field with discriminant $absolute_bound"
           field=C
         end
       end
@@ -797,7 +797,7 @@ end
 function _discriminant_bound(autos, ram_primes::Array{fmpz,1}, bound::fmpz)
 
   K=_to_non_normal(autos)
-  @vprint :QuadraticExt 1 "Doing $(K)"
+  @vprint :AbExt 1 "Doing $(K)"
   #now, compute the discriminant of K. Since we know the ramified primes, 
   #we know the primes dividing the discriminant and this is easier than computing the maximal order.
   return _is_discriminant_lower(K,ram_primes,bound)

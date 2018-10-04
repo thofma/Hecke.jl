@@ -291,7 +291,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
        p = next_prime(p)
        R = GF(Int(p), cached = false)
        Rt, t = PolynomialRing(R)
-       np = divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d))
+       np = R(divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d)))
        if isone(pp)
          no = lift(np)
          pp = fmpz(p)
@@ -458,6 +458,14 @@ function factor(f::PolyElem{nf_elem})
   @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
   if degree(g) > 0
     f = div(f, g)
+  end
+  
+  if degree(f) == 1
+    multip = div(degree(f_orig), degree(f))
+    r = Fac{typeof(f)}()
+    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
+    r.unit = one(Kx) * lead(f_orig)
+    return r
   end
 
   f = f*(1//lead(f))

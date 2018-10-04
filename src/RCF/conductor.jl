@@ -490,7 +490,7 @@ function discriminant(C::ClassField)
           alpha, beta = idempotents(prime_power[p],i_without_p)
         end
         s=v
-        @hassert :QuadraticExt 1 s>=2
+        @hassert :AbExt 1 s>=2
         els=GrpAbFinGenElem[]
         for k=2:v      
           s=s-1
@@ -501,13 +501,13 @@ function discriminant(C::ClassField)
             push!(els,mp\ideal(O,gens[i]))
           end
           ap-=order(quo(R,els)[1])
-          @hassert :QuadraticExt 1 ap>0
+          @hassert :AbExt 1 ap>0
         end
         if haskey(tmg, p)
           push!(els, mp\ideal(O,tmg[p].generators[1]))
         end
         ap-=order(quo(R,els)[1])
-        @hassert :QuadraticExt 1 ap>0
+        @hassert :AbExt 1 ap>0
       end
       td=prime_decomposition_type(O,Int(p.minimum))
       np=fmpz(p.minimum)^(td[1][1]*length(td)*ap)
@@ -703,7 +703,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
     qw=divexact(d,prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
     discr*=fmpz(p.minimum)^qw
     if discr > bound
-      @vprint :QuadraticExt 2 "too large\n"
+      @vprint :AbExt 2 "too large\n"
       return false
     #else
     #  if haskey(abs_disc, p.minimum)
@@ -745,7 +745,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
           alpha, beta = idempotents(prime_power[p], i_without_p)
         end
         s = lp[p]
-        @hassert :QuadraticExt 1 s>=2
+        @hassert :AbExt 1 s>=2
         els=GrpAbFinGenElem[]
         for k=2:lp[p]      
           s = s-1
@@ -767,18 +767,18 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
           if tentative_discr > bound
             return false
           end
-          @hassert :QuadraticExt 1 ap>0
+          @hassert :AbExt 1 ap>0
         end
         if haskey(tmg, p)
           push!(els, mp\ideal(O,tmg[p].generators[1]))
         end
         ap -= order(quo(R,els)[1])
-        @hassert :QuadraticExt 1 ap>0
+        @hassert :AbExt 1 ap>0
       end
       np1 = np^ap
       discr *= np1
       if discr > bound
-        @vprint :QuadraticExt 2 "too large\n"
+        @vprint :AbExt 2 "too large\n"
         return false
       #else
       # if haskey(abs_disc, p.minimum)
@@ -831,7 +831,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
       end
       discr*=p^ap
       if discr>bound
-        @vprint :QuadraticExt 2 "too large\n"
+        @vprint :AbExt 2 "too large\n"
         return false
       else
         abs_disc[p]=ap
@@ -855,7 +855,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
             for k=0:v-2      
               el=mp\ideal(O,Int((b*s*R(s1)^(p^k)+a*pow).data))
               ap-=order(quo(G,[el])[1])
-              @hassert :QuadraticExt 1 ap>0
+              @hassert :AbExt 1 ap>0
             end
           end
           if gcd(n,p-1)==1
@@ -879,7 +879,7 @@ function discriminant_conductorQQ(O::NfOrd, C::ClassField, m::Int, bound::fmpz, 
       end
       discr*=p^ap
       if discr>bound
-        @vprint :QuadraticExt 2 "too large\n"
+        @vprint :AbExt 2 "too large\n"
         return false
       else
         abs_disc[p]=ap
@@ -1135,6 +1135,28 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
     end
   end
   return sub(R, subgrp, true)
+end
+
+function norm_group_map(R::ClassField, r::Array{ClassField, 1}, map = false)
+  @assert map != false || all(x -> base_ring(R) == base_ring(x), r)
+#  @assert map == false && all(x -> base_ring(R) == base_ring(x), r)
+
+  mR = defining_modulus(R)[1]
+  @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
+
+  fR = _compose(R.rayclassgroupmap, inv(R.quotientmap))
+  lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
+                             PrimesSet(100, -1), minimum(mR))
+  if map == false                           
+    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), p) for p = lp]) for x = r]
+  else
+    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), map(p)) for p = lp]) for x = r]
+  end
+  return h
+end
+
+function norm_group_map(R::ClassField, r::ClassField, map = false)
+  return norm_group_map(R, [r], map)[1]
 end
 
 @doc Markdown.doc"""
