@@ -50,7 +50,7 @@ function FacElem(x::nf_elem)
 end
 
 function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) where T
-  @vprint :UnitGroup 1 "Checking if factored element is torsion\n"
+  @vprint :UnitGroup 2 "Checking if factored element is torsion\n"
 
   if checkisunit
     _isunit(x) ? nothing : return false
