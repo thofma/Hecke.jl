@@ -175,7 +175,7 @@
     @testset "Direct product" begin
       G = DiagonalGroup([5, 3])
       H = DiagonalGroup([4])
-      K = @inferred direct_product(G, H)
+      K = direct_product(G, H)[1]
       @test isisomorphic(K, DiagonalGroup([60]))
     end
 

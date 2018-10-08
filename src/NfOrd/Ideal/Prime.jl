@@ -142,20 +142,47 @@ end
 > a prime ideal in the maximal order of $k$, find all prime ideals in
 > the maximal order of $K$ above.
 """
-function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
+function prime_decomposition(f::Map, p::NfOrdIdl)
+  
+
   @assert p.is_prime == 1
+  k = domain(f)
+  K = codomain(f)
+  ZK = maximal_order(K)
+  if !divisible(index(ZK), minimum(p))
+    return prime_decomposition_nonindex(f, p)
+  end
+  # TODO: Implement for nonindex divisors seriously,
+  # splitting the algebra.
+  lp = prime_decomposition(ZK, minimum(p))
+  res = Tuple{NfOrdIdl, Int}()
+  el = ZK(f(p.gen_two))
+  for P in keys(lp)
+    v = valuation(el, P)
+    # p has a two-normal presentation, so to test the ramification 
+    # I only need to test the second element.
+    if v > 0
+      push!(res, (P, v))
+    end
+  end
+  return res
+
+end
+
+function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
+
   k = domain(f)
   K = codomain(f)
   ZK = maximal_order(K)
   G = K.pol
   Qx = parent(G)
 
-  Fp, xp = PolynomialRing(GF(Int(minimum(p)), cached=false), cached=false)
+  Fp, xp = PolynomialRing(GF(Int(minimum(p)), cached = false), cached = false)
   Gp = factor(gcd(Fp(f(K(p.gen_two))), Fp(G)))
   res = Tuple{NfOrdIdl, Int}[]
   Zk = maximal_order(k)
-  for (f, e) = Gp.fac
-    P = ideal_from_poly(ZK, Int(minimum(p)), f, 1)
+  for (ke, e) = Gp.fac
+    P = ideal_from_poly(ZK, Int(minimum(p)), ke, 1)
     push!(res, (P, e))
   end
   return res

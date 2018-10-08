@@ -15,9 +15,9 @@ end
 
 function Base.show(io::IO, K::KummerExt)
   if isdefined(K.AutG, :snf)
-    print(io, "KummerExt with structure $(AutG.snf)")
+    print(io, "KummerExt with structure $(K.AutG.snf)")
   else
-    print(io, "KummerExt with structure $([AutG.rels[i, i] for i=1:ngens(AutG)])")
+    print(io, "KummerExt with structure $([K.AutG.rels[i, i] for i=1:ngens(K.AutG)])")
   end
 end
 
@@ -41,10 +41,11 @@ function kummer_extension(exps::Array{Int, 1}, gens::Array{FacElem{nf_elem, Anti
   k = base_ring(gens[1])
   L = maximal_order(k)
   zeta, o = torsion_units_gen_order(L)
+  n = lcm(exps)
   @assert o % n == 0
 
   K.zeta = k(zeta)^div(o, n)
-  K.n = lcm(exps)
+  K.n = n
   K.gen = gens
   K.AutG = DiagonalGroup(exps)
   K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
@@ -54,6 +55,39 @@ end
 function kummer_extension(n::Int, gen::Array{nf_elem, 1})
   g = [FacElem(x) for x=gen]
   return kummer_extension(n, g)
+end
+
+###############################################################################
+#
+#  Base Field
+#
+###############################################################################
+
+function base_field(K::KummerExt)
+  return base_ring(K.gen[1])
+end
+
+###############################################################################
+#
+#  Degree
+#
+###############################################################################
+
+function degree(K::KummerExt)
+  return Int(order(K.AutG))
+end
+
+###############################################################################
+#
+#  From Kummer Extension to Number Field
+#
+###############################################################################
+
+function number_field(K::KummerExt)
+
+  k = base_field(K)
+  kt, t = PolynomialRing(k, "t")
+  return number_field([t^(Int(order(K.AutG[i])))- evaluate(K.gen[i]) for i=1:length(K.gen)])
 end
 
 ###############################################################################

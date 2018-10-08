@@ -1339,7 +1339,7 @@ function isnormal(C::ClassField)
   K = base_field(C)
   aut = automorphisms(K)
   if length(aut) == degree(K)
-    return isnormal_easy
+    return isnormal_easy(C)
   else 
     return isnormal_difficult(C)
   end

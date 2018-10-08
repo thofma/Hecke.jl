@@ -2022,9 +2022,9 @@ end
 
 function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   
-  @assert order(I)==order(J)
+  @assert order(I) == order(J)
   
-  if gcd(minimum(I), minimum(J))==1
+  if gcd(minimum(I), minimum(J)) == 1
     return true
   else 
     return isone(I+J)

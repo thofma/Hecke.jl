@@ -458,27 +458,6 @@ end
 #
 ###############################################################################
 
-function _norm_modulo(a::nf_elem, n::fmpz)
-  
-  K = parent(a)
-  s, t = ppio(denominator(a), n)
-  if s == 1
-    R = ResidueRing(FlintZZ, n, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
-    return resultant_ideal(Rx(numerator(a)), Rx(K.pol))
-  else
-    m = n*s^degree(K)
-    R = ResidueRing(FlintZZ, m, cached = false)
-    Rx, x = PolynomialRing(R, "x", cached = false)
-    return resultant_ideal(Rx(numerator(a)), Rx(K.pol))
-  end  
-end
-
-
-function is_norm_divisible(a::nf_elem, n::fmpz)
-  return iszero(_norm_modulo(a, n))  
-end
-
 function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p::fmpz)
   
   O = order(Ip1)

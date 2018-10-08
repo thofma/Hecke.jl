@@ -761,8 +761,14 @@ function _relations(M::FqGModule, N::FqGModule)
         push!(matrices, matrices[i]*H[j])
       else
         x=_solve_unique(transpose(v),transpose(B))
-        A= sum([x[q,1]*matrices[q] for q=1:rows(x)])
-        A=A-(matrices[i]*H[j])
+        A = matrices[i]*H[j]
+        for q = 1:rows(x)
+          for s = 1:N.dim
+            for t = 1:N.dim
+              A[s, t] -= x[q, 1]* matrices[q][s,t]
+            end
+          end
+        end
         if first
           for s=1:N.dim
             for t=1:N.dim

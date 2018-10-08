@@ -842,3 +842,156 @@ function final_check_and_ans(x::nmod_mat, MatSnf::nmod_mat, M::ZpnGModule)
   return y 
 
 end
+
+##################################################################################
+#
+#  Stable Subgroups function
+#
+##################################################################################
+
+@doc Markdown.doc"""
+***
+    stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
+    
+> Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 
+> subgroups of R such that the corresponding quotient has the required type.
+"""
+
+function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+
+  if quotype[1] != -1
+    if minimal
+      error("Cannot compute minimal submodules with prescribed quotient type")
+    end
+  end
+  
+  if quotype[1]!= -1
+    c=lcm(quotype)
+  else
+    c= Int(order(R))
+  end
+  Q,mQ=quo(R,c, false)
+  lf=factor(order(Q)).fac
+  list=[]
+  for p in keys(lf)
+    
+    x=valuation(c,p)
+    if x==0
+      continue
+    end
+    G,mG=psylow_subgroup(Q, p, false)
+    S,mS=snf(G)
+    
+    #
+    #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
+    #
+    
+    if x==1
+      
+      F = GF(Int(p), cached=false)
+      act_mat=Array{gfp_mat, 1}(undef, length(act))
+      for w=1:length(act)
+        act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
+      end
+      for w=1:ngens(S)
+        el=mG(mS(S[w]))
+        for z=1:length(act)
+          elz=mS\(haspreimage(mG,act[z](el))[2])
+          for l=1:ngens(S)
+            act_mat[z][w,l]=elz[l]
+          end
+        end
+      end
+      M = ModAlgAss(act_mat)
+      #
+      #  Searching for submodules
+      #
+      if quotype[1]!= -1
+        quotype_p=Int[]
+        for i=1:length(quotype)
+          v=valuation(quotype[i],p)
+          if v>0
+            push!(quotype_p,v)
+          end
+        end
+        if Int(p)*quotype_p == S.snf
+          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+          push!(list, ([plist1]))
+          continue
+        end
+        ind = length(quotype_p)
+        plist = submodules(M, ind)
+      else
+        if minimal
+          plist = minimal_submodules(M)
+        else
+          plist = submodules(M)
+        end
+      end
+      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
+
+    else    
+    
+      RR=ResidueRing(FlintZZ, Int(p^x), cached=false)
+      act_mat=Array{nmod_mat,1}(undef, length(act))
+      auxmat1=hcat(mG.map', rels(Q)')
+      auxmat2=mS.map*mG.map
+      W=MatrixSpace(RR,ngens(S), ngens(S), false)
+      for z=1:length(act)
+        y=transpose(solve(auxmat1, (auxmat2*act[z].map)'))
+        y=sub(y,1:ngens(S), 1:ngens(G))*mS.imap
+        act_mat[z]=W(y)
+      end
+      
+      #
+      #  Searching for submodules
+      #
+      
+      M=Hecke.ZpnGModule(S,act_mat)
+      if quotype[1]!= -1
+        quotype_p=Int[]
+        for i=1:length(quotype)
+          v=valuation(quotype[i],p)
+          if v>0
+            push!(quotype_p,v)
+          end
+        end
+        if Int(p)*quotype_p==S.snf
+          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+          push!(list, ([plist1]))
+          continue
+        end
+        plist = submodules(M, typequo = quotype_p)
+      else
+        if minimal
+          plist = minimal_submodules(M)
+        else
+          plist = submodules(M)
+        end
+      end
+      
+      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
+      
+    end
+  end
+  if isempty(list)
+    return ([])
+  end
+
+  return ( op(R,vcat(c...)) for c in Iterators.product(list...))
+
+end
+
+function _lift_and_construct(A::Zmodn_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c::Int)
+  
+  R=mQ.header.domain
+  newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+  for i=1:rows(A)
+    y=view(A, i:i, 1:cols(A))
+    if !iszero(y)
+      push!(newsub,mQ\(mG(mS(mS.header.domain(lift(y))))))
+    end       
+  end
+  return newsub
+
+end

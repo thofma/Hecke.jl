@@ -26,7 +26,7 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeM
   evals::Array{NfOrdQuoRingElem,1}# Evaluations of the units and class group generators.
   quots::Array  #Quotients of the ring by p^n for p dividing the modulus
   idemps::Array{Tuple{NfOrdElem, NfOrdElem},1} #Idempotents for discrete logarithm
-  coprime_elems::Array{nf_elem,1}
+  coprime_elems::Array{nf_elem, 1}
   
   tame_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #The multiplicative group, tame part
   wild_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #Multiplicative group, wild part
@@ -44,7 +44,6 @@ end
 #  Ray Class Group interface
 #
 ###############################################################################
-
 
 @doc Markdown.doc"""
     ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; p_part,n_quo)
@@ -592,16 +591,18 @@ end
 #  Changes the exponential map of the class group so that the chosen representatives are coprime to the modulus
 #
 
-function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
+function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::MapClassGrp, m::NfOrdIdl)
  
-  O=parent(m).order
-  K=nf(O)
-  L=NfOrdIdl[]
-  
+  O = order(m)
+  K = nf(O)
+  L = Array{NfOrdIdl,1}(undef, ngens(C))
+  el = Array{nf_elem,1}(undef, ngens(C))
+
   for i=1:ngens(C)
-    a=mC(C[i])
-    if iscoprime(a,m)
-      push!(L,a)
+    a = first(keys(mC.princ_gens[i][1].fac))
+    if iscoprime(a, m)
+      L[i] = a
+      el[i] = K(1)
     else  
       J=inv(a)
       s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
@@ -614,59 +615,14 @@ function _coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
         simplify(I)
         I = numerator(I)
       end
-      push!(L,I)
+      L[i] = I
+      el[i] = s
     end
   end
-  
+
   function exp(a::GrpAbFinGenElem)  
-    e=FacElem(Dict{NfOrdIdl,fmpz}(ideal(O,1) => fmpz(1)))
-    for i=1:ngens(C)
-      if Int(a.coeff[1,i])!= 0
-        e*=FacElem(Dict(L[i] => a.coeff[1,i]))
-      end
-    end
-    return e
-  end
-  
-  return exp
-
-end 
-
-function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
- 
-  O=parent(m).order
-  K=nf(O)
-  L=Array{NfOrdIdl,1}(undef, ngens(C))
-  el=Array{nf_elem,1}(undef, ngens(C))
-
-  for i=1:ngens(C)
-    a=first(keys(mC.princ_gens[i][1].fac))
-    if iscoprime(a,m)
-      L[i]=a
-      el[i]=K(1)
-    else  
-      J=inv(a)
-      s=K(rand(J.num,5))//J.den  # Is the bound acceptable?
-      I=s*a
-      simplify(I)
-      I = numerator(I)
-      while !iscoprime(I,m)
-        s=K(rand(J.num,5))//J.den  
-        I=s*a
-        simplify(I)
-        I = numerator(I)
-      end
-      L[i]=I
-      el[i]=s
-    end
-  end
-  for i=1:ngens(C)
-    @assert iscoprime(L[i],m)
-  end
-  
-  function exp(a::GrpAbFinGenElem)  
-    e=Dict{NfOrdIdl,fmpz}()
-    for i=1:ngens(C)
+    e = Dict{NfOrdIdl,fmpz}()
+    for i = 1:ngens(C)
       if Int(a.coeff[1,i])!= 0
         e[L[i]]= a.coeff[1,i]
       end
@@ -680,6 +636,7 @@ function _elements_to_coprime_ideal(C::GrpAbFinGen, mC::Map, m::NfOrdIdl)
   return exp, el
 
 end 
+
 function empty_ray_class(m::NfOrdIdl)
   O=order(parent(m))
   X=DiagonalGroup(Int[])
@@ -757,12 +714,9 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
     mp.modulus_inf=InfPlc[]
     mp.fact_mod=Dict{NfOrdIdl, Int}()
     mp.defining_modulus = (mp.modulus_fin, mp.modulus_inf)
-    return X,mp
+    return X, mp
 
 end
-
-
-
 
 ###################################################################################
 #
@@ -782,66 +736,66 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   K=nf(O)
   
   C, mC = class_group(O)
-
-  exp_class=Hecke._coprime_ideal(C,mC,m)
+  _assure_princ_gen(mC)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, m)
   U, mU = unit_group_fac_elem(O)
-  Q, pi= quo(O,m)
-  G, mG=_multgrp_ray(Q)
+  Q, pi = quo(O,m)
+  G, mG = _multgrp_ray(Q)
   
-  lp=Q.factor
+  lp = Q.factor
   
   p = [ x for x in inf_plc if isreal(x) ]
   if !isempty(p)
-    H,eH,lH=Hecke._infinite_primes(O,p,m)
-    T=G
-    G=direct_product(G,H)
+    H, eH, lH = Hecke._infinite_primes(O, p, m)
+    T = G
+    G = direct_product(G, H)[1]
   end
   
   @vprint :RayFacElem 1 "The multiplicative group is $G \n"
   @vprint :RayFacElem 1 "The class group is $C \n"
   @vprint :RayFacElem 1 "The units are $U \n"
     
-  expon=exponent(G)
+  expon = exponent(G)
 
 #
 # We construct the relation matrix and evaluate units and relations with the class group in the quotient by m
 # Then we compute the discrete logarithms
 #
 
-  R=zero_matrix(FlintZZ,ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
+  R=zero_matrix(FlintZZ, ngens(C)+ngens(U)+ngens(G), ngens(C)+ngens(G))
   for i=1:ngens(C)
-    R[i,i]=C.snf[i]
+    R[i,i] = C.snf[i]
   end
   if issnf(G)
-    for i=1:ngens(G)
-      R[i+ngens(C),i+ngens(C)]=G.snf[i]
+    for i = 1:ngens(G)
+      R[i+ngens(C), i+ngens(C)] = G.snf[i]
     end
   else
-    for i=1:ngens(G)
-      R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
+    for i = 1:ngens(G)
+      R[i+ngens(C), i+ngens(C)] = G.rels[i,i]
     end 
   end
  
 
   @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
-  evals=[]
-  tobeeval=FacElem{nf_elem, AnticNumberField}[]
-  if U.snf[1]==2
-    push!(evals,O(-1))
+  evals = []
+  tobeeval = FacElem{nf_elem, AnticNumberField}[]
+  if U.snf[1] == 2
+    push!(evals, O(-1))
   else
     push!(tobeeval, mU(U[1]))
   end
   append!(tobeeval,[mU(U[i]) for i=2:ngens(U)])
   
   @vprint :RayFacElem 1 "then principal ideal generators \n"
-  princ_gens=[]
-  for i=1:ngens(C)
+  princ_gens = []
+  for i = 1:ngens(C)
     @vtime :RayFacElem 1 push!(princ_gens, Hecke.principal_gen_fac_elem((exp_class(C[i]))^(Int(order(C[i])))))
   end
-  append!(tobeeval,princ_gens)
+  append!(tobeeval, princ_gens)
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp,fmpz(expon))
+  @vtime :RayFacElem 1 ev,quots,idemps = fac_elems_eval(O,Q,tobeeval,lp,fmpz(expon))
   append!(evals,ev)
   @vprint :RayFacElem 1 "\n"
   
@@ -865,7 +819,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
 # We compute the relation between generators of Cl and (O/m)^* in Cl^m
 #
 
-  for i=1: ngens(C)
+  for i = 1: ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     a=((mG\Q(evals[i+ngens(U)]))).coeff
     if !isempty(p)
@@ -955,6 +909,7 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]
   mp.modulus_fin = m
   mp.modulus_inf = p
   mp.fact_mod = Q.factor
+  mp.coprime_elems = Kel
   if isdefined(mG, :tame)
     mp.tame_mult_grp = mG.tame
   end
@@ -1122,37 +1077,37 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   if mod(n,2)==0 
     pr = [ x for x in inf_plc if isreal(x) ]
     if !isempty(pr)
-      @vtime :RayFacElem 1 H,eH,lH=Hecke._infinite_primes(O, pr, I)
-      T=G
-      G =Hecke.direct_product(G,H)
+      @vtime :RayFacElem 1 H, eH, lH = Hecke._infinite_primes(O, pr, I)
+      T = G
+      G = Hecke.direct_product(G, H)[1]
     end
   end
   
-  if gcd(C.snf[end],n)==1 && order(G)==1
+  if gcd(C.snf[end], n) == 1 && order(G) == 1
     return empty_ray_class(m)
   end
   
-  f=collect(keys(factor(fmpz(n)).fac))
-  val=Array{Int,1}(undef, length(f))
-  for i=1:length(f)
-    val[i]=valuation(C.snf[end],f[i])
+  f = collect(keys(factor(fmpz(n)).fac))
+  val = Array{Int,1}(undef, length(f))
+  for i = 1:length(f)
+    val[i] = valuation(C.snf[end],f[i])
   end
-  valclass=1
-  for i=1:length(f)
+  valclass = 1
+  for i = 1:length(f)
     if val[i]!=0
       valclass*=f[i]^(val[i])
     end
   end
-  nonnclass=divexact(C.snf[end], valclass)
+  nonnclass = divexact(C.snf[end], valclass)
 
-  C, mC, vect = _class_group_mod_n(C,mC,Int(valclass))
+  C, mC, vect = _class_group_mod_n(C, mC, Int(valclass))
   
   if check_expo && exponent(C)*exponent(G)<n
     return empty_ray_class(m)
   end
   
   U, mU = unit_group_fac_elem(O)
-  exp_class, Kel = Hecke._elements_to_coprime_ideal(C,mC,m)
+  exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, m)
   for i=1:ngens(C)
     @hassert :RayFacElem 1 iscoprime(numerator(evaluate(exp_class(C[i]))), m)
   end
@@ -1191,8 +1146,8 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
 
   @hassert :RayFacElem 1 issnf(U)
   @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
-  evals=NfOrdQuoRingElem[]
-  tobeeval=FacElem{nf_elem, AnticNumberField}[]
+  evals = NfOrdQuoRingElem[]
+  tobeeval = FacElem{nf_elem, AnticNumberField}[]
   if gcd(U.snf[1],n)!=1
     if U.snf[1]==2
       push!(evals,Q(-1))
@@ -1210,7 +1165,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 ev,quots,idemps=fac_elems_eval(O,Q,tobeeval,lp, fmpz(gcd(expo,n)))
+  @vtime :RayFacElem 1 ev, quots, idemps = fac_elems_eval(O, Q, tobeeval, lp, fmpz(gcd(expo,n)))
   append!(evals, ev)
   @vprint :RayFacElem 1 "\n"
   
@@ -1628,15 +1583,15 @@ function induce_action(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Heck
   end
 
   for k=1:length(Aut)
-    imaggens=Array{GrpAbFinGenElem,1}(undef, length(lgens))
+    images = Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 
       @vtime :RayFacElem 3 J = induce_image(lgens[i], Aut[k])
-      @vtime :RayFacElem 3 imaggens[i] = mR\J
+      @vtime :RayFacElem 3 images[i] = mR\J
     end
     if mp == false
-      G[k] = hom(subs, imaggens, check = true)
+      G[k] = hom(subs, images, check = true)
     else
-      G[k] = hom([mp(x) for x = subs], [mp(x) for x = imaggens], check = true)
+      G[k] = hom([mp(x) for x = subs], [mp(x) for x = images], check = true)
     end
     @hassert :RayFacElem 1 isbijective(G[k])
   end
@@ -1644,155 +1599,65 @@ function induce_action(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Heck
   
 end
 
-##################################################################################
+################################################################################
 #
-#  Stable Subgroups function
-#
-##################################################################################
+#  Generator 1 mod m
+# 
+################################################################################
 
 @doc Markdown.doc"""
-***
-    stable_subgroups(R::GrpAbFinGen, quotype::Array{Int,1}, act::Array{T, 1}; op=sub)
+    has_principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]) -> Bool, NfOrdElem
     
-> Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 
-> subgroups of R such that the corresponding quotient has the required type.
+> Given an ideal I, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
+  If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is $0
+
 """
+function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[])
 
-function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+  # This function could be optimized if I cache some stuff from the construction
+  # of the ray class group, but only in the case of the full ray_class_group
+  # and not in the quotient.
 
-  if quotype[1] != -1
-    if minimal
-      error("Cannot compute minimal submodules with prescribed quotient type")
-    end
+  @assert iscoprime(I, m)
+  O = order(I)
+  C, mC = class_group(O)
+  fl, gen = isprincipal_fac_elem(I)
+  if !fl
+    return false, O(0)
   end
+  U, mU = unit_group_fac_elem(O)
   
-  if quotype[1]!= -1
-    c=lcm(quotype)
+  Q, mQ = quo(O, m)
+  G, mG = multiplicative_group(Q)
+  lp = Q.factor
+  expo = exponent(G)
+  tobeeval = FacElem{nf_elem, AnticNumberField}[mU(x) for x in gens(U)]
+  push!(tobeeval, gen)
+  evals = fac_elems_eval(O, Q, tobeeval, lp, expo)[1]
+  els = GrpAbFinGenElem[mG\(Q(evals[i])) for i in 1:length(evals)-1]
+  elgen = mG\(Q(evals[end]))
+  if isempty(inf_plc)
+    S, mS = sub(G, els)
+    fl1, coord = haspreimage(mS, elgen)
   else
-    c= Int(order(R))
+    #I have to take into account the signs!
+    H, eH, lH = Hecke._infinite_primes(O, inf_plc, m)
+    GH, iG, iH = direct_product(G, H)
+    els_inf = GrpAbFinGenElem[lH(mU(U[i])) for i = 1:ngens(U)]
+    els_tot = [iG(els[i]) + iH(els_inf[i]) for i = 1:ngens(U)]
+    S, mS = sub(GH, els_tot)
+    elgen = iG(elgen) + iH(lH(gen))
+    fl1, coord = haspreimage(mS, elgen)
   end
-  Q,mQ=quo(R,c, false)
-  lf=factor(order(Q)).fac
-  list=[]
-  for p in keys(lf)
-    
-    x=valuation(c,p)
-    if x==0
-      continue
-    end
-    G,mG=psylow_subgroup(Q, p, false)
-    S,mS=snf(G)
-    
-    #
-    #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
-    #
-    
-    if x==1
-      
-      F = GF(Int(p), cached=false)
-      act_mat=Array{gfp_mat, 1}(undef, length(act))
-      for w=1:length(act)
-        act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
-      end
-      for w=1:ngens(S)
-        el=mG(mS(S[w]))
-        for z=1:length(act)
-          elz=mS\(haspreimage(mG,act[z](el))[2])
-          for l=1:ngens(S)
-            act_mat[z][w,l]=elz[l]
-          end
-        end
-      end
-      M = ModAlgAss(act_mat)
-      #
-      #  Searching for submodules
-      #
-      if quotype[1]!= -1
-        quotype_p=Int[]
-        for i=1:length(quotype)
-          v=valuation(quotype[i],p)
-          if v>0
-            push!(quotype_p,v)
-          end
-        end
-        if Int(p)*quotype_p == S.snf
-          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-          push!(list, ([plist1]))
-          continue
-        end
-        ind = length(quotype_p)
-        plist = submodules(M, ind)
-      else
-        if minimal
-          plist = minimal_submodules(M)
-        else
-          plist = submodules(M)
-        end
-      end
-      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
-
-    else    
-    
-      RR=ResidueRing(FlintZZ, Int(p^x), cached=false)
-      act_mat=Array{nmod_mat,1}(undef, length(act))
-      auxmat1=hcat(mG.map', rels(Q)')
-      auxmat2=mS.map*mG.map
-      W=MatrixSpace(RR,ngens(S), ngens(S), false)
-      for z=1:length(act)
-        y=transpose(solve(auxmat1, (auxmat2*act[z].map)'))
-        y=sub(y,1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat[z]=W(y)
-      end
-      
-      #
-      #  Searching for submodules
-      #
-      
-      M=Hecke.ZpnGModule(S,act_mat)
-      if quotype[1]!= -1
-        quotype_p=Int[]
-        for i=1:length(quotype)
-          v=valuation(quotype[i],p)
-          if v>0
-            push!(quotype_p,v)
-          end
-        end
-        if Int(p)*quotype_p==S.snf
-          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-          push!(list, ([plist1]))
-          continue
-        end
-        plist = submodules(M, typequo = quotype_p)
-      else
-        if minimal
-          plist = minimal_submodules(M)
-        else
-          plist = submodules(M)
-        end
-      end
-      
-      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
-      
+  if !fl1
+    return false, O(0)
+  end
+  @assert ngens(S) == ngens(U)
+  for i = 1:ngens(U)
+    if coord[i] != 0
+      gen *= mU(U[i])^Int(coord[i])
     end
   end
-  if isempty(list)
-    return ([])
-  end
-
-  return ( op(R,vcat(c...)) for c in Iterators.product(list...))
-
-end
-
-function _lift_and_construct(A::Zmodn_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c::Int)
-  
-  R=mQ.header.domain
-  newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-  for i=1:rows(A)
-    y=view(A, i:i, 1:cols(A))
-    if !iszero(y)
-      push!(newsub,mQ\(mG(mS(mS.header.domain(lift(y))))))
-    end       
-  end
-  return newsub
+  return true, gen
 
 end
