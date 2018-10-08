@@ -650,7 +650,7 @@ function sunit_group_fac_elem(S::Array{fmpz, 1})
     return sum([e*dlog(k) for (k,e) = a.fac])
   end
 
-  mp.header = Hecke.MapHeader(G, FacElemMon(FlintQQ), dexp, dlog)
+  mp.header = MapHeader(G, FacElemMon(FlintQQ), dexp, dlog)
 
   return G, mp
 end
@@ -678,15 +678,15 @@ function sunit_group(S::Array{fmpz, 1})
     return evaluate(image(mu, a))
   end
 
-  mp.header = Hecke.MapHeader(u, FlintQQ, dexp, mu.header.preimage)
+  mp.header = MapHeader(u, FlintQQ, dexp, mu.header.preimage)
 
   return u, mp
 end
 
-Hecke.gcd(a::fmpz, b::Integer) = Hecke.gcd(a, fmpz(b))
-Hecke.gcd(a::Integer, b::fmpz) = Hecke.gcd(fmpz(a), b)
-Hecke.lcm(a::fmpz, b::Integer) = Hecke.lcm(a, fmpz(b))
-Hecke.lcm(a::Integer, b::fmpz) = Hecke.lcm(fmpz(a), b)
+gcd(a::fmpz, b::Integer) = gcd(a, fmpz(b))
+gcd(a::Integer, b::fmpz) = gcd(fmpz(a), b)
+lcm(a::fmpz, b::Integer) = lcm(a, fmpz(b))
+lcm(a::Integer, b::fmpz) = lcm(fmpz(a), b)
 
 @doc Markdown.doc"""
     isprime_power(n::fmpz) -> Bool
@@ -908,3 +908,282 @@ Base.isless(a::fmpz, b::Int) = a < b
 function (::Type{Base.Rational{BigInt}})(x::fmpq)
   return Rational{BigInt}(BigInt(numerator(x)), BigInt(denominator(x)))
 end
+
+export eulerphi_inv
+
+@doc Markdown.doc"""
+    Divisors{T}
+
+An iterator for the divisors of a given object.
+Create using 
+    Divisors(A, power::Int = 1)
+where A is either a FacElem or a direct element. Power can be used
+to restrict to objects B s.th. B^power still divides A, e.g. 
+    Divisors(12, powers = 2)
+will produce square divisors.
+
+For rings where this makes sense, ie. where the unit group is finite,
+```units = true``` can be passed in to also take into accound
+the units.
+"""
+mutable struct Divisors{T} 
+  n::T
+  lf::MSet{T}
+  s#::Iterator
+  f::Function
+  U::GrpAbFinGen
+  function Divisors(a::T; units::Bool = false, power::Int = 1) where {T}
+    r = new{T}()
+    r.n = a
+    r.lf = MSet{T}()
+    for (p, k) = factor(a).fac
+      k = div(k, power)
+      if k > 0 
+        push!(r.lf, p, k)
+      end
+    end
+    r.f = x -> length(x) == 0 ? one(parent(a)) : prod(x)
+    r.s = subsets(r.lf)
+    if units
+      U, mU = unit_group(parent(a))
+      r.U = U
+      g = r.f
+      r.f = x->mU(x[1]) * g(x[2])
+      r.s = Base.Iterators.ProductIterator((U, r.s))
+    end
+   return r
+  end
+  function Divisors(a::NfOrdIdl; units::Bool = false, power::Int = 1)
+    r = new{NfOrdIdl}()
+    r.n = a
+    r.lf = MSet{NfOrdIdl}()
+    for (p, k) = factor(a)
+      k = div(k, power)
+      if k > 0 
+        push!(r.lf, p, k)
+      end
+    end
+    r.f = x -> length(x) == 0 ? one(parent(a)) : prod(x)
+    r.s = subsets(r.lf)
+    return r
+  end
+  function Divisors(a::FacElem{NfOrdIdl}; units::Bool = false, power::Int = 1)
+    r = new{NfOrdIdl}()
+    r.n = evaluate(a)
+    r.lf = MSet{NfOrdIdl}()
+    for (p, k) = factor(a)
+      k = div(k, power)
+      if k > 0 
+        push!(r.lf, p, k)
+      end
+    end
+    r.f = x -> length(x) == 0 ? one(parent(a)) : prod(x)
+    r.s = subsets(r.lf)
+    return r
+  end
+
+  function Divisors(a::FacElem{fmpz, FlintIntegerRing}; units::Bool = false, power::Int = 1) 
+    r = new{fmpz}()
+    r.n = evaluate(a)
+    r.lf = MSet{fmpz}()
+    for (p, k) = factor(a).fac
+      k = div(k, power)
+      if k > 0 
+        push!(r.lf, p, k)
+      end
+    end
+    r.f = x -> length(x) == 0 ? one(parent(r.n)) : prod(x)
+    r.s = subsets(r.lf)
+    if units
+      U, mU = unit_group(parent(a))
+      r.U = U
+      g = r.f
+      r.f = x->mU(x[1]) * g(x[2])
+      r.s = Base.Iterators.ProductIterator((U, r.s))
+    end
+   return r
+  end
+  function Divisors(a::Fac{fmpz}; units::Bool = false, power::Int = 1)
+    return Divisors(FacElem(a), units = units, power = power)
+  end
+end
+Base.IteratorSize(::Divisors) = Base.HasLength() 
+Base.length(D::Divisors) = length(D.s)                                                    
+
+function Base.iterate(D::Divisors)
+  x = iterate(D.s)
+  if x == nothing
+    return x
+  end
+  return D.f(x[1]), x[2]
+end
+
+function Base.iterate(D::Divisors, i)
+  x = iterate(D.s, i)
+  if x == nothing
+    return x
+  end
+  return D.f(x[1]), x[2]
+end
+
+function Base.show(io::IO, D::Divisors)
+  print(io, "Divisors of $(D.n) = $(D.lf)")
+  if isdefined(D, :U)
+    print(io, " times $(D.U)")
+  end
+  print(io, "\n")
+end
+
+@doc Markdown.doc"""
+    unit_group(::FlintIntegerRing) -> GrpAbFinGen, Map
+
+> The unit group of Z, ie. C_2 and the map translating between the group and Z.    
+"""
+function unit_group(::FlintIntegerRing)
+  G = DiagonalGroup([2])
+  exp = function(z::GrpAbFinGenElem)
+    return isodd(z[1]) ? fmpz(-1) : fmpz(1)
+  end
+  log = function(z::fmpz)
+    return z == -1 ? G[1] : G[0]
+  end
+  return G, MapFromFunc(exp, log, G, FlintZZ)
+end
+
+@doc Markdown.doc"""
+    unit_group(::Integers{T}) -> GrpAbFinGen, Map
+
+> The unit group of , ie. C_2 and the map translating between the group and Z.    
+"""
+function unit_group(R::AbstractAlgebra.Integers{T}) where {T}
+  G = DiagonalGroup([2])
+  exp = function(z::GrpAbFinGenElem)
+    return isodd(z[1]) ? T(-1) : T(1)
+  end
+  log = function(z::T)
+    return z == -1 ? G[1] : G[0]
+  end
+  return G, MapFromFunc(exp, log, G, R)
+end
+
+#Nemo.GaloisField = nmod?
+# PolyRing
+
+#basically from
+#http://people.math.gatech.edu/~ecroot/shparlinski_final.pdf
+#Contini, Croot, Shparlinski: Complexity of inverting the Euler function
+@doc Markdown.doc"""
+    eulerphi_inv_fac_elem(n::fmpz)
+> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+> holde. The elements are returned in factored form.
+"""
+function eulerphi_inv_fac_elem(n::fmpz)
+  lp = []
+  for d = Divisors(n)
+    if isprime(d+1)
+      push!(lp, d+1)
+    end
+  end
+#  println("possible primes: ", lp)
+
+  E = []
+  res = []
+  for p = lp
+    v = valuation(n, p)
+    for i=0:v
+      push!(E, ((p-1)*p^i, [(p, i+1)]))
+      if E[end][1] == n
+        push!(res, FacElem(Dict(E[end][2])))
+      end
+    end
+  end
+  while true
+    F = []
+    for e = E
+      nn = divexact(n, e[1])
+      x = e[2]
+      pm = x[end][1]
+      for p = lp
+        if p <= pm
+          continue
+        end
+        if nn % (p-1) == 0
+          v = valuation(nn, p)
+          for i = 0:v
+            push!(F, (e[1]*(p-1)*p^i, vcat(e[2], [(p, i+1)])))
+            if F[end][1] == n
+              push!(res, FacElem(Dict(F[end][2])))
+            end
+          end
+        end
+      end
+    end
+    if length(F) == 0
+      return res
+    end
+    E = F
+  end
+end
+
+function eulerphi(x::Fac{fmpz})
+  return prod((p-1)*p^(v-1) for (p,v) = x.fac)
+end
+
+function eulerphi(x::FacElem{fmpz, FlintIntegerRing})
+  x = factor(x)
+  return prod((p-1)*p^(v-1) for (p,v) = x.fac)
+end
+
+function eulerphi(n::T) where {T <: Integer}
+  return T(eulerphi(fmpz(n)))
+end
+
+@doc Markdown.doc"""
+    eulerphi_inv(n::Integer) -> Array{fmpz, 1}
+> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+> holds.
+"""
+function eulerphi_inv(n::Integer)
+  return eulerphi_inv(fmpz(n))
+end
+
+@doc Markdown.doc"""
+    eulerphi_inv(n::fmpz) -> Array{fmpz, 1}
+> The inverse of the Euler totient functions: find all $x$ s.th. $phi(x) = n$
+> holds.
+"""
+function eulerphi_inv(n::fmpz)
+  return [ evaluate(x) for x = eulerphi_inv_fac_elem(n)]
+end
+
+function factor(a::FacElem{fmpz, FlintIntegerRing})
+  b = simplify(a)
+  c = Dict{fmpz, Int}()
+  s = fmpz(1)
+  for (p,k) = b.fac
+    lp = factor(p)
+    s *= lp.unit
+    for (q,w) = lp.fac
+      c[q] = w*k
+    end
+  end
+  l = Fac{fmpz}()
+  l.fac = c
+  l.unit = s
+  return l
+end
+
+function FacElem(a::Fac{fmpz})
+  f = FacElem(a.fac)
+  if a.unit == -1
+    return a.unit * f
+  end
+  return f
+end
+
+#= for torsion units:
+
+   [maximum([maximum(vcat([fmpz(-1)], eulerphi_inv(x))) for x = Divisors(fmpz(n))]) for n = 1:250]
+
+=# 
+

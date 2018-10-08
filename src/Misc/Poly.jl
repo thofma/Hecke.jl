@@ -134,9 +134,10 @@ end
 # Hensel
 #
 ##############################################################
-
+#cannot use Ref here, has to be Ptr as the underlying stuff is
+#not Julia allocated (but flint)
 mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
-  coeffs::Ref{Nothing}
+  coeffs::Ptr{Nothing}
   alloc::Int
   length::Int
 
@@ -144,7 +145,7 @@ mutable struct fmpz_poly_raw  ## fmpz_poly without parent like in c
     error("should not get called")
     z = new()
     ccall((:fmpz_poly_init, :libflint), Nothing, (Ref{fmpz_poly},), z)
-    finalizer(z, _fmpz_poly_raw_clear_fn)
+    finalizer(_fmpz_poly_raw_clear_fn, z)
     return z
   end
 end
@@ -156,8 +157,8 @@ end
 
 mutable struct fmpz_poly_factor
   c::Int   # really an fmpz  - but there is no fmpz_raw to be flint compatible
-  poly::Ref{fmpz_poly_raw}
-  exp::Ref{Int} 
+  poly::Ptr{fmpz_poly_raw}
+  exp::Ptr{Int} 
   _num::Int
   _alloc::Int
     
@@ -165,7 +166,7 @@ mutable struct fmpz_poly_factor
     z = new()
     ccall((:fmpz_poly_factor_init, :libflint), Nothing,
             (Ref{fmpz_poly_factor}, ), z)
-    finalizer(z, _fmpz_poly_factor_clear_fn)
+    finalizer(_fmpz_poly_factor_clear_fn, z)
     return z
   end
 end
@@ -195,9 +196,9 @@ mutable struct HenselCtx
   p::UInt
 
   LF :: fmpz_poly_factor
-  link::Ref{Int}
-  v::Ref{fmpz_poly_raw}
-  w::Ref{fmpz_poly_raw}
+  link::Ptr{Int}
+  v::Ptr{fmpz_poly_raw}
+  w::Ptr{fmpz_poly_raw}
   N::UInt
   prev::UInt
   r::Int  #for the cleanup
@@ -208,7 +209,7 @@ mutable struct HenselCtx
     a.f = f
     a.p = UInt(p)
     Zx,x = PolynomialRing(FlintZZ, "x", cached=false)
-    Rx,x = PolynomialRing(GF(p, cached=false), "x", cached=false)
+    Rx,x = PolynomialRing(GF(UInt(p), cached=false), "x", cached=false)
     a.lf = Nemo.nmod_poly_factor(UInt(p))
     ccall((:nmod_poly_factor, :libflint), UInt,
           (Ref{Nemo.nmod_poly_factor}, Ref{gfp_poly}), (a.lf), Rx(f))
@@ -225,7 +226,7 @@ mutable struct HenselCtx
     a.link = ccall((:flint_calloc, :libflint), Ptr{Int}, (Int, Int), 2*r-2, sizeof(Int))
     a.N = 0
     a.prev = 0
-    finalizer(a, HenselCtx_free)
+    finalizer(HenselCtx_free, a)
     return a
   end
 
@@ -1891,3 +1892,27 @@ function _factor_squarefree(x::fmpq_poly)
    return res, fmpq(z, denominator(x))
 
 end
+
+#=
+function roots(f::fmpz_poly)
+  g = gcd(f, derivative(f))
+  p = p_start
+  while true
+    p = next_prime(p)
+    R = GF(p)
+    Rx,x = PolynomialRing(R, cached = false)
+    gp = Rx(g)
+    if !issquarefree(gp)
+      continue
+    end
+    #TODO: try a few primes to find best (with fewest roots)
+    rp = roots(gp)
+    if length(rp) == 0
+      return []
+    end
+    
+  end
+  
+end
+
+=#

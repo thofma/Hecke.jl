@@ -22,6 +22,31 @@ end
 #
 ################################################################################
 
+# 1 = scale
+# 2 = swap
+# 3 = add scaled
+# 4 = parallel scaled addition
+# 5 = trafo partial dense
+# 6 = move row to end
+# 7 = trafo id
+mutable struct SparseTrafoElem{T, S}
+  type::Int
+  i::Int
+  j::Int
+  a::T
+  b::T
+  c::T
+  d::T
+  rows::UnitRange{Int}
+  cols::UnitRange{Int}
+  U::S
+
+  function SparseTrafoElem{T, S}() where {T, S}
+    z = new{T, S}()
+    return z
+  end
+end
+
 abstract type Trafo end
 
 mutable struct TrafoScale{T} <: Trafo

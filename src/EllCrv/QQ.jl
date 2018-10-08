@@ -108,7 +108,7 @@ function torsion_points_lutz_nagell(F::EllCrv{fmpq})
 
   # Lutz-Nagell: necessary: y = 0 or y^2 divides d
 
-  ycand = squaredivisors(numerator(d)) # candidates for y-coordinate
+  ycand = collect(squaredivisors(numerator(d))) # candidates for y-coordinate
 
   push!(ycand,0)
 
