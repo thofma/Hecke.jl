@@ -199,26 +199,6 @@ function issquarefree(n::Union{Int,fmpz})
   return isone(abs(n)) || maximum(values(factor(n).fac)) == 1
 end
 
-function absolute_automorphism_group(C::ClassField)
-  L = number_field(C)
-  K = base_field(C)
-  autK = automorphisms(K)
-  id = find_identity(autK, *)
-  autK_gen = small_generating_set(autK, *, id)
-  return absolute_automorphism_group(C, autK_gen)
-end
-
-function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Array{NfToNfMor, 1})
-  L = number_field(C)
-  aut_L_rel = rel_auto(C)::Vector{NfRel_nsToNfRel_nsMor}
-  rel_extend = NfRel_nsToNfRel_nsMor[ Hecke.extend_aut(C, a) for a in aut_gen_of_base_field ]
-  rel_gens = vcat(aut_L_rel, rel_extend)
-  return rel_gens::Array{NfRel_nsToNfRel_nsMor, 1}
-end
-
-function automorphism_groupQQ(C::ClassField)
-  return rel_auto(C)
-end
 
 ##########################################################################################################
 #
