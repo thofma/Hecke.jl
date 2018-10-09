@@ -105,7 +105,7 @@ function spoly(f::PseudoPoly, g::PseudoPoly)
   lcpolf = leading_coefficient(polynomial(f))
   lcpolg = leading_coefficient(polynomial(g))
   _gcd = gcd(lmf, lmg)
-  return pseudo_polynomial(inv(lcpolf) * divexact(lmg, _gcd) * polynomial(f) - inv(lcpolg) * divexact(lmf, _gcd) * polynomial(g), lcm(leading_coefficient(f), leading_coefficient(g)))
+  return pseudo_polynomial(inv(lcpolf) * divexact(lmg, _gcd) * polynomial(f) - inv(lcpolg) * divexact(lmf, _gcd) * polynomial(g), (lcm(leading_coefficient(f), leading_coefficient(g))))
 end
 
 ################################################################################
@@ -118,10 +118,10 @@ function gb(G)
   GG = deepcopy(G)
   L = [ (GG[i], GG[j]) for i in 1:length(GG) for j in 1:(i - 1)]
   while !isempty(L)
-    reverse!(L)
+    @show length(GG)
     (f, g) = pop!(L)
-    reverse!(L)
-    r = reduce(spoly(f, g), GG)
+    sp = spoly(f, g)
+    r = reduce(sp, GG)
     if !iszero(r)
       for f in GG
         push!(L, (f, r))
@@ -139,6 +139,8 @@ end
 ################################################################################
 
 function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
+  a = simplify(a)
+  b = simplify(b)
   da = denominator(a)
   db = denominator(b)
   d = lcm(da, db)
@@ -147,7 +149,7 @@ function lcm(a::NfOrdFracIdl, b::NfOrdFracIdl)
   simplify(newa)
   simplify(newb)
   c = lcm(numerator(newa), numerator(newb))
-  return frac_ideal(order(a), c, d)
+  return simplify(frac_ideal(order(a), c, d))
 end
 
 
