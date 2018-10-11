@@ -3,11 +3,22 @@
 #  Interface
 #
 ################################################################################
-
-function absolute_automorphism_group(C::ClassField)
+@doc Markdown.doc"""
+    absolute_automorphism_group(C::ClassField)
+  
+>  Computes a generating set for the automorphisms of the 
+   number field corresponding to C. It assumes that the base field is normal.
+   if "check" is true, the function checks if the extension is normal.
+"""
+function absolute_automorphism_group(C::ClassField, check::Bool = false)
+ 
   L = number_field(C)
   K = base_field(C)
   autK = automorphisms(K)
+  @assert length(autK) == degree(K)
+  if check
+    @assert isnormal(C)
+  end
   id = find_identity(autK, *)
   autK_gen = small_generating_set(autK, *, id)
   return absolute_automorphism_group(C, autK_gen)
@@ -133,8 +144,13 @@ end
 #
 ###############################################################################
 
-#Special case in which I want to extend the automorphisms of a field to
-# a cyclotomic extension
+@doc Markdown.doc"""
+    extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor) -> NfRelToNfRelMor
+    
+> Given a cyclotomic extension $C$ of a number field $K$ and an automorphism $\tau$ of $K$,
+  computes an extension of tau to $C$.
+
+"""
 function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
    		
   K = domain(tau)		
@@ -314,120 +330,183 @@ function find_gens(A::ClassField, cp::fmpz = fmpz(1))
   return lp, sR
 end
 
+function find_gens(KK::KummerExt, m::fmpz)
+
+  K = base_field(KK)
+  O = maximal_order(K)
+  els = GrpAbFinGenElem[]
+  Q, mQ = quo(KK.AutG, els)
+  Sp = Hecke.PrimesSet(200, -1)
+  cp = lcm(discriminant(O), m)
+  frob_gens = NfOrdIdl[]
+  for q in Sp
+    if cp % q == 0
+      continue
+    end
+    lp = prime_decomposition(O, q)
+    for i = 1:length(lp)
+      z = can_frobenius(lp[i][1], KK)
+      if iszero(mQ(z))
+        continue
+      end
+      push!(frob_gens, lp[i][1])
+      push!(els, z)
+      Q, mQ = quo(KK.AutG, els)
+      if order(Q) == 1
+        break
+      end
+    end
+    if order(Q) == 1
+      break
+    end
+  end
+  return frob_gens
+end
+
 function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Map
   
-  #Main Idea: I extend tau to the big kummer extension and then I restrict it.
-  k = base_field(A)
   Cp = ClassField_pp[x for x in A.cyc if degree(x) % Int(p) == 0]
+  AA, gAA = number_field([c.A.pol for c = Cp])
+  #Main Idea: I extend tau to the big kummer extension KK and then I restrict it to AA.
+  k = base_field(A)
   d = maximum(degree(x) for x in Cp)
   C = cyclotomic_extension(k, d)
-    
+  O = maximal_order(C.Ka)
   # C is the base field of the kummer extension generated
   # by all the cyclic components.
   # I extend the automorphisms to C
-  Autos = Array{NfRelToNfRelMor, 1}(undef, length(autos))
   Autos_abs = Array{NfToNfMor, 1}(undef, length(autos))
   for i = 1:length(autos)
-    Autos[i] = extend_to_cyclotomic(C, autos[i])
-    Autos_abs[i] = NfToNfMor(C.Ka, C.Ka, C.mp[1](Autos[i](C.mp[1]\gen(C.Ka))))
+    aut = extend_to_cyclotomic(C, autos[i])
+    Autos_abs[i] = NfToNfMor(C.Ka, C.Ka, C.mp[1](aut(C.mp[1]\gen(C.Ka))))
   end
   #I compute the embeddings of the small cyclotomic extensions into the others
-  embs = Array{NfRelToNfRelMor, 1}(undef, length(Cp))
   abs_emb = Array{NfToNfMor, 1}(undef, length(Cp))
   for i = 1:length(Cp)
     if degree(Cp[i]) == d
-      embs[i] = NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr))
       abs_emb[i] = NfToNfMor(C.Ka, C.Ka, gen(C.Ka))
     else
       Cs = cyclotomic_extension(k, degree(Cp[i]))
-      embs[i] = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(d, degree(Cp[i])))
-      img = C.mp[1](embs[i](Cs.mp[1]\(gen(Cs.Ka))))
+      emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(d, degree(Cp[i])))
+      img = C.mp[1](emb(Cs.mp[1]\(gen(Cs.Ka))))
       abs_emb[i] = NfToNfMor(Cs.Ka, C.Ka, img)
     end
   end
 
   #Now, I can compute the corresponding Kummer extension over the big cyclotomic field.
-  exps = Array{Int, 1}(undef, length(Cp))
-  gens = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(Cp))
-  frob_gens = Array{NfOrdIdl, 1}(undef, length(Cp))
-  for i = 1:length(Cp) 
-    exps[i] = Cp[i].o
-    if degree(Cp[i]) == d
-      gens[i] = Cp[i].a
-      frob_gens[i] = find_frob(Cp[i])
-      continue
+  m = minimum(defining_modulus(A)[1])
+  incs = Array{NfRelToNfRel_nsMor, 1}(undef, length(Cp))
+  if gcd(d, m) == 1 || d == minimum(degree(x) for x in Cp)
+    #the extension and the cyclotomic extensions are linearly disjoint!
+    exps = Array{Int, 1}(undef, length(Cp))
+    gens = Array{FacElem{nf_elem, AnticNumberField}, 1}(undef, length(Cp))
+    for i = 1:length(Cp) 
+      if degree(Cp[i]) == d 
+        gens[i] = Cp[i].a
+        exps[i] = Cp[i].o
+      else
+        a = FacElem(Dict(abs_emb[i](ke) => v for (ke,v) = Cp[i].a.fac))
+        exps[i] = Cp[i].o
+        gens[i] = a
+      end
     end
-    a = FacElem(Dict(abs_emb[i](ke) => v for (ke,v) = Cp[i].a.fac))
-    # I need to compute the degree of the extension
-    # To do this, I compute a prime ideal which is inert in the extension. 
-    # This will give us the degree.
-    # I have to work at the same time in both Cp and over C
-    Ki = kummer_extension(Cp[i].o, [a])
-    P = find_frob(Cp[i], Ki, abs_emb[i])
-    frob_gens[i] = P
-    j = Int(can_frobenius(P, Ki)[1])
-    gc = gcd(j, Cp[i].o)
-    if gc == 1
-      gens[i] = a
-      exps[i] = Cp[i].o
+    KK = kummer_extension(exps, gens)
+    K, gK = number_field(KK)
+    #I need the inclusions of the single extensions Cp[i].K in K
+    for i = 1:length(Cp)
+      incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], gK[i])
+    end
+  else
+    #Difficult case. I compute the norm group of every polynomial...
+    error("Not yet implemented")
+    #=
+    Kt, t = PolynomialRing(C.Ka, "t")
+    expst = Array{Int, 1}(undef, length(Cp))
+    elst = Array{FacElem{nf_elem}, 1}(undef, length(Cp)) 
+    lpols = Array{PolyElem, 1}(undef, length(Cp))
+    for i = 1:length(Cp)
+      expst[i] = Cp[i].o
+      if degree(Cp[i]) == d
+        elst[i] = Cp[i].a
+      else
+        elst[i] = FacElem(Dict(abs_emb[i](ke) => v for (ke,v) = Cp[i].a.fac))
+      end
+      lpols[i] = t^expst[i] - evaluate(elst[i]) 
+    end
+    disc = prod(discriminant(x) for x in lpols)
+    r, mr = ray_class_group(ideal(O, O(disc)), n_quo = d)
+    subs = Array{GrpAbFinGen, 1}(undef, length(lpols))
+    s, ms = norm_group(lpols[i], mr, false)[1]
+    q, mq = quo(r, s)
+    if 
+    exps = Int[]
+    gens = FacElem{nf_elem, AnticNumberField}[]
+    roots_to_be_taken = falses(length(Cp))
+    s = subs[1]
+    q, mq = quo(r, subs[1])
+    o = order(q)
+    if o != 1
+      push!(exps, o)
+      push!(gens, ispower(elst[1], Int(divexact(expst[1], o)))[2])
     else
-      o = divexact(Cp[i].o, gc)
-      fl, a1 = ispower(evaluate(a), gc)
-      gens[i] = a1
-      exps[i] = o
+      roots_to_be_taken[1] = true
     end
+    for i = 2:length(Cp)
+      s = intersect(s, subs[i])
+      q, mq = quo(r, s)
+      o1 = order(q)
+      if o1 == o
+        roots_to_be_taken[i] = true
+      else
+        e = divexact(o1, o)
+        push!(exps, e)
+        fl, elr = ispower(elst[1], Int(divexact(expst[1], e)))
+        @assert fl
+        push!(gens, elr)
+      end 
+      o = o1
+    end
+    KK = kummer_extension(exps, gens)
+    K, gK = number_field(KK)
+    K1t, t1 = PolynomialRing(K, "t1")
+    j = 0
+    for i=1:length(Cp)
+      if roots_to_be_taken[i]
+        j += 1
+        elt = FacElem(Dict(K(ke) => v for (ke, v) in elst[i].fac))
+        f = t1^expst[i] - evaluate(elt)
+        fac = factor(f).fac
+        rt = K(0)
+        for ke in keys(fac)
+          if degree(ke) == 1
+            rt = coeff(ke, 0)
+            break
+          end
+        end
+        @assert !iszero(rt)
+        incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], rt)
+      else
+        incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], gK[i-j])
+      end
+    end
+    =#
   end
   
-  
-  KK = kummer_extension(exps, gens)
-  # I want extend tau to KK
+  # I want extend the automorphisms to KK
   # First, I find a set of primes such that their Frobenius generates the Galois group of KK
-  els = Array{GrpAbFinGenElem, 1}(undef, length(frob_gens))
-  for i = 1:length(frob_gens)
-    els[i] = can_frobenius(frob_gens[i], KK)
-  end
-  Q, mQ = quo(KK.AutG, els)
+  frob_gens = find_gens(KK, m)
   
-  if order(Q) != 1
-    #I need to add generators  
-    m = defining_modulus(A)[1]
-    Sp = Hecke.PrimesSet(200, 10000)
-    cp = lcm(discriminant(maximal_order(C.Ka)), minimum(m))
-    OKa = maximal_order(C.Ka)
-    for q in Sp
-      if cp % q == 0
-        continue
-      end
-      lp = prime_decomposition(OKa, q)
-      for i = 1:length(lp)
-        z = can_frobenius(lp[i][1], KK)
-        if iszero(mQ(z))
-          continue
-        end
-        push!(frob_gens, lp[i][1])
-        push!(els, z)
-        Q, mQ = quo(KK.AutG, els)
-        if order(Q) == 1
-          break
-        end
-      end
-      if order(Q) == 1
-        break
-      end
-    end
-  end
-
-  K, gK = number_field(KK)
   autos_extended = Array{NfRel_nsToNfRel_nsMor, 1}(undef, length(autos))
+  #LK, mLK = absolute_field(K)
+  #a21 = mLK(gen(LK))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
     for i = 1:length(Cp)
-      images_KK[i] = extend_auto(KK, Autos_abs[w], KK.gen[i], exps[i], frob_gens)
+      images_KK[i] = extend_auto(KK, Autos_abs[w], KK.gen[i], Int(order(KK.AutG[i])), frob_gens)
     end
   
     #Now, I can define the automorphism on K
-  
     images_K = Array{NfRel_nsElem{nf_elem}, 1}(undef, length(images_KK))
     for i = 1:length(images_K)
       s = K(evaluate(images_KK[i][2]))
@@ -437,51 +516,55 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
       images_K[i] = s
     end
     autos_extended[w] = NfRel_nsToNfRel_nsMor(K, K, Autos_abs[w], images_K)
-  
-    LK, mLK = absolute_field(K)
-    a21 = mLK(gen(LK))
-    elLK1 = autos_extended[w](a21)
-    @assert LK.pol(elLK1) == 0
+    #elLK1 = autos_extended[w](a21)
+    #@assert LK.pol(elLK1) == 0
   end
-  # now we restrict the automorphisms to the subfield using linear algebra
-  # Need to compute the images of the generators in K!
+  res = restriction(K, Cp, autos_extended, incs)
+  return res
+  
+end
 
-  all_pe = Tuple{NfRel_nsElem, Array{NfRel_nsElem, 1}}[]
+function restriction(K::NfRel_ns{nf_elem}, Cp::Array{ClassField_pp, 1}, autos::Array{NfRel_nsToNfRel_nsMor, 1}, incs::Array{NfRelToNfRel_nsMor, 1})
+  
+  C = cyclotomic_extension(base_field(Cp[1]), maximum(degree(x) for x in Cp))
+  #First, I compute the images in K of the generators of the class fields
+  # and their images under the automorphisms
+  gK = gens(K)
+  all_pe = Array{Tuple{NfRel_nsElem, Array{NfRel_nsElem, 1}}, 1}(undef, length(Cp))
   for j = 1:length(Cp)
-    emb = NfRelToNfRel_nsMor(Cp[j].K, K, abs_emb[j], gK[j]^divexact(KK.n, Int(order(KK.AutG[j]))))
-    KDom, mKDom = absolute_field(Cp[j].K)
-    elKDom = emb(mKDom\(gen(KDom)))
-    @assert KDom.pol(elKDom) == 0 
-    pe = emb(Cp[j].pe)
-    tau_pe = Array{NfRel_nsElem, 1}(undef, length(autos_extended))
+    pe = incs[j](Cp[j].pe)
+    tau_pe = Array{NfRel_nsElem, 1}(undef, length(autos))
     for i = 1:length(tau_pe)
-      tau_pe[i] = autos_extended[i](pe)
+      tau_pe[i] = autos[i](pe)
     end
-    push!(all_pe, (pe, tau_pe))
+    all_pe[j] = (pe, tau_pe)
   end
-
-  #And now, linear algebra!
-  B = [K(1), all_pe[1][1]]
-  d1 = degree(Cp[1])
-  while length(B) < degree(Cp[1])
-    push!(B, B[end]*all_pe[1][1])
+  #AA is the target field 
+  AA, gAA = number_field([c.A.pol for c = Cp])
+  #And now, linear algebra to compute the restriction
+  #I need the product basis fo all the primitive elements of Cp
+  B = Array{NfRel_nsElem, 1}(undef, degree(AA))
+  B[1] = K(1)
+  for i = 2:degree(Cp[1])
+    B[i] = all_pe[1][1]*B[i-1]
   end
-  
-  for jj=2:length(Cp)
-    d1 *= degree(Cp[jj])
-    D = copy(B)
-    while length(B) < d1
-      D = [x*all_pe[jj][1] for x = D]
-      append!(B, D)
+  ind = degree(Cp[1])
+  for jj = 2:length(Cp)
+    el = all_pe[jj][1]
+    for i = 2:degree(Cp[jj])
+      for j = 1:ind
+        B[(i-1)* ind + j] = B[j]* el 
+      end
+      el *= all_pe[jj][1]
     end
+    ind *= degree(Cp[jj])
   end
-  M = sparse_matrix(C.Ka)
-  for i=1:d1
+  #Now, I construct the corresponding sparse matrix
+  M = sparse_matrix(base_field(K))
+  for i = 1:degree(AA)
     push!(M, SRow(B[i]))
   end
-  AA, gAA = number_field([c.A.pol for c = Cp])
-  @assert d1 == degree(AA)
-  @assert d1 == length(B)
+
   b_AA = basis(AA)
   Mk = _expand(M, C.mp[1])
   #@hassert :ClassField 2 nullspace(Mk')[1] == 0
@@ -498,7 +581,9 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
     all_im[i] = all_imCp
   end
   return all_im
+
 end
+
 
 function extend_auto(KK::KummerExt, tau::NfToNfMor, a::FacElem{nf_elem, AnticNumberField}, k::Int, frob_gens::Array{NfOrdIdl, 1})
 
@@ -507,14 +592,13 @@ function extend_auto(KK::KummerExt, tau::NfToNfMor, a::FacElem{nf_elem, AnticNum
   
   #Compute the action of the Frobenius on the generators and on tau(a)
   imgs_rhs = Array{Int, 1}(undef, length(frob_gens))
-  imgs_test = Array{Int, 1}(undef, length(frob_gens))
   imgs_lhs = Array{GrpAbFinGenElem, 1}(undef, length(frob_gens))
   i = 0
   
   for P in frob_gens
     i += 1
     imgs_lhs[i] = can_frobenius(P, KK)
-    imgs_rhs[i] = can_frobenius(P, KK, tau_a)
+    imgs_rhs[i] = can_frobenius(P, KK, tau_a)*divexact(KK.n, k)
   end
   # Now, I have to solve the system.
   # Careful! I have to multiply the components with their difference with the exponent :(
@@ -531,15 +615,27 @@ function extend_auto(KK::KummerExt, tau::NfToNfMor, a::FacElem{nf_elem, AnticNum
     imgs[i] = H(m)
   end
   mp = hom(gens(G), imgs, check = true)
-  @show mp.map
-  #@assert isinjective(mp)
-  @show b = H(imgs_rhs)
+  b = H(imgs_rhs)
   fl, el = haspreimage(mp, b)
   @assert fl
   #Now, I need the element of the base field
   prod_gens = prod(KK.gen[i]^(el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
   fl2, rt = ispower(inv(prod_gens)*tau_a, k)
-  @assert fl2
+  #if !fl2
+  #  @assert !isinjective(mp)
+  #  #I try all the possible preimages.
+  #  K, mK = kernel(mp)
+  #  for w in K
+  #    el1 = el + mK(w)
+  #    prod_gens = prod(KK.gen[i]^(el1[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
+  #    fl2, rt = ispower(inv(prod_gens)*tau_a, k)
+  #    if fl2
+  #      el = el1
+  #      break
+  #    end
+  #  end
+    @assert fl2
+  #end
   return el, rt
   
 end
@@ -777,7 +873,11 @@ function extend_aut(A::ClassField, tau::T) where T <: Map
   return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
 end
 
-#now again, but for embeddnigs, not automorphisms
+################################################################################
+#
+#  Embeddings
+#
+################################################################################
 
 function extend_hom(A::ClassField, B::ClassField, tau::T) where T <: Map
   # tau: k1       -> k2

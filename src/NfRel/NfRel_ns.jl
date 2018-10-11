@@ -781,7 +781,7 @@ end
 
 #find isomorphic simple field AND the map
 @doc Markdown.doc"""
-    simple_extension(K::NfRel_ns{nf_elem}) -> AnticNumberField, Map, Map
+    simple_extension(K::NfRel_ns{nf_elem}) -> NfRel, Map, Map
 
 > Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
 > (1st map) and the embedding of the base field (2nd map).

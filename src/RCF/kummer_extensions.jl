@@ -124,7 +124,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Array{fmpz,1}(undef, length(K.gen))
+  aut = Array{fmpz, 1}(undef, length(K.gen))
   for j=1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
@@ -168,11 +168,13 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   z_p = inv(mF(Zk(K.zeta)))
   @assert norm(p) % K.n == 1
   ex = div(norm(p)-1, K.n)
-  aut = fmpz[]
 
   mu = mF(g)^ex  # can throw bad prime!
   i = 0
-  while !isone(mu)
+  while true
+    if isone(mu)
+      break
+    end
     i += 1
     @assert i <= K.n
     mul!(mu, mu, z_p)
