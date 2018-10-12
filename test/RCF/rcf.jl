@@ -36,7 +36,7 @@
 
   K = simple_extension(number_field(r1))[1]
   ZK = maximal_order(K)
-  lp = factor(2*3*5*zk)
+  lp = factor(2*3*5*maximal_order(k))
   for p = keys(lp)
     t = prime_decomposition_type(r1, p)
     l = prime_decomposition(ZK, p)

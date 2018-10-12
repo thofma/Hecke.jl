@@ -886,10 +886,11 @@ end
 
 function prime_dec_nonindex(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   L = nf(O)
+  OK = order(p)
+  @assert OK == O.basis_pmat.coeffs[1].order
+  @assert OK.ismaximal == 1
   a = gen(L)
   K = base_ring(L)
-  OK = maximal_order(K)
-  @assert order(p) == OK
   f = L.pol
 
   Kx = parent(f)
@@ -993,6 +994,7 @@ end
 ################################################################################
 
 function valuation_naive(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S}
+  @assert order(A.basis_pmat.coeffs[1]) == order(B.basis_pmat.coeffs[1])
   @assert !iszero(A) && !iszero(B)
   O = order(A)
   Afrac = frac_ideal(O, basis_pmat(A), true)
@@ -1011,6 +1013,8 @@ valuation(A::NfRelOrdIdl{T, S}, B::NfRelOrdIdl{T, S}) where {T, S} = valuation_n
 
 function valuation_naive(a::NfRelOrdElem{T}, B::NfRelOrdIdl{T, S}) where {T, S}
   @assert !iszero(a)
+  @assert order(parent(a).basis_pmat.coeffs[1]) == order(B.basis_pmat.coeffs[1])
+  @assert order((a * parent(a)).basis_pmat.coeffs[1]) == order(B.basis_pmat.coeffs[1])
   return valuation(a*parent(a), B)
 end
 

@@ -98,16 +98,16 @@ end
 function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::NfOrdIdl, lp::Dict{NfOrdIdl, Int}, prime_power::Dict{NfOrdIdl, NfOrdIdl}, a::Union{Int, fmpz}, n::Int)
   
   O = maximal_order(K)
-  b = basis(pk)
+  b = basis(pk, Val{false})
   N = basis_mat(pv, Val{false})*basis_mat_inv(pk, Val{false})
   G = AbelianGroup(N.num)
-  S,mS = snf(G)
+  S, mS = snf(G)
   #Generators
-  gens = Array{NfOrdElem,1}(undef, ngens(S))
+  gens = Array{NfOrdElem, 1}(undef, ngens(S))
   for i=1:ngens(S)
-    gens[i]=O(1)
-    for j=1:ngens(G)
-      gens[i]+=mod(mS.map[i,j], S.snf[end])*b[j]
+    gens[i] = O(1)
+    for j = 1:ngens(G)
+      add!(gens[i], gens[i], mod(mS.map[i,j], S.snf[end])*b[j])
     end
   end
   if length(lp) > 1
@@ -123,7 +123,7 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
   end
   if mod(n,2)==0
     for i=1:length(gens)
-      gens[i] = make_positive(gens[i],fmpz(a))
+      gens[i] = make_positive(gens[i], fmpz(a))
     end
   end
   return gens

@@ -330,7 +330,7 @@ function find_gens(A::ClassField, cp::fmpz = fmpz(1))
   return lp, sR
 end
 
-function find_gens(KK::KummerExt, m::fmpz)
+function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem}, 1}, 1}, m::fmpz)
 
   K = base_field(KK)
   O = maximal_order(K)
@@ -345,12 +345,24 @@ function find_gens(KK::KummerExt, m::fmpz)
     end
     lp = prime_decomposition(O, q)
     for i = 1:length(lp)
-      z = can_frobenius(lp[i][1], KK)
-      if iszero(mQ(z))
+      try
+        z = can_frobenius(lp[i][1], KK)
+        for x in gens_imgs
+          for y in x
+            can_frobenius(lp[i][1], KK, y)
+          end
+        end
+        if iszero(mQ(z))
+          continue
+        end
+        push!(frob_gens, lp[i][1])
+        push!(els, z)
+      catch e
+        if typeof(e) != BadPrime
+          rethrow(e)
+        end
         continue
       end
-      push!(frob_gens, lp[i][1])
-      push!(els, z)
       Q, mQ = quo(KK.AutG, els)
       if order(Q) == 1
         break
@@ -494,7 +506,15 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
   
   # I want extend the automorphisms to KK
   # First, I find a set of primes such that their Frobenius generates the Galois group of KK
-  frob_gens = find_gens(KK, m)
+  act_on_gens = Array{Array{FacElem{nf_elem}, 1}, 1}(undef, length(KK.gen))
+  for i = 1:length(KK.gen)
+    act_on_gen_i = Array{FacElem{nf_elem}, 1}(undef, length(autos))
+    for j = 1:length(autos)
+      act_on_gen_i[j] = FacElem(Dict(Autos_abs[j](ke) => v for (ke, v) in KK.gen[i]))
+    end
+    act_on_gens[i] = act_on_gen_i
+  end
+  frob_gens = find_gens(KK, act_on_gens, m)
   
   autos_extended = Array{NfRel_nsToNfRel_nsMor, 1}(undef, length(autos))
   #LK, mLK = absolute_field(K)
@@ -503,7 +523,7 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
     for i = 1:length(Cp)
-      images_KK[i] = extend_auto(KK, Autos_abs[w], KK.gen[i], Int(order(KK.AutG[i])), frob_gens)
+      images_KK[i] = extend_auto(KK, act_on_gens[i][w], Int(order(KK.AutG[i])), frob_gens)
     end
   
     #Now, I can define the automorphism on K
@@ -585,16 +605,12 @@ function restriction(K::NfRel_ns{nf_elem}, Cp::Array{ClassField_pp, 1}, autos::A
 end
 
 
-function extend_auto(KK::KummerExt, tau::NfToNfMor, a::FacElem{nf_elem, AnticNumberField}, k::Int, frob_gens::Array{NfOrdIdl, 1})
+function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k::Int, frob_gens::Array{NfOrdIdl, 1})
 
-  #Compute tau(a)
-  tau_a = FacElem(Dict{nf_elem, fmpz}(tau(ke) => v for (ke,v) = a.fac))
-  
   #Compute the action of the Frobenius on the generators and on tau(a)
   imgs_rhs = Array{Int, 1}(undef, length(frob_gens))
   imgs_lhs = Array{GrpAbFinGenElem, 1}(undef, length(frob_gens))
   i = 0
-  
   for P in frob_gens
     i += 1
     imgs_lhs[i] = can_frobenius(P, KK)
@@ -618,6 +634,7 @@ function extend_auto(KK::KummerExt, tau::NfToNfMor, a::FacElem{nf_elem, AnticNum
   b = H(imgs_rhs)
   fl, el = haspreimage(mp, b)
   @assert fl
+
   #Now, I need the element of the base field
   prod_gens = prod(KK.gen[i]^(el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
   fl2, rt = ispower(inv(prod_gens)*tau_a, k)

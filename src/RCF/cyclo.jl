@@ -46,40 +46,46 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   fk = first(keys(lf.fac))
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
-  Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
+  if degree(fk) != 1
+    Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
+    
+    # An equation order defined from a factor of a 
+    # cyclotomic polynomial is always maximal by Dedekind
+    # hence the product basis should be maximal at all primes except
+    # for all p dividing the gcd()
+    b_k = basis(maximal_order(k), k)
+    B_k = [small2abs(x) for x = b_k]
+    g = rel2abs(Kr_gen)
+    for i = 1:degree(fk)-1
+      for j = 1:degree(k)
+        push!(B_k, B_k[j]*g^i)
+      end
+    end
+    ZKa = Hecke.NfOrd(B_k)
+    for (p,v) = factor(gcd(discriminant(maximal_order(k)), fmpz(n))).fac
+      ZKa = pmaximal_overorder(ZKa, p)
+    end
+    ZKa.ismaximal = 1
+    Hecke._set_maximal_order_of_nf(Ka, ZKa)
+  else
+    Ka = k
+    rel2abs = NfRelToNf(Kr, Ka, gen(Ka), -coeff(fk, 0), Kr(gen(Ka)))
+    small2abs = NfToNfMor(k, k, gen(k))
+    ZKa = maximal_order(k)
+  end
+  #ZKa = lll(ZKa)
 
+  
   c = CyclotomicExt()
   c.k = k
   c.n = n
   c.Kr = Kr
   c.Ka = Ka
   c.mp = (rel2abs, small2abs)
- 
-  b_k = basis(maximal_order(k), k)
-  B_k = [small2abs(x) for x = b_k]
-  g = rel2abs(Kr_gen)
-  for i=1:degree(fk)-1
-    for j=1:degree(k)
-      push!(B_k, B_k[j]*g^i)
-    end
-  end
 
-  # we argued that an equation order defined from a factor of a 
-  # cyclotomic polynomial should always be maximal by Dedekind
-  # hence the product basis should be maximal...
-  # we can later implement proper relative maximal orders
-  # wrong! for Q(sqrt(10))(zeta_5) this is not 5 maximal.
-  # so we need to become p-maximal for all p dividing the gcd()
-
-  ZKa = Hecke.NfOrd(B_k)
-  for (p,v) = factor(gcd(discriminant(maximal_order(k)), fmpz(n))).fac
-    ZKa = pmaximal_overorder(ZKa, p)
-  end
-  ZKa = lll(ZKa)
-  ZKa.ismaximal = 1
-  Hecke._set_maximal_order_of_nf(Ka, ZKa)
   push!(Ac, c)
   Hecke._set_cyclotomic_ext_nf(k, Ac)
   return c
+  
 end
 

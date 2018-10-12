@@ -275,7 +275,10 @@ function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
        end
     end
   end
-  g = GrpAbFinGenElem[preimage(mc, x) for x = lP]
+  g = Array{GrpAbFinGenElem, 1}(undef, length(lP))
+  for i = 1:length(lP)
+    g[i] = preimage(mc, lP[i])
+  end
 
   q, mq = quo(domain(mc), g, false)
   mc = compose(inv(mq), mc)
@@ -297,12 +300,12 @@ function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
 #end
   if isempty(lP)
     U, mU = unit_group_fac_elem(ZK)
-    @vtime :ClassField 2 KK = kummer_extension(e, [mU(U[i]) for i=1:ngens(U)])
+    KK = kummer_extension(e, [mU(U[i]) for i = 1:ngens(U)])
   else
     @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
     @vtime :ClassField 2 KK = kummer_extension(e, [mS(S[i]) for i=1:ngens(S)])
   end
-  
+
   return lP::Array{NfOrdIdl, 1}, KK
 end
 
@@ -385,7 +388,7 @@ end
 
 function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem},1}, AutA::GrpAbFinGen, oA::fmpz, C::CyclotomicExt)
   pe = gen(A)# + 0*gen(C.Ka)
-  Auto=Dict{Hecke.GrpAbFinGenElem, Any}()
+  Auto = Dict{Hecke.GrpAbFinGenElem, Any}()
   cnt = 0
   while true
     @vprint :ClassField 3 "candidate: $pe\n"
@@ -460,16 +463,16 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   end
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
-
-  AutA_gen = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}[]
-  AutA_rel = zero_matrix(FlintZZ, ngens(g)+1, ngens(g)+1)
+  ng = ngens(g)+1
+  AutA_gen = Array{Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}, 1}(undef, ng)
+  AutA_rel = zero_matrix(FlintZZ, ng, ng)
   zeta = C.mp[1](gen(C.Kr))
   n = degree(A)
   @assert e % n == 0
 
   @vprint :ClassField 2 "... the trivial one (Kummer)\n"
   tau = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}(A, A, zeta^div(e, n)*gen(A))
-  push!(AutA_gen, tau)
+  AutA_gen[1] = tau
 
   AutA_rel[1,1] = n  # the order of tau
 
@@ -479,7 +482,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mg(g[i]))))
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
     sigma = _extend_auto(A, Hecke.NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
-    push!(AutA_gen, sigma)
+    AutA_gen[i+1] = sigma
 
     @vprint :ClassField 2 "... finding relation ...\n"
     m = gen(A)
@@ -509,7 +512,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 end
 
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
-  @assert iskummer_extension(K)
+  @hassert :ClassField 1 iskummer_extension(K)
   k = base_ring(K)
   Zk = maximal_order(k)
   zeta, ord = Hecke.torsion_units_gen_order(Zk)
@@ -543,6 +546,13 @@ function _rcf_descent(CF::ClassField_pp)
   k = nf(order(codomain(CF.rayclassgroupmap)))
   C = cyclotomic_extension(k, e)
   A = CF.K
+  if C.Ka == k
+    #There is nothing to do! The extension is already on the right field
+    CF.A = A
+    CF.pe = gen(A)
+    return CF.A
+  end
+  
   n = degree(A)
   #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
   _aut_A_over_k(C, CF)
@@ -553,7 +563,7 @@ function _rcf_descent(CF::ClassField_pp)
   # now we need a primitive element for A/k
   # mostly, gen(A) will do
   @vprint :ClassField 2 "Searching for primitive element...\n"
-  pe, Auto = _find_prim_elem(A::NfRel, AutA_gen, AutA, order(AutA_snf), C)
+  pe, Auto = _find_prim_elem(A, AutA_gen, AutA, order(AutA_snf), C)
   @vprint :ClassField 2 "\nnow the fix group...\n"
 
   if iscyclic(AutA_snf)  # the subgroup is trivial to find!
