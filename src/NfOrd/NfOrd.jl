@@ -625,9 +625,11 @@ function norm_change_const(O::NfOrd)
             return z
           end
           M = minkowski_mat(O, pr)
+          M = M*M'
           pr *= 2
         catch e  # should verify the correct error
           M = minkowski_mat(O, pr)
+          M = M*M'
           pr *= 2
         end
       end
