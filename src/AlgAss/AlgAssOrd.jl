@@ -1,4 +1,3 @@
-
 add_assert_scope(:AlgAssOrd)
 add_verbose_scope(:AlgAssOrd)
 
@@ -6,9 +5,15 @@ elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
 elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
-parent_type(::Type{AlgAssAbsOrdElem{S, T}}) where {S, T} = AlgAssAbsOrd{S, T}
+ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 
-parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
+algebra(O::AlgAssAbsOrd) = O.algebra
+
+################################################################################
+#
+#  Construction
+#
+################################################################################
 
 function Order(A::S, B::Vector{T}) where {S <: AbsAlgAss, T <: AbsAlgAssElem}
   return AlgAssAbsOrd{S, T}(A, B)
@@ -18,53 +23,11 @@ function Order(A::S, basis_mat::FakeFmpqMat) where {S <: AbsAlgAss}
   return AlgAssAbsOrd{S}(A, basis_mat)
 end
 
-(O::AlgAssAbsOrd{S, T})(a::T) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, a)
-end
-
-(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{fmpz}) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, a, arr)
-end
-
-(O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, arr)
-end
-
-algebra(O::AlgAssAbsOrd) = O.algebra
-
-(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} =begin
-  b = elem_in_algebra(a)
-  if check
-    (x, y) = _check_elem_in_order(b, O)
-    !x && error("Algebra element not in the order")
-    return O(b, y)
-  else
-    return O(b)
-  end
-end
-
-(O::AlgAssAbsOrd)() = O(algebra(O)())
-
-one(O::AlgAssAbsOrd) = O(one(algebra(O)))
-
-zero(O::AlgAssAbsOrd) = O()
-
-# Turn the following into a check:
+################################################################################
 #
-#(O::AlgAssAbsOrd)(a::AlgAssElem) = begin
-#  if !isdefined(O, :basis_mat_inv)
-#    O.basis_mat_inv=inv(O.basis_mat)
-#  end
-#  x=FakeFmpqMat(a.coeffs)*O.basis_mat_inv
-#  @assert denominator(x)==1
-#  return AlgAssAbsOrdElem(O,a, vec(Array(x.num)))
-#end
-
-###############################################################################
+#  Index
 #
-#  Types
-#
-###############################################################################
+################################################################################
 
 function index(O::AlgAssAbsOrd)
   B = inv(O.basis_mat)
@@ -72,6 +35,12 @@ function index(O::AlgAssAbsOrd)
   @assert isinteger(n)
   return FlintZZ(n)
 end
+
+################################################################################
+#
+#  "Assure" functions for fields
+#
+################################################################################
 
 function _assure_has_basis(O::AlgAssAbsOrd)
   if !isdefined(O, :basis)
@@ -86,6 +55,19 @@ function _assure_has_basis(O::AlgAssAbsOrd)
   return nothing
 end
 
+function assure_basis_mat_inv(O::AlgAssAbsOrd)
+  if !isdefined(O, :basis_mat_inv)
+    O.basis_mat_inv=inv(O.basis_mat)
+  end
+  return nothing
+end
+
+################################################################################
+#
+#  Basis
+#
+################################################################################
+
 function basis(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   _assure_has_basis(O)
   if copy == Val{true}
@@ -95,15 +77,77 @@ function basis(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   end
 end
 
+################################################################################
+#
+#  (Inverse) basis matrix
+#
+################################################################################
+
+function basis_mat(x::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+  if copy == Val{true}
+    return deepcopy(x.basis_mat)
+  else
+    return x.basis_mat
+  end
+end
+
+function basis_mat_inv(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+  assure_basis_mat_inv(O)
+  if copy == Val{true}
+    return deepcopy(O.basis_mat_inv)
+  else
+    return O.basis_mat_inv
+  end
+end
+
+################################################################################
+#
+#  Degree
+#
+################################################################################
+
 function degree(O::AlgAssAbsOrd)
   return dim(O.algebra)
 end
 
-function elem_in_algebra(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
-  if copy == Val{true}
-    return deepcopy(x.elem_in_algebra)
+################################################################################
+#
+#  Inclusion of algebra elements
+#
+################################################################################
+
+function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} = Val{false}) where {S, T, U}
+  t = zero_matrix(FlintQQ, 1, degree(O))
+  elem_to_mat_row!(t, 1, a)
+  t = FakeFmpqMat(t)
+  t = t*basis_mat_inv(O, Val{false})
+  if short == Val{true}
+    return isone(t.den)
+  elseif short == Val{false}
+    if !isone(t.den)
+      return false, Vector{fmpz}()
+    else
+      v = Vector{fmpz}(undef, degree(O))
+      for i = 1:degree(O)
+        v[i] = deepcopy(t.num[1, i])
+      end
+      return true, v
+    end
+  end
+end
+
+function in(x::T, O::AlgAssAbsOrd{S, T}) where {S, T}
+  y = FakeFmpqMat(x.coeffs)
+  if isdefined(O, :basis_mat_inv)
+    M1 = O.basis_mat_inv
   else
-    return x.elem_in_algebra
+    M1 = inv(O.basis_mat)
+    O.basis_mat_inv = M1
+  end
+  if (y*M1).den == 1
+    return true
+  else
+    return false
   end
 end
 
@@ -134,160 +178,11 @@ function FakeFmpqMat(x::Array{fmpq,1})
   return FakeFmpqMat(M,den)
 end
 
-###############################################################################
+################################################################################
 #
-#  Functions for elements of order
+#  Random elements
 #
-###############################################################################
-
-function basis_mat(x::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
-  if copy == Val{true}
-    return deepcopy(x.basis_mat)
-  else
-    return x.basis_mat
-  end
-end
-
-function basis_mat_inv(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
-  assure_basis_mat_inv(O)
-  if copy == Val{true}
-    return deepcopy(O.basis_mat_inv)
-  else
-    return O.basis_mat_inv
-  end
-end
-
-@inline parent(x::AlgAssAbsOrdElem) = x.parent
-
-function assure_has_coord(x::AlgAssAbsOrdElem)
-  if isdefined(x, :elem_in_basis)
-    return nothing
-  end
-  d = degree(parent(x))
-  M = FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
-  x.elem_in_basis = Array{fmpz, 1}(undef, d)
-  for i = 1:d
-    x.elem_in_basis[i] = M.num[1, i]
-  end
-  return nothing
-end
-
-function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
-  assure_has_coord(x)
-  if copy == Val{true}
-    return deepcopy(x.elem_in_basis)
-  else
-    return x.elem_in_basis
-  end
-end
-
-#= function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T =#
-#=   if isdefined(x, :elem_in_basis) =#
-#=     if copy==Val{true} =#
-#=       return deepcopy(x.elem_in_basis) =#
-#=     else =#
-#=       return x.elem_in_basis =#
-#=     end =#
-#=   else =#
-#=     d = degree(parent(x)) =#
-#=     M=FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv =#
-#=     x.elem_in_basis=Array{fmpz,1}(undef, d) =#
-#=     for i = 1:d =#
-#=       x.elem_in_basis[i]=M.num[1,i] =#
-#=     end =#
-#=   end =#
-#=   if copy==Val{true} =#
-#=     return deepcopy(x.elem_in_basis) =#
-#=   else =#
-#=     return x.elem_in_basis =#
-#=   end =#
-#= end =#
-
-function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} = Val{false}) where {S, T, U}
-  t = zero_matrix(FlintQQ, 1, degree(O))
-  elem_to_mat_row!(t, 1, a)
-  t = FakeFmpqMat(t)
-  t = t*basis_mat_inv(O, Val{false})
-  if short == Val{true}
-    return isone(t.den)
-  elseif short == Val{false}
-    if !isone(t.den)
-      return false, Vector{fmpz}()
-    else
-      v = Vector{fmpz}(undef, degree(O))
-      for i = 1:degree(O)
-        v[i] = deepcopy(t.num[1, i])
-      end
-      return true, v
-    end
-  end
-end
-
-function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  @assert parent(x)==parent(y)
-  O=parent(x)
-  assure_elem_in_algebra(x)
-  assure_elem_in_algebra(y)
-  return O(x.elem_in_algebra*y.elem_in_algebra)
-end
-
-function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  assure_elem_in_algebra(x)
-  assure_elem_in_algebra(y)
-  return parent(x)(elem_in_algebra(x) + elem_in_algebra(y))
-end
-
-function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  return parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
-end
-
-function -(x::AlgAssAbsOrdElem)
-  return parent(x)(-elem_in_algebra(x, Val{false}))
-end
-
-function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
-  O=x.parent
-  y=Array{fmpz,1}(undef, O.dim)
-  z=elem_in_basis(x, Val{false})
-  for i=1:O.dim
-    y[i] = z[i] * n
-  end
-  return O(y)
-end
-
-function in(x::AlgAssElem, O::AlgAssAbsOrd)
-  
-  y=FakeFmpqMat(x.coeffs)
-  if isdefined(O, :basis_mat_inv)
-    M1=O.basis_mat_inv
-  else
-    M1=inv(O.basis_mat)
-    O.basis_mat_inv=M1
-  end
-  if (y*M1).den==1
-    return true
-  else
-    return false
-  end
-
-end
-
-function elem_from_mat_row(O::AlgAssAbsOrd, M::fmpz_mat, i::Int)
-  return O(fmpz[M[i,j] for j = 1:degree(O)])
-end
-
-function ^(x::AlgAssAbsOrdElem, y::Union{fmpz, Int})
-  z = parent(x)()
-  z.elem_in_algebra = elem_in_algebra(x, Val{false})^y
-  return z
-end
-
-function ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem)
-  if parent(a) != parent(b)
-    return false
-  end
-  return elem_in_algebra(a, Val{false}) == elem_in_algebra(b, Val{false})
-end
+################################################################################
 
 function rand(O::AlgAssAbsOrd, R::UnitRange{T}) where T <: Integer
   return O(map(fmpz, rand(R, degree(O))))
@@ -303,7 +198,7 @@ end
 
 ###############################################################################
 #
-#  Functions for orders
+#  Basis matrices from generators
 #
 ###############################################################################
 
@@ -377,7 +272,6 @@ function +(a::AlgAssAbsOrd, b::AlgAssAbsOrd)
   return Order(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
 end
 
-
 ###############################################################################
 #
 #  Print
@@ -395,10 +289,6 @@ function show(io::IO, O::AlgAssAbsOrd)
     println(io, " with basis matrix ")
     print(io, basis_mat(O))
   end
-end
-
-function show(io::IO, a::AlgAssAbsOrdElem)
-  print(io, a.elem_in_algebra)
 end
 
 ###############################################################################
@@ -537,8 +427,6 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
 
 end
 
-
-
 ###############################################################################
 #
 #  Some tests
@@ -629,7 +517,6 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   return true
 end
 
-
 ###############################################################################
 #
 #  ring of multipliers
@@ -712,20 +599,11 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
   return O1
 end
 
-
-
 ###############################################################################
 #
 #  p-radical
 #
 ###############################################################################
-
-function assure_basis_mat_inv(O::AlgAssAbsOrd)
-  if !isdefined(O, :basis_mat_inv)
-    O.basis_mat_inv=inv(O.basis_mat)
-  end
-  return nothing
-end
 
 function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   
@@ -771,8 +649,6 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   return J
 
 end
-
-
 
 @doc Markdown.doc"""
 ***
@@ -869,44 +745,9 @@ end
 
 ###############################################################################
 #
-#  Trace, Discriminant and Reduced Trace Matrix 
+#  Discriminant and Reduced Trace Matrix
 #
 ###############################################################################
-
-function assure_elem_in_algebra(x::AlgAssAbsOrdElem)
-  if !isdefined(x, :elem_in_algebra)
-    O = parent(x)
-    x.elem_in_algebra = dot(O.basis_alg, x.elem_in_basis) 
-  end
-  return nothing
-end
-
-function representation_matrix(x::AlgAssAbsOrdElem)
-
-  O = parent(x)
-  M = O.basis_mat
-  if isdefined(O, :basis_mat_inv)
-    M1 = O.basis_mat_inv
-  else
-    M1 = inv(O.basis_mat)
-    O.basis_mat_inv = M1
-  end
-  assure_elem_in_algebra(x)
-  B = FakeFmpqMat(representation_matrix(x.elem_in_algebra))
-  mul!(B, M, B)
-  mul!(B, B, M1)
-
-  @assert B.den==1
-  return B.num
-end
-
-function tr(x::AlgAssAbsOrdElem)
-  return FlintZZ(tr(x.elem_in_algebra))
-end
-
-function trred(x::AlgAssAbsOrdElem)
-  return FlintZZ(trred(x.elem_in_algebra))
-end
 
 function trred_matrix(O::AlgAssAbsOrd)
 
@@ -1252,7 +1093,6 @@ function MaximalOrder(O::AlgAssAbsOrd)
   return OO
 end
 
-
 ###############################################################################
 #
 #  IsSplit
@@ -1262,7 +1102,7 @@ end
 @doc Markdown.doc"""
 ***
     issplit(A::AlgAss)
-        
+
 > Given a Q-algebra A, this function returns true if A splits over Q, false otherwise
 """
 
