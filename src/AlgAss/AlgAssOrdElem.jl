@@ -313,3 +313,13 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
   z = -O([ V[1, i] for i = (d + 2):(2*d + 1) ])
   return true, z
 end
+
+################################################################################
+#
+#  isone/iszero
+#
+################################################################################
+
+iszero(a::AlgAssAbsOrdElem) = iszero(elem_in_algebra(a, Val{false}))
+
+isone(a::AlgAssAbsOrdElem) = isone(elem_in_algebra(a, Val{false}))

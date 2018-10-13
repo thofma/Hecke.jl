@@ -264,6 +264,23 @@ ideal(O::NfAbsOrd, a::fmpz)  = NfAbsOrdIdl(O, deepcopy(a))
 ideal(O::NfAbsOrd, a::Int) = NfAbsOrdIdl(O, a)
 ideal(O::NfAbsOrd, a::Integer) = NfAbsOrdIdl(O, fmpz(a))
 
+function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
+  d = degree(O)
+  @assert length(b) >= d
+
+  M = zero_matrix(FlintZZ, length(b), d)
+  for i = 1:length(b)
+    for j = 1:d
+      M[i, j] = elem_in_basis(b[i])[j]
+    end
+  end
+  M = _hnf(M, :lowerleft)
+  if d < length(b)
+    M = sub(M, (length(b) - d + 1):length(b), 1:d)
+  end
+  return ideal(O, M, check, true)
+end
+
 ################################################################################
 #
 #  Basic field access

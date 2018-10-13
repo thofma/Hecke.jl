@@ -151,11 +151,11 @@ function in(x::T, O::AlgAssAbsOrd{S, T}) where {S, T}
   end
 end
 
-###############################################################################
+################################################################################
 #
 #  Some auxiliary functions
 #
-###############################################################################
+################################################################################
 
 function lift(M::fq_nmod_mat)
 
@@ -196,11 +196,11 @@ function rand(O::AlgAssAbsOrd, n::fmpz)
   return rand(O, -BigInt(n):BigInt(n))
 end
 
-###############################################################################
+################################################################################
 #
 #  Basis matrices from generators
 #
-###############################################################################
+################################################################################
 
 function basis_mat(A::Array{S, 1}) where {S <: AbsAlgAssElem}
   @assert length(A) > 0
@@ -256,11 +256,11 @@ function order_gen(O::AlgAssAbsOrd)
 
 end
 
-###############################################################################
+################################################################################
 #
 #  Sum of orders
 #
-###############################################################################
+################################################################################
 
 # Be careful!
 # To be used only in the case of the construction of a maximal order!
@@ -272,11 +272,11 @@ function +(a::AlgAssAbsOrd, b::AlgAssAbsOrd)
   return Order(a.algebra, FakeFmpqMat(c, aB.den*bB.den))
 end
 
-###############################################################################
+################################################################################
 #
 #  Print
 #
-###############################################################################
+################################################################################
 
 function show(io::IO, O::AlgAssAbsOrd)
   compact = get(io, :compact, false)
@@ -291,11 +291,11 @@ function show(io::IO, O::AlgAssAbsOrd)
   end
 end
 
-###############################################################################
+################################################################################
 #
 #  Quaternion algebras
 #
-###############################################################################
+################################################################################
 
 function quaternion_algebra(a::Int, b::Int)
   
@@ -331,11 +331,11 @@ function quaternion_algebra(a::Int, b::Int)
   
 end
 
-###############################################################################
+################################################################################
 #
 #  Quotient
 #
-###############################################################################
+################################################################################
 
 function quo(O::AlgAssAbsOrd, p::Int)
   # p must be prime
@@ -427,11 +427,11 @@ function quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl, p::Int)
 
 end
 
-###############################################################################
+################################################################################
 #
 #  Some tests
 #
-###############################################################################
+################################################################################
 
 function check_ideal(I::AlgAssAbsOrdIdl)
   
@@ -517,11 +517,11 @@ function check_pradical(I::AlgAssAbsOrdIdl, p::Int)
   return true
 end
 
-###############################################################################
+################################################################################
 #
 #  ring of multipliers
 #
-###############################################################################
+################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -599,11 +599,11 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
   return O1
 end
 
-###############################################################################
+################################################################################
 #
 #  p-radical
 #
-###############################################################################
+################################################################################
 
 function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   
@@ -743,11 +743,11 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   
 end
 
-###############################################################################
+################################################################################
 #
 #  Discriminant and Reduced Trace Matrix
 #
-###############################################################################
+################################################################################
 
 function trred_matrix(O::AlgAssAbsOrd)
 
@@ -785,11 +785,11 @@ function discriminant(O::AlgAssAbsOrd)
 end
 
 
-###############################################################################
+################################################################################
 #
 #  Schur Index at Infinity
 #
-###############################################################################
+################################################################################
 
 
 #Steel Nebe paper
@@ -830,11 +830,11 @@ function trace_signature(O::AlgAssAbsOrd)
 end
 
 
-###############################################################################
+################################################################################
 #
 #  Schur Index at p
 #
-###############################################################################
+################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -856,11 +856,11 @@ function schur_index_at_p(O::AlgAssAbsOrd, p::fmpz)
 end
 
 
-###############################################################################
+################################################################################
 #
 #  p-maximal overorder
 #
-###############################################################################
+################################################################################
 
 function _maximal_ideals(O::AlgAssAbsOrd, p::Int)
   
@@ -1070,11 +1070,11 @@ function pmaximal_overorder_tr(O::AlgAssAbsOrd, p::Int)
   return O
 end
 
-###############################################################################
+################################################################################
 #
 #  Maximal Order
 #
-###############################################################################
+################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -1084,20 +1084,70 @@ end
 """
 
 function MaximalOrder(O::AlgAssAbsOrd)
-  @vtime :NfOrd fac = factor(abs(discriminant(O)))
-  OO=O
+  A = algebra(O)
+  if isdefined(A, :maximal_order)
+    return A.maximal_order
+  end
+
+  d = discriminant(O)
+  if typeof(A) <: AlgGrp
+    fac = factor(dim(A)) # the order of the group
+  else
+    @vtime :NfOrd fac = factor(abs(d))
+  end
+
+  OO = O
   for (p,j) in fac
+    if mod(d, p^2) != 0
+      continue
+    end
     OO += pmaximal_overorder(O, Int(p))
   end
-  OO.ismaximal=1
+  OO.ismaximal = 1
+  algebra(O).maximal_order = OO
   return OO
 end
 
-###############################################################################
+function MaximalOrder(A::AbsAlgAss)
+  if isdefined(A, :maximal_order)
+    return A.maximal_order
+  end
+
+  O = Order(A, basis(A))
+  @assert one(A) in O
+  return MaximalOrder(O)
+end
+
+function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
+  if isdefined(A, :maximal_order)
+    return A.maximal_order
+  end
+  fields_and_maps = as_number_fields(A)
+  M = zero_matrix(FlintQQ, dim(A), dim(A))
+  row = 1
+  for i = 1:length(fields_and_maps)
+    K = fields_and_maps[i][1]
+    AtoK = fields_and_maps[i][2]
+    O = maximal_order(K)
+    for b in basis(O)
+      a = AtoK\K(b)
+      elem_to_mat_row!(M, row, a)
+      row += 1
+    end
+  end
+  FakeM = FakeFmpqMat(M)
+  FakeM = hnf!(FakeM, :lowerleft)
+  OO = Order(A, FakeM)
+  OO.ismaximal = 1
+  A.maximal_order = OO
+  return OO
+end
+
+################################################################################
 #
 #  IsSplit
 #
-###############################################################################
+################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -1120,4 +1170,33 @@ function issplit(A::AlgAss)
     end
   end
   return true
+end
+
+################################################################################
+#
+#  Conductor
+#
+################################################################################
+
+# Besides the call of elem_in_algebra this is exactly the same as in NfOrd/NfOrd.jl.
+function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
+  n = degree(R)
+  t = basis_mat(R, Val{false})*basis_mat_inv(S, Val{false})
+  @assert isone(t.den)
+  basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
+  M = zero_matrix(FlintZZ, n^2, n)
+  B = basis(S, Val{false})
+  for k in 1:n
+    a = B[k]
+    N = representation_matrix(S(elem_in_algebra(a, Val{false})))*basis_mat_R_in_S_inv_num
+    for i in 1:n
+      for j in 1:n
+        M[(k - 1)*n + i, j] = N[j, i]
+      end
+    end
+  end
+  H = sub(hnf(M), 1:n, 1:n)
+  Hinv, new_den = pseudo_inv(transpose(H))
+  Hinv = Hinv*basis_mat_R_in_S_inv_num
+  return ideal(R, divexact(Hinv, new_den))
 end

@@ -244,3 +244,79 @@ mutable struct GrpAbFinGenToNfOrdQuoRingMultMap <: Map{GrpAbFinGen, NfOrdQuoRing
     return z
   end
 end
+
+################################################################################
+#
+#  Morphisms from finite abelian groups onto units of orders of algebras
+#
+################################################################################
+
+mutable struct GrpAbFinGenToAlgAssAbsOrdMap{S, T} <: Map{GrpAbFinGen, AlgAssAbsOrd{S, T}, HeckeMap, GrpAbFinGenToAlgAssAbsOrdMap}
+  header::MapHeader
+  generators::Vector{AlgAssAbsOrdElem{S, T}}
+  discrete_logarithm::Function
+  modulus::AlgAssAbsOrdIdl{S, T}
+
+  function GrpAbFinGenToAlgAssAbsOrdMap{S, T}(G::GrpAbFinGen, O::AlgAssAbsOrd{S, T}, generators::Vector{V}, disc_log::Function, modulus::AlgAssAbsOrdIdl{S, T}...) where V <: AlgAssAbsOrdElem{S, T} where {S, T}
+    @assert ngens(G) == length(generators)
+
+    z = new{S, T}()
+    modulo = false
+    if length(modulus) == 1
+      modulo = true
+      z.modulus = modulus[1]
+    end
+
+    function _image(a::GrpAbFinGenElem)
+      @assert parent(a) == G
+      y = one(O)
+      for i in 1:length(generators)
+        a[i] == 0 && continue
+        if modulo
+          y = mod(y*powermod(generators[i], a[i], z.modulus), z.modulus)
+        else
+          y *= generators[i]^a[i]
+        end
+      end
+      return y
+    end
+
+    function _preimage(a::AlgAssAbsOrdElem)
+      @assert parent(a) == O
+      return G(disc_log(a))
+    end
+
+    z.header = MapHeader(G, O, _image, _preimage)
+    z.generators = generators
+    z.discrete_logarithm = disc_log
+    return z
+  end
+
+  function GrpAbFinGenToAlgAssAbsOrdMap{S, T}(O::AlgAssAbsOrd{S, T}, generators::Vector{V}, snf_structure::Vector{fmpz}, disc_log::Function, modulus::AlgAssAbsOrdIdl{S, T}...) where V <: AlgAssAbsOrdElem{S, T} where {S, T}
+    @assert length(generators) == length(snf_structure)
+
+    G = DiagonalGroup(snf_structure)
+
+    return GrpAbFinGenToAlgAssAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
+  end
+
+  function GrpAbFinGenToAlgAssAbsOrdMap{S, T}(O::AlgAssAbsOrd{S, T}, generators::Vector{V}, relation_matrix::fmpz_mat, disc_log::Function, modulus::AlgAssAbsOrdIdl{S, T}...) where V <: AlgAssAbsOrdElem{S, T} where {S, T}
+    @assert length(generators) == rows(relation_matrix)
+
+    G = GrpAbFinGen(relation_matrix)
+
+    return GrpAbFinGenToAlgAssAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
+  end
+end
+
+function GrpAbFinGenToAlgAssAbsOrdMap(G::GrpAbFinGen, O::AlgAssAbsOrd{S, T}, generators::Vector{V}, disc_log::Function, modulus::AlgAssAbsOrdIdl{S, T}...) where V <: AlgAssAbsOrdElem{S, T} where {S, T}
+  return GrpAbFinGenToAlgAssAbsOrdMap{S, T}(G, O, generators, disc_log, modulus...)
+end
+
+function GrpAbFinGenToAlgAssAbsOrdMap(O::AlgAssAbsOrd{S, T}, generators::Vector{V}, snf_structure::Vector{fmpz}, disc_log::Function, modulus::AlgAssAbsOrdIdl{S, T}...) where V <: AlgAssAbsOrdElem{S, T} where {S, T}
+  return GrpAbFinGenToAlgAssAbsOrdMap{S, T}(O, generators, snf_structure, disc_log, modulus...)
+end
+
+function GrpAbFinGenToAlgAssAbsOrdMap(O::AlgAssAbsOrd{S, T}, generators::Vector{V}, relation_matrix::fmpz_mat, disc_log::Function, modulus::AlgAssAbsOrdIdl{S, T}...) where V <: AlgAssAbsOrdElem{S, T} where {S, T}
+  return GrpAbFinGenToAlgAssAbsOrdMap{S, T}(O, generators, relation_matrix, disc_log, modulus...)
+end

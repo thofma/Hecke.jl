@@ -295,7 +295,7 @@ end
 #
 ################################################################################
 
-function ==(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && return false
   return a.coeffs == b.coeffs
 end
@@ -342,7 +342,7 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AlgAssElem{T}) where T
+function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
   for c = 1:cols(M)
     M[i, c] = deepcopy(a.coeffs[c])
   end

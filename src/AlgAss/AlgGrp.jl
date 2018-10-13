@@ -77,7 +77,9 @@ end
 ################################################################################
 
 function ==(A::AlgGrp{T}, B::AlgGrp{T}) where {T}
-  return base_ring(A) == base_ring(B) && group(A) == group(B)
+  # This does not work as long as deepcopy copies the group.
+  #return base_ring(A) == base_ring(B) && group(A) == group(B)
+  return base_ring(A) == base_ring(B) && A.mult_table == B.mult_table
 end
 
 ###############################################################################

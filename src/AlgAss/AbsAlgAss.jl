@@ -177,14 +177,14 @@ end
 
 ################################################################################
 #
-#  Deccomposition
+#  Decomposition
 #
 ################################################################################
 
 @doc Markdown.doc"""
 ***
     decompose(A::AbsAlgAss{T}) -> AlgAss{T}
-            
+
 > Given a semisimple algebra over a field, this function 
 > returns a decomposition of A as a direct sum of simple algebras.
 """
@@ -397,6 +397,83 @@ function _dec_com_finite(A::AbsAlgAss{T}) where T
     end
     return res
   end
+end
+
+################################################################################
+#
+#  Decomposition as number fields
+#
+################################################################################
+
+function as_number_fields(A::AbsAlgAss{fmpq})
+  if isdefined(A, :maps_to_numberfields)
+    return A.maps_to_numberfields
+  end
+
+  d = dim(A)
+
+  Adec = decompose(A)
+
+  # Compute a LLL reduced basis of the maximal order of A to find "small"
+  # polynomials for the number fields.
+  if typeof(A) <: AlgAss
+    OO = Order(A, basis(A))
+    @assert one(A) in OO
+    OA = maximal_order(OO)
+  elseif typeof(A) <: AlgGrp
+    OA = maximal_order(A)
+  end
+
+  L = lll(basis_mat(OA, Val{false}).num)
+  n = basis_mat(OA, Val{false}).den
+  basis_lll = [ elem_from_mat_row(A, L, i, n) for i = 1:d ]
+
+  M = zero_matrix(FlintQQ, 0, d)
+  matrices = Vector{fmpq_mat}()
+  fields = Vector{AnticNumberField}()
+  for i = 1:length(Adec)
+    # For each small algebra construct a number field and the isomorphism
+    B, BtoA = Adec[i]
+    dB = dim(B)
+    local K, BtoK
+    for j = 1:d
+      t = BtoA\basis_lll[j]
+      mint = minpoly(t)
+      if degree(mint) == dB
+        K = number_field(mint)[1]
+        BtoK = AbsAlgAssToNfAbsMor(B, K, t)
+        break
+      end
+    end
+    push!(fields, K)
+
+    # Construct the map from K to A
+    N = zero_matrix(FlintQQ, degree(K), d)
+    for j = 1:degree(K)
+      t = BtoA(BtoK\basis(K)[j])
+      elem_to_mat_row!(N, j, t)
+    end
+    push!(matrices, N)
+    M = vcat(M, N)
+  end
+  @assert rows(M) == d
+
+  invM = inv(M)
+  matrices2 = Vector{fmpq_mat}(undef, length(matrices))
+  offset = 1
+  for i = 1:length(matrices)
+    r = rows(matrices[i])
+    N = sub(invM, 1:d, offset:(offset + r - 1))
+    matrices2[i] = N
+    offset += r
+  end
+
+  result = Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor}}()
+  for i = 1:length(fields)
+    push!(result, (fields[i], AbsAlgAssToNfAbsMor(A, fields[i], matrices[i], matrices2[i])))
+  end
+  A.maps_to_numberfields = result
+  return result
 end
 
 ################################################################################

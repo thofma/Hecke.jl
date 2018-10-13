@@ -4,6 +4,8 @@ abstract type AbsAlgAss{T} <: Ring end
 
 abstract type AbsAlgAssElem{T} <: RingElem end
 
+elem_type(::Type{AbsAlgAss{T}}) where {T} = AbsAlgAssElem{T}
+
 ################################################################################
 #
 #  AlgAss / AlgAssElem
@@ -26,6 +28,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   maps_to_numberfields
+  maximal_order
 
   # Constructor with default values
   function AlgAss{T}(R::Ring) where {T}
@@ -106,6 +109,7 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   decomposition
   center
   maps_to_numberfields
+  maximal_order
 
   function AlgGrp(K::Ring, G::GrpAbFinGen)
     A = AlgGrp(K, G, op = +)

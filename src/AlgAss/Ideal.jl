@@ -6,6 +6,10 @@ function Base.one(S::AlgAssAbsOrdIdlSet)
   return ideal(O, M, true)
 end
 
+function one(I::AlgAssAbsOrdIdl)
+  return ideal(order(I), one(order(I)))
+end
+
 function Base.copy(I::AlgAssAbsOrdIdl)
   return I
 end
@@ -150,6 +154,7 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
 end
 
 Base.:(^)(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
+Base.:(^)(A::AlgAssAbsOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
 
 function intersection(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
@@ -305,4 +310,85 @@ function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
   y = one(O) - x
   @assert y in b
   return x, y
+end
+
+################################################################################
+#
+#  From algebra to number field
+#
+################################################################################
+
+function _as_ideal_of_number_field(I::AlgAssAbsOrdIdl, m::AbsAlgAssToNfAbsMor)
+  @assert algebra(order(I)) == domain(m)
+  K = codomain(m)
+  OK = maximal_order(K)
+
+  b = Vector{elem_type(OK)}()
+  for i = 1:dim(domain(m))
+    push!(b, OK(m(elem_in_algebra(basis(I, Val{false})[i]))))
+  end
+  return ideal_from_z_gens(OK, b)
+end
+
+function _as_ideal_of_algebra(I::NfAbsOrdIdl, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AlgAssAbsOrdElem }
+  A = algebra(O)
+  fields_and_maps = as_number_fields(A)
+  b = Vector{elem_type(O)}()
+  for j = 1:length(fields_and_maps)
+    K, AtoK = fields_and_maps[j]
+    if j == i
+      @assert nf(order(I)) == K
+      append!(b, [ O(AtoK\K(bb)) for bb in basis(I, Val{false}) ])
+    else
+      append!(b, one_ideals[j])
+    end
+  end
+  return ideal_from_z_gens(O, b)
+end
+
+# Returns an array of bases of the ideals O_i(1)*O_i lifted to O, where O_i
+# are the maximal orders of the number fields in the decomposition of
+# algebra(O).
+function _lift_one_ideals(O::AlgAssAbsOrd)
+  A = algebra(O)
+  fields_and_maps = as_number_fields(A)
+
+  one_ideals = Vector{Vector{elem_type(O)}}()
+  for i = 1:length(fields_and_maps)
+    K, AtoK = fields_and_maps[i]
+    OK = maximal_order(K)
+    a = OK(1)*OK
+    b = Vector{elem_type(O)}()
+    for i = 1:degree(K)
+      push!(b, O(AtoK\K(basis(a, Val{false})[i])))
+    end
+    push!(one_ideals, b)
+  end
+  return one_ideals
+end
+
+################################################################################
+#
+#  Factorization
+#
+################################################################################
+
+function factor(I::AlgAssAbsOrdIdl)
+  O = order(I)
+  A = algebra(O)
+  fields_and_maps = as_number_fields(A)
+
+  one_ideals = _lift_one_ideals(O)
+
+  fac = Dict{ideal_type(O), Int}()
+  for i = 1:length(fields_and_maps)
+    K, AtoK = fields_and_maps[i]
+    J = _as_ideal_of_number_field(I, AtoK)
+    fac2 = factor(J)
+    for (p, e) in fac2
+      P = _as_ideal_of_algebra(p, i, O, one_ideals)
+      fac[P] = e
+    end
+  end
+  return fac
 end
