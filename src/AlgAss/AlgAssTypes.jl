@@ -4,8 +4,6 @@ abstract type AbsAlgAss{T} <: Ring end
 
 abstract type AbsAlgAssElem{T} <: RingElem end
 
-elem_type(::Type{AbsAlgAss{T}}) where {T} = AbsAlgAssElem{T}
-
 ################################################################################
 #
 #  AlgAss / AlgAssElem
@@ -78,11 +76,10 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   end
 
   # This does not make a copy of coeffs
-  function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where{T, S}
+  function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
     z = new{T, AlgAss{T}}()
     z.parent = A
     z.coeffs = coeffs
-    z.coeffs
     return z
   end
 end
@@ -171,7 +168,6 @@ mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
-    z.coeffs
     return z
   end
 end

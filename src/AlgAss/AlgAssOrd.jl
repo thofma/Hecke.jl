@@ -1079,32 +1079,37 @@ end
 @doc Markdown.doc"""
 ***
     MaximalOrder(O::AlgAssAbsOrd)
-        
+
 > Given an order O, this function returns a maximal order containing O
 """
 
 function MaximalOrder(O::AlgAssAbsOrd)
-  A = algebra(O)
-  if isdefined(A, :maximal_order)
-    return A.maximal_order
-  end
-
   d = discriminant(O)
-  if typeof(A) <: AlgGrp
-    fac = factor(dim(A)) # the order of the group
-  else
-    @vtime :NfOrd fac = factor(abs(d))
-  end
+  @vtime :NfOrd fac = factor(abs(d))
 
   OO = O
-  for (p,j) in fac
+  for (p, j) in fac
     if mod(d, p^2) != 0
       continue
     end
     OO += pmaximal_overorder(O, Int(p))
   end
   OO.ismaximal = 1
-  algebra(O).maximal_order = OO
+  return OO
+end
+
+function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpElem }
+  d = discriminant(O)
+  fac = factor(degree(O)) # the order of the group
+
+  OO = O
+  for (p, j) in fac
+    if mod(d, p^2) != 0
+      continue
+    end
+    OO += pmaximal_overorder(O, Int(p))
+  end
+  OO.ismaximal = 1
   return OO
 end
 
@@ -1115,6 +1120,7 @@ function MaximalOrder(A::AbsAlgAss)
 
   O = Order(A, basis(A))
   @assert one(A) in O
+  # O still not needs to be an order...
   return MaximalOrder(O)
 end
 

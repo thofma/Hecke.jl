@@ -10,6 +10,20 @@ parent(a::AbsAlgAssElem) = a.parent
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(a::AlgAssElem{S, T}, dict::IdDict) where {S, T}
+  return AlgAssElem{S, T}(parent(a), Base.deepcopy_internal(a.coeffs, dict))
+end
+
+function Base.deepcopy_internal(a::AlgGrpElem{S, T}, dict::IdDict) where {S, T}
+  return AlgGrpElem{S, T}(parent(a), Base.deepcopy_internal(a.coeffs, dict))
+end
+
+################################################################################
+#
 #  Special elements
 #
 ################################################################################

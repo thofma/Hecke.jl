@@ -416,14 +416,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
 
   # Compute a LLL reduced basis of the maximal order of A to find "small"
   # polynomials for the number fields.
-  if typeof(A) <: AlgAss
-    OO = Order(A, basis(A))
-    @assert one(A) in OO
-    OA = maximal_order(OO)
-  elseif typeof(A) <: AlgGrp
-    OA = maximal_order(A)
-  end
-
+  OA = maximal_order(A)
   L = lll(basis_mat(OA, Val{false}).num)
   n = basis_mat(OA, Val{false}).den
   basis_lll = [ elem_from_mat_row(A, L, i, n) for i = 1:d ]
@@ -436,16 +429,19 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     B, BtoA = Adec[i]
     dB = dim(B)
     local K, BtoK
+    found_field = false # Only for debugging
     for j = 1:d
       t = BtoA\basis_lll[j]
       mint = minpoly(t)
       if degree(mint) == dB
+        found_field = true
         K = number_field(mint)[1]
         BtoK = AbsAlgAssToNfAbsMor(B, K, t)
+        push!(fields, K)
         break
       end
     end
-    push!(fields, K)
+    @assert found_field "This should not happen..."
 
     # Construct the map from K to A
     N = zero_matrix(FlintQQ, degree(K), d)

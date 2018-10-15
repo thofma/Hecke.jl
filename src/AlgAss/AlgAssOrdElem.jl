@@ -6,6 +6,16 @@ parent_type(::AlgAssAbsOrdElem{S, T}) where {S, T} = AlgAssAbsOrd{S, T}
 
 ################################################################################
 #
+#  Parent check
+#
+################################################################################
+
+function check_parent(x::AlgAssAbsOrdElem{S, T}, y::AlgAssAbsOrdElem{S, T}) where {S, T}
+  return parent(x) === parent(y)
+end
+
+################################################################################
+#
 #  Parent object overloading
 #
 ################################################################################
@@ -43,6 +53,21 @@ end
 #  @assert denominator(x)==1
 #  return AlgAssAbsOrdElem(O,a, vec(Array(x.num)))
 #end
+
+################################################################################
+#
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(a::AlgAssAbsOrdElem, dict::IdDict)
+  b = parent(a)()
+  b.elem_in_algebra = Base.deepcopy_internal(a.elem_in_algebra, dict)
+  if isdefined(a, :elem_in_basis)
+    b.elem_in_basis = Base.deepcopy_internal(a.elem_in_basis, dict)
+  end
+  return b
+end
 
 ################################################################################
 #
@@ -129,21 +154,26 @@ end
 ###############################################################################
 
 function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  @assert parent(x)==parent(y)
-  O=parent(x)
-  assure_elem_in_algebra(x)
-  assure_elem_in_algebra(y)
-  return O(x.elem_in_algebra*y.elem_in_algebra)
+  !check_parent(x, y) && error("Wrong parents")
+  return parent(x)(elem_in_algebra(x, Val{false})*elem_in_algebra(y, Val{false}))
 end
 
 function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  assure_elem_in_algebra(x)
-  assure_elem_in_algebra(y)
-  return parent(x)(elem_in_algebra(x) + elem_in_algebra(y))
+  !check_parent(x, y) && error("Wrong parents")
+  z = parent(x)(elem_in_algebra(x, Val{false}) + elem_in_algebra(y, Val{false}))
+  if isdefined(x, :elem_in_basis) && isdefined(y, :elem_in_basis)
+    z.elem_in_basis = [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
+  end
+  return z
 end
 
 function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  return parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
+  !check_parent(x, y) && error("Wrong parents")
+  z = parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
+  if isdefined(x, :elem_in_basis) && isdefined(y, :elem_in_basis)
+    z.elem_in_basis = [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
+  end
+  return z
 end
 
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)

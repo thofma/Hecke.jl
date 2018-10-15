@@ -170,22 +170,23 @@ end
 #
 ################################################################################
 
-mutable struct AbsAlgAssToNfAbsMor <: Map{AbsAlgAss{fmpq}, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
-  header::MapHeader{AbsAlgAss{fmpq}, AnticNumberField}
+# S is the type of the algebra, T the element type of the algebra
+mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
+  header::MapHeader{S, AnticNumberField}
   M::fmpq_mat
   N::fmpq_mat
   t::fmpq_mat # dummy vector used in image and preimage
   tt::fmpq_mat # another dummy vector
 
-  function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat)
+  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
 
-    z = new()
+    z = new{S, T}()
     z.M = M
     z.N = N
     z.t = zero_matrix(FlintQQ, 1, dim(A))
     z.tt = zero_matrix(FlintQQ, 1, degree(K))
 
-    function _image(x::AbsAlgAssElem{fmpq})
+    function _image(x::T)
       for i = 1:dim(A)
         z.t[1, i] = x.coeffs[i]
       end
@@ -201,12 +202,12 @@ mutable struct AbsAlgAssToNfAbsMor <: Map{AbsAlgAss{fmpq}, AnticNumberField, Hec
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{AbsAlgAss{fmpq}, AnticNumberField}(A, K, _image, _preimage)
+    z.header = MapHeader{S, AnticNumberField}(A, K, _image, _preimage)
     return z
   end
 
-  # a is a primitve element in A
-  function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, a::AbsAlgAssElem{fmpq})
+  # a is a primitive element in A
+  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, a::T) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
 
     s = one(A)
     M = zero_matrix(FlintQQ, dim(A), dim(A))
@@ -216,6 +217,14 @@ mutable struct AbsAlgAssToNfAbsMor <: Map{AbsAlgAss{fmpq}, AnticNumberField, Hec
       elem_to_mat_row!(M, i, s)
     end
 
-    return AbsAlgAssToNfAbsMor(A, K, M, inv(M))
+    return AbsAlgAssToNfAbsMor{S, T}(A, K, M, inv(M))
   end
+end
+
+function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat)
+  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, M, N)
+end
+
+function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, a::AbsAlgAssElem{fmpq})
+  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, a)
 end
