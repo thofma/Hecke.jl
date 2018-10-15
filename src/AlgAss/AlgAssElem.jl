@@ -10,20 +10,6 @@ parent(a::AbsAlgAssElem) = a.parent
 
 ################################################################################
 #
-#  Deepcopy
-#
-################################################################################
-
-function Base.deepcopy_internal(a::AlgAssElem{S, T}, dict::IdDict) where {S, T}
-  return AlgAssElem{S, T}(parent(a), Base.deepcopy_internal(a.coeffs, dict))
-end
-
-function Base.deepcopy_internal(a::AlgGrpElem{S, T}, dict::IdDict) where {S, T}
-  return AlgGrpElem{S, T}(parent(a), Base.deepcopy_internal(a.coeffs, dict))
-end
-
-################################################################################
-#
 #  Special elements
 #
 ################################################################################
@@ -293,7 +279,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::AlgAssElem{T}, dict::IdDict) where {T}
+function Base.deepcopy_internal(a::AbsAlgAssElem{T}, dict::IdDict) where {T}
   b = parent(a)()
   for x in fieldnames(typeof(a))
     if x != :parent && isdefined(a, x)
