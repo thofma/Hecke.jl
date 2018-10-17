@@ -849,19 +849,18 @@ function _minmod(a::fmpz, b::NfOrdElem)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
   e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
-
-  S = ResidueRing(FlintZZ, a*d*e, cached=false)
+  S = ResidueRing(FlintZZ, a*d*e, cached = false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
   U = lift(FlintZZ["x"][1], u)
   # m can be zero...
-  m = lift(m)
-  if iszero(m)
-    m = a*d*e
+  m1 = lift(m)
+  if iszero(m1)
+    m1 = a*d*e
   end
-  bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
+  bi = k(U)//m1*d # at this point, bi*d*b = m mod a*d*idx
   d = denominator(bi, Zk)
   return gcd(d, a)
   # min(<a, b>) = min(<ad, bd>)/d and bd is in the equation order, hence max as well

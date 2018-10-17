@@ -118,7 +118,8 @@ function _1pluspk_1pluspk1(K::AnticNumberField, p::NfOrdIdl, pk::NfOrdIdl, pv::N
 
     alpha, beta = idempotents(prime_power[p], i_without_p)
     for i in 1:length(gens)
-      gens[i] = beta*gens[i] + alpha
+      mul!(gens[i], gens[i], beta)
+      add!(gens[i], gens[i], alpha)
     end   
   end
   if mod(n,2)==0
@@ -535,14 +536,15 @@ end
 function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOrdElem, 1}} = Dict{Int, Array{NfOrdElem, 1}}())
 
   mr = C.rayclassgroupmap
-  a = minimum(mr.modulus_fin)
-  mp = inv(C.quotientmap) * mr 
-  R = domain(mp)
-
   lp = mr.fact_mod
   if isempty(lp)
     return true
   end
+  
+  a = minimum(mr.modulus_fin)
+  mp = inv(C.quotientmap) * mr 
+  R = domain(mp)
+  
   O = order(first(keys(lp)))
   K = nf(O)
   tmg = mr.tame_mult_grp
@@ -562,6 +564,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
   
   #wild part
   if !isempty(mr.wild_mult_grp)
+    o = Int(order(R))
     prime_power = Dict{NfOrdIdl, NfOrdIdl}()
     for (p,v) in lp
       prime_power[p] = p^v
@@ -580,7 +583,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
       if haskey(lwp, Int(p.minimum))
         gens = lwp[Int(p.minimum)]
       else
-        gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, Int(order(R)))
+        gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, o)
         lwp[Int(p.minimum)] = gens
       end
       iscond=false
@@ -686,7 +689,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   
   #first, tamely ramified part
   tmg=mr.tame_mult_grp
-  primes_done=fmpz[]
+  primes_done = fmpz[]
   for p in keys(tmg) 
     if p.minimum in primes_done || haskey(mr.wild_mult_grp, p)
       continue
@@ -700,17 +703,17 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       q,mq=quo(R,[el])
       ap-= order(q)
     end
-    qw=divexact(d,prime_decomposition_type(O,Int(p.minimum))[1][2])*ap
+    qw=divexact(d, p.splitting_type[1])*ap
     discr*=fmpz(p.minimum)^qw
     if discr > bound
       @vprint :AbExt 2 "too large\n"
       return false
-    #else
-    #  if haskey(abs_disc, p.minimum)
-    #    abs_disc[p.minimum] += qw
-    #  else 
-    #    abs_disc[p.minimum] = qw
-    #  end
+    else
+      if haskey(abs_disc, p.minimum)
+        abs_disc[p.minimum] += qw
+      else 
+        abs_disc[p.minimum] = qw
+      end
       #for q in keys(tmg)
       #  if minimum(q)==minimum(p) 
       #    relative_disc[q]=ap
@@ -731,19 +734,12 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       if p.minimum in primes_done
         continue
       end 
-      np = p.minimum^divexact(d, prime_decomposition_type(O,Int(p.minimum))[1][2])
+      np = p.minimum^divexact(d, p.splitting_type[1])
       push!(primes_done, p.minimum) 
       ap = n*lp[p]
       if cyc_prime
         ap -= lp[p]
       else
-        if length(lp) > 1
-          i_without_p = ideal(O, 1)
-          for (p2, vp2) in lp
-            (p != p2) && (i_without_p *= prime_power[p2])
-          end
-          alpha, beta = idempotents(prime_power[p], i_without_p)
-        end
         s = lp[p]
         @hassert :AbExt 1 s>=2
         els=GrpAbFinGenElem[]
@@ -770,7 +766,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
           @hassert :AbExt 1 ap>0
         end
         if haskey(tmg, p)
-          push!(els, mp\ideal(O,tmg[p].generators[1]))
+          push!(els, mp\ideal(O, tmg[p].generators[1]))
         end
         ap -= order(quo(R,els)[1])
         @hassert :AbExt 1 ap>0
@@ -780,12 +776,12 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
       if discr > bound
         @vprint :AbExt 2 "too large\n"
         return false
-      #else
-      # if haskey(abs_disc, p.minimum)
-      #    abs_disc[p.minimum] += np1
-      #  else 
-      #    abs_disc[p.minimum] = np1
-      #  end
+      else
+        if haskey(abs_disc, p.minimum)
+          abs_disc[p.minimum] += ap*divexact(d, p.splitting_type[1])
+        else 
+          abs_disc[p.minimum] = ap*divexact(d, p.splitting_type[1])
+        end
       #  for q in keys(tmg)
       #    if minimum(q)==minimum(p) 
       #      relative_disc[q]=ap
@@ -795,7 +791,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
     end
   end
   #C.relative_discriminant=relative_disc
-  #C.absolute_discriminant=abs_disc
+  C.absolute_discriminant = abs_disc
   return true
 
 end

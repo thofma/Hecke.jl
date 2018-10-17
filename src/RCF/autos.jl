@@ -347,13 +347,13 @@ function find_gens(KK::KummerExt, gens_imgs::Array{Array{FacElem{nf_elem}, 1}, 1
     for i = 1:length(lp)
       try
         z = can_frobenius(lp[i][1], KK)
+        if iszero(mQ(z))
+          continue
+        end
         for x in gens_imgs
           for y in x
             can_frobenius(lp[i][1], KK, y)
           end
-        end
-        if iszero(mQ(z))
-          continue
         end
         push!(frob_gens, lp[i][1])
         push!(els, z)

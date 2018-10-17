@@ -145,7 +145,7 @@ function __init__()
 
 
   t = create_accessors(AnticNumberField,
-                       Tuple{Array{nf_elem, 1}, nf_elem},
+                       Tuple{Int, nf_elem},
                        get_handle())
   global _get_nf_torsion_units = t[1]
   global _set_nf_torsion_units = t[2]
@@ -277,21 +277,20 @@ end
 
 function _torsion_units(K::AnticNumberField)
   try
-    c = _get_nf_torsion_units(K)::Tuple{Array{nf_elem, 1}, nf_elem}
+    c = _get_nf_torsion_units(K)::Tuple{Int, nf_elem}
     return c
   catch
     O = maximal_order(K)
-    tor, gen = _torsion_units(O)
-    tornf = [ elem_in_nf(x) for x in tor]
+    ord, gen = _torsion_units(O)
     gennf = elem_in_nf(gen)
-    _set_nf_torsion_units(K, (tornf, gennf))
-    return tornf, gennf
+    _set_nf_torsion_units(K, (ord, gennf))
+    return ord, gennf
   end
 end
 
 function torsion_units(K::AnticNumberField)
-  ar, g = _torsion_units(K)
-  return ar
+  ord, g = _torsion_units(K)
+  return nf_elem[g^i for i = 0:ord-1]
 end
 
 function torsion_units_gen(K::AnticNumberField)

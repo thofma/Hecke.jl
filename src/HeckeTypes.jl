@@ -606,7 +606,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   #conjugate_data::acb_root_ctx
   minkowski_mat::Tuple{arb_mat, Int}        # Minkowski matrix
   minkowski_gram_mat_scaled::Tuple{fmpz_mat, Int} # Minkowski matrix - gram * 2^prec and rounded
-  torsion_units#::Tuple{Vector{NfAbsOrd}, NfAbsOrd}
+  torsion_units#::Tuple{Int, NfAbsOrd}
   unit_group::Map                  # Abstract types in the field is usually bad,
                                    # but here it can be neglected.
                                    # We annotate the getter function
@@ -1083,7 +1083,7 @@ mutable struct UnitGrpCtx{T <: Union{nf_elem, FacElem{nf_elem}}}
   regulator::arb
   tentative_regulator::arb
   regulator_precision::Int
-  torsion_units::Array{NfOrdElem, 1}
+  #torsion_units::Array{NfOrdElem, 1}
   torsion_units_order::Int
   torsion_units_gen::NfOrdElem
   conj_log_cache::Dict{Int, Dict{nf_elem, arb}}

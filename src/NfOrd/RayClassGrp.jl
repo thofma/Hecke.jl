@@ -157,12 +157,12 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
         for (f,k) in J.fac
           act_el=f
           if mQ(act_el)!=0
-            el[i]*=mQ(act_el)^k
+            mul!(el[i], el[i], mQ(act_el)^k)
             continue
           end
           val=valuation(act_el,p)
           act_el=O(act_el*(anti_uni^val),false)
-          el[i]*= mQ(act_el)^k
+          mul!(el[i], el[i], mQ(act_el)^k)
         end
       end
     else
@@ -173,11 +173,12 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
         for (f,k) in J.fac
           if mQ(f)!=0
             el[i]*=mQ(f)^k
+            mul!(el[i], el[i], mQ(f)^k)
             continue
           end
           val=valuation(f,p)
           act_el=O(f*(anti_uni^val),false)
-          el[i]*= mQ(act_el)^k
+          mul!(el[i], el[i], mQ(act_el)^k)
         end
       end
     end
@@ -190,12 +191,12 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
       for (f,k) in J.fac
         act_el=f
         if mod(act_el, p)!=0
-          el[i]*=mQ(act_el)^k
+          mul!(el[i], el[i], Q(act_el)^k)
           continue
         end
         val=valuation(act_el,p)
         act_el=O(act_el*(anti_uni^val),false)
-        el[i]*=Q(act_el)^k
+        mul!(el[i], el[i], Q(act_el)^k)
       end
     end
     return [el[i].elem for i=1:length(el)], Q
@@ -680,7 +681,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
   mp=Hecke.MapRayClassGrp{typeof(X)}()
   mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.modulus_fin=ideal(O,1)
-  mp.modulus_inf=InfPlc[]
+  mp.modulus_inf=Array{InfPlc, 1}()
   mp.fact_mod=Dict{NfOrdIdl, Int}()
   mp.defining_modulus = (mp.modulus_fin, mp.modulus_inf)
     
@@ -710,7 +711,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp, exp_class::Function
     mp=Hecke.MapRayClassGrp{typeof(X)}()
     mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
     mp.modulus_fin=ideal(O,1)
-    mp.modulus_inf=InfPlc[]
+    mp.modulus_inf=Array{InfPlc, 1}()
     mp.fact_mod=Dict{NfOrdIdl, Int}()
     mp.defining_modulus = (mp.modulus_fin, mp.modulus_inf)
     return X, mp
@@ -724,7 +725,7 @@ end
 ###################################################################################
 
 
-function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array{InfPlc, 1}())
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
@@ -942,7 +943,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
     end
     mp=Hecke.MapClassGrp{typeof(G)}()
     mp.header=Hecke.MapHeader(G, mC.header.codomain,exp1,disclog1)
-    mp.princ_gens=[(FacElem(Dict(ideal(O,1)=> fmpz(1))), FacElem(Dict(K(1)=> 1)))]
+    mp.princ_gens = Tuple{FacElem{NfOrdIdl}, FacElem{nf_elem}}[(FacElem(Dict(ideal(O,1)=> fmpz(1))), FacElem(Dict(K(1)=> 1)))]
     return G,mp, fmpz[]
   
   else
@@ -1010,7 +1011,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=I
   
 end
 
-function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1} = Array{InfPlc, 1}())
   
   K=nf(O)
   d1=Dict{NfOrdIdl, Int}()
@@ -1025,7 +1026,7 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
   
 end
 
-function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1} = InfPlc[])
+function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1} = Array{InfPlc, 1}())
   
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
@@ -1050,7 +1051,7 @@ function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::
 
 end
 
-function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=InfPlc[]; check_expo=false)
+function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=Array{InfPlc, 1}(); check_expo=false)
   # check_expo checks, before the computation of the units, if the exponent of the group can be n.
   # if it is lower for sure, it returns the trivial group.
   # I HAVE TO FIND A BETTER METHOD. 

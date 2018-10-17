@@ -142,16 +142,14 @@ end
 
 function make_positive(x::NfOrdElem, a::fmpz)
  
-  els=conjugates_arb(x)
+  els=conjugates_real(elem_in_nf(x))
   m=fmpz(0)
   for i=1:length(els)
-    if isreal(els[i])
-      y=BigFloat(midpoint(real(els[i]/a)))
-      if y>0
-        continue
-      else
-        m = max(m,1-ceil(fmpz,y))
-      end
+    y = BigFloat(midpoint(els[i]/a))
+    if y > 0
+      continue
+    else
+      m = max(m,1-ceil(fmpz,y))
     end
   end
   @hassert :RayFacElem 1 iscoprime(ideal(parent(x),x), ideal(parent(x), a))
@@ -466,6 +464,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       tbound = q*(q-1) + q*(q^2-1) + (k-q^2+1)*(q^3-1)
     end
     =#
+    #@show (nbound, obound, tbound) 
     bound_max_ap = min(nbound, obound, tbound)  #bound on ap
     bound_max_exp = div(q*bound_max_ap, q^v*(q-1)) #bound on the exponent in the conductor
     if nisc != 1
@@ -839,8 +838,8 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     fields=NfRel_ns[]
   end
   
-  bound = abs(div(absolute_discriminant_bound,discriminant(O)^n))
-  if bound==0
+  bound = div(absolute_discriminant_bound, abs(discriminant(O))^n)
+  if bound == 0
     return fields
   end
 
@@ -884,13 +883,12 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
     if cgrp
         mr.prime_ideal_cache = S
     end
-    act=induce_action(mr,gens)
-    ls=stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype=gtype)
-    a=_min_wild(k[2])*k[1]
+    act = induce_action(mr,gens)
+    ls = stable_subgroups(r, act, op=(x, y) -> quo(x, y, false)[2], quotype = gtype)
     totally_positive_generators(mr)
     for s in ls
       @hassert :AbExt 1 order(codomain(s))==n
-      C=ray_class_field(mr, s)
+      C = ray_class_field(mr, s)
       if Hecke._is_conductor_min_normal(C) && Hecke.discriminant_conductor(C, bound)
         @vprint :AbExt 1 "New Field \n"
         L = number_field(C)
@@ -912,7 +910,7 @@ function abelian_normal_extensions(O::NfOrd, gtype::Array{Int,1}, absolute_discr
           end
         else
           if with_autos==Val{true}
-            push!(fields, (L,absolute_automorphism_group(C,gens))) 
+            push!(fields, (L, absolute_automorphism_group(C,gens))) 
           else
             push!(fields, L)
           end
