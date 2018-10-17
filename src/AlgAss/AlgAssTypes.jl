@@ -235,6 +235,13 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_basis::Vector{fmpz}
   parent::AlgAssAbsOrd{S, T}
 
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    z = new{S, T}()
+    z.parent = O
+    z.elem_in_algebra = algebra(O)()
+    return z
+  end
+
   function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
     z = new{S, T}()
     z.elem_in_algebra = a
