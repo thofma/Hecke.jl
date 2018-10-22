@@ -15,9 +15,9 @@ end
 
 function Base.show(io::IO, K::KummerExt)
   if isdefined(K.AutG, :snf)
-    print(io, "KummerExt with structure $(AutG.snf)")
+    print(io, "KummerExt with structure $(K.AutG.snf)")
   else
-    print(io, "KummerExt with structure $([AutG.rels[i, i] for i=1:ngens(AutG)])")
+    print(io, "KummerExt with structure $([K.AutG.rels[i, i] for i=1:ngens(K.AutG)])")
   end
 end
 
@@ -41,10 +41,11 @@ function kummer_extension(exps::Array{Int, 1}, gens::Array{FacElem{nf_elem, Anti
   k = base_ring(gens[1])
   L = maximal_order(k)
   zeta, o = torsion_units_gen_order(L)
+  n = lcm(exps)
   @assert o % n == 0
 
   K.zeta = k(zeta)^div(o, n)
-  K.n = lcm(exps)
+  K.n = n
   K.gen = gens
   K.AutG = DiagonalGroup(exps)
   K.frob_cache = Dict{NfOrdIdl, GrpAbFinGenElem}()
@@ -54,6 +55,39 @@ end
 function kummer_extension(n::Int, gen::Array{nf_elem, 1})
   g = [FacElem(x) for x=gen]
   return kummer_extension(n, g)
+end
+
+###############################################################################
+#
+#  Base Field
+#
+###############################################################################
+
+function base_field(K::KummerExt)
+  return base_ring(K.gen[1])
+end
+
+###############################################################################
+#
+#  Degree
+#
+###############################################################################
+
+function degree(K::KummerExt)
+  return Int(order(K.AutG))
+end
+
+###############################################################################
+#
+#  From Kummer Extension to Number Field
+#
+###############################################################################
+
+function number_field(K::KummerExt)
+
+  k = base_field(K)
+  kt, t = PolynomialRing(k, "t")
+  return number_field([t^(Int(order(K.AutG[i])))- evaluate(K.gen[i]) for i=1:length(K.gen)])
 end
 
 ###############################################################################
@@ -90,7 +124,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   # Frob(sqrt[n](a), p) = sqrt[n](a)^N(p) (mod p) = zeta^r sqrt[n](a)
   # sqrt[n](a)^N(p) = a^(N(p)-1 / n) = zeta^r mod p
 
-  aut = Array{fmpz,1}(undef, length(K.gen))
+  aut = Array{fmpz, 1}(undef, length(K.gen))
   for j=1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
@@ -134,11 +168,13 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   z_p = inv(mF(Zk(K.zeta)))
   @assert norm(p) % K.n == 1
   ex = div(norm(p)-1, K.n)
-  aut = fmpz[]
 
   mu = mF(g)^ex  # can throw bad prime!
   i = 0
-  while !isone(mu)
+  while true
+    if isone(mu)
+      break
+    end
     i += 1
     @assert i <= K.n
     mul!(mu, mu, z_p)

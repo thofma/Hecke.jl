@@ -275,7 +275,10 @@ function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
        end
     end
   end
-  g = GrpAbFinGenElem[preimage(mc, x) for x = lP]
+  g = Array{GrpAbFinGenElem, 1}(undef, length(lP))
+  for i = 1:length(lP)
+    g[i] = preimage(mc, lP[i])
+  end
 
   q, mq = quo(domain(mc), g, false)
   mc = compose(inv(mq), mc)
@@ -297,12 +300,12 @@ function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
 #end
   if isempty(lP)
     U, mU = unit_group_fac_elem(ZK)
-    @vtime :ClassField 2 KK = kummer_extension(e, [mU(U[i]) for i=1:ngens(U)])
+    KK = kummer_extension(e, [mU(U[i]) for i = 1:ngens(U)])
   else
     @vtime :ClassField 2 S, mS = Hecke.sunit_group_fac_elem(lP)
     @vtime :ClassField 2 KK = kummer_extension(e, [mS(S[i]) for i=1:ngens(S)])
   end
-  
+
   return lP::Array{NfOrdIdl, 1}, KK
 end
 
@@ -385,7 +388,7 @@ end
 
 function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem},1}, AutA::GrpAbFinGen, oA::fmpz, C::CyclotomicExt)
   pe = gen(A)# + 0*gen(C.Ka)
-  Auto=Dict{Hecke.GrpAbFinGenElem, Any}()
+  Auto = Dict{Hecke.GrpAbFinGenElem, Any}()
   cnt = 0
   while true
     @vprint :ClassField 3 "candidate: $pe\n"
@@ -460,16 +463,16 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   end
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
-
-  AutA_gen = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}[]
-  AutA_rel = zero_matrix(FlintZZ, ngens(g)+1, ngens(g)+1)
+  ng = ngens(g)+1
+  AutA_gen = Array{Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}, 1}(undef, ng)
+  AutA_rel = zero_matrix(FlintZZ, ng, ng)
   zeta = C.mp[1](gen(C.Kr))
   n = degree(A)
   @assert e % n == 0
 
   @vprint :ClassField 2 "... the trivial one (Kummer)\n"
   tau = Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}(A, A, zeta^div(e, n)*gen(A))
-  push!(AutA_gen, tau)
+  AutA_gen[1] = tau
 
   AutA_rel[1,1] = n  # the order of tau
 
@@ -479,7 +482,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mg(g[i]))))
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
     sigma = _extend_auto(A, Hecke.NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
-    push!(AutA_gen, sigma)
+    AutA_gen[i+1] = sigma
 
     @vprint :ClassField 2 "... finding relation ...\n"
     m = gen(A)
@@ -509,7 +512,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 end
 
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
-  @assert iskummer_extension(K)
+  @hassert :ClassField 1 iskummer_extension(K)
   k = base_ring(K)
   Zk = maximal_order(k)
   zeta, ord = Hecke.torsion_units_gen_order(Zk)
@@ -543,6 +546,13 @@ function _rcf_descent(CF::ClassField_pp)
   k = nf(order(codomain(CF.rayclassgroupmap)))
   C = cyclotomic_extension(k, e)
   A = CF.K
+  if C.Ka == k
+    #There is nothing to do! The extension is already on the right field
+    CF.A = A
+    CF.pe = gen(A)
+    return CF.A
+  end
+  
   n = degree(A)
   #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
   _aut_A_over_k(C, CF)
@@ -553,7 +563,7 @@ function _rcf_descent(CF::ClassField_pp)
   # now we need a primitive element for A/k
   # mostly, gen(A) will do
   @vprint :ClassField 2 "Searching for primitive element...\n"
-  pe, Auto = _find_prim_elem(A::NfRel, AutA_gen, AutA, order(AutA_snf), C)
+  pe, Auto = _find_prim_elem(A, AutA_gen, AutA, order(AutA_snf), C)
   @vprint :ClassField 2 "\nnow the fix group...\n"
 
   if iscyclic(AutA_snf)  # the subgroup is trivial to find!
@@ -895,638 +905,6 @@ function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
   lp = factor_coprime(a, IdealSet(Zk))
   return reduce_mod_powers(a, n, Dict((p, Int(v)) for (p, v) = lp))
 end
-
-###############################################################################
-#
-#  Automorphisms of abelian extension
-#
-###############################################################################
-
-function rel_auto_easy(A::ClassField_pp)
-  
-  # sqrt[n](a) -> zeta sqrt[n](a) on A.A
-  #on A.K, the Kummer: sqrt[n](a) = gen(A.K) -> zeta gen(A.K)
-  #we have the embedding A.A -> A.K : gen(A.A) -> A.pe
-  M = sparse_matrix(base_ring(A.K))
-  b = A.K(1)
-  push!(M, SRow(b))
-  for i=2:degree(A)
-    b *= A.pe
-    push!(M, SRow(b))
-  end
-  tau = NfRelToNfRelMor(A.K, A.K, A.bigK.zeta*gen(A.K))
-  N = SRow(tau(A.pe))
-  C = cyclotomic_extension(base_field(A), degree(A))
-  Mk = _expand(M, C.mp[1])
-  Nk = _expand(N, C.mp[1])
-  s = solve(Mk, Nk) # will not work, matrix non-square...
-  im = A.A()
-  r = degree(C.Kr)
-  for (i, c) = s
-    setcoeff!(im, i-1, c)
-  end
-  return NfRelToNfRelMor(A.A, A.A, im)
-  
-end
-
-function rel_auto_intersection(A::ClassField_pp)
-  
-  # In the computation of the class field, I saved the 
-  # automorphisms of A.K over k.
-  # Now, I have to search for the one that generates the Galois
-  # group of the target field over k
-  C = cyclotomic_extension(base_field(A), degree(A))
-  a = ispower(degree(A))[2]
-  @assert isprime(a)
-  exp_to_test = divexact(degree(A), a)
-  r = degree(C.Kr)
-  if !isdefined(A, :AutG)
-    _aut_A_over_k(C, A)
-  end
-  #Now, I restrict them to A.A
-  M = sparse_matrix(base_ring(A.K))
-  b = A.K(1)
-  push!(M, SRow(b))
-  for i=2:degree(A)
-    b *= A.pe
-    push!(M, SRow(b))
-  end
-  Mk = _expand(M, C.mp[1])
-  i = 0
-  # One of the automorphisms must generate the group, so I check the order.
-  for j=1:length(A.AutG)
-    tau = A.AutG[j]
-    N = SRow(tau(A.pe))
-    Nk = _expand(N, C.mp[1])
-    s = solve(Mk, Nk) # will not work, matrix non-square...
-    im = A.A()
-    for (i, c) = s
-      setcoeff!(im, i-1, c)
-    end
-    aut = NfRelToNfRelMor(A.A, A.A, im)
-    pow_aut = aut^exp_to_test
-    if pow_aut(gen(A.A)) != gen(A.A)
-      return aut
-    end
-  end
-  error("I can't find the automorphism!")
- 
-end
-
-function rel_auto(A::ClassField_pp)
-  
-  @assert isdefined(A, :A)
-  
-  if degree(A) == degree(A.K)
-    #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
-    return rel_auto_easy(A)
-  else
-    #Tricky case
-    return rel_auto_intersection(A)
-  end
-end
-
-function rel_auto(A::ClassField)
-  aut = NfRelToNfRelMor[rel_auto(x) for x = A.cyc]
-  K = number_field(A)
-  g = gens(K)
-  Aut = NfRel_nsToNfRel_nsMor[]
-  for i=1:length(aut)
-    push!(Aut, NfRel_nsToNfRel_nsMor(K, K, [j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)]))
-  end
-  return Aut
-end
-
-
-###############################################################################
-#
-#  Extension of automorphisms from the base field to the class field
-#
-###############################################################################
-
-#Special case in which I want to extend the automorphisms of a field to
-# a cyclotomic extension
-function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
-   		
-  K = domain(tau)		
-  @assert K == base_ring(C.Kr)		
-  g = C.Kr.pol		
-  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])		
-  i = 1		
-  z = gen(C.Kr)		
-  while gcd(i, C.n) != 1 || !iszero(tau_g(z))		
-    i *= 1		
-    z *= gen(C.Kr) 		
-  end		
-  return NfRelToNfRelMor(C.Kr, C.Kr, tau, z)		
-  		
-end
-
-function extend_aut(A::ClassField, tau::T) where T <: Map
-  # tau: k       -> k
-  #global last_extend = (A, tau)
-  k = domain(tau)
-  @assert k == codomain(tau)
-  @assert k == base_field(A)
-  lp = factor(fmpz(degree(A)))
-  all_h = [A.A() for x in A.cyc]
-  for (p, v) = lp.fac
-#    println("doin' $p^$v")
-    Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
-    i = 1
-    om = 0
-    im = 0
-    while i <= length(Cp)
-      if degree(Cp[i]) > om
-        om = degree(Cp[i])
-        im = i
-      end
-      i += 1
-    end
-    # now Cp[im] is of maximal exponent - hence, it should have the maximal
-    # big Kummer extension. By construction (above), the set of s-units
-    # SHOULD guarantee this....
-    # om defintely has the maximal base field, ie. the most roots of 1.
-    # Now I want all generators in terms of this large Kummer field.
-    #
-    # Idea: similar to pSelmer in Magma:
-    #  look at frob(p, k(zeta_n)(sqrt[n](a)))(sqrt[n](a)):
-    #  sqrt[n](a) -> zeta_n^i sqrt[n](a) = sqrt[n](a)^N(p) mod p
-    # so N(p) = en+f => f = 1 (otherwise the congruence cannot work)
-    # zeta_n^i = a^e mod p for any prime p in k(zeta_n)
-    # since a = S-Unit (mod n-th powers) I can compare frob(p, a) to
-    # the frob(sqrt[n](U_S)) and find the presentation:
-    # next, we want the "same" for sqrt[n](tau(a)).
-    # Given, that can_frob is kind of non-cheap, we want to be clever
-    # zeta_n^i = tau(a)^e mod p =>
-    # tau^-1(zeta_n)^i = a^e mod tau^-1(p) or
-    # zeta_n^(ij) = a^e mod tau^-1(p)
-    # So: need j = j(tau) and the permutation on lp...
-    # in particular, tau need to be extened to k(zeta_n)
-    # Cheat: g = Kr.pol => g(zeta) = 0
-    #  tau(g)(zeta^r) = 0 for some suitable r
-    # then zeta -> zeta^r should be a valid extension....
-    #
-    # TODO: Don't use the bigK.gen (the full s-units), just use the 
-    # group generated by the .a, the various Kummer generators, lifted
-    # to the large cyclotomic extension.
-    # currently the bigK.gen are needed to ensure enough primes are used:
-    # in general, since the degrees of the Kummer extensions can drop when moved
-    # to the larger cyclotomic field, we cannot use the degrees of the components
-    # as a check. (Try enough primes until the Frobenius generate the full group
-    # but we don't know the group.)
-    C = cyclotomic_extension(k, Int(om))
-    g = C.Kr.pol
-    tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])
-#    println("g: $g")
-#    println("tau(g): $tau_g")
-    i = 1
-    z = gen(C.Kr)
-    while gcd(i, om) != 1 || !iszero(tau_g(z))
-      i *= 1
-      z *= gen(C.Kr) 
-    end
-    z_i = i
-
-    z_i_inv = invmod(z_i, om)
-
-    Tau = NfRelToNfRelMor(C.Kr, C.Kr, tau, z)
-    tau_Ka = NfToNfMor(C.Ka, C.Ka, C.mp[1](Tau(C.mp[1]\gen(C.Ka))))
-    #TODO: need the inverse of this or similar...
-    # currently, this is not used as it did not work.
-
-    lp = collect(keys(Cp[im].bigK.frob_cache))
-    pp = maximum(minimum(x) for x = lp)
-    S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
-
-    @assert C.Ka == base_ring(Cp[im].K)
-
-    all_s = []
-    all_tau_s = []
-    all_emb = []
-    for c in Cp
-#      println("om: $om -> ", degree(c), " vs ", c.o)
-      Cs = cyclotomic_extension(k, Int(degree(c)))
-      Emb = NfRelToNfRelMor(Cs.Kr, C.Kr, gen(C.Kr)^div(om, degree(c)))
-      emb = inv(Cs.mp[1]) * Emb * C.mp[1]
-      a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
-      tau_a = FacElem(Dict(tau_Ka(k) => v for (k,v) = a.fac))
-      push!(all_emb, (a, tau_a, emb, divexact(om, c.o)))
-    end
-
-    G = DiagonalGroup([om for i=1:length(Cp[im].bigK.gen)])
-    Q, mQ = quo(G, elem_type(G)[])
-    U = DiagonalGroup([om for i = Cp])
-    s_gen = elem_type(U)[]
-    tau_gen = elem_type(U)[]
-
-    for p = S
-      local f
-      local fa
-      local tfa
-      try
-        f = can_frobenius(p, Cp[im].bigK).coeff
-        fa = [can_frobenius(p, Cp[im].bigK, a[1]) for a = all_emb]
-        tfa =[can_frobenius(p, Cp[im].bigK, a[2]) for a = all_emb]
-      catch e
-        if typeof(e) != BadPrime
-          rethrow(e)
-        end
-        continue
-      end
-      el = mQ(G(f))
-      if iszero(el)
-        continue
-      end
-      Q, mmQ = quo(Q, [el])
-      mQ = mQ*mmQ
-      push!(s_gen, U(fa))
-      push!(tau_gen, U(tfa))
-      if order(Q) == 1
-        break
-      end
-    end
-
-    T_grp = DiagonalGroup([om for i= s_gen])
-    t_gen = [T_grp([x[i] for x = s_gen]) for i=1:length(Cp)]
-    t_tau_gen = [T_grp([x[i] for x = tau_gen]) for i=1:length(Cp)]
-    t_corr = [gcd(content(x.coeff), om) for x = t_gen]
-    #if any entry in t_corr is != 1, then the degree of the kummer
-    #extension has to be lower:
-    #support C2 x C8, the generator for the C2 is in the Cylo(8),
-    #thus over the larger base field, the extension is trivial
-    all_b = []
-    for i=1:length(Cp)
-      q, mq = quo(T_grp, divexact(Cp[i].o, Int(t_corr[i])))
-      @assert domain(mq) == T_grp
-      _, ms = sub(q, [mq(x) for x = t_gen])
-      fl, lf = haspreimage(ms, mq(t_tau_gen[i]))
-      @assert fl
-      mu = prod(all_emb[j][1]^lf[j] for j=1:length(Cp)) * inv(all_emb[i][2])
-      fl, rt = ispower(mu, divexact(Cp[i].o, Int(t_corr[i])))
-      @assert fl
-      push!(all_b, (evaluate(rt), lf))
-    end
-    
-    Ka = C.Ka
-    KaT, X = PolynomialRing(Ka, "T", cached = false)
-    KK, gKK = number_field([X^Int(divexact(Cp[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(Cp)])
-    s = []
-    for i in 1:length(Cp)
-      _s = gKK[1]
-      _s = _s^Int(divexact(om, divexact(Cp[i].o, t_corr[i]))*all_b[i][2][1])
-      for j in 2:length(Cp)
-        _s = _s * gKK[j]^Int(divexact(om, divexact(Cp[i].o, t_corr[i]))*all_b[i][2][j])
-      end
-      push!(s, _s)
-    end
-    h = NfRel_nsToNfRel_nsMor(KK, KK, tau_Ka, [inv(all_b[i][1]) * s[i] for i=1:length(Cp)])
-
-    # now "all" that remains is to restrict h to the subfield, using lin. alg..
-    # .. and of course move away form the Cp stuff.
-
-    #TODO: better (more efficient) maps from NfRel -> NfRel_ns in case
-    # we're using only one generator
-    #Similar: NfRel_ns -> NfRel_ns small gens set -> large gens set
-    all_pe =[]
-    for jj=1:length(Cp)
-      emb = NfRelToNfRel_nsMor(Cp[jj].K, KK, all_emb[jj][3], gens(KK)[jj])
-#      println("start:")
-#      println(gen(Cp[jj].K), " -> ", emb(gen(Cp[jj].K)))
-#      println(Cp[jj].K.pol, " -> ", minpoly(emb(gen(Cp[jj].K))))
-      pe = emb(Cp[jj].pe)
-      tau_pe = h(pe)
-#      println("$(Cp[jj].pe) pe: $pe -> $tau_pe")
-#      println(norm(minpoly(Cp[jj].pe)))
-#      println(norm(minpoly(pe)))
-#      println(norm(minpoly(tau_pe)))
-#      println("=======")
-      push!(all_pe, (pe, tau_pe))
-    end
-
-    B = [KK(1), all_pe[1][1]]
-    d = degree(Cp[1])
-    while length(B) < degree(Cp[1])
-      push!(B, B[end]*all_pe[1][1])
-    end
-  
-
-    for jj=2:length(Cp)
-      d *= degree(Cp[jj])
-      D = copy(B)
-      while length(B) < d
-        D = [x*all_pe[jj][1] for x = D]
-        append!(B, D)
-      end
-    end
-    M = sparse_matrix(Ka)
-    for i=1:d
-      push!(M, SRow(B[i]))
-    end
-    AA, gAA = number_field([c.A.pol for c = Cp])
-    @assert d == degree(AA)
-    @assert d == length(B)
-    b_AA = basis(AA)
-    Mk = _expand(M, C.mp[1])
-    #@hassert :ClassField 2 nullspace(Mk')[1] == 0
-    all_im = NfRel_nsElem{nf_elem}[]
-    for jj=1:length(Cp)
-      N = SRow(all_pe[jj][2])
-      Nk = _expand(N, C.mp[1])
-      global last_solve = (Mk, Nk, M, N)
-      n = solve(Mk, Nk)
-      im = sum(v*b_AA[l] for (l, v) = n)
-      push!(all_im, im)
-    end
-    im = NfRel_nsElem{nf_elem}[]
-    i = 1
-    j = 1
-    while j<=length(A.cyc)
-      if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
-        push!(im, gens(A.A)[j])
-        i += 1
-        j += 1
-      else
-        j += 1
-      end
-    end
-    emb = NfRel_nsToNfRel_nsMor(KK, A.A, im)
-    i = 1
-    j = 1
-    while j<=length(A.cyc)
-      if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
-        all_h[j] = emb(all_im[i])
-        i += 1
-        j += 1
-      else
-        j += 1
-      end
-    end
-  end
-  return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
-end
-
-#now again, but for embeddnigs, not automorphisms
-
-function extend_hom(A::ClassField, B::ClassField, tau::T) where T <: Map
-  # tau: k1       -> k2
-  #global last_extend = (A, tau)
-  k1 = domain(tau)
-  k2 = codomain(tau)
-  @assert k1 == base_field(A)
-  @assert k2 == base_field(B)
-  @assert degree(B) % degree(A) == 0 #actually, this should hold for the exponent
-  lp = factor(fmpz(degree(B)))
-  all_h = [A.A() for x in A.cyc]
-  for (p, v) = lp.fac
-    println("doin' $p^$v")
-    Cp = [Ap for Ap = A.cyc if degree(Ap) % Int(p) == 0]
-    Dp = [Bp for Bp = B.cyc if degree(Bp) % Int(p) == 0]
-    h = [extend_hom(X, Cp, tau) for x = Dp]
-  end
-end
-
-function extend_hom(C::ClassField_pp, D::Array{ClassField_pp, 1}, tau)
-    #if it works, then Cp -> Dp should also work
-    k2 = codomain(tau)
-    k1 = domain(tau)
-    i = 1
-    om = 0
-    im = 0
-    while i <= length(D)
-      if degree(D[i]) > om
-        om = degree(D[i])
-        im = i
-      end
-      i += 1
-    end
-    # now Dp[im] is of maximal exponent - hence, it should have the maximal
-    # big Kummer extension. By construction (above), the set of s-units
-    # SHOULD guarantee this....
-    # om defintely has the maximal base field, ie. the most roots of 1.
-    # Now I want (the images) for all generators in terms of this large Kummer field.
-    #
-    Dy = cyclotomic_extension(k2, Int(om))
-    Cy = cyclotomic_extension(k1, C.degree)
-    g = Cy.Kr.pol
-    tau_g = k2["x"][1]([tau(coeff(g, i)) for i=0:degree(g)])
-    println("g: $g")
-    println("tau(g): $tau_g")
-    i = 1
-    z = gen(Dy.Kr)
-    while gcd(i, om) != 1 || !iszero(tau_g(z))
-      i *= 1
-      z *= gen(Dy.Kr) 
-    end
-    z_i = i
-
-    z_i_inv = invmod(z_i, om)
-
-    Tau = NfRelToNfRelMor(Cy.Kr, Dy.Kr, tau, z)
-    @show tau_Ka = NfToNfMor(Cy.Ka, Dy.Ka, Dy.mp[1](Tau(Cy.mp[1]\gen(Cy.Ka))))
-
-    lp = collect(keys(D[im].bigK.frob_cache))
-    pp = maximum(minimum(x) for x = lp)
-    S = Base.Iterators.flatten((lp, PrimeIdealsSet(order(lp[1]), pp, fmpz(-1), indexdivisors=false, ramified=false, degreebound = 1)))
-
-    @assert Dy.Ka == base_ring(D[im].K)
-
-    all_s = []
-    all_tau_s = []
-    all_emb = []
-    for c in D
-#      println("om: $om -> ", degree(c), " vs ", c.o)
-      Cs = cyclotomic_extension(k2, Int(degree(c)))
-      Emb = NfRelToNfRelMor(Cs.Kr, Dy.Kr, gen(Dy.Kr)^div(om, degree(c)))
-      emb = inv(Cs.mp[1]) * Emb * Dy.mp[1]
-      a = FacElem(Dict(emb(k) => v for (k,v) = c.a.fac))
-      push!(all_emb, (a, emb, divexact(om, c.o)))
-    end
-    b = FacElem(Dict(tau_Ka(k) => v for (k,v) = C.a.fac))
-
-    G = DiagonalGroup([om for i=1:length(D[im].bigK.gen)])
-    Q, mQ = quo(G, elem_type(G)[])
-    U = DiagonalGroup([om for i = D])
-    s_gen = elem_type(U)[]
-    tau_b = fmpz[]
-
-    for p = S
-      local f
-      local fa
-      local tfa
-      try
-        f = can_frobenius(p, D[im].bigK).coeff
-        fa = [can_frobenius(p, D[im].bigK, a[1]) for a = all_emb]
-        tfa = can_frobenius(p, D[im].bigK, b)
-      catch e
-        if typeof(e) != BadPrime
-          rethrow(e)
-        end
-        continue
-      end
-      el = mQ(G(f))
-      if iszero(el)
-        continue
-      end
-      Q, mmQ = quo(Q, [el])
-      mQ = mQ*mmQ
-      push!(s_gen, U(fa))
-      push!(tau_b, (tfa))
-      if order(Q) == 1
-        break
-      end
-    end
-
-    T_grp = DiagonalGroup([om for i= s_gen])
-    @show t_gen = [T_grp([x[i] for x = s_gen]) for i=1:length(D)]
-    @show t_tau_g = T_grp(tau_b)
-    @show t_corr = [gcd(content(x.coeff), om) for x = t_gen]
-    @show t_corr_b = gcd(gcd(tau_b), om)
-    @assert t_corr_b == 1
-    #if any entry in t_corr is != 1, then the degree of the kummer
-    #extension has to be lower:
-    #support C2 x C8, the generator for the C2 is in the Cylo(8),
-    #thus over the larger base field, the extension is trivial
-
-    q, mq = quo(T_grp, divexact(C.o, Int(t_corr_b)))
-    @assert domain(mq) == T_grp
-    _, ms = sub(q, [mq(x) for x = t_gen])
-    @show fl, lf = haspreimage(ms, mq(t_tau_g))
-    @assert fl
-    mu = prod(all_emb[j][1]^lf[j] for j=1:length(D)) * inv(b)
-    fl, rt = ispower(mu, divexact(C.o, Int(t_corr_b)))
-    @assert fl
-    all_b = (evaluate(rt), lf)
-    
-    Ka = Dy.Ka
-    KaT, X = PolynomialRing(Ka, "T", cached = false)
-    KK, gKK = number_field([X^Int(divexact(D[j].o, t_corr[j])) - root(evaluate(all_emb[j][1]), Int(t_corr[j])) for j=1:length(D)])
-    s = gKK[1]
-    s = s^Int(divexact(D[1].o, C.o)*all_b[2][1])
-    for j in 2:length(D)
-      s = s * gKK[j]^Int(divexact(D[j].o, C.o)*all_b[2][j])
-    end
-    h = NfRelToNfRel_nsMor(C.K, KK, tau_Ka, inv(all_b[1]) * s)
-
-    # now "all" that remains is to restrict h to the subfield, using lin. alg..
-
-    all_pe = []
-    for jj=1:length(D)
-      emb = NfRelToNfRel_nsMor(D[jj].K, KK, tau_Ka, gens(KK)[jj])
-      pe = emb(D[jj].pe)
-      push!(all_pe, pe)
-    end
-
-    B = [KK(1), all_pe[1]]
-    d = degree(D[1])
-    while length(B) < degree(D[1])
-      push!(B, B[end]*all_pe[1])
-    end
-  
-
-    for jj=2:length(D)
-      d *= degree(D[jj])
-      _D = copy(B)
-      while length(B) < d
-        _D = [x*all_pe[jj] for x = _D]
-        append!(B, _D)
-      end
-    end
-    M = sparse_matrix(Ka)
-    for i=1:d
-      push!(M, SRow(B[i]))
-    end
-    AA, gAA = number_field([c.A.pol for c = D])
-    @assert d == degree(AA)
-    @assert d == length(B)
-    b_AA = basis(AA)
-    Mk = _expand(M, Dy.mp[1])
-    #@hassert :ClassField 2 nullspace(Mk')[1] == 0
-    N = SRow(h(C.pe))
-    Nk = _expand(N, Dy.mp[1])
-    n = solve(Mk, Nk)
-    all_im = sum(v*b_AA[l] for (l, v) = n)
-
-      return all_im
-
-      #=
-
-    im = NfRel_nsElem{nf_elem}[]
-    i = 1
-    j = 1
-    while j<=length(A.cyc)
-      if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
-        push!(im, gens(A.A)[j])
-        i += 1
-        j += 1
-      else
-        j += 1
-      end
-    end
-    emb = NfRel_nsToNfRel_nsMor(KK, A.A, im)
-    i = 1
-    j = 1
-    while j<=length(A.cyc)
-      if i<= length(Cp) && degree(A.cyc[j]) == degree(Cp[i])
-        all_h[j] = emb(all_im[i])
-        i += 1
-        j += 1
-      else
-        j += 1
-      end
-    end
-  end
-  return NfRel_nsToNfRel_nsMor(A.A, A.A, tau, all_h)
-  =#
-end
-
-#M is over K, mp: K -> K/k, expand M into a matrix over k
-function _expand(M::Generic.Mat{nf_elem}, mp::Map)
-  Kr = domain(mp)
-  Ka = codomain(mp)
-  k = base_ring(Kr)
-  d = degree(Kr)
-  N = zero_matrix(k, rows(M), cols(M) * d)
-  for i=1:rows(M)
-    for j = 1:cols(M)
-      a = mp\M[i,j]
-      for l=0:d-1
-        N[i, (j-1)*d+l+1] = coeff(a, l)
-      end
-    end
-  end
-  return N
-end
-
-function _expand(M::SRow{nf_elem}, mp::Map)
-  Kr = domain(mp)
-  k = base_ring(Kr)
-  d = degree(Kr)
-  sr = SRow(k)
-  for (j, v) = M
-    a = mp\v
-    for l=0:d-1
-      c = coeff(a, l)
-      if !iszero(c)
-        push!(sr.pos, (j-1)*d+1+l)
-        push!(sr.values, c)
-      end
-    end
-  end
-  return sr
-end
-
-function _expand(M::SMat{nf_elem}, mp::Map)
-  Kr = domain(mp)
-  k = base_ring(Kr)
-  N = sparse_matrix(k)
-  for i=1:rows(M)
-    sr = _expand(M[i], mp)
-    push!(N, sr)
-  end
-  return N
-end
-
 
 ###############################################################################
 #

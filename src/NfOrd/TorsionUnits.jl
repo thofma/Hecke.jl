@@ -87,8 +87,14 @@ end
 > Given an order $O$, compute the torsion units of $O$.
 """
 function torsion_units(O::NfOrd)
-  ar, g = _torsion_units(O)
-  return ar
+  ord, g = _torsion_units(O)
+  res = Array{NfOrdElem, 1}(undef, ord)
+  res[1] = O(1)
+  res[2] = g
+  for i = 3:ord
+    res[i] = g*res[i-1]
+  end
+  return res
 end
 
 @doc Markdown.doc"""
@@ -98,8 +104,7 @@ end
 > Given an order $O$, compute a generator of the torsion units of $O$.
 """
 function torsion_units_gen(O::NfOrd)
-  ar, g = _torsion_units(O)
-  return g
+  return _torsion_units(O)[2]
 end
 
 @doc Markdown.doc"""
@@ -109,8 +114,8 @@ end
 > Given an order $O$, compute a generator of the torsion units of $O$ as well as its order.
 """
 function torsion_units_gen_order(O::NfOrd)
-  ar, g = _torsion_units(O)
-  return g, length(ar)
+  ord, g = _torsion_units(O)
+  return g, ord
 end
 
 @doc Markdown.doc"""
@@ -121,8 +126,8 @@ end
 > together with a map $G \to \mathcal O^\times$.
 """
 function torsion_unit_group(O::NfOrd)
-  ar, g = _torsion_units(O)
-  f = AbToNfOrdMultGrp(O, length(ar), g)
+  ord, g = _torsion_units(O)
+  f = AbToNfOrdMultGrp(O, ord, g)
   return domain(f), f
 end
 
@@ -131,7 +136,7 @@ function _torsion_units(O::NfOrd)
     return O.torsion_units
   end
 
-  z = _torsion_units_lifting(O)
+  z = _torsion_units_gen(O)
   O.torsion_units = z
   return O.torsion_units
 end
@@ -265,9 +270,7 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
   end
 
   p = upper_bound + 1
-
   m = fmpz(0)
-  m_old = fmpz(0)
   stable = 0
 
   first = true
@@ -277,11 +280,11 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
     if isramified(O, p)
       continue
     end
-    lp = prime_decomposition(O, p)
-    m_new = m_old
+    lp = prime_decomposition_type(O, p)
+    m_new = m
 
-    for (P, e) in lp
-      m_new = gcd(m_new, norm(P) - 1)
+    for (f, e) in lp
+      m_new = gcd(m_new, p^f - 1)
     end
 
     if first
@@ -292,7 +295,7 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
       first = false
     end
 
-    if m_new == m_old
+    if m_new == m
       stable += 1
     else
       stable = 0
@@ -302,7 +305,7 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
       return m_new
     end
 
-    m_old = m_new
+    m = m_new
   end
 end
 
@@ -331,3 +334,35 @@ function _torsion_units_lifting(O::NfOrd)
   return R, R[i]
 end
 
+function _torsion_units_gen(O::NfOrd)
+  r1, r2 = signature(O)
+
+  if r1 > 0
+    return 2, O(-1)
+  end
+
+  m = _torsion_group_order_divisor(O)
+  Ky, y = PolynomialRing(nf(O), "y", cached = false)
+  fac = factor(m).fac
+  gen = O(1)
+  ord = 1
+  for (p, v) in fac
+    if p == 2 && v == 1
+      mul!(gen, gen, O(-1))
+      ord *= 2
+      continue
+    end
+    for i = 1:v
+      f = divexact(y^(Int(p)^(v+1-i)) - 1, y^(Int(p)^(v-i)) - 1)
+      R = _roots_hensel(f, 1)
+      if !isempty(R)
+        mul!(gen, gen, O(R[1]))
+        ord *= Int(p)^(v+1-i)
+        break
+      end
+    end  
+  end
+
+  return ord, gen
+
+end

@@ -26,6 +26,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   decomposition#::Vector{Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})}
   center#Tuple{AlgAss{T}, mor(AlgAss{T}, AlgAss{T})
   maps_to_numberfields
+  maximal_order
 
   # Constructor with default values
   function AlgAss{T}(R::Ring) where {T}
@@ -75,11 +76,10 @@ mutable struct AlgAssElem{T, S} <: AbsAlgAssElem{T}
   end
 
   # This does not make a copy of coeffs
-  function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where{T, S}
+  function AlgAssElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
     z = new{T, AlgAss{T}}()
     z.parent = A
     z.coeffs = coeffs
-    z.coeffs
     return z
   end
 end
@@ -106,6 +106,7 @@ mutable struct AlgGrp{T, S, R} <: AbsAlgAss{T}
   decomposition
   center
   maps_to_numberfields
+  maximal_order
 
   function AlgGrp(K::Ring, G::GrpAbFinGen)
     A = AlgGrp(K, G, op = +)
@@ -167,7 +168,6 @@ mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
     z = new{T, S}()
     z.parent = A
     z.coeffs = coeffs
-    z.coeffs
     return z
   end
 end
@@ -234,6 +234,13 @@ mutable struct AlgAssAbsOrdElem{S, T} <: RingElem
   elem_in_algebra::T
   elem_in_basis::Vector{fmpz}
   parent::AlgAssAbsOrd{S, T}
+
+  function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    z = new{S, T}()
+    z.parent = O
+    z.elem_in_algebra = algebra(O)()
+    return z
+  end
 
   function AlgAssAbsOrdElem{S, T}(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
     z = new{S, T}()

@@ -4,7 +4,82 @@ import Nemo.matrix
 
 import Base.vcat
 
-# 
+################################################################################
+#
+#  Dense matrix types
+#
+################################################################################
+
+dense_matrix_type(::Type{fmpz}) = fmpz_mat
+
+dense_matrix_type(::Type{fmpq}) = fmpq_mat
+
+dense_matrix_type(::Type{nmod}) = nmod_mat
+
+dense_matrix_type(::Type{fq_nmod}) = fq_nmod_mat
+
+dense_matrix_type(::Type{fq}) = fq_mat
+
+dense_matrix_type(::Type{arb}) = arb_mat
+
+dense_matrix_type(::Type{acb}) = acb_mat
+
+dense_matrix_type(::Type{T}) where {T} = Generic.Mat{T}
+
+coefficient_type(::Type{fmpz_mat}) = fmpz
+
+coefficient_type(::Type{fmpq_mat}) = fmpq
+
+coefficient_type(::Type{nmod_mat}) = nmod
+
+coefficient_type(::Type{fq_nmod_mat}) = fq_nmod
+
+coefficient_type(::Type{fq_mat}) = fq
+
+coefficient_type(::Type{arb_mat}) = arb
+
+coefficient_type(::Type{acb_mat}) = acb
+
+coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
+
+################################################################################
+#
+#  Saturation
+#
+################################################################################
+
+@doc Markdown.doc"""
+    saturate(A::fmpz_mat) -> fmpz_mat
+
+Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \meet
+\mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
+$A$.
+
+Equivalently, return $TA$ for an invertiable rational matrix $T$ such that $TA$
+is integral and the elementary divisors of $TA$ are all trivial.
+"""
+function saturate(A::fmpz_mat)
+  #row saturation: want
+  #  TA in Z, T in Q and elem_div TA = [1]
+  #
+  #  AT = H (in HNF), then A = HT^-1 and H^-1A = T^-1
+  # since T is uni-mod, H^-1 A is in Z with triv. elm. div
+
+  H = hnf(A')
+  H = H'
+  Hi, d = pseudo_inv(sub(H, 1:rows(H), 1:rows(H)))
+  S = Hi*A
+  Sd = divexact(S, d)
+#  @hassert :HNF 1  d*Sd == S
+  return Sd
+end
+
+################################################################################
+#
+#  Zero matrix constructors
+#
+################################################################################
+
 function zero_matrix(::Type{MatElem}, R::Ring, n::Int)
   return zero_matrix(R, n)
 end

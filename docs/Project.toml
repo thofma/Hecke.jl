@@ -1,5 +1,5 @@
 [deps]
-Hecke = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
+#Hecke = "3e1990a7-5d81-5526-99ce-9ba3ff248f21"
 Nemo = "2edaba10-b0f1-5616-af89-8c11ac63239a"
 AbstractAlgebra = "c3fe647b-3220-5bb0-a1ea-a7954cac585d"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"

@@ -51,6 +51,8 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
 
   while(length(A) < r)
 
+    @assert length(kelem) == length(x.R_gen) + length(x.R_rel)
+
     for i in 1:length(kelem)
       kelem[i] = 0
     end
@@ -70,6 +72,8 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
     end
 
     _make_row_primitive!(kelem)
+
+    @assert length(kelem) == length(x.R_gen) + length(x.R_rel)
 
     y = FacElem(vcat(x.R_gen, x.R_rel), kelem)
 
@@ -101,6 +105,8 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
   @vprint :UnitGroup 1 "Enlarging unit group by adding more kernel basis elements ...\n"
   while not_larger < 3 
 
+    @assert length(kelem) == length(x.R_gen) + length(x.R_rel)
+
     for i in 1:length(kelem)
       kelem[i] = 0
     end
@@ -112,6 +118,8 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
     time_kernel += @elapsed for i in length(trafos):-1:1
       apply_right!(kelem, trafos[i])
     end
+
+    @assert length(kelem) == length(x.R_gen) + length(x.R_rel)
 
     y = FacElem(vcat(x.R_gen, x.R_rel), kelem)
 
@@ -126,6 +134,7 @@ function _unit_group_find_units_with_trafo(u::UnitGrpCtx, x::ClassGrpCtx)
     if is_tors
       @v_do :UnitGroup 2 popindent()
       @vprint :UnitGroup 2 "Element is torsion unit\n"
+      not_larger = not_larger + 1
       continue
     end
     @v_do :UnitGroup 2 popindent()

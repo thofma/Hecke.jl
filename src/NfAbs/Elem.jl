@@ -312,6 +312,37 @@ end
 
 ################################################################################
 #
+#  Is norm divisible by
+#
+################################################################################
+
+
+@doc Markdown.doc"""
+***
+   is_norm_divisible(a::nf_elem, n::fmpz) -> Bool
+
+Checks if the norm of $a$ is divisible by $n$
+"""
+function is_norm_divisible(a::nf_elem, n::fmpz)
+  
+  K = parent(a)
+  s, t = ppio(denominator(a), n)
+  if s == 1
+    R = ResidueRing(FlintZZ, n, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
+  else
+    m = n*s^degree(K)
+    R = ResidueRing(FlintZZ, m, cached = false)
+    Rx, x = PolynomialRing(R, "x", cached = false)
+    el = resultant_ideal(Rx(numerator(a)), Rx(K.pol))
+  end 
+  return iszero(el) 
+end
+
+
+################################################################################
+#
 #  Numerator
 #
 ################################################################################

@@ -10,7 +10,7 @@ for scope in Hecke.ASSERT_SCOPE
   set_assert_level(scope, 3)
 end
 
-@time include("AssAlg.jl")
+@time include("AlgAss.jl")
 @time include("EllCrv.jl")
 @time include("GrpAb.jl")
 @time include("LinearAlgebra.jl")

@@ -16,7 +16,7 @@ mutable struct ClassField_pp
   mq::Map
   rayclassgroupmap::Map#MapRayClassGrp
   quotientmap::Map#GrpAbFinGenMap
-  a::FacElem
+  a::FacElem#Generator of the Kummer Extension
 
   sup::Array{NfOrdIdl, 1} # the support of a - if known
   sup_known::Bool
@@ -25,7 +25,7 @@ mutable struct ClassField_pp
   A::NfRel{nf_elem} # the target
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
   defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
-  pe::NfRelElem{nf_elem}
+  pe::NfRelElem{nf_elem} #The image of the generator of A in K
   AutG::Array
   AutR::fmpz_mat
   bigK::KummerExt
@@ -40,7 +40,7 @@ mutable struct ClassField_pp
 end
 
 function Base.show(io::IO, C::ClassField_pp)
-  println(IOContext(io, :compact => true), "Cyclic class field of degree $(order(codomain(C.quotientmap))) defined modulo $(defining_modulus(C))")
+  println(IOContext(io, :compact => true), "Cyclic class field of degree $(degree(C)) defined modulo $(defining_modulus(C))")
   if isdefined(C, :a)
     println(io, "Kummer generator ", C.a)
   end

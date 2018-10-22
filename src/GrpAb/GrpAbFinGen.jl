@@ -495,15 +495,38 @@ end
 
 @doc Markdown.doc"""
 ***
-    direct_product(G::GrpAbFinGen, H::GrpAbFinGen) -> GrpAbFinGen
+    direct_product(G::GrpAbFinGen, H::GrpAbFinGen) -> GrpAbFinGen, GrpAbFinGenMap, GrpAbFinGenMap
 
-> Returns the abelian group $G\times H$.
+> Returns the abelian group $G\times H$ and the injections $G -> G\times \{0\}$, 
+  $H -> \{0\} \times H$ .
 """
 function direct_product(G::GrpAbFinGen, H::GrpAbFinGen)
+
+  if ngens(G) == 0 && ngens(H) == 0
+    Dp = DiagonalGroup(Int[])
+    m1 = GrpAbFinGenMap(G, Dp, zero_matrix(FlintZZ, 0, 0))
+    m2 = GrpAbFinGenMap(H, Dp, zero_matrix(FlintZZ, 0, 0))
+    return Dp, m1, m2
+  end
+  if ngens(G) == 0 
+    Dp = deepcopy(H)
+    m1 = GrpAbFinGenMap(G, Dp, zero_matrix(FlintZZ, 0, ngens(H)))
+    m2 = hom(gens(H), [Dp[i] for i = 1:ngens(H)])
+    return Dp, m1, m2
+  end
+  if ngens(H) == 0 
+    Dp = deepcopy(G)
+    m2 = GrpAbFinGenMap(H, Dp, zero_matrix(FlintZZ, 0, ngens(G)))
+    m1 = hom(gens(G), [Dp[i] for i = 1:ngens(G)])
+    return Dp, m1, m2
+  end
   A = vcat(rels(G), zero_matrix(FlintZZ, rows(rels(H)), cols(rels(G))))
   B = vcat(zero_matrix(FlintZZ, rows(rels(G)), cols(rels(H))), rels(H))
-
-  return AbelianGroup(hcat(A,B))
+  Dp = AbelianGroup(hcat(A,B))
+  m1 = hom(gens(G), [Dp[i] for i=1:ngens(G)])
+  m2 = hom(gens(H), [Dp[i+ngens(G)] for i = 1:ngens(H)])
+  return Dp, m1, m2
+  
 end
 
 ################################################################################

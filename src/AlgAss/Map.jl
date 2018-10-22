@@ -163,3 +163,68 @@ end
 #function hom(A::AlgAss{R}, B::AlgAss{S}, M::T, N::T) where {R <: AlgAss, S <: AlgAss, T}
 #  return AlgAssMor{R, S, T}(A, B, M, N)
 #end
+
+################################################################################
+#
+#  Morphisms between algebras and number fields
+#
+################################################################################
+
+# S is the type of the algebra, T the element type of the algebra
+mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
+  header::MapHeader{S, AnticNumberField}
+  M::fmpq_mat
+  N::fmpq_mat
+  t::fmpq_mat # dummy vector used in image and preimage
+  tt::fmpq_mat # another dummy vector
+
+  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
+
+    z = new{S, T}()
+    z.M = M
+    z.N = N
+    z.t = zero_matrix(FlintQQ, 1, dim(A))
+    z.tt = zero_matrix(FlintQQ, 1, degree(K))
+
+    function _image(x::T)
+      for i = 1:dim(A)
+        z.t[1, i] = x.coeffs[i]
+      end
+      s = z.t*N
+      return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
+    end
+
+    function _preimage(x::nf_elem)
+      for i = 1:degree(K)
+        z.tt[1, i] = coeff(x, i - 1)
+      end
+      s = z.tt*M
+      return A([ s[1, i] for i = 1:dim(A) ])
+    end
+
+    z.header = MapHeader{S, AnticNumberField}(A, K, _image, _preimage)
+    return z
+  end
+
+  # a is a primitive element in A
+  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, a::T) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
+
+    s = one(A)
+    M = zero_matrix(FlintQQ, dim(A), dim(A))
+    elem_to_mat_row!(M, 1, s)
+    for i = 2:dim(A)
+      s = mul!(s, s, a)
+      elem_to_mat_row!(M, i, s)
+    end
+
+    return AbsAlgAssToNfAbsMor{S, T}(A, K, M, inv(M))
+  end
+end
+
+function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat)
+  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, M, N)
+end
+
+function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, a::AbsAlgAssElem{fmpq})
+  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, a)
+end

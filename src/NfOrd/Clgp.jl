@@ -153,9 +153,10 @@ function _validate_class_unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 
   if !isdefined(U, :torsion_units)
     @vprint :UnitGroup 1 "Computing torsion structure ... \n"
-    U.torsion_units = torsion_units(O)
-    U.torsion_units_order = length(U.torsion_units)
-    U.torsion_units_gen = torsion_units_gen(O)
+    #U.torsion_units = torsion_units(O)
+    g, ord = torsion_units_gen_order(O)
+    U.torsion_units_order = ord
+    U.torsion_units_gen = g
   end  
 
   @vprint :UnitGroup 1 "Torsion structure done!\n"

@@ -264,6 +264,23 @@ ideal(O::NfAbsOrd, a::fmpz)  = NfAbsOrdIdl(O, deepcopy(a))
 ideal(O::NfAbsOrd, a::Int) = NfAbsOrdIdl(O, a)
 ideal(O::NfAbsOrd, a::Integer) = NfAbsOrdIdl(O, fmpz(a))
 
+function ideal_from_z_gens(O::NfOrd, b::Vector{NfOrdElem}, check::Bool = false)
+  d = degree(O)
+  @assert length(b) >= d
+
+  M = zero_matrix(FlintZZ, length(b), d)
+  for i = 1:length(b)
+    for j = 1:d
+      M[i, j] = elem_in_basis(b[i])[j]
+    end
+  end
+  M = _hnf(M, :lowerleft)
+  if d < length(b)
+    M = sub(M, (length(b) - d + 1):length(b), 1:d)
+  end
+  return ideal(O, M, check, true)
+end
+
 ################################################################################
 #
 #  Basic field access
@@ -832,19 +849,18 @@ function _minmod(a::fmpz, b::NfOrdElem)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
   e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
-
-  S = ResidueRing(FlintZZ, a*d*e, cached=false)
+  S = ResidueRing(FlintZZ, a*d*e, cached = false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
   U = lift(FlintZZ["x"][1], u)
   # m can be zero...
-  m = lift(m)
-  if iszero(m)
-    m = a*d*e
+  m1 = lift(m)
+  if iszero(m1)
+    m1 = a*d*e
   end
-  bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
+  bi = k(U)//m1*d # at this point, bi*d*b = m mod a*d*idx
   d = denominator(bi, Zk)
   return gcd(d, a)
   # min(<a, b>) = min(<ad, bd>)/d and bd is in the equation order, hence max as well
@@ -2022,9 +2038,9 @@ end
 
 function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   
-  @assert order(I)==order(J)
+  @assert order(I) == order(J)
   
-  if gcd(minimum(I), minimum(J))==1
+  if gcd(minimum(I), minimum(J)) == 1
     return true
   else 
     return isone(I+J)

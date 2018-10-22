@@ -6,6 +6,8 @@
 
 parent_type(::Type{AlgAssElem{T, S}}) where {T, S} = S
 
+parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
+
 parent(a::AbsAlgAssElem) = a.parent
 
 ################################################################################
@@ -217,7 +219,7 @@ function ^(a::AbsAlgAssElem, b::Int)
   end
 end
 
-function ^(a::AlgAssElem, b::fmpz)
+function ^(a::AbsAlgAssElem, b::fmpz)
   if nbits(b) < 64
     return a^Int(b)
   end
@@ -260,6 +262,17 @@ function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
   return AlgGrpElem{T, typeof(A)}(A, c)
 end
 
+# Generic.Mat needs it
+function (A::AlgAss)(a::AlgAssElem)
+  @assert parent(a) == A "Wrong parent"
+  return a
+end
+
+function (A::AlgGrp)(a::AlgGrpElem)
+  @assert parent(a) == A "Wrong parent"
+  return a
+end
+
 ################################################################################
 #
 #  String I/O
@@ -279,7 +292,7 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::AlgAssElem{T}, dict::IdDict) where {T}
+function Base.deepcopy_internal(a::AbsAlgAssElem{T}, dict::IdDict) where {T}
   b = parent(a)()
   for x in fieldnames(typeof(a))
     if x != :parent && isdefined(a, x)
@@ -295,7 +308,7 @@ end
 #
 ################################################################################
 
-function ==(a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
+function ==(a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
   parent(a) != parent(b) && return false
   return a.coeffs == b.coeffs
 end
@@ -342,7 +355,7 @@ end
 #
 ################################################################################
 
-function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AlgAssElem{T}) where T
+function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
   for c = 1:cols(M)
     M[i, c] = deepcopy(a.coeffs[c])
   end
@@ -460,3 +473,15 @@ end
 ################################################################################
 
 
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+function coeffs(a::AbsAlgAssElem, copy::Bool = true)
+  if copy
+    return deepcopy(a.coeffs)
+  end
+  return a.coeffs
+end

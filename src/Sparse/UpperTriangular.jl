@@ -1,140 +1,5 @@
 # this is the old upper triangular code
 
-function one_step(A::SMat{T}, sr = 1) where T
-  i = sr
-  assert(i>0)
-  all_r = Array{Int}(0)
-  min = A.c
-  while i <= length(A.rows)
-    @assert length(A.rows[i].pos)>0
-    @assert A.rows[i].pos[1] >= sr
-    if A.rows[i].pos[1] < min
-      min = A.rows[i].pos[1]
-      all_r = [i]
-    elseif A.rows[i].pos[1] == min
-      push!(all_r, i)
-    end
-    i += 1
-  end
-
-  if length(all_r) == 0
-    return A.r+1
-  end
-#  println("found multiple $(length(all_r)) possibilities of weight $([length(A.rows[_i].pos) for _i in all_r])")
-  #sorting
-  sort!(all_r, lt=function(a,b) return length(A.rows[a].pos) < length(A.rows[b].pos)end)
-#  println("found multiple $(length(all_r)) possibilities of weight $([length(A.rows[_i].pos) for _i in all_r])")
-  # we need to have rows[all_r[1]] == sr, so that the new pivot will be in
-  # row sr
-
-  if !(sr in all_r)
-    q = A.rows[sr]
-    A.rows[sr] = A.rows[all_r[1]]
-    A.rows[all_r[1]] = q
-    all_r[1] = sr
-  else
-    p = findfirst(all_r, sr)
-    if p > 1
-      q = A.rows[sr]
-      A.rows[sr] = A.rows[all_r[1]]
-      A.rows[all_r[1]] = q
-      all_r[p] = all_r[1]
-      all_r[1] = sr
-    end
-  end
-  if length(all_r) == 1
-    return sr+1
-  end
-
-  for j=2:length(all_r)
-    x = A.rows[sr].values[1]
-    y = A.rows[all_r[j]].values[1]
-    g = x
-    @assert x!= 0
-    if y % x == 0
-      c = -div(y, x)
-#      @assert x*c == -y
-      add_scaled_row!(A, sr, all_r[j], c)
-      @assert !iszero(A[sr])
-    else
-      g,a,b = gcdx(x, y)
-#      @assert g == a*x + b*y
-      c = -div(y, g)
-#      @assert y == -c*g
-      d = div(x, g)
-#      @assert x == d*g
-      transform_row!(A, sr, all_r[j], a, b, c, d)
-      @assert !iszero(A[sr])
-    end
-
-#    @assert A.rows[sr].entry[1]valuesval == g
-#    @assert A.rows[sr].entry[1].val != 0
-#    if length(A.rows[all_r[j]].entry) == 0 ||
-#             A.rows[all_r[j]].entry[1].col > min
-#    else
-#      println("bad", x, " and ", y, " in ", sr, ", ", all_r[j])
-#      println("min: ", min)
-#    end
-
-#    @assert length(A.rows[all_r[j]].entry) == 0 ||
-#             A.rows[all_r[j]].entry[1].col > min
-#  println("in one step: ilog2(max) now ", nbits(maximum(abs, A)), " j:", j, " length: ", length(all_r))
-  end
-  sort!(all_r)
-  for j=length(all_r):-1:2
-    if iszero(A.rows[all_r[j]])
-      deleteat!(A.rows, all_r[j])
-      A.r -= 1
-    end
-  end
-  return sr+1
-end
-
-@doc Markdown.doc"""
-  upper_triangular{T}(A::SMat{T}; mod = 0)
-
-  Inplace: transform A into an upper triangular matrix. If mod
-  is non-zero, reduce entries modulo mod during the computation.
-"""
-function upper_triangular(A::SMat{T}; mod = 0) where T
-  for i = 1:min(rows(A), cols(A))
-    x = one_step(A, i)
-#    println("after one step: ilog2(max) now ", nbits(maximum(abs, A)))
-    if x>A.r
-      return
-    end
-    if A.nnz > (A.r-i) * (A.c-i) /2 || nbits(maximum(abs, A)) > 200
-      #println("calling  at level ", i, " bits: ", nbits(maximum(abs, A)), "nnz: ", A.nnz)
-      h = sub(A, i:A.r, i:A.c)
-      deleteat!(A.rows, i:A.r)
-      A.r -= length(i:A.r)
-      @assert length(A.rows) == A.r
-      h = fmpz_mat(h)
-      #println("calling dense hnf on a ", rows(h), " by ", cols(h), " matrix")
-      if mod==0
-        h = hnf(h)
-      else
-        h = nmod_mat(mod, h)
-        rref!(h)
-        h = Array(lift(h))
-      end
-      h = sparse_matrix(h)
-      for j in h.rows
-        rw = SRow{T}()
-        for e in 1:length(j.pos)
-          push!(rw.pos, j.pos[e] + i-1)
-          push!(rw.values, j.values[e])
-        end
-        push!(A.rows, rw)
-        A.r += 1
-      end
-
-      return
-    end
-  end
-  return
-end
-
 ################################################################################
 #
 #  One echelonization step w/o transformations
@@ -150,18 +15,26 @@ function _one_step(A::SMat{T}, sr = 1) where T
 end
 
 function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
-  trafos = Trafo[]
+  trafos = SparseTrafoElem[]
   i = sr
-  assert(i>0)
-  all_r = Array{Int}(0)
+  @assert i > 0
+  all_r = Int[]
   min = A.c
 
   while i <= length(A.rows)
+    # if we encounter zero row, push it to the end
+    if iszero(A.rows[i])
+      deleteat!(A.rows, i)
+      push!(A.rows, sparse_row(base_ring(A)))
+      push!(trafos, sparse_trafo_delete_zero(T, i))
+      i += 1
+      continue
+    end
     @assert length(A.rows[i].pos)>0
     @assert A.rows[i].pos[1] >= sr
     if A.rows[i].pos[1] < min
       min = A.rows[i].pos[1]
-      all_r = [i]
+      all_r = Int[i]
     elseif A.rows[i].pos[1] == min
       push!(all_r, i)
     end
@@ -178,15 +51,15 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
   # row sr
 
   if !(sr in all_r)
-    push!(trafos, TrafoSwap{T}(sr, all_r[1]))
+    push!(trafos, sparse_trafo_swap(T, sr, all_r[1]))
     q = A.rows[sr]
     A.rows[sr] = A.rows[all_r[1]]
     A.rows[all_r[1]] = q
     all_r[1] = sr
   else
-    p = findfirst(all_r, sr)
+    p = something(findfirst(isequal(sr), all_r), 0)
     if p > 1
-      push!(trafos, TrafoSwap{T}(sr, all_r[1]))
+      push!(trafos, sparse_trafo_swap(T, sr, all_r[1]))
 
       q = A.rows[sr]
       A.rows[sr] = A.rows[all_r[1]]
@@ -213,8 +86,8 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
   for j = length(all_r):-1:2
     if length(A.rows[all_r[j]].pos) == 0
       deleteat!(A.rows, all_r[j])
-      push!(trafos, TrafoDeleteZero{T}(all_r[j]))
-      A.r -= 1
+      push!(A.rows, sparse_row(base_ring(A)))
+      push!(trafos, sparse_trafo_delete_zero(T, all_r[j]))
     end
   end
   return sr + 1, trafos
@@ -239,7 +112,7 @@ function echelonize_via_dense(h::SMat{nmod})
 end
 
 function echelonize_via_dense_with_trafo(h::SMat{fmpz})
-  hdense = fmpz_mat(h)
+  hdense = matrix(h)
   # echelonize
   hdense, U = hnf_with_transform(hdense)
   # put back into sparse matrix
@@ -248,7 +121,7 @@ function echelonize_via_dense_with_trafo(h::SMat{fmpz})
 end
 
 function echelonize_via_dense(h::SMat{fmpz})
-  hdense = fmpz_mat(h)
+  hdense = matrix(h)
   # echelonize
   hdense = hnf(hdense)
   # put back into sparse matrix
@@ -268,7 +141,7 @@ end
 function echelonize_basecase!(x::T, y::T, i::Int, j::Int, A::Hecke.SMat{T}) where T
   c = -divexact(y, x)
   add_scaled_row!(A, i, j, c)
-  return TrafoAddScaled(i, j, c)
+  return sparse_trafo_addscaled(i, j, c)
 end
 
 function echelonize_basecase!(x::fmpz, y::fmpz, i::Int, j::Int,
@@ -276,13 +149,13 @@ function echelonize_basecase!(x::fmpz, y::fmpz, i::Int, j::Int,
   if y % x == 0
     c = -div(y, x)
     add_scaled_row!(A, i, j, c)
-    return TrafoAddScaled(i, j, c)
+    return sparse_trafo_add_scaled(i, j, c)
   else
     g,a,b = gcdx(x, y)
     c = -div(y, g)
     d = div(x, g)
     Hecke.transform_row!(A, i, j, a, b, c, d)
-    return TrafoParaAddScaled(i, j, a, b, c, d)
+    return sparse_trafo_para_add_scaled(i, j, a, b, c, d)
   end
 end
 
@@ -294,6 +167,14 @@ end
 
 # there is some density limit at level i, at which dense echelonization
 # will be invoked
+#
+
+function upper_triangular_with_trafo(M::SMat, density_limit = 0.5)
+  B = deepcopy(M)
+  T = upper_triangular_with_trafo!(B, density_limit)
+  return B, T
+end
+
 function upper_triangular_with_trafo!(M::SMat, density_limit::Float64 = 0.5)
   f = (A, i) -> (A.nnz > (A.r-i) * (A.c-i) * density_limit)
   return _upper_triangular_with_trafo!(M, f)
@@ -310,7 +191,7 @@ end
 # At each level i, is_dense_enough(A, i) is called.
 # If it evaluates to true, then dense echelonization will be called.
 function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) where T
-  trafo = Trafo[]
+  trafo = SparseTrafoElem[]
 
   for i = 1:min(rows(A), cols(A))
     x, t = _one_step_with_trafo(A, i)
@@ -327,7 +208,7 @@ function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) wh
 
       # h will have zero rows
 
-      push!(trafo, TrafoPartialDense(i, i:A.r, i:A.c, U))
+      push!(trafo, sparse_trafo_partial_dense(i, i:A.r, i:A.c, U))
 
       deleteat!(A.rows, i:A.r)
       A.r -= length(i:A.r)
@@ -357,8 +238,8 @@ function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) wh
       # Now delete trailing zero rows.
       while length(A.rows[k].pos) == 0
         deleteat!(A.rows, k)
-        A.r -= 1
-        push!(trafo, TrafoDeleteZero{T}(k))
+        push!(A.rows, sparse_row(base_ring(A)))
+        push!(trafo, sparse_trafo_delete_zero(T, k))
         k -= 1
       end
 
@@ -454,7 +335,7 @@ function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
       if j == i
         continue
       end
-      push!(trafos_right, TrafoAddScaled(j, i, -a))
+      push!(trafos_right, sparse_trafo_add_scaled(j, i, -a))
     end
   end
 
@@ -462,8 +343,8 @@ function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
 
   snfofess, ltr, rtr = snf_with_transform(essential_part, true, true)
 
-  push!(trafos_left, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), ltr))
-  push!(trafos_right, TrafoPartialDense(essential_index, essential_index:rows(A), essential_index:cols(A), rtr))
+  push!(trafos_left, sparse_trafo_partial_dense(essential_index, essential_index:rows(A), essential_index:cols(A), ltr))
+  push!(trafos_right, sparse_trafo_partial_dense(essential_index, essential_index:rows(A), essential_index:cols(A), rtr))
 
   return snfofess, trafos_left, trafos_right
 end
