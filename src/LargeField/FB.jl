@@ -33,6 +33,16 @@ function compose_mod(x::nmod_poly, y::nmod_poly, z::nmod_poly)
   return r
 end
 
+function compose_mod(x::gfp_poly, y::gfp_poly, z::gfp_poly)
+  check_parent(x,y)
+  check_parent(x,z)
+  r = parent(x)()
+  ccall((:nmod_poly_compose_mod, :libflint), Nothing,
+          (Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}, Ref{gfp_poly}), r, x, y, z)
+  return r
+end
+
+
 @doc Markdown.doc"""
   taylor_shift(x::nmod_poly, r::UInt) -> nmod_poly
 
