@@ -26,6 +26,20 @@ function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
   
 end
 
+function lift(M::gfp_mat, R::Nemo.NmodRing)
+  
+  x=factor(fmpz(R.n))
+  @assert length(x.fac)==1
+  @assert order(parent(M[1,1]))==first(keys(x.fac))
+  N=zero_matrix(R, rows(M), cols(M))
+  for i=1:rows(M)
+    for j=1:cols(M)
+      N[i,j] = R(lift(M[i,j]))
+    end
+  end
+  return N
+
+end
 
 #
 #  Action of a matrix on an element of the group
@@ -93,8 +107,8 @@ end
 
 function issubmodule(M::ZpnGModule, S::nmod_mat)
   
-  @assert issnf(M.V)
-  s, ms=subm_to_subg(M,S)
+  #@assert issnf(M.V)
+  s, ms=subm_to_subg(M, S)
   for x in gens(s)
     el=ms(x)
     for g in M.G
@@ -117,9 +131,9 @@ function action(V::GrpAbFinGen, act::Array{T,1}) where T<: Map{GrpAbFinGen, GrpA
   @assert length(factor(order(V)).fac)==1
   RR=ResidueRing(FlintZZ, expon, cached=false)
   act_mat=Array{nmod_mat,1}(undef, length(act))
-  for z=1:length(act)
-    A=zero_matrix(RR,ngens(V), ngens(V))
-    for i=1:ngens(V)
+  for z = 1:length(act)
+    A =zero_matrix(RR, ngens(V), ngens(V))
+    for i = 1:ngens(V)
       y=act[z](V[i])
       for j=1:ngens(V)
         A[i,j]=y.coeff[1,j]
@@ -217,16 +231,14 @@ end
 ########################################################################################################
 
 
-function quo(M::ZpnGModule, S:: nmod_mat)
-
-  Q,mQ=quo(M.V,lift(S))
-  return ZpnGModule(Q,M.G), mQ
-  
+function quo(M::ZpnGModule, S::nmod_mat)
+  Q, mQ=quo(M.V, lift(S))
+  return ZpnGModule(Q, M.G), mQ
 end
 
 function sub(M::ZpnGModule, S::nmod_mat)
 
-  sg,msg=sub(M.V,lift(S))
+  sg, msg=sub(M.V, lift(S))
   G=Array{nmod_mat,1}(undef, length(M.G))
   for k=1:length(M.G)
     A=zero_matrix(M.R, ngens(sg), ngens(sg))
@@ -267,31 +279,28 @@ end
 function _exponent_p_sub(M::ZpnGModule)
 
   @assert issnf(M.V)
-  G=M.G
-  V=M.V
-  p=M.p
-  F, a = Nemo.FiniteField(p, 1, "a", cached=false)
-  v=fmpz[divexact(V.snf[i],p) for i=1:ngens(V)]
-  G1=Array{fq_nmod_mat,1}(undef, length(G))
-  MS=MatrixSpace(F,ngens(V),ngens(V), false)
+  G = M.G
+  V = M.V
+  p = M.p
+  F = GF(Int(p), cached=false)
+  v = fmpz[divexact(V.snf[i], p) for i=1:ngens(V)]
+  G1 = Array{gfp_mat,1}(undef, length(G))
   for s=1:length(G1)
-    G1[s]=MS(0)
+    G1[s] = zero_matrix(F, ngens(V), ngens(V))
     for i=1:ngens(V)
       for j=1:ngens(V)
-        if G[s][i,j]!=0 && v[i] <= v[j]
-          G1[s][i,j]=divexact((G[s][i,j].data)*v[i],v[j])
+        if G[s][i,j] !=0 && v[i] <= v[j]
+          G1[s][i,j] = divexact((G[s][i,j].data)*v[i], v[j])
         end
       end
     end
   end
-  return FqGModule(G1)
+  return ModAlgAss(G1)
   
 end
 
 function subm_to_subg(M::ZpnGModule, S::nmod_mat; op=sub)
-  
   return op(M.V,lift(S))
-  
 end
 
 
@@ -303,20 +312,19 @@ end
 
 function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   
-  
   R=M.R
   S,mS=snf(M)
-  N=_exponent_p_sub(S)
+  N = _exponent_p_sub(S)
   if ord==-1
-    list_sub=minimal_submodules(N)
+    list_sub = minimal_submodules(N)
   else
-    list_sub=minimal_submodules(N, ngens(S.V)-ord)
+    list_sub = minimal_submodules(N, ngens(S.V)-ord)
   end
   list=Array{nmod_mat,1}(undef, length(list_sub))
   v=[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   W=MatrixSpace(R,1, ngens(M.V), false)
   for z=1:length(list)
-    list[z]= vcat([W((mS(S.V([FlintZZ(coeff(list_sub[z][k,i],0))*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:rows(list_sub[z])])
+    list[z] = vcat([W((mS(S.V([lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:rows(list_sub[z])])
   end
   return list
 
@@ -335,23 +343,23 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   S,mS=snf(M)
   N=dual_module(S)
   if ind==-1
-    minlist=minimal_submodules(N)
+    minlist = minimal_submodules(N)
   else 
-    minlist=minimal_submodules(N,ind)
+    minlist = minimal_submodules(N,ind)
   end
   list=Array{nmod_mat,1}(undef, length(minlist))
   W=MatrixSpace(R,1,ngens(S.V), false)
   v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
-    K=DiagonalGroup([fmpz(R.n) for j=1:rows(x)])
-    A=lift(transpose(x))
+    K = DiagonalGroup([fmpz(R.n) for j=1:rows(x)])
+    A = lift(transpose(x))
     for j=1:rows(A)
       for k=1:cols(A)
         A[j,k]*=v[j]
       end
     end 
-    mH=Hecke.GrpAbFinGenMap(S.V,K,A)
-    sg,msg=kernel(mH)
+    mH = Hecke.GrpAbFinGenMap(S.V,K,A)
+    sg, msg = kernel(mH)
     push!(list, vcat([ (mS(msg(y))).coeff for y in gens(sg)]))
   end
   return list
@@ -381,7 +389,7 @@ function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
         M[j-s+1,k-s+1]=(G[i][j,k]).data
       end
     end
-    G1[i]=M
+    G1[i] = M
   end
   return G1
 
@@ -474,8 +482,8 @@ function submodules_all(M::ZpnGModule)
   
   R=M.R
   S,mS=snf(M)  
-  minlist=minimal_submodules(S)
-  list=nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf), false)(1), MatrixSpace(R,1,length(S.V.snf), false)(0)]
+  minlist = minimal_submodules(S)
+  list=nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf), false)(1), zero_matrix(R,1,length(S.V.snf))]
   
   #
   #  Find minimal submodules, factor out and recursion on the quotients
@@ -506,6 +514,59 @@ function submodules_all(M::ZpnGModule)
 end
 
 
+function main_submodules_cyclic(M::ZpnGModule, ord::Int)
+
+  list = _submodules_with_struct_cyclic(M, ord)
+  for step = 1:ord-1
+    c = M.p^step 
+    list1 = nmod_mat[]
+    for x in list  
+      L, _ = quo(M, x)
+      newlist = _submodules_with_struct_cyclic(L, ord-step)
+      for i = 1:length(newlist)
+        if !iszero(c * M.V( lift(newlist[i]) ))
+          push!(list1, newlist[i])
+        end
+      end
+    end
+    list = list1
+  end
+  return list
+  
+end
+
+function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
+  
+  R = M.R
+  #
+  #  We search for an element in p^(ord-1)*G
+  #
+  s, ms = sub(M, M.p^(ord-1))
+  S, mS = snf(s)
+  N = _exponent_p_sub(S)
+  submod = gfp_mat[]
+  if N.dimension == 1
+    push!(submod, identity_matrix(base_ring(N), 1))
+  else
+    @vtime :StabSub 1 submod = minimal_submodules(N, 1, composition_factors(N, dimension = 1))
+  end
+  list1 = Array{nmod_mat,1}(undef, length(submod))
+  v = nmod[R(divexact(S.V.snf[i], M.p)) for i = 1:ngens(S.V)]
+  for i = 1:length(submod)
+    list1[i] = lift(submod[i], R)
+    @assert rows(list1[i]) == 1
+    for k = 1:cols(list1[i])
+      list1[i][1, k] *= v[k]
+    end
+  end  
+  W=MatrixSpace(R, rows(mS.map), cols(ms.map), false)
+  MatSnf=W(mS.map*ms.map)  
+  for j=1:length(list1)
+    list1[j] = list1[j]*MatSnf
+  end
+  return list1
+
+end
 
 function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
 
@@ -517,10 +578,10 @@ function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   S,mS=snf(s)
   N=_exponent_p_sub(S)
   submod=fq_nmod_mat[]
-  if N.dim==1
+  if N.dimension ==1
     push!(submod, identity_matrix(N.K, 1))
   else
-    @vtime :StabSub 1 submod=minimal_submodules(N,1,composition_factors(N))
+    @vtime :StabSub 1 submod=minimal_submodules(N,1,composition_factors(N, dimension = 1))
   end
   list1=Array{nmod_mat,1}(undef, length(submod))
   v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
@@ -561,14 +622,14 @@ function submodule_with_struct_exp_p(M::ZpnGModule, l::Int)
     
     R=M.R
     S,mS=snf(M)
-    N=Hecke._exponent_p_sub(S)
-    lf=composition_factors(N)
-    list=nmod_mat[]
-    v=fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
-    submod=submodules(N,ngens(S.V)-l,comp_factors=lf)
+    N = Hecke._exponent_p_sub(S)
+    lf = composition_factors(N)
+    list = nmod_mat[]
+    v = fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
+    submod = submodules(N,ngens(S.V)-l,comp_factors=lf)
     list1=Array{nmod_mat,1}(undef, length(submod))
     for i=1:length(submod) 
-      list1[i]=lift(submod[i],R) 
+      list1[i]=lift(submod[i], R) 
       for s=1:rows(list1[i])
         for t=1:cols(list1[i])
           @inbounds list1[i][s,t]*=v[t]
@@ -587,7 +648,8 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   
   # If the group is cyclic, it is easier 
   if length(typesub)==1
-    return submodules_with_struct_cyclic(M,typesub[1])
+    return main_submodules_cyclic(M, typesub[1])
+    #return submodules_with_struct_cyclic(M,typesub[1])
   end
   sort!(typesub)
   # If the subgroups we are searching for have exponent p, it is easier
@@ -605,7 +667,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   s,ms=sub(S1, M.p^(typesub[end]-1))
   S,mS=snf(s)
   N=_exponent_p_sub(S)
-  @vtime :StabSub 1 submod=submodules(N,(N.dim)-a)
+  @vtime :StabSub 1 submod=submodules(N,(N.dimension)-a)
   #
   #  Write the modules as elements of S
   #
@@ -672,7 +734,7 @@ function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   #  Check for redundancy
   #
   w=fmpz[divexact(fmpz(R.n), S1.V.snf[j]) for j=1:ngens(S1.V)]
-  list=_no_redundancy(list,w)
+  @vtime :StabSub 1 list=_no_redundancy(list,w)
 
   #
   #  Write the submodules in terms of the set of given generators

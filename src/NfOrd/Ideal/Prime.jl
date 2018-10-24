@@ -84,13 +84,14 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    intersect(f::Map, P::NfOrdIdl) -> NfOrdIdl
+    intersect_prime(f::Map, P::NfOrdIdl) -> NfOrdIdl
 > Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
 > of number fields, find the unique prime $p$ in $k$ below.
 """
 
 function intersect_prime(f::Map, P::NfOrdIdl)
   
+  @assert isprime(P)
   p = minimum(P)
   k = domain(f)
   Ok = maximal_order(k)
@@ -144,7 +145,6 @@ end
 """
 function prime_decomposition(f::Map, p::NfOrdIdl)
   
-
   @assert p.is_prime == 1
   k = domain(f)
   K = codomain(f)

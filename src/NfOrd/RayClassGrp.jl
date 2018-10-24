@@ -1358,7 +1358,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     mp.modulus_fin = ideal(O,modulus)
     mp.modulus_inf = real_places(nf(O))
     mp.defining_modulus = (ideal(O, modulus), real_places(nf(O)))
-    return U,mp
+    return U, mp
     
     
   elseif isodd(n_quo)

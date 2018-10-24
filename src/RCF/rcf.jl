@@ -88,7 +88,7 @@ function NumberField(CF::ClassField)
   @assert issnf(G)
   q = [G[i] for i=1:ngens(G)]
   for i=1:ngens(G)
-    o = order(G[i])
+    o = G.snf[i]
     lo = factor(o)
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
@@ -131,25 +131,20 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   sR = GrpAbFinGenElem[]
   lp = elem_type(domain(mR))[]
 
-  #st = start(S)
-  local q, mq, np, extra
   np = 0
   extra = 1
 
-  #q, mq = quo(R, sR, false)
+  q, mq = quo(R, sR, false)
   for p in S
-    q, mq = quo(R, sR, false)
-  #while true
-    #p, st = next(S, st)
-    if cp % p == 0 || index(ZK) % p ==0
+    if cp % p == 0 || index(ZK) % p == 0
       continue
     end
     @vprint :ClassField 2 "doin` $p\n"
     np += 1
 
-    if np % ngens(R) == 0
-      @vprint :ClassField 3 "need many generators... $np for group with $(ngens(R))"
-    end
+    #if np % ngens(R) == 0
+    #  @vprint :ClassField 3 "need many generators... $np for group with $(ngens(R))\n"
+    #end
     lP = prime_decomposition(ZK, p)
 
     f=R[1]
@@ -241,15 +236,15 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   k = nf(Zk)
   @hassert :ClassField 1 k == domain(mp)
 
-  Sp = Hecke.PrimesSet(200, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
+  Sp = Hecke.PrimesSet(100, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
 
-  lp, sG = find_gens(cf, Sp, cp)
+  @vtime :ClassField 2 lp, sG = find_gens(cf, Sp, cp)
   G = codomain(cf)
   sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
 
   for i=1:length(lp)
     p = Id_Zk(intersect_nonindex(mp, lp[i]))
-    sR[i]= valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
+    sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
   end
   @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
        # if think if the quo(G, ..) == 1, then the other is automatic
@@ -386,14 +381,19 @@ end
 #
 ###############################################################################
 
-function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem},1}, AutA::GrpAbFinGen, oA::fmpz, C::CyclotomicExt)
-  pe = gen(A)# + 0*gen(C.Ka)
-  Auto = Dict{Hecke.GrpAbFinGenElem, Any}()
+#This function computes a primitive element for the target extension with the
+#roots of unit over the base field and the action of the automorphisms on it.
+function _find_prim_elem(AutA::GrpAbFinGen, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem}, 1}, C::CyclotomicExt)
+  
+  A = domain(AutA_gen[1])
+  pe = gen(A)
+  Auto = Dict{Hecke.GrpAbFinGenElem, NfRelElem}()
+  oA = order(AutA)
   cnt = 0
   while true
     @vprint :ClassField 3 "candidate: $pe\n"
     Im = Set{Hecke.NfRelElem{nf_elem}}()
-    for j = AutA
+    for j in AutA
       im = grp_elem_to_map(AutA_gen, j, pe)
       if im in Im
         pe += gen(C.Ka)
@@ -405,7 +405,7 @@ function _find_prim_elem(A::NfRel, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_
       else
         push!(Im, im)
       end
-      Auto[j]=im
+      Auto[j] = im
     end
     if length(Im) == oA
       break
@@ -446,16 +446,17 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   e = degree(CF)
   g, mg = unit_group(ResidueRing(FlintZZ, e, cached=false))
   @assert issnf(g)
-  #mg = Hecke.make_snf(mg)
-  @assert (e%8 == 0 && ngens(domain(mg))==2) ||
-           ngens(domain(mg)) <= 1
+  @assert (e%8 == 0 && ngens(g)==2) || ngens(g) <= 1
+  
+  K = C.Ka
+  Kr = C.Kr
 
-  if degree(C.Kr) < order(g)  # there was a common subfield, we
+  if degree(Kr) < order(g)  # there was a common subfield, we
                               # have to pass to a subgroup
-    @assert order(g) % degree(C.Kr) == 0
-    f = C.Kr.pol
+    @assert order(g) % degree(Kr) == 0
+    f = Kr.pol
     # Can do better. If the group is cyclic (e.g. if p!=2), we already know the subgroup!
-    s, ms = sub(g, [x for x in g if iszero(f(gen(C.Kr)^Int(lift(mg(x)))))], false)
+    s, ms = sub(g, [x for x in g if iszero(f(gen(Kr)^Int(lift(mg(x)))))], false)
     ss, mss = snf(s)
     g = ss
     #mg = mg*ms*mss
@@ -466,7 +467,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   ng = ngens(g)+1
   AutA_gen = Array{Hecke.NfRelToNfRelMor{nf_elem,  nf_elem}, 1}(undef, ng)
   AutA_rel = zero_matrix(FlintZZ, ng, ng)
-  zeta = C.mp[1](gen(C.Kr))
+  zeta = C.mp[1](gen(Kr))
   n = degree(A)
   @assert e % n == 0
 
@@ -476,28 +477,28 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
 
   AutA_rel[1,1] = n  # the order of tau
 
-  K = C.Ka
+  
   @vprint :ClassField 2 "... need to extend $(ngens(g)) from the cyclo ext\n"
-  for i=1:ngens(g)
-    si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mg(g[i]))))
+  for i = 1:ngens(g)
+    si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))))
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
-    sigma = _extend_auto(A, Hecke.NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
+    sigma = _extend_auto(A, NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
     AutA_gen[i+1] = sigma
 
     @vprint :ClassField 2 "... finding relation ...\n"
     m = gen(A)
-    for j=1:Int(order(g[i]))
+    for j = 1:Int(order(g[i]))
       m = sigma(m)
     end
     # now m SHOULD be tau^?(gen(A)), so sigma^order(g[i]) = tau^?
     # the ? is what I want...
     j = 0
-    local zeta_i::nf_elem = (inv(zeta)^div(e, n))::nf_elem
-    local mi::nf_elem = coeff(m, 1)
+    zeta_i = zeta^mod(div(e, n)*(e-1), e)
+    mi = coeff(m, 1)
     @hassert :ClassField 1 m == mi*gen(A) 
 
     while mi != 1
-      mi *= zeta_i
+      mul!(mi, mi, zeta_i)
       j += 1
       @assert j <= e
     end
@@ -513,6 +514,7 @@ end
 
 function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   @hassert :ClassField 1 iskummer_extension(K)
+  #@assert iskummer_extension(K)
   k = base_ring(K)
   Zk = maximal_order(k)
   zeta, ord = Hecke.torsion_units_gen_order(Zk)
@@ -521,19 +523,21 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
 
   im_zeta = h(zeta)
   r = 1
-  z = zeta
+  z = deepcopy(zeta)
   while im_zeta != z
     r += 1
-    z *= zeta
+    mul!(z, z, zeta)
   end
 
   a = -coeff(K.pol, 0)
-  a = a^r//h(a) # this assumes K/k to be abelian
-  fl, b = hasroot(a, degree(K))
+  a = h(a)//a^r # this assumes K/k to be abelian
+  fl, b = ispower(a, degree(K))
   @assert fl
 
-  return NfRelToNfRelMor(K, K, h, 1//b*gen(K)^r)
+  return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
 end
+
+
 
 function _rcf_descent(CF::ClassField_pp)
   if isdefined(CF, :A)
@@ -543,7 +547,7 @@ function _rcf_descent(CF::ClassField_pp)
   @vprint :ClassField 2 "Descending ...\n"
                
   e = degree(CF)
-  k = nf(order(codomain(CF.rayclassgroupmap)))
+  k = base_field(CF)
   C = cyclotomic_extension(k, e)
   A = CF.K
   if C.Ka == k
@@ -553,133 +557,143 @@ function _rcf_descent(CF::ClassField_pp)
     return CF.A
   end
   
+  Zk = maximal_order(k)
+  ZK = maximal_order(C.Ka)
+  
   n = degree(A)
   #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
   _aut_A_over_k(C, CF)
   
   AutA_gen = CF.AutG
   AutA = GrpAbFinGen(CF.AutR)
-  AutA_snf, mp = snf(AutA)
   # now we need a primitive element for A/k
   # mostly, gen(A) will do
   @vprint :ClassField 2 "Searching for primitive element...\n"
-  pe, Auto = _find_prim_elem(A, AutA_gen, AutA, order(AutA_snf), C)
+  pe, Auto = _find_prim_elem(AutA, AutA_gen, C)
   @vprint :ClassField 2 "\nnow the fix group...\n"
-
-  if iscyclic(AutA_snf)  # the subgroup is trivial to find!
+  if iscyclic(AutA)  # the subgroup is trivial to find!
     @vprint :ClassField 2 ".. trivial as automorphism group is cyclic\n"
-    s, ms = sub(AutA_snf, [e*AutA_snf[1]], false)
+    s, ms = sub(AutA, e, false)
   else
     @vprint :ClassField 2 ".. interesting...\n"
-    #want: hom: AutA = Gal(A/k) -> Gal(K/k) = domain(mq)
+    # want: hom: AutA = Gal(A/k) -> Gal(K/k) = domain(mq)
+    #K is the target field.
     # idea: take primes p in k and compare
-    #  Frob(p, A/k) and preimage(mq, p)
+    # Frob(p, A/k) and preimage(mq, p)
     @assert n == degree(CF.K)
-    Zk = order(defining_modulus(CF)[1])
+
     function canFrob(p::NfOrdIdl)
-      lP = Hecke.prime_decomposition_nonindex(C.mp[2], p)
+      lP = prime_decomposition(C.mp[2], p)
       P = lP[1][1]
-      Q = lP[end][1]
-      F, mF = ResidueFieldSmall(order(P), P)
+      F, mF = ResidueFieldSmall(ZK, P)
       Ft, t = PolynomialRing(F, cached=false)
       mFp = extend_easy(mF, C.Ka)
       ap = mFp(CF.a)
       Ap = ResidueRing(Ft, t^n-ap)
       
-      function toAp(x) # x in CF.K
+      #@assert length(Set([toAp(v) for (k,v) = Auto])) == length(Auto)
+      #TODO: bad prime possible if set is too small (pe might interfere with p)
+      xpe = zero(Ft)
+      for i = 0:n-1
+        setcoeff!(xpe, i, mFp(coeff(pe, i)))
+      end
+      imF = Ap(xpe)^norm(p)
+      res = GrpAbFinGenElem[]
+      for (ky, v) in Auto
         xp = zero(Ft)
-        @assert coeff(x, n) == 0
-        for i=0:n-1
-          setcoeff!(xp, i, mFp(coeff(x, i)))
+        @assert coeff(v, n) == 0
+        for i = 0:n-1
+          setcoeff!(xp, i, mFp(coeff(v, i)))
         end
-        return Ap(xp)
-      end
-
-#      @assert length(Set([toAp(v) for (k,v) = Auto])) == length(Auto)
-#TODO: bad prime possible if set is too small (pe might interfere with p)
-      imF = toAp(pe)^norm(p)
-      for (ky,v) = Auto
-        kp = toAp(v)
+        kp = Ap(xp)
         if kp == imF
-          return ky
+          push!(res, ky)
+          #return ky
         end
       end
-      error("Frob not found")
+      if length(res) > 1
+        throw(BadPrime(p))
+      end
+      return res[1]
+      error("Frob not found")  
     end
+
     @vprint :ClassField 2 "finding Artin map...\n"
-#TODO can only use non-indx primes, easy primes...
+    #TODO can only use non-indx primes, easy primes...
+    cp = lcm([minimum(defining_modulus(CF)[1]), index(Zk), index(ZK)])
     @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
-                      PrimesSet(200, -1), lcm(minimum(defining_modulus(CF)[1]), index(maximal_order(codomain(C.mp[2])))))
-    h = hom(f, [image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp])
-    @hassert :ClassField 1 issurjective(h)
-    h = _compose(mp, h)
-    h = hom(AutA_snf, [h(AutA_snf[i]) for i=1:ngens(AutA_snf)])
+                      PrimesSet(200, -1), cp)
+    imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp]
+    h = hom(f, imgs)
+    @assert issurjective(h)
+    #@hassert :ClassField 1 issurjective(h)
     s, ms = kernel(h)
     @vprint :ClassField 2 "... done, have subgroup!\n"
   end
- 
+  
+  q, mq = quo(AutA, ms.map, false)
+  @assert order(q) == degree(CF)
+  
   #now, hopefully either norm or trace will be primitive for the target
   #norm, trace relative to s, the subgroup
 
   @vprint :ClassField 2 "computing orbit of primitive element\n"
-  os = [Auto[mp(ms(j))] for j=s]
-
-  function coerce_down(a)
+  os = [Auto[ms(j)] for j in s]
+  AT, T = PolynomialRing(A, "T", cached = false)
+  
+  function coerce_down(a::NfRelElem)
     @assert a.data.length <= 1
     b = coeff(a, 0)
     c = preimage(C.mp[1], b)
     @assert c.data.length <= 1
     return coeff(c, 0)
   end
-
-  function minpoly(a)
-    @vtime :ClassField 2 o = [grp_elem_to_map(AutA_gen, mp(mq(j)), t) for j = q]
+  
+  function charpoly(a::NfRelElem)
+    @vtime :ClassField 2 o = NfRelElem[grp_elem_to_map(AutA_gen, mq(j), a) for j = q]
     @vtime :ClassField 2 f = prod(T-x for x=o)
     @assert degree(f) == length(o)
     @assert length(o) == e
-    @vtime :ClassField 2 g = [coerce_down(coeff(f, i)) for i=0:Int(e)]
+    @vtime :ClassField 2 g = nf_elem[coerce_down(coeff(f, i)) for i=0:Int(e)]
     return PolynomialRing(parent(g[1]), cached = false)[1](g)
   end
 
 #  n = prod(os) # maybe primitive??  
   @vprint :ClassField 2 "trying relative trace\n"
   @assert length(os) > 0
-  t = zero(parent(os[1]))
-  for o in os
-    t = t + o
+  t = os[1]
+  for i = 2:length(os)
+    t += os[i]
   end
-
-  #t = sum(os)
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
-  q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
-  @assert order(q) == degree(CF)
-  AT, T = PolynomialRing(A, "T", cached = false)
   @vprint :ClassField 2 "char poly...\n"
-  f = minpoly(t)
+  f = charpoly(t)
   @vprint :ClassField 2 "... done\n"
+  
   if !issquarefree(f)
-    @vprint :ClassField 2 "trying relative trace of squares\n"
-    for i=1:length(os)
-      os[i] *= os[i]
-    end
-    t = sum(os)
-    CF.pe = t
-    #now the minpoly of t - via Galois as this is easiest to implement...
-    q, mq = quo(AutA_snf, [ms(s[i]) for i=1:ngens(s)], false)
-    @assert order(q) == degree(CF)
-    AT, T = PolynomialRing(A, "T", cached = false)
-    @vprint :ClassField 2 "char poly...\n"
-    f = minpoly(t)
-    @vprint :ClassField 2 "... done\n"
-    @assert issquarefree(f)
-  end  
-
-  CF.A = number_field(f)[1]
+    os1 = deepcopy(os)
+    while !issquarefree(f)
+      @vprint :ClassField 2 "trying relative trace of squares\n"
+      for i = 1:length(os)
+        os1[i] *= os[i]
+      end
+      t = os1[1]
+      for i = 2:length(os)
+        t += os1[i]
+      end
+      CF.pe = t
+      #now the minpoly of t - via Galois as this is easiest to implement...
+      @vprint :ClassField 2 "min poly...\n"
+      f = charpoly(t)
+      @vprint :ClassField 2 "... done\n"
+    end  
+  end
+  CF.A = number_field(f, check = false)[1]
   return nothing
 end
 
-function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe)
+function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe::NfRelElem)
   res = pe
   for i=1:length(A)
     if b[i] == 0
@@ -728,7 +742,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
 
   function _image(x::nf_elem)
     m = denominator(x)
-    if m %p == 0
+    if m % p == 0
       throw(BadPrime(p))
     end
     return Fq(Ft(x)) 
