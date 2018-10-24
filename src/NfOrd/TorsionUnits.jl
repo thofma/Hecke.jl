@@ -277,14 +277,15 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
 
   while true
     p = next_prime(p)
-    if isramified(O, p)
+    if isramified(O, p) || isindex_divisor(O, p)
       continue
     end
     lp = prime_decomposition_type(O, p)
+
     m_new = m
 
     for (f, e) in lp
-      m_new = gcd(m_new, p^f - 1)
+      m_new = gcd(m_new, fmpz(p)^f - 1)
     end
 
     if first
@@ -293,6 +294,10 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
         m_new = 2 * m_new
       end
       first = false
+    end
+    
+    if m_new == 2
+      return fmpz(2)
     end
 
     if m_new == m
