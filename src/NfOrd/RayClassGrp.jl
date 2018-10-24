@@ -1,5 +1,5 @@
 
-export ray_class_group, stable_subgroups
+export ray_class_group
 
 add_verbose_scope(:RayFacElem)
 add_assert_scope(:RayFacElem)
@@ -576,7 +576,7 @@ function _assure_princ_gen(mC::MapClassGrp)
     return true
   end
   C=domain(mC)
-  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(undef, ngens(C))
+  mC.princ_gens=Array{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}(undef, ngens(C))
   for i=1:ngens(C)
     I=FacElem(Dict(mC(C[i])=> fmpz(1)))
     pr=principal_gen_fac_elem(I^C.snf[i])
@@ -1609,7 +1609,7 @@ end
     has_principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]) -> Bool, NfOrdElem
     
 > Given an ideal I, this function checks if the ideal is trivial in the ray class group mod ($m$, inf_plc).
-  If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is $0
+  If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 
 """
 function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[])
@@ -1661,3 +1661,71 @@ function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 
   return true, gen
 
 end
+
+function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[])
+
+  # This function could be optimized if I cache some stuff from the construction
+  # of the ray class group, but only in the case of the full ray_class_group
+  # and not in the quotient.
+
+  O = order(m)
+  C, mC = class_group(O)
+  fl, gen = isprincipal_fac_elem(I)
+  if !fl
+    return fl, gen
+  end
+  U, mU = unit_group_fac_elem(O)
+  
+  Q, mQ = quo(O, m)
+  G, mG = multiplicative_group(Q)
+  lp = Q.factor
+  expo = exponent(G)
+  tobeeval = FacElem{nf_elem, AnticNumberField}[mU(x) for x in gens(U)]
+  push!(tobeeval, gen)
+  evals = fac_elems_eval(O, Q, tobeeval, lp, expo)[1]
+  els = GrpAbFinGenElem[mG\(Q(evals[i])) for i in 1:length(evals)-1]
+  elgen = mG\(Q(evals[end]))
+  if isempty(inf_plc)
+    S, mS = sub(G, els)
+    fl1, coord = haspreimage(mS, elgen)
+  else
+    #I have to take into account the signs!
+    H, eH, lH = Hecke._infinite_primes(O, inf_plc, m)
+    GH, iG, iH = direct_product(G, H)
+    els_inf = GrpAbFinGenElem[lH(mU(U[i])) for i = 1:ngens(U)]
+    els_tot = [iG(els[i]) + iH(els_inf[i]) for i = 1:ngens(U)]
+    S, mS = sub(GH, els_tot)
+    elgen = iG(elgen) + iH(lH(gen))
+    fl1, coord = haspreimage(mS, elgen)
+  end
+  if !fl1
+    return false, gen
+  end
+  @assert ngens(S) == ngens(U)
+  for i = 1:ngens(U)
+    if coord[i] != 0
+      gen *= mU(U[i])^Int(coord[i])
+    end
+  end
+  return true, gen
+
+end
+
+function disc_log_generalized_ray_class_grp(I::NfOrdIdl, mr::MapRayClassGrp)
+  
+  R = domain(mr)
+  el = mr\I
+  lI = Array{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, Int}, 1}(undef, ngens(R))
+  lI[1] = (mr(R[1]), Int(el[1]))
+  J = lI[1][1]^lI[1][2]
+  for i = 1:ngens(R)
+    lI[i] = (mr(R[i]), Int(el[i]))
+    J *= lI[i][1]^lI[i][2]
+  end
+  I1 = I * inv(J)
+  fl1 , gen1 = principal_gen_1_mod_m(I1, mr.modulus_fin, mr.modulus_inf)
+  @assert fl1
+  return gen1, lI
+  
+end
+
