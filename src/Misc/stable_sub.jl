@@ -1,4 +1,6 @@
 
+export stable_subgroups
+
 add_verbose_scope(:StabSub)
 
 ###############################################################################

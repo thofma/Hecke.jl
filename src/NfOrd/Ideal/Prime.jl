@@ -95,7 +95,9 @@ function intersect_prime(f::Map, P::NfOrdIdl)
   p = minimum(P)
   k = domain(f)
   Ok = maximal_order(k)
-  if index(Ok) % p != 0
+  K = codomain(f)
+  OK = maximal_order(K)
+  if !divisible(index(Ok)*index(OK), fmpz(p))
     return intersect_nonindex(f, P)
   end
   d = degree(P)
