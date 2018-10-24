@@ -513,7 +513,6 @@ function factor(f::PolyElem{nf_elem})
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
   end
-
   @vtime :PolyFactor 2 fac = factor(N)
   res = Dict{PolyElem{nf_elem}, Int64}()
 
@@ -605,7 +604,7 @@ function _degset(f::fmpz_poly, p::Int)
   return _ds(fa)
 end
 
-function (R::NmodPolyRing)(f::fq_nmod_poly)
+function (R::GFPPolyRing)(f::fq_nmod_poly)
   g = R()
   for i=0:degree(f)
     setcoeff!(g, i, coeff(coeff(f, i), 0))

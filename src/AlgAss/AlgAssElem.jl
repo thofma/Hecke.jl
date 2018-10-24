@@ -6,6 +6,8 @@
 
 parent_type(::Type{AlgAssElem{T, S}}) where {T, S} = S
 
+parent_type(::Type{AlgGrpElem{T, S}}) where {T, S} = S
+
 parent(a::AbsAlgAssElem) = a.parent
 
 ################################################################################
@@ -217,7 +219,7 @@ function ^(a::AbsAlgAssElem, b::Int)
   end
 end
 
-function ^(a::AlgAssElem, b::fmpz)
+function ^(a::AbsAlgAssElem, b::fmpz)
   if nbits(b) < 64
     return a^Int(b)
   end
@@ -258,6 +260,17 @@ end
 function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgGrpElem{T, typeof(A)}(A, c)
+end
+
+# Generic.Mat needs it
+function (A::AlgAss)(a::AlgAssElem)
+  @assert parent(a) == A "Wrong parent"
+  return a
+end
+
+function (A::AlgGrp)(a::AlgGrpElem)
+  @assert parent(a) == A "Wrong parent"
+  return a
 end
 
 ################################################################################
@@ -460,3 +473,15 @@ end
 ################################################################################
 
 
+################################################################################
+#
+#  Field access
+#
+################################################################################
+
+function coeffs(a::AbsAlgAssElem, copy::Bool = true)
+  if copy
+    return deepcopy(a.coeffs)
+  end
+  return a.coeffs
+end

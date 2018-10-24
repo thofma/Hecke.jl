@@ -59,7 +59,7 @@ end
 
 > A modular $\gcd$
 """
-function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
   # modular kronnecker assumes a, b !=n 0
   if iszero(a)
     if iszero(b)
@@ -71,7 +71,8 @@ function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
     return inv(lead(a))*a
   end
 
-  g= gcd_modular_kronnecker(a, b)
+  g= gcd_modular_kronnecker(a, b, test_sqfr)
+  test_sqfr && return g
   return inv(lead(g))*g  # we want it monic...
 end
 
@@ -135,7 +136,7 @@ end
 
 #similar to gcd_modular, but avoids rational reconstruction by controlling
 #a/the denominator
-function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool = false)
   # rat recon maybe replace by known den if poly integral (Kronnecker)
   # if not monic, scale by gcd
   # remove content?
@@ -172,8 +173,11 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
     end
     gp = [fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
     gc = Hecke.modular_lift(gp, me)
-    if isone(gc)
+    if isconstant(gc)
       return parent(a)(1)
+    end
+    if test_sqfr
+      return parent(a)(0)
     end
     if d == 1
       g = gc
@@ -392,7 +396,7 @@ end
 ################################################################################
 
 function issquarefree(x::Generic.Poly{nf_elem})
-  return degree(gcd(x, derivative(x))) == 0
+  return isone(gcd(x, derivative(x), true))
 end
 
 ################################################################################

@@ -132,7 +132,6 @@ function __init__()
     Libdl.dlopen(libhecke)
   else
     push!(Libdl.DL_LOAD_PATH, libdir)
-    ENV["PATH"] = ENV["PATH"] * ";" * joinpath(Pkg.dir("Nemo"), "local", "lib")
   end
   
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
@@ -318,7 +317,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.5.1"
+global VERSION_NUMBER = v"0.5.2"
 
 ################################################################################
 #

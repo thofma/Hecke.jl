@@ -584,7 +584,7 @@ function splitting_field(fl::Array{fmpq_poly, 1}; coprime::Bool = false, do_root
   if do_roots
     r = [roots(x)[1] for x = fl if degree(x) == 1]
   end
-  fl = fl[find(x->degree(x) > 1, fl)]
+  fl = fl[findall(x->degree(x) > 1, fl)]
   if length(fl) == 0
     if do_roots
       return FlintQQ, r
@@ -640,6 +640,7 @@ function splitting_field(fl::Array{<:PolyElem{nf_elem}, 1}; do_roots::Bool = fal
   for x = fl
     append!(ffl, collect(keys(factor(x).fac)))
   end
+  fl = ffl
   r = []
   if do_roots
     r = [roots(x)[1] for x = fl if degree(x) == 1]

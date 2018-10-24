@@ -20,39 +20,40 @@ end
 #
 ################################################################################
 
-(O::AlgAssAbsOrd{S, T})(a::T) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, a)
-end
-
-(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{fmpz}) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, a, arr)
-end
-
-(O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
-  return AlgAssAbsOrdElem{S, T}(O, arr)
-end
-
-(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} =begin
-  b = elem_in_algebra(a)
+(O::AlgAssAbsOrd{S, T})(a::T, check::Bool = true) where {S, T} = begin
   if check
-    (x, y) = _check_elem_in_order(b, O)
+    (x, y) = _check_elem_in_order(a, O)
     !x && error("Algebra element not in the order")
-    return O(b, y)
+    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a), y)
   else
-    return O(b)
+    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a))
   end
 end
 
-# Turn the following into a check:
-#
-#(O::AlgAssAbsOrd)(a::AlgAssElem) = begin
-#  if !isdefined(O, :basis_mat_inv)
-#    O.basis_mat_inv=inv(O.basis_mat)
-#  end
-#  x=FakeFmpqMat(a.coeffs)*O.basis_mat_inv
-#  @assert denominator(x)==1
-#  return AlgAssAbsOrdElem(O,a, vec(Array(x.num)))
-#end
+(O::AlgAssAbsOrd{S, T})(a::T, arr::Vector{fmpz}, check::Bool = false) where {S, T} = begin
+  if check
+    (x, y) = _check_elem_in_order(a, O)
+    (!x || arr != y) && error("Algebra element not in the order")
+    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a), y)
+  else
+    return AlgAssAbsOrdElem{S, T}(O, deepcopy(a), deepcopy(arr))
+  end
+end
+
+(O::AlgAssAbsOrd{S, T})(arr::Vector{fmpz}) where {S, T} = begin
+  return AlgAssAbsOrdElem{S, T}(O, deepcopy(arr))
+end
+
+(O::AlgAssAbsOrd{S, T})(a::AlgAssAbsOrdElem{S, T}, check::Bool = true) where {S, T} =begin
+  b = elem_in_algebra(a) # already a copy
+  if check
+    (x, y) = _check_elem_in_order(b, O)
+    !x && error("Algebra element not in the order")
+    return AlgAssAbsOrdElem{S, T}(O, b, y)
+  else
+    return AlgAssAbsOrdElem{S, T}(O, b)
+  end
+end
 
 ################################################################################
 #
@@ -75,11 +76,11 @@ end
 #
 ################################################################################
 
-(O::AlgAssAbsOrd)() = O(algebra(O)())
+(O::AlgAssAbsOrd{S, T})() where {S, T} = AlgAssAbsOrdElem{S, T}(O)
 
 one(O::AlgAssAbsOrd) = O(one(algebra(O)))
 
-zero(O::AlgAssAbsOrd) = O()
+zero(O::AlgAssAbsOrd) = O(algebra(O)())
 
 ################################################################################
 #
