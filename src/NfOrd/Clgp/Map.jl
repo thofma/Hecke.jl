@@ -261,6 +261,20 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
 end
 
 #TODO: if an ideal is principal, store it on the ideal!!!
+@doc Markdown.doc"""
+    isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet}) -> Bool, FacElem{nf_elem, NumberField}
+> Tests if $A$ is principal and returns $(\mathtt{true}, \alpha)$ if $A =
+> \langle \alpha\rangle$ of $(\mathtt{false}, 1)$ otherwise.  
+> The generator will be in factored form.
+"""
+function isprincipal_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+  J, a= reduce_ideal2(I)
+  @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
+  fl, x = isprincipal_fac_elem(J)
+  @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
+  x= x * a
+  return fl, x
+end
 
 @doc Markdown.doc"""
     principal_gen_fac_elem(A::NfOrdIdl) -> FacElem{nf_elem, NumberField}
@@ -279,8 +293,8 @@ end
 > For a principal ideal $A$ in factored form, find a generator in factored form.
 """
 
-function principal_gen_fac_elem(I::FacElem)
-  J,a= reduce_ideal2(I)
+function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+  J, a= reduce_ideal2(I)
   @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)
   @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J

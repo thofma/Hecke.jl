@@ -678,7 +678,7 @@ end
 > For a non-simple extension $K$ of $Q$, find a primitive element and thus
 > an isomorphic simple extension of $Q$. The map realises this isomorphism.
 """
-function simple_extension(K::NfAbsNS)
+function simple_extension(K::NfAbsNS; check = true)
   n = ngens(K)
   g = gens(K)
 
@@ -698,7 +698,7 @@ function simple_extension(K::NfAbsNS)
     push!(ind, j)
     pe += j * g[i]
   end
-  Ka, a = number_field(f)
+  Ka, a = number_field(f, check = check, cached = false)
   k = base_ring(K)
   M = zero_matrix(k, degree(K), degree(K))
   z = one(K)

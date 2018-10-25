@@ -300,25 +300,15 @@ end
 
 function _issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
-  g = L.pol
   Lx, x = PolynomialRing(L, "x", cached = false)
-  fL = Lx()
-  rts = roots(f, L)
-  for r in rts
-  #for i = 0:degree(f)
-  #  setcoeff!(fL, i, L(coeff(f, i)))
-  #end
-  #fac = factor(fL)
-  #for (a, b) in fac
-  #  if degree(a) == 1
-  #    c1 = coeff(a, 0)
-  #    c2 = coeff(a, 1)
-  #    h = parent(L.pol)(-c1*inv(c2))
-  #    return true, NfToNfMor(K, L, h(gen(L)))
-    h = parent(L.pol)(r)
+  f1 = evaluate(f, x)
+  R = _roots_hensel(f1, 1)
+  if isempty(R)
+    return false, L()
+  else
+    h = parent(L.pol)(R[1])
     return true, h(gen(L))
-  end
-  return false, L()
+  end 
 end
 
 @doc Markdown.doc"""

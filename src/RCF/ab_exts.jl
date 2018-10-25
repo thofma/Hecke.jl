@@ -509,7 +509,6 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
       push!(final_list, (el*q,d))
     end
   end
-
   return final_list
   
 end
@@ -959,13 +958,13 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
 
 end
 
-function _quad_ext(bound::Int, real::Bool = false)
+function _quad_ext(bound::Int, only_real::Bool = false)
   
   Qx, x = PolynomialRing(FlintQQ, "x")
   K = NumberField(x-1)[1]
   Kt, t = PolynomialRing(K, "t")
   sqf = squarefree_up_to(bound)
-  if !real
+  if !only_real
     sqf = vcat(sqf[2:end], Int[-i for i in sqf])
   else
     sqf = sqf[2:end]
@@ -980,16 +979,18 @@ function _quad_ext(bound::Int, real::Bool = false)
       @views push!(final_list, sqf[i])
     end
   end
-  fields_list = Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{nf_elem}, 1}}[]
+  fields_list = Array{Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{nf_elem}, 1}}, 1}(undef, length(final_list))
+  j = 0
   for i in final_list
+    j += 1
     if mod(i,4) != 1
       L, gL = number_field([t^2-i], cached=false, check = false)
       auts = [NfRel_nsToNfRel_nsMor(L, L, [-gL[1]])]
-      push!(fields_list, (L, auts))
+      fields_list[j] = (L, auts)
     else
       L, gL = number_field([t^2-t+divexact(1-i,4)], cached=false, check = false)
       auts = [NfRel_nsToNfRel_nsMor(L, L, [1-gL[1]])]
-      push!(fields_list, (L, auts))
+      fields_list[j] = (L, auts)
     end
   end
   return fields_list
@@ -1017,7 +1018,7 @@ function C22_extensions(bound::Int)
   
 end
 
-function _C22_exts_abexts(bound::Int, real::Bool = false)
+function _C22_exts_abexts(bound::Int, only_real::Bool = false)
   Qx,x=PolynomialRing(FlintZZ, "x")
   K,_=NumberField(x-1)
   Kx,x=PolynomialRing(K,"x", cached=false)
@@ -1025,7 +1026,7 @@ function _C22_exts_abexts(bound::Int, real::Bool = false)
   b1=ceil(Int, Base.sqrt(bound))
   n=2*b1+1
   poszero=b1+1
-  if real
+  if only_real
     for i = 1:poszero
       for j = 1:size(pairs, 2)
         pairs[i, j] = false

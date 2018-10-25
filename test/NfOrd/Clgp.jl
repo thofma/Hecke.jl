@@ -130,12 +130,25 @@
       @test mG(G[1]) == O(-1)
       @test order(U) == O
       @test U.torsion_units_order == 2
-      #@test 1 in U.torsion_units
-      #@test -1 in U.torsion_units
       @test contains(AF(2027.9289425180057),U.tentative_regulator)
       @test order(Cl) == 5
     end
+    
+    @testset "Cyclotomic Field 13" begin
+      K, a = cyclotomic_field(13);
+      O = maximal_order(K)
+      Cl, mCl = Hecke.class_group(O, redo = true);
+      UU, mU = Hecke.unit_group(O)
 
+      U = O.auxilliary_data[6]
+
+      G, mG = torsion_unit_group(O)
+      @test order(G) == 26
+      @test order(U) == O
+      @test U.torsion_units_order == 26
+      @test order(Cl) == 1
+    end
+    
     @testset "f = Q[x]/(f), f = x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904" begin
        K, a = NumberField(x^18 + 18*x^16 + 135*x^14 + 192*x^12 - 2961*x^10 - 17334*x^8+ 20361*x^6 +  315108*x^4 + 514944*x^2 + 123904, "a")
       O = maximal_order(K)
