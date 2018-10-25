@@ -1926,7 +1926,7 @@ function random_init(I::AbstractArray{T, 1}; reduce::Bool = true, ub::fmpz=fmpz(
   return R
 end
 
-function random_extend(R::RandIdlCtx, I::AbstractArray{NfAbsOrdIdl, 1})
+function random_extend(R::RandIdlCtx, I::T) where {T <:AbstractArray{NfOrdIdl, 1}}
   for i = I
     if i in R.base
       continue
