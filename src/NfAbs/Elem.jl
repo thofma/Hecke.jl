@@ -786,6 +786,7 @@ function ispower(a::nf_elem, n::Int)
   end
 
   d = denominator(a)
+
   rt = _roots_hensel(a*d^n, n, 1)
 
   if length(rt)>0

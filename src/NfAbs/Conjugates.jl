@@ -55,6 +55,49 @@ function conjugates(x::nf_elem, abs_tol::Int = 32, T = arb)
   end
 end
 
+# This is for quick and dirty computations
+function __conjugates_arb(x::nf_elem, prec::Int = 32)
+  K = parent(x)
+  d = degree(K)
+  r1, r2 = signature(K)
+  conjugates = Array{acb}(undef, r1 + 2*r2)
+
+  c = conjugate_data_arb_roots(K, -1)
+
+  CC = AcbField(prec, false)
+  RR = ArbField(prec, false)
+
+  xpoly = arb_poly(parent(K.pol)(x), prec)
+
+  for i in 1:r1
+    o = RR()
+    ccall((:arb_poly_evaluate, :libarb), Nothing,
+          (Ref{arb}, Ref{arb_poly}, Ref{arb}, Int),
+           o, xpoly, c.real_roots[i], prec)
+
+    if !isfinite(o)
+      error("oops")
+    end
+    conjugates[i] = CC(o)
+  end
+
+  for i in 1:r2
+    tacb = CC()
+    ccall((:arb_poly_evaluate_acb, :libarb), Nothing,
+          (Ref{acb}, Ref{arb_poly}, Ref{acb}, Int),
+           tacb, xpoly, c.complex_roots[i], prec)
+
+    if !isfinite(tacb)
+      error("oops")
+    end
+
+    conjugates[r1 + i] = tacb
+    conjugates[r1 + i + r2] = conj(conjugates[r1 + i])
+  end
+
+  return conjugates
+end
+
 function conjugates_arb(x::nf_elem, abs_tol::Int = 32)
   K = parent(x)
   d = degree(K)

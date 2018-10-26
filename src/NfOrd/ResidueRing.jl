@@ -1231,6 +1231,7 @@ end
 Base.isless(x::arb, y::arb) = x < y
 
 function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
+  #return _lifting_expo_using_logbound(p, deg_p, O, arb[log(a) for a in bnd])
   # compute the lifting exponent a la Friedrich-Fieker
   #bnd has upper bounds on |x^{(i)}| 1<= i <= r1+r2 as arbs
   #we're using a prime ideal above p of intertia degree deg_p
@@ -1252,13 +1253,13 @@ function _lifting_expo(p::Int, deg_p::Int, O::NfOrd, bnd::Array{arb, 1})
   end
 
   boundt2 = max(bd, R(1))
-  
+
   # Tommy: log(...) could contain a ball, which contains zero
   tmp = R(abs_upper_bound(R(c1)*R(c2)*boundt2*exp((R(n*(n-1))//2 + 2)*log(R(2)))//n, fmpz))
-  
+
   #CF: there is a prob, in the paper wrt LLL bounds on |x| or |x|^2....
   boundk = R(n)*log(tmp)//(2*deg_p*log(R(p)))
-  
+
   ss = abs_upper_bound(boundk, fmpz)
   return ss
 end
@@ -1389,15 +1390,20 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
 
   # compute the lifting exponent a la Friedrich-Fieker
 
-  R = ArbField(64, false)
   (r1, r2) = signature(K) 
 
   # for Kronnecker:
   gsa = derivative(K.pol)(gen(K))
   gsa_con = conjugates_arb(gsa, 32)
-  a_con = conjugates_arb(a, 32)
+  conj = __conjugates_arb(a, 32)
+  R = parent(conj[1])
+  a_con = [R(abs_upper_bound(abs(e), fmpz)) for e in conj]
 
-  bound_root = [ R(0) for i in 1:(r1 + r2) ]
+  R = ArbField(prec(parent(a_con[1])), false)
+
+  bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
+
+  log_bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
 
   for i in 1:r1+r2
     bound_root[i] = root(abs(a_con[i]), m) * abs(gsa_con[i])
@@ -1408,6 +1414,7 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
   rts = _hensel(a, m, p, Int(ss), max_roots = max_roots)
   return rts
 end
+
 #identical to hasroot - which one do we want?
 function ispower(a::NfOrdElem, n::Int)
   Ox, x = PolynomialRing(parent(a), "x", cached=false)
