@@ -106,7 +106,7 @@ end
 > polynomial $g$ s.th. $g \equiv a \bmod M$.
 """
 function induce_rational_reconstruction(a::fmpz_poly, M::fmpz) 
-  b = PolynomialRing(FlintQQ, parent(a).S)[1]()
+  b = PolynomialRing(FlintQQ, parent(a).S, cached = false)[1]()
   for i=0:degree(a)
     fl, x,y = rational_reconstruction(coeff(a, i), M)
     if fl
@@ -178,7 +178,7 @@ end
  
 function factor_to_dict(a::fmpz_poly_factor)
   res = Dict{fmpz_poly,Int}()
-  Zx,x = PolynomialRing(FlintZZ, "x")
+  Zx,x = PolynomialRing(FlintZZ, "x", cached = false)
   for i in 1:a._num
     f = Zx()
     ccall((:fmpz_poly_set, :libflint), Nothing, (Ref{fmpz_poly}, Ref{fmpz_poly_raw}), f, a.poly+(i-1)*sizeof(fmpz_poly_raw))
@@ -651,7 +651,7 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
   e, p = ispower(m)
   easy = isprime(p)
 
-  Zx = PolynomialRing(FlintZZ)[1]
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
 
   res = R(1)
 
@@ -825,7 +825,7 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
   e, p = ispower(m)
   easy = isprime(p)
 
-  Zx = PolynomialRing(FlintZZ)[1]
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
 
   while true
     if degree(f) < 1 && degree(g) < 1
@@ -943,7 +943,7 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
 
   Rt = parent(f)
   R = base_ring(Rt)
-  Zx = FlintZZ["x"][1]
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   m::fmpz = fmpz(modulus(R))
   e, p::fmpz = ispower(m)
   easy = isprime(p)
@@ -954,9 +954,6 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
 
 #  u, v = Rt(0), Rt(1)  #g = u f_in + v g_in
 #  U, V = Rt(1), Rt(0)  #f = U f_in + V g_in
-
-
-  Zx = PolynomialRing(FlintZZ)[1]
 
   while true
     if degree(f) < 1 && degree(g) < 1
@@ -1097,7 +1094,7 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   easy = isprime(p)
   @assert easy
 
-  Zx = PolynomialRing(FlintZZ)[1]
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
 
   rs = []
 
@@ -1218,7 +1215,7 @@ function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S 
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   R = base_ring(f)
-  Zx = FlintZZ["x"][1]
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   s = Nemo.Generic.sylvester_matrix(lift(Zx, f), lift(Zx, g))
   h = hnf(s)
   return gcd(R(0), R(h[rows(h), cols(h)]))
@@ -1228,8 +1225,8 @@ function rres_bez(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S 
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   R = base_ring(f)
-  Zx = FlintZZ["x"][1]
-  Qx = FlintQQ["x"][1]
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(lift(Zx, f)), Qx(lift(Zx, g)))
   return gcd(R(0), R(lcm(denominator(q), denominator(w))))
 end
@@ -1245,7 +1242,7 @@ end
 function rres_bez(f::fmpz_poly, g::fmpz_poly)
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  Qx = FlintQQ["x"][1]
+  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(f), Qx(g))
   return lcm(denominator(q), denominator(w))
 end
@@ -1260,7 +1257,7 @@ end
 function rresx(f::fmpz_poly, g::fmpz_poly)
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
-  Qx = FlintQQ["x"][1]
+  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(f), Qx(g))
   l = lcm(denominator(q), denominator(w))
   Zx = parent(f)
@@ -1565,7 +1562,7 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
       s = gcd(lift(res), pn)
       if !isone(s)
         new_pn = divexact(pn, s)
-        Zx = PolynomialRing(FlintZZ, "x")[1]
+        Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
         R1 = ResidueRing(FlintZZ, new_pn, cached = false)
         R1t = PolynomialRing(R1, "y", cached = false)[1]
         f1 = R1t(lift(Zx,f))
@@ -1721,14 +1718,14 @@ end
 
 function roots(f::fmpq_poly, R::Nemo.FqNmodFiniteField)
   Rt, t = PolynomialRing(R, "t", cached=false)
-  fp = FlintZZ["t"][1](f*denominator(f))
+  fp = PolynomialRing(FlintZZ, cached = false)[1](f*denominator(f))
   fpp = Rt(fp)
   return roots(fpp)
 end
 
 function roots(f::fmpq_poly, R::Nemo.NmodRing)
   Rt, t = PolynomialRing(R, "t", cached=false)
-  fp = FlintZZ["t"][1](f*denominator(f))
+  fp = PolynomialRing(FlintZZ, cached = false)[1](f*denominator(f))
   fpp = Rt(fp)
   return roots(fpp)
 end

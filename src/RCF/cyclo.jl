@@ -36,7 +36,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     end
   end
 
-  ZX, X = PolynomialRing(FlintZZ)
+  ZX, X = PolynomialRing(FlintZZ, cached = false)
   Qx = parent(k.pol)
   kt, t = PolynomialRing(k, "t", cached = false)
   f = cyclotomic(n, X)

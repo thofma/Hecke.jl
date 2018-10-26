@@ -311,7 +311,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
   K = nf(O)
   f = K.pol
   R = parent(f)
-  Zx, x = PolynomialRing(FlintIntegerRing(),"x")
+  Zx, x = PolynomialRing(FlintIntegerRing(),"x", cached = false)
   Zf = Zx(f)
 
   if degree_limit == 0
@@ -797,7 +797,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   @assert P <= typemax(UInt)
   K = nf(order(p))
   Rx = PolynomialRing(GF(UInt(P), cached=false), cached=false)[1]
-  Zx = PolynomialRing(FlintZZ)[1]
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
   g = Rx(p.gen_two.elem_in_nf)
   f = Rx(K.pol)
   g = gcd!(g, g, f)

@@ -678,7 +678,7 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
   k = max(k, 2)
   #assumes f squarefree
   #assumes constant_coefficient(f) != 0
-  ZX, X = FlintZZ["X"]
+  ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
   Rp = GF(p, cached=false)
   Rpt, t = PolynomialRing(Rp, "t", cached=false)
   K = base_ring(f)
@@ -851,7 +851,7 @@ function _hensel(a::nf_elem, m::Int, p::Int, k::Int; max_roots::Int = m)
   #@assert denominator(a) == 1                           
   #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
   #hard to test...
-  ZX, X = FlintZZ["X"]
+  ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
   Rp = GF(p, cached = false)
   Rpt, t = PolynomialRing(Rp, "t", cached = false)
   K = parent(a)

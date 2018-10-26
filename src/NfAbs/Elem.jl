@@ -290,7 +290,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
      while nbits(pp) < nb
        p = next_prime(p)
        R = GF(Int(p), cached = false)
-       Rt, t = PolynomialRing(R)
+       Rt, t = PolynomialRing(R, cached = false)
        np = R(divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d)))
        if isone(pp)
          no = lift(np)
@@ -435,7 +435,7 @@ function norm(f::PolyElem{nf_elem})
   y = gen(Qy)
   Qyx, x = PolynomialRing(Qy, "x", cached = false)
 
-  Qx = PolynomialRing(FlintQQ, "x")[1]
+  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
   T = evaluate(K.pol, gen(Qxy))
@@ -471,7 +471,7 @@ end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
   Ky, y = PolynomialRing(K, cached = false)
-  Qz, z = PolynomialRing(FlintQQ)
+  Qz, z = PolynomialRing(FlintQQ, cached = false)
   return factor(evaluate(Qz(f), y))
 end
 

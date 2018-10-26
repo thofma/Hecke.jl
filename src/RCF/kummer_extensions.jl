@@ -86,8 +86,8 @@ end
 function number_field(K::KummerExt)
 
   k = base_field(K)
-  kt, t = PolynomialRing(k, "t")
-  return number_field([t^(Int(order(K.AutG[i])))- evaluate(K.gen[i]) for i=1:length(K.gen)])
+  kt, t = PolynomialRing(k, "t", cached = false)
+  return number_field([t^(Int(order(K.AutG[i])))- evaluate(K.gen[i]) for i=1:length(K.gen)], check = false, cached = false)
 end
 
 ###############################################################################
@@ -158,7 +158,7 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt, g::FacElem{nf_elem})
   end
 
   F, mF = ResidueFieldSmall(Zk, p)
-  mF = extend_easy(mF, number_field(Zk))
+  mF = extend_easy(mF, nf(Zk))
 
   #K = sqrt[n](gen), an automorphism will be
   # K[i] -> zeta^? K[i]

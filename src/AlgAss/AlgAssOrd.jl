@@ -816,8 +816,8 @@ end
 function trace_signature(O::AlgAssAbsOrd)
   
   @vtime :AlgAssOrd 1 M = trred_matrix(O)
-  Zx, x = PolynomialRing(FlintZZ, "x")
-  Qy, y = PolynomialRing(FlintQQ, "y")
+  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Qy, y = PolynomialRing(FlintQQ, "y", cached = false)
   @vtime :AlgAssOrd 1 f = charpoly(Zx, M)
   @vtime :AlgAssOrd 1 fac = factor_squarefree(Qy(f))
   npos = 0

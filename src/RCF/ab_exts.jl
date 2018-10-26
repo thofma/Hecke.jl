@@ -759,8 +759,8 @@ function abelian_extensions(O::Union{FlintIntegerRing, FlintRationalField},
                             real::Bool = false,
                             tame::Bool = false)
 
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K, _ = NumberField(x - 1, "a")
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  K, _ = NumberField(x - 1, "a", cached = false)
   OK = maximal_order(K)
   l = abelian_extensions(OK, gtype, discriminant_bound,
                          real = real,
@@ -954,15 +954,15 @@ function quadratic_extensions(bound::Int; tame::Bool=false, real::Bool=false, co
       @views push!(final_list,sqf[i])
     end
   end
-  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached=false)[1] for i in final_list)
+  return ( mod(i,4)!=1 ? number_field(x^2-i, cached=false)[1] : number_field(x^2-x+divexact(1-i,4), cached = false)[1] for i in final_list)
 
 end
 
 function _quad_ext(bound::Int, only_real::Bool = false)
   
-  Qx, x = PolynomialRing(FlintQQ, "x")
-  K = NumberField(x-1)[1]
-  Kt, t = PolynomialRing(K, "t")
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  K = NumberField(x-1, cached = false)[1]
+  Kt, t = PolynomialRing(K, "t", cached = false)
   sqf = squarefree_up_to(bound)
   if !only_real
     sqf = vcat(sqf[2:end], Int[-i for i in sqf])
@@ -1058,7 +1058,7 @@ function _ext_with_autos(Ox,x,i,j)
   else
     pol2=x^2-x+divexact(1-j,4)
   end
-  L, lg= number_field([pol1,pol2])
+  L, lg= number_field([pol1,pol2], cached = false)
   if y1!=1
     a1=-lg[1]
   else
@@ -1183,7 +1183,7 @@ function _find_pairs(bound::Int)
   
 end
 
-function check_disc(a::Int,b::Int,c::Int,bound::Int)
+function check_disc(a::Int, b::Int, c::Int, bound::Int)
   
   if mod(a,4)!=2 && mod(b,4)!=2
     return true
@@ -1216,7 +1216,7 @@ function _ext(Ox,x,i,j)
   else
     pol2=x^2-x+divexact(1-j,4)
   end
-  return number_field([pol1,pol2])
+  return number_field([pol1,pol2], cached = false)
 
 end
 
@@ -1224,8 +1224,8 @@ end
 # of the discriminant of the extension Q(sqrt(n))
 function _discn(n::Int)
   
-  x=mod(n,4)
-  if x!=1
+  x = mod(n,4)
+  if x != 1
     return 4*n
   else
     return n
@@ -1417,7 +1417,7 @@ function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor
     mul!(M, M, M1.num)
     basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = Order(Ks, basisO2, false)
+  O2 = Order(Ks, basisO2, false, false)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks,O2)
 

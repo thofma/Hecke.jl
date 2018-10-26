@@ -872,7 +872,7 @@ function _order(K::S, elt::Array{T, 1}) where {S, T}
 
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, elt)[1]
-  return Order(K, elt, false)
+  return Order(K, elt, false, false)
 end
 
 ################################################################################
@@ -959,11 +959,11 @@ function +(a::NfAbsOrd, b::NfAbsOrd)
         m[i+d,j]= aB.den*bB.num[i,j]
       end
     end
-    mat=_hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
+    mat = _hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
     c = view(mat, d + 1:2*d, 1:d)
     O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), false)
     O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
-    O.disc= gcd(discriminant(a), discriminant(b))
+    O.disc = gcd(discriminant(a), discriminant(b))
     if a.disc<0 || b.disc<0
       O.disc=-O.disc
     end
@@ -1030,7 +1030,10 @@ the index $[ \mathcal O_K : R]$ is not dividible by $p$.
 """
 function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
   @vprint :NfOrd 1 "computing p-maximal overorder for $p ... \n"
-  if rem(discriminant(O), p^2) != 0
+  if p in O.primesofmaximality
+    return O
+  end
+  if rem(discriminant(O), p^2) != 0 
     push!(O.primesofmaximality, p)
     return O
   end
@@ -1039,8 +1042,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
   @vprint :NfOrd 1 "extending the order at $p for the first time ... \n"
   OO = poverorder(O, p)
   dd = discriminant(OO)
-  v=valuation(dd,p)
-  if v==0 || v==1
+  if rem(discriminant(O), p^2) != 0
     push!(OO.primesofmaximality, p)
     return OO
   end
@@ -1051,8 +1053,7 @@ function pmaximal_overorder(O::NfAbsOrd, p::fmpz)
     d = dd
     OO = poverorder(OO, p)
     dd = discriminant(OO)
-    v = valuation(dd,p)
-    if v==0 || v==1
+    if rem(dd, p^2) != 0
       break
     end
   end
@@ -1075,19 +1076,23 @@ end
 equation_order(K::AnticNumberField) = EquationOrder(K)
 
 function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
-  OO = deepcopy(O)
-  disc = abs(discriminant(O))
+  if length(primes) == 0
+    return O
+  end
+  OO = O
+  ind = index(O)
+  EO = EquationOrder(nf(O))
   for i in 1:length(primes)
     p = primes[i]
-    (j, disc) = remove(disc, p)
-    if j == 1
-      continue
-    end
     @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    O1 = pmaximal_overorder(O, p)
-    if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
-      OO += O1
-    end 
+    if divisible(ind, p)
+      OO = pmaximal_overorder(OO, p)
+    else
+      O1 = pmaximal_overorder(EO, p)
+      if divisible(index(O1), p)
+        OO += O1
+      end
+    end
     if !(p in OO.primesofmaximality)
       push!(OO.primesofmaximality, p)
     end
@@ -1153,7 +1158,7 @@ function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
   O = MaximalOrder(O, primes)
   @vprint :NfOrd 1 "... done\n"
-  return NfOrd(K, basis_mat(O))
+  return NfOrd(K, basis_mat(O, Val{false}))
 end
 
 @doc Markdown.doc"""
@@ -1401,7 +1406,7 @@ function new_maximal_order(O::NfOrd)
     O.ismaximal = 1
     return O  
   end
-  Zx, x = PolynomialRing(FlintZZ, "x")
+  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
   f1 = Zx(K.pol)
   ds = rres(f1, derivative(f1))
   #First, factorization of the discriminant given by the snf of the trace matrix

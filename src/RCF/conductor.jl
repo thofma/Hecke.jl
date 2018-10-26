@@ -1083,7 +1083,7 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
         end
         F,mF = ResidueFieldSmall(O, L[i][1])
         mFp = extend_easy(mF, K)  
-        Fz, z = PolynomialRing(GF(Int(p)), "z", cached=false)
+        Fz, z = PolynomialRing(GF(Int(p), cached = false), "z", cached = false)
         all_deg = []
         #= the idea, taking 2 polys:
           f splits in d_i

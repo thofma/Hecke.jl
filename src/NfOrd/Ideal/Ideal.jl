@@ -874,7 +874,7 @@ end
 
 function _invmod(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
-  k = number_field(Zk)
+  k = nf(Zk)
   if isone(a)
     return one(k)
   end
@@ -893,7 +893,7 @@ function _invmod(a::fmpz, b::NfOrdElem)
     c = inv(canonical_unit(m))
     m = lift(m*c)
   end
-  U = lift(FlintZZ["x"][1], u*c)
+  U = lift(PolynomialRing(FlintZZ, "x", cached = false)[1], u*c)
   bi = k(U)//m*d # at this point, bi*d*b = m mod a*d*idx
   return bi
 end
@@ -1351,7 +1351,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   #Trace method if the prime is large enough
   if p > degree(O)
     M = trace_matrix(O)
-    W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d)
+    W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
     M1 = W(M)
     k, B = nullspace(M1)
     if k == 0
@@ -1379,7 +1379,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   @assert p^(j-1) < d
   @assert d <= p^j
 
-  R = GF(p, cached=false)
+  R = GF(p, cached = false)
   A = zero_matrix(R, degree(O), degree(O))
   B = basis(O, Val{false})
   for i in 1:degree(O)

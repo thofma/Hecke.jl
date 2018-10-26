@@ -340,7 +340,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     #N1 = B.den * B.num
     #N1 = _hnf_modular_eldiv(N1, p^(modu+1), :lowerleft)
     #O1 = Order(K, FakeFmpqMat(N1, B.den))
-    O1 = Order(K, B)
+    O1 = Order(K, B, false)
     O1.disc = divexact(O.disc, p^(2*vdisc))
     push!(O1.primesofmaximality, p)
   end
@@ -352,7 +352,7 @@ end
 function polygons_overorder(O::NfOrd, p::fmpz)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
-  Zy, y = PolynomialRing(FlintZZ, "y")
+  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   Kx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
 
   f = nf(O).pol
@@ -449,7 +449,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
 
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, elt)[1]
-  return Order(K, elt, false)
+  return Order(K, elt, false, false)
 end
 
 ###############################################################################
@@ -593,7 +593,7 @@ end
 function decomposition_type_polygon(O::NfOrd, p::fmpz)
   K = nf(O)
   f = K.pol
-  Zx ,x = PolynomialRing(FlintZZ, "x")
+  Zx ,x = PolynomialRing(FlintZZ, "x", cached = false)
   R = ResidueRing(FlintZZ, p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(Zx(K.pol))
@@ -662,7 +662,7 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
   end
   K = nf(O)
   f = K.pol
-  Zx = PolynomialRing(FlintZZ, "x")[1]
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   R = ResidueRing(FlintZZ, p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
