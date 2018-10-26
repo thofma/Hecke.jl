@@ -1716,8 +1716,7 @@ function disc_log_generalized_ray_class_grp(I::NfOrdIdl, mr::MapRayClassGrp)
   R = domain(mr)
   el = mr\I
   lI = Array{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, Int}, 1}(undef, ngens(R))
-  lI[1] = (mr(R[1]), Int(el[1]))
-  J = lI[1][1]^lI[1][2]
+  J = codomain(mr)()
   for i = 1:ngens(R)
     lI[i] = (mr(R[i]), Int(el[i]))
     J *= lI[i][1]^lI[i][2]

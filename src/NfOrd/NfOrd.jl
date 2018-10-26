@@ -750,11 +750,41 @@ function Order(a::NfOrdFracIdl, check::Bool = true, cache::Bool = true)
   return Order(nf(order(a)), basis_mat(a)*basis_mat(order(a)), check, cache)
 end
 
+################################################################################
+#
+#  Equation order
+#
+################################################################################
+
+function __equation_order(K::AnticNumberField)
+  M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+  Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+  z = NfAbsOrd(K, M, Minv, basis(K), false)
+  z.isequation_order = true
+  return z
+end
+
 @doc Markdown.doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
 > Returns the equation order of the number field $K$.
 """
+function EquationOrder(K::AnticNumberField, cached::Bool = true)
+  if cached
+    try
+      M = _get_nf_equation_order(K)
+      return M
+    catch e
+      M = __equation_order(K)
+      _set_nf_equation_order(K, M)
+      return M
+    end
+  else
+   M = __equation_order(K)
+   return M
+  end
+end
+
 function EquationOrder(K::T, cached::Bool = false) where {T}
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))

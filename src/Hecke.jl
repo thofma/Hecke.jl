@@ -184,6 +184,10 @@ function __init__()
   global _get_automorphisms_nf = t[1]
   global _set_automorphisms_nf = t[2]
 
+  t = create_accessors(AnticNumberField, NfAbsOrd{AnticNumberField, nf_elem}, get_handle())
+  global _get_equation_order_of_nf = t[1]
+  global _set_equation_order_of_nf = t[2]
+
   t = create_accessors(RelativeExtension, NfRelOrd, get_handle())
 
   global _get_maximal_order_of_nf_rel = t[1]
@@ -218,6 +222,14 @@ end
 
 function _set_maximal_order(K::AnticNumberField, O)
   _set_maximal_order_of_nf(K, O)
+end
+
+function _get_nf_equation_order(K::AnticNumberField)
+  return _get_equation_order_of_nf(K)::NfAbsOrd{AnticNumberField, nf_elem}
+end
+
+function _set_nf_equation_order(K::AnticNumberField, O)
+  _set_equation_order_of_nf(K, O)
 end
 
 function conjugate_data_arb(K::AnticNumberField)
