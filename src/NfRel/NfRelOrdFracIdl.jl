@@ -421,7 +421,15 @@ simplify(a::NfRelOrdFracIdl) = a
 #
 ################################################################################
 
-function mod(x::S, y::T) where {S <: Union{nf_elem, RelativeElement}, T <: Union{NfOrdFracIdl, NfRelOrdFracIdl}}
+function mod(x::nf_elem, y::NfOrdFracIdl)
+  return _mod(x, y)
+end
+
+function mod(x::RelativeElement, y::NfRelOrdFracIdl)
+  return _mod(x, y)
+end
+
+function _mod(x, y::T) where {T}
   K = parent(x)
   O = order(y)
   d = K(lcm(denominator(x, O), denominator(y)))

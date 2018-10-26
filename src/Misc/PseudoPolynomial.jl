@@ -44,7 +44,7 @@ function can_reduce(f::PseudoPoly{S, T}, G::Array{PseudoPoly{S, T}, 1}) where {S
   if isone(denominator(b))
     c = sum(leading_coefficient(G[i]) for i in I)//coefficient_ideal(f)
     l = _contains(leading_coefficient(polynomial(f)), [leading_coefficient(G[i])//coefficient_ideal(f) for i in I])
-    l = [ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
+    l = nf_elem[ l[i]//leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I)]
     g = deepcopy(polynomial(f))
     @assert leading_coefficient(polynomial(f)) == sum(l[i] * leading_coefficient(polynomial(G[I[i]])) for i in 1:length(I))
     for i in 1:length(I)
@@ -114,14 +114,61 @@ end
 #
 ################################################################################
 
-function gb(G)
-  GG = deepcopy(G)
-  L = [ (GG[i], GG[j]) for i in 1:length(GG) for j in 1:(i - 1)]
+function _den(f)
+  return lcm([denominator(coeff(f, i)) for i in 0:length(f)-1])
+end
+
+function _simplify(pp)
+  f = polynomial(pp)
+  den = _den(f)
+  g = f * den
+  I = coefficient_ideal(pp) * inv(base_ring(f)(den))
+  I = simplify(I)
+  return pseudo_polynomial(g, I)
+end
+
+function gb(G::Vector{S}, mmod) where {S}
+  GG::Vector{S} = deepcopy(G)
+  push!(GG, pseudo_polynomial(one(parent(G[1].poly)), mmod))
+  L = Tuple{S, S}[ (GG[i], GG[j]) for i in 1:length(GG) for j in 1:(i - 1)]
   while !isempty(L)
+    #@show length([x for x in GG if isconstant(polynomial(x))])
+    @show [ norm(coefficient_ideal(x)) for x in GG]
+    #@show [ norm(coefficient_ideal(_simplify(x))) for x in GG]
+    @show [ (_den(polynomial(x))) for x in GG]
+    #@show [ (_den(polynomial(_simplify(x)))) for x in GG]
     @show length(GG)
+    @show length(L)
     (f, g) = pop!(L)
     sp = spoly(f, g)
+    @show "reducing ..."
     r = reduce(sp, GG)
+    @show "done"
+    A = coefficient_ideal(r)
+    C, b = reduce_ideal2(A)
+    rp = r.poly
+    r = pseudo_polynomial(b * rp, frac_ideal(order(C), C))
+    Nfinv = mmod * inv(C)::NfOrdFracIdl
+    @show Nfinv
+    newcoeffs = nf_elem[]
+    indices = Int[]
+    for i in 1:length(r.poly.coeffs)
+      c = r.poly.coeffs[i]
+      cc = c - mod(c, Nfinv)
+      if !iszero(cc)
+        push!(newcoeffs, c - mod(c, Nfinv))
+        push!(indices, i)
+      end
+    end
+    newexps = Array{UInt, 2}(undef, size(r.poly.exps, 1), length(indices))
+    for j in 1:length(indices)
+      for k in 1:size(r.poly.exps, 1)
+        newexps[k, j] = r.poly.exps[k, indices[j]]
+      end
+    end
+
+    r = pseudo_polynomial(parent(r.poly)(newcoeffs, newexps), coefficient_ideal(r))
+
     if !iszero(r)
       for f in GG
         push!(L, (f, r))
