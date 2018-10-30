@@ -85,7 +85,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)), integral::Bool = true)
   T = fmpz
   O = order(FB.ideals[1])                  
-  n = deepcopy(n)
+  @show n = deepcopy(n)
 
   if integral
     df =numerator(n)
@@ -101,7 +101,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   for p in keys(d)
     vp = valuation!(n, p)
 #    s::Array{Tuple{Int, Int}, 1}, vp::Int = FB.fb[p].doit(a, vp)
-    s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p], n)
+    s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p], fmpq(p)^vp)
     if vp != 0
       ret = false
       if error
