@@ -424,7 +424,7 @@ end
 
 @doc Markdown.doc"""
     induce_crt(L::Array, c::crt_env{fmpz}) -> fmpz_poly
-> Given fmpz_poly polynomials $L[i]$ and a {{{crt_env}}}, apply the
+> Given fmpz\_poly polynomials $L[i]$ and a {{{crt\_env}}}, apply the
 > {{{crt}}} function to each coefficient retsulting in a polynomial $f = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Array, c::crt_env{fmpz})
