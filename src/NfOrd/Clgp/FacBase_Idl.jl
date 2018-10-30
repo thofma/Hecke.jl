@@ -101,7 +101,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
   for p in keys(d)
     vp = valuation!(n, p)
 #    s::Array{Tuple{Int, Int}, 1}, vp::Int = FB.fb[p].doit(a, vp)
-    s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p])
+    s::Array{Tuple{Int, Int}, 1}, vp::Int = fb_doit(a, vp, FB.fb[p], n)
     if vp != 0
       ret = false
       if error

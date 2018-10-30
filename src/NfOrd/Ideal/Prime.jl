@@ -808,7 +808,7 @@ function val_func_no_index_small(p::NfOrdIdl)
   g = Sx(g)
   h = Sx()
   uP = UInt(P)
-  return function(x::nf_elem)
+  return function(x::nf_elem, no::fmpq = fmpq(0))
     d = denominator(x)
     nf_elem_to_nmod_poly!(h, x, false) # ignores the denominator
     h = rem!(h, h, g)
@@ -832,7 +832,7 @@ function val_func_index(p::NfOrdIdl)
   M = representation_matrix(pi.num.gen_two)
   O = order(p)
   P = p.gen_one
-  return function(x::nf_elem)
+  return function(x::nf_elem, no::fmpq = fmpq(0))
     v = 0
     d, x_mat = integral_split(x, O)
     Nemo.mul!(x_mat, x_mat, M)
@@ -854,11 +854,11 @@ end
 > Computes the $\mathfrak p$-adic valuation of $a$, that is, the largest $i$
 > such that $a$ is contained in $\mathfrak p^i$.
 """
-function valuation(a::nf_elem, p::NfOrdIdl)
+function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   @hassert :NfOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   if isdefined(p, :valuation)
-    return p.valuation(a)::Int
+    return p.valuation(a, no)::Int
   end
   O = order(p)
   P = p.gen_one
@@ -866,7 +866,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   # for generic ideals
   if p.splitting_type[2] == 0
     #global bad_ideal = p
-    p.valuation = function(a::nf_elem)
+    p.valuation = function(a::nf_elem, no::fmpq = fmpq(0))
       d = denominator(a, O)
       x = O(d*a)
       return valuation_naive(O(x), p)::Int - valuation_naive(O(d), p)::Int
@@ -875,14 +875,14 @@ function valuation(a::nf_elem, p::NfOrdIdl)
   end
 
   if p.splitting_type[1]*p.splitting_type[2] == degree(O)
-    p.valuation = function(a::nf_elem)
-      return divexact(valuation(norm(a), P)[1], p.splitting_type[2])::Int
+    p.valuation = function(a::nf_elem, no::fmpq = fmpq(0))
+      return divexact(valuation(iszero(no) ? norm(a) : no, P)[1], p.splitting_type[2])::Int
     end
   elseif mod(index(O),P) != 0 && p.splitting_type[1] == 1
     if p.gen_one^2 <= typemax(UInt) 
       f1 = val_func_no_index_small(p)
       f2 = val_func_no_index(p)
-      p.valuation = function(x::nf_elem)
+      p.valuation = function(x::nf_elem, no::fmpq = fmpq(0))
         v = f1(x)
         if v > 100  # can happen ONLY if the precision in the .._small function
                     # was too small.
@@ -898,7 +898,7 @@ function valuation(a::nf_elem, p::NfOrdIdl)
     p.valuation = val_func_index(p)
   end
 
-  return p.valuation(a)::Int
+  return p.valuation(a, no)::Int
 end
 
 @doc Markdown.doc"""
