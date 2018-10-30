@@ -64,7 +64,7 @@ import Random: rand!
 
 import Nemo
 
-exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz,
+exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, 
            :factor,
            :call, :factors, :parseint, :strongequal, :window, :xgcd]
 
