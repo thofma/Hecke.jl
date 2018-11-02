@@ -187,6 +187,19 @@ function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   return O(y)
 end
 
+# Computes a/b, if possible
+function divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true)
+  !check_parent(a, b) && error("Wrong parents")
+  O = parent(a)
+  c = divexact_right(elem_in_algebra(a, Val{false}), elem_in_algebra(b, Val{false}))
+  if check
+    (x, y) = _check_elem_in_order(c, O)
+    !x && error("Quotient not an element of the order")
+    return typeof(a)(O, c, y) # Avoid unneccessary copies
+  end
+  return typeof(a)(O, c)
+end
+
 ################################################################################
 #
 #  Conversion from matrix
