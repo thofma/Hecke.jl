@@ -1166,12 +1166,14 @@ function issplit(A::AlgAss)
   O = Order(A, basis(A))
   i = schur_index_at_real_plc(O)
   if i==2
+    @vprint :AlgAssOrd 1 "Not split at the infinite prime\n"
     return false
   end  
   fac = factor(root(abs(discriminant(O)),2))
   for (p,j) in fac
     O1 = pmaximal_overorder(O, Int(p))
     if valuation(O1.disc, Int(p)) != 0
+      @vprint :AlgAssOrd 1 "Not split at $p\n"
       return false
     end
   end

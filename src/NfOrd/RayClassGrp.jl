@@ -1524,7 +1524,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
-    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2))
+    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)

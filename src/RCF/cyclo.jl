@@ -65,6 +65,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     for (p,v) = factor(gcd(discriminant(maximal_order(k)), fmpz(n))).fac
       ZKa = pmaximal_overorder(ZKa, p)
     end
+    ZKa = lll(ZKa)
     ZKa.ismaximal = 1
     Hecke._set_maximal_order_of_nf(Ka, ZKa)
   else
@@ -73,8 +74,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     small2abs = NfToNfMor(k, k, gen(k))
     ZKa = maximal_order(k)
   end
-  #ZKa = lll(ZKa)
-
   
   c = CyclotomicExt()
   c.k = k

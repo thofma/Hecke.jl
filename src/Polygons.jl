@@ -598,7 +598,7 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(Zx(K.pol))
   @vprint :NfOrd 1 "Factoring the polynomial \n"
-  fac = factor(f1)
+  fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
   res = Tuple{Int, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
   for (g,m) in fac
@@ -608,7 +608,7 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
       continue
     end
     phi = lift(Zx, g)
-    dev = phi_development(Zx(f),phi)
+    dev = phi_development(Zx(f), phi)
     N = newton_polygon(dev, p)
     if denominator(slope(N.lines[1])) == m
       push!(res, (degree(g), m))

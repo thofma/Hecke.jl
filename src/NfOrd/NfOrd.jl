@@ -379,6 +379,21 @@ end
 
 ################################################################################
 #
+#  Ramified Primes
+#
+################################################################################
+
+@doc Markdown.doc"""
+    ramified_primes(O::NfOrd) -> Array{fmpz, 1}
+
+Returns the list of prime numbers that divide $\operatorname{disc}(\mathcal O)$.
+"""
+function ramified_primes(O::NfOrd)
+  return collect(keys(factor(discriminant(O)).fac))
+end
+
+################################################################################
+#
 #  Deepcopy
 #
 ################################################################################

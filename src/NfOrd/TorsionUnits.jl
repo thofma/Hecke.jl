@@ -362,9 +362,9 @@ function _torsion_units_gen(O::NfOrd)
     end
     for i = 1:v
       f = divexact(y^(Int(p)^(v+1-i)) - 1, y^(Int(p)^(v-i)) - 1)
-      R = _roots_hensel(f, 1)
-      if !isempty(R)
-        mul!(gen, gen, O(R[1]))
+      fl, r = _one_root_hensel(f)
+      if fl
+        mul!(gen, gen, O(r))
         ord *= Int(p)^(v+1-i)
         break
       end

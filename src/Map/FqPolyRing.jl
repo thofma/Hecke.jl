@@ -25,7 +25,7 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
     n = degree(Fq)
     @assert n == degree(g)
     m = degree(h)
-    Fqm = FqFiniteField(p, n*m, :$, cached = false)
+    Fqm = FqFiniteField(p, n*m, :$, false)
     Fqmy, y = PolynomialRing(Fqm, "y", cached = false)
     gy = Fqmy([ Fqm(fmpz(coeff(g, i))) for i = 0:degree(g) ])
     a = roots(gy)[1]

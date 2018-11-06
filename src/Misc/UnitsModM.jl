@@ -402,6 +402,37 @@ function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T 
   end
 end
 
+function disc_log_bs_gs(a::nmod, b::nmod, o::Int) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
+  b==1 && return 0  
+  b==a && return 1
+  r = root(o, 2)
+  r = Int(r)
+  baby = Dict{typeof(a), Int}()
+  baby[a] = 1
+  baby[parent(a)(1)] = 0
+  pows = a
+  i = 1
+  while i+1 < r
+    pows *= a
+    i += 1
+    pows == b && return i
+    baby[pows] = i
+  end
+  giant = pows*a
+  @assert giant == a^r
+  b == giant && return r
+  giant = inv(giant)
+  g = fmpz(0)
+  for i=1:r
+    b *= giant
+    g += r
+    if haskey(baby, b)
+      return g + baby[b]
+    end
+  end
+  throw("disc_log failed")
+end
+
 
 @doc Markdown.doc"""
   disc_log_ph{T <:PolyElem}(a::Residue{T}, b::Residue{T}, o::fmpz, r::Int)
@@ -621,29 +652,27 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       end
     end
     
-    k=gcd(npart,n)
+    k =gcd(npart, n)
     inv=Int(invmod(s1,npart))
     quot=divexact(npart, k)
     
     function disc_log(x::Int)
       y=R(x)^(s1*quot)
-      if iszero(y)
-        error("Not coprime!")
-      end
+      iszero(y)  && error("Not coprime!")
       if isone(y)
         return 0
       end
+      w= g^quot
       if k<100
-        c=1
-        w=g^quot
-        el=w
+        c = 1
+        el = w
         while el!=y
-          c+=1
-          el*=w
+          c += 1
+          el *= w
         end
         return mod(c*inv,k)
       else
-        error("To be implemented!")
+        return mod(inv*disc_log_bs_gs(w, y, npart), k)
       end
     end     
     return (Int(g.data), k, disc_log)::Tuple{Int,Int,Function}

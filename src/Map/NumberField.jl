@@ -97,6 +97,8 @@ end
 
 Base.copy(f::NfToNfMor) = f
 
+Base.hash(f::NfToNfMor, h::UInt) = Base.hash(f.prim_img, h)
+
 function show(io::IO, h::NfToNfMor)
   if domain(h) == codomain(h)
     println(io, "Automorphism of ", domain(h))

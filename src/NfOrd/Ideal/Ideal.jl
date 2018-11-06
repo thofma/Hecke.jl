@@ -1348,7 +1348,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   d = degree(O)
   
-  #Trace method if the prime is large enough
+    #Trace method if the prime is large enough
   if p > degree(O)
     M = trace_matrix(O)
     W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
@@ -1360,7 +1360,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
     M2 = zero_matrix(FlintZZ, d, d)
     for i=1:cols(B)
       for j=1:d
-        M2[i,j] = FlintZZ(B[j,i].data)
+        M2[i,j] = FlintZZ(B[j, i].data)
       end
     end
     gens=[O(p)]
@@ -1406,9 +1406,9 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   #Then, construct the basis matrix of the ideal
   m = zero_matrix(FlintZZ, d, d)
-  for i=1:length(X)
-    for j=1:d
-      m[i,j]=lift(X[i][j])
+  for i = 1:length(X)
+    for j = 1:d
+      m[i, j] = lift(X[i][j])
     end
   end
   mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
@@ -1459,7 +1459,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   mhnf = hnf_modular_eldiv!(m, minimum(a))
   s = prod(mhnf[i,i] for i = 1:n)
-  if s == 1
+  if isone(s)
     return O
   end
   # mhnf is upper right HNF
@@ -1477,6 +1477,12 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   O1 = Order(nf(O), b, false)
   if isdefined(O, :disc)
     O1.disc = divexact(O.disc, s^2)
+  end
+  if isdefined(O, :index)
+    O1.index = s*O.index
+  end
+  if isdefined(O, :basis_mat_inv)
+    O1.basis_mat_inv = O.basis_mat_inv * mhnftrans
   end
   return O1
 end
