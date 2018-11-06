@@ -12,10 +12,11 @@ function _lll_quad(A::NfOrdIdl)
   K = nf(order(A))
   @assert degree(K) ==2 && discriminant(order(A)) < 0
   b = basis(A)
-  a1 = numerator(trace(b[1]^2))
-  a2 = numerator(trace(b[2]^2))
-  a12 = numerator(trace(b[1] * b[2]))
+  a1 = 2*numerator(norm(b[1]))
+  a2 = 2*numerator(norm(b[2]))
+  a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
   g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
+  @assert isposdef(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
@@ -116,6 +117,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
   ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
+  @show d
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision

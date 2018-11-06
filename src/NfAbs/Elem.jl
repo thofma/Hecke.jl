@@ -1045,3 +1045,45 @@ function (R::Nemo.FmpzModPolyRing)(a::nf_elem)
   return r
 end
 
+function conjugate_quad(a::nf_elem)
+  k = parent(a)
+  @assert degree(k) == 2
+  # we have
+  # a = x + y gen(k), so bar(a) = x + y bar(k)
+  # assume pol(k) is monic: x^2 + rx + t, then
+  # bar(gen(k)) = -gen(k) - r
+  # since (pq-formula) gen(k) = - r/2 \pm 1/2(sqrt(r^2-4t)
+  # so bar(a) = x + y (-bar(k) - r) = (x-ry) - y gen(k)
+  b = k()
+  q = fmpz()
+  @assert isone(k.pol_den)
+  GC.@preserve b begin
+    a_ptr = reinterpret(Ptr{Int}, pointer_from_objref(a))
+    p_ptr = reinterpret(Ptr{Int}, k.pol_coeffs)
+    s = sizeof(Ptr{fmpz})
+
+    ccall((:fmpz_mul, :libflint), Cvoid, (Ref{fmpz}, Ptr{Int}, Ptr{Int}), q, p_ptr+s, a_ptr +s)
+    ccall((:fmpz_sub, :libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b)), a_ptr, q)
+    ccall((:fmpz_neg, :libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+1*s, a_ptr + s)
+    ccall((:fmpz_set, :libflint), Cvoid, (Ptr{fmpz}, Ptr{fmpz}), reinterpret(Ptr{Int}, pointer_from_objref(b))+3*s, a_ptr+3*s)
+  end
+  #TODO: 
+  # - write in c?
+  # - use Ref and Ref(, i) instead of pointers
+  # - deal with non-monic fields
+  return b
+end
+
+function complex_conjugate(a::nf_elem)
+  d = degree(parent(a))
+  if d == 1
+    return a
+  end
+  if d == 2
+    if discriminant(parent(a)) < 0
+      return a
+    end
+    return conjugate_quad(a)
+  end
+  error("Not implemented yet: element must be in an at most quadratic field")
+end
