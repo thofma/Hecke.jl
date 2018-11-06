@@ -1309,7 +1309,7 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
     if !issquarefree(fp)
       continue
     end
-    rmodp = gcd(fp, powmod(T, p^deg_p, fp) - T)
+    rmodp = gcd(fp, powmod(T, fmpz(p)^deg_p, fp) - T)
     if degree(rmodp) == 0
       return nf_elem[]
     end
@@ -1385,7 +1385,7 @@ function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
     if !issquarefree(fp)
       continue
     end
-    rmodp = gcd(fp, powmod(T, p^deg_p, fp) - T)
+    rmodp = gcd(fp, powmod(T, fmpz(p)^deg_p, fp) - T)
     if degree(rmodp) == 0
       return nf_elem[]
     end
@@ -1493,7 +1493,7 @@ function _one_root_hensel(f::Generic.Poly{nf_elem})
     if !issquarefree(fp)
       continue
     end
-    nroot_fp = gcd(fp, powmod(T, p^deg_p, fp)-T)
+    nroot_fp = gcd(fp, powmod(T, fmpz(p)^deg_p, fp)-T)
     if degree(nroot_fp) != deg
       return false, K(0)
     end 
