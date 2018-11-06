@@ -1655,7 +1655,7 @@ function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 
   @assert ngens(S) == ngens(U)
   for i = 1:ngens(U)
     if coord[i] != 0
-      gen *= mU(U[i])^Int(coord[i])
+      gen *= mU(U[i])^-Int(coord[i])
     end
   end
   return true, gen
@@ -1704,7 +1704,7 @@ function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, i
   @assert ngens(S) == ngens(U)
   for i = 1:ngens(U)
     if coord[i] != 0
-      gen *= mU(U[i])^Int(coord[i])
+      gen *= mU(U[i])^-Int(coord[i])
     end
   end
   return true, gen

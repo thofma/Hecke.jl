@@ -1121,7 +1121,9 @@ function MaximalOrder(A::AbsAlgAss)
   O = Order(A, basis(A))
   @assert one(A) in O
   # O still not needs to be an order...
-  return MaximalOrder(O)
+  OO = MaximalOrder(O)
+  A.maximal_order = OO
+  return OO
 end
 
 function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})

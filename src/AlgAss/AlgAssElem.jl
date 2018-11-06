@@ -157,6 +157,18 @@ function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   return c
 end
 
+# Computes a/b, if possible
+function divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem)
+  parent(a) != parent(b) && error("Parents don't match.")
+  # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
+
+  A = parent(a)
+  Mb = transpose(representation_matrix(b))
+  va = matrix(base_ring(A), dim(A), 1, coeffs(a, false))
+  vc = solve(Mb, va)
+  return A([ vc[i, 1] for i = 1:dim(A) ])
+end
+
 ################################################################################
 #
 #  Ad hoc operations
@@ -187,6 +199,16 @@ dot(b::fmpz, a::AbsAlgAssElem{T}) where {T} = b*a
 
 ################################################################################
 #
+#  Inverse
+#
+################################################################################
+
+function inv(a::AbsAlgAssElem)
+  return divexact_right(one(parent(a)), a)
+end
+
+################################################################################
+#
 #  Exponentiation
 #
 ################################################################################
@@ -198,9 +220,8 @@ function ^(a::AbsAlgAssElem, b::Int)
     return deepcopy(a)
   else
     if b < 0
-      error("Not implemented yet")
-      #a = inv(a)
-      #b = -b
+      a = inv(a)
+      b = -b
     end
     bit = ~((~UInt(0)) >> 1)
     while (UInt(bit) & b) == 0
@@ -224,7 +245,8 @@ function ^(a::AbsAlgAssElem, b::fmpz)
     return a^Int(b)
   end
   if b < 0
-    error("Not implemented yet")
+    a = inv(a)
+    b = -b
   elseif b == 0
     return one(parent(a))
   elseif b == 1

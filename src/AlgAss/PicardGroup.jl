@@ -6,6 +6,8 @@
 
 mutable struct MapRayClassGroupAlg{S, T} <: Map{S, T, HeckeMap, MapRayClassGroupAlg}
   header::MapHeader{S, T}
+  groups_in_number_fields::Vector{Tuple{S, MapRayClassGrp{S}}}
+  into_product_of_groups::GrpAbFinGenMap # the isomorphism between the domain and the product of the groups in groups_in_number_fields
 
   function MapRayClassGroupAlg{S, T}() where {S, T}
     return new{S, T}()
@@ -14,6 +16,12 @@ end
 
 mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
   header::MapHeader{S, T}
+
+  # For the refined discrete logarithm:
+  right_transform::fmpz_mat
+  betas # Vector of algebra elements
+  gammas # the same type as betas
+  ray_class_group_map::MapRayClassGroupAlg
 
   function MapPicardGrp{S, T}() where {S, T}
     return new{S, T}()
