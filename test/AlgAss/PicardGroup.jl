@@ -58,4 +58,21 @@ end
   @test P.snf == fmpz[ 3 ]
   @test test_disc_log_picard(P, mP, O)
 
+  Qx, x = FlintQQ["x"]
+  f = x^3 - 10x^2 - 3x - 2
+  g = x^2 - 9x + 1
+  A = AlgAss(f*g)
+  O = Order(A, basis(A))
+  P, mP = picard_group(O, true)
+  @test issnf(P)
+  @test P.snf == fmpz[ 2 ]
+  @test test_disc_log_picard(P, mP, O)
+  # Test the refined discrete logarithm
+  @test isdefined(mP, :betas)
+  I = mP(P[1])
+  @test_throws ErrorException Hecke.principal_gen(I)
+  I2 = I^2
+  a = Hecke.principal_gen(I2)
+  @test I2 == ideal(O, a)
+
 end
