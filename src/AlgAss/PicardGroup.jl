@@ -388,10 +388,20 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
 end
 
 function principal_gen(a::AlgAssAbsOrdIdl)
-  if order(a).ismaximal == 1
-    error("Not implemented (yet)")
+  O = order(a)
+  if O.ismaximal == 1
+    return principal_gen_maximal(a)
   end
 
+  OO = maximal_order(algebra(O))
+  if O == OO
+    return principal_gen_maximal(a)
+  end
+
+  return principal_gen_non_maximal(a)
+end
+
+function principal_gen_non_maximal(a::AlgAssAbsOrdIdl)
   P, mP = picard_group(order(a), true)
 
   g, r = refined_disc_log_picard_group(a, mP)
@@ -399,6 +409,23 @@ function principal_gen(a::AlgAssAbsOrdIdl)
     error("Ideal is not principal")
   end
   return order(a)(g)
+end
+
+function principal_gen_maximal(a::AlgAssAbsOrdIdl)
+  O = order(a)
+  A = algebra(O)
+  fields_and_maps = as_number_fields(A)
+
+  gen = A()
+  for i = 1:length(fields_and_maps)
+    K, AtoK = fields_and_maps[i]
+    C, mC = class_group(K) # should be cached
+    Hecke._assure_princ_gen(mC)
+    ai = _as_ideal_of_number_field(a, AtoK)
+    g = principal_gen(ai)
+    gen += AtoK\elem_in_nf(g)
+  end
+  return O(gen)
 end
 
 ################################################################################

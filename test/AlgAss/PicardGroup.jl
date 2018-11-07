@@ -7,7 +7,6 @@ function test_disc_log_picard(P, mP, O::Hecke.AlgAssAbsOrd)
   #=   end =#
   #=   I = ideal(O, a) =#
   #=   if !iszero(mP\I) =#
-  #=     println(1) =#
   #=     return false =#
   #=   end =#
   #= end =#
@@ -25,11 +24,29 @@ function test_disc_log_picard(P, mP, O::Hecke.AlgAssAbsOrd)
       I2 *= mP(P[j])^c[j]
     end
     if mP\I1 != mP\I2 || mP\I1 != p
-      println(i + 1)
       return false
     end
   end
   return true
+end
+
+@testset "Picard group of maximal orders of algebras" begin
+
+  Qx, x = FlintQQ["x"]
+  f = x^3 - 10x^2 - 3x - 2
+  g = x^2 - 9x + 1
+  A = AlgAss(f*g)
+  O = maximal_order(A)
+  P, mP = picard_group(O)
+  @test issnf(P)
+  @test P.snf == fmpz[ 2 ]
+  @test test_disc_log_picard(P, mP, O)
+  I = mP(P[1])
+  @test_throws ErrorException Hecke.principal_gen(I)
+  I2 = I^2
+  a = Hecke.principal_gen(I2)
+  @test I2 == ideal(O, a)
+
 end
 
 @testset "Picard group of non maximal orders of algebras" begin
