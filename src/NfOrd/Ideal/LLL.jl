@@ -117,7 +117,6 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
 
   ccall((:fmpz_mat_one, :libflint), Nothing, (Ref{fmpz_mat}, ), g)
   ccall((:fmpz_lll, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{Nemo.lll_ctx}), d, g, ctx)
-  @show d
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
