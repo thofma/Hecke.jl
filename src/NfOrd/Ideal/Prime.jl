@@ -763,7 +763,7 @@ function val_func_no_index(p::NfOrdIdl)
   end
   e = elem_from_mat_row(K, M, 1, P)
   # e is still a valuation element, but with smaller coefficients.
-  return function(x::nf_elem)
+  return function(x::nf_elem, no::fmpq = fmpq(0))
     v = 0
     d = denominator(x)
     x *= d
