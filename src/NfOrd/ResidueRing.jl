@@ -1664,14 +1664,13 @@ function _hensel_one_root(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::I
     zz = K(z)*iden
     if res == zz || i == length(pr)
       if f(zz) == 0
-        rs = zz
-        return true, rs
+        return true, zz
       else
         res = zz
       end
     end
   end  
-  return false, rs
+  return false, K(0)
 end
 
 

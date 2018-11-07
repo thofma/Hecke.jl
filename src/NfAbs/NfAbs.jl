@@ -378,6 +378,12 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   end 
 end
 
+@doc Markdown.doc"""
+      issubfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+> This function assumes that K is normal.
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
 function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)
   if !fl

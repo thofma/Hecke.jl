@@ -2,8 +2,8 @@
 
   @testset "Minimal Submodules" begin
    
-    F,a=FiniteField(3,1,"a")
-    R=ResidueRing(FlintZZ,9)
+    F, a = FiniteField(3,1,"a")
+    R = ResidueRing(FlintZZ,9)
     
     V=DiagonalGroup([3,3,9,9])
     
