@@ -199,6 +199,8 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
   #trace_mat::fmpz_mat              # The reduced trace matrix (if known)
   trred_matrix::fmpz_mat
 
+  picard_group#::MapPicardGrp
+
   function AlgAssAbsOrd{S}(A::S) where {S}
     O = new{S, elem_type(S)}()
     O.algebra = A
