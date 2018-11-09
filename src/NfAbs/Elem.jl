@@ -677,43 +677,36 @@ end
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false, do_max_ord::Bool = true)
+function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
   @assert issquarefree(f)
 
   #TODO: implement for equation order....
   #TODO: use max_roots
 
   if degree(f) == 1
-    return [-trailing_coefficient(f)//lead(f)]
+    return nf_elem[-trailing_coefficient(f)//lead(f)]
   end
 
-  get_d = x -> denominator(x)
-  if do_max_ord
-    O = maximal_order(base_ring(f))
-    if do_lll
-      O = lll(O)
-    end
-    get_d = x-> denominator(x, O)
+  O = maximal_order(base_ring(f))
+  if do_lll
+    O = lll(O)
   end
 
   d = degree(f)
 
-  deno = get_d(coeff(f, d))
+  deno = denominator(coeff(f, d), O)
+
   for i in (d-1):-1:0
     ai = coeff(f, i)
     if !iszero(ai)
-      deno = lcm(deno, get_d(ai))
+      deno = lcm(deno, denominator(ai, O))
     end
   end
 
   g = deno*f
 
-  if do_max_ord
-    Ox, x = PolynomialRing(O, "x", cached = false)
-    goverO = Ox([ O(coeff(g, i)) for i in 0:d])
-  else
-    goverO = g
-  end  
+  Ox, x = PolynomialRing(O, "x", cached = false)
+  goverO = Ox(elem_type(O)[ O(coeff(g, i)) for i in 0:d])
 
   if !isone(lead(goverO))
     deg = degree(f)
@@ -725,12 +718,12 @@ function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Boo
     end
     setcoeff!(goverO, deg, one(O))
     r = _roots_hensel(goverO, max_roots)
-    return [ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
+    return nf_elem[ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
   end
 
   A = _roots_hensel(goverO, max_roots)
 
-  return [ elem_in_nf(y) for y in A ]
+  return nf_elem[ elem_in_nf(y) for y in A ]
 end
 
 @doc Markdown.doc"""

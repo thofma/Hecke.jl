@@ -1124,7 +1124,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
     B = basis_mat(I)
     L = lll(B)
 
-    rhs = MatrixSpace(FlintZZ, degree(O), 1, false)(elem_in_basis(new_a)'')
+    rhs = matrix(FlintZZ, degree(O), 1, elem_in_basis(new_a))
     lhs = transpose(L)
 
     X, d = solve_rational(lhs, rhs)
@@ -1197,12 +1197,12 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
       B = basis_mat(I)
       L = lll(B)
 
-      rhs = MatrixSpace(FlintZZ, degree(O), 1, false)(elem_in_basis(new_a)'')
+      rhs = matrix(FlintZZ, degree(O), 1, elem_in_basis(new_a))
       lhs = transpose(L)
 
       X, d = solve_rational(lhs, rhs)
 
-      zz = [ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
+      zz = fmpq[ fmpq(BigInt(X[l, 1])//BigInt(d) - round(BigInt(X[l, 1])//BigInt(d))) for l in 1:degree(O)]
 
       cden = denominator(zz[1])
 
@@ -1210,7 +1210,7 @@ function _roots_hensel(f::Generic.Poly{NfOrdElem}, max_roots::Int = degree(f))
         cden = lcm(cden, denominator(zz[l]))
       end
 
-      zz_num = [ numerator(cden*zz[l]) for l in 1:degree(O) ]
+      zz_num = fmpz[ numerator(cden*zz[l]) for l in 1:degree(O) ]
 
       v = matrix(FlintZZ, 1, degree(O), zz_num)
 
