@@ -1119,17 +1119,7 @@ function _find_pairs(bound::Int)
       pairs[1:n,poszero-i] .=false
     end
   end
-  #check
-#=  
-  for i=1:n
-    for j=1:n
-      if pairs[i,j]
-        @assert issquarefree(i-poszero)
-        @assert issquarefree(j-poszero)
-      end
-    end
-  end
-=#
+
   #removing diagonal
   for i=1:n
     pairs[i,i]=false

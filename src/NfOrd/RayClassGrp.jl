@@ -1344,7 +1344,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   if inf_plc 
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(I.minimum)
+      i=Int(mod(I.minimum, modulus))
       return mU\(R(i))
     end
     
@@ -1365,7 +1365,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     
     function disc_log2(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(I.minimum)
+      i=Int(mod(I.minimum, modulus))
       return mU\(R(i))
     end
     
@@ -1387,7 +1387,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     Q,mQ=quo(U, [mU\(R(-1))])
     
     function disc_log(I::NfOrdIdl)
-      i=Int(minimum(I))
+      i=Int(mod(minimum(I), modulus))
       return mQ(mU\(R(i)))
     end
     
