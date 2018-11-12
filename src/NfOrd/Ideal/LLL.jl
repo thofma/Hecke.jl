@@ -158,7 +158,6 @@ function short_elem(A::NfOrdIdl,
       l, t = lll(A, v, prec = prec)
       break
     catch e
-      @show e
       if !(e isa LowPrecisionLLL)
         rethrow(e)
       end
