@@ -884,7 +884,7 @@ function _order(K::S, elt::Array{T, 1}) where {S, T}
 
   # Since 1 is in elt, prods will contain all elements
   while !closed
-    prods = T[elt[i] for i=1:length(elt)]
+    prods = T[elt[i] for i = 1:length(elt)]
     for i = 2:length(elt)
       for j = i:length(elt)
         push!(prods, elt[i]*elt[j])
@@ -908,9 +908,9 @@ function _order(K::S, elt::Array{T, 1}) where {S, T}
       closed = true
     else
       dold = d
-      elt = T[]
+      elt = Array{T, 1}(undef, n)
       for i in 1:n
-        push!(elt, elem_from_mat_row(K, B.num, rows(B) - degree(K) + i, B.den))
+        elt[i] = elem_from_mat_row(K, B.num, rows(B) - degree(K) + i, B.den)
       end
     end
   end
