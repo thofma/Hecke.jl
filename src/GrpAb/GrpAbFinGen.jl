@@ -325,6 +325,14 @@ function snf(G::GrpAbFinGen)
   end
 
   S, _, T = snf_with_transform(G.rels, false, true)
+
+  return _reduce_snf(G, S, T, inv(T))
+end
+
+# For S in SNF with G.rels = U*S*T and Ti = inv(T) this removes
+# the ones at the diagonal of S and contructs the homomorphism.
+function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
+
   d = fmpz[S[i,i] for i = 1:min(rows(S), cols(S))]
 
   while length(d) < ngens(G)
@@ -350,7 +358,6 @@ function snf(G::GrpAbFinGen)
   end
 
   TTi = zero_matrix(FlintZZ, length(s), rows(T))
-  Ti = inv(T)
 
   j = 1
   for i = 1:length(d)

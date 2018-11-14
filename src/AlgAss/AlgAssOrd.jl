@@ -816,8 +816,8 @@ end
 function trace_signature(O::AlgAssAbsOrd)
   
   @vtime :AlgAssOrd 1 M = trred_matrix(O)
-  Zx, x = PolynomialRing(FlintZZ, "x")
-  Qy, y = PolynomialRing(FlintQQ, "y")
+  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  Qy, y = PolynomialRing(FlintQQ, "y", cached = false)
   @vtime :AlgAssOrd 1 f = charpoly(Zx, M)
   @vtime :AlgAssOrd 1 fac = factor_squarefree(Qy(f))
   npos = 0
@@ -1121,7 +1121,9 @@ function MaximalOrder(A::AbsAlgAss)
   O = Order(A, basis(A))
   @assert one(A) in O
   # O still not needs to be an order...
-  return MaximalOrder(O)
+  OO = MaximalOrder(O)
+  A.maximal_order = OO
+  return OO
 end
 
 function maximal_order_via_decomposition(A::AbsAlgAss{fmpq})
@@ -1166,12 +1168,14 @@ function issplit(A::AlgAss)
   O = Order(A, basis(A))
   i = schur_index_at_real_plc(O)
   if i==2
+    @vprint :AlgAssOrd 1 "Not split at the infinite prime\n"
     return false
   end  
   fac = factor(root(abs(discriminant(O)),2))
   for (p,j) in fac
     O1 = pmaximal_overorder(O, Int(p))
     if valuation(O1.disc, Int(p)) != 0
+      @vprint :AlgAssOrd 1 "Not split at $p\n"
       return false
     end
   end

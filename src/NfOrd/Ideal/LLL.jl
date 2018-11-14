@@ -169,7 +169,22 @@ function short_elem(A::NfOrdIdl,
   temp = FakeFmpqMat(basis_mat(A))*basis_mat(order(A))
   b = temp.num
   b_den = temp.den
-  l, t = lll(A, v, prec = prec)
+  local t
+  while true
+    if prec > 2^18
+      error("Something wrong in short_elem")
+    end
+    try
+      l, t = lll(A, v, prec = prec)
+      break
+    catch e
+      if !(e isa LowPrecisionLLL)
+        rethrow(e)
+      end
+    end
+    prec = 2 * prec
+  end
+
   w = view(t, 1,1, 1, cols(t))
   c = w*b
   q = elem_from_mat_row(K, c, 1, b_den)

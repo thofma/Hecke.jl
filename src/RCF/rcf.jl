@@ -530,10 +530,14 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   end
 
   a = -coeff(K.pol, 0)
-  a = h(a)//a^r # this assumes K/k to be abelian
+  #ha = FacElem(h(a))
+  #a1 = inv(FacElem(a))^r * ha # this assumes K/k to be abelian
+  #@time fl, b = ispower(a1, degree(K))
+  #@assert fl
+  #return NfRelToNfRelMor(K, K, h, evaluate(b)*gen(K)^r)
+  a = h(a)//a^r
   fl, b = ispower(a, degree(K))
   @assert fl
-
   return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
 end
 
@@ -589,7 +593,7 @@ function _rcf_descent(CF::ClassField_pp)
       Ft, t = PolynomialRing(F, cached=false)
       mFp = extend_easy(mF, C.Ka)
       ap = mFp(CF.a)
-      Ap = ResidueRing(Ft, t^n-ap)
+      Ap = ResidueRing(Ft, t^n-ap, cached = false)
       
       #@assert length(Set([toAp(v) for (k,v) = Auto])) == length(Auto)
       #TODO: bad prime possible if set is too small (pe might interfere with p)

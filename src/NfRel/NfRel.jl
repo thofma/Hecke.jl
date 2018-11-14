@@ -772,7 +772,7 @@ function issubfield(K::NfRel, L::NfRel)
   if mod(degree(g), degree(f)) != 0
     return false, NfRelToNfRelMor(K, L, L())
   end
-  Lx, x = L["x"]
+  Lx, x = PolynomialRing(L, "x", cached = false)
   fL = Lx()
   for i = 0:degree(f)
     setcoeff!(fL, i, L(coeff(f, i)))

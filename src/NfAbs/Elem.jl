@@ -290,7 +290,7 @@ function norm_div(a::nf_elem, d::fmpz, nb::Int)
      while nbits(pp) < nb
        p = next_prime(p)
        R = GF(Int(p), cached = false)
-       Rt, t = PolynomialRing(R)
+       Rt, t = PolynomialRing(R, cached = false)
        np = R(divexact(resultant(Rt(parent(a).pol), Rt(a)), R(d)))
        if isone(pp)
          no = lift(np)
@@ -435,7 +435,7 @@ function norm(f::PolyElem{nf_elem})
   y = gen(Qy)
   Qyx, x = PolynomialRing(Qy, "x", cached = false)
 
-  Qx = PolynomialRing(FlintQQ, "x")[1]
+  Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
   T = evaluate(K.pol, gen(Qxy))
@@ -471,7 +471,7 @@ end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
   Ky, y = PolynomialRing(K, cached = false)
-  Qz, z = PolynomialRing(FlintQQ)
+  Qz, z = PolynomialRing(FlintQQ, cached = false)
   return factor(evaluate(Qz(f), y))
 end
 
@@ -677,60 +677,59 @@ end
 > Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
 > squarefree and monic.
 """
-function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false, do_max_ord::Bool = true)
+function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
   @assert issquarefree(f)
 
   #TODO: implement for equation order....
   #TODO: use max_roots
 
   if degree(f) == 1
-    return [-trailing_coefficient(f)//lead(f)]
+    return nf_elem[-trailing_coefficient(f)//lead(f)]
   end
-
-  get_d = x -> denominator(x)
-  if do_max_ord
-    O = maximal_order(base_ring(f))
+  K = base_ring(f)
+  
+  try
+    O = _get_maximal_order_of_nf(K)
+    
     if do_lll
       O = lll(O)
     end
-    get_d = x-> denominator(x, O)
-  end
 
-  d = degree(f)
+    d = degree(f)
 
-  deno = get_d(coeff(f, d))
-  for i in (d-1):-1:0
-    ai = coeff(f, i)
-    if !iszero(ai)
-      deno = lcm(deno, get_d(ai))
+    deno = denominator(coeff(f, d), O)
+
+    for i in (d-1):-1:0
+      ai = coeff(f, i)
+      if !iszero(ai)
+        deno = lcm(deno, denominator(ai, O))
+      end
     end
-  end
 
-  g = deno*f
+    g = deno*f
 
-  if do_max_ord
     Ox, x = PolynomialRing(O, "x", cached = false)
-    goverO = Ox([ O(coeff(g, i)) for i in 0:d])
-  else
-    goverO = g
-  end  
+    goverO = Ox(elem_type(O)[ O(coeff(g, i)) for i in 0:d])
 
-  if !isone(lead(goverO))
-    deg = degree(f)
-    a = lead(goverO)
-    b = one(O)
-    for i in deg-1:-1:0
-      setcoeff!(goverO, i, b*coeff(goverO, i))
-      b = b*a
+    if !isone(lead(goverO))
+      deg = degree(f)
+      a = lead(goverO)
+      b = one(O)
+      for i in deg-1:-1:0
+        setcoeff!(goverO, i, b*coeff(goverO, i))
+        b = b*a
+      end
+      setcoeff!(goverO, deg, one(O))
+      r = _roots_hensel(goverO, max_roots)
+      return nf_elem[ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
     end
-    setcoeff!(goverO, deg, one(O))
-    r = _roots_hensel(goverO, max_roots)
-    return [ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
+
+    A = _roots_hensel(goverO, max_roots)
+
+    return nf_elem[ elem_in_nf(y) for y in A ]
+  catch e
+    return _roots_hensel(f, max_roots)
   end
-
-  A = _roots_hensel(goverO, max_roots)
-
-  return [ elem_in_nf(y) for y in A ]
 end
 
 @doc Markdown.doc"""
@@ -786,6 +785,7 @@ function ispower(a::nf_elem, n::Int)
   end
 
   d = denominator(a)
+
   rt = _roots_hensel(a*d^n, n, 1)
 
   if length(rt)>0

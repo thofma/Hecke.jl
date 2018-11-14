@@ -281,19 +281,22 @@ function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
       continue
     end
     lp = prime_decomposition_type(O, p)
-
-    m_new = m
-
-    for (f, e) in lp
-      m_new = gcd(m_new, fmpz(p)^f - 1)
+    minf = lp[1][1]
+    for i = 2:length(lp)
+      if lp[i][1] < minf
+        minf = lp[i][1]
+      end
     end
 
     if first
+      m_new = fmpz(p)^minf - 1
       m_new, _ = ppio(m_new, discriminant(O))
       if isodd(m_new)
         m_new = 2 * m_new
       end
       first = false
+    else
+      m_new =  gcd(m, powmod(fmpz(p), minf, m) - 1)
     end
     
     if m_new == 2
@@ -359,9 +362,9 @@ function _torsion_units_gen(O::NfOrd)
     end
     for i = 1:v
       f = divexact(y^(Int(p)^(v+1-i)) - 1, y^(Int(p)^(v-i)) - 1)
-      R = _roots_hensel(f, 1)
-      if !isempty(R)
-        mul!(gen, gen, O(R[1]))
+      fl, r = _one_root_hensel(f)
+      if fl
+        mul!(gen, gen, O(r))
         ord *= Int(p)^(v+1-i)
         break
       end

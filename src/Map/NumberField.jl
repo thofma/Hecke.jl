@@ -97,6 +97,8 @@ end
 
 Base.copy(f::NfToNfMor) = f
 
+Base.hash(f::NfToNfMor, h::UInt) = Base.hash(f.prim_img, h)
+
 function show(io::IO, h::NfToNfMor)
   if domain(h) == codomain(h)
     println(io, "Automorphism of ", domain(h))
@@ -118,9 +120,9 @@ function automorphisms(K::AnticNumberField)
   end
   f = K.pol
   lr = roots(f, K)
-  Aut = Hecke.NfToNfMor[]
-  for r in lr
-    push!(Aut, Hecke.NfToNfMor(K, K, r))
+  Aut = Array{NfToNfMor, 1}(undef, length(lr))
+  for i = 1:length(lr)
+    Aut[i] = NfToNfMor(K, K, lr[i])
   end
   _set_automorphisms_nf(K, Aut)
   return copy(Aut)::Vector{NfToNfMor}

@@ -402,6 +402,37 @@ function disc_log_bs_gs(a::Generic.Res{T}, b::Generic.Res{T}, o::fmpz) where {T 
   end
 end
 
+function disc_log_bs_gs(a::nmod, b::nmod, o::Int) where {T <: Union{PolyElem, fmpz, fq_nmod_poly, fq_poly, nmod_poly}}
+  b==1 && return 0  
+  b==a && return 1
+  r = root(o, 2)
+  r = Int(r)
+  baby = Dict{typeof(a), Int}()
+  baby[a] = 1
+  baby[parent(a)(1)] = 0
+  pows = a
+  i = 1
+  while i+1 < r
+    pows *= a
+    i += 1
+    pows == b && return i
+    baby[pows] = i
+  end
+  giant = pows*a
+  @assert giant == a^r
+  b == giant && return r
+  giant = inv(giant)
+  g = fmpz(0)
+  for i=1:r
+    b *= giant
+    g += r
+    if haskey(baby, b)
+      return g + baby[b]
+    end
+  end
+  throw("disc_log failed")
+end
+
 
 @doc Markdown.doc"""
   disc_log_ph{T <:PolyElem}(a::Residue{T}, b::Residue{T}, o::fmpz, r::Int)
@@ -479,17 +510,17 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
 
   #First, multiplicative group mod p
   if isodd(p)
-    g,ord, disclog=_unit_grp_residue_field_mod_n(p,n)
+    g, ord, disclog=_unit_grp_residue_field_mod_n(p,n)
     if v>=2 && n % p==0
       #We know that (1+p)^(p-1) generates the p-Sylow of Z/p^vZ
       #We only need the quotient by p^valuation(n,p)
       R=ResidueRing(FlintZZ, p^v, cached=false)
-      gen=R(1+p)^(p-1)
-      ord1=gcd(p^(v-1), n)
-      aux1=div(p^(v-1),ord1)
-      expg=(p-1)*aux1
-      z=gen^aux1
-      inv=invmod(p-1,ord1)
+      gen = R(1+p)^(p-1)
+      ord1 = gcd(p^(v-1), n)
+      aux1 = div(p^(v-1), ord1)
+      expg = (p-1)*aux1
+      z = gen^aux1
+      inv = invmod(p-1,ord1)
       function disc_log(x::Int)
         y=R(x)^expg
         if aux1<100
@@ -501,7 +532,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
           end
           return mod(c*inv, ord1)
         else
-          error("Not yet implemented")
+          return mod(inv*disc_log_bs_gs(z, y, aux1), ord1)
         end
       end
       if iszero(g)
@@ -526,7 +557,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
   else
     # p=2
     # It works differently
-    if n %2 !=0 || v==1
+    if n % 2 != 0 || v == 1
       function disclog4(x::Int)
         return Int[]
       end
@@ -544,13 +575,13 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
       end
       return [-1], [2], disclog5
     else 
-      R=ResidueRing(FlintZZ, 2^v, cached=false)
-      ord=gcd(2^(v-2), n)
-      gens=[-1,5]
-      exps=divexact(2^(v-2), ord)
-      z=5^exps
+      R = ResidueRing(FlintZZ, 2^v, cached=false)
+      ord = gcd(2^(v-2), n)
+      gens = [-1,5]
+      exps = divexact(2^(v-2), ord)
+      z = 5^exps
       function disc_log6(x::Int)
-        if x%4 ==1
+        if x % 4 ==1
           y=R(x)^exps
           if ord<100
             c=1
@@ -559,9 +590,9 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
               c+=1
               el*=z
             end
-            return [0,c]
+            return [0, c]
           else
-            error("Not yet implemented")
+            return [0, disc_log_bs_gs(z, y, ord)]
           end
         elseif x%4==3
           y=R(-x)^exps
@@ -574,7 +605,7 @@ function _unit_pk_mod_n(p::Int, v::Int, n::Int)
             end
             return [1,c]
           else
-            error("Not yet implemented")
+            return [1, disc_log_bs_gs(z, y, ord)]
           end
         else 
           error("Not coprime")
@@ -621,29 +652,28 @@ function _unit_grp_residue_field_mod_n(p::Int, n::Int)
       end
     end
     
-    k=gcd(npart,n)
+    k =gcd(npart, n)
     inv=Int(invmod(s1,npart))
     quot=divexact(npart, k)
+    w= g^quot
     
     function disc_log(x::Int)
       y=R(x)^(s1*quot)
-      if iszero(y)
-        error("Not coprime!")
-      end
+      iszero(y)  && error("Not coprime!")
       if isone(y)
         return 0
       end
+      
       if k<100
-        c=1
-        w=g^quot
-        el=w
+        c = 1
+        el = w
         while el!=y
-          c+=1
-          el*=w
+          c += 1
+          el *= w
         end
         return mod(c*inv,k)
       else
-        error("To be implemented!")
+        return mod(inv*disc_log_bs_gs(w, y, npart), k)
       end
     end     
     return (Int(g.data), k, disc_log)::Tuple{Int,Int,Function}

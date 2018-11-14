@@ -17,16 +17,16 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
 
     Fq = base_ring(h)
     p = characteristic(Fq)
-    Fp = ResidueRing(FlintZZ, p)
-    Fpx = Fp["x"][1]
+    Fp = ResidueRing(FlintZZ, p, cached = false)
+    Fpx = PolynomialRing(Fp, "x", cached = false)[1]
     g = Fpx()
     pt = ccall((:fq_ctx_modulus, :libflint), Ptr{Nemo.fmpz_mod_poly}, (Ref{Nemo.FqFiniteField}, ), Fq)
     ccall((:fmpz_mod_poly_set, :libflint), Nothing, (Ref{Nemo.fmpz_mod_poly}, Ptr{Nemo.fmpz_mod_poly}), g, pt)
     n = degree(Fq)
     @assert n == degree(g)
     m = degree(h)
-    Fqm = FqFiniteField(p, n*m, :$)
-    Fqmy, y = Fqm["y"]
+    Fqm = FqFiniteField(p, n*m, :$, false)
+    Fqmy, y = PolynomialRing(Fqm, "y", cached = false)
     gy = Fqmy([ Fqm(fmpz(coeff(g, i))) for i = 0:degree(g) ])
     a = roots(gy)[1]
     aa = Vector{typeof(a)}()

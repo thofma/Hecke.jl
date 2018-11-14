@@ -1344,7 +1344,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
   if inf_plc 
     function disc_log1(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(I.minimum)
+      i=Int(mod(I.minimum, modulus))
       return mU\(R(i))
     end
     
@@ -1365,7 +1365,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     
     function disc_log2(I::NfOrdIdl)
       @assert gcd(minimum(I),modulus)==1
-      i=Int(I.minimum)
+      i=Int(mod(I.minimum, modulus))
       return mU\(R(i))
     end
     
@@ -1387,7 +1387,7 @@ function ray_class_groupQQ(O::NfOrd, modulus::Int, inf_plc::Bool, n_quo::Int)
     Q,mQ=quo(U, [mU\(R(-1))])
     
     function disc_log(I::NfOrdIdl)
-      i=Int(minimum(I))
+      i=Int(mod(minimum(I), modulus))
       return mQ(mU\(R(i)))
     end
     
@@ -1524,7 +1524,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
-    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2))
+    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)
@@ -1655,7 +1655,7 @@ function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 
   @assert ngens(S) == ngens(U)
   for i = 1:ngens(U)
     if coord[i] != 0
-      gen *= mU(U[i])^Int(coord[i])
+      gen *= mU(U[i])^-Int(coord[i])
     end
   end
   return true, gen
@@ -1704,7 +1704,7 @@ function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, i
   @assert ngens(S) == ngens(U)
   for i = 1:ngens(U)
     if coord[i] != 0
-      gen *= mU(U[i])^Int(coord[i])
+      gen *= mU(U[i])^-Int(coord[i])
     end
   end
   return true, gen
@@ -1716,8 +1716,7 @@ function disc_log_generalized_ray_class_grp(I::NfOrdIdl, mr::MapRayClassGrp)
   R = domain(mr)
   el = mr\I
   lI = Array{Tuple{FacElem{NfOrdIdl, NfOrdIdlSet}, Int}, 1}(undef, ngens(R))
-  lI[1] = (mr(R[1]), Int(el[1]))
-  J = lI[1][1]^lI[1][2]
+  J = codomain(mr)()
   for i = 1:ngens(R)
     lI[i] = (mr(R[i]), Int(el[i]))
     J *= lI[i][1]^lI[i][2]

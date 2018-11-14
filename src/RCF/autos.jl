@@ -480,7 +480,7 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
     end
     KK = kummer_extension(exps, gens)
     K, gK = number_field(KK)
-    K1t, t1 = PolynomialRing(K, "t1")
+    K1t, t1 = PolynomialRing(K, "t1", cached = false)
     j = 0
     for i=1:length(Cp)
       if roots_to_be_taken[i]
@@ -560,7 +560,7 @@ function restriction(K::NfRel_ns{nf_elem}, Cp::Array{ClassField_pp, 1}, autos::A
     all_pe[j] = (pe, tau_pe)
   end
   #AA is the target field 
-  AA, gAA = number_field([c.A.pol for c = Cp])
+  AA, gAA = number_field([c.A.pol for c = Cp], cached = false)
   #And now, linear algebra to compute the restriction
   #I need the product basis fo all the primitive elements of Cp
   B = Array{NfRel_nsElem, 1}(undef, degree(AA))
@@ -637,6 +637,7 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
 
   #Now, I need the element of the base field
   prod_gens = prod(KK.gen[i]^(el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
+  #TODO: Compute the support before calling ispower
   fl2, rt = ispower(inv(prod_gens)*tau_a, k)
   #if !fl2
   #  @assert !isinjective(mp)

@@ -1,4 +1,4 @@
-export splitting_field
+export splitting_field, issubfield
 ################################################################################
 #
 #  Predicates
@@ -311,24 +311,18 @@ function _issubfield(K::AnticNumberField, L::AnticNumberField)
   end 
 end
 
-@doc Markdown.doc"""
-      issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
-
-> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
-> Otherwise the function returns "false" and a morphism mapping everything to 0.
-"""
-function issubfield(K::AnticNumberField, L::AnticNumberField)
+function _issubfield_first_checks(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   g = L.pol
   if mod(degree(g), degree(f)) != 0
-    return false, NfToNfMor(K, L, L())
+    return false
   end
   t = divexact(degree(g), degree(f))
   try
     OK = _get_maximal_order_of_nf(K)
     OL = _get_maximal_order_of_nf(L)
     if mod(discriminant(OL), discriminant(OK)^t) != 0
-      return false, NfToNfMor(K, L, L())
+      return false
     end
   catch e
     if !isa(e, AccessorNotSetError)
@@ -347,13 +341,57 @@ function issubfield(K::AnticNumberField, L::AnticNumberField)
         continue
       end
       if mod(dg, p^t) != 0
-        return false, NfToNfMor(K, L, L())
+        return false
       end
       p = next_prime(p)
     end
   end
+  return true
+end
+
+@doc Markdown.doc"""
+      issubfield(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function issubfield(K::AnticNumberField, L::AnticNumberField)
+  fl = _issubfield_first_checks(K, L)
+  if !fl
+    return false, NfToNfMor(K, L, L())
+  end
   b, prim_img = _issubfield(K, L)
   return b, NfToNfMor(K, L, prim_img)
+end
+
+
+function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
+  f = K.pol
+  Lx, x = PolynomialRing(L, "x", cached = false)
+  f1 = evaluate(f, x)
+  fl, r = _one_root_hensel(f1)
+  if !fl
+    return false, L()
+  else
+    h = parent(L.pol)(r)
+    return true, h(gen(L))
+  end 
+end
+
+@doc Markdown.doc"""
+      issubfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
+> This function assumes that K is normal.
+> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+> Otherwise the function returns "false" and a morphism mapping everything to 0.
+"""
+function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
+  fl = _issubfield_first_checks(K, L)
+  if !fl
+    return false, NfToNfMor(K, L, L())
+  end
+  b, prim_img = _issubfield_normal(K, L)
+  return b, NfToNfMor(K, L, prim_img)
+
 end
 
 ################################################################################

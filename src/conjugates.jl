@@ -17,7 +17,7 @@ function conjugates_init(f::Union{fmpz_poly, fmpq_poly})
     for i = 1:f.length
       g[i] = FlintZZ(numerator(coeff(f, i-1)))
     end
-    g = PolynomialRing(FlintZZ, string(var(parent(f))))[1](g)
+    g = PolynomialRing(FlintZZ, string(var(parent(f))), cached = false)[1](g)
     f = g
   end
   isconstant(gcd(f, derivative(f))) || error("poly should be square-free")

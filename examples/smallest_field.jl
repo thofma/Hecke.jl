@@ -50,7 +50,7 @@ l = []
 while length(l) == 0
   global dbound
   global l = fields(n, i, dbound)
-  dbound = 2 * dbound
+  dbound = 100 * dbound
   println("========================================")
   println("Increasing discriminant bound: $dbound")
   println("========================================")

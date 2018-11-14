@@ -885,7 +885,6 @@ end
 > Given a $G$-module $M$, it returns all the maximal submodules of M
 
 """
-
 function maximal_submodules(M::FqGModule, index::Int=M.dim, lf=[])
 
   M_dual=dual_space(M)
@@ -905,7 +904,6 @@ end
 > Given a $G$-module $M$, it returns all the submodules of M
 
 """
-
 function submodules(M::FqGModule)
 
   K=M.K
@@ -962,7 +960,6 @@ end
 > Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field
 
 """
-
 function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}[])
   
   K=M.K

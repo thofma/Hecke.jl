@@ -9,6 +9,14 @@ add_verbose_scope(:StabSub)
 #
 ###############################################################################
 
+function base_ring(M::ZpnGModule)
+  return M.R
+end
+
+function show(io::IO, M::ZpnGModule)
+  print(io, "Module over Z/", M.R.n, "Z with structure ", M.V)
+end
+
 #
 #  Lifts a matrix from F_p to Z/p^nZ
 #
@@ -374,12 +382,10 @@ end
 #  Composition factors and series
 #
 ##########################################################################################
-
 #
 #  Given a list of square matrices G, it returns a list of matrices given by the minors 
 #  (n-s) x (n-s) of the matrices G[i] mod p 
 #
-
 function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
   
   G1=Array{fq_nmod_mat,1}(undef, length(G))
@@ -400,9 +406,7 @@ end
 #
 #  Cut the module in submodules with exponent p, returning the quotients p^i M /p^(i+1) M
 #
-
 function _mult_by_p(M::ZpnGModule)
-
   G=M.G
   V=M.V
   p=M.p
@@ -427,7 +431,6 @@ function _mult_by_p(M::ZpnGModule)
     push!(spaces, FqGModule(GNew))
   end
   return spaces  
-
 end
 
 function composition_factors(M::ZpnGModule)
@@ -453,11 +456,11 @@ function composition_factors(M::ZpnGModule)
 
 end
 
-#######################################################################################
+###############################################################################
 #
-#  Submodules function
+#  Submodules interface
 #
-#######################################################################################
+###############################################################################
 
 @doc Markdown.doc"""
     submodules(M::ZpnGModule; typequo, typesub, order)
@@ -479,6 +482,11 @@ function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
   
 end
 
+###############################################################################
+#
+#  Function to find all the submodules
+#
+###############################################################################
 
 function submodules_all(M::ZpnGModule)
   
@@ -515,6 +523,11 @@ function submodules_all(M::ZpnGModule)
   
 end
 
+###############################################################################
+#
+#  Submodules with given structure as a subgroup
+#
+###############################################################################
 
 function main_submodules_cyclic(M::ZpnGModule, ord::Int)
 
@@ -570,238 +583,170 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
 
 end
 
-function submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
-
-  R=M.R
-  #
-  #  We search for an element in p^(ord-1)*G
-  #
-  s,ms=sub(M, M.p^(ord-1))
-  S,mS=snf(s)
-  N=_exponent_p_sub(S)
-  submod=fq_nmod_mat[]
-  if N.dimension ==1
-    push!(submod, identity_matrix(N.K, 1))
-  else
-    @vtime :StabSub 1 submod=minimal_submodules(N,1,composition_factors(N, dimension = 1))
+function _update_typesub(typesub::Vector{Int})
+  i = 1
+  while typesub[i] != typesub[end]
+    i += 1
   end
-  list1=Array{nmod_mat,1}(undef, length(submod))
-  v=fmpz[(M.p)^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
-  for i=1:length(submod)
-    @views list1[i]=lift(submod[i],R)
-    @assert rows(list1[i])==1
-    for k=1:cols(list1[i])
-      @inbounds list1[i][1,k]*=v[k]
-    end
-  end  
-  W=MatrixSpace(R,rows(mS.map), cols(ms.map), false)
-  MatSnf=W(mS.map*ms.map)  
-  for j=1:length(list1)
-    @inbounds @views list1[j]=list1[j]*MatSnf
+  new_typesub = Array{Int, 1}(undef, length(typesub))
+  for j = 1:i-1
+    new_typesub[j] = typesub[j]
   end
-  if ord==1
-    return list1
+  for j = i:length(new_typesub)
+    new_typesub[j] = typesub[j] - 1
   end
-  list=nmod_mat[]
-  for x in list1  
-    L,_=quo(M,x)
-    newlist=submodules_with_struct_cyclic(L,ord-1)
-    i=1
-    while i<=length(newlist)
-      @views if iszero(M.V(lift(M.p^(ord-1)*newlist[i])))
-        deleteat!(newlist,i)
-      else 
-        i+=1
-      end
-    end
-    append!(list, newlist)
-  end
-  return list
-
+  return new_typesub
 end
 
-function submodule_with_struct_exp_p(M::ZpnGModule, l::Int)
-    
-    R=M.R
-    S,mS=snf(M)
-    N = Hecke._exponent_p_sub(S)
-    lf = composition_factors(N)
-    list = nmod_mat[]
-    v = fmpz[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
-    submod = submodules(N,ngens(S.V)-l,comp_factors=lf)
-    list1=Array{nmod_mat,1}(undef, length(submod))
-    for i=1:length(submod) 
-      list1[i]=lift(submod[i], R) 
-      for s=1:rows(list1[i])
-        for t=1:cols(list1[i])
-          @inbounds list1[i][s,t]*=v[t]
+
+function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
+  @assert issnf(M.V)
+  p = M.p
+  R = base_ring(M)
+  #First iteration out of the loop.
+  list = _submodules_with_struct(M, typesub)
+  #Some data needed in the loop
+  w = Vector{fmpz}(undef, ngens(M.V))
+  for i = 1:length(w)
+    w[i] = divexact(fmpz(R.n), M.V.snf[i])
+  end
+  new_typesub = _update_typesub(typesub)
+  #Now, the iterative process.
+  for i = 1:typesub[end]-1
+    list1 = nmod_mat[]
+    new_typesub1 = _update_typesub(new_typesub)
+    diag = typesub - new_typesub1
+    Gtest = snf(DiagonalGroup([p^x for x in diag]))[1]
+    for x in list  
+      L, _ = quo(M, x)
+      newlist = _submodules_with_struct(L, new_typesub)
+      for s = 1:length(newlist)
+        newlist[s] = vcat(newlist[s], x)
+      end
+      #First, I sieve for the subgroups with the correct structure.
+      for s = 1:length(newlist)
+        t, mt = subm_to_subg(M, newlist[s])
+        if isisomorphic(t, Gtest)
+          push!(list1, newlist[s])
         end
       end
     end
-    W=MatrixSpace(R,rows(mS.map), cols(mS.map), false)
-    MatSnf=W(mS.map)
-    return ( x *MatSnf for x in list1)
-    
+    new_typesub = new_typesub1 
+    #Now, a different sieving. I could have the same subgroup multiple times!
+    if !isempty(list1)
+      @vtime :StabSub 1 list1 = _no_redundancy(list1, w)
+    end
+    list = list1
+  end
+  return list
 end
 
-
-
-function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
+function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
   
-  # If the group is cyclic, it is easier 
-  if length(typesub)==1
-    return main_submodules_cyclic(M, typesub[1])
-    #return submodules_with_struct_cyclic(M,typesub[1])
-  end
-  sort!(typesub)
-  # If the subgroups we are searching for have exponent p, it is easier
-  if typesub[end]==1
-    return submodule_with_struct_exp_p(M,length(typesub))
-  end
-  R=M.R
+  R = base_ring(M)
+  s, ms = sub(M, M.p^(typesub[end]-1))
+  S, mS = snf(s)
+  N = _exponent_p_sub(S)
   
-  a=1
-  while a<length(typesub) && typesub[end-a]==typesub[end]
-    a+=1
+  i = 1
+  while typesub[i] != typesub[end]
+    i += 1
   end
+  a = length(typesub) - i + 1
   
-  S1,mS1=snf(M)
-  s,ms=sub(S1, M.p^(typesub[end]-1))
-  S,mS=snf(s)
-  N=_exponent_p_sub(S)
-  @vtime :StabSub 1 submod=submodules(N,(N.dimension)-a)
+  @vtime :StabSub 1 submod = submodules(N, (N.dimension)-a)
   #
   #  Write the modules as elements of S
   #
-  list1=Array{nmod_mat,1}(undef, length(submod))
-  v=[divexact(S.V.snf[i], M.p) for i=1:ngens(S.V)]
-  for i=1:length(submod)
-    @inbounds list1[i]=lift(submod[i],R)
-    for j=1:rows(list1[i])
-      for k=1:cols(list1[i])
-        @inbounds list1[i][j,k]*=v[k]
+
+  list1 = Array{nmod_mat, 1}(undef, length(submod))
+  v = [divexact(S.V.snf[i], M.p) for i = 1:ngens(S.V)]
+  for i = 1:length(submod)
+    @inbounds list1[i] = lift(submod[i], R)
+    for j = 1:rows(list1[i])
+      for k = 1:cols(list1[i])
+        @inbounds list1[i][j,k] *= v[k]
       end
     end 
   end 
-  
-  
-  auxmat=mS.imap*ms.map
-  W=MatrixSpace(R,rows(auxmat), cols(auxmat), false)
-  auxmat=W(auxmat)
-  for j=1:length(list1)
-    @inbounds list1[j]=list1[j]*auxmat
+  #and now as elements of M
+  auxmat = mS.map*ms.map
+  W = MatrixSpace(R, rows(auxmat), cols(auxmat), false)
+  auxmat = W(auxmat)
+  for j = 1:length(list1)
+    @inbounds list1[j] = list1[j]*auxmat
   end
-  #
-  #  I create the group to check if the candidates are isomorphic to it
-  #
+  return list1
 
-  l=[M.p^(typesub[j]) for j=1:length(typesub)]
-  G=DiagonalGroup(l)
-  G.issnf=true
-  G.snf=l
-  
-  #
-  #  I create the type of the group I am searching for in the quotient
-  #
-  new_subtype=deepcopy(typesub)
-  for j=length(typesub)-a+1:length(typesub)
-    @inbounds new_subtype[j]-=1
-  end
-  
-  #
-  #  Recursion on the quotient
-  #
-  
-  list=nmod_mat[]
-  for x in list1  
-    L, _=quo(S1,x)
-    newlist=collect(submodules_with_struct(L,new_subtype))
-    for j=1:length(newlist)
-      @inbounds newlist[j]=vcat(newlist[j],x)
-    end
-    i=1
-    while i<=length(newlist)
-      t,mt=subm_to_subg(S1,newlist[i])
-      if !isisomorphic(t,G)
-        deleteat!(newlist,i)
-      else 
-        i+=1
-      end
-    end
-    if !isempty(newlist)
-      append!(list, newlist)
-    end
-  end
-  #
-  #  Check for redundancy
-  #
-  w=fmpz[divexact(fmpz(R.n), S1.V.snf[j]) for j=1:ngens(S1.V)]
-  @vtime :StabSub 1 list=_no_redundancy(list,w)
-
-  #
-  #  Write the submodules in terms of the set of given generators
-  #  and return an iterator over the list
-  #
-
-  W=MatrixSpace(R,ngens(S1.V), ngens(M.V), false)
-  MatSnf=W(mS1.map)
-  
-  return (el*MatSnf for el in list)
-  
 end
 
+function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
+  # If the group is cyclic, it is easier 
+  if length(typesub)==1
+    return main_submodules_cyclic(M, typesub[1])
+  end
+  sort!(typesub)
+  return _submodules_with_struct_main(M, typesub)
+end
 
-function _no_redundancy(list::Array{nmod_mat,1},w::Array{fmpz,1})
+function _no_redundancy(list::Array{nmod_mat,1}, w::Array{fmpz,1})
 
-  
+  R = base_ring(list[1])
+  n = cols(list[1])
   #
   #  Howell form of every candidate, embedding them in a free module
   #
-  for i=1:length(list)
-    if cols(list[i])>=rows(list[i])
-      @inbounds list[i]=vcat(list[i],zero_matrix(parent(list[i][1,1]),cols(list[i])-rows(list[i]), cols(list[i])))
+  for i = 1:length(list)
+    if n > rows(list[i])
+      @inbounds list[i] = vcat(list[i], zero_matrix(R, n-rows(list[i]), cols(list[i])))
     end
-    for j=1:cols(list[i])
-      for k=1:rows(list[i])
+    for j=1:n
+      for k=1:n
         @inbounds list[i][k,j]*=w[j]
       end
     end
     howell_form!(list[i])
-    list[i]=sub(list[i],1:cols(list[i]),1:cols(list[i]))
+    list[i] = view(list[i], 1:n, 1:n)
   end
   #
   #  Now, check if they are equal
   #
   i=1
-  while i<length(list)
-    k=i+1
-    while k<=length(list)
-      if list[i]==list[k]
-        deleteat!(list,k)
-      else 
-        k+=1
+  list1 = nmod_mat[list[1]]
+  for i = 2:length(list)
+    found = false
+    for j = 1:length(list1)
+      if list[i] == list1[j]
+        found = true
+        break
       end
     end
-    i+=1
+    if !found
+      push!(list1, list[i])
+    end
   end
   
   #
   #  Write them again not embedded
   #
-  for i=1:length(list)
-    for j=1:cols(list[i])
+  for i=1:length(list1)
+    for j=1:n
       for k=1:j
-        list[i][k,j]=divexact(list[i][k,j].data,w[j])
+        list1[i][k,j] = divexact(list1[i][k,j].data, w[j])
       end
     end
   end
-  return list
+  return list1
 
 end
 
+###############################################################################
+#
+#  Submodules of given order
+#
+###############################################################################
 
 function submodules_order(M::ZpnGModule, ord::Int)
-  
   
   R=M.R
   S,mS=snf(M)
@@ -855,24 +800,27 @@ function submodules_order(M::ZpnGModule, ord::Int)
   
 end
 
-
+###############################################################################
+#
+#  Submodules with given structure of the quotient
+#
+###############################################################################
 
 function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   
-  R=M.R 
-  S,mS=snf(M)
+  R = base_ring(M)
+  p = M.p 
+  S, mS = snf(M)
   sort!(typequo)
-  l=[(M.p)^typequo[i] for i=1:length(typequo)]
-  wish=DiagonalGroup(l)
-  wish.issnf=true
-  wish.snf=l
+  wish = DiagonalGroup([p^i for i in typequo])
+
   if isisomorphic(wish,S.V)
     return nmod_mat[zero_matrix(R, 1, ngens(M.V))]
   end
-  if length(l)>length(S.V.snf)
+  if length(typequo) > length(S.V.snf)
     return nmod_mat[]
   end
-  for i=1:length(typequo)
+  for i = 1:length(typequo)
     if !divisible(S.V.snf[ngens(S.V)+1-i],fmpz((M.p)^typequo[length(typequo)+1-i]))
       return nmod_mat[]
     end
@@ -881,20 +829,20 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Dual Module and candidate submodules
   #
-  M_dual=dual_module(S)
-  candidates=submodules_with_struct(M_dual, typequo)
+  M_dual = dual_module(S)
+  candidates = submodules_with_struct(M_dual, typequo)
 
   #
   #  Dualize the modules
   #
-  v=[divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
-  list=(_dualize(x, S.V, v) for x in candidates) 
+  v = [divexact(S.V.snf[end],S.V.snf[j]) for j=1:ngens(S.V) ]
+  list = (_dualize(x, S.V, v) for x in candidates) 
    
   #
   #  Write the submodules in terms of the given generators
   #
-  W=MatrixSpace(R, rows(mS.map), cols(mS.map), false)
-  MatSnf=W(mS.map)
+  W = MatrixSpace(R, rows(mS.map), cols(mS.map), false)
+  MatSnf = W(mS.map)
   return (final_check_and_ans(x, MatSnf, M) for x in list)
   
 end

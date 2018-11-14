@@ -346,6 +346,20 @@ function _as_ideal_of_algebra(I::NfAbsOrdIdl, i::Int, O::AlgAssAbsOrd, one_ideal
   return ideal_from_z_gens(O, b)
 end
 
+function _as_ideal_of_algebra(I::FacElem{NfOrdIdl, NfOrdIdlSet}, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AlgAssAbsOrdElem }
+  if isempty(I)
+    return ideal(O, one(O))
+  end
+
+  base = Vector{ideal_type(O)}()
+  exp = Vector{fmpz}()
+  for (b, e) in I
+    push!(base, _as_ideal_of_algebra(b, i, O, one_ideals))
+    push!(exp, e)
+  end
+  return FacElem(base, exp)
+end
+
 # Returns an array of bases of the ideals O_i(1)*O_i lifted to O, where O_i
 # are the maximal orders of the number fields in the decomposition of
 # algebra(O).

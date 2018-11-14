@@ -174,10 +174,10 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
     gp = [fsap[i] * gcd(fp[i], gp[i]) for i=1:length(gp)]
     gc = Hecke.modular_lift(gp, me)
     if isconstant(gc)
-      return parent(a)(1)
+      return parent(a)(1)::Generic.Poly{nf_elem}
     end
     if test_sqfr
-      return parent(a)(0)
+      return parent(a)(0)::Generic.Poly{nf_elem}
     end
     if d == 1
       g = gc
@@ -197,7 +197,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
       if iszero(r)
         r = mod(b, g)
         if iszero(r)
-          return g
+          return g::Generic.Poly{nf_elem}
         end
       end
     else
