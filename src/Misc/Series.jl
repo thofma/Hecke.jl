@@ -62,8 +62,9 @@ end
 function derivative(f::RelSeriesElem{T}) where T
   g = parent(f)()
   set_prec!(g, precision(f)-1)
+  fit!(g, pol_length(f))
   v = valuation(f)
-  Nemo.set_val!(g, 0)
+  set_val!(g, 0)
   if v==0
     for i=1:Nemo.pol_length(f)
       setcoeff!(g, i-1, (i+v)*Nemo.polcoeff(f, i))
@@ -72,7 +73,7 @@ function derivative(f::RelSeriesElem{T}) where T
     for i=0:Nemo.pol_length(f)
       setcoeff!(g, i, (i+v)*Nemo.polcoeff(f, i))
     end
-    Nemo.set_val!(g, v-1)
+    set_val!(g, v-1)
   end
   Nemo.renormalize!(g)  
   return g
