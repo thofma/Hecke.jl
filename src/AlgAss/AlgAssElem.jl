@@ -507,3 +507,13 @@ function coeffs(a::AbsAlgAssElem, copy::Bool = true)
   end
   return a.coeffs
 end
+
+################################################################################
+#
+#  Denominator
+#
+################################################################################
+
+function denominator(x::AbsAlgAssElem)
+  return lcm([ denominator(y) for y in coeffs(x, false) ])
+end
