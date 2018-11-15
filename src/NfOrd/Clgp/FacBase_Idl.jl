@@ -85,7 +85,7 @@ function _factor!(FB::NfFactorBase, a::nf_elem,
                     error::Bool = true, n::fmpq = abs(norm(a)), integral::Bool = true)
   T = fmpz
   O = order(FB.ideals[1])                  
-  @show n = deepcopy(n)
+  n = deepcopy(n)
 
   if integral
     df =numerator(n)
