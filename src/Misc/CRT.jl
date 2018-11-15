@@ -71,7 +71,7 @@ end
    crt_env(p::Array{T, 1}) -> crt_env{T}
 
 > Given coprime moduli in some euclidean ring (FlintZZ, nmod_poly, 
->  fmpz_mod_poly), prepare data for fast application of the chinese
+>  fmpz\_mod_poly), prepare data for fast application of the chinese
 >  remander theorem for those moduli.
 """
 function crt_env(p::Array{T, 1}) where T
@@ -86,7 +86,7 @@ end
 ***
    crt{T}(b::Array{T, 1}, a::crt_env{T}) -> T
 
-> Given values in b and the environment prepared by crt_env, return the 
+> Given values in b and the environment prepared by crt\_env, return the 
 > unique (modulo the product) solution to $x \equiv b_i \bmod p_i$.
 """  
 function crt(b::Array{T, 1}, a::crt_env{T}) where T
@@ -423,11 +423,11 @@ function induce_crt(a::fmpz_poly, p::fmpz, b::fmpz_poly, q::fmpz, signed::Bool =
 end
 
 @doc Markdown.doc"""
-    induce_crt(L::Array, c::crt_env{fmpz}) -> fmpz_poly
-> Given fmpz_poly polynomials $L[i]$ and a {{{crt_env}}}, apply the
-> {{{crt}}} function to each coefficient retsulting in a polynomial $f = L[i] \bmod p[i]$.
+    induce_crt(L::Array{PolyElem, 1}, c::crt_env{fmpz}) -> fmpz_poly
+> Given fmpz\_poly polynomials $L[i]$ and a {{{crt\_env}}}, apply the
+> {{{crt}}} function to each coefficient resulting in a polynomial $f = L[i] \bmod p[i]$.
 """
-function induce_crt(L::Array, c::crt_env{fmpz})
+function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}) where {T <: PolyElem}
   Zx, x = FlintZZ["x"]
   res = Zx()
   m = maximum(degree(x) for x = L)
@@ -481,6 +481,29 @@ end
 function _num_setcoeff!(a::nf_elem, n::Int, c::Integer)
   _num_setcoeff!(a, n, fmpz(c))
 end
+
+@doc Markdown.doc"""
+    induce_crt(L::Array{MatElem, 1}, c::crt_env{fmpz}) -> fmpz_mat
+> Given matrices $L[i]$ and a {{{crt\_env}}}, apply the
+> {{{crt}}} function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
+"""
+function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
+  res = zero_matrix(FlintZZ, rows(L[1]), cols(L[1]))
+  
+  if signed 
+    cr = crt_signed
+  else
+    cr = crt
+  end
+
+  for i=1:rows(L[1])
+    for j=1:cols(L[1])
+      res[i,j] = cr([lift(x[i,j]) for x =L], c)
+    end
+  end
+  return res
+end
+
 
 mutable struct modular_env
   p::fmpz

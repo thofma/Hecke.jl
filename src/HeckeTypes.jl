@@ -1318,20 +1318,20 @@ mutable struct FactorBaseSingleP
   end
 end
 
-function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
+function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
   if length(sP.lp) < 3 || isindex_divisor(order(sP.lp[1][2]), sP.P) # ie. index divisor or so
-    return fb_naive_doit(a, v, sP)
+    return fb_naive_doit(a, v, sP, no)
   end
   d = denominator(a)
   if isone(gcd(d, sP.P)) return fb_int_doit(a, v, sP); end
-  return fb_naive_doit(a, v, sP);
+  return fb_naive_doit(a, v, sP, no);
 end
 
-function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP)
+function fb_naive_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
   lp = sP.lp
   r = Array{Tuple{Int, Int},1}()
   for x=1:length(lp)
-    vl = valuation(a, lp[x][2])
+    vl = valuation(a, lp[x][2], no)
     v -= vl*lp[x][2].splitting_type[2]
     if vl !=0
       push!(r, (lp[x][1], vl))

@@ -482,7 +482,7 @@ end
 > This function computes $d = round(c 2^p)$ and returns $round(d d^t/2^p)$.
 """
 function minkowski_gram_mat_scaled(O::NfOrd, prec::Int = 64)
-  if isdefined(O, :minkowski_gram_mat_scaled) && O.minkowski_gram_mat_scaled[2] > prec
+  if isdefined(O, :minkowski_gram_mat_scaled) && O.minkowski_gram_mat_scaled[2] >= prec
     A = deepcopy(O.minkowski_gram_mat_scaled[1])
     shift!(A, prec - O.minkowski_gram_mat_scaled[2])
   else

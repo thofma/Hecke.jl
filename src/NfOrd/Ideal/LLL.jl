@@ -8,6 +8,19 @@ function _lll_gram(A::NfOrdIdl)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
 
+function _lll_quad(A::NfOrdIdl)
+  K = nf(order(A))
+  @assert degree(K) ==2 && discriminant(order(A)) < 0
+  b = basis(A)
+  a1 = 2*numerator(norm(b[1]))
+  a2 = 2*numerator(norm(b[2]))
+  a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
+  g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
+  @assert isposdef(g)
+  l, t = lll_gram_with_transform(g)
+  return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
+end
+
 function lll_basis(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
   L, T = lll(A, v, prec=prec)
   S = FakeFmpqMat(T)*basis_mat(A)*basis_mat(order(A))
@@ -38,6 +51,13 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact.
     return _lll_gram(A)
+  end
+
+  if iszero(v) && degree(K) == 2 && discriminant(order(A)) < 0
+    #in this case the gram-matrix of the minkowski lattice is related to the
+    #trace-matrix which is exact.
+    #could be extended to CM-fields
+    return _lll_quad(A)
   end
 
   n = degree(order(A))

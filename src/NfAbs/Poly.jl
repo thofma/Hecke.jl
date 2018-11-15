@@ -5,7 +5,7 @@
 ################################################################################
 
 @doc Markdown.doc"""
-  induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz) -> Generic.Poly{nf_elem}, fmpz
+    induce_crt(a::Generic.Poly{nf_elem}, p::fmpz, b::Generic.Poly{nf_elem}, q::fmpz) -> Generic.Poly{nf_elem}, fmpz
 
 > Given polynomials $a$ defined modulo $p$ and $b$ modulo $q$, apply the CRT
 > to all coefficients recursively.
