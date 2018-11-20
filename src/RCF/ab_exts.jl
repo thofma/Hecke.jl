@@ -1377,7 +1377,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   if degree(base_ring(L)) > 1
     O = maximal_order(S.base_ring)
     for i = 1:degree(O)
-      el = mK(O.basis_nf[i])
+      el = mK(S(O.basis_nf[i]))
       for j = 1:ind
         B[(i-1)* ind + j] = B[j] * el 
       end
