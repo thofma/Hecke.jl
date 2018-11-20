@@ -300,3 +300,27 @@ end
 function AlgAssAbsOrdIdlSet(O::AlgAssAbsOrd{S, T}) where {S, T}
   return AlgAssAbsOrdIdlSet{S, T}(O)
 end
+
+mutable struct AlgAssAbsOrdFracIdl{S, T}
+  order::AlgAssAbsOrd{S, T}
+  num::AlgAssAbsOrdIdl{S, T}
+  den::fmpz
+  basis_mat::FakeFmpqMat
+  basis_mat_inv::FakeFmpqMat
+
+  function AlgAssAbsOrdFracIdl{S, T}(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdIdl{S, T}, b::fmpz) where {S, T}
+    z = new{S, T}()
+    z.order = O
+    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
+    z.num = a
+    z.den = b
+    return z
+  end
+
+  function AlgAssAbsOrdFracIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::FakeFmpqMat) where {S, T}
+    z = new{S, T}()
+    z.order = O
+    z.basis_mat = M
+    return z
+  end
+end

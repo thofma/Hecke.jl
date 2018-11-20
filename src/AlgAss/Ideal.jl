@@ -153,8 +153,8 @@ function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   return ideal(order(a), M, true)
 end
 
-Base.:(^)(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
-Base.:(^)(A::AlgAssAbsOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
+^(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
+^(A::AlgAssAbsOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
 
 function intersection(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
@@ -162,6 +162,15 @@ function intersection(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where 
   K = _kernel(H)
   return ideal(order(a), _hnf(view(K, 1:d, 1:d)*basis_mat(a, Val{false}), :lowerleft), true)
 end
+
+################################################################################
+#
+#  Ad hoc multiplication
+#
+################################################################################
+
+*(x::fmpz, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, Val{false}), true)
+*(a::AlgAssAbsOrdIdl, x::fmpz) = ideal(order(a), basis_mat(a, Val{false})*x, true)
 
 ################################################################################
 #
