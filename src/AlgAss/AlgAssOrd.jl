@@ -6,6 +6,7 @@ elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
 elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
 ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
+frac_ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
 
 algebra(O::AlgAssAbsOrd) = O.algebra
 
@@ -149,6 +150,14 @@ function in(x::T, O::AlgAssAbsOrd{S, T}) where {S, T}
   else
     return false
   end
+end
+
+function denominator(a::AbsAlgAssElem, O::AlgAssAbsOrd)
+  t = zero_matrix(FlintQQ, 1, degree(O))
+  elem_to_mat_row!(t, 1, a)
+  t = FakeFmpqMat(t)
+  t = mul!(t, t, basis_mat_inv(O, Val{false}))
+  return t.den
 end
 
 ################################################################################

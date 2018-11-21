@@ -1,3 +1,8 @@
+function isone(a::AlgAssAbsOrdFracIdl)
+  a = simplify!(a)
+  return isone(denominator(a, false)) && isone(numerator(a, false))
+end
+
 ###############################################################################
 #
 #  String I/O
@@ -106,6 +111,11 @@ function frac_ideal(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdIdl{S, T}, d::fmpz) wh
   return AlgAssAbsOrdFracIdl{S, T}(O, a, d)
 end
 
+function frac_ideal(O::AlgAssAbsOrd{S, T}, a::T) where {S, T}
+  d = denominator(a, O)
+  return frac_ideal(O, ideal(O, O(d*a)), d)
+end
+
 function frac_ideal_from_z_gens(O::AlgAssAbsOrd{S, T}, b::Vector{T}) where {S, T}
   d = degree(O)
   den = lcm([ denominator(bb) for bb in b ])
@@ -136,6 +146,47 @@ end
 
 ################################################################################
 #
+#  Ad hoc binary operations
+#
+################################################################################
+
+function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
+  c = a*denominator(b, false) + numerator(b, false)
+  return frac_ideal(order(a), c, denominator(b))
+end
+
++(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T} = b + a
+
+function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
+  return typeof(b)(order(a), a*numerator(b, false), denominator(b))
+end
+
+function *(a::AlgAssAbsOrdFracIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  return typeof(a)(order(a), numerator(a, false)*b, denominator(a))
+end
+
+function *(x::T, a::AlgAssAbsOrdFracIdl{S, T}) where {S, T}
+  O = order(a)
+  return frac_ideal(O, x)*a
+end
+
+function *(a::AlgAssAbsOrdFracIdl{S, T}, x::T) where {S, T}
+  O = order(a)
+  return a*frac_ideal(O, x)
+end
+
+function *(x::T, a::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  O = order(a)
+  return frac_ideal(O, x)*a
+end
+
+function *(a::AlgAssAbsOrdIdl{S, T}, x::T) where {S, T}
+  O = order(a)
+  return a*frac_ideal(O, x)
+end
+
+################################################################################
+#
 #  Equality
 #
 ################################################################################
@@ -143,4 +194,33 @@ end
 function ==(A::AlgAssAbsOrdFracIdl, B::AlgAssAbsOrdFracIdl)
   order(A) != order(B) && return false
   return basis_mat(A, false) == basis_mat(B, false)
+end
+
+################################################################################
+#
+#  Simplification
+#
+################################################################################
+
+function simplify!(a::AlgAssAbsOrdFracIdl)
+  b = basis_mat(numerator(a, false), Val{false})
+  g = gcd(denominator(a, false), content(b))
+
+  if g != 1
+    a.num = divexact(a.num, g)
+    a.den = divexact(a.den, g)
+  end
+
+  return a
+end
+
+################################################################################
+#
+#  Random elements
+#
+################################################################################
+
+function rand(a::AlgAssAbsOrdFracIdl, B::Int)
+  z = rand(numerator(a, false), B)
+  return fmpq(1, denominator(a, false))*elem_in_algebra(z, Val{false})
 end

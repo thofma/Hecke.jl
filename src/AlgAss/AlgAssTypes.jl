@@ -275,9 +275,12 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   basis_mat_inv::FakeFmpqMat
   gens::Vector{AlgAssAbsOrdElem{S, T}}    # Generators of the ideal
 
+  iszero::Int                             # 0: don't know, 1: known to be zero, 2: known to be not zero
+
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
     r = new{S, T}()
     r.order = O
+    r.iszero = 0
     return r
   end
 
@@ -290,6 +293,7 @@ mutable struct AlgAssAbsOrdIdl{S, T}
       r.basis[i] = elem_from_mat_row(O, M, i)
     end
     r.basis_mat = M
+    r.iszero = 0
     return r
   end
 end
@@ -317,7 +321,7 @@ mutable struct AlgAssAbsOrdFracIdl{S, T}
   function AlgAssAbsOrdFracIdl{S, T}(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdIdl{S, T}, b::fmpz) where {S, T}
     z = new{S, T}()
     z.order = O
-    z.basis_mat = FakeFmpqMat(basis_mat(a), b)
+    z.basis_mat = FakeFmpqMat(basis_mat(a), deepcopy(b))
     z.num = a
     z.den = b
     return z

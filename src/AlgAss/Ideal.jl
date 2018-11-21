@@ -1,5 +1,8 @@
 @inline order(I::AlgAssAbsOrdIdl) = I.order
 
+iszero(I::AlgAssAbsOrdIdl) = (I.iszero == 1)
+isone(I::AlgAssAbsOrdIdl) = isone(abs(det(basis_mat(I, Val{false}))))
+
 function Base.one(S::AlgAssAbsOrdIdlSet)
   O = order(S)
   M = identity_matrix(FlintZZ, degree(O))
@@ -190,6 +193,33 @@ end
 *(x::fmpz, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, Val{false}), true)
 *(a::AlgAssAbsOrdIdl, x::fmpz) = ideal(order(a), basis_mat(a, Val{false})*x, true)
 
+function *(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
+  @assert parent(x) == order(a)
+  O = order(a)
+  return ideal(O, x)*a
+end
+
+function *(a::AlgAssAbsOrdIdl, x::AlgAssAbsOrdElem)
+  @assert parent(x) == order(a)
+  O = order(a)
+  return a*ideal(O, x)
+end
+
+################################################################################
+#
+#  Division
+#
+################################################################################
+
+function divexact(a::AlgAssAbsOrdIdl, x::fmpz)
+  O = order(a)
+  M = FakeFmpqMat(basis_mat(a, Val{false}), deepcopy(x))
+  if M.den != 1
+    error("Ideal not divisible by x")
+  end
+  return ideal(O, M.num)
+end
+
 ################################################################################
 #
 #  Construction
@@ -204,7 +234,11 @@ end
 function ideal(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdElem{S, T}) where {S, T}
   @assert parent(a) == O
   M = representation_matrix(a)
-  return ideal(O, M)
+  A = ideal(O, M)
+  if iszero(a)
+    A.iszero = 1
+  end
+  return A
 end
 
 function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}) where { T <: AlgAssAbsOrdElem }
@@ -432,4 +466,60 @@ function factor(I::AlgAssAbsOrdIdl)
     end
   end
   return fac
+end
+
+################################################################################
+#
+#  Inverse
+#
+################################################################################
+
+# If I is not coprime to the conductor of O in the maximal order, then this might
+# not be an inverse.
+function inv(a::AlgAssAbsOrdIdl)
+  @assert !iszero(a)
+  O = order(a)
+  return colon(ideal(O, one(O)), a)
+end
+
+# Mostly the same as colon in NfOrd/Ideal/Ideal.jl
+function colon(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
+  O = order(a)
+  n = degree(O)
+  B = basis(b)
+
+  bmatinv = basis_mat_inv(a, Val{false})
+
+  n = FakeFmpqMat(representation_matrix(B[1]), FlintZZ(1))*bmatinv
+  m = numerator(n)
+  d = denominator(n)
+  for i in 2:length(B)
+    n = FakeFmpqMat(representation_matrix(B[i]), FlintZZ(1))*bmatinv
+    l = lcm(denominator(n), d)
+    if l == d
+      m = hcat(m, n.num)
+    else
+      m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
+      d = l
+    end
+  end
+  m = hnf(transpose(m))
+  # n is upper right HNF
+  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
+  b, l = pseudo_inv(m)
+  return frac_ideal_type(O)(O, ideal(O, b), l)
+end
+
+function isinvertible(a::AlgAssAbsOrdIdl)
+  if iszero(a)
+    return false, a
+  end
+
+  if order(a).ismaximal == 1
+    return true, inv(a)
+  end
+
+  b = inv(a)
+  c = a*b
+  return isone(c), b
 end
