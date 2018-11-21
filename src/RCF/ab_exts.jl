@@ -1008,7 +1008,7 @@ function C22_extensions(bound::Int)
   
   
   Qx,x=PolynomialRing(FlintZZ, "x")
-  K,_=NumberField(x-1)
+  K, _=NumberField(x-1, cached = false)
   Kx,x=PolynomialRing(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
@@ -1020,26 +1020,17 @@ end
 
 function _C22_exts_abexts(bound::Int, only_real::Bool = false)
   Qx,x=PolynomialRing(FlintZZ, "x")
-  K,_=NumberField(x-1)
-  Kx,x=PolynomialRing(K,"x", cached=false)
+  K,_=NumberField(x-1, cached = false)
+  Kx, x=PolynomialRing(K,"x", cached=false)
   pairs=_find_pairs(bound)
   b1=ceil(Int, Base.sqrt(bound))
   n=2*b1+1
   poszero=b1+1
   if only_real
-    for i = 1:poszero
-      for j = 1:size(pairs, 2)
-        pairs[i, j] = false
-      end
-    end
-    for j = 1:poszero
-      for i = 1:size(pairs, 2)
-        pairs[i, j] = false
-      end
-    end
+    return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=poszero+2:n for j=i+1:n if pairs[i,j])
+  else
+    return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
   end
-  return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
-
 end
 
 function _ext_with_autos(Ox,x,i,j)
@@ -1349,78 +1340,83 @@ end
 #
 ###############################################################################
 
-function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor{T},1}}) where T
+function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
   
-  S,mS=simple_extension(L[1])
-  K,mK=absolute_field(S, false)
-  
+  S, mS = simple_extension(L)
+  K, mK = absolute_field(S, false)
   #First, we compute the maximal order of the absolute field.
-  #We start from the maximal orders of the relative extension and of the base field.
-  #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
+  #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
   # generating the equation order.
   @vprint :AbExt 2 "Computing the maximal order\n"
-  O=maximal_order(L[1].base_ring)
-  OL=EquationOrder(L[1])
-  B=pseudo_basis(OL)
   
   
-  #Then we consider the product basis
-  basisL=Array{NfRel_nsElem, 1}(undef, 2*degree(L[1]))
-  for i=1:degree(L[1])
-    _assure_weakly_normal_presentation(B[i][2].num)
-    basisL[2*i-1]=divexact(B[i][2].num.gen_one* B[i][1], B[i][2].den)
-    basisL[2*i]=divexact(L[1].base_ring(B[i][2].num.gen_two)* B[i][1], B[i][2].den)
+  #First, I construct the product basis of the relative extension
+  pols = L.pol
+  gL = gens(L)
+  B = Array{nf_elem, 1}(undef, degree(K))
+  B[1] = K(1)
+  ind = total_degree(pols[1])
+  genjj = mK(mS\gL[1])
+  for i = 2:ind
+    B[i] = genjj*B[i-1]
   end
-  basisO=[L[1](O.basis_nf[i]) for i=1:degree(O)]
-  
-  nbasisL=[mK(mS\(el)) for el in basisL]
-  nbasisO=[mK(mS\(el)) for el in basisO]
+  for jj = 2:length(pols)
+    genjj = mK(mS\gL[jj])
+    el = genjj
+    new_deg = total_degree(pols[jj])
+    for i = 2:new_deg
+      for j = 1:ind
+        B[(i-1)* ind + j] = B[j]* el 
+      end
+      mul!(el, el, genjj)
+    end
+    ind *= new_deg
+  end
 
-  cbasis=[x*y for x in nbasisL for y in nbasisO]
-  powgen = Array{nf_elem, 1}(undef, degree(K))
-  powgen[1] = K(1)
-  for i = 2:degree(K)
-    powgen[i] = powgen[i-1]*gen(K)
+  #Now, I add the elements of the maximal order
+  if degree(base_ring(L)) > 1
+    O = maximal_order(S.base_ring)
+    for i = 1:degree(O)
+      el = mK(S(O.basis_nf[i]))
+      for j = 1:ind
+        B[(i-1)* ind + j] = B[j] * el 
+      end
+    end
   end
-  append!(cbasis, powgen)
   #Now, we compute the maximal order. Then we simplify.
-  O1 = MaximalOrder(_order(K, cbasis))
+  O1 = MaximalOrder(_order_for_polygon_overorder(K, B))
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  Ks, mKs = simplify(K)#, canonical = true)
-  
+  Ks, mKs = simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
-  M = zero_matrix(FlintZZ, degree(Ks), degree(Ks))
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
   arr_prim_img[1] = K(1)
-  prim_img=mKs(gen(Ks))
   for i = 2:degree(Ks)
-    arr_prim_img[i] = arr_prim_img[i-1]*prim_img
+    arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1=inv(basis_mat(arr_prim_img))
+  M1 = inv(basis_mat(arr_prim_img))
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
     elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
     mul!(M, M, M1.num)
-    basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
+    basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
   O2 = Order(Ks, basisO2, false, false)
   O2.ismaximal = 1
-  _set_maximal_order_of_nf(Ks,O2)
+  _set_maximal_order_of_nf(Ks, O2)
 
   #Now, the automorphisms.
-  autos=Array{NfToNfMor, 1}(undef, length(L[2]))
+  autos=Array{NfToNfMor, 1}(undef, length(auts))
   el=mS(mK\(mKs(gen(Ks))))
-  for i=1:length(L[2])
-    x=mK(mS\(L[2][i](el)))
+  for i=1:length(auts)
+    x = mK(mS\(auts[i](el)))
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
     y=elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
-    @assert Ks.pol(y)==0
-    autos[i]=NfToNfMor(Ks,Ks,y)
+    autos[i] = NfToNfMor(Ks,Ks,y)
   end
   _set_automorphisms_nf(Ks, closure(autos, *))
   

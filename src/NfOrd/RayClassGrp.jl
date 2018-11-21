@@ -1462,12 +1462,14 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       # First, I change them in order to be coprime to coprime_to
       change_into_coprime(mR, coprime_to)
     end
-    @vtime :NfOrd 1 totally_positive_generators(mR, true)
-    tmg=mR.tame_mult_grp
-    wld=mR.wild_mult_grp
+    if !isempty(mR.modulus_inf)
+      @vtime :NfOrd 1 totally_positive_generators(mR, true)
+    end
+    tmg = mR.tame_mult_grp
+    wld = mR.wild_mult_grp
     for (p,v) in tmg
-      I=ideal(O,v.generators[1])
-      f=mR\I
+      I = ideal(O, v.generators[1])
+      f = mR\I
       if iszero(mq(f))
         continue
       end
@@ -1524,7 +1526,8 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
-    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
+    @show "here"
+    S = prime_ideals_up_to(O, max(1000,4*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)
