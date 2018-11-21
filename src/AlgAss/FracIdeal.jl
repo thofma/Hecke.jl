@@ -13,6 +13,24 @@ end
 
 ###############################################################################
 #
+#  Deepcopy
+#
+###############################################################################
+
+function Base.deepcopy_internal(a::AlgAssAbsOrdFracIdl, dict::IdDict)
+  b = typeof(a)(order(a), deepcopy(a.num), deepcopy(a.den))
+  for i in fieldnames(typeof(a))
+    if isdefined(a, i)
+      if i != :order && i != :num && i != :den
+        setfield!(b, i, Base.deepcopy_internal(getfield(a, i), dict))
+      end
+    end
+  end
+  return b
+end
+
+###############################################################################
+#
 #  Field access
 #
 ###############################################################################

@@ -275,6 +275,12 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   basis_mat_inv::FakeFmpqMat
   gens::Vector{AlgAssAbsOrdElem{S, T}}    # Generators of the ideal
 
+  function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
+    r = new{S, T}()
+    r.order = O
+    return r
+  end
+
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}, M::fmpz_mat) where {S, T}
     r = new{S, T}()
     r.order = O

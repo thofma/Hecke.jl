@@ -29,6 +29,24 @@ end
 
 ################################################################################
 #
+#  Deepcopy
+#
+################################################################################
+
+function Base.deepcopy_internal(a::AlgAssAbsOrdIdl, dict::IdDict)
+  b = typeof(a)(order(a))
+  for i in fieldnames(typeof(a))
+    if isdefined(a, i)
+      if i != :order
+        setfield!(b, i, Base.deepcopy_internal(getfield(a, i), dict))
+      end
+    end
+  end
+  return b
+end
+
+################################################################################
+#
 #  Ideal Set
 #
 ################################################################################
