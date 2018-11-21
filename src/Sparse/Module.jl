@@ -82,7 +82,7 @@ function check_index(M::ModuleCtx_fmpz)
   if isdefined(M, :basis)
     C = copy(M.basis)
   else
-    d = abs(det(M.bas_gens))
+    d = abs(det_mc(M.bas_gens))
     C = M.max_indep
     C.c = M.bas_gens.c
     for ii = M.bas_gens
@@ -187,11 +187,22 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   if !M.new && isdefined(M, :trafo)
     return
   end
-  z = vcat(M.bas_gens, M.rel_gens)
-  h, t = hnf_kannan_bachem(z, Val{true}, truncate = true)
-  M.trafo = t
-  M.basis = h
-  M.basis_idx = det(h) # h is upp_triangular, hence det is trivial
+  if isdefined(M, :trafo)
+    st = M.done_up_to + 1
+    @show "EXTEND"
+    @show "before", det(M.basis)
+    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:rows(M.rel_gens), 1:cols(M.rel_gens)), Val{true}, offset = st-1, truncate = true)
+    append!(M.trafo, t)
+    @show "after", det(M.basis)
+  else
+    z = vcat(M.bas_gens, M.rel_gens)
+    h, t = hnf_kannan_bachem(z, Val{true}, truncate = true)
+    M.trafo = t
+    M.basis = h
+  end
+  M.done_up_to = rows(M.rel_gens)
+  M.basis_idx = det(M.basis) # h is upp_triangular, hence det is trivial
+  @assert M.basis_idx > 0
   M.new = false
   nothing
 end
