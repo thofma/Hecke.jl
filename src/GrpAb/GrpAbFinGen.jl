@@ -35,7 +35,7 @@
 export AbelianGroup, DiagonalGroup, issnf, ngens, nrels, rels, snf, isfinite,
        isinfinite, rank, order, exponent, istrivial, isisomorphic,
        direct_product, istorsion, torsion_subgroup, sub, quo, iscyclic,
-       psylow_subgroup, issubgroup
+       psylow_subgroup, issubgroup, abelian_groups
 
 import Base.+, Nemo.snf, Nemo.parent, Base.rand, Nemo.issnf
 
@@ -993,3 +993,165 @@ function multgrp_of_cyclic_grp(n::fmpz)
 end
 
 multgrp_of_cyclic_grp(n::Integer) = multgrp_of_cyclic_grp(fmpz(n))
+
+################################################################################
+#
+#  Isomorphism to abelian groups
+#
+################################################################################
+
+@doc Markdown.doc"""
+    find_isomorphism(G, op, A::GrpAb) -> Dict, Dict
+
+Given an abelian group $A$ and a collection $G$ which is an abelian group with
+the operation `op`, this functions returns isomorphisms $G \to A$ and $A \to G$
+encoded as dictionaries.
+
+It is assumed that $G$ and $A$ are isomorphic.
+"""
+function find_isomorphism(G, op, A::GrpAb)
+  H, GtoH, HtoG = find_isomorphism_with_abelian_group(G, op)
+  @assert issnf(H)
+  Asnf, AsnftoA = snf(A)
+  s = length(H.snf)
+  id = identity_matrix(FlintZZ, s)
+  AsnftoH = hom(Asnf, H, id, id)
+  GtoA = Dict{eltype(G), GrpAbFinGenElem}()
+  AtoG = Dict{GrpAbFinGenElem, eltype(G)}()
+  for g in G
+    GtoA[g] = AsnftoA(AsnftoH\(GtoH[g]))
+  end
+  for a in A
+    AtoG[a] = HtoG[AsnftoH(AsnftoA\a)]
+  end
+
+  #for g in G
+  #  @assert AtoG[GtoA[g]] == g
+  #end
+  #for a in G
+  #  @assert AtoG[GtoA[a]] == a
+  #end
+  return GtoA, AtoG
+end
+
+function find_isomorphism_with_abelian_group(G, op)
+  id = find_identity(G, op)
+  S = small_generating_set(G, op, id)
+  list = push!(copy(S), id)
+  n = length(G)
+  elem_to_index = Dict{eltype(G), Int}()
+  words = Dict{eltype(G), Array{Int}}()
+  rels = Vector{Vector{Int}}()
+
+  l = length(list)
+
+  for i in 1:length(S)
+    v = zeros(Int, length(S))
+    v[i] = 1
+    words[S[i]] = v
+  end
+
+  words[list[end]] = zeros(Int, length(S))
+
+  for i in 1:length(G)
+    elem_to_index[G[i]] = i
+  end
+
+  while length(list) != n
+    for g in list
+      for i in 1:length(S)
+        s = S[i]
+        m = op(g, s)
+
+        if m in list
+          w = words[S[i]] .+ words[g] .- words[m]
+          if !iszero(w)
+            push!(rels, w)
+          end
+        end
+
+        if !(m in list)
+          push!(list, m)
+          words[m] = words[s] .+ words[g]
+        end
+      end
+    end
+  end
+
+  rel_mat = zero_matrix(FlintZZ, length(rels), length(S))
+  for i in 1:length(rels)
+    for j in 1:length(S)
+      rel_mat[i, j] = rels[i][j]
+    end
+  end
+
+  A = AbelianGroup(rel_mat)
+  Asnf, mAsnf = snf(A)
+  GtoAsnf = Dict{eltype(G), GrpAbFinGenElem}()
+  AsnftoG = Dict{GrpAbFinGenElem, eltype(G)}()
+  for g in G
+    w = words[g]
+    GtoAsnf[g] = sum(w[i] * (mAsnf \ A[i]) for i in 1:length(S))
+  end
+  for a in Asnf
+    x = id
+    v = Int[mAsnf(a).coeff[1, i] for i in 1:length(S)]
+    for i in 1:length(S)
+      x = op(x, pow(S[i], op, v[i], id))
+    end
+    AsnftoG[a] = x
+  end
+
+  #for g in G
+  #  @assert AsnftoG[GtoAsnf[g]] == g
+  #end
+  #for a in Asnf
+  #  @assert GtoAsnf[AsnftoG[a]] == a
+  #end
+
+  return Asnf, GtoAsnf, AsnftoG
+end
+
+function pow(x, op, n, id)
+  if n == 0
+    return id
+  end
+  y = x
+  for i in 1:(n-1)
+    y = op(y, x)
+  end
+  return y
+end
+
+################################################################################
+#
+#  All abelian groups
+#
+################################################################################
+
+@doc Markdown.doc"""
+    abelian_groups(n::Int) -> Vector{GrpAbFinGen}
+
+Given a positive integer $n$, return a list of all abelian groups of order $n$.
+"""
+function abelian_groups(n::Int)
+  if n == 1
+    return [DiagonalGroup(Int[])]
+  end
+  nn = fmpz(n)
+  fac = factor(nn)
+  sylow_lists = Vector{Vector{GrpAbFinGen}}()
+  for (p, e) in fac
+    push!(sylow_lists, GrpAbFinGen[DiagonalGroup(fmpz[p^i for i in reverse(t)]) for t in AllParts(e)])
+  end
+  C = Base.Iterators.product(sylow_lists...)
+  grps = GrpAbFinGen[]
+  for c in C
+    G = c[1]
+    for i in 2:length(fac)
+      G = snf(direct_product(G, c[i])[1])[1]
+    end
+    push!(grps, G)
+  end
+  return grps
+end
