@@ -1813,10 +1813,10 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
   assure_2_normal(A2)
 
   lp = append!(prime_decomposition(ZK, 2), prime_decomposition(ZK, 3))
-  if n >= 13
+  if n >= 12
     lp = append!(lp, prime_decomposition(ZK, 5))
   end
-  if n >= 21
+  if n >= 20
     lp = append!(lp, prime_decomposition(ZK, 7))
   end
 
