@@ -441,7 +441,15 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
   @hassert :NfOrd 1 has_2_elem(A)
   K = nf(order(A))
   n = degree(K)
-  c = _hnf_modular_eldiv(representation_matrix(A.gen_two), abs(A.gen_one), :lowerleft)
+
+  m = abs(A.gen_one)
+  be = elem_in_nf(A.gen_two)
+  d = denominator(be)
+  f, e = ppio(d, m)
+  be *= e
+  be = mod(be*f, m*f)//f
+
+  c = _hnf_modular_eldiv(representation_matrix(order(A)(be)), m, :lowerleft)
   A.basis_mat = c
   return nothing
 end
@@ -934,19 +942,18 @@ function simplify(A::NfAbsOrdIdl)
       A.minimum = gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
     end  
     A.gen_one = A.minimum
-    if false 
-      #norm seems to be cheap, while inv is expensive
-      #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
-      #      order basis. For this it would better be small in the field basis....
-      n = _normmod(A.gen_one^degree(order(A)), A.gen_two)
-      @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
-    else  
-      n = gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
-    end  
-    if isdefined(A, :norm)
-      @assert n == A.norm
+    if !isdefined(A, :norm)
+      if false 
+        #norm seems to be cheap, while inv is expensive
+        #TODO: improve the odds further: currently, the 2nd gen has small coeffs in the
+        #      order basis. For this it would better be small in the field basis....
+        n = _normmod(A.gen_one^degree(order(A)), A.gen_two)
+        @hassert :Rres 1 n == gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
+      else  
+        n = gcd(A.gen_one^degree(order(A)), FlintZZ(norm(A.gen_two)))
+      end  
+      A.norm = n
     end
-    A.norm = n
     if true
       be = A.gen_two.elem_in_nf
       d = denominator(be)
