@@ -773,7 +773,7 @@ end
 > Determines whether $a$ has an $n$-th root. If this is the case,
 > the root is returned.
 """
-function ispower(a::nf_elem, n::Int)
+function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
   #println("Compute $(n)th root of $a")
 
   @assert n>0
@@ -785,7 +785,14 @@ function ispower(a::nf_elem, n::Int)
   end
 
   d = denominator(a)
-
+  if with_roots_unity
+    fl, rt = _one_root_hensel(a*d^n, n)
+    if fl
+      return fl, rt//d
+    else
+      return fl, zero(a)
+    end
+  end
   rt = _roots_hensel(a*d^n, n, 1)
 
   if length(rt)>0

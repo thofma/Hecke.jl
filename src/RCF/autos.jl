@@ -154,14 +154,20 @@ end
 function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)		
    		
   K = domain(tau)		
-  @assert K == base_ring(C.Kr)		
+  @assert K == base_ring(C.Kr)
+  gKr = gen(C.Kr)
+  if euler_phi(C.n) == degree(C.Kr)
+    #The extension with the roots of unity is disjoint from K
+    #Therefore, the minimal polynomial has coefficient over QQ.
+    return NfRelToNfRelMor(C.Kr, C.Kr, tau, gKr)
+  end		
   g = C.Kr.pol		
   tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])		
-  i = 1		
-  z = gen(C.Kr)		
+  i = 1	
+  z = copy(gKr)		
   while gcd(i, C.n) != 1 || !iszero(tau_g(z))		
-    i *= 1		
-    z *= gen(C.Kr) 		
+    i += 1		
+    mul!(z, z, gKr) 		
   end		
   return NfRelToNfRelMor(C.Kr, C.Kr, tau, z)		
   		
@@ -636,24 +642,11 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   @assert fl
 
   #Now, I need the element of the base field
-  prod_gens = prod(KK.gen[i]^(el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
+  prod_gens = prod(KK.gen[i]^(-el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
   #TODO: Compute the support before calling ispower
-  fl2, rt = ispower(inv(prod_gens)*tau_a, k)
-  #if !fl2
-  #  @assert !isinjective(mp)
-  #  #I try all the possible preimages.
-  #  K, mK = kernel(mp)
-  #  for w in K
-  #    el1 = el + mK(w)
-  #    prod_gens = prod(KK.gen[i]^(el1[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
-  #    fl2, rt = ispower(inv(prod_gens)*tau_a, k)
-  #    if fl2
-  #      el = el1
-  #      break
-  #    end
-  #  end
-    @assert fl2
-  #end
+  mul!(prod_gens, prod_gens, tau_a)
+  fl2, rt = ispower(prod_gens, k)
+  @assert fl2
   return el, rt
   
 end

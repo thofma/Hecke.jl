@@ -961,16 +961,10 @@ end
 function _quad_ext(bound::Int, only_real::Bool = false)
   
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K = NumberField(x-1, cached = false)[1]
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  K = NumberField(x-1, cached = false, check = false)[1]
   sqf = squarefree_up_to(bound)
-  if !only_real
-    sqf = vcat(sqf[2:end], Int[-i for i in sqf])
-  else
-    sqf = sqf[2:end]
-  end
   final_list = Int[]
-  for i=1:length(sqf)
+  for i=2:length(sqf)
     if abs(sqf[i]*4)< bound
       @views push!(final_list, sqf[i])
       continue
@@ -979,24 +973,37 @@ function _quad_ext(bound::Int, only_real::Bool = false)
       @views push!(final_list, sqf[i])
     end
   end
-  fields_list = Array{Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{nf_elem}, 1}}, 1}(undef, length(final_list))
-  j = 0
-  for i in final_list
-    j += 1
-    if mod(i,4) != 1
-      L, gL = number_field([t^2-i], cached=false, check = false)
-      auts = [NfRel_nsToNfRel_nsMor(L, L, [-gL[1]])]
-      fields_list[j] = (L, auts)
+  if !only_real
+    for i = 1:length(sqf)
+      if abs(sqf[i]*4)< bound
+        @views push!(final_list, -sqf[i])
+        continue
+      end
+      if mod(sqf[i], 4) == 3
+        @views push!(final_list, -sqf[i])
+      end
+    end
+  end
+  fields_list = Array{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}, 1}(undef, length(final_list))
+  for i = 1:length(final_list)
+    if mod(final_list[i],4) != 1
+      L, gL = number_field(x^2-final_list[i], cached=false, check = false)
+      auts = [NfToNfMor(L, L, -gL)]
+      emb = NfToNfMor(K, L, L(1))
+      fields_list[i] = (L, auts, [emb])
     else
-      L, gL = number_field([t^2-t+divexact(1-i,4)], cached=false, check = false)
-      auts = [NfRel_nsToNfRel_nsMor(L, L, [1-gL[1]])]
-      fields_list[j] = (L, auts)
+      L, gL = number_field(x^2-x+divexact(1-final_list[i], 4), cached=false, check = false)
+      auts = [NfToNfMor(L, L, 1-gL)]
+      emb = NfToNfMor(K, L, L(1))
+      fields_list[i] = (L, auts, [emb])
     end
   end
   return fields_list
 
-
 end
+
+
+
 
 ###############################################################################
 #
@@ -1012,76 +1019,104 @@ function C22_extensions(bound::Int)
   Kx,x=PolynomialRing(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
-  pairs=_find_pairs(bound)
+  pairs, sqf = _find_pairs(bound)
   poszero=b1+1
-  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if i != poszero && j != poszero && sqf[abs(i-poszero)] && sqf[abs(j-poszero)] && pairs[i,j])
   
 end
 
 function _C22_exts_abexts(bound::Int, only_real::Bool = false)
-  Qx,x=PolynomialRing(FlintZZ, "x")
-  K,_=NumberField(x-1, cached = false)
-  Kx, x=PolynomialRing(K,"x", cached=false)
-  pairs=_find_pairs(bound)
-  b1=ceil(Int, Base.sqrt(bound))
-  n=2*b1+1
-  poszero=b1+1
-  if only_real
-    return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=poszero+2:n for j=i+1:n if pairs[i,j])
+  Qx, x = PolynomialRing(FlintZZ, "x")
+  if !only_real
+    pairs, sqf = _find_pairs(bound)
+    b1 = ceil(Int, Base.sqrt(bound))
+    n = size(pairs, 1)
+    poszero = b1+1
+    return (_ext_with_autos(Qx, x, i-poszero, j-poszero) for i = 1:n for j = i+1:n if i != poszero && j != poszero && sqf[abs(i-poszero)] && sqf[abs(j-poszero)] && pairs[i,j])
   else
-    return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+    pairs, sqf = _find_pairs_real(bound)
+    b = length(sqf)
+    return (_ext_with_autos(Qx, x, i, j) for i = 2:b for j = i+1:b if sqf[i] && sqf[j] && pairs[i,j])
   end
 end
 
-function _ext_with_autos(Ox,x,i,j)
- 
-  y1 = mod(i,4)
-  pol1=Ox(1)
-  if y1!=1
-    pol1=x^2-i
+function _ext_with_autos(Qx, x, i::Int, j::Int)
+  y1 = mod(i, 4)
+  pol1 = Qx()
+  setcoeff!(pol1, 2, fmpz(1))
+  if y1 != 1
+    setcoeff!(pol1, 0 , fmpz(-i))
   else
-    pol1=x^2-x+divexact(1-i,4)
+    setcoeff!(pol1, 0, fmpz(divexact(1-i,4)))
+    setcoeff!(pol1, 1, fmpz(-1))
   end
-  y2=mod(j,4)
-  pol2=Ox(1)
-  if y2!=1
-    pol2=x^2-j
+  y2 = mod(j, 4)
+  pol2 = Qx()
+  setcoeff!(pol2, 2, fmpz(1))
+  if y2 != 1
+    setcoeff!(pol2, 0 , fmpz(-j))
   else
-    pol2=x^2-x+divexact(1-j,4)
+    setcoeff!(pol2, 0 , fmpz(divexact(1-j, 4)))
+    setcoeff!(pol2, 1 , fmpz(-1))
   end
-  L, lg= number_field([pol1,pol2], cached = false)
-  if y1!=1
-    a1=-lg[1]
-  else
-    a1=1-lg[1]
-  end
-  if y2!=1
-    a2=-lg[2]
-  else
-    a2=1-lg[2]
-  end
-  mL1=NfRel_nsToNfRel_nsMor(L,L, [a1,lg[2]])
-  mL2=NfRel_nsToNfRel_nsMor(L,L, [lg[1],a2])
-  return (L, [mL1,mL2])
-
+  return pol1, pol2
 end
 
-function _find_pairs(bound::Int)
-  
-  b1=ceil(Int,Base.sqrt(bound))
-  n=2*b1+1
-  pairs=trues(n,n)
-  poszero=b1+1
-  
-  for i=1:n
-    pairs[i,poszero]=false
-    pairs[i,b1+2]=false
-    pairs[poszero,i]=false
-    pairs[b1+2,i]=false
+function __get_term(a::fmpq_mpoly, exps::Vector{UInt})
+   z = fmpq()
+   ccall((:fmpq_mpoly_get_coeff_fmpq_ui, :libflint), Nothing,
+         (Ref{fmpq}, Ref{fmpq_mpoly}, Ptr{UInt}, Ref{FmpqMPolyRing}),
+         z, a, exps, parent(a))
+   return z
+end
+
+function _C22_with_max_ord(l)
+  list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}()
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  K = NumberField(x-1, cached = false)[1]
+  for (p1, p2) in l
+    Kns, g = number_field([p1, p2])
+    S, mS = simple_extension(Kns)
+    cf = gcd(discriminant(p1), discriminant(p2))
+    B = Vector{nf_elem}(undef, degree(S))
+    B[1] = S(1)
+    B[2] = mS\(g[1])
+    B[3] = mS\(g[2])
+    B[4] = B[2] * B[3]
+    M = hnf(basis_mat(B))
+    O = Order(S, M, false, false)
+    if cf != 1
+      fac = factor(cf)
+      for (p, v) in fac
+        O = pmaximal_overorder(O, p)        
+      end
+    end
+    O.ismaximal = 1
+    Hecke._set_maximal_order_of_nf(S, O) 
+    coord1 = __get_term(mS.prim_img.data, UInt[1, 0])
+    coord2 = __get_term(mS.prim_img.data, UInt[0, 1])
+    auts = Vector{NfToNfMor}(undef, 2)
+    if iszero(coeff(p1, 1))
+      auts[1] = NfToNfMor(S, S, -coord1*B[2]+coord2*B[3])
+    else
+      auts[1] = NfToNfMor(S, S, 1-coord1*B[2]+coord2*B[3])
+    end
+    if iszero(coeff(p2, 1))
+      auts[2] = NfToNfMor(S, S, coord1*B[2]-coord2*B[3])
+    else
+      auts[2] = NfToNfMor(S, S, coord1*B[2]+1-coord2*B[3])
+    end
+    push!(list, (S, auts, [Hecke.NfToNfMor(K, S, S(1))]))
   end
+  return list
+end
+
+function _find_pairs_real(bound::Int)
+  b1 = ceil(Int,Base.sqrt(bound))
+  pairs = trues(b1, b1)
   
   #sieve for squarefree  
-  list= trues(b1)
+  list = trues(b1)
   i=2
   b=Base.sqrt(b1)
   while i<=b
@@ -1092,50 +1127,125 @@ function _find_pairs(bound::Int)
         continue
       else 
         list[j]=false
-        t=2*j
+        t = j + j
         while t <= b1
           list[t]=false
-          t+=j
+          t += j
         end
       end
     end
     i+=1
   end
-  #now translate it into the matrix
-  for i=1:b1
+  
+  #counting extensions  
+  for i = 2:b1
     if !list[i]
-      pairs[poszero+i,1:n] .=false
-      pairs[1:n,poszero+i] .=false
-      pairs[poszero-i,1:n] .=false
-      pairs[1:n,poszero-i] .=false
+      continue
+    end
+    for j = i+1:b1
+      if !list[j]
+        continue
+      end
+      if pairs[i, j]
+        third = divexact(i*j, gcd(i, j)^2)
+        if abs(third) > b1
+          pairs[i,j] = false
+        else
+          pairs[third, i] = false
+          pairs[third, j] = false
+          pairs[i, third] = false
+          pairs[j, third] = false
+          d1 = _discn(i)
+          d2 = _discn(j)
+          g1 = d1*d2
+          if abs(g1) < b1
+            continue
+          end
+          d3 = _discn(third)
+          g2 = d1*d3
+          if abs(g2)<b1
+            continue
+          end
+          g3 = d2*d3
+          if abs(g3)<b1
+            continue
+          end
+          g = gcd(g1,g2,g3)
+          if abs(g)<b1
+            continue
+          elseif check_disc(i, j, third, bound)
+            pairs[i,j] = false
+          end
+        end
+      end
     end
   end
+  return pairs, list
+  
+end
 
-  #removing diagonal
-  for i=1:n
-    pairs[i,i]=false
+
+
+
+function _find_pairs(bound::Int)
+  
+  b1=ceil(Int, Base.sqrt(bound))
+  n=2*b1+1
+  pairs = trues(n,n)
+  poszero = b1+1
+  
+  pairs[1:poszero, poszero] .= false
+  pairs[1:(b1+2), b1+2] .= false
+  pairs[poszero, (poszero+1):n] .= false
+  pairs[b1+2, (b1+3):n] .= false
+  
+  #sieve for squarefree  
+  list = trues(b1)
+  i = 2
+  b = Base.sqrt(b1)
+  while i <= b
+    if list[i]
+      j = i^2
+      if !list[j]
+        i += 1
+        continue
+      else 
+        list[j] = false
+        t = 2*j
+        while t <= b1
+          list[t] = false
+          t +=j
+        end
+      end
+    end
+    i+=1
   end
   
   #counting extensions  
-  for i=1:n
-    for j=i+1:n
-      if pairs[i,j]
-        pairs[j,i]=false
-        third=divexact((i-poszero)*(j-poszero), gcd(i-poszero, j-poszero)^2)
+  for i = 1:n
+    if i == poszero || !list[abs(i-poszero)] || i == b1+2
+      continue
+    end
+    for j = i+1:n
+      if j == poszero || !list[abs(j-poszero)] || j == b1+2
+        continue
+      end
+      if pairs[i, j]
+        first = i-poszero
+        second = j-poszero
+        third = divexact(first*second, gcd(first, second)^2)
         if abs(third)>b1
-          pairs[i,j]=false
+          pairs[i, j] = false
         else
           y=third+poszero
-          pairs[y,i]=false
-          pairs[y,j]=false
-          pairs[i,y]=false
-          pairs[j,y]=false
-          first=i-poszero
-          second=j-poszero
+          pairs[y,i] = false
+          pairs[y,j] = false
+          pairs[i,y] = false
+          pairs[j,y] = false
           d1=_discn(first)
           d2=_discn(second)
           g1=d1*d2
-          if abs(g1)<b1
+          if abs(g1) < b1
             continue
           else 
             d3=_discn(third)
@@ -1147,11 +1257,11 @@ function _find_pairs(bound::Int)
               if abs(g3)<b1
                 continue
               else
-                g=gcd(g1,g2,g3)
+                g = gcd(g1,g2,g3)
                 if abs(g)<b1
                   continue
                 elseif check_disc(first, second, third, bound)
-                  pairs[i,j]=false
+                  pairs[i, j] = false
                 end
               end
             end
@@ -1160,7 +1270,7 @@ function _find_pairs(bound::Int)
       end
     end
   end
-  return pairs
+  return pairs, list
   
 end
 
@@ -1184,11 +1294,11 @@ end
 function _ext(Ox,x,i,j)
  
   y=mod(i,4)
-  pol1=Ox(1)
-  if y!=1
-    pol1=x^2-i
+  pol1 = x^2
+  if y != 1
+    pol1 = x^2-i
   else
-    pol1=x^2-x+divexact(1-i,4)
+    pol1 = x^2-x+divexact(1-i,4)
   end
   y=mod(j,4)
   pol2=Ox(1)

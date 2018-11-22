@@ -150,7 +150,7 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
   
   if mult==1 
     if nbits(p.minimum)<64
-      @vtime :RayFacElem 2 Q,mQ=ResidueFieldSmall(O,p)
+      @vtime :RayFacElem 2 Q, mQ=ResidueFieldSmall(O, p)
       el=[Q(1) for i=1:length(elems)]
       for i=1:length(elems)
         J=elems[i]
@@ -160,42 +160,47 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
             mul!(el[i], el[i], mQ(act_el)^k)
             continue
           end
-          val=valuation(act_el,p)
-          act_el=O(act_el*(anti_uni^val),false)
+          val = valuation(act_el,p)
+          anti_val = anti_uni^val
+          mul!(anti_val, anti_val, act_el.elem_in_nf)
+          act_el=O(anti_val, false)
           mul!(el[i], el[i], mQ(act_el)^k)
         end
       end
     else
-      @vtime :RayFacElem 2 Q,mQ=ResidueField(O,p)
+      @vtime :RayFacElem 2 Q, mQ = ResidueField(O, p)
       el=[Q(1) for i=1:length(elems)]
       for i=1:length(elems)
         J=elems[i]
-        for (f,k) in J.fac
+        for (f, k) in J.fac
           if mQ(f)!=0
-            el[i]*=mQ(f)^k
             mul!(el[i], el[i], mQ(f)^k)
             continue
           end
-          val=valuation(f,p)
-          act_el=O(f*(anti_uni^val),false)
+          val = valuation(f, p)
+          ant_val = anti_uni^val
+          mul!(ant_val, ant_val, f.elem_in_nf)
+          act_el = O(ant_val, false)
           mul!(el[i], el[i], mQ(act_el)^k)
         end
       end
     end
-    return [mQ\el[i] for i=1:length(el)], (Q,mQ)
+    return [mQ\el[i] for i=1:length(el)], (Q, mQ)
   else
-    @vtime :RayFacElem 2 Q,mQ=quo(O,q)
-    el=[Q(1) for i=1:length(elems)]
+    @vtime :RayFacElem 2 Q, mQ = quo(O, q)
+    el = [Q(1) for i=1:length(elems)]
     for i=1:length(elems)
-      J=elems[i]
+      J = elems[i]
       for (f,k) in J.fac
         act_el=f
         if mod(act_el, p)!=0
           mul!(el[i], el[i], Q(act_el)^k)
           continue
         end
-        val=valuation(act_el,p)
-        act_el=O(act_el*(anti_uni^val),false)
+        val = valuation(act_el, p)
+        ant_val = anti_uni^val 
+        mul!(ant_val, ant_val, act_el.elem_in_nf)
+        act_el = O(ant_val, false)
         mul!(el[i], el[i], Q(act_el)^k)
       end
     end

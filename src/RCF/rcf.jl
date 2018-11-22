@@ -530,13 +530,8 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   end
 
   a = -coeff(K.pol, 0)
-  #ha = FacElem(h(a))
-  #a1 = inv(FacElem(a))^r * ha # this assumes K/k to be abelian
-  #@time fl, b = ispower(a1, degree(K))
-  #@assert fl
-  #return NfRelToNfRelMor(K, K, h, evaluate(b)*gen(K)^r)
   a = h(a)//a^r
-  fl, b = ispower(a, degree(K))
+  fl, b = ispower(a, degree(K), with_roots_unity = true)
   @assert fl
   return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
 end
@@ -662,12 +657,11 @@ function _rcf_descent(CF::ClassField_pp)
     return PolynomialRing(parent(g[1]), cached = false)[1](g)
   end
 
-#  n = prod(os) # maybe primitive??  
   @vprint :ClassField 2 "trying relative trace\n"
   @assert length(os) > 0
   t = os[1]
   for i = 2:length(os)
-    t += os[i]
+    add!(t, t, os[i])
   end
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
@@ -680,11 +674,11 @@ function _rcf_descent(CF::ClassField_pp)
     while !issquarefree(f)
       @vprint :ClassField 2 "trying relative trace of squares\n"
       for i = 1:length(os)
-        os1[i] *= os[i]
+        mul!(os1[i], os1[i], os[i])
       end
       t = os1[1]
       for i = 2:length(os)
-        t += os1[i]
+        add!(t, t, os1[i])
       end
       CF.pe = t
       #now the minpoly of t - via Galois as this is easiest to implement...
@@ -697,7 +691,7 @@ function _rcf_descent(CF::ClassField_pp)
   return nothing
 end
 
-function grp_elem_to_map(A::Array, b::Hecke.GrpAbFinGenElem, pe::NfRelElem)
+function grp_elem_to_map(A::Array, b::GrpAbFinGenElem, pe::NfRelElem)
   res = pe
   for i=1:length(A)
     if b[i] == 0
