@@ -2,26 +2,35 @@
 # same with LLL
 ################################################################################
 
-function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, nb::Int, rat::Float64, max_good::Int = 2) where {T}
+function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float64, max_good::Int = 2) where {T}
   bad_norm = 0
   rk = rank(c.M)
   good = 0
+  O = order(c)
+  K = nf(O)
   while true
     e = class_group_small_lll_elements_relation_next(I)
-    n = norm_div(e, norm(I.A), nb)
+    n = norm(e, c.normCtx, norm(I.A))
     if I.cnt > length(I.b)^2
       break
     end
-    if nbits(numerator(n)) > nb - 25
+    if n == Nothing
+      @show "BadNorm"
       bad_norm += 1
       if I.cnt > 100  && bad_norm / I.cnt > 0.1
-        @vprint :ClassGroup 2 "norm too large, $(I.cnt) has size $(nbits(numerator(n))) should be <= $(nb - 20) $bad_norm $(I.cnt)\n"
+        @vprint :ClassGroup 2 "norm too large, $(I.cnt) \n"
         break
       end
       continue
     end
     bef = length(c.M.bas_gens) + length(c.M.rel_gens)
-    fl = class_group_add_relation(c, e, n, norm(I.A), integral = true)
+    fl, r = issmooth!(c.FB.fb_int, n)
+    fl || (c.bad_rel += 1)
+    fl = fl || (r < c.B2 && isprime(r))
+    if fl
+      ee = K(O(fmpz[e[1, i] for i=1:degree(K)]))
+      fl = class_group_add_relation(c, ee, fmpq(n), norm(I.A), integral = true)
+    end
     if !fl  && I.cnt/(good+1) > 2*c.expect
       @vprint :ClassGroup 2 "not enough progress $(I.cnt) $(c.expect) $good\n"
       break
@@ -46,12 +55,10 @@ end
 
 function class_group_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2) where {T}
   O = order(c.FB.ideals[1])
-  nb = nbits(abs(discriminant(O)))
-  nb = div(nb, 2) + 30
 
   rt = time_ns()
   I = class_group_small_lll_elements_relation_start(c, O)
-  single_env(c, I, nb, rat/10, -1)
+  single_env(c, I, rat/10, -1)
   @vprint :ClassGroup 1 "search in order:  $((time_ns()-rt)*1e-9) rel mat:  $(c.M.bas_gens)\nin $(c.M)"
 
   @vtime :ClassGroup 1 h, piv = class_group_get_pivot_info(c)
@@ -79,8 +86,6 @@ end
 function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2; extra::Int = 5, rand_exp::Int = 1) where {T}
 
   O = order(c.FB.ideals[1])
-  nb = nbits(abs(discriminant(O)))
-  nb = div(nb, 2) + 30
 
   st = c.rel_cnt
 
@@ -140,17 +145,19 @@ function class_group_new_relations_via_lll(c::ClassGrpCtx{T}, rat::Float64 = 0.2
     end
   end
 
+  n_idl = 0
   while true
     st = c.rel_cnt
     while (c.rel_cnt - st < 2)
       sort_rev = rank(c.M) < length(c.FB.ideals) *0.9
       for p = sort(collect(piv), rev = sort_rev)
-        @vprint :ClassGroup 1 "p: $p $rand_exp $(length(rand_env.base))\n"
+        @vprint :ClassGroup 1 "$(set_cursor_col())$(clear_to_eol())#ideals tested: $n_idl, pivot ideal: $p, exp: $rand_exp, #rand base: $(length(rand_env.base))"
         @vtime :ClassGroup 3 J = random_get(rand_env, reduce = false)
   #      @show nbits(norm(J)), rand_env.exp, rand_exp
         @vtime :ClassGroup 3 J *= c.FB.ideals[p]^rand_exp
         @vtime :ClassGroup 3 I = class_group_small_lll_elements_relation_start(c, J)
-        @vtime :ClassGroup 3 single_env(c, I, nb, 0.8, -1)
+        n_idl += 1
+        @vtime :ClassGroup 3 single_env(c, I, 0.8, -1)
         if h == 0 && rank(c.M) == length(c.FB.ideals)
           #reached full rank for the 1st time!!
           h, p = class_group_get_pivot_info(c)

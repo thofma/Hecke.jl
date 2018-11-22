@@ -155,12 +155,13 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       iI = inv(E.A)
     end
 
-    a = class_group_small_lll_elements_relation_next(E)
+    aa = class_group_small_lll_elements_relation_next(E)
     #println("trying $a")
     cnt += 1
-    na = norm(E.A)*abs(Hecke.norm_div(a, norm(E.A), div(nbits(discriminant(order(E.A))), 2)+20))
+    na = norm(E.A)*abs(norm(aa, c.normCtx, norm(E.A)))
     n = FlintZZ(norm(iI)*na)
     if issmooth(c.FB.fb_int, n)
+      a = K(O(fmpz[aa[1, i] for i=1:degree(K)]))
       Ia = simplify(a*iI)
       @assert n == norm(Ia)
       @assert Ia.den == 1
