@@ -53,7 +53,10 @@ mutable struct NfRelToNf <: Map{NfRel{nf_elem}, AnticNumberField, HeckeMap, NfRe
       f = data(x)
       # First evaluate the coefficients of f at a to get a polynomial over L
       # Then evaluate at b
-      r = [ evaluate(R(coeff(f, i)), a) for i in 0:degree(f)]
+      r = Vector{nf_elem}(undef, degree(f)+1)
+      for  i = 0:degree(f)
+        r[i+1] = evaluate(R(coeff(f, i)), a)
+      end
       return evaluate(Ly(r), b)
     end
 

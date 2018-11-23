@@ -781,10 +781,11 @@ end
 
 #find isomorphic simple field AND the map
 @doc Markdown.doc"""
-    simple_extension(K::NfRel_ns{nf_elem}) -> NfRel, Map, Map
+    simple_extension(K::NfRel_ns{nf_elem}) -> NfRel, Map
 
-> Compute an isomorphic field as an extension of $Q$ together with the isomorphism 
-> (1st map) and the embedding of the base field (2nd map).
+> Compute a simple field L as an extension of the base field of K and an isomorphism
+> between L and K 
+
 """
 function simple_extension(K::NfRel_ns)
   n = ngens(K)
@@ -792,7 +793,6 @@ function simple_extension(K::NfRel_ns)
 
   pe = g[1]
   i = 1
-  ind = [1]
   f = minpoly(pe)
   #todo: use resultants rather than minpoly??
   while i < n
@@ -803,7 +803,6 @@ function simple_extension(K::NfRel_ns)
       j += 1
       f = minpoly(pe+j*g[i])
     end
-    push!(ind, j)
     pe += j*g[i]
     # To work around julia bug
     pe.parent
@@ -816,16 +815,16 @@ function simple_extension(K::NfRel_ns)
   elem_to_mat_row!(M, 2, pe)
   z *= pe
   for i=3:degree(K)
-    z *= pe
+    mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end
   N = zero_matrix(k, 1, degree(K))
   b = basis(Ka)
-  emb = typeof(b)()
-  for i=1:n
+  emb = Array{typeof(b[1]), 1}(undef, n)
+  for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
     s = solve(M', N')
-    push!(emb, sum(b[j]*s[j,1] for j=1:degree(Ka)))
+    emb[i] = sum(b[j]*s[j,1] for j=1:degree(Ka))
   end
 
   return Ka, NfRelToNfRel_nsMor(Ka, K, pe, emb)

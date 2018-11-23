@@ -1,15 +1,13 @@
 function test_disc_log_picard(P, mP, O::Hecke.AlgAssAbsOrd)
-  #= # principal ideals should always be invertible =#
-  #= for i = 1:5 =#
-  #=   a = rand(O, 10) =#
-  #=   while iszero(a) =#
-  #=     a = rand(O, 10) =#
-  #=   end =#
-  #=   I = ideal(O, a) =#
-  #=   if !iszero(mP\I) =#
-  #=     return false =#
-  #=   end =#
-  #= end =#
+  for i = 1:5
+    I = ideal(O, rand(O, 10))
+    while !isinvertible(I)[1]
+      I = ideal(O, rand(O, 10))
+    end
+    if !iszero(mP\I)
+      return false
+    end
+  end
 
   if ngens(P) == 0
     return true
@@ -91,5 +89,7 @@ end
   I2 = I^2
   a = Hecke.principal_gen(I2)
   @test I2 == ideal(O, a)
-
+  I = ideal(O, 7*one(O)) # not coprime to the conductor of O in the maximal order
+  a = Hecke.principal_gen(I)
+  @test I == ideal(O, a)
 end

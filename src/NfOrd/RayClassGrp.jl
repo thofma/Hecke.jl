@@ -150,7 +150,7 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
   
   if mult==1 
     if nbits(p.minimum)<64
-      @vtime :RayFacElem 2 Q,mQ=ResidueFieldSmall(O,p)
+      @vtime :RayFacElem 2 Q, mQ=ResidueFieldSmall(O, p)
       el=[Q(1) for i=1:length(elems)]
       for i=1:length(elems)
         J=elems[i]
@@ -160,42 +160,47 @@ function _eval_quo(O::NfOrd, elems::Array{FacElem{NfOrdElem, NfOrd},1}, p::NfOrd
             mul!(el[i], el[i], mQ(act_el)^k)
             continue
           end
-          val=valuation(act_el,p)
-          act_el=O(act_el*(anti_uni^val),false)
+          val = valuation(act_el,p)
+          anti_val = anti_uni^val
+          mul!(anti_val, anti_val, act_el.elem_in_nf)
+          act_el=O(anti_val, false)
           mul!(el[i], el[i], mQ(act_el)^k)
         end
       end
     else
-      @vtime :RayFacElem 2 Q,mQ=ResidueField(O,p)
+      @vtime :RayFacElem 2 Q, mQ = ResidueField(O, p)
       el=[Q(1) for i=1:length(elems)]
       for i=1:length(elems)
         J=elems[i]
-        for (f,k) in J.fac
+        for (f, k) in J.fac
           if mQ(f)!=0
-            el[i]*=mQ(f)^k
             mul!(el[i], el[i], mQ(f)^k)
             continue
           end
-          val=valuation(f,p)
-          act_el=O(f*(anti_uni^val),false)
+          val = valuation(f, p)
+          ant_val = anti_uni^val
+          mul!(ant_val, ant_val, f.elem_in_nf)
+          act_el = O(ant_val, false)
           mul!(el[i], el[i], mQ(act_el)^k)
         end
       end
     end
-    return [mQ\el[i] for i=1:length(el)], (Q,mQ)
+    return [mQ\el[i] for i=1:length(el)], (Q, mQ)
   else
-    @vtime :RayFacElem 2 Q,mQ=quo(O,q)
-    el=[Q(1) for i=1:length(elems)]
+    @vtime :RayFacElem 2 Q, mQ = quo(O, q)
+    el = [Q(1) for i=1:length(elems)]
     for i=1:length(elems)
-      J=elems[i]
+      J = elems[i]
       for (f,k) in J.fac
         act_el=f
         if mod(act_el, p)!=0
           mul!(el[i], el[i], Q(act_el)^k)
           continue
         end
-        val=valuation(act_el,p)
-        act_el=O(act_el*(anti_uni^val),false)
+        val = valuation(act_el, p)
+        ant_val = anti_uni^val 
+        mul!(ant_val, ant_val, act_el.elem_in_nf)
+        act_el = O(ant_val, false)
         mul!(el[i], el[i], Q(act_el)^k)
       end
     end
@@ -1462,12 +1467,14 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
       # First, I change them in order to be coprime to coprime_to
       change_into_coprime(mR, coprime_to)
     end
-    @vtime :NfOrd 1 totally_positive_generators(mR, true)
-    tmg=mR.tame_mult_grp
-    wld=mR.wild_mult_grp
+    if !isempty(mR.modulus_inf)
+      @vtime :NfOrd 1 totally_positive_generators(mR, true)
+    end
+    tmg = mR.tame_mult_grp
+    wld = mR.wild_mult_grp
     for (p,v) in tmg
-      I=ideal(O,v.generators[1])
-      f=mR\I
+      I = ideal(O, v.generators[1])
+      f = mR\I
       if iszero(mq(f))
         continue
       end
@@ -1524,7 +1531,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
   if isdefined(mR, :prime_ideal_cache)
     S = mR.prime_ideal_cache
   else
-    S = prime_ideals_up_to(O, max(1000,100*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
+    S = prime_ideals_up_to(O, max(1000,4*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
     mR.prime_ideal_cache = S
   end
   q, mq = quo(R, sR, false)

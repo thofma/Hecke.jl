@@ -261,7 +261,7 @@ const _euler_phi_inverse_maximum =
 
 # One should/could also try to be closer to Algorithm 1
 # in Molin, "On the calculation of roots of unity in a number field"
-function _torsion_group_order_divisor(O::NfOrd, N::Int = 5)
+function _torsion_group_order_divisor(O::NfOrd)
 
   if degree(O) <= 250
     upper_bound = _euler_phi_inverse_maximum[degree(O)]
@@ -350,7 +350,8 @@ function _torsion_units_gen(O::NfOrd)
   end
 
   m = _torsion_group_order_divisor(O)
-  Ky, y = PolynomialRing(nf(O), "y", cached = false)
+  K = nf(O)
+  Ky, y = PolynomialRing(K, "y", cached = false)
   fac = factor(m).fac
   gen = O(1)
   ord = 1
@@ -361,7 +362,13 @@ function _torsion_units_gen(O::NfOrd)
       continue
     end
     for i = 1:v
-      f = divexact(y^(Int(p)^(v+1-i)) - 1, y^(Int(p)^(v-i)) - 1)
+      f1 = Ky()
+      setcoeff!(f1, 0, -K(1))
+      setcoeff!(f1, Int(p)^(v+1-i), K(1))
+      f2 = Ky()
+      setcoeff!(f2, 0, -K(1))
+      setcoeff!(f2, Int(p)^(v-i), K(1))
+      f = divexact(f1, f2)
       fl, r = _one_root_hensel(f)
       if fl
         mul!(gen, gen, O(r))

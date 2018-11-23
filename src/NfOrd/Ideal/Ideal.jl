@@ -1763,34 +1763,70 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     end
   end
 end
+#
+# Here some random guesses for the difficult 2-element generators
+# degree  | d
+#   < 7   | 1
+#  8 - 12 | 2 * 3
+# 13 - 20 | 2 * 3 * 5
+#  >= 21  | 2 * 3 * 5 * 7
 
 function is_2_normal_difficult(A::NfAbsOrdIdl)
-  d = fmpz(2)
+  d = 2
   m = minimum(A)
   ZK = order(A)
+  n = degree(ZK)
 
-  if gcd(d, m) == 1 || degree(ZK) < 7
+  if n < 7
     return false
   end
+
+  if n < 12 && isone(gcd(m, 2 * 3))
+    return false
+  end
+
+  if n < 20 && isone(gcd(m, 2 * 3 * 5))
+    return false
+  end
+
+  if isone(gcd(m, 2 * 3 * 5 * 7))
+    return false
+  end
+
   return true
 end
 
 function assure_2_normal_difficult(A::NfAbsOrdIdl)
-  d = fmpz(2)
   m = minimum(A)
   ZK = order(A)
+  n = degree(ZK)
 
-  if gcd(d, m) == 1 || degree(ZK) < 7
+  if !is_2_normal_difficult(A)
     assure_2_normal(A)
     return
   end
 
-  m1, m2 = ppio(m, d)
+  if n < 12
+    d = 2 * 3
+  elseif n < 20
+    d = 2 * 3 * 5
+  else
+    d = 2 * 3 * 5 * 7
+  end
+
+  m1, m2 = ppio(m, fmpz(d))
   A1 = gcd(A, m1)
   A2 = gcd(A, m2)
   assure_2_normal(A2)
 
-  lp = prime_decomposition(ZK, 2)
+  lp = append!(prime_decomposition(ZK, 2), prime_decomposition(ZK, 3))
+  if n >= 12
+    lp = append!(lp, prime_decomposition(ZK, 5))
+  end
+  if n >= 20
+    lp = append!(lp, prime_decomposition(ZK, 7))
+  end
+
   v = [valuation(A1, p[1]) for p = lp]
 
   B1 = prod(lp[i][1]^v[i] for i=1:length(v) if v[i] > 0)
@@ -1842,16 +1878,10 @@ function assure_2_normal(A::NfAbsOrdIdl)
       if cnt > 1000
         error("Having a hard time making generators normal for $A")
       end
-      #Nemo.rand_into!(bas, r, s)
       rand!(s, O, r)
-      #Nemo.mult_into!(s, A.gen_two, s)
       mul!(s, s, A.gen_two)
-      #Nemo.add_into!(gen, rand(r)*A.gen_one, gen)
       add!(gen, rand(r)*A.gen_one, gen)
-      #Nemo.add_into!(gen, s, gen)
       add!(gen, s, gen)
-#      gen += rand(r)*A.gen_one + rand(bas, r)*A.gen_two
-      #gen = element_reduce_mod(gen, O, m^2)
       gen = mod(gen, m^2)
 
       if iszero(gen)

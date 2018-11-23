@@ -460,7 +460,7 @@ function minpoly_sparse(a::NfAbsNSElem)
   z *= a
   sz = SRow(z)
   i = 1
-  Qt, t = PolynomialRing(FlintQQ, "t", cached = false)
+  Qt, t = PolynomialRing(FlintQQ, "x", cached = false)
   while true
     if n % i == 0
       echelon!(M)
@@ -781,6 +781,17 @@ end
 > The ideal bust be maximal, however, this is not tested.
 """
 function NumberField(f::Array{fmpq_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false)
+  S = Symbol(s)
+  n = length(f)
+  Qx, x = PolynomialRing(FlintQQ, n, s)
+  K = NfAbsNS(fmpq_mpoly[f[i](x[i]) for i=1:n],
+              Symbol[Symbol("$s$i") for i=1:n], cached)
+  K.degrees = [degree(f[i]) for i in 1:n]
+  K.degree = prod(K.degrees)
+  return K, gens(K)
+end
+
+function NumberField(f::Array{fmpz_poly, 1}, s::String="_\$"; cached::Bool = false, check::Bool = false)
   S = Symbol(s)
   n = length(f)
   Qx, x = PolynomialRing(FlintQQ, n, s)

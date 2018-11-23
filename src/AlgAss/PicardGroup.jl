@@ -297,8 +297,12 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   end
 
   function disc_log(x::AlgAssAbsOrdIdl)
+    if !isinvertible(x)[1]
+      error("Ideal is not invertible")
+    end
     if !isone(x + F)
-      error("Ideal is not coprime to the conductor")
+      #error("Ideal is not coprime to the conductor")
+      x, _ = _coprime_integral_ideal_class(x, F)
     end
 
     xOO = extend(x, OO)
@@ -325,20 +329,25 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
     error("Data for the refined discrete logarithm is not available.")
   end
 
+  if !isinvertible(a)[1]
+    error("Ideal is not invertible")
+  end
+
   O = order(a)
   A = algebra(O)
   OO = maximal_order(A)
   F = conductor(O, OO)
   FOO = F*OO
+  aOO = a*OO
 
-  # We assume that a is coprime to F. This means we only need to do steps 5 to 7
-  # of the algorithm, because we have contract(extend(a, OO), O) == a.
+  t = one(A)
   if !isone(a + F)
-    error("Ideal is not coprime to the conductor")
+    # After this modification of a we do not need steps 1 to 4 of the algorithm
+    a, t = _coprime_integral_ideal_class(a, F)
+    aOO = a*OO
   end
 
   # Compute the refined disc log of aOO in the ray class group
-  aOO = a*OO
   mR = mP.ray_class_group_map
   R = domain(mR)
 
@@ -384,7 +393,7 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
     gamma *= mP.gammas[i]^rV[i]
   end
 
-  return divexact_right(k*beta, gamma), P(p)
+  return divexact_right(k*beta, t*gamma), P(p)
 end
 
 function principal_gen(a::AlgAssAbsOrdIdl)
@@ -677,4 +686,30 @@ function kernel_group(O::AlgAssAbsOrd)
   StoIdl = MapPicardGrp{typeof(S), typeof(Idl)}()
   StoIdl.header = MapHeader(S, Idl, disc_exp, disc_log)
   return S, StoIdl
+end
+
+################################################################################
+#
+#  Coprime representatives
+#
+################################################################################
+
+# Mostly taken from NfOrd/LinearAlgebra.jl
+function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
+  O = order(b)
+  a_inv = inv(a)
+  c = ideal(O, one(O))
+  x = algebra(O)()
+  check = true
+  while check
+    x = rand(a_inv, 100)
+    c = x*a
+    c = simplify!(c)
+    if denominator(c, false) != 1
+      # Should not happen, x is in inv(a)
+      continue
+    end
+    isone(numerator(c, false) + b) ? (check = false) : (check = true)
+  end
+  return numerator(c, false), x
 end

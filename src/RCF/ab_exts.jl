@@ -961,16 +961,10 @@ end
 function _quad_ext(bound::Int, only_real::Bool = false)
   
   Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
-  K = NumberField(x-1, cached = false)[1]
-  Kt, t = PolynomialRing(K, "t", cached = false)
+  K = NumberField(x-1, cached = false, check = false)[1]
   sqf = squarefree_up_to(bound)
-  if !only_real
-    sqf = vcat(sqf[2:end], Int[-i for i in sqf])
-  else
-    sqf = sqf[2:end]
-  end
   final_list = Int[]
-  for i=1:length(sqf)
+  for i=2:length(sqf)
     if abs(sqf[i]*4)< bound
       @views push!(final_list, sqf[i])
       continue
@@ -979,24 +973,37 @@ function _quad_ext(bound::Int, only_real::Bool = false)
       @views push!(final_list, sqf[i])
     end
   end
-  fields_list = Array{Tuple{NfRel_ns, Array{NfRel_nsToNfRel_nsMor{nf_elem}, 1}}, 1}(undef, length(final_list))
-  j = 0
-  for i in final_list
-    j += 1
-    if mod(i,4) != 1
-      L, gL = number_field([t^2-i], cached=false, check = false)
-      auts = [NfRel_nsToNfRel_nsMor(L, L, [-gL[1]])]
-      fields_list[j] = (L, auts)
+  if !only_real
+    for i = 1:length(sqf)
+      if abs(sqf[i]*4)< bound
+        @views push!(final_list, -sqf[i])
+        continue
+      end
+      if mod(sqf[i], 4) == 3
+        @views push!(final_list, -sqf[i])
+      end
+    end
+  end
+  fields_list = Array{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}, 1}(undef, length(final_list))
+  for i = 1:length(final_list)
+    if mod(final_list[i],4) != 1
+      L, gL = number_field(x^2-final_list[i], cached=false, check = false)
+      auts = [NfToNfMor(L, L, -gL)]
+      emb = NfToNfMor(K, L, L(1))
+      fields_list[i] = (L, auts, [emb])
     else
-      L, gL = number_field([t^2-t+divexact(1-i,4)], cached=false, check = false)
-      auts = [NfRel_nsToNfRel_nsMor(L, L, [1-gL[1]])]
-      fields_list[j] = (L, auts)
+      L, gL = number_field(x^2-x+divexact(1-final_list[i], 4), cached=false, check = false)
+      auts = [NfToNfMor(L, L, 1-gL)]
+      emb = NfToNfMor(K, L, L(1))
+      fields_list[i] = (L, auts, [emb])
     end
   end
   return fields_list
 
-
 end
+
+
+
 
 ###############################################################################
 #
@@ -1008,89 +1015,108 @@ function C22_extensions(bound::Int)
   
   
   Qx,x=PolynomialRing(FlintZZ, "x")
-  K,_=NumberField(x-1)
+  K, _=NumberField(x-1, cached = false)
   Kx,x=PolynomialRing(K,"x", cached=false)
   b1=ceil(Int,Base.sqrt(bound))
   n=2*b1+1
-  pairs=_find_pairs(bound)
+  pairs, sqf = _find_pairs(bound)
   poszero=b1+1
-  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
+  return (_ext(Kx,x,i-poszero,j-poszero) for i=1:n for j=i+1:n if i != poszero && j != poszero && sqf[abs(i-poszero)] && sqf[abs(j-poszero)] && pairs[i,j])
   
 end
 
 function _C22_exts_abexts(bound::Int, only_real::Bool = false)
-  Qx,x=PolynomialRing(FlintZZ, "x")
-  K,_=NumberField(x-1)
-  Kx,x=PolynomialRing(K,"x", cached=false)
-  pairs=_find_pairs(bound)
-  b1=ceil(Int, Base.sqrt(bound))
-  n=2*b1+1
-  poszero=b1+1
-  if only_real
-    for i = 1:poszero
-      for j = 1:size(pairs, 2)
-        pairs[i, j] = false
-      end
-    end
-    for j = 1:poszero
-      for i = 1:size(pairs, 2)
-        pairs[i, j] = false
-      end
-    end
+  Qx, x = PolynomialRing(FlintZZ, "x")
+  if !only_real
+    pairs, sqf = _find_pairs(bound)
+    b1 = ceil(Int, Base.sqrt(bound))
+    n = size(pairs, 1)
+    poszero = b1+1
+    return (_ext_with_autos(Qx, x, i-poszero, j-poszero) for i = 1:n for j = i+1:n if i != poszero && j != poszero && sqf[abs(i-poszero)] && sqf[abs(j-poszero)] && pairs[i,j])
+  else
+    pairs, sqf = _find_pairs_real(bound)
+    b = length(sqf)
+    return (_ext_with_autos(Qx, x, i, j) for i = 2:b for j = i+1:b if sqf[i] && sqf[j] && pairs[i,j])
   end
-  return (_ext_with_autos(Kx, x, i-poszero, j-poszero) for i=1:n for j=i+1:n if pairs[i,j])
-
 end
 
-function _ext_with_autos(Ox,x,i,j)
- 
-  y1 = mod(i,4)
-  pol1=Ox(1)
-  if y1!=1
-    pol1=x^2-i
+function _ext_with_autos(Qx, x, i::Int, j::Int)
+  y1 = mod(i, 4)
+  pol1 = Qx()
+  setcoeff!(pol1, 2, fmpz(1))
+  if y1 != 1
+    setcoeff!(pol1, 0 , fmpz(-i))
   else
-    pol1=x^2-x+divexact(1-i,4)
+    setcoeff!(pol1, 0, fmpz(divexact(1-i,4)))
+    setcoeff!(pol1, 1, fmpz(-1))
   end
-  y2=mod(j,4)
-  pol2=Ox(1)
-  if y2!=1
-    pol2=x^2-j
+  y2 = mod(j, 4)
+  pol2 = Qx()
+  setcoeff!(pol2, 2, fmpz(1))
+  if y2 != 1
+    setcoeff!(pol2, 0 , fmpz(-j))
   else
-    pol2=x^2-x+divexact(1-j,4)
+    setcoeff!(pol2, 0 , fmpz(divexact(1-j, 4)))
+    setcoeff!(pol2, 1 , fmpz(-1))
   end
-  L, lg= number_field([pol1,pol2], cached = false)
-  if y1!=1
-    a1=-lg[1]
-  else
-    a1=1-lg[1]
-  end
-  if y2!=1
-    a2=-lg[2]
-  else
-    a2=1-lg[2]
-  end
-  mL1=NfRel_nsToNfRel_nsMor(L,L, [a1,lg[2]])
-  mL2=NfRel_nsToNfRel_nsMor(L,L, [lg[1],a2])
-  return (L, [mL1,mL2])
-
+  return pol1, pol2
 end
 
-function _find_pairs(bound::Int)
-  
-  b1=ceil(Int,Base.sqrt(bound))
-  n=2*b1+1
-  pairs=trues(n,n)
-  poszero=b1+1
-  
-  for i=1:n
-    pairs[i,poszero]=false
-    pairs[i,b1+2]=false
-    pairs[poszero,i]=false
-    pairs[b1+2,i]=false
+function __get_term(a::fmpq_mpoly, exps::Vector{UInt})
+   z = fmpq()
+   ccall((:fmpq_mpoly_get_coeff_fmpq_ui, :libflint), Nothing,
+         (Ref{fmpq}, Ref{fmpq_mpoly}, Ptr{UInt}, Ref{FmpqMPolyRing}),
+         z, a, exps, parent(a))
+   return z
+end
+
+function _C22_with_max_ord(l)
+  list = Vector{Tuple{AnticNumberField, Vector{NfToNfMor}, Vector{NfToNfMor}}}()
+  Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+  K = NumberField(x-1, cached = false)[1]
+  for (p1, p2) in l
+    Kns, g = number_field([p1, p2])
+    S, mS = simple_extension(Kns)
+    cf = gcd(discriminant(p1), discriminant(p2))
+    B = Vector{nf_elem}(undef, degree(S))
+    B[1] = S(1)
+    B[2] = mS\(g[1])
+    B[3] = mS\(g[2])
+    B[4] = B[2] * B[3]
+    M = hnf(basis_mat(B))
+    O = Order(S, M, false, false)
+    if cf != 1
+      fac = factor(cf)
+      for (p, v) in fac
+        O = pmaximal_overorder(O, p)        
+      end
+    end
+    O.ismaximal = 1
+    Hecke._set_maximal_order_of_nf(S, O) 
+    coord1 = __get_term(mS.prim_img.data, UInt[1, 0])
+    coord2 = __get_term(mS.prim_img.data, UInt[0, 1])
+    auts = Vector{NfToNfMor}(undef, 2)
+    if iszero(coeff(p1, 1))
+      auts[1] = NfToNfMor(S, S, -coord1*B[2]+coord2*B[3])
+    else
+      auts[1] = NfToNfMor(S, S, 1-coord1*B[2]+coord2*B[3])
+    end
+    if iszero(coeff(p2, 1))
+      auts[2] = NfToNfMor(S, S, coord1*B[2]-coord2*B[3])
+    else
+      auts[2] = NfToNfMor(S, S, coord1*B[2]+1-coord2*B[3])
+    end
+    push!(list, (S, auts, [Hecke.NfToNfMor(K, S, S(1))]))
   end
+  return list
+end
+
+function _find_pairs_real(bound::Int)
+  b1 = ceil(Int,Base.sqrt(bound))
+  pairs = trues(b1, b1)
   
   #sieve for squarefree  
-  list= trues(b1)
+  list = trues(b1)
   i=2
   b=Base.sqrt(b1)
   while i<=b
@@ -1101,50 +1127,125 @@ function _find_pairs(bound::Int)
         continue
       else 
         list[j]=false
-        t=2*j
+        t = j + j
         while t <= b1
           list[t]=false
-          t+=j
+          t += j
         end
       end
     end
     i+=1
   end
-  #now translate it into the matrix
-  for i=1:b1
+  
+  #counting extensions  
+  for i = 2:b1
     if !list[i]
-      pairs[poszero+i,1:n] .=false
-      pairs[1:n,poszero+i] .=false
-      pairs[poszero-i,1:n] .=false
-      pairs[1:n,poszero-i] .=false
+      continue
+    end
+    for j = i+1:b1
+      if !list[j]
+        continue
+      end
+      if pairs[i, j]
+        third = divexact(i*j, gcd(i, j)^2)
+        if abs(third) > b1
+          pairs[i,j] = false
+        else
+          pairs[third, i] = false
+          pairs[third, j] = false
+          pairs[i, third] = false
+          pairs[j, third] = false
+          d1 = _discn(i)
+          d2 = _discn(j)
+          g1 = d1*d2
+          if abs(g1) < b1
+            continue
+          end
+          d3 = _discn(third)
+          g2 = d1*d3
+          if abs(g2)<b1
+            continue
+          end
+          g3 = d2*d3
+          if abs(g3)<b1
+            continue
+          end
+          g = gcd(g1,g2,g3)
+          if abs(g)<b1
+            continue
+          elseif check_disc(i, j, third, bound)
+            pairs[i,j] = false
+          end
+        end
+      end
     end
   end
+  return pairs, list
+  
+end
 
-  #removing diagonal
-  for i=1:n
-    pairs[i,i]=false
+
+
+
+function _find_pairs(bound::Int)
+  
+  b1=ceil(Int, Base.sqrt(bound))
+  n=2*b1+1
+  pairs = trues(n,n)
+  poszero = b1+1
+  
+  pairs[1:poszero, poszero] .= false
+  pairs[1:(b1+2), b1+2] .= false
+  pairs[poszero, (poszero+1):n] .= false
+  pairs[b1+2, (b1+3):n] .= false
+  
+  #sieve for squarefree  
+  list = trues(b1)
+  i = 2
+  b = Base.sqrt(b1)
+  while i <= b
+    if list[i]
+      j = i^2
+      if !list[j]
+        i += 1
+        continue
+      else 
+        list[j] = false
+        t = 2*j
+        while t <= b1
+          list[t] = false
+          t +=j
+        end
+      end
+    end
+    i+=1
   end
   
   #counting extensions  
-  for i=1:n
-    for j=i+1:n
-      if pairs[i,j]
-        pairs[j,i]=false
-        third=divexact((i-poszero)*(j-poszero), gcd(i-poszero, j-poszero)^2)
+  for i = 1:n
+    if i == poszero || !list[abs(i-poszero)] || i == b1+2
+      continue
+    end
+    for j = i+1:n
+      if j == poszero || !list[abs(j-poszero)] || j == b1+2
+        continue
+      end
+      if pairs[i, j]
+        first = i-poszero
+        second = j-poszero
+        third = divexact(first*second, gcd(first, second)^2)
         if abs(third)>b1
-          pairs[i,j]=false
+          pairs[i, j] = false
         else
           y=third+poszero
-          pairs[y,i]=false
-          pairs[y,j]=false
-          pairs[i,y]=false
-          pairs[j,y]=false
-          first=i-poszero
-          second=j-poszero
+          pairs[y,i] = false
+          pairs[y,j] = false
+          pairs[i,y] = false
+          pairs[j,y] = false
           d1=_discn(first)
           d2=_discn(second)
           g1=d1*d2
-          if abs(g1)<b1
+          if abs(g1) < b1
             continue
           else 
             d3=_discn(third)
@@ -1156,11 +1257,11 @@ function _find_pairs(bound::Int)
               if abs(g3)<b1
                 continue
               else
-                g=gcd(g1,g2,g3)
+                g = gcd(g1,g2,g3)
                 if abs(g)<b1
                   continue
                 elseif check_disc(first, second, third, bound)
-                  pairs[i,j]=false
+                  pairs[i, j] = false
                 end
               end
             end
@@ -1169,7 +1270,7 @@ function _find_pairs(bound::Int)
       end
     end
   end
-  return pairs
+  return pairs, list
   
 end
 
@@ -1193,11 +1294,11 @@ end
 function _ext(Ox,x,i,j)
  
   y=mod(i,4)
-  pol1=Ox(1)
-  if y!=1
-    pol1=x^2-i
+  pol1 = x^2
+  if y != 1
+    pol1 = x^2-i
   else
-    pol1=x^2-x+divexact(1-i,4)
+    pol1 = x^2-x+divexact(1-i,4)
   end
   y=mod(j,4)
   pol2=Ox(1)
@@ -1349,78 +1450,83 @@ end
 #
 ###############################################################################
 
-function _from_relative_to_abs(L::Tuple{NfRel_ns{T}, Array{NfRel_nsToNfRel_nsMor{T},1}}) where T
+function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
   
-  S,mS=simple_extension(L[1])
-  K,mK=absolute_field(S, false)
-  
+  S, mS = simple_extension(L)
+  K, mK = absolute_field(S, false)
   #First, we compute the maximal order of the absolute field.
-  #We start from the maximal orders of the relative extension and of the base field.
-  #FALSE: Since the computation of the relative maximal order is slow, I prefer to bring to the absolute field the elements
+  #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
   # generating the equation order.
   @vprint :AbExt 2 "Computing the maximal order\n"
-  O=maximal_order(L[1].base_ring)
-  OL=EquationOrder(L[1])
-  B=pseudo_basis(OL)
   
   
-  #Then we consider the product basis
-  basisL=Array{NfRel_nsElem, 1}(undef, 2*degree(L[1]))
-  for i=1:degree(L[1])
-    _assure_weakly_normal_presentation(B[i][2].num)
-    basisL[2*i-1]=divexact(B[i][2].num.gen_one* B[i][1], B[i][2].den)
-    basisL[2*i]=divexact(L[1].base_ring(B[i][2].num.gen_two)* B[i][1], B[i][2].den)
+  #First, I construct the product basis of the relative extension
+  pols = L.pol
+  gL = gens(L)
+  B = Array{nf_elem, 1}(undef, degree(K))
+  B[1] = K(1)
+  ind = total_degree(pols[1])
+  genjj = mK(mS\gL[1])
+  for i = 2:ind
+    B[i] = genjj*B[i-1]
   end
-  basisO=[L[1](O.basis_nf[i]) for i=1:degree(O)]
-  
-  nbasisL=[mK(mS\(el)) for el in basisL]
-  nbasisO=[mK(mS\(el)) for el in basisO]
+  for jj = 2:length(pols)
+    genjj = mK(mS\gL[jj])
+    el = genjj
+    new_deg = total_degree(pols[jj])
+    for i = 2:new_deg
+      for j = 1:ind
+        B[(i-1)* ind + j] = B[j]* el 
+      end
+      mul!(el, el, genjj)
+    end
+    ind *= new_deg
+  end
 
-  cbasis=[x*y for x in nbasisL for y in nbasisO]
-  powgen = Array{nf_elem, 1}(undef, degree(K))
-  powgen[1] = K(1)
-  for i = 2:degree(K)
-    powgen[i] = powgen[i-1]*gen(K)
+  #Now, I add the elements of the maximal order
+  if degree(base_ring(L)) > 1
+    O = maximal_order(S.base_ring)
+    for i = 1:degree(O)
+      el = mK(S(O.basis_nf[i]))
+      for j = 1:ind
+        B[(i-1)* ind + j] = B[j] * el 
+      end
+    end
   end
-  append!(cbasis, powgen)
   #Now, we compute the maximal order. Then we simplify.
-  O1 = MaximalOrder(_order(K, cbasis))
+  O1 = MaximalOrder(_order_for_polygon_overorder(K, B))
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  Ks, mKs = simplify(K)#, canonical = true)
-  
+  Ks, mKs = simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
-  M = zero_matrix(FlintZZ, degree(Ks), degree(Ks))
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
   arr_prim_img[1] = K(1)
-  prim_img=mKs(gen(Ks))
   for i = 2:degree(Ks)
-    arr_prim_img[i] = arr_prim_img[i-1]*prim_img
+    arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
   end
-  M1=inv(basis_mat(arr_prim_img))
+  M1 = inv(basis_mat(arr_prim_img))
   basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
   M = zero_matrix(FlintZZ, 1, degree(Ks))
   for i=1:length(basisO2)
     elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
     mul!(M, M, M1.num)
-    basisO2[i]=elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
+    basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
   O2 = Order(Ks, basisO2, false, false)
   O2.ismaximal = 1
-  _set_maximal_order_of_nf(Ks,O2)
+  _set_maximal_order_of_nf(Ks, O2)
 
   #Now, the automorphisms.
-  autos=Array{NfToNfMor, 1}(undef, length(L[2]))
+  autos=Array{NfToNfMor, 1}(undef, length(auts))
   el=mS(mK\(mKs(gen(Ks))))
-  for i=1:length(L[2])
-    x=mK(mS\(L[2][i](el)))
+  for i=1:length(auts)
+    x = mK(mS\(auts[i](el)))
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
     y=elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
-    @assert Ks.pol(y)==0
-    autos[i]=NfToNfMor(Ks,Ks,y)
+    autos[i] = NfToNfMor(Ks,Ks,y)
   end
   _set_automorphisms_nf(Ks, closure(autos, *))
   

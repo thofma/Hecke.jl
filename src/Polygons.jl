@@ -419,7 +419,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
     for i = 2:length(elt)
       for j = i:length(elt)
         el = elt[i]*elt[j]
-        if denominator(el)!=1
+        if denominator(el) != 1
           push!(prods, elt[i]*elt[j])
         end
       end

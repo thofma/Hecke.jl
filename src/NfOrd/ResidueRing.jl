@@ -1351,8 +1351,6 @@ function _roots_hensel(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f))
 end
 
 
-
-
 function _roots_hensel(a::nf_elem, m::Int, max_roots::Int = m)
   # f must be squarefree
   # I should check that
@@ -1599,7 +1597,7 @@ function _hensel_one_root(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::I
   pr = reverse(pr)
 
   #lets start:
-  for i=2:length(pr)
+  for i = 2:length(pr)
     pp = fmpz(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
     Qt, t = PolynomialRing(Q, "t", cached=false)
@@ -1616,11 +1614,13 @@ function _hensel_one_root(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::I
     
     M = zero_matrix(FlintZZ, n, n)
     for j=1:degree(pgg)
-      M[j,j] = pp
+      M[j, j] = pp
     end
-    pt = t^(degree(pgg)-1)
+    pt = Qt()
+    setcoeff!(pt, degree(pgg)-1, Q(1))
     for j=degree(pgg)+1:n
-      pt = (pt*t) % pgg
+      mul!(pt, pt, t) 
+      pt = pt % pgg
       M[j,j] = 1
       for l = 0:degree(pt)
         M[j, l+1] = -lift(coeff(pt, l))
@@ -1668,6 +1668,195 @@ function _hensel_one_root(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::I
       else
         res = zz
       end
+    end
+  end  
+  return false, K(0)
+end
+
+
+#As before, for polynomial x^m - a
+function _one_root_hensel(a::nf_elem, m::Int)
+  # f must be squarefree
+  # I should check that
+  K = parent(a)
+  n = degree(K)
+
+  # First we find a prime ideal such that f is squarefree modulo P 
+  # (The discriminant of f has only finitely many divisors).
+
+  p = m+1
+  deg_p = 1
+
+  while true
+    p = next_prime(p)
+
+    Rp = GF(p, cached=false)
+    Rpt, t = PolynomialRing(Rp, "t", cached = false)
+    gp = Rpt(K.pol)
+    if iszero(discriminant(gp))
+      continue
+    end
+
+    lp = factor(gp).fac
+    #set up the mod p data:
+    #need FiniteField as I need to factor (roots)
+    deg_p = degree(first(keys(lp)))
+    S = FqNmodFiniteField(first(keys(lp)), :z, false)
+    ST, T = PolynomialRing(S, "T", cached=false)
+    fp = ST()
+    setcoeff!(fp, m, S(1))
+    setcoeff!(fp, 0, - S(Rpt(a)))
+    if !issquarefree(fp)
+      continue
+    end
+    rmodp = gcd(fp, powmod(T, fmpz(p)^deg_p, fp) - T)
+    if degree(rmodp) != m
+      return false, K(0)
+    end
+    break
+  end
+
+  #println("prime $p ")
+
+  # compute the lifting exponent a la Friedrich-Fieker
+
+  (r1, r2) = signature(K) 
+
+  # for Kronnecker:
+  gsa = derivative(K.pol)(gen(K))
+  gsa_con = conjugates_arb(gsa, 32)
+  conj = __conjugates_arb(a, 32)
+  R = parent(conj[1])
+  a_con = [R(abs_upper_bound(abs(e), fmpz)) for e in conj]
+
+  R = ArbField(prec(parent(a_con[1])), false)
+
+  bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
+
+  log_bound_root = arb[ R(0) for i in 1:(r1 + r2) ]
+
+  for i in 1:r1+r2
+    bound_root[i] = root(abs(a_con[i]), m) * abs(gsa_con[i])
+  end
+
+  ss = _lifting_expo(p, deg_p, EquationOrder(K), bound_root)
+
+  fl, rts = _hensel_one_root(a, m, p, Int(ss))
+  return fl, rts
+end
+
+function _hensel_one_root(a::nf_elem, m::Int, p::Int, k::Int)
+  k = max(k, 2)
+  #@assert denominator(a) == 1                           
+  #well, actually, denominator(a, maximal_order)==1 would be sufficient, but 
+  #hard to test...
+  ZX, X = PolynomialRing(FlintZZ, "X", cached = false)
+  Rp = GF(p, cached = false)
+  Rpt, t = PolynomialRing(Rp, "t", cached = false)
+  K = parent(a)
+  gp = Rpt(K.pol)
+
+
+  #find the prime ideal - as I don't want to use orders, this is 
+  #fun (computing a max order just for this is wasteful)
+  #fun fact: if g = prod g_i mod p^k, then P_i^k = <p^k, g_i>
+  #so instead of powering, and simplify and such, lets write it down
+  lp = factor(gp).fac
+  if length(lp) > 1
+    g1 = lift(ZX, first(keys(lp)))
+    gg = hensel_lift(ZX(K.pol), g1, fmpz(p), k)
+  else
+    gg = ZX(K.pol)
+  end
+  
+  # now for all i<= k, <p^i, K(gg)+p^i> is a normal presentation for
+  #                                     the prime ideal power.
+  #later we'll get the HNF matrix for selected powers as well
+
+  #set up the mod p data:
+  #need FiniteField as I need to factor (roots)
+  S = FqNmodFiniteField(first(keys(lp)), :z, false)
+  ST, T = PolynomialRing(S, "T", cached=false)
+  fp = ST()
+  setcoeff!(fp, m, S(1))
+  setcoeff!(fp, 0, - S(Rpt(a)))
+  rt1 = roots(fp)
+  rt = inv(rt1[1])^(m-1)
+  
+  # this is in the finite field, but now I need it in the res. ring.
+  # in ZX for ease of transport.
+  RT = lift(ZX, lift(Rpt, rt)) 
+  #the den: ala Kronnecker:
+  den = ZX(derivative(K.pol)(gen(K)))
+  iden = inv(derivative(K.pol)(gen(K)))
+
+  #for the result, to check for stabilising
+  res = K(0)
+  zz = K(0)
+  #we'll be working in (Z/p^k)[t]/gg
+
+  #an "optimal" lifting chain:
+  pr = [k]
+  while k>1
+    k = div(k+1, 2)
+    push!(pr, k)
+  end
+  pr = reverse(pr)
+
+  #lets start:
+  for i = 2:length(pr)
+    pp = fmpz(p)^pr[i]
+    Q = ResidueRing(FlintZZ, pp, cached=false)
+    Qt, t = PolynomialRing(Q, "t", cached = false)
+
+    #possibly this should be done with max precision and then adjusted down
+    #the poly mod P^??
+
+    pgg = Qt(gg) #we'll do the reductions by hand - possibly not optimal
+
+    #the lattice for reco:
+    n = degree(K)
+    M = zero_matrix(FlintZZ, n, n)
+    for j=1:degree(pgg)
+      M[j,j] = pp
+    end
+    pt = Qt()
+    setcoeff!(pt, degree(pgg)-1, Q(1))
+    for j=degree(pgg)+1:n
+      pt = (pt*t) % pgg
+      M[j,j] = 1
+      for k=0:degree(pt)
+        M[j, k+1] = -lift(coeff(pt, k))
+      end
+    end
+    #this is (or should be) the HNF basis for P^??
+    M = lll(M)
+    Mi, d = pseudo_inv(M)
+
+    ap = Qt(ZX(a))
+    bp = powmod(ap, m-1, pgg)
+    minv = invmod(fmpz(m), pp)
+
+    RTjp = Qt(RT)
+    RT = lift(ZX, (RTjp*(1+minv) - bp*minv* powmod(RTjp, m+1, pgg)) % pgg)
+
+    #before the reconstruction, we need to scale by den and by a
+    cf = lift(ZX, (Qt(RT*den) % pgg)*ap % pgg)
+    ve = matrix(FlintZZ, 1, n, [coeff(cf, k) for k = 0:n-1])
+    _ve = ve*Mi
+    mu = matrix(FlintZZ, 1, n, [ round(_ve[1, k]//d) for k = 1:n])
+    ve = ve - mu*M
+    z = ZX()
+    for kk=1:n
+      setcoeff!(z, kk-1, ve[1, kk])
+    end
+    mul!(res, K(z), iden)
+    if res == zz || i == length(pr)
+      if res^m == a
+        return true, res
+      end
+    else
+      zz = res
     end
   end  
   return false, K(0)
