@@ -523,7 +523,7 @@ mutable struct FacElemMon{S} <: Ring
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
-  function FacElemMon{S}(R::S, cached::Bool = false) where {S}
+  function FacElemMon{S}(R::S, cached::Bool = !false) where {S}
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{S}
     else
