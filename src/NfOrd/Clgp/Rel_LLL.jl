@@ -122,7 +122,7 @@ end
 function norm(a::fmpz_mat, NC::NormCtx_gen, div::fmpz = fmpz(1))
   O = NC.O
   k = nf(O)
-  no = norm_div(k(O(a)), div, NC.nb)
+  no = numerator(norm_div(k(O(fmpz[a[1, i] for i = 1:degree(k)])), div, NC.nb))
   if nbits(no) > NC.nb-10
     return Nothing
   else

@@ -72,10 +72,11 @@ function class_group_init(FB::NfFactorBase, T::DataType = SMat{fmpz}; add_rels::
       class_group_add_auto(clg, au[i])
       i += 1
     end
+    clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, 
+                                                     length(au) == degree(O))
+  else
+    clg.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, false)
   end
-
-  c.normCtx = NormCtx(O, div(nbits(discriminant(O)), 2) + 20, 
-                                                   length(au) == degree(O))
 
   return clg
 end
