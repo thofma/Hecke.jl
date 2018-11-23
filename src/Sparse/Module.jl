@@ -189,11 +189,11 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   end
   if isdefined(M, :trafo)
     st = M.done_up_to + 1
-    @show "EXTEND"
-    @show "before", det(M.basis)
+    #@show "EXTEND"
+    #@show "before", det(M.basis)
     _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:rows(M.rel_gens), 1:cols(M.rel_gens)), Val{true}, offset = st-1, truncate = true)
     append!(M.trafo, t)
-    @show "after", det(M.basis)
+    #@show "after", det(M.basis)
   else
     z = vcat(M.bas_gens, M.rel_gens)
     h, t = hnf_kannan_bachem(z, Val{true}, truncate = true)

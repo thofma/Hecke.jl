@@ -435,79 +435,8 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
       incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], gK[i])
     end
   else
-    #Difficult case. I compute the norm group of every polynomial...
+    #Difficult case. Think about it...
     error("Not yet implemented")
-    #=
-    Kt, t = PolynomialRing(C.Ka, "t")
-    expst = Array{Int, 1}(undef, length(Cp))
-    elst = Array{FacElem{nf_elem}, 1}(undef, length(Cp)) 
-    lpols = Array{PolyElem, 1}(undef, length(Cp))
-    for i = 1:length(Cp)
-      expst[i] = Cp[i].o
-      if degree(Cp[i]) == d
-        elst[i] = Cp[i].a
-      else
-        elst[i] = FacElem(Dict(abs_emb[i](ke) => v for (ke,v) = Cp[i].a.fac))
-      end
-      lpols[i] = t^expst[i] - evaluate(elst[i]) 
-    end
-    disc = prod(discriminant(x) for x in lpols)
-    r, mr = ray_class_group(ideal(O, O(disc)), n_quo = d)
-    subs = Array{GrpAbFinGen, 1}(undef, length(lpols))
-    s, ms = norm_group(lpols[i], mr, false)[1]
-    q, mq = quo(r, s)
-    if 
-    exps = Int[]
-    gens = FacElem{nf_elem, AnticNumberField}[]
-    roots_to_be_taken = falses(length(Cp))
-    s = subs[1]
-    q, mq = quo(r, subs[1])
-    o = order(q)
-    if o != 1
-      push!(exps, o)
-      push!(gens, ispower(elst[1], Int(divexact(expst[1], o)))[2])
-    else
-      roots_to_be_taken[1] = true
-    end
-    for i = 2:length(Cp)
-      s = intersect(s, subs[i])
-      q, mq = quo(r, s)
-      o1 = order(q)
-      if o1 == o
-        roots_to_be_taken[i] = true
-      else
-        e = divexact(o1, o)
-        push!(exps, e)
-        fl, elr = ispower(elst[1], Int(divexact(expst[1], e)))
-        @assert fl
-        push!(gens, elr)
-      end 
-      o = o1
-    end
-    KK = kummer_extension(exps, gens)
-    K, gK = number_field(KK)
-    K1t, t1 = PolynomialRing(K, "t1", cached = false)
-    j = 0
-    for i=1:length(Cp)
-      if roots_to_be_taken[i]
-        j += 1
-        elt = FacElem(Dict(K(ke) => v for (ke, v) in elst[i].fac))
-        f = t1^expst[i] - evaluate(elt)
-        fac = factor(f).fac
-        rt = K(0)
-        for ke in keys(fac)
-          if degree(ke) == 1
-            rt = coeff(ke, 0)
-            break
-          end
-        end
-        @assert !iszero(rt)
-        incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], rt)
-      else
-        incs[i] = NfRelToNfRel_nsMor(Cp[i].K, K, abs_emb[i], gK[i-j])
-      end
-    end
-    =#
   end
   
   # I want extend the automorphisms to KK
@@ -523,8 +452,6 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
   frob_gens = find_gens(KK, act_on_gens, m)
   
   autos_extended = Array{NfRel_nsToNfRel_nsMor, 1}(undef, length(autos))
-  #LK, mLK = absolute_field(K)
-  #a21 = mLK(gen(LK))
   #I will compute a possible image cyclic component by cyclic component
   for w = 1:length(autos)
     images_KK = Array{Tuple{GrpAbFinGenElem, FacElem{nf_elem, AnticNumberField}}, 1}(undef, length(Cp))
@@ -542,8 +469,6 @@ function extend_aut_pp(A::ClassField, autos::Array{T, 1}, p::fmpz) where T <: Ma
       images_K[i] = s
     end
     autos_extended[w] = NfRel_nsToNfRel_nsMor(K, K, Autos_abs[w], images_K)
-    #elLK1 = autos_extended[w](a21)
-    #@assert LK.pol(elLK1) == 0
   end
   res = restriction(K, Cp, autos_extended, incs)
   return res
@@ -644,7 +569,7 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   #Now, I need the element of the base field
   prod_gens = prod(KK.gen[i]^(-el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
   #TODO: Compute the support before calling ispower
-  mul!(prod_gens, prod_gens, tau_a)
+  prod_gens *= tau_a
   fl2, rt = ispower(prod_gens, k)
   @assert fl2
   return el, rt

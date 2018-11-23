@@ -78,8 +78,8 @@ end
 > for all prime power cyclic subfields.
 > Note, by type this is always a non-simple extension.
 """
-function NumberField(CF::ClassField)
-  if isdefined(CF, :A)
+function NumberField(CF::ClassField; redo::Bool = false)
+  if isdefined(CF, :A) && !redo
     return CF.A
   end
   
@@ -131,20 +131,13 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
   sR = GrpAbFinGenElem[]
   lp = elem_type(domain(mR))[]
 
-  np = 0
-  extra = 1
-
   q, mq = quo(R, sR, false)
+  s, ms = snf(q)
   for p in S
     if cp % p == 0 || index(ZK) % p == 0
       continue
     end
     @vprint :ClassField 2 "doin` $p\n"
-    np += 1
-
-    #if np % ngens(R) == 0
-    #  @vprint :ClassField 3 "need many generators... $np for group with $(ngens(R))\n"
-    #end
     lP = prime_decomposition(ZK, p)
 
     f=R[1]
@@ -160,9 +153,23 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
       if iszero(mq(f))
         continue
       end
+      #At least one of the coefficient of the element 
+      #must be invertible in the snf form.
+      el = ms\f
+      to_be = false
+      for w = 1:ngens(s)
+        if gcd(s.snf[w], el.coeff[w]) == 1
+          to_be = true
+          break
+        end
+      end
+      if !to_be
+        continue
+      end
       push!(sR, f)
       push!(lp, P)
       q, mq = quo(R, sR, false)
+      s, ms = snf(q)
     end
     if order(q) == 1   
       break
@@ -261,8 +268,8 @@ function _s_unit_for_kummer(mc::Map, ZK::NfOrd, e::Int, f::fmpz)
   if f != 1
     lf = factor(f)  
     for p = keys(lf.fac)
-       #I have to remove the primes that can't be in the conductor
-       lp = prime_decomposition(ZK, p)  #TODO: make it work for fmpz
+       #I remove the primes that can't be in the conductor
+       lp = prime_decomposition(ZK, p)
        for (P, s) in lp
          if gcd(norm(P), e) != 1 || gcd(norm(P)-1, e) != 1
            push!(lP, P)
@@ -310,7 +317,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
     return CF.K
   end
   f = defining_modulus(CF)[1]::NfOrdIdl
-  @vprint :ClassField 2 "Kummer extension ... with conductor(?) $f\n"
+  @vprint :ClassField 2 "Kummer extension ... with modulus $f\n"
   k1 = nf(order(f))
   e = degree(CF)::Int 
   @assert Hecke.isprime_power(e)
@@ -482,7 +489,8 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
   for i = 1:ngens(g)
     si = Hecke.NfRelToNfRelMor{nf_elem, nf_elem}(Kr, Kr, gen(Kr)^Int(lift(mg(g[i]))))
     @vprint :ClassField 2 "... extending zeta -> zeta^$(mg(g[i]))\n"
-    sigma = _extend_auto(A, NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K))))))
+    to_be_ext = NfToNfMor(K, K, C.mp[1](si(preimage(C.mp[1], gen(K)))))
+    sigma = _extend_auto(A, to_be_ext)
     AutA_gen[i+1] = sigma
 
     @vprint :ClassField 2 "... finding relation ...\n"
@@ -532,6 +540,7 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   a = -coeff(K.pol, 0)
   a = h(a)//a^r
   fl, b = ispower(a, degree(K), with_roots_unity = true)
+  @assert b^degree(K) == a
   @assert fl
   return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
 end
@@ -661,7 +670,7 @@ function _rcf_descent(CF::ClassField_pp)
   @assert length(os) > 0
   t = os[1]
   for i = 2:length(os)
-    add!(t, t, os[i])
+    t += os[i]
   end
   CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
@@ -674,11 +683,11 @@ function _rcf_descent(CF::ClassField_pp)
     while !issquarefree(f)
       @vprint :ClassField 2 "trying relative trace of squares\n"
       for i = 1:length(os)
-        mul!(os1[i], os1[i], os[i])
+        os1[i] *= os[i]
       end
       t = os1[1]
       for i = 2:length(os)
-        add!(t, t, os1[i])
+        t += os1[i]
       end
       CF.pe = t
       #now the minpoly of t - via Galois as this is easiest to implement...

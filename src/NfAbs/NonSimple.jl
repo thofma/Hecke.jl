@@ -681,7 +681,18 @@ end
 function simple_extension(K::NfAbsNS; check = true)
   n = ngens(K)
   g = gens(K)
-
+  if n == 1
+    #The extension is already simple
+    Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
+    coef = Array{fmpq, 1}(undef, degree(K)+1)
+    for i = 1:length(coef)
+      coef[i] = __get_term(K.pol[1], UInt[i])
+    end
+    Ka, a = NumberField(Qx(coef), "a", cached = false, check = check)
+    #now, the map
+    mp = NfAbsToNfAbsNS(Ka, K, g[1], a)
+    return Ka, mp
+  end
   pe = g[1]
   i = 1
   ind = Int[1]
@@ -704,9 +715,9 @@ function simple_extension(K::NfAbsNS; check = true)
   z = one(K)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
-  z *= pe
+  mul!(z, z, pe)
   for i=3:degree(K)
-    z *= pe
+    mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end
   N = zero_matrix(k, 1, degree(K))

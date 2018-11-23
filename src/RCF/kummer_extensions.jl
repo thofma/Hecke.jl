@@ -84,10 +84,16 @@ end
 ###############################################################################
 
 function number_field(K::KummerExt)
-
   k = base_field(K)
   kt, t = PolynomialRing(k, "t", cached = false)
-  return number_field([t^(Int(order(K.AutG[i])))- evaluate(K.gen[i]) for i=1:length(K.gen)], check = false, cached = false)
+  pols = Array{typeof(t), 1}(undef, length(K.gen))
+  for i = 1:length(pols)
+    p = kt()
+    setcoeff!(p, Int(order(K.AutG[i])), k(1))
+    setcoeff!(p, 0, -evaluate(K.gen[i]))
+    pols[i] = p
+  end
+  return number_field(pols, check = false, cached = false)
 end
 
 ###############################################################################
