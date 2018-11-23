@@ -145,7 +145,6 @@ end
 > Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det_mc(A::SMat{fmpz})
-  println(stacktrace())
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
     z = [ A[i, i] for i in 1:A.r]
@@ -260,7 +259,6 @@ function solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false)
   invert_rows!(Bp)
   Bp = Bp'
   Ep, Tp = echelon_with_trafo(Bp)
-  @show density(Ep), density(Tp)
   @hassert :HNF 1  Ep.c == Ep.r
 #  @hassert :HNF 1  nmod_mat(Tp) * nmod_mat(Bp) == nmod_mat(Ep)
 
