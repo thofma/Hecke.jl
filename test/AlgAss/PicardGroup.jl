@@ -1,11 +1,9 @@
 function test_disc_log_picard(P, mP, O::Hecke.AlgAssAbsOrd)
-  # principal ideals should always be invertible
   for i = 1:5
-    a = rand(O, 10)
-    while iszero(a)
-      a = rand(O, 10)
+    I = ideal(O, rand(O, 10))
+    while !isinvertible(I)[1]
+      I = ideal(O, rand(O, 10))
     end
-    I = ideal(O, a)
     if !iszero(mP\I)
       return false
     end
