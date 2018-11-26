@@ -854,7 +854,7 @@ function root(a::NfOrdElem, n::Int)
   fl, rt = ispower(a.elem_in_nf, n)
   if fl
     O = parent(a)
-    if denominator(a, O) == 1
+    if denominator(rt, O) == 1
       return O(rt)
     end  
   end
