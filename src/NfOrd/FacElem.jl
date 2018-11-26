@@ -56,54 +56,48 @@ function istorsion_unit(x::FacElem{T}, checkisunit::Bool = false, p::Int = 16) w
     _isunit(x) ? nothing : return false
   end
 
-  p = max(nbits(maxabs_exp(x))+nbits(length(x.fac)), p)
-
   K = base_ring(x)
   d = degree(K)
   r, s = signature(K)
 
-  while true
+  @vprint :UnitGroup 2 "Precision is now $(p) \n"
+  l = 0
+  @vprint :UnitGroup 2 "Computing conjugates ... \n"
+  @v_do :UnitGroup 2 pushindent()
+  A = ArbField(p, false)
+  B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
+  p = Int(upper_bound(-log(B)/log(A(2)), fmpz)) + 2
 
-    if nbits(p) > 15
-      error("Precision is too high")
+  cx = conjugates_arb_log(x, p) #this guarantees the result with an abs. error 
+                                # of 2^-p
+  @v_do :UnitGroup 2 popindent()
+  @vprint :UnitGroup 2 "Conjugates log are $cx\n"
+  for i in 1:r
+    k = abs(cx[i])
+    if ispositive(k)
+      return false, p
+    elseif isnonnegative(B - k)
+      l = l + 1
+    else
+      println("fail 1")
     end
-
-    @vprint :UnitGroup 2 "Precision is now $(p) \n"
-    l = 0
-    @vprint :UnitGroup 2 "Computing conjugates ... \n"
-    @v_do :UnitGroup 2 pushindent()
-    cx = conjugates_arb_log(x, p)
-    @v_do :UnitGroup 2 popindent()
-    @vprint :UnitGroup 2 "Conjugates log are $cx\n"
-    A = ArbField(p, false)
-    B = log(A(1) + A(1)//A(6) * log(A(d))//A(d^2))
-    for i in 1:r
-      k = abs(cx[i])
-      if ispositive(k)
-        return false, p
-      elseif isnonnegative(B - k)
-        l = l + 1
-      else
-        println("fail 1")
-      end
-    end
-    for i in 1:s
-      k = cx[r + i]//2
-      if ispositive(k)
-        return false, p
-      elseif isnonnegative(B - k)
-        l = l + 1
-      else
-        println("fail 2")
-      end
-    end
-
-    if l == r + s
-      return true, p
-    end
-
-    p = 2*p
   end
+  for i in 1:s
+    k = cx[r + i]//2
+    if ispositive(k)
+      return false, p
+    elseif isnonnegative(B - k)
+      l = l + 1
+    else
+      println("fail 2")
+    end
+  end
+
+  if l == r + s
+    return true, p
+  end
+  error("precision was not sufficient")
+
 end
 
 function factored_norm(x::FacElem{nf_elem})
@@ -144,6 +138,7 @@ _base_ring(x::FacElem{nf_elem}) = base_ring(x)::AnticNumberField
 *(x::NfOrdElem, y::FacElem{nf_elem}) = y*x
 
 function _conjugates_arb_log(A::FacElemMon{AnticNumberField}, a::nf_elem, abs_tol::Int)
+  abs_tol = 1<<nbits(abs_tol)
   if haskey(A.conj_log_cache, abs_tol)
     if haskey(A.conj_log_cache[abs_tol], a)
       return A.conj_log_cache[abs_tol][a]::Array{arb, 1}
@@ -193,11 +188,13 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
 
   target_tol = abs_tol
 
+  pr = abs_tol + nbits(maximum(abs, values(x.fac))) + nbits(length(x.fac))
+
   while true
     prec_too_low = false
     first = true
     for (a, e) in x.fac
-      z = _conjugates_arb_log(parent(x), a, abs_tol)
+      z = _conjugates_arb_log(parent(x), a, pr)
       if first
         for j in 1:d
           res[j] = parent(z[j])()::arb
@@ -224,7 +221,8 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
       end
     end
     if prec_too_low
-      abs_tol = 2 * abs_tol
+      @show "\n\n SHIT \n\n"
+      pr *= 2
       continue
     end
 

@@ -790,22 +790,23 @@ end
 function simple_extension(K::NfRel_ns)
   n = ngens(K)
   g = gens(K)
-
+  if n == 1
+    fl, p = is_univariate(K.pol[1])
+    Ks, gKs = number_field(p, cached = false, check = false)
+    return Ks, NfRelToNfRel_nsMor(Ks, K, g[1], [gKs])
+  end
   pe = g[1]
   i = 1
   f = minpoly(pe)
   #todo: use resultants rather than minpoly??
   while i < n
     i += 1
-    j = 1
-    f = minpoly(pe+j*g[i])
+    pe += g[i]
+    f = minpoly(pe)
     while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
-      j += 1
-      f = minpoly(pe+j*g[i])
+      pe += g[i]
+      f = minpoly(pe)
     end
-    pe += j*g[i]
-    # To work around julia bug
-    pe.parent
   end
   Ka, a = number_field(f, check = false)
   k = base_ring(K)
@@ -813,7 +814,7 @@ function simple_extension(K::NfRel_ns)
   z = one(K)
   elem_to_mat_row!(M, 1, z)
   elem_to_mat_row!(M, 2, pe)
-  z *= pe
+  mul!(z, z, pe)
   for i=3:degree(K)
     mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)

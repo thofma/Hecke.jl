@@ -409,6 +409,86 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
 end
 
 @doc Markdown.doc"""
+    hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, offset::Int = 0) -> SMat{fmpz}
+
+Given a matrix $A$ in HNF, extend this to get the HNF of the concatination
+with $b$.
+"""
+function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where N
+  @vprint :HNF 1 "Extending HNF by:\n"
+  @vprint :HNF 1 b
+  @vprint :HNF 1 "density $(density(A)) $(density(b))"
+
+  with_trafo = (trafo == Val{true})
+  with_trafo ? trafos = SparseTrafoElem{fmpz, fmpz_mat}[] : nothing
+
+  A_start_rows = rows(A)  # for the offset stuff
+
+  nc = 0
+  for i=b
+    if with_trafo 
+      q, w, new_trafos = reduce_full(A, i, trafo)
+      append!(trafos, new_trafos)
+    else
+      q, w = reduce_full(A, i)
+    end
+
+    if length(q) > 0
+      p = find_row_starting_with(A, q.pos[1])
+      if p > length(A.rows)
+        # Appending row q to A
+        # Do not need to track a transformation
+        push!(A, q)
+      else
+        # Inserting row q at position p
+        insert!(A.rows, p, q)
+        A.r += 1
+        A.nnz += length(q)
+        A.c = max(A.c, q.pos[end])
+        # The transformation is swapping pairwise from rows(B) to p.
+        # This should be the permutation matrix corresponding to
+        # (k k-1)(k-1 k-2) ...(p+1 p) where k = rows(B)
+        if with_trafo
+          for j in rows(A):-1:(p+1)
+            push!(trafos, sparse_trafo_swap(fmpz, j, j - 1))
+          end
+        end
+      end
+      push!(w, q.pos[1])
+    else
+      # Row i was reduced to zero
+      with_trafo ? push!(trafos, sparse_trafo_delete_zero(fmpz, rows(A) + 1)) : nothing
+    end
+    if length(w) > 0
+      if with_trafo
+        new_trafos = reduce_up(A, w, trafo)
+        append!(trafos, new_trafos)
+      else
+        reduce_up(A, w)
+      end
+    end
+    @v_do :HNF 1 begin
+      if nc % 10 == 0
+        println("Now at $nc rows of $(rows(b)), HNF so far $(rows(A)) rows")
+        println("Current density: $(density(A))")
+        println("and size of largest entry: $(nbits(maximum(abs, A))) bits")
+      end
+    end
+    nc += 1
+  end
+  if !truncate
+    for i in 1:rows(b)
+      push!(A, sparse_row(base_ring(A)))
+    end
+  end
+  if with_trafo && offset != 0
+    change_indices!(trafos, A_start_rows, offset)
+  end
+  with_trafo ? (return A, trafos) : (return A)
+end
+
+
+@doc Markdown.doc"""
     hnf_kannan_bachem(A::SMat{fmpz}) -> SMat{fmpz}
 
 Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.

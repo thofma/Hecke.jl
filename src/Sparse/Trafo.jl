@@ -72,6 +72,37 @@ function sparse_trafo_delete_zero(::Type{T}, i::Int) where {T}
   return z
 end
 
+function change_indices!(T::Array{SparseTrafoElem{S, SS}, 1}, st::Int, off::Int) where {S, SS}
+  for t in T
+    if t.type == 7
+        continue
+    end
+    if t.i > st
+      t.i += off
+    end
+    if t.type == 1 || t.type == 5 || t.type == 6
+      continue
+    end
+    if t.j > st
+      t.j += off
+    end
+  end
+end
+
+function max_index(T::Array{SparseTrafoElem{S, SS}, 1}) where {S, SS}
+  i = 0
+  for t in T
+    if t.type == 7
+        continue
+    end
+    i = max(i, t.i)
+    if t.type == 1 || t.type == 5 || t.type == 6
+      continue
+    end
+    i = max(i, t.j)
+  end
+  return i
+end
 
 ################################################################################
 #

@@ -523,7 +523,7 @@ mutable struct FacElemMon{S} <: Ring
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
-  function FacElemMon{S}(R::S, cached::Bool = false) where {S}
+  function FacElemMon{S}(R::S, cached::Bool = !false) where {S}
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{S}
     else
@@ -1431,6 +1431,7 @@ mutable struct ModuleCtx_fmpz
   essential_elementary_divisors::Array{fmpz, 1}
   new::Bool
   trafo::Any            # transformations bla
+  done_up_to::Int
 
   function ModuleCtx_fmpz(dim::Int, p::Int = next_prime(2^20))
     M = new()
@@ -1468,6 +1469,8 @@ mutable struct RandIdlCtx
 end
 
 const nf_elem_or_fac_elem = Union{nf_elem, FacElem{nf_elem, AnticNumberField}}
+
+abstract type NormCtx end
 
 mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or SMat{}
   FB::NfFactorBase
@@ -1519,6 +1522,9 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
   cl_map::Map
   finished::Bool
 
+  normCtx::NormCtx
+  sat_done::Int
+
   function ClassGrpCtx{T}() where {T}
     r = new{T}()
     r.R_gen = Array{nf_elem_or_fac_elem, 1}()
@@ -1533,6 +1539,7 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either fmpz_mat or S
     r.B2 = 0
     r.H_trafo = []
     r.finished = false
+    r.sat_done = 0
     return r
   end
 end

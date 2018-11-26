@@ -3,8 +3,8 @@ function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   #@hassert :HNF 1  cols(A) == rows(A)
   @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
-  # the tansformation
-  # supposed to be a field...
+  # the transformation
+  # supposed to be over a field...
 
   sol = typeof(g)()
 
@@ -58,8 +58,16 @@ end
 function rational_reconstruction(A::SRow{fmpz}, M::fmpz)
   B = SRow{fmpz}()
   de = fmpz(1)
+  M2 = div(M, 2)
+  nbM = div(nbits(M), 2)
+  fl, d,n = true, fmpz(1), fmpz(1)
   for (p,v) = A
-    fl, n, d = rational_reconstruction(v, M)
+    vv = mod_sym(d*v, M)
+    if nbits(vv) < nbM
+      fl, n = true, vv
+    else
+      fl, n, d = rational_reconstruction(v, M)
+    end
     if !fl
       return false, B, de
     end
@@ -137,11 +145,15 @@ end
 > Uses the dense (nmod_mat) determinant on $A$ for various primes $p$.
 """
 function det_mc(A::SMat{fmpz})
+
   @hassert :HNF 1  A.r == A.c
   if isupper_triangular(A)
     z = [ A[i, i] for i in 1:A.r]
     return prod(z)
   end
+
+  b = sparse_matrix(matrix(FlintZZ, 1, A.c, rand(1:10, A.c)))
+  _, qq = solve_dixon_sf(A, b)
   
   q = p
   first = true
@@ -150,7 +162,7 @@ function det_mc(A::SMat{fmpz})
   last = fmpz(0)
   while true
     R = ResidueRing(FlintZZ, q, cached = false)
-    d = det(nmod_mat(change_ring(A, R)))
+    d = det(matrix(change_ring(A, R)))*inv(R(qq))
     if first
       dd = fmpz(d)
       mm = fmpz(q)
@@ -161,7 +173,7 @@ function det_mc(A::SMat{fmpz})
     end
     q = next_prime(q)
     if dd == last
-      return dd
+      return dd*qq
     else
       last = dd
     end
@@ -215,7 +227,7 @@ end
     solve_dixon_sf(A::SMat{fmpz}, b::SRow{fmpz}, is_int::Bool = false) -> SRow{fmpz}, fmpz
     solve_dixon_sf(A::SMat{fmpz}, B::SMat{fmpz}, is_int::Bool = false) -> SMat{fmpz}, fmpz
 
-> For an upper-triangular sparse matrix $A$ and a sparse matrix (row), find
+> For an sparse square matrix $A$ or full rank and a sparse matrix (row), find
 > a sparse matrix (row) $x$ and an integer $d$ s.th.
 > $$x A = bd$$
 > holds.

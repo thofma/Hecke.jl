@@ -1823,7 +1823,8 @@ function _hensel_one_root(a::nf_elem, m::Int, p::Int, k::Int)
     pt = Qt()
     setcoeff!(pt, degree(pgg)-1, Q(1))
     for j=degree(pgg)+1:n
-      pt = (pt*t) % pgg
+      mul!(pt, pt, t)
+      pt = pt % pgg
       M[j,j] = 1
       for k=0:degree(pt)
         M[j, k+1] = -lift(coeff(pt, k))

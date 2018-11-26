@@ -1890,6 +1890,131 @@ function _factor_squarefree(x::fmpq_poly)
 
 end
 
+function charpoly_mod(M::Generic.Mat{nf_elem}; integral::Bool = false, normal::Bool = false, proof::Bool = true)
+  K = base_ring(M)
+  p = p_start
+  Kt, t = PolynomialRing(K, cached = false)
+  f = Kt()
+  f_last = f
+  d = fmpz(1)
+  stable = 5
+  max_stable = 5
+  while true
+    p = next_prime(p)
+    me = modular_init(K, p)
+    if normal && length(me.fld) < degree(K)
+      continue
+    end
+    t = Hecke.modular_proj(M, me)
+    if !isdefined(me, :fldx)
+      me.fldx = [PolynomialRing(x, "_x", cached=false)[1] for x = me.fld]
+      me.Kx = Kt
+    end
+
+    fp = map(i-> charpoly(me.fldx[i], t[i]), 1:length(t))
+    gp= Hecke.modular_lift(fp, me)
+    if iszero(f)
+      f = gp
+    else
+      f, d = induce_crt(f, d, gp, fmpz(p), true)
+      if integral
+        fl = true
+        gg = f
+      else
+        fl, gg = induce_rational_reconstruction(f, d)
+      end
+
+      if fl && gg == f_last
+        stable -= 1
+        if stable <= 0
+          break
+        end
+      else
+        stable = max_stable
+      end
+      f_last = gg
+    end
+  end
+  if !proof
+    return f_last
+  end
+  error("Proof not implemented")
+end
+#=
+function cyclic_generators(A::MatElem{T}) where {T <: FieldElem}
+  b = matrix(base_ring(A), 0, rows(A), [])
+  g = matrix(base_ring(A), 0, rows(A), [])
+  while rows(b) < rows(A)
+    if rows(g) == 0
+      g = zero_matrix(base_ring(A), 1, rows(A))
+      g[1,1] = 1
+    else
+      i = findfirst(j-> b[j,j] == 0, 1:rows(b))
+      if i == nothing
+        i = rows(b)+1
+      end
+      g = vcat(g, zero_matrix(base_ring(A), 1, rows(A)))
+      g[rows(g), i] = 1
+    end
+    b = extend_cyclic_subspace(A::MatElem{T}, b::MatElem{T}, g)
+    if rows(b) == rows(A)
+      return g
+    end
+  end
+end
+
+function extend_cyclic_subspace(A::MatElem{T}, b::MatElem{T}, g) where {T <: FieldElem}
+  while true
+    g = vcat(g, g*A)
+    cleanvect(b, g) #currently does only single rows...
+    i = findfirst(i->iszero_row(g, i), 1:rows(g))
+    if i != nothing
+      b = vcat(b, view(g, 1:i-1, 1:cols(g)))
+      rk, b = rref!(b)
+      @assert rk == rows(b)
+      return b
+    end
+    A *= A
+  end
+end
+function cyclic_subspace(A::MatElem{T}, b::MatElem{T}) where {T <: FieldElem}
+  b = deepcopy!(b)
+  rk, b = rref!(b)
+  bv = view(b, 1:rk, 1:cols(b))
+  if rk == 0 || rk == cols(b)
+    return bv
+  end
+  while true
+    b2 = bv*A
+    b = vcat(bv, b2)
+    rk_new, b = rref!(b)
+    if rk_new == rk 
+      return bv
+    end
+    rk= rk_new
+    bv = view(b, 1:rk, 1:cols(b))
+    if rk == cols(b)
+      return bv
+    end
+    A *= A
+  end
+end
+=#
+#=
+  plan for proof:
+    if f is irreducible (or at least square-free), then there are
+      (many) primes p s.th. f is square-free mod p
+    then that means there are vectors b s.th. the 
+    space <M^i b | i> = everyhting, at least mod p, so in general.
+    Now f(M)b = 0 implies f(M) = 0.
+
+    if f is known to be integral, then one can use arb to compute the
+      complex version and use this to derive bounds...
+
+    There are also bounds on the coefficients which are sometimes tight  
+=#
+
+
 #=
 function roots(f::fmpz_poly)
   g = gcd(f, derivative(f))

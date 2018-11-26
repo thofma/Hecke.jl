@@ -246,9 +246,20 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       idx = _validate_class_unit_group(c, U) 
       @assert idx == _validate_class_unit_group(c, U)
       stable = 3.5
+      if c.sat_done == 0
+        @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
+        if saturate!(c, U, 2, stable)
+          @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
+        end
+        idx = _validate_class_unit_group(c, U) 
+        c.sat_done = 2
+      end
       while idx < 20 && idx > 1
         @vprint :ClassGroup 1 "Finishing by saturating up to $idx\n"
-        @assert any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
+        fl = any(p->saturate!(c, U, p, stable), PrimesSet(1, 2*Int(idx)))
+        @assert fl  # so I can switch assertions off...
+        c.sat_done = 2*Int(idx)
+
         @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         n_idx = _validate_class_unit_group(c, U) 
         @vprint :ClassGroup 1 "index estimate down to $n_idx from $idx\n"

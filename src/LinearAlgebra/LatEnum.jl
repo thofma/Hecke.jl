@@ -247,6 +247,8 @@ function enum_ctx_advance_level(E::enum_ctx{A,B,C}, i::Int) where {A,B,C}
 end
 
 _next = 0.0
+Rational{BigInt}(a::fmpz) = BigInt(a)//1
+
 function enum_ctx_next(E::enum_ctx{A,B,C}) where {A,B,C}
   global _next
   @v_do :ClassGroup_time 2 rt = time_ns()

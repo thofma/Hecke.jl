@@ -1474,9 +1474,13 @@ end
 > Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 """
 function is_univariate(f::Generic.MPoly{nf_elem})
-  kx, x = PolynomialRing(base_ring(f))
+  kx, x = PolynomialRing(base_ring(f), "x")
   if ngens(parent(f)) == 1
-    return true, sum(f.coeffs[i]*x^f.exps[1, i] for i=1:f.length)
+    f1 = kx()
+    for i = 1:f.length
+      setcoeff!(f1, Int(f.exps[1, i]), f.coeffs[i])
+    end
+    return true, f1
   end
   if f.length == 0
     @assert iszero(f)
@@ -1494,7 +1498,11 @@ function is_univariate(f::Generic.MPoly{nf_elem})
   if i != j
     return false, x
   end
-  return true, sum(f.coeffs[j]*x^f.exps[i, j] for j=1:f.length)
+  f1 = kx()
+  for j = 1:f.length
+    setcoeff!(f1, Int(f.exps[i, j]), f.coeffs[j])
+  end
+  return true, f1
 end
 #TODO: should be done in Nemo/AbstractAlgebra s.w.
 #      needed by ^ (the generic power in Base using square and multiply)

@@ -65,6 +65,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
   @hassert :CompactPresentation 2 length(de) == 0 || ideal(ZK, a*be) == FacElem(de)
 
   while k>=1
+    @vprint :CompactPresentation 1 "k now: $k\n"
     D = Dict((p, div(fmpz(v), n^k)) for (p, v) = de if v >= n^k)
     if length(D) == 0
       A = FacElem(Dict(ideal(ZK, 1) => 1))

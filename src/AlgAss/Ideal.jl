@@ -1,3 +1,5 @@
+export isinvertible
+
 @inline order(I::AlgAssAbsOrdIdl) = I.order
 
 iszero(I::AlgAssAbsOrdIdl) = (I.iszero == 1)
@@ -512,6 +514,12 @@ end
 
 function isinvertible(a::AlgAssAbsOrdIdl)
   if iszero(a)
+    return false, a
+  end
+
+  bmata = basis_mat(a, Val{false})
+
+  if any(iszero(bmata[i, i]) for i in 1:degree(order(a)))
     return false, a
   end
 

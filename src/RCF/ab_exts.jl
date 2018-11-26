@@ -367,18 +367,18 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   b1=Int(root(fmpz(bound),Int(degree(O)*(m-1)*k))) 
   list = squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
 
-  extra_list = Tuple{Int, Int}[(1,1)]
+  extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
   for q in ram_primes
-    tr = prime_decomposition_type(O,Int(q))
+    tr = prime_decomposition_type(O, Int(q))
     f = tr[1][1]
-    nq = Int(q)^f 
+    nq = q^f 
     if gcd(nq-1,n) == 1
       continue
     end
     if nq > bound
       continue
     end
-    l=length(extra_list)
+    l = length(extra_list)
     for i=1:l
       no = extra_list[i][2]*nq
       if no > bound
@@ -388,7 +388,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
     end
   end
   
-  final_list=Tuple{Int,fmpz}[]
+  final_list=Tuple{Int, fmpz}[]
   l=length(list)
   e = Int((m-1)*k)
   for (el,norm) in extra_list
@@ -396,7 +396,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
       if (list[i]^(e*d)) * norm > bound
         continue
       end
-      push!(final_list, (list[i]*el, (list[i]^(e*d))*norm))
+      push!(final_list, (list[i]*el, (fmpz(list[i])^(e*d))*norm))
     end
   end
   
@@ -405,6 +405,8 @@ end
 
 
 function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
+  
+  #Careful: I am assuming that a is in snf!
   
   K=nf(O)
   d=degree(O)
@@ -417,7 +419,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
 
   list = conductors_tame(O, n, bound)
-
+  
   if tame
     return Tuple{Int, Dict{NfOrdIdl, Int}}[(x[1], Dict{NfOrdIdl, Int}()) for x in list]  
   end
@@ -1076,7 +1078,7 @@ function _C22_with_max_ord(l)
   K = NumberField(x-1, cached = false)[1]
   for (p1, p2) in l
     Kns, g = number_field([p1, p2])
-    S, mS = simple_extension(Kns)
+    S, mS = simple_extension(Kns, check = false)
     cf = gcd(discriminant(p1), discriminant(p2))
     B = Vector{nf_elem}(undef, degree(S))
     B[1] = S(1)
