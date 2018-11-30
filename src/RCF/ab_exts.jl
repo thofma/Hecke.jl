@@ -1043,22 +1043,33 @@ function _C22_exts_abexts(bound::Int, only_real::Bool = false)
 end
 
 function _ext_with_autos(Qx, x, i::Int, j::Int)
-  y1 = mod(i, 4)
+  first = i
+  second = j
+  g = gcd(i, j)
+  if g != 1
+    third = divexact(i*j, g^2)
+    if gcd(first, third) == 1
+      second = third
+    elseif gcd(second, third) == 1
+      first = third
+    end
+  end
+  y1 = mod(first, 4)
   pol1 = Qx()
   setcoeff!(pol1, 2, fmpz(1))
   if y1 != 1
-    setcoeff!(pol1, 0 , fmpz(-i))
+    setcoeff!(pol1, 0 , fmpz(-first))
   else
-    setcoeff!(pol1, 0, fmpz(divexact(1-i,4)))
+    setcoeff!(pol1, 0, fmpz(divexact(1-first,4)))
     setcoeff!(pol1, 1, fmpz(-1))
   end
-  y2 = mod(j, 4)
+  y2 = mod(second, 4)
   pol2 = Qx()
   setcoeff!(pol2, 2, fmpz(1))
   if y2 != 1
-    setcoeff!(pol2, 0 , fmpz(-j))
+    setcoeff!(pol2, 0 , fmpz(-second))
   else
-    setcoeff!(pol2, 0 , fmpz(divexact(1-j, 4)))
+    setcoeff!(pol2, 0 , fmpz(divexact(1-second, 4)))
     setcoeff!(pol2, 1 , fmpz(-1))
   end
   return pol1, pol2
@@ -1099,15 +1110,21 @@ function _C22_with_max_ord(l)
     coord2 = __get_term(mS.prim_img.data, UInt[0, 1])
     auts = Vector{NfToNfMor}(undef, 2)
     if iszero(coeff(p1, 1))
-      auts[1] = NfToNfMor(S, S, -coord1*B[2]+coord2*B[3])
+      auts[1] = NfToNfMor(S, S, (-coord1)*B[2]+coord2*B[3])
     else
-      auts[1] = NfToNfMor(S, S, 1-coord1*B[2]+coord2*B[3])
+      auts[1] = NfToNfMor(S, S, 1+(-coord1)*B[2]+coord2*B[3])
     end
     if iszero(coeff(p2, 1))
-      auts[2] = NfToNfMor(S, S, coord1*B[2]-coord2*B[3])
-    else
-      auts[2] = NfToNfMor(S, S, coord1*B[2]+1-coord2*B[3])
+      auts[2] = NfToNfMor(S, S, coord1*B[2]+(-coord2)*B[3])
+    else      
+      auts[2] = NfToNfMor(S, S, coord1*B[2]+1+(-coord2)*B[3])
     end
+    cl_auts = Vector{NfToNfMor}(undef, 4)
+    cl_auts[1] = NfToNfMor(S, S, gen(S))
+    cl_auts[2] = auts[1]
+    cl_auts[3] = auts[2]
+    cl_auts[4] = auts[1] * auts[2]
+    Hecke._set_automorphisms_nf(S, cl_auts)
     push!(list, (S, auts, [Hecke.NfToNfMor(K, S, S(1))]))
   end
   return list

@@ -162,9 +162,9 @@ function extend_to_cyclotomic(C::CyclotomicExt, tau::NfToNfMor)
     return NfRelToNfRelMor(C.Kr, C.Kr, tau, gKr)
   end		
   g = C.Kr.pol		
-  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])		
+  tau_g = parent(g)([tau(coeff(g, i)) for i=0:degree(g)])	
   i = 1	
-  z = copy(gKr)		
+  z = deepcopy(gKr)		
   while gcd(i, C.n) != 1 || !iszero(tau_g(z))		
     i += 1		
     mul!(z, z, gKr) 		
