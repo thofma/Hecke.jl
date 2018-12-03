@@ -1186,11 +1186,9 @@ Base.eltype(::PrimeIdealsSet) = NfOrdIdl
 
 Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
 
-#TODO: rename intersection!!!!
 #      iterator for residue rings/ fields
 #      check is unit_group(quo(R, A)) for non-maximal R is correct (well intended to be correct)
 #      saturation in the Singular sense
-Base.intersect(A::NfOrdIdl, B::NfOrdIdl) = intersection(A, B)
 
 #TODO: move to Arithmetic?
 function radical(A::NfOrdIdl)
@@ -1204,6 +1202,10 @@ function radical(A::NfOrdIdl)
 end
 
 #TODO: isprime is broken for non-maximal orders, uses valuation...
+#Algo:
+# primary -> radical is prime, so this is neccessary
+# in orders: prime -> maximal (or 0)
+# in general: radical is maximal -> primary
 function isprimary(A::NfOrdIdl)
   return isprime(radical(A))
 end
@@ -1214,13 +1216,16 @@ function primary_decomposition(A::NfOrdIdl)
   lp = factor(a).fac
   P = []
   for p = keys(lp)
-    pp = prime_decomposition(order(A), p)
+    pp = prime_ideals_over(order(A), p)
     for x = pp
-      y = x[1] + A
+      y = x + A
       if !isone(y)
-        push!(P, x[1]^(x[2]*lp[p]) + A)
+        #TODO: what is the correct exponent here?
+        push!(P, x^(div(degree(order(A)), flog(norm(x), p))*lp[p]) + A)
       end
     end
   end
   return P
 end
+
+
