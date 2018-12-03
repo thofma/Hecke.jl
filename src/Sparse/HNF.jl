@@ -415,6 +415,7 @@ Given a matrix $A$ in HNF, extend this to get the HNF of the concatination
 with $b$.
 """
 function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where N
+  rA = rows(A)
   @vprint :HNF 1 "Extending HNF by:\n"
   @vprint :HNF 1 b
   @vprint :HNF 1 "density $(density(A)) $(density(b))"
@@ -457,7 +458,7 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_trafo ? push!(trafos, sparse_trafo_delete_zero(fmpz, rows(A) + 1)) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_move_row(fmpz, rows(A) + 1, rA + rows(b))) : nothing
     end
     if length(w) > 0
       if with_trafo
@@ -481,9 +482,11 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
       push!(A, sparse_row(base_ring(A)))
     end
   end
+
   if with_trafo && offset != 0
     change_indices!(trafos, A_start_rows, offset)
   end
+
   with_trafo ? (return A, trafos) : (return A)
 end
 
@@ -496,7 +499,7 @@ Compute the Hermite normal form of $A$ using the Kannan-Bachem algorithm.
 function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false) where N
   @vprint :HNF 1 "Starting Kannan Bachem HNF on:\n"
   @vprint :HNF 1 A
-  @vprint :HNF 1 "with density $(density(A))"
+  @vprint :HNF 1 "with density $(density(A)); truncating $truncate"
 
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = SparseTrafoElem{fmpz, fmpz_mat}[] : nothing
@@ -536,7 +539,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_trafo ? push!(trafos, sparse_trafo_delete_zero(fmpz, rows(B) + 1)) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_move_row(fmpz, rows(B) + 1, rows(A))) : nothing
     end
     if length(w) > 0
       if with_trafo

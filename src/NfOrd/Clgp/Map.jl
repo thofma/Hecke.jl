@@ -295,10 +295,11 @@ end
 """
 
 function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+
   J, a= reduce_ideal2(I)
-  @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
+  #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)
-  @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
+  #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
   x=x*a
   return x
   
@@ -337,10 +338,13 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
 
   R, d = solve_ut(H, r)
+
   if d != 1
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
+
   rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+
   for (p,v) = R
     rs[p] = v
   end

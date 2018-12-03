@@ -27,7 +27,7 @@ end
 # 3 = add scaled
 # 4 = parallel scaled addition
 # 5 = trafo partial dense
-# 6 = move row to end
+# 6 = move row to other row (erverything moves up)
 # 7 = trafo id
 mutable struct SparseTrafoElem{T, S}
   type::Int
