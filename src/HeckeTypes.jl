@@ -523,7 +523,7 @@ mutable struct FacElemMon{S} <: Ring
   basis_conjugates::Dict{RingElem, Tuple{Int, Array{arb, 1}}}
   conj_log_cache::Dict{Int, Dict{nf_elem, Array{arb, 1}}}
 
-  function FacElemMon{S}(R::S, cached::Bool = !false) where {S}
+  function FacElemMon{S}(R::S, cached::Bool = false) where {S}
     if haskey(FacElemMonDict, R)
       return FacElemMonDict[R]::FacElemMon{S}
     else
@@ -537,6 +537,29 @@ mutable struct FacElemMon{S} <: Ring
       end
       return z
     end
+  end
+
+  function FacElemMon{AnticNumberField}(R::AnticNumberField, cached::Bool = true)
+    if haskey(FacElemMonDict, R)
+      return FacElemMonDict[R]::FacElemMon{S}
+    end
+    try
+      F = _get_fac_elem_mon_of_nf(R)
+      return F
+    catch e
+      if !isa(e, AccessorNotSetError)
+        rethrow(e)
+      end
+    end
+    z = new()
+    z.base_ring = R
+    z.basis_conjugates_log = Dict{RingElem, Array{arb, 1}}()
+    z.basis_conjugates = Dict{RingElem, Array{arb, 1}}()
+    z.conj_log_cache = Dict{Int, Dict{nf_elem, arb}}()
+    if cached
+      _set_fac_elem_mon_of_nf(R, z)
+    end
+    return z
   end
 end
 
