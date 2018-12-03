@@ -390,37 +390,17 @@ end
 
 #This function computes a primitive element for the target extension with the
 #roots of unit over the base field and the action of the automorphisms on it.
+#The Kummer generator is always primitive! (Carlo and Claus)
 function _find_prim_elem(AutA::GrpAbFinGen, AutA_gen::Array{NfRelToNfRelMor{nf_elem,  nf_elem}, 1}, C::CyclotomicExt)
   
   A = domain(AutA_gen[1])
   pe = gen(A)
   Auto = Dict{Hecke.GrpAbFinGenElem, NfRelElem}()
-  oA = order(AutA)
-  cnt = 0
-  while true
-    @vprint :ClassField 3 "candidate: $pe\n"
-    Im = Set{Hecke.NfRelElem{nf_elem}}()
-    for j in AutA
-      im = grp_elem_to_map(AutA_gen, j, pe)
-      if im in Im
-        pe += gen(C.Ka)
-        cnt += 1
-        if cnt > 100
-          error("Too many attempts to find primitive elements")
-        end
-        break
-      else
-        push!(Im, im)
-      end
-      Auto[j] = im
-    end
-    if length(Im) == oA
-      break
-    end
+  for j in AutA
+    im = grp_elem_to_map(AutA_gen, j, pe)
+    Auto[j] = im
   end
-  @vprint :ClassField 2 "have primitive element!!!  "
-  @vprint :ClassField 3 " $pe"
-  
+  @vprint :ClassField 2 "have action on the primitive element!!!\n"  
   return pe, Auto
 end
 
@@ -576,20 +556,24 @@ function _rcf_descent(CF::ClassField_pp)
   AutA = GrpAbFinGen(CF.AutR)
   # now we need a primitive element for A/k
   # mostly, gen(A) will do
-  @vprint :ClassField 2 "Searching for primitive element...\n"
-  pe, Auto = _find_prim_elem(AutA, AutA_gen, C)
+  
   @vprint :ClassField 2 "\nnow the fix group...\n"
   if iscyclic(AutA)  # the subgroup is trivial to find!
     @vprint :ClassField 2 ".. trivial as automorphism group is cyclic\n"
     s, ms = sub(AutA, e, false)
+    @vprint :ClassField 2 "computing orbit of primitive element\n"
+    pe = gen(A)
+    os = NfRelElem[grp_elem_to_map(AutA_gen, ms(j), pe) for j in s]
   else
+    @vprint :ClassField 2 "Computing automorphisms of the extension and orbit of primitive element\n"
+    pe, Auto = _find_prim_elem(AutA, AutA_gen, C)
     @vprint :ClassField 2 ".. interesting...\n"
     # want: hom: AutA = Gal(A/k) -> Gal(K/k) = domain(mq)
     #K is the target field.
     # idea: take primes p in k and compare
     # Frob(p, A/k) and preimage(mq, p)
     @assert n == degree(CF.K)
-
+    
     function canFrob(p::NfOrdIdl)
       lP = prime_decomposition(C.mp[2], p)
       P = lP[1][1]
@@ -597,10 +581,10 @@ function _rcf_descent(CF::ClassField_pp)
       Ft, t = PolynomialRing(F, cached=false)
       mFp = extend_easy(mF, C.Ka)
       ap = mFp(CF.a)
-      Ap = ResidueRing(Ft, t^n-ap, cached = false)
-      
-      #@assert length(Set([toAp(v) for (k,v) = Auto])) == length(Auto)
-      #TODO: bad prime possible if set is too small (pe might interfere with p)
+      pol = Ft()
+      setcoeff!(pol, 0, -ap)
+      setcoeff!(pol, n, one(F))
+      Ap = ResidueRing(Ft, pol, cached = false)
       xpe = zero(Ft)
       for i = 0:n-1
         setcoeff!(xpe, i, mFp(coeff(pe, i)))
@@ -616,11 +600,11 @@ function _rcf_descent(CF::ClassField_pp)
         kp = Ap(xp)
         if kp == imF
           push!(res, ky)
+          if length(res) >1
+            throw(BadPrime(p))
+          end
           #return ky
         end
-      end
-      if length(res) > 1
-        throw(BadPrime(p))
       end
       return res[1]
       error("Frob not found")  
@@ -633,10 +617,11 @@ function _rcf_descent(CF::ClassField_pp)
                       PrimesSet(200, -1), cp)
     imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp]
     h = hom(f, imgs)
-    @assert issurjective(h)
-    #@hassert :ClassField 1 issurjective(h)
+    @hassert :ClassField 1 issurjective(h)
     s, ms = kernel(h)
     @vprint :ClassField 2 "... done, have subgroup!\n"
+    @vprint :ClassField 2 "computing orbit of primitive element\n"
+    os = NfRelElem[Auto[ms(j)] for j in s]
   end
   
   q, mq = quo(AutA, ms.map, false)
@@ -645,10 +630,7 @@ function _rcf_descent(CF::ClassField_pp)
   #now, hopefully either norm or trace will be primitive for the target
   #norm, trace relative to s, the subgroup
 
-  @vprint :ClassField 2 "computing orbit of primitive element\n"
-  os = [Auto[ms(j)] for j in s]
   AT, T = PolynomialRing(A, "T", cached = false)
-  
   function coerce_down(a::NfRelElem)
     @assert a.data.length <= 1
     b = coeff(a, 0)
@@ -700,7 +682,7 @@ function _rcf_descent(CF::ClassField_pp)
   return nothing
 end
 
-function grp_elem_to_map(A::Array, b::GrpAbFinGenElem, pe::NfRelElem)
+function grp_elem_to_map(A::Array{NfRelToNfRelMor{nf_elem, nf_elem}, 1}, b::GrpAbFinGenElem, pe::NfRelElem)
   res = pe
   for i=1:length(A)
     if b[i] == 0

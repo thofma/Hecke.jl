@@ -545,11 +545,11 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
   mp = inv(C.quotientmap) * mr 
   R = domain(mp)
   
-  O = order(first(keys(lp)))
-  K = nf(O)
+  O = base_ring(C)
+  
   tmg = mr.tame_mult_grp
   #first, tame part
-  primes_done=fmpz[]
+  primes_done = fmpz[]
   for p in keys(tmg)
     if p.minimum in primes_done 
       continue
@@ -561,7 +561,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
       return false
     end
   end
-  
+  K = nf(O)
   #wild part
   if !isempty(mr.wild_mult_grp)
     o = Int(order(R))

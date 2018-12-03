@@ -785,7 +785,7 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
   end
 
   d = denominator(a)
-  if with_roots_unity
+  if n == 2 || with_roots_unity
     fl, rt = _one_root_hensel(a*d^n, n)
     if fl
       return fl, rt//d
