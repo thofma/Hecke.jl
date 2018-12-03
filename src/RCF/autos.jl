@@ -69,7 +69,7 @@ function rel_auto_easy(A::ClassField_pp)
   
 end
 
-function rel_auto_intersection(A::ClassField_pp)
+function rel_auto_intersect(A::ClassField_pp)
   
   # In the computation of the class field, I saved the 
   # automorphisms of A.K over k.
@@ -122,7 +122,7 @@ function rel_auto(A::ClassField_pp)
     return rel_auto_easy(A)
   else
     #Tricky case
-    return rel_auto_intersection(A)
+    return rel_auto_intersect(A)
   end
 end
 

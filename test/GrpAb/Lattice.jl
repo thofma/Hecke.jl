@@ -79,7 +79,7 @@
     b, P = @inferred Hecke.find_shortest(G, 3, 5)
     @test !b
 
-    # Find something in the intersection
+    # Find something in the intersect
     b, P1, P2 = @inferred Hecke.find_common(G, 3, 5)
     @test b
     @test P1 == [4, 3]

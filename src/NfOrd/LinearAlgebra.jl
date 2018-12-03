@@ -1518,7 +1518,7 @@ function +(M::ModDed, N::ModDed)
    return MN
 end
 
-function intersection(M::ModDed, N::ModDed)
+function intersect(M::ModDed, N::ModDed)
    @assert base_ring(M) == base_ring(N)
    @assert cols(M.pmatrix) == cols(N.pmatrix)
    MM = simplify_basis(M)

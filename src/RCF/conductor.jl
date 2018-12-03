@@ -1610,7 +1610,7 @@ end
 @doc Markdown.doc"""
     minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
 > Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the 
-> intersection $I \cap \Z_k$.
+> intersect $I \cap \Z_k$.
 """
 function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
   K = codomain(m)

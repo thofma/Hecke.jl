@@ -179,7 +179,7 @@ end
 ^(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 ^(A::AlgAssAbsOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
 
-function intersection(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
+function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
   H = vcat(basis_mat(a), basis_mat(b))
   K = _kernel(H)
@@ -304,8 +304,8 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   return ideal(O, M, true)
 end
 
-intersection(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = contract(A, O)
-intersection(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = contract(A, O)
+intersect(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = contract(A, O)
+intersect(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = contract(A, O)
 
 ################################################################################
 #
