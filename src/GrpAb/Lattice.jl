@@ -239,7 +239,7 @@ end
 
 # Given two vertices root1 and root2, check if the "connected components"
 # intersect. If so, find two paths from root1 and root2 which end in a vertex
-# of the intersection. The second and third return values are arrays T1
+# of the intersect. The second and third return values are arrays T1
 # and T2 with T1[1] == T2[1], T1[end] == root1 and T2[end] == root2.
 function find_common(G::Graph{T, M}, root1::T, root2::T) where {T, M}
   S1 = T[]

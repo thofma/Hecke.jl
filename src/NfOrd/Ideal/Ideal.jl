@@ -41,7 +41,7 @@ export IdealSet, valuation,prime_decomposition_type, prime_decomposition,
 export NfOrdIdl
 
 export deepcopy, parent, order, basis, basis_mat, basis_mat_inv, minimum, norm,
-       ==, in, +, *, intersection, lcm, idempotents, mod, pradical
+       ==, in, +, *, intersect, lcm, idempotents, mod, pradical
 
 add_assert_scope(:Rres)
 new = !true

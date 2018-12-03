@@ -257,7 +257,7 @@ end
 function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O, p))
   K = nf(O)
   d = degree(O)
-  M = intersection(N, pmaximal_overorder(O, p))
+  M = intersect(N, pmaximal_overorder(O, p))
   B = zero_matrix(FlintZZ, d, d)
   orders = Vector{typeof(O)}()
   for i in 1:d
@@ -418,7 +418,7 @@ function isgorenstein(O::NfOrd, p::fmpz)
 end
 
 # This is very slow!
-function intersection(x::NfOrd, y::NfOrd)
+function intersect(x::NfOrd, y::NfOrd)
   d = degree(x)
   g = lcm(denominator(basis_mat(x)), denominator(basis_mat(y)))
   H = vcat(divexact(g * basis_mat(x).num, basis_mat(x).den), divexact(g * basis_mat(y).num, basis_mat(y).den))

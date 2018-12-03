@@ -50,7 +50,7 @@ divides(::NfAbsOrdIdl{AnticNumberField,nf_elem}, ::NfAbsOrdIdl{AnticNumberField,
 lcm(::NfOrdIdl, ::NfOrdIdl)
 gcd(::NfOrdIdl, ::NfOrdIdl)
 gcd(::NfOrdIdl, ::fmpz)
-intersection(::NfOrdIdl, ::NfOrdIdl)
+intersect(::NfOrdIdl, ::NfOrdIdl)
 colon(::NfOrdIdl, ::NfOrdIdl)
 in(::NfOrdElem, ::NfAbsOrdIdl)
 ispower(::NfAbsOrdIdl, ::Int)
