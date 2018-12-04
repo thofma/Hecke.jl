@@ -1474,7 +1474,7 @@ end
 > Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 """
 function is_univariate(f::Generic.MPoly{nf_elem})
-  kx, x = PolynomialRing(base_ring(f), "x")
+  kx, x = PolynomialRing(base_ring(f), "x", cached = false)
   if ngens(parent(f)) == 1
     f1 = kx()
     for i = 1:f.length

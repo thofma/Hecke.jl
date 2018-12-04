@@ -321,7 +321,7 @@ end
 >  G = g mod p, H = h mod p.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, h::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
+  Rx, x = PolynomialRing(ResidueField(FlintZZ, p, cached=false), cached=false)
   fl, a, b = gcdx(Rx(g), Rx(h))
   @assert isone(fl)
   @assert k>= 2
@@ -373,7 +373,7 @@ end
 >  Given f and g such that g is a divisor of f mod p and g and f/g are coprime, compute a hensel lift of g modulo p^k.
 """
 function hensel_lift(f::fmpz_poly, g::fmpz_poly, p::fmpz, k::Int)
-  Rx, x = PolynomialRing(GF(p, cached=false), cached=false)
+  Rx, x = PolynomialRing(ResidueField(FlintZZ, p, cached=false), cached=false)
   h = lift(parent(f), div(Rx(f), Rx(g)))
   return hensel_lift(f, g, h, p, k)[1]
 end  
