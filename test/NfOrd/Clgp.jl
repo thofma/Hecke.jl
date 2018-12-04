@@ -95,7 +95,7 @@
       Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
-      U = O.auxilliary_data[6]
+      U = Hecke._get_UnitGrpCtx_of_order(O)
 
       G, mG = torsion_unit_group(O)
       @test order(G) == 2
@@ -123,7 +123,7 @@
       Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
-      U = O.auxilliary_data[6]
+      U = Hecke._get_UnitGrpCtx_of_order(O)
 
       G, mG = torsion_unit_group(O)
       @test order(G) == 2
@@ -140,7 +140,7 @@
       Cl, mCl = Hecke.class_group(O, redo = true);
       UU, mU = Hecke.unit_group(O)
 
-      U = O.auxilliary_data[6]
+      U = Hecke._get_UnitGrpCtx_of_order(O)
 
       G, mG = torsion_unit_group(O)
       @test order(G) == 26
