@@ -133,23 +133,18 @@ function _mod!(x::nf_elem, y::fmpz)
   return x
 end
 
-mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing, HeckeMap, NfOrdQuoMap}
-  header::MapHeader{NfOrd, NfOrdQuoRing}
+# S is the type of the order, T the type of the ideal and U the elem_type of the order, which define the quotient ring
+mutable struct AbsOrdQuoMap{S, T, U} <: Map{S, AbsOrdQuoRing{S, T}, HeckeMap, AbsOrdQuoMap}
+  header::MapHeader{S, AbsOrdQuoRing{S, T}}
 
-  # Only to make default variables in functions possible
-  function NfOrdQuoMap()
-    z = new()
-    return z
-  end
-
-  function NfOrdQuoMap(O::NfOrd, Q::NfOrdQuoRing)
+  function AbsOrdQuoMap{S, T, U}(O::S, Q::AbsOrdQuoRing{S, T}) where {S, T, U}
     z = new()
 
-    _image = function (x::NfOrdElem)
+    _image = function (x::U)
       return Q(x)
     end
 
-    _preimage = function (x::NfOrdQuoRingElem)
+    _preimage = function (x::AbsOrdQuoRingElem{S, T, U})
       return x.elem
     end
 
@@ -157,6 +152,13 @@ mutable struct NfOrdQuoMap <: Map{NfOrd, NfOrdQuoRing, HeckeMap, NfOrdQuoMap}
     return z
   end
 end
+
+function AbsOrdQuoMap(O::S, Q::AbsOrdQuoRing{S, T}) where {S, T}
+  U = elem_type(O)
+  return AbsOrdQuoMap{S, T, U}(O, Q)
+end
+
+const NfOrdQuoMap = AbsOrdQuoMap{NfOrd, NfOrdIdl, NfOrdElem}
 
 function Mor(O::NfOrd, F::FqNmodFiniteField, y::fq_nmod)
   return NfOrdToFqNmodMor(O, F, y)

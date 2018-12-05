@@ -1611,13 +1611,14 @@ end
 #
 ################################################################################
 
-mutable struct NfOrdQuoRing <: Ring
-  base_ring::NfOrd
-  ideal::NfOrdIdl
+# S is the type of the order, T the type of the ideal
+mutable struct AbsOrdQuoRing{S, T} <: Ring
+  base_ring::S
+  ideal::T
   basis_mat::fmpz_mat
   basis_mat_array::Array{fmpz, 2}
   preinvn::Array{fmpz_preinvn_struct, 1}
-  factor::Dict{NfOrdIdl, Int}
+  factor::Dict{T, Int}
 
   # temporary variables for divisor and annihilator computations
   # don't use for anything else
@@ -1628,8 +1629,8 @@ mutable struct NfOrdQuoRing <: Ring
 
   multiplicative_group::Map
 
-  function NfOrdQuoRing(O::NfOrd, I::NfOrdIdl)
-    z = new()
+  function AbsOrdQuoRing{S, T}(O::S, I::T) where {S, T}
+    z = new{S, T}()
     z.base_ring = O
     z.ideal = I
     z.basis_mat = basis_mat(I)
@@ -1640,22 +1641,35 @@ mutable struct NfOrdQuoRing <: Ring
     z.tmp_xxgcd = zero_matrix(FlintZZ, 3*d + 1, 3*d + 1)
     z.tmp_ann = zero_matrix(FlintZZ, 2*d, d)
     z.tmp_euc = zero_matrix(FlintZZ, 2*d, d)
-    minimum(I) # compute the minimum
     return z
   end
 end
 
-mutable struct NfOrdQuoRingElem <: RingElem
-  elem::NfOrdElem
-  parent::NfOrdQuoRing
+function AbsOrdQuoRing(O::S, I::T) where {S, T}
+  @assert T == ideal_type(O)
+  return AbsOrdQuoRing{S, T}(O, I)
+end
 
-  function NfOrdQuoRingElem(O::NfOrdQuoRing, x::NfOrdElem)
-    z = new()
-    z.elem = mod(x, O)
-    z.parent = O
+# S and T as for AbsOrdQuoRing, U is the elem_type of the order
+mutable struct AbsOrdQuoRingElem{S, T, U} <: RingElem
+  elem::U
+  parent::AbsOrdQuoRing{S, T}
+
+  function AbsOrdQuoRingElem{S, T, U}(Q::AbsOrdQuoRing{S, T}, x::U) where {S, T, U}
+    z = new{S, T, U}()
+    z.elem = mod(x, Q)
+    z.parent = Q
     return z
   end
 end
+
+function AbsOrdQuoRingElem(Q::AbsOrdQuoRing{S, T}, x::U) where {S, T, U}
+  return AbsOrdQuoRingElem{S, T, U}(Q, x)
+end
+
+const NfOrdQuoRing = AbsOrdQuoRing{NfOrd, NfOrdIdl}
+
+const NfOrdQuoRingElem = AbsOrdQuoRingElem{NfOrd, NfOrdIdl, NfOrdElem}
 
 ################################################################################
 #

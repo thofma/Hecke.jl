@@ -103,22 +103,19 @@ end
 ################################################################################
 
 function assure_has_coord(x::AlgAssAbsOrdElem)
-  if isdefined(x, :elem_in_basis)
+  if x.has_coord
     return nothing
   end
-  d = degree(parent(x))
-  M = FakeFmpqMat(x.elem_in_algebra.coeffs)*x.parent.basis_mat_inv
-  x.elem_in_basis = Array{fmpz, 1}(undef, d)
-  for i = 1:d
-    x.elem_in_basis[i] = M.num[1, i]
-  end
+  a, b = _check_elem_in_order(elem_in_algebra(x, Val{false}), parent(x))
+  !a && error("Not a valid order element")
+  x.elem_in_basis = b
   return nothing
 end
 
 function assure_elem_in_algebra(x::AlgAssAbsOrdElem)
   if !isdefined(x, :elem_in_algebra)
     O = parent(x)
-    x.elem_in_algebra = dot(O.basis_alg, x.elem_in_basis) 
+    x.elem_in_algebra = dot(O.basis_alg, x.elem_in_basis)
   end
   return nothing
 end
@@ -162,8 +159,9 @@ end
 function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, Val{false}) + elem_in_algebra(y, Val{false}))
-  if isdefined(x, :elem_in_basis) && isdefined(y, :elem_in_basis)
+  if x.has_coord && y.has_coord
     z.elem_in_basis = [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
+    z.has_coord = true
   end
   return z
 end
@@ -171,8 +169,9 @@ end
 function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
   z = parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
-  if isdefined(x, :elem_in_basis) && isdefined(y, :elem_in_basis)
+  if x.has_coord && y.has_coord
     z.elem_in_basis = [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
+    z.has_coord = true
   end
   return z
 end
@@ -233,6 +232,18 @@ function ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem)
     return false
   end
   return elem_in_algebra(a, Val{false}) == elem_in_algebra(b, Val{false})
+end
+
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+function mul!(z::AlgAssAbsOrdElem, x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
+  z.elem_in_algebra = mul!(elem_in_algebra(z, Val{false}), elem_in_algebra(x, Val{false}), elem_in_algebra(y, Val{false}))
+  z.has_coord = false
+  return z
 end
 
 ################################################################################

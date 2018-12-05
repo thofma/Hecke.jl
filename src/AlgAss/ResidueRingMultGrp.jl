@@ -4,13 +4,28 @@
 #
 ################################################################################
 
-function _multgrp_mod_ideal(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl)
+function multiplicative_group(Q::AlgAssAbsOrdQuoRing)
+  if !isdefined(Q, :multiplicative_group)
+    O = base_ring(Q)
+    OO = maximal_order(algebra(O))
+    if O == OO
+      G, GtoQ = _multgrp(Q)
+    else
+      G, GtoQ = _multgrp_non_maximal(Q)
+    end
+    Q.multiplicative_group = GtoQ
+  end
+  mQ = Q.multiplicative_group
+  return domain(mQ), mQ
+end
+
+unit_group(Q::AlgAssAbsOrdQuoRing) = multiplicative_group(Q)
+
+function _multgrp_non_maximal(Q::AlgAssAbsOrdQuoRing)
+  O = base_ring(Q)
+  a = ideal(Q)
   A = algebra(O)
   OO = maximal_order(A)
-
-  if OO == O
-    return _multgrp_mod_ideal_maximal(O, a)
-  end
 
   aOO = a*OO
 
@@ -37,24 +52,27 @@ function _multgrp_mod_ideal(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl)
   end
 
   groups = Vector{GrpAbFinGen}()
-  maps = Vector{GrpAbFinGenToAlgAssAbsOrdMap}()
+  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
   ideals = Vector{ideal_type(O)}() # values of primary_ideals, but in the "right" order
   for (p, q) in primary_ideals
-    G, GtoO = _multgrp_mod_q(p, q, prime_ideals[p][1])
+    G, GtoQ = _multgrp_mod_q(p, q, prime_ideals[p][1])
     push!(groups, G)
-    push!(maps, GtoO)
+    push!(maps, GtoQ)
     push!(ideals, q)
   end
 
-  G, GtoO = _direct_product(groups, maps, ideals, a)
-  S, StoG, StoO = snf(G, GtoO)
-  return S, StoO
+  G, GtoQ = _direct_product(groups, maps, ideals, Q)
+  S, StoG, StoQ = snf(G, GtoQ)
+  return S, StoQ
 end
 
-function _multgrp_mod_ideal_maximal(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl)
+function _multgrp(Q::AlgAssAbsOrdQuoRing)
+  O = base_ring(Q)
+  OtoQ = AbsOrdQuoMap(O, Q)
+  a = ideal(Q)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
-  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToNfOrdQuoRingMultMap}}()
+  groups = Vector{Tuple{GrpAbFinGen, GrpAbFinGenToAbsOrdQuoRingMultMap}}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     ai = _as_ideal_of_number_field(a, AtoK)
@@ -68,44 +86,45 @@ function _multgrp_mod_ideal_maximal(O::AlgAssAbsOrd, a::AlgAssAbsOrdIdl)
 
   S, StoG = snf(G)
 
-  generators = Vector{elem_type(O)}()
+  generators = Vector{elem_type(Q)}()
   for i = 1:ngens(S)
     x = StoG(S[i])
-    y = O()
+    y = zero(Q)
     offset = 1
     for j = 1:length(groups)
-      H, HtoQ = groups[j]
+      H, HtoQK = groups[j]
       n = ngens(H)
       if iszero(n)
         continue
       end
 
-      t = H([ x.coeff[1, k] for k = offset:(offset + n - 1) ])
+      s = H([ x.coeff[1, k] for k = offset:(offset + n - 1) ])
       K, AtoK = fields_and_maps[j]
-      Q = codomain(HtoQ)
-      OK = base_ring(Q)
-      OKtoQ = NfOrdQuoMap(OK, Q)
-      y += O(AtoK\(K(OKtoQ\(HtoQ(t)))))
+      QK = codomain(HtoQK)
+      OK = base_ring(QK)
+      OKtoQK = NfOrdQuoMap(OK, QK)
+      t = K(OKtoQK\(HtoQK(s)))
+      y += OtoQ(O(AtoK\t))
       offset += n
     end
     push!(generators, y)
   end
 
-  function disc_log(x::AlgAssAbsOrdElem)
+  function disc_log(x::AbsOrdQuoRingElem)
     y = zero_matrix(FlintZZ, 1, 0)
     for i = 1:length(groups)
       K, AtoK = fields_and_maps[i]
-      H, HtoQ = groups[i]
-      Q = codomain(HtoQ)
-      OK = base_ring(Q)
-      h = HtoQ\(Q(OK(AtoK(elem_in_algebra(x, Val{false})))))
+      H, HtoQK = groups[i]
+      QK = codomain(HtoQK)
+      OK = base_ring(QK)
+      h = HtoQK\(QK(OK(AtoK(elem_in_algebra(OtoQ\x, Val{false})))))
       y = hcat(y, h.coeff)
     end
     s = StoG\G(y)
     return [ s.coeff[1, i] for i = 1:ngens(S) ]
   end
 
-  return S, GrpAbFinGenToAlgAssAbsOrdMap(S, O, generators, disc_log, a)
+  return S, GrpAbFinGenToAbsOrdMap(S, Q, generators, disc_log)
 end
 
 ################################################################################
@@ -117,37 +136,48 @@ end
 # p should be a prime ideal in a non-maximal order, q a p-primary ideal and
 # P a prime ideal above p in the maximal order
 function _multgrp_mod_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
+
+  Q, OtoQ = quo(order(q), q)
   G1, G1toO = _multgrp_mod_p(p, P)
 
   if p == q
-    return G1, G1toO
+    function disc_log1(x::AbsOrdQuoRingElem)
+      return G1toO.discrete_logarithm(OtoQ\x)
+    end
+    GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G1, Q, map(OtoQ, G1toO.generators), disc_log1)
+    return G1, GtoQ
   end
 
   G2, G2toO = _1_plus_p_mod_1_plus_q(p, q)
 
   if ngens(G1) == 0
-    return G2, G2toO
+    function disc_log2(x::AbsOrdQuoRingElem)
+      return G2toO.discrete_logarithm(OtoQ\x)
+    end
+    GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G2, Q, map(OtoQ, G2toO.generators), disc_log2)
+    return G2, GtoQ
   end
 
   gen1 = G1toO(G1[1])
   @assert issnf(G1) && issnf(G2)
   rel1 = G1.snf[1]
   gen1_obcs = powermod(gen1, G2.snf[end], q)
-  gens = [ gen1_obcs ; G2toO.generators ]
+  gens = map(OtoQ, [ gen1_obcs ; G2toO.generators ])
   G1toO.generators[1] = gen1_obcs
 
   G = direct_product(G1, G2)[1]
 
   obcs_inv = gcdx(G2.snf[end], rel1)[2]
-  function disc_log(x::AlgAssAbsOrdElem)
-    r = mod((G1toO.discrete_logarithm(x))[1]*obcs_inv, rel1)
-    x *= gen1_obcs^mod(-r, rel1)
-    return append!([ r ], G2toO.discrete_logarithm(x))
+  function disc_log(x::AbsOrdQuoRingElem)
+    y = OtoQ\x
+    r = mod((G1toO.discrete_logarithm(y))[1]*obcs_inv, rel1)
+    y *= gen1_obcs^mod(-r, rel1)
+    return append!([ r ], G2toO.discrete_logarithm(y))
   end
 
-  GtoO = GrpAbFinGenToAlgAssAbsOrdMap(G, order(p), gens, disc_log, q)
-  S, StoG, StoO = snf(G, GtoO)
-  return S, StoO
+  GtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(G, Q, gens, disc_log)
+  S, StoG, StoQ = snf(G, GtoQ)
+  return S, StoQ
 end
 
 ################################################################################
@@ -169,11 +199,12 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
     function disc_log2(x::AlgAssAbsOrdElem)
       return fmpz[]
     end
-    GtoO = GrpAbFinGenToAlgAssAbsOrdMap(G, O, elem_type(O)[], disc_log2, p)
+    GtoO = GrpAbFinGenToAbsOrdMap(G, O, elem_type(O)[], disc_log2, p)
     return G, GtoO
   end
 
-  G, GtoOA = _multgrp_mod_ideal_maximal(OA, P)
+  OAP, OAtoOAP = quo(OA, P)
+  G, GtoOAP = _multgrp(OAP)
   qq = order(G)
   @assert ngens(G) <= 1
 
@@ -181,7 +212,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   g = G[1]
   if qq == q
     # Maybe we are lucky and don't need to search for another generator
-    aa = GtoOA(G[1])
+    aa = OAtoOAP\GtoOAP(G[1])
     x = _check_elem_in_order(elem_in_algebra(aa, Val{false}), O, Val{true})
     if x
       a = O(aa, false)
@@ -200,8 +231,8 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
         continue
       end
 
-      aa = OA(a)
-      g = GtoOA\aa
+      aa = OAtoOAP(OA(a))
+      g = GtoOAP\aa
       n = g.coeff[1]
       if gcd(n, qq) == r
         break
@@ -211,18 +242,18 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
 
   if qq == q
     function disc_log3(x::AlgAssAbsOrdElem)
-      xOA = OA(x)
-      return GtoOA.discrete_logarithm(xOA)
+      xx = OAtoOAP(OA(x))
+      return GtoOAP.discrete_logarithm(xx)
     end
-    return G, GrpAbFinGenToAlgAssAbsOrdMap(G, O, [ a ], disc_log3, p)
+    return G, GrpAbFinGenToAbsOrdMap(G, O, [ a ], disc_log3, p)
   end
 
   H, HtoG = sub(G, [ g ])
   S, StoH = snf(H)
 
   function disc_log(x::AlgAssAbsOrdElem)
-    xOA = OA(x)
-    g = GtoOA\xOA
+    xx = OAtoOAP(OA(x))
+    g = GtoOAP\xx
     b, h = haspreimage(HtoG, g)
     @assert b
     b, s = haspreimage(StoH, h)
@@ -230,7 +261,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
     return [ s.coeff[1, i] for i = 1:ngens(S) ]
   end
 
-  return S, GrpAbFinGenToAlgAssAbsOrdMap(S, O, [ a ], disc_log, p)
+  return S, GrpAbFinGenToAbsOrdMap(S, O, [ a ], disc_log, p)
 end
 
 ################################################################################
@@ -265,26 +296,28 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
     push!(dlogs, disc_log)
   end
 
+  Q, OtoQ = quo(order(q), q)
   # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.16
   function disc_log(b::AlgAssAbsOrdElem)
+    b = OtoQ(b)
     a = fmpz[]
+    gQ = map(OtoQ, g)
     k = 1
     for i in 1:length(dlogs)
-      aa = dlogs[i](b)
-      prod = one(O)
+      aa = dlogs[i](OtoQ\b)
+      prod = one(Q)
       for j in 1:length(aa)
-        prod = mod(prod*powermod(g[k], aa[j], q), q)
+        prod = prod*gQ[k]^aa[j]
         k += 1
       end
       a = fmpz[ a ; aa ]
-      bb, b = isdivisible_mod_ideal(b, prod, q)
-      @assert bb
+      b = divexact(b, prod)
     end
     return a
   end
 
-  toO = GrpAbFinGenToAlgAssAbsOrdMap(O, g, M, disc_log, q)
-  S, mS, StoO = snf(toO)
+  toO = GrpAbFinGenToAbsOrdMap(O, g, M, disc_log, q)
+  S, mS, StoO = snf(toO, OtoQ)
   return S, StoO
 end
 
@@ -357,114 +390,4 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   end
 
   return gens, rels(S), disc_log
-end
-
-################################################################################
-#
-#  SNF and direct product (which transform the map too)
-#
-################################################################################
-
-# Returns the SNF S of G and a map from S to G and one from S to codomain(GtoR).
-# Some computations are done modulo GtoR.modulus, if this is defined.
-function snf(G::GrpAbFinGen, GtoR::GrpAbFinGenToAlgAssAbsOrdMap)
-  S, StoG = snf(G)
-
-  R = codomain(GtoR)
-  modulo = isdefined(GtoR, :modulus)
-
-  if ngens(G) == 0
-    if modulo
-      StoR = typeof(GtoR)(S, R, GtoR.generators, GtoR.discrete_logarithm, GtoR.modulus)
-    else
-      StoR = typeof(GtoR)(S, R, GtoR.generators, GtoR.discrete_logarithm)
-    end
-    return S, StoG, StoR
-  end
-
-  function disclog(x)
-    @assert parent(x) == R
-    y = GtoR.discrete_logarithm(x)
-    a = StoG\(G(y))
-    return fmpz[ a[j] for j = 1:ngens(S) ]
-  end
-
-  gens_snf = Vector{elem_type(R)}(undef, ngens(S))
-  for i = 1:ngens(S)
-    x = StoG(S[i]).coeff
-    for j = 1:ngens(G)
-      x[1, j] = mod(x[1, j], S.snf[end])
-    end
-    y = one(R)
-    for j = 1:ngens(G)
-      if modulo
-        y = mod(y*powermod(GtoR.generators[j], x[1, j], GtoR.modulus), GtoR.modulus)
-      else
-        y *= GtoR.generators[j]^(x[1, j])
-      end
-    end
-    gens_snf[i] = y
-  end
-
-  if modulo
-    StoR = typeof(GtoR)(S, R, gens_snf, disclog, GtoR.modulus)
-  else
-    StoR = typeof(GtoR)(S, R, gens_snf, disclog)
-  end
-
-  return S, StoG, StoR
-end
-
-snf(GtoR::GrpAbFinGenToAlgAssAbsOrdMap) = snf(domain(GtoR), GtoR)
-
-# It is assumed that the ideals are coprime and the codomains of the maps should
-# all be the same order.
-function _direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{S}, ideals::Vector{T}, modulus::AlgAssAbsOrdIdl...) where { S <: GrpAbFinGenToAlgAssAbsOrdMap, T <: AlgAssAbsOrdIdl }
-  @assert length(groups) == length(maps)
-  @assert length(groups) != 0
-  @assert length(ideals) >= length(groups)
-
-  if length(groups) == 1 && length(ideals) == 1
-    if length(modulus) == 1
-      if !isdefined(maps[1], :modulus) || maps[1].modulus != modulus[1]
-        m = GrpAbFinGenToAlgAssAbsOrdMap(groups[1], O, maps[1].generators, maps[1].discrete_logarithm, modulus...)
-        return groups[1], m
-      end
-    end
-    return groups[1], maps[1]
-  end
-
-  G = groups[1]
-  for i = 2:length(groups)
-    G = direct_product(G, groups[i])[1]
-  end
-
-  O = codomain(maps[1])
-  oneO = one(O)
-  generators = Vector{elem_type(O)}()
-  t = [ oneO for i = 1:length(ideals) ]
-  for i = 1:length(groups)
-    for j = 1:ngens(groups[i])
-      t[i] = maps[i].generators[j]
-      g = crt(t, ideals)
-      push!(generators, g)
-      t[i] = oneO
-    end
-  end
-
-  if length(groups) == 1
-    m = GrpAbFinGenToAlgAssAbsOrdMap(G, O, generators, maps[1].discrete_logarithm, modulus...)
-    return G, m
-  end
-
-  function disc_log(a::AlgAssAbsOrdElem)
-    result = Vector{fmpz}()
-    for map in maps
-      append!(result, map.discrete_logarithm(a))
-    end
-    return result
-  end
-
-  m = GrpAbFinGenToAlgAssAbsOrdMap(G, O, generators, disc_log, modulus...)
-  return G, m
 end

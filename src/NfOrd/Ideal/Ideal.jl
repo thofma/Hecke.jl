@@ -1241,7 +1241,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1}
   end
 end
 
-function mod(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
 
@@ -1293,7 +1293,35 @@ function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fm
   return x
 end
 
-function mod(x::NfOrdElem, Q::NfOrdQuoRing)
+function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
+
+  O = parent(x)
+  a = elem_in_basis(x, Val{false})
+
+  q = fmpz()
+  r = fmpz()
+  for i in degree(O):-1:1
+    if iszero(a[i])
+      continue
+    end
+    fdiv_qr_with_preinvn!(q, r, a[i], c[i, i], preinv[i])
+    for j in 1:i
+      submul!(a[j], q, c[i, j])
+    end
+  end
+  # We need to adjust the underlying algebra element
+  t = algebra(O)()
+  B = O.basis_alg
+  x.elem_in_algebra = zero!(elem_in_algebra(x, Val{false}))
+  for i in 1:degree(O)
+    t = mul!(t, B[i], a[i])
+    x.elem_in_algebra = add!(elem_in_algebra(x, Val{false}), elem_in_algebra(x, Val{false}), t)
+  end
+
+  return x
+end
+
+function mod(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
   a = elem_in_basis(x) # this is already a copy
 
@@ -1309,7 +1337,7 @@ function mod(x::NfOrdElem, Q::NfOrdQuoRing)
   return mod(x, Q.basis_mat_array, Q.preinvn)
 end
 
-function mod!(x::NfOrdElem, Q::NfOrdQuoRing)
+function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
   a = elem_in_basis(x, Val{false}) # this is already a copy
 
