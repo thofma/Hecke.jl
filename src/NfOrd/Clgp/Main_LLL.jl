@@ -14,7 +14,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
     if I.cnt > length(I.b)^2
       break
     end
-    if n == Nothing
+    if n == nothing
       @show "BadNorm"
       bad_norm += 1
       if I.cnt > 100  && bad_norm / I.cnt > 0.1

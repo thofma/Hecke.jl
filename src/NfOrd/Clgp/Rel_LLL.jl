@@ -84,7 +84,7 @@ function norm(m::fmpz_mat, NC::NormCtx_split, div::fmpz = fmpz(1))
   end
   no = crt_signed(l, NC.e)
   if nbits(no) > NC.nb - 10
-    return Nothing
+    return nothing
   else
     return no
   end
@@ -124,7 +124,7 @@ function norm(a::fmpz_mat, NC::NormCtx_gen, div::fmpz = fmpz(1))
   k = nf(O)
   no = numerator(norm_div(k(O(fmpz[a[1, i] for i = 1:degree(k)])), div, NC.nb))
   if nbits(no) > NC.nb-10
-    return Nothing
+    return nothing
   else
     return no
   end

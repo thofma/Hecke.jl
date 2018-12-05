@@ -158,7 +158,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     aa = class_group_small_lll_elements_relation_next(E)
     #println("trying $a")
     cnt += 1
-    na = norm(E.A)*abs(norm(aa, c.normCtx, norm(E.A)))
+    na = norm(aa, c.normCtx, norm(E.A))
     if na === nothing #basically means elt is too large,
                       # exhausted randomness, so redo it.
       use_rand = true
@@ -167,6 +167,7 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
       iI = inv(E.A)
       continue
     end
+    na = norm(E.A)*abs(na)
     n = FlintZZ(norm(iI)*na)
     if issmooth(c.FB.fb_int, n)
       a = K(O(fmpz[aa[1, i] for i=1:degree(K)]))
