@@ -18,7 +18,7 @@ parent(a::AbsAlgAssElem) = a.parent
 
 zero(A::AbsAlgAss) = A()
 
-one(A::AbsAlgAss) = A(A.one)
+one(A::AbsAlgAss) = A(deepcopy(A.one)) # deepcopy needed by mul!
 
 ################################################################################
 #
@@ -95,11 +95,68 @@ function *(a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   return A(coeffs)
 end
 
+################################################################################
+#
+#  Unsafe operations
+#
+################################################################################
+
+function zero!(a::AlgGrpElem)
+  for i = 1:length(a.coeffs)
+    a.coeffs[i] = zero!(a.coeffs[i])
+  end
+  return a
+end
+
+function zero!(a::AlgAssElem)
+  for i = 1:length(a.coeffs)
+    a.coeffs[i] = zero!(a.coeffs[i])
+  end
+  return a
+end
+
+function add!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) where {T}
+  parent(a) != parent(b) && error("Parents don't match.")
+  parent(c) != parent(b) && error("Parents don't match.")
+  A = parent(a)
+  d = dim(A)
+
+  if c === a || c === b
+    d = A()
+    d = add!(d, a, b)
+    return d
+  end
+
+  for i = 1:d
+    c.coeffs[i] = add!(c.coeffs[i], a.coeffs[i], b.coeffs[i])
+  end
+
+  return c
+end
+
+function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::fmpz) where {T}
+  parent(a) != parent(c) && error("Parents don't match.")
+
+  if c === a
+    d = parent(a)()
+    d = mul!(d, a, b)
+    return d
+  end
+
+  bfmpq = fmpq(b, 1)
+  for i = 1:dim(parent(a))
+    c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], bfmpq)
+  end
+  return c
+end
+
+mul!(c::AbsAlgAssElem{T}, a::fmpz, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
+
 function mul!(c::AlgGrpElem{T, S}, a::AlgGrpElem{T, S}, b::AlgGrpElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
   d = dim(A)
-  coeffs = Vector{T}(undef, d)
+
   if c === a || c === b
     z = parent(a)()
     mul!(z, a, b)
@@ -156,6 +213,12 @@ function mul!(c::AlgAssElem{T}, a::AlgAssElem{T}, b::AlgAssElem{T}) where {T}
   #@assert c == a * b
   return c
 end
+
+################################################################################
+#
+#  Division
+#
+################################################################################
 
 # Computes a/b, if possible
 function divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem)
