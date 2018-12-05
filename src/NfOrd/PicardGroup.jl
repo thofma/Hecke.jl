@@ -74,7 +74,7 @@ function _direct_sum_of_localizations(O::NfOrd)
   end
 
   groups = Vector{GrpAbFinGen}()
-  maps = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}()
+  maps = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}()
   for p in keys(D)
     # Find m such that p^m*O_p \subseteq F*O_p
     m = 0
@@ -91,7 +91,7 @@ function _direct_sum_of_localizations(O::NfOrd)
 
     # Compute (OK_p/F*OK_p)^\times
     groups2 = Vector{GrpAbFinGen}(undef, length(prime_ideals_over_p))
-    maps2 = Vector{GrpAbFinGenToNfOrdQuoRingMultMap}(undef, length(prime_ideals_over_p))
+    maps2 = Vector{GrpAbFinGenToAbsOrdQuoRingMultMap}(undef, length(prime_ideals_over_p))
     for i = 1:length(prime_ideals_over_p)
       q, eq = prime_ideals_over_p[i]
       groups2[i], maps2[i] = _multgrp_mod_pv(q, eq, q^eq)
@@ -120,7 +120,7 @@ function _direct_sum_of_localizations(O::NfOrd)
     gens = map(x -> GtoQ\(OKtoQ(OK(x.elem))), mGG.generators)
     H, GtoH = quo(G, gens)
     @assert GtoH.map == identity_matrix(FlintZZ, ngens(G))
-    HtoQ = GrpAbFinGenToNfOrdQuoRingMultMap(H, Q, GtoQ.generators, GtoQ.discrete_logarithm)
+    HtoQ = GrpAbFinGenToAbsOrdQuoRingMultMap(H, Q, GtoQ.generators, GtoQ.discrete_logarithm)
     push!(groups, H)
     push!(maps, HtoQ)
   end

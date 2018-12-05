@@ -142,7 +142,8 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     return R, RtoIdl
   end
 
-  G, GtoO = _multgrp_mod_ideal(O, F)
+  Q, OtoQ = quo(O, F)
+  G, GtoQ = multiplicative_group(Q)
 
   if !prepare_ref_disc_log
     # If we don't need to compute refined discrete logarithms, we compute the
@@ -152,7 +153,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # R to Pic(O).
     GinR = Vector{GrpAbFinGenElem}()
     for i = 1:ngens(G)
-      g = OO(GtoO(G[i]))
+      g = OO(OtoQ\(GtoQ(G[i])))
       r = mR\(ideal(OO, g))
       push!(GinR, r)
     end
@@ -188,7 +189,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
       D[i, i] = R.snf[i]
     end
     for i = (ngens(R) + 1):(ngens(R) + ngens(G))
-      g = OO(GtoO(G[i - ngens(R)]))
+      g = OO(OtoQ\(GtoQ(G[i - ngens(R)])))
       gOO = ideal(OO, g)
       a, r = disc_log_generalized_ray_class_grp(gOO, mR)
 
@@ -301,7 +302,6 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
       error("Ideal is not invertible")
     end
     if !isone(x + F)
-      #error("Ideal is not coprime to the conductor")
       x, _ = _coprime_integral_ideal_class(x, F)
     end
 
@@ -705,10 +705,7 @@ function _coprime_integral_ideal_class(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
     x = rand(a_inv, 100)
     c = x*a
     c = simplify!(c)
-    if denominator(c, false) != 1
-      # Should not happen, x is in inv(a)
-      continue
-    end
+    @assert denominator(c, false) == 1
     isone(numerator(c, false) + b) ? (check = false) : (check = true)
   end
   return numerator(c, false), x

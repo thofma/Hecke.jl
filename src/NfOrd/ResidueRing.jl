@@ -52,19 +52,25 @@ set_assert_level(:NfOrdQuoRing, 0)
 #
 ################################################################################
 
-elem_type(::Type{NfOrdQuoRing}) = NfOrdQuoRingElem
+function elem_type(::Type{AbsOrdQuoRing{S, T}}) where {S, T}
+  U = elem_type(S)
+  return AbsOrdQuoRingElem{S, T, U}
+end
 
-elem_type(::NfOrdQuoRing) = NfOrdQuoRingElem
+function elem_type(::AbsOrdQuoRing{S, T}) where {S, T}
+  U = elem_type(S)
+  return AbsOrdQuoRingElem{S, T, U}
+end
 
-base_ring(Q::NfOrdQuoRing) = Q.base_ring
+base_ring(Q::AbsOrdQuoRing) = Q.base_ring
 
-ideal(Q::NfOrdQuoRing) = Q.ideal
+ideal(Q::AbsOrdQuoRing) = Q.ideal
 
-basis_mat(Q::NfOrdQuoRing) = Q.basis_mat
+basis_mat(Q::AbsOrdQuoRing) = Q.basis_mat
 
-parent(x::NfOrdQuoRingElem) = x.parent
+parent(x::AbsOrdQuoRingElem) = x.parent
 
-parent_type(::Type{NfOrdQuoRingElem}) = NfOrdQuoRing
+parent_type(::Type{AbsOrdQuoRingElem{S, T, U}}) where {S, T, U} = AbsOrdQuoRing{S, T}
 
 ################################################################################
 #
@@ -72,7 +78,7 @@ parent_type(::Type{NfOrdQuoRingElem}) = NfOrdQuoRing
 #
 ################################################################################
 
-hash(x::NfOrdQuoRingElem, h::UInt) = hash(x.elem, h)
+hash(x::AbsOrdQuoRingElem, h::UInt) = hash(x.elem, h)
 
 ################################################################################
 #
@@ -95,8 +101,8 @@ Nemo.promote_rule(::Type{NfOrdQuoRingElem}, ::Type{fmpz}) = NfOrdQuoRingElem
 #
 ################################################################################
 
-Base.deepcopy_internal(x::NfOrdQuoRingElem, dict::IdDict) =
-        NfOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
+Base.deepcopy_internal(x::AbsOrdQuoRingElem, dict::IdDict) =
+        AbsOrdQuoRingElem(parent(x), Base.deepcopy_internal(x.elem, dict))
 
 #copy(x::NfOrdQuoRingElem) = deepcopy(x)
 
@@ -106,11 +112,11 @@ Base.deepcopy_internal(x::NfOrdQuoRingElem, dict::IdDict) =
 #
 ################################################################################
 
-function show(io::IO, Q::NfOrdQuoRing)
+function show(io::IO, Q::AbsOrdQuoRing)
   print(io, "Quotient of $(Q.base_ring)")
 end
 
-function show(io::IO, x::NfOrdQuoRingElem)
+function show(io::IO, x::AbsOrdQuoRingElem)
   print(io, "$(x.elem)")
 end
 
@@ -120,16 +126,16 @@ end
 #
 ################################################################################
 
-function (O::NfOrdQuoRing)(x::NfOrdElem)
-  parent(x) != base_ring(O) && error("Cannot coerce element into the quotient ring")
-  return NfOrdQuoRingElem(O, x)
+function (Q::AbsOrdQuoRing{S, T})(x::U) where {S, T, U}
+  parent(x) != base_ring(Q) && error("Cannot coerce element into the quotient ring")
+  return AbsOrdQuoRingElem(Q, x)
 end
 
-function (Q::NfOrdQuoRing)(x::Integer)
+function (Q::AbsOrdQuoRing)(x::Integer)
   return Q(base_ring(Q)(x))
 end
 
-function (Q::NfOrdQuoRing)(x::fmpz)
+function (Q::AbsOrdQuoRing)(x::fmpz)
   return Q(base_ring(Q)(x))
 end
 
@@ -140,23 +146,28 @@ end
 # (and standart helpers)
 #
 ################################################################################
+
 @doc Markdown.doc"""
     quo(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing, Map
+    quo(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing, Map
 > The quotient ring $O/I$ as a ring together with the section $M: O/I \to O$.
 > The pointwise inverse of $M$ is the canonical projection $O\to O/I$.
 """
-function quo(O::NfOrd, I::NfOrdIdl)
+
+function quo(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl})
+  @assert order(I) == O
   # We should check that I is not zero
-  Q = NfOrdQuoRing(O, I)
-  f = NfOrdQuoMap(O, Q)
+  Q = AbsOrdQuoRing(O, I)
+  f = AbsOrdQuoMap(O, Q)
   return Q, f
 end
 
 @doc Markdown.doc"""
     ResidueRing(O::NfOrd, I::NfOrdIdl) -> NfOrdQuoRing
+    ResidueRing(O::AlgAssAbsOrd, I::AlgAssAbsOrdIdl) -> AbsOrdQuoRing
 > The quotient ring $O$ modulo $I$ as a new ring.
 """
-Nemo.ResidueRing(O::NfOrd, I::NfOrdIdl) = NfOrdQuoRing(O, I)
+Nemo.ResidueRing(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}) = AbsOrdQuoRing(O, I)
 
 @doc Markdown.doc"""
     lift(O::NfOrd, a::NfOrdQuoRingElem) -> NfOrdElem
@@ -173,51 +184,51 @@ end
 #
 ################################################################################
 
-function +(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+function +(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
   return parent(x)(x.elem + y.elem)
 end
 
-function -(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+function -(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
   return parent(x)(x.elem - y.elem)
 end
 
-function -(x::NfOrdQuoRingElem)
+function -(x::AbsOrdQuoRingElem)
   return parent(x)(-x.elem)
 end
 
-function *(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+function *(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
   return parent(x)(x.elem * y.elem)
 end
 
-function mul!(z::NfOrdQuoRingElem, x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
-  mul!(z.elem, x.elem, y.elem)
-  mod!(z.elem, parent(z))
+function mul!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+  z.elem = mul!(z.elem, x.elem, y.elem)
+  z.elem = mod!(z.elem, parent(z))
   return z
 end
 
-function *(x::Integer, y::NfOrdQuoRingElem)
+function *(x::Integer, y::AbsOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end
 
-*(x::NfOrdQuoRingElem, y::Integer) = y*x
+*(x::AbsOrdQuoRingElem, y::Integer) = y*x
 
-function *(x::fmpz, y::NfOrdQuoRingElem)
-  return parent(x)(x * y.elem)
+function *(x::fmpz, y::AbsOrdQuoRingElem)
+  return parent(y)(x * y.elem)
 end
 
-*(x::NfOrdQuoRingElem, y::fmpz) = y*x
+*(x::AbsOrdQuoRingElem, y::fmpz) = y*x
 
-function ^(a::NfOrdQuoRingElem, f::fmpz)
+function ^(a::AbsOrdQuoRingElem, f::fmpz)
   if nbits(f) < 64
     return a^Int(f)
   end
-  f==0 && return one(parent(a))
-  f==1 && return deepcopy(a)
-  if f<0
-    f=-f
+  f == 0 && return one(parent(a))
+  f == 1 && return deepcopy(a)
+  if f < 0
+    f = -f
     a = inv(a)
   end
   b = a^(div(f, 2))
@@ -230,7 +241,7 @@ end
 
 #^(a::NfOrdQuoRingElem, f::Integer) = a^fmpz(f)
 
-function ^(a::NfOrdQuoRingElem, b::Int)
+function ^(a::AbsOrdQuoRingElem, b::Int)
   if b == 0
     return one(parent(a))
   elseif b == 1
@@ -263,15 +274,15 @@ end
 #
 ################################################################################
 
-iszero(x::NfOrdQuoRingElem) = iszero(x.elem)
+iszero(x::AbsOrdQuoRingElem) = iszero(x.elem)
 
-isone(x::NfOrdQuoRingElem) = isone(x.elem)
+isone(x::AbsOrdQuoRingElem) = isone(x.elem)
 
-function one(Q::NfOrdQuoRing)
+function one(Q::AbsOrdQuoRing)
   return Q(one(Q.base_ring))
 end
 
-function zero(Q::NfOrdQuoRing)
+function zero(Q::AbsOrdQuoRing)
   return Q(zero(Q.base_ring))
 end
 
@@ -281,7 +292,11 @@ end
 #
 ################################################################################
 
-==(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem) = x.elem == y.elem
+function ==(x::AbsOrdQuoRing, y::AbsOrdQuoRing)
+  return base_ring(x) == base_ring(y) && ideal(x) == ideal(y)
+end
+
+==(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem) = x.elem == y.elem
 
 ################################################################################
 #
@@ -289,13 +304,13 @@ end
 #
 ################################################################################
 
-function divexact(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+function divexact(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   b, z = isdivisible(x, y)
   @assert b
   return z
 end
 
-function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
+function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   parent(x) != parent(y) && error("Elements must have same parents")
 
   iszero(y) && error("Dividing by zero")
@@ -335,7 +350,11 @@ function isdivisible(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
     V[1 + i, d + 1 + i] = 1
   end
 
-  hnf_modular_eldiv!(V, minimum(parent(x).ideal))
+  if typeof(base_ring(parent(x))) <: NfOrd
+    hnf_modular_eldiv!(V, minimum(parent(x).ideal))
+  else
+    V = hnf(V)
+  end
 
   for i in 2:(d + 1)
     if !iszero(V[1, i])
@@ -401,7 +420,7 @@ end
 #
 ################################################################################
 
-function inv(x::NfOrdQuoRingElem)
+function inv(x::AbsOrdQuoRingElem)
   return divexact(one(parent(x)), x)
 end
 
@@ -423,7 +442,7 @@ function euclid(x::NfOrdQuoRingElem)
   _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
   _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_mat)
 
-  hnf_modular_eldiv!(U, parent(x).ideal.minimum)
+  hnf_modular_eldiv!(U, minimum(parent(x).ideal, Val{false}))
 
   z = fmpz(1)
 
