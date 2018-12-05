@@ -82,7 +82,7 @@ end
 function _exp(a::fmpz_mod_abs_series)
   R = base_ring(parent(a))
   R = ResidueRing(FlintZZ, Int(modulus(R)), cached = false)
-  Rx,x = PolynomialRing(R)
+  Rx,x = PolynomialRing(R, cached = false)
   A = Rx()
   for i=0:length(a)
     setcoeff!(A, i, lift(coeff(a, i)))
