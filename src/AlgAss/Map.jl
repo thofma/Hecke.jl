@@ -228,3 +228,18 @@ end
 function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, a::AbsAlgAssElem{fmpq})
   return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, a)
 end
+
+function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
+  if isdefined(m, :imat)
+    return true, preimage(m, a)
+  end
+
+  A = parent(a)
+  t = matrix(base_ring(A), dim(A), 1, coeffs(a))
+  b, p = cansolve(m.mat', t)
+  if b
+    return true, domain(m)([ p[1, i] for i = 1:rows(m.mat) ])
+  else
+    return false, zero(domain(m))
+  end
+end
