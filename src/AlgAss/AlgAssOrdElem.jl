@@ -378,3 +378,24 @@ end
 iszero(a::AlgAssAbsOrdElem) = iszero(elem_in_algebra(a, Val{false}))
 
 isone(a::AlgAssAbsOrdElem) = isone(elem_in_algebra(a, Val{false}))
+
+################################################################################
+#
+#  Elements from and to matrices
+#
+################################################################################
+
+function elem_to_mat_row!(M::fmpz_mat, i::Int, a::AlgAssAbsOrdElem)
+  for c = 1:cols(M)
+    M[i, c] = elem_in_basis(a)[c]
+  end
+  return nothing
+end
+
+function elem_from_mat_row(O::AlgAssAbsOrd, M::fmpz_mat, i::Int)
+  t = Vector{fmpz}(undef, degree(O))
+  for c = 1:cols(M)
+    t[c] = deepcopy(M[i, c])
+  end
+  return O(t)
+end
