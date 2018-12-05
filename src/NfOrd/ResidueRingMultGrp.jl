@@ -1205,7 +1205,7 @@ function direct_product(groups::Vector{GrpAbFinGen}, maps::Vector{GrpAbFinGenToA
     return groups[1], maps[1], AbsOrdQuoMap(base_ring(Q), Q)
   end
 
-  ideals = Vector{ideal_type(base_ring(Q))}(undef, length(maps))
+  ideals = Vector{typeof(ideal(codomain(maps[1])))}(undef, length(maps))
   for i = 1:length(maps)
     ideals[i] = ideal(codomain(maps[i]))
   end
