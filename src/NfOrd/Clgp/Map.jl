@@ -159,6 +159,14 @@ function class_group_ideal_relation(I::NfOrdIdl, c::ClassGrpCtx)
     #println("trying $a")
     cnt += 1
     na = norm(E.A)*abs(norm(aa, c.normCtx, norm(E.A)))
+    if na === nothing #basically means elt is too large,
+                      # exhausted randomness, so redo it.
+      use_rand = true
+      last_j = random_get(J, reduce = false)
+      E = class_group_small_lll_elements_relation_start(c, I*last_j) 
+      iI = inv(E.A)
+      continue
+    end
     n = FlintZZ(norm(iI)*na)
     if issmooth(c.FB.fb_int, n)
       a = K(O(fmpz[aa[1, i] for i=1:degree(K)]))
@@ -295,10 +303,11 @@ end
 """
 
 function principal_gen_fac_elem(I::FacElem{NfOrdIdl, NfOrdIdlSet})
+
   J, a= reduce_ideal2(I)
-  @hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
+  #@hassert :PID_Test 1 evaluate(a)*J == evaluate(I)
   x = Hecke.principal_gen_fac_elem(J)
-  @hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
+  #@hassert :PID_Test 1 ideal(order(J), evaluate(x)) == J
   x=x*a
   return x
   
@@ -337,10 +346,13 @@ function isprincipal_fac_elem(A::NfOrdIdl)
   #so(?) x*A is c-smooth and x*A = evaluate(r)
 
   R, d = solve_ut(H, r)
+
   if d != 1
     return false, FacElem([nf(O)(1)], fmpz[1])
   end
+
   rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
+
   for (p,v) = R
     rs[p] = v
   end
@@ -395,6 +407,9 @@ function unique_fmpz_mat(C::Nemo.arb_mat)
 end
 
 function Base.round(::Type{fmpz}, x::arb)
+  if radius(x) > 1e-1
+    throw(InexactError(:round, fmpz, x))
+  end
   return round(fmpz, BigFloat(x))
 end
 
@@ -444,6 +459,19 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
   b = deepcopy(a)
   cnt = 10
   V = zero_matrix(FlintZZ, 1, 1)
+  if isdefined(U, :tentative_regulator)
+    #TODO: improve here - it works, kind of...
+    B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
+    bd = maximum(sqrt(sum(B[i,j]^2 for j=1:cols(B))) for i=1:rows(B))
+    bd = bd/root(U.tentative_regulator, length(U.units))
+    if isfinite(bd)
+      s = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), bd)
+      prec = max(s, prec)
+      prec = 1<<nbits(prec)
+    else
+      #@show "too large"
+    end
+  end
 
   while true
     prec, A = Hecke._conj_log_mat_cutoff_inv(U, prec)
@@ -476,7 +504,7 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
     if iszero(V)
       return b
     end
-
+    @vprint :UnitGroup 2 "exactly? ($exact) reducing by $V\n"
     for i=1:length(b)
       b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
     end

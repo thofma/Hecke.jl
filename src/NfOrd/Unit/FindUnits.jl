@@ -225,7 +225,10 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
       @hassert :UnitGroup 2 _isunit(y)
 
       if u.full_rank
+        @vprint :UnitGroup 2 "have full rank, can reduce unit first...\n"
         y = reduce_mod_units([y], u)[1]
+      else
+        @vprint :UnitGroup 2 "no full rank, cannot reduce unit first...\n"
       end
 
       @vprint :UnitGroup 1 "Exponents are of bit size $(maximum([ nbits(o) for o in values(y.fac)]))\n"

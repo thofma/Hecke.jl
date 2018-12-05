@@ -23,7 +23,7 @@
     C1 = frac_ideal(OL, PM3)
 
     @test A == B + C
-    @test B == intersection(A, B)
+    @test B == intersect(A, B)
     @test K(2)*C == A*B
     @test inv(C)*C1 == I1
     @test norm(A) == OK(9)*OK

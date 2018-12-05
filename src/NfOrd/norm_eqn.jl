@@ -7,7 +7,7 @@ function norm_1_generators(A::Array{NfOrdIdl, 1})
   @assert all(x->x.gen_one == A[1].gen_one, A)
 
   f = matrix(FlintZZ, 1, length(A), [degree(x) for x = A])
-  k = nullspace(f)[1]
+  k = nullspace(f)[2]
   
   id = [FacElem(A, [k[i,j] for i=1:length(A)]) for j=1:cols(k)]
   return id 

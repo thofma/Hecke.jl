@@ -63,12 +63,12 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
+    intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
 > Returns $x \cap y$.
 """
-function intersection(x::NfOrdIdl, y::NfOrdIdl)
+function intersect(x::NfOrdIdl, y::NfOrdIdl)
   d = degree(order(x))
   H = vcat(basis_mat(x), basis_mat(y))
   K = _kernel(H)
@@ -77,12 +77,12 @@ function intersection(x::NfOrdIdl, y::NfOrdIdl)
 end
 
 @doc Markdown.doc"""
-    intersection(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
+    intersect(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
     lcm(x::NfOrdIdl, y::NfOrdIdl) -> NfOrdIdl
 
 > Returns $x \cap y$.
 """
-lcm(x::NfOrdIdl, y::NfOrdIdl) = intersection(x, y)
+lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
 ################################################################################
 #
@@ -773,5 +773,5 @@ function contract(A::NfOrdIdl, O::NfOrd)
   return ideal(O, M, false, true)
 end
 
-intersection(O::NfOrd, A::NfOrdIdl) = contract(A, O)
-intersection(A::NfOrdIdl, O::NfOrd) = contract(A, O)
+intersect(O::NfOrd, A::NfOrdIdl) = contract(A, O)
+intersect(A::NfOrdIdl, O::NfOrd) = contract(A, O)

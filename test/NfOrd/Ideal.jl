@@ -107,7 +107,7 @@
     K = @inferred ideal(O1, 15) + ideal(O1, 10)
     @test K == ideal(O1, 5)
 
-    K = @inferred intersection(ideal(O1, 15), ideal(O1, 10))
+    K = @inferred intersect(ideal(O1, 15), ideal(O1, 10))
     @test K == ideal(O1, 30)
     K = @inferred lcm(ideal(O1, 15), ideal(O1, 10))
     @test K == ideal(O1, 30)

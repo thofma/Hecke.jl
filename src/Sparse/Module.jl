@@ -184,6 +184,7 @@ function rank(M::ModuleCtxNmod)
 end
 
 function module_trafo_assure(M::ModuleCtx_fmpz)
+
   if !M.new && isdefined(M, :trafo)
     return
   end
@@ -202,6 +203,7 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   M.basis_idx = det(M.basis) # h is upp_triangular, hence det is trivial
   @assert M.basis_idx > 0
   M.new = false
+
   nothing
 end
 

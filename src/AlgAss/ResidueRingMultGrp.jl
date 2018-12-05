@@ -46,7 +46,7 @@ function _multgrp_non_maximal(Q::AlgAssAbsOrdQuoRing)
     primes_above = prime_ideals[p]
     q = primes_above[1]^fac_of_aOO[primes_above[1]]
     for i = 2:length(primes_above)
-      q = intersection(q, primes_above[i]^fac_of_aOO[primes_above[i]])
+      q = intersect(q, primes_above[i]^fac_of_aOO[primes_above[i]])
     end
     primary_ideals[p] = contract(q, O)
   end

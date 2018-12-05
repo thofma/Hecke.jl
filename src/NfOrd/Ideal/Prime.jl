@@ -412,7 +412,7 @@ function anti_uniformizer(P::NfOrdIdl)
   else
     p = minimum(P)
     M = representation_matrix(uniformizer(P))
-    Mp = MatrixSpace(GF(p, cached=false), rows(M), cols(M), false)(M)
+    Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
     K = kernel(Mp)
     @assert length(K) > 0
     P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
@@ -1185,3 +1185,47 @@ end
 Base.eltype(::PrimeIdealsSet) = NfOrdIdl
 
 Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
+
+#      iterator for residue rings/ fields
+#      check is unit_group(quo(R, A)) for non-maximal R is correct (well intended to be correct)
+#      saturation in the Singular sense
+
+#TODO: move to Arithmetic?
+function radical(A::NfOrdIdl)
+  a = minimum(A)
+  lp = factor(a).fac
+  R = 1*order(A)
+  for p = keys(lp)
+    R = intersect(R, A + pradical(order(A), p))
+  end
+  return R
+end
+
+#TODO: isprime is broken for non-maximal orders, uses valuation...
+#Algo:
+# primary -> radical is prime, so this is neccessary
+# in orders: prime -> maximal (or 0)
+# in general: radical is maximal -> primary
+function isprimary(A::NfOrdIdl)
+  return isprime(radical(A))
+end
+ismaximal(A::NfOrdIdl) = (!iszero(A)) && isprime(A)
+
+function primary_decomposition(A::NfOrdIdl)
+  a = minimum(A)
+  lp = factor(a).fac
+  P = []
+  for p = keys(lp)
+    pp = prime_ideals_over(order(A), p)
+    for x = pp
+      y = x + A
+      if !isone(y)
+        #TODO: what is the correct exponent here?
+        push!(P, x^(div(degree(order(A)), flog(norm(x), p))*lp[p]) + A)
+      end
+    end
+  end
+  return P
+end
+
+

@@ -44,7 +44,7 @@ import Base: show, minimum, rand, prod, copy, rand, ceil, round, size, in,
              setindex!, transpose, getindex, //, div, floor, max, BigFloat,
              precision, first, StepRange, show, one, zero, inv, iseven, isodd,
              convert, angle, abs2, isless, exponent, isfinite, zeros, rem, min,
-             numerator, denominator, exp, maximum
+             numerator, denominator, exp, maximum, intersect
 
 # To make all exported Nemo functions visible to someone using "using Hecke"
 # we have to export everything again
@@ -202,6 +202,11 @@ function __init__()
 
   global _get_unit_group_non_maximal = t[1]
   global _set_unit_group_non_maximal = t[2]
+
+  t = create_accessors(AnticNumberField, FacElemMon{AnticNumberField}, get_handle())
+
+  global _get_fac_elem_mon_of_nf = t[1]
+  global _set_fac_elem_mon_of_nf = t[2]
 
   global R = _RealRing()
 

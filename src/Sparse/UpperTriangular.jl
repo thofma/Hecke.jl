@@ -26,7 +26,7 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
     if iszero(A.rows[i])
       deleteat!(A.rows, i)
       push!(A.rows, sparse_row(base_ring(A)))
-      push!(trafos, sparse_trafo_delete_zero(T, i))
+      push!(trafos, sparse_trafo_move_row(T, i, rows(A)))
       i += 1
       continue
     end
@@ -87,8 +87,8 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
     if length(A.rows[all_r[j]].pos) == 0
       deleteat!(A.rows, all_r[j])
       push!(A.rows, sparse_row(base_ring(A)))
-      push!(trafos, sparse_trafo_delete_zero(T, all_r[j]))
-    end
+      push!(trafos, sparse_trafo_move_row(T, all_r[j]), rows(A))
+o   end
   end
   return sr + 1, trafos
 end
@@ -239,7 +239,7 @@ function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) wh
       while length(A.rows[k].pos) == 0
         deleteat!(A.rows, k)
         push!(A.rows, sparse_row(base_ring(A)))
-        push!(trafo, sparse_trafo_delete_zero(T, k))
+        push!(trafo, sparse_trafo_move_row(T, k, rows(A)))
         k -= 1
       end
 

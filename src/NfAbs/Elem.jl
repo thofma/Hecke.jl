@@ -785,7 +785,7 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
   end
 
   d = denominator(a)
-  if with_roots_unity
+  if n == 2 || with_roots_unity
     fl, rt = _one_root_hensel(a*d^n, n)
     if fl
       return fl, rt//d
@@ -854,7 +854,7 @@ function root(a::NfOrdElem, n::Int)
   fl, rt = ispower(a.elem_in_nf, n)
   if fl
     O = parent(a)
-    if denominator(a, O) == 1
+    if denominator(rt, O) == 1
       return O(rt)
     end  
   end

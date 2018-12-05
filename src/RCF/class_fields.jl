@@ -199,7 +199,7 @@ end
 
 @doc Markdown.doc"""
     intersect(a::ClassField, b::ClassField) -> ClassField
-> The intersection of $a$ and $b$ as a class field.
+> The intersect of $a$ and $b$ as a class field.
 """
 function Base.intersect(a::ClassField, b::ClassField)
   @assert base_ring(a) == base_ring(b)

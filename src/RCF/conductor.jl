@@ -545,11 +545,11 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
   mp = inv(C.quotientmap) * mr 
   R = domain(mp)
   
-  O = order(first(keys(lp)))
-  K = nf(O)
+  O = base_ring(C)
+  
   tmg = mr.tame_mult_grp
   #first, tame part
-  primes_done=fmpz[]
+  primes_done = fmpz[]
   for p in keys(tmg)
     if p.minimum in primes_done 
       continue
@@ -561,7 +561,7 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
       return false
     end
   end
-  
+  K = nf(O)
   #wild part
   if !isempty(mr.wild_mult_grp)
     o = Int(order(R))
@@ -1474,7 +1474,7 @@ end
 > Tests if $f$ involves only one variable. If so, return a corresponding univariate polynomial.
 """
 function is_univariate(f::Generic.MPoly{nf_elem})
-  kx, x = PolynomialRing(base_ring(f), "x")
+  kx, x = PolynomialRing(base_ring(f), "x", cached = false)
   if ngens(parent(f)) == 1
     f1 = kx()
     for i = 1:f.length
@@ -1610,7 +1610,7 @@ end
 @doc Markdown.doc"""
     minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField} -> NfOrdIdl
 > Given an embedding $m:k\to K$ of number fields and an integral ideal in $K$, find the 
-> intersection $I \cap \Z_k$.
+> intersect $I \cap \Z_k$.
 """
 function minimum(m::T, I::NfOrdIdl) where T <: Map{AnticNumberField, AnticNumberField}
   K = codomain(m)

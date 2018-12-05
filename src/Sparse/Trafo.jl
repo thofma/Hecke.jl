@@ -2,7 +2,7 @@
 
 export sparse_trafo_scale, sparse_trafo_swap, sparse_trafo_add_scaled,
        sparse_trafo_para_add_scaled, sparse_trafo_partial_dense,
-       sparse_trafo_delete_zero
+       sparse_trafo_move_row
 
 ################################################################################
 #
@@ -65,10 +65,12 @@ function sparse_trafo_id(::Type{T}) where {T}
   return z
 end
 
-function sparse_trafo_delete_zero(::Type{T}, i::Int) where {T}
+function sparse_trafo_move_row(::Type{T}, i::Int, j::Int) where {T}
+  @assert i <= j
   z = SparseTrafoElem{T, dense_matrix_type(T)}()
   z.type = 6
   z.i = i
+  z.j = j
   return z
 end
 
@@ -80,7 +82,7 @@ function change_indices!(T::Array{SparseTrafoElem{S, SS}, 1}, st::Int, off::Int)
     if t.i > st
       t.i += off
     end
-    if t.type == 1 || t.type == 5 || t.type == 6
+    if t.type == 1 || t.type == 5
       continue
     end
     if t.j > st
@@ -96,7 +98,7 @@ function max_index(T::Array{SparseTrafoElem{S, SS}, 1}) where {S, SS}
         continue
     end
     i = max(i, t.i)
-    if t.type == 1 || t.type == 5 || t.type == 6
+    if t.type == 1 || t.type == 5
       continue
     end
     i = max(i, t.j)
@@ -392,7 +394,7 @@ function Base.show(io::IO, t::SparseTrafoElem)
   elseif i == 5
     print(io, "Dense ", rows(t.U), "x", rows(t.U), " at ", t.i)
   elseif i == 6
-    print(io, "Move ", t.i, " to end")
+    print(io, "Move ", t.i, " to ", t.j)
   end
 end
 
@@ -434,8 +436,15 @@ function apply_left!(A::SMat{T}, t::SparseTrafoElem{T, S}) where {T, S}
       push!(A, r)
     end
   elseif i == 6
-    deleteat!(A.rows, t.i)
-    push!(A.rows, sparse_row(base_ring(A)))
+    @assert t.i <= t.j
+    x = A.rows
+    for j in t.i:t.j-1
+      r = x[j]
+      x[j] = x[j + 1]
+      x[j + 1] = r
+    end
+    #deleteat!(A.rows, t.i)
+    #push!(A.rows, sparse_row(base_ring(A)))
   else
     error("Wrong type")
   end
@@ -471,7 +480,7 @@ function apply_right!(x::Vector{T}, t::SparseTrafoElem{T, S}) where {T, S}
       x[i] = s[1, j]
     end
   elseif i == 6
-    for j in length(x):-1:t.i+1
+    for j in t.j:-1:t.i+1
       r = x[j]
       x[j] = x[j - 1]
       x[j - 1] = r

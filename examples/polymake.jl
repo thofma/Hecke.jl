@@ -52,6 +52,62 @@ function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
   return res
 end
 
+function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 0
+  bA = Array{BigInt, 2}(hcat(-b, A))
+  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, cols(A), 1), C))
+  p = Polymake.perlobj( "Polytope<Rational>", Dict("EQUATIONS" => bA, 
+                                                   "INEQUALITIES" => zI))
+  inner = Polymake.give(p, "INTERIOR_LATTICE_POINTS")
+  out = Polymake.give(p, "BOUNDARY_LATTICE_POINTS")
+
+  res = zero_matrix(FlintZZ, rows(inner) + rows(out), cols(A))
+  for i=1:rows(out)
+    @assert out[i,1] == 1
+    for j=1:cols(A)
+      res[i,j] = out[i, j+1]
+    end
+  end
+  for i=1:rows(inner)
+    @assert inner[i,1] == 1
+    for j=1:cols(A)
+      res[i+rows(out), j] = inner[i, j+1]
+    end
+  end
+  return res
+end
+
+function Hecke.valuation(a::FacElem{fmpz, FlintIntegerRing}, p::fmpz)
+  return sum(k*valuation(b, p) for (b, k) = a.fac)
+end
+
+
+function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
+  @assert Hecke.ismaximal(R)
+  lp = factor(k*R)
+  s, ms = Hecke.sunit_mod_units_group_fac_elem(collect(keys(lp)))
+  C = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(ms(s[i]), p) for i=1:ngens(s)]) for p = keys(lp)])
+  
+  lp = factor(k)
+  A = vcat([matrix(FlintZZ, 1, ngens(s), [valuation(Hecke.factored_norm(ms(s[i])), p) for i=1:ngens(s)]) for p = keys(lp.fac)])
+  b = matrix(FlintZZ, length(lp.fac), 1, [valuation(k, p) for p = keys(lp.fac)])
+
+  so = solve_mixed(A, b, C)
+  sol = [ms(s(sub(so, i:i, 1:cols(so)))) for i=1:rows(so)]
+
+  if !abs
+    u, mu = unit_group_fac_elem(R)
+    i = findfirst(x -> norm(mu(x)) == -1, gens(u))
+    ns = [norm(x) for x = sol]
+    if i === nothing
+      return [sol[i] for i in 1:length(sol) if ns[i] == k]
+    end
+    U = mu(u[i])
+    return [ ns[i] == k ? sol[i] : sol[i] * U for i = 1:length(sol)]
+  end
+  return sol
+end
+
+
 function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
   @assert Hecke.ismaximal(R)
   lp = factor(k)

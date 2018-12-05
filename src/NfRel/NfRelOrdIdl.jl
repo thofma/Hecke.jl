@@ -573,11 +573,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-    intersection(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
+    intersect(a::NfRelOrdIdl, b::NfRelOrdIdl) -> NfRelOrdIdl
 
 > Returns $a \cap b$.
 """
-function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
+function intersect(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   d = degree(order(a))
   Ma = basis_pmat(a)
   Mb = basis_pmat(b)
@@ -586,7 +586,7 @@ function intersection(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   M2 = hcat(PseudoMatrix(z, Mb.coeffs), Mb)
   M = vcat(M1, M2)
   if T == nf_elem
-    m = intersection(norm(a), norm(b))
+    m = intersect(norm(a), norm(b))
     H = sub(pseudo_hnf_full_rank_with_modulus(M, m, :lowerleft), 1:d, 1:d)
   else
     H = sub(pseudo_hnf(M, :lowerleft), 1:d, 1:d)

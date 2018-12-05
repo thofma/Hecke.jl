@@ -221,7 +221,6 @@ function conjugates_arb_log(x::FacElem{nf_elem, AnticNumberField}, abs_tol::Int)
       end
     end
     if prec_too_low
-      @show "\n\n SHIT \n\n"
       pr *= 2
       continue
     end

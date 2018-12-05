@@ -40,7 +40,7 @@ mutable struct NormCtx_split <: NormCtx
         continue
       end
       push!(NC.lp, p)
-      R = GF(p)
+      R = GF(p, cached = false)
       push!(NC.lR, R)
       push!(NC.mp, zero_matrix(R, 1, degree(O)))
       push!(NC.np, zero_matrix(R, 1, degree(O)))
@@ -226,7 +226,13 @@ function class_group_small_lll_elements_relation_next(I::SmallLLLRelationsCtx)
 
   I.cnt += 1
   while true
-    rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))
+    # Before: rand!(I.elt, I.b, -I.bd:I.bd, min(length(I.b), 5))
+    # TODO: make this non-allocating
+    I.elt = rand(-I.bd:I.bd) * rand(I.b)
+    for i in 2:min(length(I.b), 5)
+      I.elt = I.elt + rand(-I.bd:I.bd) * rand(I.b)
+    end
+
     if !iszero(I.elt)
       return deepcopy(I.elt)
     end

@@ -104,19 +104,19 @@ end
   @test contains(AF(31293.8558289993733), Hecke.regulator([ K(mU(U[2])) ], 1))
   @test test_disc_log_units(U, mU, O)
 
-  f = x^4-3072*x^3+7926*x^2-3920*x-9063
-  K, a = number_field(f, "a")
-  O = equation_order(K)
-  P, mP = picard_group(O)
-  @test issnf(P)
-  @test P.snf == fmpz[ 2, 2, 2, 2, 4 ]
-  @test test_disc_log_picard(P, mP, O)
+  #f = x^4-3072*x^3+7926*x^2-3920*x-9063
+  #K, a = number_field(f, "a")
+  #O = equation_order(K)
+  #P, mP = picard_group(O)
+  #@test issnf(P)
+  #@test P.snf == fmpz[ 2, 2, 2, 2, 4 ]
+  #@test test_disc_log_picard(P, mP, O)
 
-  U, mU = Hecke.unit_group_non_maximal(O)
-  @test issnf(U)
-  @test U.snf == fmpz[ 2, 0, 0 ]
-  @test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
-  @test test_disc_log_units(U, mU, O)
+  #U, mU = Hecke.unit_group_non_maximal(O)
+  #@test issnf(U)
+  #@test U.snf == fmpz[ 2, 0, 0 ]
+  #@test contains(AF(455982050.1598537651), Hecke.regulator(map( x -> K(mU(x)), [ U[2], U[3] ]), 1))
+  #@test test_disc_log_units(U, mU, O)
 
 #  f = x^3+4064*x^2-1608*x-2816
 #  K, a = number_field(f, "a")

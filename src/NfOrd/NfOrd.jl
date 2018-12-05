@@ -1298,7 +1298,7 @@ function lll(M::NfOrd)
       On.ismaximal = M.ismaximal
       return On
     catch e
-      if isa(e, LowPrecisionLLL)
+      if isa(e, LowPrecisionLLL) || isa(e, InexactError)
         prec = Int(round(prec*1.2))
         #if prec>1000
         #  error("precision too large in LLL");

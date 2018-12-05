@@ -166,6 +166,9 @@ function _add_dependent_unit(U::UnitGrpCtx{S}, y::T; rel_only = false) where {S,
   U.rel_add_prec = p
   @vprint :UnitGroup 1 "reduction of the new unit group...index improved by $(abs(rel[r+1]))\n"
   @vtime :UnitGroup 1 U.units = reduce(U.units, p)
+  #test reduction:
+  #  LLL -> prod |b_i| <= 2^? disc
+  @hassert :UnitGroup 1 prod(sum(x*x for x = conjugates_arb_log(u, 64)) for u = U.units)/U.tentative_regulator^2 < fmpz(1)<< (2*length(U.units))
   return true
 end
 
@@ -292,24 +295,6 @@ function _conj_log_mat_cutoff(x::Array{T, 1}, p::Int) where T
   end
 
   return A
-end
-
-# Powering function for fmpz exponents
-function _pow(x::Array{T, 1}, y::Array{fmpz, 1}) where T
-  K = _base_ring(x[1])
-
-  zz = deepcopy(y)
-
-  z = Array{fmpz}(undef, length(x))
-
-  for i in 1:length(x)
-    z[i] = mod(zz[i], 2)
-    zz[i] = zz[i] - z[i]
-  end
-
-  r = K(1)
-
-  return zz
 end
 
 function _add_unit(u::UnitGrpCtx, x::FacElem{nf_elem, AnticNumberField})
