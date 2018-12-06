@@ -106,9 +106,9 @@ function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, 
   M = O.tcontain
   newelems=FacElem{NfOrdElem, NfOrd}[]
   for el in elems
-    x=Dict{NfOrdElem, fmpz}()
+    x = Dict{NfOrdElem, fmpz}()
     for (f,k) in el.fac
-      l=mod(k,exponent)
+      l = mod(k,exponent)
       if !iszero(l)
         elem_to_mat_row!(M.num, 1, M.den, f)
         M = mul!(M, M, O.basis_mat_inv)

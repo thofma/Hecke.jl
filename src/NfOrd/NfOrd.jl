@@ -771,39 +771,47 @@ end
 #
 ################################################################################
 
-function __equation_order(K::AnticNumberField)
-  M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  z = NfAbsOrd(K, M, Minv, basis(K), false)
-  z.isequation_order = true
-  return z
-end
+#equation_order(K::AnticNumberField, cached::Bool) = EquationOrder(K, cached = cached)
+
+equation_order(K, cached::Bool = false) = EquationOrder(K, cached)
+
+#function __equation_order(K::AnticNumberField)
+#  M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+#  Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+#  z = NfAbsOrd(K, M, Minv, basis(K), false)
+#  z.isequation_order = true
+#  return z
+#end
 
 @doc Markdown.doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
 > Returns the equation order of the number field $K$.
 """
-function EquationOrder(K::AnticNumberField, cached::Bool = true)
+function EquationOrder(K::T, cached::Bool = true) where {T}
   if cached
     try
       M = _get_nf_equation_order(K)
       return M
     catch e
-      M = __equation_order(K)
-      _set_nf_equation_order(K, M)
-      return M
+      if e isa AccessorNotSetError
+        M = __equation_order(K)
+        _set_nf_equation_order(K, M)
+        return M
+      else
+        rethrow(e)
+      end
     end
   else
-   M = __equation_order(K)
-   return M
+    M = __equation_order(K)
+    return M
   end
 end
 
-function EquationOrder(K::T, cached::Bool = false) where {T}
+function __equation_order(K::T) where {T}
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  z = NfAbsOrd{T, elem_type(T)}(K, M, Minv, basis(K), cached)
+  z = NfAbsOrd{T, elem_type(T)}(K, M, Minv, basis(K), false)
   z.isequation_order = true
   return z
 end
@@ -1116,10 +1124,6 @@ end
 #
 ###############################################################################
 
-#for consistency
-
-equation_order(K::AnticNumberField) = EquationOrder(K)
-
 function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   if length(primes) == 0
     return O
@@ -1220,18 +1224,18 @@ julia> K, a = NumberField(x^3 + 2, "a");
 julia> O = MaximalOrder(K);
 ```
 """
-function MaximalOrder(K::AnticNumberField)
+function MaximalOrder(K::T) where {T}
   try
-    c = _get_maximal_order_of_nf(K)::NfOrd
+    c = _get_maximal_order(K)::NfAbsOrd{T, elem_type(T)}
     return c
   catch e
     if !isa(e, AccessorNotSetError)
       rethrow(e)
     end
     #O = MaximalOrder(K)::NfOrd
-    O = new_maximal_order(EquationOrder(K))::NfOrd
-    O.ismaximal=1
-    _set_maximal_order_of_nf(K, O)
+    O = new_maximal_order(EquationOrder(K))::NfAbsOrd{T, elem_type(T)}
+    O.ismaximal = 1
+    _set_maximal_order(K, O)
     return O
   end
 end
@@ -1437,14 +1441,19 @@ end
 
 ###############################################################################
 #
-#  Buchmann-Lenstra for the computation of maximal orders
+#  Code to get a new maximal order starting from any order
 #
 ###############################################################################
+
+# This is the non-cached version generic fallback version
 
 function new_maximal_order(O::NfAbsOrd)
   return maximal_order_round_four(O)
 end
 
+#  Buchmann-Lenstra for simple absolute number fields.
+
+# TODO: Ask Carlo if we need to assert that O is "the" equation order.
 function new_maximal_order(O::NfOrd)
   K = nf(O)
   if degree(K) == 1

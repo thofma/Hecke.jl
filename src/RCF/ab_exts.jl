@@ -366,7 +366,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
   k=divexact(n,m)
   b1=Int(root(fmpz(bound),Int(degree(O)*(m-1)*k))) 
   list = squarefree_for_conductors(O, b1, n, coprime_to=coprime_to)
-
+  e = Int((m-1)*k)
   extra_list = Tuple{Int, fmpz}[(1, fmpz(1))]
   for q in ram_primes
     tr = prime_decomposition_type(O, Int(q))
@@ -375,6 +375,7 @@ function conductors_tame(O::NfOrd, n::Int, bound::fmpz)
     if gcd(nq-1,n) == 1
       continue
     end
+    nq = nq^(length(tr)*e)
     if nq > bound
       continue
     end
@@ -426,7 +427,7 @@ function conductors(O::NfOrd, a::Array{Int, 1}, bound::fmpz, tame::Bool=false)
   #
   # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals. 
   #
-  wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(),1)]
+  wild_list=Tuple{Int, Dict{NfOrdIdl, Int}, fmpz}[(1, Dict{NfOrdIdl, Int}(), fmpz(1))]
   for q in wild_ram
     lp = prime_decomposition(O,Int(q))
     fq = divexact(d,lp[1][2]*length(lp))

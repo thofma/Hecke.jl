@@ -56,6 +56,18 @@ function _set_maximal_order(K::NfAbsNS, O::NfAbsOrd{NfAbsNS, NfAbsNSElem})
   K.O = O
 end
 
+function _get_nf_equation_order(K::NfAbsNS)
+  if isdefined(K, :equation_order)
+    return K.equation_order::NfAbsOrd{NfAbsNS, NfAbsNSElem}
+  else
+    throw(AccessorNotSetError())
+  end
+end
+
+function _set_nf_equation_order(K::NfAbsNS, O)
+  K.equation_order = O
+end
+
 ################################################################################
 #
 #  Copy

@@ -249,9 +249,7 @@ function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}) where { T <: AlgAssAbs
 
   M = zero_matrix(FlintZZ, length(b), d)
   for i = 1:length(b)
-    for j = 1:d
-      M[i, j] = elem_in_basis(b[i])[j]
-    end
+    elem_to_mat_row!(M, i, b[i])
   end
   M = _hnf(M, :lowerleft)
   if d < length(b)
