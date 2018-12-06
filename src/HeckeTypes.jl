@@ -736,7 +736,7 @@ NfAbsOrd(b::Array{T, 1}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(
 
 const NfOrd = NfAbsOrd{AnticNumberField, nf_elem}
 
-const NfAbsOrdID = Dict{Tuple{AnticNumberField, FakeFmpqMat}, NfOrd}()
+const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, NfOrd}()
 
 ################################################################################
 #
@@ -1968,6 +1968,7 @@ mutable struct NfAbsNS <: Nemo.Field
   degree::Int
   degrees::Vector{Int}
   O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
+  equation_order
 
   function NfAbsNS(f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
     r = new()
