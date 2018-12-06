@@ -5,7 +5,7 @@ export rational_reconstruction, farey_lift, div, valence, leading_coefficient,
        coefficients
 
 function PolynomialRing(R::Ring; cached::Bool = false)
-  return PolynomialRing(R, "_x", cached = cached)
+  return PolynomialRing(R, "x", cached = cached)
 end
 
 function PolynomialRing(R::FlintRationalField, a::Symbol; cached::Bool = true)

@@ -715,6 +715,15 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
   end  
 end
 
+function Base.hash(f::NfRel_nsToNfRel_nsMor{T}, u::UInt64) where T
+  #I combine the hash functions for the automorphism of the base field and the hash function for the images of the generators.
+  a = hash(f.coeff_aut, u)
+  for i = 1:length(f.emb)
+    a = hash(f.emb[i], a)
+  end
+  return a
+end
+
 function Base.:(*)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}
   domain(f) == codomain(g) || throw("Maps not compatible")
 
