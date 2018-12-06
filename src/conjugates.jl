@@ -127,9 +127,12 @@ end
 function minkowski(a::nf_elem, p::Int)
   c = roots_ctx(parent(a))
   x = conjugates_arb(a, p)
+  old = precision(BigFloat)
+  setprecision(BigFloat, p)
   m = Array{BigFloat}(undef, 0)
   for i=1:c.r1
-    push!(m, BigFloat(real(x[i])))
+    v = BigFloat(real(x[i]))
+    push!(m, v)
   end
   s2 = sqrt(BigFloat(2))
   for i=1:c.r2
@@ -137,6 +140,7 @@ function minkowski(a::nf_elem, p::Int)
     push!(m, s2*BigFloat(real(z)))
     push!(m, s2*BigFloat(imag(z)))
   end
+  setprecision(BigFloat, old)
   return m
 end
 
@@ -180,9 +184,9 @@ function minkowski_mat(K::AnticNumberField, p::Int = 50)
       m[i,j] = mm[i][j]
     end
   end
-  setprecision(old)
   c.minkowski_mat = m
   c.minkowski_mat_p = p
+  setprecision(old)
   return m
 end
 
