@@ -761,44 +761,7 @@ end
 whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
 whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
-function print_cache()
-  sym = [];
-  for a in collect(names(Nemo, all = true));
-    d = Meta.parse("Nemo." * string(a));
-      try z = eval(d); push!(sym, (d, z));
-    catch e;
-    end;
-  end
-  for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
-    try
-      print(f[1], " ", length(f[2]), "\n");
-    catch e
-    end
-  end
-  
-  sym = [];
-  for a in collect(names(Nemo.Generic, all = true));
-    d = Meta.parse("Nemo.Generic." * string(a));
-      try z = eval(d); push!(sym, (d, z));
-    catch e;
-    end;
-  end
-  for f in sym;
-    #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
-    try
-      print(f[1], " ", length(f[2]), "\n");
-    catch e
-    end;
-  end
-
-  sym = [];
-  for a in collect(names(Hecke, all = true));
-    d = Meta.parse("Hecke." * string(a));
-      try z = eval(d); push!(sym, (d, z));
-    catch e;
-    end;
-  end
+function print_cache(sym::Array{Any, 1})
   for f in sym;
     #if f[2] isa Array || f[2] isa Dict || f[2] isa IdDict;
     try
@@ -807,6 +770,53 @@ function print_cache()
     end
   end
 end
+
+function print_cache()
+  print_cache(find_cache(Nemo))
+  print_cache(find_cache(Nemo.Generic))
+  print_cache(find_cache(Hecke))
+end
+
+function find_cache(M::Module)
+  sym = []
+  for a in collect(names(M, all = true))
+    d = Meta.parse("$M.$a")
+      try 
+        z = eval(d); 
+        if isa(z, AbstractArray) || isa(z, AbstractDict)
+          push!(sym, (d, z))
+        end
+    catch e
+    end
+  end
+  return sym
+end
+
+protect = [:(Hecke.ASSERT_LOOKUP), :(Hecke.VERBOSE_LOOKUP), 
+           :(Hecke.ASSERT_SCOPE), :(Hecke.VERBOSE_SCOPE),
+           :(Hecke._euler_phi_inverse_maximum), 
+           :(Hecke.odlyzko_bound_grh),
+           :(Hecke.nC), :(Hecke.B1), #part of ECM
+           :(Hecke.VERBOSE_PRINT_INDENT)]
+
+function clear_cache(sym::Array{Any, 1})
+  for f in sym;
+    if f[1] in protect
+      continue
+    end
+    try
+      empty!(f[2])
+    catch e
+    end
+  end
+end
+
+function clear_cache()
+  clear_cache(find_cache(Nemo))
+  clear_cache(find_cache(Nemo.Generic))
+  clear_cache(find_cache(Hecke))
+end
+
 
 @inline __get_rounding_mode() = Base.MPFR.rounding_raw(BigFloat)
 
