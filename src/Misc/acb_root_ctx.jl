@@ -40,12 +40,12 @@
 function BigFloat(x::arb)
   n = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), x)
   p = precision(BigFloat)
-  setprecision(n+10)
+  setprecision(BigFloat, max(n+10,p))
   a = BigFloat()
   b = BigFloat()
   ccall((:arb_get_interval_mpfr, :libarb), Nothing, (Ref{BigFloat}, Ref{BigFloat}, Ref{arb}), a, b, x)
   c = (a+b)/2
-  setprecision(p)
+  setprecision(BigFloat, p)
   return c
 
 end
