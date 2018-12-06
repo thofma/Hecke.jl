@@ -95,7 +95,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @assert abs(sum(vvv)) <= degree(K)
     @vtime :CompactPresentation 1 id = inv(simplify(evaluate(A, coprime = true)))
     @vtime :CompactPresentation 1 b = short_elem(id, matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
-    @assert abs(norm(b)//norm(id)) < abs(discriminant(ZK))
+    @assert abs(norm(b)//norm(id)) <= abs(discriminant(ZK)) # the trivial case
     B = simplify(ideal(ZK, b))
     @assert B.num.is_principal == 1  
     @assert isone(B.num) || B.num.gens_normal > 1
@@ -117,7 +117,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       @hassert :CompactPresentation 1 valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
-    @assert norm(B) < abs(discriminant(ZK))
+    @assert norm(B) <= abs(discriminant(ZK))
 
     for (p, _v) = factor(B)
       if haskey(de, p)
