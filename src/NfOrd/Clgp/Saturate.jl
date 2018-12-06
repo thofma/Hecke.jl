@@ -196,7 +196,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   while true
     e = saturate_exp(c, n, stable)
     if rows(e) == 0
-      @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success
+      @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success, "\n"
       return success
     end
     se = sparse_matrix(e)'
