@@ -177,7 +177,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
       I.elt = zero_matrix(FlintZZ, 1, degree(O))
       return I
     catch e
-      if isa(e, LowPrecisionLLL)
+      if isa(e, LowPrecisionLLL) || isa(e, InexactError)
         printstyled("prec too low in LLL\n", color = :red)
         prec = Int(ceil(1.2*prec))
 #        println(" increasing to ", prec)
