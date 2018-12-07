@@ -346,7 +346,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
       ideal.gen_two = ideal.gen_two + O(p)
     end
 
-    ideal.gens_normal = p
+    ideal.gens_normal = fmpz(p)
     ideal.gens_weakly_normal = true
 
     # Find an "anti-uniformizer" in case P is unramified
