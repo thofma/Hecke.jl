@@ -394,7 +394,7 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use
         prod *= Q(g[k])^a_[j]
         k += 1
       end
-      a = fmpz[a ; a_]
+      append!(a, a_)
       b = divexact(b,prod)
     end
     return a
@@ -457,7 +457,7 @@ function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
     x=mS(S[i])
     gens[i]=O(0)
     for j=1:ngens(G)
-      gens[i]+= mod(x[j], S.snf[end])*b[j]
+      add!(gens[i], gens[i], mod(x[j], S.snf[end])*b[j])
     end
   end
   
@@ -523,7 +523,7 @@ function _artin_hasse_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p
   
   pnum = p.minimum
   @assert pnum*u >= v >= u >= 1
-  Q, mQ=quo(order(p), pv)
+  Q, mQ = quo(order(p), pv)
   g,M, dlog = _pu_mod_pv(pu,pv)
   map!(x->artin_hasse_exp(Q(x),pnum), g, g)
   
@@ -537,14 +537,14 @@ function artin_hasse_exp(x::NfOrdQuoRingElem, pnum::fmpz)
   Q=parent(x)
   s = Q(1)
   fac_i = Q(1)
-  t=Q(1)
+  t = Q(1)
   for i=1:pnum-1
-    t*=x
+    mul!(t, t, x)
     if iszero(t)
       break
     end
-    fac_i *= Q(i)
-    s += divexact(t,fac_i)
+    mul!(fac_i, fac_i, Q(i))
+    add!(s, s, divexact(t, fac_i))
   end
   return s.elem
 end
@@ -555,14 +555,14 @@ function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
   s = Q(0)
   t= Q(1)
   for i in 1:pnum-1
-    t *=x
+    mul!(t, t, x)
     if iszero(t)
       break
     end
     if iseven(i)
       s -= divexact(t,Q(i))
     else 
-      s += divexact(t,Q(i))
+      add!(s, s, divexact(t,Q(i)))
     end
   end
   return s.elem
@@ -591,9 +591,10 @@ function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   e = valuation(pnum,p) #ramification index
   k0 = 1 + div(fmpz(e),(pnum-1))
   @assert u >= k0
-  g,M, dlog = _pu_mod_pv(pu,pv)
-  Q = NfOrdQuoRing(order(p),pv)
-  map!(x->p_adic_exp(Q,p,v,x,e;pv=pv), g, g)
+  g, M, dlog = _pu_mod_pv(pu,pv)
+  O = order(p)
+  Q = NfOrdQuoRing(O, pv)
+  map!(x -> p_adic_exp(Q, p, v, x, e; pv = pv), g, g)
   function discrete_logarithm(b::NfOrdElem) 
     return dlog(p_adic_log(Q,p,v,b,e;pv=pv))
   end
@@ -606,10 +607,10 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::N
   O = parent(x)
   iszero(x) && return O(1)
   pnum = p.minimum
-  val_p_x = valuation(x,p)
+  val_p_x = valuation(x, p)
   max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x) + 1
-  Q_ = NfOrdQuoRing(O,p^val_p_maximum)
+  Q_ = NfOrdQuoRing(O, p^val_p_maximum)
   x = Q_(x)
   s = one(Q)
   inc = Q_(1)
@@ -630,7 +631,7 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::N
     @hassert :NfOrdQuoRing 1 !iszero(deltax)
     @hassert :NfOrdQuoRing 1 !iszero(Q_(i_prod))
     inc = divexact(deltax,Q_(i_prod))
-    s += Q(inc.elem)
+    add!(s, s, Q(inc.elem))
     i_old = i
   end
   return s.elem
@@ -646,12 +647,12 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
   xi = one(O)
   i_old = 0
   val_p_xi = 0
-  anti_uni=anti_uniformizer(p)
+  anti_uni = anti_uniformizer(p)
   #we have to find a bound for this.
   # it is enough to find the minimum l such that
   # pnum^l v_p(x)>= v+el
   l=1
-  left=pnum*val_p_x
+  left = pnum*val_p_x
   right=v+e
   while left < right
     left*=pnum
@@ -665,9 +666,10 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
     val_p_i = val_pnum_i * e
     val_p_xi += val_p_x
     val_p_xi - val_p_i >= v && continue
-    xi *= x^(i-i_old)
-    numer= O(xi.elem_in_nf*(anti_uni^val_p_i), false)
-    denom= O(i*(anti_uni^val_p_i), false)
+    mul!(xi, xi, x^(i-i_old))
+    el = anti_uni^val_p_i
+    numer = O(xi.elem_in_nf*el, false)
+    denom = O(i*el, false)
     inc = divexact(Q(numer),Q(denom))
     isodd(i) ? s+=inc : s-=inc
     i_old = i
@@ -905,67 +907,59 @@ end
 #  multiplicative group mod n
 #
 ####################################################################################
-
 function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
-  Q, mQ = ResidueField(O,p)
+  Q, mQ = ResidueField(O, p)
 
-  f=collect(keys(factor(fmpz(n)).fac))
   np = norm(p) - 1
-  @assert gcd(n,np)!=1
-  val=Array{Int,1}(undef, length(f))
-  for i=1:length(f)
-    val[i]=valuation(np,f[i])
-  end
-  npart=prod([f[i]^(val[i]) for i=1:length(f) if val[i]!=0])
-  m=divexact(np,npart)
-  powm=[divexact(npart,f[i]) for i=1:length(f) if val[i]!=0]
+  @assert gcd(n, np)!=1
+  npart, m = ppio(np, fmpz(n))
+  k = gcd(npart, n)
+  fac = factor(k)
+  powm = [divexact(npart, x) for x in keys(fac.fac)]
   
   #
   #  We search for a random element with the right order
   #
   
-  found=false
-  g=Q(1)
-  while found==false
+  found = false
+  g = Q(1)
+  while !found
     g = rand(Q)
-    if g != Q(0) 
-      g=g^m
-      found=true
-      for i=1:length(powm)
-        if g^powm[i] == Q(1) 
-          found=false
-          continue
-        end
+    !iszero(g) || continue
+    g = g^m
+    found = true
+    for i=1:length(powm)
+      if isone(g^powm[i]) 
+        found=false
+        break
       end     
     end
   end
-
-  k=gcd(npart,n)
+  
   inv=gcdx(m,fmpz(npart))[2]
   quot=divexact(npart, k)
 
-
+  w=g^quot
   function disclog(x::NfOrdElem)
     t=mQ(x)^(m*quot)
     if iszero(t)
       error("Not coprime!")
     end
-    if t==Q(1)
-      return [Int(0)]
+    if isone(t)
+      return Int[0]
     end
     if k<20
       s=1
-      w=g^quot
-      el=w
+      el = deepcopy(w)
       while el!=t
         s+=1
-        el*=w
+        mul!(el, el, w)
       end
-      return [mod(s*inv,k) ]
+      return [Int(mod(s*inv,k)) ]
     else 
-      return [pohlig_hellman(g^quot,k,t)*inv] 
+      return [Int(pohlig_hellman(g^quot,k,t)*inv)] 
     end
   end
 

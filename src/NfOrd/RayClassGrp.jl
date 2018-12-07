@@ -76,19 +76,23 @@ end
 
 function fac_elems_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem, AnticNumberField},1}, lp::Dict{NfOrdIdl, Int}, exponent::fmpz)
 
-  newelems=_preproc(O,elems,exponent)
+  @vtime :RayFacElem :3 newelems = _preproc(O,elems,exponent)
   quots=[]
   idemps=Tuple{NfOrdElem, NfOrdElem}[]
   el=[Q(1) for i=1:length(newelems)]
   I=ideal(O,1)
+  aux = zero(Q)
   for (p,vp) in lp
     q=p^vp
     y, Qn=_eval_quo(O, newelems, p, q, anti_uniformizer(p), vp, exponent)
     push!(quots,Qn)
-    a,b=idempotents(I,q)
+    a,b = idempotents(I,q)
     push!(idemps,(a,b))
     for i=1:length(el)
-      el[i]=Q(y[i])*Q(a)+el[i]*Q(b)
+      mul!(aux, Q(y[i]), Q(a))
+      mul!(el[i], el[i], Q(b))
+      add!(el[i], el[i], aux)
+      #el[i]=Q(y[i])*Q(a)+el[i]*Q(b)
     end
     I=I*q
   end
@@ -102,36 +106,46 @@ end
 
 function _preproc(O::NfOrd, elems::Array{FacElem{nf_elem, AnticNumberField},1}, exponent::fmpz)
   
-  assure_has_basis_mat_inv(O)
   M = O.tcontain
   newelems=FacElem{NfOrdElem, NfOrd}[]
   for el in elems
     x = Dict{NfOrdElem, fmpz}()
     for (f,k) in el.fac
       l = mod(k,exponent)
-      if !iszero(l)
-        elem_to_mat_row!(M.num, 1, M.den, f)
-        M = mul!(M, M, O.basis_mat_inv)
-        if M.den==1
-          el=O(vec(Array(M.num)))
-          if haskey(x,el)
-            x[el]+= l
-          else
-            x[el]=l
-          end
+      if iszero(l)
+        continue
+      end
+      if denominator(f) == 1
+        el=O(f)
+        if haskey(x,el)
+          x[el]+= l
         else
-          d=O(M.den)
-          n=O(vec(Array(M.num)))
-          if haskey(x,n)
-            x[n]=mod(x[n]+l,exponent)
-          else
-            x[n]=l
-          end
-          if haskey(x,d)
-            x[d]=mod(x[d]+exponent-l,exponent)
-          else
-            x[d]=exponent-l
-          end
+          x[el]=l
+        end
+        continue
+      end
+      assure_has_basis_mat_inv(O)
+      elem_to_mat_row!(M.num, 1, M.den, f)
+      M = mul!(M, M, O.basis_mat_inv)
+      if M.den==1
+        el=O(vec(Array(M.num)))
+        if haskey(x,el)
+          x[el]+= l
+        else
+          x[el]=l
+        end
+      else
+        d=O(M.den)
+        n=O(vec(Array(M.num)))
+        if haskey(x,n)
+          x[n]=mod(x[n]+l,exponent)
+        else
+          x[n]=l
+        end
+        if haskey(x,d)
+          x[d]=mod(x[d]+exponent-l,exponent)
+        else
+          x[d]=exponent-l
         end
       end
     end
@@ -1208,7 +1222,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     end 
   end
   
-  X=AbelianGroup(R)
+  X = AbelianGroup(R)
    
   #
   # Discrete logarithm
@@ -1332,7 +1346,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   else
     mp.modulus_inf=inf_plc
   end
-  return X,mp
+  return X, mp
   
 end
 
