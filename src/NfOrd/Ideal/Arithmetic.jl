@@ -302,7 +302,7 @@ function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
                     # otherwise, I don't know the correct value
   end
 
-  c.gens_weakly_normal = 1
+  c.gens_weakly_normal = true
 
   return c
 end
