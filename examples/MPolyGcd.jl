@@ -1,7 +1,33 @@
 module MPolyGcd
 
 using Hecke
-import Nemo
+import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
+
+mutable struct MPolyBuildCtx
+  f::nmod_mpoly
+  function MPolyBuildCtx(R::NmodMPolyRing)
+    r = new()
+    r.f = R()
+    return r
+  end
+end
+
+function finish(M::MPolyBuildCtx)
+  z = M.f
+  ctx = parent(M.f)
+
+  ccall((:nmod_mpoly_sort_terms, :libflint), Nothing,
+             (Ref{nmod_mpoly}, Ref{NmodMPolyRing}), z, ctx)
+  ccall((:nmod_mpoly_combine_like_terms, :libflint), Nothing,
+             (Ref{nmod_mpoly}, Ref{NmodMPolyRing}), z, ctx)
+  return M.f
+end
+
+function push_term!(M::MPolyBuildCtx, c::UInt, e::Vector{Int})
+  ccall((:nmod_mpoly_push_term_ui_ui, :libflint), Nothing,
+               (Ref{nmod_mpoly}, UInt, Ptr{Int}, Ref{NmodMPolyRing}),
+               M.f, c, e, M.f.parent)
+end
 
 function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   p = Hecke.p_start
@@ -29,16 +55,15 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
     R = ResidueRing(FlintZZ, p)
     Rt, t = PolynomialRing(R, "t", cached = false)
     Kpx, gp = PolynomialRing(R, ["$(x)_$p" for x = Kx.S])
-    fp = [Kpx() for x = me.fld]
-    gp = [Kpx() for x = me.fld]
+    fp = [MPolyBuildCtx(Kpx) for x = me.fld]
+    gp = [MPolyBuildCtx(Kpx) for x = me.fld]
     s = length(me.fld)
     for i=1:lf
       c = coeff(f, i)
       e = exponent_vector(f, i)
       cp = Hecke.modular_proj(c, me)
       for x = 1:s
-        setcoeff!(fp[x], i, R(coeff(cp[x], 0)))
-        set_exponent_vector!(fp[x], i, e)
+        push_term!(fp[x], coeff(cp[x], 0), e)
       end
     end
     for i=1:lg
@@ -46,11 +71,10 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
       e = exponent_vector(g, i)
       cp = Hecke.modular_proj(c, me)
       for x = 1:s
-        setcoeff!(gp[x], i, R(coeff(cp[x], 0)))
-        set_exponent_vector!(gp[x], i, e)
+        push_term!(gp[x], coeff(cp[x], 0), e)
       end
     end
-    gcd_p = [Base.gcd(fp[i], gp[i]) for i=1:s]
+    gcd_p = [Base.gcd(finish(fp[i]), finish(gp[i])) for i=1:s]
     for i=1:length(gcd_p[1])
       for x=1:s
         me.res[x] = parent(me.res[x])(lift(coeff(gcd_p[x], i)))
