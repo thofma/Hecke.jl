@@ -287,7 +287,7 @@ function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_
     if degree_limit == 0 && lower_limit == 0
       O.index_div[fmpz(p)] = lp
     end
-    return lp
+    return copy(lp)
   end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
 end
