@@ -716,50 +716,25 @@ function update()
   cd(olddir)
 end
 
-function whos(io::IO=STDOUT, m::Module=current_module(), pattern::Regex=r"")
-    maxline = Base.tty_size()[2]
-    line = zeros(UInt8, maxline)
-    head = PipeBuffer(maxline + 1)
-    for v in sort!(names(m, all = true)) # show also NON exported stuff!
-        s = string(v)
-        if isdefined(m, v) && ismatch(pattern, s)
-            value = getfield(m, v)
-            @printf head "%30s " s
-            try
-                bytes = Base.summarysize(value)
-                if bytes < 10_000
-                    @printf(head, "%6d bytes  ", bytes)
-                else
-                    @printf(head, "%6d KB     ", bytes ÷ (1024))
-                end
-                print(head, Base.summary(value))
-            catch e
-                print(head, "#=ERROR: unable to show value=#")
-                println(e)
-            end
+#same (copyed) as in stdlib/v1.0/InteractiveUtils/src/InteractiveUtils.jl
+#difference: names(m, all = true) to also see non-exported variables, aka
+# caches...
 
-            newline = search(head, UInt8('\n')) - 1
-            if newline < 0
-                newline = nb_available(head)
-            end
-            if newline > maxline
-                newline = maxline - 1 # make space for ...
-            end
-            line = resize!(line, newline)
-            line = read!(head, line)
+function varinfo(m::Module=Main, pattern::Regex=r"")
+    rows =
+        Any[ let value = getfield(m, v)
+                 Any[string(v),
+                     (value===Base || value===Main || value===Core ? "" : format_bytes(summarysize(value))),
+                     summary(value)]
+             end
+             for v in sort!(names(m, all = true)) if isdefined(m, v) && occursin(pattern, string(v)) ]
 
-            Base.write(io, line)
-            if nb_available(head) > 0 # more to read? replace with ...
-                print(io, '\u2026') # hdots
-            end
-            println(io)
-            seekend(head) # skip the rest of the text
-        end
-    end
+    pushfirst!(rows, Any["name", "size", "summary"])
+
+    return Markdown.MD(Any[Markdown.Table(rows, Symbol[:l, :r, :l])])
 end
+varinfo(pat::Regex) = varinfo(Main, pat)
 
-whos(m::Module, pat::Regex=r"") = whos(STDOUT, m, pat)
-whos(pat::Regex) = whos(STDOUT, current_module(), pat)
 
 function print_cache(sym::Array{Any, 1})
   for f in sym;
