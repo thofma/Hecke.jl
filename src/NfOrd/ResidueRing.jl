@@ -209,6 +209,12 @@ function mul!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   return z
 end
 
+function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+  z.elem = add!(z.elem, x.elem, y.elem)
+  z.elem = mod!(z.elem, parent(z))
+  return z
+end
+
 function *(x::Integer, y::AbsOrdQuoRingElem)
   return parent(y)(x * y.elem)
 end

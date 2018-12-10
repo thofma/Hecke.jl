@@ -503,3 +503,90 @@ function isisomorphic_to_8T5(G::GrpGen)
   @assert z == 1
   return true
 end
+
+###############################################################################
+#
+#  NfToNfMor closure
+#
+###############################################################################
+
+function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
+
+  K = domain(S[1])
+  d = numerator(discriminant(K.pol))
+  p = 11
+  while mod(d, p) == 0
+    p = next_prime(p)
+  end
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  fmod = Rx(K.pol)
+  
+  t = length(S)
+  order = 1
+  elements = [NfToNfMor(K, K, gen(K))]
+  pols = gfp_poly[x]
+  gpol = Rx(S[1].prim_img)
+  if gpol != x
+    push!(pols, gpol)
+    push!(elements, S[1])
+    order += 1
+  
+    gpol = compose_mod(gpol, pols[2], fmod)
+
+    while gpol != x
+      order = order +1
+      push!(elements, S[1]*elements[end])
+      push!(pols, gpol)
+      gpol = compose_mod(gpol, pols[2], fmod)
+    end
+  end
+  if order == final_order
+    return elements
+  end
+  
+  for i in 2:t
+    if !(S[i] in elements)
+      pi = Rx(S[i].prim_img)
+      previous_order = order
+      order = order + 1
+      push!(elements, S[i])
+      push!(pols, Rx(S[i].prim_img))
+      for j in 2:previous_order
+        order = order + 1
+        push!(pols, compose_mod(pols[j], pi, fmod))
+        push!(elements, elements[j]*S[i])
+      end
+      if order == final_order
+        return elements
+      end
+      rep_pos = previous_order + 1
+      while rep_pos <= order
+        for k in 1:i
+          s = S[k]
+          po = Rx(s.prim_img)
+          att = compose_mod(pols[rep_pos], po, fmod)
+          if !(att in pols)
+            elt = elements[rep_pos]*s
+            order = order + 1
+            push!(elements, elt)
+            push!(pols, att)
+            for j in 2:previous_order
+              order = order + 1
+              push!(pols, compose_mod(pols[j], att, fmod))
+              push!(elements, elements[j] *elt)
+            end
+            if order == final_order
+              return elements
+            end
+          end
+        end
+        rep_pos = rep_pos + previous_order
+      end
+    end
+  end
+  return elements
+end
+
+
+

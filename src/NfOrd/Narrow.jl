@@ -67,6 +67,7 @@ function ==(A::NfOrdIdl, B::NfOrdFracIdl)
     return true
   end
 end
+
 ==(A::NfOrdFracIdl, B::NfOrdIdl) = B==A
 
 @doc Markdown.doc"""

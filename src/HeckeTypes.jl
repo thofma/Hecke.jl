@@ -978,11 +978,11 @@ mutable struct NfAbsOrdIdl{S, T}
     C.is_principal = 1
     C.basis_mat = abs(x)*identity_matrix(FlintZZ, degree(O))
     C.princ_gen_special = (1, abs(x), fmpz(0))
-    C.gen_one = x
+    C.gen_one = fmpz(x)
     C.gen_two = O(x)
-    C.norm = abs(x)^degree(O)
+    C.norm = fmpz(abs(x))^degree(O)
     C.minimum = fmpz(abs(x))
-    C.gens_normal = x
+    C.gens_normal = fmpz(x)
     C.gens_weakly_normal = true
     return C
   end

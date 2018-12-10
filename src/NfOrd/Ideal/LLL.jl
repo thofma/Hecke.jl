@@ -178,7 +178,7 @@ function short_elem(A::NfOrdIdl,
       l, t = lll(A, v, prec = prec)
       break
     catch e
-      if !(e isa LowPrecisionLLL)
+      if !(e isa LowPrecisionLLL || e isa InexactError)
         rethrow(e)
       end
     end
@@ -202,7 +202,7 @@ function _short_elem(A::NfOrdIdl,
       b = short_elem(A, v, prec = p)
       return b
     catch e
-      if e isa LowPrecisionLLL
+      if e isa LowPrecisionLLL || e isa InexactError
         p = 2*p
       else
         rethrow(e)
