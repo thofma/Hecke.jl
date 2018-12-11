@@ -3,16 +3,32 @@ module MPolyGcd
 using Hecke
 import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
 
-mutable struct MPolyBuildCtx
-  f::nmod_mpoly
-  function MPolyBuildCtx(R::NmodMPolyRing)
-    r = new()
+mutable struct MPolyBuildCtx{T}
+  f::T
+  function MPolyBuildCtx(R::T) where {T <: MPolyRing}
+    r = new{elem_type(T)}()
     r.f = R()
     return r
   end
 end
 
-function finish(M::MPolyBuildCtx)
+function show(io::IO, M::MPolyBuildCtx)
+  print(io, "constructing a polynomial in ", parent(M.f))
+end
+
+function finish(M::MPolyBuildCtx{<:Generic.MPoly})
+  M.f = sort_terms!(M.f)
+  M.f = combine_like_terms!(M.f)
+  return M.f
+end
+
+function push_term!(M::MPolyBuildCtx{<:Generic.MPoly}, c::RingElem, e::Vector{Int})
+  l = length(M.f)+1
+  set_exponent_vector!(M.f, l, e)
+  setcoeff!(M.f, l, c)
+end
+
+function finish(M::MPolyBuildCtx{nmod_mpoly})
   z = M.f
   ctx = parent(M.f)
 
@@ -23,7 +39,7 @@ function finish(M::MPolyBuildCtx)
   return M.f
 end
 
-function push_term!(M::MPolyBuildCtx, c::UInt, e::Vector{Int})
+function push_term!(M::MPolyBuildCtx{nmod_mpoly}, c::UInt, e::Vector{Int})
   ccall((:nmod_mpoly_push_term_ui_ui, :libflint), Nothing,
                (Ref{nmod_mpoly}, UInt, Ptr{Int}, Ref{NmodMPolyRing}),
                M.f, c, e, M.f.parent)
@@ -31,7 +47,6 @@ end
 
 function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   p = Hecke.p_start
-  p = 150
   K = base_ring(f)
   Kx = parent(f)
   lf = length(f)
@@ -75,13 +90,14 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
       end
     end
     gcd_p = [Base.gcd(finish(fp[i]), finish(gp[i])) for i=1:s]
+    bt = MPolyBuildCtx(parent(f))
     for i=1:length(gcd_p[1])
       for x=1:s
         me.res[x] = parent(me.res[x])(lift(coeff(gcd_p[x], i)))
       end
-      setcoeff!(tp, i, Hecke.modular_lift(me.res, me))
-      set_exponent_vector!(tp, i, exponent_vector(gcd_p[1], i))
+      push_term!(bt, Hecke.modular_lift(me.res, me), exponent_vector(gcd_p[1], i))
     end
+    tp = finish(bt)
     if d==1
       d = fmpz(p)
       gc, tp = tp, gc
@@ -98,7 +114,7 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
       #      scratch, do the basis_matrix for the new ideal and
       #      use CRT to combine them
       #TODO: explore combining LLL matrices to speed up LLL....
-
+#TODO: deal with bad primes...
       idl, _ = induce_crt(idl, d, lift(parent(idl), me.ce.pr[end]), fmpz(p))
       if any(i->(parent(me.ce.pr[end])(coeff(tp, i) - coeff(gd, i))) % me.ce.pr[end] != 0, 1:length(tp))
 #        cm = lll(basis_matrix(fmpz(p), lift(parent(idl), me.ce.pr[end]), K))
@@ -108,7 +124,7 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
 #        if ideal(E, bm) != ideal(E, basis_matrix(d, idl, K))
 #          return bm, basis_matrix(d, idl, K)
 #        end
-        if nbits(d) > 5#080
+        if nbits(d) > 1%9000
           R = RecoCtx(basis_matrix(d, idl, K), K)
           for i=1:length(gc)
             setcoeff!(gd, i, rational_reconstruct(coeff(gc, i), R, true))
