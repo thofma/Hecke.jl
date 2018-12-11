@@ -11,12 +11,11 @@ export rational_reconstruction, farey_lift, berlekamp_massey
 
 @doc Markdown.doc"""
 ***
-  rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
+    rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int)
 
 >  Returns true and x, y s.th. ay = x mod b and degree(x) <= n, degree(y) <= m
    or false (and garbage) if this is not possible.
 """
-
 function rational_reconstruction(a::PolyElem{S}, b::PolyElem{S}, n::Int, m::Int) where S
   R = a.parent
   if degree(a) <= n return true, a, R(1); end
@@ -62,8 +61,8 @@ end
 
 @doc Markdown.doc"""
 ***
-  rational_reconstruction(a::fmpz, b::fmpz)
-  rational_reconstruction(a::Integer, b::Integer)
+    rational_reconstruction(a::fmpz, b::fmpz)
+    rational_reconstruction(a::Integer, b::Integer)
 
 > Tries to solve ay=x mod b for x,y < sqrt(M/2). If possible, returns
   (true, x, y) or (false, garbage) if not possible.
@@ -96,7 +95,7 @@ end
 
 @doc Markdown.doc"""
 ***
-  rational_reconstruction(a::nf_elem, b::fmpz)
+    rational_reconstruction(a::nf_elem, b::fmpz)
 
 > Applies the rational_reconstruction function to each coefficient.
 """
