@@ -1324,7 +1324,7 @@ function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, 
   return primsplit!(g)
 end
 
-struct PolyCoeffs{T <: PolyElem} 
+struct PolyCoeffs{T <: RingElem} 
   f::T
 end  
 
@@ -1332,29 +1332,26 @@ function coefficients(f::PolyElem)
   return PolyCoeffs(f)
 end
 
-# TODO: Fix this iterator
+function Base.iterate(PC::PolyCoeffs{<:PolyElem}, st::Int = -1)
+  st += 1
+  if st > degree(PC.f)
+    return nothing
+  else
+    return coeff(PC.f, st), st
+  end
+end
 
-#function Base.start(a::PolyCoeffs)
-#  return 0
-#end
-#
-#function Base.next(a::PolyCoeffs, b::Int)
-#  return coeff(a.f, b), b+1
-#end
-#
-#function Base.done(a::PolyCoeffs, b::Int)
-#  return b > degree(a.f)
-#end
-#
-#function Base.length(a::PolyCoeffs)
-#  return length(a.f)
-#end
+Base.IteratorEltype(M::PolyElem) = Base.HasEltype()
+Base.eltype(M::PolyElem{T}) where {T} = T
 
-function Base.lastindex(a::PolyCoeffs)
+Base.IteratorSize(M::PolyCoeffs{<:PolyElem}) = Base.HasLength()
+Base.length(M::PolyCoeffs{<:PolyElem}) = degree(M.f)+1
+
+function Base.lastindex(a::PolyCoeffs{<:PolyElem})
   return degree(a.f)
 end
 
-function Base.getindex(a::PolyCoeffs, i::Int)
+function Base.getindex(a::PolyCoeffs{<:PolyElem}, i::Int)
   return coeff(a.f, i)
 end
 
