@@ -56,7 +56,14 @@ end
 
 Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
 
-//(f::AbstractAlgebra.MPolyElem{T}, g::T) where {T} = f*inv(g)
+function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
+   z = parent(a)()
+   r = Bool(ccall((:nmod_mpoly_gcd_zippel, :libflint), Cint,
+         (Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{NmodMPolyRing}),
+         z, a, b, a.parent))
+   r == false && error("Unable to compute gcd")
+   return z
+end
     
 function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   p = Hecke.p_start
@@ -91,7 +98,7 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
     fp = Hecke.modular_proj(me, f)
     gp = Hecke.modular_proj(me, g)
     glp = Hecke.modular_proj(gl, me)
-    gcd_p = [coeff(glp[i], 0)*Base.gcd(fp[i], gp[i]) for i=1:length(fp)]
+    gcd_p = [coeff(glp[i], 0)*gcd_zippel(fp[i], gp[i]) for i=1:length(fp)]
     tp = Hecke.modular_lift(me, gcd_p)
     if d==1
       d = fmpz(p)
