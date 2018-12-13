@@ -69,7 +69,6 @@ end
     
 function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   p = Hecke.p_start
-  p = 100
   K = base_ring(f)
   max_stable = 2
   stable = max_stable
