@@ -2,10 +2,14 @@ module MPolyGcd
 
 using Hecke
 import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
+import AbstractAlgebra
+import Base.//, Base.==
+
+export terms, gcd
 
 mutable struct MPolyBuildCtx{T}
   f::T
-  function MPolyBuildCtx(R::T) where {T <: MPolyRing}
+  function MPolyBuildCtx(R::T) where {T <: AbstractAlgebra.MPolyRing}
     r = new{elem_type(T)}()
     r.f = R()
     return r
@@ -16,27 +20,16 @@ function show(io::IO, M::MPolyBuildCtx)
   print(io, "constructing a polynomial in ", parent(M.f))
 end
 
-function finish(M::MPolyBuildCtx{<:Generic.MPoly})
+function finish(M::MPolyBuildCtx{<:AbstractAlgebra.MPolyElem})
   M.f = sort_terms!(M.f)
   M.f = combine_like_terms!(M.f)
   return M.f
 end
 
-function push_term!(M::MPolyBuildCtx{<:Generic.MPoly}, c::RingElem, e::Vector{Int})
+function push_term!(M::MPolyBuildCtx{<:AbstractAlgebra.MPolyElem}, c::RingElem, e::Vector{Int})
   l = length(M.f)+1
   set_exponent_vector!(M.f, l, e)
   setcoeff!(M.f, l, c)
-end
-
-function finish(M::MPolyBuildCtx{nmod_mpoly})
-  z = M.f
-  ctx = parent(M.f)
-
-  ccall((:nmod_mpoly_sort_terms, :libflint), Nothing,
-             (Ref{nmod_mpoly}, Ref{NmodMPolyRing}), z, ctx)
-  ccall((:nmod_mpoly_combine_like_terms, :libflint), Nothing,
-             (Ref{nmod_mpoly}, Ref{NmodMPolyRing}), z, ctx)
-  return M.f
 end
 
 function push_term!(M::MPolyBuildCtx{nmod_mpoly}, c::UInt, e::Vector{Int})
@@ -45,22 +38,57 @@ function push_term!(M::MPolyBuildCtx{nmod_mpoly}, c::UInt, e::Vector{Int})
                M.f, c, e, M.f.parent)
 end
 
-function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
+function Hecke.lead(f::AbstractAlgebra.MPolyElem)
+  iszero(f) && error("zero poly")
+  return coeff(f, 1)
+end
+
+function Hecke.coefficients(f::AbstractAlgebra.MPolyElem)
+  return Hecke.PolyCoeffs(f)
+end
+
+function Base.iterate(PC::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}, st::Int = 0)
+  st += 1
+  if st > length(PC.f)
+    return nothing
+  else
+    return coeff(PC.f, st), st
+  end
+end
+
+Base.length(M::Hecke.PolyCoeffs{<:AbstractAlgebra.MPolyElem}) = length(M.f)
+
+function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
+   z = parent(a)()
+   r = Bool(ccall((:nmod_mpoly_gcd_zippel, :libflint), Cint,
+         (Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{nmod_mpoly}, Ref{NmodMPolyRing}),
+         z, a, b, a.parent))
+   r == false && error("Unable to compute gcd")
+   return z
+end
+    
+function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
   p = Hecke.p_start
   K = base_ring(f)
-  Kx = parent(f)
-  lf = length(f)
-  lg = length(g)
-  gc = parent(f)()
-  gd = parent(f)()
-  tp = parent(f)()
   max_stable = 2
   stable = max_stable
 
   d = fmpz(1)
+  gc = parent(f)()
+  gd = parent(f)()
   idl = FlintZZ["x"][1]()
   bm = zero_matrix(FlintZZ, degree(K), degree(K))
+
+  #TODO: scale input to make it integral
+  de = lcm(lcm(map(denominator, coefficients(f))), lcm(map(denominator, coefficients(g))))
+  f*=de
+  g*=de
   E = equation_order(K)
+  lI =E*E(lead(f)) + E*E(lead(g))
+  gl = Hecke.short_elem(lI)
+  gl *= evaluate(derivative(K.pol), gen(K))  # use Kronnecker basis
+
+  fl = true
   while true
     p = next_prime(p)
     me = Hecke.modular_init(K, p, deg_limit = 1)
@@ -69,45 +97,18 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
     end
     R = ResidueRing(FlintZZ, p)
     Rt, t = PolynomialRing(R, "t", cached = false)
-    Kpx, gp = PolynomialRing(R, ["$(x)_$p" for x = Kx.S])
-    fp = [MPolyBuildCtx(Kpx) for x = me.fld]
-    gp = [MPolyBuildCtx(Kpx) for x = me.fld]
-    s = length(me.fld)
-    for i=1:lf
-      c = coeff(f, i)
-      e = exponent_vector(f, i)
-      cp = Hecke.modular_proj(c, me)
-      for x = 1:s
-        push_term!(fp[x], coeff(cp[x], 0), e)
-      end
-    end
-    for i=1:lg
-      c = coeff(g, i)
-      e = exponent_vector(g, i)
-      cp = Hecke.modular_proj(c, me)
-      for x = 1:s
-        push_term!(gp[x], coeff(cp[x], 0), e)
-      end
-    end
-    gcd_p = [Base.gcd(finish(fp[i]), finish(gp[i])) for i=1:s]
-    bt = MPolyBuildCtx(parent(f))
-    for i=1:length(gcd_p[1])
-      for x=1:s
-        me.res[x] = parent(me.res[x])(lift(coeff(gcd_p[x], i)))
-      end
-      push_term!(bt, Hecke.modular_lift(me.res, me), exponent_vector(gcd_p[1], i))
-    end
-    tp = finish(bt)
+    fp = Hecke.modular_proj(me, f)
+    gp = Hecke.modular_proj(me, g)
+    glp = Hecke.modular_proj(gl, me)
+    gcd_p = [coeff(glp[i], 0)*gcd_zippel(fp[i], gp[i]) for i=1:length(fp)]
+    tp = Hecke.modular_lift(me, gcd_p)
     if d==1
       d = fmpz(p)
-      gc, tp = tp, gc
+      gc = tp
       idl = lift(parent(idl), me.ce.pr[end])
       bm = lll(basis_matrix(fmpz(p), idl, K))
       R = RecoCtx(bm, K)
-      for i=1:length(gc)
-        setcoeff!(gd, i, rational_reconstruct(coeff(gc, i), R, true))
-      end
-      gd.exps = deepcopy(gc.exps)
+      fl, gd = rational_reconstruct(gc, R, true)
       stable = max_stable
     else
       #TODO: instead of lifting "idl" and doing basis_matrix from
@@ -116,25 +117,13 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
       #TODO: explore combining LLL matrices to speed up LLL....
 #TODO: deal with bad primes...
       idl, _ = induce_crt(idl, d, lift(parent(idl), me.ce.pr[end]), fmpz(p))
-      if any(i->(parent(me.ce.pr[end])(coeff(tp, i) - coeff(gd, i))) % me.ce.pr[end] != 0, 1:length(tp))
-#        cm = lll(basis_matrix(fmpz(p), lift(parent(idl), me.ce.pr[end]), K))
-#        _, ee, ff = gcdx(d, fmpz(p))
-#        bm = lll(p*ff*bm + d*ee*cm)
+      if (!fl) || any(i->(parent(me.ce.pr[end])(coeff(tp, i) - coeff(gd, i))) % me.ce.pr[end] != 0, 1:length(tp))
         gc, d = induce_crt(gc, d, tp, fmpz(p), true)
-#        if ideal(E, bm) != ideal(E, basis_matrix(d, idl, K))
-#          return bm, basis_matrix(d, idl, K)
-#        end
-        if nbits(d) > 1%9000
-          R = RecoCtx(basis_matrix(d, idl, K), K)
-          for i=1:length(gc)
-            setcoeff!(gd, i, rational_reconstruct(coeff(gc, i), R, true))
-          end
-          gd.exps = deepcopy(gc.exps)
-  #        @show "now ", gd
-          stable = max_stable
-        end
+        R = RecoCtx(basis_matrix(d, idl, K), K)
+        fl, gd = rational_reconstruct(gc, R, true)
+        stable = max_stable
       else
-#        @show "stable"
+        @show "stable"
         d *= p
         stable -= 1
         if stable <= 0 
@@ -149,8 +138,8 @@ function gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
       end
       #before I forget: gc is "the" gcd modulo <d, idl>
     end
-#    if nbits(d) > 150
-#      return gc, gd, (d, idl)
+#    if nbits(d) > 2500
+#      error("")
 #    end
   end
 end
@@ -165,14 +154,52 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
     pq2 = fmpz(0)
   end
 
-  @assert length(a) == length(b)
-  @assert a.exps == b.exps
-  c = parent(a)()
-  for i=1:length(a)
-    setcoeff!(c, i, Hecke.induce_inner_crt(coeff(a, i), coeff(b, i), pi, pq, pq2))
+  ta = terms(a)
+  tb = terms(b)
+  c = MPolyBuildCtx(parent(a))
+  aa, sa = iterate(ta)
+  bb, sb = iterate(tb)
+  @assert aa == bb # leading terms must agree or else...
+  while !(aa === nothing) && !(bb === nothing)
+    if aa == bb
+      push_term!(c, Hecke.induce_inner_crt(coeff(aa), coeff(bb), pi, pq, pq2), exponent_vector(aa))
+      aa = iterate(ta, sa)
+      if !(aa === nothing)
+        aa, sa = aa
+      end
+      bb = iterate(tb, sb)
+      if !(bb === nothing)
+        bb, sb = bb
+      end
+    elseif aa < bb
+      push_term!(c, bb)
+      bb, sb = iterate(tb, sb)
+      if !(bb === nothing)
+        bb, sb = bb
+      end
+    else
+      push_term!(c, aa)
+      aa = iterate(ta, sa)
+      if !(aa === nothing)
+        aa, sa = aa
+      end
+    end
   end
-  c.exps = deepcopy(a.exps)
-  return c, pq
+  while !(aa === nothing)
+    push_term!(c, aa)
+    aa = iterate(ta, sa)
+    if !aa == nothing
+      aa, sa = aa
+    end
+  end
+  while !(bb === nothing)
+    push_term!(c, bb)
+    bb = iterate(tb, sb)
+    if !bb == nothing
+      bb, sb = bb
+    end
+  end
+  return finish(c), pq
 end   
 
 function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bool = false)
@@ -195,6 +222,45 @@ function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bo
   return c, pq
 end   
 
+function Hecke.characteristic(R::PolyRing)
+  return characteristic(base_ring(R))
+end
+
+function Hecke.modular_proj(me::Hecke.modular_env, f::Generic.MPoly{nf_elem})
+  if !isdefined(me, :Kxy)
+    me.Kxy = parent(f)
+  else
+    @assert me.Kxy === parent(f)
+  end
+  if !isdefined(me, :Kpxy)
+    p = characteristic(me.Fpx)
+    me.Kpxy, _ = PolynomialRing(base_ring(me.Fpx), ["$(x)_$p" for x = me.Kxy.S])
+  end
+  fp = [MPolyBuildCtx(me.Kpxy) for x = me.fld]
+  s = length(me.fld)
+  for i=1:length(f)
+    c = coeff(f, i)
+    e = exponent_vector(f, i)
+    cp = Hecke.modular_proj(c, me)
+    for x = 1:s
+      push_term!(fp[x], coeff(cp[x], 0), e)
+    end
+  end
+  return map(finish, fp)
+end
+
+function Hecke.modular_lift(me::Hecke.modular_env, g::Array{nmod_mpoly, 1})
+  bt = MPolyBuildCtx(me.Kxy)
+  #TODO deal with different vectors properly (check induce_crt)
+  @assert all(x->exponent_vectors(g[1]) == exponent_vectors(g[x]), 2:length(g))
+  for i=1:length(g[1])
+    for x=1:length(g)
+      me.res[x] = parent(me.res[x])(lift(coeff(g[x], i)))
+    end
+    push_term!(bt, Hecke.modular_lift(me.res, me), exponent_vector(g[1], i))
+  end
+  return finish(bt)
+end
 
 function Hecke.mod!(f::fmpz_poly, p::fmpz)
   for i=0:degree(f)
@@ -291,6 +357,18 @@ mutable struct RecoCtx
   end
 end
 
+function rational_reconstruct(a::Generic.MPoly{nf_elem}, R::RecoCtx, integral::Bool = false)
+  b = MPolyBuildCtx(parent(a))
+  for i=1:length(a)
+    fl, c = rational_reconstruct(coeff(a, i), R, integral)
+    if !fl
+      return fl, a
+    end
+    push_term!(b, c, exponent_vector(a, i))
+  end
+  return true, finish(b)
+end
+
 function rational_reconstruct(a::nf_elem, R::RecoCtx, integral::Bool = false)
   if integral
     if !isdefined(R, :LI)
@@ -306,15 +384,146 @@ function rational_reconstruct(a::nf_elem, R::RecoCtx, integral::Bool = false)
     for i=1:degree(R.k)
       s[1, i] = round(s[1, i]//R.d)
     end
-    t = s*R.L
+    tt = s*R.L
     b = parent(a)()
+    nb = div(3*nbits(R.d), 2)
     for i=1:degree(R.k)
-      Hecke._num_setcoeff!(b, i-1, t[1, i])
+      Hecke._num_setcoeff!(b, i-1, t[1, i]-tt[1, i])
+      nb -= nbits(t[1, i] - tt[1, i])
     end
-    return a-b
+    return nb >= 0, b
   end
-  error("still missing...")
+  n = degree(parent(a))
+  Znn = MatrixSpace(FlintZZ, n, n)
+  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) R.L]
+  lll!(L)
+  d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
+  n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))
+  return true, n//d
 end
+
+function Hecke.toMagma(io::IOStream, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R")
+  print(io, "$name<")
+  S = symbols(R)
+  for i = 1:length(S)-1
+    print(io, "$(S[i]),")
+  end
+  print(io, "$(S[end])> := PolynomialRing($base_name, $(length(S)));\n")
+end
+
+function Hecke.toMagma(p::String, R::AbstractAlgebra.MPolyRing; base_name::String = "S", name::String = "R", make::String = "w")
+  f = open(p, mode)
+  Hecke.toMagma(f, R, base_name = base_name, name = name)
+  close(f)
+end
+
+function Hecke.toMagma(io::IOStream, f::Generic.MPolyElem)
+  S = symbols(parent(f))
+  for i=1:length(f)
+    if i>1
+      print(io, "+")
+    end
+    s = "$(coeff(f, i))"
+    s = replace(s, "//" => "/")
+    print(io, "($s)")
+    e = exponent_vector(f, i)
+    if iszero(e)
+      continue
+    end
+    print(io, "*")
+    fi = true
+    for j=1:length(S)
+      if e[j] > 0
+        if !fi
+          print(io, "*")
+        else
+          fi = false
+        end
+        print(io, "$(S[j])^$(e[j])")
+      end
+    end
+  end
+end
+
+function Hecke.toMagma(io::IOStream, k::AnticNumberField; name::String = "S", gen_name::String="_a")
+  print(io, "$name<$gen_name> := NumberField($(k.pol));\n")
+end
+
+function Hecke.toMagma(io::IOStream, s::Symbol, v::Any)
+  print(io, "$s := ")
+  Hecke.toMagma(io, v)
+  print(io, ";\n")
+end
+
+struct term{T}
+  f::T
+  i::Int
+  function term(f::T, i::Int) where {T <: Generic.MPoly}
+    return new{T}(f, i)
+  end
+end
+
+function Base.show(io::IO, t::term)
+  print(io, "$(t.i)-th term of $(t.f)")
+end
+
+struct terms{T}
+  f::T
+  function terms(f::T) where {T <: Generic.MPoly}
+    return new{T}(f)
+  end
+end
+
+function Base.show(io::IO, t::terms)
+  print(io, "Iterator for the terms of $(t.f)")
+end
+
+function Base.iterate(T::terms, st::Int = 0)
+  st += 1
+  if st > length(T.f)
+    return nothing
+  end
+  return term(T.f, st), st
+end
+
+Base.IteratorEltype(M::terms) = Base.HasEltype()
+Base.eltype(M::terms{T}) where {T} = term{T}
+
+Base.IteratorSize(M::terms) = Base.HasLength()
+Base.length(M::terms) = length(M.f)
+
+function Base.isless(f::term, g::term)
+  R = parent(f.f)
+  @assert R == parent(g.f)
+  return AbstractAlgebra.Generic.monomial_cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))<0
+end
+
+function ==(f::term, g::term)
+  R = parent(f.f)
+  @assert R == parent(g.f)
+  return f.i == g.i
+end
+
+function push_term!(M::MPolyBuildCtx{<:Generic.MPoly{T}}, t::term{T}) where {T}
+  push_term!(M, coeff(t.f, t.f.i), exponent_vector(t.f, t.f.i))
+end
+
+function Hecke.coeff(t::term)
+  return coeff(t.f, t.i)
+end
+
+function Hecke.exponent_vector(t::term)
+  return exponent_vector(t.f, t.i)
+end
+
+function Base.lastindex(a::terms)
+  return length(a.f)
+end
+
+function Base.getindex(a::terms, i::Int)
+  return term(a.f, i)
+end
+
 
 
 #=TODO
@@ -323,12 +532,9 @@ end
   nmod_mpoly -> gfp_mpoly? at least in Nemo
   set_coeff should accept UInt
 
-  why is Generic.gcd not monic?
-
   deal with bad primes (wrong expo vectors)
   reconstruction - and use it in the _hensel stuff elsewhere...
-  deal with lead_coeff, content
-  use Kronnecker rep do avoid dens.
+  deal with content
 
 =#
 

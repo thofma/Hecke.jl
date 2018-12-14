@@ -519,6 +519,8 @@ mutable struct modular_env
   K::AnticNumberField
   Rp::Array{fq_nmod_poly, 1}
   Kx::Generic.PolyRing{nf_elem}
+  Kxy::Generic.MPolyRing{nf_elem}
+  #Kpxy::NmodMPolyRing
 
   function modular_env()
     return new()
