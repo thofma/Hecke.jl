@@ -570,7 +570,7 @@ function extend_auto(KK::KummerExt, tau_a::FacElem{nf_elem, AnticNumberField}, k
   prod_gens = prod(KK.gen[i]^(-el[i]*div(Int(order(KK.AutG[i])), k)) for i = 1:length(KK.gen))
   #TODO: Compute the support before calling ispower
   prod_gens *= tau_a
-  fl2, rt = ispower(prod_gens, k)
+  fl2, rt = ispower(prod_gens, k, with_roots_unity = true)
   @assert fl2
   return el, rt
   

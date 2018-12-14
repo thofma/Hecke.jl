@@ -136,6 +136,8 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   generators::Vector{T}
   discrete_logarithm::Function
   modulus # this can be anything, for which powermod(::T, ::fmpz, modulus) is defined
+  
+  disc_log::GrpAbFinGenElem #Needed in the conductor computation
 
   function GrpAbFinGenToAbsOrdMap{S, T}(G::GrpAbFinGen, O::S, generators::Vector{T}, disc_log::Function, modulus...) where {S, T}
     @assert ngens(G) == length(generators)

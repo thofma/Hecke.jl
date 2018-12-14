@@ -533,7 +533,7 @@ end
 #  The input must be a multiple of the minimum of the conductor, we don't check for consistency. 
 #
 
-function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOrdElem, 1}} = Dict{Int, Array{NfOrdElem, 1}}())
+function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpAbFinGenElem, 1}} = Dict{Int, Array{GrpAbFinGenElem, 1}}())
 
   mr = C.rayclassgroupmap
   lp = mr.fact_mod
@@ -550,13 +550,17 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
   tmg = mr.tame_mult_grp
   #first, tame part
   primes_done = fmpz[]
-  for p in keys(tmg)
+  for (p, v) in tmg
     if p.minimum in primes_done 
       continue
     end
     push!(primes_done, p.minimum)
-    I = ideal(O, tmg[p].generators[1])
-    el = mp\I
+    if isdefined(v, :disc_log)
+      el = C.quotientmap(v.disc_log)
+    else
+      I = ideal(O, v.generators[1])
+      el = mp\I
+    end
     if iszero(el)
       return false
     end
@@ -583,12 +587,16 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{NfOr
       if haskey(lwp, Int(p.minimum))
         gens = lwp[Int(p.minimum)]
       else
-        gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, o)
+        gens_els = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, o)
+        gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
+        for i = 1:length(gens)
+          gens[i] = mr\(ideal(O, gens_els[i]))
+        end
         lwp[Int(p.minimum)] = gens
       end
-      iscond=false
+      iscond = false
       for i in 1:length(gens)
-        if !iszero(mp\ideal(O,gens[i]))
+        if !iszero(C.quotientmap(gens[i]))
           iscond=true
           break
         end
@@ -668,7 +676,7 @@ end
 #
 #######################################################################################
 
-function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}} = Dict{Tuple{Int, Int}, Array{NfOrdElem, 1}}())
+function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}} = Dict{Tuple{Int, Int}, Array{GrpAbFinGenElem, 1}}())
   
   mr = C.rayclassgroupmap 
   O = base_ring(C)
@@ -690,7 +698,7 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
   #first, tamely ramified part
   tmg=mr.tame_mult_grp
   primes_done = fmpz[]
-  for p in keys(tmg) 
+  for (p, mapp) in tmg 
     if p.minimum in primes_done || haskey(mr.wild_mult_grp, p)
       continue
     end
@@ -699,12 +707,16 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
     if cyc_prime
       ap-=1
     else
-      el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
+      if isdefined(mapp, :disc_log)
+        el = C.quotientmap(mapp.disc_log)
+      else
+        el=mp\ideal(O,tmg[p].generators[1]) #The generator is totally positive, we modified it before
+      end
       q,mq=quo(R,[el])
       ap-= order(q)
     end
-    qw=divexact(d, p.splitting_type[1])*ap
-    discr*=fmpz(p.minimum)^qw
+    qw = divexact(d, p.splitting_type[1])*ap
+    mul!(discr, discr, fmpz(p.minimum)^qw)
     if discr > bound
       @vprint :AbExt 2 "too large\n"
       return false
@@ -750,11 +762,15 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
           if haskey(lwp, (Int(p.minimum), s+1))
             gens = lwp[(Int(p.minimum), s+1)]
           else
-            gens = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
+            gens_els = _1pluspk_1pluspk1(K, p, pk, pv, lp, prime_power, a, n)
+            gens = Vector{GrpAbFinGenElem}(undef, length(gens_els))
+            for i = 1:length(gens)
+              gens[i] = mr\(ideal(O, gens_els[i]))
+            end
             lwp[(Int(p.minimum), s+1)] = gens
           end
           for i = 1:length(gens)
-            push!(els, mp\ideal(O, gens[i]))
+            push!(els, C.quotientmap(gens[i]))
           end
           o = order(quo(R,els)[1])
           ap -= o
@@ -766,13 +782,17 @@ function discriminant_conductor(C::ClassField, bound::fmpz; lwp::Dict{Tuple{Int,
           @hassert :AbExt 1 ap>0
         end
         if haskey(tmg, p)
-          push!(els, mp\ideal(O, tmg[p].generators[1]))
+          if isdefined(tmg[p], :disc_log)
+            push!(els, C.quotientmap(tmg[p].disc_log))
+          else
+            push!(els, mp\ideal(O, tmg[p].generators[1]))
+          end
         end
         ap -= order(quo(R,els)[1])
         @hassert :AbExt 1 ap>0
       end
       np1 = np^ap
-      discr *= np1
+      mul!(discr, discr, np1)
       if discr > bound
         @vprint :AbExt 2 "too large\n"
         return false

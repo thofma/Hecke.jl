@@ -159,6 +159,13 @@ function pow!(z::FacElem, x::FacElem, y::T) where T <: Union{fmpz, Integer}
   end
 end
 
+function pow!(x::FacElem, y::T) where T <: Union{fmpz, Integer}
+  for a in base(x)
+    # this should be inplace ... not sure anymore: using copy, inplace is bad
+    x.fac[a] = y*x.fac[a]
+  end
+end
+
 # ^(x::FacElem, y::Union{fmpz, Integer}) is ambiguous
 for T in [:Integer, fmpz]
   @eval begin
@@ -337,6 +344,41 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
   # still doesn't work
 
   return prod([(p//1)^Int(k) for (p,k) = x.fac])
+end
+
+function _ev(d::Dict{nf_elem, fmpz}, oe::nf_elem)
+  z = deepcopy(oe)
+  if length(d)==0
+    return z
+  elseif length(d)==1
+    x = first(d)
+    return x[1]^x[2]
+  end
+  b = empty(d)
+  for (k, v) in d
+    if iszero(v)
+      continue
+    end
+    if v>-10 && v<10
+      mul!(z, z, k^Int(v))
+    else
+      r = isodd(v) ? 1 : 0
+      vv = div(v-r, 2)
+      if vv != 0
+        b[k] = vv
+      end
+      if r != 0
+        mul!(z, z, k)
+      end
+    end
+  end
+  if isempty(b)
+    return z
+  end
+  res = _ev(b, oe)
+  mul!(res, res, res)
+  mul!(z, z, res)
+  return z
 end
 
 function _ev(d::Dict{T, fmpz}, oe::T) where T

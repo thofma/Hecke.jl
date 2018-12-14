@@ -220,7 +220,7 @@ function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   end
 end
 
-function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = false)
+function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots_unity = false, decom = false)
   if n == 1
     return true, a
   end
@@ -232,9 +232,10 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = fa
     de = Dict((p, v) for (p, v) = decom)
   end
   c = Hecke.compact_presentation(a, n, decom = de)
-  b = base_ring(c)(1)
-  d = FacElem(b)
-  for (k,v) = c.fac
+  K = base_ring(c)
+  b = one(K)
+  d = Dict{nf_elem, fmpz}()
+  for (k, v) = c.fac
     q, r = divrem(v, n)
     if r < 0
       r += n
@@ -242,15 +243,19 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; decom = fa
       @assert r > 0
       @assert n*q+r == v
     end
-    d *= FacElem(Dict(k => q))
-    b *= k^r
+    d[k] = q
+    mul!(b, b, k^r)
   end
-  @hassert :CompactPresentation 2 evaluate(d^n*b *inv(a))== 1
-  fl, x = ispower(b, n)
+  if isempty(d)
+    d[one(K)] = fmpz(1)
+  end
+  df = FacElem(d) 
+  @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
+  fl, x = ispower(b, n, with_roots_unity = with_roots_unity)
   if fl
-    return fl, d*x
+    return fl, df*x
   else
-    return fl, d
+    return fl, df
   end
 end
 

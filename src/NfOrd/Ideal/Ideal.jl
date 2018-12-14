@@ -699,6 +699,16 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 > Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  #=
+  if isdefined(x, :gen_one) && isdefined(y, :gen_one)
+    if x.gen_one == y.gen_one && x.gen_two == y.gen_two
+      return true
+    end
+    if gcd(x.gen_one, y.gen_one) == 1
+      return false
+    end 
+  end
+  =#
   return basis_mat(x, Val{false}) == basis_mat(y, Val{false})
 end
 

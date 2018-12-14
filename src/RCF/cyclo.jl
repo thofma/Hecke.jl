@@ -35,10 +35,28 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
       rethrow(e)
     end
   end
+  
+  kt, t = PolynomialRing(k, "t", cached = false)
+  
+  if n == 2
+    #Easy, just return the field
+    Kr = number_field(t+1, cached = false, check = false)[1]
+    rel2abs = NfRelToNf(Kr, k, gen(k), k(-1), Kr(gen(k)))
+    small2abs = NfToNfMor(k, k, gen(k))
+    c = CyclotomicExt()
+    c.k = k
+    c.n = n
+    c.Kr = Kr
+    c.Ka = k
+    c.mp = (rel2abs, small2abs)
+
+    push!(Ac, c)
+    Hecke._set_cyclotomic_ext_nf(k, Ac)
+    return c
+  end
 
   ZX, X = PolynomialRing(FlintZZ, cached = false)
   Qx = parent(k.pol)
-  kt, t = PolynomialRing(k, "t", cached = false)
   f = cyclotomic(n, X)
   fq = Qx(f)
   fk = evaluate(fq, t)
