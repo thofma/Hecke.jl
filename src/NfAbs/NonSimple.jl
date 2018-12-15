@@ -385,7 +385,7 @@ function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
   end
   adata = data(a)
   for j in 1:length(adata)
-    exps = Nemo._get_termexp_ui(adata, j)
+    exps = exponent_vector(adata, j)
     k = monomial_to_index(K, exps)
     M[i, k] = coeff(adata, j)
   end
@@ -415,7 +415,7 @@ function SRow(a::NfAbsNSElem)
   adata = data(a)
   for i=1:length(adata)
     # TODO: Do this inplace with preallocated exps array
-    exps = Nemo._get_termexp_ui(adata, i)
+    exps = exponent_vector(adata, i)
     push!(sr.pos, monomial_to_index(parent(a), exps))
     push!(sr.values, coeff(adata, i))
   end
@@ -591,7 +591,7 @@ function msubst(f::fmpq_mpoly, v::Array{T, 1}) where {T}
   @assert n == nvars(parent(f))
   r = FlintQQ()
   for i=1:length(f)
-    exps = Nemo._get_termexp_ui(f, i)
+    exps = exponent_vector(f, i)
     r += coeff(f, i) * prod(v[j]^exps[j] for j=1:n)
   end
   return r
