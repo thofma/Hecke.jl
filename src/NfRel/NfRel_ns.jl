@@ -415,16 +415,16 @@ end
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   a.parent
   K = parent(a)
-  C = CartesianIndices(Tuple(0:total_degree(f)-1 for f = K.pol))
-  L = LinearIndices(C)
-  CC = [UInt[c[i] for i=1:length(K.pol)] for c = C]
+  #C = CartesianIndices(Tuple(0:total_degree(f)-1 for f = K.pol))
+  #L = LinearIndices(C)
+  #CC = [UInt[c[i] for i=length(K.pol):-1:1] for c = C]
   for j=1:cols(M)
     M[i, j] = zero(base_ring(K))
   end
   for j=1:length(a.data)
-    p = findfirst(isequal(a.data.exps[:, j]), CC)
-    @assert p !== nothing
-    M[i, L[p]] = a.data.coeffs[j]
+    #p = findfirst(isequal(a.data.exps[:, j]), CC)
+    #@assert p !== nothing
+    M[i, monomial_to_index(j, a)] = a.data.coeffs[j]
   end
 end
 
@@ -445,12 +445,12 @@ end
 function monomial_to_index(i::Int, a::NfRel_nsElem)
   K = parent(a)
   n = ngens(K)
-  idx = a.data.exps[n, i]
-  for j=n-1:-1:1
-    idx *= total_degree(K.pol[j])
+  idx = a.data.exps[1, i]
+  for j=2:n
+    idx *= total_degree(K.pol[n - j + 1])
     idx += a.data.exps[j, i]
   end
-  return idx+1
+  return Int(idx+1)
 end
 
 function SRow(a::NfRel_nsElem)
