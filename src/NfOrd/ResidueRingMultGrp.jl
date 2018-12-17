@@ -1001,6 +1001,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
     if haskey(y2, q)
       @assert y2[q] >= 2
       G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q])
+      if haskey(y1, q)
+        tame_part[q].generators[1] = tame_part[q].generators[1]^Int(exponent(G2))
+      end
       
       i += ngens(G2)
       nq = norm(q) - 1

@@ -270,6 +270,39 @@ end
 > an element generating a normal basis of K over Q.
 """
 function normal_basis(K::Nemo.AnticNumberField)
+  
+  O = EquationOrder(K)
+  Qx = parent(K.pol)
+  d = discriminant(O)
+  p = 1
+  for q in PrimesSet(degree(K), -1)
+    if divisible(d, q)
+      continue
+    end
+    #Now, I check if p is totally split
+    R = GF(q, cached = false)
+    Rt, t = PolynomialRing(R, "t", cached = false)
+    ft = Rt(K.pol)
+    pt = powmod(t, q, ft)
+    if degree(gcd(ft, pt-t)) == degree(ft)
+      p = q
+      break
+    end
+  end
+  #Now, I only need to lift an idempotent of O/pO
+  R = GF(p, cached = false)
+  Rx, x = PolynomialRing(R, "x", cached = false)
+  f = Rx(K.pol)
+  fac = factor(f)
+  g = divexact(f, first(keys(fac.fac)))
+  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
+  g1 = lift(Zy, g)
+  return K(g1)
+  
+end
+
+
+function normal_basis2(K::Nemo.AnticNumberField)
   n = degree(K)
   Aut = automorphisms(K)
 
@@ -291,6 +324,8 @@ function normal_basis(K::Nemo.AnticNumberField)
   end
   return r
 end
+
+
 
 ################################################################################
 #
