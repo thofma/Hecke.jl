@@ -775,14 +775,6 @@ end
 
 equation_order(K, cached::Bool = false) = EquationOrder(K, cached)
 
-#function __equation_order(K::AnticNumberField)
-#  M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-#  Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-#  z = NfAbsOrd(K, M, Minv, basis(K), false)
-#  z.isequation_order = true
-#  return z
-#end
-
 @doc Markdown.doc"""
     EquationOrder(K::AnticNumberField) -> NfOrd
 
@@ -805,6 +797,36 @@ function EquationOrder(K::T, cached::Bool = true) where {T}
   else
     M = __equation_order(K)
     return M
+  end
+end
+
+# If the numerator of the defining polynomial is not monic, then we construct
+# the order as described in exercise 15, chapter 15 of Cohen's first book.
+# This is due to H. Lenstra.
+function __equation_order(K::AnticNumberField)
+  f = K.pol
+  de = denominator(f)
+  g = f * de
+
+  if ismonic(g)
+    M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+    Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
+    z = NfAbsOrd{AnticNumberField, nf_elem}(K, M, Minv, basis(K), false)
+    z.isequation_order = true
+    return z
+  else
+    d = degree(g)
+    M = zero_matrix(FlintZZ, d, d)
+    M[1, 1] = 1
+    for i in 2:d
+      for j in i:-1:2
+        M[i, j] = numerator(coeff(g, d - (i - j)))
+      end
+    end
+    @hassert :NfOrd 1 defines_order(K, FakeFmpqMat(M))
+    z = NfAbsOrd{AnticNumberField, nf_elem}(K, FakeFmpqMat(M))
+    z.isequation_order = false
+    return z
   end
 end
 
@@ -1455,6 +1477,10 @@ end
 
 # TODO: Ask Carlo if we need to assert that O is "the" equation order.
 function new_maximal_order(O::NfOrd)
+  if !isequation_order(O)
+    return maximal_order_round_four(O)
+  end
+
   K = nf(O)
   if degree(K) == 1
     O.ismaximal = 1
@@ -1517,7 +1543,6 @@ end
 
 function DedekindComposite(O::NfOrd, l::Array{fmpz,1})
 
-  @vprint :NfOrd 1 "Dedekind criterion with $rem \n"
   O1=O
   l1=fmpz[]
   while true

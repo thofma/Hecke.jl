@@ -151,6 +151,7 @@ group as an abelian group and a map from this group to the set
 of ideals of the maximal order.
 """
 function class_group(K::AnticNumberField)
+  @show K
   return class_group(maximal_order(K))
 end
 
