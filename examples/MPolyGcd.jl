@@ -5,7 +5,7 @@ import Nemo, Nemo.nmod_mpoly, Nemo.NmodMPolyRing
 import AbstractAlgebra
 import Base.//, Base.==
 
-export terms, gcd
+export Terms, gcd
 
 mutable struct MPolyBuildCtx{T}
   f::T
@@ -68,10 +68,26 @@ function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
 end
     
 function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
+#  @show "gcd start"
   p = Hecke.p_start
   K = base_ring(f)
   max_stable = 2
   stable = max_stable
+
+  if iszero(f)
+    return g
+  end
+  if iszero(g)
+    return f
+  end
+
+  # compute deflation and deflate
+  shifta, defla = Generic.deflation(f)
+  shiftb, deflb = Generic.deflation(g)
+  shiftr = min.(shifta, shiftb)
+  deflr = broadcast(gcd, defla, deflb)
+  f = deflate(f, shifta, deflr)
+  g = deflate(g, shiftb, deflr)
 
   d = fmpz(1)
   gc = parent(f)()
@@ -100,7 +116,15 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
     fp = Hecke.modular_proj(me, f)
     gp = Hecke.modular_proj(me, g)
     glp = Hecke.modular_proj(gl, me)
-    gcd_p = [coeff(glp[i], 0)*gcd_zippel(fp[i], gp[i]) for i=1:length(fp)]
+    gcd_p = nmod_mpoly[]
+    for i=1:length(fp)
+      _g = gcd_zippel(fp[i], gp[i])
+      if length(_g) == 1 && iszero(exponent_vector(_g, 1))
+        return one(parent(f))
+      end
+      push!(gcd_p, coeff(glp[i], 0)*_g)
+    end
+    #gcd_p = [coeff(glp[i], 0)*gcd_zippel(fp[i], gp[i]) for i=1:length(fp)]
     tp = Hecke.modular_lift(me, gcd_p)
     if d==1
       d = fmpz(p)
@@ -109,6 +133,15 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
       bm = lll(basis_matrix(fmpz(p), idl, K))
       R = RecoCtx(bm, K)
       fl, gd = rational_reconstruct(gc, R, true)
+      if fl && divides(f, gd)[1] && divides(g, gd)[1]
+#          @show "gcd stop", nbits(d), length(gd), gd
+#          @time fl, q = divides(f, gd)
+#          @time q = div(f, gd)
+#          @time q*gd == f
+          gd*=inv(gl)
+          @assert isone(lead(gd))
+          return inflate(gd, shiftr, deflr)
+      end
       stable = max_stable
     else
       #TODO: instead of lifting "idl" and doing basis_matrix from
@@ -123,24 +156,22 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
         fl, gd = rational_reconstruct(gc, R, true)
         stable = max_stable
       else
-        @show "stable"
         d *= p
         stable -= 1
-        if stable <= 0 
+      end
+        if true || stable <= 0 
           if divides(f, gd)[1] && divides(g, gd)[1]
-            @show nbits(d)
-            return gd
+#            @show "gcd stop", nbits(d), length(gd), gd
+            gd*=inv(gl)
+            @assert isone(lead(gd))
+            return inflate(gd, shiftr, deflr)
           else
             @show "divides failed"
             stable = max_stable
           end
         end
-      end
       #before I forget: gc is "the" gcd modulo <d, idl>
     end
-#    if nbits(d) > 2500
-#      error("")
-#    end
   end
 end
 
@@ -153,49 +184,57 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   else
     pq2 = fmpz(0)
   end
+  z = zero(base_ring(a))
 
-  ta = terms(a)
-  tb = terms(b)
+  #=
+  c = (b-a)*pi+a
+  mod!(c, pq)
+  return c
+  =#
+
+  ta = Terms(a)
+  tb = Terms(b)
   c = MPolyBuildCtx(parent(a))
   aa, sa = iterate(ta)
   bb, sb = iterate(tb)
-  @assert aa == bb # leading terms must agree or else...
+  @assert length(a) == length(b)
+  @assert ==(aa, bb, true) # leading terms must agree or else...
   while !(aa === nothing) && !(bb === nothing)
-    if aa == bb
+    if ==(aa, bb, true) #monomial equality
       push_term!(c, Hecke.induce_inner_crt(coeff(aa), coeff(bb), pi, pq, pq2), exponent_vector(aa))
       aa = iterate(ta, sa)
-      if !(aa === nothing)
-        aa, sa = aa
-      end
       bb = iterate(tb, sb)
-      if !(bb === nothing)
-        bb, sb = bb
-      end
+      aa === nothing && break
+      aa, sa = aa
+      bb === nothing && break
+      bb, sb = bb
     elseif aa < bb
-      push_term!(c, bb)
+      error("bad 1")
+      push_term!(c, Hecke.induce_inner_crt(z, coeff(bb), pi, pq, pq2), exponent_vector(bb))
       bb, sb = iterate(tb, sb)
-      if !(bb === nothing)
-        bb, sb = bb
-      end
+      bb === nothing && break
+      bb, sb = bb
     else
-      push_term!(c, aa)
+      error("bad 2")
+      push_term!(c, Hecke.induce_inner_crt(coeff(a), z, pi, pq, pq2), exponent_vector(aa))
       aa = iterate(ta, sa)
-      if !(aa === nothing)
-        aa, sa = aa
-      end
+      aa === nothing && break
+      aa, sa = aa
     end
   end
   while !(aa === nothing)
-    push_term!(c, aa)
+      error("bad 3")
+    push_term!(c, Hecke.induce_inner_crt(coeff(a), z, pi, pq, pq2), exponent_vector(aa))
     aa = iterate(ta, sa)
     if !aa == nothing
       aa, sa = aa
     end
   end
   while !(bb === nothing)
-    push_term!(c, bb)
+      error("bad 4")
+    push_term!(c, Hecke.induce_inner_crt(z, coeff(bb), pi, pq, pq2), exponent_vector(bb))
     bb = iterate(tb, sb)
-    if !bb == nothing
+    if !(bb === nothing)
       bb, sb = bb
     end
   end
@@ -252,6 +291,7 @@ end
 function Hecke.modular_lift(me::Hecke.modular_env, g::Array{nmod_mpoly, 1})
   bt = MPolyBuildCtx(me.Kxy)
   #TODO deal with different vectors properly (check induce_crt)
+  gt = [Terms(x) for x = g]
   @assert all(x->exponent_vectors(g[1]) == exponent_vectors(g[x]), 2:length(g))
   for i=1:length(g[1])
     for x=1:length(g)
@@ -455,75 +495,86 @@ function Hecke.toMagma(io::IOStream, s::Symbol, v::Any)
   print(io, ";\n")
 end
 
-struct term{T}
+struct Term{T}
   f::T
   i::Int
-  function term(f::T, i::Int) where {T <: Generic.MPoly}
+  function Term(f::T, i::Int) where {T <: AbstractAlgebra.MPolyElem}
     return new{T}(f, i)
   end
 end
 
-function Base.show(io::IO, t::term)
+function Base.show(io::IO, t::Term)
   print(io, "$(t.i)-th term of $(t.f)")
 end
 
-struct terms{T}
+struct Terms{T}
   f::T
-  function terms(f::T) where {T <: Generic.MPoly}
+  function Terms(f::T) where {T <: AbstractAlgebra.MPolyElem}
     return new{T}(f)
   end
 end
 
-function Base.show(io::IO, t::terms)
+function Base.show(io::IO, t::Terms)
   print(io, "Iterator for the terms of $(t.f)")
 end
 
-function Base.iterate(T::terms, st::Int = 0)
+function Base.iterate(T::Terms, st::Int = 0)
   st += 1
   if st > length(T.f)
     return nothing
   end
-  return term(T.f, st), st
+  return Term(T.f, st), st
 end
 
-Base.IteratorEltype(M::terms) = Base.HasEltype()
-Base.eltype(M::terms{T}) where {T} = term{T}
+Base.IteratorEltype(M::Terms) = Base.HasEltype()
+Base.eltype(M::Terms{T}) where {T} = Term{T}
 
-Base.IteratorSize(M::terms) = Base.HasLength()
-Base.length(M::terms) = length(M.f)
+Base.IteratorSize(M::Terms) = Base.HasLength()
+Base.length(M::Terms) = length(M.f)
 
-function Base.isless(f::term, g::term)
-  R = parent(f.f)
-  @assert R == parent(g.f)
-  return AbstractAlgebra.Generic.monomial_cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))<0
-end
-
-function ==(f::term, g::term)
-  R = parent(f.f)
-  @assert R == parent(g.f)
-  return f.i == g.i
-end
-
-function push_term!(M::MPolyBuildCtx{<:Generic.MPoly{T}}, t::term{T}) where {T}
-  push_term!(M, coeff(t.f, t.f.i), exponent_vector(t.f, t.f.i))
-end
-
-function Hecke.coeff(t::term)
-  return coeff(t.f, t.i)
-end
-
-function Hecke.exponent_vector(t::term)
-  return exponent_vector(t.f, t.i)
-end
-
-function Base.lastindex(a::terms)
+function Base.lastindex(a::Terms)
   return length(a.f)
 end
 
-function Base.getindex(a::terms, i::Int)
-  return term(a.f, i)
+function Base.getindex(a::Terms, i::Int)
+  return Term(a.f, i)
 end
 
+function Base.isless(f::Term, g::Term)
+  R = parent(f.f)
+  @assert R == parent(g.f)
+  return AbstractAlgebra.Generic.monomial_isless(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))
+end
+
+function ==(f::Term, g::Term, monomial_only::Bool = false)
+  R = parent(f.f)
+  @assert R == parent(g.f)
+
+  return AbstractAlgebra.Generic.monomial_cmp(f.f.exps, f.i, g.f.exps, g.i, ngens(R), R, UInt(0))==0 && (monomial_only || coeff(f.f, f.i) == coeff(g.f, g.i))
+end
+
+function push_term!(M::MPolyBuildCtx{<:Generic.MPoly{T}}, t::Term{T}) where {T}
+  push_term!(M, coeff(t.f, t.f.i), exponent_vector(t.f, t.f.i))
+end
+
+function Hecke.coeff(t::Term)
+  return coeff(t.f, t.i)
+end
+
+function Hecke.exponent_vector(t::Term)
+  return exponent_vector(t.f, t.i)
+end
+
+function monomial(t::Term)
+  m = parent(r.f)()
+  set_exponent_vector!(m, 1, exponent_vector(t))
+  setcoeff!(m, one(base_ring(m)))
+  return m
+end
+
+function lead_term(f::AbstractAlgebra.MPolyElem)
+  return Term(f, 1)
+end
 
 
 #=TODO
@@ -537,6 +588,7 @@ end
   deal with content
 
 =#
+
 
 end
 

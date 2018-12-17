@@ -494,7 +494,7 @@ function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p:
   return ideals, AA
 end
 
-function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmpz)
+function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOrdIdl, p::fmpz)
   #I is an ideal lying over p
   #T is the product of all the prime ideals lying over p that do not appear in the factorization of I
   #Ip is the p-radical
@@ -505,7 +505,7 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
     Ip1.norm = p
     Ip1.splitting_type = (0, 1)
     Ip1.is_prime = 1
-    ideals = Array{Tuple{NfOrdIdl, Int}, 1}(undef, 1)
+    ideals = Array{Tuple{ideal_type(O), Int}, 1}(undef, 1)
     ideals[1] = (Ip1, Int(0))
   else
     AtoO = inv(OtoA)

@@ -1,8 +1,14 @@
 module HeckeProfile
-using Hecke
+using Hecke, Profile
+using Base.StackTraces
 
+
+function Profile.callers(fn::Symbol)
+  return Profile.callers(String(fn))
+end
+#=
 function Profile.callersf(matchfunc::Function, bt::Vector, lidict::Profile.LineInfoFlatDict)
-  counts = Dict{Profile.StackFrame, Int}()
+  counts = Dict{StackFrame, Int}()
   lastmatched = false
   for id in bt
       if id == 0
@@ -46,7 +52,9 @@ Profile.callers(func::Function, bt::Vector, lidict::Profile.LineInfoDict; kwargs
     Profile.callers(Symbol(func), bt, lidict; kwargs...)
 Profile.callers(func::Function; kwargs...) = Profile.callers(Symbol(func), Profile.retrieve()...; kwargs...)
 
+=#
 
+#=
 function Base.process_backtr(process_func::Function, t::Vector, limit::Int=typemax(Int); skipC = !true)
     n = 0
     last_frame = StackTraces.UNKNOWN
@@ -78,7 +86,7 @@ function Base.process_backtr(process_func::Function, t::Vector, limit::Int=typem
         process_func(last_frame, n)
     end
 end
-
+=#
 #=
   from base/profile.jl
   bt is a vector if UInt
@@ -261,20 +269,30 @@ end
 
 graph(skipC::Bool = true, skipMacro::Bool=true) = graph(Profile.retrieve()..., skipC, skipMacro)
 
-function parents{T <:Any}(g::Graph{T}, c::T) 
+function parents(g::Graph{T}, c::T)  where {T}
   return [a for (a,b) = keys(g.e) if b==c]
 end
 
-function parents_with_counts{T <:Any}(g::Graph{T}, c::T) 
+function parents_with_counts(g::Graph{T}, c::T)  where {T}
   return [(a, d) for ((a,b), d) = g.e if b==c]
 end    
 
-function children{T <: Any}(g::Graph{T}, c::T)
+function children(g::Graph{T}, c::T) where {T}
   return [b for (a,b) = keys(g.e) if a==c]
 end
 
-function children_with_count{T <: Any}(g::Graph{T}, c::T)
+function children_with_count(g::Graph{T}, c::T) where {T}
   return [(b, d) for ((a,b), d) = g.e if a==c]
 end
+
+#= usage:
+  @profile s.th.
+
+  Profile.callers(:jl_apply_generic)
+  G = HeckeProfile.grpah();
+  HeckeProfile.children(G, :+)
+  ...
+
+=#  
 
 end

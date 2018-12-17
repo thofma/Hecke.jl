@@ -1,4 +1,5 @@
-export splitting_field, issubfield
+export splitting_field, issubfield, isdefining_polynomial_nice
+
 ################################################################################
 #
 #  Predicates
@@ -6,6 +7,7 @@ export splitting_field, issubfield
 ################################################################################
 
 issimple(::Type{AnticNumberField}) = true
+
 issimple(::AnticNumberField) = true
 
 ################################################################################
@@ -135,6 +137,15 @@ function iskummer_extension(K::AnticNumberField)
     return false
   end
   return ispure_extension(K)
+end
+
+@doc Markdown.doc"""
+    isdefining_polynomial_nice(K::AnticNumberField)
+
+Tests if the defining polynomial of $K$ is integral and monic.
+"""
+function isdefining_polynomial_nice(K::AnticNumberField)
+  return Bool(K.flag & UInt(1))
 end
 
 ################################################################################

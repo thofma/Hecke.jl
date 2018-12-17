@@ -120,7 +120,7 @@ function AlgAss(f::PolyElem)
   return A
 end
 
-function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
+function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) where {S, T}
   @assert order(I) == O
 
   n = degree(O)
@@ -138,7 +138,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
   r = _rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   b = Vector{fmpz}(undef, n)
-  bbasis = Vector{NfOrdElem}(undef, r)
+  bbasis = Vector{elem_type(O)}(undef, r)
   for i = 1:r
     for j = 1:n
       b[j] = lift(B[i, j])
@@ -194,7 +194,7 @@ function AlgAss(O::NfOrd, I::NfOrdIdl, p::Union{Integer, fmpz})
     return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
   end
 
-  OtoA = NfOrdToAlgAssMor{elem_type(Fp)}(O, A, _image, _preimage)
+  OtoA = NfAbsOrdToAlgAssMor{S, T, elem_type(Fp)}(O, A, _image, _preimage)
 
   return A, OtoA
 end
