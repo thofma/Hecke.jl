@@ -574,12 +574,16 @@ function (f::NfOrdToFqMor)(p::PolyElem{NfOrdElem})
   return z
 end
 
-mutable struct NfOrdToAlgAssMor{T} <: Map{NfOrd, AlgAss{T}, HeckeMap, NfOrdToAlgAssMor}
+mutable struct NfAbsOrdToAlgAssMor{S, U, T} <: Map{NfAbsOrd{S, U}, AlgAss{T}, HeckeMap, NfAbsOrdToAlgAssMor}
   header::MapHeader
 
-  function NfOrdToAlgAssMor{T}(O::NfOrd, A::AlgAss{T}, _image::Function, _preimage::Function) where T
-    z = new{T}()
+  function NfAbsOrdToAlgAssMor{S, U, T}(O::NfAbsOrd{S, U}, A::AlgAss{T}, _image::Function, _preimage::Function) where {S, U, T}
+    z = new{S, U, T}()
     z.header = MapHeader(O, A, _image, _preimage)
     return z
   end
+end
+
+function NfAbsOrdToAlgAssMor(O::NfAbsOrd{S, U}, A::AlgAss{T}, _image, _preimage) where {S, U, T}
+  return NfAbsOrdToAlgAssMor{S, U, T}(O, A, _image, _preimage)
 end

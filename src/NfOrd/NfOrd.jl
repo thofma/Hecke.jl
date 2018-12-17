@@ -554,7 +554,7 @@ end
 Returns the smallest positive integer $k$ such that $k \cdot a$ is contained in
 $\mathcal O$.
 """
-function denominator(a::nf_elem, O::NfOrd)
+function denominator(a::Union{nf_elem, NfAbsNSElem}, O::NfAbsOrd)
   assure_has_basis_mat_inv(O)
   M = O.tcontain
   elem_to_mat_row!(M.num, 1, M.den, a)

@@ -45,7 +45,7 @@
 
 > Returns $x + y$.
 """
-function +(x::NfOrdIdl, y::NfOrdIdl)
+function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   d = degree(order(x))
   H = vcat(basis_mat(x), basis_mat(y))
   g = gcd(minimum(x), minimum(y))
@@ -95,15 +95,15 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 
 > Returns $x \cdot y$.
 """
-function *(x::NfOrdIdl, y::NfOrdIdl)
-  if ismaximal_known(order(x)) && ismaximal(order(x))
+function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  if ismaximal_known(order(x)) && ismaximal(order(x)) && issimple(nf(order(x)))
     return mul_maximal(x, y)
   else
     return mul_gen(x, y)
   end
 end
 
-function mul_gen(x::NfOrdIdl, y::NfOrdIdl)
+function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   order(x) != order(y) && error("Not compatible")
   if iszero(x) || iszero(y)
     z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))

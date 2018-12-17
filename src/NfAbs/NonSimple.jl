@@ -329,6 +329,18 @@ function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::NfAbsNSElem)
   return c
 end
 
+function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
+  add!(c.data, a.data, parent(c.data)(b))
+  c = reduce!(c)
+  return c
+end
+
+function Nemo.add!(c::NfAbsNSElem, a::NfAbsNSElem, b::Integer)
+  add!(c.data, a.data, parent(c.data)(b))
+  c = reduce!(c)
+  return c
+end
+
 function Nemo.addeq!(b::NfAbsNSElem, a::NfAbsNSElem)
   addeq!(b.data, a.data)
   b = reduce!(b)
@@ -338,6 +350,12 @@ end
 #
 
 function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
+  mul!(c.data, a.data, parent(c.data)(b))
+  c = reduce!(c)
+  return c
+end
+
+function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::Integer)
   mul!(c.data, a.data, parent(c.data)(b))
   c = reduce!(c)
   return c
@@ -843,3 +861,23 @@ end
 (K::NfAbsNS)(a::fmpq) = K(parent(K.pol[1])(a))
 
 (K::NfAbsNS)() = zero(K)
+
+function is_norm_divisible(a::NfAbsNSElem, n::fmpz)
+  return iszero(mod(norm(a), n))
+end
+
+function valuation(a::NfAbsNSElem, p::NfAbsOrdIdl)
+  return valuation(order(p)(a), p)
+end
+
+function valuation(a::NfAbsOrdElem, p::NfAbsOrdIdl)
+  i = 1
+  q = p
+  while true
+    if !(a in q)
+      return i - 1
+    end
+    q = q * p
+    i = i + 1
+  end
+end

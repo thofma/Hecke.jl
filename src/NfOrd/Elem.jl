@@ -806,7 +806,7 @@ function rand!(z::NfAbsOrdElem{S, T}, B::Vector{NfAbsOrdElem{S, T}}, R) where {S
   return z
 end
 
-function rand!(z::NfAbsOrdElem, O::NfOrd, R::UnitRange{T}) where T <: Integer
+function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
   y = O()
   ar = rand(R, degree(O))
   B = basis(O, Val{false})
@@ -894,7 +894,7 @@ end
 for T in [Integer, fmpz]
   @eval begin
     @inline function mul!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
-      mul!(z.elem_in_nf, x.elem_in_nf, y)
+      z.elem_in_nf = mul!(z.elem_in_nf, x.elem_in_nf, y)
       z.has_coord = false
       return z
     end
@@ -906,7 +906,7 @@ end
 for T in [Integer, fmpz]
   @eval begin
     @inline function add!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::$T)
-      add!(z.elem_in_nf, x.elem_in_nf, y)
+      z.elem_in_nf = add!(z.elem_in_nf, x.elem_in_nf, y)
       z.has_coord = false
       return z
     end
