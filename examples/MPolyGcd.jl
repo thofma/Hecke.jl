@@ -68,7 +68,7 @@ function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
 end
     
 function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
-  @show "gcd start"
+#  @show "gcd start"
   p = Hecke.p_start
   K = base_ring(f)
   max_stable = 2
@@ -135,6 +135,9 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
       fl, gd = rational_reconstruct(gc, R, true)
       if fl && divides(f, gd)[1] && divides(g, gd)[1]
 #          @show "gcd stop", nbits(d), length(gd), gd
+#          @time fl, q = divides(f, gd)
+#          @time q = div(f, gd)
+#          @time q*gd == f
           gd*=inv(gl)
           @assert isone(lead(gd))
           return inflate(gd, shiftr, deflr)
