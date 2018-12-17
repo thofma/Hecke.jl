@@ -20,6 +20,6 @@
   @time include("NfOrd/Overorders.jl")
   println("LinearAlgebra.jl")
   @time include("NfOrd/LinearAlgebra.jl")
-  println("PicardGroup.jl")
-  @time include("NfOrd/PicardGroup.jl")
+  #println("PicardGroup.jl")
+  #@time include("NfOrd/PicardGroup.jl")
 end

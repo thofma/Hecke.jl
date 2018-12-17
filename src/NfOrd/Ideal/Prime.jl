@@ -406,18 +406,26 @@ function _lift(T::Array{Nemo.gfp_elem, 1})
 end
 
 # Belabas p. 40
+# Facts on normal presentation, Algorithmic Algebraic Number theory, Pohst-Zassenhaus 
 function anti_uniformizer(P::NfOrdIdl)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
-  else
-    p = minimum(P)
-    M = representation_matrix(uniformizer(P))
-    Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
-    K = kernel(Mp)
-    @assert length(K) > 0
-    P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
+  end
+  #=
+  if has_2_elem_normal(P)
+    Pinv = inv(P)
+    P.anti_uniformizer = divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den)
     return P.anti_uniformizer
   end
+  =#
+  p = minimum(P)
+  M = representation_matrix(uniformizer(P))
+  Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
+  K = kernel(Mp)
+  @assert length(K) > 0
+  P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
+  return P.anti_uniformizer
+  
 end
 
 function prime_decomposition_type(O::NfOrd, p::Integer)
@@ -862,8 +870,16 @@ end
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   @hassert :NfOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
+  #First, check the content of a as a polynomial.
+  K = parent(a)
+  Qx = parent(K.pol)
+  pol_a = Qx(a)
+  c = content(pol_a)
+  valnumden = valuation(numerator(c), p) - valuation(denominator(c), p)
+  b = divexact(a, c)
+  
   if isdefined(p, :valuation)
-    return p.valuation(a, no)::Int
+    return valnumden + p.valuation(b, divexact(no, c^degree(K)))::Int
   end
   O = order(p)
   P = p.gen_one
@@ -871,19 +887,19 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
   # for generic ideals
   if p.splitting_type[2] == 0
     #global bad_ideal = p
-    p.valuation = function(a::nf_elem, no::fmpq = fmpq(0))
-      d = denominator(a, O)
-      x = O(d*a)
-      return valuation_naive(O(x), p)::Int - valuation_naive(O(d), p)::Int
+    p.valuation = function(s::nf_elem, no::fmpq = fmpq(0))
+      d = denominator(s, O)
+      x = O(d*s)
+      return valuation_naive(x, p)::Int - valuation_naive(O(d), p)::Int
     end
-    return p.valuation(a)::Int
+    return valnumden + p.valuation(b)::Int
   end
 
   if p.splitting_type[1]*p.splitting_type[2] == degree(O)
-    p.valuation = function(a::nf_elem, no::fmpq = fmpq(0))
-      return divexact(valuation(iszero(no) ? norm(a) : no, P)[1], p.splitting_type[2])::Int
+    p.valuation = function(s::nf_elem, no::fmpq = fmpq(0))
+      return divexact(valuation(iszero(no) ? norm(s) : no, P)[1], p.splitting_type[2])::Int
     end
-  elseif mod(index(O),P) != 0 && p.splitting_type[1] == 1
+  elseif mod(index(O), P) != 0 && p.splitting_type[1] == 1
     if p.gen_one^2 <= typemax(UInt) 
       f1 = val_func_no_index_small(p)
       f2 = val_func_no_index(p)
@@ -903,7 +919,8 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
     p.valuation = val_func_index(p)
   end
 
-  return p.valuation(a, no)::Int
+  return valnumden + p.valuation(b, divexact(no, c^degree(K)))::Int
+
 end
 
 @doc Markdown.doc"""

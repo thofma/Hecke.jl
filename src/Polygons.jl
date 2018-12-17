@@ -538,30 +538,17 @@ function _decomposition(O::NfOrd, I::NfOrdIdl, Ip::NfOrdIdl, T::NfOrdIdl, p::fmp
       @hassert :NfOrd 1 u in P
       x = zero(parent(u))
       modulo = norm(P)*p
-      
-      #@vtime :NfOrd 1 is_norm_divisible(u.elem_in_nf, modulo)
-      #@vtime :NfOrd 1 iszero(mod(norm(u), modulo))
-      
-      #if !iszero(mod(norm(u), modulo))
+
       if !is_norm_divisible(u.elem_in_nf, modulo)
-      #    @show O, u.elem_in_nf, modulo
-      #  end
         x = u
       elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
-      # if !iszero(mod(norm(u+p), modulo))
-      #          @show O, u.elem_in_nf+p, modulo
-      #  end
         x = u + p
       elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
-      # if !iszero(mod(norm(u-p), modulo))
-      #          @show O, u.elem_in_nf-p, modulo
-      # end
         x = u - p
       else
         Ba = basis(P, Val{false})
         for i in 1:degree(O)
           if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
-          #if !iszero(mod(norm(v*Ba[i] + u), modulo))
             x = v*Ba[i] + u
             break
           end

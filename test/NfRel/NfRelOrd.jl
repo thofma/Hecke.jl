@@ -76,7 +76,7 @@ end
 
 
 @testset "Relative maximal orders of non-simple extensions" begin
-   Qx, x = FlintQQ["x"]
+  Qx, x = FlintQQ["x"]
 
   K, a = NumberField(x, "a")
   OK = maximal_order(K)

@@ -70,14 +70,15 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
       @vprint :UnitGroup 1 "Bitsize of coefficient $([nbits(elem_in_basis(U.order(b))[i]) for i in 1:degree(U.order)])"
 
       #has_root, roota = root(b, p)
-      has_root, _roota = ispower(U.order(b), p)
-      roota = elem_in_nf(_roota)
-
-
+      println("\n\n\n $(typeof(U.order(b))) \n\n\n")
+      with_roots_unity = divisible(U.torsion_units_order, p)
+      has_root, _roota = ispower(U.order(b), p, with_roots_unity)
+      
       if !has_root
         continue
       end
-
+      
+      roota = elem_in_nf(_roota)
       return (false, roota)
     end
   end
@@ -114,6 +115,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
     b = evaluate(a)
 
     #has_root, roota = root(b, p)
+    
     has_root, _roota = ispower(U.order(b), p)
     roota = elem_in_nf(_roota)
 

@@ -119,13 +119,18 @@ function automorphisms(K::AnticNumberField)
     end
   end
   f = K.pol
-  lr = roots(f, K)
+  Kt, t = PolynomialRing(K, "t", cached = false)
+  f1 = evaluate(f, t)
+  f1 = divexact(f1, t - gen(K))
+  lr = roots(f1, div(degree(K), 2))
+  push!(lr, gen(K))
   Aut = Array{NfToNfMor, 1}(undef, length(lr))
   for i = 1:length(lr)
     Aut[i] = NfToNfMor(K, K, lr[i])
   end
-  _set_automorphisms_nf(K, Aut)
-  return copy(Aut)::Vector{NfToNfMor}
+  auts = closure(Aut, degree(K))
+  _set_automorphisms_nf(K, auts)
+  return copy(auts)::Vector{NfToNfMor}
 
 end
 

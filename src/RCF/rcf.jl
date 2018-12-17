@@ -520,7 +520,6 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   a = -coeff(K.pol, 0)
   a = h(a)//a^r
   fl, b = ispower(a, degree(K), with_roots_unity = true)
-  @assert b^degree(K) == a
   @assert fl
   return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
 end
