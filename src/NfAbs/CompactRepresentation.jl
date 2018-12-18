@@ -252,8 +252,8 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   df = FacElem(d) 
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
   fl, x = ispower(b, n, with_roots_unity = with_roots_unity)
-  @hassert :CompactPresentation 2 x^n == b
   if fl
+    @hassert :CompactPresentation 2 x^n == b
     return fl, df*x
   else
     return fl, df
