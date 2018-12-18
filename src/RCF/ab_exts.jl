@@ -1475,7 +1475,7 @@ end
 ###############################################################################
 
 function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
-  
+
   S, mS = simple_extension(L)
   K, mK = absolute_field(S, false)
   #First, we compute the maximal order of the absolute field.
@@ -1552,7 +1552,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
     y=elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
     autos[i] = NfToNfMor(Ks,Ks,y)
   end
-  _set_automorphisms_nf(Ks, closure(autos, *))
+  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos
