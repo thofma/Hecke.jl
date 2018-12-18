@@ -1000,9 +1000,14 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
 
     if haskey(y2, q)
       @assert y2[q] >= 2
-      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q])
+      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], qe)
       if haskey(y1, q)
-        tame_part[q].generators[1] = tame_part[q].generators[1]^Int(exponent(G2))
+        e = Int(exponent(G2))
+        com, uncom = ppio(n, e)
+        while !isone(mod(e, uncom))
+          e *= e
+        end
+        tame_part[q].generators[1] = tame_part[q].generators[1]^e
       end
       
       i += ngens(G2)
@@ -1033,6 +1038,9 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
 
   for s = 1:length(tame_ind)
     tame_part[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]])
+  end
+  for (p, v) in tame_part
+    @assert v.disc_log == StoQ\(Q(v.generators[1]))
   end
 
   return S, StoQ, tame_part, wild_part
