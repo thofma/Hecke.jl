@@ -559,7 +559,7 @@ function isirreducible(f::PolyElem{nf_elem})
     return false
   end
 
-  s = MSet(Int[])
+  s = Set{Int}()
   i = 1
   for p = PrimesSet(degree(f)+1, -1)
     try
@@ -588,7 +588,8 @@ end
 
 function _ds(fa)
   @assert all(x->x == 1, values(fa.fac))
-  M = MSet(degree(x) for x = keys(fa.fac))
+  T = Int[degree(x) for x = keys(fa.fac)]
+  M = MSet(T)
   return Set(sum(s) for s = subsets(M) if length(s) > 0)
 end
 
@@ -611,6 +612,7 @@ function (R::GFPPolyRing)(f::fq_nmod_poly)
   end
   return g
 end
+
 function _degset(f::PolyElem{nf_elem}, p::Int, normal::Bool = false)
   K = base_ring(f)
  
