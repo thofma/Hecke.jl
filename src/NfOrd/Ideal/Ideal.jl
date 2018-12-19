@@ -951,6 +951,7 @@ end
 
 
 function simplify(A::NfAbsOrdIdl)
+  @hassert :NfOrd 1 isconsistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
@@ -959,6 +960,7 @@ function simplify(A::NfAbsOrdIdl)
       A.gen_two = order(A)(1)
       A.minimum = fmpz(1)
       A.norm = fmpz(1)
+      @hassert :NfOrd 1 isconsistent(A)
       return A
     end
     if true
@@ -995,11 +997,10 @@ function simplify(A::NfAbsOrdIdl)
       A.gens_normal = A.gen_one
     end
 
-    if has_2_elem_normal(A) && !iszero(A.gen_two)
-      @hassert :NfOrd 1 defines_2_normal(A) 
-    end
+    @hassert :NfOrd 1 isconsistent(A)
     return A
   end
+  @hassert :NfOrd 1 isconsistent(A)
   return A
 end
 
@@ -1681,6 +1682,21 @@ end
 #
 ################################################################################
 
+function isconsistent(A::NfAbsOrdIdl)
+  if has_2_elem_normal(A) && !iszero(A.gen_two)
+    if !defines_2_normal(A) 
+      return false
+    end
+  end
+  #if has_norm(A)
+  #  b = basis_mat(A, Val{false})
+  #  if det(b) != A.norm
+  #    return false
+  #  end
+  #end
+  return true
+end
+
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
 # see Pohst-Zassenhaus p. 404
 function defines_2_normal(A::NfAbsOrdIdl)
@@ -1921,6 +1937,7 @@ end
 
 function assure_2_normal(A::NfAbsOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
+    @hassert :NfOrd 1 isconsistent(A)
     return
   end
   O = order(A)
@@ -1952,6 +1969,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
       cnt += 1
       if cnt > 100 && is_2_normal_difficult(A)
         assure_2_normal_difficult(A)
+        @hassert :NfOrd 1 isconsistent(A)
         return  
       end
       if cnt > 1000
@@ -1982,6 +2000,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     A.gen_one = m
     A.gen_two = gen
     A.gens_normal = m
+    @hassert :NfOrd 1 isconsistent(A)
     return
   end
 
@@ -1998,6 +2017,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     cnt += 1
     if cnt > 100 && is_2_normal_difficult(A)
       assure_2_normal_difficult(A)
+      @hassert :NfOrd 1 isconsistent(A)
       return  
     end
     if cnt > 1000
@@ -2025,6 +2045,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
   A.gen_one = m
   A.gen_two = gen
   A.gens_normal = m
+  @hassert :NfOrd 1 isconsistent(A)
   return
 end
 

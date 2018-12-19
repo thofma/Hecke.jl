@@ -8,10 +8,6 @@ function Nemo.PolynomialRing(R::Nemo.Ring, n::Int, s::String="x";
                                                     ordering = ordering)
 end
 
-function total_degree(f::fmpq_mpoly)
-  return Int(maximum(degree(f, i) for i=1:nvars(parent(f))))
-end
-
 function add!(c::fmpq_mpoly, a::fmpq_mpoly, b::fmpq_mpoly)
   ccall((:fmpq_mpoly_add, :libflint), Nothing,
         (Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}),
