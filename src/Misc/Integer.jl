@@ -783,7 +783,7 @@ function factor_trial_range(N::fmpz, start::Int=0, np::Int=10^5)
    return res, canonical_unit(N)
 end
 
-big_primes = fmpz[]
+const big_primes = fmpz[]
 
 function factor(N::fmpz)
   N_in = N
