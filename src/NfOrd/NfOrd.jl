@@ -1150,7 +1150,21 @@ function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   if length(primes) == 0
     return O
   end
+
   OO = O
+
+  if !isdefining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
+    for i in 1:length(primes)
+      p = primes[i]
+      @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
+      OO += pmaximal_overorder(OO, p)
+      if !(p in OO.primesofmaximality)
+        push!(OO.primesofmaximality, p)
+      end
+    end
+    return OO
+  end
+
   ind = index(O)
   EO = EquationOrder(nf(O))
   for i in 1:length(primes)
@@ -1477,18 +1491,24 @@ end
 
 # TODO: Ask Carlo if we need to assert that O is "the" equation order.
 function new_maximal_order(O::NfOrd)
-  if !isequation_order(O)
-    return maximal_order_round_four(O)
-  end
+  #if !isequation_order(O)
+  #  return maximal_order_round_four(O)
+  #end
 
   K = nf(O)
   if degree(K) == 1
     O.ismaximal = 1
     return O  
   end
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
-  f1 = Zx(K.pol)
-  ds = rres(f1, derivative(f1))
+
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || isinteger(gen_index(O)))
+    Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+    f1 = Zx(K.pol)
+    ds = rres(f1, derivative(f1))
+  else
+    ds = discriminant(O)
+  end
+
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
   l = coprime_base(_el_divs(M,ds))
