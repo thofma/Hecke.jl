@@ -31,37 +31,62 @@
     @test BtoA(e*f) == BtoA(e)*BtoA(f)
   end
 
+  # Extend to K again
+  C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
+  @test isisomorphic(K, base_ring(C))[1]
+  @test dim(C) == dim(A)
+
+  @test iszero(BtoC(zero(B)))
+  @test iszero(CtoB(zero(C)))
+  @test isone(BtoC(one(B)))
+  @test isone(CtoB(one(C)))
+
+  for i = 1:5
+    c = rand(B, -10:10)
+    d = rand(B, -10:10)
+    @test CtoB(BtoC(c)) == c
+    @test CtoB(BtoC(d)) == d
+    @test BtoC(c + d) == BtoC(c) + BtoC(d)
+    @test BtoC(c*d) == BtoC(c)*BtoC(d)
+
+    e = rand(C, -10:10)
+    f = rand(C, -10:10)
+    @test BtoC(CtoB(e)) == e
+    @test BtoC(CtoB(f)) == f
+    @test CtoB(e + f) == CtoB(e) + CtoB(f)
+    @test CtoB(e*f) == CtoB(e)*CtoB(f)
+  end
+
   # Restrict from number field to number field
   g = x^9 - 15x^6 - 87x^3 - 125
   L, b = number_field(g, "b")
-  t, KtoL = issubfield(K, L)
-  @assert t
+  KtoL = NfToNfMor(K, L, -2//45*b^7 + 7//9*b^4 + 109//45*b)
 
-  C = AlgAss(MatrixAlgebra(L, 2))
-  D, CtoD, DtoC = Hecke.restrict_scalars(C, KtoL)
+  A = AlgAss(MatrixAlgebra(L, 2))
+  B, AtoB, BtoA = Hecke.restrict_scalars(A, KtoL)
  
-  @test base_ring(D) == K
-  @test dim(D) == dim(C)*div(degree(L), degree(K))
+  @test base_ring(B) == K
+  @test dim(B) == dim(A)*div(degree(L), degree(K))
 
-  @test iszero(CtoD(zero(C)))
-  @test iszero(DtoC(zero(D)))
-  @test isone(CtoD(one(C)))
-  @test isone(DtoC(one(D)))
+  @test iszero(AtoB(zero(A)))
+  @test iszero(BtoA(zero(B)))
+  @test isone(AtoB(one(A)))
+  @test isone(BtoA(one(B)))
 
   for i = 1:5
-    c = rand(C, -10:10)
-    d = rand(C, -10:10)
-    @test DtoC(CtoD(c)) == c
-    @test DtoC(CtoD(d)) == d
-    @test CtoD(c + d) == CtoD(c) + CtoD(d)
-    @test CtoD(c*d) == CtoD(c)*CtoD(d)
+    c = rand(A, -10:10)
+    d = rand(A, -10:10)
+    @test BtoA(AtoB(c)) == c
+    @test BtoA(AtoB(d)) == d
+    @test AtoB(c + d) == AtoB(c) + AtoB(d)
+    @test AtoB(c*d) == AtoB(c)*AtoB(d)
 
-    e = rand(D, -10:10)
-    f = rand(D, -10:10)
-    @test CtoD(DtoC(e)) == e
-    @test CtoD(DtoC(f)) == f
-    @test DtoC(e + f) == DtoC(e) + DtoC(f)
-    @test DtoC(e*f) == DtoC(e)*DtoC(f)
+    e = rand(B, -10:10)
+    f = rand(B, -10:10)
+    @test AtoB(BtoA(e)) == e
+    @test AtoB(BtoA(f)) == f
+    @test BtoA(e + f) == BtoA(e) + BtoA(f)
+    @test BtoA(e*f) == BtoA(e)*BtoA(f)
   end
 
   # Restrict from F_q to F_p

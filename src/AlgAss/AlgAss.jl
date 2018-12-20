@@ -792,10 +792,12 @@ function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{Flint
   B.iscommutative = A.iscommutative
 
   function AtoB(x)
+    @assert parent(x) == A
     return B(_new_coeffs(x))
   end
 
   function BtoA(x)
+    @assert parent(x) == B
     if prime_field == FlintQQ
       R = parent(K.pol)
     else
@@ -881,10 +883,12 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
   B.iscommutative = A.iscommutative
 
   function AtoB(x)
+    @assert parent(x) == A
     return B(_new_coeffs(x))
   end
 
   function BtoA(x)
+    @assert parent(x) == B
     y = zeros(L, n)
     xcoeffs = coeffs(x)
     for i = 1:n
@@ -894,6 +898,102 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
       end
     end
     return A(y)
+  end
+
+  return B, AtoB, BtoA
+end
+
+function _as_algebra_over_center(A::AlgAss{fmpq})
+  C, CtoA = center(A)
+  fields = as_number_fields(C)
+  @assert length(fields) == 1
+  K, CtoK = fields[1]
+
+  basisC = basis(C)
+  basisCinA = Vector{elem_type(A)}(undef, dim(C))
+  basisCinK = Vector{elem_type(K)}(undef, dim(C))
+  for i = 1:dim(C)
+    basisCinA[i] = CtoA(basisC[i])
+    basisCinK[i] = CtoK(basisC[i])
+  end
+
+  # We construct a basis of A over C (respectively K) by using the following fact:
+  # A subset M of basis(A) is a C-basis of A if and only if |M| = dim(A)/dim(C)
+  # and all possible products of elements of M and basisCinA form a Q-basis of A.
+  AoverQ = basis(A)
+  AoverC = Vector{Int}()
+  M = zero_matrix(FlintQQ, dim(C), dim(A))
+  MM = zero_matrix(FlintQQ, 0, dim(A))
+  r = 0
+  for i = 1:dim(A)
+    b = AoverQ[i]
+
+    for j = 1:dim(C)
+      elem_to_mat_row!(M, j, b*basisCinA[j])
+    end
+
+    N = vcat(MM, M)
+    s = rank(N)
+    if s > r
+      push!(AoverC, i)
+      MM = N
+      r = s
+    end
+    if r == dim(A)
+      break
+    end
+  end
+
+  m = div(dim(A), dim(C))
+
+  @assert length(AoverC) == m
+  @assert rows(MM) == dim(A)
+
+  iMM = inv(MM)
+
+  function _new_coeffs(x)
+    y = zeros(K, m)
+    xx = matrix(FlintQQ, 1, dim(A), coeffs(x, false))
+    Mx = xx*iMM
+    for i = 1:m
+      for j = 1:dim(C)
+        y[i] = addeq!(y[i], basisCinK[j]*Mx[1, (i - 1)*dim(C) + j])
+      end
+    end
+    return y
+  end
+
+  mult_table = zeros(K, m, m, m)
+  Aij = A()
+  for i = 1:m
+    for j = 1:m
+      Aij = mul!(Aij, A[AoverC[i]], A[AoverC[j]])
+      if iszero(Aij)
+        continue
+      end
+
+      mult_table[i, j, :] = _new_coeffs(Aij)
+    end
+  end
+
+  B = AlgAss(K, mult_table, _new_coeffs(one(A)))
+  B.iscommutative = A.iscommutative
+
+  function AtoB(x)
+    @assert parent(x) == A
+    return B(_new_coeffs(x))
+  end
+
+  function BtoA(x)
+    @assert parent(x) == B
+    y = zeros(FlintQQ, dim(A))
+    xx = A()
+    for i = 1:dim(B)
+      t = CtoA(CtoK\coeffs(x, false)[i])
+      xx = add!(xx, xx, t*A[AoverC[i]])
+    end
+    Mx = matrix(FlintQQ, 1, dim(A), coeffs(xx, false))*MM
+    return A([ Mx[1, i] for i = 1:dim(A) ])
   end
 
   return B, AtoB, BtoA
