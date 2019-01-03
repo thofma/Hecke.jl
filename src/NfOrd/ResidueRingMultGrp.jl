@@ -391,7 +391,7 @@ function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use
       a_ = dlogs[i](b.elem)
       prod = Q(1)
       for j in 1:length(a_)
-        prod *= Q(g[k])^a_[j]
+        mul!(prod, prod, Q(g[k])^a_[j])
         k += 1
       end
       append!(a, a_)
@@ -425,13 +425,18 @@ function _expand(g::Array{NfOrdElem,1}, M::fmpz_mat, h::Array{NfOrdElem,1}, N::f
     Z[i+rows(M),i+rows(M)]=N[i,i]
   end
   for i in 1:rows(M)
-    el = prod([Q(g[j])^M[i,j] for j=1:cols(M) ]).elem
-    alpha = disc_log(el)
+    el = Q(1)
+    for j = 1:cols(M)
+      if !iszero(M[i, j])
+        mul!(el, el, Q(g[j])^M[i, j])
+      end
+    end
+    el1 = el.elem
+    alpha = disc_log(el1)
     for j in 1:cols(N)
       Z[i,j+cols(M)] = -alpha[j]
     end
   end
-
   append!(g,h)
   
   return g,Z
@@ -551,18 +556,21 @@ end
 
 function artin_hasse_log(y::NfOrdQuoRingElem, pnum::fmpz)
   Q = parent(y)
-  x = y-1
+  x = y - Q(1)
+  if iszero(x)
+    return x.elem
+  end
   s = Q(0)
-  t= Q(1)
+  t = Q(1)
   for i in 1:pnum-1
     mul!(t, t, x)
     if iszero(t)
       break
     end
     if iseven(i)
-      s -= divexact(t,Q(i))
+      sub!(s, s, divexact(t, Q(i)))
     else 
-      add!(s, s, divexact(t,Q(i)))
+      add!(s, s, divexact(t, Q(i)))
     end
   end
   return s.elem
@@ -671,7 +679,11 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
     numer = O(xi.elem_in_nf*el, false)
     denom = O(i*el, false)
     inc = divexact(Q(numer),Q(denom))
-    isodd(i) ? s+=inc : s-=inc
+    if isodd(i) 
+      add!(s, s, inc)
+    else
+      sub!(s, s, inc)
+    end
     i_old = i
   end
   return s.elem
@@ -1039,10 +1051,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
   for s = 1:length(tame_ind)
     tame_part[tame_ind[s][1]].disc_log = StoG\(G[tame_ind[s][2]])
   end
-  for (p, v) in tame_part
-    @assert v.disc_log == StoQ\(Q(v.generators[1]))
-  end
-
+  
   return S, StoQ, tame_part, wild_part
 end
 

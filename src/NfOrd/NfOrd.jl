@@ -932,8 +932,6 @@ function _order(K::S, elt::Array{T, 1}) where {S, T}
     end
     d = dd//(B.den)^n
 
-    
-
     if dold == d
       closed = true
     else
@@ -1477,10 +1475,10 @@ end
 
 # TODO: Ask Carlo if we need to assert that O is "the" equation order.
 function new_maximal_order(O::NfOrd)
+
   if !isequation_order(O)
     return maximal_order_round_four(O)
   end
-
   K = nf(O)
   if degree(K) == 1
     O.ismaximal = 1

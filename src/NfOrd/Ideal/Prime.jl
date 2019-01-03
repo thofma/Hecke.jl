@@ -120,6 +120,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   #  g(h) = 0 mod G
   k = domain(f)
   K = codomain(f)
+  Zk = maximal_order(k)
   G = K.pol
   Qx = parent(G)
   g = k.pol(gen(Qx))
@@ -131,7 +132,6 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
   for (f, e) = gp.fac
     if f(hp) % Gp == 0
-      Zk = maximal_order(k)
       p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
       return p
     end

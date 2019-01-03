@@ -868,6 +868,12 @@ end
   return z
 end
 
+@inline function sub!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
+  sub!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
+  z.has_coord = false
+  return z
+end
+
 @inline function mul!(z::NfAbsOrdElem, x::NfAbsOrdElem, y::NfAbsOrdElem)
   mul!(z.elem_in_nf, x.elem_in_nf, y.elem_in_nf)
   z.has_coord = false

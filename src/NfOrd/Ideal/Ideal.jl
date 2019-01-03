@@ -706,16 +706,19 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 > Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  #=
-  if isdefined(x, :gen_one) && isdefined(y, :gen_one)
+  if has_2_elem(x) && has_2_elem(y)
     if x.gen_one == y.gen_one && x.gen_two == y.gen_two
       return true
     end
-    if gcd(x.gen_one, y.gen_one) == 1
-      return false
-    end 
   end
-  =#
+  m1 = minimum(x)
+  m2 = minimum(y)
+  if m1 != m2
+    return false
+  end
+  if isone(m1)
+    return true
+  end
   return basis_mat(x, Val{false}) == basis_mat(y, Val{false})
 end
 
@@ -1416,7 +1419,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   d = degree(O)
   
-    #Trace method if the prime is large enough
+  #Trace method if the prime is large enough
   if p > degree(O)
     M = trace_matrix(O)
     W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
@@ -1426,12 +1429,12 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
       return ideal(O, p)
     end
     M2 = zero_matrix(FlintZZ, d, d)
-    for i=1:cols(B)
-      for j=1:d
-        M2[i,j] = FlintZZ(B[j, i].data)
+    for i = 1:cols(B)
+      for j = 1:d
+        M2[i, j] = FlintZZ(B[j, i].data)
       end
     end
-    gens=[O(p)]
+    gens = elem_type(O)[O(p)]
     for i=1:cols(B)
       if !iszero_row(M2,i)
         push!(gens, elem_from_mat_row(O, M2, i))

@@ -257,7 +257,6 @@ function ==(a::ClassField, b::ClassField)
   expo = Int(exponent(codomain(mq1)))
   c = lcm(defining_modulus(a)[1], defining_modulus(b)[1])
   c_inf = union(defining_modulus(a)[2], defining_modulus(b)[2])
-
   r, mr = ray_class_group(c, c_inf, n_quo = expo)
   C = ray_class_field(mr)
   @assert defining_modulus(C) == (c, c_inf)
@@ -280,4 +279,24 @@ end
 function iscyclic(C::ClassField)
   mp = C.quotientmap
   return iscyclic(codomain(mp))
+end
+
+###############################################################################
+#
+#  Maximal p-subfield
+#
+###############################################################################
+
+@doc Markdown.doc"""
+    maximal_p_subfield(C::ClassField, p::Int)
+> Returns the class field corresponding to the maximal subextension of
+> prime power degree
+"""
+function maximal_p_subfield(C::ClassField, p::Int)
+  mg = C.quotientmap
+  v = valuation(degree(C), p)
+  q, mq = quo(codomain(mg), p^v)
+  s, ms = snf(q)
+  mg1 = GrpAbFinGen(mg*mq*ms)
+  return ray_class_field(C.rayclassgroupmap, mg1)
 end
