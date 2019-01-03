@@ -199,17 +199,6 @@ function Base.show(io::IO, a::NfRel_nsElem)
   f = data(a)
   show(io, f, [string(s) for s = a.parent.S])
   return nothing
-
-  for i=1:length(f)
-    if i>1
-      print(io, " + ")
-    end
-    print(io, "(", f.coeffs[i], ")*")
-    print(io, "$(a.parent.S[1])^$(Int(f.exps[1, i]))")
-    for j=2:length(a.parent.pol)
-      print(io, " * $(a.parent.S[j])^$(Int(f.exps[j, i]))")
-    end
-  end
 end
 
 ################################################################################
@@ -771,7 +760,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRelElem{T}, 1}) where T
   L = parent(v[1])
   for i=1:length(f)
     #@show prod(v[j]^f.exps[j, i] for j=1:n)
-    s = _prod((v[j]^f.exps[j, i] for j=1:n), one(L))
+    s = _prod((v[j]^f.exps[n - j + 1, i] for j=1:n), one(L))
     r += f.coeffs[i]* s
   end
   return r
@@ -782,7 +771,7 @@ function msubst(f::Generic.MPoly{T}, v::Array{NfRel_nsElem{T}, 1}) where T
   @assert n == ngens(parent(f))
   r = zero(k)
   for i=1:length(f)
-    r += f.coeffs[i]*prod(v[j]^f.exps[j, i] for j=1:n)
+    r += f.coeffs[i]*prod(v[j]^f.exps[n - j + 1, i] for j=1:n)
   end
   return r
 end
@@ -828,6 +817,7 @@ function simple_extension(K::NfRel_ns)
     mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end
+  
   N = zero_matrix(k, 1, degree(K))
   b = basis(Ka)
   emb = Array{typeof(b[1]), 1}(undef, n)

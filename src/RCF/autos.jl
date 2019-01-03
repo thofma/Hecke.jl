@@ -27,6 +27,13 @@ end
 function absolute_automorphism_group(C::ClassField, aut_gen_of_base_field::Array{NfToNfMor, 1})
   L = number_field(C)
   aut_L_rel = rel_auto(C)::Vector{NfRel_nsToNfRel_nsMor}
+  if iscyclic(C) && length(aut_L_rel) > 1
+    aut = aut_L_rel[1]
+    for i = 2:length(aut_L_rel)
+      aut *= aut_L_rel[i]
+    end
+    aut_L_rel = NfRel_nsToNfRel_nsMor[aut]
+  end
   rel_extend = Hecke.new_extend_aut(C, aut_gen_of_base_field)
   rel_gens = vcat(aut_L_rel, rel_extend)
   return rel_gens::Array{NfRel_nsToNfRel_nsMor, 1}
@@ -76,13 +83,10 @@ function rel_auto_intersect(A::ClassField_pp)
   # Now, I have to search for the one that generates the Galois
   # group of the target field over k
   C = cyclotomic_extension(base_field(A), degree(A))
-  a = ispower(degree(A))[2]
-  @assert isprime(a)
-  exp_to_test = divexact(degree(A), a)
-  r = degree(C.Kr)
   if !isdefined(A, :AutG)
     _aut_A_over_k(C, A)
   end
+  G, mG = snf(AbelianGroup(A.AutR))
   #Now, I restrict them to A.A
   M = sparse_matrix(base_ring(A.K))
   b = A.K(1)
@@ -92,22 +96,29 @@ function rel_auto_intersect(A::ClassField_pp)
     push!(M, SRow(b))
   end
   Mk = _expand(M, C.mp[1])
-  i = 0
   # One of the automorphisms must generate the group, so I check the order.
-  for j=1:length(A.AutG)
-    tau = A.AutG[j]
-    N = SRow(tau(A.pe))
+  for j = 1:ngens(G)
+    if !divisible(G.snf[j], fmpz(degree(A)))
+      continue
+    end
+    #Construct the automorphism
+    gener = mG(G[j])
+    elem = A.pe
+    for i = 1:ngens(G)
+      if !iszero(gener[i])
+        for s = 1:Int(gener[i])
+          elem = A.AutG[i](elem)
+        end 
+      end
+    end
+    N = SRow(elem)
     Nk = _expand(N, C.mp[1])
     s = solve(Mk, Nk) # will not work, matrix non-square...
     im = A.A()
     for (i, c) = s
       setcoeff!(im, i-1, c)
     end
-    aut = NfRelToNfRelMor(A.A, A.A, im)
-    pow_aut = aut^exp_to_test
-    if pow_aut(gen(A.A)) != gen(A.A)
-      return aut
-    end
+    return NfRelToNfRelMor(A.A, A.A, im)
   end
   error("I can't find the automorphism!")
  
@@ -116,7 +127,6 @@ end
 function rel_auto(A::ClassField_pp)
   
   @assert isdefined(A, :A)
-  
   if degree(A) == degree(A.K)
     #If the cyclotomic extension and the target field are linearly disjoint, it is easy.
     return rel_auto_easy(A)

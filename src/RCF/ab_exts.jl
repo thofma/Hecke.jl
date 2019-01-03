@@ -1474,8 +1474,144 @@ end
 #
 ###############################################################################
 
-function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
+function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
+
   
+  @vprint :AbExt 2 "Computing maximal orders of subfields\n"
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  fields = Vector{AnticNumberField}(undef, length(L.pol))
+  for i = 1:length(L.pol)
+    fK = is_univariate(L.pol[i])[2]
+    f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+    K = NumberField(f, cached = false)[1];
+    OK = maximal_order(K)
+    fields[i] = K
+  end
+  NS, gNS = number_field([fields[i].pol for i = 1:length(fields)])
+  mvpolring = parent(NS.pol[1])
+  gpols = gens(mvpolring)
+  #Now, bring the maximal order of every component in NS
+  B = Vector{Vector{NfAbsNSElem}}(undef, length(fields))
+  for i = 1:length(fields)
+    OK = maximal_order(fields[i])
+    BOK = OK.basis_nf
+    BK = Vector{NfAbsNSElem}(undef, degree(OK))
+    for j = 1:length(BK)
+      polel = Qx(BOK[j])
+      polm = evaluate(polel, gpols[i])
+      BK[j] = NS(polm)
+    end
+    B[i] = BK
+  end
+  
+  K, mK = simple_extension(NS)
+  
+  BKK = Array{nf_elem, 1}(undef, degree(K))
+  ind = degree(fields[1])
+  for i = 1:ind
+    BKK[i] = mK\(B[1][i])
+  end
+  for jj = 2:length(fields)
+    new_deg = degree(fields[jj])
+    for i = 2:new_deg
+      el = mK\(B[jj][i])
+      for j = 1:ind
+        BKK[(i-1)* ind + j] = BKK[j] * el
+      end
+    end
+    ind *= new_deg
+  end
+  O1 = Order(K, BKK, false, false)
+  #Now, I set some basic properties. In particular, discriminant, trace matrix.
+  disc = fmpz(1)
+  for i = 1:length(fields)
+    mul!(disc, disc, discriminant(maximal_order(fields[i]))^(divexact(degree(K), degree(fields[i]))))
+  end
+  #M = trace_matrix(maximal_order(fields[1]))
+  #for i = 2:length(fields)
+  #  M = kronecker_product(M, trace_matrix(maximal_order(fields[i])))
+  #end
+  O1.disc = disc
+  #O1.trace_mat = M
+  
+  #Now, compute the primes at which I have to compute the maximal order
+  
+  d = fmpz(1)
+  for i = 1:length(fields)
+    for j = i+1:length(fields)
+      d1 = gcd(discriminant(maximal_order(fields[i])), discriminant(maximal_order(fields[j])))
+      d = lcm(d, d1)
+    end
+  end
+  lp = collect(keys(factor(d).fac))
+  @vtime :AbExt 2 O1 = MaximalOrder(O1, lp)
+  _set_maximal_order(K, O1)
+  #Now, we translate the automorphisms.
+  imgs = Vector{NfAbsNSElem}(undef, length(auts))
+  for i = 1:length(auts)
+    fK = is_univariate(auts[i].emb[i].data)[2]
+    f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+    imgs[i] = NS(evaluate(f, gpols[i]))
+  end
+  autsNS = Vector{NfAbsNSToNfAbsNS}(undef, length(auts))
+  for t = 1:length(auts)
+    imgs = Vector{NfAbsNSElem}(undef, length(fields))
+    for s = 1:length(fields)
+      fK = is_univariate(auts[t].emb[s].data)[2]
+      f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
+      imgs[s] = NS(evaluate(f, gpols[s]))
+    end
+    autsNS[t] = NfAbsNSToNfAbsNS(NS, NS, imgs)
+  end
+  #Now, to the simple field
+  auts_abs = Vector{NfToNfMor}(undef, length(autsNS))
+  gK = mK(gen(K))
+  for i = 1:length(auts_abs)
+    auts_abs[i] = NfToNfMor(K, K, mK\(autsNS[i](gK)))
+  end
+  
+  
+  @vprint :AbExt 2 "Done. Now simplify and translate information\n"
+  @vtime :AbExt 2 Ks, mKs = simplify(K)
+  #Now, we have to construct the maximal order of this field.
+  #I am computing the preimages of mKs by hand, by inverting the matrix.
+  arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
+  arr_prim_img[1] = K(1)
+  for i = 2:degree(Ks)
+    arr_prim_img[i] = arr_prim_img[i-1]*mKs.prim_img
+  end
+  M1 = inv(basis_mat(arr_prim_img))
+  basisO2 = Array{nf_elem, 1}(undef, degree(Ks))
+  M = zero_matrix(FlintZZ, 1, degree(Ks))
+  for i=1:length(basisO2)
+    elem_to_mat_row!(M, 1, denominator(O1.basis_nf[i]), O1.basis_nf[i])
+    mul!(M, M, M1.num)
+    basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
+  end
+  O2 = Order(Ks, basisO2, false, false)
+  O2.ismaximal = 1
+  _set_maximal_order_of_nf(Ks, O2)
+
+  #Now, the automorphisms.
+  autos = Array{NfToNfMor, 1}(undef, length(auts_abs))
+  el = mKs(gen(Ks))
+  for i = 1:length(auts)
+    x = auts_abs[i](el)
+    elem_to_mat_row!(M, 1, denominator(x), x)
+    mul!(M, M, M1.num)
+    y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
+    @assert iszero(Ks.pol(y))
+    autos[i] = NfToNfMor(Ks, Ks, y)
+  end
+  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
+  
+  @vprint :AbExt 2 "Finished\n"
+  return Ks, autos
+
+end 
+
+function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
+
   S, mS = simple_extension(L)
   K, mK = absolute_field(S, false)
   #First, we compute the maximal order of the absolute field.
@@ -1518,11 +1654,13 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
     end
   end
   #Now, we compute the maximal order. Then we simplify.
-  O1 = MaximalOrder(_order_for_polygon_overorder(K, B))
+  #PO = _order_for_polygon_overorder(K, B)
+  PO = Order(K, B, false, false)
+  @vtime :AbExt 2 O1 = MaximalOrder(PO)
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  Ks, mKs = simplify(K)
+  @vtime :AbExt 2 Ks, mKs = simplify(K)
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
@@ -1549,10 +1687,10 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
     x = mK(mS\(auts[i](el)))
     elem_to_mat_row!(M, 1, denominator(x), x)
     mul!(M, M, M1.num)
-    y=elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
+    y=Hecke.elem_from_mat_row(Ks, M, 1, M1.den*denominator(x))
     autos[i] = NfToNfMor(Ks,Ks,y)
   end
-  _set_automorphisms_nf(Ks, closure(autos, *))
+  _set_automorphisms_nf(Ks, closure(autos, degree(Ks)))
   
   @vprint :AbExt 2 "Finished\n"
   return Ks, autos

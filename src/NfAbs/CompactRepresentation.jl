@@ -21,8 +21,15 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   be = FacElem(K(1))
 
+<<<<<<< HEAD
   @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a))) ||
                                   abs(factored_norm(a)) == factored_norm(FacElem(de))
+=======
+  if !(decom isa Bool)
+    @hassert :CompactPresentation 1 length(decom) == 0 && isone(abs(factored_norm(a))) == 1 ||
+                                    abs(factored_norm(a)) == factored_norm(FacElem(decom))
+  end
+>>>>>>> 6bcd2281e8f3c1c64c2b1cb590318c2c3a0e0695
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
@@ -100,11 +107,15 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     @assert B.num.is_principal == 1  
     @assert isone(B.num) || B.num.gens_normal > 1
     assure_2_normal(B.num)
+    @hassert :NfOrd 1 isconsistent(B.num)
+    @hassert :NfOrd 1 norm(B) == abs(norm(b))
 
     for p = keys(de)
       assure_2_normal(p)
+      # _v = valuation(b, p)
       # @hassert :CompactPresentation 1 valuation(B, p) == _v
       # unfortunately, wrong: valuation(p^2 = p^9 / p^7, p^3) = 0 or 1 depending...
+      @hassert :NfOrd 1 isconsistent(p)
       de[p] += n^k*_v
       if haskey(de_inv, p)
         pi = de_inv[p]
@@ -113,7 +124,9 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
         de_inv[p] = pi
       end
       B *= pi^_v
+      @hassert :NfOrd 1 isconsistent(B.num)
       B = simplify(B)
+      @hassert :NfOrd 1 isconsistent(B.num)
       @hassert :CompactPresentation 1 valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
@@ -253,6 +266,7 @@ function Hecke.ispower(a::FacElem{nf_elem, AnticNumberField}, n::Int; with_roots
   @hassert :CompactPresentation 2 evaluate(df^n*b *inv(a))== 1
   fl, x = ispower(b, n, with_roots_unity = with_roots_unity)
   if fl
+    @hassert :CompactPresentation 2 x^n == b
     return fl, df*x
   else
     return fl, df

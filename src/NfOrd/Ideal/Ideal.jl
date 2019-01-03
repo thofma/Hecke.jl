@@ -425,6 +425,13 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
     return nothing
   end
 
+  if !isdefining_polynomial_nice(nf(order(A)))
+    d = degree(order(A))
+    c = sub(_hnf(vcat(A.gen_one * identity_matrix(FlintZZ, degree(order(A))), representation_matrix(A.gen_two)), :lowerleft), d+1:2*d, 1:d)
+    A.basis_mat = c
+    return nothing
+  end
+
   if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum &&
      !isindex_divisor(order(A), A.minimum)
     # A is a prime ideal of degree 1
@@ -562,12 +569,12 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       A.minimum = fmpz(0)
       A.iszero = 1
     else
-      if issimple(nf(order(A))) && order(A).ismaximal == 1
+      if issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
         A.minimum = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 A.minimum == denominator(inv(b), order(A))
       else
         bi = inv(b)
-        A.minimum =  denominator(bi, order(A))
+        A.minimum = denominator(bi, order(A))
       end
     end
     return nothing
@@ -579,7 +586,7 @@ function assure_has_minimum(A::NfAbsOrdIdl)
       # A = (A.gen_one, 0) = (A.gen_one)
       d = abs(A.gen_one)
     else
-      if issimple(nf(order(A))) && order(A).ismaximal == 1
+      if issimple(nf(order(A))) && isdefining_polynomial_nice(nf(order(A))) && order(A).ismaximal == 1
         d = _minmod(A.gen_one, A.gen_two)
         @hassert :Rres 1 d == gcd(A.gen_one, denominator(inv(A.gen_two.elem_in_nf), order(A)))
       else
@@ -699,16 +706,19 @@ princ_gen_special(A::NfAbsOrdIdl) = A.princ_gen_special[A.princ_gen_special[1] +
 > Returns whether $x$ and $y$ are equal.
 """
 function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  #=
-  if isdefined(x, :gen_one) && isdefined(y, :gen_one)
+  if has_2_elem(x) && has_2_elem(y)
     if x.gen_one == y.gen_one && x.gen_two == y.gen_two
       return true
     end
-    if gcd(x.gen_one, y.gen_one) == 1
-      return false
-    end 
   end
-  =#
+  m1 = minimum(x)
+  m2 = minimum(y)
+  if m1 != m2
+    return false
+  end
+  if isone(m1)
+    return true
+  end
   return basis_mat(x, Val{false}) == basis_mat(y, Val{false})
 end
 
@@ -726,7 +736,7 @@ end
 
 > Returns whether $x$ is contained in $y$.
 """
-function in(x::NfOrdElem, y::NfAbsOrdIdl)
+function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
   t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, Val{false})
@@ -858,10 +868,19 @@ function (A::Nemo.AnticNumberField)(a::Nemo.fmpz_poly)
   return A(FlintQQ["x"][1](a))
 end
 
+function _minmod(a::fmpz, b::NfAbsOrdElem)
+  return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
+end
+
 function _minmod(a::fmpz, b::NfOrdElem)
   if isone(a) 
     return a
   end
+
+  if !isdefining_polynomial_nice(nf(parent(b)))
+    return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
+  end
+ 
   Zk = parent(b)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
@@ -935,6 +954,7 @@ end
 
 
 function simplify(A::NfAbsOrdIdl)
+  @hassert :NfOrd 1 isconsistent(A)
   if has_2_elem(A) && has_weakly_normal(A)
     #if maximum(element_to_sequence(A.gen_two)) > A.gen_one^2
     #  A.gen_two = element_reduce_mod(A.gen_two, A.parent.order, A.gen_one^2)
@@ -943,6 +963,7 @@ function simplify(A::NfAbsOrdIdl)
       A.gen_two = order(A)(1)
       A.minimum = fmpz(1)
       A.norm = fmpz(1)
+      @hassert :NfOrd 1 isconsistent(A)
       return A
     end
     if true
@@ -979,11 +1000,10 @@ function simplify(A::NfAbsOrdIdl)
       A.gens_normal = A.gen_one
     end
 
-    if has_2_elem_normal(A) && !iszero(A.gen_two)
-      @hassert :NfOrd 1 defines_2_normal(A) 
-    end
+    @hassert :NfOrd 1 isconsistent(A)
     return A
   end
+  @hassert :NfOrd 1 isconsistent(A)
   return A
 end
 
@@ -1210,7 +1230,7 @@ iszero(I::NfAbsOrdIdl) = (I.iszero == 1)
 > basis matrix of $I$ and $(b_1,\dotsc,b_d)$ is the coefficient vector of $y$,
 > then $0 \leq b_i < a_i$ for $1 \leq i \leq d$.
 """
-function mod(x::S, y::T) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfAbsOrdIdl, AlgAssAbsOrdIdl} }
+function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <: Union{NfAbsOrdIdl, AlgAssAbsOrdIdl} }
   parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   # this function assumes that HNF is lower left
   # !!! This must be changed as soon as HNF has a different shape
@@ -1400,7 +1420,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   d = degree(O)
   
-    #Trace method if the prime is large enough
+  #Trace method if the prime is large enough
   if p > degree(O)
     M = trace_matrix(O)
     W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
@@ -1410,12 +1430,12 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
       return ideal(O, p)
     end
     M2 = zero_matrix(FlintZZ, d, d)
-    for i=1:cols(B)
-      for j=1:d
-        M2[i,j] = FlintZZ(B[j, i].data)
+    for i = 1:cols(B)
+      for j = 1:d
+        M2[i, j] = FlintZZ(B[j, i].data)
       end
     end
-    gens=[O(p)]
+    gens = elem_type(O)[O(p)]
     for i=1:cols(B)
       if !iszero_row(M2,i)
         push!(gens, elem_from_mat_row(O, M2, i))
@@ -1665,6 +1685,21 @@ end
 #
 ################################################################################
 
+function isconsistent(A::NfAbsOrdIdl)
+  if has_2_elem_normal(A) && !iszero(A.gen_two)
+    if !defines_2_normal(A) 
+      return false
+    end
+  end
+  #if has_norm(A)
+  #  b = basis_mat(A, Val{false})
+  #  if det(b) != A.norm
+  #    return false
+  #  end
+  #end
+  return true
+end
+
 # check if gen_one,gen_two is a P(gen_one)-normal presentation
 # see Pohst-Zassenhaus p. 404
 function defines_2_normal(A::NfAbsOrdIdl)
@@ -1747,6 +1782,24 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     return nothing
   end
 
+  if !isdefining_polynomial_nice(nf(order(A)))
+    B = Array{fmpz}(undef, degree(O))
+    Amin2 = minimum(A)^2
+    Amind = minimum(A)^degree(O)
+    BB = basis(A, Val{false})
+    r = -Amin2:Amin2
+
+    while true
+      rand!(B, r)
+      gen = dot(B, BB)
+      if norm(A) == gcd(Amind, norm(gen))
+        A.gen_one = minimum(A)
+        A.gen_two = O(gen, false)
+        A.gens_weakly_normal = true
+        return nothing
+      end
+    end
+  end
 
   M = MatrixSpace(FlintZZ, 1, degree(O), false)
 
@@ -1887,6 +1940,7 @@ end
 
 function assure_2_normal(A::NfAbsOrdIdl)
   if has_2_elem(A) && has_2_elem_normal(A)
+    @hassert :NfOrd 1 isconsistent(A)
     return
   end
   O = order(A)
@@ -1918,6 +1972,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
       cnt += 1
       if cnt > 100 && is_2_normal_difficult(A)
         assure_2_normal_difficult(A)
+        @hassert :NfOrd 1 isconsistent(A)
         return  
       end
       if cnt > 1000
@@ -1948,6 +2003,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     A.gen_one = m
     A.gen_two = gen
     A.gens_normal = m
+    @hassert :NfOrd 1 isconsistent(A)
     return
   end
 
@@ -1964,6 +2020,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
     cnt += 1
     if cnt > 100 && is_2_normal_difficult(A)
       assure_2_normal_difficult(A)
+      @hassert :NfOrd 1 isconsistent(A)
       return  
     end
     if cnt > 1000
@@ -1991,6 +2048,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
   A.gen_one = m
   A.gen_two = gen
   A.gens_normal = m
+  @hassert :NfOrd 1 isconsistent(A)
   return
 end
 
@@ -2086,7 +2144,6 @@ function random_get(R::RandIdlCtx; reduce::Bool = true, repeat::Int = 1)
     else
       R.rand = simplify(R.rand * R.ibase[i]).num
     end
-  #  @show R.exp, R.exp in R.last
   end
   push!(R.last, copy(R.exp))
   return R.rand

@@ -139,7 +139,7 @@ end
 function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
                 A::NfOrdIdl; prec::Int = 200, val::Int = 0,
                 limit::Int = 0) where {T}
-  global _start
+  global _start = A
   O = order(A)
   K = nf(O)
   local rt::UInt
@@ -181,7 +181,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
         printstyled("prec too low in LLL\n", color = :red)
         prec = Int(ceil(1.2*prec))
 #        println(" increasing to ", prec)
-        if prec > 1000
+        if prec > 3000
           error("2:too much prec")
         end
       else

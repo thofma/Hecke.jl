@@ -248,7 +248,6 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   @vtime :ClassField 2 lp, sG = find_gens(cf, Sp, cp)
   G = codomain(cf)
   sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
-
   for i=1:length(lp)
     p = Id_Zk(intersect_nonindex(mp, lp[i]))
     sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
@@ -360,7 +359,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   @assert i > 0
   n = lift(l)::fmpz_mat
   N = GrpAbFinGen([e for j=1:rows(n)])
-  s, ms = sub(N, GrpAbFinGenElem[sum([n[j, k]*N[j] for j=1:rows(n)]) for k=1:i], false)
+  s, ms = sub(N, GrpAbFinGenElem[sum([n[j, ind]*N[j] for j=1:rows(n)]) for ind=1:i], false)
   ms = Hecke.make_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 iscyclic(H)
@@ -370,6 +369,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
     c = div(e, o)
   end
   g = ms(H[1])
+  @vprint :ClassField 2 "g = $g\n"
   @vprint :ClassField 2 "final $n of order $o and e=$e\n"
   a = prod([KK.gen[i]^div(mod(g[i], e), c) for i=1:ngens(N)])
   @vprint :ClassField 2 "generator $a\n"
@@ -426,7 +426,7 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     Since A is abelian, the two need to agree, hence l==s and
     c can be computed as root(sigma(a)*a^-s, n)
 
-    This has to be done for enough autpmorphisms of k(zeta)/k to generate
+    This has to be done for enough automorphisms of k(zeta)/k to generate
     the full group. If n=p^k then this is one (for p>2) and n=2, 4 and
     2 for n=2^k, k>2
 =#
@@ -449,6 +449,9 @@ function _aut_A_over_k(C::CyclotomicExt, CF::ClassField_pp)
     #mg = mg*ms*mss
     mg = mss * ms * mg
   end
+  
+  
+  
 
   @vprint :ClassField 2 "building automorphism group over ground field...\n"
   ng = ngens(g)+1

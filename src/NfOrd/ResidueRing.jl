@@ -127,7 +127,7 @@ end
 ################################################################################
 
 function (Q::AbsOrdQuoRing{S, T})(x::U) where {S, T, U}
-  parent(x) != base_ring(Q) && error("Cannot coerce element into the quotient ring")
+  parent(x) !== base_ring(Q) && error("Cannot coerce element into the quotient ring")
   return AbsOrdQuoRingElem(Q, x)
 end
 
@@ -143,7 +143,7 @@ end
 #
 #  Quotient function
 #  
-# (and standart helpers)
+# (and standard helpers)
 #
 ################################################################################
 
@@ -211,6 +211,12 @@ end
 
 function add!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
   z.elem = add!(z.elem, x.elem, y.elem)
+  z.elem = mod!(z.elem, parent(z))
+  return z
+end
+
+function sub!(z::AbsOrdQuoRingElem, x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
+  z.elem = sub!(z.elem, x.elem, y.elem)
   z.elem = mod!(z.elem, parent(z))
   return z
 end

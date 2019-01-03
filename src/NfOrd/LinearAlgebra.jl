@@ -70,7 +70,7 @@ function det(M::Generic.Mat{NfOrdElem})
   O = base_ring(M)::NfOrd
   K = nf(O)
   B = _det_bound(M)
-  p = p_start #global  
+  p = next_prime(p_start) #global  
   P = fmpz(1)
   i = 1
   res = O()
@@ -79,7 +79,6 @@ function det(M::Generic.Mat{NfOrdElem})
   t_splitting = 0.0
   used_primes = Array{UInt, 1}()
   tmp_polys = Array{nf_elem, 1}()
-
 
   while P < 2*B
     # reject some bad primes
@@ -112,7 +111,7 @@ function det(M::Generic.Mat{NfOrdElem})
   # now the CRT on each coefficient
 
   fc = crt_env(fmpz[x for x = used_primes])
-  fv = Array{fmpz}(length(used_primes))
+  fv = Array{fmpz}(undef, length(used_primes))
   for i=1:length(used_primes)
     fv[i] = fmpz(0)
   end

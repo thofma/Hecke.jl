@@ -41,7 +41,7 @@ export PrimeIdealsSet
 > Returns whether the integer $p$ is ramified in $\mathcal O$.
 > It is assumed that $p$ is prime.
 """
-function isramified(O::NfOrd, p::Union{Int, fmpz})
+function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
   @assert ismaximal_known(O) && ismaximal(O)
 
   return mod(discriminant(O), p) == 0
@@ -52,7 +52,7 @@ end
     degree(P::NfOrdIdl) -> Int
 > The inertia degree of the prime-ideal $P$.
 """
-function degree(A::NfOrdIdl)
+function degree(A::NfAbsOrdIdl)
   @assert isprime(A)
   return A.splitting_type[2]
 end
@@ -62,7 +62,7 @@ end
     ramification_index(P::NfOrdIdl) -> Int
 > The ramification index of the prime-ideal $P$.
 """
-function ramification_index(A::NfOrdIdl)
+function ramification_index(A::NfAbsOrdIdl)
   @assert isprime(A)
   return A.splitting_type[1]
 end
@@ -73,7 +73,7 @@ end
 > The ramification index and inertia degree of the prime ideal $P$.
 > First value is the ramificatio index, the second the degree of $P$.
 """
-function splitting_type(A::NfOrdIdl)
+function splitting_type(A::NfAbsOrdIdl)
   @assert isprime(A)
   return A.splitting_type
 end
@@ -120,6 +120,7 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   #  g(h) = 0 mod G
   k = domain(f)
   K = codomain(f)
+  Zk = maximal_order(k)
   G = K.pol
   Qx = parent(G)
   g = k.pol(gen(Qx))
@@ -131,7 +132,6 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   Gp = gcd(Fp(K(P.gen_two)), Fp(G))
   for (f, e) = gp.fac
     if f(hp) % Gp == 0
-      Zk = maximal_order(k)
       p = ideal_from_poly(Zk, Int(minimum(P)), f, 1)
       return p
     end
@@ -249,7 +249,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    prime_decomposition(O::NfOrd,
+    prime_decomposition(O::NfAbsOrd,
                         p::Integer,
                         degree_limit::Int = 0,
                         lower_limit::Int = 0) -> Array{Tuple{NfOrdIdl, Int}, 1}
@@ -269,27 +269,51 @@ function prime_decomposition(O::NfAbsOrd{S, T}, p::Union{Integer, fmpz}, degree_
     return prime_decomposition(O, Int(p), degree_limit, lower_limit)
   end
 
-  if mod(index(O),fmpz(p)) == 0 || !issimple(nf(O))
-    if cached
-      if haskey(O.index_div, fmpz(p))
-        lp = O.index_div[fmpz(p)]
-        z = Tuple{NfAbsOrdIdl{S, T}, Int}[]
-        for (Q, e) in lp
-          if degree_limit == 0 || degree(Q) <= degree_limit
-            push!(z, (Q, e))
-          end
-        end
-        return z
-      end
-    end
-    @assert O.ismaximal ==1 || p in O.primesofmaximality
-    lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-    if degree_limit == 0 && lower_limit == 0
-      O.index_div[fmpz(p)] = lp
-    end
-    return copy(lp)
-  end
   return prime_dec_nonindex(O, p, degree_limit, lower_limit)
+end
+
+function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int = degree(O), lower_limit::Int = 0, cached::Bool = true)
+  if typeof(p) == fmpz && nbits(p) < 64
+    return prime_decomposition(O, Int(p), degree_limit, lower_limit)
+  end
+
+  if isdefining_polynomial_nice(nf(O))
+    if isindex_divisor(O, p)
+      if cached
+        if haskey(O.index_div, fmpz(p))
+          lp = O.index_div[fmpz(p)]
+          z = Tuple{NfOrdIdl, Int}[]
+          for (Q, e) in lp
+            if degree_limit == 0 || degree(Q) <= degree_limit
+              push!(z, (Q, e))
+            end
+          end
+          return z
+        end
+      end
+      @assert O.ismaximal ==1 || p in O.primesofmaximality
+      lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
+      if degree_limit == 0 && lower_limit == 0
+        O.index_div[fmpz(p)] = lp
+      end
+      return copy(lp)
+    else
+      return prime_dec_nonindex(O, p, degree_limit, lower_limit)
+    end
+  end
+  return prime_dec_gen(O, p, degree_limit, lower_limit)
+end
+
+function prime_dec_gen(O, p, degree_limit = degree(O), lower_limit = 0)
+  Ip = pradical(O, p)
+  lp = Hecke._decomposition(O, Ip, Ip, ideal(O, one(O)), fmpz(p))
+  z = Tuple{ideal_type(O), Int}[]
+  for (Q, e) in lp
+    if degree(Q) <= degree_limit && degree(Q) >= lower_limit
+      push!(z, (Q, e))
+    end
+  end
+  return z
 end
 
 function _fac_and_lift(f::fmpz_poly, p, degree_limit, lower_limit)
@@ -425,7 +449,6 @@ function anti_uniformizer(P::NfOrdIdl)
   @assert length(K) > 0
   P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
   return P.anti_uniformizer
-  
 end
 
 function prime_decomposition_type(O::NfOrd, p::Integer)
@@ -699,7 +722,7 @@ end
 
 > Returns whether $A$ knows if it is prime.
 """
-function isprime_known(A::NfOrdIdl)
+function isprime_known(A::NfAbsOrdIdl)
   return A.is_prime != 0
 end
 
@@ -709,7 +732,7 @@ end
 
 > Returns whether $A$ is a prime ideal.
 """
-function isprime(A::NfOrdIdl)
+function isprime(A::NfAbsOrdIdl)
   if isprime_known(A)
     return A.is_prime == 1
   elseif minimum(A) == 0
@@ -868,6 +891,9 @@ end
 > such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
+  if !isdefining_polynomial_nice(parent(a))
+    return valuation_naive(a, p)
+  end
   @hassert :NfOrd 0 !iszero(a)
   #assert(a !=0) # can't handle infinity yet
   #First, check the content of a as a polynomial.
@@ -984,6 +1010,16 @@ function valuation_naive(x::NfOrdElem, B::NfOrdIdl)
   return i
 end
 
+function valuation_naive(x::nf_elem, B::NfOrdIdl)
+  @assert !isone(B)
+  i = 0
+  C = B
+  while x in C
+    i += 1
+    C *= B
+  end
+  return i
+end
 
 @doc Markdown.doc"""
 ***

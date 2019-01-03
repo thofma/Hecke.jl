@@ -546,7 +546,6 @@ function _is_conductor_min_normal(C::Hecke.ClassField; lwp::Dict{Int, Array{GrpA
   R = domain(mp)
   
   O = base_ring(C)
-  
   tmg = mr.tame_mult_grp
   #first, tame part
   primes_done = fmpz[]

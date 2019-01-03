@@ -483,8 +483,8 @@ function rand(A::AbsAlgAss{T}) where T
   return A(c)
 end
 
-function rand(A::AbsAlgAss{fmpq}, rng::UnitRange{Int} = -10:10) 
-  c = fmpq[rand(base_ring(A), rng) for i = 1:dim(A)]
+function rand(A::AbsAlgAss{T}, rng::UnitRange{Int}) where T
+  c = T[rand(base_ring(A), rng) for i = 1:dim(A)]
   return A(c)
 end
 

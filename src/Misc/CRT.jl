@@ -681,7 +681,11 @@ function modular_proj(a::Generic.Poly{nf_elem}, me::modular_env)
     zero!(me.Rp[j])
   end
   for i=0:length(a)-1
-    crt_inv!(me.rp, me.Fpx(coeff(a, i)), me.ce)
+    c = coeff(a, i)
+    if iszero(mod(denominator(c), me.p))
+      throw(BadPrime(me.p))
+    end
+    crt_inv!(me.rp, me.Fpx(c), me.ce)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
       ccall((:fq_nmod_set, :libflint), Nothing,
