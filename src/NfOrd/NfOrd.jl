@@ -47,9 +47,9 @@ export ==, +, basis, basis_mat, basis_mat_inv, contains_eqaution_order,
 
 Nemo.parent_type(::Type{NfAbsOrdElem{S, T}}) where {S, T} = NfAbsOrd{S, T}
 
-Nemo.elem_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfAbsOrdElem{S, T}
-
 Nemo.elem_type(::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdElem{S, T}
+
+Nemo.elem_type(::Type{NfAbsOrd{S, T}}) where {S, T} = NfAbsOrdElem{S, T}
 
 ideal_type(::NfAbsOrd{S, T}) where {S, T} = NfAbsOrdIdl{S, T}
 
@@ -70,14 +70,14 @@ Nemo.isnegative(::NfAbsOrdElem) = false
 ################################################################################
 
 @doc Markdown.doc"""
-    nf(O::NfOrd) -> AnticNumberField
+    nf(O::NfAbsOrd) -> AnticNumberField
 
 Returns the ambient number field of $\mathcal O$.
 """
 @inline nf(O::NfAbsOrd) = O.nf
 
 @doc Markdown.doc"""
-  number_field(O::NfOrd)
+  number_field(O::NfAbsOrd)
 
 Return the ambient number field of $\mathcal O$.
 """
@@ -86,7 +86,7 @@ Return the ambient number field of $\mathcal O$.
 end
 
 @doc Markdown.doc"""
-    parent(O::NfOrd) -> NfOrdSet
+    parent(O::NfAbsOrd) -> NfOrdSet
 
 Returns the parent of $\mathcal O$, that is, the set of orders of the ambient
 number field.
@@ -94,10 +94,10 @@ number field.
 parent(O::NfOrd) = NfAbsOrdSet(nf(O), false)
 
 @doc Markdown.doc"""
-    isequation_order(O::NfOrd) -> Bool
+    isequation_order(O::NfAbsOrd) -> Bool
 
 Returns whether $\mathcal O$ is the equation order of the ambient number
-field.
+field $K$.
 """
 @inline isequation_order(O::NfAbsOrd) = O.isequation_order
 
@@ -767,18 +767,64 @@ end
 
 ################################################################################
 #
+#  Any order
+#
+################################################################################
+
+function any_order(K::AnticNumberField)
+  f = K.pol
+  de = denominator(f)
+  g = f * de
+
+  if ismonic(g)
+    return equation_order(K)
+  else
+    d = degree(g)
+    M = zero_matrix(FlintZZ, d, d)
+    M[1, 1] = 1
+    for i in 2:d
+      for j in i:-1:2
+        M[i, j] = numerator(coeff(g, d - (i - j)))
+      end
+    end
+    @hassert :NfOrd 1 defines_order(K, FakeFmpqMat(M))
+    z = NfAbsOrd{AnticNumberField, nf_elem}(K, FakeFmpqMat(M))
+    z.isequation_order = false
+    return z
+  end
+end
+
+function any_order(K::NfAbsNS)
+  normalized_gens = Vector{NfAbsNSElem}(undef, degree(K))
+  g = gens(K)
+  for i in 1:ngens(K)
+    f = denominator(K.pol[i]) * K.pol[i]
+    if isone(coeff(f, 1))
+      normalized_gens[i] = g[i]
+    else
+      normalized_gens[i] = coeff(f, 1) * g[i]
+    end
+  end
+
+  b = NfAbsNSElem[]
+  for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
+    push!(b, prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i)))
+  end
+  return Order(K, b, false, false)
+end
+
+################################################################################
+#
 #  Equation order
 #
 ################################################################################
 
-#equation_order(K::AnticNumberField, cached::Bool) = EquationOrder(K, cached = cached)
-
 equation_order(K, cached::Bool = false) = EquationOrder(K, cached)
 
 @doc Markdown.doc"""
-    EquationOrder(K::AnticNumberField) -> NfOrd
+    EquationOrder(K::NfAbs) -> NfAbsOrd
 
-> Returns the equation order of the number field $K$.
+Returns the equation order of the absolute number field $K$.
 """
 function EquationOrder(K::T, cached::Bool = true) where {T}
   if cached
@@ -805,35 +851,27 @@ end
 # This is due to H. Lenstra.
 function __equation_order(K::AnticNumberField)
   f = K.pol
-  de = denominator(f)
-  g = f * de
-
-  if ismonic(g)
+  if isone(denominator(f) * lead(f))
     M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
     z = NfAbsOrd{AnticNumberField, nf_elem}(K, M, Minv, basis(K), false)
     z.isequation_order = true
     return z
   else
-    d = degree(g)
-    M = zero_matrix(FlintZZ, d, d)
-    M[1, 1] = 1
-    for i in 2:d
-      for j in i:-1:2
-        M[i, j] = numerator(coeff(g, d - (i - j)))
-      end
-    end
-    @hassert :NfOrd 1 defines_order(K, FakeFmpqMat(M))
-    z = NfAbsOrd{AnticNumberField, nf_elem}(K, FakeFmpqMat(M))
-    z.isequation_order = false
-    return z
+    error("Primitive element must be integral")
   end
 end
 
-function __equation_order(K::T) where {T}
+function __equation_order(K::NfAbsNS)
+  for f in K.pol
+    if !isone(denominator(f) * coeff(f, 1))
+      error("Generators must be integral")
+    end
+  end
+
   M = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
   Minv = FakeFmpqMat(identity_matrix(FlintZZ, degree(K)))
-  z = NfAbsOrd{T, elem_type(T)}(K, M, Minv, basis(K), false)
+  z = NfAbsOrd{NfAbsNS, NfAbsNSElem}(K, M, Minv, basis(K), false)
   z.isequation_order = true
   return z
 end
@@ -1148,7 +1186,21 @@ function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   if length(primes) == 0
     return O
   end
+
   OO = O
+
+  if !isdefining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
+    for i in 1:length(primes)
+      p = primes[i]
+      @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
+      OO += pmaximal_overorder(OO, p)
+      if !(p in OO.primesofmaximality)
+        push!(OO.primesofmaximality, p)
+      end
+    end
+    return OO
+  end
+
   ind = index(O)
   EO = EquationOrder(nf(O))
   for i in 1:length(primes)
@@ -1223,7 +1275,7 @@ order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
 this function returns the maximal order of $K$.
 """
 function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
-  O = EquationOrder(K)
+  O = any_order(K)
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
   O = MaximalOrder(O, primes)
   @vprint :NfOrd 1 "... done\n"
@@ -1253,7 +1305,7 @@ function MaximalOrder(K::T) where {T}
       rethrow(e)
     end
     #O = MaximalOrder(K)::NfOrd
-    O = new_maximal_order(EquationOrder(K))::NfAbsOrd{T, elem_type(T)}
+    O = new_maximal_order(any_order(K))::NfAbsOrd{T, elem_type(T)}
     O.ismaximal = 1
     _set_maximal_order(K, O)
     return O
@@ -1476,17 +1528,20 @@ end
 # TODO: Ask Carlo if we need to assert that O is "the" equation order.
 function new_maximal_order(O::NfOrd)
 
-  if !isequation_order(O)
-    return maximal_order_round_four(O)
-  end
   K = nf(O)
   if degree(K) == 1
     O.ismaximal = 1
     return O  
   end
-  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
-  f1 = Zx(K.pol)
-  ds = rres(f1, derivative(f1))
+
+  if isdefining_polynomial_nice(K) && (isequation_order(O) || isinteger(gen_index(O)))
+    Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+    f1 = Zx(K.pol)
+    ds = rres(f1, derivative(f1))
+  else
+    ds = discriminant(O)
+  end
+
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
   l = coprime_base(_el_divs(M,ds))

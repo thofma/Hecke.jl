@@ -449,7 +449,6 @@ function anti_uniformizer(P::NfOrdIdl)
   @assert length(K) > 0
   P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
   return P.anti_uniformizer
-  
 end
 
 function prime_decomposition_type(O::NfOrd, p::Integer)

@@ -736,7 +736,7 @@ NfAbsOrd(b::Array{T, 1}, cached::Bool = false) where {T} = NfAbsOrd{parent_type(
 
 const NfOrd = NfAbsOrd{AnticNumberField, nf_elem}
 
-const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, NfOrd}()
+const NfAbsOrdID = Dict{Tuple{Any, FakeFmpqMat}, NfAbsOrd}()
 
 ################################################################################
 #

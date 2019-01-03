@@ -96,11 +96,16 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 > Returns $x \cdot y$.
 """
 function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  @hassert :NfOrd 1 isconsistent(x)
+  @hassert :NfOrd 1 isconsistent(y)
+
   if ismaximal_known(order(x)) && ismaximal(order(x)) && issimple(nf(order(x)))
-    return mul_maximal(x, y)
+    z = mul_maximal(x, y)
   else
-    return mul_gen(x, y)
+    z = mul_gen(x, y)
   end
+  @hassert :NfOrd 1 isconsistent(z)
+  return z
 end
 
 function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)

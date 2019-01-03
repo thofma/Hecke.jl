@@ -370,7 +370,33 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   return A, OtoA
 end
 
-################################################################################
+function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
+  n = A.n
+  K = base_ring(A)
+  n2 = n^2
+  # We use the matrices M_{ij} with a 1 at row i and column j and zeros everywhere else as the basis for A.
+  # We sort "row major", so A[(i - 1)*n + j] corresponds to the matrix M_{ij}.
+  # M_{ik}*M_{lj} = 0, if k != l, and M_{ik}*M_{kj} = M_{ij}
+  mult_table = zeros(K, n2, n2, n2)
+  oneK = one(K)
+  for i = 0:n:(n2 - n)
+    for k = 1:n
+      kn = (k - 1)*n
+      for j = 1:n
+        mult_table[i + k, kn + j, i + j] = oneK
+      end
+    end
+  end
+  oneA = zeros(K, n2)
+  for i = 1:n
+    oneA[(i - 1)*n + i] = oneK
+  end
+  A = AlgAss(K, mult_table, oneA)
+  A.iscommutative = ( n == 1 ? 1 : 2 )
+  return A
+end
+
+###############################################################################
 #
 #  String I/O
 #
@@ -689,4 +715,286 @@ function AlgAss(A::AlgAss)
   R = base_ring(A)
   d = dim(A)
   return A, hom(A, A, identity_matrix(R, d), identity_matrix(R, d))
+end
+
+################################################################################
+#
+#  Change of ring
+#
+################################################################################
+
+# Top level functions to avoid "type mix-ups" (like AlgAss{fq_nmod} with FlintQQ)
+function restrict_scalars(A::AlgAss{nf_elem}, Q::FlintRationalField)
+  return _restrict_scalars_to_prime_field(A, Q)
+end
+
+function restrict_scalars(A::AlgAss{fq_nmod}, Fp::NmodRing)
+  return _restrict_scalars_to_prime_field(A, Fp)
+end
+
+function restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResRing{fmpz})
+  return _restrict_scalars_to_prime_field(A, Fp)
+end
+
+function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, NmodRing, Generic.ResRing{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
+  K = base_ring(A)
+  n = dim(A)
+  m = degree(K)
+  nm = n*m
+  a = gen(K)
+  # We use A[1], a*A[1], ..., a^{m - 1}*A[1], ..., A[n], ..., a^{m - 1}*A[n] as
+  # the basis for A over the prime field.
+  # Precompute the powers a^k:
+  powers_of_a = zeros(K, 2*m - 1)
+  powers_of_a[1] = one(K)
+  for k = 2:2*m - 1
+    powers_of_a[k] = mul!(powers_of_a[k], powers_of_a[k - 1], a)
+  end
+
+  function _new_coeffs(x)
+    y = Vector{elem_type(prime_field)}(undef, nm)
+    yy = coeffs(x, false)
+    for i = 1:n
+      for j = 1:m
+        if prime_field == FlintQQ
+          y[(i - 1)*m + j] = coeff(yy[i], j - 1)
+        else
+          y[(i - 1)*m + j] = prime_field(coeff(yy[i], j - 1))
+        end
+      end
+    end
+    return y
+  end
+
+  m1 = m - 1
+  mult_table = zeros(prime_field, nm, nm, nm)
+  Aij = A()
+  t = A()
+  for i = 1:n
+    for j = 1:n
+      Aij = mul!(Aij, A[i], A[j])
+      if iszero(Aij)
+        continue
+      end
+
+      mi = m*(i - 1)
+      mj = m*(j - 1)
+      for s = 0:2*m1 # all possible sums of exponents for a
+        t = mul!(t, powers_of_a[s + 1], Aij)
+        tcoeffs = _new_coeffs(t)
+        for k = max(0, s - m1):min(s, m1)
+          mult_table[mi + k + 1, mj + s - k + 1, :] = tcoeffs
+        end
+      end
+    end
+  end
+  B = AlgAss(prime_field, mult_table, _new_coeffs(one(A)))
+  B.iscommutative = A.iscommutative
+
+  function AtoB(x)
+    @assert parent(x) == A
+    return B(_new_coeffs(x))
+  end
+
+  function BtoA(x)
+    @assert parent(x) == B
+    if prime_field == FlintQQ
+      R = parent(K.pol)
+    else
+      R, z = PolynomialRing(prime_field, "z", cached = false)
+    end
+    y = Vector{elem_type(K)}(undef, n)
+    xcoeffs = coeffs(x) # a copy
+    for i = 1:n
+      y[i] = K(R(xcoeffs[(i - 1)*m + 1:(i - 1)*m + m]))
+    end
+    return A(y)
+  end
+
+  return B, AtoB, BtoA
+end
+
+function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
+  K = domain(KtoL)
+  L = codomain(KtoL)
+  @assert L == base_ring(A)
+  n = dim(A)
+  m = div(degree(L), degree(K))
+  nm = n*m
+  a = gen(L)
+  powers_of_a = zeros(L, 2*m - 1)
+  powers_of_a[1] = one(L)
+  for k = 2:2*m - 1
+    powers_of_a[k] = mul!(powers_of_a[k], powers_of_a[k - 1], a)
+  end
+
+  basisK = basis(K)
+  basisKinL = map(KtoL, basisK)
+  M = zero_matrix(FlintQQ, degree(L), degree(L))
+  t = L()
+  for i = 1:m
+    for j = 1:degree(K)
+      t = mul!(t, basisKinL[j], powers_of_a[i])
+      for k = 1:degree(L)
+        M[k, (i - 1)*m + j] = coeff(t, k - 1)
+      end
+    end
+  end
+  M = inv(M)
+
+  function _new_coeffs(x)
+    y = zeros(K, nm)
+    yy = coeffs(x, false)
+    for i = 1:n
+      c = matrix(FlintQQ, degree(L), 1, [ coeff(yy[i], j) for j = 0:degree(L) - 1 ])
+      Mc = M*c
+      for j = 1:m
+        for k = 1:degree(K)
+          y[(i - 1)*m + j] += Mc[(j - 1)*degree(K) + k, 1]*basisK[k]
+        end
+      end
+    end
+    return y
+  end
+
+  m1 = m - 1
+  mult_table = zeros(K, nm, nm, nm)
+  Aij = A()
+  t = A()
+  for i = 1:n
+    for j = 1:n
+      Aij = mul!(Aij, A[i], A[j])
+      if iszero(Aij)
+        continue
+      end
+
+      mi = m*(i - 1)
+      mj = m*(j - 1)
+      for s = 0:2*m1 # all possible sums of exponents for a
+        t = mul!(t, powers_of_a[s + 1], Aij)
+        tcoeffs = _new_coeffs(t)
+        for k = max(0, s - m1):min(s, m1)
+          mult_table[mi + k + 1, mj + s - k + 1, :] = tcoeffs
+        end
+      end
+    end
+  end
+  B = AlgAss(K, mult_table, _new_coeffs(one(A)))
+  B.iscommutative = A.iscommutative
+
+  function AtoB(x)
+    @assert parent(x) == A
+    return B(_new_coeffs(x))
+  end
+
+  function BtoA(x)
+    @assert parent(x) == B
+    y = zeros(L, n)
+    xcoeffs = coeffs(x)
+    for i = 1:n
+      xx = map(KtoL, xcoeffs[(i - 1)*m + 1:(i - 1)*m + m])
+      for j = 1:m
+        y[i] += xx[j]*powers_of_a[j]
+      end
+    end
+    return A(y)
+  end
+
+  return B, AtoB, BtoA
+end
+
+function _as_algebra_over_center(A::AlgAss{fmpq})
+  C, CtoA = center(A)
+  fields = as_number_fields(C)
+  @assert length(fields) == 1
+  K, CtoK = fields[1]
+
+  basisC = basis(C)
+  basisCinA = Vector{elem_type(A)}(undef, dim(C))
+  basisCinK = Vector{elem_type(K)}(undef, dim(C))
+  for i = 1:dim(C)
+    basisCinA[i] = CtoA(basisC[i])
+    basisCinK[i] = CtoK(basisC[i])
+  end
+
+  # We construct a basis of A over C (respectively K) by using the following fact:
+  # A subset M of basis(A) is a C-basis of A if and only if |M| = dim(A)/dim(C)
+  # and all possible products of elements of M and basisCinA form a Q-basis of A.
+  AoverQ = basis(A)
+  AoverC = Vector{Int}()
+  M = zero_matrix(FlintQQ, dim(C), dim(A))
+  MM = zero_matrix(FlintQQ, 0, dim(A))
+  r = 0
+  for i = 1:dim(A)
+    b = AoverQ[i]
+
+    for j = 1:dim(C)
+      elem_to_mat_row!(M, j, b*basisCinA[j])
+    end
+
+    N = vcat(MM, M)
+    s = rank(N)
+    if s > r
+      push!(AoverC, i)
+      MM = N
+      r = s
+    end
+    if r == dim(A)
+      break
+    end
+  end
+
+  m = div(dim(A), dim(C))
+
+  @assert length(AoverC) == m
+  @assert rows(MM) == dim(A)
+
+  iMM = inv(MM)
+
+  function _new_coeffs(x)
+    y = zeros(K, m)
+    xx = matrix(FlintQQ, 1, dim(A), coeffs(x, false))
+    Mx = xx*iMM
+    for i = 1:m
+      for j = 1:dim(C)
+        y[i] = addeq!(y[i], basisCinK[j]*Mx[1, (i - 1)*dim(C) + j])
+      end
+    end
+    return y
+  end
+
+  mult_table = zeros(K, m, m, m)
+  Aij = A()
+  for i = 1:m
+    for j = 1:m
+      Aij = mul!(Aij, A[AoverC[i]], A[AoverC[j]])
+      if iszero(Aij)
+        continue
+      end
+
+      mult_table[i, j, :] = _new_coeffs(Aij)
+    end
+  end
+
+  B = AlgAss(K, mult_table, _new_coeffs(one(A)))
+  B.iscommutative = A.iscommutative
+
+  function AtoB(x)
+    @assert parent(x) == A
+    return B(_new_coeffs(x))
+  end
+
+  function BtoA(x)
+    @assert parent(x) == B
+    y = zeros(FlintQQ, dim(A))
+    xx = A()
+    for i = 1:dim(B)
+      t = CtoA(CtoK\coeffs(x, false)[i])
+      xx = add!(xx, xx, t*A[AoverC[i]])
+    end
+    Mx = matrix(FlintQQ, 1, dim(A), coeffs(xx, false))*MM
+    return A([ Mx[1, i] for i = 1:dim(A) ])
+  end
+
+  return B, AtoB, BtoA
 end

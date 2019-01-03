@@ -134,6 +134,23 @@ function add!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::AbsAlgAssElem{T}) whe
   return c
 end
 
+function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::T) where {T}
+  parent(a) != parent(c) && error("Parents don't match.")
+
+  if c === a
+    d = parent(a)()
+    d = mul!(d, a, b)
+    return d
+  end
+
+  for i = 1:dim(parent(a))
+    c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], b)
+  end
+  return c
+end
+
+mul!(c::AbsAlgAssElem{T}, a::T, b::AbsAlgAssElem{T}) where {T} = mul!(c, b, a)
+
 function mul!(c::AbsAlgAssElem{T}, a::AbsAlgAssElem{T}, b::fmpz) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
