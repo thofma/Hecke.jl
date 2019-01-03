@@ -35,16 +35,16 @@ end
   @test Hecke._spans_subset_of_pseudohnf(Babs, Brel, :lowerleft)
 
   for i = 1:1
-    f = monic_randpoly(Qx, 2, 3, 100)
+    f = monic_randpoly(Qx, 2, 3, 10)
     while !isirreducible(f)
-      f = monic_randpoly(Qx, 2, 3, 100)
+      f = monic_randpoly(Qx, 2, 3, 10)
     end
     K, a = NumberField(f, "a")
 
     Ky, y = K["y"]
-    g = monic_randpoly(Ky, 2, 3, 100)
+    g = monic_randpoly(Ky, 2, 3, 10)
     while !isirreducible(g)
-      g = monic_randpoly(Ky, 2, 3, 100)
+      g = monic_randpoly(Ky, 2, 3, 10)
     end
     L, b = number_field(g, "b")
 
@@ -59,9 +59,9 @@ end
   K, a = NumberField(x, "a")
   Ky, y = K["y"]
   for i = 1:1
-    f = monic_randpoly(Ky, 8, 10, 100)
+    f = monic_randpoly(Ky, 8, 10, 10)
     while !isirreducible(f)
-      f = monic_randpoly(Ky, 8, 10, 100)
+      f = monic_randpoly(Ky, 8, 10, 10)
     end
     L, b = number_field(f, "b")
 
@@ -115,22 +115,22 @@ end
   @test Hecke._spans_subset_of_pseudohnf(Bs, Bns, :lowerleft)
 
   for i = 1:1
-    f = monic_randpoly(Qx, 2, 2, 100)
+    f = monic_randpoly(Qx, 2, 2, 10)
     while !isirreducible(f)
-      f = monic_randpoly(Qx, 2, 2, 100)
+      f = monic_randpoly(Qx, 2, 2, 10)
     end
     K, a = NumberField(f, "a")
 
     Ky, y = K["y"]
     g = Vector{Generic.Poly{nf_elem}}()
-    gg = monic_randpoly(Ky, 2, 2, 100)
+    gg = monic_randpoly(Ky, 2, 2, 10)
     while !isirreducible(gg)
-      gg = monic_randpoly(Ky, 2, 2, 100)
+      gg = monic_randpoly(Ky, 2, 2, 10)
     end
     push!(g, gg)
-    gg = monic_randpoly(Ky, 2, 2, 100)
+    gg = monic_randpoly(Ky, 2, 2, 10)
     while gg == g[1] || !isirreducible(gg)
-      gg = monic_randpoly(Ky, 2, 2, 100)
+      gg = monic_randpoly(Ky, 2, 2, 10)
     end
     push!(g, gg)
     L, b = number_field(g, "b")
