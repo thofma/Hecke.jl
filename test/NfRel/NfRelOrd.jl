@@ -42,9 +42,9 @@ end
     K, a = NumberField(f, "a")
 
     Ky, y = K["y"]
-    g = monic_randpoly(Ky, 2, 3, 10)
+    g = monic_randpoly(Ky, 2, 2, 10)
     while !isirreducible(g)
-      g = monic_randpoly(Ky, 2, 3, 10)
+      g = monic_randpoly(Ky, 2, 2, 10)
     end
     L, b = number_field(g, "b")
 
@@ -59,9 +59,9 @@ end
   K, a = NumberField(x, "a")
   Ky, y = K["y"]
   for i = 1:1
-    f = monic_randpoly(Ky, 8, 10, 10)
+    f = monic_randpoly(Ky, 5, 5, 10)
     while !isirreducible(f)
-      f = monic_randpoly(Ky, 8, 10, 10)
+      f = monic_randpoly(Ky, 5, 5, 10)
     end
     L, b = number_field(f, "b")
 
@@ -165,12 +165,12 @@ end
   PM2 = PseudoMatrix(matrix(Q2, [1 0; 2 1]), [ Q2(1)*Z2, Q2(fmpq(1, 4))*Z2 ])
   @test basis_pmat(OK2, Val{false}) == PM2
 
-  Q3, q3 = number_field(x2, "q3")
-  Z3 = maximal_order(Q3)
-  Qx3, x3 = Q3["x3"]
-  f3 = x3^2 + 28x3 + 36
-   K3, a3 = number_field(f3, "a3")
-  OK3 = maximal_order(K3)
-  PM3 = PseudoMatrix(matrix(Q3, [1 0; 2 1]), [ Q3(1)*Z3, Q3(fmpq(1, 4))*Z3 ])
-  @test basis_pmat(OK3, Val{false}) == PM3
+  #Q3, q3 = number_field(x2, "q3")
+  #Z3 = maximal_order(Q3)
+  #Qx3, x3 = Q3["x3"]
+  #f3 = x3^2 + 28x3 + 36
+  # K3, a3 = number_field(f3, "a3")
+  #OK3 = maximal_order(K3)
+  #PM3 = PseudoMatrix(matrix(Q3, [1 0; 2 1]), [ Q3(1)*Z3, Q3(fmpq(1, 4))*Z3 ])
+  #@test basis_pmat(OK3, Val{false}) == PM3
 end
