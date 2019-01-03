@@ -115,7 +115,7 @@ end
 ################################################################################
 
 function _den(f)
-  return lcm([denominator(coeff(f, i)) for i in 0:length(f)-1])
+  return lcm([denominator(coeff(f, i)) for i in 1:length(f)])
 end
 
 function _simplify(pp)
@@ -129,27 +129,36 @@ end
 
 function gb(G::Vector{S}, mmod) where {S}
   GG::Vector{S} = deepcopy(G)
+  reverse!(GG)
   push!(GG, pseudo_polynomial(one(parent(G[1].poly)), mmod))
   L = Tuple{S, S}[ (GG[i], GG[j]) for i in 1:length(GG) for j in 1:(i - 1)]
   while !isempty(L)
     #@show length([x for x in GG if isconstant(polynomial(x))])
-    @show [ norm(coefficient_ideal(x)) for x in GG]
+    #@show [ norm(coefficient_ideal(x)) for x in GG]
     #@show [ norm(coefficient_ideal(_simplify(x))) for x in GG]
-    @show [ (_den(polynomial(x))) for x in GG]
+    #@show [ (_den(polynomial(x))) for x in GG]
     #@show [ (_den(polynomial(_simplify(x)))) for x in GG]
-    @show length(GG)
-    @show length(L)
+    #@show length(GG)
+    #@show length(L)
     (f, g) = pop!(L)
+
+    lmf = leading_monomial(f)
+    lmg = leading_monomial(g)
+    lcf = leading_coefficient(f)
+    lcg = leading_coefficient(g)
+    if isone(gcd(lmf, lmg)) && isone(lcf + lcg)
+      println("Skipping ...")
+      continue
+    end
+
     sp = spoly(f, g)
-    @show "reducing ..."
-    r = reduce(sp, GG)
-    @show "done"
+    r = sp
+
     A = coefficient_ideal(r)
     C, b = reduce_ideal2(A)
     rp = r.poly
     r = pseudo_polynomial(b * rp, frac_ideal(order(C), C))
     Nfinv = mmod * inv(C)::NfOrdFracIdl
-    @show Nfinv
     newcoeffs = nf_elem[]
     indices = Int[]
     for i in 1:length(r.poly.coeffs)
@@ -160,6 +169,7 @@ function gb(G::Vector{S}, mmod) where {S}
         push!(indices, i)
       end
     end
+
     newexps = Array{UInt, 2}(undef, size(r.poly.exps, 1), length(indices))
     for j in 1:length(indices)
       for k in 1:size(r.poly.exps, 1)
@@ -168,6 +178,45 @@ function gb(G::Vector{S}, mmod) where {S}
     end
 
     r = pseudo_polynomial(parent(r.poly)(newcoeffs, newexps), coefficient_ideal(r))
+
+    r = reduce(r, GG)
+
+ 
+    if iszero(polynomial(r))
+      continue
+    end
+
+    println("first r")
+    @show r
+
+    A = coefficient_ideal(r)
+    C, b = reduce_ideal2(A)
+    rp = r.poly
+    r = pseudo_polynomial(b * rp, frac_ideal(order(C), C))
+    Nfinv = mmod * inv(C)::NfOrdFracIdl
+    newcoeffs = nf_elem[]
+    indices = Int[]
+    for i in 1:length(r.poly.coeffs)
+      c = r.poly.coeffs[i]
+      cc = c - mod(c, Nfinv)
+      if !iszero(cc)
+        push!(newcoeffs, c - mod(c, Nfinv))
+        push!(indices, i)
+      end
+    end
+
+    newexps = Array{UInt, 2}(undef, size(r.poly.exps, 1), length(indices))
+    for j in 1:length(indices)
+      for k in 1:size(r.poly.exps, 1)
+        newexps[k, j] = r.poly.exps[k, indices[j]]
+      end
+    end
+
+    r = pseudo_polynomial(parent(r.poly)(newcoeffs, newexps), coefficient_ideal(r))
+
+    r = reduce(r, GG)
+
+    @show r
 
     if !iszero(r)
       for f in GG
