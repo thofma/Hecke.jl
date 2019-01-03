@@ -273,7 +273,7 @@ function parents(g::Graph{T}, c::T)  where {T}
   return [a for (a,b) = keys(g.e) if b==c]
 end
 
-function parents_with_counts(g::Graph{T}, c::T)  where {T}
+function parents_with_count(g::Graph{T}, c::T)  where {T}
   return [(a, d) for ((a,b), d) = g.e if b==c]
 end    
 
