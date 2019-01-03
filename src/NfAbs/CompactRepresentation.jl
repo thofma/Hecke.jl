@@ -21,8 +21,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   be = FacElem(K(1))
 
-  @hassert :CompactPresentation 1 length(decom) == 0 && isone(abs(factored_norm(a))) == 1 ||
-                                  abs(factored_norm(a)) == factored_norm(FacElem(decom))
+  @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a))) ||
+                                  abs(factored_norm(a)) == factored_norm(FacElem(de))
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
@@ -103,8 +103,8 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
     for p = keys(de)
       assure_2_normal(p)
-      local _v = valuation(b, p)
-      @hassert :CompactPresentation 1 valuation(B, p) == _v
+      # @hassert :CompactPresentation 1 valuation(B, p) == _v
+      # unfortunately, wrong: valuation(p^2 = p^9 / p^7, p^3) = 0 or 1 depending...
       de[p] += n^k*_v
       if haskey(de_inv, p)
         pi = de_inv[p]
