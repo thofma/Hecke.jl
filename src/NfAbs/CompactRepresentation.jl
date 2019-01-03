@@ -21,15 +21,10 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
   be = FacElem(K(1))
 
-<<<<<<< HEAD
-  @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a))) ||
-                                  abs(factored_norm(a)) == factored_norm(FacElem(de))
-=======
   if !(decom isa Bool)
-    @hassert :CompactPresentation 1 length(decom) == 0 && isone(abs(factored_norm(a))) == 1 ||
-                                    abs(factored_norm(a)) == factored_norm(FacElem(decom))
+    @hassert :CompactPresentation 1 length(de) == 0 && isone(abs(factored_norm(a))) ||
+                                    abs(factored_norm(a)) == factored_norm(FacElem(de))
   end
->>>>>>> 6bcd2281e8f3c1c64c2b1cb590318c2c3a0e0695
 
   v = conjugates_arb_log_normalise(a, arb_prec)
   _v = maximum(abs, values(de))+1
@@ -112,7 +107,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
     for p = keys(de)
       assure_2_normal(p)
-      # _v = valuation(b, p)
+      local _v = valuation(b, p)
       # @hassert :CompactPresentation 1 valuation(B, p) == _v
       # unfortunately, wrong: valuation(p^2 = p^9 / p^7, p^3) = 0 or 1 depending...
       @hassert :NfOrd 1 isconsistent(p)
@@ -127,7 +122,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       @hassert :NfOrd 1 isconsistent(B.num)
       B = simplify(B)
       @hassert :NfOrd 1 isconsistent(B.num)
-      @hassert :CompactPresentation 1 valuation(B, p) == 0
+      #@hassert :CompactPresentation 1 valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
     @assert norm(B) <= abs(discriminant(ZK))
