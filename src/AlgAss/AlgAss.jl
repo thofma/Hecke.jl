@@ -370,7 +370,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   return A, OtoA
 end
 
-function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
+function AlgAss(A::Generic.MatAlgebra)
   n = A.n
   K = base_ring(A)
   n2 = n^2
@@ -660,17 +660,17 @@ end
 #
 ################################################################################
 
-function primitive_element(A::AlgAss)
-  a, _ = _primitive_element(A::AlgAss)
+function primitive_element(A::AbsAlgAss)
+  a, _ = _primitive_element(A)
   return a
 end
 
-function _primitive_element(A::AlgAss)
+function _primitive_element(A::AbsAlgAss)
   error("Not implemented yet")
   return nothing
 end
 
-function _primitive_element(A::AlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
+function _primitive_element(A::AbsAlgAss{T}) where T <: Union{nmod, fq, fq_nmod, Generic.Res{fmpz}, fmpq, Generic.ResF{fmpz}, gfp_elem}
   d = dim(A)
   a = rand(A)
   f = minpoly(a)
@@ -703,6 +703,37 @@ function _as_field(A::AlgAss{T}) where T
     end
   end
   return a, mina, f
+end
+
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, nmod, Generic.Res{fmpz}} }
+  return _as_field_with_isomorphism(A, _primitive_element(A)...)
+end
+
+# Assuming a is a primitive element of A and mina its minimal polynomial, this
+# functions constructs the field base_ring(A)/mina and the isomorphism between
+# A and this field.
+function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, nmod, Generic.Res{fmpz}}, T <: Union{fmpq_poly, nmod_poly, fmpz_mod_poly} }
+  s = one(A)
+  M = zero_matrix(base_ring(A), dim(A), dim(A))
+  elem_to_mat_row!(M, 1, s)
+  for i = 2:dim(A)
+    s = mul!(s, s, a)
+    elem_to_mat_row!(M, i, s)
+  end
+
+  if base_ring(A) == FlintQQ
+    K = number_field(mina, cached = false)[1]
+    return K, AbsAlgAssToNfAbsMor(A, K, M, inv(M))
+  elseif base_ring(A) isa NmodRing
+    Fq = FqNmodFiniteField(mina, Symbol("a"), false)
+    return Fq, AbsAlgAssToFqNmodMor(A, Fq, M, inv(M))
+  elseif base_ring(A) isa Generic.ResRing{fmpz}
+    Fq = FqFiniteField(mina, Symbol("a"), false)
+    N, d = inv(M)
+    return Fq, AbsAlgAssToFqMor(A, Fq, M, divexact(N, d))
+  else
+    error("Not implemented")
+  end
 end
 
 ################################################################################

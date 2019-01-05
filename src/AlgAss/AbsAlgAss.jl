@@ -435,8 +435,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
       mint = minpoly(t)
       if degree(mint) == dB
         found_field = true
-        K = number_field(mint, cached = false)[1]
-        BtoK = AbsAlgAssToNfAbsMor(B, K, t)
+        K, BtoK = _as_field_with_isomorphism(B, t, mint)
         push!(fields, K)
         break
       end
