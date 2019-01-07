@@ -1061,6 +1061,7 @@ mutable struct NfOrdFracIdl
   function NfOrdFracIdl(O::NfOrd, a::NfOrdIdl, b::fmpz)
     z = new()
     z.order = O
+    b = abs(b)
     z.basis_mat = FakeFmpqMat(basis_mat(a), b)
     z.num = a
     z.den = b
@@ -1078,7 +1079,7 @@ mutable struct NfOrdFracIdl
     z = new()
     z.order = order(x)
     z.num = x
-    z.den = y
+    z.den = abs(y)
     return z
   end
   
