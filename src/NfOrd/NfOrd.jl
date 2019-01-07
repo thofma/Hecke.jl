@@ -1474,8 +1474,9 @@ end
 > For the maximal order, this is also the inverse ideal of the co-different.
 """
 function different(R::NfOrd)
-  D = ideal(R, different(R(gen(nf(R)))))
+#  D = ideal(R, different(R(gen(nf(R)))))
   d = abs(discriminant(R))
+  D = d*R
   while norm(D) != d
     #@show D, norm(D), d
     x = rand(R, -10:10)
