@@ -27,7 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# (C) 2015-2018 Claus Fieker, Tommy Hofmann
+# (C) 2015-2019 Claus Fieker, Tommy Hofmann
 #
 ################################################################################
 
@@ -119,7 +119,7 @@ function __init__()
     printstyled(" $VERSION_NUMBER ", color = :green)
     print("... \n ... which comes with absolutely no warranty whatsoever")
     println()
-    println("(c) 2015-2018 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
+    println("(c) 2015-2019 by Claus Fieker, Tommy Hofmann and Carlo Sircana")
     println()
   else
     println("Hecke $VERSION_NUMBER ...")
@@ -334,7 +334,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.5.2"
+global VERSION_NUMBER = v"0.5.3"
 
 ################################################################################
 #

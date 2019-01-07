@@ -67,9 +67,10 @@ function gcd_zippel(a::nmod_mpoly, b::nmod_mpoly)
    return z
 end
     
-function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem})
+function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1))
+#function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_elem}, ps::PrimesSet{Int} = PrimesSet(Hecke.p_start, -1, 23, 1))
 #  @show "gcd start"
-  p = Hecke.p_start
+  p = iterate(ps)[1]
   K = base_ring(f)
   max_stable = 2
   stable = max_stable
@@ -106,7 +107,7 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
 
   fl = true
   while true
-    p = next_prime(p)
+    p = iterate(ps, p)[1]
     me = Hecke.modular_init(K, p, deg_limit = 1)
     if isempty(me)
       continue
@@ -120,7 +121,7 @@ function Hecke.gcd(f::Hecke.Generic.MPoly{nf_elem}, g::Hecke.Generic.MPoly{nf_el
     for i=1:length(fp)
       _g = gcd_zippel(fp[i], gp[i])
       if length(_g) == 1 && iszero(exponent_vector(_g, 1))
-        return one(parent(f))
+        return inflate(one(parent(f)), shiftr, deflr)
       end
       push!(gcd_p, coeff(glp[i], 0)*_g)
     end
