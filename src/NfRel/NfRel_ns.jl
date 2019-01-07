@@ -793,17 +793,23 @@ function simple_extension(K::NfRel_ns)
     Ks, gKs = number_field(p, cached = false, check = false)
     return Ks, NfRelToNfRel_nsMor(Ks, K, g[1], [gKs])
   end
-  pe = g[1]
-  i = 1
-  f = minpoly(pe)
-  #todo: use resultants rather than minpoly??
-  while i < n
-    i += 1
-    pe += g[i]
+  if lcm([total_degree(K.pol[i]) for i = 1:length(K.pol)]) == degree(K)
+    #The sum of the primitive elements is the right element
+    pe = sum(g[i] for i = 1:length(g))
     f = minpoly(pe)
-    while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
+  else
+    pe = g[1]
+    i = 1
+    f = minpoly(pe)
+    #todo: use resultants rather than minpoly??
+    while i < n
+      i += 1
       pe += g[i]
       f = minpoly(pe)
+      while degree(f) < prod(total_degree(K.pol[k]) for k=1:i)
+        pe += g[i]
+        f = minpoly(pe)
+      end
     end
   end
   Ka, a = number_field(f, check = false)
@@ -817,7 +823,6 @@ function simple_extension(K::NfRel_ns)
     mul!(z, z, pe)
     elem_to_mat_row!(M, i, z)
   end
-  
   N = zero_matrix(k, 1, degree(K))
   b = basis(Ka)
   emb = Array{typeof(b[1]), 1}(undef, n)

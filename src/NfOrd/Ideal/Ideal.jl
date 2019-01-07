@@ -1512,7 +1512,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   bmatinv = basis_mat_inv(a, Val{false})
   m = zero_matrix(FlintZZ, n*length(B), n)
-  for i=1:length(B)
+  for i = 1:length(B)
     M = representation_matrix(B[i])
     mul!(M, M, bmatinv.num)
     if bmatinv.den == 1

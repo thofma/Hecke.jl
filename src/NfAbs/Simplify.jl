@@ -16,30 +16,47 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     a, f1 = polredabs(K)
     f = Qx(f1)
   else
-    ZK = lll(maximal_order(K))
-    I = index(ZK)^2
-    D = discriminant(ZK)
-    B = basis(ZK)
-    b = ZK(gen(K))
-    f = K.pol
+    OK = maximal_order(K)
+    ZK = lll(OK)
+    I = index(OK)
+    B = basis(ZK, Val{false})
+    a = gen(K)
     for i = 1:length(B)
-      ff = minpoly(B[i].elem_in_nf, Qx)
-      if degree(ff) < degree(K)
+      el = OK(B[i].elem_in_nf)
+      ind_a = _index(el)
+      if iszero(ind_a) || ind_a > I
         continue
-      end
-      id = div(numerator(discriminant(ff)), D)
-      if id<I
-        b = B[i]
-        I = id
-        f = ff
+      else
+        a = B[i].elem_in_nf
+        I = ind_a
       end
     end
-    a = b.elem_in_nf
+    f = minpoly(a, Qx)
   end
-  L = number_field(f, cached=false, check = false)[1]
+  L = number_field(f, cached = false, check = false)[1]
   m = NfToNfMor(L, K, a)
   return L, m
 end
+
+function _index(a::NfOrdElem)
+  O = parent(a)
+  d = degree(O)
+  M = zero_matrix(FlintZZ, d, d)
+  c = elem_in_basis(one(O), Val{false})
+  for i = 1:d
+    M[1, i] = c[i]
+  end
+  a1 = deepcopy(a)
+  for i = 2:d
+    c = elem_in_basis(a1, Val{false})
+    for j = 1:d
+      M[i, j] = c[j]
+    end
+    mul!(a1, a1, a)
+  end
+  return det(M)
+end
+
 
  #a block is a partition of 1:n
  #given by the subfield of parent(a) defined by a
