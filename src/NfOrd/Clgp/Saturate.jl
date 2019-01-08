@@ -121,7 +121,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
 
   S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
   for q in S
-    if isindex_divisor(ZK, q)
+    if isdefining_polynomial_nice(K) && isindex_divisor(ZK, q)
       continue
     end
     if discriminant(ZK) % q == 0
