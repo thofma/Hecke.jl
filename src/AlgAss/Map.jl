@@ -188,16 +188,16 @@ end
 # S is the type of the algebra, T the element type of the algebra
 mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
   header::MapHeader{S, AnticNumberField}
-  M::fmpq_mat
-  N::fmpq_mat
+  mat::fmpq_mat
+  imat::fmpq_mat
   t::fmpq_mat # dummy vector used in image and preimage
   tt::fmpq_mat # another dummy vector
 
   function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
 
     z = new{S, T}()
-    z.M = M
-    z.N = N
+    z.mat = M
+    z.imat = N
     z.t = zero_matrix(FlintQQ, 1, dim(A))
     z.tt = zero_matrix(FlintQQ, 1, degree(K))
 
@@ -205,7 +205,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, A
       for i = 1:dim(A)
         z.t[1, i] = x.coeffs[i]
       end
-      s = z.t*N
+      s = z.t*M
       return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
     end
 
@@ -213,7 +213,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, A
       for i = 1:degree(K)
         z.tt[1, i] = coeff(x, i - 1)
       end
-      s = z.tt*M
+      s = z.tt*N
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
@@ -235,16 +235,16 @@ end
 # S is the type of the algebra, T the element type of the algebra.
 mutable struct AbsAlgAssToFqMor{S, T} <: Map{S, FqFiniteField, HeckeMap, AbsAlgAssToFqMor}
   header::MapHeader{S, FqFiniteField}
-  M::Generic.Mat{Generic.Res{fmpz}}
-  N::Generic.Mat{Generic.Res{fmpz}}
-  t::Generic.Mat{Generic.Res{fmpz}} # dummy vector used in image and preimage
-  tt::Generic.Mat{Generic.Res{fmpz}} # another dummy vector
+  mat::Generic.Mat{Generic.ResF{fmpz}}
+  imat::Generic.Mat{Generic.ResF{fmpz}}
+  t::Generic.Mat{Generic.ResF{fmpz}} # dummy vector used in image and preimage
+  tt::Generic.Mat{Generic.ResF{fmpz}} # another dummy vector
 
-  function AbsAlgAssToFqMor{S, T}(A::S, Fq::FqFiniteField, M::Generic.Mat{Generic.Res{fmpz}}, N::Generic.Mat{Generic.Res{fmpz}}) where { S <: AbsAlgAss{Generic.Res{fmpz}}, T <: AbsAlgAssElem{Generic.Res{fmpz}} }
+  function AbsAlgAssToFqMor{S, T}(A::S, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}}) where { S <: AbsAlgAss{Generic.ResF{fmpz}}, T <: AbsAlgAssElem{Generic.ResF{fmpz}} }
 
     z = new{S, T}()
-    z.M = M
-    z.N = N
+    z.mat = M
+    z.imat = N
     z.t = zero_matrix(base_ring(A), 1, dim(A))
     z.tt = zero_matrix(base_ring(A), 1, degree(Fq))
 
@@ -252,7 +252,7 @@ mutable struct AbsAlgAssToFqMor{S, T} <: Map{S, FqFiniteField, HeckeMap, AbsAlgA
       for i = 1:dim(A)
         z.t[1, i] = x.coeffs[i]
       end
-      s = z.t*N
+      s = z.t*M
       R = PolynomialRing(base_ring(A))[1]
       return Fq(R([ s[1, i] for i = 1:degree(Fq) ]))
     end
@@ -261,7 +261,7 @@ mutable struct AbsAlgAssToFqMor{S, T} <: Map{S, FqFiniteField, HeckeMap, AbsAlgA
       for i = 1:degree(Fq)
         z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
       end
-      s = z.tt*M
+      s = z.tt*N
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
@@ -270,23 +270,23 @@ mutable struct AbsAlgAssToFqMor{S, T} <: Map{S, FqFiniteField, HeckeMap, AbsAlgA
   end
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.Res{fmpz}}, Fq::FqFiniteField, M::Generic.Mat{Generic.Res{fmpz}}, N::Generic.Mat{Generic.Res{fmpz}})
+function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}})
   return AbsAlgAssToFqMor{typeof(A), elem_type(A)}(A, Fq, M, N)
 end
 
 # S is the type of the algebra, T the element type of the algebra.
 mutable struct AbsAlgAssToFqNmodMor{S, T} <: Map{S, FqNmodFiniteField, HeckeMap, AbsAlgAssToFqNmodMor}
   header::MapHeader{S, FqNmodFiniteField}
-  M::nmod_mat
-  N::nmod_mat
-  t::nmod_mat # dummy vector used in image and preimage
-  tt::nmod_mat # another dummy vector
+  mat::gfp_mat
+  imat::gfp_mat
+  t::gfp_mat # dummy vector used in image and preimage
+  tt::gfp_mat # another dummy vector
 
-  function AbsAlgAssToFqNmodMor{S, T}(A::S, Fq::FqNmodFiniteField, M::nmod_mat, N::nmod_mat) where { S <: AbsAlgAss{nmod}, T <: AbsAlgAssElem{nmod} }
+  function AbsAlgAssToFqNmodMor{S, T}(A::S, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat) where { S <: AbsAlgAss{gfp_elem}, T <: AbsAlgAssElem{gfp_elem} }
 
     z = new{S, T}()
-    z.M = M
-    z.N = N
+    z.mat = M
+    z.imat = N
     z.t = zero_matrix(base_ring(A), 1, dim(A))
     z.tt = zero_matrix(base_ring(A), 1, degree(Fq))
 
@@ -294,7 +294,7 @@ mutable struct AbsAlgAssToFqNmodMor{S, T} <: Map{S, FqNmodFiniteField, HeckeMap,
       for i = 1:dim(A)
         z.t[1, i] = x.coeffs[i]
       end
-      s = z.t*N
+      s = z.t*M
       R = PolynomialRing(base_ring(A))[1]
       return Fq(R([ s[1, i] for i = 1:degree(Fq) ]))
     end
@@ -303,7 +303,7 @@ mutable struct AbsAlgAssToFqNmodMor{S, T} <: Map{S, FqNmodFiniteField, HeckeMap,
       for i = 1:degree(Fq)
         z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
       end
-      s = z.tt*M
+      s = z.tt*N
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
@@ -312,6 +312,6 @@ mutable struct AbsAlgAssToFqNmodMor{S, T} <: Map{S, FqNmodFiniteField, HeckeMap,
   end
 end
 
-function AbsAlgAssToFqNmodMor(A::AbsAlgAss{nmod}, Fq::FqNmodFiniteField, M::nmod_mat, N::nmod_mat)
+function AbsAlgAssToFqNmodMor(A::AbsAlgAss{gfp_elem}, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat)
   return AbsAlgAssToFqNmodMor{typeof(A), elem_type(A)}(A, Fq, M, N)
 end

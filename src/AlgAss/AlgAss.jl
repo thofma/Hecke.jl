@@ -434,13 +434,13 @@ function ==(A::AlgAss, B::AlgAss)
   return A.one == B.one && A.mult_table == B.mult_table
 end
 
-
-function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false) where {T}
+# Computes e*A if action is :left and A*e if action is :right.
+function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   isgenres = (typeof(R) <: Generic.ResRing)
   n = dim(A)
-  B = representation_matrix(e)
+  B = representation_matrix(e, action)
   r = _rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   basis = Vector{elem_type(A)}(undef, r)
@@ -448,7 +448,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     basis[i] = elem_from_mat_row(A, B, i)
   end
 
-  # The basis matrix of e*A with respect to A is
+  # The basis matrix of e*A resp. A*e with respect to A is
   basis_mat_of_eA = sub(B, 1:r, 1:n)
 
   if isgenres
@@ -502,7 +502,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     # We have the map eA -> A, given by the multiplying with basis_mat_of_eA.
     # But there is also the canonical projection A -> eA, a -> ea.
     # We compute the corresponding matrix.
-    B = representation_matrix(e)
+    B = representation_matrix(e, action)
     C = zero_matrix(R, n, r)
     for i in 1:n
       for k = 1:n
@@ -705,14 +705,14 @@ function _as_field(A::AlgAss{T}) where T
   return a, mina, f
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, nmod, Generic.Res{fmpz}} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}} }
   return _as_field_with_isomorphism(A, _primitive_element(A)...)
 end
 
 # Assuming a is a primitive element of A and mina its minimal polynomial, this
 # functions constructs the field base_ring(A)/mina and the isomorphism between
 # A and this field.
-function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, nmod, Generic.Res{fmpz}}, T <: Union{fmpq_poly, nmod_poly, fmpz_mod_poly} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}}, T <: Union{fmpq_poly, gfp_poly, gfp_fmpz_poly} }
   s = one(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -723,14 +723,13 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
 
   if base_ring(A) == FlintQQ
     K = number_field(mina, cached = false)[1]
-    return K, AbsAlgAssToNfAbsMor(A, K, M, inv(M))
-  elseif base_ring(A) isa NmodRing
+    return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
+  elseif base_ring(A) isa GaloisField
     Fq = FqNmodFiniteField(mina, Symbol("a"), false)
-    return Fq, AbsAlgAssToFqNmodMor(A, Fq, M, inv(M))
-  elseif base_ring(A) isa Generic.ResRing{fmpz}
+    return Fq, AbsAlgAssToFqNmodMor(A, Fq, inv(M), M)
+  elseif base_ring(A) isa Generic.ResField{fmpz}
     Fq = FqFiniteField(mina, Symbol("a"), false)
-    N, d = inv(M)
-    return Fq, AbsAlgAssToFqMor(A, Fq, M, divexact(N, d))
+    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M)
   else
     error("Not implemented")
   end
@@ -759,15 +758,15 @@ function restrict_scalars(A::AlgAss{nf_elem}, Q::FlintRationalField)
   return _restrict_scalars_to_prime_field(A, Q)
 end
 
-function restrict_scalars(A::AlgAss{fq_nmod}, Fp::NmodRing)
+function restrict_scalars(A::AlgAss{fq_nmod}, Fp::GaloisField)
   return _restrict_scalars_to_prime_field(A, Fp)
 end
 
-function restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResRing{fmpz})
+function restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResField{fmpz})
   return _restrict_scalars_to_prime_field(A, Fp)
 end
 
-function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, NmodRing, Generic.ResRing{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
+function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, GaloisField, Generic.ResField{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
   K = base_ring(A)
   n = dim(A)
   m = degree(K)
@@ -934,30 +933,37 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
   return B, AtoB, BtoA
 end
 
-function _as_algebra_over_center(A::AlgAss{fmpq})
+function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}} }
+  K = base_ring(A)
+  isnf = ( K == FlintQQ )
   C, CtoA = center(A)
-  fields = as_number_fields(C)
-  @assert length(fields) == 1
-  K, CtoK = fields[1]
+  if isnf
+    fields = as_number_fields(C)
+    @assert length(fields) == 1
+    L, CtoL = fields[1]
+  else
+    L, CtoL = _as_field_with_isomorphism(C)
+  end
 
   basisC = basis(C)
   basisCinA = Vector{elem_type(A)}(undef, dim(C))
-  basisCinK = Vector{elem_type(K)}(undef, dim(C))
+  basisCinL = Vector{elem_type(L)}(undef, dim(C))
   for i = 1:dim(C)
     basisCinA[i] = CtoA(basisC[i])
-    basisCinK[i] = CtoK(basisC[i])
+    basisCinL[i] = CtoL(basisC[i])
   end
 
-  # We construct a basis of A over C (respectively K) by using the following fact:
+  # We construct a basis of A over C (respectively L) by using the following fact:
   # A subset M of basis(A) is a C-basis of A if and only if |M| = dim(A)/dim(C)
-  # and all possible products of elements of M and basisCinA form a Q-basis of A.
-  AoverQ = basis(A)
+  # and all possible products of elements of M and basisCinA form a K-basis of A,
+  # with K := base_ring(A).
+  AoverK = basis(A)
   AoverC = Vector{Int}()
-  M = zero_matrix(FlintQQ, dim(C), dim(A))
-  MM = zero_matrix(FlintQQ, 0, dim(A))
+  M = zero_matrix(K, dim(C), dim(A))
+  MM = zero_matrix(K, 0, dim(A))
   r = 0
   for i = 1:dim(A)
-    b = AoverQ[i]
+    b = AoverK[i]
 
     for j = 1:dim(C)
       elem_to_mat_row!(M, j, b*basisCinA[j])
@@ -982,19 +988,27 @@ function _as_algebra_over_center(A::AlgAss{fmpq})
 
   iMM = inv(MM)
 
+  if !isnf
+    R = PolynomialRing(K, "x", cached = false)[1]
+  end
+
   function _new_coeffs(x)
-    y = zeros(K, m)
-    xx = matrix(FlintQQ, 1, dim(A), coeffs(x, false))
+    y = zeros(L, m)
+    xx = matrix(K, 1, dim(A), coeffs(x, false))
     Mx = xx*iMM
     for i = 1:m
       for j = 1:dim(C)
-        y[i] = addeq!(y[i], basisCinK[j]*Mx[1, (i - 1)*dim(C) + j])
+        if isnf
+          y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
+        else
+          y[i] = addeq!(y[i], basisCinL[j]*L(R(Mx[1, (i - 1)*dim(C) + j])))
+        end
       end
     end
     return y
   end
 
-  mult_table = zeros(K, m, m, m)
+  mult_table = zeros(L, m, m, m)
   Aij = A()
   for i = 1:m
     for j = 1:m
@@ -1007,7 +1021,7 @@ function _as_algebra_over_center(A::AlgAss{fmpq})
     end
   end
 
-  B = AlgAss(K, mult_table, _new_coeffs(one(A)))
+  B = AlgAss(L, mult_table, _new_coeffs(one(A)))
   B.iscommutative = A.iscommutative
 
   function AtoB(x)
@@ -1017,13 +1031,13 @@ function _as_algebra_over_center(A::AlgAss{fmpq})
 
   function BtoA(x)
     @assert parent(x) == B
-    y = zeros(FlintQQ, dim(A))
+    y = zeros(K, dim(A))
     xx = A()
     for i = 1:dim(B)
-      t = CtoA(CtoK\coeffs(x, false)[i])
+      t = CtoA(CtoL\coeffs(x, false)[i])
       xx = add!(xx, xx, t*A[AoverC[i]])
     end
-    Mx = matrix(FlintQQ, 1, dim(A), coeffs(xx, false))*MM
+    Mx = matrix(K, 1, dim(A), coeffs(xx, false))*MM
     return A([ Mx[1, i] for i = 1:dim(A) ])
   end
 

@@ -90,7 +90,7 @@
   end
 
   # Restrict from F_q to F_p
-  Fp = ResidueRing(FlintZZ, 7)
+  Fp = GF(7)
   Fq, a = FiniteField(7, 3, "a")
 
   A = AlgAss(MatrixAlgebra(Fq, 2))
