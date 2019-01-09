@@ -148,7 +148,7 @@ function algebraic_reconstruction(a::nf_elem, M::NfAbsOrdIdl)
   K = parent(a)
   n = degree(K)
   Znn = MatrixSpace(FlintZZ, n, n)
-  L = [ Znn(1) representation_mat_q(a)[1] ; Znn(0) basis_matrix(M, Val{false})]
+  L = [ Znn(1) representation_matrix_q(a)[1] ; Znn(0) basis_matrix(M, Val{false})]
   lll!(L)
   d = Nemo.elem_from_mat_row(K, sub(L, 1:1, 1:n), 1, fmpz(1))
   n = Nemo.elem_from_mat_row(K, sub(L, 1:1, n+1:2*n), 1, fmpz(1))

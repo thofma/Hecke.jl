@@ -164,71 +164,6 @@ end
 #  return AlgAssMor{R, S, T}(A, B, M, N)
 #end
 
-################################################################################
-#
-#  Morphisms between algebras and number fields
-#
-################################################################################
-
-# S is the type of the algebra, T the element type of the algebra
-mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
-  header::MapHeader{S, AnticNumberField}
-  M::fmpq_mat
-  N::fmpq_mat
-  t::fmpq_mat # dummy vector used in image and preimage
-  tt::fmpq_mat # another dummy vector
-
-  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
-
-    z = new{S, T}()
-    z.M = M
-    z.N = N
-    z.t = zero_matrix(FlintQQ, 1, dim(A))
-    z.tt = zero_matrix(FlintQQ, 1, degree(K))
-
-    function _image(x::T)
-      for i = 1:dim(A)
-        z.t[1, i] = x.coeffs[i]
-      end
-      s = z.t*N
-      return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
-    end
-
-    function _preimage(x::nf_elem)
-      for i = 1:degree(K)
-        z.tt[1, i] = coeff(x, i - 1)
-      end
-      s = z.tt*M
-      return A([ s[1, i] for i = 1:dim(A) ])
-    end
-
-    z.header = MapHeader{S, AnticNumberField}(A, K, _image, _preimage)
-    return z
-  end
-
-  # a is a primitive element in A
-  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, a::T) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
-
-    s = one(A)
-    M = zero_matrix(FlintQQ, dim(A), dim(A))
-    elem_to_mat_row!(M, 1, s)
-    for i = 2:dim(A)
-      s = mul!(s, s, a)
-      elem_to_mat_row!(M, i, s)
-    end
-
-    return AbsAlgAssToNfAbsMor{S, T}(A, K, M, inv(M))
-  end
-end
-
-function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat)
-  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, M, N)
-end
-
-function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, a::AbsAlgAssElem{fmpq})
-  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, a)
-end
-
 function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   if isdefined(m, :imat)
     return true, preimage(m, a)
@@ -242,4 +177,141 @@ function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   else
     return false, zero(domain(m))
   end
+end
+
+################################################################################
+#
+#  Morphisms between algebras and number fields
+#
+################################################################################
+
+# S is the type of the algebra, T the element type of the algebra
+mutable struct AbsAlgAssToNfAbsMor{S, T} <: Map{S, AnticNumberField, HeckeMap, AbsAlgAssToNfAbsMor}
+  header::MapHeader{S, AnticNumberField}
+  mat::fmpq_mat
+  imat::fmpq_mat
+  t::fmpq_mat # dummy vector used in image and preimage
+  tt::fmpq_mat # another dummy vector
+
+  function AbsAlgAssToNfAbsMor{S, T}(A::S, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat) where { S <: AbsAlgAss{fmpq}, T <: AbsAlgAssElem{fmpq} }
+
+    z = new{S, T}()
+    z.mat = M
+    z.imat = N
+    z.t = zero_matrix(FlintQQ, 1, dim(A))
+    z.tt = zero_matrix(FlintQQ, 1, degree(K))
+
+    function _image(x::T)
+      for i = 1:dim(A)
+        z.t[1, i] = x.coeffs[i]
+      end
+      s = z.t*M
+      return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
+    end
+
+    function _preimage(x::nf_elem)
+      for i = 1:degree(K)
+        z.tt[1, i] = coeff(x, i - 1)
+      end
+      s = z.tt*N
+      return A([ s[1, i] for i = 1:dim(A) ])
+    end
+
+    z.header = MapHeader{S, AnticNumberField}(A, K, _image, _preimage)
+    return z
+  end
+end
+
+function AbsAlgAssToNfAbsMor(A::AbsAlgAss{fmpq}, K::AnticNumberField, M::fmpq_mat, N::fmpq_mat)
+  return AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}(A, K, M, N)
+end
+
+################################################################################
+#
+#  Morphisms between algebras and finite fields
+#
+################################################################################
+
+# S is the type of the algebra, T the element type of the algebra.
+mutable struct AbsAlgAssToFqMor{S, T} <: Map{S, FqFiniteField, HeckeMap, AbsAlgAssToFqMor}
+  header::MapHeader{S, FqFiniteField}
+  mat::Generic.Mat{Generic.ResF{fmpz}}
+  imat::Generic.Mat{Generic.ResF{fmpz}}
+  t::Generic.Mat{Generic.ResF{fmpz}} # dummy vector used in image and preimage
+  tt::Generic.Mat{Generic.ResF{fmpz}} # another dummy vector
+
+  function AbsAlgAssToFqMor{S, T}(A::S, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}}) where { S <: AbsAlgAss{Generic.ResF{fmpz}}, T <: AbsAlgAssElem{Generic.ResF{fmpz}} }
+
+    z = new{S, T}()
+    z.mat = M
+    z.imat = N
+    z.t = zero_matrix(base_ring(A), 1, dim(A))
+    z.tt = zero_matrix(base_ring(A), 1, degree(Fq))
+
+    function _image(x::T)
+      for i = 1:dim(A)
+        z.t[1, i] = x.coeffs[i]
+      end
+      s = z.t*M
+      R = PolynomialRing(base_ring(A))[1]
+      return Fq(R([ s[1, i] for i = 1:degree(Fq) ]))
+    end
+
+    function _preimage(x::fq)
+      for i = 1:degree(Fq)
+        z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
+      end
+      s = z.tt*N
+      return A([ s[1, i] for i = 1:dim(A) ])
+    end
+
+    z.header = MapHeader{S, FqFiniteField}(A, Fq, _image, _preimage)
+    return z
+  end
+end
+
+function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}})
+  return AbsAlgAssToFqMor{typeof(A), elem_type(A)}(A, Fq, M, N)
+end
+
+# S is the type of the algebra, T the element type of the algebra.
+mutable struct AbsAlgAssToFqNmodMor{S, T} <: Map{S, FqNmodFiniteField, HeckeMap, AbsAlgAssToFqNmodMor}
+  header::MapHeader{S, FqNmodFiniteField}
+  mat::gfp_mat
+  imat::gfp_mat
+  t::gfp_mat # dummy vector used in image and preimage
+  tt::gfp_mat # another dummy vector
+
+  function AbsAlgAssToFqNmodMor{S, T}(A::S, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat) where { S <: AbsAlgAss{gfp_elem}, T <: AbsAlgAssElem{gfp_elem} }
+
+    z = new{S, T}()
+    z.mat = M
+    z.imat = N
+    z.t = zero_matrix(base_ring(A), 1, dim(A))
+    z.tt = zero_matrix(base_ring(A), 1, degree(Fq))
+
+    function _image(x::T)
+      for i = 1:dim(A)
+        z.t[1, i] = x.coeffs[i]
+      end
+      s = z.t*M
+      R = PolynomialRing(base_ring(A))[1]
+      return Fq(R([ s[1, i] for i = 1:degree(Fq) ]))
+    end
+
+    function _preimage(x::fq_nmod)
+      for i = 1:degree(Fq)
+        z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
+      end
+      s = z.tt*N
+      return A([ s[1, i] for i = 1:dim(A) ])
+    end
+
+    z.header = MapHeader{S, FqNmodFiniteField}(A, Fq, _image, _preimage)
+    return z
+  end
+end
+
+function AbsAlgAssToFqNmodMor(A::AbsAlgAss{gfp_elem}, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat)
+  return AbsAlgAssToFqNmodMor{typeof(A), elem_type(A)}(A, Fq, M, N)
 end

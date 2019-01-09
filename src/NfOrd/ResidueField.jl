@@ -163,7 +163,7 @@ end
 function ResidueFieldSmall(O::NfOrd, P::NfOrdIdl)
   p = minimum(P)
   nbits(p) > 64 && error("Minimum of prime ideal must be small (< 64 bits)")
-  if !ismaximal_known(O) || !ismaximal(O)
+  if !ismaximal_known(O) || !ismaximal(O) || !isdefining_polynomial_nice(nf(O))
     return _residue_field_generic(O, P)
   end
   if !isindex_divisor(O, minimum(P))
