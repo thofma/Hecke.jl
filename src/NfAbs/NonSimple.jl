@@ -347,7 +347,6 @@ function Nemo.addeq!(b::NfAbsNSElem, a::NfAbsNSElem)
   return b
 end
 
-#
 
 function Nemo.mul!(c::NfAbsNSElem, a::NfAbsNSElem, b::fmpz)
   mul!(c.data, a.data, parent(c.data)(b))
@@ -716,11 +715,11 @@ function simple_extension(K::NfAbsNS; check = true)
     Qx, x = PolynomialRing(FlintQQ, "x", cached = false)
     coef = Array{fmpq, 1}(undef, degree(K)+1)
     for i = 1:length(coef)
-      coef[i] = __get_term(K.pol[1], UInt[i])
+      coef[i] = __get_term(K.pol[1], UInt[i-1])
     end
     Ka, a = NumberField(Qx(coef), "a", cached = false, check = check)
     #now, the map
-    mp = NfAbsToNfAbsNS(Ka, K, g[1], a)
+    mp = NfAbsToNfAbsNS(Ka, K, g[1], [a])
     return Ka, mp
   end
   pe = g[1]

@@ -44,6 +44,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
   end
   
   O = order(clg.FB.ideals[1]) 
+  easy = isdefining_polynomial_nice(parent(a))
   @vprint :ClassGroup 3 "trying relation of length $(Float64(length(a))) and norm $(Float64(n*nI)), effective $(Float64(n))\n"
   if integral #element is known to be integral
     fl, r = issmooth!(clg.FB.fb_int, numerator(n*nI))
@@ -54,7 +55,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     @vprint :ClassGroup 3 "not int-smooth\n"
 #    println("not int-smooth");
     # try for large prime?
-    if abs(r) < clg.B2 && isprime(r) && !isindex_divisor(O, r) 
+    if easy && abs(r) < clg.B2 && isprime(r) && !isindex_divisor(O, r) 
       @vprint :ClassGroup 3 "gives potential large prime\n"
       i = special_prime_ideal(r, a)
       #TODO: check Galois orbit of special ideal

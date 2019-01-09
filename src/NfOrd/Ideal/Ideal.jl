@@ -878,7 +878,7 @@ function _minmod(a::fmpz, b::NfOrdElem)
   end
 
   if !isdefining_polynomial_nice(nf(parent(b)))
-    return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
+    return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
  
   Zk = parent(b)
@@ -915,6 +915,9 @@ function _invmod(a::fmpz, b::NfOrdElem)
   if isone(a)
     return one(k)
   end
+  if !isdefining_polynomial_nice(nf(parent(b)))
+    return inv(k(b))
+  end
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
   e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
@@ -939,6 +942,9 @@ end
 function _normmod(a::fmpz, b::NfOrdElem)
   if isone(a)
     return a
+  end
+  if !isdefining_polynomial_nice(nf(parent(b)))
+    return norm(b)
   end
   Zk = parent(b)
   k = number_field(Zk)
@@ -985,7 +991,7 @@ function simplify(A::NfAbsOrdIdl)
       end  
       A.norm = n
     end
-    if true
+    if isdefining_polynomial_nice(nf(order(A)))
       be = A.gen_two.elem_in_nf
       d = denominator(be)
       f, e = ppio(d, A.gen_one)
@@ -1512,7 +1518,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   bmatinv = basis_mat_inv(a, Val{false})
   m = zero_matrix(FlintZZ, n*length(B), n)
-  for i=1:length(B)
+  for i = 1:length(B)
     M = representation_matrix(B[i])
     mul!(M, M, bmatinv.num)
     if bmatinv.den == 1

@@ -63,6 +63,8 @@ mutable struct ClassField
   absolute_discriminant::Dict{fmpz,Int}
   cyc::Array{ClassField_pp, 1}
   A::NfRel_ns{nf_elem}
+  AbsAutGrpA::Vector{NfRel_nsToNfRel_nsMor{nf_elem}} #The generators for the absolute automorphism
+                                                     #group of A
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap
 
@@ -297,6 +299,6 @@ function maximal_p_subfield(C::ClassField, p::Int)
   v = valuation(degree(C), p)
   q, mq = quo(codomain(mg), p^v)
   s, ms = snf(q)
-  mg1 = GrpAbFinGen(mg*mq*ms)
+  mg1 = GrpAbFinGenMap(mg*mq*ms)
   return ray_class_field(C.rayclassgroupmap, mg1)
 end

@@ -1091,11 +1091,11 @@ end
 ################################################################################
 
 function _poverorder(O::NfAbsOrd, p::fmpz)
-  I = pradical(O, p)
+  @vtime :NfOrd 3 I = pradical(O, p)
   if isdefined(I, :princ_gen) && I.princ_gen == p
     return O
   end
-  R = ring_of_multipliers(I)
+  @vtime :NfOrd 3 R = ring_of_multipliers(I)
   return R
 end
 
@@ -1474,8 +1474,9 @@ end
 > For the maximal order, this is also the inverse ideal of the co-different.
 """
 function different(R::NfOrd)
-  D = ideal(R, different(R(gen(nf(R)))))
+#  D = ideal(R, different(R(gen(nf(R)))))
   d = abs(discriminant(R))
+  D = d*R
   while norm(D) != d
     #@show D, norm(D), d
     x = rand(R, -10:10)
@@ -1567,20 +1568,11 @@ function new_maximal_order(O::NfOrd)
     return OO
   end
   for i=1:length(l1)
-    a,b = ispower(l1[i])
+    a, b = ispower(l1[i])
     if a>1
       l1[i]=b
     end
   end
-  #=
-  O1, l=DedekindComposite(O, deepcopy(l1))
-  if discriminant(O1)!=discriminant(O)
-    OO+=O1
-    push!(l, discriminant(O1))
-  end
-  append!(l1,l)
-  l1=coprime_base(l1)
-  =#
   O1, Q = _TameOverorderBL(OO, l1)
   if !isempty(Q)
     @vprint :NfOrd 1 "I have to factor $Q\n "

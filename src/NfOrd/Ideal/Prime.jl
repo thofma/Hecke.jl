@@ -452,6 +452,9 @@ function anti_uniformizer(P::NfOrdIdl)
 end
 
 function prime_decomposition_type(O::NfOrd, p::Integer)
+  if !isdefining_polynomial_nice(nf(O))
+    return [(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
+  end
   if (mod(discriminant(O), p)) != 0 && (mod(fmpz(index(O)), p) != 0)
     K = nf(O)
     f = K.pol

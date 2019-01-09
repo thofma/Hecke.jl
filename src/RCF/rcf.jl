@@ -776,6 +776,10 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   return z
 end
 
+#a stop-gap, mainly for non-monic polynomials
+function extend_easy(f::Hecke.NfOrdToFqMor, K::AnticNumberField)
+  return extend(f, K)
+end
 ###############################################################################
 #
 #  Reduction of generators

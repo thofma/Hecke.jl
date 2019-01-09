@@ -653,6 +653,7 @@ divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 #  difficult due to Julia's inability to unset entries...
 function divexact(A::NfOrdIdl, b::fmpz)
   zk = order(A)
+  b = abs(b)
   if has_2_elem(A)
     B = ideal(zk, divexact(A.gen_one, b), divexact(A.gen_two, b))
     if isdefined(A, :gens_normal)

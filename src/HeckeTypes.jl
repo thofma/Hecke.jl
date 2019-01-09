@@ -1061,6 +1061,7 @@ mutable struct NfOrdFracIdl
   function NfOrdFracIdl(O::NfOrd, a::NfOrdIdl, b::fmpz)
     z = new()
     z.order = O
+    b = abs(b)
     z.basis_mat = FakeFmpqMat(basis_mat(a), b)
     z.num = a
     z.den = b
@@ -1078,7 +1079,7 @@ mutable struct NfOrdFracIdl
     z = new()
     z.order = order(x)
     z.num = x
-    z.den = y
+    z.den = abs(y)
     return z
   end
   
@@ -1328,7 +1329,7 @@ mutable struct FactorBaseSingleP
     O = order(lp[1][2])
     K = O.nf
 
-    if length(lp) >= 3 && !isindex_divisor(O, p) # ie. index divisor or so
+    if isone(lead(K.pol)) && isone(denominator(K.pol)) && (length(lp) >= 3 && !isindex_divisor(O, p)) # ie. index divisor or so
       Zx = PolynomialRing(FlintZZ, "x")[1]
       Fpx = PolynomialRing(ResidueRing(FlintZZ, UInt(p), cached=false), "x", cached=false)[1]
       Qx = parent(K.pol)
@@ -1342,7 +1343,7 @@ mutable struct FactorBaseSingleP
 end
 
 function fb_doit(a::nf_elem, v::Int, sP::FactorBaseSingleP, no::fmpq = fmpq(0))
-  if length(sP.lp) < 3 || isindex_divisor(order(sP.lp[1][2]), sP.P) # ie. index divisor or so
+  if !isdefined(sP, :lf)
     return fb_naive_doit(a, v, sP, no)
   end
   d = denominator(a)
