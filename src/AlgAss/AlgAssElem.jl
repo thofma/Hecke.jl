@@ -237,17 +237,26 @@ end
 #
 ################################################################################
 
-# Computes a/b, if possible
-function divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem)
+# Computes a/b if action is :right and b\a if action is :left (and if this is possible)
+function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
   # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
 
   A = parent(a)
-  Mb = transpose(representation_matrix(b))
-  va = matrix(base_ring(A), dim(A), 1, coeffs(a, false))
-  vc = solve(Mb, va)
+  M = transpose(representation_matrix(b, action))
+  va = matrix(base_ring(A), dim(A), 1, coeffs(a))
+  # a could be a zero divisor, so there will not be a unique solution
+  Ma = hcat(M, va)
+  r = rref!(Ma)
+  @assert !all(iszero, [ Ma[r, i] for i = 1:dim(A) ]) "Division not possible"
+  vc = solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
+
   return A([ vc[i, 1] for i = 1:dim(A) ])
 end
+
+divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :right)
+
+divexact_left(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :left)
 
 ################################################################################
 #

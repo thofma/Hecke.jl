@@ -186,11 +186,11 @@ function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   return O(y)
 end
 
-# Computes a/b, if possible
-function divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true)
+# Computes a/b if action is :right and b\a if action is :left (and if this is possible)
+function divexact(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, action::Symbol, check::Bool = true)
   !check_parent(a, b) && error("Wrong parents")
   O = parent(a)
-  c = divexact_right(elem_in_algebra(a, Val{false}), elem_in_algebra(b, Val{false}))
+  c = divexact(elem_in_algebra(a, Val{false}), elem_in_algebra(b, Val{false}), action)
   if check
     (x, y) = _check_elem_in_order(c, O)
     !x && error("Quotient not an element of the order")
@@ -198,6 +198,10 @@ function divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = 
   end
   return typeof(a)(O, c)
 end
+
+divexact_right(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true) = divexact(a, b, :right, check)
+
+divexact_left(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, check::Bool = true) = divexact(a, b, :left, check)
 
 ################################################################################
 #
