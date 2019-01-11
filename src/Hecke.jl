@@ -81,7 +81,7 @@ import Nemo: acb_struct, Ring, Group, Field, NmodRing, nmod, arf_struct,
 export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
        set_verbose_level, add_assert_scope, get_assert_level, set_assert_level,
        update, show, StepRange, domain, codomain, image, preimage,
-       modord, resultant, next_prime, ispower, number_field
+       modord, resultant, next_prime, ispower, number_field, factor
 
 ###############################################################################
 #
