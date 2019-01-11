@@ -193,31 +193,33 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   return c
   =#
 
-  ta = Terms(a)
-  tb = Terms(b)
+  N = ngens(parent(a))
+
+  ta = terms(a)
+  tb = terms(b)
   c = MPolyBuildCtx(parent(a))
   aa, sa = iterate(ta)
   bb, sb = iterate(tb)
   @assert length(a) == length(b)
   @assert ==(aa, bb, true) # leading terms must agree or else...
   while !(aa === nothing) && !(bb === nothing)
-    if ==(aa, bb, true) #monomial equality
-      push_term!(c, Hecke.induce_inner_crt(coeff(aa), coeff(bb), pi, pq, pq2), exponent_vector(aa))
+    if ==(aa.exps, bb.exps) #monomial equality
+      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), coeff(bb, 1), pi, pq, pq2), exponent_vector(aa))
       aa = iterate(ta, sa)
       bb = iterate(tb, sb)
       aa === nothing && break
       aa, sa = aa
       bb === nothing && break
       bb, sb = bb
-    elseif aa < bb
+    elseif monomial_isless(aa.exps, 1, bb.exps, 1, N, parent(aa), UInt(0)) #aa < bb
       error("bad 1")
-      push_term!(c, Hecke.induce_inner_crt(z, coeff(bb), pi, pq, pq2), exponent_vector(bb))
+      push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb))
       bb, sb = iterate(tb, sb)
       bb === nothing && break
       bb, sb = bb
     else
       error("bad 2")
-      push_term!(c, Hecke.induce_inner_crt(coeff(a), z, pi, pq, pq2), exponent_vector(aa))
+      push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa))
       aa = iterate(ta, sa)
       aa === nothing && break
       aa, sa = aa
@@ -225,7 +227,7 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   end
   while !(aa === nothing)
       error("bad 3")
-    push_term!(c, Hecke.induce_inner_crt(coeff(a), z, pi, pq, pq2), exponent_vector(aa))
+    push_term!(c, Hecke.induce_inner_crt(coeff(aa, 1), z, pi, pq, pq2), exponent_vector(aa))
     aa = iterate(ta, sa)
     if !aa == nothing
       aa, sa = aa
@@ -233,7 +235,7 @@ function Hecke.induce_crt(a::Hecke.Generic.MPoly{nf_elem}, p::fmpz, b::Hecke.Gen
   end
   while !(bb === nothing)
       error("bad 4")
-    push_term!(c, Hecke.induce_inner_crt(z, coeff(bb), pi, pq, pq2), exponent_vector(bb))
+    push_term!(c, Hecke.induce_inner_crt(z, coeff(bb, 1), pi, pq, pq2), exponent_vector(bb))
     bb = iterate(tb, sb)
     if !(bb === nothing)
       bb, sb = bb
