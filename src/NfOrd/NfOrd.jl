@@ -771,6 +771,15 @@ end
 #
 ################################################################################
 
+#based on an ideal of Lenstra, more details in
+#https://www.sciencedirect.com/science/article/pii/S0019357701800392
+#https://www.impan.pl/pl/wydawnictwa/czasopisma-i-serie-wydawnicze/acta-arithmetica/all/120/3/82018/decomposition-of-primes-in-non-maximal-orders
+#: Denis Simon: The index of nonmonic polynomials
+#    Indag Math, 2001
+#: Denis Simon, Ilaria Del Corso, Roberto Dvornicich:
+#    Decomposition of primes in non-maximal orders,
+#    Acta Arithmetica 120 (2005), 231-244 
+#
 function any_order(K::AnticNumberField)
   f = K.pol
   de = denominator(f)
