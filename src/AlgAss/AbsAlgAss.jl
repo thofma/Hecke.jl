@@ -14,6 +14,8 @@ morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{fq_nmod}, S <: AbsA
 
 morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{nmod}, S <: AbsAlgAss{nmod}} = AbsAlgAssMor{T, S, nmod_mat}
 
+morphism_type(::Type{T}, ::Type{S}) where {R, T <: AbsAlgAss{gfp_elem}, S <: AbsAlgAss{gfp_elem}} = AbsAlgAssMor{T, S, gfp_mat}
+
 morphism_type(A::Type{T}) where {T <: AbsAlgAss} = morphism_type(A, A)
 
 ################################################################################
@@ -435,8 +437,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
       mint = minpoly(t)
       if degree(mint) == dB
         found_field = true
-        K = number_field(mint, cached = false)[1]
-        BtoK = AbsAlgAssToNfAbsMor(B, K, t)
+        K, BtoK = _as_field_with_isomorphism(B, t, mint)
         push!(fields, K)
         break
       end
@@ -466,7 +467,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
 
   result = Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor}}()
   for i = 1:length(fields)
-    push!(result, (fields[i], AbsAlgAssToNfAbsMor(A, fields[i], matrices[i], matrices2[i])))
+    push!(result, (fields[i], AbsAlgAssToNfAbsMor(A, fields[i], matrices2[i], matrices[i])))
   end
   A.maps_to_numberfields = result
   return result

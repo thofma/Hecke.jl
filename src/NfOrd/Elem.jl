@@ -34,7 +34,7 @@
 
 export ==, +, -, *, ^, add!, conjugates_arb, conjugates_arb_log, discriminant,
        divexact, elem_in_nf, elem_in_basis, isone, iszero, minkowski_map, mod,
-       mul!, norm, one, parent, powermod, rand, rand!, representation_mat,
+       mul!, norm, one, parent, powermod, rand, rand!, representation_matrix,
        show, trace, t2, zero
 
 ################################################################################

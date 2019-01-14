@@ -297,7 +297,7 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
   while i<=b
     if primes[i]
       dt = prime_decomposition_type(O, i)
-      if gcd(deg,i^dt[1][1]-1) == 1
+      if gcd(deg, i^dt[1][1]-1) == 1
         @inbounds primes[i] = false
         @inbounds sqf[i] = false
         j = i
@@ -308,12 +308,12 @@ function squarefree_for_conductors(O::NfOrd, n::Int, deg::Int; coprime_to::Array
         end
       else 
         j=i
-        while j<= n
+        while j <= n
           @inbounds primes[j]=false
           j+=i
         end
         j=i^2
-        t=2*j
+        t=j
         while j<= n
           @inbounds sqf[j]=false
           j+=t

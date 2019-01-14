@@ -370,9 +370,9 @@ function _rcf_find_kummer(CF::ClassField_pp)
   end
   g = ms(H[1])
   @vprint :ClassField 2 "g = $g\n"
-  @vprint :ClassField 2 "final $n of order $o and e=$e\n"
+  #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
   a = prod([KK.gen[i]^div(mod(g[i], e), c) for i=1:ngens(N)])
-  @vprint :ClassField 2 "generator $a\n"
+  #@vprint :ClassField 2 "generator $a\n"
   CF.a = a
   
   CF.sup_known = true
@@ -1078,4 +1078,57 @@ function ring_class_field(O::NfAbsOrd)
   k = kernel(h, true)[1]
   q, mq = quo(R, k)
   return ray_class_field(mR, mq)
+end
+
+
+function induce_image(a::FacElem{nf_elem, AnticNumberField}, f::NfToNfMor)
+  
+  D = Dict{nf_elem, fmpz}()
+  for (x, v) in a
+    D[f(x)] = v
+  end
+  return FacElem(D)
+  
+end
+
+function induce_action(mS, auts::Vector{NfToNfMor}, n::Int)
+  
+  S = domain(mS)
+  q, mq = quo(S, n)
+  s, ms = snf(q)
+  
+  gens = small_generating_set(auts)
+  maps = Vector{GrpAbFinGenMap}(undef, length(gens))
+  mats = Vector{fmpz_mat}(undef, length(gens))
+  for i = 1:length(gens)
+    mats[i] = zero_matrix(FlintZZ, ngens(s), ngens(s))
+  end
+  for i = 1:length(gens)
+    for j = 1:ngens(s)
+      el = mS(mq\(ms(s[j])))
+      el1 = induce_image(el, gens[i])
+      @time invimg = ms\(mq(mS\(el1)))
+      for t = 1:ngens(s)
+        mats[i][j, t] = invimg[t]
+      end
+      for t = 1:ngens(s)
+        mats[i][t, t] -= 1
+      end
+    end    
+  end
+  for i = 1:length(mats)
+    maps[i] = GrpAbFinGenMap(s, s, mats[i])
+  end
+  k, mk = kernel(maps[1])
+  @show snf(k)[1]
+  for i = 2:length(maps)
+    k1, mk1 = kernel(maps[2])
+    @show snf(k1)[1]
+    k = intersect(k, k1)
+  end
+  return k
+  
+
+
+
 end
