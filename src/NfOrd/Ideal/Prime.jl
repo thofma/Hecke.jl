@@ -749,14 +749,11 @@ function isprime(A::NfAbsOrdIdl)
     A.is_prime = 2
     return false
   end
+  lp = prime_ideals_over(order(A), p)
 
-  p > 2^62 && error("Not implemented (yet)")
-
-  lp = prime_decomposition(order(A), Int(p))
-
-  for (P, f) in lp
+  for P in lp
     e = valuation(A, P)
-    if e == 1 && n == degree(P)
+    if e == 1 && norm(A) == norm(P)
       A.is_prime = 1
       return true
     elseif e == 0
@@ -894,7 +891,7 @@ end
 > such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
-  if !isdefining_polynomial_nice(parent(a))
+  if !isdefining_polynomial_nice(parent(a)) ||
     return valuation_naive(a, p)
   end
   @hassert :NfOrd 0 !iszero(a)
@@ -911,7 +908,6 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
     return valnumden + p.valuation(b, divexact(no, c^degree(K)))::Int
   end
   O = order(p)
-  P = p.gen_one
 
   # for generic ideals
   if p.splitting_type[2] == 0
@@ -923,6 +919,8 @@ function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
     end
     return valnumden + p.valuation(b)::Int
   end
+
+  P = p.gen_one
 
   if p.splitting_type[1]*p.splitting_type[2] == degree(O)
     p.valuation = function(s::nf_elem, no::fmpq = fmpq(0))
@@ -1017,6 +1015,9 @@ function valuation_naive(x::nf_elem, B::NfOrdIdl)
   @assert !isone(B)
   i = 0
   C = B
+  O = order(B)
+  d = denominator(x, O)
+  return valuation_naive(O(x*d), B) - valuation_naive(O(d), B)
   while x in C
     i += 1
     C *= B
