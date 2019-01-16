@@ -1082,7 +1082,7 @@ function +(a::NfAbsOrd, b::NfAbsOrd)
     mat = _hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
     c = view(mat, d + 1:2*d, 1:d)
     O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), false)
-    O.primesofmaximality = unique(vcat(a.primesofmaximality, b.primesofmaximality))
+    O.primesofmaximality = union(a.primesofmaximality, b.primesofmaximality)
     O.disc = gcd(discriminant(a), discriminant(b))
     if a.disc<0 || b.disc<0
       O.disc=-O.disc
