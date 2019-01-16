@@ -592,10 +592,15 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
 
     e = FacElem(g, rs)
     for (p,v) = S1[s]
-      e *= FacElem(Dict(X[p]=>v))
+      if haskey(e.fac, X[p])
+        e.fac[X[p]] += v
+      else
+        e.fac[X[p]] = v
+      end
     end
+    inv!(e)
 
-    push!(U, inv(e))  # I don't understand the inv
+    push!(U, e)  # I don't understand the inv
   end
   @vprint :ClassGroup 1 "reducing mod units\n"
   @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(O))
@@ -607,8 +612,8 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
  
   function exp(a::GrpAbFinGenElem)
     b = U[1]^a.coeff[1, 1]
-    for i=2:length(U)
-      b *= U[i]^a.coeff[1, i]
+    for i = 2:length(U)
+      mul!(b, b, U[i]^a.coeff[1, i])
     end
     return b
   end
@@ -730,5 +735,4 @@ function sunit_group(I::Array{NfOrdIdl, 1})
 
   return G, r
 end
-
 

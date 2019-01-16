@@ -381,6 +381,50 @@ function _ev(d::Dict{nf_elem, fmpz}, oe::nf_elem)
   return z
 end
 
+function _ev(d::Dict{fq_nmod, fmpz}, z::fq_nmod)
+  Fq = parent(z)
+  if length(d) == 0
+    return z
+  elseif length(d)==1
+    x = first(d)
+    return x[1]^Int(x[2])
+  end
+  b = empty(d)
+  for (k, v) in d
+    if iszero(v)
+      continue
+    end
+    if abs(v) < 10
+      if v >0 
+        kv = Fq()
+        ccall((:fq_nmod_pow, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, k, v, Fq)
+        mul!(z, z, kv)
+      else
+        kv = Fq()
+        ccall((:fq_nmod_inv, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), kv, k, Fq)
+        ccall((:fq_nmod_pow, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{fmpz}, Ref{FqNmodFiniteField}), kv, kv, -v, Fq)
+        mul!(z, z, kv)
+      end
+    else
+      r = isodd(v) ? 1 : 0
+      vv = div(v-r, 2)
+      if vv != 0
+        b[k] = vv
+      end
+      if r != 0
+        mul!(z, z, k)
+      end
+    end
+  end
+  if isempty(b)
+    return z
+  end
+  res = _ev(b, one(Fq))
+  mul!(res, res, res)
+  mul!(z, z, res)
+  return z
+end
+
 function _ev(d::Dict{T, fmpz}, oe::T) where T
   z = copy(oe)
   if length(d)==0
