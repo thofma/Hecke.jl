@@ -31,6 +31,7 @@ mutable struct MapRayClassGrp{T} <: Map{T, FacElemMon{Hecke.NfOrdIdlSet}, HeckeM
   
   tame_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #The multiplicative group, tame part
   wild_mult_grp::Dict{NfOrdIdl, GrpAbFinGenToNfAbsOrdMap} #Multiplicative group, wild part
+  disc_log_inf_plc::Dict{InfPlc, GrpAbFinGenElem} #The infinite places and the corresponding discrete logarithm.
   
   function MapRayClassGrp{T}() where {T}
     z = new{T}()
@@ -59,7 +60,7 @@ function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0
   if n_quo!=0
     return ray_class_group_quo(n_quo,m,inf_plc)
   else 
-    return ray_class_group_fac_elem(m,inf_plc)
+    return ray_class_group_fac_elem(m, inf_plc)
   end
 
 end
@@ -2005,7 +2006,34 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
   
 end
 
+function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
+    
+    S = DiagonalGroup([2 for i=1:length(p)])
 
+    function log(B::nf_elem)
+      emb=Hecke.signs(B, p)
+      ar = [0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      return S(ar)
+    end 
+    
+    function log(B::FacElem{nf_elem})
+      emb=Hecke.signs(B,p)
+      ar = [0 for i = 1:length(p)]
+      for i=1:length(p)
+        if emb[p[i]] == -1
+          ar[i] = 1
+        end
+      end
+      return S(ar)
+    end 
+  return S, log
+  
+end
 
 function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, units::Vector{NfOrdElem}, mC::MapClassGrp, princ_gens::Vector{NfOrdElem}, vect::Vector{fmpz})
 
@@ -2021,7 +2049,7 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   @vtime :RayFacElem 1 G, mG, tame, wild= _mult_grp_mod_n(Q, y1, y2, n)
   if mod(n,2)==0 && !isempty(inf_plc)
-    @vtime :RayFacElem 1 H, eH, lH = Hecke._infinite_primes(O, inf_plc, I)
+    @vtime :RayFacElem 1 H, lH = Hecke.log_infinite_primes(O, inf_plc)
     T = G
     G = Hecke.direct_product(G, H)[1]
   end
@@ -2129,6 +2157,13 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   
   X = AbelianGroup(R)
+  
+  disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
+  for i = 1:length(inf_plc)
+    eldi = zeros(FlintZZ, cols(R))
+    eldi[cols(R) - length(inf_plc) + i] = 1
+    disc_log_inf[inf_plc[i]] = X(eldi)
+  end
    
   #
   # Discrete logarithm
@@ -2231,7 +2266,152 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   mp.tame_mult_grp = tame
   mp.wild_mult_grp = wild
   mp.defining_modulus = (I, inf_plc)
+  mp.disc_log_inf_plc = disc_log_inf
   return X, mp
+  
+end
+#
+#  Find small primes that generate the ray class group (or a quotient)
+#  It needs a map GrpAbFinGen -> NfOrdIdlSet
+#
+function find_gens_for_action(mR::MapRayClassGrp)
+
+  O = order(codomain(mR))
+  R = domain(mR) 
+  m = mR.defining_modulus[1]
+  mm = minimum(m)
+  lp = NfOrdIdl[]
+  sR = GrpAbFinGenElem[]
+  ip = InfPlc[]
+  sR1 = GrpAbFinGenElem[]
+  q, mq = quo(R, sR, false)
+  
+  #
+  #  First, generators of the multiplicative group. 
+  #  If the class group is trivial, they are enough 
+  #
+  if isdefined(mR, :fact_mod) && !isempty(mR.fact_mod) 
+    if !isempty(mR.modulus_inf)
+      @vtime :NfOrd 1 totally_positive_generators(mR, true)
+    end
+    tmg = mR.tame_mult_grp
+    wld = mR.wild_mult_grp
+    for (p, v) in tmg
+      if isdefined(v, :disc_log)
+        if iszero(mq(v.disc_log))
+          continue
+        end
+        I = ideal(O, v.generators[1])
+        push!(sR, v.disc_log)
+        push!(lp, I)
+      else
+        I = ideal(O, v.generators[1])
+        f = mR\I
+        if iszero(mq(f))
+          continue
+        end
+        push!(sR, f)
+        push!(lp, I)
+      end
+      q, mq = quo(R, sR, false)
+      if order(q) == 1 
+        return lp, ip, sR, sR1
+      end
+    end
+
+    for (p,v) in wld
+      for i=1:length(v.generators)
+        I=ideal(O,v.generators[i])
+        f=mR\I
+        if iszero(mq(f))
+          continue
+        end
+        push!(sR, f)
+        push!(lp, I)
+        q, mq = quo(R, sR, false)
+        if order(q) == 1 
+          return lp, ip, sR, sR1
+        end
+      end
+    end
+  end
+  
+  
+  if !isempty(mR.modulus_inf)
+    dlog_dict = mR.disc_log_inf_plc
+    for (p, v) in dlog_dict
+      if iszero(mq(v))
+        continue
+      end
+      push!(ip, p)
+      push!(sR1, v)
+      q, mq = quo(R, vcat(sR, sR1), false)
+      if order(q) == 1 
+        return lp, ip, sR, sR1
+      end
+    end
+  end
+  
+  if isdefined(mR, :prime_ideal_cache)
+    S = mR.prime_ideal_cache
+  else
+    S = prime_ideals_up_to(O, max(1000,4*clog(discriminant(O),10)^2), degree_limit = 1, index_divisors = false)
+    mR.prime_ideal_cache = S
+  end
+
+  for P in S
+    if gcd(minimum(P), mm) != 1
+      continue
+    end
+    if haskey(mR.prime_ideal_preimage_cache, P)
+      f = mR.prime_ideal_preimage_cache[P]
+    else
+      f = mR\P
+      mR.prime_ideal_preimage_cache[P] = f
+    end
+    if iszero(mq(f))
+      continue
+    end
+    push!(sR, f)
+    push!(lp, P)
+    q, mq = quo(R, vcat(sR, sR1), false)
+    if order(q) == 1 
+      break
+    end
+  end
+  @assert order(q) == 1
+  return lp, ip, sR, sR1
+end
+
+function induce_action_new(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1})
+
+  R = mR.header.domain
+  O = mR.header.codomain.base_ring.order
+  K=nf(O)
+   
+  
+  G = Array{GrpAbFinGenMap,1}(undef, length(Aut))
+  #
+  #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
+  #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
+  #  class group map
+  #
+  Igens, IPgens, subs, IPsubs = find_gens_for_action(mR) 
+
+  for k=1:length(Aut)
+    images = Array{GrpAbFinGenElem,1}(undef, length(Igens)+length(IPgens))
+    for i=1:length(Igens) 
+      @vtime :RayFacElem 3 J = induce_image(Igens[i], Aut[k])
+      @vtime :RayFacElem 3 images[i] = mR\J
+    end
+    for i = 1:length(IPgens)
+      Pn = induce_image(IPgens[i], Aut[k])
+      images[i+length(Igens)] = mR.disc_log_inf_plc[Pn]
+    end
+    G[k] = hom(vcat(subs, IPsubs), images, check = true)
+    @hassert :RayFacElem 1 isbijective(G[k])
+  end
+  return G
   
 end
 

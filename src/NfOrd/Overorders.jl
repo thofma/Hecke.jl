@@ -366,9 +366,12 @@ function prime_ideals_over(O::NfOrd, p::fmpz)
   p_critical_primes = Vector{ideal_type(O)}()
   lp = prime_decomposition(M, p)
   for (P, e) in lp
-    push!(p_critical_primes, contract(P, O))
+    c = contract(P, O)
+    if !(c in p_critical_primes)
+      push!(p_critical_primes, c)
+    end
   end
-  return unique(p_critical_primes)
+  return p_critical_primes
 end
 
 function isbass(O::NfOrd, p::fmpz)

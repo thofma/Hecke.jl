@@ -465,7 +465,7 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     offset += r
   end
 
-  result = Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor}}()
+  result = Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}}()
   for i = 1:length(fields)
     push!(result, (fields[i], AbsAlgAssToNfAbsMor(A, fields[i], matrices2[i], matrices[i])))
   end

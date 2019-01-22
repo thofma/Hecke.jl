@@ -118,4 +118,60 @@
     @test BtoA(e + f) == BtoA(e) + BtoA(f)
     @test BtoA(e*f) == BtoA(e)*BtoA(f)
   end
+
+  # Extend to Fq again
+  C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
+  @test characteristic(base_ring(C)) == characteristic(Fq)
+  @test degree(base_ring(C)) == degree(Fq)
+  @test dim(C) == dim(A)
+
+  @test iszero(BtoC(zero(B)))
+  @test iszero(CtoB(zero(C)))
+  @test isone(BtoC(one(B)))
+  @test isone(CtoB(one(C)))
+
+  for i = 1:5
+    c = rand(B)
+    d = rand(B)
+    @test CtoB(BtoC(c)) == c
+    @test CtoB(BtoC(d)) == d
+    @test BtoC(c + d) == BtoC(c) + BtoC(d)
+    @test BtoC(c*d) == BtoC(c)*BtoC(d)
+
+    e = rand(C)
+    f = rand(C)
+    @test BtoC(CtoB(e)) == e
+    @test BtoC(CtoB(f)) == f
+    @test CtoB(e + f) == CtoB(e) + CtoB(f)
+    @test CtoB(e*f) == CtoB(e)*CtoB(f)
+  end
+end
+
+@testset "Matrix Algebra" begin
+  Fq, a = FiniteField(7, 2, "a")
+
+  A = AlgAss(MatrixAlgebra(Fq, 3))
+  B, AtoB = Hecke._as_matrix_algebra(A)
+  @test dim(B) == dim(A)
+
+  @test iszero(AtoB(zero(A)))
+  @test iszero(AtoB\(zero(B)))
+  @test isone(AtoB(one(A)))
+  @test isone(AtoB\(one(B)))
+
+  for i = 1:5
+    c = rand(A)
+    d = rand(A)
+    @test AtoB\(AtoB(c)) == c
+    @test AtoB\(AtoB(d)) == d
+    @test AtoB(c + d) == AtoB(c) + AtoB(d)
+    @test AtoB(c*d) == AtoB(c)*AtoB(d)
+
+    e = rand(B)
+    f = rand(B)
+    @test AtoB(AtoB\e) == e
+    @test AtoB(AtoB\f) == f
+    @test AtoB\(e + f) == (AtoB\e) + (AtoB\f)
+    @test AtoB\(e*f) == (AtoB\e)*(AtoB\f)
+  end
 end

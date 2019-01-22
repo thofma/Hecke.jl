@@ -72,11 +72,13 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
   return AlgAss{T}(R, mult_table, one)
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
+function AlgAss(R::Ring, mult_table::Array{T, 3}, compute_one::Bool = true) where {T}
   # checks
   A = AlgAss{T}(R)
   A.mult_table = mult_table
-  A.one = find_one(A)
+  if compute_one
+    A.one = find_one(A)
+  end
   return A
 end
 
@@ -370,7 +372,7 @@ function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRe
   return A, OtoA
 end
 
-function AlgAss(A::Generic.MatAlgebra)
+function AlgAss(A::Generic.MatAlgebra{T}) where { T <: FieldElem }
   n = A.n
   K = base_ring(A)
   n2 = n^2
@@ -435,7 +437,7 @@ function ==(A::AlgAss, B::AlgAss)
 end
 
 # Computes e*A if action is :left and A*e if action is :right.
-function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
+function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left, has_one::Bool = true) where {T}
   @assert parent(e) == A
   R = base_ring(A)
   isgenres = (typeof(R) <: Generic.ResRing)
@@ -491,7 +493,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     end
     eA = AlgAss(R, mult_table, v)
   else
-    eA = AlgAss(R, mult_table)
+    eA = AlgAss(R, mult_table, has_one)
   end
 
   # TODO: The following is wrong. The algebra eA may be commutative
@@ -935,9 +937,8 @@ end
 
 function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}} }
   K = base_ring(A)
-  isnf = ( K == FlintQQ )
   C, CtoA = center(A)
-  if isnf
+  if T === fmpq
     fields = as_number_fields(C)
     @assert length(fields) == 1
     L, CtoL = fields[1]
@@ -988,21 +989,13 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
 
   iMM = inv(MM)
 
-  if !isnf
-    R = PolynomialRing(K, "x", cached = false)[1]
-  end
-
   function _new_coeffs(x)
     y = zeros(L, m)
     xx = matrix(K, 1, dim(A), coeffs(x, false))
     Mx = xx*iMM
     for i = 1:m
       for j = 1:dim(C)
-        if isnf
-          y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
-        else
-          y[i] = addeq!(y[i], basisCinL[j]*L(R(Mx[1, (i - 1)*dim(C) + j])))
-        end
+        y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
       end
     end
     return y
@@ -1042,4 +1035,233 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
   end
 
   return B, AtoB, BtoA
+end
+
+################################################################################
+#
+#  Idempotents
+#
+################################################################################
+
+# See W. Eberly "Computations for Algebras and Group Representations" p. 126.
+function _find_non_trivial_idempotent(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+  if dim(A) == 1
+    error("Dimension of algebra is 1")
+  end
+  while true
+    a = rand(A)
+    if isone(a) || iszero(a)
+      continue
+    end
+    mina = minpoly(a)
+    if isirreducible(mina)
+      if degree(mina) == dim(A)
+        error("Algebra is a field")
+      end
+      continue
+    end
+    if issquarefree(mina)
+      e = _find_idempotent_via_squarefree_poly(A, a, mina)
+    else
+      e = _find_idempotent_via_non_squarefree_poly(A, a, mina)
+    end
+    if isone(e) || iszero(e)
+      continue
+    end
+    return e
+  end
+end
+
+function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+  fac = factor(mina)
+  if length(fac) == 1
+    return zero(A)
+  end
+  sf_part = prod(keys(fac.fac))
+  b = sf_part(a)
+  # This is not really an algebra, only a right sided ideal
+  bA, bAtoA = subalgebra(A, b, false, :left, false)
+
+  # Find an element e of bA such that e*x == x for all x in bA
+  M = zero_matrix(base_ring(A), dim(bA), 0)
+  for i = 1:dim(bA)
+    M = hcat(M, representation_matrix(bA[i], :right))
+  end
+
+  N = zero_matrix(base_ring(A), 0, 1)
+  for i = 1:dim(bA)
+    N = vcat(N, matrix(base_ring(A), dim(bA), 1, coeffs(bA[i])))
+  end
+  MN = hcat(transpose(M), N)
+  r = rref!(MN)
+  be = solve_ut(sub(MN, 1:r, 1:dim(bA)), sub(MN, 1:r, (dim(bA) + 1):(dim(bA) + 1)))
+  e = bAtoA(bA([ be[i, 1] for i = 1:dim(bA) ]))
+  return e
+end
+
+# A should be semi-simple
+# See W. Eberly "Computations for Algebras and Group Representations" p. 89.
+function _extraction_of_idempotents(A::AlgAss, only_one::Bool = false)
+  Z, ZtoA = center(A)
+  if dim(Z) == 1
+    error("Dimension of centre is 1")
+  end
+
+  a = ZtoA(rand(Z))
+  f = minpoly(a)
+  while isirreducible(f)
+    if degree(f) == dim(A)
+      error("Cannot find idempotents (algebra is a field)")
+    end
+    a = ZtoA(rand(Z))
+    f = minpoly(a)
+  end
+
+  fac = factor(f)
+  fi = [ k for k in keys(fac.fac) ]
+  l = length(fi)
+  R = parent(f)
+  if only_one
+    r = zeros(R, l)
+    r[1] = one(R)
+    g = crt(r, fi)
+    return g(a)
+  else
+    oneR = one(R)
+    zeroR = zero(R)
+    gi = Vector{elem_type(R)}(undef, l)
+    r = zeros(R, l)
+    for i = 1:l
+      r[i] = oneR
+      gi[i] = crt(r, fi)
+      r[i] = zeroR
+    end
+    return [ g(a) for g in gi ]
+  end
+end
+
+function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mina::Union{gfp_poly, gfp_fmpz_poly, fq_poly, fq_nmod_poly}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+  B = AlgAss(mina)
+  idemB = _extraction_of_idempotents(B, true)
+
+  e = dot(coeffs(idemB, false), [ a^k for k = 0:(degree(mina) - 1) ])
+  return e
+end
+
+function _primitive_idempotents(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
+  if dim(A) == 1
+    return [ one(A) ]
+  end
+
+  e = _find_non_trivial_idempotent(A)
+
+  idempotents = Vector{elem_type(A)}()
+
+  eA, m1 = subalgebra(A, e, true, :left)
+  eAe, m2 = subalgebra(eA, m1\e, true, :right)
+  if dim(eAe) == dim(A)
+    push!(idempotents, e)
+  else
+    idems = _primitive_idempotents(eAe)
+    append!(idempotents, [ m1(m2(idem)) for idem in idems ])
+  end
+
+  f = (1 - e)
+  fA, n1 = subalgebra(A, f, true, :left)
+  fAf, n2 = subalgebra(fA, n1\f, true, :right)
+
+  if dim(fAf) == dim(A)
+    push!(idempotents, f)
+  else
+    idems = _primitive_idempotents(fAf)
+    append!(idempotents, [ n1(n2(idem)) for idem in idems ])
+  end
+
+  return idempotents
+end
+
+################################################################################
+#
+#  Matrix Algebra
+#
+################################################################################
+
+# This computes a "matrix type" basis for A.
+# See W. Eberly "Computations for Algebras and Group Representations" p. 121.
+function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
+  k = length(idempotents)
+  # Compute a basis e_ij of A (1 <= i, j <= k) with
+  # e_11 + e_22 + ... + e_kk = 1 and e_rs*e_tu = \delta_st*e_ru.
+  new_basis = Vector{elem_type(A)}(undef, k^2) # saved row major: new_basis[(i - 1)*k + j] = e_ij
+  for i = 1:k
+    new_basis[(i - 1)*k + i] = idempotents[i]
+  end
+
+  a = idempotents[1]
+  for i = 2:k
+    b = idempotents[i]
+    e = a + b
+    eA, m1 = subalgebra(A, e, true, :left)
+    eAe, m2 = subalgebra(eA, m1\e, true, :right)
+
+    aa = m2\(m1\(a))
+    bb = m2\(m1\(b))
+
+    # We compute an element x of eAe which fulfils
+    # aa*x == x, bb*x == 0, x*aa == 0 and x*bb == x.
+    M1 = representation_matrix(aa - one(eAe), :left)
+    M2 = representation_matrix(bb, :left)
+    M3 = representation_matrix(aa, :right)
+    M4 = representation_matrix(bb - one(eAe), :right)
+
+    M = hcat(M1, M2, M3, M4)
+    xx = eAe(left_kernel(M)[1])
+    x = m1(m2(xx))
+
+    new_basis[i] = x # this is e_1i
+
+    # We compute an element y of eAe which fulfils
+    # aa*y == 0, bb*y == y, y*aa == y, y*bb == 0, y*xx == bb, xx*y == aa.
+    N1 = representation_matrix(aa, :left)
+    N2 = representation_matrix(bb - one(eAe), :left)
+    N3 = representation_matrix(aa - one(eAe), :right)
+    N4 = representation_matrix(bb, :right)
+    N5 = representation_matrix(xx, :right)
+    N6 = representation_matrix(xx, :left)
+    N = hcat(N1, N2, N3, N4, N5, N6)
+    NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
+    NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(bb)))
+    NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(aa)))
+    yy = _solve_unique(NN, transpose(N))
+    y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
+
+    new_basis[(i - 1)*k + 1] = y # this is e_i1
+  end
+
+  for i = 2:k
+    ik = (i - 1)*k
+    ei1 = new_basis[ik + 1]
+    for j = 2:k
+      new_basis[ik + j] = ei1*new_basis[j] # this is e_ij
+    end
+  end
+  return new_basis
+end
+
+# Assumes that A is central and isomorphic to a matrix algebra of base_ring(A)
+function _as_matrix_algebra(A::AlgAss{T}) where { T <: Union{gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod}, S <: AlgAssElem{T, AlgAss{T}} }
+  idempotents = _primitive_idempotents(A)
+  @assert length(idempotents)^2 == dim(A)
+  Fq = base_ring(A)
+
+  B = AlgAss(MatrixAlgebra(Fq, length(idempotents)))
+
+  matrix_basis = _matrix_basis(A, idempotents)
+
+  # matrix_basis is another basis for A. We build the matrix for the basis change.
+  M = zero_matrix(Fq, dim(A), dim(A))
+  for i = 1:dim(A)
+    elem_to_mat_row!(M, i, matrix_basis[i])
+  end
+  return B, hom(A, B, inv(M), M)
 end
