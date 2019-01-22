@@ -56,7 +56,6 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T)
   pp, e = Hecke.ppio(Int(size(F)-1), p)
   dl = Dict{elem_type(F), Int}()
   dl[F(1)] = 0
-#  #=
   lp = factor(p)
   while true
     x = rand(F)
@@ -72,7 +71,8 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T)
       break
     end
   end
-#  =#
+  #TODO: in the image of mF1, if the input is a FacElem, the exponents should be reduced by pp.
+  #This avoids some inverses.
   return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, x)^e, pp) % p for x = R])
 end
 

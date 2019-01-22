@@ -124,8 +124,8 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   q = one(Fq)
   t = mF.t
   s = mF.s
-  for (k,v) = a.fac
-    vv = Int(v)
+  for (k, v) = a.fac
+    vv = v
     if quo != 0
       vv = v %quo 
       if vv < 0
