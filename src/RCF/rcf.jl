@@ -295,15 +295,16 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
   ZK = maximal_order(c.Ka)
   #@hassert :ClassField 1 order(domain(cf)) == ZK
   Zk = order(m)
-  Id_Zk = Hecke.NfOrdIdlSet(Zk)
   Sp = Hecke.PrimesSet(100, -1, c.n, 1) #primes = 1 mod n, so totally split in cyclo
 
   @vtime :ClassField 2 lp, sG = find_gens(K, Sp, cp)
   G = K.AutG
   sR = Array{GrpAbFinGenElem, 1}(undef, length(lp))
-  for i=1:length(lp)
-    p = Id_Zk(intersect_nonindex(mp, lp[i]))
-    sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
+  @vtime :ClassField 3 for i=1:length(lp)
+    p = intersect_nonindex(mp, lp[i])
+    #Since the prime are totally split in the cyclotomic extension by our choice, we can ignore the valuation of the norm
+    #sR[i] = valuation(norm(lp[i]), norm(p))*CF.quotientmap(preimage(CF.rayclassgroupmap, p))
+    sR[i] = CF.quotientmap(preimage(CF.rayclassgroupmap, p))
   end
   @hassert :ClassField 1 order(quo(G, sG, false)[1]) == 1
        # if think if the quo(G, ..) == 1, then the other is automatic
@@ -349,7 +350,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   q, mq = quo(c, g, false)
   mc = compose(inv(mq), mc)
   
-  lP = vcat(lP, find_gens(inv(mc), PrimesSet(100, -1))[1])
+  @vtime :ClassField 3 lP = vcat(lP, find_gens(inv(mc), PrimesSet(100, -1))[1])
   
   @vprint :ClassField 2 "using $lP of length $(length(lP)) for S-units\n"
   if isempty(lP)
@@ -393,7 +394,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   C = cyclotomic_extension(k1, e)
   
   #We could use f, but we would have to factor it.
-  lP, KK = _s_unit_for_kummer(C, minimum(f))
+  @vtime :ClassField 3 lP, KK = _s_unit_for_kummer(C, minimum(f))
   CF.bigK = KK
   CF.sup = lP
   @vprint :ClassField 2 "building Artin map for the large Kummer extension\n"
@@ -417,7 +418,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   @assert i > 0
   n = lift(l)::fmpz_mat
   N = GrpAbFinGen([e for j=1:rows(n)])
-  s, ms = sub(N, GrpAbFinGenElem[sum([n[j, ind]*N[j] for j=1:rows(n)]) for ind=1:i], false)
+  s, ms = sub(N, GrpAbFinGenElem[N([n[j, ind] for j=1:rows(n)]) for ind=1:i], false)
   ms = Hecke.make_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 iscyclic(H)
@@ -429,7 +430,7 @@ function _rcf_find_kummer(CF::ClassField_pp)
   g = ms(H[1])
   @vprint :ClassField 2 "g = $g\n"
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = prod([KK.gen[i]^div(mod(g[i], e), c) for i=1:ngens(N)])
+  a = prod([KK.gen[i]^div(mod(g[i], e), c) for i=1:ngens(N) if !iszero(g[i])])
   #@vprint :ClassField 2 "generator $a\n"
   CF.a = a
   
@@ -566,23 +567,34 @@ function _extend_auto(K::Hecke.NfRel{nf_elem}, h::Hecke.NfToNfMor)
   #@assert iskummer_extension(K)
   k = base_ring(K)
   Zk = maximal_order(k)
-  zeta, ord = Hecke.torsion_units_gen_order(Zk)
-  @assert ord % degree(K) == 0
-  zeta = k(zeta)^div(ord, degree(K))
 
-  im_zeta = h(zeta)
-  r = 1
-  z = deepcopy(zeta)
-  while im_zeta != z
-    r += 1
-    mul!(z, z, zeta)
+  if degree(K) == 2
+    r = 1
+  else
+    zeta, ord = Hecke.torsion_units_gen_order(Zk)
+    @assert ord % degree(K) == 0
+    zeta = k(zeta)^div(ord, degree(K))
+    im_zeta = h(zeta)
+    r = 1
+    z = deepcopy(zeta)
+    while im_zeta != z
+      r += 1
+      mul!(z, z, zeta)
+    end
   end
-
+  
   a = -coeff(K.pol, 0)
-  a = h(a)//a^r
-  @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
-  @assert fl
-  return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
+  if r <= div(degree(K), 2)
+    a = h(a)//a^r
+    @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
+    @assert fl
+    return NfRelToNfRelMor(K, K, h, b*gen(K)^r)
+  else
+    a = h(a)*(a^(degree(K)-r))
+    @vtime :ClassField 3 fl, b = ispower(a, degree(K), with_roots_unity = true)
+    @assert fl
+    return NfRelToNfRelMor(K, K, h, b*gen(K)^(r-degree(K)))
+  end
 end
 
 
@@ -989,8 +1001,7 @@ end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int, primes::Array{NfOrdIdl, 1})
   lp = Dict((p, Int(valuation(a, p))) for p = primes)
-  return reduce_mod_powers(a, n, lp)
-  return b  
+  return reduce_mod_powers(a, n, lp)  
 end
 
 function reduce_mod_powers(a::FacElem{nf_elem, AnticNumberField}, n::Int)
