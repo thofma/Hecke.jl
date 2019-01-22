@@ -15,7 +15,7 @@ function single_env(c::ClassGrpCtx{T}, I::Hecke.SmallLLLRelationsCtx, rat::Float
       break
     end
     if n == nothing
-      @show "BadNorm"
+      #@show "BadNorm"
       bad_norm += 1
       if I.cnt > 100  && bad_norm / I.cnt > 0.1
         @vprint :ClassGroup 2 "norm too large, $(I.cnt) \n"

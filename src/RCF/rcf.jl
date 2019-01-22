@@ -786,7 +786,7 @@ is also mot permitted (and will produce a {{{BadPrime}}} error.
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
   return NfToFqMor_easy(f, K)
-
+  #=
   #O = domain(f) #used for the hassert and thus the testing
   z = Hecke.NfToFqNmodMor()
   z.header.domain = K
@@ -838,8 +838,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
     end
     return _ev(D, one(Fq))
   end
-  
-  #=
+
   s = Fq()
   function _image(x::FacElem{nf_elem, AnticNumberField})
     r = one(Fq)
@@ -866,7 +865,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
 #    @hassert :ClassField 3 r == f(O(evaluate(x)))
     return r
   end
-  =#
+
 
   function _preimage(x::fq_nmod)
     return elem_in_nf(preimage(f, x))
@@ -876,6 +875,7 @@ function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   z.header.preimage = _preimage
 
   return z
+  =#
 end
 
 #a stop-gap, mainly for non-monic polynomials

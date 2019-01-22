@@ -104,10 +104,6 @@ end
 #
 ###############################################################################
 
-# the Frobenius at p in K:
-#K is an extension of k, p a prime in k,
-#returns a vector in (Z/nZ)^r representing the Frob
-
 mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqMor_easy}
   header::MapHeader
   Fq::FqNmodFiniteField
@@ -129,7 +125,7 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   t = mF.t
   s = mF.s
   for (k,v) = a.fac
-    vv = v
+    vv = Int(v)
     if quo != 0
       vv = v %quo 
       if vv < 0
@@ -144,6 +140,10 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
       _nf_to_fq!(s, k, Fq, t)
       if iszero(s)
         throw(BadPrime(1))
+      end
+      if vv < 0
+        ccall((:fq_nmod_inv, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Ref{FqNmodFiniteField}), s, s, Fq)
+        vv = -vv
       end
       ccall((:fq_nmod_pow_ui, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
       mul!(q, q, s)
@@ -162,7 +162,9 @@ function image(mF::NfToFqMor_easy, a::nf_elem)
   return q
 end
 
-
+# the Frobenius at p in K:
+#K is an extension of k, p a prime in k,
+#returns a vector in (Z/nZ)^r representing the Frob
 function can_frobenius(p::NfOrdIdl, K::KummerExt)
   @assert norm(p) % K.n == 1
   if haskey(K.frob_cache, p)
@@ -181,8 +183,8 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
 
   F, mF = ResidueFieldSmall(Zk, p)::Tuple{FqNmodFiniteField,NfOrdToFqNmodMor}
   #_mF = extend_easy(mF, number_field(Zk))
-  _mF = NfToFqMor_easy(mF, number_field(Zk))
-  z_p = inv(image(_mF, K.zeta))
+  mF = NfToFqMor_easy(mF, number_field(Zk))
+  z_p = image(mF, K.zeta)^(K.n-1)
 
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
@@ -229,7 +231,8 @@ function can_frobenius1(p::NfOrdIdl, K::KummerExt)
   end
 
   F, mF = ResidueFieldSmall(Zk, p)
-  mF = extend_easy(mF, number_field(Zk))
+  mF = NfToFqMor_easy(mF, number_field(Zk))
+  #mF = extend_easy(mF, number_field(Zk))
   z_p = mF(K.zeta)^(K.n-1)
 
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be

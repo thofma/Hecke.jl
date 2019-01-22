@@ -852,8 +852,6 @@ function _hensel(f::Generic.Poly{nf_elem}, p::Int, k::Int; max_roots::Int = degr
 end
 
 
-
-
 function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
   @assert m>0
   if m == 1
@@ -1707,11 +1705,11 @@ end
 
 #As before, for polynomial x^m - a
 function _one_root_hensel(a::nf_elem, m::Int)
+
   # f must be squarefree
   # I should check that
   K = parent(a)
   n = degree(K)
-
   # First we find a prime ideal such that f is squarefree modulo P 
   # (The discriminant of f has only finitely many divisors).
 
@@ -1835,7 +1833,9 @@ function _hensel_one_root(a::nf_elem, m::Int, p::Int, k::Int)
   pr = reverse(pr)
 
   #lets start:
+
   for i = 2:length(pr)
+
     pp = fmpz(p)^pr[i]
     Q = ResidueRing(FlintZZ, pp, cached=false)
     Qt, t = PolynomialRing(Q, "t", cached = false)

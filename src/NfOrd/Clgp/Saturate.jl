@@ -49,10 +49,11 @@ function Hecke.matrix(R::Hecke.Ring, M::MatElem)
 end
 
 function mod_p(R, Q::NfOrdIdl, p::Int, T)
-  F, mF = Hecke.ResidueFieldSmall(order(Q), Q)
-  mF = Hecke.extend_easy(mF, nf(order(Q)))
+  Zk = order(Q)
+  F, mF = Hecke.ResidueFieldSmall(Zk, Q)
+  mF1 = Hecke.NfToFqMor_easy(mF, number_field(Zk))
   @assert size(F) % p == 1
-  pp,e = Hecke.ppio(Int(size(F)-1), p)
+  pp, e = Hecke.ppio(Int(size(F)-1), p)
   dl = Dict{elem_type(F), Int}()
   dl[F(1)] = 0
 #  #=
@@ -72,7 +73,7 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T)
     end
   end
 #  =#
-  return matrix(T, 1, length(R), Int[dlog(dl, mF(x)^e, pp) % p for x = R])
+  return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, x)^e, pp) % p for x = R])
 end
 
 Hecke.lift(A::fmpz_mat) = A
