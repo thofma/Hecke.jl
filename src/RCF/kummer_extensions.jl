@@ -105,6 +105,62 @@ end
 # the Frobenius at p in K:
 #K is an extension of k, p a prime in k,
 #returns a vector in (Z/nZ)^r representing the Frob
+
+mutable struct NfToFqMor_easy <: Map{AnticNumberField, FqNmodFiniteField, HeckeMap, NfToFqMor_easy}
+  header::MapHeader
+  Fq::FqNmodFiniteField
+  s::fq_nmod
+  t::gfp_poly
+  function NfToFqMor_easy(a::Map, k::AnticNumberField)
+    r = new()
+    r.Fq = codomain(a)
+    r.header = MapHeader(k, r.Fq)
+    r.s = r.Fq()
+    r.t = PolynomialRing(GF(UInt(characteristic(r.Fq)), cached=false), cached=false)[1]()
+    return r
+  end
+end
+
+function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::Int = 0)
+  Fq = mF.Fq
+  q = one(Fq)
+  t = mF.t
+  s = mF.s
+  for (k,v) = a.fac
+    vv = v
+    if quo != 0
+      vv = v %quo 
+      if vv < 0
+        vv += quo
+      end
+    end
+    @assert vv < order(Fq)  #please complain if this is triggered
+    if !iszero(vv)
+      if denominator(k) % characteristic(Fq) == 0
+        throw(BadPrime(characteristic(Fq)))
+      end
+      _nf_to_fq!(s, k, Fq, t)
+      if iszero(s)
+        throw(BadPrime(1))
+      end
+      ccall((:fq_nmod_pow_ui, :libflint), Nothing, (Ref{fq_nmod}, Ref{fq_nmod}, Int, Ref{FqNmodFiniteField}), s, s, vv, Fq)
+      mul!(q, q, s)
+    end
+  end
+  return q
+end
+
+function image(mF::NfToFqMor_easy, a::nf_elem)
+  Fq = mF.Fq
+  q = Fq()
+  if denominator(a) % characteristic(Fq) == 0
+    throw(BadPrime(characteristic(Fq)))
+  end
+  _nf_to_fq!(q, a, Fq, mF.t)
+  return q
+end
+
+
 function can_frobenius(p::NfOrdIdl, K::KummerExt)
   @assert norm(p) % K.n == 1
   if haskey(K.frob_cache, p)
@@ -121,9 +177,10 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
     error("Oops")
   end
 
-  F, mF = ResidueFieldSmall(Zk, p)
-  mF = extend_easy(mF, number_field(Zk))
-  z_p = inv(mF(Zk(K.zeta)))
+  F, mF = ResidueFieldSmall(Zk, p)::Tuple{FqNmodFiniteField,NfOrdToFqNmodMor}
+  #_mF = extend_easy(mF, number_field(Zk))
+  _mF = NfToFqMor_easy(mF, number_field(Zk))
+  z_p = inv(image(_mF, K.zeta))
 
   # K = k(sqrt[n_i](gen[i]) for i=1:length(gen)), an automorphism will be
   # K[i] -> zeta^divexact(n, n_i) * ? K[i]
@@ -134,7 +191,9 @@ function can_frobenius(p::NfOrdIdl, K::KummerExt)
   for j=1:length(K.gen)
     ord_genj = Int(order(K.AutG[j]))
     ex = div(norm(p)-1, ord_genj)
-    mu = mF(K.gen[j])^ex  # can throw bad prime!
+    mu = image(_mF, K.gen[j], K.n)^ex
+    #mu = mF(K.gen[j])^ex  # can throw bad prime!
+    #@assert z1 == mu
     i = 0
     z_pj = z_p^divexact(K.n, ord_genj)
     while !isone(mu)
