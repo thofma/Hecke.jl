@@ -128,9 +128,9 @@ end
       gg = monic_randpoly(Ky, 2, 2, 10)
     end
     push!(g, gg)
-    gg = monic_randpoly(Ky, 2, 2, 10)
+    gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
     while gg == g[1] || !isirreducible(gg)
-      gg = monic_randpoly(Ky, 2, 2, 10)
+      gg = monic_randpoly(Ky, 3, 3, 10) # Must be coprime to 2
     end
     push!(g, gg)
     L, b = number_field(g, "b")

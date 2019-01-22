@@ -384,6 +384,11 @@ function (A::AlgGrp)(a::AlgGrpElem)
   return a
 end
 
+# For polynomial substitution
+function (A::AlgAss)(a::Int)
+  return a*one(A)
+end
+
 ################################################################################
 #
 #  String I/O

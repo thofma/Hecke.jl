@@ -110,6 +110,7 @@ function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
+  
   @vtime :ClassField 1 _rcf_find_kummer(CFpp)
   @vprint :ClassField 1 "reducing the generator...\n"
   @vtime :ClassField 1 _rcf_reduce(CFpp)
@@ -148,7 +149,7 @@ function find_gens(mR::Map, S::PrimesSet, cp::fmpz=fmpz(1))
         if !isa(e, BadPrime)
           rethrow(e)
         end
-        continue
+        break # try new prime number
       end
       if iszero(mq(f))
         continue
@@ -652,14 +653,14 @@ function _rcf_descent(CF::ClassField_pp)
       F, mF = ResidueFieldSmall(ZK, P)
       Ft, t = PolynomialRing(F, cached=false)
       mFp = extend_easy(mF, C.Ka)
-      ap = mFp(CF.a)
+      ap = image(mFp, CF.a)
       pol = Ft()
       setcoeff!(pol, 0, -ap)
       setcoeff!(pol, n, one(F))
       Ap = ResidueRing(Ft, pol, cached = false)
       xpe = zero(Ft)
       for i = 0:n-1
-        setcoeff!(xpe, i, mFp(coeff(pe, i)))
+        setcoeff!(xpe, i, image(mFp, coeff(pe, i)))
       end
       imF = Ap(xpe)^norm(p)
       res = GrpAbFinGenElem[]
@@ -667,7 +668,7 @@ function _rcf_descent(CF::ClassField_pp)
         xp = zero(Ft)
         @assert coeff(v, n) == 0
         for i = 0:n-1
-          setcoeff!(xp, i, mFp(coeff(v, i)))
+          setcoeff!(xp, i, image(mFp, coeff(v, i)))
         end
         kp = Ap(xp)
         if kp == imF
@@ -769,17 +770,22 @@ end
 
 
 @doc Markdown.doc"""
-   extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
-> For a residue field map from a prime ideal, extend the domain of the map
-> to the entire field.
-> Requires the prime ideal to be coprime to the index, unramified and
-> over a small integer.
-> Will throw a {{{BadPrime}}} exception if applied to an element in the 
-> field with a $p$ in the denominator or with valuation $>0$.
-> Also applies to {{{FacElem{nf_elem}}}}.
+    extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField) -> NfToFqNmodMor
+For a residue field map from a prime ideal, extend the domain of the map
+to the entire field.
+Requires the prime ideal to be coprime to the index, unramified and
+over a small integer. The resulting map can very efficiently be
+evaluated using {{{image(map, elem}}}.
+The resulting map can be applied to
+  * {{{nf_elem}}}
+  * {{{FacElem{nf_elem}}}}
+Will throw a {{{BadPrime}}} exception if applied to an element in the 
+field with a $p$ in the denominator. In the case of {{{FacElem}}}, zero
+is also mot permitted (and will produce a {{{BadPrime}}} error.
 """
 function extend_easy(f::Hecke.NfOrdToFqNmodMor, K::AnticNumberField)
   nf(domain(f)) != K && error("Number field is not the number field of the order")
+  return NfToFqMor_easy(f, K)
 
   #O = domain(f) #used for the hassert and thus the testing
   z = Hecke.NfToFqNmodMor()

@@ -175,3 +175,17 @@ function _nf_to_fq!(a::fq_nmod, b::nf_elem, K::FqNmodFiniteField, a_tmp::gfp_pol
                                      a, a_tmp, K)
   _reduce(a)
 end
+
+function (A::FqNmodFiniteField)(x::gfp_elem)
+  @assert characteristic(A) == characteristic(parent(x))
+  return A(lift(x))
+end
+
+function (A::FqFiniteField)(x::Generic.ResF{fmpz})
+  @assert characteristic(A) == characteristic(parent(x))
+  return A(lift(x))
+end
+
+Nemo.promote_rule(::Type{fq_nmod}, ::Type{gfp_elem}) = fq_nmod
+
+Nemo.promote_rule(::Type{fq}, ::Type{Generic.ResF{fmpz}}) = fq
