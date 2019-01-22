@@ -230,7 +230,10 @@ function symb(a::StackFrame)
   end
 end
 
-function graph(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = true, skipMacro::Bool=true)
+function graph(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = true, skipMacro::Bool=true; prune_by::Symbol = :nothing)
+  if prune != :nothing
+    bt = prune(prune_by, bt, lidict)
+  end
   g = Graph{Symbol}()
   v = g.v
   e = g.e
@@ -267,7 +270,7 @@ function graph(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = true, ski
   return g
 end
 
-graph(skipC::Bool = true, skipMacro::Bool=true) = graph(Profile.retrieve()..., skipC, skipMacro)
+graph(skipC::Bool = true, skipMacro::Bool=true; prune_by::Symbol = :nothing) = graph(Profile.retrieve()..., skipC, skipMacro, prune_by = prune_by)
 
 function parents(g::Graph{T}, c::T)  where {T}
   return [a for (a,b) = keys(g.e) if b==c]
