@@ -596,7 +596,7 @@ function radical(A::AlgAss{fq_nmod})
   #Hard to believe, but this is linear!!!!
   for i=1:l
     M=zero_matrix(F, dim(A), rows(C))
-    for t=1:rows(I)
+    for t=1:rows(C)
       elm=elem_from_mat_row(A,C,t)
       for s=1:dim(A)
         a=elm*A[s]
