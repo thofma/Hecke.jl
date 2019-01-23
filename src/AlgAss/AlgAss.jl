@@ -607,8 +607,7 @@ function radical(A::AlgAss{fq_nmod})
     end
     k,B=nullspace(M)
     if k==0
-      # This is clearly wrong
-      return AlgAssOrdIdl(O,MatrixSpace(FlintZZ, dim(A), dim(A), false)(p))
+      return AlgAssElem[]
     end
     C=transpose(B)*C
   end
