@@ -456,9 +456,9 @@ function tr(x::AbsAlgAssElem{T}) where T
   _assure_trace_basis(A)
   tr=zero(base_ring(A))
   for i=1:dim(A)
-    add!(tr, tr, x.coeffs[i]*A.trace_basis_elem[i]) 
+    tr = add!(tr, tr, x.coeffs[i]*A.trace_basis_elem[i])
   end
-  return tr 
+  return tr
 end
 
 #function _tr(x::AlgAssElem{T}) where {T}
