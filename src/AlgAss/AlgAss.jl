@@ -596,7 +596,7 @@ function radical(A::AlgAss{fq_nmod})
   #Hard to believe, but this is linear!!!!
   for i=1:l
     M=zero_matrix(F, dim(A), rows(C))
-    for t=1:rows(I)
+    for t=1:rows(C)
       elm=elem_from_mat_row(A,C,t)
       for s=1:dim(A)
         a=elm*A[s]
@@ -988,16 +988,19 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
 
   iMM = inv(MM)
 
-  function _new_coeffs(x)
-    y = zeros(L, m)
-    xx = matrix(K, 1, dim(A), coeffs(x, false))
-    Mx = xx*iMM
-    for i = 1:m
-      for j = 1:dim(C)
-        y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
+  local _new_coeffs
+  let L = L, K = K, iMM = iMM, basisCinL = basisCinL, C = C, m = m
+    _new_coeffs = x -> begin
+      y = zeros(L, m)
+      xx = matrix(K, 1, dim(A), coeffs(x, false))
+      Mx = xx*iMM
+      for i = 1:m
+        for j = 1:dim(C)
+          y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
+        end
       end
+      return y
     end
-    return y
   end
 
   mult_table = zeros(L, m, m, m)
@@ -1016,21 +1019,27 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
   B = AlgAss(L, mult_table, _new_coeffs(one(A)))
   B.iscommutative = A.iscommutative
 
-  function AtoB(x)
-    @assert parent(x) == A
-    return B(_new_coeffs(x))
+  local AtoB
+  let B = B, _new_coeffs = _new_coeffs
+    AtoB = x -> begin
+      @assert parent(x) == A
+      return B(_new_coeffs(x))
+    end
   end
 
-  function BtoA(x)
-    @assert parent(x) == B
-    y = zeros(K, dim(A))
-    xx = A()
-    for i = 1:dim(B)
-      t = CtoA(CtoL\coeffs(x, false)[i])
-      xx = add!(xx, xx, t*A[AoverC[i]])
+  local BtoA
+  let K = K, MM = MM, CtoA = CtoA, CtoL = CtoL, AoverC = AoverC, B = B, m = m
+    BtoA = x -> begin
+      @assert parent(x) == B
+      y = zeros(K, dim(A))
+      xx = A()
+      for i = 1:dim(B)
+        t = CtoA(CtoL\coeffs(x, false)[i])
+        xx = add!(xx, xx, t*A[AoverC[i]])
+      end
+      Mx = matrix(K, 1, dim(A), coeffs(xx, false))*MM
+      return A([ Mx[1, i] for i = 1:dim(A) ])
     end
-    Mx = matrix(K, 1, dim(A), coeffs(xx, false))*MM
-    return A([ Mx[1, i] for i = 1:dim(A) ])
   end
 
   return B, AtoB, BtoA
