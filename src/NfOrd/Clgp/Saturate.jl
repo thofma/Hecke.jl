@@ -73,7 +73,7 @@ function mod_p(R, Q::NfOrdIdl, p::Int, T)
   end
   #TODO: in the image of mF1, if the input is a FacElem, the exponents should be reduced by pp.
   #This avoids some inverses.
-  return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, x)^e, pp) % p for x = R])
+  return matrix(T, 1, length(R), Int[dlog(dl, image(mF1, x, pp)^e, pp) % p for x = R])
 end
 
 Hecke.lift(A::fmpz_mat) = A
