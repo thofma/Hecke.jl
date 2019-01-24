@@ -92,7 +92,7 @@ function rel_auto_intersect(A::ClassField_pp)
   M = sparse_matrix(base_ring(A.K))
   b = A.K(1)
   push!(M, SRow(b))
-  for i=2:degree(A)
+  for i = 2:degree(A)
     b *= A.pe
     push!(M, SRow(b))
   end
@@ -105,7 +105,7 @@ function rel_auto_intersect(A::ClassField_pp)
     #Construct the automorphism
     gener = mG(G[j])
     elem = A.pe
-    for i = 1:ngens(G)
+    for i = 1:cols(A.AutR)
       if !iszero(gener[i])
         for s = 1:Int(gener[i])
           elem = A.AutG[i](elem)
