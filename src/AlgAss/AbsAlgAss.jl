@@ -409,7 +409,7 @@ end
 
 function as_number_fields(A::AbsAlgAss{fmpq})
   if isdefined(A, :maps_to_numberfields)
-    return A.maps_to_numberfields
+    return A.maps_to_numberfields::Vector{Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}}
   end
 
   d = dim(A)

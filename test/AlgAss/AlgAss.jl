@@ -1,3 +1,49 @@
+function test_alg_morphism_char_0(A, B, AtoB, BtoA)
+  @test iszero(AtoB(zero(A)))
+  @test iszero(BtoA(zero(B)))
+  @test isone(AtoB(one(A)))
+  @test isone(BtoA(one(B)))
+
+  for i = 1:5
+    c = rand(A, -10:10)
+    d = rand(A, -10:10)
+    @test BtoA(AtoB(c)) == c
+    @test BtoA(AtoB(d)) == d
+    @test AtoB(c + d) == AtoB(c) + AtoB(d)
+    @test AtoB(c*d) == AtoB(c)*AtoB(d)
+
+    e = rand(B, -10:10)
+    f = rand(B, -10:10)
+    @test AtoB(BtoA(e)) == e
+    @test AtoB(BtoA(f)) == f
+    @test BtoA(e + f) == BtoA(e) + BtoA(f)
+    @test BtoA(e*f) == BtoA(e)*BtoA(f)
+  end
+end
+
+function test_alg_morphism_char_p(A, B, AtoB, BtoA)
+  @test iszero(AtoB(zero(A)))
+  @test iszero(BtoA(zero(B)))
+  @test isone(AtoB(one(A)))
+  @test isone(BtoA(one(B)))
+
+  for i = 1:5
+    c = rand(A)
+    d = rand(A)
+    @test BtoA(AtoB(c)) == c
+    @test BtoA(AtoB(d)) == d
+    @test AtoB(c + d) == AtoB(c) + AtoB(d)
+    @test AtoB(c*d) == AtoB(c)*AtoB(d)
+
+    e = rand(B)
+    f = rand(B)
+    @test AtoB(BtoA(e)) == e
+    @test AtoB(BtoA(f)) == f
+    @test BtoA(e + f) == BtoA(e) + BtoA(f)
+    @test BtoA(e*f) == BtoA(e)*BtoA(f)
+  end
+end
+
 @testset "Change of ring" begin
 
   # Restrict from number field to Q
@@ -10,52 +56,14 @@
   @test base_ring(B) == FlintQQ
   @test dim(B) == dim(A)*degree(K)
 
-  @test iszero(AtoB(zero(A)))
-  @test iszero(BtoA(zero(B)))
-  @test isone(AtoB(one(A)))
-  @test isone(BtoA(one(B)))
-
-  for i = 1:5
-    c = rand(A, -10:10)
-    d = rand(A, -10:10)
-    @test BtoA(AtoB(c)) == c
-    @test BtoA(AtoB(d)) == d
-    @test AtoB(c + d) == AtoB(c) + AtoB(d)
-    @test AtoB(c*d) == AtoB(c)*AtoB(d)
-
-    e = rand(B, -10:10)
-    f = rand(B, -10:10)
-    @test AtoB(BtoA(e)) == e
-    @test AtoB(BtoA(f)) == f
-    @test BtoA(e + f) == BtoA(e) + BtoA(f)
-    @test BtoA(e*f) == BtoA(e)*BtoA(f)
-  end
+  test_alg_morphism_char_0(A, B, AtoB, BtoA)
 
   # Extend to K again
   C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
   @test isisomorphic(K, base_ring(C))[1]
   @test dim(C) == dim(A)
 
-  @test iszero(BtoC(zero(B)))
-  @test iszero(CtoB(zero(C)))
-  @test isone(BtoC(one(B)))
-  @test isone(CtoB(one(C)))
-
-  for i = 1:5
-    c = rand(B, -10:10)
-    d = rand(B, -10:10)
-    @test CtoB(BtoC(c)) == c
-    @test CtoB(BtoC(d)) == d
-    @test BtoC(c + d) == BtoC(c) + BtoC(d)
-    @test BtoC(c*d) == BtoC(c)*BtoC(d)
-
-    e = rand(C, -10:10)
-    f = rand(C, -10:10)
-    @test BtoC(CtoB(e)) == e
-    @test BtoC(CtoB(f)) == f
-    @test CtoB(e + f) == CtoB(e) + CtoB(f)
-    @test CtoB(e*f) == CtoB(e)*CtoB(f)
-  end
+  test_alg_morphism_char_0(B, C, BtoC, CtoB)
 
   # Restrict from number field to number field
   g = x^9 - 15x^6 - 87x^3 - 125
@@ -68,26 +76,7 @@
   @test base_ring(B) == K
   @test dim(B) == dim(A)*div(degree(L), degree(K))
 
-  @test iszero(AtoB(zero(A)))
-  @test iszero(BtoA(zero(B)))
-  @test isone(AtoB(one(A)))
-  @test isone(BtoA(one(B)))
-
-  for i = 1:5
-    c = rand(A, -10:10)
-    d = rand(A, -10:10)
-    @test BtoA(AtoB(c)) == c
-    @test BtoA(AtoB(d)) == d
-    @test AtoB(c + d) == AtoB(c) + AtoB(d)
-    @test AtoB(c*d) == AtoB(c)*AtoB(d)
-
-    e = rand(B, -10:10)
-    f = rand(B, -10:10)
-    @test AtoB(BtoA(e)) == e
-    @test AtoB(BtoA(f)) == f
-    @test BtoA(e + f) == BtoA(e) + BtoA(f)
-    @test BtoA(e*f) == BtoA(e)*BtoA(f)
-  end
+  test_alg_morphism_char_0(A, B, AtoB, BtoA)
 
   # Restrict from F_q to F_p
   Fp = GF(7)
@@ -98,26 +87,7 @@
   @test base_ring(B) == Fp
   @test dim(B) == dim(A)*degree(K)
 
-  @test iszero(AtoB(zero(A)))
-  @test iszero(BtoA(zero(B)))
-  @test isone(AtoB(one(A)))
-  @test isone(BtoA(one(B)))
-
-  for i = 1:5
-    c = rand(A)
-    d = rand(A)
-    @test BtoA(AtoB(c)) == c
-    @test BtoA(AtoB(d)) == d
-    @test AtoB(c + d) == AtoB(c) + AtoB(d)
-    @test AtoB(c*d) == AtoB(c)*AtoB(d)
-
-    e = rand(B)
-    f = rand(B)
-    @test AtoB(BtoA(e)) == e
-    @test AtoB(BtoA(f)) == f
-    @test BtoA(e + f) == BtoA(e) + BtoA(f)
-    @test BtoA(e*f) == BtoA(e)*BtoA(f)
-  end
+  test_alg_morphism_char_p(A, B, AtoB, BtoA)
 
   # Extend to Fq again
   C, BtoC, CtoB = Hecke._as_algebra_over_center(B)
@@ -125,53 +95,112 @@
   @test degree(base_ring(C)) == degree(Fq)
   @test dim(C) == dim(A)
 
-  @test iszero(BtoC(zero(B)))
-  @test iszero(CtoB(zero(C)))
-  @test isone(BtoC(one(B)))
-  @test isone(CtoB(one(C)))
+  test_alg_morphism_char_p(B, C, BtoC, CtoB)
+end
 
-  for i = 1:5
-    c = rand(B)
-    d = rand(B)
-    @test CtoB(BtoC(c)) == c
-    @test CtoB(BtoC(d)) == d
-    @test BtoC(c + d) == BtoC(c) + BtoC(d)
-    @test BtoC(c*d) == BtoC(c)*BtoC(d)
+# n = dim(A)^2 = dim(B)^2
+function test_mat_alg_morphism(AtoB::Hecke.AbsAlgAssMor, n::Int)
+  A = domain(AtoB)
+  B = codomain(AtoB)
 
-    e = rand(C)
-    f = rand(C)
-    @test BtoC(CtoB(e)) == e
-    @test BtoC(CtoB(f)) == f
-    @test CtoB(e + f) == CtoB(e) + CtoB(f)
-    @test CtoB(e*f) == CtoB(e)*CtoB(f)
+  test_alg_morphism_char_p(A, B, AtoB, inv(AtoB))
+
+  sum_of_diag = AtoB\B[1]
+  for i = 2:n
+    sum_of_diag += AtoB\B[(i - 1)*n + i]
+  end
+  @test isone(sum_of_diag)
+
+  # B[(i - 1)*n + j]*B[(k - 1)*n + l] == B[(i - 1)*n + l], if j == k, and 0, otherwise
+  for i = 1:n
+    iN = (i - 1)*n
+    for j = 1:n
+      ij = iN + j
+      for k = 1:n
+        kn = (k - 1)*n
+        for l = 1:n
+          if j == k
+            @test AtoB\(B[ij]*B[kn + l]) == AtoB\B[iN + l]
+          else
+            @test iszero(AtoB\(B[ij]*B[kn + l]))
+          end
+        end
+      end
+    end
   end
 end
 
 @testset "Matrix Algebra" begin
+  Fp = GF(7)
   Fq, a = FiniteField(7, 2, "a")
 
   A = AlgAss(MatrixAlgebra(Fq, 3))
   B, AtoB = Hecke._as_matrix_algebra(A)
   @test dim(B) == dim(A)
 
-  @test iszero(AtoB(zero(A)))
-  @test iszero(AtoB\(zero(B)))
-  @test isone(AtoB(one(A)))
-  @test isone(AtoB\(one(B)))
+  test_mat_alg_morphism(AtoB, 3)
 
-  for i = 1:5
-    c = rand(A)
-    d = rand(A)
-    @test AtoB\(AtoB(c)) == c
-    @test AtoB\(AtoB(d)) == d
-    @test AtoB(c + d) == AtoB(c) + AtoB(d)
-    @test AtoB(c*d) == AtoB(c)*AtoB(d)
+  G = PermutationGroup(4)
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  Adec = Hecke.decompose(A)
 
-    e = rand(B)
-    f = rand(B)
-    @test AtoB(AtoB\e) == e
-    @test AtoB(AtoB\f) == f
-    @test AtoB\(e + f) == (AtoB\e) + (AtoB\f)
-    @test AtoB\(e*f) == (AtoB\e)*(AtoB\f)
+  i = 2
+  B = Adec[1][1]
+  while dim(B) != 9
+    B = Adec[i][1]
+    i += 1
   end
+
+  C, BtoC = Hecke._as_matrix_algebra(B)
+
+  test_mat_alg_morphism(BtoC, 3)
+
+  i = 2
+  B = Adec[1][1]
+  while dim(B) != 4
+    B = Adec[i][1]
+    i += 1
+  end
+
+  C, BtoC = Hecke._as_matrix_algebra(B)
+
+  test_mat_alg_morphism(BtoC, 2)
+end
+
+@testset "Radical" begin
+  G = PermutationGroup(4)
+
+  Fp = GF(2)
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  Fp = GF(fmpz(2))
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  Fq, a = FiniteField(2, 2, "a")
+  A = AlgAss(AlgGrp(Fq, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  Fq, a = FiniteField(fmpz(2), 2, "a")
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  G = PermutationGroup(3)
+
+  Fp = GF(13)
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 0
+
+  Fp = GF(fmpz(13))
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 0
+
+  Fq, a = FiniteField(13, 2, "a")
+  A = AlgAss(AlgGrp(Fq, G))[1]
+  @test length(Hecke.radical(A)) == 0
+
+  Fq, a = FiniteField(fmpz(13), 2, "a")
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 0
 end

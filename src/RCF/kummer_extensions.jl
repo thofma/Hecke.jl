@@ -152,7 +152,7 @@ function image(mF::NfToFqMor_easy, a::FacElem{nf_elem, AnticNumberField}, quo::I
   return q
 end
 
-function image(mF::NfToFqMor_easy, a::nf_elem)
+function image(mF::NfToFqMor_easy, a::nf_elem, n_quo::Int = 0)
   Fq = mF.Fq
   q = Fq()
   if denominator(a) % characteristic(Fq) == 0

@@ -1829,9 +1829,9 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
       return
     end
 
-    if cnt > 1000
-      println("Having a hard time find weak generators for $A")
-    end
+    #if cnt > 1000
+    #  println("Having a hard time find weak generators for $A")
+    #end
 
     rand!(B, r)
 
