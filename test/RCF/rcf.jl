@@ -22,6 +22,14 @@
   @test doit(1:100) == 16
   @test doit(10^18:10^18+100) == 18
   @test doit(10^18:10^18+1000, 11) == 2
+  
+  
+  r, mr = Hecke.ray_class_groupQQ(Z,  32, true, 8);
+  q, mq = quo(r, [r[1]])
+  C = ray_class_field(mr, mq)
+  KC = number_field(C)
+  auts = Hecke.rel_auto(C)
+  @test length(closure(auts, *)) == 8 
 
   k, a = wildanger_field(3, 13)
   zk = maximal_order(k)
