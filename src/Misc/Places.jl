@@ -249,3 +249,38 @@ function istotally_positive(a::NfOrdElem, args...)
   return istotally_positive(a.elem_in_nf, args...)
 end
 
+################################################################################
+#
+#  Action of a morphism on a infinite place
+#
+################################################################################
+
+#The action of f on P is defined as f(P) = P\circ f^{-1} and not P\circ f
+#In this way, (f\circ g)(P)= f(g(P)), otherwise it would fail.
+
+@doc Markdown.doc"""
+    induce_image(P::InfPlc, m::NfToNfMor) -> InfPlc
+> Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
+> this is unique.
+"""
+function induce_image(P::InfPlc, m::NfToNfMor)
+  k = number_field(P)
+  @assert k == domain(m)
+  Qx = parent(k.pol)
+  if isdefined(m, :prim_preimg)
+    h = Qx(m.prim_preimg)
+  else
+    # I need to invert the map.
+    inv_img = _compute_preimg(m)
+    h = Qx(inv_img)
+  end
+  im = h(P.r)
+  lp = infinite_places(codomain(m))
+  return lp[findfirst(x -> overlaps(lp[x].r, im), 1:length(lp))]
+end
+
+function number_field(P::InfPlc)
+  return P.K
+end
+
+

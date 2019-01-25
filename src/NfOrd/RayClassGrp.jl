@@ -1837,8 +1837,10 @@ function induce_action(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Heck
   for k=1:length(Aut)
     images = Array{GrpAbFinGenElem,1}(undef, length(lgens))
     for i=1:length(lgens) 
+      #println("Elem: $(subs[i].coeff)")
       @vtime :RayFacElem 3 J = induce_image(lgens[i], Aut[k])
       @vtime :RayFacElem 3 images[i] = mR\J
+      #println("Image: $(images[i].coeff)")
     end
     if mp == false
       G[k] = hom(subs, images, check = true)
@@ -2385,30 +2387,27 @@ end
 
 function induce_action_new(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1})
 
-  R = mR.header.domain
-  O = mR.header.codomain.base_ring.order
-  K=nf(O)
-   
-  
   G = Array{GrpAbFinGenMap,1}(undef, length(Aut))
-  #
   #  Instead of applying the automorphisms to the elements given by mR, I choose small primes 
   #  generating the group and study the action on them. In this way, I take advantage of the cache of the 
   #  class group map
-  #
   Igens, IPgens, subs, IPsubs = find_gens_for_action(mR) 
-
+  genstot = vcat(subs, IPsubs)
   for k=1:length(Aut)
     images = Array{GrpAbFinGenElem,1}(undef, length(Igens)+length(IPgens))
     for i=1:length(Igens) 
+      #println("Elem: $(subs[i].coeff)")
       @vtime :RayFacElem 3 J = induce_image(Igens[i], Aut[k])
       @vtime :RayFacElem 3 images[i] = mR\J
+      #println("Image: $(images[i].coeff)")
     end
     for i = 1:length(IPgens)
+      #println("Elem: $(IPsubs[i].coeff)")
       Pn = induce_image(IPgens[i], Aut[k])
       images[i+length(Igens)] = mR.disc_log_inf_plc[Pn]
+      #println("Image: $(images[i+length(Igens)].coeff)")
     end
-    G[k] = hom(vcat(subs, IPsubs), images, check = true)
+    G[k] = hom(genstot, images, check = true)
     @hassert :RayFacElem 1 isbijective(G[k])
   end
   return G

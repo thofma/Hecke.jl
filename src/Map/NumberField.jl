@@ -25,7 +25,6 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
       return z
     end
 
-    # build the matrix for the basis change
     M = zero_matrix(FlintQQ, degree(L), degree(L))
     b = basis(K)
     for i = 1:degree(L)
@@ -49,6 +48,25 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.header = MapHeader(K, L, _image, _preimage)
     return z
   end
+end
+
+function _compute_preimg(m::NfToNfMor)
+  # build the matrix for the basis change
+  K = domain(m)
+  L = codomain(m)
+  M = zero_matrix(FlintQQ, degree(L), degree(L))
+  b = basis(K)
+  for i = 1:degree(L)
+    c = m(b[i])
+    for j = 1:degree(L)
+      M[j, i] = coeff(c, j - 1)
+    end
+  end
+  t = zero_matrix(FlintQQ, degree(L), 1)
+  t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+  s = solve(M, t)
+  m.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+  return m.prim_preimg
 end
 
 function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
