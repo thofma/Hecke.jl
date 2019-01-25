@@ -166,3 +166,41 @@ end
 
   test_mat_alg_morphism(BtoC, 2)
 end
+
+@testset "Radical" begin
+  G = PermutationGroup(4)
+
+  Fp = GF(2)
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  Fp = GF(fmpz(2))
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  Fq, a = FiniteField(2, 2, "a")
+  A = AlgAss(AlgGrp(Fq, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  Fq, a = FiniteField(fmpz(2), 2, "a")
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 19
+
+  G = PermutationGroup(3)
+
+  Fp = GF(13)
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 0
+
+  Fp = GF(fmpz(13))
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 0
+
+  Fq, a = FiniteField(13, 2, "a")
+  A = AlgAss(AlgGrp(Fq, G))[1]
+  @test length(Hecke.radical(A)) == 0
+
+  Fq, a = FiniteField(fmpz(13), 2, "a")
+  A = AlgAss(AlgGrp(Fp, G))[1]
+  @test length(Hecke.radical(A)) == 0
+end

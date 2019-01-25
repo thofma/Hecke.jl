@@ -574,10 +574,10 @@ end
 > Given an algebra over a finite field of prime order, this function 
 > returns a set of elements generating the radical of A
 """
-function radical(A::AlgAss{fq_nmod})
+function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
 
-  F=A.base_ring
-  p=F.p
+  F = base_ring(A)
+  p = characteristic(F)
   l=clog(fmpz(dim(A)),p)
   #First step: kernel of the trace matrix
   I=trace_matrix(A)
@@ -601,7 +601,11 @@ function radical(A::AlgAss{fq_nmod})
       for s=1:dim(A)
         a=elm*A[s]
         M1=representation_matrix(a^(p^i))
-        el=sum(FlintZZ(coeff(M1[k,k],0)) for k=1:dim(A))
+        if F isa FqFiniteField || F isa FqNmodFiniteField
+          el=sum(FlintZZ(coeff(M1[k,k],0)) for k=1:dim(A))
+        else
+          el = sum(lift(M1[k, k]) for k = 1:dim(A))
+        end
         M[s,t]=F(divexact(el,p^i))
       end
     end
