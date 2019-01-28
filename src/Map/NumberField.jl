@@ -141,7 +141,7 @@ function automorphisms(K::AnticNumberField)
   f1 = evaluate(f, t)
   divpol = Kt(nf_elem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
-  lr = roots(f1, div(degree(K), 2))::Vector{nf_elem}
+  lr = roots(f1, div(degree(K), 2))
   Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
   for i = 1:length(lr)
     Aut1[i] = NfToNfMor(K, K, lr[i])
@@ -150,7 +150,6 @@ function automorphisms(K::AnticNumberField)
   auts = closure(Aut1, degree(K))
   _set_automorphisms_nf(K, auts)
   return copy(auts)::Vector{NfToNfMor}
-
 end
 
 hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)
