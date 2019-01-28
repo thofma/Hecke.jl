@@ -651,21 +651,25 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     roots(f::fmpz_poly, K::AnticNumberField) -> Array{nf_elem, 1}
-    roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
 
-> Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
-> squarefree and monic.
+Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
+squarefree and monic.
 """
 function roots(f::fmpz_poly, K::AnticNumberField, max_roots::Int = degree(f))
   Ky, y = PolynomialRing(K, cached = false)
-  return roots(evaluate(f, y), max_roots)
+  return roots(evaluate(f, y), max_roots = max_roots)
 end
 
+@doc Markdown.doc"""
+    roots(f::fmpq_poly, K::AnticNumberField) -> Array{nf_elem, 1}
+
+Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
+squarefree and monic.
+"""
 function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
   Ky, y = PolynomialRing(K, cached = false)
-  return roots(evaluate(f, y), max_roots)
+  return roots(evaluate(f, y), max_roots = max_roots)
 end
 
 function elem_in_nf(a::nf_elem)
@@ -673,65 +677,41 @@ function elem_in_nf(a::nf_elem)
 end
 
 @doc Markdown.doc"""
-***
-    roots(f::Generic.Poly{nf_elem}) -> Array{nf_elem, 1}
+    roots(f::Generic.Poly{nf_elem}; max_roots = degree(f),
+                                    ispure = false,
+                                    isnormal = false)       -> Array{nf_elem, 1}
 
-> Computes all roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
-> squarefree and monic.
+Computes the roots of a polynomial $f$. It is assumed that $f$ is is non-zero,
+squarefree and monic.
+
+- `max_roots` controls the maximal number of roots the functions returns.
+- `ispure` indicates whether $f$ is of the form $x^d + c$, where $d$ is the
+  degree and $c$ the constant coefficient of $f$.
+- `isnormal` indicates that the field contains no or all the roots of $f$.
 """
-function roots(f::Generic.Poly{nf_elem}, max_roots::Int = degree(f); do_lll::Bool = false)
-  @assert issquarefree(f)
+function roots(f::Generic.Poly{nf_elem}; max_roots::Int = degree(f),
+                                         ispure::Bool = false,
+                                         isnormal::Bool = false)
 
-  #TODO: implement for equation order....
-  #TODO: use max_roots
+  iszero(f) && error("Polynomial must be non-zero")
+
+  if max_roots == 0
+    return nf_elem[]
+  end
+
+  if max_roots <= 1 && iszero(coeff(f, 0))
+    return nf_elem[zero(base_ring(f))]
+  end
+
+  if degree(f) == 0
+    return nf_elem[]
+  end
 
   if degree(f) == 1
-    return nf_elem[-trailing_coefficient(f)//lead(f)]
+    return nf_elem[-coeff(f, 0)//coeff(f, 1)]
   end
-  K = base_ring(f)
-  
-  try
-    O = _get_maximal_order_of_nf(K)
-    
-    if do_lll
-      O = lll(O)
-    end
 
-    d = degree(f)
-
-    deno = denominator(coeff(f, d), O)
-
-    for i in (d-1):-1:0
-      ai = coeff(f, i)
-      if !iszero(ai)
-        deno = lcm(deno, denominator(ai, O))
-      end
-    end
-
-    g = deno*f
-
-    Ox, x = PolynomialRing(O, "x", cached = false)
-    goverO = Ox(elem_type(O)[ O(coeff(g, i)) for i in 0:d])
-
-    if !isone(lead(goverO))
-      deg = degree(f)
-      a = lead(goverO)
-      b = one(O)
-      for i in deg-1:-1:0
-        setcoeff!(goverO, i, b*coeff(goverO, i))
-        b = b*a
-      end
-      setcoeff!(goverO, deg, one(O))
-      r = _roots_hensel(goverO, max_roots)
-      return nf_elem[ divexact(elem_in_nf(y), elem_in_nf(a)) for y in r ]
-    end
-
-    A = _roots_hensel(goverO, max_roots)
-
-    return nf_elem[ elem_in_nf(y) for y in A ]
-  catch e
-    return _roots_hensel(f, max_roots)
-  end
+  return _roots_hensel(f, max_roots = max_roots, ispure = ispure, isnormal = isnormal)
 end
 
 @doc Markdown.doc"""
@@ -739,9 +719,9 @@ end
 > Tests if $f$ has a root and return it.    
 """
 function hasroot(f::PolyElem{nf_elem})
-  rt = roots(f, 1)
+  rt = roots(f, max_roots = 1)
   if length(rt) == 0
-    return false, gen(base_ring(f))
+    return false, zero(base_ring(f))
   else
     return true, rt[1]
   end
@@ -750,6 +730,7 @@ end
 @doc Markdown.doc"""
     hasroot(f::fmpz_poly, K::AnticNumberField) -> Bool, nf_elem
     hasroot(f::fmpq_poly, K::AnticNumberField) -> Bool, nf_elem
+
 > Tests if $f$ has a root in $K$, and return it.
 """
 function hasroot(f::fmpz_poly, K::AnticNumberField)
@@ -770,16 +751,17 @@ end
 
 @doc Markdown.doc"""
 ***
-    ispower(a::nf_elem, n::Int) -> Bool, nf_elem
+    ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false) -> Bool, nf_elem
 
 > Determines whether $a$ has an $n$-th root. If this is the case,
 > the root is returned.
+>
+> If the field $K$ is known to contain the $n$-th roots of unity,
+> one can set `with_roots_unity` to `true`.
 """
 function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
-  #println("Compute $(n)th root of $a")
-
-  @assert n>0
-  if n==1
+  @assert n > 0
+  if n == 1
     return true, a
   end
   if iszero(a)
@@ -787,17 +769,16 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
   end
 
   d = denominator(a)
-  if n == 2 || with_roots_unity
-    fl, rt = _one_root_hensel(a*d^n, n)
-    if fl
-      return fl, rt//d
-    else
-      return fl, zero(a)
-    end
-  end
-  rt = _roots_hensel(a*d^n, n, 1)
 
-  if length(rt)>0
+  Ky, y = PolynomialRing(parent(a), "y")
+
+  if n == 2 || with_roots_unity
+    rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, isnormal = true)
+  else
+    rt = roots(y^n - a*d^n, max_roots = 1, ispure = true)
+  end
+
+  if length(rt) > 0
     return true, rt[1]//d
   else
     return false, zero(a)
@@ -836,18 +817,14 @@ end
 > Compute all $n$-th roots of $a$, possibly none.
 """
 function roots(a::nf_elem, n::Int)
-  #println("Compute $(n)th root of $a")
-
-  @assert n>0
-  if n==1
-    return [a]
-  end
-  if iszero(a)
-    return [a]
+  @assert n > 0
+  if n == 1 || iszero(a)
+    return nf_elem[a]
   end
 
   d = denominator(a)
-  rt = _roots_hensel(a*d^n, n)
+  Ky, y = PolynomialRing(parent(a), "y", cached = false)
+  rt = roots(y^n - a*d^n, ispure = true)
 
   return [x//d for x = rt]
 end

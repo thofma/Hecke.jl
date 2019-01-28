@@ -261,10 +261,10 @@ const _euler_phi_inverse_maximum =
 
 # One should/could also try to be closer to Algorithm 1
 # in Molin, "On the calculation of roots of unity in a number field"
-function _torsion_group_order_divisor(O::NfOrd)
+function _torsion_group_order_divisor(K::AnticNumberField)
 
-  if degree(O) <= 250
-    upper_bound = _euler_phi_inverse_maximum[degree(O)]
+  if degree(K) <= 250
+    upper_bound = _euler_phi_inverse_maximum[degree(K)]
   else
     error("Not implemented yet")
   end
@@ -275,12 +275,23 @@ function _torsion_group_order_divisor(O::NfOrd)
 
   first = true
 
+  # This can be replaced by any multiple of the discriminant of the maximal
+  # order
+  # TODO: Fix this for non-monic, non-integral defining polynomials
+  disc = FlintZZ(discriminant(K.pol))
+
   while true
     p = next_prime(p)
-    if isramified(O, p) || isindex_divisor(O, p)
+    Rp = Nemo.GF(p, cached=false)
+    Rpt, t = PolynomialRing(Rp, "t", cached=false)
+    gp = Rpt(K.pol)
+
+    if iszero(discriminant(gp))
       continue
     end
-    lp = prime_decomposition_type(O, p)
+
+    lp = _prime_decomposition_type(gp)
+
     minf = lp[1][1]
     for i = 2:length(lp)
       if lp[i][1] < minf
@@ -290,7 +301,7 @@ function _torsion_group_order_divisor(O::NfOrd)
 
     if first
       m_new = fmpz(p)^minf - 1
-      m_new, _ = ppio(m_new, discriminant(O))
+      m_new, _ = ppio(m_new, disc)
       if isodd(m_new)
         m_new = 2 * m_new
       end
@@ -317,47 +328,20 @@ function _torsion_group_order_divisor(O::NfOrd)
   end
 end
 
-function _torsion_units_lifting(O::NfOrd)
-
-  r1, r2 = signature(O)
-
+function _torsion_units_gen(K::AnticNumberField)
+  r1, r2 = signature(K)
   if r1 > 0
-    return [ O(1), -O(1) ], -O(1)
+    return 2, K(-1)
   end
 
-  m = _torsion_group_order_divisor(O)
-  Oy, y = PolynomialRing(O, "y", cached = false)
-  f = y^Int(m) - 1
-  R = _roots_hensel(f)
-
-  i = 1
-  for outer i in 1:length(R)
-    if torsion_unit_order(R[i], length(R)) == length(R)
-      break
-    end
-  end
-
-  @assert O(-1) in R
-
-  return R, R[i]
-end
-
-function _torsion_units_gen(O::NfOrd)
-  r1, r2 = signature(O)
-
-  if r1 > 0
-    return 2, O(-1)
-  end
-
-  m = _torsion_group_order_divisor(O)
-  K = nf(O)
+  m = _torsion_group_order_divisor(K)
   Ky, y = PolynomialRing(K, "y", cached = false)
   fac = factor(m).fac
-  gen = O(1)
+  gen = K(1)
   ord = 1
   for (p, v) in fac
     if p == 2 && v == 1
-      mul!(gen, gen, O(-1))
+      mul!(gen, gen, K(-1))
       ord *= 2
       continue
     end
@@ -369,9 +353,9 @@ function _torsion_units_gen(O::NfOrd)
       setcoeff!(f2, 0, -K(1))
       setcoeff!(f2, Int(p)^(v-i), K(1))
       f = divexact(f1, f2)
-      fl, r = _one_root_hensel(f)
-      if fl
-        mul!(gen, gen, O(r))
+      r = _roots_hensel(f, max_roots = 1, isnormal = true, root_bound = fmpz[one(fmpz) for i in 1:(r1 + r2)])
+      if length(r) > 0
+        mul!(gen, gen, r[1])
         ord *= Int(p)^(v+1-i)
         break
       end
@@ -379,5 +363,25 @@ function _torsion_units_gen(O::NfOrd)
   end
 
   return ord, gen
+end
 
+function _torsion_units_gen(O::NfOrd)
+  ord, a = _torsion_units(nf(O)) # This is the cached version
+
+  # The following could be improved by factoring n
+  # and doing something prime by prime.
+  m = 1
+  b = a
+  while true
+    if b in O
+      break
+    else
+      b = b * a
+      m = m + 1
+    end
+  end
+
+  @assert mod(ord, m) == 0
+
+  return divexact(ord, m), O(b)
 end

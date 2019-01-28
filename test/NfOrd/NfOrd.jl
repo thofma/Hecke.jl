@@ -340,4 +340,19 @@
     Emult = ring_of_multipliers(P)
     @test conductor(E, Emult) == P
   end
+
+  @testset "Torsion units" begin
+    f = x^2 + 3
+    K, a = NumberField(f, "a")
+    M = EquationOrder(K)
+    A, mA = @inferred torsion_unit_group(M)
+    @test order(A) == 2
+    @test mA(A[1]) == M(-1)
+    OK = maximal_order(K)
+    A, mA = @inferred torsion_unit_group(OK)
+    @test order(A) == 6
+    @test isone(mA(A[1])^6)
+    @test !isone(mA(A[1])^3)
+    @test !isone(mA(A[1])^2)
+  end
 end

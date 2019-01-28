@@ -348,7 +348,7 @@ function _issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   Lx, x = PolynomialRing(L, "x", cached = false)
   f1 = evaluate(f, x)
-  R = _roots_hensel(f1, 1)
+  R = roots(f1, max_roots = 1)
   if isempty(R)
     return false, L()
   else
@@ -415,20 +415,22 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
   Lx, x = PolynomialRing(L, "x", cached = false)
   f1 = evaluate(f, x)
-  fl, r = _one_root_hensel(f1)
-  if !fl
-    return false, L()
-  else
+  r = roots(f1, max_roots = 1, isnormal = true)
+  if length(r) > 0
     h = parent(L.pol)(r)
     return true, h(gen(L))
+  else
+    return false, L()
   end 
 end
 
 @doc Markdown.doc"""
       issubfield_normal(K::AnticNumberField, L::AnticNumberField) -> Bool, NfToNfMor
-> This function assumes that K is normal.
-> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+
+> Returns `true` and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
 > Otherwise the function returns "false" and a morphism mapping everything to 0.
+>
+> This function assumes that K is normal.
 """
 function issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   fl = _issubfield_first_checks(K, L)

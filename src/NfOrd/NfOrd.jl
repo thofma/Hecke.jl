@@ -602,7 +602,7 @@ where $(\omega_i)_i$ is the $\mathbf Z$-basis of $\mathcal O$.
 """
 function norm_change_const(O::NfOrd)
   if O.norm_change_const[1] > 0
-    return O.norm_change_const
+    return O.norm_change_const::Tuple{Float64, Float64}
   else
     d = degree(O)
     M = minkowski_mat(O, 64)
@@ -637,7 +637,7 @@ function norm_change_const(O::NfOrd)
           if isfinite(l_min)
             z = (Float64(l_max), Float64(l_min))
             O.norm_change_const = z
-            return z
+            return z::Tuple{Float64, Float64}
           end
           M = minkowski_mat(O, pr)
           M = M*M'
@@ -672,7 +672,7 @@ function norm_change_const(O::NfOrd)
 #    z = (c1, c2)
     z = (r[end], inv(r[1]))
     O.norm_change_const = z
-    return z
+    return z::Tuple{Float64, Float64}
   end
 end
 

@@ -296,11 +296,9 @@ function _torsion_units(K::AnticNumberField)
     c = _get_nf_torsion_units(K)::Tuple{Int, nf_elem}
     return c
   catch
-    O = maximal_order(K)
-    ord, gen = _torsion_units(O)
-    gennf = elem_in_nf(gen)
-    _set_nf_torsion_units(K, (ord, gennf))
-    return ord, gennf
+    ord, gen = _torsion_units_gen(K)
+    _set_nf_torsion_units(K, (ord, gen))
+    return ord, gen
   end
 end
 

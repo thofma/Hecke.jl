@@ -119,7 +119,7 @@ function induce_rational_reconstruction(a::fmpz_poly, M::fmpz)
 end
 
 
-constant_coefficient = trailing_coefficient
+const constant_coefficient = trailing_coefficient
 
 function resultant(f::fmpz_poly, g::fmpz_poly, d::fmpz, nb::Int)
   z = fmpz()
