@@ -1710,3 +1710,21 @@ function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
   @assert B*X == A
   return X
 end
+
+################################################################################
+#
+#  Function to convert a matrix to array
+#
+################################################################################
+
+function to_array(M::fmpq_mat)
+  A = Vector{fmpq}(undef, cols(M)*rows(M))
+  for i = 1:rows(M)
+    for j = 1:cols(M)
+      A[(i-1)*cols(M) + j] = M[i, j]
+    end
+  end
+  return A
+end
+
+
