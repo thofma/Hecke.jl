@@ -1659,6 +1659,7 @@ function change_into_coprime(mR::MapRayClassGrp, a::fmpz)
     return nothing
   end
   _, s, t = gcdx(uncom, m)
+  
   tmg = mR.tame_mult_grp
   wld = mR.wild_mult_grp
   for (p, v) in tmg
@@ -1681,7 +1682,7 @@ end
 #  It needs a map GrpAbFinGen -> NfOrdIdlSet
 #
 function find_gens(mR::MapRayClassGrp; coprime_to::fmpz = fmpz(-1))
-
+  
   O = order(codomain(mR))
   R = domain(mR) 
   m = mR.defining_modulus[1]
