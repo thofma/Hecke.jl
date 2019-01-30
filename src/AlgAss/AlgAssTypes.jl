@@ -174,6 +174,46 @@ end
 
 ################################################################################
 #
+#  AbsAlgAssIdl
+#
+################################################################################
+
+# S is the type of the algebra, T = elem_type(S) and U is the type of matrices
+# over the group field
+mutable struct AbsAlgAssIdl{S, T, U}
+  algebra::S
+  basis::Vector{T}
+  basis_mat::U
+
+  isleft::Int                      # 0 Not known
+                                   # 1 Known to be a left ideal
+                                   # 2 Known to not be a right ideal
+  isright::Int                     # as for isleft
+
+  iszero::Int
+
+  function AbsAlgAssIdl{S, T, U}(A::S) where {S, T, U}
+    I = new{S, T, U}()
+    I.algebra = A
+    I.isleft = 0
+    I.isright = 0
+    I.iszero = 0
+    return I
+  end
+
+  function AbsAlgAssIdl{S, U}(A::S, M::U) where {S, U}
+    I = new{S, elem_type(S), U}()
+    I.algebra = A
+    I.basis_mat = M
+    I.isleft = 0
+    I.isright = 0
+    I.iszero = 0
+    return I
+  end
+end
+
+################################################################################
+#
 #  AlgAssAbsOrd / AlgAssAbsOrdElem / AlgAssAbsOrdIdl / AlgAssAbsOrdFracIdl
 #
 ################################################################################

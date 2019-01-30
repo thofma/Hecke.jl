@@ -615,8 +615,7 @@ function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz},
     end
     C=transpose(B)*C
   end
-  return AlgAssElem[elem_from_mat_row(A,C,i) for i=1:rows(C)]
-   
+  return elem_type(A)[elem_from_mat_row(A,C,i) for i=1:rows(C)]
 end
 
 ###############################################################################

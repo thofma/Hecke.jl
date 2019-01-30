@@ -322,7 +322,7 @@ function _1_plus_p_mod_1_plus_q(p::AlgAssAbsOrdIdl, q::AlgAssAbsOrdIdl)
 end
 
 # Given the groups (1 + p)/(1 + p^k + q) (via g and M) and
-# (1 + p^k + q)/(^ + p^(2*k) + q) (via h and N) and a discrete logarithm in the
+# (1 + p^k + q)/(1 + p^(2*k) + q) (via h and N) and a discrete logarithm in the
 # second group this function computes the group (1 + p)/(1 + p^(2*k) + q).
 function _expand(g::Vector{T}, M::fmpz_mat, h::Vector{T}, N::fmpz_mat, disc_log::Function, q::AlgAssAbsOrdIdl) where { T <: AlgAssAbsOrdElem }
   isempty(g) && return h, N
