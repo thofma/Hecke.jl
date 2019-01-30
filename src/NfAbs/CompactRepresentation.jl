@@ -16,6 +16,11 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
     de::Dict{NfOrdIdl, fmpz} = factor_coprime(a, IdealSet(ZK))
   else
     de = Dict((p, v) for (p, v) = decom)
+    if length(decom) == 0
+      ZK = maximal_order(K)
+    else
+      ZK = order(first(keys(decom)))
+    end
   end
   de_inv =Dict{NfOrdIdl, NfOrdFracIdl}()
 
@@ -198,7 +203,7 @@ end
 function evaluate_mod(a::FacElem{nf_elem, AnticNumberField}, B::NfOrdFracIdl)
   p = fmpz(next_prime(p_start))
   K = base_ring(a)
-  ZK = maximal_order(K)
+  ZK = order(B)
   dB = denominator(B)*index(ZK)
 
   @hassert :CompactPresentation 1 factored_norm(B) == abs(factored_norm(a))
