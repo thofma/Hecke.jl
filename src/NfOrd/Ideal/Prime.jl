@@ -451,6 +451,20 @@ function anti_uniformizer(P::NfOrdIdl)
   return P.anti_uniformizer
 end
 
+function _prime_decomposition_type(fmodp)
+  fac = factor_shape(fmodp)
+  g = sum([ x for x in values(fac)])
+  res = Array{Tuple{Int, Int}}(undef, g)
+  k = 1
+  for (fi, ei) in fac
+    for j in 1:ei
+      res[k] = (fi, 1)
+      k = k + 1
+    end
+  end
+  return res
+end
+
 function prime_decomposition_type(O::NfOrd, p::Integer)
   if !isdefining_polynomial_nice(nf(O))
     return [(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
@@ -462,17 +476,7 @@ function prime_decomposition_type(O::NfOrd, p::Integer)
     Zx, x = PolynomialRing(FlintZZ,"x", cached = false)
     Zf = Zx(f)
     fmodp = PolynomialRing(GF(p, cached = false), "y", cached = false)[1](Zf)
-    fac = factor_shape(fmodp)
-    g = sum([ x for x in values(fac)])
-    res = Array{Tuple{Int, Int}}(undef, g)
-    k = 1
-    for (fi, ei) in fac
-      for j in 1:ei
-        res[k] = (fi, 1)
-        k = k + 1
-      end
-    end
-    return res
+    return _prime_decomposition_type(fmodp)
   else
     @assert O.ismaximal == 1 || p in O.primesofmaximality
     return decomposition_type_polygon(O, fmpz(p))

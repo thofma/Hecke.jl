@@ -483,6 +483,7 @@ function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p:
     end
     @vtime :NfOrd 1 N = view(_hnf_modular_eldiv(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
     P = NfOrdIdl(O, N)
+    P.minimum = p
     P.norm = p^f
     P.splitting_type = (0, f)
     P.is_prime = 1

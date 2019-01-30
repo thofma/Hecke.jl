@@ -189,3 +189,36 @@ end
 Nemo.promote_rule(::Type{fq_nmod}, ::Type{gfp_elem}) = fq_nmod
 
 Nemo.promote_rule(::Type{fq}, ::Type{Generic.ResF{fmpz}}) = fq
+
+################################################################################
+#
+#  Primitive roots in finite fields
+#
+################################################################################
+
+# This is not used anywhere
+function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
+  @assert m > 0
+  if m == 1
+    return K(1)
+  end
+  if size(K) % m != 1
+    return false, K(1)
+  end
+  if m == 2
+    return K(-1)
+  end
+  fm = factor(m)
+  while true
+    g = rand(K)
+    if iszero(g)
+      continue
+    end
+    if any(x -> isone(g^div(m, x)), keys(fm))
+      continue
+    end
+    return true, g^div(size(K)-1, m)
+  end  
+end
+
+

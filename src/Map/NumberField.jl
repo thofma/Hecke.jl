@@ -25,7 +25,6 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
       return z
     end
 
-    # build the matrix for the basis change
     M = zero_matrix(FlintQQ, degree(L), degree(L))
     b = basis(K)
     for i = 1:degree(L)
@@ -49,6 +48,25 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
     z.header = MapHeader(K, L, _image, _preimage)
     return z
   end
+end
+
+function _compute_preimg(m::NfToNfMor)
+  # build the matrix for the basis change
+  K = domain(m)
+  L = codomain(m)
+  M = zero_matrix(FlintQQ, degree(L), degree(L))
+  b = basis(K)
+  for i = 1:degree(L)
+    c = m(b[i])
+    for j = 1:degree(L)
+      M[j, i] = coeff(c, j - 1)
+    end
+  end
+  t = zero_matrix(FlintQQ, degree(L), 1)
+  t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+  s = solve(M, t)
+  m.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
+  return m.prim_preimg
 end
 
 function Base.:(==)(f::NfToNfMor, g::NfToNfMor)
@@ -111,8 +129,8 @@ end
 
 function automorphisms(K::AnticNumberField)
   try
-    Aut = _get_automorphisms_nf(K)
-    return copy(Aut)::Vector{NfToNfMor}
+    Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
+    return copy(Aut)
   catch e
     if !isa(e, AccessorNotSetError)
       rethrow(e)
@@ -121,17 +139,17 @@ function automorphisms(K::AnticNumberField)
   f = K.pol
   Kt, t = PolynomialRing(K, "t", cached = false)
   f1 = evaluate(f, t)
-  f1 = divexact(f1, t - gen(K))
-  lr = roots(f1, div(degree(K), 2))
-  push!(lr, gen(K))
-  Aut = Array{NfToNfMor, 1}(undef, length(lr))
+  divpol = Kt(nf_elem[-gen(K), K(1)])
+  f1 = divexact(f1, divpol)
+  lr = roots(f1, max_roots = div(degree(K), 2))
+  Aut1 = Vector{NfToNfMor}(undef, length(lr)+1)
   for i = 1:length(lr)
-    Aut[i] = NfToNfMor(K, K, lr[i])
+    Aut1[i] = NfToNfMor(K, K, lr[i])
   end
-  auts = closure(Aut, degree(K))
+  Aut1[end] = NfToNfMor(K, K, gen(K))
+  auts = closure(Aut1, degree(K))
   _set_automorphisms_nf(K, auts)
   return copy(auts)::Vector{NfToNfMor}
-
 end
 
 hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)

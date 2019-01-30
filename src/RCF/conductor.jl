@@ -1461,24 +1461,6 @@ function iscentral(C::ClassField)
   return all(x -> all(y -> x(y) == y, g), act)
 end
 
-@doc Markdown.doc"""
-    induce_image(P::InfPlc, m :: Map{AnticNumberField, AnticNumberField}) -> InfPlc
-> Find a place in the image of $P$ under $m$. If $m$ is an automorphism,
-> this is unique.
-"""
-function induce_image(P::InfPlc, m :: Map{AnticNumberField, AnticNumberField})
-  k = number_field(P)
-  Qx = parent(k.pol)
-  h = Qx(m(gen(k)))
-  im = h(P.r)
-  lp = infinite_places(codomain(m))
-  return lp[findfirst(x -> overlaps(lp[x].r, im), 1:length(lp))]
-end
-
-function number_field(P::InfPlc)
-  return P.K
-end
-
 function lcm(A::AbstractArray{<:NfAbsOrdIdl})
   a = first(A)
   a = ideal(order(a), 1)

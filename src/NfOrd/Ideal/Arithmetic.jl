@@ -610,9 +610,10 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
+***
    crt(r1::NfOrdElem, i1::NfOrdIdl, r2::NfOrdElem, i2::NfOrdIdl) -> NfOrdElem
 > Find $x$ s.th $x \equiv r1 \bmod i1$ and $x \equiv r2 \bmod i2$
-using (((idempotents)))
+> using (((idempotents)))
 """
 function crt(r1::S, i1::T, r2::S, i2::T) where { S <: Union{NfOrdElem, AlgAssAbsOrdElem}, T <: Union{NfOrdIdl, AlgAssAbsOrdIdl} }
   u, v = idempotents(i1, i2)

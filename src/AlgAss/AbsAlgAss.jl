@@ -489,6 +489,11 @@ function rand(A::AbsAlgAss{T}, rng::UnitRange{Int}) where T
   return A(c)
 end
 
+function rand(A::AlgAss{fmpq}, rng::UnitRange{Int} = -20:20)
+  c = [fmpq(rand(FlintZZ, rng)) for i = 1:dim(A)]
+  return A(c)
+end
+
 ################################################################################
 #
 #  Compute generators

@@ -1532,7 +1532,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   end
   M = trace_matrix(maximal_order(fields[1]))
   for i = 2:length(fields)
-    M = kronecker_product(M, trace_matrix(maximal_order(fields[i])))
+    M = kronecker_product(trace_matrix(maximal_order(fields[i])), M)
   end
   O1.disc = disc
   O1.trace_mat = M
