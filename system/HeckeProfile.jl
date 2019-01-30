@@ -231,7 +231,7 @@ function symb(a::StackFrame)
 end
 
 function graph(bt::Vector, lidict::Profile.LineInfoDict, skipC::Bool = true, skipMacro::Bool=true; prune_by::Symbol = :nothing)
-  if prune != :nothing
+  if prune_by != :nothing
     bt = prune(prune_by, bt, lidict)
   end
   g = Graph{Symbol}()
