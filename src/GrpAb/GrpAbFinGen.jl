@@ -1102,12 +1102,12 @@ function find_isomorphism_with_abelian_group(G, op)
     AsnftoG[a] = x
   end
 
-  #for g in G
-  #  @assert AsnftoG[GtoAsnf[g]] == g
-  #end
-  #for a in Asnf
-  #  @assert GtoAsnf[AsnftoG[a]] == a
-  #end
+  for g in G
+    @assert AsnftoG[GtoAsnf[g]] == g
+  end
+  for a in Asnf
+    @assert GtoAsnf[AsnftoG[a]] == a
+  end
 
   return Asnf, GtoAsnf, AsnftoG
 end

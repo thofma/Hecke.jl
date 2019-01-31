@@ -163,6 +163,10 @@ mutable struct AlgGrpElem{T, S} <: AbsAlgAssElem{T}
     return z
   end
 
+  function AlgGrpElem{T, S}(A::S, g::U) where {T, S, U}
+    return A[A.group_to_base[g]]
+  end
+
   # This does not make a copy of coeffs
   function AlgGrpElem{T, S}(A::S, coeffs::Array{T, 1}) where {T, S}
     z = new{T, S}()
