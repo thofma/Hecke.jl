@@ -304,3 +304,127 @@ function _set_sidedness(a::AbsAlgAssIdl, side::Symbol)
   end
   return nothing
 end
+
+################################################################################
+#
+#  Quotient rings
+#
+################################################################################
+
+function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
+  @assert A == algebra(a)
+  K = base_ring(A)
+
+  # First compute the vector space quotient
+  Ma = basis_mat(a, false)
+  M = hcat(transpose(Ma), identity_matrix(K, dim(A)))
+  r = rref!(M)
+  pivot_cols = Vector{Int}()
+  j = 1
+  for i = 1:cols(M)
+    if !iszero(M[j, i])
+      if i > rows(Ma)
+        push!(pivot_cols, i - rows(Ma))
+      end
+      j += 1
+      if j > rows(M)
+        break
+      end
+    end
+  end
+
+  # We now have the basis (basis of the quotient, basis of the ideal)
+  n = dim(A) - rows(Ma)
+  M = vcat(zero_matrix(K, n, dim(A)), Ma)
+  oneK = K(1)
+  zeroK = K()
+  for i = 1:n
+    M[i, pivot_cols[i]] = oneK
+  end
+  iM = inv(M)
+
+  N = sub(M, 1:n, 1:dim(A))
+  NN = sub(iM, 1:dim(A), 1:n)
+
+  # Lift a basis of the quotient to A
+  quotient_basis = Vector{elem_type(A)}(undef, n)
+  b = zero_matrix(K, 1, n)
+  for i = 1:n
+    b[1, i] = oneK
+    bN = b*N
+    quotient_basis[i] = A([ bN[1, i] for i = 1:dim(A) ])
+    b[1, i] = zeroK
+  end
+
+  # Build the multiplication table
+  t = A()
+  s = zero_matrix(K, 1, dim(A))
+  mult_table = Array{elem_type(K), 3}(undef, n, n, n)
+  for i = 1:n
+    for j = 1:n
+      t = mul!(t, quotient_basis[i], quotient_basis[j])
+      elem_to_mat_row!(s, 1, t)
+      sNN = s*NN
+      mult_table[i, j, :] = [ sNN[1, k] for k  = 1:n ]
+    end
+  end
+
+  B = AlgAss(K, mult_table)
+  AtoB = hom(A, B, NN, N)
+  return B, AtoB
+end
+
+# Assumes b \subseteq a
+function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U }
+  @assert algebra(a) == algebra(b)
+  A = algebra(a)
+  K = base_ring(A)
+
+  # First compute the vector space quotient
+  Ma = basis_mat(a, false)
+  Mb = basis_mat(b, false)
+  M = hcat(transpose(Mb), transpose(Ma))
+  r = rref!(M)
+  pivot_cols = Vector{Int}()
+  j = 1
+  for i = 1:cols(M)
+    if !iszero(M[j, i])
+      if i > rows(Mb)
+        push!(pivot_cols, i - rows(Mb))
+      end
+      j += 1
+      if j > rows(M)
+        break
+      end
+    end
+  end
+
+  # Build the basis matrix for the quotient
+  M = zero_matrix(K, dim(A), dim(A))
+  n = rows(Ma) - rows(Mb)
+  for i = 1:n
+    for j = 1:dim(A)
+      M[i, j] = deepcopy(Ma[pivot_cols[i], j])
+    end
+  end
+
+  mult_table = _build_subalgebra_mult_table!(A, M)
+  # M is now in rref
+
+  B = AlgAss(K, mult_table)
+  MM = sub(M, 1:dim(B), 1:dim(A))
+  BtoA = hom(B, A, MM)
+
+  N = transpose(vcat(MM, Mb)) # Another basis matrix for a
+  function _preimage(x::AbsAlgAssElem)
+    t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, false)))
+    if t
+      return B([ y[i, 1] for i = 1:dim(B) ])
+    else
+      error("Element is not in the image")
+    end
+  end
+  BtoA.header.preimage = _preimage
+
+  return B, BtoA
+end

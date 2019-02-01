@@ -449,32 +449,36 @@ function ==(A::AlgAss, B::AlgAss)
   return A.mult_table == B.mult_table
 end
 
-# Computes e*A if action is :left and A*e if action is :right.
-function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left, has_one::Bool = true) where {T}
-  @assert parent(e) == A
-  R = base_ring(A)
-  isgenres = (typeof(R) <: Generic.ResRing)
+# Builds a multiplication table for the subalgebra of A with basis matrix B.
+# We assume cols(B) == dim(A).
+# A rref of B will be computed IN PLACE! If return_LU is Val{true}, a LU-factorization
+# of transpose(rref(B)) is returned.
+function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::Type{Val{S}} = Val{false}) where { T, S }
+  K = base_ring(A)
   n = dim(A)
-  B = representation_matrix(e, action)
   r = _rref!(B)
-  r == 0 && error("Cannot construct zero dimensional algebra.")
+  if r == 0
+    if return_LU == Val{true}
+      return Array{elem_type(K), 3}(undef, 0, 0, 0), PermGroup(cols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0)
+    else
+      return Array{elem_type(K), 3}(undef, 0, 0, 0)
+    end
+  end
+
   basis = Vector{elem_type(A)}(undef, r)
   for i = 1:r
     basis[i] = elem_from_mat_row(A, B, i)
   end
 
-  # The basis matrix of e*A resp. A*e with respect to A is
-  basis_mat_of_eA = sub(B, 1:r, 1:n)
-
-  if isgenres
+  if (typeof(K) <: Generic.ResRing)
     _, p, L, U = _lu(transpose(B))
   else
     _, p, L, U = lu(transpose(B))
   end
 
-  mult_table = Array{elem_type(R), 3}(undef, r, r, r)
+  mult_table = Array{elem_type(K), 3}(undef, r, r, r)
   c = A()
-  d = zero_matrix(R, n, 1)
+  d = zero_matrix(K, n, 1)
   for i = 1:r
     for j = 1:r
       if iscommutative(A) && j < i
@@ -494,7 +498,35 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
       end
     end
   end
+
+  if return_LU == Val{true}
+    return mult_table, p, L, U
+  else
+    return mult_table
+  end
+end
+
+# Computes e*A if action is :left and A*e if action is :right.
+function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool = false, action::Symbol = :left) where {T}
+  @assert parent(e) == A
+  R = base_ring(A)
+  isgenres = (typeof(R) <: Generic.ResRing)
+  n = dim(A)
+  B = representation_matrix(e, action)
+
+  mult_table, p, L, U = _build_subalgebra_mult_table!(A, B, Val{true})
+  r = size(mult_table, 1)
+
+  if r == 0
+    return AlgAss(R, mult_table, Vector{elem_type(R)}(undef, 0))
+  end
+
+  # The basis matrix of e*A resp. A*e with respect to A is
+  basis_mat_of_eA = sub(B, 1:r, 1:n)
+
   if idempotent
+    c = A()
+    d = zero_matrix(R, n, 1)
     for k = 1:n
       d[p[k], 1] = e.coeffs[k]
     end
