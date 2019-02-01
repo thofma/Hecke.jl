@@ -63,7 +63,7 @@ function find_one(A::AlgAss)
   end
   Mc = hcat(M, c)
   rref!(Mc)
-  if !iszero(Mc[n, n])
+  if iszero(Mc[n, n])
     return false, zeros(A, n)
   end
   if n != 1 && !iszero(Mc[n + 1, n + 1])
