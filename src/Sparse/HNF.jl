@@ -177,11 +177,17 @@ Computes the saturation of $A$, that is, a basis for $\mathbf{Q}\otimes M \meet
 \mathbf{Z}^n$, where $M$ is the row span of $A$ and $n$ the number of rows of
 $A$.
 
-Equivalently, return $TA$ for an invertiable rational matrix $T$ such that $TA$
+Equivalently, return $TA$ for an invertible rational matrix $T$, such that $TA$
 is integral and the elementary divisors of $TA$ are all trivial.
 """
 function saturate(A::SMat{fmpz})
-  return sparse_matrix(saturate(fmpz_mat(A)))
+  Hti = transpose(hnf(transpose(A)))
+  Hti = sub(Hti , 1:rows(Hti), 1:rows(Hti))
+  Hti = transpose(Hti)
+  S, s = solve_ut(Hti, transpose(A))
+  @assert isone(s)
+  SS = transpose(S)
+  return SS
 end
 
 ################################################################################
