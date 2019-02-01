@@ -15,6 +15,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
   base_ring::Ring
   mult_table::Array{T, 3} # e_i*e_j = sum_k mult_table[i, j, k]*e_k
   one::Vector{T}
+  has_one::Bool
   iscommutative::Int       # 0: don't know
                            # 1: known to be commutative
                            # 2: known to be not commutative
@@ -41,6 +42,7 @@ mutable struct AlgAss{T} <: AbsAlgAss{T}
     A = AlgAss{T}(R)
     A.mult_table = mult_table
     A.one = one
+    A.has_one = true
     return A
   end
 

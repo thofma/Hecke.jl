@@ -10,6 +10,8 @@ export wedderburn_decomposition
 
 base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
 
+has_one(A::AlgAss) = A.has_one
+
 Generic.dim(A::AlgAss) = size(A.mult_table, 1)
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
@@ -45,6 +47,7 @@ end
 ################################################################################
 
 # This only works if base_ring(A) is a field (probably)
+# Return true, one if there is a one and false, something if not.
 function find_one(A::AlgAss)
   n = dim(A)
   M = zero_matrix(base_ring(A), n^2, n)
@@ -60,24 +63,28 @@ function find_one(A::AlgAss)
   end
   Mc = hcat(M, c)
   rref!(Mc)
-  @assert !iszero(Mc[n, n])
-  n != 1 && @assert iszero(Mc[n + 1, n + 1])
+  if !iszero(Mc[n, n])
+    return false, zeros(A, n)
+  end
+  if n != 1 && !iszero(Mc[n + 1, n + 1])
+    return false, zeros(A, n)
+  end
   cc = solve_ut(sub(Mc, 1:n, 1:n), sub(Mc, 1:n, (n + 1):(n + 1)))
   one = [ cc[i, 1] for i = 1:n ]
-  return one
+  return true, one
 end
 
 function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
-  # checks
   return AlgAss{T}(R, mult_table, one)
 end
 
-function AlgAss(R::Ring, mult_table::Array{T, 3}, compute_one::Bool = true) where {T}
-  # checks
+function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
   A = AlgAss{T}(R)
   A.mult_table = mult_table
-  if compute_one
-    A.one = find_one(A)
+  has_one, one = find_one(A)
+  A.has_one = has_one
+  if has_one
+    A.one = one
   end
   return A
 end
@@ -433,7 +440,13 @@ end
 
 function ==(A::AlgAss, B::AlgAss)
   base_ring(A) != base_ring(B) && return false
-  return A.one == B.one && A.mult_table == B.mult_table
+  if has_one(A) != has_one(B)
+    return false
+  end
+  if has_one(A) && has_one(B) && A.one != B.one
+    return false
+  end
+  return A.mult_table == B.mult_table
 end
 
 # Computes e*A if action is :left and A*e if action is :right.
@@ -493,7 +506,7 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
     end
     eA = AlgAss(R, mult_table, v)
   else
-    eA = AlgAss(R, mult_table, has_one)
+    eA = AlgAss(R, mult_table)
   end
 
   # TODO: The following is wrong. The algebra eA may be commutative
