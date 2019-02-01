@@ -368,8 +368,12 @@ function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
   basis(A)[i]
 end
 
-function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
-  length(c) != dim(A) && error("Dimensions don't match.")
+#function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
+#  length(c) != dim(A) && error("Dimensions don't match.")
+#  return AlgGrpElem{T, typeof(A)}(A, c)
+#end
+
+function (A::AlgGrp{T, S, R})(c::R) where {T, S, R}
   return AlgGrpElem{T, typeof(A)}(A, c)
 end
 

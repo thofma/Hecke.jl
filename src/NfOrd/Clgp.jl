@@ -65,7 +65,7 @@
 ################################################################################
 
 export class_group, FactorBase, issmooth, factor, lll_basis,
-       unit_group_fac_elem, unit_group
+       unit_group_fac_elem, unit_group, regulator
 
 add_verbose_scope(:ClassGroup)
 add_verbose_scope(:ClassGroup_time)
@@ -248,7 +248,7 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
       stable = 3.5
       if c.sat_done == 0
         @vprint :ClassGroup 1 "Finite index, saturating at 2\n"
-        if saturate!(c, U, 2, stable)
+        while saturate!(c, U, 2, stable)
           @vtime_add_elapsed :UnitGroup 1 c :unit_time r = _unit_group_find_units(U, c)
         end
         idx = _validate_class_unit_group(c, U) 
@@ -388,3 +388,22 @@ function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, us
   return unit_group_fac_elem(c, U)
 end
 
+@doc Markdown.doc"""
+    regulator(O::NfOrd)
+> Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
+"""
+function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut)
+  @assert b==1
+  unit_group_fac_elem(c, U)
+  return U.tentative_regulator
+end
+
+@doc Markdown.doc"""
+    regulator(K::AnticNumberField)
+> Computes the regulator of $K$, ie. the discriminant of the unit lattice 
+> for the maximal order of $K$
+"""
+function regulator(K::AnticNumberField)
+  return regulator(maximal_order(K))
+end

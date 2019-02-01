@@ -147,6 +147,7 @@ function elements_with_all_signs(L::NfOrd)
   cnt = 0
   while true
     a = rand(L, b)
+    iszero(a) && continue
     t = logS(signs(K(a)))
     if !haspreimage(mu, t)[1]
       push!(s, t)

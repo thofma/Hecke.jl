@@ -574,6 +574,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   Rd = hcat(d*identity_matrix(SMat, FlintZZ, R.r), fmpz(-1)*R)
   @vprint :ClassGroup 1 ".. done, now saturating ...\n"
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
+  @vprint :ClassGroup 1 " done\n"
   S1 = sub(S, 1:S.r, 1:S.r)
   S2 = sub(S, 1:S.r, S.r+1:S.c)
   @assert rows(S1) == rows(S2) && rows(S1) == S.r

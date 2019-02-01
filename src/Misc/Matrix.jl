@@ -1326,10 +1326,18 @@ function setindex!(A::Nemo.MatElem{T}, n::Int, s::T) where T <: RingElem
   A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))] = s
 end
 
-# TODO: Fix this iterator
-#Base.start(A::Nemo.MatElem) = 1
-#Base.next(A::Nemo.MatElem, i::Int) = A[i], i+1
-#Base.done(A::Nemo.MatElem, i::Int) = i > length(A)
+function Base.iterate(A::Nemo.MatElem, state::Int = 0) 
+  s = size(A)
+  if state < s[1]*s[2]
+    state += 1
+    return A[state], state
+  end
+  return nothing
+end
+
+Base.IteratorSize(M::Nemo.MatElem) = Base.HasLength()
+Base.IteratorEltype(M::Nemo.MatElem) = Base.HasEltype()
+Base.eltype(M::Nemo.MatElem) = elem_type(base_ring(M))
 
 function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) where T
   @assert cols(b) == 1 && rows(b) == rows(A) 

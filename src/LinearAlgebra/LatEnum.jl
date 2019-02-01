@@ -502,3 +502,33 @@ function recprint(n::Int)
   s = "  "^n
   return s
 end
+
+@doc Markdown.doc"""
+    hermite_constant(n::Int, R=ArbField(100))
+The $n$-th Hermite constant (for lattices) to the power $n$.
+Exact value if $1 \le n \le 8$ and Blichfeld's upper bound
+otherwise.
+"""
+function hermite_constant(n::Int, R=ArbField(20))
+  if n <= 8
+    return R([1, 4/3, 2, 4, 8, 64/3, 64, 256][n])
+  end
+  return (2/pi)^n*gamma(R(2+n/2))^2
+end
+
+#using semi_factorial and gamma_half we can write the Blichfeld bound
+#as rational * pi^1-n (if we want)
+#Blichfeld = pi^(1-n) /8 * semi_factorial(n+2)^2
+#
+function semi_factorial(n::Int)
+  if isodd(n)
+    return prod([fmpz(2*i-1) for i=1:div(n+1, 2)])
+  else
+    return prod([fmpz(2*i) for i=1:div(n, 2)])
+  end
+end
+
+function gamma_half(n::Int)
+  #gamma(n/2)
+  return sqrt(pi)*semi_factorial(n-2)/2^((n-1)/2)
+end
