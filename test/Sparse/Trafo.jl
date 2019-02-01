@@ -72,7 +72,7 @@
                                     0 0 4 28 10;
                                     0 0 7 46 16])
 
-  T = @inferred sparse_trafo_delete_zero(fmpz, 2)
+  T = @inferred sparse_trafo_move_row(fmpz, 2, 5)
   @inferred Hecke.apply_left!(Asparse, T)
   @test Asparse == sparse_matrix(FlintZZ, [1 1 0 0 0;
                                            0 0 1 10 4;
