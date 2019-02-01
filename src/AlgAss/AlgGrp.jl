@@ -12,6 +12,8 @@ elem_type(::Type{AlgGrp{T, S, R}}) where {T, S, R} = AlgGrpElem{T, AlgGrp{T, S, 
 
 group(A::AlgGrp) = A.group
 
+has_one(A::AlgGrp) = true
+
 function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
   length(c) != dim(A) && error("Dimensions don't match.")
   return AlgGrpElem{T, typeof(A)}(A, c)

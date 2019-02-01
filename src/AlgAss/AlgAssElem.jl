@@ -18,7 +18,12 @@ parent(a::AbsAlgAssElem) = a.parent
 
 zero(A::AbsAlgAss) = A()
 
-one(A::AbsAlgAss) = A(deepcopy(A.one)) # deepcopy needed by mul!
+function one(A::AbsAlgAss)
+  if !has_one(A)
+    error("Algebra does not have a one")
+  end
+  return A(deepcopy(A.one)) # deepcopy needed by mul!
+end
 
 ################################################################################
 #

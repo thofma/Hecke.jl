@@ -103,7 +103,7 @@ function assure_has_basis_mat(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
   a.basis_mat = zero_matrix(FlintZZ, d, d)
   for i = 1:d
     for j = 1:d
-      a.basis_mat[i, j] = elem_in_basis(basis[i])[j]
+      a.basis_mat[i, j] = elem_in_basis(basis(a, Val{false})[i])[j]
     end
   end
   a.basis_mat = _hnf(a.basis_mat, :lowerleft)
