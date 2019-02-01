@@ -293,7 +293,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
       end
       @assert O.ismaximal ==1 || p in O.primesofmaximality
       lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-      if degree_limit == 0 && lower_limit == 0
+      if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
       end
       return copy(lp)
