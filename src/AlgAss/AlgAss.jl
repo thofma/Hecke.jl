@@ -1136,7 +1136,7 @@ function _find_idempotent_via_non_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}
   sf_part = prod(keys(fac.fac))
   b = sf_part(a)
   # This is not really an algebra, only a right sided ideal
-  bA, bAtoA = subalgebra(A, b, false, :left, false)
+  bA, bAtoA = subalgebra(A, b, false, :left)
 
   # Find an element e of bA such that e*x == x for all x in bA
   M = zero_matrix(base_ring(A), dim(bA), 0)
