@@ -1218,7 +1218,7 @@ function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S 
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   s = Nemo.Generic.sylvester_matrix(lift(Zx, f), lift(Zx, g))
   h = hnf(s)
-  return gcd(R(0), R(h[rows(h), cols(h)]))
+  return gcd(R(0), R(h[nrows(h), ncols(h)]))
 end
 
 function rres_bez(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
@@ -1236,7 +1236,7 @@ function rres_hnf(f::fmpz_poly, g::fmpz_poly)
   @assert typeof(f) == typeof(g)
   s = Nemo.Generic.sylvester_matrix(f, g)
   h = hnf(s)
-  return abs(h[rows(h), cols(h)])
+  return abs(h[nrows(h), ncols(h)])
 end
 
 function rres_bez(f::fmpz_poly, g::fmpz_poly)
@@ -1939,22 +1939,22 @@ function charpoly_mod(M::Generic.Mat{nf_elem}; integral::Bool = false, normal::B
 end
 #=
 function cyclic_generators(A::MatElem{T}) where {T <: FieldElem}
-  b = matrix(base_ring(A), 0, rows(A), [])
-  g = matrix(base_ring(A), 0, rows(A), [])
-  while rows(b) < rows(A)
-    if rows(g) == 0
-      g = zero_matrix(base_ring(A), 1, rows(A))
+  b = matrix(base_ring(A), 0, nrows(A), [])
+  g = matrix(base_ring(A), 0, nrows(A), [])
+  while nrows(b) < nrows(A)
+    if nrows(g) == 0
+      g = zero_matrix(base_ring(A), 1, nrows(A))
       g[1,1] = 1
     else
-      i = findfirst(j-> b[j,j] == 0, 1:rows(b))
+      i = findfirst(j-> b[j,j] == 0, 1:nrows(b))
       if i == nothing
-        i = rows(b)+1
+        i = nrows(b)+1
       end
-      g = vcat(g, zero_matrix(base_ring(A), 1, rows(A)))
-      g[rows(g), i] = 1
+      g = vcat(g, zero_matrix(base_ring(A), 1, nrows(A)))
+      g[nrows(g), i] = 1
     end
     b = extend_cyclic_subspace(A::MatElem{T}, b::MatElem{T}, g)
-    if rows(b) == rows(A)
+    if nrows(b) == nrows(A)
       return g
     end
   end
@@ -1964,11 +1964,11 @@ function extend_cyclic_subspace(A::MatElem{T}, b::MatElem{T}, g) where {T <: Fie
   while true
     g = vcat(g, g*A)
     cleanvect(b, g) #currently does only single rows...
-    i = findfirst(i->iszero_row(g, i), 1:rows(g))
+    i = findfirst(i->iszero_row(g, i), 1:nrows(g))
     if i != nothing
-      b = vcat(b, view(g, 1:i-1, 1:cols(g)))
+      b = vcat(b, view(g, 1:i-1, 1:ncols(g)))
       rk, b = rref!(b)
-      @assert rk == rows(b)
+      @assert rk == nrows(b)
       return b
     end
     A *= A
@@ -1977,8 +1977,8 @@ end
 function cyclic_subspace(A::MatElem{T}, b::MatElem{T}) where {T <: FieldElem}
   b = deepcopy!(b)
   rk, b = rref!(b)
-  bv = view(b, 1:rk, 1:cols(b))
-  if rk == 0 || rk == cols(b)
+  bv = view(b, 1:rk, 1:ncols(b))
+  if rk == 0 || rk == ncols(b)
     return bv
   end
   while true
@@ -1989,8 +1989,8 @@ function cyclic_subspace(A::MatElem{T}, b::MatElem{T}) where {T <: FieldElem}
       return bv
     end
     rk= rk_new
-    bv = view(b, 1:rk, 1:cols(b))
-    if rk == cols(b)
+    bv = view(b, 1:rk, 1:ncols(b))
+    if rk == ncols(b)
       return bv
     end
     A *= A

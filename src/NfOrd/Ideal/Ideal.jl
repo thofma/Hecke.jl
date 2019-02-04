@@ -1436,13 +1436,13 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
       return ideal(O, p)
     end
     M2 = zero_matrix(FlintZZ, d, d)
-    for i = 1:cols(B)
+    for i = 1:ncols(B)
       for j = 1:d
         M2[i, j] = FlintZZ(B[j, i].data)
       end
     end
     gens = elem_type(O)[O(p)]
-    for i=1:cols(B)
+    for i=1:ncols(B)
       if !iszero_row(M2,i)
         push!(gens, elem_from_mat_row(O, M2, i))
       end

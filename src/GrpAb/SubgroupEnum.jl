@@ -98,7 +98,7 @@ function index_to_group(s::IndexPSubgroups, i::UInt)
   end
   c = s.c
   zero!(c)
-  for k=1:rows(c)
+  for k=1:nrows(c)
     if s.st+j-1 != k
       c[k, k] = 1
     end
@@ -110,7 +110,7 @@ function index_to_group(s::IndexPSubgroups, i::UInt)
     k += 1
   end
   c[s.st + j-1, s.st + j-1] = s.p
-  gen = [s.mp\(codomain(s.mp)(sub(c, l:l, 1:cols(c)))) for l=1:rows(c)]
+  gen = [s.mp\(codomain(s.mp)(sub(c, l:l, 1:ncols(c)))) for l=1:nrows(c)]
   return s.mthd(domain(s.mp), gen)
 end
 

@@ -168,7 +168,7 @@ end
 Swap the $i$-th and $j$-th column of $A$ inplace.
 """
 function swap_cols!(A::SMat{T}, i::Int, j::Int) where T
-  @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
+  @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)
 
   if i == j
     return A
@@ -242,7 +242,7 @@ $A_j \rightarrow A_j + c \cdot A_i$, where $(A_i)_i$ denote the columns of $A$.
 function add_scaled_col!(A::SMat{T}, i::Int, j::Int, c::T) where T
   @assert c != 0
 
-  @assert 1 <= i <= cols(A) && 1 <= j <= cols(A)
+  @assert 1 <= i <= ncols(A) && 1 <= j <= ncols(A)
 
   for r in A.rows
     if i in r.pos
@@ -392,7 +392,7 @@ function Base.show(io::IO, t::SparseTrafoElem)
   elseif i == 4
     print(io, "Transform", t.i, ", ", t.j, " by [", t.a, " ", t.b, " ", t.c, " ", t.d, "]")
   elseif i == 5
-    print(io, "Dense ", rows(t.U), "x", rows(t.U), " at ", t.i)
+    print(io, "Dense ", nrows(t.U), "x", nrows(t.U), " at ", t.i)
   elseif i == 6
     print(io, "Move ", t.i, " to ", t.j)
   end
@@ -473,10 +473,10 @@ function apply_right!(x::Vector{T}, t::SparseTrafoElem{T, S}) where {T, S}
     x[t.i] = r
     x[t.j] = s
   elseif i == 5
-    s = matrix(parent(x[1]), 1, rows(t.U), x[t.rows])
+    s = matrix(parent(x[1]), 1, nrows(t.U), x[t.rows])
     #println("s :$s")
     s = s*t.U
-    for (i, j) in zip(t.rows,1:rows(t.U))
+    for (i, j) in zip(t.rows,1:nrows(t.U))
       x[i] = s[1, j]
     end
   elseif i == 6
@@ -506,9 +506,9 @@ end
 #function apply_left!(x::Vector{NfOrdFracIdl}, y::TrafoPartialDense)
 #  z = view(deepcopy(x), y.cols)
 #  xx = view(x, y.cols)
-#  for i in 1:rows(y.U)  ## use power product instead
+#  for i in 1:nrows(y.U)  ## use power product instead
 #    xx[i] = z[1]^Int(y.U[i, 1])
-#    for j in 2:cols(y.U)
+#    for j in 2:ncols(y.U)
 #      xx[i] *= z[j]^Int(y.U[i, j])
 #    end
 #  end

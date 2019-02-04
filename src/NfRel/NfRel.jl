@@ -555,7 +555,7 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelElem{T}) where T
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     M[i, c] = deepcopy(coeff(a, c - 1))
   end
   return nothing
@@ -564,7 +564,7 @@ end
 function elem_from_mat_row(L::NfRel{T}, M::Generic.Mat{T}, i::Int) where T
   t = L(1)
   a = L()
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a += M[i, c]*t
     mul!(t, t, gen(L))
   end

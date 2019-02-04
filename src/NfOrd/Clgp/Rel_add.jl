@@ -121,7 +121,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::nf_elem, n::fmpq, nI::
     end  
 
     clg.rel_cnt += 1
-#    @assert clg.rel_cnt < 2*cols(clg.M)
+#    @assert clg.rel_cnt < 2*ncols(clg.M)
     @v_do :ClassGroup 1 println(" -> OK, rate currently ",
            clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last,
            " rank now ", rank(clg.M), " of ", length(clg.FB.ideals))
@@ -165,7 +165,7 @@ function class_group_add_relation(clg::ClassGrpCtx{SMat{fmpz}}, a::FacElem{nf_el
   push!(clg.RS, hash(a))
 
   clg.rel_cnt += 1
-#    @assert clg.rel_cnt < 2*cols(clg.M)
+#    @assert clg.rel_cnt < 2*ncols(clg.M)
   @v_do :ClassGroup 1 println(" -> OK, rate currently ",
          clg.bad_rel/clg.rel_cnt, " this ", clg.bad_rel - clg.last)
   clg.last = clg.bad_rel

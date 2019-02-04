@@ -330,23 +330,23 @@ function _expand(g::Vector{T}, M::fmpz_mat, h::Vector{T}, N::fmpz_mat, disc_log:
 
   @assert issnf(N)
   O = order(q)
-  Z = zero_matrix(FlintZZ, rows(M) + rows(N), cols(M) + cols(N))
-  for i = 1:rows(M)
-    for j = 1:cols(M)
+  Z = zero_matrix(FlintZZ, nrows(M) + nrows(N), ncols(M) + ncols(N))
+  for i = 1:nrows(M)
+    for j = 1:ncols(M)
       Z[i, j] = M[i, j]
     end
   end
-  for i = 1:rows(N)
-    Z[i + rows(M), i + rows(M)] = N[i, i]
+  for i = 1:nrows(N)
+    Z[i + nrows(M), i + nrows(M)] = N[i, i]
   end
-  for i = 1:rows(M)
+  for i = 1:nrows(M)
     el = one(O)
-    for j = 1:cols(M)
+    for j = 1:ncols(M)
       el = mod(el*powermod(g[j], M[i, j], q), q)
     end
     alpha = disc_log(el)
-    for j in 1:cols(N)
-      Z[i, j + cols(M)] = -alpha[j]
+    for j in 1:ncols(N)
+      Z[i, j + ncols(M)] = -alpha[j]
     end
   end
 

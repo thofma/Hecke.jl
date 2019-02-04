@@ -183,7 +183,7 @@ mutable struct GrpAbFinGenToAbsOrdMap{S, T} <: Map{GrpAbFinGen, S, HeckeMap, Grp
   end
 
   function GrpAbFinGenToAbsOrdMap{S, T}(O::S, generators::Vector{T}, relation_matrix::fmpz_mat, disc_log::Function, modulus...) where {S, T}
-    @assert length(generators) == rows(relation_matrix)
+    @assert length(generators) == nrows(relation_matrix)
 
     G = GrpAbFinGen(relation_matrix)
 
@@ -257,7 +257,7 @@ mutable struct GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U} <: Map{GrpAbFinGen, Ab
   end
 
   function GrpAbFinGenToAbsOrdQuoRingMultMap{S, T, U}(Q::AbsOrdQuoRing{S, T}, generators::Vector{AbsOrdQuoRingElem{S, T, U}}, relation_matrix::fmpz_mat, disc_log::Function) where {S, T, U}
-    @assert length(generators) == rows(relation_matrix)
+    @assert length(generators) == nrows(relation_matrix)
 
     G = GrpAbFinGen(relation_matrix)
 

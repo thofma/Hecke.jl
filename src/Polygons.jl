@@ -329,10 +329,10 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
   end
   B = basis_mat(l)
-  B = sub(hnf(B), rows(B)-degree(K)+1:rows(B), 1:degree(K))
+  B = sub(hnf(B), nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
   if !regular
     elt = nf_elem[]
-    for i in 1:rows(B) 
+    for i in 1:nrows(B) 
       push!(elt, elem_from_mat_row(K, B.num, i, B.den))
     end
     O1 = _order_for_polygon_overorder(K, elt)
@@ -427,9 +427,9 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
     
     B = hnf(basis_mat(prods))
     
-    dd = B.num[rows(B) - degree(K) + 1, 1]
+    dd = B.num[nrows(B) - degree(K) + 1, 1]
     for i in 2:degree(K)
-      dd *= B.num[rows(B) - degree(K) + i, i]
+      dd *= B.num[nrows(B) - degree(K) + i, i]
     end
     if iszero(dd)
       error("Elements do not define a module of full rank")
@@ -442,7 +442,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       dold = d
       elt = T[]
       for i in 1:n
-        push!(elt, elem_from_mat_row(K, B.num, rows(B) - degree(K) + i, B.den))
+        push!(elt, elem_from_mat_row(K, B.num, nrows(B) - degree(K) + i, B.den))
       end
     end
   end
@@ -481,7 +481,7 @@ function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p:
       end
       N = vcat(N, m)
     end
-    @vtime :NfOrd 1 N = view(_hnf_modular_eldiv(N, p, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    @vtime :NfOrd 1 N = view(_hnf_modular_eldiv(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     P = NfOrdIdl(O, N)
     P.minimum = p
     P.norm = p^f

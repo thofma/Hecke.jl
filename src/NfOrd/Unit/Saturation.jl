@@ -40,7 +40,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   nonzerorows = Array{Int, 1}()
 
-  for j in 1:rows(L)
+  for j in 1:nrows(L)
     if !iszero_row(L, j)
       push!(nonzerorows, j)
     end
@@ -48,7 +48,7 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   if k == 0 
     return (true, zero(nf(order(U))))
-  elseif k == 1 && sum(T[ L[nonzerorows[1], i]::T for i in 1:cols(L)-1]) == 0
+  elseif k == 1 && sum(T[ L[nonzerorows[1], i]::T for i in 1:ncols(L)-1]) == 0
     # Only one root, which is torsion.
     # We assume that the torsion group is the full torsion group
     return (true, zero(nf(order(U))))
@@ -89,15 +89,15 @@ function _is_saturated(U::UnitGrpCtx, p::Int, B::Int = 2^30 - 1, proof::Bool = f
 
   for i in 1:MAX
 
-    ra = rand(0:p-1, rows(K))
-    v = zero_matrix(base_ring(K), 1, cols(K))
-    for j in 1:cols(K)
-      for l in 1:rows(K)
+    ra = rand(0:p-1, nrows(K))
+    v = zero_matrix(base_ring(K), 1, ncols(K))
+    for j in 1:ncols(K)
+      for l in 1:nrows(K)
         v[1, j] = v[1, j] + ra[l]*K[l,j]
       end
     end
 
-    if v == parent(v)(0)# || sum([v[1, j] for j in 1:rows(K)-1]) == 0
+    if v == parent(v)(0)# || sum([v[1, j] for j in 1:nrows(K)-1]) == 0
       continue
     end
 

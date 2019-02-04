@@ -269,7 +269,7 @@ mutable struct AlgAssAbsOrd{S, T} <: Ring
     r = AlgAssAbsOrd{S}(A)
     d = dim(A)
     r.basis_mat = basis_mat
-    r.basis_alg = Vector{elem_type(S)}(undef, rows(basis_mat))
+    r.basis_alg = Vector{elem_type(S)}(undef, nrows(basis_mat))
     for i in 1:d
       r.basis_alg[i] = elem_from_mat_row(A, basis_mat.num, i, basis_mat.den)
     end

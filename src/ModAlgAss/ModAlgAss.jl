@@ -11,7 +11,7 @@ mutable struct ModAlgAss{S, T, V}
   function ModAlgAss{S, T}(action::Vector{T}) where {S, T}
     z = new{S, T, elem_type(S)}()
     z.action = action
-    z.dimension = cols(action[1])
+    z.dimension = ncols(action[1])
     z.base_ring = base_ring(action[1])
     if z.dimension == 1
       z.isirreducible = 1
@@ -89,9 +89,9 @@ end
 function algebra(M::Vector{T}) where {T <: MatElem}
   @assert length(M) > 0
   A = M[1]
-  n = rows(A)
+  n = nrows(A)
   n2 = n^2
-  @assert n == cols(A)
+  @assert n == ncols(A)
   K = base_ring(A)
   Mprod = M
   Morig = copy(M)
@@ -129,7 +129,7 @@ function algebra(M::Vector{T}) where {T <: MatElem}
   end
 
   dim = current_dim
-  B = sub(B, 1:dim, 1:cols(B))
+  B = sub(B, 1:dim, 1:ncols(B))
 
   basis = [ matrix(K, n, n, [B[k, (i - 1)*n + j] for i in 1:n for j in 1:n]) for k in 1:dim]
 

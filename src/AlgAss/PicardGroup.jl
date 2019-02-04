@@ -222,8 +222,8 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # We need to change Vi, since we want integral generators.
     Q = similar(V) # Not exactly the same Q as in the Bley-Endres-paper
     C = deepcopy(Vi) # Will be Vi + Q*R.rels, we can't change Vi in place, since it is also part of StoR
-    for i = 1:rows(C)
-      for j = 1:cols(C)
+    for i = 1:nrows(C)
+      for j = 1:ncols(C)
         if C[i, j] >= 0
           continue
         end
@@ -236,9 +236,9 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # Compute the generators
     generators_in_OO = Vector{ideal_type(OO)}()
     gens_snf = Vector{ideal_type(O)}()
-    for i = 1:rows(C)
+    for i = 1:nrows(C)
       I = ideal(OO, one(OO))
-      for j = 1:cols(C)
+      for j = 1:ncols(C)
         I *= gens_of_R[j]^C[i, j]
       end
       push!(generators_in_OO, I)
@@ -271,10 +271,10 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # (-----) * W = (-----)
     # (0 | 0)       (0 | 0).
     # We don't do the multiplications with zero.
-    UW = U*sub(W, 1:ngens(R), 1:cols(W))
+    UW = U*sub(W, 1:ngens(R), 1:ncols(W))
 
     betas = Vector{elem_type(A)}()
-    for i = 1:rows(UW)
+    for i = 1:nrows(UW)
       t = one(A)
       for j = 1:ngens(R)
         t *= princ_gens_ray[j]^UW[i, j]

@@ -26,8 +26,8 @@ end
 > Returns $A$.
 """
 function rand!(A::Generic.Mat{nf_elem}, U::AbstractArray)
-  for i=1:rows(A)
-    for j=1:cols(A)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       rand!(A[i,j], U)
     end
   end
@@ -48,9 +48,9 @@ end
 > compute a global pre-image using some efficient CRT.
 """
 function modular_lift(ap::Array{fq_nmod_mat, 1}, me::modular_env)
-  A = zero_matrix(me.K, rows(ap[1]), cols(ap[1]))
-  for i=1:rows(A)
-    for j=1:cols(A)
+  A = zero_matrix(me.K, nrows(ap[1]), ncols(ap[1]))
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       A[i,j] = modular_lift([ap[k][i,j] for k=1:length(ap)], me)
     end
   end
@@ -62,8 +62,8 @@ end
 > Inplace: reduce all entries of $A$ modulo $m$, into the positive residue system.
 """
 function mod!(A::Generic.Mat{nf_elem}, m::fmpz)
-  for i=1:rows(A)
-    for j=1:cols(A)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       mod!(A[i,j], m)
     end
   end
@@ -74,8 +74,8 @@ end
 > Inplace: reduce all entries of $A$ modulo $m$, into the symmetric residue system.
 """
 function mod_sym!(A::Generic.Mat{nf_elem}, m::fmpz)
-  for i=1:rows(A)
-    for j=1:cols(A)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       mod_sym!(A[i,j], m)
     end
   end
@@ -96,8 +96,8 @@ function rational_reconstruction2(A::Generic.Mat{nf_elem}, M::fmpz)
   sM = root(M, 2)
   d = one(A[1,1])
   di = inv(d)
-  for i=1:rows(A)
-    for j=1:cols(A)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       a = A[i,j]*d
       mod_sym!(a, M)
       if all(i->small_coeff(a, sM, i), 1:a.elem_length)
@@ -120,8 +120,8 @@ end
 
 function rational_reconstruction(A::Generic.Mat{nf_elem}, M::fmpz)
   B = similar(A)
-  for i=1:rows(A)
-    for j=1:cols(A)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       fl, B[i,j] = rational_reconstruction(A[i,j], M)
       if !fl 
         return false, B
@@ -162,8 +162,8 @@ end
 > Inplace: divide each entry by $p$.
 """
 function divexact!(A::Generic.Mat{nf_elem}, p::fmpz)
-  for i=1:rows(A)
-    for j=1:cols(A)
+  for i=1:nrows(A)
+    for j=1:ncols(A)
       A[i,j] = A[i,j]//p
     end
   end

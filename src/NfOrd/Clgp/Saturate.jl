@@ -45,7 +45,7 @@ function dlog(dl::Dict, x, p::Int)
 end
 
 function Hecke.matrix(R::Hecke.Ring, M::MatElem)
-  return matrix(R, rows(M), cols(M), elem_type(R)[R(M[i,j]) for i=1:rows(M) for j=1:cols(M)])
+  return matrix(R, nrows(M), ncols(M), elem_type(R)[R(M[i,j]) for i=1:nrows(M) for j=1:ncols(M)])
 end
 
 function mod_p(R, Q::NfOrdIdl, p::Int, T)
@@ -87,7 +87,7 @@ Hecke.lift(A::fmpz_mat) = A
 =#
 
 function lift_nonsymmetric(a::nmod_mat)
-  z = fmpz_mat(rows(a), cols(a))
+  z = fmpz_mat(nrows(a), ncols(a))
   z.base_ring = FlintIntegerRing()
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
           (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
@@ -95,7 +95,7 @@ function lift_nonsymmetric(a::nmod_mat)
 end
 
 function lift_nonsymmetric(a::gfp_mat)
-  z = fmpz_mat(rows(a), cols(a))
+  z = fmpz_mat(nrows(a), ncols(a))
   z.base_ring = FlintZZ
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
           (Ref{fmpz_mat}, Ref{gfp_mat}), z, a)
@@ -117,7 +117,7 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
   end
   T = GF(p, cached = false)
   A = identity_matrix(T, length(R))
-  cA = cols(A)
+  cA = ncols(A)
   i = 1
 
   S = Hecke.PrimesSet(Hecke.p_start, -1, Int(p), 1)
@@ -143,8 +143,8 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
         if z[1] == 0
           return matrix(FlintZZ, 0, length(R), fmpz[])
         end
-        A = A*sub(z[2], 1:rows(z[2]), 1:z[1])
-        if cA == cols(A) 
+        A = A*sub(z[2], 1:nrows(z[2]), 1:z[1])
+        if cA == ncols(A) 
           break #the other ideals are going to give the same info
                 #for multi-quad as the field is normal
         end        
@@ -154,13 +154,13 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
         end
       end
     end
-    if cA == cols(A) 
+    if cA == ncols(A) 
       i += 1
     else
       i = 0
-      cA = cols(A)
+      cA = ncols(A)
     end
-    if i> stable*cols(A)
+    if i> stable*ncols(A)
       break
     end
   end
@@ -173,7 +173,7 @@ fe(a::nf_elem) = FacElem(a)
 function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   res = []
   fac = []
-  for i=1:cols(z)
+  for i=1:ncols(z)
     a = fe(c.R_gen[1])^FlintZZ(z[1, i])
     b = FlintZZ(z[1, i]) * c.M.bas_gens[1]
     for j=2:length(c.R_gen)
@@ -196,7 +196,7 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
   success = false
   while true
     e = saturate_exp(c, n, stable)
-    if rows(e) == 0
+    if nrows(e) == 0
       @vprint :ClassGroup 1  "sat yielded nothing new at ", stable, success, "\n"
       return success
     end
@@ -207,10 +207,10 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
     t, mt = torsion_unit_group(maximal_order(K))
     zeta = K(mt(t[1]))
 
-    @vprint :ClassGroup 1 "sat: (Hopefully) enlarging by $(cols(e)) elements\n"
+    @vprint :ClassGroup 1 "sat: (Hopefully) enlarging by $(ncols(e)) elements\n"
 
     wasted = false
-    for i=1:cols(e)
+    for i=1:ncols(e)
       r = e[:, i]
       @assert content(r) == 1
       a = FacElem(K(1))
@@ -223,9 +223,9 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable = 3
         a *= fe(c.R_rel[j])^r[j + length(c.R_gen), 1]
         fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
       end
-      if rows(e) > length(c.R_gen) + length(c.R_rel)
-        @assert length(c.R_gen) + length(c.R_rel) + 1 == rows(e)
-        a *= fe(zeta)^r[rows(e), 1]
+      if nrows(e) > length(c.R_gen) + length(c.R_rel)
+        @assert length(c.R_gen) + length(c.R_rel) + 1 == nrows(e)
+        a *= fe(zeta)^r[nrows(e), 1]
       end
       
       decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)

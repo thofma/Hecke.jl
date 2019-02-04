@@ -57,9 +57,9 @@ end
 
 #need to only compute the top l x l submatrix when using limited enum
 function pseudo_cholesky(G::fmpz_mat, den=1; 
-                 TC::Type=Rational{BigInt}, limit = rows(G))
-  n = cols(G)
-  @hassert :LatEnum 1 rows(G) == n
+                 TC::Type=Rational{BigInt}, limit = nrows(G))
+  n = ncols(G)
+  @hassert :LatEnum 1 nrows(G) == n
   limit = min(limit, n)
   t = fmpz()
   C = Array{TC}(undef, limit, limit)
@@ -94,24 +94,24 @@ function pseudo_cholesky(G::fmpz_mat, den=1;
   return C
 end
 
-function enum_ctx_from_basis(B::FakeFmpqMat; Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
+function enum_ctx_from_basis(B::FakeFmpqMat; Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = nrows(B))
   G = gram(numerator(B))
   return enum_ctx_from_gram(G, denominator(B)^2, Tx=Tx, TC=TC, TU=TU, limit = limit)
 end
 
-function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = rows(G))
+function enum_ctx_from_gram(G::FakeFmpqMat; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = nrows(G))
   return enum_ctx_from_gram(numerator(G), denominator(G), Tx=Tx, TC=TC, TU=TU, limit = limit)
 end  
  
-function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = fmpz(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = rows(B))
+function enum_ctx_from_basis(B::fmpz_mat, den::fmpz = fmpz(1); Tx::Type = BigInt, TC::Type = Rational{BigInt}, TU::Type = Rational{BigInt}, limit = nrows(B))
   G = gram(B)
   return enum_ctx_from_gram(G, den*den, Tx=Tx, TC=TC, TU=TU, limit = limit)
 end
 
-function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = rows(G))
+function enum_ctx_from_gram(G::fmpz_mat, den = 1; Tx = BigInt, TC = Rational{BigInt}, TU = Rational{BigInt}, limit = nrows(G))
   E = enum_ctx{Tx, TC, TU}()
   E.G = G
-  n = E.n =rows(G) 
+  n = E.n =nrows(G) 
   E.limit = limit = min(limit, n)
   E.d = den
   E.C = pseudo_cholesky(E.G, den, TC = TC, limit = limit)
@@ -354,7 +354,7 @@ end
 ################################################################################
 
 function pseudo_cholesky(G::arb_mat)
-  n = cols(G)
+  n = ncols(G)
   C = deepcopy(G)
   for i = 1:n-1 
     for j = i+1:n
@@ -391,14 +391,14 @@ end
 
 function enumerate_using_gram(G::arb_mat, c::arb)
   E = EnumCtxArb(pseudo_cholesky(G))
-  return _enumerate(E, c, rows(G), zero_matrix(FlintZZ, 1, rows(G)))
+  return _enumerate(E, c, nrows(G), zero_matrix(FlintZZ, 1, nrows(G)))
 end
 
 function _enumerate(E::EnumCtxArb, c::arb, i::Int, x::fmpz_mat)
   # assume x_n,x_n-1,...,x_i+1 are set
   # compute the bound for x_i
   G = E.G
-  n = rows(G)
+  n = nrows(G)
   p = E.p
   #recprint(n-i)
   #println("I am at level $i with $x")

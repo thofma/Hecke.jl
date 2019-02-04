@@ -63,7 +63,7 @@ parent_type(::Type{GrpAbFinGenElem}) = GrpAbFinGen
     AbelianGroup(M::fmpz_mat) -> GrpAbFinGen
 
 > Creates the abelian group with relation matrix `M`. That is, the group will
-> have `cols(M)` generators and each row of `M` describes one relation.
+> have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::fmpz_mat)
   return GrpAbFinGen(M)
@@ -74,7 +74,7 @@ end
     AbelianGroup(M::Array{fmpz, 2}) -> GrpAbFinGen
 
 > Creates the abelian group with relation matrix `M`. That is, the group will
-> have `cols(M)` generators and each row of `M` describes one relation.
+> have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::Array{fmpz, 2})
   return AbelianGroup(matrix(FlintZZ, M))
@@ -85,7 +85,7 @@ end
     AbelianGroup(M::Array{Integer, 2}) -> GrpAbFinGen
 
 > Creates the abelian group with relation matrix `M`. That is, the group will
-> have `cols(M)` generators and each row of `M` describes one relation.
+> have `ncols(M)` generators and each row of `M` describes one relation.
 """
 function AbelianGroup(M::Array{T, 2}) where T <: Integer
   return AbelianGroup(matrix(FlintZZ, M))
@@ -121,16 +121,16 @@ Assuming that $M$ has only one row, this function creates the direct product of
 the cyclic groups $\mathbf{Z}/m_i$, where $m_i$ is the $i$th entry of `M`.
 """
 function DiagonalGroup(M::fmpz_mat)
-  if rows(M) != 1
+  if nrows(M) != 1
     error("The argument must have only one row")
   end
 
-  N = zero_matrix(FlintZZ, cols(M), cols(M))
-  for i = 1:cols(M)
+  N = zero_matrix(FlintZZ, ncols(M), ncols(M))
+  for i = 1:ncols(M)
     N[i,i] = M[1, i]
   end
   if issnf(N)
-    return GrpAbFinGen(fmpz[M[1, i] for i = 1:cols(M)])
+    return GrpAbFinGen(fmpz[M[1, i] for i = 1:ncols(M)])
   else
     return GrpAbFinGen(N)
   end
@@ -246,7 +246,7 @@ function ngens(A::GrpAbFinGen)
   if issnf(A)
     return length(A.snf)
   else
-    return cols(A.rels)
+    return ncols(A.rels)
   end
 end
 
@@ -260,7 +260,7 @@ function nrels(A::GrpAbFinGen)
   if issnf(A)
     return length(A.snf)
   else
-    return rows(A.rels)
+    return nrows(A.rels)
   end
 end
 
@@ -333,7 +333,7 @@ end
 # the ones at the diagonal of S and contructs the homomorphism.
 function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
 
-  d = fmpz[S[i,i] for i = 1:min(rows(S), cols(S))]
+  d = fmpz[S[i,i] for i = 1:min(nrows(S), ncols(S))]
 
   while length(d) < ngens(G)
     push!(d, 0)
@@ -346,23 +346,23 @@ function _reduce_snf(G::GrpAbFinGen, S::fmpz_mat, T::fmpz_mat, Ti::fmpz_mat)
   #    push!(s, d[i])
   #  end
   #end
-  TT = zero_matrix(FlintZZ, rows(T), length(s))
+  TT = zero_matrix(FlintZZ, nrows(T), length(s))
   j = 1
   for i = 1:length(d)
     if d[i] != 1
-      for k=1:rows(T)
+      for k=1:nrows(T)
         TT[k, j] = T[k, i]
       end
       j += 1
     end
   end
 
-  TTi = zero_matrix(FlintZZ, length(s), rows(T))
+  TTi = zero_matrix(FlintZZ, length(s), nrows(T))
 
   j = 1
   for i = 1:length(d)
     if d[i] != 1
-      for k=1:rows(T)
+      for k=1:nrows(T)
         TTi[j, k] = Ti[i, k]
       end
       j += 1
@@ -527,8 +527,8 @@ function direct_product(G::GrpAbFinGen, H::GrpAbFinGen)
     m1 = hom(gens(G), [Dp[i] for i = 1:ngens(G)])
     return Dp, m1, m2
   end
-  A = vcat(rels(G), zero_matrix(FlintZZ, rows(rels(H)), cols(rels(G))))
-  B = vcat(zero_matrix(FlintZZ, rows(rels(G)), cols(rels(H))), rels(H))
+  A = vcat(rels(G), zero_matrix(FlintZZ, nrows(rels(H)), ncols(rels(G))))
+  B = vcat(zero_matrix(FlintZZ, nrows(rels(G)), ncols(rels(H))), rels(H))
   Dp = AbelianGroup(hcat(A,B))
   m1 = hom(gens(G), [Dp[i] for i=1:ngens(G)])
   m2 = hom(gens(H), [Dp[i+ngens(G)] for i = 1:ngens(H)])
@@ -604,16 +604,16 @@ function sub(G::GrpAbFinGen, s::Array{GrpAbFinGenElem, 1},
   end
   h = hnf(m)
   fstWithoutOldGens = 1
-  for i in rows(h):-1:1, j in ngens(p):-1:1
+  for i in nrows(h):-1:1, j in ngens(p):-1:1
     if !iszero(h[i,j])
       fstWithoutOldGens = i + 1
       break
     end
   end
-  r = sub(h, fstWithoutOldGens:rows(h), ngens(p) + 1:cols(h))
+  r = sub(h, fstWithoutOldGens:nrows(h), ngens(p) + 1:ncols(h))
   S = AbelianGroup(r)
 
-  mS = hom(S, p, sub(m, (nrels(p) + 1):rows(h), 1:ngens(p)), false)
+  mS = hom(S, p, sub(m, (nrels(p) + 1):nrows(h), 1:ngens(p)), false)
 
   if add_to_lattice
     append!(L, mS)
@@ -644,8 +644,8 @@ end
 """
 function sub(G::GrpAbFinGen, M::fmpz_mat,
              add_to_lattice::Bool = true, L::GrpAbLattice = GroupLattice)
-  m = zero_matrix(FlintZZ, rows(M) + nrels(G), ngens(G) + rows(M))
-  for i = 1:rows(M)
+  m = zero_matrix(FlintZZ, nrows(M) + nrels(G), ngens(G) + nrows(M))
+  for i = 1:nrows(M)
     for j = 1:ngens(G)
       m[i + nrels(G), j] = M[i,j]
     end
@@ -666,15 +666,15 @@ function sub(G::GrpAbFinGen, M::fmpz_mat,
   h = hnf(m)
   fstWithoutOldGens = 1
 
-  for i in rows(h):-1:1, j in ngens(G):-1:1
+  for i in nrows(h):-1:1, j in ngens(G):-1:1
     if !iszero(h[i,j])
       fstWithoutOldGens = i + 1
       break
     end
   end
-  r = sub(h, fstWithoutOldGens:rows(h), ngens(G) + 1:cols(h))
+  r = sub(h, fstWithoutOldGens:nrows(h), ngens(G) + 1:ncols(h))
   S = AbelianGroup(r)
-  mS = hom(S, G, sub(m, (nrels(G) + 1):rows(h), 1:ngens(G)), false)
+  mS = hom(S, G, sub(m, (nrels(G) + 1):nrows(h), 1:ngens(G)), false)
 
   if add_to_lattice
     append!(L, mS)
@@ -830,7 +830,7 @@ function +(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
   if !fl
     error("no common overgroup known")
   end
-  return sub(GH, vcat([GH(mG[i, :]) for i=1:rows(mG)], [GH(mH[i, :]) for i=1:rows(mH)]))[1]
+  return sub(GH, vcat([GH(mG[i, :]) for i=1:nrows(mG)], [GH(mH[i, :]) for i=1:nrows(mH)]))[1]
 end
 
 function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
@@ -838,15 +838,15 @@ function Base.intersect(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupL
   if !fl
     error("no common overgroup known")
   end
-  #M = [ mG identity_matrix(FlintZZ, rows(mG)); mH zero_matrix(FlintZZ, rows(mH), rows(mG)) ;
-        #rels(GH) zero_matrix(FlintZZ, nrels(GH), rows(mG))]
-  M = vcat(vcat(hcat(mG, identity_matrix(FlintZZ, rows(mG))), hcat(mH, zero_matrix(FlintZZ, rows(mH), rows(mG)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), rows(mG))))
+  #M = [ mG identity_matrix(FlintZZ, nrows(mG)); mH zero_matrix(FlintZZ, nrows(mH), nrows(mG)) ;
+        #rels(GH) zero_matrix(FlintZZ, nrels(GH), nrows(mG))]
+  M = vcat(vcat(hcat(mG, identity_matrix(FlintZZ, nrows(mG))), hcat(mH, zero_matrix(FlintZZ, nrows(mH), nrows(mG)))), hcat(rels(GH), zero_matrix(FlintZZ, nrels(GH), nrows(mG))))
   h = hnf(M)
-  i = rows(h)
+  i = nrows(h)
   while i > 0 && iszero(sub(h, i:i, 1:ngens(GH)))
     i -= 1
   end
-  return sub(G, [G(sub(h, j:j, ngens(GH)+1:cols(h))) for j=i+1:rows(h)])[1]
+  return sub(G, [G(sub(h, j:j, ngens(GH)+1:ncols(h))) for j=i+1:nrows(h)])[1]
 end
 
 function Base.intersect(A::Array{GrpAbFinGen, 1})
@@ -864,7 +864,7 @@ function Base.issubset(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLa
     error("no common overgroup known")
   end
   hH = hom(H, GH, mH)
-  return all(x -> haspreimage(hH, GH(mG[x, :]))[1], 1:rows(mG))
+  return all(x -> haspreimage(hH, GH(mG[x, :]))[1], 1:nrows(mG))
 end
 
 function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLattice)
@@ -874,7 +874,7 @@ function issubgroup(G::GrpAbFinGen, H::GrpAbFinGen, L::GrpAbLattice = GroupLatti
   end
   hH = hom(H, GH, mH)
   n = matrix(FlintZZ, 0, ngens(H), fmpz[])
-  for j=1:rows(mG)
+  for j=1:nrows(mG)
     fl, x = haspreimage(hH, GH(mG[j, :]))
     if !fl
       return false, hH

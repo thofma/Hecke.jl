@@ -173,7 +173,7 @@ function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   t = matrix(base_ring(A), dim(A), 1, coeffs(a))
   b, p = cansolve(m.mat', t)
   if b
-    return true, domain(m)([ p[i, 1] for i = 1:rows(m.mat) ])
+    return true, domain(m)([ p[i, 1] for i = 1:nrows(m.mat) ])
   else
     return false, zero(domain(m))
   end

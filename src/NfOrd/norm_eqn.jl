@@ -9,7 +9,7 @@ function norm_1_generators(A::Array{NfOrdIdl, 1})
   f = matrix(FlintZZ, 1, length(A), [degree(x) for x = A])
   k = nullspace(f)[2]
   
-  id = [FacElem(A, [k[i,j] for i=1:length(A)]) for j=1:cols(k)]
+  id = [FacElem(A, [k[i,j] for i=1:length(A)]) for j=1:ncols(k)]
   return id 
 end
 

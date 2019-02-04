@@ -481,7 +481,7 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     M[i, c] = deepcopy(a.coeffs[c])
   end
   return nothing
@@ -489,7 +489,7 @@ end
 
 function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
   a = A()
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a.coeffs[c] = deepcopy(M[i, c])
   end
   return a
@@ -497,7 +497,7 @@ end
 
 function elem_from_mat_row(A::AbsAlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
   a = A()
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     a.coeffs[j] = fmpq(M[i, j], d)
   end
   return a

@@ -444,7 +444,8 @@ function anti_uniformizer(P::NfOrdIdl)
   =#
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
-  Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
+  #Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
+  Mp = matrix(GF(p, cached = false), M)
   K = kernel(Mp)
   @assert length(K) > 0
   P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p

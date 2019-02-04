@@ -46,8 +46,8 @@ function assure_has_basis(a::AbsAlgAssIdl)
 
   A = algebra(a)
   M = basis_mat(a, false)
-  a.basis = Vector{elem_type(A)}(undef, rows(M))
-  for i = 1:rows(M)
+  a.basis = Vector{elem_type(A)}(undef, nrows(M))
+  for i = 1:nrows(M)
     a.basis[i] = elem_from_mat_row(A, M, i)
   end
   return nothing
@@ -79,7 +79,7 @@ end
 function in(x::T, a::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   A = algebra(a)
   M = matrix(base_ring(A), 1, dim(A), coeffs(x, false))
-  return rank(vcat(basis_mat(a, false), M)) == rows(basis_mat(a, false)) # so far we assume rows(basis_mat) == rank(basis_mat)
+  return rank(vcat(basis_mat(a, false), M)) == nrows(basis_mat(a, false)) # so far we assume nrows(basis_mat) == rank(basis_mat)
 end
 
 ################################################################################
@@ -154,8 +154,8 @@ function +(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
 
   M = vcat(basis_mat(a), basis_mat(b))
   r = rref!(M)
-  if r != rows(M)
-    M = sub(M, 1:r, 1:cols(M))
+  if r != nrows(M)
+    M = sub(M, 1:r, 1:ncols(M))
   end
   return ideal(algebra(a), M, :nothing, true)
 end
@@ -266,7 +266,7 @@ end
 
 function ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Bool = false)
   @assert base_ring(M) == base_ring(A)
-  @assert cols(M) == dim(A)
+  @assert ncols(M) == dim(A)
   if !M_in_rref
     r, N = rref(M)
     if r == 0
@@ -274,8 +274,8 @@ function ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Boo
       a.iszero = 1
       return a
     end
-    if r != rows(N)
-      M = sub(N, 1:r, 1:cols(N))
+    if r != nrows(N)
+      M = sub(N, 1:r, 1:ncols(N))
     else
       M = N
     end
@@ -321,20 +321,20 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
   r = rref!(M)
   pivot_cols = Vector{Int}()
   j = 1
-  for i = 1:cols(M)
+  for i = 1:ncols(M)
     if !iszero(M[j, i])
-      if i > rows(Ma)
-        push!(pivot_cols, i - rows(Ma))
+      if i > nrows(Ma)
+        push!(pivot_cols, i - nrows(Ma))
       end
       j += 1
-      if j > rows(M)
+      if j > nrows(M)
         break
       end
     end
   end
 
   # We now have the basis (basis of the quotient, basis of the ideal)
-  n = dim(A) - rows(Ma)
+  n = dim(A) - nrows(Ma)
   M = vcat(zero_matrix(K, n, dim(A)), Ma)
   oneK = K(1)
   zeroK = K()
@@ -387,13 +387,13 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   r = rref!(M)
   pivot_cols = Vector{Int}()
   j = 1
-  for i = 1:cols(M)
+  for i = 1:ncols(M)
     if !iszero(M[j, i])
-      if i > rows(Mb)
-        push!(pivot_cols, i - rows(Mb))
+      if i > nrows(Mb)
+        push!(pivot_cols, i - nrows(Mb))
       end
       j += 1
-      if j > rows(M)
+      if j > nrows(M)
         break
       end
     end
@@ -401,7 +401,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
 
   # Build the basis matrix for the quotient
   M = zero_matrix(K, dim(A), dim(A))
-  n = rows(Ma) - rows(Mb)
+  n = nrows(Ma) - nrows(Mb)
   for i = 1:n
     for j = 1:dim(A)
       M[i, j] = deepcopy(Ma[pivot_cols[i], j])

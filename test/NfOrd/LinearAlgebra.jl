@@ -34,7 +34,7 @@
 
     z = Apseudohnf.matrix
 
-    for i in 1:rows(z)
+    for i in 1:nrows(z)
       Hecke.mul_row!(z, i, K(norm(Apseudohnf.coeffs[i])))
     end
 
