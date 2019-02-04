@@ -193,9 +193,9 @@ end
 
 function *(a::fmpz_mat, b::Array{BigFloat, 2})
   s = Base.size(b)
-  cols(a) == s[1] || error("dimensions do not match")
+  ncols(a) == s[1] || error("dimensions do not match")
 
-  c = Array{BigFloat}(undef, rows(a), s[2])
+  c = Array{BigFloat}(undef, nrows(a), s[2])
   return mult!(c, a, b)
 end
 

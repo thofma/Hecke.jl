@@ -233,7 +233,7 @@ function _picard_group(O::NfOrd)
 
   M = hcat(rels(Cl), -P)
   M = vcat(M, hcat(zero_matrix(FlintZZ, ngens(G), ngens(Cl)), rels(G)))
-  M = vcat(M, hcat(zero_matrix(FlintZZ, rows(Q), ngens(Cl)), Q))
+  M = vcat(M, hcat(zero_matrix(FlintZZ, nrows(Q), ngens(Cl)), Q))
 
   P = AbelianGroup(M)
 

@@ -353,7 +353,7 @@ mutable struct SMat{T}
   function SMat{T}(a::SMat{S}) where {S, T}
     r = new{T}()
     r.rows = Array{SRow{T}}(undef, length(a.rows))
-    for i=1:rows(a)
+    for i=1:nrows(a)
       r.rows[i] = SRow{T}(a.rows[i])
     end
     r.c = a.c
@@ -407,7 +407,7 @@ mutable struct EnumCtxArb
   function EnumCtxArb(G::arb_mat)
     z = new()
     z.G = G
-    z.x = zero_matrix(FlintZZ, 1, rows(G))
+    z.x = zero_matrix(FlintZZ, 1, nrows(G))
     z.p = prec(base_ring(G))
     return z
   end
@@ -456,8 +456,8 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x
     z.den = y
-    z.rows = rows(x)
-    z.cols = cols(x)
+    z.rows = nrows(x)
+    z.cols = ncols(x)
     if !simplified
       simplify_content!(z)
     end
@@ -469,8 +469,8 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x[1]
     z.den = x[2]
-    z.rows = rows(x[1])
-    z.cols = cols(x[1])
+    z.rows = nrows(x[1])
+    z.cols = ncols(x[1])
     simplify_content!(z)
 #    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
@@ -480,8 +480,8 @@ mutable struct FakeFmpqMat
     z = new()
     z.num = x
     z.den = fmpz(1)
-    z.rows = rows(x)
-    z.cols = cols(x)
+    z.rows = nrows(x)
+    z.cols = ncols(x)
 #    z.parent = FakeFmpqMatSpace(z.rows, z.cols)
     return z
   end
@@ -489,22 +489,22 @@ mutable struct FakeFmpqMat
   function FakeFmpqMat(x::fmpq_mat)
     z = new()
     d = denominator(x[1, 1])
-    for i in 1:rows(x)
-      for j in 1:cols(x)
+    for i in 1:nrows(x)
+      for j in 1:ncols(x)
         d = lcm(d, denominator(x[i, j]))
       end
     end
-    n = zero_matrix(FlintZZ, rows(x), cols(x))
-    #n = fmpz_mat(rows(x), cols(x))
+    n = zero_matrix(FlintZZ, nrows(x), ncols(x))
+    #n = fmpz_mat(nrows(x), ncols(x))
     #n.base_ring = FlintIntegerRing()
-    for i in 1:rows(x)
-      for j in 1:cols(x)
+    for i in 1:nrows(x)
+      for j in 1:ncols(x)
         n[i, j] = FlintZZ(d*x[i, j])
       end
     end
-#    z.parent = FakeFmpqMatSpace(rows(x), cols(x))
-    z.rows = rows(x)
-    z.cols = cols(x)
+#    z.parent = FakeFmpqMatSpace(nrows(x), ncols(x))
+    z.rows = nrows(x)
+    z.cols = ncols(x)
     z.num = n
     z.den = d
     return z
@@ -1588,8 +1588,8 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
 
   function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::NfOrdIdl;
                  prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
-    v = matrix(FlintZZ, 1, rows(clg.val_base), Base.rand(-val:val, 1,
-                    rows(clg.val_base)))*clg.val_base
+    v = matrix(FlintZZ, 1, nrows(clg.val_base), Base.rand(-val:val, 1,
+                    nrows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}
     I = new{Tx, TU, TC}()
@@ -1841,7 +1841,7 @@ mutable struct ZpnGModule <: GModule
   p::Int
   
   function ZpnGModule(V::GrpAbFinGen,G::Array{nmod_mat,1})
-    @assert ngens(V)==cols(G[1]) && ngens(V)==rows(G[1])
+    @assert ngens(V)==ncols(G[1]) && ngens(V)==nrows(G[1])
     z=new()
     z.G=G
     z.V=V
@@ -1866,7 +1866,7 @@ mutable struct FqGModule <: GModule
     z=new()
     z.G=G
     z.K=parent(G[1][1,1])
-    z.dim=cols(G[1])
+    z.dim=ncols(G[1])
     if z.dim==1
       z.isirreducible=true
       z.dim_spl_fld=1

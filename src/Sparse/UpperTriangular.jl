@@ -26,7 +26,7 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
     if iszero(A.rows[i])
       deleteat!(A.rows, i)
       push!(A.rows, sparse_row(base_ring(A)))
-      push!(trafos, sparse_trafo_move_row(T, i, rows(A)))
+      push!(trafos, sparse_trafo_move_row(T, i, nrows(A)))
       i += 1
       continue
     end
@@ -87,7 +87,7 @@ function _one_step_with_trafo(A::SMat{T}, sr = 1) where T
     if length(A.rows[all_r[j]].pos) == 0
       deleteat!(A.rows, all_r[j])
       push!(A.rows, sparse_row(base_ring(A)))
-      push!(trafos, sparse_trafo_move_row(T, all_r[j]), rows(A))
+      push!(trafos, sparse_trafo_move_row(T, all_r[j]), nrows(A))
 o   end
   end
   return sr + 1, trafos
@@ -193,7 +193,7 @@ end
 function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) where T
   trafo = SparseTrafoElem[]
 
-  for i = 1:min(rows(A), cols(A))
+  for i = 1:min(nrows(A), ncols(A))
     x, t = _one_step_with_trafo(A, i)
     append!(trafo, t)
 
@@ -239,7 +239,7 @@ function _upper_triangular_with_trafo!(A::SMat{T}, is_dense_enough::Function) wh
       while length(A.rows[k].pos) == 0
         deleteat!(A.rows, k)
         push!(A.rows, sparse_row(base_ring(A)))
-        push!(trafo, sparse_trafo_move_row(T, k, rows(A)))
+        push!(trafo, sparse_trafo_move_row(T, k, nrows(A)))
         k -= 1
       end
 
@@ -268,7 +268,7 @@ function upper_triangular!(M::SMat{fmpz}, density_limit::Float64 = 0.5, size_lim
 end
 
 function _upper_triangular!(A::SMat{T}, is_dense_enough) where T
-  for i = 1:min(rows(A), cols(A))
+  for i = 1:min(nrows(A), ncols(A))
     x = _one_step(A, i)
 
     if x>A.r
@@ -317,7 +317,7 @@ function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
   # We assume that A is quadratic and upper triangular
   essential_index = 1
 
-  for i in 1:rows(A)
+  for i in 1:nrows(A)
     @assert A.rows[i].pos[1] == i
     if A.rows[i].values[1] != 1
       essential_index = i
@@ -339,12 +339,12 @@ function _snf_upper_triangular_with_trafo(A::SMat{fmpz})
     end
   end
 
-  essential_part = fmpz_mat(sub(A, essential_index:rows(A), essential_index:cols(A)))
+  essential_part = fmpz_mat(sub(A, essential_index:nrows(A), essential_index:ncols(A)))
 
   snfofess, ltr, rtr = snf_with_transform(essential_part, true, true)
 
-  push!(trafos_left, sparse_trafo_partial_dense(essential_index, essential_index:rows(A), essential_index:cols(A), ltr))
-  push!(trafos_right, sparse_trafo_partial_dense(essential_index, essential_index:rows(A), essential_index:cols(A), rtr))
+  push!(trafos_left, sparse_trafo_partial_dense(essential_index, essential_index:nrows(A), essential_index:ncols(A), ltr))
+  push!(trafos_right, sparse_trafo_partial_dense(essential_index, essential_index:nrows(A), essential_index:ncols(A), rtr))
 
   return snfofess, trafos_left, trafos_right
 end
@@ -361,7 +361,7 @@ function elementary_divisors(A::SMat{fmpz})
 
   essential_index = 1
 
-  for i in 1:rows(A)
+  for i in 1:nrows(A)
     @assert A.rows[i].pos[1] == i
     if A.rows[i].values[1] != 1 
       essential_index = i
@@ -369,9 +369,9 @@ function elementary_divisors(A::SMat{fmpz})
     end
   end
 
-  essential_part = fmpz_mat(sub(A, essential_index:rows(A), essential_index:cols(A)))
+  essential_part = fmpz_mat(sub(A, essential_index:nrows(A), essential_index:ncols(A)))
 
   s = snf(essential_part)
 
-  return vcat(fmpz[1 for i=1:essential_index-1], fmpz[s[i,i] for i=1:rows(s)]) 
+  return vcat(fmpz[1 for i=1:essential_index-1], fmpz[s[i,i] for i=1:nrows(s)]) 
 end

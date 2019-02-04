@@ -1330,7 +1330,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   expo = exponent(G)
   
   R = zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
-  for i=1:cols(R)
+  for i=1:ncols(R)
     R[ngens(C)+ngens(U)+ngens(G)+i,i] = n
   end
   for i=1:ngens(C)
@@ -1443,26 +1443,26 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       if isdefined(J,:princ_gen)
         el = J.princ_gen
         y = (mG\(pi(el))).coeff
-        for i = 1:cols(y)
+        for i = 1:ncols(y)
           res[1, ngens(C) + i] = y[1, i]
         end
         if iszero(mod(n,2)) && !isempty(inf_plc)
           b = lH(K(el))
           for i = 1:length(inf_plc)
-            res[1, ngens(C)+cols(y)+i] = b[i]
+            res[1, ngens(C)+ncols(y)+i] = b[i]
           end
         end
         return X(res)
       elseif isdefined(J,:princ_gen_special)
         el=O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
         y=(mG\(pi(el))).coeff
-        for i = 1:cols(y)
+        for i = 1:ncols(y)
           res[1, ngens(C) + i] = y[1, i]
         end
         if mod(n,2)==0 && !isempty(pr)
           b=lH(K(el))
           for i = 1:length(inf_plc)
-            res[1, ngens(C)+cols(y)+i] = b[i]
+            res[1, ngens(C)+ncols(y)+i] = b[i]
           end
         end
         return X(res)
@@ -1470,13 +1470,13 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
         z=principal_gen_fac_elem(J)
         el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
         y=(mG\(pi(el))).coeff
-        for i = 1:cols(y)
+        for i = 1:ncols(y)
           res[1, ngens(C) + i] = y[1, i]
         end
         if mod(n,2)==0 && !isempty(pr)
           b=lH(z)
           for i = 1:length(inf_plc)
-            res[1, ngens(C)+cols(y)+i] = b[i]
+            res[1, ngens(C)+ncols(y)+i] = b[i]
           end
         end
         return X(res)
@@ -1498,13 +1498,13 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       z = principal_gen_fac_elem(s)
       el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
       y=(mG\(pi(el))).coeff
-      for i = 1:cols(y)
+      for i = 1:ncols(y)
         res[1, ngens(C) + i] = y[1, i]*inverse_d
       end
       if mod(n,2)==0 && !isempty(pr)
         b = lH(z)
         for i = 1:length(inf_plc)
-          res[1, ngens(C)+cols(y)+i] = b[i]
+          res[1, ngens(C)+ncols(y)+i] = b[i]
         end
       end
       return X(res)
@@ -2078,7 +2078,7 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
 
   
   R = zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
-  for i=1:cols(R)
+  for i=1:ncols(R)
     R[ngens(C)+ngens(U)+ngens(G)+i,i] = n
   end
   for i=1:ngens(C)
@@ -2122,18 +2122,18 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
     a=(mG\(evals[i])).coeff
-    for j = 1:cols(a)
+    for j = 1:ncols(a)
       R[i+ngens(G)+ngens(C), ngens(C)+j] = a[1, j]
     end
     if mod(n, 2)==0 && !isempty(inf_plc)
       if i==1
         for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+cols(a)+j] = 1
+          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a)+j] = 1
         end
       else
         b = lH(mU(U[i]))
         for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+cols(a)+j] = b[j]
+          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a)+j] = b[j]
         end
       end
     end
@@ -2153,8 +2153,8 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     end
     if mod(n,2)==0 && !isempty(inf_plc)
       b = lH(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i]))).coeff
-      for j = 1:cols(b)
-        R[i, ngens(C)+cols(a)+j] = -b[1, j]
+      for j = 1:ncols(b)
+        R[i, ngens(C)+ncols(a)+j] = -b[1, j]
       end
     end
   end
@@ -2163,8 +2163,8 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(inf_plc)
-    eldi = zeros(FlintZZ, cols(R))
-    eldi[cols(R) - length(inf_plc) + i] = 1
+    eldi = zeros(FlintZZ, ncols(R))
+    eldi[ncols(R) - length(inf_plc) + i] = 1
     disc_log_inf[inf_plc[i]] = X(eldi)
   end
    
@@ -2181,26 +2181,26 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       if isdefined(J,:princ_gen)
         el = J.princ_gen
         y = (mG\(pi(el))).coeff
-        for i = 1:cols(y)
+        for i = 1:ncols(y)
           res[1, ngens(C) + i] = y[1, i]
         end
         if iszero(mod(n,2)) && !isempty(inf_plc)
           b = lH(K(el))
           for i = 1:length(inf_plc)
-            res[1, ngens(C)+cols(y)+i] = b[i]
+            res[1, ngens(C)+ncols(y)+i] = b[i]
           end
         end
         return X(res)
       elseif isdefined(J,:princ_gen_special)
         el=O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
         y=(mG\(pi(el))).coeff
-        for i = 1:cols(y)
+        for i = 1:ncols(y)
           res[1, i+ngens(C)] = y[1, i]
         end
         if iszero(mod(n,2)) && !isempty(pr)
           b = lH(K(el)).coeff
-          for i = 1:cols(b)
-            res[1, i+ngens(C)+cols(y)] = b[1, i]
+          for i = 1:ncols(b)
+            res[1, i+ngens(C)+ncols(y)] = b[1, i]
           end
         end
         return X(res)
@@ -2208,13 +2208,13 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
         z = principal_gen_fac_elem(J)
         el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
         y = (mG\(pi(el))).coeff
-        for i = 1:cols(y)
+        for i = 1:ncols(y)
           res[1, i+ngens(C)] = y[1, i]
         end
         if mod(n,2)==0 && !isempty(inf_plc)
           b=lH(z).coeff
-          for i = 1:cols(b)
-            res[1, i+ngens(C)+cols(y)] = b[1, i]
+          for i = 1:ncols(b)
+            res[1, i+ngens(C)+ncols(y)] = b[1, i]
           end
         end
         return X(res)
@@ -2234,13 +2234,13 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
       z = principal_gen_fac_elem(s)
       el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
       y=(mG\(pi(el))).coeff
-      for i = 1:cols(y)
+      for i = 1:ncols(y)
         res[1, i+ngens(C)] = y[1, i]*inverse_d
       end
       if mod(n,2)==0 && !isempty(inf_plc)
         b=lH(z).coeff
-        for i = 1:cols(b)
-          res[1, i+ngens(C)+cols(y)] = b[1, i]
+        for i = 1:ncols(b)
+          res[1, i+ngens(C)+ncols(y)] = b[1, i]
         end
       end
       return X(res)

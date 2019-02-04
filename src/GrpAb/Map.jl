@@ -106,7 +106,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
     m = vcat(m, rels(parent(A[1])))
     i, T = nullspace(m')
     T = T'
-    T = sub(T, 1:rows(T), 1:length(A))
+    T = sub(T, 1:nrows(T), 1:length(A))
     n = vcat([x.coeff for x in B])
     n = T*n
     if !cansolve(rels(parent(B[1]))', n')[1]
@@ -116,7 +116,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
 
   M = vcat([hcat(A[i].coeff, B[i].coeff) for i = 1:length(A)])
   RA = rels(GA)
-  M = vcat(M, hcat(RA, zero_matrix(FlintZZ, rows(RA), cols(B[1].coeff))))
+  M = vcat(M, hcat(RA, zero_matrix(FlintZZ, nrows(RA), ncols(B[1].coeff))))
   H = hnf(M)
   if ngens(GB) == 0
     return GrpAbFinGenMap(GA, GB, matrix(FlintZZ, ngens(GA), 0, fmpz[]))
@@ -199,30 +199,30 @@ of $h$.
 function kernel(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   G = domain(h)
   H = codomain(h)
-  m=zero_matrix(FlintZZ, rows(h.map)+rows(rels(H)), cols(h.map))
-  for i=1:rows(h.map)
-    for j=1:cols(h.map)
+  m=zero_matrix(FlintZZ, nrows(h.map)+nrows(rels(H)), ncols(h.map))
+  for i=1:nrows(h.map)
+    for j=1:ncols(h.map)
       m[i,j]=h.map[i,j]
     end
   end
   if !issnf(H)
     for i=1:nrels(H)
       for j=1:ngens(H)
-        m[rows(h.map)+i,j]=H.rels[i,j]
+        m[nrows(h.map)+i,j]=H.rels[i,j]
       end
     end
   else
     for i=1:length(H.snf)
-      m[rows(h.map)+i,i]=H.snf[i]
+      m[nrows(h.map)+i,i]=H.snf[i]
     end
   end
   hn, t = hnf_with_transform(m)
-  for i = 1:rows(hn)
+  for i = 1:nrows(hn)
     if iszero_row(hn, i)
-      return sub(G, sub(t, i:rows(t), 1:ngens(G)), add_to_lattice)
+      return sub(G, sub(t, i:nrows(t), 1:ngens(G)), add_to_lattice)
     end
   end
-  if rows(hn) == 0
+  if nrows(hn) == 0
     return sub(G, elem_type(G)[], add_to_lattice)
   end
   error("Something went terribly wrong in kernel computation")
@@ -240,7 +240,7 @@ function image(h::GrpAbFinGenMap, add_to_lattice::Bool = true)
   H = codomain(h)
   hn = hnf(vcat(h.map, rels(H)))
   im = GrpAbFinGenElem[]
-  for i = 1:rows(hn)
+  for i = 1:nrows(hn)
     if !iszero_row(hn, i)
       push!(im, H(sub(hn, i:i, 1:ngens(H))))
     else

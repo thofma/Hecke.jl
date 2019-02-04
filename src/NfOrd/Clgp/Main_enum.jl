@@ -106,7 +106,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
     end
     @v_do :ClassGroup_gc 1 gc()
     #want 10% more relations than ideals...
-    if cols(clg.M) *1.1 < rows(clg.M)
+    if ncols(clg.M) *1.1 < nrows(clg.M)
       @vprint :ClassGroup 1 println("rel mat probably full rank, leaving phase 1");
       while length(I) < length(clg.FB.ideals)
         push!(I, class_group_small_real_elements_relation_start(clg, clg.FB.ideals[length(I)+1], limit = limit, prec = prec, val = val))
@@ -121,7 +121,7 @@ function class_group_find_relations(clg::ClassGrpCtx; val = 0, prec::Int = 100,
   @v_do :ClassGroup 1 println("added ", clg.rel_cnt, " good relations and ",
                   clg.bad_rel, " bad ones, ratio ", clg.bad_rel/clg.rel_cnt)
 
-  @v_do :ClassGroup 1 println("total ", rows(clg.M), " relations (incl. orbit)")
+  @v_do :ClassGroup 1 println("total ", nrows(clg.M), " relations (incl. orbit)")
 
   s = time_ns()
 
@@ -380,12 +380,12 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
             E.bad += 1
           end
         end
-        if length(clg.RS) % 20 == 0 # cols(clg.M)*0.1
+        if length(clg.RS) % 20 == 0 # ncols(clg.M)*0.1
 #          print_with_color(:blue, "2:found rels, trying again\n")
           break
         end
       end
-      if length(clg.RS) % 20  == 0# cols(clg.M)*0.1
+      if length(clg.RS) % 20  == 0# ncols(clg.M)*0.1
 #        print_with_color(:blue, "3:found rels, trying again\n")
         break
       end

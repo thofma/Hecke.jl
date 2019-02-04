@@ -28,10 +28,10 @@ function _reduce_field(A::SMat{T}, g::SRow{T}) where {T}
   while length(g)>0
     s = g.pos[1]
     j = 1
-    while j<= rows(A) && A.rows[j].pos[1] < s
+    while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
     end  
-    if j > rows(A) || A.rows[j].pos[1] > s
+    if j > nrows(A) || A.rows[j].pos[1] > s
       break
     end
     @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
@@ -63,10 +63,10 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz})
   while length(g)>0
     s = g.pos[1]
     j = 1
-    while j<= rows(A) && A.rows[j].pos[1] < s
+    while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
     end  
-    if j > rows(A) || A.rows[j].pos[1] > s
+    if j > nrows(A) || A.rows[j].pos[1] > s
       if g.values[1] < 0
         if !new_g
           g = copy(g)
@@ -120,10 +120,10 @@ function reduce(A::SMat{fmpz}, g::SRow{fmpz}, m::fmpz)
   while length(g)>0
     s = g.pos[1]
     j = 1
-    while j<= rows(A) && A.rows[j].pos[1] < s
+    while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
     end  
-    if j > rows(A) || A.rows[j].pos[1] > s
+    if j > nrows(A) || A.rows[j].pos[1] > s
       if mod_sym(g.values[1], m) < 0 
         for i=1:length(g.values)
           g.values[i] *= -1
@@ -182,7 +182,7 @@ is integral and the elementary divisors of $TA$ are all trivial.
 """
 function saturate(A::SMat{fmpz})
   Hti = transpose(hnf(transpose(A)))
-  Hti = sub(Hti , 1:rows(Hti), 1:rows(Hti))
+  Hti = sub(Hti , 1:nrows(Hti), 1:nrows(Hti))
   Hti = transpose(Hti)
   S, s = solve_ut(Hti, transpose(A))
   @assert isone(s)
@@ -206,7 +206,7 @@ If such an index does not exist, find the smallest index larger.
 function find_row_starting_with(A::SMat, p::Int)
 #  @hassert :HNF 1  isupper_triangular(A)
   start = 0
-  stop = rows(A)+1
+  stop = nrows(A)+1
   while start < stop - 1
     mid = div((stop + start), 2)
     if A[mid].pos[1] == p
@@ -278,14 +278,14 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
   while length(g)>0
     s = g.pos[1]
     j = 1
-    while j<= rows(A) && A.rows[j].pos[1] < s
+    while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
     end  
-    if j > rows(A) || A.rows[j].pos[1] > s
+    if j > nrows(A) || A.rows[j].pos[1] > s
       if g.values[1] < 0
         # Multiply row g by -1
         if with_trafo
-          push!(trafos, sparse_trafo_scale(rows(A) + 1, fmpz(-1)))
+          push!(trafos, sparse_trafo_scale(nrows(A) + 1, fmpz(-1)))
         end
         if !new_g
           g = copy(g)
@@ -315,7 +315,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       sca =  -divexact(p, A.rows[j].values[1])
       g = Hecke.add_scaled_row(A[j], g, sca)
       new_g = true
-      with_trafo ? push!(trafos, sparse_trafo_add_scaled(j, rows(A) + 1, sca)) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_add_scaled(j, nrows(A) + 1, sca)) : nothing
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
     else
       x, a, b = gcdx(A.rows[j].values[1], p)
@@ -325,7 +325,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
       A[j], g = Hecke.transform_row(A[j], g, a, b, c, d)
       new_g = true
       if with_trafo
-        push!(trafos, sparse_trafo_para_add_scaled(j, rows(A) + 1, a, b, c, d))
+        push!(trafos, sparse_trafo_para_add_scaled(j, nrows(A) + 1, a, b, c, d))
       end
       @hassert :HNF 1  A[j].values[1] == x
       @hassert :HNF 1  length(g)==0 || g.pos[1] > A[j].pos[1]
@@ -355,7 +355,7 @@ function reduce_full(A::SMat{fmpz}, g::SRow{fmpz}, trafo::Type{Val{T}} = Val{fal
     for i=1:length(g.values)
       g.values[i] *= -1
     end
-    with_trafo ? push!(trafos, sparse_trafo_scale!{fmpz}(rows(A) + 1, fmpz(-1))) : nothing
+    with_trafo ? push!(trafos, sparse_trafo_scale!{fmpz}(nrows(A) + 1, fmpz(-1))) : nothing
   end
   if with_trafo
     g, new_trafos = reduce_right(A, g, 1, trafo)
@@ -384,12 +384,12 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
     with_trafo ? (return b, trafos) : return b
   end
   p = find_row_starting_with(A, b.pos[j])
-  if p > rows(A)
+  if p > nrows(A)
     with_trafo ? (return b, trafos) : return b
   end
   @hassert :HNF 1  A[p] != b
   while j <= length(b.pos)
-    while p<rows(A) && A[p].pos[1] < b.pos[j]
+    while p<nrows(A) && A[p].pos[1] < b.pos[j]
       p += 1
     end
     if A[p].pos[1] == b.pos[j]
@@ -401,7 +401,7 @@ function reduce_right(A::SMat{fmpz}, b::SRow{fmpz},
       end
       if q != 0
         b = Hecke.add_scaled_row(A[p], b, -q)
-        with_trafo ? push!(trafos, sparse_trafo_add_scaled(p, rows(A) + 1, -q)) : nothing
+        with_trafo ? push!(trafos, sparse_trafo_add_scaled(p, nrows(A) + 1, -q)) : nothing
         if r == 0
           j -= 1
         else
@@ -421,7 +421,7 @@ Given a matrix $A$ in HNF, extend this to get the HNF of the concatination
 with $b$.
 """
 function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; truncate::Bool = false, offset::Int = 0) where N
-  rA = rows(A)
+  rA = nrows(A)
   @vprint :HNF 1 "Extending HNF by:\n"
   @vprint :HNF 1 b
   @vprint :HNF 1 "density $(density(A)) $(density(b))"
@@ -429,7 +429,7 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
   with_trafo = (trafo == Val{true})
   with_trafo ? trafos = SparseTrafoElem{fmpz, fmpz_mat}[] : nothing
 
-  A_start_rows = rows(A)  # for the offset stuff
+  A_start_rows = nrows(A)  # for the offset stuff
 
   nc = 0
   for i=b
@@ -452,11 +452,11 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
         A.r += 1
         A.nnz += length(q)
         A.c = max(A.c, q.pos[end])
-        # The transformation is swapping pairwise from rows(B) to p.
+        # The transformation is swapping pairwise from nrows(B) to p.
         # This should be the permutation matrix corresponding to
-        # (k k-1)(k-1 k-2) ...(p+1 p) where k = rows(B)
+        # (k k-1)(k-1 k-2) ...(p+1 p) where k = nrows(B)
         if with_trafo
-          for j in rows(A):-1:(p+1)
+          for j in nrows(A):-1:(p+1)
             push!(trafos, sparse_trafo_swap(fmpz, j, j - 1))
           end
         end
@@ -464,7 +464,7 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_trafo ? push!(trafos, sparse_trafo_move_row(fmpz, rows(A) + 1, rA + rows(b))) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_move_row(fmpz, nrows(A) + 1, rA + nrows(b))) : nothing
     end
     if length(w) > 0
       if with_trafo
@@ -476,7 +476,7 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
     end
     @v_do :HNF 1 begin
       if nc % 10 == 0
-        println("Now at $nc rows of $(rows(b)), HNF so far $(rows(A)) rows")
+        println("Now at $nc rows of $(nrows(b)), HNF so far $(nrows(A)) rows")
         println("Current density: $(density(A))")
         println("and size of largest entry: $(nbits(maximum(abs, A))) bits")
       end
@@ -484,7 +484,7 @@ function hnf_extend!(A::SMat{fmpz}, b::SMat{fmpz}, trafo::Type{Val{N}} = Val{fal
     nc += 1
   end
   if !truncate
-    for i in 1:rows(b)
+    for i in 1:nrows(b)
       push!(A, sparse_row(base_ring(A)))
     end
   end
@@ -533,11 +533,11 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
         B.r += 1
         B.nnz += length(q)
         B.c = max(B.c, q.pos[end])
-        # The transformation is swapping pairwise from rows(B) to p.
+        # The transformation is swapping pairwise from nrows(B) to p.
         # This should be the permutation matrix corresponding to
-        # (k k-1)(k-1 k-2) ...(p+1 p) where k = rows(B)
+        # (k k-1)(k-1 k-2) ...(p+1 p) where k = nrows(B)
         if with_trafo
-          for j in rows(B):-1:(p+1)
+          for j in nrows(B):-1:(p+1)
             push!(trafos, sparse_trafo_swap(fmpz, j, j - 1))
           end
         end
@@ -545,7 +545,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
       push!(w, q.pos[1])
     else
       # Row i was reduced to zero
-      with_trafo ? push!(trafos, sparse_trafo_move_row(fmpz, rows(B) + 1, rows(A))) : nothing
+      with_trafo ? push!(trafos, sparse_trafo_move_row(fmpz, nrows(B) + 1, nrows(A))) : nothing
     end
     if length(w) > 0
       if with_trafo
@@ -557,7 +557,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
     end
     @v_do :HNF 1 begin
       if nc % 10 == 0
-        println("Now at $nc rows of $(rows(A)), HNF so far $(rows(B)) rows")
+        println("Now at $nc rows of $(nrows(A)), HNF so far $(nrows(B)) rows")
         println("Current density: $(density(B))")
         println("and size of largest entry: $(nbits(maximum(abs, B))) bits")
       end
@@ -565,7 +565,7 @@ function hnf_kannan_bachem(A::SMat{fmpz}, trafo::Type{Val{N}} = Val{false}; trun
     nc += 1
   end
   if !truncate
-    for i in 1:(rows(A) - rows(B))
+    for i in 1:(nrows(A) - nrows(B))
       push!(B, sparse_row(base_ring(A)))
     end
   end

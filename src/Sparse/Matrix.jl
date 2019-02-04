@@ -24,21 +24,21 @@ parent(A::SMat) = SMatSpace(base_ring(A), A.r, A.c)
 base_ring(A::SMat{T}) where {T} = A.base_ring::parent_type(T)
 
 @doc Markdown.doc"""
-    rows(A::SMat) -> Int
+    nrows(A::SMat) -> Int
 
 Return the number of rows of $A$.
 """
-function rows(A::SMat)
+function nrows(A::SMat)
   @assert A.r == length(A.rows)
   return A.r
 end
 
 @doc Markdown.doc"""
-    cols(A::SMat) -> Int
+    ncols(A::SMat) -> Int
 
 Return the number of columns of $A$.
 """
-function cols(A::SMat)
+function ncols(A::SMat)
   return A.c
 end
 
@@ -51,7 +51,7 @@ function nnz(A::SMat)
   return A.nnz
 end
 
-size(A::SMat) = (rows(A), cols(A))
+size(A::SMat) = (nrows(A), ncols(A))
 
 ################################################################################
 #
@@ -75,7 +75,7 @@ end
 Return whether $A$ is equal to $B$.
 """
 function ==(x::SMat{T}, y::SMat{T}) where T
-  return base_ring(x) == base_ring(y) && x.rows == y.rows && cols(x) == cols(y)
+  return base_ring(x) == base_ring(y) && x.rows == y.rows && ncols(x) == ncols(y)
 end
 
 ################################################################################
@@ -91,7 +91,7 @@ Return the sparsity of `A`, that is, the number of zero-valued elements divided
 by the number of all elements.
 """
 function sparsity(A::SMat)
-  return 1.0 - nnz(A)/(rows(A) * cols(A))
+  return 1.0 - nnz(A)/(nrows(A) * ncols(A))
 end
 
 @doc Markdown.doc"""
@@ -137,7 +137,7 @@ end
 ################################################################################
 
 function copy(A::SMat{T}) where T
-  return sub(A, 1:rows(A), 1:cols(A))
+  return sub(A, 1:nrows(A), 1:ncols(A))
 end
 
 ################################################################################
@@ -168,7 +168,7 @@ end
 Given a sparse matrix $A$ and an index $i$, return the $i$-th row of $A$.
 """
 function getindex(A::SMat{T}, i::Int) where T
-  (i < 1 || i > rows(A)) && error("Index must be between 1 and $(rows(A))")
+  (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
   return A.rows[i]
 end
 
@@ -179,7 +179,7 @@ Given a sparse matrix $A$, a sparse row $b$ and an index $i$, set the $i$-th
 row of $A$ equal to $b$.
 """
 function setindex!(A::SMat{T}, b::SRow{T}, i::Int) where T
-  (i < 1 || i > rows(A)) && error("Index must be between 1 and $(rows(A))")
+  (i < 1 || i > nrows(A)) && error("Index must be between 1 and $(nrows(A))")
   A.rows[i] = b
   return A
 end
@@ -214,10 +214,10 @@ Constructs thesparse matrix corresponding to the dense matrix $A$. If
 function sparse_matrix(A::MatElem; keepzrows::Bool = true)
   R = base_ring(A)
   m = sparse_matrix(R)
-  m.c = cols(A)
+  m.c = ncols(A)
   m.r = 0
 
-  for i=1:rows(A)
+  for i=1:nrows(A)
     if iszero_row(A, i)
       if !keepzrows
         continue
@@ -226,7 +226,7 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
       end
     else
       r = SRow{elem_type(R)}()
-      for j = 1:cols(A)
+      for j = 1:ncols(A)
         t = A[i, j]
         if t != 0
           m.nnz += 1
@@ -325,7 +325,7 @@ function change_ring(A::SMat{T}, f) where {T}
   y = f(x)
   S = parent(y)
   z = sparse_matrix(S)
-  z.c = cols(A)
+  z.c = ncols(A)
   z.nnz = 0
   for r in A
     if iszero(r)
@@ -367,8 +367,8 @@ Returns the transpose of $A$.
 function transpose(A::SMat{T}) where {T}
   R = base_ring(A)
   B = sparse_matrix(R)
-  n = rows(A)
-  m = cols(A)
+  n = nrows(A)
+  m = ncols(A)
   B.rows = Vector{SRow{T}}(undef, m)
   for i=1:m
     B.rows[i] = SRow(R)
@@ -397,7 +397,7 @@ function endof(A::SMat)
 end
 
 function Base.iterate(A::SMat, st::Int = 1)
-  if st > rows(A)
+  if st > nrows(A)
     return nothing
   end
 
@@ -405,7 +405,7 @@ function Base.iterate(A::SMat, st::Int = 1)
 end
 
 function length(A::SMat)
-  return rows(A)
+  return nrows(A)
 end
 
 Base.eltype(A::SMat{T}) where {T} = SRow{T}
@@ -434,21 +434,21 @@ end
 Return the product $A \cdot b$ as a dense vector.
 """
 function mul(A::SMat{T}, b::AbstractVector{T}) where T
-  @assert length(b) == cols(A)
-  c = Vector{T}(undef, rows(A))
+  @assert length(b) == ncols(A)
+  c = Vector{T}(undef, nrows(A))
   mul!(c, A, b)
   return c
 end
 
 function mul!(c::Array{T, 2}, A::SMat{T}, b::AbstractArray{T, 2}) where T
   sz = size(b)
-  @assert sz[1] == cols(A)
+  @assert sz[1] == ncols(A)
   tz = size(c)
-  @assert tz[1] == rows(A)
+  @assert tz[1] == nrows(A)
   @assert tz[2] == sz[2]
   z = zero(base_ring(A))
   for m in 1:size(b, 2)
-    for i in 1:rows(A)
+    for i in 1:nrows(A)
       c[i, m] = dot(A.rows[i], view(b, :, m), z)
     end
   end
@@ -463,7 +463,7 @@ Return the product $A \cdot b$ as a dense array.
 """
 function mul(A::SMat{T}, b::AbstractArray{T, 2}) where T
   sz = size(b)
-  @assert sz[1] == cols(A)
+  @assert sz[1] == ncols(A)
   c = Array{T}(undef, sz[1], sz[2])
   return mul!(c, A, b)
 end
@@ -471,11 +471,11 @@ end
 # - SMat{T} * MatElem as MatElem
 # - Inplace
 function mul!(c::MatElem{T}, A::SMat{T}, b::MatElem{T}) where T
-  @assert rows(b) == cols(A)
-  @assert rows(c) == rows(A)
-  @assert cols(c) == cols(b)
-  for m = 1:cols(b)
-    for i = 1:rows(A)
+  @assert nrows(b) == ncols(A)
+  @assert nrows(c) == nrows(A)
+  @assert ncols(c) == ncols(b)
+  for m = 1:ncols(b)
+    for i = 1:nrows(A)
       c[i, m] = dot(A.rows[i], b, m)
     end
   end
@@ -490,8 +490,8 @@ end
 Return the product $A \cdot b$ as a dense matrix.
 """
 function mul(A::SMat{T}, b::MatElem{T}) where T
-  @assert rows(b) == cols(A)
-  c = similar(b, rows(A), cols(b))
+  @assert nrows(b) == ncols(A)
+  c = similar(b, nrows(A), ncols(b))
   return mul!(c, A, b)
 end
 
@@ -520,8 +520,8 @@ end
 # - Inplace
 # - Reduction as the last step, no intermediate reductions.
 function mul_mod!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
-  @assert length(b) == cols(A)
-  @assert length(c) == rows(A)
+  @assert length(b) == ncols(A)
+  @assert length(c) == nrows(A)
 
   for i = 1:length(A.rows)
     s = S(0)
@@ -538,8 +538,8 @@ end
 # - Inplace
 # - Intermediate reductions.
 function mul_mod_big!(c::Array{S, 1}, A::SMat{T}, b::Array{S, 1}, mod::S) where {S, T}
-  @assert length(b) == cols(A)
-  @assert length(c) == rows(A)
+  @assert length(b) == ncols(A)
+  @assert length(c) == nrows(A)
   for i = 1:length(A.rows)
     s = 0
     I = A.rows[i]
@@ -563,17 +563,17 @@ end
 Return the sum $A + B$.
 """
 function +(A::SMat{T}, B::SMat{T}) where T
-  rows(A) != rows(B) && error("Matrices must have same number of rows")
-  cols(A) != cols(B) && error("Matrices must have same number of columns")
+  nrows(A) != nrows(B) && error("Matrices must have same number of rows")
+  ncols(A) != ncols(B) && error("Matrices must have same number of columns")
   C = sparse_matrix(base_ring(A))
-  m = min(rows(A), rows(B))
+  m = min(nrows(A), nrows(B))
   for i=1:m
     push!(C, A[i] + B[i])
   end
-  for i=m+1:rows(A)
+  for i=m+1:nrows(A)
     push!(C, A[i])
   end
-  for i=m+1:rows(B)
+  for i=m+1:nrows(B)
     push!(C, B[i])
   end
   return C
@@ -585,19 +585,19 @@ end
 Return the difference $A - B$.
 """
 function -(A::SMat{T}, B::SMat{T}) where T
-  rows(A) != rows(B) && error("Matrices must have same number of rows")
-  cols(A) != cols(B) && error("Matrices must have same number of columns")
+  nrows(A) != nrows(B) && error("Matrices must have same number of rows")
+  ncols(A) != ncols(B) && error("Matrices must have same number of columns")
   C = sparse_matrix(base_ring(A)) 
-  m = min(rows(A), rows(B))
+  m = min(nrows(A), nrows(B))
   for i=1:m
     push!(C, A[i]-B[i])
   end
-  for i=m+1:rows(A)
+  for i=m+1:nrows(A)
     push!(C, A[i])
   end
-  if m < rows(B)
+  if m < nrows(B)
     n = base_ring(B)(-1)
-    for i=m+1:rows(B)
+    for i=m+1:nrows(B)
       push!(C, n*B[i])
     end
   end
@@ -653,10 +653,10 @@ Return the product $b \cdot A$.
 """
 function *(b::fmpz, A::SMat{fmpz})
   if iszero(b)
-    return zero_matrix(SMat, FlintZZ, rows(A), cols(A))
+    return zero_matrix(SMat, FlintZZ, nrows(A), ncols(A))
   end
   B = sparse_matrix(base_ring(A))
-  B.c = cols(A)
+  B.c = ncols(A)
   for a in A
     push!(B, b * a)
   end
@@ -715,7 +715,7 @@ valence of trans * A  is computed instead.
 function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T}, 1}()) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
-  if false && cols(A) > rows(A)
+  if false && ncols(A) > nrows(A)
     At = A
     A = transpose(A)
   else
@@ -728,10 +728,10 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
     mm = mul_mod!
     println("mul small case")
   end
-  c1 = Array{Int}(undef, cols(A))
-  c2 = Array{Int}(undef, rows(A))
+  c1 = Array{Int}(undef, ncols(A))
+  c2 = Array{Int}(undef, nrows(A))
 
-  for i=1:cols(A)
+  for i=1:ncols(A)
     c1[i] = Int(rand(-10:10))
   end
 
@@ -759,7 +759,7 @@ function valence_mc(A::SMat{T}; extra_prime = 2, trans = Array{SMatSLP_add_row{T
       continue
     end
     df = degree(f)
-    println("Poly degree is $df, dims $(rows(A)) x $(cols(A))")
+    println("Poly degree is $df, dims $(nrows(A)) x $(ncols(A))")
 
     V = fmpz(leading_coefficient(f))
     pp = fmpz(p)
@@ -807,7 +807,7 @@ end
 function valence_mc(A::SMat{T}, p::Int) where T
   # we work in At * A (or A * At) where we choose the smaller of the 2
   # matrices
-  if false && cols(A) > rows(A)
+  if false && ncols(A) > nrows(A)
     At = A
     A = transpose(A)
   else
@@ -820,10 +820,10 @@ function valence_mc(A::SMat{T}, p::Int) where T
     mm = mul_mod!
     println("mul small case")
   end
-  c1 = zeros{Int}(cols(A))
-  c2 = zeros{Int}(rows(A))
+  c1 = zeros{Int}(ncols(A))
+  c2 = zeros{Int}(nrows(A))
 
-  for i=1:cols(A)
+  for i=1:ncols(A)
     c1[i] = Int(rand(-10:10))
   end
 
@@ -900,13 +900,13 @@ function hcat!(A::SMat{T}, B::SMat{T}) where T
   o = A.c
   A.c += B.c
   nnz = A.nnz
-  for i=1:min(rows(A), rows(B))
+  for i=1:min(nrows(A), nrows(B))
     for (p,v) in B[i]
       push!(A[i].pos, p+o)
       push!(A[i].values, v)
     end
   end
-  for i=min(rows(A), rows(B))+1:rows(B)
+  for i=min(nrows(A), nrows(B))+1:nrows(B)
     sr = SRow{T}()
     for (p,v) in B[i]
       push!(sr.pos, p+o)
@@ -1094,8 +1094,8 @@ end
 
 function Nemo.matrix(A::SMat)
   R = base_ring(A)
-  M = zero_matrix(R, rows(A), cols(A))
-  for i=1:rows(A)
+  M = zero_matrix(R, nrows(A), ncols(A))
+  for i=1:nrows(A)
     for j=1:length(A.rows[i].pos)
       M[i, A.rows[i].pos[j]] = A.rows[i].values[j]
     end
@@ -1194,7 +1194,7 @@ function Base.cat(dims::Tuple{Int, Int}, A::SMat...)
   B = copy(A[1])
   c = B.c
   for i=2:length(A)
-    for j=1:rows(A[i])
+    for j=1:nrows(A[i])
       R = SRow(base_ring(B))
       for (k,v) = A[i].rows[j]
         push!(R.pos, k+c)
@@ -1219,7 +1219,7 @@ end
 Tests if $A$ is an identity matrix.
 """
 function isone(A::SMat)
-  if cols(A) != rows(A)
+  if ncols(A) != nrows(A)
     return false
   end
   for (i, r) in enumerate(A)
@@ -1301,7 +1301,7 @@ function SparseArrays.sparse(A::SMat{T}) where T
   J = zeros(Int, A.nnz)
   V = Vector{T}(undef, A.nnz)
   i = 1
-  for r = 1:rows(A)
+  for r = 1:nrows(A)
     for j=1:length(A.rows[r].pos)
       I[i] = r
       J[i] = A.rows[r].pos[j]
@@ -1320,7 +1320,7 @@ The same matrix, but as a two-dimensional julia array.
 """
 function Array(A::SMat{T}) where T
   R = zero_matrix(base_ring(A), A.r, A.c) 
-  for i=1:rows(A)
+  for i=1:nrows(A)
     for j=1:length(A.rows[i].pos)
       R[i, A.rows[i].pos[j]] = A.rows[i].values[j]
     end

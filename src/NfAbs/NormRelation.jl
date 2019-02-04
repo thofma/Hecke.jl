@@ -366,7 +366,7 @@ function simplify(c::Hecke.ClassGrpCtx)
     fl = Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
     @assert fl
   end
-  for i=1:rows(c.M.rel_gens)
+  for i=1:nrows(c.M.rel_gens)
     if iszero(c.M.rel_gens.rows[i])
       Hecke._add_unit(U, c.R_rel[i])
     end
@@ -384,7 +384,7 @@ function units(c::Hecke.ClassGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
 
-  for i=1:rows(c.M.rel_gens)
+  for i=1:nrows(c.M.rel_gens)
     if iszero(c.M.rel_gens.rows[i])
       Hecke._add_unit(U, c.R_rel[i])
     end
@@ -559,15 +559,15 @@ function FixedField(K::T,S::Array{M,1}) where {T <: Union{AnticNumberField, Heck
     nulls = nullspace(mat_nulls);
     nn = nulls[2]
     d = one(FlintZZ)
-    for i in 1:rows(nn)
-      for j in 1:cols(nn)
+    for i in 1:nrows(nn)
+      for j in 1:ncols(nn)
         d = lcm(d, denominator(nn[i, j]))
       end
     end
     nn = d * nn
     nn = matrix(FlintZZ, nn)
     #@show nn
-    #@show rows(nn), cols(nn)
+    #@show nrows(nn), ncols(nn)
     nn = transpose(saturate(transpose(nn)))
     nn = lll(nn')'
     ar_fixed = Array{typeof(gen(K)),1}(undef,nulls[1]);

@@ -70,8 +70,8 @@ function class_group_disc_exp(a::GrpAbFinGenElem, c::ClassGrpCtx)
   else
     Ti = c.dl_data[4]
   end
-  e = a.coeff * sub(Ti, rows(Ti)-cols(a.coeff)+1:rows(Ti), 1:cols(Ti))
-  return power_product_class(c.FB.ideals[length(c.FB.ideals)-rows(Ti)+1:end], [mod(e[1, i], c.h) for i=1:cols(e)])
+  e = a.coeff * sub(Ti, nrows(Ti)-ncols(a.coeff)+1:nrows(Ti), 1:ncols(Ti))
+  return power_product_class(c.FB.ideals[length(c.FB.ideals)-nrows(Ti)+1:end], [mod(e[1, i], c.h) for i=1:ncols(e)])
 end
 
 function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
@@ -90,14 +90,14 @@ function class_group_disc_log(r::SRow{fmpz}, c::ClassGrpCtx)
   end
 
 #  println("reduced to $r")
-  rr = zero_matrix(FlintZZ, 1, rows(T))
-  for i = 1:rows(T)
+  rr = zero_matrix(FlintZZ, 1, nrows(T))
+  for i = 1:nrows(T)
     rr[1,i] = 0
   end
   for (p,v) = r
     rr[1, p-s+1] = v
   end
-  d = C(sub(rr*T, 1:1, rows(T)-length(C.snf)+1:rows(T)))
+  d = C(sub(rr*T, 1:1, nrows(T)-length(C.snf)+1:nrows(T)))
 #  println(d)
   return d
 end
@@ -263,7 +263,7 @@ function class_group_grp(c::ClassGrpCtx; redo::Bool = false)
   es_dense = fmpz_mat(es)
   S, _, T = snf_with_transform(es_dense, false, true)
 
-  p = findall(x->S[x,x]>1, 1:cols(S))
+  p = findall(x->S[x,x]>1, 1:ncols(S))
 
   C = DiagonalGroup([S[x, x] for x in p])
   c.dl_data = (s, T, C)
@@ -394,10 +394,10 @@ end
 function unique_fmpz_mat(C::Nemo.arb_mat)
   half = parent(C[1,1])(fmpq(1//2))  #TODO: does not work
   half = parent(C[1,1])(1)//2
-  v = zero_matrix(FlintZZ, rows(C), cols(C))
+  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
-  for i=1:rows(C)
-    for j=1:cols(C)
+  for i=1:nrows(C)
+    for j=1:ncols(C)
       fl, v[i,j] = unique_integer(floor(C[i,j] + half))
       if !fl
         return fl, v
@@ -415,10 +415,10 @@ function Base.round(::Type{fmpz}, x::arb)
 end
 
 function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
-  v = zero_matrix(FlintZZ, rows(C), cols(C))
+  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
-  for i=1:rows(C)
-    for j=1:cols(C)
+  for i=1:nrows(C)
+    for j=1:ncols(C)
       v[i,j] = round(fmpz, C[i,j])
     end
   end
@@ -426,10 +426,10 @@ function Base.round(::Type{fmpz_mat}, C::Nemo.arb_mat)
 end
 
 function round_approx(::Type{fmpz_mat}, C::Nemo.arb_mat)
-  v = zero_matrix(FlintZZ, rows(C), cols(C))
+  v = zero_matrix(FlintZZ, nrows(C), ncols(C))
 
-  for i=1:rows(C)
-    for j=1:cols(C)
+  for i=1:nrows(C)
+    for j=1:ncols(C)
       a = upper_bound(C[i,j], fmpz)
       b = lower_bound(C[i,j], fmpz)
       if (b-a) > sqrt(abs(C[i,j]))
@@ -463,7 +463,7 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
   if isdefined(U, :tentative_regulator)
     #TODO: improve here - it works, kind of...
     B = Hecke._conj_arb_log_matrix_normalise_cutoff(b, prec)
-    bd = maximum(sqrt(sum(B[i,j]^2 for j=1:cols(B))) for i=1:rows(B))
+    bd = maximum(sqrt(sum(B[i,j]^2 for j=1:ncols(B))) for i=1:nrows(B))
     bd = bd/root(U.tentative_regulator, length(U.units))
     if isfinite(bd)
       s = ccall((:arb_bits, :libarb), Int, (Ref{arb}, ), bd)
@@ -507,7 +507,7 @@ function reduce_mod_units(a::Array{T, 1}, U) where T
     end
     @vprint :UnitGroup 2 "exactly? ($exact) reducing by $V\n"
     for i=1:length(b)
-      b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:cols(V)])
+      b[i] = b[i]*prod([U.units[j]^-V[i,j] for j = 1:ncols(V)])
     end
 
     if exact
@@ -577,7 +577,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   @vprint :ClassGroup 1 " done\n"
   S1 = sub(S, 1:S.r, 1:S.r)
   S2 = sub(S, 1:S.r, S.r+1:S.c)
-  @assert rows(S1) == rows(S2) && rows(S1) == S.r
+  @assert nrows(S1) == nrows(S2) && nrows(S1) == S.r
   
   g = vcat(c.R_gen, c.R_rel)
 
@@ -686,7 +686,7 @@ function sunit_group_fac_elem(I::Array{NfOrdIdl, 1})
     a1 = preimage(mS, a)
     a2 = a*inv(image(mS, a1))
     a3 = preimage(mU, a2)
-    return G(vcat([a3.coeff[1,i] for i=1:cols(a3.coeff)], [a1.coeff[1,i] for i=1:cols(a1.coeff)]))
+    return G(vcat([a3.coeff[1,i] for i=1:ncols(a3.coeff)], [a1.coeff[1,i] for i=1:ncols(a1.coeff)]))
   end
 
   function log(a::nf_elem)

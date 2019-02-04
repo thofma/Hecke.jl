@@ -79,7 +79,7 @@ mutable struct NfOrdToFqNmodMor <: Map{NfOrd, FqNmodFiniteField, HeckeMap, NfOrd
     c = Rx()
     for i in 1:n
       ib = F() 
-      @assert d == cols(b[i])
+      @assert d == ncols(b[i])
       for j in 1:d
         setcoeff!(c, j - 1, b[i][1, j])
       end
@@ -262,7 +262,7 @@ end
 # with A = B * X
 # this function will find it!
 function _solve_unique(A::nmod_mat, B::nmod_mat)
-  X = zero_matrix(base_ring(A), cols(B), rows(A))
+  X = zero_matrix(base_ring(A), ncols(B), nrows(A))
 
   #println("solving\n $A \n = $B * X")
   r, per, L, U = lu(B) # P*M1 = L*U
@@ -275,8 +275,8 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
 
   #println("first solve\n $Ap = $L * Y")
 
-  for i in 1:cols(Y)
-    for j in 1:rows(Y)
+  for i in 1:ncols(Y)
+    for j in 1:nrows(Y)
       s = Ap[j, i]
       for k in 1:j-1
         s = s - Y[k, i]*L[j, k]
@@ -289,7 +289,7 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
 
   #println("solving \n $Y \n = $U * X")
 
-  YY = sub(Y, 1:r, 1:cols(Y))
+  YY = sub(Y, 1:r, 1:ncols(Y))
   UU = sub(U, 1:r, 1:r)
   X = _inv(UU)*YY
 
@@ -300,7 +300,7 @@ function _solve_unique(A::nmod_mat, B::nmod_mat)
 end
 
 function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic.Res{fmpz}})
-  X = zero_matrix(base_ring(A), cols(B), rows(A))
+  X = zero_matrix(base_ring(A), ncols(B), nrows(A))
 
   #println("solving\n $A \n = $B * X")
   r, per, L, U = _lu(B) # P*M1 = L*U
@@ -308,12 +308,12 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
 
   @assert B == per*L*U
   Ap = inv(per)*A
-  Y = zero_matrix(base_ring(A), rows(A), cols(A))
+  Y = zero_matrix(base_ring(A), nrows(A), ncols(A))
 
   #println("first solve\n $Ap = $L * Y")
 
-  for i in 1:cols(Y)
-    for j in 1:rows(Y)
+  for i in 1:ncols(Y)
+    for j in 1:nrows(Y)
       s = Ap[j, i]
       for k in 1:j-1
         s = s - Y[k, i]*L[j, k]
@@ -326,7 +326,7 @@ function _solve_unique(A::Generic.Mat{Generic.Res{fmpz}}, B::Generic.Mat{Generic
 
   #println("solving \n $Y \n = $U * X")
 
-  YY = sub(Y, 1:r, 1:cols(Y))
+  YY = sub(Y, 1:r, 1:ncols(Y))
   UU = sub(U, 1:r, 1:r)
   X = _inv(UU)*YY
 
@@ -388,7 +388,7 @@ function NfOrdToFqMor(O::NfOrd, P::NfOrdIdl)#, g::fmpz_poly, a::NfOrdElem, b::Ve
 
   for i in 1:n
     ib = F() 
-    @assert d == cols(b[i])
+    @assert d == ncols(b[i])
     for j in 1:d
       setcoeff!(c, j - 1, b[i][1, j])
     end

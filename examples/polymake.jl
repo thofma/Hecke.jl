@@ -2,8 +2,8 @@ module PolymakeOscar
 
 using Polymake, Hecke
 
-Hecke.rows(A::Polymake.pm_MatrixAllocated) = Int(size(A)[1])
-Hecke.cols(A::Polymake.pm_MatrixAllocated) = Int(size(A)[2])
+Hecke.nrows(A::Polymake.pm_MatrixAllocated) = Int(size(A)[1])
+Hecke.ncols(A::Polymake.pm_MatrixAllocated) = Int(size(A)[2])
 
 #solves Ax <= b
 function solve_ineq(A::fmpz_mat, b::fmpz_mat)
@@ -12,17 +12,17 @@ function solve_ineq(A::fmpz_mat, b::fmpz_mat)
   inner = Polymake.give(p, "INTERIOR_LATTICE_POINTS")
   out = Polymake.give(p, "BOUNDARY_LATTICE_POINTS")
 
-  res = zero_matrix(FlintZZ, rows(inner) + rows(out), cols(A))
-  for i=1:rows(out)
+  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  for i=1:nrows(out)
     @assert out[i,1] == 1
-    for j=1:cols(A)
+    for j=1:ncols(A)
       res[i,j] = out[i, j+1]
     end
   end
-  for i=1:rows(inner)
+  for i=1:nrows(inner)
     @assert inner[i,1] == 1
-    for j=1:cols(A)
-      res[i+rows(out), j] = inner[i, j+1]
+    for j=1:ncols(A)
+      res[i+nrows(out), j] = inner[i, j+1]
     end
   end
   return res
@@ -30,23 +30,23 @@ end
 
 function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
   bA = Array{BigInt, 2}(hcat(-b, A))
-  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, cols(A), 1), MatrixSpace(FlintZZ, cols(A), cols(A))(1)))
+  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, ncols(A), 1), MatrixSpace(FlintZZ, ncols(A), ncols(A))(1)))
   p = Polymake.perlobj( "Polytope<Rational>", Dict("EQUATIONS" => bA, 
                                                    "INEQUALITIES" => zI))
   inner = Polymake.give(p, "INTERIOR_LATTICE_POINTS")
   out = Polymake.give(p, "BOUNDARY_LATTICE_POINTS")
 
-  res = zero_matrix(FlintZZ, rows(inner) + rows(out), cols(A))
-  for i=1:rows(out)
+  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  for i=1:nrows(out)
     @assert out[i,1] == 1
-    for j=1:cols(A)
+    for j=1:ncols(A)
       res[i,j] = out[i, j+1]
     end
   end
-  for i=1:rows(inner)
+  for i=1:nrows(inner)
     @assert inner[i,1] == 1
-    for j=1:cols(A)
-      res[i+rows(out), j] = inner[i, j+1]
+    for j=1:ncols(A)
+      res[i+nrows(out), j] = inner[i, j+1]
     end
   end
   return res
@@ -54,23 +54,23 @@ end
 
 function solve_mixed(A::fmpz_mat, b::fmpz_mat, C::fmpz_mat)  # Ax == b && Cx >= 0
   bA = Array{BigInt, 2}(hcat(-b, A))
-  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, cols(A), 1), C))
+  zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, ncols(A), 1), C))
   p = Polymake.perlobj( "Polytope<Rational>", Dict("EQUATIONS" => bA, 
                                                    "INEQUALITIES" => zI))
   inner = Polymake.give(p, "INTERIOR_LATTICE_POINTS")
   out = Polymake.give(p, "BOUNDARY_LATTICE_POINTS")
 
-  res = zero_matrix(FlintZZ, rows(inner) + rows(out), cols(A))
-  for i=1:rows(out)
+  res = zero_matrix(FlintZZ, nrows(inner) + nrows(out), ncols(A))
+  for i=1:nrows(out)
     @assert out[i,1] == 1
-    for j=1:cols(A)
+    for j=1:ncols(A)
       res[i,j] = out[i, j+1]
     end
   end
-  for i=1:rows(inner)
+  for i=1:nrows(inner)
     @assert inner[i,1] == 1
-    for j=1:cols(A)
-      res[i+rows(out), j] = inner[i, j+1]
+    for j=1:ncols(A)
+      res[i+nrows(out), j] = inner[i, j+1]
     end
   end
   return res
@@ -92,7 +92,7 @@ function norm_equation2_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
   b = matrix(FlintZZ, length(lp.fac), 1, [valuation(k, p) for p = keys(lp.fac)])
 
   so = solve_mixed(A, b, C)
-  sol = [ms(s(sub(so, i:i, 1:cols(so)))) for i=1:rows(so)]
+  sol = [ms(s(sub(so, i:i, 1:ncols(so)))) for i=1:nrows(so)]
 
   if !abs
     u, mu = unit_group_fac_elem(R)
@@ -115,7 +115,7 @@ function norm_equation_fac_elem(R::NfAbsOrd, k::fmpz; abs::Bool = false)
   for (p, k) = lp.fac
     P = prime_decomposition(R, p)
     s = solve_non_negative(matrix(FlintZZ, 1, length(P), [degree(x[1]) for x = P]), matrix(FlintZZ, 1, 1, [k]))
-    push!(S, (P, [view(s, i:i, 1:cols(s)) for i=1:rows(s)]))
+    push!(S, (P, [view(s, i:i, 1:ncols(s)) for i=1:nrows(s)]))
   end
   sol = []
   for x in Base.Iterators.ProductIterator(Tuple(t[2] for t = S))

@@ -36,7 +36,7 @@ end
 
 function prod_diag(A::fmpz_mat)
   a = fmpz()
-  for i=1:rows(A)
+  for i=1:nrows(A)
     b = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), A, i-1, i-1)
     ccall((:fmpz_mul, :libflint), Nothing, (Ref{fmpz}, Ref{fmpz}, Ptr{fmpz}), a, a, b)
   end
@@ -94,7 +94,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
       @v_do :ClassGroup 2 println("using inf val", v)
       c = deepcopy(c)
       mult_by_2pow_diag!(c, v)
-      sv = max(fmpz(0), sum(v[1,i] for i=1:cols(l)))
+      sv = max(fmpz(0), sum(v[1,i] for i=1:ncols(l)))
     end
 
 
@@ -110,7 +110,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   shift!(d, -prec)  #TODO: remove?
 
   for i=1:n
-    fmpz_mat_entry_add_ui!(d, i, i, UInt(rows(d)))
+    fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
   end
 
   ctx=Nemo.lll_ctx(0.99, 0.51, :gram)
@@ -122,7 +122,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   ## test if entries in l are small enough, if not: increase precision
   ## or signal that prec was too low
   @v_do :ClassGroup 2 printstyled("lll basis length profile\n", color=:green);
-  @v_do :ClassGroup 2 for i=1:rows(l)
+  @v_do :ClassGroup 2 for i=1:nrows(l)
     print(Float64(div(l[i,i], fmpz(2)^prec*den*den)*1.0), " : ")
   end
   @v_do :ClassGroup 2 println("")
@@ -134,7 +134,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   ## lll needs to yield a basis sth
   ## l[1,1] = |b_i|^2 <= 2^((n-1)/2) disc^(1/n)  
   ## and prod(l[i,i]) <= 2^(n(n-1)/2) disc
-  n = rows(l)
+  n = nrows(l)
   disc = abs(discriminant(order(A)))*norm(A)^2 * den^(2*n) * fmpz(2)^(2*sv)
   di = root(disc, n)+1
   di *= fmpz(2)^(div(n+1,2)) * fmpz(2)^prec
@@ -185,7 +185,7 @@ function short_elem(A::NfOrdIdl,
     prec = 2 * prec
   end
 
-  w = view(t, 1,1, 1, cols(t))
+  w = view(t, 1,1, 1, ncols(t))
   c = w*b
   q = elem_from_mat_row(K, c, 1, b_den)
   return q

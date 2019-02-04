@@ -418,8 +418,8 @@ function _rcf_find_kummer(CF::ClassField_pp)
   i, l = nullspace(M)
   @assert i > 0
   n = lift(l)::fmpz_mat
-  N = GrpAbFinGen([e for j=1:rows(n)])
-  s, ms = sub(N, GrpAbFinGenElem[N([n[j, ind] for j=1:rows(n)]) for ind=1:i], false)
+  N = GrpAbFinGen([e for j=1:nrows(n)])
+  s, ms = sub(N, GrpAbFinGenElem[N([n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
   ms = Hecke.make_snf(ms)
   H = domain(ms)
   @hassert :ClassField 1 iscyclic(H)

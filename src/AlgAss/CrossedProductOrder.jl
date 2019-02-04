@@ -124,11 +124,11 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:dim(A1)]
   M = ModAlgAss(lM)
   ls = minimal_submodules(M)
-  l = sum(rows(x) for x in ls)
+  l = sum(nrows(x) for x in ls)
   M1 = zero_matrix(base_ring(A1), l, dim(A1))
   i=1
   for x in ls
-    for j=1:rows(x)
+    for j=1:nrows(x)
       for k=1:dim(A1)
         M1[i,k] = x[j,k]
       end
@@ -141,18 +141,18 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   end
   M1 = view(M1, 1:r, 1:dim(A1))
   dM = transpose(nullspace(M1)[2])
-  gens = Vector{elem_type(O)}(undef, rows(dM))
-  m = zero_matrix(FlintZZ, rows(dM)+O.dim, O.dim)
-  for i=1:rows(dM)
+  gens = Vector{elem_type(O)}(undef, nrows(dM))
+  m = zero_matrix(FlintZZ, nrows(dM)+O.dim, O.dim)
+  for i=1:nrows(dM)
     el = elem_in_basis(mA1(elem_from_mat_row(A1, dM, i)))
-    for j=1:cols(dM)
+    for j=1:ncols(dM)
       m[i,j] = el[j]
     end
     gens[i]= elem_from_mat_row(O, m, i)
   end
   for i = 1:O.dim
     for j = 1:O.dim
-      m[rows(dM)+i, j] = I1.basis_mat[i,j]
+      m[nrows(dM)+i, j] = I1.basis_mat[i,j]
     end
   end
   hnf_modular_eldiv!(m, fmpz(p))

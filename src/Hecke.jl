@@ -66,7 +66,7 @@ import Nemo
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, 
            :factor,
-           :call, :factors, :parseint, :strongequal, :window, :xgcd]
+           :call, :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols]
 
 for i in names(Nemo)
   i in exclude && continue

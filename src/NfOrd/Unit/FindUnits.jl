@@ -207,8 +207,8 @@ function _unit_group_find_units(u::UnitGrpCtx, x::ClassGrpCtx)
 
     add_units = []
     rel = SMat{fmpz}()
-    for jj in 1:min(div(rows(x.M.rel_gens), 10)+1, 20)
-      xj = rand(1:rows(x.M.rel_gens))
+    for jj in 1:min(div(nrows(x.M.rel_gens), 10)+1, 20)
+      xj = rand(1:nrows(x.M.rel_gens))
       if xj in add_units
         continue
       end

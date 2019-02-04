@@ -766,8 +766,8 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   M1 = zero_matrix(K, d, d)
   imF = inv(mF)
   # Write a basis of the kernel of A in the rows of M1.
-  for i = 1:cols(B)
-    for j = 1:rows(B)
+  for i = 1:ncols(B)
+    for j = 1:nrows(B)
       M1[i, j] = K(imF(B[j, i])*elts_with_val[j])
     end
   end
@@ -956,7 +956,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
       end
       N = vcat(N, deepcopy(m))
     end
-    N = sub(pseudo_hnf(N, :lowerleft), rows(N) - degree(O) + 1:rows(N), 1:degree(O))
+    N = sub(pseudo_hnf(N, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
     P = ideal(O, N, false, true)
     P.is_prime = 1
     e = valuation(pO, P)
@@ -1326,9 +1326,9 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   F, mF = ResidueField(order(p), p)
   mmF = extend(mF, nf(order(p)))
   immF = inv(mmF)
-  Mp = zero_matrix(F, rows(M), cols(M))
-  for i = 1:rows(M)
-    for j = 1:cols(M)
+  Mp = zero_matrix(F, nrows(M), ncols(M))
+  for i = 1:nrows(M)
+    for j = 1:ncols(M)
       Mp[i, j] = mmF(M[i, j])
     end
   end

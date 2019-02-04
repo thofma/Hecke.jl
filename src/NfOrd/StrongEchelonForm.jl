@@ -9,7 +9,7 @@ function _pivot(A, start_row, col)
     return 1;
   end
 
-  for j in start_row + 1:rows(A)
+  for j in start_row + 1:nrows(A)
     if !iszero(A[j, col])
       swap_rows!(A, j, start_row)
       return -1
@@ -22,8 +22,8 @@ end
 function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, strategy)
   B = deepcopy(A)
 
-  if rows(B) < cols(B)
-    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero_matrix(base_ring(B), ncols(B) - nrows(B), ncols(B)))
   end
 
   if strategy == :split
@@ -58,8 +58,8 @@ function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :
 end
 
 function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
-  n = rows(A)
-  m = cols(A)
+  n = nrows(A)
+  m = ncols(A)
   d = one(base_ring(A))
 
   t_isdiv = 0.0
@@ -68,7 +68,7 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
 
   row = 1
   col = 1
-  while row <= rows(A) && col <= cols(A)
+  while row <= nrows(A) && col <= ncols(A)
     #println("doing row $row")
     t = _pivot(A, row, col)
     if t == 0
@@ -76,7 +76,7 @@ function triangularize!(A::Generic.Mat{NfOrdQuoRingElem})
       continue
     end
     d = d*t
-    for i in (row + 1):rows(A)
+    for i in (row + 1):nrows(A)
       if iszero(A[i, col])
         continue
       end
@@ -129,8 +129,8 @@ end
 # It is assumed that A has more rows then columns.
 function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
   #A = deepcopy(B)
-  n = rows(A)
-  m = cols(A)
+  n = nrows(A)
+  m = ncols(A)
 
   @assert n >= m
 
@@ -138,7 +138,7 @@ function strong_echelon_form_naive!(A::Generic.Mat{NfOrdQuoRingElem})
   triangularize!(A)
   #println("done")
 
-  T = zero_matrix(base_ring(A), 1, cols(A))
+  T = zero_matrix(base_ring(A), 1, ncols(A))
 
   # We do not normalize!
   for j in 1:m
@@ -206,20 +206,20 @@ end
 ################################################################################
 
 function howell_form!(A::Generic.Mat{NfOrdQuoRingElem})
-  @assert rows(A) >= cols(A)
+  @assert nrows(A) >= ncols(A)
 
-  k = rows(A)
+  k = nrows(A)
 
   strong_echelon_form_naive!(A)
 
-  for i in 1:rows(A)
+  for i in 1:nrows(A)
     if iszero_row(A, i)
       k = k - 1
 
-      for j in (i + 1):rows(A)
+      for j in (i + 1):nrows(A)
         if !iszero_row(A, j)
           swap_rows!(A, i, j)
-          j = rows(A)
+          j = nrows(A)
           k = k + 1
         end
       end
@@ -231,8 +231,8 @@ end
 function howell_form(A::Generic.Mat{NfOrdQuoRingElem})
   B = deepcopy(A)
 
-  if rows(B) < cols(B)
-    B = vcat(B, zero_matrix(base_ring(B), cols(B) - rows(B), cols(B)))
+  if nrows(B) < ncols(B)
+    B = vcat(B, zero_matrix(base_ring(B), ncols(B) - nrows(B), ncols(B)))
   end
 
   howell_form!(B)
@@ -247,11 +247,11 @@ end
 ################################################################################
 
 function det(M::Generic.Mat{NfOrdQuoRingElem})
-  rows(M) != cols(M) && error("Matrix must be square matrix")
+  nrows(M) != ncols(M) && error("Matrix must be square matrix")
   N = deepcopy(M)
   d = triangularize!(N)
   z = one(base_ring(M))
-  for i in 1:rows(N)
+  for i in 1:nrows(N)
     z = z * N[i, i]
   end
   return z*d
@@ -301,7 +301,7 @@ end
 
 function can_map_into_integer_quotient(Q::NfOrdQuoRing)
   B = basis_mat(ideal(Q))
-  for i in 2:cols(B)
+  for i in 2:ncols(B)
     if !isone(B[i, i])
       return false
     end
@@ -339,8 +339,8 @@ function _strong_echelon_form_split(M::MatElem{NfOrdQuoRingElem}, ideals)
   R = base_ring(Q)
   modulus = ideal(Q)
 
-  n = rows(M)
-  m = cols(M)
+  n = nrows(M)
+  m = ncols(M)
 
   M_cur = zero_matrix(Q, n, m)
   
@@ -448,8 +448,8 @@ function _strong_echelon_form_nonsplit(M)
   Q = base_ring(M)
   I = ideal(Q)
 
-  n = rows(M)
-  m = cols(M)
+  n = nrows(M)
+  m = ncols(M)
 
   if can_map_into_integer_quotient(Q)
     RmodIZ, f, g = map_into_integer_quotient(Q)

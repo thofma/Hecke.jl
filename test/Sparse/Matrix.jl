@@ -12,8 +12,8 @@ using SparseArrays
   @test R == @inferred base_ring(Asparse)
   @test M == @inferred parent(Asparse)
 
-  @test 3 == @inferred rows(Asparse)
-  @test 3 == @inferred cols(Asparse)
+  @test 3 == @inferred nrows(Asparse)
+  @test 3 == @inferred ncols(Asparse)
   @test 3 == @inferred nnz(Asparse)
   @test (3, 3) == @inferred size(Asparse)
 
@@ -22,21 +22,21 @@ using SparseArrays
 
   Csparse = sparse_matrix(FlintZZ)
   @test base_ring(Csparse) == FlintZZ
-  @test rows(Csparse) == 0
-  @test cols(Csparse) == 0
+  @test nrows(Csparse) == 0
+  @test ncols(Csparse) == 0
 
   A = fmpz[1 2; 0 0; 3 4]
 
   Dsparse = sparse_matrix(A)
   @test base_ring(Dsparse) == FlintZZ
-  @test rows(Dsparse) == 3
-  @test cols(Dsparse) == 2
+  @test nrows(Dsparse) == 3
+  @test ncols(Dsparse) == 2
   @test nnz(Dsparse) == 4
 
   Esparse = sparse_matrix(FlintZZ)
   @test base_ring(Esparse) == FlintZZ
-  @test rows(Esparse) == 0
-  @test cols(Esparse) == 0
+  @test nrows(Esparse) == 0
+  @test ncols(Esparse) == 0
   @test nnz(Esparse) == 0
 
   # Hash
@@ -49,8 +49,8 @@ using SparseArrays
 
   B = zero_matrix(FlintZZ, 2, 3)
   Bsparse = sparse_matrix(B)
-  @test rows(Bsparse) == 2
-  @test cols(Bsparse) == 3
+  @test nrows(Bsparse) == 2
+  @test ncols(Bsparse) == 3
   @test nnz(Bsparse) == 0
   @test Asparse !== Bsparse
 
@@ -98,8 +98,8 @@ using SparseArrays
 
   D = sparse_matrix(FlintZZ, [1 5 3; 5 5 5; -4 1 1])
   D = mod_sym!(D, fmpz(5))
-  @test rows(D) == 3
-  @test cols(D) == 3
+  @test nrows(D) == 3
+  @test ncols(D) == 3
   @test D.rows[1] == sparse_row(FlintZZ, [1, 3], fmpz[1, -2])
   @test D.rows[2] == sparse_row(FlintZZ)
   @test D.rows[3] == sparse_row(FlintZZ, [1, 2, 3], fmpz[1, 1, 1])
@@ -193,16 +193,16 @@ using SparseArrays
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
   E = @inferred sub(D, 2:3, 2:3)
   @test base_ring(E) == FlintZZ
-  @test rows(E) == 2
-  @test cols(E) == 2
+  @test nrows(E) == 2
+  @test ncols(E) == 2
   @test E == sparse_matrix(FlintZZ, [0 0; 1 0])
 
   # Vertical concatenation
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
   E = @inferred vcat(D, D)
   @test base_ring(E) == FlintZZ
-  @test rows(E) == 6
-  @test cols(E) == 3
+  @test nrows(E) == 6
+  @test ncols(E) == 3
   @test E == sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0;
                                      1 5 3; 0 0 0; 0 1 0])
   # Horizontal concatenation
@@ -210,8 +210,8 @@ using SparseArrays
   D = sparse_matrix(FlintZZ, [1 5 3; 0 0 0; 0 1 0])
   E = @inferred hcat(D, D)
   @test base_ring(E) == FlintZZ
-  @test rows(E) == 3
-  @test cols(E) == 6
+  @test nrows(E) == 3
+  @test ncols(E) == 6
   @test E == sparse_matrix(FlintZZ, [1 5 3 1 5 3; 0 0 0 0 0 0; 0 1 0 0 1 0])
 
   # Hadamard bound

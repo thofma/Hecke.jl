@@ -16,11 +16,11 @@ set_assert_level(:HNF, 0)
 
 
 function show(io::IO, M::ModuleCtxNmod)
-  println("Sparse module over $(M.R) of (current) rank $(rows(M.basis)) and $(rows(M.gens))")
+  println("Sparse module over $(M.R) of (current) rank $(nrows(M.basis)) and $(nrows(M.gens))")
 end
 
 function show(io::IO, M::ModuleCtx_fmpz)
-  println("Sparse module over FlintZZ of (current) rank $(rows(M.bas_gens)) and further $(rows(M.rel_gens))")
+  println("Sparse module over FlintZZ of (current) rank $(nrows(M.bas_gens)) and further $(nrows(M.rel_gens))")
   if isdefined(M, :basis_idx)
     println("current index: $(M.basis_idx)")
   end
@@ -36,10 +36,10 @@ function add_gen!(M::ModuleCtxNmod, g::SRow{nmod})
   h = reduce(M.basis, g)
   if !iszero(h)
     i = 1
-    while i<= rows(M.basis) && M.basis.rows[i].pos[1] < h.pos[1]
+    while i<= nrows(M.basis) && M.basis.rows[i].pos[1] < h.pos[1]
       i += 1
     end
-    @hassert :HNF 2  i > rows(M.basis) || M.basis[i].pos[1] > h.pos[1]
+    @hassert :HNF 2  i > nrows(M.basis) || M.basis[i].pos[1] > h.pos[1]
     insert!(M.basis.rows, i, h)
     M.basis.r += 1
     M.basis.nnz += length(h)
@@ -63,7 +63,7 @@ function add_gen!(M::ModuleCtx_fmpz, g::SRow{fmpz}, always::Bool = true)
 end
 
 function check_index(M::ModuleCtx_fmpz)
-  if rows(M.Mp.basis) < cols(M.Mp.basis)
+  if nrows(M.Mp.basis) < ncols(M.Mp.basis)
     return fmpz(0)
   end
 
@@ -89,10 +89,10 @@ function check_index(M::ModuleCtx_fmpz)
       h = reduce(C, ii, 2*d) #to avoid problems with diag being 1...1 d
       @hassert :HNF 2  !iszero(h)
       i = 1
-      while i<= rows(C) && C.rows[i].pos[1] < h.pos[1]
+      while i<= nrows(C) && C.rows[i].pos[1] < h.pos[1]
         i += 1
       end
-      @hassert :HNF 2  i > rows(C) || C[i].pos[1] > h.pos[1]
+      @hassert :HNF 2  i > nrows(C) || C[i].pos[1] > h.pos[1]
       insert!(C.rows, i, h)
       C.r += 1
       C.nnz += length(h)
@@ -108,7 +108,7 @@ function check_index(M::ModuleCtx_fmpz)
 
 #=
   for l=1:5
-    mis = find(i->C[i,i] != 1, 1:rows(C))
+    mis = find(i->C[i,i] != 1, 1:nrows(C))
     if length(mis) == 0
       break
     end
@@ -135,7 +135,7 @@ function check_index(M::ModuleCtx_fmpz)
   end
 =#
   M.basis = C
-  M.basis_idx = prod([C[i,i] for i=1:rows(C)])
+  M.basis_idx = prod([C[i,i] for i=1:nrows(C)])
 
   return M.basis_idx
 end
@@ -148,21 +148,21 @@ function elementary_divisors(M::ModuleCtx_fmpz)
     end
   end
   C = M.basis
-  f = find(i -> C[i,i] != 1, 1:rows(C))
+  f = find(i -> C[i,i] != 1, 1:nrows(C))
   if length(f) == 0
     M.essential_elementary_divisors = fmpz[]
     return M.essential_elementary_divisors
   end
   e = minimum(f)
-  m = fmpz_mat(sub(C, e:rows(C), e:cols(C)))
+  m = fmpz_mat(sub(C, e:nrows(C), e:ncols(C)))
   s = snf(m)
-  M.essential_elementary_divisors = [s[i,i] for i=1:rows(s)]
+  M.essential_elementary_divisors = [s[i,i] for i=1:nrows(s)]
   return M.essential_elementary_divisors
 end
 
 function missing_pivot(M::ModuleCtx_fmpz)
   C = M.Mp.basis
-  return setdiff(BitSet(1:cols(C)), [x.pos[1] for x=C])
+  return setdiff(BitSet(1:ncols(C)), [x.pos[1] for x=C])
 end
 
 function non_trivial_pivot(M::ModuleCtx_fmpz)
@@ -172,7 +172,7 @@ function non_trivial_pivot(M::ModuleCtx_fmpz)
   end
   C = M.basis
   @hassert :HNF 2  C.r == C.c
-  return setdiff(BitSet(1:cols(C)), findall(i->C[i].values[1] == 1, 1:C.c))
+  return setdiff(BitSet(1:ncols(C)), findall(i->C[i].values[1] == 1, 1:C.c))
 end
 
 function rank(M::ModuleCtx_fmpz)
@@ -190,7 +190,7 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
   end
   if isdefined(M, :trafo)
     st = M.done_up_to + 1
-    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:rows(M.rel_gens), 1:cols(M.rel_gens)), Val{true}, offset = st-1, truncate = true)
+    _, t = hnf_extend!(M.basis, sub(M.rel_gens, st:nrows(M.rel_gens), 1:ncols(M.rel_gens)), Val{true}, offset = st-1, truncate = true)
     append!(M.trafo, t)
 
   else
@@ -199,7 +199,7 @@ function module_trafo_assure(M::ModuleCtx_fmpz)
     M.trafo = t
     M.basis = h
   end
-  M.done_up_to = rows(M.rel_gens)
+  M.done_up_to = nrows(M.rel_gens)
   M.basis_idx = det(M.basis) # h is upp_triangular, hence det is trivial
   @assert M.basis_idx > 0
   M.new = false

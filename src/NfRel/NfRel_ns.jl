@@ -407,7 +407,7 @@ function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRel_nsElem{T}) where T
   #C = CartesianIndices(Tuple(0:total_degree(f)-1 for f = K.pol))
   #L = LinearIndices(C)
   #CC = [UInt[c[i] for i=length(K.pol):-1:1] for c = C]
-  for j=1:cols(M)
+  for j=1:ncols(M)
     M[i, j] = zero(base_ring(K))
   end
   for j=1:length(a.data)
@@ -421,7 +421,7 @@ function elem_from_mat_row(K::NfRel_ns{T}, M::Generic.Mat{T}, i::Int) where T
   a = K()
   t = K()
   b = basis(K)
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a.parent = K
     b[c].parent = K
     a = a + M[i, c]*b[c]
@@ -478,7 +478,7 @@ function minpoly_dense(a::NfRel_nsElem)
   i = 2
   while true
     if n % (i-1) == 0 && rank(M) < i
-      N = nullspace(sub(M, 1:i, 1:cols(M))')
+      N = nullspace(sub(M, 1:i, 1:ncols(M))')
       @assert N[1] == 1
       f = PolynomialRing(k,"t", cached=false)[1]([N[2][j, 1] for j=1:i])
       return f*inv(lead(f))
@@ -490,8 +490,8 @@ function minpoly_dense(a::NfRel_nsElem)
 end
 
 function Base.Matrix(a::SMat)
-  A = zero_matrix(base_ring(a), rows(a), cols(a))
-  for i = 1:rows(a)
+  A = zero_matrix(base_ring(a), nrows(a), ncols(a))
+  for i = 1:nrows(a)
     for (k, c) = a[i]
       A[i, k] = c
     end
@@ -518,7 +518,7 @@ function minpoly_sparse(a::NfRel_nsElem)
       echelon!(M)
       fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
       if fl
-        so = mul(so, sub(M, 1:i, n+1:cols(M)))
+        so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         kt, t = PolynomialRing(k, "t", cached = false)
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.

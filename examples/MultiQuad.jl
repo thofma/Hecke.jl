@@ -182,7 +182,7 @@ function dlog(dl::Dict, x, p::Int)
 end
 
 function Hecke.matrix(R::Hecke.Ring, M::MatElem)
-  return matrix(R, rows(M), cols(M), elem_type(R)[R(M[i,j]) for i=1:rows(M) for j=1:cols(M)])
+  return matrix(R, nrows(M), ncols(M), elem_type(R)[R(M[i,j]) for i=1:nrows(M) for j=1:ncols(M)])
 end
 
 function _nullspace(A::nmod_mat)
@@ -193,13 +193,13 @@ function _nullspace(A::nmod_mat)
   end
   A = A'
   R = base_ring(A)
-  r = rows(A)
-  c = cols(A)
-  A = hcat(A, identity_matrix(R, rows(A)))
-  A = vcat(A, zero_matrix(R, cols(A) - rows(A), cols(A)))
+  r = nrows(A)
+  c = ncols(A)
+  A = hcat(A, identity_matrix(R, nrows(A)))
+  A = vcat(A, zero_matrix(R, ncols(A) - nrows(A), ncols(A)))
 
   howell_form!(A)
-  i = rows(A)
+  i = nrows(A)
   while iszero(A[i, :])
     i -= 1
   end
@@ -207,14 +207,14 @@ function _nullspace(A::nmod_mat)
   while i>0 && iszero(A[i:i, 1:c])
     i-= 1
   end
-  if i < rows(A)
+  if i < nrows(A)
     if i<r
-      A = sub(A, i+1:r, c+1:cols(A))
+      A = sub(A, i+1:r, c+1:ncols(A))
     else
-      A = zero_matrix(base_ring(A), 0, cols(A)-c)
+      A = zero_matrix(base_ring(A), 0, ncols(A)-c)
     end
   else
-    A = sub(A, i:r, c+1:cols(A))
+    A = sub(A, i:r, c+1:ncols(A))
   end  
   A = A'
   @assert iszero(A_orig * A)
@@ -233,7 +233,7 @@ function _nullspace(A::nmod_mat)
     end
     @assert c[1] == b[1]
   end
-  return cols(A), A
+  return ncols(A), A
 end
 
 function mod_p(R, Q::NfOrdIdl, p::Int)
@@ -293,14 +293,14 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
       all_p = [up^k]
     end
     #@show all_p
-    AA = identity_matrix(FlintZZ, cols(A))
+    AA = identity_matrix(FlintZZ, ncols(A))
     for pp = all_p
       #println("doin' $pp")
       AA = matrix(ResidueRing(FlintZZ, Int(pp)), lift(AA))
       Ap = matrix(base_ring(AA), A)
       i = 1
       S = Hecke.PrimesSet(Hecke.p_start, -1, Int(pp), 1)
-      cAA = cols(AA)
+      cAA = ncols(AA)
       for q in S
         if isindex_divisor(ZK, q)
           continue
@@ -320,25 +320,25 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             z = mod_p(R, Q[1], Int(pp))
             z = z*Ap
             z = _nullspace(z)
-            B = hcat(AA, sub(z[2], 1:rows(z[2]), 1:z[1]))
+            B = hcat(AA, sub(z[2], 1:nrows(z[2]), 1:z[1]))
             B = _nullspace(B)
-            AA = AA*sub(B[2], 1:cols(AA), 1:B[1])
+            AA = AA*sub(B[2], 1:ncols(AA), 1:B[1])
             if !isprime(p)
               AA = AA'
-              if rows(AA) < cols(AA)
-                AA = vcat(AA, zero_matrix(base_ring(AA), cols(AA) - rows(AA), cols(AA)))
+              if nrows(AA) < ncols(AA)
+                AA = vcat(AA, zero_matrix(base_ring(AA), ncols(AA) - nrows(AA), ncols(AA)))
               end
               howell_form!(AA)
-              local i = rows(AA)
+              local i = nrows(AA)
               while i>0 && iszero(AA[i, :])
                 i -= 1
               end
-              AA = sub(AA, 1:i, 1:cols(AA))'
+              AA = sub(AA, 1:i, 1:ncols(AA))'
             else
-              @assert rank(AA') == cols(AA)
+              @assert rank(AA') == ncols(AA)
             end  
 #            @show cAA, pp, q, size(AA)
-            if cAA == cols(AA) 
+            if cAA == ncols(AA) 
               break #the other ideals are going to give the same info
                     #for multi-quad as the field is normal
             end        
@@ -349,15 +349,15 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
             end
           end
         end
-        if cAA == cols(AA) 
+        if cAA == ncols(AA) 
           #println("good $i")
           i += 1
         else
           #println("bad")
           i = 0
         end
-        cAA = cols(AA)
-        if i> stable*cols(AA)
+        cAA = ncols(AA)
+        if i> stable*ncols(AA)
           break
         end
       end
@@ -370,21 +370,21 @@ function saturate_exp(c::Hecke.ClassGrpCtx, p::Int, stable = 1.5)
     q, w = Hecke.ppio(p, pp) # q is a "power" of pp and w is coprime
     g, e, f = gcdx(q, w)
     AA = AA'
-    AA = vcat(AA, zero_matrix(base_ring(AA), cols(AA) - rows(AA), cols(AA)))
+    AA = vcat(AA, zero_matrix(base_ring(AA), ncols(AA) - nrows(AA), ncols(AA)))
     strong_echelon_form!(AA)
 
     X  = similar(AA)
-    for j=1:min(rows(X), cols(X))
+    for j=1:min(nrows(X), ncols(X))
       X[j,j] = 1
     end
     _A = matrix(base_ring(A), e*q*lift(X) + f*w*lift(AA))
     A = _A*A'
     howell_form!(A)
-    i = rows(A)
+    i = nrows(A)
     while iszero(A[i, :])
       i -= 1
     end
-    A = sub(A, 1:i, 1:cols(A))'
+    A = sub(A, 1:i, 1:ncols(A))'
     #@show size(A)
   end
   return A
@@ -396,7 +396,7 @@ fe(a::nf_elem) = FacElem(a)
 function elems_from_sat(c::Hecke.ClassGrpCtx, z)
   res = []
   fac = []
-  for i=1:cols(z)
+  for i=1:ncols(z)
     a = fe(c.R_gen[1])^FlintZZ(z[1, i])
     b = FlintZZ(z[1, i]) * c.M.bas_gens[1]
     for j=2:length(c.R_gen)
@@ -421,9 +421,9 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   K = nf(c)
   _, zeta = Hecke._get_nf_torsion_units(K)
 
-  #println("Enlarging by $(cols(e)) elements")
+  #println("Enlarging by $(ncols(e)) elements")
   n_gen = []
-  for i=1:cols(e)
+  for i=1:ncols(e)
     r = e[:, i]
     g = content(r)
     g = gcd(g, n)
@@ -439,9 +439,9 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
       a *= fe(c.R_rel[j])^r[j + length(c.R_gen), 1]
       fac_a += r[j + length(c.R_gen), 1] * c.M.rel_gens[j]
     end
-    if rows(e) > length(c.R_gen) + length(c.R_rel)
-      @assert length(c.R_gen) + length(c.R_rel) + 1 == rows(e)
-      a *= fe(zeta)^r[rows(e), 1]
+    if nrows(e) > length(c.R_gen) + length(c.R_rel)
+      @assert length(c.R_gen) + length(c.R_rel) + 1 == nrows(e)
+      a *= fe(zeta)^r[nrows(e), 1]
     end
     
     decom = Dict((c.FB.ideals[k], v) for (k,v) = fac_a)
@@ -457,7 +457,7 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
     if fl
       push!(n_gen, FacElem(x))
       r = divexact(se.rows[i], g)
-      push!(r.pos, rows(e) + length(n_gen))
+      push!(r.pos, nrows(e) + length(n_gen))
       push!(r.values, -div(n, Int(g)))
       push!(A, r)
     else
@@ -487,22 +487,22 @@ function saturate(c::Hecke.ClassGrpCtx, n::Int, stable = 3.5)
   A = A'
 #    @show fmpz_mat(A)
   H, T = hnf_with_trafo(fmpz_mat(A))
-  @assert isone(sub(H, 1:cols(A), 1:cols(A))) #otherwise, relations sucked.
+  @assert isone(sub(H, 1:ncols(A), 1:ncols(A))) #otherwise, relations sucked.
   Ti = inv(T')
-  Ti = sub(Ti, length(n_gen)+1:rows(Ti), 1:cols(Ti))
+  Ti = sub(Ti, length(n_gen)+1:nrows(Ti), 1:ncols(Ti))
 
   R = vcat(c.R_gen, c.R_rel)
   if !(hash(zeta) in c.RS)
     push!(R, zeta)
   end
   R = vcat(R, n_gen)
-  @assert cols(Ti) == length(R) 
+  @assert ncols(Ti) == length(R) 
 
   d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
 
-  for i=1:rows(Ti)
+  for i=1:nrows(Ti)
     a = FacElem(K(1))
-    for j=1:cols(Ti)
+    for j=1:ncols(Ti)
       a *= R[j]^Ti[i, j]
     end
       #TODO remove zeta from relations!!
@@ -545,7 +545,7 @@ function simplify(c::Hecke.ClassGrpCtx)
     fl = Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
     @assert fl
   end
-  for i=1:rows(c.M.rel_gens)
+  for i=1:nrows(c.M.rel_gens)
     if iszero(c.M.rel_gens.rows[i])
       Hecke._add_unit(U, c.R_rel[i])
     end
@@ -563,7 +563,7 @@ function units(c::Hecke.ClassGrpCtx)
   Hecke.module_trafo_assure(c.M)
   trafos = c.M.trafo
 
-  for i=1:rows(c.M.rel_gens)
+  for i=1:nrows(c.M.rel_gens)
     if iszero(c.M.rel_gens.rows[i])
       Hecke._add_unit(U, c.R_rel[i])
     end

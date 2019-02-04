@@ -508,7 +508,7 @@ function rand(Q::NfOrdQuoRing)
   B = basis(base_ring(Q))
   z = rand(fmpz(1):A[1,1]) * B[1]
 
-  for i in 2:rows(A)
+  for i in 2:nrows(A)
     z = z + rand(fmpz(1):A[i, i]) * B[i]
   end
 

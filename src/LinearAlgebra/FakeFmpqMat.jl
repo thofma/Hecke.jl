@@ -10,9 +10,9 @@ numerator(x::FakeFmpqMat) = deepcopy(x.num)
 
 denominator(x::FakeFmpqMat) = deepcopy(x.den)
 
-rows(x::FakeFmpqMat) = rows(x.num)
+nrows(x::FakeFmpqMat) = nrows(x.num)
 
-cols(x::FakeFmpqMat) = cols(x.num)
+ncols(x::FakeFmpqMat) = ncols(x.num)
 
 function simplify_content!(x::FakeFmpqMat)
   c = content(x.num)
@@ -169,8 +169,8 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
   z = FakeFmpqMat()
   z.num = Base.deepcopy_internal(x.num, dict)
   z.den = Base.deepcopy_internal(x.den, dict)
-  z.rows = rows(x)
-  z.cols = cols(x)
+  z.rows = nrows(x)
+  z.cols = ncols(x)
   if isdefined(x, :parent)
     z.parent = x.parent
   end
@@ -184,7 +184,7 @@ end
 ################################################################################
 
 function det(x::FakeFmpqMat)
-  rows(x) != cols(x) && error("Matrix must be square")
+  nrows(x) != ncols(x) && error("Matrix must be square")
   
-  return det(x.num)//(x.den)^rows(x)
+  return det(x.num)//(x.den)^nrows(x)
 end

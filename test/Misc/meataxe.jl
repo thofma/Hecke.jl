@@ -16,13 +16,13 @@
      v=MatrixSpace(F,1,4)([1,0,0,0])
      X=Hecke.closure(v,M.action)
      Y=Hecke.spinning(v,M.action)
-     @test rows(X)==2
-     @test rows(Y)==2
+     @test nrows(X)==2
+     @test nrows(Y)==2
      rref!(Y)
      @test X==Y
      w=MatrixSpace(F,1,4)([0,0,0,1])
      v=vcat(v,w)
-     @test rows(Hecke.closure(v,M.action))==4
+     @test nrows(Hecke.closure(v,M.action))==4
  
     end
     
@@ -31,8 +31,8 @@
       M=Hecke.ModAlgAss(G)
       bool,B=meataxe(M)
       @test !bool
-      @test rows(B)==2
-      #@test rows(Hecke.closure(B, M.action))==2
+      @test nrows(B)==2
+      #@test nrows(Hecke.closure(B, M.action))==2
       
       N=Hecke._actsub(B,G)
       bool,B=meataxe(N)
@@ -42,7 +42,7 @@
       M=Hecke.ModAlgAss(G)
       bool,B=meataxe(M)
       @test !bool
-      #@test rows(Hecke.closure(B, M.action))==rows(B)
+      #@test nrows(Hecke.closure(B, M.action))==nrows(B)
       
     end
     
@@ -112,13 +112,13 @@
    v=MatrixSpace(F,1,4)([1,0,0,0])
    X=Hecke.closure(v,M.G)
    Y=Hecke.spinning(v,M.G)
-   @test rows(X)==2
-   @test rows(Y)==2
+   @test nrows(X)==2
+   @test nrows(Y)==2
    rref!(Y)
    @test X==Y
    w=MatrixSpace(F,1,4)([0,0,0,1])
    v=vcat(v,w)
-   @test rows(Hecke.closure(v,M.G))==4
+   @test nrows(Hecke.closure(v,M.G))==4
 
   end
   
@@ -129,8 +129,8 @@
     M=FqGModule(G)
     bool,B=meataxe(M)
     @test !bool
-    @test rows(B)==2
-    @test rows(Hecke.closure(B, M.G))==2
+    @test nrows(B)==2
+    @test nrows(Hecke.closure(B, M.G))==2
     
     N=Hecke.actsub(B,G)
     bool,B=meataxe(N)
@@ -140,7 +140,7 @@
     M=FqGModule(G)
     bool,B=meataxe(M)
     @test !bool
-    @test rows(Hecke.closure(B, M.G))==rows(B)
+    @test nrows(Hecke.closure(B, M.G))==nrows(B)
     
   end
   

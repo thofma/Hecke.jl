@@ -265,16 +265,16 @@ end
 
 # return (x1,...,xr)*y
 function _transform(x::Array{FacElem{T, S}, 1}, y::fmpz_mat) where {T, S}
-  length(x) != rows(y) &&
+  length(x) != nrows(y) &&
               error("Length of array must be number of rows of matrix")
 
-  z = Array{FacElem{T, S}}(undef, cols(y))
+  z = Array{FacElem{T, S}}(undef, ncols(y))
 
   t = parent(x[1])()
 
-  for i in 1:cols(y)
+  for i in 1:ncols(y)
     z[i] = x[1]^y[1,i]
-    for j in 2:rows(y)
+    for j in 2:nrows(y)
       if y[j, i] == 0
         continue
       end
@@ -302,9 +302,9 @@ end
 function transform_left!(x::Array{FacElem{S, T}, 1}, y::TrafoPartialDense{R}) where {S, T, R}
   z = view(deepcopy(x), y.rows)
   xx = view(x, y.rows)
-  for i in 1:rows(y.U)
+  for i in 1:nrows(y.U)
     xx[i] = z[1]^Int(y.U[i, 1])
-    for j in 2:cols(y.U)
+    for j in 2:ncols(y.U)
       xx[i] *= z[j]^Int(y.U[i, j])
     end
   end
