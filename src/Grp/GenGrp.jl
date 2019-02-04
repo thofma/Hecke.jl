@@ -767,4 +767,4 @@ end
   return auts
 end
 
-include("small_groups)
+include("small_groups")
