@@ -252,12 +252,115 @@ end
 
 ################################################################################
 #
+#  Cyclic subgroups
+#
+################################################################################
+
+function _isnormal(H::Vector{GrpGenElem})
+  S = gens(parent(H[1]))
+  for s in S
+    for h in H
+      if !(inv(s) * h * s in H)
+        return false
+      end
+    end
+  end
+
+  return true
+end
+
+function _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem)
+  S = gens(parent(H[1]))
+  for s in S
+    if !(inv(s) * gen * s in H)
+      return false
+    end
+  end
+
+  return true
+end
+
+function _cyclic_subgroups(G::GrpGen; normal::Bool = false)
+  res = Vector{GrpGenElem}[]
+  res_elem = GrpGenElem[]
+  idG = id(G)
+  for g in G
+    S = closure([g], *, idG)
+    if normal && !_isnormal(S, g)
+      continue
+    end
+
+    h = first(sort!([ s for s in S if order(s) == length(S)], by = x -> x.i))
+    if h in res_elem
+      continue
+    else
+      sort!(S, by = x -> x.i)
+      @assert !(S in res)
+      push!(res, S)
+      push!(res_elem, h)
+    end
+  end
+
+  return res, res_elem
+end
+
+function _subgroups(G::GrpGen; normal::Bool = false)
+  res = Vector{GrpGenElem}[]
+  res_gens = Vector{GrpGenElem}[]
+  cur_grps, Cgen = _cyclic_subgroups(G)
+  cur = Vector{GrpGenElem}[GrpGenElem[g] for g in Cgen]
+  old = cur
+  ngenext = Vector{GrpGenElem}[]
+  while true
+    new = Vector{GrpGenElem}[]
+    for c in old 
+      for cy in Cgen
+        n = push!(copy(c), cy)
+        S = sort!(closure(n, *), by = x -> x.i)
+        sort!(n, by = x -> x.i)
+        if !(S in cur_grps)
+          push!(new, n)
+          push!(cur_grps, S)
+        end
+      end
+    end
+
+    if length(new) == 0
+      break
+    else
+      append!(cur, new)
+    end
+    old = new
+  end
+  if normal
+    return [cur_grps[i] for i in 1:length(cur_grps) if _isnormal(cur_grps[i])]
+  else
+    return cur_grps
+  end
+end
+
+function subgroups(G::GrpGen; order::Int = 0, index::Int = 0, normal::Bool = false)
+  H = _subgroups(G, normal = normal)
+  if order > 0
+    return [h for h in H if length(h) == order]
+  elseif index > 0
+    return [h for h in H if divexact(length(G), length(h)) == index]
+  else
+    return H
+  end
+end
+
+################################################################################
+#
 #  Compute generic group from anything
 #
 ################################################################################
 
 function generic_group(G, op)
-  return GrpGen(_multiplication_table(G, op))
+  Gen = GrpGen(_multiplication_table(G, op))
+  GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
+  GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
+  return Gen, GtoGen, GentoG
 end
 
 ################################################################################
