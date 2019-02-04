@@ -185,7 +185,7 @@ end
 # Construct multiplication table of G under op
 function _multiplication_table(G, op)
   l = length(G)
-  z = Matrix{Int}(l, l)
+  z = Matrix{Int}(undef, l, l)
   for i in 1:l
     for j in 1:l
       p = op(G[i], G[j])
@@ -218,6 +218,7 @@ mutable struct GrpGen
     z = new()
     z.mult_table = M
     z.identity = find_identity(z)
+    z.order = size(M, 1)
     return z
   end
 end
@@ -225,6 +226,28 @@ end
 struct GrpGenElem
   group::GrpGen
   i::Int
+end
+
+function Base.iterate(G::GrpGen, state::Int = 1)
+  if state > G.order
+    return nothing
+  end
+
+  return G[state], state + 1
+end
+
+Base.eltype(::Type{GrpGen}) = GrpGenElem
+
+Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
+
+function gens(G::GrpGen)
+  if isdefined(G, :gens)
+    return [G[i] for i in G.gens]
+  else
+    S = small_generating_set(collect(G), *, id(G))
+    G.gens = [g.i for g in S]
+    return S
+  end
 end
 
 ################################################################################
@@ -270,6 +293,8 @@ end
 function order(G::GrpGen)
   return size(G.mult_table, 1)
 end
+
+length(G::GrpGen) = order(G)
 
 ################################################################################
 #
@@ -588,5 +613,158 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
   return elements
 end
 
+################################################################################
+#
+#  Automorphisms
+#
+################################################################################
 
+function find_small_group(G::GrpGen)
+  l = order(G)
 
+  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+
+  for i in 1:l
+    g = G[i]
+    o = order(g)
+    if haskey(elements_by_orders, o)
+      push!(elements_by_orders[o], g)
+    else
+      elements_by_orders[o] = [g]
+    end
+  end
+
+  candidates = Int[]
+
+  local ordershape
+
+  for j in 1:length(groups_from_magma[order(G)])
+    ordershape = groups_from_magma[order(G)][j][4]
+
+    candidate = true
+    for (o, no) in ordershape
+      if !haskey(elements_by_orders, o)
+        candidate = false
+        break
+      else
+        elts = elements_by_orders[o]
+        if length(elts) != no
+          candidate = false
+          break
+        end
+      end
+     end
+     
+     if candidate
+        push!(candidates, j)
+     end
+  end
+
+  @assert length(candidates) > 0
+  println("Candidate groups are $candidates")
+
+  sort!(candidates, rev = true)
+
+  idG = id(G)
+
+  for j in candidates
+    @show j
+    H = groups_from_magma[order(G)][j]
+
+    elbyord = [elements_by_orders[o] for o in H[2]]
+
+    @show H[2]
+
+    it = Iterators.product(elbyord...)
+
+    words = H[3]
+    
+    for poss in it
+      is_hom = true
+      for w in words
+        if eval_word(collect(poss), w) != idG
+          is_hom = false
+          break
+        end
+      end
+
+      if is_hom
+        if length(closure(collect(poss), *, idG)) == order(G)
+          return true, j, poss
+        end
+      end
+    end
+  end
+
+  return false
+end
+
+function eval_word(S, w::Vector{Int})
+  g = id(parent(S[1]))
+  for i in 1:length(w)
+    if w[i] > 0
+      g = g * S[w[i]]
+    else
+      g = g * inv(S[-w[i]])
+    end
+  end
+  return g
+end
+
+function automorphisms(i, j)
+  Gdata = groups_from_magma[i][j]
+  P = PermGroup(i)
+  G = generic_group(closure([P(p) for p in Gdata[1]], *), *)
+
+  l = order(G)
+
+  @show isabelian(G)
+
+  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+
+  for i in 1:l
+    g = G[i]
+    o = order(g)
+    if haskey(elements_by_orders, o)
+      push!(elements_by_orders[o], g)
+    else
+      elements_by_orders[o] = [g]
+    end
+  end
+
+  elbyord = [elements_by_orders[o] for o in Gdata[2]]
+
+  it = Iterators.product(elbyord...)
+
+  words::Vector{Vector{Int}} = Gdata[3]
+
+  idG = id(G)
+
+  auts = _aut_group(it, words, idG, order(G))::Vector{Vector{GrpGenElem}}
+
+  return auts
+end
+  
+@noinline function _aut_group(it, words, idG, n)
+  auts = Vector{GrpGenElem}[]
+  for poss in it
+    is_hom = true
+    for w in words
+      if eval_word(poss, w) != idG
+        is_hom = false
+        break
+      end
+    end
+
+    if is_hom
+      cposs = collect(poss)
+      if length(closure(cposs, *, idG)) == n
+        push!(auts, cposs)
+      end
+    end
+  end
+
+  return auts
+end
+
+include("groups_from_magma")
