@@ -767,4 +767,4 @@ end
   return auts
 end
 
-include("groups_from_magma")
+include("small_groups)
