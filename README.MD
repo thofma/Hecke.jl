@@ -17,10 +17,10 @@ It is written in [julia](http://www.julialang.org) and is based on the computer 
 So far, Hecke provides the following features:
 
   - Orders (including element and ideal arithmetic) in relative and absolute number fields
-  - Class and Unit group computation
+  - Class and unit group computation
   - Computation of maximal orders
-  - Extensions of Number Fields (relative fields)
-  - non-simple fields
+  - Extensions of number Fields (relative fields)
+  - Non-simple fields
   - Lattice enumeration
   - Sparse linear algebra
   - Class field theory
