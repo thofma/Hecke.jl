@@ -896,7 +896,7 @@ end
 > such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
-  if !isdefining_polynomial_nice(parent(a)) ||
+  if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
     return valuation_naive(a, p)
   end
   @hassert :NfOrd 0 !iszero(a)
