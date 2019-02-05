@@ -31,33 +31,33 @@ function small_generating_set(G, op)
   return small_generating_set(G, op, i)
 end
 
-function small_generating_set(G, op, id)
+function _non_trivial_randelem(G, id)
+  x = rand(G)::typeof(id)
+  while x == id
+    x = rand(G)::typeof(id)
+  end
+  return x
+end
+
+function small_generating_set(G::Vector, op, id)
   orderG = length(G)
 
   if length(G) == 1
     return G
   end
 
-  function non_trivial_randelem()
-    x = rand(G)
-    while (x == id)
-      x = rand(G)
-    end
-    return x
-  end
-
   firsttry = 10
   secondtry = 20
   # First try one element
   for i in 1:firsttry
-    gen = non_trivial_randelem()
+    gen = non_trivial_randelem(G, id)
     if length(closure([gen], op, id)) == orderG
       return [gen]
     end
   end
 
   for i in 1:secondtry
-    gens = [non_trivial_randelem(), non_trivial_randelem()]
+    gens = typeof(id)[non_trivial_randelem(G, id), non_trivial_randelem(G, id)]
     if length(closure(gens, op, id)) == orderG
       return unique(gens)
     end
@@ -74,7 +74,7 @@ function small_generating_set(G, op, id)
       error("Something wrong with generator search")
     end
     j = j + 1
-    gens = [non_trivial_randelem() for i in 1:b]
+    gens = [non_trivial_randelem(G, id) for i in 1:b]
     if length(closure(gens, op, id)) == orderG
       return unique(gens)
     end
@@ -586,6 +586,20 @@ function closure(S::Vector{NfToNfMor}, final_order::Int = -1)
     end
   end
   return elements
+end
+
+function small_generating_set(Aut::Array{NfToNfMor, 1})
+  K=Aut[1].header.domain
+  a=gen(K)
+  Identity = Aut[1]
+  for i in 1:length(Aut)
+    Au = Aut[i]
+    if Au.prim_img == a
+      Identity = Aut[i]
+      break
+    end
+  end
+  return  Hecke.small_generating_set(Aut, *, Identity)
 end
 
 
