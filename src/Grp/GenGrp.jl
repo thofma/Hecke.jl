@@ -228,6 +228,30 @@ struct GrpGenElem
   i::Int
 end
 
+mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
+
+  domain::GrpGen
+  codomain::GrpGen
+  img::Vector{GrpGenElem}
+  preimg::Vector{GrpGenElem}
+
+  function GrpGenToGrpGenMor(G::GrpGen, H::GrpGen, image::Vector{GrpGenElem})
+    z = new()
+    z.domain = G
+    z.codomain = H
+    z.img = image
+    return z
+  end
+end
+
+function Base.show(io::IO, f::GrpGenToGrpGenMor)
+  println(io, "Morphism from group\n", f.domain, "to\n", f.codomain)
+end
+
+function image(f::GrpGenToGrpGenMor, g::GrpGenElem)
+  return f.img[g.i]
+end
+
 function Base.iterate(G::GrpGen, state::Int = 1)
   if state > G.order
     return nothing
@@ -348,6 +372,21 @@ function subgroups(G::GrpGen; order::Int = 0, index::Int = 0, normal::Bool = fal
   else
     return H
   end
+end
+
+function _proper_subgroups(G::GrpGen; kw...)
+  subs = subgroups(G; kw...)
+  res = Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}(undef, length(subs))
+  for i in 1:length(subs)
+    res[i] = subgroup(G, subs[i])
+  end
+  return res
+end
+
+function subgroup(G::GrpGen, H::Vector{GrpGenElem})
+  Hgen, = generic_group(H, *)
+  m = GrpGenToGrpGenMor(Hgen, G, H)
+  return Hgen, m
 end
 
 ################################################################################
