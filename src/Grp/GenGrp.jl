@@ -50,14 +50,14 @@ function small_generating_set(G::Vector, op, id)
   secondtry = 20
   # First try one element
   for i in 1:firsttry
-    gen = non_trivial_randelem(G, id)
+    gen = _non_trivial_randelem(G, id)
     if length(closure([gen], op, id)) == orderG
       return [gen]
     end
   end
 
   for i in 1:secondtry
-    gens = typeof(id)[non_trivial_randelem(G, id), non_trivial_randelem(G, id)]
+    gens = typeof(id)[_non_trivial_randelem(G, id), _non_trivial_randelem(G, id)]
     if length(closure(gens, op, id)) == orderG
       return unique(gens)
     end
@@ -74,7 +74,7 @@ function small_generating_set(G::Vector, op, id)
       error("Something wrong with generator search")
     end
     j = j + 1
-    gens = [non_trivial_randelem(G, id) for i in 1:b]
+    gens = [_non_trivial_randelem(G, id) for i in 1:b]
     if length(closure(gens, op, id)) == orderG
       return unique(gens)
     end
@@ -185,7 +185,7 @@ end
 # Construct multiplication table of G under op
 function _multiplication_table(G, op)
   l = length(G)
-  z = Matrix{Int}(l, l)
+  z = Matrix{Int}(undef, l, l)
   for i in 1:l
     for j in 1:l
       p = op(G[i], G[j])
@@ -218,6 +218,7 @@ mutable struct GrpGen
     z = new()
     z.mult_table = M
     z.identity = find_identity(z)
+    z.order = size(M, 1)
     return z
   end
 end
@@ -227,6 +228,128 @@ struct GrpGenElem
   i::Int
 end
 
+function Base.iterate(G::GrpGen, state::Int = 1)
+  if state > G.order
+    return nothing
+  end
+
+  return G[state], state + 1
+end
+
+Base.eltype(::Type{GrpGen}) = GrpGenElem
+
+Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
+
+function gens(G::GrpGen)
+  if isdefined(G, :gens)
+    return [G[i] for i in G.gens]
+  else
+    S = small_generating_set(collect(G), *, id(G))
+    G.gens = [g.i for g in S]
+    return S
+  end
+end
+
+################################################################################
+#
+#  Cyclic subgroups
+#
+################################################################################
+
+function _isnormal(H::Vector{GrpGenElem})
+  S = gens(parent(H[1]))
+  for s in S
+    for h in H
+      if !(inv(s) * h * s in H)
+        return false
+      end
+    end
+  end
+
+  return true
+end
+
+function _isnormal(H::Vector{GrpGenElem}, gen::GrpGenElem)
+  S = gens(parent(H[1]))
+  for s in S
+    if !(inv(s) * gen * s in H)
+      return false
+    end
+  end
+
+  return true
+end
+
+function _cyclic_subgroups(G::GrpGen; normal::Bool = false)
+  res = Vector{GrpGenElem}[]
+  res_elem = GrpGenElem[]
+  idG = id(G)
+  for g in G
+    S = closure([g], *, idG)
+    if normal && !_isnormal(S, g)
+      continue
+    end
+
+    h = first(sort!([ s for s in S if order(s) == length(S)], by = x -> x.i))
+    if h in res_elem
+      continue
+    else
+      sort!(S, by = x -> x.i)
+      @assert !(S in res)
+      push!(res, S)
+      push!(res_elem, h)
+    end
+  end
+
+  return res, res_elem
+end
+
+function _subgroups(G::GrpGen; normal::Bool = false)
+  res = Vector{GrpGenElem}[]
+  res_gens = Vector{GrpGenElem}[]
+  cur_grps, Cgen = _cyclic_subgroups(G)
+  cur = Vector{GrpGenElem}[GrpGenElem[g] for g in Cgen]
+  old = cur
+  ngenext = Vector{GrpGenElem}[]
+  while true
+    new = Vector{GrpGenElem}[]
+    for c in old 
+      for cy in Cgen
+        n = push!(copy(c), cy)
+        S = sort!(closure(n, *), by = x -> x.i)
+        sort!(n, by = x -> x.i)
+        if !(S in cur_grps)
+          push!(new, n)
+          push!(cur_grps, S)
+        end
+      end
+    end
+
+    if length(new) == 0
+      break
+    else
+      append!(cur, new)
+    end
+    old = new
+  end
+  if normal
+    return [cur_grps[i] for i in 1:length(cur_grps) if _isnormal(cur_grps[i])]
+  else
+    return cur_grps
+  end
+end
+
+function subgroups(G::GrpGen; order::Int = 0, index::Int = 0, normal::Bool = false)
+  H = _subgroups(G, normal = normal)
+  if order > 0
+    return [h for h in H if length(h) == order]
+  elseif index > 0
+    return [h for h in H if divexact(length(G), length(h)) == index]
+  else
+    return H
+  end
+end
+
 ################################################################################
 #
 #  Compute generic group from anything
@@ -234,7 +357,10 @@ end
 ################################################################################
 
 function generic_group(G, op)
-  return GrpGen(_multiplication_table(G, op))
+  Gen = GrpGen(_multiplication_table(G, op))
+  GentoG = Dict{GrpGenElem, eltype(G)}(Gen[i] => G[i] for i in 1:length(G))
+  GtoGen = Dict{eltype(G), GrpGenElem}(G[i] => Gen[i] for i in 1:length(G))
+  return Gen, GtoGen, GentoG
 end
 
 ################################################################################
@@ -270,6 +396,8 @@ end
 function order(G::GrpGen)
   return size(G.mult_table, 1)
 end
+
+length(G::GrpGen) = order(G)
 
 ################################################################################
 #
@@ -602,5 +730,158 @@ function small_generating_set(Aut::Array{NfToNfMor, 1})
   return  Hecke.small_generating_set(Aut, *, Identity)
 end
 
+################################################################################
+#
+#  Automorphisms
+#
+################################################################################
 
+function find_small_group(G::GrpGen)
+  l = order(G)
 
+  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+
+  for i in 1:l
+    g = G[i]
+    o = order(g)
+    if haskey(elements_by_orders, o)
+      push!(elements_by_orders[o], g)
+    else
+      elements_by_orders[o] = [g]
+    end
+  end
+
+  candidates = Int[]
+
+  local ordershape
+
+  for j in 1:length(groups_from_magma[order(G)])
+    ordershape = groups_from_magma[order(G)][j][4]
+
+    candidate = true
+    for (o, no) in ordershape
+      if !haskey(elements_by_orders, o)
+        candidate = false
+        break
+      else
+        elts = elements_by_orders[o]
+        if length(elts) != no
+          candidate = false
+          break
+        end
+      end
+     end
+     
+     if candidate
+        push!(candidates, j)
+     end
+  end
+
+  @assert length(candidates) > 0
+  println("Candidate groups are $candidates")
+
+  sort!(candidates, rev = true)
+
+  idG = id(G)
+
+  for j in candidates
+    @show j
+    H = groups_from_magma[order(G)][j]
+
+    elbyord = [elements_by_orders[o] for o in H[2]]
+
+    @show H[2]
+
+    it = Iterators.product(elbyord...)
+
+    words = H[3]
+    
+    for poss in it
+      is_hom = true
+      for w in words
+        if eval_word(collect(poss), w) != idG
+          is_hom = false
+          break
+        end
+      end
+
+      if is_hom
+        if length(closure(collect(poss), *, idG)) == order(G)
+          return true, j, poss
+        end
+      end
+    end
+  end
+
+  return false
+end
+
+function eval_word(S, w::Vector{Int})
+  g = id(parent(S[1]))
+  for i in 1:length(w)
+    if w[i] > 0
+      g = g * S[w[i]]
+    else
+      g = g * inv(S[-w[i]])
+    end
+  end
+  return g
+end
+
+function automorphisms(i, j)
+  Gdata = groups_from_magma[i][j]
+  P = PermGroup(i)
+  G = generic_group(closure([P(p) for p in Gdata[1]], *), *)
+
+  l = order(G)
+
+  @show isabelian(G)
+
+  elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
+
+  for i in 1:l
+    g = G[i]
+    o = order(g)
+    if haskey(elements_by_orders, o)
+      push!(elements_by_orders[o], g)
+    else
+      elements_by_orders[o] = [g]
+    end
+  end
+
+  elbyord = [elements_by_orders[o] for o in Gdata[2]]
+
+  it = Iterators.product(elbyord...)
+
+  words::Vector{Vector{Int}} = Gdata[3]
+
+  idG = id(G)
+
+  auts = _aut_group(it, words, idG, order(G))::Vector{Vector{GrpGenElem}}
+
+  return auts
+end
+  
+@noinline function _aut_group(it, words, idG, n)
+  auts = Vector{GrpGenElem}[]
+  for poss in it
+    is_hom = true
+    for w in words
+      if eval_word(poss, w) != idG
+        is_hom = false
+        break
+      end
+    end
+
+    if is_hom
+      cposs = collect(poss)
+      if length(closure(cposs, *, idG)) == n
+        push!(auts, cposs)
+      end
+    end
+  end
+
+  return auts
+end
+
+include("small_groups")

@@ -298,7 +298,7 @@ end
 #
 ###############################################################################
 
-function _crt_normalization(O::NfOrd, Q::NfOrdQuoRing, elems::Vector{NfOrdElem}, lp::Dict{NfOrdIdl, Int})
+function _crt_normalization(O::NfOrd, Q::NfOrdQuoRing, elems::Vector{NfOrdElem}, elems_int::Vector{Dict{fmpz, Int}}, lp::Dict{NfOrdIdl, Int})
 
   quots = Tuple{NfOrdIdl, NfOrdIdl}[]
   idemps = Tuple{NfOrdQuoRingElem, NfOrdQuoRingElem}[]
@@ -307,7 +307,7 @@ function _crt_normalization(O::NfOrd, Q::NfOrdQuoRing, elems::Vector{NfOrdElem},
   aux = zero(Q)
   for (p,vp) in lp
     q = p^vp
-    @vtime :RayFacElem 3 y = _new_eval_quo(O, elems, p, q)
+    @vtime :RayFacElem 3 y = _new_eval_quo(O, elems, elems_int, p, q)
     push!(quots, (p, q))
     @vtime :RayFacElem 3 a, b = idempotents(I, q)
     id1 = Q(a)
@@ -329,12 +329,13 @@ end
 function _units_andprincgens_eval(O::NfOrd, Q::NfOrdQuoRing, elems::Array{FacElem{nf_elem, AnticNumberField},1}, lp::Dict{NfOrdIdl, Int}, exponent::fmpz)
 
   if !isempty(elems)
-    @vtime :RayFacElem :3 newelems = _new_preproc(elems, exponent)
+    @vtime :RayFacElem :3 newelems, to_be_normalized_int = _new_preproc(elems, exponent)
     @vtime :RayFacElem :3 to_be_normalized = [O(evaluate(newelems[i]), false) for i=1:length(newelems)]
   else
     to_be_normalized = Vector{NfOrdElem}()
+    to_be_normalized_int = Vector{Dict{fmpz, Int}}()
   end
-  return _crt_normalization(O, Q, to_be_normalized, lp)
+  return _crt_normalization(O, Q, to_be_normalized, to_be_normalized_int, lp)
 
 end
 
@@ -343,8 +344,10 @@ function _new_preproc(elems::Array{FacElem{nf_elem, AnticNumberField},1}, expone
   FacElemParent = parent(elems[1])
   K = base_ring(FacElemParent)
   newelems = Vector{FacElem{nf_elem, AnticNumberField}}(undef, length(elems))
+  new_elems_int = Vector{Dict{fmpz, Int}}(undef, length(elems))
   for i = 1:length(newelems)
     x = Dict{nf_elem, fmpz}()
+    x_int = Dict{fmpz, Int}()
     for (f, k) in elems[i].fac
       l = mod(k, exponent)
       if iszero(l)
@@ -358,11 +361,10 @@ function _new_preproc(elems::Array{FacElem{nf_elem, AnticNumberField},1}, expone
         x[n] = l
       end
       if !isone(d)
-        el = K(d)
-        if haskey(x, el)
-          x[el] = mod(x[el] - l, exponent)
+        if haskey(x_int, d)
+          x_int[d] = mod(x_int[d] - l, exponent)
         else
-          x[el] = mod(-l, exponent)
+          x_int[d] = mod(-l, exponent)
         end
       end
     end
@@ -371,30 +373,48 @@ function _new_preproc(elems::Array{FacElem{nf_elem, AnticNumberField},1}, expone
     else 
       newelems[i] = FacElemParent()
     end
+    new_elems_int[i] = x_int
   end
-  return newelems
+  return newelems, new_elems_int
 
 end
 
-function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, p::NfOrdIdl, q::NfOrdIdl)
-  
+
+
+function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, elems_int::Vector{Dict{fmpz, Int}}, p::NfOrdIdl, q::NfOrdIdl)
   anti_uni = anti_uniformizer(p)
   el = Vector{NfOrdElem}(undef, length(elems))
-  if p.gen_one == q.gen_one && p.gen_two == q.gen_two 
+  if p == q
     if nbits(p.minimum)<64
       @vtime :RayFacElem 2 Q, mQ = ResidueFieldSmall(O, q)
-      for i=1:length(elems)
+      for i = 1:length(elems)
         f = elems[i]
         el1 = mQ(f)
         if !iszero(el1)
-          el[i] = mQ\(el1)
-          continue
+          proj = el1
+        else
+          val = valuation(f, q)
+          anti_val = anti_uni^val
+          mul!(anti_val, anti_val, f.elem_in_nf)
+          act_el = O(anti_val, false)
+          proj = mQ(act_el)
         end
-        val = valuation(f, q)
-        anti_val = anti_uni^val
-        mul!(anti_val, anti_val, f.elem_in_nf)
-        act_el = O(anti_val, false)
-        el[i] = mQ\(mQ(act_el))
+        if length(elems_int) != 0
+          for (k, v) in elems_int[i]
+            if isone(gcd(k, minimum(q)))
+              res = powmod(k, v, minimum(q))
+              mul!(proj, proj, mQ(O(res)))
+            else
+              valk = valuation(k, q)
+              antival = anti_uni^valk
+              mul!(antival, antival, k)
+              prod_el = O(antival, false)
+              res = mQ(prod_el)^v
+              mul!(proj, proj, res)
+            end
+          end
+        end
+        el[i] = mQ\proj
       end
     else
       @vtime :RayFacElem 2 Q, mQ = ResidueField(O, q)
@@ -402,14 +422,30 @@ function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, p::NfOrdIdl, q::NfO
         f = elems[i]
         el1 = mQ(f)
         if !iszero(el1)
-          el[i] = mod(f, q)
-          continue
+          proj = el1
+        else
+          val = valuation(f, q)
+          anti_val = anti_uni^val
+          mul!(anti_val, anti_val, f.elem_in_nf)
+          act_el = O(anti_val, false)
+          proj = mQ(act_el)
         end
-        val = valuation(f, q)
-        anti_val = anti_uni^val
-        mul!(anti_val, anti_val, f.elem_in_nf)
-        act_el = O(anti_val, false)
-        el[i] = mQ\(mQ(act_el))
+        if length(elems_int) != 0
+          for (k, v) in elems_int[i]
+            if isone(gcd(k, minimum(q)))
+              res = powmod(k, v, minimum(q))
+              mul!(proj, proj, Q(res))
+            else
+              valk = valuation(k, q)
+              antival = anti_uni^valk
+              mul!(antival, antival, k)
+              prod_el = O(antival, false)
+              res = mQ(prod_el)^v
+              mul!(proj, proj, res)
+            end
+          end
+        end
+        el[i] = mQ\proj
       end
     end
   else
@@ -417,13 +453,28 @@ function _new_eval_quo(O::NfOrd, elems::Array{NfOrdElem, 1}, p::NfOrdIdl, q::NfO
       f = elems[i]
       if !iszero(mod(f, p))
         el[i] = mod(f, q)
-        continue
+      else
+        val = valuation(f, p)
+        ant_val = anti_uni^val 
+        mul!(ant_val, ant_val, f.elem_in_nf)
+        act_el = O(ant_val, false)
+        el[i] = mod(act_el, q)
       end
-      @vtime :RayFacElem 3 val = valuation(f, p)
-      ant_val = anti_uni^val 
-      mul!(ant_val, ant_val, f.elem_in_nf)
-      act_el = O(ant_val, false)
-      el[i] = mod(act_el, q)
+      if length(elems_int) != 0
+        for (k, v) in elems_int[i]
+          if isone(gcd(k, minimum(q)))
+            res = powmod(k, v, minimum(q))
+            mul!(el[i], el[i], O(res))
+          else
+            valk = valuation(k, p)
+            antival = anti_uni^valk
+            mul!(antival, antival, k)
+            prod_el = O(antival, false)
+            res = powermod(prod_el, v, minimum(q))
+            mul!(el[i], el[i], res)
+          end
+        end
+      end
     end
   end
   return el
@@ -1990,15 +2041,15 @@ end
 #
 ###############################################################################
 
-function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{NfOrdElem}, mC::MapClassGrp, princ_gens::Vector{NfOrdElem}, vect::Vector{fmpz})
+function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz})
   
   K=nf(O)
   d1=Dict{NfOrdIdl, Int}()
   lp=factor(m)
   for q in keys(lp.fac)
-    lq=prime_decomposition(O,q) 
+    lq=prime_decomposition(O, q) 
     for (P,e) in lq
-      d1[P]=1
+      d1[P] = 1
     end   
   end
   I = ideal(O, m)
@@ -2038,7 +2089,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   
 end
 
-function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, units::Vector{NfOrdElem}, mC::MapClassGrp, princ_gens::Vector{NfOrdElem}, vect::Vector{fmpz})
+function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz})
 
   O=order(I)
   K=nf(O)
@@ -2102,23 +2153,25 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   @hassert :RayFacElem 1 issnf(U)
   @vprint :RayFacElem 1 "Collecting elements to be evaluated; first, units \n"
   to_be_eval = Vector{NfOrdElem}(undef, ngens(C) + ngens(U))
+  to_be_eval_int = Vector{Dict{fmpz, Int}}(undef, ngens(C) + ngens(U))
   for i = 1:length(units)
-    to_be_eval[i] = units[i]
+    to_be_eval[i] = units[i][1]
+    to_be_eval_int[i] = units[i][2]
   end
   for i = 1:ngens(C)
     expokel = mod(C.snf[i]*vect[i], fmpz(n))
     numkel = numerator(Kel[i])
     denkel = denominator(Kel[i])
-    mul!(numkel, princ_gens[i].elem_in_nf, numkel^expokel)
+    mul!(numkel, princ_gens[i][1].elem_in_nf, numkel^expokel)
     if denkel != 1
       numkel *= denkel^(mod(-expokel, fmpz(n)))
     end
     to_be_eval[i+length(units)] = O(numkel)
+    to_be_eval_int[i+length(units)] = princ_gens[i][2]
   end
   @vprint :RayFacElem 1 "Time for elements evaluation: "
-  @vtime :RayFacElem 1 evals, quots, idemps = _crt_normalization(O, Q, to_be_eval, lp)
+  @vtime :RayFacElem 1 evals, quots, idemps = _crt_normalization(O, Q, to_be_eval, to_be_eval_int, lp)
   @vprint :RayFacElem 1 "\n"
-  
   for i=1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
     a=(mG\(evals[i])).coeff
@@ -2143,7 +2196,6 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   # 
   # We compute the relation between generators of Cl and (O/m)^* in Cl^m
   #
-
   for i=1:ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
     invn=invmod(vect[i],fmpz(expo))

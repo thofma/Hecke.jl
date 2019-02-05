@@ -163,21 +163,6 @@ function make_positive(x::NfOrdElem, a::fmpz)
     
 end
 
-
-function small_generating_set(Aut::Array{NfToNfMor, 1})
-  K=Aut[1].header.domain
-  a=gen(K)
-  Identity = Aut[1]
-  for i in 1:length(Aut)
-    Au = Aut[i]
-    if Au.prim_img == a
-      Identity = Aut[i]
-      break
-    end
-  end
-  return  Hecke.small_generating_set(Aut, *, Identity)
-end
-
 function _are_there_subs(G::GrpAbFinGen,gtype::Array{Int,1})
 
   H=DiagonalGroup(gtype)
