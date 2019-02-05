@@ -185,7 +185,7 @@ end
 ################################################################################
 
 # S is the type of the algebra, T = elem_type(S) and U is the type of matrices
-# over the group field
+# over the base ring of the algebra
 mutable struct AbsAlgAssIdl{S, T, U}
   algebra::S
   basis::Vector{T}
