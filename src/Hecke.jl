@@ -609,6 +609,7 @@ include("RCF.jl")
 include("Grp.jl")
 include("ModAlgAss.jl")
 include("AlgAss.jl")
+include("AlgAssOrd.jl")
 
 ################################################################################
 #
