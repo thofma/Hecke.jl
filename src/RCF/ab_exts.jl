@@ -1473,10 +1473,10 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     fK = is_univariate(L.pol[i])[2]
     f = Qx([coeff(coeff(fK, j), 0) for j = 0:degree(fK)])
     K = NumberField(f, cached = false)[1];
-    OK = maximal_order(K)
+    OK = maximal_order(K)::NfOrd
     fields[i] = K
   end
-  NS, gNS = number_field([fields[i].pol for i = 1:length(fields)])
+  NS, gNS = number_field(fmpq_poly[fields[i].pol for i = 1:length(fields)])
   mvpolring = parent(NS.pol[1])
   gpols = gens(mvpolring)
   #Now, bring the maximal order of every component in NS
@@ -1560,7 +1560,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
   
   
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K)
+  @vtime :AbExt 2 Ks, mKs = simplify(K)::Tuple{AnticNumberField, NfToNfMor}
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))
@@ -1600,8 +1600,8 @@ end
 
 function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor{T}, 1}) where T
 
-  S, mS = simple_extension(L)
-  K, mK = absolute_field(S, false)
+  S, mS = simple_extension(L)::Tuple{NfRel{nf_elem}, NfRelToNfRel_nsMor{nf_elem}}
+  K, mK, mK2 = absolute_field(S, false)::Tuple{AnticNumberField, Hecke.NfRelToNf, NfToNfMor}
   #First, we compute the maximal order of the absolute field.
   #Since the computation of the relative maximal order is slow, I bring to the absolute field the elements
   # generating the equation order.
@@ -1648,7 +1648,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
   @vprint :AbExt 2 "Done. Now simplify and translate information\n"
-  @vtime :AbExt 2 Ks, mKs = simplify(K)
+  @vtime :AbExt 2 Ks, mKs = simplify(K)::Tuple{AnticNumberField, NfToNfMor}
   #Now, we have to construct the maximal order of this field.
   #I am computing the preimages of mKs by hand, by inverting the matrix.
   arr_prim_img = Array{nf_elem, 1}(undef, degree(Ks))

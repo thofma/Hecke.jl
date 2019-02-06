@@ -1339,8 +1339,8 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   lp=merge(max,y1,y2)
   
-  Q,pi=quo(O,I)
-  Q.factor=lp
+  Q,pi = quo(O,I)
+  Q.factor =lp
   C, mC = class_group(O)
   _assure_princ_gen(mC)
   @vtime :RayFacElem 1 G, mG, tame, wild= _mult_grp_mod_n(Q,y1,y2,n)
@@ -1353,7 +1353,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     end
   end
   
-  if gcd(C.snf[end], n) == 1 && order(G) == 1
+  if isone(gcd(C.snf[end], fmpz(n))) && isone(order(G))
     return empty_ray_class(m)
   end
   
@@ -2043,12 +2043,11 @@ end
 
 function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz})
   
-  K=nf(O)
-  d1=Dict{NfOrdIdl, Int}()
-  lp=factor(m)
+  d1 = Dict{NfOrdIdl, Int}()
+  lp = factor(m)
   for q in keys(lp.fac)
-    lq=prime_decomposition(O, q) 
-    for (P,e) in lq
+    lq = prime_decomposition(O, q) 
+    for (P, e) in lq
       d1[P] = 1
     end   
   end
@@ -2097,7 +2096,7 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   lp=merge(max, y1, y2)
   
-  Q,pi = quo(O, I)
+  Q, pi = quo(O, I)
   Q.factor = lp
   C = domain(mC)
   
@@ -2109,7 +2108,7 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   end
   expo = exponent(G)
   
-  if exponent(C)*expo < n
+  if exponent(C)*expo < fmpz(n)
     return empty_ray_class(I)
   end
   
@@ -2119,7 +2118,7 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
 
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, I)
   
-  if order(G)==1
+  if order(G) == 1
     return class_as_ray_class(C, mC, exp_class, I, n)    
   end
   
@@ -2130,18 +2129,18 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   R = zero_matrix(FlintZZ, 2*ngens(C)+ngens(U)+2*ngens(G), ngens(C)+ngens(G))
   for i=1:ncols(R)
-    R[ngens(C)+ngens(U)+ngens(G)+i,i] = n
+    R[ngens(C)+ngens(U)+ngens(G)+i, i] = fmpz(n)
   end
-  for i=1:ngens(C)
-    R[i,i]=C.snf[i]
+  for i = 1:ngens(C)
+    R[i, i] = C.snf[i]
   end
   if issnf(G)
     for i=1:ngens(G)
-      R[i+ngens(C),i+ngens(C)]=G.snf[i]
+      R[i+ngens(C), i+ngens(C)] = G.snf[i]
     end
   else
     for i=1:ngens(G)
-      R[i+ngens(C),i+ngens(C)]=G.rels[i,i]
+      R[i+ngens(C), i+ngens(C)] = G.rels[i,i]
     end
   end
   
@@ -2164,33 +2163,33 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     denkel = denominator(Kel[i])
     mul!(numkel, princ_gens[i][1].elem_in_nf, numkel^expokel)
     if denkel != 1
-      numkel *= denkel^(mod(-expokel, fmpz(n)))
+      denkel = denkel^Int(mod(-expokel, fmpz(n)))
+      mul!(numkel, numkel, denkel) 
     end
-    to_be_eval[i+length(units)] = O(numkel)
+    to_be_eval[i+length(units)] = O(numkel, false)
     to_be_eval_int[i+length(units)] = princ_gens[i][2]
   end
   @vprint :RayFacElem 1 "Time for elements evaluation: "
   @vtime :RayFacElem 1 evals, quots, idemps = _crt_normalization(O, Q, to_be_eval, to_be_eval_int, lp)
   @vprint :RayFacElem 1 "\n"
-  for i=1:ngens(U)
+  for i = 1:ngens(U)
     @vprint :RayFacElem 1 "Disclog of unit $i \n"
-    a=(mG\(evals[i])).coeff
-    for j = 1:ncols(a)
-      R[i+ngens(G)+ngens(C), ngens(C)+j] = a[1, j]
+    a = preimage(mG, evals[i])
+    for j = 1:ncols(a.coeff)
+      R[i+ngens(G)+ngens(C), ngens(C)+j] = a[j]
     end
     if mod(n, 2)==0 && !isempty(inf_plc)
       if i==1
         for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a)+j] = 1
+          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = fmpz(1)
         end
       else
         b = lH(mU(U[i]))
         for j = 1:length(inf_plc)
-          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a)+j] = b[j]
+          R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = b[j]
         end
       end
     end
-
   end 
 
   # 
@@ -2198,15 +2197,15 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   #
   for i=1:ngens(C)
     @vprint :RayFacElem 1 "Disclog of class group element $i \n"
-    invn=invmod(vect[i],fmpz(expo))
-    a=((mG\(evals[i+ngens(U)]))*invn).coeff
-    for j = 1:length(a)
-      R[i,ngens(C)+j]=-a[1,j]
+    invn = invmod(vect[i], expo)
+    a = preimage(mG, evals[i+ngens(U)])::GrpAbFinGenElem
+    for j = 1:ncols(a.coeff)
+      R[i,ngens(C)+j] = -a[j]*invn
     end
     if mod(n,2)==0 && !isempty(inf_plc)
-      b = lH(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i]))).coeff
-      for j = 1:ncols(b)
-        R[i, ngens(C)+ncols(a)+j] = -b[1, j]
+      b = lH(mC.princ_gens[i][2]*(Kel[i]^(C.snf[i]*vect[i])))
+      for j = 1:ncols(b.coeff)
+        R[i, ngens(C)+ncols(a.coeff)+j] = -b[j]
       end
     end
   end
@@ -2215,8 +2214,8 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   disc_log_inf = Dict{InfPlc, GrpAbFinGenElem}()
   for i = 1:length(inf_plc)
-    eldi = zeros(FlintZZ, ncols(R))
-    eldi[ncols(R) - length(inf_plc) + i] = 1
+    eldi = zeros(FlintZZ, ngens(X))
+    eldi[ngens(X) - length(inf_plc) + i] = 1
     disc_log_inf[inf_plc[i]] = X(eldi)
   end
    
@@ -2232,30 +2231,28 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     if J.is_principal==1
       if isdefined(J,:princ_gen)
         el = J.princ_gen
-        y = (mG\(pi(el))).coeff
+        y = preimage(mG, pi(el)).coeff
         for i = 1:ncols(y)
           res[1, ngens(C) + i] = y[1, i]
         end
-        if iszero(mod(n,2)) && !isempty(inf_plc)
+        if iszero(mod(n, 2)) && !isempty(inf_plc)
           b = lH(K(el))
           for i = 1:length(inf_plc)
             res[1, ngens(C)+ncols(y)+i] = b[i]
           end
         end
-        return X(res)
       elseif isdefined(J,:princ_gen_special)
-        el=O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
-        y=(mG\(pi(el))).coeff
-        for i = 1:ncols(y)
-          res[1, i+ngens(C)] = y[1, i]
+        el1 = O(J.princ_gen_special[2])+O(J.princ_gen_special[3])
+        y1 = preimage(mG, pi(el1)).coeff
+        for i = 1:ncols(y1)
+          res[1, i+ngens(C)] = y1[1, i]
         end
         if iszero(mod(n,2)) && !isempty(pr)
           b = lH(K(el)).coeff
           for i = 1:ncols(b)
-            res[1, i+ngens(C)+ncols(y)] = b[1, i]
+            res[1, i+ngens(C)+ncols(y1)] = b[1, i]
           end
         end
-        return X(res)
       else
         z = principal_gen_fac_elem(J)
         el = _fac_elem_evaluation(O, Q, quots, idemps, z, gcd(expo,n))
@@ -2269,7 +2266,6 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
             res[1, i+ngens(C)+ncols(y)] = b[1, i]
           end
         end
-        return X(res)
       end 
     else      
       W = mC\J
@@ -2290,14 +2286,13 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
         res[1, i+ngens(C)] = y[1, i]*inverse_d
       end
       if mod(n,2)==0 && !isempty(inf_plc)
-        b=lH(z).coeff
+        b = lH(z).coeff
         for i = 1:ncols(b)
           res[1, i+ngens(C)+ncols(y)] = b[1, i]
         end
       end
-      return X(res)
     end    
-    
+    return X(res)
   end 
   
   for (prim, mprim) in tame

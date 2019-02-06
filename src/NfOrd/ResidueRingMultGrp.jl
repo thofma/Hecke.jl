@@ -797,7 +797,6 @@ end
 #
 #################################################################################
 
-
 function _prime_part_multgrp_mod_p(p::NfOrdIdl, prime::Int)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
@@ -919,24 +918,10 @@ end
 #  multiplicative group mod n
 #
 ####################################################################################
-function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
-  @hassert :NfOrdQuoRing 2 isprime(p)
-  O = order(p)
-  Q, mQ = ResidueField(O, p)
 
-  np = norm(p) - 1
-  @assert gcd(n, np)!=1
-  npart, m = ppio(np, fmpz(n))
-  k = gcd(npart, n)
-  fac = factor(k)
-  powm = [divexact(npart, x) for x in keys(fac.fac)]
-  
-  #
-  #  We search for a random element with the right order
-  #
-  
+function _find_gen(Q::FqFiniteField, powm::Vector{fmpz}, m::fmpz)
   found = false
-  g = Q(1)
+  g = one(Q)
   while !found
     g = rand(Q)
     !iszero(g) || continue
@@ -944,39 +929,60 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
     found = true
     for i=1:length(powm)
       if isone(g^powm[i]) 
-        found=false
+        found = false
         break
       end     
     end
   end
+  return g
+end
+
+
+function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
+  @hassert :NfOrdQuoRing 2 isprime(p)
+  O = order(p)
+  Q, mQ = ResidueField(O, p)
+
+  np = norm(p) - fmpz(1)
+  @assert !isone(gcd(fmpz(n), np))
+  npart, m = ppio(np, fmpz(n))
+  k = gcd(npart, fmpz(n))::fmpz
+  fac = factor(k)::Fac{fmpz}
+  powm = fmpz[divexact(npart, x) for x in keys(fac.fac)]
   
-  inv=gcdx(m,fmpz(npart))[2]
-  quot=divexact(npart, k)
+  #
+  #  We search for a random element with the right order
+  #
+  g = _find_gen(Q, powm, m)
+  inv = gcdx(m, npart)[2]
+  quot = divexact(npart, k)
 
   w=g^quot
   function disclog(x::NfOrdElem)
-    t=mQ(x)^(m*quot)
+    t = mQ(x)^(m*quot)
     if iszero(t)
       error("Not coprime!")
     end
     if isone(t)
-      return Int[0]
+      return fmpz[fmpz(0)]
     end
-    if k<20
-      s=1
+    if k < 20
+      s = 1
       el = deepcopy(w)
-      while el!=t
-        s+=1
+      while el != t
+        s += 1
         mul!(el, el, w)
       end
-      return [Int(mod(s*inv,k)) ]
+      return fmpz[mod(fmpz(s)*inv, k)]
     else 
-      return [Int(pohlig_hellman(g^quot,k,t)*inv)] 
+      return fmpz[pohlig_hellman(g^quot, k, t)*inv] 
     end
   end
-
-  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ k ], disclog)
-  return domain(map), map
+  G = DiagonalGroup([k])
+  gens = Vector{NfOrdElem}(undef, 1)
+  gens[1] = preimage(mQ, g)
+  map = GrpAbFinGenToNfAbsOrdMap(G, O, gens, disclog)
+  return G, map
 end
 
 function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOrdIdl, Int}, n::Integer)
@@ -1030,7 +1036,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
       obcs_inv = gcdx(nq, obcs)[2]
 
       disc_log2 = function(x::NfOrdElem)
-        y = Q(x)^Int(nq)
+        y = Q(x)^nq
         z = G2toO.discrete_logarithm(y.elem)
         for i = 1:length(z)
           z[i] *= obcs_inv

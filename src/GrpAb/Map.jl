@@ -139,6 +139,18 @@ function hom(G::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
   return h
 end
 
+function hom(G::GrpAbFinGen, H::GrpAbFinGen, B::Array{GrpAbFinGenElem, 1})
+  @assert length(B) == ngens(G)
+  M = zero_matrix(FlintZZ, ngens(G), ngens(H))
+  for i = 1:ngens(G)
+    for j = 1:ngens(H)
+      M[i, j] = B[i][j]
+    end
+  end
+  h = GrpAbFinGenMap(G, H, M)
+  return h
+end
+
 # TODO: Extend the check to non-endomorphisms
 function hom(A::GrpAbFinGen, B::GrpAbFinGen, M::fmpz_mat, check::Bool = true)
   if check #totally wrong if A != B

@@ -7,7 +7,11 @@
     c, KtoL = Hecke.issubfield(K, L)
     @test c == true
     @test parent(KtoL(a)) == L
-
+    
+    c, KtoL = Hecke.issubfield_normal(K, L)
+    @test c == true
+    @test parent(KtoL(a)) == L
+    
     OK = maximal_order(K)
     OL = maximal_order(L)
     c, KtoL = Hecke.issubfield(K, L)
