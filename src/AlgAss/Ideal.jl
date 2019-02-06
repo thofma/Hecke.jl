@@ -231,34 +231,25 @@ function ideal_from_gens(A::AbsAlgAss, b::Vector{T}, side::Symbol = :nothing) wh
 end
 
 function ideal(A::AbsAlgAss, x::AbsAlgAssElem)
-  t = A()
-  M = zero_matrix(base_ring(A), 2*dim(A), dim(A))
+  t1 = A()
+  t2 = A()
+  M = zero_matrix(base_ring(A), dim(A)^2, dim(A))
   for i = 1:dim(A)
-    t = mul!(t, A[i], x)
-    elem_to_mat_row!(M, i, t)
-    t = mul!(t, x, A[i])
-    elem_to_mat_row!(M, dim(A) + i, t)
+    t1 = mul!(t1, A[i], x)
+    ii = (i - 1)*dim(A)
+    for j = 1:dim(A)
+      t2 = mul!(t2, t1, A[j])
+      elem_to_mat_row!(M, ii + j, t2)
+    end
   end
 
   return ideal(A, M, :twosided)
 end
 
 function ideal(A::AbsAlgAss, x::AbsAlgAssElem, action::Symbol)
-  t = A()
-  M = zero_matrix(base_ring(A), dim(A), dim(A))
-  for i = 1:dim(A)
-    if action == :left
-      t = mul!(t, x, A[i])
-      elem_to_mat_row!(M, i, t)
-    elseif action == :right
-      t = mul!(t, A[i], x)
-      elem_to_mat_row!(M, i, t)
-    else
-      error("action must be :left or :right")
-    end
-  end
-
+  M = representation_matrix(x, action)
   a = ideal(A, M)
+
   if action == :left
     a.isright = 1
   elseif action == :right
@@ -417,18 +408,29 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
 
   B = AlgAss(K, mult_table)
   MM = sub(M, 1:dim(B), 1:dim(A))
-  BtoA = hom(B, A, MM)
+
+  AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(MM)}(A, B)
 
   N = transpose(vcat(MM, Mb)) # Another basis matrix for a
-  function _preimage(x::AbsAlgAssElem)
+  function _image(x::AbsAlgAssElem)
     t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, false)))
     if t
       return B([ y[i, 1] for i = 1:dim(B) ])
     else
-      error("Element is not in the image")
+      error("Element is not in the domain")
     end
   end
-  BtoA.header.preimage = _preimage
 
-  return B, BtoA
+  function _preimage(x::AbsAlgAssElem)
+    t = zero_matrix(K, 1, dim(B))
+    for i = 1:dim(B)
+      t[1, i] = x.coeffs[i]
+    end
+    tt = t*MM
+    return A([ tt[1, i] for i = 1:dim(A) ])
+  end
+
+  AtoB.header.image = _image
+  AtoB.header.preimage = _preimage
+  return B, AtoB
 end

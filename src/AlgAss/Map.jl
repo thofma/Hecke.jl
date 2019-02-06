@@ -6,6 +6,12 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   c_t::T
   d_t::T
 
+  function AbsAlgAssMor{R, S, T}(A::R, B::S) where {R, S, T}
+    z = new{R, S, T}()
+    z.header = MapHeader(A, B)
+    return z
+  end
+
   function AbsAlgAssMor{R, S, T}(A::R, B::S, M::T) where {R, S, T}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
