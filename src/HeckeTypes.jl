@@ -1797,7 +1797,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
 
   function NfRel{T}(f::Generic.Poly{T}, s::Symbol, cached::Bool = false) where {T}
     if haskey(NfRelID, (parent(f), f, s))
-      return NfRelID[parent(f), f, s]
+      return NfRelID[parent(f), f, s]::NfRel{T}
     else
       z = new{T}()
       z.base_ring = base_ring(parent(f))
@@ -1807,7 +1807,7 @@ mutable struct NfRel{T} <: RelativeExtension{T}
       if cached
         NfRelID[parent(f), f, s] = z
       end
-      return z
+      return z::NfRel{T}
     end
   end
 end
