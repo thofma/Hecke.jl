@@ -649,12 +649,12 @@ end
 
 @doc Markdown.doc"""
 ***
-     radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+     radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod, fmpq, nf_elem } }
 
 > Given an algebra over a finite field of prime order, this function 
 > returns the radical of A
 """
-function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod, fmpq, nf_elem } }
   return ideal_from_gens(A, _radical(A), :twosided)
 end
 
@@ -700,6 +700,20 @@ function _radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}
     C=transpose(B)*C
   end
   return elem_type(A)[elem_from_mat_row(A,C,i) for i=1:nrows(C)]
+end
+
+function _radical(A::AlgAss{T}) where { T <: Union{ fmpq, nf_elem } }
+  M = trace_matrix(A)
+  n, N = nullspace(M)
+  b = Vector{elem_type(A)}(undef, n)
+  t = zeros(base_ring(A), dim(A))
+  for i = 1:n
+    for j = 1:dim(A)
+      t[j] = N[j, i]
+    end
+    b[i] = A(t)
+  end
+  return b
 end
 
 ###############################################################################
