@@ -614,12 +614,16 @@ end
 
 @doc Markdown.doc"""
 ***
-    radical(A::AlgAss{fq_nmod})
-            
+     radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+
 > Given an algebra over a finite field of prime order, this function 
-> returns a set of elements generating the radical of A
+> returns the radical of A
 """
 function radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
+  return ideal_from_gens(A, _radical(A), :twosided)
+end
+
+function _radical(A::AlgAss{T}) where { T <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod } }
 
   F = base_ring(A)
   p = characteristic(F)
