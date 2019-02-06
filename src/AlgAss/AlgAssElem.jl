@@ -359,7 +359,12 @@ end
 #
 ################################################################################
 
-(A::AlgAss{T})() where {T} = AlgAssElem{T, AlgAss{T}}(A)
+function (A::AlgAss{T})() where {T}
+  if iszero(A)
+    return A(T[])
+  end
+  return AlgAssElem{T, AlgAss{T}}(A)
+end
 
 (A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
 

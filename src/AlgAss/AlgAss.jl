@@ -12,7 +12,14 @@ base_ring(A::AlgAss{T}) where {T} = A.base_ring::parent_type(T)
 
 has_one(A::AlgAss) = A.has_one
 
-Generic.dim(A::AlgAss) = size(A.mult_table, 1)
+iszero(A::AlgAss) = A.iszero
+
+function Generic.dim(A::AlgAss)
+  if iszero(A)
+    return 0
+  end
+  return size(A.mult_table, 1)
+end
 
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
@@ -49,6 +56,9 @@ end
 # This only works if base_ring(A) is a field (probably)
 # Return true, one if there is a one and false, something if not.
 function find_one(A::AlgAss)
+  if iszero(A)
+    return true, elem_type(base_ring(A))[]
+  end
   n = dim(A)
   M = zero_matrix(base_ring(A), n^2, n)
   c = zero_matrix(base_ring(A), n^2, 1)
@@ -74,11 +84,26 @@ function find_one(A::AlgAss)
   return true, one
 end
 
+function _zero_algebra(R::Ring)
+  A = AlgAss{elem_type(R)}(R)
+  A.iszero = true
+  A.iscommutative = 1
+  A.has_one = true
+  A.one = elem_type(R)[]
+  return A
+end
+
 function AlgAss(R::Ring, mult_table::Array{T, 3}, one::Array{T, 1}) where {T}
+  if size(mult_table, 1) == 0
+    return _zero_algebra(R)
+  end
   return AlgAss{T}(R, mult_table, one)
 end
 
 function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
+  if size(mult_table, 1) == 0
+    return _zero_algebra(R)
+  end
   A = AlgAss{T}(R)
   A.mult_table = mult_table
   has_one, one = find_one(A)
@@ -90,6 +115,9 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
 end
 
 function AlgAss(R::Ring, d::Int, arr::Array{T, 1}) where {T}
+  if d == 0
+    return _zero_algebra(R)
+  end
   mult_table = Array{T, 3}(undef, d, d, d)
   n = d^2
   for i in 1:d
@@ -440,6 +468,12 @@ end
 
 function ==(A::AlgAss, B::AlgAss)
   base_ring(A) != base_ring(B) && return false
+  if iszero(A) != iszero(B)
+    return false
+  end
+  if iszero(A) && iszero(B)
+    return true
+  end
   if has_one(A) != has_one(B)
     return false
   end
@@ -518,7 +552,8 @@ function subalgebra(A::AlgAss{T}, e::AlgAssElem{T, AlgAss{T}}, idempotent::Bool 
   r = size(mult_table, 1)
 
   if r == 0
-    return AlgAss(R, mult_table, Vector{elem_type(R)}(undef, 0))
+    eA = _zero_algebra(R)
+    return eA, hom(eA, A, zero_matrix(R, 0, n))
   end
 
   # The basis matrix of e*A resp. A*e with respect to A is
