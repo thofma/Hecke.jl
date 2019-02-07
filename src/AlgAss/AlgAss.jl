@@ -106,6 +106,7 @@ function AlgAss(R::Ring, mult_table::Array{T, 3}) where {T}
   end
   A = AlgAss{T}(R)
   A.mult_table = mult_table
+  A.iszero = false
   has_one, one = find_one(A)
   A.has_one = has_one
   if has_one
