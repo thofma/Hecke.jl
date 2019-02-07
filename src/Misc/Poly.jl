@@ -380,23 +380,11 @@ end
   
 
 function fmpq_poly_to_nmod_poly_raw!(r::nmod_poly, a::fmpq_poly)
-  ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Nothing, (Ref{nmod_poly}, Ref{Int}, Int), r, a.coeffs, a.length)
-  p = r.mod_n
-  den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{Int}, UInt), a.den, p)
-  if den != UInt(1)
-    den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
-    mul!(r, r, den)
-  end
+  ccall((:fmpq_poly_get_nmod_poly, :libflint), Nothing, (Ref{nmod_poly}, Ref{fmpq_poly}), r, a)
 end
 
 function fmpq_poly_to_gfp_poly_raw!(r::gfp_poly, a::fmpq_poly)
-  ccall((:_fmpz_vec_get_nmod_poly, :libhecke), Nothing, (Ref{gfp_poly}, Ref{Int}, Int), r, a.coeffs, a.length)
-  p = r.mod_n
-  den = ccall((:fmpz_fdiv_ui, :libflint), UInt, (Ref{Int}, UInt), a.den, p)
-  if den != UInt(1)
-    den = ccall((:n_invmod, :libflint), UInt, (UInt, UInt), den, p)
-    mul!(r, r, den)
-  end
+  ccall((:fmpq_poly_get_nmod_poly, :libflint), Nothing, (Ref{gfp_poly}, Ref{fmpq_poly}), r, a)
 end
 
 function fmpq_poly_to_fmpz_mod_poly_raw!(r::fmpz_mod_poly, a::fmpq_poly, t1::fmpz_poly = fmpz_poly(), t2::fmpz = fmpz())

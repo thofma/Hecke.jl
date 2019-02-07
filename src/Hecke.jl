@@ -89,11 +89,11 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 #
 ###############################################################################
 
-const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-
-const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
-
-const libdir = joinpath(pkgdir, "local", "lib")
+#const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
+#
+#const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
+#
+#const libdir = joinpath(pkgdir, "local", "lib")
 
 global const number_field = NumberField
 function MaximalOrder
@@ -125,14 +125,14 @@ function __init__()
     println("Hecke $VERSION_NUMBER ...")
   end
   
-  if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
-    push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  elseif Sys.islinux()
-    push!(Libdl.DL_LOAD_PATH, libdir)
-    Libdl.dlopen(libhecke)
-  else
-    push!(Libdl.DL_LOAD_PATH, libdir)
-  end
+  #if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
+  #  push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
+  #elseif Sys.islinux()
+  #  push!(Libdl.DL_LOAD_PATH, libdir)
+  #  Libdl.dlopen(libhecke)
+  #else
+  #  push!(Libdl.DL_LOAD_PATH, libdir)
+  #end
   
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
