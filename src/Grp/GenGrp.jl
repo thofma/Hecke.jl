@@ -833,12 +833,9 @@ function find_small_group(G::GrpGen)
   idG = id(G)
 
   for j in candidates
-    @show j
     H = groups_from_magma[order(G)][j]
 
     elbyord = [elements_by_orders[o] for o in H[2]]
-
-    @show H[2]
 
     it = Iterators.product(elbyord...)
 
@@ -882,8 +879,6 @@ function automorphisms(i, j)
   G = generic_group(closure([P(p) for p in Gdata[1]], *), *)
 
   l = order(G)
-
-  @show isabelian(G)
 
   elements_by_orders = Dict{Int, Array{GrpGenElem, 1}}()
 
@@ -932,4 +927,21 @@ end
   return auts
 end
 
-include("small_groups")
+include("small_groups_1_63")
+
+function number_of_small_groups(i)
+  return length(small_groups_1_63[i])
+end
+
+function small_group(i, j)
+  i < 1 || i > 63 && error("Group order ($i) must be between 1 and 63")
+  j < 1 || j > number_of_small_groups(i) && error("Index ($j) must be between 1 and $(number_of_small_groups(i))")
+  P = PermGroup(i)
+  Gens = [P()]
+  for p in small_groups_1_63[i][j][1]
+    push!(Gens, P(p))
+  end
+  G, _, _ = generic_group(closure(Gens, *, P()), *)
+  return G
+end
+

@@ -293,7 +293,7 @@ end
 # TODO:
 # If it is abelian, then a subgroup is redundant, if and only if the quotient group is not cyclic
 # Use this to avoid endless recursions
-function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}; primitive::Bool = false, greedy::Bool = false, large_index::Bool = false)
+function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}; primitive::Bool = false, greedy::Bool = false, large_index::Bool = false, pure::Bool = false)
   QG = AlgGrp(FlintQQ, G)
   wd = decompose(QG)
   idempotents = [ f(one(A)) for (A, f) in wd]
@@ -302,6 +302,23 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   for i in 1:length(H)
     norms_rev[sum([QG(H[i][2](h)) for h in H[i][1]])] = i
     norms[i] = sum([QG(H[i][2](h)) for h in H[i][1]])
+  end
+
+  n = Int(order(G))
+
+  if pure
+    m = zero_matrix(FlintQQ, length(H), n)
+    for i in 1:length(H)
+      for j in 1:n
+        m[i, j] = norms[i].coeffs[j]
+      end
+    end
+
+    onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+
+    b, v, K = cansolve_with_nullspace(m', onee')
+
+    return b
   end
 
   nonannihilating = Vector{Vector{Int}}(undef, length(idempotents))
@@ -396,8 +413,6 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     end
   end
 
-  @show sol
-
   z = zero(QG)
   for (i, k, l, x) in sol
     z = z + x * B[k] * norms[subgroups_needed[i]] * B[l]
@@ -410,8 +425,6 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   for (_,_,_,x) in sol
     den = lcm(den, denominator(x))
   end
-
-  @show length(sol)
 
   solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
   solutions_as_group_element_arrays = Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}(undef, length(subgroups_needed))
@@ -430,8 +443,6 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     end
     push!(solutions, (sgroup, vv))
   end
-
-  @show solutions
 
   return true, den, solutions
 end
