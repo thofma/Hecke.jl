@@ -228,6 +228,10 @@ struct GrpGenElem
   i::Int
 end
 
+elem_type(::Type{GrpGen}) = GrpGenElem
+
+elem_type(::GrpGen) = GrpGenElem
+
 mutable struct GrpGenToGrpGenMor <: Map{GrpGen, GrpGen, HeckeMap, GrpGen}
 
   domain::GrpGen
@@ -263,6 +267,11 @@ end
 Base.eltype(::Type{GrpGen}) = GrpGenElem
 
 Base.hash(G::GrpGenElem, h::UInt) = Base.hash(G.i, h)
+
+function Base.deepcopy_internal(g::GrpGenElem, dict::IdDict)
+  return GrpGenElem(g.group, g.i)
+end
+
 
 function gens(G::GrpGen)
   if isdefined(G, :gens)
@@ -510,12 +519,12 @@ end
 ################################################################################
 
 function Base.show(io::IO, G::GrpGen)
-  print(io, "Generic group with multiplication table\n")
+  print(io, "Generic group of order ", order(G), " with multiplication table\n")
   println(io, G.mult_table)
 end
 
 function Base.show(io::IO, g::GrpGenElem)
-  print(io, "Element of generic group ($(g.i))\n")
+  print(io, "($(g.i))\n")
 end
 
 ################################################################################
