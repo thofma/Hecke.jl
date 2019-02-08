@@ -293,7 +293,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
       end
       @assert O.ismaximal ==1 || p in O.primesofmaximality
       lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
-      if degree_limit == 0 && lower_limit == 0
+      if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
       end
       return copy(lp)
@@ -444,7 +444,8 @@ function anti_uniformizer(P::NfOrdIdl)
   =#
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
-  Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), rows(M), cols(M), false)(M)
+  #Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
+  Mp = matrix(GF(p, cached = false), M)
   K = kernel(Mp)
   @assert length(K) > 0
   P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
@@ -895,7 +896,7 @@ end
 > such that $a$ is contained in $\mathfrak p^i$.
 """
 function valuation(a::nf_elem, p::NfOrdIdl, no::fmpq = fmpq(0))
-  if !isdefining_polynomial_nice(parent(a)) ||
+  if !isdefining_polynomial_nice(parent(a)) || order(p).ismaximal != 1
     return valuation_naive(a, p)
   end
   @hassert :NfOrd 0 !iszero(a)

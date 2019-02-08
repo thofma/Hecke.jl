@@ -453,13 +453,13 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     push!(matrices, N)
     M = vcat(M, N)
   end
-  @assert rows(M) == d
+  @assert nrows(M) == d
 
   invM = inv(M)
   matrices2 = Vector{fmpq_mat}(undef, length(matrices))
   offset = 1
   for i = 1:length(matrices)
-    r = rows(matrices[i])
+    r = nrows(matrices[i])
     N = sub(invM, 1:d, offset:(offset + r - 1))
     matrices2[i] = N
     offset += r
@@ -502,7 +502,7 @@ end
 
 function _reduce(M, v)
   cur_ind = 0
-  for outer cur_ind in 1:cols(M)
+  for outer cur_ind in 1:ncols(M)
     if !iszero(v[cur_ind])
       break
     end

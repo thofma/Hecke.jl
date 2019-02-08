@@ -1,23 +1,6 @@
-export isinvertible
+algebra(a::AbsAlgAssIdl) = a.algebra
 
-@inline order(I::AlgAssAbsOrdIdl) = I.order
-
-iszero(I::AlgAssAbsOrdIdl) = (I.iszero == 1)
-isone(I::AlgAssAbsOrdIdl) = isone(abs(det(basis_mat(I, Val{false}))))
-
-function Base.one(S::AlgAssAbsOrdIdlSet)
-  O = order(S)
-  M = identity_matrix(FlintZZ, degree(O))
-  return ideal(O, M, true)
-end
-
-function one(I::AlgAssAbsOrdIdl)
-  return ideal(order(I), one(order(I)))
-end
-
-function Base.copy(I::AlgAssAbsOrdIdl)
-  return I
-end
+iszero(a::AbsAlgAssIdl) = (a.iszero == 1)
 
 ###############################################################################
 #
@@ -25,11 +8,11 @@ end
 #
 ###############################################################################
 
-function show(io::IO, a::AlgAssAbsOrdIdl)
+function show(io::IO, a::AbsAlgAssIdl)
   print(io, "Ideal of ")
-  show(IOContext(io, :compact => true), order(a))
+  print(io, algebra(a))
   println(io, " with basis matrix")
-  print(io, a.basis_mat)
+  print(io, basis_mat(a, false))
 end
 
 ################################################################################
@@ -38,11 +21,11 @@ end
 #
 ################################################################################
 
-function Base.deepcopy_internal(a::AlgAssAbsOrdIdl, dict::IdDict)
-  b = typeof(a)(order(a))
+function Base.deepcopy_internal(a::AbsAlgAssIdl, dict::IdDict)
+  b = typeof(a)(algebra(a))
   for i in fieldnames(typeof(a))
     if isdefined(a, i)
-      if i != :order
+      if i != :algebra
         setfield!(b, i, Base.deepcopy_internal(getfield(a, i), dict))
       end
     end
@@ -52,98 +35,108 @@ end
 
 ################################################################################
 #
-#  Ideal Set
-#
-################################################################################
-
-function show(io::IO, a::AlgAssAbsOrdIdlSet)
-  print(io, "Set of ideals of $(order(a))\n")
-end
-
-order(a::AlgAssAbsOrdIdlSet) = a.order
-
-parent(I::AlgAssAbsOrdIdl) = AlgAssAbsOrdIdlSet(order(I))
-
-function IdealSet(O::AlgAssAbsOrd)
-   return AlgAssAbsOrdIdlSet(O)
-end
-
-elem_type(::Type{AlgAssAbsOrdIdlSet{S, T}}) where {S, T} = AlgAssAbsOrdIdl{S, T}
-
-elem_type(::AlgAssAbsOrdIdlSet{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
-
-parent_type(::Type{AlgAssAbsOrdIdl{S, T}}) where {S, T} = AlgAssAbsOrdIdlSet{S, T}
-
-################################################################################
-#
 #  Basis (matrices)
 #
 ################################################################################
 
-function assure_has_basis(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
+function assure_has_basis(a::AbsAlgAssIdl)
   if isdefined(a, :basis)
     return nothing
   end
 
-  O = order(a)
-  a.basis = Vector{AlgAssAbsOrdElem{S, T}}(undef, degree(O))
-  for i = 1:degree(O)
-    a.basis[i] = elem_from_mat_row(O, basis_mat(a, Val{false}), i)
+  A = algebra(a)
+  M = basis_mat(a, false)
+  a.basis = Vector{elem_type(A)}(undef, nrows(M))
+  for i = 1:nrows(M)
+    a.basis[i] = elem_from_mat_row(A, M, i)
   end
   return nothing
 end
 
-function assure_has_basis_mat(a::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  if isdefined(a, :basis_mat)
-    return nothing
-  end
-
-  O = order(a)
-  d = degree(O)
-  a.basis_mat = zero_matrix(FlintZZ, d, d)
-  for i = 1:d
-    for j = 1:d
-      a.basis_mat[i, j] = elem_in_basis(basis[i])[j]
-    end
-  end
-  a.basis_mat = _hnf(a.basis_mat, :lowerleft)
-  return nothing
-end
-
-function assure_has_basis_mat_inv(a::AlgAssAbsOrdIdl)
-  if isdefined(a, :basis_mat_inv)
-    return nothing
-  else
-    a.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(a, Val{false})))
-    return nothing
-  end
-end
-
-function basis(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function basis(a::AbsAlgAssIdl, copy::Bool = true)
   assure_has_basis(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.basis)
   else
     return a.basis
   end
 end
 
-function basis_mat(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
-  assure_has_basis_mat(a)
-  if copy == Val{true}
+function basis_mat(a::AbsAlgAssIdl, copy::Bool = true)
+  if copy
     return deepcopy(a.basis_mat)
   else
     return a.basis_mat
   end
 end
 
-function basis_mat_inv(a::AlgAssAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
-  assure_has_basis_mat_inv(a)
-  if copy == Val{true}
-    return deepcopy(a.basis_mat_inv)
-  else
-    return a.basis_mat_inv
+################################################################################
+#
+#  Inclusion of elements in ideals
+#
+################################################################################
+
+function in(x::T, a::AbsAlgAssIdl{S, T, U}) where {S, T, U}
+  A = algebra(a)
+  M = matrix(base_ring(A), 1, dim(A), coeffs(x, false))
+  return rank(vcat(basis_mat(a, false), M)) == nrows(basis_mat(a, false)) # so far we assume nrows(basis_mat) == rank(basis_mat)
+end
+
+################################################################################
+#
+#  Test right/left
+#
+################################################################################
+
+function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
+  A = algebra(a)
+  ba = basis(a, false)
+  t = A()
+  for i = 1:dim(A)
+    for j = 1:length(ba)
+      if side == :left
+        t = mul!(t, A[i], ba[j])
+      elseif side == :right
+        t = mul!(t, ba[j], A[i])
+      end
+      if !(t in a)
+        return false
+      end
+    end
   end
+  return true
+end
+
+function isright_ideal(a::AbsAlgAssIdl)
+  if a.isright == 1
+    return true
+  elseif a.isright == 2
+    return false
+  end
+
+  if _test_ideal_sidedness(a, :right)
+    a.isright = 1
+    return true
+  end
+
+  a.isright = 2
+  return false
+end
+
+function isleft_ideal(a::AbsAlgAssIdl)
+  if a.isleft == 1
+    return true
+  elseif a.isleft == 2
+    return false
+  end
+
+  if _test_ideal_sidedness(a, :left)
+    a.isleft = 1
+    return true
+  end
+
+  a.isleft = 2
+  return false
 end
 
 ################################################################################
@@ -152,174 +145,57 @@ end
 #
 ################################################################################
 
-function +(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  d = degree(order(a))
-  M = vcat(basis_mat(a), basis_mat(b))
-  M = view(_hnf(M, :lowerleft), (d + 1):2*d, 1:d)
-  return ideal(order(a), M, true)
-end
-
-function *(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  d = degree(order(a))
-  ba = basis(a, Val{false})
-  bb = basis(b, Val{false})
-  M = zero_matrix(FlintZZ, d^2, d)
-  for i = 1:d
-    for j = 1:d
-      t = ba[i]*bb[j]
-      for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t)[k]
-      end
-    end
-  end
-  M = view(_hnf(M, :lowerleft), (d^2 - d + 1):d^2, 1:d)
-  return ideal(order(a), M, true)
-end
-
-^(A::AlgAssAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
-^(A::AlgAssAbsOrdIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
-
-function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  d = degree(order(a))
-  H = vcat(basis_mat(a), basis_mat(b))
-  K = _kernel(H)
-  return ideal(order(a), _hnf(view(K, 1:d, 1:d)*basis_mat(a, Val{false}), :lowerleft), true)
-end
-
-################################################################################
-#
-#  Ad hoc multiplication
-#
-################################################################################
-
-*(x::fmpz, a::AlgAssAbsOrdIdl) = ideal(order(a), x*basis_mat(a, Val{false}), true)
-*(a::AlgAssAbsOrdIdl, x::fmpz) = ideal(order(a), basis_mat(a, Val{false})*x, true)
-
-function *(x::AlgAssAbsOrdElem, a::AlgAssAbsOrdIdl)
-  @assert parent(x) == order(a)
-  O = order(a)
-  return ideal(O, x)*a
-end
-
-function *(a::AlgAssAbsOrdIdl, x::AlgAssAbsOrdElem)
-  @assert parent(x) == order(a)
-  O = order(a)
-  return a*ideal(O, x)
-end
-
-################################################################################
-#
-#  Division
-#
-################################################################################
-
-function divexact(a::AlgAssAbsOrdIdl, x::fmpz)
-  O = order(a)
-  M = FakeFmpqMat(basis_mat(a, Val{false}), deepcopy(x))
-  if M.den != 1
-    error("Ideal not divisible by x")
-  end
-  return ideal(O, M.num)
-end
-
-################################################################################
-#
-#  Construction
-#
-################################################################################
-
-function ideal(O::AlgAssAbsOrd{S, T}, M::fmpz_mat, M_in_hnf::Bool = false) where {S, T}
-  !M_in_hnf ? M = _hnf(M, :lowerleft) : nothing
-  return AlgAssAbsOrdIdl{S, T}(O, M)
-end
-
-function ideal(O::AlgAssAbsOrd{S, T}, a::AlgAssAbsOrdElem{S, T}) where {S, T}
-  @assert parent(a) == O
-  M = representation_matrix(a)
-  A = ideal(O, M)
+function +(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   if iszero(a)
-    A.iszero = 1
+    return deepcopy(b)
+  elseif iszero(b)
+    return deepcopy(a)
   end
-  return A
+
+  M = vcat(basis_mat(a), basis_mat(b))
+  r = rref!(M)
+  if r != nrows(M)
+    M = sub(M, 1:r, 1:ncols(M))
+  end
+  return ideal(algebra(a), M, :nothing, true)
 end
 
-function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}) where { T <: AlgAssAbsOrdElem }
-  d = degree(O)
-  @assert length(b) >= d
-
-  M = zero_matrix(FlintZZ, length(b), d)
-  for i = 1:length(b)
-    elem_to_mat_row!(M, i, b[i])
+function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
+  if iszero(a)
+    return deepcopy(a)
+  elseif iszero(b)
+    return deepcopy(b)
   end
-  M = _hnf(M, :lowerleft)
-  if d < length(b)
-    M = sub(M, (length(b) - d + 1):length(b), 1:d)
+
+  if !isright_ideal(a)
+    error("First argument is not a right ideal")
   end
-  return ideal(O, M, true)
-end
+  if !isleft_ideal(b)
+    error("Second argument is not a left ideal")
+  end
 
-################################################################################
-#
-#  Extend/contract
-#
-################################################################################
-
-#THIS IS WRONG! The ideal generated by one element need to consider multiplication on both sides
-function extend(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
-  # Assumes order(A) \subseteq O
-
-  d = degree(O)
-  M = zero_matrix(FlintZZ, d^2, d)
-  X = map(O, basis(A, Val{false}))
-  Y = basis(O, Val{false})
-  t = O()
-  for i = 1:d
-    for j = 1:d
-      t = X[i]*Y[j]
-      for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t, Val{false})[k]
-      end
+  A = algebra(a)
+  ba = basis(a, false)
+  bb = basis(b, false)
+  M = zero_matrix(base_ring(A), length(ba)*length(bb), dim(A))
+  for i = 1:length(ba)
+    ii = (i - 1)*length(bb)
+    for j = 1:length(bb)
+      elem_to_mat_row!(M, ii + j, ba[i]*bb[j])
     end
   end
-  M = sub(_hnf(M, :lowerleft), d*(d - 1) + 1:d^2, 1:d)
-  return ideal(O, M, true)
+  return ideal(algebra(a), M, :nothing)
 end
 
-*(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = extend(A, O)
+^(A::AbsAlgAssIdl, e::Int) = Base.power_by_squaring(A, e)
+^(A::AbsAlgAssIdl, e::fmpz) = Base.power_by_squaring(A, BigInt(e))
 
-function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
-  # Assumes O \subseteq order(A)
-
-  d = degree(O)
-  M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
-  @assert M.den == 1
-  H = vcat(basis_mat(A), M.num)
-  K = _kernel(H)
-  M = sub(K, 1:d, 1:d)*basis_mat(A, Val{false})
-  M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
-  @assert M.den == 1
-  M = _hnf(M.num, :lowerleft)
-  return ideal(O, M, true)
+function one(a::AbsAlgAssIdl)
+  return ideal(algebra(a), identity_matrix(base_ring(A), dim(A)), :twosided, true)
 end
 
-intersect(O::AlgAssAbsOrd, A::AlgAssAbsOrdIdl) = contract(A, O)
-intersect(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd) = contract(A, O)
-
-################################################################################
-#
-#  Inclusion of elements in ideals
-#
-################################################################################
-
-function in(x::AlgAssAbsOrdElem, I::AlgAssAbsOrdIdl)
-  el = elem_in_basis(x)
-  y = matrix(FlintZZ, 1, length(el), el)
-  M1, d =pseudo_inv(I.basis_mat)
-  if FakeFmpqMat(y*M1, d).den==1
-    return true
-  else
-    return false
-  end
+function Base.copy(a::AbsAlgAssIdl)
+  return a
 end
 
 ################################################################################
@@ -328,204 +204,233 @@ end
 #
 ################################################################################
 
-function ==(A::AlgAssAbsOrdIdl, B::AlgAssAbsOrdIdl)
-  order(A) != order(B) && return false
-  return basis_mat(A, Val{false}) == basis_mat(B, Val{false})
+function ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
+  algebra(a) != algebra(b) && return false
+  return basis_mat(a, false) == basis_mat(b, false)
 end
 
 ################################################################################
 #
-#  Hashing
+#  Construction
 #
 ################################################################################
 
-function Base.hash(A::AlgAssAbsOrdIdl, h::UInt)
-  return Base.hash(basis_mat(A, Val{false}), h)
-end
-
-################################################################################
-#
-#  Idempotents
-#
-################################################################################
-
-# Algorithm 1.3.2 in Cohen "Advanced Topics in Computational Number Theory"
-function idempotents(a::AlgAssAbsOrdIdl, b::AlgAssAbsOrdIdl)
-  !(order(a) === order(b)) && error("Parent mismatch")
-  O = order(a)
-  d = degree(O)
-  A = basis_mat(a, Val{false})
-  B = basis_mat(b, Val{false})
-
-  C = vcat(A, B)
-  H, U = hnf_with_transform(C)
-
-  if H != vcat(identity_matrix(FlintZZ, d), zero_matrix(FlintZZ, d, d))
-    error("Ideals are not coprime")
+function ideal_from_gens(A::AbsAlgAss, b::Vector{T}, side::Symbol = :nothing) where { T <: AbsAlgAssElem }
+  if length(b) == 0
+    M = zero_matrix(base_ring(A), 0, dim(A))
+    return ideal(A, M, side, true)
   end
 
-  X = sub(U, 1:1, 1:d)
-  XA = X*A
-  x = O([ XA[1, i] for i = 1:d ])
-  @assert x in a
-  y = one(O) - x
-  @assert y in b
-  return x, y
-end
+  @assert parent(b[1]) == A
 
-################################################################################
-#
-#  From algebra to number field
-#
-################################################################################
-
-function _as_ideal_of_number_field(I::AlgAssAbsOrdIdl, m::AbsAlgAssToNfAbsMor)
-  @assert algebra(order(I)) == domain(m)
-  K = codomain(m)
-  OK = maximal_order(K)
-
-  b = Vector{elem_type(OK)}()
-  for i = 1:dim(domain(m))
-    push!(b, OK(m(elem_in_algebra(basis(I, Val{false})[i]))))
+  M = zero_matrix(base_ring(A), length(b), dim(A))
+  for i = 1:length(b)
+    elem_to_mat_row!(M, i, b[i])
   end
-  return ideal_from_z_gens(OK, b)
+  return ideal(A, M, side)
 end
 
-function _as_ideal_of_algebra(I::NfAbsOrdIdl, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AlgAssAbsOrdElem }
-  A = algebra(O)
-  fields_and_maps = as_number_fields(A)
-  b = Vector{elem_type(O)}()
-  for j = 1:length(fields_and_maps)
-    K, AtoK = fields_and_maps[j]
-    if j == i
-      @assert nf(order(I)) == K
-      append!(b, [ O(AtoK\K(bb)) for bb in basis(I, Val{false}) ])
+function ideal(A::AbsAlgAss, x::AbsAlgAssElem)
+  t1 = A()
+  t2 = A()
+  M = zero_matrix(base_ring(A), dim(A)^2, dim(A))
+  for i = 1:dim(A)
+    t1 = mul!(t1, A[i], x)
+    ii = (i - 1)*dim(A)
+    for j = 1:dim(A)
+      t2 = mul!(t2, t1, A[j])
+      elem_to_mat_row!(M, ii + j, t2)
+    end
+  end
+
+  return ideal(A, M, :twosided)
+end
+
+function ideal(A::AbsAlgAss, x::AbsAlgAssElem, action::Symbol)
+  M = representation_matrix(x, action)
+  a = ideal(A, M)
+
+  if action == :left
+    a.isright = 1
+  elseif action == :right
+    a.isleft = 1
+  end
+
+  return a
+end
+
+function ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Bool = false)
+  @assert base_ring(M) == base_ring(A)
+  @assert ncols(M) == dim(A)
+  if !M_in_rref
+    r, N = rref(M)
+    if r == 0
+      a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, zero_matrix(base_ring(A), 0, dim(A)))
+      a.iszero = 1
+      return a
+    end
+    if r != nrows(N)
+      M = sub(N, 1:r, 1:ncols(N))
     else
-      append!(b, one_ideals[j])
+      M = N
     end
   end
-  return ideal_from_z_gens(O, b)
+  a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, M)
+  _set_sidedness(a, side)
+  a.iszero = 2
+  return a
 end
 
-function _as_ideal_of_algebra(I::FacElem{NfOrdIdl, NfOrdIdlSet}, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AlgAssAbsOrdElem }
-  if isempty(I)
-    return ideal(O, one(O))
+# Helper function to set the side-flags
+# side can be :right, :left or :twosided
+function _set_sidedness(a::AbsAlgAssIdl, side::Symbol)
+  if side == :right
+    a.isleft = 0
+    a.isright = 1
+  elseif side == :left
+    a.isleft = 1
+    a.isright = 0
+  elseif side == :twosided
+    a.isleft = 1
+    a.isright = 1
+  else
+    a.isleft = 0
+    a.isright = 0
   end
-
-  base = Vector{ideal_type(O)}()
-  exp = Vector{fmpz}()
-  for (b, e) in I
-    push!(base, _as_ideal_of_algebra(b, i, O, one_ideals))
-    push!(exp, e)
-  end
-  return FacElem(base, exp)
-end
-
-# Returns an array of bases of the ideals O_i(1)*O_i lifted to O, where O_i
-# are the maximal orders of the number fields in the decomposition of
-# algebra(O).
-function _lift_one_ideals(O::AlgAssAbsOrd)
-  A = algebra(O)
-  fields_and_maps = as_number_fields(A)
-
-  one_ideals = Vector{Vector{elem_type(O)}}()
-  for i = 1:length(fields_and_maps)
-    K, AtoK = fields_and_maps[i]
-    OK = maximal_order(K)
-    a = OK(1)*OK
-    b = Vector{elem_type(O)}()
-    for i = 1:degree(K)
-      push!(b, O(AtoK\K(basis(a, Val{false})[i])))
-    end
-    push!(one_ideals, b)
-  end
-  return one_ideals
+  return nothing
 end
 
 ################################################################################
 #
-#  Factorization
+#  Quotient rings
 #
 ################################################################################
 
-function factor(I::AlgAssAbsOrdIdl)
-  O = order(I)
-  A = algebra(O)
-  fields_and_maps = as_number_fields(A)
+function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
+  @assert A == algebra(a)
+  K = base_ring(A)
 
-  one_ideals = _lift_one_ideals(O)
-
-  fac = Dict{ideal_type(O), Int}()
-  for i = 1:length(fields_and_maps)
-    K, AtoK = fields_and_maps[i]
-    J = _as_ideal_of_number_field(I, AtoK)
-    fac2 = factor(J)
-    for (p, e) in fac2
-      P = _as_ideal_of_algebra(p, i, O, one_ideals)
-      fac[P] = e
+  # First compute the vector space quotient
+  Ma = basis_mat(a, false)
+  M = hcat(transpose(Ma), identity_matrix(K, dim(A)))
+  r = rref!(M)
+  pivot_cols = Vector{Int}()
+  j = 1
+  for i = 1:ncols(M)
+    if !iszero(M[j, i])
+      if i > nrows(Ma)
+        push!(pivot_cols, i - nrows(Ma))
+      end
+      j += 1
+      if j > nrows(M)
+        break
+      end
     end
   end
-  return fac
+
+  # We now have the basis (basis of the quotient, basis of the ideal)
+  n = dim(A) - nrows(Ma)
+  M = vcat(zero_matrix(K, n, dim(A)), Ma)
+  oneK = K(1)
+  zeroK = K()
+  for i = 1:n
+    M[i, pivot_cols[i]] = oneK
+  end
+  iM = inv(M)
+
+  N = sub(M, 1:n, 1:dim(A))
+  NN = sub(iM, 1:dim(A), 1:n)
+
+  # Lift a basis of the quotient to A
+  quotient_basis = Vector{elem_type(A)}(undef, n)
+  b = zero_matrix(K, 1, n)
+  for i = 1:n
+    b[1, i] = oneK
+    bN = b*N
+    quotient_basis[i] = A([ bN[1, i] for i = 1:dim(A) ])
+    b[1, i] = zeroK
+  end
+
+  # Build the multiplication table
+  t = A()
+  s = zero_matrix(K, 1, dim(A))
+  mult_table = Array{elem_type(K), 3}(undef, n, n, n)
+  for i = 1:n
+    for j = 1:n
+      t = mul!(t, quotient_basis[i], quotient_basis[j])
+      elem_to_mat_row!(s, 1, t)
+      sNN = s*NN
+      mult_table[i, j, :] = [ sNN[1, k] for k  = 1:n ]
+    end
+  end
+
+  B = AlgAss(K, mult_table)
+  AtoB = hom(A, B, NN, N)
+  return B, AtoB
 end
 
-################################################################################
-#
-#  Inverse
-#
-################################################################################
+# Assumes b \subseteq a
+function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U }
+  @assert algebra(a) == algebra(b)
+  A = algebra(a)
+  K = base_ring(A)
 
-# If I is not coprime to the conductor of O in the maximal order, then this might
-# not be an inverse.
-function inv(a::AlgAssAbsOrdIdl)
-  @assert !iszero(a)
-  O = order(a)
-  return colon(ideal(O, one(O)), a)
-end
+  # First compute the vector space quotient
+  Ma = basis_mat(a, false)
+  Mb = basis_mat(b, false)
+  M = hcat(transpose(Mb), transpose(Ma))
+  r = rref!(M)
+  pivot_cols = Vector{Int}()
+  j = 1
+  for i = 1:ncols(M)
+    if !iszero(M[j, i])
+      if i > nrows(Mb)
+        push!(pivot_cols, i - nrows(Mb))
+      end
+      j += 1
+      if j > nrows(M)
+        break
+      end
+    end
+  end
 
-# Mostly the same as colon in NfOrd/Ideal/Ideal.jl
-function colon(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
-  O = order(a)
-  n = degree(O)
-  B = basis(b)
+  # Build the basis matrix for the quotient
+  M = zero_matrix(K, dim(A), dim(A))
+  n = nrows(Ma) - nrows(Mb)
+  for i = 1:n
+    for j = 1:dim(A)
+      M[i, j] = deepcopy(Ma[pivot_cols[i], j])
+    end
+  end
 
-  bmatinv = basis_mat_inv(a, Val{false})
+  mult_table = _build_subalgebra_mult_table!(A, M)
+  # M is now in rref
 
-  n = FakeFmpqMat(representation_matrix(B[1]), FlintZZ(1))*bmatinv
-  m = numerator(n)
-  d = denominator(n)
-  for i in 2:length(B)
-    n = FakeFmpqMat(representation_matrix(B[i]), FlintZZ(1))*bmatinv
-    l = lcm(denominator(n), d)
-    if l == d
-      m = hcat(m, n.num)
+  B = AlgAss(K, mult_table)
+  MM = sub(M, 1:dim(B), 1:dim(A))
+
+  AtoB = AbsAlgAssMor{typeof(A), typeof(B), typeof(MM)}(A, B)
+
+  N = transpose(vcat(MM, Mb)) # Another basis matrix for a
+  function _image(x::AbsAlgAssElem)
+    t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, false)))
+    if t
+      return B([ y[i, 1] for i = 1:dim(B) ])
     else
-      m = hcat(m*div(l, d), n.num*div(l, denominator(n)))
-      d = l
+      error("Element is not in the domain")
     end
   end
-  m = hnf(transpose(m))
-  # n is upper right HNF
-  m = transpose(sub(m, 1:degree(O), 1:degree(O)))
-  b, l = pseudo_inv(m)
-  return frac_ideal_type(O)(O, ideal(O, b), l)
-end
 
-function isinvertible(a::AlgAssAbsOrdIdl)
-  if iszero(a)
-    return false, a
+  function _preimage(x::AbsAlgAssElem)
+    t = zero_matrix(K, 1, dim(B))
+    for i = 1:dim(B)
+      t[1, i] = x.coeffs[i]
+    end
+    tt = t*MM
+    return A([ tt[1, i] for i = 1:dim(A) ])
   end
 
-  bmata = basis_mat(a, Val{false})
-
-  if any(iszero(bmata[i, i]) for i in 1:degree(order(a)))
-    return false, a
-  end
-
-  if order(a).ismaximal == 1
-    return true, inv(a)
-  end
-
-  b = inv(a)
-  c = a*b
-  return isone(c), b
+  AtoB.header.image = _image
+  AtoB.header.preimage = _preimage
+  return B, AtoB
 end

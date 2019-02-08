@@ -19,7 +19,7 @@ function _reduce_size(x::Array{T, 1}, prec::Int = 64) where T
 
   A = zero_matrix(parent(conlog[1]), length(x), rr)
 
-  B = zero_matrix(FlintZZ, rows(A), cols(A))
+  B = zero_matrix(FlintZZ, nrows(A), ncols(A))
 
   for i in 1:rr
     A[1, i] = conlog[i]
@@ -27,8 +27,8 @@ function _reduce_size(x::Array{T, 1}, prec::Int = 64) where T
 
   Ar = base_ring(A)
 
-  for i in 1:rows(A)
-    for j in 1:cols(A)
+  for i in 1:nrows(A)
+    for j in 1:ncols(A)
       b, y = unique_integer(ceil(ldexp(A[i, j], 64)))
       @assert b
       B[i, j] = y
@@ -79,11 +79,11 @@ function scaled_log_matrix(u::Array{T, 1}, pr::Int = 32) where T
 end
 
 function row_norm(A::fmpz_mat, i::Int)
-  return sum([A[i,j]^2 for j=1:cols(A)])
+  return sum([A[i,j]^2 for j=1:ncols(A)])
 end
 
 function row_norms(A::fmpz_mat)
-  return [row_norm(A, i) for i=1:rows(A)]
+  return [row_norm(A, i) for i=1:nrows(A)]
 end
 
 function reduce(u::Array{T, 1}, prec::Int = 32) where T

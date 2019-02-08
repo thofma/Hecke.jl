@@ -256,8 +256,8 @@ function Hecke.induce_crt(a::fmpz_mat, p::fmpz, b::fmpz_mat, q::fmpz, signed::Bo
 
   @assert size(a) == size(b)
   c = similar(a)
-  for i=1:rows(a)
-    for j=1:cols(a)
+  for i=1:nrows(a)
+    for j=1:ncols(a)
       c[i,j] = Hecke.inner_crt(a[i,j], b[i,j], pi, pq, pq2)
     end
   end

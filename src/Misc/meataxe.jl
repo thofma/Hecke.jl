@@ -12,12 +12,12 @@ add_assert_scope(:MeatAxe)
 # the vector reduced with respect to $M$
 #
 function cleanvect(M::T, v::T) where {T}
-  @assert rows(v)==1
+  @assert nrows(v)==1
   w=deepcopy(v)
   if iszero(v)
     return w  
   end
-  for i=1:rows(M)
+  for i=1:nrows(M)
     if iszero_row(M,i)
       continue
     end
@@ -30,7 +30,7 @@ function cleanvect(M::T, v::T) where {T}
     end
     mult=divexact(w[1,ind], M[i,ind])
     w[1,ind]=parent(M[1,1])(0)
-    for k=ind+1:cols(M)
+    for k=ind+1:ncols(M)
       w[1,k]-= mult*M[i,k]
     end      
   end
@@ -46,14 +46,14 @@ end
 function closure(C::T, G::Array{T,1}) where {T}
   rref!(C)
   i=1
-  while i <= rows(C)
-    w=view(C, i:i, 1:cols(C))
+  while i <= nrows(C)
+    w=view(C, i:i, 1:ncols(C))
     for j=1:length(G)
       res=cleanvect(C,w*G[j])
       if !iszero(res)
         C=vcat(C,res)  
-        if rows(C)==cols(C)
-          i=cols(C)+1
+        if nrows(C)==ncols(C)
+          i=ncols(C)+1
           break
         end
       end 
@@ -61,8 +61,8 @@ function closure(C::T, G::Array{T,1}) where {T}
     i+=1
   end
   r = rref!(C)
-  if r != rows(C)
-    C = sub(C, 1:r, 1:cols(C))
+  if r != nrows(C)
+    C = sub(C, 1:r, 1:ncols(C))
   end
   return C
 end
@@ -77,15 +77,15 @@ function spinning(C::T,G::Array{T,1}) where {T}
   B=deepcopy(C)
   X=rref(C)[2]
   i=1
-  while i != rows(B)+1
+  while i != nrows(B)+1
     for j=1:length(G)
-      el= view(B, i:i, 1:cols(B)) * G[j]
+      el= view(B, i:i, 1:ncols(B)) * G[j]
       res= cleanvect(X,el)
       if !iszero(res)
         X=vcat(X,res)
         rref!(X)
         B=vcat(B,el)
-        if rows(B)==cols(B)
+        if nrows(B)==ncols(B)
           return B
         end
       end
@@ -102,9 +102,9 @@ end
 
 function clean_and_quotient(M::T,N::T, pivotindex::Set{Int}) where {T}
 
-  coeff=zero_matrix(parent(M[1,1]),rows(N),rows(M))
-  for i=1:rows(N)
-    for j=1:rows(M)
+  coeff=zero_matrix(parent(M[1,1]),nrows(N),nrows(M))
+  for i=1:nrows(N)
+    for j=1:nrows(M)
       if iszero_row(M,j)
         continue
       end
@@ -113,15 +113,15 @@ function clean_and_quotient(M::T,N::T, pivotindex::Set{Int}) where {T}
         ind+=1
       end
       coeff[i,j]=divexact(N[i,ind], M[j,ind])
-      for s=1:cols(N)
+      for s=1:ncols(N)
         N[i,s]-=coeff[i,j]*M[j,s]
       end
     end
   end 
-  vec= zero_matrix(parent(M[1,1]),rows(N),cols(M)-length(pivotindex))
-  for i=1:rows(N)  
+  vec= zero_matrix(parent(M[1,1]),nrows(N),ncols(M)-length(pivotindex))
+  for i=1:nrows(N)  
     pos=0
-    for s=1:cols(M)
+    for s=1:ncols(M)
       if !(s in pivotindex)
         pos+=1
         vec[i,pos]=N[i,s]
@@ -141,7 +141,7 @@ function _split(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
   equot=Array{fq_nmod_mat,1}(undef, length(G))
   esub=Array{fq_nmod_mat,1}(undef, length(G))
   pivotindex=Set{Int}()
-  for i=1:rows(C)
+  for i=1:nrows(C)
     ind=1
     while iszero(C[i,ind])
       ind+=1
@@ -151,12 +151,12 @@ function _split(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
   for a=1:length(G)
     subm,vec=clean_and_quotient(C, C*G[a],pivotindex)
     esub[a]=subm
-    s=zero_matrix(parent(C[1,1]),cols(G[1])-length(pivotindex),cols(G[1])-length(pivotindex))
+    s=zero_matrix(parent(C[1,1]),ncols(G[1])-length(pivotindex),ncols(G[1])-length(pivotindex))
     pos=0
-    for i=1:rows(G[1])
+    for i=1:nrows(G[1])
       if !(i in pivotindex)
-        m,vec=clean_and_quotient(C,sub(G[a],i:i,1:rows(G[1])),pivotindex)
-        for j=1:cols(vec)
+        m,vec=clean_and_quotient(C,sub(G[a],i:i,1:nrows(G[1])),pivotindex)
+        for j=1:ncols(vec)
           s[i-pos,j]=vec[1,j]
         end
       else 
@@ -177,7 +177,7 @@ function actsub(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
 
   esub=Array{fq_nmod_mat,1}(undef, length(G))
   pivotindex=Set{Int}()
-  for i=1:rows(C)
+  for i=1:nrows(C)
     ind=1
     while iszero(C[i,ind])
       ind+=1
@@ -199,7 +199,7 @@ function actquo(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
 
   equot=Array{fq_nmod_mat,1}(undef, length(G))
   pivotindex=Set{Int}()
-  for i=1:rows(C)
+  for i=1:nrows(C)
     ind=1
     while iszero(C[i,ind])
       ind+=1
@@ -207,12 +207,12 @@ function actquo(C::fq_nmod_mat,G::Array{fq_nmod_mat,1})
     push!(pivotindex,ind)   
   end
   for a=1:length(G)
-    s=zero_matrix(parent(C[1,1]),cols(G[1])-length(pivotindex),cols(G[1])-length(pivotindex))
+    s=zero_matrix(parent(C[1,1]),ncols(G[1])-length(pivotindex),ncols(G[1])-length(pivotindex))
     pos=0
-    for i=1:rows(G[1])
+    for i=1:nrows(G[1])
       if !(i in pivotindex)
-        m,vec=clean_and_quotient(C,sub(G[a],i:i,1:rows(G[1])),pivotindex)
-        for j=1:cols(vec)
+        m,vec=clean_and_quotient(C,sub(G[a],i:i,1:nrows(G[1])),pivotindex)
+        for j=1:ncols(vec)
           s[i-pos,j]=vec[1,j]
         end
       else 
@@ -334,7 +334,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
           G1=[T*mat*inv(T) for mat in M.G]
           i=2
           E=fq_nmod_mat[eye(T,a)]
-          while rows(U)!= a
+          while nrows(U)!= a
             w= sub(kerA, i:i, 1:n)
             z= cleanvect(U,w)
             if iszero(z)
@@ -351,7 +351,7 @@ function isisomorphic(M::FqGModule,N::FqGModule)
             else 
               break
             end
-            if rows(U)==a
+            if nrows(U)==a
               M.dim_spl_fld=a
               found=true
               break
@@ -403,7 +403,7 @@ end
 
 
 #function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
-#  X = zero_matrix(base_ring(A), cols(B), rows(A))
+#  X = zero_matrix(base_ring(A), ncols(B), nrows(A))
 #
 #  #println("solving\n $A \n = $B * X")
 #  r, per, L, U = lu(B) # P*M1 = L*U
@@ -415,8 +415,8 @@ end
 #
 #  #println("first solve\n $Ap = $L * Y")
 #
-#  for i in 1:cols(Y)
-#    for j in 1:rows(Y)
+#  for i in 1:ncols(Y)
+#    for j in 1:nrows(Y)
 #      s = Ap[j, i]
 #      for k in 1:j-1
 #        s = s - Y[k, i]*L[j, k]
@@ -429,7 +429,7 @@ end
 #
 #  #println("solving \n $Y \n = $U * X")
 #
-#  YY = sub(Y, 1:r, 1:cols(Y))
+#  YY = sub(Y, 1:r, 1:ncols(Y))
 #  UU = sub(U, 1:r, 1:r)
 #  X = inv(UU)*YY
 #
@@ -572,15 +572,15 @@ function meataxe(M::FqGModule)
           #  Norton test
           #   
           B=closure(transpose(view(kern,1:n, 1:1)),M.G)
-          if rows(B)!=n
+          if nrows(B)!=n
             M.isirreducible=false
             return false, B
           end
           kernt=nullspace(N)[2]
           Bt=closure(transpose(view(kernt,1:n,1:1)),Gt)
-          if rows(Bt)!=n
+          if nrows(Bt)!=n
             subst=transpose(nullspace(Bt)[2])
-            @assert rows(subst)==rows(closure(subst,G))
+            @assert nrows(subst)==nrows(closure(subst,G))
             M.isirreducible=false
             return false, subst
           end
@@ -638,10 +638,10 @@ function composition_series(M::FqGModule)
     list[i]=sub_list[i]*C
   end
   for z=1:length(quot_list)
-    s=zero_matrix(K,rows(quot_list[z]), cols(C))
-    for i=1:rows(quot_list[z])
+    s=zero_matrix(K,nrows(quot_list[z]), ncols(C))
+    for i=1:nrows(quot_list[z])
       pos=0
-      for j=1:cols(C)
+      for j=1:ncols(C)
         if j in pivotindex
           pos+=1
         else
@@ -750,7 +750,7 @@ function _relations(M::FqGModule, N::FqGModule)
   X=B
   push!(matrices, identity_matrix(base_ring(B), N.dim))
   i=1
-  while i<=rows(B)
+  while i<=nrows(B)
     w=view(B, i:i, 1:n)
     for j=1:length(G)
       v=w*G[j]
@@ -762,7 +762,7 @@ function _relations(M::FqGModule, N::FqGModule)
       else
         x=_solve_unique(transpose(v),transpose(B))
         A = matrices[i]*H[j]
-        for q = 1:rows(x)
+        for q = 1:nrows(x)
           for s = 1:N.dim
             for t = 1:N.dim
               A[s, t] -= x[q, 1]* matrices[q][s,t]
@@ -915,8 +915,8 @@ function submodules(M::FqGModule)
     N, pivotindex = actquo(x,M.G)
     ls=submodules(N)
     for a in ls
-      s=zero_matrix(K,rows(a), M.dim)
-      for t=1:rows(a)
+      s=zero_matrix(K,nrows(a), M.dim)
+      for t=1:nrows(a)
         pos=0
         for j=1:M.dim
           if j in pivotindex
@@ -936,7 +936,7 @@ function submodules(M::FqGModule)
   while i<length(list)
     j=i+1
     while j<=length(list)
-      if rows(list[j])!=rows(list[i])
+      if nrows(list[j])!=nrows(list[i])
         j+=1
       elseif list[j]==list[i]
         deleteat!(list, j)
@@ -1006,8 +1006,8 @@ function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}
         #
         ls=submodules(N,index, comp_factors=lf1)
         for a in ls
-          s=zero_matrix(K,rows(a)+rows(x), M.dim)
-          for t=1:rows(a)
+          s=zero_matrix(K,nrows(a)+nrows(x), M.dim)
+          for t=1:nrows(a)
             pos=0
             for j=1:M.dim
               if j in pivotindex
@@ -1017,9 +1017,9 @@ function submodules(M::FqGModule, index::Int; comp_factors=Tuple{FqGModule, Int}
               end
             end
           end
-          for t=rows(a)+1:rows(s)
-            for j=1:cols(s)
-              s[t,j]=x[t-rows(a),j]
+          for t=nrows(a)+1:nrows(s)
+            for j=1:ncols(s)
+              s[t,j]=x[t-nrows(a),j]
             end
           end
           push!(list,s)

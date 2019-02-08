@@ -96,9 +96,9 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
   RG=rels(G)
   RC=rels(C)
 
-  A=vcat(RC, MatrixSpace(FlintZZ, ngens(G)+ngens(U), cols(RC))())
-  B=vcat(MatrixSpace(FlintZZ, ngens(C), cols(RG))(), RG)
-  B=vcat(B, MatrixSpace(FlintZZ, ngens(U) , cols(RG))())
+  A=vcat(RC, MatrixSpace(FlintZZ, ngens(G)+ngens(U), ncols(RC))())
+  B=vcat(MatrixSpace(FlintZZ, ngens(C), ncols(RG))(), RG)
+  B=vcat(B, MatrixSpace(FlintZZ, ngens(U) , ncols(RG))())
  
 #
 # We compute the relation matrix given by the image of the map U -> (O/m)^*
@@ -110,7 +110,7 @@ function ray_class_group_std(m::NfOrdIdl, primes::Array{InfPlc,1}=InfPlc[])
       a=hcat(a, (lH(K(u))).coeff)
     end 
     for j=1:ngens(G)
-      B[i+rows(RC)+rows(RG),j]=a[1,j]
+      B[i+nrows(RC)+nrows(RG),j]=a[1,j]
     end
   end 
 

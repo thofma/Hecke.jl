@@ -24,6 +24,8 @@ dense_matrix_type(::Type{arb}) = arb_mat
 
 dense_matrix_type(::Type{acb}) = acb_mat
 
+dense_matrix_type(::Type{gfp_elem}) = gfp_mat
+
 dense_matrix_type(::Type{T}) where {T} = Generic.Mat{T}
 
 coefficient_type(::Type{fmpz_mat}) = fmpz
@@ -39,6 +41,8 @@ coefficient_type(::Type{fq_mat}) = fq
 coefficient_type(::Type{arb_mat}) = arb
 
 coefficient_type(::Type{acb_mat}) = acb
+
+coefficient_type(::Type{gfp_mat}) = gfp_elem
 
 coefficient_type(::Type{Generic.Mat{T}}) where {T} = T
 
@@ -67,7 +71,7 @@ function saturate(A::fmpz_mat)
 
   H = hnf(A')
   H = H'
-  Hi, d = pseudo_inv(sub(H, 1:rows(H), 1:rows(H)))
+  Hi, d = pseudo_inv(sub(H, 1:nrows(H), 1:nrows(H)))
   S = Hi*A
   Sd = divexact(S, d)
 #  @hassert :HNF 1  d*Sd == S
@@ -106,9 +110,9 @@ function matrix(A::Array{T, 1}) where T <: RingElem
 end
 
 function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
-  A = Array{T}(undef, rows(a), cols(a))
-  for i = 1:rows(a)
-    for j = 1:cols(a)
+  A = Array{T}(undef, nrows(a), ncols(a))
+  for i = 1:nrows(a)
+    for j = 1:ncols(a)
       A[i,j] = T(a[i,j])
     end 
   end
@@ -116,7 +120,7 @@ function Array(a::fmpz_mat; S::Type{T} = fmpz) where T
 end
 
 function iszero_row(M::fmpz_mat, i::Int)
-  for j = 1:cols(M)
+  for j = 1:ncols(M)
     if M[i,j] != 0 
       return false
     end
@@ -126,7 +130,7 @@ end
 
 function iszero_row(M::nmod_mat, i::Int)
   zero = UInt(0)
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     t = ccall((:nmod_mat_get_entry, :libflint), Base.GMP.Limb, (Ref{nmod_mat}, Int, Int), M, i - 1, j - 1)
     if t != zero
       return false
@@ -137,7 +141,7 @@ end
 
 
 function iszero_row(M::MatElem{T}, i::Int) where T
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     if !iszero(M[i,j])
       return false
     end
@@ -189,7 +193,7 @@ end
 #
 function modular_hnf(m::fmpz, a::fmpz_mat, shape::Symbol = :upperright)
   c = vcat(parent(a)(m), a)
-  n = cols(a)
+  n = ncols(a)
   w = view(c, n+1, 1, 2*n, n)
   ccall((:fmpz_mat_scalar_mod_fmpz, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}, Ref{fmpz}), w, w, m)
   if shape == :lowerleft
@@ -225,7 +229,7 @@ function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
 end
 
 function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
-   (rows(x) < cols(x)) &&
+   (nrows(x) < ncols(x)) &&
                 error("Matrix must have at least as many rows as columns")
    ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
                 (Ref{fmpz_mat}, Ref{fmpz}), x, d)
@@ -236,17 +240,17 @@ function ishnf(x::fmpz_mat, shape::Symbol)
   if shape == :upperright
     return ishnf(x)
   elseif shape == :lowerleft
-    r = rows(x)
+    r = nrows(x)
     i = 0
-    j_old = cols(x) + 1
+    j_old = ncols(x) + 1
 
-    for outer i in rows(x):-1:1
+    for outer i in nrows(x):-1:1
 
       if iszero_row(x, i)
         break
       end
 
-      j = cols(x)
+      j = ncols(x)
       while iszero(x[i, j])
         j = j - 1
       end
@@ -267,7 +271,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
   end
 end
 
-function _swaprows(x::fmpz_mat)
+function _swapnrows(x::fmpz_mat)
   y = deepcopy(x)
   _swaprows!(y)
   return y
@@ -280,8 +284,8 @@ function _swapcols(x::fmpz_mat)
 end
 
 function _swaprows!(x::fmpz_mat)
-  r = rows(x)
-  c = cols(x)
+  r = nrows(x)
+  c = ncols(x)
 
   if r == 1
     return x
@@ -321,8 +325,8 @@ end
   
 
 function _swaprows!(x::nmod_mat)
-  r = rows(x)
-  c = cols(x)
+  r = nrows(x)
+  c = ncols(x)
 
   if r == 1
     return nothing
@@ -353,8 +357,8 @@ function _swaprows!(x::nmod_mat)
 end
 
 function _swapcols!(x::nmod_mat)
-  r = rows(x)
-  c = cols(x)
+  r = nrows(x)
+  c = ncols(x)
 
   if c == 1
     return nothing
@@ -385,8 +389,8 @@ function _swapcols!(x::nmod_mat)
 end
 
 function _swapcols!(x::fmpz_mat)
-  r = rows(x)
-  c = cols(x)
+  r = nrows(x)
+  c = ncols(x)
 
   if c == 1
     return x
@@ -421,8 +425,8 @@ function _swapcols(x::Generic.Mat)
 end
 
 function _swapcols!(x::Generic.Mat)
-  r = rows(x)
-  c = cols(x)
+  r = nrows(x)
+  c = ncols(x)
   t = base_ring(x)(0)
 
   if c == 1
@@ -447,15 +451,15 @@ function _swapcols!(x::Generic.Mat)
   nothing
 end
 
-function _swaprows(x::Generic.Mat)
+function _swapnrows(x::Generic.Mat)
   z = deepcopy(x)
-  _swaprows(z)
+  _swapnrows(z)
   return z
 end
 
 function _swaprows!(x::Generic.Mat)
-  r = rows(x)
-  c = cols(x)
+  r = nrows(x)
+  c = ncols(x)
 
   if r == 1
     return x
@@ -484,8 +488,8 @@ end
 
 function maximum(f::typeof(abs), a::fmpz_mat)
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
-  for i=1:rows(a)
-    for j=1:cols(a)
+  for i=1:nrows(a)
+    for j=1:ncols(a)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
       if ccall((:fmpz_cmpabs, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
         m = z
@@ -499,8 +503,8 @@ end
 
 function maximum(a::fmpz_mat)  
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
-  for i=1:rows(a)
-    for j=1:cols(a)
+  for i=1:nrows(a)
+    for j=1:ncols(a)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
       if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) < 0
         m = z
@@ -514,8 +518,8 @@ end
 
 function minimum(a::fmpz_mat) 
   m = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, 0,0)
-  for i=1:rows(a)
-    for j=1:cols(a)
+  for i=1:nrows(a)
+    for j=1:ncols(a)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), a, i-1, j-1)
       if ccall((:fmpz_cmp, :libflint), Cint, (Ptr{fmpz}, Ptr{fmpz}), m, z) > 0
         m = z
@@ -528,7 +532,7 @@ function minimum(a::fmpz_mat)
 end
 
 function lift_unsigned(a::nmod_mat)
-  z = zero_matrix(FlintZZ, rows(a), cols(a))
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
           (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
   return z
@@ -553,7 +557,7 @@ end
 # look at flint documentation of nmod_mat_nullspace
 
 function _right_kernel(x::T) where {T <: Zmodn_mat}
-  z = zero_matrix(base_ring(x), cols(x), max(rows(x),cols(x)))
+  z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{T}, Ref{T}), z, x)
   return z, n
 end
@@ -567,10 +571,10 @@ function kernel(a)
   z, n = _right_kernel(x)
   z = transpose(z)
   T = elem_type(base_ring(a))
-  ar = typeof(Array{T}(undef, cols(z)))[]
+  ar = typeof(Array{T}(undef, ncols(z)))[]
   for i in 1:n 
-    t = Array{T}(undef, cols(z))
-    for j in 1:cols(z)
+    t = Array{T}(undef, ncols(z))
+    for j in 1:ncols(z)
       t[j] = R(z[i, j])
     end
     push!(ar,t)
@@ -594,10 +598,10 @@ function right_kernel(a::MatElem)
     z = nn
   end
   T = elem_type(base_ring(a))
-  ar = typeof(Array{T}(undef, rows(z)))[]
+  ar = typeof(Array{T}(undef, nrows(z)))[]
   for i in 1:n
-    t = Array{T}(undef, rows(z))
-    for j in 1:rows(z)
+    t = Array{T}(undef, nrows(z))
+    for j in 1:nrows(z)
       t[j] = R(z[j, i])
     end
     push!(ar,t)
@@ -608,9 +612,9 @@ end
 left_kernel(a::MatElem) = right_kernel(transpose(a))
 
 function lift(a::Generic.Mat{Generic.Res{fmpz}})
-  z = zero_matrix(FlintZZ, rows(a), cols(a))
-  for i in 1:rows(a)
-    for j in 1:cols(a)
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
       z[i, j] = lift(a[i, j])
     end
   end
@@ -625,9 +629,9 @@ end
 
 function _rref(a::Generic.Mat{Generic.Res{fmpz}})
   m = modulus(base_ring(a))
-  b = zero_matrix(FlintZZ, rows(a), cols(a))
-  for i in 1:rows(b)
-    for j in 1:cols(b)
+  b = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  for i in 1:nrows(b)
+    for j in 1:ncols(b)
       b[i,j] = lift(a[i,j]) % m
     end
   end
@@ -642,17 +646,17 @@ _rref(a) = rref(a)
 # now inplace
 function _rref!(a::Generic.Mat{Generic.Res{fmpz}})
   m = modulus(base_ring(a))
-  b = zero_matrix(FlintZZ, rows(a), cols(a))
-  for i in 1:rows(b)
-    for j in 1:cols(b)
+  b = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  for i in 1:nrows(b)
+    for j in 1:ncols(b)
       b[i,j] = lift(a[i,j]) % m
     end
   end
 
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  for i in 1:rows(b)
-    for j in 1:cols(b)
+  for i in 1:nrows(b)
+    for j in 1:ncols(b)
       a[i, j] = b[i, j]
     end
   end
@@ -669,8 +673,8 @@ _rref!(a) = rref!(a)
 ################################################################################
 
 function _lu!(P::Generic.perm, A::S) where {S <: MatElem{Generic.Res{fmpz}}}
-   m = rows(A)
-   n = cols(A)
+   m = nrows(A)
+   n = ncols(A)
    rank = 0
    r = 1
    c = 1
@@ -714,9 +718,9 @@ end
 
 _lu!(P::Generic.perm, A) = lu!(P, A)
 
-function _lu(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{fmpz}}}
-   m = rows(A)
-   n = cols(A)
+function _lu(A::S, P = PermGroup(nrows(A))) where {S <: MatElem{Generic.Res{fmpz}}}
+   m = nrows(A)
+   n = ncols(A)
    P.n != m && error("Permutation does not match matrix")
    p = P()
    R = base_ring(A)
@@ -738,17 +742,17 @@ function _lu(A::S, P = PermGroup(rows(A))) where {S <: MatElem{Generic.Res{fmpz}
    return rank, p, L, U
 end
 
-_lu(A, P = PermGroup(rows(A))) = lu(A, P)
+_lu(A, P = PermGroup(nrows(A))) = lu(A, P)
 
 function _right_kernel(a::T) where {T <: Union{Generic.Mat{Generic.Res{fmpz}}, Generic.Mat{Generic.ResF{fmpz}}}}
   r, b = _rref(a)
   pivots = Array{Int}(undef, r)
-  nonpivots = Array{Int}(undef, cols(b) - r)
-  X = zero_matrix(base_ring(a),cols(b),cols(b) - r)
+  nonpivots = Array{Int}(undef, ncols(b) - r)
+  X = zero_matrix(base_ring(a),ncols(b),ncols(b) - r)
 
   if r == 0
-    return vcat(identity_matrix(base_ring(a), cols(b) - r), zero_matrix(base_ring(a), r, cols(b) - r)), cols(b)
-  elseif !((cols(b) - r) == 0)
+    return vcat(identity_matrix(base_ring(a), ncols(b) - r), zero_matrix(base_ring(a), r, ncols(b) - r)), ncols(b)
+  elseif !((ncols(b) - r) == 0)
     i = 1
     j = 1
     k = 1
@@ -761,26 +765,26 @@ function _right_kernel(a::T) where {T <: Union{Generic.Mat{Generic.Res{fmpz}}, G
       pivots[i] = j
       j += 1
     end
-    while k <= cols(b) - r
+    while k <= ncols(b) - r
       nonpivots[k] = j
       k += 1
       j += 1
     end
 
-    for i in 1:cols(b) - r
+    for i in 1:ncols(b) - r
       for j in 1:r
         X[pivots[j],i] = - b[j,nonpivots[i]]
       end
       X[nonpivots[i],i] = 1
     end
   end
-  return X, cols(b) - r
+  return X, ncols(b) - r
 end
 
 function kernel_mod(a::fmpz_mat, m::fmpz)
   b = deepcopy(a)
-  for i in 1:rows(b)
-    for j in 1:cols(b)
+  for i in 1:nrows(b)
+    for j in 1:ncols(b)
       b[i,j] = b[i,j] % m
     end
   end
@@ -788,12 +792,12 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
   # fmpz_mat_rref_mod assumes that input is reduced modulo m
   r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
   pivots = Array{Int}(undef, r)
-  nonpivots = Array{Int}(undef, cols(b) - r)
-  X = zero_matrixSpace(FlintZZ,cols(b),cols(b))
+  nonpivots = Array{Int}(undef, ncols(b) - r)
+  X = zero_matrixSpace(FlintZZ,ncols(b),ncols(b))
 
   if r == 0
-    return identity_matrix(FlintZZ, cols(b))
-  elseif !((cols(b) - r) == 0)
+    return identity_matrix(FlintZZ, ncols(b))
+  elseif !((ncols(b) - r) == 0)
     i = 1
     j = 1
     k = 1
@@ -806,13 +810,13 @@ function kernel_mod(a::fmpz_mat, m::fmpz)
       pivots[i] = j
       j += 1
     end
-    while k <= cols(b) - r
+    while k <= ncols(b) - r
       nonpivots[k] = j
       k += 1
       j += 1
     end
 
-    for i in 1:cols(b) - r
+    for i in 1:ncols(b) - r
       for j in 1:r
         X[pivots[j],i] = - FlintZZ(b[j,nonpivots[i]])
       end
@@ -826,12 +830,12 @@ end
 function _kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
   i = 1
-  for outer i in 1:rows(H)
+  for outer i in 1:nrows(H)
     if iszero_row(H, i)
       break
     end
   end
-  return sub(U, i:rows(U), 1:cols(U))
+  return sub(U, i:nrows(U), 1:ncols(U))
 end
 
 ################################################################################
@@ -842,8 +846,8 @@ end
 
 # Copy B into A at position (i, j)
 function _copy_matrix_into_matrix(A::fmpz_mat, i::Int, j::Int, B::fmpz_mat)
-  for k in 0:rows(B) - 1
-    for l in 0:cols(B) - 1
+  for k in 0:nrows(B) - 1
+    for l in 0:ncols(B) - 1
       d = ccall((:fmpz_mat_entry, :libflint),
                 Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), B, k, l)
       t = ccall((:fmpz_mat_entry, :libflint),
@@ -860,7 +864,7 @@ end
 > have positive determinant.
 """
 function isposdef(a::fmpz_mat)
-  for i=1:rows(a)
+  for i=1:nrows(a)
     if det(sub(a, 1:i, 1:i)) <= 0
       return false
     end
@@ -936,8 +940,8 @@ function round_scale!(b::fmpz_mat, a::arb_mat, l::Int)
 end
 
 function shift!(g::fmpz_mat, l::Int)
-  for i=1:rows(g)
-    for j=1:cols(g)
+  for i=1:nrows(g)
+    for j=1:ncols(g)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), g, i-1, j-1)
       if l > 0
         ccall((:fmpz_mul_2exp, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Int), z, z, l)
@@ -956,8 +960,8 @@ end
 > Reduces every entry modulo $p$ in-place, ie. applies the mod function to every entry.
 """
 function mod!(M::fmpz_mat, p::fmpz)
-  for i=1:rows(M)
-    for j=1:cols(M)
+  for i=1:nrows(M)
+    for j=1:ncols(M)
       z = ccall((:fmpz_mat_entry, :libflint), Ptr{fmpz}, (Ref{fmpz_mat}, Int, Int), M, i - 1, j - 1)
       ccall((:fmpz_mod, :libflint), Nothing, (Ptr{fmpz}, Ptr{fmpz}, Ref{fmpz}), z, z, p)
     end
@@ -984,52 +988,52 @@ end
 > All component matrices need to have the same number of columns.
 """
 function vcat(A::Array{Generic.Mat{T}, 1}) where T
-  if any(x->cols(x) != cols(A[1]), A)
+  if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = zero_matrix(base_ring(A[1]), sum(rows, A), cols(A[1]))
+  M = zero_matrix(base_ring(A[1]), sum(rows, A), ncols(A[1]))
   s = 0
   for i=A
-    for j=1:rows(i)
-      for k=1:cols(i)
+    for j=1:nrows(i)
+      for k=1:ncols(i)
         M[s+j, k] = i[j,k]
       end
     end
-    s += rows(i)
+    s += nrows(i)
   end
   return M
 end
 
 function vcat(A::Array{fmpz_mat, 1})
-  if any(x->cols(x) != cols(A[1]), A)
+  if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = zero_matrix(base_ring(A[1]), sum(rows, A), cols(A[1]))
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
   s = 0
   for i=A
-    for j=1:rows(i)
-      for k=1:cols(i)
+    for j=1:nrows(i)
+      for k=1:ncols(i)
         M[s+j, k] = i[j,k]
       end
     end
-    s += rows(i)
+    s += nrows(i)
   end
   return M
 end
 
 function vcat(A::Array{nmod_mat, 1})
-  if any(x->cols(x) != cols(A[1]), A)
+  if any(x->ncols(x) != ncols(A[1]), A)
     error("Matrices must have same number of columns")
   end
-  M = zero_matrix(base_ring(A[1]), sum(rows, A), cols(A[1]))
+  M = zero_matrix(base_ring(A[1]), sum(nrows, A), ncols(A[1]))
   s = 0
   for i=A
-    for j=1:rows(i)
-      for k=1:cols(i)
+    for j=1:nrows(i)
+      for k=1:ncols(i)
         M[s+j, k] = i[j,k]
       end
     end
-    s += rows(i)
+    s += nrows(i)
   end
   return M
 end
@@ -1057,11 +1061,11 @@ then U*[ a 0; 0 b] * V = [g 0 ; 0 l]
 """
 function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
   if r
-    R = identity_matrix(FlintZZ, cols(A))
+    R = identity_matrix(FlintZZ, ncols(A))
   end
 
   if l
-    L = identity_matrix(FlintZZ, rows(A))
+    L = identity_matrix(FlintZZ, nrows(A))
   end
   # TODO: if only one trafo is required, start with the HNF that does not
   #       compute the trafo
@@ -1088,11 +1092,11 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
     S = S'
   end
   #this is probably not really optimal...
-  for i=1:min(rows(S), cols(S))
+  for i=1:min(nrows(S), ncols(S))
     if S[i,i] == 1
       continue
     end
-    for j=i+1:min(rows(S), cols(S))
+    for j=i+1:min(nrows(S), ncols(S))
       if S[j,j] == 0
         continue
       end
@@ -1109,7 +1113,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
         # so row i and j of L will be transformed. We do it naively
         # those 2x2 transformations of 2 rows should be a c-primitive
         # or at least a Nemo/Hecke primitive
-        for k=1:cols(L)
+        for k=1:ncols(L)
           x = -b*f
 #          L[i,k], L[j,k] = L[i,k]+L[j,k], x*L[i,k]+(x+1)*L[j,k]
           L[i,k], L[j,k] = L[i,k]+L[j,k], x*(L[i,k]+L[j,k])+L[j,k]
@@ -1119,7 +1123,7 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
         # V = [e -b ; f a];
         # so col i and j of R will be transformed. We do it naively
         # careful: at this point, R is still transposed
-        for k=1:rows(R)
+        for k=1:nrows(R)
           R[i, k], R[j, k] = e*R[i,k]+f*R[j,k], -b*R[i,k]+a*R[j,k]
         end
       end
@@ -1145,35 +1149,35 @@ end
 function nullspace(M::nmod_mat)
   R = base_ring(M)
   if isprime(fmpz(modulus(R)))
-    k = zero_matrix(R, cols(M), cols(M))
+    k = zero_matrix(R, ncols(M), ncols(M))
     n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
     return (n, k)
   end
 
-  N = hcat(M', identity_matrix(R, cols(M)))
+  N = hcat(M', identity_matrix(R, ncols(M)))
   ex = 0
-  if rows(N) < cols(N)
-    ex = cols(N) - rows(N)
-    N = vcat(N, zero_matrix(R, ex, cols(N)))
+  if nrows(N) < ncols(N)
+    ex = ncols(N) - nrows(N)
+    N = vcat(N, zero_matrix(R, ex, ncols(N)))
   end
   H = howell_form(N)
   nr = 1
-  while nr <= rows(H) && !iszero_row(H, nr)
+  while nr <= nrows(H) && !iszero_row(H, nr)
     nr += 1
   end
   nr -= 1
-  h = sub(H, 1:nr, 1:rows(M))
-  for i=1:rows(h)
+  h = sub(H, 1:nr, 1:nrows(M))
+  for i=1:nrows(h)
     if iszero_row(h, i)
-      k = sub(H, i:rows(h), rows(M)+1:cols(H))
-      return rows(k), k'
+      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+      return nrows(k), k'
     end
   end
-  return 0, zero_matrix(R,rows(M),0)
+  return 0, zero_matrix(R,nrows(M),0)
 end
 
 function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,Generic.Mat{Generic.Res{fmpz}}})
-  @assert M.cols == cols(Mp) && M.rows == rows(Mp)
+  @assert M.cols == ncols(Mp) && M.rows == nrows(Mp)
   N = M()
   for i=1:M.rows
     for j=1:M.cols
@@ -1196,8 +1200,8 @@ end
 > Tests if A is diagonal.
 """
 function isdiag(A::fmpz_mat)
-  for i = 1:cols(A)
-    for j = 1:rows(A)
+  for i = 1:ncols(A)
+    for j = 1:nrows(A)
       if i != j && !iszero(A[j, i])
         return false
       end
@@ -1214,9 +1218,9 @@ end
 
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
 function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
-  m = rows(A)
-  n = cols(A)
-  @assert m == rows(b)
+  m = nrows(A)
+  n = ncols(A)
+  @assert m == nrows(b)
   @assert m <= n
   x = similar(A, n, 1)
   pivot_cols = Vector{Int}()
@@ -1243,9 +1247,9 @@ end
 
 # Solves A x = b for A lower triangular m\times n matrix and b m\times 1.
 function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
-  m = rows(A)
-  n = cols(A)
-  @assert m == rows(b)
+  m = nrows(A)
+  n = ncols(A)
+  @assert m == nrows(b)
   @assert m <= n
   x = similar(A, n, 1)
   pivot_cols = Vector{Int}()
@@ -1277,14 +1281,14 @@ end
 # TODO: re-write for special types (fmpz_mat e.g.) to gain efficiency
 #
 
-length(A::Nemo.MatElem) = rows(A) * cols(A)
+length(A::Nemo.MatElem) = nrows(A) * ncols(A)
 Base.ndims(A::Nemo.MatElem) = 2
 
 function Base.size(A::Nemo.MatElem, n::Int)
   if n == 1
-    return rows(A)
+    return nrows(A)
   elseif n == 2
-    return cols(A)
+    return ncols(A)
   elseif n < 1
     error("arraysize: dimension out of range")
   else
@@ -1293,7 +1297,7 @@ function Base.size(A::Nemo.MatElem, n::Int)
 end
 
 function Base.axes(A::Nemo.MatElem)
-  return (Base.OneTo(rows(A)), Base.OneTo(cols(A)))
+  return (Base.OneTo(nrows(A)), Base.OneTo(ncols(A)))
 end
 
 function Base.axes(A::Nemo.MatElem, n::Int)
@@ -1308,7 +1312,7 @@ function Base.stride(A::Nemo.MatElem, n::Int)
   if n <= 1
     return 1
   elseif n == 2
-    return rows(A)
+    return nrows(A)
   else
     return length(A)
   end
@@ -1316,10 +1320,10 @@ end
 
 Base.eltype(A::Nemo.MatElem{T}) where T <: Nemo.RingElem = T
 
-getindex(A::Nemo.MatElem, n::Int) = A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))]
+getindex(A::Nemo.MatElem, n::Int) = A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))]
 
 function setindex!(A::Nemo.MatElem{T}, n::Int, s::T) where T <: RingElem
-  A[1 + ((n-1) % rows(A)), 1 + div((n-1), rows(A))] = s
+  A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))] = s
 end
 
 function Base.iterate(A::Nemo.MatElem, state::Int = 0) 
@@ -1336,68 +1340,68 @@ Base.IteratorEltype(M::Nemo.MatElem) = Base.HasEltype()
 Base.eltype(M::Nemo.MatElem) = elem_type(base_ring(M))
 
 function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) where T
-  @assert cols(b) == 1 && rows(b) == rows(A) 
-  for j=1:rows(A)
+  @assert ncols(b) == 1 && nrows(b) == nrows(A) 
+  for j=1:nrows(A)
     A[j,i] = b[j]
   end
   b
 end
 
 function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, i::Int, ::Colon) where T
-  @assert rows(b) == 1 && cols(b) == cols(A)
-  for j=1:cols(A)
+  @assert nrows(b) == 1 && ncols(b) == ncols(A)
+  for j=1:ncols(A)
     A[i,j] = b[j]
   end
   b
 end
 
 function setindex!(A::Nemo.MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
-  @assert length(b) == rows(A)
-  for j=1:rows(A)
+  @assert length(b) == nrows(A)
+  for j=1:nrows(A)
     A[j,i] = b[j]
   end
   b
 end
 
 function setindex!(A::Nemo.MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
-  @assert length(b) == cols(A)
-  for j=1:cols(A)
+  @assert length(b) == ncols(A)
+  for j=1:ncols(A)
     A[i,j] = b[j]
   end
   b
 end
 
 function setindex!(A::Nemo.MatElem, b, ::Colon, i::Int) 
-  for j=1:rows(A)
+  for j=1:nrows(A)
     A[j,i] = b
   end
   b
 end
 
 function setindex!(A::Nemo.MatElem, b, i::Int, ::Colon)
-  for j=1:cols(A)
+  for j=1:ncols(A)
     A[i,j] = b
   end
   b
 end
 
 
-getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:cols(A)]
-getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:rows(A), i:i]
+getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
+getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 
 function Base.hcat(A::Nemo.MatElem...)
-  r = rows(A[1])
-  c = cols(A[1])
+  r = nrows(A[1])
+  c = ncols(A[1])
   R = base_ring(A[1])
   for i=2:length(A)
-    @assert rows(A[i]) == r
+    @assert nrows(A[i]) == r
     @assert base_ring(A[i]) == R
-    c += cols(A[i])
+    c += ncols(A[i])
   end
   X = zero_matrix(R, r, c)
   o = 1
   for i=1:length(A)
-    for j=1:cols(A[i])
+    for j=1:ncols(A[i])
       X[:, o] = A[i][:, j]
       o += 1
     end
@@ -1406,18 +1410,18 @@ function Base.hcat(A::Nemo.MatElem...)
 end
 
 function Base.vcat(A::Nemo.MatElem...)
-  r = rows(A[1])
-  c = cols(A[1])
+  r = nrows(A[1])
+  c = ncols(A[1])
   R = base_ring(A[1])
   for i=2:length(A)
-    @assert cols(A[i]) == c
+    @assert ncols(A[i]) == c
     @assert base_ring(A[i]) == R
-    r += rows(A[i])
+    r += nrows(A[i])
   end
   X = zero_matrix(R, r, c)
   o = 1
   for i=1:length(A)
-    for j=1:rows(A[i])
+    for j=1:nrows(A[i])
       X[o, :] = A[i][j, :]
       o += 1
     end
@@ -1469,9 +1473,9 @@ end
 """
 function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
   @assert isrref(B)
-  for h=1:rows(A)
+  for h=1:nrows(A)
     j = 1
-    for i=1:rows(B)
+    for i=1:nrows(B)
       while iszero(B[i, j])
         j += 1
       end
@@ -1502,14 +1506,14 @@ function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
   @assert isrref(A)
   p = Int[]
   j = 0
-  for i=1:rows(A)
+  for i=1:nrows(A)
     j += 1
-    if j > cols(A)
+    if j > ncols(A)
       return p
     end
     while iszero(A[i,j])
       j += 1
-      if j > cols(A)
+      if j > ncols(A)
         return p
       end
     end
@@ -1525,17 +1529,17 @@ end
 function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
   R = base_ring(A)
   @assert R == base_ring(B)
-  @assert rows(A) == rows(B)
+  @assert nrows(A) == nrows(B)
   mu = [A B]
   rk, mu = rref(mu)
   p = find_pivot(mu)
-  if any(i->i>cols(A), p)
+  if any(i->i>ncols(A), p)
     return false, B
   end
-  sol = zero_matrix(R, cols(A), cols(B))
+  sol = zero_matrix(R, ncols(A), ncols(B))
   for i = 1:length(p)
-    for j = 1:cols(B)
-      sol[p[i], j] = mu[i, cols(A) + j]
+    for j = 1:ncols(B)
+      sol[p[i], j] = mu[i, ncols(A) + j]
     end
   end
   return true, sol
@@ -1548,23 +1552,23 @@ end
 function Nemo.cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
   R = base_ring(A)
   @assert R == base_ring(B)
-  @assert rows(A) == rows(B)
+  @assert nrows(A) == nrows(B)
   mu = [A B]
   rk, mu = rref(mu)
   p = find_pivot(mu)
-  if any(i->i>cols(A), p)
+  if any(i->i>ncols(A), p)
     return false, B, B
   end
-  sol = zero_matrix(R, cols(A), cols(B))
+  sol = zero_matrix(R, ncols(A), ncols(B))
   for i = 1:length(p)
-    for j = 1:cols(B)
-      sol[p[i], j] = mu[i, cols(A) + j]
+    for j = 1:ncols(B)
+      sol[p[i], j] = mu[i, ncols(A) + j]
     end
   end
-  n = zero_matrix(R, cols(A), cols(A) - length(p))
-  np = sort(setdiff(1:cols(A), p))
+  n = zero_matrix(R, ncols(A), ncols(A) - length(p))
+  np = sort(setdiff(1:ncols(A), p))
   i = 0
-  push!(p, cols(A)+1)
+  push!(p, ncols(A)+1)
   for j = 1:length(np)
     if np[j] >= p[i+1]
       i += 1
@@ -1587,26 +1591,26 @@ end
 function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
   R = base_ring(a)
   @assert R == base_ring(b)
-  @assert rows(a) == rows(b)
+  @assert nrows(a) == nrows(b)
 
   H, T = hnf_with_trafo(transpose(a))
   b = deepcopy(b)
-  z = similar(a, cols(b), cols(a))
-  l = min(rows(a), cols(a))
-  for i = 1:cols(b)
+  z = similar(a, ncols(b), ncols(a))
+  l = min(nrows(a), ncols(a))
+  for i = 1:ncols(b)
     for j = 1:l
       k = 1
-      while k <= cols(H) && iszero(H[j, k])
+      while k <= ncols(H) && iszero(H[j, k])
         k += 1
       end
-      if k > cols(H)
+      if k > ncols(H)
         continue
       end
       q, r = divrem(b[k, i], H[j, k])
       if !iszero(r)
         return false, b
       end
-      for h = k:cols(H)
+      for h = k:ncols(H)
         b[h, i] -= q*H[j, h]
       end
       z[i, j] = q
@@ -1626,25 +1630,25 @@ end
 function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
   R = base_ring(a)
   @assert R == base_ring(b)
-  @assert rows(a) == rows(b)
+  @assert nrows(a) == nrows(b)
 
   H, T = hnf_with_trafo(transpose(a))
-  z = similar(a, cols(b), cols(a))
-  l = min(rows(a), cols(a))
-  for i=1:cols(b)
+  z = similar(a, ncols(b), ncols(a))
+  l = min(nrows(a), ncols(a))
+  for i=1:ncols(b)
     for j=1:l
       k = 1
-      while k <= cols(H) && iszero(H[j, k])
+      while k <= ncols(H) && iszero(H[j, k])
         k += 1
       end
-      if k > cols(H)
+      if k > ncols(H)
         continue
       end
       q, r = divrem(b[k, i], H[j, k])
       if !iszero(r)
         return false, b, b
       end
-      for h=k:cols(H)
+      for h=k:ncols(H)
         b[h, i] -= q*H[j, h]
       end
       z[i, k] = q
@@ -1654,20 +1658,20 @@ function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) wh
     return false, b, b
   end
 
-  for i = rows(H):-1:1
-    for j = 1:cols(H)
+  for i = nrows(H):-1:1
+    for j = 1:ncols(H)
       if !iszero(H[i,j])
-        N = similar(a, cols(a), rows(H) - i)
-        for k = 1:rows(N)
-          for l = 1:cols(N)
-            N[k,l] = T[rows(T) - l + 1, k]
+        N = similar(a, ncols(a), nrows(H) - i)
+        for k = 1:nrows(N)
+          for l = 1:ncols(N)
+            N[k,l] = T[nrows(T) - l + 1, k]
           end
         end
         return true, transpose(z*T), N
       end
     end
   end
-  N =  similar(a, cols(a), 0)
+  N =  similar(a, ncols(a), 0)
 
   return true, (z*T), N
 end
@@ -1678,7 +1682,7 @@ end
 """
 function elementary_divisors(A::fmpz_mat)
   s = snf(A)
-  return [s[i,i] for i=1:min(cols(s), rows(s))]
+  return [s[i,i] for i=1:min(ncols(s), nrows(s))]
 end
 
 @doc Markdown.doc"""
@@ -1696,7 +1700,7 @@ end
 ################################################################################
 
 function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
-  X = zero_matrix(base_ring(A), cols(B), rows(A))
+  X = zero_matrix(base_ring(A), ncols(B), nrows(A))
 
   r, per, L, U = lu(B) # P*M1 = L*U
 
@@ -1705,8 +1709,8 @@ function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
   Ap = inv(per)*A
   Y = similar(A)
 
-  for i in 1:cols(Y)
-    for j in 1:rows(Y)
+  for i in 1:ncols(Y)
+    for j in 1:nrows(Y)
       s = Ap[j, i]
       for k in 1:j-1
         s = s - Y[k, i]*L[j, k]
@@ -1717,7 +1721,7 @@ function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
 
   #@assert Ap == L*Y
 
-  YY = sub(Y, 1:r, 1:cols(Y))
+  YY = sub(Y, 1:r, 1:ncols(Y))
   UU = sub(U, 1:r, 1:r)
   X = inv(UU)*YY
 
@@ -1734,10 +1738,10 @@ end
 ################################################################################
 
 function to_array(M::fmpq_mat)
-  A = Vector{fmpq}(undef, cols(M)*rows(M))
-  for i = 1:rows(M)
-    for j = 1:cols(M)
-      A[(i-1)*cols(M) + j] = M[i, j]
+  A = Vector{fmpq}(undef, ncols(M)*nrows(M))
+  for i = 1:nrows(M)
+    for j = 1:ncols(M)
+      A[(i-1)*ncols(M) + j] = M[i, j]
     end
   end
   return A

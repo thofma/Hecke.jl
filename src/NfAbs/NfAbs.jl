@@ -417,7 +417,7 @@ function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   f1 = evaluate(f, x)
   r = roots(f1, max_roots = 1, isnormal = true)
   if length(r) > 0
-    h = parent(L.pol)(r)
+    h = parent(L.pol)(r[1])
     return true, h(gen(L))
   else
     return false, L()

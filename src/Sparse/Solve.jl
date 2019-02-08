@@ -1,6 +1,6 @@
 function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   # Works also for non-square matrices
-  #@hassert :HNF 1  cols(A) == rows(A)
+  #@hassert :HNF 1  ncols(A) == nrows(A)
   @hassert :HNF 2  isupper_triangular(A)
   # assumes A is upper triangular, reduces g modulo A to zero and collects
   # the transformation
@@ -11,10 +11,10 @@ function cansolve_ut(A::SMat{T}, g::SRow{T}) where T <: Union{FieldElem, nmod}
   while length(g)>0
     s = g.pos[1]
     j = 1
-    while j<= rows(A) && A.rows[j].pos[1] < s
+    while j<= nrows(A) && A.rows[j].pos[1] < s
       j += 1
     end  
-    if j > rows(A) || A.rows[j].pos[1] > s
+    if j > nrows(A) || A.rows[j].pos[1] > s
       break
     end
     @hassert :HNF 2  A.rows[j].pos[1] == g.pos[1]
@@ -342,10 +342,10 @@ end
 
 function echelon!(S::SMat{T}) where T <: FieldElem
   i = 1
-  while i <= rows(S)
-    m = cols(S)+1
+  while i <= nrows(S)
+    m = ncols(S)+1
     mp = 0
-    for j=i:rows(S)
+    for j=i:nrows(S)
       if m > S[j].pos[1]
         m = S[j].pos[1]
         mp = j
@@ -359,7 +359,7 @@ function echelon!(S::SMat{T}) where T <: FieldElem
     end
     Si = -inv(S[i].values[1])
     j = i+1
-    while j <= rows(S)
+    while j <= nrows(S)
       if S[j].pos[1] == m
         add_scaled_row!(S, i, j, S[j].values[1]*Si)
         if length(S[j].values) == 0
@@ -384,9 +384,9 @@ end
 function Nemo.cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
   echelon!(c)
-  fl, sol = cansolve_ut(sub(c, 1:rows(c), 1:a.c), b)
+  fl, sol = cansolve_ut(sub(c, 1:nrows(c), 1:a.c), b)
   if fl
-    return fl, mul(sol, sub(c, 1:rows(c), a.c+1:c.c))
+    return fl, mul(sol, sub(c, 1:nrows(c), a.c+1:c.c))
   else
     return fl, sol
   end  

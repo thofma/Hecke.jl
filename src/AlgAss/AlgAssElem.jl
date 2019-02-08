@@ -18,7 +18,12 @@ parent(a::AbsAlgAssElem) = a.parent
 
 zero(A::AbsAlgAss) = A()
 
-one(A::AbsAlgAss) = A(deepcopy(A.one)) # deepcopy needed by mul!
+function one(A::AbsAlgAss)
+  if !has_one(A)
+    error("Algebra does not have a one")
+  end
+  return A(deepcopy(A.one)) # deepcopy needed by mul!
+end
 
 ################################################################################
 #
@@ -354,7 +359,12 @@ end
 #
 ################################################################################
 
-(A::AlgAss{T})() where {T} = AlgAssElem{T, AlgAss{T}}(A)
+function (A::AlgAss{T})() where {T}
+  if iszero(A)
+    return A(T[])
+  end
+  return AlgAssElem{T, AlgAss{T}}(A)
+end
 
 (A::AlgGrp{T, S, R})() where {T, S, R} = AlgGrpElem{T, typeof(A)}(A)
 
@@ -368,8 +378,12 @@ function Base.getindex(A::AbsAlgAss{T}, i::Int) where {T}
   basis(A)[i]
 end
 
-function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
-  length(c) != dim(A) && error("Dimensions don't match.")
+#function (A::AlgGrp{T, S, R})(c::Array{T, 1}) where {T, S, R}
+#  length(c) != dim(A) && error("Dimensions don't match.")
+#  return AlgGrpElem{T, typeof(A)}(A, c)
+#end
+
+function (A::AlgGrp{T, S, R})(c::R) where {T, S, R}
   return AlgGrpElem{T, typeof(A)}(A, c)
 end
 
@@ -472,7 +486,7 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::MatElem{T}, i::Int, a::AbsAlgAssElem{T}) where T
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     M[i, c] = deepcopy(a.coeffs[c])
   end
   return nothing
@@ -480,7 +494,7 @@ end
 
 function elem_from_mat_row(A::AbsAlgAss{T}, M::MatElem{T}, i::Int) where T
   a = A()
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a.coeffs[c] = deepcopy(M[i, c])
   end
   return a
@@ -488,7 +502,7 @@ end
 
 function elem_from_mat_row(A::AbsAlgAss, M::fmpz_mat, i::Int, d::fmpz=fmpz(1))
   a = A()
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     a.coeffs[j] = fmpq(M[i, j], d)
   end
   return a

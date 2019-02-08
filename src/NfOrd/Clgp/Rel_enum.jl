@@ -17,7 +17,7 @@ function enum_ctx_from_ideal(A::NfOrdIdl,
   b_den = temp.den
   K = nf(order(A))
   if limit == 0
-    limit = rows(l)
+    limit = nrows(l)
   end
 
   E = enum_ctx_from_gram(l, Tx = Tx, TC = TC, TU = TU,

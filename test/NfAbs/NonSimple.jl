@@ -98,7 +98,7 @@
       @test degree(f) == 6
 
       M = @inferred representation_matrix(z)
-      for i in 1:rows(M)
+      for i in 1:nrows(M)
         @test Hecke.elem_from_mat_row(K, M, i) == z * basis(K)[i]
       end
 

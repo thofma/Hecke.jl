@@ -77,7 +77,7 @@ function norm(m::fmpz_mat, NC::NormCtx_split, div::fmpz = fmpz(1))
     mul!(NC.np[i], NC.mp[i], NC.lC[i])
     n = NC.np[i]
     p = n[1,1]
-    for j=2:cols(m)
+    for j=2:ncols(m)
       p *= n[1,j]
     end
     push!(l, lift(inv(NC.lR[i](div))*p))
@@ -96,9 +96,9 @@ function norms(a::fmpz_mat, NC::NormCtx_split, div::fmpz = fmpz(1))
   nr = Array{gfp_mat, 1}()
   for i=1:length(NC.lp)
     n = matrix(NC.lR[i], a)*NC.lC[i]
-    m = zero_matrix(NC.lR[i], rows(a), 1)
-    for k=1:rows(n)
-      for j=2:cols(n)
+    m = zero_matrix(NC.lR[i], nrows(a), 1)
+    for k=1:nrows(n)
+      for j=2:ncols(n)
         n[k, 1] *= n[k, j]
       end
       m[k, 1] = n[k, 1]*inv(NC.lR[i](div))
@@ -168,7 +168,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
       I.b = fmpz_mat[]
       @assert S.den == 1
       for i=f
-        push!(I.b, view(S.num, i:i, 1:cols(S.num)))
+        push!(I.b, view(S.num, i:i, 1:ncols(S.num)))
       end
       #println([Float64(numerator(L)[i,i]//denominator(L)*1.0) for i=1:degree(K)])
       #now select a subset that can yield "small" relations, where
@@ -178,7 +178,7 @@ function class_group_small_lll_elements_relation_start(clg::ClassGrpCtx{T},
       return I
     catch e
       if isa(e, LowPrecisionLLL) || isa(e, InexactError)
-        printstyled("prec too low in LLL\n", color = :red)
+        #printstyled("prec too low in LLL\n", color = :red)
         prec = Int(ceil(1.2*prec))
 #        println(" increasing to ", prec)
         if prec > 3000

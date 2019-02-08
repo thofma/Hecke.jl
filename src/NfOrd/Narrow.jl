@@ -214,7 +214,7 @@ function narrow_class_group(L::NfOrd)
   # generators are gensC supplemented by gens(s)
 
   RC = rels(C)
-  R = hcat(zero_matrix(FlintZZ, rows(RC), ngens(s)), RC)
+  R = hcat(zero_matrix(FlintZZ, nrows(RC), ngens(s)), RC)
   for i=1:ngens(C)
     A, al = power_reduce2(gensC[i], order(C[i]))
     be = principal_gen_fac_elem(A)

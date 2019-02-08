@@ -3,15 +3,15 @@
 # use as include(...)
 ################################################################################
 function toNemo(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " = MatrixSpace(FlintZZ, ", rows(A), ", ", cols(A), ")([")
-  for i = 1:rows(A)
-    for j = 1:cols(A)
+  println(io, name, " = MatrixSpace(FlintZZ, ", nrows(A), ", ", ncols(A), ")([")
+  for i = 1:nrows(A)
+    for j = 1:ncols(A)
       print(io, A[i,j])
-      if j < cols(A)
+      if j < ncols(A)
         print(io, " ")
       end
     end
-    if i<rows(A)
+    if i<nrows(A)
       println(io, ";")
     end
   end
@@ -30,15 +30,15 @@ end
 # use as read(...)
 ################################################################################
 function toMagma(io::IOStream, A::fmpz_mat; name = "A")
-  println(io, name, " := Matrix(Integers(), ", rows(A), ", ", cols(A), ", [")
-  for i = 1:rows(A)
-    for j = 1:cols(A)
+  println(io, name, " := Matrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
+  for i = 1:nrows(A)
+    for j = 1:ncols(A)
       print(io, A[i,j])
-      if j < cols(A)
+      if j < ncols(A)
         print(io, ", ")
       end
     end
-    if i<rows(A)
+    if i<nrows(A)
       println(io, ",")
     end
   end
@@ -57,11 +57,11 @@ end
 # use as read(...)
 ################################################################################
 function toMagma(io::IOStream, A::SMat; name = "A")
-  println(io, name, " := SparseMatrix(Integers(), ", rows(A), ", ", cols(A), ", [")
-  for i = 1:rows(A)
+  println(io, name, " := SparseMatrix(Integers(), ", nrows(A), ", ", ncols(A), ", [")
+  for i = 1:nrows(A)
     for xx = 1:length(A.rows[i].pos) 
       print(io, "<", i, ", ", A.rows[i].pos[xx], ", ", A.rows[i].values[xx], ">")
-      if xx < length(A.rows[i].pos) || i<rows(A)
+      if xx < length(A.rows[i].pos) || i<nrows(A)
         print(io, ", ")
       end
     end

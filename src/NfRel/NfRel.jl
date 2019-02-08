@@ -555,7 +555,7 @@ end
 ################################################################################
 
 function elem_to_mat_row!(M::Generic.Mat{T}, i::Int, a::NfRelElem{T}) where T
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     M[i, c] = deepcopy(coeff(a, c - 1))
   end
   return nothing
@@ -564,7 +564,7 @@ end
 function elem_from_mat_row(L::NfRel{T}, M::Generic.Mat{T}, i::Int) where T
   t = L(1)
   a = L()
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a += M[i, c]*t
     mul!(t, t, gen(L))
   end
@@ -648,12 +648,24 @@ end
 #TODO: cache traces of powers of the generator on the field, then
 #      the trace does not need the matrix
 
+@doc Markdown.doc"""
+    charpoly(a::NfRelElem) -> PolyElem
+
+Given an element $a$ in an extension $L/K$, this function returns the
+characteristic polynomial of $a$ over $K$.
+"""
 function charpoly(a::NfRelElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
   return minpoly(R, M, true)
 end
 
+@doc Markdown.doc"""
+    minpoly(a::NfRelElem) -> PolyElem
+
+Given an element $a$ in an extension $L/K$, this function returns the minimal
+polynomial of $a$ of $K$.
+"""
 function minpoly(a::NfRelElem)
   M = representation_matrix(a)
   R = PolynomialRing(base_ring(parent(a)), cached = false)[1]
@@ -673,8 +685,15 @@ function absolute_charpoly(a::NfRelElem)
 end
 
 function minpoly(a::NfRelElem, k::Union{NfRel, AnticNumberField, FlintRationalField})
+
+  if parent(a) == k
+    R, y  = PolynomialRing(k, cached = false)
+    return y - a
+  end
+
   f = minpoly(a)
-  while base_ring(f) != k
+    while base_ring(f) != k
+    @show typeof(f)
     f = norm(f)
     g = gcd(f, derivative(f))
     if !isone(g)
@@ -759,11 +778,11 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
-      issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
+    issubfield(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
-> Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
-> Otherwise the function returns "false" and a morphism mapping everything to 0.
+Returns "true" and an injection from $K$ to $L$ if $K$ is a subfield of $L$.
+Otherwise the function returns "false" and a morphism mapping everything to
+$0$.
 """
 function issubfield(K::NfRel, L::NfRel)
   @assert base_ring(K) == base_ring(L)
@@ -790,11 +809,10 @@ function issubfield(K::NfRel, L::NfRel)
 end
 
 @doc Markdown.doc"""
-***
-      isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
+    isisomorphic(K::NfRel, L::NfRel) -> Bool, NfRelToNfRelMor
 
-> Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
-> Otherwise the function returns "false" and a morphism mapping everything to 0.
+Returns "true" and an isomorphism from $K$ to $L$ if $K$ and $L$ are isomorphic.
+Otherwise the function returns "false" and a morphism mapping everything to $0$.
 """
 function isisomorphic(K::NfRel, L::NfRel)
   @assert base_ring(K) == base_ring(L)

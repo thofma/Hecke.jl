@@ -372,7 +372,7 @@ function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
   # Proper implementation needs access to the content of the underlying
   # fmpq_mpoly
 
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     M[i, j] = zero(FlintZZ)
   end
 
@@ -382,11 +382,11 @@ function elem_to_mat_row!(M::fmpz_mat, i::Int, d::fmpz, a::NfAbsNSElem)
     return nothing
   end
 
-  z = zero_matrix(FlintQQ, 1, cols(M))
+  z = zero_matrix(FlintQQ, 1, ncols(M))
   elem_to_mat_row!(z, 1, a)
   z_q = FakeFmpqMat(z)
 
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     M[i, j] = z_q.num[1, j]
   end
 
@@ -397,7 +397,7 @@ end
 
 function elem_to_mat_row!(M::fmpq_mat, i::Int, a::NfAbsNSElem)
   K = parent(a)
-  for j in 1:cols(M)
+  for j in 1:ncols(M)
     M[i, j] = zero(FlintQQ)
   end
   adata = data(a)
@@ -412,7 +412,7 @@ end
 function elem_from_mat_row(K::NfAbsNS, M::fmpq_mat, i::Int)
   a = K()
   b = basis(K)
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a += M[i, c]*b[c]
   end
   return a
@@ -421,7 +421,7 @@ end
 function elem_from_mat_row(K::NfAbsNS, M::fmpz_mat, i::Int, d::fmpz)
   a = K()
   b = basis(K)
-  for c = 1:cols(M)
+  for c = 1:ncols(M)
     a += M[i, c]*b[c]
   end
   return divexact(a, d)
@@ -460,7 +460,7 @@ function minpoly_dense(a::NfAbsNSElem)
   Qt, _ = PolynomialRing(FlintQQ,"t", cached=false)
   while true
     if n % (i-1) == 0 && rank(M) < i
-      N = nullspace(sub(M, 1:i, 1:cols(M))')
+      N = nullspace(sub(M, 1:i, 1:ncols(M))')
       @assert N[1] == 1
       v = Vector{fmpq}(undef, i)
       for j in 1:i
@@ -495,7 +495,7 @@ function minpoly_sparse(a::NfAbsNSElem)
       echelon!(M)
       fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
       if fl
-        so = mul(so, sub(M, 1:i, n+1:cols(M)))
+        so = mul(so, sub(M, 1:i, n+1:ncols(M)))
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0

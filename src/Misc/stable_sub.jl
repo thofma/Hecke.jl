@@ -26,9 +26,9 @@ function lift(M::fq_nmod_mat, R::Nemo.NmodRing)
   x=factor(fmpz(R.n))
   @assert length(x.fac)==1
   @assert order(parent(M[1,1]))==first(keys(x.fac))
-  N=zero_matrix(R,rows(M),cols(M))
-  for i=1:rows(M)
-    for j=1:cols(M)
+  N=zero_matrix(R,nrows(M),ncols(M))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
       N[i,j]=FlintZZ(coeff(M[i,j],0))
     end
   end
@@ -41,9 +41,9 @@ function lift(M::gfp_mat, R::Nemo.NmodRing)
   x=factor(fmpz(R.n))
   @assert length(x.fac)==1
   @assert order(parent(M[1,1]))==first(keys(x.fac))
-  N=zero_matrix(R, rows(M), cols(M))
-  for i=1:rows(M)
-    for j=1:cols(M)
+  N=zero_matrix(R, nrows(M), ncols(M))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
       N[i,j] = R(lift(M[i,j]))
     end
   end
@@ -58,10 +58,10 @@ end
 function *(x::GrpAbFinGenElem, M::nmod_mat)
 
   G=parent(x)
-  @assert ngens(G)==rows(M)
+  @assert ngens(G)==nrows(M)
   R=parent(M[1,1]) 
-  coeff=zero_matrix(R,1,cols(M))
-  for i=1:cols(M)
+  coeff=zero_matrix(R,1,ncols(M))
+  for i=1:ncols(M)
     coeff[1,i]=x.coeff[1,i]
   end
   y=coeff*M
@@ -194,28 +194,28 @@ function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})
   #
   #  First, compute the kernel of the corresponding homomorphisms
   # 
-  K=DiagonalGroup([V.snf[end] for j=1:rows(M)])
+  K=DiagonalGroup([V.snf[end] for j=1:nrows(M)])
   A=lift(transpose(M))
-  for j=1:rows(A)
-    for k=1:cols(A)
+  for j=1:nrows(A)
+    for k=1:ncols(A)
       A[j,k]*=v[j]
     end
   end 
   mH=Hecke.GrpAbFinGenMap(V,K,A)
   newel=kernel_as_submodule(mH)
-  return MatrixSpace(parent(M[1,1]),rows(newel), cols(newel), false)(newel)
+  return MatrixSpace(parent(M[1,1]),nrows(newel), ncols(newel), false)(newel)
   
 end
 
 function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
 
   A=nullspace(transpose(M))
-  B=vcat(transpose(A),zero_matrix(M[1,1].parent, cols(A),cols(A)))
-  for j=1:cols(A)
-    B[rows(A)+j,j]=snf_struct[j]
+  B=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
+  for j=1:ncols(A)
+    B[nrows(A)+j,j]=snf_struct[j]
   end
   S=nullspace(B)
-  C=vcat(transpose(A),zero_matrix(M[1,1].parent, cols(A),cols(A)))
+  C=vcat(transpose(A),zero_matrix(M[1,1].parent, ncols(A),ncols(A)))
   return S*C
  
 end
@@ -224,9 +224,9 @@ function kernel_as_submodule(h::GrpAbFinGenMap)
   G = domain(h)
   H = codomain(h)
   hn, t = hnf_with_transform(vcat(h.map, rels(H))) 
-  for i=1:rows(hn)
+  for i=1:nrows(hn)
     if iszero_row(hn, i)
-      return view(t, i:rows(t), 1:ngens(G))
+      return view(t, i:nrows(t), 1:ngens(G))
     end
   end
   error("JH")
@@ -334,7 +334,7 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   v=[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
   W=MatrixSpace(R,1, ngens(M.V), false)
   for z=1:length(list)
-    list[z] = vcat([W((mS(S.V([lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:rows(list_sub[z])])
+    list[z] = vcat([W((mS(S.V([lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:nrows(list_sub[z])])
   end
   return list
 
@@ -361,10 +361,10 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   W=MatrixSpace(R,1,ngens(S.V), false)
   v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
-    K = DiagonalGroup([fmpz(R.n) for j=1:rows(x)])
+    K = DiagonalGroup([fmpz(R.n) for j=1:nrows(x)])
     A = lift(transpose(x))
-    for j=1:rows(A)
-      for k=1:cols(A)
+    for j=1:nrows(A)
+      for k=1:ncols(A)
         A[j,k]*=v[j]
       end
     end 
@@ -389,7 +389,7 @@ end
 function _change_ring(G::Array{nmod_mat,1}, F::Nemo.FqNmodFiniteField, s::Int)
   
   G1=Array{fq_nmod_mat,1}(undef, length(G))
-  n=rows(G[1])
+  n=nrows(G[1])
   for i=1:length(G)
     M=zero_matrix(F,n-s+1,n-s+1)
     for j=s:n
@@ -517,7 +517,7 @@ function submodules_all(M::ZpnGModule)
   #
   #  Writing the submodules in terms of the given generators and returning an iterator
   #
-  W=MatrixSpace(R,rows(mS.map), cols(mS.map), false)
+  W=MatrixSpace(R,nrows(mS.map), ncols(mS.map), false)
   MatSnf=W(mS.map)
   return (x*MatSnf for x in list)
   
@@ -569,12 +569,12 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
   v = nmod[R(divexact(S.V.snf[i], M.p)) for i = 1:ngens(S.V)]
   for i = 1:length(submod)
     list1[i] = lift(submod[i], R)
-    @assert rows(list1[i]) == 1
-    for k = 1:cols(list1[i])
+    @assert nrows(list1[i]) == 1
+    for k = 1:ncols(list1[i])
       list1[i][1, k] *= v[k]
     end
   end  
-  W=MatrixSpace(R, rows(mS.map), cols(ms.map), false)
+  W=MatrixSpace(R, nrows(mS.map), ncols(ms.map), false)
   MatSnf=W(mS.map*ms.map)  
   for j=1:length(list1)
     list1[j] = list1[j]*MatSnf
@@ -663,15 +663,15 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
   v = [divexact(S.V.snf[i], M.p) for i = 1:ngens(S.V)]
   for i = 1:length(submod)
     @inbounds list1[i] = lift(submod[i], R)
-    for j = 1:rows(list1[i])
-      for k = 1:cols(list1[i])
+    for j = 1:nrows(list1[i])
+      for k = 1:ncols(list1[i])
         @inbounds list1[i][j,k] *= v[k]
       end
     end 
   end 
   #and now as elements of M
   auxmat = mS.map*ms.map
-  W = MatrixSpace(R, rows(auxmat), cols(auxmat), false)
+  W = MatrixSpace(R, nrows(auxmat), ncols(auxmat), false)
   auxmat = W(auxmat)
   for j = 1:length(list1)
     @inbounds list1[j] = list1[j]*auxmat
@@ -692,13 +692,13 @@ end
 function _no_redundancy(list::Array{nmod_mat,1}, w::Array{fmpz,1})
 
   R = base_ring(list[1])
-  n = cols(list[1])
+  n = ncols(list[1])
   #
   #  Howell form of every candidate, embedding them in a free module
   #
   for i = 1:length(list)
-    if n > rows(list[i])
-      @inbounds list[i] = vcat(list[i], zero_matrix(R, n-rows(list[i]), cols(list[i])))
+    if n > nrows(list[i])
+      @inbounds list[i] = vcat(list[i], zero_matrix(R, n-nrows(list[i]), ncols(list[i])))
     end
     for j=1:n
       for k=1:n
@@ -759,8 +759,8 @@ function submodules_order(M::ZpnGModule, ord::Int)
     minlist=minimal_submodules(N,i,lf)
     for x in minlist  
       A=lift(x,R) 
-      for s=1:rows(A)
-        for t=1:cols(A)
+      for s=1:nrows(A)
+        for t=1:ncols(A)
           A[s,t]*=v[t]
         end
       end
@@ -782,10 +782,10 @@ function submodules_order(M::ZpnGModule, ord::Int)
   #  Write the submodules in terms of the set of given generators
   #
   
-  W=MatrixSpace(R,rows(mS.map), cols(mS.map), false)
+  W=MatrixSpace(R,nrows(mS.map), ncols(mS.map), false)
   MatSnf=W(mS.map)
   for j=1:length(list)
-    list[j]=list[j]*MatSnf #vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:rows(list[j])])
+    list[j]=list[j]*MatSnf #vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:nrows(list[j])])
   end
   
   #
@@ -794,7 +794,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   
   minlist=minimal_submodules(N,ord, lf)
   for x in minlist
-    push!(list, vcat([W((mS( S.V([FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:rows(x) ]))
+    push!(list, vcat([W((mS( S.V([FlintZZ(coeff(x[k,i],0))*((M.p)^(v[i]-1)) for i=1:ngens(S.V)]))).coeff) for k=1:nrows(x) ]))
   end
   return (x for x in list)
   
@@ -841,7 +841,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Write the submodules in terms of the given generators
   #
-  W = MatrixSpace(R, rows(mS.map), cols(mS.map), false)
+  W = MatrixSpace(R, nrows(mS.map), ncols(mS.map), false)
   MatSnf = W(mS.map)
   return (final_check_and_ans(x, MatSnf, M) for x in list)
   
@@ -998,8 +998,8 @@ function _lift_and_construct(A::Zmodn_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMa
   
   R=mQ.header.domain
   newsub=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-  for i=1:rows(A)
-    y=view(A, i:i, 1:cols(A))
+  for i=1:nrows(A)
+    y=view(A, i:i, 1:ncols(A))
     if !iszero(y)
       push!(newsub,mQ\(mG(mS(mS.header.domain(lift(y))))))
     end       

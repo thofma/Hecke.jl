@@ -1,11 +1,16 @@
 export CyclotomicExt, cyclotomic_extension
 
+################################################################################
+#
+#  Type definition
+#
+################################################################################
 mutable struct CyclotomicExt
   k::AnticNumberField
   n::Int
-  Kr::Hecke.NfRel
+  Kr::Hecke.NfRel{nf_elem}
   Ka::AnticNumberField
-  mp::Any
+  mp::Tuple{NfRelToNf, NfToNfMor}
   function CyclotomicExt()
     return new()
   end
@@ -14,6 +19,12 @@ end
 function Base.show(io::IO, c::CyclotomicExt)
   print(io, "Cyclotomic extension by zeta_$(c.n) of degree $(degree(c.Ka))")
 end
+
+################################################################################
+#
+#  Interface and creation
+#
+################################################################################
 
 @doc Markdown.doc"""
     cyclotomic_extension(k::AnticNumberField, n::Int) -> CyclotomicExt
@@ -106,3 +117,58 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   
 end
 
+absolute_field(C::CyclotomicExt) = C.Ka
+base_field(C::CyclotomicExt) = C.k
+
+################################################################################
+#
+#  Automorphisms for cyclotomic extensions
+#
+################################################################################
+@doc Markdown.doc"""
+***
+    automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor}) -> Vector{NfToNfMor}
+> Computes the automorphisms of the absolute field defined by the cyclotomic extension, i.e. of absolute_field(C).
+> gens must be a set of generators for the automorphism group of the base field of C
+"""
+function automorphisms(C::CyclotomicExt; gens::Vector{NfToNfMor} = small_generating_set(automorphisms(base_field(C))), copyval::Type{Val{T}} = Val{true}) where {T}
+
+  if degree(absolute_field(C)) == degree(base_field(C))
+    return automorphisms(C.Ka, copyval)
+  end
+  genK = C.mp[1]\gen(C.Ka)
+  gnew = Hecke.NfToNfMor[]
+  #First extend the old generators
+  for g in gens
+    ng = Hecke.extend_to_cyclotomic(C, g)
+    na = NfToNfMor(C.Ka, C.Ka, C.mp[1](ng(genK)))
+    push!(gnew, na)
+  end 
+  #Now add the automorphisms of the relative extension
+  R = ResidueRing(FlintZZ, C.n, cached = false)
+  U, mU = unit_group(R)
+  if iscyclic(U)
+    k = degree(C.Kr)
+    expo = divexact(eulerphi(fmpz(C.n)), k)
+    l = Hecke.NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(U[1])^expo)))
+    l1 = NfToNfMor(C.Ka, C.Ka, C.mp[1](l(C.mp[1]\gen(C.Ka))))
+    #@assert iszero(Kc.Ka.pol(l1(gen(Kc.Ka)))) 
+    push!(gnew, l1)
+  else
+    f = C.Kr.pol
+    s, ms = sub(U, [x for x in U if iszero(f(gen(C.Kr)^Int(lift(mU(x)))))], false)
+    S, mS = snf(s)
+    for t = 1:ngens(S)
+      l = Hecke.NfRelToNfRelMor(C.Kr, C.Kr, gen(C.Kr)^Int(lift(mU(ms(mS(S[t]))))))
+      push!(gnew, Hecke.NfToNfMor(C.Ka, C.Ka, C.mp[1](l(genK))))
+    end
+  end
+  auts = closure(gnew, degree(C.Ka))
+  Hecke._set_automorphisms_nf(C.Ka, auts)
+  if copyval == Val{true}
+    return copy(auts)
+  else
+    return auts
+  end
+
+end

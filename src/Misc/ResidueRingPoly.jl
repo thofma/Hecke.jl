@@ -69,7 +69,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{T}) where T <: PolyElem
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
   end
-  for j=degree(a.data)+2:cols(M)
+  for j=degree(a.data)+2:ncols(M)
     M[i,j] = z
   end
 end
@@ -78,7 +78,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_poly})
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
   end
-  for j=degree(a.data)+2:cols(M)
+  for j=degree(a.data)+2:ncols(M)
     M[i,j] = z
   end
 end
@@ -87,7 +87,7 @@ function elem_to_mat_row!(M::MatElem, i::Int, a::ResElem{fq_nmod_poly})
   for j=0:degree(a.data)
     M[i,j+1] = coeff(a.data, j)
   end
-  for j=degree(a.data)+2:cols(M)
+  for j=degree(a.data)+2:ncols(M)
     M[i,j] = z
   end
 end

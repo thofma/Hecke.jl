@@ -255,7 +255,7 @@ end
 function local_norm!(n::fmpz, ap::nmod_mat, me::Hecke.modular_env)
   nn = UInt(1)
   np = UInt(1)
-  for j=1:rows(ap)
+  for j=1:nrows(ap)
     np = Nemo.getindex_raw(ap, j, 1)
     nn = ccall((:n_mulmod2_preinv, :libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
   end
@@ -412,9 +412,9 @@ fb_int = FactorBase(fmpz[x for x = vcat(fb_int[1], fb_int[2], fb_int[3])]);
 =#
 
 function improve(c::Hecke.ClassGrpCtx)
-  H = sub(c.M, 1:rows(c.M), 1:cols(c.M))
+  H = sub(c.M, 1:nrows(c.M), 1:ncols(c.M))
   Hecke.upper_triangular(H, mod = 17)
-  p = setdiff(Set(1:cols(H)), Set([x.pos[1] for x=H.rows]))
+  p = setdiff(Set(1:ncols(H)), Set([x.pos[1] for x=H.rows]))
   p = maximum(p)
   b = Hecke.bkz_basis(c.FB.ideals[p]);
 #  b = rels_stat(b, ...)
@@ -535,7 +535,7 @@ end
 # If M is upper-triangular with more columns then rows,
 # this function returns the non-pivot column indices.
 function _find_missing_pivot(M::SMat)
-  return setdiff(Set(1:cols(M)), Set([y.pos[1] for y = M.rows ])) 
+  return setdiff(Set(1:ncols(M)), Set([y.pos[1] for y = M.rows ])) 
 end
 
 function res_degree_in_max_real(p::Int, n::Int)

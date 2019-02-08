@@ -141,13 +141,13 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
         break
       end
       curr_col += 1
-      println("adding col, now at $curr_col, $(rows(m))")
+      println("adding col, now at $curr_col, $(nrows(m))")
       bd = _log(fmpz(p), cld_bound(n-1-c))+1 # bound for THIS coeff only
       if bd > k_max
         print_with_color(:red, "prec change for next iteration was $k_max is $bd for $c\n")
       end  
       k_max = max(k_max, bd)
-      rm = rows(m)
+      rm = nrows(m)
       _n = MatrixSpace(R, min(r, rm), r)(sub(m, 1:min(r, rm), 1:r)) * sub(p_adic, 1:r, n-1-c+1:n-1-c+1)
       _n = lift(MatrixSpace(FlintZZ, min(r, rm), 1), _n)
       # now we need to down-scale this...
@@ -158,13 +158,13 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
           _n[i,1] = div(_n[i,1], fmpz(p)^bd)
         end
       end
-      m = hcat(m, vcat(_n, MatrixSpace(FlintZZ, rows(m)-rows(_n), 1)()))
+      m = hcat(m, vcat(_n, MatrixSpace(FlintZZ, nrows(m)-nrows(_n), 1)()))
       if k+d > bd
-        m = vcat(m, MatrixSpace(FlintZZ, 1, cols(m))())
+        m = vcat(m, MatrixSpace(FlintZZ, 1, ncols(m))())
         if trunk && bd <= k
-          m[rows(m), cols(m)] = fmpz(p)^(d)
+          m[nrows(m), ncols(m)] = fmpz(p)^(d)
         else
-          m[rows(m), cols(m)] = fmpz(p)^(k+d-bd)
+          m[nrows(m), ncols(m)] = fmpz(p)^(k+d-bd)
         end
       else
         print_with_color(:yellow, "\n\n zero diag added \n\n")
@@ -179,7 +179,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
 
       println("scale")
       for i = 1:r
-        for j=1:rows(m)
+        for j=1:nrows(m)
           m[j,i] *= r
         end
       end
@@ -187,7 +187,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
       @time rk, l = lll_with_removal(m, r*fmpz(r)^2 + fmpz(r)^2*curr_col) 
       println("un scale")
       for i = 1:r
-        for j=1:rows(l)
+        for j=1:nrows(l)
           l[j,i] = div(l[j,i], r)
         end
       end
@@ -198,8 +198,8 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
         break
       end
       @assert rk > 0
-      if rk < rows(m)
-        println("loosing rows! now at $rk from $(rows(m))")
+      if rk < nrows(m)
+        println("loosing rows! now at $rk from $(nrows(m))")
       end
       if rk==1
         println("Poly is irreducible!")
@@ -208,7 +208,7 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
         fact[f] = valuation(Rx(f_orig), Rx(f))
         return fact
       end
-      m = sub(l, 1:rk, 1:cols(m))
+      m = sub(l, 1:rk, 1:ncols(m))
 
       _cmp = function(i,j)
         local k = 1
@@ -239,9 +239,9 @@ function vanHoeji(f_orig::fmpz_poly, trunk::Bool = true)
         i = j
       end
 
-      println("found $cls of length $(length(cls)) for $(rows(m))")
+      println("found $cls of length $(length(cls)) for $(nrows(m))")
       bad = 0
-      if length(cls) == rows(m)
+      if length(cls) == nrows(m)
         println("testing")
         for grp in cls
           fa = lift(parent(f_orig), prod(ky[grp]))

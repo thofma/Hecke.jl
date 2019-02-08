@@ -177,8 +177,8 @@ end
 
 function howell_form(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   B=deepcopy(A)
-  if rows(B)<cols(B)
-    B=vcat(B, zero_matrix(base_ring(B), cols(B)-rows(B), cols(B)))
+  if nrows(B)<ncols(B)
+    B=vcat(B, zero_matrix(base_ring(B), ncols(B)-nrows(B), ncols(B)))
   end
   howell_form!(B)
   return B
@@ -196,8 +196,8 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   A1=lift(A)
   ccall((:fmpz_mat_howell_form_mod, :libflint), Nothing,
                 (Ref{fmpz_mat}, Ref{fmpz}), A1, modulus(R))
-  A=MatrixSpace(R, rows(A), cols(A))(A1)
-  return A
+  #A=MatrixSpace(R, nrows(A), ncols(A))(A1)
+  return matrix(R, A1)
   
   R=base_ring(A)
   n=R.modulus
@@ -206,10 +206,10 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  Get an upper triangular matrix 
   #
   
-  for j=1:cols(A)
-    for i=j+1:cols(A)
+  for j=1:ncols(A)
+    for i=j+1:ncols(A)
       g,s,t,u,v = _xxgcd(A[j,j].data,A[i,j].data,n)
-      for k in 1:cols(A)
+      for k in 1:ncols(A)
         t1 = s* A[j,k] + t* A[i,k]
         t2 = u* A[j,k] + v* A[i,k]
         A[j,k] = t1
@@ -222,16 +222,16 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  Multiply the rows by annihlator of the pivot element and reduce 
   #
   
-  T = zero_matrix(R, 1, cols(A))
-  for j in 1:cols(A)
+  T = zero_matrix(R, 1, ncols(A))
+  for j in 1:ncols(A)
     if A[j,j] != 0
        u = _unit(A[j,j].data, n)
-      for k in 1:cols(A)
+      for k in 1:ncols(A)
         A[j,k]=u*A[j,k]
       end
       for i in 1:j-1
         q = div(A[i,j].data, A[j,j].data)
-        for k in j:cols(A)
+        for k in j:ncols(A)
           A[i,k]-= q*A[j,k]
         end
       end
@@ -239,17 +239,17 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
       if l == 0
         continue
       end
-      for k in j:cols(A)
+      for k in j:ncols(A)
        T[1,k]=l*A[j,k]
       end
     else
-      for k in j:cols(A)
+      for k in j:ncols(A)
         T[1, k]= A[j,k]
       end
     end
-    for i in j:cols(A) 
+    for i in j:ncols(A) 
       g,s,t,u,v = _xxgcd(A[i,i].data, T[1,i].data,n)
-      for k in 1:cols(A)
+      for k in 1:ncols(A)
         t1 = s*A[i,k] + t*T[1,k]
         t2 = u*A[i,k] + v*T[1,k]
         A[i,k]= t1
@@ -257,9 +257,9 @@ function howell_form!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
       end
     end
   end
-  if iszero_row(A,rows(A))
-    for i=1:cols(A)
-      A[rows(A),i]=T[1,i]
+  if iszero_row(A,nrows(A))
+    for i=1:ncols(A)
+      A[nrows(A),i]=T[1,i]
     end
   end
 end
@@ -272,10 +272,10 @@ function triangularize!(A::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  Get an upper triangular matrix 
   #
   
-  for j=1:cols(A)
-    for i=j+1:cols(A)
+  for j=1:ncols(A)
+    for i=j+1:ncols(A)
       g,s,t,u,v = _xxgcd(A[j,j].data,A[i,j].data,n)
-      for k in 1:cols(A)
+      for k in 1:ncols(A)
         t1 = s* A[j,k] + t* A[i,k]
         t2 = u* A[j,k] + v* A[i,k]
         A[j,k] = t1
@@ -297,31 +297,31 @@ function nullspace(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
   #  but I have to test if the modulus is prime. What is better?
   #
 
-  N = zero_matrix(R, rows(M)+cols(M), rows(M)+cols(M))
-  for i=1:rows(M)
-    for j=1:cols(M)
+  N = zero_matrix(R, nrows(M)+ncols(M), nrows(M)+ncols(M))
+  for i=1:nrows(M)
+    for j=1:ncols(M)
       N[j,i]=M[i,j]
     end
   end
-  for i=1:cols(M)
-    N[i, i+rows(M)]=1
+  for i=1:ncols(M)
+    N[i, i+nrows(M)]=1
   end
   N=howell_form!(N)
 
-  if gcd(prod([N[i,i] for i=1:rows(N)]).data,R.modulus)==1
-    return 0, MatrixSpace(R,cols(M),0, false)()
+  if gcd(prod([N[i,i] for i=1:nrows(N)]).data,R.modulus)==1
+    return 0, MatrixSpace(R,ncols(M),0, false)()
   end
   nr = 1
-  while nr <= rows(N) && !iszero_row(N, nr)
+  while nr <= nrows(N) && !iszero_row(N, nr)
     nr += 1
   end
   nr -= 1
-  h = sub(N, 1:nr, 1:rows(M))
-  for i=1:rows(h)
+  h = sub(N, 1:nr, 1:nrows(M))
+  for i=1:nrows(h)
     if iszero_row(h, i)
-      k = sub(N, i:rows(h), rows(M)+1:cols(N))
-      return rows(k), k'
+      k = sub(N, i:nrows(h), nrows(M)+1:ncols(N))
+      return nrows(k), k'
     end
   end
-  return 0, MatrixSpace(R,cols(M),0, false)(0)
+  return 0, MatrixSpace(R,ncols(M),0, false)(0)
 end

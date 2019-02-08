@@ -127,10 +127,14 @@ function show(io::IO, h::NfToNfMor)
 end
 
 
-function automorphisms(K::AnticNumberField)
+function automorphisms(K::AnticNumberField, copyval::Type{Val{T}} = Val{true}) where {T}
   try
     Aut = _get_automorphisms_nf(K)::Vector{NfToNfMor}
-    return copy(Aut)
+    if copyval == Val{true}
+      return copy(Aut)
+    else 
+      return Aut
+    end
   catch e
     if !isa(e, AccessorNotSetError)
       rethrow(e)
@@ -149,7 +153,11 @@ function automorphisms(K::AnticNumberField)
   Aut1[end] = NfToNfMor(K, K, gen(K))
   auts = closure(Aut1, degree(K))
   _set_automorphisms_nf(K, auts)
-  return copy(auts)::Vector{NfToNfMor}
+  if copyval == Val{true}
+    return copy(auts)
+  else 
+    return auts
+  end
 end
 
 hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)

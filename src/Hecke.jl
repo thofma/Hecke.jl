@@ -66,7 +66,7 @@ import Nemo
 
 exclude = [:Nemo, :AbstractAlgebra, :RealField, :zz, :qq, 
            :factor,
-           :call, :factors, :parseint, :strongequal, :window, :xgcd]
+           :call, :factors, :parseint, :strongequal, :window, :xgcd, :rows, :cols]
 
 for i in names(Nemo)
   i in exclude && continue
@@ -90,10 +90,10 @@ export @vprint, @hassert, @vtime, add_verbose_scope, get_verbose_level,
 ###############################################################################
 
 const pkgdir = joinpath(dirname(pathof(Hecke)), "..")
-
-const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
-
-const libdir = joinpath(pkgdir, "local", "lib")
+#
+#const libhecke = joinpath(pkgdir, "local", "lib", "libhecke")
+#
+#const libdir = joinpath(pkgdir, "local", "lib")
 
 global const number_field = NumberField
 function MaximalOrder
@@ -125,14 +125,14 @@ function __init__()
     println("Hecke $VERSION_NUMBER ...")
   end
   
-  if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
-    push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
-  elseif Sys.islinux()
-    push!(Libdl.DL_LOAD_PATH, libdir)
-    Libdl.dlopen(libhecke)
-  else
-    push!(Libdl.DL_LOAD_PATH, libdir)
-  end
+  #if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
+  #  push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
+  #elseif Sys.islinux()
+  #  push!(Libdl.DL_LOAD_PATH, libdir)
+  #  Libdl.dlopen(libhecke)
+  #else
+  #  push!(Libdl.DL_LOAD_PATH, libdir)
+  #end
   
   t = create_accessors(AnticNumberField, acb_root_ctx, get_handle())
   global _get_nf_conjugate_data_arb = t[1]
@@ -332,7 +332,7 @@ Base.adjoint(x) = transpose(x)
 #
 ################################################################################
 
-global VERSION_NUMBER = v"0.5.4"
+global VERSION_NUMBER = v"0.6.0"
 
 ################################################################################
 #
@@ -609,6 +609,7 @@ include("RCF.jl")
 include("Grp.jl")
 include("ModAlgAss.jl")
 include("AlgAss.jl")
+include("AlgAssOrd.jl")
 
 ################################################################################
 #

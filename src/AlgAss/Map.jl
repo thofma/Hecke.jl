@@ -6,6 +6,12 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
   c_t::T
   d_t::T
 
+  function AbsAlgAssMor{R, S, T}(A::R, B::S) where {R, S, T}
+    z = new{R, S, T}()
+    z.header = MapHeader(A, B)
+    return z
+  end
+
   function AbsAlgAssMor{R, S, T}(A::R, B::S, M::T) where {R, S, T}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
@@ -173,7 +179,7 @@ function haspreimage(m::AbsAlgAssMor, a::AbsAlgAssElem)
   t = matrix(base_ring(A), dim(A), 1, coeffs(a))
   b, p = cansolve(m.mat', t)
   if b
-    return true, domain(m)([ p[i, 1] for i = 1:rows(m.mat) ])
+    return true, domain(m)([ p[i, 1] for i = 1:nrows(m.mat) ])
   else
     return false, zero(domain(m))
   end

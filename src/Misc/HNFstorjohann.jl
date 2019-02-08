@@ -5,12 +5,12 @@ HNF algorithm due to Arne Storjohann
 
 # This function only changes CC, zero_cols and N but not T.
 function conditioning_with_trafo!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, zero_cols::BitArray, row::Int, col1::Int) where S <: Nemo.RingElement
-  @assert col1 < cols(T)
+  @assert col1 < ncols(T)
   @assert T[row, col1] > 0
   R = base_ring(T)
   row1 = row + 1
   # We don't need every field of CC
-  for i = (row + 2):rows(T)
+  for i = (row + 2):nrows(T)
     CC[i] = zero!(CC[i])
     zero_cols[i] = true
   end
@@ -21,8 +21,8 @@ function conditioning_with_trafo!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, ze
   t2 = R()
   col2 = 0
   s = 0
-  for c = (col1 + 1):cols(T)
-    for i = row1:rows(T)
+  for c = (col1 + 1):ncols(T)
+    for i = row1:nrows(T)
       t1 = mul!(t1, N[1, 1], T[i, c])
       t2 = mul!(t2, T[row, c], T[i, col1])
       t = t1 - t2
@@ -44,10 +44,10 @@ function conditioning_with_trafo!(T::MatElem{S}, N::MatElem{S}, CC::Array{S}, ze
     end
   end
   @assert col2 != 0
-  if row1 == rows(T)
+  if row1 == nrows(T)
     return col2
   end
-  for l = row + 2:rows(T)
+  for l = row + 2:nrows(T)
     g = gcd(N[2, 1], T[l, col1])
     if iszero(g)
       continue
@@ -103,7 +103,7 @@ end
 # This function only changes N and QC, but not T.
 function column_reduction_with_trafo!(T::MatElem{S}, N::MatElem{S}, QC::MatElem{S}, row::Int, col1::Int, col2::Int) where S <: Nemo.RingElement
   @assert T[ row, col1] > 0
-  @assert rows(T) == rows(QC)
+  @assert nrows(T) == nrows(QC)
   R = base_ring(T)
   row1 = row + 1
   t = R()
@@ -128,7 +128,7 @@ function column_reduction_with_trafo!(T::MatElem{S}, N::MatElem{S}, QC::MatElem{
   end
   N[1, 1] = g
   # Make 0 below T[row, col1] and reduce below T[row1, col2]
-  for i = (row + 2):rows(T)
+  for i = (row + 2):nrows(T)
     if iszero(T[i, col1])
       QC[i, row] = zero!(QC[i, row])
       QC[i, row1] = zero!(QC[i, row1])
@@ -191,9 +191,9 @@ function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
   #timeProdQC = 0
   #timeU = 0
   R = base_ring(A)
-  T = similar(A, rows(A) + 2, cols(A) + 2)
-  n = rows(T)
-  m = cols(T)
+  T = similar(A, nrows(A) + 2, ncols(A) + 2)
+  n = nrows(T)
+  m = ncols(T)
   T[1, 1] = R(1)
   T[n, m] = R(1)
   n1 = n - 1
@@ -368,7 +368,7 @@ function hnf_storjohann_with_trafo(A::MatElem{S}) where S <: Nemo.RingElement
 end
 
 function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingElement
-  @assert col1 < cols(T)
+  @assert col1 < ncols(T)
   @assert T[row, col1] > 0
   R = base_ring(T)
   row1 = row + 1
@@ -376,8 +376,8 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
   t1 = R()
   t2 = R()
   col2 = 0
-  for c = (col1 + 1):cols(T)
-    for i = row1:rows(T)
+  for c = (col1 + 1):ncols(T)
+    for i = row1:nrows(T)
       t1 = mul!(t1, T[row, col1], T[i, c])
       t2 = mul!(t2, T[row, c], T[i, col1])
       t = t1 - t2
@@ -385,7 +385,7 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
         col2 = c
         # Make sure the rows row and row1 are linearly independent
         if i != row1
-          for j = col1:cols(T)
+          for j = col1:ncols(T)
             T[row1, j] = addeq!(T[row1, j], T[i, j])
           end
         end
@@ -397,10 +397,10 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
     end
   end
   @assert col2 != 0
-  if row1 == rows(T)
+  if row1 == nrows(T)
     return col2
   end
-  for l = row + 2:rows(T)
+  for l = row + 2:nrows(T)
     g = gcd(T[row1, col1], T[l, col1])
     if iszero(g)
       continue
@@ -438,7 +438,7 @@ function conditioning!(T::MatElem{S}, row::Int, col1::Int) where S <: Nemo.RingE
       if r2 < 0
         t1 = -t1
       end
-      for j = col1:(cols(T) - 1)
+      for j = col1:(ncols(T) - 1)
         t = mul!(t, T[l, j], t1)
         T[row1, j] = addeq!(T[row1, j], t)
       end
@@ -452,12 +452,12 @@ function column_reduction!(T::MatElem{S}, row::Int, col1::Int, col2::Int) where 
   R = base_ring(T)
   row1 = row + 1
   col11 = col1 + 1
-  n = cols(T) - 1
+  n = ncols(T) - 1
   t = R()
   t1 = R()
   t2 = R()
   # Make 0 below T[row, col1]
-  for i = row1:rows(T)
+  for i = row1:nrows(T)
     if i == row1 || !iszero(T[i, col1])
       g, a, b = gcdx(T[row, col1], T[i, col1])
       c = divexact(T[row, col1], g)
@@ -485,7 +485,7 @@ function column_reduction!(T::MatElem{S}, row::Int, col1::Int, col2::Int) where 
     end
   end
   # Reduce below T[row1, col2]
-  for i = (row + 2):rows(T)
+  for i = (row + 2):nrows(T)
     if T[i, col2] < 0 || T[i, col2] >= T[row1, col2]
       q = -fdiv(T[i, col2], T[row1, col2])
       for j = col11:n
@@ -519,9 +519,9 @@ end
 
 function hnf_storjohann(A::MatElem{S}) where S <: Nemo.RingElement
   R = base_ring(A)
-  T = similar(A, rows(A) + 2, cols(A) + 2)
-  n = rows(T)
-  m = cols(T)
+  T = similar(A, nrows(A) + 2, ncols(A) + 2)
+  n = nrows(T)
+  m = ncols(T)
   T[1, 1] = R(1)
   T[n, m] = R(1)
   n1 = n - 1

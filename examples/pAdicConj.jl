@@ -366,7 +366,7 @@ function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
   la = [conjugates_pAdic_log(e, p, 300) for e = a] #can loose precision
     # needs to be traced
     # precision needs to be updated.  
-  n = cols(la[1])
+  n = ncols(la[1])
   Qp = base_ring(la[1])
   lu = matrix(Qp, 0, n, [])
   for i=1:length(la)
@@ -436,7 +436,7 @@ function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
       @assert reduce(gcd, gamma) == 1 # should be a primitive relation
       _, U = hnf_with_trafo(matrix(FlintZZ, length(r), 1, gamma))
       U = inv(U)  
-      U = sub(U, 1:rows(U), 2:cols(U))
+      U = sub(U, 1:nrows(U), 2:ncols(U))
       #new basis is the cols of U
       push!(u, a[i])
       u = Hecke._transform(u, U)
@@ -601,8 +601,8 @@ function non_torsion_lower_bound(R::NfOrd, B::Int = 2*degree(R))
     # try on wildanger_field(13, 17) and observe the vectors found...
     # in particular 1 is not (reliably) found
     @show s = Hecke.enum_ctx_short_elements(L, i*L.d)
-    if rows(s) > 5
-      M = minimum([t2(R(collect(sub(s, i:i, 1:n)))) for i=1:rows(s)])
+    if nrows(s) > 5
+      M = minimum([t2(R(collect(sub(s, i:i, 1:n)))) for i=1:nrows(s)])
       j = n-2
       return (n-j)/4*acosh((M-j)/(n-j))^2
     end
@@ -616,9 +616,9 @@ function unit_lower_bound(R::NfOrd, B::Int = 2*degree(R))
   i = B
   while true
     s = Hecke.enum_ctx_short_elements(L, i*L.d)
-    e = [R(collect(sub(s, i:i, 1:n))) for i=1:rows(s)]
+    e = [R(collect(sub(s, i:i, 1:n))) for i=1:nrows(s)]
     u = [x for x in e if isunit(x)]
-    if rows(s) > 5
+    if nrows(s) > 5
       if length(u) == 0
         R = parent(t2(e[1]))
         @show M = R(i)

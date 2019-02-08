@@ -34,7 +34,7 @@
 
 # Get FacElem from ClassGrpCtx
 function FacElem(x::ClassGrpCtx, y::fmpz_mat, j::Int)
-  return FacElem(x.R, [ deepcopy(y[j, i]) for i in 1:cols(y) ])
+  return FacElem(x.R, [ deepcopy(y[j, i]) for i in 1:ncols(y) ])
 end
 
 function FacElem(x::ClassGrpCtx, y::Array{fmpz, 1})

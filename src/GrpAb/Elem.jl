@@ -302,8 +302,8 @@ end
 > this function returns the element of $A$ with components `x`.
 """
 function (A::GrpAbFinGen)(x::fmpz_mat)
-  ngens(A) != cols(x) && error("Lengths do not coincide")
-  rows(x) != 1 && error("Matrix should have only one row")
+  ngens(A) != ncols(x) && error("Lengths do not coincide")
+  nrows(x) != 1 && error("Matrix should have only one row")
   z = GrpAbFinGenElem(A, Base.deepcopy(x))
   return z
 end
@@ -478,15 +478,15 @@ Base.eltype(::Type{GrpAbFinGen}) = GrpAbFinGenElem
 # Helper function
 function reduce_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
   j = 1
-  for i=1:min(rows(H), cols(H))
-    while j <= cols(H) && iszero(H[i, j])
+  for i=1:min(nrows(H), ncols(H))
+    while j <= ncols(H) && iszero(H[i, j])
       j+=1
     end
-    if j > cols(H)
+    if j > ncols(H)
       return
     end
     q = fdiv(a[1, j], H[i, j])
-    for k=j:cols(a)
+    for k=j:ncols(a)
       a[1, k] = a[1, k] - q * H[i, k]
     end
   end

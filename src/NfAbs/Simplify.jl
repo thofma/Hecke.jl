@@ -16,24 +16,25 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     a, f1 = polredabs(K)
     f = Qx(f1)
   else
-    OK = maximal_order(K)
-    ZK = lll(OK)
+    OK = maximal_order(K)::NfOrd
+    ZK = lll(OK)::NfOrd
     I = index(OK)
     B = basis(ZK, Val{false})
     a = gen(K)
     for i = 1:length(B)
+      if isone(denominator(B[i].elem_in_nf))
+        continue
+      end 
       el = OK(B[i].elem_in_nf)
       ind_a = _index(el)
-      if iszero(ind_a) || ind_a > I
-        continue
-      else
+      if !iszero(ind_a) && ind_a < I
         a = B[i].elem_in_nf
         I = ind_a
       end
     end
     f = minpoly(a, Qx)
   end
-  L = number_field(f, cached = false, check = false)[1]
+  L = NumberField(f, cached = false, check = false)[1]
   m = NfToNfMor(L, K, a)
   return L, m
 end

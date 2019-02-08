@@ -488,7 +488,7 @@ end
 > {{{crt}}} function to each coefficient resulting in a matrix $M = L[i] \bmod p[i]$.
 """
 function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}, signed::Bool = false) where {T <: MatElem}
-  res = zero_matrix(FlintZZ, rows(L[1]), cols(L[1]))
+  res = zero_matrix(FlintZZ, nrows(L[1]), ncols(L[1]))
   
   if signed 
     cr = crt_signed
@@ -496,8 +496,8 @@ function induce_crt(L::Array{T, 1}, c::crt_env{fmpz}, signed::Bool = false) wher
     cr = crt
   end
 
-  for i=1:rows(L[1])
-    for j=1:cols(L[1])
+  for i=1:nrows(L[1])
+    for j=1:ncols(L[1])
       res[i,j] = cr([lift(x[i,j]) for x =L], c)
     end
   end
@@ -733,10 +733,10 @@ end
 function modular_proj(a::Generic.Mat{nf_elem}, me::modular_env)
   Mp = fq_nmod_mat[]
   for i=1:me.ce.n
-    push!(Mp, zero_matrix(me.fld[i], rows(a), cols(a)))
+    push!(Mp, zero_matrix(me.fld[i], nrows(a), ncols(a)))
   end
-  for i=1:rows(a)
-    for j=1:cols(a)
+  for i=1:nrows(a)
+    for j=1:ncols(a)
       im =modular_proj(a[i,j], me)
       for k=1:me.ce.n
         setindex!(Mp[k], deepcopy(im[k]), i, j)
@@ -749,10 +749,10 @@ end
 function modular_proj(a::Generic.Mat{NfOrdElem}, me::modular_env)
   Mp = []
   for i=1:me.ce.n
-    push!(Mp, zero_matrix(me.fld[i], rows(a), cols(a)))
+    push!(Mp, zero_matrix(me.fld[i], nrows(a), ncols(a)))
   end
-  for i=1:rows(a)
-    for j=1:cols(a)
+  for i=1:nrows(a)
+    for j=1:ncols(a)
       im =modular_proj(me.K(a[i,j]), me)
       for k=1:me.ce.n
         setindex!(Mp[k], deepcopy(im[k]), i, j)

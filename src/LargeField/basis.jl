@@ -15,18 +15,18 @@ function lll_basis_profile(A::NfOrdIdl; prec::Int = 100)
   set_bigfloat_precision(old)
   g = g*g'
   Hecke.shift!(g, -prec)
-  g += rows(g)*one(parent(g))
+  g += nrows(g)*one(parent(g))
 
   l = lll_gram(g)
 
-  lp = [ div(l[i,i], fmpz(2)^prec) for i=1:rows(l)]
+  lp = [ div(l[i,i], fmpz(2)^prec) for i=1:nrows(l)]
   return lp
 end
 
 #function short_elem(c::roots_ctx, A::NfOrdIdl,
 #                v::fmpz_mat = MatrixSpace(FlintZZ, 1,1)(); prec::Int = 100)
 #  l, t = lll(c, A, v, prec = prec)
-#  w = window(t, 1,1, 1, cols(t))
+#  w = window(t, 1,1, 1, ncols(t))
 #  c = w*b
 #  q = elem_from_mat_row(K, c, 1, b_den)
 #  return q
