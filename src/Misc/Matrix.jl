@@ -1389,7 +1389,6 @@ end
 getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
 getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 
-
 function Base.hcat(A::Nemo.MatElem...)
   r = nrows(A[1])
   c = ncols(A[1])
@@ -1430,18 +1429,18 @@ function Base.vcat(A::Nemo.MatElem...)
   return X
 end
 
-function Base.cat(n::Int, A::Nemo.MatElem...) 
-  if n==1
-    return vcat(A...)
-  elseif n==2
-    return hcat(A...)
-  else
-    error("does not make sense here")
-  end
-end
+function Base.cat(A::Nemo.MatElem...;dims) 
+  @assert dims == (1,2) || isa(dims, Int)
 
-function Base.cat(dims::Tuple{Int, Int}, A::Nemo.MatElem...) 
-  @assert dims == (1,2)
+  if isa(dims, Int) 
+    if dims == 1
+      return hcat(A...)
+    elseif dims == 2
+      return vcat(A...)
+    else
+      error("dims must be 1, 2, or (1,2)")
+    end
+  end
 
   z = [similar(x) for x = A]
   X = z[1]
@@ -1455,7 +1454,16 @@ function Base.cat(dims::Tuple{Int, Int}, A::Nemo.MatElem...)
   return X
 end
 
-Base.cat(dims, A::Nemo.MatElem...) = cat(Tuple(dims), A...)
+function Base.hvcat(rows::Tuple{Vararg{Int}}, A::Nemo.MatElem...)
+  B = hcat([A[i] for i=1:rows[1]]...)
+  o = rows[1]
+  for j=2:length(rows)
+    C = hcat([A[i+o] for i=1:rows[j]]...)
+    o += rows[j]
+    B = vcat(B, C)
+  end
+  return B
+end
 
 @doc Markdown.doc"""
     reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem

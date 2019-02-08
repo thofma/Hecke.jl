@@ -49,6 +49,11 @@ end
 mutable struct GeIdeal
   a::NfAbsOrdIdl
   function GeIdeal(a::NfAbsOrdIdl)
+    o =order(a)
+    if o.ismaximal == 1
+      return new(a)
+    end
+    #keep track of known maximality and use this to speed things up
     o = ring_of_multipliers(a)
     if o === order(a)
       return new(a)

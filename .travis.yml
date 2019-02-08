@@ -14,7 +14,7 @@ notifications:
   - email: false
 script:
   - while sleep 30; do echo "still alive"; done &
-  - julia -e 'using Pkg;Pkg.add("Nemo"); Pkg.clone(pwd()); include(joinpath(Pkg.dir("Hecke"), "deps", "build.jl"))'
+  - julia -e 'using Pkg;Pkg.add("Nemo"); Pkg.clone(pwd());'
     #- julia -e 'using Pkg; Pkg.build("Hecke");'
   - julia -e 'using Pkg; Pkg.test("Hecke");'
 
