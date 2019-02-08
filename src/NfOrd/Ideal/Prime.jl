@@ -435,13 +435,11 @@ function anti_uniformizer(P::NfOrdIdl)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
-  #=
   if has_2_elem_normal(P)
     Pinv = inv(P)
     P.anti_uniformizer = divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den)
     return P.anti_uniformizer
   end
-  =#
   p = minimum(P)
   M = representation_matrix(uniformizer(P))
   #Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
@@ -744,8 +742,8 @@ function isprime(A::NfAbsOrdIdl)
   if isprime_known(A)
     return A.is_prime == 1
   elseif minimum(A) == 0
-    A.is_prime = 2
-    return false
+    A.is_prime = 1
+    return true
   end
 
   (n, p) = ispower(norm(A, Val{false}))
@@ -754,22 +752,44 @@ function isprime(A::NfAbsOrdIdl)
     A.is_prime = 2
     return false
   end
+  if n == 1
+    A.is_prime = 1
+    A.splitting_type = (valuation(p, A), 1)
+    return true
+  end
+  OK = order(A)
+  
+  #maximal order case
+  if OK.ismaximal == 1 || iszero(mod(discriminant(OK, p))) || p in OK.primes_of_maximality 
+    lp = prime_decomposition(OK, p)
+    for (P, e) in lp
+      if norm(A) != norm(P)
+        continue
+      end
+      if P.gen_two in A
+        A.is_prime = 1
+        A.splitting_type = P.splitting_type
+        return true
+      end
+    end
+    A.is_prime = 2
+    return false
+  end
+  
+  #non-maximal order
   lp = prime_ideals_over(order(A), p)
-
   for P in lp
-    e = valuation(A, P)
-    if e == 1 && norm(A) == norm(P)
+    if norm(A) != norm(P)
+      continue
+    end
+    if A == P
       A.is_prime = 1
       return true
-    elseif e == 0
-      continue
-    else
-      A.is_prime = 2
-      return false
     end
   end
+  A.is_prime = 2
+  return false
 
-  error("Something wrong in isprime")
 end
 
 ################################################################################

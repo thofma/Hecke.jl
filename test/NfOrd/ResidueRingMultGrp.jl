@@ -343,7 +343,7 @@
        K,  a = NumberField(f,"a");
       O = maximal_order(K)
       p = O(3)*O
-      #p = collect(keys(factor(p)))[1]
+      p = collect(keys(factor(p)))[1]
       structures = Vector{fmpz}[[26],[26,3,3,3],[26,9,9,9],[26,27,27,27]]
       @testset "v = $v" for v in 1:length(structures)
         pv = p^v
@@ -441,6 +441,7 @@
 
       @testset "p = <$(pnum)>" for pnum in [ x for x in 1:50 if isprime(fmpz(x))]
         p = O(pnum)*O
+        @test isprime(p)
         #p = collect(keys(factor(p)))[1]
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
@@ -464,6 +465,7 @@
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
+        @test isprime(p)
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
@@ -488,6 +490,7 @@
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
+        @test isprime(p)
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
@@ -512,6 +515,7 @@
       end
 
       @testset "p = <$(p.gen_one), $(p.gen_two)>" for p in primeideals
+        @test isprime(p)
         G, mG = Hecke._multgrp_mod_p(p)
         @test length(mG.generators) == 1
         g = mG.generators[1]
@@ -538,6 +542,7 @@
 
         @testset "p = <$(pnum)>, v = $(v)" for pnum in [ x for x in 1:30 if isprime(fmpz(x))], v in [1,2,3,4,11,30]
           p = O(pnum)*O
+          @test isprime(p)
           pv = p^v
           #p = collect(keys(factor(i)))[1]
           G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, fmpz(pnum)^v; method = method)

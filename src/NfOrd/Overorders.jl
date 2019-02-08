@@ -363,8 +363,11 @@ prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
 
 function prime_ideals_over(O::NfOrd, p::fmpz)
   M = maximal_order(O)
-  p_critical_primes = Vector{ideal_type(O)}()
   lp = prime_decomposition(M, p)
+  if M == O
+    return NfOrdIdl[x[1] for x in lp]
+  end
+  p_critical_primes = Vector{ideal_type(O)}()
   for (P, e) in lp
     c = contract(P, O)
     if !(c in p_critical_primes)

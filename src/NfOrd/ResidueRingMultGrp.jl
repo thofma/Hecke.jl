@@ -298,18 +298,8 @@ end
 function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::fmpz = fmpz(0); method=nothing)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
-  if method == :one_unit
-    gens = nothing
-    rels = nothing
-    disc_log = nothing
-    try
-      gens, structt , disc_log = _one_unit_method(p,v)
-      rels = matrix(diagm(structt))
-    catch
-      warn("Skipped p = <$(p.gen_one),$(p.gen_two)>, v = $(v)")
-      gens, rels, disc_log = _iterative_method(p,v)
-    end
-  elseif method == :quadratic
+  
+  if method == :quadratic
     gens, rels, disc_log = _iterative_method(p,v;base_method=:quadratic,use_p_adic=false)
   elseif method == :artin_hasse
     gens, rels, disc_log = _iterative_method(p,v;base_method=:artin_hasse,use_p_adic=false)
@@ -320,10 +310,10 @@ function _1_plus_p_mod_1_plus_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl, pnumv::fmpz 
   end
 
   @assert size(rels) == (length(gens),length(gens))
-  toO = GrpAbFinGenToNfAbsOrdMap(order(p), gens, rels, disc_log, pnumv)
+  toO = GrpAbFinGenToNfAbsOrdMap(order(p), gens, rels, disc_log, pnumv)::GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
   Q, OtoQ = quo(order(p), pv)
   S, mS, StoO = snf(toO, OtoQ)
-  return S, StoO
+  return S, StoO::GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
 end
 
 ################################################################################
@@ -332,75 +322,80 @@ end
 #
 ################################################################################
 
-function _iterative_method(p::NfOrdIdl, v; base_method=nothing, use_p_adic=true)
-  return _iterative_method(p,1,v;base_method=base_method,use_p_adic=use_p_adic)
+function _iterative_method(p::NfOrdIdl, v::Int; base_method=nothing, use_p_adic=true)
+  return _iterative_method(p, 1, v ; base_method = base_method, use_p_adic = use_p_adic)
 end
 
-function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method=nothing, use_p_adic=true)
-  @hassert :NfOrdQuoRing 2 isprime(p)
+function _iterative_method(p::NfOrdIdl, u::Int, v::Int; base_method = nothing, use_p_adic = true)
   @assert v >= u >= 1
   pnum = minimum(p)
   if use_p_adic
-    e = valuation(pnum,p)
-    k0 = 1 + div(fmpz(e),(pnum-1))
+    e = ramification_index(p)
+    k0 = 1 + Int(div(fmpz(e),(pnum-1)))::Int
   end
   g = Vector{NfOrdElem}()
-  M = zero_matrix(FlintZZ,0,0)
+  M = zero_matrix(FlintZZ, 0, 0)
   dlogs = Vector{Function}()
 
   l = u
-  pl = p^l
+  pl = (p^l)::NfOrdIdl
 
   while l != v
     k = l
     pk = pl
-
     if use_p_adic && k>=k0
-      next_method = _p_adic_method
       l = v
-    elseif base_method == :quadratic
-      next_method = _quadratic_method
-      l = min(2*k,v)
-    elseif base_method == :_one_unit
-      next_method = _one_unit_method
-      if use_p_adic
-        l = min(k0,v)
+      d = div(l, k)
+      if l == d*k
+        pl = pk^d
       else
-        l = v
+        pl = p^l
       end
+      h, N, disc_log = _p_adic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, fmpz_mat, Function}
+    elseif base_method == :quadratic
+      l = min(2*k, v)
+      d = div(l, k)
+      if l == d*k
+        pl = pk^d
+      else
+        pl = p^l
+      end
+      h, N, disc_log = _quadratic_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, fmpz_mat, Function}
     else
-      next_method = _artin_hasse_method
-      l = min(pnum*k,v)
+      l = Int(min(pnum*k, v))
+      d = div(l, k)
+      if l == d*k
+        pl = pk^d
+      else
+        pl = p^l
+      end
+      h, N, disc_log = _artin_hasse_method(p, k, l; pu = pk, pv = pl)::Tuple{Vector{NfOrdElem}, fmpz_mat, Function}
     end
-
-    d = Int(div(fmpz(l),k))
-    pl = l == d*k ? pk^d : p^l
-    h, N, disc_log = next_method(p,k,l;pu=pk,pv=pl)
     
-    g,M = _expand(g,M,h,N,disc_log,pl)
+    g, M = _expand(g, M, h, N, disc_log, pl)
    
-    push!(dlogs,disc_log)
+    push!(dlogs, disc_log)
   end
 
-  Q = NfOrdQuoRing(order(pl),pl)
+  Q = NfOrdQuoRing(order(pl), pl)
   function discrete_logarithm(b::NfOrdElem)
-    b = Q(b)
+    b1 = Q(b)
     a = fmpz[]
-    k = 1
+    k1 = 1
     for i in 1:length(dlogs)
-      a_ = dlogs[i](b.elem)
+      a_ = dlogs[i](b1.elem)
       prod = Q(1)
       for j in 1:length(a_)
-        mul!(prod, prod, Q(g[k])^a_[j])
-        k += 1
+        mul!(prod, prod, Q(g[k1])^a_[j])
+        k1 += 1
       end
       append!(a, a_)
-      b = divexact(b,prod)
+      b1 = divexact(b1, prod)
     end
     return a
   end
 
-  return g, M, discrete_logarithm
+  return g::Vector{NfOrdElem}, M, discrete_logarithm
 end
 
 
@@ -447,14 +442,14 @@ end
 #  This function returns a set of generators with the corresponding relations and disclog
 #
 
-function _pu_mod_pv(pu::NfOrdIdl,pv::NfOrdIdl)
+function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
 
   O=order(pu)
   b=basis(pu)
   N = basis_mat(pv, Val{false})*basis_mat_inv(pu, Val{false})
   @assert denominator(N) == 1
-  G=AbelianGroup(N.num)
-  S,mS=snf(G)
+  G = AbelianGroup(N.num)
+  S, mS=snf(G)
   
   #Generators
   gens=Array{NfOrdElem,1}(undef, ngens(S))
@@ -487,7 +482,7 @@ function _1_plus_pa_mod_1_plus_pb_structure(p::NfOrdIdl,a,b)
   @hassert :NfOrdQuoRing 2 isprime(p)
   O = order(p)
   pnum = minimum(p)
-  e = valuation(O(pnum),p)
+  e = ramification_index(p)
   k0 = 1 + div(fmpz(e),(pnum-1))
   a >= k0 || return false, nothing
   Q = NfOrdQuoRing(O,p^(b-a))
@@ -502,7 +497,7 @@ end
 
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v), where 2*u >= v >= u >= 1
-function _quadratic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
+function _quadratic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert 2*u >= v >= u >= 1
   g,M, dlog = _pu_mod_pv(pu,pv)
@@ -523,15 +518,14 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v), where p is a prime ideal over pnum
 # and pnum*u >= v >= u >= 1
-function _artin_hasse_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
+function _artin_hasse_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @hassert :NfOrdQuoRing 2 isprime(p)
-  
-  pnum = p.minimum
+  pnum = minimum(p)
   @assert pnum*u >= v >= u >= 1
+  @assert fmpz(v) <= pnum*fmpz(u)
   Q, mQ = quo(order(p), pv)
-  g,M, dlog = _pu_mod_pv(pu,pv)
+  g, M, dlog = _pu_mod_pv(pu,pv)
   map!(x->artin_hasse_exp(Q(x),pnum), g, g)
-  
   function discrete_logarithm(x::NfOrdElem)
     return dlog(artin_hasse_log(Q(x), pnum)) 
   end
@@ -592,29 +586,28 @@ end
 # Compute generators, a relation matrix and a function to compute discrete
 # logarithms for (1+p^u)/(1+p^v) if u >= k0, where p is a prime ideal over pnum,
 # e the p-adic valuation of pnum, and k0 = 1 + div(e,pnum-1)
-function _p_adic_method(p::NfOrdIdl, u, v; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
+function _p_adic_method(p::NfOrdIdl, u::Int, v::Int; pu::NfOrdIdl=p^u, pv::NfOrdIdl=p^v)
   @assert v > u >= 1
-  @hassert :NfOrdQuoRing 2 isprime(p)
-  pnum = p.minimum
-  e = valuation(pnum,p) #ramification index
-  k0 = 1 + div(fmpz(e),(pnum-1))
+  e = ramification_index(p) #ramification index
+  k0 = 1 + div(fmpz(e),(minimum(p)-1))
   @assert u >= k0
-  g, M, dlog = _pu_mod_pv(pu,pv)
+  g, M, dlog = _pu_mod_pv(pu, pv)
   O = order(p)
   Q = NfOrdQuoRing(O, pv)
-  map!(x -> p_adic_exp(Q, p, v, x, e; pv = pv), g, g)
+  map!(x -> p_adic_exp(Q, p, v, x), g, g)
   function discrete_logarithm(b::NfOrdElem) 
-    return dlog(p_adic_log(Q,p,v,b,e;pv=pv))
+    return dlog(p_adic_log(Q, p, v, b))
   end
   
   return g, M, discrete_logarithm
 end
 
 
-function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
+function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, x::NfOrdElem)
   O = parent(x)
   iszero(x) && return O(1)
   pnum = p.minimum
+  e = ramification_index(p)
   val_p_x = valuation(x, p)
   max_i = floor(Int, v / (val_p_x - (e/(Float64(pnum)-1)))) + 1
   val_p_maximum = Int(max_i*val_p_x) + 1
@@ -645,10 +638,10 @@ function p_adic_exp(Q::NfOrdQuoRing, p::NfOrdIdl, v, x::NfOrdElem, e::Int; pv::N
   return s.elem
 end
 
-function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::NfOrdIdl=p^v)
+function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v::Int, y::NfOrdElem)
   O = parent(y)
   isone(y) && return zero(O)
-  pnum = Int(minimum(p))
+  pnum = minimum(p)
   x = y - 1
   val_p_x = valuation(x, p)
   s = zero(Q)
@@ -656,10 +649,11 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
   i_old = 0
   val_p_xi = 0
   anti_uni = anti_uniformizer(p)
+  e = ramification_index(p)
   #we have to find a bound for this.
   # it is enough to find the minimum l such that
   # pnum^l v_p(x)>= v+el
-  l=1
+  l = 1
   left = pnum*val_p_x
   right=v+e
   while left < right
@@ -668,8 +662,26 @@ function p_adic_log(Q::NfOrdQuoRing, p::NfOrdIdl, v, y::NfOrdElem, e::Int; pv::N
     l+=1
   end
   bound2=pnum^l-pnum
-  bound1=div(v, val_p_x)
-  for i in [ 1:bound1 ; (bound1+pnum-(bound1%pnum)):pnum:bound2 ]
+  bound1 = div(v, val_p_x)
+  leftlim = bound1 + pnum - mod(fmpz(bound1), pnum)
+  for i in 1:bound1
+    val_pnum_i = valuation(i, pnum)
+    val_p_i = val_pnum_i * e
+    val_p_xi += val_p_x
+    val_p_xi - val_p_i >= v && continue
+    mul!(xi, xi, x^(i-i_old))
+    el = anti_uni^val_p_i
+    numer = O(xi.elem_in_nf*el, false)
+    denom = O(i*el, false)
+    inc = divexact(Q(numer),Q(denom))
+    if isodd(i) 
+      add!(s, s, inc)
+    else
+      sub!(s, s, inc)
+    end
+    i_old = i
+  end
+  for i in leftlim:pnum:bound2
     val_pnum_i = valuation(i, pnum)
     val_p_i = val_pnum_i * e
     val_p_xi += val_p_x
@@ -981,7 +993,7 @@ function _n_part_multgrp_mod_p(p::NfOrdIdl, n::Int)
   G = DiagonalGroup([k])
   gens = Vector{NfOrdElem}(undef, 1)
   gens[1] = preimage(mQ, g)
-  map = GrpAbFinGenToNfAbsOrdMap(G, O, gens, disclog)
+  map = GrpAbFinGenToNfAbsOrdMap(G, O, gens, disclog)::GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
   return G, map
 end
 
@@ -1044,7 +1056,7 @@ function _mult_grp_mod_n(Q::NfOrdQuoRing, y1::Dict{NfOrdIdl, Int}, y2::Dict{NfOr
         return z
       end
 
-      G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)
+      G2toO2 = GrpAbFinGenToNfAbsOrdMap(G2, O, G2toO.generators, disc_log2)::GrpAbFinGenToAbsOrdMap{NfOrd, NfOrdElem}
       push!(maps, G2toO2)
       wild_part[q] = G2toO2
     end

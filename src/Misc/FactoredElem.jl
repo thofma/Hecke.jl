@@ -342,8 +342,12 @@ function evaluate(x::FacElem{NfOrdIdl, NfOrdIdlSet}; coprime::Bool = false)
     return frac_ideal(O, O(1))
   end
   # still doesn't work
-
-  return prod([(p//1)^Int(k) for (p,k) = x.fac])
+  D = collect(x.fac)
+  A = (D[1][1]//1)^Int(D[1][2])
+  for i in 2:length(D)
+    A = A * (D[i][1]//1)^Int(D[i][2])
+  end
+  return A
 end
 
 function _ev(d::Dict{nf_elem, fmpz}, oe::nf_elem)

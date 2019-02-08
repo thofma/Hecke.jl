@@ -16,7 +16,7 @@ mutable struct ClassField_pp
   mq::Map
   rayclassgroupmap::Map#MapRayClassGrp
   quotientmap::Map#GrpAbFinGenMap
-  a::FacElem#Generator of the Kummer Extension
+  a::FacElem{nf_elem, AnticNumberField}#Generator of the Kummer Extension
 
   sup::Array{NfOrdIdl, 1} # the support of a - if known
   sup_known::Bool
@@ -26,7 +26,7 @@ mutable struct ClassField_pp
   o::Int # the degree of K - note, in general this is a divisor of the degree of A
   defect::Int # div(degree(A), degree(K)) = div(degree(A), o)
   pe::NfRelElem{nf_elem} #The image of the generator of A in K
-  AutG::Array
+  AutG::Vector{NfRelToNfRelMor{nf_elem, nf_elem}}
   AutR::fmpz_mat
   bigK::KummerExt
   degree::Int # The degree of the relative extension we are searching for.
@@ -101,11 +101,11 @@ function defining_modulus(CF::ClassField_pp)
 end 
 
 function _modulus(mq::MapRayClassGrp)
-  return mq.defining_modulus
+  return mq.defining_modulus::Tuple{NfOrdIdl, Vector{InfPlc}}
 end
 
 function _modulus(mq::MapClassGrp)
-  return (ideal(order(codomain(mq)), 1), InfPlc[])
+  return (ideal(order(codomain(mq)), 1), InfPlc[])::Tuple{NfOrdIdl, Vector{InfPlc}}
 end
 
 ###############################################################################
