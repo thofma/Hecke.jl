@@ -1747,4 +1747,14 @@ function to_array(M::fmpq_mat)
   return A
 end
 
+function Nemo.minpoly(M::MatElem)
+  k = base_ring(M)
+  kx, x = PolynomialRing(k, cached = false)
+  return minpoly(kx, M)
+end
 
+function Nemo.charpoly(M::MatElem)
+  k = base_ring(M)
+  kx, x = PolynomialRing(k, cached = false)
+  return charpoly(kx, M)
+end
