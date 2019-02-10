@@ -32,7 +32,7 @@
 # (C) 2015 Tommy Hofmann
 #
 ################################################################################
-#  Todo:
+#  TODO:
 #   - (sh/c)ould be indexed by the type of G and C
 #     in fact, since G is not used after the creation, maybe we should drop it.
 #     realisticly, x (hence L, U) can be small types mostly
@@ -337,9 +337,9 @@ end
 function enum_ctx_short_elements(E::enum_ctx{A,B,C}, c::T, limit=-1) where {A,B,C} where T <: Union{Integer, fmpz}
   enum_ctx_start(E, fmpz(c))
   if enum_ctx_next(E)
-    l = E.x
+    l = deepcopy(E.x) # else the 1st element is not returned....
   else
-    l= matrix(FlintZZ, 0, E.n, fmpz[])
+    l = matrix(FlintZZ, 0, E.n, fmpz[])
   end
   while enum_ctx_next(E) && (limit == -1 || limit >= Base.size(l, 1))
     l = vcat(l, E.x)
