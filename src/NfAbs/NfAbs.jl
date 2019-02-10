@@ -1,4 +1,4 @@
-export splitting_field, issubfield, isdefining_polynomial_nice
+export splitting_field, issubfield, isdefining_polynomial_nice, quadratic_field
 
 ################################################################################
 #
@@ -97,6 +97,28 @@ end
 
 function wildanger_field(n::Int, B::Integer; cached::Bool = true)
   return wildanger_field(n, fmpz(B), cached = cached)
+end
+
+@doc Markdown.doc"""
+    quadratic_field(d::Integer) -> AnticNumberField, nf_elem
+    quadratic_field(d::fmpz) -> AnticNumberField, nf_elem
+
+Returns the field with defining polynomial $x^n -d$.
+"""
+function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
+  Qx, x = PolynomialRing(FlintQQ)
+  if nbits(d) > 100
+    a = div(d, fmpz(10)^(ndigits(d, 10) - 4))
+    b = mod(abs(d), 10^4)
+    s = "sqrt($a....$b)"
+  else
+    s = "sqrt($d)"
+  end
+  return number_field(x^2-d, s, cached = cached, check = check)
+end
+
+function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)
+  return quadratic_field(fmpz(d), cached = cached, check = check)
 end
 
 ################################################################################
