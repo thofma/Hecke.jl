@@ -520,6 +520,7 @@ end
 mutable struct MapSUnitModUnitGrpFacElem{T} <: Map{T, FacElemMon{AnticNumberField}, HeckeMap, MapSUnitModUnitGrpFacElem}
   header::MapHeader
   idl::Array{NfOrdIdl, 1}
+  valuations::Vector{SRow{fmpz}}
 
   function MapSUnitModUnitGrpFacElem{T}() where {T}
     return new{T}()
@@ -544,6 +545,7 @@ end
 """
 function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   #deal with trivial case somehow!!!
+  @assert length(I) > 0
   O = order(I[1])
 
   @vprint :ClassGroup 1 "calling sunit_mod_units_group_fac_elem with $(length(I)) ideals\n"
@@ -558,32 +560,44 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   X = Array{nf_elem, 1}()
 
   rr = sparse_matrix(FlintZZ)
+
+  # To track the valuation of the S-units
+  vals_of_rels = SRow{fmpz}[]
+
   @vprint :ClassGroup 1 "finding relations ...\n"
-  @vtime :ClassGroup 1 for A = I
+  @vtime :ClassGroup 1 for (i, A) = enumerate(I)
     @vprint :ClassGroup 2 "doin' $A\n"
     @vtime :ClassGroup 2 x, r = class_group_ideal_relation(A, c)
 # TODO: write == for Idl and FracIdl    
 #    @assert prod([c.FB.ideals[p]^Int(v) for (p,v) = r]) == x*A
     push!(X, x)
     push!(rr, r)
+    v = SRow(FlintZZ)
+    # We only track the valuation of the prime ideals in S.
+    # Even though S might interset the class group factor base
+    # non-trivially, this should still be correct.
+    push!(vals_of_rels, sparse_row(FlintZZ, [(i, fmpz(-1))]))
   end
+
   @vprint :ClassGroup 1 "... done\n"
    
   @vprint :ClassGroup 1 "solving...\n"
   @vtime :ClassGroup 1 R, d = solve_ut(H, rr)
-  Rd = hcat(d*identity_matrix(SMat, FlintZZ, R.r), fmpz(-1)*R)
+  Rd = hcat(d*identity_matrix(SMat, FlintZZ, nrows(R)), fmpz(-1)*R)
   @vprint :ClassGroup 1 ".. done, now saturating ...\n"
   @vtime :ClassGroup 1 S = hnf(saturate(Rd))
   @vprint :ClassGroup 1 " done\n"
-  S1 = sub(S, 1:S.r, 1:S.r)
-  S2 = sub(S, 1:S.r, S.r+1:S.c)
-  @assert nrows(S1) == nrows(S2) && nrows(S1) == S.r
+  S1 = sub(S, 1:nrows(S), 1:nrows(S))
+  S2 = sub(S, 1:nrows(S), (nrows(S) + 1):ncols(S))
+  @assert nrows(S1) == nrows(S2) && nrows(S1) == nrows(S)
   
   g = vcat(c.R_gen, c.R_rel)
 
+  valuations = SRow{fmpz}[]
+
   for s = 1:S.r
     rs = zeros(fmpz, c.M.bas_gens.r + c.M.rel_gens.r)
-    for (p,v) = S2[s] 
+    for (p, v) = S2[s]
       rs[p] = v
     end
 
@@ -591,21 +605,31 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
       apply_right!(rs, T[i])
     end
 
+    _val_vec = sparse_row(FlintZZ)
+
     e = FacElem(g, rs)
-    for (p,v) = S1[s]
+    for (p, v) = S1[s]
+      _val_vec = _val_vec + v * vals_of_rels[p]
       if haskey(e.fac, X[p])
         e.fac[X[p]] += v
       else
         e.fac[X[p]] = v
       end
     end
+
+    _val_vec = -_val_vec
     inv!(e)
 
+    push!(valuations, _val_vec)
     push!(U, e)  # I don't understand the inv
   end
   @vprint :ClassGroup 1 "reducing mod units\n"
   @vtime :ClassGroup 1 U = reduce_mod_units(U, _get_UnitGrpCtx_of_order(O))
   @vprint :ClassGroup 1 "Done!\n"
+
+  #for j in 1:length(I)
+  #  @assert (O(evaluate(U[j]))*O) == prod(I[i]^Int(valuations[j][i]) for i in 1:length(I))
+  #end
 
   C = DiagonalGroup(fmpz[0 for i=U])
   r = MapSUnitModUnitGrpFacElem{typeof(C)}()
@@ -614,6 +638,9 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   function exp(a::GrpAbFinGenElem)
     b = U[1]^a.coeff[1, 1]
     for i = 2:length(U)
+      if iszero(a.coeff[1, i])
+        continue
+      end
       mul!(b, b, U[i]^a.coeff[1, i])
     end
     return b
@@ -642,6 +669,7 @@ function sunit_mod_units_group_fac_elem(I::Array{NfOrdIdl, 1})
   end
 
   r.header = MapHeader(C, FacElemMon(nf(O)), exp, log)
+  r.valuations = valuations
 
   return C, r
 end
