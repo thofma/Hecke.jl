@@ -424,6 +424,20 @@ function -(A::SRow{T}, B::SRow{T}) where T
   return add_scaled_row(B, A, base_ring(A)(-1))
 end
 
+@doc Markdown.doc"""
+    -(A::SRow) -> SRow
+
+Returns the negative of $A$.
+"""
+function -(A::SRow{T}) where {T}
+  B = SRow{T}()
+  for (p, v) = A
+    push!(B.pos, p)
+    push!(B.values, -v)
+  end
+  return B
+end
+
 ################################################################################
 #
 #  Scalar operations
