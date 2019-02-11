@@ -59,7 +59,6 @@ function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = 
   G = automorphisms(K)
   A, GtoA, AtoG = find_isomorphism_with_abelian_group(G, *);
   b, den, ls = _has_norm_relation_abstract(A, [f for f in subgroups(A) if order(f[1]) > 1], large_index = !small_degree)
-  @assert b
   n = length(ls)
 
   z = NormRelation{Int}()
@@ -165,7 +164,7 @@ end
 # TODO:
 # If it is abelian, then a subgroup is redundant, if and only if the quotient group is not cyclic
 # Use this to avoid endless recursions
-function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpAbFinGenMap}}; primitive::Bool = false, interactive::Bool = false, greedy::Bool = false, large_index::Bool = false)
+function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpAbFinGenMap}}; primitive::Bool = false, interactive::Bool = false, greedy::Bool = false, large_index::Bool = false, pure::Bool = false)
   QG = AlgGrp(FlintQQ, G)
   wd = decompose(QG)
   idempotents = [ f(one(A)) for (A, f) in wd]
@@ -239,6 +238,24 @@ function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpA
       end
     end
   end
+
+  #cyc = [h for h in H if iscyclic(h[1])]
+
+  #if pure
+  #  n = Int(order(G))
+  #  m = zero_matrix(FlintQQ, length(cyc), n)
+  #  for i in 1:length(cyc)
+  #    for j in 1:n
+  #      m[i, j] = norms[i].coeffs[j]
+  #    end
+  #  end
+
+  #  onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+
+  #  b, v, K = cansolve_with_nullspace(m', onee')
+
+  #  return b
+  #end
 
   # Now solve the equation to find a representation 1 = sum_{H} x_H N_H
   n = Int(order(G))
@@ -447,42 +464,61 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   return true, den, solutions
 end
 
-function _compute_class_group_with_relations(K::AnticNumberField, N::NormRelation, B::Int = factor_base_bound_grh(maximal_order(K)))
+function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
   ZK = maximal_order(K)
-  c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
+  #c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
+  c = class_group_init(NfFactorBase(ZK, S))
   cp = Set(minimum(x) for x = c.FB.ideals)
 
-  for i = 1:length(N)
-    k, mk = subfield(N, i)
-    zk = maximal_order(k)
-    print("Computing class group of $k... ")
-    class_group(zk, use_aut = true)
-    println("done")
-    lp = prime_ideals_up_to(zk, Int(B), complete = false)
-    lp = [ x for x = lp if minimum(x) in cp]
-    println("Now computing the S-unit group for lp of length $(length(lp))")
-    if length(lp) > 0
-      S, mS = Hecke.sunit_group_fac_elem(lp)
-    else
-      S, mS = Hecke.unit_group_fac_elem(zk)
-    end
-    for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
-      @show j,ngens(S)
-      u = mS(S[j])  #do compact rep here???
-      u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
-      Hecke.class_group_add_relation(c, FacElem(Dict((N(mk(x), i), v) for (x,v) = u.fac)))
-    end
-  end
+  #for i = 1:length(N)
+  #  k, mk = subfield(N, i)
+  #  zk = maximal_order(k)
+  #  print("Computing class group of $k... ")
+  #  class_group(zk, use_aut = true)
+  #  println("done")
+  #  lp = prime_ideals_up_to(zk, Int(B), complete = false)
+  #  lp = [ x for x = lp if minimum(x) in cp]
+  #  println("Now computing the S-unit group for lp of length $(length(lp))")
+  #  @assert length(lp) > 0
+  #  #if length(lp) > 0
+  #  #  S, mS = Hecke.sunit_group_fac_elem(lp)
+  #  #else
+  #  #  S, mS = Hecke.unit_group_fac_elem(zk)
+  #  #end
+  #  S, mS = sunit_mod_units_group_fac_elem(lp)
+  #  D = Dict{nf_elem, nf_elem}() # embedding cache
+  #  function N_mk(x, D, i)
+  #    if haskey(D, x)
+  #      return D[x]
+  #    else
+  #      y = N(mk(x), i)
+  #      D[x] = y
+  #      return y
+  #    end
+  #  end
+  #  for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
+  #    @show j,ngens(S)
+  #    u = mS(S[j])  #do compact rep here???
+  #    #@time u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
+  #    #for (x, v) in u.fac
+  #    #  D[x] = true
+  #    #end
+  #    @show length(D)
+  #    @time [ N_mk(x, D, i) for (x, v) = u.fac]
+  #    @time Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
+  #  end
+  #end
 
+  println("Now doing something with the units ... ")
   torsion_units(ZK)
-  u = units(c)
-  for (p, e) in factor(index(N))
-    b = Hecke.saturate!(c, u, Int(p))
-    while b
-      b = Hecke.saturate!(c, u, Int(p))
-    end
-  end
-  return c, u
+  #u = units(c)
+  #for (p, e) in factor(index(N))
+  #  b = Hecke.saturate!(c, u, Int(p))
+  #  while b
+  #    b = Hecke.saturate!(c, u, Int(p))
+  #  end
+  #end
+  #return c, u
 end
 
 one(T::FacElemMon{AnticNumberField}) = T()
