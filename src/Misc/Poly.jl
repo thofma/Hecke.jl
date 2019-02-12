@@ -530,17 +530,18 @@ end
 #factors f as unit * monic 
 #seems to not like 3*x^2+3*x+1 mod 108! mod 27 it is fine.
 # requires some coefficient of f to be a unit
+
 function fun_factor(f::PolyElem{<:RingElem})
-  local g0
-  local h0
   if isunit(lead(f))
-    l= lead(f)
+    l = lead(f)
     return parent(f)(l), f*inv(l)
   end
   if isunit(f)
     return f, parent(f)(1)
   end
+  
   t = gen(parent(f))
+  h0 = parent(f)(0)
   g0 = parent(f)(0)
   for i=degree(f):-1:0
     if isunit(coeff(f, i))
@@ -804,6 +805,11 @@ function rres(f::fmpz_poly, g::fmpz_poly)
   return rres_bez(f,g)
 end
 
+# Based on these formulas:
+# rres(f, g) = rres(f - kg, g), so I can divide.
+# rres(f, g) = rres(g, f)
+# rres(uf, g) = rres(f, g)
+# rres(pf, g) mod p^n = p*(rres(f, g) mod p^(n-1)) (under right hypotheses)
 function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
@@ -814,13 +820,15 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
   easy = isprime(p)
 
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
-
+  
+  res = R(1)
   while true
+    #First, some trivial check.
     if degree(f) < 1 && degree(g) < 1
       if iszero(f) || iszero(g)
         res = R(0)
       else
-        res = R(gcd(lift(lead(f)), lift(lead(g))))
+        res *= R(gcd(lift(lead(f)), lift(lead(g))))
       end
       return res
     end
@@ -843,54 +851,69 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
         if iszero(a)
           return lead(g)
         else
-          return gcd(lead(g), a*constant_coefficient(f))
+          res *= gcd(lead(g), a*constant_coefficient(f))
+          return res
         end
       else
-        return gcd(R(0), constant_coefficient(g))
+        res *= constant_coefficient(g)
+        return res
       end
     end
-
+    
+    c, g = primsplit(g)
+    res *= R(c)
+    if iszero(res)
+      return res
+    end
+    
     if !isunit(lead(g))
-      c, g = primsplit(g)
+      #one of the coefficient will now be invertible (at least after the splitting)
+      s = gcd(m, lift(res))
+      if !isone(s)
+        m = divexact(m, s)
+      end
       if easy
-        cp = [m]
+        cp = S[m]
       else
-        cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+        cp = S[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
         push!(cp, m)
-        cp = [x for x = cp if !iszero(x)]
+        cp = S[x for x = cp if !iszero(x)]
         cp = coprime_base(cp)
-        cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+        cp = S[x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
       end
       resp = fmpz[]
       pg = fmpz[]
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
-
-        if lg != m
-          R1 = ResidueRing(FlintZZ, S(lg), cached=false)
-          R1t = PolynomialRing(R1, cached=false)[1]
-          #g is bad in R1, so factor it
-          gR1 = R1t(lift(Zx, g))
-          fR1 = R1t(lift(Zx, f))
-        else
-          gR1 = g
-          fR1 = f
-          R1 = R
-          R1t = Rt
-        end
+        R1 = ResidueRing(FlintZZ, S(lg), cached=false)
+        R1t = PolynomialRing(R1, cached=false)[1]
+        #g is bad in R1, so factor it
+        gR1 = R1t(lift(Zx, g))
+        fR1 = R1t(lift(Zx, f))
+        res1 = one(R1)
         if isunit(lead(gR1))
           g2 = gR1
         else
+          if iszero(gR1)
+            push!(resp, fmpz(0))
+            continue
+          end
+          c, gR1 = primsplit!(gR1)
+          res1 *= R1(c)
           g1, g2 = fun_factor(gR1)
         end
-        push!(resp, lift(lift(c)*rres_sircana(fR1, g2)))
+        push!(resp, lift(res1)*lift(rres_sircana(fR1, g2)))
       end
-      res = length(cp)==1 ? R(resp[1]) : R(crt(resp, pg))
-      return gcd(R(0), res)
+      if length(resp) == 1
+        res *= R(resp[1])
+      else
+        res *= R(crt(resp, pg))
+      end
+      return res
     end
 
-    q, f = divrem(f, g)
+    f = rem(f, g)
   end
 end
 
@@ -1286,7 +1309,7 @@ function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz,
 
   g = coeff(f, 0)
   setcoeff!(f, 0, 1)
-  for i=1:d
+  for i = 1:d
     h, _, _, u, v = xxgcd(g, coeff(f, i))
     setcoeff!(f, i, v)
     if  g != h
@@ -1374,18 +1397,18 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   end
   
   if degree(f) < 1
-    res *= lead(f)^degree(g)
+    mul!(res, res, lead(f)^degree(g))
     return res
   end
 
   c, f = primsplit(f)
   if !isone(c)
-    res *= R(c)^degree(g)
+    mul!(res, res, R(c)^degree(g))
   end
 
   c, g = primsplit(g)
   if !isone(c)
-    res *= R(c)^degree(f)
+    mul!(res, res, R(c)^degree(f))
   end
   
   if degree(f) < degree(g)
@@ -1401,13 +1424,13 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   while true
     
     if degree(g) < 1
-      res *= lead(g)^degree(f)
+      mul!(res, res, lead(g)^degree(f))
       return res
     end
   
     c, g = primsplit(g)
     if !isone(c)
-      res *= R(c)^degree(f)
+      mul!(res, res, R(c)^degree(f))
     end
 
     if iszero(res)
@@ -1425,60 +1448,53 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
 
   # factoring case, need to split the ring as well.
   # we need a coprime factorisation and then we go recursively
-  if easy
-    return resultant_valuation_pp(f, g)
-  else
-    #If res is not coprime to the modulus, I can continue the computations modulo a smaller one.
-    s = gcd(m, lift(res))
-    if !isone(s)
-      m = divexact(m, s)
-    end
-    cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
-    push!(cp, m)
-    cp = [x for x = cp if !iszero(x)]
-    cp = coprime_base(cp)
-    cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
-    resp = fmpz[]
-    pg = fmpz[]
-    for p = cp
-      lg = p^valuation(m, p)
-      push!(pg, lg)
-
-      if lg != m
-        R1 = ResidueRing(FlintZZ, S(lg), cached = false)
-        R1t = PolynomialRing(R1, cached = false)[1]
-        #g is bad in R1, so factor it
-        gR1 = R1t(lift(Zx, g))
-        fR1 = R1t(lift(Zx, f))
-      else
-        gR1 = g
-        fR1 = f
-        R1 = R
-        R1t = Rt
-      end
-  
-      if degree(fR1) < degree(f) && degree(gR1) < degree(g)
-        res1 = R1(0)
-      elseif degree(fR1) < degree(f)
-        res1 = lead(gR1)^(degree(f) - degree(fR1))
-      else
-        res1 = R1(1)
-      end
-  
-      if !isunit(lead(gR1))
-        g1, g2 = fun_factor(gR1)
-        res1 *= resultant_ideal(fR1, g2)
-        push!(resp, lift(res1))
-      else
-        #gR1 has a invertible leading coeff
-        res1 *= resultant_ideal(fR1, gR1)
-        push!(resp, lift(res1))
-      end
-    end
-    res *=  lift(R(crt(resp, pg)))
-    return res
+  #If res is not coprime to the modulus, I can continue the computations modulo a smaller one.
+  s = gcd(m, lift(res))
+  if !isone(s)
+    m = divexact(m, s)
   end
+  cp = fmpz[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+  push!(cp, m)
+  cp = fmpz[x for x = cp if !iszero(x)]
+  cp = coprime_base(cp)
+  cp = fmpz[x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
+  resp = fmpz[]
+  pg = fmpz[]
+  for p = cp
+    lg = p^valuation(m, p)
+    push!(pg, lg)
+    R1 = ResidueRing(FlintZZ, S(lg), cached = false)
+    R1t = PolynomialRing(R1, cached = false)[1]
+    #g is bad in R1, so factor it
+    gR1 = R1t(Generic.Res{fmpz}[R1(lift(coeff(g, i))) for i = 0:degree(g)])
+    fR1 = R1t(Generic.Res{fmpz}[R1(lift(coeff(f, i))) for i = 0:degree(f)])
+
+    if degree(fR1) < degree(f) && degree(gR1) < degree(g)
+      res1 = R1(0)
+    elseif degree(fR1) < degree(f)
+      res1 = lead(gR1)^(degree(f) - degree(fR1))
+    else
+      res1 = R1(1)
+    end
+
+    if !isunit(lead(gR1))
+      g1, g2 = fun_factor(gR1)
+      mul!(res1, res1, resultant_ideal(fR1, g2))
+      push!(resp, lift(res1))
+    else
+      #gR1 has a invertible leading coeff
+      mul!(res1, res1, resultant_ideal(fR1, gR1))
+      push!(resp, lift(res1))
+    end
+  end
+  if length(resp) == 1
+    mul!(res, res, R(resp[1]))
+  else
+    mul!(res, res, R(crt(resp, pg)))
+  end
+  return res
 end
+
 
 function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
@@ -1502,23 +1518,23 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   res = R(1)
   
   if degree(f) < 1
-    res *= lead(f)^degree(g)
+    mul!(res, res, lead(f)^degree(g))
     return res
   end
 
   if degree(g) < 1
-    res *= lead(g)^degree(f)
+    mul!(res, res, lead(g)^degree(f))
     return res
   end
 
   c, f = primsplit(f)
   if !isone(c)
-    res *= R(c)^degree(g)
+    mul!(res, res, R(c)^degree(g))
   end
 
   c, g = primsplit(g)
   if !isone(c)
-    res *= R(c)^degree(f)
+    mul!(res, res, R(c)^degree(f))
   end
   
   if degree(f) < degree(g)
@@ -1535,12 +1551,12 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
     if isunit(lead(g)) #accelerate a bit...possibly.
       f = rem(f, g)
       if degree(f) < 1
-        res *= lead(f)^degree(g)
+        mul!(res, res, lead(f)^degree(g))
         return res
       end
       c, f = primsplit(f)
       if !isone(c)
-        res *= R(c)^degree(g)
+        mul!(res, res, R(c)^degree(g))
       end
       f, g = g, f
     else
@@ -1553,11 +1569,12 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
         f1 = R1t(lift(Zx,f))
         g2 = R1t(lift(Zx,g))
         g3, g2 = fun_factor(g2)
-        return res*R(lift(resultant_ideal_pp(f1, g2)))
+        return mul!(res, res, R(lift(resultant_ideal_pp(f1, g2))))
       end
       g1, g = fun_factor(g)  
       if degree(g) < 1
-        return res*lead(g)^degree(f)
+        mul!(res, res, lead(g)^degree(f))
+        return res
       end
     end
   end

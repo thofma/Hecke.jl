@@ -872,6 +872,18 @@ function _minmod(a::fmpz, b::NfAbsOrdElem)
   return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
 end
 
+function _minmod_easy(a::fmpz, b::NfOrdElem)
+  Zk = parent(b)
+  k = number_field(Zk)
+  S = ResidueRing(FlintZZ, a, cached = false)
+  St = PolynomialRing(S, cached=false)[1]
+  B = St(b.elem_in_nf)
+  F = St(k.pol)
+  m = lift(rres(B, F))
+  return gcd(a, m)
+end
+
+
 function _minmod(a::fmpz, b::NfOrdElem)
   if isone(a) 
     return a
@@ -880,12 +892,15 @@ function _minmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
- 
   Zk = parent(b)
   k = number_field(Zk)
+  e, _ = ppio(index(Zk), a)
+  if isone(e)
+    return _minmod_easy(a, b)
+  end
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-  e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
+   
   S = ResidueRing(FlintZZ, a*d*e, cached = false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
@@ -949,13 +964,14 @@ function _normmod(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
-  S = ResidueRing(FlintZZ, a*d^degree(parent(b)), cached=false)
+  com, uncom = ppio(d, a)
+  S = ResidueRing(FlintZZ, a*com^degree(k), cached=false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
-  m = resultant_sircana(B, F)  # u*B + v*F = m mod modulus(S)
-  m = gcd(modulus(m), lift(m))
-  return divexact(m, d^degree(parent(b)))
+  m = resultant_ideal(B, F)  # u*B + v*F = m mod modulus(S)
+  m1 = gcd(modulus(m), lift(m))
+  return divexact(m1, d^degree(parent(b)))
 end
 
 
@@ -1807,10 +1823,8 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     end
   end
 
-  M = MatrixSpace(FlintZZ, 1, degree(O), false)
-
   Amin2 = minimum(A)^2
-  Amind = minimum(A)^degree(O)
+  Amind = gcd(minimum(A)^degree(O), minimum(A)*norm(A))
 
   B = Array{fmpz}(undef, degree(O))
 
@@ -1818,7 +1832,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
 
   r = -Amin2:Amin2
 
-  m = M()
+  m = zero_matrix(FlintZZ, 1, degree(O))
 
   cnt = 0
   while true
@@ -1826,7 +1840,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
 
     if cnt > 100 && is_2_normal_difficult(A)
       assure_2_normal_difficult(A)
-      return
+      return nothing
     end
 
     #if cnt > 1000
@@ -1850,16 +1864,15 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     mul!(m, m, basis_mat(O, Val{false}).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
     d = denominator(gen)
-    f, e = ppio(d, minimum(A))
-    gen *= e
-    gen = mod(gen*f, f*minimum(A)^2)//f
+    f, e = ppio(d, minimum(A, Val{false}))
+    gen = mod(numerator(gen), f*minimum(A)^2)//f
     if iszero(gen)
       continue
     end
 
     # the following should be done inplace
     #gen = dot(reshape(Array(mm), degree(O)), basis(O))
-    if norm(A) == gcd(Amind, numerator(norm(gen)))
+    if norm(A) == _normmod(Amind, O(gen, false))#gcd(Amind, numerator(norm(gen)))
       A.gen_one = minimum(A)
       A.gen_two = O(gen, false)
       A.gens_weakly_normal = true
@@ -1907,7 +1920,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
 
   if !is_2_normal_difficult(A)
     assure_2_normal(A)
-    return
+    return nothing
   end
 
   if n < 12
@@ -1941,7 +1954,7 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
   A.gens_weakly_normal = C.gens_weakly_normal
   A.gens_short = C.gens_short
 
-  return
+  return nothing
 end
 
 function assure_2_normal(A::NfAbsOrdIdl)
@@ -2188,15 +2201,12 @@ end
 """
 
 function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
-  
   @assert order(I) == order(J)
-  
   if gcd(minimum(I), minimum(J)) == 1
     return true
   else 
     return isone(I+J)
   end
-
 end 
 
 one(I::NfAbsOrdIdlSet) = ideal(order(I), 1)
@@ -2320,4 +2330,3 @@ end
 """
 eulerphi_inv(n::fmpz, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = eulerphi_inv_fac_elem(n, zk)]
 eulerphi_inv(n::Integer, zk::NfAbsOrd) = [ numerator(evaluate(x)) for x = eulerphi_inv_fac_elem(fmpz(n), zk)]
-

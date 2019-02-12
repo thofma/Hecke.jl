@@ -318,10 +318,8 @@ end
 
 
 @doc Markdown.doc"""
-***
    is_norm_divisible(a::nf_elem, n::fmpz) -> Bool
-
-Checks if the norm of $a$ is divisible by $n$
+> Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is an integer.
 """
 function is_norm_divisible(a::nf_elem, n::fmpz)
   
@@ -419,8 +417,8 @@ end
 @doc Markdown.doc"""
     norm(f::PolyElem{nf_elem}) -> fmpq_poly
 
-The norm of $f$, that is, the product of all conjugates of $f$ taken
-coefficientwise.
+>The norm of $f$, that is, the product of all conjugates of $f$ taken
+>coefficientwise.
 """
 function norm(f::PolyElem{nf_elem})
   Kx = parent(f)

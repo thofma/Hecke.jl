@@ -2035,20 +2035,44 @@ end
 #
 ###############################################################################
 
+function _minimum(wprimes::Dict{NfOrdIdl, Int})
+  mins = Dict{fmpz, Int}()
+  for (P, v) in wprimes
+    e = P.splitting_type[1]
+    p = minimum(P)
+    k, r = divrem(v, e)
+    if !iszero(r)
+      k += 1
+    end
+    if haskey(mins, p)
+      mins[p] = max(mins[p], k)
+    else
+      mins[p] = k
+    end
+  end
+  return prod(x^v for (x, v) in mins)
+end
+
 function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz})
   
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
+  I = ideal(O, 1)
   for q in keys(lp.fac)
     lq = prime_decomposition(O, q) 
     for (P, e) in lq
+      I *= P
       d1[P] = 1
     end   
   end
-  I = ideal(O, m)
-  for (p, v) in wprimes
-    I *= p^v
+  I.minimum = m
+  if !isempty(wprimes)
+    for (p, v) in wprimes
+      I *= p^v
+    end
+    I.minimum = m*_minimum(wprimes)
   end
+  
   return ray_class_group_quo(n_quo, I, d1, wprimes, inf_plc, units, mC, princ_gens, vect)
   
 end
@@ -2088,7 +2112,7 @@ function ray_class_group_quo(n::Integer, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   K=nf(O)
   @assert !(isempty(y1) && isempty(y2)) || isone(I)
   
-  lp=merge(max, y1, y2)
+  lp = merge(max, y1, y2)
   
   Q, pi = quo(O, I)
   Q.factor = lp

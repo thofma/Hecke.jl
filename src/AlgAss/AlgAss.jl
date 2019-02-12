@@ -163,9 +163,8 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
 
   n = degree(O)
   BO = basis(O)
-
+  BOmod = NfAbsOrdElem{S, T}[ mod(O(v), I) for v in BO ]
   Fp = GF(p, cached=false)
-  BOmod = [ mod(O(v), I) for v in BO ]
   B = zero_matrix(Fp, n, n)
   for i = 1:n
     b = elem_in_basis(BOmod[i])
@@ -186,6 +185,7 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
 
   _, p, L, U = _lu(transpose(B))
 
+  
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
   d = zero_matrix(Fp, n, 1)
@@ -225,7 +225,7 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
     for k = 1:r
       e.coeffs[k] = deepcopy(d[k, 1])
     end
-    return e
+    return e::AlgAssElem
   end
 
   function _preimage(a::AlgAssElem)

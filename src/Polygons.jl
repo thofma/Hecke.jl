@@ -458,7 +458,7 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::AlgAss, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p::fmpz)
+function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p::fmpz) where {T}
   
   O = order(Ip1)
   @vprint :NfOrd 1 "Splitting the algebra\n" 
@@ -510,7 +510,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
     ideals[1] = (Ip1, Int(0))
   else
     AtoO = inv(OtoA)
-    ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
+    @vtime :NfOrd 3 ideals , AA = _from_algs_to_ideals(A, OtoA, AtoO, Ip1, p)
   end
   k = (1-1/BigInt(p))^degree(O) < 0.1
   for j in 1:length(ideals)
@@ -562,14 +562,41 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       P.gen_two = x
       P.gens_normal = p
       P.gens_weakly_normal = 1
-      e = Int(valuation(nf(O)(p), P)) #I can probably do something just looking at the Newton polygon.
+      @vtime :NfOrd 3 e = Int(valuation(nf(O)(p), P)) #I can probably do something just looking at the Newton polygon.
       P.splitting_type = e, f
       ideals[j] = (P, e)
     else
       @vprint :NfOrd 1 "Chances for finding second generator: ~$((1-1/BigInt(p)))\n"
-      _assure_weakly_normal_presentation(P)
-      assure_2_normal(P)
-      e = Int(valuation(nf(O)(p), P)) #I can probably do something just looking at the Newton polygon.
+      @vtime :NfOrd 3 _assure_weakly_normal_presentation(P)
+      u = P.gen_two
+      modulo = norm(P)*p
+      x = zero(parent(u))
+      
+      if !is_norm_divisible(u.elem_in_nf, modulo)
+        x = u
+      elseif !is_norm_divisible(u.elem_in_nf+p, modulo)
+        x = u + p
+      elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
+        x = u - p
+      else
+        Ba = basis(P, Val{false})
+        for i in 1:degree(O)
+          if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
+            x = v*Ba[i] + u
+            break
+          end
+        end
+      end
+
+      @hassert :NfOrd 1 !iszero(x)
+      @hassert :NfOrd 2 O*O(p) + O*x == P
+      P.gen_two = x
+      P.gens_normal = p
+      if length(ideals) == 1
+        e = Int(divexact(valuation(norm(I), p), f))
+      else
+        @vtime :NfOrd 3 e = Int(valuation(nf(O)(p), P))
+      end
       P.splitting_type = e, f
       ideals[j] = (P, e)
     end
@@ -655,10 +682,10 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
-  fac = factor(f1)
+  @vtime :NfOrd 1 fac = factor(f1)
   res = Tuple{NfOrdIdl, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
-  for (g, m) in fac
+  @vtime :NfOrd 3 for (g, m) in fac
     if degree(g) > degree_limit || lower_limit > degree(g)
       continue
     end
@@ -676,11 +703,11 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
       J.norm = FlintZZ(p)^degree(phi)
       J.minimum = FlintZZ(p)
 
-    # We have to do something to get 2-normal presentation:
-    # if ramified or valuation val(b,P) == 1, (p,b)
-    # is a P(p)-normal presentation
-    # otherwise we need to take p+b
-    # I SHOULD CHECK THAT THIS WORKS
+      # We have to do something to get 2-normal presentation:
+      # if ramified or valuation val(b,P) == 1, (p,b)
+      # is a P(p)-normal presentation
+      # otherwise we need to take p+b
+      # I SHOULD CHECK THAT THIS WORKS
 
       if !(!is_norm_divisible(b, (J.norm)^2) || (ei > 1))
         J.gen_two = J.gen_two + O(p)
@@ -725,10 +752,10 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
     #TODO: p-adic factorization of the polynomial.
     push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m))))))))
   end
-  if !isempty(l)
-    Ip = pradical(O, p)
+  @vtime :NfOrd 3 if !isempty(l)
+    @vtime :NfOrd 3 Ip = pradical(O, p)
     for (I, Q) in l
-      lp = _decomposition(O, I, Ip, Q, p)
+      @vtime :NfOrd 3 lp = _decomposition(O, I, Ip, Q, p)
       for (P, e) in lp
         if degree(P) > degree_limit || degree(P) < lower_limit
           continue
