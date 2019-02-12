@@ -192,18 +192,20 @@ end
 
 function ^(x::nf_elem, y::fmpz)
   # TODO: try to coerce y to UInt
+  res = parent(x)()
   if y < 0
-    return inv(x)^(-y)
+    res = inv(x)^(-y)
   elseif y == 0
-    return parent(x)(1)
+    res = parent(x)(1)
   elseif y == 1
-    return deepcopy(x)
+    res = deepcopy(x)
   elseif mod(y, 2) == 0
     z = x^(div(y, 2))
-    return z*z
-  elseif mod(y, 2) == 1
-    return x^(y-1) * x
+    res = z*z
+  else
+    res = x^(y-1) * x
   end
+  return res
 end
 
 

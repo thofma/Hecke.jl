@@ -210,7 +210,7 @@ function class_group_disc_log(I::NfOrdIdl, c::ClassGrpCtx)
 end
 
 mutable struct MapClassGrp{T} <: Map{T, NfOrdIdlSet, HeckeMap, MapClassGrp}
-  header::MapHeader
+  header::MapHeader{T, NfOrdIdlSet}
   princ_gens::Array{Tuple{FacElem{NfOrdIdl,NfOrdIdlSet}, FacElem{nf_elem, AnticNumberField}},1}
   
   function MapClassGrp{T}() where {T}
@@ -225,14 +225,29 @@ end
 function class_group(c::ClassGrpCtx; redo::Bool = false)
   if !redo
     if isdefined(c, :cl_map)
-      mC = c.cl_map
+      mC = c.cl_map::MapClassGrp{GrpAbFinGen}
       C = domain(mC)
       return C, mC
     end
   end  
+  
   C = class_group_grp(c, redo = redo)
   r = MapClassGrp{typeof(C)}()
-  r.header = MapHeader(C, parent(c.FB.ideals[1]), x->class_group_disc_exp(x, c), x->class_group_disc_log(x, c))
+  
+  local disclog 
+  let c = c
+    function disclog(x::NfOrdIdl)
+      return class_group_disc_log(x, c)
+    end
+  end
+  
+  local expo
+  let c = c
+    function expo(x::GrpAbFinGenElem)
+      return class_group_disc_exp(x, c)
+    end
+  end
+  r.header = MapHeader(C, parent(c.FB.ideals[1]), expo, disclog)
 
   c.cl_map = r
   return C, r
