@@ -30,9 +30,17 @@ mutable struct NormRelation{T}
   coefficients::Vector{Vector{Tuple{NfToNfMor, Int}}}
   ispure::Bool
   pure_coefficients::Vector{Int}
+  isabelian::Bool
+  isgeneric::Bool
+  coefficients_gen::Vector{Vector{Tuple{Int, NfToNfMor, NfToNfMor}}}
 
   function NormRelation{T}() where {T}
-    return new{T}()
+    z = new{T}()
+    z.ispure = false
+    z.isabelian = false
+    z.isgeneric = false
+    z.denominator = 0
+    return z
   end
 end
 
@@ -47,11 +55,10 @@ function Base.hash(x::AlgGrpElem, h::UInt)
   return Base.hash(x.coeffs, h)
 end
 
-function _norm_relation_setup(K::AnticNumberField; small_degree::Bool = true)
+function _norm_relation_setup_abelian(K::AnticNumberField; small_degree::Bool = true)
   G = automorphisms(K)
   A, GtoA, AtoG = find_isomorphism_with_abelian_group(G, *);
   b, den, ls = _has_norm_relation_abstract(A, [f for f in subgroups(A) if order(f[1]) > 1], large_index = !small_degree)
-  @assert b
   n = length(ls)
 
   z = NormRelation{Int}()
@@ -76,6 +83,44 @@ function _norm_relation_setup(K::AnticNumberField; small_degree::Bool = true)
     end
     z.coefficients[i] = w
   end
+
+  z.isabelian = true
+
+  return z
+end
+
+function _norm_relation_setup_generic(K::AnticNumberField; small_degree::Bool = true)
+  A = automorphisms(K)
+  G, AtoG, GtoA = generic_group(G, *);
+  b, den, ls = _has_norm_relation_abstract(G, [f for f in subgroups(A) if order(f[1]) > 1])
+  @assert b
+  n = length(ls)
+
+  z = NormRelation{Int}()
+  z.K = K
+  z.subfields = Vector{Tuple{AnticNumberField, NfToNfMor}}(undef, n)
+  z.denominator = den
+  z.ispure = false
+ 
+  for i in 1:n
+    F, mF = FixedField(K, NfToNfMor[GtoA[f] for f in ls[i][1]])
+    S, mS = simplify(F)
+    L = S
+    mL = mF * mS
+    z.subfields[i] = L, mL
+  end
+
+  z.coefficients_gen = Vector{Vector{Tuple{NfToNfMor, Int}}}(undef, n)
+
+  for i in 1:n
+    w = Vector{Tuple{Int, NfToNfMor, NfToNfMor}}(undef, length(ls[i][2]))
+    for (j, (expo, auto_pre, auto_post)) in enumerate(ls[i][2])
+      w[j] = (expo, GtoA[auto_pre], GtoA[auto_post])
+    end
+    z.coefficients_gen[i] = w
+  end
+
+  z.isabelian = true
 
   return z
 end
@@ -119,7 +164,7 @@ end
 # TODO:
 # If it is abelian, then a subgroup is redundant, if and only if the quotient group is not cyclic
 # Use this to avoid endless recursions
-function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpAbFinGenMap}}; primitive::Bool = false, interactive::Bool = false, greedy::Bool = false, large_index::Bool = false)
+function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpAbFinGenMap}}; primitive::Bool = false, interactive::Bool = false, greedy::Bool = false, large_index::Bool = false, pure::Bool = false)
   QG = AlgGrp(FlintQQ, G)
   wd = decompose(QG)
   idempotents = [ f(one(A)) for (A, f) in wd]
@@ -194,6 +239,24 @@ function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpA
     end
   end
 
+  #cyc = [h for h in H if iscyclic(h[1])]
+
+  #if pure
+  #  n = Int(order(G))
+  #  m = zero_matrix(FlintQQ, length(cyc), n)
+  #  for i in 1:length(cyc)
+  #    for j in 1:n
+  #      m[i, j] = norms[i].coeffs[j]
+  #    end
+  #  end
+
+  #  onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+
+  #  b, v, K = cansolve_with_nullspace(m', onee')
+
+  #  return b
+  #end
+
   # Now solve the equation to find a representation 1 = sum_{H} x_H N_H
   n = Int(order(G))
 
@@ -244,110 +307,221 @@ function _has_norm_relation_abstract(G::GrpAb, H::Vector{Tuple{GrpAbFinGen, GrpA
   return true, den, solutions_as_group_element_arrays
 end
 
-function _compute_class_group_with_relations(K::AnticNumberField, N::NormRelation, B::Int = factor_base_bound_grh(maximal_order(K)))
-  ZK = maximal_order(K)
-  c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
-  cp = Set(minimum(x) for x = c.FB.ideals)
+# TODO:
+# If it is abelian, then a subgroup is redundant, if and only if the quotient group is not cyclic
+# Use this to avoid endless recursions
+function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenToGrpGenMor}}; primitive::Bool = false, greedy::Bool = false, large_index::Bool = false, pure::Bool = false)
+  QG = AlgGrp(FlintQQ, G)
+  wd = decompose(QG)
+  idempotents = [ f(one(A)) for (A, f) in wd]
+  norms_rev = Dict{elem_type(QG), Int}()
+  norms = Vector{elem_type(QG)}(undef, length(H))
+  for i in 1:length(H)
+    norms_rev[sum([QG(H[i][2](h)) for h in H[i][1]])] = i
+    norms[i] = sum([QG(H[i][2](h)) for h in H[i][1]])
+  end
 
-  for i = 1:length(N)
-    k, mk = subfield(N, i)
-    zk = maximal_order(k)
-    print("Computing class group of $k... ")
-    class_group(zk, use_aut = true)
-    println("done")
-    lp = prime_ideals_up_to(zk, Int(B), complete = false)
-    lp = [ x for x = lp if minimum(x) in cp]
-    println("Now computing the S-unit group for lp of length $(length(lp))")
-    if length(lp) > 0
-      S, mS = Hecke.sunit_group_fac_elem(lp)
+  n = Int(order(G))
+
+  if pure
+    m = zero_matrix(FlintQQ, length(H), n)
+    for i in 1:length(H)
+      for j in 1:n
+        m[i, j] = norms[i].coeffs[j]
+      end
+    end
+
+    onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+
+    b, v, K = cansolve_with_nullspace(m', onee')
+
+    return b
+  end
+
+  nonannihilating = Vector{Vector{Int}}(undef, length(idempotents))
+
+  for j in 1:length(idempotents)
+    nonannihilating_ej = Vector{Int}()
+    for i in 1:length(norms)
+      if !iszero(idempotents[j] * norms[i])
+        push!(nonannihilating_ej, i)
+      end
+    end
+    nonannihilating[j] = nonannihilating_ej
+  end
+
+  l = length(idempotents)
+
+  subgroups_needed = Int[]
+
+  if any(isempty, nonannihilating)
+    return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
+  end
+
+  subgroups_needed = Int[]
+
+  for i in 1:length(nonannihilating)
+    if greedy || !large_index
+      sort!(nonannihilating[i], by = x -> order(H[x][1]), rev = true)
+    elseif large_index
+      sort!(nonannihilating[i], by = x -> order(H[x][1]))
+    end
+  end
+
+  k = nonannihilating[1][1]
+  push!(subgroups_needed, k)
+  i = 2
+  for i in 2:l
+    if length(intersect(subgroups_needed, nonannihilating[i])) > 0
+      continue
     else
-      S, mS = Hecke.unit_group_fac_elem(zk)
-    end
-    for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
-      @show j,ngens(S)
-      u = mS(S[j])  #do compact rep here???
-      u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
-      Hecke.class_group_add_relation(c, FacElem(Dict((N(mk(x), i), v) for (x,v) = u.fac)))
+      push!(subgroups_needed, nonannihilating[i][1])
     end
   end
 
-  torsion_units(ZK)
-  u = units(c)
-  for (p, e) in factor(index(N))
-    b = Hecke.saturate!(c, u, Int(p))
-    while b
-      b = Hecke.saturate!(c, u, Int(p))
+  if primitive
+    # Check if we can replace a subgroup by bigger subgroups
+    for i in 1:length(subgroups_needed)
+      Q, mQ = quo(G, H[subgroups_needed[i]][1])
+      if length(Q) == 1
+        continue
+      end
+      b, den, ls = _has_norm_relation_abstract(Q, [f for f in subgroups(Q) if order(f[1]) > 1])
+      if b
+        return _has_norm_relation_abstract(G, deleteat!(H, subgroups_needed[i]))
+      end
     end
   end
-  return c, u
+
+  # Now solve the equation to find a representation 1 = sum_{H} x_H N_H y_H
+  n = Int(order(G))
+
+  onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
+
+  m = zero_matrix(FlintQQ, length(subgroups_needed) * n * n, n)
+
+  B = basis(QG)
+
+  for i in 1:length(subgroups_needed)
+    for k in 1:n
+      for l in 1:n
+        for j in 1:n
+          m[(i - 1)*n^2 + n * (k - 1) + l, j] = (B[k] * norms[subgroups_needed[i]] * B[l]).coeffs[j]
+        end
+      end
+    end
+  end
+
+  b, v, K = cansolve_with_nullspace(m', onee')
+
+  @assert b
+
+  # Now collect the coefficients again as elements of Q[G]
+  sol = Vector{Tuple{Int, Int, Int, fmpq}}()
+  for i in 1:length(subgroups_needed)
+    for k in 1:n
+      for l in 1:n
+        if iszero(v[(i - 1)*n^2 + (k - 1) * n + l, 1])
+          continue
+        else
+          push!(sol, (i, k, l, v[(i - 1)*n^2 + (k - 1) * n + l, 1]))
+        end
+      end
+    end
+  end
+
+  z = zero(QG)
+  for (i, k, l, x) in sol
+    z = z + x * B[k] * norms[subgroups_needed[i]] * B[l]
+  end
+
+  @assert isone(z)
+
+  den = one(FlintZZ)
+
+  for (_,_,_,x) in sol
+    den = lcm(den, denominator(x))
+  end
+
+  solutions = Vector{Tuple{Vector{GrpGenElem}, Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}}}()
+  solutions_as_group_element_arrays = Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}(undef, length(subgroups_needed))
+
+  for i in 1:length(subgroups_needed)
+    sgroup = [H[subgroups_needed[i]][2](h) for h in H[subgroups_needed[i]][1]]
+    vv = Vector{Tuple{fmpz, GrpGenElem, GrpGenElem}}()
+    for (k, g) in enumerate(group(QG))
+      for (l, h) in enumerate(group(QG))
+        if iszero(v[(i - 1)*n^2 + (k - 1) * n + l, 1])
+          continue
+        else
+          push!(vv, (FlintZZ(den * v[(i - 1)*n^2 + (k - 1) * n + l, 1]), g, h))
+        end
+      end
+    end
+    push!(solutions, (sgroup, vv))
+  end
+
+  return true, den, solutions
 end
 
-function _compute_class_group_with_relations(K::AnticNumberField, ttt, B::Int = factor_base_bound_grh(maximal_order(K)))
+function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
   ZK = maximal_order(K)
-  c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
+  #c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
+  c = class_group_init(NfFactorBase(ZK, S))
   cp = Set(minimum(x) for x = c.FB.ideals)
-  t_ord = 0
-  local t_u
 
-  (den, ls), A, GtoA, AtoG = ttt# _get_brauer_relations(A, [f for f in subgroups(A) if order(f[1]) > 1])
-  subfields = []
-  for i in 1:length(ls)
-    F, mF = FixedField(K, [AtoG[f] for f in ls[i][2]])
-    S, mS = simplify(F)
-    L = S
-    mL = mF * mS
-    push!(subfields, (L, mL))
-
-    #@show mF
-    #b = one(K)
-    #for j in 1:length(ls[i][2])
-    #  # This is the norm
-    #  b = b * AtoG[ls[i][2][j]](a)
-    #end
-    #@show b
-  end
-
-  println("Computing subfields done")
-
-  for i = 1:length(subfields)
-    k, mk = subfields[i]
-    zk = maximal_order(k)
-    print("Computing class group of $k... ")
-    class_group(zk)
-    println("done")
-    lp = prime_ideals_up_to(zk, Int(B), complete = false)
-    lp = [ x for x = lp if minimum(x) in cp]
-    if length(lp) > 0
-      S, mS = Hecke.sunit_group_fac_elem(lp)
-    else
-      S, mS = Hecke.unit_group_fac_elem(zk)
-    end
-    for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
-      #@show i,ngens(S)
-      #u = mS(S[j])  #do compact rep here???
-      u = mk(evaluate(mS(S[j])))  #do compact rep here???
-      uu = one(parent(u))
-      for (expo, auto) in ls[i][1]
-        uu = uu * (AtoG[auto](u))^expo
-      end
-
-      Hecke.class_group_add_relation(c, uu)
-      #u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
-      #Hecke.class_group_add_relation(c, FacElem(Dict((mk(x), v) for (x,v) = u.fac)))
-    end
-  end
-  torsion_units(ZK)
-  c, U = simplify(c)
-  return c, U
-  #u = units(c)
-  #for (p, e) in factor(den)
-    #Hecke.saturate!(c, u, Int(p))
+  #for i = 1:length(N)
+  #  k, mk = subfield(N, i)
+  #  zk = maximal_order(k)
+  #  print("Computing class group of $k... ")
+  #  class_group(zk, use_aut = true)
+  #  println("done")
+  #  lp = prime_ideals_up_to(zk, Int(B), complete = false)
+  #  lp = [ x for x = lp if minimum(x) in cp]
+  #  println("Now computing the S-unit group for lp of length $(length(lp))")
+  #  @assert length(lp) > 0
+  #  #if length(lp) > 0
+  #  #  S, mS = Hecke.sunit_group_fac_elem(lp)
+  #  #else
+  #  #  S, mS = Hecke.unit_group_fac_elem(zk)
+  #  #end
+  #  S, mS = sunit_mod_units_group_fac_elem(lp)
+  #  D = Dict{nf_elem, nf_elem}() # embedding cache
+  #  function N_mk(x, D, i)
+  #    if haskey(D, x)
+  #      return D[x]
+  #    else
+  #      y = N(mk(x), i)
+  #      D[x] = y
+  #      return y
+  #    end
+  #  end
+  #  for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
+  #    @show j,ngens(S)
+  #    u = mS(S[j])  #do compact rep here???
+  #    #@time u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
+  #    #for (x, v) in u.fac
+  #    #  D[x] = true
+  #    #end
+  #    @show length(D)
+  #    @time [ N_mk(x, D, i) for (x, v) = u.fac]
+  #    @time Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
+  #  end
   #end
-  #return c
+
+  println("Now doing something with the units ... ")
+  torsion_units(ZK)
+  #u = units(c)
+  #for (p, e) in factor(index(N))
+  #  b = Hecke.saturate!(c, u, Int(p))
+  #  while b
+  #    b = Hecke.saturate!(c, u, Int(p))
+  #  end
+  #end
+  #return c, u
 end
 
 one(T::FacElemMon{AnticNumberField}) = T()
-  
 
 function simplify(c::Hecke.ClassGrpCtx)
   d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
