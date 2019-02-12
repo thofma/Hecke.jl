@@ -926,6 +926,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_cl
   X, _ = quo(C, n, false)
   
   local disclog
+  
   let mC = mC, X = X
     function disclog(J::NfOrdIdl)
       return X((mC\J).coeff)
@@ -960,9 +961,7 @@ function class_as_ray_class(C::GrpAbFinGen, mC::MapClassGrp{GrpAbFinGen}, exp_cl
     function disclog(J::NfOrdIdl)
       return X((mC\J).coeff)
     end
-  end
-    
-  let X = X
+
     function disclog(J::FacElem{NfOrdIdl, NfOrdIdlSet})
       a = X[0]
       for (f, k) in J.fac
@@ -2107,8 +2106,8 @@ end
 function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
     
   S = DiagonalGroup(Int[2 for i=1:length(p)])
-
   local log
+  
   let S = S, p = p
     function log(B::nf_elem)
       emb = Hecke.signs(B, p)
@@ -2132,7 +2131,6 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
       return S(ar)
     end
   end 
-  
   return S, log
   
 end
@@ -2154,10 +2152,9 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   Q, pi = quo(O, I)
   Q.factor = lp
   C = domain(mC)
-  
   @vtime :RayFacElem 1 G, mG, tame, wild = _mult_grp_mod_n(Q, y1, y2, n)
   if iszero(mod(n,2)) && !isempty(inf_plc)
-    @vtime :RayFacElem 1 H, lH = Hecke.log_infinite_primes(O, inf_plc)
+    H, lH = Hecke.log_infinite_primes(O, inf_plc)
     T = G
     G = Hecke.direct_product(G, H)[1]
   end
@@ -2233,13 +2230,13 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     for j = 1:ncols(a.coeff)
       R[i+ngens(G)+ngens(C), ngens(C)+j] = a[j]
     end
-    if mod(n, 2)==0 && !isempty(inf_plc)
+    if iszero(mod(n, 2)) && !isempty(inf_plc)
       if i==1
         for j = 1:length(inf_plc)
           R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = fmpz(1)
         end
       else
-        b = lH(mU(U[i]))::GrpAbFinGenElem
+        b = lH(mU(U[i]))
         for j = 1:length(inf_plc)
           R[i+ngens(G)+ngens(C), ngens(C)+ncols(a.coeff)+j] = b[j]
         end
@@ -2280,7 +2277,7 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
   inverse_d = invmod(nonnclass, expo)
   
   local disclog
-  let X = X, I = I, lH = lH, mG = mG, O = O, pi = pi, exp_class = exp_class, mC = mC, Q = Q, nonnclass = nonnclass, inverse_d = inverse_d, n = n, quots = quots, idemps = idemps, C = C, expo = expo
+  let X = X, I = I, mG = mG, O = O, pi = pi, exp_class = exp_class, mC = mC, Q = Q, nonnclass = nonnclass, inverse_d = inverse_d, n = n, quots = quots, idemps = idemps, C = C, expo = expo
   function disclog(J::NfOrdIdl)
     
     res = zero_matrix(FlintZZ, 1, ngens(X))
