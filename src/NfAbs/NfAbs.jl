@@ -110,7 +110,7 @@ function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
   if nbits(d) > 100
     a = div(d, fmpz(10)^(ndigits(d, 10) - 4))
     b = mod(abs(d), 10^4)
-    s = "sqrt($a....$b)"
+    s = "sqrt($a..($(nbits(d)) bits)..$b)"
   else
     s = "sqrt($d)"
   end
