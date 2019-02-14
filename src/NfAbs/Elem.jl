@@ -192,18 +192,20 @@ end
 
 function ^(x::nf_elem, y::fmpz)
   # TODO: try to coerce y to UInt
+  res = parent(x)()
   if y < 0
-    return inv(x)^(-y)
+    res = inv(x)^(-y)
   elseif y == 0
-    return parent(x)(1)
+    res = parent(x)(1)
   elseif y == 1
-    return deepcopy(x)
+    res = deepcopy(x)
   elseif mod(y, 2) == 0
     z = x^(div(y, 2))
-    return z*z
-  elseif mod(y, 2) == 1
-    return x^(y-1) * x
+    res = z*z
+  else
+    res = x^(y-1) * x
   end
+  return res
 end
 
 
@@ -318,10 +320,8 @@ end
 
 
 @doc Markdown.doc"""
-***
    is_norm_divisible(a::nf_elem, n::fmpz) -> Bool
-
-Checks if the norm of $a$ is divisible by $n$
+> Checks if the norm of $a$ is divisible by $n$, assuming that the norm of $a$ is an integer.
 """
 function is_norm_divisible(a::nf_elem, n::fmpz)
   
@@ -419,8 +419,8 @@ end
 @doc Markdown.doc"""
     norm(f::PolyElem{nf_elem}) -> fmpq_poly
 
-The norm of $f$, that is, the product of all conjugates of $f$ taken
-coefficientwise.
+>The norm of $f$, that is, the product of all conjugates of $f$ taken
+>coefficientwise.
 """
 function norm(f::PolyElem{nf_elem})
   Kx = parent(f)
@@ -483,13 +483,23 @@ end
 function factor(f::PolyElem{nf_elem})
   Kx = parent(f)
   K = base_ring(f)
-  f == 0 && error("poly is zero")
+
+  iszero(f) && error("poly is zero")
+
+  if degree(f) == 0
+    r = Fac{typeof(f)}()
+    r.fac = Dict{typeof(f), Int}()
+    r.unit = Kx(lead(f))
+    return r
+  end
+
   f_orig = deepcopy(f)
   @vprint :PolyFactor 1 "Factoring $f\n"
   @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
   if degree(g) > 0
     f = div(f, g)
   end
+
   
   if degree(f) == 1
     multip = div(degree(f_orig), degree(f))

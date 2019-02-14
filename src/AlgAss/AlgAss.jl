@@ -163,14 +163,13 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
 
   n = degree(O)
   BO = basis(O)
-
+  BOmod = NfAbsOrdElem{S, T}[ mod(O(v), I) for v in BO ]
   Fp = GF(p, cached=false)
-  BOmod = [ mod(O(v), I) for v in BO ]
   B = zero_matrix(Fp, n, n)
   for i = 1:n
-    b = elem_in_basis(BOmod[i])
+    _b = elem_in_basis(BOmod[i])
     for j = 1:n
-      B[i, j] = Fp(b[j])
+      B[i, j] = Fp(_b[j])
     end
   end
   r = _rref!(B)
@@ -184,8 +183,9 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
     bbasis[i] = O(b)
   end
 
-  _, p, L, U = _lu(transpose(B))
+  _, perm, L, U = _lu(transpose(B))
 
+  
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
   d = zero_matrix(Fp, n, 1)
@@ -194,7 +194,7 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
     for j = i:r
       c = elem_in_basis(mod(bbasis[i]*bbasis[j], I))
       for k = 1:n
-        d[p[k], 1] = c[k]
+        d[perm[k], 1] = c[k]
       end
       d = solve_lt(L, d)
       d = solve_ut(U, d)
@@ -214,22 +214,30 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
   end
   A.iscommutative = 1
 
-  function _image(a::NfOrdElem)
-    c = elem_in_basis(mod(a, I))
-    for k = 1:n
-      d[p[k], 1] = c[k]
+  local _image
+
+  let n = n, r = r, d = d, I = I, A = A, L = L, U = U
+    function _image(a::NfOrdElem)
+      c = elem_in_basis(mod(a, I))
+      for k = 1:n
+        d[perm[k], 1] = c[k]
+      end
+      d = solve_lt(L, d)
+      d = solve_ut(U, d)
+      e = A()
+      for k = 1:r
+        e.coeffs[k] = deepcopy(d[k, 1])
+      end
+      return e
     end
-    d = solve_lt(L, d)
-    d = solve_ut(U, d)
-    e = A()
-    for k = 1:r
-      e.coeffs[k] = deepcopy(d[k, 1])
-    end
-    return e
   end
 
-  function _preimage(a::AlgAssElem)
-    return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
+  local _preimage
+
+  let bbasis = bbasis, r = r
+    function _preimage(a::AlgAssElem)
+      return sum(lift(a.coeffs[i])*bbasis[i] for i = 1:r)
+    end
   end
 
   OtoA = NfAbsOrdToAlgAssMor{S, T, elem_type(Fp)}(O, A, _image, _preimage)
