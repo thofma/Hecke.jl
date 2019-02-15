@@ -790,3 +790,14 @@ function Base.:(^)(a::nf_elem, e::UInt)
 end
 
 
+@doc Markdown.doc"""
+    normal_closure(K::AnticNumberField) -> AnticNumberField, NfToNfMor
+The normal closure of $K$ together with the embedding map.
+"""
+function normal_closure(K::AnticNumberField)
+  s = splitting_field(K.pol)
+  r = roots(K.pol, s)[1]
+  return s, hom(K, s, r)
+end
+
+
