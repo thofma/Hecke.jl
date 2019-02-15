@@ -148,18 +148,168 @@ function check_relation(N::NormRelation, a::nf_elem)
   @assert !iszero(a)
   z = one(field(N))
   for i in 1:length(N)
-    z = z * embedding(N, i)(norm(embedding(N, i), N(a, i)))
+    z = z * N(norm(embedding(N, i), a), i)
   end
   return a^index(N) == z
 end
 
 function (N::NormRelation)(x::Union{nf_elem, FacElem{nf_elem, AnticNumberField}}, i::Int)
   z = one(N.K)
+  _, mk = subfield(N, i)
+  y = mk(x)
   for (auto, expo) in N.coefficients[i]
-    z = z * auto(x)^expo
+    z = z * auto(y)^expo
   end
   return z
 end
+
+function induce_action(N::NormRelation, i, s::Vector, S::Vector)
+  z = zero_matrix(SMat, FlintZZ, 0, length(S))
+  mk = embedding(N, i)
+  for i in 1:length(s)
+    v = Tuple{Int, fmpz}[]
+    pextended = prime_decomposition(mk, s[i])
+    for Q in pextended
+      for j in 1:length(S)
+        if S[j] == Q[1]
+          push!(v, (j, Q[2]))
+        end
+      end
+    end
+    push!(z, sparse_row(FlintZZ, v))
+  end
+  @show fmpz_mat(z)
+  # Now compute the permutations induced by the automorphisms
+  z
+end
+
+function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
+  ZK = maximal_order(K)
+  #c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
+  FB = NfFactorBase(ZK, S)
+  c = class_group_init(FB)
+  cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
+
+  for i = 1:1#length(N)
+    k, mk = subfield(N, i)
+    zk = maximal_order(k)
+    print("Computing class group of $k... ")
+    class_group(zk, use_aut = true)
+    println("done")
+    @show cp
+    lpk = [ P[1] for p in cp for P = prime_decomposition(zk, p)]
+    println("Now computing the S-unit group for lp of length $(length(lpk))")
+    @show lpk
+    @show length(lpk)
+    @assert length(lpk) > 0
+    Szk, mS = Hecke.sunit_mod_units_group_fac_elem(lpk)
+    # Now figure out how the valuations behave when passing from lpk to S
+    z = induce_action(N, i, lpk,S)# zero_matrix(SMat, FlintZZ, 0, length(S))
+  end
+
+  #  S, mS = sunit_mod_units_group_fac_elem(lp)
+  #  D = Dict{nf_elem, nf_elem}() # embedding cache
+  #  function N_mk(x, D, i)
+  #    if haskey(D, x)
+  #      return D[x]
+  #    else
+  #      y = N(mk(x), i)
+  #      D[x] = y
+  #      return y
+  #    end
+  #  end
+  #  for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
+  #    @show j,ngens(S)
+  #    u = mS(S[j])  #do compact rep here???
+  #    #@time u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
+  #    #for (x, v) in u.fac
+  #    #  D[x] = true
+  #    #end
+  #    @show length(D)
+  #    @time [ N_mk(x, D, i) for (x, v) = u.fac]
+  #    @time Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
+  #  end
+  #end
+
+  println("Now doing something with the units ... ")
+  torsion_units(ZK)
+  #u = units(c)
+  #for (p, e) in factor(index(N))
+  #  b = Hecke.saturate!(c, u, Int(p))
+  #  while b
+  #    b = Hecke.saturate!(c, u, Int(p))
+  #  end
+  #end
+  #return c, u
+end
+
+one(T::FacElemMon{AnticNumberField}) = T()
+
+function simplify(c::Hecke.ClassGrpCtx)
+  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+
+  Hecke.module_trafo_assure(c.M)
+  trafos = c.M.trafo
+
+  for i=1:length(c.FB.ideals)
+    x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
+    x[i] = 1
+    for j in length(trafos):-1:1
+      Hecke.apply_right!(x, trafos[j])
+    end
+    y = FacElem(vcat(c.R_gen, c.R_rel), x)
+    fl = Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
+    @assert fl
+  end
+  for i=1:nrows(c.M.rel_gens)
+    if iszero(c.M.rel_gens.rows[i])
+      Hecke._add_unit(U, c.R_rel[i])
+    end
+  end
+  for i=1:length(U.units)  
+    Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
+  end
+  return d, U
+end
+
+function units(c::Hecke.ClassGrpCtx)
+  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
+  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
+
+  Hecke.module_trafo_assure(c.M)
+  trafos = c.M.trafo
+
+  for i=1:nrows(c.M.rel_gens)
+    if iszero(c.M.rel_gens.rows[i])
+      Hecke._add_unit(U, c.R_rel[i])
+    end
+  end
+
+  U.units = Hecke.reduce(U.units, U.tors_prec)
+  U.tentative_regulator = Hecke.regulator(U.units, 64)
+
+  return U
+end
+
+function create_mat(K::T,A::Array{S,1}) where {T <: Union{AnticNumberField, Hecke.NfRel}, S <: Union{Hecke.NfRelElem, nf_elem}}
+    arrtemp = [base_field(K)(0) for i in 1:degree(K)*length(A)];
+    m = matrix(base_field(K),degree(K),length(A),arrtemp);
+    for j in 1:length(A)
+        artemp = [coeff(A[j],i) for i in 0:degree(K)-1];
+        for i in 1:degree(K)
+            m[i,j] = artemp[i];
+        end
+    end
+    return m;
+end
+
+################################################################################
+#
+#  Code for abstract norm relations
+#
+################################################################################
+
 
 # TODO:
 # If it is abelian, then a subgroup is redundant, if and only if the quotient group is not cyclic
@@ -464,123 +614,11 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
   return true, den, solutions
 end
 
-function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
-  ZK = maximal_order(K)
-  #c = Hecke.class_group_init(ZK, B, complete = false, add_rels = false, min_size = 0)
-  c = class_group_init(NfFactorBase(ZK, S))
-  cp = Set(minimum(x) for x = c.FB.ideals)
-
-  #for i = 1:length(N)
-  #  k, mk = subfield(N, i)
-  #  zk = maximal_order(k)
-  #  print("Computing class group of $k... ")
-  #  class_group(zk, use_aut = true)
-  #  println("done")
-  #  lp = prime_ideals_up_to(zk, Int(B), complete = false)
-  #  lp = [ x for x = lp if minimum(x) in cp]
-  #  println("Now computing the S-unit group for lp of length $(length(lp))")
-  #  @assert length(lp) > 0
-  #  #if length(lp) > 0
-  #  #  S, mS = Hecke.sunit_group_fac_elem(lp)
-  #  #else
-  #  #  S, mS = Hecke.unit_group_fac_elem(zk)
-  #  #end
-  #  S, mS = sunit_mod_units_group_fac_elem(lp)
-  #  D = Dict{nf_elem, nf_elem}() # embedding cache
-  #  function N_mk(x, D, i)
-  #    if haskey(D, x)
-  #      return D[x]
-  #    else
-  #      y = N(mk(x), i)
-  #      D[x] = y
-  #      return y
-  #    end
-  #  end
-  #  for j=2:ngens(S) # don't need torsion here - it's the "same" everywhere
-  #    @show j,ngens(S)
-  #    u = mS(S[j])  #do compact rep here???
-  #    #@time u = Hecke.compact_presentation(u, 2, decom = Dict((P, valuation(u, P)) for P = lp))
-  #    #for (x, v) in u.fac
-  #    #  D[x] = true
-  #    #end
-  #    @show length(D)
-  #    @time [ N_mk(x, D, i) for (x, v) = u.fac]
-  #    @time Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)))
-  #  end
-  #end
-
-  println("Now doing something with the units ... ")
-  torsion_units(ZK)
-  #u = units(c)
-  #for (p, e) in factor(index(N))
-  #  b = Hecke.saturate!(c, u, Int(p))
-  #  while b
-  #    b = Hecke.saturate!(c, u, Int(p))
-  #  end
-  #end
-  #return c, u
-end
-
-one(T::FacElemMon{AnticNumberField}) = T()
-
-function simplify(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
-
-  Hecke.module_trafo_assure(c.M)
-  trafos = c.M.trafo
-
-  for i=1:length(c.FB.ideals)
-    x = zeros(fmpz, length(c.R_gen) + length(c.R_rel))
-    x[i] = 1
-    for j in length(trafos):-1:1
-      Hecke.apply_right!(x, trafos[j])
-    end
-    y = FacElem(vcat(c.R_gen, c.R_rel), x)
-    fl = Hecke.class_group_add_relation(d, y, deepcopy(c.M.basis.rows[i]))
-    @assert fl
-  end
-  for i=1:nrows(c.M.rel_gens)
-    if iszero(c.M.rel_gens.rows[i])
-      Hecke._add_unit(U, c.R_rel[i])
-    end
-  end
-  for i=1:length(U.units)  
-    Hecke.class_group_add_relation(d, U.units[i], SRow(FlintZZ))
-  end
-  return d, U
-end
-
-function units(c::Hecke.ClassGrpCtx)
-  d = Hecke.class_group_init(c.FB, SMat{fmpz}, add_rels = false)
-  U = Hecke.UnitGrpCtx{FacElem{nf_elem, AnticNumberField}}(order(d))
-
-  Hecke.module_trafo_assure(c.M)
-  trafos = c.M.trafo
-
-  for i=1:nrows(c.M.rel_gens)
-    if iszero(c.M.rel_gens.rows[i])
-      Hecke._add_unit(U, c.R_rel[i])
-    end
-  end
-
-  U.units = Hecke.reduce(U.units, U.tors_prec)
-  U.tentative_regulator = Hecke.regulator(U.units, 64)
-
-  return U
-end
-
-function create_mat(K::T,A::Array{S,1}) where {T <: Union{AnticNumberField, Hecke.NfRel}, S <: Union{Hecke.NfRelElem, nf_elem}}
-    arrtemp = [base_field(K)(0) for i in 1:degree(K)*length(A)];
-    m = matrix(base_field(K),degree(K),length(A),arrtemp);
-    for j in 1:length(A)
-        artemp = [coeff(A[j],i) for i in 0:degree(K)-1];
-        for i in 1:degree(K)
-            m[i,j] = artemp[i];
-        end
-    end
-    return m;
-end
+################################################################################
+#
+#  Code from Erec, Fabian and Jannick
+#
+################################################################################
 
 #returns array with base elems for Q(A)
 function get_fieldbase(K::T, A::Array{S,1}) where {T <: Union{AnticNumberField, Hecke.NfRel}, S <: Union{nf_elem, Hecke.NfRelElem}}
