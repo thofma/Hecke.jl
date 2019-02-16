@@ -838,6 +838,23 @@ function trace_signature(O::AlgAssAbsOrd)
   
 end
 
+function trace_signature(A::AlgAss, P::InfPlc)
+  M = trred_matrix(basis(A))
+  Ky, y = PolynomialRing(base_ring(A), "y")
+  f = charpoly(Ky, M)
+  npos = number_positive_roots(f, P)
+  return (npos, degree(f) - npos)
+end
+
+function schur_index_at_real_plc(A::AlgAss, P::InfPlc)
+  x = trace_signature(A, P)
+  n = root(dim(A),2)
+  if x[1] == divexact(n*(n+1),2)
+    return 1
+  else
+    return 2
+  end
+end
 
 ################################################################################
 #

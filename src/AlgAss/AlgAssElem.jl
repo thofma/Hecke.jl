@@ -598,6 +598,25 @@ end
 
 ################################################################################
 #
+#  Gram matrix of reduced trace
+#
+################################################################################
+
+function trred_matrix(A::Vector{<: AlgAssElem})
+  n = length(A)
+  n == 0 && error("Array must be non-empty")
+  K = base_ring(parent(A[1]))
+  M = zero_matrix(K, n, n)
+  for i in 1:n
+    for j in 1:n
+      M[i, j] = trred(A[i] * A[j])
+    end
+  end
+  return M
+end
+
+################################################################################
+#
 #  Characteristic polynomial
 #
 ################################################################################

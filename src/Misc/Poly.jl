@@ -1855,6 +1855,64 @@ function number_positive_roots(f::fmpz_poly)
 
 end
 
+function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
+  fsq = squarefree_factorization(f)
+  p = 0
+  for (g, e) in fsq
+    p = p + _number_positive_roots_sqf(g, P) * e
+  end
+  return p
+end
+
+function _number_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+  prec = start_prec
+  while true
+    coeffs = Vector{acb}(undef, length(f))
+    c = evaluate(coeff(f, 0), P, prec)
+    coeffs[1] = c
+    C = parent(c)
+    Cx, x = PolynomialRing(C, "x", cached = false)
+    for i in 1:degree(f)
+      coeffs[i + 1] = evaluate(coeff(f, i), P, prec)
+    end
+    g = Cx(coeffs)
+    rts = real.(Hecke.roots(g))
+    if any(contains_zero, rts)
+      prec = 2 * prec
+    else
+      return count(ispositive, rts)
+    end
+  end
+end
+
+################################################################################
+#
+#  Squarefree factorization in characteristic 0
+#
+################################################################################
+
+# This is Musser's algorithm
+function squarefree_factorization(f::PolyElem)
+  @assert iszero(characteristic(base_ring(f)))
+  c = lead(f)
+  f = divexact(f, c)
+  di = gcd(f, derivative(f))
+  ei = divexact(f, di)
+  i = 1
+  res = Dict{typeof(f), Int}()
+  while !isconstant(ei)
+    eii = gcd(di, ei)
+    dii = divexact(di, eii)
+    if degree(eii) != degree(ei)
+      res[divexact(ei, eii)] = i
+    end
+    i = i +1
+    di = dii
+    ei = eii
+  end
+  return Fac(parent(f)(c), res)
+end
+
 ################################################################################
 #
 #  Squarefree factorization for fmpz_poly
