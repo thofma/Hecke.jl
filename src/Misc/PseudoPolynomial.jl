@@ -51,6 +51,7 @@ function can_reduce(f::PseudoPoly{S, T}, G::Array{PseudoPoly{S, T}, 1}) where {S
       g = g - l[i] * polynomial(G[I[i]]) * divexact(lmf, leading_monomial(G[I[i]]))
     end
     @assert leading_monomial(g) != lmf
+    @show leading_monomial(g)
     return true, pseudo_polynomial(g, coefficient_ideal(f))
   else
     return false, f
@@ -125,6 +126,33 @@ function _simplify(pp)
   I = coefficient_ideal(pp) * inv(base_ring(f)(den))
   I = simplify(I)
   return pseudo_polynomial(g, I)
+end
+
+function gb_naive(G::Vector{S}) where {S}
+  GG::Vector{S} = deepcopy(G)
+  #reverse!(GG)
+  L = Tuple{S, S}[ (GG[i], GG[j]) for i in 1:length(GG) for j in 1:(i - 1)]
+  while !isempty(L)
+    @show length(L)
+    sort!(L, by = x -> total_degree(polynomial(x[1])) + total_degree(polynomial(x[2])))
+    reverse!(L)
+    (f, g) = pop!(L)
+    sp = spoly(f, g)
+    r = reduce(sp, GG)
+    if !iszero(r)
+      r = _simplify(r)
+      if total_degree(polynomial(r)) == 0
+        @show norm(coefficient_ideal(r)) * norm(coeff(polynomial(r), 1))
+      else
+        @show polynomial(r)
+      end
+      for f in GG
+        push!(L, (f, r))
+      end
+      push!(GG, r)
+    end
+  end
+  return GG
 end
 
 function gb(G::Vector{S}, mmod) where {S}
