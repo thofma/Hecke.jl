@@ -692,6 +692,3 @@ function group_structure(Q::NfOrdQuoRing)
   return S
 end
 
-
-
-

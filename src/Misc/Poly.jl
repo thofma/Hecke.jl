@@ -1617,7 +1617,7 @@ function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: F
   A = S([coeff(reverse(derivative(f)), i) for i=0:d-1], d, n+1, 0)
   B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
   L = A*inv(B)
-  s = [coeff(L, i) for i=1:n]
+  s = T[coeff(L, i) for i=1:n]
   return s
 end
 
@@ -1648,11 +1648,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   R = parent(P[1])
   S = PowerSeriesRing(R, d, "gen(S)")[1]
   s = S(P, length(P), d, 0)
-  if !false
-    r = - integral(s)
-    r = exp(r)
-  end
-
+  
+  r = -integral(s)
+  r1 = exp(r)
+  #=
   if false
     r = S(T[R(1), -P[1]], 2, 2, 0) 
     la = [d+1]
@@ -1670,10 +1669,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
     end
     println("new exp $r")
   end
-  v = valuation(r)
-  @assert v==0
+  =#
+  @assert iszero(valuation(r1))
   Rx, x = PolynomialRing(R, cached = false)
-  return Rx([Nemo.polcoeff(r, d-i) for i=0:d])
+  return Rx([Nemo.polcoeff(r1, d-i) for i=0:d])
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T

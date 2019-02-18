@@ -331,7 +331,7 @@ end
 #
 ###############################################################################
 
-function _compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
+function compose(f::GrpAbFinGenMap, g::GrpAbFinGenMap)
   @assert domain(g)==codomain(f)
   
   M=f.map*g.map

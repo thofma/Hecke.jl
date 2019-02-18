@@ -12,10 +12,9 @@ function Base.show(io::IO, E::BadPrime)
   end
 end
 
-mutable struct ClassField_pp
-  mq::Map
-  rayclassgroupmap::Map#MapRayClassGrp
-  quotientmap::Map#GrpAbFinGenMap
+mutable struct ClassField_pp{S, T}
+  rayclassgroupmap::S
+  quotientmap::T
   a::FacElem{nf_elem, AnticNumberField}#Generator of the Kummer Extension
 
   sup::Array{NfOrdIdl, 1} # the support of a - if known
@@ -32,8 +31,8 @@ mutable struct ClassField_pp
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap
 
-  function ClassField_pp()
-    z = new()
+  function ClassField_pp{S, T}() where {S, T}
+    z = new{S, T}()
     z.degree = -1
     return z
   end
@@ -53,23 +52,22 @@ function Base.show(io::IO, C::ClassField_pp)
 end
 
 
-mutable struct ClassField
-  mq::Map
-  rayclassgroupmap::Map
-  quotientmap::Map#GrpAbFinGenMap
+mutable struct ClassField{S, T}
+  rayclassgroupmap::S#Union{MapRayClassGrp{GrpAbFinGen}, MapClassGrp{GrpAbFinGen}}
+  quotientmap::T#GrpAbFinGenMap
 
   conductor::Tuple{NfOrdIdl, Array{InfPlc, 1}}
   relative_discriminant::Dict{NfOrdIdl, Int}
   absolute_discriminant::Dict{fmpz,Int}
-  cyc::Array{ClassField_pp, 1}
+  cyc::Array{ClassField_pp{S, T}, 1}
   A::NfRel_ns{nf_elem}
   AbsAutGrpA::Vector{NfRel_nsToNfRel_nsMor{nf_elem}} #The generators for the absolute automorphism
                                                      #group of A
   degree::Int # The degree of the relative extension we are searching for.
               # In other words, the order of the codomain of quotientmap
 
-  function ClassField()
-    z = new()
+  function ClassField{S, T}() where {S, T}
+    z = new{S, T}()
     z.degree = -1
     return z
   end
@@ -148,14 +146,14 @@ end
   degree(A::ClassField)
 > The degree of $A$ over its base field, ie. the size of the defining ideal group.
 """
-function degree(A::ClassField)
+function degree(A::ClassField{S, T}) where {S, T}
   if A.degree == -1
     A.degree = Int(order(codomain(A.quotientmap)))
   end
   return A.degree
 end
 
-function degree(A::ClassField_pp)
+function degree(A::ClassField_pp{S, T}) where {S, T}
   if A.degree == -1
     A.degree = Int(order(codomain(A.quotientmap)))
   end
