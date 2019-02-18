@@ -57,6 +57,10 @@ function div(f::PolyElem, g::PolyElem)
   return q
 end
 
+function rem(f::PolyElem, g::PolyElem)
+  return mod(f, g)
+end
+
 function ismonic(a::PolyElem)
   return isone(lead(a))
 end

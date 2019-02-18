@@ -1,6 +1,8 @@
 add_assert_scope(:AlgAssOrd)
 add_verbose_scope(:AlgAssOrd)
 
+export issplit
+
 elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
 elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
@@ -840,13 +842,16 @@ end
 
 function trace_signature(A::AlgAss, P::InfPlc)
   M = trred_matrix(basis(A))
-  Ky, y = PolynomialRing(base_ring(A), "y")
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
   f = charpoly(Ky, M)
   npos = number_positive_roots(f, P)
   return (npos, degree(f) - npos)
 end
 
 function schur_index_at_real_plc(A::AlgAss, P::InfPlc)
+  if dim(A) % 4 != 0
+    return 1
+  end
   x = trace_signature(A, P)
   n = root(dim(A),2)
   if x[1] == divexact(n*(n+1),2)
@@ -854,6 +859,13 @@ function schur_index_at_real_plc(A::AlgAss, P::InfPlc)
   else
     return 2
   end
+end
+
+function issplit(A::AlgAss, P::InfPlc)
+  if iscomplex(P)
+    return true
+  end
+  return schur_index_at_real_plc(A, P) == 1
 end
 
 ################################################################################

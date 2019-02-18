@@ -205,3 +205,27 @@ end
   A = AlgAss(AlgGrp(Fp, G))[1]
   @test nrows(basis_mat(Hecke.radical(A), false)) == 0
 end
+
+@testset "Splitting at infinite place" begin
+  G = small_group(8, 4)
+  Qx, x = PolynomialRing(FlintQQ, "x")
+  K, a = NumberField(x - 1, "a")
+  A = Hecke.AlgGrp(K, G)
+  H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 4)
+  P = infinite_places(K)[1]
+  @test !issplit(H, P)
+
+  K, a = NumberField(x - 1, "a")
+  A = Hecke.AlgGrp(K, G)
+  H = first(c[1] for c in Hecke.decompose(A) if dim(c[1]) == 1)
+  P = infinite_places(K)[1]
+  @test issplit(H, P)
+
+  K, a = NumberField(x^2 - 2, "a")
+  HH = Hecke.quaternion_algebra(2, 3)
+  A = AlgAss(K, map(K, HH.mult_table))
+  Ps = real_places(K)
+  @test issplit(A, Ps[1])
+  @test issplit(A, Ps[2])
+end
+
