@@ -12,6 +12,8 @@ frac_ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
 
 algebra(O::AlgAssAbsOrd) = O.algebra
 
+iscommutative(O::AlgAssAbsOrd) = iscommutative(algebra(O))
+
 ################################################################################
 #
 #  Construction

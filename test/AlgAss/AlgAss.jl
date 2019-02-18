@@ -204,6 +204,29 @@ end
   Fq, a = FiniteField(fmpz(13), 2, "a")
   A = AlgAss(AlgGrp(Fp, G))[1]
   @test nrows(basis_mat(Hecke.radical(A), false)) == 0
+
+  Qx, x = FlintQQ["x"]
+  # f = x^2 + 1
+  # g = x^3 + 3x^2 + 5x - 5
+  f2g3 = x^13 + 9x^12 + 44x^11 + 120x^10 + 205x^9 + 153x^8 + 32x^7 - 168x^6 - 5x^5 - 485x^4 + 500x^3 - 400x^2 + 375x - 125 # = f^2*g^3
+  A = AlgAss(f2g3)
+  fg = A(fmpq[-5, 5, -2, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0]) # = f*g
+  J = Hecke.radical(A)
+  I = ideal(A, fg)
+  @test I == J
+
+  f = x^2 + 1
+  K, a = number_field(f, "a")
+  Ky, y = K["y"]
+  # g = y^3 - 3y^2 - 3y + 2
+  # h = y^2 + 5y + 5
+  g2h3 = y^12 + 9y^11 + 3y^10 - 198y^9 - 603y^8 + 423y^7 + 4829y^6 + 8430y^5 + 4335y^4 - 2675y^3 - 3075y^2 + 500 # = g^2*h^3
+  A = AlgAss(g2h3)
+  gh = A(map(K, [10, -5, -28, -13, 2, 1, 0, 0, 0, 0, 0, 0])) # = g*h
+  J = Hecke.radical(A)
+  I = ideal(A, gh)
+  @test I == J
+
 end
 
 @testset "Splitting at infinite place" begin
