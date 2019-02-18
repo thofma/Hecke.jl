@@ -28,6 +28,58 @@ struct RelNeq
   end
 end
 
+#= Via Lorenz... Let K/k be finite
+
+  {N(I) = 1}
+  ----------   < Cl_(Z_K * m)
+  {N(a) = 1}
+
+  For m the lorenz_module for n=K:k in Z_k: any unit u = 1 (m) is an n-th power.
+  If I = J in Cl_(Z_K m) => I = a J and a = 1 (Z_K m). Furthermore, since N(I) = N(J) = 1Zk (the trivial ideal)
+  N(a) is a unit. Since a = 1 (Z_K m) we have N(a) = 1 (m) so N(a) = eps^n, thus N(a/eps) = 1 and
+  I = J in the norm-1-group.
+  Since the map (injection) is only well defined on ideals coprime to m, we don't get everything.
+  We're missing the contribution of finitely many explicit ideals, hence this can be fixed.
+
+  In the case of k = Q, this amounts to the strict (narrow) class group (I think).
+
+  This is easier to handle than the version below (free of lorenz_module).
+
+  Next Q: Let N^1 be the subgroup of Cl_M defined above. Then
+
+           X_M  the ray class field mod M = Z_K m 
+            |   
+            |
+            X   the class field for N^1, thus the norm group is Cl_M/N^1
+         Y  |   the norm group of Y is the norm of X_M over k.
+         |  |   Possibly X = KY? To neat, but maybe a central/ ...? extension
+         |  K
+         | /
+         |/
+         k
+
+
+ Now, finally the question: has X any (useful) Galois theoretic characterisation such as
+   the minmal/ maximal field ...
+   the compositum with ...
+   is a version of the genus field ...
+ Can one use this unknown characterisation to compute X (the degree of X) hence get a method to
+ provably compute N^1?
+ So far, to compute N^1: just try small prime ideals until the computation stablises. Then hope.
+   Alternatively: use Jan Albert's thesis to get bound on the generation...
+
+ For K/k normal this should reduce(?) to Scholz' paper (or Jehne's version) on Zahlknoten/ number knots
+ In this case N(I) = 1 iff I = prod A^(1-sigma a) thus it can be computed from the Galois action on 
+ ideal (classes), then Cl/N^1 is fixed pointwise by Gal(K/k) (trivial action) (in fact this should be the
+ largest/ smallest such quotient)
+ hence the group extension (exact sequence)
+    
+   1 -> Cl/N^1 -> Gal(X/k) -> Gal(K/k) -> 1 
+
+ is split(?) direct(?) (nice?) (special?)
+
+ My memory of Scholz is that there is a second field lurking around...
+=#  
 function norm_1_subgroup(A::RelNeq)
   k = A.k
   K = A.K

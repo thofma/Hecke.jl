@@ -158,12 +158,12 @@ function AlgAss(f::PolyElem)
   return A
 end
 
-function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) where {S, T}
+function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAbsOrdIdl}, p::Union{Integer, fmpz})
   @assert order(I) == O
 
   n = degree(O)
   BO = basis(O)
-  BOmod = NfAbsOrdElem{S, T}[ mod(O(v), I) for v in BO ]
+  BOmod = elem_type(O)[ mod(O(v), I) for v in BO ]
   Fp = GF(p, cached=false)
   B = zero_matrix(Fp, n, n)
   for i = 1:n
@@ -185,13 +185,20 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
 
   _, perm, L, U = _lu(transpose(B))
 
-  
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
   d = zero_matrix(Fp, n, 1)
 
+  iscom = true
+  if O isa AlgAssAbsOrd
+    iscom = iscommutative(O)
+  end
+
   for i = 1:r
-    for j = i:r
+    for j = 1:r
+      if iscom && j < i
+        continue
+      end
       c = elem_in_basis(mod(bbasis[i]*bbasis[j], I))
       for k = 1:n
         d[perm[k], 1] = c[k]
@@ -200,7 +207,9 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
       d = solve_ut(U, d)
       for k = 1:r
         mult_table[i, j, k] = deepcopy(d[k, 1])
-        mult_table[j, i, k] = deepcopy(d[k, 1])
+        if iscom && i != j
+          mult_table[j, i, k] = deepcopy(d[k, 1])
+        end
       end
     end
   end
@@ -217,7 +226,7 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
   local _image
 
   let n = n, r = r, d = d, I = I, A = A, L = L, U = U
-    function _image(a::NfOrdElem)
+    function _image(a::Union{ NfOrdElem, AlgAssAbsOrdElem })
       c = elem_in_basis(mod(a, I))
       for k = 1:n
         d[perm[k], 1] = c[k]
@@ -240,7 +249,7 @@ function AlgAss(O::NfAbsOrd{S, T}, I::NfAbsOrdIdl, p::Union{Integer, fmpz}) wher
     end
   end
 
-  OtoA = NfAbsOrdToAlgAssMor{S, T, elem_type(Fp)}(O, A, _image, _preimage)
+  OtoA = AbsOrdToAlgAssMor{typeof(O), elem_type(Fp)}(O, A, _image, _preimage)
 
   return A, OtoA
 end
@@ -877,6 +886,20 @@ function restrict_scalars(A::AlgAss{fq}, Fp::Generic.ResField{fmpz})
   return _restrict_scalars_to_prime_field(A, Fp)
 end
 
+function restrict_scalars(A::AlgAss{gfp_elem}, Fp::GaloisField)
+  function AtoA(x::AlgAssElem)
+    return x
+  end
+  return A, AtoA, AtoA
+end
+
+function restrict_scalars(A::AlgAss{Generic.ResF{fmpz}}, Fp::Generic.ResField{fmpz})
+  function AtoA(x::AlgAssElem)
+    return x
+  end
+  return A, AtoA, AtoA
+end
+
 function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{FlintRationalField, GaloisField, Generic.ResField{fmpz}}) where { T <: Union{nf_elem, fq_nmod, fq} }
   K = base_ring(A)
   n = dim(A)
@@ -1047,6 +1070,14 @@ end
 function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}} }
   K = base_ring(A)
   C, CtoA = center(A)
+
+  if dim(C) == 1
+    function AtoA(x::AlgAssElem)
+      return x
+    end
+    return A, AtoA, AtoA
+  end
+
   if T === fmpq
     fields = as_number_fields(C)
     @assert length(fields) == 1
