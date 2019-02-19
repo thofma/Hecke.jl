@@ -825,14 +825,14 @@ function _as_field(A::AlgAss{T}) where T
   return a, mina, f
 end
 
-function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq} }
   return _as_field_with_isomorphism(A, _primitive_element(A)...)
 end
 
 # Assuming a is a primitive element of A and mina its minimal polynomial, this
 # functions constructs the field base_ring(A)/mina and the isomorphism between
 # A and this field.
-function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}}, T <: Union{fmpq_poly, gfp_poly, gfp_fmpz_poly} }
+function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::T) where { S <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq_nmod, fq}, T <: Union{fmpq_poly, gfp_poly, gfp_fmpz_poly, fq_nmod_poly, fq_poly} }
   s = one(A)
   M = zero_matrix(base_ring(A), dim(A), dim(A))
   elem_to_mat_row!(M, 1, s)
@@ -846,10 +846,13 @@ function _as_field_with_isomorphism(A::AbsAlgAss{S}, a::AbsAlgAssElem{S}, mina::
     return K, AbsAlgAssToNfAbsMor(A, K, inv(M), M)
   elseif base_ring(A) isa GaloisField
     Fq = FqNmodFiniteField(mina, Symbol("a"), false)
-    return Fq, AbsAlgAssToFqNmodMor(A, Fq, inv(M), M)
+    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(mina))
   elseif base_ring(A) isa Generic.ResField{fmpz}
     Fq = FqFiniteField(mina, Symbol("a"), false)
-    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M)
+    return Fq, AbsAlgAssToFqMor(A, Fq, inv(M), M, parent(mina))
+  elseif base_ring(A) isa FqNmodFiniteField || base_ring(A) isa FqFiniteField
+    Fr, RtoFr = field_extension(mina)
+    return Fr, AbsAlgAssToFqMor(A, Fr, inv(M), M, parent(mina), RtoFr)
   else
     error("Not implemented")
   end
@@ -1067,7 +1070,7 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
   return B, AtoB, BtoA
 end
 
-function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}} }
+function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} }
   K = base_ring(A)
   C, CtoA = center(A)
 
@@ -1085,6 +1088,8 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
   else
     L, CtoL = _as_field_with_isomorphism(C)
   end
+
+  isfq = ( T === fq_nmod || T === fq )
 
   basisC = basis(C)
   basisCinA = Vector{elem_type(A)}(undef, dim(C))
@@ -1130,14 +1135,19 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
   iMM = inv(MM)
 
   local _new_coeffs
-  let L = L, K = K, iMM = iMM, basisCinL = basisCinL, C = C, m = m
+  let L = L, K = K, iMM = iMM, basisCinL = basisCinL, C = C, m = m, isfq = isfq
     _new_coeffs = x -> begin
       y = zeros(L, m)
       xx = matrix(K, 1, dim(A), coeffs(x, false))
       Mx = xx*iMM
       for i = 1:m
         for j = 1:dim(C)
-          y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
+          if isfq
+            t = CtoL.RtoFq(CtoL.R(Mx[1, (i - 1)*dim(C) + j]))
+            y[i] = addeq!(y[i], basisCinL[j]*t)
+          else
+            y[i] = addeq!(y[i], basisCinL[j]*Mx[1, (i - 1)*dim(C) + j])
+          end
         end
       end
       return y
