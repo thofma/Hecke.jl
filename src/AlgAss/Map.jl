@@ -238,86 +238,82 @@ end
 #
 ################################################################################
 
-# S is the type of the algebra, T the element type of the algebra.
-mutable struct AbsAlgAssToFqMor{S, T} <: Map{S, FqFiniteField, HeckeMap, AbsAlgAssToFqMor}
-  header::MapHeader{S, FqFiniteField}
-  mat::Generic.Mat{Generic.ResF{fmpz}}
-  imat::Generic.Mat{Generic.ResF{fmpz}}
-  t::Generic.Mat{Generic.ResF{fmpz}} # dummy vector used in image and preimage
-  tt::Generic.Mat{Generic.ResF{fmpz}} # another dummy vector
+# Morphism between an algebra A and a finite field Fq.
+# base_ring(A) can be a GaloisField, a Generic.ResField{fmpz} or a Fq(Nmod)FiniteField, Fq can be a
+# Fq(Nmod)FiniteField.
+# MatType is the type of matrices over base_ring(A), PolyRingType the type of a
+# polynomial ring over base_ring(A)
+mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeMap, AbsAlgAssToFqMor}
+  header::MapHeader{S, T}
+  mat::MatType
+  imat::MatType
+  t::MatType # dummy vector used in image and preimage
+  tt::MatType # another dummy vector
+  R::PolyRingType
+  RtoFq::FqPolyRingToFqMor # only used if S == AbsAlgAss{fq} or S == AbsAlgAss{fq_nmod}
 
-  function AbsAlgAssToFqMor{S, T}(A::S, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}}) where { S <: AbsAlgAss{Generic.ResF{fmpz}}, T <: AbsAlgAssElem{Generic.ResF{fmpz}} }
+  function AbsAlgAssToFqMor{S, T, MatType, PolyRingType}(A::S, Fq::T, M::MatType, N::MatType, R::PolyRingType, RtoFq::FqPolyRingToFqMor...) where {
+           S <: AbsAlgAss{S1} where { S1 <: Union{ gfp_elem, Generic.ResF{fmpz}, fq, fq_nmod} },
+           T <: Union{ FqNmodFiniteField, FqFiniteField },
+           MatType <: Union{ gfp_mat, Generic.Mat{Generic.ResF{fmpz}}, fq_nmod_mat, fq_mat },
+           PolyRingType <: Union{ GFPPolyRing, GFPFmpzPolyRing, FqNmodPolyRing, FqPolyRing }
+    }
 
-    z = new{S, T}()
+    z = new{S, T, MatType, PolyRingType}()
     z.mat = M
     z.imat = N
     z.t = zero_matrix(base_ring(A), 1, dim(A))
-    z.tt = zero_matrix(base_ring(A), 1, degree(Fq))
+    z.tt = zero_matrix(base_ring(A), 1, dim(A))
+    z.R = R
 
-    function _image(x::T)
+    isfq = ( base_ring(A) isa FqNmodFiniteField || base_ring(A) isa FqFiniteField )
+    if isfq
+      z.RtoFq = RtoFq[1]
+    end
+
+    function _image(x::AlgAssElem)
+      @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
         z.t[1, i] = x.coeffs[i]
       end
       s = z.t*M
-      R = PolynomialRing(base_ring(A))[1]
-      return Fq(R([ s[1, i] for i = 1:degree(Fq) ]))
+      sR = z.R([ s[1, i] for i = 1:dim(A) ])
+      if isfq
+        return Fq(z.RtoFq(sR))
+      else
+        return Fq(sR)
+      end
     end
 
-    function _preimage(x::fq)
-      for i = 1:degree(Fq)
+    function _preimage(x::Union{ fq_nmod, fq })
+      @assert typeof(x) == elem_type(T)
+      if isfq
+        x = z.RtoFq\x
+      end
+      for i = 1:dim(A)
         z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
       end
       s = z.tt*N
       return A([ s[1, i] for i = 1:dim(A) ])
     end
 
-    z.header = MapHeader{S, FqFiniteField}(A, Fq, _image, _preimage)
+    z.header = MapHeader{S, T}(A, Fq, _image, _preimage)
     return z
   end
 end
 
-function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}})
-  return AbsAlgAssToFqMor{typeof(A), elem_type(A)}(A, Fq, M, N)
+function AbsAlgAssToFqMor(A::AbsAlgAss{gfp_elem}, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat, R::GFPPolyRing)
+  return AbsAlgAssToFqMor{typeof(A), FqNmodFiniteField, gfp_mat, GFPPolyRing}(A, Fq, M, N, R)
 end
 
-# S is the type of the algebra, T the element type of the algebra.
-mutable struct AbsAlgAssToFqNmodMor{S, T} <: Map{S, FqNmodFiniteField, HeckeMap, AbsAlgAssToFqNmodMor}
-  header::MapHeader{S, FqNmodFiniteField}
-  mat::gfp_mat
-  imat::gfp_mat
-  t::gfp_mat # dummy vector used in image and preimage
-  tt::gfp_mat # another dummy vector
-
-  function AbsAlgAssToFqNmodMor{S, T}(A::S, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat) where { S <: AbsAlgAss{gfp_elem}, T <: AbsAlgAssElem{gfp_elem} }
-
-    z = new{S, T}()
-    z.mat = M
-    z.imat = N
-    z.t = zero_matrix(base_ring(A), 1, dim(A))
-    z.tt = zero_matrix(base_ring(A), 1, degree(Fq))
-
-    function _image(x::T)
-      for i = 1:dim(A)
-        z.t[1, i] = x.coeffs[i]
-      end
-      s = z.t*M
-      R = PolynomialRing(base_ring(A))[1]
-      return Fq(R([ s[1, i] for i = 1:degree(Fq) ]))
-    end
-
-    function _preimage(x::fq_nmod)
-      for i = 1:degree(Fq)
-        z.tt[1, i] = base_ring(A)(coeff(x, i - 1))
-      end
-      s = z.tt*N
-      return A([ s[1, i] for i = 1:dim(A) ])
-    end
-
-    z.header = MapHeader{S, FqNmodFiniteField}(A, Fq, _image, _preimage)
-    return z
-  end
+function AbsAlgAssToFqMor(A::AbsAlgAss{fq_nmod}, Fq::FqNmodFiniteField, M::fq_nmod_mat, N::fq_nmod_mat, R::FqNmodPolyRing, RtoFq::FqPolyRingToFqMor)
+  return AbsAlgAssToFqMor{typeof(A), FqNmodFiniteField, fq_nmod_mat, FqNmodPolyRing}(A, Fq, M, N, R, RtoFq)
 end
 
-function AbsAlgAssToFqNmodMor(A::AbsAlgAss{gfp_elem}, Fq::FqNmodFiniteField, M::gfp_mat, N::gfp_mat)
-  return AbsAlgAssToFqNmodMor{typeof(A), elem_type(A)}(A, Fq, M, N)
+function AbsAlgAssToFqMor(A::AbsAlgAss{Generic.ResF{fmpz}}, Fq::FqFiniteField, M::Generic.Mat{Generic.ResF{fmpz}}, N::Generic.Mat{Generic.ResF{fmpz}}, R::GFPFmpzPolyRing)
+  return AbsAlgAssToFqMor{typeof(A), FqFiniteField, Generic.Mat{Generic.ResF{fmpz}}, GFPFmpzPolyRing}(A, Fq, M, N, R)
+end
+
+function AbsAlgAssToFqMor(A::AbsAlgAss{fq}, Fq::FqFiniteField, M::fq_mat, N::fq_mat, R::FqPolyRing, RtoFq::FqPolyRingToFqMor)
+  return AbsAlgAssToFqMor{typeof(A), FqFiniteField, fq_mat, FqPolyRing}(A, Fq, M, N, R, RtoFq)
 end

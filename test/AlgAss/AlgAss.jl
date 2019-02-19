@@ -96,6 +96,18 @@ end
   @test dim(C) == dim(A)
 
   test_alg_morphism_char_p(B, C, BtoC, CtoB)
+
+  # Extend from F_p^m to F_p^n
+  Fqx, x = Fq["x"]
+  f = x^2 + 5x + 2
+  A = AlgAss(f)
+  B, AtoB, BtoA = Hecke._as_algebra_over_center(A)
+  @test characteristic(base_ring(B)) == characteristic(Fq)
+  @test degree(base_ring(B)) == degree(f)*degree(Fq)
+  @test dim(B) == 1
+
+  test_alg_morphism_char_p(A, B, AtoB, BtoA)
+
 end
 
 # n = dim(A)^2 = dim(B)^2
