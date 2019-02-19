@@ -137,13 +137,14 @@ function rel_auto(A::ClassField_pp)
   end
 end
 
+
 function rel_auto(A::ClassField)
-  aut = NfRelToNfRelMor[rel_auto(x) for x = A.cyc]
+  aut = NfRelToNfRelMor{nf_elem}[rel_auto(x) for x = A.cyc]
   K = number_field(A)
   g = gens(K)
-  Aut = NfRel_nsToNfRel_nsMor{nf_elem}[]
-  for i=1:length(aut)
-    push!(Aut, NfRel_nsToNfRel_nsMor(K, K, [j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)]))
+  Aut = Vector{NfRel_nsToNfRel_nsMor{nf_elem}}(undef, length(aut))
+  for i = 1:length(aut)
+    Aut[i] = NfRel_nsToNfRel_nsMor(K, K, NfRel_nsElem{nf_elem}[j==i ? aut[i].prim_img.data(g[j]) : g[j] for j=1:length(aut)])
   end
   return Aut
 end

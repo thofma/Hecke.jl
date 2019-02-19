@@ -424,10 +424,9 @@ function _absolute_field(K::NfRel, cached::Bool = false)
 
   l = 0
   g = f
-  N = 0
+  N = norm(g)
 
   while true
-    N = norm(g)
     @assert degree(N) == degree(g) * degree(k)
 
     if !isconstant(N) && issquarefree(N)
@@ -437,9 +436,10 @@ function _absolute_field(K::NfRel, cached::Bool = false)
     l += 1
  
     g = compose(f, gen(kx) - l*gen(k))
+    N = norm(g)
   end
 
-  Ka = NumberField(N, "_\$", cached = cached, check = false)[1]
+  Ka = NumberField(N, "x", cached = cached, check = false)[1]
 
   KaT, T = PolynomialRing(Ka, "T", cached = false)
 

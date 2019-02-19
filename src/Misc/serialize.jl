@@ -1,7 +1,8 @@
 
 #TODO: do binary...although this is exactly what BigInt does
+
 function serialize(s::AbstractSerializer, t::fmpz)
-  serialize_type(s, fmpz)
+  Serialization.serialize_type(s, fmpz)
   return serialize(s, base(t, 62))
 end
 
@@ -10,7 +11,7 @@ function deserialize(s::AbstractSerializer, ::Type{fmpz})
 end
 
 function serialize(s::AbstractSerializer, t::fmpq)
-  serialize_type(s, fmpq)
+  Serialization.serialize_type(s, fmpq)
   serialize(s, base(numerator(t), 62))
   return serialize(s, base(denominator(t), 62))
 end
@@ -22,7 +23,7 @@ function deserialize(s::AbstractSerializer, ::Type{fmpq})
 end
 
 function serialize(s::AbstractSerializer, t::PolyElem{T}) where T
-  serialize_type(s, PolyElem{T})
+  Serialization.serialize_type(s, PolyElem{T})
   serialize(s, length(t))
   for i=0:length(t)
     serialize(s, coeff(t, i))
@@ -41,12 +42,22 @@ function deserialize(s::AbstractSerializer, ::Type{PolyElem{T}}) where T
 end
 
 function serialize(s::AbstractSerializer, t::AnticNumberField)
-  serialize_type(s, AnticNumberField)
+  Serialization.serialize_type(s, AnticNumberField)
   return serialize(s, t.pol)
 end
 
 function deserialize(s::AbstractSerializer, ::Type{AnticNumberField})
   return number_field(deserialize(s), cached=false)[1]
+end
+
+function serialize(s::AbstractSerializer, t::NfToNfMor)
+  Serialization.serialize_type(s, NfToNfMor)
+  return serialize(s, (domain(t), codomain(t), t.prim_img))
+end
+
+function deserialize(s::AbstractSerializer, ::Type{NfToNfMor})
+  K, L, a = deserialize(s)
+  return NfToNfMor(K, L, a)
 end
 
 add_verbose_scope(:Par)

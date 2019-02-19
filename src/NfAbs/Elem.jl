@@ -427,19 +427,18 @@ function norm(f::PolyElem{nf_elem})
   K = base_ring(f)
   if degree(f) > 10 # TODO: find a good cross-over
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
-    PQ = [tr(x) for x=P]
+    PQ = fmpq[tr(x) for x in P]
     return power_sums_to_polynomial(PQ)
   end
 
   Qy = parent(K.pol)
-  y = gen(Qy)
   Qyx, x = PolynomialRing(Qy, "x", cached = false)
 
   Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
   T = evaluate(K.pol, gen(Qxy))
-  h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))
+  h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))::Generic.Poly{fmpq_poly}
   return resultant(T, h)
 end
 
@@ -780,7 +779,7 @@ function ispower(a::nf_elem, n::Int; with_roots_unity::Bool = false)
 
   d = denominator(a)
 
-  Ky, y = PolynomialRing(parent(a), "y")
+  Ky, y = PolynomialRing(parent(a), "y", cached = false)
 
   if n == 2 || with_roots_unity
     rt = roots(y^n - a*d^n, max_roots = 1, ispure = true, isnormal = true)

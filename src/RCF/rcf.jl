@@ -30,12 +30,13 @@ end
 > (formal) abelian extension where the (relative) automorphism group
 > is canonically isomorphic to the codomain of $q$.
 """
-function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp}, quomap::GrpAbFinGenMap)
-  CF = ClassField()
+function ray_class_field(m::S, quomap::T) where {S <: Union{MapClassGrp, MapRayClassGrp}, T}
+  CF = ClassField{S, T}()
   CF.rayclassgroupmap = m
-  S, mS = snf(codomain(quomap))
-  CF.quotientmap = Hecke._compose(inv(mS), quomap)
-  #CF.mq = Hecke.make_snf(Hecke._compose(m, inv(quomap)))
+  D = codomain(quomap)
+  S1, mS1 = snf(D)
+  iS1 = GrpAbFinGenMap(D, S1, mS1.imap, mS1.map)
+  CF.quotientmap = Hecke.compose(quomap, iS1)
   return CF
 end
 
@@ -78,21 +79,21 @@ end
 > for all prime power cyclic subfields.
 > Note, by type this is always a non-simple extension.
 """
-function NumberField(CF::ClassField; redo::Bool = false)
+function NumberField(CF::ClassField{S, T}; redo::Bool = false) where {S, T}
   if isdefined(CF, :A) && !redo
     return CF.A
   end
   
-  res = ClassField_pp[]
+  res = ClassField_pp{S, T}[]
   G = codomain(CF.quotientmap)
   @assert issnf(G)
-  q = [G[i] for i=1:ngens(G)]
+  q = GrpAbFinGenElem[G[i] for i=1:ngens(G)]
   for i=1:ngens(G)
     o = G.snf[i]
     lo = factor(o)
     for (p, e) = lo.fac
       q[i] = p^e*G[i]
-      S, mQ = quo(G, q, false)
+      S1, mQ = quo(G, q, false)
       push!(res, ray_class_field_cyclic_pp(CF, mQ))
     end
     q[i] = G[i]
@@ -102,11 +103,10 @@ function NumberField(CF::ClassField; redo::Bool = false)
   return CF.A
 end
 
-function ray_class_field_cyclic_pp(CF::ClassField, mQ::GrpAbFinGenMap)
+function ray_class_field_cyclic_pp(CF::ClassField{S, T}, mQ::GrpAbFinGenMap) where {S, T}
   @vprint :ClassField 1 "cyclic prime power class field of degree $(degree(CF))\n"
-  CFpp = ClassField_pp()
-  #CFpp.mq = _compose(CF.mq, inv(mQ))
-  CFpp.quotientmap = _compose(mQ, CF.quotientmap)
+  CFpp = ClassField_pp{S, T}()
+  CFpp.quotientmap = compose(CF.quotientmap, mQ)
   CFpp.rayclassgroupmap = CF.rayclassgroupmap
   @assert domain(CFpp.rayclassgroupmap) == domain(CFpp.quotientmap)
   @vprint :ClassField 1 "finding the Kummer extension...\n"
@@ -313,7 +313,7 @@ function build_map(CF::ClassField_pp, K::KummerExt, c::CyclotomicExt)
        #example: Q[sqrt(10)], rcf of 16*Zk
   # now the map G -> R sG[i] -> sR[i] 
   h = hom(sG, sR)
-  #@hassert :ClassField 1 issurjective(h)
+  @hassert :ClassField 1 !isone(gcd(fmpz(degree(CF)), minimum(m))) || issurjective(h)
   return h
 end
 
@@ -329,7 +329,7 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   allow_cache!(mc)
   @vprint :ClassField 2 "... $c\n"
   c, mq = quo(c, e, false)
-  mc = _compose(mc, inv(mq))
+  mc = compose(inv(mq), mc)
   
   lP = Hecke.NfOrdIdl[]
   if f != 1
@@ -380,19 +380,18 @@ function _s_unit_for_kummer(C::CyclotomicExt, f::fmpz)
   return lP, KK
 end
 
-function _rcf_find_kummer(CF::ClassField_pp)
+function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
 
   if isdefined(CF, :K)
     return nothing
   end
-  f = defining_modulus(CF)[1]::NfOrdIdl
-  @vprint :ClassField 2 "Kummer extension ... with modulus $f\n"
-  k1 = nf(order(f))
-  e = degree(CF)::Int 
-  @assert Hecke.isprime_power(e)
-
+  f = defining_modulus(CF)[1]
+  @vprint :ClassField 2 "Kummer extension with modulus $f\n"
+  k1 = base_field(CF)
+  
+  #@assert Hecke.isprime_power(e)
   @vprint :ClassField 2 "Adjoining the root of unity\n"
-  C = cyclotomic_extension(k1, e)
+  C = cyclotomic_extension(k1, degree(CF))
   
   #We could use f, but we would have to factor it.
   @vtime :ClassField 3 lP, KK = _s_unit_for_kummer(C, minimum(f))
@@ -418,20 +417,21 @@ function _rcf_find_kummer(CF::ClassField_pp)
   i, l = nullspace(M)
   @assert i > 0
   n = lift(l)
-  N = GrpAbFinGen(fmpz[e for j=1:nrows(n)])
+  e1 = degree(CF)
+  N = GrpAbFinGen(fmpz[fmpz(e1) for j=1:nrows(n)])
   s, ms = sub(N, GrpAbFinGenElem[N(fmpz[n[j, ind] for j=1:nrows(n)]) for ind=1:i], false)
   ms = Hecke.make_snf(ms)
-  H = domain(ms)::GrpAbFinGen
+  H = domain(ms)
   @hassert :ClassField 1 iscyclic(H)
   o = Int(order(H))
   c = 1
-  if o < e
-    c = div(e, o)
+  if o < fmpz(e1)
+    c = div(fmpz(e1), o)
   end
   g = ms(H[1])
   @vprint :ClassField 2 "g = $g\n"
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = prod(FacElem{nf_elem, AnticNumberField}[KK.gen[i]^div(mod(g[i], e), c) for i=1:ngens(N) if !iszero(g[i])])
+  a = prod(FacElem{nf_elem, AnticNumberField}[KK.gen[i]^div(mod(g[i], fmpz(e1)), c) for i=1:ngens(N) if !iszero(g[i])])
   #@vprint :ClassField 2 "generator $a\n"
   CF.a = a
   CF.sup_known = true
@@ -605,21 +605,23 @@ function _rcf_descent(CF::ClassField_pp)
                
   e = degree(CF)
   k = base_field(CF)
-  C = cyclotomic_extension(k, e)
+  CE = cyclotomic_extension(k, e)
   A = CF.K
-  if C.Ka == k
+  CK = absolute_field(CE)
+  if degree(CK) == degree(k) #Relies on the fact that, if the cyclotomic extension has degree 1, 
+    #the absolute field is equal to the base field
     #There is nothing to do! The extension is already on the right field
     CF.A = A
     CF.pe = gen(A)
-    return CF.A
+    return nothing
   end
   
   Zk = maximal_order(k)
-  ZK = maximal_order(absolute_field(C))
+  ZK = maximal_order(absolute_field(CE))
   
   n = degree(A)
   #@vprint :ClassField 2 "Automorphism group (over ground field) $AutA\n"
-  _aut_A_over_k(C, CF)
+  _aut_A_over_k(CE, CF)
   
   AutA_gen = CF.AutG
   AutA = GrpAbFinGen(CF.AutR)
@@ -643,49 +645,52 @@ function _rcf_descent(CF::ClassField_pp)
     # Frob(p, A/k) and preimage(mq, p)
     @assert n == degree(CF.K)
     
-    function canFrob(p::NfOrdIdl)
-      lP = prime_decomposition(C.mp[2], p)
-      P = lP[1][1]
-      F, mF = ResidueFieldSmall(ZK, P)
-      Ft, t = PolynomialRing(F, cached=false)
-      mFp = extend_easy(mF, C.Ka)
-      ap = image(mFp, CF.a)
-      pol = Ft()
-      setcoeff!(pol, 0, -ap)
-      setcoeff!(pol, n, one(F))
-      Ap = ResidueRing(Ft, pol, cached = false)
-      xpe = zero(Ft)
-      for i = 0:n-1
-        setcoeff!(xpe, i, image(mFp, coeff(pe, i)))
-      end
-      imF = Ap(xpe)^norm(p)
-      res = GrpAbFinGenElem[]
-      for (ky, v) in Auto
-        xp = zero(Ft)
-        @assert coeff(v, n) == 0
+    local canFrob
+    let CE = CE, ZK = ZK, n = n, pe = pe
+      function canFrob(p::NfOrdIdl)
+        lP = prime_decomposition(CE.mp[2], p)
+        P = lP[1][1]
+        F, mF = ResidueFieldSmall(ZK, P)
+        Ft = PolynomialRing(F, cached=false)[1]
+        mFp = extend_easy(mF, CE.Ka)
+        ap = image(mFp, CF.a)
+        pol = Ft()
+        setcoeff!(pol, 0, -ap)
+        setcoeff!(pol, n, one(F))
+        Ap = ResidueRing(Ft, pol, cached = false)
+        xpe = zero(Ft)
         for i = 0:n-1
-          setcoeff!(xp, i, image(mFp, coeff(v, i)))
+          setcoeff!(xpe, i, image(mFp, coeff(pe, i)))
         end
-        kp = Ap(xp)
-        if kp == imF
-          push!(res, ky)
-          if length(res) >1
-            throw(BadPrime(p))
+        imF = Ap(xpe)^norm(p)
+        res = GrpAbFinGenElem[]
+        for (ky, v) in Auto
+          xp = zero(Ft)
+          @assert coeff(v, n) == 0
+          for i = 0:n-1
+            setcoeff!(xp, i, image(mFp, coeff(v, i)))
           end
-          #return ky
+          kp = Ap(xp)
+          if kp == imF
+            push!(res, ky)
+            if length(res) >1
+              throw(BadPrime(p))
+            end
+            #return ky
+          end
         end
+        return res[1]
+        error("Frob not found")  
       end
-      return res[1]
-      error("Frob not found")  
     end
-
     @vprint :ClassField 2 "finding Artin map...\n"
     #TODO can only use non-indx primes, easy primes...
     cp = lcm([minimum(defining_modulus(CF)[1]), index(Zk), index(ZK)])
-    @vtime :ClassField 2 lp, f = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
-                      PrimesSet(200, -1), cp)
-    imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p)) for p = lp]
-    h = hom(f, imgs)
+    #@vtime :ClassField 2 lp, f1 = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA),
+    #                  PrimesSet(200, -1), cp)
+    lp, f1 = find_gens(MapFromFunc(canFrob, IdealSet(Zk), AutA), PrimesSet(200, -1), cp)
+    imgs = GrpAbFinGenElem[image(CF.quotientmap, preimage(CF.rayclassgroupmap, p1)) for p1 = lp]
+    h = hom(f1, imgs)
     @hassert :ClassField 1 issurjective(h)
     s, ms = kernel(h)
     @vprint :ClassField 2 "... done, have subgroup!\n"
@@ -700,38 +705,42 @@ function _rcf_descent(CF::ClassField_pp)
   #norm, trace relative to s, the subgroup
 
   AT, T = PolynomialRing(A, "T", cached = false)
-  function coerce_down(a::NfRelElem{nf_elem})
-    @assert a.data.length <= 1
-    b = coeff(a, 0)
-    c = preimage(C.mp[1], b)
-    @assert c.data.length <= 1
-    return coeff(c, 0)::nf_elem
+  local charpoly
+  inc_map = CE.mp[1]
+  let inc_map = inc_map, mq = mq, AutA_gen = AutA_gen, q = q, T = T, e = e
+    function coerce_down(a::NfRelElem{nf_elem})
+      @assert a.data.length <= 1
+      b = coeff(a, 0)
+      c = preimage(inc_map, b)
+      @assert c.data.length <= 1
+      return coeff(c, 0)
+    end
+  
+    function charpoly(a::NfRelElem{nf_elem})
+      @vtime :ClassField 2 o = NfRelElem{nf_elem}[grp_elem_to_map(AutA_gen, mq(j), a) for j = q]
+      @vtime :ClassField 2 f = prod(T-x for x=o)
+      @assert degree(f) == length(o)
+      @assert length(o) == e
+      @vtime :ClassField 2 g = nf_elem[coerce_down(coeff(f, i)) for i=0:e]
+      return PolynomialRing(parent(g[1]), cached = false)[1](g)
+    end
   end
   
-  function charpoly(a::NfRelElem{nf_elem})
-    @vtime :ClassField 2 o = NfRelElem{nf_elem}[grp_elem_to_map(AutA_gen, mq(j), a) for j = q]
-    @vtime :ClassField 2 f = prod(T-x for x=o)
-    @assert degree(f) == length(o)
-    @assert length(o) == e
-    @vtime :ClassField 2 g = nf_elem[coerce_down(coeff(f, i)) for i=0:e]
-    return PolynomialRing(parent(g[1]), cached = false)[1](g)::Generic.Poly{nf_elem}
-  end
-
   @vprint :ClassField 2 "trying relative trace\n"
   @assert length(os) > 0
   t = os[1]
   for i = 2:length(os)
     t += os[i]
   end
-  CF.pe = t::NfRelElem{nf_elem}
+  CF.pe = t
   #now the minpoly of t - via Galois as this is easiest to implement...
   @vprint :ClassField 2 "char poly...\n"
-  f = charpoly(t)
+  f2 = charpoly(t)
   @vprint :ClassField 2 "... done\n"
   
-  if !issquarefree(f)
-    os1 = deepcopy(os)::Vector{NfRelElem{nf_elem}}
-    while !issquarefree(f)
+  if !issquarefree(f2)
+    os1 = NfRelElem{nf_elem}[elem for elem in os]
+    while !issquarefree(f2)
       @vprint :ClassField 2 "trying relative trace of squares\n"
       for i = 1:length(os)
         os1[i] *= os[i]
@@ -743,11 +752,11 @@ function _rcf_descent(CF::ClassField_pp)
       CF.pe = t
       #now the minpoly of t - via Galois as this is easiest to implement...
       @vprint :ClassField 2 "min poly...\n"
-      f = charpoly(t)
+      f2 = charpoly(t)
       @vprint :ClassField 2 "... done\n"
     end  
   end
-  CF.A = number_field(f, check = false)[1]
+  CF.A = number_field(f2, check = false)[1]
   return nothing
 end
 
