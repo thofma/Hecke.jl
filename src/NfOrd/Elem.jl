@@ -559,6 +559,17 @@ end
 
 ################################################################################
 #
+#  Adhoc division
+#
+################################################################################
+
+function //(x::nf_elem, y::NfOrdElem)
+  check_parent(x, y.elem_in_nf)
+  return x//y.elem_in_nf
+end
+
+################################################################################
+#
 #  Exponentiation
 #
 ################################################################################
@@ -1029,3 +1040,7 @@ end
 Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{U}) where {S, T, U <: Integer} = NfAbsOrdElem{S, T}
 
 Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{fmpz}) where {S, T} = NfAbsOrdElem{S, T}
+
+Nemo.promote_rule(::Type{NfAbsOrdElem{S, T}}, ::Type{T}) where {S, T} = T
+
+Nemo.promote_rule(::Type{T}, ::Type{NfAbsOrdElem{S, T}}) where {S, T} = T

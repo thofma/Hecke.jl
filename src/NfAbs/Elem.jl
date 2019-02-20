@@ -40,7 +40,6 @@ function israt(a::nf_elem)
   return a.elem_length<2
 end
 
-
 ################################################################################
 #
 #  Random elements from arrays of nf_elem
