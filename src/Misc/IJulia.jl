@@ -87,15 +87,19 @@ function math_html(io::IO, a::nf_elem)
   s = parent(a).S
   if s in [:_a, Symbol("_\$")] 
     parent(a).S = Symbol("\\alpha")
-    f = string(a)
+    fs = string(a)
     parent(a).S = s
   else
-    f = string(a)
+    fs = string(a)
   end
-  f = replace(f, "*" => "")
+  f = replace(fs, "*" => "")
   f = replace(f, r"\^([0-9]*)" => s"^{\1}")
   f = replace(f, r"([0-9]*)//([0-9]*)" => s"\\frac{\1}{\2}")
-  print(io, f)
+  if true
+    print(io, f)
+  else
+    print(io, "\\toggle{$f}{$fs}\\endtoggle")
+  end
 end
 
 function Base.show(io::IO, ::MIME"text/html", a::nf_elem)
@@ -126,52 +130,25 @@ function math_html(io::IO, A::Fac{T}) where {T}
   end
 end
 
-function Base.show(io::IO, ::MIME"text/html", a::Integer)
-  return show(io, "text/html", fmpz(a))
-end
-math_html(io::IO, a::Integer) = show(io, "text/html", a)
-Base.show(io::IO, ::MIME"text/html", a::fmpz) = math_html(io, a)
+Base.show(io::IO, ::MIME"text/html", a::Integer) = show(io, "text/html", fmpz(a))
+math_html(io::IO, a::Integer) = math_html(io, fmpz(a))
 
-function html_alternative(s1::String, s2::String)
-#= by Sebastian G
-<div id="thumb0" class="thumbs" onclick="klikaj('thumb0')" data-text1="knock2" data-text2="FOO2"
-data-currenttext='1'>knock</div>
-<script>
-function klikaj(i) {
-    current_el = document.getElementById(i)
-    if(current_el.getAttribute('data-currenttext') == '1'){
-        current_el.innerHTML=current_el.getAttribute('data-text2')
-        current_el.setAttribute('data-currenttext','2')
-    }else{
-        current_el.innerHTML=current_el.getAttribute('data-text1')
-        current_el.setAttribute('data-currenttext','1')
-    }
-}
-</script>
-=#
-  s = "<div onclick=click_func(this) data-curtxt = 1>$s1</div>
-   <script>
-   function click_func(c) { 
-        if (c.getAttribute('data-curtxt') == '1'){
-          c.innerHTML = '$s2'
-          c.setAttribute('data-curtxt', '2')
-        }else{
-          c.innerHTML = '$s1'
-          c.setAttribute('data-curtxt', '1')
-       }
-       }
-     </script>"
+function Base.show(io::IO, ::MIME"text/html", a::fmpz)
+  print(io, "\$")
+  math_html(io, a)
+  print(io, "\$")
 end
 
 function math_html(io::IO, a::fmpz)
   nd = ndigits(a, 10)
-  if true # nd < 20
+  if nd < 20
     print(io, a)
   else
     d = string(abs(a) % 10^5)
     d = "00000"[1:5-length(d)] * d
-    d = "\$("*string(div(a, fmpz(10)^(nd-5))) *  "..($nd \\text{ digits}).." * d *")]\$"
-    print(io, html_alternative(d, string(a)))
+    d = "("*string(div(a, fmpz(10)^(nd-5))) *  "..($nd \\text{ digits}).." * d *")"
+#    print(io, "\$\\require{action}\$")
+    print(io, "\\toggle{$d}{$a}\\endtoggle")
   end
 end
 
@@ -241,16 +218,26 @@ function math_html(io::IO, a::NfAbsOrdElem)
 end
 
 function math_html(io::IO, O::NfAbsOrd{AnticNumberField, nf_elem})
-  print(io, "\\text{Maximal order of }")
-  n = find_name(nf(O))
-  if n === nothing || !get(io, :compact, false)
+  c = get(io, :compact, false)
+  if !c
+    print(io, "\\text{Maximal order of }")
     math_html(io, nf(O))
-  else
-    print(io, string(n))
-  end
-  if !get(io, :compact, false)
     print(io, "\\text{ with basis }")
     math_html(io, basis(O))
+    return
+  end
+
+  n = find_name(O)
+  if !(n===nothing)
+    print(io, string(n))
+    return
+  end
+  n = find_name(nf(O))
+  if n === nothing 
+    print(io, "\\text{Maximal order of }")
+    math_html(io, nf(O))
+  else
+    print(io, "\\mathcal O_$(string(n))")
   end
 end
 
@@ -323,6 +310,40 @@ function math_html(io::IO, G::GrpAbFinGen)
   else
     print(io, G)
   end
+end
+
+function math_html(io::IO, R::PolyRing)
+  n = find_name(R)
+  if !(n === nothing) && get(io, :compact, false)
+    print(io, string(n))
+    return 
+  end
+  print(io, "\\text{Polynomial ring over }")
+  print(IOContext(io, :compact => true), base_ring(R))
+end
+
+function Base.show(io::IO, ::MIME"text/html", K::PolyRing)
+  print(io, "\$")
+  math_html(io, K)
+  print(io, "\$")
+end
+
+function math_html(io::IO, K::NfRel)
+  n = find_name(K)
+  if !(n === nothing) && get(io, :compact, false)
+    print(io, string(n))
+    return 
+  end
+  print(io, "\\text{Relative number field over }")
+  math_html(IOContext(io, :compact => true), base_field(K))
+  print(io, "\\text{ defined by }")
+  math_html(io, K.pol)
+end
+
+function Base.show(io::IO, ::MIME"text/html", K::NfRel)
+  print(io, "\$")
+  math_html(io, K)
+  print(io, "\$")
 end
 
 

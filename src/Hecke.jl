@@ -124,6 +124,10 @@ function __init__()
   else
     println("Hecke $VERSION_NUMBER ...")
   end
+
+  if inNotebook()  # to make toggle work in IJulia
+    display("text/html", "\$\\require{action}\$")
+  end
   
   #if "HOSTNAME" in keys(ENV) && ENV["HOSTNAME"] == "juliabox"
   #  push!(Libdl.DL_LOAD_PATH, "/usr/local/lib")
