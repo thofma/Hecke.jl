@@ -601,6 +601,7 @@ function non_torsion_lower_bound(R::NfOrd, B::Int = 2*degree(R))
     # try on wildanger_field(13, 17) and observe the vectors found...
     # in particular 1 is not (reliably) found
     @show s = Hecke.enum_ctx_short_elements(L, i*L.d)
+    #remove torsion
     if nrows(s) > 5
       M = minimum([t2(R(collect(sub(s, i:i, 1:n)))) for i=1:nrows(s)])
       j = n-2
@@ -616,6 +617,7 @@ function unit_lower_bound(R::NfOrd, B::Int = 2*degree(R))
   i = B
   while true
     s = Hecke.enum_ctx_short_elements(L, i*L.d)
+    #remove torsion!!! now that \pm 1 is actually found
     e = [R(collect(sub(s, i:i, 1:n))) for i=1:nrows(s)]
     u = [x for x in e if isunit(x)]
     if nrows(s) > 5
