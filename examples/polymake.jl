@@ -31,8 +31,8 @@ end
 function solve_non_negative(A::fmpz_mat, b::fmpz_mat)
   bA = Array{BigInt, 2}(hcat(-b, A))
   zI = Array{BigInt, 2}(hcat(zero_matrix(FlintZZ, ncols(A), 1), MatrixSpace(FlintZZ, ncols(A), ncols(A))(1)))
-  p = Polymake.perlobj( "Polytope<Rational>", Dict("EQUATIONS" => bA, 
-                                                   "INEQUALITIES" => zI))
+  p = Polymake.perlobj( "Polytope<Rational>", Dict("EQUATIONS" => deepcopy(bA), 
+                                                   "INEQUALITIES" => deepcopy(zI)))
   inner = Polymake.give(p, "INTERIOR_LATTICE_POINTS")
   out = Polymake.give(p, "BOUNDARY_LATTICE_POINTS")
 
