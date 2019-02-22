@@ -1152,20 +1152,20 @@ function norm_group(f::Array{T, 1}, mR::Hecke.MapRayClassGrp, isabelian::Bool = 
   return sub(R, subgrp, true)
 end
 
-function norm_group_map(R::ClassField, r::Array{ClassField, 1}, map = false)
+function norm_group_map(R::ClassField{S, T}, r::Vector{<:ClassField}, map = false) where {S, T}
   @assert map != false || all(x -> base_ring(R) == base_ring(x), r)
 #  @assert map == false && all(x -> base_ring(R) == base_ring(x), r)
 
   mR = defining_modulus(R)[1]
   @assert map != false || all(x->mR+defining_modulus(x)[1] == defining_modulus(x)[1], r)
 
-  fR = _compose(R.rayclassgroupmap, inv(R.quotientmap))
+  fR = compose(inv(R.quotientmap), R.rayclassgroupmap)
   lp, sR = find_gens(MapFromFunc(x->preimage(fR, x), IdealSet(base_ring(R)), domain(fR)),
                              PrimesSet(100, -1), minimum(mR))
   if map == false                           
-    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), p) for p = lp]) for x = r]
+    h = [hom(sR, [preimage(compose(inv(x.quotientmap), x.rayclassgroupmap), p) for p = lp]) for x = r]
   else
-    h = [hom(sR, [preimage(_compose(x.rayclassgroupmap, inv(x.quotientmap)), map(p)) for p = lp]) for x = r]
+    h = [hom(sR, [preimage(compose(inv(x.quotientmap), x.rayclassgroupmap), map(p)) for p = lp]) for x = r]
   end
   return h
 end
@@ -1238,7 +1238,7 @@ function maximal_abelian_subfield(A::ClassField, k::AnticNumberField)
   #compute the norm group of A in R
   proj1 = hom(gS, [mC\x for x in lP])
   S, mS = kernel(proj1)
-  mS1 = Hecke._compose(mS, proj)
+  mS1 = Hecke.compose(mS, proj)
   G, mG = Hecke.cokernel(mS1)
   return ray_class_field(mr, mG)
   

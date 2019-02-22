@@ -1028,8 +1028,8 @@ function _C22_exts_abexts(bound::Int, only_real::Bool = false)
   else
     pairs, sqf = _find_pairs_real(bound)
     b = length(sqf)
-    sqfs = [i for i = 2:b if sqf[i]]
-    res = [(i, j) for i = 1:length(sqfs) for j = i+1:length(sqfs) if pairs[sqfs[i], sqfs[j]]]
+    sqfs = Int[i for i = 2:b if sqf[i]]
+    res = Tuple{Int, Int}[(i, j) for i = 1:length(sqfs) for j = i+1:length(sqfs) if pairs[sqfs[i], sqfs[j]]]
     return (_ext_with_autos(Qx, x, sqfs[i], sqfs[j]) for (i, j) in res)
     #return (_ext_with_autos(Qx, x, sqfs[i], sqfs[j]) for i = 1:length(sqfs) for j = i+1:length(sqfs) if pairs[sqfs[i], sqfs[j]])
     #return (_ext_with_autos(Qx, x, i, j) for i = 2:b for j = i+1:b if sqf[i] && sqf[j] && pairs[i,j])

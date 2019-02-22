@@ -275,6 +275,12 @@ function ideal(A::AbsAlgAss, M::MatElem, side::Symbol = :nothing, M_in_rref::Boo
       M = N
     end
   end
+  if M_in_rref && nrows(M) == 0
+    a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, M)
+    a.iszero = 1
+    return a
+  end
+
   a = AbsAlgAssIdl{typeof(A), typeof(M)}(A, M)
   _set_sidedness(a, side)
   a.iszero = 2

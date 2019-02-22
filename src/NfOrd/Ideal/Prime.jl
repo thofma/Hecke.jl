@@ -393,8 +393,9 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
 end
 
 function uniformizer(P::NfOrdIdl)
+  @assert isprime(P)
   p = minimum(P)
-  if P.gens_normal == p
+  if isdefined(P, :gens_normal) && P.gens_normal == p
     return P.gen_two
   else
     if p > 250

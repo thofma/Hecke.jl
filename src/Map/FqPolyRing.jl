@@ -1,33 +1,54 @@
 # This function constructs the field F_q \cong parent(h)/h and a homomorphism
 # from parent(h) to F_q.
-function field_extension(h::fq_poly)
+function field_extension(h::Union{ fq_nmod_poly, fq_poly })
   m = FqPolyRingToFqMor(h)
   return codomain(m), m
 end
 
-mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqPolyRingToFqMor}
-  header::MapHeader{FqPolyRing, FqFiniteField}
-  h::fq_poly
-  mat::Generic.Mat{Generic.Res{fmpz}}
-  mat_inv::Generic.Mat{Generic.Res{fmpz}}
+mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap, FqPolyRingToFqMor}
+  header::MapHeader{S, T}
+  h::PolyType
+  mat::MatType
+  mat_inv::MatType
 
-  function FqPolyRingToFqMor(h::fq_poly)
-    z = new()
+  function FqPolyRingToFqMor{S, T, PolyType, MatType}(h::PolyType) where {
+           S <: Union{ FqNmodPolyRing, FqPolyRing },
+           T <: Union{ FqNmodFiniteField, FqFiniteField },
+           PolyType <: Union{ fq_nmod_poly, fq_poly },
+           MatType <: Union{ gfp_mat, Generic.Mat{Generic.ResF{fmpz}} }
+    }
+
+    z = new{S, T, PolyType, MatType}()
     z.h = h
+
+    isnmod = (T == FqNmodFiniteField)
 
     Fq = base_ring(h)
     p = characteristic(Fq)
-    Fp = ResidueRing(FlintZZ, p, cached = false)
+    if isnmod
+      Fp = GF(Int(p); cached = false)
+    else
+      Fp = GF(p; cached = false)
+    end
     Fpx = PolynomialRing(Fp, "x", cached = false)[1]
     g = Fpx()
-    pt = ccall((:fq_ctx_modulus, :libflint), Ptr{Nemo.fmpz_mod_poly}, (Ref{Nemo.FqFiniteField}, ), Fq)
-    ccall((:fmpz_mod_poly_set, :libflint), Nothing, (Ref{Nemo.fmpz_mod_poly}, Ptr{Nemo.fmpz_mod_poly}), g, pt)
+    if isnmod
+      pt = ccall((:fq_nmod_ctx_modulus, :libflint), Ptr{nmod_poly}, (Ref{FqNmodFiniteField}, ), Fq)
+      ccall((:nmod_poly_set, :libflint), Nothing, (Ref{gfp_poly}, Ptr{nmod_poly}), g, pt)
+    else
+      pt = ccall((:fq_ctx_modulus, :libflint), Ptr{fmpz_mod_poly}, (Ref{FqFiniteField}, ), Fq)
+      ccall((:fmpz_mod_poly_set, :libflint), Nothing, (Ref{gfp_fmpz_poly}, Ptr{fmpz_mod_poly}), g, pt)
+    end
     n = degree(Fq)
     @assert n == degree(g)
     m = degree(h)
-    Fqm = FqFiniteField(p, n*m, :$, false)
+    if isnmod
+      Fqm = FqNmodFiniteField(p, n*m, :$, false)
+    else
+      Fqm = FqFiniteField(p, n*m, :$, false)
+    end
     Fqmy, y = PolynomialRing(Fqm, "y", cached = false)
-    gy = Fqmy([ Fqm(fmpz(coeff(g, i))) for i = 0:degree(g) ])
+    gy = Fqmy([ Fqm(coeff(g, i)) for i = 0:degree(g) ])
     a = roots(gy)[1]
     aa = Vector{typeof(a)}()
     push!(aa, Fqm(1))
@@ -65,11 +86,10 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
       end
     end
     z.mat = M
-    invM, t = inv(M)
-    invM = inv(t)*invM
+    invM = inv(M)
     z.mat_inv = invM
 
-    function _image(f::fq_poly)
+    function _image(f::PolyType)
       f = mod(f, h)
       x_mat = zero_matrix(Fp, n*m, 1)
       for j = 0:m - 1
@@ -81,11 +101,16 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
       x_mat = M*x_mat
       t = parent(g)([ x_mat[k, 1] for k = 1:n*m ])
       x = Fqm()
-      ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), x, t, Fqm)
+      if isnmod
+        ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), x, t, Fqm)
+      else
+        ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), x, t, Fqm)
+      end
       return x
     end
 
-    function _preimage(x::fq)
+    function _preimage(x::Union{ fq_nmod, fq })
+      @assert typeof(x) == elem_type(T)
       x_mat = zero_matrix(Fp, n*m, 1)
       for k = 0:n*m - 1
         x_mat[k + 1, 1] = Fp(coeff(x, k))
@@ -95,12 +120,25 @@ mutable struct FqPolyRingToFqMor <: Map{FqPolyRing, FqFiniteField, HeckeMap, FqP
       t = Fqm()
       for j = 0:m - 1
         tt = parent(g)([ x_mat[i + n*j + 1, 1] for i = 0:n - 1 ])
-        ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{fmpz_mod_poly}, Ref{FqFiniteField}), t, tt, Fq)
+        if isnmod
+          ccall((:fq_nmod_set, :libflint), Nothing, (Ref{fq_nmod}, Ref{gfp_poly}, Ref{FqNmodFiniteField}), t, tt, Fq)
+        else
+          ccall((:fq_set, :libflint), Nothing, (Ref{fq}, Ref{gfp_fmpz_poly}, Ref{FqFiniteField}), t, tt, Fq)
+        end
         setcoeff!(f, j, t)
       end
       return f
     end
-    z.header = MapHeader{FqPolyRing, FqFiniteField}(parent(h), Fqm, _image, _preimage)
+    z.header = MapHeader{S, T}(parent(h), Fqm, _image, _preimage)
     return z
   end
+end
+
+
+function FqPolyRingToFqMor(h::fq_poly)
+  return FqPolyRingToFqMor{FqPolyRing, FqFiniteField, fq_poly, Generic.Mat{Generic.ResF{fmpz}}}(h)
+end
+
+function FqPolyRingToFqMor(h::fq_nmod_poly)
+  return FqPolyRingToFqMor{FqNmodPolyRing, FqNmodFiniteField, fq_nmod_poly, gfp_mat}(h)
 end

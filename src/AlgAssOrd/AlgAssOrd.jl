@@ -1,6 +1,8 @@
 add_assert_scope(:AlgAssOrd)
 add_verbose_scope(:AlgAssOrd)
 
+export issplit
+
 elem_type(::Type{AlgAssAbsOrd{S, T}}) where {S, T} = AlgAssAbsOrdElem{S, T}
 
 elem_type(::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdElem{S, T}
@@ -9,6 +11,8 @@ ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdIdl{S, T}
 frac_ideal_type(O::AlgAssAbsOrd{S, T}) where {S, T} = AlgAssAbsOrdFracIdl{S, T}
 
 algebra(O::AlgAssAbsOrd) = O.algebra
+
+iscommutative(O::AlgAssAbsOrd) = iscommutative(algebra(O))
 
 ################################################################################
 #
@@ -838,6 +842,33 @@ function trace_signature(O::AlgAssAbsOrd)
   
 end
 
+function trace_signature(A::AlgAss, P::InfPlc)
+  M = trred_matrix(basis(A))
+  Ky, y = PolynomialRing(base_ring(A), "y", cached = false)
+  f = charpoly(Ky, M)
+  npos = number_positive_roots(f, P)
+  return (npos, degree(f) - npos)
+end
+
+function schur_index_at_real_plc(A::AlgAss, P::InfPlc)
+  if dim(A) % 4 != 0
+    return 1
+  end
+  x = trace_signature(A, P)
+  n = root(dim(A),2)
+  if x[1] == divexact(n*(n+1),2)
+    return 1
+  else
+    return 2
+  end
+end
+
+function issplit(A::AlgAss, P::InfPlc)
+  if iscomplex(P)
+    return true
+  end
+  return schur_index_at_real_plc(A, P) == 1
+end
 
 ################################################################################
 #

@@ -35,10 +35,10 @@ end
 function cyclotomic_extension(k::AnticNumberField, n::Int)
   Ac = CyclotomicExt[]
   try 
-    Ac = Hecke._get_cyclotomic_ext_nf(k)
+    Ac = Hecke._get_cyclotomic_ext_nf(k)::Vector{CyclotomicExt}
     for i = Ac
       if i.n == n
-        return i::CyclotomicExt
+        return i
       end
     end
   catch e

@@ -57,6 +57,10 @@ function div(f::PolyElem, g::PolyElem)
   return q
 end
 
+function rem(f::PolyElem, g::PolyElem)
+  return mod(f, g)
+end
+
 function ismonic(a::PolyElem)
   return isone(lead(a))
 end
@@ -1617,7 +1621,7 @@ function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T <: F
   A = S([coeff(reverse(derivative(f)), i) for i=0:d-1], d, n+1, 0)
   B = S([coeff(reverse(f), i) for i=0:d], d+1, n+1, 0)
   L = A*inv(B)
-  s = [coeff(L, i) for i=1:n]
+  s = T[coeff(L, i) for i=1:n]
   return s
 end
 
@@ -1648,11 +1652,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
   R = parent(P[1])
   S = PowerSeriesRing(R, d, "gen(S)")[1]
   s = S(P, length(P), d, 0)
-  if !false
-    r = - integral(s)
-    r = exp(r)
-  end
-
+  
+  r = -integral(s)
+  r1 = exp(r)
+  #=
   if false
     r = S(T[R(1), -P[1]], 2, 2, 0) 
     la = [d+1]
@@ -1670,10 +1673,10 @@ function power_sums_to_polynomial(P::Array{T, 1}) where T <: FieldElem
     end
     println("new exp $r")
   end
-  v = valuation(r)
-  @assert v==0
+  =#
+  @assert iszero(valuation(r1))
   Rx, x = PolynomialRing(R, cached = false)
-  return Rx([Nemo.polcoeff(r, d-i) for i=0:d])
+  return Rx([Nemo.polcoeff(r1, d-i) for i=0:d])
 end
 
 function power_sums_to_polynomial(P::Array{T, 1}) where T
@@ -1853,6 +1856,64 @@ function number_positive_roots(f::fmpz_poly)
   ev0 = Int[sign(coeff(x,0)) for x in s]
   return _number_changes(ev0)-_number_changes(evinf)
 
+end
+
+function number_positive_roots(f::PolyElem{nf_elem}, P::InfPlc)
+  fsq = squarefree_factorization(f)
+  p = 0
+  for (g, e) in fsq
+    p = p + _number_positive_roots_sqf(g, P) * e
+  end
+  return p
+end
+
+function _number_positive_roots_sqf(f::PolyElem{nf_elem}, P::InfPlc; start_prec::Int = 32)
+  prec = start_prec
+  while true
+    coeffs = Vector{acb}(undef, length(f))
+    c = evaluate(coeff(f, 0), P, prec)
+    coeffs[1] = c
+    C = parent(c)
+    Cx, x = PolynomialRing(C, "x", cached = false)
+    for i in 1:degree(f)
+      coeffs[i + 1] = evaluate(coeff(f, i), P, prec)
+    end
+    g = Cx(coeffs)
+    rts = real.(Hecke.roots(g))
+    if any(contains_zero, rts)
+      prec = 2 * prec
+    else
+      return count(ispositive, rts)
+    end
+  end
+end
+
+################################################################################
+#
+#  Squarefree factorization in characteristic 0
+#
+################################################################################
+
+# This is Musser's algorithm
+function squarefree_factorization(f::PolyElem)
+  @assert iszero(characteristic(base_ring(f)))
+  c = lead(f)
+  f = divexact(f, c)
+  di = gcd(f, derivative(f))
+  ei = divexact(f, di)
+  i = 1
+  res = Dict{typeof(f), Int}()
+  while !isconstant(ei)
+    eii = gcd(di, ei)
+    dii = divexact(di, eii)
+    if degree(eii) != degree(ei)
+      res[divexact(ei, eii)] = i
+    end
+    i = i +1
+    di = dii
+    ei = eii
+  end
+  return Fac(parent(f)(c), res)
 end
 
 ################################################################################
