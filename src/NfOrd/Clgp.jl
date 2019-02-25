@@ -205,7 +205,7 @@ function class_group_current_h(c::ClassGrpCtx)
   return c.h
 end
 
-function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false)
+function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::Int = 1000, redo::Bool = false, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
 
   @vprint :UnitGroup 1 "Computing tentative class and unit group ... \n"
 
@@ -292,6 +292,14 @@ function _class_unit_group(O::NfOrd; bound::Int = -1, method::Int = 3, large::In
 
   @vprint :ClassGroup 1 "hnftime $(c.time[:hnf_time])\n"
 
+  if !GRH
+    class_group_proof(c, fmpz(2), factor_base_bound_minkowski(O))
+    for (p, _) in factor(c.h)
+      while saturate!(c, U, Int(p), 3.5)
+      end
+    end
+  end
+
   return c, U, _validate_class_unit_group(c, U)
 end
 
@@ -341,49 +349,49 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
 end
 
 @doc Markdown.doc"""
-***
     class_group(O::NfOrd; bound = -1, method = 3, redo = false, large = 1000) -> GrpAbFinGen, Map
 
-> Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
-> The inverse of the map is the projection onto the group of ideals modulo the 
-> group of principal ideals.
-> \texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
-> \texttt{bound}, when given, is the bound for the factor base.
+Returns a group $A$ and a map $f$ from $A$ to the set of ideals of $O$.
+The inverse of the map is the projection onto the group of ideals modulo the 
+group of principal ideals.
+\texttt{redo} allows to trigger a re-computation, thus avoiding the cache.
+\texttt{bound}, when given, is the bound for the factor base.
 """
-function class_group(O::NfOrd; bound::Int = -1, method::Int = 3, redo::Bool = false, unit_method::Int = 1, large::Int = 1000, use_aut::Bool = false)
-  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut)
-  @assert b==1
+function class_group(O::NfOrd; bound::Int = -1, method::Int = 3,
+                     redo::Bool = false, unit_method::Int = 1,
+                     large::Int = 1000, use_aut::Bool = false, GRH::Bool = true)
+  c, U, b = _class_unit_group(O, bound = bound, method = method, redo = redo, unit_method = unit_method, large = large, use_aut = use_aut, GRH = GRH)
+
+  @assert b == 1
   return class_group(c)
 end
 
 
 @doc Markdown.doc"""
-***
     unit_group(O::NfOrd) -> GrpAbFinGen, Map
 
-> Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
-> A set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
-> `f(U[1])` will give a generator for the torsion subgroup.
+Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
+A set of fundamental units of $\mathcal O$ can be
+obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+`f(U[1])` will give a generator for the torsion subgroup.
 """
-function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut)
+function unit_group(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
   return unit_group(c, U)
 end
 
 @doc Markdown.doc"""
-***
     unit_group_fac_elem(O::NfOrd) -> GrpAbFinGen, Map
 
-> Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
-> A set of fundamental units of $\mathcal O$ can be
-> obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
-> `f(U[1])` will give a generator for the torsion subgroup.
-> All elements will be returned in factored form.
+Returns a group $U$ and an isomorphism map $f \colon U \to \mathcal O^\times$.
+A set of fundamental units of $\mathcal O$ can be
+obtained via `[ f(U[1+i]) for i in 1:unit_rank(O) ]`.
+`f(U[1])` will give a generator for the torsion subgroup.
+All elements will be returned in factored form.
 """
-function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut)
+function unit_group_fac_elem(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
   return unit_group_fac_elem(c, U)
 end
@@ -392,8 +400,8 @@ end
     regulator(O::NfOrd)
 > Computes the regulator of $O$, ie. the discriminant of the unit lattice.    
 """
-function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false)
-  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut)
+function regulator(O::NfOrd; method::Int = 3, unit_method::Int = 1, use_aut::Bool = false, GRH::Bool = true)
+  c, U, b = _class_unit_group(O, method = method, unit_method = unit_method, use_aut = use_aut, GRH = GRH)
   @assert b==1
   unit_group_fac_elem(c, U)
   return U.tentative_regulator

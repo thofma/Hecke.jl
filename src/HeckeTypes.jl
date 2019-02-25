@@ -1588,7 +1588,7 @@ mutable struct IdealRelationsCtx{Tx, TU, TC}
 
   function IdealRelationsCtx{Tx, TU, TC}(clg::ClassGrpCtx, A::NfOrdIdl;
                  prec::Int = 100, val::Int=0, limit::Int = 0) where {Tx, TU, TC}
-    v = matrix(FlintZZ, 1, nrows(clg.val_base), Base.rand(-val:val, 1,
+    v = matrix(FlintZZ, Base.rand(-val:val, 1,
                     nrows(clg.val_base)))*clg.val_base
     E = enum_ctx_from_ideal(A, v, prec = prec, limit = limit,
        Tx = Tx, TU = TU, TC = TC)::enum_ctx{Tx, TU, TC}

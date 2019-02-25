@@ -55,12 +55,12 @@ end
 >  it will return the quotient of the Ray Class Group by n
 
 """
-function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0)
+function ray_class_group(m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; n_quo=0, GRH::Bool = true)
 
   if n_quo!=0
-    return ray_class_group_quo(n_quo,m,inf_plc)
+    return ray_class_group_quo(n_quo, m, inf_plc, GRH = GRH)
   else 
-    return ray_class_group_fac_elem(m, inf_plc)
+    return ray_class_group_fac_elem(m, inf_plc, GRH = GRH)
   end
 
 end
@@ -987,7 +987,7 @@ end
 ###################################################################################
 
 
-function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array{InfPlc, 1}())
+function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array{InfPlc, 1}(); GRH::Bool = true)
 
 #
 # We compute the group using the sequence U -> (O/m)^* _> Cl^m -> Cl -> 1
@@ -997,10 +997,10 @@ function ray_class_group_fac_elem(m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = Array
   O=parent(m).order
   K=nf(O)
   
-  C, mC = class_group(O)
+  C, mC = class_group(O, GRH = GRH)
   _assure_princ_gen(mC)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, m)
-  U, mU = unit_group_fac_elem(O)
+  U, mU = unit_group_fac_elem(O, GRH = GRH)
   Q, pi = quo(O,m)
   G, mG = _multgrp_ray(Q)
   
@@ -1278,7 +1278,7 @@ function _class_group_mod_n(C::GrpAbFinGen, mC::Hecke.MapClassGrp, n::Integer)
 end 
 
 
-function ray_class_group_quo(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[])
+function ray_class_group_quo(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=InfPlc[]; GRH::Bool = true)
 
   #
   #  Take the relevant part of the modulus
@@ -1296,11 +1296,11 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, inf_plc::Array{InfPlc,1}=I
       y2[q]=Int(e)
     end
   end
-  return ray_class_group_quo(n, m, y1, y2, inf_plc)
+  return ray_class_group_quo(n, m, y1, y2, inf_plc, GRH = GRH)
   
 end
 
-function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1} = Array{InfPlc, 1}())
+function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}=Dict{NfOrdIdl, Int}(), inf_plc::Array{InfPlc,1} = Array{InfPlc, 1}(); GRH::Bool = true)
   
   K=nf(O)
   d1=Dict{NfOrdIdl, Int}()
@@ -1311,11 +1311,11 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
       d1[P]=1
     end   
   end
-  return ray_class_group_quo(n_quo, length(wprimes) == 0 ? ideal(O, m) : m*numerator(evaluate(FacElem(wprimes), coprime = true)), d1, wprimes, inf_plc, check_expo=true)
+  return ray_class_group_quo(n_quo, length(wprimes) == 0 ? ideal(O, m) : m*numerator(evaluate(FacElem(wprimes), coprime = true)), d1, wprimes, inf_plc, check_expo=true, GRH = GRH)
   
 end
 
-function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1} = Array{InfPlc, 1}())
+function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::Array{InfPlc, 1} = Array{InfPlc, 1}(); GRH::Bool = true)
   
   y1=Dict{NfOrdIdl,Int}()
   y2=Dict{NfOrdIdl,Int}()
@@ -1336,12 +1336,12 @@ function ray_class_group_quo(O::NfOrd, n::Int, y::Dict{NfOrdIdl, Int}, inf_plc::
   for (q,vq) in y2
     I*=q^vq
   end
-  return ray_class_group_quo(n, I, y1, y2, inf_plc)
+  return ray_class_group_quo(n, I, y1, y2, inf_plc, GRH = GRH)
 
 end
 
 
-function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=Array{InfPlc, 1}(); check_expo=false)
+function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}=Array{InfPlc, 1}(); check_expo=false, GRH::Bool = true)
   # check_expo checks, before the computation of the units, if the exponent of the group can be n.
   # if it is lower for sure, it returns the trivial group.
   # I HAVE TO FIND A BETTER METHOD. 
@@ -1361,7 +1361,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
   
   Q,pi = quo(O,I)
   Q.factor =lp
-  C, mC = class_group(O)
+  C, mC = class_group(O, GRH = GRH)
   _assure_princ_gen(mC)
   @vtime :RayFacElem 1 G, mG, tame, wild= _mult_grp_mod_n(Q,y1,y2,n)
   if mod(n,2)==0 
@@ -1384,7 +1384,7 @@ function ray_class_group_quo(n::Integer, m::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2
     return empty_ray_class(m)
   end
   
-  U, mU = unit_group_fac_elem(O)
+  U, mU = unit_group_fac_elem(O, GRH = GRH)
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, m)
   for i=1:ngens(C)
     @hassert :RayFacElem 1 iscoprime(numerator(evaluate(exp_class(C[i]))), m)
@@ -1938,7 +1938,7 @@ end
   If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 
 """
-function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[])
+function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group
@@ -1946,12 +1946,12 @@ function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 
 
   @assert iscoprime(I, m)
   O = order(I)
-  C, mC = class_group(O)
+  C, mC = class_group(O, GRH = GRH)
   fl, gen = isprincipal_fac_elem(I)
   if !fl
     return false, O(0)
   end
-  U, mU = unit_group_fac_elem(O)
+  U, mU = unit_group_fac_elem(O, GRH = GRH)
   
   Q, mQ = quo(O, m)
   G, mG = multiplicative_group(Q)
@@ -1988,19 +1988,19 @@ function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 
 
 end
 
-function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[])
+function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group
   # and not in the quotient.
 
   O = order(m)
-  C, mC = class_group(O)
+  C, mC = class_group(O, GRH = GRH)
   fl, gen = isprincipal_fac_elem(I)
   if !fl
     return fl, gen
   end
-  U, mU = unit_group_fac_elem(O)
+  U, mU = unit_group_fac_elem(O, GRH = GRH)
   
   Q, mQ = quo(O, m)
   G, mG = multiplicative_group(Q)
@@ -2079,7 +2079,7 @@ function _minimum(wprimes::Dict{NfOrdIdl, Int})
   return prod(x^v for (x, v) in mins)
 end
 
-function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz})
+function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdIdl,Int}, inf_plc::Array{InfPlc,1}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz}; GRH::Bool = true)
   
   d1 = Dict{NfOrdIdl, Int}()
   lp = factor(m)
@@ -2099,7 +2099,7 @@ function ray_class_group_quo(O::NfOrd, n_quo::Int, m::Int, wprimes::Dict{NfOrdId
     I.minimum = m*_minimum(wprimes)
   end
   
-  return ray_class_group_quo(n_quo, I, d1, wprimes, inf_plc, units, mC, princ_gens, vect)
+  return ray_class_group_quo(n_quo, I, d1, wprimes, inf_plc, units, mC, princ_gens, vect, GRH = GRH)
   
 end
 
@@ -2135,7 +2135,7 @@ function log_infinite_primes(O::NfOrd, p::Array{InfPlc,1})
   
 end
 
-function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp{GrpAbFinGen}, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz})
+function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Dict{NfOrdIdl,Int}, inf_plc::Vector{InfPlc}, units::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, mC::MapClassGrp{GrpAbFinGen}, princ_gens::Vector{Tuple{NfOrdElem, Dict{fmpz, Int}}}, vect::Vector{fmpz}; GRH::Bool = true)
 
   O = order(I)
   K = nf(O)
@@ -2164,9 +2164,9 @@ function ray_class_group_quo(n::Int, I::NfOrdIdl, y1::Dict{NfOrdIdl,Int}, y2::Di
     return empty_ray_class(I)::Tuple{GrpAbFinGen, MapRayClassGrp{GrpAbFinGen}}
   end
   
-  C1, mC1 = class_group(O)::Tuple{GrpAbFinGen, MapClassGrp{GrpAbFinGen}}
+  C1, mC1 = class_group(O, GRH = GRH)::Tuple{GrpAbFinGen, MapClassGrp{GrpAbFinGen}}
   valclass, nonnclass = ppio(exponent(C1), fmpz(n))
-  U, mU = unit_group_fac_elem(O)
+  U, mU = unit_group_fac_elem(O, GRH = GRH)
 
   exp_class, Kel = Hecke._elements_to_coprime_ideal(C, mC, I)
   
