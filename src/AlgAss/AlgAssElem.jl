@@ -242,8 +242,8 @@ end
 #
 ################################################################################
 
-# Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+# Tries to compute a/b if action is :right and b\a if action is :left
+function isdivisible(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
   # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
 
@@ -253,10 +253,23 @@ function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
   # a could be a zero divisor, so there will not be a unique solution
   Ma = hcat(M, va)
   r = rref!(Ma)
-  @assert !all(iszero, [ Ma[r, i] for i = 1:dim(A) ]) "Division not possible"
+
+  if all(iszero, [ Ma[r, i] for i = 1:dim(A) ])
+    return false, A()
+  end
+
   vc = solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
 
-  return A([ vc[i, 1] for i = 1:dim(A) ])
+  return true, A([ vc[i, 1] for i = 1:dim(A) ])
+end
+
+# Computes a/b if action is :right and b\a if action is :left (and if this is possible)
+function divexact(a::AbsAlgAssElem, b::AbsAlgAssElem, action::Symbol)
+  t, c = isdivisible(a, b, action)
+  if !t
+    error("Divison not possible")
+  end
+  return c
 end
 
 divexact_right(a::AbsAlgAssElem, b::AbsAlgAssElem) = divexact(a, b, :right)
@@ -297,8 +310,14 @@ dot(b::fmpz, a::AbsAlgAssElem{T}) where {T} = b*a
 #
 ################################################################################
 
+isinvertible(a::AbsAlgAssElem) = isdivisible(one(parent(a)), a, :right)
+
 function inv(a::AbsAlgAssElem)
-  return divexact_right(one(parent(a)), a)
+  t, b = isinvertible(a)
+  if !t
+    error("Element is not invertible")
+  end
+  return b
 end
 
 ################################################################################

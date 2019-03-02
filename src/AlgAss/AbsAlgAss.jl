@@ -232,9 +232,19 @@ end
 function _dec_via_center(A::S) where {T, S <: AbsAlgAss{T}}
   ZA, mZA = center(A)
   Algs = _dec_com(ZA)
+  ZA.decomposition = Algs
   res = Tuple{AlgAss{T}, morphism_type(AlgAss{T}, S)}[ subalgebra(A, mZA(BtoZA(one(B))), true) for (B, BtoZA) in Algs]
   for i in 1:length(res)
     res[i][1].issimple = 1
+    B, BtoZA = Algs[i] # B is the centre of res[i][1]
+    # Build a map from B to res[i][1] via B -> ZA -> A -> res[i][1]
+    M = zero_matrix(base_ring(A), dim(B), dim(res[i][1]))
+    for j = 1:dim(B)
+      t = mZA(BtoZA(B[j]))
+      s = res[i][2]\t
+      elem_to_mat_row!(M, j, s)
+    end
+    res[i][1].center = (B, hom(B, res[i][1], M))
   end
   A.decomposition = res
   return res
@@ -416,12 +426,21 @@ function as_number_fields(A::AbsAlgAss{fmpq})
 
   Adec = decompose(A)
 
-  # Compute a LLL reduced basis of the maximal order of A to find "small"
-  # polynomials for the number fields.
-  OA = maximal_order(A)
-  L = lll(basis_mat(OA, Val{false}).num)
-  n = basis_mat(OA, Val{false}).den
-  basis_lll = [ elem_from_mat_row(A, L, i, n) for i = 1:d ]
+  fields_not_cached = false
+  for i = 1:length(Adec)
+    if !isdefined(Adec[i][1], :maps_to_numberfields)
+      fields_not_cached = true
+    end
+  end
+
+  if fields_not_cached
+    # Compute a LLL reduced basis of the maximal order of A to find "small"
+    # polynomials for the number fields.
+    OA = maximal_order(A)
+    L = lll(basis_mat(OA, Val{false}).num)
+    n = basis_mat(OA, Val{false}).den
+    basis_lll = [ elem_from_mat_row(A, L, i, n) for i = 1:d ]
+  end
 
   M = zero_matrix(FlintQQ, 0, d)
   matrices = Vector{fmpq_mat}()
@@ -430,19 +449,30 @@ function as_number_fields(A::AbsAlgAss{fmpq})
     # For each small algebra construct a number field and the isomorphism
     B, BtoA = Adec[i]
     dB = dim(B)
-    local K, BtoK
-    found_field = false # Only for debugging
-    for j = 1:d
-      t = BtoA\basis_lll[j]
-      mint = minpoly(t)
-      if degree(mint) == dB
-        found_field = true
-        K, BtoK = _as_field_with_isomorphism(B, t, mint)
-        push!(fields, K)
-        break
+    if !isdefined(B, :maps_to_numberfields)
+      local K, BtoK
+      found_field = false # Only for debugging
+      for j = 1:d
+        t = BtoA\basis_lll[j]
+        mint = minpoly(t)
+        if degree(mint) == dB
+          found_field = true
+          K, BtoK = _as_field_with_isomorphism(B, t, mint)
+          B.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(B), elem_type(B)}}[(K, BtoK)]
+          push!(fields, K)
+          break
+        end
       end
+      @assert found_field "This should not happen..."
+    else
+      K, BtoK = B.maps_to_numberfields[1]
+      push!(fields, K)
     end
-    @assert found_field "This should not happen..."
+
+    if length(Adec) == 1
+      A.maps_to_numberfields = Tuple{AnticNumberField, AbsAlgAssToNfAbsMor{typeof(A), elem_type(A)}}[(K, BtoK)]
+      return A.maps_to_numberfields
+    end
 
     # Construct the map from K to A
     N = zero_matrix(FlintQQ, degree(K), d)

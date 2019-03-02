@@ -318,7 +318,7 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
 
   # First compute the vector space quotient
   Ma = basis_mat(a, false)
-  M = hcat(transpose(Ma), identity_matrix(K, dim(A)))
+  M = hcat(deepcopy(transpose(Ma)), identity_matrix(K, dim(A)))
   r = rref!(M)
   pivot_cols = Vector{Int}()
   j = 1
@@ -384,7 +384,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   # First compute the vector space quotient
   Ma = basis_mat(a, false)
   Mb = basis_mat(b, false)
-  M = hcat(transpose(Mb), transpose(Ma))
+  M = hcat(deepcopy(transpose(Mb)), deepcopy(transpose(Ma)))
   r = rref!(M)
   pivot_cols = Vector{Int}()
   j = 1

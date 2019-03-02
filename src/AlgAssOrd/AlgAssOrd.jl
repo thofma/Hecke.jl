@@ -1153,14 +1153,55 @@ function MaximalOrder(O::AlgAssAbsOrd{S, T}) where { S <: AlgGrp, T <: AlgGrpEle
   return OO
 end
 
+function _denominator_of_mult_table(A::AlgAss{fmpq})
+  @assert !iszero(A)
+
+  l = denominator(A.mult_table[1, 1, 1])
+  for i = 1:dim(A)
+    for j = 1:dim(A)
+      for k = 1:dim(A)
+        l = lcm(l, denominator(A.mult_table[i, j, k]))
+      end
+    end
+  end
+  return l
+end
+
+function _denominator_of_mult_table(A::AlgGrp{fmpq})
+  @assert !iszero(A)
+
+  l = denominator(A.mult_table[1, 1])
+  for i = 1:dim(A)
+    for j = 1:dim(A)
+      l = lcm(l, denominator(A.mult_table[i, j]))
+    end
+  end
+  return l
+end
+
+function any_order(A::AbsAlgAss{fmpq})
+  d = _denominator_of_mult_table(A)
+
+  M = vcat(zero_matrix(FlintQQ, 1, dim(A)), d*identity_matrix(FlintQQ, dim(A)))
+  oneA = one(A)
+  for i = 1:dim(A)
+    M[1, i] = deepcopy(coeffs(oneA, false)[i])
+  end
+  M = FakeFmpqMat(M)
+  M = hnf!(M, :lowerleft)
+  O = Order(A, sub(M, 2:dim(A) + 1, 1:dim(A)))
+  @assert check_order(O)
+  @assert one(A) in O
+  return O
+end
+
 function MaximalOrder(A::AbsAlgAss)
   if isdefined(A, :maximal_order)
     return A.maximal_order
   end
 
-  O = Order(A, basis(A))
-  @assert one(A) in O
-  # O still not needs to be an order...
+  #O = Order(A, basis(A))
+  O = any_order(A)
   OO = MaximalOrder(O)
   A.maximal_order = OO
   return OO

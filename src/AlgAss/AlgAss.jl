@@ -753,7 +753,7 @@ function _rep_for_center(M::T, A::AlgAss) where T<: MatElem
 end
 
 function center(A::AlgAss{T}) where {T}
-  if iscommutative_known(A) && A.iscommutative==1
+  if iscommutative(A)
     B, mB = AlgAss(A)
     return B, mB
   end

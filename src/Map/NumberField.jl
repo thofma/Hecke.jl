@@ -35,7 +35,11 @@ mutable struct NfToNfMor <: Map{AnticNumberField, AnticNumberField, HeckeMap, Nf
       end
     end
     t = zero_matrix(FlintQQ, degree(L), 1)
-    t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+    if degree(L) == 1
+      t[1, 1] = coeff(gen(L), 0)
+    else
+      t[2, 1] = fmpq(1) # coefficient vector of gen(L)
+    end
 
     s = solve(M, t)
     z.prim_preimg = K(parent(K.pol)([ s[i, 1] for i = 1:degree(K) ]))
