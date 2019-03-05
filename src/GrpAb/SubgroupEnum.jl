@@ -368,7 +368,7 @@ function getintervals(t, s, x, y, p, sigma, tau)
     end
   end
   if length(indice) == 0
-    return indice, (z for z in 2:1)
+    return indice, (Int[] for z in 1:1)
   end
   return indice, Base.product(ranges...)
 end
@@ -429,6 +429,7 @@ function _subgroup_type_iterator(x, y, p)
   t = something(findlast(!iszero, y), 0)
 
   # have to treat the empty y separately
+  
 
   if any(y[i] > x[i] for i in 1:length(x))
     return (x for x in 1:-1)

@@ -85,7 +85,14 @@ end
 function (Zx::FmpzPolyRing)(a::nf_elem) 
   b = Zx()
   @assert denominator(a) == 1
+  if Sys.iswindows()
+    @show a.elem_length
+  end
   for i=0:a.elem_length
+    if Sys.iswindows()
+      @show i
+      @show numerator(coeff(a, i))
+    end
     setcoeff!(b, i, numerator(coeff(a, i)))
   end
   return b
