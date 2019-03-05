@@ -293,24 +293,22 @@ Nemo.divexact(a::NfRel_nsElem, b::NfRel_nsElem) = div(a, b)
 ################################################################################
 #via julia
 
-function Base.:(^)(a::NfRel_nsElem, b::Integer)# = Base.power_by_squaring(a, b)
+function Base.:(^)(a::NfRel_nsElem{T}, b::Integer) where T 
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
-    return parent(a)(1)
+    return one(parent(a))
   elseif b == 1
     return deepcopy(a)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  elseif mod(b, 2) == 1
+  else mod(b, 2) == 1
     return a^(b - 1)*a
   end
 end
 
-#Base.:(^)(a::NfRel_nsElem, b::UInt) = Base.power_by_squaring(a, b)
-
-function Base.:(^)(a::NfRel_nsElem, b::fmpz)
+function Base.:(^)(a::NfRel_nsElem{T}, b::fmpz) where T
   if b < 0
     return inv(a)^(-b)
   elseif b == 0
@@ -320,7 +318,7 @@ function Base.:(^)(a::NfRel_nsElem, b::fmpz)
   elseif mod(b, 2) == 0
     c = a^(div(b, 2))
     return c*c
-  elseif mod(b, 2) == 1
+  else mod(b, 2) == 1
     return a^(b - 1)*a
   end
 end
@@ -471,7 +469,7 @@ function minpoly_dense(a::NfRel_nsElem)
   n = degree(K)
   k = base_ring(K)
   M = zero_matrix(k, degree(K)+1, degree(K))
-  z = a^0
+  z = one(K)
   elem_to_mat_row!(M, 1, z)
   z *= a
   elem_to_mat_row!(M, 2, z)
@@ -504,7 +502,7 @@ function minpoly_sparse(a::NfRel_nsElem)
   n = degree(K)
   k = base_ring(K)
   M = sparse_matrix(k)
-  z = a^0
+  z = one(K)
   sz = SRow(z)
   i = 0
   push!(sz.values, k(1))
@@ -513,13 +511,14 @@ function minpoly_sparse(a::NfRel_nsElem)
   z *= a
   sz = SRow(z)
   i = 1
+  kt, t = PolynomialRing(k, "t", cached = false)
+  f = kt()
   while true
     if n % i == 0
       echelon!(M)
       fl, so = cansolve_ut(sub(M, 1:i, 1:n), sz)
       if fl
         so = mul(so, sub(M, 1:i, n+1:ncols(M)))
-        kt, t = PolynomialRing(k, "t", cached = false)
         # TH: If so is the zero vector, we cannot use the iteration,
         # so we do it by hand.
         if length(so.pos) == 0
@@ -563,8 +562,9 @@ function inv(a::NfRel_nsElem)
   if iszero(a)
     error("division by zero")
   end
+  K = parent(a)
   f = minpoly(a)
-  z = coeff(f, degree(f))
+  z = K(coeff(f, degree(f)))
   for i=degree(f)-1:-1:1
     z = z*a + coeff(f, i)
   end
@@ -785,7 +785,7 @@ end
 > between L and K 
 
 """
-function simple_extension(K::NfRel_ns)
+function simple_extension(K::NfRel_ns{T}) where {T}
   n = ngens(K)
   g = gens(K)
   if n == 1
@@ -824,12 +824,15 @@ function simple_extension(K::NfRel_ns)
     elem_to_mat_row!(M, i, z)
   end
   N = zero_matrix(k, 1, degree(K))
-  b = basis(Ka)
-  emb = Array{typeof(b[1]), 1}(undef, n)
+  b1 = basis(Ka)
+  emb = Array{NfRelElem{T}, 1}(undef, n)
   for i = 1:n
     elem_to_mat_row!(N, 1, g[i])
     s = solve(M', N')
-    emb[i] = sum(b[j]*s[j,1] for j=1:degree(Ka))
+    emb[i] = zero(Ka)
+    for j = 1:degree(Ka)
+      emb[i] += b1[j]*s[j, 1]
+    end
   end
 
   return Ka, NfRelToNfRel_nsMor(Ka, K, pe, emb)

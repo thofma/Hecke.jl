@@ -1425,50 +1425,37 @@ end
 #
 ################################################################################
 
-# TH:
-# There is some annoying type instability since we pass to nmod_mat or
-# something else. Should use the trick with the function barrier.
-@doc Markdown.doc"""
-    pradical(O::NfOrd, p::{fmpz|Integer}) -> NfAbsOrdIdl
 
-> Given a prime number $p$, this function returns the $p$-radical
-> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
-> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
-> \in p\mathcal O \}$. It is not checked that $p$ is prime.
-"""
-function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
-  if typeof(p) == fmpz && nbits(p) < 64
-    return pradical(O, Int(p))
-  end
+function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
   d = degree(O)
-  
-  #Trace method if the prime is large enough
-  if p > degree(O)
-    M = trace_matrix(O)
-    W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
-    M1 = W(M)
-    k, B = nullspace(M1)
-    if k == 0
-      return ideal(O, p)
-    end
-    M2 = zero_matrix(FlintZZ, d, d)
-    for i = 1:ncols(B)
-      for j = 1:d
-        M2[i, j] = FlintZZ(B[j, i].data)
-      end
-    end
-    gens = elem_type(O)[O(p)]
-    for i=1:ncols(B)
-      if !iszero_row(M2,i)
-        push!(gens, elem_from_mat_row(O, M2, i))
-      end
-    end
-    M2 = _hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
-    I = NfAbsOrdIdl(O, M2)
-    I.gens = gens
-    return I
+  M = trace_matrix(O)
+  W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
+  M1 = W(M)
+  k, B = nullspace(M1)
+  if k == 0
+    return ideal(O, p)
   end
+  M2 = zero_matrix(FlintZZ, d, d)
+  for i = 1:ncols(B)
+    for j = 1:d
+      M2[i, j] = FlintZZ(B[j, i].data)
+    end
+  end
+  gens = elem_type(O)[O(p)]
+  for i=1:ncols(B)
+    if !iszero_row(M2,i)
+      push!(gens, elem_from_mat_row(O, M2, i))
+    end
+  end
+  M2 = _hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
+  I = NfAbsOrdIdl(O, M2)
+  I.gens = gens
+  return I
+end
+
+function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   
+  d = degree(O)
   j = clog(fmpz(d), p)
   @assert p^(j-1) < d
   @assert d <= p^j
@@ -1476,7 +1463,7 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   R = GF(p, cached = false)
   A = zero_matrix(R, degree(O), degree(O))
   B = basis(O, Val{false})
-  for i in 1:degree(O)
+  for i in 1:d
     t = powermod(B[i], p^j, p)
     ar = elem_in_basis(t)
     for k in 1:d
@@ -1509,6 +1496,32 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   I = NfAbsOrdIdl(O, mm)
   I.gens = gens
   return I
+
+end
+# TH:
+# There is some annoying type instability since we pass to nmod_mat or
+# something else. Should use the trick with the function barrier.
+@doc Markdown.doc"""
+    pradical(O::NfOrd, p::{fmpz|Integer}) -> NfAbsOrdIdl
+
+> Given a prime number $p$, this function returns the $p$-radical
+> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
+> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
+> \in p\mathcal O \}$. It is not checked that $p$ is prime.
+"""
+function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
+  if typeof(p) == fmpz && nbits(p) < 64
+    return pradical(O, Int(p))
+  end
+  d = degree(O)
+  
+  #Trace method if the prime is large enough
+  if p > d
+    return pradical_trace(O, p)
+  else
+    return pradical_frobenius(O, p)
+  end
+  
 end
 
 ################################################################################

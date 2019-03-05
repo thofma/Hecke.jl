@@ -751,11 +751,14 @@ function simple_extension(K::NfAbsNS; check = true)
   end
   N = zero_matrix(k, 1, degree(K))
   b = basis(Ka)
-  emb = typeof(b)()
+  emb = Vector{typeof(b[1])}(undef, n)
   for i=1:n
     elem_to_mat_row!(N, 1, g[i])
     s = solve(M', N')
-    push!(emb, sum(b[j] * s[j,1] for j in 1:degree(Ka)))
+    emb[i] = zero(Ka)
+    for j = 1:degree(Ka)
+      emb[i] += b[j] * s[j, 1]
+    end
   end
 
   return Ka, NfAbsToNfAbsNS(Ka, K, pe, emb)

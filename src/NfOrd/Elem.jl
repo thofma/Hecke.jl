@@ -623,7 +623,9 @@ end
 Returns an element $a^i$ modulo $m$.
 """
 function powermod(a::NfAbsOrdElem, i::fmpz, p::fmpz)
-  if contains_equation_order(parent(a))
+  
+  if contains_equation_order(parent(a))#This doesn't work! 
+  #if isdefining_polynomial_nice(nf(parent(a)))
     return powermod_fast(a, i, p)
   else
     return powermod_gen(a, i, p)

@@ -48,15 +48,15 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   end
   
   kt, t = PolynomialRing(k, "t", cached = false)
+  c = CyclotomicExt()
+  c.k = k
+  c.n = n
   
   if n == 2
     #Easy, just return the field
     Kr = number_field(t+1, cached = false, check = false)[1]
     rel2abs = NfRelToNf(Kr, k, gen(k), k(-1), Kr(gen(k)))
     small2abs = NfToNfMor(k, k, gen(k))
-    c = CyclotomicExt()
-    c.k = k
-    c.n = n
     c.Kr = Kr
     c.Ka = k
     c.mp = (rel2abs, small2abs)
@@ -66,11 +66,55 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     return c
   end
 
+
+  
   ZX, X = PolynomialRing(FlintZZ, cached = false)
   Qx = parent(k.pol)
   f = cyclotomic(n, X)
   fq = Qx(f)
   fk = evaluate(fq, t)
+  if n < 5
+    #For n = 3, 4 the cyclotomic polynomial has degree 2,
+    #so we can just ask for the roots.
+    rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
+    if length(rt) == 1
+      #The polynomial splits completely!
+      Kr, gKr = number_field(t - rt[1], cached = false, check = false)
+      rel2abs = NfRelToNf(Kr, k, gen(k), rt[1], Kr(gen(k)))
+      small2abs = NfToNfMor(k, k, gen(k))
+      c.Kr = Kr
+      c.Ka = k
+      c.mp = (rel2abs, small2abs)
+    else
+      Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)
+      Ka, rel2abs, small2abs = Hecke.absolute_field(Kr, false)
+
+      Zk = maximal_order(k)
+      b_k = basis(Zk, k)
+      B_k = nf_elem[small2abs(x) for x = b_k]
+      g = rel2abs(Kr_gen)
+      g1 = one(Ka)
+      for i = 1:degree(fk)-1
+        mul!(g1, g1, g)
+        for j = 1:degree(k)
+          push!(B_k, B_k[j]*g1)
+        end
+      end
+      ZKa = Hecke.NfOrd(B_k)
+      for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
+        ZKa = pmaximal_overorder(ZKa, p)
+      end
+      ZKa = lll(ZKa)
+      ZKa.ismaximal = 1
+      Hecke._set_maximal_order_of_nf(Ka, ZKa)
+      c.Kr = Kr
+      c.Ka = Ka
+      c.mp = (rel2abs, small2abs)
+    end
+    push!(Ac, c)
+    Hecke._set_cyclotomic_ext_nf(k, Ac)
+    return c
+  end
   lf = factor(fk)
   fk = first(keys(lf.fac))
 
@@ -82,16 +126,19 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     # cyclotomic polynomial is always maximal by Dedekind
     # hence the product basis should be maximal at all primes except
     # for all p dividing the gcd()
-    b_k = basis(maximal_order(k), k)
-    B_k = [small2abs(x) for x = b_k]
+    Zk = maximal_order(k)
+    b_k = basis(Zk, k)
+    B_k = nf_elem[small2abs(x) for x = b_k]
     g = rel2abs(Kr_gen)
+    g1 = one(Ka)
     for i = 1:degree(fk)-1
+      mul!(g1, g1, g)
       for j = 1:degree(k)
-        push!(B_k, B_k[j]*g^i)
+        push!(B_k, B_k[j]*g1)
       end
     end
     ZKa = Hecke.NfOrd(B_k)
-    for (p,v) = factor(gcd(discriminant(maximal_order(k)), fmpz(n))).fac
+    for (p,v) = factor(gcd(discriminant(Zk), fmpz(n))).fac
       ZKa = pmaximal_overorder(ZKa, p)
     end
     ZKa = lll(ZKa)
@@ -103,10 +150,7 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     small2abs = NfToNfMor(k, k, gen(k))
     ZKa = maximal_order(k)
   end
-  
-  c = CyclotomicExt()
-  c.k = k
-  c.n = n
+
   c.Kr = Kr
   c.Ka = Ka
   c.mp = (rel2abs, small2abs)

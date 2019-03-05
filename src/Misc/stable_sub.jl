@@ -310,7 +310,7 @@ function _exponent_p_sub(M::ZpnGModule)
 end
 
 function subm_to_subg(M::ZpnGModule, S::nmod_mat; op=sub)
-  return op(M.V,lift(S))
+  return op(M.V, lift(S))
 end
 
 
@@ -620,6 +620,7 @@ function _submodules_with_struct_main(M::ZpnGModule, typesub::Array{Int,1})
     for x in list  
       L, _ = quo(M, x)
       newlist = _submodules_with_struct(L, new_typesub)
+      
       for s = 1:length(newlist)
         newlist[s] = vcat(newlist[s], x)
       end
@@ -682,7 +683,7 @@ end
 
 function submodules_with_struct(M::ZpnGModule, typesub::Array{Int,1})
   # If the group is cyclic, it is easier 
-  if length(typesub)==1
+  if length(typesub) == 1
     return main_submodules_cyclic(M, typesub[1])
   end
   sort!(typesub)
@@ -701,13 +702,14 @@ function _no_redundancy(list::Array{nmod_mat,1}, w::Array{fmpz,1})
       @inbounds list[i] = vcat(list[i], zero_matrix(R, n-nrows(list[i]), ncols(list[i])))
     end
     for j=1:n
-      for k=1:n
-        @inbounds list[i][k,j]*=w[j]
+      for k=1:nrows(list[i])
+        @inbounds list[i][k,j] *= w[j]
       end
     end
     howell_form!(list[i])
     list[i] = view(list[i], 1:n, 1:n)
   end
+
   #
   #  Now, check if they are equal
   #
@@ -812,9 +814,9 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   p = M.p 
   S, mS = snf(M)
   sort!(typequo)
-  wish = DiagonalGroup([p^i for i in typequo])
+  wish = DiagonalGroup(Int[p^i for i in typequo])
 
-  if isisomorphic(wish,S.V)
+  if isisomorphic(wish, S.V)
     return nmod_mat[zero_matrix(R, 1, ngens(M.V))]
   end
   if length(typequo) > length(S.V.snf)
@@ -831,7 +833,6 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   M_dual = dual_module(S)
   candidates = submodules_with_struct(M_dual, typequo)
-
   #
   #  Dualize the modules
   #
@@ -878,9 +879,9 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
   end
   
   if quotype[1]!= -1
-    c=lcm(quotype)
+    c = lcm(quotype)
   else
-    c= Int(order(R))
+    c = Int(order(R))
   end
   Q,mQ=quo(R,c, false)
   lf=factor(order(Q)).fac
@@ -919,10 +920,10 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
       #  Searching for submodules
       #
       if quotype[1]!= -1
-        quotype_p=Int[]
+        quotype_p = Int[]
         for i=1:length(quotype)
-          v=valuation(quotype[i],p)
-          if v>0
+          v = valuation(quotype[i],p)
+          if v > 0
             push!(quotype_p,v)
           end
         end
@@ -940,7 +941,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
           plist = submodules(M)
         end
       end
-      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
+      push!(list, (_lift_and_construct(x, mQ, mG, mS, c) for x in plist))
 
     else    
     
@@ -959,7 +960,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
       #  Searching for submodules
       #
       
-      M=Hecke.ZpnGModule(S,act_mat)
+      M = Hecke.ZpnGModule(S,act_mat)
       if quotype[1]!= -1
         quotype_p=Int[]
         for i=1:length(quotype)

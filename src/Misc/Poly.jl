@@ -514,21 +514,41 @@ end
 
 function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T}, t::PolyElem{T}) where T <: RingElem #from von zur Gathen: h needs to be monic
   @assert ismonic(h)
-#  @assert isnilpotent(content(f-g*h))  #this guarantees useful lifting
-#  @assert isnilpotent(content(g*s+h*t-1))
-  e = f-g*h 
-  q, r = divrem(s*e, h)
-#  @assert s*e == q*h+r
-  g = g+t*e+q*g
-  h = h+r
-  @assert ismonic(h)
-  b = s*g+t*h-1
-  c, d = divrem(s*b, h)
-#  @assert s*b == c*h+d
-  s = s-d
-  t = t-t*b-c*g
+  #@assert isnilpotent(content(f-g*h))  #this guarantees useful lifting
+  #@assert isnilpotent(content(g*s+h*t-1))
+  Rx = parent(f)
+  aux1 = Rx()
+  mul!(aux1, g, h)
+  sub!(aux1, f, aux1)
+  #aux1 = f-g*h 
+  q, r = divrem(s*aux1, h)
+  #@assert s*e == q*h+r
+  mul!(aux1, aux1, t)
+  add!(aux1, aux1, g)
+  aux2 = Rx()
+  mul!(aux2, q, g)
+  add!(aux1, aux1, aux2)
+  #g = g+t*e+q*g
+  g = aux1
+  add!(aux2, h, r)
+  h = aux2
+  #h = h+r
+  #@assert ismonic(h)
+  aux3 = Rx()
+  aux4 = Rx()
+  mul!(aux3, s, aux1)
+  mul!(aux4, t, aux2)
+  add!(aux3, aux3, aux4)
+  sub!(aux3, aux3, one(Rx))
+  mul!(aux4, s, aux3)
+  c, d = divrem(aux4, h)
+  #@assert s*b == c*h+d
+  mul!(aux3, aux3, t)
+  sub!(aux3, t, aux3)
+  sub!(aux3, aux3, c*g)
+  sub!(aux4, s, d)
 
-  return g, h, s, t
+  return aux1, aux2, aux4, aux3
 end
 
 #factors f as unit * monic 
@@ -536,54 +556,56 @@ end
 # requires some coefficient of f to be a unit
 
 function fun_factor(f::PolyElem{<:RingElem})
+  Rx = parent(f)
   if isunit(lead(f))
     l = lead(f)
-    return parent(f)(l), f*inv(l)
+    return Rx(l), f*inv(l)
   end
-  if isunit(f)
-    return f, parent(f)(1)
-  end
+  R = base_ring(Rx)
   
-  t = gen(parent(f))
-  h0 = parent(f)(0)
-  g0 = parent(f)(0)
-  for i=degree(f):-1:0
-    if isunit(coeff(f, i))
-      h0 = f - g0
-      break
-    else
-      setcoeff!(g0, i, deepcopy(coeff(f, i)))
-    end
+  ind = degree(f)-1
+  while !isunit(coeff(f, ind))
+    ind -= 1
   end
-
-  #co-factors:
-  g0 = parent(f)(0)
-  setcoeff!(g0, degree(f) - degree(h0), lead(f))
-  setcoeff!(g0, 0, lead(h0))
-  s = parent(f)(inv(lead(h0)))
-  h0 *= lead(s)
-  t = parent(f)(0)
-  g, h, s, t = _hensel(f, g0, h0, s, t)
+  if iszero(ind)
+    return f, one(Rx)
+  end
+  u0 = zero(Rx)
+  for i = 0:ind
+    setcoeff!(u0, i, coeff(f, ind+i))
+  end
+  g0 = zero(Rx)
+  invc = inv(coeff(f, ind))
+  for i = 0:ind-1
+    setcoeff!(g0, i, coeff(f, i)*invc)
+  end
+  setcoeff!(g0, ind, one(R))
+  
+  s = Rx(inv(coeff(u0, 0)))
+  t = zero(Rx)
+  
+  u, g, s, t = _hensel(f, u0, g0, s, t)
   i = 1
-  while g!= g0 || h != h0
-#      @show content(g*s-t*h-1)
+  while g != g0 || u != u0
+
     i += 1
     g0 = g
-    h0 = h
-    g, h, s, t = _hensel(f, g0, h0, s, t)
+    u0 = u
+    u, g, s, t = _hensel(f, u0, g0, s, t)
     if i>20 #in general: loop forever... one could check that the
       # contents of f-gh and s*g+t*h - 1 is nilpotent.
       # this SHOULD ensure convergence
       @show f
       @show parent(f)
-      @show g, h, s, t
-      @show content(f-g*h)
-      @show content(g*s-t*h-1)
+      @show g, u, s, t
+      @show content(f-g*u)
+      @show content(g*t-s*u-1)
       error("too long")
     end
   end
+  #@assert g0*u0 == f
 
-  return g0, h0
+  return u0, g0
 end
 
 @doc Markdown.doc"""
@@ -809,19 +831,89 @@ function rres(f::fmpz_poly, g::fmpz_poly)
   return rres_bez(f,g)
 end
 
+
+function rres_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f1, g1)
+  @assert typeof(f1) == typeof(g1)
+  Rt = parent(f1)
+  R = base_ring(Rt)
+  m = fmpz(modulus(R))
+  e, p = ispower(m)
+  @assert isprime(p)
+  f = deepcopy(f1)
+  g = deepcopy(g1)
+  
+  res = R(1)
+  while true
+    #First, some trivial check.
+    if degree(f) < 1 && degree(g) < 1
+      if iszero(f) && iszero(g)
+        res = zero(R)
+      else
+        res = mul!(res, res, R(gcd(lift(lead(f)), lift(lead(g)))))
+      end
+      return res
+    end
+
+    if degree(f) < degree(g)
+      f, g = g, f
+    end
+    if degree(g) < 1
+      
+      if divisible(lift(coeff(f, degree(f))), p)
+        #need the constant coeff * the annihilator of the others...
+        a = coeff(f, 1)
+        for i = 2:degree(f)
+          a = gcd(a, coeff(f, i))
+          if isone(a)
+            break
+          end
+        end
+        a = annihilator(a)
+        if iszero(a)
+          return res*coeff(g, 0)
+        else
+          res = mul!(res, res, R(gcd(lift(coeff(g, 0)), lift(a)*lift(coeff(f, 0)))))
+          return res
+        end
+      else
+        res = mul!(res, res, constant_coefficient(g))
+        return res
+      end
+    end
+    
+    c, g = primsplit!(g)
+    res = mul!(res, res, c)
+    if iszero(res)
+      return res
+    end
+    
+    if divisible(lift(coeff(g, degree(g))), p)
+      #one of the coefficient will now be invertible (at least after the splitting)
+      g = fun_factor(g)[2]
+    end
+    rem!(f, f, g)
+  end
+end
+
 # Based on these formulas:
 # rres(f, g) = rres(f - kg, g), so I can divide.
 # rres(f, g) = rres(g, f)
 # rres(uf, g) = rres(f, g)
 # rres(pf, g) mod p^n = p*(rres(f, g) mod p^(n-1)) (under right hypotheses)
-function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
-  Nemo.check_parent(f, g)
-  @assert typeof(f) == typeof(g)
-  Rt = parent(f)
+function rres_sircana(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f1, g1)
+  @assert typeof(f1) == typeof(g1)
+  Rt = parent(f1)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
   e, p = ispower(m)
   easy = isprime(p)
+  if easy
+    return rres_sircana_pp(f1, g1)
+  end
+  f = deepcopy(f1)
+  g = deepcopy(g1)
 
   Zx = PolynomialRing(FlintZZ, cached = false)[1]
   
@@ -829,8 +921,8 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
   while true
     #First, some trivial check.
     if degree(f) < 1 && degree(g) < 1
-      if iszero(f) || iszero(g)
-        res = R(0)
+      if iszero(f) && iszero(g)
+        res = zero(R)
       else
         res *= R(gcd(lift(lead(f)), lift(lead(g))))
       end
@@ -864,7 +956,7 @@ function rres_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wher
       end
     end
     
-    c, g = primsplit(g)
+    c, g = primsplit!(g)
     res *= R(c)
     if iszero(res)
       return res
@@ -1155,7 +1247,7 @@ end
 > $f = u + n$ where $u$ is a unit in the coeff. ring
 > and $n$ is nilpotent.
 """
-function Nemo.isunit(f::Union{fmpz_mod_poly,nmod_poly}) 
+function Nemo.isunit(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   if !isunit(constant_coefficient(f))
     return false
   end
@@ -1170,7 +1262,7 @@ end
 @doc Markdown.doc"""
     isnilpotent(a::ResElem{fmpz}) -> Bool
     isnilpotent(a::ResElem{Integer}) -> Bool
-> Tests iff $a$ is nilpotent.
+> Tests if $a$ is nilpotent.
 """
 function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
   #a is nilpontent if it is divisible by all primes divising the modulus
@@ -1179,34 +1271,36 @@ function isnilpotent(a::ResElem{T}) where T <: Union{Integer, fmpz}
   return iszero(a^l)
 end
 
-function iszerodivisor(f::Union{fmpz_mod_poly,nmod_poly})
+function iszerodivisor(f::T) where T <: Union{fmpz_mod_poly,nmod_poly}
   c = content(f)
   return isnilpotent(c)
 end
 
-function Nemo.inv(f::Union{fmpz_mod_poly,nmod_poly}) 
+function Nemo.inv(f::T) where T <: Union{fmpz_mod_poly,nmod_poly} 
   if !isunit(f)
     error("impossible inverse")
   end
-  g = parent(f)(inv(trailing_coefficient(f)))
+  Rx = parent(f)
+  g = Rx(inv(trailing_coefficient(f)))
   #lifting: to invert a, start with an inverse b mod m, then
   # then b -> b*(2-ab) is an inverse mod m^2
   # starting with this g, and using the fact that all coeffs are nilpotent
   # we have an invers modulo s.th. nilpotent. Hence it works
-  c = f*g
+  c = Rx()
+  mul!(c, f, g)
   while !isone(c)
-    g = g*(2-c)
-    c = f*g
+    mul!(g, g, 2-c)
+    mul!(c, f, g)
   end
   return g
 end
 
-function Nemo.invmod(f::T, M::T) where T <: Union{fmpz_mod_poly}
+function Nemo.invmod(f::fmpz_mod_poly, M::fmpz_mod_poly) 
   if !isunit(f)
     error("impossible inverse")
   end
   if !isunit(lead(M))
-    error("modulus must be monic")
+    error("not yet implemented")
   end
   g = parent(f)(inv(trailing_coefficient(f)))
   #lifting: to invert a, start with an inverse b mod m, then
@@ -1214,12 +1308,12 @@ function Nemo.invmod(f::T, M::T) where T <: Union{fmpz_mod_poly}
   # starting with this g, and using the fact that all coeffs are nilpotent
   # we have an invers modulo s.th. nilpotent. Hence it works
   c = f*g
-  q, c = divrem(c, M)
+  rem!(c, c, M)
   while !isone(c)
     g = g*(2-c)
-    q, g = divrem(g, M)
-    c = f*g
-    q, c = divrem(c, M)
+    rem!(g, g, M)
+    mul!(c, f, g)
+    rem!(c, c, M)
   end
   return g
 end
@@ -1256,9 +1350,32 @@ end
 
 function rres_bez(f::fmpz_poly, g::fmpz_poly)
   Nemo.check_parent(f, g)
-  @assert typeof(f) == typeof(g)
   Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   g, q, w = gcdx(Qx(f), Qx(g))
+  if iszero(q) || iszero(w)
+    if isconstant(f) || isconstant(g)
+      if isconstant(f) && isconstant(g)
+        return gcd(coeff(f, 0), coeff(g, 0))
+      end
+      if isconstant(f)
+        if !isone(gcd(lead(g), coeff(f, 0)))
+          cg = content(g - coeff(g, 0))
+          ann = divexact(coeff(f, 0), gcd(coeff(f, 0), cg))
+          return gcd(coeff(f, 0), ann*coeff(g, 0))
+        else
+          return coeff(f, 0)
+        end
+      end
+      if !isone(gcd(lead(f), coeff(g, 0)))
+        cf = content(f - coeff(f, 0))
+        ann = divexact(coeff(g, 0), gcd(coeff(g, 0), cf))
+        return gcd(coeff(g, 0), ann*coeff(f, 0))
+      else
+        return coeff(g, 0)
+      end
+    end
+    return fmpz(0)
+  end
   return lcm(denominator(q), denominator(w))
 end
 
@@ -1300,15 +1417,17 @@ end
 > Computes the contents $c$ and the primitive part of $f$ destructively.   
 """
 function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
-
+  
+  @assert !iszero(f)
   d = degree(f)
   if d == 0
     if iszero(f)
       return base_ring(parent(f))(1), f
     end
     c = canonical_unit(coeff(f, 0))
+    c1 =inv(c)*coeff(f, 0)
     setcoeff!(f, 0, 1)
-    return inv(c)*coeff(f, 0), f
+    return c1, f
   end
 
   g = coeff(f, 0)
@@ -1401,18 +1520,18 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   end
   
   if degree(f) < 1
-    mul!(res, res, lead(f)^degree(g))
+    res = mul!(res, res, lead(f)^degree(g))
     return res
   end
 
   c, f = primsplit(f)
   if !isone(c)
-    mul!(res, res, R(c)^degree(g))
+    res = mul!(res, res, R(c)^degree(g))
   end
 
   c, g = primsplit(g)
   if !isone(c)
-    mul!(res, res, R(c)^degree(f))
+    res = mul!(res, res, R(c)^degree(f))
   end
   
   if degree(f) < degree(g)
@@ -1428,13 +1547,13 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   while true
     
     if degree(g) < 1
-      mul!(res, res, lead(g)^degree(f))
+      res = mul!(res, res, lead(g)^degree(f))
       return res
     end
   
     c, g = primsplit(g)
     if !isone(c)
-      mul!(res, res, R(c)^degree(f))
+      res = mul!(res, res, R(c)^degree(f))
     end
 
     if iszero(res)
@@ -1443,7 +1562,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
     #want f % g which works iff lead(g) | lead(f)
 
     if isunit(lead(g)) #accelerate a bit...possibly.
-      f = rem(f, g)
+      rem!(f, f, g)
       f, g = g, f
       continue
     end
@@ -1483,18 +1602,18 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
 
     if !isunit(lead(gR1))
       g1, g2 = fun_factor(gR1)
-      mul!(res1, res1, resultant_ideal(fR1, g2))
+      res1 = mul!(res1, res1, resultant_ideal(fR1, g2))
       push!(resp, lift(res1))
     else
       #gR1 has a invertible leading coeff
-      mul!(res1, res1, resultant_ideal(fR1, gR1))
+      res1 = mul!(res1, res1, resultant_ideal(fR1, gR1))
       push!(resp, lift(res1))
     end
   end
   if length(resp) == 1
-    mul!(res, res, R(resp[1]))
+    res = mul!(res, res, R(resp[1]))
   else
-    mul!(res, res, R(crt(resp, pg)))
+    res = mul!(res, res, R(crt(resp, pg)))
   end
   return res
 end
@@ -1507,9 +1626,9 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
-  pn = fmpz(R.modulus)
-  
-  
+  #pn = fmpz(modulus(R))
+  pn = modulus(R)
+    
   #Some initial checks
   if degree(f) < 1 && degree(g) < 1
     if iszero(f) || iszero(g)
@@ -1522,23 +1641,23 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
   res = R(1)
   
   if degree(f) < 1
-    mul!(res, res, lead(f)^degree(g))
+    res = mul!(res, res, lead(f)^degree(g))
     return res
   end
 
   if degree(g) < 1
-    mul!(res, res, lead(g)^degree(f))
+    res = mul!(res, res, lead(g)^degree(f))
     return res
   end
 
   c, f = primsplit(f)
   if !isone(c)
-    mul!(res, res, R(c)^degree(g))
+    res = mul!(res, res, c^degree(g))
   end
 
   c, g = primsplit(g)
   if !isone(c)
-    mul!(res, res, R(c)^degree(f))
+    res = mul!(res, res, c^degree(f))
   end
   
   if degree(f) < degree(g)
@@ -1553,31 +1672,31 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
     #want f % g which works iff lead(g) | lead(f)
 
     if isunit(lead(g)) #accelerate a bit...possibly.
-      f = rem(f, g)
+      rem!(f, f, g)
       if degree(f) < 1
-        mul!(res, res, lead(f)^degree(g))
+        res = mul!(res, res, lead(f)^degree(g))
         return res
       end
-      c, f = primsplit(f)
+      c, f = primsplit!(f)
       if !isone(c)
-        mul!(res, res, R(c)^degree(g))
+        res = mul!(res, res, c^degree(g))
       end
       f, g = g, f
     else
       s = gcd(lift(res), pn)
       if !isone(s)
         new_pn = divexact(pn, s)
-        Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-        R1 = ResidueRing(FlintZZ, new_pn, cached = false)
+        R1 = ResidueRing(FlintZZ, S(new_pn), cached = false)
         R1t = PolynomialRing(R1, "y", cached = false)[1]
-        f1 = R1t(lift(Zx,f))
-        g2 = R1t(lift(Zx,g))
-        g3, g2 = fun_factor(g2)
-        return mul!(res, res, R(lift(resultant_ideal_pp(f1, g2))))
+        f2 = R1t(T[R1(lift(coeff(f, i))) for i = 0:degree(f)])
+        g2 = R1t(T[R1(lift(coeff(g, i))) for i = 0:degree(g)])
+        g2 = fun_factor(g2)[2]
+        z = resultant_ideal_pp(f2, g2)
+        return mul!(res, res, R(lift(z)))
       end
-      g1, g = fun_factor(g)  
+      g = fun_factor(g)[2] 
       if degree(g) < 1
-        mul!(res, res, lead(g)^degree(f))
+        res = mul!(res, res, lead(g)^degree(f))
         return res
       end
     end

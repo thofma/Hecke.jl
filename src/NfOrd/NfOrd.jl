@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export ==, +, basis, basis_mat, basis_mat_inv, contains_eqaution_order,
+export ==, +, basis, basis_mat, basis_mat_inv, contains_equation_order,
        discriminant, degree, den, gen_index, EquationOrder, index,
        isequation_order, isindex_divisor, lll, lll_basis, maximal_order,
        MaximalOrder, minkowski_mat, nf, norm_change_const, Order, parent,

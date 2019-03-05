@@ -71,7 +71,7 @@ function gcd(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem}, test_sqfr::Bool
     return inv(lead(a))*a
   end
 
-  g= gcd_modular_kronnecker(a, b, test_sqfr)
+  g = gcd_modular_kronnecker(a, b, test_sqfr)
   test_sqfr && return g
   return inv(lead(g))*g  # we want it monic...
 end

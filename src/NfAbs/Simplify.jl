@@ -18,9 +18,14 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
   else
     OK = maximal_order(K)::NfOrd
     ZK = lll(OK)::NfOrd
-    I = index(OK)
-    B = basis(ZK, Val{false})
     a = gen(K)
+    if isdefining_polynomial_nice(K)
+      I = index(OK)
+    else
+      I = divexact(numerator(discriminant(K.pol)), discriminant(ZK))
+    end
+    B = basis(ZK, Val{false})
+    
     for i = 1:length(B)
       if isone(denominator(B[i].elem_in_nf))
         continue

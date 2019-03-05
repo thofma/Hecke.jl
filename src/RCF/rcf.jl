@@ -431,7 +431,14 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   g = ms(H[1])
   @vprint :ClassField 2 "g = $g\n"
   #@vprint :ClassField 2 "final $n of order $o and e=$e\n"
-  a = prod(FacElem{nf_elem, AnticNumberField}[KK.gen[i]^div(mod(g[i], fmpz(e1)), c) for i=1:ngens(N) if !iszero(g[i])])
+  a = FacElem(Dict{nf_elem, fmpz}(one(C.Ka) => fmpz(1)))
+  for i = 1:ngens(N)
+    if iszero(g[i])
+      continue
+    end
+    mul!(a, a, KK.gen[i]^div(mod(g[i], fmpz(e1)), c))
+  end
+  #a = prod(FacElem{nf_elem, AnticNumberField}[KK.gen[i]^div(mod(g[i], fmpz(e1)), c) for i=1:ngens(N) if !iszero(g[i])])
   #@vprint :ClassField 2 "generator $a\n"
   CF.a = a
   CF.sup_known = true
