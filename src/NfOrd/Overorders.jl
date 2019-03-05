@@ -15,8 +15,8 @@ function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
   Vinv = inv(V)
   basis_O = basis(O)
   basis_M = basis(M)
-  new_basis_O = Vector{nf_elem}(d)
-  new_basis_M = Vector{nf_elem}(d)
+  new_basis_O = Vector{nf_elem}(undef, d)
+  new_basis_M = Vector{nf_elem}(undef, d)
   for i in 1:d
     new_basis_O[i] = elem_in_nf(sum(U[i, j] * basis_O[j] for j in 1:d))
   end
@@ -32,7 +32,7 @@ function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
   end
 
   subs = subgroups(A)
-  potential_basis = Vector{nf_elem}(d)
+  potential_basis = Vector{nf_elem}(undef, d)
   oorders = typeof(O)[]
   for s in subs
     T = image(s[2])
@@ -199,8 +199,8 @@ function _overorders_meataxe(O::NfOrd, M::NfOrd)
   Vinv = inv(V)
   basis_O = basis(O)
   basis_M = basis(M)
-  new_basis_O = Vector{nf_elem}(d)
-  new_basis_M = Vector{nf_elem}(d)
+  new_basis_O = Vector{nf_elem}(undef, d)
+  new_basis_M = Vector{nf_elem}(undef, d)
   for i in 1:d
     new_basis_O[i] = elem_in_nf(sum(U[i, j] * basis_O[j] for j in 1:d))
   end
@@ -232,7 +232,7 @@ function _overorders_meataxe(O::NfOrd, M::NfOrd)
     push!(autos, hom(A, A, m))
   end
     
-  potential_basis = Vector{nf_elem}(d)
+  potential_basis = Vector{nf_elem}(undef, d)
 
   subs = stable_subgroups(A, autos)
   for s in subs
@@ -270,8 +270,8 @@ function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O,
   Vinv = inv(V)
   basis_O = basis(O)
   basis_M = basis(M)
-  new_basis_O = Vector{nf_elem}(d)
-  new_basis_M = Vector{nf_elem}(d)
+  new_basis_O = Vector{nf_elem}(undef, d)
+  new_basis_M = Vector{nf_elem}(undef, d)
   for i in 1:d
     new_basis_O[i] = elem_in_nf(sum(U[i, j] * basis_O[j] for j in 1:d))
   end
@@ -302,7 +302,7 @@ function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O,
     push!(autos, hom(A, A, m))
   end
     
-  potential_basis = Vector{nf_elem}(d)
+  potential_basis = Vector{nf_elem}(undef, d)
 
   subs = stable_subgroups(A, autos)
   for s in subs
@@ -337,7 +337,7 @@ function overorders_meataxe(O::NfOrd, M::NfOrd = maximal_order(O))
     return typeof(O)[O]
   end
 
-  res = Vector{typeof(O)}(prod(length(orders[i]) for i in 1:length(orders)))
+  res = Vector{typeof(O)}(undef, prod(length(orders[i]) for i in 1:length(orders)))
 
   if length(orders) == 1
     return orders[1]
@@ -375,6 +375,46 @@ function prime_ideals_over(O::NfOrd, p::fmpz)
     end
   end
   return p_critical_primes
+end
+
+function isbass(O::NfOrd, P::NfOrdIdl)
+  M = maximal_order(O)
+  Q = extend(P, M)
+  p = minimum(P)
+  resfield_dim = valuation(norm(Q), p)
+  ext_dim = valuation(norm(Q), p)
+  @assert mod(ext_dim, resfield_dim) == 0
+  return div(ext_dim, resfield_dim) <= 2
+end
+
+function pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl; branching::Bool = true)
+  R = ring_of_multipliers(P)
+  if index(R) == index(O)
+    return typeof(O)[O]
+  end
+  lQ = prime_ideals_over(R, minimum(P))
+  if !branching
+    res = typeof(O)[O]
+    for Q in lQ
+      if intersect(Q, O) == P
+        return append!(res, pprimary_overorders_bass(R, Q, branching = false))
+      end
+    end
+  end
+
+  res = typeof(O)[O]
+
+  k = 0
+  for Q in lQ
+    if k == 2 
+      break
+    end
+    if intersect(Q, O) == P
+      k = k + 1
+      append!(res, pprimary_overorders_bass(R, Q, branching = false))
+    end
+  end
+  return res
 end
 
 function isbass(O::NfOrd, p::fmpz)
@@ -432,23 +472,49 @@ function intersect(x::NfOrd, y::NfOrd)
   return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_mat(x).num, basis_mat(x).den), :lowerleft), g))
 end
 
-# Overorders in case O is Bass
-# This is currently broken
-function poverorders_bass(O::NfOrd, p::fmpz)
-  lP = prime_decomposition(maximal_order(nf(O)), p)
-  M = basis_mat(O)
-  n = degree(O)
-  for (P, e) in lP
-    pi = uniformizer(P)
-    a = pi
-    for k in 1:2 
-      N, d = representation_matrix_q(a.elem_in_nf)
-      NN = FakeFmpqMat(vcat(M.num * d, N * M.den), d * M.den)
-      EE = Order(nf(O), sub(hnf(NN, :lowerleft), n + 1:2*n, 1:n))
-      @show EE
-      a = a * pi
+function new_poverorders(O::NfOrd, p::fmpz)
+  lP = prime_ideals_over(O, p)
+  res = typeof(O)[O]
+  for P in lP
+    nres = typeof(O)[]
+    Pprim = pprimary_overorders(O, P)
+    for R in Pprim
+      for S in res
+        push!(nres, R + S)
+      end
+    end
+    res = nres
+  end
+  return res
+end
+
+function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
+  if isbass(O, P)
+    return pprimary_overorders_bass(O, P)
+  end
+  E = ring_of_multipliers(P)
+  if index(E) != index(O)
+    minimaloverorders = _overorders_meataxe(O, E)
+  else
+    return typeof(O)[O]
+  end
+
+
+  res = typeof(O)[O]
+
+  for R in minimaloverorders
+    if index(R) == index(O)
+      continue
+    end
+    lQ = prime_ideals_over(R, minimum(P))
+    for Q in lQ
+      if intersect(Q, O) != P
+        continue
+      end
+      append!(res, pprimary_overorders(R, Q))
     end
   end
+  return res
 end
 
 ################################################################################
@@ -564,8 +630,6 @@ function isisomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
   l = length(Q1_A.snf)
 
   elements_with_correct_order = Dict{fmpz, Vector{GrpAbFinGenElem}}()
-
-  @show orders
 
   for g in Q2_A
     o = order(g)
