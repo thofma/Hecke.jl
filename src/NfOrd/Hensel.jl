@@ -85,15 +85,14 @@ end
 function (Zx::FmpzPolyRing)(a::nf_elem) 
   b = Zx()
   @assert denominator(a) == 1
-  if Sys.iswindows()
-    @show a.elem_length
-  end
-  for i=0:a.elem_length
-    if Sys.iswindows()
-      @show i
-      @show numerator(coeff(a, i))
+  if degree(parent(a)) == 1
+    # If the number field is linear, then a.elem_length is not properly
+    # initialized, that is, it could be anything.
+    setcoeff!(b, i, numerator(coeff(a, 0)))
+  else
+    for i=0:a.elem_length
+      setcoeff!(b, i, numerator(coeff(a, i)))
     end
-    setcoeff!(b, i, numerator(coeff(a, i)))
   end
   return b
 end

@@ -76,12 +76,6 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
-    if Sys.iswindows()
-      println("n:", n)
-      println("k:", k)
-      println("fq:", fq)
-      println("fk:", fk)
-    end
     rt = _roots_hensel(fk, max_roots = 1, isnormal = true)
     if length(rt) == 1
       #The polynomial splits completely!
