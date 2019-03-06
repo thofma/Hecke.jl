@@ -322,18 +322,18 @@ end
 
 function minimal_submodules(M::ZpnGModule, ord::Int=-1)
   
-  R=M.R
-  S,mS=snf(M)
+  R = M.R
+  S, mS = snf(M)
   N = _exponent_p_sub(S)
-  if ord==-1
+  if ord == -1
     list_sub = minimal_submodules(N)
   else
     list_sub = minimal_submodules(N, ngens(S.V)-ord)
   end
-  list=Array{nmod_mat,1}(undef, length(list_sub))
-  v=[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
-  W=MatrixSpace(R,1, ngens(M.V), false)
-  for z=1:length(list)
+  list = Array{nmod_mat,1}(undef, length(list_sub))
+  v = [M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
+  W = MatrixSpace(R,1, ngens(M.V), false)
+  for z = 1:length(list)
     list[z] = vcat([W((mS(S.V([lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:nrows(list_sub[z])])
   end
   return list
@@ -490,8 +490,11 @@ end
 
 function submodules_all(M::ZpnGModule)
   
-  R=M.R
-  S,mS=snf(M)  
+  R = M.R
+  if isone(order(M.V))
+    return nmod_mat[]
+  end 
+  S,mS = snf(M)  
   minlist = minimal_submodules(S)
   list=nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf), false)(1), zero_matrix(R,1,length(S.V.snf))]
   
@@ -500,8 +503,8 @@ function submodules_all(M::ZpnGModule)
   #
   
   for x in minlist
-    N,_=quo(S,x)
-    newlist=submodules_all(N)
+    N, _ = quo(S,x)
+    newlist = submodules_all(N)
     for y in newlist
       push!(list,vcat(y,x))
     end
@@ -512,7 +515,7 @@ function submodules_all(M::ZpnGModule)
   #  Eliminate redundance via Howell form
   #
   w=fmpz[divexact(fmpz(R.n), S.V.snf[j]) for j=1:ngens(S.V)]
-  list=_no_redundancy(list,w)
+  list=_no_redundancy(list, w)
   
   #
   #  Writing the submodules in terms of the given generators and returning an iterator

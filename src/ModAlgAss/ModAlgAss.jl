@@ -71,7 +71,8 @@ function isirreducible(M::ModAlgAss)
   if M.isirreducible != 0
     return M.isirreducible == 1
   else
-    error("Not implemented yet")
+    fl, N = meataxe(M)
+    return fl
   end
 end
 
