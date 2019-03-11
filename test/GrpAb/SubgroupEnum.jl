@@ -3,6 +3,9 @@
     G = DiagonalGroup([9, 3, 3])
     H = DiagonalGroup([9, 3, 3, 5, 7])
 
+    GG = DiagonalGroup([8])
+    @test 4 == length(collect(subgroups(GG)))
+
     @testset "All subgroups" begin
       @test 50 == length(collect(psubgroups(G, 3)))
     end

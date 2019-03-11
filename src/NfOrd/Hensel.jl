@@ -85,8 +85,14 @@ end
 function (Zx::FmpzPolyRing)(a::nf_elem) 
   b = Zx()
   @assert denominator(a) == 1
-  for i=0:a.elem_length
-    setcoeff!(b, i, numerator(coeff(a, i)))
+  if degree(parent(a)) == 1
+    # If the number field is linear, then a.elem_length is not properly
+    # initialized, that is, it could be anything.
+    setcoeff!(b, 0, numerator(coeff(a, 0)))
+  else
+    for i=0:a.elem_length
+      setcoeff!(b, i, numerator(coeff(a, i)))
+    end
   end
   return b
 end

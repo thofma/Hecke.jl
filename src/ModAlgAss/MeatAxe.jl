@@ -229,7 +229,7 @@ end
 #
 #  Function that determine if two modules are isomorphic, provided that the first is irreducible
 #
-function isisomorphic(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
+function isisomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
   @assert M.isirreducible == 1
   @assert base_ring(M) == base_ring(N)
   @assert length(M.action) == length(N.action)
@@ -264,139 +264,6 @@ function isisomorphic(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
   rel = _relations(M,N)
   return iszero(rel[N.dimension, N.dimension])
 
-  #=
-  
-  #
-  #  Adding generators to obtain randomness
-  #
-  
-  for i=1:max(length(M.action),9)
-    l1=rand(1:length(G))
-    l2=rand(1:length(G))
-    while l1 !=l2
-      l2=rand(1:length(G))
-    end
-    push!(G, G[l1]*G[l2])
-    push!(H, H[l1]*H[l2])
-  end
-
-  #
-  #  Now, we get peakwords
-  #
-  
-  A=zero_matrix(K,n,n)
-  B=zero_matrix(K,n,n)
-  found=false
-  
-  while !found
-  
-    A=zero_matrix(K,n,n)
-    B=zero_matrix(K,n,n)
-    l1=rand(1:length(G))
-    l2=rand(1:length(G))
-    push!(G, G[l1]*G[l2])
-    push!(H, H[l1]*H[l2])
-  
-    for i=1:length(G)
-      s=rand(K)
-      A+=s*G[i]
-      B+=s*H[i]
-    end
-  
-    cp=charpoly(Kx,A)
-    cpB=charpoly(Kx,B)
-    if cp!=cpB
-      return false
-    end
-    sq=prod(collect(keys(factor_squarefree(cp).fac)))
-    j=1
-    while !isone(sq)
-      g=gcd(x^(Int(order(K)^j))-x,sq)
-      sq=divexact(sq,g)
-      lf=factor(g)
-      for t in keys(lf.fac)
-        f=t
-        S=_subst(t,A)
-        a,kerA=nullspace(transpose(S))
-        if a==1
-          M.dim_spl_fld=1
-          found=true
-          break
-        end
-        kerA=transpose(kerA)
-        posfac=gcd(posfac,a) 
-        if divisible(fmpz(posfac),a)
-          v=sub(kerA, 1:1, 1:n)
-          U=v
-          T =spinning(v,G)
-          G1=[T*mat*inv(T) for mat in M.action]
-          i=2
-          E=fq_nmod_mat[eye(T,a)]
-          while nrows(U)!= a
-            w= sub(kerA, i:i, 1:n)
-            z= cleanvect(U,w)
-            if iszero(z)
-              continue
-            end
-            O =spinning(w,G)
-            G2=[O*mat*inv(O) for mat in M.action]
-            if G1 == G2
-              b=kerA*O
-              x=transpose(solve(transpose(kerA),transpose(b)))
-              push!(E,x)
-              U=vcat(U,z)
-              U=closure(U,E)
-            else 
-              break
-            end
-            if nrows(U)==a
-              M.dim_spl_fld=a
-              found=true
-              break
-            else
-              i+=1
-            end
-          end
-        end
-        if found==true
-          break
-        end
-      end   
-      j+=1        
-    end
-  end
-  #
-  #  Get the standard basis
-  #
-
-  
-  L=_subst(f,A)
-  a,kerA=nullspace(transpose(L))
-  
-  I=_subst(f,B)
-  b,kerB=nullspace(transpose(I))
-
-
-  if a!=b
-    return false
-  end
-  
-  Q= spinning(transpose(sub(kerA, 1:n, 1:1)), M.action)
-  W= spinning(transpose(sub(kerB, 1:n, 1:1)), N.action)
-  
-  #
-  #  Check if the actions are conjugated
-  #
-  S=inv(W)*Q
-  T=inv(S)
-  for i=1:length(M.action)
-    if S*M.action[i]* T != N.action[i]
-      return false
-    end
-  end
-  return true
-
-  =#
 end
 
 function _enum_el(K,v,dim)
@@ -417,8 +284,8 @@ function _enum_el(K,v,dim)
   end
 end
 
-function dual_space(M::ModAlgAss{S, T}) where {S, T}
-  G=T[transpose(g) for g in M.action]
+function dual_space(M::ModAlgAss{S, T, V}) where {S, T, V}
+  G = T[transpose(g) for g in M.action]
   return ModAlgAss(G)
 end
 
@@ -470,14 +337,14 @@ end
 > Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
 
 """
-function meataxe(M::ModAlgAss{S, T}) where {S, T}
+function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
 
   K=base_ring(M)
   Kx,x=PolynomialRing( K,"x", cached=false)
   n=dimension(M)
   H = M.action
   if n == 1
-    M.isirreducible=1
+    M.isirreducible = 1
     return true, identity_matrix(base_ring(H[1]), n)
   end
   
@@ -609,7 +476,7 @@ end
 
 """
 
-function composition_series(M::ModAlgAss{S, T}) where {S, T}
+function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
 
   if M.isirreducible == 1
     return [identity_matrix(base_ring(M.action[1]), M.dimension)]
@@ -665,7 +532,7 @@ end
 > i.e. the isomorphism classes of modules appearing in a composition series of M
 
 """
-function composition_factors(M::ModAlgAss{S, T}; dimension::Int=-1) where {S, T}
+function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S, T, V}
   
   if M.isirreducible == 1
     if dimension!= -1 
@@ -721,7 +588,7 @@ function composition_factors(M::ModAlgAss{S, T}; dimension::Int=-1) where {S, T}
 
 end
 
-function _relations(M::ModAlgAss{S, T}, N::ModAlgAss{S, T}) where {S, T}
+function _relations(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T, V}
   @assert M.isirreducible == 1
   G=M.action
   H=N.action
@@ -832,21 +699,25 @@ end
 """
 
 
-function minimal_submodules(M::ModAlgAss{S, T}, dim::Int=M.dimension+1, lf=[]) where {S, T}
+function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
   
-  K=M.base_ring
-  n=M.dimension
+  K = M.base_ring
+  n = M.dimension
   
-  if M.isirreducible==true
-    return T[]
+  if isone(M.isirreducible)
+    if dim >= n
+      return T[identity_matrix(K, n)]
+    else
+      return T[]
+    end
   end
 
-  list=T[]
+  list = T[]
   if isempty(lf)
-    lf=composition_factors(M)
+    lf = composition_factors(M)
   end
-  if length(lf)==1 && lf[1][2]==1
-    return T[]
+  if isone(length(lf)) && isone(lf[1][2])
+    return T[identity_matrix(K, n)]
   end
   if dim!=n+1
     lf=[x for x in lf if x[1].dimension==dim]
@@ -854,9 +725,8 @@ function minimal_submodules(M::ModAlgAss{S, T}, dim::Int=M.dimension+1, lf=[]) w
   if isempty(lf)
     return list
   end
-  G=M.action
   for x in lf
-    append!(list,Hecke._irrsubs(x[1],M)) 
+    append!(list, Hecke._irrsubs(x[1], M)) 
   end
   return list
 end
@@ -870,11 +740,11 @@ end
 
 """
 
-function maximal_submodules(M::ModAlgAss{S, T}, index::Int=M.dimension, lf=[]) where {S, T}
+function maximal_submodules(M::ModAlgAss{S, T, V}, index::Int=M.dimension, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
 
-  M_dual=dual_space(M)
-  minlist=minimal_submodules(M_dual, index+1, lf)
-  maxlist=Array{T,1}(undef, length(minlist))
+  M_dual = dual_space(M)
+  minlist = minimal_submodules(M_dual, index+1, lf)
+  maxlist = Array{T, 1}(undef, length(minlist))
   for j=1:length(minlist)
     maxlist[j]=transpose(nullspace(minlist[j])[2])
   end
@@ -890,12 +760,12 @@ end
 
 """
 
-function submodules(M::ModAlgAss{S, T}) where {S, T}
+function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
 
   K=M.base_ring
   list=T[]
   lf=composition_factors(M)
-  minlist=minimal_submodules(M, M.dimension+1, lf)
+  minlist = minimal_submodules(M, M.dimension+1, lf)
   for x in minlist
     rref!(x)
     N, pivotindex =_actquo(x,M.action)
