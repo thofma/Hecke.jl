@@ -765,13 +765,52 @@ function Order(a::NfOrdFracIdl, check::Bool = true, cache::Bool = true)
   return Order(nf(order(a)), basis_mat(a)*basis_mat(order(a)), check, cache)
 end
 
+function _Order(K::S, a::Array{T, 1}, check::Bool = true,
+                cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS},
+                                           T <: Union{nf_elem, NfAbsNSElem}}
+  n = degree(K)
+  B_K = basis(K)
+
+  if one(K) in a
+    cur = a
+  else
+    cur = append!([one(K)], a)
+  end
+  # Close it under multiplication
+  Bmat = basis_mat(cur)
+  while true
+    k = length(cur)
+    prods = Vector{elem_type(K)}(undef, k^2)
+    for i in 1:k
+      for j in 1:k
+        prods[(i - 1) * k + j] = cur[i]*cur[j]
+      end
+    end
+    #@show prods
+    Ml = hnf(basis_mat(prods))
+    #@show Ml
+    r = findfirst(i -> !iszero_row(Ml.num, i), 1:k^2)
+    nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
+    if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
+      break
+    end
+    Bmat = nBmat
+    # Check if 1 is contained in the Z-module
+  end
+  if nrows(Bmat) != n
+    error("Elements do not generate an order")
+  end
+
+  return Order(K, Bmat, false)
+end
+
 ################################################################################
 #
 #  Any order
 #
 ################################################################################
 
-#based on an ideal of Lenstra, more details in
+#Based on an idea of Lenstra. More details in
 #https://www.sciencedirect.com/science/article/pii/S0019357701800392
 #https://www.impan.pl/pl/wydawnictwa/czasopisma-i-serie-wydawnicze/acta-arithmetica/all/120/3/82018/decomposition-of-primes-in-non-maximal-orders
 #: Denis Simon: The index of nonmonic polynomials
