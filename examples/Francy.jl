@@ -2,8 +2,11 @@ module Francy
 
 export canvas, graph, shape, link, menu, callback
 
-using JSON
+using JSON, IJulia
 Base.istextmime(::MIME"application/vnd.francy+json") = true
+
+#once..
+IJulia.register_mime(MIME("application/vnd.francy+json"));
 
 function Base.show(io::IO, ::MIME"application/vnd.francy+json", s::String)
   print(io, s)
@@ -24,8 +27,10 @@ function Base.show(io::IO, t::MIME"application/vnd.francy+json", c::Canvas)
   show(io, t, JSON.json(c.c))
 end
 
+canvas_cache = Dict{String, WeakRef}()
+
 function canvas(t::String)
-  return Canvas(Dict(:version => "1.0.4",
+  C = Canvas(Dict(:version => "1.0.4",
        :mime => "application/vnd.francy+json",
        :canvas =>
     Dict(:width => 800,
@@ -35,8 +40,15 @@ function canvas(t::String)
          :zoomToFit => true,
          :texTypesetting => false,
          :menus => Dict(),
+         :messages => Dict(),
          :graph => Dict()
     )))
+  
+  global canvas_cache
+  canvas_cache[C.c[:canvas][:id]] = WeakRef(C)
+  global last_c
+  last_c = C
+  return C
 end
 
 function graph()
@@ -50,7 +62,7 @@ function graph()
               )
 end
 
-function shape(n::String, type::Symbol = :circle)
+function shape(n::String, type::Symbol = :circle; callbacks = Dict())
   return Dict(:type => type,
               :id => create_id(),
               :size => 10,
@@ -62,7 +74,7 @@ function shape(n::String, type::Symbol = :circle)
               :parent => "",
               :menus => Dict(),
               :messages => Dict(),
-              :callbacks => Dict()
+              :callbacks => callbacks
               )
 end
 
@@ -105,10 +117,82 @@ function add_menu(a::Dict, m::Dict)
   a[:menus][m[:id]] = m
 end
 
+function add_message(a::Dict, m::Dict)
+  a[:messages][m[:id]] = m
+end
+
 function add_callback(n::Dict, c::Dict)
   n[:callbacks][c[:id]] = c
 end
 
+function message(s::String)
+  return Dict(:id => create_id(),
+              :type => :info,
+              :title => s,
+              :value => ""
+              )
+end
+
+using Hecke
+function divisors(n::fmpz)
+  lf = factor(n).fac
+  z = Base.Iterators.ProductIterator(Tuple([[p^i for i=0:k] for (p,k) = lf]))
+  l = fmpz[]
+  for x = z
+    push!(l, prod(x))
+  end
+  return l
+end
+
+function graphic_divisors(n::fmpz)
+  c = canvas("Divisors of $n")
+  d = divisors(n)
+  no = [shape(string(d[i])) for i=1:length(d)]
+  for n = 1:length(no)
+    add_callback(no[n], callback("isprime", "(:" * c.c[:canvas][:id] * ", $(d[n]))"))
+  end
+  g = graph()
+  for n = no
+    add_node(g, n)
+  end
+  for i=1:length(d)
+    for j=1:length(d)
+      if i==j
+        continue
+      end
+      if divides(d[i], d[j])[1]
+        add_link(g, link(no[i], no[j]))
+      end
+    end
+  end
+  c.c[:canvas][:graph] = g
+  return c
+end
+
+function canvas(s::Symbol)
+  global canvas_cache
+  return canvas_cache[string(s)].value
+end
+
+function Main.isprime(t::Tuple)
+  n = fmpz(t[2])
+  f = isprime(n)
+  c = canvas(t[1])
+  add_message(c.c[:canvas], message("$n is prime: $f"))
+  display("application/vnd.francy+json", c)
+  return true
+end
+
+function Trigger(a::String)
+  b = JSON.parse(a)
+#  global last_c
+  c = b["func"] * "(" * b["knownArgs"] * ")"
+  res = eval(Meta.parse(c))
+#  add_message(last_c.c[:canvas], message("2:res is $c"))
+#  display("application/vnd.francy+json", last_c)
+end  
+
+export Trigger
 
 end
 
