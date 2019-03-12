@@ -234,7 +234,12 @@ using Main.Francy
 
 module FrancyExample
 
+
 using Hecke, Main.Francy
+
+import Base.*
+*(x::Hecke.RingElem) = x
+
 function divisors(n::fmpz)
   lf = factor(n).fac
   z = Base.Iterators.ProductIterator(Tuple([[p^i for i=0:k] for (p,k) = lf]))
@@ -291,6 +296,25 @@ function isodd(t::Tuple)
 end
 
 export graphic_divisors
+
+function graphic_subgroups(A::GrpAbFinGen)
+  s = collect(subgroups(A))
+  g = graph()
+  n = [shape("$i: $(length(s[i][1]))") for i = 1:length(s)]
+  for x = n
+    push!(g, x)
+  end
+  for i=1:length(s)
+    for j=i+1:length(s)
+      if issubgroup(s[i][1], s[j][1])[1]
+        push!(g, link(n[i], n[j]))
+      end
+    end
+  end
+  c = canvas("subgroups")
+  push!(c, g)
+  return c
+end
 
 end
 
