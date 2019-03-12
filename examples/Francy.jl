@@ -151,6 +151,11 @@ function push!(G::Graph, L::Link)
   G.g[:links][L.l[:id]] = L.l
 end
 
+#= trigger can be
+  :click  -> mouse event, left click in js
+  :context -> mouse event, right click or context-menu
+  :dblclick -> mouse event, double click
+=#
 function callback(f::String, a::String)
   return Callback(Dict(:id => create_id(),
               :func => f,
