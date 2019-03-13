@@ -331,10 +331,10 @@ function minimal_submodules(M::ZpnGModule, ord::Int=-1)
     list_sub = minimal_submodules(N, ngens(S.V)-ord)
   end
   list = Array{nmod_mat,1}(undef, length(list_sub))
-  v = [M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
-  W = MatrixSpace(R,1, ngens(M.V), false)
+  v = Int[M.p^(valuation(S.V.snf[i], M.p)-1) for i=1:ngens(S.V)]
+  W = MatrixSpace(R, 1, ngens(M.V), false)
   for z = 1:length(list)
-    list[z] = vcat([W((mS(S.V([lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:nrows(list_sub[z])])
+    list[z] = vcat(nmod_mat[W((mS(S.V(fmpz[lift(list_sub[z][k,i])*v[i] for i=1:ngens(S.V)]))).coeff) for k=1:nrows(list_sub[z])])
   end
   return list
 
@@ -349,10 +349,10 @@ end
 
 function maximal_submodules(M::ZpnGModule, ind::Int=-1)
   
-  R=M.R
-  S,mS=snf(M)
-  N=dual_module(S)
-  if ind==-1
+  R = M.R
+  S, mS = snf(M)
+  N = dual_module(S)
+  if ind == -1
     minlist = minimal_submodules(N)
   else 
     minlist = minimal_submodules(N,ind)
@@ -492,11 +492,11 @@ function submodules_all(M::ZpnGModule)
   
   R = M.R
   if isone(order(M.V))
-    return nmod_mat[]
+    return (nmod_mat[])
   end 
   S,mS = snf(M)  
   minlist = minimal_submodules(S)
-  list=nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf), false)(1), zero_matrix(R,1,length(S.V.snf))]
+  list = nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf), false)(1), zero_matrix(R,1,length(S.V.snf))]
   
   #
   #  Find minimal submodules, factor out and recursion on the quotients
@@ -820,14 +820,14 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   wish = DiagonalGroup(Int[p^i for i in typequo])
 
   if isisomorphic(wish, S.V)
-    return nmod_mat[zero_matrix(R, 1, ngens(M.V))]
+    return (nmod_mat[zero_matrix(R, 1, ngens(M.V))])
   end
   if length(typequo) > length(S.V.snf)
-    return nmod_mat[]
+    return (nmod_mat[])
   end
   for i = 1:length(typequo)
     if !divisible(S.V.snf[ngens(S.V)+1-i],fmpz((M.p)^typequo[length(typequo)+1-i]))
-      return nmod_mat[]
+      return (nmod_mat[])
     end
   end
 
@@ -873,46 +873,44 @@ end
 > subgroups of R such that the corresponding quotient has the required type.
 """
 
-function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
+function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
-  if quotype[1] != -1
-    if minimal
-      error("Cannot compute minimal submodules with prescribed quotient type")
-    end
+  if quotype[1] != -1 && minimal
+    error("Cannot compute minimal submodules with prescribed quotient type")
   end
-  
   if quotype[1]!= -1
-    c = lcm(quotype)
-  else
-    c = Int(order(R))
+    #I write quotype as the diagonal entries of the snf form.
+    DG = DiagonalGroup(quotype)
+    quotype = map(Int, snf(DG)[1].snf)
   end
-  Q,mQ=quo(R,c, false)
-  lf=factor(order(Q)).fac
-  list=[]
+  c = lcm(quotype[end], Int(order(R)))
+  Q, mQ = quo(R, c, false)
+  lf = factor(order(Q)).fac
+  list = []
   for p in keys(lf)
     
-    x=valuation(c,p)
-    if x==0
+    x1 = valuation(lcm(quotype[end], Int(order(R))), p)
+    if iszero(x1)
       continue
     end
-    G,mG=psylow_subgroup(Q, p, false)
-    S,mS=snf(G)
+    G, mG = psylow_subgroup(Q, p, false)
+    S, mS = snf(G)
     
     #
     #  Action on the group: we need to distinguish between FqGModule and ZpnGModule (in the first case the algorithm is more efficient)
     #
     
-    if x==1
+    if x1 == 1
       
-      F = GF(Int(p), cached=false)
+      F = GF(Int(p), cached = false)
       act_mat=Array{gfp_mat, 1}(undef, length(act))
       for w=1:length(act)
-        act_mat[w]=zero_matrix(F,ngens(S), ngens(S))
+        act_mat[w] = zero_matrix(F,ngens(S), ngens(S))
       end
       for w=1:ngens(S)
         el=mG(mS(S[w]))
         for z=1:length(act)
-          elz=mS\(haspreimage(mG,act[z](el))[2])
+          elz=mS\(haspreimage(mG, act[z](el))[2])
           for l=1:ngens(S)
             act_mat[z][w,l]=elz[l]
           end
@@ -931,8 +929,8 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
           end
         end
         if Int(p)*quotype_p == S.snf
-          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
-          push!(list, ([plist1]))
+          plist1 = GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+          push!(list, (Vector{GrpAbFinGenElem}[plist1]))
           continue
         end
         ind = length(quotype_p)
@@ -944,59 +942,69 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op=sub, quotype::Arr
           plist = submodules(M)
         end
       end
-      push!(list, (_lift_and_construct(x, mQ, mG, mS, c) for x in plist))
+      it = (_lift_and_construct(x, mQ, mG, mS, lcm(quotype[end], Int(order(R)))) for x in plist)
+      push!(list, it)
 
     else    
     
-      RR=ResidueRing(FlintZZ, Int(p^x), cached=false)
-      act_mat=Array{nmod_mat,1}(undef, length(act))
-      auxmat1=hcat(mG.map', rels(Q)')
-      auxmat2=mS.map*mG.map
-      W=MatrixSpace(RR,ngens(S), ngens(S), false)
+      RR = ResidueRing(FlintZZ, Int(p)^x1, cached=false)
+      act_mat1 = Array{nmod_mat,1}(undef, length(act))
+      auxmat1 = hcat(mG.map', rels(Q)')
+      auxmat2 = mS.map*mG.map
+      W = MatrixSpace(RR,ngens(S), ngens(S), false)
       for z=1:length(act)
-        y=transpose(solve(auxmat1, (auxmat2*act[z].map)'))
-        y=sub(y,1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat[z]=W(y)
+        y = transpose(solve(auxmat1, (auxmat2*act[z].map)'))
+        y = sub(y,1:ngens(S), 1:ngens(G))*mS.imap
+        act_mat1[z] = W(y)
       end
       
       #
       #  Searching for submodules
       #
       
-      M = Hecke.ZpnGModule(S,act_mat)
+      M1 = Hecke.ZpnGModule(S, act_mat1)
       if quotype[1]!= -1
         quotype_p=Int[]
         for i=1:length(quotype)
-          v=valuation(quotype[i],p)
+          v = valuation(quotype[i],p)
           if v>0
-            push!(quotype_p,v)
+            push!(quotype_p, v)
           end
         end
-        if Int(p)*quotype_p==S.snf
-          plist1=GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
+        if Int(p)*quotype_p == S.snf
+          plist1 = GrpAbFinGenElem[c*R[i] for i=1:ngens(R)]
           push!(list, ([plist1]))
           continue
         end
-        plist = submodules(M, typequo = quotype_p)
+        plist = submodules(M1, typequo = quotype_p)
       else
         if minimal
-          plist = minimal_submodules(M)
+          plist = minimal_submodules(M1)
         else
-          plist = submodules(M)
+          plist = submodules(M1)
         end
       end
-      
-      push!(list, (_lift_and_construct(x, mQ,mG,mS,c) for x in plist))
-      
+      it = (_lift_and_construct(x, mQ, mG, mS, lcm(quotype[end], Int(order(R)))) for x in plist)
+      push!(list, it)
     end
   end
   if isempty(list)
     return ([])
   end
 
-  return ( op(R,vcat(c...)) for c in Iterators.product(list...))
-
+  if minimal
+    res1 = collect(list[1])
+    for j = 2:length(list)
+      append!(res1, collect(list[j]))
+    end
+    return (op(R, cc) for cc in res1)
+  else
+     return ( op(R, vcat(cc...)) for cc in Iterators.product(list...))
+  end
 end
+
+
+
 
 function _lift_and_construct(A::Zmodn_mat, mQ::GrpAbFinGenMap, mG::GrpAbFinGenMap, mS::GrpAbFinGenMap, c::Int)
   

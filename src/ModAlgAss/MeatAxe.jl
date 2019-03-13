@@ -478,7 +478,7 @@ end
 
 function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
 
-  if M.isirreducible == 1
+  if M.isirreducible == 1 || M.dimension == 1
     return [identity_matrix(base_ring(M.action[1]), M.dimension)]
   end
 
@@ -534,15 +534,15 @@ end
 """
 function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S, T, V}
   
-  if M.isirreducible == 1
-    if dimension!= -1 
-      if M.dimension==dimension
-        return Tuple{ModAlgAss{S, T}, Int}[(M,1)]
+  if M.isirreducible == 1 || M.dimension == 1
+    if dimension != -1 
+      if M.dimension == dimension
+        return Tuple{ModAlgAss{S, T, V}, Int}[(M,1)]
       else
-        return Tuple{ModAlgAss{S, T}, Int}[]
+        return Tuple{ModAlgAss{S, T, V}, Int}[]
       end
     else
-      return Tuple{ModAlgAss{S, T}, Int}[(M,1)]
+      return Tuple{ModAlgAss{S, T, V}, Int}[(M,1)]
     end
   end 
  
@@ -763,7 +763,10 @@ end
 function submodules(M::ModAlgAss{S, T, V}) where {S, T, V}
 
   K=M.base_ring
-  list=T[]
+  list = T[]
+  if M.dimension == 1
+    return [zero_matrix(K, 1, 1), identity_matrix(K, 1)]
+  end
   lf=composition_factors(M)
   minlist = minimal_submodules(M, M.dimension+1, lf)
   for x in minlist

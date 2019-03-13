@@ -1284,7 +1284,6 @@ function radical(A::NfOrdIdl)
   return R
 end
 
-#TODO: isprime is broken for non-maximal orders, uses valuation...
 #Algo:
 # primary -> radical is prime, so this is neccessary
 # in orders: prime -> maximal (or 0)
@@ -1297,7 +1296,7 @@ ismaximal(A::NfOrdIdl) = (!iszero(A)) && isprime(A)
 function primary_decomposition(A::NfOrdIdl)
   a = minimum(A)
   lp = factor(a).fac
-  P = []
+  P = NfOrdIdl[]
   for p = keys(lp)
     pp = prime_ideals_over(order(A), p)
     for x = pp
