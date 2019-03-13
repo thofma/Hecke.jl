@@ -1,7 +1,269 @@
 export overorders, isbass, isgorenstein, prime_ideals_over
 
+################################################################################
+#
+#  Quotients of two orders
+#
+################################################################################
+
+# For convenience, there is a quotient constructor for an extension of orders.
+# The quotient will be represented as an abelian group.
+mutable struct GrpAbFinGenToNfOrdQuoNfOrd <: Map{GrpAbFinGen, NfOrd, HeckeMap, GrpAbFinGenToNfOrdQuoNfOrd}
+  domain::GrpAbFinGen
+  codomain::NfOrd
+  bottom::NfOrd
+  top_snf_basis::Vector{nf_elem}
+  top_snf_basis_in_order::Vector{NfOrdElem}
+  bottom_snf_basis::Vector{nf_elem}
+  top_basis_mat_inv::FakeFmpqMat
+
+  function GrpAbFinGenToNfOrdQuoNfOrd(M::NfOrd, O::NfOrd)
+    z = new()
+    d = degree(O)
+    K = nf(O)
+    B = zero_matrix(FlintZZ, d, d)
+    for i in 1:d
+      v = elem_in_basis(M(elem_in_nf(basis(O)[i])))
+      for j in 1:d
+        B[i, j] = v[j]
+      end
+    end
+    S, U, V = snf_with_transform(B, true, true)
+    Vinv = inv(V)
+    basis_O = basis(O)
+    basis_M = basis(M)
+    new_basis_O = Vector{nf_elem}(undef, d)
+    new_basis_M = Vector{nf_elem}(undef, d)
+    for i in 1:d
+      new_basis_O[i] = elem_in_nf(sum(U[i, j] * basis_O[j] for j in 1:d))
+    end
+
+    for i in 1:d
+      new_basis_M[i] = elem_in_nf(sum(Vinv[i, j] * basis_M[j] for j in 1:d))
+    end
+
+    A = DiagonalGroup([S[i, i] for i in 1:d])
+
+    z.domain = A
+    z.codomain = M
+    z.bottom = O
+    z.top_snf_basis = new_basis_M
+    z.bottom_snf_basis = new_basis_O
+    z.top_basis_mat_inv = inv(basis_mat(new_basis_M))
+    z.top_snf_basis_in_order = map(M, z.top_snf_basis)
+
+    return z
+  end
+end
+
+domain(f::GrpAbFinGenToNfOrdQuoNfOrd) = f.domain
+
+codomain(f::GrpAbFinGenToNfOrdQuoNfOrd) = f.codomain
+
+function image(f::GrpAbFinGenToNfOrdQuoNfOrd, x::GrpAbFinGenElem)
+  t = zero(codomain(f))
+  z = deepcopy(f.top_snf_basis_in_order[1])
+  mul!(z, x.coeff[1], z)
+  for i in 2:degree(codomain(f))
+    mul!(t, x.coeff[i], f.top_snf_basis_in_order[i])
+    add!(z, t, t)
+  end
+  return z
+end
+
+function preimage(f::GrpAbFinGenToNfOrdQuoNfOrd, x::NfOrdElem)
+  v = elem_in_nf(x)
+  t = f.codomain.tcontain
+  elem_to_mat_row!(t.num, 1, t.den, v)
+  t = mul!(t, t, f.top_basis_mat_inv)
+  @assert isone(t.den)
+  return domain(f)(t.num)
+end
+
+function quo(M::NfOrd, O::NfOrd)
+  f = GrpAbFinGenToNfOrdQuoNfOrd(M, O)
+  return domain(f), f
+end
+
+################################################################################
+#
+#  Inducing an endomorphism of the quotient
+#
+################################################################################
+
+# Let f : A -> M/O be a quotient of orders and g: M -> M an endomorphism of
+# O-modules (so g(x) is in O for all x in O).
+# This functions computes an endomorphism h: A -> A such that
+#
+# A <- M/O
+# |     |
+# v     v
+# A <- M/O
+#
+# commutes. The horizontal maps is the section of f.
+
+function induce(f::GrpAbFinGenToNfOrdQuoNfOrd, g)
+  G = domain(f)
+  imgs = Vector{GrpAbFinGenElem}(undef, ngens(G))
+  d = degree(codomain(f))
+  m = zero_matrix(FlintZZ, d, d)
+  for i in 1:ngens(G)
+    imgs[i] = f\(g(f(G[i])))
+  end
+  return hom(G, G, imgs)
+end
+
+################################################################################
+#
+#  Minimal overorders
+#
+################################################################################
+
+# Compute the minimal overorders of O in M by computing the orders generated
+# by minimal O-submodules of M.
+function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
+  A, mA = quo(M, O)
+  B = mA.bottom_snf_basis
+  @assert isone(B[1])
+  autos = Vector{GrpAbFinGenMap}(undef, degree(O) - 1)
+  # We skip the first basis element, since it acts trivially
+  for i in 1:(degree(O) - 1)
+    autos[i] = induce(mA, x -> M(elem_in_nf(B[i + 1]))*x)
+  end
+
+  d = degree(O)
+  K = nf(O)
+
+  potential_basis = Vector{nf_elem}(undef, d)
+
+  orders = NfOrd[]
+
+  subs = stable_subgroups(A, autos, minimal = true)
+  for s in subs
+    T = image(s[2])
+    G = domain(T[2])
+    for i in 1:d
+      v = T[2](G[i]).coeff
+      if iszero(v)
+        potential_basis[i] = mA.bottom_snf_basis[i]
+      else
+        potential_basis[i] = sum(v[1, j] * mA.top_snf_basis[j] for j in 1:d)
+      end
+    end
+    L = _Order(K, potential_basis)
+    bL = basis_mat(L, Val{false})
+    if any(x -> x == bL, orders)
+      continue
+    else
+      push!(orders, L)
+    end
+  end
+  return orders
+end
+
+################################################################################
+#
+#  Primary overorders
+#
+################################################################################
+
+function new_poverorders(O::NfOrd, p::fmpz)
+  lP = prime_ideals_over(O, p)
+  res = typeof(O)[O]
+  for P in lP
+    nres = typeof(O)[]
+    Pprim = pprimary_overorders(O, P)
+    for R in Pprim
+      for S in res
+        push!(nres, R + S)
+      end
+    end
+    res = nres
+  end
+  return res
+end
+
+function new_overorders(O::NfOrd)
+  orders = Vector{typeof(O)}[]
+  M = maximal_order(O)
+  for (p, ) in factor(div(index(M), index(O)))
+    push!(orders, new_poverorders(O, p))
+    @show p, length(orders[end])
+  end
+
+  if length(orders) == 0
+    return typeof(O)[O]
+  end
+
+  res = Vector{typeof(O)}(undef, prod(length(orders[i]) for i in 1:length(orders)))
+
+  if length(orders) == 1
+    return orders[1]
+  else
+    I = Iterators.product(orders...)
+    for (j, i) in enumerate(I)
+      res[j] = sum(i)
+    end
+    return res
+  end
+end
+
+function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
+  #if isbass(O, P)
+  #  return pprimary_overorders_bass(O, P)
+  #end
+  E = ring_of_multipliers(P)
+  if index(E) != index(O)
+    minimaloverorders = _overorders_meataxe(O, E)
+  else
+    return typeof(O)[O]
+  end
+
+  res = typeof(O)[]
+
+  for R in minimaloverorders
+    if index(R) == index(O)
+      continue
+    end
+    lQ = prime_ideals_over(R, minimum(P))
+    primes = typeof(lQ)()
+    for Q in lQ
+      if length(primes) == 2 || intersect(Q, O) != P
+        continue
+      end
+      push!(primes, Q)
+    end
+    if length(primes) == 1
+      rres = pprimary_overorders(R, primes[1])
+    else
+      rres1 = pprimary_overorders(R, primes[1])
+      rres2 = pprimary_overorders(R, primes[2])
+      rres = typeof(rres1)()
+      for R1 in rres1
+        for R2 in rres2
+          push!(rres, R1 + R2)
+        end
+      end
+    end
+    if length(res) == 0
+      res = append!([O], rres)
+    else
+      nres = typeof(res)()
+      for C in res
+        for T in rres
+          push!(nres, C + T)
+        end
+      end
+      res = nres
+    end
+    res = unique(OO -> basis_mat(OO, Val{false}), res)
+  end
+  return res
+end
+
+
 function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
-  M = maximal_order(nf(O))
+  #M = maximal_order(nf(O))
   d = degree(O)
   K = nf(O)
   B = zero_matrix(FlintZZ, d, d)
@@ -20,7 +282,7 @@ function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
   for i in 1:d
     new_basis_O[i] = elem_in_nf(sum(U[i, j] * basis_O[j] for j in 1:d))
   end
-  
+
   for i in 1:d
     new_basis_M[i] = elem_in_nf(sum(Vinv[i, j] * basis_M[j] for j in 1:d))
   end
@@ -117,72 +379,72 @@ function poverorders(O, p::fmpz)
   return to_enlarge
 end
 
-function _overorders_meataxe(O::AlgAssAbsOrd, M::AlgAssAbsOrd)
-  K = O.algebra
-  d = degree(O)
-  B = zero_matrix(FlintZZ, d, d)
-  orders = Vector{typeof(O)}()
-  for i in 1:d
-    v = elem_in_basis(M(elem_in_algebra(basis(O)[i])))
-    for j in 1:d
-      B[i, j] = v[j]
-    end
-  end
-  S::fmpz_mat, U::fmpz_mat, V::fmpz_mat = snf_with_transform(B, true, true)
-  Vinv = inv(V)
-  basis_O = basis(O)
-  basis_M = basis(M)
-  new_basis_O = Vector{AlgAssElem{fmpq}}(d)
-  new_basis_M = Vector{AlgAssElem{fmpq}}(d)
-  for i in 1:d
-    new_basis_O[i] = elem_in_algebra(sum(U[i, j] * basis_O[j] for j in 1:d))
-  end
-
-  for i in 1:d
-    new_basis_M[i] = elem_in_algebra(sum(Vinv[i, j] * basis_M[j] for j in 1:d))
-  end
-
-  new_basis_mat_M_inv = inv(basis_mat(new_basis_M))
-
-  autos = GrpAbFinGenMap[]
-
-  A = DiagonalGroup(fmpz[ S[i, i] for i in 1:d])
-
-  for i in 1:d
-    b = new_basis_O[i]
-    m = zero_matrix(FlintZZ, d, d)
-    for j in 1:d
-      v = elem_in_algebra(M(b* new_basis_M[j]))
-      t = FakeFmpqMat(matrix(FlintQQ, 1, degree(O), v.coeffs)) * new_basis_mat_M_inv
-      # I need the representation with respect to new_basis_M
-      for k in 1:d
-        m[j, k] = t.num[1, k]
-      end
-    end
-    push!(autos, hom(A, A, m))
-  end
-    
-  potential_basis = Vector{AlgAssElem{fmpq}}(d)
-
-  subs = stable_subgroups(A, autos)
-  for s in subs
-    T = image(s[2])
-    G = domain(T[2])
-    for i in 1:d
-      v = T[2](G[i]).coeff
-      if iszero(v)
-        potential_basis[i] = new_basis_O[i]
-      else
-        potential_basis[i] = sum(v[1, j] * new_basis_M[j] for j in 1:d)
-      end
-    end
-    b, bmat = defines_order(K, deepcopy(potential_basis))
-    if b 
-      push!(orders, Order(K, bmat))
-    end
-  end
-  return orders
-end
+#function _overorders_meataxe(O::AlgAssAbsOrd, M::AlgAssAbsOrd)
+#  K = O.algebra
+#  d = degree(O)
+#  B = zero_matrix(FlintZZ, d, d)
+#  orders = Vector{typeof(O)}()
+#  for i in 1:d
+#    v = elem_in_basis(M(elem_in_algebra(basis(O)[i])))
+#    for j in 1:d
+#      B[i, j] = v[j]
+#    end
+#  end
+#  S::fmpz_mat, U::fmpz_mat, V::fmpz_mat = snf_with_transform(B, true, true)
+#  Vinv = inv(V)
+#  basis_O = basis(O)
+#  basis_M = basis(M)
+#  new_basis_O = Vector{AlgAssElem{fmpq}}(undef, d)
+#  new_basis_M = Vector{AlgAssElem{fmpq}}(undef, d)
+#  for i in 1:d
+#    new_basis_O[i] = elem_in_algebra(sum(U[i, j] * basis_O[j] for j in 1:d))
+#  end
+#
+#  for i in 1:d
+#    new_basis_M[i] = elem_in_algebra(sum(Vinv[i, j] * basis_M[j] for j in 1:d))
+#  end
+#
+#  new_basis_mat_M_inv = inv(basis_mat(new_basis_M))
+#
+#  autos = GrpAbFinGenMap[]
+#
+#  A = DiagonalGroup(fmpz[ S[i, i] for i in 1:d])
+#
+#  for i in 1:d
+#    b = new_basis_O[i]
+#    m = zero_matrix(FlintZZ, d, d)
+#    for j in 1:d
+#      v = elem_in_algebra(M(b* new_basis_M[j]))
+#      t = FakeFmpqMat(matrix(FlintQQ, 1, degree(O), v.coeffs)) * new_basis_mat_M_inv
+#      # I need the representation with respect to new_basis_M
+#      for k in 1:d
+#        m[j, k] = t.num[1, k]
+#      end
+#    end
+#    push!(autos, hom(A, A, m))
+#  end
+#    
+#  potential_basis = Vector{AlgAssElem{fmpq}}(undef, d)
+#
+#  subs = stable_subgroups(A, autos)
+#  for s in subs
+#    T = image(s[2])
+#    G = domain(T[2])
+#    for i in 1:d
+#      v = T[2](G[i]).coeff
+#      if iszero(v)
+#        potential_basis[i] = new_basis_O[i]
+#      else
+#        potential_basis[i] = sum(v[1, j] * new_basis_M[j] for j in 1:d)
+#      end
+#    end
+#    b, bmat = defines_order(K, deepcopy(potential_basis))
+#    if b 
+#      push!(orders, Order(K, bmat))
+#    end
+#  end
+#  return orders
+#end
 
 function _overorders_meataxe(O::NfOrd, M::NfOrd)
   K = nf(O)
@@ -231,7 +493,7 @@ function _overorders_meataxe(O::NfOrd, M::NfOrd)
     end
     push!(autos, hom(A, A, m))
   end
-    
+
   potential_basis = Vector{nf_elem}(undef, d)
 
   subs = stable_subgroups(A, autos)
@@ -404,17 +666,33 @@ function pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl; branching::Bool = true)
 
   res = typeof(O)[O]
 
+  primes = NfOrdIdl[]
+
   k = 0
   for Q in lQ
     if k == 2 
       break
     end
     if intersect(Q, O) == P
+      push!(primes, Q)
       k = k + 1
-      append!(res, pprimary_overorders_bass(R, Q, branching = false))
     end
   end
-  return res
+
+  if k == 1
+    append!(res, pprimary_overorders_bass(R, primes[1], branching = false))
+    return res
+  else
+    @assert k == 2
+    S1 = pprimary_overorders_bass(R, primes[1], branching = false)
+    S2 = pprimary_overorders_bass(R, primes[2], branching = false)
+    for T1 in S1
+      for T2 in S2
+        push!(res, T1 + T2)
+      end
+    end
+    return res
+  end
 end
 
 function isbass(O::NfOrd, p::fmpz)
@@ -470,51 +748,6 @@ function intersect(x::NfOrd, y::NfOrd)
   H = vcat(divexact(g * basis_mat(x).num, basis_mat(x).den), divexact(g * basis_mat(y).num, basis_mat(y).den))
   K = _kernel(H)
   return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_mat(x).num, basis_mat(x).den), :lowerleft), g))
-end
-
-function new_poverorders(O::NfOrd, p::fmpz)
-  lP = prime_ideals_over(O, p)
-  res = typeof(O)[O]
-  for P in lP
-    nres = typeof(O)[]
-    Pprim = pprimary_overorders(O, P)
-    for R in Pprim
-      for S in res
-        push!(nres, R + S)
-      end
-    end
-    res = nres
-  end
-  return res
-end
-
-function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
-  if isbass(O, P)
-    return pprimary_overorders_bass(O, P)
-  end
-  E = ring_of_multipliers(P)
-  if index(E) != index(O)
-    minimaloverorders = _overorders_meataxe(O, E)
-  else
-    return typeof(O)[O]
-  end
-
-
-  res = typeof(O)[O]
-
-  for R in minimaloverorders
-    if index(R) == index(O)
-      continue
-    end
-    lQ = prime_ideals_over(R, minimum(P))
-    for Q in lQ
-      if intersect(Q, O) != P
-        continue
-      end
-      append!(res, pprimary_overorders(R, Q))
-    end
-  end
-  return res
 end
 
 ################################################################################
@@ -644,7 +877,7 @@ function isisomorphic(Q1::NfOrdQuoRing, Q2::NfOrdQuoRing)
   end
 
   isos = []
- 
+
   genQ1A = gens(Q1_A)
 
   O1 = base_ring(Q1)

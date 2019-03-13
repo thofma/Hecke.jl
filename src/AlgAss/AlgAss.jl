@@ -21,6 +21,8 @@ function Generic.dim(A::AlgAss)
   return size(A.mult_table, 1)
 end
 
+degree(A::AlgAss) = dim(A)
+
 elem_type(::Type{AlgAss{T}}) where {T} = AlgAssElem{T, AlgAss{T}}
 
 ################################################################################

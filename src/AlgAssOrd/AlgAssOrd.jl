@@ -544,7 +544,6 @@ end
 """
 
 function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
-
   O = order(I)
   @hassert :AlgAssOrd 1 Hecke.check_associativity(O.algebra)
   @hassert :AlgAssOrd 1 Hecke.check_distributivity(O.algebra)
@@ -607,7 +606,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
   b = FakeFmpqMat(pseudo_inv(n))
   mul!(b, b, O.basis_mat)
   O1 = Order(O.algebra, b)
-  O1.disc = divexact(O.disc, s^2)
+  O1.disc = divexact(discriminant(O), s^2)
   @hassert :AlgAssOrd 1 check_order(O1)
   return O1
 end
@@ -624,7 +623,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   #@show dim(A1)
   @vtime :AlgAssOrd 1 lg = Hecke.gens(A1)
   #@show length(lg)
-  lM = nmod_mat[transpose(representation_matrix(lg[i])) for i=1:length(lg)]
+  lM = gfp_mat[transpose(representation_matrix(lg[i])) for i=1:length(lg)]
   #lM = nmod_mat[transpose(representation_matrix(A1[i])) for i=1:dim(A1)]
   M = ModAlgAss(lM)
   ls = minimal_submodules(M)
