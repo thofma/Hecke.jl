@@ -32,7 +32,7 @@
 #
 ################################################################################
 
-export PrimeIdealsSet
+export PrimeIdealsSet, prime_ideals_over
 
 @doc Markdown.doc"""
 ***
@@ -1273,6 +1273,12 @@ Base.IteratorSize(::Type{PrimeIdealsSet}) = Base.SizeUnknown()
 #      check is unit_group(quo(R, A)) for non-maximal R is correct (well intended to be correct)
 #      saturation in the Singular sense
 
+################################################################################
+#
+#  Primary decomposition
+#
+################################################################################
+
 #TODO: move to Arithmetic?
 function radical(A::NfOrdIdl)
   a = minimum(A)
@@ -1310,4 +1316,49 @@ function primary_decomposition(A::NfOrdIdl)
   return P
 end
 
+################################################################################
+#
+#  Prime ideals over an integer (for non-maximal orders)
+#
+################################################################################
 
+prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
+
+function prime_ideals_over(O::NfOrd, p::fmpz)
+  M = maximal_order(O)
+  lp = prime_decomposition(M, p)
+  if M == O
+    return NfOrdIdl[x[1] for x in lp]
+  end
+  p_critical_primes = Vector{ideal_type(O)}()
+  for (P, e) in lp
+    c = contract(P, O)
+    if !(c in p_critical_primes)
+      push!(p_critical_primes, c)
+    end
+  end
+  return p_critical_primes
+end
+
+#P is a prime ideal in a order contained in O
+#Computes the set of prime ideals lying over P
+function prime_ideals_over(O::NfOrd, P::NfOrdIdl; )
+  @assert isprime(P)
+  O1 = order(P)
+  if O1 == O
+    return ideal_type(O)[P]
+  end
+  M = maximal_order(O)
+  lp = prime_decomposition(M, minimum(P))
+  p_critical_primes = Vector{ideal_type(O)}()
+  for (Q, e) in lp
+    c = contract(Q, O1)
+    if c == P
+      c1 = contract(Q, O)
+      if !(c1 in p_critical_primes)
+        push!(p_critical_primes, c1)
+      end 
+    end
+  end
+  return p_critical_primes
+end
