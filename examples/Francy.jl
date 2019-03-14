@@ -19,7 +19,7 @@ function graphic_divisors(n::fmpz)
   c = canvas("Divisors of $n")
   I = Francy.id(c)
   d = divisors(n)
-  no = [shape(string(d[i])) for i=1:length(d)]
+  no = [node(string(d[i])) for i=1:length(d)]
   for n = 1:length(no)
     push!(no[n], menu("Prime?", callback("FrancyExample.isprime", "(:" * I * ", $(d[n]))")))
     push!(no[n], menu("Odd?", callback("FrancyExample.isodd", "(:" * I * ", $(d[n]))")))
@@ -65,7 +65,7 @@ export graphic_divisors
 function graphic_subgroups(A::GrpAbFinGen)
   s = collect(subgroups(A))
   g = graph()
-  n = [shape("$i: $(length(s[i][1]))") for i = 1:length(s)]
+  n = [node("$i: $(length(s[i][1]))") for i = 1:length(s)]
   for x = n
     push!(g, x)
   end
