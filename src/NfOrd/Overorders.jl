@@ -110,7 +110,7 @@ function image(f::GrpAbFinGenToNfOrdQuoNfOrd, x::GrpAbFinGenElem)
   mul!(z, x.coeff[1], z)
   for i in 2:degree(codomain(f))
     mul!(t, x.coeff[i], f.top_snf_basis_in_order[i])
-    add!(z, t, t)
+    add!(z, z, t)
   end
   return z
 end
@@ -194,13 +194,67 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
         potential_basis[i] = sum(v[1, j] * mA.top_snf_basis[j] for j in 1:d)
       end
     end
-    L = _order(K, potential_basis)
-    bL = basis_mat(L, Val{false})
+    #L = _Order(K, potential_basis)
+    # A minimal overorder must be a minimal submodule
+    fl, bL = defines_order(K, potential_basis)
+    if !fl
+      continue
+    end
+    bL = hnf(bL)
+    #bL = basis_mat(L, Val{false})
     if any(x -> basis_mat(x, Val{false}) == bL, orders)
       continue
     else
-      push!(orders, L)
+      push!(orders, Order(K, bL, false, false))
     end
+  end
+  return orders
+end
+
+function _minimal_poverorders(O::NfOrd, P::NfOrdIdl)
+  M = ring_of_multipliers(P)
+  p = minimum(P)
+  A, mA = quo(M, O)
+  B = mA.bottom_snf_basis
+  @assert isone(B[1])
+  autos = Vector{GrpAbFinGenMap}(undef, degree(O) - 1)
+  # We skip the first basis element, since it acts trivially
+  for i in 1:(degree(O) - 1)
+    autos[i] = induce(mA, x -> M(elem_in_nf(B[i + 1]))*x)
+  end
+
+  d = degree(O)
+  K = nf(O)
+
+  potential_basis = Vector{nf_elem}(undef, d)
+
+  orders = NfOrd[]
+
+  subs = stable_subgroups(A, autos, minimal = true)
+  for s in subs
+    T = image(s[2])
+    G = domain(T[2])
+    new_element = 0
+    for i in 1:d
+      v = T[2](G[i]).coeff
+      if iszero(v)
+        potential_basis[i] = mA.bottom_snf_basis[i]
+      else
+        potential_basis[i] = sum(v[1, j] * mA.top_snf_basis[j] for j in 1:d)
+        new_element = i
+      end
+    end
+    @assert new_element != 0
+    b, bL = defines_minimal_overorder(potential_basis, [potential_basis[new_element]])
+    if !b
+      continue
+    end
+    if any(x -> basis_mat(x, Val{false}) == bL, orders)
+      error("Should not happen")
+    end
+    L = Order(K, bL, false, false)
+    #bL = basis_mat(L, Val{false})
+    push!(orders, L)
   end
   return orders
 end
@@ -230,7 +284,7 @@ end
 function new_overorders(O::NfOrd)
   orders = Vector{typeof(O)}[]
   M = maximal_order(O)
-  @time for (p, ) in factor(div(index(M), index(O)))
+  for (p, ) in factor(div(index(M), index(O)))
     push!(orders, new_poverorders(O, p))
     #@show p, length(orders[end])
   end
@@ -257,10 +311,12 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
   current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
   while length(to_enlarge) > 0
     N = pop!(to_enlarge)
-    lQ = [ Q for Q in prime_ideals_over(N, minimum(P)) if contract(Q, O) == P]
+    #lQ = [ Q for Q in prime_ideals_over(N, minimum(P)) if contract(Q, O) == P]
+    lQ = prime_ideals_over(N, P)
     new = typeof(O)[]
     for Q in lQ
-      new = append!(new, _minimal_overorders_meataxe(N, ring_of_multipliers(Q)))
+      #new = append!(new, _minimal_overorders_meataxe(N, ring_of_multipliers(Q)))
+      new = append!(new, _minimal_poverorders(N, Q))
     end
     for S in new
       H = hnf(basis_mat(S, Val{false}))
@@ -344,7 +400,6 @@ end
 
 
 function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
-  #M = maximal_order(nf(O))
   d = degree(O)
   K = nf(O)
   B = zero_matrix(FlintZZ, d, d)
@@ -390,7 +445,7 @@ function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
     end
     b, bmat = defines_order(K, potential_basis)
     if b 
-      push!(oorders, Order(K, bmat))
+      push!(oorders, Order(K, hnf(bmat)))
     end
   end
   return oorders
@@ -524,7 +579,7 @@ function _overorders_meataxe(O::NfOrd, M::NfOrd)
     end
     b, bmat = defines_order(K, deepcopy(potential_basis))
     if b 
-      push!(orders, Order(K, bmat))
+      push!(orders, Order(K, hnf(bmat)))
     end
   end
   return orders
@@ -605,7 +660,7 @@ function overorders_meataxe(O::NfOrd, M::NfOrd = maximal_order(O))
 
   k = 1
 
-  @time for (p, ) in factor(div(index(M), index(O)))
+  for (p, ) in factor(div(index(M), index(O)))
     push!(orders, poverorders_meataxe(O, p, M))
   end
 
