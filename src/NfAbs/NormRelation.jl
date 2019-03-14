@@ -236,15 +236,20 @@ function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
       end
     end
 
+    print("Feeding in the S-units of the small field ... ")
+
     for j=1:ngens(Szk)
+      print(j, " ")
       u = mS(Szk[j])  #do compact rep here???
       #@show z.rows
       valofnewelement = mul(mS.valuations[j], z)
-      #v = zeros(fmpz, length(vv))
+      #v = zeros(fmpz, length(FB.ideals))
       #v[valofnewelement.pos] = valofnewelement.values
-      #@assert [valuation(evaluate(FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac))), P) for P in FB.ideals] == v
+      #@assert [valuation((FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac))), P) for P in FB.ideals] == v
       Hecke.class_group_add_relation(c, FacElem(Dict((N_mk(x, D, i), v) for (x,v) = u.fac)), valofnewelement)
     end
+
+    println("done")
 
     U, mU = unit_group_fac_elem(zk)
     for j=2:ngens(U) # I cannot add a torsion unit. He will hang forever.

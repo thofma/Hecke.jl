@@ -150,9 +150,9 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
         potential_basis[i] = sum(v[1, j] * mA.top_snf_basis[j] for j in 1:d)
       end
     end
-    L = _Order(K, potential_basis)
+    L = _order(K, potential_basis)
     bL = basis_mat(L, Val{false})
-    if any(x -> x == bL, orders)
+    if any(x -> basis_mat(x, Val{false}) == bL, orders)
       continue
     else
       push!(orders, L)
@@ -186,9 +186,9 @@ end
 function new_overorders(O::NfOrd)
   orders = Vector{typeof(O)}[]
   M = maximal_order(O)
-  for (p, ) in factor(div(index(M), index(O)))
+  @time for (p, ) in factor(div(index(M), index(O)))
     push!(orders, new_poverorders(O, p))
-    @show p, length(orders[end])
+    #@show p, length(orders[end])
   end
 
   if length(orders) == 0
@@ -214,25 +214,28 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
   #end
   E = ring_of_multipliers(P)
   if index(E) != index(O)
-    minimaloverorders = _overorders_meataxe(O, E)
+    minimaloverorders = _minimal_overorders_meataxe(O, E)
   else
     return typeof(O)[O]
   end
 
-  res = typeof(O)[]
+  res = typeof(O)[O]
 
   for R in minimaloverorders
     if index(R) == index(O)
+      error("should not happen")
       continue
     end
     lQ = prime_ideals_over(R, minimum(P))
     primes = typeof(lQ)()
+    #@show length([Q for Q in lQ if intersect(Q, O) == P])
     for Q in lQ
       if length(primes) == 2 || intersect(Q, O) != P
         continue
       end
       push!(primes, Q)
     end
+    #@show length(primes)
     if length(primes) == 1
       rres = pprimary_overorders(R, primes[1])
     else
@@ -245,17 +248,13 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
         end
       end
     end
-    if length(res) == 0
-      res = append!([O], rres)
-    else
-      nres = typeof(res)()
-      for C in res
-        for T in rres
-          push!(nres, C + T)
-        end
+    nres = typeof(res)()
+    for C in res
+      for T in rres
+        push!(nres, C + T)
       end
-      res = nres
     end
+    append!(res, nres)
     res = unique(OO -> basis_mat(OO, Val{false}), res)
   end
   return res
@@ -566,7 +565,8 @@ function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O,
     
   potential_basis = Vector{nf_elem}(undef, d)
 
-  subs = stable_subgroups(A, autos)
+  @time subs = stable_subgroups(A, autos)
+  @show A
   for s in subs
     T = image(s[2])
     G = domain(T[2])
@@ -591,7 +591,7 @@ function overorders_meataxe(O::NfOrd, M::NfOrd = maximal_order(O))
 
   k = 1
 
-  for (p, ) in factor(div(index(M), index(O)))
+  @time for (p, ) in factor(div(index(M), index(O)))
     push!(orders, poverorders_meataxe(O, p, M))
   end
 

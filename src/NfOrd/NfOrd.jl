@@ -958,9 +958,11 @@ function _order(K::S, elt::Array{T, 1}) where {S, T}
   o = one(K)
   
   n = degree(K)
+
   if !(o in elt)
     push!(elt, o)
   end
+
   B = basis_mat(elt)
   B = hnf(B)
   
