@@ -1,4 +1,48 @@
-export overorders, isbass, isgorenstein, prime_ideals_over
+export overorders, isbass, isgorenstein
+
+################################################################################
+#
+#  Defines minimal overorder
+#
+################################################################################
+#H must be in lower left hnf form
+function iszero_mod_hnf!(a::fmpz_mat, H::fmpz_mat)
+  j = ncols(H)
+  for i = min(nrows(H), ncols(H)):-1:1
+    if iszero(a[i])
+      continue
+    end
+    while j >= 1 && iszero(H[i, j])
+      j -= 1 
+    end
+    if iszero(j) 
+      return iszero(a)
+    end
+    q, r = divrem(a[1, j], H[i, j])
+    if r != 0
+      return false
+    end
+    a[1, j] = r
+    for k=1:(j-1)
+      a[1, k] = a[1, k] - q * H[i, k]
+    end
+  end
+  return iszero(a)
+end
+
+function defines_minimal_overorder(B::Vector{nf_elem}, l::Vector{nf_elem})
+  M = hnf(basis_mat(B))
+  x = M.den * l[1]^2
+  if denominator(x) != 1
+    return false, M
+  end
+  m = zero_matrix(FlintZZ, 1, ncols(M))
+  for i = 1:ncols(M)
+    m[1, i] = numerator(coeff(x, i - 1))
+  end
+  fl = iszero_mod_hnf!(m, M.num)
+  return fl, M  
+end
 
 ################################################################################
 #
@@ -619,24 +663,6 @@ Returns all overorders of $\mathcal O$.
 """
 function overorders(O::NfOrd)
   return overorders_meataxe(O)
-end
-
-prime_ideals_over(O::NfOrd, p::Integer) = prime_ideals_over(O, fmpz(p))
-
-function prime_ideals_over(O::NfOrd, p::fmpz)
-  M = maximal_order(O)
-  lp = prime_decomposition(M, p)
-  if M == O
-    return NfOrdIdl[x[1] for x in lp]
-  end
-  p_critical_primes = Vector{ideal_type(O)}()
-  for (P, e) in lp
-    c = contract(P, O)
-    if !(c in p_critical_primes)
-      push!(p_critical_primes, c)
-    end
-  end
-  return p_critical_primes
 end
 
 function isbass(O::NfOrd, P::NfOrdIdl)
