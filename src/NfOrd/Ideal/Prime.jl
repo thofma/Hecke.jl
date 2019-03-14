@@ -157,9 +157,9 @@ function prime_decomposition(f::Map, p::NfOrdIdl)
   # TODO: Implement for nonindex divisors seriously,
   # splitting the algebra.
   lp = prime_decomposition(ZK, minimum(p))
-  res = Tuple{NfOrdIdl, Int}()
-  el = ZK(f(p.gen_two))
-  for P in keys(lp)
+  res = Tuple{NfOrdIdl, Int}[]
+  el = f(p.gen_two.elem_in_nf)
+  for (P,_) in lp
     v = valuation(el, P)
     # p has a two-normal presentation, so to test the ramification 
     # I only need to test the second element.
