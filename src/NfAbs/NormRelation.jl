@@ -205,7 +205,7 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
 end
 
 function _compute_sunit_group_mod(K::AnticNumberField, N::NormRelation, S)
-  ZK = maximal_order(K)
+  ZK = order(S[1])
   FB = NfFactorBase(ZK, S)
   c = class_group_init(FB)
   cp = sort!(collect(Set(minimum(x) for x = c.FB.ideals)))
