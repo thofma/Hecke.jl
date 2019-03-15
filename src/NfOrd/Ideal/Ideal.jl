@@ -875,33 +875,59 @@ end
 function _minmod_easy(a::fmpz, b::NfOrdElem)
   Zk = parent(b)
   k = number_field(Zk)
-  S = ResidueRing(FlintZZ, a, cached = false)
-  St = PolynomialRing(S, cached=false)[1]
-  B = St(b.elem_in_nf)
-  F = St(k.pol)
+  S1 = ResidueRing(FlintZZ, a, cached = false)
+  St1 = PolynomialRing(S1, cached=false)[1]
+  B = St1(b.elem_in_nf)
+  F = St1(k.pol)
   m = lift(rres(B, F))
   return gcd(a, m)
 end
 
-
 function _minmod(a::fmpz, b::NfOrdElem)
+
   if isone(a) 
     return a
   end
-
+  
   if !isdefining_polynomial_nice(nf(parent(b)))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
+  a2, ar = ppio(a, fmpz(2))
+  min = fmpz(1)
+  if !isone(a2)
+    min *= _minmod_comp(a2, b)
+  end
+  a3, ar = ppio(ar, fmpz(3))
+  if !isone(a3)
+    min *= _minmod_comp(a3, b)
+  end
+  a5, ar = ppio(ar, fmpz(5))
+  if !isone(a5)
+    min *= _minmod_comp(a5, b)
+  end
+  a7, ar = ppio(ar, fmpz(7))
+  if !isone(a7)
+    min *= _minmod_comp(a7, b)
+  end
+  res = min*_minmod_comp(ar, b)
+  @hassert :NfOrd 1 res == gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
+  return res
+end
+
+function _minmod_comp(a::fmpz, b::NfOrdElem)
+
   Zk = parent(b)
   k = number_field(Zk)
-  e, _ = ppio(index(Zk), a)
-  if isone(e)
-    return _minmod_easy(a, b)
+  acom, auncom = ppio(a, index(Zk))
+  min_uncom = _minmod_easy(auncom, b)
+  if isone(acom)
+    return min_uncom
   end
+  e, _ = ppio(index(Zk), acom)
   d = denominator(b.elem_in_nf)
-  d, _ = ppio(d, a)
-   
-  S = ResidueRing(FlintZZ, a*d*e, cached = false)
+  d, _ = ppio(d, acom)
+  
+  S = ResidueRing(FlintZZ, acom*d*e, cached = false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
@@ -910,11 +936,11 @@ function _minmod(a::fmpz, b::NfOrdElem)
   # m can be zero...
   m1 = lift(m)
   if iszero(m1)
-    m1 = a*d*e
+    m1 = acom*d*e
   end
   bi = k(U)//m1*d # at this point, bi*d*b = m mod a*d*idx
   d = denominator(bi, Zk)
-  return gcd(d, a)
+  return min_uncom*gcd(d, acom)
   # min(<a, b>) = min(<ad, bd>)/d and bd is in the equation order, hence max as well
   # min(a, b) = gcd(a, denominator(b))
   # rres(b, f) = <b, f> meet Z = <r> and
@@ -940,6 +966,7 @@ function _invmod(a::fmpz, b::NfOrdElem)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
+  
   m, u, v = rresx(B, F)  # u*B + v*F = m mod modulus(S)
   if iszero(m)
     m = a^2*d*e
@@ -953,14 +980,58 @@ function _invmod(a::fmpz, b::NfOrdElem)
   return bi
 end
 
-
 function _normmod(a::fmpz, b::NfOrdElem)
-  if isone(a)
+  if isone(a) 
     return a
   end
+  
   if !isdefining_polynomial_nice(nf(parent(b)))
     return norm(b)
   end
+  return _normmod_comp(a, b)
+  #=
+  a2, ar = ppio(a, fmpz(2))
+  modu = fmpz[]
+  resp = fmpz[]
+  if !isone(a2)
+    push!(modu, a2)
+    push!(resp, _normmod_comp(a2, b))
+  end
+  a3, ar = ppio(ar, fmpz(3))
+  if !isone(a3)
+    push!(modu, a3)
+    push!(resp, _normmod_comp(a3, b))
+  end
+  a5, ar = ppio(ar, fmpz(5))
+  if !isone(a5)
+    push!(modu, a5)
+    push!(resp, _normmod_comp(a5, b))
+  end
+  a7, ar = ppio(ar, fmpz(7))
+  if !isone(a7)
+    push!(modu, a7)
+    push!(resp, _normmod_comp(a7, b))
+  end
+  if !isone(ar)
+    push!(modu, ar)
+    push!(resp, _normmod_comp(ar, b))
+  end
+  if isone(length(resp))
+    @hassert :NfOrd 1 gcd(resp[1], a) == gcd(norm(b), a)
+    return resp[1]
+  else
+    res = crt(resp, modu)
+    @hassert :NfOrd 1 gcd(res, a) == gcd(norm(b), a)
+    return res
+  end
+  =#
+end
+
+function _normmod_comp(a::fmpz, b::NfOrdElem)
+  if isone(a)
+    return a
+  end
+
   Zk = parent(b)
   k = number_field(Zk)
   d = denominator(b.elem_in_nf)
@@ -973,7 +1044,6 @@ function _normmod(a::fmpz, b::NfOrdElem)
   m1 = gcd(modulus(m), lift(m))
   return divexact(m1, d^degree(parent(b)))
 end
-
 
 function simplify(A::NfAbsOrdIdl)
   @hassert :NfOrd 1 isconsistent(A)

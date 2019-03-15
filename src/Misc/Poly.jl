@@ -521,11 +521,12 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
   mul!(aux1, g, h)
   sub!(aux1, f, aux1)
   #aux1 = f-g*h 
-  q, r = divrem(s*aux1, h)
+  aux2 = Rx()
+  mul!(aux2, s, aux1)
+  q, r = divrem(aux2, h)
   #@assert s*e == q*h+r
   mul!(aux1, aux1, t)
   add!(aux1, aux1, g)
-  aux2 = Rx()
   mul!(aux2, q, g)
   add!(aux1, aux1, aux2)
   #g = g+t*e+q*g
@@ -545,7 +546,8 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
   #@assert s*b == c*h+d
   mul!(aux3, aux3, t)
   sub!(aux3, t, aux3)
-  sub!(aux3, aux3, c*g)
+  mul!(c, c, g)
+  sub!(aux3, aux3, c)
   sub!(aux4, s, d)
 
   return aux1, aux2, aux4, aux3
@@ -556,15 +558,17 @@ end
 # requires some coefficient of f to be a unit
 
 function fun_factor(f::PolyElem{<:RingElem})
+  
   Rx = parent(f)
   if isunit(lead(f))
     l = lead(f)
     return Rx(l), f*inv(l)
   end
   R = base_ring(Rx)
-  
+  mod = lift(coeff(f, degree(f)))
   ind = degree(f)-1
   while !isunit(coeff(f, ind))
+    mod = gcd(mod, lift(coeff(f, ind)))
     ind -= 1
   end
   if iszero(ind)
@@ -577,21 +581,45 @@ function fun_factor(f::PolyElem{<:RingElem})
   g0 = zero(Rx)
   invc = inv(coeff(f, ind))
   for i = 0:ind-1
-    setcoeff!(g0, i, coeff(f, i)*invc)
+    setcoeff!(g0, i, coeff(f, i) * invc)
   end
   setcoeff!(g0, ind, one(R))
   
-  s = Rx(inv(coeff(u0, 0)))
-  t = zero(Rx)
+  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
+  f2 = lift(Zy, f)
+  mod = fmpz(gcd(mod, modulus(Rx))) #We have the equality modulo mod
+  mod = mod*mod
+  R1 = ResidueRing(FlintZZ, mod, cached = false)
+  R1x, x = PolynomialRing(R1, "x", cached = false)
+  s = R1x(lift(inv(coeff(u0, 0))))
+  t = zero(R1x)
+  u0 = R1x(lift(Zy, u0))
+  g0 = R1x(lift(Zy, g0))
+  f1 = R1x(f2)
+  u, g, s, t = _hensel(f1, u0, g0, s, t)
   
-  u, g, s, t = _hensel(f, u0, g0, s, t)
   i = 1
-  while g != g0 || u != u0
+  while modulus(Rx)>= mod
+    
+    mod = mod*mod
+    
+    if mod > modulus(Rx)
+      mod = fmpz(modulus(Rx))
+    end
 
+    R1 = ResidueRing(FlintZZ, mod, cached = false)
+    R1x, x = PolynomialRing(R1, "x", cached = false)
+    u0 = R1x(lift(Zy, u))
+    g0 = R1x(lift(Zy, g))
+    s = R1x(lift(Zy, s))
+    t = R1x(lift(Zy, t))
+    f1 = R1x(f2)
     i += 1
-    g0 = g
-    u0 = u
-    u, g, s, t = _hensel(f, u0, g0, s, t)
+    
+    u, g, s, t = _hensel(f1, u0, g0, s, t)
+    if mod >= modulus(Rx)
+      break
+    end
     if i>20 #in general: loop forever... one could check that the
       # contents of f-gh and s*g+t*h - 1 is nilpotent.
       # this SHOULD ensure convergence
@@ -603,8 +631,10 @@ function fun_factor(f::PolyElem{<:RingElem})
       error("too long")
     end
   end
-  #@assert g0*u0 == f
-
+  
+  u0 = Rx(lift(Zy, u))
+  g0 = Rx(lift(Zy, g))
+  @hassert :NfOrd 1 g0*u0 == f
   return u0, g0
 end
 
@@ -1044,6 +1074,7 @@ function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} whe
   end
 end
 
+
 function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
@@ -1054,6 +1085,9 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
   m::fmpz = fmpz(modulus(R))
   e, p::fmpz = ispower(m)
   easy = isprime(p)
+  if easy
+    return _rresx_sircana_pp(f, g)
+  end
 
   u::PolyElem{T}, v::PolyElem{T} = Rt(0), Rt(1)
   U::PolyElem{T}, V::PolyElem{T} = Rt(1), Rt(0)
@@ -1169,6 +1203,89 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
       # r = u_ * f + v_ * g 
 
       (u_*U + v_*u), (u_*V + v_*v)
+      return res, (u_*U + v_*u), (u_*V + v_*v)
+    end
+
+    q, f = divrem(f, g)
+    #f -> f-qg, so U*f_in + V * g_in -> ...
+    U = U - q*u
+    V = V - q*v
+  end
+end
+
+
+function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  Nemo.check_parent(f1, g1)
+  @assert typeof(f1) == typeof(g1)
+
+  Rt = parent(f1)
+  R = base_ring(Rt)
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
+  m = fmpz(modulus(R))
+  f = f1
+  g = g1
+
+  u::PolyElem{T}, v::PolyElem{T} = Rt(0), Rt(1)
+  U::PolyElem{T}, V::PolyElem{T} = Rt(1), Rt(0)
+#  res::T, uu::T, vv::T
+
+#  u, v = Rt(0), Rt(1)  #g = u f_in + v g_in
+#  U, V = Rt(1), Rt(0)  #f = U f_in + V g_in
+
+  while true
+    if degree(f) < 1 && degree(g) < 1
+      if iszero(f) && iszero(g)
+        res = R(0)
+        u = Rt(0)
+        v = Rt(0)
+      else
+        res, uu, vv = gcdx(lead(f), lead(g)) 
+        #res = uu*f + vv*g = uu*(U f_in + V g_in) + vv*(u f_in + v g_in)
+        #    = uu*U + vv*u  uu*V + vv*v
+        u, v = (uu*U + vv*u), (uu*V + vv*v)
+      end
+      return res, u, v
+    end
+
+    if degree(f) < degree(g)
+      f, g = g, f
+      U, u = u, U
+      V, v = v, V
+    end
+
+    if degree(g) < 1
+      if !isunit(lead(f))
+        #need the constant coeff * the annihilator of the others...
+        a = coeff(f, 1)
+        for i = 2:degree(f)
+          a = gcd(a, coeff(f, i))
+          if isone(a)
+            break
+          end
+        end
+        a = annihilator(a)
+        if iszero(a)
+          return lead(g), u, v
+        else
+          res, uu, vv = gcdx(a*constant_coefficient(f), lead(g))
+          u, v = (uu*a*U + vv*u), (uu*a*V + vv*v)
+
+          return res, u, v
+        end
+      else
+        return constant_coefficient(g), u, v
+      end
+    end
+
+    if !isunit(lead(g))
+      c, g = primsplit(g)
+      g1, g2 = fun_factor(g)
+      #@assert isunit(g1)
+      rr, uu, vv = rresx_sircana(f, g2)
+      res = rr*c
+      u_ = uu*c
+      v_ = inv(g1)*vv
+      #@hassert :NfOrd 1 (u_*U + v_*u)*f1 + (u_*V + v_*v)*g1 == res
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
 
