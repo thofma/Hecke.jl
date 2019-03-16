@@ -988,43 +988,42 @@ function _normmod(a::fmpz, b::NfOrdElem)
   if !isdefining_polynomial_nice(nf(parent(b)))
     return norm(b)
   end
-  return _normmod_comp(a, b)
-  #=
-  a2, ar = ppio(a, fmpz(2))
-  modu = fmpz[]
+
+  mods = fmpz[]
   resp = fmpz[]
+  a2, ar = ppio(a, fmpz(2))
   if !isone(a2)
-    push!(modu, a2)
+    push!(mods, a2)
     push!(resp, _normmod_comp(a2, b))
   end
   a3, ar = ppio(ar, fmpz(3))
   if !isone(a3)
-    push!(modu, a3)
+    push!(mods, a3)
     push!(resp, _normmod_comp(a3, b))
   end
   a5, ar = ppio(ar, fmpz(5))
   if !isone(a5)
-    push!(modu, a5)
+    push!(mods, a5)
     push!(resp, _normmod_comp(a5, b))
   end
   a7, ar = ppio(ar, fmpz(7))
   if !isone(a7)
-    push!(modu, a7)
+    push!(mods, a7)
     push!(resp, _normmod_comp(a7, b))
   end
   if !isone(ar)
-    push!(modu, ar)
+    push!(mods, ar)
     push!(resp, _normmod_comp(ar, b))
   end
-  if isone(length(resp))
-    @hassert :NfOrd 1 gcd(resp[1], a) == gcd(norm(b), a)
+  if isone(length(mods))
+    @hassert :NfOrd 1 gcd(norm(b), a) == resp[1]
     return resp[1]
   else
-    res = crt(resp, modu)
-    @hassert :NfOrd 1 gcd(res, a) == gcd(norm(b), a)
+    res = gcd(crt(resp, mods), a)
+    @hassert :NfOrd 1 gcd(norm(b), a) == res
     return res
-  end
-  =#
+  end 
+  
 end
 
 function _normmod_comp(a::fmpz, b::NfOrdElem)
@@ -1041,8 +1040,8 @@ function _normmod_comp(a::fmpz, b::NfOrdElem)
   B = St(d*b.elem_in_nf)
   F = St(k.pol)
   m = resultant_ideal(B, F)  # u*B + v*F = m mod modulus(S)
-  m1 = gcd(modulus(m), lift(m))
-  return divexact(m1, d^degree(parent(b)))
+  m1 = gcd(modulus(S), lift(m))
+  return divexact(m1, com^degree(parent(b)))
 end
 
 function simplify(A::NfAbsOrdIdl)
