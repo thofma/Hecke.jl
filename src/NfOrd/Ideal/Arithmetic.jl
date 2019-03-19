@@ -47,7 +47,7 @@
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   d = degree(order(x))
-  H = vcat(basis_mat(x), basis_mat(y))
+  H = vcat(basis_mat(x, Val{false}), basis_mat(y, Val{false}))
   g = gcd(minimum(x), minimum(y))
   if isone(g)
     return ideal(order(x), g)
@@ -514,7 +514,7 @@ function mul_gen(x::NfOrdIdl, y::fmpz)
     return z
   end
 
-  z = ideal(order(x), basis_mat(x)*y)
+  z = ideal(order(x), basis_mat(x, Val{false})*y)
   if isdefined(x, :princ_gen)
     z.princ_gen = x.princ_gen * y
   end
@@ -771,7 +771,7 @@ function contract(A::NfOrdIdl, O::NfOrd)
   d = degree(O)
   M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
   @assert M.den == 1
-  H = vcat(basis_mat(A), M.num)
+  H = vcat(basis_mat(A, Val{false}), M.num)
   K = _kernel(H)
   M = sub(K, 1:d, 1:d)*basis_mat(A, Val{false})
   M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
