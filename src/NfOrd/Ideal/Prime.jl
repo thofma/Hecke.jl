@@ -761,7 +761,7 @@ function isprime(A::NfAbsOrdIdl)
   OK = order(A)
   
   #maximal order case
-  if OK.ismaximal == 1 || iszero(mod(discriminant(OK), p)) || p in OK.primes_of_maximality
+  if OK.ismaximal == 1 || iszero(mod(discriminant(OK), p))# || p in OK.primes_of_maximality
     lp = prime_decomposition(OK, p)
     for (P, e) in lp
       if norm(A) != norm(P)
