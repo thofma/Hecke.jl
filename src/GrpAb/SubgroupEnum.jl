@@ -824,7 +824,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
       filter!( z -> z > 0, ptype)
       sort!(ptype, rev = true)
       T = psubgroups(G, Int(p), quotype = ptype, fun = (g, m) -> sub(g, m, false))
-      genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
+      genss = ( GrpAbFinGenElem[ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
   elseif subtype != [-1]
@@ -845,7 +845,7 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
       filter!( z -> z > 0, ptype)
       sort!(ptype, rev = true)
       T = psubgroups(G, Int(p), subtype = ptype, fun = (g, m) -> sub(g, m, false))
-      genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
+      genss = ( GrpAbFinGenElem[ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
   elseif suborder != -1 || subindex != -1
@@ -859,14 +859,14 @@ function _subgroups_gens(G::GrpAbFinGen, subtype::Array{S, 1} = [-1],
     for (p, e) in fac
       orderatp = p^e
       T = psubgroups(G, Int(p), order = orderatp, fun = (g, m) -> sub(g, m, false))
-      genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
+      genss = ( GrpAbFinGenElem[ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
   else
     fac = factor(order(G))
     for (p, e) in fac
       T = psubgroups(G, Int(p), fun = (g, m) -> sub(g, m, false))
-      genss = ( [ t[2](x) for x in gens(t[1]) ] for t in T )
+      genss = ( GrpAbFinGenElem[ t[2](x) for x in gens(t[1]) ] for t in T )
       push!(pgens, genss)
     end
   end
@@ -878,7 +878,7 @@ end
 # Same as above but now allow a function to be applied to the output
 function _subgroups(G::GrpAbFinGen; subtype = [-1], quotype = [-1], order = -1,
                                     index = -1, fun = sub)
-  return ( fun(G, z) for z in _subgroups_gens(G, subtype, quotype, order, index))
+  return ( fun(G, convert(Vector{GrpAbFinGenElem}, z)) for z in _subgroups_gens(G, subtype, quotype, order, index))
 end
 
 
