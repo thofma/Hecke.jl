@@ -242,7 +242,7 @@ end
 
 
 function quo(M::ZpnGModule, S::nmod_mat)
-  Q, mQ=quo(M.V, lift(S))
+  Q, mQ=quo(M.V, lift(S), false)
   return ZpnGModule(Q, M.G), mQ
 end
 
