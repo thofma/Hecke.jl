@@ -182,9 +182,9 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
 
   orders = NfOrd[]
 
-  subs = stable_subgroups(A, autos, minimal = true)
+  subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
   for s in subs
-    T = image(s[2])
+    T = image(s[2], false)
     G = domain(T[2])
     for i in 1:d
       v = T[2](G[i]).coeff
@@ -211,7 +211,7 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
   return orders
 end
 
-function _minimal_poverorders(O::NfOrd, P::NfOrdIdl)
+function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[])
   M = ring_of_multipliers(P)
   p = minimum(P)
   A, mA = quo(M, O)
@@ -230,9 +230,10 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl)
 
   orders = NfOrd[]
 
-  subs = stable_subgroups(A, autos, minimal = true)
+  subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
+  #@show length(collect(subs))
   for s in subs
-    T = image(s[2])
+    T = image(s[2], false)
     G = domain(T[2])
     new_element = 0
     for i in 1:d
@@ -245,8 +246,9 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl)
       end
     end
     @assert new_element != 0
-    b, bL = defines_minimal_overorder(potential_basis, [potential_basis[new_element]])
+    b, bL = defines_minimal_overorder(potential_basis, nf_elem[potential_basis[new_element]])
     if !b
+      excess[] = excess[] + 1
       continue
     end
     if any(x -> basis_mat(x, Val{false}) == bL, orders)
@@ -285,7 +287,10 @@ function new_overorders(O::NfOrd)
   orders = Vector{typeof(O)}[]
   M = maximal_order(O)
   for (p, ) in factor(div(index(M), index(O)))
-    push!(orders, new_poverorders(O, p))
+    print("Time for $p: ")
+    tp = @elapsed new_p = new_poverorders(O, p)
+    push!(orders, new_p)
+    println(tp)
     #@show p, length(orders[end])
   end
 
@@ -299,9 +304,10 @@ function new_overorders(O::NfOrd)
     return orders[1]
   else
     I = Iterators.product(orders...)
-    for (j, i) in enumerate(I)
+    tsum = @elapsed for (j, i) in enumerate(I)
       res[j] = sum(i)
     end
+    println("summing: $tsum")
     return res
   end
 end
@@ -309,17 +315,23 @@ end
 function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
   to_enlarge = typeof(O)[O]
   current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
+  excess = Int[0]
   while length(to_enlarge) > 0
+    #@show sum(Int[ sum(Int[length(x) for x in e]) for (_,e) in current])
+    #@show length(to_enlarge)
     N = pop!(to_enlarge)
     #lQ = [ Q for Q in prime_ideals_over(N, minimum(P)) if contract(Q, O) == P]
     lQ = prime_ideals_over(N, P)
     new = typeof(O)[]
     for Q in lQ
       #new = append!(new, _minimal_overorders_meataxe(N, ring_of_multipliers(Q)))
-      new = append!(new, _minimal_poverorders(N, Q))
+      #@show isbass(N, Q)
+      new = append!(new, _minimal_poverorders(N, Q, excess))
     end
     for S in new
-      H = hnf(basis_mat(S, Val{false}))
+      #@show ishnf(basis_mat(S).num, :lowerleft)
+      #t += @elapsed H = hnf(basis_mat(S, Val{false}))
+      H = basis_mat(S, Val{false})
       ind = prod(H.num[i, i] for i in 1:degree(O))//H.den
       if haskey(current, ind)
         c = current[ind]
@@ -343,6 +355,7 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
       push!(to_enlarge, e)
     end
   end
+  println("excess: $(excess[])")
   return to_enlarge
 end
 
@@ -424,16 +437,21 @@ function overorders_naive(O::NfOrd, M::NfOrd = maximal_order(nf(O)))
   end
 
   A = AbelianGroup(S)
+  
+  @show [S[i, i] for i in 1:nrows(S)]
 
   if order(A) == 1
     return typeof(O)[O]
   end
 
-  subs = subgroups(A)
+  # Don't put things in the subgroup lattice
+  subs = subgroups(A, fun = (G, z) -> sub(G, z, false))
   potential_basis = Vector{nf_elem}(undef, d)
   oorders = typeof(O)[]
-  for s in subs
-    T = image(s[2])
+  println("#subgroups: $(length(collect(subs)))")
+  for (i, s) in enumerate(subs)
+    #@show i
+    T = image(s[2], false)
     G = domain(T[2])
     for i in 1:d
       v = T[2](G[i]).coeff
@@ -565,9 +583,9 @@ function _overorders_meataxe(O::NfOrd, M::NfOrd)
 
   potential_basis = Vector{nf_elem}(undef, d)
 
-  subs = stable_subgroups(A, autos)
+  subs = stable_subgroups(A, autos, op = (G, z) -> sub(G, z, false))
   for s in subs
-    T = image(s[2])
+    T = image(s[2], false)
     G = domain(T[2])
     for i in 1:d
       v = T[2](G[i]).coeff
@@ -635,9 +653,11 @@ function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O,
     
   potential_basis = Vector{nf_elem}(undef, d)
 
-  subs = stable_subgroups(A, autos)
+  excess = 0
+
+  subs = stable_subgroups(A, autos, op = (G, z) -> sub(G, z, false))
   for s in subs
-    T = image(s[2])
+    T = image(s[2], false)
     G = domain(T[2])
     for i in 1:d
       v = T[2](G[i]).coeff
@@ -650,8 +670,11 @@ function poverorders_meataxe(O::NfOrd, p::fmpz, N::NfOrd = pmaximal_overorder(O,
     b, bmat = defines_order(K, deepcopy(potential_basis))
     if b 
       push!(orders, Order(K, bmat))
+    else
+      excess += 1
     end
   end
+  @show excess, length(orders)
   return orders
 end
 
@@ -688,16 +711,6 @@ Returns all overorders of $\mathcal O$.
 """
 function overorders(O::NfOrd)
   return overorders_meataxe(O)
-end
-
-function isbass(O::NfOrd, P::NfOrdIdl)
-  M = maximal_order(O)
-  Q = extend(P, M)
-  p = minimum(P)
-  resfield_dim = valuation(norm(Q), p)
-  ext_dim = valuation(norm(Q), p)
-  @assert mod(ext_dim, resfield_dim) == 0
-  return div(ext_dim, resfield_dim) <= 2
 end
 
 function pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl; branching::Bool = true)
@@ -744,6 +757,16 @@ function pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl; branching::Bool = true)
     end
     return res
   end
+end
+
+function isbass(O::NfOrd, P::NfOrdIdl)
+  M = maximal_order(O)
+  Q = extend(P, M)
+  p = minimum(P)
+  resfield_dim = valuation(norm(P), p)
+  ext_dim = valuation(norm(Q), p)
+  @assert mod(ext_dim, resfield_dim) == 0
+  return div(ext_dim, resfield_dim) <= 2
 end
 
 function isbass(O::NfOrd, p::fmpz)
@@ -830,11 +853,11 @@ function ideals_with_norm(O::NfOrd, p::fmpz, n::Int)
   for par in AllParts(n)
     ppar = Vector(par)
 
-    subs = stable_subgroups(A, autos, quotype=[pInt^y for y in ppar])
+    subs = stable_subgroups(A, autos, quotype=[pInt^y for y in ppar], op = (G, z) -> sub(G, z, false))
 
     for s in subs
       new_basis_mat = zero_matrix(FlintZZ, d, d)
-      T = image(s[2])
+      T = image(s[2], false)
       G = domain(T[2])
       for i in 1:d
         v = T[2](G[i]).coeff
