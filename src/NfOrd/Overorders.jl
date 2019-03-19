@@ -166,7 +166,12 @@ end
 # Compute the minimal overorders of O in M by computing the orders generated
 # by minimal O-submodules of M.
 function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
+
+  orders = NfOrd[]
   A, mA = quo(M, O)
+  if order(A) == 1
+    return orders
+  end
   B = mA.bottom_snf_basis
   @assert isone(B[1])
   autos = Vector{GrpAbFinGenMap}(undef, degree(O) - 1)
@@ -180,7 +185,7 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
 
   potential_basis = Vector{nf_elem}(undef, d)
 
-  orders = NfOrd[]
+  
 
   subs = stable_subgroups(A, autos, minimal = true)
   for s in subs
@@ -215,21 +220,26 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl)
   M = ring_of_multipliers(P)
   p = minimum(P)
   A, mA = quo(M, O)
+  orders = NfOrd[]
+  if order(A) == 1
+    return orders
+  end
   B = mA.bottom_snf_basis
+  d = degree(O)
+  K = nf(O)
   @assert isone(B[1])
-  autos = Vector{GrpAbFinGenMap}(undef, degree(O) - 1)
+  autos = Vector{GrpAbFinGenMap}(undef, d)
   # We skip the first basis element, since it acts trivially
-  for i in 1:(degree(O) - 1)
+  for i in 1:(d - 1)
     autos[i] = induce(mA, x -> M(elem_in_nf(B[i + 1]))*x)
   end
+  autos[d] = induce(mA, x -> x^p)
 
   d = degree(O)
   K = nf(O)
 
   potential_basis = Vector{nf_elem}(undef, d)
-
-  orders = NfOrd[]
-
+  
   subs = stable_subgroups(A, autos, minimal = true)
   for s in subs
     T = image(s[2])
@@ -249,11 +259,7 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl)
     if !b
       continue
     end
-    if any(x -> basis_mat(x, Val{false}) == bL, orders)
-      error("Should not happen")
-    end
     L = Order(K, bL, false, false)
-    #bL = basis_mat(L, Val{false})
     push!(orders, L)
   end
   return orders
@@ -310,6 +316,10 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
   to_enlarge = typeof(O)[O]
   current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
   while length(to_enlarge) > 0
+    @show length(to_enlarge)
+    if length(current) > 0
+      @show sum(length(x) for x in values(current))
+    end
     N = pop!(to_enlarge)
     #lQ = [ Q for Q in prime_ideals_over(N, minimum(P)) if contract(Q, O) == P]
     lQ = prime_ideals_over(N, P)
@@ -319,13 +329,11 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
       new = append!(new, _minimal_poverorders(N, Q))
     end
     for S in new
-      H = hnf(basis_mat(S, Val{false}))
-      ind = prod(H.num[i, i] for i in 1:degree(O))//H.den
+      H = basis_mat(S, Val{false})
+      ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
       if haskey(current, ind)
         c = current[ind]
-        if haskey(c, H)
-          continue
-        else
+        if !haskey(c, H)
           c[H] = S
           push!(to_enlarge, S)
         end
@@ -350,9 +358,9 @@ function pprimary_overorders_old(O::NfOrd, P::NfOrdIdl)
   #if isbass(O, P)
   #  return pprimary_overorders_bass(O, P)
   #end
-  E = ring_of_multipliers(P)
+
   if index(E) != index(O)
-    minimaloverorders = _minimal_overorders_meataxe(O, E)
+    minimaloverorders = _minimal_poverorders(O, P)#_minimal_overorders_meataxe(O, E)
   else
     return typeof(O)[O]
   end
@@ -360,20 +368,8 @@ function pprimary_overorders_old(O::NfOrd, P::NfOrdIdl)
   res = typeof(O)[O]
 
   for R in minimaloverorders
-    if index(R) == index(O)
-      error("should not happen")
-      continue
-    end
-    lQ = prime_ideals_over(R, minimum(P))
-    primes = typeof(lQ)()
-    #@show length([Q for Q in lQ if intersect(Q, O) == P])
-    for Q in lQ
-      if length(primes) == 2 || intersect(Q, O) != P
-        continue
-      end
-      push!(primes, Q)
-    end
-    #@show length(primes)
+    primes = prime_ideals_over(R, P)
+
     if length(primes) == 1
       rres = pprimary_overorders(R, primes[1])
     else
@@ -395,6 +391,7 @@ function pprimary_overorders_old(O::NfOrd, P::NfOrdIdl)
     append!(res, nres)
     res = unique(OO -> basis_mat(OO, Val{false}), res)
   end
+  @show length(res)
   return res
 end
 
@@ -700,12 +697,63 @@ function isbass(O::NfOrd, P::NfOrdIdl)
   return div(ext_dim, resfield_dim) <= 2
 end
 
+function new_pprimary_overorder_bass(O::NfOrd, P::NfOrdIdl)
+  res = NfOrd[O]
+  O1 = ring_of_multipliers(P)
+  if index(O1) == index(O)
+    return res
+  end
+  push!(res, O1)
+  primes = prime_ideals_over(O1, P)
+  while length(primes) == 1
+    O2 = ring_of_multipliers(primes[1])
+    if index(O2) == index(O1)
+      return res
+    end
+    push!(res, O2)
+    O1 = O2
+    primes = prime_ideals_over(O1, primes[1])
+  end
+  
+  #There was branching.
+  res1 = NfOrd[]
+  O3 = O1
+  O2 = ring_of_multipliers(O1, primes[1])
+  while index(O3) != index(O2)
+    push!(res1, O2)
+    O3 = O2
+    P = prime_ideals_over(O2, primes[1])[1]
+    O2 = ring_of_multipliers(P) 
+  end
+  
+  res2 = NfOrd[]
+  O3 = O1
+  O2 = ring_of_multipliers(O1, primes[2])
+  while index(O3) != index(O2)
+    push!(res2, O2)
+    O3 = O2
+    P = prime_ideals_over(O2, primes[2])[1]
+    O2 = ring_of_multipliers(P) 
+  end
+  append!(res, res1)
+  append!(res, res2)
+  for N in res1
+    for M in res2
+      push!(res, N + M)
+    end
+  end
+  return res
+  
+end
+
+
 function pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl; branching::Bool = true)
+  res = NfOrd[]
   R = ring_of_multipliers(P)
   if index(R) == index(O)
     return typeof(O)[O]
   end
-  lQ = prime_ideals_over(R, minimum(P))
+  lQ = prime_ideals_over(R, P)
   if !branching
     res = typeof(O)[O]
     for Q in lQ

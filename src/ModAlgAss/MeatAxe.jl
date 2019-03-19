@@ -328,8 +328,6 @@ end
 #
 #################################################################
 
-
-
 @doc Markdown.doc"""
 ***
     meataxe(M::FqGModule) -> Bool, MatElem
@@ -348,17 +346,24 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     return true, identity_matrix(base_ring(H[1]), n)
   end
   
-  if length(H)==1
-    A=H[1]
+  
+  G = deepcopy(H)
+  filter!(x -> !iszero(x), G)
+  if length(G) == 0
+    return false, matrix(base_ring(H[1]), 1, n, [one(base_ring(H[1])) for i = 1:n])
+  end
+
+  if length(G)==1
+    A = G[1]
     poly=charpoly(Kx,A)
     sq=factor_squarefree(poly)
-    lf=factor(first(keys(sq.fac)))
-    t=first(keys(lf.fac))
+    lf = factor(first(keys(sq.fac)))
+    t = first(keys(lf.fac))
     if degree(t)==n
       M.isirreducible= 1
-      return true, identity_matrix(base_ring(H[1]), n)
+      return true, identity_matrix(base_ring(G[1]), n)
     else 
-      N= _subst(t, A)
+      N = _subst(t, A)
       Ntrnull = nullspace(transpose(N))
       # TODO: Remove this once fixed.
       if isa(Ntrnull[1], T)
@@ -369,7 +374,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
       #kern=transpose(nullspace(transpose(N))[2])
       #@show nullspace(transpose(N))
       #@show kern
-      B=closure(sub(kern,1:1, 1:n),H)
+      B=closure(sub(kern,1:1, 1:n), G)
       return false, B
     end
   end
@@ -377,11 +382,8 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   #
   #  Adding generators to obtain randomness
   #
-  G = deepcopy(H)
-  filter!(x -> !iszero(x), G)
-  if length(G) == 0
-    return false, matrix(base_ring(H[1]), 1, n, [one(base_ring(H[1])) for i = 1:n])
-  end
+
+
   Gt = T[transpose(x) for x in M.action]
   
   #for i=1:max(length(M.action),9)
@@ -393,8 +395,12 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   #  push!(G, G[l1]*G[l2])
   #end
   
+  cnt = 0
   while true
-
+    cnt += 1
+    if cnt > 1000
+      error("Too many attempts")
+    end
     # At every step, we add a generator to the group.
     new_gen = G[rand(1:length(G))]*G[rand(1:length(G))]
     while iszero(new_gen)
@@ -533,7 +539,7 @@ end
 
 """
 function composition_factors(M::ModAlgAss{S, T, V}; dimension::Int=-1) where {S, T, V}
-  
+
   if M.isirreducible == 1 || M.dimension == 1
     if dimension != -1 
       if M.dimension == dimension

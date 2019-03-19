@@ -187,7 +187,8 @@ end
 function basis_ord(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
   assure_has_basis(O)
   if copy == Val{true}
-    return deepcopy(O.basis_ord)::Vector{elem_type(O)}
+    res = O.basis_ord::Vector{elem_type(O)}
+    return deepcopy(res)::Vector{elem_type(O)}
   else
     return O.basis_ord::Vector{elem_type(O)}
   end
@@ -269,7 +270,7 @@ function show_gen(io::IO, O::NfAbsOrd)
   print(io, "Order of ")
   println(io, nf(O))
   print(io, "with Z-basis ")
-  print(io, basis(O))
+  print(io, basis(O, Val{false}))
 end
 
 function show_maximal(io::IO, O::NfAbsOrd)
@@ -1051,7 +1052,7 @@ function ==(R::NfAbsOrd, S::NfAbsOrd)
   nf(R) != nf(S) && return false
   assure_has_basis_mat(R)
   assure_has_basis_mat(S)
-  return R.basis_mat == S.basis_mat
+  return hnf(R.basis_mat) == hnf(S.basis_mat)
 end
 
 function ==(R::NfAbsOrdSet, S::NfAbsOrdSet)
@@ -1078,12 +1079,15 @@ function trace_matrix(O::NfAbsOrd)
   b = O.basis_nf
   n = degree(K)
   g = zero_matrix(FlintZZ, n, n)
-  for i=1:n
-    t = tr(b[i]^2)
+  aux = K()
+  for i = 1:n
+    mul!(aux, b[i], b[i])
+    t = tr(aux)
     @assert isinteger(t)
     g[i, i] = numerator(t)
     for j in (i + 1):n
-      t = tr(b[i]*b[j])
+      mul!(aux, b[i], b[j])
+      t = tr(aux)
       @assert isinteger(t)
       g[i, j] = numerator(t)
       g[j, i] = numerator(t)
