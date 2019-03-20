@@ -89,12 +89,11 @@ end
 > of number fields, find the unique prime $p$ in $k$ below.
 """
 
-function intersect_prime(f::Map, P::NfOrdIdl)
+function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
   
   @assert isprime(P)
   p = minimum(P)
   k = domain(f)
-  Ok = maximal_order(k)
   K = codomain(f)
   OK = maximal_order(K)
   if !divisible(index(Ok)*index(OK), fmpz(p))
@@ -112,7 +111,7 @@ function intersect_prime(f::Map, P::NfOrdIdl)
 
 end
 
-function intersect_nonindex(f::Map, P::NfOrdIdl)
+function intersect_nonindex(f::Map, P::NfOrdIdl, Zk = maximal_order(domain(f)))
   @assert P.is_prime == 1
   #let g be minpoly of k, G minpoly of K and h in Qt the primitive
   #element of k in K (image of gen(k))
@@ -120,7 +119,6 @@ function intersect_nonindex(f::Map, P::NfOrdIdl)
   #  g(h) = 0 mod G
   k = domain(f)
   K = codomain(f)
-  Zk = maximal_order(k)
   G = K.pol
   Qx = parent(G)
   g = k.pol(gen(Qx))
@@ -145,14 +143,13 @@ end
 > a prime ideal in the maximal order of $k$, find all prime ideals in
 > the maximal order of $K$ above.
 """
-function prime_decomposition(f::Map, p::NfOrdIdl)
+function prime_decomposition(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
   
   @assert p.is_prime == 1
   k = domain(f)
   K = codomain(f)
-  ZK = maximal_order(K)
   if !divisible(index(ZK), minimum(p))
-    return prime_decomposition_nonindex(f, p)
+    return prime_decomposition_nonindex(f, p, ZK)
   end
   # TODO: Implement for nonindex divisors seriously,
   # splitting the algebra.
@@ -171,11 +168,10 @@ function prime_decomposition(f::Map, p::NfOrdIdl)
 
 end
 
-function prime_decomposition_nonindex(f::Map, p::NfOrdIdl)
+function prime_decomposition_nonindex(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
 
   k = domain(f)
   K = codomain(f)
-  ZK = maximal_order(K)
   G = K.pol
   Qx = parent(G)
 
@@ -193,7 +189,7 @@ end
 @doc Markdown.doc"""
     lift(K::AnticNumberField, f::nmod_poly) -> nf_elem
 > Given a polynomial $f$ over a finite field, lift it to an element of the
-> number field $K$. The lift if given by the eleemnt represented by the
+> number field $K$. The lift if given by the element represented by the
 > canonical lift of $f$ to a polynomial over the integers.
 """
 function lift(K::AnticNumberField, f::T) where {T <: Zmodn_poly}
