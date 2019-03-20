@@ -228,7 +228,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
   local _image
 
   let n = n, r = r, d = d, I = I, A = A, L = L, U = U
-    function _image(a::Union{ NfOrdElem, AlgAssAbsOrdElem })
+    function _image(a::Union{NfAbsOrdElem, AlgAssAbsOrdElem })
       c = elem_in_basis(mod(a, I))
       for k = 1:n
         d[perm[k], 1] = c[k]

@@ -538,7 +538,7 @@ end
 >
 > If the ideals are not coprime, an error is raised.
 """
-function idempotents(x::NfOrdIdl, y::NfOrdIdl)
+function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   !(order(x) === order(y)) && error("Parent mismatch")
   O = order(x)
   d = degree(O)
