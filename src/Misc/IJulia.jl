@@ -346,6 +346,10 @@ function Base.show(io::IO, ::MIME"text/html", K::NfRel)
   print(io, "\$")
 end
 
+function Base.show(io::IO, ::MIME"text/html", b::Bool)
+   print(io, b ? "true" : "false")
+end
+
 
 function find_name(A, M = Main)
   for a = names(Main)
