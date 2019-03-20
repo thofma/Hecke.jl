@@ -100,9 +100,23 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       push!(vvv, r)
     end
     @assert abs(sum(vvv)) <= degree(K)
-    @vtime :CompactPresentation 1 id = inv(simplify(evaluate(A, coprime = true)))
+    @vtime :CompactPresentation 1 eA = (simplify(evaluate(A, coprime = true)))
+    @vtime :CompactPresentation 1 id = inv(eA)
+    
     @vtime :CompactPresentation 1 b = short_elem(id, matrix(FlintZZ, 1, length(vvv), vvv), prec = short_prec) # the precision needs to be done properly...
+   
     @assert abs(norm(b)//norm(id)) <= abs(discriminant(ZK)) # the trivial case
+
+  if true
+    for p = keys(A.fac)
+      isone(p) || (de[p] -= n^k*A.fac[p])
+    end
+
+    B = simplify(ideal(ZK, b)*eA)
+    @assert isone(B.den)
+    B = B.num
+  else
+    
     B = simplify(ideal(ZK, b))
     @assert B.num.is_principal == 1  
     @assert isone(B.num) || B.num.gens_normal > 1
@@ -112,7 +126,7 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
 
     for p = keys(de)
       assure_2_normal(p)
-      local _v = valuation(b, p)
+      @vtime :CompactPresentation 1 local _v = valuation(b, p)
       # @hassert :CompactPresentation 1 valuation(B, p) == _v
       # unfortunately, wrong: valuation(p^2 = p^9 / p^7, p^3) = 0 or 1 depending...
       @hassert :NfOrd 1 isconsistent(p)
@@ -120,19 +134,21 @@ function compact_presentation(a::FacElem{nf_elem, AnticNumberField}, nn::Int = 2
       if haskey(de_inv, p)
         pi = de_inv[p]
       else
-        pi = inv(p)
+        @vtime :CompactPresentation 1 pi = inv(p)
         de_inv[p] = pi
       end
       B *= pi^_v
       @hassert :NfOrd 1 isconsistent(B.num)
-      B = simplify(B)
+      @vtime :CompactPresentation 1 B = simplify(B)
       @hassert :NfOrd 1 isconsistent(B.num)
       #@hassert :CompactPresentation 1 valuation(B, p) == 0
     end
     @assert !haskey(de, ideal(ZK, 1))
+  end  
+   
     @assert norm(B) <= abs(discriminant(ZK))
 
-    for (p, _v) = factor(B)
+    @vtime :CompactPresentation 1 for (p, _v) = factor(B)
       if haskey(de, p)
         de[p] += _v*n^k
         continue
