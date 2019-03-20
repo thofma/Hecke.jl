@@ -183,11 +183,12 @@ function induce_action(N::NormRelation, i, s::Vector, S::Vector)
   if !ispure(N)
     throw(error("Not implemented yet"))
   end
+  ZK = order(S[1])
   z = zero_matrix(SMat, FlintZZ, 0, length(S))
   mk = embedding(N, i)
   for j in 1:length(s)
     v = Tuple{Int, fmpz}[]
-    pextended = prime_decomposition(mk, s[j])
+    pextended = prime_decomposition(mk, s[j], ZK)
     for Q in pextended
       for j in 1:length(S)
         if S[j] == Q[1]
