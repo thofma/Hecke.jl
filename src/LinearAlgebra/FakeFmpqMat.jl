@@ -154,6 +154,10 @@ function hnf(x::FakeFmpqMat, shape = :lowerleft)
   return FakeFmpqMat(h, denominator(x))
 end
 
+function hnf!!(x::FakeFmpqMat, shape = :lowerleft)
+  _hnf!(x.num, shape)
+end
+
 ################################################################################
 #
 #  Sub

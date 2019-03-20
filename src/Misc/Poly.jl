@@ -557,25 +557,26 @@ end
 #seems to not like 3*x^2+3*x+1 mod 108! mod 27 it is fine.
 # requires some coefficient of f to be a unit
 
-function fun_factor(f::PolyElem{<:RingElem})
-  
+function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
+
   Rx = parent(f)
   if isunit(lead(f))
     l = lead(f)
     return Rx(l), f*inv(l)
   end
   R = base_ring(Rx)
-  mod = lift(coeff(f, degree(f)))
+  smod = lift(coeff(f, degree(f)))
   ind = degree(f)-1
   while !isunit(coeff(f, ind))
-    mod = gcd(mod, lift(coeff(f, ind)))
+    smod = gcd(smod, lift(coeff(f, ind)))
     ind -= 1
   end
   if iszero(ind)
     return f, one(Rx)
   end
+
   u0 = zero(Rx)
-  for i = 0:ind
+  for i = 0:degree(f)-ind
     setcoeff!(u0, i, coeff(f, ind+i))
   end
   g0 = zero(Rx)
@@ -587,39 +588,39 @@ function fun_factor(f::PolyElem{<:RingElem})
   
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
   f2 = lift(Zy, f)
-  mod = fmpz(gcd(mod, modulus(Rx))) #We have the equality modulo mod
+  mod = fmpz(gcd(smod, fmpz(modulus(Rx)))) #We have the equality modulo mod
   mod = mod*mod
   R1 = ResidueRing(FlintZZ, mod, cached = false)
   R1x, x = PolynomialRing(R1, "x", cached = false)
   s = R1x(lift(inv(coeff(u0, 0))))
   t = zero(R1x)
-  u0 = R1x(lift(Zy, u0))
-  g0 = R1x(lift(Zy, g0))
-  f1 = R1x(f2)
-  u, g, s, t = _hensel(f1, u0, g0, s, t)
-  
-  i = 1
-  while modulus(Rx)>= mod
-    
-    mod = mod*mod
-    
-    if mod > modulus(Rx)
-      mod = fmpz(modulus(Rx))
-    end
+  u = R1x(lift(Zy, u0))
+  g = R1x(lift(Zy, g0))
 
+  f1 = R1x(f2)
+  u, g, s, t = _hensel(f1, u, g, s, t)
+  @hassert :NfOrd 1 f1 == u*g
+  i = 1
+  modRx = fmpz(modulus(Rx))
+  while modRx > mod
+
+    mod = mod*mod
+    if mod > modRx
+      mod = modRx
+    end
     R1 = ResidueRing(FlintZZ, mod, cached = false)
     R1x, x = PolynomialRing(R1, "x", cached = false)
-    u0 = R1x(lift(Zy, u))
-    g0 = R1x(lift(Zy, g))
+    u = R1x(lift(Zy, u))
+    g = R1x(lift(Zy, g))
     s = R1x(lift(Zy, s))
     t = R1x(lift(Zy, t))
     f1 = R1x(f2)
     i += 1
     
-    u, g, s, t = _hensel(f1, u0, g0, s, t)
-    if mod >= modulus(Rx)
-      break
-    end
+    u, g, s, t = _hensel(f1, u, g, s, t)
+
+    @hassert :NfOrd 1 f1 == u*g
+
     if i>20 #in general: loop forever... one could check that the
       # contents of f-gh and s*g+t*h - 1 is nilpotent.
       # this SHOULD ensure convergence
@@ -637,6 +638,7 @@ function fun_factor(f::PolyElem{<:RingElem})
   @hassert :NfOrd 1 g0*u0 == f
   return u0, g0
 end
+
 
 @doc Markdown.doc"""
     Base.rand(Rt::PolyRing{T}, n::Int) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> PolElem{T}

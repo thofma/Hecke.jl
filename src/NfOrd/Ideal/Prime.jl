@@ -761,7 +761,7 @@ function isprime(A::NfAbsOrdIdl)
   OK = order(A)
   
   #maximal order case
-  if OK.ismaximal == 1 || iszero(mod(discriminant(OK, p))) || p in OK.primes_of_maximality 
+  if OK.ismaximal == 1 || iszero(mod(discriminant(OK), p))# || p in OK.primes_of_maximality
     lp = prime_decomposition(OK, p)
     for (P, e) in lp
       if norm(A) != norm(P)
@@ -1342,7 +1342,7 @@ end
 
 #P is a prime ideal in a order contained in O
 #Computes the set of prime ideals lying over P
-function prime_ideals_over(O::NfOrd, P::NfOrdIdl; )
+function prime_ideals_over(O::NfOrd, P::NfOrdIdl)
   @assert isprime(P)
   O1 = order(P)
   if O1 == O

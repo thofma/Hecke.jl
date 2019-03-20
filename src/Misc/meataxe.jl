@@ -51,7 +51,7 @@ function closure(C::T, G::Array{T,1}) where {T}
     for j=1:length(G)
       res=cleanvect(C,w*G[j])
       if !iszero(res)
-        C=vcat(C,res)  
+        C = vcat(C,res)  
         if nrows(C)==ncols(C)
           i=ncols(C)+1
           break
