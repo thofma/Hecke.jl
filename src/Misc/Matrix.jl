@@ -215,6 +215,23 @@ function _hnf(x::fmpz_mat, shape::Symbol = :upperright)
   return hnf(x)::fmpz_mat
 end
 
+function _hnf!(x::fmpz_mat, shape::Symbol = :upperright)
+  if shape == :lowerleft
+    _swapcols!(x)
+    hnf!(x)
+    _swapcols!(x)
+    _swaprows!(x)
+    return x::fmpz_mat
+  end
+  hnf!(x)
+  return x::fmpz_mat
+end
+
+function hnf!(x::fmpz_mat)
+  ccall((:fmpz_mat_hnf, :libflint), Nothing, (Ref{fmpz_mat}, Ref{fmpz_mat}), x, x)
+  return x
+end
+
 function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   if shape == :lowerleft
     h = hnf_modular_eldiv!(_swapcols(x), m)
@@ -228,12 +245,23 @@ function _hnf_modular_eldiv(x::fmpz_mat, m::fmpz, shape::Symbol = :upperright)
   end
 end
 
-function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz)
+function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
    (nrows(x) < ncols(x)) &&
                 error("Matrix must have at least as many rows as columns")
-   ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
-                (Ref{fmpz_mat}, Ref{fmpz}), x, d)
-   return x
+   if shape == :upperright
+     ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
+                  (Ref{fmpz_mat}, Ref{fmpz}), x, d)
+     return x
+   elseif shape == :lowerleft
+     _swapcols!(x)
+     ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
+                 (Ref{fmpz_mat}, Ref{fmpz}), x, d)
+     _swapcols!(x)
+     _swaprows!(x)
+     return x
+   else
+     error("shape $shape is not supported")
+   end
 end
 
 function ishnf(x::fmpz_mat, shape::Symbol)
