@@ -385,8 +385,9 @@ function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZ
 
   z2 = view(z, (d + 1):2*d, 1:d)
   mul!(z2, S1.num, R1.den)
-  #MM = FakeFmpqMat(deepcopy(z), S1.den * R1.den)
-  #hnf_modular_eldiv!(z, d1, :lowerleft)
+  MM = FakeFmpqMat(vcat(S1.den * R1.num, R1.den * S1.num), S1.den * R1.den)
+  @assert MM == FakeFmpqMat(z, S1.den * R1.den)
+  hnf_modular_eldiv!(z, d1, :lowerleft)
   #MM = hnf!(MM)
   #@assert MM == FakeFmpqMat(z, S1.den * R1.den)
   #hnf!!(MM)
@@ -396,7 +397,11 @@ function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZ
   M = FakeFmpqMat(z, S1.den * R1.den)
 
   #M = FakeFmpqMat(vcat(S1.den*R1.num, R1.den*S1.num), S1.den*R1.den)
-  #M = hnf!(M)
+  #M = hnf!(MM)
+  #@show MMM
+  #@show M
+  #@show M.num == MMM.num
+  #@assert M == MMM
   #@assert M == MM
   M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
   return Order(K, M1, false, false)
@@ -420,7 +425,10 @@ function new_poverorders(O::NfOrd, p::fmpz)
     println("Time for $P: $tP")
     @show length(Pprim), length(res)
     trec = @elapsed for R in Pprim
+      #@show R
       for S in res
+        #@show S
+        #@show sum_as_Z_modules(R, S)
         push!(nres, sum_as_Z_modules(R, S, tz))
       end
     end
@@ -433,7 +441,7 @@ end
 function new_overorders(O::NfOrd)
   orders = typeof(O)[]
   M = maximal_order(O)
-  for (p, ) in factor(div(index(M), index(O)))
+  for (p, ) in factor(FlintZZ(div(gen_index(M), gen_index(O))))
     print("Time for $p: ")
     tp = @elapsed new_p = new_poverorders(O, p)
     if isempty(orders)
@@ -466,10 +474,10 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
   current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
   excess = Int[0]
   while length(to_enlarge) > 0
-    #@show length(to_enlarge)
-    #if length(current) > 0
-    #  @show sum([length(x) for x in values(current)])
-    #end
+    @show length(to_enlarge)
+    if length(current) > 0
+      @show sum([length(x) for x in values(current)])
+    end
     N = popfirst!(to_enlarge)
     lQ = prime_ideals_over(N, P)
     for Q in lQ
@@ -902,7 +910,7 @@ end
 function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
   res = NfOrd[]
   O1 = ring_of_multipliers(P)
-  if index(O1) == index(O)
+  if gen_index(O1) == gen_index(O)
     return res
   end
   K = nf(O)
