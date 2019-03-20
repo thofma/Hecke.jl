@@ -1362,3 +1362,243 @@ function prime_ideals_over(O::NfOrd, P::NfOrdIdl; )
   end
   return p_critical_primes
 end
+
+function (Rx::FmpzPolyRing)(f::fmpq_mpoly)
+  fp = Rx()
+  R = base_ring(Rx)
+  d = denominator(f)
+  @assert d == 1
+  for t = terms(f)
+    e = total_degree(t)
+    @assert length(t) == 1
+    c = coeff(t, 1)
+    setcoeff!(fp, e, numerator(c*d))
+  end
+  return fp
+end
+
+
+function (Rx::GFPPolyRing)(f::fmpq_mpoly)
+  fp = Rx()
+  R = base_ring(Rx)
+  d = denominator(f)
+  for t = terms(f)
+    e = total_degree(t)
+    @assert length(t) == 1
+    c = coeff(t, 1)
+    setcoeff!(fp, e, R(numerator(c*d)))
+  end
+  return fp * inv(R(d))
+end
+
+function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
+  Zx, x = PolynomialRing(FlintZZ, cached = false)
+  Zmodpx = PolynomialRing(GF(p, cached = false), "y", cached = false)[1]
+  fmodp = Zmodpx(f)
+  fac = factor(fmodp)
+  lifted_fac = Array{Tuple{fmpz_poly, Int}, 1}()
+  for (k, v) in fac
+    if degree(k) <= degree_limit && degree(k) >= lower_limit
+      push!(lifted_fac, (lift(Zx, k), v))
+    end
+  end
+  return lifted_fac
+end
+
+function roots(f::fmpz_poly, K::FqNmodFiniteField; max_roots::Int = degree(f))
+  Kx = PolynomialRing(K, cached = false)[1]
+  ff = Kx()
+  for i=0:degree(f)
+    setcoeff!(ff, i, coeff(f, i))
+  end
+  return roots(ff)
+end
+
+
+function roots(f::gfp_poly, K::FqNmodFiniteField; max_roots::Int = degree(f))
+  @assert characteristic(K) == characteristic(base_ring(f))
+  Kx = PolynomialRing(K, cached = false)[1]
+  ff = Kx()
+  for i=0:degree(f)
+    setcoeff!(ff, i, lift(coeff(f, i)))
+  end
+  return roots(ff)
+end
+
+function minpoly(a::fq_nmod)
+  return minpoly(PolynomialRing(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+end
+
+function minpoly(Rx::GFPPolyRing, a::fq_nmod)
+  c = [a]
+  fa = frobenius(a)
+  while !(fa in c)
+    push!(c, fa)
+    fa = frobenius(fa)
+  end
+  St = PolynomialRing(parent(a), cached = false)[1]
+  f = prod([gen(St) - x for x = c])
+  g = Rx()
+  for i = 0:degree(f)
+    setcoeff!(g, i, coeff(coeff(f, i), 0))
+  end
+  return g
+end
+
+function is_pairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
+  return issquarefree(prod(A))
+end
+
+function FlintFiniteField(p::Int, k::Int)
+  @assert isprime(p)
+  return FlintFiniteField(p, k, "o")
+end
+
+GF(p::Int, k::Int) = FlintFiniteField(p, k)
+
+function _lift_p2(q, f::fmpz_poly, a::fq_nmod)
+  Rx = base_ring(q)
+  o = inv(derivative(f)(a))
+  op = Rx()
+  ap = Rx()
+  for i=0:degree(parent(a))-1
+    setcoeff!(op, i, coeff(o, i))
+    setcoeff!(ap, i, coeff(a, i))
+  end
+  A = q(ap) - q(f(ap))*q(op)
+  return A
+end
+
+function prime_dec_nonindex(O::NfAbsOrd{NfAbsNS,NfAbsNSElem}, p::Union{Integer, fmpz}, degree_limit::Int = 0, lower_limit::Int = 0)
+
+  K = nf(O)
+  all_f = K.pol
+  R = parent(all_f[1]) #we're non-simple, probably fmpq_mpoly
+
+  if degree_limit == 0
+    degree_limit = degree(K)
+  end
+
+  Fpx = PolynomialRing(GF(p, cached = false), cached = false)[1]
+  R = ResidueRing(FlintZZ, p^2, cached = false)
+  Rx = PolynomialRing(R, cached = false)[1]
+  Zx = PolynomialRing(FlintZZ, cached = false)[1]
+
+  fac = [_fac_and_lift(f, p, degree_limit, lower_limit) for f in all_f]
+  all_c = [1 for f = all_f]
+  re = elem_type(Fpx)[]
+  rt = Array{Array{fq_nmod, 1}, 1}()
+  RT = []
+  RE = []
+  while true
+    re = elem_type(Fpx)[]
+    RE = []
+    #= TODO: this is suboptimal...
+      k = Q[t]/(t^2-2, t^2-3, t^3-5), p = 11
+      then splitting is [2], [1,1], [1,2]
+      and I need 6 ideals of degree 2
+      taking ony one root of the deg 2 factors gives a total of 4 ideals only
+      I'd need 1 for the 1st factor, and 2 for the subsequent deg 2 factors.
+      Why, I am not quite sure
+      So I do all roots (which are too many) and sieve later.
+    =#  
+    for x = Base.Iterators.product(fac...)
+      k = lcm([degree(t[1]) for t = x])
+      Fq = FiniteField(p, k, "y", cached = false)[1]
+      Fq2 = ResidueRing(Rx, lift(Zx, minpoly(gen(Fq))))
+      rt = Array{Array{elem_type(Fq), 1}, 1}()
+      RT = []
+      d = 1
+      for ti = 1:length(x)
+        t = x[ti]
+        g = gcd(d, degree(t[1]))
+        d = lcm(d, degree(t[1]))
+        r = roots(t[1], Fq)
+        if g == 1
+          push!(rt, [r[1]])
+        else
+          # I want only g roots! but I have f roots from an irreducible
+          # poly of degree f
+          #fundamentaly, I'd like to factor the poly over the field 
+          # so far (of degree d)
+          # and choose one root for each factor.
+          a = [r[1]]
+          for i=1:g-1
+            push!(a, frobenius(a[end]))
+          end
+          push!(rt, a)
+        end
+        push!(RT, [_lift_p2(Fq2, Zx(all_f[ti]), i) for i = rt[end]])
+      end
+      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)]))
+        for rrt = Base.Iterators.product(rt...)])
+      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)])
+        for rrt = Base.Iterators.product(RT...)])
+    end
+    if length(Set(re)) < length(re)
+      all_c = [rand(1:p-1) for f = all_c]
+      #can happen if index divisor, but unramified
+      continue
+      error("should not happen", p)
+    end
+    if sum(degree(x) for x = re) == degree(K)
+      break
+    end
+    @show all_c = [rand(1:p-1) for f = all_c]
+  end
+  mu = [lift(Zx, re[i])(RE[i]) for i=1:length(re)]
+  fac = [(lift(Zx, re[x]), 1, mu[x]) for x = 1:length(re) if lower_limit <= degree(re[x]) <= degree_limit]
+
+ 
+  pe = sum([gens(K)[i] * all_c[i] for i=1:length(all_c)])
+
+  result = Array{Tuple{ideal_type(O),Int}}(undef, length(fac))
+
+  for k in 1:length(fac)
+    fi = fac[k][1]
+    ei = fac[k][2]
+  
+    b = fi(pe)
+    ideal = NfAbsOrdIdl(O)
+    ideal.gen_one = p
+    ideal.gen_two = O(b, false)
+    ideal.is_prime = 1
+    ideal.splitting_type = ei, degree(fi)
+    ideal.norm = FlintZZ(p)^degree(fi)
+    ideal.minimum = FlintZZ(p)
+
+    # We have to do something to get 2-normal presentation:
+    # if ramified or valuation val(b,P) == 1, (p,b)
+    # is a P(p)-normal presentation
+    # otherwise we need to take p+b
+    # I SHOULD CHECK THAT THIS WORKS
+
+    #maybe: compute the roots of the f_i mod p^2 and evaluate the element..
+    # this would check if elt is in p^2 everything being unramified
+
+    if ei == 1 && iszero(fac[k][3])
+      ideal.gen_two = ideal.gen_two + O(p)
+    end
+
+    ideal.gens_normal = fmpz(p)
+    ideal.gens_weakly_normal = true
+
+    # Find an "anti-uniformizer" in case P is unramified
+    # We don't call it anti-unfiformizer anymore
+
+    #if ideal.splitting_type[1] == 1
+    #  t = parent(f)(lift(Zx, divexact(fmodp, fi)))
+    #  ideal.anti_uniformizer = O(K(t), false)
+    #end
+
+    if length(fac) == 1 && ideal.splitting_type[2] == degree(f)
+      # Prime number is inert, in particular principal
+      ideal.is_principal = 1
+      ideal.princ_gen = O(p)
+    end
+    result[k] =  (ideal, ei)
+    k += 1
+  end
+  return result
+
+end
