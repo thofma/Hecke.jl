@@ -365,12 +365,39 @@ end
 #
 ################################################################################
 
-function sum_as_Z_modules(O1::NfOrd, O2::NfOrd)
+function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
   K = nf(O1)
   R1 = basis_mat(O1, Val{false})
   S1 = basis_mat(O2, Val{false})
-  M = FakeFmpqMat(vcat(S1.den*R1.num, R1.den*S1.num), S1.den*R1.den)
-  M = hnf!(M)
+  d = degree(K)
+  z1 = view(z, 1:d, 1:d)
+  mul!(z1, R1.num, S1.den)
+  # Assume that R1 and S1 are triangular
+  d1 = deepcopy(S1.den)
+  for i in 1:degree(K)
+    mul!(d1, d1, R1.num[i, i])
+  end
+  d2 = deepcopy(R1.den)
+  for i in 1:degree(K)
+    mul!(d2, d2, S1.num[i, i])
+  end
+  d1 = gcd!(d1, d1, d2)
+
+  z2 = view(z, (d + 1):2*d, 1:d)
+  mul!(z2, S1.num, R1.den)
+  #MM = FakeFmpqMat(deepcopy(z), S1.den * R1.den)
+  #hnf_modular_eldiv!(z, d1, :lowerleft)
+  #MM = hnf!(MM)
+  #@assert MM == FakeFmpqMat(z, S1.den * R1.den)
+  #hnf!!(MM)
+  #MM = hnf!(MM)
+  #@assert MM == MMM
+  #M = MM
+  M = FakeFmpqMat(z, S1.den * R1.den)
+
+  #M = FakeFmpqMat(vcat(S1.den*R1.num, R1.den*S1.num), S1.den*R1.den)
+  #M = hnf!(M)
+  #@assert M == MM
   M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
   return Order(K, M1, false, false)
 end
@@ -386,15 +413,18 @@ function new_poverorders(O::NfOrd, p::fmpz)
   lP = prime_ideals_over(O, p)
   res = typeof(O)[O]
   K = nf(O)
+  tz = zero_matrix(FlintZZ, 2 * degree(O), degree(O))
   for P in lP
     nres = typeof(O)[]
-    Pprim = pprimary_overorders(O, P)
+    tP = @elapsed Pprim = pprimary_overorders(O, P)
+    println("Time for $P: $tP")
     @show length(Pprim), length(res)
-    for R in Pprim
+    trec = @elapsed for R in Pprim
       for S in res
-        push!(nres, sum_as_Z_modules(R, S))
+        push!(nres, sum_as_Z_modules(R, S, tz))
       end
     end
+    println("time for recombination: $trec")
     res = nres
   end
   return res
@@ -410,11 +440,14 @@ function new_overorders(O::NfOrd)
       append!(orders, new_p)
     else
       orders1 = typeof(O)[]
+      sizehint!(orders1, length(orders) * length(new_p))
+      z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
       @show length(orders), length(new_p)
       for O1 in orders
-        for O2 in new_p
-          push!(orders1, sum_as_Z_modules(O1, O2))
+        @time for O2 in new_p
+          push!(orders1, sum_as_Z_modules(O1, O2, z))
         end
+        @show length(orders1)
       end
       orders = orders1
     end
