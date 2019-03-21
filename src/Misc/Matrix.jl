@@ -299,7 +299,7 @@ function ishnf(x::fmpz_mat, shape::Symbol)
   end
 end
 
-function _swapnrows(x::fmpz_mat)
+function _swaprows(x::fmpz_mat)
   y = deepcopy(x)
   _swaprows!(y)
   return y
@@ -479,9 +479,9 @@ function _swapcols!(x::Generic.Mat)
   nothing
 end
 
-function _swapnrows(x::Generic.Mat)
+function _swaprows(x::Generic.Mat)
   z = deepcopy(x)
-  _swapnrows(z)
+  _swaprows(z)
   return z
 end
 
