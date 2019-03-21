@@ -458,13 +458,13 @@ end
 #
 ###############################################################################
 
-function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl, p::fmpz) where {T}
+function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::fmpz) where {T}
   
   O = order(Ip1)
   @vprint :NfOrd 1 "Splitting the algebra\n" 
   AA = decompose(A)
   @vprint :NfOrd 1 "Done \n"
-  ideals = Array{Tuple{NfOrdIdl, Int}, 1}(undef, length(AA))
+  ideals = Array{Tuple{typeof(Ip1), Int}, 1}(undef, length(AA))
   m = zero_matrix(FlintZZ, 1, degree(O))
   for i = 1:length(AA)
     B = AA[i][1]
@@ -482,7 +482,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl,
       N = vcat(N, m)
     end
     @vtime :NfOrd 1 N = view(_hnf_modular_eldiv(N, p, :lowerleft), nrows(N) - degree(O) + 1:nrows(N), 1:degree(O))
-    P = NfOrdIdl(O, N)
+    P = ideal(O, N)
     P.minimum = p
     P.norm = p^f
     P.splitting_type = (0, f)

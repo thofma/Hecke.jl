@@ -280,10 +280,13 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
       continue
     end
 
-    if degree(f) == dim(A) && isirreducible(f)
-      A.issimple = 1
-      B, mB = AlgAss(A)
-      return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
+    if isirreducible(f)
+      if degree(f) == dim(A)
+        A.issimple = 1
+        B, mB = AlgAss(A)
+        return Tuple{AlgAss{T}, morphism_type(AlgAss{T}, typeof(A))}[(B, mB)]
+      end
+      continue
     end
 
     @assert issquarefree(f)

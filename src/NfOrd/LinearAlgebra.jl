@@ -979,9 +979,9 @@ end
 
 function pseudo_hnf_kb(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H = _pseudo_hnf_kb(PseudoMatrix(_swapcols(P.matrix), P.coeffs), Val{false})
-    _swapcols!(H.matrix)
-    _swaprows!(H.matrix)
+    H = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{false})
+    invert_cols!(H.matrix)
+    invert_rows!(H.matrix)
     reverse!(H.coeffs)
     return H
   elseif shape == :upperright
@@ -993,11 +993,11 @@ end
 
 function pseudo_hnf_kb_with_trafo(P::PMat, shape::Symbol = :upperright)
   if shape == :lowerleft
-    H, U = _pseudo_hnf_kb(PseudoMatrix(_swapcols(P.matrix), P.coeffs), Val{true})
-    _swapcols!(H.matrix)
-    _swaprows!(H.matrix)
+    H, U = _pseudo_hnf_kb(PseudoMatrix(invert_cols(P.matrix), P.coeffs), Val{true})
+    invert_cols!(H.matrix)
+    invert_rows!(H.matrix)
     reverse!(H.coeffs)
-    _swaprows!(U)
+    invert_rows!(U)
     return H, U
   elseif shape == :upperright
     return _pseudo_hnf_kb(P, Val{true})

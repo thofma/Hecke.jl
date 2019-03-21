@@ -108,6 +108,24 @@ end
 
   test_alg_morphism_char_p(A, B, AtoB, BtoA)
 
+  Fp = GF(3)
+  mt = Array{elem_type(Fp), 3}(undef, 2, 2, 2)
+  mt[1, 1, 1] = Fp(0)
+  mt[1, 1, 2] = Fp(2)
+  mt[1, 2, 1] = Fp(2)
+  mt[1, 2, 2] = Fp(1)
+  mt[2, 1, 1] = Fp(2)
+  mt[2, 1, 2] = Fp(1)
+  mt[2, 2, 1] = Fp(1)
+  mt[2, 2, 2] = Fp(1)
+  A = AlgAss(Fp, mt)
+  B, AtoB, BtoA = Hecke._as_algebra_over_center(A)
+  @test characteristic(base_ring(B)) == characteristic(Fp)
+  @test degree(base_ring(B)) == dim(A)
+  @test dim(B) == 1
+
+  test_alg_morphism_char_p(A, B, AtoB, BtoA)
+
 end
 
 # n = dim(A)^2 = dim(B)^2

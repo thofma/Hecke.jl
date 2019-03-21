@@ -39,15 +39,15 @@ function _strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, strategy)
     C = _strong_echelon_form_nonsplit(B)
     return C
   else
-    error("dasds")
+    error("Invalid strategy")
   end
 end
 
 function strong_echelon_form(A::Generic.Mat{NfOrdQuoRingElem}, shape::Symbol = :upperright, strategy::Symbol = :split)
   if shape == :lowerleft
-    h = _strong_echelon_form(_swapcols(A), strategy)
-    _swapcols!(h)
-    _swaprows!(h)
+    h = _strong_echelon_form(invert_cols(A), strategy)
+    invert_cols!(h)
+    invert_rows!(h)
     return h
   elseif shape == :upperright
     h = _strong_echelon_form(A, strategy)

@@ -1886,7 +1886,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !isdefining_polynomial_nice(nf(order(A)))
+  if !issimple(nf(order(A))) || !isdefining_polynomial_nice(nf(order(A)))
     B = Array{fmpz}(undef, degree(O))
     Amin2 = minimum(A)^2
     Amind = minimum(A)^degree(O)
