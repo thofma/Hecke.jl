@@ -70,7 +70,7 @@ end
 """
 function intersect(x::NfOrdIdl, y::NfOrdIdl)
   d = degree(order(x))
-  H = vcat(basis_mat(x), basis_mat(y))
+  H = vcat(basis_mat(x, Val{false}), basis_mat(y, Val{false}))
   K = left_kernel(H)[2]
   g = lcm(minimum(x),minimum(y))
   return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, Val{false}), g, :lowerleft), false, true)
