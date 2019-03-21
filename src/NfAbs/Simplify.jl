@@ -24,7 +24,7 @@ function simplify(K::AnticNumberField; canonical::Bool = false)
     else
       I = divexact(numerator(discriminant(K.pol)), discriminant(ZK))
     end
-    B = basis(ZK, Val{false})
+    B = basis(ZK, copy = false)
     
     for i = 1:length(B)
       if isone(denominator(B[i].elem_in_nf))
@@ -48,13 +48,13 @@ function _index(a::NfOrdElem)
   O = parent(a)
   d = degree(O)
   M = zero_matrix(FlintZZ, d, d)
-  c = elem_in_basis(one(O), Val{false})
+  c = elem_in_basis(one(O), copy = false)
   for i = 1:d
     M[1, i] = c[i]
   end
   a1 = deepcopy(a)
   for i = 2:d
-    c = elem_in_basis(a1, Val{false})
+    c = elem_in_basis(a1, copy = false)
     for j = 1:d
       M[i, j] = c[j]
     end

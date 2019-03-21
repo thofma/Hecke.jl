@@ -79,7 +79,7 @@ function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2
       end
     end
   end
-  B = basis(O, Val{false})
+  B = basis(O, copy = false)
   el = O(0)
   for j=1:m
     for k=1:n
@@ -159,7 +159,7 @@ function pradical_crossed_product(O::AlgAssAbsOrd, I1::AlgAssAbsOrdIdl, p::Int)
   if isdefined(I1, :gens)
     append!(gens, I1.gens)
   else
-    append!(gens, basis(I1, Val{false}))
+    append!(gens, basis(I1, copy = false))
   end
   J=ideal(O, view(m, 1:O.dim, 1:O.dim))
   J.gens=gens
@@ -173,7 +173,7 @@ function _ideal_in_radical(OL::NfOrd, G::Array{NfToNfMor, 1}, O::AlgAssAbsOrd, p
   I = pradical(OL, p)
   I.minimum = fmpz(p)
   _assure_weakly_normal_presentation(I)
-  B = basis(I, Val{false})
+  B = basis(I, copy = false)
   M = zero_matrix(FlintZZ, O.dim, O.dim)
   l = 0
   for i = 1:length(B)

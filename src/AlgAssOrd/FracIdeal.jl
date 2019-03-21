@@ -75,7 +75,7 @@ function basis_mat(a::AlgAssAbsOrdFracIdl, copy::Bool = true)
     if !isdefined(a, :num) || !isdefined(a, :den)
       error("Numerator and/or denominator not defined")
     end
-    a.basis_mat = FakeFmpqMat(basis_mat(a.num, Val{false}), a.den)
+    a.basis_mat = FakeFmpqMat(basis_mat(a.num, copy = false), a.den)
   end
   if copy
     return deepcopy(a.basis_mat)
@@ -203,7 +203,7 @@ end
 ################################################################################
 
 function simplify!(a::AlgAssAbsOrdFracIdl)
-  b = basis_mat(numerator(a, false), Val{false})
+  b = basis_mat(numerator(a, false), copy = false)
   g = gcd(denominator(a, false), content(b))
 
   if g != 1
@@ -222,5 +222,5 @@ end
 
 function rand(a::AlgAssAbsOrdFracIdl, B::Int)
   z = rand(numerator(a, false), B)
-  return fmpq(1, denominator(a, false))*elem_in_algebra(z, Val{false})
+  return fmpq(1, denominator(a, false))*elem_in_algebra(z, copy = false)
 end

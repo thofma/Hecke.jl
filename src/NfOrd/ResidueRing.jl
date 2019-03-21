@@ -349,7 +349,7 @@ function isdivisible(x::AbsOrdQuoRingElem, y::AbsOrdQuoRingElem)
 
   V[1, 1] = 1
 
-  a = elem_in_basis(x.elem, Val{false})
+  a = elem_in_basis(x.elem, copy = false)
 
   for i in 1:d
     V[1, 1 + i] = a[i]
@@ -454,7 +454,7 @@ function euclid(x::NfOrdQuoRingElem)
   _copy_matrix_into_matrix(U, 1, 1, representation_matrix(x.elem))
   _copy_matrix_into_matrix(U, d + 1, 1, parent(x).basis_mat)
 
-  hnf_modular_eldiv!(U, minimum(parent(x).ideal, Val{false}))
+  hnf_modular_eldiv!(U, minimum(parent(x).ideal, copy = false))
 
   z = fmpz(1)
 
@@ -605,7 +605,7 @@ function xxgcd(x::NfOrdQuoRingElem, y::NfOrdQuoRingElem)
   # ( 0  M_f  0  I )
   # ( 0  M_I  0  0 )
 
-  a = elem_in_basis(Q(O(1)).elem, Val{false})
+  a = elem_in_basis(Q(O(1)).elem, copy = false)
 
   V = parent(x).tmp_xxgcd
 

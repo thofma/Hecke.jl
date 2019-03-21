@@ -51,7 +51,7 @@ end
 
 function (O::NfRelOrd)(a::Vector{T}, check::Bool = true) where T
   t = nf(O)()
-  basis = basis_nf(O, Val{false})
+  basis = basis_nf(O, copy = false)
   for i = 1:degree(O)
     t += a[i]*basis[i]
   end
@@ -433,6 +433,6 @@ norm(a::NfRelOrdElem) = norm(a.elem_in_nf)
 function representation_matrix(a::NfRelOrdElem)
   O = parent(a)
   A = representation_matrix(elem_in_nf(a))
-  A = basis_mat(O, Val{false})*A*basis_mat_inv(O, Val{false})
+  A = basis_mat(O, copy = false)*A*basis_mat_inv(O, copy = false)
   return A
 end

@@ -174,7 +174,7 @@ function assure_has_basis_mat_inv(O::NfAbsOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O, Val{false}))
+  O.basis_mat_inv = inv(basis_mat(O, copy = false))
   return nothing
 end
 
@@ -184,9 +184,9 @@ end
 #
 ################################################################################
 
-function basis_ord(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+@inline function basis_ord(O::NfAbsOrd; copy::Bool = true)
   assure_has_basis(O)
-  if copy == Val{true}
+  if copy
     res = O.basis_ord::Vector{elem_type(O)}
     return deepcopy(res)::Vector{elem_type(O)}
   else
@@ -199,7 +199,7 @@ end
 
 Returns the $\mathbf Z$-basis of $\mathcal O$.
 """
-@inline basis(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where {T} = basis_ord(O, copy)
+@inline basis(O::NfAbsOrd; copy::Bool = true) = basis_ord(O, copy = copy)
 
 @doc Markdown.doc"""
     basis(O::NfOrd, K::AnticNumberField) -> Array{nf_elem, 1}
@@ -207,9 +207,13 @@ Returns the $\mathbf Z$-basis of $\mathcal O$.
 Returns the $\mathbf Z$-basis elements of $\mathcal O$ as elements of the
 ambient number field.
 """
-function basis(O::NfAbsOrd, K::AnticNumberField)
+function basis(O::NfAbsOrd, K::AnticNumberField; copy::Bool = true)
   nf(O) != K && error()
-  return deepcopy(O.basis_nf)
+  if copy
+    return deepcopy(O.basis_nf)
+  else
+    return O.basis_nf
+  end
 end
 
 ################################################################################
@@ -224,9 +228,9 @@ end
 Returns the basis matrix of $\mathcal O$ with respect to the power basis
 of the ambient number field.
 """
-function basis_mat(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat(O::NfAbsOrd; copy::Bool = true)
   assure_has_basis_mat(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_mat)
   else
     return O.basis_mat
@@ -238,9 +242,9 @@ end
 
 Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv(O::NfAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat_inv(O::NfAbsOrd; copy::Bool = true) where T
   assure_has_basis_mat_inv(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_mat_inv)
   else
     return O.basis_mat_inv
@@ -270,7 +274,7 @@ function show_gen(io::IO, O::NfAbsOrd)
   print(io, "Order of ")
   println(io, nf(O))
   print(io, "with Z-basis ")
-  print(io, basis(O, Val{false}))
+  print(io, basis(O, copy = false))
 end
 
 function show_maximal(io::IO, O::NfAbsOrd)
@@ -337,7 +341,7 @@ function gen_index(O::NfAbsOrd)
   if isdefined(O, :gen_index)
     return deepcopy(O.gen_index)
   else
-    O.gen_index = inv(det(basis_mat(O, Val{false})))#FlintQQ(O.basis_mat.den^degree(O), det(O.basis_mat.num))
+    O.gen_index = inv(det(basis_mat(O, copy = false)))#FlintQQ(O.basis_mat.den^degree(O), det(O.basis_mat.num))
     return deepcopy(O.gen_index)
   end
 end
@@ -1114,8 +1118,8 @@ function +(a::NfAbsOrd, b::NfAbsOrd)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
-    aB = basis_mat(a, Val{false})
-    bB = basis_mat(b, Val{false})
+    aB = basis_mat(a, copy = false)
+    bB = basis_mat(b, copy = false)
     d = degree(a)
     m = zero_matrix(FlintZZ, 2*d, d)
     for i=1:d
@@ -1333,7 +1337,7 @@ function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
   @vprint :NfOrd 1 "Computing the maximal order ...\n"
   O = MaximalOrder(O, primes)
   @vprint :NfOrd 1 "... done\n"
-  return NfOrd(K, basis_mat(O, Val{false}))
+  return NfOrd(K, basis_mat(O, copy = false))
 end
 
 @doc Markdown.doc"""
@@ -1393,7 +1397,7 @@ function _lll_gram(M::NfOrd)
   g = trace_matrix(M)
 
   q,w = lll_gram_with_transform(g)
-  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
+  On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
   On.ismaximal = M.ismaximal
   return On
 end
@@ -1403,7 +1407,7 @@ end
 > A basis for $m$ that is reduced using the LLL algorithm for the Minkowski metric.    
 """
 function lll_basis(M::NfOrd)
-  I = ideal(M, parent(basis_mat(M, Val{false}).num)(1))
+  I = ideal(M, parent(basis_mat(M, copy = false).num)(1))
   return lll_basis(I)
 end
 
@@ -1423,8 +1427,8 @@ function lll(M::NfOrd)
   prec = 100
   while true
     try
-      q,w = lll(I, parent(basis_mat(M, Val{false}).num)(0), prec = prec)
-      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, Val{false}).num, denominator(basis_mat(M, Val{false}))))
+      q,w = lll(I, parent(basis_mat(M, copy = false).num)(0), prec = prec)
+      On = NfOrd(K, FakeFmpqMat(w*basis_mat(M, copy = false).num, denominator(basis_mat(M, copy = false))))
       On.ismaximal = M.ismaximal
       return On
     catch e
@@ -1924,11 +1928,11 @@ end
 """
 function conductor(R::NfOrd, S::NfOrd)
   n = degree(R)
-  t = basis_mat(R, Val{false}) * basis_mat_inv(S, Val{false})
+  t = basis_mat(R, copy = false) * basis_mat_inv(S, copy = false)
   @assert isone(t.den)
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
   M = zero_matrix(FlintZZ, n^2, n)
-  B = basis(S, Val{false})
+  B = basis(S, copy = false)
   for k in 1:n
     a = B[k]
     N = representation_matrix(S(a.elem_in_nf, false)) * basis_mat_R_in_S_inv_num
