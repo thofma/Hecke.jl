@@ -923,10 +923,10 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(index(Zk), acom)
+  e, _ = ppio(denominator(basis_mat(Zk, Val{false})), acom)
+  #e, _ = ppio(index(Zk), acom)
   d = denominator(b.elem_in_nf)
-  d, _ = ppio(d, acom)
-  
+  d, _ = ppio(d, acom)  
   S = ResidueRing(FlintZZ, acom*d*e, cached = false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
@@ -1536,10 +1536,10 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
     t = powermod(B[i], p^j, p)
     ar = elem_in_basis(t)
     for k in 1:d
-      A[i,k] = ar[k]
+      A[k, i] = ar[k]
     end
   end
-  X = kernel(A)
+  X = right_kernel_basis(A)
   gens = elem_type(O)[O(p)]
   if length(X)==0
     I = ideal(O, p)

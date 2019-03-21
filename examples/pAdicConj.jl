@@ -375,7 +375,7 @@ function mult_syzygies_units(a::Array{FacElem{nf_elem, AnticNumberField}, 1})
       continue
     end
     lv = vcat(lu, la[i])
-    k = Hecke.left_kernel(lv)
+    k = Hecke.left_kernel_basis(lv)
     @assert length(k) < 2
     if length(k) == 0
       println("new at $i")
@@ -515,7 +515,7 @@ function mult_syzygies_units(A::Array{FacElem{nf_elem, AnticNumberField}, 1})
           end
         end
       end
-      k = Hecke.left_kernel(lv)
+      k = Hecke.left_kernel_basis(lv)
       @assert length(k) < 2
       if length(k) == 0
         println("new ")

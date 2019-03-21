@@ -414,7 +414,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   # for all a in the kernel
   R = ResidueRing(FlintZZ, C.n, cached=false)
   M = MatrixSpace(R, ngens(k), ngens(G), false)(mk.map)
-  i, l = nullspace(M)
+  i, l = right_kernel(M)
   @assert i > 0
   n = lift(l)
   e1 = degree(CF)

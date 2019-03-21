@@ -187,7 +187,7 @@ function mul!(a::fmpz_mat, b::fmpz_mat, c::fmpz)
 end                  
 
 #computes (hopefully) the hnf for vcat(a*I, m) and returns ONLY the
-#non-singular part. By definition, the result wil have full rank
+#non-singular part. By definition, the result will have full rank
 #
 #Should be rewritten to use Howell and lifting rather the big HNF
 #
@@ -625,6 +625,28 @@ function minimum(a::fmpz_mat)
   return r
 end
 
+
+################################################################################
+#
+#  Lift of matrices to overrings
+#
+################################################################################
+
+@doc Markdown.doc"""
+    lift(a::Generic.Mat{Generic.Res{fmpz}}) -> fmpz_mat
+
+> It returns a lift of the matrix to the integers.
+"""
+function lift(a::Generic.Mat{Generic.Res{fmpz}})
+  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
+  for i in 1:nrows(a)
+    for j in 1:ncols(a)
+      z[i, j] = lift(a[i, j])
+    end
+  end
+  return z
+end
+
 function lift_unsigned(a::nmod_mat)
   z = zero_matrix(FlintZZ, nrows(a), ncols(a))
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
@@ -633,65 +655,19 @@ function lift_unsigned(a::nmod_mat)
 end
 
 ################################################################################
-# possibly a slice or window in fmpz_mat?
-# the nr x nc matrix starting in (a,b)
-################################################################################
-
-function sub(A::fmpz_mat, r::UnitRange, c::UnitRange)
-  return deepcopy(view(A, r, c))
-end
-
-################################################################################
 #
-#  misc.jl : At some point this should migrate to Nemo
+#  Kernel function
 #
 ################################################################################
 
-# compute basis for the right kernel space by calling flint
-# look at flint documentation of nmod_mat_nullspace
+@doc Markdown.doc"""
+    right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
 
-function _right_kernel(x::T) where {T <: Zmodn_mat}
-  z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
-  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{T}, Ref{T}), z, x)
-  return z, n
-end
-
-# compute basis for the left kernel space
-# output is array of arrays, which span the kernel
-
-function kernel(a)
-  x = transpose(a)
+> It returns a basis for the right kernel of the matrix defined over a field
+"""
+function right_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem
   R = base_ring(a)
-  z, n = _right_kernel(x)
-  z = transpose(z)
-  T = elem_type(base_ring(a))
-  ar = typeof(Array{T}(undef, ncols(z)))[]
-  for i in 1:n 
-    t = Array{T}(undef, ncols(z))
-    for j in 1:ncols(z)
-      t[j] = R(z[i, j])
-    end
-    push!(ar,t)
-  end
-  return ar
-end
-
-function right_kernel(a::MatElem)
-  R = base_ring(a)
-  if typeof(R) <: Generic.ResRing{fmpz}
-    nn, zz = _right_kernel(a)
-  else
-    zz, nn = nullspace(a)
-  end
-  #TODO: There is some inconsistency between returning the nullity or the kernel first...
-  if typeof(nn) <: Integer
-    n = nn
-    z = zz
-  else
-    n = zz
-    z = nn
-  end
-  T = elem_type(base_ring(a))
+  n, z = nullspace(a)
   ar = typeof(Array{T}(undef, nrows(z)))[]
   for i in 1:n
     t = Array{T}(undef, nrows(z))
@@ -703,225 +679,32 @@ function right_kernel(a::MatElem)
   return ar
 end
 
-left_kernel(a::MatElem) = right_kernel(transpose(a))
+@doc Markdown.doc"""
+    left_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}}
 
-function lift(a::Generic.Mat{Generic.Res{fmpz}})
-  z = zero_matrix(FlintZZ, nrows(a), ncols(a))
-  for i in 1:nrows(a)
-    for j in 1:ncols(a)
-      z[i, j] = lift(a[i, j])
-    end
-  end
-  return z
+> It returns a basis for the left kernel of the matrix
+"""
+left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
+
+@doc Markdown.doc"""
+    right_kernel(a::gfp_mat) ->  Int, gfp_mat
+
+> It returns a tuple (n, M) where M is a matrix whose columns generate 
+> the kernel and n is the dimension of the kernel.
+"""
+function right_kernel(x::gfp_mat) 
+  z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
+  n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
+  return n, z
 end
 
-################################################################################
-#
-#  Row reduced echelon form over Z/nZ for prime n (nmod and Res{fmpz})
-#
-################################################################################
+@doc Markdown.doc"""
+    left_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
-function _rref(a::Generic.Mat{Generic.Res{fmpz}})
-  m = modulus(base_ring(a))
-  b = zero_matrix(FlintZZ, nrows(a), ncols(a))
-  for i in 1:nrows(b)
-    for j in 1:ncols(b)
-      b[i,j] = lift(a[i,j]) % m
-    end
-  end
-
-  # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  return r, parent(a, false)(b)
-end
-
-_rref(a) = rref(a)
-
-# now inplace
-function _rref!(a::Generic.Mat{Generic.Res{fmpz}})
-  m = modulus(base_ring(a))
-  b = zero_matrix(FlintZZ, nrows(a), ncols(a))
-  for i in 1:nrows(b)
-    for j in 1:ncols(b)
-      b[i,j] = lift(a[i,j]) % m
-    end
-  end
-
-  # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  for i in 1:nrows(b)
-    for j in 1:ncols(b)
-      a[i, j] = b[i, j]
-    end
-  end
-
-  return r
-end
-
-_rref!(a) = rref!(a)
-
-################################################################################
-#
-#  LU factorization over Z/nZ for n prime (nmod and Res{fmpz})
-#
-################################################################################
-
-function _lu!(P::Generic.perm, A::S) where {S <: MatElem{Generic.Res{fmpz}}}
-   m = nrows(A)
-   n = ncols(A)
-   rank = 0
-   r = 1
-   c = 1
-   R = base_ring(A)
-   t = R()
-   while r <= m && c <= n
-      if A[r, c] == 0
-         i = r + 1
-         while i <= m
-            if !iszero(A[i, c])
-               for j = 1:n
-                  A[i, j], A[r, j] = A[r, j], A[i, j]
-               end
-               P[r], P[i] = P[i], P[r]
-               break
-            end
-            i += 1
-         end
-         if i > m
-            c += 1
-            continue
-         end
-      end
-      rank += 1
-      d = -inv(A[r, c])
-      for i = r + 1:m
-         q = A[i, c]*d
-         for j = c + 1:n
-            t = mul!(t, A[r, j], q)
-            A[i, j] = addeq!(A[i, j], t)
-         end
-         A[i, c] = R()
-         A[i, rank] = -q
-      end
-      r += 1
-      c += 1
-   end
-   inv!(P)
-   return rank
-end
-
-_lu!(P::Generic.perm, A) = lu!(P, A)
-
-function _lu(A::S, P = PermGroup(nrows(A))) where {S <: MatElem{Generic.Res{fmpz}}}
-   m = nrows(A)
-   n = ncols(A)
-   P.n != m && error("Permutation does not match matrix")
-   p = P()
-   R = base_ring(A)
-   U = deepcopy(A)
-   L = similar(A, m, m)
-   rank = _lu!(p, U)
-   for i = 1:m
-      for j = 1:n
-         if i > j
-            L[i, j] = U[i, j]
-            U[i, j] = R()
-         elseif i == j
-            L[i, j] = R(1)
-         elseif j <= m
-            L[i, j] = R()
-         end
-      end
-   end
-   return rank, p, L, U
-end
-
-_lu(A, P = PermGroup(nrows(A))) = lu(A, P)
-
-function _right_kernel(a::T) where {T <: Union{Generic.Mat{Generic.Res{fmpz}}, Generic.Mat{Generic.ResF{fmpz}}}}
-  r, b = _rref(a)
-  pivots = Array{Int}(undef, r)
-  nonpivots = Array{Int}(undef, ncols(b) - r)
-  X = zero_matrix(base_ring(a),ncols(b),ncols(b) - r)
-
-  if r == 0
-    return vcat(identity_matrix(base_ring(a), ncols(b) - r), zero_matrix(base_ring(a), r, ncols(b) - r)), ncols(b)
-  elseif !((ncols(b) - r) == 0)
-    i = 1
-    j = 1
-    k = 1
-    for i in 1:r
-      while b[i,j] == 0
-        nonpivots[k] = j
-        k += 1
-        j += 1
-      end
-      pivots[i] = j
-      j += 1
-    end
-    while k <= ncols(b) - r
-      nonpivots[k] = j
-      k += 1
-      j += 1
-    end
-
-    for i in 1:ncols(b) - r
-      for j in 1:r
-        X[pivots[j],i] = - b[j,nonpivots[i]]
-      end
-      X[nonpivots[i],i] = 1
-    end
-  end
-  return X, ncols(b) - r
-end
-
-function kernel_mod(a::fmpz_mat, m::fmpz)
-  b = deepcopy(a)
-  for i in 1:nrows(b)
-    for j in 1:ncols(b)
-      b[i,j] = b[i,j] % m
-    end
-  end
-
-  # fmpz_mat_rref_mod assumes that input is reduced modulo m
-  r = ccall((:fmpz_mat_rref_mod, :libflint), Int, (Ptr{Nothing}, Ref{fmpz_mat}, Ref{fmpz}), C_NULL, b, m)
-  pivots = Array{Int}(undef, r)
-  nonpivots = Array{Int}(undef, ncols(b) - r)
-  X = zero_matrixSpace(FlintZZ,ncols(b),ncols(b))
-
-  if r == 0
-    return identity_matrix(FlintZZ, ncols(b))
-  elseif !((ncols(b) - r) == 0)
-    i = 1
-    j = 1
-    k = 1
-    for i in 1:r
-      while b[i,j] == 0
-        nonpivots[k] = j
-        k += 1
-        j += 1
-      end
-      pivots[i] = j
-      j += 1
-    end
-    while k <= ncols(b) - r
-      nonpivots[k] = j
-      k += 1
-      j += 1
-    end
-
-    for i in 1:ncols(b) - r
-      for j in 1:r
-        X[pivots[j],i] = - FlintZZ(b[j,nonpivots[i]])
-      end
-      X[nonpivots[i],i] = FlintZZ(1)
-    end
-  end
-  return X, r
-end
-
-# Another kernel function
-function _kernel(x::fmpz_mat)
+> It returns a tuple (n, M) where M is a matrix whose rows generate 
+> the kernel of M and n is the rank of the kernel.
+"""
+function left_kernel(x::fmpz_mat)
   H, U = hnf_with_transform(x)
   i = 1
   for outer i in 1:nrows(H)
@@ -929,7 +712,58 @@ function _kernel(x::fmpz_mat)
       break
     end
   end
-  return sub(U, i:nrows(U), 1:ncols(U))
+  if iszero_row(H, i)
+    return nrows(U)-i+1, view(U, i:nrows(U), 1:ncols(U))
+  else
+    return 0, zero_matrix(FlintZZ, 0, ncols(U))
+  end
+end
+
+@doc Markdown.doc"""
+    right_kernel(a::fmpz_mat) -> Int, fmpz_mat
+
+> It returns a tuple (n, M) where M is a matrix whose rows generate 
+> the kernel of M and n is the rank of the kernel.
+"""
+function right_kernel(x::fmpz_mat)
+  n, M = left_kernel(transpose(x))
+  return n, transpose(M)
+end
+
+@doc Markdown.doc"""
+    right_kernel(a::nmod_mat) -> Int, nmod_mat
+
+> It returns a tuple (n, M) where M is a matrix whose rows generate 
+> the kernel of M and n is the rank of the kernel.
+"""
+function right_kernel(M::nmod_mat)
+  R = base_ring(M)
+  if isprime(fmpz(modulus(R)))
+    k = zero_matrix(R, ncols(M), ncols(M))
+    n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
+    return (n, k)
+  end
+
+  N = hcat(M', identity_matrix(R, ncols(M)))
+  ex = 0
+  if nrows(N) < ncols(N)
+    ex = ncols(N) - nrows(N)
+    N = vcat(N, zero_matrix(R, ex, ncols(N)))
+  end
+  H = howell_form(N)
+  nr = 1
+  while nr <= nrows(H) && !iszero_row(H, nr)
+    nr += 1
+  end
+  nr -= 1
+  h = sub(H, 1:nr, 1:nrows(M))
+  for i=1:nrows(h)
+    if iszero_row(h, i)
+      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+      return nrows(k), k'
+    end
+  end
+  return 0, zero_matrix(R,nrows(M),0)
 end
 
 ################################################################################
@@ -1047,6 +881,11 @@ function shift!(g::fmpz_mat, l::Int)
   return g
 end
 
+################################################################################
+#
+#  Reduce the entries of a matrix modulo p
+#
+################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -1073,6 +912,12 @@ function mod(M::fmpz_mat, p::fmpz)
   mod!(N, p)
   return N
 end
+
+################################################################################
+#
+#  Concatenation of matrices
+#
+################################################################################
 
 @doc Markdown.doc"""
 ***
@@ -1130,6 +975,84 @@ function vcat(A::Array{nmod_mat, 1})
     s += nrows(i)
   end
   return M
+end
+
+function Base.vcat(A::Nemo.MatElem...)
+  r = nrows(A[1])
+  c = ncols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert ncols(A[i]) == c
+    @assert base_ring(A[i]) == R
+    r += nrows(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:nrows(A[i])
+      X[o, :] = A[i][j, :]
+      o += 1
+    end
+  end
+  return X
+end
+
+
+function Base.hcat(A::Nemo.MatElem...)
+  r = nrows(A[1])
+  c = ncols(A[1])
+  R = base_ring(A[1])
+  for i=2:length(A)
+    @assert nrows(A[i]) == r
+    @assert base_ring(A[i]) == R
+    c += ncols(A[i])
+  end
+  X = zero_matrix(R, r, c)
+  o = 1
+  for i=1:length(A)
+    for j=1:ncols(A[i])
+      X[:, o] = A[i][:, j]
+      o += 1
+    end
+  end
+  return X
+end
+
+
+function Base.cat(A::Nemo.MatElem...;dims) 
+  @assert dims == (1,2) || isa(dims, Int)
+
+  if isa(dims, Int) 
+    if dims == 1
+      return hcat(A...)
+    elseif dims == 2
+      return vcat(A...)
+    else
+      error("dims must be 1, 2, or (1,2)")
+    end
+  end
+
+  z = [similar(x) for x = A]
+  X = z[1]
+  for i=1:length(A)
+    if i==1
+      X = hcat(A[1], z[2:end]...)
+    else
+      X = vcat(X, hcat(z[1:i-1]..., A[i], z[i+1:end]...))
+    end
+  end
+  return X
+end
+
+function Base.hvcat(rows::Tuple{Vararg{Int}}, A::Nemo.MatElem...)
+  B = hcat([A[i] for i=1:rows[1]]...)
+  o = rows[1]
+  for j=2:length(rows)
+    C = hcat([A[i+o] for i=1:rows[j]]...)
+    o += rows[j]
+    B = vcat(B, C)
+  end
+  return B
 end
 
 ################################################################################
@@ -1238,47 +1161,6 @@ function snf_with_transform(A::fmpz_mat, l::Bool = true, r::Bool = true)
     # last two are dummy
     return S, S, S
   end
-end
-
-function nullspace(M::nmod_mat)
-  R = base_ring(M)
-  if isprime(fmpz(modulus(R)))
-    k = zero_matrix(R, ncols(M), ncols(M))
-    n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
-    return (n, k)
-  end
-
-  N = hcat(M', identity_matrix(R, ncols(M)))
-  ex = 0
-  if nrows(N) < ncols(N)
-    ex = ncols(N) - nrows(N)
-    N = vcat(N, zero_matrix(R, ex, ncols(N)))
-  end
-  H = howell_form(N)
-  nr = 1
-  while nr <= nrows(H) && !iszero_row(H, nr)
-    nr += 1
-  end
-  nr -= 1
-  h = sub(H, 1:nr, 1:nrows(M))
-  for i=1:nrows(h)
-    if iszero_row(h, i)
-      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
-      return nrows(k), k'
-    end
-  end
-  return 0, zero_matrix(R,nrows(M),0)
-end
-
-function lift(M::FmpzMatSpace, Mp::Union{nmod_mat,Generic.Mat{Generic.Res{fmpz}}})
-  @assert M.cols == ncols(Mp) && M.rows == nrows(Mp)
-  N = M()
-  for i=1:M.rows
-    for j=1:M.cols
-      N[i,j] = lift(Mp[i,j])
-    end
-  end
-  return N
 end
 
 ################################################################################
@@ -1483,81 +1365,6 @@ end
 getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
 getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 
-function Base.hcat(A::Nemo.MatElem...)
-  r = nrows(A[1])
-  c = ncols(A[1])
-  R = base_ring(A[1])
-  for i=2:length(A)
-    @assert nrows(A[i]) == r
-    @assert base_ring(A[i]) == R
-    c += ncols(A[i])
-  end
-  X = zero_matrix(R, r, c)
-  o = 1
-  for i=1:length(A)
-    for j=1:ncols(A[i])
-      X[:, o] = A[i][:, j]
-      o += 1
-    end
-  end
-  return X
-end
-
-function Base.vcat(A::Nemo.MatElem...)
-  r = nrows(A[1])
-  c = ncols(A[1])
-  R = base_ring(A[1])
-  for i=2:length(A)
-    @assert ncols(A[i]) == c
-    @assert base_ring(A[i]) == R
-    r += nrows(A[i])
-  end
-  X = zero_matrix(R, r, c)
-  o = 1
-  for i=1:length(A)
-    for j=1:nrows(A[i])
-      X[o, :] = A[i][j, :]
-      o += 1
-    end
-  end
-  return X
-end
-
-function Base.cat(A::Nemo.MatElem...;dims) 
-  @assert dims == (1,2) || isa(dims, Int)
-
-  if isa(dims, Int) 
-    if dims == 1
-      return hcat(A...)
-    elseif dims == 2
-      return vcat(A...)
-    else
-      error("dims must be 1, 2, or (1,2)")
-    end
-  end
-
-  z = [similar(x) for x = A]
-  X = z[1]
-  for i=1:length(A)
-    if i==1
-      X = hcat(A[1], z[2:end]...)
-    else
-      X = vcat(X, hcat(z[1:i-1]..., A[i], z[i+1:end]...))
-    end
-  end
-  return X
-end
-
-function Base.hvcat(rows::Tuple{Vararg{Int}}, A::Nemo.MatElem...)
-  B = hcat([A[i] for i=1:rows[1]]...)
-  o = rows[1]
-  for j=2:length(rows)
-    C = hcat([A[i+o] for i=1:rows[j]]...)
-    o += rows[j]
-    B = vcat(B, C)
-  end
-  return B
-end
 
 @doc Markdown.doc"""
     reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
@@ -1840,6 +1647,12 @@ function to_array(M::fmpq_mat)
   end
   return A
 end
+
+################################################################################
+#
+#  Minpoly and Charpoly
+#
+################################################################################
 
 function Nemo.minpoly(M::MatElem)
   k = base_ring(M)

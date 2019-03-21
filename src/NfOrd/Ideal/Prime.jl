@@ -441,7 +441,7 @@ function anti_uniformizer(P::NfOrdIdl)
   M = representation_matrix(uniformizer(P))
   #Mp = MatrixSpace(ResidueField(FlintZZ, p, cached=false), nrows(M), ncols(M), false)(M)
   Mp = matrix(GF(p, cached = false), M)
-  K = kernel(Mp)
+  K = left_kernel_basis(Mp)
   @assert length(K) > 0
   P.anti_uniformizer = elem_in_nf(order(P)(_lift(K[1])))//p
   return P.anti_uniformizer
@@ -1329,6 +1329,7 @@ function prime_ideals_over(O::NfOrd, p::fmpz)
   p_critical_primes = Vector{ideal_type(O)}()
   for (P, e) in lp
     c = contract(P, O)
+    c.is_prime = 1
     if !(c in p_critical_primes)
       push!(p_critical_primes, c)
     end
@@ -1351,6 +1352,7 @@ function prime_ideals_over(O::NfOrd, P::NfOrdIdl)
     c = contract(Q, O1)
     if c == P
       c1 = contract(Q, O)
+      c1.is_prime = 1
       if !(c1 in p_critical_primes)
         push!(p_critical_primes, c1)
       end 

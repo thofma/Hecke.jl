@@ -174,7 +174,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
       B[i, j] = Fp(_b[j])
     end
   end
-  r = _rref!(B)
+  r = rref!(B)
   r == 0 && error("Cannot construct zero dimensional algebra.")
   b = Vector{fmpz}(undef, n)
   bbasis = Vector{elem_type(O)}(undef, r)
@@ -185,7 +185,7 @@ function AlgAss(O::Union{NfAbsOrd, AlgAssAbsOrd}, I::Union{NfAbsOrdIdl, AlgAssAb
     bbasis[i] = O(b)
   end
 
-  _, perm, L, U = _lu(transpose(B))
+  _, perm, L, U = lu(transpose(B))
 
   mult_table = Array{elem_type(Fp), 3}(undef, r, r, r)
 
@@ -512,7 +512,7 @@ end
 function _build_subalgebra_mult_table!(A::AlgAss{T}, B::MatElem{T}, return_LU::Type{Val{S}} = Val{false}) where { T, S }
   K = base_ring(A)
   n = dim(A)
-  r = _rref!(B)
+  r = rref!(B)
   if r == 0
     if return_LU == Val{true}
       return Array{elem_type(K), 3}(undef, 0, 0, 0), PermGroup(ncols(B))(), zero_matrix(K, 0, 0), zero_matrix(K, 0, 0)
@@ -1405,7 +1405,7 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
     M4 = representation_matrix(bb - one(eAe), :right)
 
     M = hcat(M1, M2, M3, M4)
-    xx = eAe(left_kernel(M)[1])
+    xx = eAe(left_kernel_basis(M)[1])
     x = m1(m2(xx))
 
     new_basis[i] = x # this is e_1i
