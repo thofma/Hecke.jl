@@ -1,3 +1,22 @@
+# additional constructors
+
+function FlintFiniteField(p::Integer; cached::Bool = true)
+  @assert isprime(p)
+  return GF(p, cached=cached)
+end
+
+function FlintFiniteField(p::fmpz; cached::Bool = true)
+  @assert isprime(p)
+  return GF(p, cached=cached)
+end
+
+function FlintFiniteField(p::Int, k::Int; cached::Bool = true)
+  @assert isprime(p)
+  return FlintFiniteField(p, k, "o", cached = cached)
+end
+
+GF(p::Int, k::Int, s::AbstractString="o"; cached::Bool = true) = FlintFiniteField(p, k, s, cached = cached)
+
 ##
 ## rand for Flint-Finite fields
 ##
@@ -219,6 +238,38 @@ function has_primitive_root_1(K::Nemo.FqNmodFiniteField, m::Int)
     end
     return true, g^div(size(K)-1, m)
   end  
+end
+
+
+## Minpoly/ Charpoly
+
+function minpoly(a::fq_nmod)
+  return minpoly(PolynomialRing(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+end
+
+function minpoly(Rx::GFPPolyRing, a::fq_nmod)
+  c = [a]
+  fa = frobenius(a)
+  while !(fa in c)
+    push!(c, fa)
+    fa = frobenius(fa)
+  end
+  St = PolynomialRing(parent(a), cached = false)[1]
+  f = prod([gen(St) - x for x = c])
+  g = Rx()
+  for i = 0:degree(f)
+    setcoeff!(g, i, coeff(coeff(f, i), 0))
+  end
+  return g
+end
+
+function charpoly(a::fq_nmod)
+  return charpoly(PolynomialRing(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
+end
+
+function charpoly(Rx::GFPPolyRing, a::fq_nmod)
+  g = minpoly(Rx, a)
+  return g^div(degree(parent(a)), degree(g))
 end
 
 

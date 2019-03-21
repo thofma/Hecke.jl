@@ -1401,56 +1401,9 @@ function _fac_and_lift(f::fmpq_mpoly, p, degree_limit, lower_limit)
   return lifted_fac
 end
 
-function roots(f::fmpz_poly, K::FqNmodFiniteField; max_roots::Int = degree(f))
-  Kx = PolynomialRing(K, cached = false)[1]
-  ff = Kx()
-  for i=0:degree(f)
-    setcoeff!(ff, i, coeff(f, i))
-  end
-  return roots(ff)
-end
-
-
-function roots(f::gfp_poly, K::FqNmodFiniteField; max_roots::Int = degree(f))
-  @assert characteristic(K) == characteristic(base_ring(f))
-  Kx = PolynomialRing(K, cached = false)[1]
-  ff = Kx()
-  for i=0:degree(f)
-    setcoeff!(ff, i, lift(coeff(f, i)))
-  end
-  return roots(ff)
-end
-
-function minpoly(a::fq_nmod)
-  return minpoly(PolynomialRing(GF(Int(characteristic(parent(a))), cached = false), cached = false)[1], a)
-end
-
-function minpoly(Rx::GFPPolyRing, a::fq_nmod)
-  c = [a]
-  fa = frobenius(a)
-  while !(fa in c)
-    push!(c, fa)
-    fa = frobenius(fa)
-  end
-  St = PolynomialRing(parent(a), cached = false)[1]
-  f = prod([gen(St) - x for x = c])
-  g = Rx()
-  for i = 0:degree(f)
-    setcoeff!(g, i, coeff(coeff(f, i), 0))
-  end
-  return g
-end
-
 function is_pairwise_coprime(A::Array{T, 1}) where {T <: PolyElem}
   return issquarefree(prod(A))
 end
-
-function FlintFiniteField(p::Int, k::Int)
-  @assert isprime(p)
-  return FlintFiniteField(p, k, "o")
-end
-
-GF(p::Int, k::Int) = FlintFiniteField(p, k)
 
 function _lift_p2(q, f::fmpz_poly, a::fq_nmod)
   Rx = base_ring(q)

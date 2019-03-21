@@ -18,16 +18,6 @@ function PolynomialRing(R::FlintIntegerRing, a::Symbol; cached::Bool = true)
   return Zx, gen(Zx)
 end
 
-function FlintFiniteField(p::Integer)
-  @assert isprime(p)
-  return GF(p, cached=false)
-end
-
-function FlintFiniteField(p::fmpz)
-  @assert isprime(p)
-  return GF(p, cached=false)
-end
-
 function fmpz(a::Generic.Res{Nemo.fmpz})
   return a.data
 end
@@ -1973,6 +1963,25 @@ function roots(f::fmpq_poly, R::Nemo.NmodRing)
   return roots(fpp)
 end
 
+function roots(f::fmpz_poly, K::FqNmodFiniteField; max_roots::Int = degree(f))
+  Kx = PolynomialRing(K, cached = false)[1]
+  ff = Kx()
+  for i=0:degree(f)
+    setcoeff!(ff, i, coeff(f, i))
+  end
+  return roots(ff)
+end
+
+function roots(f::gfp_poly, K::FqNmodFiniteField; max_roots::Int = degree(f))
+  @assert characteristic(K) == characteristic(base_ring(f))
+  Kx = PolynomialRing(K, cached = false)[1]
+  ff = Kx()
+  for i=0:degree(f)
+    setcoeff!(ff, i, lift(coeff(f, i)))
+  end
+  return roots(ff)
+end
+
 function ispower(a::Nemo.fq_nmod, m::Int)
   s = size(parent(a))
   if gcd(s-1, m) == 1
@@ -2339,3 +2348,4 @@ function roots(f::fmpz_poly)
 end
 
 =#
+
