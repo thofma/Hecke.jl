@@ -1,3 +1,4 @@
+#=
 mutable struct fmpr
   _man::Int
   _exp::Int
@@ -35,6 +36,7 @@ function fmpq(x::fmpr)
   ccall((:fmpr_get_fmpq, :libarb), Nothing, (Ref{fmpq}, Ref{fmpr}), z, x)
   return z
 end
+=#
 
 mutable struct cfrac
   coeff::Ptr{fmpz}
