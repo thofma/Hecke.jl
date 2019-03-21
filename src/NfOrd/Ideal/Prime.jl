@@ -287,7 +287,7 @@ function prime_decomposition(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::In
           return z
         end
       end
-      @assert O.ismaximal ==1 || p in O.primesofmaximality
+      @assert O.ismaximal == 1 || p in O.primesofmaximality
       lp = prime_decomposition_polygons(O, fmpz(p), degree_limit, lower_limit)
       if degree_limit == degree(O) && lower_limit == 0
         O.index_div[fmpz(p)] = lp
@@ -757,7 +757,7 @@ function isprime(A::NfAbsOrdIdl)
   OK = order(A)
   
   #maximal order case
-  if OK.ismaximal == 1 || iszero(mod(discriminant(OK), p))# || p in OK.primes_of_maximality
+  if OK.ismaximal == 1 || !iszero(mod(discriminant(OK), p)) || p in OK.primesofmaximality
     lp = prime_decomposition(OK, p)
     for (P, e) in lp
       if norm(A) != norm(P)
