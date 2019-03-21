@@ -947,7 +947,7 @@ function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
     f = dim(B)
     idem = BtoA(B[1]) # Assumes that B == idem*A
     M = representation_matrix(idem)
-    ker = left_kernel(M)
+    ker = left_kernel_basis(M)
     N = basis_pmat(Ip)
     for i = 1:length(ker)
       b = elem_in_basis(AtoO(A(ker[i])))
@@ -1332,7 +1332,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
       Mp[i, j] = mmF(M[i, j])
     end
   end
-  K = left_kernel(Mp)
+  K = left_kernel_basis(Mp)
   @assert length(K) > 0
   x = nf(O)()
   for i = 1:degree(O)

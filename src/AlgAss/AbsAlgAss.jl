@@ -172,7 +172,7 @@ function kernel_of_frobenius(A::AbsAlgAss)
     end
   end
 
-  V = right_kernel(B)
+  V = right_kernel_basis(B)
   return [ A(v) for v in V ]
 end
 
@@ -581,7 +581,7 @@ function gens(A::AbsAlgAss)
           for k in 1:d
             B[d, k] = c.coeffs[k]
           end
-          new_dim = _rref!(B)
+          new_dim = rref!(B)
           if new_dim == d
             return cur_gen
           elseif new_dim > cur_dim

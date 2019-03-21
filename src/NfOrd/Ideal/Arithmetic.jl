@@ -71,7 +71,7 @@ end
 function intersect(x::NfOrdIdl, y::NfOrdIdl)
   d = degree(order(x))
   H = vcat(basis_mat(x), basis_mat(y))
-  K = _kernel(H)
+  K = left_kernel(H)[2]
   g = lcm(minimum(x),minimum(y))
   return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, Val{false}), g, :lowerleft), false, true)
 end
@@ -772,12 +772,16 @@ function contract(A::NfOrdIdl, O::NfOrd)
   M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
   @assert M.den == 1
   H = vcat(basis_mat(A, Val{false}), M.num)
-  K = _kernel(H)
-  M = sub(K, 1:d, 1:d)*basis_mat(A, Val{false})
+  K = left_kernel(H)[2]
+  M = view(K, 1:d, 1:d)*basis_mat(A, Val{false})
   M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
   @assert M.den == 1
   M = _hnf_modular_eldiv(M.num, minimum(A), :lowerleft)
-  return ideal(O, M, false, true)
+  res = ideal(O, M, false, true)
+  if A.is_prime == 1
+    res.is_prime = 1
+  end
+  return res
 end
 
 intersect(O::NfOrd, A::NfOrdIdl) = contract(A, O)

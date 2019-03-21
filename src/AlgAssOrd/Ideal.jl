@@ -164,7 +164,7 @@ end
 function intersect(a::AlgAssAbsOrdIdl{S, T}, b::AlgAssAbsOrdIdl{S, T}) where {S, T}
   d = degree(order(a))
   H = vcat(basis_mat(a), basis_mat(b))
-  K = _kernel(H)
+  K = left_kernel(H)[2]
   return ideal(order(a), _hnf(view(K, 1:d, 1:d)*basis_mat(a, Val{false}), :lowerleft), true)
 end
 
@@ -277,7 +277,7 @@ function contract(A::AlgAssAbsOrdIdl, O::AlgAssAbsOrd)
   M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
   @assert M.den == 1
   H = vcat(basis_mat(A), M.num)
-  K = _kernel(H)
+  K = left_kernel(H)[2]
   M = sub(K, 1:d, 1:d)*basis_mat(A, Val{false})
   M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
   @assert M.den == 1

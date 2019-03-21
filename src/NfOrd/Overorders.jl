@@ -1070,7 +1070,7 @@ function intersect(x::NfOrd, y::NfOrd)
   d = degree(x)
   g = lcm(denominator(basis_mat(x)), denominator(basis_mat(y)))
   H = vcat(divexact(g * basis_mat(x).num, basis_mat(x).den), divexact(g * basis_mat(y).num, basis_mat(y).den))
-  K = _kernel(H)
+  K = left_kernel(H)[2]
   return Order(nf(x), FakeFmpqMat(_hnf(sub(K, 1:d, 1:d)*divexact(g * basis_mat(x).num, basis_mat(x).den), :lowerleft), g))
 end
 

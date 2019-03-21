@@ -472,7 +472,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1::NfOrdIdl,
     f = dim(B)
     idem = BtoA(one(B)) # Assumes that B == idem*A
     M = representation_matrix(idem)
-    ker = left_kernel(M)
+    ker = left_kernel_basis(M)
     N = basis_mat(Ip1, Val{false})
     for s = 1:length(ker)
       b = elem_in_basis(AtoO(A(ker[s])))
