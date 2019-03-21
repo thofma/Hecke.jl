@@ -299,18 +299,42 @@ function ishnf(x::fmpz_mat, shape::Symbol)
   end
 end
 
+################################################################################
+#
+#  Inversion of rows and columns
+#
+################################################################################
+
+@doc Markdown.doc"""
+    invert_rows(x::fmpz_mat) -> fmpz_mat
+
+> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> rows of $x$.
+"""
 function invert_rows(x::fmpz_mat)
   y = deepcopy(x)
   invert_rows!(y)
   return y
 end
 
+@doc Markdown.doc"""
+    invert_columns(x::fmpz_mat) -> fmpz_mat
+
+> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> columns of $x$.
+"""
 function invert_cols(x::fmpz_mat)
   y = deepcopy(x)
   invert_cols!(y)
   return y
 end
 
+@doc Markdown.doc"""
+    invert_rows!(x::fmpz_mat) -> fmpz_mat
+
+> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> rows of $x$. The operations are done inplace.
+"""
 function invert_rows!(x::fmpz_mat)
   r = nrows(x)
   c = ncols(x)
@@ -338,20 +362,25 @@ function invert_rows!(x::fmpz_mat)
       end
     end
   end
-  nothing
+  return x
 end
 
 function _swaprows!(x::fmpz_mat, i::Int, j::Int)
   ccall((:_fmpz_mat_swap_rows, :libflint), Nothing, (Ref{fmpz_mat}, Int, Int), x, i-1, j-1)
-  nothing
+  return x
 end
 
 function _swaprows!(x::nmod_mat, i::Int, j::Int)
   ccall((:_nmod_mat_swap_rows, :libflint), Nothing, (Ref{nmod_mat}, Int, Int), x, i-1, j-1)
-  nothing
+  return x
 end
   
+@doc Markdown.doc"""
+    invert_rows!(x::nmod_mat) -> nmod_mat
 
+> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> rows of $x$. The operations are done inplace.
+"""
 function invert_rows!(x::nmod_mat)
   r = nrows(x)
   c = ncols(x)
@@ -381,9 +410,15 @@ function invert_rows!(x::nmod_mat)
       end
     end
   end
-  nothing
+  x
 end
 
+@doc Markdown.doc"""
+    invert_cols!(x::nmod_mat) -> nmod_mat
+
+> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> columns of $x$. The operations are done inplace.
+"""
 function invert_cols!(x::nmod_mat)
   r = nrows(x)
   c = ncols(x)
@@ -413,9 +448,15 @@ function invert_cols!(x::nmod_mat)
       end
     end
   end
-  nothing
+  return x
 end
 
+@doc Markdown.doc"""
+    invert_cols!(x::fmpz_mat) -> fmpz_mat
+
+> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> columns of $x$. The operations are done inplace.
+"""
 function invert_cols!(x::fmpz_mat)
   r = nrows(x)
   c = ncols(x)
@@ -443,15 +484,27 @@ function invert_cols!(x::fmpz_mat)
       end
     end
   end
-  nothing
+  return x
 end
 
+@doc Markdown.doc"""
+    invert_cols(x::Mat) -> Mat
+
+> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> columns of $x$.
+"""
 function invert_cols(x::Generic.Mat)
   z = deepcopy(x)
   invert_cols!(z)
   return z
 end
 
+@doc Markdown.doc"""
+    invert_cols!(x::Mat) -> Mat
+
+> Swap columns $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> columns of $x$. The operations are done inplace.
+"""
 function invert_cols!(x::Generic.Mat)
   r = nrows(x)
   c = ncols(x)
@@ -476,15 +529,27 @@ function invert_cols!(x::Generic.Mat)
       end
     end
   end
-  nothing
+  return x
 end
 
+@doc Markdown.doc"""
+    invert_rows(x::Mat) -> Mat
+
+> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> rows of $x$.
+"""
 function invert_rows(x::Generic.Mat)
   z = deepcopy(x)
   invert_rows(z)
   return z
 end
 
+@doc Markdown.doc"""
+    invert_rows!(x::Mat) -> Mat
+
+> Swap rows $i$ and $n -i$ for $1 \leq i \leq n/2$, where $n$ is the number of
+> rows of $x$. The operations are done inplace.
+"""
 function invert_rows!(x::Generic.Mat)
   r = nrows(x)
   c = ncols(x)
@@ -508,8 +573,9 @@ function invert_rows!(x::Generic.Mat)
       end
     end
   end
-  nothing
+  return x
 end
+
 ################################################################################
 # 
 ################################################################################
