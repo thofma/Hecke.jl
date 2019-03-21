@@ -1,4 +1,4 @@
-export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_mod
+export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_basis
 
 import Nemo.matrix
 
@@ -659,6 +659,21 @@ end
 #  Kernel function
 #
 ################################################################################
+@doc Markdown.doc"""
+    kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
+
+> It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
+> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+"""
+function kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
+  if side == :right
+    return right_kernel_basis(A)
+  elseif side == :left
+    return left_kernel_basis(A)
+  else
+    error("Unsupported argument: :$side for side: Must be :left or :right")
+  end
+end
 
 @doc Markdown.doc"""
     right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
@@ -686,6 +701,16 @@ end
 """
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
+function kernel(A::MatElem, side::Symbol = :right)
+  if side == :right
+    return right_kernel(A)
+  elseif side == :left
+    return left_kernel(A)
+  else
+    error("Unsupported argument: :$side for side: Must be :left or :right")
+  end
+end
+
 @doc Markdown.doc"""
     right_kernel(a::gfp_mat) ->  Int, gfp_mat
 
@@ -696,6 +721,11 @@ function right_kernel(x::gfp_mat)
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
   return n, z
+end
+
+function left_kernel(x::gfp_mat)
+   n, M = right_kernel(transpose(x))
+   return n, transpose(M)
 end
 
 @doc Markdown.doc"""
@@ -764,6 +794,11 @@ function right_kernel(M::nmod_mat)
     end
   end
   return 0, zero_matrix(R,nrows(M),0)
+end
+
+function left_kernel(a::nmod_mat)
+  n, M = right_kernel(transpose(a))
+  return n, transpose(M)
 end
 
 ################################################################################
