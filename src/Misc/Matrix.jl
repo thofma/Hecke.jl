@@ -253,11 +253,11 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
                   (Ref{fmpz_mat}, Ref{fmpz}), x, d)
      return x
    elseif shape == :lowerleft
-     _swapcols!(x)
+     invert_cols!(x)
      ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
                  (Ref{fmpz_mat}, Ref{fmpz}), x, d)
-     _swapcols!(x)
-     _swaprows!(x)
+     invert_cols!(x)
+     invert_rows!(x)
      return x
    else
      error("shape $shape is not supported")
