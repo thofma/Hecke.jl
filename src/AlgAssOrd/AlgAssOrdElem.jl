@@ -273,22 +273,17 @@ end
 #
 ################################################################################
 
-function representation_matrix(x::AlgAssAbsOrdElem)
+function representation_matrix(x::AlgAssAbsOrdElem, action::Symbol = :left)
 
   O = parent(x)
-  M = O.basis_mat
-  if isdefined(O, :basis_mat_inv)
-    M1 = O.basis_mat_inv
-  else
-    M1 = inv(O.basis_mat)
-    O.basis_mat_inv = M1
-  end
-  assure_elem_in_algebra(x)
-  B = FakeFmpqMat(representation_matrix(x.elem_in_algebra))
-  mul!(B, M, B)
-  mul!(B, B, M1)
+  M = basis_mat(O, copy = false)
+  M1 = basis_mat_inv(O, copy = false)
 
-  @assert B.den==1
+  B = FakeFmpqMat(representation_matrix(elem_in_algebra(x, copy = false), action))
+  B = mul!(B, M, B)
+  B = mul!(B, B, M1)
+
+  @assert B.den == 1
   return B.num
 end
 

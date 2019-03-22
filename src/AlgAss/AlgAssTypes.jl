@@ -196,7 +196,7 @@ mutable struct AbsAlgAssIdl{S, T, U}
 
   isleft::Int                      # 0 Not known
                                    # 1 Known to be a left ideal
-                                   # 2 Known to not be a right ideal
+                                   # 2 Known not to be a left ideal
   isright::Int                     # as for isleft
 
   iszero::Int
@@ -331,11 +331,18 @@ mutable struct AlgAssAbsOrdIdl{S, T}
   basis_mat_inv::FakeFmpqMat
   gens::Vector{AlgAssAbsOrdElem{S, T}}    # Generators of the ideal
 
+  isleft::Int                      # 0 Not known
+                                   # 1 Known to be a left ideal
+                                   # 2 Known not to be a left ideal
+  isright::Int                     # as for isleft
+
   iszero::Int                             # 0: don't know, 1: known to be zero, 2: known to be not zero
 
   function AlgAssAbsOrdIdl{S, T}(O::AlgAssAbsOrd{S, T}) where {S, T}
     r = new{S, T}()
     r.order = O
+    r.isleft = 0
+    r.isright = 0
     r.iszero = 0
     return r
   end
@@ -349,6 +356,8 @@ mutable struct AlgAssAbsOrdIdl{S, T}
       r.basis[i] = elem_from_mat_row(O, M, i)
     end
     r.basis_mat = M
+    r.isleft = 0
+    r.isright = 0
     r.iszero = 0
     return r
   end
