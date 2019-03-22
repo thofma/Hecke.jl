@@ -203,6 +203,8 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
 
   offset = mA.offset
 
+  subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
+
   for s in subs
     T = image(s[2], false)
     G = domain(T[2])
@@ -258,14 +260,20 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powerin
   for i in 1:(d - 1)
     autos[i] = induce(mA, x -> M(elem_in_nf(B[i + 1]))*x)
   end
+  
 
   d = degree(O)
   K = nf(O)
 
   potential_basis = Vector{nf_elem}(undef, d)
 
-  subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
-
+  filter!( x -> !iszero(x.map), autos)
+  if iszero(length(autos))
+    subs = subgroups(A, subtype = [Int(p)], fun = (G, z) -> sub(G, z, false))
+  else
+    subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
+  end
+  
   for i in 1:mA.offset
     potential_basis[i] = mA.bottom_snf_basis[i]
   end
@@ -323,19 +331,25 @@ function _minimal_poverorders2(O::NfOrd, P::NfOrdIdl, excess = Int[])
   end
   autos[d] = induce(mA, x -> x^2)
 
-  R = GF(2)
-  W = MatrixSpace(R, ngens(A), ngens(A), false)
-  V = ModAlgAss([W(l.map) for l in autos])
+
+  filter!( x -> !iszero(x.map), autos)
+  if iszero(length(autos))
+    subs = subgroups(A, subtype = [2], fun = (G, z) -> sub(G, z, false))
+  else
+    R = GF(2)
+    W = MatrixSpace(R, ngens(A), ngens(A), false)
+    V = ModAlgAss([W(l.map) for l in autos])
   
-  subm = minimal_submodules(V, f)
-  subs = (sub(A, lift(x), false) for x in subm)
+    subm = minimal_submodules(V, f)
+    subs = (sub(A, lift(x), false) for x in subm)
+  end
+  
   potential_basis = Vector{nf_elem}(undef, d)
 
   offset = mA.offset
   for i in 1:offset
     potential_basis[i] = mA.bottom_snf_basis[i]
   end
-
 
   for s in subs
     T = image(s[2], false)
