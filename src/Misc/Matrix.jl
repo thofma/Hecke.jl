@@ -1,4 +1,4 @@
-export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_mod
+export iszero_row, modular_hnf, howell_form, _hnf_modular, kernel_basis
 
 import Nemo.matrix
 
@@ -253,11 +253,11 @@ function hnf_modular_eldiv!(x::fmpz_mat, d::fmpz, shape::Symbol = :upperright)
                   (Ref{fmpz_mat}, Ref{fmpz}), x, d)
      return x
    elseif shape == :lowerleft
-     _swapcols!(x)
+     invert_cols!(x)
      ccall((:fmpz_mat_hnf_modular_eldiv, :libflint), Nothing,
                  (Ref{fmpz_mat}, Ref{fmpz}), x, d)
-     _swapcols!(x)
-     _swaprows!(x)
+     invert_cols!(x)
+     invert_rows!(x)
      return x
    else
      error("shape $shape is not supported")
@@ -659,6 +659,21 @@ end
 #  Kernel function
 #
 ################################################################################
+@doc Markdown.doc"""
+    kernel_basis(a::MatElem{T}, side:: Symbol) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
+
+> It returns a basis for the kernel of the matrix defined over a field. If side is $:right$ or not
+> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+"""
+function kernel_basis(A::MatElem{T}, side::Symbol = :right) where T<: AbstractAlgebra.FieldElem
+  if side == :right
+    return right_kernel_basis(A)
+  elseif side == :left
+    return left_kernel_basis(A)
+  else
+    error("Unsupported argument: :$side for side: Must be :left or :right")
+  end
+end
 
 @doc Markdown.doc"""
     right_kernel_basis(a::MatElem{T}) -> Vector{Vector{T}} where {T <: AbstractAlgebra.FieldElem}
@@ -686,6 +701,16 @@ end
 """
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
+function kernel(A::MatElem, side::Symbol = :right)
+  if side == :right
+    return right_kernel(A)
+  elseif side == :left
+    return left_kernel(A)
+  else
+    error("Unsupported argument: :$side for side: Must be :left or :right")
+  end
+end
+
 @doc Markdown.doc"""
     right_kernel(a::gfp_mat) ->  Int, gfp_mat
 
@@ -696,6 +721,11 @@ function right_kernel(x::gfp_mat)
   z = zero_matrix(base_ring(x), ncols(x), max(nrows(x),ncols(x)))
   n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{gfp_mat}, Ref{gfp_mat}), z, x)
   return n, z
+end
+
+function left_kernel(x::gfp_mat)
+   n, M = right_kernel(transpose(x))
+   return n, transpose(M)
 end
 
 @doc Markdown.doc"""
@@ -764,6 +794,11 @@ function right_kernel(M::nmod_mat)
     end
   end
   return 0, zero_matrix(R,nrows(M),0)
+end
+
+function left_kernel(a::nmod_mat)
+  n, M = right_kernel(transpose(a))
+  return n, transpose(M)
 end
 
 ################################################################################
@@ -1424,17 +1459,37 @@ function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
 end
 
 @doc Markdown.doc"""
-    cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem
-> Tries to solve $Ax = B$
+    cansolve(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem
+
+Tries to solve $Ax = B$ for $x$ if `side = :right` and $xA = B$ if `side =
+:left`.
 """
-function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+function cansolve(A::MatElem{T}, B::MatElem{T};
+                                  side = :right) where T <: FieldElem
+  @assert base_ring(A) == base_ring(B)
+
+  if side === :right
+    @assert nrows(A) == nrows(B)
+    return _cansolve(A, B)
+  elseif side === :left
+    @assert ncols(A) == ncols(B)
+    b, C = _cansolve(transpose(A), transpose(B))
+    if b
+      return true, transpose(C)
+    else
+      return false, C
+    end
+  else
+    error("Unsupported argument :$side for side: Must be :left or :right")
+  end
+end
+
+function _cansolve(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
-  @assert R == base_ring(B)
-  @assert nrows(A) == nrows(B)
   mu = [A B]
   rk, mu = rref(mu)
   p = find_pivot(mu)
-  if any(i->i>ncols(A), p)
+  if any(i -> i > ncols(A), p)
     return false, B
   end
   sol = zero_matrix(R, ncols(A), ncols(B))
@@ -1447,13 +1502,31 @@ function Nemo.cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.F
 end
 
 @doc Markdown.doc"""
-    cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> Bool, MatElem, MatElem
-> Tries to solve $Ax = B$, returns a solution and the nullspace.
+    cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
+
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
+It returns the solution and the right respectively left nullspace of $A$.
 """
-function Nemo.cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+function cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: Nemo.FieldElem
+  @assert base_ring(A) == base_ring(B)
+  if side === :right
+    @assert nrows(A) == nrows(B)
+    return _cansolve_with_nullspace(A, B)
+  elseif side === :left
+    b, C, K = _cansolve_with_nullspace(transpose(A), transpose(B))
+    @assert ncols(A) == ncols(B)
+    if b
+      return b, transpose(C), transpose(K)
+    else
+      return b, C, K
+    end
+  else
+    error("Unsupported argument :$side for side: Must be :left or :right")
+  end
+end
+
+function _cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
-  @assert R == base_ring(B)
-  @assert nrows(A) == nrows(B)
   mu = [A B]
   rk, mu = rref(mu)
   p = find_pivot(mu)
@@ -1577,60 +1650,40 @@ function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) wh
   return true, (z*T), N
 end
 
+################################################################################
+#
+#  Elementary divisors
+#
+################################################################################
+
 @doc Markdown.doc"""
-   elementary_divisors(A::fmpz_mat) -> Array{fmpz, 1}
-> The elementary divisors of $A$, ie. the diagonal entries of the Smith normal form of $A$.
+   elementary_divisors(A::fmpz_mat) -> Vector{fmpz}
+
+The elementary divisors of $A$, that is, the diagonal entries of the Smith
+normal form of $A$.
 """
 function elementary_divisors(A::fmpz_mat)
   s = snf(A)
-  return [s[i,i] for i=1:min(ncols(s), nrows(s))]
+  return fmpz[s[i,i] for i = 1:min(ncols(s), nrows(s))]
 end
 
 @doc Markdown.doc"""
    maximal_elementary_divisors(A::fmpz_mat) -> fmpz
-> The largest elementary divisor of $A$, ie. the last diagonal entry of the Smith normal form of $A$.
+
+The largest elementary divisor of $A$, that is, the last diagonal entry of the
+Smith normal form of $A$.
 """
 function maximal_elementary_divisor(A::fmpz_mat)
   return elementary_divisors(A)[end]
 end
 
-################################################################################
-#
-#  Solve with unique solution
-#
-################################################################################
+@doc Markdown.doc"""
+   largest_elementary_divisor(A::fmpz_mat) -> fmpz
 
-function _solve_unique(A::T, B::T) where {S <: FieldElem, T <: MatElem{S}}
-  X = zero_matrix(base_ring(A), ncols(B), nrows(A))
-
-  r, per, L, U = lu(B) # P*M1 = L*U
-
-  inv!(per)
-  #@assert B == per*L*U
-  Ap = inv(per)*A
-  Y = similar(A)
-
-  for i in 1:ncols(Y)
-    for j in 1:nrows(Y)
-      s = Ap[j, i]
-      for k in 1:j-1
-        s = s - Y[k, i]*L[j, k]
-      end
-      Y[j, i] = s
-    end
-  end
-
-  #@assert Ap == L*Y
-
-  YY = sub(Y, 1:r, 1:ncols(Y))
-  UU = sub(U, 1:r, 1:r)
-  X = inv(UU)*YY
-
-  #@assert Y == U * X
-
-  @assert B*X == A
-  return X
-end
+The largest elementary divisor of $A$, that is, the last diagonal entry of the
+Smith normal form of $A$.
+"""
+largest_elementary_divisor(A::fmpz_mat) = maximal_elementary_divisor(A)
 
 ################################################################################
 #

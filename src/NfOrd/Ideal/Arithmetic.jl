@@ -47,7 +47,7 @@
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   d = degree(order(x))
-  H = vcat(basis_mat(x, Val{false}), basis_mat(y, Val{false}))
+  H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
   g = gcd(minimum(x), minimum(y))
   if isone(g)
     return ideal(order(x), g)
@@ -70,10 +70,10 @@ end
 """
 function intersect(x::NfOrdIdl, y::NfOrdIdl)
   d = degree(order(x))
-  H = vcat(basis_mat(x), basis_mat(y))
+  H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
   K = left_kernel(H)[2]
   g = lcm(minimum(x),minimum(y))
-  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, Val{false}), g, :lowerleft), false, true)
+  return ideal(order(x), _hnf_modular_eldiv(view(K, 1:d, 1:d)*basis_mat(x, copy = false), g, :lowerleft), false, true)
 end
 
 @doc Markdown.doc"""
@@ -117,11 +117,11 @@ function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   end
   O = order(x)
   d = degree(O)
-  l = minimum(x, Val{false})*minimum(y, Val{false})
+  l = minimum(x, copy = false)*minimum(y, copy = false)
   z = fmpz_mat(degree(O)*degree(O), degree(O))
   z.base_ring = FlintZZ
-  X = basis(x, Val{false})
-  Y = basis(y, Val{false})
+  X = basis(x, copy = false)
+  Y = basis(y, copy = false)
   t = O()
   for i in 1:d
     for j in 1:d
@@ -208,8 +208,8 @@ function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
 #  end
 
   if has_minimum(a) && has_minimum(b)
-    ma = minimum(a, Val{false})
-    mb = minimum(b, Val{false})
+    ma = minimum(a, copy = false)
+    mb = minimum(b, copy = false)
 
     if gcd(ma, mb) == 1
       C.minimum = ma * mb
@@ -514,7 +514,7 @@ function mul_gen(x::NfOrdIdl, y::fmpz)
     return z
   end
 
-  z = ideal(order(x), basis_mat(x, Val{false})*y)
+  z = ideal(order(x), basis_mat(x, copy = false)*y)
   if isdefined(x, :princ_gen)
     z.princ_gen = x.princ_gen * y
   end
@@ -570,8 +570,8 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     V[1, i + 1] = u[i]
   end
 
-  _copy_matrix_into_matrix(V, 2, 2, basis_mat(x, Val{false}))
-  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y, Val{false}))
+  _copy_matrix_into_matrix(V, 2, 2, basis_mat(x, copy = false))
+  _copy_matrix_into_matrix(V, 2 + d, 2, basis_mat(y, copy = false))
 
   for i in 1:d
     V[1 + i, d + 1 + i] = 1
@@ -587,7 +587,7 @@ function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
     end
   end
 
-  basisofx = basis(x, Val{false})
+  basisofx = basis(x, copy = false)
 
   z = basisofx[1]*H[1, d + 2]
 
@@ -741,14 +741,14 @@ function extend(A::NfOrdIdl, O::NfOrd)
 
   d = degree(O)
   M = zero_matrix(FlintZZ, d^2, d)
-  X = basis(O, Val{false})
-  Y = map(O, basis(A, Val{false}))
+  X = basis(O, copy = false)
+  Y = map(O, basis(A, copy = false))
   t = O()
   for i = 1:d
     for j = 1:d
       mul!(t, X[i], Y[j])
       for k = 1:d
-        M[(i - 1)*d + j, k] = elem_in_basis(t, Val{false})[k]
+        M[(i - 1)*d + j, k] = elem_in_basis(t, copy = false)[k]
       end
     end
   end
@@ -769,12 +769,12 @@ function contract(A::NfOrdIdl, O::NfOrd)
   end
 
   d = degree(O)
-  M = basis_mat(O, Val{false})*basis_mat_inv(order(A), Val{false})
+  M = basis_mat(O, copy = false)*basis_mat_inv(order(A), copy = false)
   @assert M.den == 1
-  H = vcat(basis_mat(A, Val{false}), M.num)
+  H = vcat(basis_mat(A, copy = false), M.num)
   K = left_kernel(H)[2]
-  M = view(K, 1:d, 1:d)*basis_mat(A, Val{false})
-  M = M*basis_mat(order(A), Val{false})*basis_mat_inv(O, Val{false})
+  M = view(K, 1:d, 1:d)*basis_mat(A, copy = false)
+  M = M*basis_mat(order(A), copy = false)*basis_mat_inv(O, copy = false)
   @assert M.den == 1
   M = _hnf_modular_eldiv(M.num, minimum(A), :lowerleft)
   res = ideal(O, M, false, true)

@@ -73,9 +73,9 @@ end
 #
 ################################################################################
 
-function basis(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis(O::AlgAssAbsOrd; copy::Bool = true)
   _assure_has_basis(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis)
   else
     return O.basis
@@ -88,17 +88,17 @@ end
 #
 ################################################################################
 
-function basis_mat(x::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
-  if copy == Val{true}
+function basis_mat(x::AlgAssAbsOrd; copy::Bool = true)
+  if copy
     return deepcopy(x.basis_mat)
   else
     return x.basis_mat
   end
 end
 
-function basis_mat_inv(O::AlgAssAbsOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat_inv(O::AlgAssAbsOrd; copy::Bool = true)
   assure_basis_mat_inv(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_mat_inv)
   else
     return O.basis_mat_inv
@@ -125,7 +125,7 @@ function _check_elem_in_order(a::T, O::AlgAssAbsOrd{S, T}, short::Type{Val{U}} =
   t = zero_matrix(FlintQQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
-  t = t*basis_mat_inv(O, Val{false})
+  t = t*basis_mat_inv(O, copy = false)
   if short == Val{true}
     return isone(t.den)
   elseif short == Val{false}
@@ -160,7 +160,7 @@ function denominator(a::AbsAlgAssElem, O::AlgAssAbsOrd)
   t = zero_matrix(FlintQQ, 1, degree(O))
   elem_to_mat_row!(t, 1, a)
   t = FakeFmpqMat(t)
-  t = mul!(t, t, basis_mat_inv(O, Val{false}))
+  t = mul!(t, t, basis_mat_inv(O, copy = false))
   return t.den
 end
 
@@ -467,7 +467,7 @@ function check_ideal(I::AlgAssAbsOrdIdl)
 end
 
 function ==(S::AlgAssAbsOrd, T::AlgAssAbsOrd)
-  return basis_mat(S, Val{false}) == basis_mat(T, Val{false})
+  return basis_mat(S, copy = false) == basis_mat(T, copy = false)
 end
 
 function defines_order(A::AlgAss{fmpq}, v::Array{AlgAssElem{fmpq, AlgAss{fmpq}}, 1})
@@ -570,7 +570,7 @@ function ring_of_multipliers(I::AlgAssAbsOrdIdl, p::fmpz=fmpz(1))
       end
     end
   else
-    B = basis(I, Val{false})
+    B = basis(I, copy = false)
     m = zero_matrix(FlintZZ, O.dim^2, O.dim)
     for i=1:O.dim
       M = representation_matrix(B[i])
@@ -948,7 +948,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
   for i = 1:nrows(x)
     el = A1toO(elem_from_mat_row(A1, x, i))
     for j = 1:O.dim
-      m[i,j] = elem_in_basis(el, Val{false})[j]
+      m[i,j] = elem_in_basis(el, copy = false)[j]
     end
     gens[i] = elem_from_mat_row(O, m, i)
   end
@@ -963,7 +963,7 @@ function _from_submodules_to_ideals(M::ModAlgAss, O::AlgAssAbsOrd, I::AlgAssAbsO
     append!(gens, I.gens)
     J.gens = gens
   else
-    append!(gens, basis(I, Val{false}))
+    append!(gens, basis(I, copy = false))
   end
   return J
 
@@ -1275,14 +1275,14 @@ end
 # Besides the call of elem_in_algebra this is exactly the same as in NfOrd/NfOrd.jl.
 function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
   n = degree(R)
-  t = basis_mat(R, Val{false})*basis_mat_inv(S, Val{false})
+  t = basis_mat(R, copy = false)*basis_mat_inv(S, copy = false)
   @assert isone(t.den)
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
   M = zero_matrix(FlintZZ, n^2, n)
-  B = basis(S, Val{false})
+  B = basis(S, copy = false)
   for k in 1:n
     a = B[k]
-    N = representation_matrix(S(elem_in_algebra(a, Val{false})))*basis_mat_R_in_S_inv_num
+    N = representation_matrix(S(elem_in_algebra(a, copy = false)))*basis_mat_R_in_S_inv_num
     for i in 1:n
       for j in 1:n
         M[(k - 1)*n + i, j] = N[j, i]

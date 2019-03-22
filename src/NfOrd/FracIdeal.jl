@@ -357,7 +357,7 @@ function simplify(A::NfOrdFracIdl)
     g = gcd(g, A.den)
     g = gcd(g, A.num.gen_one)
   else  
-    b = basis_mat(A.num, Val{false})
+    b = basis_mat(A.num, copy = false)
     g = gcd(denominator(A), content(b))
   end  
 

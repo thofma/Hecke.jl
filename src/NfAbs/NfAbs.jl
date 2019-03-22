@@ -73,7 +73,7 @@ end
 The $n$-th cyclotomic field defined by the $n$-the cyclotomic polynomial.
 """
 function cyclotomic_field(n::Int; cached::Bool = true)
-  return CyclotomicField(n, cached = cached)
+  return CyclotomicField(n, "z_$n", cached = cached)
 end
 
 #fields with usually large class groups...

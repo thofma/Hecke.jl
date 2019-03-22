@@ -57,7 +57,7 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   m = vcat(M.map, rels(codomain(M)))
   fl, p = cansolve(m', a.coeff')
   if fl
-    return true, domain(M)(sub(p', 1:1, 1:ngens(domain(M))))
+    return true, domain(M)(view(p', 1:1, 1:ngens(domain(M))))
   else
     return false, domain(M)[1]
   end
@@ -77,9 +77,9 @@ function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 
   m = vcat(M.imap, rels(domain(M)))
-  fl, p = cansolve(m, a.coeff)
+  fl, p = cansolve(m', a.coeff')
   if fl
-    return true, codomain(M)(sub(p, 1:1, 1:ngens(codomain(M))))
+    return true, codomain(M)(view(p', 1:1, 1:ngens(codomain(M))))
   else
     return false, codomain(M)[1]
   end

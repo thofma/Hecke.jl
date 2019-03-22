@@ -290,17 +290,20 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
   els = nf_elem[]
   Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
   modu = valuation(rres(Zx(f), derivative(Zx(f))), p) 
-  R = ResidueRing(FlintZZ, p, cached = false)
+  R = GF(p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
-  #R1 = ResidueRing(FlintZZ, p^(modu+2), cached = false)
-  #R1x, z = PolynomialRing(R1, "z", cached = false)
   f1 = Rx(K.pol)
   fac = factor(f1)
-  l = nf_elem[gen(K)^i for i=0:degree(K)-1]
+  l = Vector{nf_elem}(undef, degree(K))
+  l[1] = one(K)
+  l[2] = gen(K)
+  for i = 3:length(l)
+    l[i] = l[i-1]* l[2]
+  end
   regular = true
   vdisc = 0
   for (g, m) in fac
-    if m==1
+    if m == 1
       continue
     end
     F, a = FiniteField(g, "a", cached = false)
@@ -329,7 +332,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
   end
   B = basis_mat(l)
-  B = sub(hnf(B), nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
+  B = sub(hnf!(B), nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
   if !regular
     elt = nf_elem[]
     for i in 1:nrows(B) 
@@ -337,9 +340,6 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
     O1 = _order_for_polygon_overorder(K, elt)
   else
-    #N1 = B.den * B.num
-    #N1 = _hnf_modular_eldiv(N1, p^(modu+1), :lowerleft)
-    #O1 = Order(K, FakeFmpqMat(N1, B.den))
     O1 = Order(K, B, false)
     O1.disc = divexact(O.disc, p^(2*vdisc))
     push!(O1.primesofmaximality, p)
@@ -353,7 +353,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
   #First, Dedekind criterion. If the Dedekind criterion says that we are p-maximal,
   # or it can produce an order which is p-maximal, we are done.
   Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
-  Kx, x = PolynomialRing(ResidueRing(FlintZZ, p, cached=false), "x", cached=false)
+  Kx, x = PolynomialRing(Nemo.GF(p, cached=false), "x", cached=false)
 
   f = nf(O).pol
 
@@ -473,7 +473,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::fmpz) 
     idem = BtoA(one(B)) # Assumes that B == idem*A
     M = representation_matrix(idem)
     ker = left_kernel_basis(M)
-    N = basis_mat(Ip1, Val{false})
+    N = basis_mat(Ip1, copy = false)
     for s = 1:length(ker)
       b = elem_in_basis(AtoO(A(ker[s])))
       for j = 1:degree(O)
@@ -547,7 +547,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
         x = u - p
       else
-        Ba = basis(P, Val{false})
+        Ba = basis(P, copy = false)
         for i in 1:degree(O)
           if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
             x = v*Ba[i] + u
@@ -579,7 +579,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
         x = u - p
       else
-        Ba = basis(P, Val{false})
+        Ba = basis(P, copy = false)
         for i in 1:degree(O)
           if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
             x = v*Ba[i] + u

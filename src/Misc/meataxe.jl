@@ -402,43 +402,6 @@ function isisomorphic(M::FqGModule,N::FqGModule)
 end
 
 
-#function _solve_unique(A::fq_nmod_mat, B::fq_nmod_mat)
-#  X = zero_matrix(base_ring(A), ncols(B), nrows(A))
-#
-#  #println("solving\n $A \n = $B * X")
-#  r, per, L, U = lu(B) # P*M1 = L*U
-#  inv!(per)  
-#  @assert B == per*L*U
-#
-#  Ap = inv(per)*A
-#  Y = similar(A)
-#
-#  #println("first solve\n $Ap = $L * Y")
-#
-#  for i in 1:ncols(Y)
-#    for j in 1:nrows(Y)
-#      s = Ap[j, i]
-#      for k in 1:j-1
-#        s = s - Y[k, i]*L[j, k]
-#      end
-#      Y[j, i] = s
-#    end
-#  end
-#
-#  @assert Ap == L*Y
-#
-#  #println("solving \n $Y \n = $U * X")
-#
-#  YY = sub(Y, 1:r, 1:ncols(Y))
-#  UU = sub(U, 1:r, 1:r)
-#  X = inv(UU)*YY
-#
-#  @assert Y == U * X
-#
-#  @assert B*X == A
-#  return X
-#end
-
 function dual_space(M::FqGModule)
   
   G=fq_nmod_mat[transpose(g) for g in M.G]
@@ -760,12 +723,12 @@ function _relations(M::FqGModule, N::FqGModule)
         B=vcat(B,v)
         push!(matrices, matrices[i]*H[j])
       else
-        x=_solve_unique(transpose(v),transpose(B))
+        fl, x= cansolve(B, v, side = :left)
         A = matrices[i]*H[j]
-        for q = 1:nrows(x)
+        for q = 1:ncols(x)
           for s = 1:N.dim
             for t = 1:N.dim
-              A[s, t] -= x[q, 1]* matrices[q][s,t]
+              A[s, t] -= x[1, q]* matrices[q][s,t]
             end
           end
         end

@@ -36,16 +36,16 @@ parent(a::NfRelOrdFracIdl) = a.parent
 #
 ################################################################################
 
-iszero(a::NfRelOrdFracIdl) = iszero(basis_mat(a, Val{false})[1, 1])
+iszero(a::NfRelOrdFracIdl) = iszero(basis_mat(a, copy = false)[1, 1])
 
 function isone(a::NfRelOrdFracIdl)
   if denominator(a) != 1
     return false
   end
-  @assert isone(basis_pmat(a, Val{false}).matrix[1, 1])
-  @assert isone(basis_pmat(order(a), Val{false}).matrix[1, 1])
+  @assert isone(basis_pmat(a, copy = false).matrix[1, 1])
+  @assert isone(basis_pmat(order(a), copy = false).matrix[1, 1])
 
-  return isone(basis_pmat(a, Val{false}).coeffs[1])
+  return isone(basis_pmat(a, copy = false).coeffs[1])
 end
 
 ################################################################################
@@ -64,9 +64,9 @@ function assure_has_denominator(a::NfRelOrdFracIdl)
   end
   O = order(a)
   n = degree(O)
-  PM = basis_pmat(a, Val{false})
-  pb = pseudo_basis(O, Val{false})
-  inv_coeffs = inv_coeff_ideals(O, Val{false})
+  PM = basis_pmat(a, copy = false)
+  pb = pseudo_basis(O, copy = false)
+  inv_coeffs = inv_coeff_ideals(O, copy = false)
   d = fmpz(1)
   for i = 1:n
     for j = 1:i
@@ -123,12 +123,12 @@ function show(io::IO, a::NfRelOrdFracIdl)
   compact = get(io, :compact, false)
   if compact
     print(io, "Fractional ideal with basis pseudo-matrix\n")
-    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
   else
     print(io, "Fractional ideal of\n")
     show(IOContext(io, :compact => true), order(a))
     print(io, "\nwith basis pseudo-matrix\n")
-    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
   end
 end
 
@@ -158,13 +158,13 @@ end
 > Creates the fractional ideal of $\mathcal O$ with basis matrix $M$.
 """
 function frac_ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}) where {T, S}
-  coeffs = deepcopy(basis_pmat(O, Val{false})).coeffs
+  coeffs = deepcopy(basis_pmat(O, copy = false)).coeffs
   return frac_ideal(O, PseudoMatrix(M, coeffs))
 end
 
 function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   d = degree(O)
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_ring(nf(O)), d, d)
   if iszero(x)
     return NfRelOrdFracIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
@@ -172,7 +172,7 @@ function frac_ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}) where {T, S}
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*x)
   end
-  M = M*basis_mat_inv(O, Val{false})
+  M = M*basis_mat_inv(O, copy = false)
   PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
   return NfRelOrdFracIdl{T, S}(O, PM)
@@ -214,7 +214,7 @@ end
 """
 function ==(a::NfRelOrdFracIdl, b::NfRelOrdFracIdl)
   order(a) != order(b) && return false
-  return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
+  return basis_pmat(a, copy = false) == basis_pmat(b, copy = false)
 end
 
 ################################################################################
@@ -229,13 +229,13 @@ function assure_has_norm(a::NfRelOrdFracIdl)
     return nothing
   end
   if iszero(a)
-    O = order(basis_pmat(a, Val{false}).coeffs[1])
+    O = order(basis_pmat(a, copy = false).coeffs[1])
     a.norm = nf(O)()*O
     a.has_norm = true
     return nothing
   end
-  c = basis_pmat(a, Val{false}).coeffs
-  d = inv_coeff_ideals(order(a), Val{false})
+  c = basis_pmat(a, copy = false).coeffs
+  d = inv_coeff_ideals(order(a), copy = false)
   n = c[1]*d[1]
   for i = 2:degree(order(a))
     n *= c[i]*d[i]
@@ -313,10 +313,10 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   if iszero(a) || iszero(b)
     return nf(order(a))()*order(a)
   end
-  pba = pseudo_basis(a, Val{false})
-  pbb = pseudo_basis(b, Val{false})
-  ma = basis_mat(a, Val{false})
-  mb = basis_mat(b, Val{false})
+  pba = pseudo_basis(a, copy = false)
+  pbb = pseudo_basis(b, copy = false)
+  ma = basis_mat(a, copy = false)
+  mb = basis_mat(b, copy = false)
   den = denominator(a)*denominator(b)
   L = nf(order(a))
   K = base_ring(L)
@@ -334,14 +334,14 @@ function *(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   end
   if T != nf_elem
     H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-    H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+    H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
     H = pseudo_hnf(H, :lowerleft)
     return frac_ideal(order(a), H, true)
   end
   m = simplify(den^(2*d)*norm(a)*norm(b))
   @assert isone(denominator(m))
   H = sub(pseudo_hnf_full_rank_with_modulus(PseudoMatrix(M, C), numerator(m), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
-  H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+  H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
   H = pseudo_hnf_full_rank_with_modulus(H, numerator(m), :lowerleft)
   for i = 1:d
     H.coeffs[i].den = H.coeffs[i].den*den
@@ -372,7 +372,7 @@ divexact(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = a*inv(b)
 
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S}
   O = order(a)
-  return frac_ideal(O, basis_pmat(a, Val{false}), true)*inv(b)
+  return frac_ideal(O, basis_pmat(a, copy = false), true)*inv(b)
 end
 
 //(a::NfRelOrdFracIdl{T, S}, b::NfRelOrdFracIdl{T, S}) where {T, S} = divexact(a, b)
@@ -403,7 +403,7 @@ end
 #
 ################################################################################
 
-isintegral(a::NfRelOrdFracIdl) = defines_ideal(order(a), basis_pmat(a, Val{false}))
+isintegral(a::NfRelOrdFracIdl) = defines_ideal(order(a), basis_pmat(a, copy = false))
 
 ################################################################################
 #
@@ -431,7 +431,7 @@ function mod(x::S, y::T) where {S <: Union{nf_elem, RelativeElement}, T <: Union
     dy = simplify(dy)
     dynum = numerator(dy)
   else
-    dynum = NfRelOrdIdl{T.parameters...}(O, basis_pmat(dy, Val{false}))
+    dynum = NfRelOrdIdl{T.parameters...}(O, basis_pmat(dy, copy = false))
   end
   dz = mod(O(dx), dynum)
   z = divexact(K(dz), d)
@@ -453,11 +453,11 @@ end
 function in(x::RelativeElement, y::NfRelOrdFracIdl)
   parent(x) != nf(order(y)) && error("Number field of element and ideal must be equal")
   O = order(y)
-  b_pmat = basis_pmat(y, Val{false})
+  b_pmat = basis_pmat(y, copy = false)
   t = zero_matrix(base_ring(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, x)
-  t = t*basis_mat_inv(O, Val{false})
-  t = t*basis_mat_inv(y, Val{false})
+  t = t*basis_mat_inv(O, copy = false)
+  t = t*basis_mat_inv(y, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])
       return false
@@ -490,7 +490,7 @@ valuation(a::RelativeElement, P::NfRelOrdIdl) = valuation_naive(a, P)
 ################################################################################
 
 function rand(a::NfRelOrdFracIdl, B::Int)
-  pb = pseudo_basis(a, Val{false})
+  pb = pseudo_basis(a, copy = false)
   z = nf(order(a))()
   for i = 1:degree(order(a))
     t = rand(pb[i][2], B)

@@ -9,7 +9,7 @@
     L, b = number_field(g, "b")
     OL = maximal_order(L)
 
-    coeff_ideals = [ deepcopy(Hecke.pseudo_basis(OL, Val{false})[i][2]) for i = 1:2 ]
+    coeff_ideals = [ deepcopy(Hecke.pseudo_basis(OL, copy = false)[i][2]) for i = 1:2 ]
     PM = Hecke.PseudoMatrix(matrix(K, [1 0; 0 1]), coeff_ideals)
     PM1 = pseudo_hnf(Hecke.PseudoMatrix(matrix(K, [3 0; 0 3]), coeff_ideals), :lowerleft, true)
     PM2 = pseudo_hnf(Hecke.PseudoMatrix(matrix(K, [6 0; 0 6]), coeff_ideals), :lowerleft, true)
@@ -92,7 +92,7 @@
     F, mF = ResidueField(OL, P)
     @test degree(F) == p.splitting_type[2]*P.splitting_type[2]
 
-    pb = pseudo_basis(P, Val{false})
+    pb = pseudo_basis(P, copy = false)
     for i = 1:degree(OL)
       b = OL(minimum(pb[i][2])*pb[i][1])
       @test iszero(mF(b))
@@ -121,7 +121,7 @@
     F, mF = ResidueField(OL, P)
     @test degree(F) == p.splitting_type[2]*P.splitting_type[2]
 
-    pb = pseudo_basis(P, Val{false})
+    pb = pseudo_basis(P, copy = false)
     for i = 1:degree(OL)
       b = OL(minimum(pb[i][2])*pb[i][1])
       @test iszero(mF(b))

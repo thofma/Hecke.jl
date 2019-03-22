@@ -2,21 +2,21 @@ function _lll_gram(A::NfOrdIdl)
   K = nf(order(A))
   @assert istotally_real(K)
   g = trace_matrix(A)
-  @assert det(g) != 0
-  @assert isposdef(g)
+  @hassert :ClassGroup 1 !iszero(det(g))
+  @hassert :ClassGroup 1 isposdef(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
 
 function _lll_quad(A::NfOrdIdl)
   K = nf(order(A))
-  @assert degree(K) ==2 && discriminant(order(A)) < 0
+  @assert degree(K) == 2 && discriminant(order(A)) < 0
   b = basis(A)
   a1 = 2*numerator(norm(b[1]))
   a2 = 2*numerator(norm(b[2]))
   a12 = numerator(trace(b[1] * conjugate_quad(K(b[2]))))
   g = matrix(FlintZZ, 2, 2, [a1, a12, a12, a2])
-  @assert isposdef(g)
+  @hassert :ClassGroup 1 isposdef(g)
   l, t = lll_gram_with_transform(g)
   return FakeFmpqMat(l, fmpz(1)), t::fmpz_mat
 end
@@ -45,8 +45,8 @@ end
 
 function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 100)
 
-
   K = nf(order(A))
+
   if iszero(v) && istotally_real(K)
     #in this case the gram-matrix of the minkowski lattice is the trace-matrix
     #which is exact.
@@ -63,7 +63,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  l, t1 = lll_with_transform(basis_mat(A, Val{false}))
+  l, t1 = lll_with_transform(basis_mat(A, copy = false))
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
@@ -75,7 +75,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   else
     c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
-    b = FakeFmpqMat(l)*basis_mat(order(A), Val{false})
+    b = FakeFmpqMat(l)*basis_mat(order(A), copy = false)
 
 
     rt_c = roots_ctx(K)
@@ -238,4 +238,3 @@ function reduce_ideal2(A::NfOrdIdl)
   @assert C.den == 1
   return C.num, b
 end
-

@@ -88,8 +88,8 @@ zero(O::AlgAssAbsOrd) = O(algebra(O)())
 #
 ################################################################################
 
-function elem_in_algebra(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
-  if copy == Val{true}
+function elem_in_algebra(x::AlgAssAbsOrdElem; copy::Bool = true) where T
+  if copy
     return deepcopy(x.elem_in_algebra)
   else
     return x.elem_in_algebra
@@ -106,7 +106,7 @@ function assure_has_coord(x::AlgAssAbsOrdElem)
   if x.has_coord
     return nothing
   end
-  a, b = _check_elem_in_order(elem_in_algebra(x, Val{false}), parent(x))
+  a, b = _check_elem_in_order(elem_in_algebra(x, copy = false), parent(x))
   !a && error("Not a valid order element")
   x.elem_in_basis = b
   return nothing
@@ -126,9 +126,9 @@ end
 #
 ################################################################################
 
-function elem_in_basis(x::AlgAssAbsOrdElem, copy::Type{Val{T}} = Val{true}) where T
+function elem_in_basis(x::AlgAssAbsOrdElem; copy::Bool = true)
   assure_has_coord(x)
-  if copy == Val{true}
+  if copy
     return deepcopy(x.elem_in_basis)
   else
     return x.elem_in_basis
@@ -142,7 +142,7 @@ end
 ################################################################################
 
 function -(x::AlgAssAbsOrdElem)
-  return parent(x)(-elem_in_algebra(x, Val{false}))
+  return parent(x)(-elem_in_algebra(x, copy = false))
 end
 
 ###############################################################################
@@ -153,12 +153,12 @@ end
 
 function *(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
-  return parent(x)(elem_in_algebra(x, Val{false})*elem_in_algebra(y, Val{false}))
+  return parent(x)(elem_in_algebra(x, copy = false)*elem_in_algebra(y, copy = false))
 end
 
 function +(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
-  z = parent(x)(elem_in_algebra(x, Val{false}) + elem_in_algebra(y, Val{false}))
+  z = parent(x)(elem_in_algebra(x, copy = false) + elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
     z.elem_in_basis = [ x.elem_in_basis[i] + y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
@@ -168,7 +168,7 @@ end
 
 function -(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
   !check_parent(x, y) && error("Wrong parents")
-  z = parent(x)(elem_in_algebra(x, Val{false}) - elem_in_algebra(y, Val{false}))
+  z = parent(x)(elem_in_algebra(x, copy = false) - elem_in_algebra(y, copy = false))
   if x.has_coord && y.has_coord
     z.elem_in_basis = [ x.elem_in_basis[i] - y.elem_in_basis[i] for i = 1:degree(parent(x)) ]
     z.has_coord = true
@@ -179,7 +179,7 @@ end
 function *(n::Union{Integer, fmpz}, x::AlgAssAbsOrdElem)
   O=x.parent
   y=Array{fmpz,1}(undef, O.dim)
-  z=elem_in_basis(x, Val{false})
+  z=elem_in_basis(x, copy = false)
   for i=1:O.dim
     y[i] = z[i] * n
   end
@@ -190,7 +190,7 @@ end
 function divexact(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem, action::Symbol, check::Bool = true)
   !check_parent(a, b) && error("Wrong parents")
   O = parent(a)
-  c = divexact(elem_in_algebra(a, Val{false}), elem_in_algebra(b, Val{false}), action)
+  c = divexact(elem_in_algebra(a, copy = false), elem_in_algebra(b, copy = false), action)
   if check
     (x, y) = _check_elem_in_order(c, O)
     !x && error("Quotient not an element of the order")
@@ -228,7 +228,7 @@ end
 
 function ^(x::AlgAssAbsOrdElem, y::Union{fmpz, Int})
   z = parent(x)()
-  z.elem_in_algebra = elem_in_algebra(x, Val{false})^y
+  z.elem_in_algebra = elem_in_algebra(x, copy = false)^y
   return z
 end
 
@@ -242,7 +242,7 @@ function ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem)
   if parent(a) != parent(b)
     return false
   end
-  return elem_in_algebra(a, Val{false}) == elem_in_algebra(b, Val{false})
+  return elem_in_algebra(a, copy = false) == elem_in_algebra(b, copy = false)
 end
 
 ################################################################################
@@ -252,7 +252,7 @@ end
 ################################################################################
 
 function mul!(z::AlgAssAbsOrdElem, x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem)
-  z.elem_in_algebra = mul!(elem_in_algebra(z, Val{false}), elem_in_algebra(x, Val{false}), elem_in_algebra(y, Val{false}))
+  z.elem_in_algebra = mul!(elem_in_algebra(z, copy = false), elem_in_algebra(x, copy = false), elem_in_algebra(y, copy = false))
   z.has_coord = false
   return z
 end
@@ -355,11 +355,11 @@ function isdivisible_mod_ideal(x::AlgAssAbsOrdElem, y::AlgAssAbsOrdElem, a::AlgA
   V[1, 1] = fmpz(1)
 
   for i = 1:d
-    V[1, 1 + i] = elem_in_basis(x, Val{false})[i]
+    V[1, 1 + i] = elem_in_basis(x, copy = false)[i]
   end
 
   A = representation_matrix(y)
-  B = basis_mat(a, Val{false})
+  B = basis_mat(a, copy = false)
 
   _copy_matrix_into_matrix(V, 2, 2, A)
   _copy_matrix_into_matrix(V, 2 + d, 2, B)
@@ -386,6 +386,6 @@ end
 #
 ################################################################################
 
-iszero(a::AlgAssAbsOrdElem) = iszero(elem_in_algebra(a, Val{false}))
+iszero(a::AlgAssAbsOrdElem) = iszero(elem_in_algebra(a, copy = false))
 
-isone(a::AlgAssAbsOrdElem) = isone(elem_in_algebra(a, Val{false}))
+isone(a::AlgAssAbsOrdElem) = isone(elem_in_algebra(a, copy = false))

@@ -289,8 +289,8 @@ p = prime_decomposition(OK, 2)[1][1]
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
 function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
-  basis_pmatI = basis_pmat(I, Val{false})
-  basis_pmatO = basis_pmat(O, Val{false})
+  basis_pmatI = basis_pmat(I, copy = false)
+  basis_pmatO = basis_pmat(O, copy = false)
 
   new_basis_mat = deepcopy(O.basis_mat)
   new_basis_mat_I = deepcopy(I.basis_mat)
@@ -637,7 +637,8 @@ function subalgebra(A::AlgAss{T}, basis::Array{AlgAssElem{T, AlgAss{T}},1}) wher
     for j=1:length(basis)
       x=basis[i]*basis[j]
       N1=matrix(base_ring(A), dim(A), 1, x.coeffs)
-      N=_solve_unique(N1,B)
+      b, N = cansolve(B, N1)
+      @assert b
       for k=1:length(basis)
         M[i,j,k]=N[k,1]
       end
@@ -1422,7 +1423,8 @@ function _matrix_basis(A::AlgAss{T}, idempotents::Vector{S}) where { T <: Union{
     NN = zero_matrix(base_ring(A), 4*dim(eAe), 1)
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(bb)))
     NN = vcat(NN, matrix(base_ring(A), dim(eAe), 1, coeffs(aa)))
-    yy = _solve_unique(NN, transpose(N))
+    b, yy = cansolve(transpose(N), NN)
+    @assert b
     y = m1(m2(eAe([ yy[i, 1] for i = 1:dim(eAe) ])))
 
     new_basis[(i - 1)*k + 1] = y # this is e_i1

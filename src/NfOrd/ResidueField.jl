@@ -15,7 +15,7 @@ export ResidueField
 #                          pi(basis(O)[i]) = sum_j B[i][1, j] * pi(a)^j
 function compute_residue_field_data(m)
   O = domain(m)
-  basisO = basis(O, Val{false})
+  basisO = basis(O, copy = false)
   B = codomain(m)
   primB, minprimB, getcoordpowerbasis = _as_field(B)
   f = degree(minprimB)

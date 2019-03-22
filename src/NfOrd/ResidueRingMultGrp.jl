@@ -185,7 +185,7 @@ _multgrp_ray(Q::NfOrdQuoRing; method = nothing) = _multgrp(Q, true; method = met
 function _multgrp_mod_pv(p::NfOrdIdl, v::Int, pv::NfOrdIdl; method=nothing)
   @hassert :NfOrdQuoRing 2 isprime(p)
   @assert v >= 1
-  pnumv = minimum(p, Val{false})^v # to speed up the exponentiation in the GrpAbFinGenToNfAbsOrdMaps
+  pnumv = minimum(p, copy = false)^v # to speed up the exponentiation in the GrpAbFinGenToNfAbsOrdMaps
   G1, G1toO = _multgrp_mod_p(p, pnumv)
   Q, OtoQ = quo(order(p), pv)
   tame_part = Dict{NfAbsOrdIdl, GrpAbFinGenToNfAbsOrdMap}()
@@ -446,7 +446,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
 
   O=order(pu)
   b=basis(pu)
-  N = basis_mat(pv, Val{false})*basis_mat_inv(pu, Val{false})
+  N = basis_mat(pv, copy = false)*basis_mat_inv(pu, copy = false)
   @assert denominator(N) == 1
   G = AbelianGroup(N.num)
   S, mS=snf(G)
@@ -462,7 +462,7 @@ function _pu_mod_pv(pu::NfOrdIdl, pv::NfOrdIdl)
   end
   
   #Disclog  
-  M=basis_mat_inv(pu, Val{false})*mS.imap
+  M=basis_mat_inv(pu, copy = false)*mS.imap
   function disclog(x::NfOrdElem)
     x_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(x)), fmpz(1))
     mul!(x_fakemat, x_fakemat, M)
@@ -1136,8 +1136,8 @@ function _multgrp_non_maximal(Q::NfOrdQuoRing)
   for i = 1:length(m)
     P = prime_ideals[i]
     p = minimum(P)
-    x = valuation(det(basis_mat(A, Val{false})), p)
-    y = valuation(det(basis_mat(P, Val{false})), p)
+    x = valuation(det(basis_mat(A, copy = false)), p)
+    y = valuation(det(basis_mat(P, copy = false)), p)
     m[i] = Int(ceil(x/y))
   end
 
