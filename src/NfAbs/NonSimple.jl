@@ -153,11 +153,6 @@ Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpz}) = NfAbsNSElem
 
 Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{fmpq}) = NfAbsNSElem
 
-function Nemo.promote_rule(::Type{NfAbsNSElem}, ::Type{U}) where {U <: Nemo.RingElement}
-  Nemo.promote_rule(fmpq, U) == fmpq ? NfAbsNSElem : Union{}
-end
-
-
 ################################################################################
 #
 #  Field access
