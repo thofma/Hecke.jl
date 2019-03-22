@@ -279,7 +279,6 @@ function _dec_com_gen(A::AbsAlgAss{T}) where {T <: FieldElem}
     if degree(f) < 2
       continue
     end
-
     if isirreducible(f)
       if degree(f) == dim(A)
         A.issimple = 1

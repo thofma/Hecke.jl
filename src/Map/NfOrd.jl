@@ -215,7 +215,7 @@ function _get_coeff_raw(x::fq_nmod, i::Int)
 end
 
 function _get_coeff_raw(x::fq, i::Int)
-  t = FlintIntegerRing()
+  t = FlintZZ
   ccall((:fmpz_poly_get_coeff_fmpz, :libflint), Nothing, (Ref{fmpz}, Ref{fq}, Int), t, x, i)
   return t
 end
@@ -441,7 +441,7 @@ function extend(f::Union{NfOrdToFqNmodMor, NfOrdToFqMor}, K::AnticNumberField)
   z.header.codomain = f.header.codomain
 
   p = characteristic(z.header.codomain)
-  Zx = PolynomialRing(FlintIntegerRing(), "x", cached = false)[1]
+  Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
   y = f(NfOrdElem(domain(f), gen(K)))
   pia = anti_uniformizer(f.P)
   O = domain(f)

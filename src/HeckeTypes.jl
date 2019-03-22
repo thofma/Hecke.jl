@@ -495,14 +495,11 @@ mutable struct FakeFmpqMat
       end
     end
     n = zero_matrix(FlintZZ, nrows(x), ncols(x))
-    #n = fmpz_mat(nrows(x), ncols(x))
-    #n.base_ring = FlintIntegerRing()
     for i in 1:nrows(x)
       for j in 1:ncols(x)
         n[i, j] = FlintZZ(d*x[i, j])
       end
     end
-#    z.parent = FakeFmpqMatSpace(nrows(x), ncols(x))
     z.rows = nrows(x)
     z.cols = ncols(x)
     z.num = n

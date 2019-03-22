@@ -65,14 +65,10 @@ function cyclotomic_extension(k::AnticNumberField, n::Int)
     Hecke._set_cyclotomic_ext_nf(k, Ac)
     return c
   end
-
-
   
   ZX, X = PolynomialRing(FlintZZ, cached = false)
-  Qx = parent(k.pol)
   f = cyclotomic(n, X)
-  fq = Qx(f)
-  fk = evaluate(fq, t)
+  fk = change_ring(f, kt)
   if n < 5
     #For n = 3, 4 the cyclotomic polynomial has degree 2,
     #so we can just ask for the roots.
