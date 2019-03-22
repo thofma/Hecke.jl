@@ -701,7 +701,14 @@ end
 """
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
-function kernel(A::MatElem, side::Symbol = :right)
+
+@doc Markdown.doc"""
+    kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
+
+> It returns a tuple $(n, M)$, where n is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
+> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+"""
+function kernel(A::MatElem; side::Symbol = :right)
   if side == :right
     return right_kernel(A)
   elseif side == :left
@@ -799,6 +806,45 @@ end
 function left_kernel(a::nmod_mat)
   n, M = right_kernel(transpose(a))
   return n, transpose(M)
+end
+
+################################################################################
+#
+#  Kernel over different rings
+#
+################################################################################
+
+@doc Markdown.doc"""
+    kernel(a::MatElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
+
+> It returns a tuple $(n, M)$, where n is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
+> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+"""
+function kernel(M::MatElem, R::Ring; side::Symbol = :right)
+  MP = change_base_ring(M, R)
+  return kernel(MP, side = side)
+end
+
+################################################################################
+#
+#  Change base ring
+#
+################################################################################
+
+@doc Markdown.doc"""
+    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
+
+> Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
+> matrix over R obtained by coercing the entries of M from S into R. 
+"""
+function change_base_ring(M::MatElem, R::Ring)
+  MP = zero_matrix(R, nrows(M), ncols(M))
+  for i = 1:nrows(M)
+    for j = 1:ncols(M)
+      MP[i, j] = R(M[i, j])
+    end
+  end
+  return MP
 end
 
 ################################################################################

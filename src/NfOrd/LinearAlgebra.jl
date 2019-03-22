@@ -267,7 +267,7 @@ end
 """
 function PseudoMatrix(m::Generic.Mat{NfOrdElem}, c::Array{NfOrdIdl, 1})
   @assert nrows(m) == length(c)
-  mm = change_ring(m, nf(base_ring(m)))
+  mm = change_base_ring(m, nf(base_ring(m)))
   cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
   return PMat{nf_elem, NfOrdFracIdl}(mm, cc)
 end
@@ -298,7 +298,7 @@ function PseudoMatrix(m::Generic.Mat{S}, c::Array{T, 1}) where {S <: RelativeEle
   return PMat{S, typeof(cc[1])}(m, cc)
 end
 
-PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_ring(m, nf(base_ring(m))))
+PseudoMatrix(m::Generic.Mat{NfOrdElem}) = PseudoMatrix(change_base_ring(m, nf(base_ring(m))))
 
 function PseudoMatrix(c::Array{S, 1}) where S
    K = nf(order(c[1]))
@@ -316,9 +316,6 @@ function ncols(m::PMat)
   return ncols(m.matrix)
 end
 
-function change_ring(m::Generic.Mat{NfOrdElem}, K::AnticNumberField)
-  return matrix(K, map(z -> K(z), m.entries))
-end
 
 function det(m::PMat)
   z = m.coeffs[1]
@@ -1279,7 +1276,7 @@ end
 
 
 function PseudoMatrix2(m::Generic.Mat{NfOrdElem}, r::Array{NfOrdFracIdl, 1}, c::Array{NfOrdIdl, 1})
-   mm = change_ring(m, nf(base_ring(m)))
+   mm = change_base_ring(m, nf(base_ring(m)))
    rr = map(z -> NfOrdFracIdl(z, fmpz(1)), r)
    cc = map(z -> NfOrdFracIdl(z, fmpz(1)), c)
    return PMat(mm, rr, cc)

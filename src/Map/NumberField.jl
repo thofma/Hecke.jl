@@ -146,7 +146,7 @@ function automorphisms(K::AnticNumberField, copyval::Type{Val{T}} = Val{true}) w
   end
   f = K.pol
   Kt, t = PolynomialRing(K, "t", cached = false)
-  f1 = evaluate(f, t)
+  f1 = change_ring(f, Kt)
   divpol = Kt(nf_elem[-gen(K), K(1)])
   f1 = divexact(f1, divpol)
   lr = roots(f1, max_roots = div(degree(K), 2))
