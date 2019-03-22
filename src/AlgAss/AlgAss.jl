@@ -930,7 +930,7 @@ function _restrict_scalars_to_prime_field(A::AlgAss{T}, prime_field::Union{Flint
 
   function _new_coeffs(x)
     y = Vector{elem_type(prime_field)}(undef, nm)
-    yy = coeffs(x, false)
+    yy = coeffs(x, copy = false)
     for i = 1:n
       for j = 1:m
         if prime_field == FlintQQ
@@ -1021,7 +1021,7 @@ function restrict_scalars(A::AlgAss{nf_elem}, KtoL::NfToNfMor)
 
   function _new_coeffs(x)
     y = zeros(K, nm)
-    yy = coeffs(x, false)
+    yy = coeffs(x, copy = false)
     for i = 1:n
       c = matrix(FlintQQ, degree(L), 1, [ coeff(yy[i], j) for j = 0:degree(L) - 1 ])
       Mc = M*c
@@ -1120,11 +1120,11 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
     end
 
     function AtoB(x::AlgAssElem)
-      return B(map(L, coeffs(x, false)))
+      return B(map(L, coeffs(x, copy = false)))
     end
 
     function BtoA(x::AlgAssElem)
-      return A([ K(coeff(c, 0)) for c in coeffs(x, false) ])
+      return A([ K(coeff(c, 0)) for c in coeffs(x, copy = false) ])
     end
     return B, AtoB, BtoA
   end
@@ -1176,7 +1176,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
   let L = L, K = K, iMM = iMM, basisCinL = basisCinL, C = C, m = m, isfq = isfq
     _new_coeffs = x -> begin
       y = zeros(L, m)
-      xx = matrix(K, 1, dim(A), coeffs(x, false))
+      xx = matrix(K, 1, dim(A), coeffs(x, copy = false))
       Mx = xx*iMM
       for i = 1:m
         for j = 1:dim(C)
@@ -1223,7 +1223,7 @@ function _as_algebra_over_center(A::AlgAss{T}) where { T <: Union{fmpq, gfp_elem
       y = zeros(K, dim(A))
       xx = A()
       for i = 1:dim(B)
-        t = CtoA(CtoL\coeffs(x, false)[i])
+        t = CtoA(CtoL\coeffs(x, copy = false)[i])
         xx = add!(xx, xx, t*A[AoverC[i]])
       end
       return xx
@@ -1340,7 +1340,7 @@ function _find_idempotent_via_squarefree_poly(A::AlgAss{T}, a::AlgAssElem{T}, mi
   B = AlgAss(mina)
   idemB = _extraction_of_idempotents(B, true)
 
-  e = dot(coeffs(idemB, false), [ a^k for k = 0:(degree(mina) - 1) ])
+  e = dot(coeffs(idemB, copy = false), [ a^k for k = 0:(degree(mina) - 1) ])
   return e
 end
 

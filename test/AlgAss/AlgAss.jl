@@ -202,38 +202,21 @@ end
 
   Fp = GF(2)
   A = AlgAss(AlgGrp(Fp, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 19
+  @test nrows(basis_mat(Hecke.radical(A), copy = false)) == 19
 
   Fp = GF(fmpz(2))
   A = AlgAss(AlgGrp(Fp, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 19
-
-  Fq, a = FiniteField(2, 2, "a")
-  A = AlgAss(AlgGrp(Fq, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 19
-
-  Fq, a = FiniteField(fmpz(2), 2, "a")
-  A = AlgAss(AlgGrp(Fp, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 19
+  @test nrows(basis_mat(Hecke.radical(A), copy = false)) == 19
 
   G = PermutationGroup(3)
 
   Fp = GF(13)
   A = AlgAss(AlgGrp(Fp, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 0
+  @test nrows(basis_mat(Hecke.radical(A), copy = false)) == 0
 
   Fp = GF(fmpz(13))
   A = AlgAss(AlgGrp(Fp, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 0
-
-
-  Fq, a = FiniteField(13, 2, "a")
-  A = AlgAss(AlgGrp(Fq, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 0
-
-  Fq, a = FiniteField(fmpz(13), 2, "a")
-  A = AlgAss(AlgGrp(Fp, G))[1]
-  @test nrows(basis_mat(Hecke.radical(A), false)) == 0
+  @test nrows(basis_mat(Hecke.radical(A), copy = false)) == 0
 
   Qx, x = FlintQQ["x"]
   # f = x^2 + 1

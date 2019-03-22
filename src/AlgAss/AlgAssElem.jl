@@ -684,7 +684,7 @@ end
 #
 ################################################################################
 
-function coeffs(a::AbsAlgAssElem, copy::Bool = true)
+function coeffs(a::AbsAlgAssElem; copy::Bool = true)
   if copy
     return deepcopy(a.coeffs)
   end
@@ -698,5 +698,5 @@ end
 ################################################################################
 
 function denominator(x::AbsAlgAssElem)
-  return lcm([ denominator(y) for y in coeffs(x, false) ])
+  return lcm([ denominator(y) for y in coeffs(x, copy = false) ])
 end

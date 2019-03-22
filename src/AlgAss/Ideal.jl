@@ -12,7 +12,7 @@ function show(io::IO, a::AbsAlgAssIdl)
   print(io, "Ideal of ")
   print(io, algebra(a))
   println(io, " with basis matrix")
-  print(io, basis_mat(a, false))
+  print(io, basis_mat(a, copy = false))
 end
 
 ################################################################################
@@ -45,7 +45,7 @@ function assure_has_basis(a::AbsAlgAssIdl)
   end
 
   A = algebra(a)
-  M = basis_mat(a, false)
+  M = basis_mat(a, copy = false)
   a.basis = Vector{elem_type(A)}(undef, nrows(M))
   for i = 1:nrows(M)
     a.basis[i] = elem_from_mat_row(A, M, i)
@@ -53,7 +53,7 @@ function assure_has_basis(a::AbsAlgAssIdl)
   return nothing
 end
 
-function basis(a::AbsAlgAssIdl, copy::Bool = true)
+function basis(a::AbsAlgAssIdl; copy::Bool = true)
   assure_has_basis(a)
   if copy
     return deepcopy(a.basis)
@@ -62,7 +62,7 @@ function basis(a::AbsAlgAssIdl, copy::Bool = true)
   end
 end
 
-function basis_mat(a::AbsAlgAssIdl, copy::Bool = true)
+function basis_mat(a::AbsAlgAssIdl; copy::Bool = true)
   if copy
     return deepcopy(a.basis_mat)
   else
@@ -78,8 +78,8 @@ end
 
 function in(x::T, a::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   A = algebra(a)
-  M = matrix(base_ring(A), 1, dim(A), coeffs(x, false))
-  return rank(vcat(basis_mat(a, false), M)) == nrows(basis_mat(a, false)) # so far we assume nrows(basis_mat) == rank(basis_mat)
+  M = matrix(base_ring(A), 1, dim(A), coeffs(x, copy = false))
+  return rank(vcat(basis_mat(a, copy = false), M)) == nrows(basis_mat(a, copy = false)) # so far we assume nrows(basis_mat) == rank(basis_mat)
 end
 
 ################################################################################
@@ -89,8 +89,9 @@ end
 ################################################################################
 
 function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
+
   A = algebra(a)
-  ba = basis(a, false)
+  ba = basis(a, copy = false)
   t = A()
   for i = 1:dim(A)
     for j = 1:length(ba)
@@ -98,6 +99,8 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
         t = mul!(t, A[i], ba[j])
       elseif side == :right
         t = mul!(t, ba[j], A[i])
+      else
+        error("side must be either :left or :right")
       end
       if !(t in a)
         return false
@@ -107,7 +110,7 @@ function _test_ideal_sidedness(a::AbsAlgAssIdl, side::Symbol)
   return true
 end
 
-function isright_ideal(a::AbsAlgAssIdl)
+function isright_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl })
   if a.isright == 1
     return true
   elseif a.isright == 2
@@ -123,7 +126,7 @@ function isright_ideal(a::AbsAlgAssIdl)
   return false
 end
 
-function isleft_ideal(a::AbsAlgAssIdl)
+function isleft_ideal(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl })
   if a.isleft == 1
     return true
   elseif a.isleft == 2
@@ -175,8 +178,8 @@ function *(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where {S, T, U}
   end
 
   A = algebra(a)
-  ba = basis(a, false)
-  bb = basis(b, false)
+  ba = basis(a, copy = false)
+  bb = basis(b, copy = false)
   M = zero_matrix(base_ring(A), length(ba)*length(bb), dim(A))
   for i = 1:length(ba)
     ii = (i - 1)*length(bb)
@@ -206,7 +209,7 @@ end
 
 function ==(a::AbsAlgAssIdl, b::AbsAlgAssIdl)
   algebra(a) != algebra(b) && return false
-  return basis_mat(a, false) == basis_mat(b, false)
+  return basis_mat(a, copy = false) == basis_mat(b, copy = false)
 end
 
 ################################################################################
@@ -289,7 +292,7 @@ end
 
 # Helper function to set the side-flags
 # side can be :right, :left or :twosided
-function _set_sidedness(a::AbsAlgAssIdl, side::Symbol)
+function _set_sidedness(a::Union{ AbsAlgAssIdl, AlgAssAbsOrdIdl }, side::Symbol)
   if side == :right
     a.isleft = 0
     a.isright = 1
@@ -317,7 +320,7 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
   K = base_ring(A)
 
   # First compute the vector space quotient
-  Ma = basis_mat(a, false)
+  Ma = basis_mat(a, copy = false)
   M = hcat(deepcopy(transpose(Ma)), identity_matrix(K, dim(A)))
   r = rref!(M)
   pivot_cols = Vector{Int}()
@@ -366,7 +369,7 @@ function quo(A::S, a::AbsAlgAssIdl{S, T, U}) where { S, T, U }
       t = mul!(t, quotient_basis[i], quotient_basis[j])
       elem_to_mat_row!(s, 1, t)
       sNN = s*NN
-      mult_table[i, j, :] = [ sNN[1, k] for k  = 1:n ]
+      mult_table[i, j, :] = [ sNN[1, k] for k = 1:n ]
     end
   end
 
@@ -382,8 +385,8 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
   K = base_ring(A)
 
   # First compute the vector space quotient
-  Ma = basis_mat(a, false)
-  Mb = basis_mat(b, false)
+  Ma = basis_mat(a, copy = false)
+  Mb = basis_mat(b, copy = false)
   M = hcat(deepcopy(transpose(Mb)), deepcopy(transpose(Ma)))
   r = rref!(M)
   pivot_cols = Vector{Int}()
@@ -419,7 +422,7 @@ function quo(a::AbsAlgAssIdl{S, T, U}, b::AbsAlgAssIdl{S, T, U}) where { S, T, U
 
   N = transpose(vcat(MM, Mb)) # Another basis matrix for a
   function _image(x::AbsAlgAssElem)
-    t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, false)))
+    t, y = cansolve(N, matrix(K, dim(A), 1, coeffs(x, copy = false)))
     if t
       return B([ y[i, 1] for i = 1:dim(B) ])
     else
