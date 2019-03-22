@@ -140,6 +140,7 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   # rat recon maybe replace by known den if poly integral (Kronnecker)
   # if not monic, scale by gcd
   # remove content?
+  @assert parent(a) == parent(b)
   a = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
@@ -147,13 +148,13 @@ function gcd_modular_kronnecker(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_ele
   d = gcd(da, db)
   a = a*da
   b = b*db
-  K = base_ring(parent(a))
+  Kt = parent(a)
+  K = base_ring(Kt)
   fsa = evaluate(derivative(K.pol), gen(K))*d
   #now gcd(a, b)*fsa should be in the equation order...
   global p_start
   p = p_start
-  K = base_ring(parent(a))
-  @assert parent(a) == parent(b)
+  
   g = zero(a)
   d = fmpz(1)
   last_g = parent(a)(0)
@@ -290,6 +291,7 @@ end
 #  try using deg-1-primes only (& complicated lifting)
 #
 function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
+  @assert parent(a) == parent(b)
   a = a*(1//leading_coefficient(a))
   da = Base.reduce(lcm, [denominator(coeff(a, i)) for i=0:degree(a)])
   b = b*(1//leading_coefficient(b))
@@ -297,13 +299,12 @@ function gcdx_mod_res(a::Generic.Poly{nf_elem}, b::Generic.Poly{nf_elem})
   d = gcd(da, db)
   a = a*da
   b = b*db
-  K = base_ring(parent(a))
-  fsa = evaluate(derivative(K.pol), gen(K))*d
+  Kt = parent(a)
+  K = base_ring(Kt)
+  fsa = change_ring(derivative(K.pol), Kt)*d
   #now gcd(a, b)*fsa should be in the equation order...
   global p_start
-  p = p_start
-  K = base_ring(parent(a))
-  @assert parent(a) == parent(b)
+  p = p_start  
   g = zero(parent(a))
   d = fmpz(1)
   r = zero(K)
@@ -405,14 +406,15 @@ end
 #
 ################################################################################
 
-function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, x::PolyElem, y::PolyElem)
+function nf_poly_to_xy(f::PolyElem{Nemo.nf_elem}, Qxy::PolyRing, Qx::PolyRing)
   K = base_ring(f)
   Qy = parent(K.pol)
-
-  res = zero(parent(y))
+  y = gen(Qx)
+  
+  res = zero(Qxy)
   for i=degree(f):-1:0
     res *= y
-    res += evaluate(Qy(coeff(f, i)), x)
+    res += change_ring(Qy(coeff(f, i)), Qxy)
   end
   return res
 end

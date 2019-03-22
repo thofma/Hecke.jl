@@ -367,9 +367,7 @@ end
 
 function _issubfield(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
-  Lx, x = PolynomialRing(L, "x", cached = false)
-  f1 = evaluate(f, x)
-  R = roots(f1, max_roots = 1)
+  R = roots(f, L, max_roots = 1)
   if isempty(R)
     return false, L()
   else
@@ -434,8 +432,7 @@ end
 
 function _issubfield_normal(K::AnticNumberField, L::AnticNumberField)
   f = K.pol
-  Lx, x = PolynomialRing(L, "x", cached = false)
-  f1 = evaluate(f, x)
+  f1 = change_base_ring(f, L)
   r = roots(f1, max_roots = 1, isnormal = true)
   if length(r) > 0
     h = parent(L.pol)(r[1])

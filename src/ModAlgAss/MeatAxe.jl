@@ -349,6 +349,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   
   G = deepcopy(H)
   filter!(x -> !iszero(x), G)
+  #@show G
   if length(G) == 0
     return false, matrix(base_ring(H[1]), 1, n, [one(base_ring(H[1])) for i = 1:n])
   end
