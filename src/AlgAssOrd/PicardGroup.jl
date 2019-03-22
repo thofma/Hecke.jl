@@ -111,7 +111,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   A = algebra(O)
   OO = maximal_order(A)
 
-  F = conductor(O, OO)
+  F = conductor(O, OO, :left)
   FOO = extend(F, OO)
 
   # We want to use the exact sequence
@@ -336,7 +336,7 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
   O = order(a)
   A = algebra(O)
   OO = maximal_order(A)
-  F = conductor(O, OO)
+  F = conductor(O, OO, :left)
   FOO = F*OO
   aOO = a*OO
 
@@ -443,7 +443,8 @@ end
 #
 ################################################################################
 
-function ray_class_group(m::AlgAssAbsOrdIdl)
+# inf_pcl[i] may contain places for the field A.maps_to_numberfields[i][1]
+function ray_class_group(m::AlgAssAbsOrdIdl, inf_plc::Vector{Vector{InfPlc}} = Vector{Vector{InfPlc}}())
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -452,7 +453,11 @@ function ray_class_group(m::AlgAssAbsOrdIdl)
   groups = Vector{Tuple{GrpAbFinGen, MapRayClassGrp}}()
   for i = 1:length(fields_and_maps)
     mi = _as_ideal_of_number_field(m, fields_and_maps[i][2])
-    r, mr = ray_class_group(mi)
+    if length(inf_plc) != 0
+      r, mr = ray_class_group(mi, inf_plc[i])
+    else
+      r, mr = ray_class_group(mi)
+    end
     push!(groups, _make_disc_exp_deterministic(mr))
     #push!(groups, ray_class_group(mi))
   end
