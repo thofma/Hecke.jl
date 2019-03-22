@@ -331,7 +331,7 @@ function prime_dec_nonindex(O::NfOrd, p::Union{Integer, fmpz}, degree_limit::Int
   K = nf(O)
   f = K.pol
   R = parent(f)
-  Zx, x = PolynomialRing(FlintIntegerRing(),"x", cached = false)
+  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
   Zf = Zx(f)
 
   if degree_limit == 0

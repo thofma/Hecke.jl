@@ -65,8 +65,9 @@ function *(x::GrpAbFinGenElem, M::nmod_mat)
     coeff[1,i]=x.coeff[1,i]
   end
   y=coeff*M
-  return G(lift(y))
-  
+  l = lift(y)
+  l.base_ring = FlintZZ # TODO: Remove this once Nemo is updated
+  return G(l)
 end
 
 

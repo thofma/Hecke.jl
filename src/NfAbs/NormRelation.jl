@@ -437,7 +437,7 @@ function _has_norm_relation_abstract(G::GrpAb,
 
     onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
 
-    b, v, K = cansolve_with_nullspace(m', onee')
+    b, v, K = cansolve_with_kernel(m', onee')
 
     if !b
       return false, zero(FlintZZ), Vector{Tuple{Vector{Tuple{fmpz, GrpAbFinGenElem}}, Vector{GrpAbFinGenElem}}}()
@@ -485,7 +485,7 @@ function _has_norm_relation_abstract(G::GrpAb,
     end
   end
 
-  b, v, K = cansolve_with_nullspace(m', onee')
+  b, v, K = cansolve_with_kernel(m', onee')
 
   # Now collect the coefficients again as elements of Q[G]
   sol = Vector{elem_type(QG)}(undef, length(subgroups_needed))
@@ -544,7 +544,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
 
     onee = matrix(FlintQQ, 1, n, coeffs(one(QG)))
 
-    b, v, K = cansolve_with_nullspace(m', onee')
+    b, v, K = cansolve_with_kernel(m', onee')
 
     return b
   end
@@ -623,7 +623,7 @@ function _has_norm_relation_abstract(G::GrpGen, H::Vector{Tuple{GrpGen, GrpGenTo
     end
   end
 
-  b, v, K = cansolve_with_nullspace(m', onee')
+  b, v, K = cansolve_with_kernel(m', onee')
 
   @assert b
 

@@ -88,7 +88,7 @@ Hecke.lift(A::fmpz_mat) = A
 
 function lift_nonsymmetric(a::nmod_mat)
   z = fmpz_mat(nrows(a), ncols(a))
-  z.base_ring = FlintIntegerRing()
+  z.base_ring = FlintZZ
   ccall((:fmpz_mat_set_nmod_mat_unsigned, :libflint), Nothing,
           (Ref{fmpz_mat}, Ref{nmod_mat}), z, a)
   return z

@@ -55,9 +55,9 @@ function haspreimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 
   m = vcat(M.map, rels(codomain(M)))
-  fl, p = cansolve(m', a.coeff')
+  fl, p = cansolve(m, a.coeff, side = :left)
   if fl
-    return true, domain(M)(view(p', 1:1, 1:ngens(domain(M))))
+    return true, domain(M)(view(p, 1:1, 1:ngens(domain(M))))
   else
     return false, domain(M)[1]
   end
@@ -77,9 +77,9 @@ function hasimage(M::GrpAbFinGenMap, a::GrpAbFinGenElem)
   end
 
   m = vcat(M.imap, rels(domain(M)))
-  fl, p = cansolve(m', a.coeff')
+  fl, p = cansolve(m, a.coeff, side = :left)
   if fl
-    return true, codomain(M)(view(p', 1:1, 1:ngens(codomain(M))))
+    return true, codomain(M)(view(p, 1:1, 1:ngens(codomain(M))))
   else
     return false, codomain(M)[1]
   end
@@ -99,8 +99,8 @@ end
 function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::Bool = false)
   GA = parent(A[1])
   GB = parent(B[1])
-  @assert length(B)==length(A)
-  @assert length(A)>0
+  @assert length(B) == length(A)
+  @assert length(A) > 0
   if (check)
     m = vcat([x.coeff for x in A])
     m = vcat(m, rels(parent(A[1])))
@@ -109,7 +109,7 @@ function hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}; check::
     T = sub(T, 1:nrows(T), 1:length(A))
     n = vcat([x.coeff for x in B])
     n = T*n
-    if !cansolve(rels(parent(B[1]))', n')[1]
+    if !cansolve(rels(parent(B[1])), n, side = :left)[1]
       error("Data does not define a homomorphism")
     end
   end
