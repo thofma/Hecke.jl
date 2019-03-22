@@ -743,7 +743,7 @@ function isprime(A::NfAbsOrdIdl)
     return true
   end
 
-  (n, p) = ispower(norm(A, Val{false}))
+  (n, p) = ispower(norm(A, copy = false))
 
   if !isprime(p)
     A.is_prime = 2

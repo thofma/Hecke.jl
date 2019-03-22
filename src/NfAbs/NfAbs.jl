@@ -113,7 +113,18 @@ function quadratic_field(d::fmpz; cached::Bool = true, check::Bool = true)
   else
     s = "sqrt($d)"
   end
-  return number_field(x^2-d, s, cached = cached, check = check)
+  q, a = number_field(x^2-d, s, cached = cached, check = check)
+  set_special(q, :show => show_quad)
+  return q, a
+end
+
+function show_quad(io::IO, q::AnticNumberField)
+  d = trail(q.pol)
+  if d > 0
+    print(io, "Real quadratic field by ", q.pol)
+  else
+    print(io, "Imaginary quadratic field by ", q.pol)
+  end
 end
 
 function quadratic_field(d::Integer; cached::Bool = true, check::Bool = true)

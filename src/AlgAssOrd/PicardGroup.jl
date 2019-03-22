@@ -205,7 +205,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
       for j = 1:ngens(R)
         D[i, j] = r[j]
       end
-      push!(gens_of_G, divexact_right(elem_in_algebra(g, Val{false}), c))
+      push!(gens_of_G, divexact_right(elem_in_algebra(g, copy = false), c))
     end
 
     # D is the relation matrix of the picard group
@@ -254,7 +254,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     for i = 1:ngens(R)
       b, a = principal_gen_1_mod_m(gens_of_R[i]^R.snf[i], FOO)
       @assert b
-      push!(princ_gens_ray, elem_in_algebra(a, Val{false}))
+      push!(princ_gens_ray, elem_in_algebra(a, copy = false))
     end
 
     gammas = Vector{elem_type(A)}()

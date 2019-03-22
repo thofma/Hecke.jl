@@ -51,7 +51,7 @@ function assure_has_basis_pmat(O::NfRelOrd{T, S}) where {T, S}
   if !isdefined(O, :pseudo_basis)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   L = nf(O)
   M = zero_matrix(base_ring(L), degree(O), degree(O))
   C = Vector{S}()
@@ -70,7 +70,7 @@ function assure_has_pseudo_basis(O::NfRelOrd{T, S}) where {T, S}
   if !isdefined(O, :basis_pmat)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  P = basis_pmat(O, Val{false})
+  P = basis_pmat(O, copy = false)
   L = nf(O)
   pseudo_basis = Vector{Tuple{elem_type(L), S}}()
   for i = 1:degree(O)
@@ -107,7 +107,7 @@ function assure_has_basis_mat_inv(O::NfRelOrd)
   if isdefined(O, :basis_mat_inv)
     return nothing
   end
-  O.basis_mat_inv = inv(basis_mat(O, Val{false}))
+  O.basis_mat_inv = inv(basis_mat(O, copy = false))
   return nothing
 end
 
@@ -115,7 +115,7 @@ function assure_has_inv_coeff_ideals(O::NfRelOrd)
   if isdefined(O, :inv_coeff_ideals)
     return nothing
   end
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   O.inv_coeff_ideals = [ inv(pb[i][2]) for i in 1:degree(O) ]
   return nothing
 end
@@ -132,9 +132,9 @@ end
 
 > Returns the pseudo-basis of $\mathcal O$.
 """
-function pseudo_basis(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+function pseudo_basis(O::NfRelOrd; copy = true)
   assure_has_pseudo_basis(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.pseudo_basis)
   else
     return O.pseudo_basis
@@ -148,9 +148,9 @@ end
 > Returns the basis pseudo-matrix of $\mathcal O$ with respect to the power basis
 > of the ambient number field.
 """
-function basis_pmat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_pmat(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_pmat(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_pmat)
   else
     return O.basis_pmat
@@ -163,9 +163,9 @@ end
 
 > Returns the inverses of the coefficient ideals of the pseudo basis of $O$.
 """
-function inv_coeff_ideals(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+function inv_coeff_ideals(O::NfRelOrd; copy::Bool = true)
   assure_has_inv_coeff_ideals(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.inv_coeff_ideals)
   else
     return O.inv_coeff_ideals
@@ -185,9 +185,9 @@ end
 > Returns the elements of the pseudo-basis of $\mathcal O$ as elements of the
 > ambient number field.
 """
-function basis_nf(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_nf(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_nf(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_nf)
   else
     return O.basis_nf
@@ -201,9 +201,9 @@ end
 > Returns the basis matrix of $\mathcal O$ with respect to the power basis
 > of the ambient number field.
 """
-function basis_mat(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_mat(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_mat)
   else
     return O.basis_mat
@@ -216,9 +216,9 @@ end
 
 > Returns the inverse of the basis matrix of $\mathcal O$.
 """
-function basis_mat_inv(O::NfRelOrd, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat_inv(O::NfRelOrd; copy::Bool = true)
   assure_has_basis_mat_inv(O)
-  if copy == Val{true}
+  if copy
     return deepcopy(O.basis_mat_inv)
   else
     return O.basis_mat_inv
@@ -244,7 +244,7 @@ function show(io::IO, O::NfRelOrd)
     else
       print(io, "Relative order with pseudo-basis ")
     end
-    pb = pseudo_basis(O, Val{false})
+    pb = pseudo_basis(O, copy = false)
     for i = 1:degree(O)
       print(io, "($(pb[i][1])) * ")
       show(IOContext(io, :compact => true), pb[i][2])
@@ -260,7 +260,7 @@ function show(io::IO, O::NfRelOrd)
     end
     println(io, nf(O))
     print(io, "with pseudo-basis ")
-    pb = pseudo_basis(O, Val{false})
+    pb = pseudo_basis(O, copy = false)
     for i = 1:degree(O)
       print(io, "\n(")
       print(io, pb[i][1])
@@ -282,7 +282,7 @@ function assure_has_discriminant(O::NfRelOrd{T, S}) where {T, S}
     return nothing
   end
   d = det(trace_matrix(O))
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   a = pb[1][2]^2
   for i = 2:degree(O)
     a *= pb[i][2]^2
@@ -352,10 +352,10 @@ end
 ################################################################################
 
 function _check_elem_in_order(a::RelativeElement{T}, O::NfRelOrd{T, S}, short::Type{Val{V}} = Val{false}) where {T, S, V}
-  b_pmat = basis_pmat(O, Val{false})
+  b_pmat = basis_pmat(O, copy = false)
   t = zero_matrix(base_ring(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
-  t = t*basis_mat_inv(O, Val{false})
+  t = t*basis_mat_inv(O, copy = false)
   if short == Val{true}
     for i = 1:degree(O)
       if !(t[1, i] in b_pmat.coeffs[i])
@@ -487,7 +487,7 @@ end
 
 function ==(R::NfRelOrd, S::NfRelOrd)
   nf(R) != nf(S) && return false
-  return basis_pmat(R, Val{false}) == basis_pmat(S, Val{false})
+  return basis_pmat(R, copy = false) == basis_pmat(S, copy = false)
 end
 
 ################################################################################
@@ -508,7 +508,7 @@ function trace_matrix(O::NfRelOrd)
   end
   L = nf(O)
   K = base_ring(L)
-  b = basis_nf(O, Val{false})
+  b = basis_nf(O, copy = false)
   d = degree(L)
   g = zero_matrix(K, d, d)
   for i = 1:d
@@ -722,7 +722,7 @@ function relative_order(O::NfOrd, m::NfRelToNf)
   K = base_ring(L)
   OK = maximal_order(K)
   mm = inv(m)
-  B = basis(O, Val{false})
+  B = basis(O, copy = false)
   d = degree(L)
   dabs = degree(Labs)
   M = zero_matrix(K, dabs, d)
@@ -744,7 +744,7 @@ function non_simple_order(O::NfRelOrd, m::NfRelToNfRel_nsMor)
   L_ns = codomain(m)
   @assert nf(O) == L
   K = base_ring(L)
-  B = basis_nf(O, Val{false})
+  B = basis_nf(O, copy = false)
   d = degree(L)
   M = zero_matrix(K, d, d)
   for i = 1:d
@@ -769,9 +769,9 @@ $\mathcal O$.
 function denominator(a::RelativeElement, O::NfRelOrd)
   t = zero_matrix(base_ring(nf(O)), 1, degree(O))
   elem_to_mat_row!(t, 1, a)
-  t = t*basis_mat_inv(O, Val{false})
+  t = t*basis_mat_inv(O, copy = false)
   d = fmpz(1)
-  icv = inv_coeff_ideals(O, Val{false})
+  icv = inv_coeff_ideals(O, copy = false)
   for i = 1:degree(O)
     tt = icv[i]*t[1, i]
     tt = simplify(tt)
@@ -787,7 +787,7 @@ end
 ################################################################################
 
 function rand(O::NfRelOrd, B::Int)
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   z = nf(O)()
   for i = 1:degree(O)
     t = rand(pb[i][2], B)

@@ -117,7 +117,7 @@ function _multgrp(Q::AlgAssAbsOrdQuoRing)
       H, HtoQK = groups[i]
       QK = codomain(HtoQK)
       OK = base_ring(QK)
-      h = HtoQK\(QK(OK(AtoK(elem_in_algebra(OtoQ\x, Val{false})))))
+      h = HtoQK\(QK(OK(AtoK(elem_in_algebra(OtoQ\x, copy = false)))))
       y = hcat(y, h.coeff)
     end
     s = StoG\G(y)
@@ -192,7 +192,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   O = order(p)
   OA = order(P) # the maximal order
 
-  q = det(basis_mat(p, Val{false}))
+  q = det(basis_mat(p, copy = false))
   q = q - 1 # the cardinality of (O/p)^\times
   if isone(q)
     G = GrpAbFinGen(fmpz[])
@@ -213,7 +213,7 @@ function _multgrp_mod_p(p::AlgAssAbsOrdIdl, P::AlgAssAbsOrdIdl)
   if qq == q
     # Maybe we are lucky and don't need to search for another generator
     aa = OAtoOAP\GtoOAP(G[1])
-    x = _check_elem_in_order(elem_in_algebra(aa, Val{false}), O, Val{true})
+    x = _check_elem_in_order(elem_in_algebra(aa, copy = false), O, Val{true})
     if x
       a = O(aa, false)
     end
@@ -359,10 +359,10 @@ end
 # Cohen "Advanced Topics in Computational Number Theory" Algorithm 4.2.15.
 function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAssAbsOrdIdl)
   O = order(puq)
-  b = basis(puq, Val{false})
+  b = basis(puq, copy = false)
 
   # Compute (p^u + q)/(p^v + q)
-  N = basis_mat(pvq, Val{false})*basis_mat_inv(puq, Val{false})
+  N = basis_mat(pvq, copy = false)*basis_mat_inv(puq, copy = false)
   @assert denominator(N) == 1
   G = AbelianGroup(numerator(N))
   S, StoG = snf(G)
@@ -380,7 +380,7 @@ function _1_plus_pu_plus_q_mod_1_plus_pv_plus_q(puq::AlgAssAbsOrdIdl, pvq::AlgAs
   map!(x -> x + one(O), gens, gens)
 
   # The first part of Algorithm 4.2.16 in Cohen "Advanced Topics..."
-  M = basis_mat_inv(puq, Val{false})*StoG.imap
+  M = basis_mat_inv(puq, copy = false)*StoG.imap
   function disc_log(x::AlgAssAbsOrdElem)
     y = mod(x - one(O), pvq)
     y_fakemat = FakeFmpqMat(matrix(FlintZZ, 1, degree(O), elem_in_basis(y)), fmpz(1))

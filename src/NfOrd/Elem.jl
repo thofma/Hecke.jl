@@ -230,10 +230,10 @@ end
 
 > Returns the coefficient vector of $a$.
 """
-function elem_in_basis(a::NfAbsOrdElem, copy::Type{Val{T}} = Val{true}) where {T}
+function elem_in_basis(a::NfAbsOrdElem; copy::Bool = true) where {T}
   assure_has_coord(a)
   @hassert :NfOrd 2 a == dot(a.elem_in_basis, basis(parent(a)))
-  if copy == Val{true}
+  if copy
     return deepcopy(a.elem_in_basis)
   else
     return a.elem_in_basis
@@ -822,7 +822,7 @@ end
 function rand!(z::NfAbsOrdElem, O::NfAbsOrd, R::UnitRange{T}) where T <: Integer
   y = O()
   ar = rand(R, degree(O))
-  B = basis(O, Val{false})
+  B = basis(O, copy = false)
   for i in 1:degree(O)
     mul!(y, rand(R), B[i])
     add!(z, z, y)

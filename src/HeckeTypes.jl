@@ -1962,7 +1962,7 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: Nemo.Field
+mutable struct NfAbsNS <: Field
   pol::Array{fmpq_mpoly, 1}
   S::Array{Symbol, 1}
   basis#::Vector{NfAbsNSElem}
@@ -1979,7 +1979,7 @@ mutable struct NfAbsNS <: Nemo.Field
   end
 end
 
-mutable struct NfAbsNSElem <: Nemo.FieldElem
+mutable struct NfAbsNSElem <: FieldElem
   data::fmpq_mpoly
   parent::NfAbsNS
 

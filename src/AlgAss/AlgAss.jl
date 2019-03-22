@@ -289,8 +289,8 @@ p = prime_decomposition(OK, 2)[1][1]
 # coefficient ideals have zero p-adic valuation. Then we can think in the
 # localization at p and do as in the case of principal ideal domains.
 function AlgAss(O::NfRelOrd{T, S}, I::NfRelOrdIdl{T, S}, p::Union{NfOrdIdl, NfRelOrdIdl}) where {T, S}
-  basis_pmatI = basis_pmat(I, Val{false})
-  basis_pmatO = basis_pmat(O, Val{false})
+  basis_pmatI = basis_pmat(I, copy = false)
+  basis_pmatO = basis_pmat(O, copy = false)
 
   new_basis_mat = deepcopy(O.basis_mat)
   new_basis_mat_I = deepcopy(I.basis_mat)

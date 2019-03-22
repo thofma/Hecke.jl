@@ -63,7 +63,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   n = degree(order(A))
   prec = max(prec, 4*n)
 
-  l, t1 = lll_with_transform(basis_mat(A, Val{false}))
+  l, t1 = lll_with_transform(basis_mat(A, copy = false))
 
   if iszero(v)
     d = minkowski_gram_mat_scaled(order(A), prec)
@@ -75,7 +75,7 @@ function lll(A::NfOrdIdl, v::fmpz_mat = zero_matrix(FlintZZ, 1, 1); prec::Int = 
   else
     c = minkowski_mat(nf(order(A)), prec) ## careful: current iteration
                                           ## c is NOT a copy, so don't change.
-    b = FakeFmpqMat(l)*basis_mat(order(A), Val{false})
+    b = FakeFmpqMat(l)*basis_mat(order(A), copy = false)
 
 
     rt_c = roots_ctx(K)

@@ -589,7 +589,7 @@
 
         @testset "p = <$(p.gen_one), $(p.gen_two)>, v = $(v)" for p in primeideals, v in [1,4,11]
           pv = p^v
-          G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, minimum(p, Val{false})^v; method = method)
+          G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, minimum(p, copy = false)^v; method = method)
           @test issnf(G)
           @test length(mG.generators) == ngens(G)
           # Test generators
@@ -631,7 +631,7 @@
 
         @testset "p = <$(p.gen_one), $(p.gen_two)>, v = $(v)" for p in primeideals, v in [2,9]
           pv = p^v
-          G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, minimum(p, Val{false})^v; method = method)
+          G, mG = Hecke._1_plus_p_mod_1_plus_pv(p, v, pv, minimum(p, copy = false)^v; method = method)
           @test issnf(G)
           @test length(mG.generators) == ngens(G)
           # Test generators

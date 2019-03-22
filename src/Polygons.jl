@@ -473,7 +473,7 @@ function _from_algs_to_ideals(A::AlgAss{T}, OtoA::Map, AtoO::Map, Ip1, p::fmpz) 
     idem = BtoA(one(B)) # Assumes that B == idem*A
     M = representation_matrix(idem)
     ker = left_kernel_basis(M)
-    N = basis_mat(Ip1, Val{false})
+    N = basis_mat(Ip1, copy = false)
     for s = 1:length(ker)
       b = elem_in_basis(AtoO(A(ker[s])))
       for j = 1:degree(O)
@@ -547,7 +547,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
         x = u - p
       else
-        Ba = basis(P, Val{false})
+        Ba = basis(P, copy = false)
         for i in 1:degree(O)
           if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
             x = v*Ba[i] + u
@@ -579,7 +579,7 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
       elseif !is_norm_divisible(u.elem_in_nf-p, modulo)
         x = u - p
       else
-        Ba = basis(P, Val{false})
+        Ba = basis(P, copy = false)
         for i in 1:degree(O)
           if !is_norm_divisible((v*Ba[i] + u).elem_in_nf, modulo)
             x = v*Ba[i] + u

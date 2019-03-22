@@ -110,7 +110,7 @@ parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
 # - slow (due to basis)
 # - unless basis is in HNF it is also non-unique
 function Base.hash(A::NfAbsOrdIdl, h::UInt)
-  return Base.hash(basis_mat(A, Val{false}), h)
+  return Base.hash(basis_mat(A, copy = false), h)
 end
 
 ################################################################################
@@ -355,7 +355,7 @@ function assure_has_basis(A::NfAbsOrdIdl)
     assure_has_basis_mat(A)
     O = order(A)
     M = A.basis_mat
-    Ob = basis(O, Val{false})
+    Ob = basis(O, copy = false)
     B = Vector{elem_type(O)}(undef, degree(O))
     y = O()
     for i in 1:degree(O)
@@ -377,9 +377,9 @@ end
 
 > Returns the basis of A.
 """
-@inline function basis(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where {T}
+@inline function basis(A::NfAbsOrdIdl; copy::Bool = true)
   assure_has_basis(A)
-  if copy == Val{true}
+  if copy
     return deepcopy(A.basis)
   else
     return A.basis
@@ -406,9 +406,9 @@ end
 
 > Returns the basis matrix of $A$.
 """
-function basis_mat(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat(A::NfAbsOrdIdl; copy::Bool = true)
   assure_has_basis_mat(A)
-  if copy == Val{true}
+  if copy
     return deepcopy(A.basis_mat)
   else
     return A.basis_mat
@@ -470,7 +470,7 @@ function basis_mat_prime_deg_1(A::NfAbsOrdIdl)
 
   K, mK = ResidueField(O, A)
   assure_has_basis(O)
-  bas = basis(O, Val{false})
+  bas = basis(O, copy = false)
   if isone(bas[1])
     b[1, 1] = A.minimum
   else
@@ -503,9 +503,9 @@ end
 
 > Returns the inverse basis matrix of $A$.
 """
-function basis_mat_inv(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat_inv(A::NfAbsOrdIdl; copy::Bool = true) where T
   assure_has_basis_mat_inv(A)
-  if copy == Val{true}
+  if copy
     return deepcopy(A.basis_mat_inv)
   else
     return A.basis_mat_inv
@@ -522,7 +522,7 @@ function assure_has_basis_mat_inv(A::NfAbsOrdIdl)
   if isdefined(A, :basis_mat_inv)
     return nothing
   else
-    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(A, Val{false})))
+    A.basis_mat_inv = FakeFmpqMat(pseudo_inv(basis_mat(A, copy = false)))
     return nothing
   end
 end
@@ -549,9 +549,9 @@ end
 
 > Returns the smallest nonnegative element in $A \cap \mathbf Z$.
 """
-function minimum(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function minimum(A::NfAbsOrdIdl; copy::Bool = true)
   assure_has_minimum(A)
-  if copy == Val{true}
+  if copy
     return deepcopy(A.minimum)
   else
     return A.minimum
@@ -598,8 +598,8 @@ function assure_has_minimum(A::NfAbsOrdIdl)
     return nothing
   end
 
-  @hassert :NfOrd 2 isone(basis(order(A), Val{false})[1])
-  A.minimum = basis_mat(A, Val{false})[1, 1]
+  @hassert :NfOrd 2 isone(basis(order(A), copy = false)[1])
+  A.minimum = basis_mat(A, copy = false)[1, 1]
   return nothing
 end
 
@@ -645,7 +645,7 @@ function assure_has_norm(A::NfAbsOrdIdl)
   end
 
   assure_has_basis_mat(A)
-  A.norm = abs(det(basis_mat(A, Val{false})))
+  A.norm = abs(det(basis_mat(A, copy = false)))
   return nothing
 end
 
@@ -656,9 +656,9 @@ end
 > Returns the norm of $A$, that is, the cardinality of $\mathcal O/A$, where
 > $\mathcal O$ is the order of $A$.
 """
-function norm(A::NfAbsOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function norm(A::NfAbsOrdIdl; copy::Bool = true)
   assure_has_norm(A)
-  if copy == Val{true}
+  if copy
     return deepcopy(A.norm)
   else
     return A.norm
@@ -719,7 +719,7 @@ function ==(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   if isone(m1)
     return true
   end
-  return basis_mat(x, Val{false}) == basis_mat(y, Val{false})
+  return basis_mat(x, copy = false) == basis_mat(y, copy = false)
 end
 
 ################################################################################
@@ -739,7 +739,7 @@ end
 function in(x::NfAbsOrdElem, y::NfAbsOrdIdl)
   parent(x) !== order(y) && error("Order of element and ideal must be equal")
   v = matrix(FlintZZ, 1, degree(parent(x)), elem_in_basis(x))
-  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, Val{false})
+  t = FakeFmpqMat(v, fmpz(1))*basis_mat_inv(y, copy = false)
   return isone(t.den) 
 end
 
@@ -847,7 +847,7 @@ function isinvertible(A::NfAbsOrdIdl)
   i2 = gen_index(order(A))
   i = i1*inv(i2)
   @assert isone(denominator(i))
-  if isone(gcd(numerator(i), minimum(A, Val{false})))
+  if isone(gcd(numerator(i), minimum(A, copy = false)))
     return true, inv(A)
   end
   B = inv(A)
@@ -923,7 +923,7 @@ function _minmod_comp(a::fmpz, b::NfOrdElem)
   if isone(acom)
     return min_uncom
   end
-  e, _ = ppio(denominator(basis_mat(Zk, Val{false})), acom)
+  e, _ = ppio(denominator(basis_mat(Zk, copy = false)), acom)
   #e, _ = ppio(index(Zk), acom)
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, acom)  
@@ -961,7 +961,7 @@ function _invmod(a::fmpz, b::NfOrdElem)
   end
   d = denominator(b.elem_in_nf)
   d, _ = ppio(d, a)
-  e, _ = ppio(basis_mat(Zk, Val{false}).den, a) 
+  e, _ = ppio(basis_mat(Zk, copy = false).den, a) 
   S = ResidueRing(FlintZZ, a^2*d*e, cached=false)
   St = PolynomialRing(S, cached=false)[1]
   B = St(d*b.elem_in_nf)
@@ -1106,7 +1106,7 @@ end
 
 function trace_matrix(A::NfAbsOrdIdl)
   g = trace_matrix(order(A))
-  b = basis_mat(A, Val{false})
+  b = basis_mat(A, copy = false)
 #  mul!(b, b, g)   #b*g*b' is what we want.
 #                  #g should not be changed? b is a copy.
 #  mul!(b, b, b')  #TODO: find a spare tmp-mat and use transpose
@@ -1339,7 +1339,7 @@ function mod(x::S, y::T) where { S <: Union{NfAbsOrdElem, AlgAssAbsOrdElem}, T <
     return O(a)
   end
 
-  c = basis_mat(y, Val{false})
+  c = basis_mat(y, copy = false)
   t = fmpz(0)
   for i in degree(O):-1:1
     t = fdiv(a[i], c[i,i])
@@ -1365,7 +1365,7 @@ function mod(x::NfOrdElem, y::NfAbsOrdIdl, preinv::Array{fmpz_preinvn_struct, 1}
     end
     return O(a)
   else
-    return mod(x, basis_mat(y, Val{false}), preinv)
+    return mod(x, basis_mat(y, copy = false), preinv)
   end
 end
 
@@ -1394,7 +1394,7 @@ function mod!(x::NfOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fm
   # !!! This must be changed as soon as HNF has a different shape
 
   O = parent(x)
-  a = elem_in_basis(x, Val{false}) # this is already a copy
+  a = elem_in_basis(x, copy = false) # this is already a copy
 
   q = fmpz()
   r = fmpz()
@@ -1424,7 +1424,7 @@ end
 function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::Array{fmpz_preinvn_struct, 1})
 
   O = parent(x)
-  a = elem_in_basis(x, Val{false})
+  a = elem_in_basis(x, copy = false)
 
   q = fmpz()
   r = fmpz()
@@ -1440,10 +1440,10 @@ function mod!(x::AlgAssAbsOrdElem, c::Union{fmpz_mat, Array{fmpz, 2}}, preinv::A
   # We need to adjust the underlying algebra element
   t = algebra(O)()
   B = O.basis_alg
-  x.elem_in_algebra = zero!(elem_in_algebra(x, Val{false}))
+  x.elem_in_algebra = zero!(elem_in_algebra(x, copy = false))
   for i in 1:degree(O)
     t = mul!(t, B[i], a[i])
-    x.elem_in_algebra = add!(elem_in_algebra(x, Val{false}), elem_in_algebra(x, Val{false}), t)
+    x.elem_in_algebra = add!(elem_in_algebra(x, copy = false), elem_in_algebra(x, copy = false), t)
   end
 
   return x
@@ -1467,7 +1467,7 @@ end
 
 function mod!(x::Union{NfOrdElem, AlgAssAbsOrdElem}, Q::AbsOrdQuoRing)
   O = parent(x)
-  a = elem_in_basis(x, Val{false}) # this is already a copy
+  a = elem_in_basis(x, copy = false) # this is already a copy
 
   y = ideal(Q)
 
@@ -1531,7 +1531,7 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
 
   R = GF(p, cached = false)
   A = zero_matrix(R, degree(O), degree(O))
-  B = basis(O, Val{false})
+  B = basis(O, copy = false)
   for i in 1:d
     t = powermod(B[i], p^j, p)
     ar = elem_in_basis(t)
@@ -1612,9 +1612,9 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   if isdefined(a, :gens) && length(a.gens) < n
     B = a.gens
   else
-    B = basis(a, Val{false})
+    B = basis(a, copy = false)
   end
-  bmatinv = basis_mat_inv(a, Val{false})
+  bmatinv = basis_mat_inv(a, copy = false)
   m = zero_matrix(FlintZZ, n*length(B), n)
   for i = 1:length(B)
     M = representation_matrix(B[i])
@@ -1648,7 +1648,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   end
   mhnftrans = view(mhnf, 1:n, 1:n)
   b = FakeFmpqMat(pseudo_inv(mhnftrans))
-  mul!(b, b, basis_mat(O, Val{false}))
+  mul!(b, b, basis_mat(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
   O1 = Order(nf(O), b, false)
   if isdefined(O, :disc)
@@ -1678,7 +1678,7 @@ function colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl, contains::Bool = false)
     B = basis(b)
   end
 
-  bmatinv = basis_mat_inv(a, Val{false})
+  bmatinv = basis_mat_inv(a, copy = false)
 
   if contains
     m = zero_matrix(FlintZZ, n*length(B), n)
@@ -1796,7 +1796,7 @@ function isconsistent(A::NfAbsOrdIdl)
     end
   end
   #if has_norm(A)
-  #  b = basis_mat(A, Val{false})
+  #  b = basis_mat(A, copy = false)
   #  if det(b) != A.norm
   #    return false
   #  end
@@ -1890,7 +1890,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     B = Array{fmpz}(undef, degree(O))
     Amin2 = minimum(A)^2
     Amind = minimum(A)^degree(O)
-    BB = basis(A, Val{false})
+    BB = basis(A, copy = false)
     r = -Amin2:Amin2
 
     while true
@@ -1941,12 +1941,12 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
       continue
     end
 
-    mul!(m, m, basis_mat(A, Val{false}))
-    d = denominator(basis_mat(O, Val{false}))
-    mul!(m, m, basis_mat(O, Val{false}).num)
+    mul!(m, m, basis_mat(A, copy = false))
+    d = denominator(basis_mat(O, copy = false))
+    mul!(m, m, basis_mat(O, copy = false).num)
     gen = elem_from_mat_row(nf(O), m, 1, d)
     d = denominator(gen)
-    f, e = ppio(d, minimum(A, Val{false}))
+    f, e = ppio(d, minimum(A, copy = false))
     gen = mod(numerator(gen), f*minimum(A)^2)//f
     if iszero(gen)
       continue

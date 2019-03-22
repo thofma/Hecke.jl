@@ -6,7 +6,7 @@ mutable struct NfRelOrdToFqMor{T, S} <: Map{NfRelOrd{T, S}, FqFiniteField, Hecke
   function NfRelOrdToFqMor{T, S}(O::NfRelOrd{T, S}, P::NfRelOrdIdl{T, S}) where {T, S}
     z = new{T, S}()
     z.P = P
-    p = minimum(P, Val{false})
+    p = minimum(P, copy = false)
     F, mF = ResidueField(order(p), p)
     mmF = extend(mF, nf(order(p)))
     Fx = F["x"][1]

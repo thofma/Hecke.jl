@@ -41,7 +41,7 @@ function assure_has_basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   if !isdefined(a, :pseudo_basis)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  pb = pseudo_basis(a, Val{false})
+  pb = pseudo_basis(a, copy = false)
   L = nf(order(a))
   M = zero_matrix(base_ring(L), degree(L), degree(L))
   C = Vector{S}()
@@ -49,7 +49,7 @@ function assure_has_basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
     elem_to_mat_row!(M, i, pb[i][1])
     push!(C, deepcopy(pb[i][2]))
   end
-  M = M*basis_mat_inv(order(a), Val{false})
+  M = M*basis_mat_inv(order(a), copy = false)
   a.basis_pmat = pseudo_hnf(PseudoMatrix(M, C), :lowerleft, true)
   return nothing
 end
@@ -61,8 +61,8 @@ function assure_has_pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   if !isdefined(a, :basis_pmat)
     error("No pseudo_basis and no basis_pmat defined.")
   end
-  P = basis_pmat(a, Val{false})
-  B = basis_nf(order(a), Val{false})
+  P = basis_pmat(a, copy = false)
+  B = basis_nf(order(a), copy = false)
   L = nf(order(a))
   K = base_ring(L)
   pseudo_basis = Vector{Tuple{elem_type(L), typeof(a).parameters[2]}}()
@@ -89,7 +89,7 @@ function assure_has_basis_mat_inv(a::Union{NfRelOrdIdl, NfRelOrdFracIdl})
   if isdefined(a, :basis_mat_inv)
     return nothing
   end
-  a.basis_mat_inv = inv(basis_mat(a, Val{false}))
+  a.basis_mat_inv = inv(basis_mat(a, copy = false))
   return nothing
 end
 
@@ -106,9 +106,9 @@ end
 
 > Returns the pseudo-basis of $a$.
 """
-function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, copy::Type{Val{T}} = Val{true}) where T
+function pseudo_basis(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_pseudo_basis(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.pseudo_basis)
   else
     return a.pseudo_basis
@@ -122,9 +122,9 @@ end
 
 > Returns the basis pseudo-matrix of $a$.
 """
-function basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, copy::Type{Val{T}} = Val{true}) where T
+function basis_pmat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_basis_pmat(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.basis_pmat)
   else
     return a.basis_pmat
@@ -144,9 +144,9 @@ end
 
 > Returns the basis matrix of $a$.
 """
-function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_basis_mat(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.basis_mat)
   else
     return a.basis_mat
@@ -160,9 +160,9 @@ end
 
 > Returns the inverse of the basis matrix of $a$.
 """
-function basis_mat_inv(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}, copy::Type{Val{T}} = Val{true}) where T
+function basis_mat_inv(a::Union{NfRelOrdIdl, NfRelOrdFracIdl}; copy::Bool = true)
   assure_has_basis_mat_inv(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.basis_mat_inv)
   else
     return a.basis_mat_inv
@@ -184,12 +184,12 @@ function show(io::IO, a::NfRelOrdIdl)
   compact = get(io, :compact, false)
   if compact
     print(io, "Ideal with basis pseudo-matrix\n")
-    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
   else
     print(io, "Ideal of\n")
     show(IOContext(io, :compact => true), order(a))
     print(io, "\nwith basis pseudo-matrix\n")
-    show(IOContext(io, :compact => true), basis_pmat(a, Val{false}))
+    show(IOContext(io, :compact => true), basis_pmat(a, copy = false))
   end
 end
 
@@ -201,7 +201,7 @@ end
 
 function defines_ideal(O::NfRelOrd{T, S}, M::PMat{T, S}) where {T, S}
   K = base_ring(nf(O))
-  coeffs = basis_pmat(O, Val{false}).coeffs
+  coeffs = basis_pmat(O, copy = false).coeffs
   I = PseudoMatrix(identity_matrix(K, degree(O)), deepcopy(coeffs))
   return _spans_subset_of_pseudohnf(M, I, :lowerleft)
 end
@@ -230,7 +230,7 @@ end
 > then it is checked whether $M$ defines an ideal.
 """
 function ideal(O::NfRelOrd{T, S}, M::Generic.Mat{T}, check::Bool = true) where {T, S}
-  coeffs = deepcopy(basis_pmat(O, Val{false})).coeffs
+  coeffs = deepcopy(basis_pmat(O, copy = false)).coeffs
   return ideal(O, PseudoMatrix(M, coeffs), check)
 end
 
@@ -243,7 +243,7 @@ end
 """
 function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, a::S, b::S, check::Bool = true) where {T, S}
   d = degree(O)
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_ring(nf(O)), 2*d, d)
   C = Array{S}(undef, 2*d)
   for i = 1:d
@@ -254,7 +254,7 @@ function ideal(O::NfRelOrd{T, S}, x::RelativeElement{T}, y::RelativeElement{T}, 
     elem_to_mat_row!(M, i, pb[i - d][1]*y)
     C[i] = pb[i - d][2]*b
   end
-  M = M*basis_mat_inv(O, Val{false})
+  M = M*basis_mat_inv(O, copy = false)
   PM = PseudoMatrix(M, C)
   if check
     !defines_ideal(O, PM) && error("The elements do not define an ideal.")
@@ -287,7 +287,7 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
   parent(x) != O && error("Order of element does not coincide with order")
 
   d = degree(O)
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   M = zero_matrix(base_ring(nf(O)), d, d)
   if iszero(x)
     return NfRelOrdIdl{T, S}(O, PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ]))
@@ -295,7 +295,7 @@ function ideal(O::NfRelOrd{T, S}, x::NfRelOrdElem{T}) where {T, S}
   for i = 1:d
     elem_to_mat_row!(M, i, pb[i][1]*nf(O)(x))
   end
-  M = M*basis_mat_inv(O, Val{false})
+  M = M*basis_mat_inv(O, copy = false)
   PM = PseudoMatrix(M, [ deepcopy(pb[i][2]) for i = 1:d ])
   PM = pseudo_hnf(PM, :lowerleft)
   return NfRelOrdIdl{T, S}(O, PM)
@@ -314,7 +314,7 @@ end
 """
 function ideal(O::NfRelOrd{T, S}, a::S, check::Bool = true) where {T, S}
   d = degree(O)
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
   M = identity_matrix(base_ring(nf(O)), d)
   PM = PseudoMatrix(M, [ a*pb[i][2] for i = 1:d ])
   if check
@@ -330,7 +330,7 @@ function ideal(O::NfRelOrd{nf_elem, NfOrdFracIdl}, a::NfOrdIdl, check::Bool = tr
 end
 
 function ideal(O::NfRelOrd, a::NfRelOrdIdl, check::Bool = true)
-  @assert order(a) == order(pseudo_basis(O, Val{false})[1][2])
+  @assert order(a) == order(pseudo_basis(O, copy = false)[1][2])
 
   aa = frac_ideal(order(a), basis_pmat(a), true)
   return ideal(O, aa, check)
@@ -393,7 +393,7 @@ end
 """
 function ==(a::NfRelOrdIdl, b::NfRelOrdIdl)
   order(a) != order(b) && return false
-  return basis_pmat(a, Val{false}) == basis_pmat(b, Val{false})
+  return basis_pmat(a, copy = false) == basis_pmat(b, copy = false)
 end
 
 ################################################################################
@@ -402,7 +402,7 @@ end
 #
 ################################################################################
 
-iszero(a::NfRelOrdIdl) = iszero(basis_mat(a, Val{false})[1, 1])
+iszero(a::NfRelOrdIdl) = iszero(basis_mat(a, copy = false)[1, 1])
 
 isone(a::NfRelOrdIdl) = isone(minimum(a))
 
@@ -418,13 +418,13 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
     return nothing
   end
   if iszero(a)
-    O = order(basis_pmat(a, Val{false}).coeffs[1])
+    O = order(basis_pmat(a, copy = false).coeffs[1])
     a.norm = O()*O
     a.has_norm = true
     return nothing
   end
-  c = basis_pmat(a, Val{false}).coeffs
-  d = inv_coeff_ideals(order(a), Val{false})
+  c = basis_pmat(a, copy = false).coeffs
+  d = inv_coeff_ideals(order(a), copy = false)
   n = c[1]*d[1]
   for i = 2:degree(order(a))
     n *= c[i]*d[i]
@@ -435,7 +435,7 @@ function assure_has_norm(a::NfRelOrdIdl{T, S}) where {T, S}
     a.norm = n.num
   else
     @assert denominator(n) == 1
-    a.norm = NfRelOrdIdl{typeof(n).parameters...}(order(n), basis_pmat(n, Val{false}))
+    a.norm = NfRelOrdIdl{typeof(n).parameters...}(order(n), basis_pmat(n, copy = false))
   end
   a.has_norm = true
   return nothing
@@ -447,9 +447,9 @@ end
 
 > Returns the norm of $a$.
 """
-function norm(a::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function norm(a::NfRelOrdIdl; copy::Bool = true)
   assure_has_norm(a)
-  if copy == Val{true}
+  if copy
     return deepcopy(a.norm)
   else
     return a.norm
@@ -495,10 +495,10 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   if iszero(a) || iszero(b)
     return order(a)()*order(a)
   end
-  pba = pseudo_basis(a, Val{false})
-  pbb = pseudo_basis(b, Val{false})
-  ma = basis_mat(a, Val{false})
-  mb = basis_mat(b, Val{false})
+  pba = pseudo_basis(a, copy = false)
+  pbb = pseudo_basis(b, copy = false)
+  ma = basis_mat(a, copy = false)
+  mb = basis_mat(b, copy = false)
   L = nf(order(a))
   K = base_ring(L)
   d = degree(order(a))
@@ -518,7 +518,7 @@ function *(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   else
     H = sub(pseudo_hnf(PseudoMatrix(M, C), :lowerleft), (d*(d - 1) + 1):d^2, 1:d)
   end
-  H.matrix = H.matrix*basis_mat_inv(order(a), Val{false})
+  H.matrix = H.matrix*basis_mat_inv(order(a), copy = false)
   if T == nf_elem
     H = pseudo_hnf_full_rank_with_modulus(H, m, :lowerleft)
   else
@@ -615,14 +615,14 @@ function inv(a::Union{NfRelOrdIdl{T, S}, NfRelOrdFracIdl{T, S}}) where {T, S}
   @assert !iszero(a)
   O = order(a)
   d = degree(O)
-  pb = pseudo_basis(a, Val{false})
-  bmO = basis_mat(O, Val{false})
-  bmOinv = basis_mat_inv(O, Val{false})
+  pb = pseudo_basis(a, copy = false)
+  bmO = basis_mat(O, copy = false)
+  bmOinv = basis_mat_inv(O, copy = false)
   M = bmO*representation_matrix(pb[1][1])*bmOinv
   for i = 2:d
     M = hcat(M, bmO*representation_matrix(pb[i][1])*bmOinv)
   end
-  invcoeffs = inv_coeff_ideals(O, Val{false})
+  invcoeffs = inv_coeff_ideals(O, copy = false)
   C = Array{S}(undef, d^2)
   for i = 1:d
     for j = 1:d
@@ -651,7 +651,7 @@ end
 """
 function divexact(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S}
   O = order(a)
-  return frac_ideal(O, basis_pmat(a, Val{false}), true)*inv(b)
+  return frac_ideal(O, basis_pmat(a, copy = false), true)*inv(b)
 end
 
 //(a::NfRelOrdIdl{T, S}, b::NfRelOrdIdl{T, S}) where {T, S} = divexact(a, b)
@@ -699,7 +699,7 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   L = nf(O)
   K = base_ring(L)
   OK = maximal_order(K)
-  pb = pseudo_basis(O, Val{false})
+  pb = pseudo_basis(O, copy = false)
 
   is_absolute = (typeof(K) == AnticNumberField)
 
@@ -718,13 +718,13 @@ function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   if is_absolute
     Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, pbint[i][2], fmpz(1)) for i = 1:d ]))
   else
-    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, basis_pmat(pbint[i][2], Val{false})) for i = 1:d ]))
+    Oint = typeof(O)(L, PseudoMatrix(basis_mat_int, [ frac_ideal(OK, basis_pmat(pbint[i][2], copy = false)) for i = 1:d ]))
   end
 
   if is_absolute
     pOK = ideal(OK, OK(minimum(P)))
   else
-    pOK = minimum(P, Val{false})*OK
+    pOK = minimum(P, copy = false)*OK
   end
   prime_ideals = factor(pOK)
 
@@ -809,11 +809,11 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   O = order(a)
   K = base_ring(nf(O))
   d = degree(O)
-  pb = pseudo_basis(a, Val{false})
-  S = basis_mat_inv(O, Val{false})*basis_mat_inv(a, Val{false})
-  M = basis_mat(O, Val{false})*representation_matrix(pb[1][1])*S
+  pb = pseudo_basis(a, copy = false)
+  S = basis_mat_inv(O, copy = false)*basis_mat_inv(a, copy = false)
+  M = basis_mat(O, copy = false)*representation_matrix(pb[1][1])*S
   for i = 2:d
-    M = hcat(M, basis_mat(O, Val{false})*representation_matrix(pb[i][1])*S)
+    M = hcat(M, basis_mat(O, copy = false)*representation_matrix(pb[i][1])*S)
   end
   invcoeffs = [ simplify(inv(pb[i][2])) for i = 1:d ]
   C = Array{T2}(undef, d^2)
@@ -828,7 +828,7 @@ function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   end
   PM = PseudoMatrix(transpose(M), C)
   PM = sub(pseudo_hnf(PM, :upperright, true), 1:d, 1:d)
-  N = inv(transpose(PM.matrix))*basis_mat(O, Val{false})
+  N = inv(transpose(PM.matrix))*basis_mat(O, copy = false)
   PN = PseudoMatrix(N, [ simplify(inv(I)) for I in PM.coeffs ])
   PN = pseudo_hnf(PN, :lowerleft, true)
   return NfRelOrd{T1, T2}(nf(O), PN)
@@ -847,14 +847,14 @@ function relative_ideal(a::NfOrdIdl, m::NfRelToNf)
   K = base_ring(L)
   O = relative_order(order(a), m)
   mm = inv(m)
-  B = basis(a, Val{false})
+  B = basis(a, copy = false)
   d = degree(L)
   dabs = degree(Labs)
   M = zero_matrix(K, dabs, d)
   for i = 1:dabs
     elem_to_mat_row!(M, i, mm(Labs(B[i])))
   end
-  M = M*basis_mat_inv(O, Val{false})
+  M = M*basis_mat_inv(O, copy = false)
   PM = sub(pseudo_hnf(PseudoMatrix(M), :lowerleft, true), (dabs - d + 1):dabs, 1:d)
   return ideal(O, PM, false, true)
 end
@@ -933,7 +933,7 @@ end
 function prime_dec_index(O::NfRelOrd, p::Union{NfOrdIdl, NfRelOrdIdl})
   L = nf(O)
   K = base_ring(L)
-  pbasisO = pseudo_basis(O, Val{false})
+  pbasisO = pseudo_basis(O, copy = false)
   pO = p*O
 
   Ip = pradical(O, p)
@@ -977,7 +977,7 @@ end
 function mod(a::NfRelOrdElem, I::NfRelOrdIdl)
   O = order(I)
   b = elem_in_basis(a)
-  PM = basis_pmat(I, Val{false}) # PM is assumed to be in pseudo hnf
+  PM = basis_pmat(I, copy = false) # PM is assumed to be in pseudo hnf
   for i = degree(O):-1:1
     t = b[i] - mod(b[i], PM.coeffs[i])
     for j = 1:i
@@ -1064,9 +1064,9 @@ end
 > Returns the ideal $A \cap O$ where $O$ is the maximal order of the coefficient
 > ideals of $A$.
 """
-function minimum(A::NfRelOrdIdl, copy::Type{Val{T}} = Val{true}) where T
+function minimum(A::NfRelOrdIdl; copy::Bool = true)
   assure_has_minimum(A)
-  if copy == Val{true}
+  if copy
     return deepcopy(A.minimum)
   else
     return A.minimum
@@ -1077,10 +1077,10 @@ function assure_has_minimum(A::NfRelOrdIdl)
   if isdefined(A, :minimum)
     return nothing
   end
-  @assert isone(basis_pmat(A, Val{false}).matrix[1, 1])
-  @assert isone(basis_pmat(order(A), Val{false}).matrix[1, 1])
+  @assert isone(basis_pmat(A, copy = false).matrix[1, 1])
+  @assert isone(basis_pmat(order(A), copy = false).matrix[1, 1])
 
-  M = deepcopy(basis_pmat(A, Val{false}).coeffs[1])
+  M = deepcopy(basis_pmat(A, copy = false).coeffs[1])
   M = simplify(M)
   A.minimum = numerator(M)
   return nothing
@@ -1117,8 +1117,8 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   !(order(x) == order(y)) && error("Parent mismatch")
 
   O = order(x)
-  mx = minimum(x, Val{false})
-  my = minimum(y, Val{false})
+  mx = minimum(x, copy = false)
+  my = minimum(y, copy = false)
   g = mx + my
   if isone(g)
     u, v = idempotents(mx, my)
@@ -1138,8 +1138,8 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
   end
   for i = 1:d
     for j = 1:d
-      M[i + 1, j + 1] = deepcopy(basis_mat(x, Val{false})[i, j])
-      M[i + 1 + d, j + 1] = deepcopy(basis_mat(y, Val{false})[i, j])
+      M[i + 1, j + 1] = deepcopy(basis_mat(x, copy = false)[i, j])
+      M[i + 1 + d, j + 1] = deepcopy(basis_mat(y, copy = false)[i, j])
     end
     M[i + 1, i + d + 1] = K(1)
   end
@@ -1151,8 +1151,8 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
     ( 0 | M_y |  0  )
   =#
 
-  coeffsx = deepcopy(basis_pmat(x, Val{false}).coeffs)
-  coeffsy = deepcopy(basis_pmat(y, Val{false}).coeffs)
+  coeffsx = deepcopy(basis_pmat(x, copy = false).coeffs)
+  coeffsy = deepcopy(basis_pmat(y, copy = false).coeffs)
   C = [ K(1)*OK, coeffsx..., coeffsy... ]
   PM = PseudoMatrix(M, C)
   PM = pseudo_hnf(PM, :upperright)
@@ -1163,7 +1163,7 @@ function idempotents(x::NfRelOrdIdl{T, S}, y::NfRelOrdIdl{T, S}) where {T, S}
     end
   end
 
-  pbx = pseudo_basis(x, Val{false})
+  pbx = pseudo_basis(x, copy = false)
   u = pbx[1][1]*PM.matrix[1, d + 2]
   for i = 2:d
     u += pbx[i][1]*PM.matrix[1, d + 1 + i]
@@ -1192,9 +1192,9 @@ end
 function in(x::NfRelOrdElem, y::NfRelOrdIdl)
   parent(x) != order(y) && error("Order of element and ideal must be equal")
   O = order(y)
-  b_pmat = basis_pmat(y, Val{false})
+  b_pmat = basis_pmat(y, copy = false)
   t = transpose(matrix(base_ring(nf(O)), degree(O), 1, elem_in_basis(x)))
-  t = t*basis_mat_inv(y, Val{false})
+  t = t*basis_mat_inv(y, copy = false)
   for i = 1:degree(O)
     if !(t[1, i] in b_pmat.coeffs[i])
       return false
@@ -1226,7 +1226,7 @@ function uniformizer(P::NfRelOrdIdl)
   @assert P.is_prime == 1
 
   if P.splitting_type[1] == 1
-    return order(P)(uniformizer(minimum(P, Val{false})))
+    return order(P)(uniformizer(minimum(P, copy = false)))
   end
 
   r = 500 # hopefully enough
@@ -1269,7 +1269,7 @@ function p_uniformizer(P::NfRelOrdIdl)
     return P.p_uniformizer
   end
 
-  p = minimum(P, Val{false})
+  p = minimum(P, copy = false)
   prime_dec = prime_decomposition(order(P), p)
   primes = Vector{typeof(P)}()
   for (PP, e) in prime_dec
@@ -1300,7 +1300,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
     return P.anti_uniformizer
   end
 
-  p = minimum(P, Val{false})
+  p = minimum(P, copy = false)
   # We need a pseudo basis of O, where the coefficient ideals have valuation
   # 0 at p.
   O = order(P)
@@ -1309,7 +1309,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   d = Vector{T}(undef, degree(O))
   a = elem_in_nf(uniformizer(p))
   for i = 1:degree(O)
-    v = valuation(pseudo_basis(O, Val{false})[i][2], p)
+    v = valuation(pseudo_basis(O, copy = false)[i][2], p)
     if !iszero(v)
       d[i] = a^v
       mul_row!(N, i, d[i])
@@ -1336,7 +1336,7 @@ function anti_uniformizer(P::NfRelOrdIdl{T, S}) where {T, S}
   @assert length(K) > 0
   x = nf(O)()
   for i = 1:degree(O)
-    x += immF(K[1][i])*pseudo_basis(O, Val{false})[i][1]*d[i]
+    x += immF(K[1][i])*pseudo_basis(O, copy = false)[i][1]*d[i]
   end
   P.anti_uniformizer = x*anti_uniformizer(p)
   return P.anti_uniformizer
@@ -1349,7 +1349,7 @@ end
 ################################################################################
 
 function rand(a::NfRelOrdIdl, B::Int)
-  pb = pseudo_basis(a, Val{false})
+  pb = pseudo_basis(a, copy = false)
   z = nf(order(a))()
   for i = 1:degree(order(a))
     t = rand(pb[i][2], B)
@@ -1366,7 +1366,7 @@ end
 
 function prime_number(p::NfRelOrdIdl)
   @assert p.is_prime == 1
-  m = minimum(p, Val{false})
+  m = minimum(p, copy = false)
   if typeof(m) == NfOrdIdl
     return minimum(m)
   else

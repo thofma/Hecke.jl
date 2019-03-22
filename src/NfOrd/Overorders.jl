@@ -222,8 +222,8 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
       continue
     end
     bL = hnf(bL)
-    #bL = basis_mat(L, Val{false})
-    if any(x -> basis_mat(x, Val{false}) == bL, orders)
+    #bL = basis_mat(L, copy = false)
+    if any(x -> basis_mat(x, copy = false) == bL, orders)
       continue
     else
       push!(orders, Order(K, bL, false, false))
@@ -309,7 +309,7 @@ function _minimal_poverorders2(O::NfOrd, P::NfOrdIdl, excess = Int[])
   d = degree(O)
   K = nf(O)
   if norm(P) == order(A)
-    O1 = Order(K, hnf(basis_mat(M, Val{false})), false, false)
+    O1 = Order(K, hnf(basis_mat(M, copy = false)), false, false)
     push!(orders, O1)
     return orders
   end
@@ -367,8 +367,8 @@ end
 
 function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZZ, 2 * degree(O1), degree(O1)))
   K = nf(O1)
-  R1 = basis_mat(O1, Val{false})
-  S1 = basis_mat(O2, Val{false})
+  R1 = basis_mat(O1, copy = false)
+  S1 = basis_mat(O2, copy = false)
   d = degree(K)
   z1 = view(z, 1:d, 1:d)
   mul!(z1, R1.num, S1.den)
@@ -486,8 +486,8 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
         new = new_pprimary_overorders_bass(N, Q)
         for S in new
           #@show ishnf(basis_mat(S).num, :lowerleft)
-          #t += @elapsed H = hnf(basis_mat(S, Val{false}))
-          H = basis_mat(S, Val{false})
+          #t += @elapsed H = hnf(basis_mat(S, copy = false))
+          H = basis_mat(S, copy = false)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]
@@ -504,8 +504,8 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
         new = _minimal_poverorders(N, Q, excess)
         for S in new
           #@show ishnf(basis_mat(S).num, :lowerleft)
-          #t += @elapsed H = hnf(basis_mat(S, Val{false}))
-          H = basis_mat(S, Val{false})
+          #t += @elapsed H = hnf(basis_mat(S, copy = false))
+          H = basis_mat(S, copy = false)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]
@@ -570,7 +570,7 @@ function pprimary_overorders_old(O::NfOrd, P::NfOrdIdl)
       end
     end
     append!(res, nres)
-    res = unique(OO -> basis_mat(OO, Val{false}), res)
+    res = unique(OO -> basis_mat(OO, copy = false), res)
   end
   @show length(res)
   return res
@@ -670,7 +670,7 @@ function poverorders(O, p::fmpz)
     N = pop!(to_enlarge)
     new = poverorders_from_multipliers(N, p)
     for S in new
-      H = hnf(basis_mat(S, Val{false}))
+      H = hnf(basis_mat(S, copy = false))
       ind = prod(H.num[i, i] for i in 1:degree(O))//H.den
       if haskey(current, ind)
         c = current[ind]
@@ -914,7 +914,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
     return res
   end
   K = nf(O)
-  O1n = Order(K, hnf(basis_mat(O1, Val{false})), false, false)
+  O1n = Order(K, hnf(basis_mat(O1, copy = false)), false, false)
   push!(res, O1n)
   primes = prime_ideals_over(O1, P)
   while length(primes) == 1
@@ -922,7 +922,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
     if index(O2) == index(O1)
       return res
     end
-    O2n = Order(K, hnf(basis_mat(O2, Val{false})), false, false)
+    O2n = Order(K, hnf(basis_mat(O2, copy = false)), false, false)
     push!(res, O2n)
     O1 = O2
     primes = prime_ideals_over(O1, primes[1])
@@ -933,7 +933,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
   O3 = O1
   O2 = ring_of_multipliers(primes[1])
   while index(O3) != index(O2)
-    O2n = Order(K, hnf(basis_mat(O2, Val{false})), false, false)
+    O2n = Order(K, hnf(basis_mat(O2, copy = false)), false, false)
     push!(res1, O2n)
     O3 = O2
     P = prime_ideals_over(O2, primes[1])[1]
@@ -944,7 +944,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
   O3 = O1
   O2 = ring_of_multipliers(primes[2])
   while index(O3) != index(O2)
-    O2n = Order(K, hnf(basis_mat(O2, Val{false})), false, false)
+    O2n = Order(K, hnf(basis_mat(O2, copy = false)), false, false)
     push!(res2, O2)
     O3 = O2
     P = prime_ideals_over(O2, primes[2])[1]
@@ -1159,7 +1159,7 @@ end
 function abelian_group(Q::NfOrdQuoRing)
   A = AbelianGroup(Q.basis_mat)
   S, mS = snf(A)
-  B = basis(Q.base_ring, Val{false})
+  B = basis(Q.base_ring, copy = false)
   f = a -> begin aa = mS(a); Q(sum(aa.coeff[i] * B[i] for i in 1:degree(Q.base_ring))) end
   g = b -> mS\A(elem_in_basis(b.elem))
   return S, f, g

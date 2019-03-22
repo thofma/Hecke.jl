@@ -1177,8 +1177,8 @@ function pseudo_hnf_kb!(H::PMat{T, S}, U::Generic.Mat{T}, with_trafo::Bool = fal
                 error("Ideals are not integral.")
               end
               # numerator(ad) would make a deepcopy...
-              adint = NfRelOrdIdl{typeof(ad).parameters...}(order(ad), basis_pmat(ad, Val{false}))
-              bdint = NfRelOrdIdl{typeof(bd).parameters...}(order(bd), basis_pmat(bd, Val{false}))
+              adint = NfRelOrdIdl{typeof(ad).parameters...}(order(ad), basis_pmat(ad, copy = false))
+              bdint = NfRelOrdIdl{typeof(bd).parameters...}(order(bd), basis_pmat(bd, copy = false))
               u, v = map(K, idempotents(adint, bdint))
             end
             u = divexact(u, Aij)
