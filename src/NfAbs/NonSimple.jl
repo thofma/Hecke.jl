@@ -864,6 +864,27 @@ end
 
 (K::NfAbsNS)() = zero(K)
 
+function (K::NfAbsNS)(a::NfAbsNSElem)
+  if parent(a) === K
+    return deepcopy(a)
+  end
+  error("not compatible")
+end
+
+@doc Markdown.doc"""
+    norm(f::PolyElem{NfAbsNSElem}) -> fmpq_poly
+
+>The norm of $f$, that is, the product of all conjugates of $f$ taken
+>coefficientwise.
+"""
+function norm(f::PolyElem{NfAbsNSElem})
+  Kx = parent(f)
+  K = base_ring(f)
+  P = polynomial_to_power_sums(f, degree(f)*degree(K))
+  PQ = fmpq[tr(x) for x in P]
+  return power_sums_to_polynomial(PQ)
+end
+
 function is_norm_divisible(a::NfAbsNSElem, n::fmpz)
   return iszero(mod(norm(a), n))
 end
