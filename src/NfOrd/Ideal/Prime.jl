@@ -84,9 +84,10 @@ end
 #
 ################################################################################
 @doc Markdown.doc"""
-    intersect_prime(f::Map, P::NfOrdIdl) -> NfOrdIdl
+    intersect_prime(f::Map, P::NfOrdIdl, O_k::NfOrd) -> NfOrdIdl
 > Given a prime ideal $P$ in $K$ and the inclusion map $f:k \to K$ 
 > of number fields, find the unique prime $p$ in $k$ below.
+> $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
 
 function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
@@ -138,12 +139,13 @@ end
 
 
 @doc Markdown.doc"""
-    prime_decomposition_nonindex(f::Map, p::NfOrdIdl) -> Array{Tuple{NfOrdIdl, Int}, 1}
+    prime_decomposition_nonindex(f::Map, p::NfOrdIdl, Z_K::NfOrd) -> Array{Tuple{NfOrdIdl, Int}, 1}
 > Given a map $f: k\to K$ of number fields defined over $\mathbb Q$ and
 > a prime ideal in the maximal order of $k$, find all prime ideals in
 > the maximal order of $K$ above.
+> The ideals will belong to $Z_K$ which defaults to "the" maximal order of $K$.
 """
-function prime_decomposition(f::Map, p::NfOrdIdl, ZK = maximal_order(codomain(f)))
+function prime_decomposition(f::Map, p::NfOrdIdl, ZK::NfOrd = maximal_order(codomain(f)))
   
   @assert p.is_prime == 1
   k = domain(f)
