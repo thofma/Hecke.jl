@@ -1938,7 +1938,7 @@ end
   If this is the case, we also return a generator which is 1 mod $m$. If not, the second return value is wrong.
 
 """
-function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
+function has_principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group
@@ -1988,7 +1988,7 @@ function principal_gen_1_mod_m(I::NfOrdIdl, m::NfOrdIdl, inf_plc::Array{InfPlc, 
 
 end
 
-function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
+function has_principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, inf_plc::Array{InfPlc, 1} = InfPlc[]; GRH::Bool = true)
 
   # This function could be optimized if I cache some stuff from the construction
   # of the ray class group, but only in the case of the full ray_class_group
@@ -2037,7 +2037,7 @@ function principal_gen_1_mod_m(I::FacElem{NfOrdIdl, NfOrdIdlSet}, m::NfOrdIdl, i
 
 end
 
-function disc_log_generalized_ray_class_grp(I::NfOrdIdl, mr::MapRayClassGrp)
+function disc_log_generalized_ray_class_grp(I::Union{ NfOrdIdl, FacElem{NfOrdIdl, NfOrdIdlSet} }, mr::MapRayClassGrp)
   
   R = domain(mr)
   el = mr\I
@@ -2048,12 +2048,11 @@ function disc_log_generalized_ray_class_grp(I::NfOrdIdl, mr::MapRayClassGrp)
     J *= lI[i][1]^lI[i][2]
   end
   I1 = I * inv(J)
-  fl1 , gen1 = principal_gen_1_mod_m(I1, mr.modulus_fin, mr.modulus_inf)
+  fl1, gen1 = has_principal_gen_1_mod_m(I1, mr.modulus_fin, mr.modulus_inf)
   @assert fl1
   return gen1, lI
   
 end
-
 
 ###############################################################################
 #

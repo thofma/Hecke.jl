@@ -15,7 +15,13 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :default)
   if cond == :left
     F = conductor(O, OA, :left)
   else
-    F = conductor(O, OA, :right)*conductor(O, OA, :left)
+    Fr = conductor(O, OA, :right)
+    Fl = conductor(O, OA, :left)
+    if Fr == Fl
+      F = Fl
+    else
+      F = Fr*Fl
+    end
   end
   FinZ = _as_ideal_of_smaller_algebra(ZtoA, F)
 
@@ -65,6 +71,9 @@ function locally_free_class_group(O::AlgAssAbsOrd, cond::Symbol = :default)
 end
 
 # Helper function for locally_free_class_group
+# Computes the representative in the ray class group (domain(mR)) for the ideal
+# nr(a)*O_Z, where nr is the reduced norm and O_Z the maximal order of the centre
+# of A.
 function _reduced_norms(a::AlgAssElem, mR::MapRayClassGroupAlg)
   A = parent(a)
   Adec = decompose(A)

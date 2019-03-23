@@ -20,7 +20,7 @@ mutable struct MapPicardGrp{S, T} <: Map{S, T, HeckeMap, MapPicardGrp}
 
   # For the refined discrete logarithm:
   right_transform::fmpz_mat
-  betas # Vector of algebra elements
+  betas # Vector of factorized algebra elements
   gammas # the same type as betas
   ray_class_group_map::MapRayClassGroupAlg
 
@@ -123,6 +123,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
   @assert issnf(R)
 
   Idl = IdealSet(O)
+  fac_elem_mon_A = FacElemMon(A)
   if ngens(R) == 0
     function disc_exp_triv(x::GrpAbFinGenElem)
       return ideal(O, one(O))
@@ -135,8 +136,8 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     RtoIdl = MapPicardGrp{typeof(R), typeof(Idl)}()
     RtoIdl.header = MapHeader(R, Idl, disc_exp_triv, disc_log_triv)
     RtoIdl.right_transform = zero_matrix(FlintZZ, 0, 0)
-    RtoIdl.betas = Vector{elem_type(A)}()
-    RtoIdl.gammas = Vector{elem_type(A)}()
+    RtoIdl.betas = Vector{elem_type(fac_elem_mon_A)}()
+    RtoIdl.gammas = Vector{elem_type(fac_elem_mon_A)}()
     RtoIdl.ray_class_group_map = mR
     O.picard_group = RtoIdl
     return R, RtoIdl
@@ -167,6 +168,7 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     gens_snf = Vector{ideal_type(O)}(undef, ngens(S))
     for i = 1:ngens(S)
       r = RtoP\StoP(S[i])
+      # Contraction does not commute with multiplication, so we have to evaluate.
       gens_snf[i] = contract(evaluate(mR(r)), O)
     end
 
@@ -177,13 +179,14 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # prod_i mR(R[i])^r_i but just something equivalent. In the following, we
     # need this latter "discrete exponentiation". Therefore we collect the
     # generators here and don't use mR later.
-    gens_of_R = Vector{ideal_type(OO)}()
+    fac_elem_mon_idl_OO = FacElemMon(IdealSet(OO))
+    gens_of_R = Vector{elem_type(fac_elem_mon_idl_OO)}()
     for i = 1:ngens(R)
-      push!(gens_of_R, evaluate(mR(R[i])))
+      push!(gens_of_R, mR(R[i]))
     end
 
     # Compute the relations of the generators of G in R
-    gens_of_G = Vector{elem_type(A)}()
+    gens_of_G = Vector{elem_type(fac_elem_mon_A)}()
     D = zero_matrix(FlintZZ, ngens(R) + ngens(G), ngens(R))
     for i = 1:ngens(R)
       D[i, i] = R.snf[i]
@@ -194,18 +197,18 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
       a, r = disc_log_generalized_ray_class_grp(gOO, mR)
 
       # Now we have gOO = a*mR(r), but we need gOO = c*gOO2
-      gOO2 = ideal(OO, one(OO))
+      gOO2 = fac_elem_mon_idl_OO()
       for j = 1:ngens(R)
         gOO2 *= gens_of_R[j]^r[j]
       end
       b, s = disc_log_generalized_ray_class_grp(gOO2, mR)
       @assert r == s
-      c = divexact_right(a, b)
+      c = a*inv(b)
 
       for j = 1:ngens(R)
         D[i, j] = r[j]
       end
-      push!(gens_of_G, divexact_right(elem_in_algebra(g, copy = false), c))
+      push!(gens_of_G, elem_in_algebra(g, copy = false)*inv(c))
     end
 
     # D is the relation matrix of the picard group
@@ -234,32 +237,33 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     end
 
     # Compute the generators
-    generators_in_OO = Vector{ideal_type(OO)}()
+    generators_in_OO = Vector{elem_type(fac_elem_mon_idl_OO)}()
     gens_snf = Vector{ideal_type(O)}()
     for i = 1:nrows(C)
-      I = ideal(OO, one(OO))
+      I = fac_elem_mon_idl_OO()
       for j = 1:ncols(C)
         I *= gens_of_R[j]^C[i, j]
       end
       push!(generators_in_OO, I)
 
       if !isone(S_rels[i, i])
-        push!(gens_snf, contract(I, O))
+        # Contraction does not commute with multiplication, so we have to evaluate.
+        push!(gens_snf, contract(evaluate(I), O))
       end
     end
     @assert length(gens_snf) == ngens(S)
 
     # Compute the additional data needed for the refined discrete logarithm.
-    princ_gens_ray = Vector{elem_type(A)}()
+    princ_gens_ray = Vector{elem_type(fac_elem_mon_A)}()
     for i = 1:ngens(R)
-      b, a = principal_gen_1_mod_m(gens_of_R[i]^R.snf[i], FOO)
+      b, a = has_principal_gen_1_mod_m(gens_of_R[i]^R.snf[i], FOO)
       @assert b
-      push!(princ_gens_ray, elem_in_algebra(a, copy = false))
+      push!(princ_gens_ray, a)
     end
 
-    gammas = Vector{elem_type(A)}()
+    gammas = Vector{elem_type(fac_elem_mon_A)}()
     for i = 1:ngens(R)
-      g = one(A)
+      g = fac_elem_mon_A()
       for j = 1:ngens(R)
         g *= princ_gens_ray[j]^Q[i, j]
       end
@@ -273,9 +277,9 @@ function _picard_group_non_maximal(O::AlgAssAbsOrd, prepare_ref_disc_log::Bool =
     # We don't do the multiplications with zero.
     UW = U*sub(W, 1:ngens(R), 1:ncols(W))
 
-    betas = Vector{elem_type(A)}()
+    betas = Vector{elem_type(fac_elem_mon_A)}()
     for i = 1:nrows(UW)
-      t = one(A)
+      t = fac_elem_mon_A()
       for j = 1:ngens(R)
         t *= princ_gens_ray[j]^UW[i, j]
       end
@@ -352,15 +356,15 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
   R = domain(mR)
 
   k1, r = disc_log_generalized_ray_class_grp(aOO, mR)
-  aOO2 = ideal(OO, one(OO))
+  aOO2 = FacElemMon(IdealSet(OO))()
   for i = 1:ngens(R)
     # We need this kind of discrete exponentiation
-    aOO2 *= evaluate(mR(R[i]))^r[i]
+    aOO2 *= mR(R[i])^r[i]
   end
 
   k2, s = disc_log_generalized_ray_class_grp(aOO2, mR)
   @assert r == s
-  k = divexact_right(k1, k2)
+  k = k1*inv(k2)
 
   # Map r into the picard group
   rV = r.coeff*mP.right_transform
@@ -393,48 +397,71 @@ function refined_disc_log_picard_group(a::AlgAssAbsOrdIdl, mP::MapPicardGrp)
     gamma *= mP.gammas[i]^rV[i]
   end
 
-  return divexact_right(k*beta, t*gamma), P(p)
+  return k*beta*inv(t*gamma), P(p)
 end
 
 function principal_gen(a::AlgAssAbsOrdIdl)
+  g = principal_gen_fac_elem(a)
+  return order(a)(evaluate(g))
+end
+
+function principal_gen_fac_elem(a::AlgAssAbsOrdIdl)
+  a, g = isprincipal_fac_elem(a)
+  if !a
+    error("Ideal is not principal")
+  end
+  return g
+end
+
+function isprincipal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
   if O.ismaximal == 1
-    return principal_gen_maximal(a)
+    return isprincipal_maximal_fac_elem(a)
   end
 
   OO = maximal_order(algebra(O))
   if O == OO
-    return principal_gen_maximal(a)
+    return isprincipal_maximal_fac_elem(a)
   end
 
-  return principal_gen_non_maximal(a)
+  return isprincipal_non_maximal_fac_elem(a)
 end
 
-function principal_gen_non_maximal(a::AlgAssAbsOrdIdl)
+function isprincipal_non_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   P, mP = picard_group(order(a), true)
 
   g, r = refined_disc_log_picard_group(a, mP)
-  if !iszero(r)
-    error("Ideal is not principal")
-  end
-  return order(a)(g)
+  return iszero(r), g
 end
 
-function principal_gen_maximal(a::AlgAssAbsOrdIdl)
+function isprincipal_maximal_fac_elem(a::AlgAssAbsOrdIdl)
   O = order(a)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
 
-  gen = A()
+  idems = [ AtoK\one(K) for (K, AtoK) in fields_and_maps ]
+  sum_idems = sum(idems)
+  minus_idems = [ -one(A)*idem for idem in idems ]
+  bases = Vector{elem_type(A)}()
+  exps = Vector{fmpz}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     C, mC = class_group(K) # should be cached
     Hecke._assure_princ_gen(mC)
     ai = _as_ideal_of_number_field(a, AtoK)
-    g = principal_gen(ai)
-    gen += AtoK\elem_in_nf(g)
+    c, g = isprincipal_fac_elem(ai)
+    if !c
+      return false, FacElemMon(A)()
+    end
+    for (b, e) in g
+      t = AtoK\b
+      t = add!(t, t, sum_idems)
+      t = add!(t, t, minus_idems[i])
+      push!(bases, t)
+      push!(exps, e)
+    end
   end
-  return O(gen)
+  return true, FacElem(bases, exps)
 end
 
 ################################################################################
@@ -568,53 +595,81 @@ function _make_disc_exp_deterministic(mR::MapRayClassGrp)
   return S, mRR
 end
 
-function principal_gen_1_mod_m(I::AlgAssAbsOrdIdl, m::AlgAssAbsOrdIdl)
+function has_principal_gen_1_mod_m(I::Union{ AlgAssAbsOrdIdl, FacElem{ <: AlgAssAbsOrdIdl, <: AlgAssAbsOrdIdlSet} }, m::AlgAssAbsOrdIdl)
   O = order(m)
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
 
-  gen = A()
+  idems = [ AtoK\one(K) for (K, AtoK) in fields_and_maps ]
+  sum_idems = sum(idems)
+  minus_idems = [ -one(A)*idem for idem in idems ]
+  bases = Vector{elem_type(A)}()
+  exps = Vector{fmpz}()
   for i = 1:length(fields_and_maps)
     K, AtoK = fields_and_maps[i]
     mi = _as_ideal_of_number_field(m, AtoK)
     Ii = _as_ideal_of_number_field(I, AtoK)
-    b, g = principal_gen_1_mod_m(Ii, mi)
-    if !b
-      return false, O(0)
+    a, g = has_principal_gen_1_mod_m(Ii, mi)
+    if !a
+      return false, FacElem(base, exps)
     end
-    gen += AtoK\evaluate(g)
+    for (b, e) in g
+      t = AtoK\b
+      t = add!(t, t, sum_idems)
+      t = add!(t, t, minus_idems[i])
+      push!(bases, t)
+      push!(exps, e)
+    end
   end
-  return true, O(gen)
+  return true, FacElem(bases, exps)
 end
 
-function disc_log_generalized_ray_class_grp(I::AlgAssAbsOrdIdl, mR::MapRayClassGroupAlg)
+function disc_log_generalized_ray_class_grp(I::Union{ S, FacElem{S, T} }, mR::MapRayClassGroupAlg) where { S <: AlgAssAbsOrdIdl, T <: AlgAssAbsOrdIdlSet }
   m = mR.modulus
-  @assert order(I) == order(m)
   O = order(m)
   A = algebra(O)
+
+  if I isa FacElem && isempty(I)
+    return FacElemMon(A)(), domain(mR)()
+  end
+
   fields_and_maps = as_number_fields(A)
 
   groups = mR.groups_in_number_fields
 
-  ideals = Vector{NfOrdIdl}()
+  if I isa AlgAssAbsOrdIdl
+    ideals = Vector{NfOrdIdl}()
+  else
+    ideals = Vector{FacElem{NfOrdIdl, NfOrdIdlSet}}()
+  end
   for i = 1:length(fields_and_maps)
     push!(ideals, _as_ideal_of_number_field(I, fields_and_maps[i][2]))
   end
 
-  alpha = A()
+  idems = [ AtoK\one(K) for (K, AtoK) in fields_and_maps ]
+  sum_idems = sum(idems)
+  minus_idems = [ -one(A)*idem for idem in idems ]
+  bases = Vector{elem_type(A)}()
+  exps = Vector{fmpz}()
   p = zero_matrix(FlintZZ, 1, 0)
   ideal_gens = Vector{elem_type(O)}()
   for i = 1:length(ideals)
     K, AtoK = fields_and_maps[i]
     d, lI = disc_log_generalized_ray_class_grp(ideals[i], groups[i][2])
     p = hcat(p, matrix(FlintZZ, 1, length(lI), [ lI[i][2] for i = 1:length(lI) ]))
-    alpha += AtoK\evaluate(d)
+    for (b, e) in d
+      t = AtoK\b
+      t = add!(t, t, sum_idems)
+      t = add!(t, t, minus_idems[i])
+      push!(bases, t)
+      push!(exps, e)
+    end
   end
   RtoP = mR.into_product_of_groups
   P = codomain(RtoP)
   r = RtoP\P(p)
 
-  return alpha, r
+  return FacElem(bases, exps), r
 end
 
 ################################################################################

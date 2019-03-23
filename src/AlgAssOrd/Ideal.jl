@@ -281,6 +281,9 @@ function ideal(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}, action::Symbol)
   return a
 end
 
+*(O::AlgAssAbsOrd{S, T}, x::AlgAssAbsOrdElem{S, T}) where {S, T} = ideal(O, x, :left)
+*(x::AlgAssAbsOrdElem{S, T}, O::AlgAssAbsOrd{S, T}) where {S, T} = ideal(O, x, :right)
+
 function ideal_from_z_gens(O::AlgAssAbsOrd, b::Vector{T}, side::Symbol = :nothing) where { T <: AlgAssAbsOrdElem }
   d = degree(O)
   @assert length(b) >= d
@@ -558,6 +561,24 @@ function _as_ideal_of_number_field(I::AlgAssAbsOrdIdl, m::AbsAlgAssToNfAbsMor)
   return ideal_from_z_gens(OK, b)
 end
 
+function _as_ideal_of_number_field(I::FacElem{<: AlgAssAbsOrdIdl, <: AlgAssAbsOrdIdlSet}, m::AbsAlgAssToNfAbsMor)
+  @assert algebra(order(base_ring(parent(I)))) == domain(m)
+  K = codomain(m)
+  OK = maximal_order(K)
+
+  if isempty(I)
+    return FacElemMon(IdealSet(OK))()
+  end
+
+  bases = Vector{ideal_type(OK)}()
+  exps = Vector{fmpz}()
+  for (b, e) in I
+    push!(bases, _as_ideal_of_number_field(b, m))
+    push!(exps, e)
+  end
+  return FacElem(bases, exps)
+end
+
 function _as_ideal_of_algebra(I::NfAbsOrdIdl, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AlgAssAbsOrdElem }
   A = algebra(O)
   fields_and_maps = as_number_fields(A)
@@ -576,7 +597,7 @@ end
 
 function _as_ideal_of_algebra(I::FacElem{NfOrdIdl, NfOrdIdlSet}, i::Int, O::AlgAssAbsOrd, one_ideals::Vector{Vector{T}}) where { T <: AlgAssAbsOrdElem }
   if isempty(I)
-    return ideal(O, one(O))
+    return FacElemMon(IdealSet(O))()
   end
 
   base = Vector{ideal_type(O)}()

@@ -459,6 +459,18 @@ function Base.deepcopy_internal(a::AbsAlgAssElem{T}, dict::IdDict) where {T}
   return b
 end
 
+Base.copy(a::AbsAlgAssElem) = deepcopy(a)
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(a::AbsAlgAssElem, h::UInt)
+  return Base.hash(coeffs(a, copy = false), h)
+end
+
 ################################################################################
 #
 #  Equality
