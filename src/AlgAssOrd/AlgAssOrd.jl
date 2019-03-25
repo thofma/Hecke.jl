@@ -1188,13 +1188,11 @@ function any_order(A::AbsAlgAss{fmpq})
   M = vcat(zero_matrix(FlintQQ, 1, dim(A)), d*identity_matrix(FlintQQ, dim(A)))
   oneA = one(A)
   for i = 1:dim(A)
-    M[1, i] = deepcopy(coeffs(oneA, false)[i])
+    M[1, i] = deepcopy(coeffs(oneA, copy = false)[i])
   end
   M = FakeFmpqMat(M)
   M = hnf!(M, :lowerleft)
   O = Order(A, sub(M, 2:dim(A) + 1, 1:dim(A)))
-  @assert check_order(O)
-  @assert one(A) in O
   return O
 end
 
@@ -1272,8 +1270,7 @@ end
 #
 ################################################################################
 
-# Besides the call of elem_in_algebra this is exactly the same as in NfOrd/NfOrd.jl.
-function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
+function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd, action::Symbol)
   n = degree(R)
   t = basis_mat(R, copy = false)*basis_mat_inv(S, copy = false)
   @assert isone(t.den)
@@ -1282,7 +1279,7 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
   B = basis(S, copy = false)
   for k in 1:n
     a = B[k]
-    N = representation_matrix(S(elem_in_algebra(a, copy = false)))*basis_mat_R_in_S_inv_num
+    N = representation_matrix(S(elem_in_algebra(a, copy = false)), action)*basis_mat_R_in_S_inv_num
     for i in 1:n
       for j in 1:n
         M[(k - 1)*n + i, j] = N[j, i]
@@ -1292,5 +1289,5 @@ function conductor(R::AlgAssAbsOrd, S::AlgAssAbsOrd)
   H = sub(hnf(M), 1:n, 1:n)
   Hinv, new_den = pseudo_inv(transpose(H))
   Hinv = Hinv*basis_mat_R_in_S_inv_num
-  return ideal(R, divexact(Hinv, new_den))
+  return ideal(R, divexact(Hinv, new_den), action)
 end

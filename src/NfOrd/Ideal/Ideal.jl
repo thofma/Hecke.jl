@@ -2281,7 +2281,6 @@ end
 > Test if ideals $I,J$ are coprime
 
 """
-
 function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   @assert order(I) == order(J)
   if gcd(minimum(I), minimum(J)) == 1

@@ -754,16 +754,6 @@ function isirreducible(f::Generic.Poly{NfRelElem{T}}) where T
   return sum(values(lf.fac)) == 1
 end
 
-function factor(f::PolyElem, K::Nemo.Field)
-  Kt, t = PolynomialRing(K, cached = false)
-  return factor(Kt([K(coeff(f, i)) for i=0:degree(f)]))
-end
-
-function roots(f::PolyElem, K::Nemo.Field)
-  Kt, t = PolynomialRing(K, cached = false)
-  return roots(Kt([K(coeff(f, i)) for i=0:degree(f)]))
-end
-
 function roots(f::Generic.Poly{NfRelElem{T}}) where T
   lf = factor(f)
   @assert degree(lf.unit) == 0

@@ -430,14 +430,11 @@ function norm(f::PolyElem{nf_elem})
     return power_sums_to_polynomial(PQ)
   end
 
-  Qy = parent(K.pol)
-  Qyx, x = PolynomialRing(Qy, "x", cached = false)
-
   Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
   Qxy = PolynomialRing(Qx, "y", cached = false)[1]
 
-  T = evaluate(K.pol, gen(Qxy))
-  h = nf_poly_to_xy(f, gen(Qxy), gen(Qx))::Generic.Poly{fmpq_poly}
+  T = change_ring(K.pol, Qxy)
+  h = nf_poly_to_xy(f, Qxy, Qx)
   return resultant(T, h)
 end
 
@@ -463,14 +460,13 @@ end
 > The factorisation of f over K (using Trager's method).
 """
 function factor(f::fmpq_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K, cached = false)
-  return factor(evaluate(f, y))
+  f1 = change_base_ring(f, K)
+  return factor(f1)
 end
 
 function factor(f::fmpz_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K, cached = false)
-  Qz, z = PolynomialRing(FlintQQ, cached = false)
-  return factor(evaluate(Qz(f), y))
+  f1 = change_base_ring(f, K)
+  return factor(f1)
 end
 
 @doc Markdown.doc"""
@@ -511,24 +507,19 @@ function factor(f::PolyElem{nf_elem})
 
   k = 0
   g = f
-  N = 0
+  @vtime :PolyFactor 2 N = norm(g)
 
-  while true
-    @vtime :PolyFactor 2 N = norm(g)
-    if !isconstant(N) && issquarefree(N)
-      break
-    end
+  while isconstant(N) || !issquarefree(N)
     k = k + 1
     g = compose(f, gen(Kx) - k*gen(K))
+    @vtime :PolyFactor 2 N = norm(g)
   end
   @vtime :PolyFactor 2 fac = factor(N)
+  
   res = Dict{PolyElem{nf_elem}, Int64}()
 
   for i in keys(fac.fac)
-    t = zero(Kx)
-    for j in 0:degree(i)
-      t = t + K(coeff(i, j))*gen(Kx)^j
-    end
+    t = change_ring(i, Kx)
     t = compose(t, gen(Kx) + k*gen(K))
     @vtime :PolyFactor 2 t = gcd(f, t)
     res[t] = 1
@@ -664,9 +655,9 @@ end
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
 squarefree and monic.
 """
-function roots(f::fmpz_poly, K::AnticNumberField, max_roots::Int = degree(f))
-  Ky, y = PolynomialRing(K, cached = false)
-  return roots(evaluate(f, y), max_roots = max_roots)
+function roots(f::fmpz_poly, K::AnticNumberField; kw...)
+  f1 = change_base_ring(f, K)
+  return roots(f1; kw...)
 end
 
 @doc Markdown.doc"""
@@ -675,9 +666,9 @@ end
 Computes all roots in $K$ of a polynomial $f$. It is assumed that $f$ is is non-zero,
 squarefree and monic.
 """
-function roots(f::fmpq_poly, K::AnticNumberField, max_roots::Int = degree(f))
-  Ky, y = PolynomialRing(K, cached = false)
-  return roots(evaluate(f, y), max_roots = max_roots)
+function roots(f::fmpq_poly, K::AnticNumberField; kw...)
+  f1 = change_base_ring(f, K)
+  return roots(f1; kw...)
 end
 
 function elem_in_nf(a::nf_elem)
@@ -742,13 +733,13 @@ end
 > Tests if $f$ has a root in $K$, and return it.
 """
 function hasroot(f::fmpz_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K, cached = false)
-  return hasroot(evaluate(f, y))
+  f1 = change_base_ring(f, K)
+  return hasroot(f1)
 end
 
 function hasroot(f::fmpq_poly, K::AnticNumberField)
-  Ky, y = PolynomialRing(K, cached = false)
-  return hasroot(evaluate(f, y))
+  f1 = change_base_ring(f, K)
+  return hasroot(f1)
 end
 
 ################################################################################

@@ -925,6 +925,7 @@ function isabelian(K::NfRel)
   return isabelian(K.pol, base_ring(K))
 end
 
+#TODO: consolidate with norm_group!!!!
 @doc Markdown.doc"""
 ***
   isabelian(f::Nemo.Generic.Poly, K::Nemo.AnticNumberField) -> Bool
@@ -934,7 +935,6 @@ end
 
 ***
 """
-#TODO: consolidate with norm_group!!!!
 function isabelian(f::Nemo.PolyElem, K::Nemo.AnticNumberField)
   
   O=maximal_order(K)

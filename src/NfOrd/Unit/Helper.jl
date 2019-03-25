@@ -39,18 +39,24 @@ function _make_row_primitive!(x::Array{fmpz, 1})
   end
 end
 
-function _primitive_element(F::FqNmodFiniteField)
+function _primitive_element(F::Union{FqNmodFiniteField, FqFiniteField})
   #println("Computing primitive element of $F")
   #println("Have to factor $(order(F) - 1)")
-  fac = factor(order(F) - 1)
+  oF = order(F) - 1
+  fac = factor(oF)
+  exps = Vector{fmpz}()
+  for (l, ll) in fac
+    push!(exps, div(oF, l))
+  end
+
   while true
     a = rand(F)
     if iszero(a)
       continue
     end
     is_primitive = true
-    for (l, ll) in fac
-      if isone(a^(div(order(F) - 1, l)))
+    for e in exps
+      if isone(a^e)
         is_primitive = false
         break
       end
@@ -60,5 +66,3 @@ function _primitive_element(F::FqNmodFiniteField)
     end
   end
 end
-
-

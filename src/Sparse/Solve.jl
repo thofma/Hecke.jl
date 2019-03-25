@@ -381,7 +381,7 @@ function solve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   return sol
 end
 
-function Nemo.cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
+function cansolve(a::SMat{T}, b::SRow{T}) where T <: FieldElem
   c = hcat(a, identity_matrix(SMat, base_ring(a), a.r))
   echelon!(c)
   fl, sol = cansolve_ut(sub(c, 1:nrows(c), 1:a.c), b)

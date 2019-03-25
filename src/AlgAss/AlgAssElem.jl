@@ -459,6 +459,18 @@ function Base.deepcopy_internal(a::AbsAlgAssElem{T}, dict::IdDict) where {T}
   return b
 end
 
+Base.copy(a::AbsAlgAssElem) = deepcopy(a)
+
+################################################################################
+#
+#  Hashing
+#
+################################################################################
+
+function Base.hash(a::AbsAlgAssElem, h::UInt)
+  return Base.hash(coeffs(a, copy = false), h)
+end
+
 ################################################################################
 #
 #  Equality
@@ -481,30 +493,6 @@ function Generic.minpoly(a::AbsAlgAssElem)
   R = PolynomialRing(base_ring(parent(a)), "x", cached=false)[1]
   return minpoly(R, M)
 end
-
-################################################################################
-#
-#  Trace
-#
-################################################################################
-
-#function tr(x::AbsAlgAssElem)
-#  return tr(representation_matrix(x))
-#end
-
-function tr(x::AbsAlgAssElem{T}) where T
-  A=parent(x)
-  _assure_trace_basis(A)
-  tr=zero(base_ring(A))
-  for i=1:dim(A)
-    tr = add!(tr, tr, x.coeffs[i]*A.trace_basis_elem[i])
-  end
-  return tr
-end
-
-#function _tr(x::AlgAssElem{T}) where {T}
-#  return trace(representation_matrix(x))
-#end
 
 ################################################################################
 #
@@ -605,6 +593,24 @@ end
 #
 ################################################################################
 
+#function tr(x::AbsAlgAssElem)
+#  return tr(representation_matrix(x))
+#end
+
+function tr(x::AbsAlgAssElem{T}) where T
+  A=parent(x)
+  _assure_trace_basis(A)
+  tr=zero(base_ring(A))
+  for i=1:dim(A)
+    tr = add!(tr, tr, x.coeffs[i]*A.trace_basis_elem[i])
+  end
+  return tr
+end
+
+#function _tr(x::AlgAssElem{T}) where {T}
+#  return trace(representation_matrix(x))
+#end
+
 function trred(a::AbsAlgAssElem)
   A = parent(a)
   if issimple_known(A) && A.issimple == 1
@@ -618,6 +624,41 @@ function trred(a::AbsAlgAssElem)
     t = zero(base_ring(A))
     for (B, BtoA) in W
       t = t + trred(BtoA\(a))
+    end
+    return t
+  end
+end
+
+################################################################################
+#
+#  (Reduced) norm
+#
+################################################################################
+
+function norm(a::AbsAlgAssElem{fmpq})
+  return abs(det(representation_matrix(a)))
+end
+
+function norm(a::AbsAlgAssElem)
+  return det(representation_matrix(a))
+end
+
+function normred(a::AbsAlgAssElem)
+  A = parent(a)
+  if issimple_known(A) && A.issimple == 1
+    d = dimension_of_center(A)
+    n = divexact(dim(A), d)
+    m = isqrt(n)
+    @assert m^2 == n
+    N = norm(a)
+    Nred = root(N, m)
+    @assert Nred^m == N
+    return Nred
+  else
+    Adec = decompose(A)
+    t = one(base_ring(A))
+    for (B, BtoA) in Adec
+      t = t*normred(BtoA\a)
     end
     return t
   end
@@ -655,7 +696,7 @@ end
 #
 ################################################################################
 
-function coeffs(a::AbsAlgAssElem, copy::Bool = true)
+function coeffs(a::AbsAlgAssElem; copy::Bool = true)
   if copy
     return deepcopy(a.coeffs)
   end
@@ -669,5 +710,5 @@ end
 ################################################################################
 
 function denominator(x::AbsAlgAssElem)
-  return lcm([ denominator(y) for y in coeffs(x, false) ])
+  return lcm([ denominator(y) for y in coeffs(x, copy = false) ])
 end

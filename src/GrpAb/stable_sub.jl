@@ -65,8 +65,9 @@ function *(x::GrpAbFinGenElem, M::nmod_mat)
     coeff[1,i]=x.coeff[1,i]
   end
   y=coeff*M
-  return G(lift(y))
-  
+  l = lift(y)
+  l.base_ring = FlintZZ # TODO: Remove this once Nemo is updated
+  return G(l)
 end
 
 
@@ -414,10 +415,10 @@ function _mult_by_p(M::ZpnGModule)
   #
   #  First, the quotient M/pM
   #
-  F,a=Nemo.FiniteField(p,1,"a", cached=false)
-  n=ngens(V)
-  Gq=_change_ring(G,F,1)
-  spaces=FqGModule[FqGModule(Gq)]
+  F = GF(p, cached=false)
+  n = ngens(V)
+  Gq = _change_ring(G, F, 1)
+  spaces = ModAlgAss[ModAlgAss(Gq)]
   #
   #  Now, the others
   #
@@ -428,7 +429,7 @@ function _mult_by_p(M::ZpnGModule)
       j+=1
     end
     GNew=_change_ring(G,F,j)
-    push!(spaces, FqGModule(GNew))
+    push!(spaces, ModAlgAss(GNew))
   end
   return spaces  
 end
@@ -467,7 +468,6 @@ end
 > Given a ZpnGModule M, the function returns all the submodules of M. 
 > 
 """
-
 function submodules(M::ZpnGModule; typequo=Int[-1], typesub=Int[-1], ord=-1)
 
   if typequo!=[-1]
@@ -872,7 +872,6 @@ end
 > Given a group R, an array of endomorphisms of the group and the type of the quotient, it returns all the stable 
 > subgroups of R such that the corresponding quotient has the required type.
 """
-
 function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::Array{Int,1}=Int[-1], minimal::Bool = false) where T <: Map{GrpAbFinGen, GrpAbFinGen} 
 
   if quotype[1] != -1 && minimal
@@ -954,7 +953,7 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
       W = MatrixSpace(RR,ngens(S), ngens(S), false)
       for z=1:length(act)
         y = transpose(solve(auxmat1, (auxmat2*act[z].map)'))
-        y = sub(y,1:ngens(S), 1:ngens(G))*mS.imap
+        y = sub(y, 1:ngens(S), 1:ngens(G))*mS.imap
         act_mat1[z] = W(y)
       end
       

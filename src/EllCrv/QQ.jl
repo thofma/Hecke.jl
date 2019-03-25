@@ -394,6 +394,7 @@ end
 #
 ################################################################################
 
+# algorithm of Laska-Kraus-Connell
 @doc Markdown.doc"""
 ***
     laska_kraus_connell(E::EllCrv{fmpz}) -> Array{Nemo.fmpz}
@@ -401,7 +402,6 @@ end
 > Given an elliptic curve over $\mathbf Q$ with integral model, this returns an
 > isomorphic elliptic curve over $\mathbf Q$ with minimal discriminant.
 """
-# algorithm of Laska-Kraus-Connell
 function laska_kraus_connell(E::EllCrv{fmpq})
   a1 = numerator(E.coeff[1])
   a2 = numerator(E.coeff[2])
@@ -526,6 +526,7 @@ end
 #
 ################################################################################
 
+# tate's algorithm, see Cremona, p. 66
 @doc Markdown.doc"""
 ***
     tates_algorithm_local(E::EllCrv{fmpz}, p::Int) -> EllipticCurve{fmpq}, String, fmpz, fmpz
@@ -534,7 +535,6 @@ end
 > for $E$ at the prime $p$, $K$ is the Kodaira symbol, $f$ is the conduator
 > valuation at $p$ and $c$ is the local Tamagawa number at $p$.
 """
-# tate's algorithm, see Cremona, p. 66
 function tates_algorithm_local(E::EllCrv{fmpq}, p)
 
   p = FlintZZ(p)

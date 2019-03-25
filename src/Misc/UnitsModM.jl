@@ -102,12 +102,12 @@ mutable struct MapUnitGroupModM{T} <: Map{T, Nemo.NmodRing, HeckeMap, MapUnitGro
   end
 end
 
+#TO BE FIXED. If mod is non-zero, it is wrong.
 @doc Markdown.doc"""
   UnitGroup(R::Generic.ResRing{fmpz}) GrpAbFinGen, Map
 
 >  The unit group of R = Z/nZ together with the apropriate map.
 """
-#TO BE FIXED. If mod is non-zero, it is wrong.
 function UnitGroup(R::Generic.ResRing{fmpz}, mod::fmpz=fmpz(0))
 
   m = R.modulus
@@ -261,14 +261,13 @@ function solvemod(a::fmpz, b::fmpz, M::fmpz)
   return invmod(a, Mg)* divexact(b, g) %Mg
 end
 
-
+#solves a^x = b (mod M) for M a prime power
 @doc Markdown.doc"""
   disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
 
 >  Computes g s.th. a^g == b mod M. M has to be a power of an odd prime
 >  and a a generator for the multiplicative group mod M
 """
-#solves a^x = b (mod M) for M a prime power
 function disc_log_mod(a::fmpz, b::fmpz, M::fmpz)
   fM = factor(M).fac
   @assert length(keys(fM)) == 1

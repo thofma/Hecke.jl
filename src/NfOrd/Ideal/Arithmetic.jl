@@ -643,6 +643,10 @@ end
 ################################################################################
 
 divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
+
+#TODO: write a divexact! to change the ideal?
+#  difficult due to Julia's inability to unset entries...
+
 @doc Markdown.doc"""
 ***
     divexact(A::NfOrdIdl, y::fmpz) -> NfOrdIdl
@@ -650,8 +654,6 @@ divexact(A::NfOrdIdl, b::Integer) = divexact(A, fmpz(b))
 
 > Returns $A/y$ assuming that $A/y$ is again an integral ideal.
 """
-#TODO: write a divexact! to change the ideal?
-#  difficult due to Julia's inability to unset entries...
 function divexact(A::NfOrdIdl, b::fmpz)
   zk = order(A)
   b = abs(b)

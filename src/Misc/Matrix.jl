@@ -701,7 +701,14 @@ end
 """
 left_kernel_basis(a::MatElem{T}) where T <: AbstractAlgebra.FieldElem = right_kernel_basis(transpose(a))
 
-function kernel(A::MatElem, side::Symbol = :right)
+
+@doc Markdown.doc"""
+    kernel(a::MatElem{T}; side::Symbol = :right) -> Int, MatElem{T}
+
+> It returns a tuple $(n, M)$, where n is the rank of the kernel and $M$ is a basis for it. If side is $:right$ or not
+> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+"""
+function kernel(A::MatElem; side::Symbol = :right)
   if side == :right
     return right_kernel(A)
   elseif side == :left
@@ -799,6 +806,45 @@ end
 function left_kernel(a::nmod_mat)
   n, M = right_kernel(transpose(a))
   return n, transpose(M)
+end
+
+################################################################################
+#
+#  Kernel over different rings
+#
+################################################################################
+
+@doc Markdown.doc"""
+    kernel(a::MatElem{T}, R::Ring; side::Symbol = :right) -> n, MatElem{elem_type(R)}
+
+> It returns a tuple $(n, M)$, where n is the rank of the kernel over $R$ and $M$ is a basis for it. If side is $:right$ or not
+> specified, the right kernel is computed. If side is $:left$, the left kernel is computed.
+"""
+function kernel(M::MatElem, R::Ring; side::Symbol = :right)
+  MP = change_base_ring(M, R)
+  return kernel(MP, side = side)
+end
+
+################################################################################
+#
+#  Change base ring
+#
+################################################################################
+
+@doc Markdown.doc"""
+    change_base_ring(M::MatElem, R::Ring) -> MatElem{elem_type(R)} 
+
+> Given a $m\times n$ matrix M over a ring S and another ring R, return the $m \times n$
+> matrix over R obtained by coercing the entries of M from S into R. 
+"""
+function change_base_ring(M::MatElem, R::Ring)
+  MP = zero_matrix(R, nrows(M), ncols(M))
+  for i = 1:nrows(M)
+    for j = 1:ncols(M)
+      MP[i, j] = R(M[i, j])
+    end
+  end
+  return MP
 end
 
 ################################################################################
@@ -1012,7 +1058,7 @@ function vcat(A::Array{nmod_mat, 1})
   return M
 end
 
-function Base.vcat(A::Nemo.MatElem...)
+function Base.vcat(A::MatElem...)
   r = nrows(A[1])
   c = ncols(A[1])
   R = base_ring(A[1])
@@ -1033,7 +1079,7 @@ function Base.vcat(A::Nemo.MatElem...)
 end
 
 
-function Base.hcat(A::Nemo.MatElem...)
+function Base.hcat(A::MatElem...)
   r = nrows(A[1])
   c = ncols(A[1])
   R = base_ring(A[1])
@@ -1054,7 +1100,7 @@ function Base.hcat(A::Nemo.MatElem...)
 end
 
 
-function Base.cat(A::Nemo.MatElem...;dims) 
+function Base.cat(A::MatElem...;dims) 
   @assert dims == (1,2) || isa(dims, Int)
 
   if isa(dims, Int) 
@@ -1079,7 +1125,7 @@ function Base.cat(A::Nemo.MatElem...;dims)
   return X
 end
 
-function Base.hvcat(rows::Tuple{Vararg{Int}}, A::Nemo.MatElem...)
+function Base.hvcat(rows::Tuple{Vararg{Int}}, A::MatElem...)
   B = hcat([A[i] for i=1:rows[1]]...)
   o = rows[1]
   for j=2:length(rows)
@@ -1228,6 +1274,14 @@ end
 ################################################################################
 
 # Solves A x = b for A upper triangular m\times n matrix and b m\times 1.
+
+@doc Markdown.doc"""
+    solve_ut(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
+
+Given an upper triangular $m \times m$ matrix $A$ and a matrix $b$ of size $m
+\times 1$, this function computes $x$ such that $Ax = b$.  It is assumed that
+the pivots of $A$ are invertible.
+"""
 function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
@@ -1256,7 +1310,13 @@ function solve_ut(A::MatElem{T}, b::MatElem{T}) where T
   return x
 end
 
-# Solves A x = b for A lower triangular m\times n matrix and b m\times 1.
+@doc Markdown.doc"""
+    solve_lt(A::MatElem{T}, b::MatElem{T}) -> MatElem{T})
+
+Given a lower triangular $m \times m$ matrix $A$ and a matrix $b$ of size
+$m \times 1$, this function computes $x$ such that $Ax = b$.  It is assumed
+that the pivots of $A$ are invertible.
+"""
 function solve_lt(A::MatElem{T}, b::MatElem{T}) where T
   m = nrows(A)
   n = ncols(A)
@@ -1292,10 +1352,11 @@ end
 # TODO: re-write for special types (fmpz_mat e.g.) to gain efficiency
 #
 
-length(A::Nemo.MatElem) = nrows(A) * ncols(A)
-Base.ndims(A::Nemo.MatElem) = 2
+length(A::MatElem) = nrows(A) * ncols(A)
 
-function Base.size(A::Nemo.MatElem, n::Int)
+Base.ndims(A::MatElem) = 2
+
+function Base.size(A::MatElem, n::Int)
   if n == 1
     return nrows(A)
   elseif n == 2
@@ -1307,19 +1368,19 @@ function Base.size(A::Nemo.MatElem, n::Int)
   end
 end
 
-function Base.axes(A::Nemo.MatElem)
+function Base.axes(A::MatElem)
   return (Base.OneTo(nrows(A)), Base.OneTo(ncols(A)))
 end
 
-function Base.axes(A::Nemo.MatElem, n::Int)
+function Base.axes(A::MatElem, n::Int)
   return Base.OneTo(size(A, n))
 end
 
-function Base.eachindex(A::Nemo.MatElem)
+function Base.eachindex(A::MatElem)
   return Base.OneTo(length(A))
 end
 
-function Base.stride(A::Nemo.MatElem, n::Int)
+function Base.stride(A::MatElem, n::Int)
   if n <= 1
     return 1
   elseif n == 2
@@ -1329,15 +1390,15 @@ function Base.stride(A::Nemo.MatElem, n::Int)
   end
 end
 
-Base.eltype(A::Nemo.MatElem{T}) where T <: Nemo.RingElem = T
+Base.eltype(A::MatElem{T}) where T <: RingElem = T
 
-getindex(A::Nemo.MatElem, n::Int) = A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))]
+getindex(A::MatElem, n::Int) = A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))]
 
-function setindex!(A::Nemo.MatElem{T}, n::Int, s::T) where T <: RingElem
+function setindex!(A::MatElem{T}, n::Int, s::T) where T <: RingElem
   A[1 + ((n-1) % nrows(A)), 1 + div((n-1), nrows(A))] = s
 end
 
-function Base.iterate(A::Nemo.MatElem, state::Int = 0) 
+function Base.iterate(A::MatElem, state::Int = 0) 
   s = size(A)
   if state < s[1]*s[2]
     state += 1
@@ -1346,11 +1407,11 @@ function Base.iterate(A::Nemo.MatElem, state::Int = 0)
   return nothing
 end
 
-Base.IteratorSize(M::Nemo.MatElem) = Base.HasLength()
-Base.IteratorEltype(M::Nemo.MatElem) = Base.HasEltype()
-Base.eltype(M::Nemo.MatElem) = elem_type(base_ring(M))
+Base.IteratorSize(M::MatElem) = Base.HasLength()
+Base.IteratorEltype(M::MatElem) = Base.HasEltype()
+Base.eltype(M::MatElem) = elem_type(base_ring(M))
 
-function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) where T
+function setindex!(A::MatElem{T}, b::MatElem{T}, ::Colon, i::Int) where T
   @assert ncols(b) == 1 && nrows(b) == nrows(A) 
   for j=1:nrows(A)
     A[j,i] = b[j]
@@ -1358,7 +1419,7 @@ function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, ::Colon, i::Int) wher
   b
 end
 
-function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, i::Int, ::Colon) where T
+function setindex!(A::MatElem{T}, b::MatElem{T}, i::Int, ::Colon) where T
   @assert nrows(b) == 1 && ncols(b) == ncols(A)
   for j=1:ncols(A)
     A[i,j] = b[j]
@@ -1366,7 +1427,7 @@ function setindex!(A::Nemo.MatElem{T}, b::Nemo.MatElem{T}, i::Int, ::Colon) wher
   b
 end
 
-function setindex!(A::Nemo.MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
+function setindex!(A::MatElem, b::Array{<: Any, 1}, ::Colon, i::Int) 
   @assert length(b) == nrows(A)
   for j=1:nrows(A)
     A[j,i] = b[j]
@@ -1374,7 +1435,7 @@ function setindex!(A::Nemo.MatElem, b::Array{<: Any, 1}, ::Colon, i::Int)
   b
 end
 
-function setindex!(A::Nemo.MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
+function setindex!(A::MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
   @assert length(b) == ncols(A)
   for j=1:ncols(A)
     A[i,j] = b[j]
@@ -1382,14 +1443,14 @@ function setindex!(A::Nemo.MatElem, b::Array{ <: Any, 1}, i::Int, ::Colon)
   b
 end
 
-function setindex!(A::Nemo.MatElem, b, ::Colon, i::Int) 
+function setindex!(A::MatElem, b, ::Colon, i::Int) 
   for j=1:nrows(A)
     A[j,i] = b
   end
   b
 end
 
-function setindex!(A::Nemo.MatElem, b, i::Int, ::Colon)
+function setindex!(A::MatElem, b, i::Int, ::Colon)
   for j=1:ncols(A)
     A[i,j] = b
   end
@@ -1397,17 +1458,17 @@ function setindex!(A::Nemo.MatElem, b, i::Int, ::Colon)
 end
 
 
-getindex(A::Nemo.MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
-getindex(A::Nemo.MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
+getindex(A::MatElem, i::Int, ::Colon) = A[i:i, 1:ncols(A)]
+getindex(A::MatElem, ::Colon, i::Int) = A[1:nrows(A), i:i]
 
 
 @doc Markdown.doc"""
-    reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+    reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 
 > For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
 > columns will be zero afterwards.
 """
-function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+function reduce_mod!(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   @assert isrref(B)
   for h=1:nrows(A)
     j = 1
@@ -1422,23 +1483,23 @@ function reduce_mod!(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.Fie
 end
 
 @doc Markdown.doc"""
-    reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem -> MatElem
+    reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem -> MatElem
 
-> For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
-> columns will be zero afterwards.
+For a reduced row echelon matrix $B$, reduce $A$ modulo $B$, ie. all the pivot
+columns will be zero afterwards.
 """
-function Nemo.reduce_mod(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.FieldElem
+function reduce_mod(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   C = deepcopy(A)
   reduce_mod!(C, B)
   return C
 end
 
 @doc Markdown.doc"""
-    find_pivot(A::Nemo.MatElem{<:Nemo.RingElem}) -> Array{Int, 1}
+    find_pivot(A::MatElem{<:RingElem}) -> Array{Int, 1}
 
-> Find the pivot-columns of the reduced row echelon matrix $A$
+Find the pivot-columns of the reduced row echelon matrix $A$
 """
-function find_pivot(A::Nemo.MatElem{<:Nemo.RingElem})
+function find_pivot(A::MatElem{<:RingElem})
   @assert isrref(A)
   p = Int[]
   j = 0
@@ -1502,18 +1563,18 @@ function _cansolve(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
 end
 
 @doc Markdown.doc"""
-    cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
+    cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem -> Bool, MatElem, MatElem
 
 Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
-It returns the solution and the right respectively left nullspace of $A$.
+It returns the solution and the right respectively left kernel of $A$.
 """
-function cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: Nemo.FieldElem
+function cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: FieldElem
   @assert base_ring(A) == base_ring(B)
   if side === :right
     @assert nrows(A) == nrows(B)
-    return _cansolve_with_nullspace(A, B)
+    return _cansolve_with_kernel(A, B)
   elseif side === :left
-    b, C, K = _cansolve_with_nullspace(transpose(A), transpose(B))
+    b, C, K = _cansolve_with_kernel(transpose(A), transpose(B))
     @assert ncols(A) == ncols(B)
     if b
       return b, transpose(C), transpose(K)
@@ -1525,7 +1586,7 @@ function cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}; side = :right) wh
   end
 end
 
-function _cansolve_with_nullspace(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
+function _cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: FieldElem
   R = base_ring(A)
   mu = [A B]
   rk, mu = rref(mu)
@@ -1559,14 +1620,32 @@ end
 #maybe (definitely!) agree on one name and combine?
 
 @doc Markdown.doc"""
-    cansolve(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem
-> Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring.
+    cansolve(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem
+    
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`
+over a euclidean ring.
 """
-function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
-  R = base_ring(a)
-  @assert R == base_ring(b)
-  @assert nrows(a) == nrows(b)
+function cansolve(A::MatElem{T}, B::MatElem{T};
+                                  side = :right) where T <: RingElem
+  @assert base_ring(A) == base_ring(B)
 
+  if side === :right
+    @assert nrows(A) == nrows(B)
+    return _cansolve(A, B)
+  elseif side === :left
+    @assert ncols(A) == ncols(B)
+    b, C = _cansolve(transpose(A), transpose(B))
+    if b
+      return true, transpose(C)
+    else
+      return false, C
+    end
+  else
+    error("Unsupported argument :$side for side: Must be :left or :right")
+  end
+end
+
+function _cansolve(a::MatElem{S}, b::MatElem{S}, side = :left) where S <: RingElem
   H, T = hnf_with_trafo(transpose(a))
   b = deepcopy(b)
   z = similar(a, ncols(b), ncols(a))
@@ -1597,15 +1676,30 @@ function Nemo.cansolve(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.R
 end
 
 @doc Markdown.doc"""
-    cansolve_with_nullspace(A::Nemo.MatElem{T}, B::Nemo.MatElem{T}) where T <: Nemo.RingElem -> Bool, MatElem, MatElem
-> Tries to solve $Ax = B$ where the matrices are defined over a euclidean ring. If successful,
-> a basis for the nullspace is computed as well.
-"""
-function Nemo.cansolve_with_nullspace(a::Nemo.MatElem{S}, b::Nemo.MatElem{S}) where S <: Nemo.RingElem
-  R = base_ring(a)
-  @assert R == base_ring(b)
-  @assert nrows(a) == nrows(b)
+    cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}) where T <: RingElem -> Bool, MatElem, MatElem
 
+Tries to solve $Ax = B$ for $x$ if `side = :right` or $Ax = B$ if `side = :left`.
+It returns the solution and the right respectively left kernel of $A$.
+"""
+function cansolve_with_kernel(A::MatElem{T}, B::MatElem{T}; side = :right) where T <: RingElem
+  @assert base_ring(A) == base_ring(B)
+  if side === :right
+    @assert nrows(A) == nrows(B)
+    return _cansolve_with_kernel(A, B)
+  elseif side === :left
+    b, C, K = _cansolve_with_kernel(transpose(A), transpose(B))
+    @assert ncols(A) == ncols(B)
+    if b
+      return b, transpose(C), transpose(K)
+    else
+      return b, C, K
+    end
+  else
+    error("Unsupported argument :$side for side: Must be :left or :right")
+  end
+end
+
+function _cansolve_with_kernel(a::MatElem{S}, b::MatElem{S}) where S <: RingElem
   H, T = hnf_with_trafo(transpose(a))
   z = similar(a, ncols(b), ncols(a))
   l = min(nrows(a), ncols(a))
@@ -1707,13 +1801,13 @@ end
 #
 ################################################################################
 
-function Nemo.minpoly(M::MatElem)
+function minpoly(M::MatElem)
   k = base_ring(M)
   kx, x = PolynomialRing(k, cached = false)
   return minpoly(kx, M)
 end
 
-function Nemo.charpoly(M::MatElem)
+function charpoly(M::MatElem)
   k = base_ring(M)
   kx, x = PolynomialRing(k, cached = false)
   return charpoly(kx, M)

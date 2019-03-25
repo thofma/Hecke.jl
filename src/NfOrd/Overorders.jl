@@ -203,6 +203,8 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
 
   offset = mA.offset
 
+  subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
+
   for s in subs
     T = image(s[2], false)
     G = domain(T[2])
@@ -258,14 +260,20 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powerin
   for i in 1:(d - 1)
     autos[i] = induce(mA, x -> M(elem_in_nf(B[i + 1]))*x)
   end
+  
 
   d = degree(O)
   K = nf(O)
 
   potential_basis = Vector{nf_elem}(undef, d)
 
-  subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
-
+  filter!( x -> !iszero(x.map), autos)
+  if iszero(length(autos))
+    subs = subgroups(A, subtype = [Int(p)], fun = (G, z) -> sub(G, z, false))
+  else
+    subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
+  end
+  
   for i in 1:mA.offset
     potential_basis[i] = mA.bottom_snf_basis[i]
   end
@@ -323,19 +331,25 @@ function _minimal_poverorders2(O::NfOrd, P::NfOrdIdl, excess = Int[])
   end
   autos[d] = induce(mA, x -> x^2)
 
-  R = GF(2)
-  W = MatrixSpace(R, ngens(A), ngens(A), false)
-  V = ModAlgAss([W(l.map) for l in autos])
+
+  filter!( x -> !iszero(x.map), autos)
+  if iszero(length(autos))
+    subs = subgroups(A, subtype = [2], fun = (G, z) -> sub(G, z, false))
+  else
+    R = GF(2)
+    W = MatrixSpace(R, ngens(A), ngens(A), false)
+    V = ModAlgAss([W(l.map) for l in autos])
   
-  subm = minimal_submodules(V, f)
-  subs = (sub(A, lift(x), false) for x in subm)
+    subm = minimal_submodules(V, f)
+    subs = (sub(A, lift(x), false) for x in subm)
+  end
+  
   potential_basis = Vector{nf_elem}(undef, d)
 
   offset = mA.offset
   for i in 1:offset
     potential_basis[i] = mA.bottom_snf_basis[i]
   end
-
 
   for s in subs
     T = image(s[2], false)
@@ -385,8 +399,8 @@ function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZ
 
   z2 = view(z, (d + 1):2*d, 1:d)
   mul!(z2, S1.num, R1.den)
-  MM = FakeFmpqMat(vcat(S1.den * R1.num, R1.den * S1.num), S1.den * R1.den)
-  @assert MM == FakeFmpqMat(z, S1.den * R1.den)
+  #MM = FakeFmpqMat(vcat(S1.den * R1.num, R1.den * S1.num), S1.den * R1.den)
+  #@assert MM == FakeFmpqMat(z, S1.den * R1.den)
   hnf_modular_eldiv!(z, d1, :lowerleft)
   #MM = hnf!(MM)
   #@assert MM == FakeFmpqMat(z, S1.den * R1.den)
@@ -404,7 +418,7 @@ function sum_as_Z_modules(O1::NfOrd, O2::NfOrd, z::fmpz_mat = zero_matrix(FlintZ
   #@assert M == MMM
   #@assert M == MM
   M1 = sub(M, (nrows(M)-ncols(M)+1):nrows(M), 1:ncols(M))
-  return Order(K, M1, false, false)
+  return NfAbsOrd(K, M1, false)
 end
 
 
@@ -447,15 +461,17 @@ function new_overorders(O::NfOrd)
     if isempty(orders)
       append!(orders, new_p)
     else
-      orders1 = typeof(O)[]
+      orders1 = Vector{typeof(O)}(undef, length(orders) * length(new_p))
       sizehint!(orders1, length(orders) * length(new_p))
       z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
       @show length(orders), length(new_p)
+      kk = 1
       for O1 in orders
         @time for O2 in new_p
-          push!(orders1, sum_as_Z_modules(O1, O2, z))
+          orders1[kk] = sum_as_Z_modules(O1, O2, z)
+          kk += 1
         end
-        @show length(orders1)
+        @show kk
       end
       orders = orders1
     end
@@ -522,7 +538,6 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
         end
       end
     end
-    
   end
   push!(to_enlarge, O)
   for d in values(current)

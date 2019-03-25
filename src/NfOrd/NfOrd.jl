@@ -1810,7 +1810,7 @@ function _cycleBL(O::NfOrd, q::fmpz)
     end
     I1=(ideals[1]+ideal(O,q))*(ideals[3]+ideal(O,q))
     I2=(ideals[2]+ideal(O,q))^2
-    M2=basis_mat(I2, Val{false})*basis_mat_inv(I1, Val{false})
+    M2=basis_mat(I2, copy = false)*basis_mat_inv(I1, copy = false)
     @assert M2.den==1
     G2=_el_divs(M2.num,q)
     if isempty(G2)

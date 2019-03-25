@@ -495,14 +495,11 @@ mutable struct FakeFmpqMat
       end
     end
     n = zero_matrix(FlintZZ, nrows(x), ncols(x))
-    #n = fmpz_mat(nrows(x), ncols(x))
-    #n.base_ring = FlintIntegerRing()
     for i in 1:nrows(x)
       for j in 1:ncols(x)
         n[i, j] = FlintZZ(d*x[i, j])
       end
     end
-#    z.parent = FakeFmpqMatSpace(nrows(x), ncols(x))
     z.rows = nrows(x)
     z.cols = ncols(x)
     z.num = n
@@ -676,7 +673,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdID, (K, x))
+    if cached && haskey(NfAbsOrdID, (K, x))
       return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{S, T}(K)
@@ -692,7 +689,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdID, (K, x))
+    if cached && haskey(NfAbsOrdID, (K, x))
       return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{S, T}(K)
@@ -714,7 +711,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_mat(b)
-    if haskey(NfAbsOrdID, (K,A))
+    if cached && haskey(NfAbsOrdID, (K,A))
       return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{parent_type(T), T}(K)
@@ -1832,7 +1829,7 @@ end
 
 abstract type GModule end
 
-export FqGModule, ZpnGModule
+export ZpnGModule
 
 mutable struct ZpnGModule <: GModule
   R::Nemo.NmodRing
@@ -1852,31 +1849,6 @@ mutable struct ZpnGModule <: GModule
     return z
   end
   
-end
-
-
-mutable struct FqGModule <: GModule
-  K::Nemo.FqNmodFiniteField
-  G::Array{fq_nmod_mat,1}
-  dim::Int
-  isirreducible::Bool
-  dim_spl_fld::Int
-  
-  function FqGModule(G::Array{fq_nmod_mat,1})
-    z=new()
-    z.G=G
-    z.K=parent(G[1][1,1])
-    z.dim=ncols(G[1])
-    if z.dim==1
-      z.isirreducible=true
-      z.dim_spl_fld=1
-    else 
-      z.dim_spl_fld=0
-      z.isirreducible=false
-    end
-    
-    return z
-  end
 end
 
 ###############################################################################
@@ -1962,7 +1934,7 @@ end
 #
 ################################################################################
 
-mutable struct NfAbsNS <: Nemo.Field
+mutable struct NfAbsNS <: Field
   pol::Array{fmpq_mpoly, 1}
   S::Array{Symbol, 1}
   basis#::Vector{NfAbsNSElem}
@@ -1979,7 +1951,7 @@ mutable struct NfAbsNS <: Nemo.Field
   end
 end
 
-mutable struct NfAbsNSElem <: Nemo.FieldElem
+mutable struct NfAbsNSElem <: FieldElem
   data::fmpq_mpoly
   parent::NfAbsNS
 
