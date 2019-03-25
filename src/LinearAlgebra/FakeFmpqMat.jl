@@ -125,6 +125,8 @@ end
 
 ==(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
 
+isequal(x::FakeFmpqMat, y::FakeFmpqMat) = (x.num == y.num) && (x.den == y.den)
+
 ################################################################################
 #
 #  Conversion

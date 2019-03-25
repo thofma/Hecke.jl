@@ -536,7 +536,6 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
         end
       end
     end
-    
   end
   push!(to_enlarge, O)
   for d in values(current)
