@@ -683,6 +683,8 @@ function element_with_valuation(a::T, primes::Vector{T}) where {T <: Union{NfOrd
   return x
 end
 
+# Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
 ***
       pradical(O::NfRelOrd, P::NfOrdIdl) -> NfRelOrdIdl
@@ -692,8 +694,6 @@ end
 > just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
 > \in P\mathcal O \}$. It is not checked that $P$ is prime.
 """
-# Algorithm V.8. and VI.8. in "Berechnung relativer Ganzheitsbasen mit dem
-# Round-2-Algorithmus" by C. Friedrichs.
 function pradical(O::NfRelOrd, P::Union{NfOrdIdl, NfRelOrdIdl})
   d = degree(O)
   L = nf(O)
@@ -795,6 +795,8 @@ end
 #
 ################################################################################
 
+# Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
+# Round-2-Algorithmus" by C. Friedrichs.
 @doc Markdown.doc"""
 ***
     ring_of_multipliers(a::NfRelOrdIdl) -> NfRelOrd
@@ -803,8 +805,6 @@ end
 > with $xa \subseteq a$, where $K$ is the ambient number field
 > of $a$.
 """
-# Algorithm VII.1. in "Berechnung relativer Ganzheitsbasen mit dem
-# Round-2-Algorithmus" by C. Friedrichs.
 function ring_of_multipliers(a::NfRelOrdIdl{T1, T2}) where {T1, T2}
   O = order(a)
   K = base_ring(nf(O))

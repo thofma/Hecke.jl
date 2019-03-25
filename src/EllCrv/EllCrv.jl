@@ -464,12 +464,12 @@ end
 #
 ################################################################################
 
+# p. 46 Washington, p. 72 Cohen
 @doc Markdown.doc"""
 ***
     j(E::EllCrv{T}) -> T
 > Computes the j-invariant of $E$.
 """
-# p. 46 Washington, p. 72 Cohen
 function j_invariant(E::EllCrv{T}) where T
   if isdefined(E, :j)
     return E.j
@@ -509,13 +509,13 @@ end
 #
 ################################################################################
 
+# washington p. 14, cohen p. 270
 @doc Markdown.doc"""
 ***
     +(P::EllCrvPt, Q::EllCrvPt) -> EllCrvPt
 > Adds two points on an elliptic curve.
 > does not work in characteristic 2
 """
-# washington p. 14, cohen p. 270
 function +(P::EllCrvPt{T}, Q::EllCrvPt{T}) where T
   parent(P) != parent(Q) && error("Points must live on the same curve")
 
@@ -641,13 +641,13 @@ end
 #
 ################################################################################
 
+# algorithm 'integer times a point', [Washington, p. 18]
 @doc Markdown.doc"""
 ***
     *(n::Int, P::EllCrvPt) -> EllCrvPt
 
 > Computes the point $nP$.
 """
-# algorithm 'integer times a point', [Washington, p. 18]
 function *(n::Int, P::EllCrvPt)
   B = infinity(P.parent)
   C = P

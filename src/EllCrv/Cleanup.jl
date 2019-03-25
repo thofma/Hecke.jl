@@ -96,6 +96,7 @@ function local_height_finite(P, p)
   return Float64(numerator(L))/Float64(denominator(L)) * log(Float64(p))
 end
 
+# p. 74 in cremona's book
 @doc Markdown.doc"""
 ***
     local_height_infinite(P::EllCrvPt{fmpq}, d = 20) -> Float64
@@ -104,7 +105,6 @@ end
 > the real local height of $P$. It is assumed that $E$ is given by a minimal mode.
 > The parameter $d$ controls the number of decimal places.
 """
-# p. 74 in cremona's book
 function local_height_infinite(P, d = 20)
   E = P.parent
   x = P.coordx
@@ -168,13 +168,13 @@ end
 #
 ################################################################################
 
+# see Cremona, p. 75
 @doc Markdown.doc"""
 ***
     canonical_height(P::EllCrvPt) -> Float64
 
 > Computes the canonical height of a point $P$. 
 """
-# see Cremona, p. 75
 function canonical_height(P)
     
   if P.isinfinite == true
@@ -206,6 +206,7 @@ end
 #
 ################################################################################
 
+# see Robledo, p. 47
 @doc Markdown.doc"""
 ***
     isindependent(S::Array{EllCrvPt{fmpq}}) -> Bool
@@ -214,7 +215,6 @@ end
 > is linearly independent. Returns true if they are independent, otherwise false.
 > This function may return false results.
 """
-# see Robledo, p. 47
 function isindependent(P)
   epsilon = 10.0^(-8)
   r = length(P)
@@ -263,11 +263,11 @@ end
 #
 ################################################################################
 
+# see Cohen
 @doc Markdown.doc"""
     real_period(E::EllCrv{fmpz}) -> Float64
 >   Returns the real period of an elliptic curve E with integer coefficients.
 """
-# see Cohen
 function real_period(E)
   a1 = numerator(E.coeff[1])
   a2 = numerator(E.coeff[2])
@@ -329,11 +329,11 @@ function naive_height(P)
   return h
 end
 
+# p.75 Cremona
 @doc Markdown.doc"""
     points_with_bounded_naive_height(E:EllCrv, B::Int) -> Array{EllCrvPt}
 > Computes all rational points on a curve E with integer coefficients which have naive height <= B.
 """
-# p.75 Cremona
 function points_with_bounded_naive_height(E, B)
   a1 = numerator(E.coeff[1])
   a2 = numerator(E.coeff[2])

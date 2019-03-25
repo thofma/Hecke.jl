@@ -42,13 +42,13 @@ export hasse_interval, order, order_via_bsgs, order_via_legendre,
 #
 ################################################################################
 
+# only works for short form
 @doc Markdown.doc"""
 ***
     rand(E::EllCrv) -> EllCrvPt
 > Returns a random point on the elliptic curve $E$ defined over a finite field.
 > It is assumed that $E$ is given in short form.
 """
-# only works for short form
 function rand(E::EllCrv)
   R = base_field(E)
 
@@ -77,6 +77,7 @@ end
 #
 ################################################################################
 
+# Th. 4.14
 @doc Markdown.doc"""
 ***
     order_via_legendre(E::EllCrv{Generic.Res{fmpz}) -> fmpz
@@ -85,7 +86,6 @@ Calculates the number of points on an elliptic curve $E$ over a finite field
 $\mathbf Z/p\mathbf Z$ using the Legendre symbol. It is assumed that $p$ is
 prime.
 """
-# Th. 4.14
 function order_via_legendre(E::EllCrv{T}) where {T <: Union{nmod, Generic.Res{fmpz}}}
   R = base_field(E)
   p = characteristic(R)
@@ -142,6 +142,7 @@ function hasse_interval(E::EllCrv)
   return [l, b]
 end
 
+# section 4.3.4
 @doc Markdown.doc"""
 ***
     elem_order_bsgs(P::EllCrvPt) -> fmpz
@@ -149,7 +150,6 @@ end
 > Calculates the order of a point P on an elliptic curve given over a finite
 > field using BSGS.
 """
-# section 4.3.4
 function elem_order_bsgs(P::EllCrvPt)
   R = base_field(P.parent)
   p = characteristic(R)
