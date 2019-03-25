@@ -775,19 +775,17 @@ end
 """
 function right_kernel(M::nmod_mat)
   R = base_ring(M)
-  if isprime(fmpz(modulus(R)))
+  if isprime(modulus(R))
     k = zero_matrix(R, ncols(M), ncols(M))
     n = ccall((:nmod_mat_nullspace, :libflint), Int, (Ref{nmod_mat}, Ref{nmod_mat}), k, M)
-    return (n, k)
+    return n, k
   end
 
-  N = hcat(M', identity_matrix(R, ncols(M)))
-  ex = 0
-  if nrows(N) < ncols(N)
-    ex = ncols(N) - nrows(N)
-    N = vcat(N, zero_matrix(R, ex, ncols(N)))
+  H = hcat(M', identity_matrix(R, ncols(M)))
+  if nrows(H) < ncols(H)
+    H = vcat(H, zero_matrix(R, ncols(H) - nrows(H), ncols(H)))
   end
-  H = howell_form(N)
+  howell_form!(H)
   nr = 1
   while nr <= nrows(H) && !iszero_row(H, nr)
     nr += 1
@@ -808,6 +806,32 @@ function left_kernel(a::nmod_mat)
   return n, transpose(M)
 end
 
+function right_kernel(M::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+  R = base_ring(M)
+  N = hcat(M', identity_matrix(R, ncols(M)))
+  if nrows(N) < ncols(N)
+    N = vcat(N, zero_matrix(R, ncols(N) - nrows(N), ncols(N)))
+  end
+  H = howell_form!(N)
+  nr = 1
+  while nr <= nrows(H) && !iszero_row(H, nr)
+    nr += 1
+  end
+  nr -= 1
+  h = sub(H, 1:nr, 1:nrows(M))
+  for i=1:nrows(h)
+    if iszero_row(h, i)
+      k = sub(H, i:nrows(h), nrows(M)+1:ncols(H))
+      return nrows(k), k'
+    end
+  end
+  return 0, zero_matrix(R,nrows(M),0)
+end
+
+function left_kernel(a::Generic.Mat{Nemo.Generic.Res{Nemo.fmpz}})
+  n, M = right_kernel(transpose(a))
+  return n, transpose(M)
+end
 ################################################################################
 #
 #  Kernel over different rings

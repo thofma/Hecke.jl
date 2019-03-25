@@ -1,8 +1,13 @@
+export rres, rresx
 
-export rres
 
+################################################################################
+#
+#  Computation of a generator of the ideal of the resultant
+#
+################################################################################
 @doc Markdown.doc"""
-    resultant_valuation(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
+    resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
 > A generator for the ideal of the resultant of $f$ anf $g$ using a quadratic-time algorithm.
 > One of the two polynomials must be monic.
 """
@@ -14,7 +19,7 @@ function resultant_ideal(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} w
   Rt = parent(f)
   R = base_ring(Rt)
   m = fmpz(modulus(R))
-  e, p::fmpz = ispower(m)
+  e, p = ispower(m)
   easy = isprime(p)
   
   if easy
@@ -215,6 +220,11 @@ function resultant_ideal_pp(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S
 
 end
 
+################################################################################
+#
+#  Extended gcd
+#
+################################################################################
 
 @doc Markdown.doc"""
     xxgcd(a::ResElem{fmpz}, b::ResElem{fmpz}) -> g, e, f, u, v
@@ -231,52 +241,6 @@ function xxgcd(a::ResElem{S}, b::ResElem{S}) where S <: Union{fmpz, Integer}
   end
 end
 
-@doc Markdown.doc"""
-    primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
-    primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
-> Computes the contents $c$ and the primitive part of $f$ destructively.   
-"""
-function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
-  
-  @assert !iszero(f)
-  d = degree(f)
-  if d == 0
-    if iszero(f)
-      return base_ring(parent(f))(1), f
-    end
-    c = canonical_unit(coeff(f, 0))
-    c1 =inv(c)*coeff(f, 0)
-    setcoeff!(f, 0, 1)
-    return c1, f
-  end
-
-  g = coeff(f, 0)
-  setcoeff!(f, 0, 1)
-  for i = 1:d
-    h, _, _, u, v = xxgcd(g, coeff(f, i))
-    setcoeff!(f, i, v)
-    if  g != h
-      for j=0:i-1
-        setcoeff!(f, j, u*coeff(f, j))
-      end
-    end
-    g = h
-    if isone(g)
-      return g, f
-    end
-  end
-  return g, f
-end
-
-@doc Markdown.doc"""
-    primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
-    primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
-> Computes the contents $c$ and the primitive part of $f$.
-"""
-function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
-  g = deepcopy(f)
-  return primsplit!(g)
-end
 
 #for testing: the obvious(?) naive method(s)
 function rres_hnf(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
@@ -301,7 +265,9 @@ end
 
 
 #polynomial remainder sequence - almost
+#=
 function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
@@ -323,8 +289,7 @@ function prs_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   end
   return rs, g
 end
-
-
+=#
 
 function Nemo.gcd(a::ResElem{T}, b::ResElem{T}) where T <: Union{Integer, fmpz}
   m = modulus(a)
@@ -625,19 +590,21 @@ function rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} whe
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   @assert isunit(lead(f)) || isunit(lead(g)) #can be weakened to invertable lead
-  res::T, u::PolyElem{T}, v::PolyElem{T} = _rresx_sircana(f, g)::Tuple{T, PolyElem{T}, PolyElem{T}}
+  res, u, v = _rresx_sircana(f, g)
   if !iszero(res)
     cu = canonical_unit(res)
     cu = inv(cu)
-    res *= cu
+    res = mul!(res, res, cu)
     u *= cu
     v *= cu
   end
   if isunit(lead(g))
-    q::PolyElem{T}, r::PolyElem{T} = divrem(u, g)
+    q, r = divrem(u, g)
+    @hassert :NfOrd 1 res == r*f + (v+q*f)*g
     return res, r, v+q*f
   else
     q, r = divrem(v, f)
+    @hassert :NfOrd 1 res == (u+q*g)*f + r*g
     return res, u+q*g, r
   end
 end
@@ -645,24 +612,19 @@ end
 
 function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f, g)
-  @assert typeof(f) == typeof(g)
 
   Rt = parent(f)
   R = base_ring(Rt)
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  m::fmpz = fmpz(modulus(R))
-  e, p::fmpz = ispower(m)
+  m = fmpz(modulus(R))
+  e, p = ispower(m)
   easy = isprime(p)
   if easy
     return _rresx_sircana_pp(f, g)
   end
 
-  u::PolyElem{T}, v::PolyElem{T} = Rt(0), Rt(1)
-  U::PolyElem{T}, V::PolyElem{T} = Rt(1), Rt(0)
-#  res::T, uu::T, vv::T
-
-#  u, v = Rt(0), Rt(1)  #g = u f_in + v g_in
-#  U, V = Rt(1), Rt(0)  #f = U f_in + V g_in
+  u, v = Rt(0), Rt(1)
+  U, V = Rt(1), Rt(0)
 
   while true
     if degree(f) < 1 && degree(g) < 1
@@ -700,48 +662,32 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
           return lead(g), u, v
         else
           res, uu, vv = gcdx(a*constant_coefficient(f), lead(g))
-          u, v = (uu*a*U + vv*u), (uu*a*V + vv*v)
-
-          return res, u, v
+          return res, uu*a*U + vv*u, uu*a*V + vv*v
         end
       else
         return constant_coefficient(g), u, v
       end
     end
+   
 
     if !isunit(lead(g))
       c, g = primsplit(g)
-      if easy
-        cp = [m]
-      else
-        cp = [gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
-        push!(cp, m)
-        cp = [x for x = cp if !iszero(x)]
-        cp = coprime_base(cp)
-        cp = [x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
-      end
+      cp = fmpz[gcd(lift(coeff(g, i)), m) for i=0:degree(g)]
+      push!(cp, m)
+      cp = coprime_base(cp)
+      cp = fmpz[x for x = cp if !isunit(x)] #error: [1, 1, 3, 27] -> [1,3]
       resp = fmpz[]
-      resB = []
+      resB = Tuple{typeof(f), typeof(f)}[]
       pg = fmpz[]
       for p = cp
         lg = p^valuation(m, p)
         push!(pg, lg)
+        R1 = ResidueRing(FlintZZ, S(lg), cached=false)
+        R1t = PolynomialRing(R1, cached=false)[1]
+        #g is bad in R1, so factor it
+        gR1 = R1t(lift(Zx, g))
+        fR1 = R1t(lift(Zx, f))
 
-        #gR1::PolyElem{T}, fR1::PolyElem{T}
-        #c::T
-        #g1::PolyElem{T}, g2::PolyElem{T}
-        if lg != m
-          R1 = ResidueRing(FlintZZ, S(lg), cached=false)
-          R1t = PolynomialRing(R1, cached=false)[1]
-          #g is bad in R1, so factor it
-          gR1 = R1t(lift(Zx, g))
-          fR1 = R1t(lift(Zx, f))
-        else
-          gR1 = g
-          fR1 = f
-          R1 = R
-          R1t = Rt
-        end
         if iszero(R1(lift(c)))
           push!(resp, fmpz(0))
           push!(resB, (R1t(0), R1t(1))) #relation need to be primitive
@@ -752,25 +698,23 @@ function _rresx_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} wh
           else
             g1, g2 = fun_factor(gR1)
           end
-          @assert isunit(g1)
+          #@assert isunit(g1)
           rr, uu, vv = rresx_sircana(fR1, g2)
           push!(resp, lift(lift(c)*rr))
           push!(resB, (uu*lift(c), inv(g1)*vv))
         end
       end
       if length(cp) == 1
-        res, u_, v_ = R(resp[1]), Rt(resB[1][1]), Rt(resB[1][2])
+        res, u_, v_ = R(resp[1]), Rt(lift(Zx, resB[1][1])), Rt(lift(Zx, resB[1][2]))
       else
         ce = crt_env(pg)
         res = R(crt(resp, ce))
-        u_ = Rt(induce_crt([x[1] for x = resB], ce))
-        v_ = Rt(induce_crt([x[2] for x = resB], ce))
+        u_ = Rt(induce_crt(typeof(f)[x[1] for x = resB], ce))
+        v_ = Rt(induce_crt(typeof(f)[x[2] for x = resB], ce))
       end
       # f = U*f_in + V*g_in
       # g = u*f_in + v*g_in
       # r = u_ * f + v_ * g 
-
-      (u_*U + v_*u), (u_*V + v_*v)
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
 
@@ -784,7 +728,6 @@ end
 
 function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
   Nemo.check_parent(f1, g1)
-  @assert typeof(f1) == typeof(g1)
 
   Rt = parent(f1)
   R = base_ring(Rt)
@@ -793,12 +736,9 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
   f = f1
   g = g1
 
-  u::PolyElem{T}, v::PolyElem{T} = Rt(0), Rt(1)
-  U::PolyElem{T}, V::PolyElem{T} = Rt(1), Rt(0)
-#  res::T, uu::T, vv::T
+  u, v = Rt(0), Rt(1)
+  U, V = Rt(1), Rt(0)
 
-#  u, v = Rt(0), Rt(1)  #g = u f_in + v g_in
-#  U, V = Rt(1), Rt(0)  #f = U f_in + V g_in
 
   while true
     if degree(f) < 1 && degree(g) < 1
@@ -848,12 +788,10 @@ function _rresx_sircana_pp(f1::PolyElem{T}, g1::PolyElem{T}) where T <: ResElem{
     if !isunit(lead(g))
       c, g = primsplit(g)
       g1, g2 = fun_factor(g)
-      #@assert isunit(g1)
-      rr, uu, vv = rresx_sircana(f, g2)
+      rr, uu, vv = _rresx_sircana_pp(f, g2)
       res = rr*c
       u_ = uu*c
       v_ = inv(g1)*vv
-      #@hassert :NfOrd 1 (u_*U + v_*u)*f1 + (u_*V + v_*v)*g1 == res
       return res, (u_*U + v_*u), (u_*V + v_*v)
     end
 
@@ -890,97 +828,9 @@ end
 
 ################################################################################
 #
-#  Fun Factor
+#  Gcd
 #
 ################################################################################
-#factors f as unit * monic 
-#seems to not like 3*x^2+3*x+1 mod 108! mod 27 it is fine.
-# requires some coefficient of f to be a unit
-
-function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
-
-  Rx = parent(f)
-  if isunit(lead(f))
-    l = lead(f)
-    return Rx(l), f*inv(l)
-  end
-  R = base_ring(Rx)
-  smod = lift(coeff(f, degree(f)))
-  ind = degree(f)-1
-  while !isunit(coeff(f, ind))
-    smod = gcd(smod, lift(coeff(f, ind)))
-    ind -= 1
-  end
-  if iszero(ind)
-    return f, one(Rx)
-  end
-
-  u0 = zero(Rx)
-  for i = 0:degree(f)-ind
-    setcoeff!(u0, i, coeff(f, ind+i))
-  end
-  g0 = zero(Rx)
-  invc = inv(coeff(f, ind))
-  for i = 0:ind-1
-    setcoeff!(g0, i, coeff(f, i) * invc)
-  end
-  setcoeff!(g0, ind, one(R))
-  
-  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
-  f2 = lift(Zy, f)
-  mod = fmpz(gcd(smod, fmpz(modulus(Rx)))) #We have the equality modulo mod
-  mod = mod*mod
-  R1 = ResidueRing(FlintZZ, mod, cached = false)
-  R1x, x = PolynomialRing(R1, "x", cached = false)
-  s = R1x(lift(inv(coeff(u0, 0))))
-  t = zero(R1x)
-  u = R1x(lift(Zy, u0))
-  g = R1x(lift(Zy, g0))
-
-  f1 = R1x(f2)
-  u, g, s, t = _hensel(f1, u, g, s, t)
-  @hassert :NfOrd 1 f1 == u*g
-  i = 1
-  modRx = fmpz(modulus(Rx))
-  while modRx > mod
-
-    mod = mod*mod
-    if mod > modRx
-      mod = modRx
-    end
-    R1 = ResidueRing(FlintZZ, mod, cached = false)
-    R1x, x = PolynomialRing(R1, "x", cached = false)
-    u = R1x(lift(Zy, u))
-    g = R1x(lift(Zy, g))
-    s = R1x(lift(Zy, s))
-    t = R1x(lift(Zy, t))
-    f1 = R1x(f2)
-    i += 1
-    
-    u, g, s, t = _hensel(f1, u, g, s, t)
-
-    @hassert :NfOrd 1 f1 == u*g
-
-    if i>20 #in general: loop forever... one could check that the
-      # contents of f-gh and s*g+t*h - 1 is nilpotent.
-      # this SHOULD ensure convergence
-      @show f
-      @show parent(f)
-      @show g, u, s, t
-      @show content(f-g*u)
-      @show content(g*t-s*u-1)
-      error("too long")
-    end
-  end
-  
-  u0 = Rx(lift(Zy, u))
-  g0 = Rx(lift(Zy, g))
-  @hassert :NfOrd 1 g0*u0 == f
-  return u0, g0
-end
-
-
-
 
 @doc Markdown.doc"""
     gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
@@ -1013,6 +863,11 @@ function gcd_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where
   return f
 end
 
+################################################################################
+#
+#  Resultant
+#
+################################################################################
 
 @doc Markdown.doc"""
     resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer} -> T
@@ -1169,6 +1024,97 @@ function resultant_sircana(f::PolyElem{T}, g::PolyElem{T}) where T <: ResElem{S}
   return res
 end
 
+################################################################################
+#
+#  Fun Factor
+#
+################################################################################
+# factors f as unit * monic 
+# requires some coefficient of f to be a unit
+
+function fun_factor(f::T) where T <: Union{fmpz_mod_poly, nmod_poly}
+
+  Rx = parent(f)
+  if isunit(lead(f))
+    l = lead(f)
+    return Rx(l), f*inv(l)
+  end
+  R = base_ring(Rx)
+  smod = lift(coeff(f, degree(f)))
+  ind = degree(f)-1
+  while !isunit(coeff(f, ind))
+    smod = gcd(smod, lift(coeff(f, ind)))
+    ind -= 1
+  end
+  if iszero(ind)
+    return f, one(Rx)
+  end
+
+  u0 = zero(Rx)
+  for i = 0:degree(f)-ind
+    setcoeff!(u0, i, coeff(f, ind+i))
+  end
+  g0 = zero(Rx)
+  invc = inv(coeff(f, ind))
+  for i = 0:ind-1
+    setcoeff!(g0, i, coeff(f, i) * invc)
+  end
+  setcoeff!(g0, ind, one(R))
+  
+  Zy, y = PolynomialRing(FlintZZ, "y", cached = false)
+  f2 = lift(Zy, f)
+  mod = fmpz(gcd(smod, fmpz(modulus(Rx)))) #We have the equality modulo mod
+  mod = mod*mod
+  R1 = ResidueRing(FlintZZ, mod, cached = false)
+  R1x, x = PolynomialRing(R1, "x", cached = false)
+  s = R1x(lift(inv(coeff(u0, 0))))
+  t = zero(R1x)
+  u = R1x(lift(Zy, u0))
+  g = R1x(lift(Zy, g0))
+
+  f1 = R1x(f2)
+  u, g, s, t = _hensel(f1, u, g, s, t)
+  @hassert :NfOrd 1 f1 == u*g
+  i = 1
+  modRx = fmpz(modulus(Rx))
+  while modRx > mod
+
+    mod = mod*mod
+    if mod > modRx
+      mod = modRx
+    end
+    R1 = ResidueRing(FlintZZ, mod, cached = false)
+    R1x, x = PolynomialRing(R1, "x", cached = false)
+    u = R1x(lift(Zy, u))
+    g = R1x(lift(Zy, g))
+    s = R1x(lift(Zy, s))
+    t = R1x(lift(Zy, t))
+    f1 = R1x(f2)
+    i += 1
+    
+    u, g, s, t = _hensel(f1, u, g, s, t)
+
+    @hassert :NfOrd 1 f1 == u*g
+
+    if i>20 #in general: loop forever... one could check that the
+      # contents of f-gh and s*g+t*h - 1 is nilpotent.
+      # this SHOULD ensure convergence
+      @show f
+      @show parent(f)
+      @show g, u, s, t
+      @show content(f-g*u)
+      @show content(g*t-s*u-1)
+      error("too long")
+    end
+  end
+  
+  u0 = Rx(lift(Zy, u))
+  g0 = Rx(lift(Zy, g))
+  @hassert :NfOrd 1 g0*u0 == f
+  return u0, g0
+end
+
+
 
 function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T}, t::PolyElem{T}) where T <: RingElem #from von zur Gathen: h needs to be monic
   @assert ismonic(h)
@@ -1208,4 +1154,58 @@ function _hensel(f::PolyElem{T}, g::PolyElem{T}, h::PolyElem{T}, s::PolyElem{T},
   sub!(aux3, aux3, c)
   sub!(aux4, s, d)
   return aux1, aux2, aux4, aux3
+end
+
+################################################################################
+#
+#  Primitive splitting
+#
+################################################################################
+
+
+@doc Markdown.doc"""
+    primsplit!(f::PolyElem{ResElem{fmpz}}) -> c, f
+    primsplit!(f::PolyElem{ResElem{Integer}}) -> c, f
+> Computes the contents $c$ and the primitive part of $f$ destructively.   
+"""
+function primsplit!(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  
+  @assert !iszero(f)
+  d = degree(f)
+  if d == 0
+    if iszero(f)
+      return base_ring(parent(f))(1), f
+    end
+    c = canonical_unit(coeff(f, 0))
+    c1 =inv(c)*coeff(f, 0)
+    setcoeff!(f, 0, 1)
+    return c1, f
+  end
+
+  g = coeff(f, 0)
+  setcoeff!(f, 0, 1)
+  for i = 1:d
+    h, _, _, u, v = xxgcd(g, coeff(f, i))
+    setcoeff!(f, i, v)
+    if  g != h
+      for j=0:i-1
+        setcoeff!(f, j, u*coeff(f, j))
+      end
+    end
+    g = h
+    if isone(g)
+      return g, f
+    end
+  end
+  return g, f
+end
+
+@doc Markdown.doc"""
+    primsplit(f::PolyElem{ResElem{fmpz}}}) -> c, f
+    primsplit(f::PolyElem{ResElem{Integer}}}) -> c, f
+> Computes the contents $c$ and the primitive part of $f$.
+"""
+function primsplit(f::PolyElem{T}) where T <: ResElem{S} where S <: Union{fmpz, Integer}
+  g = deepcopy(f)
+  return primsplit!(g)
 end

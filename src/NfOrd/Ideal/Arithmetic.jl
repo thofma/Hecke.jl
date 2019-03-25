@@ -46,12 +46,12 @@
 > Returns $x + y$.
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  d = degree(order(x))
-  H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
   g = gcd(minimum(x), minimum(y))
   if isone(g)
     return ideal(order(x), g)
   end
+  d = degree(order(x))
+  H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
   H = view(_hnf_modular_eldiv(H, g, :lowerleft), (d + 1):2*d, 1:d)
   return ideal(order(x), H, false, true)
 end
@@ -69,6 +69,11 @@ end
 > Returns $x \cap y$.
 """
 function intersect(x::NfOrdIdl, y::NfOrdIdl)
+  g = gcd(minimum(x), minimum(y))
+  if isone(g)
+    #The ideals are coprime, the intersection is equal to the product
+    return x*y
+  end
   d = degree(order(x))
   H = vcat(basis_mat(x, copy = false), basis_mat(y, copy = false))
   K = left_kernel(H)[2]
