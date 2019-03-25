@@ -673,7 +673,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, xinv::FakeFmpqMat, B::Vector{T}, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdID, (K, x))
+    if cached && haskey(NfAbsOrdID, (K, x))
       return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{S, T}(K)
@@ -689,7 +689,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   end
 
   function NfAbsOrd{S, T}(K::S, x::FakeFmpqMat, cached::Bool = false) where {S, T}
-    if haskey(NfAbsOrdID, (K, x))
+    if cached && haskey(NfAbsOrdID, (K, x))
       return NfAbsOrdID[(K, x)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{S, T}(K)
@@ -711,7 +711,7 @@ mutable struct NfAbsOrd{S, T} <: Ring
   function NfAbsOrd{S, T}(b::Array{T, 1}, cached::Bool = false) where {S, T}
     K = parent(b[1])
     A = basis_mat(b)
-    if haskey(NfAbsOrdID, (K,A))
+    if cached && haskey(NfAbsOrdID, (K,A))
       return NfAbsOrdID[(K,A)]::NfAbsOrd{S, T}
     else
       z = NfAbsOrd{parent_type(T), T}(K)
