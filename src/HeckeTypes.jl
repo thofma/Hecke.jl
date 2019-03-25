@@ -1829,7 +1829,7 @@ end
 
 abstract type GModule end
 
-export FqGModule, ZpnGModule
+export ZpnGModule
 
 mutable struct ZpnGModule <: GModule
   R::Nemo.NmodRing
@@ -1849,31 +1849,6 @@ mutable struct ZpnGModule <: GModule
     return z
   end
   
-end
-
-
-mutable struct FqGModule <: GModule
-  K::Nemo.FqNmodFiniteField
-  G::Array{fq_nmod_mat,1}
-  dim::Int
-  isirreducible::Bool
-  dim_spl_fld::Int
-  
-  function FqGModule(G::Array{fq_nmod_mat,1})
-    z=new()
-    z.G=G
-    z.K=parent(G[1][1,1])
-    z.dim=ncols(G[1])
-    if z.dim==1
-      z.isirreducible=true
-      z.dim_spl_fld=1
-    else 
-      z.dim_spl_fld=0
-      z.isirreducible=false
-    end
-    
-    return z
-  end
 end
 
 ###############################################################################

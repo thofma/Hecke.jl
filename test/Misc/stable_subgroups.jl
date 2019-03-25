@@ -12,13 +12,13 @@
     A=MatrixSpace(R,4,4)(l)
     A1=MatrixSpace(F,4,4)(l1)
     
-    M=ZpnGModule(V,[A])
-    M1=FqGModule([A1])
+    M = ZpnGModule(V,[A])
+    M1 = Hecke.ModAlgAss([A1])
     
-    ls=minimal_submodules(M)
-    ls1=minimal_submodules(M1)
+    ls = minimal_submodules(M)
+    ls1 = minimal_submodules(M1)
     
-    @test length(ls)==length(ls1)
+    @test length(ls) == length(ls1)
     for y in ls
       @test Hecke.issubmodule(M,y)
     end

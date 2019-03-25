@@ -217,13 +217,13 @@ function newton_polygon(f::fmpz_poly, phi::fmpz_poly, p::fmpz)
 end
 
 
-function residual_polynomial(F::FqFiniteField, L::Line, dev::Array{fmpz_poly, 1}, p::fmpz)
+function residual_polynomial(F::FqFiniteField, L::Line, dev::Array{fmpz_poly, 1}, p::Union{Int, fmpz})
 
-  cof=Array{fq,1}()
-  R=ResidueRing(FlintZZ, p, cached=false)
-  Rx,x=PolynomialRing(R,"y", cached=false)
-  s=L.points[1][1]
-  e=denominator(L.slope)
+  R = GF(p, cached=false)
+  cof = Array{elem_type(F), 1}()
+  Rx, x = PolynomialRing(R, "y", cached=false)
+  s = L.points[1][1]
+  e = denominator(L.slope)
   for i=0:degree(L)
     if !iszero(dev[Int(s+e*i+1)])
       el=Rx(divexact(dev[Int(s+e*i+1)], p^(Int(L.points[1][2]+numerator(L.slope*i*e)))))
@@ -232,7 +232,7 @@ function residual_polynomial(F::FqFiniteField, L::Line, dev::Array{fmpz_poly, 1}
       push!(cof, F(0))
     end 
   end
-  Fx, x=PolynomialRing(F,"x", cached=false)
+  Fx, x = PolynomialRing(F,"x", cached=false)
   return Fx(cof)
 
 end
@@ -605,25 +605,25 @@ function _decomposition(O::NfAbsOrd, I::NfAbsOrdIdl, Ip::NfAbsOrdIdl, T::NfAbsOr
 
 end
 
-function decomposition_type_polygon(O::NfOrd, p::fmpz)
+function decomposition_type_polygon(O::NfOrd, p::Union{fmpz, Int})
   K = nf(O)
-  f = K.pol
-  Zx ,x = PolynomialRing(FlintZZ, "x", cached = false)
-  R = ResidueRing(FlintZZ, p, cached = false)
+  Zx, x = PolynomialRing(FlintZZ, "x", cached = false)
+  f = Zx(K.pol)
+  R = GF(p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
-  f1 = Rx(Zx(K.pol))
+  f1 = change_ring(f, Rx)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
   fac = factor(f1) #TODO: We don't need the factorization directly, but only the factorization of the non-squarefree part
   res = Tuple{Int, Int}[]
   l = Tuple{NfOrdIdl, NfOrdIdl}[]
-  for (g,m) in fac
+  for (g, m) in fac
     @vprint :NfOrd 1 "Doing $((g,m)) \n"
     if m==1
       push!(res, (degree(g), 1))
       continue
     end
     phi = lift(Zx, g)
-    dev = phi_development(Zx(f), phi)
+    dev = phi_development(f, phi)
     N = newton_polygon(dev, p)
     if denominator(slope(N.lines[1])) == m
       push!(res, (degree(g), m))
@@ -641,7 +641,7 @@ function decomposition_type_polygon(O::NfOrd, p::fmpz)
       end
     end  
     if length(N.lines) != length(pols)
-      push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m)))))))) 
+      push!(l, (ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(K.pol)(lift(Zx, divexact(f1, g^m)))))))) 
     else
       for i=1:length(pols)
         fact = factor(pols[i])
@@ -671,14 +671,14 @@ end
 #
 ###############################################################################
 
-function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
+function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::Union{fmpz, Int}, degree_limit::Int = 0, lower_limit::Int = 0) where {S, T}
   if degree_limit == 0
     degree_limit = degree(O)
   end
   K = nf(O)
   f = K.pol
   Zx = PolynomialRing(FlintZZ, "x", cached = false)[1]
-  R = ResidueRing(FlintZZ, p, cached = false)
+  R = GF(p, cached = false)
   Rx, y = PolynomialRing(R, "y", cached = false)
   f1 = Rx(K.pol)
   @vprint :NfOrd 1 "Factoring the polynomial \n"
@@ -691,12 +691,12 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
     end
     @vprint :NfOrd 1 "Doing $((g, m)) \n"
     phi = lift(Zx, g)
-    if m==1
+    if isone(m)
       ei = m
       t = parent(f)(phi)
       b = K(t)
       J = NfAbsOrdIdl(O)
-      J.gen_one = p
+      J.gen_one = fmpz(p)
       J.gen_two = O(b, false)
       J.is_prime = 1
       J.splitting_type = ei, degree(phi)
@@ -718,37 +718,6 @@ function prime_decomposition_polygons(O::NfAbsOrd{S, T}, p::fmpz, degree_limit::
       push!(res, (J, ei))
       continue
     end
-    #=
-    dev = phi_development(Zx(f),phi)
-    N = newton_polygon(dev, p)
-    filter(x -> slope(x)<0, N.lines)
-    if length(N.lines) == 1 && degree(N.lines[1]) == 1 && length(fac)==1
-      s = slope(N.lines[1])
-      x=K(1)
-      if abs(numerator(s))> denominator(s)
-        d, r = divrem(numerator(s), denominator(s))
-        x = divexact(K(phi), p^(-d))
-        d, u, v = gcdx(r, denominator(s))
-        @assert d == 1
-        x = divexact(x^-u, p^(-v))#*K(parent(f)(lift(Zx, divexact(f1, g^m)))) Can this be correct?
-      else
-        d, u, v = gcdx(numerator(s), denominator(s))
-        @assert d==1
-        x=divexact(K(phi)^(-u), p^(-v))#*K(parent(f)(lift(Zx, divexact(f1, g^m)))) Can this be correct?
-      end
-      J = NfAbsOrdIdl(O)
-      J.gen_one = p
-      J.gen_two = O(x)
-      J.is_prime = 1
-      J.splitting_type = Int(denominator(s)), degree(phi)
-      J.norm = FlintZZ(p)^degree(phi)
-      J.minimum = FlintZZ(p)
-      J.gens_normal = p
-      J.gens_weakly_normal = true
-      push!(res, (J, Int(denominator(s))))
-      continue
-    end
-    =#
     #TODO: p-adic factorization of the polynomial.
     push!(l, (ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, g^m))))), ideal(O, fmpz(p), O(K(parent(f)(lift(Zx, divexact(f1, g^m))))))))
   end

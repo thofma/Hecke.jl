@@ -1,145 +1,136 @@
+export submodules, minimal_submodules, maximal_submodules, composition_series,
+       composition_factors, meataxe
+
 ################################################################################
 #
 #  Tools for MeatAxe
 #
 ################################################################################
 
-# Given a matrix M in upper right echelon form and a vector, it returns the
-# vector reduced with respect to $M$
 #
-#function cleanvect!(M::T, v::T) where {T <: MatElem}
-#  if iszero(v)
-#    return v
-#  end
-#  R = base_ring(M)
-#  t = R()
-#  for i = 1:nrows(M)
-#    ind = 1
-#    a = M[i, ind]
-#    while iszero(a)
-#      ind += 1
-#      if ind > ncols(M)
-#        # I found a zero row
-#        return v
-#      end
-#      a = M[i, ind]
-#    end
-#    b = v[1, ind]
-#    if iszero(b)
-#      continue
-#    end
-#    mult = divexact(b, a)
-#    v[1, ind] = zero(R)
-#    for k in (ind + 1):ncols(M)
-#      t = mul!(t, mult, M[i, k])
-#      s = v[1, k]
-#      v[1, k] = sub!(s, s, t)
-#      #w[1,k]-= mult*M[i,k]
-#    end      
-#  end
-#  return v
-#end
+# Given a matrix $M$ in echelon form and a vector, it returns
+# the vector reduced with respect to $M$
 #
-#function cleanvect(M::T, v::T) where {T <: MatElem}
-#  @assert nrows(v) == 1
-#  w = deepcopy(v)
-#  cleanvect!(M, w)
-#  return w
-#end
+function cleanvect(M::T, v::T) where {T}
+  @assert nrows(v)==1
+  w=deepcopy(v)
+  if iszero(v)
+    return w  
+  end
+  for i=1:nrows(M)
+    if iszero_row(M,i)
+      continue
+    end
+    ind=1
+    while iszero(M[i,ind])
+      ind+=1
+    end
+    if iszero(w[1,ind])
+      continue
+    end
+    mult=divexact(w[1,ind], M[i,ind])
+    w[1,ind] = parent(M[1,1])(0)
+    for k=ind+1:ncols(M)
+      w[1,k]-= mult*M[i,k]
+    end      
+  end
+  return w
+
+end
+
 #
-## Given a matrix C containing the coordinates of vectors v_1,dots, v_k 
-## in echelon form, the function computes a basis for the submodule they generate
-## 
-## This function destroys the input C
-#function closure(C::T, G::Array{T,1}) where {T <: MatElem}
-#  rref!(C)
-#  w = zero_matrix(base_ring(C), 1, ncols(C))
-#  CC = zero_matrix(base_ring(C), ncols(C), ncols(C))
-#  for i in 1:nrows(C)
-#    for j in 1:ncols(C)
-#      CC[i, j] = C[i, j]
-#    end
-#  end
-#  zero_row = nrows(C) + 1
-#  i = 1
-#  while i <= zero_row - 1
-#    for j in 1:ncols(C)
-#      w[1, j] = CC[i, j]
-#    end
-#    for j=1:length(G)
-#      w = mul!(w, w, G[j])
-#      w = cleanvect!(CC, w)
-#      if !iszero(w)
-#        for k in 1:ncols(C)
-#          CC[zero_row, k] = w[1, k]
-#        end
-#        zero_row = zero_row + 1
-#        if zero_row > nrows(CC) + 1
-#          i = zero_row
-#          break
-#        end
-#      end 
-#      #w = zero!(w)
-#      for j in 1:ncols(C)
-#        w[1, j] = CC[i, j]
-#      end
-#    end  
-#    i = i + 1
-#  end
-#  l = nrows(CC)
-#  r = rref!(CC)
-#  # I don't want to make so many copies
-#  if r == nrows(C)
-#    return C
-#  elseif l > r
-#    return sub(CC, 1:r, 1:ncols(CC))
-#  else
-#    return CC
-#  end
-#end
+#  Given a matrix C containing the coordinates of vectors v_1,dots, v_k 
+#  in echelon form, the function computes a basis for the submodule they generate
+# 
+
+function closure(C::T, G::Array{T,1}) where {T}
+  rref!(C)
+  i=1
+  while i <= nrows(C)
+    w=view(C, i:i, 1:ncols(C))
+    for j=1:length(G)
+      res=cleanvect(C,w*G[j])
+      if !iszero(res)
+        C = vcat(C,res)  
+        if nrows(C)==ncols(C)
+          i=ncols(C)+1
+          break
+        end
+      end 
+    end  
+    i+=1
+  end
+  r = rref!(C)
+  if r != nrows(C)
+    C = sub(C, 1:r, 1:ncols(C))
+  end
+  return C
+end
+
 #
-## Given a matrix C containing the coordinates of one vector
-## the function computes a basis for the submodule it generates
-## C must not be modified and C does not need to be in rref
+#  Given a matrix C containing the coordinates of vectors v_1,dots, v_k,
+#  the function computes a basis for the submodule they generate
+# 
+
+function spinning(C::T,G::Array{T,1}) where {T}
+
+  B=deepcopy(C)
+  X=rref(C)[2]
+  i=1
+  while i != nrows(B)+1
+    for j=1:length(G)
+      el= view(B, i:i, 1:ncols(B)) * G[j]
+      res= cleanvect(X,el)
+      if !iszero(res)
+        X=vcat(X,res)
+        rref!(X)
+        B=vcat(B,el)
+        if nrows(B)==ncols(B)
+          return B
+        end
+      end
+    end  
+    i+=1
+  end
+  return B
+  
+end
+
 #
-## I do not understand why my version does not work!
-## Must the output contain C at the top?
-## TODO: Ask Carlo
-#function spinning(C::T, G::Array{T, 1}) where {T <: MatElem}
-#  B = deepcopy(C)
-#  B = closure(B, G)
-#  if rref(B) != rref(_spinning(C, G))
-#    @show B
-#    @show _spinning(C, G)
-#  end
-#  return _spinning(C, G)
-#  #return B
-#end
+#  Function to obtain the action of G on the quotient and on the submodule
 #
-#function _spinning(C::T,G::Vector{T}) where {T <: MatElem}
-#  B=deepcopy(C)
-#  X=rref(C)[2]
-#  i=1
-#  while i != nrows(B)+1
-#    for j=1:length(G)
-#      #@show sub(B, i:i, 1:ncols(B)) 
-#      #@show G[j]
-#      el= sub(B, i:i, 1:ncols(B)) * G[j]
-#      #@show el
-#      res= cleanvect(X,el)
-#      if !iszero(res)
-#        X=vcat(X,res)
-#        rref!(X)
-#        B=vcat(B,el)
-#        if nrows(B)==ncols(B)
-#          return B
-#        end
-#      end
-#    end  
-#    i+=1
-#  end
-#  return B
-#end
+
+function clean_and_quotient(M::T,N::T, pivotindex::Set{Int}) where {T}
+
+  coeff=zero_matrix(parent(M[1,1]),nrows(N),nrows(M))
+  for i=1:nrows(N)
+    for j=1:nrows(M)
+      if iszero_row(M,j)
+        continue
+      end
+      ind=1
+      while iszero(M[j,ind])
+        ind+=1
+      end
+      coeff[i,j]=divexact(N[i,ind], M[j,ind])
+      for s=1:ncols(N)
+        N[i,s]-=coeff[i,j]*M[j,s]
+      end
+    end
+  end 
+  vec= zero_matrix(parent(M[1,1]),nrows(N),ncols(M)-length(pivotindex))
+  for i=1:nrows(N)  
+    pos=0
+    for s=1:ncols(M)
+      if !(s in pivotindex)
+        pos+=1
+        vec[i,pos]=N[i,s]
+      end 
+    end
+  end
+  return coeff, vec
+end
+
 
 #  Restriction of the action to the submodule generated by C and the quotient
 
@@ -241,26 +232,18 @@ function isisomorphic(M::ModAlgAss{S, T, V}, N::ModAlgAss{S, T, V}) where {S, T,
     return M.action==N.action
   end
 
-  K= base_ring(M)
-  Kx,x=PolynomialRing(K, "x", cached=false)
+  K = base_ring(M)
+  Kx, x = PolynomialRing(K, "x", cached=false)
   
   if length(M.action) == 1
-    f=charpoly(Kx,M.action[1])
-    g=charpoly(Kx,N.action[1])
+    f = charpoly(Kx, M.action[1])
+    g = charpoly(Kx, N.action[1])
     if f==g
       return true
     else
       return false
     end
   end
-  
-  n=M.dimension
-  posfac=n
-   
-  f=Kx(1)
-  G=deepcopy(M.action)
-  H=deepcopy(N.action)
-
   rel = _relations(M,N)
   return iszero(rel[N.dimension, N.dimension])
 
@@ -330,7 +313,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    meataxe(M::FqGModule) -> Bool, MatElem
+    meataxe(M::ModAlgAss) -> Bool, MatElem
 
 > Given module M, returns true if the module is irreducible (and the identity matrix) and false if the space is reducible, togheter with a basis of a submodule
 
@@ -349,7 +332,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   
   G = deepcopy(H)
   filter!(x -> !iszero(x), G)
-  #@show G
+
   if length(G) == 0
     return false, matrix(base_ring(H[1]), 1, n, [one(base_ring(H[1])) for i = 1:n])
   end
@@ -477,7 +460,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    composition_series(M::FqGModule) -> Array{MatElem,1}
+    composition_series(M::ModAlgAss) -> Array{MatElem,1}
 
 > Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence of submodules such that the quotient of two consecutive element is irreducible.
 
@@ -533,7 +516,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    composition_factors(M::FqGModule)
+    composition_factors(M::ModAlgAss)
 
 > Given a Fq[G]-module M, it returns, up to isomorphism, the composition factors of M with their multiplicity,
 > i.e. the isomorphism classes of modules appearing in a composition series of M
@@ -700,13 +683,11 @@ end
 
 @doc Markdown.doc"""
 ***
-    minimal_submodules(M::FqGModule)
+    minimal_submodules(M::ModAlgAss)
 
 > Given a Fq[G]-module M, it returns all the minimal submodules of M
 
 """
-
-
 function minimal_submodules(M::ModAlgAss{S, T, V}, dim::Int=M.dimension+1, lf = Tuple{ModAlgAss{S, T, V}, Int}[]) where {S, T, V}
   
   K = M.base_ring
@@ -742,7 +723,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    maximal_submodules(M::FqGModule)
+    maximal_submodules(M::ModAlgAss)
 
 > Given a $G$-module $M$, it returns all the maximal submodules of M
 
@@ -762,7 +743,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    submodules(M::FqGModule)
+    submodules(M::ModAlgAss)
 
 > Given a $G$-module $M$, it returns all the submodules of M
 
@@ -822,7 +803,7 @@ end
 
 @doc Markdown.doc"""
 ***
-    submodules(M::FqGModule, index::Int)
+    submodules(M::ModAlgAss, index::Int)
 
 > Given a $G$-module $M$, it returns all the submodules of M of index q^index, where q is the order of the field
 
