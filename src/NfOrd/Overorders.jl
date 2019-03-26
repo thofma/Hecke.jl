@@ -237,6 +237,7 @@ end
 function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powering::Bool = false)
   M = ring_of_multipliers(P)
   p = minimum(P)
+  f = valuation(norm(P), p)
   if p == 2
     return _minimal_poverorders2(O, P, excess)
   end
@@ -244,6 +245,12 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powerin
   A, mA = quo(M, O)
   orders = NfOrd[]
   if order(A) == 1
+    @show A
+    return orders
+  end
+  if order(A) == p^f
+    O1 = Order(nf(O), hnf(basis_mat(M)), false, false)
+    push!(orders, O1)
     return orders
   end
   B = mA.bottom_snf_basis
@@ -269,7 +276,7 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powerin
 
   filter!( x -> !iszero(x.map), autos)
   if iszero(length(autos))
-    subs = subgroups(A, subtype = [Int(p)], fun = (G, z) -> sub(G, z, false))
+    subs = subgroups(A, subtype = [Int(p)^f], fun = (G, z) -> sub(G, z, false))
   else
     subs = stable_subgroups(A, autos, minimal = true, op = (G, z) -> sub(G, z, false))
   end
@@ -279,7 +286,49 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powerin
   end
 
   offset = mA.offset
-
+  
+  
+  lQ = prime_ideals_over(M, P)
+  rel_fs = fmpz[divexact(valuation(norm(Q), p), f) for Q in lQ]
+  fac = factor(lcm(rel_fs))
+  for (q, _) in fac
+    if q == 2
+      continue
+    else
+      subs = subgroups(A, subtype = [Int(p) for j in 1:Int(f*(Int(q) - 1))], fun = (G, z) -> sub(G, z, false))
+      for s in subs
+        T = image(s[2], false)
+        G = domain(T[2])
+        new_element = 0
+        for i in 1:(d - offset)
+          v = T[2](G[i]).coeff
+          if iszero(v)
+            potential_basis[i + offset] = mA.bottom_snf_basis[i + offset]
+          else
+            @assert ncols(v) == d - offset
+            potential_basis[i + offset] = sum(v[1, j] * mA.top_snf_basis[j + offset] for j in 1:(d - offset))
+            new_element = i + offset
+          end
+        end
+        @assert new_element != 0
+        b, bL = defines_order(K, potential_basis)
+        if !b
+          excess[] = excess[] + 1
+          continue
+        end
+        L = Order(K, bL, false, false)
+        lQL = prime_ideals_over(L, P)
+        if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
+          push!(orders, L)
+        end
+      end
+    end
+  end
+  
+  if !(2 in fac) && length(lQ) == 1 && norm(P)^rel_fs[1] == order(A)
+    return orders
+  end
+  
   for s in subs
     T = image(s[2], false)
     G = domain(T[2])
@@ -303,6 +352,8 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powerin
     L = Order(K, bL, false, false)
     push!(orders, L)
   end
+  
+  
   return orders
 end
 
@@ -450,6 +501,99 @@ function new_poverorders(O::NfOrd, p::fmpz)
     res = nres
   end
   return res
+end
+
+function bass_overorders(O::NfOrd)
+  orders = typeof(O)[]
+  M = maximal_order(O)
+  fac = factor(FlintZZ(div(gen_index(M), gen_index(O))))
+  for (p, ) in fac
+    lp = prime_ideals_over(O, p)
+    for P in lp
+      Pprim = pprimary_overorders(O, P)
+      bassP = Vector{typeof(O)}()
+      for A in Pprim
+        add = true
+        pabove = prime_ideals_over(A, P)
+        for Q in pabove
+          if !isbass(A, Q)
+            add = false
+            break
+          end
+        end
+        if add
+          push!(bassP, A)
+        end
+      end
+      if isempty(orders)
+        append!(orders, bassP)
+      else
+        orders1 = Vector{typeof(O)}(undef, length(orders) * length(bassP))
+        z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+        kk = 1
+        for O1 in orders
+          @time for O2 in bassP
+            orders1[kk] = sum_as_Z_modules(O1, O2, z)
+            kk += 1
+          end
+          @show kk
+        end
+        orders = orders1
+      end
+    end
+  end
+
+  if length(orders) == 0
+    return typeof(O)[O]
+  end
+  return orders
+end
+
+
+function gorenstein_overorders(O::NfOrd)
+  orders = typeof(O)[]
+  M = maximal_order(O)
+  fac = factor(FlintZZ(div(gen_index(M), gen_index(O))))
+  for (p, ) in fac
+    lp = prime_ideals_over(O, p)
+    for P in lp
+      Pprim = pprimary_overorders(O, P)
+      gorP = Vector{typeof(O)}()
+      for A in Pprim
+        add = true
+        pabove = prime_ideals_over(A, P)
+        for Q in pabove
+          if !isgorenstein(A)
+            add = false
+            break
+          end
+        end
+        if add
+          push!(gorP, A)
+        end
+      end
+      if isempty(orders)
+        append!(orders, gorP)
+      else
+        orders1 = Vector{typeof(O)}(undef, length(orders) * length(gorP))
+        z = zero_matrix(FlintZZ, 2*degree(O), degree(O))
+        kk = 1
+        for O1 in orders
+          @time for O2 in gorP
+            orders1[kk] = sum_as_Z_modules(O1, O2, z)
+            kk += 1
+          end
+          @show kk
+        end
+        orders = orders1
+      end
+    end
+  end
+
+  if length(orders) == 0
+    return typeof(O)[O]
+  end
+  return orders
 end
 
 function new_overorders(O::NfOrd)
@@ -1024,6 +1168,12 @@ function pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl; branching::Bool = true)
   end
 end
 
+################################################################################
+#
+#  IsBass function
+#
+################################################################################
+
 function isbass(O::NfOrd, P::NfOrdIdl)
   M = maximal_order(O)
   Q = extend(P, M)
@@ -1063,6 +1213,12 @@ function isbass(O::NfOrd)
   return true
 end
 
+################################################################################
+#
+#  IsGorenstein function
+#
+################################################################################
+
 function isgorenstein(O)
   codiff = codifferent(O)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
@@ -1078,6 +1234,11 @@ function isgorenstein(O::NfOrd, p::fmpz)
   R = simplify(simplify(colon(1*O, codiff.num) * codiff) * codiff.den)
   v = valuation(norm(R), p)
   return v == 0
+end
+
+function isgorenstein(O::NfOrd, P::NfOrdIdl)
+  J = colon(ideal(O, 1), P)
+  return det(basis_mat(J)) == norm(P)
 end
 
 # This is very slow!
