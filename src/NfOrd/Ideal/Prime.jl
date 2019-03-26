@@ -89,7 +89,6 @@ end
 > of number fields, find the unique prime $p$ in $k$ below.
 > $p$ will be in the order $O_k$ which defaults to "the" maximal order of $k$.
 """
-
 function intersect_prime(f::Map, P::NfOrdIdl, Ok::NfOrd = maximal_order(domain(f)))
   
   @assert isprime(P)
