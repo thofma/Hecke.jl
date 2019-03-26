@@ -1942,6 +1942,7 @@ mutable struct NfAbsNS <: Field
   degrees::Vector{Int}
   O#::NfAbsOrd{NfAbsNS, NfAbsNSElem}
   equation_order
+  traces::Array{Array{fmpq, 1}, 1}
 
   function NfAbsNS(f::Array{fmpq_mpoly, 1}, S::Array{Symbol, 1}, cached::Bool = false)
     r = new()
