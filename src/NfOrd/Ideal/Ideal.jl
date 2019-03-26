@@ -883,6 +883,7 @@ function _minmod_easy(a::fmpz, b::NfOrdElem)
   return gcd(a, m)
 end
 
+
 function _minmod(a::fmpz, b::NfOrdElem)
 
   if isone(a) 
@@ -1498,8 +1499,8 @@ end
 function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
   d = degree(O)
   M = trace_matrix(O)
-  W = MatrixSpace(ResidueRing(FlintZZ, p, cached=false), d, d, false)
-  M1 = W(M)
+  F = GF(p, cached = false)
+  M1 = change_base_ring(M, F)
   k, B = nullspace(M1)
   if k == 0
     return ideal(O, p)
@@ -1517,7 +1518,7 @@ function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
     end
   end
   M2 = _hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
-  I = NfAbsOrdIdl(O, M2)
+  I = ideal(O, M2)
   I.gens = gens
   return I
 end
@@ -1579,8 +1580,10 @@ end
 > \in p\mathcal O \}$. It is not checked that $p$ is prime.
 """
 function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
-  if typeof(p) == fmpz && nbits(p) < 64
-    return pradical(O, Int(p))
+  if p isa fmpz
+    if nbits(p) < 64
+      return pradical(O, Int(p))
+    end
   end
   d = degree(O)
   
@@ -1590,7 +1593,6 @@ function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
   else
     return pradical_frobenius(O, p)
   end
-  
 end
 
 ################################################################################
