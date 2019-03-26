@@ -2278,10 +2278,9 @@ end
 ###################################################################################
 
 @doc Markdown.doc"""
-***
     iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl) -> Bool
-> Test if ideals $I,J$ are coprime
 
+Test if ideals $I,J$ are coprime.
 """
 function iscoprime(I::NfAbsOrdIdl, J::NfAbsOrdIdl)
   @assert order(I) == order(J)

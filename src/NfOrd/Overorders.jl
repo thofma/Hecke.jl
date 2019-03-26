@@ -234,7 +234,7 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
   return orders
 end
 
-function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[], use_powering::Bool = false)
+function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[0], use_powering::Bool = false)
   M = ring_of_multipliers(P)
   p = minimum(P)
   f = valuation(norm(P), p)
@@ -666,6 +666,7 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
           #@show ishnf(basis_mat(S).num, :lowerleft)
           #t += @elapsed H = hnf(basis_mat(S, copy = false))
           H = basis_mat(S, copy = false)
+          #@assert ishnf(H.num, :lowerleft)
           ind = prod(H.num[i, i] for i in 1:degree(O))//(H.den)^degree(O)
           if haskey(current, ind)
             c = current[ind]
