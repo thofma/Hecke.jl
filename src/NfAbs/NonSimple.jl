@@ -514,7 +514,7 @@ function minpoly_sparse(a::NfAbsNSElem)
 end
 
 function minpoly(a::NfAbsNSElem)
-  return minpoly_sparse(a)
+  return minpoly_via_trace(a)::fmpq_poly
 end
 
 ################################################################################
@@ -555,17 +555,6 @@ end
 function norm(a::NfAbsNSElem)
   f = minpoly(a)
   return (-1)^degree(parent(a)) * coeff(f, 0)^div(degree(parent(a)), degree(f))
-end
-
-################################################################################
-#
-#  Trace
-#
-################################################################################
-
-function tr(a::NfAbsNSElem)
-  f = minpoly(a)
-  return -coeff(f, degree(f)-1)*div(degree(parent(a)), degree(f))
 end
 
 ################################################################################
@@ -878,6 +867,70 @@ function norm(f::PolyElem{NfAbsNSElem})
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = fmpq[tr(x) for x in P]
   return power_sums_to_polynomial(PQ)
+end
+
+function trace_assure(K::NfAbsNS)
+  if isdefined(K, :traces)
+    return
+  end
+  Qx, x = PolynomialRing(FlintZZ, cached = false)
+  K.traces = [polynomial_to_power_sums(Qx(f), total_degree(f)-1) for f = K.pol]
+end
+
+#= Idea
+  if k = Q[x,y]/<f, g>
+    then 
+      tr(x^i) = power_sums(f)
+      tr(y^i) = power_sums(g)
+      tr(x^i y^j) = tr(x^i) tr(y^j):
+        in the tower of fields:
+          tr_<f,g>(xy) = tr_<f>(x (tr_<g> y)) = tr_f x * tr_g y
+  so trace_assure computes trace(x^i)
+  and tr assembles....
+=#
+
+function tr(a::NfAbsNSElem)
+  k = parent(a)
+  trace_assure(k)
+  t = fmpq()
+  for trm = terms(a.data)
+    c = coeff(trm, 1)::fmpq
+    e = exponent_vector(trm, 1)
+    tt = fmpq(1)
+    for i=1:length(e)
+      if e[i] != 0
+        tt *= k.traces[i][e[i]]
+      else
+        tt *= total_degree(k.pol[i])
+      end
+    end
+    t += c*tt
+  end
+  return t
+end
+
+function minpoly_via_trace(a::NfAbsNSElem)
+  k = parent(a)
+  d = degree(k)
+  b = a
+  l = [tr(b)]
+  i = 1
+  while i <= d
+    while d % i != 0
+      b *= a
+      push!(l, tr(b))
+      i += 1
+    end
+    q = fmpq(1, div(d, i))
+    f = power_sums_to_polynomial([x*q for x = l])
+    if iszero(subst(f, a))  #TODO: to checks first...
+      return f::fmpq_poly
+    end
+    b *= a
+    push!(l, tr(b))
+    i += 1
+  end
+  error("cannot happen")
 end
 
 function is_norm_divisible(a::NfAbsNSElem, n::fmpz)

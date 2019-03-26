@@ -700,6 +700,9 @@ end
 
 #plain vanilla recursion
 function polynomial_to_power_sums(f::PolyElem{T}, n::Int=degree(f)) where T 
+  if n == 0
+    return elem_type(base_ring(f))[]
+  end
   d = degree(f)
   R = base_ring(f)
   E = T[(-1)^i*coeff(f, d-i) for i=0:min(d, n)] #should be the elementary symm.
