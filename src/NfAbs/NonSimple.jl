@@ -121,6 +121,28 @@ Nemo.one(K::NfAbsNS) = K(Nemo.one(parent(K.pol[1])))
 
 Nemo.one(a::NfAbsNSElem) = one(a.parent)
 
+function Nemo.zero!(a::NfAbsNSElem) 
+  a.data = zero(a.data)
+  return a
+end
+
+function Nemo.one!(a::NfAbsNSElem)
+  a.data = one(a.data)
+  return a
+end
+
+function Nemo.zero!(a::fmpq_mpoly)
+  ccall((:fmpq_mpoly_zero, :libflint), Nothing,
+      (Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}), a, parent(a))
+  return a
+end
+
+function Nemo.one!(a::fmpq_mpoly)
+  ccall((:fmpq_mpoly_one, :libflint), Nothing,
+      (Ref{fmpq_mpoly}, Ref{FmpqMPolyRing}), a, parent(a))
+  return a
+end
+
 dot(a::NfAbsNSElem, b::Union{Integer, fmpz}) = a * b
 
 dot(a::Union{Integer, fmpz}, b::NfAbsNSElem) = b * a
@@ -873,7 +895,7 @@ function trace_assure(K::NfAbsNS)
   if isdefined(K, :traces)
     return
   end
-  Qx, x = PolynomialRing(FlintZZ, cached = false)
+  Qx, x = PolynomialRing(FlintQQ, cached = false)
   K.traces = [polynomial_to_power_sums(Qx(f), total_degree(f)-1) for f = K.pol]
 end
 
@@ -909,6 +931,9 @@ function tr(a::NfAbsNSElem)
   return t
 end
 
+#TODO: 
+#  test f mod p first
+#  if all polys are monic, the test if traces have non-trivial gcd
 function minpoly_via_trace(a::NfAbsNSElem)
   k = parent(a)
   d = degree(k)
@@ -952,3 +977,104 @@ function valuation(a::NfAbsOrdElem, p::NfAbsOrdIdl)
     i = i + 1
   end
 end
+
+#TODO: find a better algo.
+function degree(a::NfAbsNSElem)
+  return degree(minpoly(a))
+end
+
+function degree(a::nf_elem)
+  return degree(minpoly(a))
+end
+
+function primitive_element(K::NfAbsNS)
+  g = gens(K)
+  pe = g[1]
+  d = total_degree(K.pol[1])
+  i = 1
+  while i < length(g)
+    i += 1
+    d *= total_degree(K.pol[i])
+    while true
+      pe += g[i]
+      f = minpoly(pe)
+      degree(f) == d && break
+    end
+  end
+  return pe
+end
+
+@doc Markdown.doc"""
+  factor(f::PolyElem{NfAbsNSElem}) -> Fac{Generic.Poly{NfAbsNSElem}}
+
+> The factorisation of f (using Trager's method).
+"""
+function factor(f::PolyElem{NfAbsNSElem})
+  Kx = parent(f)
+  K = base_ring(f)
+
+  iszero(f) && error("poly is zero")
+
+  if degree(f) == 0
+    r = Fac{typeof(f)}()
+    r.fac = Dict{typeof(f), Int}()
+    r.unit = Kx(lead(f))
+    return r
+  end
+
+  f_orig = deepcopy(f)
+  @vprint :PolyFactor 1 "Factoring $f\n"
+  @vtime :PolyFactor 2 g = gcd(f, derivative(f))  
+  if degree(g) > 0
+    f = div(f, g)
+  end
+
+  
+  if degree(f) == 1
+    multip = div(degree(f_orig), degree(f))
+    r = Fac{typeof(f)}()
+    r.fac = Dict{typeof(f), Int}(f*(1//lead(f)) => multip)
+    r.unit = one(Kx) * lead(f_orig)
+    return r
+  end
+
+  f = f*(1//lead(f))
+
+  k = 0
+  g = f
+  @vtime :PolyFactor 2 N = norm(g)
+
+  pe = K()
+  while isconstant(N) || !issquarefree(N)
+    k = k + 1
+    if k == 1
+      pe = primitive_element(K)
+    end
+    g = compose(f, gen(Kx) - k*pe)
+    @vtime :PolyFactor 2 N = norm(g)
+  end
+  @show "factor"
+  @vtime :PolyFactor 2 fac = factor(N)
+  @show "done"
+  
+  res = Dict{PolyElem{NfAbsNSElem}, Int64}()
+
+  for i in keys(fac.fac)
+    @show i
+    t = change_ring(i, Kx)
+    t = compose(t, gen(Kx) + k*pe)
+    @vtime :PolyFactor 2 t = gcd(f, t)
+    res[t] = 1
+  end
+
+  r = Fac{typeof(f)}()
+  r.fac = res
+  r.unit = Kx(1)
+
+  if f != f_orig
+    error("factoring with mult not implemented")
+  end
+  r.unit = one(Kx)* lead(f_orig)//prod((lead(p) for (p, e) in r))
+  return r
+end
+
