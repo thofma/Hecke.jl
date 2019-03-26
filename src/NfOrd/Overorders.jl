@@ -563,7 +563,7 @@ function gorenstein_overorders(O::NfOrd)
         add = true
         pabove = prime_ideals_over(A, P)
         for Q in pabove
-          if !isgorenstein(A)
+          if !isgorenstein(A, Q)
             add = false
             break
           end
@@ -1238,7 +1238,7 @@ end
 
 function isgorenstein(O::NfOrd, P::NfOrdIdl)
   J = colon(ideal(O, 1), P)
-  return det(basis_mat(J)) == norm(P)
+  return isone(norm(P)*det(basis_mat(J)))
 end
 
 # This is very slow!
