@@ -340,7 +340,7 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
   if length(G)==1
     A = G[1]
     poly=charpoly(Kx,A)
-    sq=factor_squarefree(poly)
+    sq = factor_squarefree(poly)
     lf = factor(first(keys(sq.fac)))
     t = first(keys(lf.fac))
     if degree(t)==n
@@ -348,17 +348,8 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
       return true, identity_matrix(base_ring(G[1]), n)
     else 
       N = _subst(t, A)
-      Ntrnull = nullspace(transpose(N))
-      # TODO: Remove this once fixed.
-      if isa(Ntrnull[1], T)
-        kern=transpose(Ntrnull[1])
-      else
-        kern=transpose(Ntrnull[2])
-      end
-      #kern=transpose(nullspace(transpose(N))[2])
-      #@show nullspace(transpose(N))
-      #@show kern
-      B=closure(sub(kern,1:1, 1:n), G)
+      null, kern = kernel(N, side = :left)
+      B = closure(sub(kern,1:1, 1:n), G)
       return false, B
     end
   end
@@ -404,50 +395,36 @@ function meataxe(M::ModAlgAss{S, T, V}) where {S, T, V}
     # Compute the characteristic polynomial and, for irreducible factor f, try the Norton test
     # 
     poly=charpoly(Kx,A)
-    sqfpart=keys(factor_squarefree(poly).fac)
+    sqfpart = keys(factor_squarefree(poly).fac)
     for el in sqfpart
-      sq=el
+      sq = el
       i=1
       while !isone(sq)
-        f=gcd(powmod(x, order(K)^i, sq)-x,sq)
-        sq=divexact(sq,f)
+        f = gcd(powmod(x, order(K)^i, sq)-x,sq)
+        sq = divexact(sq, f)
         lf=factor(f)
         for t in keys(lf.fac)
           N = _subst(t, A)
-          a, kern = nullspace(transpose(N))
-          if !isa(a, Int)
-            a, kern = kern, a
-          end
+          a, kern = kernel(N, side = :left)
           @assert a > 0
-          #
-          #  Norton test
-          #   
-          B = closure(transpose(sub(kern,1:n, 1:1)), M.action)
+          #  Norton test  
+          B = closure(sub(kern, 1:1, 1:n), M.action)
           if nrows(B) != n
             M.isirreducible= 2
             return false, B
           end
-          # TODO: Remove this
-          aa, kernt = nullspace(N)
-          if !isa(aa, Int)
-            aa, kernt = kernt, aa
-          end
+          aa, kernt = kernel(transpose(N), side = :left)
           @assert aa == a
-          Bt = closure(transpose(sub(kernt,1:n,1:1)), Gt)
+          Bt = closure(sub(kernt, 1:1, 1:n), Gt)
           if nrows(Bt) != n
-            Btnu, aa = nullspace(Bt)
-            if !isa(aa, Int)
-              aa, Btnu = Btnu, aa
-            end
-            subst=transpose(Btnu)
+            aa, Btnu = kernel(Bt)
+            subst = transpose(Btnu)
             #@assert nrows(subst)==nrows(closure(subst,G))
             M.isirreducible = 2
             return false, subst
           end
           if degree(t) == a
-            #
             # f is a good factor, irreducibility!
-            #
             M.isirreducible = 1
             return true, identity_matrix(base_ring(G[1]), n)
           end
@@ -465,7 +442,6 @@ end
 > Given a Fq[G]-module M, it returns a composition series for M, i.e. a sequence of submodules such that the quotient of two consecutive element is irreducible.
 
 """
-
 function composition_series(M::ModAlgAss{S, T, V}) where {S, T, V}
 
   if M.isirreducible == 1 || M.dimension == 1

@@ -756,6 +756,13 @@ function left_kernel(x::fmpz_mat)
   end
 end
 
+right_kernel(M::MatElem) = nullspace(M)
+
+function left_kernel(M::MatElem) 
+  rk, M1 = nullspace(transpose(M))
+  return rk, transpose(M1)
+end
+
 @doc Markdown.doc"""
     right_kernel(a::fmpz_mat) -> Int, fmpz_mat
 
