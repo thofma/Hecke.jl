@@ -1796,6 +1796,27 @@ function maximal_elementary_divisor(A::fmpz_mat)
 end
 
 @doc Markdown.doc"""
+   divisors(A::fmpz_mat, d::fmpz) -> fmpz
+
+Returns the diagonal entries of a diagonal form of A. We assume that all the elementary
+divisors are divisors of d.
+"""
+function divisors(M::fmpz_mat, d::fmpz)
+  M1 = _hnf_modular_eldiv(M, d)
+  while !isdiag(M1)
+    M1 = M1'
+    hnf_modular_eldiv!(M1, d)
+  end
+  l = fmpz[]
+  for j = 1:nrows(M1)
+    if !isone(M1[j,j])
+      push!(l, M1[j, j])
+    end
+  end
+  return l
+end
+
+@doc Markdown.doc"""
    largest_elementary_divisor(A::fmpz_mat) -> fmpz
 
 The largest elementary divisor of $A$, that is, the last diagonal entry of the

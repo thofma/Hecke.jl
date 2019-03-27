@@ -1491,179 +1491,9 @@ end
 
 ################################################################################
 #
-#  p-radical
+#  Colon, conductor: it's the same(?) method
 #
 ################################################################################
-
-
-function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
-  d = degree(O)
-  M = trace_matrix(O)
-  F = GF(p, cached = false)
-  M1 = change_base_ring(M, F)
-  k, B = nullspace(M1)
-  if k == 0
-    return ideal(O, p)
-  end
-  M2 = zero_matrix(FlintZZ, d, d)
-  for i = 1:ncols(B)
-    for j = 1:d
-      M2[i, j] = FlintZZ(B[j, i].data)
-    end
-  end
-  gens = elem_type(O)[O(p)]
-  for i=1:ncols(B)
-    if !iszero_row(M2,i)
-      push!(gens, elem_from_mat_row(O, M2, i))
-    end
-  end
-  M2 = _hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
-  I = ideal(O, M2)
-  I.gens = gens
-  return I
-end
-
-function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
-  
-  d = degree(O)
-  j = clog(fmpz(d), p)
-  @assert p^(j-1) < d
-  @assert d <= p^j
-
-  R = GF(p, cached = false)
-  A = zero_matrix(R, degree(O), degree(O))
-  B = basis(O, copy = false)
-  for i in 1:d
-    t = powermod(B[i], p^j, p)
-    ar = elem_in_basis(t)
-    for k in 1:d
-      A[k, i] = ar[k]
-    end
-  end
-  X = right_kernel_basis(A)
-  gens = elem_type(O)[O(p)]
-  if length(X)==0
-    I = ideal(O, p)
-    I.gens = gens
-    return I
-  end
-  #First, find the generators
-  for i = 1:length(X)
-    coords = Array{fmpz,1}(undef, d)
-    for j=1:d
-      coords[j] = lift(X[i][j])
-    end
-    push!(gens, O(coords))
-  end
-  #Then, construct the basis matrix of the ideal
-  m = zero_matrix(FlintZZ, d, d)
-  for i = 1:length(X)
-    for j = 1:d
-      m[i, j] = lift(X[i][j])
-    end
-  end
-  mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
-  I = NfAbsOrdIdl(O, mm)
-  I.gens = gens
-  return I
-
-end
-# TH:
-# There is some annoying type instability since we pass to nmod_mat or
-# something else. Should use the trick with the function barrier.
-@doc Markdown.doc"""
-    pradical(O::NfOrd, p::{fmpz|Integer}) -> NfAbsOrdIdl
-
-> Given a prime number $p$, this function returns the $p$-radical
-> $\sqrt{p\mathcal O}$ of $\mathcal O$, which is
-> just $\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k
-> \in p\mathcal O \}$. It is not checked that $p$ is prime.
-"""
-function pradical(O::NfAbsOrd, p::Union{Integer, fmpz})
-  if p isa fmpz
-    if nbits(p) < 64
-      return pradical(O, Int(p))
-    end
-  end
-  d = degree(O)
-  
-  #Trace method if the prime is large enough
-  if p > d
-    return pradical_trace(O, p)
-  else
-    return pradical_frobenius(O, p)
-  end
-end
-
-################################################################################
-#
-#  Ring of multipliers, colon, conductor: it's the same(?) method
-#
-################################################################################
-
-@doc Markdown.doc"""
-***
-    ring_of_multipliers(I::NfAbsOrdIdl) -> NfOrd
-
-> Computes the order $(I : I)$, which is the set of all $x \in K$
-> with $xI \subseteq I$.
-"""
-function ring_of_multipliers(a::NfAbsOrdIdl)
-  O = order(a) 
-  n = degree(O)
-  if isdefined(a, :gens) && length(a.gens) < n
-    B = a.gens
-  else
-    B = basis(a, copy = false)
-  end
-  bmatinv = basis_mat_inv(a, copy = false)
-  m = zero_matrix(FlintZZ, n*length(B), n)
-  for i = 1:length(B)
-    M = representation_matrix(B[i])
-    mul!(M, M, bmatinv.num)
-    if bmatinv.den == 1
-      for j=1:n
-        for k=1:n
-          m[j+(i-1)*n,k] = M[k,j]
-        end
-      end
-    else
-      for j=1:n
-        for k=1:n
-          m[j+(i-1)*n,k] = divexact(M[k,j], bmatinv.den)
-        end
-      end
-    end
-  end
-  mhnf = hnf_modular_eldiv!(m, minimum(a))
-  s = prod(mhnf[i,i] for i = 1:n)
-  if isone(s)
-    return O
-  end
-  # mhnf is upper right HNF
-  # mhnftrans = transpose(view(mhnf, 1:n, 1:n))
-  for i = 1:n
-    for j = i+1:n
-      mhnf[j, i] = mhnf[i, j]
-      mhnf[i, j] = 0
-    end
-  end
-  mhnftrans = view(mhnf, 1:n, 1:n)
-  b = FakeFmpqMat(pseudo_inv(mhnftrans))
-  mul!(b, b, basis_mat(O, copy = false))
-  @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-  O1 = Order(nf(O), b, false)
-  if isdefined(O, :disc)
-    O1.disc = divexact(O.disc, s^2)
-  end
-  if isdefined(O, :index)
-    O1.index = s*O.index
-  end
-  if isdefined(O, :basis_mat_inv)
-    O1.basis_mat_inv = O.basis_mat_inv * mhnftrans
-  end
-  return O1
-end
 
 @doc Markdown.doc"""
     colon(a::NfAbsOrdIdl, b::NfAbsOrdIdl) -> NfOrdFracIdl
@@ -2006,7 +1836,6 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
     assure_2_normal(A)
     return nothing
   end
-
   if n < 12
     d = 2 * 3
   elseif n < 20
@@ -2028,9 +1857,14 @@ function assure_2_normal_difficult(A::NfAbsOrdIdl)
     lp = append!(lp, prime_decomposition(ZK, 7))
   end
 
-  v = [valuation(A1, p[1]) for p = lp]
+  v = Int[valuation(A1, p[1]) for p = lp]
 
-  B1 = prod(lp[i][1]^v[i] for i=1:length(v) if v[i] > 0)
+  B1 = ideal(ZK, 1)
+  for i = 1:length(v)
+    if v[i] > 0 
+      B1 *= lp[i][1]^v[i]
+    end
+  end
   C = B1 * A2
   A.gen_one = C.gen_one
   A.gen_two = C.gen_two
@@ -2111,7 +1945,7 @@ function assure_2_normal(A::NfAbsOrdIdl)
   end
 
   m = minimum(A)
-  bas = [ elem_in_nf(b) for b in basis(A)]
+  bas = nf_elem[ elem_in_nf(b) for b in basis(A, copy = false)]
   # Magic constants
   if m > 1000
     r = -500:500
