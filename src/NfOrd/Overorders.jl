@@ -245,7 +245,6 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[0], use_poweri
   A, mA = quo(M, O)
   orders = NfOrd[]
   if order(A) == 1
-    @show A
     return orders
   end
   if order(A) == p^f
@@ -487,7 +486,6 @@ function new_poverorders(O::NfOrd, p::fmpz)
   for P in lP
     nres = typeof(O)[]
     tP = @elapsed Pprim = pprimary_overorders(O, P)
-    println("Time for $P: $tP")
     @show length(Pprim), length(res)
     trec = @elapsed for R in Pprim
       #@show R
@@ -536,7 +534,6 @@ function bass_overorders(O::NfOrd)
             orders1[kk] = sum_as_Z_modules(O1, O2, z)
             kk += 1
           end
-          @show kk
         end
         orders = orders1
       end
@@ -583,7 +580,6 @@ function gorenstein_overorders(O::NfOrd)
             orders1[kk] = sum_as_Z_modules(O1, O2, z)
             kk += 1
           end
-          @show kk
         end
         orders = orders1
       end
@@ -615,7 +611,6 @@ function new_overorders(O::NfOrd)
           orders1[kk] = sum_as_Z_modules(O1, O2, z)
           kk += 1
         end
-        @show kk
       end
       orders = orders1
     end
@@ -634,10 +629,10 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
   current = Dict{fmpq, Dict{FakeFmpqMat, typeof(O)}}()
   excess = Int[0]
   while length(to_enlarge) > 0
-    @show length(to_enlarge)
-    if length(current) > 0
-      @show sum([length(x) for x in values(current)])
-    end
+    #@show length(to_enlarge)
+    #if length(current) > 0
+    #  @show sum([length(x) for x in values(current)])
+    #end
     N = popfirst!(to_enlarge)
     lQ = prime_ideals_over(N, P)
     for Q in lQ
@@ -691,7 +686,6 @@ function pprimary_overorders(O::NfOrd, P::NfOrdIdl)
     end
   end
   println("excess: $(excess[])")
-  @show length(to_enlarge)
   return to_enlarge
 end
 
