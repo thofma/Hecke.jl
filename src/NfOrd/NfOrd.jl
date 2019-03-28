@@ -966,7 +966,6 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
       rk = 0
     end
     B = sub(B, rk+1:nrows(B), 1:n)
-    phase = 2
     bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
   end
 
