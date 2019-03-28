@@ -262,7 +262,7 @@ function show(io::IO, S::NfOrdSet)
 end
 
 function show(io::IO, O::NfAbsOrd)
-  if ismaximal_known(O) && ismaximal(O)
+  if ismaximal_known(O) && O.ismaximal == 1
     show_maximal(io, O)
   else
     show_gen(io, O)

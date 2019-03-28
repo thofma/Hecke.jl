@@ -165,3 +165,4 @@ function automorphisms(K::AnticNumberField, copyval::Type{Val{T}} = Val{true}) w
 end
 
 hom(K::AnticNumberField, L::AnticNumberField, a::nf_elem) = NfToNfMor(K, L, a)
+id_hom(K::AnticNumberField) = NfToNfMor(K, K, gen(K))

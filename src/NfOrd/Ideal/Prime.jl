@@ -1041,11 +1041,11 @@ function valuation_naive(x::nf_elem, B::NfOrdIdl)
   O = order(B)
   d = denominator(x, O)
   return valuation_naive(O(x*d), B) - valuation_naive(O(d), B)
-  while x in C
-    i += 1
-    C *= B
-  end
-  return i
+  #while x in C
+  #  i += 1
+  #  C *= B
+  #end
+  #return i
 end
 
 @doc Markdown.doc"""

@@ -81,7 +81,7 @@ function Nemo.snf(M::ZpnGModule)
   A=M.V
   G=M.G
   if issnf(A)
-    return M, GrpAbFinGenMap(A,A, identity_matrix(FlintZZ, ngens(A)))
+    return M, id_hom(A)
   end
   S,mS=snf(A)
   W=[mS(s) for s in gens(S)]

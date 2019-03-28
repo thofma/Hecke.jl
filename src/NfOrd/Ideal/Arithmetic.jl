@@ -103,8 +103,8 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   @hassert :NfOrd 1 isconsistent(x)
   @hassert :NfOrd 1 isconsistent(y)
-
-  if ismaximal_known(order(x)) && ismaximal(order(x)) && issimple(nf(order(x)))
+  OK = order(x)
+  if ismaximal_known(OK) && OK.ismaximal == 1 && issimple(nf(OK))#ismaximal(order(x)) && issimple(nf(order(x)))
     z = mul_maximal(x, y)
   else
     z = mul_gen(x, y)
@@ -463,7 +463,7 @@ end
 > Returns the ideal $x \cdot y$.
 """
 function *(x::NfOrdIdl, y::fmpz)
-  if ismaximal_known(order(x)) && ismaximal(order(x))
+  if ismaximal_known(order(x)) && order(x).ismaximal == 1#ismaximal(order(x))
     return mul_maximal(x, y)
   else
     return mul_gen(x, y)

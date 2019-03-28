@@ -191,6 +191,7 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, A::NfToNfMor, a::
   return z
 end
 
+
 function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_elem})
   function image(x::NfRelElem{nf_elem})
     # x is an element of K
@@ -209,9 +210,8 @@ function NfRelToNfRelMor(K::NfRel{nf_elem}, L::NfRel{nf_elem}, a::NfRelElem{nf_e
   return z
 end
 
-function _identity(K::AnticNumberField)
-  return NfToNfMor(K, K, gen(K))
-end
+id_hom(K::NfRel) = NfRelToNfRelMor(K, K, gen(K))
+
 
 function ==(x::NfRelToNfRelMor{T}, y::NfRelToNfRelMor{T}) where T
   return (x.coeff_aut == y.coeff_aut) && (x.prim_img == y.prim_img) 
