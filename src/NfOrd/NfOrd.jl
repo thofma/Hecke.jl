@@ -922,12 +922,16 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   bas = [K(1)]
   phase = 1
   local B::FakeFmpqMat
-  @show "start"
+  @show "start", elt
   for e = elt
     if phase == 2
-      if denominator(B) % denominator(e) == 0
-        C = basis_mat([e])
-        fl, _ = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+      if !true && denominator(B) % denominator(e) == 0
+        @show B
+        @show C = basis_mat([e])
+        @show fl, s = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+        if fl 
+          @show "skipping $e"
+        end
         fl || continue
       end 
     end
@@ -951,9 +955,19 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
         B = sub(B, rk+1:nrows(B), 1:n)
         phase = 2
         bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
-        b = copy(bas)
       end
     end
+  end
+
+  if length(bas) >= n
+    B = hnf(basis_mat(bas))
+    rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
+    if rk === nothing
+      rk = 0
+    end
+    B = sub(B, rk+1:nrows(B), 1:n)
+    phase = 2
+    bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
   end
 
   length(bas) == n || error("data does not define an order: dimension to small")
