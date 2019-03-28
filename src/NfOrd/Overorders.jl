@@ -228,7 +228,7 @@ function _minimal_overorders_meataxe(O::NfOrd, M::NfOrd)
     if any(x -> basis_mat(x, copy = false) == bL, orders)
       continue
     else
-      push!(orders, Order(K, bL, false, false))
+      push!(orders, Order(K, bL, check = false, cached = false))
     end
   end
   return orders
@@ -248,7 +248,7 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[0], use_poweri
     return orders
   end
   if order(A) == p^f
-    O1 = Order(nf(O), hnf(basis_mat(M)), false, false)
+    O1 = Order(nf(O), hnf(basis_mat(M)), check = false, cached = false)
     push!(orders, O1)
     return orders
   end
@@ -315,7 +315,7 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[0], use_poweri
           excess[] = excess[] + 1
           continue
         end
-        L = Order(K, bL, false, false)
+        L = Order(K, bL, check = false, cached = false)
         lQL = prime_ideals_over(L, P)
         if length(lQL) == 1 && norm(lQL[1]) == norm(P)^q
           push!(orders, L)
@@ -348,7 +348,7 @@ function _minimal_poverorders(O::NfOrd, P::NfOrdIdl, excess = Int[0], use_poweri
       excess[] = excess[] + 1
       continue
     end
-    L = Order(K, bL, false, false)
+    L = Order(K, bL, check = false, cached = false)
     push!(orders, L)
   end
   
@@ -367,7 +367,7 @@ function _minimal_poverorders2(O::NfOrd, P::NfOrdIdl, excess = Int[])
   d = degree(O)
   K = nf(O)
   if norm(P) == order(A)
-    O1 = Order(K, hnf(basis_mat(M, copy = false)), false, false)
+    O1 = Order(K, hnf(basis_mat(M, copy = false)), check = false, cached = false)
     push!(orders, O1)
     return orders
   end
@@ -417,7 +417,7 @@ function _minimal_poverorders2(O::NfOrd, P::NfOrdIdl, excess = Int[])
     end
     @assert new_element != 0
     bL = hnf!(basis_mat(potential_basis))
-    L = Order(K, bL, false, false)
+    L = Order(K, bL, check = false, cached = false)
     push!(orders, L)
   end
   return orders
@@ -1068,7 +1068,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
     return res
   end
   K = nf(O)
-  O1n = Order(K, hnf(basis_mat(O1, copy = false)), false, false)
+  O1n = Order(K, hnf(basis_mat(O1, copy = false)), check = false, cached = false)
   push!(res, O1n)
   primes = prime_ideals_over(O1, P)
   while length(primes) == 1
@@ -1076,7 +1076,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
     if index(O2) == index(O1)
       return res
     end
-    O2n = Order(K, hnf(basis_mat(O2, copy = false)), false, false)
+    O2n = Order(K, hnf(basis_mat(O2, copy = false)), check = false, cached = false)
     push!(res, O2n)
     O1 = O2
     primes = prime_ideals_over(O1, primes[1])
@@ -1087,7 +1087,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
   O3 = O1
   O2 = ring_of_multipliers(primes[1])
   while index(O3) != index(O2)
-    O2n = Order(K, hnf(basis_mat(O2, copy = false)), false, false)
+    O2n = Order(K, hnf(basis_mat(O2, copy = false)), check = false, cached = false)
     push!(res1, O2n)
     O3 = O2
     P = prime_ideals_over(O2, primes[1])[1]
@@ -1098,7 +1098,7 @@ function new_pprimary_overorders_bass(O::NfOrd, P::NfOrdIdl)
   O3 = O1
   O2 = ring_of_multipliers(primes[2])
   while index(O3) != index(O2)
-    O2n = Order(K, hnf(basis_mat(O2, copy = false)), false, false)
+    O2n = Order(K, hnf(basis_mat(O2, copy = false)), check = false, cached = false)
     push!(res2, O2)
     O3 = O2
     P = prime_ideals_over(O2, primes[2])[1]

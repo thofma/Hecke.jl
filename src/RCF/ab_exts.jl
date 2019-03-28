@@ -1091,7 +1091,7 @@ function _C22_with_max_ord(l)
     B[3] = mS\(g[2])
     B[4] = B[2] * B[3]
     M = hnf(basis_mat(B))
-    O = Order(S, M, false, false)
+    O = Order(S, M, check = false, cached = false)
     if cf != 1
       fac = factor(cf)
       for (p, v) in fac
@@ -1509,7 +1509,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     end
     ind *= new_deg
   end
-  O1 = Order(K, BKK, false, false)
+  O1 = Order(K, BKK, check = false, cached = false)
   #Now, I set some basic properties. In particular, discriminant, trace matrix.
   disc = fmpz(1)
   for i = 1:length(fields)
@@ -1576,7 +1576,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     mul!(M, M, M1.num)
     basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = Order(Ks, basisO2, false, false)
+  O2 = Order(Ks, basisO2, check = false, cached = false)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks, O2)
 
@@ -1643,7 +1643,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
   end
   #Now, we compute the maximal order. Then we simplify.
   #PO = _order_for_polygon_overorder(K, B)
-  PO = Order(K, B, false, false)
+  PO = Order(K, B, check = false, cached = false)
   @vtime :AbExt 2 O1 = MaximalOrder(PO)
   O1.ismaximal = 1
   _set_maximal_order_of_nf(K, O1)
@@ -1664,7 +1664,7 @@ function _from_relative_to_abs(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsMor
     mul!(M, M, M1.num)
     basisO2[i] = elem_from_mat_row(Ks, M, 1, M1.den*denominator(O1.basis_nf[i]))
   end
-  O2 = Order(Ks, basisO2, false, false)
+  O2 = Order(Ks, basisO2, check = false, cached = false)
   O2.ismaximal = 1
   _set_maximal_order_of_nf(Ks, O2)
 
