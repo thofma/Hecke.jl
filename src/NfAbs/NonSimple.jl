@@ -545,6 +545,9 @@ end
 
 function minpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
   f = minpoly(a)
+  if !isone(denominator(f))
+    error("element is not integral")
+  end
   return Rx(denominator(f)*f)
 end
 
@@ -573,6 +576,9 @@ end
 
 function charpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
   f = charpoly(a)
+  if !isone(denominator(f))
+    error("element is not integral")
+  end
   return Rx(denominator(f)*f)
 end
 
