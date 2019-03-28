@@ -7,8 +7,130 @@ export maximal_order, pmaximal_order,poverorder, MaximalOrder, ring_of_integers
 #  Maximal Order interface
 #
 ###############################################################################
+@doc Markdown.doc"""
+    maximal_order(O::NfAbsOrd; index_divisors::Vector{fmpz}, discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
 
-function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
+> Returns the maximal order of the number field that contains $O$. Additional information can be supplied if they are already known, as the ramified primes,
+> the discriminant of the maximal order or a set of integers dividing the index of $O$ in the maximal order.
+"""
+function MaximalOrder(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+  K = nf(O)
+  try
+    # First check if the number field knows its maximal order
+    M = _get_maximal_order(K)::typeof(O)
+    return M
+  catch e
+    if !isa(e, AccessorNotSetError) 
+      rethrow(e)
+    end
+    M = new_maximal_order(O, index_divisors = index_divisors, disc = discriminant, ramified_primes = ramified_primes)
+    M.ismaximal = 1
+    _set_maximal_order(K, M)
+    return M
+  end
+end
+
+@doc Markdown.doc"""
+    maximal_order(K::Union{AnticNumberField, NfAbsNS}; discriminant::fmpz, ramified_primes::Vector{fmpz}) -> NfAbsOrd
+
+> Returns the maximal order of $K$. Additional information can be supplied if they are already known, as the ramified primes
+> or the discriminant of the maximal order.  
+
+# Example
+
+```julia-repl
+julia> Qx, xx = FlintQQ["x"];
+julia> K, a = NumberField(x^3 + 2, "a");
+julia> O = MaximalOrder(K);
+```
+"""
+function MaximalOrder(K::T; discriminant::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where T <: Union{AnticNumberField, NfAbsNS}
+  try
+    c = _get_maximal_order(K)::NfAbsOrd{T, elem_type(T)}
+    return c
+  catch e
+    if !isa(e, AccessorNotSetError)
+      rethrow(e)
+    end
+    #O = MaximalOrder(K)::NfOrd
+    O = new_maximal_order(any_order(K))
+    O.ismaximal = 1
+    _set_maximal_order(K, O)
+    return O
+  end
+end
+
+@doc Markdown.doc"""
+***
+    ring_of_integers(K::AnticNumberField) -> NfAbsOrd
+
+> This function returns the ring of integers of $K$.
+"""
+function ring_of_integers(x::T; kw...) where T
+  return maximal_order(x; kw...)
+end
+
+
+function maximal_order(f::T) where T <: Union{fmpz_poly, fmpq_poly}
+  K = number_field(f, cached = false)[1]
+  return maximal_order(K)
+end
+
+###############################################################################
+#
+#  Generic code for orders
+#
+###############################################################################
+
+function new_maximal_order(O::NfAbsOrd{S, T}; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[]) where {S, T}
+  return maximal_order_round_four(O, index_divisors= index_divisors, disc = disc, ramified_primes = ramified_primes)
+end
+
+function maximal_order_round_four(O::NfAbsOrd; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
+  OO = deepcopy(O)
+  M = trace_matrix(O)
+  l = divisors(M, discriminant(O))
+  if !isempty(index_divisors)
+    push!(l, index_divisors)
+  end
+  if !isempty(ramified_primes)
+    push!(l, ramified_primes)
+  end
+  l = coprime_base(l)
+  for s in l
+    if disc != -1
+      u = divexact(discriminant(OO), disc)
+      if isone(gcd(u, s))
+        continue
+      end
+    end
+    @vtime :NfOrd fac = factor(s)
+    for (p, j) in fac
+      @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
+      O1 = pmaximal_overorder(O, p)
+      if valuation(discriminant(O1), p) < valuation(discriminant(OO),p)
+        OO += O1
+      end 
+      @vprint :NfOrd 1 "done\n"
+    end
+  end
+  OO.ismaximal = 1
+  return OO
+end
+
+################################################################################
+#
+#  function to get an order which is maximal at some primes
+#
+################################################################################
+@doc Markdown.doc"""
+***
+    pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1}) - > NfOrd
+
+> Given a set of prime numbers, this function returns an overorder of $O$ which
+> is maximal at those primes.
+"""
+function pmaximal_overorder_at(O::NfOrd, primes::Array{fmpz, 1})
   if length(primes) == 0
     return O
   end
@@ -47,120 +169,6 @@ function MaximalOrder(O::NfOrd, primes::Array{fmpz, 1})
   end
   return OO
 end
-
-@doc Markdown.doc"""
-***
-    maximal_order(O::NfOrd) -> NfOrd
-    MaximalOrder(O::NfOrd) -> NfOrd
-
-Returns the maximal overorder of $O$.
-"""
-function MaximalOrder(O::NfAbsOrd)
-  K = nf(O)
-  try
-    # First check if the number field knows its maximal order
-    M = _get_maximal_order(K)::typeof(O)
-    return M
-  catch e
-    if !isa(e, AccessorNotSetError) 
-      rethrow(e)
-    end
-    M = new_maximal_order(O)::typeof(O)
-    M.ismaximal = 1
-    _set_maximal_order(K, M)
-    return M
-  end
-end
-
-
-
-@doc Markdown.doc"""
-***
-    MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-    maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-    ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-
-Assuming that ``primes`` contains all the prime numbers at which the equation
-order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
-this function returns the maximal order of $K$.
-"""
-function MaximalOrder(K::AnticNumberField, primes::Array{fmpz, 1})
-  O = any_order(K)
-  @vprint :NfOrd 1 "Computing the maximal order ...\n"
-  O = MaximalOrder(O, primes)
-  @vprint :NfOrd 1 "... done\n"
-  return NfOrd(K, basis_mat(O, copy = false))
-end
-
-@doc Markdown.doc"""
-    maximal_order(K::AnticNumberField) -> NfOrd
-    ring_of_integers(K::AnticNumberField) -> NfOrd
-
-> Returns the maximal order of $K$.
-
-# Example
-
-```julia-repl
-julia> Qx, xx = FlintQQ["x"];
-julia> K, a = NumberField(x^3 + 2, "a");
-julia> O = MaximalOrder(K);
-```
-"""
-function MaximalOrder(K::T) where {T}
-  try
-    c = _get_maximal_order(K)::NfAbsOrd{T, elem_type(T)}
-    return c
-  catch e
-    if !isa(e, AccessorNotSetError)
-      rethrow(e)
-    end
-    #O = MaximalOrder(K)::NfOrd
-    O = new_maximal_order(any_order(K))::NfAbsOrd{T, elem_type(T)}
-    O.ismaximal = 1
-    _set_maximal_order(K, O)
-    return O
-  end
-end
-
-@doc Markdown.doc"""
-***
-    ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -> NfOrd
-    ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -> NfOrd
-
-Assuming that ``primes`` contains all the prime numbers at which the equation
-order $\mathbf{Z}[\alpha]$ of $K = \mathbf{Q}(\alpha)$ is not maximal,
-this function returns the maximal order of $K$.
-"""
-ring_of_integers(x::AnticNumberField, primes::Array{fmpz, 1}) = maximal_order(x, primes)
-ring_of_integers(x::AnticNumberField, primes::Array{Integer, 1}) = maximal_order(x, primes)
-
-###############################################################################
-#
-#  Code to get a new maximal order starting from any order
-#
-###############################################################################
-
-function new_maximal_order(O::NfAbsOrd)
-  return maximal_order_round_four(O)
-end
-function maximal_order_round_four(O::NfAbsOrd)
-  OO = deepcopy(O)
-  @vtime :NfOrd fac = factor(abs(discriminant(O)))
-  for (p,j) in fac
-    if j == 1
-      continue
-    end
-    @vprint :NfOrd 1 "Computing p-maximal overorder for $p ..."
-    O1 = pmaximal_overorder(O, p)
-    if valuation(discriminant(O1), p)< valuation(discriminant(OO),p)
-      OO += O1
-    end 
-    @vprint :NfOrd 1 "done\n"
-  end
-  OO.ismaximal = 1
-  return OO
-end
-
 ################################################################################
 #
 #  Buchmann Lenstra heuristic
@@ -168,7 +176,7 @@ end
 ################################################################################
 
 #  Buchmann-Lenstra for simple absolute number fields.
-function new_maximal_order(O::NfOrd)
+function new_maximal_order(O::NfOrd; index_divisors::Vector{fmpz} = fmpz[], disc::fmpz = fmpz(-1), ramified_primes::Vector{fmpz} = fmpz[])
 
   K = nf(O)
   if degree(K) == 1
@@ -186,26 +194,48 @@ function new_maximal_order(O::NfOrd)
 
   #First, factorization of the discriminant given by the snf of the trace matrix
   M = trace_matrix(O)
-  l = coprime_base(divisors(M, ds))
+  l = divisors(M, ds)
+  if !isempty(index_divisors)
+    append!(l, index_divisors)
+  end
+  if !isempty(ramified_primes)
+    append!(l, ramified_primes)
+  end
+  if disc != -1
+    push!(l, disc)
+  end
+  l = coprime_base(l)
   @vprint :NfOrd 1 "Factors of the discriminant: $l\n "
   l1 = fmpz[]
   OO = O
   @vprint :NfOrd 1 "Trial division of the discriminant\n "
   for d in l
+    if disc != -1
+      u = divexact(discriminant(OO), disc)
+      if isone(gcd(u, d))
+        continue
+      end
+    end
     fac = factor_trial_range(d)[1]
     rem = d
     for (p,v) in fac
       rem = divexact(rem, p^v)
     end
     @vprint :NfOrd 1 "Computing the maximal order at $(collect(keys(fac)))\n "
-    O1 = MaximalOrder(O, collect(keys(fac)))
+    O1 = pmaximal_overorder_at(O, collect(keys(fac)))
     OO += O1
     rem = abs(rem)
     if !isone(rem)
+      if disc != -1
+        u = divexact(discriminant(OO), disc)
+        if isone(gcd(u, rem))
+          continue
+        end
+      end
       push!(l1, rem)
     end
   end
-  if isempty(l1)
+  if isempty(l1) || discriminant(OO) == disc
     OO.ismaximal = 1
     return OO
   end
@@ -216,11 +246,11 @@ function new_maximal_order(O::NfOrd)
     end
   end
   O1, Q = _TameOverorderBL(OO, l1)
-  if !isempty(Q)
+  if !isempty(Q) && discriminant(O1) != disc
     @vprint :NfOrd 1 "I have to factor $Q\n "
     for el in Q
       d = factor(el).fac
-      O1 += MaximalOrder(O1, collect(keys(d)))
+      O1 += pmaximal_overorder_at(O1, collect(keys(d)))
     end
   end
   O1.ismaximal = 1

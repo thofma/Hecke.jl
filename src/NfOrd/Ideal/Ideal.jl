@@ -124,7 +124,7 @@ function show(io::IO, a::NfAbsOrdIdlSet)
 end
 
 function show(io::IO, a::NfAbsOrdIdl)
-  if ismaximal_known(order(a)) && ismaximal(order(a))
+  if ismaximal_known(order(a)) && order(a).ismaximal == 1
     return show_maximal(io, a)
   else
     return show_gen(io, a)
@@ -1691,18 +1691,7 @@ function _assure_weakly_normal_presentation(A::NfAbsOrdIdl)
     return nothing
   end
 
-  @hassert :NfOrd 1 has_basis_mat(A)
-
   O = order(A)
-
-  # Because of the interesting choice for the HNF,
-  # we don't know the minimum (although we have a basis matrix)
-  # Thanks flint!
-
-  minimum(A)
-
-  @hassert :NfOrd 1 has_minimum(A)
-
   if minimum(A) == 0
     A.gen_one = minimum(A)
     A.gen_two = zero(O)

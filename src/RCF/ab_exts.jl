@@ -1532,7 +1532,7 @@ function _from_relative_to_absQQ(L::NfRel_ns{T}, auts::Array{NfRel_nsToNfRel_nsM
     end
   end
   lp = collect(keys(factor(d).fac))
-  @vtime :AbExt 2 O1 = MaximalOrder(O1, lp)
+  @vtime :AbExt 2 O1 = pmaximal_overorder_at(O1, lp)
   _set_maximal_order(K, O1)
   #Now, we translate the automorphisms.
   imgs = Vector{NfAbsNSElem}(undef, length(auts))
