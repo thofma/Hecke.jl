@@ -332,7 +332,8 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
   end
   B = basis_mat(l)
-  B = sub(hnf!(B), nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
+  hnf!(B)
+  B = sub(B, nrows(B)-degree(K)+1:nrows(B), 1:degree(K))
   if !regular
     elt = nf_elem[]
     for i in 1:nrows(B) 
@@ -425,7 +426,8 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
       end
     end
     
-    B = hnf(basis_mat(prods))
+    B = basis_mat(prods) 
+    hnf!(B)
     
     dd = B.num[nrows(B) - degree(K) + 1, 1]
     for i in 2:degree(K)

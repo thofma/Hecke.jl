@@ -391,7 +391,7 @@ isprime_known(A::NfOrdFracIdl) = isprime_known(A.num)
 """
 function ==(A::NfOrdFracIdl, B::NfOrdFracIdl)
   #return B.den * basis_mat(A.num) == A.den * basis_mat(B.num)
-  if (!ismaximal_known(order(A)) || (ismaximal_known(order(A)) && !ismaximal(order(A))))
+  if !ismaximal_known(order(A)) || !ismaximal(order(A))
     return basis_mat(A) == basis_mat(B)
   end
 

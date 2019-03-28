@@ -102,6 +102,8 @@ field $K$.
 
 @inline ismaximal_known(O::NfAbsOrd) = O.ismaximal != 0
 
+@inline ismaximal_known_and_maximal(O::NfAbsOrd) = isone(O.ismaximal)
+
 @doc Markdown.doc"""
     ismaximal(R::NfAbsOrd) -> Bool
 > Tests if the order $R$ is maximal. This might trigger the 
@@ -262,7 +264,7 @@ function show(io::IO, S::NfOrdSet)
 end
 
 function show(io::IO, O::NfAbsOrd)
-  if ismaximal_known(O) && O.ismaximal == 1
+  if ismaximal_known_and_maximal(O)
     show_maximal(io, O)
   else
     show_gen(io, O)
@@ -1280,13 +1282,15 @@ end
 #       a modular HNF algorithm.
 @doc Markdown.doc"""
     conductor(R::NfOrd, S::NfOrd) -> NfAbsOrdIdl
-> The conductor $\{x \in S | xS\subseteq R\}$
+> The conductor $\{x \in R | xS\subseteq R\}$
 > for orders $R\subseteq S$.
 """
 function conductor(R::NfOrd, S::NfOrd)
   n = degree(R)
   t = basis_mat(R, copy = false) * basis_mat_inv(S, copy = false)
-  @assert isone(t.den)
+  if !isone(t.den)
+    error("The first order is not contained in the second!")
+  end
   basis_mat_R_in_S_inv_num, d = pseudo_inv(t.num)
   M = zero_matrix(FlintZZ, n^2, n)
   B = basis(S, copy = false)
@@ -1299,7 +1303,8 @@ function conductor(R::NfOrd, S::NfOrd)
       end
     end
   end
-  H = sub(hnf(M), 1:n, 1:n)
+  hnf!(M)
+  H = sub(M, 1:n, 1:n)
   Hinv, new_den = pseudo_inv(transpose(H))
   Hinv = Hinv * basis_mat_R_in_S_inv_num
   return ideal(R, divexact(Hinv, new_den))
