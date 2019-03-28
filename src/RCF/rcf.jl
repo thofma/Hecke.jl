@@ -19,7 +19,7 @@ add_assert_scope(:ClassField)
 > must be the map returned from a call to {class_group} or {ray_class_group}.
 """
 function ray_class_field(m::Union{MapClassGrp, MapRayClassGrp})
-  return ray_class_field(m, GrpAbFinGenMap(domain(m)))
+  return ray_class_field(m, id_hom(domain(m)))
 end
 
 @doc Markdown.doc"""

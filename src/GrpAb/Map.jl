@@ -91,6 +91,8 @@ end
 #
 ################################################################################
 
+id_hom(G::GrpAbFinGen) = hom(G, G, identity_matrix(FlintZZ, ngens(G)), identity_matrix(FlintZZ, ngens(G)), false)
+
 #TODO: Should check consistency
 @doc Markdown.doc"""
     hom(A::Array{GrpAbFinGenElem, 1}, B::Array{GrpAbFinGenElem, 1}) -> Map

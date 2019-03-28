@@ -1902,7 +1902,7 @@ function induce_action(mR::MapRayClassGrp, Aut::Array{Hecke.NfToNfMor, 1} = Heck
 
   lgens, subs = find_gens(mR) 
   if isempty(lgens)
-    push!(G, GrpAbFinGenMap(R))
+    push!(G, id_hom(R))
     return G
   end
 

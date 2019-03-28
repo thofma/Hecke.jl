@@ -704,6 +704,8 @@ mutable struct NfRel_nsToNfRel_nsMor{T} <: Map{NfRel_ns{T}, NfRel_ns{T}, HeckeMa
   end  
 end
 
+id_hom(K::NfRel_ns) = NfRel_nsToNfRel_nsMor(K, K, gens(K))
+
 function Base.hash(f::NfRel_nsToNfRel_nsMor{T}, u::UInt64) where T
   #I combine the hash functions for the automorphism of the base field and the hash function for the images of the generators.
   a = hash(f.coeff_aut, u)
