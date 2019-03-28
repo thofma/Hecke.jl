@@ -33,6 +33,12 @@
 #
 ################################################################################
 
+function check_parent(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+   if order(x) !== order(y)
+     error("Ideals do not have the same order.")
+   end
+end
+
 ################################################################################
 #
 #  Ideal addition / GCD
@@ -46,6 +52,7 @@
 > Returns $x + y$.
 """
 function +(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  check_parent(x, y)
   g = gcd(minimum(x), minimum(y))
   if isone(g)
     return ideal(order(x), g)
@@ -69,6 +76,7 @@ end
 > Returns $x \cap y$.
 """
 function intersect(x::NfOrdIdl, y::NfOrdIdl)
+  check_parent(x, y)
   g = gcd(minimum(x), minimum(y))
   if isone(g)
     #The ideals are coprime, the intersection is equal to the product
@@ -101,6 +109,7 @@ lcm(x::NfOrdIdl, y::NfOrdIdl) = intersect(x, y)
 > Returns $x \cdot y$.
 """
 function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
+  check_parent(x, y)
   @hassert :NfOrd 1 isconsistent(x)
   @hassert :NfOrd 1 isconsistent(y)
   OK = order(x)
@@ -114,7 +123,7 @@ function *(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
 end
 
 function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  order(x) != order(y) && error("Not compatible")
+  check_parent(x, y)
   if iszero(x) || iszero(y)
     I1 = ideal(order(x), 0)
     I1.iszero = 1
@@ -144,6 +153,7 @@ end
 
 # using the 2-normal representation
 function prod_via_2_elem_normal(a::NfOrdIdl, b::NfOrdIdl)
+  check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem_normal(a)
   @hassert :NfOrd 1 has_2_elem_normal(b)
   O = order(a)
@@ -232,6 +242,7 @@ end
 
 # using the 2-weak-normal representation
 function prod_via_2_elem_weakly(a::NfOrdIdl, b::NfOrdIdl)
+  check_parent(a, b)
   @hassert :NfOrd 1 has_2_elem(a)
   @hassert :NfOrd 1 has_2_elem(b)
 
@@ -325,6 +336,7 @@ end
 > Returns the ideal x*y.
 """
 function mul_maximal(x::NfOrdIdl, y::NfOrdIdl)
+  check_parent(x, y)
   if iszero(x) || iszero(y)
     z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
     z.iszero = 1
@@ -361,6 +373,7 @@ end
 > The gcd or sum (A+B).
 """
 function gcd(A::NfOrdIdl, B::NfOrdIdl)
+  check_parent(A, B)
   return A+B
 end
 
@@ -393,6 +406,12 @@ function gcd(A::NfOrdIdl, p::fmpz)
     return A + ideal(order(A), p)
   end
 end
+
+################################################################################
+#
+#  Powering
+#
+################################################################################
 
 Base.:(^)(A::NfAbsOrdIdl, e::Int) = Base.power_by_squaring(A, e)
 
@@ -505,7 +524,7 @@ end
 *(x::Integer, y::NfOrdIdl) = y * x
 
 function *(x::NfOrdElem, y::NfOrdIdl)
-  parent(x) != order(y) && error("Orders of element and ideal must be equal")
+  parent(x) !== order(y) && error("Orders of element and ideal must be equal")
   return ideal(parent(x), x) * y
 end
 
@@ -543,7 +562,8 @@ end
 > If the ideals are not coprime, an error is raised.
 """
 function idempotents(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
-  !(order(x) === order(y)) && error("Parent mismatch")
+  check_parent(x, y)
+  #!(order(x) === order(y)) && error("Parent mismatch")
   O = order(x)
   d = degree(O)
 
@@ -701,6 +721,7 @@ end
 > Returns $AB^{-1}$ assuming that $AB^{-1}$ is again an integral ideal.
 """
 function divexact(A::NfOrdIdl, B::NfOrdIdl)
+  check_parent(A, B)
   # It is assumed that B divides A, that is, A \subseteq B
   t_prod = 0.0
   t_simpl = 0.0
@@ -737,6 +758,9 @@ end
 ################################################################################
 
 function extend(A::NfOrdIdl, O::NfOrd)
+  if order(A) === O
+    return A
+  end
   # Assumes order(A) \subseteq O
 
   if iszero(A)
@@ -766,6 +790,9 @@ end
 *(O::NfOrd, A::NfOrdIdl) = extend(A, O)
 
 function contract(A::NfOrdIdl, O::NfOrd)
+  if order(A) === O
+    return A
+  end
   # Assumes O \subseteq order(A)
 
   if iszero(A)
@@ -791,4 +818,5 @@ function contract(A::NfOrdIdl, O::NfOrd)
 end
 
 intersect(O::NfOrd, A::NfOrdIdl) = contract(A, O)
+
 intersect(A::NfOrdIdl, O::NfOrd) = contract(A, O)

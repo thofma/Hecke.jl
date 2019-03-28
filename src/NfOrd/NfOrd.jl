@@ -994,6 +994,7 @@ function Base.isequal(R::NfOrd, S::NfOrd)
   return R === S
 end
 
+# Todo: Improve this
 function ==(R::NfAbsOrd, S::NfAbsOrd)
   nf(R) != nf(S) && return false
   assure_has_basis_mat(R)

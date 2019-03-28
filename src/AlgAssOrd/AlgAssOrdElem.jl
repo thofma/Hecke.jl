@@ -239,7 +239,7 @@ end
 ################################################################################
 
 function ==(a::AlgAssAbsOrdElem, b::AlgAssAbsOrdElem)
-  if parent(a) != parent(b)
+  if parent(a) !== parent(b)
     return false
   end
   return elem_in_algebra(a, copy = false) == elem_in_algebra(b, copy = false)

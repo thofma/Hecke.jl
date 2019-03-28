@@ -431,8 +431,8 @@ function assure_has_basis_mat(A::NfAbsOrdIdl)
     return nothing
   end
 
-  if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 && A.norm == A.minimum &&
-     !isindex_divisor(order(A), A.minimum)
+  if !issimple(nf(order(A))) && isdefined(A, :is_prime) && A.is_prime == 1 &&
+         A.norm == A.minimum && !isindex_divisor(order(A), A.minimum)
     # A is a prime ideal of degree 1
     A.basis_mat = basis_mat_prime_deg_1(A)
     return nothing
