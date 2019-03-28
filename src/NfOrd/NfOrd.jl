@@ -915,35 +915,40 @@ end
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
 function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
-  o = one(K)
-  
   n = degree(K)
 
   bas = [K(1)]
   phase = 1
   local B::FakeFmpqMat
-  @show "start", elt
+
   for e = elt
     if phase == 2
-      if !true && denominator(B) % denominator(e) == 0
-        @show B
-        @show C = basis_mat([e])
-        @show fl, s = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
-        if fl 
-          @show "skipping $e"
-        end
-        fl || continue
+      if denominator(B) % denominator(e) == 0
+        C = basis_mat([e])
+        fl, _ = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+#        fl && println("elt known:", e)
+        fl && continue
       end 
     end
     if check
-      @show f = minpoly(e)
+      f = minpoly(e)
       isone(denominator(f)) || error("data does not define an order, $e is non-integral")
       df = degree(f)-1
     else
       df = n-1
     end
     b = copy(bas)
+    @assert isone(b[1])
     for i=1:df
+      if phase == 2
+        f = e*b[1]
+        if denominator(B) % denominator(f) == 0
+          C = basis_mat([f])
+          fl, _ = cansolve(B.num, div(B.den, denominator(f))*C.num, side = :left)
+#          fl && println("inner abort: ", e, " ^ ", i)
+          fl && break
+        end 
+      end
       b = [e*x for x = b]
       append!(bas, b)
       if length(bas) >= n
@@ -955,6 +960,7 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
         B = sub(B, rk+1:nrows(B), 1:n)
         phase = 2
         bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+        @assert isone(bas[1])
       end
     end
   end
@@ -972,7 +978,6 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   length(bas) == n || error("data does not define an order: dimension to small")
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, B)[1]
-  @show "stop", K, B
   return Order(K, B, cached = cached, check = check)
 end
 
