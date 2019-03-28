@@ -101,7 +101,7 @@ function dedekind_test(O::NfOrd, p::fmpz, compute_order::Type{Val{S}} = Val{true
     n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
     b = FakeFmpqMat(n, p)
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-    OO = Order(nf(O), b, false)
+    OO = Order(nf(O), b, check = false)
 
     OO.isequation_order = false
 

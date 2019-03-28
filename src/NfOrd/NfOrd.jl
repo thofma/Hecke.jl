@@ -685,68 +685,72 @@ end
 #  Construction of orders
 #
 ################################################################################
-
 @doc Markdown.doc"""
-    Order(B::Array{nf_elem, 1}, check::Bool = true) -> NfOrd
+    Order(B::Array{nf_elem, 1}; check::Bool = true, cached::Bool = true) -> NfOrd
 
-Returns the order with $\mathbf Z$-basis $B$. If `check` is set, it is checked
-whether $B$ defines an order.
+Returns the order generated $B$. If `check` is set, it is checked
+whether $B$ defines an order. If `is_basis` is set, then elements are assumed to form
+a $\Z$-basis.
 """
-function Order(::S, a::Array{T, 1}, check::Bool = true,
-               cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
+function Order(::S, a::Array{T, 1}; check::Bool = true, is_basis::Bool = true,
+               cached::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}, T <: Union{nf_elem, NfAbsNSElem}}
   K = parent(a[1])
-  if check
-    b, bmat, bmat_inv, _ = defines_order(K, a)
-    if !b
-      error("The elements do not define an order")
+  if is_basis
+    if check
+      b, bmat, bmat_inv, _ = defines_order(K, a)
+      if !b
+        error("The elements do not define an order")
+      else
+        return NfAbsOrd(K, bmat, bmat_inv, deepcopy(a), cached)
+      end
     else
-      return NfAbsOrd(K, bmat, bmat_inv, deepcopy(a), cache)
+      return NfAbsOrd(deepcopy(a), cached)
     end
   else
-    return NfAbsOrd(deepcopy(a), cache)
+    return _order(K, a, cached = cached, check = check)
   end
 end
 
-function Order(K, a::Vector, check::Bool = true,
-               cache::Bool = true)
+function Order(K, a::Vector; check::Bool = true, is_basis::Bool = true,
+               cached::Bool = true)
   local b
   try
     b = map(K, a)
   catch
     error("Cannot coerce elements from array into the number field")
   end
-  return Order(K, b, check, cache)
+  return Order(K, b, check = check, cached = cached, is_basis = is_basis)
 end
 
 @doc Markdown.doc"""
-    Order(K::AnticNumberField, A::FakeFmpqMat, check::Bool = true) -> NfOrd
+    Order(K::AnticNumberField, A::FakeFmpqMat; check::Bool = true) -> NfOrd
 
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
-function Order(K::S, a::FakeFmpqMat, check::Bool = true,
-               cache::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}}
+function Order(K::S, a::FakeFmpqMat; check::Bool = true,
+               cached::Bool = false) where {S <: Union{AnticNumberField, NfAbsNS}}
   if check
     b, ainv, d = defines_order(K, a)
     if !b
       error("The basis matrix does not define an order")
     else
-      return NfAbsOrd(K, deepcopy(a), ainv, d, cache)
+      return NfAbsOrd(K, deepcopy(a), ainv, d, cached)
     end
   else
-    return NfAbsOrd(K, deepcopy(a), cache)
+    return NfAbsOrd(K, deepcopy(a), cached)
   end
 end
 
 @doc Markdown.doc"""
-    Order(K::AnticNumberField, A::fmpq_mat, check::Bool = true) -> NfOrd
+    Order(K::AnticNumberField, A::fmpq_mat; check::Bool = true) -> NfOrd
 
 Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
-function Order(K::S, a::fmpq_mat, check::Bool = true,
-               cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}}
-  return Order(K, FakeFmpqMat(a), cache)
+function Order(K::S, a::fmpq_mat; check::Bool = true,
+               cached::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS}}
+  return Order(K, FakeFmpqMat(a), cached = cached, check = check)
 end
 
 @doc Markdown.doc"""
@@ -756,56 +760,8 @@ Returns the order which has basis matrix $A$ with respect to the power basis
 of $K$. If `check` is set, it is checked whether $A$ defines an order.
 """
 function Order(K::S, a::fmpz_mat, check::Bool = true,
-               cache::Bool = true) where {S}
-  return Order(K, FakeFmpqMat(a), check, cache)
-end
-
-@doc Markdown.doc"""
-    Order(A::NfOrdFracIdl) -> NfOrd
-
-Returns the fractional ideal $A$ as an order of the ambient number field.
-"""
-function Order(a::NfOrdFracIdl, check::Bool = true, cache::Bool = true)
-  return Order(nf(order(a)), basis_mat(a)*basis_mat(order(a)), check, cache)
-end
-
-function _Order(K::S, a::Array{T, 1}, check::Bool = true,
-                cache::Bool = true) where {S <: Union{AnticNumberField, NfAbsNS},
-                                           T <: Union{nf_elem, NfAbsNSElem}}
-  n = degree(K)
-  B_K = basis(K)
-
-  if one(K) in a
-    cur = a
-  else
-    cur = append!([one(K)], a)
-  end
-  # Close it under multiplication
-  Bmat = basis_mat(cur)
-  while true
-    k = length(cur)
-    prods = Vector{elem_type(K)}(undef, k^2)
-    for i in 1:k
-      for j in 1:k
-        prods[(i - 1) * k + j] = cur[i]*cur[j]
-      end
-    end
-    #@show prods
-    Ml = hnf(basis_mat(prods))
-    #@show Ml
-    r = findfirst(i -> !iszero_row(Ml.num, i), 1:k^2)
-    nBmat = sub(Ml, r:nrows(Ml), 1:ncols(Ml))
-    if nrows(nBmat) == nrows(Bmat) && Bmat == nBmat
-      break
-    end
-    Bmat = nBmat
-    # Check if 1 is contained in the Z-module
-  end
-  if nrows(Bmat) != n
-    error("Elements do not generate an order")
-  end
-
-  return Order(K, Bmat, false)
+               cached::Bool = true) where {S}
+  return Order(K, FakeFmpqMat(a), check = check, cached = cached)
 end
 
 ################################################################################
@@ -862,7 +818,7 @@ function any_order(K::NfAbsNS)
   for i in CartesianIndices(Tuple(1:degrees(K)[i] for i in 1:ngens(K)))
     push!(b, prod(normalized_gens[j]^(i[j] - 1) for j=1:length(i)))
   end
-  return Order(K, b, false, false)
+  return Order(K, b, check = false, cached = false)
 end
 
 ################################################################################
@@ -958,86 +914,66 @@ end
 """
 equation_order(M::NfAbsOrd) = equation_order(nf(M))
 
-function _order(K::S, elt::Array{T, 1}) where {S, T}
+function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
   o = one(K)
   
   n = degree(K)
 
-  if !(o in elt)
-    push!(elt, o)
-  end
-
-  B = basis_mat(elt)
-  B = hnf(B)
-  
-  elt = T[]
-  if nrows(B) >= n
-    for i in (nrows(B) - degree(K) + 1):nrows(B) 
-      push!(elt, elem_from_mat_row(K, B.num, i, B.den))
-    end
-  else
-    for i in 1:nrows(B) 
-      push!(elt, elem_from_mat_row(K, B.num, i, B.den))
-    end
-    for i=1:n-1
-      l=length(elt)
-      for s = 1:l
-        for t = i:l
-          push!(elt, elt[s] * elt[t])
+  bas = [K(1)]
+  phase = 1
+  local B::FakeFmpqMat
+  @show "start", elt
+  for e = elt
+    if phase == 2
+      if !true && denominator(B) % denominator(e) == 0
+        @show B
+        @show C = basis_mat([e])
+        @show fl, s = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+        if fl 
+          @show "skipping $e"
         end
-      end
-      B = hnf(basis_mat(elt))
-      empty!(elt)
-      if nrows(B) >= n
-        for i in (nrows(B) - degree(K) + 1):nrows(B) 
-          push!(elt, elem_from_mat_row(K, B.num, i, B.den))
-        end
-      else
-        for i in 1:nrows(B) 
-          push!(elt, elem_from_mat_row(K, B.num, i, B.den))
-        end
-      end
+        fl || continue
+      end 
     end
-  end
-  
-  closed = false
-
-  dold = fmpq(0)
-
-  # Since 1 is in elt, prods will contain all elements
-  while !closed
-    prods = T[elt[i] for i = 1:length(elt)]
-    for i = 2:length(elt)
-      for j = i:length(elt)
-        push!(prods, elt[i]*elt[j])
-      end
-    end
-    
-    B = hnf(basis_mat(prods))
-    
-    dd = B.num[nrows(B) - degree(K) + 1, 1]
-    for i in 2:degree(K)
-      dd *= B.num[nrows(B) - degree(K) + i, i]
-    end
-    if iszero(dd)
-      error("Elements do not define a module of full rank")
-    end
-    d = dd//(B.den)^n
-
-    if dold == d
-      closed = true
+    if check
+      @show f = minpoly(e)
+      isone(denominator(f)) || error("data does not define an order, $e is non-integral")
+      df = degree(f)-1
     else
-      dold = d
-      elt = Array{T, 1}(undef, n)
-      for i in 1:n
-        elt[i] = elem_from_mat_row(K, B.num, nrows(B) - degree(K) + i, B.den)
+      df = n-1
+    end
+    b = copy(bas)
+    for i=1:df
+      b = [e*x for x = b]
+      append!(bas, b)
+      if length(bas) >= n
+        B = hnf(basis_mat(bas))
+        rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
+        if rk === nothing
+          rk = 0
+        end
+        B = sub(B, rk+1:nrows(B), 1:n)
+        phase = 2
+        bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
       end
     end
   end
 
+  if length(bas) >= n
+    B = hnf(basis_mat(bas))
+    rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
+    if rk === nothing
+      rk = 0
+    end
+    B = sub(B, rk+1:nrows(B), 1:n)
+    bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+  end
+
+  length(bas) == n || error("data does not define an order: dimension to small")
   # Make an explicit check
-  @hassert :NfOrd 1 defines_order(K, elt)[1]
-  return Order(K, elt, false, false)
+  @hassert :NfOrd 1 defines_order(K, B)[1]
+  @show "stop", K, B
+  return Order(K, B, cached = cached, check = check)
 end
 
 ################################################################################
@@ -1113,7 +1049,7 @@ Given two orders $R$, $S$ of $K$, this function returns the smallest order
 containing both $R$ and $S$. It is assumed that $R$, $S$ contain the ambient
 equation order and have coprime index.
 """
-function +(a::NfAbsOrd, b::NfAbsOrd)
+function +(a::NfAbsOrd, b::NfAbsOrd; cached::Bool = true)
   nf(a) != nf(b) && error("Orders must have same ambient number field")
   if contains_equation_order(a) && contains_equation_order(b) &&
           isone(gcd(index(a), index(b)))
@@ -1129,7 +1065,7 @@ function +(a::NfAbsOrd, b::NfAbsOrd)
     end
     mat = _hnf_modular_eldiv(m, bB.den*aB.den, :lowerleft)
     c = view(mat, d + 1:2*d, 1:d)
-    O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), false)
+    O = Order(nf(a), FakeFmpqMat(c, aB.den*bB.den), check = false, cached = cached)
     O.primesofmaximality = union(a.primesofmaximality, b.primesofmaximality)
     O.disc = gcd(discriminant(a), discriminant(b))
     if a.disc<0 || b.disc<0
@@ -1137,7 +1073,7 @@ function +(a::NfAbsOrd, b::NfAbsOrd)
     end
     return O
   else
-    return _order(nf(a), vcat(a.basis_nf, b.basis_nf))
+    return _order(nf(a), vcat(a.basis_nf, b.basis_nf), cached = cached)
   end
 end
 
