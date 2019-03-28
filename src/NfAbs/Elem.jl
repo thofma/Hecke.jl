@@ -153,13 +153,27 @@ end
 
 The characteristic polynomial of a.
 """
-function charpoly(a::nf_elem, Qx::FmpqPolyRing = parent(parent(a).pol))
+function charpoly(Qx::FmpqPolyRing, a::nf_elem)
   f = charpoly(Qx, representation_matrix(a))
+  return f
+end
+
+function charpoly(a::nf_elem)
+  f = charpoly(parent(parent(a).pol), a)
   return f
 end
 
 function charpoly(a::nf_elem, ::FlintRationalField)
   return charpoly(a)
+end
+
+function charpoly(Zx::FmpzPolyRing, a::nf_elem)
+  f = charpoly(a)
+  return Zx(denocharator(f)*f)
+end
+
+function charpoly(a::nf_elem, Z::FlintIntegerRing)
+  return charpoly(PolynomialRing(Z, cached = false)[1], a)
 end
 
 ################################################################################
@@ -174,13 +188,27 @@ end
 
 > The minimal polynomial of a.
 """
-function minpoly(a::nf_elem, Qx::FmpqPolyRing = parent(parent(a).pol))
+function minpoly(Qx::FmpqPolyRing, a::nf_elem)
   f = minpoly(Qx, representation_matrix(a))
+  return f
+end
+
+function minpoly(a::nf_elem)
+  f = minpoly(parent(parent(a).pol), a)
   return f
 end
 
 function minpoly(a::nf_elem, ::FlintRationalField)
   return minpoly(a)
+end
+
+function minpoly(a::nf_elem, ZZ::FlintIntegerRing)
+  return minpoly(PolynomialRing(ZZ, cached = false)[1], a)
+end
+
+function minpoly(Zx::FmpzPolyRing, a::nf_elem)
+  f = minpoly(a)
+  return Zx(denominator(f)*f)
 end
 
 ################################################################################

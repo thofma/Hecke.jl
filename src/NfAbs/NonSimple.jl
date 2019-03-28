@@ -539,6 +539,23 @@ function minpoly(a::NfAbsNSElem)
   return minpoly_via_trace(a)::fmpq_poly
 end
 
+function minpoly(Rx::FmpqPolyRing, a::NfAbsNSElem)
+  return Qx(minpoly(a))
+end
+
+function minpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
+  f = minpoly(a)
+  return Rx(denominator(f)*f)
+end
+
+function minpoly(a::NfAbsNSElem, R::FlintIntegerRing)
+  return minpoly(PolynomialRing(R, cached = false)[1], a)
+end
+
+function minpoly(a::NfAbsNSElem, ::FlintRationalField)
+  return minpoly(a)
+end
+
 ################################################################################
 #
 #  Characteristic polynomial
@@ -548,6 +565,23 @@ end
 function charpoly(a::NfAbsNSElem)
   f = minpoly(a)
   return f^div(degree(parent(a)), degree(f))
+end
+
+function charpoly(Rx::FmpqPolyRing, a::NfAbsNSElem)
+  return Qx(charpoly(a))
+end
+
+function charpoly(Rx::FmpzPolyRing, a::NfAbsNSElem)
+  f = charpoly(a)
+  return Rx(denominator(f)*f)
+end
+
+function charpoly(a::NfAbsNSElem, R::FlintIntegerRing)
+  return charpoly(PolynomialRing(R, cached = false)[1], a)
+end
+
+function charpoly(a::NfAbsNSElem, ::FlintRationalField)
+  return charpoly(a)
 end
 
 ################################################################################
