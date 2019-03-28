@@ -341,7 +341,7 @@ function gens_overorder_polygons(O::NfOrd, p::fmpz)
     end
     O1 = _order_for_polygon_overorder(K, elt)
   else
-    O1 = Order(K, B, false)
+    O1 = Order(K, B, check = false)
     O1.disc = divexact(O.disc, p^(2*vdisc))
     push!(O1.primesofmaximality, p)
   end
@@ -398,7 +398,7 @@ function polygons_overorder(O::NfOrd, p::fmpz)
     n = _hnf_modular_eldiv(Malpha, p, :lowerleft)
     b = FakeFmpqMat(n, p)
     @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-    OO = Order(nf(O), b, false)
+    OO = Order(nf(O), b, check = false)
     OO.isequation_order = false
     OO.disc = divexact(O.disc, p^(2*(degree(O)-degree(U))))
     push!(OO.primesofmaximality, p)
@@ -451,7 +451,7 @@ function _order_for_polygon_overorder(K::S, elt::Array{T, 1}) where {S, T}
 
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, elt)[1]
-  return Order(K, elt, false, false)
+  return Order(K, elt, check = false, cached = false)
 end
 
 ###############################################################################
