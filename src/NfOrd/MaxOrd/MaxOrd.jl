@@ -624,7 +624,7 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   b = FakeFmpqMat(pseudo_inv(mhnftrans))
   mul!(b, b, basis_mat(O, copy = false))
   @hassert :NfOrd 1 defines_order(nf(O), b)[1]
-  O1 = Order(nf(O), b, false)
+  O1 = NfAbsOrd(nf(O), b)
   if isdefined(O, :disc)
     O1.disc = divexact(O.disc, s^2)
   end

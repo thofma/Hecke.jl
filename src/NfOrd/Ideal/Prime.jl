@@ -42,8 +42,7 @@ export PrimeIdealsSet, prime_ideals_over
 > It is assumed that $p$ is prime.
 """
 function isramified(O::NfAbsOrd, p::Union{Int, fmpz})
-  @assert ismaximal_known(O) && ismaximal(O)
-
+  @assert ismaximal_known_and_maximal(O)
   return mod(discriminant(O), p) == 0
 end
 
