@@ -239,6 +239,7 @@ end
 
 function _set_nf_equation_order(K::AnticNumberField, O)
   _set_equation_order_of_nf(K, O)
+  return nothing
 end
 
 function conjugate_data_arb(K::AnticNumberField)

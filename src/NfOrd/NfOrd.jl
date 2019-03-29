@@ -154,7 +154,7 @@ function assure_has_basis(O::NfAbsOrd)
   d = degree(O)
   B = Vector{elem_type(O)}(undef, d)
   for i in 1:length(b)
-    v = [fmpz(0) for j in 1:d]
+    v = fmpz[fmpz(0) for j in 1:d]
     one!(v[i])
     B[i] = NfAbsOrdElem(O, b[i], v)
   end
@@ -166,7 +166,7 @@ function assure_has_basis_mat(O::NfAbsOrd)
   if isdefined(O, :basis_mat)
     return nothing
   end
-  A = O.basis_nf
+  A = O.basis_nf#::Vector{elem_type(nf(O))}
   O.basis_mat = FakeFmpqMat(basis_mat(A))
   return nothing
 end

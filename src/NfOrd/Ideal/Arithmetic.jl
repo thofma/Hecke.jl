@@ -116,9 +116,9 @@ end
 function mul_gen(x::NfAbsOrdIdl, y::NfAbsOrdIdl)
   order(x) != order(y) && error("Not compatible")
   if iszero(x) || iszero(y)
-    z = ideal(order(x), zero_matrix(FlintZZ, degree(order(x)), degree(order(x))))
-    z.iszero = 1
-    return z
+    I1 = ideal(order(x), 0)
+    I1.iszero = 1
+    return I1
   end
   O = order(x)
   d = degree(O)

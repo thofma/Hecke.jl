@@ -582,7 +582,9 @@ end
 function rres_bez(f::fmpz_poly, g::fmpz_poly)
   Nemo.check_parent(f, g)
   Qx = PolynomialRing(FlintQQ, "x", cached = false)[1]
-  g, q, w = gcdx(Qx(f), Qx(g))
+  f1 = Qx(f)
+  g1 = Qx(g)
+  d, q, w = gcdx(f1, g1)
   if iszero(q) || iszero(w)
     if isconstant(f) || isconstant(g)
       if isconstant(f) && isconstant(g)
