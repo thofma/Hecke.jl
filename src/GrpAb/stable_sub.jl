@@ -204,8 +204,8 @@ function _dualize(M::nmod_mat, V::GrpAbFinGen, v::Array{fmpz,1})
   end 
   mH=Hecke.GrpAbFinGenMap(V,K,A)
   newel=kernel_as_submodule(mH)
-  return MatrixSpace(parent(M[1,1]),nrows(newel), ncols(newel), false)(newel)
-  
+  return change_base_ring(newel, base_ring(M))
+
 end
 
 function _dualize_1(M::nmod_mat, snf_struct::Array{fmpz,1})
@@ -359,7 +359,6 @@ function maximal_submodules(M::ZpnGModule, ind::Int=-1)
     minlist = minimal_submodules(N,ind)
   end
   list=Array{nmod_mat,1}(undef, length(minlist))
-  W=MatrixSpace(R,1,ngens(S.V), false)
   v=[divexact(fmpz(R.n),S.V.snf[j]) for j=1:ngens(S.V) ]
   for x in minlist
     K = DiagonalGroup([fmpz(R.n) for j=1:nrows(x)])
@@ -496,7 +495,7 @@ function submodules_all(M::ZpnGModule)
   end 
   S,mS = snf(M)  
   minlist = minimal_submodules(S)
-  list = nmod_mat[MatrixSpace(R,length(S.V.snf),length(S.V.snf), false)(1), zero_matrix(R,1,length(S.V.snf))]
+  list = nmod_mat[identity_matrix(R, length(S.V.snf)), zero_matrix(R,1,length(S.V.snf))]
   
   #
   #  Find minimal submodules, factor out and recursion on the quotients
@@ -520,8 +519,7 @@ function submodules_all(M::ZpnGModule)
   #
   #  Writing the submodules in terms of the given generators and returning an iterator
   #
-  W=MatrixSpace(R,nrows(mS.map), ncols(mS.map), false)
-  MatSnf=W(mS.map)
+  MatSnf=change_base_ring(mS.map, R)
   return (x*MatSnf for x in list)
   
 end
@@ -577,8 +575,7 @@ function _submodules_with_struct_cyclic(M::ZpnGModule, ord::Int)
       list1[i][1, k] *= v[k]
     end
   end  
-  W=MatrixSpace(R, nrows(mS.map), ncols(ms.map), false)
-  MatSnf=W(mS.map*ms.map)  
+  MatSnf=change_base_ring(mS.map*ms.map, R)
   for j=1:length(list1)
     list1[j] = list1[j]*MatSnf
   end
@@ -675,10 +672,9 @@ function _submodules_with_struct(M::ZpnGModule, typesub::Array{Int, 1})
   end 
   #and now as elements of M
   auxmat = mS.map*ms.map
-  W = MatrixSpace(R, nrows(auxmat), ncols(auxmat), false)
-  auxmat = W(auxmat)
+  auxmat2 = change_base_ring(auxmat, R)
   for j = 1:length(list1)
-    @inbounds list1[j] = list1[j]*auxmat
+    @inbounds list1[j] = list1[j]*auxmat2
   end
   return list1
 
@@ -787,8 +783,7 @@ function submodules_order(M::ZpnGModule, ord::Int)
   #  Write the submodules in terms of the set of given generators
   #
   
-  W=MatrixSpace(R,nrows(mS.map), ncols(mS.map), false)
-  MatSnf=W(mS.map)
+  MatSnf=change_base_ring(mS.map, R)
   for j=1:length(list)
     list[j]=list[j]*MatSnf #vcat([W(( mS( S.V([list[j][k,i].data for i=1:ngens(S.V)]))).coeff)  for k=1:nrows(list[j])])
   end
@@ -845,8 +840,7 @@ function submodules_with_quo_struct(M::ZpnGModule, typequo::Array{Int,1})
   #
   #  Write the submodules in terms of the given generators
   #
-  W = MatrixSpace(R, nrows(mS.map), ncols(mS.map), false)
-  MatSnf = W(mS.map)
+  MatSnf = change_base_ring(mS.map, R)
   return (final_check_and_ans(x, MatSnf, M) for x in list)
   
 end
@@ -950,11 +944,10 @@ function stable_subgroups(R::GrpAbFinGen, act::Array{T, 1}; op = sub, quotype::A
       act_mat1 = Array{nmod_mat,1}(undef, length(act))
       auxmat1 = hcat(mG.map', rels(Q)')
       auxmat2 = mS.map*mG.map
-      W = MatrixSpace(RR,ngens(S), ngens(S), false)
       for z=1:length(act)
         y = transpose(solve(auxmat1, (auxmat2*act[z].map)'))
         y = sub(y, 1:ngens(S), 1:ngens(G))*mS.imap
-        act_mat1[z] = W(y)
+        act_mat1[z] = change_base_ring(y, RR)
       end
       
       #

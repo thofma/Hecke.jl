@@ -413,7 +413,7 @@ function _rcf_find_kummer(CF::ClassField_pp{S, T}) where {S, T}
   # thus it works iff sum a[i] n[i] = 0
   # for all a in the kernel
   R = ResidueRing(FlintZZ, C.n, cached=false)
-  M = MatrixSpace(R, ngens(k), ngens(G), false)(mk.map)
+  M = change_base_ring(mk.map, R)
   i, l = right_kernel(M)
   @assert i > 0
   n = lift(l)

@@ -149,7 +149,7 @@ function in(x::T, O::AlgAssAbsOrd{S, T}) where {S, T}
     M1 = inv(O.basis_mat)
     O.basis_mat_inv = M1
   end
-  if (y*M1).den == 1
+  if isone((y*M1).den)
     return true
   else
     return false
@@ -170,26 +170,16 @@ end
 #
 ################################################################################
 
-function lift(M::fq_nmod_mat)
-
-  N=zero_matrix(FlintZZ, nrows(M), ncols(M))
-  for i=1:nrows(M)
-    for j=1:ncols(M)
-      N[i,j]=FlintZZ(coeff(M[i,j],0))
-    end
-  end
-  return N
-end
-
-function FakeFmpqMat(x::Array{fmpq,1})
-  dens=[denominator(x[i]) for i=1:length(x)]
-  den=lcm(dens)
-  M=zero_matrix(FlintZZ, 1, length(x))
-  for i=1:length(x)
-    M[1,i]=numerator(x[i])*divexact(den, dens[i])
-  end
-  return FakeFmpqMat(M,den)
-end
+#function lift(M::fq_nmod_mat)
+#
+#  N=zero_matrix(FlintZZ, nrows(M), ncols(M))
+#  for i=1:nrows(M)
+#    for j=1:ncols(M)
+#      N[i,j]=FlintZZ(coeff(M[i,j],0))
+#    end
+#  end
+#  return N
+#end
 
 ################################################################################
 #
@@ -640,7 +630,7 @@ function pradical_meataxe(O::AlgAssAbsOrd, p::Int)
   end
   r = rref!(M1)
   if r == O.dim
-    J= AlgAssAbsOrdIdl(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J= AlgAssAbsOrdIdl(O, scalar_matrix(FlintZZ, O.dim, p))
     J.gens=AlgAssAbsOrdElem[O(p*one(O.algebra))]
     return J
   end
@@ -680,13 +670,12 @@ function pradical(O::AlgAssAbsOrd, p::Int)
   F = GF(p, cached=false)
 
   #First step: kernel of the trace matrix mod p 
-  W = MatrixSpace(F,O.dim, O.dim, false)
 
-  I = W(n*trred_matrix(O))
+  I = change_base_ring(n*trred_matrix(O), F)
   k, B = nullspace(I)
   # The columns of B give the coordinates of the elements in the order.
   if k==0
-    J= ideal(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+    J= ideal(O, scalar_matrix(FlintZZ, O.dim, p))
     J.gens = AlgAssAbsOrdElem[O(p*one(O.algebra))]
     return J
   end
@@ -729,7 +718,7 @@ function pradical(O::AlgAssAbsOrd, p::Int)
     end
     k, B2 = nullspace(N)
     if k == 0
-      J = ideal(O, MatrixSpace(FlintZZ, O.dim, O.dim, false)(p))
+      J = ideal(O, scalar_matrix(FlintZZ, O.dim, p))
       J.gens = AlgAssAbsOrdElem[O(p*one(O.algebra))]
       return J
     end

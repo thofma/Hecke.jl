@@ -716,10 +716,10 @@ function Base.hash(f::NfRel_nsToNfRel_nsMor{T}, u::UInt64) where T
 end
 
 function Base.:(*)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}
-  domain(f) == codomain(g) || throw("Maps not compatible")
+  codomain(f) == domain(g) || throw("Maps not compatible")
 
   a = gens(domain(g))
-  return NfRel_nsToNfRel_nsMor(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, [ f(g(x)) for x in a])
+  return NfRel_nsToNfRel_nsMor(domain(g), codomain(f), f.coeff_aut * g.coeff_aut, [ g(f(x)) for x in a])
 end
 
 function Base.:(==)(f::NfRel_nsToNfRel_nsMor{T}, g::NfRel_nsToNfRel_nsMor{T}) where {T}

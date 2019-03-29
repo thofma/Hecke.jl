@@ -44,7 +44,7 @@ function CrossedProductAlgebra(K::AnticNumberField, G::Array{T,1}, cocval::Array
           # I take the element B[k]*G[h]
           # and I take the product 
           # B[i]*G[j]* B[k]*G[h]=B[i]*G[j](B[k])*c[j,h]*(G[j]*G[h])
-          ind=find_elem(G,G[j]*G[h]) 
+          ind=find_elem(G,G[h] * G[j]) 
           x=B[i]*G[j](B[k])*cocval[j,h]
           #@show i, j, k,h,  ind,B[i],G[j](B[k]),cocval[j,h],  x
           for s=0:n-1
@@ -85,7 +85,7 @@ function CrossedProductAlgebra(O::NfOrd, G::Array{T,1}, cocval::Array{nf_elem, 2
     for k=1:n
       l =O(G[j](K(B[k])), false)
       for h=1:m
-        ind = find_elem(G, G[j]*G[h]) 
+        ind = find_elem(G, G[h] * G[j]) 
         t = O(cocval[j,h], false)
         for i=1:n
           #I have the element B[i]*G[j]
