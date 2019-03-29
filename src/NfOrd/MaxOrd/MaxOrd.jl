@@ -667,6 +667,7 @@ function pradical_trace(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   M2 = _hnf_modular_eldiv(M2, fmpz(p), :lowerleft)
   I = ideal(O, M2)
+  I.minimum = p
   I.gens = gens
   return I
 end
@@ -712,6 +713,7 @@ function pradical_frobenius(O::NfAbsOrd, p::Union{Integer, fmpz})
   end
   mm = _hnf_modular_eldiv(m, fmpz(p), :lowerleft)
   I = NfAbsOrdIdl(O, mm)
+  I.minimum = p
   I.gens = gens
   return I
 

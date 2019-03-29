@@ -137,35 +137,7 @@ function lowerconvexhull(points::Array{Tuple{Int, Int},1})
     push!(l, Line(pointsconvexhull[n-i], pointsconvexhull[n-i-1]))
   end
   return Polygon(l, sorted = true)
-  #=
-  #This thing clearly cannot work, I don't know how to fix it
-  i = 1
-  while points[i][2] !=0
-    i += 1
-  end
-  
-  pointsonconvexhull = [ points[i-1], points[i] ]
 
-  n = length(points)-2
-  
-
-  oldslope = slope(pointsonconvexhull[1],pointsonconvexhull[2])
-
-  for i = 1:n
-    newslope = slope(points[n-i+1], pointsonconvexhull[1])
-    if newslope >= oldslope
-      pointsonconvexhull[1] = points[n-i+1]
-    else
-      unshift!(pointsonconvexhull, points[n-i+1])
-    end
-    oldslope = newslope
-  end
-  =#
-  t = Line[]
-  for i=1:length(pointsonconvexhull)-1
-    push!(t,Line((pointsonconvexhull[i], pointsonconvexhull[i+1])))
-  end
-  return Polygon(t)
 end
 
 ###############################################################################

@@ -921,54 +921,55 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
   
   n = degree(K)
 
-  bas = [K(1)]
+  bas = elem_type(K)[one(K)]
   phase = 1
   local B::FakeFmpqMat
   @show "start", elt
   for e = elt
-    if phase == 2
-      if !true && denominator(B) % denominator(e) == 0
-        @show B
-        @show C = basis_mat([e])
-        @show fl, s = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
-        if fl 
-          @show "skipping $e"
-        end
-        fl || continue
-      end 
-    end
+    #if phase == 2
+    #  if !true && denominator(B) % denominator(e) == 0
+    #    @show B
+    #    @show C = basis_mat([e])
+    #    @show fl, s = cansolve(B.num, div(B.den, denominator(e))*C.num, side = :left)
+    #    if fl 
+    #      @show "skipping $e"
+    #    end
+    #    fl || continue
+    #  end 
+    #end
     if check
-      @show f = minpoly(e)
+      f = minpoly(e)
       isone(denominator(f)) || error("data does not define an order, $e is non-integral")
       df = degree(f)-1
     else
       df = n-1
     end
-    b = copy(bas)
     for i=1:df
-      b = [e*x for x = b]
+      b = elem_type(K)[e*x for x = bas]
       append!(bas, b)
       if length(bas) >= n
-        B = hnf(basis_mat(bas))
-        rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
-        if rk === nothing
-          rk = 0
+        B = basis_mat(bas)
+        B = hnf!(B)
+        rk = nrows(B) - n +1
+        while iszero_row(B.num, rk)
+          rk += 1
         end
-        B = sub(B, rk+1:nrows(B), 1:n)
+        B = sub(B, rk:nrows(B), 1:n)
         phase = 2
-        bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+        bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
       end
     end
   end
 
   if length(bas) >= n
-    B = hnf(basis_mat(bas))
-    rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
-    if rk === nothing
-      rk = 0
+    B = basis_mat(bas)
+    B = hnf!(B)
+    rk = nrows(B) - n + 1
+    while iszero_row(B.num, rk)
+      rk += 1
     end
-    B = sub(B, rk+1:nrows(B), 1:n)
-    bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+    B = sub(B, rk:nrows(B), 1:n)
+    bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
   end
 
   length(bas) == n || error("data does not define an order: dimension to small")
