@@ -919,7 +919,7 @@ equation_order(M::NfAbsOrd) = equation_order(nf(M))
 function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true) where {S, T}
   n = degree(K)
 
-  bas = [K(1)]
+  bas = elem_type(K)[one(K)]
   phase = 1
   local B::FakeFmpqMat
 
@@ -939,45 +939,45 @@ function _order(K::S, elt::Array{T, 1}; cached::Bool = true, check::Bool = true)
     else
       df = n-1
     end
-    b = copy(bas)
-    @assert isone(b[1])
+    f = one(K)
     for i=1:df
+      mul!(f, f, e)
       if phase == 2
-        f = e*b[1]
         if denominator(B) % denominator(f) == 0
-          C = basis_mat([f])
-          fl, _ = cansolve(B.num, div(B.den, denominator(f))*C.num, side = :left)
+          C = basis_mat(elem_type(K)[f])
+          fl = iszero_mod_hnf!(div(B.den, denominator(f))*C.num, B.num)
 #          fl && println("inner abort: ", e, " ^ ", i)
           fl && break
         end 
       end
-      b = [e*x for x = b]
+      b = elem_type(K)[e*x for x in bas]
       append!(bas, b)
       if length(bas) >= n
-        B = hnf(basis_mat(bas))
-        rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
-        if rk === nothing
-          rk = 0
+        B = basis_mat(bas)
+        hnf!(B)
+        rk = nrows(B) - n + 1
+        while iszero_row(B, rk)
+          rk += 1
         end
-        B = sub(B, rk+1:nrows(B), 1:n)
+        B = sub(B, rk:nrows(B), 1:n)
         phase = 2
-        bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+        bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
         @assert isone(bas[1])
       end
     end
   end
 
   if length(bas) >= n
-    B = hnf(basis_mat(bas))
-    rk = findlast(i -> iszero_row(B.num, i), 1:nrows(B))
-    if rk === nothing
-      rk = 0
+    B = basis_mat(bas)
+    hnf!(B)
+    rk = nrows(B) - n + 1
+    if iszero_row(B.num, rk)
+      error("data does not define an order: dimension to small")
     end
-    B = sub(B, rk+1:nrows(B), 1:n)
-    bas = [ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
+    B = sub(B, rk:nrows(B), 1:n)
+    bas = elem_type(K)[ elem_from_mat_row(K, B.num, i, B.den) for i = 1:nrows(B) ]
   end
-
-  length(bas) == n || error("data does not define an order: dimension to small")
+  
   # Make an explicit check
   @hassert :NfOrd 1 defines_order(K, B)[1]
   return Order(K, B, cached = cached, check = check)
