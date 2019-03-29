@@ -4,8 +4,6 @@
 #
 ################################################################################
 
-export num, den
-
 numerator(x::FakeFmpqMat) = deepcopy(x.num)
 
 denominator(x::FakeFmpqMat) = deepcopy(x.den)
@@ -181,6 +179,16 @@ function Base.deepcopy_internal(x::FakeFmpqMat, dict::IdDict)
     z.parent = x.parent
   end
   return z
+end
+
+################################################################################
+#
+#  iszero_row
+#
+################################################################################
+
+function iszero_row(M::FakeFmpqMat, i::Int)
+  return iszero_row(M.num, i)
 end
 
 ################################################################################
