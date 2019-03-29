@@ -94,11 +94,25 @@ function IdealSet(O::NfOrd)
    return NfAbsOrdIdlSet(O)
 end
 
+################################################################################
+#
+#  Basic type functions
+#
+################################################################################
+
 elem_type(::Type{NfOrdIdlSet}) = NfOrdIdl
 
 elem_type(::NfOrdIdlSet) = NfOrdIdl
 
 parent_type(::Type{NfOrdIdl}) = NfOrdIdlSet
+
+################################################################################
+#
+#  Comparison
+#
+################################################################################
+
+==(x::NfAbsOrdIdlSet, y::NfAbsOrdIdlSet) = x.order === y.order
 
 ################################################################################
 #
@@ -135,7 +149,7 @@ function show_gen(io::IO, a::NfAbsOrdIdl)
   print(io, "Ideal of (")
   print(io, order(a), ")\n")
   print(io, "with basis matrix\n")
-  print(io, basis_mat(a))
+  print(io, basis_mat(a, copy = false))
 end
 
 function show_maximal(io::IO, id::NfAbsOrdIdl)
@@ -195,10 +209,9 @@ end
 ################################################################################
 
 @doc Markdown.doc"""
-***
     ideal(O::NfOrd, x::NfOrdElem) -> NfAbsOrdIdl
 
-> Creates the principal ideal $(x)$ of $\mathcal O$.
+Creates the principal ideal $(x)$ of $\mathcal O$.
 """
 function ideal(O::NfAbsOrd, x::NfAbsOrdElem)
   return NfAbsOrdIdl(deepcopy(x))
@@ -214,7 +227,7 @@ end
 """
 function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = false)
   !x_in_hnf ? x = _hnf(x, :lowerleft) : nothing #sub-optimal, but == relies on the basis being thus
-
+  #_trace_call(;print = true)
   I = NfAbsOrdIdl(O, x)
   if check
     J = ideal(O, 0)
@@ -229,13 +242,11 @@ function ideal(O::NfAbsOrd, x::fmpz_mat, check::Bool = false, x_in_hnf::Bool = f
   return I
 end
 
-
 @doc Markdown.doc"""
-***
     ideal(O::NfOrd, x::fmpz, y::NfOrdElem) -> NfAbsOrdIdl
     ideal(O::NfOrd, x::Integer, y::NfOrdElem) -> NfAbsOrdIdl
 
-> Creates the ideal $(x,y)$ of $\mathcal O$.
+Creates the ideal $(x, y)$ of $\mathcal O$.
 """
 function ideal(O::NfAbsOrd, x::fmpz, y::NfOrdElem)
   return NfAbsOrdIdl(deepcopy(x), deepcopy(y))

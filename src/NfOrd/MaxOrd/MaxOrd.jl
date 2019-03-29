@@ -584,14 +584,11 @@ function ring_of_multipliers(a::NfAbsOrdIdl)
   O = order(a) 
   n = degree(O)
   if isdefined(a, :gens) && length(a.gens) < n
-    if gens[1] == minimum(A)
-      B = a.gens[2:end]
-    else
-      B = a.gens
-    end
+    B = a.gens
   else
     B = basis(a, copy = false)
   end
+  @assert length(B) > 0
   bmatinv = basis_mat_inv(a, copy = false)
   m = zero_matrix(FlintZZ, n*length(B), n)
   for i = 1:length(B)
